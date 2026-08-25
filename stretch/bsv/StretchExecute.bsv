@@ -767,10 +767,11 @@ function ActionValue#(Tuple3#(HWordAddr, Maybe#(Tuple2#(Bit#(4), IndexWord)),
           ind = setOpInvalid(ind); // FP arithmetic beyond L/ST: out of scope
       end
       // -----------------------------------------------------------
-      // Input-Output (Reference Manual "IBM 7619 Exchange", pp.104-127;
-      // see StretchIO.bsv's file header for the full scope statement
-      // this case implements against -- synchronous single-block
-      // transfer, two fixed simulated devices, RD/W/CCW/REL only).
+      // Input-Output (Reference Manual "IBM 7619 Exchange", pp.104-127,
+      // and "External Units", pp.129-149; see StretchIO.bsv's file
+      // header for the full scope statement this case implements
+      // against -- synchronous single-block transfer, three fixed
+      // simulated devices, RD/W/CCW/REL/CTL, LOC not implemented).
       // -----------------------------------------------------------
       tagged IoOp .io_: begin
         Bit#(4) op4 = io_.op;
@@ -786,13 +787,16 @@ function ActionValue#(Tuple3#(HWordAddr, Maybe#(Tuple2#(Bit#(4), IndexWord)),
                                                      // the field itself
                                                      // holds the actual
                                                      // channel number.
-        Bool readerCh  = io.isReader(chAddr);
-        Bool printerCh = io.isPrinter(chAddr);
+        DeviceKind kind = kindOf(chAddr);
+        Bool readerCh  = (kind == DevReader);
+        Bool printerCh = (kind == DevPrinter);
+        Bool tapeCh    = (kind == DevTape);
 
-        if (!readerCh && !printerCh) begin
-          // Unit Not Ready Reject (p.112): neither simulated device is
-          // installed at this channel address. The instruction is
-          // never accepted; no control word anywhere is touched.
+        if (kind == DevNone) begin
+          // Unit Not Ready Reject (p.112): none of this model's
+          // simulated devices is installed at this channel address.
+          // The instruction is never accepted; no control word
+          // anywhere is touched.
           ind = setBit(ind, ind_UNRJ, 1);
         end else begin
           // Address Invalid (AD) for an out-of-range control-word
@@ -802,9 +806,61 @@ function ActionValue#(Tuple3#(HWordAddr, Maybe#(Tuple2#(Bit#(4), IndexWord)),
           // -- a documented gap, not a silent one.
           WordAddr effA2 = effAddr18(st, io_.addr2, io_.i2);
           case (base)
-            3'b010, 3'b011: ind = setOpInvalid(ind); // CTL, LOC: not
-                                                       // implemented,
-                                                       // see StretchIO.bsv.
+            3'b010: begin // CTL (Control) -- only implemented against
+                           // the tape channel (StretchIO.bsv "CONTROL
+                           // FUNCTIONS"); reader/printer CTL and every
+                           // tape function code this model doesn't
+                           // implement fall through to OP-invalid.
+              if (!tapeCh) begin
+                ind = setOpInvalid(ind);
+              end else begin
+                // p.111: CONTROL's right effective address carries a
+                // raw function code, NOT a core-storage word address
+                // -- effA2 here is that code as-is (strap_asm.py's
+                // IO_OP branch deliberately skips the >>6 word-address
+                // conversion for CTL/LOC; see its own comment).
+                case (effA2)
+                  18'o136, 18'o137: begin // REWIND / REWIND AND UNLOAD
+                                            // (p.132) -- see StretchIO.bsv
+                                            // for why both map to the
+                                            // same behavior here.
+                    io.setTapePos(0);
+                    ControlWord cw = io.readChanCW(chAddr);
+                    if (!seop) cw.eop = 1;
+                    io.writeChanCW(chAddr, cw);
+                  end
+                  18'o176: begin // BACKSPACE BLOCK (p.132)
+                    ControlWord cw = io.readChanCW(chAddr);
+                    if (io.tapePos() == 0) begin
+                      // "the tape cannot be moved... beyond the load
+                      // point. Any backspace instructions given with
+                      // the tape in this position are terminated with
+                      // an exchange-program-check indication" (p.136).
+                      cw.epgk = 1;
+                      if (!seop) cw.eop = 1;
+                    end else begin
+                      io.setTapePos(io.tapePos() - 1);
+                      if (!seop) cw.eop = 1;
+                    end
+                    io.writeChanCW(chAddr, cw);
+                  end
+                  default: ind = setOpInvalid(ind); // SPACE BLOCK/FILE,
+                                                       // WRITE TAPE MARK,
+                                                       // BACKSPACE FILE,
+                                                       // density/ECC/
+                                                       // parity/light
+                                                       // functions --
+                                                       // real p.130-132
+                                                       // codes this
+                                                       // model does not
+                                                       // implement; see
+                                                       // StretchIO.bsv.
+                endcase
+              end
+            end
+            3'b011: ind = setOpInvalid(ind); // LOC: not implemented --
+                                               // see StretchIO.bsv
+                                               // "INSTRUCTIONS".
             3'b101: begin // REL (Release)
               ControlWord cw = io.readChanCW(chAddr);
               cw.epgk = 0; cw.uk = 0; cw.ee = 0; cw.cs = 0; cw.seop = 0;
@@ -819,7 +875,9 @@ function ActionValue#(Tuple3#(HWordAddr, Maybe#(Tuple2#(Bit#(4), IndexWord)),
                      // (p.122), so the control word here is left alone.
               st.writeWord(effA2, packControlWord(io.readChanCW(chAddr)));
             3'b000, 3'b001: begin // RD, W
-              Bool wrongUnit = (base == 3'b000) ? !readerCh : !printerCh;
+              Bool wrongUnit = (base == 3'b000)
+                ? (!readerCh && !tapeCh)   // RD valid on reader or tape
+                : (!printerCh && !tapeCh); // W valid on printer or tape
               if (wrongUnit) begin
                 // Exchange Program Check (p.113): "an instruction is
                 // received that the selected unit is not designed to
@@ -845,7 +903,13 @@ function ActionValue#(Tuple3#(HWordAddr, Maybe#(Tuple2#(Bit#(4), IndexWord)),
                 Bit#(19) rem0 = (cw0.count == 0) ? 19'd262144 : zeroExtend(cw0.count);
                 ioStart = tagged Valid IoXfer {
                   ch: chAddr, isWrite: (base == 3'b001),
-                  memAddr: cw0.dataAddr, devIdx: 0,
+                  memAddr: cw0.dataAddr,
+                  // Reader/printer always restart at device index 0
+                  // (StretchIO.bsv has no persistent position for
+                  // either). Tape instead continues from wherever the
+                  // last transfer or CTL REWIND/BACKSPACE BLOCK left
+                  // it -- see StretchIO.bsv "TAPE POSITION".
+                  devIdx: tapeCh ? zeroExtend(io.tapePos()) : 0,
                   remaining: rem0, suppressEop: seop,
                   // SKIP (p.107) only has meaning on READ -- "on writing,
                   // the flag is meaningless and is ignored" -- so it's

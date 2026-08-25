@@ -123,6 +123,22 @@ is still a large, tractable transcription target for later, with a much
 more concrete list of prerequisites than before, not a near-term
 milestone.
 
+**Update, second day**: a tape drive now exists too
+(`strap/programs/io_tape.strap`, `bsv/StretchIO.bsv` channel 34), with
+real position persistence across instructions and two of `CTL`'s tape
+function codes -- REWIND and BACKSPACE BLOCK (octal 136/176,
+Reference Manual p.132), read from the External Units chapter this
+same session. This closes part of reason (1) above but not all of it:
+the DCP's `%SEOP` usage is now representable (`RD`/`W`/`REL`/`CTL`
+SEOP forms all decode and, except `RD SEOP`/`CTL SEOP` specifically,
+are exercised), and rewind/backspace are real, but SPACE FILE, WRITE
+TAPE MARK, BACKSPACE FILE, and chaining/multiple-block operation are
+still not implemented -- likely needed by a program that manages
+actual tape files rather than single blocks, which the DCP's master
+tape almost certainly does. Reason (2), the `MemWords`/BRAM storage
+blocker, is completely untouched by this update and remains the larger
+prerequisite.
+
 ## 2. STRAP II System Analysis Guide (`C22-6729`, top-level)
 
 211 pages, ~65% sampled directly (front matter, both main-pass flow

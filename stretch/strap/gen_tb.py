@@ -18,7 +18,7 @@ from strap_asm import assemble, AssemblerError
 
 
 def generate(module_name, prog, checks, step_cap=2000, reader_image=None,
-             printer_checks=None):
+             printer_checks=None, tape_image=None, tape_checks=None):
     """checks: list of (label:str, word_addr_expr:str, expected:int).
 
     reader_image: optional list of ints -- words to pre-load into the
@@ -32,10 +32,23 @@ def generate(module_name, prog, checks, step_cap=2000, reader_image=None,
     core.io.readPrinterWord(index) instead of core.mem.readWord(addr),
     for verifying what a WRITE instruction actually sent to the
     simulated printer (StretchIO.chanPrinter).
+
+    tape_image: optional list of ints -- words to pre-load into the
+    simulated tape (StretchIO.chanTape) before the program runs, via
+    core.io.writeTapeWord -- the same method the running program's own
+    W instructions use, since the tape is bidirectional (see
+    StretchIO.bsv's file header).
+
+    tape_checks: optional list of (label:str, tape_index:int,
+    expected:int) -- checked against core.io.readTapeWord(index),
+    for verifying tape content a W instruction wrote (as distinct from
+    checks against core storage, which verify what an RD read back).
     """
     words = sorted(prog.words.items())
     reader_image = reader_image or []
     printer_checks = printer_checks or []
+    tape_image = tape_image or []
+    tape_checks = tape_checks or []
     if prog.end_pc is None:
         raise ValueError("program has no END target; cannot set the start PC")
 
@@ -89,7 +102,19 @@ def generate(module_name, prog, checks, step_cap=2000, reader_image=None,
         lines.append("  endrule")
         lines.append("")
 
-    run_phase = reader_load_phase + n_reader
+    n_tape = len(tape_image)
+    tape_load_phase = reader_load_phase + n_reader
+    if n_tape:
+        lines.append(f"  rule loadTape (phase >= {tape_load_phase} && phase < {tape_load_phase + n_tape});")
+        lines.append(f"    case (phase - {tape_load_phase})")
+        for i, val in enumerate(tape_image):
+            lines.append(f"      {i}: core.io.writeTapeWord({i}, 64'h{val & ((1<<64)-1):016x});")
+        lines.append("    endcase")
+        lines.append("    phase <= phase + 1;")
+        lines.append("  endrule")
+        lines.append("")
+
+    run_phase = tape_load_phase + n_tape
     lines.append(f"  rule setStart (phase == {run_phase});")
     lines.append(f"    core.setPC({prog.end_pc});")
     lines.append(f"    phase <= {run_phase + 1};")
@@ -128,7 +153,15 @@ def generate(module_name, prog, checks, step_cap=2000, reader_image=None,
         lines.append("  endrule")
         lines.append("")
 
-    finish_phase = pcheck_phase0 + len(printer_checks)
+    tcheck_phase0 = pcheck_phase0 + len(printer_checks)
+    for i, (label, tape_idx, expected) in enumerate(tape_checks):
+        lines.append(f"  rule tcheck{i} (phase == {tcheck_phase0 + i});")
+        lines.append(f'    check("{label}", core.io.readTapeWord({tape_idx}), 64\'h{expected & ((1<<64)-1):016x});')
+        lines.append(f"    phase <= {tcheck_phase0 + i + 1};")
+        lines.append("  endrule")
+        lines.append("")
+
+    finish_phase = tcheck_phase0 + len(tape_checks)
     lines.append(f"  rule finish (phase == {finish_phase});")
     lines.append("    if (fails == 0)")
     lines.append('      $display("ALL TESTS PASSED");')
@@ -155,9 +188,16 @@ if __name__ == '__main__':
     #                             with these words, in order, index 0 first
     #                             (int(x,0), so hex "0x..." or decimal both
     #                             work); at most one R= argument is allowed
+    #   T=W0,W1,W2,...         -- pre-load the simulated tape's image, same
+    #                             syntax as R=; at most one T= argument
+    #   TC:LABEL:INDEX=EXPECTED -- a simulated-tape-word check (INDEX is a
+    #                             plain tape index 0..TapeWords-1), for
+    #                             verifying what a W instruction wrote to
+    #                             tape -- see StretchIO.bsv
     if len(sys.argv) < 3:
         print(f"usage: {sys.argv[0]} program.strap ModuleName "
-              f"[LABEL:ADDR=EXPECTED | P:LABEL:INDEX=EXPECTED | R=W0,W1,... ...]",
+              f"[LABEL:ADDR=EXPECTED | P:LABEL:INDEX=EXPECTED | "
+              f"TC:LABEL:INDEX=EXPECTED | R=W0,W1,... | T=W0,W1,... ...]",
               file=sys.stderr)
         sys.exit(1)
     with open(sys.argv[1]) as f:
@@ -170,17 +210,26 @@ if __name__ == '__main__':
     module_name = sys.argv[2]
     checks = []
     printer_checks = []
+    tape_checks = []
     reader_image = None
+    tape_image = None
     for spec in sys.argv[3:]:
         if spec.startswith('R='):
             reader_image = [int(x, 0) for x in spec[2:].split(',') if x]
+        elif spec.startswith('T='):
+            tape_image = [int(x, 0) for x in spec[2:].split(',') if x]
         elif spec.startswith('P:'):
             label, rest = spec[2:].split(':', 1)
             idx_expr, expected = rest.split('=', 1)
             printer_checks.append((label, int(idx_expr, 0), int(expected, 0)))
+        elif spec.startswith('TC:'):
+            label, rest = spec[3:].split(':', 1)
+            idx_expr, expected = rest.split('=', 1)
+            tape_checks.append((label, int(idx_expr, 0), int(expected, 0)))
         else:
             label, rest = spec.split(':', 1)
             addr_expr, expected = rest.split('=', 1)
             checks.append((label, addr_expr, int(expected, 0)))
     print(generate(module_name, prog, checks, reader_image=reader_image,
-                    printer_checks=printer_checks))
+                    printer_checks=printer_checks, tape_image=tape_image,
+                    tape_checks=tape_checks))

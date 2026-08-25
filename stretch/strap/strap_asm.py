@@ -929,9 +929,13 @@ def emit_statement(stmt, symtab, image):
     if op in IO_BASE_OPS or op in IO_OP:
         # "OP1(OP2), C(I1), A(I2)" (X22-6533 pocket card "INPUT-OUTPUT
         # OPERATIONS"): OP2, if present, must be SEOP; C is the channel
-        # address, A is the second effective address (a control-word
-        # address for RD/W/CCW, ignored for REL, unused here for CTL/
-        # LOC -- see StretchIO.bsv's scope note).
+        # address, A is the second effective address -- a control-word
+        # address for RD/W/CCW, ignored for REL, but for CTL/LOC a raw
+        # code (a control-function code or a unit selection address,
+        # p.111: "control information which is decoded by the external
+        # unit (CONTROL)... a selection address (LOCATE)") -- NOT a
+        # core-storage address at all. See StretchIO.bsv's "CONTROL
+        # FUNCTIONS" for what this implementation does with it.
         #
         # UNITS -- C is a plain, UNCONVERTED address field, exactly
         # like any other non-immediate address field in this assembler
@@ -942,11 +946,16 @@ def emit_statement(stmt, symtab, image):
         # channel number at IBM bits 12-18 of this 24-bit field, NOT at
         # its low-order bits, so a literal channel number N is NOT the
         # right operand value; N<<5 is (confirmed independently by
-        # direct bit-position derivation and by advisor review). A is
-        # converted from this assembler's bit-count units to a WORD
-        # address the same way XW's REFILL field and the FP A18 field
-        # already are (>> 6) -- unlike C, this one repeats an
-        # already-verified pattern rather than introducing a new one.
+        # direct bit-position derivation and by advisor review). For
+        # RD/W/CCW/REL, A is converted from this assembler's bit-count
+        # units to a WORD address the same way XW's REFILL field and
+        # the FP A18 field already are (>> 6) -- a repeat of an
+        # already-verified pattern. For CTL/LOC, A is a raw code, not
+        # an address of anything, so it gets NO conversion at all --
+        # the same "bare integer used as-is" treatment as C, and a
+        # genuinely different case from RD/W/CCW/REL's A, caught only
+        # once CTL had a real behavior (tape CONTROL functions) to
+        # test the conversion against.
         seop_mod = bool(stmt.mods) and stmt.mods[0].strip().upper() == 'SEOP'
         lookup = (op + 'SEOP') if (seop_mod and op in IO_BASE_OPS) else op
         if lookup not in IO_OP:
@@ -962,7 +971,8 @@ def emit_statement(stmt, symtab, image):
         addr2_bits = eval_expr(base2, symtab, loc, lineno=stmt.lineno) if base2.strip() else 0
         i2 = eval_reg(paren2, symtab, stmt.lineno)
         addr24 = chan_bits & 0xFFFFFF
-        addr18 = (addr2_bits >> 6) & 0x3FFFF
+        is_code_field = lookup in ('CTL', 'CTLSEOP', 'LOC', 'LOCSEOP')
+        addr18 = (addr2_bits & 0x3FFFF) if is_code_field else ((addr2_bits >> 6) & 0x3FFFF)
         image.deposit_full(loc, enc_io(addr24, i1, addr18, IO_OP[lookup], i2))
         return
 

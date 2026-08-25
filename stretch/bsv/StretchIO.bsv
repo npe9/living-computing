@@ -2,8 +2,11 @@
 //
 // A simulated Input-Output subsystem for the IBM 7030, standing in for
 // the real "IBM 7619 Exchange" (Reference Manual pp.104-127) and the
-// external units it connects (pp.129-149, NOT read for this
-// implementation -- see the scope note below for what that rules out).
+// external units it connects (pp.129-149; the "External Units" chapter
+// -- unlike at this file's previous revision, now read for the tape
+// unit's standard and tape-specific CONTROL function codes, p.129-132;
+// see the "CONTROL FUNCTIONS" section below for exactly what subset of
+// that chapter this implements).
 //
 // SCOPE -- read before extending or relying on this file.
 //
@@ -21,45 +24,137 @@
 // after issuing an operation still behave correctly, just without the
 // wait actually taking wall-clock time.
 //
-// DEVICES: exactly two simulated devices, fixed at elaboration time,
-// matching only as much of the External Units chapter as p.104-127's
-// device-independent Exchange description covers:
+// DEVICES: three simulated devices, fixed at elaboration time, each
+// covering only as much of the External Units chapter as this
+// implementation has actually read and modeled:
 //   channel 32 (chanReader):  a read-only card-reader stand-in.
 //   channel 33 (chanPrinter): a write-only printer stand-in.
-// Both are backed by a fixed-size Vector of words (DeviceWords) that
-// the testbench pre-loads (reader) or inspects after the run
-// (printer) -- see strap/gen_tb.py. This is a deliberate departure
-// from real file I/O: bsc's $fopen/$fgetc are Actions, so a block
-// transfer would unroll into a statically-sequenced chain of file
-// accesses fighting the same one-write-per-rule constraint everything
-// else in this codebase works around; pre-loading through the
-// existing "one write per phase, sequenced by an explicit phase
-// register" pattern (gen_tb.py's `load` rule for program words) reuses
-// a proven mechanism instead of inventing a second one. Real file I/O,
-// if ever wanted, is a later convenience layered on top of this, not
-// a prerequisite for it.
+//   channel 34 (chanTape):    a read/write tape-drive stand-in.
+// Reader and printer are backed by a fixed-size Vector of words
+// (DeviceWords) that the testbench pre-loads (reader) or inspects
+// after the run (printer) -- see strap/gen_tb.py. The tape is backed
+// by its own, deliberately SMALLER Vector (TapeWords -- see below) and
+// additionally carries a position register that PERSISTS across
+// instructions, unlike the reader/printer's devIdx which always
+// restarts at 0 -- see "TAPE POSITION" below. All device storage is a
+// deliberate departure from real file I/O: bsc's $fopen/$fgetc are
+// Actions, so a block transfer would unroll into a statically-sequenced
+// chain of file accesses fighting the same one-write-per-rule
+// constraint everything else in this codebase works around;
+// pre-loading through the existing "one write per phase, sequenced by
+// an explicit phase register" pattern (gen_tb.py's `load` rule for
+// program words) reuses a proven mechanism instead of inventing a
+// second one. Real file I/O, if ever wanted, is a later convenience
+// layered on top of this, not a prerequisite for it.
 //
-// INSTRUCTIONS: RD, W, CCW, and REL (and their SEOP variants) are
-// implemented. CTL and LOC are NOT -- CTL's control-function codes
-// (rewind, backspace, write tape mark, ...) and LOC's per-unit
-// selection semantics are device-specific and documented in the
-// External Units chapter, which this implementation has not read; both
-// decode to Operation Code Invalid (ind_OP) rather than a guessed
-// behavior, matching this codebase's standing rule against
-// implementing what hasn't been verified against a primary source.
+// DEVICE GENERALIZATION: `DeviceKind` and `kindOf` below replace what
+// was, at the two-device revision of this file, a pair of hardcoded
+// `isReader`/`isPrinter` predicates -- that shape does not survive a
+// third device, let alone a microcontroller port someday needing a
+// fourth or fifth. Adding a device now means: one more `DeviceKind`
+// tag, one more arm in `kindOf`, one more storage Vector/position
+// register, one more arm in readChanCW/writeChanCW's dispatch -- not a
+// new boolean threaded through every call site.
+//
+// INSTRUCTIONS: RD, W, CCW, REL, and CTL (and their SEOP variants) are
+// implemented, CTL only against the tape channel (see "CONTROL
+// FUNCTIONS" below) -- CTL issued to the reader or printer still
+// decodes to Operation Code Invalid, since this implementation has not
+// modeled any reader/printer control function (reserved light, check
+// light, ECC mode -- p.129-130 -- none of which have an observable
+// effect on this model's storage-level abstraction anyway). LOC is NOT
+// implemented: the manual's addressing model has LOCATE select one of
+// up to eight tape units accommodated by a single tape control on a
+// channel (p.133), but this model puts exactly one tape unit directly
+// on its own channel, the same direct-addressing shape as the reader
+// and printer -- sidestepping the channel-to-control-to-unit hierarchy
+// LOCATE exists to navigate. That's an explicit, documented
+// simplification (the user's own stated tolerance: "it's okay if they
+// are intended to work in a simulated environment"), not a case of
+// LOCATE's semantics being unread -- see p.110-111, p.133 for what a
+// multi-unit LOCATE would need if ever added.
 // Chaining and multiple-block operation are also NOT implemented: a
-// transfer is always a single block against the device's one fixed
+// transfer is always a single block against a device's own fixed
 // image, and the chain/multiple flags are captured in the control word
 // (readable via CCW) but the transfer FSM in StretchCore ignores them.
 // SKIP (p.107) IS honored, on READ only (the manual: "on writing, the
 // flag is meaningless and is ignored") -- a skip-flagged READ still
 // advances the device's read cursor and the memory address each cycle,
-// but does not write core storage for that word. A count
-// that would run the transfer past the device's DeviceWords capacity
-// ends the block early with End Exception (EE) + End of Operation
-// (EOP), matching "the unit runs out of material" (p.121) -- this is
-// implemented, not just documented, since it costs nothing extra given
-// the FSM already tracks a device index.
+// but does not write core storage for that word. A count that would
+// run the transfer past a device's capacity (DeviceWords for reader/
+// printer, TapeWords for tape) ends the block early with End Exception
+// (EE) + End of Operation (EOP), matching "the unit runs out of
+// material" (p.121) -- this is implemented, not just documented, since
+// it costs nothing extra given the FSM already tracks a device index.
+//
+// TAPE POSITION: unlike the reader and printer, where every RD/W
+// starts over at device index 0 (StretchExecute.bsv's IoOp case always
+// sets `devIdx: 0` for those two), a real tape's read/write head stays
+// wherever the last operation left it -- "operation of Tape under
+// Computer Control" (p.133) describes reading, writing, spacing, and
+// backspacing as all acting relative to the tape's current position,
+// not an instruction-local index. This is the one property that makes
+// a tape a tape and not a third card reader with a different channel
+// number: two successive READs must return successive data, not the
+// same block twice. Modeled here as a persistent `tapePos` register
+// (StretchExecute.bsv seeds a new transfer's devIdx from it instead of
+// 0; StretchCore's FSM writes it back after every word moved) which
+// CONTROL REWIND resets to 0 and CONTROL BACKSPACE BLOCK decrements by
+// one -- see below. `tapePos` is intentionally ONE BIT WIDER than
+// `TapeIndex` (`TapePos = Bit#(TLog#(TapeWords)+1)`), the same "room
+// for one past the end" idiom `IoXfer.devIdx` already uses relative to
+// `DeviceIndex`, so a fully-drained tape (position == TapeWords) is
+// representable without wraparound and is caught by the very next
+// RD/W's End Exception check on its first FSM cycle, before any data
+// moves.
+//
+// TapeWords IS DELIBERATELY SMALL (16, vs. DeviceWords' 32): this is
+// the first device where "the unit runs out of material" is meant to
+// be something a test program can actually reach with an ordinary
+// count, not just a theoretical code path -- see
+// strap/programs/io_tape.strap's End Exception check.
+//
+// CONTROL FUNCTIONS: the External Units chapter's CONTROL instruction
+// format (p.111: "a selection address (LOCATE), control information
+// which is decoded by the external unit (CONTROL)") puts a raw
+// function code in the right effective address field -- NOT a
+// core-storage word address the way RD/W/CCW's right effective address
+// is. strap_asm.py's IO_OP branch accordingly does NOT apply the >>6
+// word-address conversion to CTL/LOC's second field (see its own
+// comment) -- a genuinely different case from RD/W/CCW's "A", caught
+// only once CTL had a real behavior to test against. Of the tape
+// control functions the manual lists (p.132), this implementation
+// executes exactly two, both chosen because they're the minimum needed
+// to demonstrate tape position actually being a persistent, mutable
+// register rather than a documentation-only field:
+//   octal 136 (REWIND) / 137 (REWIND AND UNLOAD): both reset tapePos
+//     to 0. This model has no separate "unloaded" unit state, so the
+//     two codes are not distinguished -- a documented simplification.
+//     Deviates from the manual's note that REWIND's EOP indication is
+//     given at the *initiation* of the operation, not its completion
+//     (p.132: "the end-of-operation indication is given as soon as the
+//     operation is initiated at the unit") -- this synchronous model
+//     has no notion of "still rewinding" separate from "done", so
+//     REWIND completes (and sets EOP) in the same execute()/CTL case
+//     as every other CONTROL function, not asynchronously.
+//   octal 176 (BACKSPACE BLOCK): decrements tapePos by one, UNLESS
+//     tapePos is already 0 (the load point), in which case the
+//     instruction is "terminated with an exchange-program-check
+//     indication" per p.136 ("Beginning and End of Tape") -- position
+//     is left at 0, not wrapped or made negative.
+// Every other tape control code the manual documents -- SPACE BLOCK/
+// FILE, WRITE TAPE MARK, BACKSPACE FILE, the density/ECC/parity/light
+// functions (p.130, p.132) -- decodes to Operation Code Invalid here.
+// SPACE FILE/BACKSPACE FILE/WRITE TAPE MARK need a tape-mark concept
+// this word-addressed model doesn't have (p.134-135: a tape mark is a
+// distinguished single-byte block, and this model has no notion of
+// byte-granular blocks at all, only fixed word positions); the
+// density/ECC/parity/light functions have no observable effect on a
+// model that already treats every word as a flat 64 bits with no
+// framing, parity, or physical light state to toggle. CTL's own SEOP
+// form (CTLSEOP, already in opcodes.py since the original I/O
+// milestone) suppresses EOP on REWIND/BACKSPACE BLOCK exactly as it
+// does on RD/W/REL.
 //
 // WRITE's "+2" QUIRK, DELIBERATELY NOT REPRODUCED: p.124's table says a
 // terminated WRITE leaves the control word's data word address at
@@ -76,15 +171,16 @@
 //
 // WHAT REJECTS VS. WHAT SETS A STATUS BIT (p.111-113, "Input-Output
 // Reject Indicators" / "Input-Output Status Indicators"): addressing a
-// channel that isn't chanReader or chanPrinter is a genuine reject
-// (Unit Not Ready -- ind_UNRJ; the instruction is never accepted and
-// the addressed channel's control word location, if any, is never
-// touched) since neither of this model's two devices is ever
-// installed anywhere else. Addressing the right channel with the wrong
-// operation -- e.g. RD to the printer -- is accepted but fails as an
-// Exchange Program Check (EPGK) status bit, matching "an instruction is
-// received that the selected unit is not designed to perform, such as
-// a READ given to a printer" (p.113) exactly.
+// channel that isn't chanReader, chanPrinter, or chanTape is a genuine
+// reject (Unit Not Ready -- ind_UNRJ; the instruction is never accepted
+// and the addressed channel's control word location, if any, is never
+// touched) since none of this model's three devices is ever installed
+// anywhere else. Addressing the right channel with the wrong operation
+// -- e.g. RD to the printer -- is accepted but fails as an Exchange
+// Program Check (EPGK) status bit, matching "an instruction is received
+// that the selected unit is not designed to perform, such as a READ
+// given to a printer" (p.113) exactly. The tape accepts both RD and W,
+// since real magnetic tape genuinely is both readable and writable.
 //
 // NOT PROPAGATED: the CPU's own indicator-register bits (ind_EPGK,
 // ind_UK, ind_EE, ind_EOP, ind_CS -- already defined in StretchTypes.bsv
@@ -108,18 +204,43 @@ import Vector::*;
 typedef 32 DeviceWords;
 typedef Bit#(TLog#(DeviceWords)) DeviceIndex;
 
+// Deliberately smaller than DeviceWords -- see "TapeWords IS
+// DELIBERATELY SMALL" above.
+typedef 16 TapeWords;
+typedef Bit#(TLog#(TapeWords)) TapeIndex;
+// One bit wider than TapeIndex, room for "one past the end" (== 16)
+// once the tape is fully drained -- same idiom as IoXfer.devIdx vs.
+// StretchIO.DeviceIndex; see "TAPE POSITION" above.
+typedef Bit#(TAdd#(TLog#(TapeWords), 1)) TapePos;
+
 WordAddr chanReader  = 32;
 WordAddr chanPrinter = 33;
+WordAddr chanTape    = 34;
+
+// Which (if any) of this model's devices a channel address names. See
+// "DEVICE GENERALIZATION" above -- this is what every future device
+// should extend instead of adding another hardcoded predicate.
+typedef enum { DevNone, DevReader, DevPrinter, DevTape }
+  DeviceKind deriving (Bits, Eq, FShow);
+
+function DeviceKind kindOf(WordAddr ch) =
+  (ch == chanReader)  ? DevReader  :
+  (ch == chanPrinter) ? DevPrinter :
+  (ch == chanTape)    ? DevTape    : DevNone;
 
 interface StretchIO;
-  // Whether a channel address names one of this model's two devices,
-  // and if so which. Used by StretchExecute's IoOp case for the
-  // reject-vs-status-bit distinction described above.
+  // Whether a channel address names one of this model's devices, and
+  // if so which. Used by StretchExecute's IoOp case for the
+  // reject-vs-status-bit distinction described above. (kindOf itself
+  // is also directly importable -- these are just Bool convenience
+  // wrappers over it for the common single-device checks.)
   method Bool isReader(WordAddr ch);
   method Bool isPrinter(WordAddr ch);
+  method Bool isTape(WordAddr ch);
 
-  // Device image access for the testbench only (see strap/gen_tb.py) --
-  // not part of the 7030 ISA. StretchExecute.bsv never calls these.
+  // Device image access for the testbench only (see strap/gen_tb.py,
+  // strap/gen_tape_tb.py) -- not part of the 7030 ISA. StretchExecute.bsv
+  // never calls these.
   method Action loadReaderWord(DeviceIndex i, Word64 v);
   method Word64 readPrinterWord(DeviceIndex i);
 
@@ -128,11 +249,26 @@ interface StretchIO;
   method Word64 readerWord(DeviceIndex i);
   method Action writePrinterWord(DeviceIndex i, Word64 v);
 
+  // Tape is bidirectional, unlike the read-only reader and write-only
+  // printer, so one pair of methods serves both the FSM's runtime
+  // transfers AND the testbench's pre-load/post-run-check calls (see
+  // strap/gen_tape_tb.py) -- there's no read-only/write-only split to
+  // preserve the way there is for readerWord/writePrinterWord.
+  method Word64 readTapeWord(TapeIndex i);
+  method Action writeTapeWord(TapeIndex i, Word64 v);
+
+  // Tape's persistent position -- see "TAPE POSITION" above.
+  // StretchExecute's IoOp case reads this to seed a new transfer's
+  // devIdx; StretchCore's ioPending FSM writes it back after every
+  // word moved; the CTL REWIND/BACKSPACE BLOCK cases write it directly.
+  method TapePos tapePos();
+  method Action setTapePos(TapePos p);
+
   // Per-channel control word (Figure 35): what COPY CONTROL WORD reads
-  // back, and what a RD/W/REL updates. This is the EXCHANGE's own copy
-  // -- distinct from the control word an instruction reads out of core
-  // storage to start an operation, which core storage keeps unchanged
-  // during the transfer (p.107 "State of Control Word in the
+  // back, and what a RD/W/REL/CTL updates. This is the EXCHANGE's own
+  // copy -- distinct from the control word an instruction reads out of
+  // core storage to start an operation, which core storage keeps
+  // unchanged during the transfer (p.107 "State of Control Word in the
   // Exchange").
   method ControlWord readChanCW(WordAddr ch);
   method Action writeChanCW(WordAddr ch, ControlWord cw);
@@ -141,24 +277,26 @@ endinterface
 module mkStretchIO(StretchIO);
   Vector#(DeviceWords, Reg#(Word64)) readerImg  <- replicateM(mkReg(0));
   Vector#(DeviceWords, Reg#(Word64)) printerImg <- replicateM(mkReg(0));
+  Vector#(TapeWords, Reg#(Word64))   tapeImg    <- replicateM(mkReg(0));
+  Reg#(TapePos) tapePosReg <- mkReg(0);
 
-  // unitReady is fixed at 1 (installed) for both simulated devices;
-  // there is no not-ready/busy state to model without real device
-  // timing. Both channels power on with every other status/flag/count/
-  // refill field zero, matching the p.126 "initial power-on" reset
-  // description closely enough for a simulated system with no IPL.
+  // unitReady is fixed at 1 (installed) for all three simulated
+  // devices; there is no not-ready/busy state to model without real
+  // device timing. All channels power on with every other status/flag/
+  // count/refill field zero, matching the p.126 "initial power-on"
+  // reset description closely enough for a simulated system with no
+  // IPL.
   ControlWord cwReset = ControlWord {
     dataAddr: 0, unitReady: 1, epgk: 0, uk: 0, ee: 0, eop: 0, cs: 0,
     seop: 0, chain: 0, multiple: 0, skip: 0, count: 0, refill: 0
   };
   Reg#(ControlWord) readerCW  <- mkReg(cwReset);
   Reg#(ControlWord) printerCW <- mkReg(cwReset);
+  Reg#(ControlWord) tapeCW    <- mkReg(cwReset);
 
-  function Bool isReaderF(WordAddr ch) = (ch == chanReader);
-  function Bool isPrinterF(WordAddr ch) = (ch == chanPrinter);
-
-  method isReader = isReaderF;
-  method isPrinter = isPrinterF;
+  method Bool isReader(WordAddr ch) = (kindOf(ch) == DevReader);
+  method Bool isPrinter(WordAddr ch) = (kindOf(ch) == DevPrinter);
+  method Bool isTape(WordAddr ch) = (kindOf(ch) == DevTape);
 
   method Action loadReaderWord(DeviceIndex i, Word64 v);
     readerImg[i] <= v;
@@ -170,15 +308,34 @@ module mkStretchIO(StretchIO);
     printerImg[i] <= v;
   endmethod
 
-  method ControlWord readChanCW(WordAddr ch) =
-    isReaderF(ch) ? readerCW : printerCW; // printer CW is also the
-                                           // fallback for any other
-                                           // (uninstalled) channel;
-                                           // callers gate real use with
-                                           // isReader/isPrinter first.
+  method Word64 readTapeWord(TapeIndex i) = tapeImg[i];
+  method Action writeTapeWord(TapeIndex i, Word64 v);
+    tapeImg[i] <= v;
+  endmethod
+
+  method TapePos tapePos() = tapePosReg;
+  method Action setTapePos(TapePos p);
+    tapePosReg <= p;
+  endmethod
+
+  method ControlWord readChanCW(WordAddr ch);
+    case (kindOf(ch))
+      DevReader:  return readerCW;
+      DevPrinter: return printerCW;
+      DevTape:    return tapeCW;
+      default:    return printerCW; // fallback for any uninstalled
+                                     // channel; callers gate real use
+                                     // with isReader/isPrinter/isTape
+                                     // (or kindOf) first.
+    endcase
+  endmethod
   method Action writeChanCW(WordAddr ch, ControlWord cw);
-    if (isReaderF(ch)) readerCW <= cw;
-    else if (isPrinterF(ch)) printerCW <= cw;
+    case (kindOf(ch))
+      DevReader:  readerCW  <= cw;
+      DevPrinter: printerCW <= cw;
+      DevTape:    tapeCW    <= cw;
+      default:    noAction;
+    endcase
   endmethod
 endmodule
 

@@ -176,6 +176,29 @@ what's original.
   coincidence of the chosen test values rather than a flaw in the
   design, and the majority of checks still caught the regression
   cleanly.
+- **`io_tape.strap`** — the tape drive's own test, `StretchIO.bsv`'s
+  channel 34, added the same session `CTL` first executed against a
+  real device. Where `io_reader_printer.strap` proves RD/W/CCW/REL
+  work, this program's whole point is proving tape POSITION is a real,
+  persistent, mutable register: two successive `RD`s must return
+  different data (position carries across instructions, unlike the
+  reader/printer's always-restart-at-0 `devIdx`); `CTL` REWIND (octal
+  136) must reset it to 0, proven by re-reading the tape's *original*
+  first words, not wherever a prior `W` left off; `CTL` BACKSPACE
+  BLOCK (octal 176) must move it back by exactly one, proven by
+  re-reading a word already read once before; BACKSPACE BLOCK at the
+  load point (position already 0) must reject with Exchange Program
+  Check rather than wrap or go negative (p.136); and a count exceeding
+  the tape's own (deliberately small, 16-word) capacity must trigger
+  End Exception against *that* capacity, not the reader/printer's
+  32-word one. 27 checks total, all passing; every one of the four
+  properties above was separately confirmed load-bearing by the usual
+  adversarial revert (position-restart-at-0, wrong EE capacity, and
+  the load-point EPGK guard were each reverted in turn — see "Gotchas"
+  item 14). Expected values derived the same way as
+  `io_reader_printer.strap`'s, in a companion script
+  (`gen_tape_tb.py`) that walks the exact same position transitions
+  the `.strap` file's own header comment documents step by step.
 
 Every run above is a true end-to-end test: STRAP source text through
 the Python assembler, through the *same* Bluespec decoder/executor
@@ -217,18 +240,31 @@ was the first bug caught (see below):
   (p.111) places the 7-bit channel number at instruction bits 12-18 of
   the 24-bit address field, not the field's low-order bits, so the raw
   field value a program must write is `channel_number << 5`
-  (`chanReader`=32 → `1024`, `chanPrinter`=33 → `1056` — see
-  `StretchIO.bsv`). This assembler doesn't auto-scale it, deliberately:
-  see `strap_asm.py`'s `IO_OP` emit comment for why guessing a new
-  subfield-aware conversion wasn't the right call here versus just
-  documenting it.
+  (`chanReader`=32 → `1024`, `chanPrinter`=33 → `1056`, `chanTape`=34 →
+  `1088` — see `StretchIO.bsv`). This assembler doesn't auto-scale it,
+  deliberately: see `strap_asm.py`'s `IO_OP` emit comment for why
+  guessing a new subfield-aware conversion wasn't the right call here
+  versus just documenting it.
+- An Input-Output instruction's **second field** (`A`, the `RD`/`W`/
+  `CTL`/`LOC`/`REL`/`CCW`'s `A` operand) is converted DIFFERENTLY
+  depending on the operation, a genuine exception to "when in doubt,
+  match an existing precedent" this codebase otherwise follows: for
+  `RD`/`W`/`CCW`, `A` is a control-word core-storage address, converted
+  `>>6` exactly like XW's REFILL field. For `CTL`/`LOC`, `A` is a raw
+  code (a control-function code or a unit selection address, p.111) —
+  NOT an address of anything — and gets NO conversion, the same "bare
+  integer used as-is" treatment as `C`. This distinction only became
+  visible once `CTL` had a real tape behavior to test against; before
+  that, `CTL`/`LOC` decoded to Operation Code Invalid unconditionally,
+  so the (wrong) `>>6` conversion on their `A` field was silently
+  never exercised.
 
 ## Gotchas found by running real programs
 
-Genuine findings from getting these two programs to actually pass —
-this is exactly the kind of bug real-program testing is for, as
-opposed to hand-written unit tests that only exercise what their
-author already had in mind:
+Genuine findings from getting these programs to actually pass — this
+is exactly the kind of bug real-program testing is for, as opposed to
+hand-written unit tests that only exercise what their author already
+had in mind:
 
 1. **The address-field unit bug above.** Caught by hand-verifying the
    assembler's encoding of `BZAL, $+1.0` against a hand-computed target
@@ -501,6 +537,55 @@ author already had in mind:
     restored and the full regression suite reconfirmed passing before
     this note was written.
 
+14. **The tape drive needed real primary source before it could be
+    real, not a renamed card reader.** The user's original request
+    named "tape drives" explicitly; the reader/printer milestone had
+    stopped short of them, and `CTL`/`LOC` had stayed unimplemented
+    because the External Units chapter (Reference Manual pp.129-149)
+    was, at that point, genuinely unread — the earlier `StretchIO.bsv`
+    said so plainly. This session actually read it (pp.111, 126-137)
+    before writing any tape code, and it settled three design questions
+    that would otherwise have been guesses: (a) CONTROL's right
+    effective address is a raw function code, not a core-storage word
+    address the way RD/W/CCW's is (p.111) — meaning `strap_asm.py`'s
+    existing `>>6` word-address conversion for that field was *wrong*
+    for `CTL`/`LOC` specifically, a real bug in the assembler caught
+    only because there was finally a real CTL behavior to test the
+    conversion against; (b) the exact octal function codes for REWIND
+    (136) and BACKSPACE BLOCK (176), and the load-point rejection rule
+    (p.136: "the tape cannot be moved... beyond the load point. Any
+    backspace instructions given with the tape in this position are
+    terminated with an exchange-program-check indication"); (c) LOCATE
+    exists to select one of up to eight tape units behind a shared tape
+    control (p.133) — a hierarchy this model deliberately sidesteps by
+    putting exactly one tape unit directly on its own channel, the same
+    shape as the reader and printer, documented as a simplification
+    rather than left as an unread gap. Two devices (`isReader`/
+    `isPrinter`) had already been called out by post-milestone review
+    as a shape that "does not survive a third device" — generalized
+    into a `DeviceKind` enum + `kindOf` function in `StretchIO.bsv`
+    before writing the tape's own storage, exactly where the advisor
+    said the investment belonged for a future microcontroller port.
+    The property that actually makes a tape a tape — position
+    persisting across instructions, rather than every `RD`/`W`
+    restarting at device index 0 like the reader/printer do — needed a
+    dedicated `TapePos` register one bit wider than the tape's own
+    index type (the same "room for one past the end" idiom `IoXfer`'s
+    `devIdx` already used relative to `DeviceIndex`), threaded through
+    `StretchExecute.bsv`'s transfer-start logic and `StretchCore.bsv`'s
+    per-word FSM. Three properties were adversarially reverted in
+    turn — position always restarting at 0, the End Exception capacity
+    check using the reader/printer's `DeviceWords` instead of the
+    tape's own smaller `TapeWords`, and the load-point BACKSPACE
+    rejection — and each produced exactly the predicted failures (12,
+    1, and 7 respectively) with nothing else breaking, then was
+    restored and reconfirmed. `io_tape.strap`'s 27 checks passed
+    cleanly on the very first real run, with no debugging needed beyond
+    the adversarial-revert passes themselves — a contrast with the
+    reader/printer milestone's own first-pass 6/10 partial-fail
+    surprise (item 13), attributable to reading the primary source
+    fully before implementing rather than mid-implementation.
+
 ## Halting
 
 A runner needs a way to know when the program is done rather than
@@ -533,11 +618,17 @@ list as of earlier milestones; both are now implemented on both sides
 indexing against Figure 7, Connectives against Problem 2.2 Method 3's
 `CT0110` — above. Input-Output (`RD`/`W`/`CTL`/`LOC`/`REL`/`CCW`) is
 new this milestone too: `RD`/`W`/`CCW`/`REL` are implemented on both
-sides and verified against `io_reader_printer.strap` (above); `CTL`/
-`LOC` assemble but StretchExecute.bsv doesn't execute them (device-
-specific codes not yet read from the Reference Manual's External Units
-chapter) — see `../bsv/README.md`'s "Executed" section and
-`StretchIO.bsv`.
+sides and verified against `io_reader_printer.strap` (above). `CTL`
+executes, but only against the tape channel and only its two
+implemented function codes (REWIND, BACKSPACE BLOCK) — verified
+against `io_tape.strap`; CTL issued to the reader/printer, and every
+other tape function code the External Units chapter documents (SPACE
+BLOCK/FILE, WRITE TAPE MARK, BACKSPACE FILE, density/ECC/parity/light
+functions), still falls through to Operation Code Invalid. `LOC`
+assembles but is not executed at all — see `StretchIO.bsv`'s
+"INSTRUCTIONS" for why (a documented simplification, not an unread
+chapter, now that the External Units chapter has in fact been read).
+See `../bsv/README.md`'s "Executed" section and `StretchIO.bsv`.
 
 **What's actually been assembled and run**, as opposed to merely
 present in `opcodes.py`'s tables, is much narrower than what's
@@ -545,22 +636,25 @@ implemented: `L`, `LI`, `+`, `ST`, `K` (VFL, binary unsigned, direct,
 immediate, and progressive addressing), `CT` (one Connective, `CT0110`
 = XOR, progressive addressing), `LVI`, `LX`, `LV`, `V+`,
 `BZAL`/`BAE`/`BRZ`/`BZXCZ` (Branch on Indicator), `B`, `BEW`, `NOP`,
-`RD`, `W`, `CCW`, `REL` (Input-Output, direct and index-register-
-selected channel addressing), `DD`, `VF`, `XW`, `END`. The other ~75
-VFL/FP/DirIndex/ImmIndex mnemonics in `opcodes.py`, every other
-Connective (only `CT0110`, plus `CT0000` transiently as a
-discriminating check — see "Programs assembled and verified so far"
-above), the `-` → invert-bit path, `CB`, `RD`/`W`/`REL`'s `SEOP` forms
-(encoded and generated by `IO_OP`, but no test program has exercised
-one yet — `RD`/`W SEOP` only suppress the EOP status bit and were
-correct on inspection; `REL SEOP` additionally had to *not* set EOP at
-all, which the first implementation got wrong by ignoring `seop`
-entirely in the `REL` case — caught by post-milestone review, not by a
-test program, and fixed in the same commit; still worth an actual
-`RELSEOP` test), and floating point end to end are implemented against
-the same tables and citations as everything else here, but have never
-been exercised by an assembled-and-run program — treat them as
-unverified until one has.
+`RD`, `W`, `CCW`, `REL`, `CTL` (Input-Output, direct and
+index-register-selected channel addressing, all three simulated
+devices — reader, printer, tape), `DD`, `VF`, `XW`, `END`. Of the
+Input-Output SEOP forms, `W SEOP` and `REL SEOP` are exercised (the
+latter caught a real bug — `REL SEOP` originally ignored its own
+`seop` flag and set EOP unconditionally, found by post-milestone
+review, not a test program, and fixed with a distinguishing test added
+in the same commit); `RD SEOP`, `CTL SEOP`, and `LOC SEOP` are encoded
+and generated by `IO_OP` but have never been assembled into a test —
+`RD SEOP` shares the exact same suppress-EOP code path `W SEOP`
+already exercises, so it's lower-risk than `REL SEOP` was, but
+"lower-risk" is not "verified." The other ~75 VFL/FP/DirIndex/ImmIndex
+mnemonics in `opcodes.py`, every other Connective (only `CT0110`, plus
+`CT0000` transiently as a discriminating check — see "Programs
+assembled and verified so far" above), the `-` → invert-bit path,
+`CB`, `LOC`, and floating point end to end are implemented against the
+same tables and citations as everything else here, but have never been
+exercised by an assembled-and-run program — treat them as unverified
+until one has.
 
 ## Next steps
 
@@ -605,18 +699,30 @@ unverified until one has.
 8. Connectives' `BS`<8 byte-padding, Partial Field, and the left-
    zeros/all-ones counts at word 7 (p.75-77) — see
    `../bsv/README.md`'s "Connectives" scope note.
-9. Input-Output: `SEOP` on `RD`/`W`/`REL` and `SKIP` are now all
-   exercised by `io_reader_printer.strap` (added the same session the
-   `REL SEOP` bug below was caught — see "Gotchas" item 13); `RD`/`W
-   SEOP` were correct on inspection, `REL SEOP` was not (see below).
-   Still untested: the End Exception path (`StretchCore.bsv`'s
-   `ioPending` FSM handles a count running past a device's
-   `DeviceWords` capacity, but no test program has ever requested more
-   words than a device has); `CTL`/`LOC` once their device-specific
-   codes are read from the External Units chapter (see
-   `../bsv/README.md` "Next steps" item 5); and consider giving `DD`
-   (or a new pseudo-op) the ability to resolve a label to a numeric
-   value, which would let a control word's `dataAddr` field be written
-   directly in STRAP source instead of needing a companion Python
-   patcher like `gen_io_tb.py` — worth doing generally, not just for
-   I-O, if more programs end up needing label-valued `DD` fields.
+9. Input-Output: `SKIP`, `W SEOP`, `REL SEOP`, and the End Exception
+   path are all now exercised (`io_reader_printer.strap`,
+   `io_tape.strap` — see "Gotchas" items 13-14; the tape's own
+   deliberately-small `TapeWords` made EE reachable with an ordinary
+   count for the first time). `CTL` now executes, but only against
+   tape and only two of the External Units chapter's documented
+   function codes (REWIND, BACKSPACE BLOCK) — SPACE BLOCK/FILE, WRITE
+   TAPE MARK, BACKSPACE FILE, and the density/ECC/parity/light
+   functions are real, primary-sourced codes (p.130-132) this
+   implementation still doesn't execute (SPACE FILE/BACKSPACE FILE/
+   WRITE TAPE MARK need a tape-mark concept this word-addressed model
+   doesn't have; the rest have no observable effect on a model with no
+   framing/parity/light state to toggle). `LOC` is not implemented at
+   all — this model's one-tape-unit-per-channel simplification
+   sidesteps the channel→control→unit selection hierarchy LOC exists
+   to navigate (see `StretchIO.bsv`'s "INSTRUCTIONS"); implementing it
+   for real would mean modeling multiple tape units behind a shared
+   control, a bigger step than anything else in this list. Still
+   untested: `RD SEOP` and `CTL SEOP`/`LOC SEOP` (encoded, never
+   assembled into a program — `RD SEOP` is lower-risk since it shares
+   `W SEOP`'s already-exercised code path, but "lower-risk" isn't
+   "verified"). Also worth doing: give `DD` (or a new pseudo-op) the
+   ability to resolve a label to a numeric value, which would let a
+   control word's `dataAddr` field be written directly in STRAP source
+   instead of needing a companion Python patcher like `gen_io_tb.py`/
+   `gen_tape_tb.py` — worth doing generally, not just for I-O, if more
+   programs end up needing label-valued `DD` fields.

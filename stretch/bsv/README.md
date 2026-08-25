@@ -34,8 +34,8 @@ instruction set, built from the primary sources (all under
 | `StretchVFL.bsv` | Variable-field-length bit extract/insert. |
 | `StretchALU.bsv` | Sign-and-magnitude arithmetic primitives. |
 | `StretchExecute.bsv` | Execute stage for the in-scope opcode subset. |
-| `StretchIO.bsv` | Simulated Input-Output subsystem (two fixed devices — card reader, printer — standing in for the real Exchange and external units); see its own file header for the full scope statement. |
-| `StretchCore.bsv` | Fetch/decode/execute, one instruction per `step()` — returns whether the instruction halted (branched to its own address, the `BEW, $` idiom), for STRAP-program runners (`../strap/gen_tb.py`) to stop on rather than a fixed step count. A progressive-indexing VFL instruction takes two `step()` calls (see "Toolchain" item 7); an RD/W input-output instruction takes as many calls as the block has words, one word drained per call (see `StretchIO.bsv`). |
+| `StretchIO.bsv` | Simulated Input-Output subsystem (three fixed devices — card reader, printer, tape — standing in for the real Exchange and external units); see its own file header for the full scope statement. |
+| `StretchCore.bsv` | Fetch/decode/execute, one instruction per `step()` — returns whether the instruction halted (branched to its own address, the `BEW, $` idiom), for STRAP-program runners (`../strap/gen_tb.py`) to stop on rather than a fixed step count. A progressive-indexing VFL instruction takes two `step()` calls (see "Toolchain" item 7); an RD/W input-output instruction takes as many calls as the block has words, one word drained per call, device-kind-dependent capacity (see `StretchIO.bsv`). |
 | `StretchTb.bsv` | Hand-assembled smoke test (predates the STRAP assembler; kept as a decoder/executor regression test independent of it). |
 
 ## Bit-numbering convention
@@ -99,24 +99,32 @@ system, several of them large enough to be their own projects).
 - **Floating point `L`/`ST`** only (plain data movement; see FpWord in
   StretchTypes.bsv for the register layout).
 - **Input-Output** — `RD`, `W`, `CCW` (Copy Control Word), `REL`
-  (Release), and their `SEOP` forms, against a **simulated** Exchange
-  and exactly two fixed devices (a card reader, channel 32; a printer,
-  channel 33) — see `StretchIO.bsv`'s file header for the full scope
-  statement: synchronous single-block transfer (no real CPU/IO
-  overlap, no interrupt propagation), and the documented deviation
-  from the manual's WRITE "+2" control-word rule (this model has no
-  double-buffer to reproduce it with). `CTL` and `LOC` decode but
-  don't execute (device-specific codes not yet read from the
-  Reference Manual's External Units chapter, pp.129-149). Verified
-  against a purpose-written program (no worked example in the manual
-  happens to cover this) — see `../strap/README.md`.
+  (Release), `CTL` (Control), and their `SEOP` forms, against a
+  **simulated** Exchange and three fixed devices (a card reader,
+  channel 32; a printer, channel 33; a tape drive, channel 34) — see
+  `StretchIO.bsv`'s file header for the full scope statement:
+  synchronous single-block transfer (no real CPU/IO overlap, no
+  interrupt propagation), the documented deviation from the manual's
+  WRITE "+2" control-word rule (this model has no double-buffer to
+  reproduce it with), and — now that the External Units chapter
+  (pp.129-149) has been read — `CTL` executing only against the tape
+  channel and only two of its documented function codes (REWIND,
+  BACKSPACE BLOCK, p.132); every other tape function code (SPACE
+  BLOCK/FILE, WRITE TAPE MARK, BACKSPACE FILE, density/ECC/parity/
+  light functions) and `CTL` on the reader/printer still fall through
+  to Operation Code Invalid, as does `LOC` entirely (this model's
+  one-tape-unit-per-channel simplification has no unit-selection
+  hierarchy for LOC to navigate — see `StretchIO.bsv`
+  "INSTRUCTIONS"). Verified against purpose-written programs (no
+  worked example in the manual happens to cover this) — see
+  `../strap/README.md`.
 
 ### Decoded but not executed (sets indicator 15, OP, and no-ops —
 ### matches real-machine behavior for a suppressed instruction)
 
 Decimal-mode VFL (`c=1`), radix conversion, floating-point arithmetic
-beyond L/ST, Input-Output's `CTL`/`LOC` (see above), SIC (Store
-Instruction Counter If), Bit Branching, `EX`/`EXIC`, Transmit
+beyond L/ST, Input-Output's `LOC` and most of `CTL` (see above), SIC
+(Store Instruction Counter If), Bit Branching, `EX`/`EXIC`, Transmit
 backward/`SWAP`/multi-word.
 
 Per the "decode completely, execute partially" principle: every format
@@ -190,9 +198,11 @@ genuine, load-bearing scope cut: Stretch's fame rests on its
 microarchitecture as much as its ISA, and that is future work, not
 something this session attempted. I/O channels and the exchange ARE
 now simulated (see "Executed" above and `StretchIO.bsv`), but only
-enough of them to run RD/W/CCW/REL against two fixed devices with no
-real device timing, no CTL/LOC, and no CPU-indicator-register or
-Channel-Address-register propagation of I/O status.
+enough of them to run RD/W/CCW/REL/CTL against three fixed devices
+(the last of which -- tape -- only supports two of its real CTL
+function codes) with no real device timing, no LOC, and no
+CPU-indicator-register or Channel-Address-register propagation of I/O
+status.
 
 ## Toolchain
 
@@ -301,14 +311,17 @@ checked result matching an independent calculation) — Problems 2.1 and
 2.2 Methods 1, 2, and 3 (3's own two unimplementable lines, `LVE`/`SIC`,
 substituted for verified equivalents — see `strap/README.md`), and
 Reference Manual Figure 7 (progressive indexing, ten-record loop) —
-plus two purpose-written programs closing gaps the worked examples
+plus four purpose-written programs closing gaps the worked examples
 happened not to exercise: `xw_refill.strap` (the `XW` pseudo-op's
-`REFILL` field) and `io_reader_printer.strap` (the simulated
-Input-Output subsystem — RD/W/CCW/REL against a card reader and
-printer, including two discriminating checks: a wrong-unit RD given to
-the printer, and a channel address with no device installed, reached
-through an index register specifically to exercise the channel-address
-field's own index arithmetic). Getting each to pass
+`REFILL` field), `io_reader_printer.strap` (the simulated card reader
+and printer — RD/W/CCW/REL/SKIP, including a wrong-unit RD given to
+the printer, a channel address with no device installed, and a
+distinguishing test that caught a real bug in `REL SEOP`'s original
+implementation — see `strap/README.md`'s Gotchas item 13), and
+`io_tape.strap` (the simulated tape drive — RD/W/CCW plus CTL's REWIND
+and BACKSPACE BLOCK, proving tape position persists across
+instructions rather than restarting like the reader/printer's does —
+Gotchas item 14). Getting each to pass
 caught real bugs or gaps in this model as it stood, not hypothetical
 ones: an inverted index-flag-bit derivation (`StretchExecute.bsv`'s
 `V+`/`V+I`/`V-I`/`CountBranch` cases were computing the index flag from
@@ -372,15 +385,25 @@ of these).
    `strap/README.md` "Gotchas" item 7) has no branch after its
    refilling instruction — so this is a real gap, not a guess dressed
    up as a finding.
-5. Extend the simulated Input-Output subsystem (`StretchIO.bsv`):
-   `CTL`/`LOC` (needs the External Units chapter, pp.129-149, not yet
-   read); chaining and multiple-block operation (currently decoded
-   into the control word but ignored by the transfer FSM — every RD/W
-   is a single block against a device's one fixed image); propagating
+5. Extend the simulated Input-Output subsystem (`StretchIO.bsv`), now
+   that the External Units chapter (pp.129-149) has actually been
+   read: the tape's remaining CTL function codes (SPACE BLOCK/FILE,
+   WRITE TAPE MARK, BACKSPACE FILE — need a tape-mark concept this
+   word-addressed model doesn't have yet; density/ECC/parity/light
+   functions have no observable effect on this model's storage-level
+   abstraction and may not be worth implementing even as no-ops);
+   `LOC` and real multi-unit selection (would mean modeling several
+   tape units behind one shared control, replacing the current
+   one-tape-unit-per-channel simplification — a bigger step than
+   anything else in this list, see `StretchIO.bsv` "INSTRUCTIONS");
+   chaining and multiple-block operation (currently decoded into the
+   control word but ignored by the transfer FSM — every RD/W is a
+   single block against a device's one fixed image); propagating
    EOP/EPGK/UK/EE/CS into the CPU's own indicator register and the
    Channel Address register (word 5) — needed before a BI- or
    SIC-based wait loop (like real DCP source uses) can observe I/O
    completion, since this model currently exposes status only via
    `CCW`; and, if real device content larger than `DeviceWords` (32)
-   is ever needed, `StretchIO`'s Vector-based device images have the
-   same elaboration-cost ceiling as item 8 above.
+   or `TapeWords` (16) is ever needed, `StretchIO`'s Vector-based
+   device images have the same elaboration-cost ceiling as item 8
+   above.

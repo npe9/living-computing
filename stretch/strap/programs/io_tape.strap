@@ -1,0 +1,123 @@
+! io_tape.strap -- exercises the simulated tape drive (StretchIO.bsv,
+! channel 34) end to end: RD, W, CCW, and CTL's two implemented tape
+! functions (REWIND and BACKSPACE BLOCK, octal 136 and 176 -- Reference
+! Manual p.132). Unlike io_reader_printer.strap, this program's whole
+! point is to prove tape POSITION is a real, persistent, mutable
+! register, not just a renamed card reader with a different channel
+! number -- see StretchIO.bsv's "TAPE POSITION" note. Every step below
+! exists to test one specific position-affecting behavior:
+!
+!   1-2. Two successive RDs must return DIFFERENT data (position
+!        persists across instructions -- the core distinguishing test).
+!   3.   A WRITE must actually change tape content (round-tripped via
+!        a direct tape-content check, not just inferred later).
+!   4-5. CTL REWIND must reset position to 0 (proven by re-reading the
+!        tape's ORIGINAL first words, not wherever the WRITE left off).
+!   6-7. CTL BACKSPACE BLOCK must move position back by exactly one
+!        (proven by re-reading a word already read once before).
+!   8-9. CTL BACKSPACE BLOCK at the load point (position 0) must be
+!        rejected with Exchange Program Check, not wrap or go negative
+!        (Reference Manual p.136, "Beginning and End of Tape").
+!   10.  A count exceeding the tape's capacity (TapeWords=16) must end
+!        early with End Exception + End of Operation, count field
+!        showing exactly how many words were NOT transferred -- the
+!        first device in this project where "the unit runs out of
+!        material" (p.121) is reachable with an ordinary count, not
+!        just a theoretical code path (StretchIO.bsv's TapeWords is
+!        deliberately small for exactly this reason).
+!
+! CHANNEL ADDRESS: chanTape (34) << 5 = 1088, same derivation as
+! io_reader_printer.strap's reader/printer constants (Reference Manual
+! p.111: the 7-bit channel number occupies instruction bits 12-18 of
+! the 24-bit channel-address field).
+!
+! CTL FUNCTION CODES are written as plain decimal, NOT through the
+! word-address >> 6 conversion RD/W/CCW/REL's second field gets --
+! CONTROL's right effective address is a raw function code (p.111),
+! and strap_asm.py's IO_OP branch was fixed this same session to skip
+! that conversion for CTL/LOC specifically (see its own comment).
+! REWIND is octal 136 = decimal 94; BACKSPACE BLOCK is octal 176 =
+! decimal 126 -- Reference Manual p.132's own table.
+!
+! CONTROL WORDS: as in io_reader_printer.strap, CTLW1-CTLW6 below are
+! zero-initialized placeholders patched by the companion driver script
+! (strap/gen_tape_tb.py) with real dataAddr/count values, since this
+! assembler's DD statement cannot resolve a label to a numeric address.
+! The tape's own pre-loaded content (TAPE_IMAGE) is likewise supplied
+! by gen_tape_tb.py, not written here, via the same T= mechanism
+! io_reader_printer.strap's reader image uses (gen_tb.py's loadTape
+! rule).
+
+START   LVI, $1, 1088      !X1 = tape channel (34), pre-scaled
+
+        RD, 0($1), CTLW1   !read 4 words into BLOCK1 (tape position 0->4)
+        CCW, 0($1), CCWA
+
+        RD, 0($1), CTLW2   !read 4 more words into BLOCK2 (position 4->8) --
+                            !must be the NEXT 4 words, not BLOCK1 again
+        CCW, 0($1), CCWB
+
+        W, 0($1), CTLW3    !write 2 words from SRC onto tape (position 8->10)
+        CCW, 0($1), CCWC
+
+        CTL, 0($1), 94     !REWIND (octal 136) -- position -> 0
+        CCW, 0($1), CCWD
+
+        RD, 0($1), CTLW4   !read 2 words into BLOCK3 (position 0->2) --
+                            !must equal the tape's ORIGINAL first 2 words,
+                            !proving REWIND actually reset position to 0
+        CCW, 0($1), CCWE
+
+        CTL, 0($1), 126    !BACKSPACE BLOCK (octal 176) -- position 2->1
+        CCW, 0($1), CCWF
+
+        RD, 0($1), CTLW5   !read 1 word into BLOCK4 (position 1->2) -- must
+                            !equal the tape's original word[1], proving
+                            !BACKSPACE BLOCK moved position back by exactly 1
+        CCW, 0($1), CCWG
+
+        CTL, 0($1), 94     !REWIND again -> position 0, to set up the
+                            !BACKSPACE-at-load-point test below
+        CCW, 0($1), CCWH
+
+        CTL, 0($1), 126    !BACKSPACE BLOCK at the load point (position
+                            !already 0) -- p.136: "terminated with an
+                            !exchange-program-check indication," position
+                            !must NOT go negative or wrap
+        CCW, 0($1), CCWI
+
+        RD, 0($1), CTLW6   !read 20 words (> TapeWords=16) into a 16-word
+                            !block starting at position 0 (unmoved by the
+                            !rejected backspace above) -- exercises End
+                            !Exception: transfers exactly 16 words, then
+                            !EE+EOP with count field showing 4 remaining
+        CCW, 0($1), CCWJ
+
+        BEW, $
+        NOP, 0             !pad to a word boundary, same reason as
+                            !io_reader_printer.strap's own NOP,0
+
+CTLW1   DD(BU,64), 0        !patched: dataAddr=BLOCK1, count=4
+CTLW2   DD(BU,64), 0        !patched: dataAddr=BLOCK2, count=4
+CTLW3   DD(BU,64), 0        !patched: dataAddr=SRC, count=2
+CTLW4   DD(BU,64), 0        !patched: dataAddr=BLOCK3, count=2
+CTLW5   DD(BU,64), 0        !patched: dataAddr=BLOCK4, count=1
+CTLW6   DD(BU,64), 0        !patched: dataAddr=DEST_EE, count=20
+CCWA    DD(BU,64), 0
+CCWB    DD(BU,64), 0
+CCWC    DD(BU,64), 0
+CCWD    DD(BU,64), 0
+CCWE    DD(BU,64), 0
+CCWF    DD(BU,64), 0
+CCWG    DD(BU,64), 0
+CCWH    DD(BU,64), 0
+CCWI    DD(BU,64), 0
+CCWJ    DD(BU,64), 0
+BLOCK1  DD(BU,64), 0,0,0,0
+BLOCK2  DD(BU,64), 0,0,0,0
+BLOCK3  DD(BU,64), 0,0
+BLOCK4  DD(BU,64), 0
+SRC     DD(BU,64), 999,888
+DEST_EE DD(BU,64), 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+
+        END, START

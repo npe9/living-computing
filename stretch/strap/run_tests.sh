@@ -127,9 +127,22 @@ run "XW refill" ./run_program.sh programs/xw_refill.strap StretchXwRefillTb \
 # doesn't happen to walk through an instance of.
 run "Input-Output (reader/printer)" ./run_io_test.sh StretchIoReaderPrinterTb
 
+# -- 7. Simulated tape drive (StretchIO.bsv, channel 34): RD/W/CCW plus
+# CTL's two implemented tape functions, REWIND and BACKSPACE BLOCK
+# (octal 136/176, p.132). Unlike the reader/printer test, this one's
+# whole point is proving tape position is a persistent, mutable
+# register -- two successive RDs must return different data, REWIND
+# must reset it to 0, BACKSPACE BLOCK must move it back by exactly
+# one (and reject at the load point with Exchange Program Check, per
+# p.136), and an over-large count must trigger End Exception against
+# the tape's own (deliberately small) capacity, not the reader/
+# printer's. Expected values derived in gen_tape_tb.py by walking the
+# same position transitions io_tape.strap's own header documents.
+run "Input-Output (tape)" ./run_tape_test.sh StretchIoTapeTb
+
 # -- cleanup: generated .bsv testbenches and Bluesim build products are
 # not meant to be committed (see .gitignore) --
-rm -f "$BSV_DIR"/StretchProblem*Tb.bsv "$BSV_DIR"/StretchFigure*Tb.bsv "$BSV_DIR"/StretchXwRefillTb.bsv "$BSV_DIR"/StretchIoReaderPrinterTb.bsv
+rm -f "$BSV_DIR"/StretchProblem*Tb.bsv "$BSV_DIR"/StretchFigure*Tb.bsv "$BSV_DIR"/StretchXwRefillTb.bsv "$BSV_DIR"/StretchIoReaderPrinterTb.bsv "$BSV_DIR"/StretchIoTapeTb.bsv
 rm -f "$BSV_DIR"/*_sim "$BSV_DIR"/*_sim.so
 rm -rf "$BSV_DIR"/build "$BSV_DIR"/simbuild
 

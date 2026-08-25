@@ -63,7 +63,14 @@ module mkStretchCore(StretchCore);
     if (ioPending matches tagged Valid .x) begin
       // Service one word of an in-flight RD/W transfer. See this
       // interface's step() doc above and StretchIO.bsv's file header.
-      if (x.devIdx >= fromInteger(valueOf(DeviceWords))) begin
+      // Capacity is device-kind-dependent: the tape's TapeWords is
+      // deliberately smaller than the reader/printer's DeviceWords
+      // (see StretchIO.bsv) so this is where that distinction has to
+      // be made, not a single shared constant.
+      DeviceKind kind = kindOf(x.ch);
+      Bit#(6) capacity = (kind == DevTape)
+        ? fromInteger(valueOf(TapeWords)) : fromInteger(valueOf(DeviceWords));
+      if (x.devIdx >= capacity) begin
         // "the unit runs out of material" (p.121): End Exception, not
         // Unit Check -- the block ends early; whatever was already
         // moved stays moved, and the control word reflects exactly
@@ -75,11 +82,27 @@ module mkStretchCore(StretchCore);
         ioDev.writeChanCW(x.ch, cw);
         ioPending <= tagged Invalid;
       end else begin
-        DeviceIndex di = truncate(x.devIdx); // safe: confirmed < DeviceWords above
-        if (x.isWrite)
-          ioDev.writePrinterWord(di, st.readWord(x.memAddr));
-        else if (!x.skip)
-          st.writeWord(x.memAddr, ioDev.readerWord(di));
+        if (kind == DevTape) begin
+          TapeIndex ti = truncate(x.devIdx); // safe: confirmed < TapeWords above
+          if (x.isWrite)
+            ioDev.writeTapeWord(ti, st.readWord(x.memAddr));
+          else if (!x.skip)
+            st.writeWord(x.memAddr, ioDev.readTapeWord(ti));
+          // Tape position PERSISTS across instructions (StretchIO.bsv
+          // "TAPE POSITION"), unlike the reader/printer's devIdx which
+          // is always instruction-local -- so unlike the reader/printer
+          // branch below, tape also has to write its position back
+          // every cycle, not just at the end of the transfer. Advances
+          // even under SKIP: the manual says the flag only suppresses
+          // the core-storage write, not the device's own motion.
+          ioDev.setTapePos(truncate(x.devIdx + 1));
+        end else begin
+          DeviceIndex di = truncate(x.devIdx); // safe: confirmed < DeviceWords above
+          if (x.isWrite)
+            ioDev.writePrinterWord(di, st.readWord(x.memAddr));
+          else if (!x.skip)
+            st.writeWord(x.memAddr, ioDev.readerWord(di));
+        end
         // else: SKIP flag set on a READ (p.107) -- the device cursor
         // and memory address still advance below exactly as if the
         // word had been transferred, but core storage is left
