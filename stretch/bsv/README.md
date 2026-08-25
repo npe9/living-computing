@@ -284,6 +284,17 @@ of these).
 
 ## Next steps
 
+0. **Real historical source, not just worked examples, is now a
+   transcription target.** `docs/archival_inventory.md` catalogues an
+   archival pass over bitsavers' `diag/`/`ce/`/`mcp/` collections: pages
+   19–152 of the 7030 Diagnostic Control Program manual
+   (`diag/ka_ua1_diagnostic_ctl_pgm.pdf`) are a complete, unbroken STRAP
+   source listing (~130 pages, continuity independently verified) — the
+   largest block of real Stretch source found anywhere in this project
+   so far. Two self-contained routines in it (Memory Compare, Panel
+   Dump) need no tape/channel I/O and are runnable/verifiable on this
+   model today; see that doc's "Recommended next steps" for the
+   transcription order (shared symbol table first).
 1. Verify the decoder against `7030_Opcode_List.pdf`'s assembled-word
    listings (its OCR is noisy on digits; check against the rendered
    page images, not the OCR text, the same way the format tables in

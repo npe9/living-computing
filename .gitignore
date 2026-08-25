@@ -21,3 +21,6 @@ __pycache__/
 
 # OS cruft
 .DS_Store
+
+# Claude Code harness-internal state (not project content)
+.claude/

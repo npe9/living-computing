@@ -441,6 +441,16 @@ until one has.
 
 ## Next steps
 
+0. **Transcribe real historical STRAP source, not just worked
+   examples.** `../docs/archival_inventory.md` inventories bitsavers'
+   `diag/`/`ce/`/`mcp/` collections: the Diagnostic Control Program
+   manual (`diag/ka_ua1_diagnostic_ctl_pgm.pdf`) turns out to contain a
+   complete, unbroken ~130-page STRAP source listing, with two
+   self-contained routines (Memory Compare, Panel Dump) that need no
+   I/O emulation and are assemble-and-run candidates today — see that
+   doc for the recommended transcription order (the shared MAINTENANCE
+   COMPOOL symbol table first) and for the five I-Box diagnostic
+   programs recommended as the next inventory target after that.
 1. `CNOP`, `SLC`, `CF`, `RF`, `DDI`, `SYN` (as a symbol-defining op,
    not just a no-storage placeholder), `CW`, `EXT` — pseudo-ops
    C22-6531 defines that no program exercised yet.
