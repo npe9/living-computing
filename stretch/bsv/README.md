@@ -272,3 +272,20 @@ of these).
    two-cycle mechanism added for progressive indexing is a template for
    this, not a ready-made solution: crossing-field stores need to split
    across a word boundary, not just defer a single write).
+4. Open question, not yet resolved either way: does a branch
+   instruction immediately following a progressive-indexing
+   instruction (e.g. `BZXCZ` right after `ST(V+ICR)`, as in
+   `strap/programs/figure7_progressive_indexing.strap`) read the
+   index register's pre-refill or post-refill state on real 7030
+   hardware? With this model's two-cycle `pendingIdxWrite` design, the
+   index write (including any refill) completes on its own `step()`
+   *before* the next instruction fetches, so a following branch always
+   sees post-refill state here. Whether that matches the real
+   machine's timing (which the manual describes only as "executed in
+   two parts," not with cycle-by-cycle interleaving semantics) is
+   unverified. Not exercised by any test yet — `figure7_progressive_
+   indexing.strap`'s own `BZXCZ` exits the loop on the same cycle a
+   refill would occur, and `strap/programs/xw_refill.strap` (see
+   `strap/README.md` "Gotchas" item 7) has no branch after its
+   refilling instruction — so this is a real gap, not a guess dressed
+   up as a finding.

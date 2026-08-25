@@ -18,18 +18,22 @@ FAILED=0
 
 run() {
   # run NAME -- prints a header, runs "$@", tracks pass/fail without
-  # aborting the whole suite on one failure (set -e is for real errors:
-  # bsc failing to compile, python raising, etc; a FAIL line from the
-  # generated testbench is data, not a shell error). MUST run in the
-  # current shell, not a subshell -- `FAILED=1` set inside a subshell
-  # (e.g. `( cd x && run ... )`) is discarded when the subshell exits,
-  # which silently turned this into a script that always reported
-  # success regardless of the smoke test's actual result. Caught by
-  # advisor review before it ever shipped that way.
+  # aborting the whole suite on one failure. Deliberately NOT
+  # `"$@" | tee ... | tail`: a pipeline's exit status is its last
+  # stage's (tail's), which is ~always 0, so piping would silently
+  # swallow a real build/toolchain failure (bsc erroring out,
+  # strap_asm.py raising) as a "pass" with no PASS/FAIL lines at all --
+  # caught by advisor review, which is also how the *previous* version
+  # of this function was caught running the smoke test in a subshell,
+  # discarding `FAILED=1` set there when the subshell exited (verified
+  # fixed by deliberately breaking StretchTb.bsv's own check and
+  # confirming this function reports it).
   name="$1"; shift
   echo "=== $name ==="
-  "$@" 2>&1 | tee "$TMPOUT" | tail -20
-  if grep -q "TEST(S) FAILED" "$TMPOUT"; then FAILED=1; fi
+  status=0
+  "$@" > "$TMPOUT" 2>&1 || status=$?
+  tail -20 "$TMPOUT"
+  if [ "$status" -ne 0 ] || grep -q "TEST(S) FAILED" "$TMPOUT"; then FAILED=1; fi
   echo
 }
 
