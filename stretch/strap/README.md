@@ -40,6 +40,16 @@ finding about the hardware model, not a hypothetical one.
 
 ## Usage
 
+Run the full regression suite (the `bsv` hand-assembled smoke test plus
+every program below):
+
+```
+cd stretch/strap
+./run_tests.sh
+```
+
+Or run one program directly:
+
 ```
 cd stretch/strap
 ./run_program.sh programs/problem_2_1.strap StretchProblem21Tb \
@@ -51,8 +61,10 @@ checked against core storage after the program halts (see "Halting"
 below). The generated `.bsv` is written into `../bsv/` and compiled
 with the same pinned Homebrew toolchain as `../bsv/build.sh` (see
 `../bsv/README.md` "Toolchain"); it is a build artifact, not meant to
-be committed — clean it up (`rm ../bsv/<Module>.bsv ../bsv/<Module>_sim*`)
-after use, same as `../bsv/build`/`../bsv/simbuild`.
+be committed (`.gitignore`d at the repo root) — `run_tests.sh` cleans
+it up automatically; after a standalone `run_program.sh` use, clean up
+the same way by hand (`rm ../bsv/<Module>.bsv ../bsv/<Module>_sim*`),
+same as `../bsv/build`/`../bsv/simbuild`.
 
 ## Programs assembled and verified so far
 
@@ -81,6 +93,13 @@ original.
   *own* ten records (not just compile) surfaced a real interaction
   with the crossing-field-store simplification — see the file's own
   padding comment and `../bsv/README.md`'s "Documented simplifications".
+- **`xw_refill.strap`** — not from a manual worked example; written to
+  close a gap advisor review found in the Figure 7 test above (see
+  "Gotchas" item 7): a minimal program that forces exactly one
+  progressive-indexing refill (`XW`'s `COUNT`=1) and checks that the
+  refilled index register holds a *different*, distinctive control
+  word's contents verbatim, proving the refill read the right word at
+  the right (word-address, not bit-address) units.
 
 Every run above is a true end-to-end test: STRAP source text through
 the Python assembler, through the *same* Bluespec decoder/executor
@@ -217,12 +236,18 @@ author already had in mind:
    compiled, and silently never taken by the one program written to
    test it. Fixed by shifting the operand right 6 bits (bit address →
    word address, matching `emit_fp_instruction`'s existing `A18`
-   conversion) before packing. A dedicated test that actually forces a
-   mid-loop refill (count < 10, so at least one refill-and-resume
-   happens before the ten records are exhausted) is recorded as an
-   open item below — this fix is verified by inspection (the encoded
-   word address is now correct) and by the existing regression suite
-   still passing, not yet by an execution path that reads through it.
+   conversion) before packing. Closed by a dedicated test,
+   `xw_refill.strap` (see "Programs assembled and verified so far"
+   above): not a Figure-7 variant, because a refill replaces the
+   *entire* index word (`unpackIndexWord(st.readWord(refill))` in
+   `StretchExecute.bsv`'s `progressiveIncrement`) — a mid-loop refill
+   in Figure 7 would reset `VALUE` back to `LIST` too and reprocess
+   records from the start, not resume where it left off. Verified the
+   test actually discriminates the bug, not just the encoding: with
+   the fix reverted it failed exactly as predicted (`readWord()` on an
+   out-of-range bit address falls into `StretchStorage.bsv`'s
+   `MemWords`-bound check and returns 0, i.e. an all-zero index word,
+   not a coincidentally-correct one), and passed once restored.
 
 ## Halting
 
@@ -268,17 +293,16 @@ as unverified until one has.
 
 ## Next steps
 
-1. A refill-exercising regression test: a program where `XW`'s
-   `REFILL` field actually fires mid-loop (count small enough that at
-   least one refill-and-resume happens before the records run out),
-   to close the gap "Gotchas" item 7 above documents — the fix there
-   is verified by inspection, not yet by an execution path that reads
-   through it.
-2. Problem 2.2 Method 2 (progressive indexing, already transcribed
+1. Problem 2.2 Method 2 (progressive indexing, already transcribed
    from the manual) as the next assembled-and-run test.
-3. `CNOP`, `SLC`, `CF`, `RF`, `DDI`, `SYN` (as a symbol-defining op,
+2. `CNOP`, `SLC`, `CF`, `RF`, `DDI`, `SYN` (as a symbol-defining op,
    not just a no-storage placeholder), `CW`, `EXT` — pseudo-ops
    C22-6531 defines that no program exercised yet.
-4. Verify the opcode table exhaustively against `7030_Opcode_List.pdf`
+3. Verify the opcode table exhaustively against `7030_Opcode_List.pdf`
    (the rendered pages, not its noisy OCR — see `../bsv/README.md`
    "Next steps", inherited here unchanged).
+4. Format 8's `J'` (`i2`) field: encoded but not executed (see the
+   "Scope" note on format 8 above) — `StretchExecute.bsv`'s `VflInt`
+   case would need to read `vi.a.i2` and apply the manual's "modify
+   bits 35-50 of the instruction" behavior (p.21). No program has
+   needed this yet (`figure7_progressive_indexing.strap` writes `, 0`).
