@@ -24,7 +24,8 @@ finding about the hardware model, not a hypothetical one.
 - **22-6530-2** *IBM 7030 Data Processing System Reference Manual* —
   same copy `../bsv/README.md` cites; needed here too for VFL
   Immediate addressing's exact field-packing rule (p.56 "Field
-  Definition") and general addressing modes (p.20).
+  Definition"), general addressing modes (p.20), and Connectives
+  (p.75-77, Figure 20's sixteen logical functions).
   `docs/22-6530-2_7030RefMan.pdf`.
 - **C28-6129** *STRAP-II* (1963, with April 1963 update) — downloaded
   alongside C22-6531 but not yet consulted; STRAP-II postdates
@@ -78,9 +79,10 @@ same as `../bsv/build`/`../bsv/simbuild`.
 ## Programs assembled and verified so far
 
 The instruction lines in each `.strap` file are copied verbatim from
-the manual; each file's header comment says exactly what was added
-(test data, an entry label, a `BEW, $` halt, padding) versus what's
-original.
+the manual, with one exception (`problem_2_2_method3.strap`, noted in
+its own entry below); each file's header comment says exactly what was
+added (test data, an entry label, a `BEW, $` halt, padding) versus
+what's original.
 
 - **`problem_2_1.strap`** — C22-6578 Problem 2.1, "Cyclic Bit Shifting"
   (p.12): 3 instructions, rotate a 64-bit word left by 7 bits using
@@ -101,6 +103,23 @@ original.
   bits) is the same, letting the two methods cross-check each other.
   Getting this one to assemble at all surfaced two real STRAP-1 syntax
   gaps and one real encoding gap — see "Gotchas" items 8-10.
+- **`problem_2_2_method3.strap`** — the same problem again, Method 3's
+  *algorithm* (p.13): `CT0110` — a **Connective** (this project's first;
+  `CT` = "Connect for Test", `0110` = the XOR function, Figure 20) doing
+  the byte-equality test progressively, branching on the connective's
+  own `$RZ` indicator (`BRZ`) instead of an arithmetic-compare
+  indicator like Method 2's `BAE`. NOT a verbatim transcription: two of
+  Method 3's seven lines (`LVE, $1, VF1` and `V+, $1, VF1`, its own
+  `LVE`-loaded/`SIC`-encoded setup and teardown) are substituted for
+  Method 2's own already-verified `LV`/`VF` setup and `L(V-I)` teardown
+  — `LVE` and `SIC` are both unimplemented, and this session could not
+  pin down their exact bit-level semantics from the sources at hand;
+  see the file's own header for the full account and exactly what's
+  substituted. Same expected result (28 bits) as Methods 1/2. Verified
+  the connective function selector is actually read, not just decoded:
+  swapping `CT0110` for `CT0000` (the always-0 connective) and
+  confirming the loop now exits on its first iteration (`$1` = 7, one
+  record, not 28) before restoring the real test.
 - **`figure7_progressive_indexing.strap`** — Reference Manual
   22-6530-2 Figure 7, "Progressive Indexing" (p.22): a ten-record loop
   that adds field T to field R and stores the result in field S for
@@ -326,6 +345,53 @@ author already had in mind:
     non-immediate addresses, so that gap is untested, not fixed — see
     "Next steps".
 
+11. **`(radix)digits` literals only work inside `DD`, not in general
+    expressions.** C22-6578's own Method 3 writes `LI(BU,7), (2)1111111`
+    — the manual treats a radix literal as usable anywhere a number is
+    (same as the decimal `127` it's equal to). `strap_asm.py`'s
+    `parse_dd_literal` (the `(\d+)([0-9A-Za-z]+)` regex match) is
+    called only from `DD`'s own field parsing, not from the general
+    `eval_expr` every instruction operand goes through — so the exact
+    line as printed fails to assemble (`cannot parse expression
+    '(2)1111111'`), a clean error, not a silent misparse. Worked
+    around in `problem_2_2_method3.strap` by writing `127` instead
+    (the two are declared equal by the manual's own comment on the
+    same instruction in Method 1: "or decimal 127"). Not fixed — see
+    "Next steps".
+
+12. **Two manual-worked-example instructions (`LVE`, `SIC`) turned out
+    to be genuine dead ends, not just unimplemented.** Chasing C22-6578
+    Problem 2.2 Method 3's exact transcription led to `LVE` ("Load
+    Value Effective", Reference Manual p.20's "indirect addressing")
+    and `SIC` ("Store Instruction Counter If", used in Method 3 purely
+    as a source of a specific bit pattern, per its own comment (a)
+    "loads the magnitude of the dummy SIC instruction"). Both are
+    already listed as out of scope in `../bsv/README.md` ("RNX/LVE/SVA
+    ... out of scope"; SIC likewise). This session tried to pin down
+    exact bit-level semantics for both, from the general p.20
+    "Address Modification" text and the Direct Index Arithmetic
+    chapter (pp.22-27), and could not find enough to implement either
+    with confidence — p.20 describes LVE only at the conceptual level
+    ("the effective address is used to obtain a second level effective
+    address"), never at the instruction-format/field level the way LX
+    through KC each get their own paragraph. `SIC` is different:
+    `StretchDecode.bsv` already has a bit-format for it from an earlier
+    milestone (address + index + an embedded half-word branch
+    instruction, sourced from p.~100's "bits 32-63 specify the
+    half-word branch instruction used") — it's *decoded*, just not
+    executed (`bsv/README.md`'s "Decoded but not executed" list). What
+    this session couldn't pin down is the STRAP-level assembler syntax
+    and the semantic condition under which the instruction counter
+    actually gets stored, needed to write and verify a real SIC line
+    rather than just decode one. Rather than guess and risk a
+    falsely "verified" result, `problem_2_2_method3.strap` substitutes
+    Method 2's own already-verified `LV`/`VF` setup and `L(V-I)`
+    teardown for Method 3's `LVE`/`SIC` ones, keeping the actual new
+    feature under test (the `CT0110`/`BRZ` connective compare) exactly
+    as printed. See that file's own header comment for the full
+    account, and `../bsv/README.md`'s "Direct index arithmetic" for
+    the model-side note.
+
 ## Halting
 
 A runner needs a way to know when the program is done rather than
@@ -349,24 +415,29 @@ implemented (and why), or implemented but not yet exercised by any
 program run through this assembler.
 
 Notably **not** implemented yet: multi-word Transmit — the same gap
-`../bsv/README.md`'s "Next steps" names on the execute side.
-Progressive indexing (format 8) *was* in this list as of the previous
-milestone; it's now implemented on both sides (assembler and
-`StretchExecute.bsv`) and verified against Figure 7 above. Problem
-2.2 Method 2 (also progressive indexing) is a ready-made next test
-case, already transcribed from the manual.
+`../bsv/README.md`'s "Next steps" names on the execute side. Also not
+implemented: `LVE`/`SIC` (see "Gotchas" item 12), VFL Immediate's
+`N`/`NI` suffixes, and `(radix)digits` literals outside `DD` (item 11).
+Progressive indexing (format 8) and Connectives *were* both in this
+list as of earlier milestones; both are now implemented on both sides
+(assembler and `StretchExecute.bsv`) and verified — progressive
+indexing against Figure 7, Connectives against Problem 2.2 Method 3's
+`CT0110` — above.
 
 **What's actually been assembled and run**, as opposed to merely
 present in `opcodes.py`'s tables, is much narrower than what's
-implemented: `L`, `+`, `ST`, `K` (VFL, binary unsigned, direct and
-progressive addressing), `LVI`, `LX`, `V+`, `BZAL`/`BAE`/`BZXCZ`
-(Branch on Indicator), `B`, `BEW`, `NOP`, `DD`, `VF`, `XW`, `END`. The
-other ~75 VFL/FP/DirIndex/ImmIndex mnemonics in `opcodes.py`, the `-`
-→ invert-bit path, the `I`-suffix immediate-addressing path (Appendix
-A footnote 3), `CB`, and floating point end to end are implemented
-against the same tables and citations as everything else here, but
-have never been exercised by an assembled-and-run program — treat them
-as unverified until one has.
+implemented: `L`, `LI`, `+`, `ST`, `K` (VFL, binary unsigned, direct,
+immediate, and progressive addressing), `CT` (one Connective, `CT0110`
+= XOR, progressive addressing), `LVI`, `LX`, `LV`, `V+`,
+`BZAL`/`BAE`/`BRZ`/`BZXCZ` (Branch on Indicator), `B`, `BEW`, `NOP`,
+`DD`, `VF`, `XW`, `END`. The other ~75 VFL/FP/DirIndex/ImmIndex
+mnemonics in `opcodes.py`, every other Connective (only `CT0110`, plus
+`CT0000` transiently as a discriminating check — see "Programs
+assembled and verified so far" above), the `-` → invert-bit path,
+`CB`, and floating point end to end are implemented against the same
+tables and citations as everything else here, but have never been
+exercised by an assembled-and-run program — treat them as unverified
+until one has.
 
 ## Next steps
 
@@ -386,15 +457,18 @@ as unverified until one has.
    `classify_vfl_or_fp` today; `N`/`NI` fail loud (`AssemblerError`,
    unrecognized mnemonic) rather than being silently mis-handled, but
    no program has needed them yet either.
-5. Problem 2.2 Method 3 (p.13: "Use connective and branch on `$RZ`")
-   — transcribed in the manual right after Method 2 but needs a
-   Connective op (`CT0110`) this assembler doesn't implement yet
-   (Connectives aren't in `VFL_INT_CODES`/`StretchExecute.bsv` at all
-   — see the "Connectives" item in `../bsv/README.md` "Next steps").
-6. The general "bare integer address → bit address via the implied
+5. The general "bare integer address → bit address via the implied
    subfield" rule (C22-6578 p.13) is implemented only for VFL
    Immediate addressing (`encode_vfl_immediate`) — see "Gotchas" item
    10's note. A bare (non-"point") integer given as a normal address
    field elsewhere is used as-is, unconverted. Untested (every program
    here uses dotted notation or labels for non-immediate addresses),
    not yet a confirmed bug.
+6. `(radix)digits` literals (`parse_dd_literal`) outside `DD` — see
+   "Gotchas" item 11.
+7. `LVE`/`SIC` — see "Gotchas" item 12; would need primary-source
+   material this session didn't find (or a decision to reverse-engineer
+   the exact bit patterns from first principles instead).
+8. Connectives' `BS`<8 byte-padding, Partial Field, and the left-
+   zeros/all-ones counts at word 7 (p.75-77) — see
+   `../bsv/README.md`'s "Connectives" scope note.

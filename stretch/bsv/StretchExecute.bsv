@@ -4,20 +4,21 @@
 // documented as in-scope in bsv/README.md: VFL binary integer L/ST/+/M+/K
 // (Reference Manual 22-6530-2 pp.~86-95) with both standard address
 // modification and progressive indexing (P in {1,2,3,5,6,7}, p.21),
-// direct and immediate index arithmetic (pp.22-27), count-and-branch
-// and branch-on-indicator (pp.~26-27, pocket card X22-6533-1 "INDEX
-// BRANCHING"/"INDICATOR BRANCHING"), unconditional branching, Store
-// Zero / Refill, and direct (non-backward, single-word) Transmit.
+// the sixteen Connectives (C/CM/CT, p.75-77, byte-size-8 only -- see
+// that case's own scope note), direct and immediate index arithmetic
+// (pp.22-27), count-and-branch and branch-on-indicator (pp.~26-27,
+// pocket card X22-6533-1 "INDEX BRANCHING"/"INDICATOR BRANCHING"),
+// unconditional branching, Store Zero / Refill, and direct
+// (non-backward, single-word) Transmit.
 //
 // Every other decoded format/opcode -- decimal arithmetic, floating
-// point arithmetic beyond L/ST, connectives, radix conversion,
-// input-output, interrupts, bit branching, SIC, EX/EXIC, RNX/LVE/SVA,
-// LVS, Transmit backward/swap -- sets indicator 15 (OP, Operation Code
-// Invalid) and otherwise acts as a no-op, matching the documented
-// real-machine behavior for an invalid/suppressed instruction
-// (Reference Card, indicator class "S": "execution of instruction is
-// suppressed"). See bsv/README.md "Scope" for the full accounting and
-// citations.
+// point arithmetic beyond L/ST, radix conversion, input-output,
+// interrupts, bit branching, SIC, EX/EXIC, RNX/LVE/SVA, LVS, Transmit
+// backward/swap -- sets indicator 15 (OP, Operation Code Invalid) and
+// otherwise acts as a no-op, matching the documented real-machine
+// behavior for an invalid/suppressed instruction (Reference Card,
+// indicator class "S": "execution of instruction is suppressed"). See
+// bsv/README.md "Scope" for the full accounting and citations.
 //
 // INDICATORS ARE WRITTEN EXACTLY ONCE PER INSTRUCTION. A plain
 // register (which is what `indicators` is, see StretchStorage.bsv)
@@ -151,6 +152,45 @@ function Word64 setIndexCmpIndicatorsF(Word64 ind, Cmp3 c);
   Word64 i2 = setBit(i1,  ind_XE, pack(c == CmpEqual));
   Word64 i3 = setBit(i2,  ind_XH, pack(c == CmpHigh));
   return i3;
+endfunction
+
+// Connectives (p.76 "Connectives", Figure 20): unlike RLZ/RZ/RGZ/RN for
+// arithmetic results (setResultIndicatorsF), a connective's result has
+// no sign -- it's a raw bit pattern, not a signed magnitude. p.77:
+// "Result Greater than Zero (RGZ): turned on if the result field
+// contains any one-bit. Result Less than Zero (RLZ); Result Negative
+// (RN): turned off by the connective operations." Result Zero (RZ) is
+// the complement of RGZ here (all-zero vs. any-one-bit); To-Memory
+// Operation (MOP) is on for CONNECT TO MEMORY, off for CONNECT/CONNECT
+// FOR TEST. The left-zeros/all-ones counts (word 7) this same section
+// describes are NOT implemented -- see bsv/README.md "Scope".
+function Word64 setConnectiveIndicatorsF(Word64 ind, Bool isMOP, Bool resultZero);
+  Word64 i1 = setBit(ind, ind_MOP, pack(isMOP));
+  Word64 i2 = setBit(i1,  ind_RLZ, 0);
+  Word64 i3 = setBit(i2,  ind_RN,  0);
+  Word64 i4 = setBit(i3,  ind_RGZ, pack(!resultZero));
+  Word64 i5 = setBit(i4,  ind_RZ,  pack(resultZero));
+  return i5;
+endfunction
+
+// The sixteen connectives (p.76 Figure 20): result bit i = f(m_i, a_i)
+// where f is chosen by `conn`'s 4 bits, one per (m,a) combination --
+// conn[3]=result for (m=0,a=0), conn[2]=(0,1), conn[1]=(1,0),
+// conn[0]=(1,1) (matches Figure 20's own bit order exactly, e.g.
+// conn=4'b0110 gives (notM&a)|(m&notA) = m XOR a = "m (+) a", listed
+// there as connective 6). A minterm-sum over the whole word at once,
+// relying on the caller (readField/the accumulator-field mask) to have
+// already zeroed every bit outside the real field -- so bits beyond
+// the field's length don't need separate masking here.
+function Bit#(64) applyConnective(Bit#(4) conn, Bit#(64) m, Bit#(64) a);
+  Bit#(64) notM = ~m;
+  Bit#(64) notA = ~a;
+  Bit#(64) r = 0;
+  if (conn[3] == 1) r = r | (notM & notA);
+  if (conn[2] == 1) r = r | (notM & a);
+  if (conn[1] == 1) r = r | (m & notA);
+  if (conn[0] == 1) r = r | (m & a);
+  return r;
 endfunction
 
 // Immediate operand per p.~90 "Immediate Addressing": the instruction's
@@ -606,7 +646,105 @@ function ActionValue#(Tuple2#(HWordAddr, Maybe#(Tuple2#(Bit#(4), IndexWord))))
       // Everything else this decoder recognizes structurally but does
       // not execute.
       // -----------------------------------------------------------
-      tagged Connective .*: ind = setOpInvalid(ind);
+      // -----------------------------------------------------------
+      // Connectives (p.75-77 "Connectives"): sixteen bitwise boolean
+      // functions of a storage field `m` and an accumulator field `a`
+      // of the same length, selected by `conn` (Figure 20). Which of
+      // the three connective operations to perform is NOT a separate
+      // decoded tag -- it's `suffix`, IBM bits 55-59 of the same
+      // instruction word (X22-6533 pocket card "CONNECTIVES" table):
+      //   xxxx00111 = C  (Connect: result -> accumulator field)
+      //   xxxx01111 = CM (Connect to Memory: result -> storage field)
+      //   xxxx10111 = CT (Connect for Test: result discarded, only
+      //                    indicators set)
+      // Same addressing (direct/immediate/progressive, p.75 "Format":
+      // "The connective operations use basically the same full-word
+      // instruction format as the integer arithmetic operations...
+      // Immediate addressing is also handled the same way") and same
+      // deferred-index-write mechanism as VflInt above, for the same
+      // reason: C/CM write general storage (writeAcc/writeField, both
+      // go through st.writeWord) in the same arm that would write an
+      // index register under progressive indexing.
+      //
+      // SCOPE: byte size is assumed to be 8 (BS=0, the default, and
+      // the manual's own recommendation: "To combine a group of bits
+      // in storage with the same number of contiguous bits in the
+      // accumulator, a byte size of eight should be specified. This
+      // avoids the addition of high-order zeros..."). The <8-byte-size
+      // conversion p.75 "Byte Size" describes (each short byte padded
+      // to 8 bits with high-order zeros before combining) is NOT
+      // implemented -- effByteSize's result is decoded but unused
+      // here. Partial Field (PF) and the left-zeros/all-ones counts at
+      // word 7 are also not implemented, consistent with the rest of
+      // this file (PF isn't implemented for VflInt either). Not
+      // exercised by any program yet with BS!=8.
+      tagged Connective .cn: begin
+        Bool isProgressive = (cn.a.p != 0 && cn.a.p != 4);
+        Bool immediate = (cn.a.p == 4);
+        if (isProgressive && cn.a.i1 == 0) begin
+          ind = setOpInvalid(ind);
+        end else if (cn.suffix == 5'b01111 && immediate) begin
+          // CM + immediate: "Immediate addressing is not possible in
+          // operations whose result is placed in storage... the
+          // operation is not performed and the OP indicator is turned
+          // on" (p.56) -- same rule already enforced for VflInt's
+          // ST/M+ above.
+          ind = setOpInvalid(ind);
+        end else begin
+          Bit#(7) len_ = effLength(cn.a.length);
+          IndexWord xIdx = st.readIndex(cn.a.i1);
+          BitAddr ea = isProgressive ? xIdx.addr : effAddr24(st, cn.a.addr, cn.a.i1);
+          Bit#(8) offSh = zeroExtend(cn.a.offset);
+          Bit#(8) len8 = zeroExtend(len_);
+          Bit#(64) fieldMask = (len_ == 64) ? '1 : ((1 << len8) - 1);
+          Bool vflOk = True; // p.21/22: a suppressed VFL-format op skips
+                              // the progressive increment too, same
+                              // rule as VflInt.
+
+          if (cn.suffix == 5'b01111 && fieldCrosses(ea, len_)) begin
+            // CM writing a crossing field: same single-word-write
+            // limitation as VflInt's ST/M+ (writeField's precondition).
+            ind = setOpInvalid(ind);
+            vflOk = False;
+          end else begin
+            Bit#(64) m = immediate ? immediateOperand(cn.a.addr, len_)
+                                    : readField(st, ea, len_);
+            SM128 acc = readAcc(st);
+            Bit#(64) a = truncate(acc.mag >> offSh) & fieldMask;
+            Bit#(64) result = applyConnective(cn.conn, m, a) & fieldMask;
+            Bool resultZero = (result == 0);
+
+            case (cn.suffix)
+              5'b00111: begin // C: result replaces the accumulator
+                              // field; the rest of the accumulator is
+                              // unchanged (p.76 "In CONNECT... The
+                              // remainder of the accumulator remains
+                              // unchanged").
+                Bit#(128) fieldMask128 = zeroExtend(fieldMask) << offSh;
+                Bit#(128) resultSh = zeroExtend(result) << offSh;
+                SM128 merged = SM128 { sign: acc.sign,
+                                        mag: (acc.mag & ~fieldMask128) | resultSh };
+                writeAcc(st, merged);
+              end
+              5'b01111: writeField(st, ea, len_, result); // CM
+              5'b10111: begin end // CT: result discarded, indicators only
+              default: ind = setOpInvalid(ind); // unreachable: StretchDecode's
+                                                 // isConnSuffix only admits these
+                                                 // three patterns; kept for bsc's
+                                                 // exhaustiveness check, same style
+                                                 // as VflInt's own default arm above.
+            endcase
+
+            ind = setConnectiveIndicatorsF(ind, cn.suffix == 5'b01111, resultZero);
+          end
+
+          if (isProgressive && vflOk) begin
+            let {x2, ind2} = progressiveIncrement(st, cn.a, xIdx, ind);
+            vflPending = tagged Valid tuple2(cn.a.i1, x2);
+            ind = ind2;
+          end
+        end
+      end
       tagged Fp .fp: begin
         if (fp.code == 7'b0000110 || fp.code == 7'b0001110) begin // L / ST
           WordAddr ea = effAddr18(st, fp.addr, fp.idx);

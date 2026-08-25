@@ -1,0 +1,77 @@
+! Problem 2.2: Length of an Unknown File, Method 3's ALGORITHM (not a
+! verbatim transcription -- see below) -- "Use connective and branch
+! on $RZ" (C22-6578 p.13).
+!
+! Same problem as Methods 1 and 2: find the length in bits, including
+! its all-ones terminator, of a file of 7-bit bytes starting at INFO;
+! put the answer in $1's VALUE field. Reuses the same test data as
+! Methods 1/2 (5, 12, 100, 127), so the expected answer is the same
+! 28 bits.
+!
+! Method 3 as printed uses seven instructions:
+!     LVE, $1, VF1
+!     LI(BU,7), (2)1111111
+! CONT CT0110(V+I) (BU, 7), 0.07($1)
+!     BRZ, $+1.0
+!     B, CONT
+!     V+, $1, VF1
+!     BEW, $
+!     VF1  SIC, INFO
+! This file uses that verbatim for the middle three lines -- the
+! COMPARE-and-branch loop, which is the actual point of Method 3 (a
+! Connective, `CT0110`, doing the byte-equality test that Methods 1/2
+! did with `K`, combined with `BRZ` branching on the connective's own
+! RZ indicator rather than an arithmetic-compare indicator like `AE`).
+! The first and sixth lines are substituted:
+!
+!   - `LVE, $1, VF1` -> `LV, $1, VFIELD` (`VFIELD VF, INFO`, exactly
+!     Method 2's own setup). LVE ("Load Value Effective") is Reference
+!     Manual indirect addressing (p.20: "the effective address is used
+!     to obtain a second level effective address") -- StretchExecute.
+!     bsv does not implement it (file header: "RNX/LVE/SVA... out of
+!     scope"), and this session could not locate a page describing
+!     LVE's precise bit-level semantics distinctly from LV's (only the
+!     general p.20 paragraph and this program's own comment (a): "The
+!     LVE instruction loads the magnitude of the dummy SIC
+!     instruction" -- consistent with several readings, not enough to
+!     implement against with confidence).
+!   - `V+, $1, VF1` -> `L(BU,7)(V-I), INFO($1)` (exactly Method 2's own
+!     ending, subtracting INFO's own bit address back off $1 via
+!     progressive indexing instead of Method 3's `V+`). The manual's
+!     own comment (c) -- "V+, $1, VF1 in reality performs a subtract
+!     since bit 24 of the SIC instruction is a 1" -- depends on the
+!     exact bit pattern the assembled `SIC` pseudo-op produces at VF1;
+!     `SIC` ("Store Instruction Counter If") is not implemented by
+!     this assembler (not in opcodes.py's MISC_CODES/UNCOND_BRANCH_
+!     CODES), and this session could not find its bit-level encoding
+!     to reproduce that specific pattern deliberately rather than by
+!     accident.
+!
+! Both substitutions are already independently verified (Method 2 uses
+! this exact LV/VF setup and L(V-I) ending), so this file tests exactly
+! one new thing end to end: the Connective/BRZ middle of Method 3.
+! Comment (b) -- "In reality the 7-bit memory field is left-appended
+! with a zero bit and is connected with eight bits left of the
+! offset" -- describes a byte-size<8 padding rule (p.75 "Byte Size")
+! this model does not implement (StretchExecute.bsv's Connective case
+! scope note); it has no effect on this test regardless: `L` clears
+! the whole accumulator before `LI` loads its low 7 bits, so any
+! notional 8th (padding) bit is 0 on both operands either way, and
+! XOR(0,0)=0 -- the same RZ result whether or not the pad bit
+! "conceptually" participates.
+
+START   LV, $1, VFIELD
+        LI(BU,7), 127          !manual writes (2)1111111 -- same value,
+                                !decimal here only because eval_expr
+                                !(unlike DD's own literal parser) does
+                                !not yet support "(radix)digits" syntax
+                                !outside of DD; see README "Next steps"
+CONT    CT0110(V+I) (BU, 7), 0.07($1)
+        BRZ, $+1.0
+        B, CONT
+        L(BU, 7) (V-I), INFO($1)
+        BEW, $
+VFIELD  VF, INFO
+INFO    DD(BU,7,8), 5,12,100,127
+
+        END, START

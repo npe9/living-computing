@@ -62,6 +62,14 @@ run "Problem 2.2 Method 1" ./run_program.sh programs/problem_2_2_method1.strap S
 run "Problem 2.2 Method 2" ./run_program.sh programs/problem_2_2_method2.strap StretchProblem22M2Tb \
     "X1_len:addrIndex(1)=0x1c0000000000"
 
+# -- 3c. Problem 2.2 Method 3's algorithm: Connective (CT0110, i.e.
+# XOR) + BRZ instead of K + BAE. Two of the seven manual lines are
+# substituted for already-verified Method 2 equivalents (LVE/SIC are
+# unimplemented -- see programs/problem_2_2_method3.strap's header for
+# the full account); same expected answer (28 bits) either way.
+run "Problem 2.2 Method 3 (algorithm)" ./run_program.sh programs/problem_2_2_method3.strap StretchProblem22M3Tb \
+    "X1_len:addrIndex(1)=0x1c0000000000"
+
 # -- 4. Reference Manual Figure 7: Progressive Indexing --
 # Expected final memory (words holding the ten records' R/S/T fields) is
 # derived, not hand-computed: run

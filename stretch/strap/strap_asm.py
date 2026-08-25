@@ -60,6 +60,18 @@ execute partially, document the rest" ethos of the Bluespec model):
        reads vi.a.i2 -- the manual's "J' may be used to modify bits
        35-50 of the instruction" (p.21) is unimplemented on the model
        side, same as most of format 7's other unexecuted corners.
+       Applies equally to Connectives (below): "OP(OP2)(dds)" is
+       exactly as legal there as for VFL arithmetic, per p.75's own
+       "Format" section.
+    -  Connectives (Figure 6's "CONNECTIVE" row -- same full-word shape
+       as format 7 above, opcode field split conn(4)+suffix(5) instead
+       of abc(3)+code(6), see enc_connective/CONNECTIVE_SUFFIX) --
+       C/CM/CT mnemonics, each followed immediately by exactly 4
+       binary digits selecting one of 16 logical functions (Figure 20;
+       classify_connective). Direct, immediate, and progressive
+       addressing all share format 7's own encoding/parsing path.
+       Verified against C22-6578 Problem 2.2 Method 3's "CT0110"
+       (byte-equality test via XOR) -- see strap/README.md.
     9-12 (transmit/swap, bit branch, I-O, LVS) -- not implemented;
        these are exactly the formats StretchExecute.bsv doesn't
        execute either, so there is nothing to verify by encoding them
@@ -118,7 +130,7 @@ import sys
 from opcodes import (
     VFL_INT_CODES, VFL_INT_MINUS_BASE, FP_CODES, DIR_INDEX_CODES,
     IMM_INDEX_CODES, UNCOND_BRANCH_CODES, MISC_CODES, INDICATOR_BITS,
-    MODE_BITS, MODE_DEFAULT_BS, PROGRESSIVE_SECONDARY_OP,
+    MODE_BITS, MODE_DEFAULT_BS, PROGRESSIVE_SECONDARY_OP, CONNECTIVE_SUFFIX,
 )
 
 
@@ -189,6 +201,20 @@ def encode_vfl_immediate(val, field_len, lineno=None):
 def enc_vfl_full(addr24, i1, p, length, bs, offset, a, b, c, code, i2=0):
     v, w = cat((addr24, 24), (0b1000, 4), (i1, 4), (p, 3), (length, 6),
                (bs, 3), (offset, 7), (a, 1), (b, 1), (c, 1), (code, 6), (i2, 4))
+    assert w == 64
+    return v
+
+def enc_connective(addr24, i1, p, length, bs, offset, conn, suffix, i2=0):
+    # Same full-word shape as enc_vfl_full -- "The connective operations
+    # use basically the same full-word instruction format as the
+    # integer arithmetic operations" (Reference Manual p.75) -- but the
+    # 9-bit opcode field (bits 51-59, enc_vfl_full's a/b/c/code) splits
+    # differently here: conn (4 bits, the logical function 0-15,
+    # Figure 20) + suffix (5 bits, which of C/CM/CT -- CONNECTIVE_SUFFIX
+    # in opcodes.py) instead of the arithmetic sign/decimal modifiers
+    # and 6-bit op code.
+    v, w = cat((addr24, 24), (0b1000, 4), (i1, 4), (p, 3), (length, 6),
+               (bs, 3), (offset, 7), (conn, 4), (suffix, 5), (i2, 4))
     assert w == 64
     return v
 
@@ -444,8 +470,26 @@ def parse_dds(mod_text, lineno=None):
     return mode, length, bs
 
 
+def classify_connective(op):
+    """C/CM/CT + exactly 4 binary digits (X22-6533 pocket card
+    "CONNECTIVES" table: xxxx00111 = C "Connect" (result -> accumulator),
+    xxxx01111 = CM "Connect to Memory" (result -> storage), xxxx10111 =
+    CT "Connect for Test" (result discarded, indicators only); xxxx is
+    the connective function 0-15, Reference Manual Figure 20). Returns
+    (suffix_name, conn:int) or None. Tries CM/CT before C so "CM0101"
+    doesn't match the shorter "C" prefix first.
+    """
+    for name in ('CM', 'CT', 'C'):
+        if op.startswith(name) and len(op) == len(name) + 4:
+            digits = op[len(name):]
+            if all(ch in '01' for ch in digits):
+                return name, int(digits, 2)
+    return None
+
+
 def classify_vfl_or_fp(stmt):
-    """Returns ('VFL'|'FP'|None, base_op, invert, immediate, p_progressive, dds_mods).
+    """Returns ('VFL'|'FP'|'CONN'|None, base_op, invert, immediate,
+    p_progressive, dds_mods, conn).
 
     p_progressive is None for standard address modification, else the
     VflAddr.p value 1-7 (C22-6531 "Progressive Indexing": a VFL/
@@ -464,6 +508,14 @@ def classify_vfl_or_fp(stmt):
     dds-first ordering as non-progressive (P=0, no error), exactly the
     wrong-output-no-error failure mode this project has caught and
     fixed elsewhere (see README.md "Gotchas" item 7).
+
+    `conn` is `(suffix_name, conn_value)` from classify_connective when
+    kind is 'CONN' (Reference Manual p.75: "The connective operations
+    use basically the same full-word instruction format as the
+    integer arithmetic operations... Immediate addressing is also
+    handled the same way" -- so Connectives share this function's
+    progressive-op/dds handling rather than getting a separate one),
+    else None.
     """
     op = stmt.op
     invert = 0
@@ -484,6 +536,10 @@ def classify_vfl_or_fp(stmt):
         else:
             dds_mods.append(m)
 
+    conn = classify_connective(base_op)
+    if conn is not None:
+        return 'CONN', base_op, invert, immediate, p_progressive, dds_mods, conn
+
     # The "I"-immediate suffix (Appendix A footnote 4: a VFL op may be
     # suffixed I/N/NI for Immediate/Negative/Negative-Immediate
     # addressing) is tried whether or not an explicit dds is present --
@@ -499,21 +555,21 @@ def classify_vfl_or_fp(stmt):
     if has_dds:
         mode = dds_mods[0].split(',')[0].strip().upper()
         if mode in ('N', 'U'):
-            return 'FP', base_op, invert, immediate, p_progressive, dds_mods
+            return 'FP', base_op, invert, immediate, p_progressive, dds_mods, None
         if mode in MODE_BITS:
-            return 'VFL', base_op, invert, immediate, p_progressive, dds_mods
+            return 'VFL', base_op, invert, immediate, p_progressive, dds_mods, None
         raise AssemblerError(f"unknown data-description mode {mode!r}", stmt.lineno)
 
     in_vfl, in_fp = base_op in VFL_INT_CODES, base_op in FP_CODES
     if in_vfl and not in_fp:
-        return 'VFL', base_op, invert, immediate, p_progressive, dds_mods
+        return 'VFL', base_op, invert, immediate, p_progressive, dds_mods, None
     if in_fp and not in_vfl:
-        return 'FP', base_op, invert, immediate, p_progressive, dds_mods
+        return 'FP', base_op, invert, immediate, p_progressive, dds_mods, None
     if in_vfl and in_fp:
         # C22-6531 p.9, case 1: ambiguous op with no dds assembles as
         # VFL with data description (BU, 64, 8).
-        return 'VFL', base_op, invert, immediate, p_progressive, dds_mods
-    return None, base_op, invert, immediate, p_progressive, dds_mods
+        return 'VFL', base_op, invert, immediate, p_progressive, dds_mods, None
+    return None, base_op, invert, immediate, p_progressive, dds_mods, None
 
 
 def classify_branch_indicator(op):
@@ -576,7 +632,7 @@ def statement_size(stmt):
     if classify_branch_indicator(op) is not None:
         return HALF, HALF
     kind, *_ = classify_vfl_or_fp(stmt)
-    if kind == 'VFL':
+    if kind == 'VFL' or kind == 'CONN':  # both are full-word (p.75 "Format")
         return FULL, FULL
     if kind == 'FP':
         return HALF, HALF
@@ -837,7 +893,37 @@ def emit_statement(stmt, symtab, image):
         image.deposit_half(loc // 32, enc_branch_ind(addr19, indnum, clear, branchOn, idx))
         return
 
-    kind, base_op, invert, immediate, p_progressive, dds_mods = classify_vfl_or_fp(stmt)
+    kind, base_op, invert, immediate, p_progressive, dds_mods, conn = classify_vfl_or_fp(stmt)
+    if kind == 'CONN':
+        suffix_name, conn_value = conn
+        mode, length_expr, bs_expr = ('BU', None, None) if not dds_mods or not dds_mods[0].strip() \
+            else parse_dds(dds_mods[0], stmt.lineno)
+        if mode not in MODE_BITS:
+            raise AssemblerError(f"unknown VFL mode {mode!r}", stmt.lineno)
+        length_field = 0 if length_expr is None else eval_expr(length_expr, symtab, 0, lineno=stmt.lineno) & 0x3F
+        bs_field = (MODE_DEFAULT_BS[mode] if bs_expr is None
+                    else eval_expr(bs_expr, symtab, 0, lineno=stmt.lineno)) & 0x7
+
+        if not stmt.fields or not stmt.fields[0].strip():
+            raise AssemblerError(f"{op} needs an address field", stmt.lineno)
+        base, paren = split_field_trailing_paren(stmt.fields[0])
+        raw_val = eval_expr(base, symtab, loc, lineno=stmt.lineno)
+        addr24 = (encode_vfl_immediate(raw_val, length_field, stmt.lineno) if immediate
+                  else raw_val & 0xFFFFFF)
+        i1 = eval_reg(paren, symtab, stmt.lineno)
+
+        offset, i2 = 0, 0
+        if len(stmt.fields) >= 2 and stmt.fields[1].strip():
+            base2, paren2 = split_field_trailing_paren(stmt.fields[1])
+            offset = eval_expr(base2, symtab, loc, lineno=stmt.lineno) & 0x7F
+            i2 = eval_reg(paren2, symtab, stmt.lineno)
+
+        p = p_progressive if p_progressive is not None else (4 if immediate else 0)
+        suffix = CONNECTIVE_SUFFIX[suffix_name]
+        image.deposit_full(loc, enc_connective(addr24, i1, p, length_field, bs_field,
+                                                offset, conn_value, suffix, i2))
+        return
+
     if kind == 'VFL':
         mode, length_expr, bs_expr = ('BU', None, None) if not dds_mods or not dds_mods[0].strip() \
             else parse_dds(dds_mods[0], stmt.lineno)

@@ -214,3 +214,18 @@ PROGRESSIVE_SECONDARY_OP = {
     "V+I": 1, "V+IC": 2, "V+ICR": 3,
     "V-I": 5, "V-IC": 6, "V-ICR": 7,
 }
+
+# ---------------------------------------------------------------------
+# Connectives (Reference Manual p.75-77 "Connectives"; opcode values
+# from X22-6533 pocket card "CONNECTIVES" table). Same 9-bit opcode
+# field VFL arithmetic uses (bits 51-59), split as conn(4)+suffix(5)
+# instead of abc(3)+code(6) -- this table gives the fixed 5-bit suffix
+# for each of the three connective operations; conn (which of the 16
+# logical functions, Figure 20) is the mnemonic's own 4 binary digits,
+# parsed directly (see strap_asm.py's classify_connective).
+# ---------------------------------------------------------------------
+CONNECTIVE_SUFFIX = {
+    "C":  0b00111,  # Connect: result -> accumulator field
+    "CM": 0b01111,  # Connect to Memory: result -> storage field
+    "CT": 0b10111,  # Connect for Test: result discarded, indicators only
+}

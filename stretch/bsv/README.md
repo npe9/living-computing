@@ -68,7 +68,24 @@ system, several of them large enough to be their own projects).
   against the manual's own Figure 7 worked example, see
   `../strap/README.md`.
 - **Direct index arithmetic** — `LX LV LC LR SX SV SC SR V+ V+C V+CR
-  KV KC` (pp.22-23). Not implemented: `RNX`, `LVE`, `SVA`.
+  KV KC` (pp.22-23). Not implemented: `RNX`, `LVE`, `SVA` -- `LVE`
+  specifically was investigated for `../strap/`'s Problem 2.2 Method 3
+  and left unimplemented: p.20 describes it only as enabling "indirect
+  addressing" ("the effective address is used to obtain a second level
+  effective address"), and this session could not find a page giving
+  its exact bit-level behavior distinctly from `LV`'s -- see
+  `strap/README.md`'s Method 3 writeup.
+- **Connectives** — all sixteen logical functions (`C`/`CM`/`CT`,
+  Figure 20, p.75-77), with the same direct/immediate/progressive
+  addressing as VFL arithmetic above. **Scope**: byte size is assumed
+  to be 8 (the manual's own recommended usage — "a byte size of eight
+  should be specified" to avoid padding); the `BS`<8 high-order-zero
+  padding p.75 "Byte Size" describes is not implemented. Partial Field
+  (`PF`) and the left-zeros/all-ones counts at word 7 (also described
+  in that section) are not implemented either, consistent with `PF`
+  not being implemented for VFL arithmetic. Verified against C22-6578
+  Problem 2.2 Method 3's own `CT0110` (byte-equality test via XOR) —
+  see `strap/README.md`.
 - **Immediate index arithmetic** — all pocket-card ops except `LVS`.
 - **Count and Branch / Count, Branch and Refill**.
 - **Branch on Indicator**.
@@ -84,10 +101,9 @@ system, several of them large enough to be their own projects).
 ### Decoded but not executed (sets indicator 15, OP, and no-ops —
 ### matches real-machine behavior for a suppressed instruction)
 
-Decimal-mode VFL (`c=1`), Connectives, radix conversion,
-floating-point arithmetic beyond L/ST, Input-Output, SIC (Store
-Instruction Counter If), Bit Branching, `EX`/`EXIC`, Transmit
-backward/`SWAP`/multi-word.
+Decimal-mode VFL (`c=1`), radix conversion, floating-point arithmetic
+beyond L/ST, Input-Output, SIC (Store Instruction Counter If), Bit
+Branching, `EX`/`EXIC`, Transmit backward/`SWAP`/multi-word.
 
 Per the "decode completely, execute partially" principle: every format
 in Figure 6 has a `DecodedInstr` constructor and is field-extracted
@@ -242,27 +258,29 @@ them on this model, using real programs to drive out decode/execute
 bugs and scope gaps instead of only hand-written test vectors. That
 assembler now exists, at `../strap/` (`strap/README.md`), sharing this
 model's opcode table directly rather than re-deriving it. It has
-assembled and run four worked examples from the Reference Manual and
-`C22-6578_7030_Programming_Examples_Apr61.pdf` end to end (STRAP source
-→ assembler → this decoder/executor → a checked result matching an
-independent calculation) — Problems 2.1 and 2.2 Methods 1 and 2, and
+assembled and run five worked (or worked-algorithm) examples from the
+Reference Manual and `C22-6578_7030_Programming_Examples_Apr61.pdf`
+end to end (STRAP source → assembler → this decoder/executor → a
+checked result matching an independent calculation) — Problems 2.1 and
+2.2 Methods 1, 2, and 3 (3's own two unimplementable lines, `LVE`/`SIC`,
+substituted for verified equivalents — see `strap/README.md`), and
 Reference Manual Figure 7 (progressive indexing, ten-record loop) —
-plus a fifth, purpose-written program (`xw_refill.strap`) closing a
-gap the four worked examples happened not to exercise. Getting each to
-pass caught real bugs or gaps in this model as it stood, not
-hypothetical ones: an inverted index-flag-bit derivation
-(`StretchExecute.bsv`'s `V+`/`V+I`/`V-I`/`CountBranch` cases were
-computing the index flag from the arithmetic result instead of
-preserving the program-set flag bit); a bsc scheduler limitation on
-combining a general-storage write with an index-register write in the
-same case arm (see "Toolchain" item 7); the crossing-field-store /
-progressive-indexing interaction above; and, on the assembler side, an
-address-field unit conversion, the Special Storage Assignment range
-needing to stay off-limits to ordinary code, an XW refill-field unit
-bug, two STRAP-1 syntax gaps in Immediate addressing and progressive
-indexing's secondary-op ordering, and VFL Immediate addressing's own
-field-packing rule (see `strap/README.md` "Gotchas found by running
-real programs" for the full account of all of these).
+plus a sixth, purpose-written program (`xw_refill.strap`) closing a gap
+the worked examples happened not to exercise. Getting each to pass
+caught real bugs or gaps in this model as it stood, not hypothetical
+ones: an inverted index-flag-bit derivation (`StretchExecute.bsv`'s
+`V+`/`V+I`/`V-I`/`CountBranch` cases were computing the index flag from
+the arithmetic result instead of preserving the program-set flag bit);
+a bsc scheduler limitation on combining a general-storage write with an
+index-register write in the same case arm (see "Toolchain" item 7); the
+crossing-field-store / progressive-indexing interaction above; and, on
+the assembler side, an address-field unit conversion, the Special
+Storage Assignment range needing to stay off-limits to ordinary code,
+an XW refill-field unit bug, two STRAP-1 syntax gaps in Immediate
+addressing and progressive indexing's secondary-op ordering, and VFL
+Immediate addressing's own field-packing rule (see `strap/README.md`
+"Gotchas found by running real programs" for the full account of all
+of these).
 
 ## Next steps
 
@@ -271,10 +289,13 @@ real programs" for the full account of all of these).
    page images, not the OCR text, the same way the format tables in
    this file were established).
 2. Extend execute() coverage in the order real STRAP programs are
-   likely to need it: Connectives, decimal VFL, floating point
-   arithmetic beyond L/ST. C22-6578 Problem 2.2 Method 3 ("Use
-   connective and branch on $RZ", p.13) is a ready-made next test
-   once Connectives land — see `strap/README.md` "Next steps".
+   likely to need it: decimal VFL, floating point arithmetic beyond
+   L/ST (Connectives landed this session — see "Executed" above).
+   Connectives' own `BS`<8 padding and Partial Field/word-7-counts are
+   a narrower, self-contained extension if a program ever needs them.
+   `LVE` and `SIC` remain open — see "Direct index arithmetic" above
+   and `strap/README.md`'s Problem 2.2 Method 3 writeup for what's
+   been ruled out so far.
 3. Multi-word Transmit and crossing-field VFL stores, properly, as
    multi-cycle operations (needs `StretchCore`'s FSM to support an
    instruction that isn't done after one `step()` — the `pendingIdxWrite`
