@@ -1,0 +1,27 @@
+! Problem 2.2: Length of an Unknown File, Method 1 "Byte-by-byte
+! Compare" (C22-6531 Programming Examples, p.12).
+!
+! "Information of unknown length is written in consecutive 7-bit bytes
+! beginning at INFO. Its end is signified by the first appearance of a
+! special character consisting of seven binary 1's. Write a program to
+! find the file length (including the special character) in bits, and
+! put the answer in the value field of $1."
+!
+! The nine instruction/pseudo-op lines (LVI through SEVN VF,0.07) are
+! copied verbatim from the manual. INFO itself is not shown defined in
+! the excerpted problem; this file supplies it with four 7-bit bytes
+! (5, 12, 100, 127) so the assembled program is self-contained and
+! independently checkable: the terminator is the 4th byte, so the
+! expected file length is 4*7 = 28 bits, landing in $1's value field.
+
+START   LVI, $1, 0.0
+LOAD    L(BU, 7, 8), INFO($1)
+        K(BU, 7,8), ENDB
+        V+, $1, SEVN
+        BZAL, $+1.0
+        B, LOAD
+        BEW, $
+ENDB    DD(BU, 7,8), (2)1111111       !or decimal 127
+SEVN    VF, 0.07
+INFO    DD(BU,7,8), 5,12,100,127
+        END, START

@@ -1,0 +1,29 @@
+! Problem 2.1: Cyclic Bit Shifting (C22-6531 Programming Examples,
+! p.12, Method 1). "Cyclic left shift a full word in DOG by 7 bit
+! positions."
+!
+! The three instruction lines are copied verbatim from the manual. DOG
+! itself is not shown defined in the excerpted problem (it is presumed
+! to exist elsewhere in the full program); this file supplies it with
+! a DD statement carrying a known test pattern so the assembled program
+! is self-contained and independently checkable: rotate_left(DOG, 7).
+! DOG is placed word-aligned (first in the file, so its bit address is
+! 0) because the final ST(BU,64),DOG writes a 64-bit field, and this
+! model's VFL store rejects any field that crosses a word boundary
+! (see stretch/bsv/StretchVFL.bsv fieldCrosses / README "Toolchain")
+! -- a DOG at any other alignment would trip that and silently no-op.
+!
+! DOG's top 7 bits (IBM bits 0-6) must be nonzero, or the middle
+! +(BU,7),DOG instruction adds zero and the test would pass even if
+! that instruction were broken -- verified by exercising all three
+! instructions, not just L's own left-shift.
+
+DOG     DD(BU,64,8), 18364758544493064720   !0xFEDCBA9876543210, top7=1111111
+
+START   L(BU, 64-7), DOG+.7, 7    !leave room for DOG thru DOG +0.6
+        +(BU, 7), DOG
+        ST(BU,64), DOG
+        BEW, $                    !halt (not in the manual excerpt --
+                                   !added so the BSV runner has a stop
+                                   !condition; see stretch/strap/README.md)
+        END, START

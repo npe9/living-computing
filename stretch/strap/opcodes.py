@@ -1,0 +1,216 @@
+"""opcodes.py -- IBM 7030 "Stretch" instruction encodings for the STRAP
+assembler.
+
+This table is the assembler-side twin of the decoder in
+stretch/bsv/StretchDecode.bsv and the executor in
+stretch/bsv/StretchExecute.bsv. Every bit pattern here was copied from
+those two files (which were themselves derived from the primary sources
+-- see stretch/bsv/README.md), NOT re-derived independently, so that the
+STRAP source language and the Bluespec model share one ground truth: an
+instruction this assembler emits decodes, on the BSV model, to exactly
+the DecodedInstr the assembler intended. This is the codesign contract
+this project is for.
+
+Citations:
+  - C22-6531 "7030 Symbolic Assembly Program / Simulator" (1960), for
+    STRAP-1 syntax: the twelve symbolic instruction formats, arithmetic
+    expressions and bit-address notation, system symbols, and the
+    pseudo-operations (DD, VF, CF, RF, SYN, END, CNOP). See
+    stretch/docs/C22-6531_7030xasm-sim_1960.pdf.
+  - IBM 7030 Reference Card X22-6533-1 and Reference Manual 22-6530-2,
+    via stretch/bsv/StretchDecode.bsv / StretchExecute.bsv, for the
+    exact opcode bit values.
+"""
+
+# ---------------------------------------------------------------------
+# VFL integer arithmetic / radix conversion, 6-bit "code" field
+# (StretchDecode.isVflIntCode). Format 7: OP(dds), A24(I), OF7(I').
+# ---------------------------------------------------------------------
+VFL_INT_CODES = {
+    "+":     0b000001,
+    "+MG":   0b100001,
+    "L":     0b000101,
+    "LWF":   0b100101,
+    "M+":    0b001001,
+    "M+MG":  0b101001,
+    "M+1":   0b101011,
+    "ST":    0b001101,
+    "SRD":   0b101101,
+    "K":     0b010001,
+    "KF":    0b110001,
+    "KE":    0b010011,
+    "KFE":   0b110011,
+    "KR":    0b010101,
+    "KFR":   0b110101,
+    "LTRS":  0b111101,
+    "*":     0b011001,
+    "LFT":   0b001011,
+    "*+":    0b111001,
+    "/":     0b011101,
+    "LCV":   0b000011,
+    "LTRCV": 0b100011,
+    "CV":    0b011011,
+    "DCV":   0b111011,
+}
+# "-" is "+" with the invert-sign modifier (see StretchExecute.bsv /
+# bsv/README.md "Executed"), not a distinct 6-bit code.
+VFL_INT_MINUS_BASE = "+"
+
+# ---------------------------------------------------------------------
+# Floating point, 7-bit "code" field (StretchDecode.isValidFpCode).
+# Format 1: OP(dds), A18(I). Half-word.
+# ---------------------------------------------------------------------
+FP_CODES = {
+    "+":    0b0000010,
+    "+MG":  0b0100010,
+    "L":    0b0000110,
+    "LWF":  0b0100110,
+    "M+":   0b0001010,
+    "M+MG": 0b0101010,
+    "ST":   0b0001110,
+    "K":    0b0010010,
+    "KMG":  0b0110010,
+    "KR":   0b0010110,
+    "KMGR": 0b0110110,
+    "*":    0b0011010,
+    "/":    0b0011110,
+    "R/":   0b0111110,
+    "SRT":  0b1101110,
+    "D+":   0b1000010,
+    "D+MG": 0b1100010,
+    "DL":   0b1000110,
+    "DLWF": 0b1100110,
+    "SRD":  0b0101110,
+    "SLO":  0b1001110,
+    "D*":   0b1011010,
+    "LFT":  0b1001010,
+    "*+":   0b0111010,
+    "D/":   0b1011110,
+    "F+":   0b1010010,
+    "SHF":  0b1110010,
+    "E+":   0b1010110,
+    "E+I":  0b1110110,
+}
+
+# ---------------------------------------------------------------------
+# Direct index arithmetic, 5-bit "code" field
+# (StretchDecode.isValidDirIndexOp). Format 3: OP,J,A19(I). Half-word.
+# ---------------------------------------------------------------------
+DIR_INDEX_CODES = {
+    "LX":   0b00001,
+    "LV":   0b00011,
+    "LC":   0b00101,
+    "LR":   0b00111,
+    "SX":   0b10001,
+    "SV":   0b10011,
+    "SC":   0b10101,
+    "SR":   0b10111,
+    "V+":   0b01011,
+    "V+C":  0b01101,
+    "V+CR": 0b01111,
+    "KV":   0b01001,
+    "KC":   0b11001,
+    "RNX":  0b11111,
+    "LVE":  0b11011,
+    "SVA":  0b11101,
+}
+
+# ---------------------------------------------------------------------
+# Immediate index arithmetic, 4-bit "code" field, from the exact-16
+# case list in StretchExecute.bsv's ImmIndex switch (pocket card
+# "IMMEDIATE INDEX ARITHMETIC" table). Format 4: OP,J,imm. Half-word.
+# ---------------------------------------------------------------------
+IMM_INDEX_CODES = {
+    "LVI":    0b0001,
+    "LVNI":   0b1001,
+    "LCI":    0b0010,
+    "LRI":    0b0011,
+    "C+I":    0b0000,
+    "C-I":    0b1000,
+    "V+I":    0b0101,
+    "V+IC":   0b0110,
+    "V+ICR":  0b0111,
+    "V-I":    0b1101,
+    "V-IC":   0b1110,
+    "V-ICR":  0b1111,
+    "KVI":    0b0100,
+    "KVNI":   0b1100,
+    "KCI":    0b1010,
+    # 0b1011 = LVS ("Load Value with Sum", format 12's own variable-in-
+    # -number-field format -- StretchExecute.bsv leaves it unimplemented
+    # and this assembler does not encode it either; see README).
+}
+
+# ---------------------------------------------------------------------
+# Unconditional branch / "misc" ops, 3-bit "code" field
+# (StretchDecode.isValidUncondBranchOp / isValidMiscOp).
+# Format 2: OP, A19(I). Half-word.
+# ---------------------------------------------------------------------
+UNCOND_BRANCH_CODES = {
+    "BE":  0b000,
+    "BD":  0b001,
+    "B":   0b010,
+    "BR":  0b011,
+    "BEW": 0b100,
+    "NOP": 0b110,
+}
+MISC_CODES = {
+    "R":   0b000,
+    "RCZ": 0b001,
+    "EX":  0b010,
+    "EXIC":0b011,
+    "Z":   0b100,
+}
+
+# ---------------------------------------------------------------------
+# Indicator names -> bit number in word 11 (StretchTypes.bsv ind_*).
+# Used both for $<name> system symbols and for parsing Branch-on-
+# -Indicator mnemonics B[Z]<name>[Z] (C22-6531 Appendix A footnote 2).
+# ---------------------------------------------------------------------
+INDICATOR_BITS = {
+    "MK": 0, "IK": 1, "IJ": 2, "EK": 3, "TS": 4, "CPUS": 5, "EKJ": 6,
+    "UNRJ": 7, "CBJ": 8, "EPGK": 9, "UK": 10, "EE": 11, "EOP": 12,
+    "CS": 13, "OP": 15, "AD": 16, "USA": 17, "EXE": 18, "DS": 19,
+    "DF": 20, "IF": 21, "LC": 22, "PF": 23, "ZD": 24, "IR": 25,
+    "LS": 26, "PSH": 27, "XPFP": 28, "XPO": 29, "XPH": 30, "XPL": 31,
+    "XPU": 32, "ZM": 33, "RU": 34, "TF": 35, "UF": 36, "VF": 37,
+    "XF": 38, "BTR": 39, "DTR": 40,
+    "XCZ": 48, "XVLZ": 49, "XVZ": 50, "XVGZ": 51, "XL": 52, "XE": 53,
+    "XH": 54, "MOP": 55, "RLZ": 56, "RZ": 57, "RGZ": 58, "RN": 59,
+    "AL": 60, "AE": 61, "AH": 62, "NM": 63,
+}
+# Sort longest-name-first so a greedy match doesn't stop early (e.g. so
+# "AL" in "BZAL" isn't mis-tried before a hypothetical longer name that
+# shares its prefix).
+INDICATOR_NAMES_BY_LENGTH = sorted(INDICATOR_BITS, key=len, reverse=True)
+
+# ---------------------------------------------------------------------
+# Use-mode letters (Data Description "M" field, C22-6531 p.7) ->
+# (unsign, decimal) VflMod bits. N/U (floating point) and P
+# (properties) are not applicable to VFL/DirIndex encoding.
+# ---------------------------------------------------------------------
+MODE_BITS = {
+    "B":  (0, 0),  # Binary (signed)
+    "BU": (1, 0),  # Binary Unsigned
+    "D":  (0, 1),  # Decimal (signed) -- decode-only, see README
+    "DU": (1, 1),  # Decimal Unsigned -- decode-only, see README
+}
+MODE_DEFAULT_BS = {"B": 1, "BU": 8, "D": 4, "DU": 4}
+
+# ---------------------------------------------------------------------
+# Progressive indexing secondary operation (C22-6531 "Progressive
+# Indexing": "Any VFL or Connective operation... may have a second
+# operation enclosed in parentheses. The second operation may be V+I,
+# V+IC, or V+ICR" -- and, symmetrically, V-I/V-IC/V-ICR) -> the VFL
+# address field's P value (Reference Manual p.21: codes 1-3 add the
+# instruction's address part into the index value, 5-7 subtract; 2/3
+# and 6/7 also count down, 3 and 7 also refill on count zero). This is
+# a DIFFERENT namespace from IMM_INDEX_CODES above even though the
+# mnemonics are spelled the same way -- format 8 (progressive
+# indexing) reuses format 4's mnemonics for the secondary op, but they
+# select a VflAddr.p value here, not an ImmIndex.code.
+# ---------------------------------------------------------------------
+PROGRESSIVE_SECONDARY_OP = {
+    "V+I": 1, "V+IC": 2, "V+ICR": 3,
+    "V-I": 5, "V-IC": 6, "V-ICR": 7,
+}

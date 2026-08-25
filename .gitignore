@@ -1,0 +1,22 @@
+# Bluesim/bsc build artifacts (see stretch/bsv/README.md "Toolchain")
+build/
+simbuild/
+*.bo
+*.ba
+*_sim
+*_sim.so
+*_sim.h
+*_sim.o
+
+# Generated testbenches (see stretch/strap/run_program.sh, gen_tb.py) --
+# StretchTb.bsv itself is hand-written and permanent; generated ones
+# follow the ModuleName passed to run_program.sh, e.g. StretchProblem21Tb.
+**/StretchProblem*Tb.bsv
+**/StretchFigure*Tb.bsv
+
+# Python
+__pycache__/
+*.pyc
+
+# OS cruft
+.DS_Store

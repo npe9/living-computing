@@ -1,0 +1,84 @@
+! Figure 7, Progressive Indexing (Reference Manual 22-6530-2, p.22).
+!
+! "Stored in core storage starting at location LIST is a list of ten
+! data records. Each record consists of three fields, R, S, and T,
+! each an unsigned binary integer. Field R is seven bits long, field S
+! is eight bits long, and field T is five bits long. For each record
+! add field T to field R and place the result in field S."
+!
+! The five loop-body lines (LX through BZXCZ) and CTLWD's XW are
+! copied verbatim from the manual, including the exact instruction
+! sequence that made this the first real test of progressive indexing
+! in this model. NOTE on the manual's own printed listing: the CTLWD
+! line's COUNT field looks like "*10" (a raised dot before the digits)
+! in the scanned page -- that dot is a print/scan artifact, not a
+! minus sign: "the count field contains no sign" (p.22), and a count
+! of 10 is exactly what "ten data records" requires (the count is
+! reduced by one per record, reaching zero on the tenth). LIST itself
+! is not shown defined in the excerpted figure; this file supplies ten
+! records with known R/T values (R=10+i, T=i for record i, S=0) so the
+! assembled program is self-contained and independently checkable:
+! expect S_i = R_i + T_i = 10 + 2i after the loop runs.
+
+START   LX, $X12, CTLWD
+LOOP    L(V+I) (BU, 7, 8), 0.15 ($X12), 0
+        +(V-I)(BU, 5, 8), 0.08 ($X12), 0
+        ST(V+ICR)(BU, 8, 8), 0.13($X12), 0
+        BZXCZ, LOOP
+        BEW, $                    !halt (not in the manual excerpt --
+                                   !added so the BSV runner has a stop
+                                   !condition; see stretch/strap/README.md)
+
+        DD(BU,5,8), 0        !5-bit pad: with R+S+T=20 bits/record and
+                              !64-bit words, some record's S (the field
+                              !this program stores into) would cross a
+                              !word boundary depending on LIST's exact
+                              !alignment -- this model suppresses (OP
+                              !invalid) a VFL store whose field crosses
+                              !a word boundary (StretchVFL.fieldCrosses,
+                              !see stretch/bsv/README.md), and per the
+                              !manual's own rule (p.22 PROGRAMMING
+                              !NOTES) a suppressed VFL portion also
+                              !suppresses that instruction's progressive
+                              !increment -- so a crossing S would not
+                              !just fail to store, it would misalign
+                              !$X12 for every subsequent record. This
+                              !padding places LIST at a bit offset where
+                              !none of the ten records' S fields cross,
+                              !so this test verifies progressive
+                              !indexing itself without also tripping
+                              !that separately-documented limitation.
+LIST    DD(BU,7,8), 10       !record 0 R
+        DD(BU,8,8), 0        !record 0 S (computed by the program)
+        DD(BU,5,8), 0        !record 0 T
+        DD(BU,7,8), 11       !record 1 R
+        DD(BU,8,8), 0        !record 1 S
+        DD(BU,5,8), 1        !record 1 T
+        DD(BU,7,8), 12       !record 2 R
+        DD(BU,8,8), 0        !record 2 S
+        DD(BU,5,8), 2        !record 2 T
+        DD(BU,7,8), 13       !record 3 R
+        DD(BU,8,8), 0        !record 3 S
+        DD(BU,5,8), 3        !record 3 T
+        DD(BU,7,8), 14       !record 4 R
+        DD(BU,8,8), 0        !record 4 S
+        DD(BU,5,8), 4        !record 4 T
+        DD(BU,7,8), 15       !record 5 R
+        DD(BU,8,8), 0        !record 5 S
+        DD(BU,5,8), 5        !record 5 T
+        DD(BU,7,8), 16       !record 6 R
+        DD(BU,8,8), 0        !record 6 S
+        DD(BU,5,8), 6        !record 6 T
+        DD(BU,7,8), 17       !record 7 R
+        DD(BU,8,8), 0        !record 7 S
+        DD(BU,5,8), 7        !record 7 T
+        DD(BU,7,8), 18       !record 8 R
+        DD(BU,8,8), 0        !record 8 S
+        DD(BU,5,8), 8        !record 8 T
+        DD(BU,7,8), 19       !record 9 R
+        DD(BU,8,8), 0        !record 9 S
+        DD(BU,5,8), 9        !record 9 T
+
+CTLWD   XW, LIST, 10, CTLWD
+
+        END, START
