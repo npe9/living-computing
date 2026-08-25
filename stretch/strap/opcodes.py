@@ -229,3 +229,22 @@ CONNECTIVE_SUFFIX = {
     "CM": 0b01111,  # Connect to Memory: result -> storage field
     "CT": 0b10111,  # Connect for Test: result discarded, indicators only
 }
+
+# ---------------------------------------------------------------------
+# Input-Output (Reference Manual "IBM 7619 Exchange" pp.104-127;
+# X22-6533 pocket card "INPUT-OUTPUT OPERATIONS" table). The 4-bit OP
+# field (instruction bits 51-54): bit weight-4 (the second printed
+# digit) is the SEOP flag; the other three bits select the base
+# operation. Derived from the pocket card's 9-bit codes (OP + literal
+# 10000, e.g. RD=000010000, RDSEOP=010010000) and cross-checked
+# independently -- see StretchTypes.bsv's IoOp comment. Only RD/W/CCW/
+# REL (and their SEOP forms) are executed by StretchExecute.bsv (see
+# StretchIO.bsv's scope note); CTL and LOC assemble here but decode to
+# Operation Code Invalid on the model side.
+# ---------------------------------------------------------------------
+IO_OP = {
+    "RD":  0b0000, "W":   0b0001, "CTL": 0b0010, "LOC": 0b0011,
+    "CCW": 0b1000, "REL": 0b1001,
+    "RDSEOP": 0b0100, "WSEOP": 0b0101, "CTLSEOP": 0b0110, "LOCSEOP": 0b0111,
+    "RELSEOP": 0b1101,
+}

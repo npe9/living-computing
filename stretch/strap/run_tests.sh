@@ -111,9 +111,25 @@ run "Figure 7 Progressive Indexing" ./run_program.sh programs/figure7_progressiv
 run "XW refill" ./run_program.sh programs/xw_refill.strap StretchXwRefillTb \
     "X12_after_refill:addrIndex(12)=0x3e70000a80000"
 
+# -- 6. Simulated Input-Output subsystem (StretchIO.bsv): RD/W/CCW/REL
+# against a simulated card reader (channel 32) and printer (channel
+# 33), plus two discriminating checks -- a wrong-unit RD given to the
+# printer (Exchange Program Check) and a channel with no device
+# installed (Unit Not Ready Reject), the latter reached through an
+# index register rather than a literal specifically to exercise the
+# channel-address field's own index arithmetic (Reference Manual
+# p.111). Expected control-word values are derived in gen_io_tb.py
+# from the manual's own p.124 control-word-update rules (with one
+# documented, deliberate deviation: this model's WRITE does not
+# reproduce the real Exchange's "+2" double-buffering quirk -- see
+# StretchIO.bsv). Not a Reference Manual worked example -- this
+# project's first purpose-written program for a feature the manual
+# doesn't happen to walk through an instance of.
+run "Input-Output (reader/printer)" ./run_io_test.sh StretchIoReaderPrinterTb
+
 # -- cleanup: generated .bsv testbenches and Bluesim build products are
 # not meant to be committed (see .gitignore) --
-rm -f "$BSV_DIR"/StretchProblem*Tb.bsv "$BSV_DIR"/StretchFigure*Tb.bsv "$BSV_DIR"/StretchXwRefillTb.bsv
+rm -f "$BSV_DIR"/StretchProblem*Tb.bsv "$BSV_DIR"/StretchFigure*Tb.bsv "$BSV_DIR"/StretchXwRefillTb.bsv "$BSV_DIR"/StretchIoReaderPrinterTb.bsv
 rm -f "$BSV_DIR"/*_sim "$BSV_DIR"/*_sim.so
 rm -rf "$BSV_DIR"/build "$BSV_DIR"/simbuild
 

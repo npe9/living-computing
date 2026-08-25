@@ -121,8 +121,12 @@ function DecodedInstr decodeFullWord(Word64 w);
 
   // INPUT-OUTPUT: literal 10000 at bits 55-59 (second half-word local
   // bits 23-27). SOURCE: pocket card "INPUT-OUTPUT OPERATIONS" row.
+  // addr2 = IBM bits 32-49 (18 bits) = w[31:14]; op = IBM bits 51-54
+  // (4 bits) = w[12:9]; i2 = IBM bits 60-63 = w[3:0]. See StretchTypes'
+  // IoOp comment for the op-field bit layout.
   else if (w[8:4] == 5'b10000)
-    return tagged IoOp { addr1: a.addr, i1: a.i1 };
+    return tagged IoOp { addr1: a.addr, i1: a.i1, addr2: w[31:14],
+                          op: w[12:9], i2: w[3:0] };
 
   // TRANSMIT: 3-bit sub-op at bits 57-59 (second half-word local bits
   // 25-27) is 010 (Transmit) or 110 (Swap); bits 55-56 are the a/b

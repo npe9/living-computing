@@ -17,9 +17,25 @@ import sys
 from strap_asm import assemble, AssemblerError
 
 
-def generate(module_name, prog, checks, step_cap=2000):
-    """checks: list of (label:str, word_addr_expr:str, expected:int)."""
+def generate(module_name, prog, checks, step_cap=2000, reader_image=None,
+             printer_checks=None):
+    """checks: list of (label:str, word_addr_expr:str, expected:int).
+
+    reader_image: optional list of ints -- words to pre-load into the
+    simulated card reader (StretchIO.chanReader) before the program
+    runs, via core.io.loadReaderWord, one write per phase exactly like
+    the program-word loader below (see StretchIO.bsv's file header for
+    why this reuses that pattern instead of real file I/O).
+
+    printer_checks: optional list of (label:str, device_index:int,
+    expected:int) -- checked the same way as `checks` but against
+    core.io.readPrinterWord(index) instead of core.mem.readWord(addr),
+    for verifying what a WRITE instruction actually sent to the
+    simulated printer (StretchIO.chanPrinter).
+    """
     words = sorted(prog.words.items())
+    reader_image = reader_image or []
+    printer_checks = printer_checks or []
     if prog.end_pc is None:
         raise ValueError("program has no END target; cannot set the start PC")
 
@@ -29,6 +45,7 @@ def generate(module_name, prog, checks, step_cap=2000):
     lines.append("")
     lines.append("import StretchTypes::*;")
     lines.append("import StretchStorage::*;")
+    lines.append("import StretchIO::*;")
     lines.append("import StretchCore::*;")
     lines.append("")
     lines.append("(* synthesize *)")
@@ -60,7 +77,19 @@ def generate(module_name, prog, checks, step_cap=2000):
     lines.append("  endrule")
     lines.append("")
 
-    run_phase = n_load
+    n_reader = len(reader_image)
+    reader_load_phase = n_load
+    if n_reader:
+        lines.append(f"  rule loadReader (phase >= {reader_load_phase} && phase < {reader_load_phase + n_reader});")
+        lines.append(f"    case (phase - {reader_load_phase})")
+        for i, val in enumerate(reader_image):
+            lines.append(f"      {i}: core.io.loadReaderWord({i}, 64'h{val & ((1<<64)-1):016x});")
+        lines.append("    endcase")
+        lines.append("    phase <= phase + 1;")
+        lines.append("  endrule")
+        lines.append("")
+
+    run_phase = reader_load_phase + n_reader
     lines.append(f"  rule setStart (phase == {run_phase});")
     lines.append(f"    core.setPC({prog.end_pc});")
     lines.append(f"    phase <= {run_phase + 1};")
@@ -91,7 +120,15 @@ def generate(module_name, prog, checks, step_cap=2000):
         lines.append("  endrule")
         lines.append("")
 
-    finish_phase = check_phase0 + len(checks)
+    pcheck_phase0 = check_phase0 + len(checks)
+    for i, (label, dev_idx, expected) in enumerate(printer_checks):
+        lines.append(f"  rule pcheck{i} (phase == {pcheck_phase0 + i});")
+        lines.append(f'    check("{label}", core.io.readPrinterWord({dev_idx}), 64\'h{expected & ((1<<64)-1):016x});')
+        lines.append(f"    phase <= {pcheck_phase0 + i + 1};")
+        lines.append("  endrule")
+        lines.append("")
+
+    finish_phase = pcheck_phase0 + len(printer_checks)
     lines.append(f"  rule finish (phase == {finish_phase});")
     lines.append("    if (fails == 0)")
     lines.append('      $display("ALL TESTS PASSED");')
@@ -107,9 +144,21 @@ def generate(module_name, prog, checks, step_cap=2000):
 
 
 if __name__ == '__main__':
-    # Simple CLI: gen_tb.py program.strap ModuleName WORD_ADDR=EXPECTED ...
+    # Simple CLI: gen_tb.py program.strap ModuleName [ARG ...], where ARG is
+    # one of:
+    #   LABEL:ADDR=EXPECTED    -- a core-storage check (as before)
+    #   P:LABEL:INDEX=EXPECTED -- a simulated-printer-word check (INDEX is a
+    #                             plain device index 0..DeviceWords-1, not a
+    #                             STRAP expression, since the printer has no
+    #                             addressing of its own -- see StretchIO.bsv)
+    #   R=W0,W1,W2,...         -- pre-load the simulated card reader's image
+    #                             with these words, in order, index 0 first
+    #                             (int(x,0), so hex "0x..." or decimal both
+    #                             work); at most one R= argument is allowed
     if len(sys.argv) < 3:
-        print(f"usage: {sys.argv[0]} program.strap ModuleName [LABEL:ADDR=EXPECTED ...]", file=sys.stderr)
+        print(f"usage: {sys.argv[0]} program.strap ModuleName "
+              f"[LABEL:ADDR=EXPECTED | P:LABEL:INDEX=EXPECTED | R=W0,W1,... ...]",
+              file=sys.stderr)
         sys.exit(1)
     with open(sys.argv[1]) as f:
         src = f.read()
@@ -120,8 +169,18 @@ if __name__ == '__main__':
         sys.exit(1)
     module_name = sys.argv[2]
     checks = []
+    printer_checks = []
+    reader_image = None
     for spec in sys.argv[3:]:
-        label, rest = spec.split(':', 1)
-        addr_expr, expected = rest.split('=', 1)
-        checks.append((label, addr_expr, int(expected, 0)))
-    print(generate(module_name, prog, checks))
+        if spec.startswith('R='):
+            reader_image = [int(x, 0) for x in spec[2:].split(',') if x]
+        elif spec.startswith('P:'):
+            label, rest = spec[2:].split(':', 1)
+            idx_expr, expected = rest.split('=', 1)
+            printer_checks.append((label, int(idx_expr, 0), int(expected, 0)))
+        else:
+            label, rest = spec.split(':', 1)
+            addr_expr, expected = rest.split('=', 1)
+            checks.append((label, addr_expr, int(expected, 0)))
+    print(generate(module_name, prog, checks, reader_image=reader_image,
+                    printer_checks=printer_checks))

@@ -34,7 +34,8 @@ instruction set, built from the primary sources (all under
 | `StretchVFL.bsv` | Variable-field-length bit extract/insert. |
 | `StretchALU.bsv` | Sign-and-magnitude arithmetic primitives. |
 | `StretchExecute.bsv` | Execute stage for the in-scope opcode subset. |
-| `StretchCore.bsv` | Fetch/decode/execute, one instruction per `step()` — returns whether the instruction halted (branched to its own address, the `BEW, $` idiom), for STRAP-program runners (`../strap/gen_tb.py`) to stop on rather than a fixed step count. A progressive-indexing VFL instruction takes two `step()` calls (see "Toolchain" item 7). |
+| `StretchIO.bsv` | Simulated Input-Output subsystem (two fixed devices — card reader, printer — standing in for the real Exchange and external units); see its own file header for the full scope statement. |
+| `StretchCore.bsv` | Fetch/decode/execute, one instruction per `step()` — returns whether the instruction halted (branched to its own address, the `BEW, $` idiom), for STRAP-program runners (`../strap/gen_tb.py`) to stop on rather than a fixed step count. A progressive-indexing VFL instruction takes two `step()` calls (see "Toolchain" item 7); an RD/W input-output instruction takes as many calls as the block has words, one word drained per call (see `StretchIO.bsv`). |
 | `StretchTb.bsv` | Hand-assembled smoke test (predates the STRAP assembler; kept as a decoder/executor regression test independent of it). |
 
 ## Bit-numbering convention
@@ -97,13 +98,26 @@ system, several of them large enough to be their own projects).
   "Toolchain" below for why).
 - **Floating point `L`/`ST`** only (plain data movement; see FpWord in
   StretchTypes.bsv for the register layout).
+- **Input-Output** — `RD`, `W`, `CCW` (Copy Control Word), `REL`
+  (Release), and their `SEOP` forms, against a **simulated** Exchange
+  and exactly two fixed devices (a card reader, channel 32; a printer,
+  channel 33) — see `StretchIO.bsv`'s file header for the full scope
+  statement: synchronous single-block transfer (no real CPU/IO
+  overlap, no interrupt propagation), and the documented deviation
+  from the manual's WRITE "+2" control-word rule (this model has no
+  double-buffer to reproduce it with). `CTL` and `LOC` decode but
+  don't execute (device-specific codes not yet read from the
+  Reference Manual's External Units chapter, pp.129-149). Verified
+  against a purpose-written program (no worked example in the manual
+  happens to cover this) — see `../strap/README.md`.
 
 ### Decoded but not executed (sets indicator 15, OP, and no-ops —
 ### matches real-machine behavior for a suppressed instruction)
 
 Decimal-mode VFL (`c=1`), radix conversion, floating-point arithmetic
-beyond L/ST, Input-Output, SIC (Store Instruction Counter If), Bit
-Branching, `EX`/`EXIC`, Transmit backward/`SWAP`/multi-word.
+beyond L/ST, Input-Output's `CTL`/`LOC` (see above), SIC (Store
+Instruction Counter If), Bit Branching, `EX`/`EXIC`, Transmit
+backward/`SWAP`/multi-word.
 
 Per the "decode completely, execute partially" principle: every format
 in Figure 6 has a `DecodedInstr` constructor and is field-extracted
@@ -166,13 +180,19 @@ it recognizes independent of what the datapath implements.
 
 Interrupts, memory protection enforcement (addresses described as
 "permanently protected" are documented but not enforced against
-writes from user code beyond a few no-op cases), I/O channels and the
-exchange, the interval timer/clock actually ticking, and — the
-machine's defining engineering feature — **instruction lookahead and
-pipelining**. `StretchCore` fetches, decodes, and executes exactly one
-instruction per `step()` call. This is a genuine, load-bearing scope
-cut: Stretch's fame rests on its microarchitecture as much as its ISA,
-and that is future work, not something this session attempted.
+writes from user code beyond a few no-op cases), the interval
+timer/clock actually ticking, and — the machine's defining engineering
+feature — **instruction lookahead and pipelining**. `StretchCore`
+fetches, decodes, and executes exactly one instruction per `step()`
+call (an RD/W I/O transfer is many `step()` calls, but still no other
+instruction interleaves with them — see `StretchIO.bsv`). This is a
+genuine, load-bearing scope cut: Stretch's fame rests on its
+microarchitecture as much as its ISA, and that is future work, not
+something this session attempted. I/O channels and the exchange ARE
+now simulated (see "Executed" above and `StretchIO.bsv`), but only
+enough of them to run RD/W/CCW/REL against two fixed devices with no
+real device timing, no CTL/LOC, and no CPU-indicator-register or
+Channel-Address-register propagation of I/O status.
 
 ## Toolchain
 
@@ -249,6 +269,22 @@ isn't repeated:
    performs just that write on its own cycle. See the `pendingIdxWrite`
    register in `StretchCore.bsv` and the comment on `execute()`'s
    return type in `StretchExecute.bsv`.
+8. **`MemWords` does not scale the way item 5 above implied it might.**
+   Raising it from 256 to 8192 (a Vector of 8192 `Reg#(Word64)`, tried
+   in order to fit a DCP-sized program) sent `bsc`'s elaborator to
+   1.5TB+ virtual memory with no sign of finishing after 5+ minutes —
+   killed, not waited out. This isn't a bigger version of the same
+   256-elaborates-in-seconds tradeoff item 5 describes; it's a
+   different regime entirely, and the combinational read-mux a
+   `Vector#(N, Reg)` compiles to is the suspected reason (each of the
+   many per-instruction reads provisions a mux over all N registers).
+   Real DCP-sized memory needs a different storage structure (a
+   BRAM-backed module with registered reads, e.g. the `BRAM` library's
+   `mkBRAM1Server` or similar) rather than a bigger `Vector` — which
+   is itself a larger surgery, since `execute()`'s many arms currently
+   assume `st.readWord` is combinational (same-cycle) and would need
+   restructuring around a read latency. Not attempted this session;
+   see "Next steps".
 
 ## Codesign: the STRAP assembler
 
@@ -265,8 +301,14 @@ checked result matching an independent calculation) — Problems 2.1 and
 2.2 Methods 1, 2, and 3 (3's own two unimplementable lines, `LVE`/`SIC`,
 substituted for verified equivalents — see `strap/README.md`), and
 Reference Manual Figure 7 (progressive indexing, ten-record loop) —
-plus a sixth, purpose-written program (`xw_refill.strap`) closing a gap
-the worked examples happened not to exercise. Getting each to pass
+plus two purpose-written programs closing gaps the worked examples
+happened not to exercise: `xw_refill.strap` (the `XW` pseudo-op's
+`REFILL` field) and `io_reader_printer.strap` (the simulated
+Input-Output subsystem — RD/W/CCW/REL against a card reader and
+printer, including two discriminating checks: a wrong-unit RD given to
+the printer, and a channel address with no device installed, reached
+through an index register specifically to exercise the channel-address
+field's own index arithmetic). Getting each to pass
 caught real bugs or gaps in this model as it stood, not hypothetical
 ones: an inverted index-flag-bit derivation (`StretchExecute.bsv`'s
 `V+`/`V+I`/`V-I`/`CountBranch` cases were computing the index flag from
@@ -330,3 +372,15 @@ of these).
    `strap/README.md` "Gotchas" item 7) has no branch after its
    refilling instruction — so this is a real gap, not a guess dressed
    up as a finding.
+5. Extend the simulated Input-Output subsystem (`StretchIO.bsv`):
+   `CTL`/`LOC` (needs the External Units chapter, pp.129-149, not yet
+   read); chaining and multiple-block operation (currently decoded
+   into the control word but ignored by the transfer FSM — every RD/W
+   is a single block against a device's one fixed image); propagating
+   EOP/EPGK/UK/EE/CS into the CPU's own indicator register and the
+   Channel Address register (word 5) — needed before a BI- or
+   SIC-based wait loop (like real DCP source uses) can observe I/O
+   completion, since this model currently exposes status only via
+   `CCW`; and, if real device content larger than `DeviceWords` (32)
+   is ever needed, `StretchIO`'s Vector-based device images have the
+   same elaboration-cost ceiling as item 8 above.

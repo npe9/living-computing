@@ -98,15 +98,30 @@ in full, not just described.
   Bluespec model today, matching this project's established pattern of
   only claiming what's been run and checked.
 
-**Why this isn't a "run the DCP" milestone**: the DCP as a whole assumes
-tape drives, a card reader, a printer, a typewriter console, and the
-`%SEOP` (start-end-of-operation) channel-command primitives throughout.
-None of that I/O environment is modeled. Transcribing all ~130 pages
-without being able to run the result would produce a large,
-unverifiable artifact -- exactly the failure mode this project's
-"verify every claim by running it" ethos exists to avoid. Treat this as
-a large, tractable transcription target for whenever tape/channel I/O
-gets modeled, not a near-term milestone.
+**Why this wasn't (yet) a "run the DCP" milestone**: the DCP as a whole
+assumes tape drives, a card reader, a printer, a typewriter console, and
+the `%SEOP` (suppress end of operation) channel-command primitives
+throughout. Transcribing all ~130 pages without being able to run the
+result would produce a large, unverifiable artifact -- exactly the
+failure mode this project's "verify every claim by running it" ethos
+exists to avoid.
+
+**Update, same day**: a simulated Input-Output subsystem now exists
+(`bsv/StretchIO.bsv`) -- `RD`/`W`/`CCW`/`REL` against two fixed devices
+(a card reader, a printer), verified end to end
+(`strap/programs/io_reader_printer.strap`). This does NOT yet unblock
+DCP-scale transcription, though, for two separate reasons: (1) the DCP
+needs `CTL`/`LOC` (tape rewind/backspace/selection codes) and chaining/
+multiple-block operation, none of which this first I/O milestone
+implements; (2) more fundamentally, the DCP's own memory footprint
+(octal 004000-016500, ~5400 words) far exceeds what `StretchStorage`
+can currently hold -- raising `MemWords` from 256 high enough to fit it
+was tried and sent `bsc`'s elaborator to 1.5TB+ RAM with no sign of
+finishing (see `bsv/README.md` "Toolchain" item 8); that needs a
+BRAM-backed storage rewrite first, a separate, larger undertaking. This
+is still a large, tractable transcription target for later, with a much
+more concrete list of prerequisites than before, not a near-term
+milestone.
 
 ## 2. STRAP II System Analysis Guide (`C22-6729`, top-level)
 

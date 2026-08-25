@@ -137,6 +137,39 @@ what's original.
   refilled index register holds a *different*, distinctive control
   word's contents verbatim, proving the refill read the right word at
   the right (word-address, not bit-address) units.
+- **`io_reader_printer.strap`** — not from a manual worked example
+  either; this project's first purpose-written program for a feature
+  (Input-Output) the manual documents but doesn't happen to walk
+  through a worked instance of. Exercises `RD`, `W`, `CCW`, `REL` and
+  their `SEOP` forms against `StretchIO.bsv`'s two simulated devices (a
+  card reader, channel 32; a printer, channel 33), plus two
+  discriminating checks: a wrong-unit `RD` given to the printer
+  (Exchange Program Check) and a channel address reached through an
+  index register with no device installed (Unit Not Ready Reject, the
+  latter deliberately indexed rather than a literal to exercise the
+  channel-address field's own index arithmetic per p.111). Expected
+  control-word values are derived by a companion script, `gen_io_tb.py`
+  (see its own header) — this assembler's `DD` can't resolve a label to
+  a numeric address the way a control word's `dataAddr` field needs, so
+  `CTLW1`/`CTLW2` are zero-initialized placeholders in the `.strap`
+  source, patched to real values in Python after assembly, the same
+  "derive the expected result with a small script mirroring the
+  hardware's own packing logic" approach Figure 7 above already uses.
+  Verified against the Reference Manual's own control-word-update rules
+  (p.124), with one documented, deliberate deviation (this model's
+  `WRITE` doesn't reproduce the real Exchange's "+2" double-buffering
+  quirk — see `StretchIO.bsv`). The channel-address field's own unit
+  quirk (the 7-bit channel number sits at instruction bits 12-18, not
+  the field's low-order bits, so a literal channel number must be
+  written pre-scaled by `<<5`) was caught and confirmed load-bearing by
+  the usual adversarial revert: breaking the model's bit-extraction
+  formula predictably broke most, but not quite all, of the checks — an
+  interesting finding in its own right (documented in the commit that
+  landed this program): two of this specific test's channel constants
+  (1024, 1056) happen to alias under one specific wrong formula, a
+  coincidence of the chosen test values rather than a flaw in the
+  design, and the majority of checks still caught the regression
+  cleanly.
 
 Every run above is a true end-to-end test: STRAP source text through
 the Python assembler, through the *same* Bluespec decoder/executor
@@ -171,6 +204,18 @@ was the first bug caught (see below):
   bit count (see `StretchExecute.bsv`'s `V+` case: it adds a `VF`
   word's value straight into an index word's `addr` field). Encode
   with **no shift**: `bit_count & 0x7FFFF`.
+- An Input-Output instruction's **channel-address field** (`RD`/`W`/
+  `CTL`/`LOC`/`REL`/`CCW`'s `C` operand) is left completely
+  UNCONVERTED by this assembler, unlike the two cases above — but it
+  is NOT simply "the channel number" either: the Reference Manual
+  (p.111) places the 7-bit channel number at instruction bits 12-18 of
+  the 24-bit address field, not the field's low-order bits, so the raw
+  field value a program must write is `channel_number << 5`
+  (`chanReader`=32 → `1024`, `chanPrinter`=33 → `1056` — see
+  `StretchIO.bsv`). This assembler doesn't auto-scale it, deliberately:
+  see `strap_asm.py`'s `IO_OP` emit comment for why guessing a new
+  subfield-aware conversion wasn't the right call here versus just
+  documenting it.
 
 ## Gotchas found by running real programs
 
@@ -391,6 +436,38 @@ author already had in mind:
     as printed. See that file's own header comment for the full
     account, and `../bsv/README.md`'s "Direct index arithmetic" for
     the model-side note.
+13. **Input-Output landed as a whole new subsystem, not just a new
+    opcode.** Unlike every prior milestone (a new instruction executing
+    against existing storage), `RD`/`W`/`CTL`/`LOC`/`REL`/`CCW` needed
+    a whole simulated device layer (`StretchIO.bsv`) and a genuinely
+    multi-cycle transfer FSM in `StretchCore.bsv` (one word drained per
+    `step()` call, generalizing the two-cycle `pendingIdxWrite`
+    mechanism to N cycles) before there was anything to assemble
+    against. Two real gaps found before any STRAP code was written:
+    (a) `execute()`'s original three-way write-conflict risk (general
+    storage, index register, *and now* a device word, all potentially
+    in one rule) meant the transfer had to be threaded out as a
+    descriptor and drained by the caller, exactly like progressive
+    indexing's index write already is — not a new problem, but the
+    first case needing the *same* fix generalized past one deferred
+    write; (b) attempting to size `StretchStorage`'s memory for a
+    DCP-sized program (`MemWords` 256→8192) to make room for real I/O
+    content sent `bsc`'s elaborator to 1.5TB+ RAM with no sign of
+    finishing — killed, not chased further; a real fix needs a
+    BRAM-backed storage module, not a bigger `Vector`, and is out of
+    scope for this milestone (see `../bsv/README.md` "Toolchain" item
+    8). Also found the channel-address field's `<<5` unit quirk (see
+    the "Units" section above) and, via the adversarial revert on it,
+    an unrelated coincidence worth knowing about if this test's own
+    constants are ever changed: `chanReader<<5` (1024) and
+    `chanPrinter<<5` (1056) alias to the same wrong channel under one
+    specific incorrect bit-extraction formula (`1056 mod 128 == 32`),
+    which let 4 of 10 checks pass despite the deliberately broken
+    build (the 3 `DEST` transfer checks plus the unrelated `UNRJ`
+    indicator check) — the other 6 (every control-word and printer-
+    content check) still failed as predicted, so the revert test still
+    did its job, but a cleaner set of test constants would avoid the
+    coincidence entirely.
 
 ## Halting
 
@@ -422,7 +499,13 @@ Progressive indexing (format 8) and Connectives *were* both in this
 list as of earlier milestones; both are now implemented on both sides
 (assembler and `StretchExecute.bsv`) and verified — progressive
 indexing against Figure 7, Connectives against Problem 2.2 Method 3's
-`CT0110` — above.
+`CT0110` — above. Input-Output (`RD`/`W`/`CTL`/`LOC`/`REL`/`CCW`) is
+new this milestone too: `RD`/`W`/`CCW`/`REL` are implemented on both
+sides and verified against `io_reader_printer.strap` (above); `CTL`/
+`LOC` assemble but StretchExecute.bsv doesn't execute them (device-
+specific codes not yet read from the Reference Manual's External Units
+chapter) — see `../bsv/README.md`'s "Executed" section and
+`StretchIO.bsv`.
 
 **What's actually been assembled and run**, as opposed to merely
 present in `opcodes.py`'s tables, is much narrower than what's
@@ -430,12 +513,15 @@ implemented: `L`, `LI`, `+`, `ST`, `K` (VFL, binary unsigned, direct,
 immediate, and progressive addressing), `CT` (one Connective, `CT0110`
 = XOR, progressive addressing), `LVI`, `LX`, `LV`, `V+`,
 `BZAL`/`BAE`/`BRZ`/`BZXCZ` (Branch on Indicator), `B`, `BEW`, `NOP`,
-`DD`, `VF`, `XW`, `END`. The other ~75 VFL/FP/DirIndex/ImmIndex
-mnemonics in `opcodes.py`, every other Connective (only `CT0110`, plus
-`CT0000` transiently as a discriminating check — see "Programs
-assembled and verified so far" above), the `-` → invert-bit path,
-`CB`, and floating point end to end are implemented against the same
-tables and citations as everything else here, but have never been
+`RD`, `W`, `CCW`, `REL` (Input-Output, direct and index-register-
+selected channel addressing), `DD`, `VF`, `XW`, `END`. The other ~75
+VFL/FP/DirIndex/ImmIndex mnemonics in `opcodes.py`, every other
+Connective (only `CT0110`, plus `CT0000` transiently as a
+discriminating check — see "Programs assembled and verified so far"
+above), the `-` → invert-bit path, `CB`, `RD`/`W`'s `SEOP` forms
+(encoded and generated by `IO_OP`, but no test program has exercised
+one yet), and floating point end to end are implemented against the
+same tables and citations as everything else here, but have never been
 exercised by an assembled-and-run program — treat them as unverified
 until one has.
 
@@ -482,3 +568,12 @@ until one has.
 8. Connectives' `BS`<8 byte-padding, Partial Field, and the left-
    zeros/all-ones counts at word 7 (p.75-77) — see
    `../bsv/README.md`'s "Connectives" scope note.
+9. Input-Output: exercise the `SEOP` forms (encoded, never assembled
+   into a real test yet); `CTL`/`LOC` once their device-specific codes
+   are read from the External Units chapter (see `../bsv/README.md`
+   "Next steps" item 5); and consider giving `DD` (or a new pseudo-op)
+   the ability to resolve a label to a numeric value, which would let
+   a control word's `dataAddr` field be written directly in STRAP
+   source instead of needing a companion Python patcher like
+   `gen_io_tb.py` — worth doing generally, not just for I-O, if more
+   programs end up needing label-valued `DD` fields.

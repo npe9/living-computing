@@ -37,6 +37,7 @@ package StretchExecute;
 
 import StretchTypes::*;
 import StretchStorage::*;
+import StretchIO::*;
 import StretchVFL::*;
 import StretchALU::*;
 
@@ -253,11 +254,14 @@ endfunction
 // ---------------------------------------------------------------------
 
 // Returns (next PC, an optional pending index-register write for
-// progressive indexing). See the VflInt case below for why that write
-// is *returned* rather than performed here, and StretchCore.step for
-// where it's actually realized.
-function ActionValue#(Tuple2#(HWordAddr, Maybe#(Tuple2#(Bit#(4), IndexWord))))
-    execute(StretchStorage st, HWordAddr pc, InstrLen len, DecodedInstr di) =
+// progressive indexing, an optional started-but-not-yet-drained
+// input-output word transfer). See the VflInt case below for why the
+// index write is *returned* rather than performed here (and
+// StretchCore.step for where it's actually realized); the IoOp case
+// below explains the analogous reason for the transfer descriptor.
+function ActionValue#(Tuple3#(HWordAddr, Maybe#(Tuple2#(Bit#(4), IndexWord)),
+                               Maybe#(IoXfer)))
+    execute(StretchStorage st, StretchIO io, HWordAddr pc, InstrLen len, DecodedInstr di) =
   actionvalue
     HWordAddr fallthrough = pc + ((len == Full) ? 2 : 1);
     HWordAddr next = fallthrough;
@@ -276,6 +280,13 @@ function ActionValue#(Tuple2#(HWordAddr, Maybe#(Tuple2#(Bit#(4), IndexWord))))
     Bit#(4) idxWriteReg = 0;
     IndexWord idxWriteVal = IndexWord{addr:0, sign:0, flag:0, count:0, refill:0};
     Maybe#(Tuple2#(Bit#(4), IndexWord)) vflPending = tagged Invalid;
+
+    // A started RD/W transfer, similarly threaded out rather than
+    // performed inline: a block can be many words, and this function
+    // (like every other execute() arm) may only call st.writeWord (or,
+    // for a WRITE, io.writePrinterWord) once per invocation -- see the
+    // IoOp case below.
+    Maybe#(IoXfer) ioStart = tagged Invalid;
 
     case (di) matches
 
@@ -755,7 +766,91 @@ function ActionValue#(Tuple2#(HWordAddr, Maybe#(Tuple2#(Bit#(4), IndexWord))))
         end else
           ind = setOpInvalid(ind); // FP arithmetic beyond L/ST: out of scope
       end
-      tagged IoOp .*:      ind = setOpInvalid(ind);
+      // -----------------------------------------------------------
+      // Input-Output (Reference Manual "IBM 7619 Exchange", pp.104-127;
+      // see StretchIO.bsv's file header for the full scope statement
+      // this case implements against -- synchronous single-block
+      // transfer, two fixed simulated devices, RD/W/CCW/REL only).
+      // -----------------------------------------------------------
+      tagged IoOp .io_: begin
+        Bit#(4) op4 = io_.op;
+        Bool seop = (op4[2] == 1); // SEOP: suppress EOP on completion
+        Bit#(3) base = {op4[3], op4[1], op4[0]}; // 000=RD 001=W 010=CTL
+                                                   // 011=LOC 100=CCW 101=REL
+        BitAddr effA1 = effAddr24(st, io_.addr1, io_.i1);
+        WordAddr chAddr = zeroExtend(effA1[11:5]); // IBM bits 12-18 of
+                                                     // the 24-bit
+                                                     // channel-address
+                                                     // field (p.111) --
+                                                     // NOT offset by 32;
+                                                     // the field itself
+                                                     // holds the actual
+                                                     // channel number.
+        Bool readerCh  = io.isReader(chAddr);
+        Bool printerCh = io.isPrinter(chAddr);
+
+        if (!readerCh && !printerCh) begin
+          // Unit Not Ready Reject (p.112): neither simulated device is
+          // installed at this channel address. The instruction is
+          // never accepted; no control word anywhere is touched.
+          ind = setBit(ind, ind_UNRJ, 1);
+        end else begin
+          // Address Invalid (AD) for an out-of-range control-word
+          // address (p.111-112) is NOT checked here, consistent with
+          // this codebase's existing general non-enforcement of AD
+          // (see e.g. VflInt/Connective, which likewise don't check it)
+          // -- a documented gap, not a silent one.
+          WordAddr effA2 = effAddr18(st, io_.addr2, io_.i2);
+          case (base)
+            3'b010, 3'b011: ind = setOpInvalid(ind); // CTL, LOC: not
+                                                       // implemented,
+                                                       // see StretchIO.bsv.
+            3'b101: begin // REL (Release)
+              ControlWord cw = io.readChanCW(chAddr);
+              cw.epgk = 0; cw.uk = 0; cw.ee = 0; cw.cs = 0; cw.seop = 0;
+              cw.eop  = 1; // "the EOP indication is immediately turned
+                           // on" (p.120-121) -- REL has no SEOP form in
+                           // this model's v1 (RELSEOP decodes but isn't
+                           // distinguished; see "Next steps").
+              io.writeChanCW(chAddr, cw);
+            end
+            3'b100: // CCW (Copy Control Word): no EOP indication given
+                     // (p.122), so the control word here is left alone.
+              st.writeWord(effA2, packControlWord(io.readChanCW(chAddr)));
+            3'b000, 3'b001: begin // RD, W
+              Bool wrongUnit = (base == 3'b000) ? !readerCh : !printerCh;
+              if (wrongUnit) begin
+                // Exchange Program Check (p.113): "an instruction is
+                // received that the selected unit is not designed to
+                // perform, such as a READ given to a printer" -- the
+                // exact case cited by the manual. EOP is set alongside
+                // it: the operation never starts, so it's immediately
+                // "terminated" in the sense every other status bit
+                // uses -- a documented judgment call, not a quoted rule.
+                ControlWord cw = io.readChanCW(chAddr);
+                cw.epgk = 1; cw.eop = 1;
+                io.writeChanCW(chAddr, cw);
+              end else begin
+                ControlWord cw0 = unpackControlWord(st.readWord(effA2));
+                io.writeChanCW(chAddr, cw0); // exchange adopts the
+                                              // requested control word
+                                              // (p.106: "the exchange
+                                              // obtains the specified
+                                              // control word... and
+                                              // stores it in the
+                                              // exchange").
+                // p.107 "Zero Initial Word Count": count==0 means 2^18,
+                // representable here since `remaining` is 19 bits.
+                Bit#(19) rem0 = (cw0.count == 0) ? 19'd262144 : zeroExtend(cw0.count);
+                ioStart = tagged Valid IoXfer {
+                  ch: chAddr, isWrite: (base == 3'b001),
+                  memAddr: cw0.dataAddr, devIdx: 0,
+                  remaining: rem0, suppressEop: seop };
+              end
+            end
+          endcase
+        end
+      end
       tagged Sic .*:       ind = setOpInvalid(ind);
       tagged BitBranch .*: ind = setOpInvalid(ind);
       tagged Unimplemented: ind = setOpInvalid(ind);
@@ -765,7 +860,7 @@ function ActionValue#(Tuple2#(HWordAddr, Maybe#(Tuple2#(Bit#(4), IndexWord))))
 
     if (doIdxWrite) st.writeIndex(idxWriteReg, idxWriteVal);
     st.setIndicatorBits(ind);
-    return tuple2(next, vflPending);
+    return tuple3(next, vflPending, ioStart);
   endactionvalue;
 
 endpackage

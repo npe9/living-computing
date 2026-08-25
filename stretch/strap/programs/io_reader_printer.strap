@@ -1,0 +1,77 @@
+! io_reader_printer.strap -- exercises the simulated Input-Output
+! subsystem (StretchIO.bsv) end to end against StretchExecute.bsv's
+! new IoOp case: RD (read from the simulated card reader), W (write to
+! the simulated printer), CCW (Copy Control Word, used throughout as
+! the only way this v1 model exposes I-O status -- see StretchIO.bsv's
+! "NOT PROPAGATED" note), and REL (Release). Also two discriminating
+! checks: issuing RD to the wrong device type (Exchange Program Check),
+! and addressing a channel with no device installed (Unit Not Ready
+! Reject).
+!
+! Not a Reference Manual worked example -- this project's first
+! purpose-written program for a feature the manual doesn't happen to
+! walk through a worked instance of. Verified against the manual's own
+! stated control-word-update rules (p.124) instead, with the documented
+! WRITE "+2" deviation (StretchIO.bsv's file header: this model has no
+! double-buffering, so a completed WRITE here leaves the control word's
+! data address at A_i+N, not the real hardware's A_i+N+2).
+!
+! CHANNEL ADDRESSES are written as pre-scaled literals, not the plain
+! channel numbers 32/33 -- the Reference Manual (p.111) places the
+! 7-bit channel number at instruction bits 12-18 of the 24-bit address
+! field, not its low-order bits, so the field's raw value is channel
+! number << 5 (derived independently by direct bit-position arithmetic
+! and cross-checked by advisor review before this file was written):
+!   chanReader  (32) << 5 = 1024
+!   chanPrinter (33) << 5 = 1056
+! The channel is reached through an index register (X1/X2), not a bare
+! literal in the instruction's own address field, specifically so this
+! also exercises index arithmetic on the channel-address field, per
+! Reference Manual p.111 ("index arithmetic extends over the full 24
+! bits of the channel address field") -- not just the fixed literal
+! case.
+!
+! CONTROL WORDS: CTLW1/CTLW2 below are zero-initialized placeholders.
+! This assembler's DD statement cannot resolve a label to get DEST's
+! or SRC's word address into the control word's dataAddr field (DD's
+! literal parser only accepts decimal/(radix)digits, not symbols -- see
+! strap_asm.py's parse_dd_literal), so strap/gen_io_tb.py patches the
+! real packed control-word values (and the CCW-checks' expected values)
+! into the assembled image after assembly, using the same
+! packControlWord bit layout as StretchTypes.bsv -- the same reason
+! Figure 7's expected results are derived by a companion Python script
+! rather than written as STRAP source. See that file for the derivation.
+
+START   LVI, $1, 1024      !X1 = reader channel (32), pre-scaled
+        LVI, $2, 1056      !X2 = printer channel (33), pre-scaled
+
+        RD, 0($1), CTLW1   !read 3 words from the reader into DEST
+        CCW, 0($1), CCWA   !copy the reader's resulting control word
+
+        W, 0($2), CTLW2    !write 2 words from SRC to the printer
+        CCW, 0($2), CCWB   !copy the printer's resulting control word
+
+        RD, 0($2), CTLW1   !wrong-unit test: RD given to the printer
+        CCW, 0($2), CCWC   !copy the printer's control word (expect EPGK+EOP)
+
+        REL, 0($1), 0      !release the reader channel
+        CCW, 0($1), CCWD   !copy the reader's control word (expect EOP only,
+                            !dataAddr/count unchanged from CCWA)
+
+        RD, 0, CTLW1       !unit-not-ready test: channel 0, no device there
+        BEW, $
+        NOP, 0             !pad to a word boundary: DD applies no automatic
+                            !alignment (unlike instructions), and the run of
+                            !instructions above this point is an odd number
+                            !of half-words -- see gen_io_tb.py's word_addr()
+
+CTLW1   DD(BU,64), 0        !patched: dataAddr=DEST, count=3
+CTLW2   DD(BU,64), 0        !patched: dataAddr=SRC, count=2
+CCWA    DD(BU,64), 0
+CCWB    DD(BU,64), 0
+CCWC    DD(BU,64), 0
+CCWD    DD(BU,64), 0
+DEST    DD(BU,64), 0,0,0
+SRC     DD(BU,64), 111,222
+
+        END, START

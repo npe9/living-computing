@@ -72,10 +72,21 @@ execute partially, document the rest" ethos of the Bluespec model):
        addressing all share format 7's own encoding/parsing path.
        Verified against C22-6578 Problem 2.2 Method 3's "CT0110"
        (byte-equality test via XOR) -- see strap/README.md.
-    9-12 (transmit/swap, bit branch, I-O, LVS) -- not implemented;
-       these are exactly the formats StretchExecute.bsv doesn't
-       execute either, so there is nothing to verify by encoding them
-       yet.
+    9  Input-Output -- "OP1(OP2), C(I1), A(I2)" (X22-6533 pocket card).
+       All six base mnemonics (RD, W, CTL, LOC, REL, CCW) and their
+       SEOP forms (either spelling: "RD(SEOP)" or "RDSEOP") encode; see
+       IO_OP in opcodes.py for the derived opcode bits and
+       StretchIO.bsv for which of the six StretchExecute.bsv actually
+       executes (RD/W/CCW/REL; CTL/LOC decode to Operation Code
+       Invalid). C is deliberately NOT unit-converted -- see the
+       comment at this format's emit_statement branch for why the
+       channel-address field's own scaling (N<<5, not N) is
+       characteristically unlike the rest of this codebase's "bare
+       integer used as-is" rule and needs to be written explicitly by
+       the caller until/unless verified enough to automate.
+    10-12 (transmit/swap, bit branch, LVS) -- not implemented; these
+       are exactly the formats StretchExecute.bsv doesn't execute
+       either, so there is nothing to verify by encoding them yet.
 
 UNITS -- the one subtlety worth flagging explicitly: this assembler's
 internal location counter and every symbol value is a BIT count
@@ -131,7 +142,13 @@ from opcodes import (
     VFL_INT_CODES, VFL_INT_MINUS_BASE, FP_CODES, DIR_INDEX_CODES,
     IMM_INDEX_CODES, UNCOND_BRANCH_CODES, MISC_CODES, INDICATOR_BITS,
     MODE_BITS, MODE_DEFAULT_BS, PROGRESSIVE_SECONDARY_OP, CONNECTIVE_SUFFIX,
+    IO_OP,
 )
+
+# Input-Output base mnemonics (before an optional "(SEOP)" modifier or
+# equivalent "...SEOP" spelling folds into IO_OP's own keys -- see
+# emit_statement's IO_OP branch).
+IO_BASE_OPS = {'RD', 'W', 'CTL', 'LOC', 'REL', 'CCW'}
 
 
 class AssemblerError(Exception):
@@ -215,6 +232,20 @@ def enc_connective(addr24, i1, p, length, bs, offset, conn, suffix, i2=0):
     # and 6-bit op code.
     v, w = cat((addr24, 24), (0b1000, 4), (i1, 4), (p, 3), (length, 6),
                (bs, 3), (offset, 7), (conn, 4), (suffix, 5), (i2, 4))
+    assert w == 64
+    return v
+
+def enc_io(addr24, i1, addr18, op4, i2=0):
+    # Input-Output, pocket card "INPUT-OUTPUT OPERATIONS": full word,
+    # ADDRESS(24, channel address in low 7 bits after indexing) + 1000
+    # (24-27) + I(28-31) + ADDRESS(18, 32-49, second effective address)
+    # + a 1-bit gap (50, unused but indexable -- Reference Manual p.111:
+    # "index arithmetic extends over bits 32 through 50... but only
+    # bits 32 through 49 are used") + OP(4, 51-54) + 10000(55-59) +
+    # I(60-63). See StretchTypes.bsv's IoOp comment for op4's bit
+    # layout (bit weight-4 = SEOP flag; base op in the other 3 bits).
+    v, w = cat((addr24, 24), (0b1000, 4), (i1, 4), (addr18, 18), (0, 1),
+               (op4, 4), (0b10000, 5), (i2, 4))
     assert w == 64
     return v
 
@@ -631,6 +662,8 @@ def statement_size(stmt):
         return HALF, HALF
     if classify_branch_indicator(op) is not None:
         return HALF, HALF
+    if op in IO_BASE_OPS or op in IO_OP:
+        return FULL, FULL
     kind, *_ = classify_vfl_or_fp(stmt)
     if kind == 'VFL' or kind == 'CONN':  # both are full-word (p.75 "Format")
         return FULL, FULL
@@ -891,6 +924,46 @@ def emit_statement(stmt, symtab, image):
         addr19 = (target_bits >> 5) & 0x7FFFF
         idx = eval_reg(paren, symtab, stmt.lineno) & 0x1
         image.deposit_half(loc // 32, enc_branch_ind(addr19, indnum, clear, branchOn, idx))
+        return
+
+    if op in IO_BASE_OPS or op in IO_OP:
+        # "OP1(OP2), C(I1), A(I2)" (X22-6533 pocket card "INPUT-OUTPUT
+        # OPERATIONS"): OP2, if present, must be SEOP; C is the channel
+        # address, A is the second effective address (a control-word
+        # address for RD/W/CCW, ignored for REL, unused here for CTL/
+        # LOC -- see StretchIO.bsv's scope note).
+        #
+        # UNITS -- C is a plain, UNCONVERTED address field, exactly
+        # like any other non-immediate address field in this assembler
+        # (see the module docstring's "general... bare integer" note):
+        # this codebase does not guess a subfield-aware scaling it
+        # hasn't verified, and the channel-address field is a genuinely
+        # unusual case -- the Reference Manual (p.111) puts the 7-bit
+        # channel number at IBM bits 12-18 of this 24-bit field, NOT at
+        # its low-order bits, so a literal channel number N is NOT the
+        # right operand value; N<<5 is (confirmed independently by
+        # direct bit-position derivation and by advisor review). A is
+        # converted from this assembler's bit-count units to a WORD
+        # address the same way XW's REFILL field and the FP A18 field
+        # already are (>> 6) -- unlike C, this one repeats an
+        # already-verified pattern rather than introducing a new one.
+        seop_mod = bool(stmt.mods) and stmt.mods[0].strip().upper() == 'SEOP'
+        lookup = (op + 'SEOP') if (seop_mod and op in IO_BASE_OPS) else op
+        if lookup not in IO_OP:
+            raise AssemblerError(
+                f"unrecognized I-O mnemonic/modifier combination "
+                f"{stmt.op!r}{stmt.mods!r}", stmt.lineno)
+        if len(stmt.fields) != 2:
+            raise AssemblerError(f"{op} takes channel and address fields", stmt.lineno)
+        base1, paren1 = split_field_trailing_paren(stmt.fields[0])
+        chan_bits = eval_expr(base1, symtab, loc, lineno=stmt.lineno)
+        i1 = eval_reg(paren1, symtab, stmt.lineno)
+        base2, paren2 = split_field_trailing_paren(stmt.fields[1])
+        addr2_bits = eval_expr(base2, symtab, loc, lineno=stmt.lineno) if base2.strip() else 0
+        i2 = eval_reg(paren2, symtab, stmt.lineno)
+        addr24 = chan_bits & 0xFFFFFF
+        addr18 = (addr2_bits >> 6) & 0x3FFFF
+        image.deposit_full(loc, enc_io(addr24, i1, addr18, IO_OP[lookup], i2))
         return
 
     kind, base_op, invert, immediate, p_progressive, dds_mods, conn = classify_vfl_or_fp(stmt)

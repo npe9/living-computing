@@ -145,6 +145,83 @@ function Word64 packFpWord(FpWord x);
 endfunction
 
 // ---------------------------------------------------------------------
+// Control word layout (Reference Manual p.107 Figure 35, "Control Word
+// and Index Word Formats"): the format an input-output instruction's
+// right effective address points at in core storage, and what the
+// simulated exchange (StretchIO.bsv) tracks per channel while a
+// transfer is in progress. "Follows that of an index word" per p.106,
+// but is NOT the same layout -- the data word address is a plain
+// 18-bit word address (no sign bit, unlike an index word's 24-bit+sign
+// value field), and bits 18-27 are status/flag bits an index word
+// doesn't have. See StretchIO.bsv's file header for which of the
+// status bits this implementation actually drives.
+// ---------------------------------------------------------------------
+
+typedef struct {
+  WordAddr dataAddr;  // IBM bits 0-17
+  Bit#(1) unitReady;  // IBM bit 18
+  Bit#(1) epgk;       // IBM bit 19, Exchange Program Check
+  Bit#(1) uk;         // IBM bit 20, Unit Check
+  Bit#(1) ee;         // IBM bit 21, End Exception
+  Bit#(1) eop;        // IBM bit 22, End of Operation
+  Bit#(1) cs;         // IBM bit 23, Channel Signal
+  Bit#(1) seop;       // IBM bit 24, Suppress End of Operation
+  Bit#(1) chain;      // IBM bit 25
+  Bit#(1) multiple;   // IBM bit 26
+  Bit#(1) skip;       // IBM bit 27
+  Bit#(18) count;     // IBM bits 28-45
+  Bit#(18) refill;    // IBM bits 46-63
+} ControlWord deriving (Bits, Eq, FShow);
+
+function ControlWord unpackControlWord(Word64 w);
+  return ControlWord {
+    dataAddr:  w[63:46],
+    unitReady: w[45:45],
+    epgk:      w[44:44],
+    uk:        w[43:43],
+    ee:        w[42:42],
+    eop:       w[41:41],
+    cs:        w[40:40],
+    seop:      w[39:39],
+    chain:     w[38:38],
+    multiple:  w[37:37],
+    skip:      w[36:36],
+    count:     w[35:18],
+    refill:    w[17:0]
+  };
+endfunction
+
+function Word64 packControlWord(ControlWord c);
+  return { c.dataAddr, c.unitReady, c.epgk, c.uk, c.ee, c.eop, c.cs, c.seop,
+           c.chain, c.multiple, c.skip, c.count, c.refill };
+endfunction
+
+// A started-but-not-yet-drained input-output word transfer, threaded
+// from StretchExecute's IoOp case out to StretchCore.step()'s FSM
+// exactly the way progressive indexing's index-register write is
+// threaded out via the Maybe#(Tuple2#(...)) already returned by
+// execute() -- see StretchCore.bsv for why this has to be a multi-cycle
+// FSM rather than a loop of st.writeWord calls inside execute() itself
+// (bsv/README.md "Toolchain": one write per register per rule).
+typedef struct {
+  WordAddr ch;        // channel address (StretchIO.chanReader/chanPrinter)
+  Bool isWrite;        // False = RD (device -> memory), True = W (memory -> device)
+  WordAddr memAddr;    // next core-storage word address to move
+  Bit#(6)  devIdx;      // next device-image word index to move, ONE BIT
+                          // WIDER than StretchIO.DeviceIndex (TLog#(32)=5)
+                          // deliberately: DeviceWords==32 exactly fills a
+                          // 5-bit index, leaving no representable value
+                          // for "one past the end" to detect device
+                          // exhaustion against -- see StretchCore.bsv's
+                          // ioPending FSM, which truncates this back to
+                          // DeviceIndex only after confirming it's < 32
+  Bit#(19) remaining;   // words still to transfer, counting this one
+                          // (Bit#(19) to represent the p.107 "count field
+                          // zero means 2^18" case without overflow)
+  Bool suppressEop;     // SEOP: don't set the EOP status bit on completion
+} IoXfer deriving (Bits, Eq, FShow);
+
+// ---------------------------------------------------------------------
 // Indicators (IBM 7030 Reference Card, "INDICATOR LIST", 64 named
 // bits). Only a subset is meaningfully driven by this implementation's
 // execute stage; the rest are modeled as plain storage so BI (Branch on
@@ -253,11 +330,23 @@ typedef union tagged {
   struct { BitAddr addr1; Bit#(4) i1; HWordAddr addr2; Bit#(4) j;
            Bit#(1) backward; Bit#(1) immCount; Bit#(4) i2; } Transmit;
 
+  // Input-Output, Reference Manual "IBM 7619 Exchange" pp.104-127,
+  // pocket card "INPUT-OUTPUT OPERATIONS" row: full word,
+  // ADDRESS(24,0-23,channel addr in low 7 bits after indexing) +
+  // 1000(24-27) + I(28-31) + ADDRESS(18,32-49, second effective addr)
+  // + OP(4,51-54) + 10000(55-59) + I(60-63). `op`'s bit 2 (weight 4) is
+  // the SEOP flag; the base operation is bits 3,1,0: 000=RD, 001=W,
+  // 010=CTL, 011=LOC, 100=CCW, 101=REL (derived from the pocket card's
+  // 9-bit codes, e.g. RD=000010000, RDSEOP=010010000, REL=100110000,
+  // RELSEOP=110110000 -- cross-checked against an independent reading
+  // of the same table). See StretchExecute.bsv's IoOp case for which
+  // of these six this implementation executes.
+  //
   // Formats this decoder recognizes structurally but does not execute:
-  // Input-Output, SIC (Store Instruction Counter If), Bit Branching.
-  // Kept distinct (rather than merged into `Unimplemented`) so future
-  // work can add execution without re-deriving the format.
-  struct { BitAddr addr1; Bit#(4) i1; } IoOp;
+  // SIC (Store Instruction Counter If), Bit Branching. Kept distinct
+  // (rather than merged into `Unimplemented`) so future work can add
+  // execution without re-deriving the format.
+  struct { BitAddr addr1; Bit#(4) i1; WordAddr addr2; Bit#(4) op; Bit#(4) i2; } IoOp;
   struct { BitAddr addr; Bit#(4) idx; HalfWord32 inner; } Sic;
   struct { BitAddr addr1; Bit#(4) i1; HWordAddr addr2; Bit#(3) modAbc;
            Bit#(1) idx; } BitBranch;
