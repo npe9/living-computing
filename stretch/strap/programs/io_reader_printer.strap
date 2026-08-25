@@ -3,10 +3,17 @@
 ! new IoOp case: RD (read from the simulated card reader), W (write to
 ! the simulated printer), CCW (Copy Control Word, used throughout as
 ! the only way this v1 model exposes I-O status -- see StretchIO.bsv's
-! "NOT PROPAGATED" note), and REL (Release). Also two discriminating
+! "NOT PROPAGATED" note), and REL (Release). Also several discriminating
 ! checks: issuing RD to the wrong device type (Exchange Program Check),
-! and addressing a channel with no device installed (Unit Not Ready
-! Reject).
+! addressing a channel with no device installed (Unit Not Ready
+! Reject), a SKIP-flagged READ (must advance the control word but leave
+! core storage untouched), and RELEASE SEOP (must NOT set the EOP
+! status bit, unlike plain REL -- this last one is a genuine
+! adversarial-distinguishing test: the first implementation of REL
+! ignored its own SEOP flag entirely and set EOP unconditionally, a bug
+! caught by post-milestone review rather than by a test program; CCWF
+! below is what would have shown eop=1 instead of 0 if that bug were
+! still present).
 !
 ! Not a Reference Manual worked example -- this project's first
 ! purpose-written program for a feature the manual doesn't happen to
@@ -58,6 +65,18 @@ START   LVI, $1, 1024      !X1 = reader channel (32), pre-scaled
         CCW, 0($1), CCWD   !copy the reader's control word (expect EOP only,
                             !dataAddr/count unchanged from CCWA)
 
+        RD, 0($1), CTLW3   !SKIP test: skip-flagged RD -- must advance the
+                            !control word's dataAddr/count as usual but must
+                            !NOT write DEST2 (still the reader's channel, $1)
+        CCW, 0($1), CCWE   !copy the resulting control word
+
+        W(SEOP), 0($2), CTLW4  !WSEOP: 1-word write, EOP suppressed, so the
+                                !printer's control word has eop=0 going into
+                                !the RELEASE SEOP test below
+        REL(SEOP), 0($2), 0    !RELEASE SEOP: must leave eop=0 (unlike plain
+                                !REL, which unconditionally sets it)
+        CCW, 0($2), CCWF       !copy the printer's control word
+
         RD, 0, CTLW1       !unit-not-ready test: channel 0, no device there
         BEW, $
         NOP, 0             !pad to a word boundary: DD applies no automatic
@@ -67,11 +86,18 @@ START   LVI, $1, 1024      !X1 = reader channel (32), pre-scaled
 
 CTLW1   DD(BU,64), 0        !patched: dataAddr=DEST, count=3
 CTLW2   DD(BU,64), 0        !patched: dataAddr=SRC, count=2
+CTLW3   DD(BU,64), 0        !patched: dataAddr=DEST2, count=3, skip=1
+CTLW4   DD(BU,64), 0        !patched: dataAddr=SRC, count=1, seop=1
 CCWA    DD(BU,64), 0
 CCWB    DD(BU,64), 0
 CCWC    DD(BU,64), 0
 CCWD    DD(BU,64), 0
+CCWE    DD(BU,64), 0
+CCWF    DD(BU,64), 0
 DEST    DD(BU,64), 0,0,0
 SRC     DD(BU,64), 111,222
+DEST2   DD(BU,64), 3735879681,3735879682,3735879683
+                            !sentinel 0xDEAD0001/0002/0003 -- must survive
+                            !the SKIP-flagged RD above completely unchanged
 
         END, START

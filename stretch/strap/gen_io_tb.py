@@ -76,16 +76,23 @@ def main():
 
     dest = word_addr(prog, "DEST")
     src = word_addr(prog, "SRC")
+    dest2 = word_addr(prog, "DEST2")
     ctlw1 = word_addr(prog, "CTLW1")
     ctlw2 = word_addr(prog, "CTLW2")
+    ctlw3 = word_addr(prog, "CTLW3")
+    ctlw4 = word_addr(prog, "CTLW4")
     ccwa = word_addr(prog, "CCWA")
     ccwb = word_addr(prog, "CCWB")
     ccwc = word_addr(prog, "CCWC")
     ccwd = word_addr(prog, "CCWD")
+    ccwe = word_addr(prog, "CCWE")
+    ccwf = word_addr(prog, "CCWF")
 
-    # Patch the two input control words with their real dataAddr/count.
+    # Patch the input control words with their real dataAddr/count.
     prog.words[ctlw1] = pack_cw(dataAddr=dest, count=3)
     prog.words[ctlw2] = pack_cw(dataAddr=src, count=2)
+    prog.words[ctlw3] = pack_cw(dataAddr=dest2, count=3, skip=1)
+    prog.words[ctlw4] = pack_cw(dataAddr=src, count=1, seop=1)
 
     # Expected results, derived from Reference Manual p.124's own
     # control-word-update rules -- READ: dataAddr=A_i+N, count=C_i-N;
@@ -101,6 +108,20 @@ def main():
     # epgk/uk/ee/cs/seop (already 0) and sets eop (already 1);
     # dataAddr/count/refill/chain/multiple/skip are untouched.
     exp_ccwd = exp_ccwa
+    # SKIP-flagged RD (p.107): dataAddr/count still advance by N words,
+    # same as a normal completed RD, and the skip bit itself is carried
+    # straight through from the adopted control word (the FSM only ever
+    # touches dataAddr/count/eop) -- but DEST2 in core storage must be
+    # left untouched (checked separately below via the DEST2 sentinels).
+    exp_ccwe = pack_cw(dataAddr=dest2 + 3, unitReady=1, eop=1, skip=1, count=0)
+    # RELEASE SEOP on the printer channel: WSEOP just above suppressed
+    # EOP on the write that preceded it, so the printer's control word
+    # has eop=0 going in; REL(SEOP) resets epgk/uk/ee/cs/seop exactly
+    # like plain REL but must NOT set eop (p.121: "no EOP indication is
+    # ever given at the completion of a RELEASE SEOP"). If REL's SEOP
+    # flag were ignored (the bug this test was added to catch), eop
+    # would come out 1 here instead of 0.
+    exp_ccwf = pack_cw(dataAddr=src + 1, unitReady=1, eop=0, seop=0, count=0)
 
     checks = [
         ("DEST0", str(dest), READER_IMAGE[0]),
@@ -110,6 +131,15 @@ def main():
         ("CCWB_after_W", str(ccwb), exp_ccwb),
         ("CCWC_wrong_unit_EPGK", str(ccwc), exp_ccwc),
         ("CCWD_after_REL", str(ccwd), exp_ccwd),
+        ("CCWE_after_SKIP_RD", str(ccwe), exp_ccwe),
+        # DEST2's three sentinel words (0xDEAD0001/0002/0003) must be
+        # bit-for-bit unchanged by the SKIP-flagged RD above -- this is
+        # the actual proof that SKIP suppressed the core-storage write,
+        # not just that the control word looks right.
+        ("DEST2_0_untouched_by_SKIP", str(dest2), 0xDEAD0001),
+        ("DEST2_1_untouched_by_SKIP", str(dest2 + 1), 0xDEAD0002),
+        ("DEST2_2_untouched_by_SKIP", str(dest2 + 2), 0xDEAD0003),
+        ("CCWF_after_RELSEOP", str(ccwf), exp_ccwf),
         # ind_UNRJ (StretchTypes.bsv, indicator 7) is the only indicator
         # bit anything in this program touches -- the final RD to
         # channel 0 (no device installed) is the only reject in the

@@ -219,6 +219,11 @@ typedef struct {
                           // (Bit#(19) to represent the p.107 "count field
                           // zero means 2^18" case without overflow)
   Bool suppressEop;     // SEOP: don't set the EOP status bit on completion
+  Bool skip;             // control word's SKIP flag (p.107): on a READ,
+                          // still advance the device cursor and memAddr
+                          // each cycle but do NOT write core storage --
+                          // meaningless on WRITE (manual: ignored), so
+                          // execute() only ever sets this True for RD
 } IoXfer deriving (Bits, Eq, FShow);
 
 // ---------------------------------------------------------------------

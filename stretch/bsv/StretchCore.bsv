@@ -78,8 +78,12 @@ module mkStretchCore(StretchCore);
         DeviceIndex di = truncate(x.devIdx); // safe: confirmed < DeviceWords above
         if (x.isWrite)
           ioDev.writePrinterWord(di, st.readWord(x.memAddr));
-        else
+        else if (!x.skip)
           st.writeWord(x.memAddr, ioDev.readerWord(di));
+        // else: SKIP flag set on a READ (p.107) -- the device cursor
+        // and memory address still advance below exactly as if the
+        // word had been transferred, but core storage is left
+        // untouched for this word.
         Bit#(19) rem1 = x.remaining - 1;
         ControlWord cw = ioDev.readChanCW(x.ch);
         cw.dataAddr = x.memAddr + 1;
@@ -93,7 +97,7 @@ module mkStretchCore(StretchCore);
           ioPending <= tagged Valid IoXfer {
             ch: x.ch, isWrite: x.isWrite, memAddr: x.memAddr + 1,
             devIdx: x.devIdx + 1, remaining: rem1,
-            suppressEop: x.suppressEop };
+            suppressEop: x.suppressEop, skip: x.skip };
         end
       end
       return False;

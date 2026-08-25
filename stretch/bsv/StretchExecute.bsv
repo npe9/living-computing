@@ -808,10 +808,11 @@ function ActionValue#(Tuple3#(HWordAddr, Maybe#(Tuple2#(Bit#(4), IndexWord)),
             3'b101: begin // REL (Release)
               ControlWord cw = io.readChanCW(chAddr);
               cw.epgk = 0; cw.uk = 0; cw.ee = 0; cw.cs = 0; cw.seop = 0;
-              cw.eop  = 1; // "the EOP indication is immediately turned
-                           // on" (p.120-121) -- REL has no SEOP form in
-                           // this model's v1 (RELSEOP decodes but isn't
-                           // distinguished; see "Next steps").
+              // "the EOP indication is immediately turned on" (p.120-121)
+              // -- EXCEPT for RELEASE SEOP, where the manual is explicit
+              // that "no EOP indication is ever given at the completion
+              // of a RELEASE SEOP" (p.121).
+              if (!seop) cw.eop = 1;
               io.writeChanCW(chAddr, cw);
             end
             3'b100: // CCW (Copy Control Word): no EOP indication given
@@ -845,7 +846,12 @@ function ActionValue#(Tuple3#(HWordAddr, Maybe#(Tuple2#(Bit#(4), IndexWord)),
                 ioStart = tagged Valid IoXfer {
                   ch: chAddr, isWrite: (base == 3'b001),
                   memAddr: cw0.dataAddr, devIdx: 0,
-                  remaining: rem0, suppressEop: seop };
+                  remaining: rem0, suppressEop: seop,
+                  // SKIP (p.107) only has meaning on READ -- "on writing,
+                  // the flag is meaningless and is ignored" -- so it's
+                  // only threaded through when this is an RD; a WRITE
+                  // ignores cw0.skip regardless of what's in memory.
+                  skip: (base == 3'b000) && (cw0.skip == 1) };
               end
             end
           endcase

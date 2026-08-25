@@ -49,10 +49,12 @@
 // implementing what hasn't been verified against a primary source.
 // Chaining and multiple-block operation are also NOT implemented: a
 // transfer is always a single block against the device's one fixed
-// image, and the chain/multiple/skip flags are captured in the control
-// word (readable via CCW) but the transfer FSM in StretchCore ignores
-// chain and multiple; skip IS honored (a skip-flagged READ still moves
-// the device's read cursor but does not write core storage). A count
+// image, and the chain/multiple flags are captured in the control word
+// (readable via CCW) but the transfer FSM in StretchCore ignores them.
+// SKIP (p.107) IS honored, on READ only (the manual: "on writing, the
+// flag is meaningless and is ignored") -- a skip-flagged READ still
+// advances the device's read cursor and the memory address each cycle,
+// but does not write core storage for that word. A count
 // that would run the transfer past the device's DeviceWords capacity
 // ends the block early with End Exception (EE) + End of Operation
 // (EOP), matching "the unit runs out of material" (p.121) -- this is
