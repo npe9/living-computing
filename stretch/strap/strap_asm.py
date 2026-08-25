@@ -78,6 +78,14 @@ Getting this backwards was caught by cross-checking against the
 worked example in C22-6531 ("SEVN VF, 0.07" added via V+ to advance a
 bit-precise scan position) before any code was written against it --
 see stretch/strap/README.md.
+
+A THIRD case with its own units, found later (after code already
+existed that got it wrong -- see README.md "Gotchas" item 7): XW's
+REFILL field packs IndexWord.refill (StretchTypes.bsv, Bit#(18)),
+which StretchExecute.bsv feeds straight into st.readWord() -- a WORD
+address, not a bit count, unlike VALUE/COUNT in the same XW statement.
+Encode with a shift of 6 (bit_count >> 6) & 0x3FFFF, same conversion
+as the A18 field above.
 """
 
 import re

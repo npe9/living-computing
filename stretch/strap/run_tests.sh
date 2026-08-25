@@ -11,6 +11,8 @@
 set -e
 STRAP_DIR="$(cd "$(dirname "$0")" && pwd)"
 BSV_DIR="$STRAP_DIR/../bsv"
+TMPOUT="$(mktemp)"
+trap 'rm -f "$TMPOUT"' EXIT
 
 FAILED=0
 
@@ -18,18 +20,22 @@ run() {
   # run NAME -- prints a header, runs "$@", tracks pass/fail without
   # aborting the whole suite on one failure (set -e is for real errors:
   # bsc failing to compile, python raising, etc; a FAIL line from the
-  # generated testbench is data, not a shell error).
+  # generated testbench is data, not a shell error). MUST run in the
+  # current shell, not a subshell -- `FAILED=1` set inside a subshell
+  # (e.g. `( cd x && run ... )`) is discarded when the subshell exits,
+  # which silently turned this into a script that always reported
+  # success regardless of the smoke test's actual result. Caught by
+  # advisor review before it ever shipped that way.
   name="$1"; shift
   echo "=== $name ==="
-  if "$@" 2>&1 | tee /tmp/run_tests_last.$$ | tail -20; then :; fi
-  if grep -q "TEST(S) FAILED" /tmp/run_tests_last.$$; then FAILED=1; fi
-  rm -f /tmp/run_tests_last.$$
+  "$@" 2>&1 | tee "$TMPOUT" | tail -20
+  if grep -q "TEST(S) FAILED" "$TMPOUT"; then FAILED=1; fi
   echo
 }
 
 # -- 1. Hand-assembled BSV smoke test (StretchTb.bsv, not STRAP-derived) --
-( cd "$BSV_DIR" && run "bsv smoke test (make run)" make run )
-
+cd "$BSV_DIR"
+run "bsv smoke test (make run)" make run
 cd "$STRAP_DIR"
 
 # -- 2. Problem 2.1: Cyclic Bit Shifting --
