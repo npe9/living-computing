@@ -1,0 +1,67 @@
+! Problem 2.2: Length of an Unknown File, Method 2 "End byte in $R,
+! progressive indexing" (C22-6578 Programming Examples, p.12).
+!
+! Same problem as problem_2_2_method1.strap: information of unknown
+! length is written in consecutive 7-bit bytes beginning at INFO,
+! terminated by the first all-ones (2^7-1 = 127) byte; find the file
+! length (including the terminator) in bits, in the value field of $1.
+! Reuses Method 1's own test data (bytes 5, 12, 100, 127) so the two
+! methods' results are directly comparable: expected length = 4*7 =
+! 28 bits either way.
+!
+! The six instruction lines (LV through BEW) and VFIELD's VF are
+! copied verbatim from the manual; INFO is supplied the same way
+! Method 1's INFO was.
+!
+! How this differs from Method 1, and why it needs a fix this session
+! found (see strap/README.md "Gotchas"): $1 is loaded once via LV,
+! then advanced entirely by PROGRESSIVE indexing inside the compare
+! loop itself -- COMP's "(V+I)" adds its own address part (0.07 = 7
+! bits, the byte width) to $1's VALUE every iteration, using $1's
+! *current* VALUE (not COMP's own address field) as the actual memory
+! address being compared (StretchExecute.bsv's VflInt case: effective
+! address = xIdx.addr in progressive mode, the instruction's own A24
+! is the increment amount, not part of the address). So after N
+! comparisons $1's VALUE is INFO's bit address plus 7*N -- an absolute
+! address, not a length. The final "L(BU,7)(V-I), INFO($1)" instruction
+! is ALSO progressive: its effective address is (again) $1's *current*
+! value, and its own address part -- the literal INFO -- is what gets
+! *subtracted* from $1 afterward. That's comment (a)'s "serves mainly
+! to perform the (V-I) operation": it isn't really loading INFO($1)
+! for the load's own sake (the loaded value is discarded), it's using
+! progressive indexing's address-part-as-increment mechanic to
+! subtract INFO's own bit address back off $1, turning "INFO's address
+! + 7N" into exactly "7N" -- the file length in bits, landing in $1's
+! VALUE field as the problem asks.
+!
+! This is also the first program in this project to use VFL Immediate
+! addressing (P=4): "LI(BU,7), 127" loads the literal 127 into the
+! accumulator's rightmost 7 bits, not from a memory address -- LI
+! isn't its own mnemonic (Appendix A doesn't list one): it's "L" with
+! the "I" (Immediate) suffix from Appendix A footnote 4. Getting a
+! bare integer literal like 127 to mean "the immediate value 127" (as
+! opposed to a bit address 127) needed two real fixes to strap_asm.py:
+! (1) the "I"-suffix strip only worked when no dds was given -- see
+! strap/README.md "Gotchas". (2) more subtly, C22-6578's own comment
+! on this exact instruction (p.13, following Method 2) confirms the
+! *encoding*: a plain (non-"point") integer used where an address is
+! normally expected is an "integer address" that STRAP must convert
+! to a bit address using the operation's *implied subfield* -- for
+! this instruction, 7 bits (the field length) rather than a VFL
+! address's usual 24 -- giving bit address 0.(127*2^-7*2^24) =
+! 260096.0. That is exactly encode_vfl_immediate's (24-len)-bit
+! left-shift, packing 127 as 0xFE0000 in the 24-bit A24 field rather
+! than literal 127 -- verified by hand against the manual's own worked
+! arithmetic before this file was written.
+
+START   LV, $1, VFIELD
+        LI(BU,7), 127          !or (2)1111111
+COMP    K(BU, 7) (V+I), 0.07($1)
+        BAE, $+1.0
+        B, COMP
+        L(BU, 7) (V-I), INFO($1)
+        BEW, $
+VFIELD  VF, INFO
+INFO    DD(BU,7,8), 5,12,100,127
+
+        END, START

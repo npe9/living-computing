@@ -8,6 +8,11 @@ instruction set, built from the primary sources (all under
   (the authority for everything cited "p.NN" below; OCR sidecar text
   and page images were both consulted — the images for every bit-field
   diagram, since OCR mangles diagrams badly).
+  `docs/22-6530-2_7030RefMan.pdf` — cited from this project's start
+  but not actually present in `docs/` until `../strap/`'s Problem 2.2
+  Method 2 work needed to check a page image directly; re-fetched from
+  bitsavers then. (Same gap, same fix, as C22-6531/C22-6578 below —
+  see `../strap/README.md` "Sources".)
 - **X22-6533-1** — *IBM 7030 Reference Card* ("pocket card"): the
   primary source for exact instruction-format bit layouts and opcode
   values used throughout the decoder (`docs/pcard-*.png`).
@@ -237,23 +242,27 @@ them on this model, using real programs to drive out decode/execute
 bugs and scope gaps instead of only hand-written test vectors. That
 assembler now exists, at `../strap/` (`strap/README.md`), sharing this
 model's opcode table directly rather than re-deriving it. It has
-assembled and run three worked examples from the Reference Manual and
+assembled and run four worked examples from the Reference Manual and
 `C22-6578_7030_Programming_Examples_Apr61.pdf` end to end (STRAP source
 → assembler → this decoder/executor → a checked result matching an
-independent calculation) — Problems 2.1 and 2.2 Method 1, and
+independent calculation) — Problems 2.1 and 2.2 Methods 1 and 2, and
 Reference Manual Figure 7 (progressive indexing, ten-record loop) —
-and getting each to pass caught real bugs or gaps in this model as it
-stood, not hypothetical ones: an inverted index-flag-bit derivation
+plus a fifth, purpose-written program (`xw_refill.strap`) closing a
+gap the four worked examples happened not to exercise. Getting each to
+pass caught real bugs or gaps in this model as it stood, not
+hypothetical ones: an inverted index-flag-bit derivation
 (`StretchExecute.bsv`'s `V+`/`V+I`/`V-I`/`CountBranch` cases were
 computing the index flag from the arithmetic result instead of
 preserving the program-set flag bit); a bsc scheduler limitation on
 combining a general-storage write with an index-register write in the
 same case arm (see "Toolchain" item 7); the crossing-field-store /
 progressive-indexing interaction above; and, on the assembler side, an
-address-field unit conversion and the Special Storage Assignment range
-needing to stay off-limits to ordinary code (see `strap/README.md`
-"Gotchas found by running real programs" for the full account of all
-of these).
+address-field unit conversion, the Special Storage Assignment range
+needing to stay off-limits to ordinary code, an XW refill-field unit
+bug, two STRAP-1 syntax gaps in Immediate addressing and progressive
+indexing's secondary-op ordering, and VFL Immediate addressing's own
+field-packing rule (see `strap/README.md` "Gotchas found by running
+real programs" for the full account of all of these).
 
 ## Next steps
 
@@ -263,9 +272,9 @@ of these).
    this file were established).
 2. Extend execute() coverage in the order real STRAP programs are
    likely to need it: Connectives, decimal VFL, floating point
-   arithmetic beyond L/ST. Problem 2.2 Method 2 (also progressive
-   indexing, already transcribed in the STRAP manual excerpts) is a
-   ready-made next test once one of these lands.
+   arithmetic beyond L/ST. C22-6578 Problem 2.2 Method 3 ("Use
+   connective and branch on $RZ", p.13) is a ready-made next test
+   once Connectives land — see `strap/README.md` "Next steps".
 3. Multi-word Transmit and crossing-field VFL stores, properly, as
    multi-cycle operations (needs `StretchCore`'s FSM to support an
    instruction that isn't done after one `step()` — the `pendingIdxWrite`

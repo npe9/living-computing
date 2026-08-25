@@ -45,6 +45,12 @@ execute partially, document the rest" ethos of the Bluespec model):
     7  VFL arithmetic             -- full (binary modes B/BU only;
        decimal D/DU encode but StretchExecute.bsv flags them OP
        invalid, matching the Bluespec model's own documented scope).
+       Includes Immediate addressing (P=4, Appendix A footnote 4's
+       I/N/NI suffixes -- only I is implemented; N/NI are parsed as
+       ordinary unrecognized mnemonics, not yet stripped like I is):
+       verified against C22-6578 Problem 2.2 Method 2's "LI(BU,7),127"
+       and the manual's own worked bit-address derivation for it (see
+       encode_vfl_immediate and strap/README.md "Gotchas").
     8  Progressive indexing        -- encoded in full: "OP(OP2)(dds),
        A24(J), OF7(J')" where OP2 in {V+I,V+IC,V+ICR,V-I,V-IC,V-ICR}
        sets the VflAddr.p field (1-3/5-7); shares the format-7 encoder,
@@ -86,6 +92,24 @@ which StretchExecute.bsv feeds straight into st.readWord() -- a WORD
 address, not a bit count, unlike VALUE/COUNT in the same XW statement.
 Encode with a shift of 6 (bit_count >> 6) & 0x3FFFF, same conversion
 as the A18 field above.
+
+A FOURTH case, not a fixed shift this time: VFL Immediate addressing
+(P=4)'s A24 field holds the literal operand value itself, but
+LEFT-JUSTIFIED within the field's own length rather than placed at
+A24's low bits -- see encode_vfl_immediate and README.md "Gotchas".
+The shift amount depends on the instruction's OWN field length (dds
+length, or 64 if omitted), not a fixed constant like the three cases
+above. C22-6578 (p.13) frames this as one instance of a GENERAL STRAP
+rule -- any bare (non-"point") integer used as an address is an
+"integer address" STRAP must convert to a bit address using the
+operation's implied subfield -- but this assembler implements that
+conversion ONLY for the immediate-addressing case above; a bare
+integer given as a normal (non-immediate) address field is NOT
+converted, it's used as a raw bit count via eval_expr with no
+subfield-aware scaling. Every program run through this assembler uses
+dotted bit-address notation or a label for non-immediate addresses, so
+this gap is untested and undocumented as a known limitation rather
+than fixed -- see README.md "Next steps".
 """
 
 import re
@@ -118,6 +142,43 @@ def cat(*fields):
         result = (result << width) | (val & ((1 << width) - 1))
         total += width
     return result, total
+
+
+def encode_vfl_immediate(val, field_len, lineno=None):
+    """Pack `val` (an unsigned magnitude, `field_len` bits wide -- 64
+    if field_len is 0, the VFL "zero means 64" convention) into the
+    24-bit A24 field of a VFL-immediate (P=4) instruction, the exact
+    inverse of StretchExecute.bsv's immediateOperand(). Reference
+    Manual p.56 "Field Definition": "the effective address itself is
+    used as the operand. The field length specifies the number of
+    bits in the field starting with the LEFTMOST bit of the effective
+    address... If the field length designated is greater than 24,
+    zeros are added to the right" -- so a short field is left-
+    justified in the 24-bit word (shifted left by 24-field_len), not
+    placed at addr24's low bits the way every other address-like
+    operand in this assembler is. Getting this backwards packs a
+    literal like 127 as addr24=127 (which immediateOperand would then
+    read back as bits 0-127 relative to a nonexistent higher radix --
+    silently wrong, no error) instead of addr24=127<<17.
+    """
+    actual_len = 64 if field_len == 0 else field_len
+    if actual_len <= 24:
+        return (val & ((1 << actual_len) - 1)) << (24 - actual_len)
+    # field_len > 24: on real hardware, only the top 24 bits of the
+    # value are representable -- immediateOperand always zero-fills
+    # the rest, it can't reproduce arbitrary low-order bits. Rather
+    # than silently dropping them (the exact "wrong output, no error"
+    # failure mode this session's other two fixes were about), refuse
+    # to encode a value whose low (actual_len-24) bits are nonzero.
+    # Not exercised by any program yet.
+    low_bits = actual_len - 24
+    if val & ((1 << low_bits) - 1):
+        raise AssemblerError(
+            f"immediate value {val} has nonzero bits in the low {low_bits} "
+            f"bits of a {actual_len}-bit field -- VFL Immediate addressing "
+            f"can only represent the top 24 bits there (Reference Manual "
+            f"p.56: 'zeros are added to the right')", lineno)
+    return (val >> low_bits) & 0xFFFFFF
 
 
 # ---------------------------------------------------------------------
@@ -389,10 +450,20 @@ def classify_vfl_or_fp(stmt):
     p_progressive is None for standard address modification, else the
     VflAddr.p value 1-7 (C22-6531 "Progressive Indexing": a VFL/
     Connective op may carry a *second* parenthesized operation --
-    V+I/V+IC/V+ICR or V-I/V-IC/V-ICR -- ahead of its data description,
+    V+I/V+IC/V+ICR or V-I/V-IC/V-ICR -- alongside its data description,
     format 8 "OP(OP2)(dds), A24(J), OF7(J')"). dds_mods is stmt.mods
-    with that leading secondary-op group stripped off, if present, so
-    callers always find the real (M,L,BS) dds at dds_mods[0].
+    with that secondary-op group removed, if present, so callers
+    always find the real (M,L,BS) dds at dds_mods[0].
+
+    The secondary op's parenthesized group can come BEFORE the dds
+    (Reference Manual Figure 7's own worked example: "L(V+I)(BU,7,8)")
+    or AFTER it (C22-6578 Problem 2.2 Method 2's "K(BU,7)(V+I)") --
+    both are real, both from primary sources, so this scans every mod
+    for the secondary-op keyword rather than assuming mods[0]. A
+    fixed-position check would have silently mis-encoded the
+    dds-first ordering as non-progressive (P=0, no error), exactly the
+    wrong-output-no-error failure mode this project has caught and
+    fixed elsewhere (see README.md "Gotchas" item 7).
     """
     op = stmt.op
     invert = 0
@@ -401,11 +472,28 @@ def classify_vfl_or_fp(stmt):
     if op == '-':
         base_op, invert = VFL_INT_MINUS_BASE, 1
 
-    dds_mods = stmt.mods
+    dds_mods = []
     p_progressive = None
-    if dds_mods and dds_mods[0].strip().upper() in PROGRESSIVE_SECONDARY_OP:
-        p_progressive = PROGRESSIVE_SECONDARY_OP[dds_mods[0].strip().upper()]
-        dds_mods = dds_mods[1:]
+    for m in stmt.mods:
+        key = m.strip().upper()
+        if key in PROGRESSIVE_SECONDARY_OP:
+            if p_progressive is not None:
+                raise AssemblerError(
+                    f"{op} has more than one progressive-indexing secondary op", stmt.lineno)
+            p_progressive = PROGRESSIVE_SECONDARY_OP[key]
+        else:
+            dds_mods.append(m)
+
+    # The "I"-immediate suffix (Appendix A footnote 4: a VFL op may be
+    # suffixed I/N/NI for Immediate/Negative/Negative-Immediate
+    # addressing) is tried whether or not an explicit dds is present --
+    # C22-6578 Problem 2.2 Method 2's "LI(BU,7), 127" has both. Applied
+    # here, before the has_dds branch below, so both orderings share
+    # one check instead of the dds-present path silently skipping it
+    # (which previously made "LI(BU,7), 127" fail as an unknown op
+    # instead of being recognized as L with immediate addressing).
+    if base_op not in VFL_INT_CODES and base_op.endswith('I') and base_op[:-1] in VFL_INT_CODES:
+        base_op, immediate = base_op[:-1], True
 
     has_dds = bool(dds_mods) and dds_mods[0].strip() != ''
     if has_dds:
@@ -415,11 +503,6 @@ def classify_vfl_or_fp(stmt):
         if mode in MODE_BITS:
             return 'VFL', base_op, invert, immediate, p_progressive, dds_mods
         raise AssemblerError(f"unknown data-description mode {mode!r}", stmt.lineno)
-
-    # No explicit dds: try the "I"-immediate suffix (Appendix A footnote 3)
-    # before falling back to the ambiguous-op default.
-    if base_op not in VFL_INT_CODES and base_op.endswith('I') and base_op[:-1] in VFL_INT_CODES:
-        base_op, immediate = base_op[:-1], True
 
     in_vfl, in_fp = base_op in VFL_INT_CODES, base_op in FP_CODES
     if in_vfl and not in_fp:
@@ -768,7 +851,9 @@ def emit_statement(stmt, symtab, image):
         if not stmt.fields or not stmt.fields[0].strip():
             raise AssemblerError(f"{op} needs an address field", stmt.lineno)
         base, paren = split_field_trailing_paren(stmt.fields[0])
-        addr24 = eval_expr(base, symtab, loc, lineno=stmt.lineno) & 0xFFFFFF
+        raw_val = eval_expr(base, symtab, loc, lineno=stmt.lineno)
+        addr24 = (encode_vfl_immediate(raw_val, length_field, stmt.lineno) if immediate
+                  else raw_val & 0xFFFFFF)
         i1 = eval_reg(paren, symtab, stmt.lineno)
 
         offset, i2 = 0, 0

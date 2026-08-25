@@ -54,6 +54,14 @@ run "Problem 2.1" ./run_program.sh programs/problem_2_1.strap StretchProblem21Tb
 run "Problem 2.2 Method 1" ./run_program.sh programs/problem_2_2_method1.strap StretchProblem22Tb \
     "X1_len:addrIndex(1)=0x1c0000000000"
 
+# -- 3b. Problem 2.2 Method 2: same problem, VFL immediate addressing +
+# progressive indexing instead. Same expected answer (28 bits) as
+# Method 1 above, by construction (reuses Method 1's own test data) --
+# see programs/problem_2_2_method2.strap's header for how X1 ends up
+# holding exactly the length rather than an absolute address.
+run "Problem 2.2 Method 2" ./run_program.sh programs/problem_2_2_method2.strap StretchProblem22M2Tb \
+    "X1_len:addrIndex(1)=0x1c0000000000"
+
 # -- 4. Reference Manual Figure 7: Progressive Indexing --
 # Expected final memory (words holding the ten records' R/S/T fields) is
 # derived, not hand-computed: run

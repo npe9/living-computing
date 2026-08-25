@@ -16,7 +16,16 @@ finding about the hardware model, not a hypothetical one.
   symbols, and the pseudo-operations. `docs/C22-6531_7030xasm-sim_1960.pdf`.
 - **C22-6578** *7030 Programming Examples* (Apr 1961) — the worked
   problems this assembler has actually been run against.
-  `docs/C22-6578_7030_Programming_Examples_Apr61.pdf`.
+  `docs/C22-6578_7030_Programming_Examples_Apr61.pdf`. (Both this and
+  C22-6531 above were cited from the start of this project but not
+  actually present in `docs/` until the Problem 2.2 Method 2 work —
+  re-fetched from bitsavers when this file's citations turned out to
+  need checking against the real page images, not just memory.)
+- **22-6530-2** *IBM 7030 Data Processing System Reference Manual* —
+  same copy `../bsv/README.md` cites; needed here too for VFL
+  Immediate addressing's exact field-packing rule (p.56 "Field
+  Definition") and general addressing modes (p.20).
+  `docs/22-6530-2_7030RefMan.pdf`.
 - **C28-6129** *STRAP-II* (1963, with April 1963 update) — downloaded
   alongside C22-6531 but not yet consulted; STRAP-II postdates
   STRAP-1 and this assembler has not been checked against it.
@@ -83,6 +92,15 @@ original.
   an all-ones terminator using `LVI`/`L`/`K`/`V+`/`BZAL`/`B`/`BEW`,
   direct index arithmetic, and Branch-on-Indicator. Verified against
   the expected bit count for a known 4-byte test file.
+- **`problem_2_2_method2.strap`** — the same problem, Method 2 (p.12):
+  `LV`/`LI`/`K(V+I)`/`BAE`/`L(V-I)`/`BEW` — progressive indexing doing
+  the address walk instead of Method 1's explicit index-register add,
+  plus this project's first use of VFL **Immediate addressing** (`LI`
+  is `L` with Appendix A footnote 4's `I` suffix, not its own
+  mnemonic). Reuses Method 1's test data, so the expected result (28
+  bits) is the same, letting the two methods cross-check each other.
+  Getting this one to assemble at all surfaced two real STRAP-1 syntax
+  gaps and one real encoding gap — see "Gotchas" items 8-10.
 - **`figure7_progressive_indexing.strap`** — Reference Manual
   22-6530-2 Figure 7, "Progressive Indexing" (p.22): a ten-record loop
   that adds field T to field R and stores the result in field S for
@@ -249,6 +267,65 @@ author already had in mind:
    `MemWords`-bound check and returns 0, i.e. an all-zero index word,
    not a coincidentally-correct one), and passed once restored.
 
+8. **A VFL op's immediate-address suffix (`LI` etc.) only worked when
+   no `(dds)` was given.** Appendix A footnote 4: an op like `L` may be
+   suffixed `I`/`N`/`NI` for Immediate/Negative/Negative-Immediate
+   addressing — `strap_asm.py`'s `classify_vfl_or_fp` already stripped
+   the `I` suffix and set `immediate=True`, but only in the branch
+   taken when `stmt.mods` had no dds group at all. C22-6578 Problem
+   2.2 Method 2's `LI(BU,7), 127` has an explicit dds, so it hit the
+   other branch, which returned with `base_op="LI"` unstripped — an
+   `AssemblerError: KeyError 'LI'` at emit time, not a silent
+   miscompile, but still a real gap in a construct the manual uses in
+   its own worked example. Fixed by trying the suffix strip
+   unconditionally, before either branch.
+
+9. **Progressive indexing's secondary-op parenthetical can come before
+   *or* after the dds, and only "before" was handled.** Every existing
+   test (Figure 7, `xw_refill.strap`) happened to write it first —
+   `L(V+I)(BU,7,8)`. C22-6578 Problem 2.2 Method 2 writes it *second*
+   — `K(BU,7)(V+I)` — and `classify_vfl_or_fp` only ever checked
+   `stmt.mods[0]` for the secondary-op keyword. With mods in the other
+   order, that check silently missed it: `p_progressive` stayed
+   `None`, the instruction assembled as ordinary direct-indexed
+   addressing (P=0) instead of progressive (P=1), and — because
+   direct addressing doesn't advance the index register the way
+   progressive addressing does — the compare loop's index value never
+   changed, producing an infinite loop rather than a wrong answer.
+   Caught immediately (`run_tests.sh`'s step cap fired), not silently,
+   but the *encoding* itself was still wrong with no error at
+   assembly time — exactly the kind of gap real-program testing here
+   is for. Fixed by scanning every mod for the secondary-op keyword
+   instead of assuming a fixed position, verified by reverting the fix
+   and confirming the step-cap failure reproduces, then restoring it.
+
+10. **VFL Immediate addressing's operand isn't packed like every other
+    address-like field — it's left-justified within its own field
+    length, not placed at the low bits.** Reference Manual p.56
+    "Field Definition": "the field length specifies the number of
+    bits in the field starting with the *leftmost* bit of the
+    effective address" — so `LI(BU,7), 127`'s `A24` field must hold
+    `127 << (24-7)`, not `127`. This is independently confirmed by
+    C22-6578 itself (p.13, the paragraph right after Method 2): STRAP
+    must convert a bare "integer address" like `127` into a bit
+    address using the instruction's *implied subfield* (here, the
+    7-bit field length rather than a VFL address's usual 24), arriving
+    at bit address `260096.0` — exactly `127 << 17`, matching
+    `encode_vfl_immediate`'s formula by two independent routes (the
+    BSV model's decode-side `immediateOperand`, and the manual's own
+    worked arithmetic for this exact instruction). Verified the fix is
+    load-bearing, not just plausible: reverting `encode_vfl_immediate`
+    to a plain unshifted pack produced a clean, non-coincidental wrong
+    answer (`0x23...` instead of `0x1c...`), not a lucky pass. Note
+    C22-6578 frames "integer address → bit address via the implied
+    subfield" as a *general* STRAP rule, but this assembler implements
+    the conversion only for the immediate-addressing case above — a
+    bare integer given as a normal (non-immediate) address field is
+    used as-is via `eval_expr`, with no subfield-aware scaling. Every
+    program here uses dotted bit-address notation or a label for
+    non-immediate addresses, so that gap is untested, not fixed — see
+    "Next steps".
+
 ## Halting
 
 A runner needs a way to know when the program is done rather than
@@ -293,16 +370,31 @@ as unverified until one has.
 
 ## Next steps
 
-1. Problem 2.2 Method 2 (progressive indexing, already transcribed
-   from the manual) as the next assembled-and-run test.
-2. `CNOP`, `SLC`, `CF`, `RF`, `DDI`, `SYN` (as a symbol-defining op,
+1. `CNOP`, `SLC`, `CF`, `RF`, `DDI`, `SYN` (as a symbol-defining op,
    not just a no-storage placeholder), `CW`, `EXT` — pseudo-ops
    C22-6531 defines that no program exercised yet.
-3. Verify the opcode table exhaustively against `7030_Opcode_List.pdf`
+2. Verify the opcode table exhaustively against `7030_Opcode_List.pdf`
    (the rendered pages, not its noisy OCR — see `../bsv/README.md`
    "Next steps", inherited here unchanged).
-4. Format 8's `J'` (`i2`) field: encoded but not executed (see the
+3. Format 8's `J'` (`i2`) field: encoded but not executed (see the
    "Scope" note on format 8 above) — `StretchExecute.bsv`'s `VflInt`
    case would need to read `vi.a.i2` and apply the manual's "modify
    bits 35-50 of the instruction" behavior (p.21). No program has
    needed this yet (`figure7_progressive_indexing.strap` writes `, 0`).
+4. VFL Immediate addressing's `N`/`NI` suffixes (Negative/Negative-
+   Immediate, Appendix A footnote 4) — only `I` is stripped by
+   `classify_vfl_or_fp` today; `N`/`NI` fail loud (`AssemblerError`,
+   unrecognized mnemonic) rather than being silently mis-handled, but
+   no program has needed them yet either.
+5. Problem 2.2 Method 3 (p.13: "Use connective and branch on `$RZ`")
+   — transcribed in the manual right after Method 2 but needs a
+   Connective op (`CT0110`) this assembler doesn't implement yet
+   (Connectives aren't in `VFL_INT_CODES`/`StretchExecute.bsv` at all
+   — see the "Connectives" item in `../bsv/README.md` "Next steps").
+6. The general "bare integer address → bit address via the implied
+   subfield" rule (C22-6578 p.13) is implemented only for VFL
+   Immediate addressing (`encode_vfl_immediate`) — see "Gotchas" item
+   10's note. A bare (non-"point") integer given as a normal address
+   field elsewhere is used as-is, unconverted. Untested (every program
+   here uses dotted notation or labels for non-immediate addresses),
+   not yet a confirmed bug.
