@@ -1,0 +1,38 @@
+! Standalone test of XW's REFILL field and progressive indexing's
+! refill-on-count-zero mechanism (Reference Manual 22-6530-2 p.21-22,
+! "when the count field of the index word becomes zero... the entire
+! index word is replaced by the contents of the word whose address is
+! given in the refill field"). Not from a manual worked example --
+! written specifically to close a gap advisor review found: the only
+! other program exercising XW (figure7_progressive_indexing.strap)
+! never actually triggers a refill (its BZXCZ exits the loop the same
+! cycle a refill would fire), so the assembler's REFILL-field encoding
+! (a word address, unlike every other address-like operand in this
+! assembler, which is a bit count -- see strap/README.md "Gotchas"
+! item 7) was previously unverified by any execution path.
+!
+! Design: CTLA has COUNT=1, so the single ST(V+ICR) below decrements
+! it to 0 and triggers exactly one refill, from CTLB. CTLB's VALUE
+! (999) and COUNT (42) are deliberately distinctive numbers that don't
+! arise from any other computation in this program, so the check
+! proves the refill read the *right* word (CTLB), not merely *a*
+! word that happens to satisfy the check by coincidence -- and CTLB's
+! own REFILL/FLAG (0) round-trip through the same encode/decode path.
+!
+! Expected: after the one progressive store, $X12 (word 12+16=28... no,
+! addrIndex(12)) holds exactly CTLB's packed contents, verbatim --
+! progressiveIncrement's refill path does
+! `unpackIndexWord(st.readWord(refill))`, i.e. an unconditional load of
+! the refill word, not a merge with the pre-refill index word.
+
+START   LX, $X12, CTLA
+        ST(V+ICR)(BU,8,8), 0.0($X12), 0
+        BEW, $                !halt
+
+CTLA    XW, DATA, 1, CTLB     !VALUE=DATA (bit addr), COUNT=1, REFILL=CTLB
+CTLB    XW, 999, 42, 0        !distinctive VALUE/COUNT so the refill's
+                              !source is unambiguous -- never itself
+                              !refilled in this test (count stays 42)
+DATA    DD(BU,8,8), 0
+
+        END, START

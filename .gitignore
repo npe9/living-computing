@@ -9,10 +9,11 @@ simbuild/
 *_sim.o
 
 # Generated testbenches (see stretch/strap/run_program.sh, gen_tb.py) --
-# StretchTb.bsv itself is hand-written and permanent; generated ones
-# follow the ModuleName passed to run_program.sh, e.g. StretchProblem21Tb.
-**/StretchProblem*Tb.bsv
-**/StretchFigure*Tb.bsv
+# ignore any Stretch*Tb.bsv in bsv/ EXCEPT the hand-written StretchTb.bsv
+# itself, so this doesn't need updating every time a new ModuleName is
+# passed to run_program.sh (name-independent, not a list of module names).
+stretch/bsv/Stretch*Tb.bsv
+!stretch/bsv/StretchTb.bsv
 
 # Python
 __pycache__/
