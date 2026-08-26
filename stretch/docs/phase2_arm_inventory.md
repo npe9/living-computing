@@ -99,21 +99,35 @@ implements against.
 LX and LV (both pure single-read, no-write arms) have any test
 coverage at all. SV/SC/SR/KV/KC/V+/V+C/V+CR/SX are all unexercised.
 
-## ImmIndex (Immediate Index Arithmetic, `tagged ImmIndex`)
+## ImmIndex (Immediate Index Arithmetic, `tagged ImmIndex`) -- **V+ICR/V-ICR CONVERTED, `3d8cd90`**
 
 All arms are index-register-only (read via `readIndex`, write via the
 `idxWriteVal`/`doIdxWrite` path -> `st.writeIndex` in the caller) with
 ONE exception: V+IC/V+ICR/V-IC/V-ICR call `maybeRefill` (0-1 read,
-independent, refill address known from the index word already read).
-No arm here ever touches BRAM general storage directly. Coverage not
-separately chased since these arms carry effectively zero Phase-2
-risk (at most one independent Reg-or-BRAM read, no write dependency).
+independent, refill address known from the index word already read;
+only the ICR/-ICR variants can actually trigger it, per `maybeRefill`'s
+own condition). V+ICR/V-ICR converted to the prefetch/bail-out shape,
+inlining `maybeRefill`'s condition directly rather than calling it. No
+arm here ever touches BRAM general storage directly. Coverage: likely
+shares DirIndex V+CR's already-established finding (the `V+I`/`V+ICR`
+strings appearing in STRAP programs are VFL's progressive-addressing
+suffix, a different namespace, not this standalone opcode -- see
+DirIndex's own row above) but not independently re-verified here;
+treat as **NONE**, not chased further given the low risk (at most one
+independent read, no write dependency).
 
-## CountBranch (`tagged CountBranch`)
+## CountBranch (`tagged CountBranch`) -- **CONVERTED, `3d8cd90`**
 
-0-1 read (`maybeRefill`, only when `cb.refill == 1`), independent
-address, no write dependency. Low risk; coverage not separately
-chased for the same reason as ImmIndex.
+0-1 read (inlining `maybeRefill`'s own condition, only when
+`cb.refill == 1 && count==0`), independent address, no write
+dependency. **Coverage: NONE, confirmed by grep** -- the `CB` mnemonic
+(`strap_asm.py`'s own name for this format) does not appear in any
+STRAP program at all, not just the refill variant; the whole
+instruction is untested by any assembled program. `StretchSmoke.bsv`'s
+own hand-assembled Count-and-Branch loop (the "3*10 via CB loop" check)
+exercises CountBranch's non-refill path only (`refill=0` in its
+`encCountBranch` call) -- the refill path specifically has no coverage
+anywhere, smoke test included.
 
 ## BranchInd (`tagged BranchInd`)
 
@@ -309,10 +323,15 @@ needed).
      read) are unchanged -- SX needs no Phase 2 work at all, V+/V+C/V+CR
      is deferred to whichever step handles arms needing 2 sequential
      but non-crossing reads.
-   - Remaining in this step: ImmIndex/CountBranch refills; C, CT
-     (Connective); R, RCZ, Z (BranchOrMisc). Each should reuse the SAME
-     `prefetch`/`needsRead` protocol L established -- no new mechanism
-     design expected, just applying it arm by arm.
+   - DONE (`3d8cd90`): **ImmIndex V+ICR/V-ICR and CountBranch's
+     refill**. CountBranch's refill path has NO coverage anywhere
+     (confirmed: the `CB` mnemonic doesn't appear in any STRAP
+     program, and the smoke test's own CountBranch usage sets
+     `refill=0`) -- flagged explicitly, not assumed safe.
+   - Remaining in this step: C, CT (Connective); R, RCZ, Z
+     (BranchOrMisc). Each should reuse the SAME `prefetch`/`needsRead`
+     protocol L established -- no new mechanism design expected, just
+     applying it arm by arm.
    - **Build-time finding, unrelated to correctness, worth knowing
      before converting more arms**: Bluesim's code generator inlines
      `step()`'s entire body (which itself inlines `execute()`'s whole
