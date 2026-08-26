@@ -74,9 +74,9 @@ implements against.
 |---|---|---|---|---|
 | L (Load) -- **CONVERTED, `dbee063`** | 0-1 (inlined `extractFieldBits`, 0 if immediate; crossing case = 2, independent) | 0 BRAM (`writeAcc` is addr 8/9, Reg-only) | no (read feeds a Reg write only) | problem_2_2_method2/3 (`L`, confirmed genuinely reached: both programs passed green after conversion, resolving the earlier FP-`L` disambiguation doubt) |
 | ST (Store) | Reg-only (`readAcc`, addr 8/9) | 1 (`writeField`: internal RMW read + write) | yes, RMW inside `writeField` | problem_2_1, xw_refill (`ST(V+ICR)`) |
-| + (Add) | 0-1 (`readField(ea)`) + Reg-only (`readAcc`) | 0 BRAM (`writeAcc`, Reg-only) | no | problem_2_2_method1/3 (`+,`) |
+| + (Add) -- **CONVERTED, `e8384a9`** | 0-1 (inlined `extractFieldBits`, crossing case = 2) + Reg-only (`readAcc`) | 0 BRAM (`writeAcc`, Reg-only) | no | problem_2_2_method1/3 (`+,`) -- confirmed genuinely reached, both green after conversion |
 | M+ (Add to Memory) | 1 (`readFieldWithHi(ea)`) + Reg-only (`readAcc`) | 1 (`writeFieldWithHi`, no internal read -- dedup landed this session) | yes (write uses the read's `hi` + computed sum) | **NONE** (grepped `opcodes.py`'s `M+` key against all programs, zero matches) |
-| K (Compare) | 0-1 (`readField(ea)`) + Reg-only (`readAcc`) | 0 (comparison only) | no | problem_2_2_method1/2 (`K(...)`) |
+| K (Compare) -- **CONVERTED, `e8384a9`** | 0-1 (inlined `extractFieldBits`, crossing case = 2) + Reg-only (`readAcc`) | 0 (comparison only) | no | problem_2_2_method1/2 (`K(...)`) -- confirmed genuinely reached, both green after conversion |
 | progressiveIncrement (shared, when `isProgressive`) | 0-1 (refill, only P=3/7) | 0 (index write-back happens in `StretchCore.step`, separately) | no | figure7_progressive_indexing (explicit purpose of that program) |
 
 ## DirIndex (Direct Index Arithmetic, `tagged DirIndex`)
@@ -292,11 +292,35 @@ needed).
      post-`case` block (all VflInt arms) is now also guarded on
      `needsRead`, since it would otherwise run and set `vflPending`
      even on a bailed-out arm.
-   - Remaining in this step: K, + (VflInt); LX, LV, LC, LR, KV, KC
-     (DirIndex); ImmIndex/CountBranch refills; C, CT (Connective);
-     R, RCZ, Z (BranchOrMisc). Each should reuse the SAME
-     `prefetch`/`needsRead` protocol L established -- no new mechanism
-     design expected, just applying it arm by arm.
+   - DONE (`e8384a9`): **VflInt K and +**, same shape as L (both check
+     `prefetchCount` before doing anything, bail via `needsRead`,
+     handle both the non-crossing and crossing field cases). With
+     these three converted, `StretchVFL.bsv`'s plain (non-`WithHi`)
+     `readField` function is unused everywhere in this codebase --
+     grepped, confirmed, not removed (dead code isn't a correctness
+     issue; noted for a future cleanup pass rather than acted on now).
+   - Remaining in this step: LX, LV, LC, LR, KV, KC (DirIndex);
+     ImmIndex/CountBranch refills; C, CT (Connective); R, RCZ, Z
+     (BranchOrMisc). Each should reuse the SAME `prefetch`/`needsRead`
+     protocol L established -- no new mechanism design expected, just
+     applying it arm by arm.
+   - **Build-time finding, unrelated to correctness, worth knowing
+     before converting more arms**: Bluesim's code generator inlines
+     `step()`'s entire body (which itself inlines `execute()`'s whole
+     instruction dispatch) at EVERY textual `core.step()` call site in
+     a testbench's source -- not once per module. `StretchSmoke.bsv`
+     had 3 such call sites at one point this session (`run`,
+     `stepRnx1`, `stepRnx2`) and its generated `mkStretchTb.cxx` was
+     27.8MB, ~4x every OTHER generated testbench's 6.76MB (which each
+     have exactly 1 call site, via `strap/gen_tb.py`'s single
+     loop-until-halted `run` rule). Merged back to 2 call sites
+     (`e104dc4`), dropping to 22.1MB. As `execute()` keeps growing with
+     each arm converted, each inlined copy grows too -- keep any
+     future hand-written testbench (unlike `gen_tb.py`'s generated
+     ones, which already only ever have one call site) to as few
+     `core.step()` call sites as the FSM genuinely requires, using a
+     counted-loop rule (`stepCount < N`) rather than N separate rules
+     when multiple `step()` calls are needed in sequence.
 6. NOT STARTED. SV/SC/SR (already deduped, see above -- just needs FSM
    staging now).
 7. NOT STARTED. The genuinely dependent RMW arms, most-covered first:
