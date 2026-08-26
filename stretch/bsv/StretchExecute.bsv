@@ -1166,9 +1166,12 @@ function ActionValue#(Tuple4#(HWordAddr, Maybe#(Tuple2#(Bit#(4), IndexWord)),
                 ControlWord cw = io.readChanCW(chAddr);
                 cw.epgk = 1; cw.eop = 1;
                 io.writeChanCW(chAddr, cw);
-              end else begin
-                let raw <- st.readWord(effA2);
-                ControlWord cw0 = unpackControlWord(raw);
+              end else if (prefetchCount >= 1) begin
+                // Prefetch/bail-out shape, same as every other
+                // single-read arm -- this completes step 8
+                // (docs/phase2_arm_inventory.md), the last remaining
+                // execute() case arm.
+                ControlWord cw0 = unpackControlWord(prefetch[0]);
                 io.writeChanCW(chAddr, cw0); // exchange adopts the
                                               // requested control word
                                               // (p.106: "the exchange
@@ -1194,7 +1197,8 @@ function ActionValue#(Tuple4#(HWordAddr, Maybe#(Tuple2#(Bit#(4), IndexWord)),
                   // only threaded through when this is an RD; a WRITE
                   // ignores cw0.skip regardless of what's in memory.
                   skip: (base == 3'b000) && (cw0.skip == 1) };
-              end
+              end else
+                needsRead = tagged Valid effA2;
             end
           endcase
         end
