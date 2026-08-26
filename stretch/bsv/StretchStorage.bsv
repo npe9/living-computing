@@ -43,24 +43,58 @@ interface StretchStorage;
   // Read a full 64-bit word at a word address, honoring the
   // special-address semantics below. ActionValue, NOT a plain value
   // method, even though this implementation's answer is still same-
-  // cycle for every address (see module header): this is step one of
+  // cycle for every address (see module header): this was step one of
   // the BRAM-backed-storage migration (bsv/README.md "Next steps"
-  // item 6) -- changing every caller's calling CONVENTION (`<-` bind
-  // inside an action/actionvalue context, not a bare expression)
-  // while the underlying behavior is still guaranteed instant, so a
-  // later swap to a genuinely multi-cycle BRAM backing for addresses
-  // 32-and-up is a change to THIS METHOD's implementation and to
-  // StretchCore.step()'s control flow, not to any of its ~26 callers'
-  // syntax a second time. See StretchCore.bsv's step() for why a
-  // method call itself still cannot literally span multiple clock
-  // cycles in BSV -- that part of the migration is not done by this
-  // type change alone.
+  // item 6). DEPRECATED as of step two (readWordReq/readWordResp,
+  // below) -- kept only until every remaining caller is migrated (see
+  // docs/phase2_arm_inventory.md's conversion order); do not add new
+  // callers of this method.
   method ActionValue#(Word64) readWord(WordAddr a);
+
+  // Read a full 64-bit word, request/response style: issue the
+  // request in one rule, collect the answer in a LATER rule (never
+  // the same one -- readWordResp looks up whatever address
+  // readWordReq most recently stashed in a plain Reg, and a Reg
+  // write's new value isn't visible to a read in the SAME rule, only
+  // from the next clock edge on). This is step two of the BRAM-backed
+  // migration: the calling CONVENTION now matches what a genuinely
+  // multi-cycle backing needs, even though this implementation
+  // (Vector-backed, see module header) could still answer instantly.
+  // DELIBERATELY NOT pipelined (no support for issuing request N+1 in
+  // the same rule that collects request N's response, the way a real
+  // BRAM port allows -- confirmed possible in isolation,
+  // scratchpad/bram_probe/BramProbe4.bsv, but not built here): every
+  // multi-read arm just pays one full request-then-response round
+  // trip per read, serialized. This is a correctness project, not a
+  // performance one, and the test harness's step cap (2000, see
+  // strap/gen_tb.py) has ample room -- pipelining is a real
+  // future optimization, not a needed one, and adding it now would
+  // buy simulated-cycle-count only, at the cost of every arm's FSM
+  // needing to track two in-flight reads instead of one. No runtime
+  // guard against calling readWordResp with no request outstanding,
+  // matching this codebase's existing FSM style
+  // (`pendingIdxWrite`/`ioPending` in StretchCore.bsv have none either)
+  // -- correctness here rests on the FSM's own structure being right,
+  // checked by code review and the regression suite, not a runtime
+  // check. This lets call sites (and their StretchCore.step() FSM
+  // staging) be converted and verified incrementally, one arm at a
+  // time, with the backing swapped to real BRAM (`mkBRAM1Server`) only
+  // once every caller already
+  // tolerates the deferred-response shape -- see bsv/README.md "Next
+  // steps" item 6 and docs/phase2_arm_inventory.md for the conversion
+  // order and per-arm coverage evidence.
+  method Action readWordReq(WordAddr a);
+  method ActionValue#(Word64) readWordResp();
 
   // Write a full 64-bit word. Read-only/protected addresses silently
   // ignore the write (this models "permanently protected" locations;
   // it does not yet raise the protection-violation interrupt -- out of
-  // scope, see README). Takes effect on the next clock edge.
+  // scope, see README). Takes effect on the next clock edge. Stays a
+  // single-cycle Action through the whole BRAM migration (unlike
+  // readWord above) -- a write never needs to observe its own
+  // completion, so there's nothing for a caller to wait on even once
+  // the backing genuinely has latency; see docs/phase2_arm_inventory.md
+  // "Design settled before this inventory".
   method Action writeWord(WordAddr a, Word64 v);
 
   // Indicators: read the current 64-bit indicator word, or replace it
@@ -74,6 +108,23 @@ interface StretchStorage;
 
   method IndexWord readIndex(Bit#(4) j);
   method Action writeIndex(Bit#(4) j, IndexWord v);
+
+  // Dedicated accumulator accessors: addrAccLeft/addrAccRight (8, 9)
+  // are compile-time CONSTANTS baked into readAcc/writeAcc
+  // (StretchExecute.bsv), never a runtime-computed effective address
+  // -- unlike the ~24 call sites Phase 1 found can't know their
+  // address's range statically (StretchStorage's own git history),
+  // there is no ambiguity here: these two addresses are always
+  // Reg-backed and always will be (0-31 never moves to BRAM, see
+  // module header), so there is no reason to route them through the
+  // request/response pair above and make nearly every VflInt and
+  // Connective arm pay for a round trip it doesn't need. Read-only:
+  // writeAcc's existing two `writeWord` calls (addrAccLeft,
+  // addrAccRight, same rule) are already safe today and stay safe
+  // after the BRAM swap, since neither address ever reaches BRAM --
+  // see docs/phase2_arm_inventory.md.
+  method Word64 readAccLeft();
+  method Word64 readAccRight();
 endinterface
 
 // mkStretchStorage: models the full 18-bit (262,144-word) core address
@@ -109,7 +160,16 @@ module mkStretchStorage(StretchStorage);
   Reg#(Word64) transit                <- mkReg(0); // addr 15
   Vector#(16, Reg#(Word64)) xreg      <- replicateM(mkReg(0)); // addr 16-31
 
-  method ActionValue#(Word64) readWord(WordAddr a);
+  // readWordReq/readWordResp's deferral state -- see the interface
+  // comment for why an ordinary Reg is what enforces the one-rule-
+  // later requirement.
+  Reg#(WordAddr) pendingReadAddr      <- mkRegU;
+
+  // Shared lookup logic for readWord and readWordResp -- factored out
+  // so the two entry points (old and new calling convention) can't
+  // drift into two independently-maintained copies of the same case
+  // statement while readWord is still around.
+  function Word64 lookupWord(WordAddr a);
     case (a)
       addrZero: return 0; // permanently protected zero, p. "SPECIAL STORAGE ASSIGNMENT"
       1: return intervalTimerAndClock;
@@ -136,6 +196,18 @@ module mkStretchStorage(StretchStorage);
         end else
           return 0;
     endcase
+  endfunction
+
+  method ActionValue#(Word64) readWord(WordAddr a);
+    return lookupWord(a);
+  endmethod
+
+  method Action readWordReq(WordAddr a);
+    pendingReadAddr <= a;
+  endmethod
+
+  method ActionValue#(Word64) readWordResp();
+    return lookupWord(pendingReadAddr);
   endmethod
 
   method Action writeWord(WordAddr a, Word64 v);
@@ -199,6 +271,14 @@ module mkStretchStorage(StretchStorage);
 
   method Action writeIndex(Bit#(4) j, IndexWord v);
     xreg[j] <= packIndexWord(v);
+  endmethod
+
+  method Word64 readAccLeft();
+    return accLeft;
+  endmethod
+
+  method Word64 readAccRight();
+    return accRight;
   endmethod
 
 endmodule
