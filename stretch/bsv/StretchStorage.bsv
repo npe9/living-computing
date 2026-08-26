@@ -40,9 +40,22 @@ typedef 256 MemWords;
 typedef Bit#(TLog#(MemWords)) MemIndex;
 
 interface StretchStorage;
-  // Combinational read of a full 64-bit word at a word address,
-  // honoring the special-address semantics below.
-  method Word64 readWord(WordAddr a);
+  // Read a full 64-bit word at a word address, honoring the
+  // special-address semantics below. ActionValue, NOT a plain value
+  // method, even though this implementation's answer is still same-
+  // cycle for every address (see module header): this is step one of
+  // the BRAM-backed-storage migration (bsv/README.md "Next steps"
+  // item 6) -- changing every caller's calling CONVENTION (`<-` bind
+  // inside an action/actionvalue context, not a bare expression)
+  // while the underlying behavior is still guaranteed instant, so a
+  // later swap to a genuinely multi-cycle BRAM backing for addresses
+  // 32-and-up is a change to THIS METHOD's implementation and to
+  // StretchCore.step()'s control flow, not to any of its ~26 callers'
+  // syntax a second time. See StretchCore.bsv's step() for why a
+  // method call itself still cannot literally span multiple clock
+  // cycles in BSV -- that part of the migration is not done by this
+  // type change alone.
+  method ActionValue#(Word64) readWord(WordAddr a);
 
   // Write a full 64-bit word. Read-only/protected addresses silently
   // ignore the write (this models "permanently protected" locations;
@@ -96,7 +109,7 @@ module mkStretchStorage(StretchStorage);
   Reg#(Word64) transit                <- mkReg(0); // addr 15
   Vector#(16, Reg#(Word64)) xreg      <- replicateM(mkReg(0)); // addr 16-31
 
-  method Word64 readWord(WordAddr a);
+  method ActionValue#(Word64) readWord(WordAddr a);
     case (a)
       addrZero: return 0; // permanently protected zero, p. "SPECIAL STORAGE ASSIGNMENT"
       1: return intervalTimerAndClock;

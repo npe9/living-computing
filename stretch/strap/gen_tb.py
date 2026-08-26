@@ -140,7 +140,12 @@ def generate(module_name, prog, checks, step_cap=2000, reader_image=None,
     check_phase0 = run_phase + 1
     for i, (label, addr_expr, expected) in enumerate(checks):
         lines.append(f"  rule check{i} (phase == {check_phase0 + i});")
-        lines.append(f'    check("{label}", core.mem.readWord({addr_expr}), 64\'h{expected & ((1<<64)-1):016x});')
+        # core.mem.readWord is an ActionValue (StretchStorage.bsv's
+        # interface comment explains why: step one of the BRAM-backed-
+        # storage migration, bsv/README.md "Next steps" item 6) -- bind
+        # it before use rather than calling it as a bare expression.
+        lines.append(f"    let v{i} <- core.mem.readWord({addr_expr});")
+        lines.append(f'    check("{label}", v{i}, 64\'h{expected & ((1<<64)-1):016x});')
         lines.append(f"    phase <= {check_phase0 + i + 1};")
         lines.append("  endrule")
         lines.append("")

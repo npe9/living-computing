@@ -324,10 +324,11 @@ isn't repeated:
    materially larger rewrite than the I/O subsystem's `ioPending` FSM
    (which added multi-cycle behavior to exactly one operation kind);
    it touches the core control structure of every instruction that
-   reads or writes general storage. Not attempted this session --
-   correctly identifying the size and shape of the remaining work is
-   the deliverable, so a future session can scope it properly instead
-   of discovering the difficulty mid-rewrite. See "Next steps".
+   reads or writes general storage. Correctly identifying the size and
+   shape of the remaining work was itself the deliverable of the
+   investigation session; the actual conversion is now under way as
+   two separate, separately-verified phases -- see "Next steps" item 6
+   for the current status of each.
 
 ## Codesign: the STRAP assembler
 
@@ -446,42 +447,54 @@ of these).
    8 above has the full finding: a throwaway `mkBRAM1Server` probe at
    8192 words elaborated in 0.275s (vs. the plain-`Vector` version's
    5+ minute, 1.5TB+ RAM hang), so the elaboration-cost blocker is
-   confirmed solvable, cheaply. What's NOT done, and is the actual
-   remaining scope:
-   - Split `StretchStorage`: addresses 0-31 (Special Storage
-     Assignment) stay `Reg`-backed exactly as now — the Exchange
-     itself can't touch this range (p.111: "does not include internal
-     computer registers and index registers"), so this is an
-     architectural boundary, not an arbitrary one. Addresses 32-and-up
-     move to `BRAM1Port`/`mkBRAM1Server`.
-   - `readWord`/`writeWord` must become latency-bearing
-     (`ActionValue#(Word64)` and a request/response pair, or similar)
-     for EVERY caller, not just ones addressing general storage —
-     confirmed by checking all ~26 call sites across
-     `StretchExecute.bsv`/`StretchVFL.bsv`/`StretchCore.bsv`: all but
-     two (`addrAccLeft`/`addrAccRight`) pass a runtime-computed
-     `WordAddr`, so the 0-31-vs-32-plus dispatch cannot be resolved at
-     the call site at compile time — it has to happen inside a
-     uniformly latency-bearing interface.
-   - Every one of those ~26 call sites — nearly every VFL/FP/
-     Transmit/Connective/IoOp case arm in `execute()`, plus instruction
-     FETCH itself (`StretchCore.step()`'s decode reads a word from
-     `pcReg`, itself runtime-computed) — needs converting from a
-     single combinational expression into a multi-cycle sequence. This
-     is NOT the same shape as the existing `pendingIdxWrite`/
-     `ioPending` two-/N-cycle FSMs (which each add multi-cycle
-     behavior to one specific operation kind layered on top of an
-     otherwise-combinational `execute()`); this would make *fetch and
-     most of execute* multi-cycle, a change to the core's fundamental
-     control structure, not an addition to it.
-   - The existing regression suite (9 programs, all with exact
-     expected values) is the correctness oracle for this rewrite — it
-     passing unchanged is the verification; no new test program is
-     needed for the storage layer itself.
-   - `gen_tb.py`'s `load` rule (`core.mem.writeWord` once per phase)
-     and `check{i}` rules (`core.mem.readWord` read combinationally in
-     an `if`) both assume the current synchronous interface and would
-     need revisiting alongside the interface change, not after.
-   Given the size of this (core control-structure rewrite, not a
-   bounded addition), it's correctly scoped as its own dedicated
-   effort rather than something to fold into an unrelated milestone.
+   confirmed solvable, cheaply. Being done as two separate, separately-
+   verified phases (advisor's own framing: "never more than one revert
+   from green"):
+   - **PHASE 1, DONE**: `StretchStorage.readWord` changed from a plain
+     value method to `ActionValue#(Word64)`, with `mem` still the
+     same `Vector#(256, Reg#(Word64))` -- so every answer is still
+     same-cycle underneath, and this phase changes only the CALLING
+     CONVENTION (`<-` bind inside an action/actionvalue context) at
+     all ~26 call sites, plus every helper function in their call
+     chain that wasn't already `Action`/`ActionValue`-typed
+     (`readHW`/`writeHW`, `readAcc`, `progressiveIncrement`,
+     `maybeRefill`, `readField`/`writeField` in `StretchVFL.bsv`) and
+     `StretchCore.step()`'s own instruction-fetch reads. Also updated:
+     `StretchSmoke.bsv`'s hand-written checks and `gen_tb.py`'s
+     generated `check{i}` rule (both used to call `core.mem.readWord`
+     as a bare expression). Full 9-program regression suite passes
+     unchanged. This deliberately proves the *protocol* conversion is
+     correct in isolation, before *latency* is introduced at all --
+     any bug at this stage is unambiguously a call-site conversion
+     bug, not a BRAM-timing bug, by construction.
+   - **PHASE 2, NOT STARTED**: swap `mem`'s backing to a real
+     `BRAM1Port`/`mkBRAM1Server` for addresses 32-and-up (0-31 stays
+     `Reg`, per the Special Storage Assignment architectural boundary
+     -- p.111, "does not include internal computer registers and
+     index registers"). This is where the real difficulty is: a
+     method call cannot itself span multiple clock cycles in BSV, so
+     `readWord`'s ActionValue TYPE (now correct, from Phase 1) is not
+     by itself sufficient once the answer genuinely isn't available
+     same-cycle -- `StretchCore.step()` needs a new pending-read FSM
+     state, the same shape as `pendingIdxWrite`/`ioPending`, that
+     issues a BRAM request in one `step()` call and consumes the
+     response in a later one. The dependency analysis that makes this
+     tractable rather than needing a fully general FSM: checking every
+     call site found that NO general-storage read's address is ever
+     computed from another general-storage read's just-fetched value
+     (every address comes from Reg-only state -- index registers, PC
+     -- available instantly); the deepest case, `readField`'s
+     word-crossing read, is two INDEPENDENT reads at known-upfront
+     addresses (`w0`, `w0+1`), not a chain. That bounds the FSM to "at
+     most 2 pending reads, addresses known before either resolves" --
+     a two-phase "issue reads, then execute with the results" split
+     should work for every existing case arm, rather than an
+     arbitrary-depth wait state. Instruction fetch itself
+     (`StretchCore.step()`'s `readHW(st, pc)`/`readHW(st, pc+1)`, now
+     visible as its own ActionValue pair after Phase 1) needs the same
+     treatment and will likely be the first thing to get it, since
+     every instruction needs it and it has no case-arm-specific
+     variation to reason about first.
+   The existing regression suite remains the correctness oracle for
+   Phase 2 as well -- passing unchanged is the verification; no new
+   test program is needed for the storage layer itself.

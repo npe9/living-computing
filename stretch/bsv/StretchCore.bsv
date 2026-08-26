@@ -84,9 +84,10 @@ module mkStretchCore(StretchCore);
       end else begin
         if (kind == DevTape) begin
           TapeIndex ti = truncate(x.devIdx); // safe: confirmed < TapeWords above
-          if (x.isWrite)
-            ioDev.writeTapeWord(ti, st.readWord(x.memAddr));
-          else if (!x.skip)
+          if (x.isWrite) begin
+            let v <- st.readWord(x.memAddr);
+            ioDev.writeTapeWord(ti, v);
+          end else if (!x.skip)
             st.writeWord(x.memAddr, ioDev.readTapeWord(ti));
           // Tape position PERSISTS across instructions (StretchIO.bsv
           // "TAPE POSITION"), unlike the reader/printer's devIdx which
@@ -98,9 +99,10 @@ module mkStretchCore(StretchCore);
           ioDev.setTapePos(truncate(x.devIdx + 1));
         end else begin
           DeviceIndex di = truncate(x.devIdx); // safe: confirmed < DeviceWords above
-          if (x.isWrite)
-            ioDev.writePrinterWord(di, st.readWord(x.memAddr));
-          else if (!x.skip)
+          if (x.isWrite) begin
+            let v <- st.readWord(x.memAddr);
+            ioDev.writePrinterWord(di, v);
+          end else if (!x.skip)
             st.writeWord(x.memAddr, ioDev.readerWord(di));
         end
         // else: SKIP flag set on a READ (p.107) -- the device cursor
@@ -132,10 +134,13 @@ module mkStretchCore(StretchCore);
       return False;
     end else begin
       HWordAddr pc = pcReg;
-      HalfWord32 hw0 = readHW(st, pc);
+      HalfWord32 hw0 <- readHW(st, pc);
       InstrLen len = instrLen(hw0);
-      Maybe#(HalfWord32) hw1 = (len == Full) ? tagged Valid (readHW(st, pc + 1))
-                                              : tagged Invalid;
+      Maybe#(HalfWord32) hw1 = tagged Invalid;
+      if (len == Full) begin
+        HalfWord32 h1 <- readHW(st, pc + 1);
+        hw1 = tagged Valid h1;
+      end
       DecodedInstr di = decode(hw0, hw1);
       let {next, vflPending, ioStart} <- execute(st, ioDev, pc, len, di);
       pcReg <= next;

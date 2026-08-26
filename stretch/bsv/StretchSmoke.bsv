@@ -74,7 +74,7 @@ module mkStretchTb(Empty);
   function Action putHW(HWordAddr ha, HalfWord32 v) =
     action
       WordAddr wa = ha[18:1];
-      Word64 w = core.mem.readWord(wa);
+      Word64 w <- core.mem.readWord(wa);
       Word64 neww = (ha[0] == 0) ? {v, w[31:0]} : {w[63:32], v};
       core.mem.writeWord(wa, neww);
     endaction;
@@ -130,12 +130,14 @@ module mkStretchTb(Empty);
   // indicators, see bsv/README.md "Toolchain"), so each check gets its
   // own phase.
   rule checkArith1 (phase == 17);
-    check("mem[42] (5+7)", core.mem.readWord(42), 12);
+    let v <- core.mem.readWord(42);
+    check("mem[42] (5+7)", v, 12);
     phase <= 18;
   endrule
 
   rule checkArith2 (phase == 18);
-    check("mem[53] (3*10 via CB loop)", core.mem.readWord(53), 30);
+    let v <- core.mem.readWord(53);
+    check("mem[53] (3*10 via CB loop)", v, 30);
     core.setPC(90);
     phase <= 19;
   endrule
@@ -146,7 +148,8 @@ module mkStretchTb(Empty);
   endrule
 
   rule checkRnx (phase == 20);
-    check("indicator OP after RNX (unimplemented)", (core.mem.readWord(11) >> 48) & 1, 1);
+    let v <- core.mem.readWord(11);
+    check("indicator OP after RNX (unimplemented)", (v >> 48) & 1, 1);
     phase <= 21;
   endrule
 

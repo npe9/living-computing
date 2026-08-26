@@ -81,15 +81,16 @@ endfunction
 // Half-word-granular memory access built on the word-addressed store,
 // used by Direct Index Arithmetic's LV/LC/LR/SV/SC/SR (p.22-23: "bits
 // 0-18 of the effective address" identify a half-word).
-function Bit#(32) readHW(StretchStorage st, HWordAddr ha);
-  Word64 w = st.readWord(ha[18:1]);
-  return (ha[0] == 0) ? w[63:32] : w[31:0];
-endfunction
+function ActionValue#(Bit#(32)) readHW(StretchStorage st, HWordAddr ha) =
+  actionvalue
+    Word64 w <- st.readWord(ha[18:1]);
+    return (ha[0] == 0) ? w[63:32] : w[31:0];
+  endactionvalue;
 
 function Action writeHW(StretchStorage st, HWordAddr ha, Bit#(32) v) =
   action
     WordAddr wa = ha[18:1];
-    Word64 w = st.readWord(wa);
+    Word64 w <- st.readWord(wa);
     Word64 neww = (ha[0] == 0) ? {v, w[31:0]} : {w[63:32], v};
     st.writeWord(wa, neww);
   endaction;
@@ -99,8 +100,12 @@ function Action writeHW(StretchStorage st, HWordAddr ha, Bit#(32) v) =
 // header for the documented simplification).
 // ---------------------------------------------------------------------
 
-function SM128 readAcc(StretchStorage st) =
-  accToSM(st.readWord(addrAccLeft), st.readWord(addrAccRight));
+function ActionValue#(SM128) readAcc(StretchStorage st) =
+  actionvalue
+    Word64 hi <- st.readWord(addrAccLeft);
+    Word64 lo <- st.readWord(addrAccRight);
+    return accToSM(hi, lo);
+  endactionvalue;
 
 function Action writeAcc(StretchStorage st, SM128 v) =
   action
@@ -212,9 +217,10 @@ endfunction
 // original index word... conditional on the count's reaching zero".
 function ActionValue#(IndexWord) maybeRefill(StretchStorage st, IndexWord x, Bool doRefill) =
   actionvalue
-    if (doRefill && x.count == 0)
-      return unpackIndexWord(st.readWord(zeroExtend(x.refill)));
-    else
+    if (doRefill && x.count == 0) begin
+      Word64 w <- st.readWord(zeroExtend(x.refill));
+      return unpackIndexWord(w);
+    end else
       return x;
   endactionvalue;
 
@@ -223,15 +229,16 @@ function ActionValue#(IndexWord) maybeRefill(StretchStorage st, IndexWord x, Boo
 // part -- reused here as a plain positive increment, not an address --
 // into the SAME index register used as the effective address,
 // optionally counting down (2/3, 6/7) and refilling on count zero (3,
-// 7); indicators reflect the pre-refill state. A plain (non-Action)
-// function -- `st.readWord` (used for the refill case) is a
-// combinational value method -- returning the new index word rather
-// than writing it: see the long comment at this function's one call
-// site (in the VflInt case of `execute`, below) for why the actual
-// `st.writeIndex` for progressive indexing happens in StretchCore.step
-// instead of here.
-function Tuple2#(IndexWord, Word64) progressiveIncrement(
-    StretchStorage st, VflAddr a, IndexWord xIdx, Word64 indIn);
+// 7); indicators reflect the pre-refill state. ActionValue (not a
+// plain function) purely because `st.readWord` (used for the refill
+// case) now is one -- see StretchStorage.bsv's own interface comment
+// -- returning the new index word rather than writing it: see the
+// long comment at this function's one call site (in the VflInt case
+// of `execute`, below) for why the actual `st.writeIndex` for
+// progressive indexing happens in StretchCore.step instead of here.
+function ActionValue#(Tuple2#(IndexWord, Word64)) progressiveIncrement(
+    StretchStorage st, VflAddr a, IndexWord xIdx, Word64 indIn) =
+  actionvalue
     SM128 val = SM128{sign: xIdx.sign, mag: zeroExtend(xIdx.addr)};
     Bool subtract = (a.p >= 5);
     SM128 inc = SM128{sign: (subtract ? 1 : 0), mag: zeroExtend(a.addr)};
@@ -240,11 +247,13 @@ function Tuple2#(IndexWord, Word64) progressiveIncrement(
                      flag: xIdx.flag, count: xIdx.count, refill: xIdx.refill};
     Bit#(3) pLow = a.p - (subtract ? 4 : 0); // 1/2/3, regardless of add/subtract
     if (pLow != 1) x1.count = x1.count - 1;
-    IndexWord x2 = (pLow == 3 && x1.count == 0)
-                     ? unpackIndexWord(st.readWord(zeroExtend(x1.refill)))
-                     : x1;
+    IndexWord x2 = x1;
+    if (pLow == 3 && x1.count == 0) begin
+      Word64 w <- st.readWord(zeroExtend(x1.refill));
+      x2 = unpackIndexWord(w);
+    end
     return tuple2(x2, setIndexResultIndicatorsF(indIn, x1)); // pre-refill state, p.21
-endfunction
+  endactionvalue;
 
 // ---------------------------------------------------------------------
 // Top-level execute: consumes one decoded instruction, performs its
@@ -325,8 +334,12 @@ function ActionValue#(Tuple3#(HWordAddr, Maybe#(Tuple2#(Bit#(4), IndexWord)),
 
           case (vi.code)
             6'b000101: begin // L (Load)
-              Bit#(64) raw = immediate ? immediateOperand(vi.a.addr, len_)
-                                        : readField(st, ea, len_);
+              Bit#(64) raw = 0;
+              if (immediate) raw = immediateOperand(vi.a.addr, len_);
+              else begin
+                let r <- readField(st, ea, len_);
+                raw = r;
+              end
               SM128 sm = fieldToSM(raw, len_, bsz, vi.m.unsign, vi.m.invert);
               SM128 shifted = SM128 { sign: sm.sign, mag: sm.mag << offSh };
               writeAcc(st, shifted);
@@ -337,7 +350,7 @@ function ActionValue#(Tuple3#(HWordAddr, Maybe#(Tuple2#(Bit#(4), IndexWord)),
                 ind = setOpInvalid(ind);
                 vflOk = False;
               end else begin
-                SM128 acc = readAcc(st);
+                SM128 acc <- readAcc(st);
                 SM128 shifted = SM128 { sign: acc.sign, mag: acc.mag >> offSh };
                 Bit#(1) fsign = (vi.m.invert == 1) ? ~shifted.sign : shifted.sign;
                 Bit#(64) packedField = smToField(SM128{sign:fsign, mag:shifted.mag}, len_, bsz, vi.m.unsign);
@@ -345,11 +358,16 @@ function ActionValue#(Tuple3#(HWordAddr, Maybe#(Tuple2#(Bit#(4), IndexWord)),
               end
             end
             6'b000001: begin // + (Add; "-" is this opcode with invert=1)
-              Bit#(64) raw = immediate ? immediateOperand(vi.a.addr, len_)
-                                        : readField(st, ea, len_);
+              Bit#(64) raw = 0;
+              if (immediate) raw = immediateOperand(vi.a.addr, len_);
+              else begin
+                let r <- readField(st, ea, len_);
+                raw = r;
+              end
               SM128 opnd = fieldToSM(raw, len_, bsz, vi.m.unsign, vi.m.invert);
               SM128 opndSh = SM128 { sign: opnd.sign, mag: opnd.mag << offSh };
-              SM128 sum = smAdd(readAcc(st), opndSh);
+              SM128 acc <- readAcc(st);
+              SM128 sum = smAdd(acc, opndSh);
               writeAcc(st, sum);
               ind = setResultIndicatorsF(ind, sum);
             end
@@ -358,9 +376,9 @@ function ActionValue#(Tuple3#(HWordAddr, Maybe#(Tuple2#(Bit#(4), IndexWord)),
                 ind = setOpInvalid(ind);
                 vflOk = False;
               end else begin
-                Bit#(64) raw = readField(st, ea, len_);
+                let raw <- readField(st, ea, len_);
                 SM128 opnd = fieldToSM(raw, len_, bsz, vi.m.unsign, vi.m.invert);
-                SM128 acc = readAcc(st);
+                SM128 acc <- readAcc(st);
                 SM128 accSh = SM128 { sign: acc.sign, mag: acc.mag >> offSh };
                 SM128 sum = smAdd(opnd, accSh);
                 writeField(st, ea, len_, smToField(sum, len_, bsz, vi.m.unsign));
@@ -368,11 +386,16 @@ function ActionValue#(Tuple3#(HWordAddr, Maybe#(Tuple2#(Bit#(4), IndexWord)),
               end
             end
             6'b010001: begin // K (Compare) -> AL/AE/AH
-              Bit#(64) raw = immediate ? immediateOperand(vi.a.addr, len_)
-                                        : readField(st, ea, len_);
+              Bit#(64) raw = 0;
+              if (immediate) raw = immediateOperand(vi.a.addr, len_);
+              else begin
+                let r <- readField(st, ea, len_);
+                raw = r;
+              end
               SM128 opnd = fieldToSM(raw, len_, bsz, vi.m.unsign, vi.m.invert);
               SM128 opndSh = SM128 { sign: opnd.sign, mag: opnd.mag << offSh };
-              Cmp3 c = smCompare(readAcc(st), opndSh);
+              SM128 acc <- readAcc(st);
+              Cmp3 c = smCompare(acc, opndSh);
               ind = setAccCmpIndicatorsF(ind, c);
             end
             default: begin
@@ -402,7 +425,7 @@ function ActionValue#(Tuple3#(HWordAddr, Maybe#(Tuple2#(Bit#(4), IndexWord)),
           // reproduced the conflict even reduced to just two
           // memory-writing VflInt arms with all other sites removed).
           if (isProgressive && vflOk) begin
-            let {x2, ind2} = progressiveIncrement(st, vi.a, xIdx, ind);
+            let {x2, ind2} <- progressiveIncrement(st, vi.a, xIdx, ind);
             vflPending = tagged Valid tuple2(vi.a.i1, x2);
             ind = ind2;
           end
@@ -418,41 +441,42 @@ function ActionValue#(Tuple3#(HWordAddr, Maybe#(Tuple2#(Bit#(4), IndexWord)),
         case (di_.code)
           5'b00001: begin // LX
             idxWriteReg = di_.j; doIdxWrite = True;
-            idxWriteVal = unpackIndexWord(st.readWord(ea[18:1]));
+            let w <- st.readWord(ea[18:1]);
+            idxWriteVal = unpackIndexWord(w);
           end
           5'b10001: st.writeWord(ea[18:1], packIndexWord(x));                     // SX
           5'b00011: begin // LV
-            Bit#(32) h = readHW(st, ea);
+            Bit#(32) h <- readHW(st, ea);
             idxWriteReg = di_.j; doIdxWrite = True;
             idxWriteVal = IndexWord{addr:h[31:8], sign:h[7:7], flag:x.flag,
                                             count:x.count, refill:x.refill};
           end
           5'b10011: begin // SV
-            Bit#(32) h = readHW(st, ea);
+            Bit#(32) h <- readHW(st, ea);
             writeHW(st, ea, {x.addr, x.sign, h[6:0]});
           end
           5'b00101: begin // LC
-            Bit#(32) h = readHW(st, ea);
+            Bit#(32) h <- readHW(st, ea);
             idxWriteReg = di_.j; doIdxWrite = True;
             idxWriteVal = IndexWord{addr:x.addr, sign:x.sign, flag:x.flag,
                                             count:h[31:14], refill:x.refill};
           end
           5'b10101: begin // SC
-            Bit#(32) h = readHW(st, ea);
+            Bit#(32) h <- readHW(st, ea);
             writeHW(st, ea, {x.count, 7'b0, h[6:0]});
           end
           5'b00111: begin // LR
-            Bit#(32) h = readHW(st, ea);
+            Bit#(32) h <- readHW(st, ea);
             idxWriteReg = di_.j; doIdxWrite = True;
             idxWriteVal = IndexWord{addr:x.addr, sign:x.sign, flag:x.flag,
                                             count:x.count, refill:h[31:14]};
           end
           5'b10111: begin // SR
-            Bit#(32) h = readHW(st, ea);
+            Bit#(32) h <- readHW(st, ea);
             writeHW(st, ea, {x.refill, 7'b0, h[6:0]});
           end
           5'b01011, 5'b01101, 5'b01111: begin // V+ / V+C / V+CR
-            Bit#(32) h = readHW(st, ea);
+            Bit#(32) h <- readHW(st, ea);
             SM128 opnd = SM128{sign: h[7], mag: zeroExtend(h[31:8])};
             SM128 val  = SM128{sign: x.sign, mag: zeroExtend(x.addr)};
             SM128 sum  = smAdd(val, opnd);
@@ -466,13 +490,13 @@ function ActionValue#(Tuple3#(HWordAddr, Maybe#(Tuple2#(Bit#(4), IndexWord)),
             ind = setIndexResultIndicatorsF(ind, x1); // reflects state before any refill, p.23
           end
           5'b01001: begin // KV
-            Bit#(32) h = readHW(st, ea);
+            Bit#(32) h <- readHW(st, ea);
             SM128 opnd = SM128{sign: h[7], mag: zeroExtend(h[31:8])};
             SM128 val  = SM128{sign: x.sign, mag: zeroExtend(x.addr)};
             ind = setIndexCmpIndicatorsF(ind, smCompare(val, opnd));
           end
           5'b11001: begin // KC
-            Bit#(32) h = readHW(st, ea);
+            Bit#(32) h <- readHW(st, ea);
             Cmp3 c = (x.count == h[31:14]) ? CmpEqual : (x.count < h[31:14]) ? CmpLow : CmpHigh;
             ind = setIndexCmpIndicatorsF(ind, c);
           end
@@ -614,13 +638,15 @@ function ActionValue#(Tuple3#(HWordAddr, Maybe#(Tuple2#(Bit#(4), IndexWord)),
             3'b000: begin // R (Refill, unconditional)
               IndexWord x = st.readIndex(bm.idx);
               idxWriteReg = bm.idx; doIdxWrite = True;
-              idxWriteVal = unpackIndexWord(st.readWord(zeroExtend(x.refill)));
+              let w <- st.readWord(zeroExtend(x.refill));
+              idxWriteVal = unpackIndexWord(w);
             end
             3'b001: begin // RCZ (Refill on Count Zero)
               IndexWord x = st.readIndex(bm.idx);
               if (x.count == 0) begin
                 idxWriteReg = bm.idx; doIdxWrite = True;
-                idxWriteVal = unpackIndexWord(st.readWord(zeroExtend(x.refill)));
+                let w <- st.readWord(zeroExtend(x.refill));
+                idxWriteVal = unpackIndexWord(w);
               end
             end
             default: ind = setOpInvalid(ind); // EX, EXIC: out of scope
@@ -649,7 +675,8 @@ function ActionValue#(Tuple3#(HWordAddr, Maybe#(Tuple2#(Bit#(4), IndexWord)),
         else begin
           WordAddr srcBase = baWord(effAddr24(st, t.addr1, t.i1));
           WordAddr dstBase = (effAddr19(st, t.addr2, t.i2))[18:1];
-          st.writeWord(dstBase, st.readWord(srcBase));
+          let srcVal <- st.readWord(srcBase);
+          st.writeWord(dstBase, srcVal);
         end
       end
 
@@ -718,9 +745,13 @@ function ActionValue#(Tuple3#(HWordAddr, Maybe#(Tuple2#(Bit#(4), IndexWord)),
             ind = setOpInvalid(ind);
             vflOk = False;
           end else begin
-            Bit#(64) m = immediate ? immediateOperand(cn.a.addr, len_)
-                                    : readField(st, ea, len_);
-            SM128 acc = readAcc(st);
+            Bit#(64) m = 0;
+            if (immediate) m = immediateOperand(cn.a.addr, len_);
+            else begin
+              let r <- readField(st, ea, len_);
+              m = r;
+            end
+            SM128 acc <- readAcc(st);
             Bit#(64) a = truncate(acc.mag >> offSh) & fieldMask;
             Bit#(64) result = applyConnective(cn.conn, m, a) & fieldMask;
             Bool resultZero = (result == 0);
@@ -750,7 +781,7 @@ function ActionValue#(Tuple3#(HWordAddr, Maybe#(Tuple2#(Bit#(4), IndexWord)),
           end
 
           if (isProgressive && vflOk) begin
-            let {x2, ind2} = progressiveIncrement(st, cn.a, xIdx, ind);
+            let {x2, ind2} <- progressiveIncrement(st, cn.a, xIdx, ind);
             vflPending = tagged Valid tuple2(cn.a.i1, x2);
             ind = ind2;
           end
@@ -759,10 +790,13 @@ function ActionValue#(Tuple3#(HWordAddr, Maybe#(Tuple2#(Bit#(4), IndexWord)),
       tagged Fp .fp: begin
         if (fp.code == 7'b0000110 || fp.code == 7'b0001110) begin // L / ST
           WordAddr ea = effAddr18(st, fp.addr, fp.idx);
-          if (fp.code == 7'b0000110) // L: clears the whole accumulator (p.~90)
-            writeAcc(st, SM128{sign: 0, mag: zeroExtend(st.readWord(ea))});
-          else // ST
-            st.writeWord(ea, st.readWord(addrAccRight));
+          if (fp.code == 7'b0000110) begin // L: clears the whole accumulator (p.~90)
+            let v <- st.readWord(ea);
+            writeAcc(st, SM128{sign: 0, mag: zeroExtend(v)});
+          end else begin // ST
+            let v <- st.readWord(addrAccRight);
+            st.writeWord(ea, v);
+          end
         end else
           ind = setOpInvalid(ind); // FP arithmetic beyond L/ST: out of scope
       end
@@ -890,7 +924,8 @@ function ActionValue#(Tuple3#(HWordAddr, Maybe#(Tuple2#(Bit#(4), IndexWord)),
                 cw.epgk = 1; cw.eop = 1;
                 io.writeChanCW(chAddr, cw);
               end else begin
-                ControlWord cw0 = unpackControlWord(st.readWord(effA2));
+                let raw <- st.readWord(effA2);
+                ControlWord cw0 = unpackControlWord(raw);
                 io.writeChanCW(chAddr, cw0); // exchange adopts the
                                               // requested control word
                                               // (p.106: "the exchange
