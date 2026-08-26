@@ -35,7 +35,7 @@ execute partially, document the rest" ethos of the Bluespec model):
     4  Immediate index arithmetic -- full (LVS excluded, see opcodes.py).
     5  Count and branch           -- minimal: only the plain "CB"
        mnemonic (v=0/refill=0/branch-if-nonzero, matching
-       StretchTb.bsv's own usage), no mnemonic table for the v/refill/
+       StretchSmoke.bsv's own usage), no mnemonic table for the v/refill/
        branch-on-zero modifier combinations (see bsv/README.md's
        existing caveat on that modifier table, inherited here
        unchanged) -- not exercised by any program this assembler has
@@ -212,7 +212,7 @@ def encode_vfl_immediate(val, field_len, lineno=None):
 
 # ---------------------------------------------------------------------
 # Encoders -- one per DecodedInstr shape, field order copied verbatim
-# from StretchTb.bsv's enc* functions / StretchTypes.bsv structs.
+# from StretchSmoke.bsv's enc* functions / StretchTypes.bsv structs.
 # ---------------------------------------------------------------------
 
 def enc_vfl_full(addr24, i1, p, length, bs, offset, a, b, c, code, i2=0):
@@ -900,7 +900,7 @@ def emit_statement(stmt, symtab, image):
     if op == 'CB':
         # Format 5: OP,J,B19(K). Minimal encoding only -- v (value
         # increment) always 00/unchanged, refill always 0, branch on
-        # count-nonzero -- matching StretchTb.bsv's own hand-assembled
+        # count-nonzero -- matching StretchSmoke.bsv's own hand-assembled
         # usage of this format. No mnemonic table for the v/refill/
         # branch-on-zero modifier combinations yet; see module
         # docstring.

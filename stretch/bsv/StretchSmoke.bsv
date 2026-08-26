@@ -1,6 +1,16 @@
-// StretchTb.bsv
+// StretchSmoke.bsv
 //
-// Smoke-test testbench for mkStretchCore. Hand-assembles a small
+// Smoke-test testbench for mkStretchCore. DELIBERATELY NAMED WITHOUT A
+// "Tb" SUFFIX, unlike every generated per-program testbench
+// (StretchProblem21Tb.bsv, StretchIoTapeTb.bsv, etc.) -- this file has
+// twice been accidentally deleted by an ad-hoc `rm -f
+// bsv/Stretch*Tb.bsv` cleanup command typed outside run_tests.sh
+// (which itself enumerates exact generated filenames and never
+// globs). Renaming this file out of the "*Tb.bsv" shape makes that
+// class of mistake structurally impossible: no glob matching
+// generated testbenches can ever match this one again, no matter how
+// it's typed. See strap/README.md's Gotchas for the two prior
+// incidents. Hand-assembles a small
 // program (no STRAP assembler yet -- see bsv/README.md "Next steps")
 // exercising: VFL binary L/+/ST (unsigned, direct addressing),
 // immediate VFL add, index arithmetic (LCI), a Count-and-Branch loop,
@@ -17,7 +27,7 @@
 //
 // Run: `./build.sh && ./stretch_sim` (see bsv/Makefile / bsv/build.sh).
 
-package StretchTb;
+package StretchSmoke;
 
 import StretchTypes::*;
 import StretchStorage::*;

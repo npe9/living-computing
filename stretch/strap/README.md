@@ -202,7 +202,7 @@ what's original.
 
 Every run above is a true end-to-end test: STRAP source text through
 the Python assembler, through the *same* Bluespec decoder/executor
-already verified by `../bsv/StretchTb.bsv`'s hand-assembled smoke
+already verified by `../bsv/StretchSmoke.bsv`'s hand-assembled smoke
 test, to a checked result.
 
 ## Codesign contract

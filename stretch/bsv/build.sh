@@ -15,7 +15,7 @@ BSC=/opt/homebrew/Cellar/bsc/2026.01/bin/bsc
 cd "$(dirname "$0")"
 mkdir -p build simbuild
 
-"$BSC" -sim -simdir simbuild -bdir build -info-dir build -g mkStretchTb -u StretchTb.bsv +RTS -K512m -RTS
+"$BSC" -sim -simdir simbuild -bdir build -info-dir build -g mkStretchTb -u StretchSmoke.bsv +RTS -K512m -RTS
 "$BSC" -sim -simdir simbuild -bdir build -e mkStretchTb -o stretch_sim +RTS -K512m -RTS
 
 if [ "$1" = "run" ]; then

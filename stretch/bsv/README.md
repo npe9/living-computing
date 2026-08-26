@@ -36,7 +36,7 @@ instruction set, built from the primary sources (all under
 | `StretchExecute.bsv` | Execute stage for the in-scope opcode subset. |
 | `StretchIO.bsv` | Simulated Input-Output subsystem (three fixed devices — card reader, printer, tape — standing in for the real Exchange and external units); see its own file header for the full scope statement. |
 | `StretchCore.bsv` | Fetch/decode/execute, one instruction per `step()` — returns whether the instruction halted (branched to its own address, the `BEW, $` idiom), for STRAP-program runners (`../strap/gen_tb.py`) to stop on rather than a fixed step count. A progressive-indexing VFL instruction takes two `step()` calls (see "Toolchain" item 7); an RD/W input-output instruction takes as many calls as the block has words, one word drained per call, device-kind-dependent capacity (see `StretchIO.bsv`). |
-| `StretchTb.bsv` | Hand-assembled smoke test (predates the STRAP assembler; kept as a decoder/executor regression test independent of it). |
+| `StretchSmoke.bsv` | Hand-assembled smoke test (predates the STRAP assembler; kept as a decoder/executor regression test independent of it). |
 
 ## Bit-numbering convention
 
@@ -222,7 +222,7 @@ isn't repeated:
 3. `mkAutoFSM`/`StmtFSM`'s `seq` block mis-scheduled sequential,
    independent `writeWord` calls as false write/write conflicts
    (reproduced with a two-line `seq`, confirmed absent with an
-   equivalent hand-written `rule`). `StretchTb.bsv` uses an explicit
+   equivalent hand-written `rule`). `StretchSmoke.bsv` uses an explicit
    phase-register FSM instead.
 4. **A plain `Reg` (and `RegFile`, even the "WCF" variant — despite
    the name, that only relaxes *read/write* conflict-freedom, not
@@ -288,13 +288,46 @@ isn't repeated:
    different regime entirely, and the combinational read-mux a
    `Vector#(N, Reg)` compiles to is the suspected reason (each of the
    many per-instruction reads provisions a mux over all N registers).
-   Real DCP-sized memory needs a different storage structure (a
-   BRAM-backed module with registered reads, e.g. the `BRAM` library's
-   `mkBRAM1Server` or similar) rather than a bigger `Vector` — which
-   is itself a larger surgery, since `execute()`'s many arms currently
-   assume `st.readWord` is combinational (same-cycle) and would need
-   restructuring around a read latency. Not attempted this session;
-   see "Next steps".
+   **CONFIRMED, not just suspected, in a later session**: a throwaway
+   probe module (`mkBRAM1Server`, 8192 words, request/response
+   read-after-write) elaborated in 0.275 seconds and ran correctly in
+   Bluesim — the exact same word count that hung the `Vector` version
+   for 5+ minutes at 1.5TB+ RAM. The BRAM library is present in this
+   `bsc` installation (`Libraries/BRAM.bo`, `BRAMCore.bo`) and works in
+   both Bluesim and (per `Verilog/BRAM1.v` etc. being present)
+   synthesis, so the elaboration-cost blocker is solvable, cheaply,
+   and confirmed rather than assumed.
+   
+   What is NOT solved yet, and is the real remaining size of this
+   undertaking: `execute()`'s many arms currently assume
+   `st.readWord`/`st.writeWord` are combinational (same-cycle), and a
+   BRAM read genuinely is not -- the probe's own read took two
+   separate rule firings (`request.put` then `response.get`), not one.
+   Critically, **the address split can't be pushed to call sites**:
+   `readWord`'s ~26 call sites across `StretchExecute.bsv` (18),
+   `StretchVFL.bsv` (4), and `StretchCore.bsv` (4) overwhelmingly pass
+   a *runtime-computed* `WordAddr` (index-register-modified effective
+   addresses, `XW` refill fields, Transmit source/dest addresses --
+   see e.g. `effA2`, `ea`, `x.refill` at their call sites), not a
+   compile-time-known address in either the 0-31 special-register
+   range or the 32-and-up general-storage range. Only two call sites
+   (`addrAccLeft`/`addrAccRight`) are statically known. This means the
+   0-31-stays-`Reg`/32-plus-becomes-`BRAM` split the Special Storage
+   Assignment table itself justifies architecturally (the Exchange
+   already can't touch locations 0-31, so it's not an arbitrary cut)
+   still requires `StretchStorage`'s `readWord` interface to become
+   uniformly latency-bearing (an `ActionValue`, or a request/response
+   pair) for every caller, not just the ones that happen to address
+   general storage -- which means most of `execute()`'s ~26 read/write
+   call sites, not a handful, need converting from a single
+   combinational expression into a multi-cycle sequence. That is a
+   materially larger rewrite than the I/O subsystem's `ioPending` FSM
+   (which added multi-cycle behavior to exactly one operation kind);
+   it touches the core control structure of every instruction that
+   reads or writes general storage. Not attempted this session --
+   correctly identifying the size and shape of the remaining work is
+   the deliverable, so a future session can scope it properly instead
+   of discovering the difficulty mid-rewrite. See "Next steps".
 
 ## Codesign: the STRAP assembler
 
@@ -407,3 +440,48 @@ of these).
    or `TapeWords` (16) is ever needed, `StretchIO`'s Vector-based
    device images have the same elaboration-cost ceiling as item 8
    above.
+6. **The BRAM-backed storage rewrite** — the single prerequisite every
+   other DCP-scale-transcription item in this file and
+   `docs/archival_inventory.md` ultimately depends on. "Toolchain" item
+   8 above has the full finding: a throwaway `mkBRAM1Server` probe at
+   8192 words elaborated in 0.275s (vs. the plain-`Vector` version's
+   5+ minute, 1.5TB+ RAM hang), so the elaboration-cost blocker is
+   confirmed solvable, cheaply. What's NOT done, and is the actual
+   remaining scope:
+   - Split `StretchStorage`: addresses 0-31 (Special Storage
+     Assignment) stay `Reg`-backed exactly as now — the Exchange
+     itself can't touch this range (p.111: "does not include internal
+     computer registers and index registers"), so this is an
+     architectural boundary, not an arbitrary one. Addresses 32-and-up
+     move to `BRAM1Port`/`mkBRAM1Server`.
+   - `readWord`/`writeWord` must become latency-bearing
+     (`ActionValue#(Word64)` and a request/response pair, or similar)
+     for EVERY caller, not just ones addressing general storage —
+     confirmed by checking all ~26 call sites across
+     `StretchExecute.bsv`/`StretchVFL.bsv`/`StretchCore.bsv`: all but
+     two (`addrAccLeft`/`addrAccRight`) pass a runtime-computed
+     `WordAddr`, so the 0-31-vs-32-plus dispatch cannot be resolved at
+     the call site at compile time — it has to happen inside a
+     uniformly latency-bearing interface.
+   - Every one of those ~26 call sites — nearly every VFL/FP/
+     Transmit/Connective/IoOp case arm in `execute()`, plus instruction
+     FETCH itself (`StretchCore.step()`'s decode reads a word from
+     `pcReg`, itself runtime-computed) — needs converting from a
+     single combinational expression into a multi-cycle sequence. This
+     is NOT the same shape as the existing `pendingIdxWrite`/
+     `ioPending` two-/N-cycle FSMs (which each add multi-cycle
+     behavior to one specific operation kind layered on top of an
+     otherwise-combinational `execute()`); this would make *fetch and
+     most of execute* multi-cycle, a change to the core's fundamental
+     control structure, not an addition to it.
+   - The existing regression suite (9 programs, all with exact
+     expected values) is the correctness oracle for this rewrite — it
+     passing unchanged is the verification; no new test program is
+     needed for the storage layer itself.
+   - `gen_tb.py`'s `load` rule (`core.mem.writeWord` once per phase)
+     and `check{i}` rules (`core.mem.readWord` read combinationally in
+     an `if`) both assume the current synchronous interface and would
+     need revisiting alongside the interface change, not after.
+   Given the size of this (core control-structure rewrite, not a
+   bounded addition), it's correctly scoped as its own dedicated
+   effort rather than something to fold into an unrelated milestone.

@@ -26,7 +26,7 @@ run() {
   # caught by advisor review, which is also how the *previous* version
   # of this function was caught running the smoke test in a subshell,
   # discarding `FAILED=1` set there when the subshell exited (verified
-  # fixed by deliberately breaking StretchTb.bsv's own check and
+  # fixed by deliberately breaking StretchSmoke.bsv's own check and
   # confirming this function reports it).
   name="$1"; shift
   echo "=== $name ==="
@@ -37,7 +37,7 @@ run() {
   echo
 }
 
-# -- 1. Hand-assembled BSV smoke test (StretchTb.bsv, not STRAP-derived) --
+# -- 1. Hand-assembled BSV smoke test (StretchSmoke.bsv, not STRAP-derived) --
 cd "$BSV_DIR"
 run "bsv smoke test (make run)" make run
 cd "$STRAP_DIR"

@@ -139,6 +139,25 @@ tape almost certainly does. Reason (2), the `MemWords`/BRAM storage
 blocker, is completely untouched by this update and remains the larger
 prerequisite.
 
+**Update, third day**: reason (2) is now investigated, not untouched.
+A throwaway BRAM probe (8192 words, `mkBRAM1Server`) elaborated in
+0.275 seconds -- versus the plain-`Vector` attempt's 5+ minute,
+1.5TB+-RAM hang at the same word count -- confirming the elaboration
+blocker really is solvable and cheaply, not just theoretically.
+That's the good news; it is not the same as the blocker being *fixed*.
+Checking all ~26 `readWord`/`writeWord` call sites in
+`StretchExecute.bsv`/`StretchVFL.bsv`/`StretchCore.bsv` found that all
+but two pass a runtime-computed address, meaning BRAM's read latency
+can't be confined to a few call sites -- nearly every VFL/FP/Transmit/
+Connective/IoOp case arm in `execute()`, plus instruction fetch
+itself, would need converting from a single combinational read into a
+multi-cycle sequence. That's a rewrite of the core's control
+structure, not an addition like the `pendingIdxWrite`/`ioPending` FSMs
+were -- see `bsv/README.md` "Toolchain" item 8 and "Next steps" item 6
+for the full scope breakdown. Still the concrete prerequisite for any
+DCP-scale transcription, now with a real cost estimate instead of a
+question mark.
+
 ## 2. STRAP II System Analysis Guide (`C22-6729`, top-level)
 
 211 pages, ~65% sampled directly (front matter, both main-pass flow
