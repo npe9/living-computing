@@ -330,6 +330,37 @@ isn't repeated:
    two separate, separately-verified phases -- see "Next steps" item 6
    for the current status of each.
 
+   **Two cheap "maybe no rewrite is needed" alternatives were tried
+   and both definitively ruled out, in a later session again** (worth
+   recording so no future session re-tries either): (1) `RegFile` at
+   8192 words, tried directly in the real model (not a synthetic
+   probe) by swapping `mem`'s backing and rebuilding: rejected at
+   compile time with `(G0002) 'mem.sub' needs more than 5 ports`,
+   naming 14 distinct live call sites -- confirms the original design
+   comment's claim about `RegFile`'s 5-port cap is real and applies
+   even in Bluesim (not just Verilog synthesis, which this project
+   never targets anyway), and that bsc's conflict analysis does NOT
+   collapse mutually-exclusive `case`-statement arms into a shared
+   port -- it treats every statically-reachable call site as
+   potentially live. (2) `BRAM_Configure{latency: 0}` (same-cycle
+   BRAM, which would keep `readWord` effectively combinational with no
+   FSM needed): this `bsc`'s `BRAM.bsv` explicitly rejects it at
+   elaboration ("latency must be either 1 or 2") -- not a design
+   choice to work around, a hard floor in the library itself. Between
+   these two results, there is no shortcut: real multi-cycle handling
+   (Phase 2, `mem` on real BRAM plus a per-instruction pending-read FSM
+   in `StretchCore.step()`) is confirmed necessary, not merely likely.
+
+   **The elaboration-cost curve was also measured, not just bounded at
+   the two endpoints already known (256 seconds, 8192 hangs)**: 512
+   words took 1m54s to elaborate (vs. 256's few seconds), and 1024
+   words did not finish within a 2-minute timeout. This is a steep,
+   likely combinatorial cliff starting almost immediately past 256,
+   not a gentle slope -- doubling `MemWords` roughly from "seconds" to
+   "two minutes" in one step. Confirms `Vector#(N, Reg)` is not a
+   viable path to anything past a few hundred words, reinforcing (2)
+   above rather than opening a middle-ground option.
+
 ## Codesign: the STRAP assembler
 
 The user's stated goal for this line of work is **codesign**: a STRAP
@@ -467,34 +498,59 @@ of these).
      correct in isolation, before *latency* is introduced at all --
      any bug at this stage is unambiguously a call-site conversion
      bug, not a BRAM-timing bug, by construction.
-   - **PHASE 2, NOT STARTED**: swap `mem`'s backing to a real
-     `BRAM1Port`/`mkBRAM1Server` for addresses 32-and-up (0-31 stays
-     `Reg`, per the Special Storage Assignment architectural boundary
-     -- p.111, "does not include internal computer registers and
-     index registers"). This is where the real difficulty is: a
-     method call cannot itself span multiple clock cycles in BSV, so
-     `readWord`'s ActionValue TYPE (now correct, from Phase 1) is not
-     by itself sufficient once the answer genuinely isn't available
-     same-cycle -- `StretchCore.step()` needs a new pending-read FSM
-     state, the same shape as `pendingIdxWrite`/`ioPending`, that
-     issues a BRAM request in one `step()` call and consumes the
-     response in a later one. The dependency analysis that makes this
-     tractable rather than needing a fully general FSM: checking every
-     call site found that NO general-storage read's address is ever
+   - **PHASE 2, NOT STARTED, but two "avoid the rewrite entirely"
+     shortcuts have been tried directly in the model and definitively
+     ruled out** (see "Toolchain" item 8's own update for the exact
+     errors): `RegFile` at 8192 words hits its real 5-port cap (14
+     live call sites named in the build error); `BRAM_Configure`
+     doesn't support `latency: 0` at all in this `bsc`'s library. So
+     the real plan: swap `mem`'s backing to `BRAM1Port`/`mkBRAM1Server`
+     (latency 1) for addresses 32-and-up (0-31 stays `Reg`, per the
+     Special Storage Assignment architectural boundary -- p.111, "does
+     not include internal computer registers and index registers").
+     The difficulty: a method call cannot itself span multiple clock
+     cycles in BSV, so `readWord`'s ActionValue TYPE (now correct, from
+     Phase 1) is not by itself sufficient once the answer genuinely
+     isn't available same-cycle -- `StretchCore.step()` needs a new
+     pending-read FSM state, the same shape as
+     `pendingIdxWrite`/`ioPending`, that issues a BRAM request in one
+     `step()` call and consumes the response in a later one.
+     Per-instruction read count is bounded and now precisely known
+     (corrected from an earlier, too-high estimate that wrongly assumed
+     `readAcc`'s two reads could hit BRAM -- they can't, `addrAccLeft`/
+     `addrAccRight` are 8/9, always `Reg`-backed, always instant):
+     instruction fetch needs 0-2 (`readHW` at `pc`, and `pc+1` only for
+     a Full-length instruction); most `execute()` case arms need
+     exactly 0 or 1 BRAM-eligible read; the worst cases are `M+`/`CM`
+     (`readField`'s 1 read plus `writeField`'s own internal
+     read-modify-write read = 2) and `readField`'s own word-crossing
+     case (`w0`, `w0+1`, both independent, known-upfront addresses,
+     not a chain = 2). No general-storage read's address is EVER
      computed from another general-storage read's just-fetched value
-     (every address comes from Reg-only state -- index registers, PC
-     -- available instantly); the deepest case, `readField`'s
-     word-crossing read, is two INDEPENDENT reads at known-upfront
-     addresses (`w0`, `w0+1`), not a chain. That bounds the FSM to "at
-     most 2 pending reads, addresses known before either resolves" --
-     a two-phase "issue reads, then execute with the results" split
-     should work for every existing case arm, rather than an
-     arbitrary-depth wait state. Instruction fetch itself
-     (`StretchCore.step()`'s `readHW(st, pc)`/`readHW(st, pc+1)`, now
-     visible as its own ActionValue pair after Phase 1) needs the same
-     treatment and will likely be the first thing to get it, since
-     every instruction needs it and it has no case-arm-specific
-     variation to reason about first.
+     anywhere in the codebase -- every address comes from `Reg`-only
+     state (index registers, PC), available instantly -- which is what
+     bounds this to "at most 2 pending reads per instruction" rather
+     than an arbitrary-depth wait state.
+     **Ruled out, on advisor's explicit warning**: calling `execute()`
+     twice (once to discover what it needs, once to finish with the
+     value) -- this would re-fire every `st.writeWord`/`writeIndex`/
+     `setIndicatorBits`/`io.writeChanCW` the reached arm performs on
+     its second call, since BSV has no way to make a function's
+     Actions conditionally silent on a "dry run." Also ruled out: a
+     separate address-prediction function mirroring `execute()`'s own
+     addressing logic -- a second source of truth for what to read,
+     where a future divergence between the two produces a silently
+     wrong read that this project's 9-program suite (which doesn't
+     exercise every case arm) might not catch. The confirmed direction
+     is explicit per-case-arm staging: each arm that needs a
+     BRAM-eligible read gets manually split into its own numbered
+     stages (issue read, resume with result), the same hand-written-FSM
+     discipline `pendingIdxWrite`/`ioPending` already established for
+     their own operations, extended to cover ~15 case arms instead of
+     one operation kind each. Instruction fetch (0-2 reads, no
+     case-arm variation) is the natural first slice to implement and
+     verify in isolation, per advisor's own recommendation, before
+     extending the same FSM shape to `execute()`'s internal reads.
    The existing regression suite remains the correctness oracle for
    Phase 2 as well -- passing unchanged is the verification; no new
    test program is needed for the storage layer itself.
