@@ -224,31 +224,70 @@ reflects the deduped shape already; step 5 of the conversion order
 below is now just "convert SV/SC/SR" (no separate dedup-first step
 needed).
 
-## Conversion order (per advisor: storage interface -> fetch -> arms in this order)
+## Conversion order (revised by advisor mid-Phase-2: interface-first with
+## the OLD Vector backing kept alive alongside the new methods, call
+## sites and their FSM staging migrated incrementally with a green
+## regression suite at every step, backing swapped to real BRAM ONLY
+## once every caller already tolerates a deferred response -- not the
+## single big-bang "readWord -> readWordReq/readWordResp AND swap to
+## BRAM in one step" originally sketched below step 1's own text,
+## which would have meant one long uncompilable window with no green
+## checkpoint in between)
 
-1. `StretchStorage.bsv`: `readWord` -> `readWordReq`/`readWordResp`,
-   swap `mem` to `BRAM1Port`/`mkBRAM1Server` for addr>=32.
-2. `StretchCore.step()`'s instruction fetch (0-2 independent reads, no
-   case-arm variation, all 8 programs exercise it -- best-covered
-   place to prove the FSM shape works at all).
-3. `StretchCore.step()`'s `ioPending` W-direction read (already
-   isolated to one call site, both directions covered by 2 programs).
-4. Arms with 0-1 independent reads and no write dependency (lowest
-   risk, in roughly coverage order): VflInt L/K/+ (covered), DirIndex
-   LX/LV/LC/LR/KV/KC (LX/LV covered, LC/LR/KV/KC not), ImmIndex/
-   CountBranch refills (not separately risky), Connective C/CT (CT
-   covered, C not), BranchOrMisc R/RCZ/Z (not covered).
-5. SV/SC/SR (already deduped, see above -- just needs FSM staging now).
-6. The genuinely dependent RMW arms, most-covered first: VflInt ST
-   (covered) and Fp ST (coverage unresolved -- resolve first), then
-   the uncovered ones: VflInt M+, Connective CM, Transmit (no mnemonic
-   exists -- consider adding one, or explicitly flag as untestable as
-   currently scoped), Fp L (coverage unresolved).
-7. IoOp's RD/W control-word-adoption read (covered, low complexity --
-   could move earlier, listed last only because it's naturally grouped
-   with the `ioPending` FSM work in step 3).
+1. DONE (`a1378f0`): add `readWordReq`/`readWordResp` and
+   `readAccLeft`/`readAccRight` to `StretchStorage.bsv` ALONGSIDE the
+   existing `readWord` -- purely additive, `mem` still
+   `Vector#(256,Reg#(Word64))`, nothing yet calls the new methods.
+2. DONE (`25be1c8`): convert `readAcc`/`writeAcc` (StretchExecute.bsv)
+   and Fp ST's direct `addrAccRight` read to the new dedicated
+   accessors, dropping `readAcc`'s `ActionValue` wrapper entirely --
+   these never needed the general request/response path to begin with
+   (compile-time-constant addresses, see "Design settled" above).
+3. DONE (`98aaba9`): `StretchCore.step()`'s instruction fetch, staged
+   across 2 (Half) or 3 (Full-length) step() calls via a new
+   `fetchPending` register. First genuine multi-cycle conversion;
+   chosen first for exactly the reasons originally given (0-2 reads,
+   no case-arm variation, exercised by every program). Necessitated
+   fixing `StretchSmoke.bsv`'s hand-written, hardcoded step counts
+   (`stepCount < 24` -> `< 70`, RNX's single `core.step()` call -> 2),
+   which had baked in the old "1 instruction = 1 step() call"
+   assumption -- `strap/gen_tb.py`'s generated testbenches needed no
+   changes, since they already loop on `step()` until it returns
+   `True` rather than counting raw calls.
+4. DONE (`cc0a690`): `StretchCore.step()`'s `ioPending` W-direction
+   (memory->device) read, staged via a new `ioReadIssued` flag --
+   2 step() calls per word moved instead of 1. RD-direction
+   (device->memory) untouched, still 1 call per word (only
+   `st.writeWord`, which stays single-cycle throughout this whole
+   migration). Required restructuring the 3-way branch (capacity-
+   exceeded / issue-read-and-wait / process-word) so each ends in its
+   own `return False` -- bsc's (P0030) rejected a shared trailing
+   return once one branch needed an early one.
+5. NOT STARTED. Arms with 0-1 independent reads and no write
+   dependency (lowest risk, in roughly coverage order): VflInt L/K/+
+   (covered), DirIndex LX/LV/LC/LR/KV/KC (LX/LV covered, LC/LR/KV/KC
+   not), ImmIndex/CountBranch refills (not separately risky),
+   Connective C/CT (CT covered, C not), BranchOrMisc R/RCZ/Z (not
+   covered).
+6. NOT STARTED. SV/SC/SR (already deduped, see above -- just needs FSM
+   staging now).
+7. NOT STARTED. The genuinely dependent RMW arms, most-covered first:
+   VflInt ST (covered) and Fp ST (coverage unresolved -- resolve
+   first), then the uncovered ones: VflInt M+, Connective CM, Transmit
+   (no mnemonic exists -- consider adding one, or explicitly flag as
+   untestable as currently scoped), Fp L (coverage unresolved).
+8. NOT STARTED. IoOp's RD/W control-word-adoption read (covered, low
+   complexity -- could have moved earlier, grouped last only because
+   it's naturally adjacent to the `ioPending` FSM work in step 4).
+9. NOT STARTED, LAST. Once every call site above tolerates a deferred
+   response: swap `StretchStorage.bsv`'s `mem` from
+   `Vector#(256,Reg#(Word64))` to `BRAM1Port`/`mkBRAM1Server` (latency
+   1) for addr>=32, delete the now-unused old `readWord` method and
+   its `lookupWord` duplication, bump `MemWords` past 256 in a
+   SEPARATE later commit (advisor: isolate latency-handling from
+   capacity, one candidate cause per commit).
 
-Each step should build and pass the full regression suite before
-moving to the next; per advisor, passing unchanged is necessary but
-not sufficient evidence for arms this suite's 8 programs don't
-exercise -- those are named explicitly above, not left implicit.
+Each step builds and passes the full regression suite before moving to
+the next; per advisor, passing unchanged is necessary but not
+sufficient evidence for arms this suite's 8 programs don't exercise --
+those are named explicitly above, not left implicit.

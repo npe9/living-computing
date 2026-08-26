@@ -498,99 +498,81 @@ of these).
      correct in isolation, before *latency* is introduced at all --
      any bug at this stage is unambiguously a call-site conversion
      bug, not a BRAM-timing bug, by construction.
-   - **PHASE 2, NOT STARTED, but two "avoid the rewrite entirely"
-     shortcuts have been tried directly in the model and definitively
-     ruled out** (see "Toolchain" item 8's own update for the exact
-     errors): `RegFile` at 8192 words hits its real 5-port cap (14
-     live call sites named in the build error); `BRAM_Configure`
-     doesn't support `latency: 0` at all in this `bsc`'s library. So
-     the real plan: swap `mem`'s backing to `BRAM1Port`/`mkBRAM1Server`
-     (latency 1) for addresses 32-and-up (0-31 stays `Reg`, per the
-     Special Storage Assignment architectural boundary -- p.111, "does
-     not include internal computer registers and index registers").
-     The difficulty: a method call cannot itself span multiple clock
-     cycles in BSV, so `readWord`'s ActionValue TYPE (now correct, from
-     Phase 1) is not by itself sufficient once the answer genuinely
-     isn't available same-cycle -- `StretchCore.step()` needs a new
-     pending-read FSM state, the same shape as
-     `pendingIdxWrite`/`ioPending`, that issues a BRAM request in one
-     `step()` call and consumes the response in a later one.
-     Per-instruction read count is bounded and now precisely known
-     (corrected from an earlier, too-high estimate that wrongly assumed
-     `readAcc`'s two reads could hit BRAM -- they can't, `addrAccLeft`/
-     `addrAccRight` are 8/9, always `Reg`-backed, always instant):
-     instruction fetch needs 0-2 (`readHW` at `pc`, and `pc+1` only for
-     a Full-length instruction); most `execute()` case arms need
-     exactly 0 or 1 BRAM-eligible read; the worst cases are `M+`/`CM`
-     (`readField`'s 1 read plus `writeField`'s own internal
-     read-modify-write read = 2) and `readField`'s own word-crossing
-     case (`w0`, `w0+1`, both independent, known-upfront addresses,
-     not a chain = 2). No general-storage read's address is EVER
-     computed from another general-storage read's just-fetched value
-     anywhere in the codebase -- every address comes from `Reg`-only
-     state (index registers, PC), available instantly -- which is what
-     bounds this to "at most 2 pending reads per instruction" rather
-     than an arbitrary-depth wait state.
+   - **PHASE 2, IN PROGRESS.** Two "avoid the rewrite entirely"
+     shortcuts were tried directly in the model and definitively ruled
+     out before Phase 2 started (see "Toolchain" item 8's own update
+     for the exact errors): `RegFile` at 8192 words hits its real
+     5-port cap (14 live call sites named in the build error);
+     `BRAM_Configure` doesn't support `latency: 0` at all in this
+     `bsc`'s library. The real plan, and its full current status
+     (which arms are converted, which aren't, exact commit hashes, and
+     the coverage evidence per arm), now lives in
+     `docs/phase2_arm_inventory.md` rather than here -- that file is
+     the living document; this entry is a pointer plus the headline
+     findings worth knowing before reading it.
+     **Revised sequencing** (advisor's mid-Phase-2 correction to the
+     original one-big-conversion plan): rather than changing
+     `readWord`'s type and every one of its ~26 callers' calling
+     convention in one uncompilable window, `readWordReq`/
+     `readWordResp` were added ALONGSIDE the existing `readWord`
+     (kept, unchanged, still `Vector`-backed) so call sites and their
+     `StretchCore.step()` FSM staging could be migrated and verified
+     incrementally, one arm at a time, always green. The backing swaps
+     to real `BRAM1Port`/`mkBRAM1Server` only as the LAST step, once
+     every caller already tolerates a deferred response -- at that
+     point it's purely a change to where the answer comes from, not
+     when it's collected, since every caller already waits a cycle
+     either way.
+     **A genuine discovery that revised an earlier claim**: this
+     README previously said instruction fetch was "not a separately-
+     shippable first slice" because splitting `readWord` into request/
+     response would force every caller to convert simultaneously. That
+     reasoning was sound for the ORIGINAL single-interface-change plan
+     -- but the revised sequencing above (old `readWord` kept alive)
+     sidesteps it entirely: fetch DID ship as an independent, separately-
+     committed, separately-verified step, followed by the `ioPending`
+     FSM as another. The two are not in tension -- the earlier
+     reasoning was correct about the plan as it stood at the time; the
+     plan itself changed shape.
+     **`readAcc`/`writeAcc` don't need the request/response path at
+     all**: `addrAccLeft`/`addrAccRight` (8, 9) are compile-time
+     constants baked into the helper, never a runtime-computed
+     effective address -- genuinely different from the ~24 call sites
+     Phase 1 found can't know their address's range statically.
+     Dedicated `readAccLeft`/`readAccRight` accessors stay plain,
+     always-instant value methods, removing what would otherwise be a
+     round trip from nearly every VflInt and Connective arm. This also
+     narrows the "design consequence for addresses 0-31" this README
+     used to describe here: the accumulator specifically is exempted,
+     though every OTHER special register still pays for a
+     `readWordReq`/`readWordResp` round trip through the general path
+     once its callers convert, for the reason originally given (callers
+     generally don't know their address's range until after computing
+     it).
+     Per-instruction read count is bounded and precisely known:
+     instruction fetch needs 0-2 reads; most `execute()` case arms need
+     0-1; the worst cases (`M+`/`CM`, deduped this session via
+     `readFieldWithHi`/`writeFieldWithHi`; `SV`/`SC`/`SR`, deduped via
+     `readHWWithWord`/`writeHWWithWord`) need exactly 1 read plus a
+     dependent write, not 2 independent reads as an earlier, corrected
+     estimate assumed. See `docs/phase2_arm_inventory.md`'s "Design
+     settled" section for the full reasoning (single BRAM port
+     suffices; writes stay single-cycle throughout; case arms are
+     mutually exclusive so cross-arm port conflicts aren't a concern).
      **Ruled out, on advisor's explicit warning**: calling `execute()`
-     twice (once to discover what it needs, once to finish with the
-     value) -- this would re-fire every `st.writeWord`/`writeIndex`/
-     `setIndicatorBits`/`io.writeChanCW` the reached arm performs on
-     its second call, since BSV has no way to make a function's
-     Actions conditionally silent on a "dry run." Also ruled out: a
-     separate address-prediction function mirroring `execute()`'s own
-     addressing logic -- a second source of truth for what to read,
-     where a future divergence between the two produces a silently
-     wrong read that this project's 9-block suite (which doesn't
-     exercise every case arm) might not catch. The confirmed direction
-     is explicit per-case-arm staging: each arm that needs a
-     BRAM-eligible read gets manually split into its own numbered
-     stages (issue read, resume with result), the same hand-written-FSM
-     discipline `pendingIdxWrite`/`ioPending` already established for
-     their own operations, extended to cover ~15 case arms instead of
-     one operation kind each.
-     **Correction: instruction fetch is NOT a separately-shippable
-     first slice.** It was originally described that way here, but
-     working through the actual mechanics shows it's false: a method
-     call cannot span multiple clock cycles, so making `readWord`
-     genuinely latency-bearing means splitting it into a request/
-     response pair -- and the moment that split happens, EVERY
-     Phase-1-converted call site (fetch's included, but also all
-     ~26 in `execute()`'s call chain: `readField`, `readAcc`,
-     `progressiveIncrement`, `readHW`, ...) needs a second conversion
-     round simultaneously, from "one ActionValue call" to "issue
-     request in one rule firing, collect response in a later one."
-     There is no partial state where fetch uses the new request/
-     response interface while `execute()`'s internal reads still use
-     Phase 1's single-call convention -- they're both callers of the
-     same interface, and the interface itself is what's changing.
-     Fetch remains the right place to *prototype* the FSM shape first
-     (it's simple: 0-2 reads, no case-arm variation) -- but the actual
-     conversion, once started, is one indivisible unit covering fetch
-     and every `execute()` case arm together, not a series of
-     independently-mergeable slices. A future session should budget
-     Phase 2 as a single sitting for exactly this reason, with the
-     ~15 case arms each individually reasoned through and checked
-     against the regression suite's actual coverage (not assumed
-     covered) before considering it done -- the same rigor this
-     project applied when the "double-invocation of execute()" and
-     "separate address-prediction pass" shortcuts were rejected on
-     the risk of a silently-wrong, untested case arm; a rushed per-arm
-     conversion done without that same care risks the identical
-     failure mode from the other direction.
-     **Design consequence for addresses 0-31**: a uniform request/
-     response interface -- one calling pattern for every caller, since
-     callers generally don't know statically whether their address is
-     BRAM-eligible (Phase 1 found only 2 of ~26 sites do) -- means even
-     the always-instant `Reg`-backed special registers (addr 0-31) pay
-     for a second `step()` call through `readWord`, not just genuine
-     BRAM reads. `readIndex`/`readIndicators` are separate methods,
-     untouched by this, and stay single-call/instant (index-register
-     reads for address computation are the majority of per-instruction
-     register access and would be a poor fit for an added cycle here).
-     This tradeoff -- interface uniformity and reduced bug surface,
-     against an extra cycle even for fast-path special-register access
-     through `readWord` -- is the one a future session needs to accept
-     or reject up front, before writing any Phase 2 code.
+     twice (dry-run then real run) -- would re-fire every `st.writeWord`/
+     `writeIndex`/`setIndicatorBits`/`io.writeChanCW` the reached arm
+     performs, since BSV has no way to make a function's Actions
+     conditionally silent. Also ruled out: a separate address-
+     prediction function mirroring `execute()`'s own addressing logic
+     -- a second source of truth that could silently diverge for an
+     untested case arm. The confirmed (and now partially executed)
+     direction: explicit per-case-arm staging, extending the
+     `pendingIdxWrite`/`ioPending` hand-written-FSM pattern arm by arm,
+     verified against the regression suite (and its actual per-arm
+     coverage, not assumed) at every step -- see
+     `docs/phase2_arm_inventory.md`'s conversion-order list for exactly
+     which arms are done and which remain.
    The existing regression suite remains the correctness oracle for
    Phase 2 as well -- passing unchanged is necessary but Phase 1's own
    experience (the RELSEOP and SKIP bugs surfaced only once tape/IO
