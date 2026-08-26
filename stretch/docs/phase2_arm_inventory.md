@@ -161,9 +161,9 @@ untested-by-construction in the Phase 2 commit.
 
 | Arm | Reads | Writes | Dependent? | Coverage |
 |---|---|---|---|---|
-| C (Connect -> accumulator field) | 0-1 (`readField(ea)`, 0 if immediate) + Reg-only (`readAcc`) | 0 BRAM (`writeAcc`, Reg-only) | no | **NONE** (grepped for bare `C` + 4-bit conn prefix pattern, zero matches -- only `CT` suffix forms appear) |
+| C (Connect -> accumulator field) -- **CONVERTED, `72fe53e`** | 0-1 (inlined `extractFieldBits`, crossing case = 2), 0 if immediate + Reg-only (`readAcc`) | 0 BRAM (`writeAcc`, Reg-only) | no | **NONE** (grepped for bare `C` + 4-bit conn prefix pattern, zero matches -- only `CT` suffix forms appear) |
 | CM (Connect to Memory -> storage field) | 1 (`readFieldWithHi(ea)`, guaranteed non-immediate) + Reg-only (`readAcc`) | 1 (`writeFieldWithHi`, dedup landed this session) | yes | **NONE** (same grep) |
-| CT (Connect for Test, discarded) | 0-1 (`readField(ea)`) + Reg-only (`readAcc`) | 0 | no | problem_2_2_method3 (`CT0110(V+I)`) |
+| CT (Connect for Test, discarded) -- **CONVERTED, `72fe53e`** | 0-1 (inlined `extractFieldBits`, crossing case = 2) + Reg-only (`readAcc`) | 0 | no | problem_2_2_method3 (`CT0110(V+I)`) -- confirmed genuinely reached, but its specific field (INFO's 4 bytes, 28 bits total) never crosses a word boundary at any loop iteration, so this coverage does NOT exercise the crossing-field path (checked, not assumed) |
 | progressiveIncrement (shared) | 0-1 (refill) | 0 | no | not separately exercised via Connective (figure7 exercises this path via VflInt instead) |
 
 **C and CM are both unexercised.** CM in particular is the arm this
@@ -328,10 +328,26 @@ needed).
      (confirmed: the `CB` mnemonic doesn't appear in any STRAP
      program, and the smoke test's own CountBranch usage sets
      `refill=0`) -- flagged explicitly, not assumed safe.
-   - Remaining in this step: C, CT (Connective); R, RCZ, Z
-     (BranchOrMisc). Each should reuse the SAME `prefetch`/`needsRead`
-     protocol L established -- no new mechanism design expected, just
-     applying it arm by arm.
+   - DONE (`72fe53e`): **Connective C and CT**, correctly handling the
+     crossing case (2 reads) -- C/CT, unlike CM, are not restricted to
+     non-crossing fields, since neither writes to general storage.
+   - **Regression found and fixed en route, `c4bf213`**: the earlier
+     M+/CM dedup commit (`e17b38e`) had changed C/CT/CM's SHARED read
+     call from `readField` (crossing-capable) to `readFieldWithHi`
+     (single-word only) -- but the crossing guard only ever excluded
+     CM, not C/CT. A crossing C or CT would have silently lost its
+     field's low word ever since `e17b38e` landed. Not caught by the
+     suite: `CT0110`'s only coverage (`problem_2_2_method3`) doesn't
+     happen to cross a word boundary with its actual field parameters
+     (verified, not assumed -- see the CT row above). Fixed by
+     splitting the shared read: CM keeps `readFieldWithHi` (guaranteed
+     non-crossing by its own guard, needs the raw word for its
+     writeback); C/CT went back to crossing-capable `readField` before
+     being converted to the prefetch/bail-out mechanism in the same
+     step above.
+   - Remaining in this step: R, RCZ, Z (BranchOrMisc). Each should
+     reuse the SAME `prefetch`/`needsRead` protocol L established --
+     no new mechanism design expected, just applying it arm by arm.
    - **Build-time finding, unrelated to correctness, worth knowing
      before converting more arms**: Bluesim's code generator inlines
      `step()`'s entire body (which itself inlines `execute()`'s whole
