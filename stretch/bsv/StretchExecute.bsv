@@ -35,6 +35,7 @@
 
 package StretchExecute;
 
+import Vector::*;
 import StretchTypes::*;
 import StretchStorage::*;
 import StretchIO::*;
@@ -291,14 +292,42 @@ function ActionValue#(Tuple2#(IndexWord, Word64)) progressiveIncrement(
 
 // Returns (next PC, an optional pending index-register write for
 // progressive indexing, an optional started-but-not-yet-drained
-// input-output word transfer). See the VflInt case below for why the
-// index write is *returned* rather than performed here (and
+// input-output word transfer, an optional BRAM-eligible read this
+// call couldn't complete without). See the VflInt case below for why
+// the index write is *returned* rather than performed here (and
 // StretchCore.step for where it's actually realized); the IoOp case
 // below explains the analogous reason for the transfer descriptor.
-function ActionValue#(Tuple3#(HWordAddr, Maybe#(Tuple2#(Bit#(4), IndexWord)),
-                               Maybe#(IoXfer)))
-    execute(StretchStorage st, StretchIO io, HWordAddr pc, InstrLen len, DecodedInstr di) =
+//
+// `prefetch`/`prefetchCount`: the per-case-arm staging mechanism for
+// the BRAM storage migration (docs/phase2_arm_inventory.md). An arm
+// that needs a BRAM-eligible read checks `prefetchCount` FIRST, before
+// doing anything else: if the value it needs isn't available yet, it
+// sets the 4th return element (`needsRead`) to that address and does
+// NOTHING further -- no writes, no `ind`/`next`/`doIdxWrite`/
+// `vflPending`/`ioStart` mutation -- so the shared bail-out check at
+// the very end of this function (right before the final commit) can
+// safely return every output at its function-ENTRY value. This is
+// what makes calling `execute()` more than once for the same
+// instruction safe (unlike the rejected "call execute() twice"
+// shortcut, which would have re-fired every write on a second call):
+// the FIRST call, when it bails, performs literally zero side effects,
+// so there's nothing to double-fire. `StretchCore.step()` drives this:
+// call with `prefetchCount=0`; on `needsRead=Valid(a)`, issue
+// `st.readWordReq(a)`, park (remembering `pc`/`len`/`di`), and on the
+// next call pass a `prefetch` with one more slot filled and
+// `prefetchCount` incremented. Bound at 2 slots -- the confirmed
+// worst case for any arm converted so far (a crossing field's `w0`/
+// `w0+1`, or one field read plus one progressive-indexing refill read)
+// -- NOT a general bound for every arm this project might ever
+// convert; a THIRD simultaneous read (e.g. a crossing field combined
+// with a refill in the SAME arm) is a known, not-yet-encountered gap,
+// flagged here rather than silently mishandled should it arise.
+function ActionValue#(Tuple4#(HWordAddr, Maybe#(Tuple2#(Bit#(4), IndexWord)),
+                               Maybe#(IoXfer), Maybe#(WordAddr)))
+    execute(StretchStorage st, StretchIO io, HWordAddr pc, InstrLen len, DecodedInstr di,
+            Vector#(2, Word64) prefetch, Bit#(2) prefetchCount) =
   actionvalue
+    Maybe#(WordAddr) needsRead = tagged Invalid;
     HWordAddr fallthrough = pc + ((len == Full) ? 2 : 1);
     HWordAddr next = fallthrough;
     Word64 ind = st.readIndicators();
@@ -360,17 +389,38 @@ function ActionValue#(Tuple3#(HWordAddr, Maybe#(Tuple2#(Bit#(4), IndexWord)),
                               // progressive increment too.
 
           case (vi.code)
-            6'b000101: begin // L (Load)
+            6'b000101: begin // L (Load) -- first arm converted to the
+              // prefetch/bail-out staging (docs/phase2_arm_inventory.md).
+              // Every other arm below still calls readField/readHW/
+              // maybeRefill directly (the OLD, still-synchronous
+              // st.readWord path) -- unconverted, unaffected, working
+              // exactly as before.
               Bit#(64) raw = 0;
-              if (immediate) raw = immediateOperand(vi.a.addr, len_);
-              else begin
-                let r <- readField(st, ea, len_);
-                raw = r;
+              if (immediate) begin
+                raw = immediateOperand(vi.a.addr, len_);
+              end else begin
+                WordAddr w0 = baWord(ea);
+                Bit#(6) off = baBit(ea);
+                if (!fieldCrosses(ea, len_)) begin
+                  if (prefetchCount >= 1)
+                    raw = extractFieldBits(prefetch[0], 0, off, len_);
+                  else
+                    needsRead = tagged Valid w0;
+                end else begin
+                  if (prefetchCount >= 2)
+                    raw = extractFieldBits(prefetch[0], prefetch[1], off, len_);
+                  else if (prefetchCount == 1)
+                    needsRead = tagged Valid (w0 + 1);
+                  else
+                    needsRead = tagged Valid w0;
+                end
               end
-              SM128 sm = fieldToSM(raw, len_, bsz, vi.m.unsign, vi.m.invert);
-              SM128 shifted = SM128 { sign: sm.sign, mag: sm.mag << offSh };
-              writeAcc(st, shifted);
-              ind = setResultIndicatorsF(ind, shifted);
+              if (!isValid(needsRead)) begin
+                SM128 sm = fieldToSM(raw, len_, bsz, vi.m.unsign, vi.m.invert);
+                SM128 shifted = SM128 { sign: sm.sign, mag: sm.mag << offSh };
+                writeAcc(st, shifted);
+                ind = setResultIndicatorsF(ind, shifted);
+              end
             end
             6'b001101: begin // ST (Store)
               if (immediate || fieldCrosses(ea, len_)) begin
@@ -451,7 +501,14 @@ function ActionValue#(Tuple3#(HWordAddr, Maybe#(Tuple2#(Bit#(4), IndexWord)),
           // same code, with the write left inside this function,
           // reproduced the conflict even reduced to just two
           // memory-writing VflInt arms with all other sites removed).
-          if (isProgressive && vflOk) begin
+          // Guarded on needsRead too, not just isProgressive/vflOk:
+          // if the arm above bailed out waiting on a BRAM-eligible
+          // read (currently only L can), this must NOT run -- it
+          // would set vflPending and mutate ind despite the
+          // instruction not actually having completed, breaking the
+          // bail-out contract (see execute()'s own header comment:
+          // nothing after a bail may touch the shared outputs).
+          if (!isValid(needsRead) && isProgressive && vflOk) begin
             let {x2, ind2} <- progressiveIncrement(st, vi.a, xIdx, ind);
             vflPending = tagged Valid tuple2(vi.a.i1, x2);
             ind = ind2;
@@ -997,9 +1054,18 @@ function ActionValue#(Tuple3#(HWordAddr, Maybe#(Tuple2#(Bit#(4), IndexWord)),
 
     endcase
 
-    if (doIdxWrite) st.writeIndex(idxWriteReg, idxWriteVal);
-    st.setIndicatorBits(ind);
-    return tuple3(next, vflPending, ioStart);
+    if (needsRead matches tagged Invalid) begin
+      if (doIdxWrite) st.writeIndex(idxWriteReg, idxWriteVal);
+      st.setIndicatorBits(ind);
+      return tuple4(next, vflPending, ioStart, tagged Invalid);
+    end else begin
+      // Bailed out partway through: the arm that set `needsRead` did
+      // so before touching any of these, so returning the function-
+      // ENTRY values here (not whatever partial computation produced)
+      // is correct by construction -- see this function's own header
+      // comment.
+      return tuple4(pc, tagged Invalid, tagged Invalid, needsRead);
+    end
   endactionvalue;
 
 endpackage

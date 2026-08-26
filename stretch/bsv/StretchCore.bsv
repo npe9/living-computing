@@ -7,6 +7,7 @@
 
 package StretchCore;
 
+import Vector::*;
 import StretchTypes::*;
 import StretchStorage::*;
 import StretchIO::*;
@@ -88,6 +89,46 @@ module mkStretchCore(StretchCore);
   // in StretchCore.bsv, same reasoning as fetchPending living here
   // rather than folded into pcReg.
   Reg#(Bool) ioReadIssued <- mkReg(False);
+
+  // In-progress execute() call that bailed out waiting on a
+  // BRAM-eligible read (docs/phase2_arm_inventory.md's per-case-arm
+  // staging; execute()'s own header comment in StretchExecute.bsv has
+  // the full contract). Invalid: no execute() call in flight (either
+  // none has been attempted yet this instruction, or the most recent
+  // attempt completed). Valid tuple3(pc, len, di): execute() was
+  // called for this decoded instruction and returned a
+  // needsRead -- a request for that address was issued last cycle;
+  // execPrefetch/execPrefetchCount (below) track what's been collected
+  // so far, so the NEXT call to execute() can pick up with one more
+  // slot filled.
+  Reg#(Maybe#(Tuple3#(HWordAddr, InstrLen, DecodedInstr))) execPending <- mkReg(tagged Invalid);
+  Reg#(Vector#(2, Word64)) execPrefetch <- mkReg(replicate(0));
+  Reg#(Bit#(2)) execPrefetchCount <- mkReg(0);
+
+  // Call execute() for a freshly decoded instruction (prefetchCount=0
+  // -- no arm has been given anything yet). Either it completes
+  // outright (the common case today, since only VflInt L can bail),
+  // committing exactly as execute() always did, or it bails and this
+  // starts execPending's own FSM instead. Shared by both fetchPending
+  // completion paths (Half- and Full-length) below, so the dispatch
+  // logic isn't duplicated between them.
+  function ActionValue#(Bool) startExecute(HWordAddr pc, InstrLen len, DecodedInstr di) =
+    actionvalue
+      let {next, vflPending, ioStart, needsRead} <-
+        execute(st, ioDev, pc, len, di, replicate(0), 0);
+      fetchPending <= tagged Invalid;
+      if (needsRead matches tagged Valid .a) begin
+        st.readWordReq(a);
+        execPending <= tagged Valid tuple3(pc, len, di);
+        execPrefetchCount <= 0;
+        return False;
+      end else begin
+        pcReg <= next;
+        pendingIdxWrite <= vflPending;
+        ioPending <= ioStart;
+        return next == pc;
+      end
+    endactionvalue;
 
   method ActionValue#(Bool) step();
     if (ioPending matches tagged Valid .x) begin
@@ -199,23 +240,42 @@ module mkStretchCore(StretchCore);
           // Half-length: done fetching, decode+execute now, same as
           // the single-step case below.
           DecodedInstr di = decode(hw0, tagged Invalid);
-          let {next, vflPending, ioStart} <- execute(st, ioDev, pc, len, di);
-          pcReg <= next;
-          pendingIdxWrite <= vflPending;
-          ioPending <= ioStart;
-          fetchPending <= tagged Invalid;
-          return next == pc;
+          let done <- startExecute(pc, len, di);
+          return done;
         end
       end else begin
         // hw1 collected (instruction is Full-length by construction --
         // that's the only way this state is ever entered).
         HalfWord32 hw1 = ((pc + 1)[0] == 0) ? w[63:32] : w[31:0];
         DecodedInstr di = decode(hw0cap, tagged Valid hw1);
-        let {next, vflPending, ioStart} <- execute(st, ioDev, pc, Full, di);
+        let done <- startExecute(pc, Full, di);
+        return done;
+      end
+    end else if (execPending matches tagged Valid .ep) begin
+      // Resume an execute() call that bailed out waiting on a
+      // BRAM-eligible read -- collect the response into the next
+      // prefetch slot and try again. See execPending's own comment
+      // above and execute()'s header comment in StretchExecute.bsv
+      // for the full contract.
+      HWordAddr pc       = tpl_1(ep);
+      InstrLen len        = tpl_2(ep);
+      DecodedInstr di     = tpl_3(ep);
+      Word64 v <- st.readWordResp();
+      Vector#(2, Word64) newPrefetch = execPrefetch;
+      newPrefetch[execPrefetchCount] = v;
+      Bit#(2) newCount = execPrefetchCount + 1;
+      let {next, vflPending, ioStart, needsRead} <-
+        execute(st, ioDev, pc, len, di, newPrefetch, newCount);
+      if (needsRead matches tagged Valid .a) begin
+        st.readWordReq(a);
+        execPrefetch <= newPrefetch;
+        execPrefetchCount <= newCount;
+        return False;
+      end else begin
         pcReg <= next;
         pendingIdxWrite <= vflPending;
         ioPending <= ioStart;
-        fetchPending <= tagged Invalid;
+        execPending <= tagged Invalid;
         return next == pc;
       end
     end else begin
