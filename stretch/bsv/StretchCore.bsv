@@ -78,6 +78,17 @@ module mkStretchCore(StretchCore);
   // 2-state FSM, not worth a new type.
   Reg#(Maybe#(Tuple3#(Bool, HWordAddr, HalfWord32))) fetchPending <- mkReg(tagged Invalid);
 
+  // ioPending's own read-staging flag (docs/phase2_arm_inventory.md
+  // conversion order, step 3): only a W-direction (memory->device)
+  // word needs a genuine BRAM-eligible read (st.memAddr); RD-direction
+  // (device->memory) only ever calls st.writeWord, which stays
+  // single-cycle, so this flag is meaningless (and left False) for
+  // RD-direction transfers. Separate Reg rather than a new IoXfer
+  // field (StretchTypes.bsv) -- confined to this FSM's own bookkeeping
+  // in StretchCore.bsv, same reasoning as fetchPending living here
+  // rather than folded into pcReg.
+  Reg#(Bool) ioReadIssued <- mkReg(False);
+
   method ActionValue#(Bool) step();
     if (ioPending matches tagged Valid .x) begin
       // Service one word of an in-flight RD/W transfer. See this
@@ -100,11 +111,24 @@ module mkStretchCore(StretchCore);
         if (!x.suppressEop) cw.eop = 1;
         ioDev.writeChanCW(x.ch, cw);
         ioPending <= tagged Invalid;
+        return False;
+      end else if (x.isWrite && !ioReadIssued) begin
+        // W-direction (memory->device), first visit to this word:
+        // issue the read request and wait. ioPending/x are left
+        // untouched (same devIdx/memAddr/remaining next call), so the
+        // NEXT call's `x` still names this same word once the
+        // response is ready.
+        st.readWordReq(x.memAddr);
+        ioReadIssued <= True;
+        return False;
       end else begin
+        // Either RD-direction (always one call, ioReadIssued unused
+        // and stays False) or W-direction with the read response now
+        // ready to collect.
         if (kind == DevTape) begin
           TapeIndex ti = truncate(x.devIdx); // safe: confirmed < TapeWords above
           if (x.isWrite) begin
-            let v <- st.readWord(x.memAddr);
+            Word64 v <- st.readWordResp();
             ioDev.writeTapeWord(ti, v);
           end else if (!x.skip)
             st.writeWord(x.memAddr, ioDev.readTapeWord(ti));
@@ -119,7 +143,7 @@ module mkStretchCore(StretchCore);
         end else begin
           DeviceIndex di = truncate(x.devIdx); // safe: confirmed < DeviceWords above
           if (x.isWrite) begin
-            let v <- st.readWord(x.memAddr);
+            Word64 v <- st.readWordResp();
             ioDev.writePrinterWord(di, v);
           end else if (!x.skip)
             st.writeWord(x.memAddr, ioDev.readerWord(di));
@@ -128,6 +152,7 @@ module mkStretchCore(StretchCore);
         // and memory address still advance below exactly as if the
         // word had been transferred, but core storage is left
         // untouched for this word.
+        ioReadIssued <= False;
         Bit#(19) rem1 = x.remaining - 1;
         ControlWord cw = ioDev.readChanCW(x.ch);
         cw.dataAddr = x.memAddr + 1;
@@ -143,8 +168,8 @@ module mkStretchCore(StretchCore);
             devIdx: x.devIdx + 1, remaining: rem1,
             suppressEop: x.suppressEop, skip: x.skip };
         end
+        return False;
       end
-      return False;
     end else if (pendingIdxWrite matches tagged Valid .p) begin
       // Part 2 of a progressive-indexing instruction: nothing was
       // fetched this call, and PC already advanced on part 1.
