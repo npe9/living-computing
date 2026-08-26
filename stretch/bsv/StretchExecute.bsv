@@ -422,7 +422,10 @@ function ActionValue#(Tuple4#(HWordAddr, Maybe#(Tuple2#(Bit#(4), IndexWord)),
                 ind = setResultIndicatorsF(ind, shifted);
               end
             end
-            6'b001101: begin // ST (Store)
+            6'b001101: begin // ST (Store) -- prefetch/bail-out shape,
+              // inlining writeField's own internal RMW read rather
+              // than calling it: guaranteed non-crossing (checked
+              // just above), so exactly 1 read, same as SV/SC/SR.
               if (immediate || fieldCrosses(ea, len_)) begin
                 ind = setOpInvalid(ind);
                 vflOk = False;
@@ -431,7 +434,12 @@ function ActionValue#(Tuple4#(HWordAddr, Maybe#(Tuple2#(Bit#(4), IndexWord)),
                 SM128 shifted = SM128 { sign: acc.sign, mag: acc.mag >> offSh };
                 Bit#(1) fsign = (vi.m.invert == 1) ? ~shifted.sign : shifted.sign;
                 Bit#(64) packedField = smToField(SM128{sign:fsign, mag:shifted.mag}, len_, bsz, vi.m.unsign);
-                writeField(st, ea, len_, packedField);
+                WordAddr w0 = baWord(ea);
+                Bit#(6) off = baBit(ea);
+                if (prefetchCount >= 1)
+                  st.writeWord(w0, insertFieldBits(prefetch[0], off, len_, packedField));
+                else
+                  needsRead = tagged Valid w0;
               end
             end
             6'b000001: begin // + (Add; "-" is this opcode with invert=1)
@@ -465,18 +473,27 @@ function ActionValue#(Tuple4#(HWordAddr, Maybe#(Tuple2#(Bit#(4), IndexWord)),
                 ind = setResultIndicatorsF(ind, sum);
               end
             end
-            6'b001001: begin // M+ (Add to Memory)
+            6'b001001: begin // M+ (Add to Memory) -- prefetch/bail-out
+              // shape, inlining readFieldWithHi/writeFieldWithHi's
+              // own logic rather than calling them: guaranteed
+              // non-crossing (checked just above), exactly 1 read.
               if (immediate || fieldCrosses(ea, len_)) begin
                 ind = setOpInvalid(ind);
                 vflOk = False;
               end else begin
-                let {raw, hiWord} <- readFieldWithHi(st, ea, len_);
-                SM128 opnd = fieldToSM(raw, len_, bsz, vi.m.unsign, vi.m.invert);
-                SM128 acc = readAcc(st);
-                SM128 accSh = SM128 { sign: acc.sign, mag: acc.mag >> offSh };
-                SM128 sum = smAdd(opnd, accSh);
-                writeFieldWithHi(st, ea, len_, smToField(sum, len_, bsz, vi.m.unsign), hiWord);
-                ind = setResultIndicatorsF(ind, sum);
+                WordAddr w0 = baWord(ea);
+                Bit#(6) off = baBit(ea);
+                if (prefetchCount >= 1) begin
+                  Bit#(64) raw = extractFieldBits(prefetch[0], 0, off, len_);
+                  SM128 opnd = fieldToSM(raw, len_, bsz, vi.m.unsign, vi.m.invert);
+                  SM128 acc = readAcc(st);
+                  SM128 accSh = SM128 { sign: acc.sign, mag: acc.mag >> offSh };
+                  SM128 sum = smAdd(opnd, accSh);
+                  st.writeWord(w0, insertFieldBits(prefetch[0], off, len_,
+                                                    smToField(sum, len_, bsz, vi.m.unsign)));
+                  ind = setResultIndicatorsF(ind, sum);
+                end else
+                  needsRead = tagged Valid w0;
               end
             end
             6'b010001: begin // K (Compare) -> AL/AE/AH -- same
@@ -857,10 +874,16 @@ function ActionValue#(Tuple4#(HWordAddr, Maybe#(Tuple2#(Bit#(4), IndexWord)),
         if (t.backward == 1)
           ind = setOpInvalid(ind); // SWAP / backward transmit: out of scope
         else begin
+          // Prefetch/bail-out shape: reads srcBase, writes the SAME
+          // value verbatim to dstBase once available -- a dependent
+          // chain (the write's data IS the read's response), same
+          // shape as ST/M+/CM above.
           WordAddr srcBase = baWord(effAddr24(st, t.addr1, t.i1));
           WordAddr dstBase = (effAddr19(st, t.addr2, t.i2))[18:1];
-          let srcVal <- st.readWord(srcBase);
-          st.writeWord(dstBase, srcVal);
+          if (prefetchCount >= 1)
+            st.writeWord(dstBase, prefetch[0]);
+          else
+            needsRead = tagged Valid srcBase;
         end
       end
 
@@ -934,33 +957,23 @@ function ActionValue#(Tuple4#(HWordAddr, Maybe#(Tuple2#(Bit#(4), IndexWord)),
                                  // that writes back); see below.
             if (immediate) begin
               m = immediateOperand(cn.a.addr, len_);
-            end else if (cn.suffix == 5'b01111) begin
-              // CM: NOT yet converted to the prefetch/bail-out
-              // mechanism -- deferred to the dependent-RMW-arm step
-              // (docs/phase2_arm_inventory.md), same as VflInt M+
-              // (both write back using the value they just read, a
-              // genuinely dependent chain, not the independent-read
-              // shape C/CT below have). Stays on the old synchronous
-              // st.readWord path via readFieldWithHi -- guaranteed
-              // non-crossing (checked above) and guaranteed
-              // !immediate (checked further above) by the time this
-              // is reached, so its single-word read is exactly right,
-              // and its raw word is what CM's own writeback needs.
-              let {r, hiWord} <- readFieldWithHi(st, ea, len_);
-              m = r;
-              mHiWord = hiWord;
             end else begin
-              // C/CT: prefetch/bail-out shape (same as VflInt L/K/+),
-              // correctly handling the crossing case (2 reads) since
-              // C/CT -- unlike CM -- are NOT restricted to
-              // non-crossing (neither writes to general storage: C
-              // writes the accumulator, CT writes nothing).
+              // C/CT/CM all share this prefetch/bail-out shape. CM is
+              // guaranteed non-crossing by the outer guard above (and
+              // guaranteed !immediate by the check further above), so
+              // it always takes the !crosses branch below and needs
+              // exactly 1 read -- the same shape VflInt M+/ST have.
+              // C/CT, unlike CM, are NOT restricted to non-crossing
+              // (neither writes to general storage: C writes the
+              // accumulator, CT writes nothing), so they can genuinely
+              // need the 2-read crossing path.
               WordAddr w0 = baWord(ea);
               Bit#(6) off = baBit(ea);
               if (!fieldCrosses(ea, len_)) begin
-                if (prefetchCount >= 1)
+                if (prefetchCount >= 1) begin
                   m = extractFieldBits(prefetch[0], 0, off, len_);
-                else
+                  if (cn.suffix == 5'b01111) mHiWord = prefetch[0]; // CM's writeback needs the raw word
+                end else
                   needsRead = tagged Valid w0;
               end else begin
                 if (prefetchCount >= 2)
@@ -1012,13 +1025,19 @@ function ActionValue#(Tuple4#(HWordAddr, Maybe#(Tuple2#(Bit#(4), IndexWord)),
       tagged Fp .fp: begin
         if (fp.code == 7'b0000110 || fp.code == 7'b0001110) begin // L / ST
           WordAddr ea = effAddr18(st, fp.addr, fp.idx);
-          if (fp.code == 7'b0000110) begin // L: clears the whole accumulator (p.~90)
-            let v <- st.readWord(ea);
-            writeAcc(st, SM128{sign: 0, mag: zeroExtend(v)});
-          end else begin // ST
-            Word64 v = st.readAccRight(); // compile-time-constant
-                                           // address; see readAcc's
-                                           // own comment above.
+          if (fp.code == 7'b0000110) begin // L: clears the whole
+            // accumulator (p.~90). Prefetch/bail-out shape, same as
+            // VflInt L -- the read feeds a Reg-only write (writeAcc),
+            // not a dependent chain.
+            if (prefetchCount >= 1)
+              writeAcc(st, SM128{sign: 0, mag: zeroExtend(prefetch[0])});
+            else
+              needsRead = tagged Valid ea;
+          end else begin // ST: no staging needed at all -- the value
+            // written (addrAccRight, a compile-time-constant Reg
+            // address) is already instant, see readAcc's own comment
+            // above; the write itself never depends on a BRAM read.
+            Word64 v = st.readAccRight();
             st.writeWord(ea, v);
           end
         end else
