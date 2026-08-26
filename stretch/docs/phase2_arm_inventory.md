@@ -72,7 +72,7 @@ implements against.
 
 | Arm | Reads | Writes | Dependent? | Coverage |
 |---|---|---|---|---|
-| L (Load) | 0-1 (`readField(ea)`, 0 if immediate; crossing case = 2, independent) | 0 BRAM (`writeAcc` is addr 8/9, Reg-only) | no (read feeds a Reg write only) | problem_2_2_method2/3 (`L`, though see FP note below on disambiguating from FP's `L`) |
+| L (Load) -- **CONVERTED, `dbee063`** | 0-1 (inlined `extractFieldBits`, 0 if immediate; crossing case = 2, independent) | 0 BRAM (`writeAcc` is addr 8/9, Reg-only) | no (read feeds a Reg write only) | problem_2_2_method2/3 (`L`, confirmed genuinely reached: both programs passed green after conversion, resolving the earlier FP-`L` disambiguation doubt) |
 | ST (Store) | Reg-only (`readAcc`, addr 8/9) | 1 (`writeField`: internal RMW read + write) | yes, RMW inside `writeField` | problem_2_1, xw_refill (`ST(V+ICR)`) |
 | + (Add) | 0-1 (`readField(ea)`) + Reg-only (`readAcc`) | 0 BRAM (`writeAcc`, Reg-only) | no | problem_2_2_method1/3 (`+,`) |
 | M+ (Add to Memory) | 1 (`readFieldWithHi(ea)`) + Reg-only (`readAcc`) | 1 (`writeFieldWithHi`, no internal read -- dedup landed this session) | yes (write uses the read's `hi` + computed sum) | **NONE** (grepped `opcodes.py`'s `M+` key against all programs, zero matches) |
@@ -163,14 +163,14 @@ program actually reaching it.
 
 | Arm | Reads | Writes | Dependent? | Coverage |
 |---|---|---|---|---|
-| L (code 0000110) | 1 (`st.readWord(ea)`) | 0 BRAM (`writeAcc`, Reg-only) | no | **not yet disambiguated** -- `opcodes.py` line 66 defines FP's `"L"` at code `0b0000110`, but VflInt ALSO has an `"L"` mnemonic (different code, `6'b000101`) used by every `L(...)` call site actually seen in the programs (`L(BU,7,8)`, etc. -- always with byte-size/length modifiers). Every "L" usage found by grep in this inventory's VflInt row is presumed VflInt-format based on the modifier syntax, not confirmed by tracing `strap_asm.py`'s dispatch. FP's plain, unmodified `"L"` may or may not be reachable from any current program; not resolved here. |
-| ST (code 0001110) | Reg-only (`st.readWord(addrAccRight)`) | 1 (`st.writeWord(ea, v)`) | yes (write's value is the Reg-read's response) | same disambiguation gap as L above |
+| L (code 0000110) | 1 (`st.readWord(ea)`) | 0 BRAM (`writeAcc`, Reg-only) | no | **VflInt-vs-FP ambiguity partially resolved**: converting VflInt L (commit `dbee063`) and getting problem_2_2_method2/3 green confirms every `L(BU,...)`-style modifier'd call site really does dispatch to VflInt's L, not FP's -- so those programs are NOT evidence for FP L specifically. Whether FP's plain, unmodified `"L"` (no modifiers) is reachable from any current program is still not traced through `strap_asm.py`'s dispatch; treat as **NONE** until checked, not as an open question. |
+| ST (code 0001110) | Reg-only (`st.readWord(addrAccRight)`) | 1 (`st.writeWord(ea, v)`) | yes (write's value is the Reg-read's response) | same status as L above -- VflInt's ST is separately confirmed covered (problem_2_1, xw_refill), FP's is not |
 | anything else | 0 (OP-invalid) | 0 | n/a | n/a |
 
-**Action item before converting this arm**: resolve the L/ST
-mnemonic-format ambiguity by reading `strap_asm.py`'s dispatch (likely
-keyed on modifier presence or operand count), so FP's actual test
-coverage is known rather than assumed either way.
+**Action item before converting this arm**: resolve whether FP's
+plain `"L"`/`"ST"` (no modifiers) is reachable from `strap_asm.py`'s
+dispatch at all, so this arm's actual test coverage is known (likely
+NONE) rather than left as an open question.
 
 ## IoOp (`tagged IoOp`)
 
@@ -263,12 +263,40 @@ needed).
    exceeded / issue-read-and-wait / process-word) so each ends in its
    own `return False` -- bsc's (P0030) rejected a shared trailing
    return once one branch needed an early one.
-5. NOT STARTED. Arms with 0-1 independent reads and no write
+5. IN PROGRESS. Arms with 0-1 independent reads and no write
    dependency (lowest risk, in roughly coverage order): VflInt L/K/+
    (covered), DirIndex LX/LV/LC/LR/KV/KC (LX/LV covered, LC/LR/KV/KC
    not), ImmIndex/CountBranch refills (not separately risky),
    Connective C/CT (CT covered, C not), BranchOrMisc R/RCZ/Z (not
    covered).
+   - DONE (`dbee063`): **VflInt L**, the first arm converted and the
+     one that established the actual mechanism the rest of this step
+     (and steps 6-8) now follow: `execute()` gained a
+     `Vector#(2,Word64) prefetch`/`Bit#(2) prefetchCount` input and a
+     `Maybe#(WordAddr) needsRead` output; an arm checks
+     `prefetchCount` before doing anything else and, if the value it
+     needs isn't there yet, sets `needsRead` and does NOTHING further
+     (no writes, no `ind`/`next`/`doIdxWrite`/`vflPending`/`ioStart`
+     mutation) -- verified per arm, not assumed, since this is exactly
+     what makes calling `execute()` again for the same instruction
+     safe (the earlier-rejected double-invocation shortcut's problem
+     was re-firing side effects; a bailed call here performs none).
+     `StretchCore.step()` drives it via a `startExecute()` local
+     helper (first attempt, `prefetchCount=0`) and a new `execPending`
+     FSM state (resumes a bail by collecting one more prefetch slot
+     and re-invoking `execute()`). The 2-slot bound comes from L's own
+     worst case (a crossing field's `w0`/`w0+1`) -- NOT a general
+     bound for every remaining arm; M+/CM's crossing-plus-refill
+     combination (see "Design settled" above) could need a 3rd slot
+     and hasn't been hit yet. Progressive indexing's shared
+     post-`case` block (all VflInt arms) is now also guarded on
+     `needsRead`, since it would otherwise run and set `vflPending`
+     even on a bailed-out arm.
+   - Remaining in this step: K, + (VflInt); LX, LV, LC, LR, KV, KC
+     (DirIndex); ImmIndex/CountBranch refills; C, CT (Connective);
+     R, RCZ, Z (BranchOrMisc). Each should reuse the SAME
+     `prefetch`/`needsRead` protocol L established -- no new mechanism
+     design expected, just applying it arm by arm.
 6. NOT STARTED. SV/SC/SR (already deduped, see above -- just needs FSM
    staging now).
 7. NOT STARTED. The genuinely dependent RMW arms, most-covered first:
