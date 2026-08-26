@@ -376,12 +376,12 @@ function ActionValue#(Tuple3#(HWordAddr, Maybe#(Tuple2#(Bit#(4), IndexWord)),
                 ind = setOpInvalid(ind);
                 vflOk = False;
               end else begin
-                let raw <- readField(st, ea, len_);
+                let {raw, hiWord} <- readFieldWithHi(st, ea, len_);
                 SM128 opnd = fieldToSM(raw, len_, bsz, vi.m.unsign, vi.m.invert);
                 SM128 acc <- readAcc(st);
                 SM128 accSh = SM128 { sign: acc.sign, mag: acc.mag >> offSh };
                 SM128 sum = smAdd(opnd, accSh);
-                writeField(st, ea, len_, smToField(sum, len_, bsz, vi.m.unsign));
+                writeFieldWithHi(st, ea, len_, smToField(sum, len_, bsz, vi.m.unsign), hiWord);
                 ind = setResultIndicatorsF(ind, sum);
               end
             end
@@ -746,10 +746,15 @@ function ActionValue#(Tuple3#(HWordAddr, Maybe#(Tuple2#(Bit#(4), IndexWord)),
             vflOk = False;
           end else begin
             Bit#(64) m = 0;
+            Word64 mHiWord = 0; // valid only when !immediate; CM (the
+                                 // only suffix that writes back) is
+                                 // guaranteed !immediate above, so it's
+                                 // always set by the time CM reads it.
             if (immediate) m = immediateOperand(cn.a.addr, len_);
             else begin
-              let r <- readField(st, ea, len_);
+              let {r, hiWord} <- readFieldWithHi(st, ea, len_);
               m = r;
+              mHiWord = hiWord;
             end
             SM128 acc <- readAcc(st);
             Bit#(64) a = truncate(acc.mag >> offSh) & fieldMask;
@@ -768,7 +773,7 @@ function ActionValue#(Tuple3#(HWordAddr, Maybe#(Tuple2#(Bit#(4), IndexWord)),
                                         mag: (acc.mag & ~fieldMask128) | resultSh };
                 writeAcc(st, merged);
               end
-              5'b01111: writeField(st, ea, len_, result); // CM
+              5'b01111: writeFieldWithHi(st, ea, len_, result, mHiWord); // CM
               5'b10111: begin end // CT: result discarded, indicators only
               default: ind = setOpInvalid(ind); // unreachable: StretchDecode's
                                                  // isConnSuffix only admits these
