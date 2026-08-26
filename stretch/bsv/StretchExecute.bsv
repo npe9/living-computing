@@ -435,18 +435,35 @@ function ActionValue#(Tuple4#(HWordAddr, Maybe#(Tuple2#(Bit#(4), IndexWord)),
               end
             end
             6'b000001: begin // + (Add; "-" is this opcode with invert=1)
+              // Same prefetch/bail-out shape as L above.
               Bit#(64) raw = 0;
-              if (immediate) raw = immediateOperand(vi.a.addr, len_);
-              else begin
-                let r <- readField(st, ea, len_);
-                raw = r;
+              if (immediate) begin
+                raw = immediateOperand(vi.a.addr, len_);
+              end else begin
+                WordAddr w0 = baWord(ea);
+                Bit#(6) off = baBit(ea);
+                if (!fieldCrosses(ea, len_)) begin
+                  if (prefetchCount >= 1)
+                    raw = extractFieldBits(prefetch[0], 0, off, len_);
+                  else
+                    needsRead = tagged Valid w0;
+                end else begin
+                  if (prefetchCount >= 2)
+                    raw = extractFieldBits(prefetch[0], prefetch[1], off, len_);
+                  else if (prefetchCount == 1)
+                    needsRead = tagged Valid (w0 + 1);
+                  else
+                    needsRead = tagged Valid w0;
+                end
               end
-              SM128 opnd = fieldToSM(raw, len_, bsz, vi.m.unsign, vi.m.invert);
-              SM128 opndSh = SM128 { sign: opnd.sign, mag: opnd.mag << offSh };
-              SM128 acc = readAcc(st);
-              SM128 sum = smAdd(acc, opndSh);
-              writeAcc(st, sum);
-              ind = setResultIndicatorsF(ind, sum);
+              if (!isValid(needsRead)) begin
+                SM128 opnd = fieldToSM(raw, len_, bsz, vi.m.unsign, vi.m.invert);
+                SM128 opndSh = SM128 { sign: opnd.sign, mag: opnd.mag << offSh };
+                SM128 acc = readAcc(st);
+                SM128 sum = smAdd(acc, opndSh);
+                writeAcc(st, sum);
+                ind = setResultIndicatorsF(ind, sum);
+              end
             end
             6'b001001: begin // M+ (Add to Memory)
               if (immediate || fieldCrosses(ea, len_)) begin
@@ -462,18 +479,35 @@ function ActionValue#(Tuple4#(HWordAddr, Maybe#(Tuple2#(Bit#(4), IndexWord)),
                 ind = setResultIndicatorsF(ind, sum);
               end
             end
-            6'b010001: begin // K (Compare) -> AL/AE/AH
+            6'b010001: begin // K (Compare) -> AL/AE/AH -- same
+              // prefetch/bail-out shape as L above.
               Bit#(64) raw = 0;
-              if (immediate) raw = immediateOperand(vi.a.addr, len_);
-              else begin
-                let r <- readField(st, ea, len_);
-                raw = r;
+              if (immediate) begin
+                raw = immediateOperand(vi.a.addr, len_);
+              end else begin
+                WordAddr w0 = baWord(ea);
+                Bit#(6) off = baBit(ea);
+                if (!fieldCrosses(ea, len_)) begin
+                  if (prefetchCount >= 1)
+                    raw = extractFieldBits(prefetch[0], 0, off, len_);
+                  else
+                    needsRead = tagged Valid w0;
+                end else begin
+                  if (prefetchCount >= 2)
+                    raw = extractFieldBits(prefetch[0], prefetch[1], off, len_);
+                  else if (prefetchCount == 1)
+                    needsRead = tagged Valid (w0 + 1);
+                  else
+                    needsRead = tagged Valid w0;
+                end
               end
-              SM128 opnd = fieldToSM(raw, len_, bsz, vi.m.unsign, vi.m.invert);
-              SM128 opndSh = SM128 { sign: opnd.sign, mag: opnd.mag << offSh };
-              SM128 acc = readAcc(st);
-              Cmp3 c = smCompare(acc, opndSh);
-              ind = setAccCmpIndicatorsF(ind, c);
+              if (!isValid(needsRead)) begin
+                SM128 opnd = fieldToSM(raw, len_, bsz, vi.m.unsign, vi.m.invert);
+                SM128 opndSh = SM128 { sign: opnd.sign, mag: opnd.mag << offSh };
+                SM128 acc = readAcc(st);
+                Cmp3 c = smCompare(acc, opndSh);
+                ind = setAccCmpIndicatorsF(ind, c);
+              end
             end
             default: begin
               ind = setOpInvalid(ind);
