@@ -915,56 +915,74 @@ function ActionValue#(Tuple4#(HWordAddr, Maybe#(Tuple2#(Bit#(4), IndexWord)),
             if (immediate) begin
               m = immediateOperand(cn.a.addr, len_);
             end else if (cn.suffix == 5'b01111) begin
-              // CM: guaranteed non-crossing (checked above) and
-              // guaranteed !immediate (checked further above) by the
-              // time this is reached, so readFieldWithHi's single-word
-              // read is exactly right, and its raw word is what CM's
-              // own writeback needs.
+              // CM: NOT yet converted to the prefetch/bail-out
+              // mechanism -- deferred to the dependent-RMW-arm step
+              // (docs/phase2_arm_inventory.md), same as VflInt M+
+              // (both write back using the value they just read, a
+              // genuinely dependent chain, not the independent-read
+              // shape C/CT below have). Stays on the old synchronous
+              // st.readWord path via readFieldWithHi -- guaranteed
+              // non-crossing (checked above) and guaranteed
+              // !immediate (checked further above) by the time this
+              // is reached, so its single-word read is exactly right,
+              // and its raw word is what CM's own writeback needs.
               let {r, hiWord} <- readFieldWithHi(st, ea, len_);
               m = r;
               mHiWord = hiWord;
             end else begin
-              // C/CT: unlike CM, NOT restricted to non-crossing (the
-              // crossing guard above only excludes CM) -- neither
-              // writes to general storage (C writes the accumulator,
-              // CT writes nothing), so there's no single-word-write
-              // constraint to enforce here, and a crossing field is
-              // architecturally valid. Plain readField (not
-              // readFieldWithHi) handles the crossing case correctly;
-              // mHiWord is unused for these two suffixes regardless.
-              let r <- readField(st, ea, len_);
-              m = r;
-            end
-            SM128 acc = readAcc(st);
-            Bit#(64) a = truncate(acc.mag >> offSh) & fieldMask;
-            Bit#(64) result = applyConnective(cn.conn, m, a) & fieldMask;
-            Bool resultZero = (result == 0);
-
-            case (cn.suffix)
-              5'b00111: begin // C: result replaces the accumulator
-                              // field; the rest of the accumulator is
-                              // unchanged (p.76 "In CONNECT... The
-                              // remainder of the accumulator remains
-                              // unchanged").
-                Bit#(128) fieldMask128 = zeroExtend(fieldMask) << offSh;
-                Bit#(128) resultSh = zeroExtend(result) << offSh;
-                SM128 merged = SM128 { sign: acc.sign,
-                                        mag: (acc.mag & ~fieldMask128) | resultSh };
-                writeAcc(st, merged);
+              // C/CT: prefetch/bail-out shape (same as VflInt L/K/+),
+              // correctly handling the crossing case (2 reads) since
+              // C/CT -- unlike CM -- are NOT restricted to
+              // non-crossing (neither writes to general storage: C
+              // writes the accumulator, CT writes nothing).
+              WordAddr w0 = baWord(ea);
+              Bit#(6) off = baBit(ea);
+              if (!fieldCrosses(ea, len_)) begin
+                if (prefetchCount >= 1)
+                  m = extractFieldBits(prefetch[0], 0, off, len_);
+                else
+                  needsRead = tagged Valid w0;
+              end else begin
+                if (prefetchCount >= 2)
+                  m = extractFieldBits(prefetch[0], prefetch[1], off, len_);
+                else if (prefetchCount == 1)
+                  needsRead = tagged Valid (w0 + 1);
+                else
+                  needsRead = tagged Valid w0;
               end
-              5'b01111: writeFieldWithHi(st, ea, len_, result, mHiWord); // CM
-              5'b10111: begin end // CT: result discarded, indicators only
-              default: ind = setOpInvalid(ind); // unreachable: StretchDecode's
-                                                 // isConnSuffix only admits these
-                                                 // three patterns; kept for bsc's
-                                                 // exhaustiveness check, same style
-                                                 // as VflInt's own default arm above.
-            endcase
+            end
+            if (!isValid(needsRead)) begin
+              SM128 acc = readAcc(st);
+              Bit#(64) a = truncate(acc.mag >> offSh) & fieldMask;
+              Bit#(64) result = applyConnective(cn.conn, m, a) & fieldMask;
+              Bool resultZero = (result == 0);
 
-            ind = setConnectiveIndicatorsF(ind, cn.suffix == 5'b01111, resultZero);
+              case (cn.suffix)
+                5'b00111: begin // C: result replaces the accumulator
+                                // field; the rest of the accumulator is
+                                // unchanged (p.76 "In CONNECT... The
+                                // remainder of the accumulator remains
+                                // unchanged").
+                  Bit#(128) fieldMask128 = zeroExtend(fieldMask) << offSh;
+                  Bit#(128) resultSh = zeroExtend(result) << offSh;
+                  SM128 merged = SM128 { sign: acc.sign,
+                                          mag: (acc.mag & ~fieldMask128) | resultSh };
+                  writeAcc(st, merged);
+                end
+                5'b01111: writeFieldWithHi(st, ea, len_, result, mHiWord); // CM
+                5'b10111: begin end // CT: result discarded, indicators only
+                default: ind = setOpInvalid(ind); // unreachable: StretchDecode's
+                                                   // isConnSuffix only admits these
+                                                   // three patterns; kept for bsc's
+                                                   // exhaustiveness check, same style
+                                                   // as VflInt's own default arm above.
+              endcase
+
+              ind = setConnectiveIndicatorsF(ind, cn.suffix == 5'b01111, resultZero);
+            end
           end
 
-          if (isProgressive && vflOk) begin
+          if (!isValid(needsRead) && isProgressive && vflOk) begin
             let {x2, ind2} <- progressiveIncrement(st, cn.a, xIdx, ind);
             vflPending = tagged Valid tuple2(cn.a.i1, x2);
             ind = ind2;
