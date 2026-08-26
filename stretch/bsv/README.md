@@ -493,7 +493,7 @@ of these).
      `StretchCore.step()`'s own instruction-fetch reads. Also updated:
      `StretchSmoke.bsv`'s hand-written checks and `gen_tb.py`'s
      generated `check{i}` rule (both used to call `core.mem.readWord`
-     as a bare expression). Full 9-program regression suite passes
+     as a bare expression). Full regression suite (1 smoke test + 8 STRAP programs, 9 test blocks) passes
      unchanged. This deliberately proves the *protocol* conversion is
      correct in isolation, before *latency* is introduced at all --
      any bug at this stage is unambiguously a call-site conversion
@@ -540,17 +540,61 @@ of these).
      separate address-prediction function mirroring `execute()`'s own
      addressing logic -- a second source of truth for what to read,
      where a future divergence between the two produces a silently
-     wrong read that this project's 9-program suite (which doesn't
+     wrong read that this project's 9-block suite (which doesn't
      exercise every case arm) might not catch. The confirmed direction
      is explicit per-case-arm staging: each arm that needs a
      BRAM-eligible read gets manually split into its own numbered
      stages (issue read, resume with result), the same hand-written-FSM
      discipline `pendingIdxWrite`/`ioPending` already established for
      their own operations, extended to cover ~15 case arms instead of
-     one operation kind each. Instruction fetch (0-2 reads, no
-     case-arm variation) is the natural first slice to implement and
-     verify in isolation, per advisor's own recommendation, before
-     extending the same FSM shape to `execute()`'s internal reads.
+     one operation kind each.
+     **Correction: instruction fetch is NOT a separately-shippable
+     first slice.** It was originally described that way here, but
+     working through the actual mechanics shows it's false: a method
+     call cannot span multiple clock cycles, so making `readWord`
+     genuinely latency-bearing means splitting it into a request/
+     response pair -- and the moment that split happens, EVERY
+     Phase-1-converted call site (fetch's included, but also all
+     ~26 in `execute()`'s call chain: `readField`, `readAcc`,
+     `progressiveIncrement`, `readHW`, ...) needs a second conversion
+     round simultaneously, from "one ActionValue call" to "issue
+     request in one rule firing, collect response in a later one."
+     There is no partial state where fetch uses the new request/
+     response interface while `execute()`'s internal reads still use
+     Phase 1's single-call convention -- they're both callers of the
+     same interface, and the interface itself is what's changing.
+     Fetch remains the right place to *prototype* the FSM shape first
+     (it's simple: 0-2 reads, no case-arm variation) -- but the actual
+     conversion, once started, is one indivisible unit covering fetch
+     and every `execute()` case arm together, not a series of
+     independently-mergeable slices. A future session should budget
+     Phase 2 as a single sitting for exactly this reason, with the
+     ~15 case arms each individually reasoned through and checked
+     against the regression suite's actual coverage (not assumed
+     covered) before considering it done -- the same rigor this
+     project applied when the "double-invocation of execute()" and
+     "separate address-prediction pass" shortcuts were rejected on
+     the risk of a silently-wrong, untested case arm; a rushed per-arm
+     conversion done without that same care risks the identical
+     failure mode from the other direction.
+     **Design consequence for addresses 0-31**: a uniform request/
+     response interface -- one calling pattern for every caller, since
+     callers generally don't know statically whether their address is
+     BRAM-eligible (Phase 1 found only 2 of ~26 sites do) -- means even
+     the always-instant `Reg`-backed special registers (addr 0-31) pay
+     for a second `step()` call through `readWord`, not just genuine
+     BRAM reads. `readIndex`/`readIndicators` are separate methods,
+     untouched by this, and stay single-call/instant (index-register
+     reads for address computation are the majority of per-instruction
+     register access and would be a poor fit for an added cycle here).
+     This tradeoff -- interface uniformity and reduced bug surface,
+     against an extra cycle even for fast-path special-register access
+     through `readWord` -- is the one a future session needs to accept
+     or reject up front, before writing any Phase 2 code.
    The existing regression suite remains the correctness oracle for
-   Phase 2 as well -- passing unchanged is the verification; no new
-   test program is needed for the storage layer itself.
+   Phase 2 as well -- passing unchanged is necessary but Phase 1's own
+   experience (the RELSEOP and SKIP bugs surfaced only once tape/IO
+   tests were written) is a reminder that "passes unchanged" doesn't
+   by itself prove every case arm's new FSM staging is correct; the
+   suite doesn't exercise all ~15 case arms individually, so passing
+   it is evidence, not proof, for the arms it doesn't touch.
