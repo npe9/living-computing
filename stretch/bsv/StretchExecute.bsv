@@ -87,10 +87,37 @@ function ActionValue#(Bit#(32)) readHW(StretchStorage st, HWordAddr ha) =
     return (ha[0] == 0) ? w[63:32] : w[31:0];
   endactionvalue;
 
+// Read a half-word AND return the raw containing word alongside it,
+// for a caller (SV/SC/SR -- see their call sites below) that already
+// knows it will turn around and write the SAME word back via
+// writeHWWithWord. Mirrors readFieldWithHi/writeFieldWithHi in
+// StretchVFL.bsv (same redundant-re-read shape, same fix): a plain
+// readHW-then-writeHW sequence would fetch the identical word twice,
+// since the address doesn't change between the two calls.
+function ActionValue#(Tuple2#(Bit#(32), Word64)) readHWWithWord(StretchStorage st, HWordAddr ha) =
+  actionvalue
+    Word64 w <- st.readWord(ha[18:1]);
+    Bit#(32) half = (ha[0] == 0) ? w[63:32] : w[31:0];
+    return tuple2(half, w);
+  endactionvalue;
+
 function Action writeHW(StretchStorage st, HWordAddr ha, Bit#(32) v) =
   action
     WordAddr wa = ha[18:1];
     Word64 w <- st.readWord(wa);
+    Word64 neww = (ha[0] == 0) ? {v, w[31:0]} : {w[63:32], v};
+    st.writeWord(wa, neww);
+  endaction;
+
+// Write a half-word back into a word the caller already fetched (via
+// readHWWithWord) -- skips the internal read writeHW would otherwise
+// redundantly perform on the exact same word. Precondition: `w` is
+// the word most recently read at `ha`'s word address, and nothing
+// else wrote that word in between (same precondition writeFieldWithHi
+// has for its own `hi` parameter).
+function Action writeHWWithWord(StretchStorage st, HWordAddr ha, Bit#(32) v, Word64 w) =
+  action
+    WordAddr wa = ha[18:1];
     Word64 neww = (ha[0] == 0) ? {v, w[31:0]} : {w[63:32], v};
     st.writeWord(wa, neww);
   endaction;
@@ -452,8 +479,8 @@ function ActionValue#(Tuple3#(HWordAddr, Maybe#(Tuple2#(Bit#(4), IndexWord)),
                                             count:x.count, refill:x.refill};
           end
           5'b10011: begin // SV
-            Bit#(32) h <- readHW(st, ea);
-            writeHW(st, ea, {x.addr, x.sign, h[6:0]});
+            let {h, hWord} <- readHWWithWord(st, ea);
+            writeHWWithWord(st, ea, {x.addr, x.sign, h[6:0]}, hWord);
           end
           5'b00101: begin // LC
             Bit#(32) h <- readHW(st, ea);
@@ -462,8 +489,8 @@ function ActionValue#(Tuple3#(HWordAddr, Maybe#(Tuple2#(Bit#(4), IndexWord)),
                                             count:h[31:14], refill:x.refill};
           end
           5'b10101: begin // SC
-            Bit#(32) h <- readHW(st, ea);
-            writeHW(st, ea, {x.count, 7'b0, h[6:0]});
+            let {h, hWord} <- readHWWithWord(st, ea);
+            writeHWWithWord(st, ea, {x.count, 7'b0, h[6:0]}, hWord);
           end
           5'b00111: begin // LR
             Bit#(32) h <- readHW(st, ea);
@@ -472,8 +499,8 @@ function ActionValue#(Tuple3#(HWordAddr, Maybe#(Tuple2#(Bit#(4), IndexWord)),
                                             count:x.count, refill:h[31:14]};
           end
           5'b10111: begin // SR
-            Bit#(32) h <- readHW(st, ea);
-            writeHW(st, ea, {x.refill, 7'b0, h[6:0]});
+            let {h, hWord} <- readHWWithWord(st, ea);
+            writeHWWithWord(st, ea, {x.refill, 7'b0, h[6:0]}, hWord);
           end
           5'b01011, 5'b01101, 5'b01111: begin // V+ / V+C / V+CR
             Bit#(32) h <- readHW(st, ea);
