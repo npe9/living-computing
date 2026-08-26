@@ -684,25 +684,43 @@ function ActionValue#(Tuple4#(HWordAddr, Maybe#(Tuple2#(Bit#(4), IndexWord)),
             idxWriteVal = IndexWord{addr: x.addr, sign: x.sign, flag: x.flag,
                      count: x.count - imm18, refill: x.refill};
           end
-          4'b0101, 4'b0110, 4'b0111: begin // V+I / V+IC / V+ICR
+          4'b0101, 4'b0110, 4'b0111: begin // V+I / V+IC / V+ICR --
+            // prefetch/bail-out shape, inlining maybeRefill's own
+            // condition (doRefill && x1.count==0) rather than calling
+            // it, since only the ICR variant can ever need the read.
             SM128 sum = smAdd(val, immSM);
             IndexWord x1 = IndexWord{addr: truncate(sum.mag), sign: sum.sign,
                              flag: x.flag, count: x.count, refill: x.refill};
             if (ii.code != 4'b0101) x1.count = x1.count - 1;
-            IndexWord x2 <- (ii.code == 4'b0111) ? maybeRefill(st, x1, True)
-                                                  : actionvalue return x1; endactionvalue;
-            idxWriteReg = ii.j; doIdxWrite = True;
-            idxWriteVal = x2; ind = setIndexResultIndicatorsF(ind, x1);
+            if (ii.code == 4'b0111 && x1.count == 0) begin
+              if (prefetchCount >= 1) begin
+                idxWriteReg = ii.j; doIdxWrite = True;
+                idxWriteVal = unpackIndexWord(prefetch[0]);
+                ind = setIndexResultIndicatorsF(ind, x1);
+              end else
+                needsRead = tagged Valid zeroExtend(x1.refill);
+            end else begin
+              idxWriteReg = ii.j; doIdxWrite = True;
+              idxWriteVal = x1; ind = setIndexResultIndicatorsF(ind, x1);
+            end
           end
-          4'b1101, 4'b1110, 4'b1111: begin // V-I / V-IC / V-ICR
+          4'b1101, 4'b1110, 4'b1111: begin // V-I / V-IC / V-ICR --
+            // same shape as V+I/V+IC/V+ICR above.
             SM128 diff = smAdd(val, SM128{sign: ~immSM.sign, mag: immSM.mag});
             IndexWord x1 = IndexWord{addr: truncate(diff.mag), sign: diff.sign,
                              flag: x.flag, count: x.count, refill: x.refill};
             if (ii.code != 4'b1101) x1.count = x1.count - 1;
-            IndexWord x2 <- (ii.code == 4'b1111) ? maybeRefill(st, x1, True)
-                                                  : actionvalue return x1; endactionvalue;
-            idxWriteReg = ii.j; doIdxWrite = True;
-            idxWriteVal = x2; ind = setIndexResultIndicatorsF(ind, x1);
+            if (ii.code == 4'b1111 && x1.count == 0) begin
+              if (prefetchCount >= 1) begin
+                idxWriteReg = ii.j; doIdxWrite = True;
+                idxWriteVal = unpackIndexWord(prefetch[0]);
+                ind = setIndexResultIndicatorsF(ind, x1);
+              end else
+                needsRead = tagged Valid zeroExtend(x1.refill);
+            end else begin
+              idxWriteReg = ii.j; doIdxWrite = True;
+              idxWriteVal = x1; ind = setIndexResultIndicatorsF(ind, x1);
+            end
           end
           4'b0100: ind = setIndexCmpIndicatorsF(ind, smCompare(val, immSM)); // KVI
           4'b1100: ind = setIndexCmpIndicatorsF(ind, smCompare(val, SM128{sign:~immSM.sign, mag:immSM.mag})); // KVNI
@@ -736,13 +754,20 @@ function ActionValue#(Tuple4#(HWordAddr, Maybe#(Tuple2#(Bit#(4), IndexWord)),
         Bit#(18) newCount = x.count - 1;
         IndexWord x1 = IndexWord{addr: truncate(newVal.mag), sign: newVal.sign,
                          flag: x.flag, count: newCount, refill: x.refill};
-        IndexWord x2 <- maybeRefill(st, x1, cb.refill == 1);
-        idxWriteReg = cb.j; doIdxWrite = True;
-        idxWriteVal = x2;
-        ind = setIndexResultIndicatorsF(ind, x1); // per p.23: indicators reflect
-                                                   // state *before* any refill.
-        Bool take = (cb.branchIfZero == 1) ? (newCount == 0) : (newCount != 0);
-        if (take) next = effAddr19(st, cb.addr, {3'b0, cb.idx}); // K: X1 only
+        // Prefetch/bail-out shape, inlining maybeRefill's own
+        // condition (doRefill && x1.count==0) rather than calling it.
+        Bool doRefill = (cb.refill == 1) && (x1.count == 0);
+        if (doRefill && prefetchCount < 1) begin
+          needsRead = tagged Valid zeroExtend(x1.refill);
+        end else begin
+          IndexWord x2 = doRefill ? unpackIndexWord(prefetch[0]) : x1;
+          idxWriteReg = cb.j; doIdxWrite = True;
+          idxWriteVal = x2;
+          ind = setIndexResultIndicatorsF(ind, x1); // per p.23: indicators reflect
+                                                     // state *before* any refill.
+          Bool take = (cb.branchIfZero == 1) ? (newCount == 0) : (newCount != 0);
+          if (take) next = effAddr19(st, cb.addr, {3'b0, cb.idx}); // K: X1 only
+        end
       end
 
       // -----------------------------------------------------------
