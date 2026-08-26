@@ -910,15 +910,30 @@ function ActionValue#(Tuple4#(HWordAddr, Maybe#(Tuple2#(Bit#(4), IndexWord)),
             vflOk = False;
           end else begin
             Bit#(64) m = 0;
-            Word64 mHiWord = 0; // valid only when !immediate; CM (the
-                                 // only suffix that writes back) is
-                                 // guaranteed !immediate above, so it's
-                                 // always set by the time CM reads it.
-            if (immediate) m = immediateOperand(cn.a.addr, len_);
-            else begin
+            Word64 mHiWord = 0; // valid only for CM (the only suffix
+                                 // that writes back); see below.
+            if (immediate) begin
+              m = immediateOperand(cn.a.addr, len_);
+            end else if (cn.suffix == 5'b01111) begin
+              // CM: guaranteed non-crossing (checked above) and
+              // guaranteed !immediate (checked further above) by the
+              // time this is reached, so readFieldWithHi's single-word
+              // read is exactly right, and its raw word is what CM's
+              // own writeback needs.
               let {r, hiWord} <- readFieldWithHi(st, ea, len_);
               m = r;
               mHiWord = hiWord;
+            end else begin
+              // C/CT: unlike CM, NOT restricted to non-crossing (the
+              // crossing guard above only excludes CM) -- neither
+              // writes to general storage (C writes the accumulator,
+              // CT writes nothing), so there's no single-word-write
+              // constraint to enforce here, and a crossing field is
+              // architecturally valid. Plain readField (not
+              // readFieldWithHi) handles the crossing case correctly;
+              // mHiWord is unused for these two suffixes regardless.
+              let r <- readField(st, ea, len_);
+              m = r;
             end
             SM128 acc = readAcc(st);
             Bit#(64) a = truncate(acc.mag >> offSh) & fieldMask;
