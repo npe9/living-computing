@@ -86,11 +86,11 @@ implements against.
 | LX -- **CONVERTED, `de97419`** | 1 (inlined, no half-select) | 0 | no | figure7, xw_refill |
 | SX | 0 | 1 (`st.writeWord`, value from `readIndex`, Reg-only) | no | **NONE** (grepped for standalone `SX`, zero matches) |
 | LV -- **CONVERTED, `de97419`** | 1 (inlined half-select) | 0 | no | problem_2_2_method2/3 (`LV,`) |
-| SV | 1 (`readHWWithWord(ea)`) | 1 (`writeHWWithWord`, no internal read -- dedup landed this session, commit `b24e51b`) | yes (write uses the read's raw word + new half) | **NONE** |
+| SV -- **CONVERTED, `0feab69`** | 1 (inlined half-select) | 1 (`writeHWWithWord`, no internal read -- dedup landed this session, commit `b24e51b`) | yes (write uses the read's raw word + new half) | **NONE** -- hand-verified against the original readHWWithWord-based code, no test coverage exists |
 | LC -- **CONVERTED, `de97419`** | 1 (inlined half-select) | 0 | no | **NONE** -- verified by hand against the original readHW-based code, statement by statement, since the suite can't reach this arm |
-| SC | 1 (`readHWWithWord(ea)`) | 1 (`writeHWWithWord`, deduped) | yes | **NONE** |
+| SC -- **CONVERTED, `0feab69`** | 1 (inlined half-select) | 1 (`writeHWWithWord`, deduped) | yes | **NONE** -- same hand-verification as SV |
 | LR -- **CONVERTED, `de97419`** | 1 (inlined half-select) | 0 | no | **NONE** -- same hand-verification as LC |
-| SR | 1 (`readHWWithWord(ea)`) | 1 (`writeHWWithWord`, deduped) | yes | **NONE** |
+| SR -- **CONVERTED, `0feab69`** | 1 (inlined half-select) | 1 (`writeHWWithWord`, deduped) | yes | **NONE** -- same hand-verification as SV |
 | V+/V+C/V+CR | 1 (`readHW(ea)`) + 0-1 (`maybeRefill`, only V+CR) | 0 (index write-back only, Reg-only) | no | **NONE** as a standalone DirIndex opcode (the `V+I`/`V+ICR` strings that DO appear in figure7/xw_refill/method2/3 are the VflInt *progressive-addressing suffix*, a different namespace per `opcodes.py`'s own comment -- confirmed by reading, not assumed) |
 | KV -- **CONVERTED, `de97419`** | 1 (inlined half-select) | 0 | no | **NONE** -- same hand-verification as LC |
 | KC -- **CONVERTED, `de97419`** | 1 (inlined half-select) | 0 | no | **NONE** -- same hand-verification as LC |
@@ -368,8 +368,12 @@ needed).
      `core.step()` call sites as the FSM genuinely requires, using a
      counted-loop rule (`stepCount < N`) rather than N separate rules
      when multiple `step()` calls are needed in sequence.
-6. NOT STARTED. SV/SC/SR (already deduped, see above -- just needs FSM
-   staging now).
+6. DONE (`0feab69`). SV/SC/SR converted -- the first true dependent-
+   RMW-arm conversion, confirming the mechanism handles "write back
+   using the same read's response" cleanly: resume with prefetch[0],
+   compute the new word, issue the write in that same call, no second
+   bail needed. `readHWWithWord` is now unused everywhere (dead code,
+   same status as plain `readField` after step 5).
 7. NOT STARTED. The genuinely dependent RMW arms, most-covered first:
    VflInt ST (covered) and Fp ST (coverage unresolved -- resolve
    first), then the uncovered ones: VflInt M+, Connective CM, Transmit
