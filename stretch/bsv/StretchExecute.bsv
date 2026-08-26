@@ -799,18 +799,23 @@ function ActionValue#(Tuple4#(HWordAddr, Maybe#(Tuple2#(Bit#(4), IndexWord)),
         end else begin
           case (bm.code)
             3'b100: st.writeWord(baWord(effAddr24(st, {bm.addr,5'b0}, bm.idx)), 0); // Z (Store Zero)
-            3'b000: begin // R (Refill, unconditional)
+            3'b000: begin // R (Refill, unconditional) -- prefetch/
+              // bail-out shape (same as VflInt L/K/+ above).
               IndexWord x = st.readIndex(bm.idx);
-              idxWriteReg = bm.idx; doIdxWrite = True;
-              let w <- st.readWord(zeroExtend(x.refill));
-              idxWriteVal = unpackIndexWord(w);
+              if (prefetchCount >= 1) begin
+                idxWriteReg = bm.idx; doIdxWrite = True;
+                idxWriteVal = unpackIndexWord(prefetch[0]);
+              end else
+                needsRead = tagged Valid zeroExtend(x.refill);
             end
             3'b001: begin // RCZ (Refill on Count Zero)
               IndexWord x = st.readIndex(bm.idx);
               if (x.count == 0) begin
-                idxWriteReg = bm.idx; doIdxWrite = True;
-                let w <- st.readWord(zeroExtend(x.refill));
-                idxWriteVal = unpackIndexWord(w);
+                if (prefetchCount >= 1) begin
+                  idxWriteReg = bm.idx; doIdxWrite = True;
+                  idxWriteVal = unpackIndexWord(prefetch[0]);
+                end else
+                  needsRead = tagged Valid zeroExtend(x.refill);
               end
             end
             default: ind = setOpInvalid(ind); // EX, EXIC: out of scope
