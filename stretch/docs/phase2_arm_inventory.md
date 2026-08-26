@@ -86,11 +86,11 @@ implements against.
 | LX | 1 (`st.readWord(ea[18:1])`) | 0 | no | figure7, xw_refill |
 | SX | 0 | 1 (`st.writeWord`, value from `readIndex`, Reg-only) | no | **NONE** (grepped for standalone `SX`, zero matches) |
 | LV | 1 (`readHW(ea)`) | 0 | no | problem_2_2_method2/3 (`LV,`) |
-| SV | 1 (`readHW(ea)`) + 1 (`writeHW`'s internal RMW read, SAME word) | 1 (`writeHW`'s write) | yes, AND same redundant-read shape M+/CM had -- **not yet deduped** (see "Follow-up opportunity" below) | **NONE** |
+| SV | 1 (`readHWWithWord(ea)`) | 1 (`writeHWWithWord`, no internal read -- dedup landed this session, commit `b24e51b`) | yes (write uses the read's raw word + new half) | **NONE** |
 | LC | 1 (`readHW(ea)`) | 0 | no | **NONE** |
-| SC | 1 + 1 (same redundant-read shape as SV) | 1 | yes, same as SV | **NONE** |
+| SC | 1 (`readHWWithWord(ea)`) | 1 (`writeHWWithWord`, deduped) | yes | **NONE** |
 | LR | 1 (`readHW(ea)`) | 0 | no | **NONE** |
-| SR | 1 + 1 (same redundant-read shape as SV) | 1 | yes, same as SV | **NONE** |
+| SR | 1 (`readHWWithWord(ea)`) | 1 (`writeHWWithWord`, deduped) | yes | **NONE** |
 | V+/V+C/V+CR | 1 (`readHW(ea)`) + 0-1 (`maybeRefill`, only V+CR) | 0 (index write-back only, Reg-only) | no | **NONE** as a standalone DirIndex opcode (the `V+I`/`V+ICR` strings that DO appear in figure7/xw_refill/method2/3 are the VflInt *progressive-addressing suffix*, a different namespace per `opcodes.py`'s own comment -- confirmed by reading, not assumed) |
 | KV | 1 (`readHW(ea)`) | 0 | no | **NONE** |
 | KC | 1 (`readHW(ea)`) | 0 | no | **NONE** |
@@ -209,21 +209,20 @@ convention (see "StretchCore.step() fetch and ioPending" below).
 - **pendingIdxWrite (progressive indexing part 2)**: `st.writeIndex`
   only, Reg-only, no BRAM interaction, no Phase 2 work needed.
 
-## Follow-up opportunity found while building this inventory (not yet done)
+## Follow-up opportunity found while building this inventory -- DONE (commit `b24e51b`)
 
-SV/SC/SR (DirIndex half-word stores) have the exact same redundant-
-read shape M+/CM had before this session's `writeFieldWithHi` refactor
--- `readHW(ea)` fetches the full word to extract one half, then
-`writeHW(ea, ...)` internally re-reads the SAME word to do its own
-read-modify-write. The natural fix mirrors this session's dedup: give
-`readHW` a `readHWWithWord` variant returning the raw 64-bit word
-alongside the extracted half, and a `writeHWWithWord` that skips the
-internal read. Worth doing as its own small, independently-verified
-commit (same reasoning as the M+/CM dedup) BEFORE converting SV/SC/SR
-to the FSM form, both to reduce their stage count and because none of
-the three currently has test coverage -- exactly the situation where a
-provably-equivalent refactor under the old model is safer than
-discovering the duplication mid-FSM-conversion.
+SV/SC/SR (DirIndex half-word stores) had the exact same redundant-read
+shape M+/CM had before this session's `writeFieldWithHi` refactor --
+`readHW(ea)` fetched the full word to extract one half, then
+`writeHW(ea, ...)` internally re-read the SAME word to do its own
+read-modify-write. Fixed the same way: `readHWWithWord` returns the
+raw 64-bit word alongside the extracted half, `writeHWWithWord` skips
+the internal read using that word. Landed as its own commit, verified
+under the (still same-cycle at that point) regression suite, before
+any Phase 2 FSM work touches these three arms. The table above
+reflects the deduped shape already; step 5 of the conversion order
+below is now just "convert SV/SC/SR" (no separate dedup-first step
+needed).
 
 ## Conversion order (per advisor: storage interface -> fetch -> arms in this order)
 
@@ -239,8 +238,7 @@ discovering the duplication mid-FSM-conversion.
    LX/LV/LC/LR/KV/KC (LX/LV covered, LC/LR/KV/KC not), ImmIndex/
    CountBranch refills (not separately risky), Connective C/CT (CT
    covered, C not), BranchOrMisc R/RCZ/Z (not covered).
-5. The SV/SC/SR dedup-then-convert (apply the follow-up opportunity
-   above first, then stage).
+5. SV/SC/SR (already deduped, see above -- just needs FSM staging now).
 6. The genuinely dependent RMW arms, most-covered first: VflInt ST
    (covered) and Fp ST (coverage unresolved -- resolve first), then
    the uncovered ones: VflInt M+, Connective CM, Transmit (no mnemonic
