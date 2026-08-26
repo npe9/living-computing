@@ -73,9 +73,9 @@ implements against.
 | Arm | Reads | Writes | Dependent? | Coverage |
 |---|---|---|---|---|
 | L (Load) -- **CONVERTED, `dbee063`** | 0-1 (inlined `extractFieldBits`, 0 if immediate; crossing case = 2, independent) | 0 BRAM (`writeAcc` is addr 8/9, Reg-only) | no (read feeds a Reg write only) | problem_2_2_method2/3 (`L`, confirmed genuinely reached: both programs passed green after conversion, resolving the earlier FP-`L` disambiguation doubt) |
-| ST (Store) | Reg-only (`readAcc`, addr 8/9) | 1 (`writeField`: internal RMW read + write) | yes, RMW inside `writeField` | problem_2_1, xw_refill (`ST(V+ICR)`) |
+| ST (Store) -- **CONVERTED, `c026899`** | Reg-only (`readAcc`, addr 8/9) + 1 inlined | 1 (inlined `insertFieldBits`, no internal read) | yes, RMW inlined | problem_2_1, xw_refill (`ST(V+ICR)`) -- both confirmed green after conversion |
 | + (Add) -- **CONVERTED, `e8384a9`** | 0-1 (inlined `extractFieldBits`, crossing case = 2) + Reg-only (`readAcc`) | 0 BRAM (`writeAcc`, Reg-only) | no | problem_2_2_method1/3 (`+,`) -- confirmed genuinely reached, both green after conversion |
-| M+ (Add to Memory) | 1 (`readFieldWithHi(ea)`) + Reg-only (`readAcc`) | 1 (`writeFieldWithHi`, no internal read -- dedup landed this session) | yes (write uses the read's `hi` + computed sum) | **NONE** (grepped `opcodes.py`'s `M+` key against all programs, zero matches) |
+| M+ (Add to Memory) -- **CONVERTED, `c026899`** | 1 (inlined `extractFieldBits`) + Reg-only (`readAcc`) | 1 (inlined `insertFieldBits`, no internal read) | yes (write uses the read's word + computed sum) | **NONE** (grepped `opcodes.py`'s `M+` key against all programs, zero matches) -- hand-verified against the original, no suite coverage |
 | K (Compare) -- **CONVERTED, `e8384a9`** | 0-1 (inlined `extractFieldBits`, crossing case = 2) + Reg-only (`readAcc`) | 0 (comparison only) | no | problem_2_2_method1/2 (`K(...)`) -- confirmed genuinely reached, both green after conversion |
 | progressiveIncrement (shared, when `isProgressive`) | 0-1 (refill, only P=3/7) | 0 (index write-back happens in `StretchCore.step`, separately) | no | figure7_progressive_indexing (explicit purpose of that program) |
 
@@ -146,9 +146,12 @@ branch target). No Phase 2 work needed for this arm at all.
 
 ## Transmit (`tagged Transmit`)
 
-1 read (`st.readWord(srcBase)`) + 1 write (`st.writeWord(dstBase,
-srcVal)`), genuinely dependent (the write's data IS the read's
-response) -- the same RMW shape as M+/CM/SV/SC/SR.
+**CONVERTED, `c026899`**: 1 read (prefetch/bail-out) + 1 write
+(`st.writeWord(dstBase, prefetch[0])`), genuinely dependent (the
+write's data IS the read's response) -- the same RMW shape as
+M+/CM/SV/SC/SR, and the simplest instance of it (the write is just
+the raw read value, no computation in between). Hand-verified against
+the original -- no suite coverage exists (see below).
 
 **Coverage: NONE, and structurally so** -- there is no assembler
 mnemonic for Transmit in `opcodes.py` at all (grepped for `"T"`,
@@ -162,7 +165,7 @@ untested-by-construction in the Phase 2 commit.
 | Arm | Reads | Writes | Dependent? | Coverage |
 |---|---|---|---|---|
 | C (Connect -> accumulator field) -- **CONVERTED, `72fe53e`** | 0-1 (inlined `extractFieldBits`, crossing case = 2), 0 if immediate + Reg-only (`readAcc`) | 0 BRAM (`writeAcc`, Reg-only) | no | **NONE** (grepped for bare `C` + 4-bit conn prefix pattern, zero matches -- only `CT` suffix forms appear) |
-| CM (Connect to Memory -> storage field) | 1 (`readFieldWithHi(ea)`, guaranteed non-immediate) + Reg-only (`readAcc`) | 1 (`writeFieldWithHi`, dedup landed this session) | yes | **NONE** (same grep) |
+| CM (Connect to Memory -> storage field) -- **CONVERTED, `c026899`** | 1 (inlined `extractFieldBits`, guaranteed non-immediate and non-crossing) + Reg-only (`readAcc`) | 1 (`writeFieldWithHi`, unchanged -- only the read feeding `mHiWord` moved to the prefetch mechanism) | yes | **NONE** (same grep) -- hand-verified against the original, no suite coverage |
 | CT (Connect for Test, discarded) -- **CONVERTED, `72fe53e`** | 0-1 (inlined `extractFieldBits`, crossing case = 2) + Reg-only (`readAcc`) | 0 | no | problem_2_2_method3 (`CT0110(V+I)`) -- confirmed genuinely reached, but its specific field (INFO's 4 bytes, 28 bits total) never crosses a word boundary at any loop iteration, so this coverage does NOT exercise the crossing-field path (checked, not assumed) |
 | progressiveIncrement (shared) | 0-1 (refill) | 0 | no | not separately exercised via Connective (figure7 exercises this path via VflInt instead) |
 
@@ -177,8 +180,8 @@ program actually reaching it.
 
 | Arm | Reads | Writes | Dependent? | Coverage |
 |---|---|---|---|---|
-| L (code 0000110) | 1 (`st.readWord(ea)`) | 0 BRAM (`writeAcc`, Reg-only) | no | **VflInt-vs-FP ambiguity partially resolved**: converting VflInt L (commit `dbee063`) and getting problem_2_2_method2/3 green confirms every `L(BU,...)`-style modifier'd call site really does dispatch to VflInt's L, not FP's -- so those programs are NOT evidence for FP L specifically. Whether FP's plain, unmodified `"L"` (no modifiers) is reachable from any current program is still not traced through `strap_asm.py`'s dispatch; treat as **NONE** until checked, not as an open question. |
-| ST (code 0001110) | Reg-only (`st.readWord(addrAccRight)`) | 1 (`st.writeWord(ea, v)`) | yes (write's value is the Reg-read's response) | same status as L above -- VflInt's ST is separately confirmed covered (problem_2_1, xw_refill), FP's is not |
+| L (code 0000110) -- **CONVERTED, `c026899`** | 1 (prefetch/bail-out, same shape as VflInt L) | 0 BRAM (`writeAcc`, Reg-only) | no | **VflInt-vs-FP ambiguity partially resolved**: converting VflInt L (commit `dbee063`) and getting problem_2_2_method2/3 green confirms every `L(BU,...)`-style modifier'd call site really does dispatch to VflInt's L, not FP's -- so those programs are NOT evidence for FP L specifically. Whether FP's plain, unmodified `"L"` (no modifiers) is reachable from any current program is still not traced through `strap_asm.py`'s dispatch; treat as **NONE** until checked, not as an open question. |
+| ST (code 0001110) -- **needed NO conversion** | Reg-only (`st.readAccRight()`) | 1 (`st.writeWord(ea, v)`) | no (v is already instant -- addrAccRight is a compile-time-constant address, not a BRAM read) | same status as L above -- VflInt's ST is separately confirmed covered (problem_2_1, xw_refill), FP's is not |
 | anything else | 0 (OP-invalid) | 0 | n/a | n/a |
 
 **Action item before converting this arm**: resolve whether FP's
@@ -374,11 +377,13 @@ needed).
    compute the new word, issue the write in that same call, no second
    bail needed. `readHWWithWord` is now unused everywhere (dead code,
    same status as plain `readField` after step 5).
-7. NOT STARTED. The genuinely dependent RMW arms, most-covered first:
-   VflInt ST (covered) and Fp ST (coverage unresolved -- resolve
-   first), then the uncovered ones: VflInt M+, Connective CM, Transmit
-   (no mnemonic exists -- consider adding one, or explicitly flag as
-   untestable as currently scoped), Fp L (coverage unresolved).
+7. DONE (`c026899`). The genuinely dependent RMW arms: VflInt ST
+   (covered, confirmed green), M+ (uncovered), Connective CM
+   (uncovered), Transmit (structurally uncovered -- no assembler
+   mnemonic exists), Fp L (uncovered). Fp ST turned out to need NO
+   conversion at all -- its value (addrAccRight) is already instant.
+   `readFieldWithHi` is now dead code too, joining plain `readField`
+   and `readHWWithWord` from earlier steps.
 8. NOT STARTED. IoOp's RD/W control-word-adoption read (covered, low
    complexity -- could have moved earlier, grouped last only because
    it's naturally adjacent to the `ioPending` FSM work in step 4).
