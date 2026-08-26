@@ -83,17 +83,17 @@ implements against.
 
 | Arm | Reads | Writes | Dependent? | Coverage |
 |---|---|---|---|---|
-| LX | 1 (`st.readWord(ea[18:1])`) | 0 | no | figure7, xw_refill |
+| LX -- **CONVERTED, `de97419`** | 1 (inlined, no half-select) | 0 | no | figure7, xw_refill |
 | SX | 0 | 1 (`st.writeWord`, value from `readIndex`, Reg-only) | no | **NONE** (grepped for standalone `SX`, zero matches) |
-| LV | 1 (`readHW(ea)`) | 0 | no | problem_2_2_method2/3 (`LV,`) |
+| LV -- **CONVERTED, `de97419`** | 1 (inlined half-select) | 0 | no | problem_2_2_method2/3 (`LV,`) |
 | SV | 1 (`readHWWithWord(ea)`) | 1 (`writeHWWithWord`, no internal read -- dedup landed this session, commit `b24e51b`) | yes (write uses the read's raw word + new half) | **NONE** |
-| LC | 1 (`readHW(ea)`) | 0 | no | **NONE** |
+| LC -- **CONVERTED, `de97419`** | 1 (inlined half-select) | 0 | no | **NONE** -- verified by hand against the original readHW-based code, statement by statement, since the suite can't reach this arm |
 | SC | 1 (`readHWWithWord(ea)`) | 1 (`writeHWWithWord`, deduped) | yes | **NONE** |
-| LR | 1 (`readHW(ea)`) | 0 | no | **NONE** |
+| LR -- **CONVERTED, `de97419`** | 1 (inlined half-select) | 0 | no | **NONE** -- same hand-verification as LC |
 | SR | 1 (`readHWWithWord(ea)`) | 1 (`writeHWWithWord`, deduped) | yes | **NONE** |
 | V+/V+C/V+CR | 1 (`readHW(ea)`) + 0-1 (`maybeRefill`, only V+CR) | 0 (index write-back only, Reg-only) | no | **NONE** as a standalone DirIndex opcode (the `V+I`/`V+ICR` strings that DO appear in figure7/xw_refill/method2/3 are the VflInt *progressive-addressing suffix*, a different namespace per `opcodes.py`'s own comment -- confirmed by reading, not assumed) |
-| KV | 1 (`readHW(ea)`) | 0 | no | **NONE** |
-| KC | 1 (`readHW(ea)`) | 0 | no | **NONE** |
+| KV -- **CONVERTED, `de97419`** | 1 (inlined half-select) | 0 | no | **NONE** -- same hand-verification as LC |
+| KC -- **CONVERTED, `de97419`** | 1 (inlined half-select) | 0 | no | **NONE** -- same hand-verification as LC |
 
 **DirIndex is the least-covered format in the whole inventory**: only
 LX and LV (both pure single-read, no-write arms) have any test
@@ -299,11 +299,20 @@ needed).
      `readField` function is unused everywhere in this codebase --
      grepped, confirmed, not removed (dead code isn't a correctness
      issue; noted for a future cleanup pass rather than acted on now).
-   - Remaining in this step: LX, LV, LC, LR, KV, KC (DirIndex);
-     ImmIndex/CountBranch refills; C, CT (Connective); R, RCZ, Z
-     (BranchOrMisc). Each should reuse the SAME `prefetch`/`needsRead`
-     protocol L established -- no new mechanism design expected, just
-     applying it arm by arm.
+   - DONE (`de97419`): **DirIndex LX, LV, LC, LR, KV, KC**. Half-word
+     reads (`readHW`'s own shape) never cross a word boundary, so each
+     needed exactly 0-1 reads, simpler than VflInt's crossing case.
+     LC/LR/KV/KC have no test coverage (grepped, confirmed) -- verified
+     by hand against the original readHW-based code, statement by
+     statement, rather than relying on the suite. SX (write-only) and
+     V+/V+C/V+CR (combines a read with `maybeRefill`'s own conditional
+     read) are unchanged -- SX needs no Phase 2 work at all, V+/V+C/V+CR
+     is deferred to whichever step handles arms needing 2 sequential
+     but non-crossing reads.
+   - Remaining in this step: ImmIndex/CountBranch refills; C, CT
+     (Connective); R, RCZ, Z (BranchOrMisc). Each should reuse the SAME
+     `prefetch`/`needsRead` protocol L established -- no new mechanism
+     design expected, just applying it arm by arm.
    - **Build-time finding, unrelated to correctness, worth knowing
      before converting more arms**: Bluesim's code generator inlines
      `step()`'s entire body (which itself inlines `execute()`'s whole
