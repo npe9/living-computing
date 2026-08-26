@@ -557,37 +557,52 @@ function ActionValue#(Tuple4#(HWordAddr, Maybe#(Tuple2#(Bit#(4), IndexWord)),
         HWordAddr ea = effAddr19(st, di_.addr, di_.idx);
         IndexWord x = st.readIndex(di_.j);
         case (di_.code)
-          5'b00001: begin // LX
-            idxWriteReg = di_.j; doIdxWrite = True;
-            let w <- st.readWord(ea[18:1]);
-            idxWriteVal = unpackIndexWord(w);
+          5'b00001: begin // LX -- prefetch/bail-out shape (same as
+            // VflInt L/K/+ above). Half-word reads never cross a word
+            // boundary (a half-word always fits within the one word
+            // it addresses), so this and every other DirIndex
+            // read-only arm below needs exactly 0-1 reads, never 2.
+            if (prefetchCount >= 1) begin
+              idxWriteReg = di_.j; doIdxWrite = True;
+              idxWriteVal = unpackIndexWord(prefetch[0]);
+            end else
+              needsRead = tagged Valid ea[18:1];
           end
           5'b10001: st.writeWord(ea[18:1], packIndexWord(x));                     // SX
           5'b00011: begin // LV
-            Bit#(32) h <- readHW(st, ea);
-            idxWriteReg = di_.j; doIdxWrite = True;
-            idxWriteVal = IndexWord{addr:h[31:8], sign:h[7:7], flag:x.flag,
-                                            count:x.count, refill:x.refill};
+            if (prefetchCount >= 1) begin
+              Bit#(32) h = (ea[0] == 0) ? prefetch[0][63:32] : prefetch[0][31:0];
+              idxWriteReg = di_.j; doIdxWrite = True;
+              idxWriteVal = IndexWord{addr:h[31:8], sign:h[7:7], flag:x.flag,
+                                              count:x.count, refill:x.refill};
+            end else
+              needsRead = tagged Valid ea[18:1];
           end
           5'b10011: begin // SV
             let {h, hWord} <- readHWWithWord(st, ea);
             writeHWWithWord(st, ea, {x.addr, x.sign, h[6:0]}, hWord);
           end
           5'b00101: begin // LC
-            Bit#(32) h <- readHW(st, ea);
-            idxWriteReg = di_.j; doIdxWrite = True;
-            idxWriteVal = IndexWord{addr:x.addr, sign:x.sign, flag:x.flag,
-                                            count:h[31:14], refill:x.refill};
+            if (prefetchCount >= 1) begin
+              Bit#(32) h = (ea[0] == 0) ? prefetch[0][63:32] : prefetch[0][31:0];
+              idxWriteReg = di_.j; doIdxWrite = True;
+              idxWriteVal = IndexWord{addr:x.addr, sign:x.sign, flag:x.flag,
+                                              count:h[31:14], refill:x.refill};
+            end else
+              needsRead = tagged Valid ea[18:1];
           end
           5'b10101: begin // SC
             let {h, hWord} <- readHWWithWord(st, ea);
             writeHWWithWord(st, ea, {x.count, 7'b0, h[6:0]}, hWord);
           end
           5'b00111: begin // LR
-            Bit#(32) h <- readHW(st, ea);
-            idxWriteReg = di_.j; doIdxWrite = True;
-            idxWriteVal = IndexWord{addr:x.addr, sign:x.sign, flag:x.flag,
-                                            count:x.count, refill:h[31:14]};
+            if (prefetchCount >= 1) begin
+              Bit#(32) h = (ea[0] == 0) ? prefetch[0][63:32] : prefetch[0][31:0];
+              idxWriteReg = di_.j; doIdxWrite = True;
+              idxWriteVal = IndexWord{addr:x.addr, sign:x.sign, flag:x.flag,
+                                              count:x.count, refill:h[31:14]};
+            end else
+              needsRead = tagged Valid ea[18:1];
           end
           5'b10111: begin // SR
             let {h, hWord} <- readHWWithWord(st, ea);
@@ -608,15 +623,21 @@ function ActionValue#(Tuple4#(HWordAddr, Maybe#(Tuple2#(Bit#(4), IndexWord)),
             ind = setIndexResultIndicatorsF(ind, x1); // reflects state before any refill, p.23
           end
           5'b01001: begin // KV
-            Bit#(32) h <- readHW(st, ea);
-            SM128 opnd = SM128{sign: h[7], mag: zeroExtend(h[31:8])};
-            SM128 val  = SM128{sign: x.sign, mag: zeroExtend(x.addr)};
-            ind = setIndexCmpIndicatorsF(ind, smCompare(val, opnd));
+            if (prefetchCount >= 1) begin
+              Bit#(32) h = (ea[0] == 0) ? prefetch[0][63:32] : prefetch[0][31:0];
+              SM128 opnd = SM128{sign: h[7], mag: zeroExtend(h[31:8])};
+              SM128 val  = SM128{sign: x.sign, mag: zeroExtend(x.addr)};
+              ind = setIndexCmpIndicatorsF(ind, smCompare(val, opnd));
+            end else
+              needsRead = tagged Valid ea[18:1];
           end
           5'b11001: begin // KC
-            Bit#(32) h <- readHW(st, ea);
-            Cmp3 c = (x.count == h[31:14]) ? CmpEqual : (x.count < h[31:14]) ? CmpLow : CmpHigh;
-            ind = setIndexCmpIndicatorsF(ind, c);
+            if (prefetchCount >= 1) begin
+              Bit#(32) h = (ea[0] == 0) ? prefetch[0][63:32] : prefetch[0][31:0];
+              Cmp3 c = (x.count == h[31:14]) ? CmpEqual : (x.count < h[31:14]) ? CmpLow : CmpHigh;
+              ind = setIndexCmpIndicatorsF(ind, c);
+            end else
+              needsRead = tagged Valid ea[18:1];
           end
           default: ind = setOpInvalid(ind); // RNX, LVE, SVA: out of scope
         endcase
