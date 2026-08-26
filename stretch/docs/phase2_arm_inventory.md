@@ -139,9 +139,9 @@ branch target). No Phase 2 work needed for this arm at all.
 | Arm | Reads | Writes | Dependent? | Coverage |
 |---|---|---|---|---|
 | B/BR/BE/BD/BEW/NOP | 0 | 0 | n/a | all 8 programs (BEW alone is the halt idiom every program ends with) |
-| Z (Store Zero) | 0 | 1 (`st.writeWord(..., 0)`) | no | **NONE** (grepped for standalone `Z` opcode usage, zero matches) |
-| R (Refill, unconditional) | 1 (`st.readWord` at refill address) | 0 | no | **NONE** |
-| RCZ (Refill on Count Zero) | 0-1 (conditional on `x.count==0`) | 0 | no | **NONE** |
+| Z (Store Zero) | 0 | 1 (`st.writeWord(..., 0)`) | no | **NONE** (grepped for standalone `Z` opcode usage, zero matches) -- no Phase 2 work needed, pure write |
+| R (Refill, unconditional) -- **CONVERTED, `15ca6fa`** | 1 (inlined, no half-select) | 0 | no | **NONE** |
+| RCZ (Refill on Count Zero) -- **CONVERTED, `15ca6fa`** | 0-1 (conditional on `x.count==0`) | 0 | no | **NONE** |
 | EX/EXIC | 0 (OP-invalid, out of scope) | 0 | n/a | n/a |
 
 ## Transmit (`tagged Transmit`)
@@ -277,7 +277,7 @@ needed).
    exceeded / issue-read-and-wait / process-word) so each ends in its
    own `return False` -- bsc's (P0030) rejected a shared trailing
    return once one branch needed an early one.
-5. IN PROGRESS. Arms with 0-1 independent reads and no write
+5. DONE IN FULL. Arms with 0-1 independent reads and no write
    dependency (lowest risk, in roughly coverage order): VflInt L/K/+
    (covered), DirIndex LX/LV/LC/LR/KV/KC (LX/LV covered, LC/LR/KV/KC
    not), ImmIndex/CountBranch refills (not separately risky),
@@ -345,9 +345,12 @@ needed).
      writeback); C/CT went back to crossing-capable `readField` before
      being converted to the prefetch/bail-out mechanism in the same
      step above.
-   - Remaining in this step: R, RCZ, Z (BranchOrMisc). Each should
-     reuse the SAME `prefetch`/`needsRead` protocol L established --
-     no new mechanism design expected, just applying it arm by arm.
+   - DONE (`15ca6fa`): **BranchOrMisc R and RCZ** (Z needed no
+     conversion -- pure write, no read). **Step 5 is now complete in
+     full**: every "0-1 independent reads, no write dependency" arm
+     across VflInt, DirIndex, ImmIndex, CountBranch, Connective, and
+     BranchOrMisc is converted. R/RCZ/Z have NO coverage anywhere
+     (confirmed by grep).
    - **Build-time finding, unrelated to correctness, worth knowing
      before converting more arms**: Bluesim's code generator inlines
      `step()`'s entire body (which itself inlines `execute()`'s whole
