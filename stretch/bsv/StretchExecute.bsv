@@ -578,9 +578,18 @@ function ActionValue#(Tuple4#(HWordAddr, Maybe#(Tuple2#(Bit#(4), IndexWord)),
             end else
               needsRead = tagged Valid ea[18:1];
           end
-          5'b10011: begin // SV
-            let {h, hWord} <- readHWWithWord(st, ea);
-            writeHWWithWord(st, ea, {x.addr, x.sign, h[6:0]}, hWord);
+          5'b10011: begin // SV -- prefetch/bail-out shape: unlike the
+            // read-only arms above, this writes back using the SAME
+            // read's response (a genuinely dependent chain), but
+            // since writes stay single-cycle throughout this whole
+            // migration, resuming with prefetch[0] available is
+            // enough to both compute and issue the write in one go --
+            // no second bail needed.
+            if (prefetchCount >= 1) begin
+              Bit#(32) h = (ea[0] == 0) ? prefetch[0][63:32] : prefetch[0][31:0];
+              writeHWWithWord(st, ea, {x.addr, x.sign, h[6:0]}, prefetch[0]);
+            end else
+              needsRead = tagged Valid ea[18:1];
           end
           5'b00101: begin // LC
             if (prefetchCount >= 1) begin
@@ -591,9 +600,12 @@ function ActionValue#(Tuple4#(HWordAddr, Maybe#(Tuple2#(Bit#(4), IndexWord)),
             end else
               needsRead = tagged Valid ea[18:1];
           end
-          5'b10101: begin // SC
-            let {h, hWord} <- readHWWithWord(st, ea);
-            writeHWWithWord(st, ea, {x.count, 7'b0, h[6:0]}, hWord);
+          5'b10101: begin // SC -- same shape as SV above.
+            if (prefetchCount >= 1) begin
+              Bit#(32) h = (ea[0] == 0) ? prefetch[0][63:32] : prefetch[0][31:0];
+              writeHWWithWord(st, ea, {x.count, 7'b0, h[6:0]}, prefetch[0]);
+            end else
+              needsRead = tagged Valid ea[18:1];
           end
           5'b00111: begin // LR
             if (prefetchCount >= 1) begin
@@ -604,9 +616,12 @@ function ActionValue#(Tuple4#(HWordAddr, Maybe#(Tuple2#(Bit#(4), IndexWord)),
             end else
               needsRead = tagged Valid ea[18:1];
           end
-          5'b10111: begin // SR
-            let {h, hWord} <- readHWWithWord(st, ea);
-            writeHWWithWord(st, ea, {x.refill, 7'b0, h[6:0]}, hWord);
+          5'b10111: begin // SR -- same shape as SV above.
+            if (prefetchCount >= 1) begin
+              Bit#(32) h = (ea[0] == 0) ? prefetch[0][63:32] : prefetch[0][31:0];
+              writeHWWithWord(st, ea, {x.refill, 7'b0, h[6:0]}, prefetch[0]);
+            end else
+              needsRead = tagged Valid ea[18:1];
           end
           5'b01011, 5'b01101, 5'b01111: begin // V+ / V+C / V+CR
             Bit#(32) h <- readHW(st, ea);
