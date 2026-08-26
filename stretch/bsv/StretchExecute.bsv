@@ -127,12 +127,12 @@ function Action writeHWWithWord(StretchStorage st, HWordAddr ha, Bit#(32) v, Wor
 // header for the documented simplification).
 // ---------------------------------------------------------------------
 
-function ActionValue#(SM128) readAcc(StretchStorage st) =
-  actionvalue
-    Word64 hi <- st.readWord(addrAccLeft);
-    Word64 lo <- st.readWord(addrAccRight);
-    return accToSM(hi, lo);
-  endactionvalue;
+// Plain function again, not ActionValue: addrAccLeft/addrAccRight are
+// compile-time constants, always Reg-backed (StretchStorage.bsv's
+// dedicated readAccLeft/readAccRight accessors), so there's no
+// request/response round trip to wait on here -- see
+// docs/phase2_arm_inventory.md.
+function SM128 readAcc(StretchStorage st) = accToSM(st.readAccLeft(), st.readAccRight());
 
 function Action writeAcc(StretchStorage st, SM128 v) =
   action
@@ -377,7 +377,7 @@ function ActionValue#(Tuple3#(HWordAddr, Maybe#(Tuple2#(Bit#(4), IndexWord)),
                 ind = setOpInvalid(ind);
                 vflOk = False;
               end else begin
-                SM128 acc <- readAcc(st);
+                SM128 acc = readAcc(st);
                 SM128 shifted = SM128 { sign: acc.sign, mag: acc.mag >> offSh };
                 Bit#(1) fsign = (vi.m.invert == 1) ? ~shifted.sign : shifted.sign;
                 Bit#(64) packedField = smToField(SM128{sign:fsign, mag:shifted.mag}, len_, bsz, vi.m.unsign);
@@ -393,7 +393,7 @@ function ActionValue#(Tuple3#(HWordAddr, Maybe#(Tuple2#(Bit#(4), IndexWord)),
               end
               SM128 opnd = fieldToSM(raw, len_, bsz, vi.m.unsign, vi.m.invert);
               SM128 opndSh = SM128 { sign: opnd.sign, mag: opnd.mag << offSh };
-              SM128 acc <- readAcc(st);
+              SM128 acc = readAcc(st);
               SM128 sum = smAdd(acc, opndSh);
               writeAcc(st, sum);
               ind = setResultIndicatorsF(ind, sum);
@@ -405,7 +405,7 @@ function ActionValue#(Tuple3#(HWordAddr, Maybe#(Tuple2#(Bit#(4), IndexWord)),
               end else begin
                 let {raw, hiWord} <- readFieldWithHi(st, ea, len_);
                 SM128 opnd = fieldToSM(raw, len_, bsz, vi.m.unsign, vi.m.invert);
-                SM128 acc <- readAcc(st);
+                SM128 acc = readAcc(st);
                 SM128 accSh = SM128 { sign: acc.sign, mag: acc.mag >> offSh };
                 SM128 sum = smAdd(opnd, accSh);
                 writeFieldWithHi(st, ea, len_, smToField(sum, len_, bsz, vi.m.unsign), hiWord);
@@ -421,7 +421,7 @@ function ActionValue#(Tuple3#(HWordAddr, Maybe#(Tuple2#(Bit#(4), IndexWord)),
               end
               SM128 opnd = fieldToSM(raw, len_, bsz, vi.m.unsign, vi.m.invert);
               SM128 opndSh = SM128 { sign: opnd.sign, mag: opnd.mag << offSh };
-              SM128 acc <- readAcc(st);
+              SM128 acc = readAcc(st);
               Cmp3 c = smCompare(acc, opndSh);
               ind = setAccCmpIndicatorsF(ind, c);
             end
@@ -783,7 +783,7 @@ function ActionValue#(Tuple3#(HWordAddr, Maybe#(Tuple2#(Bit#(4), IndexWord)),
               m = r;
               mHiWord = hiWord;
             end
-            SM128 acc <- readAcc(st);
+            SM128 acc = readAcc(st);
             Bit#(64) a = truncate(acc.mag >> offSh) & fieldMask;
             Bit#(64) result = applyConnective(cn.conn, m, a) & fieldMask;
             Bool resultZero = (result == 0);
@@ -826,7 +826,9 @@ function ActionValue#(Tuple3#(HWordAddr, Maybe#(Tuple2#(Bit#(4), IndexWord)),
             let v <- st.readWord(ea);
             writeAcc(st, SM128{sign: 0, mag: zeroExtend(v)});
           end else begin // ST
-            let v <- st.readWord(addrAccRight);
+            Word64 v = st.readAccRight(); // compile-time-constant
+                                           // address; see readAcc's
+                                           // own comment above.
             st.writeWord(ea, v);
           end
         end else
