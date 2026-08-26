@@ -59,6 +59,25 @@ module mkStretchCore(StretchCore);
   Reg#(Maybe#(Tuple2#(Bit#(4), IndexWord))) pendingIdxWrite <- mkReg(tagged Invalid);
   Reg#(Maybe#(IoXfer)) ioPending <- mkReg(tagged Invalid);
 
+  // In-progress instruction fetch, staged against StretchStorage's
+  // readWordReq/readWordResp (docs/phase2_arm_inventory.md's
+  // conversion order, step 2 -- the first arm converted to the new
+  // two-call convention, chosen because it's bounded (0-2 reads, no
+  // case-arm variation) and exercised by every program). Invalid: no
+  // fetch in progress (an idle step() either starts a fresh fetch, in
+  // the final `else` branch below, or services one of the two other
+  // pending-* FSMs above it). Valid tuple3(False, pc, _): a request
+  // for the word containing hw0 was issued last cycle at word
+  // pc[18:1]; waiting on its response. Valid tuple3(True, pc, hw0):
+  // hw0 has already been collected and decoding found the instruction
+  // Full-length; a request for the word containing hw1 was issued
+  // last cycle at word (pc+1)[18:1]; hw0 is carried through unchanged
+  // so it's still on hand once hw1's response arrives. Mirrors
+  // pendingIdxWrite's tpl_1/tpl_2 accessor style above rather than a
+  // dedicated tagged-union type, for the same reason: this is a
+  // 2-state FSM, not worth a new type.
+  Reg#(Maybe#(Tuple3#(Bool, HWordAddr, HalfWord32))) fetchPending <- mkReg(tagged Invalid);
+
   method ActionValue#(Bool) step();
     if (ioPending matches tagged Valid .x) begin
       // Service one word of an in-flight RD/W transfer. See this
@@ -132,21 +151,60 @@ module mkStretchCore(StretchCore);
       st.writeIndex(tpl_1(p), tpl_2(p));
       pendingIdxWrite <= tagged Invalid;
       return False;
-    end else begin
-      HWordAddr pc = pcReg;
-      HalfWord32 hw0 <- readHW(st, pc);
-      InstrLen len = instrLen(hw0);
-      Maybe#(HalfWord32) hw1 = tagged Invalid;
-      if (len == Full) begin
-        HalfWord32 h1 <- readHW(st, pc + 1);
-        hw1 = tagged Valid h1;
+    end else if (fetchPending matches tagged Valid .fp) begin
+      // Continue an in-progress fetch -- see fetchPending's own
+      // comment above for the two states this covers.
+      Bool waitingHw1     = tpl_1(fp);
+      HWordAddr pc        = tpl_2(fp);
+      HalfWord32 hw0cap   = tpl_3(fp);
+      Word64 w <- st.readWordResp();
+      if (!waitingHw1) begin
+        HalfWord32 hw0 = (pc[0] == 0) ? w[63:32] : w[31:0];
+        InstrLen len = instrLen(hw0);
+        if (len == Full) begin
+          // hw0 collected, instruction is Full-length: issue hw1's
+          // request now (same cycle as collecting hw0's response --
+          // a real BRAM port allows a request.put() and a prior
+          // response.get() in the same rule, confirmed by
+          // scratchpad/bram_probe/BramProbe4.bsv) and wait for it.
+          st.readWordReq((pc + 1)[18:1]);
+          fetchPending <= tagged Valid tuple3(True, pc, hw0);
+          return False;
+        end else begin
+          // Half-length: done fetching, decode+execute now, same as
+          // the single-step case below.
+          DecodedInstr di = decode(hw0, tagged Invalid);
+          let {next, vflPending, ioStart} <- execute(st, ioDev, pc, len, di);
+          pcReg <= next;
+          pendingIdxWrite <= vflPending;
+          ioPending <= ioStart;
+          fetchPending <= tagged Invalid;
+          return next == pc;
+        end
+      end else begin
+        // hw1 collected (instruction is Full-length by construction --
+        // that's the only way this state is ever entered).
+        HalfWord32 hw1 = ((pc + 1)[0] == 0) ? w[63:32] : w[31:0];
+        DecodedInstr di = decode(hw0cap, tagged Valid hw1);
+        let {next, vflPending, ioStart} <- execute(st, ioDev, pc, Full, di);
+        pcReg <= next;
+        pendingIdxWrite <= vflPending;
+        ioPending <= ioStart;
+        fetchPending <= tagged Invalid;
+        return next == pc;
       end
-      DecodedInstr di = decode(hw0, hw1);
-      let {next, vflPending, ioStart} <- execute(st, ioDev, pc, len, di);
-      pcReg <= next;
-      pendingIdxWrite <= vflPending;
-      ioPending <= ioStart;
-      return next == pc;
+    end else begin
+      // Start a new fetch: issue the request for the word containing
+      // hw0 and wait. Nothing else completes this cycle -- unlike the
+      // pre-FSM version, even a Half-length instruction now takes (at
+      // least) two step() calls total, one to issue the request and
+      // one to collect it and execute. Callers that loop on step()
+      // until it returns True need no changes (see this interface's
+      // own step() doc above).
+      HWordAddr pc = pcReg;
+      st.readWordReq(pc[18:1]);
+      fetchPending <= tagged Valid tuple3(False, pc, 0);
+      return False;
     end
   endmethod
 

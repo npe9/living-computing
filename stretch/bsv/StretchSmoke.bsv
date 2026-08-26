@@ -116,12 +116,33 @@ module mkStretchTb(Empty);
     phase <= phase + 1;
   endrule
 
-  rule run (phase == 16 && stepCount < 24);
-    let _ <- core.step();
-    stepCount <= stepCount + 1;
+  // Raw step() budget: since the instruction-fetch FSM conversion
+  // (docs/phase2_arm_inventory.md), one instruction costs 2 step()
+  // calls (Half-length: issue hw0's request, collect+execute) or 3
+  // (Full-length: issue hw0, collect hw0+issue hw1, collect hw1+
+  // execute) -- no longer 1. This program's 16 real instructions
+  // (setup L/+/ST/LCI, then 3x[L/+/ST/CB]) need exactly 44 raw step()
+  // calls: setup's 3 Full + 1 Half = 3*3+2 = 11, each loop iteration's
+  // 3 Full + 1 Half = 11, times 3 iterations = 33, total 11+33 = 44.
+  // The original (pre-conversion) budget was 24 against 16 needed
+  // 1-step-per-instruction calls -- 8 slack instructions' worth,
+  // tolerated because falling off the end of this program into
+  // uninitialized (all-zero) memory decodes as something inert enough
+  // not to disturb mem[53] (empirically true of the original test).
+  // Keeping that same ~8-slack-instruction margin here (at this
+  // program's ~2.75 average steps/instruction) gives roughly 44 + 8*3
+  // = 68; rounded up a little for comfort, not the essentially-
+  // unbounded 2000 strap/gen_tb.py uses for real STRAP programs (this
+  // hand-written test has a small, known instruction count, so a
+  // tighter budget is a better regression signal than a large one).
+  rule run (phase == 16 && stepCount < 70);
+    let done <- core.step();
+    if (done) stepCount <= 70; // reached a self-branch halt early (not expected
+                                // in this program, but don't spin past it if so)
+    else stepCount <= stepCount + 1;
   endrule
 
-  rule afterRun (phase == 16 && stepCount == 24);
+  rule afterRun (phase == 16 && stepCount == 70);
     phase <= 17;
   endrule
 
@@ -142,18 +163,27 @@ module mkStretchTb(Empty);
     phase <= 19;
   endrule
 
-  rule stepRnx (phase == 19);
+  // RNX (DirIndex, Half-length) now needs 2 step() calls to complete
+  // -- one to issue hw0's request, one to collect it and run
+  // decode/execute -- not 1 (see the "run" rule's own comment above
+  // for the same fetch-FSM-conversion reason).
+  rule stepRnx1 (phase == 19);
     let _ <- core.step();
     phase <= 20;
   endrule
 
-  rule checkRnx (phase == 20);
-    let v <- core.mem.readWord(11);
-    check("indicator OP after RNX (unimplemented)", (v >> 48) & 1, 1);
+  rule stepRnx2 (phase == 20);
+    let _ <- core.step();
     phase <= 21;
   endrule
 
-  rule finish (phase == 21);
+  rule checkRnx (phase == 21);
+    let v <- core.mem.readWord(11);
+    check("indicator OP after RNX (unimplemented)", (v >> 48) & 1, 1);
+    phase <= 22;
+  endrule
+
+  rule finish (phase == 22);
     if (fails == 0)
       $display("ALL TESTS PASSED");
     else
