@@ -199,7 +199,7 @@ NONE) rather than left as an open question.
 | REL | 0 (`io.*` only) | 0 | io_reader_printer, io_tape |
 | CCW | 0 | 1 (`st.writeWord(effA2, ...)`, value from `io.readChanCW`, not a storage read) | io_reader_printer, io_tape |
 | RD/W wrongUnit | 0 | 0 (`io.*` only) | io_reader_printer (CCWC) |
-| RD/W normal | 1 (`st.readWord(effA2)`, the control-word adoption read) | 0 (`ioStart` handed to `StretchCore.step`'s existing `ioPending` FSM) | io_reader_printer, io_tape (both RD and W paths) |
+| RD/W normal -- **CONVERTED, `5b381ea`** | 1 (prefetch/bail-out, the control-word adoption read) | 0 (`ioStart` handed to `StretchCore.step`'s existing `ioPending` FSM) | io_reader_printer, io_tape (both RD and W paths) -- both confirmed green after conversion |
 
 IoOp is the best-covered format in this inventory for its
 BRAM-relevant arm (RD/W normal). The `ioPending` FSM itself (in
@@ -384,9 +384,10 @@ needed).
    conversion at all -- its value (addrAccRight) is already instant.
    `readFieldWithHi` is now dead code too, joining plain `readField`
    and `readHWWithWord` from earlier steps.
-8. NOT STARTED. IoOp's RD/W control-word-adoption read (covered, low
-   complexity -- could have moved earlier, grouped last only because
-   it's naturally adjacent to the `ioPending` FSM work in step 4).
+8. DONE (`5b381ea`). IoOp's RD/W control-word-adoption read -- the
+   LAST remaining execute() case arm. Every case arm that touches
+   general storage is now converted; only step 9 (the final BRAM
+   backing swap) remains.
 9. NOT STARTED, LAST. Once every call site above tolerates a deferred
    response: swap `StretchStorage.bsv`'s `mem` from
    `Vector#(256,Reg#(Word64))` to `BRAM1Port`/`mkBRAM1Server` (latency
