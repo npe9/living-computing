@@ -160,30 +160,39 @@ module mkStretchTb(Empty);
     let v <- core.mem.readWord(53);
     check("mem[53] (3*10 via CB loop)", v, 30);
     core.setPC(90);
+    stepCount <= 0; // reused for the RNX counted loop below
     phase <= 19;
   endrule
 
   // RNX (DirIndex, Half-length) now needs 2 step() calls to complete
   // -- one to issue hw0's request, one to collect it and run
   // decode/execute -- not 1 (see the "run" rule's own comment above
-  // for the same fetch-FSM-conversion reason).
-  rule stepRnx1 (phase == 19);
+  // for the same fetch-FSM-conversion reason). ONE counted-loop rule
+  // (reusing "run"'s own shape), not two separate rules each with
+  // their own `core.step()` call: Bluesim's code generator inlines
+  // step()'s entire body -- which itself inlines execute()'s
+  // ~1000-line instruction dispatch -- at EVERY textual call site, so
+  // two separate rules would double this section's contribution to
+  // the generated C++ for no functional reason. Measured: with two
+  // separate rules (plus "run"'s own call site) this file's generated
+  // mkStretchTb.cxx was 27.8MB (3 inlined copies of step()); every
+  // other generated testbench, with exactly one call site, is 6.76MB.
+  rule stepRnx (phase == 19 && stepCount < 2);
     let _ <- core.step();
+    stepCount <= stepCount + 1;
+  endrule
+
+  rule afterStepRnx (phase == 19 && stepCount == 2);
     phase <= 20;
   endrule
 
-  rule stepRnx2 (phase == 20);
-    let _ <- core.step();
+  rule checkRnx (phase == 20);
+    let v <- core.mem.readWord(11);
+    check("indicator OP after RNX (unimplemented)", (v >> 48) & 1, 1);
     phase <= 21;
   endrule
 
-  rule checkRnx (phase == 21);
-    let v <- core.mem.readWord(11);
-    check("indicator OP after RNX (unimplemented)", (v >> 48) & 1, 1);
-    phase <= 22;
-  endrule
-
-  rule finish (phase == 22);
+  rule finish (phase == 21);
     if (fails == 0)
       $display("ALL TESTS PASSED");
     else
