@@ -37,6 +37,10 @@ run() {
   echo
 }
 
+# -- 0. SYN pseudo-op (strap_asm.py, pure Python, no Bluesim needed --
+# see test_syn.py's own header) --
+run "SYN pseudo-op" python3 test_syn.py
+
 # -- 1. Hand-assembled BSV smoke test (StretchSmoke.bsv, not STRAP-derived) --
 cd "$BSV_DIR"
 run "bsv smoke test (make run)" make run
