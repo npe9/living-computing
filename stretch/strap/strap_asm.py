@@ -844,10 +844,46 @@ def assemble(source, origin_bits=DEFAULT_ORIGIN_BITS):
             symtab[up] = eval_expr(stmt.fields[0], symtab, stmt.addr, lineno=stmt.lineno)
             progressed = True
         if not progressed:
-            names = ', '.join(f"{up} (needs {stmt.fields[0]!r})" for up, stmt in still_pending)
+            # Classify each stuck symbol precisely rather than lumping
+            # every failure under one vague "undefined or circular"
+            # message (caught by advisor review -- the original message
+            # pointed a plain undefined-symbol typo at a nonexistent
+            # cycle). A symbol is "undefined" if ANY path through its
+            # still-missing dependencies eventually names something
+            # that isn't even a candidate (stuck) SYN -- i.e. a
+            # dependency that will never resolve, transitively, not
+            # just directly (A -> B -> undefined must blame the
+            # undefined leaf, not call A circular just because its
+            # *direct* dependency B happens to still be stuck too).
+            # What's left after removing every such chain is genuinely
+            # circular: every dependency path loops back among stuck
+            # symbols forever with no escape.
+            still_names = {up for up, stmt in still_pending}
+            direct_missing = {
+                up: [s for s in referenced_symbols(stmt.fields[0], stmt.lineno) if s not in symtab]
+                for up, stmt in still_pending}
+
+            def reaches_undefined(name, seen=frozenset()):
+                if name in seen:
+                    return False
+                for dep in direct_missing.get(name, []):
+                    if dep not in still_names or reaches_undefined(dep, seen | {name}):
+                        return True
+                return False
+
+            by_name = {up: stmt for up, stmt in still_pending}
+            undefined = [up for up in still_names if reaches_undefined(up)]
+            circular = [up for up in still_names if up not in undefined]
+            parts = []
+            if undefined:
+                parts.append('undefined: ' + ', '.join(
+                    f"{up} (needs {by_name[up].fields[0]!r})" for up in undefined))
+            if circular:
+                parts.append('circular: ' + ', '.join(
+                    f"{up} (needs {by_name[up].fields[0]!r})" for up in circular))
             raise AssemblerError(
-                f"SYN symbol(s) never resolve -- undefined or circular "
-                f"reference chain: {names}", still_pending[0][1].lineno)
+                f"SYN symbol(s) never resolve -- {'; '.join(parts)}",
+                still_pending[0][1].lineno)
         pending = still_pending
 
     # Pass 2: evaluate + emit.

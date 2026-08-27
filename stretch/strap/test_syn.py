@@ -29,11 +29,21 @@ def check(label, got, expected):
         FAILS += 1
 
 
-def expect_error(label, thunk):
+def expect_error(label, thunk, must_contain=None):
+    """must_contain, if given, is checked against the raised message --
+    the classification (undefined vs. circular) is real behavior worth
+    pinning down, not just "raised something" (a prior version of this
+    test only checked that ANY AssemblerError came back, which passed
+    even while a plain undefined-symbol case was mislabeled a circular
+    reference -- caught by advisor review)."""
     global FAILS
     try:
         thunk()
     except AssemblerError as e:
+        if must_contain and must_contain not in str(e):
+            print(f"FAIL {label} raised AssemblerError, but missing {must_contain!r}: {e}")
+            FAILS += 1
+            return
         print(f"PASS {label} raised AssemblerError: {e}")
         return
     print(f"FAIL {label} did not raise AssemblerError")
@@ -91,23 +101,52 @@ Z       SYN, 10
 check("chained forward reference: X", prog.symtab['X'], 12)
 
 # ---------------------------------------------------------------------
-# A SYN with no data description that names a plain integer via a
-# preceding DD/DDI-defined symbol works the same as the manual's
-# example; a SYN whose expression can never resolve (undefined symbol)
-# must raise, not silently default to 0 or the location counter.
+# A SYN whose expression can never resolve must raise, not silently
+# default to 0 or the location counter -- and the two distinct ways
+# that can happen (a plain typo'd/nonexistent symbol vs. a genuine
+# mutual-reference cycle) must be reported AS distinct, not both
+# collapsed into one "undefined or circular" message that would point
+# an undefined-symbol typo at a nonexistent cycle (caught by advisor
+# review of this test's first version).
 # ---------------------------------------------------------------------
 expect_error(
-    "undefined SYN reference raises",
+    "undefined SYN reference raises, classified as undefined",
     lambda: assemble("""
 BAD     SYN, NOSUCHSYMBOL+1
-"""))
+"""), must_contain='undefined: BAD')
 
 expect_error(
-    "circular SYN reference raises",
+    "circular SYN reference raises, classified as circular",
     lambda: assemble("""
 P       SYN, Q+1
 Q       SYN, P+1
-"""))
+"""), must_contain='circular: ')
+
+# A -> B -> undefined: A's DIRECT dependency (B) is itself stuck, but
+# the reason is transitive -- B depends on something that plainly never
+# exists. This must still be reported as "undefined", not "circular",
+# even though a naive one-hop check (does A's direct dependency also
+# appear in the stuck set?) would call it circular.
+expect_error(
+    "transitive undefined chain classified as undefined, not circular",
+    lambda: assemble("""
+A       SYN, B+1
+B       SYN, NOSUCHSYMBOL+1
+"""), must_contain='undefined: ')
+
+# ---------------------------------------------------------------------
+# A SYN operand naming a system symbol ($-prefixed -- an index register
+# or indicator bit, C22-6531 p.14-15) must resolve without ever being
+# treated as an unresolved programmer symbol: system symbols route
+# through eval_system_symbol, entirely outside symtab, so
+# referenced_symbols() must not flag them as "missing" and stall the
+# fixpoint pass waiting for something that was never going into symtab
+# in the first place.
+# ---------------------------------------------------------------------
+prog = assemble("""
+XR5     SYN, $X5
+""")
+check("SYN operand naming a system symbol ($X5)", prog.symtab['XR5'], 21 * 64)
 
 if FAILS == 0:
     print("ALL TESTS PASSED")
