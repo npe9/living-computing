@@ -17,9 +17,11 @@ remains the single biggest preservation gap. Everything below is a scan
 of a printed document -- reconstructable, in every real sense, only by
 hand transcription or OCR against a genuine assembler (this repo's).
 
-Five documents were inventoried in depth; a sixth data point (the
-directory listings themselves) is recorded for completeness. All PDFs
-were pulled directly from bitsavers.org.
+Ten documents were inventoried in depth (five general 7030 documents
+plus the five I-Box diagnostic test programs, see #6 below); a sixth
+data point beyond those (the directory listings themselves) is
+recorded for completeness. All PDFs were pulled directly from
+bitsavers.org.
 
 **Download gotcha**: bitsavers 403s a bare `curl -sL <url>` (blocks the
 default curl User-Agent). Use `curl -sL -A "Mozilla/5.0" -e
@@ -55,6 +57,15 @@ default curl User-Agent). Use `curl -sL -A "Mozilla/5.0" -e
    correctly predicts, from internal evidence, that the DCP manual (#1)
    supersedes an "obsolete" loader program it names -- independent
    corroboration of finding #1 before that finding was even read.
+5. **The five I-Box diagnostic test programs are, like the DCP, complete
+   STRAP source listings** (787 pages combined) -- and every one of
+   them turns out to depend on `SIC` as its own internal subroutine
+   call/return mechanism, not just as a nominally-tested instruction.
+   That single shared dependency blocks running any of the five
+   end-to-end more than any individual instruction-class gap does. See
+   #6 below for per-program findings and the specific slices (I-Box
+   5's address-truncation routine, I-Box 4's Refill/CB sections, I-Box
+   1's `WEN`/`WEN2`/`VEN`) that avoid it.
 
 ## 1. Diagnostic Control Program (`diag/ka_ua1_diagnostic_ctl_pgm.pdf`)
 
@@ -278,6 +289,161 @@ index and the individual diag/ PDFs (e.g. list `JB AF1C` / writeup
 `JB AF1B` / bitsavers filename `jb_af1c`) -- expect every individual
 diag PDF to be one revision ahead of what this index describes.
 
+## 6. The five I-Box diagnostic test programs (`diag/ja_ax1a_ibox-1.pdf` through `diag/jb_ax5b_ibox-5.pdf`)
+
+787 PDF pages across the five documents (60/203/215/193/116), all
+scanned STRAP-1 fanfold listings with no text layer, run in the SSIP
+(Sense Switch Interrogation Program)-controlled sequence I-Box 1 -> 2
+-> 3 -> 4 -> 5, each gating the next ("designed to run only after
+[prior tests] have passed"). Surveyed in parallel by five agents, each
+reading full front matter plus an evenly-spaced sample of the source
+body (not full transcription -- see "Recommended next steps" above for
+why this is an inventory pass, not a transcription pass). All five:
+"Programs becoming obsolete: None."
+
+**Notable finding, true across all five documents, not just one**:
+**`SIC` (Store Instruction Counter If) is not merely one of several
+tested instruction classes here -- in every one of these five programs
+it IS the subroutine call/return and error-report idiom the deck's own
+control flow depends on** (the universal pattern is `SIC,<label>`
+immediately followed by `B,<label>`, assembling to opcode field `80`
+throughout). `bsv/README.md` lists SIC as decoded-but-not-executed (a
+no-op). That means **none of these five programs can be run end-to-end
+against the model as a black box, independent of whatever instruction
+class each one nominally targets** -- a more load-bearing blocker than
+any single missing mnemonic. Three of the five (I-Box 3, 4, 5) have a
+second, similarly structural blocker: **`SVA`** (also NOT executed,
+per README) used as a self-modifying-code mechanism to patch operand/
+address fields into scratch instruction templates before falling
+through to execute them. Any actual run attempt on one of these five
+needs SIC (and, for 3/4/5, SVA) working first, or a narrow slice
+chosen specifically to avoid both -- the per-program notes below flag
+which slices do.
+
+### I-Box 1 (`ja_ax1a_ibox-1.pdf`, 60 pages)
+
+Purpose (verbatim): tests "1) Unconditional Branch 2) Direct Index
+Arithmetic except RNX, LVE, SVA 3) Immediate Index Arithmetic except
+LVS 4) Index Branching 5) Store Instruction Counter if" -- the
+program's own stated exclusion list (RNX/LVE/SVA/LVS) matches this
+model's own scope gaps exactly. Routines include the `B`/`BD`/`NOP`
+family, `LX/SX`, `LV/SV`, `LC/SC`, `LR/SR`, `V+`/`V+C`/`V+CR`,
+`KV`/`KC`, all immediate forms (`LVI/LVNI/LCI/LRI/KVNI/KCI`), a
+16-variant `CB`/`CBR` family, and Branch-on-Indicator both via LX
+side-effects and (in three sub-tests) via a direct store to word 11
+(Indicators) -- the latter is its own small extra gap, since
+`bsv/README.md` documents that generic STORE to word 11 is a no-op
+here. Also contains a large "Y-Z Control Sequences" section (pp.51-56)
+that is untestable *by construction* on this model: it validates
+instruction-fetch handoff between Y/Z pipeline registers, which don't
+exist here, so it would trivially pass without exercising anything.
+Beyond SIC and word-11-store: `BEW` "wait for Interval Timer signal"
+hangs on real hardware but branches straight through here (matches
+"NOT MODELED AT ALL: interrupts... interval timer"), and `ENSU`'s
+memory-protection boundary-register setup is similarly unenforceable.
+Cross-validation candidates: the CB/CBR family (largest, most
+regression-test-shaped block) and `WEN`/`WEN2`/`VEN` (~9 instructions,
+the smallest self-contained runnable fragment found in any of the five
+documents). Whole program is based at word 1536 (octal 3000) --
+like the DCP, exceeds `StretchStorage`'s current 256-word window, so
+any candidate needs re-assembly at a low `SLC` address, not in-place
+extraction.
+
+### I-Box 2 (`jb_ax2a_ibox-2.pdf`, 203 pages)
+
+Purpose (verbatim): "1) Store Zero in Index Internal and External
+Memory. 2) Compare Value and Compare Count in Internal, External and
+Index Memories. 3) Proper Index Selection." The most model-compatible
+of the five: LX/SX/SR/SC/SV, KV/KC/KVI/KCI, Store Zero, Branch on
+Indicator (including the clear-modifier form, confirmed to match
+`StretchExecute.bsv`'s `bi.clear` field exactly), and VFL `L` are all
+in the model's executed set, and the program's own "three memories"
+language turns out not to be a gap at all -- external/index/internal
+memory all resolve inside the model's single unified memory-mapped
+register file (confirmed directly against the source: parallel
+`Z,I16DMP` / `Z,$X1` / `Z,$R` triads for the same test against each of
+the three). One unresolved indicator mnemonic, `BXF`, doesn't match
+any name in `StretchTypes.bsv`'s indicator table -- worth a targeted
+look if this program is ever transcribed. Beyond SIC (the call/return
+blocker described above), every routine's ident line also carries the
+`%IQSZ` print macro `archival_inventory.md` already flags as having no
+model counterpart, and control flow leans on SSIP-resident externals
+(`SSW ERS SERS RET SEN ...`) resolved outside this document -- not
+self-contained, same shape as the DCP's Memory Compare/Panel Dump
+caveat. Revision-drift note: writeup dated April 5 1961, but the
+source listing header reads February 6 1961 -- the listing predates
+its own writeup by two months, a new and larger instance of the
+project's previously-noted writeup/deck drift pattern.
+
+### I-Box 3 (`jb_ax3a_ibox-3.pdf`, 215 pages)
+
+Purpose (verbatim): "test for the proper loading and storing of the
+index registers." One continuous STRAP listing (not several named
+control sections). Six routines, each an exhaustive bit-by-bit sweep
+(all 64 bits, all 16 index registers) of one op against all three
+memories: `XCS` (LX/SX/LV/SV/LC/SC/LR/SR, also builds a ~60-entry
+`SIC`-based interrupt table), `1222` (`SVA` -- ~a quarter of the whole
+document, plus adjacent-bit-corruption checks against FP- and
+direct-index-format instruction words), `1224` (SC), `1226` (LV, plus
+LVI at the very end), `1228` (LC), `1230` (LR, plus LRI bit-swept at
+the end). The near-exhaustive per-bit/per-register sweep structure
+makes `LX/SX/LV/SV/LC/SC/LR/SR` here about as close to a complete
+oracle as this project is likely to find for that instruction group.
+`SVA`'s dedicated section is the largest single concrete gap in any of
+the five documents. Tentative, unconfirmed revision-prefix drift noted
+(title page reads "JB AX3", one sampled source-page ID card looked
+like "JA AX3A" -- low-contrast scan, worth a direct look before citing
+as fact).
+
+### I-Box 4 (`jb_ax4b_ibox-4.pdf`, 193 pages)
+
+Purpose (verbatim): "test of the direct index arithmetic instructions
+and the transmit and swap operations." Eleven numbered routines
+(132/134/136/138/140/142/144/146/148/150/156); two mid-sequence ones
+(136: C+I/C-I, 140: V+C/V+IC/V-IC) weren't directly sampled and are
+positionally inferred. Concrete gaps: `RNX` (dedicated section 144),
+`SVA` (section 148's *entire* index-modification test relies on SVA
+to record what address each instruction computed -- another
+structural, not just topical, SVA dependency), Transmit backward and
+Swap (section 146's own stated test plan explicitly covers
+forward/backward x direct/immediate x transmit/swap -- 2 of the 3
+modifier axes are out of scope, only forward-direct-transmit is
+covered by the model), and `LVE`/`LVS` (section 156, the whole final
+and one of the largest sections). Strong cross-validation candidates:
+section 138 (Refill/RCZ, self-contained, no external dependencies
+observed -- best candidate found in this document, similar shape to
+DCP's Memory Compare) and section 150 (the CB/CBH/CBZ/CBR family,
+large and self-contained). Two routine slots (labels `152`/`154`) are
+deliberate `NOP` placeholders with a "DUMMY PROGRAM" comment, not
+missing content.
+
+### I-Box 5 (`jb_ax5b_ibox-5.pdf`, 116 pages)
+
+Purpose (verbatim): tests "the time clock, interval timer, mask and
+indicator registers, interrupt system, boundary control, execute
+instructions, Look-Ahead forwarding, and the proper truncation of
+addresses for those instructions which use only part of their address
+field." **The single largest concentration of unmodeled hardware
+found in any document surveyed in this project**: one routine alone
+(1260, mask/indicator/interrupt, ~68% of the whole document) exercises
+interrupts, mask/indicator registers, and upper/lower boundary
+registers simultaneously -- all four items on `bsv/README.md`'s "NOT
+MODELED AT ALL" list, at once, in one place. `EX`/`EXIC` (routine
+1262) and `SIC` (used as this program's own self-check mechanism, not
+just incidentally) are also entirely out of scope, and `SVA` is again
+the self-modifying-code mechanism the diagnostic relies on throughout
+-- meaning even the parts of this program that test in-scope hardware
+can't run without SIC+SVA support first. Two real bright spots:
+routine 1268 (Look-Ahead store-to-fetch/store-to-load forwarding,
+pp.110-112) is the cheapest routine in the whole document to reason
+about (~3 pages, 6 sub-cases, no interrupt/timer entanglement) despite
+testing an unmodeled feature; and routine 1274 (address-truncation
+checks for `LX/SX/Refill/StoreZero/Transmit`, pp.112-116) is **the
+single cleanest, most isolable cross-validation target found across
+all five documents** -- five concrete, independently checkable
+assertions ("-LX FAILS TO TRUNCATE BIT 19" etc.) against instructions
+already in the model's executed set, no interrupt machinery involved.
+
 ## Recommended next steps, in order
 
 1. ~~**Transcribe the STRETCH MAINTENANCE COMPOOL** (DCP manual, PDF
@@ -301,22 +467,39 @@ diag PDF to be one revision ahead of what this index describes.
    with no need to hunt for an independent defining label elsewhere in
    the 130-page listing.
 2. **Transcribe and run the Memory Compare (pp. 92-93) and Panel Dump
-   (pp. 125-129) routines** from the DCP listing -- self-contained, no
-   I/O environment needed, genuinely runnable and verifiable on the
-   existing Bluespec model today. This would be the next real codesign
-   milestone from this find, in the same shape as every prior one:
-   assemble real historical source, run it, check the result.
-3. **Inventory the five I-Box test programs**
+   (pp. 125-129) routines** from the DCP listing -- no tape/card/
+   channel I/O needed, but (corrected from an earlier, overstated
+   "self-contained" claim here -- see the "Notable finding" above)
+   NOT dependency-free: both branch to external `H`-prefixed routines
+   outside their own control sections and lean on DCP print-formatting
+   macros (`%IQSZ`/`%IQS*`) this model has no counterpart for.
+   Attempting either one means either transcribing the H-series
+   routines too and deciding what those macros should mean on this
+   simulated printer, or picking a narrower slice of one routine that
+   avoids both. Real codesign-milestone shape once unblocked; not a
+   quick win on its own.
+3. ~~**Inventory the five I-Box test programs**
    (`ja_ax1a_ibox-1` through `jb_ax5b_ibox-5`, per the System Test
-   Programs overview) next. Per that overview, they enumerate specific
-   instruction classes exercised -- unconditional branch, direct/
-   immediate index arithmetic, index branching, SIC, store-zero,
-   compare, index load/store, transmit/swap, clock/timer/mask-
-   indicator/interrupt/boundary/execute -- a checklist that maps
-   directly onto this model's implemented-vs-not scope, and (per the
-   overview's own description) each writeup PDF likely contains its
-   own listing. Same shape as the worked examples that have driven
-   every prior gap-find in this project.
+   Programs overview) next.~~ **DONE, see "6. The five I-Box diagnostic
+   test programs" above.** All five downloaded and surveyed. Headline
+   finding: `SIC` is every one of the five programs' own subroutine
+   call/return mechanism, not just a tested subject -- a bigger,
+   shared blocker to actually *running* any of them than any single
+   missing instruction class. Best near-term transcription/cross-
+   validation candidates identified: I-Box 5's routine 1274
+   (address-truncation checks against LX/SX/Refill/StoreZero/
+   Transmit, all in-scope, no interrupt machinery involved -- the
+   cleanest target found across all five documents), I-Box 4's
+   section 138 (Refill/RCZ, self-contained) and section 150 (the
+   CB/CBR family), and I-Box 1's `WEN`/`WEN2`/`VEN` (smallest
+   self-contained runnable fragment, ~9 instructions). Biggest
+   concrete instruction-level gaps confirmed with real test coverage
+   behind them: `SVA` (structural self-modifying-code dependency in
+   I-Box 3/4/5, plus I-Box 3's dedicated ~50-page section), `RNX`
+   (I-Box 4), `LVE`/`LVS` (I-Box 4's entire final section), Transmit
+   backward/Swap (I-Box 4), and the whole interrupt/mask/indicator/
+   timer/boundary system plus EX/EXIC (I-Box 5's routine 1260 alone,
+   ~68% of that document).
 4. Locate the actual **MCP program listing** and **STRAP II Assembly
    Listing** (Form C28-6129 on bitsavers is the *wrong* document for
    the latter, as established above) -- both explicitly referenced as
@@ -339,6 +522,15 @@ All from `bitsavers.org/pdf/ibm/7030/`:
 - `diag/7030_SystemTestPrograms_Aug61.pdf` -- acceptance test index
 - `C28-6129_STRAP-II_with_update_Apr63.pdf` -- STRAP-II language
   reference manual (checked, confirmed NOT the assembly listing)
+- `diag/ja_ax1a_ibox-1.pdf` -- I-Box test 1 (unconditional branch,
+  direct/immediate index arithmetic, index branching, SIC)
+- `diag/jb_ax2a_ibox-2.pdf` -- I-Box test 2 (store zero, compare
+  value/count, index selection)
+- `diag/jb_ax3a_ibox-3.pdf` -- I-Box test 3 (index register load/store)
+- `diag/jb_ax4b_ibox-4.pdf` -- I-Box test 4 (direct index arithmetic,
+  transmit, swap)
+- `diag/jb_ax5b_ibox-5.pdf` -- I-Box test 5 (clock/timer/mask/
+  indicator/interrupt/boundary/EX/lookahead/address truncation)
 
 Raw per-document agent reports (routine-by-routine tables, page-by-page
 citations) are preserved in `archival_inventory_notes.md` in this same
