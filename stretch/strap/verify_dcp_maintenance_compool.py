@@ -66,9 +66,18 @@ def main():
                   f"{m.group('word')}.{m.group('bit')} octal)")
 
     print(f"\n{CHECKED} entries checked against the manual's printed column")
-    if CHECKED < 60:
-        print(f"FAIL: expected to check ~63 entries, only found {CHECKED} "
-              f"-- ROW_RE probably isn't matching most lines")
+    # Exact, not a threshold: this file has exactly 64 rows carrying a
+    # printed-column comment (65 SYN entries total minus EDCP1, which
+    # is a derived base with no printed-column row of its own -- see
+    # the file's header). A threshold check ("< 60") would keep passing
+    # even if rows were silently dropped in a future edit; only an
+    # exact count catches that (advisor review).
+    EXPECTED_ROWS = 64
+    if CHECKED != EXPECTED_ROWS:
+        print(f"FAIL: expected exactly {EXPECTED_ROWS} checkable entries, "
+              f"found {CHECKED} -- either ROW_RE isn't matching some "
+              f"lines, or a row was added/dropped without updating this "
+              f"count")
         FAILS += 1
 
     if FAILS == 0:

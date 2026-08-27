@@ -11,6 +11,16 @@
 ! continuing onto p.130; an earlier pass of archival_inventory.md's
 ! "51 entries" figure only counted p.129 and needs correcting).
 !
+! Caveat for future use: this assembler has no INCLUDE/multi-file
+! mechanism yet, so nothing here collides with anything today. If one
+! gets added and this table is ever merged into another program's
+! symbol table, note that some of these names (ADD, ADA-ADD, ACA-ACH)
+! read like they could be arithmetic mnemonics -- they aren't (checked:
+! strap_asm.py only matches opcodes against the op field, never against
+! symbol names), but a real STRAP-1 program's own OWN symbol could
+! still collide with one of these 65 names by accident. Worth a
+! name-collision check at include time, not before.
+!
 ! -- Reading the source, and the two format questions this took real
 ! investigation to pin down --
 !
@@ -32,9 +42,10 @@
 !    step 4006, 4007, 4010, 4011 -- octal successors). The trailing `&`
 !    glyph after each printed value's two real digits is NOT a third
 !    digit at all: it's the *same* ambiguous glyph as the `+` operator,
-!    reappearing as a separate, non-numeric per-row mark (most likely a
-!    check-bit/parity indicator, plausible for a memory-diagnostic
-!    program) -- strip it, it isn't part of the value.
+!    reappearing as a separate, non-numeric per-row mark of unknown
+!    meaning (a check-bit/parity indicator is a plausible guess for a
+!    memory-diagnostic listing, but that's speculation, not confirmed)
+!    -- strip it, it isn't part of the value either way.
 !
 ! Net effect: this file reproduces the compool's own symbolic
 ! expressions VERBATIM (decimal offsets, `+` operator, no translation),
@@ -60,11 +71,19 @@
 !   EQAV6 = word 4017(oct) = 2063(dec)      [EQTAP1 SYN,EQAV6 -> 4017.00]
 !   EQAV7 = word 4020(oct) = 2064(dec)      [EQTAP5 SYN,EQAV7 -> 4020.00]
 !   ACA   = word 0                          [ACA    SYN,0     -- literal, no offset]
-!   EDCP1 = word 4000(oct) = 2048(dec)      [EQMEM SYN,EDCP1+21.0 -> 4025.00, so
-!                                             EDCP1 = word(4025oct=2069dec) - 21(words) = 2048dec = word 4000(oct).
-!                                             Independently corroborated: docs/archival_inventory.md
-!                                             already cites the DCP's own memory footprint as starting
-!                                             at octal 004000 -- exactly this value.]
+!
+! EDCP1 is different from every base above: it has no zero-offset row
+! of its own anywhere in this table (unlike ECTL1-4/EQAV1-7/ACA, it's
+! presumably defined in the DCP's own main body, outside the compool),
+! so it's back-derived instead, from the one row that DOES use it:
+!   EQMEM SYN,EDCP1+21.0 -> printed 4025.00(oct) = word 2069(dec)
+!   => EDCP1 = 2069 - 21(words) = 2048(dec) = word 4000(oct)
+! This value is consistent with (not independently confirmed by --
+! it's the same document, not a second source) docs/archival_inventory.md's
+! separate citation of the DCP's own memory footprint starting at octal
+! 004000, which is a plausible enough coincidence to trust but isn't a
+! second, independent reading of an EDCP1-defining line.
+!   EDCP1 = word 4000(oct) = 2048(dec) -- the one derived, not directly-read, base.
 
 ECTL1   SYN, 2054.0
 ECTL2   SYN, 2055.0
@@ -132,6 +151,13 @@ EQTAP5  SYN, EQAV7                      ! 4020.00
 EQTAP6  SYN, EQAV7+.16                  ! 4020.20
 ETAP7   SYN, EQAV7+.32                  ! 4020.40
 EQTAP8  SYN, EQAV7+.48                  ! 4020.60
+! EQMEM's own dds in the manual reads "BU, 40,10" (FL=32 octal=32
+! decimal... actually 40 octal = 32 decimal) where every other row in
+! this table reads "BU,100,10" (FL=100 octal = 64 decimal) -- a real
+! difference in the source. SYN stores only the resolved numeric
+! value (matching every other pseudo-op in this assembler, see
+! strap_asm.py's emit_statement), so this dds distinction is lost in
+! the transcription below; noted here since nothing else records it.
 EQMEM   SYN, EDCP1+21.0                 ! 4025.00
 
 ! -- p.130 body (14 more entries, continuing the same table --
