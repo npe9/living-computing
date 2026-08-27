@@ -340,18 +340,53 @@ of these five needs SIC (and, for 3/4/5, SVA; for 5's routine 1262,
 avoid all of it -- the per-program notes below flag which slices do.
 
 **Verification**: the "SIC is one packed instruction" claim above was
-checked directly against two independent source pages, not trusted
-from subagent reports (which described the pattern as
-"call/return"/"subroutine mechanism," a plausible-sounding but
-unverified reading -- caught before being trusted further). Read
-`jb_ax2a_ibox-2.pdf` p.6 and `ja_ax1a_ibox-1.pdf` p.50 directly: in
-both, the resolved-address column shows the `SIC` line and its
-following `B`/`CB` line landing at the *same* word number, `.00`
-(bit 0) and `.40` octal = bit 32 respectively -- e.g. `SIC,SENO+.32`
--> `006501.00` immediately followed by `B,SSW` -> `006501.40`; `SIC,
-ISCBA` -> `005413.00` followed by `CB,SX1,ISCB2` -> `005413.40`. Two
-different embedded-branch shapes (plain `B`, and conditional `CB`)
-confirmed in the same pass.
+checked two ways, not trusted from subagent reports (which described
+the pattern as "call/return"/"subroutine mechanism," a
+plausible-sounding but unverified reading -- caught before being
+trusted further, and advisor correctly pushed back on the listing
+evidence alone the first time, since an address-column reading can't
+by itself distinguish "one packed instruction" from "two half-word
+instructions that happen to sit in the same word").
+
+1. **Primary source, decisive**: `22-6530-2_7030RefMan.pdf` printed
+   p.41, "Storage of Instruction Counter" / "Store Instruction Counter
+   If (SIC)". Direct quotes: *"Any half-length branching operation...
+   can be converted to a full-word instruction... This is done by
+   prefixing any of the above instructions except BRANCH ON BIT with
+   the operation STORE INSTRUCTION COUNTER IF... Bits 32-63 specify
+   the half-word branch instruction used."* And: *"This instruction
+   may always be prefixed to one of the half-word branching
+   instructions. **It is executed if and only if the associated
+   branching is successful.**"* This settles it outright: SIC is
+   always one 64-bit instruction (a prefix fused with its branch, not
+   two independent fetches), and the IC-store is conditioned on the
+   embedded branch's own success -- not a separate condition. It also
+   means the branch executes with its own ordinary semantics
+   (unconditional, CB, or BI) as part of the same instruction, so a
+   model that doesn't perform SIC's embedded branch takes none of
+   these branches at all, regardless of what the embedded op would
+   have decided on its own.
+2. **Listing cross-check, including the case that could have falsified
+   it**: `jb_ax2a_ibox-2.pdf` p.6 and `ja_ax1a_ibox-1.pdf` p.50 both
+   show the `SIC` line and its embedded branch line landing inside the
+   same 64-bit span in the resolved-address column -- e.g.
+   `SIC,SENO+.32` -> `006501.00` immediately followed by `B,SSW` ->
+   `006501.40`; `SIC,ISCBA` -> `005413.00` followed by
+   `CB,SX1,ISCB2` -> `005413.40` (two different embedded-branch
+   shapes, plain `B` and conditional `CB`, confirmed in the same
+   pass). One instance (`ISCB2`) starts at bit 32 of word 005414
+   rather than bit 0 -- initially flagged as a possible problem for
+   reading (A) (a word-straddling SIC would falsify a bit-0-only
+   theory) -- but its own embedded `CB` resolves cleanly to
+   `005415.00`, the very next half-word, confirming SIC is a true
+   64-bit span that can start at *either* half-word boundary, not
+   something restricted to word-aligned starts. No case found that
+   contradicts the primary source.
+
+`bsv/StretchExecute.bsv`'s `tagged Sic` arm currently does only
+`ind = setOpInvalid(ind)` -- performs neither the store nor the
+embedded branch, confirming the "control flow silently falls through"
+finding stands on solid ground, not a guess.
 
 ### I-Box 1 (`ja_ax1a_ibox-1.pdf`, 60 pages)
 
