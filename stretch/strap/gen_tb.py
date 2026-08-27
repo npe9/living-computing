@@ -137,20 +137,28 @@ def generate(module_name, prog, checks, step_cap=2000, reader_image=None,
     lines.append("  endrule")
     lines.append("")
 
+    # Each check is now TWO phases, not one: core.mem.readWord was
+    # replaced by the request/response pair readWordReq/readWordResp
+    # (docs/phase2_arm_inventory.md step 9 -- the real BRAM backing
+    # needs a genuine clock edge between issuing the read and
+    # collecting its answer, so a single rule can no longer do both).
     check_phase0 = run_phase + 1
     for i, (label, addr_expr, expected) in enumerate(checks):
-        lines.append(f"  rule check{i} (phase == {check_phase0 + i});")
-        # core.mem.readWord is an ActionValue (StretchStorage.bsv's
-        # interface comment explains why: step one of the BRAM-backed-
-        # storage migration, bsv/README.md "Next steps" item 6) -- bind
-        # it before use rather than calling it as a bare expression.
-        lines.append(f"    let v{i} <- core.mem.readWord({addr_expr});")
+        req_phase = check_phase0 + 2 * i
+        resp_phase = req_phase + 1
+        lines.append(f"  rule checkReq{i} (phase == {req_phase});")
+        lines.append(f"    core.mem.readWordReq({addr_expr});")
+        lines.append(f"    phase <= {resp_phase};")
+        lines.append("  endrule")
+        lines.append("")
+        lines.append(f"  rule checkResp{i} (phase == {resp_phase});")
+        lines.append(f"    let v{i} <- core.mem.readWordResp();")
         lines.append(f'    check("{label}", v{i}, 64\'h{expected & ((1<<64)-1):016x});')
-        lines.append(f"    phase <= {check_phase0 + i + 1};")
+        lines.append(f"    phase <= {resp_phase + 1};")
         lines.append("  endrule")
         lines.append("")
 
-    pcheck_phase0 = check_phase0 + len(checks)
+    pcheck_phase0 = check_phase0 + 2 * len(checks)
     for i, (label, dev_idx, expected) in enumerate(printer_checks):
         lines.append(f"  rule pcheck{i} (phase == {pcheck_phase0 + i});")
         lines.append(f'    check("{label}", core.io.readPrinterWord({dev_idx}), 64\'h{expected & ((1<<64)-1):016x});')

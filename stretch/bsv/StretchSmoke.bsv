@@ -59,6 +59,11 @@ module mkStretchTb(Empty);
   Reg#(Bit#(8))  stepCount <- mkReg(0);
   Reg#(Bit#(32)) fails <- mkReg(0);
 
+  // Deferred half-word-write state, spanning the 2 phases putHWReq/
+  // putHWResp below now need (see their own comment).
+  Reg#(HWordAddr)  pendingHwAddr <- mkRegU;
+  Reg#(HalfWord32) pendingHwVal  <- mkRegU;
+
   function Action check(String label, Word64 got, Word64 expected) =
     action
       if (got == expected)
@@ -69,23 +74,43 @@ module mkStretchTb(Empty);
       end
     endaction;
 
-  // One storage write: read-modify-write the containing word to plant
-  // a half-word instruction at half-word address `ha`.
-  function Action putHW(HWordAddr ha, HalfWord32 v) =
+  // Plant a half-word instruction at half-word address `ha`: read-
+  // modify-write the containing word. Split into two phases -- issue
+  // the read request (stashing what to write once it resolves), then
+  // collect the response and perform the actual write -- since
+  // core.mem.readWord became core.mem.readWordReq/readWordResp
+  // (docs/phase2_arm_inventory.md step 9: the real BRAM backing needs
+  // a genuine clock edge between issuing a read and collecting its
+  // answer, so this can no longer be one action). Both stages still
+  // call core.mem.writeWord at most once (in putHWResp only), so the
+  // single-write-per-phase discipline this file's header describes is
+  // unaffected -- putHWReq performs no write at all.
+  function Action putHWReq(HWordAddr ha, HalfWord32 v) =
     action
-      WordAddr wa = ha[18:1];
-      Word64 w <- core.mem.readWord(wa);
-      Word64 neww = (ha[0] == 0) ? {v, w[31:0]} : {w[63:32], v};
-      core.mem.writeWord(wa, neww);
+      core.mem.readWordReq(ha[18:1]);
+      pendingHwAddr <= ha;
+      pendingHwVal <= v;
+    endaction;
+
+  function Action putHWResp() =
+    action
+      let w <- core.mem.readWordResp();
+      Word64 neww = (pendingHwAddr[0] == 0) ? {pendingHwVal, w[31:0]} : {w[63:32], pendingHwVal};
+      core.mem.writeWord(pendingHwAddr[18:1], neww);
     endaction;
 
   // This test program keeps every full-word instruction bit-address-0
   // (word-)aligned, so a full-word instruction is just one whole-word
-  // write -- no half-word splitting needed.
+  // write -- no half-word splitting needed, no read at all.
   function Action putFull(HWordAddr ha, Word64 v) = core.mem.writeWord(ha[18:1], v);
 
-  // SETUP_PHASES: exactly one storage-writing action per phase value.
-  rule setup (phase < 16);
+  // SETUP_PHASES: exactly one storage-writing action per phase value
+  // (putHWReq performs none at all; putHWResp's one write is its own
+  // phase). 21 phases (0-20): 4 plain writeWord + 6 putFull (each 1
+  // phase, unaffected by the BRAM migration -- writes stay
+  // single-cycle throughout) + 5 putHW pairs (each now 2 phases) + 1
+  // setPC = 4+6+10+1 = 21.
+  rule setup (phase < 21);
     case (phase)
       0: core.mem.writeWord(40, 5);   // operand A
       1: core.mem.writeWord(41, 7);   // operand B
@@ -97,21 +122,26 @@ module mkStretchTb(Empty);
       5: putFull(66, encVflFull({18'd41,6'b0}, 0, 0, 0, 0, 0, 1, 0, 0, 6'b000001));
       // ST addr=42 -> mem[42] = acc
       6: putFull(68, encVflFull({18'd42,6'b0}, 0, 0, 0, 0, 0, 1, 0, 0, 6'b001101));
-      7: putHW(70, encImmIndex(19'd3, 1, 4'b0010)); // LCI X1, 3 (loop trip count)
-      8: putHW(71, encNop());                       // realign to even half-word
+      7: putHWReq(70, encImmIndex(19'd3, 1, 4'b0010)); // LCI X1, 3 (loop trip count)
+      8: putHWResp();
+      9: putHWReq(71, encNop());                       // realign to even half-word
+      10: putHWResp();
       // LOOP_TOP = 72: L addr=53 -> acc = sum
-      9: putFull(72, encVflFull({18'd53,6'b0}, 0, 0, 0, 0, 0, 1, 0, 0, 6'b000101));
+      11: putFull(72, encVflFull({18'd53,6'b0}, 0, 0, 0, 0, 0, 1, 0, 0, 6'b000101));
       // + immediate 10, length=8 (unsigned): immediateOperand takes the
       // *leftmost* `length` bits of the address field, so 10 must be
       // left-justified: 10 << (24-8) = 10 << 16.
-      10: putFull(74, encVflFull((24'd10 << 16), 0, 4, 8, 0, 0, 1, 0, 0, 6'b000001));
+      12: putFull(74, encVflFull((24'd10 << 16), 0, 4, 8, 0, 0, 1, 0, 0, 6'b000001));
       // ST addr=53 -> sum = acc
-      11: putFull(76, encVflFull({18'd53,6'b0}, 0, 0, 0, 0, 0, 1, 0, 0, 6'b001101));
+      13: putFull(76, encVflFull({18'd53,6'b0}, 0, 0, 0, 0, 0, 1, 0, 0, 6'b001101));
       // CB X1, LOOP_TOP(72), v=00 (unchanged), refill=0, branch-if-nonzero
-      12: putHW(78, encCountBranch(19'd72, 1, 2'b00, 0, 0, 0));
-      13: putHW(79, encNop());
-      14: putHW(90, 32'hFFFF_FFFF); // decodes as DirIndex RNX; execute -> OP invalid
-      15: core.setPC(64);
+      14: putHWReq(78, encCountBranch(19'd72, 1, 2'b00, 0, 0, 0));
+      15: putHWResp();
+      16: putHWReq(79, encNop());
+      17: putHWResp();
+      18: putHWReq(90, 32'hFFFF_FFFF); // decodes as DirIndex RNX; execute -> OP invalid
+      19: putHWResp();
+      20: core.setPC(64);
     endcase
     phase <= phase + 1;
   endrule
@@ -135,33 +165,44 @@ module mkStretchTb(Empty);
   // unbounded 2000 strap/gen_tb.py uses for real STRAP programs (this
   // hand-written test has a small, known instruction count, so a
   // tighter budget is a better regression signal than a large one).
-  rule run (phase == 16 && stepCount < 70);
+  rule run (phase == 21 && stepCount < 70);
     let done <- core.step();
     if (done) stepCount <= 70; // reached a self-branch halt early (not expected
                                 // in this program, but don't spin past it if so)
     else stepCount <= stepCount + 1;
   endrule
 
-  rule afterRun (phase == 16 && stepCount == 70);
-    phase <= 17;
+  rule afterRun (phase == 21 && stepCount == 70);
+    phase <= 22;
   endrule
 
   // check() conditionally writes `fails`; two calls in the same rule
   // would be two writes to that one register (same issue as
   // indicators, see bsv/README.md "Toolchain"), so each check gets its
-  // own phase.
-  rule checkArith1 (phase == 17);
-    let v <- core.mem.readWord(42);
-    check("mem[42] (5+7)", v, 12);
-    phase <= 18;
+  // own phase -- and now two phases each (Req/Resp), same reason as
+  // putHWReq/putHWResp above.
+  rule checkArith1Req (phase == 22);
+    core.mem.readWordReq(42);
+    phase <= 23;
   endrule
 
-  rule checkArith2 (phase == 18);
-    let v <- core.mem.readWord(53);
+  rule checkArith1Resp (phase == 23);
+    let v <- core.mem.readWordResp();
+    check("mem[42] (5+7)", v, 12);
+    phase <= 24;
+  endrule
+
+  rule checkArith2Req (phase == 24);
+    core.mem.readWordReq(53);
+    phase <= 25;
+  endrule
+
+  rule checkArith2Resp (phase == 25);
+    let v <- core.mem.readWordResp();
     check("mem[53] (3*10 via CB loop)", v, 30);
     core.setPC(90);
     stepCount <= 0; // reused for the RNX counted loop below
-    phase <= 19;
+    phase <= 26;
   endrule
 
   // RNX (DirIndex, Half-length) now needs 2 step() calls to complete
@@ -171,28 +212,34 @@ module mkStretchTb(Empty);
   // (reusing "run"'s own shape), not two separate rules each with
   // their own `core.step()` call: Bluesim's code generator inlines
   // step()'s entire body -- which itself inlines execute()'s
-  // ~1000-line instruction dispatch -- at EVERY textual call site, so
-  // two separate rules would double this section's contribution to
-  // the generated C++ for no functional reason. Measured: with two
-  // separate rules (plus "run"'s own call site) this file's generated
-  // mkStretchTb.cxx was 27.8MB (3 inlined copies of step()); every
-  // other generated testbench, with exactly one call site, is 6.76MB.
-  rule stepRnx (phase == 19 && stepCount < 2);
+  // instruction dispatch -- at EVERY textual call site, so two
+  // separate rules would double this section's contribution to the
+  // generated C++ for no functional reason. Measured (before this
+  // fix): with two separate rules (plus "run"'s own call site) this
+  // file's generated mkStretchTb.cxx was 27.8MB (3 inlined copies of
+  // step()); every other generated testbench, with exactly one call
+  // site, is 6.76MB.
+  rule stepRnx (phase == 26 && stepCount < 2);
     let _ <- core.step();
     stepCount <= stepCount + 1;
   endrule
 
-  rule afterStepRnx (phase == 19 && stepCount == 2);
-    phase <= 20;
+  rule afterStepRnx (phase == 26 && stepCount == 2);
+    phase <= 27;
   endrule
 
-  rule checkRnx (phase == 20);
-    let v <- core.mem.readWord(11);
+  rule checkRnxReq (phase == 27);
+    core.mem.readWordReq(11);
+    phase <= 28;
+  endrule
+
+  rule checkRnxResp (phase == 28);
+    let v <- core.mem.readWordResp();
     check("indicator OP after RNX (unimplemented)", (v >> 48) & 1, 1);
-    phase <= 21;
+    phase <= 29;
   endrule
 
-  rule finish (phase == 21);
+  rule finish (phase == 29);
     if (fails == 0)
       $display("ALL TESTS PASSED");
     else

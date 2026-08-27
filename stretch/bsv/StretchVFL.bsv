@@ -24,9 +24,13 @@
 // bits. This is a documented simplification -- see bsv/README.md
 // "Scope" -- not a transcription of a confirmed table.
 //
-// `readWord` on StretchStorage is a combinational (non-Action) method,
-// so field *reads* here are plain functions; only field *writes* need
-// to be Action (they call the registered-write `writeWord` method).
+// Field *reads* are no longer performed here: StretchStorage's general
+// storage is BRAM-backed (docs/phase2_arm_inventory.md step 9), so a
+// read genuinely spans a clock cycle and StretchExecute.bsv's own
+// prefetch/bail-out mechanism owns the whole read side, calling only
+// the pure bit-extraction logic below (`extractFieldBits`) once a word
+// is on hand. Field *writes* stay here, still `Action` (they call the
+// single-cycle `writeWord` method, which never needed staging).
 
 package StretchVFL;
 
@@ -78,73 +82,21 @@ function Word64 insertFieldBits(Word64 hi, Bit#(6) off, Bit#(7) len_, Bit#(64) v
   return (hi & ~fieldMask) | fieldVal;
 endfunction
 
-// Read an L-bit field (1-64) whose leftmost bit is at `ba`. ActionValue
-// purely because `st.readWord` now is one (StretchStorage.bsv) -- the
-// crossing case's two reads are of two INDEPENDENT, both-known-upfront
-// addresses (w0 and w0+1), not one computed from the other's result,
-// so this stays a simple two-bind sequence rather than needing a
-// general dependent-read FSM (see bsv/README.md "Next steps" item 6
-// for why that distinction is what makes the whole storage migration
-// tractable at all).
-function ActionValue#(Bit#(64)) readField(StretchStorage st, BitAddr ba, Bit#(7) len_) =
-  actionvalue
-    WordAddr w0 = baWord(ba);
-    Bit#(6)  off = baBit(ba);
-    Bit#(8) off8 = zeroExtend(off);
-    Bit#(8) len8 = zeroExtend(len_);
-    Bool crosses = (off8 + len8 > 64);
-    Word64 hi <- st.readWord(w0);
-    Word64 lo = 64'b0;
-    if (crosses) begin
-      let l <- st.readWord(w0 + 1);
-      lo = l;
-    end
-    return extractFieldBits(hi, lo, off, len_);
-  endactionvalue;
+// readField/readFieldWithHi/writeField (the internal-read variants of
+// this section) were removed once every caller had migrated to the
+// prefetch/bail-out mechanism in StretchExecute.bsv's execute() --
+// see docs/phase2_arm_inventory.md step 9 and git history (this
+// package's own log, commit removing them) for what they looked like
+// and why they became dead code. extractFieldBits/insertFieldBits
+// above (the pure logic they were built on) and writeFieldWithHi
+// below remain live.
 
-// Read a field AND return the raw containing word (`hi`) alongside it,
-// for a caller that already knows it will turn around and write the
-// SAME word back (M+, CM -- see their call sites in
-// StretchExecute.bsv). Both guarantee non-crossing before calling this
-// (fieldCrosses is checked first, same precondition writeField
-// already has), so there is no `lo` half to carry. Pairs with
-// writeFieldWithHi below to avoid the redundant re-read that a plain
-// readField-then-writeField sequence would otherwise do -- both calls
-// would fetch the exact same word, since the field doesn't cross and
-// the address hasn't changed between them.
-function ActionValue#(Tuple2#(Bit#(64), Word64)) readFieldWithHi(StretchStorage st, BitAddr ba, Bit#(7) len_) =
-  actionvalue
-    WordAddr w0 = baWord(ba);
-    Bit#(6)  off = baBit(ba);
-    Word64 hi <- st.readWord(w0);
-    Bit#(64) val = extractFieldBits(hi, 0, off, len_);
-    return tuple2(val, hi);
-  endactionvalue;
-
-// Write an L-bit field (1-64), leaving surrounding bits in the
-// containing word untouched ("Data to the right or left of the
-// specified field in storage are never affected.", p.~89).
-//
-// PRECONDITION: !fieldCrosses(ba, len_) -- i.e. the field must fit
-// within a single word. This function issues exactly one
-// `st.writeWord` call so it composes safely with the rest of a rule
-// (see fieldCrosses above for why); callers are responsible for
-// checking first and handling the crossing case themselves (in
-// practice: OP invalid, see StretchExecute.bsv).
-function Action writeField(StretchStorage st, BitAddr ba, Bit#(7) len_, Bit#(64) val) =
-  action
-    WordAddr w0 = baWord(ba);
-    Bit#(6)  off = baBit(ba);
-    Word64 hi <- st.readWord(w0);
-    st.writeWord(w0, insertFieldBits(hi, off, len_, val));
-  endaction;
-
-// Write a field back into a word the caller already fetched (via
-// readFieldWithHi) -- skips the internal read writeField would
-// otherwise redundantly perform on the exact same word. See
-// readFieldWithHi's comment for the precondition (non-crossing,
-// same `ba`/`len_` as the paired read, nothing else wrote that word
-// in between).
+// Write a field back into a word the caller already has on hand (via
+// StretchExecute.bsv's own prefetch mechanism) -- no internal read.
+// Precondition: `hi` is the word most recently read at `ba`'s word
+// address (non-crossing -- the caller must have already confirmed
+// this, same as the removed writeField's own precondition), and
+// nothing else has written that word in between.
 function Action writeFieldWithHi(StretchStorage st, BitAddr ba, Bit#(7) len_, Bit#(64) val, Word64 hi) =
   action
     WordAddr w0 = baWord(ba);

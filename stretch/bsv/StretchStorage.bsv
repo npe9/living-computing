@@ -8,93 +8,82 @@
 // accumulator or an index register by loading/storing address 8, 9, or
 // 16+j, exactly as it reaches any other word.
 //
-// General core storage (addresses 32 and up) is backed by a plain
-// Vector of registers rather than the standard `RegFile` library
-// module: RegFile's Verilog primitive hard-caps reads at 5 ports
-// (`sub[5]` in RegFile.bs), and this design's execute stage has far
-// more than 5 distinct call sites that read a word in a given cycle
-// (readField, readAcc, readHW, per-opcode operand fetches, ...) even
-// though only one instruction's worth of them is ever live at once. A
-// Vector of registers has no such port limit -- reading a Reg is an
-// unrestricted value method. The tradeoff is capacity: MemWords below
-// bounds the simulated core to a window near address 0 (documented as a
-// simulation-capacity choice, not an architectural one -- the 18-bit,
-// 262,144-word address space is still what the *types* model, see
-// WordAddr in StretchTypes.bsv; addresses at or beyond MEM_WORDS just
-// read as 0 and discard writes, the same as a real machine addressing
-// beyond its installed core would trip AD, Address Invalid, on real
-// hardware -- not modeled here, see bsv/README.md "Scope").
+// General core storage (addresses 32 and up) is backed by real BRAM
+// (`mkBRAM1Server`, latency 1) -- the endpoint of the BRAM-backed-
+// storage migration described across this project's git history and
+// docs/phase2_arm_inventory.md. Addresses 0-31 stay a Vector of plain
+// registers: the Special Storage Assignment table (p.111, "does not
+// include internal computer registers and index registers") makes this
+// an architectural boundary, not just a simulation convenience, and it
+// lets `readAccLeft`/`readAccRight` (addresses 8/9) stay always-instant
+// value methods (see their own comment below) rather than paying a
+// request/response round trip.
 //
-// This module is otherwise combinational-read, single-write-per-cycle:
-// adequate for the non-pipelined, one-instruction-per-rule StretchCore
-// in this package. A pipelined/lookahead microarchitecture (what made
-// the real 7030 famous) would need a genuinely multi-ported memory and
-// is out of scope -- see bsv/README.md "Scope".
+// This module took two migration steps to reach BRAM, both preserved
+// in git history for the reasoning: RegFile was ruled out (its
+// Verilog primitive hard-caps reads at 5 ports, `sub[5]` in
+// RegFile.bs, and this design's execute stage has far more than 5
+// distinct call sites that could read a word in a given cycle even
+// though only one is ever live at once); a plain Vector of registers
+// was used as an interim step (unlimited read ports, but
+// elaboration cost explodes past a few hundred words -- 512 words
+// took 1m54s to elaborate, 1024 didn't finish in 2 minutes, versus
+// BRAM's 0.275s at 8192 words in isolation, confirmed by probe). The
+// tradeoff BRAM's latency-1 access introduces (a read genuinely spans
+// a clock cycle, unlike the Vector's same-cycle reads) is what forced
+// `readWordReq`/`readWordResp`'s request/response shape and the
+// per-case-arm FSM staging throughout StretchCore.bsv/
+// StretchExecute.bsv -- see docs/phase2_arm_inventory.md for the full
+// conversion history.
+//
+// MemWords below still bounds the simulated core to a window near
+// address 0 (a simulation-capacity choice, not an architectural one --
+// the 18-bit, 262,144-word address space is still what the *types*
+// model, see WordAddr in StretchTypes.bsv; addresses at or beyond
+// MemWords just read as 0 and discard writes, the same as a real
+// machine addressing beyond its installed core would trip AD, Address
+// Invalid, on real hardware -- not modeled here, see bsv/README.md
+// "Scope"). Kept at the same value Phase 1/2 developed against
+// (isolating a capacity change from this latency-handling change, one
+// candidate cause per commit); bumping it now that BRAM's elaboration
+// cost is confirmed cheap at scale is a separate, later step.
 
 package StretchStorage;
 
 import Vector::*;
+import BRAM::*;
+import DefaultValue::*;
 import StretchTypes::*;
 
 typedef 256 MemWords;
 typedef Bit#(TLog#(MemWords)) MemIndex;
 
 interface StretchStorage;
-  // Read a full 64-bit word at a word address, honoring the
-  // special-address semantics below. ActionValue, NOT a plain value
-  // method, even though this implementation's answer is still same-
-  // cycle for every address (see module header): this was step one of
-  // the BRAM-backed-storage migration (bsv/README.md "Next steps"
-  // item 6). DEPRECATED as of step two (readWordReq/readWordResp,
-  // below) -- kept only until every remaining caller is migrated (see
-  // docs/phase2_arm_inventory.md's conversion order); do not add new
-  // callers of this method.
-  method ActionValue#(Word64) readWord(WordAddr a);
-
   // Read a full 64-bit word, request/response style: issue the
   // request in one rule, collect the answer in a LATER rule (never
-  // the same one -- readWordResp looks up whatever address
-  // readWordReq most recently stashed in a plain Reg, and a Reg
-  // write's new value isn't visible to a read in the SAME rule, only
-  // from the next clock edge on). This is step two of the BRAM-backed
-  // migration: the calling CONVENTION now matches what a genuinely
-  // multi-cycle backing needs, even though this implementation
-  // (Vector-backed, see module header) could still answer instantly.
-  // DELIBERATELY NOT pipelined (no support for issuing request N+1 in
-  // the same rule that collects request N's response, the way a real
-  // BRAM port allows -- confirmed possible in isolation,
-  // scratchpad/bram_probe/BramProbe4.bsv, but not built here): every
-  // multi-read arm just pays one full request-then-response round
-  // trip per read, serialized. This is a correctness project, not a
-  // performance one, and the test harness's step cap (2000, see
-  // strap/gen_tb.py) has ample room -- pipelining is a real
-  // future optimization, not a needed one, and adding it now would
-  // buy simulated-cycle-count only, at the cost of every arm's FSM
-  // needing to track two in-flight reads instead of one. No runtime
-  // guard against calling readWordResp with no request outstanding,
+  // the same one). Deliberately NOT pipelined (no support for issuing
+  // request N+1 in the same rule that collects request N's response,
+  // the way a real BRAM port allows -- confirmed possible in
+  // isolation, scratchpad/bram_probe/BramProbe4.bsv, but not built
+  // here): every multi-read arm just pays one full request-then-
+  // response round trip per read, serialized. This is a correctness
+  // project, not a performance one, and the test harness's step cap
+  // (2000, see strap/gen_tb.py) has ample room. No runtime guard
+  // against calling readWordResp with no request outstanding,
   // matching this codebase's existing FSM style
-  // (`pendingIdxWrite`/`ioPending` in StretchCore.bsv have none either)
-  // -- correctness here rests on the FSM's own structure being right,
-  // checked by code review and the regression suite, not a runtime
-  // check. This lets call sites (and their StretchCore.step() FSM
-  // staging) be converted and verified incrementally, one arm at a
-  // time, with the backing swapped to real BRAM (`mkBRAM1Server`) only
-  // once every caller already
-  // tolerates the deferred-response shape -- see bsv/README.md "Next
-  // steps" item 6 and docs/phase2_arm_inventory.md for the conversion
-  // order and per-arm coverage evidence.
+  // (`pendingIdxWrite`/`ioPending` in StretchCore.bsv have none
+  // either) -- correctness here rests on the FSM's own structure
+  // being right, checked by code review and the regression suite, not
+  // a runtime check.
   method Action readWordReq(WordAddr a);
   method ActionValue#(Word64) readWordResp();
 
   // Write a full 64-bit word. Read-only/protected addresses silently
   // ignore the write (this models "permanently protected" locations;
   // it does not yet raise the protection-violation interrupt -- out of
-  // scope, see README). Takes effect on the next clock edge. Stays a
-  // single-cycle Action through the whole BRAM migration (unlike
-  // readWord above) -- a write never needs to observe its own
-  // completion, so there's nothing for a caller to wait on even once
-  // the backing genuinely has latency; see docs/phase2_arm_inventory.md
-  // "Design settled before this inventory".
+  // scope, see README). Single-cycle Action throughout -- a write
+  // never needs to observe its own completion, so there's nothing for
+  // a caller to wait on even with a genuinely latent BRAM backing.
   method Action writeWord(WordAddr a, Word64 v);
 
   // Indicators: read the current 64-bit indicator word, or replace it
@@ -111,18 +100,12 @@ interface StretchStorage;
 
   // Dedicated accumulator accessors: addrAccLeft/addrAccRight (8, 9)
   // are compile-time CONSTANTS baked into readAcc/writeAcc
-  // (StretchExecute.bsv), never a runtime-computed effective address
-  // -- unlike the ~24 call sites Phase 1 found can't know their
-  // address's range statically (StretchStorage's own git history),
-  // there is no ambiguity here: these two addresses are always
-  // Reg-backed and always will be (0-31 never moves to BRAM, see
-  // module header), so there is no reason to route them through the
-  // request/response pair above and make nearly every VflInt and
-  // Connective arm pay for a round trip it doesn't need. Read-only:
-  // writeAcc's existing two `writeWord` calls (addrAccLeft,
-  // addrAccRight, same rule) are already safe today and stay safe
-  // after the BRAM swap, since neither address ever reaches BRAM --
-  // see docs/phase2_arm_inventory.md.
+  // (StretchExecute.bsv), never a runtime-computed effective address,
+  // so there is no ambiguity to route through the general
+  // request/response path above and make nearly every VflInt and
+  // Connective arm pay for a round trip it doesn't need. These two
+  // addresses are always Reg-backed and always will be (0-31 never
+  // moves to BRAM, see file header).
   method Word64 readAccLeft();
   method Word64 readAccRight();
 endinterface
@@ -130,17 +113,29 @@ endinterface
 // mkStretchStorage: models the full 18-bit (262,144-word) core address
 // space, matching the largest configuration described on p.19 ("18
 // high-order bits address full words"). Addresses 0-31 are intercepted
-// below per the Special Storage Assignment table; 32 and up are a flat
-// RegFile-backed array (combinational read, registered write -- see
-// file header for why that is adequate here and where it stops being
-// adequate).
+// below per the Special Storage Assignment table; 32 and up are
+// BRAM-backed (latency 1, real request/response access) -- see file
+// header for the migration history and why 0-31 stays Reg-backed.
 module mkStretchStorage(StretchStorage);
 
   // General core storage, addresses 32 upward (0-31 are special, per
-  // the Special Storage Assignment table). See file header for why
-  // this is a Vector of registers rather than a RegFile.
-  Vector#(MemWords, Reg#(Word64)) mem <- replicateM(mkReg(0));
+  // the Special Storage Assignment table). Indexed by the raw
+  // truncated address, same as the Vector this replaced -- addresses
+  // 0-31 simply never reach this path (intercepted below), so the
+  // first 32 BRAM slots go unused; keeping the indexing arithmetic
+  // identical to the pre-BRAM design was judged lower-risk than
+  // reclaiming those 32 slots via an address translation.
+  BRAM_Configure cfg = defaultValue;
+  cfg.latency = 1; // the only latency this bsc's BRAM library
+                    // actually supports (0 is rejected outright,
+                    // "latency must be either 1 or 2" -- see
+                    // docs/phase2_arm_inventory.md); 2 was never
+                    // needed once the request/response interface
+                    // above already tolerates arbitrary same-request
+                    // latency.
+  BRAM1Port#(MemIndex, Word64) mem <- mkBRAM1Server(cfg);
   function Bool memInRange(WordAddr a) = (a < fromInteger(valueOf(MemWords)));
+  function Bool isSpecialAddr(WordAddr a) = (a < 32);
 
   // Named CPU registers backing addresses 0-31.
   Reg#(Word64) intervalTimerAndClock <- mkReg(0); // addr 1: bits 0-18 timer, 28-63 clock
@@ -160,16 +155,47 @@ module mkStretchStorage(StretchStorage);
   Reg#(Word64) transit                <- mkReg(0); // addr 15
   Vector#(16, Reg#(Word64)) xreg      <- replicateM(mkReg(0)); // addr 16-31
 
-  // readWordReq/readWordResp's deferral state -- see the interface
-  // comment for why an ordinary Reg is what enforces the one-rule-
-  // later requirement.
-  Reg#(WordAddr) pendingReadAddr      <- mkRegU;
+  // readWordReq/readWordResp's deferral state. Valid a: the request
+  // was for special (Reg-backed) address `a` (or an address beyond
+  // MemWords); resolve by reading live Reg state at response time,
+  // not from BRAM. Invalid: the request went to BRAM; resolve via
+  // mem.portA.response.get().
+  Reg#(Maybe#(WordAddr)) pendingSpecial <- mkReg(tagged Invalid);
 
-  // Shared lookup logic for readWord and readWordResp -- factored out
-  // so the two entry points (old and new calling convention) can't
-  // drift into two independently-maintained copies of the same case
-  // statement while readWord is still around.
-  function Word64 lookupWord(WordAddr a);
+  // Mediates mem.portA.response.get()'s implicit "response available"
+  // condition: get() carries an implicit condition, and bsc conjoins
+  // the implicit conditions of every method call *statically reachable*
+  // in a rule into that rule's overall firing predicate -- it does not
+  // narrow the predicate per case-arm/branch. If readWordResp() called
+  // get() directly, any caller rule that ALSO calls readWordReq() in a
+  // different branch (exactly StretchCore.step()'s FSM shape) would
+  // silently gain "and a BRAM response happens to be available right
+  // now" as part of its firing condition -- true only after a request
+  // was already issued -- so the rule can never fire on the first pass
+  // and the whole simulation hangs with zero output, spinning at 100%
+  // CPU with no forward progress. Draining get() in an internal rule
+  // keeps that implicit condition local to this module; readWordResp()
+  // then just reads the wire, an ordinary (unconditional) value read.
+  // Diagnosed via bisection down to a two-line case-arm repro
+  // (readWordReq in one arm, readWordResp in another arm of the same
+  // rule) that hung with mem.portA.response.get() called directly and
+  // ran clean once mediated through this wire. See
+  // docs/phase2_arm_inventory.md step 9.
+  Wire#(Word64) bramResp <- mkDWire(0);
+
+  rule drainBram;
+    let v <- mem.portA.response.get();
+    bramResp <= v;
+  endrule
+
+  // Special-register lookup, used only by readWordResp when the
+  // pending request named a non-BRAM address. Every address 0-31 is
+  // covered by one of the named-case arms or the xreg range below --
+  // the `default` arm's fallback to 0 is reached only for an address
+  // readWordReq classified as "special" because it was beyond
+  // MemWords (out of the simulated core's range), never for a true
+  // address 0-31.
+  function Word64 lookupSpecial(WordAddr a);
     case (a)
       addrZero: return 0; // permanently protected zero, p. "SPECIAL STORAGE ASSIGNMENT"
       1: return intervalTimerAndClock;
@@ -190,24 +216,28 @@ module mkStretchStorage(StretchStorage);
       default:
         if (a >= addrIndexBase && a < addrIndexBase + 16)
           return xreg[a - addrIndexBase];
-        else if (memInRange(a)) begin
-          MemIndex idx = truncate(a);
-          return mem[idx];
-        end else
-          return 0;
+        else
+          return 0; // out of range (>= MemWords)
     endcase
   endfunction
 
-  method ActionValue#(Word64) readWord(WordAddr a);
-    return lookupWord(a);
-  endmethod
-
   method Action readWordReq(WordAddr a);
-    pendingReadAddr <= a;
+    if (isSpecialAddr(a) || !memInRange(a)) begin
+      pendingSpecial <= tagged Valid a;
+    end else begin
+      pendingSpecial <= tagged Invalid;
+      MemIndex idx = truncate(a);
+      mem.portA.request.put(BRAMRequest{
+        write: False, responseOnWrite: False, address: idx, datain: ? });
+    end
   endmethod
 
   method ActionValue#(Word64) readWordResp();
-    return lookupWord(pendingReadAddr);
+    if (pendingSpecial matches tagged Valid .a) begin
+      return lookupSpecial(a);
+    end else begin
+      return bramResp;
+    end
   endmethod
 
   method Action writeWord(WordAddr a, Word64 v);
@@ -246,8 +276,10 @@ module mkStretchStorage(StretchStorage);
           xreg[a - addrIndexBase] <= v;
         else if (memInRange(a)) begin
           MemIndex idx = truncate(a);
-          mem[idx] <= v;
+          mem.portA.request.put(BRAMRequest{
+            write: True, responseOnWrite: False, address: idx, datain: v });
         end
+        // else: out of range, discard
     endcase
   endmethod
 

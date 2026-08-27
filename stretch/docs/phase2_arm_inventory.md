@@ -388,15 +388,69 @@ needed).
    LAST remaining execute() case arm. Every case arm that touches
    general storage is now converted; only step 9 (the final BRAM
    backing swap) remains.
-9. NOT STARTED, LAST. Once every call site above tolerates a deferred
-   response: swap `StretchStorage.bsv`'s `mem` from
+9. DONE. `StretchStorage.bsv`'s `mem` swapped from
    `Vector#(256,Reg#(Word64))` to `BRAM1Port`/`mkBRAM1Server` (latency
-   1) for addr>=32, delete the now-unused old `readWord` method and
-   its `lookupWord` duplication, bump `MemWords` past 256 in a
-   SEPARATE later commit (advisor: isolate latency-handling from
-   capacity, one candidate cause per commit).
+   1) for addr>=32; the old synchronous `readWord` method and every
+   dead-code helper it left behind (`readField`/`readFieldWithHi`/
+   `writeField` in StretchVFL.bsv, `readHW`/`readHWWithWord`/`writeHW`/
+   `maybeRefill`/`progressiveIncrement` in StretchExecute.bsv) removed.
+   Two real bugs surfaced and were fixed getting here, both worth
+   remembering for any future BRAM-backed method design in this
+   codebase:
+   - **Implicit-condition hoisting hang.** `readWordResp()` originally
+     called `mem.portA.response.get()` directly. `get()` carries an
+     implicit "a response is available" condition, and bsc conjoins
+     the implicit conditions of every *statically reachable* method
+     call in a rule into that rule's own firing predicate -- it does
+     NOT narrow the predicate per `case`/`if` branch. Any caller rule
+     that called `readWordReq` in one branch and `readWordResp` in a
+     different branch of the SAME rule (exactly `StretchCore.step()`'s
+     FSM shape) silently gained "and a BRAM response happens to be
+     available right now" as part of its overall firing condition --
+     true only after a request was already issued -- so the rule could
+     never fire on its first pass: zero output, 100% CPU, no forward
+     progress, no compile error. Bisected down to a 2-line repro
+     (`readWordReq` in case-arm 0, `readWordResp` in case-arm 1 of one
+     rule). Fixed by draining `response.get()` in a private internal
+     rule into a `Wire#(Word64)` (`mkDWire`); `readWordResp()` just
+     reads the wire, an ordinary unconditional value read, so the
+     implicit condition stays local to `StretchStorage` and never
+     reaches any caller's predicate.
+   - **Write vs. refill-read scheduling conflict.** `st.writeWord` and
+     `st.readWordReq` both ultimately call the storage's single BRAM
+     port's `request.put` -- bsc refuses (G0004) two `request.put`
+     call sites reachable in one rule invocation, even across
+     provably-exclusive `case` arms. VflInt/Connective's progressive-
+     indexing refill logic (ST/M+/CM) initially computed "does this
+     instruction also need a refill read" only AFTER already issuing
+     its own field write, so a refill-triggering `ST` could commit its
+     write and ALSO try to bail for the refill read in the same
+     `execute()` call. Caught by the regression suite, not by bsc (it
+     compiled; `xw_refill`'s `X12_after_refill` came back `0` because
+     the refill address was never actually requested -- the resume
+     call silently read back the ST's own already-consumed prefetch
+     slot instead). Fixed by hoisting the refill-need computation
+     (`vflNeedsRefill`, purely Reg-derived, no BRAM dependency) before
+     the `case`, and deferring ST/M+/CM's write until both the field's
+     own word AND (if needed) the refill word are in hand -- never
+     issuing a write and a new read request from the same call. L/+/K/
+     C/CT (which never write to storage) were unaffected and keep the
+     simpler "bail from the shared trailing block" shape.
+   `MemWords` bump past 256 remains a separate, later, not-yet-started
+   step (advisor: isolate latency-handling from capacity, one
+   candidate cause per commit) -- Phase 2's BRAM-latency migration
+   itself is now complete.
 
 Each step builds and passes the full regression suite before moving to
 the next; per advisor, passing unchanged is necessary but not
 sufficient evidence for arms this suite's 8 programs don't exercise --
-those are named explicitly above, not left implicit.
+those are named explicitly above, not left implicit. One arm remains
+genuinely unexercised even after step 9: DirIndex V+/V+C/V+CR as a
+*standalone* opcode (converted to the prefetch/bail-out shape in step
+9's commit, mechanically following the same pattern VflInt's
+progressive suffix already validates, but no assembler mnemonic in
+this suite's 8 programs reaches it directly -- see this file's own
+earlier V+/V+C/V+CR row). A 3-read combination (crossing-field read +
+progressive refill) is also unreachable by any current test and is
+explicitly flagged (OP invalid) rather than silently mishandled, in
+both the VflInt and Connective progressive blocks.
