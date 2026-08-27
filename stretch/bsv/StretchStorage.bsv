@@ -75,6 +75,24 @@ interface StretchStorage;
   // either) -- correctness here rests on the FSM's own structure
   // being right, checked by code review and the regression suite, not
   // a runtime check.
+  //
+  // STRONGER, EASY-TO-MISS REQUIREMENT: readWordResp() MUST be called
+  // on the cycle immediately following readWordReq() -- never with an
+  // idle cycle in between. The implementation mediates the BRAM
+  // response through a `Wire`/`mkDWire` (see mkStretchStorage's
+  // `bramResp`/`drainBram`), which only holds its value for the ONE
+  // cycle it's written; a caller that lets a cycle pass before
+  // collecting the response gets back a silent, wrong `0` -- no error,
+  // no hang, just data loss. Verified empirically (not just reasoned
+  // about): a probe that requests, waits one idle cycle, then collects
+  // returned 0 instead of the written value. Every current caller in
+  // `StretchCore.step()`'s FSM (fetchPending/execPending/ioPending)
+  // already satisfies this by construction, since step() IS the
+  // core's own per-cycle clock action and each of those branches
+  // collects the response as literally the first thing the very next
+  // step() call does -- but this is a real precondition on the
+  // interface, not an accident of the current call sites, and any
+  // future caller (or FSM restructuring) must preserve it.
   method Action readWordReq(WordAddr a);
   method ActionValue#(Word64) readWordResp();
 
@@ -181,6 +199,19 @@ module mkStretchStorage(StretchStorage);
   // rule) that hung with mem.portA.response.get() called directly and
   // ran clean once mediated through this wire. See
   // docs/phase2_arm_inventory.md step 9.
+  //
+  // TRADE-OFF this fix introduces, load-bearing for every caller (see
+  // readWordResp's own interface comment above for the full
+  // statement): a DWire holds its value for exactly the cycle it's
+  // written. drainBram fires and writes bramResp on whatever cycle the
+  // BRAM's response becomes ready; if readWordResp() isn't called that
+  // SAME cycle, the value is gone (next cycle's default mkDWire(0)) --
+  // a silent wrong `0`, not a hang or an error. A plain `Reg` doesn't
+  // avoid this trade-off, it just moves it: a Reg would delay the
+  // value by one more cycle and break every current caller's timing
+  // instead. The actual fix is the invariant documented on
+  // readWordResp() (call it the cycle immediately after
+  // readWordReq()), not a different storage primitive here.
   Wire#(Word64) bramResp <- mkDWire(0);
 
   rule drainBram;
