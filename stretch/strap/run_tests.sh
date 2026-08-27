@@ -41,6 +41,12 @@ run() {
 # see test_syn.py's own header) --
 run "SYN pseudo-op" python3 test_syn.py
 
+# -- 0b. DCP Maintenance Compool transcription (SYN symbol table from
+# the DCP manual, PDF pp.129-130) -- verifies every resolved symbol
+# against the manual's own printed address column. Pure Python, same
+# reasoning as 0 above. See verify_dcp_maintenance_compool.py's header.
+run "DCP Maintenance Compool" python3 verify_dcp_maintenance_compool.py
+
 # -- 1. Hand-assembled BSV smoke test (StretchSmoke.bsv, not STRAP-derived) --
 cd "$BSV_DIR"
 run "bsv smoke test (make run)" make run

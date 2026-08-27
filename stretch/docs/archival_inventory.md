@@ -87,12 +87,15 @@ in full, not just described.
   the actual page and cross-checked against p. 92 landing exactly on
   Memory Compare, confirming this PDF's page numbering has zero offset
   from the citations used throughout this doc, so 131 was simply
-  wrong) -- a `SYN` table of shared symbolic-address definitions, 51
-  entries, header "STRETCH MAINTENANCE COMPOOL, NOVEMBER 20, 1961",
-  terminating in blank lines partway down p. 130. This is the single
-  highest-leverage page in the whole find: it's the Rosetta stone that
-  resolves symbols referenced by *every other* 7030 diagnostic deck in
-  bitsavers' `diag/` directory, not just this one. Transcribe it first,
+  wrong) -- a `SYN` table of shared symbolic-address definitions, 65
+  entries (51 on p.129, 14 more continuing onto p.130 -- an earlier
+  pass of this doc undercounted, having only checked p.129), header
+  "STRETCH MAINTENANCE COMPOOL, NOVEMBER 20, 1961", terminating in
+  blank lines partway down p. 130. This is the single highest-leverage
+  page in the whole find: it's the Rosetta stone that resolves symbols
+  referenced by *every other* 7030 diagnostic deck in bitsavers'
+  `diag/` directory, not just this one. Transcribed and verified --
+  see "Recommended next steps" item 1 below. Transcribe it first,
   regardless of what else gets transcribed -- without it, every other
   listing's symbols are dangling.
 - **Memory Compare routine** (`G5`, pp. 92-93) and **Panel Dump
@@ -277,9 +280,26 @@ diag PDF to be one revision ahead of what this index describes.
 
 ## Recommended next steps, in order
 
-1. **Transcribe the STRETCH MAINTENANCE COMPOOL** (DCP manual, p. 131)
-   -- the shared symbol table every other diagnostic deck depends on.
-   Small, self-contained, unlocks everything else.
+1. ~~**Transcribe the STRETCH MAINTENANCE COMPOOL** (DCP manual, PDF
+   pp. 129-130) -- the shared symbol table every other diagnostic deck
+   depends on.~~ **DONE.** `strap/programs/dcp_maintenance_compool.strap`,
+   verified against the manual's own printed address column
+   (`strap/verify_dcp_maintenance_compool.py`, wired into
+   `run_tests.sh`). 65 entries total (51 on p.129, 14 more --
+   `ACA`..`AIDNTB` -- continuing onto p.130; the original "51 entries"
+   count here only covered p.129). Getting a real oracle for this
+   required resolving two format questions in the source scan, both
+   now documented in the transcription's own header comment and in the
+   project memory file: the ambiguous glyph between a base symbol and
+   its bit-offset is STRAP-1's `+` operator (grammar argument, C22-6531
+   pp.9-11 -- STRAP-1 has no other arithmetic operator); and the DCP
+   listing's own compiled-address column prints word numbers and bit
+   offsets in **octal**, while STRAP-1 *source* always writes them in
+   **decimal** -- confirmed exactly against every transcribed row (46
+   decimal offset prints as octal 56, etc.), which also gave every base
+   symbol's true value directly from the table's own zero-offset rows
+   with no need to hunt for an independent defining label elsewhere in
+   the 130-page listing.
 2. **Transcribe and run the Memory Compare (pp. 92-93) and Panel Dump
    (pp. 125-129) routines** from the DCP listing -- self-contained, no
    I/O environment needed, genuinely runnable and verifiable on the

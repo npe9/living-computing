@@ -1,0 +1,152 @@
+! STRETCH MAINTENANCE COMPOOL, NOVEMBER 20, 1961
+!
+! Transcribed from the IBM 7030 Diagnostic Control Program (DCP) manual,
+! `docs/ka_ua1_diagnostic_ctl_pgm.pdf`, PDF pp. 129-130 (see
+! docs/archival_inventory.md's "Recommended next steps" -- this is that
+! work). This is the shared SYN symbol table every other 7030 diagnostic
+! deck in bitsavers' diag/ directory references: control-word field
+! addresses (ECTL1-4), equipment-availability-word field addresses
+! (EQAV1-7), the accumulator-and-friends base (ACA), and one DCP-wide
+! base (EDCP1). 65 entries total (51 on p.129, 14 more -- ACA..AIDNTB --
+! continuing onto p.130; an earlier pass of archival_inventory.md's
+! "51 entries" figure only counted p.129 and needs correcting).
+!
+! -- Reading the source, and the two format questions this took real
+! investigation to pin down --
+!
+! 1. The glyph between a base symbol and its bit-offset (e.g.
+!    "ECTL1&.01" in this degraded 1961 fanfold scan) is the `+`
+!    operator. STRAP-1 arithmetic supports only `+`/`-` (C22-6531
+!    pp.9-11) -- no other reading is grammatical.
+!
+! 2. The compiled/resolved-address column this listing prints (e.g.
+!    "4006.01&" for EBMAIN) is in a DIFFERENT, OCTAL notation, while
+!    STRAP-1 source itself always writes bit addresses in DECIMAL
+!    (C22-6531 p.9's "decimal equivalent" describes source notation
+!    only). Confirmed exactly against every row: EBBLNK's source offset
+!    .46 (decimal) prints as .56 (46 decimal = 56 octal, and the only
+!    reading consistent with every other row too -- e.g. ECTL2+.12 ->
+!    4007.14, +.19 -> 4007.23, +.28 -> 4007.34, +.51 -> 4007.63,
+!    ECTL3+.17 -> 4010.21, EQAV1+.48 -> 4012.60, ACA+8.0 -> 10.00,
+!    ACA+13.0 -> 15.00). The word numbers are octal too (control words
+!    step 4006, 4007, 4010, 4011 -- octal successors). The trailing `&`
+!    glyph after each printed value's two real digits is NOT a third
+!    digit at all: it's the *same* ambiguous glyph as the `+` operator,
+!    reappearing as a separate, non-numeric per-row mark (most likely a
+!    check-bit/parity indicator, plausible for a memory-diagnostic
+!    program) -- strip it, it isn't part of the value.
+!
+! Net effect: this file reproduces the compool's own symbolic
+! expressions VERBATIM (decimal offsets, `+` operator, no translation),
+! and every printed value below is kept as a trailing comment for
+! verify_dcp_maintenance_compool.py to check against, converting this
+! model's resolved decimal bit-address back to word.bit-in-octal.
+!
+! -- Base symbols --
+!
+! Derived directly from this table's own zero-offset rows (EBAUTO,
+! EMACH, EBDRSP's own word less its offset, EBAEC's, EQRDR1, EQPUN1,
+! EQTYP1, EQPTR1, EQDIS1, EQTAP1, EQTAP5, and ACA's explicit "SYN,0"),
+! each converted from the printed octal word number to decimal:
+!   ECTL1 = word 4006(oct) = 2054(dec)      [EBAUTO SYN,ECTL1 -> 4006.00]
+!   ECTL2 = word 4007(oct) = 2055(dec)      [EMACH  SYN,ECTL2 -> 4007.00]
+!   ECTL3 = word 4010(oct) = 2056(dec)      [EBDRSP SYN,ECTL3+.17 -> 4010.21, offset 17 has no word carry]
+!   ECTL4 = word 4011(oct) = 2057(dec)      [EBAEC  SYN,ECTL4+.01 -> 4011.01]
+!   EQAV1 = word 4012(oct) = 2058(dec)      [EQRDR1 SYN,EQAV1 -> 4012.00]
+!   EQAV2 = word 4013(oct) = 2059(dec)      [EQPUN1 SYN,EQAV2 -> 4013.00]
+!   EQAV3 = word 4014(oct) = 2060(dec)      [EQTYP1 SYN,EQAV3 -> 4014.00]
+!   EQAV4 = word 4015(oct) = 2061(dec)      [EQPTR1 SYN,EQAV4 -> 4015.00]
+!   EQAV5 = word 4016(oct) = 2062(dec)      [EQDIS1 SYN,EQAV5 -> 4016.00]
+!   EQAV6 = word 4017(oct) = 2063(dec)      [EQTAP1 SYN,EQAV6 -> 4017.00]
+!   EQAV7 = word 4020(oct) = 2064(dec)      [EQTAP5 SYN,EQAV7 -> 4020.00]
+!   ACA   = word 0                          [ACA    SYN,0     -- literal, no offset]
+!   EDCP1 = word 4000(oct) = 2048(dec)      [EQMEM SYN,EDCP1+21.0 -> 4025.00, so
+!                                             EDCP1 = word(4025oct=2069dec) - 21(words) = 2048dec = word 4000(oct).
+!                                             Independently corroborated: docs/archival_inventory.md
+!                                             already cites the DCP's own memory footprint as starting
+!                                             at octal 004000 -- exactly this value.]
+
+ECTL1   SYN, 2054.0
+ECTL2   SYN, 2055.0
+ECTL3   SYN, 2056.0
+ECTL4   SYN, 2057.0
+EQAV1   SYN, 2058.0
+EQAV2   SYN, 2059.0
+EQAV3   SYN, 2060.0
+EQAV4   SYN, 2061.0
+EQAV5   SYN, 2062.0
+EQAV6   SYN, 2063.0
+EQAV7   SYN, 2064.0
+ACA     SYN, 0
+EDCP1   SYN, 2048.0
+
+! -- p.129 body (51 entries) --
+!                                          printed (octal word.bit, trailing check mark stripped)
+EBAUTO  SYN, ECTL1                      ! 4006.00
+EBMAIN  SYN, ECTL1+.01                  ! 4006.01
+EBSURV  SYN, ECTL1+.02                  ! 4006.02
+EBDCP   SYN, ECTL1+.03                  ! 4006.03
+EBMCON  SYN, ECTL1+.04                  ! 4006.04
+EBBLNK  SYN, ECTL1+.46                  ! 4006.56
+EMACH   SYN, ECTL2                      ! 4007.00
+ETAPCM  SYN, ECTL2+.12                  ! 4007.14
+ETAPDM  SYN, ECTL2+.19                  ! 4007.23
+ETAPCS  SYN, ECTL2+.28                  ! 4007.34
+ETAPDS  SYN, ECTL2+.35                  ! 4007.43
+ETAPCO  SYN, ECTL2+.44                  ! 4007.54
+ETAPDO  SYN, ECTL2+.51                  ! 4007.63
+EB16CH  SYN, ECTL2+.61                  ! 4007.75
+MNTCTL  SYN, ECTL2+.62                  ! 4007.76   @MAINT CONSL CONTROL
+EBDRSP  SYN, ECTL3+.17                  ! 4010.21
+EDPLOC  SYN, ECTL3+.32                  ! 4010.40
+EBAEC   SYN, ECTL4+.01                  ! 4011.01
+EBHARV  SYN, ECTL4+.02                  ! 4011.02
+EBK1    SYN, ECTL4+.03                  ! 4011.03
+EBK2    SYN, ECTL4+.04                  ! 4011.04
+EBK3    SYN, ECTL4+.05                  ! 4011.05
+EQRDR1  SYN, EQAV1                      ! 4012.00
+EQRDR2  SYN, EQAV1+.16                  ! 4012.20
+EQRDR3  SYN, EQAV1+.32                  ! 4012.40
+EQRDR4  SYN, EQAV1+.48                  ! 4012.60
+EQPUN1  SYN, EQAV2                      ! 4013.00
+EQPUN2  SYN, EQAV2+.16                  ! 4013.20
+EQPUN3  SYN, EQAV2+.32                  ! 4013.40
+EQPUN4  SYN, EQAV2+.48                  ! 4013.60
+EQTYP1  SYN, EQAV3                      ! 4014.00
+EQTYP2  SYN, EQAV3+.16                  ! 4014.20
+EQTYP3  SYN, EQAV3+.32                  ! 4014.40
+EQTYP4  SYN, EQAV3+.48                  ! 4014.60
+EQPTR1  SYN, EQAV4                      ! 4015.00
+EQPTR2  SYN, EQAV4+.16                  ! 4015.20
+EQPTR3  SYN, EQAV4+.32                  ! 4015.40
+EQPTR4  SYN, EQAV4+.48                  ! 4015.60
+EQDIS1  SYN, EQAV5                      ! 4016.00
+EQDIS2  SYN, EQAV5+.16                  ! 4016.20
+EQDIS3  SYN, EQAV5+.32                  ! 4016.40
+EQDIS4  SYN, EQAV5+.48                  ! 4016.60
+EQTAP1  SYN, EQAV6                      ! 4017.00
+EQTAP2  SYN, EQAV6+.16                  ! 4017.20
+EQTAP3  SYN, EQAV6+.32                  ! 4017.40
+EQTAP4  SYN, EQAV6+.48                  ! 4017.60
+EQTAP5  SYN, EQAV7                      ! 4020.00
+EQTAP6  SYN, EQAV7+.16                  ! 4020.20
+ETAP7   SYN, EQAV7+.32                  ! 4020.40
+EQTAP8  SYN, EQAV7+.48                  ! 4020.60
+EQMEM   SYN, EDCP1+21.0                 ! 4025.00
+
+! -- p.130 body (14 more entries, continuing the same table --
+! accumulator/adder/identity register field addresses, word-granularity
+! offsets from ACA) --
+ACB     SYN, ACA+1.0                    ! 1.00
+ACC     SYN, ACA+2.0                    ! 2.00
+ACD     SYN, ACA+3.0                    ! 3.00
+ACE     SYN, ACA+4.0                    ! 4.00
+ACF     SYN, ACA+5.0                    ! 5.00
+ACG     SYN, ACA+6.0                    ! 6.00
+ACH     SYN, ACA+7.0                    ! 7.00
+ADA     SYN, ACA+8.0                    ! 10.00
+ADB     SYN, ACA+9.0                    ! 11.00
+ADC     SYN, ACA+10.0                   ! 12.00
+ADD     SYN, ACA+11.0                   ! 13.00
+AIDNTA  SYN, ACA+12.0                   ! 14.00
+AIDNTB  SYN, ACA+13.0                   ! 15.00
