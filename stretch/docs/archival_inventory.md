@@ -81,10 +81,17 @@ the "how are individual tests loaded and sequenced" mechanism, present
 in full, not just described.
 
 **High-value sub-ranges, worth transcribing before anything else**:
-- **The STRETCH MAINTENANCE COMPOOL** (p. 131) -- a `SYN` table of
-  shared symbolic-address definitions. This is the single highest-
-  leverage page in the whole find: it's the Rosetta stone that resolves
-  symbols referenced by *every other* 7030 diagnostic deck in
+- **The STRETCH MAINTENANCE COMPOOL** (PDF pp. 129-130, corrected --
+  originally cited as "p. 131" in this doc, but p. 131 is actually
+  control section `J1A1` "Utility Control Routine"; verified by reading
+  the actual page and cross-checked against p. 92 landing exactly on
+  Memory Compare, confirming this PDF's page numbering has zero offset
+  from the citations used throughout this doc, so 131 was simply
+  wrong) -- a `SYN` table of shared symbolic-address definitions, 51
+  entries, header "STRETCH MAINTENANCE COMPOOL, NOVEMBER 20, 1961",
+  terminating in blank lines partway down p. 130. This is the single
+  highest-leverage page in the whole find: it's the Rosetta stone that
+  resolves symbols referenced by *every other* 7030 diagnostic deck in
   bitsavers' `diag/` directory, not just this one. Transcribe it first,
   regardless of what else gets transcribed -- without it, every other
   listing's symbols are dangling.
@@ -92,8 +99,17 @@ in full, not just described.
   routine** (`H7`, pp. 125-129, dumping LC, index/boundary/channel
   registers, both accumulator halves, indicator/mask/remainder/factor/
   transit registers -- close to a complete map of 7030 programmer-
-  visible state) are self-contained: no tape drive, card reader, or
-  channel I/O needed to run them. These are the two candidates for
+  visible state) need no tape drive, card reader, or channel I/O to
+  run -- but "self-contained" as originally written here overstated it:
+  reading the actual routine bodies (not just this summary) shows `G5`
+  branches to external `H`-prefixed routines outside its own control
+  section (`B,H1A1A2` "print heading", `B,H5A4`, `B,H6B` "encode
+  number of failures"), and both routines lean on DCP print-formatting
+  macros (`%IQSZ`/`%IQS*`) with no counterpart in this simulated model.
+  Actually assembling and running either one needs those dependencies
+  resolved first, not just `SYN` -- see `bsv/README.md`/this project's
+  memory file for the corrected, narrower scope. These remain the two
+  best candidates for
   actually assembling and running something from this find on the
   Bluespec model today, matching this project's established pattern of
   only claiming what's been run and checked.
