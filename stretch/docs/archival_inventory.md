@@ -59,13 +59,16 @@ default curl User-Agent). Use `curl -sL -A "Mozilla/5.0" -e
    corroboration of finding #1 before that finding was even read.
 5. **The five I-Box diagnostic test programs are, like the DCP, complete
    STRAP source listings** (787 pages combined) -- and every one of
-   them turns out to depend on `SIC` as its own internal subroutine
-   call/return mechanism, not just as a nominally-tested instruction.
-   That single shared dependency blocks running any of the five
-   end-to-end more than any individual instruction-class gap does. See
-   #6 below for per-program findings and the specific slices (I-Box
-   5's address-truncation routine, I-Box 4's Refill/CB sections, I-Box
-   1's `WEN`/`WEN2`/`VEN`) that avoid it.
+   them turns out to depend on `SIC`, verified directly (not just
+   trusted from an agent report -- see #6's "Verification") to be a
+   single packed test-and-branch instruction whose embedded branch
+   this model doesn't yet execute. That means virtually every test
+   block's pass/continue/fail branch silently fails and falls through
+   to whatever's next in memory instead -- a bigger, shared blocker to
+   running any of the five end-to-end than any individual
+   instruction-class gap. See #6 below for per-program findings and
+   the specific slices (I-Box 5's address-truncation routine, I-Box
+   4's Refill/CB sections, I-Box 1's `WEN`/`WEN2`/`VEN`) that avoid it.
 
 ## 1. Diagnostic Control Program (`diag/ka_ua1_diagnostic_ctl_pgm.pdf`)
 
@@ -301,24 +304,54 @@ body (not full transcription -- see "Recommended next steps" above for
 why this is an inventory pass, not a transcription pass). All five:
 "Programs becoming obsolete: None."
 
-**Notable finding, true across all five documents, not just one**:
-**`SIC` (Store Instruction Counter If) is not merely one of several
-tested instruction classes here -- in every one of these five programs
-it IS the subroutine call/return and error-report idiom the deck's own
-control flow depends on** (the universal pattern is `SIC,<label>`
-immediately followed by `B,<label>`, assembling to opcode field `80`
-throughout). `bsv/README.md` lists SIC as decoded-but-not-executed (a
-no-op). That means **none of these five programs can be run end-to-end
-against the model as a black box, independent of whatever instruction
-class each one nominally targets** -- a more load-bearing blocker than
-any single missing mnemonic. Three of the five (I-Box 3, 4, 5) have a
-second, similarly structural blocker: **`SVA`** (also NOT executed,
-per README) used as a self-modifying-code mechanism to patch operand/
+**Notable finding, true across all five documents, not just one, and
+independently verified directly against two of them (not taken on an
+agent's word -- see "Verification" below)**: **`SIC` (Store
+Instruction Counter If) is not a separate instruction from the `B`/
+`CB`/branch-on-indicator line that follows it in the source -- `SIC`
+and that following line are ONE 64-bit instruction.** `SIC`'s own
+format (per `StretchDecode.bsv`'s cited manual page, "bits 32-63
+specify the half-word branch instruction used") packs a conditional
+IC-store into the left half-word and an embedded branch (unconditional
+`B`, `CB`, or branch-on-indicator -- all three observed) into the
+right half-word of the *same* word. So this is a test-and-branch
+primitive, not a call/return convention (there's no evidence here of a
+saved return address -- "call/return" was this pass's first-draft
+mischaracterization, corrected below). `bsv/StretchExecute.bsv`
+currently handles `tagged Sic` with nothing but
+`ind = setOpInvalid(ind)` -- it performs neither the conditional store
+nor the embedded branch. Since practically every test block in these
+five decks ends in exactly this SIC-plus-embedded-branch pair as its
+pass/continue/fail logic, the practical effect on this model is that
+**every one of those branches silently fails to happen, and execution
+just falls through into whatever word comes next in memory** -- a
+concrete, confirmed break in program control flow, not merely "errors
+go unreported." Three of the five (I-Box 3, 4, 5) have a second,
+independently structural blocker: **`SVA`** (also NOT executed, per
+README) used as a self-modifying-code mechanism to patch operand/
 address fields into scratch instruction templates before falling
-through to execute them. Any actual run attempt on one of these five
-needs SIC (and, for 3/4/5, SVA) working first, or a narrow slice
-chosen specifically to avoid both -- the per-program notes below flag
-which slices do.
+through to execute them. And I-Box 5's routine 1262 (`EX`/`EXIC`) is a
+*different kind* of gap from either: `EX`/`EXIC` isn't even given its
+own decode tag (falls through to the generic `Unimplemented` no-op),
+so an EX'd subject instruction doesn't merely fail to branch
+afterward -- it never executes at all. Any actual run attempt on one
+of these five needs SIC (and, for 3/4/5, SVA; for 5's routine 1262,
+`EX`/`EXIC`) working first, or a narrow slice chosen specifically to
+avoid all of it -- the per-program notes below flag which slices do.
+
+**Verification**: the "SIC is one packed instruction" claim above was
+checked directly against two independent source pages, not trusted
+from subagent reports (which described the pattern as
+"call/return"/"subroutine mechanism," a plausible-sounding but
+unverified reading -- caught before being trusted further). Read
+`jb_ax2a_ibox-2.pdf` p.6 and `ja_ax1a_ibox-1.pdf` p.50 directly: in
+both, the resolved-address column shows the `SIC` line and its
+following `B`/`CB` line landing at the *same* word number, `.00`
+(bit 0) and `.40` octal = bit 32 respectively -- e.g. `SIC,SENO+.32`
+-> `006501.00` immediately followed by `B,SSW` -> `006501.40`; `SIC,
+ISCBA` -> `005413.00` followed by `CB,SX1,ISCB2` -> `005413.40`. Two
+different embedded-branch shapes (plain `B`, and conditional `CB`)
+confirmed in the same pass.
 
 ### I-Box 1 (`ja_ax1a_ibox-1.pdf`, 60 pages)
 
@@ -360,12 +393,15 @@ Indicator (including the clear-modifier form, confirmed to match
 in the model's executed set, and the program's own "three memories"
 language turns out not to be a gap at all -- external/index/internal
 memory all resolve inside the model's single unified memory-mapped
-register file (confirmed directly against the source: parallel
-`Z,I16DMP` / `Z,$X1` / `Z,$R` triads for the same test against each of
-the three). One unresolved indicator mnemonic, `BXF`, doesn't match
-any name in `StretchTypes.bsv`'s indicator table -- worth a targeted
-look if this program is ever transcribed. Beyond SIC (the call/return
-blocker described above), every routine's ident line also carries the
+register file (single-source finding, from one agent's reading of
+parallel `Z,I16DMP` / `Z,$X1` / `Z,$R` triads for the same test
+against each of the three -- plausible and cheap, worth a second look
+before fully relying on it, unlike the SIC finding above which this
+pass verified directly). One unresolved indicator mnemonic, `BXF`,
+doesn't match any name in `StretchTypes.bsv`'s indicator table --
+worth a targeted look if this program is ever transcribed. Beyond SIC
+(the test-and-branch blocker described above), every routine's ident
+line also carries the
 `%IQSZ` print macro `archival_inventory.md` already flags as having no
 model counterpart, and control flow leans on SSIP-resident externals
 (`SSW ERS SERS RET SEN ...`) resolved outside this document -- not
@@ -482,24 +518,31 @@ already in the model's executed set, no interrupt machinery involved.
    (`ja_ax1a_ibox-1` through `jb_ax5b_ibox-5`, per the System Test
    Programs overview) next.~~ **DONE, see "6. The five I-Box diagnostic
    test programs" above.** All five downloaded and surveyed. Headline
-   finding: `SIC` is every one of the five programs' own subroutine
-   call/return mechanism, not just a tested subject -- a bigger,
-   shared blocker to actually *running* any of them than any single
-   missing instruction class. Best near-term transcription/cross-
-   validation candidates identified: I-Box 5's routine 1274
-   (address-truncation checks against LX/SX/Refill/StoreZero/
-   Transmit, all in-scope, no interrupt machinery involved -- the
-   cleanest target found across all five documents), I-Box 4's
-   section 138 (Refill/RCZ, self-contained) and section 150 (the
-   CB/CBR family), and I-Box 1's `WEN`/`WEN2`/`VEN` (smallest
-   self-contained runnable fragment, ~9 instructions). Biggest
-   concrete instruction-level gaps confirmed with real test coverage
-   behind them: `SVA` (structural self-modifying-code dependency in
-   I-Box 3/4/5, plus I-Box 3's dedicated ~50-page section), `RNX`
-   (I-Box 4), `LVE`/`LVS` (I-Box 4's entire final section), Transmit
-   backward/Swap (I-Box 4), and the whole interrupt/mask/indicator/
-   timer/boundary system plus EX/EXIC (I-Box 5's routine 1260 alone,
-   ~68% of that document).
+   finding (checked directly against two source pages, not taken on
+   an agent's word -- see #6's "Verification"): `SIC` and its
+   following branch line are actually ONE packed 64-bit
+   test-and-branch instruction, whose embedded branch this model
+   doesn't yet execute -- meaning virtually every test block's
+   pass/continue/fail branch silently fails and falls through instead,
+   a bigger shared blocker to actually *running* any of these five
+   than any single missing instruction class. Best near-term
+   transcription/cross-validation candidates identified: I-Box 5's
+   routine 1274 (address-truncation checks against
+   LX/SX/Refill/StoreZero/Transmit, all in-scope, no interrupt
+   machinery involved -- the cleanest target found across all five
+   documents), I-Box 4's section 138 (Refill/RCZ, self-contained) and
+   section 150 (the CB/CBR family), and I-Box 1's `WEN`/`WEN2`/`VEN`
+   (smallest self-contained runnable fragment, ~9 instructions).
+   Biggest concrete instruction-level gaps confirmed with real test
+   coverage behind them: `SVA` (structural self-modifying-code
+   dependency in I-Box 3/4/5, plus I-Box 3's dedicated ~50-page
+   section), `RNX` (I-Box 4), `LVE`/`LVS` (I-Box 4's entire final
+   section), Transmit backward/Swap (I-Box 4), the whole
+   interrupt/mask/indicator/timer/boundary system (I-Box 5's routine
+   1260 alone, ~68% of that document), and `EX`/`EXIC` (I-Box 5's
+   routine 1262 -- a harder gap than SIC's, since EX'd subject
+   instructions have no decode tag at all and so never execute, not
+   just fail to branch afterward).
 4. Locate the actual **MCP program listing** and **STRAP II Assembly
    Listing** (Form C28-6129 on bitsavers is the *wrong* document for
    the latter, as established above) -- both explicitly referenced as
