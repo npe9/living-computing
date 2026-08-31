@@ -1,0 +1,80 @@
+! I-Box 1 diagnostic program (docs/ja_ax1a_ibox-1.pdf p.51, routines
+! WEN/WEN2/VEN, part of the "SIC-B,IND" test group) -- the smallest
+! self-contained runnable fragment identified in this project's I-Box
+! inventory pass (see docs/archival_inventory.md "6. The five I-Box
+! diagnostic test programs"). Verifies that a VFL binary-unsigned Load
+! correctly sets the RGZ (Result Greater-or-Zero) indicator for a
+! nonzero unsigned value and the RZ (Result Zero) indicator for zero --
+! exercises StretchALU.bsv's fieldToSM (forces sign=0 for unsigned
+! mode) and StretchExecute.bsv's setResultIndicatorsF together, a
+! genuinely behavioral check (not the type-width-guaranteed-safe shape
+! archival_inventory.md's routine-1274 finding ruled out -- see there
+! for why that candidate was rejected and this one picked instead).
+!
+! Source transcription note: the original routine's own instructions
+! are reproduced faithfully --
+!   WEN2  L%BU,64,8=,WEN7   -LOAD ONES     / BRGZZ,$+1.0 / BD,$
+!   WEN   L%BU,64,8=,WEN6   -LOAD ZEROS    / BRZZ,$+1.0  / BD,$
+!   VEN   L%BU,64,8=,WEN7                  / BRGZZ,$+1.0 / BD,$
+! (WEN6/WEN7 are DD(BU,64,8) constants of all-zeros/all-ones,
+! independently located and read at docs/ja_ax1a_ibox-1.pdf p.59) --
+! but the pass/fail MECHANISM is deliberately NOT reproduced: the
+! original's "BD,$" is a deliberate infinite-loop hang, meant for a
+! human at the console to notice on real hardware, and its own
+! continue/branch logic is wired through SIC (this model doesn't
+! execute SIC's embedded branch -- see archival_inventory.md's
+! "Verification" section). Reusing either would make this program hang
+! in Bluesim on any failure with no observable signal. Instead: each
+! check's PASS path writes a distinctive marker (100, via LVI -- an
+! ImmIndex op that, per StretchExecute.bsv's ImmIndex arm, does NOT
+! call setIndexResultIndicatorsF, so marker writes never disturb the
+! RGZ/RZ state a later check still needs to read) into its own index
+! register, pre-cleared to 0 (the FAIL marker) at program start --
+! checked externally by the testbench exactly like every other program
+! in this directory (xw_refill.strap, figure7_progressive_indexing.strap),
+! not via the deck's own SIC/hang idiom.
+!
+! Discrimination, added after advisor review of an earlier version:
+! checking only "RGZ fires after ones" / "RZ fires after zeros" cannot
+! distinguish a correct implementation from one that sets RGZ and RZ
+! identically (e.g. both always 1, or the two swapped) -- a bug that
+! survives both single-direction checks can still make an assertion
+! land on its expected marker by coincidence. Each load is therefore
+! checked in BOTH directions: the indicator that SHOULD fire (X1/X2,
+! matching WEN2/WEN's own choice) and the indicator that should NOT
+! (X4/X5, not in the original source, added here specifically to rule
+! out a swapped-indicator bug). X3 (VEN, a source-faithful duplicate of
+! WEN2's own check) is kept as-is, matching the original's own
+! apparent duplication, without an added inverse check of its own.
+! Verified non-vacuous by deliberately swapping test 1's BRGZZ for
+! BRZZ (the wrong indicator) and confirming the check then fails.
+
+START   LVI, $1, 0.0        !X1 = 0 (fail marker: RGZ set after ones)
+        LVI, $2, 0.0        !X2 = 0 (fail marker: RZ set after zeros)
+        LVI, $3, 0.0        !X3 = 0 (fail marker: RGZ set after ones, again)
+        LVI, $4, 0.0        !X4 = 0 (fail marker: RZ NOT set after ones)
+        LVI, $5, 0.0        !X5 = 0 (fail marker: RGZ NOT set after zeros)
+
+        L(BU,64,8), ONES    !WEN2 -LOAD ONES
+        BRGZZ, T1AOK         !RGZ should be set (and gets cleared here)
+        B, T1ADONE
+T1AOK   LVI, $1, 100
+T1ADONE BRZZ, T1BSKIP        !RZ should NOT be set -- branching here is the bug
+        LVI, $4, 100         !RZ correctly not set
+T1BSKIP L(BU,64,8), ZEROS   !WEN -LOAD ZEROS
+        BRZZ, T2AOK          !RZ should be set (and gets cleared here)
+        B, T2ADONE
+T2AOK   LVI, $2, 100
+T2ADONE BRGZZ, T2BSKIP       !RGZ should NOT be set -- branching here is the bug
+        LVI, $5, 100         !RGZ correctly not set
+T2BSKIP L(BU,64,8), ONES    !VEN
+        BRGZZ, T3OK
+        B, DONE
+T3OK    LVI, $3, 100
+
+DONE    BEW, $              !halt
+
+ONES    DD(BU,64,8), 18446744073709551615   !0xFFFFFFFFFFFFFFFF
+ZEROS   DD(BU,64,8), 0
+
+        END, START

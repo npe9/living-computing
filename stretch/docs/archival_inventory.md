@@ -417,6 +417,65 @@ like the DCP, exceeds `StretchStorage`'s current 256-word window, so
 any candidate needs re-assembly at a low `SLC` address, not in-place
 extraction.
 
+**`WEN`/`WEN2`/`VEN` (p.51) transcribed and run -- DONE**, as
+`strap/programs/ibox1_wen_ven_indicators.strap`
+(`StretchIboxWenTb`, wired into `run_tests.sh`). Loads a VFL
+binary-unsigned all-ones word (`WEN2`/`VEN`) and an all-zeros word
+(`WEN`), each followed by a Branch-on-Indicator checking `RGZ`/`RZ`
+respectively -- genuinely behavioral (exercises `StretchALU.bsv`'s
+`fieldToSM` forcing `sign=0` for unsigned mode together with
+`StretchExecute.bsv`'s `setResultIndicatorsF`), unlike routine 1274
+below. `WEN6`/`WEN7` (the source's own all-zero/all-one data words)
+were independently located at p.59, not assumed. The original's own
+pass/fail mechanism (`SIC`-embedded branches, deliberate infinite-loop
+hangs) was deliberately NOT reproduced -- per the `SIC` finding above,
+none of it would fire on this model anyway -- each check instead
+writes a distinctive marker into its own index register on the pass
+path (via `LVI`, an `ImmIndex` op that -- per
+`StretchExecute.bsv`'s `ImmIndex` arm -- doesn't itself touch
+`RGZ`/`RZ`, so marker writes never disturb a still-pending check),
+checked externally by the testbench exactly like every other program
+in `strap/programs/`.
+
+Verified non-vacuous twice, the second time after advisor review
+caught that the first version wasn't actually discriminating: checking
+only "RGZ fires after ones" and "RZ fires after zeros" (3 assertions,
+`X1`/`X2`/`X3`) cannot distinguish a correct implementation from one
+that sets RGZ and RZ identically or swapped, since neither hypothetical
+bug happens to touch the ONE indicator each assertion tests. Two more
+assertions were added (`X4`/`X5`, not in the original source) checking
+the OPPOSITE direction: that RZ does NOT fire after loading ones, and
+RGZ does NOT fire after loading zeros. Confirmed this closes the gap
+by temporarily patching `StretchExecute.bsv` itself to swap RGZ/RZ's
+bit assignments in `setResultIndicatorsF`, rebuilding, and confirming
+all 5 assertions fail under that exact bug (they do, and the original
+3-assertion version would NOT have caught it -- worth remembering:
+"branch fires when expected" and "branch doesn't fire when the
+opposite is expected" are two different claims, and a swapped-output
+bug can satisfy the first while failing the second only if both
+directions are actually checked). Reverted the patch, confirmed
+`StretchExecute.bsv` diffs clean against git, re-ran clean to confirm
+all 5 assertions pass.
+
+**Routine 1274 (`docs/archival_inventory.md`'s earlier "cleanest
+target" pick) rejected, with reasons, not attempted**: before writing
+any `.strap`, checked whether this model's address-truncation
+behavior could actually fail, per the general principle "an
+untestable-by-construction candidate wastes the same effort as a real
+one, so check first" (this project's Y-Z Control Sequences finding
+above is the same failure mode). `StretchTypes.bsv` types `WordAddr`/
+`HWordAddr` as exactly `Bit#(18)`/`Bit#(19)`, and every one of
+LX/SX/Refill/StoreZero/Transmit's address computations
+(`StretchExecute.bsv`'s `effAddr18`/`effAddr19`/`effAddr24`, and the
+explicit `ea[18:1]` half-word-to-word narrowing used by LX/SX/Refill)
+stays within those exact widths by construction -- BSV's fixed-width
+arithmetic makes representing an address wider than architecturally
+valid impossible, not merely unlikely. A transcribed version of
+routine 1274 would necessarily pass, exercising nothing -- exactly the
+scenario advisor warned to check for before transcribing. `WEN`/
+`WEN2`/`VEN` was picked instead for being both small and, unlike
+1274, actually capable of failing.
+
 ### I-Box 2 (`jb_ax2a_ibox-2.pdf`, 203 pages)
 
 Purpose (verbatim): "1) Store Zero in Index Internal and External
@@ -509,11 +568,12 @@ routine 1268 (Look-Ahead store-to-fetch/store-to-load forwarding,
 pp.110-112) is the cheapest routine in the whole document to reason
 about (~3 pages, 6 sub-cases, no interrupt/timer entanglement) despite
 testing an unmodeled feature; and routine 1274 (address-truncation
-checks for `LX/SX/Refill/StoreZero/Transmit`, pp.112-116) is **the
-single cleanest, most isolable cross-validation target found across
-all five documents** -- five concrete, independently checkable
-assertions ("-LX FAILS TO TRUNCATE BIT 19" etc.) against instructions
-already in the model's executed set, no interrupt machinery involved.
+checks for `LX/SX/Refill/StoreZero/Transmit`, pp.112-116) looked like
+**the single cleanest, most isolable cross-validation target found
+across all five documents** on first read, but turned out to be
+untestable by construction once checked against this model's actual
+address types -- see I-Box 1's `WEN`/`WEN2`/`VEN` entry above for the
+reasoning and for what got transcribed instead.
 
 ## Recommended next steps, in order
 
@@ -560,14 +620,18 @@ already in the model's executed set, no interrupt machinery involved.
    doesn't yet execute -- meaning virtually every test block's
    pass/continue/fail branch silently fails and falls through instead,
    a bigger shared blocker to actually *running* any of these five
-   than any single missing instruction class. Best near-term
-   transcription/cross-validation candidates identified: I-Box 5's
-   routine 1274 (address-truncation checks against
-   LX/SX/Refill/StoreZero/Transmit, all in-scope, no interrupt
-   machinery involved -- the cleanest target found across all five
-   documents), I-Box 4's section 138 (Refill/RCZ, self-contained) and
-   section 150 (the CB/CBR family), and I-Box 1's `WEN`/`WEN2`/`VEN`
-   (smallest self-contained runnable fragment, ~9 instructions).
+   than any single missing instruction class. **Update**: I-Box 1's
+   `WEN`/`WEN2`/`VEN` (smallest self-contained runnable fragment, ~9
+   instructions) has since been transcribed and run --
+   `strap/programs/ibox1_wen_ven_indicators.strap`, all 3 assertions
+   pass, see I-Box 1's own entry above. I-Box 5's routine 1274
+   (address-truncation checks) looked like the cleanest candidate on
+   first read but turned out untestable by construction (this model's
+   `WordAddr`/`HWordAddr` types make the checked failure mode
+   structurally impossible) -- rejected before transcribing, also
+   detailed in I-Box 1's entry above. Remaining candidates not yet
+   attempted: I-Box 4's section 138 (Refill/RCZ, self-contained) and
+   section 150 (the CB/CBR family).
    Biggest concrete instruction-level gaps confirmed with real test
    coverage behind them: `SVA` (structural self-modifying-code
    dependency in I-Box 3/4/5, plus I-Box 3's dedicated ~50-page

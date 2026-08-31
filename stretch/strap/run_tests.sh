@@ -114,6 +114,20 @@ run "Figure 7 Progressive Indexing" ./run_program.sh programs/figure7_progressiv
     "w39:39=0x16311183921a413" \
     "w40:40=0x1c48000000000000"
 
+# -- 4b. I-Box 1 diagnostic (docs/ja_ax1a_ibox-1.pdf p.51, WEN/WEN2/VEN):
+# VFL binary-unsigned Load correctly sets RGZ for a nonzero unsigned
+# value and RZ for zero -- see docs/archival_inventory.md "6. The five
+# I-Box diagnostic test programs" for how this candidate was chosen
+# (the smallest self-contained runnable fragment found, after routine
+# 1274's address-truncation test turned out to be untestable by
+# construction on this model's typed WordAddr/HWordAddr widths).
+run "I-Box 1 WEN/WEN2/VEN (RGZ/RZ indicators)" ./run_program.sh programs/ibox1_wen_ven_indicators.strap StretchIboxWenTb \
+    "X1_RGZ_ones:addrIndex(1)=0x640000000000" \
+    "X2_RZ_zeros:addrIndex(2)=0x640000000000" \
+    "X3_RGZ_ones_again:addrIndex(3)=0x640000000000" \
+    "X4_notRZ_ones:addrIndex(4)=0x640000000000" \
+    "X5_notRGZ_zeros:addrIndex(5)=0x640000000000"
+
 # -- 5. XW refill mechanism (see README.md "Gotchas" item 7) --
 # Distinctive VALUE=999/COUNT=42 at CTLB, refilled into $X12 via CTLA's
 # COUNT=1 forcing exactly one refill on the program's one progressive
@@ -152,7 +166,7 @@ run "Input-Output (tape)" ./run_tape_test.sh StretchIoTapeTb
 
 # -- cleanup: generated .bsv testbenches and Bluesim build products are
 # not meant to be committed (see .gitignore) --
-rm -f "$BSV_DIR"/StretchProblem*Tb.bsv "$BSV_DIR"/StretchFigure*Tb.bsv "$BSV_DIR"/StretchXwRefillTb.bsv "$BSV_DIR"/StretchIoReaderPrinterTb.bsv "$BSV_DIR"/StretchIoTapeTb.bsv
+rm -f "$BSV_DIR"/StretchProblem*Tb.bsv "$BSV_DIR"/StretchFigure*Tb.bsv "$BSV_DIR"/StretchXwRefillTb.bsv "$BSV_DIR"/StretchIoReaderPrinterTb.bsv "$BSV_DIR"/StretchIoTapeTb.bsv "$BSV_DIR"/StretchIboxWenTb.bsv
 rm -f "$BSV_DIR"/*_sim "$BSV_DIR"/*_sim.so
 rm -rf "$BSV_DIR"/build "$BSV_DIR"/simbuild
 
