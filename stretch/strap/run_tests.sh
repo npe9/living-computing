@@ -128,6 +128,21 @@ run "I-Box 1 WEN/WEN2/VEN (RGZ/RZ indicators)" ./run_program.sh programs/ibox1_w
     "X4_notRZ_ones:addrIndex(4)=0x640000000000" \
     "X5_notRGZ_zeros:addrIndex(5)=0x640000000000"
 
+# -- 4c. I-Box 4 diagnostic (docs/jb_ax4b_ibox-4.pdf p.155, routine 150
+# "CB AND CBR TEST", the plain CB mnemonic): Count and Branch
+# decrements count and branches iff nonzero, and (v=00) never touches
+# the value field -- see docs/archival_inventory.md "I-Box 4" for how
+# this candidate was chosen (section 138's "$R" system symbol doesn't
+# parse and was rejected; section 150 needed only a mnemonic-table
+# addition over an already-fully-implemented encoder/decoder, added
+# to opcodes.py as CB_CODES).
+run "I-Box 4 CB (Count and Branch)" ./run_program.sh programs/ibox4_cb_count_branch.strap StretchIboxCbTb \
+    "X1_final:addrIndex(1)=0x3e70000000000" \
+    "X2_step1_taken:addrIndex(2)=0x640000000000" \
+    "X3_step2_taken:addrIndex(3)=0x640000000000" \
+    "X4_step3_taken:addrIndex(4)=0x640000000000" \
+    "X5_step4_not_taken:addrIndex(5)=0x0"
+
 # -- 5. XW refill mechanism (see README.md "Gotchas" item 7) --
 # Distinctive VALUE=999/COUNT=42 at CTLB, refilled into $X12 via CTLA's
 # COUNT=1 forcing exactly one refill on the program's one progressive
@@ -166,7 +181,7 @@ run "Input-Output (tape)" ./run_tape_test.sh StretchIoTapeTb
 
 # -- cleanup: generated .bsv testbenches and Bluesim build products are
 # not meant to be committed (see .gitignore) --
-rm -f "$BSV_DIR"/StretchProblem*Tb.bsv "$BSV_DIR"/StretchFigure*Tb.bsv "$BSV_DIR"/StretchXwRefillTb.bsv "$BSV_DIR"/StretchIoReaderPrinterTb.bsv "$BSV_DIR"/StretchIoTapeTb.bsv "$BSV_DIR"/StretchIboxWenTb.bsv
+rm -f "$BSV_DIR"/StretchProblem*Tb.bsv "$BSV_DIR"/StretchFigure*Tb.bsv "$BSV_DIR"/StretchXwRefillTb.bsv "$BSV_DIR"/StretchIoReaderPrinterTb.bsv "$BSV_DIR"/StretchIoTapeTb.bsv "$BSV_DIR"/StretchIboxWenTb.bsv "$BSV_DIR"/StretchIboxCbTb.bsv
 rm -f "$BSV_DIR"/*_sim "$BSV_DIR"/*_sim.so
 rm -rf "$BSV_DIR"/build "$BSV_DIR"/simbuild
 

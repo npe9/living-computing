@@ -1,0 +1,97 @@
+! I-Box 4 diagnostic program (docs/jb_ax4b_ibox-4.pdf p.155, routine
+! 150 "----1250---CB AND CBR TEST", the IBR1-IBR9 block) -- the plain
+! "CB" mnemonic (Count and Branch, v=00/refill=0/branch-if-nonzero),
+! part of the CB/CBR family docs/archival_inventory.md flagged as
+! "the largest, most regression-test-shaped block" in I-Box 1's own
+! inventory entry and, for this document, "large and self-contained"
+! (I-Box 4's own entry). Exercises StretchExecute.bsv's CountBranch
+! arm end to end: `take = (branchIfZero==1) ? (newCount==0) :
+! (newCount!=0)`, decode's `branchIfZero`/`v`/`refill` bit extraction
+! (StretchDecode.bsv tryCountBranch), and confirms v=00 truly leaves
+! the value field alone (no accidental write).
+!
+! Mnemonic-table note: "CB" was, before this program, the only Count-
+! -and-Branch mnemonic this assembler encoded (v/refill/bz always
+! zero, matching StretchSmoke.bsv's own hand-assembled usage -- see
+! strap_asm.py's prior module-docstring wording). Reading this
+! section's source revealed the full CB[R][Z][H|+|-] mnemonic family
+! (16 variants, matching I-Box 1's own "16-variant CB/CBR family"
+! description); the encoder (enc_count_branch) already accepted the
+! full (v, refill, bz) parameter space, and StretchExecute.bsv's
+! CountBranch arm already consults all three fields end to end
+! (confirmed by reading the whole arm before adding anything -- see
+! docs/archival_inventory.md for the reasoning), so this was a mnemonic
+! table addition, not new model or decode work. Table added to
+! opcodes.py (CB_CODES), sourced from the pocket card's own "INDEX
+! BRANCHING" legend and cross-checked against real occurrences in this
+! section (CB/CB+/CBH/CB- on this page, CBR/CBR+ on p.159, CBRZH/CBRZ-
+! on p.165) -- not inferred from listing usage alone (the mistake this
+! project corrected twice already for the SIC finding). A companion
+! finding, also from this reading pass: section 138 (Refill/RCZ, the
+! *other* I-Box 4 candidate) was rejected outright -- its every check
+! depends on a `$R` system symbol this assembler doesn't recognize and
+! whose meaning isn't recoverable from the listing alone; see
+! docs/archival_inventory.md.
+!
+! Source transcription note: the original routine's own instructions
+! (LX,$X1,IBRA1 / four CB,$X1,<next> / SX,$X1,IBR8 / B,IBR8) are
+! reproduced faithfully in kind -- same XW-literal setup (VALUE/COUNT/
+! REFILL fields), same four chained CB instructions decrementing one
+! shared index register's count from 4 to 0, branching on the first
+! three and falling through on the fourth ("COUNT TO ZERO NO BRANCH",
+! the source's own comment). What is NOT reproduced is the source's
+! own pass/fail SIGNALING mechanism: on real hardware, a failed branch
+! falls into a `BD,CBERAn` (Branch Disabled -- a deliberate hang,
+! meant for a human at the console to notice) or, for the value test,
+! self-modifies a NOP placeholder at IBR8 into a "BD,IBR9" instruction
+! by storing X1's own packed IndexWord and depending on VALUE's bit-
+! position happening to line up with the BranchOrMisc format's ADDRESS
+! field -- a self-modifying-code idiom this project has previously
+! flagged as a structural dependency (I-Box 4's section 148 needs SVA
+! for a similar reason) and not worth reproducing bit-for-bit here
+! when the same coverage is available more simply. Instead, exactly
+! like ibox1_wen_ven_indicators.strap: each of the first three CB's
+! PASS path (branch taken) writes a distinctive marker (100, via LVI)
+! into its own pre-cleared (0) index register, and the fourth CB's
+! FAIL path (branch taken when it should NOT be) writes its own
+! marker -- so all four branch decisions are independently checked,
+! both directions covered by construction (three "should branch" and
+! one "should not"), without needing SIC, self-modifying code, or a
+! console operator. X1's own final state (count=0, value untouched)
+! is checked directly by the testbench instead of being routed through
+! a self-modified instruction.
+!
+! Verified non-vacuous by deliberately flipping the branch-condition
+! sense in StretchExecute.bsv's CountBranch arm (`take = (branchIfZero
+! == 1) ? (newCount != 0) : (newCount == 0)` -- the exact opposite of
+! the real logic), rebuilding, and confirming every assertion below
+! then fails (X2-X4 stay at their fail value 0, and X5 gets written to
+! 100 by the now-wrongly-taken fourth branch); reverted and confirmed
+! `git diff` on StretchExecute.bsv is empty before committing.
+
+START   LX, $1, CTL         !X1 = XW literal VALUE=999,COUNT=4,REFILL=0
+        LVI, $2, 0.0        !X2 = 0 (fail marker: step 1, count 4->3, not taken)
+        LVI, $3, 0.0        !X3 = 0 (fail marker: step 2, count 3->2, not taken)
+        LVI, $4, 0.0        !X4 = 0 (fail marker: step 3, count 2->1, not taken)
+        LVI, $5, 0.0        !X5 = 0 (fail marker: step 4, count 1->0, WAS taken -- bug)
+
+        CB, $1, S1OK        !IBR1 -COUNT TO 3 + BRANCH
+        B, S1DONE
+S1OK    LVI, $2, 100
+S1DONE  CB, $1, S2OK        !IBR2 -COUNT TO 2 + BRANCH
+        B, S2DONE
+S2OK    LVI, $3, 100
+S2DONE  CB, $1, S3OK        !IBR3 -COUNT TO 1 + BRANCH
+        B, S3DONE
+S3OK    LVI, $4, 100
+S3DONE  CB, $1, S4BUG       !IBR4 -COUNT TO ZERO NO BRANCH
+        B, DONE
+S4BUG   LVI, $5, 100        !reached only if the branch wrongly fired at count=0
+
+DONE    BEW, $              !halt -- X1 checked externally: count=0, value=999 (unchanged)
+
+CTL     XW, 999, 4, 0       !VALUE=999 (distinctive, unrelated to any address in
+                            !this program), COUNT=4, REFILL=0 (never read: this
+                            !block's CB instructions all carry refill=0)
+
+        END, START

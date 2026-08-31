@@ -47,13 +47,11 @@ execute partially, document the rest" ethos of the Bluespec model):
        worked example).
     3  Direct index arithmetic    -- full.
     4  Immediate index arithmetic -- full (LVS excluded, see opcodes.py).
-    5  Count and branch           -- minimal: only the plain "CB"
-       mnemonic (v=0/refill=0/branch-if-nonzero, matching
-       StretchSmoke.bsv's own usage), no mnemonic table for the v/refill/
-       branch-on-zero modifier combinations (see bsv/README.md's
-       existing caveat on that modifier table, inherited here
-       unchanged) -- not exercised by any program this assembler has
-       been run against yet.
+    5  Count and branch           -- full: all 16 CB[R][Z][H|+|-]
+       mnemonic variants (v/refill/branch-on-zero), see opcodes.py's
+       CB_CODES for the mnemonic grammar and its sourcing (pocket
+       card + cross-checked against real occurrences transcribed from
+       docs/jb_ax4b_ibox-4.pdf section 150).
     6  Branch on indicator        -- full (B[Z]<indicator>[Z] grammar,
        C22-6531 Appendix A footnote 2).
     7  VFL arithmetic             -- full (binary modes B/BU only;
@@ -156,7 +154,7 @@ from opcodes import (
     VFL_INT_CODES, VFL_INT_MINUS_BASE, FP_CODES, DIR_INDEX_CODES,
     IMM_INDEX_CODES, UNCOND_BRANCH_CODES, MISC_CODES, INDICATOR_BITS,
     MODE_BITS, MODE_DEFAULT_BS, PROGRESSIVE_SECONDARY_OP, CONNECTIVE_SUFFIX,
-    IO_OP,
+    IO_OP, CB_CODES,
 )
 
 # Input-Output base mnemonics (before an optional "(SEOP)" modifier or
@@ -684,7 +682,7 @@ def statement_size(stmt):
         return HALF, HALF
     if op in IMM_INDEX_CODES:
         return HALF, HALF
-    if op == 'CB':
+    if op in CB_CODES:
         return HALF, HALF
     if classify_branch_indicator(op) is not None:
         return HALF, HALF
@@ -1019,21 +1017,18 @@ def emit_statement(stmt, symtab, image):
         image.deposit_half(loc // 32, enc_imm_index(imm19, j, IMM_INDEX_CODES[op]))
         return
 
-    if op == 'CB':
-        # Format 5: OP,J,B19(K). Minimal encoding only -- v (value
-        # increment) always 00/unchanged, refill always 0, branch on
-        # count-nonzero -- matching StretchSmoke.bsv's own hand-assembled
-        # usage of this format. No mnemonic table for the v/refill/
-        # branch-on-zero modifier combinations yet; see module
-        # docstring.
+    if op in CB_CODES:
+        # Format 5: OP,J,B19(K). Full mnemonic table -- see opcodes.py
+        # CB_CODES for the mnemonic grammar and its sourcing.
         if len(stmt.fields) != 2:
-            raise AssemblerError("CB takes J and branch-address fields", stmt.lineno)
+            raise AssemblerError(f"{op} takes J and branch-address fields", stmt.lineno)
         j = eval_reg(stmt.fields[0], symtab, stmt.lineno)
         base, paren = split_field_trailing_paren(stmt.fields[1])
         target_bits = eval_expr(base, symtab, loc, lineno=stmt.lineno)
         addr19 = (target_bits >> 5) & 0x7FFFF
         idx = eval_reg(paren, symtab, stmt.lineno) & 0x1
-        image.deposit_half(loc // 32, enc_count_branch(addr19, j, 0, 0, 0, idx))
+        v, refill, bz = CB_CODES[op]
+        image.deposit_half(loc // 32, enc_count_branch(addr19, j, v, refill, bz, idx))
         return
 
     bi = classify_branch_indicator(op)

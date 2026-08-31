@@ -547,6 +547,63 @@ large and self-contained). Two routine slots (labels `152`/`154`) are
 deliberate `NOP` placeholders with a "DUMMY PROGRAM" comment, not
 missing content.
 
+**Section 138 (Refill/RCZ) rejected -- REJECTED, not transcribed.**
+Read pp.58-60 (routines 1381-1387): every single check in the section
+is built on `KV,$X15,$R` -- comparing X15's refilled value against a
+system symbol `$R` that this project's assembler does not recognize
+(`strap_asm.py`'s `eval_system_symbol` raises `unsupported system
+symbol $'R'`; confirmed by direct call, not inference). `$R`'s meaning
+isn't recoverable from the listing's usage alone (it's compared
+against X15 after a bare `R,$X15` Refill from various octal locations,
+but that's consistent with more than one plausible reading -- e.g. "the
+refill field's own value" vs. some other refill-related quantity -- and
+guessing from usage is exactly the "listing-address inference alone"
+mistake this project corrected twice already for the SIC finding, see
+I-Box 1's entry above). Supporting `$R` would mean inventing its
+semantics from a scanned listing rather than transcribing a defined
+instruction, unlike section 150 below where the gap is a missing
+mnemonic table over an encoder (`enc_count_branch`) that already
+accepts the full v/refill/branch-on-zero modifier space. No narrow
+slice of section 138 avoids `$R`: it appears in every block sampled
+(1381 through 1387). Rejected without writing any `.strap` code;
+moving to section 150 instead.
+
+**Section 150 (CB/CBR family), plain `CB` mnemonic transcribed and
+run -- DONE.** Read pp.155-165 (routine 150, "----1250---CB AND CBR
+TEST"). Before transcribing anything, checked whether the model
+actually implements the fields the source's mnemonics would need:
+`StretchDecode.bsv`'s `tryCountBranch` decodes `v`/`refill`/
+`branchIfZero` from the raw instruction, and `StretchExecute.bsv`'s
+`CountBranch` arm consults all three (`delta` from `cb.v`, `doRefill`
+from `cb.refill`, and `take = (cb.branchIfZero==1) ? (newCount==0) :
+(newCount!=0)`) -- so, unlike section 138's `$R`, this was a genuine
+gap only in the *assembler's mnemonic table* (`strap_asm.py` only
+ever encoded plain `CB`, v=00/refill=0/bz=0), not in the model or
+decoder. Added the full 16-mnemonic table (`CB[R][Z][H|+|-]`) to
+`opcodes.py` as `CB_CODES`, sourced from the pocket card's own "INDEX
+BRANCHING" legend (pcard-3.png) and cross-checked against 8 of the 16
+variants actually occurring in this section's listing (`CB`/`CB+`/
+`CBH`/`CB-` on p.155-156, `CBR`/`CBR+` on p.159, `CBRZH`/`CBRZ-` on
+p.165) -- not inferred from usage alone. Verified all 16 encode with
+the intended bit pattern by direct extraction before writing any test.
+Transcribed the plain `CB` block (routine 150's `IBR1`-`IBR9`, the
+safest slice: v=00, no dependency on the model's own documented-
+uncertain "add half"/"add one" unit mapping, `bsv/README.md`:146) as
+`strap/programs/ibox4_cb_count_branch.strap`, all 5 assertions pass.
+Deliberately did NOT reproduce the source's own pass/fail-signaling
+mechanism (a self-modifying-code idiom: storing X1's packed IndexWord
+over a NOP placeholder and depending on its VALUE field lining up with
+a BranchOrMisc instruction's ADDRESS field) -- same substitution
+principle as `WEN`/`WEN2`/`VEN`: keep the actual instructions under
+test, replace the pass/fail plumbing with `LVI` markers the testbench
+reads directly. Verified non-vacuous by flipping the branch-condition
+sense in `StretchExecute.bsv`'s `CountBranch` arm, rebuilding, and
+confirming all 4 branch-decision assertions then fail; reverted,
+`git diff` on `StretchExecute.bsv` confirmed clean. The remaining 8
+CB/CBR mnemonic variants (all `CBZ*`, plus `CBRH`/`CBRZ`/`CBRZ+`) are
+implemented and encode correctly but have no test coverage yet -- a
+smaller, well-scoped remaining gap, not a rejected candidate.
+
 ### I-Box 5 (`jb_ax5b_ibox-5.pdf`, 116 pages)
 
 Purpose (verbatim): tests "the time clock, interval timer, mask and
@@ -623,15 +680,23 @@ reasoning and for what got transcribed instead.
    than any single missing instruction class. **Update**: I-Box 1's
    `WEN`/`WEN2`/`VEN` (smallest self-contained runnable fragment, ~9
    instructions) has since been transcribed and run --
-   `strap/programs/ibox1_wen_ven_indicators.strap`, all 3 assertions
-   pass, see I-Box 1's own entry above. I-Box 5's routine 1274
-   (address-truncation checks) looked like the cleanest candidate on
-   first read but turned out untestable by construction (this model's
-   `WordAddr`/`HWordAddr` types make the checked failure mode
-   structurally impossible) -- rejected before transcribing, also
-   detailed in I-Box 1's entry above. Remaining candidates not yet
-   attempted: I-Box 4's section 138 (Refill/RCZ, self-contained) and
-   section 150 (the CB/CBR family).
+   `strap/programs/ibox1_wen_ven_indicators.strap`, all 5 assertions
+   pass (grown from 3 to 5 after advisor review found the original
+   version couldn't discriminate a swapped-indicator bug), see I-Box
+   1's own entry above. I-Box 5's routine 1274 (address-truncation
+   checks) looked like the cleanest candidate on first read but turned
+   out untestable by construction (this model's `WordAddr`/`HWordAddr`
+   types make the checked failure mode structurally impossible) --
+   rejected before transcribing, also detailed in I-Box 1's entry
+   above. Of the two remaining candidates: I-Box 4's section 138
+   (Refill/RCZ) was rejected -- every check depends on a `$R` system
+   symbol this assembler doesn't recognize and can't safely infer the
+   meaning of; section 150 (the CB/CBR family) was transcribed and run
+   instead -- `strap/programs/ibox4_cb_count_branch.strap`, all 5
+   assertions pass, after adding the missing `CB[R][Z][H|+|-]`
+   mnemonic table (`opcodes.py`'s `CB_CODES`) over an encoder/decoder
+   that already implemented the full field space. See I-Box 4's own
+   entry above for both.
    Biggest concrete instruction-level gaps confirmed with real test
    coverage behind them: `SVA` (structural self-modifying-code
    dependency in I-Box 3/4/5, plus I-Box 3's dedicated ~50-page

@@ -142,6 +142,55 @@ IMM_INDEX_CODES = {
 }
 
 # ---------------------------------------------------------------------
+# Count and Branch / Count, Branch, and Refill, format 5's mnemonic
+# table: (v, refill, bz) per mnemonic, source pcard-3.png "INDEX
+# BRANCHING" box --
+#   CB   Count and Branch           ab10010c
+#   CBR  Count, Branch, and Refill  ab10011c
+#   ab = 00 leave value unchanged   ab = 01 add half to value
+#   ab = 10 add one to value        ab = 11 subtract one from value
+#   c = 0 branch if count non-zero  c = 1 branch if count zero
+# Mnemonic grammar: CB[R][Z][H|+|-] -- "R" sets refill=1, "Z" sets
+# bz=1 (branch if count zero, else the default is branch if non-
+# -zero), and the trailing suffix picks ab: none=00 (unchanged),
+# H=01 (add half), +=10 (add one), -=11 (subtract one). Not inferred
+# from listing usage alone (the same mistake corrected twice for the
+# SIC finding, see docs/archival_inventory.md) -- cross-checked
+# against real occurrences transcribed from docs/jb_ax4b_ibox-4.pdf
+# section 150 (routine 150, pp.155-165): plain CB and CB+ (p.155,
+# IBR1-IBR14, "COUNT TO n + BRANCH" / "COUNT TO ZERO NO BRANCH" --
+# i.e. bz=0 in all of them, matching the table's default), CBH and
+# CB- (p.156, IBR21-IBR34, same bz=0 pattern), CBR and CBR+ (p.159,
+# IBR97-IBR105, "NO REFILL" vs "REFILL" comments matching refill=0/1),
+# and CBRZH / CBRZ- (p.165, "SHOULD BRANCH + REFILL, C TO 0" --
+# bz=1). Encoder (enc_count_branch) already accepted the full
+# (v, refill, bz) space before this table existed -- StretchExecute.
+# bsv's CountBranch arm consults all three fields (cb.v, cb.refill,
+# cb.branchIfZero), confirmed by reading the arm in full before
+# building this table (see the archival_inventory.md entry for the
+# reasoning: don't add a mnemonic for a field the model decodes but
+# never uses).
+# ---------------------------------------------------------------------
+CB_CODES = {
+    "CB":      (0b00, 0, 0),
+    "CBH":     (0b01, 0, 0),
+    "CB+":     (0b10, 0, 0),
+    "CB-":     (0b11, 0, 0),
+    "CBZ":     (0b00, 0, 1),
+    "CBZH":    (0b01, 0, 1),
+    "CBZ+":    (0b10, 0, 1),
+    "CBZ-":    (0b11, 0, 1),
+    "CBR":     (0b00, 1, 0),
+    "CBRH":    (0b01, 1, 0),
+    "CBR+":    (0b10, 1, 0),
+    "CBR-":    (0b11, 1, 0),
+    "CBRZ":    (0b00, 1, 1),
+    "CBRZH":   (0b01, 1, 1),
+    "CBRZ+":   (0b10, 1, 1),
+    "CBRZ-":   (0b11, 1, 1),
+}
+
+# ---------------------------------------------------------------------
 # Unconditional branch / "misc" ops, 3-bit "code" field
 # (StretchDecode.isValidUncondBranchOp / isValidMiscOp).
 # Format 2: OP, A19(I). Half-word.
