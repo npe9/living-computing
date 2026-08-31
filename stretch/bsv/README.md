@@ -145,7 +145,12 @@ it recognizes independent of what the datapath implements.
   1-7 as literal. See StretchVFL.bsv.
 - **Count-and-Branch "add half"/"add one" units**: best-effort reading
   of the pocket card legend (`+1`/`+2` raw units respectively) rather
-  than a confirmed table — see StretchExecute.bsv.
+  than a confirmed table — see StretchExecute.bsv. `strap/opcodes.py`'s
+  `CB_CODES` mnemonic table (`CBH`/`CB+`/`CBZH`/`CBZ+`/etc.) can emit
+  the raw v-field values that reach this arm, but no test exercises
+  them yet — table existence is not verified semantics. See
+  `strap/programs/ibox4_cb_count_branch.strap`, which deliberately
+  tests only the v=00 ("unchanged") case to avoid this exact gap.
 - **Immediate index arithmetic semantics** (`LVI`, `V+I`, etc.) are
   extrapolated from the *direct* forms' documented semantics plus the
   mnemonic table, not independently confirmed against manual prose.

@@ -64,10 +64,22 @@
 ! Verified non-vacuous by deliberately flipping the branch-condition
 ! sense in StretchExecute.bsv's CountBranch arm (`take = (branchIfZero
 ! == 1) ? (newCount != 0) : (newCount == 0)` -- the exact opposite of
-! the real logic), rebuilding, and confirming every assertion below
-! then fails (X2-X4 stay at their fail value 0, and X5 gets written to
-! 100 by the now-wrongly-taken fourth branch); reverted and confirmed
-! `git diff` on StretchExecute.bsv is empty before committing.
+! the real logic), rebuilding, and confirming the four branch-decision
+! assertions (X2-X5) then fail: X2-X4 stay at their fail value 0 (the
+! first three branches, which should fire, no longer do), and X5 gets
+! written to 100 (the fourth branch, which should NOT fire, now
+! wrongly does). X1_final itself still PASSES under this injected bug
+! -- expected, since the bug only changes which branch fires, not the
+! count/value arithmetic, so X1's final state (count=0, value=999) is
+! invariant to it; X1_final is not covered by this or any other
+! bug-injection round run so far, though it is still a real check (it
+! pins v=00 leaving the value field alone). Reverted and confirmed
+! `git diff` on StretchExecute.bsv is empty before committing. Note
+! also that X1_final's expected value (0x3e70000000000) is derived by
+! hand from the same packIndexWord bit layout the model itself uses
+! (StretchTypes.bsv), not from an independent oracle -- a
+! self-consistent check standing in for the source's own value test,
+! not proof the model's packing matches real 7030 hardware.
 
 START   LX, $1, CTL         !X1 = XW literal VALUE=999,COUNT=4,REFILL=0
         LVI, $2, 0.0        !X2 = 0 (fail marker: step 1, count 4->3, not taken)
