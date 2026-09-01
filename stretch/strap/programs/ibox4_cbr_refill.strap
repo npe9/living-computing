@@ -82,6 +82,19 @@
 ! stay green because calls 1 and 2 still see a nonzero count going in
 ! regardless of the extra refill traffic. Reverted and confirmed
 ! `git diff` on StretchExecute.bsv is empty before committing.
+!
+! Caveat on what this round actually establishes: because the bug
+! corrupts both refill AND (downstream) the branch decision, X4/X5/X6
+! failing together demonstrates the TEST AS A WHOLE is non-vacuous
+! against this bug -- it does NOT establish that X5 alone is a clean,
+! isolated detector of "refill fired too early with everything else
+! correct" (that would need a narrower bug, e.g. guarding only the
+! read-request side without touching count/branch logic, not attempted
+! here). Also: X6's expected value (REFILLTGT's packed literal) was
+! confirmed to be a genuine "right word, not just a word that happens
+! to match" check by searching the assembled image for any other word
+! holding the same 64 bits -- exactly one match (REFILLTGT's own word),
+! confirmed via `dict(prog.words)` before trusting the claim.
 
 START   LX, $1, CTL         !X1 = XW literal VALUE=111,COUNT=3,REFILL=REFILLTGT
         LVI, $2, 0.0        !X2 = 0 (fail marker: call 1 branch not taken)
