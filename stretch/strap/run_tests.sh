@@ -143,6 +143,19 @@ run "I-Box 4 CB (Count and Branch)" ./run_program.sh programs/ibox4_cb_count_bra
     "X4_step3_taken:addrIndex(4)=0x640000000000" \
     "X5_step4_not_taken:addrIndex(5)=0x0"
 
+# -- 4d. I-Box 4 diagnostic (docs/jb_ax4b_ibox-4.pdf p.159, routine 150,
+# the IBR96-IBR99 block): "CBR" (Count, Branch, and Refill) -- exercises
+# CountBranch's own refill mechanism (doRefill/needsRead/prefetch), a
+# code path distinct from xw_refill.strap's V+ICR-based refill test.
+# See ibox4_cbr_refill.strap's own header for the full transcription
+# and non-vacuousness account.
+run "I-Box 4 CBR (Count, Branch, and Refill)" ./run_program.sh programs/ibox4_cbr_refill.strap StretchIboxCbrTb \
+    "X2_call1_taken:addrIndex(2)=0x640000000000" \
+    "X3_call2_taken:addrIndex(3)=0x640000000000" \
+    "X4_call3_not_taken:addrIndex(4)=0x0" \
+    "X5_no_refill_yet:addrIndex(5)=0x6f0000040029" \
+    "X6_refilled:addrIndex(6)=0xde00fffc0000"
+
 # -- 5. XW refill mechanism (see README.md "Gotchas" item 7) --
 # Distinctive VALUE=999/COUNT=42 at CTLB, refilled into $X12 via CTLA's
 # COUNT=1 forcing exactly one refill on the program's one progressive
@@ -181,7 +194,7 @@ run "Input-Output (tape)" ./run_tape_test.sh StretchIoTapeTb
 
 # -- cleanup: generated .bsv testbenches and Bluesim build products are
 # not meant to be committed (see .gitignore) --
-rm -f "$BSV_DIR"/StretchProblem*Tb.bsv "$BSV_DIR"/StretchFigure*Tb.bsv "$BSV_DIR"/StretchXwRefillTb.bsv "$BSV_DIR"/StretchIoReaderPrinterTb.bsv "$BSV_DIR"/StretchIoTapeTb.bsv "$BSV_DIR"/StretchIboxWenTb.bsv "$BSV_DIR"/StretchIboxCbTb.bsv
+rm -f "$BSV_DIR"/StretchProblem*Tb.bsv "$BSV_DIR"/StretchFigure*Tb.bsv "$BSV_DIR"/StretchXwRefillTb.bsv "$BSV_DIR"/StretchIoReaderPrinterTb.bsv "$BSV_DIR"/StretchIoTapeTb.bsv "$BSV_DIR"/StretchIboxWenTb.bsv "$BSV_DIR"/StretchIboxCbTb.bsv "$BSV_DIR"/StretchIboxCbrTb.bsv
 rm -f "$BSV_DIR"/*_sim "$BSV_DIR"/*_sim.so
 rm -rf "$BSV_DIR"/build "$BSV_DIR"/simbuild
 

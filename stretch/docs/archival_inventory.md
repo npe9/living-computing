@@ -599,9 +599,55 @@ test, replace the pass/fail plumbing with `LVI` markers the testbench
 reads directly. Verified non-vacuous by flipping the branch-condition
 sense in `StretchExecute.bsv`'s `CountBranch` arm, rebuilding, and
 confirming all 4 branch-decision assertions then fail; reverted,
-`git diff` on `StretchExecute.bsv` confirmed clean. The remaining 8
-CB/CBR mnemonic variants (all `CBZ*`, plus `CBRH`/`CBRZ`/`CBRZ+`) are
-implemented and encode correctly but have no test coverage yet -- a
+`git diff` on `StretchExecute.bsv` confirmed clean.
+
+**`CBR` (routine 150's `IBR96`-`IBR99`, p.159) transcribed and run --
+DONE.** Exercises a code path nothing else in the suite touches:
+`CountBranch`'s own refill mechanism (`doRefill = (cb.refill == 1) &&
+(x1.count == 0)`, `needsRead`/`prefetch` bail-out,
+`unpackIndexWord(prefetch[0])`) -- distinct from `xw_refill.strap`'s
+refill, which goes through `V+ICR`/progressive-indexing instead, a
+different arm entirely. Transcribed as
+`strap/programs/ibox4_cbr_refill.strap`: three `CBR` calls on one
+index register (count 3->2->1->0), the first two branching without
+refilling, the third not branching but refilling from a distinct XW
+literal -- matching the source's own comments exactly ("COUNT 3 TO
+2,BR,NO REFILL" / "COUNT 2 TO 1,BR,NO REFILL" / "COUNT 1 TO 0,NO BR,
+REFILL"). Needed a mid-sequence snapshot (X1's state after call 2,
+before call 3's refill) that the testbench -- which only reads final
+register state after halt -- can't see directly; solved using this
+project's own memory-mapped index-register convention
+(`StretchTypes.bsv` `addrIndexBase=16`), confirmed real (not just an
+assembler-side convenience) by reading `StretchStorage.bsv`'s
+`readWord`/`writeWord`: addresses 16-31 alias directly into the same
+`xreg` array `readIndex`/`writeIndex` use. `LX,$5,$X1` therefore
+genuinely copies X1's current packed state into X5 at that exact
+program point. All 5 assertions pass (2 branch-taken, 1 branch-not-
+-taken, 1 mid-sequence "no premature refill" full-word compare, 1
+post-refill "refilled from the right word, verbatim" full-word
+compare). Verified non-vacuous with a refill-specific bug injection
+(a branch-sense flip wouldn't exercise this code at all): dropped
+`CountBranch`'s refill guard (`doRefill = (cb.refill == 1) &&
+(x1.count == 0)` -> `doRefill = (cb.refill == 1)`), rebuilt, and
+confirmed the actual failure was bigger than predicted going in --
+not just the mid-sequence check but 3 of 5 assertions (`X4`/`X5`/`X6`)
+fail, since refilling on every call also corrupts X1's own refill
+field after the first call, cascading into the branch decision on
+call 3 too. Reverted, `git diff` on `StretchExecute.bsv` confirmed
+clean. See the file's own header for the full account, including the
+correction of an initial (wrong) prediction of which assertions the
+injected bug would flip -- caught before committing, not after.
+
+Of the 16 total `CB[R][Z][H|+|-]` mnemonic variants: 2 (`CB`, `CBR`)
+have been transcribed into a `.strap` program and actually run through
+Bluesim, with a targeted, verified-non-vacuous bug injection each; a
+further 6 (`CB+`/`CBH`/`CB-`, `CBR+`, `CBRZH`/`CBRZ-`) were confirmed
+to occur in this section's own listing (used to validate the mnemonic
+table's correctness, see above) but have not themselves been executed
+as a test; the remaining 8 (`CBZ`/`CBZH`/`CBZ+`/`CBZ-`, `CBRH`,
+`CBR-`, `CBRZ`, `CBRZ+`) are implemented, encode correctly (verified
+by direct bit-extraction, not by listing occurrence), but have neither
+been observed in this document's sampled pages nor executed -- a
 smaller, well-scoped remaining gap, not a rejected candidate.
 
 ### I-Box 5 (`jb_ax5b_ibox-5.pdf`, 116 pages)
@@ -692,11 +738,12 @@ reasoning and for what got transcribed instead.
    (Refill/RCZ) was rejected -- every check depends on a `$R` system
    symbol this assembler doesn't recognize and can't safely infer the
    meaning of; section 150 (the CB/CBR family) was transcribed and run
-   instead -- `strap/programs/ibox4_cb_count_branch.strap`, all 5
-   assertions pass, after adding the missing `CB[R][Z][H|+|-]`
-   mnemonic table (`opcodes.py`'s `CB_CODES`) over an encoder/decoder
-   that already implemented the full field space. See I-Box 4's own
-   entry above for both.
+   instead -- `strap/programs/ibox4_cb_count_branch.strap` (plain
+   `CB`) and `strap/programs/ibox4_cbr_refill.strap` (`CBR`'s own
+   refill mechanism), all 10 assertions across both pass, after adding
+   the missing `CB[R][Z][H|+|-]` mnemonic table (`opcodes.py`'s
+   `CB_CODES`) over an encoder/decoder that already implemented the
+   full field space. See I-Box 4's own entry above for both.
    Biggest concrete instruction-level gaps confirmed with real test
    coverage behind them: `SVA` (structural self-modifying-code
    dependency in I-Box 3/4/5, plus I-Box 3's dedicated ~50-page

@@ -1,0 +1,111 @@
+! I-Box 4 diagnostic program (docs/jb_ax4b_ibox-4.pdf p.159, routine 150
+! "----1250---CB AND CBR TEST", the IBR96-IBR99 block) -- the "CBR"
+! mnemonic (Count, Branch, and Refill: v=00/refill=1/branch-if-nonzero),
+! second slice of the CB/CBR family after ibox4_cb_count_branch.strap
+! (see that file's header and docs/archival_inventory.md for how this
+! candidate family was chosen and section 138 rejected). Exercises a
+! code path nothing else in this suite touches: StretchExecute.bsv's
+! CountBranch arm's OWN refill mechanism (`doRefill = (cb.refill == 1)
+! && (x1.count == 0)`, then `needsRead = tagged Valid zeroExtend(x1.
+! refill)` / `unpackIndexWord(prefetch[0])`) -- distinct from
+! xw_refill.strap's refill-on-count-zero, which goes through ImmIndex's
+! V+ICR/progressive-indexing path instead, a different arm entirely.
+!
+! Source transcription note: routine 150's own IBR96-IBR99 loads X1
+! from an XW literal (IBRA9: VALUE=self-referential, COUNT=3,
+! REFILL=IBRA10, a second XW literal at COUNT=037777 octal -- large
+! enough it can't spuriously reach zero -- holding the word CBR should
+! refill from) and executes CBR three times: the first two decrement a
+! nonzero count and branch, WITHOUT refilling ("COUNT 3 TO 2,BR,NO
+! REFILL" / "COUNT 2 TO 1,BR,NO REFILL", the source's own comments);
+! the third decrements count to zero, does NOT branch (bz=0, branch-
+! -if-nonzero, and count is now zero), and DOES refill ("COUNT 1 TO
+! 0,NO BR, REFILL"). Reproduced here with simplified literals (VALUE=
+! 111/222 instead of address-derived values, COUNT=3/16383 instead of
+! octal 037777) since the specific numbers aren't the point -- the
+! sequencing (2 branches with no refill, then 1 non-branch WITH
+! refill, loading the refill target's contents verbatim) is.
+!
+! Pass/fail substitution, same principle as WEN/WEN2/VEN and
+! ibox4_cb_count_branch.strap: the source's own signaling (SX-store +
+! self-modifying-code branch into the stored value, "TERM TEST"/error-
+! table branches) is replaced with externally-checkable state. Unlike
+! the plain-CB slice, this test needs a MID-sequence snapshot (X1's
+! state after the 2nd CBR, before the 3rd fires refill) that the
+! testbench -- which only reads final register state after halt --
+! can't see directly. Solved via this project's own memory-mapped
+! index-register convention (StretchTypes.bsv addrIndexBase=16, i.e.
+! index register N is also plain memory word 16+N, confirmed real --
+! not just an assembler convenience -- by reading StretchStorage.bsv's
+! readWord/writeWord: addresses 16-31 alias directly into the same
+! `xreg` array readIndex/writeIndex use): `LX,$5,$X1` loads X5 from
+! word addrIndex(1), i.e. copies X1's CURRENT full packed state into
+! X5 at that exact program point, unaffected by X1's later changes.
+! Same idiom for the final post-refill snapshot into X6.
+!
+! Checks:
+!   X2/X3 = pass marker (branch taken) for CBR calls 1 and 2.
+!   X4 = fail marker (should stay 0): set only if call 3 wrongly
+!        branches when count reaches zero.
+!   X5 = snapshot after call 2, before call 3 fires refill -- must
+!        equal CTL's own packed value with count=1 (value/refill
+!        fields unchanged) -- this is what catches an early/spurious
+!        refill, the main way a refill-guard bug would show up.
+!   X6 = snapshot after call 3 -- must equal REFILLTGT's packed
+!        literal verbatim (an unconditional load, not a merge --
+!        StretchExecute.bsv's own comment: `unpackIndexWord(prefetch
+!        [0])`), proving refill read the RIGHT word, not merely a
+!        word that happens to satisfy some weaker check.
+!
+! Expected hex values for X1/X5/X6-style checks are computed by
+! running this project's own assembler (strap_asm.assemble) and
+! deriving the packed IndexWord bits from its symbol table, the same
+! oracle-derivation approach as figure7_progressive_indexing.strap --
+! not hand-computed, since REFILLTGT's word address depends on the
+! assembled layout.
+!
+! Verified non-vacuous with a refill-specific bug injection (a branch-
+! -sense flip, as used for the plain-CB slice, would NOT exercise this
+! code at all): temporarily dropped CountBranch's own refill guard in
+! StretchExecute.bsv (`Bool doRefill = (cb.refill == 1) && (x1.count ==
+! 0);` -> `Bool doRefill = (cb.refill == 1);`, refilling on every CBR
+! regardless of count), rebuilt, and re-ran. ACTUAL result (not what
+! was predicted before running it -- see the correction this comment
+! itself represents): X2/X3 PASS, X4/X5/X6 all FAIL. The failure is
+! bigger than "X5 alone catches it": because the bug makes call 1
+! request a refill too, X1 gets overwritten by REFILLTGT's own
+! contents (refill field 0) after call 1 already, so calls 2 and 3
+! then try to refill from word 0 instead of REFILLTGT -- corrupting
+! not just X5 (no-refill-yet, wrongly already refilled) but also X6
+! (refilled from the wrong word) and even X4 (call 3's branch decision
+! itself flips, since it's now operating on a corrupted count). X2/X3
+! stay green because calls 1 and 2 still see a nonzero count going in
+! regardless of the extra refill traffic. Reverted and confirmed
+! `git diff` on StretchExecute.bsv is empty before committing.
+
+START   LX, $1, CTL         !X1 = XW literal VALUE=111,COUNT=3,REFILL=REFILLTGT
+        LVI, $2, 0.0        !X2 = 0 (fail marker: call 1 branch not taken)
+        LVI, $3, 0.0        !X3 = 0 (fail marker: call 2 branch not taken)
+        LVI, $4, 0.0        !X4 = 0 (fail marker: call 3 branch WAS taken -- bug)
+
+        CBR, $1, S1OK       !IBR97 -COUNT 3 TO 2, BR, NO REFILL
+        B, S1DONE
+S1OK    LVI, $2, 100
+S1DONE  CBR, $1, S2OK       !IBR98 -COUNT 2 TO 1, BR, NO REFILL
+        B, S2DONE
+S2OK    LVI, $3, 100
+S2DONE  LX, $5, $X1         !snapshot X1 (count=1, no refill yet) into X5
+        CBR, $1, S3BUG      !IBR99 -COUNT 1 TO 0, NO BR, REFILL
+        B, DONE
+S3BUG   LVI, $4, 100        !reached only if the branch wrongly fired at count=0
+
+DONE    LX, $6, $X1         !snapshot X1's final (post-refill) state into X6
+        BEW, $              !halt
+
+CTL       XW, 111, 3, REFILLTGT   !VALUE=111,COUNT=3,REFILL=word(REFILLTGT)
+REFILLTGT XW, 222, 16383, 0       !distinctive VALUE/COUNT (mirrors the
+                                  !source's own "037777, deliberately huge"
+                                  !idea, though nothing decrements this
+                                  !literal's own count in this slice)
+
+          END, START
