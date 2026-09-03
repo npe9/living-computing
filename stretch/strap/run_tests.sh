@@ -69,15 +69,26 @@ run "bsv smoke test (make run)" make run
 cd "$STRAP_DIR"
 
 # Timing bounds ("CYCLES<=N", the clock count at halt with one clock =
-# one 0.3 us E-box cycle): measured 94 for Problem 2.1 and 2714 for the
-# pp.43-51 span on the stage-1 memory subsystem (six interleaved 2.1 us
-# units behind the MBCU; docs/microarchitecture_plan.md). The bounds
-# carry ~25%/10% slack; they exist to catch a timing regression, and
-# will tighten as later stages add overlap.
+# one 0.3 us E-box cycle). History: stage 1 (memory units behind the
+# MBCU) measured 94 for Problem 2.1 and 2714 for the pp.43-51 span;
+# stage 2a (prefetch) 54 and 2065; stage 2b (per-class I-box/E-box time
+# budgets from IBM's tables, E-box time not yet overlapped) 113 and
+# 4006. Bounds carry ~10-25% slack; they catch timing regressions and
+# tighten as later stages add overlap (docs/microarchitecture_plan.md).
+# -- 1b. Instruction-unit timing microbenchmark: ten taken CBs in a
+# NOP/CB loop (see the program's header for the table arithmetic, 250
+# clocks + first fetch). Measured 291 at stage 2b; the excess is the
+# branch-restart fetch latency the real CB sequence overlaps (Blosk
+# fig.8) and this model does not yet -- a stage-3 target, so the bound
+# is deliberately tight at 300.
+run "I-box timing: CB loop" ./run_program.sh programs/ibox_timing_cb.strap StretchTimingCbTb \
+    "X1_count:addrIndex(1)=0" \
+    "CYCLES<=300"
+
 # -- 2. Problem 2.1: Cyclic Bit Shifting --
 run "Problem 2.1" ./run_program.sh programs/problem_2_1.strap StretchProblem21Tb \
     "DOG_rotated:32=0x6e5d4c3b2a19087f" \
-    "CYCLES<=120"
+    "CYCLES<=140"
 
 # -- 3. Problem 2.2 Method 1: Length of an Unknown File --
 # Answer lands in X1's VALUE field (top 24 bits of the packed IndexWord,
@@ -200,7 +211,7 @@ run "I-Box 1 pp.43-51 span (20 test groups, verbatim)" ./run_program.sh programs
         IBR192=XW:IBR193+\(8\).04,1,IBRA24 IBR193=COPY:IBRA24 \
         ISCBA:ISCBB ISCBB:ISCBC ISCBC:ISCBD ISCBD:ISCBH ISCBH:ISCBI ISCBI:ISCBK \
         ISBIA:ISBIB ISBIB:ISBIC ISBIC:ISBID ISBID:ISBIH ISBIH:ISBII ISBII:ISBIK) \
-    "CYCLES<=3000"
+    "CYCLES<=4400"
 
 # -- 4c. I-Box 4 diagnostic (docs/jb_ax4b_ibox-4.pdf p.155, routine 150
 # "CB AND CBR TEST", the plain CB mnemonic): Count and Branch

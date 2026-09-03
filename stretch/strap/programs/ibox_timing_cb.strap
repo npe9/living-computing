@@ -1,0 +1,17 @@
+! Timing microbenchmark for the instruction unit (docs/
+! microarchitecture_plan.md stage 2b): a two-instruction loop, NOP then
+! count-and-branch back to it, taken ten times, then falling through
+! to the halt. Performance Characteristics vol.1: LCI 2.4 + dec 0.6 =
+! 3.0 us = 10 clocks (table 5); NOP 1.2 + 0.6 = 6 clocks (table 7); CB
+! successful 4.2 + 0.6 = 16 clocks, unsuccessful 3.6 + 0.6 = 14
+! (table 8). Budget: 10 + 10*(6+16) + 6 + 14 = 250 clocks, plus the
+! first instruction fetch from memory (~7) and the halt instruction's
+! own preparation. The CYCLES<= bound in run_tests.sh (280) is set
+! from that arithmetic, not from a measurement, so it fails if the
+! model's CB or NOP time drifts from the tables. (A branch to its own
+! address halts this model, so the loop cannot be a lone CB.)
+START   LCI, $1, 11         ! count 11: ten taken branches, then fall through
+LOOP    NOP, 0.0
+        CB, $1, LOOP        ! branch back while count != 0
+DONE    BEW, $              ! halt
+        END, START

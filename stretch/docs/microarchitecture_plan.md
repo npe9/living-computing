@@ -9,19 +9,90 @@ the STRAP assembler, the listing oracle, and above all the suite of
 verbatim 1961 diagnostic programs -- becomes the correctness oracle for
 the rewrite.
 
-## 1. What "the same as the original" means here
+## 1. Scope: a cycle-accurate replica, every documented feature, and the folklore
+
+**Target (owner's instruction, 2026-09-03): a cycle-accurate replica of
+the IBM 7030 Stretch that corresponds to every documented feature and
+to the folklore.** That means:
+
+- *Cycle-accurate*: for any program, the model's clock count matches
+  what the real machine's documented timing says -- IBM's Performance
+  Characteristics tables and worked examples, Blosk's and the CE
+  manual's timing charts, and vol.2's measured benchmarks are the
+  oracles; a discrepancy is a bug in the model until a source shows
+  the document was wrong.
+- *Every documented feature*: everything the Reference Manual, the
+  pocket card, Buchholz, Blosk, the CE manuals and the diagnostics
+  describe the machine as doing -- the whole instruction set including
+  what is unimplemented today (floating-point arithmetic, decimal VFL,
+  radix conversion, EX/EXIC, LVE/SVA/RNX/LVS, bit branching, swap and
+  backward transmit, all I/O and channel functions), the interrupt
+  system with its mask and left-most-one priority, boundary
+  protection, the interval timer and time clock, the maintenance
+  console's manual controls and repeat mode, ECC and parity checking
+  with their indicators, memory interleaving and the bus priorities,
+  the look-ahead's forwarding, recovery and housecleaning, the
+  I-box's branch guess and updated indicators, index storage's
+  destructive read and two-cycle write, the two arithmetic units and
+  their register sharing.
+- *The folklore*: the behaviors the machine was known for, which the
+  documents describe as consequences rather than features -- that
+  successful branches empty the buffers and cost a refetch; that a
+  store close to a fetch stalls or forwards; that consecutive stores
+  fight over the single LAAR; that a VFL crossing a word boundary
+  costs extra levels; that I-box instructions load recovery levels
+  and can leave the E-box idle; that the machine appears sequential
+  despite everything in flight; that it delivered less than the
+  promised speed (the performance figures in Perf. Char. §2 and
+  Buchholz §15.7 are part of the record, not embarrassment to hide).
+  §1a below is the running inventory of both, each with its source
+  and status, and grows whenever a source turns up something new.
 
 The 7030 was built from ~170,000 transistors in current-mode logic with
 ECC on every memory word and parity on every internal register. The
-model will reproduce the machine at the level its own designers
-described it: the functional units, their registers and buses, the
-buffering between them, the interlocks that keep out-of-sequence
-execution invisible, branch guessing and recovery, and the cycle timing
-of each unit. It will not reproduce gate-level logic, physical clock
-distribution, or the error-checking hardware's *content* -- ECC and
-parity checking are modeled as the pipeline stages they occupied (the
-"I checker" takes a cycle whether or not there is an error), with error
-*correction* itself out of scope until a diagnostic needs it.
+model reproduces the machine at the level its own designers described
+it: the functional units, their registers and buses, the buffering
+between them, the interlocks that keep out-of-sequence execution
+invisible, branch guessing and recovery, and the cycle timing of each
+unit. It does not reproduce gate-level logic or physical clock
+distribution; the error-checking hardware is modeled as the pipeline
+stages it occupied plus the indicators and interrupts it raised (the
+"I checker" takes a cycle whether or not there is an error), with the
+correction algorithms themselves modeled only insofar as a diagnostic
+exercises them.
+
+### 1a. Feature and folklore inventory (living)
+
+Status: **done** = modeled and tested; **partial**; **planned** (stage
+in parentheses); **open** = no stage assigned yet.
+
+| Item | Source | Status |
+|---|---|---|
+| Six interleaved 16K-word 2.1 µs memory units, MBCU busy handling | Buchholz §14.1/14.3 | done (stage 1); 8-channel priority partial |
+| Bus return tags per requester | Blosk p.19 | done for operand/1Y/2Y; LA levels planned (3) |
+| 1Y/2Y instruction buffers, I-checker cycle, program-store compare | Blosk pp.10, 15, 21 | done (2a); compare is conservative |
+| Successful branch empties the buffers and refetches | Perf. Char. p.3-17, Blosk p.35 | done (2a); overlap of the refetch inside CB's sequence planned (2b/3) |
+| Per-class I-box instruction times (tables 4-8) | Perf. Char. §3 | done as budgets (2b) |
+| FP/VFL preparation cycles; VFL SAU equation | Blosk figs 6-7; Perf. Char. tables 2-3 | done as budgets (2b); overlap with E-box planned (3/4) |
+| Y-to-Z transfer, index fetch, modification, WBC as explicit register stages | Blosk pp.13-14, 31; CE figs 3.1.6-3.1.24 | planned (2b/2c) |
+| Index storage destructive read, 2-cycle write, word 17 timer/clock | Blosk p.11 | planned (2c) |
+| Updated indicator register; index-indicator branches resolved in the I-box | Blosk p.17 | planned (2c) |
+| Arithmetic-conditional branch guessed not taken; wrong-way recovery | Buchholz §15.2; Perf. Char. p.3-23 | planned (2c/3) |
+| Four look-ahead levels, five counters, tags, indicators, IC per level | Buchholz §15.3 | planned (3) |
+| LAAR, forwarding, store-close-to-fetch cases (1)-(3) | Buchholz §15.4; Perf. Char. pp.3-20..21 | planned (3) |
+| I-box instructions load index-recovery pseudo-store levels | Perf. Char. p.3-22; Blosk p.33 | planned (3) |
+| Interrupt recovery / housecleaning | Buchholz §15.6; CE figs 3.2.22-23 | planned (3) |
+| Serial and parallel arithmetic units, A/B and C/D registers | Buchholz §14.4 | planned (4) |
+| Floating-point arithmetic (all ops), timing per table 2 and CE figs 3.8.x | Ref. Manual; CE 3.3.x/3.8.x | planned (4) |
+| Decimal VFL, radix conversion, VFL multiply/divide | Ref. Manual; CE 3.11.x | open |
+| EX/EXIC (with LA drains, table 6), LVE, SVA, RNX, LVS, bit branching, swap/backward transmit | Ref. Manual; Perf. Char. table 6 | open |
+| Interrupt system: indicators, mask, left-most-one, the "free instruction" | Blosk pp.16-17; Buchholz ch.10 | open |
+| Boundary registers and inside/outside alarms | Blosk p.20 | open |
+| Interval timer and time clock stepping (1024/s) | Blosk p.6 | open |
+| ECC/parity: check cycles, correction, indicators, I-checker conflicts | Blosk p.15; Perf. Char. p.3-19 | partial (check cycle only) |
+| Exchange as a bus requester with real overlap; disk synchronizer | Buchholz ch.16 | open (I/O is a synchronous FSM today) |
+| Maintenance console: start/stop, display/store, single step, repeat mode, index-storage test | Blosk p.6 | open |
+| Measured benchmark timings (GERB2 etc.) | Perf. Char. vol.2 | planned (5) |
 
 Concretely, "the same" means these things, each with a primary source:
 

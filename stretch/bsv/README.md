@@ -1,11 +1,13 @@
 # IBM 7030 "Stretch" — Bluespec implementation
 
-**Direction as of 2026-09-03: this model is being rebuilt as the real
-7030 microarchitecture** — interleaved memory units behind the memory
-bus control unit, the instruction unit with its 1Y/2Y buffers and index
-storage, the four-level look-ahead, and the serial/parallel arithmetic
-units, with cycle timing per IBM's own Performance Characteristics —
-per the staged plan in `../docs/microarchitecture_plan.md`. The
+**Direction as of 2026-09-03: this model is being rebuilt as a
+cycle-accurate replica of the 7030 corresponding to every documented
+feature and to the folklore** — interleaved memory units behind the
+memory bus control unit, the instruction unit with its 1Y/2Y buffers
+and index storage, the four-level look-ahead, and the serial/parallel
+arithmetic units, with cycle timing per IBM's own Performance
+Characteristics — per the staged plan and the feature inventory in
+`../docs/microarchitecture_plan.md`. The
 description below is of the model as it stands at the start of that
 work (and remains accurate until each stage lands): a non-pipelined,
 ISA-level Bluespec SystemVerilog model of the IBM 7030 instruction set,

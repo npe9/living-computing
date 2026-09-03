@@ -30,12 +30,15 @@ the session, and anything outside this repository.
 
 ## Current direction (2026-09-03)
 
-The owner has asked for the model to become the real 7030
-microarchitecture: pipelining, look-ahead, and "the other tricks they
-did". The staged plan, sources and oracles are in
-`stretch/docs/microarchitecture_plan.md`; work from it, keep it
-current, and keep the existing regression suite green at every stage
--- it is the correctness oracle for the rewrite.
+The owner has asked for the model to become **a cycle-accurate replica
+of the 7030 corresponding to every documented feature and to the
+folklore** -- pipelining, look-ahead, and "the other tricks they did".
+The staged plan, sources, oracles and the living feature-and-folklore
+inventory are in `stretch/docs/microarchitecture_plan.md` (§1, §1a);
+work from it, keep it current (add any newly found feature or
+folklore item to §1a with its source), and keep the existing
+regression suite green at every stage -- it is the correctness oracle
+for the rewrite. Timing claims need a documented number behind them.
 
 ## How work is verified here
 
