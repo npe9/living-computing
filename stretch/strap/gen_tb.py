@@ -19,7 +19,7 @@ from strap_asm import assemble, AssemblerError
 
 def generate(module_name, prog, checks, step_cap=2000, reader_image=None,
              printer_checks=None, tape_image=None, tape_checks=None,
-             pc_check=None):
+             pc_check=None, cycle_bound=None):
     """checks: list of (label:str, word_addr_expr:str, expected:int).
 
     reader_image: optional list of ints -- words to pre-load into the
@@ -183,6 +183,24 @@ def generate(module_name, prog, checks, step_cap=2000, reader_image=None,
     # intact: pass = halted at the block's end, fail = halted at the
     # offending hang, distinguishable by PC alone.
     pccheck_phase = tcheck_phase0 + len(tape_checks)
+    # Cycle bound ("CYCLES<=N"): the run rule fires once per clock, so
+    # stepCount at halt is the program's cycle count on this model --
+    # today one step() per (half of an) instruction, later the cycle
+    # count of the microarchitecture model (docs/microarchitecture_
+    # plan.md stage 0). A separate check from the architectural ones
+    # so a timing regression never masquerades as a wrong result.
+    if cycle_bound is not None:
+        lines.append(f"  rule cyclecheck (phase == {pccheck_phase});")
+        lines.append(f"    if (stepCount <= {cycle_bound})")
+        lines.append(f'      $display("PASS cycles = %0d (bound {cycle_bound})", stepCount);')
+        lines.append("    else begin")
+        lines.append(f'      $display("FAIL cycles = %0d, bound {cycle_bound}", stepCount);')
+        lines.append("      fails <= fails + 1;")
+        lines.append("    end")
+        lines.append(f"    phase <= {pccheck_phase + 1};")
+        lines.append("  endrule")
+        lines.append("")
+        pccheck_phase += 1
     if pc_check is not None:
         lines.append(f"  rule pccheck (phase == {pccheck_phase});")
         lines.append(f'    check("PC (half-word address)", zeroExtend(core.getPC()), {pc_check});')
@@ -220,6 +238,9 @@ if __name__ == '__main__':
     #                             work); at most one R= argument is allowed
     #   T=W0,W1,W2,...         -- pre-load the simulated tape's image, same
     #                             syntax as R=; at most one T= argument
+    #   CYCLES<=N              -- check that the run halted within N clock
+    #                             cycles (stepCount); the timing oracle,
+    #                             kept separate from the result checks
     #   PC=EXPECTED            -- check the instruction counter (a 19-bit
     #                             half-word address) where the program
     #                             halted; see the pccheck rule above
@@ -247,9 +268,12 @@ if __name__ == '__main__':
     reader_image = None
     tape_image = None
     pc_check = None
+    cycle_bound = None
     for spec in sys.argv[3:]:
         if spec.startswith('PC='):
             pc_check = int(spec[3:], 0)
+        elif spec.startswith('CYCLES<='):
+            cycle_bound = int(spec[8:], 0)
         elif spec.startswith('R='):
             reader_image = [int(x, 0) for x in spec[2:].split(',') if x]
         elif spec.startswith('T='):
@@ -268,4 +292,5 @@ if __name__ == '__main__':
             checks.append((label, addr_expr, int(expected, 0)))
     print(generate(module_name, prog, checks, reader_image=reader_image,
                     printer_checks=printer_checks, tape_image=tape_image,
-                    tape_checks=tape_checks, pc_check=pc_check))
+                    tape_checks=tape_checks, pc_check=pc_check,
+                    cycle_bound=cycle_bound))

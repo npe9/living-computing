@@ -28,6 +28,15 @@ Still ask first for: destructive git operations (history rewrites,
 force pushes, branch deletion), deleting files you did not create in
 the session, and anything outside this repository.
 
+## Current direction (2026-09-03)
+
+The owner has asked for the model to become the real 7030
+microarchitecture: pipelining, look-ahead, and "the other tricks they
+did". The staged plan, sources and oracles are in
+`stretch/docs/microarchitecture_plan.md`; work from it, keep it
+current, and keep the existing regression suite green at every stage
+-- it is the correctness oracle for the rewrite.
+
 ## How work is verified here
 
 Every claim in the docs is backed by something runnable. Follow the
