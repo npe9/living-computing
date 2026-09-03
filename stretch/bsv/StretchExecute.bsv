@@ -1370,6 +1370,15 @@ function ActionValue#(Tuple4#(HWordAddr, Maybe#(Tuple2#(Bit#(4), IndexWord)),
         // sign and flags in the sign byte register). Every operation
         // but ST reads its storage operand first (prefetch/bail).
         WordAddr ea = effAddr18(st, fp.addr, fp.idx);
+        // Address Invalid (Reference Manual p.20): an effective word
+        // address beyond the installed core (StretchMemory's
+        // InstalledWords = 98304, six units) sets AD and the
+        // instruction "is executed as a NO OPERATION". A floating-point
+        // instruction always addresses a full word, so this one guard
+        // covers L/ST and every arithmetic op below.
+        if (ea >= 18'd98304)
+          ind = setBit(ind, ind_AD, 1);
+        else begin
         Bool normalized = (fp.unnorm == 0);
         Bool noisy = (ind[63 - ind_NM] == 1);
         FpNum acc = fpFromAcc(st.readAccLeft(), st.readAccSign());
@@ -1475,6 +1484,7 @@ function ActionValue#(Tuple4#(HWordAddr, Maybe#(Tuple2#(Bit#(4), IndexWord)),
             default: ind = setOpInvalid(ind);
           endcase
         end
+        end  // AD guard
       end
       // -----------------------------------------------------------
       // Input-Output (Reference Manual "IBM 7619 Exchange", pp.104-127,

@@ -1,0 +1,19 @@
+! Address Invalid test (Reference Manual p.20; docs/microarchitecture_
+! plan.md feature inventory). A floating-point load whose effective
+! address is beyond the installed core (98304 words = octal 300000)
+! must set the AD indicator (bit 16) and execute as a NO OPERATION,
+! leaving the accumulator unchanged.
+!
+! First load a real value (2.0) so the accumulator is non-zero, then
+! attempt an FP load from word 100000 (> 98304, uninstalled). The
+! accumulator (checked via its left half, address 8) must still hold
+! 2.0, and word 11 (indicators) bit 16 (AD) must be on. A store of the
+! indicator word to R lets the testbench read it.
+START   L(N), TWO           ! acc = 2.0 (installed)
+        L(N), 100000.0      ! FP load from an uninstalled word: AD, no-op
+        ST(N), ACCSAVE      ! store the (unchanged) accumulator
+DONE    BEW, $
+        CNOP
+TWO     DD(BU,64), 0        ! patched to +2.0 by run_fp_addr_test.sh
+ACCSAVE DD(BU,64), 0
+        END, START
