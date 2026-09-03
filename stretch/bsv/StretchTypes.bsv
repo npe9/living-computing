@@ -388,4 +388,22 @@ typedef struct {
   Bit#(2)  chk;
 } YReg deriving (Bits, Eq, FShow);
 
+// One look-ahead level (docs/microarchitecture_plan.md stage 3a;
+// Buchholz §15.3, Cocke & Kolsky §III.C): the prepared E-box-class
+// instruction with its instruction-counter value, the operand
+// address the instruction unit determined for it (Invalid for an
+// immediate operand), the operand once fetched, whether the fetch
+// has been issued, and the earlier level whose retirement this
+// level's fetch must wait for (a store to the same word ahead of it).
+typedef struct {
+  Bool             valid;
+  DecodedInstr     di;
+  HWordAddr        pc;
+  InstrLen         len;
+  Maybe#(WordAddr) da;
+  Maybe#(Word64)   data;
+  Bool             fetchIssued;
+  Maybe#(Bit#(2))  waitFor;
+} LaLevel deriving (Bits, Eq, FShow);
+
 endpackage

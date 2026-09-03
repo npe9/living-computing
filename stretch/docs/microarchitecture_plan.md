@@ -386,6 +386,37 @@ cycles), fig.8 (CB in six), tables 4-8 spot checks, all as `CYCLES<=`
 programs. Trace flag showing, per I-box cycle, the IC/Y/Z/XF/MOD
 activity in the format of Blosk's diagrams.
 
+## 6b. Stage 3a design: the look-ahead, first cut
+
+Four levels in a ring (`LaLevel`: instruction, IC value, operand
+address, operand, fetch-issued, wait-for). The instruction unit loads
+an E-box-class instruction (VFL, connective, floating point) into the
+tail level at preparation: if it fetches a memory operand, the
+operand address is obtained by running `execute()` with no operand,
+which bails out with the address of the first read it needs and no
+side effects (the contract established in the BRAM migration) -- so
+the address arithmetic lives in one place; instructions that fetch
+nothing (immediate VFL, FP store) are loaded without a probe and run
+only at removal. Levels issue their fetches ahead on their own bus
+channels (tags 3-6, priority above the Y buffers); a level whose
+operand address equals an earlier unretired level's waits for that
+level to retire (store-then-load ordering, the LAAR's job -- Cocke &
+Kolsky fig.6A's compare/forward, done conservatively for any earlier
+level rather than only stores). The arithmetic unit removes the head
+level when its operand is present, executing with the operand
+pre-supplied; further reads (crossing words, refills) go through the
+existing resume path. E-box time (`eboxClocks`) holds the next
+removal, the I-box budget holds the next preparation, so preparation
+and fetch-ahead overlap execution. Conservative rules of this cut,
+to be relaxed in 3b/3c: an I-box-class instruction waits for the
+levels to drain before executing (no index-recovery levels yet, so
+nothing the I-box does can run ahead of an E-box store or a
+progressive-indexing modification); a load waits while a
+progressive-indexing instruction is in the levels; branches on
+non-index indicators are I-box-class and therefore also wait, which
+is Cocke & Kolsky's "hold up on every branch" option -- the
+not-taken guess comes with recovery in 3b.
+
 ## 7. Status
 
 - **Stage 0 -- done** (2026-09-03): `CYCLES<=N` check in `gen_tb.py`;
@@ -428,6 +459,16 @@ activity in the format of Blosk's diagrams.
   while the queue is full (the LAAR-busy wait of Perf. Char. p.3-21
   in miniature). Cycle counts with prefetch overlap: Problem 2.1 94
   -> 54 clocks, the pp.43-51 span 2714 -> 2065.
+- **Stage 2b -- done** (2026-09-03): per-class time budgets (§6a),
+  `ibox_timing_cb.strap` (250 table clocks, measured 291).
+- **Stage 3a -- done** (2026-09-03; full 21-block suite green, Problem
+  2.1 113 -> 92 clocks, pp.43-51 span 4006 -> 3985, the CB loop
+  unchanged at 291 since it holds no E-box work): the look-ahead of §6b, seven
+  bus tags, level channels in `StretchStorage`, `LaLevel` in
+  `StretchTypes`, the engine in `StretchCore.step()` (levels
+  collected/issued at the top of every clock; removal and preparation
+  as branches of the one instruction chain so at most one `execute()`
+  runs per clock).
 
 ## 8. Immediate next steps
 

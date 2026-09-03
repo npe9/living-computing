@@ -81,10 +81,10 @@ endfunction
 // Return tag (Blosk p.19: "a three bit return address to the bus
 // control unit ... indicates which Y register in this I unit, or which
 // of the four lookahead levels is to receive the word"). Here: 0 =
-// the operand channel, 1 = 1Y, 2 = 2Y; look-ahead levels come with
-// stage 3.
-typedef Bit#(2) RetTag;
-typedef 3 NumTags;
+// the operand channel (execute()'s own follow-up reads and the
+// testbenches), 1 = 1Y, 2 = 2Y, 3-6 = look-ahead levels 1-4.
+typedef Bit#(3) RetTag;
+typedef 7 NumTags;   // 0 operand, 1-2 = 1Y/2Y, 3-6 = look-ahead levels 1-4
 typedef struct { Bool write; WordAddr addr; Word64 data; RetTag tag; } MemReq deriving (Bits, Eq, FShow);
 
 // ---------------------------------------------------------------------

@@ -73,6 +73,12 @@ interface StretchStorage;
   // instruction unit compares it with its prefetched words (program
   // store compare) and invalidates a match.
   method Maybe#(WordAddr) recentStore();
+  // Look-ahead level channels (stage 3): one outstanding operand
+  // fetch per level, return tags 3-6, priority above the Y buffers
+  // (Buchholz §14.3: the look-ahead over the instruction fetch).
+  method Action laReq(Bit#(2) lvl, WordAddr a);
+  method Bool laReady(Bit#(2) lvl);
+  method ActionValue#(Word64) laResp(Bit#(2) lvl);
 
   // Write a full 64-bit word. Read-only/protected addresses silently
   // ignore the write (this models "permanently protected" locations;
@@ -116,12 +122,13 @@ endinterface
 module mkStretchStorage(StretchStorage);
 
   // The memory bus and units (StretchMemory.bsv), and this module's
-  // request bookkeeping. Three read channels, one per return tag:
-  // 0 = the operand channel (execute()'s reads and the testbenches'),
-  // 1 = 1Y, 2 = 2Y (the instruction unit's two buffers, stage 2).
-  // Each channel has at most one read outstanding; the bus is offered
-  // requests in the order stores, operand read, 1Y, 2Y (Buchholz
-  // §14.3: the look-ahead has priority over the instruction fetch).
+  // request bookkeeping. Seven read channels, one per return tag:
+  // 0 = the operand channel (execute()'s follow-up reads and the
+  // testbenches'), 1 = 1Y, 2 = 2Y (the instruction unit's buffers),
+  // 3-6 = look-ahead levels 1-4. Each channel has at most one read
+  // outstanding; the bus is offered requests in the order stores,
+  // operand read, look-ahead levels, 1Y, 2Y (Buchholz §14.3: the
+  // look-ahead has priority over the instruction fetch).
   // A special (register-backed) address answers on the next clock on
   // any channel. Reads on every channel are issued only while the
   // store queue is empty: store->load ordering for operands, and a
@@ -181,8 +188,11 @@ module mkStretchStorage(StretchStorage);
       storeQ.deq;
       busUsed = True;
     end
-    // Read channels, in priority order.
-    for (Integer c = 0; c < valueOf(NumTags); c = c + 1) begin
+    // Read channels, in bus priority order: the operand channel, the
+    // look-ahead levels, then the instruction buffers.
+    Integer order[7] = {0, 3, 4, 5, 6, 1, 2};
+    for (Integer oi = 0; oi < valueOf(NumTags); oi = oi + 1) begin
+      Integer c = order[oi];
       Maybe#(WordAddr) pr = chPending[c];
       Bool issued = chIssued[c];
       Maybe#(Word64) rs = chResp[c];
@@ -271,17 +281,37 @@ module mkStretchStorage(StretchStorage);
   endmethod
 
   method Action fetchReq(Bit#(1) y, WordAddr a);
-    Bit#(2) c = 1 + zeroExtend(y);
+    Bit#(3) c = 1 + zeroExtend(y);
     reqW[c].wset(a);
   endmethod
 
   method Bool fetchReady(Bit#(1) y);
-    Bit#(2) c = 1 + zeroExtend(y);
+    Bit#(3) c = 1 + zeroExtend(y);
     return isValid(chSpecial[c]) || isValid(chResp[c]);
   endmethod
 
   method ActionValue#(Word64) fetchResp(Bit#(1) y);
-    Bit#(2) c = 1 + zeroExtend(y);
+    Bit#(3) c = 1 + zeroExtend(y);
+    takeW[c].send();
+    if (chSpecial[c] matches tagged Valid .a)
+      return lookupSpecial(a);
+    else
+      return validValue(chResp[c]);
+  endmethod
+
+  // Look-ahead level channels (level 0-3 -> tags 3-6), same protocol.
+  method Action laReq(Bit#(2) lvl, WordAddr a);
+    Bit#(3) c = 3 + zeroExtend(lvl);
+    reqW[c].wset(a);
+  endmethod
+
+  method Bool laReady(Bit#(2) lvl);
+    Bit#(3) c = 3 + zeroExtend(lvl);
+    return isValid(chSpecial[c]) || isValid(chResp[c]);
+  endmethod
+
+  method ActionValue#(Word64) laResp(Bit#(2) lvl);
+    Bit#(3) c = 3 + zeroExtend(lvl);
     takeW[c].send();
     if (chSpecial[c] matches tagged Valid .a)
       return lookupSpecial(a);

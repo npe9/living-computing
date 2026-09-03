@@ -82,6 +82,55 @@ module mkStretchCore(StretchCore);
   Reg#(Bit#(8)) restartSeq <- mkReg(0);   // written by setPC
   Reg#(Bit#(8)) restartSeen <- mkReg(0);  // written at the top of step()
   Reg#(Bit#(8)) branchSeen  <- mkReg(0);
+  // ---- Stage 3a: the look-ahead (docs/microarchitecture_plan.md §6,
+  // Buchholz ch.15, Cocke & Kolsky §III.C). Four levels in a ring;
+  // E-box-class instructions (VFL, connectives, floating point) leave
+  // the instruction unit into a level with their operand address, the
+  // levels' fetches are issued ahead through their own bus channels,
+  // and the arithmetic unit removes levels in order, executing each
+  // once its operand is present. A level whose operand address equals
+  // that of an earlier unretired level waits for that level to retire
+  // before fetching (a store ahead of a load to the same word: the
+  // LAAR's job, here done conservatively for any earlier level). In
+  // this first cut an I-box-class instruction waits for the levels to
+  // drain before executing (no recovery levels yet), and so does a
+  // load behind a progressive-indexing instruction, whose index
+  // register is modified only at execution.
+  Vector#(4, Reg#(LaLevel)) la <- replicateM(mkReg(LaLevel{valid: False, di: tagged Invalid,
+        pc: 0, len: Half, da: tagged Invalid, data: tagged Invalid, fetchIssued: False,
+        waitFor: tagged Invalid}));
+  Reg#(Bit#(2)) laHead  <- mkReg(0);
+  Reg#(Bit#(2)) laTail  <- mkReg(0);
+  Reg#(Bit#(3)) laCount <- mkReg(0);
+  Reg#(Bool)    auActive <- mkReg(False);  // execPending belongs to the look-ahead head
+  Reg#(Bit#(16)) ebusy  <- mkReg(0);       // E-box time of the last removed instruction
+
+  function Bool isEboxClass(DecodedInstr d);
+    case (d) matches
+      tagged VflInt .*: return True;
+      tagged Connective .*: return True;
+      tagged Fp .*: return True;
+      default: return False;
+    endcase
+  endfunction
+  // Does the instruction fetch a memory operand (so a level can be
+  // loaded with its address from execute()'s side-effect-free bail)?
+  function Bool fetchesOperand(DecodedInstr d);
+    case (d) matches
+      tagged VflInt .v: return v.a.p != 4;
+      tagged Connective .c: return c.a.p != 4;
+      tagged Fp .f: return f.code == 7'b0000110;   // FP L; ST fetches nothing
+      default: return False;
+    endcase
+  endfunction
+  function Bool hasProgressive(DecodedInstr d);
+    case (d) matches
+      tagged VflInt .v: return v.a.p != 0 && v.a.p != 4;
+      tagged Connective .c: return c.a.p != 0 && c.a.p != 4;
+      default: return False;
+    endcase
+  endfunction
+
   // Stage 2b timing registers (see iboxCycles below).
   Reg#(Bit#(32)) clk      <- mkReg(0);   // clocks since reset
   Reg#(Bit#(32)) startClk <- mkReg(0);   // dispatch clock of the current instruction
@@ -221,7 +270,23 @@ module mkStretchCore(StretchCore);
   endfunction
 
   method ActionValue#(Bool) step();
+    Bool done = False;
     clk <= clk + 1;
+    // ---- Look-ahead: collect arrived operands, issue one fetch ----
+    Vector#(4, LaLevel) nl = readVReg(la);
+    Bit#(2) nHead = laHead; Bit#(2) nTail = laTail; Bit#(3) nCount = laCount;
+    for (Integer k = 0; k < 4; k = k + 1)
+      if (nl[k].valid && nl[k].fetchIssued && !isValid(nl[k].data) && st.laReady(fromInteger(k))) begin
+        let d <- st.laResp(fromInteger(k));
+        nl[k].data = tagged Valid d;
+      end
+    Bool issuedLa = False;
+    for (Integer k = 0; k < 4; k = k + 1)
+      if (!issuedLa && nl[k].valid && isValid(nl[k].da) && !nl[k].fetchIssued && !isValid(nl[k].waitFor)) begin
+        st.laReq(fromInteger(k), validValue(nl[k].da));
+        nl[k].fetchIssued = True;
+        issuedLa = True;
+      end
     // ---- IC controls: run every clock, before the instruction FSM ----
     Vector#(2, YReg) ny = readVReg(yr);
     Bool restart = (restartSeq != restartSeen) || (branchSeq != branchSeen);
@@ -287,13 +352,13 @@ module mkStretchCore(StretchCore);
         if (!x.suppressEop) cw.eop = 1;
         ioDev.writeChanCW(x.ch, cw);
         ioPending <= tagged Invalid;
-        return False;
+        done = False;
       end else if (!st.writeReady()) begin
         // The store queue is full: the exchange waits for the memory
         // bus before moving the next word (a RD-direction word is a
         // store; the W-direction path is also held so the two
         // directions keep the same per-word pacing).
-        return False;
+        done = False;
       end else if (x.isWrite && !ioReadIssued) begin
         // W-direction (memory->device), first visit to this word:
         // issue the read request and wait. ioPending/x are left
@@ -302,10 +367,10 @@ module mkStretchCore(StretchCore);
         // response is ready.
         st.readWordReq(x.memAddr);
         ioReadIssued <= True;
-        return False;
+        done = False;
       end else if (x.isWrite && !st.responseReady()) begin
         // W-direction: the memory read is in flight; wait for it.
-        return False;
+        done = False;
       end else begin
         // Either RD-direction (always one call, ioReadIssued unused
         // and stays False) or W-direction with the read response now
@@ -353,17 +418,17 @@ module mkStretchCore(StretchCore);
             devIdx: x.devIdx + 1, remaining: rem1,
             suppressEop: x.suppressEop, skip: x.skip };
         end
-        return False;
+        done = False;
       end
     end else if (pendingIdxWrite matches tagged Valid .p) begin
       // Part 2 of a progressive-indexing instruction: nothing was
       // fetched this call, and PC already advanced on part 1.
       st.writeIndex(tpl_1(p), tpl_2(p));
       pendingIdxWrite <= tagged Invalid;
-      return False;
+      done = False;
     end else if (execPending matches tagged Valid .ep &&& !st.responseReady()) begin
       // Operand still in flight from memory: stall.
-      return False;
+      done = False;
     end else if (execPending matches tagged Valid .ep) begin
       // Resume an execute() call that bailed out waiting on a
       // BRAM-eligible read -- collect the response into the next
@@ -383,52 +448,135 @@ module mkStretchCore(StretchCore);
         st.readWordReq(a);
         execPrefetch <= newPrefetch;
         execPrefetchCount <= newCount;
-        return False;
+        done = False;
       end else begin
-        pcReg <= next;
         pendingIdxWrite <= vflPending;
         ioPending <= ioStart;
         execPending <= tagged Invalid;
-        Bool taken = (next != pc + ((len == Full) ? 2 : 1));
-        if (taken) branchSeq <= branchSeq + 1;
-        Bit#(32) elapsed = clk - startClk;
-        Bit#(16) budget = budgetClocks(di, taken);
-        ibusy <= (elapsed >= zeroExtend(budget)) ? 0 : budget - truncate(elapsed);
-        return next == pc;
+        if (auActive) begin
+          // A look-ahead level's instruction finished: retire it.
+          auActive <= False;
+          ebusy <= eboxClocks(di);
+          nl[nHead].valid = False;
+          for (Integer k = 0; k < 4; k = k + 1)
+            if (nl[k].waitFor matches tagged Valid .w &&& w == nHead) nl[k].waitFor = tagged Invalid;
+          nHead = nHead + 1; nCount = nCount - 1;
+          done = False;
+        end else begin
+          pcReg <= next;
+          Bool taken = (next != pc + ((len == Full) ? 2 : 1));
+          if (taken) branchSeq <= branchSeq + 1;
+          Bit#(32) elapsed = clk - startClk;
+          Bit#(16) budget = budgetClocks(di, taken);
+          ibusy <= (elapsed >= zeroExtend(budget)) ? 0 : budget - truncate(elapsed);
+          done = (next == pc);
+        end
       end
+    end else if (nCount != 0 && ebusy != 0) begin
+      // The arithmetic unit is still busy with the last removed
+      // instruction; preparation continues below only via the levels.
+      ebusy <= ebusy - 1;
+      done = False;
+    end else if (nCount != 0 && (!isValid(nl[nHead].da) || isValid(nl[nHead].data))) begin
+      // Remove the head level into the arithmetic unit: its operand
+      // (if any) is present, so execute() runs with it pre-supplied;
+      // any further reads it needs go through the resume path.
+      LaLevel h = nl[nHead];
+      Vector#(2, Word64) pf = replicate(0);
+      Bit#(2) cnt = 0;
+      if (h.data matches tagged Valid .d) begin pf[0] = d; cnt = 1; end
+      let {next, vflPending, ioStart, needsRead} <-
+        execute(st, ioDev, h.pc, h.len, h.di, pf, cnt);
+      if (needsRead matches tagged Valid .a) begin
+        st.readWordReq(a);
+        execPending <= tagged Valid tuple3(h.pc, h.len, h.di);
+        execPrefetch <= pf;
+        execPrefetchCount <= cnt;
+        auActive <= True;
+      end else begin
+        pendingIdxWrite <= vflPending;
+        ioPending <= ioStart;
+        ebusy <= eboxClocks(h.di);
+        nl[nHead].valid = False;
+        for (Integer k = 0; k < 4; k = k + 1)
+          if (nl[k].waitFor matches tagged Valid .w &&& w == nHead) nl[k].waitFor = tagged Invalid;
+        nHead = nHead + 1; nCount = nCount - 1;
+      end
+      done = False;
     end else begin
       // Preparation: transfer the next instruction from the Y buffers
       // (both halves of a full-word instruction, which may straddle
-      // 1Y/2Y) and execute it; stall until the word(s) are buffered
-      // and checked. (Stage 2a has no separate Z register yet: the
-      // Y-to-Z transfer, index fetch and modification cycles are
-      // charged in stage 2b.)
+      // 1Y/2Y); an E-box-class instruction is loaded into a look-ahead
+      // level, an I-box-class one executes here once the levels have
+      // drained. Stall until the word(s) are buffered and checked.
       HWordAddr pc = pcReg;
-      if (ibusy != 0) begin
-        ibusy <= ibusy - 1;   // previous instruction's time budget still running
-        return False;
-      end else if (!st.writeReady())
-        return False; // a storing instruction could find the queue full: wait
-      else if (yLookup(pc[18:1]) matches tagged Valid .w0) begin
+      Maybe#(Tuple2#(InstrLen, DecodedInstr)) prepared = tagged Invalid;
+      if (yLookup(pc[18:1]) matches tagged Valid .w0) begin
         HalfWord32 hw0 = (pc[0] == 0) ? w0[63:32] : w0[31:0];
         InstrLen len = instrLen(hw0);
-        if (len == Half) begin
-          DecodedInstr di = decode(hw0, tagged Invalid);
-          let done <- startExecute(pc, len, di);
-          return done;
-        end else begin
+        if (len == Half)
+          prepared = tagged Valid tuple2(len, decode(hw0, tagged Invalid));
+        else begin
           HWordAddr pc1 = pc + 1;
           if (yLookup(pc1[18:1]) matches tagged Valid .w1) begin
             HalfWord32 hw1 = (pc1[0] == 0) ? w1[63:32] : w1[31:0];
-            DecodedInstr di = decode(hw0, tagged Valid hw1);
-            let done <- startExecute(pc, Full, di);
-            return done;
-          end else
-            return False;
+            prepared = tagged Valid tuple2(Full, decode(hw0, tagged Valid hw1));
+          end
         end
+      end
+      Bool progressivePending = False;
+      for (Integer k = 0; k < 4; k = k + 1)
+        if (nl[k].valid && hasProgressive(nl[k].di)) progressivePending = True;
+      if (ibusy != 0) begin
+        ibusy <= ibusy - 1;   // previous instruction's time budget still running
+        done = False;
+      end else if (!st.writeReady())
+        done = False; // a storing instruction could find the queue full: wait
+      else if (prepared matches tagged Valid {.len, .di} &&& isEboxClass(di)) begin
+        if (nCount < 4 && !progressivePending) begin
+          Maybe#(WordAddr) da = tagged Invalid;
+          Bool loaded = True;
+          if (fetchesOperand(di)) begin
+            // Side-effect-free probe: execute() with no operand bails
+            // out with the address of the operand it needs.
+            let {next, vflPending, ioStart, needsRead} <-
+              execute(st, ioDev, pc, len, di, replicate(0), 0);
+            if (needsRead matches tagged Valid .a) da = tagged Valid a;
+            else begin
+              // Classified as fetching but completed: treat as executed.
+              $display("StretchCore: E-box instruction at %0d executed at preparation (classification mismatch)", pc);
+              pcReg <= next;
+              pendingIdxWrite <= vflPending;
+              ioPending <= ioStart;
+              loaded = False;
+            end
+          end
+          if (loaded) begin
+            Maybe#(Bit#(2)) wf = tagged Invalid;
+            for (Integer k = 0; k < 4; k = k + 1)
+              if (da matches tagged Valid .a &&& nl[k].valid &&& isValid(nl[k].da) &&& validValue(nl[k].da) == a)
+                wf = tagged Valid fromInteger(k);
+            nl[nTail] = LaLevel{valid: True, di: di, pc: pc, len: len, da: da,
+                                data: tagged Invalid, fetchIssued: False, waitFor: wf};
+            nTail = nTail + 1; nCount = nCount + 1;
+            pcReg <= pc + ((len == Full) ? 2 : 1);
+            ibusy <= 2 * iboxCycles(di, False);   // its preparation time
+          end
+        end
+        done = False;
+      end else if (prepared matches tagged Valid {.len, .di}) begin
+        // I-box class: wait for the look-ahead to drain, then execute.
+        if (nCount == 0 && !auActive) begin
+          let d1 <- startExecute(pc, len, di);
+          done = d1;
+        end else
+          done = False;
       end else
-        return False;
+        done = False;
     end
+    writeVReg(la, nl);
+    laHead <= nHead; laTail <= nTail; laCount <= nCount;
+    return done;
   endmethod
 
   method HWordAddr getPC() = pcReg;
