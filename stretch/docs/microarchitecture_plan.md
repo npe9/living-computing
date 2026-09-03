@@ -417,6 +417,40 @@ non-index indicators are I-box-class and therefore also wait, which
 is Cocke & Kolsky's "hold up on every branch" option -- the
 not-taken guess comes with recovery in 3b.
 
+## 6c. Stage 3b design: I-box instructions running ahead
+
+Perf. Char. p.3-17: "I-box operations usually do not involve the
+E-box, and the I-box time can be covered largely by neighboring
+floating point operations" -- the folklore item that index arithmetic
+and count-and-branch hide behind arithmetic. In 3a every I-box-class
+instruction waits for the levels to drain; 3b lets it execute while
+levels are pending unless a hazard exists:
+
+- *Memory it reads* (LX/LV/LC/LR/KV/KC/V+ family, R/RCZ and CBR's
+  refill word, Transmit's source): wait if any unretired level's
+  operand address is that word (an E-box store ahead in program order
+  may not have happened yet -- Cocke & Kolsky fig.5's "does index
+  address compare with an address in a virtual memory").
+- *Memory it writes* (SX/SV/SC/SR, Z, SIC's store, Transmit's
+  destination): wait if any unretired level's operand address is that
+  word (a level ahead in program order must fetch the old value).
+- *Arithmetic indicators* (branch on a non-index indicator): wait for
+  the levels to drain -- this stays "hold up on every branch" until 3c
+  adds the not-taken guess with recovery.
+- *Index registers*: free -- pending E-box levels were indexed at
+  preparation and only progressive indexing modifies an index register
+  at execution, and a progressive-indexing level already blocks further
+  loading (3a rule), so it also blocks I-box run-ahead until it retires.
+
+The operand word of an I-box-class instruction is computed at
+preparation with the same effective-address arithmetic execute() uses
+(index value plus address; refill from the index word), the second
+place that arithmetic appears, kept to the one-line cases; anything
+not in the list above waits for a drain. Its time budget and Y-buffer
+restart behave as before. No recovery levels are needed yet because
+nothing the I-box does ahead can be wrong: no guessed branches, no
+interrupts.
+
 ## 7. Status
 
 - **Stage 0 -- done** (2026-09-03): `CYCLES<=N` check in `gen_tb.py`;

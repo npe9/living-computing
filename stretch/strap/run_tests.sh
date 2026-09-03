@@ -85,6 +85,14 @@ run "I-box timing: CB loop" ./run_program.sh programs/ibox_timing_cb.strap Stret
     "X1_count:addrIndex(1)=0" \
     "CYCLES<=300"
 
+# -- 1c. Look-ahead timing microbenchmark: four full-word VFL loads,
+# E-box-bound with fetch-ahead (~115 clocks, measured 120) vs ~172
+# executed serially; the bound of 140 fails if the overlap is lost
+# (as it was when the E-box busy wait preempted preparation).
+run "Look-ahead timing: four loads" ./run_program.sh programs/la_timing_loads.strap StretchTimingLaTb \
+    "ACC_right:9=4" \
+    "CYCLES<=140"
+
 # -- 2. Problem 2.1: Cyclic Bit Shifting --
 run "Problem 2.1" ./run_program.sh programs/problem_2_1.strap StretchProblem21Tb \
     "DOG_rotated:32=0x6e5d4c3b2a19087f" \

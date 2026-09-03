@@ -1,0 +1,22 @@
+! Look-ahead timing microbenchmark (docs/microarchitecture_plan.md
+! stage 3a): four full-word VFL loads from four different words, then
+! the halt. Each load costs 6 I-box cycles of preparation (12 clocks)
+! and, by Performance Characteristics table 3, 1.8 + 8*0.6 + 0.6 = 7.2
+! us = 24 clocks in the serial arithmetic unit. With the look-ahead
+! the four fetches are issued ahead and the E-box is the bottleneck:
+! about 12 (first preparation) + 7 (first fetch) + 4*24 = 115 clocks
+! plus the halt's own time. Executed one at a time with no overlap the
+! same sequence would take about 4*(12 + 7 + 24) = 172. The bound in
+! run_tests.sh (140) sits between the two, so it fails if the overlap
+! is lost.
+START   L(BU,64,8), A
+        L(BU,64,8), B
+        L(BU,64,8), C
+        L(BU,64,8), D
+        NOP, 0.0
+DONE    BEW, $
+A       DD(BU,64,8), 1
+B       DD(BU,64,8), 2
+C       DD(BU,64,8), 3
+D       DD(BU,64,8), 4
+        END, START

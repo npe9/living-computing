@@ -272,6 +272,9 @@ module mkStretchCore(StretchCore);
   method ActionValue#(Bool) step();
     Bool done = False;
     clk <= clk + 1;
+    // E-box busy time counts down every clock regardless of what the
+    // instruction unit does below; written once at the exit.
+    Bit#(16) eb = (ebusy != 0) ? ebusy - 1 : 0;
     // ---- Look-ahead: collect arrived operands, issue one fetch ----
     Vector#(4, LaLevel) nl = readVReg(la);
     Bit#(2) nHead = laHead; Bit#(2) nTail = laTail; Bit#(3) nCount = laCount;
@@ -426,10 +429,7 @@ module mkStretchCore(StretchCore);
       st.writeIndex(tpl_1(p), tpl_2(p));
       pendingIdxWrite <= tagged Invalid;
       done = False;
-    end else if (execPending matches tagged Valid .ep &&& !st.responseReady()) begin
-      // Operand still in flight from memory: stall.
-      done = False;
-    end else if (execPending matches tagged Valid .ep) begin
+    end else if (execPending matches tagged Valid .ep &&& st.responseReady()) begin
       // Resume an execute() call that bailed out waiting on a
       // BRAM-eligible read -- collect the response into the next
       // prefetch slot and try again. See execPending's own comment
@@ -456,7 +456,7 @@ module mkStretchCore(StretchCore);
         if (auActive) begin
           // A look-ahead level's instruction finished: retire it.
           auActive <= False;
-          ebusy <= eboxClocks(di);
+          eb = eboxClocks(di);
           nl[nHead].valid = False;
           for (Integer k = 0; k < 4; k = k + 1)
             if (nl[k].waitFor matches tagged Valid .w &&& w == nHead) nl[k].waitFor = tagged Invalid;
@@ -472,12 +472,8 @@ module mkStretchCore(StretchCore);
           done = (next == pc);
         end
       end
-    end else if (nCount != 0 && ebusy != 0) begin
-      // The arithmetic unit is still busy with the last removed
-      // instruction; preparation continues below only via the levels.
-      ebusy <= ebusy - 1;
-      done = False;
-    end else if (nCount != 0 && (!isValid(nl[nHead].da) || isValid(nl[nHead].data))) begin
+    end else if (nCount != 0 && ebusy == 0 && !auActive
+                 && (!isValid(nl[nHead].da) || isValid(nl[nHead].data))) begin
       // Remove the head level into the arithmetic unit: its operand
       // (if any) is present, so execute() runs with it pre-supplied;
       // any further reads it needs go through the resume path.
@@ -496,7 +492,7 @@ module mkStretchCore(StretchCore);
       end else begin
         pendingIdxWrite <= vflPending;
         ioPending <= ioStart;
-        ebusy <= eboxClocks(h.di);
+        eb = eboxClocks(h.di);
         nl[nHead].valid = False;
         for (Integer k = 0; k < 4; k = k + 1)
           if (nl[k].waitFor matches tagged Valid .w &&& w == nHead) nl[k].waitFor = tagged Invalid;
@@ -527,7 +523,9 @@ module mkStretchCore(StretchCore);
       Bool progressivePending = False;
       for (Integer k = 0; k < 4; k = k + 1)
         if (nl[k].valid && hasProgressive(nl[k].di)) progressivePending = True;
-      if (ibusy != 0) begin
+      if (isValid(execPending) && !auActive)
+        done = False;         // an I-box instruction is waiting on its operand read
+      else if (ibusy != 0) begin
         ibusy <= ibusy - 1;   // previous instruction's time budget still running
         done = False;
       end else if (!st.writeReady())
@@ -576,6 +574,7 @@ module mkStretchCore(StretchCore);
     end
     writeVReg(la, nl);
     laHead <= nHead; laTail <= nTail; laCount <= nCount;
+    ebusy <= eb;
     return done;
   endmethod
 
