@@ -232,6 +232,89 @@ synchronous I/O FSM is a stage-1 compatibility path).
   simulated cycles; the suite's ~10-minute wall time is dominated by
   bsc compilation, not simulation, so this should stay tolerable.
 
+## 6a. Stage 2 design: the instruction unit
+
+Written after reading Blosk TR00.722 in full and the CE manual's
+section-3 figure index. The CE manual's I-unit flow diagrams are the
+sequencer-level reference: figures 3.1.1-3.1.5 (IF 1Y / IF 2Y
+sequencers, IC 1Y/2Y triggers, IWC1/IWC2, IC Adv and ICOR), 3.1.6-3.1.9
+(Y-Z start trigger and the four YL/YR to ZL/ZR transfer sequencers),
+3.1.10-3.1.21 (ZR/ZL Mod Req triggers and Mod sequencers, block/suspend
+triggers, the ZL/ZR FP triggers 1-6), 3.1.22 (IHW = "instruction half-
+word" triggers, 1-bit mod, FP Z ALT), 3.1.23 (WBC+DEC and XF+DEC
+sequencers), 3.1.24-3.1.28 (WBC trigger, FW/FWS/FW-not-S triggers, ZL
+DEC trigger). The LA's are 3.2.1-3.2.27 (IAUC load, LA load pulses,
+operand check, TBC advance, SAU/VFL/FP levels, LAOP codes, ABC actions
+and indicator timers, houseclean timers, SCC advance/actions/stores).
+PAU data flow 3.3.x, FP timing 3.8.x, error conditions 3.7.x/3.9.x.
+
+**Time base.** The I-box control cycle is two clocks (0.6 µs as
+shipped, Perf. Char. p.3-17); sequencers advance on I-box cycles,
+memory on clocks. A `phase` toggle in the unit selects the A/B pulse.
+
+**Registers** (Blosk pp.7-15): `ICR` (19); `Y1`, `Y2` (64 + valid +
+checked + word address + fetch-outstanding); index storage `XS`
+(Vector of 16 words + word 17 timer/clock) with data register `XR`;
+`Z` (64, with `P` 3 bits) and its two halves; `W` (19); the index
+adder `IAU` as functions over bus-A/bus-B selections; the updated
+indicator register `UIR` (XL XE XH XCZ XVLZ XVZ XVGZ XF). The I
+checker is a one-cycle stage between a Y register's arrival and its
+`checked` flag (no error paths yet).
+
+**Control areas** (Blosk p.25-27), each an FSM stepping on I-box
+cycles:
+- *IC controls*: keep 1Y/2Y filled -- when a Y is empty and no fetch
+  is outstanding for it, request the next instruction word (the ICR
+  and adder give n..n+3) through the MBCU with that Y as return tag;
+  on a taken branch or recovery, invalidate both and restart at the
+  target. Interlocks: a store whose address compares equal to a
+  prefetched word invalidates the Y registers (program store compare,
+  Blosk p.21; Perf. Char. p.3-21 sequence (1)).
+- *Preparation controls*: when Z is free and the next half-word (per
+  ICR) is in a checked Y, transfer Y->Z (one cycle; a full-word
+  instruction straddling 1Y/2Y needs both), fetch the index word (XF,
+  one cycle, reading XS into XR) when I != 0, modify (MOD, one cycle
+  through the IAU; progressive indexing takes its two-step form); for
+  VFL, the word-boundary-crossover test (WBC) adds the length to the
+  24-bit address and gates the second word's address into W. The ICR
+  advances as Z is loaded.
+- *Look-ahead load controls*: for FP/VFL/I-O (E-box class) the
+  prepared instruction leaves Z for execution. **Stage-2 simplification:**
+  there is no look-ahead yet, so the existing `execute()` runs the
+  instruction to completion in order, performing its own operand
+  fetches through the storage handshake; its cycle cost is therefore
+  unoverlapped. Stage 3 replaces this with the four levels.
+- *Instruction-execution controls*: I-box instructions (Blosk
+  Appendix B: direct and immediate index arithmetic, unconditional
+  branches, branch on indicator, branch on bit, count-and-branch
+  family, SIC, transmit/swap, refill, execute, store zero) execute in
+  the I-box. Their *semantics* come from the existing `execute()`
+  arms (already verified by the suite); their *timing* comes from a
+  per-class I-box cycle count taken from Blosk's figures 8-10 and
+  Perf. Char. tables 4-8 (e.g. CB successful 4.2 µs + decode = 8 I-box
+  cycles; LVI 2.4 µs + dec = 5; LX from external memory 4.8 µs + dec =
+  9, of which the operand fetch's real memory time is charged as it
+  happens). Index-storage stores take two cycles.
+- *Branches*: unconditional and index-indicator branches (CB family;
+  B on XF/XVLZ/XVZ/XVGZ/XCZ/XL/XE/XH) are resolved in the I-box from
+  the UIR at preparation time and cost a Y refill. Branches on other
+  indicators are guessed not taken: the I-box goes on fetching and
+  preparing the fall-through path. **Stage-2 simplification:** since
+  the guess cannot yet be undone for index registers (no pseudo-store
+  recovery levels), the I-box does not *execute* an I-box instruction
+  past an unresolved arithmetic-conditional branch; it prepares and
+  waits. When the executor resolves the branch as taken, the prepared
+  fall-through work is discarded and fetching restarts at the target
+  (the wrong-way recovery cost of Perf. Char. p.3-23).
+
+**Deliverables**: `bsv/StretchIBox.bsv` (new) replacing
+`StretchCore.step()`'s fetch/decode loop; `StretchCore` becomes the
+composition of I-box + executor + storage + I/O. Suite green. Timing
+tests: Blosk fig.6 (four indexed FP loads prepared in eight I-box
+cycles), fig.8 (CB in six), tables 4-8 spot checks, all as `CYCLES<=`
+programs. Trace flag showing, per I-box cycle, the IC/Y/Z/XF/MOD
+activity in the format of Blosk's diagrams.
+
 ## 7. Status
 
 - **Stage 0 -- done** (2026-09-03): `CYCLES<=N` check in `gen_tb.py`;
@@ -254,10 +337,7 @@ synchronous I/O FSM is a stage-1 compatibility path).
 
 ## 8. Immediate next steps
 
-1. Stage 2, the instruction unit. Before coding, catalog the CE
-   manual's section 3 I-unit flow diagrams (figures 3.1.x, PDF
-   pp.~60-90: ZL/ZR triggers, WBC+DEC and XF+DEC sequencers, FW NOT S
-   trigger ...) and the LA flow diagrams (figures 3.2.x, PDF pp.~92+,
-   e.g. 3.2.8 "first level of SAU instructions", 3.2.9 "VFL operands
-   LAOP 03, 05, 07") and add them to §3's table.
-2. Per-unit trace flag (stage 0 leftover).
+1. Stage 2 per §6a: `StretchIBox.bsv`, starting with the IC controls
+   and Y buffers (2a), then preparation and I-box execution timing
+   (2b), then the not-taken guess and restart (2c).
+2. Per-unit trace flag (stage 0 leftover), first used by 2a.
