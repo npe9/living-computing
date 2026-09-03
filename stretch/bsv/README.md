@@ -173,7 +173,7 @@ it recognizes independent of what the datapath implements.
   half-word (32 bits) and a word (64 bits) of bit address. The earlier
   best-effort reading (+1/+2/−2 raw bits, recorded here as
   unconfirmed) was wrong by a factor of 32; I-Box 1's CBR+/CBR−/CBRH/
-  CBRZ+/CBRZ−/CBRZH groups (`strap/programs/ibox1_p46_p51_span.strap`)
+  CBRZ+/CBRZ−/CBRZH groups (`strap/programs/ibox1_p43_p51_span.strap`)
   hang at their first value test under it and pass under the table's
   units. See `strap/README.md` "Gotchas" item 18.
 - **Immediate index arithmetic semantics** (`LVI`, `V+I`, etc.) were

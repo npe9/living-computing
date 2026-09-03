@@ -167,16 +167,22 @@ run "I-Box 1 SIC-CB / SIC-CBZ (verbatim, own pass/fail)" ./run_program.sh progra
     $(python3 ibox1_expected.py programs/ibox1_sic_cb_cbz.strap ISBI \
         ISCBA:ISCBB ISCBB:ISCBC ISCBC:ISCBD ISCBD:ISCBH ISCBH:ISCBI ISCBI:ISCBK)
 
-# -- 4b'''. pp.46-51 as ONE verbatim span, octal 5247.00-5461.40: the
-# CBR/CBR+/CBR-/CBRH/CBRZ/CBRZ+/CBRZ-/CBRZH groups, then SIC-CB,
-# SIC-CBZ, SIC-B,ZIND, SIC-B,IND and WEN2/WEN/VEN, twelve consecutive
-# test groups flowing into each other exactly as the deck lays them
-# out, with a single substituted BEW at 5462.00. The count-and-branch
+# -- 4b'''. pp.43-51 as ONE verbatim span, octal 5123.00-5461.40: the
+# deck's whole index-branching section (CB, CB+, CBH, CB-, CBZ, CBZ+,
+# CBZ-, CBZH, CBR, CBR+, CBR-, CBRH, CBRZ, CBRZ+, CBRZ-, CBRZH), then
+# SIC-CB, SIC-CBZ, SIC-B,ZIND, SIC-B,IND and WEN2/WEN/VEN -- twenty
+# consecutive test groups flowing into each other exactly as the deck
+# lays them out, one substituted BEW at 5462.00. The count-and-branch
 # groups' own SX value tests pin the H/+/- units (32/64/-64 bits) --
-# the model's old +1/+2/-2 hangs at IBR106. Every SX-stored index word
-# and SIC/SV-rewritten hang checked plus the halt PC (ibox1_expected.py).
-run "I-Box 1 pp.46-51 span (12 test groups, verbatim)" ./run_program.sh programs/ibox1_p46_p51_span.strap StretchIboxSpanTb \
-    $(python3 ibox1_expected.py programs/ibox1_p46_p51_span.strap IBY \
+# the model's old +1/+2/-2 hangs at the first incrementing group.
+# Every SX-stored index word and SIC/SV-rewritten hang checked plus the
+# halt PC (ibox1_expected.py).
+run "I-Box 1 pp.43-51 span (20 test groups, verbatim)" ./run_program.sh programs/ibox1_p43_p51_span.strap StretchIboxSpanTb \
+    $(python3 ibox1_expected.py programs/ibox1_p43_p51_span.strap IBY \
+        IBR8=XW:IBR9+\(8\).04,0,-1 IBR18=XW:IBR19+\(8\).04,0,-1 \
+        IBR28=XW:IBR29+\(8\).04,0,-1 IBR38=XW:IBR39+\(8\).04,0,-1 \
+        IBR52=XW:IBR53+\(8\).04,0,-1 IBR66=XW:IBR67+\(8\).04,0,-1 \
+        IBR80=XW:IBR81+\(8\).04,0,-1 IBR94=XW:IBR95+\(8\).04,0,-1 \
         IBR100=COPY:IBRA10 \
         IBR106=XW:IBR107+\(8\).04,1,IBRA12 IBR107=COPY:IBRA12 \
         IBR113=XW:IBR114+\(8\).04,1,IBRA14 IBR114=COPY:IBRA14 \

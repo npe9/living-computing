@@ -1,9 +1,19 @@
-! I-Box 1 diagnostic program, octal 5247.00 through 5461.40 -- TWELVE
-! consecutive test groups from docs/ja_ax1a_ibox-1.pdf pp.46-51,
-! transcribed VERBATIM as one contiguous span at the listing's own
-! addresses, with the deck's own pass/fail mechanism intact throughout:
+! I-Box 1 diagnostic program, octal 5123.00 through 5461.40 -- TWENTY
+! consecutive test groups from docs/ja_ax1a_ibox-1.pdf pp.43-51, the
+! deck's entire index-branching section plus the SIC and indicator
+! groups that follow it, transcribed VERBATIM as one contiguous span at
+! the listing's own addresses, with the deck's own pass/fail mechanism
+! intact throughout:
 !
-!   CBR         IBR96..IBR101   5247.00  (p.46 bottom / p.47 top)
+!   CB          IBR..IBR9       5123.00  (p.43 bottom / p.44)
+!   CB+         IBR10..IBR19    5136.00
+!   CBH         IBR20..IBR29    5151.00
+!   CB-         IBR30..IBR39    5164.00
+!   CBZ         IBR40..IBR53    5177.00
+!   CBZ+        IBR54..IBR67    5211.00  (uses CNOP)
+!   CBZ-        IBR68..IBR81    5223.00
+!   CBZH        IBR82..IBR95    5235.00  (uses CNOP)
+!   CBR         IBR96..IBR101   5247.00
 !   CBR+        IBR102..IBR108  5261.00  "count, branch refill, + add one to value"
 !   CBR-        IBR109..IBR115  5276.00  "... sub one from value"
 !   CBRH        IBR116..IBR122  5312.00  "... add half to value"
@@ -11,12 +21,18 @@
 !   CBRZ+       IBR141..IBR158  5343.00
 !   CBRZ-       IBR159..IBR176  5360.00
 !   CBRZH       IBR177..IBR194  5375.00
-!   SIC-CB      ISCB..ISCBH     5412.00  (these five were first run as their
-!   SIC-CBZ     ISCB5..ISCBK    5421.00   own span, ibox1_p50_p51_span.strap,
-!                                         now superseded by this file)
+!   SIC-CB      ISCB..ISCBH     5412.00
+!   SIC-CBZ     ISCB5..ISCBK    5421.00
 !   SIC-B,ZIND  ISBI..ISBXW     5432.40
 !   SIC-B,IND   ISBI5..ISBIK    5443.00
 !   (indicators) WEN2/WEN/VEN   5454.00  (WEN6/WEN7 at 6102/6103)
+!
+! Above 5123.00 the deck tests LR/SR against the indicator register
+! ("LOAD + STORE REFILL IN INTERNAL MEMORY", SR,$X1,$IND+.32), a store
+! this model does not honor (bsv/README.md, word 11) -- the span starts
+! at the first group below that. Grown in three steps: pp.50-51, then
+! pp.46-49 (see git history for the two earlier files this supersedes),
+! then pp.43-46 once the assembler had CNOP.
 !
 ! Control flow, as the deck wrote it. In the count-and-branch groups
 ! every "B,$" or "BD,$" is a hang, and the group proves itself by
@@ -67,9 +83,170 @@
 !      parks at IBR106 (the first incrementing variant's value test),
 !      only CBR's two v=00 words (IBR100, IBR107) still pass. Exactly
 !      as predicted.
-! Both reverted by targeted un-patch; full suite green.
+! Both reverted by targeted un-patch; full suite green. The pp.43-46
+! groups added afterwards (CB..CBZH, no refill) passed 8/8 on their
+! first run with no model change needed beyond CNOP in the assembler.
 
-        SLC, (8)5247.0
+        SLC, (8)5123.0
+IBR     LX,$X1,IBRA1         ! -SET UP XW
+IBR1    CB,$X1,IBR2          ! -COUNT TO 3 + BRANCH
+        BD,$                 ! -HANG UP NO BRANCH
+IBR2    CB,$X1,IBR3          ! -COUNT TO 2 + BRANCH
+        BD,$                 ! -HANG UP NO BRANCH
+        BD,$
+IBR3    CB,$X1,IBR4          ! -COUNT OT 1 + BRANCH
+        BD,$                 ! -HANG UP NO BRANCH
+        BD,$
+        BD,$
+IBR4    CB,$X1,IBR7          ! -COUNT OT ZERO NO BRANCH
+IBR5    SX,$X1,IBR8          ! -STORE FOR VALUE TEST
+IBR6    B,IBR8
+IBR7    BD,$                 ! -HANG UP IF IBR4 BRANCH
+IBRA1   XW,IBR9+(8).04,4,-1
+IBR8    BD,$
+        BD,$                 ! -BECOMES (BD,IBR9),14-0+18-1S
+        BD,$
+        BD,$
+IBR9    VF,(8)777777.70      ! -21 ONES OR NOP,-1
+        VF,(8)777777.70      ! -21 ONES OR NOP,-1
+IBR10   LX,$X1,IBRA2         ! -SET UP XW
+IBR11   CB+,$X1,IBR12        ! -COUNT OT 3 + BRANCH
+        BD,$                 ! -HANG UP NO BRANCH
+IBR12   CB+,$X1,IBR13        ! -COUNT TO 2 + BRANCH
+        BD,$                 ! -HANG UP NO BRANCH
+        BD,$
+IBR13   CB+,$X1,IBR14        ! -COUNT TO 1 + BRANCH
+        BD,$                 ! -HANG UP NO BRANCH
+        BD,$
+        BD,$
+IBR14   CB+,$X1,IBR17        ! -COUNT TO ZERO NO BRANCH
+IBR15   SX,$X1,IBR18         ! -STORE FOR VALUE TEST
+IBR16   B,IBR18
+IBR17   BD,$                 ! -AHNG UP IF IBR14 BRANCH
+IBRA2   XW,IBR16+(8).04,4,-1
+IBR18   BD,$
+        BD,$                 ! -BECOMES (BD,IBR19),14-0+18-1S
+        BD,$
+        BD,$
+IBR19   VF,(8)777777.70      ! -21 ONES OR NOP,-1
+        VF,(8)777777.70      ! -21 ONES OR NOP,-1
+IBR20   LX,$X1,IBRA3         ! -SET UP XW
+IBR21   CBH,$X1,IBR22        ! -COUNT TO 3 + BRANCH
+        BD,$                 ! -HANG UP NO BRANCH
+IBR22   CBH,$X1,IBR23        ! -COUNT TO 2 + BRANCH
+        BD,$                 ! -HANG UP NO BRANCH
+        BD,$
+IBR23   CBH,$X1,IBR24        ! -COUNT TO 1 + BRANCH
+        BD,$                 ! -HANG UP NO BRANCH
+        BD,$
+        BD,$
+IBR24   CBH,$X1,IBR27        ! -COUNT TO ZERO NO BRANCH
+IBR25   SX,$X1,IBR28         ! -STORE FOR VALUE TEST
+IBR26   B,IBR28
+IBR27   BD,$                 ! -HANGS UP IF IBR24 BRNACH
+IBRA3   XW,IBR28+.04,4,-1
+IBR28   BD,$
+        BD,$                 ! -BECOMES (BD,IBR29),14-0+18-1S
+        BD,$
+        BD,$
+IBR29   VF,(8)777777.70      ! -21 ONES OR NOP,-1
+        VF,(8)777777.70      ! -21 ONES OR NOP,-1
+IBR30   LX,$X1,IBRA4         ! -SET UP XW
+IBR31   CB-,$X1,IBR32        ! -COUNT TO 3 + BRANCH
+        BD,$                 ! -HANG UP NO BRANCH
+IBR32   CB-,$X1,IBR33        ! -COUNT OT 2 + BRANCH
+        BD,$                 ! -HANG UP NO BRANCH
+        BD,$
+IBR33   CB-,$X1,IBR34        ! -COUNT TO 1 + BRANCH
+        BD,$                 ! -HANG UP NO BRANCH
+        BD,$
+        BD,$
+IBR34   CB-,$X1,IBR37        ! -COUNT TO ZERO NO BRANCH
+IBR35   SX,$X1,IBR38         ! -STORE FOR VALUE TEST
+IBR36   B,IBR38
+IBR37   BD,$                 ! -HANG UP IF IB34 BRANCH
+IBRA4   XW,IBR39+(8)4.04,4,-1
+IBR38   BD,$
+        BD,$                 ! -BECOMES (BD,IBR39),14-0+18-1S
+        BD,$
+        BD,$
+IBR39   VF,(8)777777.70      ! -21 ONES OR NOP,-1
+        VF,(8)777777.70      ! -21 ONES OR NOP,-1
+IBR40   LX,$X1,IBRA5         ! -SET UP XW
+IBR41   CBZ,$X1,IBR47        ! -NO BRANCH C TO 4
+IBR42   CBZ,$X1,IBR48        ! -NO BRANCH C TO 3
+IBR43   CBZ,$X1,IBR49        ! -NO BRANCH C TO 2
+IBR44   CBZ,$X1,IBR50        ! -NO BRANCH C TO 1
+IBR45   CBZ,$X1,IBR51        ! -BRANCH C TO 0
+IBR46   BD,$                 ! -HANG
+IBR47   BD,$
+IBR48   BD,$                 ! -UP
+IBR49   BD,$
+IBR50   BD,$                 ! -AREA
+IBR51   SX,$X1,IBR52         ! -STORE FOR VALUE TEST
+        B,IBR52
+IBRA5   XW,IBR53+(8).04,5,-1 ! -COMMON XW
+IBR52   BD,$                 ! -BECOMES BD IBR 53
+        BD,$                 ! -14-0 + 18-1
+IBR53   VF,(8)777777.70      ! -NOP,-1
+        VF,(8)777777.70      ! -NOP,-1
+IBR54   LX,$X1,IBRA6         ! -SET UP XW
+        CNOP
+IBR55   CBZ+,$X1,IBR61       ! -NO BRANCH C TO 4
+IBR56   CBZ+,$X1,IBR62       ! -NO BRANCH C TO 3
+IBR57   CBZ+,$X1,IBR63       ! -NO BRANCH C TO 2
+IBR58   CBZ+,$X1,IBR64       ! -NO BRANCH C TO 1
+IBR59   CBZ+,$X1,IBR65       ! -BRANCH C TO 0
+IBR60   BD,$                 ! -HANG
+IBR61   BD,$
+IBR62   BD,$                 ! -UP
+IBR63   BD,$
+IBR64   BD,$                 ! -AREA
+IBR65   SX,$X1,IBR66         ! -STORE FOR VALUE TEST
+        B,IBR66
+IBRA6   XW,IBR61+(8).04,5,-1 ! -COMMON XW
+IBR66   BD,$                 ! -BECOMES BD,IBR67
+        BD,$                 ! -14-0 + 18-1
+IBR67   VF,(8)777777.70      ! -NOP,-1
+        VF,(8)777777.70      ! -NOP,-1
+IBR68   LX,$X1,IBRA7         ! -SET UP XW
+IBR69   CBZ-,$X1,IBR75       ! -NO BRANCH C TO 4
+IBR70   CBZ-,$X1,IBR76       ! -NO BRANCH C TO 3
+IBR71   CBZ-,$X1,IBR77       ! -NO BRANCH C TO 2
+IBR72   CBZ-,$X1,IBR78       ! -NO BRANCH C TO 1
+IBR73   CBZ-,$X1,IBR79       ! -BRANCH C TO 0
+IBR74   BD,$                 ! -HANG
+IBR75   BD,$
+IBR76   BD,$                 ! -UP
+IBR77   BD,$
+IBR78   BD,$                 ! -AREA
+IBR79   SX,$X1,IBR80         ! -STORE FOR VALUE TEST
+        B,IBR80
+IBRA7   XW,IBR81+(8)5.04,5,-1        ! -COMMON XW
+IBR80   BD,$                 ! -BECOMES BD IBR81
+        BD,$                 ! -14-0 +18-1
+IBR81   VF,(8)777777.70      ! -NOP,-1
+        VF,(8)777777.70      ! -NOP,-1
+IBR82   LX,$X1,IBRA8         ! -SET UP XW
+IBR83   CBZH,$X1,IBR89       ! -NO BRANCH C TO 4
+IBR84   CBZH,$X1,IBR90       ! -NO BRANCH C TO 3
+IBR85   CBZH,$X1,IBR91       ! -NO BRANCH C TO 2
+IBR86   CBZH,$X1,IBR92       ! -NO BRANCH C TO 1
+IBR87   CBZH,$X1,IBR93       ! -BRANCH C TO 0
+IBR88   BD,$                 ! -HANG
+IBR89   BD,$
+IBR91   BD,$
+IBR90   BD,$                 ! -UP
+IBR92   BD,$                 ! -AREA
+        CNOP
+IBR93   SX,$X1,IBR94         ! -STORE FOR VALUE TEST
+        B,IBR94
+IBRA8   XW,IBR93+(8).44,5,-1 ! -COMMON XW
+IBR94   BD,$                 ! -BECOMES BD,IBR95
+        BD,$                 ! -BECOMES 14-0 +18-1
+IBR95   VF,(8)777777.70      ! -NOP,-1
+        VF,(8)777777.70      ! -NOP,-.32
+        CNOP
 IBR96   LX,$X1,IBRA9         ! -SET UP XW
 IBR97   CBR,$X1,IBR98        ! -COUNT 3 TO 2,BR,NO REFILL
         B,$                  ! -NO BRANCH
@@ -331,4 +508,4 @@ IBY     BEW,$               ! substituted: "Y-Z CONTROL SEQUENCES" (FP) starts h
 WEN6    DD(BU,64,8), 0
 WEN7    DD(BU,64,8), 18446744073709551615
 
-        END, IBR96
+        END, IBR

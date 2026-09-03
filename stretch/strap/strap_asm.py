@@ -6,9 +6,19 @@ StretchExecute.bsv (see opcodes.py for the shared table and citations).
 SCOPE (implemented / not, and why -- mirrors the "decode completely,
 execute partially, document the rest" ethos of the Bluespec model):
 
-  Pseudo-ops:  DD, VF, XW, END, SYN, SLC.
-  Not yet:     CF, RF, CNOP, DDI, CW, EXT (raise AssemblerError
-               citing C22-6531 rather than silently guessing).
+  Pseudo-ops:  DD, VF, XW, END, SYN, SLC, CNOP.
+  Not yet:     CF, RF, DDI, CW, EXT (raise AssemblerError citing
+               C22-6531 rather than silently guessing).
+
+  CNOP (C22-6531 "CNOP": "the machine instruction NOP is compiled" to
+  bridge a half-word-to-full-word rounding gap): rounds the location
+  counter up to the next full word, compiling a NOP into the half-word
+  skipped if there was one, nothing otherwise. Implemented as a
+  zero-size, full-word-aligned statement that counts as an instruction
+  for the automatic gap filler already used before every full-word
+  instruction -- so the listing's explicit "CNOP" rows (docs/
+  ja_ax1a_ibox-1.pdf p.45 005211.40 -> 0.30 00; p.46 005246.40 ->
+  nothing) assemble to exactly what they print.
 
   SLC ("A | SLC, Y" -- C22-6531 p.32, "Set Location Counter"): resets
   the location counter to the bit-address expression Y; the next
@@ -787,7 +797,9 @@ def statement_size(stmt):
         return 0, 0  # defines a symbol by value, occupies no storage (C22-6531 p.31)
     if op == 'SLC':
         return 0, 0  # moves the location counter, occupies no storage (C22-6531 p.32)
-    if op in ('CNOP', 'CF', 'RF', 'DDI', 'CW', 'EXT'):
+    if op == 'CNOP':
+        return FULL, 0  # align to a full word; the gap filler emits the NOP
+    if op in ('CF', 'RF', 'DDI', 'CW', 'EXT'):
         raise AssemblerError(
             f"pseudo-operation {op} not implemented by this assembler yet "
             f"(see strap_asm.py module docstring / C22-6531)", stmt.lineno)
@@ -1100,6 +1112,9 @@ def emit_statement(stmt, symtab, image):
 
     if op == 'SLC':
         return  # location counter already moved in pass 1; no storage
+
+    if op == 'CNOP':
+        return  # any NOP it implies was emitted by assemble()'s gap filler
 
     if op == 'DD':
         length = dds_length_bits(stmt.mods, stmt.lineno)

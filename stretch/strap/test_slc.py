@@ -120,6 +120,27 @@ X       LVI, $1, 1
         END, X
 """, "needs a location operand")
 
+# 6. CNOP (C22-6531): at a half-word boundary it compiles a NOP and the
+# next statement starts on the full word; at a full-word boundary it
+# compiles nothing (I-Box 1 p.45 005211.40 -> 0.30 00, p.46 005246.40
+# -> nothing).
+from strap_asm import enc_branch_or_misc
+from opcodes import UNCOND_BRANCH_CODES
+NOPW = enc_branch_or_misc(0, UNCOND_BRANCH_CODES['NOP'], False, 0)
+p = assemble("""
+        SLC, 100.0
+A       LVI, $1, 1
+        CNOP
+B       XW, 0, 0, 0
+        CNOP
+C       LVI, $1, 3
+        END, A
+""")
+check("CNOP after a half-word: next statement at the next full word", p.symtab['B'], 101 * 64)
+check("CNOP compiled a NOP into the skipped half-word", p.words[100] & 0xFFFFFFFF, NOPW)
+check("CNOP at a full-word boundary: nothing compiled, C at the next word", p.symtab['C'], 102 * 64)
+check("no NOP after C's half (nothing was compiled by the second CNOP)", p.words[102] & 0xFFFFFFFF, 0)
+
 if FAILS:
     print(f"{FAILS} TEST(S) FAILED")
     sys.exit(1)

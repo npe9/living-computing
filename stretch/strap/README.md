@@ -234,24 +234,30 @@ what's original.
   All 33 half-words of the block also match the page's printed machine
   code (`verify_ibox1_listing.py`), which is how the immediate-index
   bug in "Gotchas" item 16 was found.
-- **`ibox1_p46_p51_span.strap`** — pp.46–51 from octal 5247.00 to
-  5461.40 as one contiguous verbatim span, twelve test groups flowing
-  into each other exactly as the deck lays them out: CBR, CBR+, CBR−,
-  CBRH, CBRZ, CBRZ+, CBRZ−, CBRZH (each proves its value arithmetic by
-  `SX`-storing X1's whole index word over a hang, chosen so the right
-  value reads as `BD,<next hang>` when executed), then SIC-CB, SIC-CBZ,
-  SIC-B,ZIND, SIC-B,IND (each SIC rewrites the hang after it; the
-  chain of rewritten hangs ends on two NOP-valued `VF`s that fall into
-  the next group) and WEN2/WEN/VEN, with one substituted `BEW` at
-  5462.00 where the floating-point test begins. Grew in two steps: the
-  pp.50–51 half first (SIC with Branch on Indicator embedded —
-  `BZXF`/`BZXCZ`/`BZXVGZ`/`BZXVLZ` taken on an OFF indicator,
-  `BXF`/`BXCZ`/`BXVGZ` not taken, `BXVZ` taken — which exposed that the
-  direct index operations never set the index indicators, item 17),
-  then the count-and-branch groups, which settled the H/+/− units
-  (item 18). 28 checks: 15 SX-stored index words, 12 rewritten hangs,
-  the halt PC; expected values from `ibox1_expected.py`. All 199
-  half-words of pp.46–51 match the page (`verify_ibox1_listing.py`).
+- **`ibox1_p43_p51_span.strap`** — pp.43–51 from octal 5123.00 to
+  5461.40 as one contiguous verbatim span: the deck's entire
+  index-branching section (CB, CB+, CBH, CB−, CBZ, CBZ+, CBZ−, CBZH,
+  CBR, CBR+, CBR−, CBRH, CBRZ, CBRZ+, CBRZ−, CBRZH — each proves its
+  value arithmetic by `SX`-storing X1's whole index word over a hang
+  pair, the starting XW value chosen so the right result reads as
+  `BD,<next hang>` when executed), then SIC-CB, SIC-CBZ, SIC-B,ZIND,
+  SIC-B,IND (each SIC rewrites the hang after it; the chain of
+  rewritten hangs ends on two NOP-valued `VF`s that fall into the next
+  group) and WEN2/WEN/VEN — twenty test groups flowing into each other
+  exactly as the deck lays them out, with one substituted `BEW` at
+  5462.00 where the floating-point test begins. It starts at the
+  first group below the deck's LR/SR-into-the-indicator-register test,
+  a store this model does not honor. Grew in three steps: pp.50–51
+  (SIC with Branch on Indicator embedded — `BZXF`/`BZXCZ`/`BZXVGZ`/
+  `BZXVLZ` taken on an OFF indicator, `BXF`/`BXCZ`/`BXVGZ` not taken,
+  `BXVZ` taken — which exposed that the direct index operations never
+  set the index indicators, item 17), pp.46–49 (the refilling
+  variants, which settled the H/+/− units, item 18), then pp.43–46
+  once the assembler had `CNOP`. 36 checks: 23 SX-stored index words,
+  12 rewritten hangs, the halt PC; expected values from
+  `ibox1_expected.py`. All 497 half-words of pp.43–51 match the page
+  (`verify_ibox1_listing.py`), the first external check of every
+  count-and-branch variant but the four I-Box 4 covered.
 
 Every run above is a true end-to-end test: STRAP source text through
 the Python assembler, through the *same* Bluespec decoder/executor
@@ -718,7 +724,7 @@ had in mind:
     nice to have.**
 17. **Running the deck's own indicator tests found that direct index
     arithmetic never set the index indicators.** The SIC-B,ZIND group
-    (`ibox1_p46_p51_span.strap`) does `LX,$X1,ISBXW` and then branches
+    (`ibox1_p43_p51_span.strap`) does `LX,$X1,ISBXW` and then branches
     on XF/XCZ/XVGZ/XVLZ/XVZ being off or on, exactly as its comment
     says ("XVZ ON, XCZ, XVGZ, XVLZ, XF OFF"). In the model only
     `V+`/`V+C`/`V+CR` set those indicators; `LX`/`LV`/`LC`/`LR`/`SX`/
@@ -777,7 +783,10 @@ program run through this assembler.
 `SLC` ("Set Location Counter", C22-6531 p.32) is implemented as of the
 original-addresses milestone — see `strap_asm.py`'s docstring for the
 rules pinned down (bit-count operand, no forward references, name
-field ignored) and `test_slc.py` for each one under test.
+field ignored) and `test_slc.py` for each one under test. `CNOP`
+(round up to a full word, compiling a NOP into any skipped half-word)
+is implemented too, tested in the same file and against I-Box 1's own
+two printed `CNOP` rows.
 
 Notably **not** implemented yet: multi-word Transmit — the same gap
 `../bsv/README.md`'s "Next steps" names on the execute side. Also not
@@ -840,9 +849,10 @@ until one has.
    doc for the recommended transcription order (the shared MAINTENANCE
    COMPOOL symbol table first) and for the five I-Box diagnostic
    programs recommended as the next inventory target after that.
-1. `CNOP`, `CF`, `RF`, `DDI`, `CW`, `EXT` — pseudo-ops C22-6531
-   defines that no program exercised yet (`SYN` and `SLC` were on
-   this list; both are now implemented and tested).
+1. `CF`, `RF`, `DDI`, `CW`, `EXT` — pseudo-ops C22-6531 defines that
+   no program exercised yet (`SYN`, `SLC` and `CNOP` were on this
+   list; all three are now implemented and tested — `CNOP` is what
+   let the I-Box 1 span reach back to p.43).
 2. Verify the opcode table exhaustively against `7030_Opcode_List.pdf`
    (the rendered pages, not its noisy OCR — see `../bsv/README.md`
    "Next steps", inherited here unchanged).
