@@ -6,9 +6,28 @@ StretchExecute.bsv (see opcodes.py for the shared table and citations).
 SCOPE (implemented / not, and why -- mirrors the "decode completely,
 execute partially, document the rest" ethos of the Bluespec model):
 
-  Pseudo-ops:  DD, VF, XW, END, SYN.
-  Not yet:     CF, RF, CNOP, SLC, DDI, CW, EXT (raise AssemblerError
+  Pseudo-ops:  DD, VF, XW, END, SYN, SLC.
+  Not yet:     CF, RF, CNOP, DDI, CW, EXT (raise AssemblerError
                citing C22-6531 rather than silently guessing).
+
+  SLC ("A | SLC, Y" -- C22-6531 p.32, "Set Location Counter"): resets
+  the location counter to the bit-address expression Y; the next
+  statement is compiled there, subject to the same rounding-upward
+  alignment every statement already gets (a full-word instruction
+  after `SLC, 5.32` lands at 6.0). Y must be evaluable when the SLC
+  is reached in pass 1 -- location-counter symbols defined ABOVE it,
+  or SYNs whose own chains are resolvable by then (resolved eagerly at
+  that point, see assemble()) -- and must be non-negative; a forward
+  reference is an AssemblerError, matching the manual's own
+  restriction ("it must be evaluable by the time it is encountered in
+  pass 2 of Strap-1"). A bare integer in Y counts as BITS, not words
+  (p.32: "added in as a 24-bit address field; i.e., as an integral
+  number of bits") -- write `2860.0` for word 2860, same as any other
+  address expression here. The name field is ignored (p.32) -- an SLC
+  never defines a symbol. Needed for real historical listings, whose
+  routines sit at fixed addresses far above this assembler's default
+  origin (I-Box 1's WEN/WEN2/VEN at octal 5454-5461, see
+  programs/ibox1_wen_ven_original_addresses.strap).
 
   SYN ("A | SYN(dds), Y" -- C22-6531 p.31): defines a symbol's value
   from its own operand expression Y, not the location counter --
@@ -671,7 +690,9 @@ def statement_size(stmt):
         return 0, 0
     if op == 'SYN':
         return 0, 0  # defines a symbol by value, occupies no storage (C22-6531 p.31)
-    if op in ('CNOP', 'SLC', 'CF', 'RF', 'DDI', 'CW', 'EXT'):
+    if op == 'SLC':
+        return 0, 0  # moves the location counter, occupies no storage (C22-6531 p.32)
+    if op in ('CNOP', 'CF', 'RF', 'DDI', 'CW', 'EXT'):
         raise AssemblerError(
             f"pseudo-operation {op} not implemented by this assembler yet "
             f"(see strap_asm.py module docstring / C22-6531)", stmt.lineno)
@@ -767,66 +788,12 @@ class AssembledProgram:
         self.end_pc = end_pc        # half-word PC (int) from an END statement, or None
 
 
-def assemble(source, origin_bits=DEFAULT_ORIGIN_BITS):
-    statements = list(iter_statements(source))
-
-    # Pass 1: sizes + symbol table. Rounding a full-word instruction's
-    # location up past a half-word instruction that didn't fill a whole
-    # word leaves a gap that straight-line execution would otherwise
-    # fall through into (fetching whatever happens to be there, which
-    # decodes as a real -- and wrong -- instruction: an all-zero
-    # half-word is BE, Branch Enabled, to address 0). C22-6531's CNOP
-    # pseudo-op describes exactly this padding ("the machine instruction
-    # NOP is compiled" to bridge a half-word-to-full-word rounding gap);
-    # this assembler applies that same fill automatically wherever
-    # alignment forces a gap, rather than requiring an explicit CNOP
-    # before every full-word instruction.
-    symtab = {}
-    gaps = []
-    syn_stmts = []  # SYN statements: named but NOT assigned the location
-                     # counter (unlike every other pseudo-op/instruction)
-                     # -- their value comes from evaluating their own
-                     # operand expression instead, which may reference a
-                     # symbol not yet defined at this point in the source
-                     # (C22-6531 p.31: "this may possibly mean as late as
-                     # pass 3 of Strap-1"). Resolved in a separate
-                     # fixpoint pass below, once every location-counter
-                     # symbol above is already known. This is exactly the
-                     # bug this module's docstring describes fixing:
-                     # SYN's name must NEVER just take the current `loc`.
-    loc = origin_bits
-    for stmt in statements:
-        align, size = statement_size(stmt)
-        old_loc = loc
-        if align:
-            loc = ((loc + align - 1) // align) * align
-        # Only a gap immediately before an INSTRUCTION is reachable by
-        # straight-line execution and needs NOP-filling; a gap before a
-        # data pseudo-op (e.g. VF's "LC stands at bit 25" rounding
-        # after a bit-precise DD, C22-6531 p.18) is dead space no
-        # program counter ever visits, and is left as-is.
-        is_instruction = stmt.op.upper() not in ('DD', 'VF', 'XW', 'END', 'SYN')
-        if loc != old_loc and is_instruction:
-            gaps.append((old_loc, loc - old_loc))
-        stmt.addr = loc
-        if stmt.name:
-            up = stmt.name.upper()
-            if up in symtab:
-                raise AssemblerError(f"symbol {stmt.name!r} multiply defined", stmt.lineno)
-            if stmt.op.upper() == 'SYN':
-                syn_stmts.append((up, stmt))
-            else:
-                symtab[up] = loc
-        loc += size
-
-    # Resolve SYN symbols by fixpoint: each SYN's value is its own
-    # operand expression (C22-6531 p.31, "A | SYN(dds), Y" -- "the
-    # newly defined symbol A is that whenever A is written in the
-    # program, the effect is the same as if Y had been written"), which
-    # may itself reference another SYN symbol not yet resolved, or a
-    # location-counter symbol already known from the pass above. Retry
-    # until a full round makes no progress; whatever's left references a
-    # genuinely undefined or circular chain.
+def resolve_syns(syn_stmts, symtab, final):
+    """Resolve SYN symbols by fixpoint (see assemble() for the rule
+    this implements). Returns the list of (NAME, stmt) pairs still
+    unresolved. final=True: anything left is an error, classified
+    precisely as undefined vs. circular; final=False (an SLC asking
+    for whatever is resolvable so far): just return the leftovers."""
     pending = list(syn_stmts)
     while pending:
         progressed = False
@@ -842,6 +809,8 @@ def assemble(source, origin_bits=DEFAULT_ORIGIN_BITS):
             symtab[up] = eval_expr(stmt.fields[0], symtab, stmt.addr, lineno=stmt.lineno)
             progressed = True
         if not progressed:
+            if not final:
+                return still_pending
             # Classify each stuck symbol precisely rather than lumping
             # every failure under one vague "undefined or circular"
             # message (caught by advisor review -- the original message
@@ -883,6 +852,101 @@ def assemble(source, origin_bits=DEFAULT_ORIGIN_BITS):
                 f"SYN symbol(s) never resolve -- {'; '.join(parts)}",
                 still_pending[0][1].lineno)
         pending = still_pending
+
+    return []
+
+
+def assemble(source, origin_bits=DEFAULT_ORIGIN_BITS):
+    statements = list(iter_statements(source))
+
+    # Pass 1: sizes + symbol table. Rounding a full-word instruction's
+    # location up past a half-word instruction that didn't fill a whole
+    # word leaves a gap that straight-line execution would otherwise
+    # fall through into (fetching whatever happens to be there, which
+    # decodes as a real -- and wrong -- instruction: an all-zero
+    # half-word is BE, Branch Enabled, to address 0). C22-6531's CNOP
+    # pseudo-op describes exactly this padding ("the machine instruction
+    # NOP is compiled" to bridge a half-word-to-full-word rounding gap);
+    # this assembler applies that same fill automatically wherever
+    # alignment forces a gap, rather than requiring an explicit CNOP
+    # before every full-word instruction.
+    symtab = {}
+    gaps = []
+    syn_stmts = []  # SYN statements: named but NOT assigned the location
+                     # counter (unlike every other pseudo-op/instruction)
+                     # -- their value comes from evaluating their own
+                     # operand expression instead, which may reference a
+                     # symbol not yet defined at this point in the source
+                     # (C22-6531 p.31: "this may possibly mean as late as
+                     # pass 3 of Strap-1"). Resolved in a separate
+                     # fixpoint pass below, once every location-counter
+                     # symbol above is already known. This is exactly the
+                     # bug this module's docstring describes fixing:
+                     # SYN's name must NEVER just take the current `loc`.
+    loc = origin_bits
+    for stmt in statements:
+        if stmt.op.upper() == 'SLC':
+            # C22-6531 p.32: Y must already be evaluable here. Any SYN
+            # seen so far whose chain is resolvable now is resolved
+            # first (the manual's own ordering rule: SYNs an SLC depends
+            # on "should occur before any SLC with an address involving
+            # the name of the SYN card"); whatever is still pending
+            # after that is a genuine forward reference for THIS SLC.
+            syn_stmts[:] = resolve_syns(syn_stmts, symtab, final=False)
+            if not stmt.fields or not stmt.fields[0].strip():
+                raise AssemblerError("SLC needs a location operand", stmt.lineno)
+            missing = [sym for sym in referenced_symbols(stmt.fields[0], stmt.lineno)
+                       if sym not in symtab]
+            if missing:
+                raise AssemblerError(
+                    f"SLC operand {stmt.fields[0]!r} references {', '.join(missing)}, "
+                    f"not yet defined at this point -- SLC cannot forward-reference "
+                    f"(C22-6531 p.32)", stmt.lineno)
+            new_loc = eval_expr(stmt.fields[0], symtab, loc, lineno=stmt.lineno)
+            if new_loc < 0:
+                raise AssemblerError(
+                    f"SLC operand {stmt.fields[0]!r} evaluates to {new_loc} bits, "
+                    f"negative (C22-6531 p.32: must be positive)", stmt.lineno)
+            # p.32: "Any symbol A appearing in the name field is
+            # ignored." Ignored here too -- stmt.name is deliberately
+            # NOT entered into symtab, so a later reference to it
+            # fails loud as undefined rather than silently meaning
+            # the new location.
+            loc = new_loc
+            stmt.addr = loc
+            continue
+        align, size = statement_size(stmt)
+        old_loc = loc
+        if align:
+            loc = ((loc + align - 1) // align) * align
+        # Only a gap immediately before an INSTRUCTION is reachable by
+        # straight-line execution and needs NOP-filling; a gap before a
+        # data pseudo-op (e.g. VF's "LC stands at bit 25" rounding
+        # after a bit-precise DD, C22-6531 p.18) is dead space no
+        # program counter ever visits, and is left as-is.
+        is_instruction = stmt.op.upper() not in ('DD', 'VF', 'XW', 'END', 'SYN', 'SLC')
+        if loc != old_loc and is_instruction:
+            gaps.append((old_loc, loc - old_loc))
+        stmt.addr = loc
+        if stmt.name:
+            up = stmt.name.upper()
+            if up in symtab:
+                raise AssemblerError(f"symbol {stmt.name!r} multiply defined", stmt.lineno)
+            if stmt.op.upper() == 'SYN':
+                syn_stmts.append((up, stmt))
+            else:
+                symtab[up] = loc
+        loc += size
+
+    # Resolve SYN symbols by fixpoint: each SYN's value is its own
+    # operand expression (C22-6531 p.31, "A | SYN(dds), Y" -- "the
+    # newly defined symbol A is that whenever A is written in the
+    # program, the effect is the same as if Y had been written"), which
+    # may itself reference another SYN symbol not yet resolved, or a
+    # location-counter symbol already known from the pass above. Retry
+    # until a full round makes no progress; whatever's left references a
+    # genuinely undefined or circular chain.
+    resolve_syns(syn_stmts, symtab, final=True)
 
     # Pass 2: evaluate + emit.
     image = Image()
@@ -926,6 +990,9 @@ def emit_statement(stmt, symtab, image):
         # every other implicit-dds-inheritance rule this assembler
         # doesn't model.
         return
+
+    if op == 'SLC':
+        return  # location counter already moved in pass 1; no storage
 
     if op == 'DD':
         length = dds_length_bits(stmt.mods, stmt.lineno)

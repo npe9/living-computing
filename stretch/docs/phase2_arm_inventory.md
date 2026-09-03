@@ -436,10 +436,17 @@ needed).
      issuing a write and a new read request from the same call. L/+/K/
      C/CT (which never write to storage) were unaffected and keep the
      simpler "bail from the shared trailing block" shape.
-   `MemWords` bump past 256 remains a separate, later, not-yet-started
-   step (advisor: isolate latency-handling from capacity, one
-   candidate cause per commit) -- Phase 2's BRAM-latency migration
-   itself is now complete.
+   `MemWords` bump past 256 was kept as a separate, later step
+   (advisor: isolate latency-handling from capacity, one candidate
+   cause per commit) -- Phase 2's BRAM-latency migration itself was
+   complete at this point.
+10. DONE (next session). `MemWords` 256 -> 262144, the full 18-bit
+   space. `memInRange`'s comparison had to widen by one bit (the
+   bound 2^18 itself is not a valid `Bit#(18)` literal, bsc T0051);
+   nothing else changed. Smoke test elaborates+builds in ~40s wall
+   clock; full regression suite unchanged. Proven load-bearing by
+   `strap/programs/ibox1_wen_ven_original_addresses.strap`, which
+   fails 5/5 with 256 restored.
 
 Each step builds and passes the full regression suite before moving to
 the next; per advisor, passing unchanged is necessary but not

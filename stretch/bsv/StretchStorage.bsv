@@ -36,17 +36,22 @@
 // StretchExecute.bsv -- see docs/phase2_arm_inventory.md for the full
 // conversion history.
 //
-// MemWords below still bounds the simulated core to a window near
-// address 0 (a simulation-capacity choice, not an architectural one --
-// the 18-bit, 262,144-word address space is still what the *types*
-// model, see WordAddr in StretchTypes.bsv; addresses at or beyond
-// MemWords just read as 0 and discard writes, the same as a real
-// machine addressing beyond its installed core would trip AD, Address
-// Invalid, on real hardware -- not modeled here, see bsv/README.md
-// "Scope"). Kept at the same value Phase 1/2 developed against
-// (isolating a capacity change from this latency-handling change, one
-// candidate cause per commit); bumping it now that BRAM's elaboration
-// cost is confirmed cheap at scale is a separate, later step.
+// MemWords below is now the FULL 18-bit, 262,144-word address space
+// WordAddr (StretchTypes.bsv) models, so every address a program can
+// form is backed by real storage and memInRange is true by
+// construction (kept, one bit wider than WordAddr so the bound itself
+// fits, in case a smaller simulated core is ever wanted again --
+// addresses at or beyond MemWords read as 0 and discard writes; a
+// real machine addressing beyond its installed core would trip AD,
+// Address Invalid, not modeled here, see bsv/README.md "Scope").
+// Raised from the 256 words Phase 1/2 were developed against only
+// AFTER the BRAM latency migration was complete and green, as its own
+// separately-verified change: with BRAM behind it the full space
+// elaborates in ~40s wall clock for the smoke test (vs. a
+// Vector-of-Reg at 512 words already taking 1m54s), and is what lets
+// real historical listings run at their own addresses -- see
+// strap/programs/ibox1_wen_ven_original_addresses.strap, the first
+// program to execute above word 256.
 
 package StretchStorage;
 
@@ -55,7 +60,7 @@ import BRAM::*;
 import DefaultValue::*;
 import StretchTypes::*;
 
-typedef 256 MemWords;
+typedef 262144 MemWords;
 typedef Bit#(TLog#(MemWords)) MemIndex;
 
 interface StretchStorage;
@@ -152,7 +157,14 @@ module mkStretchStorage(StretchStorage);
                     // above already tolerates arbitrary same-request
                     // latency.
   BRAM1Port#(MemIndex, Word64) mem <- mkBRAM1Server(cfg);
-  function Bool memInRange(WordAddr a) = (a < fromInteger(valueOf(MemWords)));
+  // Compared one bit wider than WordAddr: at MemWords = 262144 (the
+  // full 18-bit address space) the bound itself doesn't fit in a
+  // Bit#(18) literal (bsc T0051), so the comparison is done in
+  // Bit#(19), where every WordAddr is in range by construction.
+  function Bool memInRange(WordAddr a);
+    Bit#(TAdd#(SizeOf#(WordAddr), 1)) wide = zeroExtend(a);
+    return wide < fromInteger(valueOf(MemWords));
+  endfunction
   function Bool isSpecialAddr(WordAddr a) = (a < 32);
 
   // Named CPU registers backing addresses 0-31.

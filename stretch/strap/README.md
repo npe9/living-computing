@@ -47,6 +47,9 @@ finding about the hardware model, not a hypothetical one.
 | `gen_tb.py` | Generates a runnable Bluespec testbench (loader + run-until-halt + checks) from an assembled program. |
 | `run_program.sh` | `strap_asm.py` → `gen_tb.py` → `bsc` → Bluesim in one step. |
 | `programs/` | Assembled test programs (see below). |
+| `run_tests.sh` | The whole regression suite in one step (pure-Python assembler tests first, then every program below on the model). |
+| `test_syn.py`, `test_slc.py` | Pure-Python tests of the `SYN` and `SLC` pseudo-ops against `assemble()` directly. |
+| `verify_ibox1_listing.py` | Assembles I-Box 1's WEN2/WEN/VEN verbatim at their listed addresses and compares every half-word to the machine code printed in the 1961 listing (`../docs/ja_ax1a_ibox-1.pdf` p.51). |
 
 ## Usage
 
@@ -199,6 +202,20 @@ what's original.
   `io_reader_printer.strap`'s, in a companion script
   (`gen_tape_tb.py`) that walks the exact same position transitions
   the `.strap` file's own header comment documents step by step.
+- **`ibox1_wen_ven_original_addresses.strap`** — I-Box 1's WEN2/WEN/VEN
+  indicator routines (`../docs/ja_ax1a_ibox-1.pdf` p.51; the I-Box
+  family as a whole is documented in `../docs/archival_inventory.md`,
+  alongside `ibox1_wen_ven_indicators.strap`, `ibox4_cb_count_branch.strap`
+  and `ibox4_cbr_refill.strap`) placed at the *listing's own* addresses
+  via `SLC` — words 2860–2865 and 3138–3139 (octal 5454–5461, 6102–6103).
+  The first program to fetch, branch and load data above the model's
+  old 256-word simulated core (`MemWords` is now the full 18-bit
+  space). Two oracles: the model (5 indicator checks, both directions
+  each, same as the low-address version) and the listing itself —
+  `verify_ibox1_listing.py` assembles the verbatim lines, `BD,$` hangs
+  included, and matches all nine printed half-words bit for bit.
+  Verified discriminating by putting `MemWords` back to 256: all 5
+  model checks then fail (fetches above the window read 0).
 
 Every run above is a true end-to-end test: STRAP source text through
 the Python assembler, through the *same* Bluespec decoder/executor
@@ -608,6 +625,11 @@ instruction formats and which pseudo-operations are implemented, not
 implemented (and why), or implemented but not yet exercised by any
 program run through this assembler.
 
+`SLC` ("Set Location Counter", C22-6531 p.32) is implemented as of the
+original-addresses milestone — see `strap_asm.py`'s docstring for the
+rules pinned down (bit-count operand, no forward references, name
+field ignored) and `test_slc.py` for each one under test.
+
 Notably **not** implemented yet: multi-word Transmit — the same gap
 `../bsv/README.md`'s "Next steps" names on the execute side. Also not
 implemented: `LVE`/`SIC` (see "Gotchas" item 12), VFL Immediate's
@@ -668,9 +690,9 @@ until one has.
    doc for the recommended transcription order (the shared MAINTENANCE
    COMPOOL symbol table first) and for the five I-Box diagnostic
    programs recommended as the next inventory target after that.
-1. `CNOP`, `SLC`, `CF`, `RF`, `DDI`, `SYN` (as a symbol-defining op,
-   not just a no-storage placeholder), `CW`, `EXT` — pseudo-ops
-   C22-6531 defines that no program exercised yet.
+1. `CNOP`, `CF`, `RF`, `DDI`, `CW`, `EXT` — pseudo-ops C22-6531
+   defines that no program exercised yet (`SYN` and `SLC` were on
+   this list; both are now implemented and tested).
 2. Verify the opcode table exhaustively against `7030_Opcode_List.pdf`
    (the rendered pages, not its noisy OCR — see `../bsv/README.md`
    "Next steps", inherited here unchanged).

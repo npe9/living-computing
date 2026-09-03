@@ -47,6 +47,15 @@ run "SYN pseudo-op" python3 test_syn.py
 # reasoning as 0 above. See verify_dcp_maintenance_compool.py's header.
 run "DCP Maintenance Compool" python3 verify_dcp_maintenance_compool.py
 
+# -- 0c. SLC pseudo-op (strap_asm.py, pure Python -- see test_slc.py) --
+run "SLC pseudo-op" python3 test_slc.py
+
+# -- 0d. I-Box 1 WEN2/WEN/VEN assembled VERBATIM at the listing's own
+# octal addresses (via SLC) and compared bit-for-bit against the
+# machine code printed in docs/ja_ax1a_ibox-1.pdf p.51 -- IBM's own
+# STRAP output as the oracle. Pure Python, no Bluesim.
+run "I-Box 1 listing bit-exact comparison" python3 verify_ibox1_listing.py
+
 # -- 1. Hand-assembled BSV smoke test (StretchSmoke.bsv, not STRAP-derived) --
 cd "$BSV_DIR"
 run "bsv smoke test (make run)" make run
@@ -122,6 +131,18 @@ run "Figure 7 Progressive Indexing" ./run_program.sh programs/figure7_progressiv
 # 1274's address-truncation test turned out to be untestable by
 # construction on this model's typed WordAddr/HWordAddr widths).
 run "I-Box 1 WEN/WEN2/VEN (RGZ/RZ indicators)" ./run_program.sh programs/ibox1_wen_ven_indicators.strap StretchIboxWenTb \
+    "X1_RGZ_ones:addrIndex(1)=0x640000000000" \
+    "X2_RZ_zeros:addrIndex(2)=0x640000000000" \
+    "X3_RGZ_ones_again:addrIndex(3)=0x640000000000" \
+    "X4_notRZ_ones:addrIndex(4)=0x640000000000" \
+    "X5_notRGZ_zeros:addrIndex(5)=0x640000000000"
+
+# -- 4b'. The same three routines placed at the listing's OWN addresses
+# (words 2860-2865, constants at 3138-3139) via SLC -- the first
+# program to run above the old 256-word core window (MemWords is now
+# the full 18-bit space). Verified discriminating: with MemWords put
+# back to 256, all 5 checks fail (fetches above the window read 0).
+run "I-Box 1 WEN/WEN2/VEN at original listing addresses" ./run_program.sh programs/ibox1_wen_ven_original_addresses.strap StretchIboxWenOrigTb \
     "X1_RGZ_ones:addrIndex(1)=0x640000000000" \
     "X2_RZ_zeros:addrIndex(2)=0x640000000000" \
     "X3_RGZ_ones_again:addrIndex(3)=0x640000000000" \

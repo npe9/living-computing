@@ -183,11 +183,13 @@ it recognizes independent of what the datapath implements.
   alignment before choosing a luckier one; see
   `../strap/programs/figure7_progressive_indexing.strap`'s padding
   comment for the concrete walkthrough.
-- **Address-space window**: `MemWords` (StretchStorage.bsv) bounds
-  simulated core to 256 words near address 0, not the full
-  262,144-word address space the 18-bit `WordAddr` type models —
-  a Bluesim elaboration-time/capacity choice (see "Toolchain" below
-  for just how much it costs to raise), not an architectural one.
+- **Address-space window**: `MemWords` (StretchStorage.bsv) is now
+  the full 262,144-word address space the 18-bit `WordAddr` type
+  models (raised from 256 once storage was BRAM-backed — see
+  "Toolchain" item 8 for the history and cost). What's still not
+  modeled is the *installed-core* limit a real installation had
+  (smaller than the address space): addressing beyond it would trip
+  AD, Address Invalid, on real hardware; here every address is backed.
 
 ### Not modeled at all
 
@@ -355,6 +357,18 @@ isn't repeated:
    these two results, there is no shortcut: real multi-cycle handling
    (Phase 2, `mem` on real BRAM plus a per-instruction pending-read FSM
    in `StretchCore.step()`) is confirmed necessary, not merely likely.
+
+   **Resolved.** After the BRAM migration (docs/phase2_arm_inventory.md
+   step 9) landed green, `MemWords` was raised straight to 262,144 —
+   the whole 18-bit space — as its own commit: the smoke test builds
+   in ~40s wall clock and every regression block passes unchanged.
+   One wrinkle: at exactly 2^18 the bound no longer fits in a
+   `Bit#(18)` literal (`bsc` T0051), so `memInRange` compares one bit
+   wider than `WordAddr`. First program to actually run above word
+   256: `strap/programs/ibox1_wen_ven_original_addresses.strap`
+   (I-Box 1's WEN2/WEN/VEN at their listed octal 5454–5461, constants
+   at 6102–6103), verified discriminating by putting 256 back and
+   watching all five of its checks fail.
 
    **The elaboration-cost curve was also measured, not just bounded at
    the two endpoints already known (256 seconds, 8192 hangs)**: 512

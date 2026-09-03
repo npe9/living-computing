@@ -172,6 +172,15 @@ tape almost certainly does. Reason (2), the `MemWords`/BRAM storage
 blocker, is completely untouched by this update and remains the larger
 prerequisite.
 
+**Update, later**: reason (2) is CLOSED. Storage is BRAM-backed
+(`bsv/README.md` "Toolchain" item 8, `docs/phase2_arm_inventory.md`)
+and `MemWords` is the full 18-bit space, so the DCP's octal
+004000-016500 footprint fits with room to spare; the assembler also
+has `SLC` now, so a listing can be placed at its own addresses rather
+than re-based. First program run at real historical addresses:
+`strap/programs/ibox1_wen_ven_original_addresses.strap`. Reason (1)
+(CTL/LOC codes, chaining) still stands for the DCP as a whole.
+
 **Update, third day**: reason (2) is now investigated, not untouched.
 A throwaway BRAM probe (8192 words, `mkBRAM1Server`) elaborated in
 0.275 seconds -- versus the plain-`Vector` attempt's 5+ minute,
@@ -413,9 +422,13 @@ Cross-validation candidates: the CB/CBR family (largest, most
 regression-test-shaped block) and `WEN`/`WEN2`/`VEN` (~9 instructions,
 the smallest self-contained runnable fragment found in any of the five
 documents). Whole program is based at word 1536 (octal 3000) --
-like the DCP, exceeds `StretchStorage`'s current 256-word window, so
-any candidate needs re-assembly at a low `SLC` address, not in-place
-extraction.
+like the DCP, exceeded `StretchStorage`'s then-256-word window, so
+the first candidates were re-based at the assembler's default origin.
+**No longer necessary**: `MemWords` now covers the whole address
+space and `SLC` is implemented, and the WEN block below has since
+been re-run at its listed addresses (octal 5454-5461) with its
+assembled words matched bit-for-bit against the listing's own printed
+machine code (`strap/verify_ibox1_listing.py`).
 
 **`WEN`/`WEN2`/`VEN` (p.51) transcribed and run -- DONE**, as
 `strap/programs/ibox1_wen_ven_indicators.strap`

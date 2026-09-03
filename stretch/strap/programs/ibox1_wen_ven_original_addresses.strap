@@ -1,0 +1,78 @@
+! I-Box 1 diagnostic program, WEN2/WEN/VEN (docs/ja_ax1a_ibox-1.pdf
+! p.51; constants WEN6/WEN7 p.59) -- the SAME three routines as
+! ibox1_wen_ven_indicators.strap, but placed at the LISTING'S OWN
+! ADDRESSES via SLC (C22-6531 p.32), instead of re-based at this
+! assembler's default origin:
+!
+!   WEN2  octal 5454.0 = word 2860      WEN6  octal 6102.0 = word 3138
+!   WEN   octal 5456.0 = word 2862      WEN7  octal 6103.0 = word 3139
+!   VEN   octal 5460.0 = word 2864
+!
+! Both are above the 256-word simulated core this model had until
+! StretchStorage.bsv's MemWords was raised to the full 18-bit address
+! space (262,144 words) -- this program is the first to fetch,
+! branch, and load data at real historical addresses, the blocker
+! every earlier I-Box/DCP note in docs/archival_inventory.md named.
+!
+! What's verbatim and what isn't: each routine's own Load stays at its
+! listed word and is assembled bit-for-bit identically to the listing's
+! printed machine code (checked by verify_ibox1_listing.py, which
+! assembles the exact source lines including the original "BRGZZ,$+1.0"
+! / "BD,$" pairs). Here, as in ibox1_wen_ven_indicators.strap, the
+! pass/fail MECHANISM is substituted, for the same reason given there:
+! "BD,$" is a deliberate hang for a console operator, unobservable in
+! Bluesim. Each routine's second half-word (the listing's BRGZZ/BRZZ
+! "$+1.0" skip over the hang) becomes a branch OUT to a marker block,
+! and the hang slot becomes "B, <fail path>"; the marker blocks live
+! at the default origin (word 32) and branch BACK into the next
+! routine's listed address. So the branches genuinely cross between
+! word 32 and words 2860-2864, and the Loads genuinely read words
+! 3138/3139 -- a low-address program that merely computed with big
+! numbers would not prove the storage change.
+!
+! Check semantics are exactly ibox1_wen_ven_indicators.strap's (both
+! directions per indicator, see its header for why): X1/X2/X3 = the
+! indicator that SHOULD fire did (RGZ after ones, RZ after zeros, RGZ
+! after ones again), X4/X5 = the indicator that should NOT fire didn't.
+! All five expect marker 100; 0 (pre-cleared) is the fail value.
+
+START   LVI, $1, 0.0        !X1 = 0 (fail marker: RGZ set after ones)
+        LVI, $2, 0.0        !X2 = 0 (fail marker: RZ set after zeros)
+        LVI, $3, 0.0        !X3 = 0 (fail marker: RGZ set after ones, again)
+        LVI, $4, 0.0        !X4 = 0 (fail marker: RZ NOT set after ones)
+        LVI, $5, 0.0        !X5 = 0 (fail marker: RGZ NOT set after zeros)
+        B, WEN2             !into the listing's own address range
+
+T1AOK   LVI, $1, 100        !RGZ correctly set after ones
+T1ADONE BRZZ, T1BSKIP       !RZ should NOT be set -- branching here is the bug
+        LVI, $4, 100        !RZ correctly not set
+T1BSKIP B, WEN              !next routine, at its listed address
+
+T2AOK   LVI, $2, 100        !RZ correctly set after zeros
+T2ADONE BRGZZ, T2BSKIP      !RGZ should NOT be set -- branching here is the bug
+        LVI, $5, 100        !RGZ correctly not set
+T2BSKIP B, VEN              !next routine, at its listed address
+
+T3OK    LVI, $3, 100
+DONE    BEW, $              !halt
+
+        SLC, 2860.0         !octal 5454.0 -- listing's own location
+WEN2    L(BU,64,8), WEN7    !-LOAD ONES        (listing: 6103.00 80 000000.20 50)
+        BRGZZ, T1AOK        !listing: BRGZZ,$+1.0 -- skip the hang
+        B, T1ADONE          !listing: BD,$      -- the hang, substituted
+
+        SLC, 2862.0         !octal 5456.0
+WEN     L(BU,64,8), WEN6    !-LOAD ZEROS       (listing: 6102.00 80 000000.20 50)
+        BRZZ, T2AOK         !listing: BRZZ,$+1.0
+        B, T2ADONE          !listing: BD,$
+
+        SLC, 2864.0         !octal 5460.0
+VEN     L(BU,64,8), WEN7    !                  (listing: 6103.00 80 000000.20 50)
+        BRGZZ, T3OK         !listing: BRGZZ,$+1.0
+        B, DONE             !listing: BD,$
+
+        SLC, 3138.0         !octal 6102.0 (p.59)
+WEN6    DD(BU,64,8), 0
+WEN7    DD(BU,64,8), 18446744073709551615   !0xFFFFFFFFFFFFFFFF
+
+        END, START
