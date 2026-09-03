@@ -1,0 +1,26 @@
+! Look-ahead / instruction-unit overlap benchmark (docs/
+! microarchitecture_plan.md stage 3b, the folklore item "I-box time
+! can be covered largely by neighboring floating point operations",
+! Perf. Char. p.3-17). Ten iterations of: load SUM, add ONE, store
+! SUM, then V+ on X2 (index arithmetic, 8 I-box cycles = 16 clocks)
+! and CB on X1 (16 clocks taken). E-box work per iteration: three
+! full-word SAU operations at 24 clocks each = 72 clocks, and the
+! store's word is the next iteration's load, so that load waits for
+! the store. With I-box run-ahead the V+ and CB (32 clocks of I-box
+! time) hide behind the E-box: about 10*72 + start-up ~ 800 clocks.
+! Serialized (I-box waiting for the levels to drain) they add ~32 per
+! iteration: ~1120. Measured 807. The bound of 900 in run_tests.sh
+! separates them. SUM is CNOP-aligned so the check reads one word.
+START   LCI, $1, 10
+        LVI, $2, 0
+LOOP    L(BU,64,8), SUM
+        +(BU,64,8), ONE
+        ST(BU,64,8), SUM
+        V+, $2, STEP
+        CB, $1, LOOP
+DONE    BEW, $
+        CNOP
+SUM     DD(BU,64,8), 0
+ONE     DD(BU,64,8), 1
+STEP    VF, 1.0
+        END, START

@@ -131,6 +131,59 @@ module mkStretchCore(StretchCore);
     endcase
   endfunction
 
+  // ---- Stage 3b (plan §6c): may an I-box-class instruction execute now,
+  // with look-ahead levels pending? It may unless a level's operand
+  // word is one it reads or writes, or it branches on an arithmetic
+  // indicator (which needs the levels drained). The operand words use
+  // the same effective-address arithmetic as execute().
+  function Bool levelHolds(Vector#(4, LaLevel) lv, WordAddr w);
+    Bool r = False;
+    for (Integer k = 0; k < 4; k = k + 1)
+      if (lv[k].da matches tagged Valid .a &&& lv[k].valid &&& a == w) r = True;
+    return r;
+  endfunction
+
+  function Bool indexIndicator(Bit#(6) n) =
+    (n == ind_XF || n == ind_XCZ || n == ind_XVLZ || n == ind_XVZ || n == ind_XVGZ
+     || n == ind_XL || n == ind_XE || n == ind_XH);
+
+  function Bool iboxHazard(DecodedInstr d, Vector#(4, LaLevel) lv);
+    Bool pending = False;
+    for (Integer k = 0; k < 4; k = k + 1) if (lv[k].valid) pending = True;
+    Bool h = True;   // anything not listed (Transmit, I/O, EX...): drain first
+    case (d) matches
+      tagged DirIndex .x: begin
+        HWordAddr ea = effAddr19(st, x.addr, x.idx);
+        Bool refillWord = (x.code == 5'b01111) && levelHolds(lv, zeroExtend(st.readIndex(x.j).refill)); // V+CR
+        h = levelHolds(lv, ea[18:1]) || refillWord;
+      end
+      tagged ImmIndex .x:
+        h = (x.code == 4'b0111 || x.code == 4'b1111)                          // V+ICR / V-ICR
+            && levelHolds(lv, zeroExtend(st.readIndex(x.j).refill));
+      tagged CountBranch .x:
+        h = (x.refill == 1) && levelHolds(lv, zeroExtend(st.readIndex(x.j).refill));
+      tagged BranchInd .x: h = !indexIndicator(x.indNum);
+      tagged BranchOrMisc .x: begin
+        // Unconditional branches drain the levels first: a halt (a
+        // branch to itself) must not be reported while E-box work is
+        // still in the look-ahead, and on the real machine a taken
+        // branch empties the look-ahead anyway (Perf. Char. p.3-18:
+        // "BD ... empty the LA completely"). NOP is free.
+        if (!x.misc) h = (x.code != 3'b110);
+        else if (x.code == 3'b100) h = levelHolds(lv, baWord(effAddr24(st, {x.addr, 5'b0}, x.idx))); // Z
+        else if (x.code == 3'b000 || x.code == 3'b001)                         // R / RCZ
+          h = levelHolds(lv, zeroExtend(st.readIndex(x.idx).refill));
+        else h = True;                                                         // EX/EXIC
+      end
+      tagged Sic .x: begin
+        BitAddr ea = effAddr24(st, x.addr, x.idx);
+        h = levelHolds(lv, ea[23:6]) || iboxHazard(decodeHalfWord(x.inner), lv);
+      end
+      default: h = True;
+    endcase
+    return pending && h;
+  endfunction
+
   // Stage 2b timing registers (see iboxCycles below).
   Reg#(Bit#(32)) clk      <- mkReg(0);   // clocks since reset
   Reg#(Bit#(32)) startClk <- mkReg(0);   // dispatch clock of the current instruction
@@ -563,8 +616,10 @@ module mkStretchCore(StretchCore);
         end
         done = False;
       end else if (prepared matches tagged Valid {.len, .di}) begin
-        // I-box class: wait for the look-ahead to drain, then execute.
-        if (nCount == 0 && !auActive) begin
+        // I-box class: execute ahead of pending levels unless a hazard
+        // (plan §6c) says wait; never while the arithmetic unit's own
+        // instruction is mid-flight (it owns the resume path).
+        if (!auActive && !iboxHazard(di, nl)) begin
           let d1 <- startExecute(pc, len, di);
           done = d1;
         end else

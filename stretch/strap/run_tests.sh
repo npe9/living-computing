@@ -93,6 +93,15 @@ run "Look-ahead timing: four loads" ./run_program.sh programs/la_timing_loads.st
     "ACC_right:9=4" \
     "CYCLES<=140"
 
+# -- 1d. I-box run-ahead benchmark: a ten-iteration L/+/ST loop closed
+# by V+ and CB. E-box-bound with the I-box instructions hidden (~800
+# clocks, measured 807) vs ~1120 if the I-box waited for the levels to
+# drain each time; bound 900.
+run "Look-ahead timing: L/+/ST/V+/CB loop" ./run_program.sh programs/la_timing_loop.strap StretchTimingLoopTb \
+    "SUM:38=10" \
+    "X2_value:addrIndex(2)=0x2800000000000" \
+    "CYCLES<=900"
+
 # -- 2. Problem 2.1: Cyclic Bit Shifting --
 run "Problem 2.1" ./run_program.sh programs/problem_2_1.strap StretchProblem21Tb \
     "DOG_rotated:32=0x6e5d4c3b2a19087f" \

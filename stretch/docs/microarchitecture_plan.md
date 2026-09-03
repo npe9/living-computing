@@ -451,6 +451,47 @@ restart behave as before. No recovery levels are needed yet because
 nothing the I-box does ahead can be wrong: no guessed branches, no
 interrupts.
 
+## 6d. Stage 3c design: the not-taken guess and wrong-way recovery
+
+Buchholz §15.2 item 4 and Blosk p.28: "for a branch instruction
+conditional on the result of arithmetic-unit operations, the
+instruction unit proceeds as if the branch will fail"; Perf. Char.
+p.3-23: "all changes in the index registers and/or index indicators due
+to the advance processing by the I-box must now be undone ... The
+correct instruction counter value is also shipped back to the I-box."
+
+- A branch on a non-index indicator (Perf. Char. p.3-22: everything but
+  XF/XVLZ/XVZ/XVGZ/XCZ/XL/XE/XH) is loaded into a look-ahead level as a
+  *branch level* -- the real machine uses four levels (instruction,
+  indicator fetch, store, recovery); the model charges their time and
+  keeps one level -- with its target address computed at preparation.
+  The instruction unit records the guess (a snapshot of the sixteen
+  index words and the index indicators, standing for the recovery
+  pseudo-store levels the machine would have loaded one at a time) and
+  continues down the fall-through path. Only one guess is outstanding
+  at a time; a second arithmetic branch waits.
+- While a guess is unresolved the I-box executes index arithmetic and
+  index branches ahead, as 3b allows, but stalls anything whose effect
+  could not be undone by the snapshot: stores to memory (SX/SV/SC/SR,
+  Z, SIC, Transmit -- on the real machine these become store levels
+  that the store-check counter does not release before the branch
+  level), unconditional branches and halts (so a halt is never reported
+  under a wrong guess), and a second guess.
+- When the arithmetic unit reaches the branch level, all earlier
+  operations are complete, so the indicators are final: the branch
+  executes with its normal semantics (test, optional clear). Guess
+  right: retire the level. Guess wrong: cancel every younger level,
+  restore the index registers and index indicators from the snapshot,
+  set the instruction counter to the target, invalidate the Y buffers,
+  and charge the recovery time (Blosk fig.10: the branch's own five
+  cycles; plus the refetch).
+
+Cost model: the branch level's four-level load is charged as the
+branch's I-box time (6 cycles); a wrong guess adds a Y refill. The
+interrupt system, when it arrives, uses the same recovery path
+(Buchholz §15.6: "the interruption action is quite similar to branch
+recovery except that in addition a new instruction has to be fetched").
+
 ## 7. Status
 
 - **Stage 0 -- done** (2026-09-03): `CYCLES<=N` check in `gen_tb.py`;
@@ -502,7 +543,20 @@ interrupts.
   `StretchTypes`, the engine in `StretchCore.step()` (levels
   collected/issued at the top of every clock; removal and preparation
   as branches of the one instruction chain so at most one `execute()`
-  runs per clock).
+  runs per clock). Follow-up: the E-box busy wait and the resume wait
+  had preempted preparation (four loads measured 162 clocks against
+  ~115); fixed, 120 clocks, benchmark `la_timing_loads.strap`.
+- **Stage 3b -- done** (2026-09-03; 23-block suite green): I-box-class instructions run
+  ahead of pending levels under §6c's hazard checks (`iboxHazard`:
+  operand-word compare against every level's address for the direct
+  index ops, refills, Z, SIC's store and its embedded branch; drain
+  for branches on arithmetic indicators and for everything else).
+  Benchmark `la_timing_loop.strap`: L/+/ST/V+/CB x10 in 807 clocks
+  vs ~1120 serialized. Caught by the suite: the halt (a branch to
+  itself) is unconditional and hazard-free, so it executed ahead of
+  pending stores and the run ended before they retired -- unconditional
+  branches now drain the levels first (the machine's "BD empties the
+  LA" behavior, Perf. Char. p.3-18).
 
 ## 8. Immediate next steps
 
