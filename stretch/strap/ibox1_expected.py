@@ -29,6 +29,7 @@ full-word check per SPEC, each a word the deck rewrites at run time:
   LABEL=COPY:OTHER   a word overwritten with the assembled contents of
                      OTHER -- the deck's "SX + TEST FOR REFILL" stores,
                      where X1 has just been refilled from OTHER's XW.
+"""
 import sys
 from strap_asm import assemble, enc_branch_or_misc, eval_expr
 from opcodes import UNCOND_BRANCH_CODES
