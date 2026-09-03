@@ -222,6 +222,37 @@ MISC_CODES = {
 # Used both for $<name> system symbols and for parsing Branch-on-
 # -Indicator mnemonics B[Z]<name>[Z] (C22-6531 Appendix A footnote 2).
 # ---------------------------------------------------------------------
+# Non-indicator system symbols, C22-6531 Appendix A (p.56), as
+# (word, first bit) of the register field they name -- "$R" is the
+# right half of the accumulator, word 9, so "KV,$X15,$R" (I-Box 4
+# section 138) compares against word 9's bits 0-24. Index registers
+# ($X0..$X15 / $0..$15) and the indicator names (INDICATOR_BITS, word
+# 11) are handled separately in strap_asm.eval_system_symbol. $MASK's
+# bit column is not legible enough on the scan to record; add it from
+# the page if a program ever needs it. $E/$M/$N/$PI are mathematical
+# constants (footnote 12), not addresses, and are not supported.
+SYSTEM_SYMBOLS = {
+    "AOC": (7, 44),   # All Ones Count, 44-50
+    "BC":  (3, 57),   # Boundary Control
+    "CA":  (5, 12),   # Channel Address, 12-18
+    "CPU": (6, 0),    # Other CPU, 0-18
+    "FT":  (14, 0),   # Factor
+    "IA":  (2, 0),    # Interruption Address, 0-17
+    "IND": (11, 0),   # Indicators
+    "IT":  (1, 0),    # Interval Timer, 0-18
+    "L":   (8, 0),    # Left Half of Accumulator
+    "LB":  (3, 32),   # Lower Boundary, 32-49
+    "LZC": (7, 17),   # Left Zeros Count, 17-23
+    "MB":  (4, 0),    # Maintenance Bits
+    "R":   (9, 0),    # Right Half of Accumulator
+    "RM":  (13, 0),   # Remainder
+    "SB":  (10, 0),   # Sign Byte, 0-7
+    "TC":  (1, 28),   # Time Clock, 28-63
+    "TR":  (15, 0),   # Transit
+    "UB":  (3, 0),    # Upper Boundary, 0-17
+    "Z":   (0, 0),    # Word Number Zero
+}
+
 INDICATOR_BITS = {
     "MK": 0, "IK": 1, "IJ": 2, "EK": 3, "TS": 4, "CPUS": 5, "EKJ": 6,
     "UNRJ": 7, "CBJ": 8, "EPGK": 9, "UK": 10, "EE": 11, "EOP": 12,

@@ -211,7 +211,7 @@ from opcodes import (
     VFL_INT_CODES, VFL_INT_MINUS_BASE, FP_CODES, DIR_INDEX_CODES,
     IMM_INDEX_CODES, UNCOND_BRANCH_CODES, MISC_CODES, INDICATOR_BITS,
     MODE_BITS, MODE_DEFAULT_BS, PROGRESSIVE_SECONDARY_OP, CONNECTIVE_SUFFIX,
-    IO_OP, CB_CODES, IMM_INDEX_COUNT_OPS,
+    IO_OP, CB_CODES, IMM_INDEX_COUNT_OPS, SYSTEM_SYMBOLS,
 )
 
 # Input-Output base mnemonics (before an optional "(SEOP)" modifier or
@@ -451,6 +451,9 @@ def eval_system_symbol(name, loc_bits, reg_context, lineno=None):
         return n if reg_context else (16 + n) * 64
     if up in INDICATOR_BITS:
         return 11 * 64 + INDICATOR_BITS[up]  # word 11 (indicators), bit = number
+    if up in SYSTEM_SYMBOLS:
+        w, b = SYSTEM_SYMBOLS[up]        # C22-6531 Appendix A register fields
+        return w * 64 + b
     raise AssemblerError(f"unsupported system symbol ${name!r}", lineno)
 
 
@@ -475,18 +478,23 @@ def eval_expr(expr, symtab, loc_bits, reg_context=False, lineno=None):
     return total
 
 
-def eval_addr_field(expr, symtab, loc_bits, unit_shift, lineno=None):
+def eval_addr_field(expr, symtab, loc_bits, unit_shift, lineno=None, int_shift=0):
     """Evaluate an expression destined for an ADDRESS field whose unit
-    is 2**unit_shift bits (5 for a 19-bit half-word-address field),
-    applying C22-6531 p.11's rule term by term: bit-address terms
-    (W.B, symbols, system symbols) are converted to the field's units,
-    while plain integers "add into all fields as integers; that is,
-    the units digit adds into the low-order position of the field".
-    eval_expr(), by contrast, returns a pure bit count."""
+    is 2**unit_shift bits (5 for a 19-bit half-word-address field, 6
+    for an 18-bit word-address field), applying C22-6531 p.11's rule
+    term by term: bit-address terms (W.B, symbols, system symbols) are
+    converted to the field's units, while plain integers "add into all
+    fields as integers; that is, the units digit adds into the low-
+    order position of the field". int_shift: for an operation whose
+    19-bit field only uses "bits 0-17 of the effective address" (LX/SX,
+    Reference Manual p.24), an integer counts full words, so it lands
+    one bit up (I-Box 4 p.58: "SX,$X0,8" prints as word 8, "SV,$X0,2"
+    as half-word 2 = 1.0). eval_expr(), by contrast, returns a pure
+    bit count."""
     total = 0
     for sign, kind, val in tokenize_expr(expr, lineno):
         if kind == 'int':
-            term = val
+            term = val << int_shift
         elif kind == 'bitaddr':
             w, b = val
             term = (w * 64 + b) >> unit_shift
@@ -1161,7 +1169,10 @@ def emit_statement(stmt, symtab, image):
         mag = abs(val) & 0xFFFFFF
         count = eval_expr(stmt.fields[1], symtab, loc, lineno=stmt.lineno) & 0x3FFFF \
             if len(stmt.fields) >= 2 and stmt.fields[1].strip() else 0
-        refill = (eval_expr(stmt.fields[2], symtab, loc, lineno=stmt.lineno) >> 6) & 0x3FFFF \
+        # REFILL is an 18-bit WORD-address field: a label's bit count
+        # scales >>6, a bare integer counts words (I-Box 4 p.192's
+        # "BIT59 XW,0,0,16" prints refill 000000.00 10 = word 16).
+        refill = eval_addr_field(stmt.fields[2], symtab, loc, 6, lineno=stmt.lineno) & 0x3FFFF \
             if len(stmt.fields) >= 3 and stmt.fields[2].strip() else 0
         flagbit = eval_expr(stmt.fields[3], symtab, loc, lineno=stmt.lineno) & 0x1 \
             if len(stmt.fields) >= 4 and stmt.fields[3].strip() else 0
@@ -1192,9 +1203,10 @@ def emit_statement(stmt, symtab, image):
         # use for a NOP placeholder, docs/jb_ax4b_ibox-4.pdf p.155/159,
         # printed as 0.30 00, i.e. address 0) compiles as address 0,
         # same as the listing's own explicit "NOP,0." form.
-        target_bits = 0 if not base.strip() else \
-            eval_expr(base, symtab, loc, lineno=stmt.lineno)
-        addr19 = (target_bits >> 5) & 0x7FFFF
+        # 19-bit half-word-address field: bit-address terms >>5, bare
+        # integers as half-words (C22-6531 p.11) -- see eval_addr_field.
+        addr19 = 0 if not base.strip() else \
+            eval_addr_field(base, symtab, loc, 5, lineno=stmt.lineno) & 0x7FFFF
         idx = eval_reg(paren, symtab, stmt.lineno)
         if op in UNCOND_BRANCH_CODES:
             image.deposit_half(loc // 32, enc_branch_or_misc(addr19, UNCOND_BRANCH_CODES[op], False, idx))
@@ -1207,8 +1219,11 @@ def emit_statement(stmt, symtab, image):
             raise AssemblerError(f"{op} takes J and address fields", stmt.lineno)
         j = eval_reg(stmt.fields[0], symtab, stmt.lineno)
         base, paren = split_field_trailing_paren(stmt.fields[1])
-        target_bits = eval_expr(base, symtab, loc, lineno=stmt.lineno)
-        addr19 = (target_bits >> 5) & 0x7FFFF
+        # LX/SX address full words ("bits 0-17 of the effective
+        # address", p.24), so a bare integer counts words; every other
+        # direct index op addresses a half-word (bits 0-18).
+        addr19 = eval_addr_field(base, symtab, loc, 5, lineno=stmt.lineno,
+                                 int_shift=1 if op in ('LX', 'SX') else 0) & 0x7FFFF
         idx = eval_reg(paren, symtab, stmt.lineno)
         image.deposit_half(loc // 32, enc_dir_index(addr19, j, DIR_INDEX_CODES[op], idx))
         return
@@ -1243,8 +1258,7 @@ def emit_statement(stmt, symtab, image):
             raise AssemblerError(f"{op} takes J and branch-address fields", stmt.lineno)
         j = eval_reg(stmt.fields[0], symtab, stmt.lineno)
         base, paren = split_field_trailing_paren(stmt.fields[1])
-        target_bits = eval_expr(base, symtab, loc, lineno=stmt.lineno)
-        addr19 = (target_bits >> 5) & 0x7FFFF
+        addr19 = eval_addr_field(base, symtab, loc, 5, lineno=stmt.lineno) & 0x7FFFF
         idx = eval_reg(paren, symtab, stmt.lineno) & 0x1
         v, refill, bz = CB_CODES[op]
         image.deposit_half(loc // 32, enc_count_branch(addr19, j, v, refill, bz, idx))
@@ -1256,8 +1270,7 @@ def emit_statement(stmt, symtab, image):
         if len(stmt.fields) != 1:
             raise AssemblerError(f"{op} takes exactly one address field", stmt.lineno)
         base, paren = split_field_trailing_paren(stmt.fields[0])
-        target_bits = eval_expr(base, symtab, loc, lineno=stmt.lineno)
-        addr19 = (target_bits >> 5) & 0x7FFFF
+        addr19 = eval_addr_field(base, symtab, loc, 5, lineno=stmt.lineno) & 0x7FFFF
         idx = eval_reg(paren, symtab, stmt.lineno) & 0x1
         image.deposit_half(loc // 32, enc_branch_ind(addr19, indnum, clear, branchOn, idx))
         return
