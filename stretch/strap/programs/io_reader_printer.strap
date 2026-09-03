@@ -49,8 +49,9 @@
 ! Figure 7's expected results are derived by a companion Python script
 ! rather than written as STRAP source. See that file for the derivation.
 
-START   LVI, $1, 1024      !X1 = reader channel (32), pre-scaled
-        LVI, $2, 1056      !X2 = printer channel (33), pre-scaled
+START   LVI, $1, 32      !X1 = reader channel 32: LVI puts it in value bits 0-18,
+                         !i.e. value 32<<5 = 1024, the channel field's own position
+        LVI, $2, 33      !X2 = printer channel 33 (value 33<<5 = 1056, same reasoning)
 
         RD, 0($1), CTLW1   !read 3 words from the reader into DEST
         CCW, 0($1), CCWA   !copy the reader's resulting control word

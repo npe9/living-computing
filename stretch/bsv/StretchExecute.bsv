@@ -13,7 +13,7 @@
 //
 // Every other decoded format/opcode -- decimal arithmetic, floating
 // point arithmetic beyond L/ST, radix conversion, input-output,
-// interrupts, bit branching, SIC, EX/EXIC, RNX/LVE/SVA, LVS, Transmit
+// interrupts, bit branching, EX/EXIC, RNX/LVE/SVA, LVS, Transmit
 // backward/swap -- sets indicator 15 (OP, Operation Code Invalid) and
 // otherwise acts as a no-op, matching the documented real-machine
 // behavior for an invalid/suppressed instruction (Reference Card,
@@ -41,6 +41,118 @@ import StretchStorage::*;
 import StretchIO::*;
 import StretchVFL::*;
 import StretchALU::*;
+import StretchDecode::*; // decodeHalfWord, for SIC's embedded branch
+
+// ---------------------------------------------------------------------
+// Half-word branch evaluation, shared by the CountBranch / BranchInd /
+// BranchOrMisc case arms of execute() and by SIC (Store Instruction
+// Counter If), whose right half-word IS one of those three branches
+// (Reference Manual p.41: "Bits 32-63 specify the half-word branch
+// instruction used"). Pure: it reads storage/index state and returns
+// what the branch WOULD do -- indicator word, index-register write,
+// taken/target -- so the caller commits it, and SIC can additionally
+// store the instruction counter on `taken`. Kept as a function rather
+// than duplicating the CB/BI/B logic inside the Sic arm.
+//
+// `slot`: which prefetch slot a refilling CBR's own read lands in
+// (0 today for every caller; parameterized so a caller that has
+// already consumed slot 0 could pass 1). `readsUsed` reports how many
+// slots the branch consumed once complete, so SIC can place its own
+// target-word read in the NEXT slot instead of colliding with the
+// refill word (the exact collision class docs/phase2_arm_inventory.md
+// step 9 records for ST + refill).
+// ---------------------------------------------------------------------
+typedef struct {
+  Maybe#(WordAddr) needsRead;
+  Bit#(2)   readsUsed;
+  Bool      doIdxWrite;
+  Bit#(4)   idxWriteReg;
+  IndexWord idxWriteVal;
+  Word64    ind;
+  Bool      taken;
+  HWordAddr target;
+} BranchOutcome deriving (Bits, Eq);
+
+function BranchOutcome evalBranch(StretchStorage st, DecodedInstr d, Word64 ind0,
+                                  Vector#(2, Word64) prefetch, Bit#(2) prefetchCount,
+                                  Bit#(2) slot);
+  BranchOutcome o = BranchOutcome {
+    needsRead: tagged Invalid, readsUsed: 0, doIdxWrite: False, idxWriteReg: 0,
+    idxWriteVal: IndexWord{addr:0, sign:0, flag:0, count:0, refill:0},
+    ind: ind0, taken: False, target: 0 };
+  case (d) matches
+
+    // Count and Branch / Count, Branch and Refill.
+    tagged CountBranch .cb: begin
+      IndexWord x = st.readIndex(cb.j);
+      // v: 00=unchanged, 01=+half(=+1 raw), 10=+one(=+2 raw), 11=-one(=-2 raw).
+      // SOURCE for the four cases: pocket card p.1 legend and p.3
+      // "INDEX BRANCHING" modifier table. The exact raw-unit mapping
+      // for "half"/"one" is this implementation's best-effort
+      // reading -- see bsv/README.md "Scope".
+      Int#(25) delta = case (cb.v)
+                          2'b01: 1;
+                          2'b10: 2;
+                          2'b11: -2;
+                          default: 0;
+                        endcase;
+      SM128 val = SM128{sign: x.sign, mag: zeroExtend(x.addr)};
+      SM128 dSM = SM128{sign: pack(delta<0), mag: zeroExtend(pack(abs(delta)))};
+      SM128 newVal = smAdd(val, dSM);
+      Bit#(18) newCount = x.count - 1;
+      IndexWord x1 = IndexWord{addr: truncate(newVal.mag), sign: newVal.sign,
+                       flag: x.flag, count: newCount, refill: x.refill};
+      // Prefetch/bail-out shape, inlining maybeRefill's own
+      // condition (doRefill && x1.count==0) rather than calling it.
+      Bool doRefill = (cb.refill == 1) && (x1.count == 0);
+      if (doRefill && prefetchCount < slot + 1) begin
+        o.needsRead = tagged Valid zeroExtend(x1.refill);
+      end else begin
+        IndexWord x2 = doRefill ? unpackIndexWord(prefetch[slot[0]]) : x1;
+        o.readsUsed = doRefill ? 1 : 0;
+        o.doIdxWrite = True; o.idxWriteReg = cb.j; o.idxWriteVal = x2;
+        o.ind = setIndexResultIndicatorsF(ind0, x1); // per p.23: indicators reflect
+                                                      // state *before* any refill.
+        Bool take = (cb.branchIfZero == 1) ? (newCount == 0) : (newCount != 0);
+        if (take) begin
+          o.taken = True;
+          o.target = effAddr19(st, cb.addr, {3'b0, cb.idx}); // K: X1 only
+        end
+      end
+    end
+
+    // Branch on Indicator. Tests the indicator word as of entry to
+    // execute() (ind0); its own `clear` still lands in the single
+    // end-of-execute indicator write via o.ind.
+    tagged BranchInd .bi: begin
+      Bit#(7) indShift = 63 - zeroExtend(bi.indNum);
+      Bit#(1) bitVal = ind0[indShift];
+      Bool take = (bi.branchOn == 1) ? (bitVal == 1) : (bitVal == 0);
+      if (bi.clear == 1) o.ind = setBit(ind0, bi.indNum, 0);
+      if (take) begin
+        o.taken = True;
+        o.target = effAddr19(st, bi.addr, {3'b0, bi.idx});
+      end
+    end
+
+    // Unconditional branching. B=010 BR=011 BE=000 BD=001 BEW=100
+    // NOP=110. BE/BD/BEW's interrupt-enable distinction is not modeled
+    // (no interrupt system in this implementation, see README); all
+    // four unconditional-branch codes other than NOP branch. The misc
+    // (Z/R/RCZ/EX) half of this format is NOT a branch and is handled
+    // by execute()'s own BranchOrMisc arm; a caller only hands the
+    // non-misc shape here.
+    tagged BranchOrMisc .bm: begin
+      if (!bm.misc && bm.code != 3'b110) begin
+        o.taken = True;
+        o.target = effAddr19(st, bm.addr, bm.idx);
+      end
+    end
+
+    default: o.ind = setOpInvalid(ind0); // not a half-word branch: fail loud
+  endcase
+  return o;
+endfunction
 
 // ---------------------------------------------------------------------
 // Address-modification helpers (p.20-21 "Address Modification"): add
@@ -756,18 +868,31 @@ function ActionValue#(Tuple4#(HWordAddr, Maybe#(Tuple2#(Bit#(4), IndexWord)),
       // -----------------------------------------------------------
       tagged ImmIndex .ii: begin
         IndexWord x = st.readIndex(ii.j);
-        Bit#(18) imm18 = truncate(ii.imm);
-        SM128 immSM = SM128{sign: 0, mag: zeroExtend(ii.imm)};
+        // Reference Manual p.25, per operation: the 19-bit address part
+        // is NOT a raw integer. Value operations (LVI/LVNI/V+I.../KVI/
+        // KVNI) use "the address part, bits 0-18, of the instruction"
+        // as bits 0-18 OF THE VALUE FIELD, "bits 19-24 set to zero"
+        // (or "zeros added to bits 19-24") -- i.e. the field is the
+        // word-and-half part of a bit address, value = field << 5.
+        // Count/refill operations (LCI/LRI/C+I/C-I/KCI) use "bits 0-17
+        // of the address part" -- the field's TOP 18 bits. An earlier
+        // version used the raw 19-bit field for values and its LOW 18
+        // bits for counts; caught by strap/verify_ibox1_listing.py,
+        // where I-Box 1's "LCI,$X1,4" prints as 4.03 02 (count 4 in
+        // bits 0-17), then confirmed against p.25.
+        Bit#(24) immVal24 = {ii.imm, 5'b0};
+        Bit#(18) imm18 = ii.imm[18:1];
+        SM128 immSM = SM128{sign: 0, mag: zeroExtend(immVal24)};
         SM128 val = SM128{sign: x.sign, mag: zeroExtend(x.addr)};
         case (ii.code)
           4'b0001: begin // LVI
             idxWriteReg = ii.j; doIdxWrite = True;
-            idxWriteVal = IndexWord{addr: zeroExtend(ii.imm), sign: 0,
+            idxWriteVal = IndexWord{addr: immVal24, sign: 0,
                      flag: x.flag, count: x.count, refill: x.refill};
           end
           4'b1001: begin // LVNI
             idxWriteReg = ii.j; doIdxWrite = True;
-            idxWriteVal = IndexWord{addr: zeroExtend(ii.imm), sign: 1,
+            idxWriteVal = IndexWord{addr: immVal24, sign: 1,
                      flag: x.flag, count: x.count, refill: x.refill};
           end
           4'b0010: begin // LCI
@@ -839,56 +964,25 @@ function ActionValue#(Tuple4#(HWordAddr, Maybe#(Tuple2#(Bit#(4), IndexWord)),
       end
 
       // -----------------------------------------------------------
-      // Count and Branch / Count, Branch and Refill.
+      // Half-word branches: Count and Branch (CB/CBR), Branch on
+      // Indicator, Unconditional. All three evaluate through
+      // evalBranch (above) so that SIC, whose right half is one of
+      // them, executes the identical logic -- see the Sic arm below.
       // -----------------------------------------------------------
-      tagged CountBranch .cb: begin
-        IndexWord x = st.readIndex(cb.j);
-        // v: 00=unchanged, 01=+half(=+1 raw), 10=+one(=+2 raw), 11=-one(=-2 raw).
-        // SOURCE for the four cases: pocket card p.1 legend and p.3
-        // "INDEX BRANCHING" modifier table. The exact raw-unit mapping
-        // for "half"/"one" is this implementation's best-effort
-        // reading -- see bsv/README.md "Scope".
-        Int#(25) delta = case (cb.v)
-                            2'b01: 1;
-                            2'b10: 2;
-                            2'b11: -2;
-                            default: 0;
-                          endcase;
-        SM128 val = SM128{sign: x.sign, mag: zeroExtend(x.addr)};
-        SM128 dSM = SM128{sign: pack(delta<0), mag: zeroExtend(pack(abs(delta)))};
-        SM128 newVal = smAdd(val, dSM);
-        Bit#(18) newCount = x.count - 1;
-        IndexWord x1 = IndexWord{addr: truncate(newVal.mag), sign: newVal.sign,
-                         flag: x.flag, count: newCount, refill: x.refill};
-        // Prefetch/bail-out shape, inlining maybeRefill's own
-        // condition (doRefill && x1.count==0) rather than calling it.
-        Bool doRefill = (cb.refill == 1) && (x1.count == 0);
-        if (doRefill && prefetchCount < 1) begin
-          needsRead = tagged Valid zeroExtend(x1.refill);
-        end else begin
-          IndexWord x2 = doRefill ? unpackIndexWord(prefetch[0]) : x1;
-          idxWriteReg = cb.j; doIdxWrite = True;
-          idxWriteVal = x2;
-          ind = setIndexResultIndicatorsF(ind, x1); // per p.23: indicators reflect
-                                                     // state *before* any refill.
-          Bool take = (cb.branchIfZero == 1) ? (newCount == 0) : (newCount != 0);
-          if (take) next = effAddr19(st, cb.addr, {3'b0, cb.idx}); // K: X1 only
+      tagged CountBranch .*: begin
+        BranchOutcome o = evalBranch(st, di, ind, prefetch, prefetchCount, 0);
+        needsRead = o.needsRead;
+        if (o.needsRead matches tagged Invalid) begin
+          ind = o.ind; doIdxWrite = o.doIdxWrite;
+          idxWriteReg = o.idxWriteReg; idxWriteVal = o.idxWriteVal;
+          if (o.taken) next = o.target;
         end
       end
 
-      // -----------------------------------------------------------
-      // Branch on Indicator.
-      // -----------------------------------------------------------
-      tagged BranchInd .bi: begin
-        Word64 indWord = ind; // this instruction's own indicator changes
-                               // (just `clear`, below) must still land in
-                               // the single end-of-execute write, so test
-                               // against the value as of entry to execute().
-        Bit#(7) indShift = 63 - zeroExtend(bi.indNum);
-        Bit#(1) bitVal = indWord[indShift];
-        Bool take = (bi.branchOn == 1) ? (bitVal == 1) : (bitVal == 0);
-        if (bi.clear == 1) ind = setBit(ind, bi.indNum, 0);
-        if (take) next = effAddr19(st, bi.addr, {3'b0, bi.idx});
+      tagged BranchInd .*: begin
+        BranchOutcome o = evalBranch(st, di, ind, prefetch, prefetchCount, 0);
+        ind = o.ind;
+        if (o.taken) next = o.target;
       end
 
       // -----------------------------------------------------------
@@ -896,12 +990,8 @@ function ActionValue#(Tuple4#(HWordAddr, Maybe#(Tuple2#(Bit#(4), IndexWord)),
       // -----------------------------------------------------------
       tagged BranchOrMisc .bm: begin
         if (!bm.misc) begin
-          // B=010 BR=011 BE=000 BD=001 BEW=100 NOP=110. BE/BD/BEW's
-          // interrupt-enable distinction is not modeled (no interrupt
-          // system in this implementation, see README); all four
-          // unconditional-branch codes other than NOP branch.
-          if (bm.code != 3'b110)
-            next = effAddr19(st, bm.addr, bm.idx);
+          BranchOutcome o = evalBranch(st, di, ind, prefetch, prefetchCount, 0);
+          if (o.taken) next = o.target;
         end else begin
           case (bm.code)
             3'b100: st.writeWord(baWord(effAddr24(st, {bm.addr,5'b0}, bm.idx)), 0); // Z (Store Zero)
@@ -926,6 +1016,71 @@ function ActionValue#(Tuple4#(HWordAddr, Maybe#(Tuple2#(Bit#(4), IndexWord)),
             end
             default: ind = setOpInvalid(ind); // EX, EXIC: out of scope
           endcase
+        end
+      end
+
+      // -----------------------------------------------------------
+      // SIC (Store Instruction Counter If), Reference Manual p.41-42:
+      // a full word whose bits 32-63 are an ordinary half-word branch
+      // (B/BR/BE/BD/BEW/NOP, CB family, or Branch on Indicator). The
+      // branch executes with its own normal semantics; "it is executed
+      // [the store] if and only if the associated branching is
+      // successful. When it is executed, it causes the instruction
+      // counter contents to be stored in bits 0-18 of the half-word
+      // specified by bits 0-18 of the effective storage address. Other
+      // bits of the half-word are not disturbed. The stored
+      // instruction counter contents always address the instruction
+      // whose location is next higher in storage than the branch
+      // instruction to which SIC is prefixed" -- i.e. `fallthrough`.
+      // "The instruction counter may be stored in any available
+      // location with 19-bit address 16.0 or above" (p.42): below
+      // that, AD (address invalid) is set and nothing is stored.
+      // SIC + NOP is "a valid full-word NO OPERATION; the counter is
+      // not stored" -- falls out of `taken` being False for NOP.
+      //
+      // Read-modify-write of the target half-word uses the prefetch/
+      // bail mechanism, in the slot AFTER any refill read the inner
+      // CBR consumed (o.readsUsed): first any inner read, then the
+      // target word, then commit everything in one call. Never issues
+      // the write in the same call as a bail (phase2 step 9 rule).
+      // The only st.writeWord call site for SIC lives in this one arm,
+      // syntactically exclusive with every other arm's writes.
+      // -----------------------------------------------------------
+      tagged Sic .s: begin
+        DecodedInstr inner = decodeHalfWord(s.inner);
+        BranchOutcome o = evalBranch(st, inner, ind, prefetch, prefetchCount, 0);
+        if (o.needsRead matches tagged Valid .*) begin
+          needsRead = o.needsRead;
+        end else begin
+          BitAddr ea = effAddr24(st, s.addr, s.idx);
+          HWordAddr ha = ea[23:5];
+          if (o.taken && ha >= 32 && prefetchCount < o.readsUsed + 1) begin
+            needsRead = tagged Valid ha[18:1];
+          end else begin
+            ind = o.ind;
+            // The inner CB's index-register write goes through the
+            // deferred second-step path (vflPending / StretchCore's
+            // pendingIdxWrite), NOT doIdxWrite: bsc rejects a
+            // general-storage write and an index-register write in the
+            // same rule invocation with a spurious G0004 conflict --
+            // bsv/README.md "Toolchain" item 7, the exact reason
+            // progressive indexing's write is deferred the same way.
+            // Same observable result: the write lands on the next
+            // step() call, before the next instruction fetches.
+            if (o.doIdxWrite) vflPending = tagged Valid tuple2(o.idxWriteReg, o.idxWriteVal);
+            if (o.taken) begin
+              next = o.target;
+              if (ha < 32)
+                ind = setBit(ind, ind_AD, 1);
+              else begin
+                Word64 w = prefetch[o.readsUsed[0]];
+                HalfWord32 old = (ha[0] == 0) ? w[63:32] : w[31:0];
+                HalfWord32 hwv = {fallthrough, old[12:0]};
+                Word64 w2 = (ha[0] == 0) ? {hwv, w[31:0]} : {w[63:32], hwv};
+                st.writeWord(ha[18:1], w2);
+              end
+            end
+          end
         end
       end
 
@@ -1341,7 +1496,6 @@ function ActionValue#(Tuple4#(HWordAddr, Maybe#(Tuple2#(Bit#(4), IndexWord)),
           endcase
         end
       end
-      tagged Sic .*:       ind = setOpInvalid(ind);
       tagged BitBranch .*: ind = setOpInvalid(ind);
       tagged Unimplemented: ind = setOpInvalid(ind);
       tagged Invalid:       ind = setOpInvalid(ind);

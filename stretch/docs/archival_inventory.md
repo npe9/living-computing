@@ -392,10 +392,19 @@ instructions that happen to sit in the same word").
    something restricted to word-aligned starts. No case found that
    contradicts the primary source.
 
-`bsv/StretchExecute.bsv`'s `tagged Sic` arm currently does only
-`ind = setOpInvalid(ind)` -- performs neither the store nor the
+`bsv/StretchExecute.bsv`'s `tagged Sic` arm at the time did only
+`ind = setOpInvalid(ind)` -- performed neither the store nor the
 embedded branch, confirming the "control flow silently falls through"
-finding stands on solid ground, not a guess.
+finding stood on solid ground, not a guess.
+
+**Update: SIC is now implemented** (Reference Manual pp.41-42 semantics,
+`bsv/README.md` "Executed"), and the first diagnostic block has been
+run VERBATIM with its own SIC-driven pass/fail chain intact -- I-Box
+1's SIC-CB / SIC-CBZ groups (p.50, `strap/programs/ibox1_sic_cb_cbz.
+strap`), the deck's own "HANG UP OR BECOME BD,<next>" self-modifying
+mechanism included. The shared blocker this section describes is
+therefore lifted for every block whose only other needs are already
+in scope; `SVA` (I-Box 3/4/5) and `EX`/`EXIC` (I-Box 5) remain.
 
 ### I-Box 1 (`ja_ax1a_ibox-1.pdf`, 60 pages)
 

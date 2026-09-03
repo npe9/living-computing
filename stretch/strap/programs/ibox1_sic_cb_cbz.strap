@@ -1,0 +1,92 @@
+! I-Box 1 diagnostic program, the "SIC-CB" and "SIC-CBZ" test groups
+! (docs/ja_ax1a_ibox-1.pdf p.50, octal 5412.00-5432.00) -- transcribed
+! VERBATIM, at the listing's own addresses, and run with the deck's
+! OWN pass/fail mechanism intact for the first time in this project.
+!
+! What the block does (its comments are reproduced on each line): X1 is
+! given count 4; four SIC-prefixed count-and-branch instructions each
+! branch to the next while storing the instruction counter into the
+! "BD,$" hang that follows them, turning that hang into "BD,<next
+! hang>" ("HANG UP OR BECOME BD,ISCBC"). The SIC-CBZ group repeats with
+! CBZ, where three of the four must NOT store ("HANG IF IC STORED":
+! ISCBE/F/G are "BD,$+.32" fall-throughs that a stored IC would turn
+! into a self-branch). Then LV/SV patch ISCBI into "BD,ISCBK", and
+! execution falls into ISCBA -- the FIRST rewritten hang -- and follows
+! the chain of rewritten BDs: ISCBA->ISCBB->ISCBC->ISCBD->ISCBH->ISCBI
+! ->ISCBK, whose two VF words are NOPs ("777777.70" decodes as NOP),
+! into the next test at 5432.40. Every SIC store is therefore on the
+! executed path: a missing one leaves a "BD,$" in the chain and the
+! program hangs there.
+!
+! On this model a branch to itself halts execution (StretchCore.step()
+! returns True when next == pc), which is exactly what "BD,$" is -- so
+! the testbench's PC check distinguishes pass (halted at 5432.40, where
+! this transcription puts a BEW,$ in place of the next test's first
+! instruction, ISBI) from fail (halted at whichever hang was not
+! rewritten). The rewritten hangs' final contents are checked too, each
+! expected word derived by strap_asm.py itself (sic_cb_expected.py):
+! the half-word "BD,<label>" the listing's own comment names.
+!
+! Substitutions: exactly one -- the BEW,$ at 5432.40 (the next test
+! group's first instruction lives there in the listing). Everything
+! from ISCB through the second VF after ISCBK is the page's own text,
+! with the listing's %..= parentheses restored to (..). Instructions
+! used: LCI, SIC, CB, CBZ, BD, NOP, LV, SV, VF -- all previously
+! implemented except SIC, which this program is the acceptance test
+! for. verify_ibox1_listing.py checks every half-word of this block
+! against the page's printed machine code as well -- and that check is
+! what caught the immediate-index field bug on the way (LCI,$X1,4 --
+! strap/README.md "Gotchas" item 16).
+!
+! Bug injections, observed results (StretchExecute.bsv's Sic arm):
+!   A. SIC never stores: 6 of 7 fail -- the five SIC-rewritten hangs
+!      keep their "BD,$" and PC parks at ISCBA (5430.40), the first
+!      hang in the chain; ISCBI still passes (rewritten by SV, not
+!      SIC). Exactly as predicted.
+!   B. SIC stores regardless of whether the branch was taken: PC parks
+!      at ISCBE (5422.40), the first "HANG IF IC STORED" case, as
+!      predicted -- but 3 fail, not the 1 predicted: ISCBH and ISCBI
+!      also fail, because the hang at ISCBE stops execution before
+!      ISCB9's SIC and the LV/SV patch ever run. (Predicting a single
+!      failure ignored that a hang truncates everything downstream --
+!      recorded as observed, per the project's own rule.)
+! Both reverted by targeted un-patch; the full suite was re-run green.
+
+        SLC, (8)5412.0
+ISCB    LCI,$X1,4           ! -SET UP COUNT
+        NOP,0.0
+ISCB1   SIC,ISCBA           ! -STORE IC,
+        CB,$X1,ISCB2        ! -COUNT NOT 0,BRANCH
+ISCBB   BD,$                ! -HANG UP OR BECOME BD,ISCBC
+ISCB2   SIC,ISCBB           ! -STORE IC,
+        CB,$X1,ISCB3        ! -COUNT NOT 0, BRANCH
+ISCBC   BD,$                ! -HANG UP OR BECOME BD,ISCBD
+ISCB3   SIC,ISCBC           ! -STORE IC,
+        CB,$X1,ISCB4        ! -COUNT NOT 0, BRANCH
+ISCBD   BD,$                ! -HANG UP OR BECOME BD,ISCBE
+ISCB4   SIC,ISCBD           ! -STORE IC,
+        CBZ,$X1,ISCB5       ! -COUNT ZERO, BRANCH
+ISCBH   BD,$                ! -HANG UP OR BECOME BD,ISCBI
+ISCB5   LCI,$X1,4           ! -SET UP COUNT
+ISCB6   SIC,ISCBE           ! -DONT STORE IC
+        CBZ,$X1,$+.32       ! -COUNT NOT ZERO NO BRANCH
+ISCBE   BD,$+.32            ! -HANG IF IC STORED
+ISCB7   SIC,ISCBF           ! -DONT STORE IC
+        CBZ,$X1,$+.32       ! -COUNT NOT ZERO NO BRANCH
+ISCBF   BD,$+.32            ! -HANG IF IC STORED
+ISCB8   SIC,ISCBG           ! -DONT STORE IC
+        CBZ,$X1,$+.32       ! -COUNT NOT ZERO, NO BRANCH
+ISCBG   BD,$+.32            ! -HANG IF IC STORED
+ISCB9   SIC,ISCBH           ! -STORE IC BECAUSE
+        CBZ,$X1,$+1.0       ! -COUNT IS ZERO, BRANCH
+ISCBI   BD,$                ! -BD, ISCBK (NEW ADDR)
+        LV,$X1,ISCBJ        ! -SET UP ISCBI TO
+        SV,$X1,ISCBI        ! -BRANCH OUT OF ROUTINE
+ISCBA   BD,$                ! -BD,ISCBB (NEW ADDR)
+ISCBJ   VF,ISCBK+.04        ! -ISCBI SET UP
+ISCBK   VF,(8)777777.70     ! -NOP,-.32
+        VF,(8)777777.70     ! -NOP,-.32
+        SLC, (8)5432.40
+ISBI    BEW,$               ! substituted: the next test group starts here
+
+        END, ISCB

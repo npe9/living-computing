@@ -138,11 +138,11 @@ run "Figure 7 Progressive Indexing" ./run_program.sh programs/figure7_progressiv
 # 1274's address-truncation test turned out to be untestable by
 # construction on this model's typed WordAddr/HWordAddr widths).
 run "I-Box 1 WEN/WEN2/VEN (RGZ/RZ indicators)" ./run_program.sh programs/ibox1_wen_ven_indicators.strap StretchIboxWenTb \
-    "X1_RGZ_ones:addrIndex(1)=0x640000000000" \
-    "X2_RZ_zeros:addrIndex(2)=0x640000000000" \
-    "X3_RGZ_ones_again:addrIndex(3)=0x640000000000" \
-    "X4_notRZ_ones:addrIndex(4)=0x640000000000" \
-    "X5_notRGZ_zeros:addrIndex(5)=0x640000000000"
+    "X1_RGZ_ones:addrIndex(1)=0xc800000000000" \
+    "X2_RZ_zeros:addrIndex(2)=0xc800000000000" \
+    "X3_RGZ_ones_again:addrIndex(3)=0xc800000000000" \
+    "X4_notRZ_ones:addrIndex(4)=0xc800000000000" \
+    "X5_notRGZ_zeros:addrIndex(5)=0xc800000000000"
 
 # -- 4b'. The same three routines placed at the listing's OWN addresses
 # (words 2860-2865, constants at 3138-3139) via SLC -- the first
@@ -150,11 +150,21 @@ run "I-Box 1 WEN/WEN2/VEN (RGZ/RZ indicators)" ./run_program.sh programs/ibox1_w
 # the full 18-bit space). Verified discriminating: with MemWords put
 # back to 256, all 5 checks fail (fetches above the window read 0).
 run "I-Box 1 WEN/WEN2/VEN at original listing addresses" ./run_program.sh programs/ibox1_wen_ven_original_addresses.strap StretchIboxWenOrigTb \
-    "X1_RGZ_ones:addrIndex(1)=0x640000000000" \
-    "X2_RZ_zeros:addrIndex(2)=0x640000000000" \
-    "X3_RGZ_ones_again:addrIndex(3)=0x640000000000" \
-    "X4_notRZ_ones:addrIndex(4)=0x640000000000" \
-    "X5_notRGZ_zeros:addrIndex(5)=0x640000000000"
+    "X1_RGZ_ones:addrIndex(1)=0xc800000000000" \
+    "X2_RZ_zeros:addrIndex(2)=0xc800000000000" \
+    "X3_RGZ_ones_again:addrIndex(3)=0xc800000000000" \
+    "X4_notRZ_ones:addrIndex(4)=0xc800000000000" \
+    "X5_notRGZ_zeros:addrIndex(5)=0xc800000000000"
+
+# -- 4b''. I-Box 1's SIC-CB and SIC-CBZ test groups (p.50), verbatim at
+# octal 5412-5432, run with the deck's OWN pass/fail mechanism: each
+# SIC rewrites the "BD,$" hang after it into "BD,<next hang>", and the
+# block ends by walking that chain. A branch to itself halts this
+# model, so PC alone says pass (halted at the substituted BEW at
+# 5432.40) or fail (halted at the un-rewritten hang). Expected words
+# derived from the assembled program by sic_cb_expected.py.
+run "I-Box 1 SIC-CB / SIC-CBZ (verbatim, own pass/fail)" ./run_program.sh programs/ibox1_sic_cb_cbz.strap StretchIboxSicTb \
+    $(python3 sic_cb_expected.py)
 
 # -- 4c. I-Box 4 diagnostic (docs/jb_ax4b_ibox-4.pdf p.155, routine 150
 # "CB AND CBR TEST", the plain CB mnemonic): Count and Branch
@@ -166,9 +176,9 @@ run "I-Box 1 WEN/WEN2/VEN at original listing addresses" ./run_program.sh progra
 # to opcodes.py as CB_CODES).
 run "I-Box 4 CB (Count and Branch)" ./run_program.sh programs/ibox4_cb_count_branch.strap StretchIboxCbTb \
     "X1_final:addrIndex(1)=0x3e70000000000" \
-    "X2_step1_taken:addrIndex(2)=0x640000000000" \
-    "X3_step2_taken:addrIndex(3)=0x640000000000" \
-    "X4_step3_taken:addrIndex(4)=0x640000000000" \
+    "X2_step1_taken:addrIndex(2)=0xc800000000000" \
+    "X3_step2_taken:addrIndex(3)=0xc800000000000" \
+    "X4_step3_taken:addrIndex(4)=0xc800000000000" \
     "X5_step4_not_taken:addrIndex(5)=0x0"
 
 # -- 4d. I-Box 4 diagnostic (docs/jb_ax4b_ibox-4.pdf p.159, routine 150,
@@ -178,8 +188,8 @@ run "I-Box 4 CB (Count and Branch)" ./run_program.sh programs/ibox4_cb_count_bra
 # See ibox4_cbr_refill.strap's own header for the full transcription
 # and non-vacuousness account.
 run "I-Box 4 CBR (Count, Branch, and Refill)" ./run_program.sh programs/ibox4_cbr_refill.strap StretchIboxCbrTb \
-    "X2_call1_taken:addrIndex(2)=0x640000000000" \
-    "X3_call2_taken:addrIndex(3)=0x640000000000" \
+    "X2_call1_taken:addrIndex(2)=0xc800000000000" \
+    "X3_call2_taken:addrIndex(3)=0xc800000000000" \
     "X4_call3_not_taken:addrIndex(4)=0x0" \
     "X5_no_refill_yet:addrIndex(5)=0x6f0000040029" \
     "X6_refilled:addrIndex(6)=0xde00fffc0000"

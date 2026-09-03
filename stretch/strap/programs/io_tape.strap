@@ -48,7 +48,8 @@
 ! io_reader_printer.strap's reader image uses (gen_tb.py's loadTape
 ! rule).
 
-START   LVI, $1, 1088      !X1 = tape channel (34), pre-scaled
+START   LVI, $1, 34      !X1 = tape channel 34: LVI puts it in value bits 0-18, i.e.
+                         !value 34<<5 = 1088, the channel field's own position
 
         RD, 0($1), CTLW1   !read 4 words into BLOCK1 (tape position 0->4)
         CCW, 0($1), CCWA

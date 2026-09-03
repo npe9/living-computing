@@ -141,6 +141,12 @@ IMM_INDEX_CODES = {
     # and this assembler does not encode it either; see README).
 }
 
+# Immediate index ops whose operand is "bits 0-17 of the address part"
+# (an 18-bit count/refill integer in the TOP 18 bits of the 19-bit
+# field, Reference Manual p.25) rather than a 19-bit value-field
+# address. See strap_asm.py's IMM_INDEX emit case.
+IMM_INDEX_COUNT_OPS = {"LCI", "LRI", "C+I", "C-I", "KCI"}
+
 # ---------------------------------------------------------------------
 # Count and Branch / Count, Branch, and Refill, format 5's mnemonic
 # table: (v, refill, bz) per mnemonic, source pcard-3.png "INDEX

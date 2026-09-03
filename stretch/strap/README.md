@@ -51,6 +51,7 @@ finding about the hardware model, not a hypothetical one.
 | `test_syn.py`, `test_slc.py` | Pure-Python tests of the `SYN` and `SLC` pseudo-ops against `assemble()` directly. |
 | `listing_oracle.py` | Compares assembled words against the machine code a historical listing prints beside each source line (the print format is decoded in its docstring). |
 | `verify_ibox1_listing.py` | Assembles I-Box 1's WEN2/WEN/VEN verbatim at their listed addresses and compares every half-word to the machine code printed in the 1961 listing (`../docs/ja_ax1a_ibox-1.pdf` p.51). |
+| `sic_cb_expected.py` | Derives `ibox1_sic_cb_cbz.strap`'s expected final state (halt PC and every SIC-rewritten hang) from the assembled program, for `run_tests.sh`. |
 | `verify_ibox4_listing.py` | Same for I-Box 4 routine 150's CB/CB+/CBR/CBR+ blocks, their LX/SX setup and XW index words (`../docs/jb_ax4b_ibox-4.pdf` pp.155/159): 137 checks, the first external validation of `CB_CODES`, LX/SX and the packed index-word layout. |
 
 ## Usage
@@ -218,6 +219,21 @@ what's original.
   included, and matches all nine printed half-words bit for bit.
   Verified discriminating by putting `MemWords` back to 256: all 5
   model checks then fail (fetches above the window read 0).
+- **`ibox1_sic_cb_cbz.strap`** — I-Box 1's "SIC-CB" and "SIC-CBZ" test
+  groups (`../docs/ja_ax1a_ibox-1.pdf` p.50, octal 5412–5432), the
+  first diagnostic block run **verbatim with its own pass/fail
+  mechanism intact**: each SIC-prefixed count-and-branch stores the
+  instruction counter into the `BD,$` hang after it, turning it into
+  `BD,<next hang>`, and the block finishes by walking that chain of
+  rewritten hangs into the next test. A branch to itself halts this
+  model, so the testbench's new `PC=` check tells pass (halted at the
+  one substituted instruction, a `BEW,$` where the next test group
+  starts) from fail (halted at whichever hang was not rewritten); the
+  six rewritten words are checked too, expected values derived by
+  `sic_cb_expected.py`. Uses LCI, SIC, CB, CBZ, BD, NOP, LV, SV, VF.
+  All 33 half-words of the block also match the page's printed machine
+  code (`verify_ibox1_listing.py`), which is how the immediate-index
+  bug in "Gotchas" item 16 was found.
 
 Every run above is a true end-to-end test: STRAP source text through
 the Python assembler, through the *same* Bluespec decoder/executor
@@ -556,6 +572,15 @@ had in mind:
     restored and the full regression suite reconfirmed passing before
     this note was written.
 
+    *Postscript, after item 16*: the "pre-scaled" `LVI, $1, 1024`
+    these programs used to select channel 32 was itself an artifact
+    of the immediate-index bug item 16 describes. With `LVI`'s real
+    semantics (the 19-bit field lands in value bits 0-18), `LVI, $1,
+    32` yields value 1024 directly — the channel number simply sits
+    in the address part's own units, and the "<<5" only ever applied
+    to a bare literal written into the instruction's 24-bit field.
+    Both I/O programs now load the plain channel number; the
+    `<<5`-in-the-instruction rule for literals stands.
 14. **The tape drive needed real primary source before it could be
     real, not a renamed card reader.** The user's original request
     named "tape drives" explicitly; the reader/printer milestone had
@@ -642,6 +667,37 @@ had in mind:
     `listing_oracle.py` before running anything on the model — it
     finds encoding bugs with no model, no expected-value derivation,
     and no bug injection needed.**
+16. **The listing oracle paid off immediately: immediate index
+    arithmetic had the field semantics wrong on BOTH sides, and the
+    two sides agreed with each other.** Transcribing I-Box 1's SIC-CB
+    block (p.50) for the SIC milestone, every half-word matched the
+    page except `LCI,$X1,4`, printed `4.03 02` — count 4 in bits 0-17,
+    where this assembler had put it in bits 1-18 (the raw 19-bit
+    field). Reference Manual p.25 then settled every immediate-index
+    op at once: value ops (`LVI`/`LVNI`/`V±I*`/`KVI`/`KVNI`) put the
+    19-bit address part into **bits 0-18 of the value field, bits
+    19-24 zero** (value = field << 5, i.e. the field is the word-and-
+    half part of a bit address, so `V-I,$X15,1.0` in the DCP listing
+    prints `1.37 0D`, field 2); count/refill ops (`LCI`/`LRI`/`C+I`/
+    `C-I`/`KCI`) use **bits 0-17 of the address part**, the field's
+    top 18 bits. `StretchExecute.bsv`'s `ImmIndex` arm had used the
+    raw field as the value and its LOW 18 bits as the count, and the
+    assembler packed to match, so every existing test agreed with
+    itself: `LVI,$1,100` loaded 100 in the model, and was checked as
+    100. Both fixed from p.25 (`eval_addr_field` applies C22-6531
+    p.11's term-by-term rule: bit-address terms scale to the field's
+    units, bare integers insert as integers — so `LVI,$1,100` now
+    means value 100<<5 = 50.0, and the marker checks in `run_tests.sh`
+    changed from 0x64<<40 to 0xC80<<40 accordingly; the smoke test's
+    hand-encoded `LCI X1,3` became field 6). The earlier UNITS note in
+    `strap_asm.py`'s docstring, which had asserted the "no shift" rule
+    from the *direct* forms' bit-precise 25-bit fields, is corrected
+    in place. **Lesson: a model and an assembler written by the same
+    hands from the same reading are not independent evidence of each
+    other — every self-consistent test here passed for months. The
+    printed machine code is the independent witness; item 15's rule
+    ("transcribe the code column too") is now load-bearing, not just
+    nice to have.**
 
 ## Halting
 
@@ -672,7 +728,8 @@ field ignored) and `test_slc.py` for each one under test.
 
 Notably **not** implemented yet: multi-word Transmit — the same gap
 `../bsv/README.md`'s "Next steps" names on the execute side. Also not
-implemented: `LVE`/`SIC` (see "Gotchas" item 12), VFL Immediate's
+implemented: `LVE` (see "Gotchas" item 12; `SIC`, its companion there,
+is now implemented on both sides — item 16), VFL Immediate's
 `N`/`NI` suffixes, and `(radix)digits` literals outside `DD` (item 11).
 Progressive indexing (format 8) and Connectives *were* both in this
 list as of earlier milestones; both are now implemented on both sides
@@ -757,9 +814,10 @@ until one has.
    "Gotchas" item 11.~~ Done: `(R)` prefixes now parse in any
    expression (item 15), needed by the I-Box 4 listing's own
    `(8).04` / `(8)37777` / `VF,(8)777777.70` forms.
-7. `LVE`/`SIC` — see "Gotchas" item 12; would need primary-source
-   material this session didn't find (or a decision to reverse-engineer
-   the exact bit patterns from first principles instead).
+7. `LVE` — see "Gotchas" item 12; would need primary-source material
+   this session didn't find (or a decision to reverse-engineer the
+   exact bit patterns from first principles instead). (`SIC`, listed
+   here with it before, is done — item 16.)
 8. Connectives' `BS`<8 byte-padding, Partial Field, and the left-
    zeros/all-ones counts at word 7 (p.75-77) — see
    `../bsv/README.md`'s "Connectives" scope note.

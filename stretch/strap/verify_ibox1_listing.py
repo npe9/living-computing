@@ -49,5 +49,61 @@ ROWS = [
 SYMBOLS = {"WEN2": "005454.00", "WEN": "005456.00", "VEN": "005460.00",
            "WEN6": "006102.00", "WEN7": "006103.00"}
 
+# p.50: the SIC-CB / SIC-CBZ test groups, ISCB (005412.00) through the
+# NOP-valued VF after ISCBK (005432.00) -- the same text as
+# programs/ibox1_sic_cb_cbz.strap minus its substituted terminal BEW.
+# Checks SIC's own half-word (address, 1000, I), the embedded CB/CBZ
+# half-words that complete each SIC word, LCI's count-in-bits-0-17
+# packing (the row that caught the immediate-index bug, see
+# strap/README.md "Gotchas" 16), LV/SV, and VF,ISCBK+.04.
+SOURCE_SIC = open(__file__.replace("verify_ibox1_listing.py",
+                                    "programs/ibox1_sic_cb_cbz.strap")).read()
+
+ROWS_SIC = [
+    ("005412.00", "4.03 02",     "ISCB   LCI,$X1,4"),
+    ("005412.40", "0.30 00",     "       NOP,0.0"),
+    ("005413.00", "5430.40 80",  "ISCB1  SIC,ISCBA"),
+    ("005413.40", "5414.42 48",  "       CB,$X1,ISCB2"),
+    ("005414.00", "5414.04 00",  "ISCBB  BD,$"),
+    ("005414.40", "5414.00 80",  "ISCB2  SIC,ISCBB"),
+    ("005415.00", "5416.02 48",  "       CB,$X1,ISCB3"),
+    ("005415.40", "5415.44 00",  "ISCBC  BD,$"),
+    ("005416.00", "5415.40 80",  "ISCB3  SIC,ISCBC"),
+    ("005416.40", "5417.42 48",  "       CB,$X1,ISCB4"),
+    ("005417.00", "5417.04 00",  "ISCBD  BD,$"),
+    ("005417.40", "5417.00 80",  "ISCB4  SIC,ISCBD"),
+    ("005420.00", "5421.02 4A",  "       CBZ,$X1,ISCB5"),
+    ("005420.40", "5420.44 00",  "ISCBH  BD,$"),
+    ("005421.00", "4.03 02",     "ISCB5  LCI,$X1,4"),
+    ("005421.40", "5422.40 80",  "ISCB6  SIC,ISCBE"),
+    ("005422.00", "5422.42 4A",  "       CBZ,$X1,$+.32"),
+    ("005422.40", "5423.04 00",  "ISCBE  BD,$+.32"),
+    ("005423.00", "5424.00 80",  "ISCB7  SIC,ISCBF"),
+    ("005423.40", "5424.02 4A",  "       CBZ,$X1,$+.32"),
+    ("005424.00", "5424.44 00",  "ISCBF  BD,$+.32"),
+    ("005424.40", "5425.40 80",  "ISCB8  SIC,ISCBG"),
+    ("005425.00", "5425.42 4A",  "       CBZ,$X1,$+.32"),
+    ("005425.40", "5426.04 00",  "ISCBG  BD,$+.32"),
+    ("005426.00", "5420.40 80",  "ISCB9  SIC,ISCBH"),
+    ("005426.40", "5427.42 4A",  "       CBZ,$X1,$+1.0"),
+    ("005427.00", "5427.04 00",  "ISCBI  BD,$"),
+    ("005427.40", "5431.02 30",  "       LV,$X1,ISCBJ"),
+    ("005430.00", "5427.03 30",  "       SV,$X1,ISCBI"),
+    ("005430.40", "5430.44 00",  "ISCBA  BD,$"),
+    ("005431.00", "5431.44+",    "ISCBJ  VF,ISCBK+.04"),
+    ("005431.40", "777777.70+",  "ISCBK  VF,(8)777777.70"),
+    ("005432.00", "777777.70+",  "       VF,(8)777777.70"),
+]
+
+SYMBOLS_SIC = {"ISCB": "005412.00", "ISCB1": "005413.00", "ISCBB": "005414.00",
+               "ISCB2": "005414.40", "ISCBC": "005415.40", "ISCB3": "005416.00",
+               "ISCBD": "005417.00", "ISCB4": "005417.40", "ISCBH": "005420.40",
+               "ISCB5": "005421.00", "ISCB6": "005421.40", "ISCBE": "005422.40",
+               "ISCB7": "005423.00", "ISCBF": "005424.00", "ISCB8": "005424.40",
+               "ISCBG": "005425.40", "ISCB9": "005426.00", "ISCBI": "005427.00",
+               "ISCBA": "005430.40", "ISCBJ": "005431.00", "ISCBK": "005431.40"}
+
 if __name__ == "__main__":
-    finish(check_rows(assemble(SOURCE), ROWS, SYMBOLS))
+    fails = check_rows(assemble(SOURCE), ROWS, SYMBOLS, label="p51 ")
+    fails += check_rows(assemble(SOURCE_SIC), ROWS_SIC, SYMBOLS_SIC, label="p50 ")
+    finish(fails)

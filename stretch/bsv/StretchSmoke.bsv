@@ -122,7 +122,9 @@ module mkStretchTb(Empty);
       5: putFull(66, encVflFull({18'd41,6'b0}, 0, 0, 0, 0, 0, 1, 0, 0, 6'b000001));
       // ST addr=42 -> mem[42] = acc
       6: putFull(68, encVflFull({18'd42,6'b0}, 0, 0, 0, 0, 0, 1, 0, 0, 6'b001101));
-      7: putHWReq(70, encImmIndex(19'd3, 1, 4'b0010)); // LCI X1, 3 (loop trip count)
+      7: putHWReq(70, encImmIndex(19'd6, 1, 4'b0010)); // LCI X1, 3 (loop trip count):
+                                                          // count is bits 0-17 of the
+                                                          // 19-bit field (p.25), so 3<<1
       8: putHWResp();
       9: putHWReq(71, encNop());                       // realign to even half-word
       10: putHWResp();

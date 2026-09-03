@@ -43,6 +43,11 @@ established pattern:
    `StretchExecute.bsv`), watch the predicted checks fail and nothing
    else, revert, and confirm `git diff` is clean. Write the observed
    failure set into the test's header, not the predicted one.
+   Revert an injection by reversing the exact patch (or `git stash`
+   the real work first), never with `git checkout <file>` on a file
+   that holds uncommitted work: that reverts the work too, and it has
+   happened once (the SIC implementation, restored from the session's
+   own edit scripts).
 3. For anything transcribed from a historical listing, transcribe the
    printed machine-code column too and check it with
    `stretch/strap/listing_oracle.py` before running on the model

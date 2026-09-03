@@ -87,7 +87,27 @@ system, several of them large enough to be their own projects).
   not being implemented for VFL arithmetic. Verified against C22-6578
   Problem 2.2 Method 3's own `CT0110` (byte-equality test via XOR) —
   see `strap/README.md`.
-- **Immediate index arithmetic** — all pocket-card ops except `LVS`.
+- **Immediate index arithmetic** — all pocket-card ops except `LVS`,
+  with the field semantics of Reference Manual p.25: value operations
+  place the 19-bit address part in bits 0-18 of the 25-bit value field
+  (value = field << 5), count/refill operations take "bits 0-17 of the
+  address part" (the field's top 18 bits). An earlier version used the
+  raw field for both; found by `strap/verify_ibox1_listing.py` (I-Box
+  1's `LCI,$X1,4` prints as `4.03 02`), see `strap/README.md` "Gotchas"
+  item 16.
+- **SIC (Store Instruction Counter If)** — Reference Manual pp.41-42: a
+  full word whose right half is an ordinary half-word branch (B-family,
+  CB-family, or Branch on Indicator); the branch runs with its own
+  semantics via the shared `evalBranch`, and if it is taken the 19-bit
+  address of the next instruction in storage is stored into bits 0-18
+  of the half-word at the SIC's effective address, other bits
+  untouched (read-modify-write through the prefetch/bail mechanism,
+  after any refill read the embedded CBR needed). Targets below 16.0
+  set AD and store nothing; SIC+NOP is a full-word no-op. Can start at
+  either half-word boundary (the listings do). Verified by running
+  I-Box 1's SIC-CB/SIC-CBZ test groups verbatim with their own
+  self-modifying pass/fail chain intact —
+  `strap/programs/ibox1_sic_cb_cbz.strap`.
 - **Count and Branch / Count, Branch and Refill**.
 - **Branch on Indicator**.
 - **Unconditional branching** (`B BR BE BD BEW NOP`) — `BE`/`BD`/`BEW`
@@ -123,9 +143,9 @@ system, several of them large enough to be their own projects).
 ### matches real-machine behavior for a suppressed instruction)
 
 Decimal-mode VFL (`c=1`), radix conversion, floating-point arithmetic
-beyond L/ST, Input-Output's `LOC` and most of `CTL` (see above), SIC
-(Store Instruction Counter If), Bit Branching, `EX`/`EXIC`, Transmit
-backward/`SWAP`/multi-word.
+beyond L/ST, Input-Output's `LOC` and most of `CTL` (see above), Bit
+Branching, `EX`/`EXIC`, Transmit backward/`SWAP`/multi-word. (SIC,
+Store Instruction Counter If, moved to "Executed" — see there.)
 
 Per the "decode completely, execute partially" principle: every format
 in Figure 6 has a `DecodedInstr` constructor and is field-extracted
@@ -151,9 +171,11 @@ it recognizes independent of what the datapath implements.
   them yet — table existence is not verified semantics. See
   `strap/programs/ibox4_cb_count_branch.strap`, which deliberately
   tests only the v=00 ("unchanged") case to avoid this exact gap.
-- **Immediate index arithmetic semantics** (`LVI`, `V+I`, etc.) are
-  extrapolated from the *direct* forms' documented semantics plus the
-  mnemonic table, not independently confirmed against manual prose.
+- **Immediate index arithmetic semantics** (`LVI`, `V+I`, etc.) were
+  originally extrapolated from the *direct* forms plus the mnemonic
+  table — and were wrong (field treated as a raw integer). Now
+  implemented from Reference Manual p.25's per-operation prose, see
+  "Executed" above.
 - **Accumulator model**: the real accumulator (words 8/9 "Left/Right
   Half" plus a separate 8-bit sign-byte register, word 10) is modeled
   here as one 128-bit sign-magnitude value; the separate sign-byte
@@ -443,9 +465,9 @@ of these).
    L/ST (Connectives landed this session — see "Executed" above).
    Connectives' own `BS`<8 padding and Partial Field/word-7-counts are
    a narrower, self-contained extension if a program ever needs them.
-   `LVE` and `SIC` remain open — see "Direct index arithmetic" above
-   and `strap/README.md`'s Problem 2.2 Method 3 writeup for what's
-   been ruled out so far.
+   `LVE` remains open — see "Direct index arithmetic" above and
+   `strap/README.md`'s Problem 2.2 Method 3 writeup for what's been
+   ruled out so far. `SIC` is done (see "Executed").
 3. Multi-word Transmit and crossing-field VFL stores, properly, as
    multi-cycle operations (needs `StretchCore`'s FSM to support an
    instruction that isn't done after one `step()` — the `pendingIdxWrite`

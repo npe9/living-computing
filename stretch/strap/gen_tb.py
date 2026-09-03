@@ -18,7 +18,8 @@ from strap_asm import assemble, AssemblerError
 
 
 def generate(module_name, prog, checks, step_cap=2000, reader_image=None,
-             printer_checks=None, tape_image=None, tape_checks=None):
+             printer_checks=None, tape_image=None, tape_checks=None,
+             pc_check=None):
     """checks: list of (label:str, word_addr_expr:str, expected:int).
 
     reader_image: optional list of ints -- words to pre-load into the
@@ -174,7 +175,23 @@ def generate(module_name, prog, checks, step_cap=2000, reader_image=None,
         lines.append("  endrule")
         lines.append("")
 
-    finish_phase = tcheck_phase0 + len(tape_checks)
+    # Final instruction-counter check ("PC=EXPECTED"): where the
+    # program halted. A branch to itself halts this model (StretchCore
+    # step() returns True when next == pc), which is exactly the I-Box
+    # diagnostics' own "BD,$" hang-on-failure idiom -- so a verbatim
+    # diagnostic block can be run with its own pass/fail mechanism
+    # intact: pass = halted at the block's end, fail = halted at the
+    # offending hang, distinguishable by PC alone.
+    pccheck_phase = tcheck_phase0 + len(tape_checks)
+    if pc_check is not None:
+        lines.append(f"  rule pccheck (phase == {pccheck_phase});")
+        lines.append(f'    check("PC (half-word address)", zeroExtend(core.getPC()), {pc_check});')
+        lines.append(f"    phase <= {pccheck_phase + 1};")
+        lines.append("  endrule")
+        lines.append("")
+        pccheck_phase += 1
+
+    finish_phase = pccheck_phase
     lines.append(f"  rule finish (phase == {finish_phase});")
     lines.append("    if (fails == 0)")
     lines.append('      $display("ALL TESTS PASSED");')
@@ -203,6 +220,9 @@ if __name__ == '__main__':
     #                             work); at most one R= argument is allowed
     #   T=W0,W1,W2,...         -- pre-load the simulated tape's image, same
     #                             syntax as R=; at most one T= argument
+    #   PC=EXPECTED            -- check the instruction counter (a 19-bit
+    #                             half-word address) where the program
+    #                             halted; see the pccheck rule above
     #   TC:LABEL:INDEX=EXPECTED -- a simulated-tape-word check (INDEX is a
     #                             plain tape index 0..TapeWords-1), for
     #                             verifying what a W instruction wrote to
@@ -226,8 +246,11 @@ if __name__ == '__main__':
     tape_checks = []
     reader_image = None
     tape_image = None
+    pc_check = None
     for spec in sys.argv[3:]:
-        if spec.startswith('R='):
+        if spec.startswith('PC='):
+            pc_check = int(spec[3:], 0)
+        elif spec.startswith('R='):
             reader_image = [int(x, 0) for x in spec[2:].split(',') if x]
         elif spec.startswith('T='):
             tape_image = [int(x, 0) for x in spec[2:].split(',') if x]
@@ -245,4 +268,4 @@ if __name__ == '__main__':
             checks.append((label, addr_expr, int(expected, 0)))
     print(generate(module_name, prog, checks, reader_image=reader_image,
                     printer_checks=printer_checks, tape_image=tape_image,
-                    tape_checks=tape_checks))
+                    tape_checks=tape_checks, pc_check=pc_check))

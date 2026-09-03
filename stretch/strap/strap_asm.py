@@ -73,7 +73,18 @@ execute partially, document the rest" ethos of the Bluespec model):
     2  Misc / unconditional branch / SIC -- branch mnemonics only
        (B BR BE BD BEW NOP); R/RCZ/Z decode but are low-confidence
        (register-operand field placement not confirmed against a
-       worked example).
+       worked example). SIC ("SIC, Y(I)" -- Store Instruction Counter
+       If, Reference Manual p.41) is a full-word prefix: it occupies
+       one half-word itself (bits 0-23 = Y as a bit address, 24-27 =
+       1000, 28-31 = I) and the NEXT statement in the source must be
+       a half-word branch (B/BR/BE/BD/BEW/NOP, any CB variant, or a
+       Branch on Indicator), which becomes bits 32-63 of the same
+       64-bit instruction; anything else there is an AssemblerError.
+       SIC itself is only half-word aligned -- the listings start
+       them at either half of a word (docs/ja_ax1a_ibox-1.pdf p.50,
+       ISCB2 at 005414.40), matching the Reference Manual's
+       19-bit-address instruction fetch. Encoding verified against
+       that page's printed machine code (verify_ibox1_listing.py).
     3  Direct index arithmetic    -- full.
     4  Immediate index arithmetic -- full (LVS excluded, see opcodes.py).
     5  Count and branch           -- full: all 16 CB[R][Z][H|+|-]
@@ -139,15 +150,22 @@ units:
     MEMORY LOCATION at half-word granularity: encode as
     (bit_count >> 5) & 0x7FFFF (drop the 5 bits that select a position
     within a half-word).
-  - An ImmIndex `imm` field (LVI et al.) sets an index register's
-    24-bit VALUE field, which VF/V+/etc. all treat as a raw bit-count
-    (see StretchExecute.bsv's V+ case: it adds a VF word's value
-    directly into an index word's `addr` field). Encode with NO shift:
-    bit_count & 0x7FFFF.
-Getting this backwards was caught by cross-checking against the
-worked example in C22-6531 ("SEVN VF, 0.07" added via V+ to advance a
-bit-precise scan position) before any code was written against it --
-see stretch/strap/README.md.
+  - An ImmIndex `imm` field is ALSO a 19-bit address field for the
+    value operations (LVI/LVNI/V+I.../KVI/KVNI): Reference Manual p.25
+    puts it into "bits 0-18 of the value field, bits 19-24 set to
+    zero", so a bit-address operand is scaled >>5 exactly like the
+    branch/DirIndex case, while a bare integer is inserted as an
+    integer (C22-6531 p.11) -- eval_addr_field() applies that term by
+    term. For the count/refill operations (LCI/LRI/C+I/C-I/KCI) the
+    operand is an 18-bit integer in "bits 0-17 of the address part",
+    i.e. the field's top 18 bits: (n & 0x3FFFF) << 1. An earlier
+    version of this note claimed the field was an unshifted bit count
+    for every ImmIndex op; that was wrong on both counts and the
+    model agreed with it, so nothing noticed until
+    verify_ibox1_listing.py compared "LCI,$X1,4" against the page
+    (4.03 02 -- count 4 in bits 0-17) -- README.md "Gotchas" item 16.
+    (The direct forms -- VF's value added via V+ -- really are
+    bit-precise 25-bit fields, which is what misled the earlier note.)
 
 A THIRD case with its own units, found later (after code already
 existed that got it wrong -- see README.md "Gotchas" item 7): XW's
@@ -183,7 +201,7 @@ from opcodes import (
     VFL_INT_CODES, VFL_INT_MINUS_BASE, FP_CODES, DIR_INDEX_CODES,
     IMM_INDEX_CODES, UNCOND_BRANCH_CODES, MISC_CODES, INDICATOR_BITS,
     MODE_BITS, MODE_DEFAULT_BS, PROGRESSIVE_SECONDARY_OP, CONNECTIVE_SUFFIX,
-    IO_OP, CB_CODES,
+    IO_OP, CB_CODES, IMM_INDEX_COUNT_OPS,
 )
 
 # Input-Output base mnemonics (before an optional "(SEOP)" modifier or
@@ -441,6 +459,34 @@ def eval_expr(expr, symtab, loc_bits, reg_context=False, lineno=None):
             term = symtab[up]
         elif kind == 'sys':
             term = eval_system_symbol(val, loc_bits, reg_context, lineno)
+        else:
+            raise AssemblerError(f"internal: bad token kind {kind}", lineno)
+        total += sign * term
+    return total
+
+
+def eval_addr_field(expr, symtab, loc_bits, unit_shift, lineno=None):
+    """Evaluate an expression destined for an ADDRESS field whose unit
+    is 2**unit_shift bits (5 for a 19-bit half-word-address field),
+    applying C22-6531 p.11's rule term by term: bit-address terms
+    (W.B, symbols, system symbols) are converted to the field's units,
+    while plain integers "add into all fields as integers; that is,
+    the units digit adds into the low-order position of the field".
+    eval_expr(), by contrast, returns a pure bit count."""
+    total = 0
+    for sign, kind, val in tokenize_expr(expr, lineno):
+        if kind == 'int':
+            term = val
+        elif kind == 'bitaddr':
+            w, b = val
+            term = (w * 64 + b) >> unit_shift
+        elif kind == 'sym':
+            up = val.upper()
+            if up not in symtab:
+                raise AssemblerError(f"undefined symbol {val!r}", lineno)
+            term = symtab[up] >> unit_shift
+        elif kind == 'sys':
+            term = eval_system_symbol(val, loc_bits, False, lineno) >> unit_shift
         else:
             raise AssemblerError(f"internal: bad token kind {kind}", lineno)
         total += sign * term
@@ -714,6 +760,18 @@ def dds_length_bits(mods, lineno=None):
     return 64 if n == 0 else n
 
 
+def is_half_word_branch(op):
+    op = op.upper()
+    return (op in UNCOND_BRANCH_CODES or op in CB_CODES
+            or classify_branch_indicator(op) is not None)
+
+
+def enc_sic(addr24, idx):
+    """SIC's own half-word (Reference Manual p.41 format): bits 0-23
+    storage address (bit address), 24-27 literal 1000, 28-31 index."""
+    return ((addr24 & 0xFFFFFF) << 8) | (0b1000 << 4) | (idx & 0xF)
+
+
 def statement_size(stmt):
     """Returns (alignment_bits, size_bits). alignment 0 = no rounding."""
     op = stmt.op.upper()
@@ -734,6 +792,8 @@ def statement_size(stmt):
             f"pseudo-operation {op} not implemented by this assembler yet "
             f"(see strap_asm.py module docstring / C22-6531)", stmt.lineno)
     # Instruction.
+    if op == 'SIC':
+        return HALF, HALF  # its embedded branch is the following statement
     if op in UNCOND_BRANCH_CODES or op in MISC_CODES:
         return HALF, HALF
     if op in DIR_INDEX_CODES:
@@ -921,7 +981,15 @@ def assemble(source, origin_bits=DEFAULT_ORIGIN_BITS):
                      # bug this module's docstring describes fixing:
                      # SYN's name must NEVER just take the current `loc`.
     loc = origin_bits
-    for stmt in statements:
+    for n, stmt in enumerate(statements):
+        if stmt.op.upper() == 'SIC':
+            nxt = statements[n + 1] if n + 1 < len(statements) else None
+            if nxt is None or not is_half_word_branch(nxt.op):
+                raise AssemblerError(
+                    f"SIC must be immediately followed by a half-word branch "
+                    f"(B/BR/BE/BD/BEW/NOP, CB..., B<ind>...) -- it is one 64-bit "
+                    f"instruction with it (Reference Manual p.41); found "
+                    f"{nxt.op if nxt else 'end of program'!r}", stmt.lineno)
         if stmt.op.upper() == 'SLC':
             # C22-6531 p.32: Y must already be evaluable here. Any SYN
             # seen so far whose chain is resolvable now is resolved
@@ -1088,6 +1156,15 @@ def emit_statement(stmt, symtab, image):
         return  # end_pc is set by the caller (assemble()), not here.
 
     # -- Instructions --------------------------------------------------
+    if op == 'SIC':
+        if len(stmt.fields) != 1:
+            raise AssemblerError("SIC takes exactly one address field", stmt.lineno)
+        base, paren = split_field_trailing_paren(stmt.fields[0])
+        target_bits = eval_expr(base, symtab, loc, lineno=stmt.lineno)
+        idx = eval_reg(paren, symtab, stmt.lineno)
+        image.deposit_half(loc // 32, enc_sic(target_bits, idx))
+        return
+
     if op in UNCOND_BRANCH_CODES or op in MISC_CODES:
         if len(stmt.fields) != 1:
             raise AssemblerError(f"{op} takes exactly one address field", stmt.lineno)
@@ -1121,8 +1198,22 @@ def emit_statement(stmt, symtab, image):
         if len(stmt.fields) != 2:
             raise AssemblerError(f"{op} takes J and immediate fields", stmt.lineno)
         j = eval_reg(stmt.fields[0], symtab, stmt.lineno)
-        imm_bits = eval_expr(stmt.fields[1], symtab, loc, lineno=stmt.lineno)
-        imm19 = imm_bits & 0x7FFFF  # NOT shifted -- see module docstring UNITS.
+        if op in IMM_INDEX_COUNT_OPS:
+            # Count/refill immediates: "bits 0-17 of the address part"
+            # (Reference Manual p.25) -- an 18-bit integer in the TOP
+            # 18 bits of the 19-bit field. I-Box 1's "LCI,$X1,4" prints
+            # as 4.03 02 (docs/ja_ax1a_ibox-1.pdf p.50): 4 in bits 0-17.
+            n = eval_expr(stmt.fields[1], symtab, loc, lineno=stmt.lineno)
+            imm19 = (n & 0x3FFFF) << 1
+        else:
+            # Value immediates: the field is bits 0-18 of a bit address
+            # (p.25: "bits 0-18 of the value field ... bits 19-24 set to
+            # zero"), so a bit-address term is scaled >>5 like any other
+            # 19-bit address field, while a bare integer is inserted as
+            # an integer into the field (C22-6531 p.11), i.e. "LVI,$1,100"
+            # yields value 100<<5 = 50.0. The DCP listing's
+            # "V-I,$X15,1.0" -> 1.37 0D (1.0 = field 2) is the check.
+            imm19 = eval_addr_field(stmt.fields[1], symtab, loc, 5, lineno=stmt.lineno) & 0x7FFFF
         image.deposit_half(loc // 32, enc_imm_index(imm19, j, IMM_INDEX_CODES[op]))
         return
 
