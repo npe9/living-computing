@@ -115,6 +115,12 @@ run "Look-ahead: branch guess + recovery" ./run_program.sh programs/la_branch_gu
     "PC=82" \
     "CYCLES<=260"
 
+# -- 1f. Floating-point arithmetic (stage 4c, StretchFP.bsv): L, *, +
+# and ST in normalized single precision, operands and expected results
+# built in Python from the 7030 format (fp_arith_expected.py). Divide
+# is deferred to the multi-cycle arithmetic unit (stage 4e).
+run "Floating point: L / * / + / ST" ./run_fp_test.sh
+
 # -- 2. Problem 2.1: Cyclic Bit Shifting --
 run "Problem 2.1" ./run_program.sh programs/problem_2_1.strap StretchProblem21Tb \
     "DOG_rotated:32=0x6e5d4c3b2a19087f" \

@@ -83,10 +83,10 @@ in parentheses); **open** = no stage assigned yet.
 | I-box instructions load index-recovery pseudo-store levels | Perf. Char. p.3-22; Blosk p.33 | partial (3c): one snapshot per guess stands in for them; their per-level cost is not charged |
 | Interrupt recovery / housecleaning | Buchholz §15.6; CE figs 3.2.22-23 | planned (3) |
 | Serial and parallel arithmetic units, A/B and C/D registers | Buchholz §14.4 | planned (4) |
-| Floating-point arithmetic (all ops), timing per table 2 and CE figs 3.8.x | Ref. Manual; CE 3.3.x/3.8.x | planned (4) |
+| Floating-point arithmetic (all ops), timing per table 2 and CE figs 3.8.x | Ref. Manual pp.78-94; CE 3.3.x/3.8.x | partial (4c): single-precision L/LWF/+/+MG/M+/M+MG/ST/K/KMG/KR/KMGR/* in StretchFP.bsv; divide, double precision, root, shift, exponent ops open |
 | Decimal VFL, radix conversion, VFL multiply/divide | Ref. Manual; CE 3.11.x | open |
-| EX/EXIC (with LA drains, table 6), LVE, SVA, RNX, LVS, bit branching, swap/backward transmit | Ref. Manual pp.26-30 (LVE: indirect addressing, 1 ms limit -> USA; SVA: replaces the 18/19/24-bit address field per the target's class; RNX: rename via X0's refill; LVS: sum of the value fields selected by address bits 0-15; T/SWAP: count rules, backward stepping); Perf. Char. table 6 | open, specified |
-| Interrupt system: indicators, mask, left-most-one, the "free instruction" | Blosk pp.16-17; Buchholz ch.10 | open |
+| EX/EXIC (with LA drains, table 6; Ref. Manual pp.49-50: subject instruction may not change the interruption state or the IC -- EXE indicator; pseudo-IC stepped after fetch, before execution), LVE, SVA, RNX, LVS, bit branching, swap/backward transmit | Ref. Manual pp.26-30 (LVE: indirect addressing, 1 ms limit -> USA; SVA: replaces the 18/19/24-bit address field per the target's class; RNX: rename via X0's refill; LVS: sum of the value fields selected by address bits 0-15; T/SWAP: count rules, backward stepping); Perf. Char. table 6 | open, specified |
+| Interrupt system: indicators, mask, left-most-one, the "free instruction" | Ref. Manual pp.43-50 (indicator list with mask/class per indicator, definitions, mask register: bits 0-19 always 1, 20-47 settable, 48-63 always 0; interruption address register; the single interruption instruction fetched from IA + leftmost indicator number, IC not stepped, executed before a second interruption); Blosk pp.16-17; Buchholz ch.10 | open, specified |
 | Boundary registers and inside/outside alarms | Blosk p.20 | open |
 | Interval timer and time clock stepping (1024/s) | Blosk p.6 | open |
 | ECC/parity: check cycles, correction, indicators, I-checker conflicts | Blosk p.15; Perf. Char. p.3-19 | partial (check cycle only) |
@@ -251,7 +251,18 @@ is the reason the machine exists.
 **Stage 5 -- timing validation.** Reproduce Perf. Char. vol.1 ch.4's
 worked timing examples and vol.2's benchmark programs (STRAP source
 with measured times) as tests with `CYCLES<=` bounds; compare Blosk's
-figures 6-10 against the trace output cycle by cycle.
+figures 6-10 against the trace output cycle by cycle. The aggregate
+oracle is vol.1 Table 10 (p.4-9), the "Execution Frequency Chart for
+Stretch Programs": per benchmark it gives the count of each operation
+executed, the total execution time in ms, and the average us/op.
+Benchmarks (source in vol.2): matrix inversion GERB2 (10x10 0.02s ...
+100x100 14.61s), matrix multiply MXM16 (25x25 0.20s ... 125x125
+21.44s), prime sieve PRIMC (106.7s, two-thirds of it an interruption
+table -- the interrupt-system timing test), Monte Carlo (10,000
+particles, 33s), the weather inner loop (AO 5.98 ms / 1711 ops / 3.5
+us-op, A1 5.57, A2 7.0135, grid 7.07 ms), elementary functions
+(.38/.309 ms). Table 10's operation counts also check the model's
+cycle attribution independently of the totals.
 
 Deferred, in scope, after stage 5: the interrupt system as a whole
 (indicator/mask/left-most-one, the "free instruction"), boundary
@@ -548,6 +559,24 @@ C/D, (b) the LA/AU hand-off protocol, (c) FP add/subtract/compare with
 normalization timing, (d) multiply, (e) divide, (f) decimal and radix
 conversion, each with `CYCLES<=` tests from table 2/3 and the CE
 timing charts.
+
+### 6f. Stage 4c note: floating-point arithmetic, and why divide waits
+
+`StretchFP.bsv` is the single-precision arithmetic, pure functions over
+the Reference Manual's format (pp.78-94): add and its magnitude/to-
+memory variants, load, compare (plain/magnitude/range), and multiply,
+with normalization (noisy mode included), the sign modifiers, the
+flagged-exponent range tables (Fig.23-24), and the LC/LS/PSH/ZM/range
+indicators. It is wired into `execute()`'s Fp arm and tested by
+`fp_arith.strap` (2 -> x3 -> +3, each stored and checked against the
+Python-derived format). **Divide and reciprocal-divide are deferred to
+the multi-cycle arithmetic unit (stage 4e).** A combinational
+full-width divide unfolds hugely in bsc, and the real divide is
+iterative (~3.5 quotient bits per cycle) -- it belongs in
+`mkArithmeticUnit` once execute()'s combinational hand-off becomes the
+staged one of §6e, not inlined here. Measured: the FP arithmetic adds
+~12s to the smoke build; the ~270s baseline is the look-ahead logic
+inlined at the smoke test's two step() call sites, not the FP.
 
 ## 7. Status
 

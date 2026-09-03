@@ -263,7 +263,7 @@ module mkStretchCore(StretchCore);
   // 1.8 us + 0.6 us per byte + 0.6 us, bytes = ceil(length / byte size)).
   function Bit#(16) eboxClocks(DecodedInstr d);
     case (d) matches
-      tagged Fp .*: return 3;
+      tagged Fp .*: return 3;          // preparation; E-box cycles added below
       tagged VflInt .v: begin
         Bit#(7) len_ = effLength(v.a.length);
         Bit#(4) bsz  = effByteSize(v.a.bs);

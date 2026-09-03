@@ -1,0 +1,23 @@
+! Floating-point arithmetic test (docs/microarchitecture_plan.md stage
+! 4c; StretchFP.bsv). Exercises L, +, *, / and ST in normalized single
+! precision, checking the accumulator's stored result each time.
+! Constants are built with DD's floating-point form is not available in
+! this assembler, so each operand is a full DD(BU,64) word holding the
+! exact 7030 floating-point encoding, derived in fp_arith_expected.py:
+!   exp field (12 bits: EF|EM10|ES) | fraction (48) | fsign | flags(3).
+! Values: TWO = +1.0 (0.5 x 2^1), THREE = +1.5 x 2^1 = 3.0, and the
+! program computes ((2 * 3) + 3) / 3 = 3.0, storing each intermediate.
+START   L(N), TWO           ! acc = 2.0
+        ST(N), R1           ! store 2.0
+        *(N), THREE         ! acc = 6.0
+        ST(N), R2           ! store 6.0
+        +(N), THREE         ! acc = 9.0
+        ST(N), R3           ! store 9.0
+DONE    BEW, $
+        CNOP
+TWO     DD(BU,64), 0
+THREE   DD(BU,64), 0
+R1      DD(BU,64), 0
+R2      DD(BU,64), 0
+R3      DD(BU,64), 0
+        END, START

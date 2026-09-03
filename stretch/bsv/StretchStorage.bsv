@@ -118,6 +118,7 @@ interface StretchStorage;
   // moves to BRAM, see file header).
   method Word64 readAccLeft();
   method Word64 readAccRight();
+  method Word64 readAccSign();   // address 10, the accumulator sign byte register
 endinterface
 
 // mkStretchStorage: the CPU's view of storage. Addresses 0-31 are
@@ -398,6 +399,10 @@ module mkStretchStorage(StretchStorage);
   method Vector#(16, Word64) snapshotIndex() = readVReg(xreg);
   method Action restoreIndex(Vector#(16, Word64) v);
     writeVReg(xreg, v);
+  endmethod
+
+  method Word64 readAccSign();
+    return accSignByte;
   endmethod
 
   method Word64 readAccLeft();

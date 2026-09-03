@@ -42,6 +42,7 @@ import StretchIO::*;
 import StretchVFL::*;
 import StretchALU::*;
 import StretchDecode::*; // decodeHalfWord, for SIC's embedded branch
+import StretchFP::*;     // single-precision floating-point arithmetic
 
 // ---------------------------------------------------------------------
 // Half-word branch evaluation, shared by the CountBranch / BranchInd /
@@ -233,6 +234,27 @@ function Action writeAcc(StretchStorage st, SM128 v) =
     st.writeWord(addrAccLeft, hi);
     st.writeWord(addrAccRight, lo);
   endaction;
+
+// Floating-point arithmetic result indicators (p.85): RLZ/RZ/RGZ from
+// the fraction result's sign and zero-ness, RN = negative.
+function Word64 setResultIndicatorsFp(Word64 ind, FpNum v);
+  Bool z = (v.frac == 0);
+  Word64 i1 = setBit(ind, ind_RLZ, pack(!z && v.sign == 1));
+  Word64 i2 = setBit(i1,  ind_RZ,  pack(z));
+  Word64 i3 = setBit(i2,  ind_RGZ, pack(!z && v.sign == 0));
+  return setBit(i3, ind_RN, v.sign);
+endfunction
+
+// Exponent range indicators (permanent: only turned on here).
+function Word64 setRangeIndicators(Word64 ind, Bit#(5) bits);
+  Word64 i = ind;
+  if (bits[4] == 1) i = setBit(i, ind_XPFP, 1);
+  if (bits[3] == 1) i = setBit(i, ind_XPO, 1);
+  if (bits[2] == 1) i = setBit(i, ind_XPH, 1);
+  if (bits[1] == 1) i = setBit(i, ind_XPL, 1);
+  if (bits[0] == 1) i = setBit(i, ind_XPU, 1);
+  return i;
+endfunction
 
 // ---------------------------------------------------------------------
 // Pure indicator-bit helpers (see file header for why these are pure
@@ -1342,25 +1364,117 @@ function ActionValue#(Tuple4#(HWordAddr, Maybe#(Tuple2#(Bit#(4), IndexWord)),
         end
       end
       tagged Fp .fp: begin
-        if (fp.code == 7'b0000110 || fp.code == 7'b0001110) begin // L / ST
-          WordAddr ea = effAddr18(st, fp.addr, fp.idx);
-          if (fp.code == 7'b0000110) begin // L: clears the whole
-            // accumulator (p.~90). Prefetch/bail-out shape, same as
-            // VflInt L -- the read feeds a Reg-only write (writeAcc),
-            // not a dependent chain.
-            if (prefetchCount >= 1)
-              writeAcc(st, SM128{sign: 0, mag: zeroExtend(prefetch[0])});
-            else
-              needsRead = tagged Valid ea;
-          end else begin // ST: no staging needed at all -- the value
-            // written (addrAccRight, a compile-time-constant Reg
-            // address) is already instant, see readAcc's own comment
-            // above; the write itself never depends on a BRAM read.
-            Word64 v = st.readAccRight();
-            st.writeWord(ea, v);
-          end
-        end else
-          ind = setOpInvalid(ind); // FP arithmetic beyond L/ST: out of scope
+        // Floating point, single precision (StretchFP.bsv, Reference
+        // Manual pp.78-94). The accumulator operand is the left half in
+        // the machine's own format (exponent + fraction in bits 0-59,
+        // sign and flags in the sign byte register). Every operation
+        // but ST reads its storage operand first (prefetch/bail).
+        WordAddr ea = effAddr18(st, fp.addr, fp.idx);
+        Bool normalized = (fp.unnorm == 0);
+        Bool noisy = (ind[63 - ind_NM] == 1);
+        FpNum acc = fpFromAcc(st.readAccLeft(), st.readAccSign());
+        Word64 accL = st.readAccLeft();
+        Word64 accS = st.readAccSign();
+        Bit#(7) c = fp.code;
+        Bool isST = (c == 7'b0001110);
+        // Divide (/ and R/) is deferred to the multi-cycle arithmetic
+        // unit (plan stage 4e): done combinationally here it unfolds
+        // into a full-width divider, and the real machine's divide is
+        // iterative anyway (~3.5 quotient bits per cycle, Buchholz
+        // p.213). Until then it decodes but does not execute.
+        Bool known = (c == 7'b0000010 || c == 7'b0100010 || c == 7'b0000110 || c == 7'b0100110
+                   || c == 7'b0001010 || c == 7'b0101010 || isST
+                   || c == 7'b0010010 || c == 7'b0110010 || c == 7'b0010110 || c == 7'b0110110
+                   || c == 7'b0011010);
+        if (!known)
+          ind = setOpInvalid(ind);   // /, R/, double precision, SRT, SHF, E+ ...: not yet
+        else if (isST) begin
+          FpNum v = fpApplySignMods(acc, fp.absSign, fp.invSign);
+          st.writeWord(ea, fpToWord(v));
+          ind = setBit(ind, ind_MOP, 1);
+          ind = setResultIndicatorsFp(ind, v);
+          ind = setRangeIndicators(ind, fpRangeBits(v, False, v.ef == 1));
+        end else if (prefetchCount < 1)
+          needsRead = tagged Valid ea;
+        else begin
+          FpNum opnd0 = fpFromWord(prefetch[0]);
+          FpNum opnd = fpApplySignMods(opnd0, fp.absSign, fp.invSign);
+          ind = setBit(ind, ind_TF, opnd0.flags[2]);
+          ind = setBit(ind, ind_UF, opnd0.flags[1]);
+          ind = setBit(ind, ind_VF, opnd0.flags[0]);
+          case (c)
+            7'b0000110, 7'b0100110: begin // L / LWF
+              FpNum v = opnd;
+              v.flags = (c == 7'b0100110) ? opnd0.flags : 0;
+              Bool gen = False;
+              if (normalized && v.ef == 0 && v.frac != 0) begin
+                let {f48, adj, lc} = fpNormalize96(0, {v.frac, 48'b0}, True, noisy);
+                let {vn, g} = fpMakeExp(signExtend(fpExp(v)) + adj, f48, v.sign, v.flags);
+                v = vn; gen = g;
+              end
+              st.writeWord(addrAccLeft, fpAccLeft(v, accL));
+              st.writeWord(addrAccSignByte, fpSignByte(v, accS));
+              ind = setBit(ind, ind_MOP, 0);
+              ind = setResultIndicatorsFp(ind, v);
+              ind = setRangeIndicators(ind, fpRangeBits(v, gen, !gen && v.ef == 1));
+              ind = setBit(ind, ind_ZM, 0);
+            end
+            7'b0000010, 7'b0100010: begin // + / +MG
+              FpResult r = fpAdd(acc, opnd, normalized, noisy, c == 7'b0100010);
+              st.writeWord(addrAccLeft, fpAccLeft(r.res, accL));
+              st.writeWord(addrAccSignByte, fpSignByte(r.res, accS));
+              ind = setBit(ind, ind_MOP, 0);
+              ind = setResultIndicatorsFp(ind, r.res);
+              if (r.lc) ind = setBit(ind, ind_LC, 1);
+              if (r.ls) ind = setBit(ind, ind_LS, 1);
+              if (r.psh) ind = setBit(ind, ind_PSH, 1);
+              ind = setRangeIndicators(ind, fpRangeBits(r.res, r.generated, r.propagated));
+              ind = setBit(ind, ind_ZM, 0);
+            end
+            7'b0001010, 7'b0101010: begin // M+ / M+MG
+              FpNum a = acc;
+              FpNum b = opnd0; if (fp.absSign == 1) b.sign = 0;
+              if (fp.invSign == 1) a.sign = ~a.sign;
+              FpResult r = fpAdd(b, a, normalized, noisy, c == 7'b0101010);
+              FpNum v = r.res; v.flags = opnd0.flags;
+              st.writeWord(ea, fpToWord(v));
+              ind = setBit(ind, ind_MOP, 1);
+              ind = setResultIndicatorsFp(ind, v);
+              if (r.lc) ind = setBit(ind, ind_LC, 1);
+              if (r.ls) ind = setBit(ind, ind_LS, 1);
+              if (r.psh) ind = setBit(ind, ind_PSH, 1);
+              ind = setRangeIndicators(ind, fpRangeBits(v, r.generated, r.propagated));
+              ind = setBit(ind, ind_ZM, 0);
+            end
+            7'b0010010, 7'b0110010, 7'b0010110, 7'b0110110: begin // K / KMG / KR / KMGR
+              Bool magnitude = (c == 7'b0110010 || c == 7'b0110110);
+              Bool range = (c == 7'b0010110 || c == 7'b0110110);
+              Int#(2) cmp = fpCompare(acc, opnd, magnitude);
+              ind = setBit(ind, ind_MOP, 0);
+              Int#(13) ea_ = fpExp(acc), eb_ = fpExp(opnd);
+              Int#(14) d = signExtend(ea_) - signExtend(eb_);
+              if (acc.ef == 0 && opnd.ef == 0 && ((d > 48) || (d < -48))) ind = setBit(ind, ind_PSH, 1);
+              if (!range) begin
+                ind = setBit(ind, ind_AL, pack(cmp < 0));
+                ind = setBit(ind, ind_AE, pack(cmp == 0));
+                ind = setBit(ind, ind_AH, pack(cmp > 0));
+              end else if (ind[63 - ind_AH] == 1) begin
+                ind = setBit(ind, ind_AE, pack(cmp < 0));
+                ind = setBit(ind, ind_AH, pack(cmp >= 0));
+              end
+            end
+            7'b0011010: begin // *
+              FpResult r = fpMul(acc, opnd, normalized, noisy);
+              st.writeWord(addrAccLeft, fpAccLeft(r.res, accL));
+              st.writeWord(addrAccSignByte, fpSignByte(r.res, accS));
+              ind = setBit(ind, ind_MOP, 0);
+              ind = setResultIndicatorsFp(ind, r.res);
+              ind = setRangeIndicators(ind, fpRangeBits(r.res, r.generated, r.propagated));
+              ind = setBit(ind, ind_ZM, pack(r.zm));
+            end
+            default: ind = setOpInvalid(ind);
+          endcase
+        end
       end
       // -----------------------------------------------------------
       // Input-Output (Reference Manual "IBM 7619 Exchange", pp.104-127,
