@@ -29,6 +29,16 @@ execute partially, document the rest" ethos of the Bluespec model):
   origin (I-Box 1's WEN/WEN2/VEN at octal 5454-5461, see
   programs/ibox1_wen_ven_original_addresses.strap).
 
+  "(R)" radix literals are accepted in ANY expression, not only inside
+  DD: "(8)37777", "IBR9+(8).04", "VF,(8)777777.70" -- both halves of a
+  bit address in the given radix. C22-6531 defines the "(R)" entry
+  mode for DD data (pp.27-28); that STRAP II applied the same prefix
+  in address fields is established by the I-Box 4 listing's own
+  printed machine code for those three forms (see tokenize_expr and
+  verify_ibox4_listing.py). A bare "NOP," (empty address field, the
+  listings' NOP-placeholder form, printed 0.30 00) compiles as
+  address 0.
+
   SYN ("A | SYN(dds), Y" -- C22-6531 p.31): defines a symbol's value
   from its own operand expression Y, not the location counter --
   occupies no storage. An earlier version of this code treated SYN
@@ -328,6 +338,7 @@ def enc_branch_or_misc(addr19, code, misc, idx):
 _TERM_SYS = re.compile(r'[A-Za-z0-9]*')
 _TERM_SYM = re.compile(r'[A-Za-z][A-Za-z0-9]*')
 _TERM_NUM = re.compile(r'\d+')
+_TERM_RADIX = re.compile(r'\((\d+)\)(?=[\d.])')
 
 def tokenize_expr(s, lineno=None):
     s = s.strip()
@@ -351,16 +362,42 @@ def tokenize_expr(s, lineno=None):
             b = int(m.group(0)) if m else 0
             tokens.append((sign, 'bitaddr', (0, b)))
             i = m.end() if m else i + 1; sign = 1; continue
+        radix = 10
+        if c == '(':
+            # "(R)" radix entry mode on a numeric term -- C22-6531 defines
+            # it for DD data entries (pp.27-28, "(8) 77760" / "(2)..."),
+            # and the I-Box 4 listing (docs/jb_ax4b_ibox-4.pdf pp.155,
+            # 159) shows STRAP II accepting the same prefix in ADDRESS
+            # fields: "XW,IBR9+(8).04,4,-1" prints as value 11445.04,
+            # "(8)37777" as count 037777, "VF,(8)777777.70" as
+            # 777777.70+. Both halves of a bit address take the radix
+            # (".04" octal = 4 bits, ".70" octal = 56 bits), matching how
+            # the listing prints bit offsets in octal. Only matched when
+            # the parenthesis holds digits and is followed by a digit or
+            # "." -- so a trailing "(I)" index modifier (split off before
+            # this tokenizer ever runs) can't be mistaken for one.
+            m = _TERM_RADIX.match(s, i)
+            if not m:
+                raise AssemblerError(f"cannot parse expression {s!r} at {s[i:]!r}", lineno)
+            radix = int(m.group(1))
+            if radix < 2 or radix > 10:
+                raise AssemblerError(f"unsupported radix ({radix}) in {s!r}", lineno)
+            i = m.end(); c = s[i]
+        if c == '.' and radix != 10:
+            m = _TERM_NUM.match(s, i + 1)
+            b = int(m.group(0), radix) if m else 0
+            tokens.append((sign, 'bitaddr', (0, b)))
+            i = m.end() if m else i + 1; sign = 1; continue
         if c.isdigit():
             m = _TERM_NUM.match(s, i)
             j = m.end()
             if j < n and s[j] == '.':
                 m2 = _TERM_NUM.match(s, j + 1)
-                b = int(m2.group(0)) if m2 else 0
-                tokens.append((sign, 'bitaddr', (int(m.group(0)), b)))
+                b = int(m2.group(0), radix) if m2 else 0
+                tokens.append((sign, 'bitaddr', (int(m.group(0), radix), b)))
                 i = m2.end() if m2 else j + 1
             else:
-                tokens.append((sign, 'int', int(m.group(0))))
+                tokens.append((sign, 'int', int(m.group(0), radix)))
                 i = j
             sign = 1; continue
         if c.isalpha():
@@ -1055,7 +1092,12 @@ def emit_statement(stmt, symtab, image):
         if len(stmt.fields) != 1:
             raise AssemblerError(f"{op} takes exactly one address field", stmt.lineno)
         base, paren = split_field_trailing_paren(stmt.fields[0])
-        target_bits = eval_expr(base, symtab, loc, lineno=stmt.lineno)
+        # An empty address field ("NOP," -- the form the I-Box listings
+        # use for a NOP placeholder, docs/jb_ax4b_ibox-4.pdf p.155/159,
+        # printed as 0.30 00, i.e. address 0) compiles as address 0,
+        # same as the listing's own explicit "NOP,0." form.
+        target_bits = 0 if not base.strip() else \
+            eval_expr(base, symtab, loc, lineno=stmt.lineno)
         addr19 = (target_bits >> 5) & 0x7FFFF
         idx = eval_reg(paren, symtab, stmt.lineno)
         if op in UNCOND_BRANCH_CODES:

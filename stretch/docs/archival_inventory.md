@@ -757,6 +757,14 @@ reasoning and for what got transcribed instead.
    the missing `CB[R][Z][H|+|-]` mnemonic table (`opcodes.py`'s
    `CB_CODES`) over an encoder/decoder that already implemented the
    full field space. See I-Box 4's own entry above for both.
+   **Update**: both pages' printed machine-code columns have now been
+   transcribed too and every assembled half-word matched against them
+   (`strap/verify_ibox4_listing.py`, 137 checks) -- the CB/CB+/CBR/
+   CBR+ encodings, LX/SX, and the XW index-word layout are thereby
+   validated against IBM's assembler itself, not just the pocket card
+   and the model's self-consistency. Same for I-Box 1's WEN block
+   (`strap/verify_ibox1_listing.py`). See `strap/README.md` "Gotchas"
+   item 15 for the print format; use it on any future transcription.
    Biggest concrete instruction-level gaps confirmed with real test
    coverage behind them: `SVA` (structural self-modifying-code
    dependency in I-Box 3/4/5, plus I-Box 3's dedicated ~50-page

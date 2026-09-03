@@ -78,8 +78,12 @@
 ! also that X1_final's expected value (0x3e70000000000) is derived by
 ! hand from the same packIndexWord bit layout the model itself uses
 ! (StretchTypes.bsv), not from an independent oracle -- a
-! self-consistent check standing in for the source's own value test,
-! not proof the model's packing matches real 7030 hardware.
+! self-consistent check standing in for the source's own value test.
+! (Written before verify_ibox4_listing.py existed: that check has
+! since matched this same packing bit-for-bit against the listing's
+! own printed XW words on pp.155/159 -- count at bits 28-45, refill a
+! word address at 46-63 -- so the layout is now externally confirmed;
+! see strap/README.md "Gotchas" item 15.)
 
 START   LX, $1, CTL         !X1 = XW literal VALUE=999,COUNT=4,REFILL=0
         LVI, $2, 0.0        !X2 = 0 (fail marker: step 1, count 4->3, not taken)

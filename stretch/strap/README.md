@@ -49,7 +49,9 @@ finding about the hardware model, not a hypothetical one.
 | `programs/` | Assembled test programs (see below). |
 | `run_tests.sh` | The whole regression suite in one step (pure-Python assembler tests first, then every program below on the model). |
 | `test_syn.py`, `test_slc.py` | Pure-Python tests of the `SYN` and `SLC` pseudo-ops against `assemble()` directly. |
+| `listing_oracle.py` | Compares assembled words against the machine code a historical listing prints beside each source line (the print format is decoded in its docstring). |
 | `verify_ibox1_listing.py` | Assembles I-Box 1's WEN2/WEN/VEN verbatim at their listed addresses and compares every half-word to the machine code printed in the 1961 listing (`../docs/ja_ax1a_ibox-1.pdf` p.51). |
+| `verify_ibox4_listing.py` | Same for I-Box 4 routine 150's CB/CB+/CBR/CBR+ blocks, their LX/SX setup and XW index words (`../docs/jb_ax4b_ibox-4.pdf` pp.155/159): 137 checks, the first external validation of `CB_CODES`, LX/SX and the packed index-word layout. |
 
 ## Usage
 
@@ -602,6 +604,44 @@ had in mind:
     reader/printer milestone's own first-pass 6/10 partial-fail
     surprise (item 13), attributable to reading the primary source
     fully before implementing rather than mid-implementation.
+15. **The listings print their own machine code — the strongest
+    encoding oracle available, and it was sitting unused.** Every I-Box
+    and DCP page prints, beside each source line, the word IBM's own
+    assembler produced: per half-word, bits 0-17 as a 6-digit octal
+    word address, "." and bits 18-23 as two octal digits, then bits
+    24-31 as two hex digits (a full word is two such groups; `VF`
+    prints its 24-bit value as W.B plus a sign; `DD(BU,64,8)` prints
+    22 octal digits). Decoded from I-Box 1's WEN block (`BRGZZ,$+1.0`
+    at 5455.00 printing as `5456.35 46` pins bit 18 as the half-word
+    select) and then applied to I-Box 4 routine 150 pp.155/159 —
+    `verify_ibox1_listing.py` and `verify_ibox4_listing.py`, on the
+    shared `listing_oracle.py`. Results: all 9 WEN half-words and all
+    137 I-Box 4 checks match bit for bit, first run. That is the first
+    validation from outside this project of `CB`/`CB+`/`CBR`/`CBR+`
+    (previously pocket-card-only), `LX`/`SX`, `VF`, `NOP`, `BD`/`B`,
+    the VFL `L` field packing — and of the packed index-word layout
+    `StretchTypes.bsv` assumes: the listing's `XW,IBR9+(8).04,4,-1`
+    printing as `11445.04 00 000117.77 FF` puts count=4's low bit at
+    bit 43 and the refill at 46-63, and `XW,IBRA9+(8).04,3,IBRA10`
+    carries IBRA10's word address 011610 verbatim in its refill field
+    (count at bits 28-45, refill a word address — exactly
+    `packIndexWord`, and exactly item 7's `>>6` conversion). That
+    closes the caveat `ibox4_cb_count_branch.strap`'s header had
+    recorded ("not proof the model's packing matches real 7030
+    hardware"). Discrimination checked by injection: encoding `CB+`
+    with `CB-`'s code fails exactly the 4 `CB+` rows; shifting the
+    XW count field one bit fails exactly the 6 XW rows; nothing else
+    moves. Two assembler gaps the verbatim source exposed and closed
+    on the way: `(R)` radix literals in address expressions
+    (`(8).04`, `(8)37777`, `VF,(8)777777.70`) and the bare `NOP,`
+    placeholder form. Symbols defined outside the transcribed range
+    (`LORE*`, `CBER*`) are `SYN`'d from the same printed column, so
+    their rows verify only opcode/modifier bits — said so in the test,
+    not glossed. **Reusable: for any future transcription, transcribe
+    the printed-code column alongside the source and run it through
+    `listing_oracle.py` before running anything on the model — it
+    finds encoding bugs with no model, no expected-value derivation,
+    and no bug injection needed.**
 
 ## Halting
 
@@ -713,8 +753,10 @@ until one has.
    field elsewhere is used as-is, unconverted. Untested (every program
    here uses dotted notation or labels for non-immediate addresses),
    not yet a confirmed bug.
-6. `(radix)digits` literals (`parse_dd_literal`) outside `DD` — see
-   "Gotchas" item 11.
+6. ~~`(radix)digits` literals (`parse_dd_literal`) outside `DD` — see
+   "Gotchas" item 11.~~ Done: `(R)` prefixes now parse in any
+   expression (item 15), needed by the I-Box 4 listing's own
+   `(8).04` / `(8)37777` / `VF,(8)777777.70` forms.
 7. `LVE`/`SIC` — see "Gotchas" item 12; would need primary-source
    material this session didn't find (or a decision to reverse-engineer
    the exact bit patterns from first principles instead).

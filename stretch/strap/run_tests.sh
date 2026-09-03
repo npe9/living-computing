@@ -56,6 +56,13 @@ run "SLC pseudo-op" python3 test_slc.py
 # STRAP output as the oracle. Pure Python, no Bluesim.
 run "I-Box 1 listing bit-exact comparison" python3 verify_ibox1_listing.py
 
+# -- 0e. I-Box 4 routine 150's CB / CB+ / CBR / CBR+ blocks (plus their
+# LX/SX setup and XW index words) assembled verbatim at the listing's
+# own addresses and compared against docs/jb_ax4b_ibox-4.pdf pp.155/159's
+# printed machine code -- the first external check of CB_CODES, LX/SX,
+# and the packed index-word layout. Pure Python, no Bluesim.
+run "I-Box 4 listing bit-exact comparison" python3 verify_ibox4_listing.py
+
 # -- 1. Hand-assembled BSV smoke test (StretchSmoke.bsv, not STRAP-derived) --
 cd "$BSV_DIR"
 run "bsv smoke test (make run)" make run
