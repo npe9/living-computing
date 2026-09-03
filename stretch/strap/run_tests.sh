@@ -68,9 +68,16 @@ cd "$BSV_DIR"
 run "bsv smoke test (make run)" make run
 cd "$STRAP_DIR"
 
+# Timing bounds ("CYCLES<=N", the clock count at halt with one clock =
+# one 0.3 us E-box cycle): measured 94 for Problem 2.1 and 2714 for the
+# pp.43-51 span on the stage-1 memory subsystem (six interleaved 2.1 us
+# units behind the MBCU; docs/microarchitecture_plan.md). The bounds
+# carry ~25%/10% slack; they exist to catch a timing regression, and
+# will tighten as later stages add overlap.
 # -- 2. Problem 2.1: Cyclic Bit Shifting --
 run "Problem 2.1" ./run_program.sh programs/problem_2_1.strap StretchProblem21Tb \
-    "DOG_rotated:32=0x6e5d4c3b2a19087f"
+    "DOG_rotated:32=0x6e5d4c3b2a19087f" \
+    "CYCLES<=120"
 
 # -- 3. Problem 2.2 Method 1: Length of an Unknown File --
 # Answer lands in X1's VALUE field (top 24 bits of the packed IndexWord,
@@ -192,7 +199,8 @@ run "I-Box 1 pp.43-51 span (20 test groups, verbatim)" ./run_program.sh programs
         IBR174=XW:IBR175+\(8\).04,1,IBRA22 IBR175=COPY:IBRA22 \
         IBR192=XW:IBR193+\(8\).04,1,IBRA24 IBR193=COPY:IBRA24 \
         ISCBA:ISCBB ISCBB:ISCBC ISCBC:ISCBD ISCBD:ISCBH ISCBH:ISCBI ISCBI:ISCBK \
-        ISBIA:ISBIB ISBIB:ISBIC ISBIC:ISBID ISBID:ISBIH ISBIH:ISBII ISBII:ISBIK)
+        ISBIA:ISBIB ISBIB:ISBIC ISBIC:ISBID ISBID:ISBIH ISBIH:ISBII ISBII:ISBIK) \
+    "CYCLES<=3000"
 
 # -- 4c. I-Box 4 diagnostic (docs/jb_ax4b_ibox-4.pdf p.155, routine 150
 # "CB AND CBR TEST", the plain CB mnemonic): Count and Branch

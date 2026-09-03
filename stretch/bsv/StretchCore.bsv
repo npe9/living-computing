@@ -162,6 +162,9 @@ module mkStretchCore(StretchCore);
         st.readWordReq(x.memAddr);
         ioReadIssued <= True;
         return False;
+      end else if (x.isWrite && !st.responseReady()) begin
+        // W-direction: the memory read is in flight; wait for it.
+        return False;
       end else begin
         // Either RD-direction (always one call, ioReadIssued unused
         // and stays False) or W-direction with the read response now
@@ -217,6 +220,9 @@ module mkStretchCore(StretchCore);
       st.writeIndex(tpl_1(p), tpl_2(p));
       pendingIdxWrite <= tagged Invalid;
       return False;
+    end else if (fetchPending matches tagged Valid .fp &&& !st.responseReady()) begin
+      // Instruction word still in flight from memory: stall.
+      return False;
     end else if (fetchPending matches tagged Valid .fp) begin
       // Continue an in-progress fetch -- see fetchPending's own
       // comment above for the two states this covers.
@@ -251,6 +257,9 @@ module mkStretchCore(StretchCore);
         let done <- startExecute(pc, Full, di);
         return done;
       end
+    end else if (execPending matches tagged Valid .ep &&& !st.responseReady()) begin
+      // Operand still in flight from memory: stall.
+      return False;
     end else if (execPending matches tagged Valid .ep) begin
       // Resume an execute() call that bailed out waiting on a
       // BRAM-eligible read -- collect the response into the next

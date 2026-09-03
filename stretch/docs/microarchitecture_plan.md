@@ -232,11 +232,32 @@ synchronous I/O FSM is a stage-1 compatibility path).
   simulated cycles; the suite's ~10-minute wall time is dominated by
   bsc compilation, not simulation, so this should stay tolerable.
 
-## 7. Immediate next steps
+## 7. Status
 
-1. Commit this plan; update `bsv/README.md`'s scope statement and
-   `AGENTS.md` to point here.
-2. Stage 0 (cycle counter, `CYCLES<=` check, trace flag).
-3. Stage 1 (memory units + MBCU), with the existing core as the client.
-4. Read CE manual section 3's I-box flow charts before stage 2 and add
-   their figure numbers to §3's table.
+- **Stage 0 -- done** (2026-09-03): `CYCLES<=N` check in `gen_tb.py`;
+  `stepCount` at halt is the clock count. Per-unit trace flag still
+  to add.
+- **Stage 1 -- done** (2026-09-03): `StretchMemory.bsv` (six units,
+  interleave map, 7-clock cycle, 5-clock read-out, single-requester
+  MBCU with nonexistent-address handling) and `StretchStorage.bsv`
+  reworked as the bus client (in-order store queue of 8, one
+  outstanding read, `responseReady`/`writeReady` handshake). Three
+  stall guards in `StretchCore.step()`, and the generated and hand-
+  written testbenches poll the handshake instead of assuming one-cycle
+  latency. Full 20-block suite green unchanged; first cycle bounds
+  recorded (Problem 2.1: 94 clocks; pp.43-51 span: 2714). Found on the
+  way: Bluesim's BRAM is not zero-initialized (0xAA..), so tests must
+  not rely on unwritten storage reading as zero -- the smoke test now
+  halts on its own data word instead of on fall-through. Not yet
+  modeled: the eight-channel priority arbitration (one requester so
+  far), address-invalid indication for nonexistent addresses.
+
+## 8. Immediate next steps
+
+1. Stage 2, the instruction unit. Before coding, catalog the CE
+   manual's section 3 I-unit flow diagrams (figures 3.1.x, PDF
+   pp.~60-90: ZL/ZR triggers, WBC+DEC and XF+DEC sequencers, FW NOT S
+   trigger ...) and the LA flow diagrams (figures 3.2.x, PDF pp.~92+,
+   e.g. 3.2.8 "first level of SAU instructions", 3.2.9 "VFL operands
+   LAOP 03, 05, 07") and add them to §3's table.
+2. Per-unit trace flag (stage 0 leftover).

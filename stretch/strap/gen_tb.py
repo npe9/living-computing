@@ -17,7 +17,7 @@ import sys
 from strap_asm import assemble, AssemblerError
 
 
-def generate(module_name, prog, checks, step_cap=2000, reader_image=None,
+def generate(module_name, prog, checks, step_cap=30000, reader_image=None,
              printer_checks=None, tape_image=None, tape_checks=None,
              pc_check=None, cycle_bound=None):
     """checks: list of (label:str, word_addr_expr:str, expected:int).
@@ -82,7 +82,7 @@ def generate(module_name, prog, checks, step_cap=2000, reader_image=None,
     lines.append("")
 
     n_load = len(words)
-    lines.append(f"  rule load (phase < {n_load});")
+    lines.append(f"  rule load (phase < {n_load} && core.mem.writeReady());")
     lines.append("    case (phase)")
     for i, (addr, val) in enumerate(words):
         lines.append(f"      {i}: core.mem.writeWord({addr}, 64'h{val:016x});")
@@ -138,11 +138,11 @@ def generate(module_name, prog, checks, step_cap=2000, reader_image=None,
     lines.append("  endrule")
     lines.append("")
 
-    # Each check is now TWO phases, not one: core.mem.readWord was
-    # replaced by the request/response pair readWordReq/readWordResp
-    # (docs/phase2_arm_inventory.md step 9 -- the real BRAM backing
-    # needs a genuine clock edge between issuing the read and
-    # collecting its answer, so a single rule can no longer do both).
+    # Each check is two phases: issue the read, then collect it once
+    # core.mem.responseReady() says the memory units have answered
+    # (variable latency -- docs/microarchitecture_plan.md stage 1).
+    # The loader likewise waits for writeReady(), since stores queue
+    # behind busy memory units.
     check_phase0 = run_phase + 1
     for i, (label, addr_expr, expected) in enumerate(checks):
         req_phase = check_phase0 + 2 * i
@@ -152,7 +152,7 @@ def generate(module_name, prog, checks, step_cap=2000, reader_image=None,
         lines.append(f"    phase <= {resp_phase};")
         lines.append("  endrule")
         lines.append("")
-        lines.append(f"  rule checkResp{i} (phase == {resp_phase});")
+        lines.append(f"  rule checkResp{i} (phase == {resp_phase} && core.mem.responseReady());")
         lines.append(f"    let v{i} <- core.mem.readWordResp();")
         lines.append(f'    check("{label}", v{i}, 64\'h{expected & ((1<<64)-1):016x});')
         lines.append(f"    phase <= {resp_phase + 1};")

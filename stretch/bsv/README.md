@@ -38,7 +38,8 @@ bitsavers.org):
 |---|---|
 | `StretchTypes.bsv` | Word/format types, bit-numbering convention, Special Storage Assignment addresses, indicator names, `DecodedInstr`. |
 | `StretchDecode.bsv` | Half/full-word length + format decode. |
-| `StretchStorage.bsv` | Unified memory-mapped register file + core storage. |
+| `StretchMemory.bsv` | The six interleaved 16K-word memory units (2.1 µs cycle, read data after ~1.6 µs) and the memory bus control unit — stage 1 of `../docs/microarchitecture_plan.md`. |
+| `StretchStorage.bsv` | The CPU's side of storage: the special-register words 0-31, an in-order store queue and one outstanding read to the MBCU, with the `responseReady`/`writeReady` handshake every caller polls. |
 | `StretchVFL.bsv` | Variable-field-length bit extract/insert. |
 | `StretchALU.bsv` | Sign-and-magnitude arithmetic primitives. |
 | `StretchExecute.bsv` | Execute stage for the in-scope opcode subset. |

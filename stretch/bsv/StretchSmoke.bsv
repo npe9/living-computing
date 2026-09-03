@@ -56,7 +56,7 @@ function HalfWord32 encNop() = { 19'b0, 3'b110, 6'b000000, 4'b0 }; // NOP=110
 module mkStretchTb(Empty);
   StretchCore core <- mkStretchCore;
   Reg#(Bit#(8))  phase <- mkReg(0);
-  Reg#(Bit#(8))  stepCount <- mkReg(0);
+  Reg#(Bit#(16)) stepCount <- mkReg(0);
   Reg#(Bit#(32)) fails <- mkReg(0);
 
   // Deferred half-word-write state, spanning the 2 phases putHWReq/
@@ -110,7 +110,13 @@ module mkStretchTb(Empty);
   // phase, unaffected by the BRAM migration -- writes stay
   // single-cycle throughout) + 5 putHW pairs (each now 2 phases) + 1
   // setPC = 4+6+10+1 = 21.
-  rule setup (phase < 21);
+  // Stage-1 memory (StretchMemory.bsv): stores queue behind busy
+  // units and reads answer after a variable number of clocks, so the
+  // setup waits for writeReady() before each store and for
+  // responseReady() before each putHWResp (phases 8, 10, 15, 17, 19).
+  rule setup (phase < 21 && core.mem.writeReady()
+              && ((phase != 8 && phase != 10 && phase != 15 && phase != 17 && phase != 19)
+                  || core.mem.responseReady()));
     case (phase)
       0: core.mem.writeWord(40, 5);   // operand A
       1: core.mem.writeWord(41, 7);   // operand B
@@ -167,14 +173,19 @@ module mkStretchTb(Empty);
   // unbounded 2000 strap/gen_tb.py uses for real STRAP programs (this
   // hand-written test has a small, known instruction count, so a
   // tighter budget is a better regression signal than a large one).
-  rule run (phase == 21 && stepCount < 70);
+  // With stage-1 memory timing the step count per instruction is no
+  // longer fixed (each fetch or operand read waits on a memory unit),
+  // so the program runs until it halts: after the CB loop exits it
+  // falls into word 40 (operand A = 5), whose left half decodes as BE
+  // to address 0, and the all-zero word 0 is a branch to itself --
+  // this model's halt. The bound is only a runaway guard.
+  rule run (phase == 21 && stepCount < 2000);
     let done <- core.step();
-    if (done) stepCount <= 70; // reached a self-branch halt early (not expected
-                                // in this program, but don't spin past it if so)
+    if (done) stepCount <= 2000;
     else stepCount <= stepCount + 1;
   endrule
 
-  rule afterRun (phase == 21 && stepCount == 70);
+  rule afterRun (phase == 21 && stepCount == 2000);
     phase <= 22;
   endrule
 
@@ -188,7 +199,7 @@ module mkStretchTb(Empty);
     phase <= 23;
   endrule
 
-  rule checkArith1Resp (phase == 23);
+  rule checkArith1Resp (phase == 23 && core.mem.responseReady());
     let v <- core.mem.readWordResp();
     check("mem[42] (5+7)", v, 12);
     phase <= 24;
@@ -199,7 +210,7 @@ module mkStretchTb(Empty);
     phase <= 25;
   endrule
 
-  rule checkArith2Resp (phase == 25);
+  rule checkArith2Resp (phase == 25 && core.mem.responseReady());
     let v <- core.mem.readWordResp();
     check("mem[53] (3*10 via CB loop)", v, 30);
     core.setPC(90);
@@ -221,12 +232,17 @@ module mkStretchTb(Empty);
   // file's generated mkStretchTb.cxx was 27.8MB (3 inlined copies of
   // step()); every other generated testbench, with exactly one call
   // site, is 6.76MB.
-  rule stepRnx (phase == 26 && stepCount < 2);
-    let _ <- core.step();
-    stepCount <= stepCount + 1;
+  // RNX at 45.0 needs a fetch (one memory round trip) plus execute;
+  // 40 clocks is ample, and small enough that whatever unwritten
+  // storage holds after it (Bluesim's BRAM is not zero-initialized)
+  // gets little chance to run before the indicator is read.
+  rule stepRnx (phase == 26 && stepCount < 40);
+    let done <- core.step();
+    if (done) stepCount <= 40;
+    else stepCount <= stepCount + 1;
   endrule
 
-  rule afterStepRnx (phase == 26 && stepCount == 2);
+  rule afterStepRnx (phase == 26 && stepCount == 40);
     phase <= 27;
   endrule
 
@@ -235,7 +251,7 @@ module mkStretchTb(Empty);
     phase <= 28;
   endrule
 
-  rule checkRnxResp (phase == 28);
+  rule checkRnxResp (phase == 28 && core.mem.responseReady());
     let v <- core.mem.readWordResp();
     check("indicator OP after RNX (unimplemented)", (v >> 48) & 1, 1);
     phase <= 29;
