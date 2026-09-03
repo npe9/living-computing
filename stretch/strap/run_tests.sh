@@ -164,7 +164,20 @@ run "I-Box 1 WEN/WEN2/VEN at original listing addresses" ./run_program.sh progra
 # 5432.40) or fail (halted at the un-rewritten hang). Expected words
 # derived from the assembled program by sic_cb_expected.py.
 run "I-Box 1 SIC-CB / SIC-CBZ (verbatim, own pass/fail)" ./run_program.sh programs/ibox1_sic_cb_cbz.strap StretchIboxSicTb \
-    $(python3 sic_cb_expected.py)
+    $(python3 ibox1_expected.py programs/ibox1_sic_cb_cbz.strap ISBI \
+        ISCBA:ISCBB ISCBB:ISCBC ISCBC:ISCBD ISCBD:ISCBH ISCBH:ISCBI ISCBI:ISCBK)
+
+# -- 4b'''. The whole of pp.50-51 from octal 5412.00 to 5461.40 as ONE
+# verbatim span: SIC-CB, SIC-CBZ, SIC-B,ZIND, SIC-B,IND and WEN2/WEN/
+# VEN, five consecutive test groups flowing into each other exactly as
+# the deck lays them out, with a single substituted BEW at 5462.00
+# where the (floating-point) next test begins. Adds SIC with Branch on
+# Indicator embedded and the index indicators LX must set (the fix
+# that block forced). Twelve rewritten hangs checked plus the halt PC.
+run "I-Box 1 pp.50-51 span (5 test groups, verbatim)" ./run_program.sh programs/ibox1_p50_p51_span.strap StretchIboxSpanTb \
+    $(python3 ibox1_expected.py programs/ibox1_p50_p51_span.strap IBY \
+        ISCBA:ISCBB ISCBB:ISCBC ISCBC:ISCBD ISCBD:ISCBH ISCBH:ISCBI ISCBI:ISCBK \
+        ISBIA:ISBIB ISBIB:ISBIC ISBIC:ISBID ISBID:ISBIH ISBIH:ISBII ISBII:ISBIK)
 
 # -- 4c. I-Box 4 diagnostic (docs/jb_ax4b_ibox-4.pdf p.155, routine 150
 # "CB AND CBR TEST", the plain CB mnemonic): Count and Branch

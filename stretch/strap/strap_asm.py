@@ -792,6 +792,8 @@ def statement_size(stmt):
             f"pseudo-operation {op} not implemented by this assembler yet "
             f"(see strap_asm.py module docstring / C22-6531)", stmt.lineno)
     # Instruction.
+    if op == 'NOP' and not stmt.fields:
+        return HALF, HALF  # bare "NOP", see emit_statement
     if op == 'SIC':
         return HALF, HALF  # its embedded branch is the following statement
     if op in UNCOND_BRANCH_CODES or op in MISC_CODES:
@@ -1166,6 +1168,8 @@ def emit_statement(stmt, symtab, image):
         return
 
     if op in UNCOND_BRANCH_CODES or op in MISC_CODES:
+        if op == 'NOP' and not stmt.fields:
+            stmt.fields = ['']  # bare "NOP" (docs/ja_ax1a_ibox-1.pdf p.50, 005433.00)
         if len(stmt.fields) != 1:
             raise AssemblerError(f"{op} takes exactly one address field", stmt.lineno)
         base, paren = split_field_trailing_paren(stmt.fields[0])

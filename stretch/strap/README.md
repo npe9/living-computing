@@ -51,7 +51,7 @@ finding about the hardware model, not a hypothetical one.
 | `test_syn.py`, `test_slc.py` | Pure-Python tests of the `SYN` and `SLC` pseudo-ops against `assemble()` directly. |
 | `listing_oracle.py` | Compares assembled words against the machine code a historical listing prints beside each source line (the print format is decoded in its docstring). |
 | `verify_ibox1_listing.py` | Assembles I-Box 1's WEN2/WEN/VEN verbatim at their listed addresses and compares every half-word to the machine code printed in the 1961 listing (`../docs/ja_ax1a_ibox-1.pdf` p.51). |
-| `sic_cb_expected.py` | Derives `ibox1_sic_cb_cbz.strap`'s expected final state (halt PC and every SIC-rewritten hang) from the assembled program, for `run_tests.sh`. |
+| `ibox1_expected.py` | Derives a verbatim I-Box 1 transcription's expected final state (halt PC and every rewritten `BD,$` hang, given as HANG:NEXT pairs from the listing's own comments) from the assembled program, for `run_tests.sh`. |
 | `verify_ibox4_listing.py` | Same for I-Box 4 routine 150's CB/CB+/CBR/CBR+ blocks, their LX/SX setup and XW index words (`../docs/jb_ax4b_ibox-4.pdf` pp.155/159): 137 checks, the first external validation of `CB_CODES`, LX/SX and the packed index-word layout. |
 
 ## Usage
@@ -230,10 +230,22 @@ what's original.
   one substituted instruction, a `BEW,$` where the next test group
   starts) from fail (halted at whichever hang was not rewritten); the
   six rewritten words are checked too, expected values derived by
-  `sic_cb_expected.py`. Uses LCI, SIC, CB, CBZ, BD, NOP, LV, SV, VF.
+  `ibox1_expected.py`. Uses LCI, SIC, CB, CBZ, BD, NOP, LV, SV, VF.
   All 33 half-words of the block also match the page's printed machine
   code (`verify_ibox1_listing.py`), which is how the immediate-index
   bug in "Gotchas" item 16 was found.
+- **`ibox1_p50_p51_span.strap`** — the whole of pp.50–51 from octal
+  5412.00 to 5461.40 as one contiguous verbatim span: SIC-CB, SIC-CBZ,
+  SIC-B,ZIND, SIC-B,IND and WEN2/WEN/VEN, five test groups flowing
+  into each other exactly as the deck lays them out (each group's
+  rewritten-hang chain ends on two NOP-valued `VF`s that fall into the
+  next group), with one substituted `BEW` at 5462.00 where the
+  floating-point test begins. Adds SIC with Branch on Indicator
+  embedded (`BZXF`/`BZXCZ`/`BZXVGZ`/`BZXVLZ` taken on an OFF
+  indicator, `BXF`/`BXCZ`/`BXVGZ` not taken, `BXVZ` taken) — which is
+  what exposed that `LX` and the other direct index operations never
+  set the index indicators ("Gotchas" item 17). Twelve rewritten hangs
+  plus the halt PC checked; all 33 SIC-B half-words match the page.
 
 Every run above is a true end-to-end test: STRAP source text through
 the Python assembler, through the *same* Bluespec decoder/executor
@@ -698,6 +710,22 @@ had in mind:
     printed machine code is the independent witness; item 15's rule
     ("transcribe the code column too") is now load-bearing, not just
     nice to have.**
+17. **Running the deck's own indicator tests found that direct index
+    arithmetic never set the index indicators.** The SIC-B,ZIND group
+    (`ibox1_p50_p51_span.strap`) does `LX,$X1,ISBXW` and then branches
+    on XF/XCZ/XVGZ/XVLZ/XVZ being off or on, exactly as its comment
+    says ("XVZ ON, XCZ, XVGZ, XVLZ, XF OFF"). In the model only
+    `V+`/`V+C`/`V+CR` set those indicators; `LX`/`LV`/`LC`/`LR`/`SX`/
+    `SV`/`SC`/`SR` left them stale. Reference Manual p.24: "The index-
+    flag and index-result indicators are set in all of the preceding
+    direct index arithmetic operations" — loads from the new word,
+    stores from the unchanged one (p.23: they "describe the index
+    after the index modification is completed"). Fixed in
+    `StretchExecute.bsv`'s DirIndex arm; injection (LX without it)
+    fails 6 of 13 with PC parked at the hang after `BZXCZ`, since the
+    preceding `SV` had left XCZ on. No earlier test could see this:
+    every test until now checked index *values*, never the indicators
+    an index op leaves behind — the diagnostic's whole point.
 
 ## Halting
 

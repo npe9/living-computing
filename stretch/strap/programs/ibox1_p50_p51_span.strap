@@ -1,0 +1,133 @@
+! I-Box 1 diagnostic program, octal 5412.00 through 5461.40 -- FIVE
+! consecutive test groups from docs/ja_ax1a_ibox-1.pdf pp.50-51,
+! transcribed VERBATIM as one contiguous span at the listing's own
+! addresses, with the deck's own pass/fail mechanism intact throughout:
+!
+!   SIC-CB      ISCB..ISCBH   5412.00   (same text as ibox1_sic_cb_cbz)
+!   SIC-CBZ     ISCB5..ISCBK  5421.00
+!   SIC-B,ZIND  ISBI..ISBXW   5432.40   SIC + Branch on Indicator ZERO
+!   SIC-B,IND   ISBI5..ISBIK  5443.00   SIC + Branch on Indicator ONE
+!   SIC-B,IND   WEN2/WEN/VEN  5454.00   (same text as verify_ibox1_listing's
+!                                        WEN block; WEN6/WEN7 at 6102/6103)
+!
+! Control flow, as the deck wrote it: each group's SICs rewrite the
+! "BD,$" hangs after them into "BD,<next hang>", the group ends by
+! LV/SV-patching one more hang and walking the whole chain, and the
+! chain's last hop lands on two VF words that decode as NOPs and fall
+! into the next group. ISCBK's NOPs fall into ISBI at 5432.40; ISBIK's
+! into WEN2 at 5454.00; VEN's own "BRGZZ,$+1.0" skips its hang into
+! 5462.00, where the next test ("Y-Z CONTROL SEQUENCES", floating-
+! point, out of this model's scope) begins -- the ONE substituted
+! instruction here is a BEW,$ at that address. Any failure anywhere in
+! the span hangs at a "BD,$" (a self-branch halts this model), so the
+! testbench's PC check alone tells pass from fail; every rewritten hang
+! is checked too (expected values from ibox1_expected.py).
+!
+! What the new groups exercise beyond ibox1_sic_cb_cbz.strap: SIC with
+! a Branch-on-Indicator embedded (BZXF/BZXCZ/BZXVGZ/BZXVLZ taken when
+! the indicator is OFF, BXF/BXCZ/BXVGZ not taken, BXVZ taken), which
+! in turn requires LX to set the index flag and index result
+! indicators from the loaded word (Reference Manual p.24: "the index-
+! flag and index-result indicators are set in all of the preceding
+! direct index arithmetic operations") -- ISBXW = XW,0,2,0 gives
+! value 0, count 2, flag 0, so XVZ on and XF/XCZ/XVGZ/XVLZ off, as the
+! listing's own comment on ISBI says. That indicator setting was
+! MISSING from the model for every direct index op except V+/V+C/V+CR
+! until this block was run (bsv/README.md, StretchExecute.bsv's
+! DirIndex arm).
+!
+! Listing text restored from the printout's %..= to (..). One reading
+! ambiguity: BZXVLZ,ISBI5's printed code is "5443.20 C0" or
+! "5443.30 C0" on the scan; only .30 (indicator 49 = XVLZ) is
+! consistent with the mnemonic and the model's indicator table, and
+! that is what verify_ibox1_listing.py checks against.
+!
+! Bug injection, observed result: with LX's indicator setting removed
+! again, 6 of 13 fail -- BZXF still branches (XF was off anyway), the
+! stale XCZ from the preceding SV (X1's count is 0 there) makes BZXCZ
+! fall through, and PC parks at ISBIC (5436.00), the hang after it;
+! ISBIB/ISBIC/ISBID/ISBIH/ISBII are never rewritten. Reverted by
+! un-patch; full suite green.
+
+        SLC, (8)5412.0
+ISCB    LCI,$X1,4           ! -SET UP COUNT
+        NOP,0.0
+ISCB1   SIC,ISCBA           ! -STORE IC,
+        CB,$X1,ISCB2        ! -COUNT NOT 0,BRANCH
+ISCBB   BD,$                ! -HANG UP OR BECOME BD,ISCBC
+ISCB2   SIC,ISCBB           ! -STORE IC,
+        CB,$X1,ISCB3        ! -COUNT NOT 0, BRANCH
+ISCBC   BD,$                ! -HANG UP OR BECOME BD,ISCBD
+ISCB3   SIC,ISCBC           ! -STORE IC,
+        CB,$X1,ISCB4        ! -COUNT NOT 0, BRANCH
+ISCBD   BD,$                ! -HANG UP OR BECOME BD,ISCBE
+ISCB4   SIC,ISCBD           ! -STORE IC,
+        CBZ,$X1,ISCB5       ! -COUNT ZERO, BRANCH
+ISCBH   BD,$                ! -HANG UP OR BECOME BD,ISCBI
+ISCB5   LCI,$X1,4           ! -SET UP COUNT
+ISCB6   SIC,ISCBE           ! -DONT STORE IC
+        CBZ,$X1,$+.32       ! -COUNT NOT ZERO NO BRANCH
+ISCBE   BD,$+.32            ! -HANG IF IC STORED
+ISCB7   SIC,ISCBF           ! -DONT STORE IC
+        CBZ,$X1,$+.32       ! -COUNT NOT ZERO NO BRANCH
+ISCBF   BD,$+.32            ! -HANG IF IC STORED
+ISCB8   SIC,ISCBG           ! -DONT STORE IC
+        CBZ,$X1,$+.32       ! -COUNT NOT ZERO, NO BRANCH
+ISCBG   BD,$+.32            ! -HANG IF IC STORED
+ISCB9   SIC,ISCBH           ! -STORE IC BECAUSE
+        CBZ,$X1,$+1.0       ! -COUNT IS ZERO, BRANCH
+ISCBI   BD,$                ! -BD, ISCBK (NEW ADDR)
+        LV,$X1,ISCBJ        ! -SET UP ISCBI TO
+        SV,$X1,ISCBI        ! -BRANCH OUT OF ROUTINE
+ISCBA   BD,$                ! -BD,ISCBB (NEW ADDR)
+ISCBJ   VF,ISCBK+.04        ! -ISCBI SET UP
+ISCBK   VF,(8)777777.70     ! -NOP,-.32
+        VF,(8)777777.70     ! -NOP,-.32
+ISBI    LX,$X1,ISBXW        ! -XVZ ON, XCZ, XVGZ, XVLZ, XF OFF
+        NOP
+ISBI1   SIC,ISBIA           ! -STORE IC
+        BZXF,ISBI2          ! -IND OFF, BRANCH
+ISBIB   BD,$                ! -HANG UP OR BECOME BD,ISBIC
+ISBI2   SIC,ISBIB           ! -STORE IC
+        BZXCZ,ISBI3         ! -IND OFF, BRANCH
+ISBIC   BD,$                ! -HANG UP OR BECOME BD,ISBID
+ISBI3   SIC,ISBIC           ! -STORE IC
+        BZXVGZ,ISBI4        ! -IND OFF, BRANCH
+ISBID   BD,$                ! -HANG UP OR BECOME BD,ISBIE
+ISBI4   SIC,ISBID           ! -STORE IC
+        BZXVLZ,ISBI5        ! -IND OFF, BRANCH
+ISBIH   BD,$                ! -HANG UP OR BECOME BD,ISBII
+ISBXW   XW,0,2,0            ! -INDEX WORD
+ISBI5   SIC,ISBIE           ! -DONT STORE IC
+        BXF,$+.32           ! -IND OFF, NO BRANCH
+ISBIE   BD,$+.32            ! -HANG IF IC STORED
+ISBI6   SIC,ISBIF           ! -DONT STORE IC
+        BXCZ,$+.32          ! -IND OFF, NO BRANCH
+ISBIF   BD,$+.32            ! -HANG IF IC STORED
+ISBI7   SIC,ISBIG           ! -DONT STORE IC
+        BXVGZ,$+.32         ! -IND OFF, NO BRANCH
+ISBIG   BD,$+.32            ! -HANG IF IC STORED
+ISBI8   SIC,ISBIH           ! -STORE IC BECAUSE
+        BXVZ,$+1.0          ! -XVZ IS ON, BRANCH
+ISBII   BD,$                ! -BD, ISBIK (NEW ADDR)
+        LV,$X1,ISBIJ        ! -SET UP ISBII TO
+        SV,$X1,ISBII        ! -BRANCH OUT OF ROUTINE
+ISBIA   BD,$                ! -BD, ISBIB (NEW ADDR)
+ISBIJ   VF,ISBIK+.04        ! -ISBII SET UP
+ISBIK   VF,(8)777777.70     ! -NOP,-.32
+        VF,(8)777777.70     ! -NOP,-.32
+WEN2    L(BU,64,8),WEN7     ! -LOAD ONES
+        BRGZZ,$+1.0
+        BD,$
+WEN     L(BU,64,8),WEN6     ! -LOAD ZEROS
+        BRZZ,$+1.0
+        BD,$
+VEN     L(BU,64,8),WEN7
+        BRGZZ,$+1.0
+        BD,$
+IBY     BEW,$               ! substituted: "Y-Z CONTROL SEQUENCES" (FP) starts here
+        SLC, (8)6102.0
+WEN6    DD(BU,64,8), 0
+WEN7    DD(BU,64,8), 18446744073709551615
+
+        END, ISCB

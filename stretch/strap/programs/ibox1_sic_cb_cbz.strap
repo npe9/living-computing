@@ -24,7 +24,7 @@
 ! this transcription puts a BEW,$ in place of the next test's first
 ! instruction, ISBI) from fail (halted at whichever hang was not
 ! rewritten). The rewritten hangs' final contents are checked too, each
-! expected word derived by strap_asm.py itself (sic_cb_expected.py):
+! expected word derived by strap_asm.py itself (ibox1_expected.py):
 ! the half-word "BD,<label>" the listing's own comment names.
 !
 ! Substitutions: exactly one -- the BEW,$ at 5432.40 (the next test

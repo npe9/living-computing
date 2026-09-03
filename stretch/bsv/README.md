@@ -69,7 +69,11 @@ system, several of them large enough to be their own projects).
   against the manual's own Figure 7 worked example, see
   `../strap/README.md`.
 - **Direct index arithmetic** — `LX LV LC LR SX SV SC SR V+ V+C V+CR
-  KV KC` (pp.22-23). Not implemented: `RNX`, `LVE`, `SVA` -- `LVE`
+  KV KC` (pp.22-23), all setting the index flag and index result
+  indicators per p.24 (loads from the loaded word, stores from the
+  unchanged one; `KV`/`KC` set the comparison indicators instead) —
+  the load/store ops only gained this when I-Box 1's SIC-B,ZIND group
+  tested them, see `strap/README.md` "Gotchas" item 17. Not implemented: `RNX`, `LVE`, `SVA` -- `LVE`
   specifically was investigated for `../strap/`'s Problem 2.2 Method 3
   and left unimplemented: p.20 describes it only as enabling "indirect
   addressing" ("the effective address is used to obtain a second level

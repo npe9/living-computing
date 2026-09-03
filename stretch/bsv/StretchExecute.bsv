@@ -743,6 +743,16 @@ function ActionValue#(Tuple4#(HWordAddr, Maybe#(Tuple2#(Bit#(4), IndexWord)),
       tagged DirIndex .di_: begin
         HWordAddr ea = effAddr19(st, di_.addr, di_.idx);
         IndexWord x = st.readIndex(di_.j);
+        // Reference Manual p.24: "The index-flag and index-result
+        // indicators are set in all of the preceding direct index
+        // arithmetic operations [LX/LV/LC/LR/SX/SV/SC/SR/V+/V+C/V+CR].
+        // The index-comparison indicators are unchanged." -- and p.23:
+        // they "describe the index after the index modification is
+        // completed". So loads set them from the NEW index word and
+        // stores from the (unchanged) current one. Before this was
+        // added only V+/V+C/V+CR set them; caught by I-Box 1's
+        // SIC-B,ZIND block (p.50-51), which tests XF/XCZ/XVGZ/XVLZ/
+        // XVZ straight after an LX.
         case (di_.code)
           5'b00001: begin // LX -- prefetch/bail-out shape (same as
             // VflInt L/K/+ above). Half-word reads never cross a word
@@ -752,16 +762,21 @@ function ActionValue#(Tuple4#(HWordAddr, Maybe#(Tuple2#(Bit#(4), IndexWord)),
             if (prefetchCount >= 1) begin
               idxWriteReg = di_.j; doIdxWrite = True;
               idxWriteVal = unpackIndexWord(prefetch[0]);
+              ind = setIndexResultIndicatorsF(ind, idxWriteVal);
             end else
               needsRead = tagged Valid ea[18:1];
           end
-          5'b10001: st.writeWord(ea[18:1], packIndexWord(x));                     // SX
+          5'b10001: begin // SX
+            st.writeWord(ea[18:1], packIndexWord(x));
+            ind = setIndexResultIndicatorsF(ind, x);
+          end
           5'b00011: begin // LV
             if (prefetchCount >= 1) begin
               Bit#(32) h = (ea[0] == 0) ? prefetch[0][63:32] : prefetch[0][31:0];
               idxWriteReg = di_.j; doIdxWrite = True;
               idxWriteVal = IndexWord{addr:h[31:8], sign:h[7:7], flag:x.flag,
                                               count:x.count, refill:x.refill};
+              ind = setIndexResultIndicatorsF(ind, idxWriteVal);
             end else
               needsRead = tagged Valid ea[18:1];
           end
@@ -775,6 +790,7 @@ function ActionValue#(Tuple4#(HWordAddr, Maybe#(Tuple2#(Bit#(4), IndexWord)),
             if (prefetchCount >= 1) begin
               Bit#(32) h = (ea[0] == 0) ? prefetch[0][63:32] : prefetch[0][31:0];
               writeHWWithWord(st, ea, {x.addr, x.sign, h[6:0]}, prefetch[0]);
+              ind = setIndexResultIndicatorsF(ind, x);
             end else
               needsRead = tagged Valid ea[18:1];
           end
@@ -784,6 +800,7 @@ function ActionValue#(Tuple4#(HWordAddr, Maybe#(Tuple2#(Bit#(4), IndexWord)),
               idxWriteReg = di_.j; doIdxWrite = True;
               idxWriteVal = IndexWord{addr:x.addr, sign:x.sign, flag:x.flag,
                                               count:h[31:14], refill:x.refill};
+              ind = setIndexResultIndicatorsF(ind, idxWriteVal);
             end else
               needsRead = tagged Valid ea[18:1];
           end
@@ -791,6 +808,7 @@ function ActionValue#(Tuple4#(HWordAddr, Maybe#(Tuple2#(Bit#(4), IndexWord)),
             if (prefetchCount >= 1) begin
               Bit#(32) h = (ea[0] == 0) ? prefetch[0][63:32] : prefetch[0][31:0];
               writeHWWithWord(st, ea, {x.count, 7'b0, h[6:0]}, prefetch[0]);
+              ind = setIndexResultIndicatorsF(ind, x);
             end else
               needsRead = tagged Valid ea[18:1];
           end
@@ -800,6 +818,7 @@ function ActionValue#(Tuple4#(HWordAddr, Maybe#(Tuple2#(Bit#(4), IndexWord)),
               idxWriteReg = di_.j; doIdxWrite = True;
               idxWriteVal = IndexWord{addr:x.addr, sign:x.sign, flag:x.flag,
                                               count:x.count, refill:h[31:14]};
+              ind = setIndexResultIndicatorsF(ind, idxWriteVal);
             end else
               needsRead = tagged Valid ea[18:1];
           end
@@ -807,6 +826,7 @@ function ActionValue#(Tuple4#(HWordAddr, Maybe#(Tuple2#(Bit#(4), IndexWord)),
             if (prefetchCount >= 1) begin
               Bit#(32) h = (ea[0] == 0) ? prefetch[0][63:32] : prefetch[0][31:0];
               writeHWWithWord(st, ea, {x.refill, 7'b0, h[6:0]}, prefetch[0]);
+              ind = setIndexResultIndicatorsF(ind, x);
             end else
               needsRead = tagged Valid ea[18:1];
           end

@@ -103,7 +103,67 @@ SYMBOLS_SIC = {"ISCB": "005412.00", "ISCB1": "005413.00", "ISCBB": "005414.00",
                "ISCBG": "005425.40", "ISCB9": "005426.00", "ISCBI": "005427.00",
                "ISCBA": "005430.40", "ISCBJ": "005431.00", "ISCBK": "005431.40"}
 
+# pp.50-51: the SIC-B,ZIND and SIC-B,IND groups (ISBI at 005432.40
+# through the second VF after ISBIK at 005453.40), from the span
+# transcription programs/ibox1_p50_p51_span.strap. SIC with Branch on
+# Indicator embedded; the indicator numbers (XF=38, XCZ=48, XVZ=50,
+# XVGZ=51, XVLZ=49) are visible in bits 19-24 of each branch. The
+# BZXVLZ row's printed code reads as either "5443.20 C0" or
+# "5443.30 C0" on the scan; .30 is the only reading consistent with
+# XVLZ (49 = 110001) and is what is checked.
+SOURCE_SPAN = open(__file__.replace("verify_ibox1_listing.py",
+                                     "programs/ibox1_p50_p51_span.strap")).read()
+
+ROWS_SICB = [
+    ("005432.40", "5442.02 10",  "ISBI   LX,$X1,ISBXW"),
+    ("005433.00", "0.30 00",     "       NOP"),
+    ("005433.40", "5452.00 80",  "ISBI1  SIC,ISBIA"),
+    ("005434.00", "5435.23 40",  "       BZXF,ISBI2"),
+    ("005434.40", "5434.44 00",  "ISBIB  BD,$"),
+    ("005435.00", "5434.40 80",  "ISBI2  SIC,ISBIB"),
+    ("005435.40", "5436.70 40",  "       BZXCZ,ISBI3"),
+    ("005436.00", "5436.04 00",  "ISBIC  BD,$"),
+    ("005436.40", "5436.00 80",  "ISBI3  SIC,ISBIC"),
+    ("005437.00", "5440.31 C0",  "       BZXVGZ,ISBI4"),
+    ("005437.40", "5437.44 00",  "ISBID  BD,$"),
+    ("005440.00", "5437.40 80",  "ISBI4  SIC,ISBID"),
+    ("005440.40", "5443.30 C0",  "       BZXVLZ,ISBI5 (scan: .20 or .30)"),
+    ("005441.00", "5441.04 00",  "ISBIH  BD,$"),
+    ("005442.00", "0.00 00 000040.00 00", "ISBXW  XW,0,2,0"),
+    ("005443.00", "5444.00 80",  "ISBI5  SIC,ISBIE"),
+    ("005443.40", "5444.23 42",  "       BXF,$+.32"),
+    ("005444.00", "5444.44 00",  "ISBIE  BD,$+.32"),
+    ("005444.40", "5445.40 80",  "ISBI6  SIC,ISBIF"),
+    ("005445.00", "5445.70 42",  "       BXCZ,$+.32"),
+    ("005445.40", "5446.04 00",  "ISBIF  BD,$+.32"),
+    ("005446.00", "5447.00 80",  "ISBI7  SIC,ISBIG"),
+    ("005446.40", "5447.31 C2",  "       BXVGZ,$+.32"),
+    ("005447.00", "5447.44 00",  "ISBIG  BD,$+.32"),
+    ("005447.40", "5441.00 80",  "ISBI8  SIC,ISBIH"),
+    ("005450.00", "5451.31 42",  "       BXVZ,$+1.0"),
+    ("005450.40", "5450.44 00",  "ISBII  BD,$"),
+    ("005451.00", "5452.42 30",  "       LV,$X1,ISBIJ"),
+    ("005451.40", "5450.43 30",  "       SV,$X1,ISBII"),
+    ("005452.00", "5452.04 00",  "ISBIA  BD,$"),
+    ("005452.40", "5453.04+",    "ISBIJ  VF,ISBIK+.04"),
+    ("005453.00", "777777.70+",  "ISBIK  VF,(8)777777.70"),
+    ("005453.40", "777777.70+",  "       VF,(8)777777.70"),
+]
+
+SYMBOLS_SICB = {"ISBI": "005432.40", "ISBI1": "005433.40", "ISBIB": "005434.40",
+                "ISBI2": "005435.00", "ISBIC": "005436.00", "ISBI3": "005436.40",
+                "ISBID": "005437.40", "ISBI4": "005440.00", "ISBIH": "005441.00",
+                "ISBXW": "005442.00", "ISBI5": "005443.00", "ISBIE": "005444.00",
+                "ISBI6": "005444.40", "ISBIF": "005445.40", "ISBI7": "005446.00",
+                "ISBIG": "005447.00", "ISBI8": "005447.40", "ISBII": "005450.40",
+                "ISBIA": "005452.00", "ISBIJ": "005452.40", "ISBIK": "005453.00",
+                "WEN2": "005454.00", "WEN": "005456.00", "VEN": "005460.00",
+                "IBY": "005462.00"}
+
 if __name__ == "__main__":
     fails = check_rows(assemble(SOURCE), ROWS, SYMBOLS, label="p51 ")
     fails += check_rows(assemble(SOURCE_SIC), ROWS_SIC, SYMBOLS_SIC, label="p50 ")
+    prog_span = assemble(SOURCE_SPAN)
+    fails += check_rows(prog_span, ROWS_SICB, SYMBOLS_SICB, label="span ")
+    fails += check_rows(prog_span, ROWS, {}, label="span-WEN ")
     finish(fails)
