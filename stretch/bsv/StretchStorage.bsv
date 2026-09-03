@@ -63,6 +63,17 @@ interface StretchStorage;
   method Action readWordReq(WordAddr a);
   method ActionValue#(Word64) readWordResp();
 
+  // Instruction-fetch channels for the instruction unit's 1Y/2Y
+  // buffers (y = 0 or 1): the same request/ready/response protocol as
+  // the operand channel, independent of it, lower bus priority.
+  method Action fetchReq(Bit#(1) y, WordAddr a);
+  method Bool fetchReady(Bit#(1) y);
+  method ActionValue#(Word64) fetchResp(Bit#(1) y);
+  // The core-storage word stored on the previous clock, if any: the
+  // instruction unit compares it with its prefetched words (program
+  // store compare) and invalidates a match.
+  method Maybe#(WordAddr) recentStore();
+
   // Write a full 64-bit word. Read-only/protected addresses silently
   // ignore the write (this models "permanently protected" locations;
   // it does not yet raise the protection-violation interrupt -- out of
@@ -105,18 +116,30 @@ endinterface
 module mkStretchStorage(StretchStorage);
 
   // The memory bus and units (StretchMemory.bsv), and this module's
-  // request bookkeeping: an in-order store queue, one outstanding
-  // read, and the collected response.
+  // request bookkeeping. Three read channels, one per return tag:
+  // 0 = the operand channel (execute()'s reads and the testbenches'),
+  // 1 = 1Y, 2 = 2Y (the instruction unit's two buffers, stage 2).
+  // Each channel has at most one read outstanding; the bus is offered
+  // requests in the order stores, operand read, 1Y, 2Y (Buchholz
+  // §14.3: the look-ahead has priority over the instruction fetch).
+  // A special (register-backed) address answers on the next clock on
+  // any channel. Reads on every channel are issued only while the
+  // store queue is empty: store->load ordering for operands, and a
+  // conservative form of the program-store compare (Blosk p.21) for
+  // instruction fetches, so a prefetched word is never older than a
+  // store the program has already made to it.
   MBCU mbcu <- mkMBCU;
   FIFOF#(MemReq) storeQ <- mkUGSizedFIFOF(8); // unguarded: memCtl checks
                                               // notFull/notEmpty itself, so no
                                               // implicit condition is hoisted into it
-  Reg#(Maybe#(WordAddr)) pendingRead <- mkReg(tagged Invalid);
-  Reg#(Bool)             readIssued  <- mkReg(False);
-  Reg#(Maybe#(Word64))   resp        <- mkReg(tagged Invalid);
-  RWire#(WordAddr) reqW   <- mkRWire;   // readWordReq this clock
+  Vector#(NumTags, Reg#(Maybe#(WordAddr))) chPending <- replicateM(mkReg(tagged Invalid));
+  Vector#(NumTags, Reg#(Bool))             chIssued  <- replicateM(mkReg(False));
+  Vector#(NumTags, Reg#(Maybe#(Word64)))   chResp    <- replicateM(mkReg(tagged Invalid));
+  Vector#(NumTags, Reg#(Maybe#(WordAddr))) chSpecial <- replicateM(mkReg(tagged Invalid));
+  Vector#(NumTags, RWire#(WordAddr))       reqW      <- replicateM(mkRWire);
+  Vector#(NumTags, PulseWire)              takeW     <- replicateM(mkPulseWire);
   RWire#(MemReq)   storeW <- mkRWire;   // writeWord (core storage) this clock
-  PulseWire        takeW  <- mkPulseWire; // readWordResp this clock
+  Reg#(Maybe#(WordAddr)) recentStoreReg <- mkReg(tagged Invalid); // see recentStore()
   function Bool memInRange(WordAddr a) = installed(a);
   function Bool isSpecialAddr(WordAddr a) = (a < 32);
 
@@ -138,10 +161,6 @@ module mkStretchStorage(StretchStorage);
   Reg#(Word64) transit                <- mkReg(0); // addr 15
   Vector#(16, Reg#(Word64)) xreg      <- replicateM(mkReg(0)); // addr 16-31
 
-  // A read of a special (register-backed) address is answered from
-  // live register state on the next clock, without touching the bus.
-  Reg#(Maybe#(WordAddr)) pendingSpecial <- mkReg(tagged Invalid);
-
   // The one rule that moves requests to the bus and responses back.
   // Every register it writes is written nowhere else; the methods
   // communicate with it through the wires above, so a method call
@@ -149,49 +168,57 @@ module mkStretchStorage(StretchStorage);
   (* fire_when_enabled, no_implicit_conditions *)
   rule memCtl;
     // Stores: enqueue this clock's store (if any); issue the oldest
-    // queued store when its unit is free. Reads are only issued once
-    // the store queue is empty, which keeps store->load ordering.
+    // queued store when its unit is free.
     if (storeW.wget matches tagged Valid .r) begin
       if (storeQ.notFull) storeQ.enq(r);
       else $display("StretchStorage: store queue full, write to %0d LOST", r.addr);
-    end
-    Bool issuedStore = False;
+      recentStoreReg <= tagged Valid r.addr;
+    end else
+      recentStoreReg <= tagged Invalid;
+    Bool busUsed = False;
     if (storeQ.notEmpty && mbcu.canAccept(storeQ.first.addr)) begin
       mbcu.put(storeQ.first);
       storeQ.deq;
-      issuedStore = True;
+      busUsed = True;
     end
-    // Reads.
-    Maybe#(WordAddr) pr = pendingRead;
-    Bool issued = readIssued;
-    Maybe#(Word64) rs = resp;
-    if (takeW) rs = tagged Invalid;
-    if (mbcu.respReady()) begin
-      let v <- mbcu.takeResp();
-      rs = tagged Valid v;
-      pr = tagged Invalid;
-      issued = False;
-    end
-    if (!issuedStore && !storeQ.notEmpty && !issued) begin
-      if (pr matches tagged Valid .a &&& mbcu.canAccept(a)) begin
-        mbcu.put(MemReq{ write: False, addr: a, data: 0 });
-        issued = True;
-      end
-    end
-    Maybe#(WordAddr) ps = pendingSpecial;
-    if (takeW) ps = tagged Invalid;
-    if (reqW.wget matches tagged Valid .a) begin
-      if (isSpecialAddr(a))
-        ps = tagged Valid a;
-      else begin
-        pr = tagged Valid a;
+    // Read channels, in priority order.
+    for (Integer c = 0; c < valueOf(NumTags); c = c + 1) begin
+      Maybe#(WordAddr) pr = chPending[c];
+      Bool issued = chIssued[c];
+      Maybe#(Word64) rs = chResp[c];
+      Maybe#(WordAddr) ps = chSpecial[c];
+      if (takeW[c]) begin rs = tagged Invalid; ps = tagged Invalid; end
+      if (mbcu.respReady(fromInteger(c))) begin
+        let v <- mbcu.takeResp(fromInteger(c));
+        rs = tagged Valid v;
+        pr = tagged Invalid;
         issued = False;
       end
+      // Every read waits for queued stores to leave the queue: store->
+      // load ordering for the operand channel (a load after a store to
+      // the same word must see the store; the look-ahead's LAAR
+      // forwarding replaces this in stage 3) and the conservative
+      // program-store compare for the instruction channels.
+      if (!busUsed && !issued && !storeQ.notEmpty) begin
+        if (pr matches tagged Valid .a &&& mbcu.canAccept(a)) begin
+          mbcu.put(MemReq{ write: False, addr: a, data: 0, tag: fromInteger(c) });
+          issued = True;
+          busUsed = True;
+        end
+      end
+      if (reqW[c].wget matches tagged Valid .a) begin
+        if (isSpecialAddr(a))
+          ps = tagged Valid a;
+        else begin
+          pr = tagged Valid a;
+          issued = False;
+        end
+      end
+      chPending[c] <= pr;
+      chIssued[c]  <= issued;
+      chResp[c]    <= rs;
+      chSpecial[c] <= ps;
     end
-    pendingRead <= pr;
-    readIssued  <= issued;
-    resp        <= rs;
-    pendingSpecial <= ps;
   endrule
 
   // Special-register lookup, used only by readWordResp when the
@@ -228,19 +255,42 @@ module mkStretchStorage(StretchStorage);
   endfunction
 
   method Bool responseReady();
-    return isValid(pendingSpecial) || isValid(resp);
+    return isValid(chSpecial[0]) || isValid(chResp[0]);
   endmethod
 
   method Action readWordReq(WordAddr a);
-    reqW.wset(a);
+    reqW[0].wset(a);
   endmethod
 
   method ActionValue#(Word64) readWordResp();
-    takeW.send();
-    if (pendingSpecial matches tagged Valid .a)
+    takeW[0].send();
+    if (chSpecial[0] matches tagged Valid .a)
       return lookupSpecial(a);
     else
-      return validValue(resp);
+      return validValue(chResp[0]);
+  endmethod
+
+  method Action fetchReq(Bit#(1) y, WordAddr a);
+    Bit#(2) c = 1 + zeroExtend(y);
+    reqW[c].wset(a);
+  endmethod
+
+  method Bool fetchReady(Bit#(1) y);
+    Bit#(2) c = 1 + zeroExtend(y);
+    return isValid(chSpecial[c]) || isValid(chResp[c]);
+  endmethod
+
+  method ActionValue#(Word64) fetchResp(Bit#(1) y);
+    Bit#(2) c = 1 + zeroExtend(y);
+    takeW[c].send();
+    if (chSpecial[c] matches tagged Valid .a)
+      return lookupSpecial(a);
+    else
+      return validValue(chResp[c]);
+  endmethod
+
+  method Maybe#(WordAddr) recentStore();
+    return recentStoreReg;
   endmethod
 
   method Bool writeReady();
@@ -282,7 +332,7 @@ module mkStretchStorage(StretchStorage);
         if (a >= addrIndexBase && a < addrIndexBase + 16)
           xreg[a - addrIndexBase] <= v;
         else
-          storeW.wset(MemReq{ write: True, addr: a, data: v }); // nonexistent
+          storeW.wset(MemReq{ write: True, addr: a, data: v, tag: 0 }); // nonexistent
                                                                 // addresses are
                                                                 // dropped by the MBCU
     endcase

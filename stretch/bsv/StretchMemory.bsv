@@ -78,15 +78,23 @@ function UnitIndex indexOf(WordAddr a);
   end
 endfunction
 
-typedef struct { Bool write; WordAddr addr; Word64 data; } MemReq deriving (Bits, Eq, FShow);
+// Return tag (Blosk p.19: "a three bit return address to the bus
+// control unit ... indicates which Y register in this I unit, or which
+// of the four lookahead levels is to receive the word"). Here: 0 =
+// the operand channel, 1 = 1Y, 2 = 2Y; look-ahead levels come with
+// stage 3.
+typedef Bit#(2) RetTag;
+typedef 3 NumTags;
+typedef struct { Bool write; WordAddr addr; Word64 data; RetTag tag; } MemReq deriving (Bits, Eq, FShow);
 
 // ---------------------------------------------------------------------
 // One 16K-word memory unit.
 // ---------------------------------------------------------------------
 interface MemoryUnit;
   method Bool free();                              // can accept a request this clock
-  method Action request(Bool write, UnitIndex idx, Word64 data);
+  method Action request(Bool write, UnitIndex idx, Word64 data, RetTag tag);
   method Bool dataReady();                         // read data presented
+  method RetTag dataTag();
   method ActionValue#(Word64) takeData();
 endinterface
 
@@ -99,8 +107,9 @@ module mkMemoryUnit(MemoryUnit);
   Reg#(Bit#(4))        readDue <- mkReg(0);   // clocks until read data is presented
   Reg#(Word64)         raw     <- mkReg(0);   // BRAM read-out, held until due
   Reg#(Maybe#(Word64)) dataOut <- mkReg(tagged Invalid);
+  Reg#(RetTag)         tagReg  <- mkReg(0);   // return tag of the read in progress
 
-  RWire#(Tuple3#(Bool, UnitIndex, Word64)) reqW <- mkRWire;
+  RWire#(Tuple4#(Bool, UnitIndex, Word64, RetTag)) reqW <- mkRWire;
   PulseWire takeW <- mkPulseWire;
 
   rule drain;
@@ -114,11 +123,12 @@ module mkMemoryUnit(MemoryUnit);
   // asserted away.
   (* fire_when_enabled *)
   rule tick;
-    if (reqW.wget matches tagged Valid {.wr, .idx, .d}) begin
+    if (reqW.wget matches tagged Valid {.wr, .idx, .d, .t}) begin
       ram.portA.request.put(BRAMRequest{ write: wr, responseOnWrite: False,
                                           address: idx, datain: d });
       busy    <= fromInteger(memCycleClocks);
       readDue <= wr ? 0 : fromInteger(memReadClocks);
+      tagReg  <= t;
     end else begin
       if (busy != 0) busy <= busy - 1;
       if (readDue > 1) readDue <= readDue - 1;
@@ -131,10 +141,11 @@ module mkMemoryUnit(MemoryUnit);
   endrule
 
   method Bool free() = (busy == 0);
-  method Action request(Bool write, UnitIndex idx, Word64 data);
-    reqW.wset(tuple3(write, idx, data));
+  method Action request(Bool write, UnitIndex idx, Word64 data, RetTag tag);
+    reqW.wset(tuple4(write, idx, data, tag));
   endmethod
   method Bool dataReady() = isValid(dataOut);
+  method RetTag dataTag() = tagReg;
   method ActionValue#(Word64) takeData();
     takeW.send();
     return validValue(dataOut);
@@ -147,35 +158,38 @@ endmodule
 interface MBCU;
   method Bool canAccept(WordAddr a);      // target unit free (nonexistent: always)
   method Action put(MemReq r);            // only when canAccept(r.addr)
-  method Bool respReady();
-  method ActionValue#(Word64) takeResp();
+  method Bool respReady(RetTag t);        // a response for tag t is waiting
+  method ActionValue#(Word64) takeResp(RetTag t);
 endinterface
 
 module mkMBCU(MBCU);
   Vector#(NumUnits, MemoryUnit) units <- replicateM(mkMemoryUnit);
-  Reg#(Bool) fakePending <- mkReg(False);  // read of a nonexistent address -> 0
+  // One response slot per return tag (a requester has at most one
+  // read outstanding per tag). Reads of nonexistent addresses answer
+  // 0 through the same slots.
+  Vector#(NumTags, Reg#(Maybe#(Word64))) resp <- replicateM(mkReg(tagged Invalid));
   RWire#(MemReq) putW <- mkRWire;
-  PulseWire takeW <- mkPulseWire;
+  Vector#(NumTags, PulseWire) takeW <- replicateM(mkPulseWire);
 
   (* fire_when_enabled, no_implicit_conditions *)
   rule route;
-    Bool fake = fakePending;
-    if (putW.wget matches tagged Valid .r) begin
-      if (installed(r.addr))
-        units[unitOf(r.addr)].request(r.write, indexOf(r.addr), r.data);
-      else if (!r.write)
-        fake = True;
-    end
-    if (takeW) fake = False;
-    fakePending <= fake;
-  endrule
-
-  function Bool anyReady();
-    Bool r = fakePending;
+    Vector#(NumTags, Maybe#(Word64)) r = readVReg(resp);
+    for (Integer t = 0; t < valueOf(NumTags); t = t + 1)
+      if (takeW[t]) r[t] = tagged Invalid;
+    // Collect every unit presenting data this clock into its tag's slot.
     for (Integer i = 0; i < valueOf(NumUnits); i = i + 1)
-      r = r || units[i].dataReady();
-    return r;
-  endfunction
+      if (units[i].dataReady()) begin
+        let d <- units[i].takeData();
+        r[units[i].dataTag()] = tagged Valid d;
+      end
+    if (putW.wget matches tagged Valid .q) begin
+      if (installed(q.addr))
+        units[unitOf(q.addr)].request(q.write, indexOf(q.addr), q.data, q.tag);
+      else if (!q.write)
+        r[q.tag] = tagged Valid 0;
+    end
+    writeVReg(resp, r);
+  endrule
 
   method Bool canAccept(WordAddr a);
     return !installed(a) || units[unitOf(a)].free();
@@ -183,16 +197,10 @@ module mkMBCU(MBCU);
   method Action put(MemReq r);
     putW.wset(r);
   endmethod
-  method Bool respReady() = anyReady();
-  method ActionValue#(Word64) takeResp();
-    Word64 v = 0;
-    for (Integer i = 0; i < valueOf(NumUnits); i = i + 1)
-      if (units[i].dataReady()) begin
-        let d <- units[i].takeData();
-        v = d;
-      end
-    takeW.send();
-    return v;
+  method Bool respReady(RetTag t) = isValid(resp[t]);
+  method ActionValue#(Word64) takeResp(RetTag t);
+    takeW[t].send();
+    return validValue(resp[t]);
   endmethod
 endmodule
 

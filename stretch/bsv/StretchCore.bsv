@@ -60,24 +60,27 @@ module mkStretchCore(StretchCore);
   Reg#(Maybe#(Tuple2#(Bit#(4), IndexWord))) pendingIdxWrite <- mkReg(tagged Invalid);
   Reg#(Maybe#(IoXfer)) ioPending <- mkReg(tagged Invalid);
 
-  // In-progress instruction fetch, staged against StretchStorage's
-  // readWordReq/readWordResp (docs/phase2_arm_inventory.md's
-  // conversion order, step 2 -- the first arm converted to the new
-  // two-call convention, chosen because it's bounded (0-2 reads, no
-  // case-arm variation) and exercised by every program). Invalid: no
-  // fetch in progress (an idle step() either starts a fresh fetch, in
-  // the final `else` branch below, or services one of the two other
-  // pending-* FSMs above it). Valid tuple3(False, pc, _): a request
-  // for the word containing hw0 was issued last cycle at word
-  // pc[18:1]; waiting on its response. Valid tuple3(True, pc, hw0):
-  // hw0 has already been collected and decoding found the instruction
-  // Full-length; a request for the word containing hw1 was issued
-  // last cycle at word (pc+1)[18:1]; hw0 is carried through unchanged
-  // so it's still on hand once hw1's response arrives. Mirrors
-  // pendingIdxWrite's tpl_1/tpl_2 accessor style above rather than a
-  // dedicated tagged-union type, for the same reason: this is a
-  // 2-state FSM, not worth a new type.
-  Reg#(Maybe#(Tuple3#(Bool, HWordAddr, HalfWord32))) fetchPending <- mkReg(tagged Invalid);
+  // The instruction unit's instruction buffers 1Y/2Y and IC controls
+  // (docs/microarchitecture_plan.md stage 2a; Blosk TR00.722 pp.7-10,
+  // 25; CE manual figs 3.1.1-3.1.5). Each Y holds one 64-bit
+  // instruction word fetched ahead of the instruction counter through
+  // its own bus channel (StretchStorage.fetchReq/fetchReady/fetchResp,
+  // return tags 1Y/2Y); a word is usable one I-checker cycle (two
+  // clocks) after it arrives. The IC controls keep both filled with
+  // the next words in sequence (`nextFetch`), free a Y once the
+  // instruction counter has passed its word, and invalidate both on a
+  // taken branch, a setPC, or a store to a prefetched word (program
+  // store compare, Blosk p.21). A fetch still in flight for an
+  // invalidated Y is discarded on arrival.
+  Vector#(2, Reg#(YReg)) yr <- replicateM(mkReg(YReg{valid: False, pending: False,
+                                                      discard: False, addr: 0, data: 0, chk: 0}));
+  Reg#(WordAddr) nextFetch <- mkReg(0);
+  // Restart requests (branch taken inside step(); setPC from outside)
+  // as sequence numbers, so each register has exactly one writer.
+  Reg#(Bit#(8)) branchSeq  <- mkReg(0);   // written in step()'s branch paths
+  Reg#(Bit#(8)) restartSeq <- mkReg(0);   // written by setPC
+  Reg#(Bit#(8)) restartSeen <- mkReg(0);  // written at the top of step()
+  Reg#(Bit#(8)) branchSeen  <- mkReg(0);
 
   // ioPending's own read-staging flag (docs/phase2_arm_inventory.md
   // conversion order, step 3): only a W-direction (memory->device)
@@ -116,7 +119,6 @@ module mkStretchCore(StretchCore);
     actionvalue
       let {next, vflPending, ioStart, needsRead} <-
         execute(st, ioDev, pc, len, di, replicate(0), 0);
-      fetchPending <= tagged Invalid;
       if (needsRead matches tagged Valid .a) begin
         st.readWordReq(a);
         execPending <= tagged Valid tuple3(pc, len, di);
@@ -126,11 +128,64 @@ module mkStretchCore(StretchCore);
         pcReg <= next;
         pendingIdxWrite <= vflPending;
         ioPending <= ioStart;
+        if (next != pc + ((len == Full) ? 2 : 1)) branchSeq <= branchSeq + 1;
         return next == pc;
       end
     endactionvalue;
 
+  // Look up a prefetched, checked instruction word.
+  function Maybe#(Word64) yLookup(WordAddr w);
+    Maybe#(Word64) r = tagged Invalid;
+    for (Integer k = 0; k < 2; k = k + 1)
+      if (yr[k].valid && yr[k].chk == 0 && yr[k].addr == w) r = tagged Valid yr[k].data;
+    return r;
+  endfunction
+
   method ActionValue#(Bool) step();
+    // ---- IC controls: run every clock, before the instruction FSM ----
+    Vector#(2, YReg) ny = readVReg(yr);
+    Bool restart = (restartSeq != restartSeen) || (branchSeq != branchSeen);
+    WordAddr nf = nextFetch;
+    WordAddr pcw = pcReg[18:1];
+    for (Integer k = 0; k < 2; k = k + 1) begin
+      // Program store compare: a store to a prefetched word invalidates it.
+      if (st.recentStore() matches tagged Valid .sw &&& ny[k].addr == sw && (ny[k].valid || ny[k].pending)) begin
+        ny[k].valid = False;
+        if (ny[k].pending) ny[k].discard = True;
+      end
+      // Restart (taken branch or setPC): drop everything buffered.
+      if (restart) begin
+        ny[k].valid = False;
+        if (ny[k].pending) ny[k].discard = True;
+      end
+      // Collect an arrived word; usable after the I-checker cycle.
+      if (ny[k].pending && st.fetchReady(fromInteger(k))) begin
+        let d <- st.fetchResp(fromInteger(k));
+        ny[k].pending = False;
+        if (ny[k].discard) ny[k].discard = False;
+        else begin ny[k].valid = True; ny[k].data = d; ny[k].chk = 2; end
+      end else if (ny[k].valid && ny[k].chk != 0)
+        ny[k].chk = ny[k].chk - 1;
+      // Free a word the instruction counter has passed.
+      if (ny[k].valid && ny[k].addr < pcw) ny[k].valid = False;
+    end
+    if (restart) begin
+      nf = pcw;
+      restartSeen <= restartSeq;
+      branchSeen <= branchSeq;
+    end
+    // Issue at most one prefetch per clock into a free Y, in order.
+    Bool issued = False;
+    for (Integer k = 0; k < 2; k = k + 1)
+      if (!issued && !ny[k].valid && !ny[k].pending && !restart) begin
+        st.fetchReq(fromInteger(k), nf);
+        ny[k].pending = True; ny[k].discard = False; ny[k].addr = nf; ny[k].chk = 0;
+        nf = nf + 1;
+        issued = True;
+      end
+    writeVReg(yr, ny);
+    nextFetch <= nf;
+
     if (ioPending matches tagged Valid .x) begin
       // Service one word of an in-flight RD/W transfer. See this
       // interface's step() doc above and StretchIO.bsv's file header.
@@ -152,6 +207,12 @@ module mkStretchCore(StretchCore);
         if (!x.suppressEop) cw.eop = 1;
         ioDev.writeChanCW(x.ch, cw);
         ioPending <= tagged Invalid;
+        return False;
+      end else if (!st.writeReady()) begin
+        // The store queue is full: the exchange waits for the memory
+        // bus before moving the next word (a RD-direction word is a
+        // store; the W-direction path is also held so the two
+        // directions keep the same per-word pacing).
         return False;
       end else if (x.isWrite && !ioReadIssued) begin
         // W-direction (memory->device), first visit to this word:
@@ -220,43 +281,6 @@ module mkStretchCore(StretchCore);
       st.writeIndex(tpl_1(p), tpl_2(p));
       pendingIdxWrite <= tagged Invalid;
       return False;
-    end else if (fetchPending matches tagged Valid .fp &&& !st.responseReady()) begin
-      // Instruction word still in flight from memory: stall.
-      return False;
-    end else if (fetchPending matches tagged Valid .fp) begin
-      // Continue an in-progress fetch -- see fetchPending's own
-      // comment above for the two states this covers.
-      Bool waitingHw1     = tpl_1(fp);
-      HWordAddr pc        = tpl_2(fp);
-      HalfWord32 hw0cap   = tpl_3(fp);
-      Word64 w <- st.readWordResp();
-      if (!waitingHw1) begin
-        HalfWord32 hw0 = (pc[0] == 0) ? w[63:32] : w[31:0];
-        InstrLen len = instrLen(hw0);
-        if (len == Full) begin
-          // hw0 collected, instruction is Full-length: issue hw1's
-          // request now (same cycle as collecting hw0's response --
-          // a real BRAM port allows a request.put() and a prior
-          // response.get() in the same rule, confirmed by
-          // scratchpad/bram_probe/BramProbe4.bsv) and wait for it.
-          st.readWordReq((pc + 1)[18:1]);
-          fetchPending <= tagged Valid tuple3(True, pc, hw0);
-          return False;
-        end else begin
-          // Half-length: done fetching, decode+execute now, same as
-          // the single-step case below.
-          DecodedInstr di = decode(hw0, tagged Invalid);
-          let done <- startExecute(pc, len, di);
-          return done;
-        end
-      end else begin
-        // hw1 collected (instruction is Full-length by construction --
-        // that's the only way this state is ever entered).
-        HalfWord32 hw1 = ((pc + 1)[0] == 0) ? w[63:32] : w[31:0];
-        DecodedInstr di = decode(hw0cap, tagged Valid hw1);
-        let done <- startExecute(pc, Full, di);
-        return done;
-      end
     end else if (execPending matches tagged Valid .ep &&& !st.responseReady()) begin
       // Operand still in flight from memory: stall.
       return False;
@@ -285,25 +309,46 @@ module mkStretchCore(StretchCore);
         pendingIdxWrite <= vflPending;
         ioPending <= ioStart;
         execPending <= tagged Invalid;
+        if (next != pc + ((len == Full) ? 2 : 1)) branchSeq <= branchSeq + 1;
         return next == pc;
       end
     end else begin
-      // Start a new fetch: issue the request for the word containing
-      // hw0 and wait. Nothing else completes this cycle -- unlike the
-      // pre-FSM version, even a Half-length instruction now takes (at
-      // least) two step() calls total, one to issue the request and
-      // one to collect it and execute. Callers that loop on step()
-      // until it returns True need no changes (see this interface's
-      // own step() doc above).
+      // Preparation: transfer the next instruction from the Y buffers
+      // (both halves of a full-word instruction, which may straddle
+      // 1Y/2Y) and execute it; stall until the word(s) are buffered
+      // and checked. (Stage 2a has no separate Z register yet: the
+      // Y-to-Z transfer, index fetch and modification cycles are
+      // charged in stage 2b.)
       HWordAddr pc = pcReg;
-      st.readWordReq(pc[18:1]);
-      fetchPending <= tagged Valid tuple3(False, pc, 0);
-      return False;
+      if (!st.writeReady())
+        return False; // a storing instruction could find the queue full: wait
+      else if (yLookup(pc[18:1]) matches tagged Valid .w0) begin
+        HalfWord32 hw0 = (pc[0] == 0) ? w0[63:32] : w0[31:0];
+        InstrLen len = instrLen(hw0);
+        if (len == Half) begin
+          DecodedInstr di = decode(hw0, tagged Invalid);
+          let done <- startExecute(pc, len, di);
+          return done;
+        end else begin
+          HWordAddr pc1 = pc + 1;
+          if (yLookup(pc1[18:1]) matches tagged Valid .w1) begin
+            HalfWord32 hw1 = (pc1[0] == 0) ? w1[63:32] : w1[31:0];
+            DecodedInstr di = decode(hw0, tagged Valid hw1);
+            let done <- startExecute(pc, Full, di);
+            return done;
+          end else
+            return False;
+        end
+      end else
+        return False;
     end
   endmethod
 
   method HWordAddr getPC() = pcReg;
-  method Action setPC(HWordAddr a); pcReg <= a; endmethod
+  method Action setPC(HWordAddr a);
+    pcReg <= a;
+    restartSeq <= restartSeq + 1;
+  endmethod
 
   interface mem = st;
   interface io = ioDev;

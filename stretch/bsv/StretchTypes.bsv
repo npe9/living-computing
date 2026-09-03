@@ -374,4 +374,18 @@ typedef union tagged {
 // StretchDecode.isFullWordInstr for the citation.
 typedef enum { Half, Full } InstrLen deriving (Bits, Eq, FShow);
 
+// One of the instruction unit's two instruction buffers 1Y/2Y
+// (StretchCore.bsv IC controls, docs/microarchitecture_plan.md
+// stage 2a): the word address it holds or awaits, the word, whether
+// a fetch is outstanding (and whether its result is to be discarded),
+// and the I-checker countdown before the word may be used.
+typedef struct {
+  Bool     valid;
+  Bool     pending;
+  Bool     discard;
+  WordAddr addr;
+  Word64   data;
+  Bit#(2)  chk;
+} YReg deriving (Bits, Eq, FShow);
+
 endpackage

@@ -335,6 +335,29 @@ activity in the format of Blosk's diagrams.
   modeled: the eight-channel priority arbitration (one requester so
   far), address-invalid indication for nonexistent addresses.
 
+- **Stage 2a -- in test** (2026-09-03): tagged bus responses
+  (`RetTag`: operand, 1Y, 2Y) in `StretchMemory.bsv`; three read
+  channels with priority order stores > operand > 1Y > 2Y in
+  `StretchStorage.bsv`, instruction fetches held while stores are
+  queued (conservative program-store compare); `StretchCore.step()`
+  now begins with the IC controls -- two `YReg` buffers filled ahead
+  through their own channels, a two-clock I-checker delay, freeing
+  behind the instruction counter, invalidation on a taken branch, on
+  `setPC`, and on a store to a buffered word (`recentStore`), with
+  in-flight fetches for invalidated buffers discarded on arrival --
+  and prepares each instruction from the buffers (a full word may
+  straddle 1Y/2Y). The old one-fetch-at-a-time FSM is gone. Two
+  real findings from the suite on the way: (1) reads on the operand
+  channel must still wait for queued stores (the first channel
+  generalization dropped that and a testbench read a control word
+  before its store reached memory); (2) a 16-word tape transfer
+  streams stores faster than four interleaved 2.1 µs units absorb
+  them and overflowed the 8-deep store queue -- the exchange now
+  waits for queue space per word, and an instruction does not start
+  while the queue is full (the LAAR-busy wait of Perf. Char. p.3-21
+  in miniature). Cycle counts with prefetch overlap: Problem 2.1 94
+  -> 54 clocks, the pp.43-51 span 2714 -> 2065.
+
 ## 8. Immediate next steps
 
 1. Stage 2 per §6a: `StretchIBox.bsv`, starting with the IC controls
