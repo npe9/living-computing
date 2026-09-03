@@ -85,15 +85,21 @@ function BranchOutcome evalBranch(StretchStorage st, DecodedInstr d, Word64 ind0
     // Count and Branch / Count, Branch and Refill.
     tagged CountBranch .cb: begin
       IndexWord x = st.readIndex(cb.j);
-      // v: 00=unchanged, 01=+half(=+1 raw), 10=+one(=+2 raw), 11=-one(=-2 raw).
-      // SOURCE for the four cases: pocket card p.1 legend and p.3
-      // "INDEX BRANCHING" modifier table. The exact raw-unit mapping
-      // for "half"/"one" is this implementation's best-effort
-      // reading -- see bsv/README.md "Scope".
+      // v (instruction bits 23-24), Reference Manual p.41 "Count and
+      // Branch" table: 00 no incrementing; 01 "H Add half to value:
+      // Add one in bit position 18"; 10 "+ Add one to value: Add one
+      // in bit position 17"; 11 "- Subtract one from value: Subtract
+      // one in bit position 17". The value field is a 24-bit bit
+      // address (bit 23 = 1 bit), so bit 18 is 32 bits (a half-word)
+      // and bit 17 is 64 (a word). An earlier version added 1/2/-2
+      // raw bits (recorded in bsv/README.md as an unconfirmed
+      // reading); I-Box 1's CBR+/CBR-/CBRH/CBRZ+/CBRZ-/CBRZH groups
+      // (strap/programs/ibox1_p46_p51_span.strap) hang at their
+      // value tests under that mapping and pass under this one.
       Int#(25) delta = case (cb.v)
-                          2'b01: 1;
-                          2'b10: 2;
-                          2'b11: -2;
+                          2'b01: 32;
+                          2'b10: 64;
+                          2'b11: -64;
                           default: 0;
                         endcase;
       SM128 val = SM128{sign: x.sign, mag: zeroExtend(x.addr)};

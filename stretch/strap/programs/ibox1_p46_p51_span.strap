@@ -1,0 +1,334 @@
+! I-Box 1 diagnostic program, octal 5247.00 through 5461.40 -- TWELVE
+! consecutive test groups from docs/ja_ax1a_ibox-1.pdf pp.46-51,
+! transcribed VERBATIM as one contiguous span at the listing's own
+! addresses, with the deck's own pass/fail mechanism intact throughout:
+!
+!   CBR         IBR96..IBR101   5247.00  (p.46 bottom / p.47 top)
+!   CBR+        IBR102..IBR108  5261.00  "count, branch refill, + add one to value"
+!   CBR-        IBR109..IBR115  5276.00  "... sub one from value"
+!   CBRH        IBR116..IBR122  5312.00  "... add half to value"
+!   CBRZ        IBR123..IBR140  5326.00  "count, branch on zero, + refill"
+!   CBRZ+       IBR141..IBR158  5343.00
+!   CBRZ-       IBR159..IBR176  5360.00
+!   CBRZH       IBR177..IBR194  5375.00
+!   SIC-CB      ISCB..ISCBH     5412.00  (these five were first run as their
+!   SIC-CBZ     ISCB5..ISCBK    5421.00   own span, ibox1_p50_p51_span.strap,
+!                                         now superseded by this file)
+!   SIC-B,ZIND  ISBI..ISBXW     5432.40
+!   SIC-B,IND   ISBI5..ISBIK    5443.00
+!   (indicators) WEN2/WEN/VEN   5454.00  (WEN6/WEN7 at 6102/6103)
+!
+! Control flow, as the deck wrote it. In the count-and-branch groups
+! every "B,$" or "BD,$" is a hang, and the group proves itself by
+! storing X1's whole index word over one of them with SX ("SX TO TEST
+! VALUE" / "SX FOR VALUE TEST"): the XW literal it started from puts a
+! bit-address like IBR106+(8).04 in the value field, chosen so that the
+! value the variant SHOULD have produced (two CBR+ = +2.0 words, five
+! CBRZH = +2.40, two CBR- = -2.0 ...) reads as "BD,<the next hang>"
+! when executed as an instruction -- so a correct value branches on,
+! a wrong one lands on a hang. The count-to-zero call then refills X1
+! from a second XW whose value reads as "BD,<the group's NOP-valued VF
+! pair>", stored the same way ("SX + TEST FOR REFILL"), and the chain
+! walks: value-test hang -> refill-test hang -> VF NOPs -> next group.
+! The SIC groups are described in ibox1_sic_cb_cbz.strap's header; the
+! SIC-B groups' own detail is in verify_ibox1_listing.py's ROWS_SICB
+! comment. The whole span ends where
+! VEN's own "BRGZZ,$+1.0" lands, 5462.00, the start of the (floating-
+! point, out of scope) "Y-Z CONTROL SEQUENCES" test -- the ONE
+! substituted instruction here is a BEW,$ at that address.
+!
+! What the count-and-branch groups pin down that no earlier test
+! could: the H / + / - value increments of the CB family. Reference
+! Manual p.41's table says H adds "one in bit position 18" of the
+! value field and +/- add or subtract "one in bit position 17" -- i.e.
+! a half-word (32 bits) and a word (64 bits) of bit address -- and the
+! listing's own arithmetic agrees (IBRA23's value 5405.44 plus five
+! halves is 5410.04, exactly IBR193+.04, where its comment says the
+! value test must land). bsv/README.md had recorded the model's
+! mapping (+1/+2/-2 raw bit units) as an unconfirmed best-effort
+! reading; it was wrong by a factor of 32, and this span is the test
+! that would have hung at IBR106 under it.
+!
+! Expected final state (ibox1_expected.py): halt PC 5462.00; every
+! SX-stored word (value-test words as X1's full index word at that
+! point, refill-test words as copies of the refill XW); every SIC- or
+! SV-rewritten hang of the p.50-51 groups.
+!
+! Listing text restored from the printout's %..= to (..). Two scan
+! readings are noted in verify_ibox1_listing.py (BZXVLZ,ISBI5 and
+! IBR184's CBRZH). The "66"/"6"/"666" marks in the listing's right
+! margin are ignored.
+!
+! Bug injections, observed results:
+!   C. LX without index-indicator setting (StretchExecute.bsv DirIndex
+!      arm): 6 of 13 fail on the pp.50-51 half alone -- PC parks at
+!      ISBIC, the hang after BZXCZ (the preceding SV had left XCZ on).
+!   D. CB half/one units back to 1/2/-2 raw bits: 26 of 28 fail -- PC
+!      parks at IBR106 (the first incrementing variant's value test),
+!      only CBR's two v=00 words (IBR100, IBR107) still pass. Exactly
+!      as predicted.
+! Both reverted by targeted un-patch; full suite green.
+
+        SLC, (8)5247.0
+IBR96   LX,$X1,IBRA9         ! -SET UP XW
+IBR97   CBR,$X1,IBR98        ! -COUNT 3 TO 2,BR,NO REFILL
+        B,$                  ! -NO BRANCH
+IBR98   CBR,$X1,IBR99        ! -COUNT 2 TO 1,BR,NO REFILL
+        B,$                  ! -NO BRANCH
+        B,$                  ! -WRONG BRANCH
+IBR99   CBR,$X1,HANGS1       ! -COUNT 1 TO 0,NO BR, REFILL
+        SX,$X1,IBR100        ! -STORE NEW XW
+        B,IBR100
+        NOP,0.0              ! -BRANCH TO NEW INST.
+IBRA9   XW,IBRA9+(8).04,3,IBRA10        ! -ORIGIANL XW
+IBRA10  XW,IBR101+(8).04,(8)37777,-1    ! -REFILL XW
+IBR100  B,$                  ! -BECOMES BD,IBR101
+        B,$                  ! -ALL 1
+HANGS1  B,$                  ! -WRONG BRANCH
+        B,$                  ! -WRONG BRANCH
+IBR101  VF,(8)777777.70      ! -NOP,-.32
+        VF,(8)777777.70      ! -NOP,-.32
+IBR102  LX,$X1,IBRA11        ! -SET UP XW
+IBR103  CBR+,$X1,IBR104      ! -COUNT 3 TO 2,1 TO VAL,+ BRANCH
+        B,$                  ! -NO BRANCH
+IBR104  CBR+,$X1,IBR105      ! -COUNT 2 TO 1,1 TO VAL,+BRANCH
+        B,$                  ! -NO BRANCH
+        B,$                  ! -WRONG BRANCH
+IBR105  SX,$X1,IBR106        ! -SX TO TEST VALUE
+        CBR+,$X1,HANGS2      ! -COUNT 1TO0,NOV+,NOB,REFILL
+        SX,$X1,IBR107        ! -SX + TEST FOR REFILL
+        B,IBR106             ! -BRANCH TO VALUE TEST
+        NOP,0.0
+IBRA11  XW,IBR106+(8).04,3,IBRA12       ! -ORIGINAL XW
+IBRA12  XW,IBR108+(8).04,(8)37777,-1
+IBR106  B,$                  ! -HANG,OR BRANCH TO REFILL TEST
+        B,$
+HANGS2  B,$                  ! -BRANCHED AT COUNT 0,ERROR
+        B,$
+IBR107  B,$                  ! -REFILL TEST HANG OR BRANCH OUT
+        B,$                  ! -ALL 1
+        B,$
+        B,$
+IBR108  VF,(8)777777.70      ! -NOP,-.32
+        VF,(8)777777.70      ! -NOP,-.32
+IBR109  LX,$X1,IBRA13        ! -SET UP XW
+IBR110  CBR-,$X1,IBR111      ! -COUNT 3TO 2, VAL.-1, +BRANCH
+        B,$                  ! -NO BRANCH
+IBR111  CBR-,$X1,IBR112      ! -COUNT 2TO 1,VAL.-1,+BRANCH
+        B,$                  ! -NO BRANCH
+        B,$                  ! -WRONG BRANCH
+IBR112  SX,$X1,IBR113        ! -SX TO TEST VALUE
+        CBR-,$X1,HANGS3      ! -COUNT 1TO 0, NOV-, NO B,REFILL
+        SX,$X1,IBR114        ! -SX +TEST FOR REFILL
+        B,IBR113             ! -BRANCH TO VALUE TEST
+IBRA13  XW,IBR115+(8).04,3,IBRA14       ! -ORIGINAL XW
+IBRA14  XW,IBR115+(8).04,(8)37777,-1    ! -REFILL XW
+IBR113  B,$                  ! -HANG OR BRANCH TO REFILL TEST
+        B,$
+HANGS3  B,$                  ! -BRANCHED AT COUNT 0,ERROR
+        B,$
+IBR114  B,$                  ! -REFILL TEST HANG OR BRANCH OUT
+        B,$                  ! -ALL 1
+        B,$
+        B,$
+IBR115  VF,(8)777777.70      ! -NOP,-.32
+        VF,(8)777777.70      ! -NOP,-.32
+IBR116  LX,$X1,IBRA15        ! -SET UP XW
+IBR117  CBRH,$X1,IBR118      ! -COUNT 3TO2,VAL+.4,+BRANCH
+        B,$                  ! -NO BRANCH
+IBR118  CBRH,$X1,IBR119      ! -COUNT 2TO1,VAL+.4,+BRANCH
+        B,$                  ! -NO BRANCH
+        B,$                  ! -WRONG BRANCH
+IBR119  SX,$X1,IBR120        ! -SX TO TEST VALUE
+        CBRH,$X1,HANGS4      ! -COUNT 1TO0,NO V+,NOB,REFILL
+        SX,$X1,IBR121        ! -SX + TEST FOR REFILL
+        B,IBR120             ! -BRANCH TO VALUE TEST
+IBRA15  XW,HANGS4+(8).04,3,IBRA16       ! -ORIGINAL XW
+IBRA16  XW,IBR122+(8).04,(8)37777,-1    ! -REFILL XW
+IBR120  B,$                  ! -HANG OR BRANCH TO REFILL TEST
+        B,$
+HANGS4  B,$                  ! -BRANCH AT COUNT 0,ERROR
+        B,$
+IBR121  B,$                  ! -REFILL TEST,HANG OR BRANCH OUT
+        B,$                  ! -ALL 1
+        B,$
+        B,$
+IBR122  VF,(8)777777.70      ! -NOP,-.32
+        VF,(8)777777.70      ! -NOP,-.32
+IBR123  LX,$X1,IBRA17        ! -SET UP XW
+IBR124  CBRZ,$X1,IBR132      ! -COUNT 6 TO 5, NO B OR REF.
+IBR125  CBRZ,$X1,IBR133      ! -COUNT 5 TO 4, NO B OR REF.
+IBR126  CBRZ,$X1,IBR134      ! -COUNT 4 TO 3, NO B OR REF.
+IBR127  CBRZ,$X1,IBR135      ! -COUNT 3 TO 2, NO B OR REF.
+IBR128  CBRZ,$X1,IBR136      ! -COUNT 2 TO 1 NO B OR REF.
+IBR129  SX,$X1,IBR138        ! -SX FOR VALUE TEST
+IBR130  CBRZ,$X1,IBR137      ! -SHOULD BRANCH + REFILL C TO 0
+IBR131  B,$                  ! -HANG UP IF NO B ON ZERO
+IBR132  B,$                  ! -HANG UP IF B ON NOT ZERO
+IBR133  B,$                  ! -HANG UP IF B ON NOT ZER
+IBR134  B,$                  ! -HANG UP IF B ON NOT ZER
+IBR135  B,$                  ! -HANG UP IF B ON NOT ZER
+IBR136  B,$                  ! -HANG UP IF B ON NOT ZERO
+IBR137  SX,$X1,IBR139        ! -HANG UP IF B ON NOT ZERO
+        B,IBR138             ! -GO TO VALUE TEST
+IBRA17  XW,IBR139+(8).04,6,IBRA18       ! -COMMON XW
+IBRA18  XW,IBR140+(8).04,(8)37777,-1    ! -REFILL XW
+IBR138  B,$                  ! -IF HANG UP, VALUE ON CBRZ WRONG
+        B,$
+IBR139  B,$                  ! -IF HANG UP, FAULTY REFILL ZERO
+        B,$                  ! -ALL 1 S
+IBR140  VF,(8)777777.70      ! -EQUALS NOP,-.32
+        VF,(8)777777.70      ! -EQUALS NOP,-.32
+IBR141  LX,$X1,IBRA19        ! -SET UP XW
+IBR142  CBRZ+,$X1,IBR150     ! -COUNT 6 TO 5, NO B OR REF.
+IBR143  CBRZ+,$X1,IBR151     ! -COUNT 5 TO 4, NO B OR REF.
+IBR144  CBRZ+,$X1,IBR152     ! -COUNT 4 TO 3, NO B OR REF.
+IBR145  CBRZ+,$X1,IBR153     ! -COUNT 2 TO 1, NO B OR REF.
+IBR146  CBRZ+,$X1,IBR154     ! -COUNT 2 TO 1, NO B OR REF.
+IBR147  SX,$X1,IBR156        ! -SX FOR VALUE TEST
+IBR148  CBRZ+,$X1,IBR155     ! -SHOULD BRANCH + REFILL C TO 0
+IBR149  B,$                  ! -HANG UP IF NO B ON ZERO
+IBR150  B,$                  ! -HANG UP IF B ON NOT ZERO
+IBR151  B,$                  ! -HANG UP IF B ON NOT ZERO
+IBR152  B,$                  ! -HANG UP IF B ON NOT ZERO
+IBR153  B,$                  ! -HANG UP IF B ON NOT ZERO
+IBR154  B,$                  ! -HANG UP IF B ON NOT ZERO
+IBR155  SX,$X1,IBR157        ! -SX FOR REFILL TEST
+        B,IBR156             ! -GO TO VALUE TEST
+IBRA19  XW,IBR153+(8).04,6,IBRA20       ! -COMMON XW
+IBRA20  XW,IBR158+(8).04,(8)37777,-1    ! -REFILL XW
+IBR156  B,$                  ! -IF HANG UP, VALUE ON CBRZ WRONG
+        B,$
+IBR157  B,$                  ! -IF HANG UP, FAULTY REFILL ZERO
+        B,$                  ! -ALL 1 S
+IBR158  VF,(8)777777.70      ! -EQUALS NOP,-.32
+        VF,(8)777777.70      ! -EQUALS NOP,-.32
+IBR159  LX,$X1,IBRA21        ! -SET UP XW
+IBR160  CBRZ-,$X1,IBR168     ! -COUNT 6 TO 5, NO B OR REF.
+IBR161  CBRZ-,$X1,IBR169     ! -COUNT 5 TO 4, NO B OR REF.
+IBR162  CBRZ-,$X1,IBR170     ! -COUNT 4 TO 3, NO B OR REF.
+IBR163  CBRZ-,$X1,IBR171     ! -COUNT 3 TO 2, NO B OR REF.
+IBR164  CBRZ-,$X1,IBR172     ! -COUNT 2 TO 1, NO B OR REF.
+IBR165  SX,$X1,IBR174        ! -SX FOR VALUE TEST
+IBR166  CBRZ-,$X1,IBR173     ! -SHOULD BRANCH + REFILL C TO 0
+IBR167  B,$                  ! -HANG UP IF NO B ON ZERO
+IBR168  B,$                  ! -HANG UP IF B ON NOT ZERO
+IBR169  B,$                  ! -HANG UP IF B ON NOT ZERO
+IBR170  B,$                  ! -HANG UP IF B ON NOT ZERO
+IBR171  B,$                  ! -HANG UP IF B ON NOT ZERO
+IBR172  B,$                  ! -HANG UP IF B ON NOT ZERO
+IBR173  SX,$X1,IBR175        ! -SX FOR REFILL TEST
+        B,IBR174             ! -GO TO VALUE TEST
+IBRA21  XW,IBR175+(8)5.04,6,IBRA22      ! -COMMON XW
+IBRA22  XW,IBR176+(8).04,(8)37777,-1    ! -REFILL XW
+IBR174  B,$                  ! -IF HANG UP, VALUE ON CBRZ WRONG
+        B,$
+IBR175  B,$                  ! -IF HANG UP, FAULTY REFILL ZERO
+        B,$                  ! -ALL 1 S
+IBR176  VF,(8)777777.70      ! -EQUALS NOP,-.32
+        VF,(8)777777.70      ! -EQUALS NOP,-.32
+IBR177  LX,$X1,IBRA23        ! -SET UP XW
+IBR178  CBRZH,$X1,IBR186     ! -COUNT 6 TO 5, NO B OR REF.
+IBR179  CBRZH,$X1,IBR187     ! -COUNT 5 TO 4, NO B OR REF.
+IBR180  CBRZH,$X1,IBR188     ! -COUNT 4 TO 3, NO B OR REF.
+IBR181  CBRZH,$X1,IBR189     ! -COUNT 2 TO 1, NO B OR REF.
+IBR182  CBRZH,$X1,IBR190     ! -COUNT 2 TO 1 NO B OR REF.
+IBR183  SX,$X1,IBR192        ! -SX FOR VALUE TEST
+IBR184  CBRZH,$X1,IBR191     ! -SHOULD BRANCH + REFILL, C TO 0
+IBR185  B,$                  ! -HANG UP IF NO B ON ZERO
+IBR186  B,$                  ! -HANG UP IF B ON NOT ZERO
+IBR187  B,$                  ! -HANG UP IF B ON NOT ZERO
+IBR188  B,$                  ! -HANG UP IF B ON NOT ZERO
+IBR189  B,$                  ! -HANG UP IF B ON NOT ZERO
+IBR190  B,$                  ! -HANG UP IF B ON NOT ZERO
+IBR191  SX,$X1,IBR193        ! -SX FOR REFILL TEST
+        B,IBR192             ! -GO TO VALUE TEST
+IBRA23  XW,IBRA23+(8).44,6,IBRA24       ! -COMMON XW
+IBRA24  XW,IBR194+(8).04,(8)37777,-1    ! -REFILL XW
+IBR192  B,$                  ! -IF HANG UP, VALUE ON CBRZ WRONG
+        B,$
+IBR193  B,$                  ! -IF HANG UP, FAULTY REFILL ZERO
+        B,$                  ! -ALL 1 S
+IBR194  VF,(8)777777.70      ! -EQUALS NOP,-.32
+        VF,(8)777777.70      ! -EQUALS NOP,-.32
+ISCB    LCI,$X1,4           ! -SET UP COUNT
+        NOP,0.0
+ISCB1   SIC,ISCBA           ! -STORE IC,
+        CB,$X1,ISCB2        ! -COUNT NOT 0,BRANCH
+ISCBB   BD,$                ! -HANG UP OR BECOME BD,ISCBC
+ISCB2   SIC,ISCBB           ! -STORE IC,
+        CB,$X1,ISCB3        ! -COUNT NOT 0, BRANCH
+ISCBC   BD,$                ! -HANG UP OR BECOME BD,ISCBD
+ISCB3   SIC,ISCBC           ! -STORE IC,
+        CB,$X1,ISCB4        ! -COUNT NOT 0, BRANCH
+ISCBD   BD,$                ! -HANG UP OR BECOME BD,ISCBE
+ISCB4   SIC,ISCBD           ! -STORE IC,
+        CBZ,$X1,ISCB5       ! -COUNT ZERO, BRANCH
+ISCBH   BD,$                ! -HANG UP OR BECOME BD,ISCBI
+ISCB5   LCI,$X1,4           ! -SET UP COUNT
+ISCB6   SIC,ISCBE           ! -DONT STORE IC
+        CBZ,$X1,$+.32       ! -COUNT NOT ZERO NO BRANCH
+ISCBE   BD,$+.32            ! -HANG IF IC STORED
+ISCB7   SIC,ISCBF           ! -DONT STORE IC
+        CBZ,$X1,$+.32       ! -COUNT NOT ZERO NO BRANCH
+ISCBF   BD,$+.32            ! -HANG IF IC STORED
+ISCB8   SIC,ISCBG           ! -DONT STORE IC
+        CBZ,$X1,$+.32       ! -COUNT NOT ZERO, NO BRANCH
+ISCBG   BD,$+.32            ! -HANG IF IC STORED
+ISCB9   SIC,ISCBH           ! -STORE IC BECAUSE
+        CBZ,$X1,$+1.0       ! -COUNT IS ZERO, BRANCH
+ISCBI   BD,$                ! -BD, ISCBK (NEW ADDR)
+        LV,$X1,ISCBJ        ! -SET UP ISCBI TO
+        SV,$X1,ISCBI        ! -BRANCH OUT OF ROUTINE
+ISCBA   BD,$                ! -BD,ISCBB (NEW ADDR)
+ISCBJ   VF,ISCBK+.04        ! -ISCBI SET UP
+ISCBK   VF,(8)777777.70     ! -NOP,-.32
+        VF,(8)777777.70     ! -NOP,-.32
+ISBI    LX,$X1,ISBXW        ! -XVZ ON, XCZ, XVGZ, XVLZ, XF OFF
+        NOP
+ISBI1   SIC,ISBIA           ! -STORE IC
+        BZXF,ISBI2          ! -IND OFF, BRANCH
+ISBIB   BD,$                ! -HANG UP OR BECOME BD,ISBIC
+ISBI2   SIC,ISBIB           ! -STORE IC
+        BZXCZ,ISBI3         ! -IND OFF, BRANCH
+ISBIC   BD,$                ! -HANG UP OR BECOME BD,ISBID
+ISBI3   SIC,ISBIC           ! -STORE IC
+        BZXVGZ,ISBI4        ! -IND OFF, BRANCH
+ISBID   BD,$                ! -HANG UP OR BECOME BD,ISBIE
+ISBI4   SIC,ISBID           ! -STORE IC
+        BZXVLZ,ISBI5        ! -IND OFF, BRANCH
+ISBIH   BD,$                ! -HANG UP OR BECOME BD,ISBII
+ISBXW   XW,0,2,0            ! -INDEX WORD
+ISBI5   SIC,ISBIE           ! -DONT STORE IC
+        BXF,$+.32           ! -IND OFF, NO BRANCH
+ISBIE   BD,$+.32            ! -HANG IF IC STORED
+ISBI6   SIC,ISBIF           ! -DONT STORE IC
+        BXCZ,$+.32          ! -IND OFF, NO BRANCH
+ISBIF   BD,$+.32            ! -HANG IF IC STORED
+ISBI7   SIC,ISBIG           ! -DONT STORE IC
+        BXVGZ,$+.32         ! -IND OFF, NO BRANCH
+ISBIG   BD,$+.32            ! -HANG IF IC STORED
+ISBI8   SIC,ISBIH           ! -STORE IC BECAUSE
+        BXVZ,$+1.0          ! -XVZ IS ON, BRANCH
+ISBII   BD,$                ! -BD, ISBIK (NEW ADDR)
+        LV,$X1,ISBIJ        ! -SET UP ISBII TO
+        SV,$X1,ISBII        ! -BRANCH OUT OF ROUTINE
+ISBIA   BD,$                ! -BD, ISBIB (NEW ADDR)
+ISBIJ   VF,ISBIK+.04        ! -ISBII SET UP
+ISBIK   VF,(8)777777.70     ! -NOP,-.32
+        VF,(8)777777.70     ! -NOP,-.32
+WEN2    L(BU,64,8),WEN7     ! -LOAD ONES
+        BRGZZ,$+1.0
+        BD,$
+WEN     L(BU,64,8),WEN6     ! -LOAD ZEROS
+        BRZZ,$+1.0
+        BD,$
+VEN     L(BU,64,8),WEN7
+        BRGZZ,$+1.0
+        BD,$
+IBY     BEW,$               ! substituted: "Y-Z CONTROL SEQUENCES" (FP) starts here
+        SLC, (8)6102.0
+WEN6    DD(BU,64,8), 0
+WEN7    DD(BU,64,8), 18446744073709551615
+
+        END, IBR96

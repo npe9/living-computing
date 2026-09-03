@@ -234,18 +234,24 @@ what's original.
   All 33 half-words of the block also match the page's printed machine
   code (`verify_ibox1_listing.py`), which is how the immediate-index
   bug in "Gotchas" item 16 was found.
-- **`ibox1_p50_p51_span.strap`** — the whole of pp.50–51 from octal
-  5412.00 to 5461.40 as one contiguous verbatim span: SIC-CB, SIC-CBZ,
-  SIC-B,ZIND, SIC-B,IND and WEN2/WEN/VEN, five test groups flowing
-  into each other exactly as the deck lays them out (each group's
-  rewritten-hang chain ends on two NOP-valued `VF`s that fall into the
-  next group), with one substituted `BEW` at 5462.00 where the
-  floating-point test begins. Adds SIC with Branch on Indicator
-  embedded (`BZXF`/`BZXCZ`/`BZXVGZ`/`BZXVLZ` taken on an OFF
-  indicator, `BXF`/`BXCZ`/`BXVGZ` not taken, `BXVZ` taken) — which is
-  what exposed that `LX` and the other direct index operations never
-  set the index indicators ("Gotchas" item 17). Twelve rewritten hangs
-  plus the halt PC checked; all 33 SIC-B half-words match the page.
+- **`ibox1_p46_p51_span.strap`** — pp.46–51 from octal 5247.00 to
+  5461.40 as one contiguous verbatim span, twelve test groups flowing
+  into each other exactly as the deck lays them out: CBR, CBR+, CBR−,
+  CBRH, CBRZ, CBRZ+, CBRZ−, CBRZH (each proves its value arithmetic by
+  `SX`-storing X1's whole index word over a hang, chosen so the right
+  value reads as `BD,<next hang>` when executed), then SIC-CB, SIC-CBZ,
+  SIC-B,ZIND, SIC-B,IND (each SIC rewrites the hang after it; the
+  chain of rewritten hangs ends on two NOP-valued `VF`s that fall into
+  the next group) and WEN2/WEN/VEN, with one substituted `BEW` at
+  5462.00 where the floating-point test begins. Grew in two steps: the
+  pp.50–51 half first (SIC with Branch on Indicator embedded —
+  `BZXF`/`BZXCZ`/`BZXVGZ`/`BZXVLZ` taken on an OFF indicator,
+  `BXF`/`BXCZ`/`BXVGZ` not taken, `BXVZ` taken — which exposed that the
+  direct index operations never set the index indicators, item 17),
+  then the count-and-branch groups, which settled the H/+/− units
+  (item 18). 28 checks: 15 SX-stored index words, 12 rewritten hangs,
+  the halt PC; expected values from `ibox1_expected.py`. All 199
+  half-words of pp.46–51 match the page (`verify_ibox1_listing.py`).
 
 Every run above is a true end-to-end test: STRAP source text through
 the Python assembler, through the *same* Bluespec decoder/executor
@@ -712,7 +718,7 @@ had in mind:
     nice to have.**
 17. **Running the deck's own indicator tests found that direct index
     arithmetic never set the index indicators.** The SIC-B,ZIND group
-    (`ibox1_p50_p51_span.strap`) does `LX,$X1,ISBXW` and then branches
+    (`ibox1_p46_p51_span.strap`) does `LX,$X1,ISBXW` and then branches
     on XF/XCZ/XVGZ/XVLZ/XVZ being off or on, exactly as its comment
     says ("XVZ ON, XCZ, XVGZ, XVLZ, XF OFF"). In the model only
     `V+`/`V+C`/`V+CR` set those indicators; `LX`/`LV`/`LC`/`LR`/`SX`/
@@ -726,6 +732,25 @@ had in mind:
     preceding `SV` had left XCZ on. No earlier test could see this:
     every test until now checked index *values*, never the indicators
     an index op leaves behind — the diagnostic's whole point.
+18. **The deck's count-and-branch groups settled the H/+/− units the
+    model had guessed.** `bsv/README.md` had recorded the CB family's
+    "add half"/"add one" as +1/+2 raw bits, "best-effort reading of
+    the pocket card legend", and the I-Box 4 transcriptions had
+    deliberately avoided every variant that increments. Reference
+    Manual p.41's table is explicit — H adds "one in bit position 18"
+    of the value field, + and − "one in bit position 17" — i.e. 32 and
+    64 bits of bit address, a half-word and a word; and I-Box 1's own
+    arithmetic says the same (IBRA23's value 5405.44 plus five CBRZH
+    halves must reach IBR193+.04 = 5410.04; two CBR+ from IBR106+.04
+    must reach IBR107+.04). Fixed to 32/64/−64. Injection (the old
+    1/2/−2 restored): the span hangs at IBR106, the first value test
+    of an incrementing variant, with only the two v=00 words (CBR's
+    IBR100/IBR107) still passing — 26 of 28 fail, as predicted. Also
+    found on the way and worth a line: a copied `END, ISCB` made the
+    first run start at 5412.00 and skip the whole count-and-branch
+    section while every SIC check still passed — the SX-stored words
+    reading back as their original `B,$` pairs is what gave it away.
+    Check the entry point when a span grows.
 
 ## Halting
 

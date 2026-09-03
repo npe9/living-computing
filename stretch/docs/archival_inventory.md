@@ -403,10 +403,14 @@ run VERBATIM with its own SIC-driven pass/fail chain intact -- I-Box
 1's SIC-CB / SIC-CBZ groups (p.50, `strap/programs/ibox1_sic_cb_cbz.
 strap`), the deck's own "HANG UP OR BECOME BD,<next>" self-modifying
 mechanism included -- and then the whole of pp.50-51 from 5412.00 to
-5461.40 as one span (`strap/programs/ibox1_p50_p51_span.strap`: SIC-CB,
+5461.40 as one span (`strap/programs/ibox1_p46_p51_span.strap`: SIC-CB,
 SIC-CBZ, SIC-B,ZIND, SIC-B,IND, WEN2/WEN/VEN, five groups flowing into
 each other), which also exposed that the model's direct index ops
-never set the index indicators (fixed). The shared blocker this section describes is
+never set the index indicators (fixed). Then extended back to 5247.00
+(pp.46-49: the CBR/CBR+/CBR-/CBRH/CBRZ/CBRZ+/CBRZ-/CBRZH groups, twelve
+groups in all), which settled the CB family's H/+/- units at 32/64
+bits (the model had 1/2) -- `strap/README.md` "Gotchas" 18. Every
+half-word of pp.46-51 now matches the listing's printed code. The shared blocker this section describes is
 therefore lifted for every block whose only other needs are already
 in scope; `SVA` (I-Box 3/4/5) and `EX`/`EXIC` (I-Box 5) remain.
 

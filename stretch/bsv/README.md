@@ -167,14 +167,15 @@ it recognizes independent of what the datapath implements.
   located in the excerpted manual text; `0` is treated as meaning 8
   (mirroring the `LENGTH` field's own "0 means 64" convention), values
   1-7 as literal. See StretchVFL.bsv.
-- **Count-and-Branch "add half"/"add one" units**: best-effort reading
-  of the pocket card legend (`+1`/`+2` raw units respectively) rather
-  than a confirmed table — see StretchExecute.bsv. `strap/opcodes.py`'s
-  `CB_CODES` mnemonic table (`CBH`/`CB+`/`CBZH`/`CBZ+`/etc.) can emit
-  the raw v-field values that reach this arm, but no test exercises
-  them yet — table existence is not verified semantics. See
-  `strap/programs/ibox4_cb_count_branch.strap`, which deliberately
-  tests only the v=00 ("unchanged") case to avoid this exact gap.
+- **Count-and-Branch "add half"/"add one" units**: settled. Reference
+  Manual p.41's table: H adds "one in bit position 18" of the value
+  field, + and − add or subtract "one in bit position 17" — a
+  half-word (32 bits) and a word (64 bits) of bit address. The earlier
+  best-effort reading (+1/+2/−2 raw bits, recorded here as
+  unconfirmed) was wrong by a factor of 32; I-Box 1's CBR+/CBR−/CBRH/
+  CBRZ+/CBRZ−/CBRZH groups (`strap/programs/ibox1_p46_p51_span.strap`)
+  hang at their first value test under it and pass under the table's
+  units. See `strap/README.md` "Gotchas" item 18.
 - **Immediate index arithmetic semantics** (`LVI`, `V+I`, etc.) were
   originally extrapolated from the *direct* forms plus the mnemonic
   table — and were wrong (field treated as a raw integer). Now

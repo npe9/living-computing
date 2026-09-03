@@ -167,15 +167,24 @@ run "I-Box 1 SIC-CB / SIC-CBZ (verbatim, own pass/fail)" ./run_program.sh progra
     $(python3 ibox1_expected.py programs/ibox1_sic_cb_cbz.strap ISBI \
         ISCBA:ISCBB ISCBB:ISCBC ISCBC:ISCBD ISCBD:ISCBH ISCBH:ISCBI ISCBI:ISCBK)
 
-# -- 4b'''. The whole of pp.50-51 from octal 5412.00 to 5461.40 as ONE
-# verbatim span: SIC-CB, SIC-CBZ, SIC-B,ZIND, SIC-B,IND and WEN2/WEN/
-# VEN, five consecutive test groups flowing into each other exactly as
-# the deck lays them out, with a single substituted BEW at 5462.00
-# where the (floating-point) next test begins. Adds SIC with Branch on
-# Indicator embedded and the index indicators LX must set (the fix
-# that block forced). Twelve rewritten hangs checked plus the halt PC.
-run "I-Box 1 pp.50-51 span (5 test groups, verbatim)" ./run_program.sh programs/ibox1_p50_p51_span.strap StretchIboxSpanTb \
-    $(python3 ibox1_expected.py programs/ibox1_p50_p51_span.strap IBY \
+# -- 4b'''. pp.46-51 as ONE verbatim span, octal 5247.00-5461.40: the
+# CBR/CBR+/CBR-/CBRH/CBRZ/CBRZ+/CBRZ-/CBRZH groups, then SIC-CB,
+# SIC-CBZ, SIC-B,ZIND, SIC-B,IND and WEN2/WEN/VEN, twelve consecutive
+# test groups flowing into each other exactly as the deck lays them
+# out, with a single substituted BEW at 5462.00. The count-and-branch
+# groups' own SX value tests pin the H/+/- units (32/64/-64 bits) --
+# the model's old +1/+2/-2 hangs at IBR106. Every SX-stored index word
+# and SIC/SV-rewritten hang checked plus the halt PC (ibox1_expected.py).
+run "I-Box 1 pp.46-51 span (12 test groups, verbatim)" ./run_program.sh programs/ibox1_p46_p51_span.strap StretchIboxSpanTb \
+    $(python3 ibox1_expected.py programs/ibox1_p46_p51_span.strap IBY \
+        IBR100=COPY:IBRA10 \
+        IBR106=XW:IBR107+\(8\).04,1,IBRA12 IBR107=COPY:IBRA12 \
+        IBR113=XW:IBR114+\(8\).04,1,IBRA14 IBR114=COPY:IBRA14 \
+        IBR120=XW:IBR121+\(8\).04,1,IBRA16 IBR121=COPY:IBRA16 \
+        IBR138=XW:IBR139+\(8\).04,1,IBRA18 IBR139=COPY:IBRA18 \
+        IBR156=XW:IBR157+\(8\).04,1,IBRA20 IBR157=COPY:IBRA20 \
+        IBR174=XW:IBR175+\(8\).04,1,IBRA22 IBR175=COPY:IBRA22 \
+        IBR192=XW:IBR193+\(8\).04,1,IBRA24 IBR193=COPY:IBRA24 \
         ISCBA:ISCBB ISCBB:ISCBC ISCBC:ISCBD ISCBD:ISCBH ISCBH:ISCBI ISCBI:ISCBK \
         ISBIA:ISBIB ISBIB:ISBIC ISBIC:ISBID ISBID:ISBIH ISBIH:ISBII ISBII:ISBIK)
 
