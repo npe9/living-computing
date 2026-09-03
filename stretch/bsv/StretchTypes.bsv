@@ -404,6 +404,8 @@ typedef struct {
   Maybe#(Word64)   data;
   Bool             fetchIssued;
   Maybe#(Bit#(2))  waitFor;
+  Bool             branch;      // a guessed (not-taken) branch on an arithmetic indicator
+  HWordAddr        target;      // its target, computed at preparation
 } LaLevel deriving (Bits, Eq, FShow);
 
 endpackage

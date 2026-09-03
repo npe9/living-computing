@@ -98,7 +98,27 @@ module mkStretchCore(StretchCore);
   // register is modified only at execution.
   Vector#(4, Reg#(LaLevel)) la <- replicateM(mkReg(LaLevel{valid: False, di: tagged Invalid,
         pc: 0, len: Half, da: tagged Invalid, data: tagged Invalid, fetchIssued: False,
-        waitFor: tagged Invalid}));
+        waitFor: tagged Invalid, branch: False, target: 0}));
+  // ---- Stage 3c (plan §6d): the not-taken guess. A branch on an
+  // arithmetic indicator is loaded as a branch level; the instruction
+  // unit snapshots the index words and indicators and continues down
+  // the fall-through path. When the arithmetic unit reaches the level
+  // the indicators are final: guess right, retire; guess wrong, cancel
+  // the younger levels and, on the next clock (`recover`), restore the
+  // snapshot, reset the instruction counter to the target and refetch.
+  Reg#(Bool)                 guessPending <- mkReg(False);
+  Reg#(Vector#(16, Word64))  xSnap        <- mkReg(replicate(0));
+  Reg#(Word64)               indSnap      <- mkReg(0);
+  Reg#(Maybe#(HWordAddr))    recover      <- mkReg(tagged Invalid);
+  function Bool isIboxStore(DecodedInstr d);
+    case (d) matches
+      tagged DirIndex .x: return x.code[4] == 1;          // SX/SV/SC/SR
+      tagged BranchOrMisc .x: return x.misc && x.code == 3'b100;  // Z
+      tagged Sic .*: return True;
+      tagged Transmit .*: return True;
+      default: return False;
+    endcase
+  endfunction
   Reg#(Bit#(2)) laHead  <- mkReg(0);
   Reg#(Bit#(2)) laTail  <- mkReg(0);
   Reg#(Bit#(3)) laCount <- mkReg(0);
@@ -143,6 +163,10 @@ module mkStretchCore(StretchCore);
     return r;
   endfunction
 
+  // Mask of the index indicators in the indicator word (bit n is w[63-n]).
+  Word64 indexIndMask = (64'h1 << (63 - ind_XF)) | (64'h1 << (63 - ind_XCZ)) | (64'h1 << (63 - ind_XVLZ))
+                      | (64'h1 << (63 - ind_XVZ)) | (64'h1 << (63 - ind_XVGZ)) | (64'h1 << (63 - ind_XL))
+                      | (64'h1 << (63 - ind_XE)) | (64'h1 << (63 - ind_XH));
   function Bool indexIndicator(Bit#(6) n) =
     (n == ind_XF || n == ind_XCZ || n == ind_XVLZ || n == ind_XVZ || n == ind_XVGZ
      || n == ind_XL || n == ind_XE || n == ind_XH);
@@ -181,7 +205,7 @@ module mkStretchCore(StretchCore);
       end
       default: h = True;
     endcase
-    return pending && h;
+    return (pending && h) || (guessPending && isIboxStore(d));
   endfunction
 
   // Stage 2b timing registers (see iboxCycles below).
@@ -387,7 +411,21 @@ module mkStretchCore(StretchCore);
     writeVReg(yr, ny);
     nextFetch <= nf;
 
-    if (ioPending matches tagged Valid .x) begin
+    if (recover matches tagged Valid .tgt) begin
+      // Wrong-way recovery (Perf. Char. p.3-23): undo the index
+      // registers and index indicators the I-box changed ahead, take the
+      // branch, and refetch. Charged as the branch's own execution
+      // cycles again plus the refill the restart costs.
+      st.restoreIndex(xSnap);
+      Word64 ind = st.readIndicators();
+      Word64 keep = ~indexIndMask;
+      st.setIndicatorBits((ind & keep) | (indSnap & indexIndMask));
+      pcReg <= tgt;
+      branchSeq <= branchSeq + 1;
+      recover <= tagged Invalid;
+      ibusy <= 12;
+      done = False;
+    end else if (ioPending matches tagged Valid .x) begin
       // Service one word of an in-flight RD/W transfer. See this
       // interface's step() doc above and StretchIO.bsv's file header.
       // Capacity is device-kind-dependent: the tape's TapeWords is
@@ -527,6 +565,9 @@ module mkStretchCore(StretchCore);
       end
     end else if (nCount != 0 && ebusy == 0 && !auActive
                  && (!isValid(nl[nHead].da) || isValid(nl[nHead].data))) begin
+      // (A branch level has no operand and is removed as soon as it is
+      // the head with the E-box free, i.e. once every earlier level has
+      // retired.)
       // Remove the head level into the arithmetic unit: its operand
       // (if any) is present, so execute() runs with it pre-supplied;
       // any further reads it needs go through the resume path.
@@ -536,7 +577,23 @@ module mkStretchCore(StretchCore);
       if (h.data matches tagged Valid .d) begin pf[0] = d; cnt = 1; end
       let {next, vflPending, ioStart, needsRead} <-
         execute(st, ioDev, h.pc, h.len, h.di, pf, cnt);
-      if (needsRead matches tagged Valid .a) begin
+      if (h.branch) begin
+        // The guessed branch, now with final indicators.
+        Bool taken = (next != h.pc + ((h.len == Full) ? 2 : 1));
+        guessPending <= False;
+        if (taken) begin
+          // Wrong guess: cancel every younger level, recover next clock.
+          for (Integer k = 0; k < 4; k = k + 1) nl[k].valid = False;
+          nTail = nHead; nCount = 0;
+          recover <= tagged Valid next;
+        end else begin
+          nl[nHead].valid = False;
+          for (Integer k = 0; k < 4; k = k + 1)
+            if (nl[k].waitFor matches tagged Valid .w &&& w == nHead) nl[k].waitFor = tagged Invalid;
+          nHead = nHead + 1; nCount = nCount - 1;
+        end
+        eb = 2 * 6;   // Blosk fig.10: decode + five execution cycles
+      end else if (needsRead matches tagged Valid .a) begin
         st.readWordReq(a);
         execPending <= tagged Valid tuple3(h.pc, h.len, h.di);
         execPrefetch <= pf;
@@ -608,11 +665,30 @@ module mkStretchCore(StretchCore);
               if (da matches tagged Valid .a &&& nl[k].valid &&& isValid(nl[k].da) &&& validValue(nl[k].da) == a)
                 wf = tagged Valid fromInteger(k);
             nl[nTail] = LaLevel{valid: True, di: di, pc: pc, len: len, da: da,
-                                data: tagged Invalid, fetchIssued: False, waitFor: wf};
+                                data: tagged Invalid, fetchIssued: False, waitFor: wf,
+                                branch: False, target: 0};
             nTail = nTail + 1; nCount = nCount + 1;
             pcReg <= pc + ((len == Full) ? 2 : 1);
             ibusy <= 2 * iboxCycles(di, False);   // its preparation time
           end
+        end
+        done = False;
+      end else if (prepared matches tagged Valid {.len, .di} &&& di matches tagged BranchInd .bi
+                   &&& !indexIndicator(bi.indNum)) begin
+        // A branch on an arithmetic indicator: guess not taken (plan
+        // §6d). Load it as a branch level with its target, snapshot the
+        // index words and indicators, and carry on down the fall-
+        // through path. One guess at a time.
+        if (!guessPending && nCount < 4 && !progressivePending) begin
+          nl[nTail] = LaLevel{valid: True, di: di, pc: pc, len: len, da: tagged Invalid,
+                              data: tagged Invalid, fetchIssued: False, waitFor: tagged Invalid,
+                              branch: True, target: effAddr19(st, bi.addr, {3'b0, bi.idx})};
+          nTail = nTail + 1; nCount = nCount + 1;
+          xSnap <= st.snapshotIndex();
+          indSnap <= st.readIndicators();
+          guessPending <= True;
+          pcReg <= pc + ((len == Full) ? 2 : 1);
+          ibusy <= 2 * 6;   // the branch's four-level load (Blosk p.39)
         end
         done = False;
       end else if (prepared matches tagged Valid {.len, .di}) begin

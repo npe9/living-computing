@@ -102,6 +102,11 @@ interface StretchStorage;
 
   method IndexWord readIndex(Bit#(4) j);
   method Action writeIndex(Bit#(4) j, IndexWord v);
+  // All sixteen index words at once: the instruction unit snapshots
+  // them when it guesses a branch and restores them on a wrong guess
+  // (standing for the look-ahead's index-recovery levels, plan §6d).
+  method Vector#(16, Word64) snapshotIndex();
+  method Action restoreIndex(Vector#(16, Word64) v);
 
   // Dedicated accumulator accessors: addrAccLeft/addrAccRight (8, 9)
   // are compile-time CONSTANTS baked into readAcc/writeAcc
@@ -388,6 +393,11 @@ module mkStretchStorage(StretchStorage);
 
   method Action writeIndex(Bit#(4) j, IndexWord v);
     xreg[j] <= packIndexWord(v);
+  endmethod
+
+  method Vector#(16, Word64) snapshotIndex() = readVReg(xreg);
+  method Action restoreIndex(Vector#(16, Word64) v);
+    writeVReg(xreg, v);
   endmethod
 
   method Word64 readAccLeft();

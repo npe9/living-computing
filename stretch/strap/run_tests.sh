@@ -102,6 +102,19 @@ run "Look-ahead timing: L/+/ST/V+/CB loop" ./run_program.sh programs/la_timing_l
     "X2_value:addrIndex(2)=0x2800000000000" \
     "CYCLES<=900"
 
+# -- 1e. Branch guess and wrong-way recovery (plan §6d): one branch on
+# RZ taken against the not-taken guess (the index arithmetic run ahead
+# must be undone), one not taken (it must stand). DONE is half-word 82
+# in this program's layout. Injection (recovery's index restore
+# removed): X1 comes back 5.0 instead of 4.0 (observed: one of the two
+# run-ahead adds had executed when the branch resolved).
+run "Look-ahead: branch guess + recovery" ./run_program.sh programs/la_branch_guess.strap StretchGuessTb \
+    "X1_4:addrIndex(1)=0x1000000000000" \
+    "X2_2:addrIndex(2)=0x800000000000" \
+    "X3_zero:addrIndex(3)=0" \
+    "PC=82" \
+    "CYCLES<=260"
+
 # -- 2. Problem 2.1: Cyclic Bit Shifting --
 run "Problem 2.1" ./run_program.sh programs/problem_2_1.strap StretchProblem21Tb \
     "DOG_rotated:32=0x6e5d4c3b2a19087f" \

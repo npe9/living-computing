@@ -77,15 +77,15 @@ in parentheses); **open** = no stage assigned yet.
 | Y-to-Z transfer, index fetch, modification, WBC as explicit register stages | Blosk pp.13-14, 31; CE figs 3.1.6-3.1.24 | planned (2b/2c) |
 | Index storage destructive read, 2-cycle write, word 17 timer/clock | Blosk p.11 | planned (2c) |
 | Updated indicator register; index-indicator branches resolved in the I-box | Blosk p.17 | planned (2c) |
-| Arithmetic-conditional branch guessed not taken; wrong-way recovery | Buchholz §15.2; Perf. Char. p.3-23 | planned (2c/3) |
-| Four look-ahead levels, five counters, tags, indicators, IC per level | Buchholz §15.3 | planned (3) |
-| LAAR, forwarding, store-close-to-fetch cases (1)-(3) | Buchholz §15.4; Perf. Char. pp.3-20..21 | planned (3) |
-| I-box instructions load index-recovery pseudo-store levels | Perf. Char. p.3-22; Blosk p.33 | planned (3) |
+| Arithmetic-conditional branch guessed not taken; wrong-way recovery | Buchholz §15.2; Perf. Char. p.3-23 | done (3c), by snapshot rather than per-instruction recovery levels |
+| Four look-ahead levels, five counters, tags, indicators, IC per level | Buchholz §15.3 | partial (3a): levels, in-order removal, fetch-ahead; the five counters' separate interlocks are collapsed into head/tail |
+| LAAR, forwarding, store-close-to-fetch cases (1)-(3) | Buchholz §15.4; Perf. Char. pp.3-20..21 | partial (3a/3b): same-word waits and Y invalidation; no data forwarding yet |
+| I-box instructions load index-recovery pseudo-store levels | Perf. Char. p.3-22; Blosk p.33 | partial (3c): one snapshot per guess stands in for them; their per-level cost is not charged |
 | Interrupt recovery / housecleaning | Buchholz §15.6; CE figs 3.2.22-23 | planned (3) |
 | Serial and parallel arithmetic units, A/B and C/D registers | Buchholz §14.4 | planned (4) |
 | Floating-point arithmetic (all ops), timing per table 2 and CE figs 3.8.x | Ref. Manual; CE 3.3.x/3.8.x | planned (4) |
 | Decimal VFL, radix conversion, VFL multiply/divide | Ref. Manual; CE 3.11.x | open |
-| EX/EXIC (with LA drains, table 6), LVE, SVA, RNX, LVS, bit branching, swap/backward transmit | Ref. Manual; Perf. Char. table 6 | open |
+| EX/EXIC (with LA drains, table 6), LVE, SVA, RNX, LVS, bit branching, swap/backward transmit | Ref. Manual pp.26-30 (LVE: indirect addressing, 1 ms limit -> USA; SVA: replaces the 18/19/24-bit address field per the target's class; RNX: rename via X0's refill; LVS: sum of the value fields selected by address bits 0-15; T/SWAP: count rules, backward stepping); Perf. Char. table 6 | open, specified |
 | Interrupt system: indicators, mask, left-most-one, the "free instruction" | Blosk pp.16-17; Buchholz ch.10 | open |
 | Boundary registers and inside/outside alarms | Blosk p.20 | open |
 | Interval timer and time clock stepping (1024/s) | Blosk p.6 | open |
@@ -492,6 +492,63 @@ interrupt system, when it arrives, uses the same recovery path
 (Buchholz §15.6: "the interruption action is quite similar to branch
 recovery except that in addition a new instruction has to be fetched").
 
+## 6e. Stage 4 design: the arithmetic unit
+
+Buchholz §14.4 (pp.208-216), Perf. Char. tables 2-3, CE manual figs
+3.3.x (PAU data flow) and 3.8.x (FP timing):
+
+- *Registers*: the 128-bit accumulator A/B and the 128-bit operand
+  register C/D, shared by both units, plus the parallel unit register,
+  shifter, and the sum/carry registers of the multiply tree. The model
+  already keeps the accumulator as one 128-bit sign-magnitude value
+  (`readAcc`/`writeAcc`); C/D become explicit so the transfer-bus
+  counter's "operand to C/D" step has a place.
+- *Serial arithmetic unit (SAU)*: two symmetrical byte-extraction paths
+  (16-of-128 then 8-of-16 switch matrices) into one binary adder or
+  logic unit, true-complement switches before and after, a decimal
+  corrector, one byte pair per clock (0.6 µs "clock" in Buchholz's
+  1959 description; the shipped SAU equation of table 3 charges 0.6
+  µs per byte, i.e. two of this model's clocks). Handles VFL add/
+  subtract/compare/load/store, connectives, decimal arithmetic and
+  radix conversion, and floating-point exponent arithmetic. The
+  model's `StretchVFL`/`StretchALU` do the arithmetic as whole fields;
+  stage 4 wraps them in a per-byte timing loop (bytes = ceil(length /
+  byte size), plus the unlike-sign and recomplement extra cycles table
+  3 lists) rather than re-deriving the byte datapath.
+- *Parallel arithmetic unit (PAU)*: 100-bit carry-propagate adder with
+  4-bit carry look-ahead (0.15 µs for 96 bits), shifter (4 right / 6
+  left per step), true-complement switch, and the multiply tree (four
+  carry-save adders taking 12 multiplier bits per cycle as four 3-bit
+  groups of ±multiplicand multiples), divide by table-selected
+  multiples (1, 3/2, 3/4 of the divisor, skipping over 1s and 0s,
+  ~3.5 quotient bits per cycle). Handles FP fraction add/multiply/
+  divide (48-bit single, 96-bit double) and VFL binary multiply/
+  divide. Floating-point arithmetic beyond L/ST is unimplemented today,
+  so stage 4 is also where the FP instruction set is completed
+  (Reference Manual ch. on floating point; Buchholz ch.8 for the
+  format, normalization, singularities and the flags), with per-
+  instruction pre-execution/execution cycles from table 2 and the CE
+  timing charts 3.8.1-3.8.20, and multiply/divide cycle counts derived
+  from the 12-bits-per-cycle and ~3.5-bits-per-cycle rules rather than
+  fixed numbers.
+- *Interface to the look-ahead*: the transfer-bus counter's hand-off
+  (op code + operand to the unit; "was it accepted?"), the arithmetic-
+  bus counter's completion (indicators into the indicator register,
+  store results back into the level), per Buchholz figs 15.9-15.10 --
+  replacing the model's direct call of `execute()` at removal with a
+  unit that accepts an instruction, runs for its cycle count, and
+  reports. Pre-execution (before any addressable register changes)
+  vs. execution matters for interrupt timing and is kept as two
+  phases.
+- *Checking*: duplicate arithmetic and parity on the switch matrices
+  (Buchholz p.209, p.216) modeled as the cycles they occupy only.
+
+Order within stage 4: (a) SAU per-byte timing wrapper and explicit
+C/D, (b) the LA/AU hand-off protocol, (c) FP add/subtract/compare with
+normalization timing, (d) multiply, (e) divide, (f) decimal and radix
+conversion, each with `CYCLES<=` tests from table 2/3 and the CE
+timing charts.
+
 ## 7. Status
 
 - **Stage 0 -- done** (2026-09-03): `CYCLES<=N` check in `gen_tb.py`;
@@ -557,6 +614,16 @@ recovery except that in addition a new instruction has to be fetched").
   pending stores and the run ended before they retired -- unconditional
   branches now drain the levels first (the machine's "BD empties the
   LA" behavior, Perf. Char. p.3-18).
+- **Stage 3c -- done** (2026-09-03; 24-block suite green): branch levels for branches on
+  arithmetic indicators, guessed not taken; snapshot of the sixteen
+  index words and the indicators at the guess (`snapshotIndex`/
+  `restoreIndex` in `StretchStorage`); I-box stores stall while a
+  guess is unresolved; wrong guess cancels the younger levels and
+  recovers on the next clock (index words and index indicators
+  restored, instruction counter to the target, Y buffers refetched,
+  12 clocks charged). `la_branch_guess.strap`: one wrong and one right
+  guess, 197 clocks; injection without the restore fails the wrong-
+  guess check.
 
 ## 8. Immediate next steps
 

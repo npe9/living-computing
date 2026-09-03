@@ -1,0 +1,38 @@
+! Look-ahead branch-guess test (docs/microarchitecture_plan.md stage
+! 3c). A branch on an arithmetic indicator is guessed not taken by the
+! instruction unit, which runs the index arithmetic behind it ahead;
+! when the arithmetic unit reaches the branch with final indicators, a
+! wrong guess must undo that work (index registers and index
+! indicators restored from the snapshot) and take the branch, a right
+! guess must let it stand.
+!
+!   Case 1: load a zero word (RZ on), BRZ is TAKEN -- the two V+I on X1
+!           executed ahead under the wrong guess must be undone, and
+!           only the target's V+I,$1,4.0 counts:  X1 = 4.0.
+!   Case 2: load a one word (RZ off), BRZ is NOT taken -- the two V+I
+!           on X2 stand:                          X2 = 2.0.
+! A wrong path that escapes recovery reaches FAIL and marks X3 = 99.0;
+! X3 must stay 0. Halted at DONE. Injection (recovery's index restore
+! removed): X1 = 5.0 -- one run-ahead add had executed when the branch
+! resolved -- so the test discriminates.
+START   LVI, $1, 0
+        LVI, $2, 0
+        LVI, $3, 0
+        L(BU,64,8), ZEROW      ! RZ on
+        BRZ, TGT1              ! taken: the guess is wrong
+        V+I, $1, 1.0           ! run ahead, must be undone
+        V+I, $1, 1.0           ! run ahead, must be undone
+        B, FAIL                ! unconditional: waits for the levels, never taken
+TGT1    V+I, $1, 4.0
+        L(BU,64,8), ONEW       ! RZ off
+        BRZ, FAIL              ! not taken: the guess is right
+        V+I, $2, 1.0           ! run ahead, stands
+        V+I, $2, 1.0           ! run ahead, stands
+        NOP, 0.0
+DONE    BEW, $
+FAIL    LVI, $3, 99.0
+        BEW, $
+        CNOP
+ZEROW   DD(BU,64,8), 0
+ONEW    DD(BU,64,8), 1
+        END, START
