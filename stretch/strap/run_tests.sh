@@ -206,6 +206,17 @@ run "FP compare block (jb_af1c F202G KR range on the model)" ./run_program.sh pr
 # row. Encoding is the verified part.
 run "FP add-to-memory block (jb_af1c F204A, encoding)" python3 verify_fp_arith_f204a_listing.py
 
+# -- 1i'''''. Discriminating M+ (Add to Memory) test: jb_af1c F204A5
+# (p.53). N-range operands FPK35 + FPK39; the sum is checked against a
+# precomputed FPK32 via CT0110 + BRGZ, so a wrong M+ fails. Encoding
+# bit-for-bit, then the model run halts at PASS iff M+ is correct.
+# Injection (fpAdd drops the added operand): halts at SERS. Unlike
+# F204A1-3, this catches a broken M+ (its operands share an exponent,
+# so the sum genuinely changes).
+run "FP M+ block (jb_af1c F204A5, encoding)" python3 verify_fp_arith_f204a5_listing.py
+run "FP M+ block (jb_af1c F204A5 on the model)" ./run_program.sh programs/fp_arith_f204a5.strap StretchFpAdd5Tb \
+    "PC=$(python3 -c 'from strap_asm import assemble; print(assemble(open("programs/fp_arith_f204a5.strap").read()).symtab["PASS"]//32)')"
+
 # -- 1j. Store-close-to-fetch: store a word then immediately reload it;
 # the load must read the new value, not the stale one. The hazard the FP
 # sign-modifier codesign exposed; fixed by tracking each E-box level's

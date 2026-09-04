@@ -1,0 +1,74 @@
+! Floating-point diagnostic jb_af1c, routine F204A sub-test 5
+! (docs/jb_af1c_floating-point.pdf p.53, octal 012355.00-012362.40) --
+! a DISCRIMINATING M+ (Add to Memory) test. Unlike F204A1-3 (which check
+! that far-apart exponents drop the low operand, and so pass even for a
+! no-op M+), F204A5 uses NORMAL-range operands and checks the SUM
+! against a precomputed expected result -- so a wrong M+ fails it.
+!
+!   L(BU),FPK35 / ST(BU,64),ROS   ROS := FPK35 (N range)
+!   L(U),FPK39 / M+(U),ROS         ROS := FPK35 + FPK39 (both N range)
+!   L(BU,64),FPK32                 acc := FPK32, the EXPECTED sum
+!                                  (listing: "check result exp++2 and
+!                                   fract+1")
+!   CT0110(BU,64),ROS              connect acc (FPK32) with ROS (sum);
+!                                  RGZ comes on iff they DIFFER
+!   SIC,SEN / BRGZ,SERS            error (RGZ on) if sum != FPK32
+! So the model reaches PASS iff M+ computed FPK35+FPK39 == FPK32; a
+! wrong sum branches to the SERS FAIL halt. Because the operands are
+! N range (not flagged), M+ goes through fpAdd's normal fraction-shift
+! path -- the path a fraction-alignment injection actually exercises,
+! which makes this a real discriminating test (F204A1-3 were not).
+!
+! Substitutions (SSIP framework, real listed addresses): SERS (octal
+! 1304) -> FAIL halt, SEN (octal 1310) -> scratch, PASS (octal 12363,
+! F204A6's start) -> halt. ROS (octal 22355) is the memory operand.
+! Constants FPK32/FPK35/FPK39 from the pool p.176.
+!
+! Instructions: L(BU)/ST(BU,64) (VFL), L(U)/M+(U) (FP), L(BU,64), CT0110
+! (connective), SIC, BRGZ -- all implemented; encodings checked against
+! the page. verify_fp_arith_f204a5_listing.py checks bit-for-bit.
+!
+! Observed: the model halts at PASS -- M+ computes FPK35+FPK39 == FPK32,
+! matching the diagnostic's expected result. Discriminating injection
+! (fpAdd's same-sign fraction add made to drop the added operand,
+! `sum = fb + fs` -> `sum = fb`): halts at SERS, exactly as predicted,
+! since the M+ result then differs from FPK32. Reversed by the exact
+! inverse edit (AGENTS.md rule 2). NOTE: an exponent-alignment injection
+! (`>> adiff` -> `>> 0`) does NOT discriminate here, because FPK35 and
+! FPK39 share an exponent (adiff = 0); that is why F204A1-3 (far-apart
+! exponents, "error if fractions added") also cannot catch a broken M+
+! and this sub-test, which checks the sum against a precomputed result,
+! is the one that can.
+
+! -- SSIP framework substitutes --
+        SLC, (8)1304.0
+SERS    BEW, $
+        SLC, (8)1310.0
+SEN     DD(BU,64,8), 0
+        SLC, (8)22355.0
+ROS     DD(BU,64,8), 0
+
+! -- constants (pool p.176) --
+        SLC, (8)22045.0
+FPK32   DD(BU,64,8), (8)0001177777777777777760
+        SLC, (8)22050.0
+FPK35   DD(BU,64,8), (8)0001125252525252525240
+        SLC, (8)22054.0
+FPK39   DD(BU,64,8), (8)0001052525252525252520
+
+! -- code (verbatim, at the listing's addresses) --
+        SLC, (8)12355.0
+F204A5  L(BU), FPK35        ! EXP IN N RANGE
+        ST(BU,64), ROS
+        L(U), FPK39         ! EXP N RANGE
+        M+(U), ROS
+        L(BU,64), FPK32     ! the expected result
+        CT0110(BU,64), ROS
+        SIC, SEN
+        BRGZ, SERS          ! error if sum != FPK32
+
+! -- PASS halt where F204A6 begins --
+        SLC, (8)12363.0
+PASS    BEW, $
+
+        END, F204A5

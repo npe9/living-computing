@@ -121,16 +121,17 @@ hand vectors alone. "Enables" notes the dependency chain.
    fractions). All instructions it uses (L, ST, M+, CT0110, SIC, BRGZ)
    are implemented; F204A1-3 are transcribed (`fp_arith_f204a.strap`)
    and assemble BIT-EXACT (`verify_fp_arith_f204a_listing.py`, in the
-   suite) and run to PASS. STILL OPEN: a discriminating model test of
-   M+. The "error if fractions added" check passes even for an M+ that
-   leaves the sum unchanged (correct M+ drops the low XFP operand, so
-   ROS stays = FK23), and the operands are XFP/flagged so they exercise
-   fpAdd's flagged-operand path, not its fraction shift -- a
-   fraction-shift injection did not discriminate. A real test needs an
-   injection in fpAdd's flagged (XFP/XFN) add plus understanding the
-   CT0110/RGZ check, OR different F204A sub-tests (A5 "check result
-   exp++2 and fract+1" expects the sum TO change -- likely the
-   discriminating one). Transcribe carefully; it mixes VFL and FP ops.
+   suite) and run to PASS -- but only as encoding checks, because
+   F204A1-3's "error if fractions added" passes even for an M+ that
+   leaves the sum unchanged (far-apart exponents drop the low operand).
+   The DISCRIMINATING M+ test is DONE: F204A5 (`fp_arith_f204a5.strap`,
+   in the suite as encoding + model run) uses N-range operands and
+   checks the sum FPK35+FPK39 against a precomputed FPK32 via
+   CT0110+BRGZ; the model passes, and an injection making fpAdd drop the
+   added operand halts at SERS, so it genuinely catches a broken M+. So
+   M+ (FP add to memory) is now verified against the diagnostic. Next
+   within step 2: the * (multiply) and remaining +/- diagnostic blocks,
+   then the open ops.
    Related nearby routine also located and runnable-with-effort: F203B
    "EXP RNG INDIC TEST" (p.52, octal 012260+) verifies the exponent-
    range indicators XPFP/XPH/XPL/XPU (set by ST, cleared by Z,$IND)
