@@ -690,21 +690,26 @@ own module), so this is naturally satisfied.
   -> 54 clocks, the pp.43-51 span 2714 -> 2065.
 - **Stage 2b -- done** (2026-09-03): per-class time budgets (§6a),
   `ibox_timing_cb.strap` (250 table clocks, measured 291).
-- **Known look-ahead gap found 2026-09-03 by the floating-point
-  diagnostic's sign-modifier test: store-close-to-fetch.** A load whose
-  operand word was written by an *immediately preceding* store reads the
-  stale value. The look-ahead's same-word wait (`waitFor`) compares
-  fetch addresses (`da`) only; an E-box store level (ST/M+) writes at
-  removal and its target word is not recorded as a hazard, so a younger
-  load level to that word issues its fetch before the store retires.
-  Repro: `ST(N),X ; L(N),X` reads X's old value (fp_signmod.strap avoids
-  this by reading pre-set constants). The real machine handles exactly
-  this with the LAAR forwarding of Perf. Char. pp.3-20..21 (store into a
-  nearby E-box operand -> forwarding mechanism). Fix: compute each
-  E-box level's store target at load time and add it to the hazard
-  check (and, later, forward the store operand). Not yet fixed. The
-  existing suite passes because no current program stores then
-  immediately re-loads the same word without an intervening drain.
+- **Store-close-to-fetch: found 2026-09-03 by the floating-point
+  diagnostic's sign-modifier test, FIXED same day.** A load whose
+  operand word was written by an immediately preceding store read the
+  stale value: the look-ahead's same-word wait compared fetch addresses
+  (`da`) only, and an E-box store (ST/M+) writes at removal, so a younger
+  load to that word fetched before the store retired. Fix: each E-box
+  level now carries `storeAddr` (its store target, `storeTarget()` --
+  Fp ST/M+/M+MG, VflInt ST/M+/M+MG/M+1), a load `waitFor`s the newest
+  earlier level whose `storeAddr` equals its fetch word (every current
+  level is program-earlier than a new one, and they retire head-first,
+  so the newest such store covers all older ones), and `levelHolds`
+  (the I-box hazard check) also matches `storeAddr`. Test
+  `store_close_to_fetch.strap`: `ST(N),X ; L(N),X` now reads the new
+  value; the same pattern failed before the fix. This is the
+  store-into-a-nearby-operand case of Perf. Char. pp.3-20..21; genuine
+  operand FORWARDING (returning the store data without a re-fetch) is a
+  later refinement -- the load currently waits for the store to retire
+  rather than being handed the value. Residual gap: Connective CM's
+  store target is not tracked (no current program stores via CM then
+  reloads).
 - **Stage 3a -- done** (2026-09-03; full 21-block suite green, Problem
   2.1 113 -> 92 clocks, pp.43-51 span 4006 -> 3985, the CB loop
   unchanged at 291 since it holds no E-box work): the look-ahead of §6b, seven

@@ -406,6 +406,9 @@ typedef struct {
   Maybe#(Bit#(2))  waitFor;
   Bool             branch;      // a guessed (not-taken) branch on an arithmetic indicator
   HWordAddr        target;      // its target, computed at preparation
+  Maybe#(WordAddr) storeAddr;   // the word this E-box level stores to (ST/M+),
+                                // so a younger load of that word waits for it
+                                // (store-close-to-fetch, plan stage 3a note)
 } LaLevel deriving (Bits, Eq, FShow);
 
 endpackage

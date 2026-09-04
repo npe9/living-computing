@@ -98,7 +98,7 @@ module mkStretchCore(StretchCore);
   // register is modified only at execution.
   Vector#(4, Reg#(LaLevel)) la <- replicateM(mkReg(LaLevel{valid: False, di: tagged Invalid,
         pc: 0, len: Half, da: tagged Invalid, data: tagged Invalid, fetchIssued: False,
-        waitFor: tagged Invalid, branch: False, target: 0}));
+        waitFor: tagged Invalid, branch: False, target: 0, storeAddr: tagged Invalid}));
   // ---- Stage 3c (plan §6d): the not-taken guess. A branch on an
   // arithmetic indicator is loaded as a branch level; the instruction
   // unit snapshots the index words and indicators and continues down
@@ -143,6 +143,25 @@ module mkStretchCore(StretchCore);
       default: return False;
     endcase
   endfunction
+  // The word an E-box level stores to (Fp ST/M+/M+MG, VflInt
+  // ST/M+/M+MG/M+1), for the store-close-to-fetch hazard; Invalid for a
+  // level that writes only the accumulator (L/+/E+/SHF/*) or nothing.
+  function Maybe#(WordAddr) storeTarget(DecodedInstr d);
+    case (d) matches
+      tagged Fp .f:
+        if (f.code == 7'b0001110 || f.code == 7'b0001010 || f.code == 7'b0101010)
+          return tagged Valid effAddr18(st, f.addr, f.idx);
+        else return tagged Invalid;
+      tagged VflInt .v:
+        if (v.code == 6'b001101 || v.code == 6'b001001 || v.code == 6'b101001 || v.code == 6'b101011) begin
+          Bool prog = (v.a.p != 0 && v.a.p != 4);
+          BitAddr ea = prog ? st.readIndex(v.a.i1).addr : effAddr24(st, v.a.addr, v.a.i1);
+          return tagged Valid ea[23:6];
+        end else return tagged Invalid;
+      default: return tagged Invalid;
+    endcase
+  endfunction
+
   function Bool hasProgressive(DecodedInstr d);
     case (d) matches
       tagged VflInt .v: return v.a.p != 0 && v.a.p != 4;
@@ -158,8 +177,10 @@ module mkStretchCore(StretchCore);
   // the same effective-address arithmetic as execute().
   function Bool levelHolds(Vector#(4, LaLevel) lv, WordAddr w);
     Bool r = False;
-    for (Integer k = 0; k < 4; k = k + 1)
+    for (Integer k = 0; k < 4; k = k + 1) begin
       if (lv[k].da matches tagged Valid .a &&& lv[k].valid &&& a == w) r = True;
+      if (lv[k].storeAddr matches tagged Valid .sa &&& lv[k].valid &&& sa == w) r = True;
+    end
     return r;
   endfunction
 
@@ -660,13 +681,23 @@ module mkStretchCore(StretchCore);
             end
           end
           if (loaded) begin
+            // Store-close-to-fetch (plan stage 3a note): if this level
+            // fetches word `a`, wait for the NEWEST earlier level that
+            // stores to `a` -- every current level is program-earlier
+            // than this new one (nTail), and they retire head-first, so
+            // waiting for the newest such store covers all older ones.
             Maybe#(Bit#(2)) wf = tagged Invalid;
-            for (Integer k = 0; k < 4; k = k + 1)
-              if (da matches tagged Valid .a &&& nl[k].valid &&& isValid(nl[k].da) &&& validValue(nl[k].da) == a)
-                wf = tagged Valid fromInteger(k);
+            if (da matches tagged Valid .a) begin
+              Bool wfound = False;
+              for (Integer i = 0; i < 4; i = i + 1) begin
+                Bit#(2) pos = nTail - 1 - fromInteger(i);
+                Bool hz = nl[pos].valid &&& isValid(nl[pos].storeAddr) &&& validValue(nl[pos].storeAddr) == a;
+                if (!wfound && hz) begin wf = tagged Valid pos; wfound = True; end
+              end
+            end
             nl[nTail] = LaLevel{valid: True, di: di, pc: pc, len: len, da: da,
                                 data: tagged Invalid, fetchIssued: False, waitFor: wf,
-                                branch: False, target: 0};
+                                branch: False, target: 0, storeAddr: storeTarget(di)};
             nTail = nTail + 1; nCount = nCount + 1;
             pcReg <= pc + ((len == Full) ? 2 : 1);
             ibusy <= 2 * iboxCycles(di, False);   // its preparation time
@@ -682,7 +713,8 @@ module mkStretchCore(StretchCore);
         if (!guessPending && nCount < 4 && !progressivePending) begin
           nl[nTail] = LaLevel{valid: True, di: di, pc: pc, len: len, da: tagged Invalid,
                               data: tagged Invalid, fetchIssued: False, waitFor: tagged Invalid,
-                              branch: True, target: effAddr19(st, bi.addr, {3'b0, bi.idx})};
+                              branch: True, target: effAddr19(st, bi.addr, {3'b0, bi.idx}),
+                              storeAddr: tagged Invalid};
           nTail = nTail + 1; nCount = nCount + 1;
           xSnap <= st.snapshotIndex();
           indSnap <= st.readIndicators();

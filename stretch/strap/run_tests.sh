@@ -138,6 +138,12 @@ run "Floating point: E+ / E+I / SHF" ./run_fp_exp_test.sh
 run "FP sign modifiers (encoding vs jb_af1c)" python3 verify_fp_signmods.py
 run "FP sign modifiers (LN/LA/LNA on the model)" ./run_fp_signmod_test.sh
 
+# -- 1j. Store-close-to-fetch: store a word then immediately reload it;
+# the load must read the new value, not the stale one. The hazard the FP
+# sign-modifier codesign exposed; fixed by tracking each E-box level's
+# store target (plan stage 3a note). This exact pattern failed before.
+run "Look-ahead: store-close-to-fetch" ./run_scf_test.sh
+
 # -- 2. Problem 2.1: Cyclic Bit Shifting --
 run "Problem 2.1" ./run_program.sh programs/problem_2_1.strap StretchProblem21Tb \
     "DOG_rotated:32=0x6e5d4c3b2a19087f" \

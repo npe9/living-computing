@@ -1,0 +1,18 @@
+! Store-close-to-fetch look-ahead test (the hazard the FP sign-modifier
+! codesign exposed, plan stage 3a note). A load whose operand word was
+! written by an immediately preceding store must read the new value,
+! not the stale one. Before the fix, L(N),X below read X's initial 0.
+!   L(N),THREE  : acc = 3.0
+!   ST(N),X     : X = 3.0
+!   L(N),X      : acc = 3.0  (reads the just-stored word -- the hazard)
+!   ST(N),R     : R = 3.0
+START   L(N), THREE
+        ST(N), X
+        L(N), X
+        ST(N), R
+DONE    BEW, $
+        CNOP
+THREE   DD(BU,64), 0
+X       DD(BU,64), 0
+R       DD(BU,64), 0
+        END, START

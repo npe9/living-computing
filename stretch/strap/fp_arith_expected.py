@@ -38,5 +38,6 @@ results = [2.0, 6.0, 9.0, 3.0]
 words = [enc(r) for r in results]
 # Emit: TWO/THREE image patches and R1..R4 checks. Layout addresses
 # come from the caller.
-print("TWO=0x%016x THREE=0x%016x R1=0x%016x R2=0x%016x R3=0x%016x R4=0x%016x"
+if __name__ == "__main__":
+    print("TWO=0x%016x THREE=0x%016x R1=0x%016x R2=0x%016x R3=0x%016x R4=0x%016x"
       % (TWO, THREE, words[0], words[1], words[2], words[3]))
