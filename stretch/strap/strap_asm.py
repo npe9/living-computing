@@ -74,12 +74,16 @@ execute partially, document the rest" ethos of the Bluespec model):
   emit_statement's SYN case for the same note in context).
 
   Instruction formats:
-    1  Floating point            -- minimal: encodes the N/U mode bit
-                                     (`unnorm`) but not absSign/invSign
-                                     modifiers, no (dds) support beyond
-                                     that; not exercised by any program
-                                     this assembler has been run
-                                     against yet.
+    1  Floating point            -- the N/U normalize mode bit
+                                     (`unnorm`) and the sign modifiers
+                                     N/A/NA (negative/absolute; suffix on
+                                     the mnemonic, e.g. LN/LA/LNA -> the
+                                     invSign/absSign bits, strip_fp_sign).
+                                     The sign modifiers were added when
+                                     the floating-point diagnostic
+                                     jb_af1c needed them; verified
+                                     bit-for-bit against its printed code
+                                     (verify_fp_signmods.py).
     2  Misc / unconditional branch / SIC -- branch mnemonics only
        (B BR BE BD BEW NOP); R/RCZ/Z decode but are low-confidence
        (register-operand field placement not confirmed against a
@@ -660,6 +664,23 @@ def classify_connective(op):
     return None
 
 
+def strip_fp_sign(op):
+    """An FP op mnemonic may carry a sign-modifier suffix (pocket card
+    X22-6533 "L(N,A,NA)" etc.; the FP diagnostic jb_af1c writes them as
+    LN/LA/LNA): N = negative sign (invert), A = absolute sign (force
+    positive), NA = both. Returns (base, absSign, invSign) if `op` is a
+    known FP op with such a suffix, else None. Verified bit-for-bit
+    against jb_af1c's printed machine code (verify_fp_signmods.py):
+    LA(U)->22007.60 sets absSign, LN(U)->.50 sets invSign, LNA(U)->.70
+    both. Tried longest suffix first (NA before N/A) and only when the
+    remainder is a real FP op, so LWF/LFT/SLO/SRT etc. are untouched.
+    """
+    for suf, a, i in (("NA", 1, 1), ("N", 0, 1), ("A", 1, 0)):
+        if op.endswith(suf) and op[:-len(suf)] in FP_CODES:
+            return (op[:-len(suf)], a, i)
+    return None
+
+
 def classify_vfl_or_fp(stmt):
     """Returns ('VFL'|'FP'|'CONN'|None, base_op, invert, immediate,
     p_progressive, dds_mods, conn).
@@ -734,6 +755,8 @@ def classify_vfl_or_fp(stmt):
         raise AssemblerError(f"unknown data-description mode {mode!r}", stmt.lineno)
 
     in_vfl, in_fp = base_op in VFL_INT_CODES, base_op in FP_CODES
+    if not in_vfl and not in_fp and strip_fp_sign(base_op) is not None:
+        return 'FP', base_op, invert, immediate, p_progressive, dds_mods, None
     if in_vfl and not in_fp:
         return 'VFL', base_op, invert, immediate, p_progressive, dds_mods, None
     if in_fp and not in_vfl:
@@ -1398,11 +1421,16 @@ def emit_statement(stmt, symtab, image):
         else:
             fp_mode = 'U' if base_op in ('E+', 'E+I') else 'N'
         unnorm = 1 if fp_mode == 'U' else 0
+        # Sign modifiers (N/A/NA suffix): A -> absSign, N -> invSign.
+        fp_base, absSign, invSign = base_op, 0, 0
+        sm = strip_fp_sign(base_op)
+        if sm is not None:
+            fp_base, absSign, invSign = sm
         base, paren = split_field_trailing_paren(stmt.fields[0])
         target_bits = eval_expr(base, symtab, loc, lineno=stmt.lineno)
         addr18 = (target_bits >> 6) & 0x3FFFF
         idx = eval_reg(paren, symtab, stmt.lineno)
-        image.deposit_half(loc // 32, enc_fp(addr18, unnorm, 0, 0, FP_CODES[base_op], idx))
+        image.deposit_half(loc // 32, enc_fp(addr18, unnorm, absSign, invSign, FP_CODES[fp_base], idx))
         return
 
     raise AssemblerError(f"unhandled mnemonic {stmt.op!r}", stmt.lineno)

@@ -1,0 +1,28 @@
+! FP sign-modifier load test (driven by the floating-point diagnostic
+! jb_af1c, which uses LN/LA/LNA throughout): N inverts the operand's
+! sign, A forces it positive, NA forces positive then inverts. The
+! assembler could not encode these until this was added (verified
+! bit-for-bit against jb_af1c in verify_fp_signmods.py).
+!
+! Each load reads a PRE-SET constant (never a word stored earlier in
+! this program) so the test exercises only the sign modifiers, not the
+! separate look-ahead store-close-to-fetch hazard documented in
+! microarchitecture_plan.md (a store immediately before a load of the
+! same word is a known gap).
+!   LN(N),TWO    : +2.0 -> -2.0
+!   LA(N),NEGTWO : -2.0 -> +2.0
+!   LNA(N),TWO   : +2.0 -> force + then invert -> -2.0
+START   LN(N), TWO
+        ST(N), RNEG
+        LA(N), NEGTWO
+        ST(N), RABS
+        LNA(N), TWO
+        ST(N), RNA
+DONE    BEW, $
+        CNOP
+TWO     DD(BU,64), 0
+NEGTWO  DD(BU,64), 0
+RNEG    DD(BU,64), 0
+RABS    DD(BU,64), 0
+RNA     DD(BU,64), 0
+        END, START

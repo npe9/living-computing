@@ -131,6 +131,13 @@ run "Address Invalid (AD, no-op)" ./run_fp_addr_test.sh
 # SHF (shift fraction). Injection G (E+ subtracts) fails the E+ check.
 run "Floating point: E+ / E+I / SHF" ./run_fp_exp_test.sh
 
+# -- 1i. FP sign-modifier loads (LN/LA/LNA), the assembler gap the
+# floating-point diagnostic jb_af1c drove out. verify_fp_signmods.py
+# checks the encoding bit-for-bit against jb_af1c's printed machine
+# code (pure Python); run_fp_signmod_test runs LN/LA/LNA on the model.
+run "FP sign modifiers (encoding vs jb_af1c)" python3 verify_fp_signmods.py
+run "FP sign modifiers (LN/LA/LNA on the model)" ./run_fp_signmod_test.sh
+
 # -- 2. Problem 2.1: Cyclic Bit Shifting --
 run "Problem 2.1" ./run_program.sh programs/problem_2_1.strap StretchProblem21Tb \
     "DOG_rotated:32=0x6e5d4c3b2a19087f" \
