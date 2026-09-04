@@ -83,7 +83,7 @@ in parentheses); **open** = no stage assigned yet.
 | I-box instructions load index-recovery pseudo-store levels | Perf. Char. p.3-22; Blosk p.33 | partial (3c): one snapshot per guess stands in for them; their per-level cost is not charged |
 | Interrupt recovery / housecleaning | Buchholz §15.6; CE figs 3.2.22-23 | planned (3) |
 | Serial and parallel arithmetic units, A/B and C/D registers | Buchholz §14.4 | planned (4) |
-| Floating-point arithmetic (all ops), timing per table 2 and CE figs 3.8.x | Ref. Manual pp.78-94; CE 3.3.x/3.8.x | partial (4c): single-precision L/LWF/+/+MG/M+/M+MG/ST/K/KMG/KR/KMGR/* in StretchFP.bsv; divide, double precision, root, shift, exponent ops open |
+| Floating-point arithmetic (all ops), timing per table 2 and CE figs 3.8.x | Ref. Manual pp.78-94; CE 3.3.x/3.8.x | partial (4c): single-precision L/LWF/+/+MG/M+/M+MG/ST/K/KMG/KR/KMGR/*/E+/E+I/SHF; divide, double precision, root (SRT), LFT, *+, F+ open |
 | Decimal VFL, radix conversion, VFL multiply/divide | Ref. Manual; CE 3.11.x | open |
 | EX/EXIC (with LA drains, table 6; Ref. Manual pp.49-50: subject instruction may not change the interruption state or the IC -- EXE indicator; pseudo-IC stepped after fetch, before execution), LVE, SVA, RNX, LVS, bit branching, swap/backward transmit | Ref. Manual pp.26-30 (LVE: indirect addressing, 1 ms limit -> USA; SVA: replaces the 18/19/24-bit address field per the target's class; RNX: rename via X0's refill; LVS: sum of the value fields selected by address bits 0-15; T/SWAP: count rules, backward stepping); Perf. Char. table 6 | open, specified |
 | Interrupt system: indicators, mask, left-most-one, the "free instruction" | Ref. Manual pp.43-50 (indicator list with mask/class per indicator, definitions, mask register: bits 0-19 always 1, 20-47 settable, 48-63 always 0; interruption address register; the single interruption instruction fetched from IA + leftmost indicator number, IC not stepped, executed before a second interruption); Blosk pp.16-17; Buchholz ch.10 | open, specified |
@@ -579,6 +579,73 @@ staged one of §6e, not inlined here. Measured: the FP arithmetic adds
 ~12s to the smoke build; the ~270s baseline is the look-ahead logic
 inlined at the smoke test's two step() call sites, not the FP.
 
+## 6g. Stage 4b implementation design: splitting execute() into an arithmetic-unit module
+
+Stage 4b is now the highest-value step: it is the structural prerequisite
+for divide/double precision AND the fix for the ~45-minute suite. The
+build cost is `execute()` -- a single monolithic combinational function
+carrying every instruction arm including the floating-point multiply and
+(future) divide -- being inlined at FOUR call sites in `StretchCore.step()`
+(startExecute, the operand-resume path, the look-ahead removal path, and
+the E-box-class preparation probe). The floating-point logic is paid four
+times over.
+
+**The split.** Divide `execute()` into two functions:
+- `executeIbox(...)` -- the I-box-class arms (DirIndex, ImmIndex,
+  CountBranch, BranchInd, BranchOrMisc, Sic, Transmit, and the AD/OP
+  fall-throughs). These are cheap and are called from `step()`'s
+  preparation path (and the shared `evalBranch`).
+- `executeEbox(...)` -- the heavy arms (VflInt, Connective, Fp, IoOp).
+  These are called ONLY from the new arithmetic-unit module.
+
+**The arithmetic-unit module** `mkArithmeticUnit`:
+```
+interface ArithmeticUnit;
+  method Bool ready();                       // idle, can accept
+  method Action start(HWordAddr pc, InstrLen len, DecodedInstr di,
+                      Vector#(2, Word64) prefetch, Bit#(2) prefetchCount);
+  method Bool needsRead();                   // bailed for an operand
+  method WordAddr readAddr();
+  method Action resume(Word64 data);         // supply the operand, continue
+  method Bool done();                        // result ready
+  method AuResult result();                  // next PC, index write, io start, indicator word
+endinterface
+```
+It instantiates `executeEbox()` at its one call site, holds the result
+for the instruction's E-box cycle count (`eboxClocks`), and reports
+`done`. The operand-read bail/resume that `step()` does today moves
+inside the AU (it already owns `execPending`/`execPrefetch`). The
+look-ahead removal path becomes: when the head level's operand is
+present and `au.ready()`, `au.start(...)`; while `!au.done()`, wait;
+on `done`, commit `au.result()` and retire.
+
+**Divide becomes multi-cycle here.** Inside the AU, a divide (or
+double-precision, root) runs an iterative FSM -- the 7030's own
+~3.5-quotient-bits-per-cycle SRT-style loop (Buchholz pp.213-215),
+producing the quotient a few bits per clock over a bounded number of
+cycles -- instead of a combinational `/`. Its cycle count is then real,
+not a table lookup, and the combinational blowup disappears. The
+`executeEbox` Fp arm's divide case, currently deferred, calls this FSM.
+
+**Why this is safe to stage.** Step 1: split `execute()` into
+`executeIbox`/`executeEbox` with NO behavior change (the two are called
+exactly where the one was) -- rebuild, full suite green, commit. The
+build should already shrink, since the preparation probe and I-box paths
+no longer inline the FP arms. Step 2: introduce `mkArithmeticUnit`
+wrapping `executeEbox`, route the removal path through it -- suite green,
+commit. Step 3: add the iterative divide FSM inside the AU and enable the
+Fp divide case -- a divide test (a/b with a known quotient) plus a
+`CYCLES<=` bound from the ~3.5-bits/cycle rule. Each step is one revert
+from green, per the project's rule.
+
+**Risk.** The `executeEbox` arms set indicators and do index writes
+through the same locals `execute()` uses; the split must carry those out
+of both functions identically (an `AuResult`/`IboxResult` struct each).
+bsc's one-write-per-rule scheduling means the AU's single `executeEbox`
+call site and `step()`'s single `executeIbox` call site must not both
+write storage in one rule -- they are in different rules (the AU is its
+own module), so this is naturally satisfied.
+
 ## 7. Status
 
 - **Stage 0 -- done** (2026-09-03): `CYCLES<=N` check in `gen_tb.py`;
@@ -661,3 +728,454 @@ inlined at the smoke test's two step() call sites, not the FP.
    and Y buffers (2a), then preparation and I-box execution timing
    (2b), then the not-taken guess and restart (2c).
 2. Per-unit trace flag (stage 0 leftover), first used by 2a.
+
+---
+
+# Appendix A. Gathered specifications (the knowledge base)
+
+This appendix captures, cited by page, the primary-source facts gathered
+for the rebuild, so the plan is self-contained and no knowledge lives
+only in a session transcript or a code comment. Page numbers are printed
+pages; PDF page = printed + 3 for the Reference Manual (22-6530-2) and
+for C22-6531. Buchholz = *Planning a Computer System* (1962). Blosk =
+TR00.722. Perf. Char. = 7030 Performance Characteristics vol.1 (Mar 61).
+
+## A.1 Word formats and addressing (Ref. Manual pp.12-21)
+
+- **Bit/word addressing**: 24-bit bit address = 18-bit word address (high)
+  + 6-bit bit-in-word (low). The whole core is one consecutively
+  numbered bit string; word boundaries may be ignored. Instructions use
+  18-bit (full-word ops), 19-bit (half-word/branch/index/transmit), or
+  24-bit (VFL integer/connective) address parts, with zeros filling the
+  missing low-order bits.
+- **Index word** (p.19): VALUE (bits 0-23) + sign (24), index flag XF
+  (25), two unused bits (26-27), COUNT (28-45), REFILL (46-63). VALUE is
+  a signed 24-bit field interpreted as a bit address. In I/O the flag +
+  bits 26-27 become control bits and part of VALUE is status.
+- **Indexing** (p.20): the index VALUE is added algebraically to the
+  instruction address part (a positive unsigned field). Carry out of
+  bit 0 (overflow) is ignored. X0 (word 16) is not available for
+  address modification; I=0 means no modification. XF/XCZ/XVLZ/XVZ/
+  XVGZ/XL/XE/XH are NOT changed when an index is used for address
+  modification (only when modified by an index-arithmetic op).
+- **Progressive indexing** (p.21, field P bits 32-34): P=0 direct, P=4
+  immediate (effective address IS the operand), P in {1,2,3,5,6,7}
+  progressive. The effective address is the index VALUE directly; then
+  the instruction address part is added (1-3) or subtracted (5-7) into
+  the VALUE; count stepped down (2,3,6,7); refilled on count zero (3,7).
+  Index result indicators set from the new index before any refill.
+  Only for variable-field-length ops. Executed in two parts (prepare,
+  then modify) -- the model's `pendingIdxWrite` two-step.
+
+## A.2 The floating-point instruction set (Ref. Manual pp.78-102)
+
+- **Format**: exponent field bits 0-11 = EF flag (0), EM magnitude
+  (1-10), ES sign (11); fraction bits 12-59 magnitude, 60 sign; data
+  flags T/U/V bits 61-63. Value = (-1)^s * F * 2^((-1)^es * EM). Binary
+  point left of bit 12; a 1 in bit 12 = one-half. Accumulator: exponent
+  bits 0-11, fraction 12-59; fraction sign in the sign byte register
+  (address 10) bit 4, flags in bits 5-7. Double precision: fraction
+  12-107 (96 bits), accumulator bits 60-107 the low fraction.
+- **Ranges** (Fig.22, p.79): N (EF=0, |E| <= 1023, magnitudes ~10^-308
+  to 10^308), XFP ("infinity-like": EF=1, ES=0, E >= 1024), XFN
+  ("zero-like": EF=1, ES=1, E <= -1024). Result exponent tables for
+  flagged operands: Fig.23 (add/multiply/divide), which range dominates.
+- **Normalization** (p.81, bit 18 modifier, 0 = normalized): a
+  normalized fraction is 1 > F >= 1/2 or zero. Left shift subtracts from
+  the exponent, a right shift for fraction overflow adds one. Zero
+  fractions are not normalized. Pre-normalization aligns operands in add
+  and divide.
+- **Sign control** (p.81-82): bit 19 "absolute sign" forces the
+  operand's sign positive before the op; bit 20 "negative sign" inverts
+  the sign of the unreplaced operand. For accumulator-changing ops both
+  apply to the storage operand; for stores, to the accumulator.
+- **Data flags** (p.82): T/U/V of the addressed operand set TF/UF/VF for
+  any op that fetches. Stores put the accumulator flags into the stored
+  word's bits 61-63. Only LOAD/LOAD-DOUBLE/-WITH-FLAG set the sign
+  byte's flag positions.
+- **Zero definition** (p.82-83): order-of-magnitude zero keeps the
+  exponent of the larger-exponent operand; a forced zero (ADD TO
+  MAGNITUDE with a negative sum) sets RZ but not LS.
+- **Noisy mode** (indicator NM, program-set only): ones instead of zeros
+  enter the low-order bits during left-shift normalization.
+- **Indicators** (pp.85-86): result RLZ/RZ/RGZ/RN (from the fraction
+  sign/zero); to-memory MOP; LC (unnormalized overflow / left-shift-out
+  of SHF / lost remainder bit); LS (add giving a zero from cancellation,
+  with exceptions); PF (unnormalized divide, |dividend fraction| >=
+  |divisor fraction|); ZD (zero divisor, division suppressed); PSH
+  (exponent difference > 48 in add); ZM (normalized order-of-magnitude
+  zero from multiply with exponent > -1024); exponent range XPFP
+  (propagated EF, ES=0), XPO (generated EF, ES=0), XPH (1024 > E >= 512),
+  XPL (512 > E >= 64), XPU (generated EF, ES=1); IR (STORE ROOT of a
+  negative), RU (remainder underflow, divide double). Fig.24/27
+  comparison-result tables (AL/AE/AH).
+- **Operations** (arithmetic action, sign result altered):
+  - *Single, cheap (no big multiply/divide) -- DONE or DOABLE now*:
+    `+`/`+MG` (add, add-to-magnitude); `L`/`LWF` (load, load-with-flag);
+    `M+`/`M+MG` (add-to-memory, add-magnitude-to-memory); `ST` (store);
+    `K`/`KMG`/`KR`/`KMGR` (compare, magnitude, for-range, magnitude-for-
+    range); `E+` (add addressed operand's exponent to the accumulator's,
+    fraction ignored); `E+I` (add bits 0-11 of the effective address as
+    an exponent; no storage access, not boundary-monitored); `SHF`
+    (shift the fraction, bits 0-10 amount / bit 11 direction; LC on a
+    left-shift-out; no storage access); `F+` (add to fraction -- like
+    add but both operands take the accumulator's exponent, no pre-shift).
+    DONE: `+ +MG L LWF M+ M+MG ST K KMG KR KMGR * E+ E+I SHF`.
+  - *Single, heavy (full multiply/divide) -- stage 4e AU*: `*` (DONE,
+    48x48 multiply), `/`, `R/` (reciprocal divide), `SRT` (store root,
+    exponent halved + fraction square root).
+  - *Double precision -- stage 4e AU*: `D+`/`D+MG` (add double), `DL`/
+    `DLWF` (load double), `SRD` (store rounded, +1 at bit 60 then
+    truncate to 48), `SLO` (store low-order half), `D*` (multiply
+    double), `LFT` (load factor into the FT register, address 14, for a
+    following `*+`), `*+` (multiply FT by the operand, add to
+    accumulator, 96-bit intermediate), `D/` (divide double, 49-bit
+    quotient + remainder in RM register address 13).
+  - Multiply: exponents added, 96-bit product, post-normalized up to 96
+    places. Divide: divisor and dividend pre-normalized, 48-bit quotient
+    (49 for double), exponent difference +1 on quotient overflow.
+
+## A.3 The interrupt and indicator system (Ref. Manual pp.43-53)
+
+- **Indicator register** (word 11): 64 bits, Fig.11 lists each with a
+  mask class. Equipment check (MK/IK/IJ/EK, mask permanent 1), attention
+  (TS/CPUS), I/O reject (EKJ/UNRJ/CBJ) and status (EPGK/UK/EE/EOP/CS),
+  instruction exception (OP/AD/USA/EXE/DS/DF/IF), result exception
+  (LC/PF/ZD and the FP-only IR/LS/PSH/XPFP/XPO/XPH/XPL/XPU/ZM/RU), data
+  flags (TF/UF/VF/XF), transit (BTR/DTR), program (PG0-6 program-set),
+  index result (XCZ/XVLZ/XVZ/XVGZ/XL/XE/XH), arithmetic result (MOP/RLZ/
+  RZ/RGZ/RN), accumulator compare (AL/AE/AH), mode (NM). Indicators are
+  temporary (reset by the next relevant result) or permanent (stay until
+  interrupt or programmed reset). Class T/P/C/H/S = when actuated
+  relative to the instruction.
+- **Mask register** (word 12): bits 0-19 permanently 1, 20-47 program-
+  settable, 48-63 permanently 0. A masked (mask=1) indicator turning on
+  while the interrupt system is enabled causes an interruption.
+- **Interruption address register** (18 bits): the interruption develops
+  the number of the left-most actuated masked indicator, adds it to the
+  interruption address, and fetches ONE instruction executed before a
+  second interruption can occur. The instruction counter is not stepped;
+  a successful branch in that instruction can replace it. IF cannot be
+  turned on by the fetch of that instruction even in protected storage.
+- **Enable state**: BRANCH ENABLED (BE) enables the interrupt system,
+  BRANCH DISABLED (BD) disables it, BRANCH ENABLED AND WAIT (BEW)
+  enables and stops (there is no machine stop; only BEW). The model
+  treats BE/BD/BEW as plain branches today -- the enable flag is the
+  small state to add (a Reg#(Bool)), a prerequisite for DS/DF/IF and
+  interruptions.
+- **Correction-routine patterns** (p.48-49): single instruction; a
+  subroutine entered by STORE-INSTRUCTION-COUNTER-IF-BRANCH-DISABLED and
+  returned by BRANCH ENABLED; up to 48 routines addressed from the
+  interruption address register.
+- **EX / EXIC** (pp.49-50): EXECUTE gives the address of a subject
+  instruction fetched and executed without stepping the instruction
+  counter; EXECUTE INDIRECT AND COUNT uses a pseudo-instruction counter
+  stepped after the fetch. A subject instruction may not change the
+  interrupt state or the instruction counter (EXE indicator). Table 6
+  (Perf. Char.) gives their timing: decode + LA drain + fetch (per an
+  address-dependent table) + the subject op + LA drain + 3.0 us refetch.
+
+## A.4 Remaining instruction semantics (Ref. Manual pp.22-33, 55-77)
+
+- **Refill (R) / Refill on Count Zero (RCZ)** (p.26): replace the full
+  word at the effective address's word with the word at that index
+  word's REFILL field (bits 46-63). RCZ only if the count field (28-45)
+  is zero. Index flag / index result indicators set from the original.
+- **Count and Branch (CB) / Count, Branch, Refill (CBR)** (p.26): count
+  down index J, increment VALUE per the advance code (bits 23-24: 00
+  none, 01 add one in bit 18 = a half-word = 32 bits, 10 add one in bit
+  17 = a word = 64 bits, 11 subtract one in bit 17), then branch on the
+  resulting count being non-zero (or zero, bit 30). CBR also refills if
+  the count reached zero.
+- **Rename (RNX)** (p.27): store the index word in J into X0's REFILL-
+  addressed location, put the effective address's word into J, replace
+  X0's refill with bits 0-17 of the effective address. AD/DS/DF rules
+  for names in 0-31.
+- **Load Value with Sum (LVS)** (p.28): add (into bits 0-24 of J) the
+  value fields of the index registers selected by ones in address bits
+  0-15 (multiple indexing); no address modification.
+- **Load Value Effective (LVE)** (p.28-29): indirect addressing -- the
+  effective address selects another instruction whose own effective
+  address (+ sign) is placed in J; chains through further LVEs; a loop
+  is broken after ~1 ms by USA. The final non-LVE instruction is not
+  executed, only its effective address computed.
+- **Store Value in Address (SVA)** (p.29-30): replace the address field
+  (18/19/24 bits per the target op's class) of the instruction at the
+  effective address with bits 0-17/18/23 of J's value field. Used for
+  self-modifying setup in the diagnostics.
+- **Transmit (T) / Swap (SWAP)** (p.30-31): move a block of `count` full
+  words (count from index J bits 28-45, 0 meaning 2^18; or immediate,
+  bits 51-54, 0 meaning 16) from the left effective address to the right.
+  Modifier bits 55-57: 57 = bidirectional (swap), 56 = immediate count,
+  55 = backward (addresses decrement). Only forward, one-word-at-a-time,
+  non-swap is modeled today.
+- **VFL integer** (pp.55-77): L/ST/+/M+/K and variants, byte size 1-8,
+  offset (accumulator bit position), signed/unsigned/decimal/binary
+  modifiers; immediate addressing (P=4) with the operand left-justified.
+  Decimal mode and radix conversion decode but are OP-invalid today.
+- **Connectives** (Fig.20, p.75-77): 16 boolean functions x {CONNECT
+  (to accumulator), CONNECT TO MEMORY, CONNECT FOR TEST}; byte size 8
+  assumed; the left-zeros / all-ones counts at word 7 and partial-field
+  padding not modeled.
+- **Bit branching** (p.100): a full-word op testing/optionally modifying
+  a single indicator bit anywhere in storage. Decoded, not executed.
+
+## A.5 The arithmetic units (Buchholz pp.208-216, Perf. Char. ch.3)
+
+- **Serial arithmetic unit (SAU)**, Fig.14.6: symmetric byte extraction
+  (16-of-128 then 8-of-16 switch matrices) from A/B (accumulator) and
+  C/D (operand), a binary adder OR a logic unit, true-complement switches
+  before and after, a decimal corrector, one byte-pair per clock. Handles
+  VFL add/subtract/compare/load/store, connectives, decimal, radix
+  conversion, FP exponent arithmetic. SAU equation (Perf. Char. table 3):
+  pre-execution 1.8 us, execution 0.6 us per byte, termination 0.6 us
+  (7.2 us full-word), plus unlike-sign/recomplement/forced-zero extras.
+- **Parallel arithmetic unit (PAU)**, Fig.14.7: 100-bit carry-propagate
+  adder with 4-bit carry look-ahead (0.15 us for 96 bits, 1s-complement
+  subtraction with end-around carry to absolute-value form); a shifter
+  (4 right / 6 left per step); the multiply tree -- 12 multiplier bits
+  per cycle decoded as four 3-bit groups selecting +-multiplicand
+  multiples fed to four carry-save adders (S = A xor B xor C, C' = AB or
+  AC or BC), two in parallel then two in series; divide by table-selected
+  multiples 1, 3/2, 3/4 of the divisor skipping over 1s/0s (~3.5 quotient
+  bits per cycle, Figs 14.11-14.13). Handles FP fraction add/multiply/
+  divide (single 48-bit, double 96-bit) and VFL binary multiply/divide.
+  FP instruction times: Perf. Char. table 2 (pre-execution + execution
+  cycles at 0.3 us).
+
+## A.6 The instruction unit and look-ahead (Blosk, Buchholz ch.15, Perf. Char.)
+
+- **I-box registers** (Blosk pp.7-15): ICR (19) + adder giving n..n+3;
+  1Y/2Y (two 64-bit instruction buffers, four half-word instructions);
+  index storage XS (17-word x 73-bit core, word 17 = timer/clock, 500 ns
+  read, 2 cycles to store) with data register XR; preparation/execution
+  register Z (64 + 3-bit P); working register W (19); 24-bit index adder
+  IAU with in-buses A (IC/W/XR/Z, complementable) and B (Y/Z); shared
+  I-checker (ECC->parity, 0.6 us); updated indicator register (XF/XCZ/
+  XVLZ/XVZ/XVGZ/XL/XE/XH). Up to six instructions in progress.
+- **Control areas** (Blosk pp.25-27): IC controls (keep 1Y/2Y full,
+  program-store compare invalidates a prefetched word); preparation
+  controls (Y->Z transfer, XF index fetch, MOD modification, WBC word-
+  boundary-crossover test); look-ahead load; instruction-execution
+  (I-box ops execute here); branch (index-indicator and unconditional
+  resolved in the I-box; arithmetic-conditional guessed not taken).
+- **Look-ahead** (Buchholz ch.15, Cocke/Kolsky III.C): four levels, each
+  {op code, 8 tags (level filled/checked, internal operand, IC valid, LA
+  op code, word-boundary crossover, no-op, from), 15 indicators, IC,
+  64-bit operand + forwarding bit F + forwarding address FA}; five ring
+  counters C1 (I-unit/IAU load), C2 (operand fetch), transfer-bus, C4
+  (arithmetic remove), C3 (store check), advancing under interlocks I1
+  (unexecuted store), I2 (store), I3 (all fetches started), I4 (next
+  ready), I5 (unexecuted arithmetic op); one LAAR with store forwarding
+  (store-close-to-fetch cases (1)-(3), Perf. Char. pp.3-20..21); all
+  stores done by LA; index-recovery pseudo-store levels; recovery
+  (housecleaning) on interrupt or wrong-way branch. Bus priority:
+  exchange > disk > look-ahead > I-box (8 requesters).
+- **I-box timing tables** (Perf. Char. ch.3, dec = 0.6 us, at 0.3 us
+  clocks): table 4 direct index (LX 4.8, LV/LC/LR/SV/SC/SR/V+/V+C/KV/KC
+  4.2, SX 1.2, V+CR 8.4 us + dec), table 5 immediate (LVI/LCI 2.4,
+  V+IC 3.0, V+ICR 7.2), table 6 misc (R/RCZ/Z, EX/EXIC with LA drains),
+  table 7 unconditional branch (B 3.6, BR 4.8, NOP 1.2, BD +2 LA drains),
+  table 8 index branch (CB successful 4.2 / unsuccessful 3.6, CBR 6.6/
+  6.0). FP prep one per 1.2 us; VFL prep 3.6 us min + 0.6 per level or
+  index. Table 9 transmit.
+
+## A.7 Memory, address monitoring, clocks, states (Buchholz ch.14, Ref. Manual pp.15,20,51-54)
+
+- **Memory** (Buchholz §14.1): 16,384-word units, 2.1 us read-write
+  cycle, own clock/addressing/data registers; six units typical -- four
+  4-way interleaved (65,536 addresses) + two 2-way (32,768). MBCU
+  (§14.3): 8 requesters, priority as above, one request per 0.3 us,
+  ~1.6 us return when free, holds requests for busy units, 3-bit return
+  tag.
+- **Address Invalid** (p.20): an effective word address not physically
+  installed sets AD; the instruction executes as a NO OPERATION. A
+  branch to an invalid address is also a no-op; a negative effective
+  address is not invalid (its magnitude is used).
+- **Address monitoring / storage protection** (p.15): two boundary
+  registers (word 3: upper 0-17, lower 32-49, control bit 57) define a
+  region; an alarm (DS store / DF fetch / IF instruction fetch, gated by
+  the interrupt system enabled + mask) fires for an effective address
+  inside OR outside the region, control-bit selectable; storing in
+  protected areas is suppressed. (Control-bit polarity still to source
+  from Appendix C.)
+- **Clocks** (p.15): interval timer measures short intervals, settable,
+  sets Time Signal (TS) when the period ends, can interrupt; time clock
+  runs continuously, not programmer-alterable. Word 1 = timer bits 0-18,
+  clock 28-63 (Appendix C). Step rate still to confirm.
+- **System states** (pp.51-54): running, programmed waiting (BEW),
+  initial program load (IPL key: terminate current op, disable
+  interrupts, run from a channel signal), initial power on (registers
+  0-12 random, interrupts disabled). Two status lights (running /
+  inactive). At power-on registers 0,2-12 hold random bits.
+
+## A.8 Timing oracles (Perf. Char. vol.1 ch.4 + vol.2)
+
+- **Table 10** (p.4-9), "Execution Frequency Chart": per benchmark, the
+  count of each operation, total execution time (ms), average us/op.
+  Weather inner-loop AO: 1711 ops (FP 1364, VFL 98, index 100, branch 97,
+  misc 52), 5.98 ms, 3.5 us/op; A1 5.57; A2 7.0135; grid param 1883 ops,
+  7.07 ms, 3.8; elementary functions .38/.309 ms.
+- **Benchmarks** (source in vol.2, 189 pp): GERB2 matrix inversion (10x10
+  0.02 s ... 100x100 14.61 s), MXM16 matrix multiply (25x25 0.20 s ...
+  125x125 21.44 s), PRIMC prime sieve 106.7 s (two-thirds an
+  interruption table -- the interrupt timing test), Monte Carlo 10,000
+  particles 33 s. These are the stage-5 `CYCLES<=` oracles once their
+  source is transcribed.
+
+## A.9 Complete instruction mnemonic set (pocket card X22-6533)
+
+The authoritative enumeration of every documented instruction, from the
+STRAP mnemonic operation-code tables on the pocket card. "(A)" = sign
+modifiers N/A/NA apply; "(I)" = index field; "(dds)" = data description.
+This is the master checklist for "every documented feature"; each
+non-modeled entry is a future target.
+
+**Floating point (full word).**
+Add/subtract family: `+ -` , `+MG -MG` (to/from magnitude). Multiply:
+`* *+ *A+ *N+ *NA+` (multiply, multiply-and-add and its absolute/negative
+variants). Divide: `/ R/` (divide, reciprocal divide). Double precision:
+`D+ D- D+MG D-MG DL DLWF D* D/`. Exponent: `E+ E+I E+AI E- E-I E-AI`
+(add/subtract, immediate, absolute-immediate). Fraction: `F+ F-`. Shift:
+`SHF SHFL SHFR` (by address / dedicated left / dedicated right). Load:
+`L LWF LFT DL DLWF`. Store: `ST SLO SRD SRT SNRT Z` (store, low-order,
+rounded, root, negative root, zero). Compare: `K KMG KR KMGR`. Misc:
+`NOP R RCZ`. Branch: `B BD BE BEW BR`. `SIC` (store instruction counter
+if). `EX EXIC` (execute, execute indirect and count).
+*Modeled now*: `+ +MG - -MG L LWF ST K KMG KR KMGR M+ M+MG * E+ E+I SHF`
+(SHF by address) `B BD BE BEW BR NOP R RCZ Z SIC`. *Open (stage 4e /
+later)*: `* variants *+ / R/ SRT SNRT`, all double precision, `E±I/AI
+E-`, `F+ F-`, `SHFL SHFR`, `LFT`, `EX EXIC`.
+
+**Variable field length (full word).** `+ +MG - -MG` , `* *+ *I+ *N+
+*NI+ /` (multiply/divide, immediate/negative variants), `C CM CT` (the
+16 connectives x connect / to-memory / for-test), `CV DCV LCV LTRCV`
+(convert, convert double, load converted, load transit converted),
+`K KE KF KFE KFR KR` (compare and compare-field family), `L LF LWF LFT
+LTRS` (load, load field, with flag, factor, load transit and set),
+`M+ M+1 M+MG M+A M- M-1 M-MG M-A` (to-memory add/subtract, one, magnitude,
+absolute), `SF SRD ST` (store field, rounded, store). Modes: B/BU/D/DU
+(binary/unsigned, decimal/unsigned) and P (progressive). *Modeled*: `L
+ST + M+ K`, binary modes, connectives (BS=8), immediate (P=4),
+progressive. *Open*: decimal, radix conversion (`CV/DCV/LCV`), multiply/
+divide, compare-field variants, `SF`, `M±1`, `M±A`, transit ops.
+
+**Direct index arithmetic (half word).** `LX LV LC LR SX SV SC SR`
+(load/store value/count/refill/index-word), `V+ V+C V+CR V- V-C V-CR`
+(advance value, count, count+refill), `KV KC` (compare value/count),
+`RNX LVE LVS SVA` (rename, load value effective, load value with sum,
+store value in address). *Modeled*: `LX LV LC LR SX SV SC SR V+ V+C V+CR
+KV KC`. *Open*: `V- V-C V-CR` (subtract), `RNX LVE LVS SVA`.
+
+**Immediate index arithmetic (half word).** `LVI LVNI LCI LRI C+I C-I
+V+I V+IC V+ICR V-I V-IC V-ICR KVI KVNI KCI LVS`. *Modeled*: all but
+`LVS`.
+
+**Count and branch (half word).** `CB[R][Z][H|+|-]` -- the 16 variants
+(count, +refill, +branch-on-zero, +half/plus-one/minus-one value).
+*Modeled*: all 16 encode; CB and CBR executed and tested.
+
+**Branch on indicator (half word).** `B[Z]<indicator>[Z]` for each of
+the 64 indicators (branch on, or on zero of, optionally clearing).
+*Modeled*: full grammar, index and arithmetic indicators.
+
+**Branch on bit (full word).** `BB BB1 BBN BBZ BZB BZB1 BZBN BZBZ`
+(branch on bit, set-to-one, negate, zero, and the zero-bit forms).
+*Open*: decoded, not executed.
+
+**Transmit (full word).** `T T] SWAP SWAP]` (transmit / swap, forward /
+backward with the "]" backward marker), immediate or index count.
+*Modeled*: forward `T`, one word, non-swap.
+
+**Input-output (full word).** `RD W CCW REL CTL LOC` (read, write, copy
+control word, release, control, locate) each with an optional `(SEOP)`;
+control functions `BS SP SPFL ERG REW UNLOAD WEF CRDRUN` (backspace,
+space, space file, erase gap, rewind, unload, write end of file, card
+run-out), density/parity `HD LD ECC EVEN NOECC ODDECC ODDNEC`, and light/
+gong `KLN RLF RLN TILF GONG`. *Modeled*: `RD W CCW REL`, `CTL` for the
+tape's REWIND/BACKSPACE codes; the rest of the control functions open.
+
+## A.10 Special storage assignment and indicator list (pocket card X22-6533-1)
+
+The exact special-storage layout (addresses 0-31) and the complete
+indicator list, read off the reference card. This supersedes the
+approximate bit positions given above where they differ.
+
+**Special storage assignment** (Length = field width in bits, then bit
+positions; P = permanently protected area):
+| Addr | Name | Bits |
+|---|---|---|
+| 0 | Zero | 0-63 |
+| 1 (P,a) | Interval Timer | 0-18 |
+| 1 (P,b) | Time Clock | 28-63 |
+| 2 (P) | Interruption Address | 0-17 |
+| 3 (P) | Upper Boundary | 0-17 |
+| 3 (P) | Lower Boundary | 32-49 |
+| 3 (P) | Boundary Control Bit | 57 |
+| 4 | Maintenance Bits | 0-63 |
+| 5 (b) | Channel Address | 12-18 |
+| 6 | Other CPU Bits | 0-18 |
+| 7 | Left Zeros Count | 17-23 |
+| 7 | All Ones Count | 44-50 |
+| 8 | Left Half of Accumulator | 0-63 |
+| 9 | Right Half of Accumulator | 0-63 |
+| 10 | Accumulator Sign Byte | 0-7 |
+| 11 (c) | Indicators | 0-63 |
+| 12 (d) | Mask | 0-63 |
+| 13 | Remainder | 0-63 |
+| 14 | Factor | 0-63 |
+| 15 | Transit | 0-63 |
+| 16-31 | Index Registers X0-X15 | 0-63 |
+
+Footnotes: a = read-only except for store-value/count/refill/address;
+b = read operation only; c = indicator bits 0-19 are read-only;
+d = mask bits 0-19 always one, 48-63 always zero. (This is why the
+model keeps word 11 read-only via generic STORE and word 12's mask
+forced.) The interval timer and time clock are BOTH in word 1 (a
+19-bit down-counter in 0-18 and a 36-bit up-counter in 28-63); the
+boundary control bit is bit 57 -- its inside/outside polarity is the
+one storage-protection detail still to source. The timer/clock STEP
+RATE is not on the card and remains to source.
+
+**Indicator list** (No. / mnemonic / mask / class): mask 1 = permanently
+masked (0-19), m = program-settable (20-47), 0 = permanently unmasked
+(48-63). Class: P permanent (off only by interruption or branch-on-
+indicator), T temporary (reset by a later relevant operation), C when
+set the instruction still completes, H when set execution terminates,
+S when set execution is suppressed (except EX/EXIC/T/SWAP).
+0 MK(P,H) machine check; 1 IK(P,H) instruction check; 2 IJ(P,S)
+instruction reject; 3 EK(P,C) exchange control check; 4 TS(P,C) time
+signal; 5 CPUS(P,C) CPU signal; 6 EKJ(P,S) exchange check reject; 7
+UNRJ(P,S) unit not ready reject; 8 CBJ(P,S) channel busy reject; 9
+EPGK(P,C) exchange program check; 10 UK(P,C) unit check; 11 EE(P,C) end
+exception; 12 EOP(P,C) end of operation; 13 CS(P,C) channel signal; 14
+reserved; 15 OP(P,S) operation code invalid; 16 AD(P,S) address invalid;
+17 USA(P,S) unended sequence of addresses; 18 EXE(P,S) execute
+exception; 19 DS(P,S) data store; 20 DF(P,* ) data fetch; 21 IF(P,* )
+instruction fetch (* = class S when mask one, else C); 22 LC(P,C) lost
+carry; 23 PF(P,C) partial field; 24 ZD(P,C) zero divisor; 25 IR(P,C)
+imaginary root; 26 LS(P,C) lost significance; 27 PSH(P,C) preparatory
+shift > 48; 28 XPFP exp flag positive (E >= 2^10); 29 XPO exp overflow
+(E >= 2^10); 30 XPH exp high (2^10 > E >= 2^9); 31 XPL exp low (2^9 > E
+>= 2^6); 32 XPU exp underflow (E <= -2^10); 33 ZM exp flag negative (E
+<= -2^10); 34 RU remainder underflow (E <= -2^10) -- all P,C; 35 TF, 36
+UF, 37 VF data flags T/U/V (T,C, reset by VFL/FP ops needing a data
+fetch); 38 XF(T,* ) index flag (* = class S with index branching + mask
+one + system enabled, else C); 39 BTR(P,C) binary transit; 40 DTR(P,C)
+decimal transit; 41-47 PG0-PG6(P,C) program indicators; 48 XCZ, 49 XVLZ,
+50 XVZ, 51 XVGZ index count/value zero/less/greater (T,C, reset by
+index arithmetic other than comparisons); 52 XL, 53 XE, 54 XH index
+low/equal/high (T,C, reset by index comparisons); 55 MOP(T,C) to-memory
+op; 56 RLZ, 57 RZ, 58 RGZ, 59 RN result less/zero/greater/negative
+(T,C, reset by VFL/FP non-comparison ops); 60 AL, 61 AE, 62 AH
+accumulator low/equal/high (T,C, reset by comparisons); 63 NM(P,C)
+noisy mode.
+
+**Transmit/Swap and index-arithmetic mnemonics** (completing A.9 from
+the card's own tables): `T TI TB TBI` (transmit, immediate, backward,
+backward-immediate) and `SWAP SWAPI SWAPB SWAPBI`; count-and-branch
+`CB/CBR/CBZ/CBRZ` each with `+`/`-`/`H` (add one / subtract one / add
+half to value), `K` meaning index register 1 only; index arithmetic
+`C+I C-I KC KV LC LR LV LVE LVS LX RNX SC SR SV SVA SX V+ V+C V+CR V+I
+V+IC V+ICR V-I V-IC V-ICR` (`*` codes = immediate or, in OP2,
+progressive indexing).

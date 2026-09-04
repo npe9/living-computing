@@ -833,3 +833,84 @@ All from `bitsavers.org/pdf/ibm/7030/`:
 Raw per-document agent reports (routine-by-routine tables, page-by-page
 citations) are preserved in `archival_inventory_notes.md` in this same
 directory for anyone doing the actual transcription work.
+
+---
+
+# Complete extant-software survey (bitsavers `ibm/7030/`, 2026-09-03)
+
+A full inventory of every surviving piece of 7030 software (source
+listings) and software documentation found on bitsavers, downloaded
+into `docs/`, with cross-references to the implementation that models
+or runs it. "Source" = an actual instruction-level listing; "Doc" =
+prose/reference. Each transcribed program in `../strap/programs/` cites
+its source PDF and page in its own header comment; this table is the
+reverse index (source -> transcription/implementation).
+
+## Diagnostics (`diag/`) -- STRAP source listings
+
+| File | What | Kind | Modeled / transcribed |
+|---|---|---|---|
+| `7030_SystemTestPrograms_Aug61.pdf` | Index of all system test programs | Doc | the map used to pick I-Box targets |
+| `ja_ax1a_ibox-1.pdf` (60pp) | I-Box 1 diagnostic | Source | RUN: `ibox1_wen_ven_indicators`, `ibox1_wen_ven_original_addresses`, `ibox1_sic_cb_cbz`, `ibox1_p43_p51_span` (20 groups, pp.43-51); bit-exact vs `verify_ibox1_listing.py` |
+| `jb_ax2a_ibox-2.pdf` (203pp) | I-Box 2 diagnostic | Source | surveyed (archival pass); SVA/SIC blockers |
+| `jb_ax3a_ibox-3.pdf` (~200pp) | I-Box 3 diagnostic | Source | surveyed; SVA (~50pp section), SIC |
+| `jb_ax4b_ibox-4.pdf` (~200pp) | I-Box 4 diagnostic | Source | RUN: `ibox4_cb_count_branch`, `ibox4_cbr_refill`; bit-exact vs `verify_ibox4_listing.py` (pp.155/159); section 138 rejected ($R), the pp.58-62 KV/$R pages sourced the Appendix-A system symbols |
+| `jb_ax5b_ibox-5.pdf` (~200pp) | I-Box 5 diagnostic | Source | surveyed; interrupt/timer/boundary/EX -- the largest unmodeled-hardware concentration |
+| `jb_af1c_floating-point.pdf` (282pp) | **Floating-point (PAU) diagnostic**, SMFF-1C, JB AF1C, Apr 15 1961, SSIP-controlled | Source | NOT YET -- the natural next codesign target for the stage-4c FP arithmetic (`StretchFP.bsv`): transcribe a block using only implemented ops (+/*/L/ST/K/E+/SHF), re-based, with the SIC/BEW pass-fail this project already handles. Divide/double-precision blocks wait for stage 4e. |
+| `ja_bb6b_worst_pat_test.pdf` (20pp) | Worst-pattern memory test | Source | NOT YET -- runnable against `StretchMemory.bsv` (the interleaved units); a memory-model codesign target |
+| `ja_bm6a_unique_adr_test.pdf` (11pp) | Unique-address memory test | Source | NOT YET -- memory-model target |
+| `ja_bp6a_memory_patterns_test.pdf` (6pp) | Memory-patterns test | Source | NOT YET -- smallest memory test, good first memory codesign target |
+| `ja_ua1_ssip.pdf` | SSIP (System Test Program supervisor) | Source | the framework the diagnostics run under; explains the SIC/BEW pass-fail idiom the transcriptions reproduce externally |
+| `ja_uc1a_maintenance_tape.pdf` | Maintenance-tape builder | Source | needs full tape/channel I/O |
+| `ka_ua1_diagnostic_ctl_pgm.pdf` (154pp) | Diagnostic Control Program (DCP), control section F1, pp.19-152 an unbroken STRAP listing | Source | RUN (partial): `dcp_maintenance_compool` (SYN symbol table pp.129-130, verified vs the printed address column); Memory Compare/Panel Dump need CTL/LOC + H-routines + print macros |
+| `ka_ex1_bx-0.pdf`, `ka_ex1b_bx-0.pdf` | BX-0 (exchange/box) test | Source | needs the exchange as a real bus requester |
+| `ka_ul1_load_and_tape_write_util.pdf` | Loader / tape-write utility | Source | needs tape I/O |
+
+## Master Control Program (`mcp/`) -- the operating system
+
+| File | What | Kind |
+|---|---|---|
+| `MCP_Mar63_001-249.pdf` + `MCP_Mar63_250-445.pdf` (451pp) | **IBM 7030 Master Control Program source listing**, "new version 03-15-63" -- the OS source the System Analysis Guide's companion reference pointed to, now LOCATED (previously flagged missing above) | Source |
+| `C22-6728_/-1_7030_MCP_Sys_Analysis_Guide.pdf` | MCP System Analysis Guide (calling sequences, flowcharts) | Doc |
+| `C22-6678-1_7030_MCP_Reference_Jun64.pdf` | MCP Reference Manual | Doc |
+| `J22-6559_MCP_UsersGuide_Dec60.pdf` | MCP User's Guide | Doc |
+| `C28-6379-0_MCP_Loader.pdf`, `N22-0085_MCP_RefMan_Upd_May63.pdf` | MCP loader / reference update | Doc |
+
+The MCP is a full operating system; running any of it needs the
+interrupt system, the exchange, tapes and the console -- a long-horizon
+target, but the source now exists in `docs/` for study and eventual
+transcription.
+
+## Customer-engineering (`ce/`) and engineering reports -- documentation
+
+| File | What |
+|---|---|
+| `R23-9732_Manual04_7101_CPU_Jan63.pdf` (297pp) | 7101 CPU CE manual: section-3 flow/block/timing charts (figs 3.1.x I-unit sequencers, 3.2.x look-ahead, 3.3.x PAU, 3.8.x FP timing) -- the gate-level reference for the microarchitecture stages |
+| `R23-9713_7101_Maint_Console_1961.pdf` | Maintenance console CE manual -- the console controls (start/stop, display/store, single step, repeat) |
+| `R23-9694/9695_CE_Intro_Pgmg_Vol2/3` | CE introductory programming |
+| `R23-9702_7503_Card_Rdr_7614_Rdr_Ctl_CE` | Card reader/control CE manual |
+| `Planning_A_Computer_System.pdf` (Buchholz 1962) | The design book: ch.14 CPU, ch.15 look-ahead -- primary source for the microarchitecture (`microarchitecture_plan.md`) |
+| `TR00.722_Stretch_I-Unit_Design_Mar60.pdf` (Blosk) | The I-unit design report -- registers, data paths, timing diagrams |
+| `TR00.03000.703_StretchVM_59.pdf` (Cocke & Kolsky) | Look-ahead ("virtual memory") simulation study -- the level/counter/interlock logic |
+| `Bloch_EngrDesOfStretch_1959.pdf`, `ADescriptionOfStretch_Dec59.pdf` | Engineering-design overviews |
+| `7030_Performance_Characteristics_Vol1/2_Mar61.pdf` | Timing tables + measured benchmark listings -- the stage-5 timing oracles |
+| `22-6530-2_7030RefMan.pdf`, `C22-6531_/6578`, `C28-6129_STRAP-II`, `X22-6533_PocketCard` | The ISA/assembler references cited throughout `../bsv/` and `../strap/` |
+
+## Building on top of this -- the codesign queue (in priority order)
+
+1. **The floating-point diagnostic** (`jb_af1c`): transcribe a block
+   exercising `+ * L ST K E+ SHF` and run it against `StretchFP.bsv`.
+   First real historical FP source validating the stage-4c arithmetic.
+2. **The memory tests** (`ja_bp6a` smallest first): run against the
+   interleaved `StretchMemory.bsv` -- the first source to exercise the
+   real memory model rather than a single BRAM.
+3. **The DCP Memory Compare / Panel Dump** (once CTL/LOC and the
+   H-routines are in): the largest self-contained DCP slices.
+4. **MCP fragments** (once interrupts + exchange exist): the OS source.
+
+Cross-reference discipline (per this survey): every `../strap/programs/
+*.strap` transcription names its source file and page range in its
+header; `../bsv/*.bsv` cite the Reference Manual / pocket card page for
+each encoding and semantic; `microarchitecture_plan.md` Appendix A
+cites the primary source for every specification fact. This table is
+the reverse index from surviving source -> implementation.
