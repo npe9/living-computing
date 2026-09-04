@@ -104,12 +104,14 @@ source (the `jb_af1c` FP diagnostic, the I-Box decks, the DCP) with the
 listing-oracle-then-run-then-injection pattern (AGENTS.md), not by
 hand vectors alone. "Enables" notes the dependency chain.
 
-1. **Finish the FP-compare family.** Reimplement `fpCompare`'s
-   Compare-for-Range path (KR/KMGR) per Ref. Manual p.90-91, then run
-   `jb_af1c` F202G (KR, p.45) bit-exact. Both enablers (BB1,$AH set,
-   Z,$IND clear) are done. *In progress — the immediate next step.*
+1. **Finish the FP-compare family.** DONE (`20edcf9`): KR/KMGR range
+   path fixed per Ref. Manual p.91 and `jb_af1c` F202G (p.45) runs
+   bit-exact; K/KMG were already verified via F202A1-6/A15-20. The
+   whole COMPARE family (K/KMG/KR/KMGR, all of AL/AE/AH, normal and
+   extreme ranges) is now validated against the diagnostic.
 2. **FP arithmetic against the diagnostic** — the largest FP gap and
-   the E-box's core. Run `jb_af1c` add/subtract/multiply blocks to
+   the E-box's core; **the current focus now that item 1 is done.**
+   Run `jb_af1c` add/subtract/multiply blocks to
    verify +/+MG/-/M+/* on real operands (result checked by a following
    K compare, the pattern already validated), then implement the open
    ops in the order the diagnostic reaches them: `*+` (multiply-add),
