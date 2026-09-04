@@ -47,15 +47,16 @@ access status, and what was retrieved, so the trail is durable.
     30-Dec 1 1965, part II, pp.117-126, doi:10.1145/1463891.1463938 (ACM
     DL, paywalled -- the primary source; would confirm the Stretch
     platform of the original MATHLAB).
-  - Secondary survey (retrieved, this folder): *Symbolic Mathematical
-    Computation 1965-1975: The emergence of a discipline* (arXiv
-    2501.16457, 2025) -- documents MATHLAB's MITRE origin and Engelman;
-    does NOT itself state the Stretch platform.
+  - Secondary survey (retrieved): *Symbolic Mathematical Computation
+    1965-1975* (arXiv 2501.16457, 2025) -- MATHLAB's MITRE origin.
   - Wikipedia: *MATHLAB*, *Carl Engelman*.
-- **Note**: widely-available secondary sources place MATHLAB at MITRE in
-  the mid-1960s but do not explicitly name Stretch as its host; the
-  Stretch/LISP-1.5 attribution comes from the project's own archival
-  research and would be confirmed by the paywalled 1965 primary paper.
+- **Stretch platform CONFIRMED by the primary paper** (retrieved,
+  `Engelman_MATHLAB_1965_FJCC_1463891.1463938.pdf`): MATHLAB ran "on the
+  time-shared system of PROJECT MAC at MIT and on the IBM 7030 at the
+  MITRE Corporation", and cites "Heckel ... for the IBM 7030 (STRETCH)
+  at MITRE" -- so MATHLAB and the LISP symbolic-differentiation work it
+  builds on ran on MITRE's Stretch, in LISP. This settles the
+  Stretch/LISP attribution from a primary source.
 - **Source code**: none known to survive.
 
 ## Retrieved into this folder
@@ -68,16 +69,16 @@ access status, and what was retrieved, so the trail is durable.
 - `AWRE_UKfortran_contributions_php_pglb_FI.txt` -- the jubilee
   contributions index (bibliography and further reading).
 
-## Opened in the browser for manual saving (script-blocked)
-These serve a bot challenge or paywall to `curl`; opened via `open` in
-the default browser so they can be saved into this folder by hand:
-- **LA-6943-H** (Lazarus, *Computing at LASL*, IVY/COLASL):
-  `https://sgp.fas.org/othergov/doe/lanl/docs1/LA-6943-H.pdf`
-- **MATHLAB** primary (Engelman 1965 FJCC):
-  `https://dl.acm.org/doi/10.1145/1463891.1463938`
-- **COLASL** (1962 ACM National Conference):
-  `https://dl.acm.org/doi/10.1145/800198.806099`
+## Retrieved (ACM papers, saved from the browser)
+- `Engelman_MATHLAB_1965_FJCC_1463891.1463938.pdf` (10pp) -- the MATHLAB
+  primary paper (confirms the Stretch/MITRE/LISP platform, above).
+- `COLASL_automatic_coding_system_ACM1962_800198.806099.pdf` (2pp) --
+  the COLASL automatic coding system (LASL), the companion to IVY.
 
-Everything not retrieved above is a citation/URL: the primary documents
-are paywalled (ACM) or bot-protected (FAS/OSTI), and no source code for
-any of these systems is known to survive.
+## Still to save (script-blocked; open in a browser)
+- **LA-6943-H** (Lazarus, *Computing at LASL*, IVY/COLASL):
+  `https://sgp.fas.org/othergov/doe/lanl/docs1/LA-6943-H.pdf` -- FAS
+  serves a bot challenge to `curl`; a real browser gets it.
+
+No source code for any of these systems is known to survive; the above
+is the surviving documentation.
