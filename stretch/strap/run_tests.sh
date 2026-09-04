@@ -197,6 +197,15 @@ run "FP compare block (jb_af1c F202G KR range, encoding)" python3 verify_fp_comp
 run "FP compare block (jb_af1c F202G KR range on the model)" ./run_program.sh programs/fp_compare_f202g.strap StretchFpCmpGTb \
     "PC=$(python3 -c 'from strap_asm import assemble; print(assemble(open("programs/fp_compare_f202g.strap").read()).symtab["PASS"]//32)')"
 
+# -- 1i''''. FP Add-to-Memory arithmetic checks (jb_af1c F204A1-3, p.53):
+# ENCODING only. The transcription assembles bit-for-bit against the
+# page (M+, CT0110, VFL BU load/store). The model run reaches PASS but
+# is NOT wired here: it is not yet a discriminating test of M+ (its XFP
+# operands and "error if fractions added" check pass even for an M+ that
+# leaves the sum unchanged) -- see the program header and the plan's FP
+# row. Encoding is the verified part.
+run "FP add-to-memory block (jb_af1c F204A, encoding)" python3 verify_fp_arith_f204a_listing.py
+
 # -- 1j. Store-close-to-fetch: store a word then immediately reload it;
 # the load must read the new value, not the stale one. The hazard the FP
 # sign-modifier codesign exposed; fixed by tracking each E-box level's

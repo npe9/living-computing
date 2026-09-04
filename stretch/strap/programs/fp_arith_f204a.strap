@@ -1,0 +1,95 @@
+! Floating-point diagnostic jb_af1c, routine F204 "ADD TO MEM TEST
+! ROUTINE" / F204A "ARITHMETIC CHECKS", sub-tests 1-3 (docs/
+! jb_af1c_floating-point.pdf p.53, octal 012331.00-012347.40) -- the
+! first FP ARITHMETIC block of the diagnostic run on this model (M+,
+! Add to Memory). Roadmap step 2.
+!
+! Each sub-test sets a memory operand and adds a floating-point operand
+! to it, then checks (with a connective + the result-greater-zero
+! indicator) that the fractions were NOT added when the exponents are
+! far apart -- the operand whose exponent is more than 48 lower is
+! insignificant and must not change the sum:
+!   A1: ROS := FK23 (XFP range); ROS += FK24 (XFP)  -- error if added
+!   A2: ROS := FK23 (XFP);       ROS += FPK38 (N range)
+!   A3: ROS := FK23 (XFP);       ROS += FK25 (XFN)
+! Mechanism per sub-test: L(BU),FK23 / ST(BU,64),ROS put FK23 in the
+! memory word ROS; L(U),<op> / M+(U),ROS add the FP operand to ROS;
+! CT0110(BU,64),ROS is a connective whose result sets RGZ if any bit
+! changed; BRGZ,SERS goes to the error routine if RGZ is on ("error if
+! fractions added"). A correct M+ leaves the sum equal to FK23 (the
+! low operand dropped), CT0110 finds no change, RGZ stays off, and all
+! three fall through to the PASS halt at F204A4's location. If M+
+! wrongly adds the insignificant fraction, RGZ comes on and BRGZ
+! branches to the SERS FAIL halt.
+!
+! Substitutions (SSIP framework at real listed addresses): SERS (octal
+! 1304) -> FAIL halt, SEN (octal 1310) -> scratch, PASS (octal 12350,
+! F204A4's start) -> halt. ROS (octal 22355) is the result/memory
+! operand word. Constants from the pools p.176-178.
+!
+! Instructions: L (VFL BU load), ST (VFL store), L(U)/M+(U) (FP load /
+! add to memory), CT0110 (connective), SIC, BRGZ -- all implemented;
+! the VFL/FP/connective encodings were checked against this page's
+! machine code before transcribing. verify_fp_arith_f204a_listing.py
+! checks every half-word and constant bit-for-bit.
+!
+! Observed / status: the transcription is bit-exact against the page
+! (verify_fp_arith_f204a_listing.py, the strong part), and the block
+! runs to the PASS halt on the model. BUT it is NOT yet a discriminating
+! test of M+ and is deliberately NOT in the regression suite as a model
+! run. Reason: for "error if fractions added", the correct result is
+! ROS unchanged (= FK23, the low operand dropped), which an M+ that did
+! nothing would also produce -- only an M+ that WRONGLY changes the sum
+! fails. And these operands are XFP/flagged, so they exercise fpAdd's
+! flagged-operand path, not its normal fraction-shift; an injection in
+! the fraction-shift path (`>> adiff` -> `>> 0`) left the outcome at
+! PASS, so it did not discriminate. A real discriminating injection must
+! target fpAdd's flagged (XFP/XFN) add and the CT0110/RGZ check
+! semantics -- an OPEN item (see the plan's FP row). Until then only the
+! bit-exact encoding is claimed as verified.
+
+! -- SSIP framework substitutes --
+        SLC, (8)1304.0
+SERS    BEW, $
+        SLC, (8)1310.0
+SEN     DD(BU,64,8), 0
+        SLC, (8)22355.0
+ROS     DD(BU,64,8), 0
+
+! -- constants (pools p.176-178) --
+        SLC, (8)22053.0
+FPK38   DD(BU,64,8), (8)0031052525252525252520
+        SLC, (8)22171.0
+FK23    DD(BU,64,8), (8)1777525252525252525240
+FK24    DD(BU,64,8), (8)1577452525252525252520
+FK25    DD(BU,64,8), (8)1577777777777777777760
+
+! -- code (verbatim, at the listing's addresses) --
+        SLC, (8)12331.0
+F204A1  L(BU), FK23         ! EXP IN XFP RANGE
+        ST(BU,64), ROS
+        L(U), FK24          ! EXP XFP RANGE
+        M+(U), ROS
+        CT0110(BU,64), ROS
+        SIC, SEN
+        BRGZ, SERS          ! error if fractions added
+F204A2  L(BU), FK23         ! EXP IN XFP RANGE
+        ST(BU,64), ROS
+        L(U), FPK38         ! EXP N RANGE
+        M+(U), ROS
+        CT0110(BU,64), ROS
+        SIC, SEN
+        BRGZ, SERS
+F204A3  L(BU), FK23         ! EXP IN XFP RANGE
+        ST(BU,64), ROS
+        L(U), FK25          ! EXP XFN RANGE
+        M+(U), ROS
+        CT0110(BU,64), ROS
+        SIC, SEN
+        BRGZ, SERS
+
+! -- PASS halt where F204A4 begins --
+        SLC, (8)12350.0
+PASS    BEW, $
+
+        END, F204A1

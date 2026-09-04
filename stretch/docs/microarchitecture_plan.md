@@ -119,8 +119,18 @@ hand vectors alone. "Enables" notes the dependency chain.
    BRGZ (result-greater-zero) to the error routine -- "ERROR IF
    FRACTIONS ADDED" (it checks that far-apart exponents do not add the
    fractions). All instructions it uses (L, ST, M+, CT0110, SIC, BRGZ)
-   are implemented, so it is transcribe-and-run ready; it mixes VFL and
-   FP ops, so transcribe carefully and lean on the listing oracle.
+   are implemented; F204A1-3 are transcribed (`fp_arith_f204a.strap`)
+   and assemble BIT-EXACT (`verify_fp_arith_f204a_listing.py`, in the
+   suite) and run to PASS. STILL OPEN: a discriminating model test of
+   M+. The "error if fractions added" check passes even for an M+ that
+   leaves the sum unchanged (correct M+ drops the low XFP operand, so
+   ROS stays = FK23), and the operands are XFP/flagged so they exercise
+   fpAdd's flagged-operand path, not its fraction shift -- a
+   fraction-shift injection did not discriminate. A real test needs an
+   injection in fpAdd's flagged (XFP/XFN) add plus understanding the
+   CT0110/RGZ check, OR different F204A sub-tests (A5 "check result
+   exp++2 and fract+1" expects the sum TO change -- likely the
+   discriminating one). Transcribe carefully; it mixes VFL and FP ops.
    Related nearby routine also located and runnable-with-effort: F203B
    "EXP RNG INDIC TEST" (p.52, octal 012260+) verifies the exponent-
    range indicators XPFP/XPH/XPL/XPU (set by ST, cleared by Z,$IND)
