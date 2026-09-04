@@ -121,6 +121,16 @@ run "Look-ahead: branch guess + recovery" ./run_program.sh programs/la_branch_gu
 # is deferred to the multi-cycle arithmetic unit (stage 4e).
 run "Floating point: L / * / + / ST" ./run_fp_test.sh
 
+# -- 1g. Address Invalid (Reference Manual p.20): a floating-point load
+# from a word beyond the installed core (98304 words) sets AD and no-ops.
+# Injection (boundary moved to the 18-bit type max) fails both checks.
+run "Address Invalid (AD, no-op)" ./run_fp_addr_test.sh
+
+# -- 1h. Floating-point exponent and shift ops (Reference Manual
+# pp.101-102): E+I (add immediate to exponent), E+ (add to exponent),
+# SHF (shift fraction). Injection G (E+ subtracts) fails the E+ check.
+run "Floating point: E+ / E+I / SHF" ./run_fp_exp_test.sh
+
 # -- 2. Problem 2.1: Cyclic Bit Shifting --
 run "Problem 2.1" ./run_program.sh programs/problem_2_1.strap StretchProblem21Tb \
     "DOG_rotated:32=0x6e5d4c3b2a19087f" \

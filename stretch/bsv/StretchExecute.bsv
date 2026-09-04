@@ -1375,8 +1375,11 @@ function ActionValue#(Tuple4#(HWordAddr, Maybe#(Tuple2#(Bit#(4), IndexWord)),
         // InstalledWords = 98304, six units) sets AD and the
         // instruction "is executed as a NO OPERATION". A floating-point
         // instruction always addresses a full word, so this one guard
-        // covers L/ST and every arithmetic op below.
-        if (ea >= 18'd98304)
+        // covers L/ST and every arithmetic op below -- except SHF and
+        // E+I, whose "address" is a shift spec / immediate exponent
+        // and is explicitly not boundary-monitored (Reference Manual
+        // pp.101-102).
+        if (ea >= 18'd98304 && fp.code != 7'b1110010 && fp.code != 7'b1110110)
           ind = setBit(ind, ind_AD, 1);
         else begin
         Bool normalized = (fp.unnorm == 0);
@@ -1391,18 +1394,69 @@ function ActionValue#(Tuple4#(HWordAddr, Maybe#(Tuple2#(Bit#(4), IndexWord)),
         // into a full-width divider, and the real machine's divide is
         // iterative anyway (~3.5 quotient bits per cycle, Buchholz
         // p.213). Until then it decodes but does not execute.
+        Bool isSHF = (c == 7'b1110010);
+        Bool isEplI = (c == 7'b1110110);  // E+I (add immediate to exponent)
         Bool known = (c == 7'b0000010 || c == 7'b0100010 || c == 7'b0000110 || c == 7'b0100110
                    || c == 7'b0001010 || c == 7'b0101010 || isST
                    || c == 7'b0010010 || c == 7'b0110010 || c == 7'b0010110 || c == 7'b0110110
-                   || c == 7'b0011010);
+                   || c == 7'b0011010 || c == 7'b1010110 || isEplI || isSHF);
         if (!known)
-          ind = setOpInvalid(ind);   // /, R/, double precision, SRT, SHF, E+ ...: not yet
+          ind = setOpInvalid(ind);   // /, R/, double precision, SRT, LFT, *+ ...: not yet
         else if (isST) begin
           FpNum v = fpApplySignMods(acc, fp.absSign, fp.invSign);
           st.writeWord(ea, fpToWord(v));
           ind = setBit(ind, ind_MOP, 1);
           ind = setResultIndicatorsFp(ind, v);
           ind = setRangeIndicators(ind, fpRangeBits(v, False, v.ef == 1));
+        end else if (isSHF) begin
+          // Shift Fraction (p.101): shift the 48-bit accumulator
+          // fraction; bits 0-10 of the effective address = amount,
+          // bit 11 = direction (0 left, 1 right), the direction subject
+          // to the sign modifiers. Exponent unchanged. A one shifted
+          // left past the top (bit 12) sets LC; noisy mode fills a left
+          // shift with ones. Does not address storage.
+          Bit#(11) amt = ea[17:7];
+          Bit#(1) dir = ea[6];
+          if (fp.absSign == 1) dir = 0;
+          if (fp.invSign == 1) dir = ~dir;
+          FpNum v = acc;
+          Bool lc = False;
+          if (dir == 0) begin // left
+            Bit#(96) wide = {48'b0, acc.frac} << amt;
+            v.frac = wide[47:0];
+            lc = (wide[95:48] != 0);
+            if (noisy && amt != 0) v.frac = v.frac | (48'hFFFFFFFFFFFF >> (48 - (amt > 48 ? 48 : amt[5:0])));
+          end else begin // right
+            Bit#(96) wide = {48'b0, acc.frac} >> amt;
+            v.frac = wide[47:0];
+          end
+          st.writeWord(addrAccLeft, fpAccLeft(v, accL));
+          st.writeWord(addrAccSignByte, fpSignByte(v, accS));
+          ind = setBit(ind, ind_MOP, 0);
+          ind = setResultIndicatorsFp(ind, v);
+          if (lc) ind = setBit(ind, ind_LC, 1);
+          ind = setRangeIndicators(ind, fpRangeBits(v, False, v.ef == 1));
+          ind = setBit(ind, ind_ZM, 0);
+        end else if (isEplI) begin
+          // Add Immediate to Exponent (p.102): bits 0-11 of the
+          // effective address form a 12-bit exponent added to the
+          // accumulator's exponent; fraction unchanged, normalized if
+          // specified. Does not address storage.
+          FpNum imm = FpNum { ef: ea[17], em: ea[16:7], es: ea[6], frac: 0, sign: 0, flags: 0 };
+          Int#(14) e = signExtend(fpExp(acc)) + signExtend(fpExp(imm));
+          let {v0, gen} = fpMakeExp(e, acc.frac, acc.sign, acc.flags);
+          FpNum v = v0;
+          if (normalized && v.ef == 0 && v.frac != 0) begin
+            let {f48, adj, lc} = fpNormalize96(0, {v.frac, 48'b0}, True, noisy);
+            let {vn, g} = fpMakeExp(signExtend(fpExp(v)) + adj, f48, v.sign, v.flags);
+            v = vn; gen = gen || g;
+          end
+          st.writeWord(addrAccLeft, fpAccLeft(v, accL));
+          st.writeWord(addrAccSignByte, fpSignByte(v, accS));
+          ind = setBit(ind, ind_MOP, 0);
+          ind = setResultIndicatorsFp(ind, v);
+          ind = setRangeIndicators(ind, fpRangeBits(v, gen, !gen && v.ef == 1));
+          ind = setBit(ind, ind_ZM, 0);
         end else if (prefetchCount < 1)
           needsRead = tagged Valid ea;
         else begin
@@ -1480,6 +1534,29 @@ function ActionValue#(Tuple4#(HWordAddr, Maybe#(Tuple2#(Bit#(4), IndexWord)),
               ind = setResultIndicatorsFp(ind, r.res);
               ind = setRangeIndicators(ind, fpRangeBits(r.res, r.generated, r.propagated));
               ind = setBit(ind, ind_ZM, pack(r.zm));
+            end
+            7'b1010110: begin // E+ (add to exponent, p.102): the
+                              // addressed operand's exponent (its sign
+                              // subject to the sign modifiers) is added
+                              // to the accumulator's exponent; fraction
+                              // and sign of the operand are ignored.
+              FpNum oe = opnd0;
+              if (fp.absSign == 1) oe.es = 0;
+              if (fp.invSign == 1) oe.es = ~oe.es;
+              Int#(14) e = signExtend(fpExp(acc)) + signExtend(fpExp(oe));
+              let {v0, gen} = fpMakeExp(e, acc.frac, acc.sign, acc.flags);
+              FpNum v = v0;
+              if (normalized && v.ef == 0 && v.frac != 0) begin
+                let {f48, adj, lc} = fpNormalize96(0, {v.frac, 48'b0}, True, noisy);
+                let {vn, g} = fpMakeExp(signExtend(fpExp(v)) + adj, f48, v.sign, v.flags);
+                v = vn; gen = gen || g;
+              end
+              st.writeWord(addrAccLeft, fpAccLeft(v, accL));
+              st.writeWord(addrAccSignByte, fpSignByte(v, accS));
+              ind = setBit(ind, ind_MOP, 0);
+              ind = setResultIndicatorsFp(ind, v);
+              ind = setRangeIndicators(ind, fpRangeBits(v, gen, !gen && v.ef == 1));
+              ind = setBit(ind, ind_ZM, 0);
             end
             default: ind = setOpInvalid(ind);
           endcase

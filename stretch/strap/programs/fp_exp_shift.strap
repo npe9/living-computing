@@ -1,0 +1,24 @@
+! Floating-point exponent and shift operations (Reference Manual
+! pp.101-102): E+I (add immediate to exponent), E+ (add to exponent),
+! SHF (shift fraction). Operands and results built in Python
+! (fp_exp_expected.py). Each: load 2.0, apply the op, store.
+!   E+I +1 : 2.0 -> 4.0 (address 128 -> 12-bit exponent field = +1)
+!   E+  ONE: 2.0 + ONE's exponent(+1) -> 4.0
+!   SHF R1 : fraction 0.5 -> 0.25, exponent 2 unchanged -> unnormalized
+START   L(N), TWO
+        E+I(N), 128.0       ! add immediate exponent +1
+        ST(N), REPLI
+        L(N), TWO
+        E+(N), ONE          ! add ONE's exponent (+1)
+        ST(N), REPL
+        L(N), TWO
+        SHF(N), 192.0       ! shift fraction right 1: amount=1 (bits 0-10), dir=right (bit 11)
+        ST(N), RSHF
+DONE    BEW, $
+        CNOP
+TWO     DD(BU,64), 0
+ONE     DD(BU,64), 0
+REPLI  DD(BU,64), 0
+REPL   DD(BU,64), 0
+RSHF   DD(BU,64), 0
+        END, START
