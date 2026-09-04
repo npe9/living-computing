@@ -67,6 +67,14 @@ run "Branch-on-Bit encoding field check" python3 verify_bb_encoding.py
 # placed at a half-word (.40) boundary, straddling a word.
 run "Branch-on-Bit listing bit-exact (jb_af1c)" python3 verify_bb_listing.py
 
+# -- 0d'''. BB changing an INDICATOR-register bit (p.41): BB1,$AH sets
+# the AH indicator, then BB,$AH branches on it. Halts at PASS iff the
+# indicator write took effect (folded into `ind`, since writeWord(11)
+# is a no-op). Injection (fold removed): halts at FAIL. Unblocks the
+# BB1,$AH pre-set in jb_af1c's KR range-compare routine F202G.
+run "Branch-on-Bit sets an indicator bit" ./run_program.sh programs/bb_indicator.strap StretchBBIndTb \
+    "PC=$(python3 -c 'from strap_asm import assemble; print(assemble(open("programs/bb_indicator.strap").read()).symtab["PASS"]//32)')"
+
 # -- 0e. I-Box 4 routine 150's CB / CB+ / CBR / CBR+ blocks (plus their
 # LX/SX setup and XW index words) assembled verbatim at the listing's
 # own addresses and compared against docs/jb_ax4b_ibox-4.pdf pp.155/159's

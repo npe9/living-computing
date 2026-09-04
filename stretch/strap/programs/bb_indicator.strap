@@ -1,0 +1,33 @@
+! Branch on Bit changing an INDICATOR-register bit (Reference Manual
+! p.41: "BRANCH ON BIT may also be used to test and change the contents
+! of positions 20-63 of the indicator register"). This is the capability
+! jb_af1c routine F202G's `BB1,$AH` needs before its KR range compares;
+! it was a known gap (StretchStorage.writeWord(11) is a no-op) until the
+! BitBranch arm was taught to fold an indicator-word write into `ind`.
+!
+! The test establishes AH off, sets it with BB1, and proves it took:
+!   L(U),CONST / K(U),CONST  -> compare a value to itself: AE on, so AL
+!                               and AH are off (AH starts 0)
+!   BB1,$AH,BAD              -> AH is 0, so BB1 (branch on bit=1) does
+!                               NOT branch (good), but SETS AH to 1
+!   BB,$AH,PASS             -> AH is now 1, so BB branches to PASS
+! A correct indicator write reaches PASS; if the write is lost (the old
+! behavior) BB,$AH does not branch and the program halts at FAIL. PC
+! alone distinguishes them.
+!
+! Instructions: L(U), K(U), BB1, BB, BEW -- all implemented. $AH is
+! indicator bit 62 (word 11). Injection (the indicator-write fold
+! removed, i.e. back to writeWord(11) which drops the write): halts at
+! FAIL, as predicted.
+
+        SLC, (8)2000.0
+START   L(U), CONST         ! load the operand
+        K(U), CONST         ! compare to itself: AE on, AH off
+        BB1, $AH, BAD       ! AH off: no branch; sets AH := 1
+        BB,  $AH, PASS      ! AH now on: branch to PASS
+FAIL    BEW, $              ! AH was NOT set (write lost): failure
+BAD     BEW, $              ! BB1 wrongly branched on a 0 bit
+PASS    BEW, $              ! AH was set: success
+CONST   DD(BU,64,8), (8)0000125252525252525240
+
+        END, START

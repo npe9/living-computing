@@ -1739,24 +1739,18 @@ function ActionValue#(Tuple4#(HWordAddr, Maybe#(Tuple2#(Bit#(4), IndexWord)),
       // BSV index 63-p (StretchTypes.bsv), matching insertFieldBits'
       // shiftAmt=64-off-len for len==1.
       //
-      // KNOWN GAP -- BB on the INDICATOR register (word 11): p.41 says
-      // "BRANCH ON BIT may also be used to test and change the contents
-      // of positions 20-63 of the indicator register", but this write
-      // goes through st.writeWord, and StretchStorage.writeWord(11) is
-      // a no-op (indicators are written once per rule via
-      // setIndicatorBits; a plain Reg cannot take two writes in one
-      // rule -- see StretchStorage's writeWord comment). So a BB that
-      // SETS an indicator bit reads it correctly but does not change
-      // it. jb_af1c routine F202G (KR Compare-for-Range tests, p.45)
-      // needs this: it pre-sets AH with `BB1,$AH,$+1.` before each KR,
-      // whose range result depends on AH's prior state (the else-branch
-      // at the ind_AH read below). Fixing it means special-casing the
-      // indicator word here -- fold the modified bit into `ind` (the
-      // Word64 the shared tail writes via setIndicatorBits) instead of
-      // calling st.writeWord -- so F202G can run. Read-only locations
-      // otherwise ("remain unchanged when there is any attempt to
-      // change them", p.41) are not modeled; special registers 0-31 are
-      // Reg-backed.
+      // BB on the INDICATOR register (word 11): p.41 says "BRANCH ON BIT
+      // may also be used to test and change the contents of positions
+      // 20-63 of the indicator register". A plain st.writeWord(11) is a
+      // no-op (indicators are written once per rule via setIndicatorBits;
+      // a Reg cannot take two writes in one rule), so the write below
+      // special-cases word 11 and folds the modified bit into `ind`
+      // instead -- see that arm. Verified by bb_indicator.strap
+      // (BB1,$AH sets AH, then BB,$AH branches on it); it unblocks
+      // jb_af1c F202G's `BB1,$AH` before its KR range compares. Other
+      // read-only locations ("remain unchanged when there is any attempt
+      // to change them", p.41) are not modeled; special registers 0-31
+      // are Reg-backed.
       //
       // Store-close-to-fetch and index consistency (StretchCore.bsv):
       //   * BB is NOT isEboxClass, so it is never loaded into a look-
@@ -1794,8 +1788,19 @@ function ActionValue#(Tuple4#(HWordAddr, Maybe#(Tuple2#(Bit#(4), IndexWord)),
                            2'b11: 1'b1;      // set to one
                            default: tested;
                          endcase;
-            st.writeWord(bw, insertFieldBits(prefetch[0], baBit(ba), 1,
-                                             zeroExtend(nb)));
+            if (bw == 11) begin
+              // BB changing an INDICATOR-register bit (p.41: positions
+              // 20-63). writeWord(11) is a no-op, so fold the modified
+              // bit into `ind` -- the Word64 the shared tail writes once
+              // via setIndicatorBits -- instead. prefetch[0] read back
+              // the indicator value (lookupSpecial(11)=indicators), so
+              // it equals `ind` here; bits 0-19 are read-only, left as
+              // is. Unblocks jb_af1c F202G's BB1,$AH before its KRs.
+              if (baBit(ba) >= 20)
+                ind = insertFieldBits(ind, baBit(ba), 1, zeroExtend(nb));
+            end else
+              st.writeWord(bw, insertFieldBits(prefetch[0], baBit(ba), 1,
+                                               zeroExtend(nb)));
           end
         end else
           needsRead = tagged Valid bw;
