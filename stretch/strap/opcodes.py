@@ -218,6 +218,37 @@ MISC_CODES = {
 }
 
 # ---------------------------------------------------------------------
+# BRANCH ON BIT (X22-6533 pocket card "BRANCH ON BIT -- Strap Format:
+# OP,B,(I),A(K)"; semantics Reference Manual p.41 "Branch on Bit").
+# Full-word instruction: B is a 24-bit BIT address (bits 0-23) with a
+# 4-bit index I (bits 28-31); A is a 19-bit branch address (bits 32-50)
+# with the 1-bit X1 flag K (bit 63); the identifying literal 111000000
+# sits at bits 51-59. Two orthogonal modifier axes occupy bits 60-62:
+#
+#   bit 62 (cond)  -- the tested bit's value that TAKES the branch:
+#                     1 for BB* (branch on bit set), 0 for BZB* (branch
+#                     on zero bit). "If its status matches that of bit
+#                     62 of the instruction ... replace the IC" (p.41).
+#   bits 60-61 (mod) -- how the tested bit is set AFTERWARD, whether or
+#                     not the branch was taken (RefMan p.41 table):
+#                       00 unchanged, 01 set to zero, 10 inverted (negate),
+#                       11 set to one.
+#
+# Each entry is (mod2, cond1). Value maps directly: mod2 is the 2-bit
+# field {bit60,bit61}, cond1 is bit 62. See StretchExecute.bsv's
+# BitBranch arm (decode: modAbc[2:1]=mod, modAbc[0]=cond).
+BB_CODES = {
+    "BB":   (0b00, 1),  # Branch on Bit
+    "BB1":  (0b11, 1),  # Branch on Bit and Set to One
+    "BBN":  (0b10, 1),  # Branch on Bit and Negate (invert)
+    "BBZ":  (0b01, 1),  # Branch on Bit and Zero (set to zero)
+    "BZB":  (0b00, 0),  # Branch on Zero Bit
+    "BZB1": (0b11, 0),  # Branch on Zero Bit and Set to One
+    "BZBN": (0b10, 0),  # Branch on Zero Bit and Negate (invert)
+    "BZBZ": (0b01, 0),  # Branch on Zero Bit and Zero (set to zero)
+}
+
+# ---------------------------------------------------------------------
 # Indicator names -> bit number in word 11 (StretchTypes.bsv ind_*).
 # Used both for $<name> system symbols and for parsing Branch-on-
 # -Indicator mnemonics B[Z]<name>[Z] (C22-6531 Appendix A footnote 2).

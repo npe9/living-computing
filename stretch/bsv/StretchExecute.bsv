@@ -1723,7 +1723,67 @@ function ActionValue#(Tuple4#(HWordAddr, Maybe#(Tuple2#(Bit#(4), IndexWord)),
           endcase
         end
       end
-      tagged BitBranch .*: ind = setOpInvalid(ind);
+      // -----------------------------------------------------------
+      // BRANCH ON BIT (Reference Manual p.41). Test one bit anywhere
+      // in storage at the effective bit address; if its value matches
+      // bb.modAbc[0] (the branch-condition bit, IBM bit 62 -- 1 for
+      // BB*, 0 for BZB*) the branch is taken. Then, WHETHER OR NOT the
+      // branch was taken, the tested bit is set per bb.modAbc[2:1]
+      // (IBM bits 60-61): 00 unchanged, 01 set to zero, 10 inverted,
+      // 11 set to one. Read-modify-write, so it uses the two-phase
+      // needsRead/prefetch path (same shape as BranchOrMisc's Refill):
+      // phase 1 (prefetchCount==0) requests the word; phase 2 tests
+      // the bit, decides the branch, and writes the word back.
+      // 00 (unchanged) issues NO write -- avoiding a phantom store-
+      // close-to-fetch hazard. Bit numbering: IBM bit p in a word is
+      // BSV index 63-p (StretchTypes.bsv), matching insertFieldBits'
+      // shiftAmt=64-off-len for len==1. Read-only locations (which
+      // "remain unchanged when there is any attempt to change them",
+      // p.41) are not modeled: the special registers 0-31 are Reg-
+      // backed and no test currently branches on a bit within one.
+      //
+      // Store-close-to-fetch and index consistency (StretchCore.bsv):
+      //   * BB is NOT isEboxClass, so it is never loaded into a look-
+      //     ahead level and storeTarget() is deliberately NOT extended
+      //     to it (a case there would be dead code). Instead iboxHazard
+      //     hits its default (h=True), so BB waits for the whole look-
+      //     ahead to DRAIN before it executes -- a strictly stronger
+      //     guarantee than the level-to-level storeAddr interlock. BB's
+      //     read of its bit word thus never sees an un-retired earlier
+      //     store.
+      //   * The phase-1 and phase-2 effAddr24 calls read the same index
+      //     bb.i1: a parked instruction is the look-ahead head
+      //     (auActive), levels retire head-first, and the only writer
+      //     of index ahead of time is wrong-guess recovery, which
+      //     resolves before any younger instruction reaches the head --
+      //     so nothing rewrites bb.i1 between park and re-entry.
+      //   * KNOWN-UNTESTED sub-case: a BB store followed immediately by
+      //     an E-box LOAD of the same word. Same class as SIC (also
+      //     non-Ebox, also writes storage, also absent from
+      //     storeTarget), whose store-then-execute path IS validated
+      //     via recentStore(); no program exercises the BB variant yet.
+      tagged BitBranch .bb: begin
+        BitAddr  ba = effAddr24(st, bb.addr1, bb.i1);
+        WordAddr bw = baWord(ba);
+        if (prefetchCount >= 1) begin
+          Bit#(6) sh     = 63 - baBit(ba);
+          Bit#(1) tested = prefetch[0][sh];
+          if (tested == bb.modAbc[0])
+            next = effAddr19(st, bb.addr2, {3'b0, bb.idx}); // K: X1 only
+          Bit#(2) mod = bb.modAbc[2:1];
+          if (mod != 2'b00) begin
+            Bit#(1) nb = case (mod)
+                           2'b01: 1'b0;      // set to zero
+                           2'b10: ~tested;   // invert (negate)
+                           2'b11: 1'b1;      // set to one
+                           default: tested;
+                         endcase;
+            st.writeWord(bw, insertFieldBits(prefetch[0], baBit(ba), 1,
+                                             zeroExtend(nb)));
+          end
+        end else
+          needsRead = tagged Valid bw;
+      end
       tagged Unimplemented: ind = setOpInvalid(ind);
       tagged Invalid:       ind = setOpInvalid(ind);
 

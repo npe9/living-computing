@@ -1,0 +1,79 @@
+! Branch-on-Bit (BB family) acceptance test -- the first program in
+! this project to execute the BRANCH ON BIT instruction, which the
+! model previously decoded but failed loud on (StretchExecute.bsv
+! "tagged BitBranch .*: setOpInvalid").
+!
+! Encoding source: X22-6533 pocket card "BRANCH ON BIT -- Strap Format:
+! OP,B,(I),A(K)" (the eight mnemonics BB/BB1/BBN/BBZ/BZB/BZB1/BZBN/BZBZ)
+! and Reference Manual p.41 "Branch on Bit" for the semantics:
+!   * the bit at the effective bit address B is tested; if it matches
+!     instruction bit 62 (1 for BB*, 0 for BZB*) the branch to A is
+!     taken;
+!   * then, WHETHER OR NOT the branch was taken, the tested bit is set
+!     per instruction bits 60-61: 00 unchanged, 01 zero, 10 invert
+!     (negate), 11 one -- so BB=00, BBZ/BZBZ=01, BBN/BZBN=10,
+!     BB1/BZB1=11.
+!
+! Self-checking chain (same mechanism as ibox1_sic_cb_cbz): a single
+! word W starts all zeros, and the ONLY path to the PASS halt (BEW,$ at
+! label DONE) requires every step below to behave correctly. Any wrong
+! result falls into a distinct "BEW,$" HANG whose address names the
+! failure. On this model a branch to itself halts (StretchCore.step
+! returns True when next==pc), so the testbench PC check distinguishes
+! pass (halted at DONE) from fail (halted at a HANG).
+!
+!   S1 BZB,W,S2   W.0 is 0  -> branch on ZERO bit taken (cond=0)
+!   S2 BB,W,HB    W.0 is 0  -> branch on bit NOT taken (cond=1); fall thru
+!   S3 BB1,W,HC   W.0 is 0  -> NOT taken, but sets W.0:=1 (modify on a
+!                             NON-taken branch -- the key case)
+!   S4 BB,W,S5    W.0 is 1  -> taken, proving S3's modify happened
+!   S5 BBN,W,S6   W.0 is 1  -> taken (cond=1) and inverts W.0 to 0
+!                             (modify on a TAKEN branch)
+!   S6 BZB,W,DONE W.0 is 0  -> taken, proving S5's invert happened
+!
+! Coverage: branch-on-1 vs branch-on-0 (S1/S2/S4/S6), modify-on-not-
+! taken (S3->S4), modify-on-taken (S5->S6). Predicted bug injections
+! (StretchExecute.bsv's BitBranch arm):
+!   A. modify only when the branch is taken: S3 leaves W.0=0, so S4's
+!      BB does not branch and the program hangs at HAND (S4's HANG).
+!   B. modify only when the branch is NOT taken: S5's invert is skipped,
+!      W.0 stays 1, S6's BZB does not branch, hang at HANF.
+!   C. never modify: hangs at HAND (S4), same as A's first failure.
+!   D. condition inverted (branch when bit != instruction bit 62): S1's
+!      BZB does not branch, hang at HANA.
+!
+! Observed: the unmodified model halts at DONE (PASS PC half-word 3095),
+! so every step behaved correctly. Injection A was applied (the modify
+! guarded on "tested == modAbc[0]", i.e. modify only when the branch is
+! taken) and the model halted at HAND (half-word 3086), the S4 HANG --
+! exactly as predicted, and nothing downstream ran to mask it. The
+! injection was then reversed by the exact inverse edit (AGENTS.md rule
+! 2) and DONE restored. Injections B/C/D are predicted from the same
+! reasoning but were not separately run.
+!
+! Encoding is additionally checked field-by-field by
+! verify_bb_encoding.py against the exact bit positions StretchDecode
+! reads. That check proves the assembler and the model's decoder agree;
+! it does not by itself prove the shared reading of the format is right
+! (see AGENTS.md rule 2), so a printed-listing cross-check against a
+! real BB line remains an open item (jb_af1c uses BB for sign tests).
+
+        SLC, (8)3000.0
+S1      BZB,  W, S2         ! W.0=0: branch on zero bit -> S2
+HANA    BEW,  $             ! HANG: BZB failed to branch on a 0 bit
+S2      BB,   W, HANB       ! W.0=0: branch-on-1 must NOT be taken
+        B,    S3            ! good path
+HANB    BEW,  $             ! HANG: BB branched on a 0 bit
+S3      BB1,  W, HANC       ! W.0=0: not taken, but sets W.0:=1
+        B,    S4            ! good path
+HANC    BEW,  $             ! HANG: BB1 branched on a 0 bit
+S4      BB,   W, S5         ! W.0 now 1 (S3 modify) -> branch to S5
+HAND    BEW,  $             ! HANG: modify-on-not-taken did not happen
+S5      BBN,  W, S6         ! W.0=1: taken, inverts W.0 to 0
+HANE    BEW,  $             ! HANG: BBN failed to branch on a 1 bit
+S6      BZB,  W, DONE       ! W.0 now 0 (S5 invert) -> branch to DONE
+HANF    BEW,  $             ! HANG: modify-on-taken (invert) did not happen
+DONE    BEW,  $             ! PASS: every BB behaved correctly
+W       XW,   0, 0, 0       ! full word of zeros: the bit under test
+
+        END, S1

@@ -123,6 +123,22 @@ system, several of them large enough to be their own projects).
   I-Box 1's SIC-CB/SIC-CBZ test groups verbatim with their own
   self-modifying pass/fail chain intact —
   `strap/programs/ibox1_sic_cb_cbz.strap`.
+- **Branch on Bit (BB family)** — Reference Manual p.41: a full word
+  that tests one bit anywhere in storage at the effective bit address.
+  If the bit matches instruction bit 62 (1 for `BB*`, 0 for `BZB*`)
+  the branch to the effective 19-bit address is taken; then, *whether
+  or not the branch was taken*, the bit is set per instruction bits
+  60-61 (`00` unchanged, `01` zero, `10` invert, `11` one) — giving the
+  eight mnemonics BB/BB1/BBN/BBZ and BZB/BZB1/BZBN/BZBZ. Read-modify-
+  write through the same prefetch/bail mechanism SIC uses; `00`
+  (unchanged) issues no write, so it raises no store hazard. Read-only
+  locations (which per p.41 stay unchanged under any write attempt)
+  are not modeled — the special registers 0-31 are Reg-backed and no
+  test branches on a bit within one. Verified by a self-checking chain
+  (`strap/programs/bb_branch_on_bit.strap`) whose only path to its PASS
+  halt requires correct condition testing plus correct modification on
+  both a taken and a not-taken branch, and by `verify_bb_encoding.py`
+  (encoding field-by-field vs the decoder's bit positions).
 - **Count and Branch / Count, Branch and Refill**.
 - **Branch on Indicator**.
 - **Unconditional branching** (`B BR BE BD BEW NOP`) — `BE`/`BD`/`BEW`
@@ -158,9 +174,10 @@ system, several of them large enough to be their own projects).
 ### matches real-machine behavior for a suppressed instruction)
 
 Decimal-mode VFL (`c=1`), radix conversion, floating-point arithmetic
-beyond L/ST, Input-Output's `LOC` and most of `CTL` (see above), Bit
-Branching, `EX`/`EXIC`, Transmit backward/`SWAP`/multi-word. (SIC,
-Store Instruction Counter If, moved to "Executed" — see there.)
+beyond L/ST, Input-Output's `LOC` and most of `CTL` (see above),
+`EX`/`EXIC`, Transmit backward/`SWAP`/multi-word. (SIC, Store
+Instruction Counter If, and Bit Branching both moved to "Executed" —
+see there.)
 
 Per the "decode completely, execute partially" principle: every format
 in Figure 6 has a `DecodedInstr` constructor and is field-extracted

@@ -811,6 +811,15 @@ assembles but is not executed at all — see `StretchIO.bsv`'s
 chapter, now that the External Units chapter has in fact been read).
 See `../bsv/README.md`'s "Executed" section and `StretchIO.bsv`.
 
+Branch on Bit (the eight mnemonics `BB`/`BB1`/`BBN`/`BBZ` and
+`BZB`/`BZB1`/`BZBN`/`BZBZ`, Strap format `OP,B,(I),A(K)`) is new this
+milestone: assembled as the full-word format of X22-6533's "BRANCH ON
+BIT" row / Reference Manual p.41, executed on both sides, and checked
+field-by-field by `verify_bb_encoding.py` and end-to-end by
+`programs/bb_branch_on_bit.strap`. A printed-listing cross-check
+against a real `BB` line (jb_af1c uses it for sign tests) is still
+outstanding — see that program's header.
+
 **What's actually been assembled and run**, as opposed to merely
 present in `opcodes.py`'s tables, is much narrower than what's
 implemented: `L`, `LI`, `+`, `ST`, `K` (VFL, binary unsigned, direct,

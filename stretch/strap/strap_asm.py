@@ -215,7 +215,7 @@ from opcodes import (
     VFL_INT_CODES, VFL_INT_MINUS_BASE, FP_CODES, DIR_INDEX_CODES,
     IMM_INDEX_CODES, UNCOND_BRANCH_CODES, MISC_CODES, INDICATOR_BITS,
     MODE_BITS, MODE_DEFAULT_BS, PROGRESSIVE_SECONDARY_OP, CONNECTIVE_SUFFIX,
-    IO_OP, CB_CODES, IMM_INDEX_COUNT_OPS, SYSTEM_SYMBOLS,
+    IO_OP, CB_CODES, IMM_INDEX_COUNT_OPS, SYSTEM_SYMBOLS, BB_CODES,
 )
 
 # Input-Output base mnemonics (before an optional "(SEOP)" modifier or
@@ -351,6 +351,19 @@ def enc_branch_or_misc(addr19, code, misc, idx):
     lit = 0b100000 if misc else 0b000000
     v, w = cat((addr19, 19), (code, 3), (lit, 6), (idx, 4))
     assert w == 32
+    return v
+
+
+def enc_branch_on_bit(bitaddr24, i1, addr19, mod2, cond1, idx1):
+    # Branch on Bit, full word (X22-6533 pocket card / RefMan p.41):
+    # BIT ADDRESS(24, 0-23) + 1000(24-27) + I(4, 28-31, bit-address
+    # index) + BRANCH ADDRESS(19, 32-50) + 111000000(9, 51-59) +
+    # mod(2, 60-61) + cond(1, 62) + K(1, 63, X1 flag for branch addr).
+    # The identifying literal is the 9-bit 111000000, which is what
+    # StretchDecode.bsv keys on (w[12:4]).
+    v, w = cat((bitaddr24, 24), (0b1000, 4), (i1, 4), (addr19, 19),
+               (0b111000000, 9), (mod2, 2), (cond1, 1), (idx1, 1))
+    assert w == 64
     return v
 
 
@@ -849,6 +862,8 @@ def statement_size(stmt):
         return HALF, HALF
     if classify_branch_indicator(op) is not None:
         return HALF, HALF
+    if op in BB_CODES:
+        return FULL, FULL  # Branch on Bit is a full-word instruction (p.41)
     if op in IO_BASE_OPS or op in IO_OP:
         return FULL, FULL
     kind, *_ = classify_vfl_or_fp(stmt)
@@ -1296,6 +1311,27 @@ def emit_statement(stmt, symtab, image):
         addr19 = eval_addr_field(base, symtab, loc, 5, lineno=stmt.lineno) & 0x7FFFF
         idx = eval_reg(paren, symtab, stmt.lineno) & 0x1
         image.deposit_half(loc // 32, enc_branch_ind(addr19, indnum, clear, branchOn, idx))
+        return
+
+    if op in BB_CODES:
+        # BRANCH ON BIT, Strap Format "OP,B,(I),A(K)" (X22-6533 pocket
+        # card): field 0 is the BIT address B with an optional 4-bit
+        # index I; field 1 is the branch address A with the optional
+        # X1-only flag K (like CB's K). B is a bit address, so its base
+        # is evaluated to raw bits (>>0, same as SIC's address); A is a
+        # half-word branch address (bit-address terms >>5).
+        if len(stmt.fields) != 2:
+            raise AssemblerError(f"{op} takes B (bit address) and A "
+                                 "(branch address) fields", stmt.lineno)
+        bbase, bparen = split_field_trailing_paren(stmt.fields[0])
+        abase, aparen = split_field_trailing_paren(stmt.fields[1])
+        bitaddr24 = eval_expr(bbase, symtab, loc, lineno=stmt.lineno) & 0xFFFFFF
+        i1 = eval_reg(bparen, symtab, stmt.lineno) & 0xF
+        addr19 = eval_addr_field(abase, symtab, loc, 5, lineno=stmt.lineno) & 0x7FFFF
+        idx1 = eval_reg(aparen, symtab, stmt.lineno) & 0x1
+        mod2, cond1 = BB_CODES[op]
+        image.deposit_full(loc, enc_branch_on_bit(bitaddr24, i1, addr19,
+                                                  mod2, cond1, idx1))
         return
 
     if op in IO_BASE_OPS or op in IO_OP:

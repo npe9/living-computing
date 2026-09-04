@@ -56,6 +56,11 @@ run "SLC pseudo-op" python3 test_slc.py
 # STRAP output as the oracle. Pure Python, no Bluesim.
 run "I-Box 1 listing bit-exact comparison" python3 verify_ibox1_listing.py
 
+# -- 0d'. BRANCH ON BIT (BB/BB1/BBN/BBZ/BZB/BZB1/BZBN/BZBZ) encoding
+# checked field-by-field against the exact bit positions StretchDecode
+# reads (X22-6533 pocket card / Reference Manual p.41). Pure Python.
+run "Branch-on-Bit encoding field check" python3 verify_bb_encoding.py
+
 # -- 0e. I-Box 4 routine 150's CB / CB+ / CBR / CBR+ blocks (plus their
 # LX/SX setup and XW index words) assembled verbatim at the listing's
 # own addresses and compared against docs/jb_ax4b_ibox-4.pdf pp.155/159's
@@ -243,6 +248,16 @@ run "I-Box 1 WEN/WEN2/VEN at original listing addresses" ./run_program.sh progra
 run "I-Box 1 SIC-CB / SIC-CBZ (verbatim, own pass/fail)" ./run_program.sh programs/ibox1_sic_cb_cbz.strap StretchIboxSicTb \
     $(python3 ibox1_expected.py programs/ibox1_sic_cb_cbz.strap ISBI \
         ISCBA:ISCBB ISCBB:ISCBC ISCBC:ISCBD ISCBD:ISCBH ISCBH:ISCBI ISCBI:ISCBK)
+
+# -- 4b-bis. BRANCH ON BIT (BB family) acceptance: a self-checking
+# chain over an all-zeros word W where the ONLY path to the PASS halt
+# (label DONE) requires correct condition testing (branch-on-1 vs
+# branch-on-0) AND correct bit modification on both a taken branch
+# (BBN invert) and a NOT-taken branch (BB1 set). Any wrong result falls
+# into a distinct BEW,$ HANG, so PC alone says pass (DONE) or fail
+# (which HANG). See programs/bb_branch_on_bit.strap for the injections.
+run "Branch-on-Bit (BB/BZB family, self-checking)" ./run_program.sh programs/bb_branch_on_bit.strap StretchBBTb \
+    "PC=$(python3 -c 'from strap_asm import assemble; print(assemble(open("programs/bb_branch_on_bit.strap").read()).symtab["DONE"]//32)')"
 
 # -- 4b'''. pp.43-51 as ONE verbatim span, octal 5123.00-5461.40: the
 # deck's whole index-branching section (CB, CB+, CBH, CB-, CBZ, CBZ+,
