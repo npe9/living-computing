@@ -164,6 +164,14 @@ run "FP compare block (jb_af1c F202A15-20, encoding)" python3 verify_fp_compare_
 run "FP compare block (jb_af1c F202A15-20 on the model)" ./run_program.sh programs/fp_compare_f202a.strap StretchFpCmpTb \
     "PC=$(python3 -c 'from strap_asm import assemble; print(assemble(open("programs/fp_compare_f202a.strap").read()).symtab["PASS"]//32)')"
 
+# -- 1i''. Companion block from the start of the same routine (F202A1-6,
+# p.30): FP compares in the NORMAL exponent range, including the AE
+# (equal) outcome (FPK0 vs FPK0). Encoding bit-for-bit, then the model
+# run halts at PASS iff every compare sets the expected indicator.
+run "FP compare block (jb_af1c F202A1-6, encoding)" python3 verify_fp_compare_a1_listing.py
+run "FP compare block (jb_af1c F202A1-6 on the model)" ./run_program.sh programs/fp_compare_f202a1.strap StretchFpCmpA1Tb \
+    "PC=$(python3 -c 'from strap_asm import assemble; print(assemble(open("programs/fp_compare_f202a1.strap").read()).symtab["PASS"]//32)')"
+
 # -- 1j. Store-close-to-fetch: store a word then immediately reload it;
 # the load must read the new value, not the stale one. The hazard the FP
 # sign-modifier codesign exposed; fixed by tracking each E-box level's

@@ -1,0 +1,117 @@
+! Floating-point diagnostic jb_af1c, routine F202A sub-tests 1-6, the
+! START of the "COMPARE INDICATORS, AL, AE, AH" routine
+! (docs/jb_af1c_floating-point.pdf p.30, octal 011301.00-011333.40).
+! Companion to fp_compare_f202a.strap (A15-A20, extreme ranges): this
+! block verifies the FP compare in the NORMAL exponent range and adds
+! the AE (equal) outcome the extreme-range block did not reach.
+!
+! Six contiguous sub-tests, each load (unnormalized) / Z,$IND / compare
+! (K, unnormalized) / three SIC-prefixed branch-on-indicator checks to
+! the error routine SERS. The listing's own comment states the result:
+!   A1: FPK0 vs FPK0  -> AE on (equal; both are zero)          BZAE,BAL,BAH
+!   A2: FPK3 vs FPK0  -> AH on (FPK3 > 0)                       BZAH,BAL,BAE
+!   A3: FPK0 vs FPK3  -> AL on (0 < FPK3)                       BZAL,BAE,BAH
+!   A4: FPK3 vs FPK9  -> AH on (FPK3 > FPK9)                    BZAH,BAL,BAE
+!   A5: FPK9 vs FPK3  -> AL on (FPK9 < FPK3)                    BZAL,BAE,BAH
+!   A6: FPK3 vs FPK21 -> AL on ("memory opnd considered higher")BZAL,BAE,BAH
+! A correct compare falls through all six to F202A7's location, where a
+! PASS halt is substituted; a wrong indicator branches to SERS (a FAIL
+! halt). PC alone says pass or fail.
+!
+! Substitutions (SSIP framework, at their real listed addresses so the
+! SIC/branch machine code still matches the listing): SERS (octal 1304)
+! -> FAIL halt, SEN (octal 1310) -> scratch, PASS (octal 11334, where
+! F202A7 begins) -> halt. Constants FPK0/FPK3/FPK9/FPK21 come from the
+! pool on p.176 at octal 22005/22010/22016/22032.
+!
+! verify_fp_compare_a1_listing.py checks every transcribed half-word and
+! constant bit-for-bit against the printed machine code.
+!
+! Observed: the model halts at PASS -- the FP compare sets exactly the
+! expected indicator for the equal case (AE, via fpCompare returning 0
+! on equal zero fractions) and for the normal-range greater/less cases.
+! Injection (AE forced off in StretchExecute's FP compare arm, i.e.
+! ind_AE never set): the model halts at SERS -- A1's BZAE branches to
+! the error routine because AE is off, exactly as predicted. This
+! discriminates the AE (equal) outcome specifically, which an AL/AH
+! swap would not (equal is unaffected by swapping less/greater).
+! Reversed by the exact inverse edit (AGENTS.md rule 2).
+
+! -- SSIP framework substitutes --
+        SLC, (8)1304.0
+SERS    BEW, $
+        SLC, (8)1310.0
+SEN     DD(BU,64,8), 0
+
+! -- constants (pool, p.176) --
+        SLC, (8)22005.0
+FPK0    DD(BU,64,8), (8)0000000000000000000000
+        SLC, (8)22010.0
+FPK3    DD(BU,64,8), (8)0000125252525252525240
+        SLC, (8)22016.0
+FPK9    DD(BU,64,8), (8)0000125252525252525000
+        SLC, (8)22032.0
+FPK21   DD(BU,64,8), (8)0031177777777777777767
+
+! -- code (verbatim, at the listing's addresses) --
+        SLC, (8)11301.0
+F202A1  L(U), FPK0          ! AE ON  (equal)
+        Z, $IND
+        K(U), FPK0
+        SIC, SEN
+        BZAE, SERS
+        SIC, SEN
+        BAL, SERS
+        SIC, SEN
+        BAH, SERS
+F202A2  L(U), FPK3          ! AH ON
+        Z, $IND
+        K(U), FPK0
+        SIC, SEN
+        BZAH, SERS
+        SIC, SEN
+        BAL, SERS
+        SIC, SEN
+        BAE, SERS
+F202A3  L(U), FPK0          ! AL ON
+        Z, $IND
+        K(U), FPK3
+        SIC, SEN
+        BZAL, SERS
+        SIC, SEN
+        BAE, SERS
+        SIC, SEN
+        BAH, SERS
+F202A4  L(U), FPK3          ! AH ON
+        Z, $IND
+        K(U), FPK9
+        SIC, SEN
+        BZAH, SERS
+        SIC, SEN
+        BAL, SERS
+        SIC, SEN
+        BAE, SERS
+F202A5  L(U), FPK9          ! AL ON
+        Z, $IND
+        K(U), FPK3
+        SIC, SEN
+        BZAL, SERS
+        SIC, SEN
+        BAE, SERS
+        SIC, SEN
+        BAH, SERS
+F202A6  L(U), FPK3          ! AL ON (memory opnd considered higher)
+        Z, $IND
+        K(U), FPK21
+        SIC, SEN
+        BZAL, SERS
+        SIC, SEN
+        BAE, SERS
+        SIC, SEN
+        BAH, SERS
+
+! -- PASS halt where F202A7 begins --
+        SLC, (8)11334.0
+PASS    BEW, $
+
+        END, F202A1

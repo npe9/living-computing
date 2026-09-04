@@ -44,6 +44,16 @@
 ! Injection (AL and AH swapped in StretchExecute's FP compare arm): the
 ! model halts at SERS (the FAIL routine) at the first sub-test, exactly
 ! as predicted. Reversed by the exact inverse edit (AGENTS.md rule 2).
+!
+! Next sub-test to add (F202A21, octal 011433): load FPK2, compare
+! FK25 (octal 22173 = (8)1577777777777777777760), expect AE on -- both
+! operands are XFN-range (EF=1, ES=1), and StretchFP.fpCompare already
+! returns equal for two same-range flagged operands (ranks XFP>N>XFN,
+! p.91), so the model should pass it. It was not added here only because
+! its BAL/BAH checks run past this listing page (its tail is on the
+! following page, and the page after p.33 in this scan is a duplicate);
+! completing it needs that page for the exact tail rows and A22's start
+! address (where PASS would then move).
 
 ! -- SSIP framework substitutes, at their real listed addresses --
         SLC, (8)1304.0
