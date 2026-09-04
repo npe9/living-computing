@@ -160,8 +160,8 @@ run "FP sign modifiers (LN/LA/LNA on the model)" ./run_fp_signmod_test.sh
 # indicator branches to the substituted SERS FAIL halt). Injection
 # (AL/AH swapped in StretchExecute's FP compare arm): halts at SERS
 # (PC 1416) instead of PASS (9782), as predicted.
-run "FP compare block (jb_af1c F202A, encoding)" python3 verify_fp_compare_listing.py
-run "FP compare block (jb_af1c F202A19/20 on the model)" ./run_program.sh programs/fp_compare_f202a.strap StretchFpCmpTb \
+run "FP compare block (jb_af1c F202A15-20, encoding)" python3 verify_fp_compare_listing.py
+run "FP compare block (jb_af1c F202A15-20 on the model)" ./run_program.sh programs/fp_compare_f202a.strap StretchFpCmpTb \
     "PC=$(python3 -c 'from strap_asm import assemble; print(assemble(open("programs/fp_compare_f202a.strap").read()).symtab["PASS"]//32)')"
 
 # -- 1j. Store-close-to-fetch: store a word then immediately reload it;
