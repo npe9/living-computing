@@ -111,7 +111,22 @@ hand vectors alone. "Enables" notes the dependency chain.
    extreme ranges) is now validated against the diagnostic.
 2. **FP arithmetic against the diagnostic** — the largest FP gap and
    the E-box's core; **the current focus now that item 1 is done.**
-   Run `jb_af1c` add/subtract/multiply blocks to
+   The routine is LOCATED (no hunting needed): `jb_af1c` F204 "ADD TO
+   MEM TEST ROUTINE" / F204A "ARITHMETIC CHECKS", p.53, octal
+   012325.40+ (sub-tests F204A1-A7). Each does L/ST to set a memory
+   operand, then M+ (Add to Memory) an operand across the XFP/XFN/N
+   exponent ranges, then a CT0110 connective test of the result and
+   BRGZ (result-greater-zero) to the error routine -- "ERROR IF
+   FRACTIONS ADDED" (it checks that far-apart exponents do not add the
+   fractions). All instructions it uses (L, ST, M+, CT0110, SIC, BRGZ)
+   are implemented, so it is transcribe-and-run ready; it mixes VFL and
+   FP ops, so transcribe carefully and lean on the listing oracle.
+   Related nearby routine also located and runnable-with-effort: F203B
+   "EXP RNG INDIC TEST" (p.52, octal 012260+) verifies the exponent-
+   range indicators XPFP/XPH/XPL/XPU (set by ST, cleared by Z,$IND)
+   via BB/BZB on the indicator register -- exercises this session's
+   BB-on-indicator and Z,$IND-clear work.
+   After F204A, run the add/subtract/multiply blocks to
    verify +/+MG/-/M+/* on real operands (result checked by a following
    K compare, the pattern already validated), then implement the open
    ops in the order the diagnostic reaches them: `*+` (multiply-add),
