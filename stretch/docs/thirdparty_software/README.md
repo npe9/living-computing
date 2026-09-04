@@ -60,9 +60,24 @@ access status, and what was retrieved, so the trail is durable.
 
 ## Retrieved into this folder
 - `Kaltofen_SymbolicMathComputation_1965-1975_arxiv2501.16457.pdf` --
-  the symbolic-math retrospective (MATHLAB history). Secondary source,
-  kept as the one freely-downloadable documentation touching one of the
-  four systems.
+  the symbolic-math retrospective (MATHLAB history), freely downloadable.
+- `AWRE_UKfortran_earlyukcompilers.txt` -- Brian Chapman's "Some Early
+  UK FORTRAN Compilers" (text extraction of the BCS Fortran-jubilee
+  page), describing Alick Glennie's S2 Stretch FORTRAN and the S3
+  follow-on.
+- `AWRE_UKfortran_contributions_php_pglb_FI.txt` -- the jubilee
+  contributions index (bibliography and further reading).
 
-Everything else above is a citation/URL: the primary documents are
-paywalled (ACM) or bot-protected (FAS/OSTI), and no source survives.
+## Opened in the browser for manual saving (script-blocked)
+These serve a bot challenge or paywall to `curl`; opened via `open` in
+the default browser so they can be saved into this folder by hand:
+- **LA-6943-H** (Lazarus, *Computing at LASL*, IVY/COLASL):
+  `https://sgp.fas.org/othergov/doe/lanl/docs1/LA-6943-H.pdf`
+- **MATHLAB** primary (Engelman 1965 FJCC):
+  `https://dl.acm.org/doi/10.1145/1463891.1463938`
+- **COLASL** (1962 ACM National Conference):
+  `https://dl.acm.org/doi/10.1145/800198.806099`
+
+Everything not retrieved above is a citation/URL: the primary documents
+are paywalled (ACM) or bot-protected (FAS/OSTI), and no source code for
+any of these systems is known to survive.

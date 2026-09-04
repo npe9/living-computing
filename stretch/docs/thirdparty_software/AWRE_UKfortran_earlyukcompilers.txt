@@ -1,0 +1,87 @@
+Fortran Specialist Group
+ BCS Home
+ BCS News
+ About BCS
+ Join BCS
+ FSG HOME
+ CONTACT US
+ JOIN FSG
+ BCS EVENTS
+ BCS GROUPS
+ BCS HOME
+ Search:
+ Just this site
+ www
+ Your Location
+ 50 Years of Fortran
+ Early UK FORTRAN Compilers
+ 50 Years of Fortran
+ Events
+ Presentations
+ Written Contributions
+ Fortran's 50th Birthday
+ Photos
+ 25th Anniversary
+ FORTRAN Implementations
+ Further Information
+ About us
+ FSG Home page
+ How to Join the Group
+ Contact details
+ Important Disclaimer
+ Some Early UK FORTRAN Compilers
+ Second heading
+ I attended the Fifty Years of FORTRAN meeting and was
+ pleased to see how the early prominence of the UK in FORTRAN use, development and
+ standardisation has continued to the present day. This note provides some further detail
+ on some of the pioneering work only hinted at the 1984
+ Annals of Computing published by AFIPS.
+ One speaker, Ron Bell of AWE described what was probably the first major UK FORTRAN
+ compiler, designed by Alick Glennie for the IBM 7030 (Stretch). At about the same
+ time AERE Harwell was preparing to take delivery of a Ferranti Atlas, which was the
+ only computer at that time comparable in power to Stretch. AERE decided to write their
+ own compiler under the leadership of Dr. Ian Pyle and I, as a member of the Ferranti
+ Atlas team joined them in 1961 to write the code generation and optimisation phase.
+ Ian maintained steady contact with Alick Glennie during development, although the
+ design differed, as did the aims.
+ Atlas featured a 'one-level store' (a concept blurring the physical distinction
+ between RAM and drum storage) which provided a very large address space. The AERE
+ FORTRAN was basically FORTRAN II with some features from the emerging FORTRAN IV, but
+ also added arrays whose size could be defined at run time rather than at compilation,
+ utilising that address space. This was the first ever availability of dynamic arrays.
+ The Atlas Operating System provided only basic batch processing capability, albeit
+ with multitasking of jobs, and no-one seemed aware of the magnitude of prevailing
+ FORTRAN programs and the need to compile subroutines independently. Consequently
+ apart from writing the compiler we also had to write a subroutine linking system, as
+ well as the run-time routines. Nevertheless there were only 5 people in the team,
+ although a sixth joined later.
+ Another interesting feature of the Harwell compiler is that it was written almost
+ entirely in FORTRAN. This enabled it to be largely tested before Atlas itself was
+ available. The testing took place on an IBM 7094 at Risley, which meant a 2 day turn
+ around on every test! A great advantage was that a loadable and tested version of the
+ compiler could be generated on the 7094 and taken en masse to Atlas.
+ Testing eventually transferred to the Atlas prototype in Manchester University but
+ the only time available was overnight. The testing of our compiler and loading system
+ could only really get under way after I had tested the card reader and punch which
+ no-one else was interested in. Inputting some 3000 binary punched cards certainly
+ provided a very thorough test of reliability! Anyway, testing on Atlas progressed well
+ and all was largely ready when the AERE Atlas was delivered (to adjacent Chilton). I
+ then transferred the completed Harwell FORTRAN system to the Atlas Computers at the
+ Universities of Manchester and London.
+ Later, AWRE took delivery of a Ferranti Atlas 2, which although using the same
+ processor as Atlas had a different operating system oriented towards time sharing.
+ Alick Glennie provided an S3 compiler, which was essentially language compatible with
+ the S2 Stretch compiler. I supported that by porting the Harwell loading system. I
+ then transferred the complete system to Titan, the Atlas 2 prototype, at Cambridge
+ University, in early 1966.
+ Yet another FORTRAN compiler was written nearby for the Ferranti Orion computer at the
+ Rutherford Laboratory at Chilton by Dr. Bob Taylor and team from the staff there,
+ again in the early 60s.
+ Brian Chapman MA, CEng, FBCS, CITP
+ Comments on this or any other of the Group's pages should be sent by email to the
+ FSG Web Editor .
+ Last modified: Sun 9 Dec 2012 15:00:32
+ Top of page
+ © Copyright BCS 2026
+ Legal and Privacy Notices
+     BCS is a registered charity: No 292786
