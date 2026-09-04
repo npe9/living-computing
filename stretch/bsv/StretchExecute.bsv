@@ -1042,7 +1042,19 @@ function ActionValue#(Tuple4#(HWordAddr, Maybe#(Tuple2#(Bit#(4), IndexWord)),
           if (o.taken) next = o.target;
         end else begin
           case (bm.code)
-            3'b100: st.writeWord(baWord(effAddr24(st, {bm.addr,5'b0}, bm.idx)), 0); // Z (Store Zero)
+            3'b100: begin // Z (Store Zero)
+              WordAddr zw = baWord(effAddr24(st, {bm.addr,5'b0}, bm.idx));
+              if (zw == 11)
+                // Store Zero to the INDICATOR register clears the
+                // settable bits 20-63 (bits 0-19 are read-only, p.41);
+                // writeWord(11) is a no-op, so fold into `ind` (the
+                // Word64 the shared tail writes once via
+                // setIndicatorBits), keeping IBM bits 0-19 = BSV 63:44.
+                // This is the diagnostic's `Z,$IND` reset before a test.
+                ind = ind & 64'hFFFFF00000000000;
+              else
+                st.writeWord(zw, 0);
+            end
             3'b000: begin // R (Refill, unconditional) -- prefetch/
               // bail-out shape (same as VflInt L/K/+ above).
               IndexWord x = st.readIndex(bm.idx);

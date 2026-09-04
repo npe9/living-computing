@@ -75,6 +75,14 @@ run "Branch-on-Bit listing bit-exact (jb_af1c)" python3 verify_bb_listing.py
 run "Branch-on-Bit sets an indicator bit" ./run_program.sh programs/bb_indicator.strap StretchBBIndTb \
     "PC=$(python3 -c 'from strap_asm import assemble; print(assemble(open("programs/bb_indicator.strap").read()).symtab["PASS"]//32)')"
 
+# -- 0d''''. Store Zero to the indicator register (Z,$IND) clears bits
+# 20-63 (p.41): BB1 sets AH, Z,$IND clears it, BB confirms it is off.
+# Halts at PASS iff the clear took effect (folded into `ind`, since
+# writeWord(11) is a no-op). Injection (fold removed): halts at FAIL.
+# This is the diagnostic's own indicator reset before each test.
+run "Store Zero clears the indicator register" ./run_program.sh programs/z_ind_clear.strap StretchZIndTb \
+    "PC=$(python3 -c 'from strap_asm import assemble; print(assemble(open("programs/z_ind_clear.strap").read()).symtab["PASS"]//32)')"
+
 # -- 0e. I-Box 4 routine 150's CB / CB+ / CBR / CBR+ blocks (plus their
 # LX/SX setup and XW index words) assembled verbatim at the listing's
 # own addresses and compared against docs/jb_ax4b_ibox-4.pdf pp.155/159's

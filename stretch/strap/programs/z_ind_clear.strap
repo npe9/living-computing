@@ -1,0 +1,33 @@
+! Store Zero to the INDICATOR register (Z,$IND) clears the settable
+! indicator bits 20-63 (Reference Manual p.41: bits 0-19 are read-only).
+! This is how the FP diagnostic resets the arithmetic indicators before
+! a test (jb_af1c uses `Z,$IND` throughout, e.g. before every KR in
+! routine F202G). It was a no-op until now (StretchStorage.writeWord(11)
+! drops the write); the Store-Zero arm now folds the clear into `ind`,
+! the same fix used for Branch on Bit changing an indicator bit
+! (bb_indicator.strap / commit 63721f1).
+!
+!   L(U),CONST / K(U),CONST -> compare a value to itself: AE on, AH off
+!   BB1,$AH,BAD             -> sets AH := 1 (AH was off, so no branch)
+!   Z,$IND                  -> clears bits 20-63, so AH := 0
+!   BB,$AH,FAIL             -> AH is off now, so NO branch (good)
+!   B,PASS
+! If Z,$IND fails to clear AH (the old no-op), the BB,$AH branches to
+! FAIL. PC alone distinguishes: PASS (Z cleared it) vs FAIL (it did not).
+!
+! Injection (the indicator-clear fold removed, i.e. writeWord(11) drops
+! the Z): halts at FAIL, as predicted.
+
+        SLC, (8)2000.0
+START   L(U), CONST
+        K(U), CONST         ! AE on, AH off
+        BB1, $AH, BAD       ! sets AH := 1
+        Z, $IND             ! clears indicator bits 20-63: AH := 0
+        BB, $AH, FAIL       ! AH off now: no branch
+        B, PASS
+FAIL    BEW, $              ! AH still set: Z,$IND did not clear it (bug)
+BAD     BEW, $              ! BB1 wrongly branched on a 0 bit
+PASS    BEW, $              ! AH cleared: success
+CONST   DD(BU,64,8), (8)0000125252525252525240
+
+        END, START
