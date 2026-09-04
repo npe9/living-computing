@@ -758,6 +758,35 @@ had in mind:
     reading back as their original `B,$` pairs is what gave it away.
     Check the entry point when a span grows.
 
+19. **Full-word instructions are half-word aligned, not word aligned.**
+    Transcribing the floating-point diagnostic jb_af1c (p.40) to run a
+    real Branch-on-Bit block showed a full-word Connective
+    (`CT0110%BU,60=,FPK3,68`) placed at octal `011652.40` — half-word 1
+    — directly after a half-word FP compare, with no gap NOP between
+    them; and the three `BB1,$xF,$+1.` lines at `.40` each. The
+    assembler had force-aligned every full-word instruction (VFL,
+    Connective, I/O, Branch on Bit) up to a word boundary — an
+    assumption no real listing had ever exercised (the ibox oracles'
+    full-word instructions happened to be word-aligned). That is wrong:
+    the instruction counter is half-word granular and "the full word
+    taken from storage will start at bit 32 of the addressed location
+    and continue to bit 31 of the next higher location" (Reference
+    Manual p.39), so a full-word instruction sits wherever the location
+    counter is and straddles the word boundary when at an odd
+    half-word. Fixed `statement_size` (full-word instructions now align
+    to HALF, size FULL) and added `Image.deposit_word_instr` (a
+    bit-precise 64-bit deposit that crosses the boundary; `deposit_full`
+    stays for word-aligned `XW` data). `listing_oracle.word_at` reads
+    such an instruction back across the two words. The three BB1 lines
+    now assemble bit-exact at their real `.40` addresses
+    (`verify_bb_listing.py`) — closing the printed-listing BB
+    cross-check `verify_bb_encoding.py` had left open. The model's
+    fetch already assembled straddling full words from the Y buffers
+    (`StretchCore.bsv`'s preparation block selects each half by `pc[0]`
+    and reads the next half-word from the next word), so only the
+    assembler needed the fix. `test_slc.py`'s case 3, which had asserted
+    the old rounding-up-to-a-word behavior, was corrected.
+
 ## Halting
 
 A runner needs a way to know when the program is done rather than

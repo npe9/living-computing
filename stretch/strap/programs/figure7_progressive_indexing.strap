@@ -29,7 +29,7 @@ LOOP    L(V+I) (BU, 7, 8), 0.15 ($X12), 0
                                    !added so the BSV runner has a stop
                                    !condition; see stretch/strap/README.md)
 
-        DD(BU,5,8), 0        !5-bit pad: with R+S+T=20 bits/record and
+        DD(BU,13,8), 0       !13-bit pad: with R+S+T=20 bits/record and
                               !64-bit words, some record's S (the field
                               !this program stores into) would cross a
                               !word boundary depending on LIST's exact
@@ -43,11 +43,16 @@ LOOP    L(V+I) (BU, 7, 8), 0.15 ($X12), 0
                               !increment -- so a crossing S would not
                               !just fail to store, it would misalign
                               !$X12 for every subsequent record. This
-                              !padding places LIST at a bit offset where
-                              !none of the ten records' S fields cross,
-                              !so this test verifies progressive
-                              !indexing itself without also tripping
-                              !that separately-documented limitation.
+                              !padding places LIST at bit-in-word offset
+                              !45, where none of the ten records' S
+                              !fields cross, so this test verifies
+                              !progressive indexing itself without also
+                              !tripping that separately-documented
+                              !limitation. (Re-tuned from 5 to 13 bits
+                              !when full-word instructions became
+                              !half-word aligned -- Gotchas item 19 --
+                              !which shifted LIST; the safe offsets are
+                              !5-9, 25-29, 45-49.)
 LIST    DD(BU,7,8), 10       !record 0 R
         DD(BU,8,8), 0        !record 0 S (computed by the program)
         DD(BU,5,8), 0        !record 0 T

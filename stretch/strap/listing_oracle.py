@@ -41,6 +41,19 @@ def loc_bits(octal_loc):
     return int(w, 8) * 64 + int(b, 8)
 
 
+def word_at(prog, bits):
+    """The 64 bits starting at half-word-aligned bit offset `bits`. A
+    full-word INSTRUCTION may sit at an odd half-word (bits % 64 == 32),
+    in which case it straddles two words -- bits 32-63 of word N hold
+    the instruction's bits 0-31, and bits 0-31 of word N+1 hold its bits
+    32-63 (Reference Manual p.39). See strap_asm.Image.deposit_word_instr."""
+    if bits % 64 == 0:
+        return prog.words.get(bits // 64, 0)
+    hi = prog.words.get(bits // 64, 0) & 0xFFFFFFFF
+    lo = prog.words.get(bits // 64 + 1, 0) >> 32
+    return (hi << 32) | lo
+
+
 def render(prog, octal_loc, printed):
     """Render the assembled content at octal_loc in the same shape as
     the listing's printed text, so the two compare as strings."""
@@ -55,7 +68,10 @@ def render(prog, octal_loc, printed):
     if len(toks) == 1 and len(toks[0]) == 22:
         return f"{word:022o}"
     if len(toks) == 4:
-        return f"{fmt_half(word >> 32)} {fmt_half(word & 0xFFFFFFFF)}"
+        # A full-word instruction or XW, read across the word boundary
+        # if it is at an odd half-word.
+        w = word_at(prog, bits)
+        return f"{fmt_half(w >> 32)} {fmt_half(w & 0xFFFFFFFF)}"
     return fmt_half(half)
 
 

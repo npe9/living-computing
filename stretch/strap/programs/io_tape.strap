@@ -95,8 +95,10 @@ START   LVI, $1, 34      !X1 = tape channel 34: LVI puts it in value bits 0-18, 
         CCW, 0($1), CCWJ
 
         BEW, $
-        NOP, 0             !pad to a word boundary, same reason as
-                            !io_reader_printer.strap's own NOP,0
+        CNOP               !word-align the data section below (full-word
+                            !I/O instructions are half-word aligned, so
+                            !BEW may land at either boundary) -- BLOCK1..4
+                            !are read back as whole words by the testbench
 
 CTLW1   DD(BU,64), 0        !patched: dataAddr=BLOCK1, count=4
 CTLW2   DD(BU,64), 0        !patched: dataAddr=BLOCK2, count=4

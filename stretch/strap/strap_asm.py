@@ -862,13 +862,25 @@ def statement_size(stmt):
         return HALF, HALF
     if classify_branch_indicator(op) is not None:
         return HALF, HALF
+    # Full-word INSTRUCTIONS (Branch on Bit, I/O, VFL, Connective) are
+    # 64 bits wide but only HALF-word aligned: the instruction counter
+    # is half-word granular, and "the full word taken from storage will
+    # start at bit 32 of the addressed location and continue to bit 31
+    # of the next higher location" (Reference Manual p.39). Real STRAP
+    # output confirms it -- the floating-point diagnostic jb_af1c packs
+    # a full-word Connective (CT0110...) at octal 011652.40, half-word 1,
+    # directly after a half-word FP compare with no gap. So alignment is
+    # HALF (they sit wherever the location counter is), size is FULL,
+    # and emit_statement deposits them with the bit-precise 64-bit
+    # deposit (crossing the word boundary when at an odd half-word),
+    # NOT deposit_full, which is reserved for word-aligned DATA (XW).
     if op in BB_CODES:
-        return FULL, FULL  # Branch on Bit is a full-word instruction (p.41)
+        return HALF, FULL  # Branch on Bit, full-word instruction (p.41)
     if op in IO_BASE_OPS or op in IO_OP:
-        return FULL, FULL
+        return HALF, FULL
     kind, *_ = classify_vfl_or_fp(stmt)
     if kind == 'VFL' or kind == 'CONN':  # both are full-word (p.75 "Format")
-        return FULL, FULL
+        return HALF, FULL
     if kind == 'FP':
         return HALF, HALF
     raise AssemblerError(
@@ -918,6 +930,17 @@ class Image:
 
     def deposit_full(self, loc_bits, value):
         assert loc_bits % 64 == 0
+        self.deposit(loc_bits, 64, value)
+
+    def deposit_word_instr(self, loc_bits, value):
+        # A full-word INSTRUCTION (Branch on Bit, I/O, VFL, Connective):
+        # 64 bits that are only HALF-word aligned and so may straddle a
+        # word boundary -- bits 32-63 of word N, then bits 0-31 of word
+        # N+1 (Reference Manual p.39). Unlike deposit_full (word-aligned
+        # DATA), the location need only be half-word aligned; the
+        # bit-precise deposit() handles the crossing and the overlap
+        # check.
+        assert loc_bits % 32 == 0
         self.deposit(loc_bits, 64, value)
 
 
@@ -1330,7 +1353,7 @@ def emit_statement(stmt, symtab, image):
         addr19 = eval_addr_field(abase, symtab, loc, 5, lineno=stmt.lineno) & 0x7FFFF
         idx1 = eval_reg(aparen, symtab, stmt.lineno) & 0x1
         mod2, cond1 = BB_CODES[op]
-        image.deposit_full(loc, enc_branch_on_bit(bitaddr24, i1, addr19,
+        image.deposit_word_instr(loc, enc_branch_on_bit(bitaddr24, i1, addr19,
                                                   mod2, cond1, idx1))
         return
 
@@ -1381,7 +1404,7 @@ def emit_statement(stmt, symtab, image):
         addr24 = chan_bits & 0xFFFFFF
         is_code_field = lookup in ('CTL', 'CTLSEOP', 'LOC', 'LOCSEOP')
         addr18 = (addr2_bits & 0x3FFFF) if is_code_field else ((addr2_bits >> 6) & 0x3FFFF)
-        image.deposit_full(loc, enc_io(addr24, i1, addr18, IO_OP[lookup], i2))
+        image.deposit_word_instr(loc, enc_io(addr24, i1, addr18, IO_OP[lookup], i2))
         return
 
     kind, base_op, invert, immediate, p_progressive, dds_mods, conn = classify_vfl_or_fp(stmt)
@@ -1411,7 +1434,7 @@ def emit_statement(stmt, symtab, image):
 
         p = p_progressive if p_progressive is not None else (4 if immediate else 0)
         suffix = CONNECTIVE_SUFFIX[suffix_name]
-        image.deposit_full(loc, enc_connective(addr24, i1, p, length_field, bs_field,
+        image.deposit_word_instr(loc, enc_connective(addr24, i1, p, length_field, bs_field,
                                                 offset, conn_value, suffix, i2))
         return
 
@@ -1441,7 +1464,7 @@ def emit_statement(stmt, symtab, image):
 
         p = p_progressive if p_progressive is not None else (4 if immediate else 0)
         code = VFL_INT_CODES[base_op]
-        image.deposit_full(loc, enc_vfl_full(addr24, i1, p, length_field, bs_field,
+        image.deposit_word_instr(loc, enc_vfl_full(addr24, i1, p, length_field, bs_field,
                                               offset, unsign, invert, decimal, code, i2))
         return
 

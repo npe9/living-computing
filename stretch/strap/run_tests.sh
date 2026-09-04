@@ -61,6 +61,12 @@ run "I-Box 1 listing bit-exact comparison" python3 verify_ibox1_listing.py
 # reads (X22-6533 pocket card / Reference Manual p.41). Pure Python.
 run "Branch-on-Bit encoding field check" python3 verify_bb_encoding.py
 
+# -- 0d''. Branch on Bit assembled bit-for-bit against the machine code
+# printed in the floating-point diagnostic jb_af1c (p.40, routine
+# F202D). IBM's own STRAP output; also exercises a full-word instruction
+# placed at a half-word (.40) boundary, straddling a word.
+run "Branch-on-Bit listing bit-exact (jb_af1c)" python3 verify_bb_listing.py
+
 # -- 0e. I-Box 4 routine 150's CB / CB+ / CBR / CBR+ blocks (plus their
 # LX/SX setup and XW index words) assembled verbatim at the listing's
 # own addresses and compared against docs/jb_ax4b_ibox-4.pdf pp.155/159's
@@ -109,15 +115,17 @@ run "Look-ahead timing: L/+/ST/V+/CB loop" ./run_program.sh programs/la_timing_l
 
 # -- 1e. Branch guess and wrong-way recovery (plan §6d): one branch on
 # RZ taken against the not-taken guess (the index arithmetic run ahead
-# must be undone), one not taken (it must stand). DONE is half-word 82
-# in this program's layout. Injection (recovery's index restore
+# must be undone), one not taken (it must stand). The halt PC (label
+# DONE) is derived from the assembled symbol table rather than hard-
+# coded, so it tracks layout (full-word instructions are half-word
+# aligned -- Gotchas item 19). Injection (recovery's index restore
 # removed): X1 comes back 5.0 instead of 4.0 (observed: one of the two
 # run-ahead adds had executed when the branch resolved).
 run "Look-ahead: branch guess + recovery" ./run_program.sh programs/la_branch_guess.strap StretchGuessTb \
     "X1_4:addrIndex(1)=0x1000000000000" \
     "X2_2:addrIndex(2)=0x800000000000" \
     "X3_zero:addrIndex(3)=0" \
-    "PC=82" \
+    "PC=$(python3 -c 'from strap_asm import assemble; print(assemble(open("programs/la_branch_guess.strap").read()).symtab["DONE"]//32)')" \
     "CYCLES<=260"
 
 # -- 1f. Floating-point arithmetic (stage 4c, StretchFP.bsv): L, *, +
@@ -207,10 +215,10 @@ run "Problem 2.2 Method 3 (algorithm)" ./run_program.sh programs/problem_2_2_met
 # boundary -- see the .strap file's own comment). Reproduced here as the
 # literal checks below so this script doesn't need to invoke Python twice.
 run "Figure 7 Progressive Indexing" ./run_program.sh programs/figure7_progressive_indexing.strap StretchFigure7Tb \
-    "w37:37=0xa0a00b0c08c0e1" \
-    "w38:38=0xd1018e1220f1429" \
-    "w39:39=0x16311183921a413" \
-    "w40:40=0x1c48000000000000"
+    "w36:36=0x910000000a0a0" \
+    "w37:37=0xb0c08c0e10d1018" \
+    "w38:38=0xe1220f1429016311" \
+    "w39:39=0x183921a4131c4800"
 
 # -- 4b. I-Box 1 diagnostic (docs/ja_ax1a_ibox-1.pdf p.51, WEN/WEN2/VEN):
 # VFL binary-unsigned Load correctly sets RGZ for a nonzero unsigned

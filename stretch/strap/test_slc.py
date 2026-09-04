@@ -66,8 +66,18 @@ HERE    LVI, $1, 5
 """)
 check("SLC 192 (bits) = word 3", p.symtab['HERE'], 3 * 64)
 
-# 3. Rounding upward: a full-word instruction after an unaligned SLC
-# lands at the next full word; a bit-precise DD does not round.
+# 3. Half-word alignment: a full-word INSTRUCTION is 64 bits wide but
+# only half-word aligned -- the instruction counter is half-word
+# granular and a full word "will start at bit 32 of the addressed
+# location and continue to bit 31 of the next higher location"
+# (Reference Manual p.39). So a full-word instruction after SLC 5.32
+# (half-word 1, already half-word aligned) STAYS at 5.32; it does not
+# round up to the next word. Confirmed against IBM's own STRAP output:
+# the floating-point diagnostic jb_af1c packs a full-word Connective at
+# octal 011652.40 with no gap, and verify_bb_listing.py reproduces its
+# BB1 lines bit-exact at .40. A bit-precise DD (data) does not round
+# either. (An earlier version of this test asserted rounding to 6.0,
+# encoding a word-alignment assumption that real listings disprove.)
 p = assemble("""
         SLC, 5.32
 FULL    L(BU,64,8), FULL
@@ -75,7 +85,7 @@ FULL    L(BU,64,8), FULL
 BITS    DD(BU,8,8), 1
         END, FULL
 """)
-check("full-word instruction after SLC 5.32 rounds up to 6.0", p.symtab['FULL'], 6 * 64)
+check("full-word instruction after SLC 5.32 stays at 5.32 (half-word aligned)", p.symtab['FULL'], 5 * 64 + 32)
 check("DD after SLC 9.3 stays at 9.3 (bit-precise, no rounding)", p.symtab['BITS'], 9 * 64 + 3)
 
 # 4. Symbolic Y: a location-counter symbol defined above, a SYN
