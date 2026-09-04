@@ -940,3 +940,17 @@ pass, beyond the source listings and design reports surveyed above:
 
 Beyond bitsavers, no other archive is known to hold 7030 software or
 documentation not represented here.
+
+
+## Third-party Stretch software (non-IBM): documentation trail
+
+The languages/systems built for Stretch installations outside IBM --
+LASL's IVY (and COLASL), AWRE's S1/S2 FORTRAN, and MITRE's Stretch LISP
+1.5 / MATHLAB -- are documented in `thirdparty_software/README.md`
+(citations, access status, and the one freely-downloadable item). Unlike
+IBM's 7030 software, no source code for any of them is known to survive,
+and the primary papers are paywalled (ACM) or bot-protected (FAS/OSTI).
+Provenance summary: IVY/COLASL in Lazarus, LA-6943-H (LASL, 1978); AWRE
+S1/S2 in Ron Bell's BCS Fortran-jubilee article (Glennie's Stretch
+FORTRAN); MATHLAB in Engelman's 1965 FJCC paper (the LISP-based MITRE
+system).
