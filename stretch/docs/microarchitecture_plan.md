@@ -96,6 +96,56 @@ in parentheses); **open** = no stage assigned yet.
 | Maintenance console: start/stop, display/store, single step, repeat mode, index-storage test | Blosk p.6 | open |
 | Measured benchmark timings (GERB2 etc.) | Perf. Char. vol.2 | planned (5) |
 
+### 1b. Execution roadmap (prioritized)
+
+The order below is the intended attack, most-actionable first. It is
+codesign-driven: each item is validated by running real historical
+source (the `jb_af1c` FP diagnostic, the I-Box decks, the DCP) with the
+listing-oracle-then-run-then-injection pattern (AGENTS.md), not by
+hand vectors alone. "Enables" notes the dependency chain.
+
+1. **Finish the FP-compare family.** Reimplement `fpCompare`'s
+   Compare-for-Range path (KR/KMGR) per Ref. Manual p.90-91, then run
+   `jb_af1c` F202G (KR, p.45) bit-exact. Both enablers (BB1,$AH set,
+   Z,$IND clear) are done. *In progress — the immediate next step.*
+2. **FP arithmetic against the diagnostic** — the largest FP gap and
+   the E-box's core. Run `jb_af1c` add/subtract/multiply blocks to
+   verify +/+MG/-/M+/* on real operands (result checked by a following
+   K compare, the pattern already validated), then implement the open
+   ops in the order the diagnostic reaches them: `*+` (multiply-add),
+   `F+` (add to fraction), double precision, `SRT` (root), `LFT`,
+   and finally `divide` (multi-cycle; the combinational form blows up
+   elaboration — needs the serial/parallel E-box of item 5).
+3. **The interrupt system** — the biggest single documented feature
+   still absent, and a prerequisite for EX/EXIC, storage protection,
+   the timer, and any diagnostic that traps. Indicators → mask →
+   left-most-one priority → the single "free" interruption instruction
+   at IA+indicator#, IC not stepped; enable/disable via BE/BD. Ref.
+   Manual pp.43-50, Blosk pp.16-17, Buchholz ch.10.
+4. **Remaining instruction gaps** (mostly self-contained): EX/EXIC
+   (needs item 3's interrupt-state rules), LVE/SVA/RNX/LVS, swap and
+   backward Transmit + crossing-field VFL stores (needs a multi-cycle
+   store), decimal VFL and radix conversion. Also finish Address
+   Invalid for all operand classes (only FP today).
+5. **Microarchitecture fidelity / the folklore** — the "cycle-accurate"
+   half. Split the E-box into the real serial (SAU) and parallel (PAU)
+   units sharing A/B and C/D; look-ahead data forwarding via the LAAR
+   (today it drains/waits, no forwarding); per-level index-recovery
+   levels with their real cost; the five ring-counter interlocks;
+   ECC/parity check cycles; the Exchange as a real bus requester;
+   the maintenance console. Validate against Perf. Char. vol.2
+   measured timings (GERB2 etc.).
+6. **DCP-scale transcription** — now unblocked on memory (BRAM, 98,304
+   words). Remaining blockers are I/O and print macros: `CTL` SPACE
+   FILE / WRITE TAPE MARK / BACKSPACE FILE, channel chaining/multi-
+   block, and the `%IQSZ` print-formatting macros; then the
+   self-contained Memory Compare (G5) and Panel Dump (H7) routines.
+   See `docs/archival_inventory.md`.
+
+Cross-cutting throughout: keep the regression suite green at every
+commit; every timing claim carries a documented number; every new
+feature gets a discriminating test proven by a reverted injection.
+
 Concretely, "the same" means these things, each with a primary source:
 
 | Aspect | Real machine | Source |
