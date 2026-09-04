@@ -1737,10 +1737,26 @@ function ActionValue#(Tuple4#(HWordAddr, Maybe#(Tuple2#(Bit#(4), IndexWord)),
       // 00 (unchanged) issues NO write -- avoiding a phantom store-
       // close-to-fetch hazard. Bit numbering: IBM bit p in a word is
       // BSV index 63-p (StretchTypes.bsv), matching insertFieldBits'
-      // shiftAmt=64-off-len for len==1. Read-only locations (which
-      // "remain unchanged when there is any attempt to change them",
-      // p.41) are not modeled: the special registers 0-31 are Reg-
-      // backed and no test currently branches on a bit within one.
+      // shiftAmt=64-off-len for len==1.
+      //
+      // KNOWN GAP -- BB on the INDICATOR register (word 11): p.41 says
+      // "BRANCH ON BIT may also be used to test and change the contents
+      // of positions 20-63 of the indicator register", but this write
+      // goes through st.writeWord, and StretchStorage.writeWord(11) is
+      // a no-op (indicators are written once per rule via
+      // setIndicatorBits; a plain Reg cannot take two writes in one
+      // rule -- see StretchStorage's writeWord comment). So a BB that
+      // SETS an indicator bit reads it correctly but does not change
+      // it. jb_af1c routine F202G (KR Compare-for-Range tests, p.45)
+      // needs this: it pre-sets AH with `BB1,$AH,$+1.` before each KR,
+      // whose range result depends on AH's prior state (the else-branch
+      // at the ind_AH read below). Fixing it means special-casing the
+      // indicator word here -- fold the modified bit into `ind` (the
+      // Word64 the shared tail writes via setIndicatorBits) instead of
+      // calling st.writeWord -- so F202G can run. Read-only locations
+      // otherwise ("remain unchanged when there is any attempt to
+      // change them", p.41) are not modeled; special registers 0-31 are
+      // Reg-backed.
       //
       // Store-close-to-fetch and index consistency (StretchCore.bsv):
       //   * BB is NOT isEboxClass, so it is never loaded into a look-
