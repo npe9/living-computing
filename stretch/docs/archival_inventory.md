@@ -914,3 +914,29 @@ header; `../bsv/*.bsv` cite the Reference Manual / pocket card page for
 each encoding and semantic; `microarchitecture_plan.md` Appendix A
 cites the primary source for every specification fact. This table is
 the reverse index from surviving source -> implementation.
+
+## Holdings now complete: the full bitsavers `ibm/7030/` collection
+
+As of 2026-09-03 all 52 PDFs under bitsavers' `pdf/ibm/7030/` (top level
++ `diag/`, `ce/`, `mcp/`) are downloaded into `docs/`; a diff confirmed
+nothing is missing, and there is no `bits/IBM/7030/` software-image
+directory (404) -- consistent with the standing finding that no
+machine-readable system tape survives. Documentation added in the final
+pass, beyond the source listings and design reports surveyed above:
+
+| File | What | Relevance |
+|---|---|---|
+| `7030_Opcode_List.pdf` (99pp) | Assembled-word opcode listing | Decoder verification -- the cross-check `bsv/README.md` "Next steps" item 1 called for (rendered pages, OCR is noisy on digits) |
+| `C22-6729_7030_STRAP_II_Sys_Analysis_Guide.pdf` (211pp) | STRAP II internals (calling sequences, flowcharts, one worked source example) | Enough to reconstruct STRAP II's logic; the assembler's own listing is still separate/unlocated |
+| `C22-6751_7030_FORTRAN_IV_May63.pdf` (37pp) | IBM 7030 FORTRAN IV | The FORTRAN IV documentation (compiler source not surfaced) |
+| `TR00.719_Stretch_Multiprogramming_May60.pdf` (14pp) | Stretch multiprogramming design | The interrupt/supervisor design behind MCP -- for the interrupt-system stage |
+| `R23-9713_7101_Maint_Console_1961.pdf` (49pp) | Maintenance console CE manual | The console controls (start/stop, display/store, single step, repeat) -- an open feature |
+| `R23-9702_7503_Card_Rdr_7614_Rdr_Ctl_CE_1961.pdf` (86pp) | Card reader / control CE | External-unit detail for the exchange |
+| `C28-6379-0_MCP_Loader.pdf` (24pp), `N22-0085_...Upd` (12pp), `X28-6131_MCP_PocketCard.pdf` (2pp), `C22-6728_...Guide.pdf` (270pp, base rev) | MCP loader / reference update / pocket card / base System Analysis Guide | MCP operation reference |
+| `D22-6513_7030_genInfo_1960.pdf` (26pp) | General information | Overview |
+| `A22-6552_/-1_physPlan.pdf` | Physical planning | Installation (the six-memory-unit configuration) |
+| `1956_fallJCC.pdf`, `1959_fallJCC.pdf`, `LASL_Jun61Article.pdf`, `ADescriptionOfStretch`, `Bloch_EngrDesOfStretch` | Conference papers / LASL / overviews | Historical design context |
+| `X22-6533_7030_PocketCard.pdf` (4pp) | Reference card (PDF; `pcard-*.png` are the working images) | The special-storage/indicator/mnemonic tables (see plan Appendix A.9-A.10) |
+
+Beyond bitsavers, no other archive is known to hold 7030 software or
+documentation not represented here.

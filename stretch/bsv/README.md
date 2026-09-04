@@ -472,10 +472,10 @@ of these).
    Dump) need no tape/channel I/O and are runnable/verifiable on this
    model today; see that doc's "Recommended next steps" for the
    transcription order (shared symbol table first).
-1. Verify the decoder against `7030_Opcode_List.pdf`'s assembled-word
-   listings (its OCR is noisy on digits; check against the rendered
-   page images, not the OCR text, the same way the format tables in
-   this file were established).
+1. Verify the decoder against `7030_Opcode_List.pdf` (now in `docs/`,
+   99 pp)'s assembled-word listings (its OCR is noisy on digits; check
+   against the rendered page images, not the OCR text, the same way the
+   format tables in this file were established).
 2. Extend execute() coverage in the order real STRAP programs are
    likely to need it: decimal VFL, floating point arithmetic beyond
    L/ST (Connectives landed this session — see "Executed" above).
