@@ -1,0 +1,120 @@
+! Floating-point diagnostic jb_af1c, routine F202G sub-tests 11-18
+! (docs/jb_af1c_floating-point.pdf p.45, octal 012036.40-012064.00) --
+! the KR (Compare for Range) tests, run on the model. KR is the FP
+! comparison whose result is GATED by the accumulator-high indicator
+! (AH): "When AH is on, a comparison is performed ... and AE is set to
+! one if the accumulator operand is low. If AH is off, the comparison
+! is performed but the comparison indicators are not changed. AL is not
+! changed" (Reference Manual p.91). AH is the input gate, never a
+! result.
+!
+! Each pair of sub-tests exercises both gate states over one operand
+! pair:
+!   G11 AH ON : BB1,$AH sets AH=1; KR FK32,FK34; expect AH still ON
+!   G12 AH OFF: Z,$IND clears AH;  KR FK32,FK34; expect AH still OFF
+!   G13 AH ON : KR FPK1,FPK1 (equal); expect AH ON
+!   G14 AH OFF: KR FPK1,FPK1; expect AE OFF (indicators left cleared)
+!   G15 AH ON : KR FK40,FK25; expect AE ON (FK40 negative < FK25 positive)
+!   G16 AH OFF: KR FK40,FK25; expect AL OFF
+!   G17 AH ON : KR FK34,FPK23; expect AH ON
+!   G18 AH OFF: KR FK34,FPK23; expect AE OFF
+! `BB1,$AH,$+1.` forces AH=1 (its target is the very next instruction,
+! so control continues either way -- the branch is only for the set-bit
+! side effect). Both that (indicator-bit set) and `Z,$IND` (indicator
+! clear) are the capabilities added earlier this session (63721f1,
+! b1a6ad0). A correct KR reaches the PASS halt substituted where the
+! routine's SSIP exit begins; a wrong indicator branches to the SERS
+! FAIL halt.
+!
+! Substitutions (SSIP framework, real listed addresses): SERS (octal
+! 1304) -> FAIL halt, SEN (octal 1310) -> scratch, PASS (octal 12064.40,
+! the routine's `B,$+1.`/`B,F202G`/`B,SSW` exit) -> halt. Constants from
+! the pools p.176-178 at their listed addresses.
+!
+! This block motivated a KR range-compare fix: fpCompare's range path
+! used to set AH := (acc >= operand), but per p.91 KR leaves AL and AH
+! unchanged and sets only AE (accumulator low). The fix removes the AH
+! write. NOTE on discrimination: F202G's own operands do NOT distinguish
+! that AH aspect -- all its AH-preset sub-tests (G11/G13/G17) have
+! cmp >= 0 (e.g. G11's FK32 is positive, FK34 negative, so FK32 > FK34),
+! so both the old (AH := cmp>=0 = 1) and the fixed (AH left = 1) code
+! leave AH on and pass. The fix is kept because it is what p.91 says;
+! it would matter for a future AH-preset/cmp<0/BZAH case. What F202G
+! DOES discriminate is KR's AE result (see below).
+! verify_fp_compare_g_listing.py checks every half-word and constant
+! bit-for-bit against the printed machine code.
+!
+! Observed: the model halts at PASS -- KR gated by AH behaves as p.91
+! specifies across all eight sub-tests. Discriminating injection (KR's
+! AE forced off in the range path): halts at SERS at G15, which expects
+! AE ON (FK40 negative < FK25 positive), exactly as predicted. Reversed
+! by the exact inverse edit (AGENTS.md rule 2).
+
+! -- SSIP framework substitutes --
+        SLC, (8)1304.0
+SERS    BEW, $
+        SLC, (8)1310.0
+SEN     DD(BU,64,8), 0
+
+! -- constants (pools, p.176-178) --
+        SLC, (8)22006.0
+FPK1    DD(BU,64,8), (8)1777777777777777777777
+        SLC, (8)22034.0
+FPK23   DD(BU,64,8), (8)0000525252525252525230
+        SLC, (8)22173.0
+FK25    DD(BU,64,8), (8)1577777777777777777760
+        SLC, (8)22202.0
+FK32    DD(BU,64,8), (8)0027125252525252525000
+        SLC, (8)22204.0
+FK34    DD(BU,64,8), (8)0200377777777777777770
+        SLC, (8)22212.0
+FK40    DD(BU,64,8), (8)1777577777777777777770
+
+! -- code (verbatim, at the listing's addresses) --
+        SLC, (8)12036.40
+F202G11 BB1, $AH, $+1.      ! force AH = 1
+        L(U), FK32
+        KR(U), FK34
+        SIC, SEN
+        BZAH, SERS          ! error if AH off
+F202G12 L(U), FK32
+        Z, $IND             ! AH = 0
+        KR(U), FK34
+        SIC, SEN
+        BAH, SERS           ! error if AH on
+F202G13 BB1, $AH, $+1.
+        L(U), FPK1
+        KR(U), FPK1
+        SIC, SEN
+        BZAH, SERS
+F202G14 L(U), FPK1
+        Z, $IND
+        KR(U), FPK1
+        SIC, SEN
+        BAE, SERS           ! error if AE on
+F202G15 BB1, $AH, $+1.
+        L(U), FK40
+        KR(U), FK25
+        SIC, SEN
+        BZAE, SERS          ! error if AE off
+F202G16 L(U), FK40
+        Z, $IND
+        KR(U), FK25
+        SIC, SEN
+        BAL, SERS           ! error if AL on
+F202G17 BB1, $AH, $+1.
+        L(U), FK34
+        KR(U), FPK23
+        SIC, SEN
+        BZAH, SERS
+F202G18 L(U), FK34
+        Z, $IND
+        KR(U), FPK23
+        SIC, SEN
+        BAE, SERS
+
+! -- PASS halt where the routine's SSIP exit begins --
+        SLC, (8)12064.40
+PASS    BEW, $
+
+        END, F202G11

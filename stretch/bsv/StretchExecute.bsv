@@ -1534,8 +1534,14 @@ function ActionValue#(Tuple4#(HWordAddr, Maybe#(Tuple2#(Bit#(4), IndexWord)),
                 ind = setBit(ind, ind_AE, pack(cmp == 0));
                 ind = setBit(ind, ind_AH, pack(cmp > 0));
               end else if (ind[63 - ind_AH] == 1) begin
+                // KR/KMGR (Compare for Range), Ref. Manual p.91: when
+                // the gate AH is on, set AE to "accumulator low"
+                // (acc < operand). AL and AH are NOT changed -- AH is
+                // the input gate, not a result; and when AH is off the
+                // comparison indicators are left unchanged (the
+                // fall-through of this `else if`). Verified against
+                // jb_af1c F202G11-18 (programs/fp_compare_f202g.strap).
                 ind = setBit(ind, ind_AE, pack(cmp < 0));
-                ind = setBit(ind, ind_AH, pack(cmp >= 0));
               end
             end
             7'b0011010: begin // *
