@@ -1,0 +1,90 @@
+! Floating-point diagnostic jb_af1c, routine F202A sub-tests 19 and 20
+! (docs/jb_af1c_floating-point.pdf p.33, octal 011422.00-011432.40) --
+! the first block of the FP diagnostic RUN on this model (previously
+! only its BB lines and sign-modifier loads were checked as encodings).
+!
+! Each sub-test loads FPK2 (unnormalized), zeroes the indicators, and
+! COMPARES it (K, unnormalized) against another constant; the listing's
+! own comment states the expected result -- "XFN RNG FRACT + AL ON",
+! i.e. the arithmetic-low indicator AL must come on and AE/AH must be
+! off. It then checks that with three SIC-prefixed branch-on-indicator
+! instructions, each branching to the error routine SERS if the result
+! is wrong:
+!   SIC,SEN / BZAL,SERS   -- error if AL is OFF (branch on zero AL)
+!   SIC,SEN / BAE,SERS     -- error if AE is ON
+!   SIC,SEN / BAH,SERS     -- error if AH is ON
+! A19 compares FPK2 vs FPK26, A20 compares FPK2 vs FPK21; both expect
+! AL on. So a correct FP compare falls straight through both sub-tests
+! to F202A21's location, where this transcription substitutes a PASS
+! halt (BEW,$); any wrong indicator branches to SERS, where a FAIL halt
+! sits. PC alone therefore says pass (halted at PASS) or fail (halted
+! at SERS), the same self-checking mechanism the I-Box SIC-CB block uses.
+!
+! Substitutions (the SSIP diagnostic framework, all OUTSIDE the
+! transcribed code range, given at their listed low-memory addresses so
+! the SIC/branch machine code still matches the listing):
+!   SERS (octal 1304) -> BEW,$   the error routine, replaced by a halt
+!   SEN  (octal 1310) -> a scratch word the SIC stores the IC into
+!   PASS (octal 11433, where F202A21 begins) -> BEW,$
+! Constants FPK2/FPK21/FPK26 are transcribed from the pool on p.176 at
+! their listed addresses (octal 22007/22032/22037), as the raw 64-bit
+! floating-point words the diagnostic defines with %8=DD%BU=.
+!
+! Instructions used: L(U), Z, K(U), SIC, BZAL/BAE/BAH (branch on
+! indicator), BEW -- all implemented. This block is the first to run a
+! real FP compare against the diagnostic's own operands and check the
+! AL/AE/AH indicators against IBM's stated expectation. The SIC pairs
+! are full words landing at octal .40 (an odd half-word), exercising the
+! half-word-aligned full-word instruction placement fixed this session
+! (strap/README.md Gotchas item 19). verify_fp_compare_listing.py checks
+! every transcribed half-word against the page's printed machine code.
+!
+! Observed: the model halts at PASS -- both compares (FPK2 vs FPK26,
+! XFP range; FPK2 vs FPK21, N range) set exactly AL, so the single-
+! precision FP compare handles these extreme-exponent operands as IBM's
+! own diagnostic expects. Injection (AL and AH swapped in
+! StretchExecute's FP compare arm): the model halts at SERS (PC 1416),
+! the FAIL routine, exactly as predicted -- FPK2<FPK26 then set AH, so
+! BZAL,SERS branched on AL being off. Reversed by the exact inverse
+! edit (AGENTS.md rule 2); PASS restored.
+
+! -- SSIP framework substitutes, at their real listed addresses --
+        SLC, (8)1304.0
+SERS    BEW, $              ! error routine -> FAIL halt
+        SLC, (8)1310.0
+SEN     DD(BU,64,8), 0      ! SIC stores the instruction counter here
+
+! -- floating-point constants (pool, p.176) --
+        SLC, (8)22007.0
+FPK2    DD(BU,64,8), (8)1777777777777777777760
+        SLC, (8)22032.0
+FPK21   DD(BU,64,8), (8)0031177777777777777767
+        SLC, (8)22037.0
+FPK26   DD(BU,64,8), (8)1777577777777777777760
+
+! -- the transcribed code (verbatim, at the listing's own addresses) --
+        SLC, (8)11422.0
+F202A19 L(U), FPK2          ! XFN RNG  FRACT +   AL ON
+        Z, $IND
+        K(U), FPK26         ! XFP RANGE, FRACT.+
+        SIC, SEN
+        BZAL, SERS          ! error if AL off and AE or AH on
+        SIC, SEN
+        BAE, SERS
+        SIC, SEN
+        BAH, SERS
+F202A20 L(U), FPK2          ! XFN RNG  FRACT +   AL ON
+        Z, $IND
+        K(U), FPK21         ! N RANGE, FRACT.+
+        SIC, SEN
+        BZAL, SERS
+        SIC, SEN
+        BAE, SERS
+        SIC, SEN
+        BAH, SERS
+
+! -- PASS halt where F202A21 begins --
+        SLC, (8)11433.0
+PASS    BEW, $              ! all AL-on checks fell through: success
+
+        END, F202A19

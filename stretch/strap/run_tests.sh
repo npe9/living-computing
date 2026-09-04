@@ -151,6 +151,19 @@ run "Floating point: E+ / E+I / SHF" ./run_fp_exp_test.sh
 run "FP sign modifiers (encoding vs jb_af1c)" python3 verify_fp_signmods.py
 run "FP sign modifiers (LN/LA/LNA on the model)" ./run_fp_signmod_test.sh
 
+# -- 1i'. First real jb_af1c block RUN on the model: routine F202A
+# sub-tests 19/20 (docs/jb_af1c_floating-point.pdf p.33), FP compares
+# of FPK2 against FPK26 (XFP range) and FPK21 (N range), each expecting
+# AL on. verify_fp_compare_listing.py checks the transcription (code +
+# the three constants) bit-for-bit against the printed machine code;
+# the run halts at PASS iff the FP compare sets exactly AL (a wrong
+# indicator branches to the substituted SERS FAIL halt). Injection
+# (AL/AH swapped in StretchExecute's FP compare arm): halts at SERS
+# (PC 1416) instead of PASS (9782), as predicted.
+run "FP compare block (jb_af1c F202A, encoding)" python3 verify_fp_compare_listing.py
+run "FP compare block (jb_af1c F202A19/20 on the model)" ./run_program.sh programs/fp_compare_f202a.strap StretchFpCmpTb \
+    "PC=$(python3 -c 'from strap_asm import assemble; print(assemble(open("programs/fp_compare_f202a.strap").read()).symtab["PASS"]//32)')"
+
 # -- 1j. Store-close-to-fetch: store a word then immediately reload it;
 # the load must read the new value, not the stale one. The hazard the FP
 # sign-modifier codesign exposed; fixed by tracking each E-box level's
