@@ -15,7 +15,9 @@ import StretchStorage::*;
 import StretchIO::*;
 import StretchDecode::*;
 import StretchExecute::*;
-import StretchVFL::*;      // effLength/effByteSize for the VFL time budget
+import StretchIBox::*;       // mkInstrBuffers, classification, iboxHazard
+import StretchLookAhead::*;  // mkLookAhead
+import StretchTiming::*;     // iboxCycles/eboxClocks/budgetClocks
 
 interface StretchCore;
   // step() advances the core exactly one clock: every rule in
@@ -71,6 +73,12 @@ module mkStretchCore(StretchCore);
   // mutually-exclusive branches of step(), so they share this one
   // instance's method port. See StretchExecute's mkEBox comment.
   EBox ebox <- mkEBox(st, ioDev);
+  // Step 5b: the instruction buffers (1Y/2Y + IC controls) and the
+  // four-level look-ahead are stage modules of their own
+  // (StretchIBox.bsv, StretchLookAhead.bsv), the mkCPU_Stage shape;
+  // the rules below orchestrate them.
+  InstrBuffers ibuf <- mkInstrBuffers(st);
+  LookAhead    la   <- mkLookAhead(st);
   // The harness's clock enable and the halt flag it polls (see the
   // rules section below for the contract).
   PulseWire  tick      <- mkPulseWire;
@@ -79,62 +87,14 @@ module mkStretchCore(StretchCore);
   Reg#(Maybe#(Tuple2#(Bit#(4), IndexWord))) pendingIdxWrite <- mkReg(tagged Invalid);
   Reg#(Maybe#(IoXfer)) ioPending <- mkReg(tagged Invalid);
 
-  // The instruction unit's instruction buffers 1Y/2Y and IC controls
-  // (docs/microarchitecture_plan.md stage 2a; Blosk TR00.722 pp.7-10,
-  // 25; CE manual figs 3.1.1-3.1.5). Each Y holds one 64-bit
-  // instruction word fetched ahead of the instruction counter through
-  // its own bus channel (StretchStorage.fetchReq/fetchReady/fetchResp,
-  // return tags 1Y/2Y); a word is usable one I-checker cycle (two
-  // clocks) after it arrives. The IC controls keep both filled with
-  // the next words in sequence (`nextFetch`), free a Y once the
-  // instruction counter has passed its word, and invalidate both on a
-  // taken branch, a setPC, or a store to a prefetched word (program
-  // store compare, Blosk p.21). A fetch still in flight for an
-  // invalidated Y is discarded on arrival.
-  // ConfigReg: the IC-controls rule writes these and the preparation
-  // rule reads them, while preparation writes pcReg/branchSeq that the
-  // IC controls read -- every read is of the pre-clock value (as in the
-  // old single method), which a ConfigReg's unordered read/write states
-  // exactly and an ordinary Reg would make a scheduling cycle.
-  Vector#(2, Reg#(YReg)) yr <- replicateM(mkConfigReg(YReg{valid: False, pending: False,
-                                                      discard: False, addr: 0, data: 0, chk: 0}));
-  Reg#(WordAddr) nextFetch <- mkReg(0);
+  // (The 1Y/2Y buffers and their IC controls: `ibuf`, StretchIBox.bsv.)
   // Restart requests (branch taken inside step(); setPC from outside)
   // as sequence numbers, so each register has exactly one writer.
   Reg#(Bit#(8)) branchSeq  <- mkReg(0);   // written in step()'s branch paths
   Reg#(Bit#(8)) restartSeq <- mkReg(0);   // written by setPC
   Reg#(Bit#(8)) restartSeen <- mkReg(0);  // written at the top of step()
   Reg#(Bit#(8)) branchSeen  <- mkReg(0);
-  // ---- Stage 3a: the look-ahead (docs/microarchitecture_plan.md §6,
-  // Buchholz ch.15, Cocke & Kolsky §III.C). Four levels in a ring;
-  // E-box-class instructions (VFL, connectives, floating point) leave
-  // the instruction unit into a level with their operand address, the
-  // levels' fetches are issued ahead through their own bus channels,
-  // and the arithmetic unit removes levels in order, executing each
-  // once its operand is present. A level whose operand address equals
-  // that of an earlier unretired level waits for that level to retire
-  // before fetching (a store ahead of a load to the same word: the
-  // LAAR's job, here done conservatively for any earlier level). In
-  // this first cut an I-box-class instruction waits for the levels to
-  // drain before executing (no recovery levels yet), and so does a
-  // load behind a progressive-indexing instruction, whose index
-  // register is modified only at execution.
-  // Two ports (mkCReg): port 0 is the every-clock operand-collect/fetch
-  // rule, port 1 the decision arm that runs after it in the same clock
-  // (rl_la_fetch / the six arms below) -- the one intra-clock ordering
-  // the old monolithic step() relied on, now explicit.
-  Vector#(4, Array#(Reg#(LaLevel))) la <- replicateM(mkCReg(2, LaLevel{valid: False, di: tagged Invalid,
-        pc: 0, len: Half, da: tagged Invalid, data: tagged Invalid, fetchIssued: False,
-        waitFor: tagged Invalid, branch: False, target: 0, storeAddr: tagged Invalid}));
-  function Vector#(4, LaLevel) laRead(Integer port);
-    Vector#(4, LaLevel) v = newVector;
-    for (Integer k = 0; k < 4; k = k + 1) v[k] = la[k][port];
-    return v;
-  endfunction
-  function Action laWrite(Integer port, Vector#(4, LaLevel) v) =
-    action
-      for (Integer k = 0; k < 4; k = k + 1) la[k][port] <= v[k];
-    endaction;
+  // (The four-level look-ahead ring: `la`, StretchLookAhead.bsv.)
   // ---- Stage 3c (plan §6d): the not-taken guess. A branch on an
   // arithmetic indicator is loaded as a branch level; the instruction
   // unit snapshots the index words and indicators and continues down
@@ -146,200 +106,13 @@ module mkStretchCore(StretchCore);
   Reg#(Vector#(16, Word64))  xSnap        <- mkReg(replicate(0));
   Reg#(Word64)               indSnap      <- mkReg(0);
   Reg#(Maybe#(HWordAddr))    recover      <- mkReg(tagged Invalid);
-  function Bool isIboxStore(DecodedInstr d);
-    case (d) matches
-      tagged DirIndex .x: return x.code[4] == 1;          // SX/SV/SC/SR
-      tagged BranchOrMisc .x: return x.misc && x.code == 3'b100;  // Z
-      tagged Sic .*: return True;
-      tagged Transmit .*: return True;
-      default: return False;
-    endcase
-  endfunction
-  Reg#(Bit#(2)) laHead  <- mkReg(0);
-  Reg#(Bit#(2)) laTail  <- mkReg(0);
-  Reg#(Bit#(3)) laCount <- mkReg(0);
   Reg#(Bool)    auActive <- mkReg(False);  // execPending belongs to the look-ahead head
   Reg#(Bit#(16)) ebusy  <- mkReg(0);       // E-box time of the last removed instruction
 
-  function Bool isEboxClass(DecodedInstr d);
-    case (d) matches
-      tagged VflInt .*: return True;
-      tagged Connective .*: return True;
-      tagged Fp .*: return True;
-      default: return False;
-    endcase
-  endfunction
-  // Does the instruction fetch a memory operand (so a level can be
-  // loaded with its address from execute()'s side-effect-free bail)?
-  function Bool fetchesOperand(DecodedInstr d);
-    case (d) matches
-      tagged VflInt .v: return v.a.p != 4;
-      tagged Connective .c: return c.a.p != 4;
-      tagged Fp .f: return f.code == 7'b0000110;   // FP L; ST fetches nothing
-      default: return False;
-    endcase
-  endfunction
-  // The word an E-box level stores to (Fp ST/M+/M+MG, VflInt
-  // ST/M+/M+MG/M+1), for the store-close-to-fetch hazard; Invalid for a
-  // level that writes only the accumulator (L/+/E+/SHF/*) or nothing.
-  function Maybe#(WordAddr) storeTarget(DecodedInstr d);
-    case (d) matches
-      tagged Fp .f:
-        if (f.code == 7'b0001110 || f.code == 7'b0001010 || f.code == 7'b0101010)
-          return tagged Valid effAddr18(st, f.addr, f.idx);
-        else return tagged Invalid;
-      tagged VflInt .v:
-        if (v.code == 6'b001101 || v.code == 6'b001001 || v.code == 6'b101001 || v.code == 6'b101011) begin
-          Bool prog = (v.a.p != 0 && v.a.p != 4);
-          BitAddr ea = prog ? st.readIndex(v.a.i1).addr : effAddr24(st, v.a.addr, v.a.i1);
-          return tagged Valid ea[23:6];
-        end else return tagged Invalid;
-      default: return tagged Invalid;
-    endcase
-  endfunction
-
-  function Bool hasProgressive(DecodedInstr d);
-    case (d) matches
-      tagged VflInt .v: return v.a.p != 0 && v.a.p != 4;
-      tagged Connective .c: return c.a.p != 0 && c.a.p != 4;
-      default: return False;
-    endcase
-  endfunction
-
-  // ---- Stage 3b (plan §6c): may an I-box-class instruction execute now,
-  // with look-ahead levels pending? It may unless a level's operand
-  // word is one it reads or writes, or it branches on an arithmetic
-  // indicator (which needs the levels drained). The operand words use
-  // the same effective-address arithmetic as execute().
-  function Bool levelHolds(Vector#(4, LaLevel) lv, WordAddr w);
-    Bool r = False;
-    for (Integer k = 0; k < 4; k = k + 1) begin
-      if (lv[k].da matches tagged Valid .a &&& lv[k].valid &&& a == w) r = True;
-      if (lv[k].storeAddr matches tagged Valid .sa &&& lv[k].valid &&& sa == w) r = True;
-    end
-    return r;
-  endfunction
-
-  // Mask of the index indicators in the indicator word (bit n is w[63-n]).
-  Word64 indexIndMask = (64'h1 << (63 - ind_XF)) | (64'h1 << (63 - ind_XCZ)) | (64'h1 << (63 - ind_XVLZ))
-                      | (64'h1 << (63 - ind_XVZ)) | (64'h1 << (63 - ind_XVGZ)) | (64'h1 << (63 - ind_XL))
-                      | (64'h1 << (63 - ind_XE)) | (64'h1 << (63 - ind_XH));
-  function Bool indexIndicator(Bit#(6) n) =
-    (n == ind_XF || n == ind_XCZ || n == ind_XVLZ || n == ind_XVZ || n == ind_XVGZ
-     || n == ind_XL || n == ind_XE || n == ind_XH);
-
-  function Bool iboxHazard(DecodedInstr d, Vector#(4, LaLevel) lv);
-    Bool pending = False;
-    for (Integer k = 0; k < 4; k = k + 1) if (lv[k].valid) pending = True;
-    Bool h = True;   // anything not listed (Transmit, I/O, EX...): drain first
-    case (d) matches
-      tagged DirIndex .x: begin
-        HWordAddr ea = effAddr19(st, x.addr, x.idx);
-        Bool refillWord = (x.code == 5'b01111) && levelHolds(lv, zeroExtend(st.readIndex(x.j).refill)); // V+CR
-        h = levelHolds(lv, ea[18:1]) || refillWord;
-      end
-      tagged ImmIndex .x:
-        h = (x.code == 4'b0111 || x.code == 4'b1111)                          // V+ICR / V-ICR
-            && levelHolds(lv, zeroExtend(st.readIndex(x.j).refill));
-      tagged CountBranch .x:
-        h = (x.refill == 1) && levelHolds(lv, zeroExtend(st.readIndex(x.j).refill));
-      tagged BranchInd .x: h = !indexIndicator(x.indNum);
-      tagged BranchOrMisc .x: begin
-        // Unconditional branches drain the levels first: a halt (a
-        // branch to itself) must not be reported while E-box work is
-        // still in the look-ahead, and on the real machine a taken
-        // branch empties the look-ahead anyway (Perf. Char. p.3-18:
-        // "BD ... empty the LA completely"). NOP is free.
-        if (!x.misc) h = (x.code != 3'b110);
-        else if (x.code == 3'b100) h = levelHolds(lv, baWord(effAddr24(st, {x.addr, 5'b0}, x.idx))); // Z
-        else if (x.code == 3'b000 || x.code == 3'b001)                         // R / RCZ
-          h = levelHolds(lv, zeroExtend(st.readIndex(x.idx).refill));
-        else h = True;                                                         // EX/EXIC
-      end
-      tagged Sic .x: begin
-        BitAddr ea = effAddr24(st, x.addr, x.idx);
-        h = levelHolds(lv, ea[23:6]) || iboxHazard(decodeHalfWord(x.inner), lv);
-      end
-      default: h = True;
-    endcase
-    return (pending && h) || (guessPending && isIboxStore(d));
-  endfunction
-
-  // Stage 2b timing registers (see iboxCycles below).
+  // Stage 2b timing registers (the budgets: StretchTiming.bsv).
   Reg#(Bit#(32)) clk      <- mkReg(0);   // clocks since reset
   Reg#(Bit#(32)) startClk <- mkReg(0);   // dispatch clock of the current instruction
   Reg#(Bit#(16)) ibusy    <- mkReg(0);   // clocks the next preparation must still wait
-
-  // ---- Stage 2b: instruction-unit timing (docs/microarchitecture_plan.md
-  // §6a). Each instruction carries a time budget in clocks (one clock =
-  // 0.3 us; one I-box control cycle = 2 clocks = 0.6 us as shipped),
-  // taken from IBM's own numbers: for I-box instructions the
-  // Performance Characteristics tables 4-8 ("basic time + dec", dec =
-  // 0.6 us, addresses in external memory), for floating point the
-  // 2-cycle preparation of Blosk fig.6 plus table 2's E-box cycles,
-  // for VFL the 6-cycle minimum preparation (+1 per indexing op, Perf.
-  // Char. p.3-17) plus table 3's SAU equation (1.8 us pre-execution,
-  // 0.6 us per byte, 0.6 us termination). The budget covers the
-  // instruction's own memory waits when memory is free: it is started
-  // at dispatch and whatever is left when the semantics complete
-  // (execute() and its operand reads) holds the next preparation, so
-  // a busy memory unit adds delay while a free one does not. Without
-  // the look-ahead (stage 3) E-box time is not overlapped with the
-  // next preparation -- a documented stage-2 simplification.
-
-  function Bit#(16) iboxCycles(DecodedInstr d, Bool taken);
-    case (d) matches
-      tagged DirIndex .x: return case (x.code)
-          5'b00001: 9;   // LX     4.8 + dec
-          5'b10001: 3;   // SX     1.2 + dec (+ LAAR)
-          5'b01111: 15;  // V+CR   8.4 + dec
-          default:  8;   // LV/LC/LR/SV/SC/SR/V+/V+C/KV/KC  4.2 + dec
-        endcase;
-      tagged ImmIndex .x: return case (x.code)
-          4'b0110, 4'b1110: 6;   // V+IC / V-IC   3.0 + dec
-          4'b0111, 4'b1111: 13;  // V+ICR / V-ICR 7.2 + dec
-          default: 5;            // LVI/LCI/LRI/LVNI/V±I/C±I/KVI/KVNI/KCI  2.4 + dec
-        endcase;
-      tagged CountBranch .x: return (x.refill == 1) ? (taken ? 12 : 11)   // CBR 6.6/6.0 + dec
-                                                     : (taken ? 8 : 7);    // CB  4.2/3.6 + dec
-      tagged BranchInd .*: return 6;   // Blosk fig.10: decode + 5 execution cycles
-      tagged BranchOrMisc .x: return x.misc
-          ? (case (x.code) 3'b100: 3; 3'b001: 8; default: 14; endcase)   // Z / RCZ / R
-          : (case (x.code) 3'b110: 3; 3'b011: 9; 3'b001: 11; default: 7; endcase); // NOP / BR / BD (+2 LA drains) / B,BE,BEW
-      tagged Sic .x: return 2 + iboxCycles(decodeHalfWord(x.inner), taken); // "SIC to EM" columns: +1.2 us
-      tagged Transmit .*: return 7;    // Blosk fig.9: 2 set-up + 5 per word (one word here)
-      tagged Fp .*: return 2;          // preparation; E-box cycles added below
-      tagged VflInt .v: return 6 + ((v.a.i1 != 0) ? 1 : 0);   // preparation, two LA levels
-      tagged Connective .c: return 6 + ((c.a.i1 != 0) ? 1 : 0);
-      tagged IoOp .*: return 6;
-      default: return 3;
-    endcase
-  endfunction
-
-  // E-box clocks for the executing classes (table 2 FP; table 3 SAU:
-  // 1.8 us + 0.6 us per byte + 0.6 us, bytes = ceil(length / byte size)).
-  function Bit#(16) eboxClocks(DecodedInstr d);
-    case (d) matches
-      tagged Fp .*: return 3;          // preparation; E-box cycles added below
-      tagged VflInt .v: begin
-        Bit#(7) len_ = effLength(v.a.length);
-        Bit#(4) bsz  = effByteSize(v.a.bs);
-        Bit#(8) bytes = (zeroExtend(len_) + zeroExtend(bsz) - 1) / zeroExtend(bsz);
-        return 8 + 2 * zeroExtend(bytes);
-      end
-      tagged Connective .c: begin
-        Bit#(7) len_ = effLength(c.a.length);
-        Bit#(4) bsz  = effByteSize(c.a.bs);
-        Bit#(8) bytes = (zeroExtend(len_) + zeroExtend(bsz) - 1) / zeroExtend(bsz);
-        return 8 + 2 * zeroExtend(bytes);
-      end
-      default: return 0;
-    endcase
-  endfunction
-
-  function Bit#(16) budgetClocks(DecodedInstr d, Bool taken) =
-    2 * iboxCycles(d, taken) + eboxClocks(d);
-
 
   // ioPending's own read-staging flag (docs/phase2_arm_inventory.md
   // conversion order, step 3): only a W-direction (memory->device)
@@ -395,14 +168,6 @@ module mkStretchCore(StretchCore);
       end
     endactionvalue;
 
-  // Look up a prefetched, checked instruction word.
-  function Maybe#(Word64) yLookup(WordAddr w);
-    Maybe#(Word64) r = tagged Invalid;
-    for (Integer k = 0; k < 2; k = k + 1)
-      if (yr[k].valid && yr[k].chk == 0 && yr[k].addr == w) r = tagged Valid yr[k].data;
-    return r;
-  endfunction
-
   // =====================================================================
   // Idiomatic-Bluespec rewrite step 4 (docs/microarchitecture_plan.md
   // §1c): the instruction unit's per-clock work as RULES, not one
@@ -443,7 +208,6 @@ module mkStretchCore(StretchCore);
   // pre-clock state by every rule, as before.
   Bit#(16) eb = (ebusy != 0) ? ebusy - 1 : 0;   // E-box busy time, counting down
 
-  Vector#(4, LaLevel) lv1 = laRead(1);   // the levels after this clock's arrivals
   Bool armRecover  = isValid(recover);
   Bool armIo       = !armRecover && isValid(ioPending);
   Bool armIdx      = !armRecover && !isValid(ioPending) && isValid(pendingIdxWrite);
@@ -451,8 +215,8 @@ module mkStretchCore(StretchCore);
   Bool armResume   = !armRecover && !isValid(ioPending) && !isValid(pendingIdxWrite) && resumeReady;
   // (A branch level has no operand and is removed as soon as it is the
   // head with the E-box free, i.e. once every earlier level has retired.)
-  Bool headReady   = laCount != 0 && ebusy == 0 && !auActive
-                     && (!isValid(lv1[laHead].da) || isValid(lv1[laHead].data));
+  Bool headReady   = la.count() != 0 && ebusy == 0 && !auActive
+                     && (!isValid(la.headLevel().da) || isValid(la.headLevel().data));
   Bool armRemove   = !armRecover && !isValid(ioPending) && !isValid(pendingIdxWrite)
                      && !resumeReady && headReady;
   Bool armPrepare  = !armRecover && !isValid(ioPending) && !isValid(pendingIdxWrite)
@@ -463,83 +227,26 @@ module mkStretchCore(StretchCore);
     clk <= clk + 1;
   endrule
 
+  // ---- Look-ahead: collect arrived operands, issue one fetch ----
   // (No fire_when_enabled on this rule or rl_ic_controls: they share the
   // look-ahead / Y-buffer bus channels with the exported `mem`
   // interface, and at the synthesized boundary bsc must assume the
   // harness could call those methods in a ticked clock. It never does
   // -- the harness ticks only in its run rule -- but that is a harness
   // fact, not something the scheduler can prove here.)
-  // ---- Look-ahead: collect arrived operands, issue one fetch ----
   rule rl_la_fetch (tick);
-    Vector#(4, LaLevel) nl = laRead(0);
-    for (Integer k = 0; k < 4; k = k + 1)
-      if (nl[k].valid && nl[k].fetchIssued && !isValid(nl[k].data) && st.laReady(fromInteger(k))) begin
-        let d <- st.laResp(fromInteger(k));
-        nl[k].data = tagged Valid d;
-      end
-    Bool issuedLa = False;
-    for (Integer k = 0; k < 4; k = k + 1)
-      if (!issuedLa && nl[k].valid && isValid(nl[k].da) && !nl[k].fetchIssued && !isValid(nl[k].waitFor)) begin
-        st.laReq(fromInteger(k), validValue(nl[k].da));
-        nl[k].fetchIssued = True;
-        issuedLa = True;
-      end
-    laWrite(0, nl);
+    la.collect();
   endrule
 
   // ---- IC controls: run every clock, alongside the instruction FSM ----
   rule rl_ic_controls (tick);
-    Vector#(2, YReg) ny = readVReg(yr);
     Bool restart = (restartSeq != restartSeen) || (branchSeq != branchSeen);
-    WordAddr nf = nextFetch;
-    WordAddr pcw = pcReg[18:1];
-    for (Integer k = 0; k < 2; k = k + 1) begin
-      // Program store compare: a store to a prefetched word invalidates it.
-      if (st.recentStore() matches tagged Valid .sw &&& ny[k].addr == sw && (ny[k].valid || ny[k].pending)) begin
-        ny[k].valid = False;
-        if (ny[k].pending) ny[k].discard = True;
-      end
-      // Restart (taken branch or setPC): drop everything buffered.
-      if (restart) begin
-        ny[k].valid = False;
-        if (ny[k].pending) ny[k].discard = True;
-      end
-      // Collect an arrived word; usable after the I-checker cycle.
-      if (ny[k].pending && st.fetchReady(fromInteger(k))) begin
-        let d <- st.fetchResp(fromInteger(k));
-        ny[k].pending = False;
-        if (ny[k].discard) ny[k].discard = False;
-        else begin ny[k].valid = True; ny[k].data = d; ny[k].chk = 2; end
-      end else if (ny[k].valid && ny[k].chk != 0)
-        ny[k].chk = ny[k].chk - 1;
-      // Free a word the instruction counter has passed.
-      if (ny[k].valid && ny[k].addr < pcw) ny[k].valid = False;
-    end
+    ibuf.advance(pcReg[18:1], restart);
     if (restart) begin
-      nf = pcw;
       restartSeen <= restartSeq;
       branchSeen <= branchSeq;
     end
-    // Issue at most one prefetch per clock into a free Y, in order.
-    Bool issued = False;
-    for (Integer k = 0; k < 2; k = k + 1)
-      if (!issued && !ny[k].valid && !ny[k].pending && !restart) begin
-        st.fetchReq(fromInteger(k), nf);
-        ny[k].pending = True; ny[k].discard = False; ny[k].addr = nf; ny[k].chk = 0;
-        nf = nf + 1;
-        issued = True;
-      end
-    writeVReg(yr, ny);
-    nextFetch <= nf;
   endrule
-
-  // Retire the head level: free it, release any level waiting on it.
-  function Vector#(4, LaLevel) retireHead(Vector#(4, LaLevel) nl, Bit#(2) head);
-    nl[head].valid = False;
-    for (Integer k = 0; k < 4; k = k + 1)
-      if (nl[k].waitFor matches tagged Valid .w &&& w == head) nl[k].waitFor = tagged Invalid;
-    return nl;
-  endfunction
 
   (* mutually_exclusive = "rl_recover, rl_io, rl_idx_write, rl_exec_resume, rl_au_remove, rl_prepare" *)
   rule rl_recover (tick && armRecover);
@@ -671,8 +378,6 @@ module mkStretchCore(StretchCore);
     HWordAddr pc       = tpl_1(ep);
     InstrLen len        = tpl_2(ep);
     DecodedInstr di     = tpl_3(ep);
-    Vector#(4, LaLevel) nl = lv1;
-    Bit#(2) nHead = laHead; Bit#(3) nCount = laCount;
     Bit#(16) ebn = eb;
     Bool done = False;
     Word64 v <- st.readWordResp();
@@ -693,8 +398,7 @@ module mkStretchCore(StretchCore);
         // A look-ahead level's instruction finished: retire it.
         auActive <= False;
         ebn = eboxClocks(di);
-        nl = retireHead(nl, nHead);
-        nHead = nHead + 1; nCount = nCount - 1;
+        la.retireHead();
       end else begin
         pcReg <= next;
         Bool taken = (next != pc + ((len == Full) ? 2 : 1));
@@ -705,8 +409,6 @@ module mkStretchCore(StretchCore);
         done = (next == pc);
       end
     end
-    laWrite(1, nl);
-    laHead <= nHead; laCount <= nCount;
     ebusy <= ebn;
     haltedReg <= done;
   endrule
@@ -715,10 +417,8 @@ module mkStretchCore(StretchCore);
     // Remove the head level into the arithmetic unit: its operand
     // (if any) is present, so execute() runs with it pre-supplied;
     // any further reads it needs go through the resume path.
-    Vector#(4, LaLevel) nl = lv1;
-    Bit#(2) nHead = laHead; Bit#(2) nTail = laTail; Bit#(3) nCount = laCount;
     Bit#(16) ebn = eb;
-    LaLevel h = nl[nHead];
+    LaLevel h = la.headLevel();
     Vector#(2, Word64) pf = replicate(0);
     Bit#(2) cnt = 0;
     if (h.data matches tagged Valid .d) begin pf[0] = d; cnt = 1; end
@@ -730,13 +430,10 @@ module mkStretchCore(StretchCore);
       guessPending <= False;
       if (taken) begin
         // Wrong guess: cancel every younger level, recover next clock.
-        for (Integer k = 0; k < 4; k = k + 1) nl[k].valid = False;
-        nTail = nHead; nCount = 0;
+        la.cancelAll();
         recover <= tagged Valid next;
-      end else begin
-        nl = retireHead(nl, nHead);
-        nHead = nHead + 1; nCount = nCount - 1;
-      end
+      end else
+        la.retireHead();
       ebn = 2 * 6;   // Blosk fig.10: decode + five execution cycles
     end else if (needsRead matches tagged Valid .a) begin
       st.readWordReq(a);
@@ -748,11 +445,8 @@ module mkStretchCore(StretchCore);
       pendingIdxWrite <= vflPending;
       ioPending <= ioStart;
       ebn = eboxClocks(h.di);
-      nl = retireHead(nl, nHead);
-      nHead = nHead + 1; nCount = nCount - 1;
+      la.retireHead();
     end
-    laWrite(1, nl);
-    laHead <= nHead; laTail <= nTail; laCount <= nCount;
     ebusy <= ebn;
     haltedReg <= False;
   endrule
@@ -763,19 +457,18 @@ module mkStretchCore(StretchCore);
     // 1Y/2Y); an E-box-class instruction is loaded into a look-ahead
     // level, an I-box-class one executes here once the levels have
     // drained. Stall until the word(s) are buffered and checked.
-    Vector#(4, LaLevel) nl = lv1;
-    Bit#(2) nTail = laTail; Bit#(3) nCount = laCount;
+    Vector#(4, LaLevel) nl = la.levels();
     Bool done = False;
     HWordAddr pc = pcReg;
     Maybe#(Tuple2#(InstrLen, DecodedInstr)) prepared = tagged Invalid;
-    if (yLookup(pc[18:1]) matches tagged Valid .w0) begin
+    if (ibuf.lookup(pc[18:1]) matches tagged Valid .w0) begin
       HalfWord32 hw0 = (pc[0] == 0) ? w0[63:32] : w0[31:0];
       InstrLen len = instrLen(hw0);
       if (len == Half)
         prepared = tagged Valid tuple2(len, decode(hw0, tagged Invalid));
       else begin
         HWordAddr pc1 = pc + 1;
-        if (yLookup(pc1[18:1]) matches tagged Valid .w1) begin
+        if (ibuf.lookup(pc1[18:1]) matches tagged Valid .w1) begin
           HalfWord32 hw1 = (pc1[0] == 0) ? w1[63:32] : w1[31:0];
           prepared = tagged Valid tuple2(Full, decode(hw0, tagged Valid hw1));
         end
@@ -791,7 +484,7 @@ module mkStretchCore(StretchCore);
     else if (!st.writeReady())
       noAction;   // a storing instruction could find the queue full: wait
     else if (prepared matches tagged Valid {.len, .di} &&& isEboxClass(di)) begin
-      if (nCount < 4 && !progressivePending) begin
+      if (la.count() < 4 && !progressivePending) begin
         Maybe#(WordAddr) da = tagged Invalid;
         Bool loaded = True;
         if (fetchesOperand(di)) begin
@@ -813,21 +506,20 @@ module mkStretchCore(StretchCore);
           // Store-close-to-fetch (plan stage 3a note): if this level
           // fetches word `a`, wait for the NEWEST earlier level that
           // stores to `a` -- every current level is program-earlier
-          // than this new one (nTail), and they retire head-first, so
+          // than this new one (the tail), and they retire head-first, so
           // waiting for the newest such store covers all older ones.
           Maybe#(Bit#(2)) wf = tagged Invalid;
           if (da matches tagged Valid .a) begin
             Bool wfound = False;
             for (Integer i = 0; i < 4; i = i + 1) begin
-              Bit#(2) pos = nTail - 1 - fromInteger(i);
+              Bit#(2) pos = la.tail() - 1 - fromInteger(i);
               Bool hz = nl[pos].valid &&& isValid(nl[pos].storeAddr) &&& validValue(nl[pos].storeAddr) == a;
               if (!wfound && hz) begin wf = tagged Valid pos; wfound = True; end
             end
           end
-          nl[nTail] = LaLevel{valid: True, di: di, pc: pc, len: len, da: da,
-                              data: tagged Invalid, fetchIssued: False, waitFor: wf,
-                              branch: False, target: 0, storeAddr: storeTarget(di)};
-          nTail = nTail + 1; nCount = nCount + 1;
+          la.load(LaLevel{valid: True, di: di, pc: pc, len: len, da: da,
+                          data: tagged Invalid, fetchIssued: False, waitFor: wf,
+                          branch: False, target: 0, storeAddr: storeTarget(st, di)});
           pcReg <= pc + ((len == Full) ? 2 : 1);
           ibusy <= 2 * iboxCycles(di, False);   // its preparation time
         end
@@ -838,12 +530,11 @@ module mkStretchCore(StretchCore);
       // §6d). Load it as a branch level with its target, snapshot the
       // index words and indicators, and carry on down the fall-
       // through path. One guess at a time.
-      if (!guessPending && nCount < 4 && !progressivePending) begin
-        nl[nTail] = LaLevel{valid: True, di: di, pc: pc, len: len, da: tagged Invalid,
-                            data: tagged Invalid, fetchIssued: False, waitFor: tagged Invalid,
-                            branch: True, target: effAddr19(st, bi.addr, {3'b0, bi.idx}),
-                            storeAddr: tagged Invalid};
-        nTail = nTail + 1; nCount = nCount + 1;
+      if (!guessPending && la.count() < 4 && !progressivePending) begin
+        la.load(LaLevel{valid: True, di: di, pc: pc, len: len, da: tagged Invalid,
+                        data: tagged Invalid, fetchIssued: False, waitFor: tagged Invalid,
+                        branch: True, target: effAddr19(st, bi.addr, {3'b0, bi.idx}),
+                        storeAddr: tagged Invalid});
         xSnap <= st.snapshotIndex();
         indSnap <= st.readIndicators();
         guessPending <= True;
@@ -854,13 +545,11 @@ module mkStretchCore(StretchCore);
       // I-box class: execute ahead of pending levels unless a hazard
       // (plan §6c) says wait; never while the arithmetic unit's own
       // instruction is mid-flight (it owns the resume path).
-      if (!auActive && !iboxHazard(di, nl)) begin
+      if (!auActive && !iboxHazard(st, guessPending, di, nl)) begin
         let d1 <- startExecute(pc, len, di);
         done = d1;
       end
     end
-    laWrite(1, nl);
-    laTail <= nTail; laCount <= nCount;
     ebusy <= eb;
     haltedReg <= done;
   endrule

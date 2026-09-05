@@ -254,14 +254,28 @@ Staged, each step green and committed:
      them: KPNS #29 "dynamic scheduling"), even from exclusive case
      arms -- `StretchSmoke.bsv`'s setup now has `setPC` in its own
      rule, as `gen_tb.py`'s runners always did.
-   - 5b (open): module boundaries INSIDE the core. `mkEBox` takes the
-     storage and I/O interfaces as module arguments, and a module with
-     interface arguments cannot be synthesized, so an I-box / look-
-     ahead / E-box split is structure only (it all elaborates once
-     inside `mkStretchCore` either way); to make the E-box its own
-     unit it would have to own or request its storage traffic through
-     exported request/response methods instead of calling `st`
-     directly -- the real `mkFBox` shape, and a larger change.
+   - **5b done: stage modules inside the core.** `StretchIBox.bsv`
+     holds `mkInstrBuffers` (the 1Y/2Y buffers with their IC controls:
+     `advance(pcw, restart)` once per clock, `lookup(word)` for the
+     preparation arm) plus the instruction classification and the
+     I-box hazard test as functions; `StretchLookAhead.bsv` holds
+     `mkLookAhead` (the four-level ring: `collect()` every clock,
+     `levels/head/tail/count/headLevel`, and the three mutations the
+     arms perform -- `retireHead`, `load`, `cancelAll`);
+     `StretchTiming.bsv` holds the time-budget tables as functions.
+     The stages take the storage interface as a module argument and
+     are flattened into the synthesized `mkStretchCore`, exactly the
+     Piccolo `mkCPU_Stage1/2/3(gpr_regfile, csr_regfile, ...)` shape;
+     the core's rules are now orchestration (`rl_la_fetch` is
+     `la.collect()`, `rl_ic_controls` is `ibuf.advance(...)`) plus the
+     six decision arms calling the stages' methods. StretchCore.bsv
+     went from 884 to 573 lines. Behavior-neutral: suite green, every
+     CYCLES<= count unchanged. `mkEBox` keeps taking the storage and
+     I/O interfaces as module arguments, so it too is flattened; to
+     make the E-box its own compilation unit it would have to route
+     its storage traffic through exported request/response methods
+     instead of calling `st` directly -- the real `mkFBox` shape, a
+     larger change, and only worth it together with steps 2-3.
 
 Note on the ~120s build: profiling (item 9) showed elaborating the
 E-box logic ONCE is the cost, and neither replication nor the FP
