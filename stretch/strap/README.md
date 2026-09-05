@@ -793,12 +793,14 @@ A runner needs a way to know when the program is done rather than
 stepping a fixed count. STRAP's own idiom for this is `BEW, $` — branch
 to the location counter's own value, i.e. branch to itself
 (C22-6531 p.14, and used verbatim at the end of every example program
-above). `StretchCore.step()` (see `../bsv/StretchCore.bsv`) returns
+above). `StretchCore.halted()` (see `../bsv/StretchCore.bsv`) becomes
 `True` when an instruction's computed next-PC equals its own address,
-and `gen_tb.py`'s generated runner steps (with a hard cap as a
-safety net) until that fires. A progressive-indexing instruction takes
-two `step()` calls to complete (see `../bsv/README.md`'s "Toolchain"
-item 7); both return `False`, so this doesn't affect halt detection.
+and `gen_tb.py`'s generated runner calls `step()` — one clock per
+call — (with a hard cap as a safety net) until that fires; the step
+count at halt is the program's clock count, which the `CYCLES<=N`
+bounds check. A progressive-indexing instruction takes two clocks to
+complete (see `../bsv/README.md`'s "Toolchain" item 7); neither can
+halt, so this doesn't affect halt detection.
 
 ## Scope
 

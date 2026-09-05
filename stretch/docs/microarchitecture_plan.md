@@ -214,7 +214,28 @@ Staged, each step green and committed:
 4. **Split `step()` into per-stage rules.** Replace the one giant
    method with an I-box (fetch/decode/prepare/index) rule, look-ahead
    rules, and the E-box interaction, communicating through FIFOs /
-   registers -- the `rl_pipe` + off-pipe-rules shape.
+   registers -- the `rl_pipe` + off-pipe-rules shape. **Done** (suite
+   green, every CYCLES<= bound unchanged). How the harness contract
+   was kept: `step()` is now an `Action` that sends a `tick` pulse and
+   every core rule is gated on it, so one call is still exactly one
+   clock and the core never moves while the harness loads or inspects;
+   the halt is a register the executing arms write, read through a new
+   `halted()` method that the harness's run rule polls in its guard --
+   which yields the same step count at halt as the old returned Bool.
+   The rules: `rl_clock`, `rl_la_fetch` (look-ahead operand collect /
+   fetch issue) and `rl_ic_controls` (1Y/2Y), every clock; then one of
+   six `(* mutually_exclusive *)` decision arms, the old if/else-if
+   ladder: `rl_recover`, `rl_io`, `rl_idx_write`, `rl_exec_resume`,
+   `rl_au_remove`, `rl_prepare`. The intra-clock ordering the single
+   method had implicitly is explicit in two places: the look-ahead
+   levels are `mkCReg(2)` (collect on port 0, arms on port 1) and the
+   Y buffers are `mkConfigReg` (the IC controls write them while the
+   preparation arm reads them and writes `pcReg`/`branchSeq` that the
+   IC controls read -- all pre-clock reads, which ConfigReg states
+   without a scheduling cycle). Build time: ~121s, unchanged -- the
+   arms are still elaborated in full, as item 9 predicted; the win is
+   structure, and step 5 (stage modules) is where compilation units
+   actually split.
 5. **Stage modules.** Extract the I-box, the look-ahead, and the E-box
    into separate modules with interfaces (the `mkCPU_Stage1/2/3`
    shape), so no single rule elaborates the whole design.

@@ -46,7 +46,7 @@ bitsavers.org):
 | `StretchALU.bsv` | Sign-and-magnitude arithmetic primitives. |
 | `StretchExecute.bsv` | Execute stage for the in-scope opcode subset. |
 | `StretchIO.bsv` | Simulated Input-Output subsystem (three fixed devices — card reader, printer, tape — standing in for the real Exchange and external units); see its own file header for the full scope statement. |
-| `StretchCore.bsv` | Fetch/decode/execute, one instruction per `step()` — returns whether the instruction halted (branched to its own address, the `BEW, $` idiom), for STRAP-program runners (`../strap/gen_tb.py`) to stop on rather than a fixed step count. A progressive-indexing VFL instruction takes two `step()` calls (see "Toolchain" item 7); an RD/W input-output instruction takes as many calls as the block has words, one word drained per call, device-kind-dependent capacity (see `StretchIO.bsv`). |
+| `StretchCore.bsv` | The instruction unit (1Y/2Y buffers, IC controls, preparation), the four-level look-ahead, and the E-box hand-off, as per-clock RULES (`rl_la_fetch`, `rl_ic_controls`, then one of six mutually-exclusive decision arms — see the file's rules section). `step()` is a clock enable: one call advances the core one clock; `halted()` reports that an instruction branched to its own address (the `BEW, $` idiom), which STRAP-program runners (`../strap/gen_tb.py`) poll to stop on rather than a fixed step count. A progressive-indexing VFL instruction takes two clocks (see "Toolchain" item 7); an RD/W input-output instruction takes as many clocks as the block has words, one word drained per clock, device-kind-dependent capacity (see `StretchIO.bsv`). |
 | `StretchSmoke.bsv` | Hand-assembled smoke test (predates the STRAP assembler; kept as a decoder/executor regression test independent of it). |
 
 ## Bit-numbering convention
@@ -252,10 +252,12 @@ Interrupts, memory protection enforcement (addresses described as
 "permanently protected" are documented but not enforced against
 writes from user code beyond a few no-op cases), the interval
 timer/clock actually ticking, and — the machine's defining engineering
-feature — **instruction lookahead and pipelining**. `StretchCore`
-fetches, decodes, and executes exactly one instruction per `step()`
-call (an RD/W I/O transfer is many `step()` calls, but still no other
-instruction interleaves with them — see `StretchIO.bsv`). This is a
+feature — **instruction lookahead and pipelining**. (Since superseded:
+the look-ahead and the instruction unit now exist as rules in
+`StretchCore.bsv`, and `step()` advances one clock, not one
+instruction — see the Files table and `../docs/microarchitecture_plan.md`.
+An RD/W I/O transfer still lets no other instruction interleave with it
+— see `StretchIO.bsv`.) At the time of writing this was a
 genuine, load-bearing scope cut: Stretch's fame rests on its
 microarchitecture as much as its ISA, and that is future work, not
 something this session attempted. I/O channels and the exchange ARE

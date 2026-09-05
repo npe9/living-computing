@@ -179,13 +179,12 @@ module mkStretchTb(Empty);
   // falls into word 40 (operand A = 5), whose left half decodes as BE
   // to address 0, and the all-zero word 0 is a branch to itself --
   // this model's halt. The bound is only a runaway guard.
-  rule run (phase == 21 && stepCount < 2000);
-    let done <- core.step();
-    if (done) stepCount <= 2000;
-    else stepCount <= stepCount + 1;
+  rule run (phase == 21 && stepCount < 2000 && !core.halted());
+    core.step();
+    stepCount <= stepCount + 1;
   endrule
 
-  rule afterRun (phase == 21 && stepCount == 2000);
+  rule afterRun (phase == 21 && (stepCount == 2000 || core.halted()));
     phase <= 22;
   endrule
 
@@ -218,6 +217,9 @@ module mkStretchTb(Empty);
     phase <= 26;
   endrule
 
+  // (History: the cost note below predates the rule-based core, where
+  // step() is only a clock-enable pulse; the rules elaborate once in
+  // mkStretchCore regardless of how many call sites step() has.)
   // RNX (DirIndex, Half-length) now needs 2 step() calls to complete
   // -- one to issue hw0's request, one to collect it and run
   // decode/execute -- not 1 (see the "run" rule's own comment above
@@ -236,13 +238,12 @@ module mkStretchTb(Empty);
   // 40 clocks is ample, and small enough that whatever unwritten
   // storage holds after it (Bluesim's BRAM is not zero-initialized)
   // gets little chance to run before the indicator is read.
-  rule stepRnx (phase == 26 && stepCount < 40);
-    let done <- core.step();
-    if (done) stepCount <= 40;
-    else stepCount <= stepCount + 1;
+  rule stepRnx (phase == 26 && stepCount < 40 && !core.halted());
+    core.step();
+    stepCount <= stepCount + 1;
   endrule
 
-  rule afterStepRnx (phase == 26 && stepCount == 40);
+  rule afterStepRnx (phase == 26 && (stepCount == 40 || core.halted()));
     phase <= 27;
   endrule
 

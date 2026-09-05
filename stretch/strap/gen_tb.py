@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 """gen_tb.py -- generate a runnable Bluespec testbench that loads an
 assembled STRAP program's memory image into mkStretchCore, runs it
-until the "BEW, $" self-branch halt idiom fires (see StretchCore.bsv's
-step() docstring), and checks a caller-supplied list of expected final
-memory words.
+until the "BEW, $" self-branch halt idiom fires (core.halted(); see
+StretchCore.bsv's interface comment -- step() advances one clock), and
+checks a caller-supplied list of expected final memory words.
 
 This is the loader half of the codesign loop: strap_asm.py's output
 feeds a BSV module built entirely from constructs already proven not
@@ -67,7 +67,7 @@ def generate(module_name, prog, checks, step_cap=30000, reader_image=None,
     lines.append("  StretchCore core <- mkStretchCore;")
     lines.append("  Reg#(Bit#(32)) phase <- mkReg(0);")
     lines.append("  Reg#(Bit#(32)) stepCount <- mkReg(0);")
-    lines.append("  Reg#(Bool)     halted <- mkReg(False);")
+
     lines.append("  Reg#(Bit#(32)) fails <- mkReg(0);")
     lines.append("")
     lines.append("  function Action check(String label, Word64 got, Word64 expected) =")
@@ -123,14 +123,13 @@ def generate(module_name, prog, checks, step_cap=30000, reader_image=None,
     lines.append("")
 
     run_phase += 1
-    lines.append(f"  rule run (phase == {run_phase} && !halted && stepCount < {step_cap});")
-    lines.append("    let h <- core.step();")
-    lines.append("    halted <= h;")
+    lines.append(f"  rule run (phase == {run_phase} && !core.halted() && stepCount < {step_cap});")
+    lines.append("    core.step();")
     lines.append("    stepCount <= stepCount + 1;")
     lines.append("  endrule")
     lines.append("")
-    lines.append(f"  rule afterRun (phase == {run_phase} && (halted || stepCount == {step_cap}));")
-    lines.append(f"    if (!halted) begin")
+    lines.append(f"  rule afterRun (phase == {run_phase} && (core.halted() || stepCount == {step_cap}));")
+    lines.append(f"    if (!core.halted()) begin")
     lines.append(f"      $display(\"FAIL: step cap ({step_cap}) reached without halting -- checks below run against mid-execution state\");")
     lines.append(f"      fails <= fails + 1;")
     lines.append(f"    end")
@@ -177,17 +176,16 @@ def generate(module_name, prog, checks, step_cap=30000, reader_image=None,
 
     # Final instruction-counter check ("PC=EXPECTED"): where the
     # program halted. A branch to itself halts this model (StretchCore
-    # step() returns True when next == pc), which is exactly the I-Box
+    # halted() becomes True when next == pc), which is exactly the I-Box
     # diagnostics' own "BD,$" hang-on-failure idiom -- so a verbatim
     # diagnostic block can be run with its own pass/fail mechanism
     # intact: pass = halted at the block's end, fail = halted at the
     # offending hang, distinguishable by PC alone.
     pccheck_phase = tcheck_phase0 + len(tape_checks)
     # Cycle bound ("CYCLES<=N"): the run rule fires once per clock, so
-    # stepCount at halt is the program's cycle count on this model --
-    # today one step() per (half of an) instruction, later the cycle
-    # count of the microarchitecture model (docs/microarchitecture_
-    # plan.md stage 0). A separate check from the architectural ones
+    # stepCount at halt is the program's cycle count on this model
+    # (one step() = one clock of the microarchitecture model, docs/
+    # microarchitecture_plan.md). A separate check from the architectural ones
     # so a timing regression never masquerades as a wrong result.
     if cycle_bound is not None:
         lines.append(f"  rule cyclecheck (phase == {pccheck_phase});")
