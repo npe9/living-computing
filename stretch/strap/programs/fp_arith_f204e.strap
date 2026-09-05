@@ -1,0 +1,129 @@
+! Floating-point diagnostic jb_af1c, routine F204E "TEST NORMALIZATION
+! MODIFIER" (docs/jb_af1c_floating-point.pdf p.65, octal 013041.00-
+! 013103.40): six sub-tests of the NORMALIZED add to memory, M+(N).
+!   E1-E3, E6: a flagged operand (XFP or XFN range) in memory and/or
+!     the accumulator -- the normalization modifier is IGNORED and the
+!     result is the dominating flagged operand unchanged (Ref. Manual
+!     p.87 / Fig.23: XFP dominates N and XFN, N dominates XFN, equal
+!     ranges take the algebraically larger exponent). "error if result
+!     norm".
+!   E4, E5: an N-range result (XFN + N, N + N) must come out
+!     NORMALIZED and equal the pool constant (FPK6, FK44). "error if
+!     result not norm".
+! How each check works: CT0110(BU,60),ROS,4 compares ROS bits 0-59 with
+! the accumulator field at offset 4 -- the RIGHT half's bits 0-59,
+! which still hold the 64-bit copy the VFL L(BU) left there (an FP
+! L(U) writes only the left half); E2/E3 reload it explicitly and
+! E4/E5 load the expected constant. E6 uses offset 68 instead: the
+! LEFT half's bits 0-59, i.e. the accumulator operand FK30 itself,
+! which has the larger exponent of two XFN operands and so must be the
+! result. So the block also pins the accumulator layout: a VFL load
+! lands in the right half (bits 64-127 of the 128), an FP load in the
+! left (bits 0-63), connective offsets count from the right end.
+!
+! Substitutions (SSIP framework, real listed addresses): SERS (octal
+! 1304) -> FAIL halt, SEN (octal 1310) -> scratch, ROS (octal 22355)
+! the memory operand, PASS -> the routine's exit at 013103.40 (the
+! listing's "B,$+1."). Constants from the pool pp.176-178. The entry
+! FMA7's "BD,$+.32" is kept verbatim.
+!
+! Instructions: BD, L(BU)/ST(BU), L(U), M+(N), CT0110 with offsets 4
+! and 68, SIC, BRGZ. verify_fp_arith_f204e_listing.py checks every
+! word bit-for-bit.
+!
+! Observed: FIRST RUN HALTED AT SERS with SEN = 013070.40, sub-test
+! E4's "error if result not norm", ROS holding FPK7 unchanged where
+! FPK6 (FPK7 normalized: fraction up three places, exponent 3 -> 0)
+! was expected. Cause: fpAdd's flagged-operand path returned the
+! surviving operand with normalization suppressed in every case; that
+! is right when the result is a FLAGGED operand (E1-E3, E6) but the
+! survivor of XFN + N is the unflagged N operand, an ordinary number,
+! and a normalized operation post-normalizes it. Fix: fpAdd normalizes
+! an unflagged survivor when normalized operation is specified. After
+! the fix all six sub-tests pass and the run halts at PASS with SEN
+! still 0; E6 leaves ROS = FK30, the accumulator operand, as the
+! larger-exponent XFN of the two. That first run is the discriminating
+! evidence for this block.
+
+! -- SSIP framework substitutes --
+        SLC, (8)1304.0
+SERS    BEW, $
+        SLC, (8)1310.0
+SEN     DD(BU,64,8), 0
+        SLC, (8)22355.0
+ROS     DD(BU,64,8), 0
+
+! -- constants (pool pp.176-178) --
+
+        SLC, (8)22013.0
+FPK6    DD(BU,64,8), (8)0000125252525252525200
+        SLC, (8)22014.0
+FPK7    DD(BU,64,8), (8)0001412525252525252520
+        SLC, (8)22017.0
+FPK10   DD(BU,64,8), (8)0002402525252525252520
+        SLC, (8)22040.0
+FPK27   DD(BU,64,8), (8)1777677777777777777760
+        SLC, (8)22167.0
+FK21    DD(BU,64,8), (8)1777403777777777777760
+        SLC, (8)22174.0
+FK26    DD(BU,64,8), (8)1777412525252525252520
+        SLC, (8)22176.0
+FK28    DD(BU,64,8), (8)0031005252525252525240
+        SLC, (8)22200.0
+FK30    DD(BU,64,8), (8)1577617777777777777760
+        SLC, (8)22201.0
+FK31    DD(BU,64,8), (8)1777612525252525252520
+        SLC, (8)22216.0
+FK44    DD(BU,64,8), (8)0000525252525252525000
+
+! -- code (verbatim, at the listing's addresses) --
+        SLC, (8)13041.0
+FMA7    BD, $+.32
+        L(BU), FK21   ! F204E1: exp in XFP range
+        ST(BU), ROS
+        L(U), FK21   ! exp XFP range
+        M+(N), ROS
+        CT0110(BU,60), ROS, 4   ! is norm modifier ignored
+        SIC, SEN
+        BRGZ, SERS   ! error if result norm
+        L(BU), FK26   ! F204E2: exp in XFP range
+        ST(BU), ROS
+        L(U), FK28   ! exp N range
+        M+(N), ROS
+        L(BU), FK26
+        CT0110(BU,60), ROS, 4   ! is norm modifier ignored
+        SIC, SEN
+        BRGZ, SERS   ! error if result norm
+        L(BU), FK26   ! F204E3: exp in XFP range
+        ST(BU), ROS
+        L(U), FK30   ! exp XFN range
+        M+(N), ROS
+        L(BU), FK26
+        CT0110(BU,60), ROS, 4   ! is norm modifier ignored
+        SIC, SEN
+        BRGZ, SERS   ! error if result norm
+        L(BU), FK31   ! F204E4: exp in XFN range
+        ST(BU), ROS
+        L(U), FPK7   ! exp N range
+        M+(N), ROS
+        L(BU), FPK6
+        CT0110(BU,60), ROS, 4   ! result should be norm
+        SIC, SEN
+        BRGZ, SERS   ! error if result not norm
+        L(BU), FPK10   ! F204E5: exp in N range
+        ST(BU), ROS
+        L(U), FPK10   ! exp N range
+        M+(N), ROS
+        L(BU), FK44
+        CT0110(BU,60), ROS, 4
+        SIC, SEN
+        BRGZ, SERS   ! error if result not norm
+        L(BU), FPK27   ! F204E6: exp in XFN range
+        ST(BU), ROS
+        L(U), FK30   ! exp XFN range
+        M+(N), ROS
+        CT0110(BU,60), ROS, 68   ! is norm modifier ignored (vs the accumulator)
+        SIC, SEN
+        BRGZ, SERS   ! error if result norm
+PASS    BEW, $                  ! 013103.40: the routine's exit ("B,$+1.")
+        END, FMA7

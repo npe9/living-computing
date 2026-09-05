@@ -257,6 +257,17 @@ run "FP M+ indicators (jb_af1c F204D on the model)" ./run_program.sh programs/fp
     "PC=$(python3 -c 'from strap_asm import assemble; print(assemble(open("programs/fp_arith_f204d.strap").read()).symtab["PASS"]//32)')" \
     "SEN:712=0"
 
+# -- 1i'''''''''. jb_af1c F204E (p.65): the normalization modifier on
+# ADD TO MEMORY -- ignored when the result is a flagged operand (XFP
+# or XFN), applied when it is the unflagged survivor of XFN + N or an
+# N + N sum. First run caught fpAdd suppressing normalization of an
+# unflagged survivor (E4: FPK7 came back unnormalized, FPK6 expected)
+# -- see the program header.
+run "FP M+ normalization modifier (jb_af1c F204E, encoding)" python3 verify_fp_arith_f204e_listing.py
+run "FP M+ normalization modifier (jb_af1c F204E on the model)" ./run_program.sh programs/fp_arith_f204e.strap StretchFpAddETb \
+    "PC=$(python3 -c 'from strap_asm import assemble; print(assemble(open("programs/fp_arith_f204e.strap").read()).symtab["PASS"]//32)')" \
+    "SEN:712=0"
+
 # -- 1j. Store-close-to-fetch: store a word then immediately reload it;
 # the load must read the new value, not the stale one. The hazard the FP
 # sign-modifier codesign exposed; fixed by tracking each E-box level's

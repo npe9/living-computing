@@ -147,8 +147,15 @@ hand vectors alone. "Enables" notes the dependency chain.
    in bit 4, shared by VFL and FP), F204D a look-ahead ordering bug
    (Z,$IND ran ahead of the unretired E-box load that sets XPL; an
    I-box store to words 7-15 now drains the look-ahead, StretchIBox
-   `eboxRegister`). Next within step 2: F204E+ / the multiply block,
-   then the open ops.
+   `eboxRegister`). F204E "TEST NORMALIZATION MODIFIER" (p.65, six
+   sub-tests of M+(N)) is DONE too; its first run caught fpAdd
+   suppressing post-normalization of the unflagged survivor of
+   XFN + N (the modifier is ignored only when the RESULT is flagged).
+   The whole F204 family (A-E: add to memory) is now verified against
+   the diagnostic. Next within step 2: F205 (ADD TO MAGNITUDE, +MG /
+   +MGA / -MG / -MGA, pp.66-71 -- accumulator-changing, checked
+   through the accumulator at offset 68 and the sign byte at $SB+.4),
+   then the multiply block and the open ops.
    Related nearby routine also located and runnable-with-effort: F203B
    "EXP RNG INDIC TEST" (p.52, octal 012260+) verifies the exponent-
    range indicators XPFP/XPH/XPL/XPU (set by ST, cleared by Z,$IND)

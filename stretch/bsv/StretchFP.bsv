@@ -195,7 +195,21 @@ function FpResult fpAdd(FpNum a, FpNum b, Bool normalized, Bool noisy, Bool addM
     // algebraically larger exponent" for equal ranges:
     if ((isXFP(a) && isXFP(b)) || (isXFN(a) && isXFN(b)))
       res = (fpExp(b) > fpExp(a)) ? b : a;
-    r.res = res; r.propagated = (res.ef == 1);
+    Bool gen = False;
+    if (res.ef == 0 && normalized) begin
+      // The surviving operand is the UNFLAGGED one (XFN + N: N
+      // dominates): it is a normal number, and a normalized operation
+      // post-normalizes it like any other result. Only a flagged
+      // result has normalization suppressed. jb_af1c F204E4 (XFN in
+      // memory, N in the accumulator, M+(N)) expects the accumulator
+      // operand normalized (FPK7 -> FPK6); E1-E3/E6, whose results
+      // are flagged, expect them untouched.
+      let {frac48, adj, lc} = fpNormalize96(0, {res.frac, 48'b0}, True, noisy);
+      Int#(14) e = signExtend(fpExp(res)) + adj;
+      let {nres, g} = fpMakeExp(e, frac48, res.sign, res.flags);
+      res = nres; gen = g;
+    end
+    r.res = res; r.propagated = (res.ef == 1); r.generated = gen;
     r.ls = False;
     return r;
   end else begin
