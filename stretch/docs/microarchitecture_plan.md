@@ -137,9 +137,18 @@ hand vectors alone. "Enables" notes the dependency chain.
    storage operand, N on the accumulator) -- and its first run caught a
    real bug, the order-of-magnitude-zero sign on an exponent tie
    (p.82: the modified ACCUMULATOR sign; fpAdd took its first operand's,
-   which for the M+ family is the storage word). Next within step 2:
-   the * (multiply) and remaining +/- diagnostic blocks, then the open
-   ops.
+   which for the M+ family is the storage word). F204C "TEST UNCHANGED
+   REGS" (p.59) and F204D "INDICATOR TESTS" (pp.60-64, sixteen
+   sub-tests: MOP, RLZ/RN, RZ, RGZ, PSH, LC, LS, XPFP/XPO/XPH/XPL/XPU)
+   are DONE and in the suite; each caught a real bug on its first run:
+   F204C the accumulator layout (the VFL sign lived in bit 0 of word 8
+   over a 127-bit magnitude, and word 10 held its low byte -- now 128
+   magnitude bits and the sign byte at IBM bits 0-7 of word 10, sign
+   in bit 4, shared by VFL and FP), F204D a look-ahead ordering bug
+   (Z,$IND ran ahead of the unretired E-box load that sets XPL; an
+   I-box store to words 7-15 now drains the look-ahead, StretchIBox
+   `eboxRegister`). Next within step 2: F204E+ / the multiply block,
+   then the open ops.
    Related nearby routine also located and runnable-with-effort: F203B
    "EXP RNG INDIC TEST" (p.52, octal 012260+) verifies the exponent-
    range indicators XPFP/XPH/XPL/XPU (set by ST, cleared by Z,$IND)

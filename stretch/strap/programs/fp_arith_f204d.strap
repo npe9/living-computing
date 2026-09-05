@@ -1,0 +1,290 @@
+! Floating-point diagnostic jb_af1c, routine F204D "INDICATOR TESTS"
+! (docs/jb_af1c_floating-point.pdf pp.60-64, octal 012643.40-013037.00):
+! sixteen sub-tests of the indicators ADD TO MEMORY sets, each: set up
+! ROS and the accumulator, clear the indicator word (Z,$IND) or a
+! register, M+, then branch-on-indicator to SERS if the indicator is
+! not as expected. The three groups:
+!   D1-D6  result indicators -- MOP (to-memory op) off->on and on->on
+!          (BB1,$MOP turns it on first); RLZ and RN (an all-ones
+!          negative sum); RN with RZ (zero + a negated zero = -0); RZ
+!          alone (+0 + 0 with $L and the sign byte cleared, and RLZ /
+!          RN / RGZ must all stay off); RGZ (a positive sum, RZ / RN /
+!          RLZ off).
+!   D7-D11 PSH (preparatory shift > 48: on for far-apart exponents,
+!          off for a propagated flagged operand), LC (unnormalized
+!          fraction overflow: 1/2+1/2 loses the carry), LS (lost
+!          significance: x + (-x) with LN, on) and LS off for a zero
+!          fraction that merely propagates a flagged operand.
+!   D12-D16 the exponent range indicators, one sub-test each: XPFP
+!          (bit 28 of the indicator word), XPO (29), XPH (30), XPL (31),
+!          XPU (32) -- the expected one on via BB,11.n, the other four
+!          off via BZB,11.n (the listing writes the bit addresses in
+!          decimal). D13 and D16 use the NORMALIZED M+(N).
+! (The sub-test comments are the listing's own.)
+!
+! Substitutions (SSIP framework, real listed addresses): SERS (octal
+! 1304) -> FAIL halt, SEN (octal 1310) -> scratch, ROS (octal 22355)
+! the memory operand, PASS -> the routine's exit at 013037.00 (the
+! listing's "B,$+1."). Constants from the pool pp.176-178. The entry
+! FMA4's "BD,$+.32" is kept verbatim.
+!
+! Instructions: BD, L(BU)/ST(BU), L(U)/LN(U), M+(U)/M+(N), Z to ROS,
+! $IND, $L and 10.0 (the sign byte), BB1 on $MOP, the branch-on-
+! indicator family (BZMOP BZRLZ BZRN BZRZ BRLZ BRGZ BZRGZ BRZ BRN BZPSH
+! BPSH BZLC BZLS BLS), BB/BZB on indicator-word bits, SIC, B.
+! verify_fp_arith_f204d_listing.py checks every word bit-for-bit.
+!
+! Observed: FIRST RUN HALTED AT SERS with SEN = 012747.00, sub-test
+! D12's "XPL off" check, the indicator word showing XPFP AND XPL on.
+! Cause: a look-ahead ordering bug. L(U),FPK28 (an E-box level) sets
+! XPL when it executes; the following Z,$IND is an I-box instruction
+! and the hazard test let it run AHEAD of the unretired load (its
+! operand address matched no level), so the clear landed first and
+! the load re-set XPL after it. Fix (StretchIBox.bsv eboxRegister): an
+! I-box store to the special-storage words the E-box writes at
+! execution (7-15: counts, accumulator, sign byte, indicators, mask,
+! remainder, factor, transit) drains the look-ahead first. After the
+! fix all sixteen sub-tests pass, the run halts at PASS with SEN
+! still 0. That first run is the discriminating evidence for this
+! block; the other fifteen sub-tests (result, PSH, LC, LS and the
+! other range indicators) passed as the model stood.
+
+! -- SSIP framework substitutes --
+        SLC, (8)1304.0
+SERS    BEW, $
+        SLC, (8)1310.0
+SEN     DD(BU,64,8), 0
+        SLC, (8)22355.0
+ROS     DD(BU,64,8), 0
+
+! -- constants (pool pp.176-178) --
+
+        SLC, (8)22005.0
+FPK0    DD(BU,64,8), (8)0000000000000000000000
+        SLC, (8)22006.0
+FPK1    DD(BU,64,8), (8)1777777777777777777777
+        SLC, (8)22011.0
+FPK4    DD(BU,64,8), (8)0000452525252525252520
+        SLC, (8)22030.0
+FPK19   DD(BU,64,8), (8)0000525252525252525240
+        SLC, (8)22037.0
+FPK26   DD(BU,64,8), (8)1777577777777777777760
+        SLC, (8)22041.0
+FPK28   DD(BU,64,8), (8)0200177777777777777760
+        SLC, (8)22045.0
+FPK32   DD(BU,64,8), (8)0001177777777777777760
+        SLC, (8)22052.0
+FPK37   DD(BU,64,8), (8)0031125252525252525240
+        SLC, (8)22170.0
+FK22    DD(BU,64,8), (8)0400177777777777777760
+        SLC, (8)22173.0
+FK25    DD(BU,64,8), (8)1577777777777777777760
+        SLC, (8)22205.0
+FK35    DD(BU,64,8), (8)1777400000000000000000
+        SLC, (8)22206.0
+FK36    DD(BU,64,8), (8)1000177777777777777760
+        SLC, (8)22207.0
+FK37    DD(BU,64,8), (8)0737577777777777777760
+        SLC, (8)22210.0
+FK38    DD(BU,64,8), (8)0777572525252525252520
+        SLC, (8)22211.0
+FK39    DD(BU,64,8), (8)0777625252525252525240
+
+! -- code (verbatim, at the listing's addresses) --
+        SLC, (8)12643.40
+FMA4    BD, $+.32
+        L(BU), FPK4   ! F204D1: MOP off to on
+        ST(BU), ROS
+        L(U), FPK19
+        M+(U), ROS
+        SIC, SEN
+        BZMOP, SERS   ! error if MOP off
+        L(BU), FPK4   ! F204D2: MOP on to on
+        L(BU), FPK4
+        ST(BU), ROS
+        L(U), FPK19
+        BB1, $MOP, $+1.   ! turn MOP on first
+        M+(U), ROS
+        SIC, SEN
+        BZMOP, SERS
+        L(BU), FPK1   ! F204D3: RLZ and RN off to on
+        ST(BU), ROS
+        L(U), FPK1
+        Z, $IND
+        M+(U), ROS
+        SIC, SEN
+        BZRLZ, SERS   ! error if RLZ and RN off
+        SIC, SEN
+        BZRN, SERS
+        Z, ROS   ! F204D4: RN and RZ on to on
+        LN(U), FPK0
+        M+(U), ROS
+        SIC, SEN
+        BZRN, SERS   ! error if RN and RZ off
+        SIC, SEN
+        BZRZ, SERS
+        SIC, SEN
+        BRLZ, SERS   ! error if RLZ and RGZ on
+        SIC, SEN
+        BRGZ, SERS
+        Z, ROS   ! F204D5: RZ on to on
+        Z, $IND
+        Z, 10.0
+        Z, $L
+        M+(U), ROS
+        SIC, SEN
+        BZRZ, SERS   ! error if RZ off
+        SIC, SEN
+        BRLZ, SERS   ! error if RLZ, RN, RGZ on
+        SIC, SEN
+        BRN, SERS
+        SIC, SEN
+        BRGZ, SERS
+        Z, ROS   ! F204D6: RGZ on to on
+        L(U), FPK28
+        M+(U), ROS
+        SIC, SEN
+        BZRGZ, SERS   ! error if RGZ off
+        SIC, SEN
+        BRZ, SERS   ! error if RZ, RN, RLZ on
+        SIC, SEN
+        BRN, SERS
+        SIC, SEN
+        BRLZ, SERS
+        L(BU), FPK4   ! FMA5 / F204D7: PSH off to on
+        ST(BU), ROS
+        L(U), FPK37
+        Z, $IND
+        M+(U), ROS
+        SIC, SEN
+        BZPSH, SERS   ! error if PSH not on
+        L(BU), FK36   ! F204D8: PSH off to off
+        ST(BU), ROS
+        L(U), FK37
+        Z, $IND
+        M+(U), ROS   ! result has propagated EF=1
+        SIC, SEN
+        BPSH, SERS   ! error if PSH came on
+        L(BU), FPK32   ! F204D9: LC off to on
+        ST(BU), ROS
+        L(U), FPK32
+        Z, $IND
+        M+(U), ROS
+        SIC, SEN
+        BZLC, SERS   ! error if LC off
+        L(BU), FPK32   ! F204D10: LS off to on
+        ST(BU), ROS
+        LN(U), FPK32
+        Z, $IND
+        M+(U), ROS
+        SIC, SEN
+        BZLS, SERS   ! error if LS off
+        L(BU), FK35   ! F204D11: LS off to off
+        ST(BU), ROS
+        L(U), FK37
+        Z, $IND
+        M+(U), ROS   ! zero fraction has propagated EF=1
+        SIC, SEN
+        BLS, SERS   ! error if LS on
+        L(BU), FPK26   ! FMA6 / F204D12: XPFP on test
+        ST(BU), ROS
+        L(U), FPK28
+        Z, $IND
+        M+(U), ROS
+        BB, 11.28, $+2.   ! error if XPFP off and
+        SIC, SEN
+        B, SERS   ! other exponent inds on
+        BZB, 11.29, $+2.
+        SIC, SEN
+        B, SERS
+        BZB, 11.30, $+2.
+        SIC, SEN
+        B, SERS
+        BZB, 11.31, $+2.
+        SIC, SEN
+        B, SERS
+        BZB, 11.32, $+2.
+        SIC, SEN
+        B, SERS
+        L(BU), FK38   ! F204D13: XPO on test
+        ST(BU), ROS
+        L(U), FK38
+        Z, $IND
+        M+(N), ROS   ! normalized
+        BB, 11.29, $+2.   ! error if XPO off and
+        SIC, SEN
+        B, SERS   ! other exponent inds on
+        BZB, 11.28, $+2.
+        SIC, SEN
+        B, SERS
+        BZB, 11.30, $+2.
+        SIC, SEN
+        B, SERS
+        BZB, 11.31, $+2.
+        SIC, SEN
+        B, SERS
+        BZB, 11.32, $+2.
+        SIC, SEN
+        B, SERS
+        L(BU), FK22   ! F204D14: XPH on test
+        ST(BU), ROS
+        L(U), FK25
+        Z, $IND
+        M+(U), ROS
+        BB, 11.30, $+2.   ! error if XPH off and
+        SIC, SEN
+        B, SERS   ! other exponent inds on
+        BZB, 11.28, $+2.
+        SIC, SEN
+        B, SERS
+        BZB, 11.29, $+2.
+        SIC, SEN
+        B, SERS
+        BZB, 11.31, $+2.
+        SIC, SEN
+        B, SERS
+        BZB, 11.32, $+2.
+        SIC, SEN
+        B, SERS
+        L(BU), FK25   ! F204D15: XPL on test
+        ST(BU), ROS
+        L(U), FPK28
+        Z, $IND
+        M+(U), ROS
+        BB, 11.31, $+2.   ! error if XPL off and
+        SIC, SEN
+        B, SERS   ! other exponent inds on
+        BZB, 11.28, $+2.
+        SIC, SEN
+        B, SERS
+        BZB, 11.29, $+2.
+        SIC, SEN
+        B, SERS
+        BZB, 11.30, $+2.
+        SIC, SEN
+        B, SERS
+        BZB, 11.32, $+2.
+        SIC, SEN
+        B, SERS
+        L(BU), FK39   ! F204D16: XPU on test
+        ST(BU), ROS
+        L(U), FK39
+        Z, $IND
+        M+(N), ROS   ! normalized
+        BB, 11.32, $+2.   ! error if XPU off and
+        SIC, SEN
+        B, SERS   ! other exponent inds on
+        BZB, 11.28, $+2.
+        SIC, SEN
+        B, SERS
+        BZB, 11.29, $+2.
+        SIC, SEN
+        B, SERS
+        BZB, 11.30, $+2.
+        SIC, SEN
+        B, SERS
+        BZB, 11.31, $+2.
+        SIC, SEN
+        B, SERS
+PASS    BEW, $                  ! 013037.00: the routine's exit ("B,$+1.")
+        END, FMA4

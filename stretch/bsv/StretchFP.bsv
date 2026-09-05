@@ -67,13 +67,26 @@ function Word64 fpToWord(FpNum x) = { x.ef, x.em, x.es, x.frac, x.sign, x.flags 
 // Accumulator: left half bits 0-59 = exponent + fraction; sign byte
 // (address 10, its bits 0-7 in the word's low byte) bit 4 = sign,
 // bits 5-7 = flags.
+// The accumulator sign byte register (word 10) is IBM bits 0-7 of that
+// word: the sign in bit 4 ("fifth bit position from the left") and the
+// data flags T/U/V in bits 5-7 (p.82: "sign byte register bit positions
+// 5-7"). Both the floating-point arms (here) and the VFL accumulator
+// helpers (StretchALU accToSM/packAcc) use this one layout. Before
+// jb_af1c F204C the model kept the byte at IBM bits 56-63 and the VFL
+// sign in bit 0 of word 8; F204C's CM1111(BU,8),10.0 / CT1100(BU,8),10.0
+// and its 64-bit checks of word 8 need the real layout.
+function Bit#(1) sbSign(Word64 sb)  = sb[59];
+function Bit#(3) sbFlags(Word64 sb) = sb[58:56];
+function Word64 sbWith(Word64 oldByte, Bit#(1) sign, Bit#(3) flags) =
+  { oldByte[63:60], sign, flags, oldByte[55:0] };
+
 function FpNum fpFromAcc(Word64 accLeft, Word64 signByte) =
   FpNum { ef: accLeft[63], em: accLeft[62:53], es: accLeft[52], frac: accLeft[51:4],
-          sign: signByte[3], flags: signByte[2:0] };
+          sign: sbSign(signByte), flags: sbFlags(signByte) };
 
 function Word64 fpAccLeft(FpNum x, Word64 oldLeft) = { x.ef, x.em, x.es, x.frac, oldLeft[3:0] };
 
-function Word64 fpSignByte(FpNum x, Word64 oldByte) = { oldByte[63:4], x.sign, x.flags };
+function Word64 fpSignByte(FpNum x, Word64 oldByte) = sbWith(oldByte, x.sign, x.flags);
 
 // Signed exponent as an integer (ignoring the flag).
 function Int#(13) fpExp(FpNum x);

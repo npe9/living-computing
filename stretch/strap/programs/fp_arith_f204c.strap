@@ -1,0 +1,96 @@
+! Floating-point diagnostic jb_af1c, routine F204C "TEST UNCHANGED REGS"
+! (docs/jb_af1c_floating-point.pdf p.59, octal 012614.40-012641.40):
+! ADD TO MEMORY must leave the accumulator -- left half $L (word 8),
+! right half $R (word 9) and the sign byte register $SB (word 10) --
+! exactly as it found them. Two sub-tests:
+!   F204C1 "zeros remain zeros": ROS := FPK2 (a flagged all-ones word
+!     with the low bits clear), Z,$L / Z,$R / Z,$SB clear the three
+!     registers, M+(U),ROS, then CT0101 (connect-for-test, function
+!     0101 = the accumulator field itself) of the left half (offset
+!     64), the right half (offset 0) and CT0011 of the 8-bit sign byte
+!     against FPK0 = 0: RGZ must stay off (BRGZ,SERS) each time.
+!   F204C2 "ones remain ones": CM0000 zeroes ROS in place, C1111
+!     writes all ones into both accumulator halves (from FPK1, all
+!     ones) and CM1111 into the sign byte, M+(U),ROS, then CT1010 /
+!     CT1100 (the complement functions) must find no zero bit: RGZ
+!     off each time.
+! The connective's third operand is the accumulator OFFSET: 64 selects
+! the left half, none the right half (Ref. Manual p.75-77; the
+! printed columns differ only there, 000040 vs 000000).
+!
+! Substitutions (SSIP framework, real listed addresses): SERS (octal
+! 1304) -> FAIL halt, SEN (octal 1310) -> scratch, ROS (octal 22355)
+! the memory operand, PASS -> the routine's exit at 012641.40 (the
+! listing's "B,$+1."). Constants FPK0/FPK1/FPK2 from the pool p.176.
+! The entry FMA3's "BD,$+.32" is kept verbatim.
+!
+! Instructions: BD, L(BU)/ST(BU), Z to the special registers, M+(U),
+! CT0101/CT0011/CT1010/CT1100 with an accumulator offset, CM0000/CM1111
+! (connect to memory), C1111 (connect to accumulator), SIC, BRGZ.
+! verify_fp_arith_f204c_listing.py checks every word bit-for-bit.
+!
+! Observed: FIRST RUN HALTED AT SERS with SEN = 012635.40, sub-test
+! C2A's "does L remain +1": the dump showed $L = 0x7FFFFFFFFFFFFFFF
+! and the sign byte word 10 = 0 after CM1111 had written ones to it.
+! Two layout errors in the model, both against Ref. Manual p.82 and
+! the special-storage table: (1) the VFL accumulator sign was kept in
+! bit 0 of word 8 over a 127-bit magnitude, so no connective could
+! ever set that bit; (2) word 10 kept its LOW byte (IBM bits 56-63),
+! so a store to the sign byte at 10.0 (IBM bits 0-7) was dropped.
+! Fix: the accumulator is 128 magnitude bits (words 8, 9) and the
+! sign byte register is IBM bits 0-7 of word 10 -- sign in bit 4,
+! flags T/U/V in bits 5-7 -- for VFL and floating point alike
+! (StretchALU accToSM/packAcc, StretchExecute readAcc/writeAcc,
+! StretchFP sbSign/sbWith, StretchStorage's word-10 mask). After the
+! fix both sub-tests pass and the run halts at PASS with SEN still 0;
+! the final state is what C2 leaves: $L and $R all ones, the sign byte
+! 0xFF in bits 0-7. That first run is the discriminating evidence.
+
+! -- SSIP framework substitutes --
+        SLC, (8)1304.0
+SERS    BEW, $
+        SLC, (8)1310.0
+SEN     DD(BU,64,8), 0
+        SLC, (8)22355.0
+ROS     DD(BU,64,8), 0
+
+! -- constants (pool p.176) --
+        SLC, (8)22005.0
+FPK0    DD(BU,64,8), (8)0000000000000000000000
+FPK1    DD(BU,64,8), (8)1777777777777777777777
+FPK2    DD(BU,64,8), (8)1777777777777777777760
+
+! -- code (verbatim, at the listing's addresses) --
+        SLC, (8)12614.40
+FMA3    BD, $+.32
+        L(BU), FPK2             ! F204C1: zeros remain zeros
+        ST(BU), ROS
+        Z, $L
+        Z, $R
+        Z, $SB
+        M+(U), ROS
+        CT0101(BU,64), FPK0, 64 ! F204C1A: does L remain +0
+        SIC, SEN
+        BRGZ, SERS
+        CT0101(BU,64), FPK0     ! F204C1B: does R remain +0
+        SIC, SEN
+        BRGZ, SERS
+        CT0011(BU,8), 10.0      ! F204C1C: does the SB remain +0
+        SIC, SEN
+        BRGZ, SERS
+        CM0000(BU), ROS         ! F204C2: ones remain ones
+        C1111(BU,64), FPK1, 64
+        C1111(BU,64), FPK1
+        CM1111(BU,8), 10.0
+        M+(U), ROS
+        CT1010(BU,64), FPK1, 64 ! F204C2A: does L remain +1
+        SIC, SEN
+        BRGZ, SERS
+        CT1010(BU,64), FPK1     ! F204C2B: does R remain +1
+        SIC, SEN
+        BRGZ, SERS
+        CT1100(BU,8), 10.0      ! F204C2C: does the SB remain +1
+        SIC, SEN
+        BRGZ, SERS
+PASS    BEW, $                  ! 012641.40: the routine's exit ("B,$+1.")
+        END, FMA3

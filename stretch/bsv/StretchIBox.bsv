@@ -73,6 +73,20 @@ endfunction
 // word is one it reads or writes, or it branches on an arithmetic
 // indicator (which needs the levels drained). The operand words use
 // the same effective-address arithmetic as execute().
+// The special-storage words the E-box reads and writes AT EXECUTION --
+// the zeros/ones counts (7), the accumulator (8, 9) and its sign byte
+// (10), the indicators (11), mask (12), remainder (13), factor (14),
+// transit (15). An I-box store to one of them (Z,$IND to clear the
+// indicators, Z,$L ...) must wait for every pending level to retire,
+// or it lands BEFORE the E-box instruction that precedes it in the
+// program and is undone / un-cleared by it. Found by jb_af1c F204D12:
+// L(U) of an XPL-range operand followed by Z,$IND then M+ -- the model
+// let Z,$IND run ahead of the load, which then set XPL after the
+// clear, and the block's "other exponent indicators off" check failed.
+// (Index words 16-31 are the I-box's own and are covered by the index
+// hazard checks above, not by this.)
+function Bool eboxRegister(WordAddr w) = (w >= 7 && w <= 15);
+
 function Bool levelHolds(Vector#(4, LaLevel) lv, WordAddr w);
   Bool r = False;
   for (Integer k = 0; k < 4; k = k + 1) begin
@@ -113,14 +127,18 @@ function Bool iboxHazard(StretchStorage st, Bool guessPending, DecodedInstr d, V
       // branch empties the look-ahead anyway (Perf. Char. p.3-18:
       // "BD ... empty the LA completely"). NOP is free.
       if (!x.misc) h = (x.code != 3'b110);
-      else if (x.code == 3'b100) h = levelHolds(lv, baWord(effAddr24(st, {x.addr, 5'b0}, x.idx))); // Z
+      else if (x.code == 3'b100) begin                                       // Z
+        WordAddr zw = baWord(effAddr24(st, {x.addr, 5'b0}, x.idx));
+        h = levelHolds(lv, zw) || eboxRegister(zw);
+      end
       else if (x.code == 3'b000 || x.code == 3'b001)                         // R / RCZ
         h = levelHolds(lv, zeroExtend(st.readIndex(x.idx).refill));
       else h = True;                                                         // EX/EXIC
     end
     tagged Sic .x: begin
       BitAddr ea = effAddr24(st, x.addr, x.idx);
-      h = levelHolds(lv, ea[23:6]) || iboxHazard(st, guessPending, decodeHalfWord(x.inner), lv);
+      h = levelHolds(lv, ea[23:6]) || eboxRegister(ea[23:6])
+          || iboxHazard(st, guessPending, decodeHalfWord(x.inner), lv);
     end
     default: h = True;
   endcase

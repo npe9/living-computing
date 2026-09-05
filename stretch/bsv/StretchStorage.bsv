@@ -166,7 +166,7 @@ module mkStretchStorage(StretchStorage);
   Reg#(Word64) zerosOnesCounts       <- mkReg(0); // addr 7
   Reg#(Word64) accLeft               <- mkReg(0); // addr 8
   Reg#(Word64) accRight              <- mkReg(0); // addr 9
-  Reg#(Word64) accSignByte           <- mkReg(0); // addr 10 (bits 0-7 only)
+  Reg#(Word64) accSignByte           <- mkReg(0); // addr 10, IBM bits 0-7 (BSV 63:56) only
   Reg#(Word64) indicators            <- mkReg(0); // addr 11
   Reg#(Word64) mask                  <- mkReg(64'hFFFF_0000_0000_0000); // addr 12: bits0-19=1,48-63=0
   Reg#(Word64) remainder             <- mkReg(0); // addr 13
@@ -347,7 +347,7 @@ module mkStretchStorage(StretchStorage);
       7: zerosOnesCounts <= v;
       8: accLeft <= v;
       9: accRight <= v;
-      10: accSignByte <= {56'b0, v[7:0]};
+      10: accSignByte <= {v[63:56], 56'b0};   // IBM bits 0-7: the sign byte
       // SIMPLIFICATION: real hardware lets a generic STORE-type
       // instruction write indicator bits 20-63 directly (Reference
       // Card footnote c: only bits 0-19 are read-only). This

@@ -226,13 +226,15 @@ function Action writeHWWithWord(StretchStorage st, HWordAddr ha, Bit#(32) v, Wor
 // dedicated readAccLeft/readAccRight accessors), so there's no
 // request/response round trip to wait on here -- see
 // docs/phase2_arm_inventory.md.
-function SM128 readAcc(StretchStorage st) = accToSM(st.readAccLeft(), st.readAccRight());
+function SM128 readAcc(StretchStorage st) = accToSM(st.readAccLeft(), st.readAccRight(), st.readAccSign());
 
 function Action writeAcc(StretchStorage st, SM128 v) =
   action
-    let {hi,lo} = packAcc(v.sign, truncate(v.mag));
+    let {hi,lo} = packAcc(v.mag);
     st.writeWord(addrAccLeft, hi);
     st.writeWord(addrAccRight, lo);
+    Word64 sb = st.readAccSign();
+    st.writeWord(addrAccSignByte, sbWith(sb, v.sign, sbFlags(sb)));
   endaction;
 
 // Floating-point arithmetic result indicators (p.85): RLZ/RZ/RGZ from

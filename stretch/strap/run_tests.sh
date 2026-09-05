@@ -232,6 +232,31 @@ run "FP M+ sign modifiers (jb_af1c F204B on the model)" ./run_program.sh program
     "PC=$(python3 -c 'from strap_asm import assemble; print(assemble(open("programs/fp_arith_f204b.strap").read()).symtab["PASS"]//32)')" \
     "SEN:712=0"
 
+# -- 1i'''''''. jb_af1c F204C (p.59): ADD TO MEMORY leaves $L, $R and the
+# sign byte register untouched -- zeros stay zeros, ones stay ones,
+# checked with connectives over the full 64-bit halves (offset 64 = L)
+# and the 8-bit sign byte at 10.0. First run caught the model's
+# accumulator layout (sign in bit 0 of word 8, a 127-bit magnitude,
+# and word 10 holding its LOW byte): now 128 magnitude bits with the
+# sign byte at IBM bits 0-7 of word 10, sign in bit 4 -- see the
+# program header.
+run "FP M+ unchanged registers (jb_af1c F204C, encoding)" python3 verify_fp_arith_f204c_listing.py
+run "FP M+ unchanged registers (jb_af1c F204C on the model)" ./run_program.sh programs/fp_arith_f204c.strap StretchFpAddCTb \
+    "PC=$(python3 -c 'from strap_asm import assemble; print(assemble(open("programs/fp_arith_f204c.strap").read()).symtab["PASS"]//32)')" \
+    "SEN:712=0"
+
+# -- 1i''''''''. jb_af1c F204D (pp.60-64): the indicators ADD TO MEMORY
+# sets -- MOP, RLZ/RN, RZ, RGZ, PSH on/off, LC, LS on/off, and the
+# five exponent-range indicators one at a time -- sixteen sub-tests.
+# First run caught a look-ahead ordering bug: Z,$IND ran ahead of the
+# unretired L(U) level that sets XPL. An I-box store to words 7-15 now
+# drains the look-ahead (StretchIBox.bsv eboxRegister) -- see the
+# program header.
+run "FP M+ indicators (jb_af1c F204D, encoding)" python3 verify_fp_arith_f204d_listing.py
+run "FP M+ indicators (jb_af1c F204D on the model)" ./run_program.sh programs/fp_arith_f204d.strap StretchFpAddDTb \
+    "PC=$(python3 -c 'from strap_asm import assemble; print(assemble(open("programs/fp_arith_f204d.strap").read()).symtab["PASS"]//32)')" \
+    "SEN:712=0"
+
 # -- 1j. Store-close-to-fetch: store a word then immediately reload it;
 # the load must read the new value, not the stale one. The hazard the FP
 # sign-modifier codesign exposed; fixed by tracking each E-box level's

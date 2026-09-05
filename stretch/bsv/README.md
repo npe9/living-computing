@@ -218,10 +218,16 @@ it recognizes independent of what the datapath implements.
   table — and were wrong (field treated as a raw integer). Now
   implemented from Reference Manual p.25's per-operation prose, see
   "Executed" above.
-- **Accumulator model**: the real accumulator (words 8/9 "Left/Right
-  Half" plus a separate 8-bit sign-byte register, word 10) is modeled
-  here as one 128-bit sign-magnitude value; the separate sign-byte
-  register is storage-addressable but not consulted by the ALU.
+- **Accumulator model** (settled 2026-09-05 by jb_af1c F204C): words
+  8/9 are the 128 magnitude bits and the sign lives in the sign byte
+  register, word 10, IBM bits 0-7 -- sign in bit 4 ("fifth bit
+  position from the left"), data flags T/U/V in bits 5-7 (Ref. Manual
+  p.82) -- used by both the VFL accumulator helpers (`StretchALU`
+  `accToSM`/`packAcc`, `StretchExecute` `readAcc`/`writeAcc`) and the
+  floating-point arms (`StretchFP` `sbSign`/`sbWith`). Until F204C the
+  VFL sign sat in bit 0 of word 8 over a 127-bit magnitude and word 10
+  kept its LOW byte; the diagnostic's full-64-bit checks of the left
+  half and its CM1111/CT1100 on `10.0` exposed both.
 - **Word 11 (Indicators) cannot be written via a generic STORE.**
   Real hardware allows writing bits 20-63 directly; here the execute
   stage owns the single per-instruction write to `indicators` (see

@@ -39,18 +39,19 @@ typedef struct {
   Bit#(128) mag;
 } SM128 deriving (Bits, Eq, FShow);
 
-function Bit#(1) accSign(Word64 hi) = hi[63:63]; // IBM bit 0 of word 8
+// The accumulator is words 8 and 9 (128 magnitude bits, Left then
+// Right) plus the sign byte register, word 10 (IBM bits 0-7; the sign
+// is bit 4 -- StretchFP sbSign/sbWith). Until jb_af1c F204C the model
+// kept the VFL sign in bit 0 of word 8 with a 127-bit magnitude; the
+// diagnostic's 64-bit checks of the left half need all 128 bits.
+function Bit#(1) accSign(Word64 signByte) = signByte[59]; // IBM bit 4 of word 10
 
-function SM128 accToSM(Word64 hi, Word64 lo);
-  Bit#(1) s = accSign(hi);
-  Bit#(127) m = {hi[62:0], lo};
-  return SM128 { sign: s, mag: zeroExtend(m) };
+function SM128 accToSM(Word64 hi, Word64 lo, Word64 signByte);
+  return SM128 { sign: accSign(signByte), mag: {hi, lo} };
 endfunction
 
-function Tuple2#(Word64,Word64) packAcc(Bit#(1) sign, Bit#(127) mag);
-  Word64 hi = {sign, mag[126:64]}; // 1 + 63 = 64
-  Word64 lo = mag[63:0];           // 64
-  return tuple2(hi, lo);
+function Tuple2#(Word64,Word64) packAcc(Bit#(128) mag);
+  return tuple2(mag[127:64], mag[63:0]);
 endfunction
 
 // Sign-and-magnitude add: computes a + b (each sign+magnitude) with a
