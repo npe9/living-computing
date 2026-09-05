@@ -9,7 +9,6 @@
 package StretchCore;
 
 import Vector::*;
-import ConfigReg::*;
 import StretchTypes::*;
 import StretchStorage::*;
 import StretchIO::*;

@@ -67,7 +67,6 @@ def generate(module_name, prog, checks, step_cap=30000, reader_image=None,
     lines.append("  StretchCore core <- mkStretchCore;")
     lines.append("  Reg#(Bit#(32)) phase <- mkReg(0);")
     lines.append("  Reg#(Bit#(32)) stepCount <- mkReg(0);")
-
     lines.append("  Reg#(Bit#(32)) fails <- mkReg(0);")
     lines.append("")
     lines.append("  function Action check(String label, Word64 got, Word64 expected) =")

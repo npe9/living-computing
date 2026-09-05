@@ -7,12 +7,17 @@ memory bus control unit, the instruction unit with its 1Y/2Y buffers
 and index storage, the four-level look-ahead, and the serial/parallel
 arithmetic units, with cycle timing per IBM's own Performance
 Characteristics — per the staged plan and the feature inventory in
-`../docs/microarchitecture_plan.md`. The
-description below is of the model as it stands at the start of that
-work (and remains accurate until each stage lands): a non-pipelined,
-ISA-level Bluespec SystemVerilog model of the IBM 7030 instruction set,
-built from the primary sources (all under `stretch/docs/`, pulled from
-bitsavers.org):
+`../docs/microarchitecture_plan.md`. Stages 0-3 of that plan and the
+idiomatic-Bluespec rewrite (§1c) have landed: the model is now the
+memory units and bus control unit, the instruction unit with 1Y/2Y,
+the four-level look-ahead with branch guessing, and the E-box as a
+request/result box, as stage modules under one synthesized core (see
+"Files"); the serial/parallel arithmetic-unit timing is the open
+half. The instruction-set description below (the "Executed" / "Not
+modeled" sections) is architectural and still accurate; where it says
+"non-pipelined" it is describing the 2026-09-03 starting point. The
+model is built from the primary sources (all under `stretch/docs/`,
+pulled from bitsavers.org):
 
 - **22-6530-2** — *IBM 7030 Data Processing System Reference Manual*
   (the authority for everything cited "p.NN" below; OCR sidecar text
@@ -48,6 +53,7 @@ bitsavers.org):
 | `StretchIO.bsv` | Simulated Input-Output subsystem (three fixed devices — card reader, printer, tape — standing in for the real Exchange and external units); see its own file header for the full scope statement. |
 | `StretchIBox.bsv` | The instruction unit's stage module `mkInstrBuffers` (1Y/2Y buffers + IC controls: `advance` once per clock, `lookup` for preparation) and, as functions, the instruction classification (E-box class, fetches an operand, stores where, progressive) and the I-box-ahead-of-look-ahead hazard test. |
 | `StretchLookAhead.bsv` | The four-level look-ahead as a stage module `mkLookAhead`: `collect` every clock (operand arrivals, one fetch issue), the levels/head/tail/count for the decision arms, and their three mutations `retireHead`/`load`/`cancelAll`. |
+| `check_schedule.py` | Run by `build.sh` on bsc's `-show-schedule` output: fails if any core rule is blocked by another core rule (only exported harness methods may block one) — the assertion `fire_when_enabled` cannot make at the synthesized boundary, see "Toolchain" item 10. |
 | `StretchTiming.bsv` | The per-instruction time-budget tables (`iboxCycles`, `eboxClocks`, `budgetClocks`) from IBM's Performance Characteristics, as pure functions. |
 | `StretchCore.bsv` | The synthesized core (`(* synthesize *)`, one compilation unit): instantiates the stages above and the E-box and orchestrates them with per-clock RULES (`rl_la_fetch` = `la.collect()`, `rl_ic_controls` = `ibuf.advance(...)`, then one of six mutually-exclusive decision arms — see the file's rules section) plus the preparation logic and the branch-guess snapshot/recovery state. `step()` is a clock enable: one call advances the core one clock; `halted()` reports that an instruction branched to its own address (the `BEW, $` idiom), which STRAP-program runners (`../strap/gen_tb.py`) poll to stop on rather than a fixed step count. A progressive-indexing VFL instruction takes two clocks (see "Toolchain" item 7); an RD/W input-output instruction takes as many clocks as the block has words, one word drained per clock, device-kind-dependent capacity (see `StretchIO.bsv`). |
 | `StretchSmoke.bsv` | Hand-assembled smoke test (predates the STRAP assembler; kept as a decoder/executor regression test independent of it). |

@@ -15,7 +15,10 @@ BSC=/opt/homebrew/Cellar/bsc/2026.01/bin/bsc
 cd "$(dirname "$0")"
 mkdir -p build simbuild
 
-"$BSC" -sim -simdir simbuild -bdir build -info-dir build -g mkStretchTb -u StretchSmoke.bsv +RTS -K512m -RTS
+"$BSC" -sim -simdir simbuild -bdir build -info-dir build -show-schedule -g mkStretchTb -u StretchSmoke.bsv +RTS -K512m -RTS
+# No core rule may be blocked by another core rule (see check_schedule.py
+# for why bsc cannot assert this itself at the synthesized boundary).
+python3 check_schedule.py build/mkStretchCore.sched
 "$BSC" -sim -simdir simbuild -bdir build -e mkStretchTb -o stretch_sim +RTS -K512m -RTS
 
 if [ "$1" = "run" ]; then

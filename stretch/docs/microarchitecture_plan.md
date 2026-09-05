@@ -249,7 +249,10 @@ Staged, each step green and committed:
      assume the harness could call the exported bus-channel methods in
      a ticked clock, so `fire_when_enabled` is off `rl_la_fetch` and
      `rl_ic_controls` (the harness never does; the suite's CYCLES<=
-     bounds are the check); (ii) a parent rule may not call `setPC`
+     bounds are the check, and `bsv/check_schedule.py`, run by
+     `build.sh` on the `-show-schedule` output, fails the build if any
+     core rule is ever blocked by another core rule); (ii) a parent
+     rule may not call `setPC`
      together with a `mem` method (bsc orders `rl_prepare` between
      them: KPNS #29 "dynamic scheduling"), even from exclusive case
      arms -- `StretchSmoke.bsv`'s setup now has `setPC` in its own
@@ -353,20 +356,27 @@ volumes have text layers; the rest are read as page images.
 
 ## 2. Where the current model stands
 
-`bsv/` today is a single non-pipelined core (`StretchCore.step()`):
-fetch, decode completely, execute one instruction to completion (with
-multi-cycle bail/resume for BRAM reads, a two-step index write, and an
-I/O transfer FSM), then the next. Storage is one BRAM behind a
-request/response interface. There is no instruction buffering, no
-overlap, no look-ahead, no separate arithmetic unit, no timing. It is
-architecturally correct for everything the 20-block suite covers, and
-that correctness is what the rewrite must preserve at every stage.
-
-What carries over unchanged: `StretchDecode.bsv` (field extraction),
-`StretchALU.bsv`/`StretchVFL.bsv` (arithmetic on operands already in
-registers), the assembler, the testbench generator's checks, and the
-programs. What is replaced: `StretchCore.bsv` and the control structure
-of `StretchExecute.bsv`. What is added: the units in §3.
+(As of 2026-09-05; the paragraph this replaces described the
+2026-09-03 starting point, a single non-pipelined `step()` core with
+one BRAM and no timing.) `bsv/` today is the synthesized core
+`mkStretchCore` orchestrating stage modules with per-clock rules:
+`StretchMemory` (six interleaved 2.1 µs units behind the MBCU),
+`StretchStorage` (the CPU's bus client: store queue, tagged read
+channels, special registers, index storage), `StretchIBox`
+(`mkInstrBuffers`: 1Y/2Y and the IC controls, plus classification and
+the I-box hazard test), `StretchLookAhead` (`mkLookAhead`: the
+four-level ring), `StretchExecute` (`mkEBox`: the execute datapath as
+a start/busy/resume box holding its own operand reads), and
+`StretchTiming` (the per-class time budgets). The core's rules are
+the every-clock `rl_la_fetch`/`rl_ic_controls` and six mutually
+exclusive decision arms (§1c step 4). `step()` is a clock enable,
+`halted()` the halt flag, and the step count at halt is the clock
+count the `CYCLES<=` bounds check. What is still not modeled is the
+list in §1b item 5 (the SAU/PAU split and their real cycle timing,
+LAAR forwarding, index-recovery levels, the ring-counter interlocks,
+ECC cycles, the Exchange as a bus requester) and the functional gaps
+in §1b items 3-4. The 44-section suite is the correctness oracle every
+change must keep green.
 
 ## 3. Target structure (Bluespec modules)
 
@@ -842,8 +852,8 @@ endinterface
 ```
 It instantiates `executeEbox()` at its one call site, holds the result
 for the instruction's E-box cycle count (`eboxClocks`), and reports
-`done`. The operand-read bail/resume that `step()` does today moves
-inside the AU (it already owns `execPending`/`execPrefetch`). The
+`done`. The operand-read bail/resume moves inside the AU (done in
+§1c step 5c: `mkEBox` holds it as `start`/`busy`/`resume`). The
 look-ahead removal path becomes: when the head level's operand is
 present and `au.ready()`, `au.start(...)`; while `!au.done()`, wait;
 on `done`, commit `au.result()` and retire.
@@ -970,13 +980,24 @@ own module), so this is naturally satisfied.
   12 clocks charged). `la_branch_guess.strap`: one wrong and one right
   guess, 197 clocks; injection without the restore fails the wrong-
   guess check.
+- **Idiomatic-Bluespec rewrite (§1c) steps 1, 4, 5a, 5b, 5c -- done**
+  (2026-09-04/05, commits cc0d401, 0068366, 59a9627, aa6d8aa, 035e385;
+  suite green with every cycle count unchanged at each step): the
+  E-box as a module, `step()` split into per-clock rules, the core as
+  its own compilation unit (suite ~12 min -> ~3.3 min cold, ~80 s
+  warm), the instruction buffers / look-ahead / timing tables as their
+  own packages, and the E-box as a start/busy/resume box owning its
+  operand reads. Details and the measured numbers are in §1c.
 
 ## 8. Immediate next steps
 
-1. Stage 2 per §6a: `StretchIBox.bsv`, starting with the IC controls
-   and Y buffers (2a), then preparation and I-box execution timing
-   (2b), then the not-taken guess and restart (2c).
-2. Per-unit trace flag (stage 0 leftover), first used by 2a.
+1. The codesign roadmap, §1b item 2: FP arithmetic against the
+   `jb_af1c` diagnostic -- the multiply and remaining add/subtract
+   blocks, then the open ops in the order the diagnostic reaches them.
+2. Optional structural refinements left by §1c: the multi-cycle
+   SAU/PAU timing (steps 2b/3), the branch-guess snapshot into the
+   look-ahead module, `mkEBox` as its own compilation unit.
+3. Per-unit trace flag (stage 0 leftover).
 
 ---
 

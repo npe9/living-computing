@@ -1780,8 +1780,8 @@ function ActionValue#(Tuple4#(HWordAddr, Maybe#(Tuple2#(Bit#(4), IndexWord)),
       //     read of its bit word thus never sees an un-retired earlier
       //     store.
       //   * The phase-1 and phase-2 effAddr24 calls read the same index
-      //     bb.i1: a parked instruction is the look-ahead head
-      //     (auActive), levels retire head-first, and the only writer
+      //     bb.i1: a parked instruction is the look-ahead head (the
+      //     E-box holds it with owner OwnerLA), levels retire head-first, and the only writer
       //     of index ahead of time is wrong-guess recovery, which
       //     resolves before any younger instruction reaches the head --
       //     so nothing rewrites bb.i1 between park and re-entry.
