@@ -1,0 +1,367 @@
+! Floating-point diagnostic jb_af1c, routine F205B "TESTS OF SIGN AND
+! MODIFIER VARIATIONS" for ADD TO MAGNITUDE (docs/jb_af1c_floating-
+! point.pdf pp.67-72, octal 013153.00-013433.00): thirty-two sub-tests
+! of +MG / +MGA / -MG / -MGA over every memory-sign (MS) / accumulator-
+! sign (ACS) combination -- the accumulator sign set by L(U) or LN(U),
+! the memory sign by the constant (FPK4/FPK19 positive, FPK23/FPK24
+! negative) -- each checking the accumulator's left half bits 0-59 at
+! offset 68 against the expected constant (CT0110 + BRGZ,SERS) and the
+! accumulator sign bit, bit 4 of the sign byte register ($SB+.4), by
+! BB/BZB. The sub-test comments are the listing's own.
+!
+! What the block establishes (Ref. Manual p.88, ADD TO MAGNITUDE): the
+! operand is added to the MAGNITUDE of the accumulator (the accumulator
+! sign is treated as positive), the N and A modifiers act on the
+! storage operand (A: absolute, N: negate, A first), a negative sum is
+! a FORCED ZERO with the accumulator's exponent and sign (FPK29:
+! exponent 1, zero fraction, e.g. B6: +1/3 in the acc minus 2/3), and
+! the result always carries the accumulator's ORIGINAL sign, since
+! only its magnitude took part: BZB (bit 0) for the L-loaded sub-tests
+! B1-B8 and B17-B24, BB (bit 1) for every LN-loaded one, forced zeros
+! included (B14, B16, B26, B32).
+!
+! Substitutions (SSIP framework, real listed addresses): SERS (octal
+! 1304) -> FAIL halt, SEN (octal 1310) -> scratch, PASS -> the
+! routine's exit at 013433.00 (the listing's "BD,$+1.0"). Constants
+! from the pool p.176. The entry FAMG2's "BD,$+.32" is kept verbatim;
+! the other sub-tests begin with the listing's "B,$+.32" separator
+! (except B8, which the listing runs straight into).
+!
+! Instructions: BD, B, L(U)/LN(U), +MG/+MGA/-MG/-MGA, NOP (B21), CT0110
+! with offset 68, SIC, BRGZ, BB/BZB on the sign byte bit.
+! verify_fp_arith_f205b_listing.py checks every word bit-for-bit.
+!
+! Observed: with the model as it stood after F205A, the first run
+! halted at B20's arithmetic check -- and the cause was the FPK23
+! transcription, see the note above (the model's exact sum of the
+! "230" reading was one unit short of FPK22). One model change was
+! made ahead of the run from the listing alone: the + arm now keeps
+! the accumulator's own sign through +MG (every LN-loaded sub-test
+! expects sign bit 1, forced zeros included), where it previously
+! wrote the adder's sign. With FPK23 corrected all thirty-two
+! sub-tests pass and the run halts at PASS with SEN still 0.
+
+! Transcription note on FPK23 (pool p.176, octal 22034): the scan's last
+! group reads as "230" or "250" -- 3 and 5 are near-identical in this
+! typewriter font. It is "250": a -2/3 whose fraction keeps the
+! 525252... alternation ends in 101 + sign 1 (compare FK43, the same
+! value at 22215, printed "...250"), and the block's own arithmetic
+! requires it -- B20/B22 add FPK4 to the magnitude of FPK23 and expect
+! the all-ones FPK22, which only "250" gives (the model, doing exact
+! arithmetic on the "230" reading, came out one unit short and
+! halted at B20's check: the diagnostic disambiguating its own scan).
+!
+! -- SSIP framework substitutes --
+        SLC, (8)1304.0
+SERS    BEW, $
+        SLC, (8)1310.0
+SEN     DD(BU,64,8), 0
+
+! -- constants (pool p.176) --
+
+        SLC, (8)22011.0
+FPK4    DD(BU,64,8), (8)0000452525252525252520
+        SLC, (8)22030.0
+FPK19   DD(BU,64,8), (8)0000525252525252525240
+        SLC, (8)22033.0
+FPK22   DD(BU,64,8), (8)0000577777777777777760
+        SLC, (8)22034.0
+FPK23   DD(BU,64,8), (8)0000525252525252525250
+        SLC, (8)22035.0
+FPK24   DD(BU,64,8), (8)0000452525252525252530
+        SLC, (8)22042.0
+FPK29   DD(BU,64,8), (8)0000400000000000000000
+
+! -- code (verbatim, at the listing's addresses) --
+        SLC, (8)13153.0
+FAMG2   BD, $+.32   ! FAMG2 / F205B1: MS+ACS+N+A+0
+        L(U), FPK19
+        +MG(U), FPK4
+        CT0110(BU,60), FPK22, 68   ! check no. in acc
+        SIC, SEN
+        BRGZ, SERS
+        BZB, $SB+.4, $+2.   ! is sign bit equal 0
+        SIC, SEN
+        B, SERS
+        B, $+.32   ! F205B2: MS+ACS+N+A+0
+        L(U), FPK4
+        +MG(U), FPK19
+        CT0110(BU,60), FPK22, 68   ! check no. in acc
+        SIC, SEN
+        BRGZ, SERS
+        BZB, $SB+.4, $+2.   ! is sign bit equal 0
+        SIC, SEN
+        B, SERS
+        B, $+.32   ! F205B3: MS+ACS+N+0,A+1
+        L(U), FPK19
+        +MGA(U), FPK4
+        CT0110(BU,60), FPK22, 68   ! check no. in acc
+        SIC, SEN
+        BRGZ, SERS
+        BZB, $SB+.4, $+2.   ! is sign bit equal 0
+        SIC, SEN
+        B, SERS
+        B, $+.32   ! F205B4: MS+ACS+N+0,A+1
+        L(U), FPK4
+        +MGA(U), FPK19
+        CT0110(BU,60), FPK22, 68   ! check no. in acc
+        SIC, SEN
+        BRGZ, SERS
+        BZB, $SB+.4, $+2.   ! is sign bit equal 0
+        SIC, SEN
+        B, SERS
+        B, $+.32   ! F205B5: MS+ACS+A+0,N+1
+        L(U), FPK19
+        -MG(U), FPK4
+        CT0110(BU,60), FPK4, 68   ! check no. in acc
+        SIC, SEN
+        BRGZ, SERS
+        BZB, $SB+.4, $+2.   ! is sign bit equal 0
+        SIC, SEN
+        B, SERS
+        B, $+.32   ! F205B6: MS+ACS+A+0,N+1
+        L(U), FPK4
+        -MG(U), FPK19
+        CT0110(BU,60), FPK29, 68   ! check no. in acc
+        SIC, SEN
+        BRGZ, SERS
+        BZB, $SB+.4, $+2.   ! is sign bit equal 0
+        SIC, SEN
+        B, SERS
+        B, $+.32   ! F205B7: MS+ACS+0,N+A+1
+        L(U), FPK19
+        -MGA(U), FPK4
+        CT0110(BU,60), FPK4, 68   ! check no. in acc
+        SIC, SEN
+        BRGZ, SERS
+        BZB, $SB+.4, $+2.   ! is sign bit equal 0
+        SIC, SEN
+        B, SERS
+                                ! F205B8: MS+ACS+0,N+A+1 (no separator in the listing)
+        L(U), FPK4
+        -MGA(U), FPK19
+        CT0110(BU,60), FPK29, 68   ! check no. in acc
+        SIC, SEN
+        BRGZ, SERS
+        BZB, $SB+.4, $+2.   ! is sign bit equal 0
+        SIC, SEN
+        B, SERS
+        B, $+.32   ! F205B9: MS+N+A+0,ACS+1
+        LN(U), FPK19
+        +MG(U), FPK4
+        CT0110(BU,60), FPK22, 68   ! check no. in acc
+        SIC, SEN
+        BRGZ, SERS
+        BB, $SB+.4, $+2.   ! is sign bit equal 1
+        SIC, SEN
+        B, SERS
+        B, $+.32   ! F205B10: MS+N+A+0,ACS+1
+        LN(U), FPK4
+        +MG(U), FPK19
+        CT0110(BU,60), FPK22, 68   ! check no. in acc
+        SIC, SEN
+        BRGZ, SERS
+        BB, $SB+.4, $+2.   ! is sign bit equal 1
+        SIC, SEN
+        B, SERS
+        B, $+.32   ! F205B11: MS+N+0,ACS+A+1
+        LN(U), FPK19
+        +MGA(U), FPK4
+        CT0110(BU,60), FPK22, 68   ! check no. in acc
+        SIC, SEN
+        BRGZ, SERS
+        BB, $SB+.4, $+2.   ! is sign bit equal 1
+        SIC, SEN
+        B, SERS
+        B, $+.32   ! F205B12: MS+N+0,ACS+A+1
+        LN(U), FPK4
+        +MGA(U), FPK19
+        CT0110(BU,60), FPK22, 68   ! check no. in acc
+        SIC, SEN
+        BRGZ, SERS
+        BB, $SB+.4, $+2.   ! is sign bit equal 1
+        SIC, SEN
+        B, SERS
+        B, $+.32   ! F205B13: MS+A+0,ACS+N+1
+        LN(U), FPK19
+        -MG(U), FPK4
+        CT0110(BU,60), FPK4, 68   ! check no. in acc
+        SIC, SEN
+        BRGZ, SERS
+        BB, $SB+.4, $+2.   ! is sign bit equal 1
+        SIC, SEN
+        B, SERS
+        B, $+.32   ! F205B14: MS+A+0,ACS+N+1
+        LN(U), FPK4
+        -MG(U), FPK19
+        CT0110(BU,60), FPK29, 68   ! check no. in acc
+        SIC, SEN
+        BRGZ, SERS
+        BB, $SB+.4, $+2.   ! is sign bit equal 1
+        SIC, SEN
+        B, SERS
+        B, $+.32   ! F205B15: MS is 0, ACS, N and A are 1
+        LN(U), FPK19
+        -MGA(U), FPK4
+        CT0110(BU,60), FPK4, 68   ! check no. in acc
+        SIC, SEN
+        BRGZ, SERS
+        BB, $SB+.4, $+2.   ! is sign bit equal 1
+        SIC, SEN
+        B, SERS
+        B, $+.32   ! F205B16: MS+0,ACS+N+A+1
+        LN(U), FPK4
+        -MGA(U), FPK19
+        CT0110(BU,60), FPK29, 68   ! check no. in acc
+        SIC, SEN
+        BRGZ, SERS
+        BB, $SB+.4, $+2.   ! is sign bit equal 1
+        SIC, SEN
+        B, SERS
+        B, $+.32   ! F205B17: MS+1,ACS+N+A+0
+        L(U), FPK19
+        +MG(U), FPK24
+        CT0110(BU,60), FPK4, 68   ! check no. in acc
+        SIC, SEN
+        BRGZ, SERS
+        BZB, $SB+.4, $+2.   ! is sign bit equal 0
+        SIC, SEN
+        B, SERS
+        B, $+.32   ! F205B18: MS+1,ACS+N+A+0
+        L(U), FPK4
+        +MG(U), FPK23
+        CT0110(BU,60), FPK29, 68   ! check no. in acc
+        SIC, SEN
+        BRGZ, SERS
+        BZB, $SB+.4, $+2.   ! is sign bit equal 0
+        SIC, SEN
+        B, SERS
+        B, $+.32   ! F205B19: MS+A+1,ACS+N+0
+        L(U), FPK19
+        +MGA(U), FPK24
+        CT0110(BU,60), FPK22, 68   ! check no. in acc
+        SIC, SEN
+        BRGZ, SERS
+        BZB, $SB+.4, $+2.   ! is sign bit equal 0
+        SIC, SEN
+        B, SERS
+        B, $+.32   ! F205B20: MS+A+1,ACS+N+0
+        L(U), FPK4
+        +MGA(U), FPK23
+        CT0110(BU,60), FPK22, 68   ! check no. in acc
+        SIC, SEN
+        BRGZ, SERS
+        BZB, $SB+.4, $+2.   ! is sign bit equal 0
+        SIC, SEN
+        B, SERS
+        B, $+.32   ! F205B21: MS+N+1,ACS+A+0
+        L(U), FPK19
+        -MG(U), FPK24
+        NOP
+        CT0110(BU,60), FPK22, 68   ! check no. in acc
+        SIC, SEN
+        BRGZ, SERS
+        BZB, $SB+.4, $+2.   ! is sign bit equal 0
+        SIC, SEN
+        B, SERS
+        B, $+.32   ! F205B22: MS and N are 1, ACS and A are 0
+        L(U), FPK4
+        -MG(U), FPK23
+        CT0110(BU,60), FPK22, 68   ! check no. in acc
+        SIC, SEN
+        BRGZ, SERS
+        BZB, $SB+.4, $+2.   ! is sign bit equal 0
+        SIC, SEN
+        B, SERS
+        B, $+.32   ! F205B23: MS+N+A+1,ACS+0
+        L(U), FPK19
+        -MGA(U), FPK24
+        CT0110(BU,60), FPK4, 68   ! check no. in acc
+        SIC, SEN
+        BRGZ, SERS
+        BZB, $SB+.4, $+2.   ! is sign bit equal 0
+        SIC, SEN
+        B, SERS
+        B, $+.32   ! F205B24: MS+N+A+1,ACS+0
+        L(U), FPK4
+        -MGA(U), FPK23
+        CT0110(BU,60), FPK29, 68   ! check no. in acc
+        SIC, SEN
+        BRGZ, SERS
+        BZB, $SB+.4, $+2.   ! is sign bit equal 0
+        SIC, SEN
+        B, SERS
+        B, $+.32   ! F205B25: MS+ACS+1,N+A+0
+        LN(U), FPK19
+        +MG(U), FPK24
+        CT0110(BU,60), FPK4, 68   ! check no. in acc
+        SIC, SEN
+        BRGZ, SERS
+        BB, $SB+.4, $+2.   ! is sign bit equal 1
+        SIC, SEN
+        B, SERS
+        B, $+.32   ! F205B26: MS and ACS are 1, N and A are 0
+        LN(U), FPK4
+        +MG(U), FPK23
+        CT0110(BU,60), FPK29, 68   ! check no. in acc
+        SIC, SEN
+        BRGZ, SERS
+        BB, $SB+.4, $+2.   ! is sign bit equal 1
+        SIC, SEN
+        B, SERS
+        B, $+.32   ! F205B27: MS+ACS+A+1,N+0
+        LN(U), FPK19
+        +MGA(U), FPK24
+        CT0110(BU,60), FPK22, 68   ! check no. in acc
+        SIC, SEN
+        BRGZ, SERS
+        BB, $SB+.4, $+2.   ! is sign bit equal 1
+        SIC, SEN
+        B, SERS
+        B, $+.32   ! F205B28: MS+ACS+A+1,N+0
+        LN(U), FPK4
+        +MGA(U), FPK23
+        CT0110(BU,60), FPK22, 68   ! check no. in acc
+        SIC, SEN
+        BRGZ, SERS
+        BB, $SB+.4, $+2.   ! is sign bit equal 1
+        SIC, SEN
+        B, SERS
+        B, $+.32   ! F205B29: MS+ACS+N+1,A+0
+        LN(U), FPK19
+        -MG(U), FPK24
+        CT0110(BU,60), FPK22, 68   ! check no. in acc
+        SIC, SEN
+        BRGZ, SERS
+        BB, $SB+.4, $+2.   ! is sign bit equal 1
+        SIC, SEN
+        B, SERS
+        B, $+.32   ! F205B30: MS+ACS+N+1,A+0
+        LN(U), FPK4
+        -MG(U), FPK23
+        CT0110(BU,60), FPK22, 68   ! check no. in acc
+        SIC, SEN
+        BRGZ, SERS
+        BB, $SB+.4, $+2.   ! is sign bit equal 1
+        SIC, SEN
+        B, SERS
+        B, $+.32   ! F205B31: MS+ACS+N+A+1
+        LN(U), FPK19
+        -MGA(U), FPK24
+        CT0110(BU,60), FPK4, 68   ! check no. in acc
+        SIC, SEN
+        BRGZ, SERS
+        BB, $SB+.4, $+2.   ! is sign bit equal 1
+        SIC, SEN
+        B, SERS
+        B, $+.32   ! F205B32: MS+ACS+N+A+1
+        LN(U), FPK4
+        -MGA(U), FPK23
+        CT0110(BU,60), FPK29, 68   ! check no. in acc
+        SIC, SEN
+        BRGZ, SERS
+        BB, $SB+.4, $+2.   ! is sign bit equal 1
+        SIC, SEN
+        B, SERS
+PASS    BEW, $                  ! 013433.00: the routine's exit ("BD,$+1.0")
+        END, FAMG2

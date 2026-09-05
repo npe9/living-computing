@@ -1498,6 +1498,12 @@ function ActionValue#(Tuple4#(HWordAddr, Maybe#(Tuple2#(Bit#(4), IndexWord)),
             end
             7'b0000010, 7'b0100010: begin // + / +MG
               FpResult r = fpAdd(acc, opnd, normalized, noisy, c == 7'b0100010, False);
+              // ADD TO MAGNITUDE (p.88): only the accumulator's MAGNITUDE
+              // takes part, and the result keeps the accumulator's own
+              // sign -- a forced zero included. jb_af1c F205B checks the
+              // sign byte after every +MG/+MGA/-MG/-MGA: bit 1 whenever
+              // the accumulator was loaded with LN, whatever the sum.
+              if (c == 7'b0100010) r.res.sign = acc.sign;
               st.writeWord(addrAccLeft, fpAccLeft(r.res, accL));
               st.writeWord(addrAccSignByte, fpSignByte(r.res, accS));
               ind = setBit(ind, ind_MOP, 0);

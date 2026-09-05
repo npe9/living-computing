@@ -1,0 +1,139 @@
+! Floating-point diagnostic jb_af1c, routines F205C "TEST UNCHANGED
+! REGISTERS" and F205D "TEST INDICATORS" for ADD TO MAGNITUDE
+! (docs/jb_af1c_floating-point.pdf pp.73-74, octal 013435.00-013505.40;
+! they share one exit, so both are here):
+!   C1 "zeros remain zeros": C0000 clears both accumulator halves and
+!     CM0000 the sign byte, L(U),FPK4 / +MG(U),FPK19, then the RIGHT
+!     half (CT0101 at offset 0), sign byte bits 0-3 (CT0011 4 bits at
+!     10.0) and 5-7 (3 bits at 10.5) and the left half's bits 60-63
+!     (CT0101, 4 bits at offset 64) must still be zero.
+!   C2 "ones remain ones": the same with C1111 / CM1111, L(U),FPK0 /
+!     +MG(U),FPK0, checked with the complement functions -- except
+!     the sign byte bits 5-7, which the listing checks with CT0011 for
+!     ZERO: L(U) replaces the flag bits 5-7 with the operand's (FPK0's,
+!     zero), Ref. Manual p.82.
+!   D1-D4 the LS (lost significance) indicator: on for FPK22 - FPK22
+!     (x + (-x), BBZ,$LS first clears it), off for 0 + 0, off for a
+!     forced zero (1/3 + (-2/3) under +MG, p.88: a forced zero sets RZ
+!     but not LS), and off when a flagged operand merely propagates
+!     (FK35 XFN + FK22, fraction checked zero with CT0110 over 48 bits
+!     against FPK0+.12).
+!
+! Substitutions (SSIP framework, real listed addresses): SERS (octal
+! 1304) -> FAIL halt, SEN (octal 1310) -> scratch, PASS -> the
+! routines' exit at 013505.40 (the listing's "B,$+1."). Constants from
+! the pool pp.176-178. The entry FAMG6's "BD,$+.32" is kept verbatim.
+!
+! Instructions: BD, B, C0000/C1111 (connect to accumulator) with
+! offset 64, CM0000/CM1111 (connect to memory), L(U), +MG(U)/-MG(U),
+! CT0101/CT0011/CT1010/CT1100/CT0110 over 64/48/4/3-bit fields at
+! accumulator offsets 0/64/68, BBZ on $LS, BZLS/BLS, Z,$IND, SIC,
+! BRGZ. verify_fp_arith_f205cd_listing.py checks every word.
+!
+! Observed: passes on the model as it stood after F205A/F205B (the
+! accumulator layout and sign-byte fixes from F204C, the +MG sign
+! rule from F205B): every register check and all four LS cases agree
+! with the listing; halts at PASS with SEN still 0.
+
+! Transcription note on FPK23 (pool p.176, octal 22034): the scan's last
+! group reads as "230" or "250" -- 3 and 5 are near-identical in this
+! typewriter font. It is "250": a -2/3 whose fraction keeps the
+! 525252... alternation ends in 101 + sign 1 (compare FK43, the same
+! value at 22215, printed "...250"), and the block's own arithmetic
+! requires it -- B20/B22 add FPK4 to the magnitude of FPK23 and expect
+! the all-ones FPK22, which only "250" gives (the model, doing exact
+! arithmetic on the "230" reading, came out one unit short and
+! halted at B20's check: the diagnostic disambiguating its own scan).
+!
+! -- SSIP framework substitutes --
+        SLC, (8)1304.0
+SERS    BEW, $
+        SLC, (8)1310.0
+SEN     DD(BU,64,8), 0
+
+! -- constants (pool pp.176-178) --
+
+        SLC, (8)22005.0
+FPK0    DD(BU,64,8), (8)0000000000000000000000
+        SLC, (8)22006.0
+FPK1    DD(BU,64,8), (8)1777777777777777777777
+        SLC, (8)22011.0
+FPK4    DD(BU,64,8), (8)0000452525252525252520
+        SLC, (8)22030.0
+FPK19   DD(BU,64,8), (8)0000525252525252525240
+        SLC, (8)22033.0
+FPK22   DD(BU,64,8), (8)0000577777777777777760
+        SLC, (8)22034.0
+FPK23   DD(BU,64,8), (8)0000525252525252525250
+        SLC, (8)22170.0
+FK22    DD(BU,64,8), (8)0400177777777777777760
+        SLC, (8)22205.0
+FK35    DD(BU,64,8), (8)1777400000000000000000
+
+! -- code (verbatim, at the listing's addresses) --
+        SLC, (8)13435.0
+FAMG6   BD, $+.32
+        C0000(BU,64), FPK0, 64   ! F205C1: zeros remain zeros
+        C0000(BU,64), FPK0
+        CM0000(BU,8), 10.0
+        L(U), FPK4
+        +MG(U), FPK19
+        CT0101(BU,64), FPK0   ! F205C1A: does R remain +0
+        SIC, SEN
+        BRGZ, SERS
+        CT0011(BU,4), 10.0   ! F205C1B: does SB0-3 remain +0
+        SIC, SEN
+        BRGZ, SERS
+        CT0011(BU,3), 10.5   ! F205C1C: does SB5-7 remain +0
+        SIC, SEN
+        BRGZ, SERS
+        CT0101(BU,4), FPK0, 64   ! F205C1D: does L60-63 remain +0
+        SIC, SEN
+        BRGZ, SERS
+        B, $+.32   ! F205C2: 1s remain 1s
+        C1111(BU,64), FPK1, 64
+        C1111(BU,64), FPK1
+        CM1111(BU,8), 10.0
+        L(U), FPK0
+        +MG(U), FPK0
+        CT1010(BU,64), FPK1   ! F205C2A: does R remain +1
+        SIC, SEN
+        BRGZ, SERS
+        CT1100(BU,4), 10.0   ! F205C2B: does SB0-3 remain +1
+        SIC, SEN
+        BRGZ, SERS
+        CT0011(BU,3), 10.5   ! F205C2C: does SB 5-7 remain +1s (sic: the load cleared them)
+        SIC, SEN
+        BRGZ, SERS
+        CT1010(BU,4), FPK1, 64   ! F205C2D: does L60-63 remain
+        SIC, SEN
+        BRGZ, SERS
+        B, $+.32   ! F205D1: LS indicator on
+        BBZ, $LS, $+1.
+        L(U), FPK22
+        -MG(U), FPK22
+        SIC, SEN
+        BZLS, SERS
+        B, $+.32   ! F205D2: LS indicator off
+        BBZ, $LS, $+1.0
+        L(U), FPK0
+        +MG(U), FPK0
+        SIC, SEN
+        BLS, SERS
+        B, $+.32   ! F205D3: LS indicator off
+        BBZ, $LS, $+1.0
+        L(U), FPK4
+        +MG(U), FPK23   ! forced zero condition
+        SIC, SEN
+        BLS, SERS
+        B, $+.32   ! F205D4: LS indicator off to off
+        Z, $IND
+        L(U), FK35   ! exponent flag 1
+        +MG(U), FK22
+        CT0110(BU,48), FPK0+.12, 68   ! check result fraction +0
+        SIC, SEN
+        BRGZ, SERS
+        SIC, SEN
+        BLS, SERS
+PASS    BEW, $                  ! 013505.40: the routines' exit ("B,$+1.")
+        END, FAMG6

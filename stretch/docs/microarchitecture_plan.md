@@ -152,10 +152,14 @@ hand vectors alone. "Enables" notes the dependency chain.
    suppressing post-normalization of the unflagged survivor of
    XFN + N (the modifier is ignored only when the RESULT is flagged).
    The whole F204 family (A-E: add to memory) is now verified against
-   the diagnostic. Next within step 2: F205 (ADD TO MAGNITUDE, +MG /
-   +MGA / -MG / -MGA, pp.66-71 -- accumulator-changing, checked
-   through the accumulator at offset 68 and the sign byte at $SB+.4),
-   then the multiply block and the open ops.
+   the diagnostic. F205 (ADD TO MAGNITUDE, pp.66-74) is DONE as well:
+   F205A (nine arithmetic checks; caught the flagged-operand path
+   skipping the forced-zero rule), F205B (thirty-two sign/modifier
+   combinations; the result keeps the accumulator's own sign, forced
+   zeros included -- and its arithmetic disambiguated the scan of
+   FPK23, "230" vs "250"), F205C/D (unchanged registers, the LS
+   indicator). Next within step 2: F206 onward -- the multiply block
+   and the open ops in the order the diagnostic reaches them.
    Related nearby routine also located and runnable-with-effort: F203B
    "EXP RNG INDIC TEST" (p.52, octal 012260+) verifies the exponent-
    range indicators XPFP/XPH/XPL/XPU (set by ST, cleared by Z,$IND)

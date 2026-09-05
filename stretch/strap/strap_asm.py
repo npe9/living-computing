@@ -699,6 +699,13 @@ def strip_fp_sign(op):
         return ("M+", 0, 1)
     if op == "M-A":
         return ("M+", 1, 1)
+    # Likewise ADD TO MAGNITUDE's written-minus forms (F205, pp.66-72):
+    # -MG is +MG with N (.52 20 beside +MG's .42), -MGA with both (.72;
+    # +MGA is .62).
+    if op == "-MG":
+        return ("+MG", 0, 1)
+    if op == "-MGA":
+        return ("+MG", 1, 1)
     return None
 
 

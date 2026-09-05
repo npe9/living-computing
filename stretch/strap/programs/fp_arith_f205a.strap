@@ -1,0 +1,132 @@
+! Floating-point diagnostic jb_af1c, routine F205A "ADD TO MAGNITUDE
+! TESTS -- ARITHMETIC CHECKS" (docs/jb_af1c_floating-point.pdf p.66,
+! octal 013111.00-013151.00): nine sub-tests of +MG(U), the accumulator-
+! changing ADD TO MAGNITUDE, each: L(U) an accumulator operand, +MG(U)
+! a storage operand, then CT0110(BU,60),k,68 -- the accumulator's left
+! half bits 0-59 (offset 68 from the right end of the 128) against the
+! expected pool constant -- and BRGZ,SERS on any difference:
+!   A1-A4: a flagged XFP operand (in the accumulator or in storage)
+!     dominates whatever it meets (XFP, N, XFN): the result is that
+!     operand; A4 pairs an XPH-range number with an XFP one.
+!   A5: two N-range operands: 1/3 + 2/3 = 0.111...1 (FPK22).
+!   A6: N + XFN: the N operand (FK43) survives.
+!   A7: XFN in the accumulator + XFP in storage: the exponent field
+!     (12 bits at offset 116 = bits 0-11) must be FK40's and, checked
+!     separately with CT0101(BU,48),0,68, the fraction is FORCED ZERO
+!     (the ADD TO MAGNITUDE rule for a negative sum, p.88, applied to
+!     the flagged case).
+!   A8, A9: an all-ones accumulator (FPK1, XFN with es=1) + an N-range
+!     or an XFN operand: the larger-exponent operand survives.
+! The routine's prologue (FAMG1: BD / L(BU),F205 / ST(BU),DPET13 /
+! SIC,RET1 / B,IDF1 at 013105.40-013110.40) is the SSIP framework's
+! routine identification and is not transcribed; the block starts at
+! its first sub-test, label SAP6.
+!
+! Substitutions (SSIP framework, real listed addresses): SERS (octal
+! 1304) -> FAIL halt, SEN (octal 1310) -> scratch, PASS -> the
+! routine's exit at 013151.00 (the listing's "B,$+1."). Constants from
+! the pool pp.176-178; address 0 is the machine's permanent zero word.
+!
+! Instructions: L(U), +MG(U), CT0110/CT0101 with accumulator offsets
+! 68 and 116, SIC, BRGZ, B. verify_fp_arith_f205a_listing.py checks
+! every word bit-for-bit.
+!
+! Observed: FIRST RUN HALTED AT SERS with SEN = 013142.00, sub-test
+! A7, the accumulator holding FK40 wholesale: the negative flagged
+! storage operand dominated (XFP over XFN) and fpAdd's flagged-operand
+! path returned it as it was, never applying ADD TO MAGNITUDE's rule
+! for a negative sum. Fix: in that path a negative flagged survivor
+! under +MG is a forced zero -- the survivor's exponent, zero fraction
+! -- which is exactly what A7's two checks require (exponent field =
+! FK40's, fraction all zeros). After the fix all nine pass and the
+! run halts at PASS. That first run is the discriminating evidence.
+
+! -- SSIP framework substitutes --
+        SLC, (8)1304.0
+SERS    BEW, $
+        SLC, (8)1310.0
+SEN     DD(BU,64,8), 0
+
+! -- constants (pool pp.176-178) --
+
+        SLC, (8)22006.0
+FPK1    DD(BU,64,8), (8)1777777777777777777777
+        SLC, (8)22011.0
+FPK4    DD(BU,64,8), (8)0000452525252525252520
+        SLC, (8)22033.0
+FPK22   DD(BU,64,8), (8)0000577777777777777760
+        SLC, (8)22041.0
+FPK28   DD(BU,64,8), (8)0200177777777777777760
+        SLC, (8)22170.0
+FK22    DD(BU,64,8), (8)0400177777777777777760
+        SLC, (8)22172.0
+FK24    DD(BU,64,8), (8)1577452525252525252520
+        SLC, (8)22173.0
+FK25    DD(BU,64,8), (8)1577777777777777777760
+        SLC, (8)22206.0
+FK36    DD(BU,64,8), (8)1000177777777777777760
+        SLC, (8)22210.0
+FK38    DD(BU,64,8), (8)0777572525252525252520
+        SLC, (8)22212.0
+FK40    DD(BU,64,8), (8)1777577777777777777770
+        SLC, (8)22215.0
+FK43    DD(BU,64,8), (8)0000525252525252525250
+
+! -- code (verbatim, at the listing's addresses) --
+        SLC, (8)13111.0
+SAP6    L(U), FK40   ! F205A1: exp in XFP range
+        +MG(U), FK24   ! exp XFP range
+        CT0110(BU,60), FK40, 68   ! result: opnd with high XFP exp range
+        SIC, SEN
+        BRGZ, SERS
+        B, $+.32   ! F205A2
+        L(U), FK40   ! exp XFP range
+        +MG(U), FK38   ! exp N range
+        CT0110(BU,60), FK40, 68   ! result: opnd with XFP exp range
+        SIC, SEN
+        BRGZ, SERS
+        B, $+.32   ! F205A3
+        L(U), FK40   ! exp XFP range
+        +MG(U), FK25   ! exp XFN range
+        CT0110(BU,60), FK40, 68   ! result: opnd with XFP exp range
+        SIC, SEN
+        BRGZ, SERS
+        B, $+.32   ! F205A4
+        L(U), FK22
+        +MG(U), FK36
+        CT0110(BU,60), FK36, 68   ! result: opnd with XFP exp range
+        SIC, SEN
+        BRGZ, SERS
+        B, $+.32   ! F205A5
+        L(U), FK43   ! exp N range
+        +MG(U), FPK4   ! exp N range
+        CT0110(BU,60), FPK22, 68   ! result fract +1 s
+        SIC, SEN
+        BRGZ, SERS
+        B, $+.32   ! F205A6
+        L(U), FK43
+        +MG(U), FK25
+        CT0110(BU,60), FK43, 68   ! result: opnd with N exp range
+        SIC, SEN
+        BRGZ, SERS
+        B, $+.32   ! F205A7
+        L(U), FK25
+        +MG(U), FK40
+        CT0110(BU,12), FK40, 116   ! exp with XFP range
+        CT0101(BU,48), 0, 68   ! fract forced zero
+        SIC, SEN
+        BRGZ, SERS
+        B, $+.32   ! F205A8
+        L(U), FPK1
+        +MG(U), FPK28
+        CT0110(BU,60), FPK28, 68   ! result: opnd with N exp range
+        SIC, SEN
+        BRGZ, SERS
+        B, $+.32   ! F205A9
+        L(U), FPK1
+        +MG(U), FK25
+        CT0110(BU,60), FK25, 68   ! result: opnd with larger exp range
+        SIC, SEN
+        BRGZ, SERS
+PASS    BEW, $                  ! 013151.00: the routine's exit ("B,$+1.")
+        END, SAP6

@@ -268,6 +268,37 @@ run "FP M+ normalization modifier (jb_af1c F204E on the model)" ./run_program.sh
     "PC=$(python3 -c 'from strap_asm import assemble; print(assemble(open("programs/fp_arith_f204e.strap").read()).symtab["PASS"]//32)')" \
     "SEN:712=0"
 
+# -- 1k. jb_af1c F205A (p.66): ADD TO MAGNITUDE (+MG) arithmetic checks,
+# nine sub-tests -- flagged operands dominating, an N + N sum, and the
+# forced-zero case (XFN accumulator + negative XFP operand: exponent
+# of the survivor, zero fraction), checked in the accumulator's left
+# half at offset 68 / 116. First run caught the flagged-operand path
+# skipping the forced-zero rule -- see the program header.
+run "FP +MG arithmetic (jb_af1c F205A, encoding)" python3 verify_fp_arith_f205a_listing.py
+run "FP +MG arithmetic (jb_af1c F205A on the model)" ./run_program.sh programs/fp_arith_f205a.strap StretchFpMgATb \
+    "PC=$(python3 -c 'from strap_asm import assemble; print(assemble(open("programs/fp_arith_f205a.strap").read()).symtab["PASS"]//32)')" \
+    "SEN:712=0"
+
+# -- 1k'. jb_af1c F205B (pp.67-72): +MG / +MGA / -MG / -MGA over every
+# memory-sign / accumulator-sign combination, thirty-two sub-tests,
+# each checking the accumulator at offset 68 and its sign bit at
+# $SB+.4. Establishes that the result keeps the accumulator's own sign
+# (forced zeros included) -- see the program header.
+run "FP +MG sign modifiers (jb_af1c F205B, encoding)" python3 verify_fp_arith_f205b_listing.py
+run "FP +MG sign modifiers (jb_af1c F205B on the model)" ./run_program.sh programs/fp_arith_f205b.strap StretchFpMgBTb \
+    "PC=$(python3 -c 'from strap_asm import assemble; print(assemble(open("programs/fp_arith_f205b.strap").read()).symtab["PASS"]//32)')" \
+    "SEN:712=0"
+
+# -- 1k''. jb_af1c F205C + F205D (pp.73-74): +MG leaves the right half,
+# the sign byte's bits 0-3 and 5-7 and the left half's bits 60-63
+# alone (zeros and ones), and the LS indicator: on for x + (-x), off
+# for 0 + 0, off for a forced zero, off for a propagated flagged
+# operand -- see the program header.
+run "FP +MG unchanged registers and LS (jb_af1c F205C/D, encoding)" python3 verify_fp_arith_f205cd_listing.py
+run "FP +MG unchanged registers and LS (jb_af1c F205C/D on the model)" ./run_program.sh programs/fp_arith_f205cd.strap StretchFpMgCDTb \
+    "PC=$(python3 -c 'from strap_asm import assemble; print(assemble(open("programs/fp_arith_f205cd.strap").read()).symtab["PASS"]//32)')" \
+    "SEN:712=0"
+
 # -- 1j. Store-close-to-fetch: store a word then immediately reload it;
 # the load must read the new value, not the stale one. The hazard the FP
 # sign-modifier codesign exposed; fixed by tracking each E-box level's

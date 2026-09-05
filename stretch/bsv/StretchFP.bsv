@@ -196,6 +196,16 @@ function FpResult fpAdd(FpNum a, FpNum b, Bool normalized, Bool noisy, Bool addM
     if ((isXFP(a) && isXFP(b)) || (isXFN(a) && isXFN(b)))
       res = (fpExp(b) > fpExp(a)) ? b : a;
     Bool gen = False;
+    if (addMag && res.sign == 1) begin
+      // ADD TO MAGNITUDE with a flagged survivor that is NEGATIVE (the
+      // accumulator's sign was made positive above, so this is the
+      // storage operand dominating): the sum would be negative, and
+      // p.88's rule applies -- a forced zero, here with the survivor's
+      // exponent and a zero fraction. jb_af1c F205A7 (XFN in the
+      // accumulator, negative XFP in storage) checks exactly that:
+      // exponent field = the XFP operand's, fraction forced zero.
+      res.frac = 0; res.sign = 0;
+    end
     if (res.ef == 0 && normalized) begin
       // The surviving operand is the UNFLAGGED one (XFN + N: N
       // dominates): it is a normal number, and a normalized operation
