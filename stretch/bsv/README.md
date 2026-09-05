@@ -517,6 +517,19 @@ of these).
    `StretchCore`/`StretchExecute`, not a local patch. The simulation
    itself is milliseconds; it is all elaboration + codegen + link --
    which is why builds run in the background here.
+10. **The fix that worked: `(* synthesize *)` on `mkStretchCore`
+   (2026-09-04, plan §1c step 5a).** After step 4 made the core
+   rule-based, the testbench's `run` rule became trivial (`step()` is
+   a clock-enable pulse) and the elaboration cost moved wholly inside
+   `mkStretchCore` -- so synthesizing it as its own module makes it
+   ONE compilation unit built once per suite run and linked by every
+   testbench: ~117s for the core, then ~0s elaborate + ~10s link per
+   testbench, versus ~120s each before (the suite: ~12 min -> ~3.5
+   min). Two constraints the boundary imposes on testbenches: no rule
+   may call `core.setPC` together with a `core.mem.*` method (KPNS
+   #29), and the exported bus-channel methods (`laReq`, `fetchReq`,
+   ...) are assumed callable in any clock, so the every-clock core
+   rules that share those channels carry no `fire_when_enabled`.
 
 ## Next steps
 

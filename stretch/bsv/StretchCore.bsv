@@ -61,6 +61,7 @@ interface StretchCore;
                                   // setup/inspection -- see StretchIO.bsv
 endinterface
 
+(* synthesize *)
 module mkStretchCore(StretchCore);
   StretchStorage st <- mkStretchStorage;
   StretchIO ioDev <- mkStretchIO;
@@ -462,8 +463,13 @@ module mkStretchCore(StretchCore);
     clk <= clk + 1;
   endrule
 
+  // (No fire_when_enabled on this rule or rl_ic_controls: they share the
+  // look-ahead / Y-buffer bus channels with the exported `mem`
+  // interface, and at the synthesized boundary bsc must assume the
+  // harness could call those methods in a ticked clock. It never does
+  // -- the harness ticks only in its run rule -- but that is a harness
+  // fact, not something the scheduler can prove here.)
   // ---- Look-ahead: collect arrived operands, issue one fetch ----
-  (* fire_when_enabled *)
   rule rl_la_fetch (tick);
     Vector#(4, LaLevel) nl = laRead(0);
     for (Integer k = 0; k < 4; k = k + 1)
@@ -482,7 +488,6 @@ module mkStretchCore(StretchCore);
   endrule
 
   // ---- IC controls: run every clock, alongside the instruction FSM ----
-  (* fire_when_enabled *)
   rule rl_ic_controls (tick);
     Vector#(2, YReg) ny = readVReg(yr);
     Bool restart = (restartSeq != restartSeen) || (branchSeq != branchSeen);

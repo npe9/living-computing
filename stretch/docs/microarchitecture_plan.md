@@ -239,6 +239,29 @@ Staged, each step green and committed:
 5. **Stage modules.** Extract the I-box, the look-ahead, and the E-box
    into separate modules with interfaces (the `mkCPU_Stage1/2/3`
    shape), so no single rule elaborates the whole design.
+   - **5a done: the core as its own compilation unit.** `(* synthesize
+     *)` on `mkStretchCore` (Piccolo synthesizes `mkCPU` and each stage
+     the same way). Measured: the core elaborates ONCE per suite run
+     (~117s, `build/mkStretchCore.ba`) and every testbench then builds
+     against it in ~0s elaboration + ~10s link, versus ~120s per
+     testbench before -- the whole suite went from ~12 min to
+     ~3.5 min. Two harness facts fell out of the boundary: (i) bsc must
+     assume the harness could call the exported bus-channel methods in
+     a ticked clock, so `fire_when_enabled` is off `rl_la_fetch` and
+     `rl_ic_controls` (the harness never does; the suite's CYCLES<=
+     bounds are the check); (ii) a parent rule may not call `setPC`
+     together with a `mem` method (bsc orders `rl_prepare` between
+     them: KPNS #29 "dynamic scheduling"), even from exclusive case
+     arms -- `StretchSmoke.bsv`'s setup now has `setPC` in its own
+     rule, as `gen_tb.py`'s runners always did.
+   - 5b (open): module boundaries INSIDE the core. `mkEBox` takes the
+     storage and I/O interfaces as module arguments, and a module with
+     interface arguments cannot be synthesized, so an I-box / look-
+     ahead / E-box split is structure only (it all elaborates once
+     inside `mkStretchCore` either way); to make the E-box its own
+     unit it would have to own or request its storage traffic through
+     exported request/response methods instead of calling `st`
+     directly -- the real `mkFBox` shape, and a larger change.
 
 Note on the ~120s build: profiling (item 9) showed elaborating the
 E-box logic ONCE is the cost, and neither replication nor the FP

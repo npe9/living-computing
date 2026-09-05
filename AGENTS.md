@@ -77,8 +77,9 @@ established pattern:
 1. `cd stretch/strap && ./run_tests.sh` is the whole regression suite
    (pure-Python assembler tests, then the Bluesim smoke test, then
    every STRAP program). It must be green before a commit. A full run
-   takes roughly ten minutes; run it in the background and keep
-   working.
+   takes roughly three and a half minutes (207s measured 2026-09-05,
+   since `mkStretchCore` became its own compilation unit; it was ~12
+   min before); run it in the background and keep working.
 2. New behavior gets a test that is proven **discriminating**: inject
    the specific bug it is meant to catch (in the assembler or in
    `StretchExecute.bsv`), watch the predicted checks fail and nothing

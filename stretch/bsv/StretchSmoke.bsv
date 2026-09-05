@@ -114,7 +114,7 @@ module mkStretchTb(Empty);
   // units and reads answer after a variable number of clocks, so the
   // setup waits for writeReady() before each store and for
   // responseReady() before each putHWResp (phases 8, 10, 15, 17, 19).
-  rule setup (phase < 21 && core.mem.writeReady()
+  rule setup (phase < 20 && core.mem.writeReady()
               && ((phase != 8 && phase != 10 && phase != 15 && phase != 17 && phase != 19)
                   || core.mem.responseReady()));
     case (phase)
@@ -149,9 +149,20 @@ module mkStretchTb(Empty);
       17: putHWResp();
       18: putHWReq(90, 32'hFFFF_FFFF); // decodes as DirIndex RNX; execute -> OP invalid
       19: putHWResp();
-      20: core.setPC(64);
     endcase
     phase <= phase + 1;
+  endrule
+
+  // setPC in its own rule, not a 21st case arm of `setup`: at
+  // mkStretchCore's synthesized boundary bsc orders the core's own
+  // rl_prepare between setPC and mem.readWordReq, so one parent rule
+  // may not call both (KPNS #29 "dynamic scheduling"), even from
+  // mutually-exclusive case arms. gen_tb.py's generated runners have
+  // always had setPC in a separate `setStart` rule for the same reason
+  // of shape.
+  rule setStart (phase == 20);
+    core.setPC(64);
+    phase <= 21;
   endrule
 
   // Raw step() budget: since the instruction-fetch FSM conversion
@@ -212,9 +223,17 @@ module mkStretchTb(Empty);
   rule checkArith2Resp (phase == 25 && core.mem.responseReady());
     let v <- core.mem.readWordResp();
     check("mem[53] (3*10 via CB loop)", v, 30);
+    phase <= 26;
+  endrule
+
+  // setPC in its own phase: at mkStretchCore's synthesized boundary
+  // bsc annotates setPC and mem.readWordResp as conflicting (both
+  // interact with the core's rules in ways whose orderings cannot both
+  // be honored in one clock), so a rule may not call both.
+  rule restartRnx (phase == 26);
     core.setPC(90);
     stepCount <= 0; // reused for the RNX counted loop below
-    phase <= 26;
+    phase <= 27;
   endrule
 
   // (History: the cost note below predates the rule-based core, where
@@ -238,27 +257,27 @@ module mkStretchTb(Empty);
   // 40 clocks is ample, and small enough that whatever unwritten
   // storage holds after it (Bluesim's BRAM is not zero-initialized)
   // gets little chance to run before the indicator is read.
-  rule stepRnx (phase == 26 && stepCount < 40 && !core.halted());
+  rule stepRnx (phase == 27 && stepCount < 40 && !core.halted());
     core.step();
     stepCount <= stepCount + 1;
   endrule
 
-  rule afterStepRnx (phase == 26 && (stepCount == 40 || core.halted()));
-    phase <= 27;
-  endrule
-
-  rule checkRnxReq (phase == 27);
-    core.mem.readWordReq(11);
+  rule afterStepRnx (phase == 27 && (stepCount == 40 || core.halted()));
     phase <= 28;
   endrule
 
-  rule checkRnxResp (phase == 28 && core.mem.responseReady());
-    let v <- core.mem.readWordResp();
-    check("indicator OP after RNX (unimplemented)", (v >> 48) & 1, 1);
+  rule checkRnxReq (phase == 28);
+    core.mem.readWordReq(11);
     phase <= 29;
   endrule
 
-  rule finish (phase == 29);
+  rule checkRnxResp (phase == 29 && core.mem.responseReady());
+    let v <- core.mem.readWordResp();
+    check("indicator OP after RNX (unimplemented)", (v >> 48) & 1, 1);
+    phase <= 30;
+  endrule
+
+  rule finish (phase == 30);
     if (fails == 0)
       $display("ALL TESTS PASSED");
     else
