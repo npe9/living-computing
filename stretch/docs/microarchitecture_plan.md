@@ -174,6 +174,50 @@ Cross-cutting throughout: keep the regression suite green at every
 commit; every timing claim carries a documented number; every new
 feature gets a discriminating test proven by a reverted injection.
 
+### 1c. Idiomatic Bluespec rewrite plan (mandatory -- AGENTS.md)
+
+The model is currently one ~1450-line combinational `execute()` (the
+whole E-box) inlined into a single monolithic `StretchCore.step()`
+rule. It must be rewritten to the structure of Bluespec's own RISC-V
+cores (Piccolo/Flute): separate pipeline-stage modules through FIFOs,
+expensive datapath in multi-cycle "box" sub-modules, off-pipe paths as
+separate rules. Reference cores are studied (bsv/README.md item 9). The
+correctness oracle throughout is the existing regression suite: every
+step keeps it green (behavior unchanged) and is a committed milestone.
+
+Staged, each step green and committed:
+
+1. **E-box as a module.** Wrap `execute()` in a singleton module
+   `mkEBox(st, io)` exposing `method ActionValue exec(...)`; the four
+   (mutually-exclusive) call sites in `step()` call the shared method.
+   Behavior-neutral scaffolding for the box structure. (Prototyped:
+   compiles, suite must be re-confirmed green.)
+2. **FP box.** Move the floating-point datapath (`StretchFP`) behind a
+   stateful module `mkFPU` with request/response methods, instantiated
+   once, and make it MULTI-CYCLE (a state machine reusing a small
+   datapath -- the real serial SAU / parallel PAU), not a giant
+   combinational function. `execute` issues an FP op and collects the
+   result over cycles. This is both the idiom (mkFBox) and the
+   cycle-accuracy item 5.
+3. **VFL / connective / integer boxes.** Same treatment for the
+   variable-field-length unit and the connectives (and eventually VFL
+   multiply/divide), each a singleton module.
+4. **Split `step()` into per-stage rules.** Replace the one giant
+   method with an I-box (fetch/decode/prepare/index) rule, look-ahead
+   rules, and the E-box interaction, communicating through FIFOs /
+   registers -- the `rl_pipe` + off-pipe-rules shape.
+5. **Stage modules.** Extract the I-box, the look-ahead, and the E-box
+   into separate modules with interfaces (the `mkCPU_Stage1/2/3`
+   shape), so no single rule elaborates the whole design.
+
+Note on the ~120s build: profiling (item 9) showed elaborating the
+E-box logic ONCE is the cost, and neither replication nor the FP
+arithmetic specifically is it -- so the primary payoff of this rewrite
+is idiomatic structure and cycle-accuracy; a build-time win is likely
+(splitting across modules/rules and genuinely multi-cycle iterative
+units reduce per-rule elaboration) but is to be MEASURED at each step,
+not assumed.
+
 Concretely, "the same" means these things, each with a primary source:
 
 | Aspect | Real machine | Source |

@@ -40,6 +40,35 @@ folklore item to §1a with its source), and keep the existing
 regression suite green at every stage -- it is the correctness oracle
 for the rewrite. Timing claims need a documented number behind them.
 
+## Idiomatic Bluespec: a mandatory, do-not-stop rewrite (2026-09-04)
+
+The owner reviewed the model and found it is written as "weird Verilog,
+not Bluespec": one ~1450-line combinational `execute()` (the whole
+E-box) inlined into a single monolithic `StretchCore.step()` rule.
+**The model MUST be rewritten to match the strategy of Bluespec's own
+RISC-V cores (Piccolo, Flute, Toooba)**, i.e. the idiomatic Bluespec
+CPU structure:
+
+- Each pipeline stage is its OWN module with an interface (as in
+  `mkCPU_Stage1/2/3`), connected by a small orchestration rule that
+  just moves bundles between stages via `.enq`/`.deq`/`.out`.
+- The expensive datapath -- floating point, VFL multiply/divide, the
+  connectives -- lives in MULTI-CYCLE, stateful "box" sub-modules
+  (as in `mkFBox`, `mkRISCV_MBox`, `mkShifter_Box`), instantiated once,
+  with request/response methods -- NOT giant combinational functions
+  inlined into one rule.
+- Rare / off-pipe paths are SEPARATE rules, not more inlined branches.
+
+This is not optional and not a "nice to have": **do not stop working
+toward it until the model matches this strategy.** It doubles as the
+cycle-accuracy goal above -- the real 7030 E-box is the multi-cycle
+serial (SAU) and parallel (PAU) arithmetic units, so the idiomatic
+rewrite and the cycle-accurate replica are the same work. The reference
+cores were studied for this (findings in `bsv/README.md` "Toolchain"
+item 9); the staged rewrite plan is `microarchitecture_plan.md` §1c.
+Every step keeps the regression suite green (behavior unchanged) and is
+committed as its own milestone.
+
 ## How work is verified here
 
 Every claim in the docs is backed by something runnable. Follow the
