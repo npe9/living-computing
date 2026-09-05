@@ -129,9 +129,17 @@ hand vectors alone. "Enables" notes the dependency chain.
    checks the sum FPK35+FPK39 against a precomputed FPK32 via
    CT0110+BRGZ; the model passes, and an injection making fpAdd drop the
    added operand halts at SERS, so it genuinely catches a broken M+. So
-   M+ (FP add to memory) is now verified against the diagnostic. Next
-   within step 2: the * (multiply) and remaining +/- diagnostic blocks,
-   then the open ops.
+   M+ (FP add to memory) is now verified against the diagnostic.
+   F204B "TEST SIGN + MOD COMBS" (pp.55-58) is DONE too
+   (`fp_arith_f204b.strap`, 183 words bit-exact, all sixteen sub-tests
+   pass on the model): M+/M+A/M-/M-A over every memory-sign /
+   accumulator-sign combination, establishing p.81-82's rule (A on the
+   storage operand, N on the accumulator) -- and its first run caught a
+   real bug, the order-of-magnitude-zero sign on an exponent tie
+   (p.82: the modified ACCUMULATOR sign; fpAdd took its first operand's,
+   which for the M+ family is the storage word). Next within step 2:
+   the * (multiply) and remaining +/- diagnostic blocks, then the open
+   ops.
    Related nearby routine also located and runnable-with-effort: F203B
    "EXP RNG INDIC TEST" (p.52, octal 012260+) verifies the exponent-
    range indicators XPFP/XPH/XPL/XPU (set by ST, cleared by Z,$IND)

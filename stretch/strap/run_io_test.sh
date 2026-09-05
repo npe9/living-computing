@@ -20,6 +20,6 @@ python3 gen_io_tb.py "$MODULE" > "$BSV_DIR/$MODULE.bsv"
 
 cd "$BSV_DIR"
 mkdir -p build simbuild
-"$BSC" -sim -simdir simbuild -bdir build -info-dir build -g "mk$MODULE" -u "$MODULE.bsv" +RTS -K512m -RTS
+"$BSC" -sim -simdir simbuild -bdir build -info-dir build -show-schedule -g "mk$MODULE" -u "$MODULE.bsv" +RTS -K512m -RTS
 "$BSC" -sim -simdir simbuild -bdir build -e "mk$MODULE" -o "${MODULE}_sim" +RTS -K512m -RTS
 "./${MODULE}_sim"

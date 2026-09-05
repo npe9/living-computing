@@ -156,7 +156,18 @@ endfunction
 // storage operand already sign-modified. addMag: ADD TO MAGNITUDE's
 // forced-zero rule (accumulator sign taken positive; negative sum ->
 // forced zero with the accumulator's sign and exponent).
-function FpResult fpAdd(FpNum a, FpNum b, Bool normalized, Bool noisy, Bool addMag);
+// `a` is the operand being replaced (the accumulator for +/+MG, the
+// storage word for M+/M+MG): its flags carry to the result and ADD TO
+// MAGNITUDE takes its magnitude. `accIsB` says the ACCUMULATOR operand
+// is `b` (the M+ family), which matters for one rule only: p.82 "Zero
+// Definition" -- an order-of-magnitude zero from addition takes the
+// (modified) sign of the operand with the algebraically larger
+// exponent, and when the exponents are EQUAL, "the modified fraction
+// sign of the operand in the accumulator". Found by jb_af1c F204B4
+// (M-A of +1/3 with +1/3: the accumulator, negated by N, gives -0; with
+// the storage operand's sign the model stored +0 and the sign check
+// branched to SERS).
+function FpResult fpAdd(FpNum a, FpNum b, Bool normalized, Bool noisy, Bool addMag, Bool accIsB);
   FpResult r = fpNoResult(a);
   if (addMag) a.sign = 0;
   // Flagged operands (Fig.23 / p.87): the result is one operand or the
@@ -202,7 +213,9 @@ function FpResult fpAdd(FpNum a, FpNum b, Bool normalized, Bool noisy, Bool addM
         // Subtract the smler magnitude; sign of the larger magnitude.
         if (fb >= fs) begin sum = zeroExtend(fb - fs); sign = big.sign; end
         else begin sum = zeroExtend(fs - fb); sign = sml.sign; end
-        if (fb == fs) sign = big.sign;   // order-of-magnitude zero takes the larger-exponent operand's sign
+        // Order-of-magnitude zero: the larger-exponent operand's sign;
+        // on an exponent tie, the accumulator's (p.82, see the header).
+        if (fb == fs) sign = (diff == 0 && accIsB) ? b.sign : big.sign;
       end
       if (addMag && sign == 1) begin
         // ADD TO MAGNITUDE: a negative sum becomes a forced zero with

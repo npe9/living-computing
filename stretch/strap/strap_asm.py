@@ -691,6 +691,14 @@ def strip_fp_sign(op):
     for suf, a, i in (("NA", 1, 1), ("N", 0, 1), ("A", 1, 0)):
         if op.endswith(suf) and op[:-len(suf)] in FP_CODES:
             return (op[:-len(suf)], a, i)
+    # The written-minus forms jb_af1c uses for ADD TO MEMORY (F204B,
+    # p.55-58): M- is M+ with the negative sign modifier (printed code
+    # 22355.50 A0 vs M+'s .40), M-A is M+ with both (.70; M+A is .60).
+    # Same pocket-card rule as "-" being "+" with the N modifier.
+    if op == "M-":
+        return ("M+", 0, 1)
+    if op == "M-A":
+        return ("M+", 1, 1)
     return None
 
 

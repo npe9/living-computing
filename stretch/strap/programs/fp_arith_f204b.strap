@@ -1,0 +1,262 @@
+! Floating-point diagnostic jb_af1c, routine F204B "TEST SIGN + MOD
+! COMBS" (docs/jb_af1c_floating-point.pdf pp.55-58, octal 012412.00-
+! 012612.40): all sixteen combinations of memory-operand sign (MS),
+! accumulator sign (ACS), and the N (negative) and A (absolute) sign
+! modifiers on ADD TO MEMORY -- M+, M+A, M-, M-A -- each checked two
+! ways: the result fraction against a precomputed constant (CT0110 on
+! bits 0-59, so the sign bit is excluded) and the result sign bit (bit
+! 60 of ROS) by BB / BZB.
+!
+! Each sub-test F204Bn is the same eleven instructions:
+!   L(BU),k1 / ST(BU),ROS        ROS := k1        (memory operand, MS)
+!   L(U),k2                      acc := k2        (ACS)
+!   M<op>(U),ROS                 ROS := ROS + acc under the modifiers
+!   L(BU),k3                     acc := k3, the expected fraction
+!   CT0110(BU,60),ROS,4          RGZ on iff bits 0-59 differ
+!   SIC,SEN / BRGZ,SERS          error if the fraction is wrong
+!   BB|BZB,ROS+.60,$+2.0         skip the error if the sign bit is as
+!   SIC,SEN / B,SERS               expected (BB: 1, BZB: 0), else error
+!
+! What the block establishes (Ref. Manual pp.81-82 "Sign Control"): the
+! absolute sign modifier applies to the STORAGE operand as fetched, the
+! negative sign modifier to the operand that is NOT changed -- for an
+! add-to-memory, the ACCUMULATOR. Walked by hand against the printed
+! expected constants, every one of the sixteen agrees with that rule
+! (e.g. B6: -2/3 in the acc, +1/3 in memory, M+A: A cannot touch the
+! acc, so the sum is -1/3 with the sign bit ON, which is what the
+! listing expects; B10: memory -1/3 made +1/3 by A, plus +2/3, sign
+! bit OFF). B4 is the zero-result case: +1/3 + (-1/3) under A and N
+! gives an order-of-magnitude zero whose sign is the modified
+! accumulator sign, negative (p.82 "Zero Definition"), sign bit ON.
+!
+! Substitutions (SSIP framework, real listed addresses): SERS (octal
+! 1304) -> FAIL halt, SEN (octal 1310) -> scratch, ROS (octal 22355) is
+! the memory operand, PASS -> the routine's exit at 012612.40 (the
+! listing's "B,$+1."). Constants from the pool pp.176-178. The routine
+! entry FMA1's "BD,$+.32" (branch disabled, to the next half-word) is
+! kept verbatim.
+!
+! Instructions: BD, L(BU)/ST(BU) (VFL, length defaulting to 64), L(U),
+! M+(U) and its sign-modifier forms M+A/M-/M-A, L(BU), CT0110 with a
+! length of 60 and an offset of 4, SIC, BRGZ, BB/BZB on a bit address --
+! all implemented; the M-/M-A mnemonics were added to the assembler for
+! this block (strip_fp_sign). verify_fp_arith_f204b_listing.py checks
+! every one of the 177 instruction and constant words bit-for-bit.
+!
+! Observed: FIRST RUN HALTED AT SERS with SEN = 012452.40 (the SIC of
+! sub-test B4's sign check) and ROS = 0x0020000000000000: exponent 1,
+! zero fraction, sign bit OFF -- the model produced +0 where the
+! diagnostic expects -0. Cause: fpAdd's order-of-magnitude-zero rule
+! took the sign of ITS FIRST OPERAND on an exponent tie, and the M+
+! family passes the storage operand first, so the tie went to the
+! storage sign instead of the modified accumulator sign (p.82). Fixed
+! by telling fpAdd which operand is the accumulator (`accIsB`); the
+! fraction and sign checks of all sixteen sub-tests then pass and the
+! run halts at PASS with SEN still 0 (no error SIC ever executed).
+! That first run is the discriminating evidence for this block: the
+! bug it caught is a real one the earlier M+ tests (F204A1-5, all with
+! non-zero sums) could not see.
+
+! -- SSIP framework substitutes --
+        SLC, (8)1304.0
+SERS    BEW, $
+        SLC, (8)1310.0
+SEN     DD(BU,64,8), 0
+        SLC, (8)22355.0
+ROS     DD(BU,64,8), 0
+
+! -- constants (pool pp.176-178) --
+        SLC, (8)22011.0
+FPK4    DD(BU,64,8), (8)0000452525252525252520
+        SLC, (8)22030.0
+FPK19   DD(BU,64,8), (8)0000525252525252525240
+        SLC, (8)22033.0
+FPK22   DD(BU,64,8), (8)0000577777777777777760
+        SLC, (8)22035.0
+FPK24   DD(BU,64,8), (8)0000452525252525252530
+        SLC, (8)22042.0
+FPK29   DD(BU,64,8), (8)0000400000000000000000
+        SLC, (8)22215.0
+FK43    DD(BU,64,8), (8)0000525252525252525250
+
+! -- code (verbatim, at the listing's addresses) --
+        SLC, (8)12412.0
+FMA1    BD, $+.32
+        L(BU), FPK4            ! F204B1: MS,ACS,A AND N ARE 0
+        ST(BU), ROS
+        L(U), FPK19
+        M+(U), ROS
+        L(BU), FPK22           ! RESULT FRACT +1 S
+        CT0110(BU,60), ROS, 4
+        SIC, SEN
+        BRGZ, SERS
+        BZB, ROS+.60, $+2.0    ! check sign bit 0
+        SIC, SEN
+        B, SERS
+        L(BU), FPK4            ! F204B2: MS+ACS+N+0 A+1
+        ST(BU), ROS
+        L(U), FPK19
+        M+A(U), ROS
+        L(BU), FPK22           ! RESULT FRACT +1 S
+        CT0110(BU,60), ROS, 4
+        SIC, SEN
+        BRGZ, SERS
+        BZB, ROS+.60, $+2.0    ! check sign bit 0
+        SIC, SEN
+        B, SERS
+        L(BU), FPK4            ! F204B3: MS+ACS+A+0 N+1
+        ST(BU), ROS
+        L(U), FPK19
+        M-(U), ROS
+        L(BU), FPK24           ! RESULT FRACT +0101..01
+        CT0110(BU,60), ROS, 4
+        SIC, SEN
+        BRGZ, SERS
+        BB, ROS+.60, $+2.0    ! check sign bit 1
+        SIC, SEN
+        B, SERS
+        L(BU), FPK4            ! F204B4: MS+ACS+0 N+A+1
+        ST(BU), ROS
+        L(U), FPK4
+        M-A(U), ROS
+        L(BU), FPK29           ! RESULT FRACT ALL ZEROS
+        CT0110(BU,60), ROS, 4
+        SIC, SEN
+        BRGZ, SERS
+        BB, ROS+.60, $+2.0    ! check sign bit 1
+        SIC, SEN
+        B, SERS
+        L(BU), FPK4            ! F204B5: MS+N+A+0 ACS+1
+        ST(BU), ROS
+        L(U), FK43
+        M+(U), ROS
+        L(BU), FPK4            ! RESULT FRACT +0101..01
+        CT0110(BU,60), ROS, 4
+        SIC, SEN
+        BRGZ, SERS
+        BB, ROS+.60, $+2.0    ! check sign bit 1
+        SIC, SEN
+        B, SERS
+        L(BU), FPK4            ! F204B6: MS+N+0 ACS+N+1
+        ST(BU), ROS
+        L(U), FK43
+        M+A(U), ROS
+        L(BU), FPK4            ! RESULT FRACT +0101..01
+        CT0110(BU,60), ROS, 4
+        SIC, SEN
+        BRGZ, SERS
+        BB, ROS+.60, $+2.0    ! check sign bit 1
+        SIC, SEN
+        B, SERS
+        L(BU), FPK4            ! F204B7: MS+A+0 ACS+N+1
+        ST(BU), ROS
+        L(U), FK43
+        M-(U), ROS
+        L(BU), FPK22           ! RESULT FRACT +1 S
+        CT0110(BU,60), ROS, 4
+        SIC, SEN
+        BRGZ, SERS
+        BZB, ROS+.60, $+2.0    ! check sign bit 0
+        SIC, SEN
+        B, SERS
+        L(BU), FPK4            ! F204B8: MS+0 ACS+N+A+1
+        ST(BU), ROS
+        L(U), FK43
+        M-A(U), ROS
+        L(BU), FPK22           ! RESULT FRACT +1 S
+        CT0110(BU,60), ROS, 4
+        SIC, SEN
+        BRGZ, SERS
+        BZB, ROS+.60, $+2.0    ! check sign bit 0
+        SIC, SEN
+        B, SERS
+        L(BU), FK43            ! F204B9: MS+1 ACS+N+A+0
+        ST(BU), ROS
+        L(U), FPK4
+        M+(U), ROS
+        L(BU), FPK4            ! RESULT FRACT +0101..01
+        CT0110(BU,60), ROS, 4
+        SIC, SEN
+        BRGZ, SERS
+        BB, ROS+.60, $+2.0    ! check sign bit 1
+        SIC, SEN
+        B, SERS
+        L(BU), FPK24           ! F204B10: MS+A+1 ACS+N+0
+        ST(BU), ROS
+        L(U), FPK19
+        M+A(U), ROS
+        L(BU), FPK22           ! RESULT FRACT +1 S
+        CT0110(BU,60), ROS, 4
+        SIC, SEN
+        BRGZ, SERS
+        BZB, ROS+.60, $+2.0    ! check sign bit 0
+        SIC, SEN
+        B, SERS
+        L(BU), FPK24           ! F204B11: MS+N+1 ACS+A+0
+        ST(BU), ROS
+        L(U), FPK19
+        M-(U), ROS
+        L(BU), FPK22           ! RESULT FRACT +1 S
+        CT0110(BU,60), ROS, 4
+        SIC, SEN
+        BRGZ, SERS
+        BB, ROS+.60, $+2.0    ! check sign bit 1
+        SIC, SEN
+        B, SERS
+        L(BU), FPK24           ! F204B12: MS+N+A+1 ACS+0
+        ST(BU), ROS
+        L(U), FPK19
+        M-A(U), ROS
+        L(BU), FPK24           ! RESULT FRACT +0101..01
+        CT0110(BU,60), ROS, 4
+        SIC, SEN
+        BRGZ, SERS
+        BB, ROS+.60, $+2.0    ! check sign bit 1
+        SIC, SEN
+        B, SERS
+        L(BU), FPK24           ! F204B13: MS+ACS+1 N+A+0
+        ST(BU), ROS
+        L(U), FK43
+        M+(U), ROS
+        L(BU), FPK22           ! RESULT FRACT +1 S
+        CT0110(BU,60), ROS, 4
+        SIC, SEN
+        BRGZ, SERS
+        BB, ROS+.60, $+2.0    ! check sign bit 1
+        SIC, SEN
+        B, SERS
+        L(BU), FPK24           ! F204B14: MS+ACS+A+1 N+0
+        ST(BU), ROS
+        L(U), FK43
+        M+A(U), ROS
+        L(BU), FPK24           ! RESULT FRACT +0101..01
+        CT0110(BU,60), ROS, 4
+        SIC, SEN
+        BRGZ, SERS
+        BB, ROS+.60, $+2.0    ! check sign bit 1
+        SIC, SEN
+        B, SERS
+        L(BU), FPK24           ! F204B15: MS+ACS+N+1 A+0
+        ST(BU), ROS
+        L(U), FK43
+        M-(U), ROS
+        L(BU), FPK24           ! RESULT FRACT +0101..01
+        CT0110(BU,60), ROS, 4
+        SIC, SEN
+        BRGZ, SERS
+        BZB, ROS+.60, $+2.0    ! check sign bit 0
+        SIC, SEN
+        B, SERS
+        L(BU), FPK24           ! F204B16: MS+ACS+N+A+1
+        ST(BU), ROS
+        L(U), FK43
+        M-A(U), ROS
+        L(BU), FPK22           ! RESULT FRACT +1 S
+        CT0110(BU,60), ROS, 4
+        SIC, SEN
+        BRGZ, SERS
+        BZB, ROS+.60, $+2.0    ! check sign bit 0
+        SIC, SEN
+        B, SERS
+PASS    BEW, $                  ! 012612.40: the routine's exit ("B,$+1.")
+        END, FMA1

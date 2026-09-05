@@ -1495,7 +1495,7 @@ function ActionValue#(Tuple4#(HWordAddr, Maybe#(Tuple2#(Bit#(4), IndexWord)),
               ind = setBit(ind, ind_ZM, 0);
             end
             7'b0000010, 7'b0100010: begin // + / +MG
-              FpResult r = fpAdd(acc, opnd, normalized, noisy, c == 7'b0100010);
+              FpResult r = fpAdd(acc, opnd, normalized, noisy, c == 7'b0100010, False);
               st.writeWord(addrAccLeft, fpAccLeft(r.res, accL));
               st.writeWord(addrAccSignByte, fpSignByte(r.res, accS));
               ind = setBit(ind, ind_MOP, 0);
@@ -1510,7 +1510,7 @@ function ActionValue#(Tuple4#(HWordAddr, Maybe#(Tuple2#(Bit#(4), IndexWord)),
               FpNum a = acc;
               FpNum b = opnd0; if (fp.absSign == 1) b.sign = 0;
               if (fp.invSign == 1) a.sign = ~a.sign;
-              FpResult r = fpAdd(b, a, normalized, noisy, c == 7'b0101010);
+              FpResult r = fpAdd(b, a, normalized, noisy, c == 7'b0101010, True);
               FpNum v = r.res; v.flags = opnd0.flags;
               st.writeWord(ea, fpToWord(v));
               ind = setBit(ind, ind_MOP, 1);

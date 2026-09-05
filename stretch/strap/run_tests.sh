@@ -217,6 +217,21 @@ run "FP M+ block (jb_af1c F204A5, encoding)" python3 verify_fp_arith_f204a5_list
 run "FP M+ block (jb_af1c F204A5 on the model)" ./run_program.sh programs/fp_arith_f204a5.strap StretchFpAdd5Tb \
     "PC=$(python3 -c 'from strap_asm import assemble; print(assemble(open("programs/fp_arith_f204a5.strap").read()).symtab["PASS"]//32)')"
 
+# -- 1i''''''. Sign-modifier combinations on ADD TO MEMORY: jb_af1c F204B
+# (pp.55-58), sixteen sub-tests of M+ / M+A / M- / M-A over every
+# memory-sign / accumulator-sign combination, each checking the result
+# fraction (CT0110 on bits 0-59) and the sign bit (BB/BZB on ROS bit
+# 60). Establishes p.81-82's rule (A on the storage operand, N on the
+# accumulator) and p.82's zero-sign rule. Encoding bit-for-bit (183
+# words), then the model run halts at PASS iff all sixteen pass; SEN
+# (the error SIC's word) must still be 0. First run caught a real bug
+# (the zero-result sign on an exponent tie took the storage operand's
+# sign) -- see the program header.
+run "FP M+ sign modifiers (jb_af1c F204B, encoding)" python3 verify_fp_arith_f204b_listing.py
+run "FP M+ sign modifiers (jb_af1c F204B on the model)" ./run_program.sh programs/fp_arith_f204b.strap StretchFpAddBTb \
+    "PC=$(python3 -c 'from strap_asm import assemble; print(assemble(open("programs/fp_arith_f204b.strap").read()).symtab["PASS"]//32)')" \
+    "SEN:712=0"
+
 # -- 1j. Store-close-to-fetch: store a word then immediately reload it;
 # the load must read the new value, not the stale one. The hazard the FP
 # sign-modifier codesign exposed; fixed by tracking each E-box level's
