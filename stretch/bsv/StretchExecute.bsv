@@ -1842,4 +1842,34 @@ function ActionValue#(Tuple4#(HWordAddr, Maybe#(Tuple2#(Bit#(4), IndexWord)),
     end
   endactionvalue;
 
+// ---------------------------------------------------------------------
+// The E-box as a single shared MODULE (idiomatic-Bluespec rewrite step
+// 1, microarchitecture_plan.md §1c). `execute` above is the whole
+// execute datapath as one function; BSV inlines functions, so calling
+// it directly at StretchCore.step()'s four sites is un-idiomatic (the
+// "weird Verilog" the owner flagged). Wrapping it in a module
+// instantiated once and calling its `exec` method is the mkFBox/mkMBox
+// shape from Bluespec's Piccolo/Flute: the datapath lives in a
+// singleton sub-module and the pipeline just calls its method. The four
+// call sites are mutually-exclusive branches of step(), so they share
+// this one instance's method port. (This step alone is behavior-neutral
+// scaffolding; step 2 makes the FP/VFL datapath multi-cycle boxes.)
+typedef Tuple4#(HWordAddr, Maybe#(Tuple2#(Bit#(4), IndexWord)),
+                Maybe#(IoXfer), Maybe#(WordAddr)) ExecResult;
+
+interface EBox;
+  method ActionValue#(ExecResult)
+    exec(HWordAddr pc, InstrLen len, DecodedInstr di,
+         Vector#(2, Word64) prefetch, Bit#(2) prefetchCount);
+endinterface
+
+module mkEBox #(StretchStorage st, StretchIO io) (EBox);
+  method ActionValue#(ExecResult)
+      exec(HWordAddr pc, InstrLen len, DecodedInstr di,
+           Vector#(2, Word64) prefetch, Bit#(2) prefetchCount);
+    let r <- execute(st, io, pc, len, di, prefetch, prefetchCount);
+    return r;
+  endmethod
+endmodule
+
 endpackage

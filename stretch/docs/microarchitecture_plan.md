@@ -190,15 +190,24 @@ Staged, each step green and committed:
 1. **E-box as a module.** Wrap `execute()` in a singleton module
    `mkEBox(st, io)` exposing `method ActionValue exec(...)`; the four
    (mutually-exclusive) call sites in `step()` call the shared method.
-   Behavior-neutral scaffolding for the box structure. (Prototyped:
-   compiles, suite must be re-confirmed green.)
+   Behavior-neutral scaffolding for the box structure. **Done**
+   (suite green; build time unchanged at ~121s, as item 9 predicted).
 2. **FP box.** Move the floating-point datapath (`StretchFP`) behind a
-   stateful module `mkFPU` with request/response methods, instantiated
-   once, and make it MULTI-CYCLE (a state machine reusing a small
-   datapath -- the real serial SAU / parallel PAU), not a giant
-   combinational function. `execute` issues an FP op and collects the
-   result over cycles. This is both the idiom (mkFBox) and the
-   cycle-accuracy item 5.
+   singleton module `mkFPU`. Piccolo's `mkFBox` interface is the model:
+   `method Action req(op, a, b)`, `method Bool valid`, `method result
+   word` -- the stage issues `req` once, reports BUSY while `! valid`
+   (stalling the pipe), then consumes `word`. Do it in two sub-steps so
+   each stays green:
+   - 2a (behavior-neutral): `mkFPU` with a COMBINATIONAL `compute`
+     method that just dispatches to the existing `StretchFP` functions;
+     `execute`'s FP arm calls `fpu.compute(...)`. Idiomatic structure,
+     no timing change.
+   - 2b (cycle-accurate, changes timing): make `mkFPU` MULTI-CYCLE
+     (req/valid/word, a state machine reusing a small datapath -- the
+     real serial SAU / parallel PAU), and have the E-box/look-ahead
+     stall for it like Stage2 stalls on `! fbox.valid`. Update the
+     timing-bound tests to the new cycle counts. This is cycle-accuracy
+     item 5.
 3. **VFL / connective / integer boxes.** Same treatment for the
    variable-field-length unit and the connectives (and eventually VFL
    multiply/divide), each a singleton module.
@@ -217,6 +226,30 @@ is idiomatic structure and cycle-accuracy; a build-time win is likely
 (splitting across modules/rules and genuinely multi-cycle iterative
 units reduce per-rule elaboration) but is to be MEASURED at each step,
 not assumed.
+
+**Reassessment (2026-09-04), which reorders the above.** The FP box
+(step 2) is LOWER value for Stretch than the Piccolo comparison
+suggested, for two measured reasons: (a) Stretch already models FP as
+multi-cycle in TIMING via the E-box time budgets (`ebusy`/`eboxClocks`/
+`iboxCycles`), so a real multi-cycle FP unit would largely duplicate
+that; (b) the FP datapath is not the elaboration cost (item 9's stub
+experiment). Boxing combinational FP into a module is also not more
+idiomatic than keeping it as `StretchFP` functions -- Bluespec cores
+use plain functions for combinational ALU work (`EX_ALU_functions`) and
+reserve modules for genuinely multi-cycle units. So the REAL remaining
+"weird Verilog" for Stretch is the monolithic `step()` method itself:
+one giant rule doing fetch + look-ahead + execute + I/O. The
+highest-value idiomatic work is therefore steps 4-5 (split `step()`
+into per-stage RULES, then STAGE MODULES with FIFO/register hand-off,
+the `rl_pipe` + off-pipe-rules shape), not step 2. Step 1 (E-box as a
+module) still stands as the foundation; steps 2-3 (multi-cycle boxes)
+become an OPTIONAL cycle-accuracy refinement, done only if/when a
+serial iterative unit is wanted, not as the primary idiom fix. The hard
+part of 4-5 is that `step()` returns a "halted" Bool per call to the
+test harness (`gen_tb.py`), and its state updates (pcReg, the four
+look-ahead levels, execPending, the Y buffers) are interdependent and
+currently atomic in one method -- splitting them into rules that keep
+the exact cycle behavior and the harness contract is the work.
 
 Concretely, "the same" means these things, each with a primary source:
 

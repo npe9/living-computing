@@ -57,6 +57,12 @@ endinterface
 module mkStretchCore(StretchCore);
   StretchStorage st <- mkStretchStorage;
   StretchIO ioDev <- mkStretchIO;
+  // Idiomatic-Bluespec rewrite step 1 (plan §1c): the execute datapath
+  // as ONE shared sub-module, not a function inlined at each call site
+  // (the mkFBox/mkMBox shape). The four ebox.exec call sites below are
+  // mutually-exclusive branches of step(), so they share this one
+  // instance's method port. See StretchExecute's mkEBox comment.
+  EBox ebox <- mkEBox(st, ioDev);
   Reg#(HWordAddr) pcReg <- mkReg(0);
   Reg#(Maybe#(Tuple2#(Bit#(4), IndexWord))) pendingIdxWrite <- mkReg(tagged Invalid);
   Reg#(Maybe#(IoXfer)) ioPending <- mkReg(tagged Invalid);
@@ -341,7 +347,7 @@ module mkStretchCore(StretchCore);
   function ActionValue#(Bool) startExecute(HWordAddr pc, InstrLen len, DecodedInstr di) =
     actionvalue
       let {next, vflPending, ioStart, needsRead} <-
-        execute(st, ioDev, pc, len, di, replicate(0), 0);
+        ebox.exec(pc, len, di, replicate(0), 0);
       startClk <= clk;
       if (needsRead matches tagged Valid .a) begin
         st.readWordReq(a);
@@ -555,7 +561,7 @@ module mkStretchCore(StretchCore);
       newPrefetch[execPrefetchCount] = v;
       Bit#(2) newCount = execPrefetchCount + 1;
       let {next, vflPending, ioStart, needsRead} <-
-        execute(st, ioDev, pc, len, di, newPrefetch, newCount);
+        ebox.exec(pc, len, di, newPrefetch, newCount);
       if (needsRead matches tagged Valid .a) begin
         st.readWordReq(a);
         execPrefetch <= newPrefetch;
@@ -597,7 +603,7 @@ module mkStretchCore(StretchCore);
       Bit#(2) cnt = 0;
       if (h.data matches tagged Valid .d) begin pf[0] = d; cnt = 1; end
       let {next, vflPending, ioStart, needsRead} <-
-        execute(st, ioDev, h.pc, h.len, h.di, pf, cnt);
+        ebox.exec(h.pc, h.len, h.di, pf, cnt);
       if (h.branch) begin
         // The guessed branch, now with final indicators.
         Bool taken = (next != h.pc + ((h.len == Full) ? 2 : 1));
@@ -669,7 +675,7 @@ module mkStretchCore(StretchCore);
             // Side-effect-free probe: execute() with no operand bails
             // out with the address of the operand it needs.
             let {next, vflPending, ioStart, needsRead} <-
-              execute(st, ioDev, pc, len, di, replicate(0), 0);
+              ebox.exec(pc, len, di, replicate(0), 0);
             if (needsRead matches tagged Valid .a) da = tagged Valid a;
             else begin
               // Classified as fetching but completed: treat as executed.
