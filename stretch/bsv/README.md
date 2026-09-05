@@ -476,6 +476,37 @@ Immediate addressing's own field-packing rule (see `strap/README.md`
 "Gotchas found by running real programs" for the full account of all
 of these).
 
+9. **Why a build is slow, profiled (2026-09-04).** A clean `bsc -g`
+   (elaborate + generate Bluesim) of one testbench takes ~121s, and it
+   is CPU-bound, not GC- or memory-bound: GHC productivity 94.2%, max
+   residency 458MB. `-show-elab-progress` puts essentially all of that
+   time inside the *single* `run` rule body -- i.e. `StretchCore.step()`
+   inlined into the testbench's rule. The root cause is structural:
+   BSV functions are always inlined (no sharing), and `execute()`
+   (`StretchExecute.bsv`, ~1450 lines: the whole E-box -- FP, VFL,
+   connectives, wide 64/96/128-bit arithmetic, the giant opcode `case`)
+   is CALLED at four sites in `step()` (a fresh I-box execute via
+   `startExecute`, the `execPending` resume, the look-ahead head
+   execute, and the side-effect-free look-ahead probe). So `bsc`
+   elaborates and schedules up to four full E-box datapaths in one
+   rule. Two of the four pass `prefetchCount = 0` as a constant (the
+   fresh execute and the probe) so `bsc` constant-folds them to the
+   operand-address bail path; the two full-size copies are the resume
+   and the head execute. The heavy unfolding (G0024) hits `primExtract`
+   (bit slicing) and the derived `Bits` instance for the big
+   `DecodedInstr` union -- each replicated per execute copy. **The fix
+   (not yet done, a real refactor): make `execute` a MODULE instantiated
+   once** (one shared E-box with a method) instead of a function inlined
+   four times, so its logic is elaborated a single time and `step()`
+   only wires to it; that means restructuring how `execute` reaches
+   `st`/`ioDev` and unifying the resume and head-execute post-
+   processing. A smaller partial win: collapse the resume (~line 558)
+   and head-execute (~600) sites, the two full-size copies, into one
+   call with a dispatched result. Either also shrinks the generated
+   C++, so the `-e` link speeds up too. The simulation itself is
+   milliseconds; it is all elaboration + codegen + link -- which is why
+   builds run in the background here.
+
 ## Next steps
 
 0. **Real historical source, not just worked examples, is now a
