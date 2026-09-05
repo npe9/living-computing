@@ -1857,18 +1857,98 @@ function ActionValue#(Tuple4#(HWordAddr, Maybe#(Tuple2#(Bit#(4), IndexWord)),
 typedef Tuple4#(HWordAddr, Maybe#(Tuple2#(Bit#(4), IndexWord)),
                 Maybe#(IoXfer), Maybe#(WordAddr)) ExecResult;
 
+// What a completed instruction hands back to the instruction unit.
+typedef struct {
+  HWordAddr next;                              // next instruction address
+  Maybe#(Tuple2#(Bit#(4), IndexWord)) idxWrite; // progressive indexing's part 2
+  Maybe#(IoXfer) ioStart;                      // an RD/W transfer to service
+} ExecDone deriving (Bits, Eq, FShow);
+
+// Who dispatched the operation the E-box is holding: the instruction
+// unit directly (an I-box-class instruction executing in preparation)
+// or the look-ahead (the head level, removed into the arithmetic unit).
+typedef enum { OwnerIbox, OwnerLA } ExecOwner deriving (Bits, Eq, FShow);
+
+// Step 5c (plan §1c): the E-box as a request/busy/result box, the
+// mkFBox shape. `start` runs the instruction; if it completes in the
+// clock, the result comes back at once (Valid); if it needs an operand
+// word from core storage, the box issues the read, holds the
+// instruction (pending/prefetch/prefetchCount/owner -- the bail/resume
+// state that used to live in StretchCore) and reports busy until
+// `resume` -- called by the instruction unit once `canResume` -- has
+// collected the word and re-run it, possibly bailing again for a
+// second word. `exec` is the bare one-shot datapath, kept for the
+// preparation arm's side-effect-free operand-address probe.
 interface EBox;
   method ActionValue#(ExecResult)
     exec(HWordAddr pc, InstrLen len, DecodedInstr di,
          Vector#(2, Word64) prefetch, Bit#(2) prefetchCount);
+  method ActionValue#(Maybe#(ExecDone))
+    start(HWordAddr pc, InstrLen len, DecodedInstr di,
+          Vector#(2, Word64) prefetch, Bit#(2) prefetchCount, ExecOwner owner);
+  method Bool busy();                 // holding an instruction that waits on a read
+  method Bool busyFor(ExecOwner o);   // ... dispatched by o
+  method Bool canResume();            // busy and the read has answered
+  method Tuple3#(HWordAddr, InstrLen, DecodedInstr) pending();   // the held instruction
+  method ActionValue#(Maybe#(ExecDone)) resume();
 endinterface
 
 module mkEBox #(StretchStorage st, StretchIO io) (EBox);
+  // The held instruction: Invalid when nothing is in flight. prefetch/
+  // prefetchCount are the operand words collected so far, so the next
+  // run of execute() picks up with one more slot filled (execute()'s
+  // header comment has the contract).
+  Reg#(Maybe#(Tuple3#(HWordAddr, InstrLen, DecodedInstr))) held <- mkReg(tagged Invalid);
+  Reg#(Vector#(2, Word64)) prefetch      <- mkReg(replicate(0));
+  Reg#(Bit#(2))            prefetchCount <- mkReg(0);
+  Reg#(ExecOwner)          owner         <- mkReg(OwnerIbox);
+
+  function ExecDone doneOf(ExecResult r) =
+    ExecDone { next: tpl_1(r), idxWrite: tpl_2(r), ioStart: tpl_3(r) };
+
   method ActionValue#(ExecResult)
       exec(HWordAddr pc, InstrLen len, DecodedInstr di,
-           Vector#(2, Word64) prefetch, Bit#(2) prefetchCount);
-    let r <- execute(st, io, pc, len, di, prefetch, prefetchCount);
+           Vector#(2, Word64) pf, Bit#(2) cnt);
+    let r <- execute(st, io, pc, len, di, pf, cnt);
     return r;
+  endmethod
+
+  method ActionValue#(Maybe#(ExecDone))
+      start(HWordAddr pc, InstrLen len, DecodedInstr di,
+            Vector#(2, Word64) pf, Bit#(2) cnt, ExecOwner o);
+    let r <- execute(st, io, pc, len, di, pf, cnt);
+    if (tpl_4(r) matches tagged Valid .a) begin
+      st.readWordReq(a);
+      held <= tagged Valid tuple3(pc, len, di);
+      prefetch <= pf;
+      prefetchCount <= cnt;
+      owner <= o;
+      return tagged Invalid;
+    end else
+      return tagged Valid doneOf(r);
+  endmethod
+
+  method Bool busy() = isValid(held);
+  method Bool busyFor(ExecOwner o) = isValid(held) && owner == o;
+  method Bool canResume() = isValid(held) && st.responseReady();
+  method Tuple3#(HWordAddr, InstrLen, DecodedInstr) pending() = validValue(held);
+
+  method ActionValue#(Maybe#(ExecDone)) resume();
+    let ep = validValue(held);
+    Word64 v <- st.readWordResp();
+    Vector#(2, Word64) pf = prefetch;
+    pf[prefetchCount] = v;
+    Bit#(2) cnt = prefetchCount + 1;
+    let r <- execute(st, io, tpl_1(ep), tpl_2(ep), tpl_3(ep), pf, cnt);
+    if (tpl_4(r) matches tagged Valid .a) begin
+      st.readWordReq(a);
+      prefetch <= pf;
+      prefetchCount <= cnt;
+      return tagged Invalid;
+    end else begin
+      held <= tagged Invalid;
+      return tagged Valid doneOf(r);
+    end
   endmethod
 endmodule
 

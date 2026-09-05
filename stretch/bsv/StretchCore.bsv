@@ -106,7 +106,6 @@ module mkStretchCore(StretchCore);
   Reg#(Vector#(16, Word64))  xSnap        <- mkReg(replicate(0));
   Reg#(Word64)               indSnap      <- mkReg(0);
   Reg#(Maybe#(HWordAddr))    recover      <- mkReg(tagged Invalid);
-  Reg#(Bool)    auActive <- mkReg(False);  // execPending belongs to the look-ahead head
   Reg#(Bit#(16)) ebusy  <- mkReg(0);       // E-box time of the last removed instruction
 
   // Stage 2b timing registers (the budgets: StretchTiming.bsv).
@@ -125,47 +124,29 @@ module mkStretchCore(StretchCore);
   // rather than folded into pcReg.
   Reg#(Bool) ioReadIssued <- mkReg(False);
 
-  // In-progress execute() call that bailed out waiting on a
-  // BRAM-eligible read (docs/phase2_arm_inventory.md's per-case-arm
-  // staging; execute()'s own header comment in StretchExecute.bsv has
-  // the full contract). Invalid: no execute() call in flight (either
-  // none has been attempted yet this instruction, or the most recent
-  // attempt completed). Valid tuple3(pc, len, di): execute() was
-  // called for this decoded instruction and returned a
-  // needsRead -- a request for that address was issued last cycle;
-  // execPrefetch/execPrefetchCount (below) track what's been collected
-  // so far, so the NEXT call to execute() can pick up with one more
-  // slot filled.
-  Reg#(Maybe#(Tuple3#(HWordAddr, InstrLen, DecodedInstr))) execPending <- mkReg(tagged Invalid);
-  Reg#(Vector#(2, Word64)) execPrefetch <- mkReg(replicate(0));
-  Reg#(Bit#(2)) execPrefetchCount <- mkReg(0);
+  // (An instruction waiting on an operand read is held by the E-box
+  // itself -- ebox.busy/busyFor/canResume/pending/resume, step 5c --
+  // with the owner tag saying whether the instruction unit dispatched
+  // it directly or the look-ahead did.)
 
-  // Call execute() for a freshly decoded instruction (prefetchCount=0
-  // -- no arm has been given anything yet). Either it completes
-  // outright (the common case today, since only VflInt L can bail),
-  // committing exactly as execute() always did, or it bails and this
-  // starts execPending's own FSM instead. Shared by both fetchPending
-  // completion paths (Half- and Full-length) below, so the dispatch
-  // logic isn't duplicated between them.
+  // Dispatch a freshly decoded I-box-class instruction to the E-box
+  // (no operand words yet). Either it completes in this clock,
+  // committing exactly as execute() always did, or the E-box holds it
+  // for its operand read and the resume arm finishes it.
   function ActionValue#(Bool) startExecute(HWordAddr pc, InstrLen len, DecodedInstr di) =
     actionvalue
-      let {next, vflPending, ioStart, needsRead} <-
-        ebox.exec(pc, len, di, replicate(0), 0);
+      let r <- ebox.start(pc, len, di, replicate(0), 0, OwnerIbox);
       startClk <= clk;
-      if (needsRead matches tagged Valid .a) begin
-        st.readWordReq(a);
-        execPending <= tagged Valid tuple3(pc, len, di);
-        execPrefetchCount <= 0;
-        return False;
-      end else begin
-        pcReg <= next;
-        pendingIdxWrite <= vflPending;
-        ioPending <= ioStart;
-        Bool taken = (next != pc + ((len == Full) ? 2 : 1));
+      if (r matches tagged Valid .o) begin
+        pcReg <= o.next;
+        pendingIdxWrite <= o.idxWrite;
+        ioPending <= o.ioStart;
+        Bool taken = (o.next != pc + ((len == Full) ? 2 : 1));
         if (taken) branchSeq <= branchSeq + 1;
         ibusy <= budgetClocks(di, taken);   // completed in the dispatch clock
-        return next == pc;
-      end
+        return o.next == pc;
+      end else
+        return False;
     endactionvalue;
 
   // =====================================================================
@@ -211,11 +192,11 @@ module mkStretchCore(StretchCore);
   Bool armRecover  = isValid(recover);
   Bool armIo       = !armRecover && isValid(ioPending);
   Bool armIdx      = !armRecover && !isValid(ioPending) && isValid(pendingIdxWrite);
-  Bool resumeReady = isValid(execPending) && st.responseReady();
+  Bool resumeReady = ebox.canResume();
   Bool armResume   = !armRecover && !isValid(ioPending) && !isValid(pendingIdxWrite) && resumeReady;
   // (A branch level has no operand and is removed as soon as it is the
   // head with the E-box free, i.e. once every earlier level has retired.)
-  Bool headReady   = la.count() != 0 && ebusy == 0 && !auActive
+  Bool headReady   = la.count() != 0 && ebusy == 0 && !ebox.busyFor(OwnerLA)
                      && (!isValid(la.headLevel().da) || isValid(la.headLevel().data));
   Bool armRemove   = !armRecover && !isValid(ioPending) && !isValid(pendingIdxWrite)
                      && !resumeReady && headReady;
@@ -369,44 +350,33 @@ module mkStretchCore(StretchCore);
   endrule
 
   rule rl_exec_resume (tick && armResume);
-    // Resume an execute() call that bailed out waiting on a
-    // BRAM-eligible read -- collect the response into the next
-    // prefetch slot and try again. See execPending's own comment
-    // above and execute()'s header comment in StretchExecute.bsv
-    // for the full contract.
-    let ep = validValue(execPending);
+    // The E-box's held instruction gets its operand word: let the box
+    // collect it and re-run (it may bail again for a second word);
+    // on completion, retire the level or advance the instruction
+    // counter according to who dispatched it.
+    let ep = ebox.pending();
     HWordAddr pc       = tpl_1(ep);
     InstrLen len        = tpl_2(ep);
     DecodedInstr di     = tpl_3(ep);
+    Bool fromLA = ebox.busyFor(OwnerLA);
     Bit#(16) ebn = eb;
     Bool done = False;
-    Word64 v <- st.readWordResp();
-    Vector#(2, Word64) newPrefetch = execPrefetch;
-    newPrefetch[execPrefetchCount] = v;
-    Bit#(2) newCount = execPrefetchCount + 1;
-    let {next, vflPending, ioStart, needsRead} <-
-      ebox.exec(pc, len, di, newPrefetch, newCount);
-    if (needsRead matches tagged Valid .a) begin
-      st.readWordReq(a);
-      execPrefetch <= newPrefetch;
-      execPrefetchCount <= newCount;
-    end else begin
-      pendingIdxWrite <= vflPending;
-      ioPending <= ioStart;
-      execPending <= tagged Invalid;
-      if (auActive) begin
+    let r <- ebox.resume();
+    if (r matches tagged Valid .o) begin
+      pendingIdxWrite <= o.idxWrite;
+      ioPending <= o.ioStart;
+      if (fromLA) begin
         // A look-ahead level's instruction finished: retire it.
-        auActive <= False;
         ebn = eboxClocks(di);
         la.retireHead();
       end else begin
-        pcReg <= next;
-        Bool taken = (next != pc + ((len == Full) ? 2 : 1));
+        pcReg <= o.next;
+        Bool taken = (o.next != pc + ((len == Full) ? 2 : 1));
         if (taken) branchSeq <= branchSeq + 1;
         Bit#(32) elapsed = clk - startClk;
         Bit#(16) budget = budgetClocks(di, taken);
         ibusy <= (elapsed >= zeroExtend(budget)) ? 0 : budget - truncate(elapsed);
-        done = (next == pc);
+        done = (o.next == pc);
       end
     end
     ebusy <= ebn;
@@ -415,38 +385,34 @@ module mkStretchCore(StretchCore);
 
   rule rl_au_remove (tick && armRemove);
     // Remove the head level into the arithmetic unit: its operand
-    // (if any) is present, so execute() runs with it pre-supplied;
-    // any further reads it needs go through the resume path.
+    // (if any) is present, so the E-box runs with it pre-supplied;
+    // any further read it needs, the box holds it for (resume arm).
     Bit#(16) ebn = eb;
     LaLevel h = la.headLevel();
     Vector#(2, Word64) pf = replicate(0);
     Bit#(2) cnt = 0;
     if (h.data matches tagged Valid .d) begin pf[0] = d; cnt = 1; end
-    let {next, vflPending, ioStart, needsRead} <-
-      ebox.exec(h.pc, h.len, h.di, pf, cnt);
+    let r <- ebox.start(h.pc, h.len, h.di, pf, cnt, OwnerLA);
     if (h.branch) begin
-      // The guessed branch, now with final indicators.
-      Bool taken = (next != h.pc + ((h.len == Full) ? 2 : 1));
+      // The guessed branch, now with final indicators (a branch never
+      // waits on an operand, so the result is here).
+      let o = validValue(r);
+      Bool taken = (o.next != h.pc + ((h.len == Full) ? 2 : 1));
       guessPending <= False;
       if (taken) begin
         // Wrong guess: cancel every younger level, recover next clock.
         la.cancelAll();
-        recover <= tagged Valid next;
+        recover <= tagged Valid o.next;
       end else
         la.retireHead();
       ebn = 2 * 6;   // Blosk fig.10: decode + five execution cycles
-    end else if (needsRead matches tagged Valid .a) begin
-      st.readWordReq(a);
-      execPending <= tagged Valid tuple3(h.pc, h.len, h.di);
-      execPrefetch <= pf;
-      execPrefetchCount <= cnt;
-      auActive <= True;
-    end else begin
-      pendingIdxWrite <= vflPending;
-      ioPending <= ioStart;
+    end else if (r matches tagged Valid .o) begin
+      pendingIdxWrite <= o.idxWrite;
+      ioPending <= o.ioStart;
       ebn = eboxClocks(h.di);
       la.retireHead();
     end
+    // else: the E-box holds the level's instruction for its operand read.
     ebusy <= ebn;
     haltedReg <= False;
   endrule
@@ -477,7 +443,7 @@ module mkStretchCore(StretchCore);
     Bool progressivePending = False;
     for (Integer k = 0; k < 4; k = k + 1)
       if (nl[k].valid && hasProgressive(nl[k].di)) progressivePending = True;
-    if (isValid(execPending) && !auActive)
+    if (ebox.busyFor(OwnerIbox))
       noAction;             // an I-box instruction is waiting on its operand read
     else if (ibusy != 0)
       ibusy <= ibusy - 1;   // previous instruction's time budget still running
@@ -545,7 +511,7 @@ module mkStretchCore(StretchCore);
       // I-box class: execute ahead of pending levels unless a hazard
       // (plan §6c) says wait; never while the arithmetic unit's own
       // instruction is mid-flight (it owns the resume path).
-      if (!auActive && !iboxHazard(st, guessPending, di, nl)) begin
+      if (!ebox.busyFor(OwnerLA) && !iboxHazard(st, guessPending, di, nl)) begin
         let d1 <- startExecute(pc, len, di);
         done = d1;
       end

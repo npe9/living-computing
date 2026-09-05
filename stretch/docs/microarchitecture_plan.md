@@ -276,6 +276,21 @@ Staged, each step green and committed:
      its storage traffic through exported request/response methods
      instead of calling `st` directly -- the real `mkFBox` shape, a
      larger change, and only worth it together with steps 2-3.
+   - **5c done: the E-box as a request/busy/result box.** `mkEBox` now
+     owns the operand-read bail/resume state that was the core's
+     `execPending`/`execPrefetch`/`auActive`: `start(pc, len, di,
+     words, n, owner)` returns the result at once (Valid) or issues the
+     operand read, holds the instruction and reports `busy` /
+     `busyFor(owner)`; `canResume` says the word is back; `resume()`
+     collects it, re-runs, and either completes or bails again for a
+     second word. The core's arms are now `ebox.start`/`ebox.resume`
+     calls plus the retire-or-advance-the-counter decision by owner
+     tag; the bare `exec` stays for the preparation arm's side-effect-
+     free operand-address probe. This is the mkFBox req/valid/result
+     protocol with the box's multi-cycle time being its operand
+     fetches (the arithmetic itself is still one clock: step 2b, the
+     serial/parallel unit timing, remains the optional refinement).
+     Behavior-neutral: suite green, every CYCLES<= count unchanged.
 
 Note on the ~120s build: profiling (item 9) showed elaborating the
 E-box logic ONCE is the cost, and neither replication nor the FP
