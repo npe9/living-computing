@@ -476,36 +476,45 @@ Immediate addressing's own field-packing rule (see `strap/README.md`
 "Gotchas found by running real programs" for the full account of all
 of these).
 
-9. **Why a build is slow, profiled (2026-09-04).** A clean `bsc -g`
-   (elaborate + generate Bluesim) of one testbench takes ~121s, and it
-   is CPU-bound, not GC- or memory-bound: GHC productivity 94.2%, max
-   residency 458MB. `-show-elab-progress` puts essentially all of that
-   time inside the *single* `run` rule body -- i.e. `StretchCore.step()`
-   inlined into the testbench's rule. The root cause is structural:
-   BSV functions are always inlined (no sharing), and `execute()`
-   (`StretchExecute.bsv`, ~1450 lines: the whole E-box -- FP, VFL,
-   connectives, wide 64/96/128-bit arithmetic, the giant opcode `case`)
-   is CALLED at four sites in `step()` (a fresh I-box execute via
-   `startExecute`, the `execPending` resume, the look-ahead head
-   execute, and the side-effect-free look-ahead probe). So `bsc`
-   elaborates and schedules up to four full E-box datapaths in one
-   rule. Two of the four pass `prefetchCount = 0` as a constant (the
-   fresh execute and the probe) so `bsc` constant-folds them to the
-   operand-address bail path; the two full-size copies are the resume
-   and the head execute. The heavy unfolding (G0024) hits `primExtract`
-   (bit slicing) and the derived `Bits` instance for the big
-   `DecodedInstr` union -- each replicated per execute copy. **The fix
-   (not yet done, a real refactor): make `execute` a MODULE instantiated
-   once** (one shared E-box with a method) instead of a function inlined
-   four times, so its logic is elaborated a single time and `step()`
-   only wires to it; that means restructuring how `execute` reaches
-   `st`/`ioDev` and unifying the resume and head-execute post-
-   processing. A smaller partial win: collapse the resume (~line 558)
-   and head-execute (~600) sites, the two full-size copies, into one
-   call with a dispatched result. Either also shrinks the generated
-   C++, so the `-e` link speeds up too. The simulation itself is
-   milliseconds; it is all elaboration + codegen + link -- which is why
-   builds run in the background here.
+9. **Why a build is slow, profiled -- with two disproven hypotheses
+   (2026-09-04).** A clean `bsc -g` (elaborate + generate Bluesim) of
+   one testbench takes ~121s, CPU-bound not GC/memory-bound (GHC
+   productivity 94.2%, max residency 458MB). `-show-elab-progress` puts
+   essentially all of it inside the *single* `run` rule body --
+   `StretchCore.step()` inlined into the testbench's rule; submodule
+   instantiation is cheap. So the cost is elaborating the one big
+   combinational rule.
+   - **Hypothesis A (WRONG): the four `execute()` call sites in `step()`
+     cost 4x.** BSV inlines functions, so it looked like four copies of
+     the ~1450-line E-box. Tested by wrapping `execute` in a module
+     (`mkEBox`) instantiated once and calling its `exec` method at all
+     four (mutually-exclusive) sites -- the idiomatic mkFBox/mkMBox
+     pattern from Bluespec's Piccolo/Flute. Result: **126s, no change.**
+     `bsc` was already sharing/folding the copies; replication is not
+     the cost. (The experiment reverted.)
+   - **Hypothesis B (WRONG): the combinational FP arithmetic.** Tested
+     by stubbing out the two 48x48 -> 96-bit multiplies in `fpMul` and
+     the up-to-95-place normalization barrel-shift in `fpNormalize96`.
+     Result: **118s, no change.** The wide FP datapath is not the cost
+     either. (Reverted.)
+   So there is NO single "weird elaboration" hotspot: the ~120s is the
+   aggregate elaboration of the whole `step()`/`execute()`/look-ahead
+   logic as one giant combinational rule, with pervasive `primExtract`
+   (bit slicing) and `DecodedInstr`-Bits unfolding (G0024) spread across
+   it. The user's read was right about the STRUCTURE though -- this is
+   "weird Verilog, not Bluespec": one monolithic combinational `execute`
+   in one rule, rather than the idiomatic Bluespec CPU (Piccolo/Flute):
+   **separate pipeline-stage MODULES communicating through FIFOs, with a
+   small orchestration rule, and the expensive datapath (FP, multiply,
+   divide) as MULTI-CYCLE stateful sub-modules ("boxes") rather than
+   giant combinational functions.** That restructure is the real fix --
+   and it doubles as the cycle-accuracy goal, since the real 7030 E-box
+   *is* multi-cycle serial (SAU) and parallel (PAU) units (plan item 5).
+   It splits the design across compilation units so no single rule
+   elaborates everything. It is a fundamental rewrite of
+   `StretchCore`/`StretchExecute`, not a local patch. The simulation
+   itself is milliseconds; it is all elaboration + codegen + link --
+   which is why builds run in the background here.
 
 ## Next steps
 
