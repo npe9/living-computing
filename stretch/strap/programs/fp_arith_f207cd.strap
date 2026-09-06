@@ -1,0 +1,87 @@
+! Floating-point diagnostic jb_af1c, routines F207C "CHANGED
+! REGISTERS" and F207D "INDICATOR TEST" for LOAD DOUBLE
+! (docs/jb_af1c_floating-point.pdf p.90, octal 014524.00-014542.40;
+! they share one exit, so both are here):
+!   C1 "$SB 5-7 ones to zeros": CM1111 sets the whole sign byte to
+!     ones, then DL(U),FPK1 -- and the flag bits, bit positions 5-7 of
+!     the sign byte register, must come back ZERO. Ref. Manual p.96:
+!     "The flag bits, bit positions 5-7 of the sign byte register, are
+!     set to zero." That is what makes DL differ from DLWF, which
+!     takes the addressed operand's flags instead, and it is checked
+!     here with a 3-bit CT0011 at 10.5.
+!   D1 the data flag indicators cleared: BB1 on $TF, $UF and $VF sets
+!     all three to one (branch on bit and set to one), then DL(U) of
+!     FPK2 -- whose flag bits are zero -- and BTF/BUF/BVF,SERS must
+!     not branch.
+!   D2 the same set to ones: Z,$IND clears them, DL(U) of FPK1 --
+!     whose flag bits are ones -- and BZTF/BZUF/BZVF,SERS must not
+!     branch. The indicators follow the ADDRESSED operand's flags
+!     whatever DL does to the sign byte's copy of them, which is why
+!     D2 passes while C1 expects zeros.
+!
+! Substitutions (SSIP framework, real listed addresses): SERS (octal
+! 1304) -> FAIL halt, SEN (octal 1310) -> scratch, PASS -> the
+! routines' exit at 014542.40 (the listing's "B,$+1.", followed by
+! B,F207C / SIC,SEN0+.32 / B,SSW). Constants from the pool p.176.
+!
+! Instructions: BD, CM1111 (connect to memory) on the sign byte,
+! DL(U), CT0011 over a 3-bit field at 10.5, BB1 on $TF/$UF/$VF,
+! BTF/BUF/BVF and BZTF/BZUF/BZVF, Z($IND), SIC, BRGZ.
+! verify_fp_arith_f207cd_listing.py checks every word bit-for-bit.
+!
+! Observed: C1 halted at SERS (SEN = 014530.00) -- and the sign byte
+! was RIGHT. Dumping word 10 at the halt gave 0xf8..., bits 0-3 the
+! ones CM1111 left, bit 4 the sign of FPK1, bits 5-7 zero exactly as
+! DL should leave them. The fault was the CT0011 reading word 10 one
+! half-word later, before the DL that writes it had retired: an
+! ordering hazard, not arithmetic. Putting three half-words between
+! the same two instructions made it pass, which is what identified it.
+! The look-ahead's store-close-to-fetch wait compares a fetch address
+! against earlier levels' STORE targets, and storeTarget() reports
+! only stores to storage -- an FP load writes the accumulator, not
+! memory -- so nothing held this fetch. A level fetching one of the
+! E-box's own registers (words 7-15) now waits for the newest earlier
+! level whatever it does; see programs/ebox_register_close_to_fetch.strap.
+! D1 and D2 passed once C1 did.
+
+! -- SSIP framework substitutes --
+        SLC, (8)1304.0
+SERS    BEW, $
+        SLC, (8)1310.0
+SEN     DD(BU,64,8), 0
+
+! -- constants (pool p.176) --
+
+        SLC, (8)22006.0
+FPK1    DD(BU,64,8), (8)1777777777777777777777
+        SLC, (8)22007.0
+FPK2    DD(BU,64,8), (8)1777777777777777777760
+
+! -- code (verbatim, at the listing's addresses) --
+        SLC, (8)14524.0
+FLD1C   BD, $+.32   ! F207C1 / SAP: $SB 5-7 ones to zeros
+        CM1111(BU,8), 10.0   ! set the whole sign byte to ones
+        DL(U), FPK1
+        CT0011(BU,3), 10.5   ! the flag bits must be zero
+        SIC, SEN
+        BRGZ, SERS
+        BB1, $TF, $+1.   ! F207D1: data flags TF UF VF set
+        BB1, $UF, $+1.   ! F207D1: data flags TF UF VF set
+        BB1, $VF, $+1.   ! F207D1: data flags TF UF VF set
+        DL(U), FPK2   ! whose flag bits are zero
+        SIC, SEN
+        BTF, SERS   ! error if not set to zero
+        SIC, SEN
+        BUF, SERS   ! error if not set to zero
+        SIC, SEN
+        BVF, SERS   ! error if not set to zero
+        Z, $IND   ! F207D2: data flags TF UF VF set
+        DL(U), FPK1   ! whose flag bits are ones
+        SIC, SEN
+        BZTF, SERS   ! error if not set to ones
+        SIC, SEN
+        BZUF, SERS   ! error if not set to ones
+        SIC, SEN
+        BZVF, SERS   ! error if not set to ones
+PASS    BEW, $                  ! 014542.40: the routine's exit ("B,$+1.")
+        END, FLD1C

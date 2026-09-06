@@ -473,12 +473,32 @@ module mkStretchCore(StretchCore);
           // stores to `a` -- every current level is program-earlier
           // than this new one (the tail), and they retire head-first, so
           // waiting for the newest such store covers all older ones.
+          //
+          // The same wait covers a fetch of one of the E-BOX's OWN
+          // registers -- words 7-15, the zeros/ones counts, the
+          // accumulator and its sign byte, the indicators, mask,
+          // remainder and factor. storeTarget() reports only stores to
+          // storage, deliberately: an FP load or add writes the
+          // accumulator, not memory. But a VFL or connective
+          // instruction may ADDRESS those words, and then the value it
+          // wants is one an unretired earlier level is still going to
+          // write. There is no address to compare against, so any
+          // level fetching 7-15 waits for the newest earlier level,
+          // whatever that level does -- the E-box on the real machine
+          // is one unit and cannot hand out its accumulator ahead of
+          // the operation still in it. Found by jb_af1c F207C1:
+          // DL(U),FPK1 immediately followed by CT0011(BU,3),10.5,
+          // which read the sign byte as it was BEFORE the load zeroed
+          // its flag bits; three half-words of separation and the same
+          // pair passes.
           Maybe#(Bit#(2)) wf = tagged Invalid;
           if (da matches tagged Valid .a) begin
             Bool wfound = False;
             for (Integer i = 0; i < 4; i = i + 1) begin
               Bit#(2) pos = la.tail() - 1 - fromInteger(i);
-              Bool hz = nl[pos].valid &&& isValid(nl[pos].storeAddr) &&& validValue(nl[pos].storeAddr) == a;
+              Bool hz = nl[pos].valid
+                        && ((isValid(nl[pos].storeAddr) && validValue(nl[pos].storeAddr) == a)
+                            || eboxRegister(a));
               if (!wfound && hz) begin wf = tagged Valid pos; wfound = True; end
             end
           end

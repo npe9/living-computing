@@ -220,11 +220,20 @@ hand vectors alone. "Enables" notes the dependency chain.
    fraction argument through untouched, so the high half taken from
    `v.frac` and the low half taken from `f96` cannot disagree -- but
    that is inspection, not a run.
-   Next in the double-precision family: F207B/C (unchanged registers)
-   and F207E (DLWF, which the model has but nothing yet exercises),
-   then F208's D+ -- the first real double-precision ARITHMETIC, which
-   needs the 96-bit adder and the accumulator's low half as a genuine
-   operand rather than something only cleared.
+   F207B (bits 108-127 survive) and F207C/F207D (the sign byte's flag
+   bits zeroed; the data flag indicators follow the addressed operand)
+   are DONE too. F207C1 found a REAL INTERLOCK BUG -- see the
+   store-close-to-fetch note in §7: the look-ahead's fetch wait
+   compares against earlier levels' STORE targets, and storeTarget()
+   reports only stores to storage, so an FP write to one of the
+   E-box's own registers (words 7-15) did not hold a following VFL or
+   connective fetch of that word. A level fetching 7-15 now waits for
+   the newest earlier level whatever it does.
+   Next in the double-precision family: F207E (DLWF, which the model
+   has but nothing yet exercises, and which carries the real DLWF
+   encodings), then F208's D+ -- the first real double-precision
+   ARITHMETIC, which needs the 96-bit adder and the accumulator's low
+   half as a genuine operand rather than something only cleared.
    Related nearby routine also located and runnable-with-effort: F203B
    "EXP RNG INDIC TEST" (p.52, octal 012260+) verifies the exponent-
    range indicators XPFP/XPH/XPL/XPU (set by ST, cleared by Z,$IND)
@@ -1042,6 +1051,22 @@ own module), so this is naturally satisfied.
   rather than being handed the value. Residual gap: Connective CM's
   store target is not tracked (no current program stores via CM then
   reloads).
+- **E-box-register-close-to-fetch: found 2026-09-06 by jb_af1c F207C1,
+  fixed same day.** The sibling hazard for the E-box's OWN registers,
+  words 7-15. `storeTarget()` reports only stores to storage --
+  deliberately, since an FP load or add writes the accumulator, not
+  memory -- so nothing made a following VFL or connective fetch of one
+  of those words wait. F207C1 is `CM1111(BU,8),10.0` / `DL(U),FPK1` /
+  `CT0011(BU,3),10.5`: the CT read the sign byte one half-word after
+  the DL that zeroes its flag bits, and got the pre-load value. The
+  sign byte itself was correct at the halt, which is what pointed at
+  ordering rather than arithmetic; three half-words of separation and
+  the same pair passed. Fix: a level whose fetch word is 7-15 waits
+  for the newest earlier valid level whatever that level does (there
+  is no address to compare against). Conservative and free -- every
+  measured cycle count in the suite is unchanged, since no benchmark
+  fetches those words in a hazardous position. Test:
+  `programs/ebox_register_close_to_fetch.strap`.
 - **Stage 3a -- done** (2026-09-03; full 21-block suite green, Problem
   2.1 113 -> 92 clocks, pp.43-51 span 4006 -> 3985, the CB loop
   unchanged at 291 since it holds no E-box work): the look-ahead of §6b, seven

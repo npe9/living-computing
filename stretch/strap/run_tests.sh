@@ -355,6 +355,32 @@ run "FP load double (jb_af1c F207A on the model)" ./run_program.sh programs/fp_a
     "PC=$(python3 -c 'from strap_asm import assemble; print(assemble(open("programs/fp_arith_f207a.strap").read()).symtab["PASS"]//32)')" \
     "SEN:712=0"
 
+# -- 1m'. jb_af1c F207B (p.90) and F207C/F207D (p.90): the rest of
+# LOAD DOUBLE. B, that bits 108-127 survive a DL (ones stay ones, zeros
+# stay zeros -- the twenty bits below the double fraction). C, that the
+# sign byte's flag bits 5-7 are zeroed. D, that the data flag
+# indicators follow the ADDRESSED operand's flags. C1 caught the E-box
+# register interlock below.
+run "FP load double unchanged registers (jb_af1c F207B, encoding)" python3 verify_fp_arith_f207b_listing.py
+run "FP load double unchanged registers (jb_af1c F207B on the model)" ./run_program.sh programs/fp_arith_f207b.strap StretchFpLoadDblBTb \
+    "PC=$(python3 -c 'from strap_asm import assemble; print(assemble(open("programs/fp_arith_f207b.strap").read()).symtab["PASS"]//32)')" \
+    "SEN:712=0"
+
+run "FP load double flags and indicators (jb_af1c F207C/D, encoding)" python3 verify_fp_arith_f207cd_listing.py
+run "FP load double flags and indicators (jb_af1c F207C/D on the model)" ./run_program.sh programs/fp_arith_f207cd.strap StretchFpLoadDblCDTb \
+    "PC=$(python3 -c 'from strap_asm import assemble; print(assemble(open("programs/fp_arith_f207cd.strap").read()).symtab["PASS"]//32)')" \
+    "SEN:712=0"
+
+# -- 1j'. E-box-register-close-to-fetch: an E-box instruction writes one
+# of words 7-15 and the very next instruction addresses that word as a
+# storage operand. The sibling of store-close-to-fetch below, for the
+# registers storeTarget() deliberately does not report. Found by
+# jb_af1c F207C1; this exact pair read the stale sign byte before the
+# fix.
+run "Look-ahead: E-box-register-close-to-fetch" ./run_program.sh programs/ebox_register_close_to_fetch.strap StretchEboxRegScfTb \
+    "PC=$(python3 -c 'from strap_asm import assemble; print(assemble(open("programs/ebox_register_close_to_fetch.strap").read()).symtab["PASS"]//32)')" \
+    "SEN:712=0"
+
 # -- 1j. Store-close-to-fetch: store a word then immediately reload it;
 # the load must read the new value, not the stale one. The hazard the FP
 # sign-modifier codesign exposed; fixed by tracking each E-box level's

@@ -1,0 +1,36 @@
+! ebox_register_close_to_fetch.strap -- the interlock jb_af1c F207C1
+! exposed: an E-box instruction that writes one of the E-box's OWN
+! registers (words 7-15: the counts, the accumulator, its sign byte,
+! the indicators, mask, remainder, factor) immediately followed by a
+! VFL or connective instruction that ADDRESSES that word as a storage
+! operand.
+!
+! storeTarget() reports only stores to storage, deliberately -- an FP
+! load writes the accumulator, not memory -- so before the fix nothing
+! made the second instruction's operand fetch wait, and it read the
+! register as it stood BEFORE the load. This is the E-box-register
+! sibling of store_close_to_fetch.strap.
+!
+! CM1111 sets all eight bits of the sign byte (word 10) to ones; DL
+! then loads FPK1 and must zero the flag bits, positions 5-7 (Ref.
+! Manual p.96). CT0011 of those three bits, in the very next
+! half-word, must therefore see zeros. With the interlock removed it
+! sees the ones CM1111 left and BRGZ branches to FAIL. Three
+! half-words of separation and it passed even before the fix, which is
+! how the hazard was identified as ordering rather than semantics.
+
+        SLC, (8)1304.0
+FAIL    BEW, $
+        SLC, (8)1310.0
+SEN     DD(BU,64,8), 0
+        SLC, (8)22006.0
+FPK1    DD(BU,64,8), (8)1777777777777777777777
+
+        SLC, (8)16000.0
+GO      CM1111(BU,8), 10.0   ! the whole sign byte to ones
+        DL(U), FPK1          ! writes word 10; flag bits 5-7 -> zero
+        CT0011(BU,3), 10.5   ! the next half-word reads word 10 back
+        SIC, SEN
+        BRGZ, FAIL
+PASS    BEW, $
+        END, GO

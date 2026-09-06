@@ -1,0 +1,65 @@
+! Floating-point diagnostic jb_af1c, routine F207B "LOAD DOUBLE --
+! UNCHANGED REGISTERS" (docs/jb_af1c_floating-point.pdf p.90, octal
+! 014510.00-014522.00): two sub-tests of the other half of LOAD
+! DOUBLE's contract.
+!
+! F207A checked that DL clears accumulator bits 60-107. This checks
+! the sentence right after it (Ref. Manual p.96): "Accumulator bits
+! 108-127 remain unchanged." B1 fills BOTH accumulator halves with
+! ones (C1111 at offsets 64 and 0), loads all-zeros with DL, and the
+! low twenty bits must still be ones; B2 does the reverse -- both
+! halves cleared, DL of all-ones, and they must still be zero. The
+! listing's own comment names the field in right-half terms, "$R
+! 44-63", which is accumulator bits 108-127: the twenty bits below the
+! double-precision fraction, addressed here as CT0110 of 20 bits at
+! accumulator offset 0.
+!
+! B2 is the one that bites in the obvious wrong direction (a DL that
+! cleared the whole right half would pass B1 and fail nothing else in
+! F207A, since A1/A2 only ever check bits 60-107 for zero); B1 catches
+! a DL that wrote the whole right half from the operand.
+!
+! Substitutions (SSIP framework, real listed addresses): SERS (octal
+! 1304) -> FAIL halt, SEN (octal 1310) -> scratch, PASS -> the
+! routine's exit at 014522.00 (the listing's "B,$+1.", followed by
+! B,F207B1 / SIC,SEN0+.32 / B,SSW). Constants from the pool p.176.
+!
+! Instructions: BD, B, C1111/C0000 at accumulator offsets 64 and 0,
+! DL(U), CT0110 over a 20-bit field at offset 0, SIC, BRGZ.
+! verify_fp_arith_f207b_listing.py checks every word bit-for-bit.
+!
+! Observed: passed on the model as it stood after F207A -- DL already
+! kept the right half's low twenty bits, so this block confirms the
+! rule rather than correcting it.
+
+! -- SSIP framework substitutes --
+        SLC, (8)1304.0
+SERS    BEW, $
+        SLC, (8)1310.0
+SEN     DD(BU,64,8), 0
+
+! -- constants (pool p.176) --
+
+        SLC, (8)22005.0
+FPK0    DD(BU,64,8), (8)0000000000000000000000
+        SLC, (8)22006.0
+FPK1    DD(BU,64,8), (8)1777777777777777777777
+
+! -- code (verbatim, at the listing's addresses) --
+        SLC, (8)14510.0
+FLD1B   BD, $+.32   ! F207B1: $R 44-63, 1 S remain 1 S
+        C1111(BU,64), FPK1, 64   ! preset the left half
+        C1111(BU,64), FPK1   ! and the right half
+        DL(U), FPK0
+        CT0110(BU,20), FPK1   ! acc bits 108-127 untouched
+        SIC, SEN
+        BRGZ, SERS
+        B, $+.32   ! F207B2: $R 44-63, 0 S remain 0 S
+        C0000(BU,64), FPK0, 64   ! preset the left half
+        C0000(BU,64), FPK0   ! and the right half
+        DL(U), FPK1
+        CT0110(BU,20), FPK0   ! acc bits 108-127 untouched
+        SIC, SEN
+        BRGZ, SERS
+PASS    BEW, $                  ! 014522.00: the routine's exit ("B,$+1.")
+        END, FLD1B
