@@ -242,11 +242,16 @@ hand vectors alone. "Enables" notes the dependency chain.
    differences from ADD the manual states -- the fractions are 96 bits
    rather than 48 extended to 96, so a preparatory shift LOSES what it
    pushes past the right end; PSH is still "difference exceeds 48";
-   and noisy mode does not pre-extend the operands. jb_af1c F208A1-A9
-   (pp.93-94, the nine unflagged sub-tests) passes, and making D+ read
-   only the accumulator's high 48 bits halts it at 014617.40.
-   Next: F208A10 onward (the XFP/XFN ranges, from 014724.00), then
-   F208B/C/D, then F209's D+MG and SRD. Still open in double
+   and noisy mode does not pre-extend the operands. jb_af1c F208A1-A14
+   (pp.93-95, the nine unflagged sub-tests and the five flagged ones)
+   passes. Two injections, each halting in its own half: D+ reading
+   only the accumulator's high 48 bits halts at 014617.40 (A1); the
+   flagged path dropping the surviving operand's low half halts at
+   014732.00 (A10) while A1-A9 still pass -- worth having, since that
+   path returns an operand whole rather than computing anything, so
+   nothing unflagged would have noticed it losing 48 bits.
+   Next: F208A15 onward (the normalization modifier, from 014761.40),
+   then F208B/C/D, then F209's D+MG and SRD. Still open in double
    precision: D+MG, D-, SRD, SLO, D*, D/, LFT -- the first real double-precision
    ARITHMETIC, which needs the 96-bit adder and the accumulator's low
    half as a genuine operand rather than something only cleared.

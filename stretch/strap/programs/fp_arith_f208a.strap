@@ -1,8 +1,8 @@
 ! Floating-point diagnostic jb_af1c, routine F208A "ADD DOUBLE TEST
-! ROUTINE -- ARITHMETIC CHECKS", sub-tests A1-A9 (docs/jb_af1c_
-! floating-point.pdf pp.93-94, octal 014613.00-014724.00): the
-! unflagged half of the block, and the first exercise of D+ -- the
-! first double-precision ARITHMETIC the model can do.
+! ROUTINE -- ARITHMETIC CHECKS", sub-tests A1-A14 (docs/jb_af1c_
+! floating-point.pdf pp.93-95, octal 014613.00-014761.40): everything
+! up to the normalization-modifier section, and the exercise of D+ --
+! the first double-precision ARITHMETIC the model can do.
 !
 ! Each sub-test builds a full 96-bit double-precision value in the
 ! accumulator and adds a storage operand to it:
@@ -26,9 +26,20 @@
 ! preparatory shift crosses the half boundary. A single-precision
 ! adder cannot produce any of these results.
 !
-! A10 onward (from 014724.00) moves into the XFP/XFN ranges and is not
-! transcribed here; this program's PASS sits exactly where A10 begins,
-! which is what checks that A1-A9's word lengths are all right.
+! A10-A14 take the operands into the XFP and XFN ranges, where the
+! result is one operand WHOLE rather than a sum -- so they check 60
+! bits at offset 68 (exponent and high fraction together) and 48 at
+! offset 20, with no exponent check of their own and no carry to look
+! for. What they add over the single-precision flagged tests is the
+! low half: A10 and A12 carry a non-zero low half through a flagged
+! add untouched, and A11/A14 require the SURVIVING operand's low half
+! -- zero, since a storage operand is extended with zeros -- to
+! replace whatever was there. FK35, whose fraction is zero, is what
+! those checks compare against.
+!
+! A15 onward (from 014761.40, "TEST NORMALIZATION MODIFIER") is not
+! transcribed here; this program's PASS sits exactly where it begins,
+! which is what checks that every word length before it is right.
 !
 ! Substitutions (SSIP framework, real listed addresses): SERS (octal
 ! 1304) -> FAIL halt, SEN (octal 1310) -> scratch. The prologue
@@ -37,18 +48,24 @@
 ! pool p.176.
 !
 ! Instructions: B, DL(U), C0011 into the accumulator at offset 20,
-! D+(U), CT0110 over 48- and 12-bit fields at offsets 20/68/116,
+! D+(U), CT0110 over 60-, 48- and 12-bit fields at offsets 20/68/116,
 ! BZLC, SIC, BRGZ.
 ! verify_fp_arith_f208a_listing.py checks every word bit-for-bit.
 !
-! Observed: all nine passed on the first run of a freshly written
+! Observed: all fourteen passed on the first run of a freshly written
 ! 96-bit adder, which is a stronger statement than it sounds -- the
 ! low-order checks are sensitive to every bit of the preparatory shift
-! and the carry across the halves. The injection that proves they bite:
-! making D+ read only the accumulator's high 48 bits and pad with
-! zeros -- what a single-precision adder would see -- halts at
-! 014617.40, A1's low order fraction check, the first check in the
-! block.
+! and the carry across the halves. Two injections show the two halves
+! of the block bite separately:
+!   - making D+ read only the accumulator's high 48 bits and pad with
+!     zeros, which is what a single-precision adder sees, halts at
+!     014617.40, A1's low order fraction check -- the first check in
+!     the block;
+!   - making the FLAGGED path drop the surviving operand's low half
+!     halts at 014732.00, A10's low order check, while A1-A9 still
+!     pass. That one is worth having: the flagged path returns an
+!     operand whole rather than computing anything, so nothing in
+!     A1-A9 would have noticed it losing 48 bits.
 
 ! -- SSIP framework substitutes --
         SLC, (8)1304.0
@@ -72,6 +89,21 @@ FPK36   DD(BU,64,8), (8)0001052525252525252500
 FPK37   DD(BU,64,8), (8)0031125252525252525240
 FPK38   DD(BU,64,8), (8)0031052525252525252520
 FPK39   DD(BU,64,8), (8)0001052525252525252520
+        SLC, (8)22007.0
+FPK2    DD(BU,64,8), (8)1777777777777777777760
+        SLC, (8)22173.0
+FK25    DD(BU,64,8), (8)1577777777777777777760
+        SLC, (8)22200.0
+FK30    DD(BU,64,8), (8)1577617777777777777760
+FK31    DD(BU,64,8), (8)1777612525252525252520
+        SLC, (8)22204.0
+FK34    DD(BU,64,8), (8)0200377777777777777770
+FK35    DD(BU,64,8), (8)1777400000000000000000
+FK36    DD(BU,64,8), (8)1000177777777777777760
+        SLC, (8)22210.0
+FK38    DD(BU,64,8), (8)0777572525252525252520
+        SLC, (8)22220.0
+FK46    DD(BU,64,8), (8)1746577777777777777760
 
 ! -- code (verbatim, at the listing's addresses) --
         SLC, (8)14613.0
@@ -190,5 +222,51 @@ DAD1A   B, $+.32   ! F208A1: exp. mem + 48 + exp. acc.
         CT0110(BU,12), FPK21, 116   ! test exponent + 50
         SIC, SEN
         BRGZ, SERS
-PASS    BEW, $                  ! 014724.00: where F208A10 begins (the flagged ranges)
+        DL(U), FK35   ! F208A10: exps in XFP range
+        C0011(BU,48), FK34+.12, 20   ! set the accumulator's low half
+        D+(U), FK46
+        CT0110(BU,60), FK35, 68   ! test result + opnd
+        SIC, SEN
+        BRGZ, SERS
+        CT0110(BU,48), FK34+.12, 20   ! and its low order half
+        SIC, SEN
+        BRGZ, SERS
+        B, $+.32   ! F208A11: exponents of opnds in XFP and N ranges
+        DL(U), FK36
+        D+(U), FK38
+        CT0110(BU,60), FK36, 68   ! test result + opnd
+        SIC, SEN
+        BRGZ, SERS
+        CT0110(BU,48), FK35+.12, 20   ! and its low order half
+        SIC, SEN
+        BRGZ, SERS
+        B, $+.32   ! F208A12: exponents of opnds in XFP and XFN ranges
+        DL(U), FK35
+        C0011(BU,48), FK34+.12, 20   ! set the accumulator's low half
+        D+(U), FK25
+        CT0110(BU,60), FK35, 68   ! test result + opnd
+        SIC, SEN
+        BRGZ, SERS
+        CT0110(BU,48), FK34+.12, 20   ! and its low order half
+        SIC, SEN
+        BRGZ, SERS
+        B, $+.32   ! F208A13: exponents of opnds in N and XFN ranges
+        DL(U), FPK31
+        C0011(BU,48), FPK32+.12, 20   ! set the accumulator's low half
+        D+(U), FPK2
+        CT0110(BU,60), FPK31, 68   ! test result + opnd
+        SIC, SEN
+        BRGZ, SERS
+        CT0110(BU,48), FPK32+.12, 20   ! and its low order half
+        SIC, SEN
+        BRGZ, SERS
+        DL(U), FK31   ! F208A14: exps in XFN range
+        D+(U), FK30
+        CT0110(BU,60), FK30, 68   ! test result + opnd
+        SIC, SEN
+        BRGZ, SERS
+        CT0110(BU,48), FK35+.12, 20   ! and its low order half
+        SIC, SEN
+        BRGZ, SERS
+PASS    BEW, $                  ! 014761.40: where "TEST NORMALIZATION MODIFIER" begins
         END, DAD1A
