@@ -323,6 +323,25 @@ run "FP M+MG sign modifiers (jb_af1c F206B on the model)" ./run_program.sh progr
     "PC=$(python3 -c 'from strap_asm import assemble; print(assemble(open("programs/fp_arith_f206b.strap").read()).symtab["PASS"]//32)')" \
     "SEN:712=0"
 
+# -- 1l''. jb_af1c F206C (p.85) + F206D (pp.86-88), the last two blocks
+# of the ADD MAGNITUDE TO MEMORY family: C, that M+MG leaves both
+# accumulator halves and the whole sign byte untouched (zeros and
+# ones); D, the LS indicator (on for a cancellation, off for both
+# operands zero, off for a forced zero, off for a propagated flagged
+# result) and the five exponent-range indicators XPFP/XPO/XPH/XPL/XPU,
+# one sub-test each with the other four checked off. D1 vs D3 is the
+# discriminating pair for fpAdd's `sum != 0` forced-zero guard --
+# removing it halts D1 at 014304.40. Both passed as the model stood.
+run "FP M+MG unchanged registers (jb_af1c F206C, encoding)" python3 verify_fp_arith_f206c_listing.py
+run "FP M+MG unchanged registers (jb_af1c F206C on the model)" ./run_program.sh programs/fp_arith_f206c.strap StretchFpMgMemCTb \
+    "PC=$(python3 -c 'from strap_asm import assemble; print(assemble(open("programs/fp_arith_f206c.strap").read()).symtab["PASS"]//32)')" \
+    "SEN:712=0"
+
+run "FP M+MG indicators (jb_af1c F206D, encoding)" python3 verify_fp_arith_f206d_listing.py
+run "FP M+MG indicators (jb_af1c F206D on the model)" ./run_program.sh programs/fp_arith_f206d.strap StretchFpMgMemDTb \
+    "PC=$(python3 -c 'from strap_asm import assemble; print(assemble(open("programs/fp_arith_f206d.strap").read()).symtab["PASS"]//32)')" \
+    "SEN:712=0"
+
 # -- 1j. Store-close-to-fetch: store a word then immediately reload it;
 # the load must read the new value, not the stale one. The hazard the FP
 # sign-modifier codesign exposed; fixed by tracking each E-box level's

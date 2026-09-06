@@ -1,0 +1,257 @@
+! Floating-point diagnostic jb_af1c, routine F206D "LOST SIGNIFICANCE
+! INDICATOR TESTS" + "TEST EXPONENT RANGE INDICATORS" for ADD
+! MAGNITUDE TO MEMORY (docs/jb_af1c_floating-point.pdf pp.86-88, octal
+! 014276.40-014445.00), ten sub-tests:
+!   D1-D4, the LS indicator, each cleared first by BLSZ (branch on LS
+!     and zero it) so the check starts from off:
+!     D1 ON  -- FPK22 - FPK22 under M-MG, both fractions non-zero and
+!               the sum cancelling: a zero from cancellation, checked
+!               by BZLS,SERS ("error if LS off").
+!     D2 OFF -- Z,ROS then FPK0: both operands +0, no significance to
+!               lose (p.87: LS is not turned on when both operand
+!               fractions were zero to begin with).
+!     D3 OFF -- FPK4 - FPK19 under M-MG: 1/3 - 2/3 in magnitude, a
+!               FORCED zero. p.89 is explicit that a forced zero
+!               leaves LS off and that this "distinguishes it from a
+!               zero sum" -- D1 against D3 is that distinction, and
+!               the pair the model's `sum != 0` guard exists for.
+!     D4 OFF -- FK36 + FK28, a result whose exponent carries a
+!               propagated EF: LS is not turned on for a propagated
+!               flagged result either.
+!   D5-D10, the exponent range indicators, each preceded by Z,$IND so
+!     only this operation's indicators are read, then BB on the one
+!     that must be ON and BZB on the other four:
+!     D5  XPFP (11.28) -- XFP +2047 dominating an N operand: propagated.
+!     D6  XPO  (11.29) -- FK38 + itself normalized: +1023 overflows.
+!     D7  XPH  (11.30) -- FK22 +512 surviving an XFN: 1024 > E >= 512.
+!     D8  XPL  (11.31) -- FPK28 +256 surviving an XFN: 512 > E >= 64.
+!     D9  XPU  (11.32) -- FK39 + itself at -1023, whose normalization
+!                         takes the exponent to -1024: underflow.
+!     D10 none         -- FPK25 (+3) surviving an XFN: an ordinary N
+!                         result, so all five must be off (five BZB,
+!                         no BB).
+!
+! Substitutions (SSIP framework, real listed addresses): SERS (octal
+! 1304) -> FAIL halt, SEN (octal 1310) -> scratch, ROS (octal 22355)
+! the memory operand, PASS -> the routines' exit at 014445.00 (the
+! listing's "BD,$+1.0", followed by B,SAP7E / SIC,SEN0+.32 / B,SSW).
+! Constants from the pool pp.176-178.
+!
+! Instructions: BD, B, L(BU)/ST(BU), L(U), Z,ROS, Z,$IND,
+! M+MG(U)/M+MG(N)/M-MG(U), BLSZ/BZLS/BLS, BB/BZB on indicator bits
+! 11.28-11.32, SIC.
+! verify_fp_arith_f206d_listing.py checks every word bit-for-bit.
+!
+! Observed: passes on the model as it stood after F206A/F206B, and D1
+! against D3 is the block that earns the `sum != 0` guard in fpAdd's
+! ADD TO MAGNITUDE arm -- written for F206A from p.83's "fraction sign
+! reversal" and p.89's "distinguishes it from a zero sum", with nothing
+! then exercising it. Removing the guard (so that an exact cancellation
+! reads as a forced zero) halts this program at 014304.40, D1's
+! BZLS,SERS "error if LS off"; restoring it passes. The exponent-range
+! half, D5-D10, passes unchanged from F204D's work on the same five
+! indicators for M+.
+
+! -- SSIP framework substitutes --
+        SLC, (8)1304.0
+SERS    BEW, $
+        SLC, (8)1310.0
+SEN     DD(BU,64,8), 0
+        SLC, (8)22355.0
+ROS     DD(BU,64,8), 0
+
+! -- constants (pool pp.176-178) --
+
+        SLC, (8)22005.0
+FPK0    DD(BU,64,8), (8)0000000000000000000000
+        SLC, (8)22007.0
+FPK2    DD(BU,64,8), (8)1777777777777777777760
+        SLC, (8)22011.0
+FPK4    DD(BU,64,8), (8)0000452525252525252520
+        SLC, (8)22030.0
+FPK19   DD(BU,64,8), (8)0000525252525252525240
+        SLC, (8)22033.0
+FPK22   DD(BU,64,8), (8)0000577777777777777760
+        SLC, (8)22036.0
+FPK25   DD(BU,64,8), (8)0001560000000000000000
+        SLC, (8)22037.0
+FPK26   DD(BU,64,8), (8)1777577777777777777760
+        SLC, (8)22040.0
+FPK27   DD(BU,64,8), (8)1777677777777777777760
+        SLC, (8)22041.0
+FPK28   DD(BU,64,8), (8)0200177777777777777760
+        SLC, (8)22053.0
+FPK38   DD(BU,64,8), (8)0031052525252525252520
+        SLC, (8)22170.0
+FK22    DD(BU,64,8), (8)0400177777777777777760
+        SLC, (8)22173.0
+FK25    DD(BU,64,8), (8)1577777777777777777760
+        SLC, (8)22176.0
+FK28    DD(BU,64,8), (8)0031005252525252525240
+        SLC, (8)22206.0
+FK36    DD(BU,64,8), (8)1000177777777777777760
+        SLC, (8)22210.0
+FK38    DD(BU,64,8), (8)0777572525252525252520
+        SLC, (8)22211.0
+FK39    DD(BU,64,8), (8)0777625252525252525240
+
+! -- code (verbatim, at the listing's addresses) --
+        SLC, (8)14276.40
+SAP7E   BD, $+.32   ! SAP7E / F206D1: test LS on
+        L(BU), FPK22
+        BLSZ, $+.32   ! both fractions unequal to zero
+        L(BU), FPK22
+        ST(BU), ROS
+        L(U), FPK22
+        M-MG(U), ROS
+        SIC, SEN
+        BZLS, SERS   ! error if LS off
+        B, $+.32   ! F206D2: test LS, off condition
+        BLSZ, $+.32   ! both opnds +0
+        Z, ROS
+        L(U), FPK0
+        M+MG(U), ROS
+        SIC, SEN
+        BLS, SERS   ! error if LS on
+        B, $+.32   ! F206D3: test LS, off condition
+        BLSZ, $+.32   ! forced zero result
+        L(BU), FPK4
+        ST(BU), ROS
+        L(U), FPK19
+        M-MG(U), ROS
+        SIC, SEN
+        BLS, SERS   ! error if LS on
+        B, $+.32   ! F206D4: test LS, off conditon
+        BLSZ, $+.32   ! result exp. contains EF+1
+        L(BU), FK36
+        ST(BU), ROS
+        L(U), FK28
+        M+MG(U), ROS
+        SIC, SEN
+        BLS, SERS   ! error if LS on
+SAP7F   L(BU), FPK26   ! F206D5 / SAP7F: test XPFP on
+        ST(BU), ROS
+        L(U), FPK38
+        Z, $IND
+        M+MG(U), ROS
+        BB, 11.28, $+2.
+        SIC, SEN
+        B, SERS
+        BZB, 11.29, $+2.
+        SIC, SEN
+        B, SERS
+        BZB, 11.30, $+2.
+        SIC, SEN
+        B, SERS
+        BZB, 11.31, $+2.
+        SIC, SEN
+        B, SERS
+        BZB, 11.32, $+2.
+        SIC, SEN
+        B, SERS
+        B, $+.32   ! F206D6: test XPO, on condition
+        L(BU), FK38   !
+        ST(BU), ROS
+        L(U), FK38
+        Z, $IND
+        M+MG(N), ROS
+        BB, 11.29, $+2.
+        SIC, SEN
+        B, SERS
+        BZB, 11.28, $+2.
+        SIC, SEN
+        B, SERS
+        BZB, 11.30, $+2.
+        SIC, SEN
+        B, SERS
+        BZB, 11.31, $+2.
+        SIC, SEN
+        B, SERS
+        BZB, 11.32, $+2.
+        SIC, SEN
+        B, SERS
+        B, $+.32   ! F206D7: test XPH, on condition
+        L(BU), FK22   !
+        ST(BU), ROS
+        L(U), FK25
+        Z, $IND
+        M+MG(U), ROS
+        BB, 11.30, $+2.
+        SIC, SEN
+        B, SERS
+        BZB, 11.28, $+2.
+        SIC, SEN
+        B, SERS
+        BZB, 11.29, $+2.
+        SIC, SEN
+        B, SERS
+        BZB, 11.31, $+2.
+        SIC, SEN
+        B, SERS
+        BZB, 11.32, $+2.
+        SIC, SEN
+        B, SERS
+SAP7G   L(BU), FPK28   ! F206D8 / SAP7G: test XPL on
+        ST(BU), ROS
+        L(U), FPK27
+        Z, $IND
+        M+MG(U), ROS
+        BB, 11.31, $+2.
+        SIC, SEN
+        B, SERS
+        BZB, 11.28, $+2.
+        SIC, SEN
+        B, SERS
+        BZB, 11.29, $+2.
+        SIC, SEN
+        B, SERS
+        BZB, 11.30, $+2.
+        SIC, SEN
+        B, SERS
+        BZB, 11.32, $+2.
+        SIC, SEN
+        B, SERS
+        B, $+.32   ! F206D9: test XPU, on condition
+        L(BU), FK39   !
+        ST(BU), ROS
+        L(U), FK39
+        Z, $IND
+        M+MG(N), ROS
+        BB, 11.32, $+2.
+        SIC, SEN
+        B, SERS
+        BZB, 11.28, $+2.
+        SIC, SEN
+        B, SERS
+        BZB, 11.29, $+2.
+        SIC, SEN
+        B, SERS
+        BZB, 11.30, $+2.
+        SIC, SEN
+        B, SERS
+        BZB, 11.31, $+2.
+        SIC, SEN
+        B, SERS
+        B, $+.32   ! F206D10: test XPFN, on condition
+        L(BU), FPK2   !
+        ST(BU), ROS
+        L(U), FPK25
+        Z, $IND
+        M+MG(U), ROS
+        BZB, 11.28, $+2.
+        SIC, SEN
+        B, SERS
+        BZB, 11.29, $+2.
+        SIC, SEN
+        B, SERS
+        BZB, 11.30, $+2.
+        SIC, SEN
+        B, SERS
+        BZB, 11.31, $+2.
+        SIC, SEN
+        B, SERS
+        BZB, 11.32, $+2.
+        SIC, SEN
+        B, SERS
+PASS    BEW, $                  ! 014445.00: the routine's exit ("BD,$+1.0")
+        END, SAP7E

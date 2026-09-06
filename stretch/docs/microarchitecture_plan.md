@@ -178,9 +178,15 @@ hand vectors alone. "Enables" notes the dependency chain.
    positive for the arithmetic only. B23 vs B24 also confirms that the
    forced-zero comparison uses the A-modified sign, and B9-B16 that the
    accumulator operand's sign is the one assumed positive. Assembler:
-   M-MG / M-MGA accepted as M+MG with N / N+A (.52 / .72). Next within
-   step 2: F206C/D (unchanged registers, indicators), then the multiply
-   block and the open ops in the order the diagnostic reaches them.
+   M-MG / M-MGA accepted as M+MG with N / N+A (.52 / .72). F206C
+   (p.85, unchanged registers) and F206D (pp.86-88, the LS indicator
+   and the five exponent-range indicators) close the family; both
+   passed as the model stood, and F206D1 against F206D3 is what earns
+   the `sum != 0` forced-zero guard written blind for F206A -- removing
+   it halts D1 at 014304.40. The whole ADD MAGNITUDE TO MEMORY family
+   (F206A-D) is now verified against the diagnostic. Next within step
+   2: the multiply block and the open ops in the order the diagnostic
+   reaches them.
    Related nearby routine also located and runnable-with-effort: F203B
    "EXP RNG INDIC TEST" (p.52, octal 012260+) verifies the exponent-
    range indicators XPFP/XPH/XPL/XPU (set by ST, cleared by Z,$IND)

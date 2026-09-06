@@ -1,0 +1,86 @@
+! Floating-point diagnostic jb_af1c, routine F206C "TEST UNCHANGED
+! REGISTERS" for ADD MAGNITUDE TO MEMORY (docs/jb_af1c_floating-
+! point.pdf p.85, octal 014244.40-014274.40): two sub-tests that
+! M+MG, whose result goes to STORAGE, leaves both accumulator halves
+! and the sign byte exactly as it found them.
+!   C1 "zeros remain zeros": C0000 clears both accumulator halves and
+!     CM0000 the sign byte, ROS := FPK37, M+MG(U),ROS, then the left
+!     half (CT0101 at offset 64, C1A), the right half (CT0101 at
+!     offset 0, C1B) and all eight sign-byte bits (CT0011 at 10.0,
+!     C1C) must still be zero.
+!   C2 "ones remain ones": the same with C1111 / CM1111 against FPK1,
+!     checked with the complement functions CT1010 and CT1100.
+! Both use the accumulator only as the source of a magnitude, so
+! nothing about it may change -- the to-memory mirror of F205C, where
+! the accumulator was the destination and it was the RIGHT half and
+! the sign byte's spare bits that had to survive.
+!
+! Substitutions (SSIP framework, real listed addresses): SERS (octal
+! 1304) -> FAIL halt, SEN (octal 1310) -> scratch, ROS (octal 22355)
+! the memory operand, PASS -> the routine's exit at 014274.40 (the
+! listing's "BD,$+1.0", followed by B,SAP7D / SIC,SEN0+.32 / B,SSW).
+! Constants from the pool p.176.
+!
+! Instructions: BD, B, L(BU)/ST(BU), C0000/C1111 (connect to
+! accumulator) with offset 64, CM0000/CM1111 (connect to memory) on
+! the sign byte at 10.0, M+MG(U), CT0101/CT0011/CT1010/CT1100, SIC,
+! BRGZ. verify_fp_arith_f206c_listing.py checks every word bit-for-bit.
+!
+! Observed: passes on the model as it stood after F206A/F206B. M+MG
+! never writes the accumulator, so nothing here could have failed once
+! the to-memory path stopped touching it -- this block is what says so
+! rather than leaving it assumed.
+
+! -- SSIP framework substitutes --
+        SLC, (8)1304.0
+SERS    BEW, $
+        SLC, (8)1310.0
+SEN     DD(BU,64,8), 0
+        SLC, (8)22355.0
+ROS     DD(BU,64,8), 0
+
+! -- constants (pool p.176) --
+
+        SLC, (8)22005.0
+FPK0    DD(BU,64,8), (8)0000000000000000000000
+        SLC, (8)22006.0
+FPK1    DD(BU,64,8), (8)1777777777777777777777
+        SLC, (8)22052.0
+FPK37   DD(BU,64,8), (8)0031125252525252525240
+
+! -- code (verbatim, at the listing's addresses) --
+        SLC, (8)14244.40
+SAP7D   BD, $+.32   ! F206C1: zeros remain zeros
+        L(BU), FPK37
+        ST(BU), ROS
+        C0000(BU,64), FPK0, 64
+        C0000(BU,64), FPK0
+        CM0000(BU,8), 10.0
+        M+MG(U), ROS
+        CT0101(BU,64), FPK0, 64   ! does L 0-63 remain
+        SIC, SEN
+        BRGZ, SERS
+        CT0101(BU,64), FPK0   ! does R 0-63 remain
+        SIC, SEN
+        BRGZ, SERS
+        CT0011(BU,8), 10.0   ! does the SB remain
+        SIC, SEN
+        BRGZ, SERS
+        B, $+.32   ! F206C2: ones remain ones
+        L(BU), FPK37
+        ST(BU), ROS
+        C1111(BU,64), FPK1, 64
+        C1111(BU,64), FPK1
+        CM1111(BU,8), 10.0
+        M+MG(U), ROS
+        CT1010(BU,64), FPK1, 64   ! does L 0-63 remain
+        SIC, SEN
+        BRGZ, SERS
+        CT1010(BU,64), FPK1   ! does R 0-63 remain
+        SIC, SEN
+        BRGZ, SERS
+        CT1100(BU,8), 10.0   ! does the SB remain
+        SIC, SEN
+        BRGZ, SERS
+PASS    BEW, $                  ! 014274.40: the routine's exit ("BD,$+1.0")
+        END, SAP7D
