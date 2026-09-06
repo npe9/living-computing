@@ -1,0 +1,175 @@
+! Floating-point diagnostic jb_af1c, routine F208B "TESTS OF SIGN AND
+! MODIFIER COMBINATIONS" (docs/jb_af1c_floating-point.pdf pp.96-98,
+! octal 015030.40-015123.00, where the listing's own exit sequence
+! BD,$+1.0 / B,SAP9D / SIC,SENC+.32 / B,SSW begins): ADD DOUBLE with
+! the sign modifiers -- D+, D+A, D-, D-A -- against both accumulator
+! signs.
+!
+! The listing names each combination in its own shorthand, which the
+! sub-test comments below repeat verbatim: MS is the memory operand's
+! sign, ACS the accumulator's, and N and A are the two SIGN modifiers
+! (N = negative, invert; A = absolute, force positive). "N" here is
+! NOT the normalization modifier -- every D+ in this block is written
+! (U), unnormalized. So "MS+ACS+A+0, N+1" reads "memory sign plus,
+! accumulator sign plus, the A modifier absent and the N modifier
+! present", which is D-.
+!
+! Each of the seven sub-tests builds a 96-bit accumulator, applies one
+! D+ variant, and makes three checks: the low order 48 fraction bits
+! (offset 20 = IBM 60-107), the high order 48 (offset 68 = IBM 12-59),
+! and then the sign bit itself with BB or BZB on the accumulator sign
+! byte at 10.04 -- word 10, bit 4, which is where the model keeps it.
+! The sign check is what makes the block worth running: the fraction
+! is the same 0101...01 pattern in most of them, so a sign rule that
+! is wrong shows up only in the last check.
+!
+! The two accumulator signs come from DL versus DLN, and the two
+! memory signs from FPK39 versus FPK40 -- the same word with bit 3,
+! the sign, set. Nothing else differs between B5/B6 and B3/B4.
+!
+! Framework substitutes as everywhere else in this series: SERS (octal
+! 1304) -> FAIL halt, SEN (octal 1310) -> scratch. The prologue is not
+! transcribed; the block starts at SAP9D, which is where F208A's exit
+! branches. Constants from the pool p.176.
+!
+! Instructions: B, DL(U), DLN(U), C0011 into the accumulator at offset
+! 20, D+(U)/D+A(U)/D-(U)/D-A(U), CT0110 over 48-bit fields at offsets
+! 20 and 68, BB and BZB on a literal bit address, SIC, BRGZ.
+! verify_fp_arith_f208b_listing.py checks every word bit-for-bit.
+!
+! Observed: all seven passed on the first run -- D+ already took its
+! operand's sign from the modifier-applied FpNum, and DL already did
+! the same, so nothing in the model needed changing. Only the
+! assembler did: D- and D-A had no rule, exactly as M-/M-A and
+! -MG/-MGA had none before their blocks. D+A needed none, since the
+! generic "A" suffix strips to D+, which is a real op.
+!
+! Two injections, both halting at B3's low order check (SIC stores
+! 015055.40, the half-word after the BRGZ guarding the CT0110 at
+! 015053.40 -- the first D-), with the whole of F208A still passing:
+!   - making D+ read the raw operand's sign instead of the
+!     modifier-applied one;
+!   - replacing the unlike-signs magnitude subtraction with an
+!     addition.
+! The second is the interesting one. Every operand F208A adds is
+! positive on the unflagged path, so until this block the unlike-signs
+! branch of fpAddDouble had never once been entered -- three hundred
+! passing rows of ADD DOUBLE arithmetic that never subtracted.
+!
+! Still not reached, and worth saying so: the sub-branch where the
+! SMALLER-exponent operand has the larger magnitude, so the result
+! takes its sign rather than the larger-exponent operand's. Forcing
+! that arm to use the wrong sign leaves both F208A and F208B green.
+! No check in either block distinguishes it.
+
+! -- SSIP framework substitutes --
+        SLC, (8)1304.0
+SERS    BEW, $
+        SLC, (8)1310.0
+SEN     DD(BU,64,8), 0
+
+! -- constants (pool p.176) --
+
+        SLC, (8)22032.0
+FPK21   DD(BU,64,8), (8)0031177777777777777767
+        SLC, (8)22050.0
+FPK35   DD(BU,64,8), (8)0001125252525252525240
+        SLC, (8)22052.0
+FPK37   DD(BU,64,8), (8)0031125252525252525240
+FPK38   DD(BU,64,8), (8)0031052525252525252520
+FPK39   DD(BU,64,8), (8)0001052525252525252520
+FPK40   DD(BU,64,8), (8)0001052525252525252530
+
+! -- code (verbatim, at the listing's addresses) --
+        SLC, (8)15030.40
+SAP9D  DL(U), FPK21   ! F208B1: MS+ACS+N+A+0
+        C0011(BU,48), FPK35+.12, 20   ! set the accumulator's low half
+        D+(U), FPK39
+        CT0110(BU,48), FPK21+.12, 20   ! test low order fraction
+        SIC, SEN
+        BRGZ, SERS
+        CT0110(BU,48), FPK21+.12, 68   ! test high order fraction
+        SIC, SEN
+        BRGZ, SERS
+        BZB, 10.04, $+2.0   ! test the accumulator sign bit: expect +
+        SIC, SEN
+        B, SERS
+        B, $+.32   ! F208B2: MS+ACS+N+0, A+1
+DOR1   DL(U), FPK21
+        C0011(BU,48), FPK35+.12, 20   ! set the accumulator's low half
+        D+A(U), FPK39
+        CT0110(BU,48), FPK21+.12, 20   ! test low order fraction
+        SIC, SEN
+        BRGZ, SERS
+        CT0110(BU,48), FPK21+.12, 68   ! test high order fraction
+        SIC, SEN
+        BRGZ, SERS
+        BZB, 10.04, $+2.0   ! test the accumulator sign bit: expect +
+        SIC, SEN
+        B, SERS
+        B, $+.32   ! F208B3: MS+ACS+A+0, N+1
+DOR2   DL(U), FPK38
+        C0011(BU,48), FPK37+.12, 20   ! set the accumulator's low half
+        D-(U), FPK39
+        CT0110(BU,48), FPK39+.12, 20   ! test low order fraction
+        SIC, SEN
+        BRGZ, SERS
+        CT0110(BU,48), FPK39+.12, 68   ! test high order fraction
+        SIC, SEN
+        BRGZ, SERS
+        BZB, 10.04, $+2.0   ! test the accumulator sign bit: expect +
+        SIC, SEN
+        B, SERS
+        B, $+.32   ! F208B4: MS+ACS+0, N+A+1
+DOR3   DL(U), FPK38
+        C0011(BU,48), FPK37+.12, 20   ! set the accumulator's low half
+        D-A(U), FPK39
+        CT0110(BU,48), FPK39+.12, 20   ! test low order fraction
+        SIC, SEN
+        BRGZ, SERS
+        CT0110(BU,48), FPK39+.12, 68   ! test high order fraction
+        SIC, SEN
+        BRGZ, SERS
+        BZB, 10.04, $+2.0   ! test the accumulator sign bit: expect +
+        SIC, SEN
+        B, SERS
+DOR4   DLN(U), FPK38   ! F208B5: MS+N+A+0  ACS+1
+        C0011(BU,48), FPK37+.12, 20   ! set the accumulator's low half
+        D+(U), FPK39
+        CT0110(BU,48), FPK39+.12, 20   ! test low order fraction
+        SIC, SEN
+        BRGZ, SERS
+        CT0110(BU,48), FPK39+.12, 68   ! test high order fraction
+        SIC, SEN
+        BRGZ, SERS
+        BB, 10.04, $+2.0   ! test the accumulator sign bit: expect -
+        SIC, SEN
+        B, SERS
+        B, $+.32   ! F208B6: MS+1, ACS+N+A+0
+DOR5   DL(U), FPK38
+        C0011(BU,48), FPK37+.12, 20   ! set the accumulator's low half
+        D+(U), FPK40
+        CT0110(BU,48), FPK39+.12, 20   ! test low order fraction
+        SIC, SEN
+        BRGZ, SERS
+        CT0110(BU,48), FPK39+.12, 68   ! test high order fraction
+        SIC, SEN
+        BRGZ, SERS
+        BZB, 10.04, $+2.0   ! test the accumulator sign bit: expect +
+        SIC, SEN
+        B, SERS
+        B, $+.32   ! F208B7: MS+ACS+N+A+1
+DOR6   DLN(U), FPK21
+        C0011(BU,48), FPK35+.12, 20   ! set the accumulator's low half
+        D-A(U), FPK40
+        CT0110(BU,48), FPK21+.12, 20   ! test low order fraction
+        SIC, SEN
+        BRGZ, SERS
+        CT0110(BU,48), FPK21+.12, 68   ! test high order fraction
+        SIC, SEN
+        BRGZ, SERS
+        BB, 10.04, $+2.0   ! test the accumulator sign bit: expect -
+        SIC, SEN
+        B, SERS
+PASS    BEW, $                  ! 015123.00: F208B exits here
+        END, SAP9D

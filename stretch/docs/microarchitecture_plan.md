@@ -274,7 +274,33 @@ hand vectors alone. "Enables" notes the dependency chain.
    between FK48 and FK101, so the later constants run one address
    below the naive formula. Verified: FK46=022220, FK47=022221,
    FK48=022222, FK101=022306, FK105=022312.
-   Next: F208B/C/D, then F209's D+MG and SRD. Still open in double
+   jb_af1c F208B (pp.96-98, B1-B7: "TESTS OF SIGN AND MODIFIER
+   COMBINATIONS") passes too, closing on 015123.00 where the listing's
+   own exit begins. It sweeps D+, D+A, D-, D-A against both
+   accumulator signs -- the two accumulator signs from DL versus DLN,
+   the two memory signs from FPK39 versus FPK40, which is the same
+   word with the sign bit set -- and checks each result on both
+   fraction halves AND on the sign bit itself, with BB/BZB on the
+   accumulator sign byte at 10.04. The model needed nothing: D+
+   already took its operand's sign from the modifier-applied FpNum and
+   DL already did the same. Only the assembler did -- D- and D-A had
+   no rule, exactly as M-/M-A and -MG/-MGA had none before their own
+   blocks; D+A needed none, since the generic "A" suffix strips to D+.
+   Two injections halt at B3's low order check (015055.40) with the
+   whole of F208A still passing: D+ reading the raw operand sign
+   instead of the modifier-applied one, and the unlike-signs magnitude
+   subtraction replaced by an addition. The second is the one worth
+   recording -- every operand F208A adds is positive on the unflagged
+   path, so until F208B the unlike-signs branch of fpAddDouble had
+   never been entered at all. Three hundred passing rows of ADD DOUBLE
+   arithmetic that never subtracted.
+   Still unreached in double precision, and stated rather than
+   assumed: the sub-branch where the SMALLER-exponent operand has the
+   larger magnitude, so the result takes ITS sign. Forcing that arm to
+   the wrong sign leaves both F208A and F208B green, so no check in
+   either block distinguishes it.
+   Next: F208C (two "TEST UNCHANGED REGISTERS" sub-tests) and F208D
+   (six or more), then F209's D+MG and SRD. Still open in double
    precision: D+MG, D-, SRD, SLO, D*, D/, LFT -- the first real double-precision
    ARITHMETIC, which needs the 96-bit adder and the accumulator's low
    half as a genuine operand rather than something only cleared.

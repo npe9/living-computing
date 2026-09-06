@@ -419,6 +419,21 @@ run "FP add double (jb_af1c F208A1-A20 on the model)" ./run_program.sh programs/
     "PC=$(python3 -c 'from strap_asm import assemble; print(assemble(open("programs/fp_arith_f208a.strap").read()).symtab["PASS"]//32)')" \
     "SEN:712=0"
 
+# jb_af1c F208B (pp.96-98): ADD DOUBLE's seven sign-and-modifier
+# combinations -- D+, D+A, D-, D-A against both accumulator signs, each
+# checked on both fraction halves and then on the sign bit itself with
+# BB/BZB. The first block in double precision that SUBTRACTS: every
+# operand F208A adds is positive on the unflagged path, so replacing
+# the unlike-signs magnitude subtraction with an addition leaves the
+# whole of F208A green and halts at B3's low order check (015055.40),
+# as does making D+ read the raw operand sign instead of the
+# modifier-applied one. Needed D-/D-A rules in strap_asm.py; the model
+# needed nothing.
+run "FP add double signs (jb_af1c F208B1-B7, encoding)" python3 verify_fp_arith_f208b_listing.py
+run "FP add double signs (jb_af1c F208B1-B7 on the model)" ./run_program.sh programs/fp_arith_f208b.strap StretchFpAddDblBTb \
+    "PC=$(python3 -c 'from strap_asm import assemble; print(assemble(open("programs/fp_arith_f208b.strap").read()).symtab["PASS"]//32)')" \
+    "SEN:712=0"
+
 # -- 1j. Store-close-to-fetch: store a word then immediately reload it;
 # the load must read the new value, not the stale one. The hazard the FP
 # sign-modifier codesign exposed; fixed by tracking each E-box level's

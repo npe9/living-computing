@@ -714,6 +714,14 @@ def strip_fp_sign(op):
         return ("M+MG", 0, 1)
     if op == "M-MGA":
         return ("M+MG", 1, 1)
+    # And ADD DOUBLE's (F208B, pp.96-97): D- is D+ with N (022054.54 20
+    # beside D+'s .44), D-A with both (.74; D+A is .64). D+A needs no
+    # rule -- the generic "A" suffix above strips to D+, which is a real
+    # FP op. D-/D-A cannot, since "D-" is not.
+    if op == "D-":
+        return ("D+", 0, 1)
+    if op == "D-A":
+        return ("D+", 1, 1)
     return None
 
 
