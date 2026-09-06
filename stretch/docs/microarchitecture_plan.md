@@ -242,20 +242,39 @@ hand vectors alone. "Enables" notes the dependency chain.
    differences from ADD the manual states -- the fractions are 96 bits
    rather than 48 extended to 96, so a preparatory shift LOSES what it
    pushes past the right end; PSH is still "difference exceeds 48";
-   and noisy mode does not pre-extend the operands. jb_af1c F208A1-A19
-   (pp.93-96: nine unflagged, five flagged, five normalization-
-   modifier) passes. Two injections, each halting in its own half: D+ reading
+   and noisy mode does not pre-extend the operands. The WHOLE of
+   jb_af1c F208A (pp.93-96, A1-A20: nine unflagged, five flagged, five
+   normalization-modifier and A20) passes, and the block's address
+   arithmetic closes on 015026.40, where the listing's own exit
+   sequence (BD,$+1.0 / B,FAD1 / SIC,SENO+.32 / B,SSW) begins.
+   Four injections, each halting in its own quarter: D+ reading
    only the accumulator's high 48 bits halts at 014617.40 (A1); the
    flagged path dropping the surviving operand's low half halts at
    014732.00 (A10) while A1-A9 still pass -- worth having, since that
    path returns an operand whole rather than computing anything, so
-   nothing unflagged would have noticed it losing 48 bits.
-   A19 adds a third: normalizing only the high 48 bits halts at
-   015014.00, and it is the only sub-test in the block that normalizes
-   at all -- A15-A18 keep a flagged survivor, where normalization is
-   suppressed.
-   Next: F208A20 onward (from 015016.00; needs FK47/FK48/FK101 from a
-   pool page not yet read), then F208B/C/D, then F209's D+MG and SRD. Still open in double
+   nothing unflagged would have noticed it losing 48 bits;
+   normalizing only the high 48 bits halts at 015014.00 (A19); and
+   dropping the normalization exponent adjustment on the UNFLAGGED
+   branch halts at A20's own exponent check while A1-A19 pass.
+   That last one separates two things that read alike. A15-A19 all use
+   D+(N), but every one of them has a flagged operand, so the
+   normalization they do (or, for A15-A18, the suppression of it)
+   happens inside the flagged branch. A20 is the only sub-test in the
+   routine that normalizes an unflagged 96-bit sum -- and the only one
+   whose result exponent is checked on its own, 12 bits at accumulator
+   offset 116 (IBM 0-11), with the fraction checked as two separate
+   48-bit fields at offsets 68 and 20 rather than folded into a
+   60-bit check. Its arithmetic sits exactly on the PSH boundary: the
+   exponents differ by 48, so the operand shifts out of the high half
+   into the low half exactly, and the 12-place normalization then
+   pulls bits back across that boundary (50 - 12 = 38, the exponent
+   FK101 checks).
+   Constant-pool addressing worth recording: FKn (n decimal) sits at
+   octal 022141 + n, not 022142 + n -- one FK number is skipped
+   between FK48 and FK101, so the later constants run one address
+   below the naive formula. Verified: FK46=022220, FK47=022221,
+   FK48=022222, FK101=022306, FK105=022312.
+   Next: F208B/C/D, then F209's D+MG and SRD. Still open in double
    precision: D+MG, D-, SRD, SLO, D*, D/, LFT -- the first real double-precision
    ARITHMETIC, which needs the 96-bit adder and the accumulator's low
    half as a genuine operand rather than something only cleared.

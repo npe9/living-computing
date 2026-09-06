@@ -1553,6 +1553,14 @@ function ActionValue#(Tuple4#(HWordAddr, Maybe#(Tuple2#(Bit#(4), IndexWord)),
               FpdResult r = fpAddDouble(da, db, normalized, noisy);
               st.writeWord(addrAccLeft, fpdAccLeft(r.res));
               st.writeWord(addrAccRight, fpdAccRight(r.res, accR));
+              // ADD leaves sign byte bits 0-3 and 5-7 alone and replaces
+              // only bit 4 with the sum's sign (p.86), and D+ is "similar
+              // to ADD". That falls out rather than being arranged:
+              // r.res.flags is a.flags, a is the accumulator, and its
+              // flags came from sbFlags(accS) -- so writing them back is
+              // a no-op on 5-7. The TF/UF/VF INDICATORS are a separate
+              // thing and do come from the addressed operand (p.87, set
+              // above for every FP op with an operand).
               st.writeWord(addrAccSignByte, sbWith(accS, r.res.sign, r.res.flags));
               ind = setBit(ind, ind_MOP, 0);
               // The result indicators only ever ask whether the result

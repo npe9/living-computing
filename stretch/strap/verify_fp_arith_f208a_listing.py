@@ -1,10 +1,14 @@
 #!/usr/bin/env python3
-"""verify_fp_arith_f208a_listing.py -- the transcribed F208A1-A9
-(programs/fp_arith_f208a.strap: ADD DOUBLE arithmetic checks, the nine
-unflagged sub-tests, the five flagged ones and the five
-normalization-modifier ones) checked bit-for-bit against jb_af1c
-pp.93-96, plus its twenty-seven constants against the pool
-pp.176-178.
+"""verify_fp_arith_f208a_listing.py -- the whole of F208A
+(programs/fp_arith_f208a.strap: ADD DOUBLE arithmetic checks -- the
+nine unflagged sub-tests, the five flagged ones, the five
+normalization-modifier ones and A20, the one exponent-only check)
+checked bit-for-bit against jb_af1c pp.93-96, plus its thirty
+constants against the pool pp.176-178.
+
+A20 closes the routine: its last BRGZ is at 015026.00 and the
+listing's exit sequence (BD,$+1.0 / B,FAD1 / SIC,SENO+.32 / B,SSW)
+starts at 015026.40, which is where PASS sits here.
 """
 import sys
 from strap_asm import assemble
@@ -40,6 +44,9 @@ CONST_ROWS = [
     ("022210.00", "0777572525252525252520", "FK38"),
     ("022211.00", "0777625252525252525240", "FK39"),
     ("022220.00", "1746577777777777777760", "FK46"),
+    ("022221.00", "0031000017777777777760", "FK47"),
+    ("022222.00", "0030177777777777600000", "FK48"),
+    ("022306.00", "0023177777777777600000", "FK101"),
 ]
 
 CODE_ROWS = [
@@ -250,7 +257,21 @@ CODE_ROWS = [
     ("015014.00", "22024.14 80 060012.15 70", "CT0110(BU,48), FPK15+.12, 20"),
     ("015015.00", "1310.00 80", "SIC, SEN"),
     ("015015.40", "1304.35 42", "BRGZ, SERS"),
+    ("015016.00", "15016.50 00", "B, $+.32"),
+    ("015016.40", "22221.44 60", "DL(U), FK47"),
+    ("015017.00", "22052.14 80 060012.06 70", "C0011(BU,48), FPK37+.12, 20"),
+    ("015020.00", "22054.04 20", "D+(N), FPK39"),
+    ("015020.40", "22306.00 80 014072.15 70", "CT0110(BU,12), FK101, 116"),
+    ("015021.40", "1310.00 80", "SIC, SEN"),
+    ("015022.00", "1304.35 42", "BRGZ, SERS"),
+    ("015022.40", "22220.14 80 060042.15 70", "CT0110(BU,48), FK46+.12, 68"),
+    ("015023.40", "1310.00 80", "SIC, SEN"),
+    ("015024.00", "1304.35 42", "BRGZ, SERS"),
+    ("015024.40", "22222.14 80 060012.15 70", "CT0110(BU,48), FK48+.12, 20"),
+    ("015025.40", "1310.00 80", "SIC, SEN"),
+    ("015026.00", "1304.35 42", "BRGZ, SERS"),
 ]
+
 
 if __name__ == "__main__":
     fails = check_rows(prog, CONST_ROWS, label="constants")

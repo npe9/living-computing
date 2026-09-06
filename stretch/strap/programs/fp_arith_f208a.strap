@@ -1,6 +1,8 @@
 ! Floating-point diagnostic jb_af1c, routine F208A "ADD DOUBLE TEST
-! ROUTINE -- ARITHMETIC CHECKS", sub-tests A1-A19 (docs/jb_af1c_
-! floating-point.pdf pp.93-96, octal 014613.00-015016.00): the
+! ROUTINE -- ARITHMETIC CHECKS", the whole routine, A1-A20
+! (docs/jb_af1c_floating-point.pdf pp.93-96, octal
+! 014613.00-015026.40, where the listing's own exit sequence
+! BD,$+1.0 / B,FAD1 / SIC,SENO+.32 / B,SSW begins): the
 ! exercise of D+ -- the first double-precision ARITHMETIC the model
 ! can do.
 !
@@ -55,14 +57,14 @@
 ! 1304) -> FAIL halt, SEN (octal 1310) -> scratch. The prologue
 ! (014607.40, the SSIP routine identification) is not transcribed; the
 ! block starts at the "B,$+.32" ahead of F208A1. Constants from the
-! pool p.176.
+! pool pp.176 and 178.
 !
 ! Instructions: B, DL(U), C0011 into the accumulator at offset 20,
 ! D+(U), CT0110 over 60-, 48- and 12-bit fields at offsets 20/68/116,
 ! BZLC, SIC, BRGZ.
 ! verify_fp_arith_f208a_listing.py checks every word bit-for-bit.
 !
-! Observed: all nineteen passed on the first run of a freshly written
+! Observed: all twenty passed on the first run of a freshly written
 ! 96-bit adder, which is a stronger statement than it sounds -- the
 ! low-order checks are sensitive to every bit of the preparatory shift
 ! and the carry across the halves. Two injections show the two halves
@@ -76,6 +78,25 @@
 !     pass. That one is worth having: the flagged path returns an
 !     operand whole rather than computing anything, so nothing in
 !     A1-A9 would have noticed it losing 48 bits.
+!   - A20 reaches a third place: it is the only sub-test in the
+!     routine that normalizes on the UNFLAGGED path. Every earlier
+!     D+(N) -- A15 through A19 -- has a flagged operand, so its
+!     normalization runs in the flagged branch instead, and A1-A18's
+!     D+(U) does not normalize at all. Dropping the normalization
+!     exponent adjustment on the unflagged branch therefore halts at
+!     A20's own exponent check (SIC stores 015022.40, the half-word
+!     after the BRGZ that guards the CT0110(BU,12) at 015020.40) with
+!     A1-A19 still passing.
+!
+! A20 is also the routine's only isolated exponent check: 12 bits at
+! accumulator offset 116 (IBM 0-11), with the fraction checked as two
+! separate 48-bit fields at offsets 68 (IBM 12-59) and 20 (IBM
+! 60-107), where every earlier flagged sub-test folds exponent and
+! high fraction together into one 60-bit check at 68. Its arithmetic
+! sits exactly on the PSH boundary -- the exponents differ by 48, so
+! the operand shifts out of the high half into the low half exactly --
+! and the 12-place normalization then pulls bits back across that
+! boundary, 50 - 12 = 38 being the exponent FK101 checks.
 
 ! -- SSIP framework substitutes --
         SLC, (8)1304.0
@@ -114,6 +135,8 @@ FK36    DD(BU,64,8), (8)1000177777777777777760
 FK38    DD(BU,64,8), (8)0777572525252525252520
         SLC, (8)22220.0
 FK46    DD(BU,64,8), (8)1746577777777777777760
+FK47    DD(BU,64,8), (8)0031000017777777777760
+FK48    DD(BU,64,8), (8)0030177777777777600000
         SLC, (8)22010.0
 FPK3    DD(BU,64,8), (8)0000125252525252525240
 FPK4    DD(BU,64,8), (8)0000452525252525252520
@@ -125,6 +148,8 @@ FK26    DD(BU,64,8), (8)1777412525252525252520
 FK27    DD(BU,64,8), (8)1577405252525252525240
         SLC, (8)22211.0
 FK39    DD(BU,64,8), (8)0777625252525252525240
+        SLC, (8)22306.0
+FK101   DD(BU,64,8), (8)0023177777777777600000
 
 ! -- code (verbatim, at the listing's addresses) --
         SLC, (8)14613.0
@@ -335,5 +360,18 @@ DAD1A   B, $+.32   ! F208A1: exp. mem + 48 + exp. acc.
         CT0110(BU,48), FPK15+.12, 20   ! and its low order half
         SIC, SEN
         BRGZ, SERS
-PASS    BEW, $                  ! 015016.00: where F208A20 begins
+        B, $+.32   ! F208A20: exponents of opnds in N range
+        DL(U), FK47
+        C0011(BU,48), FPK37+.12, 20   ! set the accumulator's low half
+        D+(N), FPK39   ! normalized
+        CT0110(BU,12), FK101, 116   ! the result exponent -- result normalized
+        SIC, SEN
+        BRGZ, SERS
+        CT0110(BU,48), FK46+.12, 68   ! IBM 12-59 of the fraction
+        SIC, SEN
+        BRGZ, SERS
+        CT0110(BU,48), FK48+.12, 20   ! and IBM 60-107
+        SIC, SEN
+        BRGZ, SERS
+PASS    BEW, $                  ! 015026.40: F208A exits here
         END, DAD1A
