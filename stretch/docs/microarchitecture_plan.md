@@ -207,7 +207,19 @@ hand vectors alone. "Enables" notes the dependency chain.
    sub-tests) passes, and its bits-60-107 check is discriminating --
    making DL leave the right half alone halts it at 014461.00. The
    assembler already encoded DL/DLWF from FP_CODES, verified against
-   the listing's own 22205.44 60 / 22006.44 60 / 22167.04 60.
+   the listing's own 22205.44 60 / 22006.44 60 / 22167.04 60 -- all
+   three DL forms. CORRECTION to 057e47d's commit message, which also
+   listed 22205.46 60 for DLWF(U) as one of "the listing's own": that
+   one is this assembler's output and has not been checked against any
+   printed line. F207E carries real DLWF encodings and will settle it.
+   Untested in what 057e47d shipped, worth knowing before building on
+   it: DLWF has no coverage at all; noisy mode has none (it is the only
+   case where DL leaves bits 60-107 non-zero); and neither does the
+   generated-EF path where a DL(N) normalization drives the exponent
+   past -1024. The last is safe by inspection -- fpMakeExp passes its
+   fraction argument through untouched, so the high half taken from
+   `v.frac` and the low half taken from `f96` cannot disagree -- but
+   that is inspection, not a run.
    Next in the double-precision family: F207B/C (unchanged registers)
    and F207E (DLWF, which the model has but nothing yet exercises),
    then F208's D+ -- the first real double-precision ARITHMETIC, which
