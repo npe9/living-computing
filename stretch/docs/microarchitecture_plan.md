@@ -229,9 +229,13 @@ hand vectors alone. "Enables" notes the dependency chain.
    E-box's own registers (words 7-15) did not hold a following VFL or
    connective fetch of that word. A level fetching 7-15 now waits for
    the newest earlier level whatever it does.
-   Next in the double-precision family: F207E (DLWF, which the model
-   has but nothing yet exercises, and which carries the real DLWF
-   encodings), then F208's D+ -- the first real double-precision
+   F207E (DLWF) is DONE too and passed as the model stood, which also
+   settles the encoding note above: 22007.46 60 and 22142.46 60 are
+   now listing-verified. Its E2 is the discriminating case -- FK0 is
+   zero everywhere but its three flag bits, so a DLWF that ignored
+   them passes every arithmetic check and fails only the sign byte
+   (halts at 014602.40). The whole LOAD DOUBLE family (F207A-E) is now
+   verified against the diagnostic. Next: F208's D+ -- the first real double-precision
    ARITHMETIC, which needs the 96-bit adder and the accumulator's low
    half as a genuine operand rather than something only cleared.
    Related nearby routine also located and runnable-with-effort: F203B

@@ -381,6 +381,19 @@ run "Look-ahead: E-box-register-close-to-fetch" ./run_program.sh programs/ebox_r
     "PC=$(python3 -c 'from strap_asm import assemble; print(assemble(open("programs/ebox_register_close_to_fetch.strap").read()).symtab["PASS"]//32)')" \
     "SEN:712=0"
 
+# -- 1m''. jb_af1c F207E (p.92): LOAD DOUBLE WITH FLAG, the one thing
+# DLWF does that DL does not -- the addressed operand's flag bits reach
+# the sign byte's positions 5-7 and the TF/UF/VF indicators, where DL
+# zeroes the sign byte's copy. E1 loads flags of zero over ones, E2
+# flags of ones over zeros (FK0 is zero everywhere but its flags, so
+# the arithmetic checks all pass and only the flags can fail). Making
+# DLWF zero the flags like DL halts at 014602.40. This is also the
+# block that puts a real DLWF encoding under the listing oracle.
+run "FP load double with flag (jb_af1c F207E, encoding)" python3 verify_fp_arith_f207e_listing.py
+run "FP load double with flag (jb_af1c F207E on the model)" ./run_program.sh programs/fp_arith_f207e.strap StretchFpLoadDblETb \
+    "PC=$(python3 -c 'from strap_asm import assemble; print(assemble(open("programs/fp_arith_f207e.strap").read()).symtab["PASS"]//32)')" \
+    "SEN:712=0"
+
 # -- 1j. Store-close-to-fetch: store a word then immediately reload it;
 # the load must read the new value, not the stale one. The hazard the FP
 # sign-modifier codesign exposed; fixed by tracking each E-box level's

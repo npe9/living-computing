@@ -1,0 +1,117 @@
+! Floating-point diagnostic jb_af1c, routine F207E "LOAD DOUBLE WITH
+! FLAG TEST ROUTINE" (docs/jb_af1c_floating-point.pdf p.92, octal
+! 014544.40-014605.40): two sub-tests of DLWF, which differs from DL
+! in exactly one way (Ref. Manual p.96): "the flag bits T, U, and V of
+! the addressed operand set the accumulator flag bits in the sign byte
+! register bit positions 5-7 as well as the data flag indicators TF,
+! UF, VF", where DL zeroes the sign byte's copy.
+!   E1 loads an operand whose flag bits are ZERO (FPK2) into an
+!     accumulator whose sign byte word has been set to ones (CM1111
+!     over all 64 bits) and whose TF/UF/VF indicators have been set to
+!     one by BB1. Everything DL guarantees is re-checked -- bits 0-59
+!     loaded, 60-107 cleared, 108-127 untouched -- and then the flag
+!     bits must be zero (CT0011 at 10.5) and BTF/BUF/BVF must not
+!     branch.
+!   E2 is the mirror: sign byte zeroed, indicators cleared by Z,$IND,
+!     and FK0 loaded -- a word that is zero everywhere EXCEPT its three
+!     flag bits, which are ones. The flag bits must come back ones
+!     (CT1100 at 10.5) and BZTF/BZUF/BZVF must not branch, while bits
+!     0-59 must be the zeros FK0 carries.
+!
+! FK0 is what makes E2 sharp: an operand whose only non-zero content
+! is the flags, so a DLWF that ignored them would leave the sign byte
+! at the zeros CM0000 wrote and fail on the flags alone, with every
+! arithmetic check passing.
+!
+! Substitutions (SSIP framework, real listed addresses): SERS (octal
+! 1304) -> FAIL halt, SEN (octal 1310) -> scratch, PASS -> the
+! routine's exit at 014605.40 (the listing's "B,$+1.", followed by
+! B,F207E / SIC,SEN0+.32 / B,SSW). Constants from the pool pp.176-177.
+!
+! Instructions: BD, C0000/C1111, CM1111/CM0000 on the sign byte word,
+! BB1 on $TF/$UF/$VF, DLWF(U), CT0110 over 60/48/20-bit fields at
+! accumulator offsets 68/20/0, CT0011 and CT1100 over 3 bits at 10.5,
+! BTF/BUF/BVF, BZTF/BZUF/BZVF, Z($IND), SIC, BRGZ.
+! verify_fp_arith_f207e_listing.py checks every word bit-for-bit.
+!
+! Observed: passed on the model as it stood -- DLWF was implemented
+! alongside DL but until now nothing exercised it. E2's sign-byte
+! check is the discriminating one: making DLWF zero the flag bits like
+! DL halts this program at 014602.40, the instruction after E2's
+! CT1100 "check $SB flag bits set to ones". (The TF/UF/VF indicators
+! are set from the addressed operand's flags for every FP operation
+! with an operand, ahead of the per-opcode arms, so they were right
+! either way -- it is the sign byte's copy that separates DLWF from
+! DL.) This block is also what puts a real DLWF encoding under the
+! listing oracle: 22007.46 60 and 22142.46 60.
+
+! -- SSIP framework substitutes --
+        SLC, (8)1304.0
+SERS    BEW, $
+        SLC, (8)1310.0
+SEN     DD(BU,64,8), 0
+
+! -- constants (pool pp.176-177) --
+
+        SLC, (8)22005.0
+FPK0    DD(BU,64,8), (8)0000000000000000000000
+        SLC, (8)22006.0
+FPK1    DD(BU,64,8), (8)1777777777777777777777
+        SLC, (8)22007.0
+FPK2    DD(BU,64,8), (8)1777777777777777777760
+        SLC, (8)22142.0
+FK0     DD(BU,64,8), (8)0000000000000000000007
+
+! -- code (verbatim, at the listing's addresses) --
+        SLC, (8)14544.40
+FLD1E   BD, $+.32   ! F207E1: load 1 S opnd with flags
+        C0000(BU,64), FPK0, 64   ! left half zeros
+        C1111(BU,64), FPK1   ! right half ones
+        CM1111(BU,64), 10.0   ! and the whole sign byte word
+        BB1, $TF, $+1.   ! all three data flag indicators to one
+        BB1, $UF, $+1.   ! all three data flag indicators to one
+        BB1, $VF, $+1.   ! all three data flag indicators to one
+        DLWF(U), FPK2   ! whose flag bits are ZERO
+        CT0110(BU,60), FPK1, 68   ! check L 0-59 1 S
+        SIC, SEN
+        BRGZ, SERS
+        CT0110(BU,48), FPK0, 20   ! check acc. bits 60-107 set to zero
+        SIC, SEN
+        BRGZ, SERS
+        CT0110(BU,20), FPK1   ! check R 44-63 remain unchanged
+        SIC, SEN
+        BRGZ, SERS
+        CT0011(BU,3), 10.5   ! check $SB flag bits set to zero
+        SIC, SEN
+        BRGZ, SERS
+        SIC, SEN
+        BTF, SERS   ! error if data flag indicators not set to zero
+        SIC, SEN
+        BUF, SERS   ! error if data flag indicators not set to zero
+        SIC, SEN
+        BVF, SERS   ! error if data flag indicators not set to zero
+        C1111(BU,64), FPK1, 64   ! F207E2: load 0 S opnd with flags
+        C1111(BU,64), FPK1
+        CM0000(BU,8), 10.0   ! sign byte to zeros
+        Z, $IND
+        DLWF(U), FK0   ! whose flag bits are ONES
+        CT0110(BU,60), FPK0, 68   ! check L0-59 +0 S
+        SIC, SEN
+        BRGZ, SERS
+        CT0110(BU,48), FPK0, 20   ! check acc. bits 60-107 set to zero
+        SIC, SEN
+        BRGZ, SERS
+        CT0110(BU,20), FPK1   ! check R 44-63 remain unchanged
+        SIC, SEN
+        BRGZ, SERS
+        CT1100(BU,3), 10.5   ! check $SB flag bits set to ones
+        SIC, SEN
+        BRGZ, SERS
+        SIC, SEN
+        BZTF, SERS   ! error if data flag indicators not set to ones
+        SIC, SEN
+        BZUF, SERS   ! error if data flag indicators not set to ones
+        SIC, SEN
+        BZVF, SERS   ! error if data flag indicators not set to ones
+PASS    BEW, $                  ! 014605.40: the routine's exit ("B,$+1.")
+        END, FLD1E
