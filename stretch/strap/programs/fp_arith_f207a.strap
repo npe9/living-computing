@@ -1,0 +1,116 @@
+! Floating-point diagnostic jb_af1c, routine F207A "LOAD DOUBLE TEST
+! ROUTINE -- ARITHMETIC CHECKS" (docs/jb_af1c_floating-point.pdf p.89,
+! octal 014452.40-014506.00): five sub-tests of DL, the first
+! double-precision instruction.
+!
+! LOAD DOUBLE (Ref. Manual p.96) "is the same as LOAD except that the
+! accumulator bits 60-107 are set to zero": the operand's exponent and
+! fraction replace bits 0-59, bits 60-107 -- the LOW half of the
+! double-precision 96-bit fraction -- are cleared, and bits 108-127
+! remain unchanged. Every sub-test here checks both halves: CT0110 of
+! 60 bits at accumulator offset 68 (bits 0-59) against the operand or
+! its normalized form, then CT0110 of 48 bits at offset 20 (bits
+! 60-107) against FPK0 -- zero. A1 and A2 first fill the accumulator's
+! right half with ones (C1111 at offset 0), so the second check is a
+! real one: it fails unless DL actually clears what was there.
+!   A1 all ones (FPK1), A2 all zeros (FPK0), unnormalized.
+!   A3-A5 the normalization modifier: DL(N) of an XFP operand (FK21,
+!     +2047) and an XFN one (FK30, -1791) must NOT normalize -- both
+!     have unnormalized fractions and the listing's comment is "error
+!     if result normalized" -- while an N-range operand must (A5:
+!     FPK10 normalized is FPK9, the same pair F204E and F206A13 use).
+!
+! The accumulator's 128 magnitude bits hold IBM bit n at bit 127-n, so
+! the fraction's low half is the left half's bits 60-63 plus the right
+! half's 64-107, and offset 20 with a 48-bit field addresses exactly
+! that -- which is what makes A1's check discriminating.
+!
+! Substitutions (SSIP framework, real listed addresses): SERS (octal
+! 1304) -> FAIL halt, SEN (octal 1310) -> scratch, PASS -> the
+! routine's exit at 014506.00 (the listing's "BD,$+1.0", followed by
+! B,FLD1 / SIC,SEN0+.32 / B,SSW). The prologue FLD1 (014447.00, the
+! SSIP routine identification) is not transcribed; the block starts at
+! the "B,$+.32" ahead of F207A1. Constants from the pool pp.176-177.
+!
+! Instructions: B, Z($L), C1111 (connect to accumulator), DL(U)/DL(N),
+! CT0110 over 60- and 48-bit fields at accumulator offsets 68 and 20,
+! SIC, BRGZ. verify_fp_arith_f207a_listing.py checks every word
+! bit-for-bit.
+!
+! Observed: passed on the first run with DL/DLWF newly implemented,
+! and A1's second check is discriminating -- making DL write the right
+! half back unchanged (so the low half of the fraction survives the
+! load, which is exactly how LOAD behaves) halts this program at
+! 014461.00, the instruction after A1's "were acc. bits 60-107 set to
+! zero" BRGZ. A3/A4 also confirm that normalization stays suppressed
+! for flagged operands in the double-precision load, and A5 that it
+! happens for an N-range one.
+
+! -- SSIP framework substitutes --
+        SLC, (8)1304.0
+SERS    BEW, $
+        SLC, (8)1310.0
+SEN     DD(BU,64,8), 0
+
+! -- constants (pool pp.176-177) --
+
+        SLC, (8)22005.0
+FPK0    DD(BU,64,8), (8)0000000000000000000000
+        SLC, (8)22006.0
+FPK1    DD(BU,64,8), (8)1777777777777777777777
+        SLC, (8)22016.0
+FPK9    DD(BU,64,8), (8)0000125252525252525000
+        SLC, (8)22017.0
+FPK10   DD(BU,64,8), (8)0002402525252525252520
+        SLC, (8)22167.0
+FK21    DD(BU,64,8), (8)1777403777777777777760
+        SLC, (8)22200.0
+FK30    DD(BU,64,8), (8)1577617777777777777760
+
+! -- code (verbatim, at the listing's addresses) --
+        SLC, (8)14452.40
+FLD1A   B, $+.32   ! F207A1: load all ones oper and
+        Z, $L
+        C1111(BU,64), FPK1   ! preset the right half to ones
+        DL(U), FPK1
+        CT0110(BU,60), FPK1, 68   ! was L 0-59 loaded correctly
+        SIC, SEN
+        BRGZ, SERS
+        CT0110(BU,48), FPK0, 20   ! were acc. bits 60-107 set to zero
+        SIC, SEN
+        BRGZ, SERS
+        B, $+.32   ! F207A2: load all zeros operand
+        C1111(BU,64), FPK1   ! preset the right half to ones
+        DL(U), FPK0
+        CT0110(BU,60), FPK0, 68   ! was L 0-59 loaded correctly
+        SIC, SEN
+        BRGZ, SERS
+        CT0110(BU,48), FPK0, 20   ! were acc. bits 60-107 set to zero
+        SIC, SEN
+        BRGZ, SERS
+        B, $+.32   ! F207A3: exponent of opnd in XFP range
+        DL(N), FK21
+        CT0110(BU,60), FK21, 68   ! error if result normalized
+        SIC, SEN
+        BRGZ, SERS
+        CT0110(BU,48), FPK0, 20   ! were acc. bits 60-107 set to zero
+        SIC, SEN
+        BRGZ, SERS
+        B, $+.32   ! F207A4: exponent of opnd in XFN range
+        DL(N), FK30
+        CT0110(BU,60), FK30, 68   ! error if result normalized
+        SIC, SEN
+        BRGZ, SERS
+        CT0110(BU,48), FPK0, 20   ! were acc. bits 60-107 set to zero
+        SIC, SEN
+        BRGZ, SERS
+        B, $+.32   ! F207A5: exponent of opnd in N range
+        DL(N), FPK10
+        CT0110(BU,60), FPK9, 68   ! check for normalized result
+        SIC, SEN
+        BRGZ, SERS
+        CT0110(BU,48), FPK0, 20   ! were acc. bits 60-107 set to zero
+        SIC, SEN
+        BRGZ, SERS
+PASS    BEW, $                  ! 014506.00: the routine's exit ("BD,$+1.0")
+        END, FLD1A

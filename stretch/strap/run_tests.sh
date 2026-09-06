@@ -342,6 +342,19 @@ run "FP M+MG indicators (jb_af1c F206D on the model)" ./run_program.sh programs/
     "PC=$(python3 -c 'from strap_asm import assemble; print(assemble(open("programs/fp_arith_f206d.strap").read()).symtab["PASS"]//32)')" \
     "SEN:712=0"
 
+# -- 1m. jb_af1c F207A (p.89): LOAD DOUBLE, the first double-precision
+# instruction -- DL is LOAD plus "accumulator bits 60-107 are set to
+# zero" (Ref. Manual p.96), the low half of the 96-bit double fraction.
+# Five sub-tests, each checking bits 0-59 against the operand and bits
+# 60-107 against zero, with the right half pre-filled with ones first
+# so the second check bites: making DL leave the right half alone halts
+# at 014461.00. A3-A5 also cover the normalization modifier over the
+# XFP, XFN and N ranges.
+run "FP load double (jb_af1c F207A, encoding)" python3 verify_fp_arith_f207a_listing.py
+run "FP load double (jb_af1c F207A on the model)" ./run_program.sh programs/fp_arith_f207a.strap StretchFpLoadDblATb \
+    "PC=$(python3 -c 'from strap_asm import assemble; print(assemble(open("programs/fp_arith_f207a.strap").read()).symtab["PASS"]//32)')" \
+    "SEN:712=0"
+
 # -- 1j. Store-close-to-fetch: store a word then immediately reload it;
 # the load must read the new value, not the stale one. The hazard the FP
 # sign-modifier codesign exposed; fixed by tracking each E-box level's

@@ -1413,9 +1413,10 @@ function ActionValue#(Tuple4#(HWordAddr, Maybe#(Tuple2#(Bit#(4), IndexWord)),
         Bool known = (c == 7'b0000010 || c == 7'b0100010 || c == 7'b0000110 || c == 7'b0100110
                    || c == 7'b0001010 || c == 7'b0101010 || isST
                    || c == 7'b0010010 || c == 7'b0110010 || c == 7'b0010110 || c == 7'b0110110
-                   || c == 7'b0011010 || c == 7'b1010110 || isEplI || isSHF);
+                   || c == 7'b0011010 || c == 7'b1010110 || isEplI || isSHF
+                   || c == 7'b1000110 || c == 7'b1100110);   // DL / DLWF
         if (!known)
-          ind = setOpInvalid(ind);   // /, R/, double precision, SRT, LFT, *+ ...: not yet
+          ind = setOpInvalid(ind);   // /, R/, the rest of double precision, SRT, LFT, *+ ...: not yet
         else if (isST) begin
           FpNum v = fpApplySignMods(acc, fp.absSign, fp.invSign);
           st.writeWord(ea, fpToWord(v));
@@ -1490,6 +1491,48 @@ function ActionValue#(Tuple4#(HWordAddr, Maybe#(Tuple2#(Bit#(4), IndexWord)),
                 v = vn; gen = g;
               end
               st.writeWord(addrAccLeft, fpAccLeft(v, accL));
+              st.writeWord(addrAccSignByte, fpSignByte(v, accS));
+              ind = setBit(ind, ind_MOP, 0);
+              ind = setResultIndicatorsFp(ind, v);
+              ind = setRangeIndicators(ind, fpRangeBits(v, gen, !gen && v.ef == 1));
+              ind = setBit(ind, ind_ZM, 0);
+            end
+            7'b1000110, 7'b1100110: begin // DL / DLWF (p.96)
+              // LOAD DOUBLE "is the same as LOAD except that the
+              // accumulator bits 60-107 are set to zero": the exponent
+              // and fraction replace bits 0-59, bits 60-107 -- the low
+              // half of the double-precision 96-bit fraction -- are
+              // cleared, and bits 108-127 remain unchanged. DLWF
+              // additionally takes the addressed operand's flag bits
+              // into the sign byte's bits 5-7 (and the TF/UF/VF
+              // indicators), where DL zeroes them; that is the same
+              // difference L and LWF already have.
+              //
+              // In the accumulator's 128 magnitude bits, IBM bit n is
+              // bit 127-n, so the fraction's low half lands as the
+              // left half's bits 60-63 and the right half's 64-107,
+              // and 108-127 are the right half's low 20 bits.
+              //
+              // Normalization is over the WHOLE 96-bit fraction. With
+              // the low half zero the shift can still only be up to 47
+              // places (the leading one is in the high half), so the
+              // exponent adjustment matches LOAD's -- but noisy mode
+              // does differ: its one-bits go into the vacated
+              // low-order positions, which here are real accumulator
+              // bits 60-107 rather than bits that fall off the end.
+              // That is why this uses fpNormalize96Wide.
+              FpNum v = opnd;
+              v.flags = (c == 7'b1100110) ? opnd0.flags : 0;
+              Bit#(96) f96 = {v.frac, 48'b0};
+              Bool gen = False;
+              if (normalized && v.ef == 0 && v.frac != 0) begin
+                let {w96, adj, lc} = fpNormalize96Wide(0, f96, True, noisy);
+                let {vn, g} = fpMakeExp(signExtend(fpExp(v)) + adj, w96[95:48], v.sign, v.flags);
+                v = vn; gen = g; f96 = w96;
+              end
+              Word64 accR = st.readAccRight();
+              st.writeWord(addrAccLeft, { v.ef, v.em, v.es, v.frac, f96[47:44] });
+              st.writeWord(addrAccRight, { f96[43:0], accR[19:0] });
               st.writeWord(addrAccSignByte, fpSignByte(v, accS));
               ind = setBit(ind, ind_MOP, 0);
               ind = setResultIndicatorsFp(ind, v);

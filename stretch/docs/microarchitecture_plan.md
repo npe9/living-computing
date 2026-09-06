@@ -197,9 +197,22 @@ hand vectors alone. "Enables" notes the dependency chain.
    the model does not have: the 96-bit fraction across the
    accumulator's two halves, DL/DLWF, D+/D+MG/D-/D-MGA, SRD/SLO/LFT.
    Transcribing F207 needs only DL/DLWF plus connectives already in
-   hand, so that is the natural first increment. If a smaller step is
-   wanted first, the alternative is to go out of diagnostic order to
-   F212's F+ or F213's E+I, both single-precision.
+   hand, so that is the natural first increment, and it is DONE: DL and
+   DLWF are implemented (StretchExecute's Fp arm writes all three
+   accumulator words -- left, right, sign byte -- clearing IBM bits
+   60-107 and keeping 108-127; `fpNormalize96Wide` in StretchFP now
+   returns the whole 96-bit normalized fraction, since noisy mode's
+   one-bits land in bits 60-107 for the double-precision family, and
+   the old 48-bit `fpNormalize96` is a slice of it). F207A (p.89, five
+   sub-tests) passes, and its bits-60-107 check is discriminating --
+   making DL leave the right half alone halts it at 014461.00. The
+   assembler already encoded DL/DLWF from FP_CODES, verified against
+   the listing's own 22205.44 60 / 22006.44 60 / 22167.04 60.
+   Next in the double-precision family: F207B/C (unchanged registers)
+   and F207E (DLWF, which the model has but nothing yet exercises),
+   then F208's D+ -- the first real double-precision ARITHMETIC, which
+   needs the 96-bit adder and the accumulator's low half as a genuine
+   operand rather than something only cleared.
    Related nearby routine also located and runnable-with-effort: F203B
    "EXP RNG INDIC TEST" (p.52, octal 012260+) verifies the exponent-
    range indicators XPFP/XPH/XPL/XPU (set by ST, cleared by Z,$IND)

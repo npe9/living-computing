@@ -135,23 +135,26 @@ function FpNum fpApplySignMods(FpNum x, Bit#(1) absSign, Bit#(1) negSign);
   return x;
 endfunction
 
-// Normalize a 96-bit fraction with overflow bit into 48 bits and an
-// exponent adjustment; noisy mode shifts in ones. Zero fractions are
-// left alone.
-function Tuple3#(Bit#(48), Int#(14), Bool) fpNormalize96(Bit#(1) ovf, Bit#(96) f96, Bool normalized, Bool noisy);
+// Normalize a 96-bit fraction with overflow bit, keeping the WHOLE 96
+// bits, plus an exponent adjustment; noisy mode shifts in ones. Zero
+// fractions are left alone. Single-precision callers want only the
+// high 48 (fpNormalize96 below); LOAD DOUBLE and the rest of the
+// double-precision family need the low half too, since accumulator
+// bits 60-107 are part of the fraction there (p.79-80, p.96) and
+// noisy mode puts its one-bits exactly into them.
+function Tuple3#(Bit#(96), Int#(14), Bool) fpNormalize96Wide(Bit#(1) ovf, Bit#(96) f96, Bool normalized, Bool noisy);
   Bit#(97) v = {ovf, f96};
-  Int#(14) adj = 0;
   Bool lostCarry = False;
   if (v == 0) return tuple3(0, 0, False);
   else if (!normalized) begin
-    // Unnormalized: high 48 bits of the 96-bit sum; overflow bit lost.
+    // Unnormalized: the 96-bit sum stands; overflow bit lost.
     lostCarry = (ovf == 1);
-    return tuple3(f96[95:48], 0, lostCarry);
+    return tuple3(f96, 0, lostCarry);
   end else begin
     if (ovf == 1) begin
       // Right shift one to bring the overflow bit in (p.81).
       Bit#(96) sh = v[96:1];
-      return tuple3(sh[95:48], 1, False);
+      return tuple3(sh, 1, False);
     end else begin
       // Left shift until the high-order bit is one (up to 95 places):
       // a leading-zero count and one shift, with noisy mode filling the
@@ -160,9 +163,15 @@ function Tuple3#(Bit#(48), Int#(14), Bool) fpNormalize96(Bit#(1) ovf, Bit#(96) f
       Int#(14) n = unpack(zeroExtend(pack(nz)));
       Bit#(96) w = f96 << nz;
       if (noisy) w = w | ((96'b1 << nz) - 1);
-      return tuple3(w[95:48], -n, False);
+      return tuple3(w, -n, False);
     end
   end
+endfunction
+
+// Single-precision view of the same normalization: the high 48 bits.
+function Tuple3#(Bit#(48), Int#(14), Bool) fpNormalize96(Bit#(1) ovf, Bit#(96) f96, Bool normalized, Bool noisy);
+  let {w, adj, lc} = fpNormalize96Wide(ovf, f96, normalized, noisy);
+  return tuple3(w[95:48], adj, lc);
 endfunction
 
 // ---- ADD (p.86-87) and its variants. a = accumulator operand, b =
