@@ -311,6 +311,18 @@ run "FP M+MG arithmetic (jb_af1c F206A on the model)" ./run_program.sh programs/
     "PC=$(python3 -c 'from strap_asm import assemble; print(assemble(open("programs/fp_arith_f206a.strap").read()).symtab["PASS"]//32)')" \
     "SEN:712=0"
 
+# -- 1l'. jb_af1c F206B (pp.78-84): ADD MAGNITUDE TO MEMORY over every
+# memory-sign / accumulator-sign / N / A combination, thirty-two
+# sub-tests, each checking ROS's exponent and fraction at offset 4 and
+# its sign bit by BZB/BB. Establishes that the accumulator operand's
+# sign is the one assumed positive, and that the result keeps the
+# ADDRESSED operand's own sign whatever the sum's -- B19 caught the
+# model storing the sum's. See the program header.
+run "FP M+MG sign modifiers (jb_af1c F206B, encoding)" python3 verify_fp_arith_f206b_listing.py
+run "FP M+MG sign modifiers (jb_af1c F206B on the model)" ./run_program.sh programs/fp_arith_f206b.strap StretchFpMgMemBTb \
+    "PC=$(python3 -c 'from strap_asm import assemble; print(assemble(open("programs/fp_arith_f206b.strap").read()).symtab["PASS"]//32)')" \
+    "SEN:712=0"
+
 # -- 1j. Store-close-to-fetch: store a word then immediately reload it;
 # the load must read the new value, not the stale one. The hazard the FP
 # sign-modifier codesign exposed; fixed by tracking each E-box level's

@@ -706,6 +706,14 @@ def strip_fp_sign(op):
         return ("+MG", 0, 1)
     if op == "-MGA":
         return ("+MG", 1, 1)
+    # And ADD MAGNITUDE TO MEMORY's (F206B, pp.78-84): M-MG is M+MG with
+    # N (.52 A0 beside M+MG's .42), M-MGA with both (.72). M+MGA needs no
+    # rule -- the generic "A" suffix above strips to M+MG, which is a real
+    # FP op; M-MG/M-MGA cannot, since M-MG is not.
+    if op == "M-MG":
+        return ("M+MG", 0, 1)
+    if op == "M-MGA":
+        return ("M+MG", 1, 1)
     return None
 
 

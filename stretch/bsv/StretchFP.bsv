@@ -232,14 +232,13 @@ function FpResult fpAdd(FpNum a, FpNum b, Bool normalized, Bool noisy, Bool addM
       //   the following BB requires sign bit 1, the addressed
       //   operand's. Keeping the survivor's exponent halted there.
       //
-      // NOT YET RIGHT: p.83 wants the addressed operand's UNMODIFIED
-      // original sign, while `a.sign` here is the sign after the
-      // absolute modifier. Under M-MGA the two differ -- ABS clears the
-      // addressed sign to 0 and the negated accumulator can still turn
-      // the sum negative -- so the forced zero would come out positive.
-      // Nothing runs that combination yet; F206B, if it mirrors F205B's
-      // thirty-two sign/modifier cases, will, and the unmodified sign
-      // has to reach fpAdd from the M+ arm for it.
+      // Only the EXPONENT matters here for the to-memory direction: the
+      // M+ arm overwrites the result sign with the addressed operand's
+      // unmodified original one (p.83), which is what a forced zero
+      // wants and what `a.sign` -- the sign after the absolute modifier
+      // -- would get wrong under M-MGA. `a.sign` still decides WHETHER
+      // the zero is forced, and there it is the A-modified sign that is
+      // correct (p.89, and jb_af1c F206B23 against B24).
       res.frac = 0;
       if (accIsB) begin
         res.sign = a.sign; res.ef = a.ef; res.em = a.em; res.es = a.es;
@@ -312,9 +311,9 @@ function FpResult fpAdd(FpNum a, FpNum b, Bool normalized, Bool noisy, Bool addM
         // operand.
         forcedZero = True;
         sum = 0;
-        sign = accIsB ? a.sign : 0;   // the absolute-modified sign; see
-                                      // the flagged path's "NOT YET
-                                      // RIGHT" note on M-MGA
+        sign = accIsB ? a.sign : 0;   // overwritten by the M+ arm with
+                                      // the unmodified original sign;
+                                      // see the flagged path's note
       end
       let {frac48, adj, lostCarry} = fpNormalize96(sum[96], sum[95:0], normalized, noisy);
       Bool zeroResult = (sum == 0);

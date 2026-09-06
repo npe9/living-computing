@@ -1,0 +1,441 @@
+! Floating-point diagnostic jb_af1c, routine F206B "TESTS OF SIGN AND
+! MODIFIER COMBINATIONS -- MS+MEM. SIGN, ACS+ACC. SIGN, N AND A ARE
+! MODIFIERS" for ADD MAGNITUDE TO MEMORY (docs/jb_af1c_floating-
+! point.pdf pp.78-84, octal 013642.00-014242.40): thirty-two sub-tests
+! of M+MG / M+MGA / M-MG / M-MGA over every memory-sign (MS) /
+! accumulator-sign (ACS) combination. Each: ROS := a constant (via
+! L(BU)/ST(BU)), L(U) or LN(U) an accumulator operand, the operation
+! to ROS, then CT0110(BU,60) of ROS at offset 4 -- the exponent and
+! fraction, bits 0-59, the sign deliberately excluded -- against the
+! expected constant in the right half, and the sign bit (ROS bit 60)
+! separately by BZB (expect 0) or BB (expect 1). The sub-test comments
+! are the listing's own.
+!
+! The four constants are two magnitudes and their negatives, all with
+! exponent +1: FPK4 = +f (fraction 0101...01), FPK19 = +g (1010...10)
+! = 2f, FPK24 = -f, FPK23 = -g; f + g = FPK22 (all ones) and g - f = f,
+! so every result is FPK22, FPK4 or the forced zero FPK29 (exponent 1,
+! zero fraction). MS is 0 for B1-B16 (memory FPK4/FPK19) and 1 for
+! B17-B32 (FPK23/FPK24); ACS is 1 wherever the accumulator is loaded
+! by LN.
+!
+! What the block establishes (Ref. Manual pp.88-89, ADD MAGNITUDE TO
+! MEMORY):
+!   - The ACCUMULATOR operand's sign is assumed positive, so B9-B16
+!     repeat B1-B8 with LN and expect the identical results.
+!   - The result ALWAYS carries the addressed operand's own original
+!     sign: BZB (bit 0) throughout B1-B16, BB (bit 1) throughout
+!     B17-B32, forced zeros included -- the mirror of F205B's finding
+!     that +MG keeps the accumulator's own sign. B19 and B24 are the
+!     discriminating pair: A makes the memory operand's sign positive
+!     FOR THE ARITHMETIC, the sum comes out positive, and the sign
+!     stored is still the negative one it was loaded with.
+!   - The forced-zero test compares the sum's sign with the addressed
+!     operand's sign AS MODIFIED BY A (B23: FPK24 with A gives a
+!     positive addressed sign against a negative sum, so the forced
+!     zero fires; B24 differs only in which operand dominates and it
+!     does not).
+!
+! Substitutions (SSIP framework, real listed addresses): SERS (octal
+! 1304) -> FAIL halt, SEN (octal 1310) -> scratch, ROS (octal 22355)
+! the memory operand, PASS -> the routine's exit at 014242.40 (the
+! listing's "BD,$+1.0", followed by B,SAP7B / SIC,SEN0+.32 / B,SSW).
+! Constants from the pool p.176, the same six F205B uses (including
+! FPK23, whose "250" reading F205B's arithmetic settled).
+!
+! One listing oddity kept verbatim: B26's accumulator load is L(U),
+! printed 22011.40 60, though its comment reads "MS AND ACS ARE 1"
+! and its pair B25 uses LN. It cannot be distinguished by the run --
+! M+MG assumes the accumulator's sign positive either way.
+!
+! Instructions: BD, B, L(BU)/ST(BU), L(U)/LN(U), M+MG/M+MGA/M-MG/
+! M-MGA, CT0110 with offset 4, SIC, BRGZ, BZB/BB on ROS bit 60.
+! verify_fp_arith_f206b_listing.py checks every word bit-for-bit.
+!
+! Observed: the run halted at B19's SIGN check (SEN = 014072.40, the
+! B,SERS after the BB) with the arithmetic already right -- FPK22 was
+! in ROS, only bit 60 was 0. The model stored the sum's sign; ADD
+! MAGNITUDE TO MEMORY stores the addressed operand's. With that one
+! line all thirty-two pass, B23/B24 included, so the A-modified sign
+! driving the forced-zero comparison was right as it stood.
+
+! -- SSIP framework substitutes --
+        SLC, (8)1304.0
+SERS    BEW, $
+        SLC, (8)1310.0
+SEN     DD(BU,64,8), 0
+        SLC, (8)22355.0
+ROS     DD(BU,64,8), 0
+
+! -- constants (pool p.176) --
+
+        SLC, (8)22011.0
+FPK4    DD(BU,64,8), (8)0000452525252525252520
+        SLC, (8)22030.0
+FPK19   DD(BU,64,8), (8)0000525252525252525240
+        SLC, (8)22033.0
+FPK22   DD(BU,64,8), (8)0000577777777777777760
+        SLC, (8)22034.0
+FPK23   DD(BU,64,8), (8)0000525252525252525250
+        SLC, (8)22035.0
+FPK24   DD(BU,64,8), (8)0000452525252525252530
+        SLC, (8)22042.0
+FPK29   DD(BU,64,8), (8)0000400000000000000000
+
+! -- code (verbatim, at the listing's addresses) --
+        SLC, (8)13642.0
+SAP7B   BD, $+.32   ! SAP7B / F206B1: MS+ACS+N+A+0
+        L(BU), FPK4
+        ST(BU), ROS
+        L(U), FPK19
+        M+MG(U), ROS
+        L(BU), FPK22
+        CT0110(BU,60), ROS, 4   ! check result in memory
+        SIC, SEN
+        BRGZ, SERS
+        BZB, ROS+.60, $+2.0   ! test sign bit 0
+        SIC, SEN
+        B, SERS
+        L(BU), FPK19   ! F206B2: MS,ACS,N AND A ARE 0
+        ST(BU), ROS
+        L(U), FPK4
+        M+MG(U), ROS
+        L(BU), FPK22
+        CT0110(BU,60), ROS, 4   ! check result in memory
+        SIC, SEN
+        BRGZ, SERS
+        BZB, ROS+.60, $+2.0   ! test sign bit 0
+        SIC, SEN
+        B, SERS
+        L(BU), FPK4   ! F206B3: MS,ACS AND N ARE 0, A IS 1
+        ST(BU), ROS
+        L(U), FPK19
+        M+MGA(U), ROS
+        L(BU), FPK22
+        CT0110(BU,60), ROS, 4   ! check result in memory
+        SIC, SEN
+        BRGZ, SERS
+        BZB, ROS+.60, $+2.0   ! test sign bit 0
+        SIC, SEN
+        B, SERS
+        L(BU), FPK19   ! F206B4: MS,ACS AND N ARE 0, A IS 1
+        ST(BU), ROS
+        L(U), FPK4
+        M+MGA(U), ROS
+        L(BU), FPK22
+        CT0110(BU,60), ROS, 4   ! check result in memory
+        SIC, SEN
+        BRGZ, SERS
+        BZB, ROS+.60, $+2.0   ! test sign bit 0
+        SIC, SEN
+        B, SERS
+        L(BU), FPK4   ! F206B5: MS,ACS AND A ARE 0, N IS 1
+        ST(BU), ROS
+        L(U), FPK19
+        M-MG(U), ROS
+        L(BU), FPK29
+        CT0110(BU,60), ROS, 4   ! check result in memory
+        SIC, SEN
+        BRGZ, SERS
+        BZB, ROS+.60, $+2.0   ! test sign bit 0
+        SIC, SEN
+        B, SERS
+        L(BU), FPK19   ! F206B6: MS,ACS AND A ARE 0, N IS 1
+        ST(BU), ROS
+        L(U), FPK4
+        M-MG(U), ROS
+        L(BU), FPK4
+        CT0110(BU,60), ROS, 4   ! check result in memory
+        SIC, SEN
+        BRGZ, SERS
+        BZB, ROS+.60, $+2.0   ! test sign bit 0
+        SIC, SEN
+        B, SERS
+        L(BU), FPK4   ! F206B7: MS AND ACS ARE 0, N AND A ARE 1
+        ST(BU), ROS
+        L(U), FPK19
+        M-MGA(U), ROS
+        L(BU), FPK29
+        CT0110(BU,60), ROS, 4   ! check result in memory
+        SIC, SEN
+        BRGZ, SERS
+        BZB, ROS+.60, $+2.0   ! test sign bit 0
+        SIC, SEN
+        B, SERS
+        L(BU), FPK19   ! F206B8: MS AND ACS ARE 0, N AND A ARE 1
+        ST(BU), ROS
+        L(U), FPK4
+        M-MGA(U), ROS
+        L(BU), FPK4
+        CT0110(BU,60), ROS, 4   ! check result in memory
+        SIC, SEN
+        BRGZ, SERS
+        BZB, ROS+.60, $+2.0   ! test sign bit 0
+        SIC, SEN
+        B, SERS
+        L(BU), FPK4   ! F206B9: MS, N AND A ARE 0, ACS IS 1
+        ST(BU), ROS
+        LN(U), FPK19
+        M+MG(U), ROS
+        L(BU), FPK22
+        CT0110(BU,60), ROS, 4   ! check result in memory
+        SIC, SEN
+        BRGZ, SERS
+        BZB, ROS+.60, $+2.0   ! test sign bit 0
+        SIC, SEN
+        B, SERS
+        L(BU), FPK19   ! F206B10: MS, N AND A ARE 0, ACS IS 1
+        ST(BU), ROS
+        LN(U), FPK4
+        M+MG(U), ROS
+        L(BU), FPK22
+        CT0110(BU,60), ROS, 4   ! check result in memory
+        SIC, SEN
+        BRGZ, SERS
+        BZB, ROS+.60, $+2.0   ! test sign bit 0
+        SIC, SEN
+        B, SERS
+        L(BU), FPK4   ! F206B11: MS AND N ARE 0, ACS AND A ARE 1
+        ST(BU), ROS
+        LN(U), FPK19
+        M+MGA(U), ROS
+        L(BU), FPK22
+        CT0110(BU,60), ROS, 4   ! check result in memory
+        SIC, SEN
+        BRGZ, SERS
+        BZB, ROS+.60, $+2.0   ! test sign bit 0
+        SIC, SEN
+        B, SERS
+        L(BU), FPK19   ! F206B12: MS AND N ARE 0, ACS AND A ARE 1
+        ST(BU), ROS
+        LN(U), FPK4
+        M+MGA(U), ROS
+        L(BU), FPK22
+        CT0110(BU,60), ROS, 4   ! check result in memory
+        SIC, SEN
+        BRGZ, SERS
+        BZB, ROS+.60, $+2.0   ! test sign bit 0
+        SIC, SEN
+        B, SERS
+        L(BU), FPK4   ! F206B13: MS AND A ARE 0, ACS AND N ARE 1
+        ST(BU), ROS
+        LN(U), FPK19
+        M-MG(U), ROS
+        L(BU), FPK29
+        CT0110(BU,60), ROS, 4   ! check result in memory
+        SIC, SEN
+        BRGZ, SERS
+        BZB, ROS+.60, $+2.0   ! test sign bit 0
+        SIC, SEN
+        B, SERS
+        L(BU), FPK19   ! F206B14: MS+A+0   ACS+N+1
+        ST(BU), ROS
+        LN(U), FPK4
+        M-MG(U), ROS
+        L(BU), FPK4
+        CT0110(BU,60), ROS, 4   ! check result in memory
+        SIC, SEN
+        BRGZ, SERS
+        BZB, ROS+.60, $+2.0   ! test sign bit 0
+        SIC, SEN
+        B, SERS
+        L(BU), FPK4   ! F206B15: MS IS 0, ACS, N AND A ARE 1
+        ST(BU), ROS
+        LN(U), FPK19
+        M-MGA(U), ROS
+        L(BU), FPK29
+        CT0110(BU,60), ROS, 4   ! check result in memory
+        SIC, SEN
+        BRGZ, SERS
+        BZB, ROS+.60, $+2.0   ! test sign bit 0
+        SIC, SEN
+        B, SERS
+        L(BU), FPK19   ! F206B16: MS IS 0, ACS, N AND A ARE 1
+        ST(BU), ROS
+        LN(U), FPK4
+        M-MGA(U), ROS
+        L(BU), FPK4
+        CT0110(BU,60), ROS, 4   ! check result in memory
+        SIC, SEN
+        BRGZ, SERS
+        BZB, ROS+.60, $+2.0   ! test sign bit 0
+        SIC, SEN
+        B, SERS
+        L(BU), FPK24   ! F206B17: ACS+N+A+0   M+1
+        ST(BU), ROS
+        L(U), FPK19
+        M+MG(U), ROS
+        L(BU), FPK29
+        CT0110(BU,60), ROS, 4   ! check result in memory
+        SIC, SEN
+        BRGZ, SERS
+        BB, ROS+.60, $+2.0   ! test sign bit 1
+        SIC, SEN
+        B, SERS
+        L(BU), FPK23   ! F206B18: MS+1  ACS+N+A+0
+        ST(BU), ROS
+        L(U), FPK4
+        M+MG(U), ROS
+        L(BU), FPK4
+        CT0110(BU,60), ROS, 4   ! check result in memory
+        SIC, SEN
+        BRGZ, SERS
+        BB, ROS+.60, $+2.0   ! test sign bit 1
+        SIC, SEN
+        B, SERS
+        L(BU), FPK24   ! F206B19: MS AND A ARE 1, ACS AND N ARE 0
+        ST(BU), ROS
+        L(U), FPK19
+        M+MGA(U), ROS
+        L(BU), FPK22
+        CT0110(BU,60), ROS, 4   ! check result in memory
+        SIC, SEN
+        BRGZ, SERS
+        BB, ROS+.60, $+2.0   ! test sign bit 1
+        SIC, SEN
+        B, SERS
+        L(BU), FPK23   ! F206B20: MS AND A ARE 1, ACS AND N ARE 0
+        ST(BU), ROS
+        L(U), FPK4
+        M+MGA(U), ROS
+        L(BU), FPK22
+        CT0110(BU,60), ROS, 4   ! check result in memory
+        SIC, SEN
+        BRGZ, SERS
+        BB, ROS+.60, $+2.0   ! test sign bit 1
+        SIC, SEN
+        B, SERS
+        L(BU), FPK24   ! F206B21: MS AND N ARE 1, ACS AND A ARE 0
+        ST(BU), ROS
+        L(U), FPK19
+        M-MG(U), ROS
+        L(BU), FPK22
+        CT0110(BU,60), ROS, 4   ! check result in memory
+        SIC, SEN
+        BRGZ, SERS
+        BB, ROS+.60, $+2.0   ! test sign bit 1
+        SIC, SEN
+        B, SERS
+        L(BU), FPK23   ! F206B22: MS AND N ARE 1, ACS AND A ARE 0
+        ST(BU), ROS
+        L(U), FPK4
+        M-MG(U), ROS
+        L(BU), FPK22
+        CT0110(BU,60), ROS, 4   ! check result in memory
+        SIC, SEN
+        BRGZ, SERS
+        BB, ROS+.60, $+2.0   ! test sign bit 1
+        SIC, SEN
+        B, SERS
+        L(BU), FPK24   ! F206B23: MS, N AND A ARE 1, ACS IS 0
+        ST(BU), ROS
+        L(U), FPK19
+        M-MGA(U), ROS
+        L(BU), FPK29
+        CT0110(BU,60), ROS, 4   ! check result in memory
+        SIC, SEN
+        BRGZ, SERS
+        BB, ROS+.60, $+2.0   ! test sign bit 1
+        SIC, SEN
+        B, SERS
+        L(BU), FPK23   ! F206B24: MS, N AND A ARE 1, ACS IS 0
+        ST(BU), ROS
+        L(U), FPK4
+        M-MGA(U), ROS
+        L(BU), FPK4
+        CT0110(BU,60), ROS, 4   ! check result in memory
+        SIC, SEN
+        BRGZ, SERS
+        BB, ROS+.60, $+2.0   ! test sign bit 1
+        SIC, SEN
+        B, SERS
+        L(BU), FPK24   ! F206B25: MS AND ACS ARE 1, N AND A ARE 0
+        ST(BU), ROS
+        LN(U), FPK19
+        M+MG(U), ROS
+        L(BU), FPK29
+        CT0110(BU,60), ROS, 4   ! check result in memory
+        SIC, SEN
+        BRGZ, SERS
+        BB, ROS+.60, $+2.0   ! test sign bit 1
+        SIC, SEN
+        B, SERS
+        L(BU), FPK23   ! F206B26: MS AND ACS ARE 1, N AND A ARE 0
+        ST(BU), ROS
+        L(U), FPK4
+        M+MG(U), ROS
+        L(BU), FPK4
+        CT0110(BU,60), ROS, 4   ! check result in memory
+        SIC, SEN
+        BRGZ, SERS
+        BB, ROS+.60, $+2.0   ! test sign bit 1
+        SIC, SEN
+        B, SERS
+        L(BU), FPK24   ! F206B27: MS,ACS AND A ARE 1, N IS 0
+        ST(BU), ROS
+        LN(U), FPK19
+        M+MGA(U), ROS
+        L(BU), FPK22
+        CT0110(BU,60), ROS, 4   ! check result in memory
+        SIC, SEN
+        BRGZ, SERS
+        BB, ROS+.60, $+2.0   ! test sign bit 1
+        SIC, SEN
+        B, SERS
+        L(BU), FPK23   ! F206B28: MS,ACS AND A ARE 1, N IS 0
+        ST(BU), ROS
+        LN(U), FPK4
+        M+MGA(U), ROS
+        L(BU), FPK22
+        CT0110(BU,60), ROS, 4   ! check result in memory
+        SIC, SEN
+        BRGZ, SERS
+        BB, ROS+.60, $+2.0   ! test sign bit 1
+        SIC, SEN
+        B, SERS
+        L(BU), FPK24   ! F206B29: MS, ACS AND N ARE 1, A IS 0
+        ST(BU), ROS
+        LN(U), FPK19
+        M-MG(U), ROS
+        L(BU), FPK22
+        CT0110(BU,60), ROS, 4   ! check result in memory
+        SIC, SEN
+        BRGZ, SERS
+        BB, ROS+.60, $+2.0   ! test sign bit 1
+        SIC, SEN
+        B, SERS
+        L(BU), FPK23   ! F206B30: MS, ACS AND N ARE 1, A IS 0
+        ST(BU), ROS
+        LN(U), FPK4
+        M-MG(U), ROS
+        L(BU), FPK22
+        CT0110(BU,60), ROS, 4   ! check result in memory
+        SIC, SEN
+        BRGZ, SERS
+        BB, ROS+.60, $+2.0   ! test sign bit 1
+        SIC, SEN
+        B, SERS
+        L(BU), FPK24   ! F206B31: MS, ACS, N AND A ARE 1
+        ST(BU), ROS
+        LN(U), FPK19
+        M-MGA(U), ROS
+        L(BU), FPK29
+        CT0110(BU,60), ROS, 4   ! check result in memory
+        SIC, SEN
+        BRGZ, SERS
+        BB, ROS+.60, $+2.0   ! test sign bit 1
+        SIC, SEN
+        B, SERS
+        L(BU), FPK23   ! F206B32: MS, ACS, N AND A ARE 1
+        ST(BU), ROS
+        LN(U), FPK4
+        M-MGA(U), ROS
+        L(BU), FPK4
+        CT0110(BU,60), ROS, 4   ! check result in memory
+        SIC, SEN
+        BRGZ, SERS
+        BB, ROS+.60, $+2.0   ! test sign bit 1
+        SIC, SEN
+        B, SERS
+PASS    BEW, $                  ! 014242.40: the routine's exit ("BD,$+1.0")
+        END, SAP7B

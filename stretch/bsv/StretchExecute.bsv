@@ -1530,6 +1530,21 @@ function ActionValue#(Tuple4#(HWordAddr, Maybe#(Tuple2#(Bit#(4), IndexWord)),
               if (fp.invSign == 1) a.sign = ~a.sign;
               FpResult r = fpAdd(b, a, normalized, noisy, c == 7'b0101010, True);
               FpNum v = r.res; v.flags = opnd0.flags;
+              // ADD MAGNITUDE TO MEMORY keeps the ADDRESSED operand's own
+              // original sign, whatever the sum's: only its magnitude took
+              // part. The mirror of p.88's rule for the accumulator-
+              // changing direction -- "in an ADD TO MAGNITUDE operation,
+              // the sign byte register bit position 4 never changes" --
+              // and of the +MG line above. It covers the forced zero
+              // (p.83: "the unmodified original fraction sign of the
+              // addressed operand in ADD MAGNITUDE TO MEMORY", which is
+              // opnd0's, NOT b's after the absolute modifier) and the
+              // ordinary sum alike. jb_af1c F206B19/B24: M+MGA and M-MGA
+              // of a NEGATIVE memory operand, whose sign A makes positive
+              // for the arithmetic; the sum is positive, and the sign
+              // stored is still the negative one. Storing the sum's sign
+              // halted at B19's BB.
+              if (c == 7'b0101010) v.sign = opnd0.sign;
               st.writeWord(ea, fpToWord(v));
               ind = setBit(ind, ind_MOP, 1);
               ind = setResultIndicatorsFp(ind, v);

@@ -168,9 +168,19 @@ hand vectors alone. "Enables" notes the dependency chain.
    accumulator operand's sign is also the one assumed positive there,
    and assumed positive BEFORE the negative-sign modifier (the M-MG
    mnemonic, not the (N) that selects normalization), so that had to
-   move out of fpAdd into the M+ arm. Next within step 2: F206B onward -- the
-   rest of the +MG-to-memory block, then the multiply block and the
-   open ops in the order the diagnostic reaches them.
+   move out of fpAdd into the M+ arm. F206B (pp.78-84, thirty-two sign
+   and modifier combinations, the mirror of F205B) followed and caught
+   the last piece: the result keeps the ADDRESSED operand's own
+   original sign whatever the sum's, the mirror of p.88's "in an ADD TO
+   MAGNITUDE operation, the sign byte register bit position 4 never
+   changes" and of F205B's rule for the accumulator direction. B19/B24
+   are the discriminating pair -- A makes the memory operand's sign
+   positive for the arithmetic only. B23 vs B24 also confirms that the
+   forced-zero comparison uses the A-modified sign, and B9-B16 that the
+   accumulator operand's sign is the one assumed positive. Assembler:
+   M-MG / M-MGA accepted as M+MG with N / N+A (.52 / .72). Next within
+   step 2: F206C/D (unchanged registers, indicators), then the multiply
+   block and the open ops in the order the diagnostic reaches them.
    Related nearby routine also located and runnable-with-effort: F203B
    "EXP RNG INDIC TEST" (p.52, octal 012260+) verifies the exponent-
    range indicators XPFP/XPH/XPL/XPU (set by ST, cleared by Z,$IND)
