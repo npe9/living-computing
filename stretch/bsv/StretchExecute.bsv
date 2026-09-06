@@ -1555,13 +1555,17 @@ function ActionValue#(Tuple4#(HWordAddr, Maybe#(Tuple2#(Bit#(4), IndexWord)),
               st.writeWord(addrAccRight, fpdAccRight(r.res, accR));
               // ADD leaves sign byte bits 0-3 and 5-7 alone and replaces
               // only bit 4 with the sum's sign (p.86), and D+ is "similar
-              // to ADD". That falls out rather than being arranged:
-              // r.res.flags is a.flags, a is the accumulator, and its
-              // flags came from sbFlags(accS) -- so writing them back is
-              // a no-op on 5-7. The TF/UF/VF INDICATORS are a separate
-              // thing and do come from the addressed operand (p.87, set
-              // above for every FP op with an operand).
-              st.writeWord(addrAccSignByte, sbWith(accS, r.res.sign, r.res.flags));
+              // to ADD". Take the flag bits from accS and say so, rather
+              // than from r.res: on the unflagged path r.res.flags is
+              // the accumulator's own and the two agree, but the FLAGGED
+              // path returns one operand WHOLE, so when the survivor is
+              // the storage operand r.res.flags is ITS flags. jb_af1c
+              // F208C2 is exactly that case -- an all-ones accumulator
+              // (flags 111) plus FPK0 (flags 000) -- and the listing
+              // demands 111 afterward. The TF/UF/VF INDICATORS are a
+              // separate thing and do come from the addressed operand
+              // (p.87, set above for every FP op with an operand).
+              st.writeWord(addrAccSignByte, sbWith(accS, r.res.sign, sbFlags(accS)));
               ind = setBit(ind, ind_MOP, 0);
               // The result indicators only ever ask whether the result
               // fraction is zero and what its sign is, so they are fed
@@ -1585,7 +1589,17 @@ function ActionValue#(Tuple4#(HWordAddr, Maybe#(Tuple2#(Bit#(4), IndexWord)),
               // the accumulator was loaded with LN, whatever the sum.
               if (c == 7'b0100010) r.res.sign = acc.sign;
               st.writeWord(addrAccLeft, fpAccLeft(r.res, accL));
-              st.writeWord(addrAccSignByte, fpSignByte(r.res, accS));
+              // Sign byte bits 5-7 are the accumulator's own, for the
+              // same reason as D+ below: p.86 is ADD's own page and says
+              // bits 0-3 and 5-7 "remain unchanged", but fpAdd's FLAGGED
+              // path returns one operand WHOLE, so r.res.flags is the
+              // STORAGE operand's whenever that operand is the survivor.
+              // Proven for D+ by jb_af1c F208C2; NOT proven here, because
+              // jb_af1c has no "TEST UNCHANGED REGISTERS" routine for
+              // plain ADD -- F203 ends at F203B, the exponent-range
+              // indicator test, and F204 begins straight after. F205C
+              // checks +MG's sign byte bits 0-3 only, not 5-7.
+              st.writeWord(addrAccSignByte, sbWith(accS, r.res.sign, sbFlags(accS)));
               ind = setBit(ind, ind_MOP, 0);
               ind = setResultIndicatorsFp(ind, r.res);
               if (r.lc) ind = setBit(ind, ind_LC, 1);

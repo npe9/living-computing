@@ -434,6 +434,22 @@ run "FP add double signs (jb_af1c F208B1-B7 on the model)" ./run_program.sh prog
     "PC=$(python3 -c 'from strap_asm import assemble; print(assemble(open("programs/fp_arith_f208b.strap").read()).symtab["PASS"]//32)')" \
     "SEN:712=0"
 
+# jb_af1c F208C (p.98): "TEST UNCHANGED REGISTERS" -- what D+ must
+# leave alone, namely accumulator right bits 44-63 (IBM 108-127,
+# outside the 96-bit fraction) and sign byte bits 5-7, the data flags.
+# C2 caught a real bug: it sets the whole sign byte to ones with
+# CM1111 and adds FPK0, whose own flags are 000, and an all-ones
+# accumulator has EF=1 so the add takes the FLAGGED path, which
+# returns the storage operand WHOLE. The model wrote that operand's
+# flags into the sign byte; p.86 says bits 5-7 remain unchanged.
+# Reverting the fix halts on C2's flag check: SIC stores 015143.00,
+# the half-word after the BRGZ at 015142.40 that guards the
+# CT1100(BU,3) at 015141.00.
+run "FP add double unchanged regs (jb_af1c F208C1-C2, encoding)" python3 verify_fp_arith_f208c_listing.py
+run "FP add double unchanged regs (jb_af1c F208C1-C2 on the model)" ./run_program.sh programs/fp_arith_f208c.strap StretchFpAddDblCTb \
+    "PC=$(python3 -c 'from strap_asm import assemble; print(assemble(open("programs/fp_arith_f208c.strap").read()).symtab["PASS"]//32)')" \
+    "SEN:712=0"
+
 # -- 1j. Store-close-to-fetch: store a word then immediately reload it;
 # the load must read the new value, not the stale one. The hazard the FP
 # sign-modifier codesign exposed; fixed by tracking each E-box level's

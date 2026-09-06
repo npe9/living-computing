@@ -1,0 +1,82 @@
+! Floating-point diagnostic jb_af1c, routine F208C "TEST UNCHANGED
+! REGISTERS" (docs/jb_af1c_floating-point.pdf p.98, octal
+! 015125.00-015143.00, where the listing's own exit sequence
+! BD,$+1.0 / B,FAD4 begins): the two sub-tests that check what ADD
+! DOUBLE must leave ALONE.
+!
+! D+ works on the accumulator's 96-bit fraction, IBM bits 12-107. Two
+! things sit outside it and must come through untouched:
+!   - accumulator right bits 44-63, which are IBM 108-127 -- the
+!     listing calls them "R44-63";
+!   - sign byte bits 5-7, the data flags. ADD replaces only bit 4, the
+!     sign, and "bits 0-3 and 5-7 ... remain unchanged" (p.86); D+ is
+!     "similar to ADD" (p.95).
+!
+! Each sub-test sets both fields to a known value, runs one D+, and
+! asks whether they are still that value. C1 does it from zero: Z on
+! $L, $R and $SB clears all three accumulator words, then D+(U) FPK50,
+! and CT0101(BU,20) FPK0 / CT0011(BU,3) 10.5 ask whether R44-63 and
+! SB5-7 remain 0. C2 does it from ones: C1111 forces both accumulator
+! halves to all ones and CM1111 forces the whole sign byte to ones,
+! then D+(U) FPK0, and CT1010 / CT1100 ask whether they remain 1.
+!
+! C2 is the one that decides something. FPK1 is all ones -- every bit,
+! flags included -- so the accumulator's flag bits are 111 going in,
+! while FPK0, the storage operand, is all zeros and its flags are 000.
+! If D+ took the sign byte's flag bits from the ADDRESSED OPERAND, the
+! check at 015141.00 would see 000 where the listing demands 111. It
+! is the discriminating case for a question the model could otherwise
+! only answer by inspection.
+!
+! An all-ones accumulator also has EF = 1, so C2's D+ goes down the
+! FLAGGED path -- the accumulator is XFN, the operand is in the N
+! range, and Figure 23 hands back the operand whole. Which makes C2 a
+! test of what "hands back the operand whole" is allowed to touch.
+!
+! Framework substitutes as everywhere else in this series: SERS (octal
+! 1304) -> FAIL halt, SEN (octal 1310) -> scratch. Constants from the
+! pool p.176.
+!
+! Instructions: Z on $L/$R/$SB, C1111 and CM1111, D+(U), CT0101,
+! CT0011, CT1010 and CT1100 over 20- and 3-bit fields, SIC, BRGZ.
+! verify_fp_arith_f208c_listing.py checks every word bit-for-bit.
+
+! -- SSIP framework substitutes --
+        SLC, (8)1304.0
+SERS    BEW, $
+        SLC, (8)1310.0
+SEN     DD(BU,64,8), 0
+
+! -- constants (pool p.176) --
+
+        SLC, (8)22005.0
+FPK0    DD(BU,64,8), (8)0000000000000000000000
+FPK1    DD(BU,64,8), (8)1777777777777777777777
+        SLC, (8)22067.0
+FPK50   DD(BU,64,8), (8)0031377777777777777760
+
+! -- code (verbatim, at the listing's addresses) --
+        SLC, (8)15125.0
+FAD4    Z, $L                  ! F208C1: R 44-63 and $SB 5-7 remain 0
+        Z, $R
+        Z, $SB
+        D+(U), FPK50
+        CT0101(BU,20), FPK0    ! does R44-63 remain +0
+        SIC, SEN
+        BRGZ, SERS
+        CT0011(BU,3), 10.5     ! do bits 5-7 of SB remain +0
+        SIC, SEN
+        BRGZ, SERS
+        B, $+.32               ! F208C2: 1 s remain 1 s, R44-63 and SB5-7
+        C1111(BU,64), FPK1, 64 ! accumulator left  := all ones
+        C1111(BU,64), FPK1     ! accumulator right := all ones
+        CM1111(BU,8), 10.0     ! sign byte := all ones, flags included
+        D+(U), FPK0
+        CT1010(BU,20), FPK1    ! does R44-63 remain +1
+        SIC, SEN
+        BRGZ, SERS
+        CT1100(BU,3), 10.5     ! do bits 5-7 of SB remain +1
+        SIC, SEN
+        BRGZ, SERS
+PASS    BEW, $                 ! 015143.00: F208C exits here
+        END, FAD4

@@ -299,8 +299,33 @@ hand vectors alone. "Enables" notes the dependency chain.
    larger magnitude, so the result takes ITS sign. Forcing that arm to
    the wrong sign leaves both F208A and F208B green, so no check in
    either block distinguishes it.
-   Next: F208C (two "TEST UNCHANGED REGISTERS" sub-tests) and F208D
-   (six or more), then F209's D+MG and SRD. Still open in double
+   jb_af1c F208C (p.98, C1-C2, "TEST UNCHANGED REGISTERS") found a
+   real bug -- the first one in this stretch of work that the listing
+   caught rather than confirmed. D+ works on IBM bits 12-107, so two
+   fields must survive it untouched: accumulator right bits 44-63
+   (IBM 108-127) and sign byte bits 5-7, the data flags. C1 checks
+   both from zero, C2 from ones: C1111 forces both accumulator halves
+   to all ones and CM1111 forces the whole sign byte to ones, then
+   D+(U) FPK0.
+   That is the discriminating case, and it discriminates twice over.
+   FPK1 is all ones INCLUDING its flag bits, so the accumulator's
+   flags are 111 going in while FPK0's are 000; and an all-ones
+   accumulator has EF = 1, so the add takes the FLAGGED path, where
+   Figure 23 hands back one operand WHOLE. The model wrote that
+   operand's flags into the sign byte and C2 halted at 015141.00's
+   check. The fix is to take bits 5-7 from accS and say so, rather
+   than from the result -- on the unflagged path the two agree, which
+   is why nothing before noticed.
+   The same hole was in fpAdd's flagged path, reached by + and +MG
+   through the identical fpSignByte(r.res, accS) call, and is fixed
+   the same way. That half is NOT under the oracle and should not be
+   claimed as such: jb_af1c has no "TEST UNCHANGED REGISTERS" routine
+   for plain ADD -- F203 ends at F203B, the exponent-range indicator
+   test, with F204 beginning straight after -- and F205C checks +MG's
+   sign byte bits 0-3 only, not 5-7. It rests on p.86 being ADD's own
+   page and on the code path being the same one F208C2 proved.
+   Next: F208D (six or more sub-tests), then F209's D+MG and SRD.
+   Still open in double
    precision: D+MG, D-, SRD, SLO, D*, D/, LFT -- the first real double-precision
    ARITHMETIC, which needs the 96-bit adder and the accumulator's low
    half as a genuine operand rather than something only cleared.
