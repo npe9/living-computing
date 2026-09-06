@@ -1,8 +1,8 @@
 ! Floating-point diagnostic jb_af1c, routine F208A "ADD DOUBLE TEST
-! ROUTINE -- ARITHMETIC CHECKS", sub-tests A1-A14 (docs/jb_af1c_
-! floating-point.pdf pp.93-95, octal 014613.00-014761.40): everything
-! up to the normalization-modifier section, and the exercise of D+ --
-! the first double-precision ARITHMETIC the model can do.
+! ROUTINE -- ARITHMETIC CHECKS", sub-tests A1-A19 (docs/jb_af1c_
+! floating-point.pdf pp.93-96, octal 014613.00-015016.00): the
+! exercise of D+ -- the first double-precision ARITHMETIC the model
+! can do.
 !
 ! Each sub-test builds a full 96-bit double-precision value in the
 ! accumulator and adds a storage operand to it:
@@ -37,9 +37,19 @@
 ! replace whatever was there. FK35, whose fraction is zero, is what
 ! those checks compare against.
 !
-! A15 onward (from 014761.40, "TEST NORMALIZATION MODIFIER") is not
-! transcribed here; this program's PASS sits exactly where it begins,
-! which is what checks that every word length before it is right.
+! A15-A19 are the "TEST NORMALIZATION MODIFIER" section, D+(N).
+! A15-A18 keep a FLAGGED operand as the survivor, so normalization is
+! suppressed and the listing's comment is "error if result
+! normalized". A19 is the one that normalizes: an N-range accumulator
+! (+13, with FPK4's fraction filling its low half) surviving an XFN
+! operand, so the whole 96-bit fraction shifts left and the exponent
+! follows it. That is the first double-precision normalization the
+! model performs -- fpNormalize96Wide over 96 real bits rather than 48
+! padded with zeros -- and FPK3/FPK15 are its two halves.
+!
+! A20 onward (from 015016.00) is not transcribed here; this program's
+! PASS sits exactly where it begins, which is what checks that every
+! word length before it is right.
 !
 ! Substitutions (SSIP framework, real listed addresses): SERS (octal
 ! 1304) -> FAIL halt, SEN (octal 1310) -> scratch. The prologue
@@ -52,7 +62,7 @@
 ! BZLC, SIC, BRGZ.
 ! verify_fp_arith_f208a_listing.py checks every word bit-for-bit.
 !
-! Observed: all fourteen passed on the first run of a freshly written
+! Observed: all nineteen passed on the first run of a freshly written
 ! 96-bit adder, which is a stronger statement than it sounds -- the
 ! low-order checks are sensitive to every bit of the preparatory shift
 ! and the carry across the halves. Two injections show the two halves
@@ -104,6 +114,17 @@ FK36    DD(BU,64,8), (8)1000177777777777777760
 FK38    DD(BU,64,8), (8)0777572525252525252520
         SLC, (8)22220.0
 FK46    DD(BU,64,8), (8)1746577777777777777760
+        SLC, (8)22010.0
+FPK3    DD(BU,64,8), (8)0000125252525252525240
+FPK4    DD(BU,64,8), (8)0000452525252525252520
+        SLC, (8)22023.0
+FPK14   DD(BU,64,8), (8)0006400005252525252520
+FPK15   DD(BU,64,8), (8)0000125252525252400000
+        SLC, (8)22174.0
+FK26    DD(BU,64,8), (8)1777412525252525252520
+FK27    DD(BU,64,8), (8)1577405252525252525240
+        SLC, (8)22211.0
+FK39    DD(BU,64,8), (8)0777625252525252525240
 
 ! -- code (verbatim, at the listing's addresses) --
         SLC, (8)14613.0
@@ -268,5 +289,51 @@ DAD1A   B, $+.32   ! F208A1: exp. mem + 48 + exp. acc.
         CT0110(BU,48), FK35+.12, 20   ! and its low order half
         SIC, SEN
         BRGZ, SERS
-PASS    BEW, $                  ! 014761.40: where "TEST NORMALIZATION MODIFIER" begins
+        B, $+.32   ! F208A15: exponents of opnds in XFP range
+        DL(U), FK26
+        D+(N), FK27   ! normalized
+        CT0110(BU,60), FK26, 68   ! error if result normalized
+        SIC, SEN
+        BRGZ, SERS
+        CT0110(BU,48), FK35+.12, 20   ! and its low order half
+        SIC, SEN
+        BRGZ, SERS
+        B, $+.32   ! F208A16: exponents of opnds in XFP and N ranges
+        DL(U), FK26
+        D+(N), FK39   ! normalized
+        CT0110(BU,60), FK26, 68   ! error if result normalized
+        SIC, SEN
+        BRGZ, SERS
+        CT0110(BU,48), FK35+.12, 20   ! and its low order half
+        SIC, SEN
+        BRGZ, SERS
+        B, $+.32   ! F208A17: exponents of opnds in XFP and XFN ranges
+        DL(U), FK26
+        D+(N), FK30   ! normalized
+        CT0110(BU,60), FK26, 68   ! error if result normalized
+        SIC, SEN
+        BRGZ, SERS
+        CT0110(BU,48), FK35+.12, 20   ! and its low order half
+        SIC, SEN
+        BRGZ, SERS
+        B, $+.32   ! F208A18: exponents of opnds in XFN range
+        DL(U), FK31
+        D+(N), FK30   ! normalized
+        CT0110(BU,60), FK30, 68   ! error if result normalized
+        SIC, SEN
+        BRGZ, SERS
+        CT0110(BU,48), FK35+.12, 20   ! and its low order half
+        SIC, SEN
+        BRGZ, SERS
+        B, $+.32   ! F208A19: exponents of opnds in N and XFN ranges
+        DL(U), FPK14
+        C0011(BU,48), FPK4+.12, 20   ! set the accumulator's low half
+        D+(N), FPK2   ! normalized
+        CT0110(BU,60), FPK3, 68   ! error if result not normalized
+        SIC, SEN
+        BRGZ, SERS
+        CT0110(BU,48), FPK15+.12, 20   ! and its low order half
+        SIC, SEN
+        BRGZ, SERS
+PASS    BEW, $                  ! 015016.00: where F208A20 begins
         END, DAD1A

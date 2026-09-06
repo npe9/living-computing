@@ -394,7 +394,7 @@ run "FP load double with flag (jb_af1c F207E on the model)" ./run_program.sh pro
     "PC=$(python3 -c 'from strap_asm import assemble; print(assemble(open("programs/fp_arith_f207e.strap").read()).symtab["PASS"]//32)')" \
     "SEN:712=0"
 
-# -- 1n. jb_af1c F208A1-A14 (pp.93-95): ADD DOUBLE, the first
+# -- 1n. jb_af1c F208A1-A19 (pp.93-96): ADD DOUBLE, the first
 # double-precision ARITHMETIC. A1-A9 unflagged, each building a genuine
 # 96-bit fraction in the accumulator (DL for bits 0-59, a C0011 of
 # another constant's fraction into offset 20 for 60-107) and adding a
@@ -405,10 +405,13 @@ run "FP load double with flag (jb_af1c F207E on the model)" ./run_program.sh pro
 # question is whether its low half comes with it. Two injections, two
 # halts: D+ reading only the high 48 bits halts at 014617.40 (A1); the
 # flagged path dropping the survivor's low half halts at 014732.00
-# (A10) with A1-A9 still passing. A15 onward (the normalization
-# modifier) is not transcribed yet.
-run "FP add double (jb_af1c F208A1-A14, encoding)" python3 verify_fp_arith_f208a_listing.py
-run "FP add double (jb_af1c F208A1-A14 on the model)" ./run_program.sh programs/fp_arith_f208a.strap StretchFpAddDblATb \
+# (A10) with A1-A9 still passing. A15-A19 are the normalization
+# modifier: A15-A18 keep a flagged survivor so normalization is
+# suppressed, and A19 is the first double-precision result the model
+# actually normalizes -- normalizing only its high 48 bits halts at
+# 015014.00. A20 onward is not transcribed yet.
+run "FP add double (jb_af1c F208A1-A19, encoding)" python3 verify_fp_arith_f208a_listing.py
+run "FP add double (jb_af1c F208A1-A19 on the model)" ./run_program.sh programs/fp_arith_f208a.strap StretchFpAddDblATb \
     "PC=$(python3 -c 'from strap_asm import assemble; print(assemble(open("programs/fp_arith_f208a.strap").read()).symtab["PASS"]//32)')" \
     "SEN:712=0"
 
