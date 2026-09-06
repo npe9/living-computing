@@ -1,0 +1,228 @@
+! Floating-point diagnostic jb_af1c, routine F206A "ADD MAGNITUDE TO
+! MEMORY TEST ROUTINE -- ARITHMETIC CHECKS" (docs/jb_af1c_floating-
+! point.pdf pp.75-77, octal 013513.00-013640.00): fifteen sub-tests of
+! M+MG, the to-memory ADD TO MAGNITUDE. Each: ROS := a constant (via
+! L(BU)/ST(BU), which also leaves the copy in the right half), L(U) an
+! accumulator operand, M+MG(U) or M+MG(N), then CT0110 of ROS against
+! the right half (offset 0: the stored copy, or an expected constant
+! loaded by L(BU)) or the left half (offset 64: the accumulator
+! operand) and BRGZ,SERS on any difference.
+!   A1-A4, A6-A8: flagged operands -- XFP (+2047) dominates, and among
+!     two XFN/XFP of the same range the larger exponent survives (A3:
+!     +1791 XFP over -1791 XFN, a range win). A4 pairs +1024 (XFP)
+!     with +1023 (N): XFP survives. A6 pairs XFN -1791 with N +512:
+!     the N operand survives (the listing's "+256" comment
+!     notwithstanding, the check is against the left half, FK22).
+!   A9: the forced zero. FPK1 (XFN -2047) is NEGATIVE in storage and
+!     the accumulator's FK25 (XFN -1791) survives it, positive -- a
+!     sign opposite the addressed operand's, so the sum fraction is
+!     replaced by zeros and, per p.89, "the sign and exponent of the
+!     storage operand become the sign and exponent of the forced
+!     order-of-magnitude zero result": FK19's exponent (-2047, the
+!     storage operand's, NOT the survivor's -1791), a zero fraction,
+!     and the BB below it requires sign bit 1, also the storage
+!     operand's. See the commit -- the model kept the survivor's.
+!   A5: N + N: FPK35 + FPK39 = FPK32 (the F204A5 sum again).
+!   A10-A15 (SAP7A, "test normalization modifier", M+MG(N)): flagged
+!     results are not normalized (A10-A12, A15); an N result is
+!     (A13: FPK10 normalized = FPK9; A14: FPK7 + FPK8 = FK45).
+! The prologue (FAMM1: BD / L(BU),F206 / ST(BU),DPET13 / SIC,RET1 /
+! B,IDF1 at 013507.40-013512.40) is the SSIP framework's routine
+! identification and is not transcribed; the block starts at SAP7.
+!
+! Substitutions (SSIP framework, real listed addresses): SERS (octal
+! 1304) -> FAIL halt, SEN (octal 1310) -> scratch, ROS (octal 22355)
+! the memory operand, PASS -> the routine's exit at 013640.00 (the
+! listing's "BD,$+1.0"). Constants from the pool pp.176-178.
+!
+! Instructions: Z ($IND, $L), L(BU)/ST(BU), L(U), M+MG(U)/M+MG(N),
+! CT0110 with offsets 0/4/64, BB on ROS bit 60, SIC, BRGZ, B.
+! verify_fp_arith_f206a_listing.py checks every word bit-for-bit.
+!
+! Observed: A1-A8 and A10-A15 passed as the model stood; A9 halted at
+! SERS with the survivor's exponent (-1791) and sign 0 in ROS where
+! the check wants the addressed operand's -2047 and sign 1. fpAdd's
+! ADD TO MAGNITUDE arm had one rule for both directions; p.89 gives
+! ADD MAGNITUDE TO MEMORY its own -- the forced zero takes the
+! ADDRESSED operand's sign and exponent, and it is that operand's
+! sign, not the accumulator's, that the sum is compared against.
+
+! -- SSIP framework substitutes --
+        SLC, (8)1304.0
+SERS    BEW, $
+        SLC, (8)1310.0
+SEN     DD(BU,64,8), 0
+        SLC, (8)22355.0
+ROS     DD(BU,64,8), 0
+
+! -- constants (pool pp.176-178) --
+
+        SLC, (8)22006.0
+FPK1    DD(BU,64,8), (8)1777777777777777777777
+        SLC, (8)22014.0
+FPK7    DD(BU,64,8), (8)0001412525252525252520
+        SLC, (8)22015.0
+FPK8    DD(BU,64,8), (8)0002005252525252525240
+        SLC, (8)22016.0
+FPK9    DD(BU,64,8), (8)0000125252525252525000
+        SLC, (8)22017.0
+FPK10   DD(BU,64,8), (8)0002402525252525252520
+        SLC, (8)22037.0
+FPK26   DD(BU,64,8), (8)1777577777777777777760
+        SLC, (8)22045.0
+FPK32   DD(BU,64,8), (8)0001177777777777777760
+        SLC, (8)22050.0
+FPK35   DD(BU,64,8), (8)0001125252525252525240
+        SLC, (8)22054.0
+FPK39   DD(BU,64,8), (8)0001052525252525252520
+        SLC, (8)22064.0
+FPK47   DD(BU,64,8), (8)0200377777777777777760
+        SLC, (8)22165.0
+FK19    DD(BU,64,8), (8)1777600000000000000000
+        SLC, (8)22170.0
+FK22    DD(BU,64,8), (8)0400177777777777777760
+        SLC, (8)22172.0
+FK24    DD(BU,64,8), (8)1577452525252525252520
+        SLC, (8)22173.0
+FK25    DD(BU,64,8), (8)1577777777777777777760
+        SLC, (8)22174.0
+FK26    DD(BU,64,8), (8)1777412525252525252520
+        SLC, (8)22175.0
+FK27    DD(BU,64,8), (8)1577405252525252525240
+        SLC, (8)22176.0
+FK28    DD(BU,64,8), (8)0031005252525252525240
+        SLC, (8)22200.0
+FK30    DD(BU,64,8), (8)1577617777777777777760
+        SLC, (8)22201.0
+FK31    DD(BU,64,8), (8)1777612525252525252520
+        SLC, (8)22206.0
+FK36    DD(BU,64,8), (8)1000177777777777777760
+        SLC, (8)22210.0
+FK38    DD(BU,64,8), (8)0777572525252525252520
+        SLC, (8)22217.0
+FK45    DD(BU,64,8), (8)0000525252525252525100
+
+! -- code (verbatim, at the listing's addresses) --
+        SLC, (8)13513.0
+SAP7    Z, $IND   ! SAP7 / F206A1
+        L(BU), FPK26   ! exp +2047
+        ST(BU), ROS
+        L(U), FK24   ! exp +1791
+        M+MG(U), ROS
+        CT0110(BU,64), ROS   ! test result: opnd with +2047 exp
+        SIC, SEN
+        BRGZ, SERS
+        Z, $L   ! F206A2
+        L(BU), FPK47   ! exp -256
+        ST(BU), ROS
+        L(U), FPK26   ! exp +2047
+        M+MG(U), ROS
+        CT0110(BU,64), ROS, 64   ! test result: opnd with +2047 exp (vs the left half)
+        SIC, SEN
+        BRGZ, SERS
+        Z, $L   ! F206A3
+        L(BU), FK25   ! exp -1791
+        ST(BU), ROS
+        L(U), FK24   ! exp +1791
+        M+MG(U), ROS
+        CT0110(BU,64), ROS, 64   ! test result: opnd with +1791 exp
+        SIC, SEN
+        BRGZ, SERS
+        L(BU), FK36   ! F206A4: exp +1024
+        ST(BU), ROS
+        L(U), FK38   ! exp +1023
+        M+MG(U), ROS
+        CT0110(BU,64), ROS   ! test result: opnd with +1024 exp
+        SIC, SEN
+        BRGZ, SERS
+        L(BU), FPK35   ! F206A5: exp +2
+        ST(BU), ROS
+        L(U), FPK39   ! exp +2
+        M+MG(U), ROS
+        L(BU), FPK32
+        CT0110(BU,64), ROS   ! test result fract +1 s, exp +2
+        SIC, SEN
+        BRGZ, SERS
+        Z, $L   ! F206A6
+        L(BU), FK25   ! exp -1791
+        ST(BU), ROS
+        L(U), FK22   ! exp +512
+        M+MG(U), ROS
+        CT0110(BU,64), ROS, 64   ! test result: opnd with +512 exp (listing says +256)
+        SIC, SEN
+        BRGZ, SERS
+        L(BU), FPK26   ! F206A7: exp +2047
+        ST(BU), ROS
+        L(U), FK25   ! exp -1791
+        M+MG(U), ROS
+        CT0110(BU,64), ROS   ! test result: opnd with +2047 exp
+        SIC, SEN
+        BRGZ, SERS
+        L(BU), FK22   ! F206A8: exp +512
+        ST(BU), ROS
+        L(U), FK25   ! exp -1791
+        M+MG(U), ROS
+        CT0110(BU,64), ROS   ! test result: opnd with +512 exp
+        SIC, SEN
+        BRGZ, SERS
+        Z, $L   ! F206A9
+        L(BU), FPK1   ! exp -2047
+        ST(BU), ROS
+        L(U), FK25   ! exp -1791
+        M+MG(U), ROS
+        L(BU), FK19
+        CT0110(BU,60), ROS, 4   ! test result: opnd with -1791 exp
+        SIC, SEN
+        BRGZ, SERS
+        BB, ROS+.60, $+2.0   ! check sign bit 1
+        SIC, SEN
+        B, SERS
+        L(BU), FK26   ! SAP7A / F206A10 (test normalization modifier): exp +2047
+        ST(BU), ROS
+        L(U), FK27   ! exp +1791
+        M+MG(N), ROS
+        CT0110(BU,64), ROS   ! test result: opnd with +2047 exp
+        SIC, SEN
+        BRGZ, SERS   ! error if result normalized
+        Z, $L   ! F206A11
+        L(BU), FK28   ! exp +50
+        ST(BU), ROS
+        L(U), FK26   ! exp +2047
+        M+MG(N), ROS
+        CT0110(BU,64), ROS, 64   ! test result: opnd with +2047 exp
+        SIC, SEN
+        BRGZ, SERS   ! error if result normalized
+        Z, $L   ! F206A12
+        L(BU), FK31   ! exp -2047
+        ST(BU), ROS
+        L(U), FK27   ! exp +1791
+        M+MG(N), ROS
+        CT0110(BU,64), ROS, 64   ! test result: opnd with +1791 exp
+        SIC, SEN
+        BRGZ, SERS   ! error if result normalized
+        Z, $L   ! F206A13
+        L(BU), FK31   ! exp -2047
+        ST(BU), ROS
+        L(U), FPK10   ! exp +5
+        M+MG(N), ROS
+        L(BU), FPK9
+        CT0110(BU,64), ROS   ! test result: opnd with +5 exp, normalized
+        SIC, SEN
+        BRGZ, SERS
+        L(BU), FPK7   ! F206A14: exp +3
+        ST(BU), ROS
+        L(U), FPK8   ! exp +4
+        M+MG(N), ROS
+        L(BU), FK45
+        CT0110(BU,64), ROS   ! test fractions added and result normalized
+        SIC, SEN
+        BRGZ, SERS
+        L(BU), FK30   ! F206A15: exp -1791
+        ST(BU), ROS
+        L(U), FK31   ! exp -2047
+        M+MG(N), ROS
+        CT0110(BU,64), ROS   ! test result: opnd with -1791 exp
+        SIC, SEN
+        BRGZ, SERS
+PASS    BEW, $                  ! 013640.00: the routine's exit ("BD,$+1.0")
+        END, SAP7

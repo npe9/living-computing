@@ -158,8 +158,19 @@ hand vectors alone. "Enables" notes the dependency chain.
    combinations; the result keeps the accumulator's own sign, forced
    zeros included -- and its arithmetic disambiguated the scan of
    FPK23, "230" vs "250"), F205C/D (unchanged registers, the LS
-   indicator). Next within step 2: F206 onward -- the multiply block
-   and the open ops in the order the diagnostic reaches them.
+   indicator). F206A (ADD MAGNITUDE TO MEMORY, pp.75-77, fifteen
+   arithmetic checks) follows: it caught fpAdd running ONE forced-zero
+   rule for both directions. p.89 gives the to-memory form its own --
+   the sum's sign is compared with the ADDRESSED operand's, and the
+   forced zero takes that operand's sign and exponent, not the
+   surviving operand's (A9: XFN -2047 negative in storage under XFN
+   -1791 positive in the accumulator wants -2047 with sign 1). The
+   accumulator operand's sign is also the one assumed positive there,
+   and assumed positive BEFORE the negative-sign modifier (the M-MG
+   mnemonic, not the (N) that selects normalization), so that had to
+   move out of fpAdd into the M+ arm. Next within step 2: F206B onward -- the
+   rest of the +MG-to-memory block, then the multiply block and the
+   open ops in the order the diagnostic reaches them.
    Related nearby routine also located and runnable-with-effort: F203B
    "EXP RNG INDIC TEST" (p.52, octal 012260+) verifies the exponent-
    range indicators XPFP/XPH/XPL/XPU (set by ST, cleared by Z,$IND)

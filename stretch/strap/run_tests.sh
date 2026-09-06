@@ -299,6 +299,18 @@ run "FP +MG unchanged registers and LS (jb_af1c F205C/D on the model)" ./run_pro
     "PC=$(python3 -c 'from strap_asm import assemble; print(assemble(open("programs/fp_arith_f205cd.strap").read()).symtab["PASS"]//32)')" \
     "SEN:712=0"
 
+# -- 1l. jb_af1c F206A (pp.75-77): ADD MAGNITUDE TO MEMORY (M+MG),
+# fifteen arithmetic checks -- the same flagged-operand dominance as
+# +MG but with the result in storage, and the forced zero that keeps
+# the ADDRESSED operand's sign and exponent (A9), plus the
+# normalization modifier over flagged and N results (A10-A15). A9
+# caught fpAdd applying +MG's forced-zero rule in the to-memory
+# direction -- see the program header.
+run "FP M+MG arithmetic (jb_af1c F206A, encoding)" python3 verify_fp_arith_f206a_listing.py
+run "FP M+MG arithmetic (jb_af1c F206A on the model)" ./run_program.sh programs/fp_arith_f206a.strap StretchFpMgMemATb \
+    "PC=$(python3 -c 'from strap_asm import assemble; print(assemble(open("programs/fp_arith_f206a.strap").read()).symtab["PASS"]//32)')" \
+    "SEN:712=0"
+
 # -- 1j. Store-close-to-fetch: store a word then immediately reload it;
 # the load must read the new value, not the stale one. The hazard the FP
 # sign-modifier codesign exposed; fixed by tracking each E-box level's

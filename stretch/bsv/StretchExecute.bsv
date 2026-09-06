@@ -1517,6 +1517,16 @@ function ActionValue#(Tuple4#(HWordAddr, Maybe#(Tuple2#(Bit#(4), IndexWord)),
             7'b0001010, 7'b0101010: begin // M+ / M+MG
               FpNum a = acc;
               FpNum b = opnd0; if (fp.absSign == 1) b.sign = 0;
+              // ADD MAGNITUDE TO MEMORY (p.89): "the accumulator operand
+              // sign is assumed positive BEFORE the negative sign
+              // modification occurs". The negative-sign modifier here
+              // is the one the M-MG mnemonic sets (fp.invSign), NOT
+              // the (N) in M+MG(N), which is the normalization
+              // modifier: M-MG adds a NEGATIVE accumulator operand,
+              // not the negation of whatever sign it was loaded with.
+              // (fpAdd leaves this to the caller for the to-memory
+              // direction; see its header.)
+              if (c == 7'b0101010) a.sign = 0;
               if (fp.invSign == 1) a.sign = ~a.sign;
               FpResult r = fpAdd(b, a, normalized, noisy, c == 7'b0101010, True);
               FpNum v = r.res; v.flags = opnd0.flags;

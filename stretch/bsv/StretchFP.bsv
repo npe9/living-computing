@@ -182,7 +182,15 @@ endfunction
 // branched to SERS).
 function FpResult fpAdd(FpNum a, FpNum b, Bool normalized, Bool noisy, Bool addMag, Bool accIsB);
   FpResult r = fpNoResult(a);
-  if (addMag) a.sign = 0;
+  // ADD TO MAGNITUDE (p.88) assumes the fraction sign of the operand IN
+  // THE ACCUMULATOR positive -- that is `a` for +MG. ADD MAGNITUDE TO
+  // MEMORY (p.89) does the same to its accumulator operand, `b`, but
+  // does it "before the negative sign modification occurs": the M+ arm
+  // of execute() therefore zeroes b.sign itself, ahead of the N
+  // modifier, and this must not reach across and clear the ADDRESSED
+  // operand's sign instead -- that sign is what the forced-zero rule
+  // below is compared against.
+  if (addMag && !accIsB) a.sign = 0;
   // Flagged operands (Fig.23 / p.87): the result is one operand or the
   // other, normalization suppressed, EF propagated.
   if (a.ef == 1 || b.ef == 1) begin
@@ -196,15 +204,47 @@ function FpResult fpAdd(FpNum a, FpNum b, Bool normalized, Bool noisy, Bool addM
     if ((isXFP(a) && isXFP(b)) || (isXFN(a) && isXFN(b)))
       res = (fpExp(b) > fpExp(a)) ? b : a;
     Bool gen = False;
-    if (addMag && res.sign == 1) begin
-      // ADD TO MAGNITUDE with a flagged survivor that is NEGATIVE (the
-      // accumulator's sign was made positive above, so this is the
-      // storage operand dominating): the sum would be negative, and
-      // p.88's rule applies -- a forced zero, here with the survivor's
-      // exponent and a zero fraction. jb_af1c F205A7 (XFN in the
-      // accumulator, negative XFP in storage) checks exactly that:
-      // exponent field = the XFP operand's, fraction forced zero.
-      res.frac = 0; res.sign = 0;
+    if (addMag && (accIsB ? (res.sign != a.sign) : (res.sign == 1))) begin
+      // ADD TO MAGNITUDE's forced zero (p.83) reached with a flagged
+      // survivor. The two directions differ in what the forced zero
+      // keeps, and each has its own check in the diagnostic:
+      //
+      // +MG: the accumulator's sign was made positive above, so a
+      //   NEGATIVE survivor is the storage operand dominating and the
+      //   sum would be negative -- a forced zero with the survivor's
+      //   exponent and a zero fraction. jb_af1c F205A7 (XFN in the
+      //   accumulator, negative XFP in storage) checks exactly that:
+      //   exponent field = the XFP operand's, fraction forced zero.
+      //   (p.88 words this as "the sign and exponent of the accumulator
+      //   operand", which fits only if one reads the surviving operand
+      //   as already gated into the accumulator; A7 is unambiguous.)
+      //
+      // M+MG: p.89 is explicit -- "the sum sign is compared with the
+      //   addressed operand's effective sign... with opposite signs the
+      //   result fraction is a forced zero in storage. The forced zero
+      //   sign is the same as the addressed operand's original sign.
+      //   The sign and exponent of the STORAGE operand become the sign
+      //   and exponent of the forced order-of-magnitude zero result."
+      //   Here that storage operand is `a`. jb_af1c F206A9 (XFN -2047
+      //   negative in storage, XFN -1791 positive in the accumulator)
+      //   needs it: the survivor is the accumulator's -1791, but the
+      //   check is against FK19 -- exponent -2047, zero fraction -- and
+      //   the following BB requires sign bit 1, the addressed
+      //   operand's. Keeping the survivor's exponent halted there.
+      //
+      // NOT YET RIGHT: p.83 wants the addressed operand's UNMODIFIED
+      // original sign, while `a.sign` here is the sign after the
+      // absolute modifier. Under M-MGA the two differ -- ABS clears the
+      // addressed sign to 0 and the negated accumulator can still turn
+      // the sum negative -- so the forced zero would come out positive.
+      // Nothing runs that combination yet; F206B, if it mirrors F205B's
+      // thirty-two sign/modifier cases, will, and the unmodified sign
+      // has to reach fpAdd from the M+ arm for it.
+      res.frac = 0;
+      if (accIsB) begin
+        res.sign = a.sign; res.ef = a.ef; res.em = a.em; res.es = a.es;
+      end else
+        res.sign = 0;
     end
     if (res.ef == 0 && normalized) begin
       // The surviving operand is the UNFLAGGED one (XFN + N: N
@@ -254,12 +294,27 @@ function FpResult fpAdd(FpNum a, FpNum b, Bool normalized, Bool noisy, Bool addM
         // on an exponent tie, the accumulator's (p.82, see the header).
         if (fb == fs) sign = (diff == 0 && accIsB) ? b.sign : big.sign;
       end
-      if (addMag && sign == 1) begin
-        // ADD TO MAGNITUDE: a negative sum becomes a forced zero with
-        // the accumulator's sign and exponent (p.88).
+      if (addMag && sum != 0 && (accIsB ? (sign != a.sign) : (sign == 1))) begin
+        // ADD TO MAGNITUDE: a sum whose fraction sign is reversed
+        // relative to the operand being replaced becomes a forced zero
+        // -- for +MG a negative sum, with the accumulator's sign and
+        // exponent (p.88); for M+MG a sum whose sign differs from the
+        // addressed operand's, with THAT operand's sign and exponent
+        // (p.89, and see the flagged path above).
+        //
+        // `sum != 0`: an exact cancellation is not "a fraction sign
+        // reversal obtained during the addition" (p.83) but an ordinary
+        // order-of-magnitude zero, which sets LS -- p.89 says a forced
+        // zero leaves LS off and that "this action distinguishes it
+        // from a zero sum". Without the guard M+MG of x and -x would be
+        // read as a forced zero, since the tie rule gives the zero the
+        // accumulator's (positive) sign against a negative addressed
+        // operand.
         forcedZero = True;
         sum = 0;
-        sign = 0;
+        sign = accIsB ? a.sign : 0;   // the absolute-modified sign; see
+                                      // the flagged path's "NOT YET
+                                      // RIGHT" note on M-MGA
       end
       let {frac48, adj, lostCarry} = fpNormalize96(sum[96], sum[95:0], normalized, noisy);
       Bool zeroResult = (sum == 0);
@@ -267,8 +322,12 @@ function FpResult fpAdd(FpNum a, FpNum b, Bool normalized, Bool noisy, Bool addM
       let {res, gen} = fpMakeExp(e, frac48, sign, a.flags);
       if (zeroResult) begin
         // Order-of-magnitude zero: exponent of the larger-exponent
-        // operand, no normalization, no exponent change.
-        res.ef = big.ef; res.em = big.em; res.es = big.es;
+        // operand, no normalization, no exponent change -- except a
+        // forced zero from M+MG, which takes the addressed operand's
+        // exponent whether or not that operand had the larger one
+        // (p.89).
+        FpNum ez = (forcedZero && accIsB) ? a : big;
+        res.ef = ez.ef; res.em = ez.em; res.es = ez.es;
         gen = False;
       end
       r.res = res;
