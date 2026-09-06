@@ -347,6 +347,143 @@ function FpResult fpAdd(FpNum a, FpNum b, Bool normalized, Bool noisy, Bool addM
   end
 endfunction
 
+// ---- DOUBLE PRECISION (p.79-80, p.95-96) ----------------------------
+// The accumulator's fraction is 96 bits, IBM 12-107; a storage operand
+// carries 48 and is "extended with 48 zeros during the operation".
+// Everything about the exponent, the ranges and the sign is the
+// single-precision rule, so this type repeats those fields with a
+// wider fraction and `fpdHead` hands the narrow helpers (fpExp, isXFP,
+// fpMakeExp, fpRangeBits) an FpNum to work on.
+typedef struct {
+  Bit#(1)  ef;
+  Bit#(10) em;
+  Bit#(1)  es;
+  Bit#(96) frac;
+  Bit#(1)  sign;
+  Bit#(3)  flags;
+} FpDouble deriving (Bits, Eq, FShow);
+
+function FpNum fpdHead(FpDouble x) =
+  FpNum { ef: x.ef, em: x.em, es: x.es, frac: 0, sign: x.sign, flags: x.flags };
+
+// IBM bit n is bit 127-n of the accumulator's 128 magnitude bits, so
+// the exponent and the fraction's high 48 are the left half's 63-4,
+// the fraction's low 48 are the left half's 3-0 followed by the right
+// half's 63-20, and IBM 108-127 -- the right half's low twenty --
+// are outside the fraction entirely.
+function FpDouble fpdFromAcc(Word64 accLeft, Word64 accRight, Word64 signByte) =
+  FpDouble { ef: accLeft[63], em: accLeft[62:53], es: accLeft[52],
+             frac: { accLeft[51:0], accRight[63:20] },
+             sign: sbSign(signByte), flags: sbFlags(signByte) };
+
+function FpDouble fpdFromWord(Word64 w) =
+  FpDouble { ef: w[63], em: w[62:53], es: w[52], frac: { w[51:4], 48'b0 },
+             sign: w[3], flags: w[2:0] };
+
+function Word64 fpdAccLeft(FpDouble x) = { x.ef, x.em, x.es, x.frac[95:44] };
+function Word64 fpdAccRight(FpDouble x, Word64 oldRight) = { x.frac[43:0], oldRight[19:0] };
+
+typedef struct {
+  FpDouble res;
+  Bool lc;
+  Bool ls;
+  Bool psh;
+  Bool generated;
+  Bool propagated;
+} FpdResult deriving (Bits, Eq, FShow);
+
+// ADD DOUBLE (p.95). `a` is the accumulator operand, `b` the storage
+// operand, already sign-modified and already extended with 48 zeros.
+// The shape is ADD's, with three differences the manual is explicit
+// about: the fractions are 96 bits rather than 48 extended to 96, so
+// what a preparatory shift pushes past the right end is LOST (in ADD
+// it is retained in the intermediate and participates); PSH is still
+// "difference exceeds 48" even though the fraction is twice as long;
+// and noisy mode does not add one-bits to the operands beforehand, it
+// only fills the vacated positions during normalization.
+function FpdResult fpAddDouble(FpDouble a, FpDouble b, Bool normalized, Bool noisy);
+  FpdResult r = FpdResult { res: a, lc: False, ls: False, psh: False,
+                            generated: False, propagated: False };
+  if (a.ef == 1 || b.ef == 1) begin
+    // Flagged operands: "the addition process follows the operation
+    // outlined under ADD except that the accumulator fraction is 96
+    // bits". Fig.23's table and the equal-range tie-break are the
+    // single-precision ones.
+    FpNum ha = fpdHead(a), hb = fpdHead(b);
+    FpDouble res = a;
+    if (isXFP(ha) && isXFP(hb)) res = a;
+    else if (isXFN(ha) && isXFN(hb)) res = a;
+    else if (isXFP(ha) || isXFP(hb)) res = isXFP(ha) ? a : b;
+    else res = isN(ha) ? a : b;
+    if ((isXFP(ha) && isXFP(hb)) || (isXFN(ha) && isXFN(hb)))
+      res = (fpExp(hb) > fpExp(ha)) ? b : a;
+    Bool gen = False;
+    if (res.ef == 0 && normalized) begin
+      // The survivor is the UNFLAGGED operand, so it normalizes like
+      // any other result -- the single-precision rule F204E4 pinned.
+      let {w96, adj, lc} = fpNormalize96Wide(0, res.frac, True, noisy);
+      let {nres, g} = fpMakeExp(signExtend(fpExp(fpdHead(res))) + adj, 48'b0, res.sign, res.flags);
+      res.ef = nres.ef; res.em = nres.em; res.es = nres.es; res.frac = w96;
+      gen = g;
+    end
+    r.res = res; r.propagated = (res.ef == 1); r.generated = gen;
+    return r;
+  end else begin
+    Int#(13) ea = fpExp(fpdHead(a)), eb = fpExp(fpdHead(b));
+    Int#(14) diff = signExtend(ea) - signExtend(eb);
+    Int#(14) adiff = (diff < 0) ? -diff : diff;
+    Bool aBig = (diff >= 0);
+    FpDouble big = aBig ? a : b;
+    FpDouble sml = aBig ? b : a;
+    r.psh = (adiff > 48);
+    if (adiff > 95) begin
+      // "When the difference between the exponents exceeds 95 the
+      // number with the lower exponent is not added."
+      r.res = big;
+      Bool bothZero = (a.frac == 0 && b.frac == 0);
+      r.ls = (big.frac == 0 && !bothZero);
+      return r;
+    end else begin
+      Bit#(96) fb = big.frac;
+      Bit#(96) fs = sml.frac >> adiff;
+      Bit#(97) sum;
+      Bit#(1) sign;
+      if (big.sign == sml.sign) begin
+        sum = zeroExtend(fb) + zeroExtend(fs);
+        sign = big.sign;
+      end else begin
+        if (fb >= fs) begin sum = zeroExtend(fb - fs); sign = big.sign; end
+        else begin sum = zeroExtend(fs - fb); sign = sml.sign; end
+        // Order-of-magnitude zero on an exact cancellation: the
+        // larger-exponent operand's sign, and on a tie the
+        // accumulator's (p.82) -- which for D+ is `a`, and `a` is
+        // `big` whenever the exponents are equal.
+        if (fb == fs) sign = big.sign;
+      end
+      let {f96, adj, lostCarry} = fpNormalize96Wide(sum[96], sum[95:0], normalized, noisy);
+      Bool zeroResult = (sum == 0);
+      let {hd, gen} = fpMakeExp(signExtend(fpExp(fpdHead(big))) + (zeroResult ? 0 : adj),
+                                48'b0, sign, a.flags);
+      FpDouble res = FpDouble { ef: hd.ef, em: hd.em, es: hd.es, frac: f96,
+                                sign: sign, flags: a.flags };
+      Bool g = gen;
+      if (zeroResult) begin
+        // "If the 96-bit intermediate sum has a zero fraction,
+        // normalization, if specified, will be suppressed. The
+        // exponent replacing accumulator bits 0-11 will be the
+        // exponent of the intermediate result."
+        res.ef = big.ef; res.em = big.em; res.es = big.es;
+        g = False;
+      end
+      r.res = res; r.lc = lostCarry; r.generated = g;
+      // "LS is set to one when at least one operand is non-zero and
+      // when the 96 bits of the result fraction are zero" (p.96).
+      r.ls = zeroResult && !(a.frac == 0 && b.frac == 0);
+      return r;
+    end
+  end
+endfunction
+
 // ---- COMPARE (p.90-91): algebraic comparison a ? b. Returns -1/0/+1
 // (accumulator low / equal / high).
 function Int#(2) fpCompare(FpNum a, FpNum b, Bool magnitude);

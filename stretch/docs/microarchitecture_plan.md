@@ -235,7 +235,19 @@ hand vectors alone. "Enables" notes the dependency chain.
    zero everywhere but its three flag bits, so a DLWF that ignored
    them passes every arithmetic check and fails only the sign byte
    (halts at 014602.40). The whole LOAD DOUBLE family (F207A-E) is now
-   verified against the diagnostic. Next: F208's D+ -- the first real double-precision
+   verified against the diagnostic. **D+ (ADD DOUBLE) is implemented
+   and verified too**: `FpDouble`/`fpAddDouble` in StretchFP work on
+   the accumulator's whole 96-bit fraction (IBM 12-107) against a
+   storage operand extended with 48 low-order zeros, with the three
+   differences from ADD the manual states -- the fractions are 96 bits
+   rather than 48 extended to 96, so a preparatory shift LOSES what it
+   pushes past the right end; PSH is still "difference exceeds 48";
+   and noisy mode does not pre-extend the operands. jb_af1c F208A1-A9
+   (pp.93-94, the nine unflagged sub-tests) passes, and making D+ read
+   only the accumulator's high 48 bits halts it at 014617.40.
+   Next: F208A10 onward (the XFP/XFN ranges, from 014724.00), then
+   F208B/C/D, then F209's D+MG and SRD. Still open in double
+   precision: D+MG, D-, SRD, SLO, D*, D/, LFT -- the first real double-precision
    ARITHMETIC, which needs the 96-bit adder and the accumulator's low
    half as a genuine operand rather than something only cleared.
    Related nearby routine also located and runnable-with-effort: F203B

@@ -1,0 +1,194 @@
+! Floating-point diagnostic jb_af1c, routine F208A "ADD DOUBLE TEST
+! ROUTINE -- ARITHMETIC CHECKS", sub-tests A1-A9 (docs/jb_af1c_
+! floating-point.pdf pp.93-94, octal 014613.00-014724.00): the
+! unflagged half of the block, and the first exercise of D+ -- the
+! first double-precision ARITHMETIC the model can do.
+!
+! Each sub-test builds a full 96-bit double-precision value in the
+! accumulator and adds a storage operand to it:
+!   DL(U) puts a word into bits 0-59 and clears 60-107; where the
+!     comment says "+ 48", a C0011 of another constant's fraction
+!     (48 bits at .12) into accumulator offset 20 fills the low half,
+!     so the accumulator holds a genuine 96-bit fraction rather than
+!     one padded with zeros;
+!   D+(U) adds a storage operand, which the machine extends with 48
+!     low-order zeros (Ref. Manual p.95);
+!   then three checks -- the low order fraction (48 bits at offset
+!     20), the high order fraction (48 bits at offset 68) and the
+!     exponent (12 bits at offset 116) -- and, where a carry out of
+!     the 48 high-order bits is expected, BZLC.
+!
+! What that exercises, and could not be exercised before: the carry
+! ACROSS the halves. A2 and A4 add a value to itself with the
+! accumulator's low half non-zero, so the low half overflows into the
+! high half and (A2, A4) out of the top, which is what the BZLC
+! checks; A1/A3/A5/A7 place the operand 48 places up so the
+! preparatory shift crosses the half boundary. A single-precision
+! adder cannot produce any of these results.
+!
+! A10 onward (from 014724.00) moves into the XFP/XFN ranges and is not
+! transcribed here; this program's PASS sits exactly where A10 begins,
+! which is what checks that A1-A9's word lengths are all right.
+!
+! Substitutions (SSIP framework, real listed addresses): SERS (octal
+! 1304) -> FAIL halt, SEN (octal 1310) -> scratch. The prologue
+! (014607.40, the SSIP routine identification) is not transcribed; the
+! block starts at the "B,$+.32" ahead of F208A1. Constants from the
+! pool p.176.
+!
+! Instructions: B, DL(U), C0011 into the accumulator at offset 20,
+! D+(U), CT0110 over 48- and 12-bit fields at offsets 20/68/116,
+! BZLC, SIC, BRGZ.
+! verify_fp_arith_f208a_listing.py checks every word bit-for-bit.
+!
+! Observed: all nine passed on the first run of a freshly written
+! 96-bit adder, which is a stronger statement than it sounds -- the
+! low-order checks are sensitive to every bit of the preparatory shift
+! and the carry across the halves. The injection that proves they bite:
+! making D+ read only the accumulator's high 48 bits and pad with
+! zeros -- what a single-precision adder would see -- halts at
+! 014617.40, A1's low order fraction check, the first check in the
+! block.
+
+! -- SSIP framework substitutes --
+        SLC, (8)1304.0
+SERS    BEW, $
+        SLC, (8)1310.0
+SEN     DD(BU,64,8), 0
+
+! -- constants (pool p.176) --
+
+        SLC, (8)22030.0
+FPK19   DD(BU,64,8), (8)0000525252525252525240
+        SLC, (8)22032.0
+FPK21   DD(BU,64,8), (8)0031177777777777777767
+        SLC, (8)22044.0
+FPK31   DD(BU,64,8), (8)0031000000000000000000
+FPK32   DD(BU,64,8), (8)0001177777777777777760
+FPK33   DD(BU,64,8), (8)0001177777777777777740
+FPK34   DD(BU,64,8), (8)0001000000000000000020
+FPK35   DD(BU,64,8), (8)0001125252525252525240
+FPK36   DD(BU,64,8), (8)0001052525252525252500
+FPK37   DD(BU,64,8), (8)0031125252525252525240
+FPK38   DD(BU,64,8), (8)0031052525252525252520
+FPK39   DD(BU,64,8), (8)0001052525252525252520
+
+! -- code (verbatim, at the listing's addresses) --
+        SLC, (8)14613.0
+DAD1A   B, $+.32   ! F208A1: exp. mem + 48 + exp. acc.
+        DL(U), FPK31
+        C0011(BU,48), FPK32+.12, 20   ! set the accumulator's low half
+        D+(U), FPK32
+        CT0110(BU,48), FPK33+.12, 20   ! test low order fraction
+        SIC, SEN
+        BRGZ, SERS
+        CT0110(BU,48), FPK34+.12, 68   ! test high order fraction
+        SIC, SEN
+        BRGZ, SERS
+        CT0110(BU,12), FPK31, 116   ! test exponent + 50
+        SIC, SEN
+        BRGZ, SERS
+        B, $+.32   ! F208A2: exp. mem + exp. acc.
+        DL(U), FPK21
+        D+(U), FPK21
+        CT0110(BU,48), FPK31+.12, 20   ! test low order fraction
+        SIC, SEN
+        BRGZ, SERS
+        CT0110(BU,48), FPK33+.12, 68   ! test high order fraction
+        SIC, SEN
+        BRGZ, SERS
+        SIC, SEN
+        BZLC, SERS   ! to check for the high order carry
+        CT0110(BU,12), FPK21, 116   ! test exponent + 50
+        SIC, SEN
+        BRGZ, SERS
+        B, $+.32   ! F208A3: exp. mem + 48 + exp. acc.
+        DL(U), FPK31
+        C0011(BU,48), FPK19+.12, 20   ! set the accumulator's low half
+        D+(U), FPK35
+        CT0110(BU,48), FPK36+.12, 20   ! test low order fraction
+        SIC, SEN
+        BRGZ, SERS
+        CT0110(BU,48), FPK34+.12, 68   ! test high order fraction
+        SIC, SEN
+        BRGZ, SERS
+        CT0110(BU,12), FPK31, 116   ! test exponent + 50
+        SIC, SEN
+        BRGZ, SERS
+        B, $+.32   ! F208A4: exp. mem + exp. acc.
+        DL(U), FPK37
+        D+(U), FPK37
+        CT0110(BU,48), FPK31+.12, 20   ! test low order fraction
+        SIC, SEN
+        BRGZ, SERS
+        CT0110(BU,48), FPK36+.12, 68   ! test high order fraction
+        SIC, SEN
+        BRGZ, SERS
+        SIC, SEN
+        BZLC, SERS   ! to check for the high order carry
+        CT0110(BU,12), FPK37, 116   ! test exponent + 50
+        SIC, SEN
+        BRGZ, SERS
+        B, $+.32   ! F208A5: exp. mem + 48 + exp. acc.
+        DL(U), FPK31
+        C0011(BU,48), FPK38+.12, 20   ! set the accumulator's low half
+        D+(U), FPK39
+        CT0110(BU,48), FPK37+.12, 20   ! test low order fraction
+        SIC, SEN
+        BRGZ, SERS
+        CT0110(BU,48), FPK31+.12, 68   ! test high order fraction
+        SIC, SEN
+        BRGZ, SERS
+        CT0110(BU,12), FPK31, 116   ! test exponent + 50
+        SIC, SEN
+        BRGZ, SERS
+        B, $+.32   ! F208A6: exp. mem + exp. acc.
+        DL(U), FPK38
+        D+(U), FPK38
+        CT0110(BU,48), FPK31+.12, 20   ! test low order fraction
+        SIC, SEN
+        BRGZ, SERS
+        CT0110(BU,48), FPK37+.12, 68   ! test high order fraction
+        SIC, SEN
+        BRGZ, SERS
+        CT0110(BU,12), FPK38, 116   ! test exponent + 50
+        SIC, SEN
+        BRGZ, SERS
+        DL(U), FPK31   ! F208A7: exp mem + exp acc ++48
+        C0011(BU,48), FPK36+.12, 20   ! set the accumulator's low half
+        D+(U), FPK35
+        CT0110(BU,48), FPK33+.12, 20   ! test low order fraction
+        SIC, SEN
+        BRGZ, SERS
+        CT0110(BU,48), FPK31+.12, 68   ! test high order fraction
+        SIC, SEN
+        BRGZ, SERS
+        CT0110(BU,12), FPK31, 116   ! test exponent + 50
+        SIC, SEN
+        BRGZ, SERS
+        B, $+.32   ! F208A8: exp.mem+exp.acc
+        DL(U), FPK38
+        D+(U), FPK37
+        CT0110(BU,48), FPK31+.12, 20   ! test low order fraction
+        SIC, SEN
+        BRGZ, SERS
+        CT0110(BU,48), FPK32+.12, 68   ! test high order fraction
+        SIC, SEN
+        BRGZ, SERS
+        CT0110(BU,12), FPK38, 116   ! test exponent + 50
+        SIC, SEN
+        BRGZ, SERS
+        B, $+.32   ! F208A9: exp.acc+48+exp.mem
+        DL(U), FPK32
+        D+(U), FPK21
+        CT0110(BU,48), FPK21+.12, 20   ! test low order fraction
+        SIC, SEN
+        BRGZ, SERS
+        CT0110(BU,48), FPK21+.12, 68   ! test high order fraction
+        SIC, SEN
+        BRGZ, SERS
+        CT0110(BU,12), FPK21, 116   ! test exponent + 50
+        SIC, SEN
+        BRGZ, SERS
+PASS    BEW, $                  ! 014724.00: where F208A10 begins (the flagged ranges)
+        END, DAD1A

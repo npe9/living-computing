@@ -1414,7 +1414,8 @@ function ActionValue#(Tuple4#(HWordAddr, Maybe#(Tuple2#(Bit#(4), IndexWord)),
                    || c == 7'b0001010 || c == 7'b0101010 || isST
                    || c == 7'b0010010 || c == 7'b0110010 || c == 7'b0010110 || c == 7'b0110110
                    || c == 7'b0011010 || c == 7'b1010110 || isEplI || isSHF
-                   || c == 7'b1000110 || c == 7'b1100110);   // DL / DLWF
+                   || c == 7'b1000110 || c == 7'b1100110   // DL / DLWF
+                   || c == 7'b1000010);                    // D+
         if (!known)
           ind = setOpInvalid(ind);   // /, R/, the rest of double precision, SRT, LFT, *+ ...: not yet
         else if (isST) begin
@@ -1537,6 +1538,34 @@ function ActionValue#(Tuple4#(HWordAddr, Maybe#(Tuple2#(Bit#(4), IndexWord)),
               ind = setBit(ind, ind_MOP, 0);
               ind = setResultIndicatorsFp(ind, v);
               ind = setRangeIndicators(ind, fpRangeBits(v, gen, !gen && v.ef == 1));
+              ind = setBit(ind, ind_ZM, 0);
+            end
+            7'b1000010: begin // D+ (p.95)
+              // ADD DOUBLE works on the accumulator's whole 96-bit
+              // fraction, IBM bits 12-107, against a storage operand
+              // extended with 48 low-order zeros. Bits 108-127 are
+              // outside the fraction and are carried through
+              // untouched, exactly as for DL.
+              Word64 accR = st.readAccRight();
+              FpDouble da = fpdFromAcc(accL, accR, accS);
+              FpDouble db = fpdFromWord(prefetch[0]);
+              db.sign = opnd.sign;   // the sign modifiers, already applied
+              FpdResult r = fpAddDouble(da, db, normalized, noisy);
+              st.writeWord(addrAccLeft, fpdAccLeft(r.res));
+              st.writeWord(addrAccRight, fpdAccRight(r.res, accR));
+              st.writeWord(addrAccSignByte, sbWith(accS, r.res.sign, r.res.flags));
+              ind = setBit(ind, ind_MOP, 0);
+              // The result indicators only ever ask whether the result
+              // fraction is zero and what its sign is, so they are fed
+              // a narrow view whose fraction is zero exactly when the
+              // 96-bit one is.
+              FpNum vind = fpdHead(r.res);
+              vind.frac = (r.res.frac == 0) ? 0 : 48'b1;
+              ind = setResultIndicatorsFp(ind, vind);
+              if (r.lc) ind = setBit(ind, ind_LC, 1);
+              if (r.ls) ind = setBit(ind, ind_LS, 1);
+              if (r.psh) ind = setBit(ind, ind_PSH, 1);
+              ind = setRangeIndicators(ind, fpRangeBits(vind, r.generated, r.propagated));
               ind = setBit(ind, ind_ZM, 0);
             end
             7'b0000010, 7'b0100010: begin // + / +MG
