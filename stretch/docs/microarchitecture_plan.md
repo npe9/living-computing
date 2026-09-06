@@ -184,9 +184,22 @@ hand vectors alone. "Enables" notes the dependency chain.
    passed as the model stood, and F206D1 against F206D3 is what earns
    the `sum != 0` forced-zero guard written blind for F206A -- removing
    it halts D1 at 014304.40. The whole ADD MAGNITUDE TO MEMORY family
-   (F206A-D) is now verified against the diagnostic. Next within step
-   2: the multiply block and the open ops in the order the diagnostic
-   reaches them.
+   (F206A-D) is now verified against the diagnostic.
+   **Correction to the order (established 2026-09-05 by reading the
+   routine banners of pp.89-140): the multiply block is NOT next.**
+   What jb_af1c reaches after F206 is DOUBLE PRECISION -- F207 LOAD
+   DOUBLE (A arithmetic, B unchanged registers, C, E load double with
+   flag, pp.89-96), F208 ADD DOUBLE (D+), F209 DOUBLE ADD TO MAGNITUDE
+   (D+MG / D-MGA) and STORE ROUNDED (SRD) -- and it only gets to F212
+   F+ (add to fraction) and F213 E+I (add immediate to exponent)
+   around pp.128-135, with multiply later still. So the next codesign
+   step is not another transcription but the double-precision datapath
+   the model does not have: the 96-bit fraction across the
+   accumulator's two halves, DL/DLWF, D+/D+MG/D-/D-MGA, SRD/SLO/LFT.
+   Transcribing F207 needs only DL/DLWF plus connectives already in
+   hand, so that is the natural first increment. If a smaller step is
+   wanted first, the alternative is to go out of diagnostic order to
+   F212's F+ or F213's E+I, both single-precision.
    Related nearby routine also located and runnable-with-effort: F203B
    "EXP RNG INDIC TEST" (p.52, octal 012260+) verifies the exponent-
    range indicators XPFP/XPH/XPL/XPU (set by ST, cleared by Z,$IND)
