@@ -542,7 +542,30 @@ hand vectors alone. "Enables" notes the dependency chain.
    PC alongside the program's own PASS symbol -- if they disagree, the
    binary is stale. Delete the three artifacts and rebuild before
    trusting anything.
-   Next: F210 "STORE ROUNDED TEST ROUTINE" (p.110, from 015772.00).
+   jb_af1c F210A1-A2 (p.110) drove SRD's execute arm, which is the
+   first model work since the D+MG rules -- SRD decoded but set
+   OP-invalid. It passed on the first implementation, and three
+   injections say precisely how much of it the block pins. Removing
+   the rounding entirely halts A1 at 016002.40. But rounding one place
+   LOW (IBM 59) and one place HIGH (IBM 61) BOTH PASS, because A1 and
+   A2's accumulator fraction is 96 ONES: a +1 anywhere in the
+   discarded low half carries the whole way out to the same zero
+   result. So they pin that rounding happens, that the overflow is
+   lost, that the XFP/XFN exponent is unchanged, and the stored sign
+   -- but not the bit position their own comment names.
+   AN OPEN QUESTION FOR F210A3, worth stating before it is run. A3 is
+   DL(U) FPK0 -- a zero accumulator -- then SRD(U) ROS, expecting
+   FPK68 = 0000000000000000000020, whose fraction is 1 in its LEAST
+   significant bit, IBM 59. Adding 1 at IBM 60 to a zero fraction sets
+   a bit in the DISCARDED half and stores a zero fraction, not a one.
+   Either SRD really rounds at IBM 59, or A3's CT0110 offset (68,
+   where A1/A2 use 4) means something other than it appears. The model
+   rounds at IBM 60 on the manual's own words ("adding one to the
+   fraction in the accumulator in bit position 60", p.96); A3 is the
+   run that decides. Note that whichever way it goes, A1/A2 stay green
+   -- so A3 is not redundant with them, it is the only thing that can
+   settle it.
+   Next: F210A3-A4 (p.110, from 016014.00), then the rest of F210.
    Its prologue is FSR1 (015772.00) and F210A1 begins at SAP11
    (015775.00): DL(U) FPK26, C0011 FK40+.12 into offset 20, then
    SRD(U) ROS, L(BU) FK35, CT0110(BU,60) ROS,4 -- "error if 1 not

@@ -50,6 +50,36 @@
 !
 ! Instructions: B, DL(U), C0011, SRD(U), L, CT0110, SIC, BZB, BRGZ.
 ! verify_fp_arith_f210a1_2_listing.py checks every word bit-for-bit.
+!
+! Observed: SRD passed on the first implementation. Three injections
+! say exactly how much of it this block pins, and the answer is less
+! than it looks:
+!
+!   Rounding not at all -- {1'b0, da.frac} with no addend -- halts A1
+!   with SIC storing 016002.40, right after its CT0110 question. So
+!   A1 does prove that a rounding step happens.
+!
+!   Rounding one place LOW, at IBM 59 (frac[48]): PASSES.
+!   Rounding one place HIGH, at IBM 61 (frac[46]): PASSES.
+!
+! Neither sub-test can see the bit position at all, and the reason is
+! structural rather than accidental: their accumulator fraction is 96
+! ONES, so a +1 anywhere in the discarded low half carries the whole
+! way out and leaves the same zero result. A1 and A2 pin that rounding
+! occurs, that the overflow is lost, that the exponent is unchanged in
+! the XFP/XFN ranges, and the stored sign bit -- but the "bit position
+! 60" in their own printed comment is the one thing they cannot check.
+!
+! F210A3 is what settles it, and there is a real question waiting
+! there. A3 is DL(U) FPK0 -- a ZERO accumulator -- then SRD(U) ROS,
+! and it expects FPK68 = 0000000000000000000020, whose fraction is 1
+! in its LEAST significant bit, IBM 59. Adding 1 at IBM 60 to a zero
+! fraction sets IBM 60, which lies in the discarded half, and would
+! store a fraction of zero, not one. Either the rounding position is
+! IBM 59 rather than 60, or A3's CT0110 offset (68, where A1/A2 use 4)
+! means something other than what it looks like. The model currently
+! rounds at IBM 60, from the manual's own words; A3 is the run that
+! will say whether the manual's numbering and the model's agree.
 
 ! -- SSIP framework substitutes --
         SLC, (8)1304.0
