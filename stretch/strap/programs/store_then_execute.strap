@@ -1,0 +1,39 @@
+! store_then_execute.strap -- program store compare with an OBSERVABLE
+! difference, which nothing in the suite had before.
+!
+! store_close_to_fetch.strap covers store-then-LOAD: a store followed
+! by a load of the same word must see the new value. This covers
+! store-then-EXECUTE: a store into the word holding the NEXT
+! INSTRUCTION, which must be re-fetched and executed in its modified
+! form. That path was unexercised, and jb_af1c F212A25 walked straight
+! into a livelock in it -- prefetch only ever issued at nextFetch and
+! moved FORWARD, so a word invalidated by program store compare at or
+! ahead of the instruction counter was dropped and never re-read, and
+! the core stalled on it forever.
+!
+! F212A25 alone cannot guard the fix. It patches effective-address
+! bits 12-17, which the shift ignores by definition, so the stale and
+! the modified instruction are BOTH no-op shifts: that row proves the
+! machine does not hang, not that the re-fetch saw the new word.
+! This program makes the two outcomes different.
+!
+! Same shape as F212A25 -- a CM1111 writing ones into the very next
+! instruction's address field -- but aimed at a bit that matters. SRC0
+! sits at an EVEN word and SRC1 at the one after it, so the two
+! addresses differ only in bit 17, the address field's low bit.
+! Setting that one bit turns "L(U), SRC0" into "L(U), SRC1":
+!   re-fetch sees the NEW word   -> RESULT = SRC1 = frac 2
+!   re-fetch sees the STALE word -> RESULT = SRC0 = frac 1, check fails
+! (U) throughout so no normalization can alter the value in transit.
+
+        SLC, (8)40.0
+START   CM1111(BU,1), TARGET+.17    ! set the low bit of TARGET's address
+TARGET  L(U), SRC0                  ! must EXECUTE as "L(U), SRC1"
+        ST(U), RESULT
+DONE    BEW, $
+
+        SLC, (8)100.0
+SRC0    DD(BU,64), (8)0000000000000000000020    ! fraction 1
+SRC1    DD(BU,64), (8)0000000000000000000040    ! fraction 2
+RESULT  DD(BU,64), 0
+        END, START

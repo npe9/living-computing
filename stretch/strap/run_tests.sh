@@ -768,6 +768,18 @@ run "FP shift fraction, 96-bit lost carry and right-shift walk (jb_af1c F212A12-
 run "FP shift fraction, 96-bit lost carry and right-shift walk (jb_af1c F212A12-A23 on the model)" ./run_program.sh programs/fp_arith_f212a12_23.strap StretchFpShfBTb \
     "PC=$(python3 -c 'from strap_asm import assemble; print(assemble(open("programs/fp_arith_f212a12_23.strap").read()).symtab["PASS"]//32)')" \
     "SEN:712=0"
+run "FP shift fraction, LC off / self-modifying / norm-mod / flagged (jb_af1c F212A24-A30, encoding)" python3 verify_fp_arith_f212a24_30_listing.py
+run "FP shift fraction, LC off / self-modifying / norm-mod / flagged (jb_af1c F212A24-A30 on the model)" ./run_program.sh programs/fp_arith_f212a24_30.strap StretchFpShfCTb \
+    "PC=$(python3 -c 'from strap_asm import assemble; print(assemble(open("programs/fp_arith_f212a24_30.strap").read()).symtab["PASS"]//32)')" \
+    "SEN:712=0"
+
+# -- Program store compare with an OBSERVABLE difference. F212A25 above
+# -- is the diagnostic's own store-then-execute row, but it patches
+# -- bits the shift ignores, so stale and fresh are both no-ops there:
+# -- it proves the machine does not hang, not that the re-fetch saw the
+# -- new word. This one makes the two outcomes different.
+run "Program store compare: store then EXECUTE the modified instruction" ./run_program.sh programs/store_then_execute.strap StretchStoreExecTb \
+    "RESULT:$(python3 -c 'from strap_asm import assemble; print(assemble(open("programs/store_then_execute.strap").read()).symtab["RESULT"]//64)')=0x20"
 
 # -- 1j. Store-close-to-fetch: store a word then immediately reload it;
 # the load must read the new value, not the stale one. The hazard the FP

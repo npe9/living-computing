@@ -1,0 +1,129 @@
+! jb_af1c F212A24-A30, pp.118-119 (octal 016470.00-016536.40, the
+! "-ARITHMETIC CHECKS F212A" block's own exit "BD,$+1.0"), transcribed
+! verbatim from the listing.  This closes F212A.
+!
+! Four things here that A1-A23 did not reach:
+!
+! A24 CLOSES HALF OF THE LC COVERAGE GAP the A12-A23 header records.
+! BLCZ clears LC, then DL(U),FPK84 / SHFR(U),107 must leave both
+! halves +0 with LC still OFF ("BLC,SERS -ERROR IF LC INDICATOR ON").
+! p.102: "A one bit shifted right beyond accumulator bit position 107
+! is lost, but no indicator is turned on."  Note what this does NOT
+! close: LC off after a LEFT shift, which no row in F212A asks.
+!
+! A25 IS SELF-MODIFYING CODE and the sharpest test in the block.
+! CM1111(BU,6,8) writes six ONE bits into the SHFL instruction's own
+! address field at DAM+.12 -- that is effective-address bits 12-17,
+! everything to the RIGHT of the 0-11 the shift actually uses -- and
+! then executes it.  p.102 defines the shift by "the effective address
+! bits 0-11", so those six ones must be ignored and the SHFL(U),0 must
+! still be a no-op.  It also exercises store-close-to-fetch for real:
+! the word being modified is the very next instruction executed.
+!
+! A26 pins "NORM MOD IGNORED".  SHFL(N),1 -- printed "200.27 20", the
+! unnormalized bit CLEAR where every other row here has it set -- must
+! do exactly what SHFL(U),1 does.  p.102: "The operation is not
+! affected by the normalization modifier."  The model's arm never
+! consults `normalized`, so this is the listing confirming that.
+!
+! A27-A30 run the shift on FLAGGED operands and check SIXTY bits at
+! offset 68 rather than 48 -- IBM 0-59, which is the EXPONENT (0-11)
+! together with the high fraction -- because the question is that the
+! exponent is NOT touched: p.102, "No change in the exponent field of
+! the accumulator operand is made by this operation."
+!   A27 FK21 is XFP (ef=1, es=0) with 5 high-order zeros; SHFL 5 -> FK53
+!   A28 FK53 has no high-order zeros;                      SHFR 5 -> FK21
+!   A29 FK30 is XFN (ef=1, es=1) with 3 high-order zeros;  SHFL 3 -> FK54
+!   A30 FK54;                                              SHFR 3 -> FK30
+! All four verified against the pool (pp.176-178) before running, both
+! the fraction shift and the exponent staying put; the ranges and the
+! zero counts match the listing's own comments on each row.
+
+! -- SSIP framework substitutes: SERS (octal 1304) -> FAIL halt,
+! -- SEN (octal 1310) -> scratch.
+        SLC, (8)1304.0
+SERS    BEW, $
+        SLC, (8)1310.0
+SEN     DD(BU,64,8), 0
+
+! -- constants (pools pp.176-178) --
+        SLC, (8)22005.0
+FPK0    DD(BU,64), (8)0000000000000000000000
+        SLC, (8)22123.0
+FPK84   DD(BU,64), (8)0000500000000000000000
+        SLC, (8)22125.0
+FPK87   DD(BU,64), (8)0001000077777777777760
+FPK88   DD(BU,64), (8)0001000177777777777740
+        SLC, (8)22167.0
+FK21    DD(BU,64), (8)1777403777777777777760
+        SLC, (8)22200.0
+FK30    DD(BU,64), (8)1577617777777777777760
+        SLC, (8)22227.0
+FK53    DD(BU,64), (8)1777577777777777777000
+FK54    DD(BU,64), (8)1577777777777777777600
+
+        SLC, (8)16470.0
+FSHF2   BLCZ, $+.32                          ! F212A24
+        DL(U), FPK84
+        SHFR(U), 13696.0
+        CT0110(BU,48), FPK0+.12, 68          ! test high order fract. + 0
+        SIC, SEN
+        BRGZ, SERS
+        CT0110(BU,48), FPK0+.12, 20          ! test low order fract. + 0
+        SIC, SEN
+        BRGZ, SERS
+        SIC, SEN
+        BLC, SERS                            ! error if LC indicator on
+        DL(U), FPK87                         ! F212A25
+        CM1111(BU,6,8), DAM+.12              ! bits to right of eff. address ignored
+DAM     SHFL(U), 0.0
+        CT0110(BU,48), FPK87+.12, 68         ! does high order fract. remain same
+        SIC, SEN
+        BRGZ, SERS
+        CT0110(BU,48), FPK0+.12, 20          ! does low order fract. remain same
+        SIC, SEN
+        BRGZ, SERS
+        DL(U), FPK87                         ! F212A26 - norm mod ignored
+        SHFL(N), 128.0
+        CT0110(BU,48), FPK88+.12, 68         ! was 96 bit fract. shifted left,
+        SIC, SEN
+        BRGZ, SERS                           ! one place only
+        CT0110(BU,48), FPK0+.12, 20
+        SIC, SEN
+        BRGZ, SERS
+        B, $+.32                             ! F212A27 - exponent of opnd in XFP range
+        DL(U), FK21                          ! fraction has 5 high order zeros
+        SHFL(U), 640.0
+        CT0110(BU,60), FK53, 68              ! check fract. shifted left 5 places
+        SIC, SEN
+        BRGZ, SERS
+        CT0110(BU,48), FPK0+.12, 20
+        SIC, SEN
+        BRGZ, SERS
+        DL(U), FK53                          ! F212A28 - fract has no high order zeros
+        SHFR(U), 640.0
+        CT0110(BU,60), FK21, 68              ! check fract. shifted right 5 places
+        SIC, SEN
+        BRGZ, SERS
+        CT0110(BU,48), FPK0+.12, 20
+        SIC, SEN
+        BRGZ, SERS
+        B, $+.32                             ! F212A29 - exponent of opnd in XFN range
+        DL(U), FK30                          ! fraction has 3 high order zeros
+        SHFL(U), 384.0
+        CT0110(BU,60), FK54, 68              ! check fract. shifted left 3 places
+        SIC, SEN
+        BRGZ, SERS
+        CT0110(BU,48), FPK0+.12, 20
+        SIC, SEN
+        BRGZ, SERS
+        DL(U), FK54                          ! F212A30
+        SHFR(U), 384.0
+        CT0110(BU,60), FK30, 68              ! check fract. shifted right 3 places
+        SIC, SEN
+        BRGZ, SERS
+        CT0110(BU,48), FPK0+.12, 20
+        SIC, SEN
+        BRGZ, SERS
+PASS    BEW, $
+        END, FSHF2

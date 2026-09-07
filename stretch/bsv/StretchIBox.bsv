@@ -191,11 +191,31 @@ module mkInstrBuffers #(StretchStorage st) (InstrBuffers);
   method Action advance(WordAddr pcw, Bool restart);
     Vector#(2, YReg) ny = readVReg(yr);
     WordAddr nf = nextFetch;
+    // Where the fetch stream must go BACK to, if a store invalidated a
+    // word the instruction counter has not passed yet. See below.
+    Maybe#(WordAddr) rewind = tagged Invalid;
     for (Integer k = 0; k < 2; k = k + 1) begin
       // Program store compare: a store to a prefetched word invalidates it.
       if (st.recentStore() matches tagged Valid .sw &&& ny[k].addr == sw && (ny[k].valid || ny[k].pending)) begin
         ny[k].valid = False;
         if (ny[k].pending) ny[k].discard = True;
+        // ... and REWIND the fetch stream to it. Invalidating alone is
+        // not enough: prefetch below only ever issues at nextFetch and
+        // moves forward, so a word at or ahead of the instruction
+        // counter would be dropped and never re-read, and the core
+        // would stall on it forever (mkStretchCore's prepare arm leaves
+        // `prepared` Invalid when lookup misses, and simply retries).
+        // jb_af1c F212A25 is exactly that program: a CM1111 writes six
+        // ones into the address field of the VERY NEXT instruction and
+        // then executes it, and before this the model livelocked at
+        // 016500.00, the modified instruction's own address.
+        // A store to a word the counter has ALREADY passed must not
+        // drag the stream backward, hence the sw >= pcw guard.
+        if (sw >= pcw)
+          rewind = tagged Valid (case (rewind) matches
+                                   tagged Valid .r : (r < sw ? r : sw);
+                                   default         : sw;
+                                 endcase);
       end
       // Restart (taken branch or setPC): drop everything buffered.
       if (restart) begin
@@ -214,6 +234,32 @@ module mkInstrBuffers #(StretchStorage st) (InstrBuffers);
       if (ny[k].valid && ny[k].addr < pcw) ny[k].valid = False;
     end
     if (restart) nf = pcw;
+    // A rewind only ever moves the stream back, never forward.
+    else if (rewind matches tagged Valid .r &&& r < nf) nf = r;
+    // nextFetch means "the lowest word not yet buffered", and a rewind
+    // can break that: the word after the invalidated one is usually
+    // still held by the other Y. Requesting it again would put BOTH
+    // buffers on the same address, and then neither can ever be freed
+    // by "the instruction counter has passed it" (only strictly-less
+    // addresses are), so no slot frees, the word after them is never
+    // fetched, and the core wedges as soon as it needs it. That is not
+    // hypothetical: it is what jb_af1c F212A25 did after the rewind
+    // alone was added -- the stall simply moved from 016500.00 to
+    // 016501.40. Skipping addresses already held or outstanding
+    // restores the invariant. Two passes suffice for two buffers.
+    // "Held" means the slot will actually DELIVER that word: valid, or
+    // pending without discard. A pending-with-discard slot holds
+    // nothing -- its arriving word is thrown away -- and treating it as
+    // held is wrong in exactly the case that matters most, a taken
+    // branch: `restart` invalidates every slot and marks the pending
+    // ones discard, so counting them would skip `pcw` itself and the
+    // branch target would never be fetched. The first version of this
+    // loop did count them and livelocked Problem 2.2 Method 2; the
+    // full suite caught it.
+    for (Integer t = 0; t < 2; t = t + 1)
+      for (Integer j = 0; j < 2; j = j + 1)
+        if ((ny[j].valid || (ny[j].pending && !ny[j].discard))
+            && ny[j].addr == nf) nf = nf + 1;
     // Issue at most one prefetch per clock into a free Y, in order.
     Bool issued = False;
     for (Integer k = 0; k < 2; k = k + 1)

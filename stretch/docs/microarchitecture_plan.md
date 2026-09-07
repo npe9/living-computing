@@ -767,13 +767,64 @@ hand vectors alone. "Enables" notes the dependency chain.
    the generic suffix loop strips them to SHF, itself a real FP op.
    The listing's "Z,SIND" is Z,$IND -- STRAP's dollar sign scanned as
    an S -- and $IND is the Appendix A system symbol for word 11.
-   F212 is transcribed A1-A11 and A12-A23. STILL TO DO in F212:
-   A24-A30 (SHFR 107 with LC required OFF; A25's CM1111 patch proving
-   bits right of the effective address are ignored; A26 "NORM MOD
-   IGNORED"; A27-A30 XFP/XFN operands), B1-B4 (the four sign-modifier
-   combinations, where SHFA/SHFN/SHFNA get exercised), C1-C3 (TEST
-   UNCHANGED REGISTERS: L0-11, R44-63, SB0-7 -- the guard on the new
-   three-write arm) and D1-D5+ (indicator tests).
+   F212A IS COMPLETE (A1-A11, A12-A23, A24-A30). A24 is the LC-OFF row
+   (SHFR 107 after BLCZ, "ERROR IF LC INDICATOR ON") -- it closes the
+   coverage gap noted above for the RIGHT-shift side only; nothing in
+   F212A still asks for LC off after a LEFT shift. A26 pins "NORM MOD
+   IGNORED" with SHFL(N),1 ("200.27 20", the unnormalized bit CLEAR)
+   behaving as SHFL(U),1, which is p.102's "not affected by the
+   normalization modifier". A27-A30 run flagged XFP/XFN operands and
+   check SIXTY bits at offset 68 rather than 48 -- the exponent
+   together with the fraction -- because the question there is that the
+   shift leaves the EXPONENT alone.
+
+   TWO REAL I-BOX BUGS, both found by F212A25 and neither reachable by
+   anything else in the suite. A25 is SELF-MODIFYING CODE: a CM1111
+   writes six ones into the address field of the VERY NEXT instruction
+   and then executes it.
+     (1) PROGRAM STORE COMPARE DID NOT REWIND THE FETCH STREAM. The
+     I-box invalidated a buffered word on a matching store, but
+     prefetch only ever issues at `nextFetch` and moves FORWARD, so a
+     word at or ahead of the instruction counter was dropped and never
+     re-read -- and mkStretchCore's prepare arm simply retries when
+     lookup misses. The model livelocked at 016500.00, the modified
+     instruction's own address. Fixed by rewinding `nextFetch` to the
+     invalidated word, guarded by `sw >= pcw` so a store to a word the
+     counter has already passed cannot drag the stream backward.
+     (2) THE REWIND THEN BROKE `nextFetch`'s INVARIANT, and the stall
+     merely MOVED to 016501.40. `nextFetch` means "the lowest word not
+     yet buffered"; after a rewind the word after the invalidated one
+     is usually still held by the other Y, and re-requesting it put
+     BOTH buffers on the same address. Only strictly-lesser addresses
+     are freed by "the counter has passed it", so neither slot ever
+     freed, the word after them was never fetched, and the core wedged
+     again. Fixed by skipping addresses already held or outstanding
+     when advancing `nextFetch`. Diagnosed from a temporary trace of
+     the prepare arm (prepared=0 with everything else clear) plus one
+     of the Y buffers, not by reading -- the second bug was invisible
+     until the first was fixed.
+   ORDERING IS CORRECT BY CONSTRUCTION and is a SEPARATE claim from
+   those two: a re-fetch cannot read a stale word, because
+   StretchStorage issues no read at all while the store queue is
+   non-empty (`!busUsed && !issued && !storeQ.notEmpty`), and
+   mbcu.canAccept requires the target unit free, so a read cannot
+   overtake the store inside its memory unit either.
+   A25 CANNOT GUARD EITHER FIX ON ITS OWN, which is why
+   programs/store_then_execute.strap was added beside it. A25 patches
+   effective-address bits 12-17, which the shift ignores by
+   definition, so the stale and the modified instruction are BOTH
+   no-op shifts: the row proves the machine does not hang, not that
+   the re-fetch saw the new word. The new program has the same shape
+   -- a CM1111 into the next instruction's address field -- but sets a
+   bit that MATTERS, turning "L(U), SRC0" into "L(U), SRC1" so stale
+   and fresh give different answers. store_close_to_fetch.strap
+   covered store-then-LOAD; store-then-EXECUTE had no test at all,
+   which is why this survived.
+
+   STILL TO DO in F212: B1-B4 (the four sign-modifier combinations,
+   where SHFA/SHFN/SHFNA get exercised), C1-C3 (TEST UNCHANGED
+   REGISTERS: L0-11, R44-63, SB0-7 -- the guard on the new three-write
+   SHF arm) and D1-D5+ (indicator tests).
    COVERAGE LIMIT, measured not assumed: NOTHING in A1-A23 requires LC
    to be OFF after a LEFT shift. A12 wants it ON; A24 is the "ERROR IF
    LC INDICATOR ON" row but shifts RIGHT, where the model cannot set
