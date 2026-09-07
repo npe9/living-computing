@@ -1,0 +1,76 @@
+! Floating-point diagnostic jb_af1c, routine F210 "STORE ROUNDED TEST
+! ROUTINE", section C "ACCUMULATOR FLAGS TO MEMORY FLAGS", sub-tests
+! C1-C2 (docs/jb_af1c_floating-point.pdf pp.111-112, octal
+! 016111.40-016130.40, where F210D "TESTS OF INDICATORS" begins).
+!
+! The oracle for the other half of p.96's storage-word sentence: "The
+! sign of the accumulator, as changed by the sign modifiers, is placed
+! in storage bit 60. The accumulator flag bits are placed in storage
+! bits 61-63." F210A checked bit 60 with its BZB questions; nothing so
+! far has looked at 61-63 at all.
+!
+!   C1  CM1111 sets ROS to all ones FIRST, then Z,$L / Z,$R / Z,$SB
+!       zero the accumulator and its sign byte. After SRD(U) ROS, the
+!       memory flags at ROS+.61 must be ZERO -- so the stored flags
+!       have to come from the accumulator and cannot be whatever was
+!       already in the word. Then it asks that the accumulator's own
+!       flags at 10.5 are still zero.
+!   C2  the mirror: all ones everywhere, flags 7, and both questions
+!       expect 7.
+!
+! C1 is the sharper of the two. Pre-loading ROS with ones is what
+! makes it a test of copying rather than a test of leaving alone -- a
+! model that simply never wrote bits 61-63 would pass C2 and fail C1.
+!
+! FSR3 is the listing's own label at its real address, 016111.40 --
+! the routine's exit branches back to it.
+!
+! ROS (022355) is the routine's scratch word, not a pool constant.
+! Framework substitutes as everywhere else in this series: SERS (octal
+! 1304) -> FAIL halt, SEN (octal 1310) -> scratch. Constant from the
+! pool p.176. PASS sits at 016130.40, where F210D begins.
+!
+! Instructions: CM1111, Z, SRD(U), CT0011, CT1100, C1111, SIC, B,
+! BRGZ.
+! verify_fp_arith_f210c_listing.py checks every word bit-for-bit.
+
+! -- SSIP framework substitutes --
+        SLC, (8)1304.0
+SERS    BEW, $
+        SLC, (8)1310.0
+SEN     DD(BU,64,8), 0
+
+! -- the routine's scratch word --
+        SLC, (8)22355.0
+ROS     DD(BU,64,8), 0
+
+! -- constants (pool p.176) --
+        SLC, (8)022006.0
+FPK1    DD(BU,64,8), (8)1777777777777777777777
+
+! -- code (verbatim, at the listing's addresses) --
+        SLC, (8)16111.40
+FSR3    CM1111(BU), ROS                        ! F210C1: accumulator flags + 0
+        Z, $L
+        Z, $R
+        Z, $SB
+        SRD(U), ROS
+        CT0011(BU,3), ROS+.61                  ! check memory flags + 0
+        SIC, SEN
+        BRGZ, SERS
+        CT0011(BU,3), 10.5                     ! do acc. flags remain + 0
+        SIC, SEN
+        BRGZ, SERS
+        B, $+.32                               ! F210C2: accumulator flags + 7
+        C1111(BU,64), FPK1, 64
+        C1111(BU,64), FPK1
+        CM1111(BU,8), 10.0
+        SRD(U), ROS
+        CT1100(BU,3), ROS+.61                  ! check memory flags + 7
+        SIC, SEN
+        BRGZ, SERS
+        CT1100(BU,3), 10.5                     ! do acc. flags remain + 7
+        SIC, SEN
+        BRGZ, SERS
+PASS    BEW, $                                 ! 016130.40: where F210D begins
+        END, FSR3

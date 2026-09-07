@@ -677,6 +677,29 @@ run "FP store rounded, unchanged registers (jb_af1c F210B on the model)" ./run_p
     "PC=$(python3 -c 'from strap_asm import assemble; print(assemble(open("programs/fp_arith_f210b.strap").read()).symtab["PASS"]//32)')" \
     "SEN:712=0"
 
+# F210C "ACCUMULATOR FLAGS TO MEMORY FLAGS" guards the other half of
+# p.96's storage-word sentence: the accumulator flag bits go to storage
+# bits 61-63. F210A checked bit 60 (the sign) with its BZB questions
+# and nothing had looked at 61-63. C1 pre-loads ROS with ONES before
+# zeroing the accumulator, which makes it a test of copying rather than
+# of leaving alone.
+run "FP store rounded, flags to memory (jb_af1c F210C, encoding)" python3 verify_fp_arith_f210c_listing.py
+run "FP store rounded, flags to memory (jb_af1c F210C on the model)" ./run_program.sh programs/fp_arith_f210c.strap StretchFpAddDblMgFTb \
+    "PC=$(python3 -c 'from strap_asm import assemble; print(assemble(open("programs/fp_arith_f210c.strap").read()).symtab["PASS"]//32)')" \
+    "SEN:712=0"
+
+# F210D "TESTS OF INDICATORS" closes F210 out, and D2 is the LOST CARRY
+# oracle recorded as missing since A5. Every block from A1 to C2 checked
+# what SRD STORED and never asked about an indicator. D1 asks that MOP
+# comes on; D2 clears LC, runs the same 96-ones operand A5 uses, and
+# asks that the rounding overflow set LC. A5 and D2 are the two halves
+# of one rule -- what the overflow did to the word, and to the
+# indicator -- and the model takes both from the same lostCarry.
+run "FP store rounded, MOP and LC indicators (jb_af1c F210D, encoding)" python3 verify_fp_arith_f210d_listing.py
+run "FP store rounded, MOP and LC indicators (jb_af1c F210D on the model)" ./run_program.sh programs/fp_arith_f210d.strap StretchFpAddDblMgFTb \
+    "PC=$(python3 -c 'from strap_asm import assemble; print(assemble(open("programs/fp_arith_f210d.strap").read()).symtab["PASS"]//32)')" \
+    "SEN:712=0"
+
 # -- 1j. Store-close-to-fetch: store a word then immediately reload it;
 # the load must read the new value, not the stale one. The hazard the FP
 # sign-modifier codesign exposed; fixed by tracking each E-box level's
