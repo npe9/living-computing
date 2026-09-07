@@ -409,9 +409,27 @@ typedef struct {
 // "difference exceeds 48" even though the fraction is twice as long;
 // and noisy mode does not add one-bits to the operands beforehand, it
 // only fills the vacated positions during normalization.
-function FpdResult fpAddDouble(FpDouble a, FpDouble b, Bool normalized, Bool noisy);
+// `addMag` selects ADD DOUBLE TO MAGNITUDE (D+MG, Ref. Manual p.95):
+// "the same as ADD DOUBLE except that the sign of the accumulator
+// operand is assumed positive and the result is made a forced zero
+// when a negative sum is obtained... a zero fraction is placed into
+// bits 12-107 of the accumulator and the sign and exponent of the
+// accumulator operand remain equal to the original accumulator sign
+// and exponent. Normalization, noisy mode, and values in the XFP or
+// XFN range are handled as in ADD DOUBLE."
+//
+// There is no ADD DOUBLE MAGNITUDE TO MEMORY, so unlike fpAdd this
+// takes no accIsB: the accumulator is always `a` and always the
+// destination. The rules below mirror fpAdd's non-accIsB arm exactly,
+// including the reading of "the accumulator operand" that jb_af1c
+// F205A7 forced on the single-precision case -- see fpAdd's header.
+function FpdResult fpAddDouble(FpDouble a, FpDouble b, Bool normalized, Bool noisy,
+                               Bool addMag);
   FpdResult r = FpdResult { res: a, lc: False, ls: False, psh: False,
                             generated: False, propagated: False };
+  // Only the accumulator's MAGNITUDE takes part; its sign is what the
+  // forced-zero rule below is compared against, so force it first.
+  if (addMag) a.sign = 0;
   if (a.ef == 1 || b.ef == 1) begin
     // Flagged operands: "the addition process follows the operation
     // outlined under ADD except that the accumulator fraction is 96
@@ -425,6 +443,14 @@ function FpdResult fpAddDouble(FpDouble a, FpDouble b, Bool normalized, Bool noi
     else res = isN(ha) ? a : b;
     if ((isXFP(ha) && isXFP(hb)) || (isXFN(ha) && isXFN(hb)))
       res = (fpExp(hb) > fpExp(ha)) ? b : a;
+    if (addMag && res.sign == 1) begin
+      // The accumulator's sign was made positive above, so a NEGATIVE
+      // survivor is the storage operand dominating and the sum would
+      // be negative: a forced zero, keeping the survivor's exponent.
+      // Same shape as fpAdd's +MG arm, which F205A7 pinned.
+      res.frac = 0;
+      res.sign = 0;
+    end
     Bool gen = False;
     if (res.ef == 0 && normalized) begin
       // The survivor is the UNFLAGGED operand, so it normalizes like
@@ -468,6 +494,17 @@ function FpdResult fpAddDouble(FpDouble a, FpDouble b, Bool normalized, Bool noi
         // `big` whenever the exponents are equal.
         if (fb == fs) sign = big.sign;
       end
+      Bool forcedZero = False;
+      if (addMag && sum != 0 && sign == 1) begin
+        // A sum whose fraction sign came out negative becomes a forced
+        // zero. `sum != 0` because an exact cancellation is not "a
+        // fraction sign reversal obtained during the addition" but an
+        // ordinary order-of-magnitude zero, which DOES set LS -- the
+        // same guard F206A forced on the single-precision path.
+        forcedZero = True;
+        sum = 0;
+        sign = 0;
+      end
       let {f96, adj, lostCarry} = fpNormalize96Wide(sum[96], sum[95:0], normalized, noisy);
       Bool zeroResult = (sum == 0);
       let {hd, gen} = fpMakeExp(signExtend(fpExp(fpdHead(big))) + (zeroResult ? 0 : adj),
@@ -497,7 +534,9 @@ function FpdResult fpAddDouble(FpDouble a, FpDouble b, Bool normalized, Bool noi
       // zeros. Testing `sum` there leaves LS off and the listing
       // demands it on. (zeroResult, on the 97-bit sum, stays as it is
       // for the separate normalization-suppression rule.)
-      r.ls = (res.frac == 0) && !(a.frac == 0 && b.frac == 0);
+      // A forced zero leaves LS off: p.89 says that "distinguishes it
+      // from a zero sum".
+      r.ls = (res.frac == 0) && !(a.frac == 0 && b.frac == 0) && !forcedZero;
       return r;
     end
   end

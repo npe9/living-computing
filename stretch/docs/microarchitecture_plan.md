@@ -372,7 +372,39 @@ hand vectors alone. "Enables" notes the dependency chain.
    and modifiers), C (unchanged registers), D (indicators), every
    block closing on the listing's own exit address, and 342 code rows
    read off the printed encoding column individually.
-   Next: F209's D+MG and SRD. Still open in double
+   jb_af1c F209A (pp.101-102, A1-A9) adds ADD DOUBLE TO MAGNITUDE.
+   fpAddDouble gained an `addMag` flag -- no accIsB, since there is no
+   ADD DOUBLE MAGNITUDE TO MEMORY -- forcing the accumulator's sign
+   positive before the add, forcing a zero when the sum comes out
+   negative (with the `sum != 0` guard F206A pinned, since an exact
+   cancellation is an order-of-magnitude zero, not a sign reversal),
+   and leaving LS off for a forced zero. The D+MG arm restores the
+   accumulator's own sign afterward, as +MG's does. All nine passed on
+   the first run.
+   What F209A does NOT do is worth more than what it does. Every
+   operand in all nine sub-tests is positive, so no sum is ever
+   negative and the forced zero is never reached; eight of the nine
+   take the flagged path, and the one unflagged sub-test (A5) does not
+   force a zero either. Disabling every addMag rule -- the sign
+   forcing, both forced-zero arms, and the sign restore -- leaves the
+   program passing. So F209A proves D+MG is decoded and computes what
+   D+ computes, and nothing about ADD TO MAGNITUDE's own behaviour.
+   That also leaves unresolved the question of which exponent a forced
+   zero keeps on the unflagged path: fpAdd uses `big`'s, the manual's
+   words say the accumulator's, and F205A7 settled the FLAGGED case in
+   favour of the survivor's. No sub-test yet reaches the unflagged
+   forced zero in either precision.
+   Two more things the diagnostic itself gets odd, transcribed as
+   printed: A1's low order check has no SIC/BRGZ after it, so its
+   result is computed and never acted on (the address arithmetic
+   confirms it -- A2 starts eleven half-words after A1, not thirteen);
+   and sub-tests 5 and 6 are labelled F209D5/F209D6 between A4 and A7,
+   almost certainly a typo in the SSIP source.
+   Next: F209B ("TESTS OF SIGN AND MODIFIER COMBINATIONS", B1-B13, pp.
+   102-103) -- the block that actually covers the magnitude rules,
+   since it brings DLN accumulators and D-MG/D-MGA operands. It will
+   need D-MG and D-MGA rules in strap_asm.py's strip_fp_sign, the same
+   shape as D-/D-A. Then SRD. Still open in double
    precision: D+MG, D-, SRD, SLO, D*, D/, LFT -- the first real double-precision
    ARITHMETIC, which needs the 96-bit adder and the accumulator's low
    half as a genuine operand rather than something only cleared.

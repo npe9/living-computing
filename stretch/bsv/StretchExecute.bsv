@@ -1415,7 +1415,7 @@ function ActionValue#(Tuple4#(HWordAddr, Maybe#(Tuple2#(Bit#(4), IndexWord)),
                    || c == 7'b0010010 || c == 7'b0110010 || c == 7'b0010110 || c == 7'b0110110
                    || c == 7'b0011010 || c == 7'b1010110 || isEplI || isSHF
                    || c == 7'b1000110 || c == 7'b1100110   // DL / DLWF
-                   || c == 7'b1000010);                    // D+
+                   || c == 7'b1000010 || c == 7'b1100010);  // D+ / D+MG
         if (!known)
           ind = setOpInvalid(ind);   // /, R/, the rest of double precision, SRT, LFT, *+ ...: not yet
         else if (isST) begin
@@ -1540,7 +1540,7 @@ function ActionValue#(Tuple4#(HWordAddr, Maybe#(Tuple2#(Bit#(4), IndexWord)),
               ind = setRangeIndicators(ind, fpRangeBits(v, gen, !gen && v.ef == 1));
               ind = setBit(ind, ind_ZM, 0);
             end
-            7'b1000010: begin // D+ (p.95)
+            7'b1000010, 7'b1100010: begin // D+ / D+MG (p.95)
               // ADD DOUBLE works on the accumulator's whole 96-bit
               // fraction, IBM bits 12-107, against a storage operand
               // extended with 48 low-order zeros. Bits 108-127 are
@@ -1550,7 +1550,16 @@ function ActionValue#(Tuple4#(HWordAddr, Maybe#(Tuple2#(Bit#(4), IndexWord)),
               FpDouble da = fpdFromAcc(accL, accR, accS);
               FpDouble db = fpdFromWord(prefetch[0]);
               db.sign = opnd.sign;   // the sign modifiers, already applied
-              FpdResult r = fpAddDouble(da, db, normalized, noisy);
+              FpdResult r = fpAddDouble(da, db, normalized, noisy, c == 7'b1100010);
+              // ADD DOUBLE TO MAGNITUDE keeps the accumulator's OWN
+              // sign whatever the sum did -- "the sign remains
+              // unchanged" for a positive sum, and for a forced zero
+              // "the sign and exponent of the accumulator operand
+              // remain equal to the original" (p.95). fpAddDouble
+              // forced a.sign positive to decide the forced zero, so
+              // put the real one back here, exactly as the +MG arm
+              // does with acc.sign.
+              if (c == 7'b1100010) r.res.sign = sbSign(accS);
               st.writeWord(addrAccLeft, fpdAccLeft(r.res));
               st.writeWord(addrAccRight, fpdAccRight(r.res, accR));
               // ADD leaves sign byte bits 0-3 and 5-7 alone and replaces

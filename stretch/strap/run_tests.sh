@@ -479,6 +479,19 @@ run "FP add double exp range (jb_af1c F208D7-D11 on the model)" ./run_program.sh
     "PC=$(python3 -c 'from strap_asm import assemble; print(assemble(open("programs/fp_arith_f208d7_11.strap").read()).symtab["PASS"]//32)')" \
     "SEN:712=0"
 
+# jb_af1c F209A (pp.101-102): ADD DOUBLE TO MAGNITUDE, nine arithmetic
+# checks -- the first exercise of D+MG. It proves the instruction is
+# decoded and that it computes what D+ computes, but NOT its
+# magnitude-specific rules: every operand in all nine sub-tests is
+# positive, so no sum is ever negative and the forced zero is never
+# reached. Disabling every addMag rule in fpAddDouble and the sign
+# restore in the D+MG arm leaves this program passing. F209B, with its
+# DLN accumulators and D-MG/D-MGA operands, is what will cover them.
+run "FP add double magnitude (jb_af1c F209A1-A9, encoding)" python3 verify_fp_arith_f209a_listing.py
+run "FP add double magnitude (jb_af1c F209A1-A9 on the model)" ./run_program.sh programs/fp_arith_f209a.strap StretchFpAddDblMgATb \
+    "PC=$(python3 -c 'from strap_asm import assemble; print(assemble(open("programs/fp_arith_f209a.strap").read()).symtab["PASS"]//32)')" \
+    "SEN:712=0"
+
 # -- 1j. Store-close-to-fetch: store a word then immediately reload it;
 # the load must read the new value, not the stale one. The hazard the FP
 # sign-modifier codesign exposed; fixed by tracking each E-box level's

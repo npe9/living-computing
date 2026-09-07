@@ -1,0 +1,172 @@
+! Floating-point diagnostic jb_af1c, routine F209A "ADD DOUBLE TO
+! MAGNITUDE TEST ROUTINE / ARITHMETIC CHECKS" (docs/jb_af1c_
+! floating-point.pdf pp.101-102, octal 015272.00-015363.40, where the
+! listing's own exit begins): the first exercise of D+MG, and the
+! first double-precision instruction the model gained since D+.
+!
+! D+MG is "the same as ADD DOUBLE except that the sign of the
+! accumulator operand is assumed positive and the result is made a
+! forced zero when a negative sum is obtained. When the sign of the
+! sum is positive, the sum is placed in the accumulator bits 0-107 and
+! the sign remains unchanged. When the sign of the sum is negative, a
+! zero fraction is placed into bits 12-107 of the accumulator and the
+! sign and exponent of the accumulator operand remain equal to the
+! original accumulator sign and exponent. Normalization, noisy mode,
+! and values in the XFP or XFN range are handled as in ADD DOUBLE."
+! (Ref. Manual p.95.)
+!
+! Nine sub-tests, one per pair of exponent ranges, each building a
+! 96-bit accumulator with DL(U) plus a C0011 of another constant's
+! fraction into offset 20, running one D+MG(U), and checking the
+! result as 60 bits at offset 68 (exponent and high fraction together)
+! and 48 bits at offset 20 (the low half).
+!
+! Two things are transcribed as printed rather than tidied:
+!
+!   - A1's low order check has NO SIC/BRGZ after it. Every other
+!     sub-test follows its last CT0110 with the pair; A1 runs straight
+!     into A2's B,$+.32 at 015277.40. The check is computed and never
+!     acted on, so a fault visible only in A1's low half would not
+!     halt. Both the mnemonic column and the address arithmetic agree,
+!     so this is the listing's own quirk, not a transcription slip.
+!
+!   - Sub-tests 5 and 6 are labelled F209D5 and F209D6 in the listing,
+!     between F209A4 and F209A7. Almost certainly a typo in the SSIP
+!     source; the comments below call them A5 and A6, which is what
+!     their position means.
+!
+! Framework substitutes as everywhere else in this series: SERS (octal
+! 1304) -> FAIL halt, SEN (octal 1310) -> scratch. Constants from the
+! pool pp.176-178.
+!
+! Instructions: B, DL(U), C0011 into the accumulator at offset 20,
+! D+MG(U), CT0110 over 60- and 48-bit fields at offsets 68 and 20,
+! SIC, BRGZ.
+! verify_fp_arith_f209a_listing.py checks every word bit-for-bit.
+
+! -- SSIP framework substitutes --
+        SLC, (8)1304.0
+SERS    BEW, $
+        SLC, (8)1310.0
+SEN     DD(BU,64,8), 0
+
+! -- constants (pool pp.176-178) --
+
+        SLC, (8)22005.0
+FPK0    DD(BU,64,8), (8)0000000000000000000000
+        SLC, (8)22007.0
+FPK2    DD(BU,64,8), (8)1777777777777777777760
+        SLC, (8)22032.0
+FPK21   DD(BU,64,8), (8)0031177777777777777767
+        SLC, (8)22050.0
+FPK35   DD(BU,64,8), (8)0001125252525252525240
+        SLC, (8)22053.0
+FPK38   DD(BU,64,8), (8)0031052525252525252520
+        SLC, (8)22171.0
+FK23    DD(BU,64,8), (8)1777525252525252525240
+FK24    DD(BU,64,8), (8)1577452525252525252520
+FK25    DD(BU,64,8), (8)1577777777777777777760
+        SLC, (8)22206.0
+FK36    DD(BU,64,8), (8)1000177777777777777760
+        SLC, (8)22210.0
+FK38    DD(BU,64,8), (8)0777572525252525252520
+        SLC, (8)22220.0
+FK46    DD(BU,64,8), (8)1746577777777777777760
+        SLC, (8)22223.0
+FK49    DD(BU,64,8), (8)1000377777777777777760
+FK50    DD(BU,64,8), (8)1746777777777777777760
+
+! -- code (verbatim, at the listing's addresses) --
+        SLC, (8)15272.0
+SAP10   B, $+.32   ! F209A1: exponents of operands in XFP range
+        DL(U), FK23
+        C0011(BU,48), FK23+.12, 20   ! set the accumulator's low half
+        D+MG(U), FK46
+        CT0110(BU,60), FK23, 68   ! exponent and high order fraction
+        SIC, SEN
+        BRGZ, SERS
+        CT0110(BU,48), FK23+.12, 20   ! low order fraction
+        ! -- the listing has NO SIC/BRGZ after A1's low order
+        !    check: its result is computed and never acted on.
+        B, $+.32   ! F209A2: exponents of opnds in XFP and N ranges
+        DL(U), FK36
+        C0011(BU,48), FK36+.12, 20   ! set the accumulator's low half
+        D+MG(U), FK38
+        CT0110(BU,60), FK36, 68   ! exponent and high order fraction
+        SIC, SEN
+        BRGZ, SERS
+        CT0110(BU,48), FK36+.12, 20   ! low order fraction
+        SIC, SEN
+        BRGZ, SERS
+        B, $+.32   ! F209A3: exponents of operands in XFP and XFN ranges
+        DL(U), FK24
+        C0011(BU,48), FK24+.12, 20   ! set the accumulator's low half
+        D+MG(U), FK25
+        CT0110(BU,60), FK24, 68   ! exponent and high order fraction
+        SIC, SEN
+        BRGZ, SERS
+        CT0110(BU,48), FK24+.12, 20   ! low order fraction
+        SIC, SEN
+        BRGZ, SERS
+        B, $+.32   ! F209A4: exponent of operands in N and XFP ranges
+        DL(U), FK38
+        C0011(BU,48), FK38+.12, 20   ! set the accumulator's low half
+        D+MG(U), FK36
+        CT0110(BU,60), FK36, 68   ! exponent and high order fraction
+        SIC, SEN
+        BRGZ, SERS
+        CT0110(BU,48), FPK0+.12, 20   ! low order fraction
+        SIC, SEN
+        BRGZ, SERS
+        B, $+.32   ! F209A5: exponents of opnds in N range
+        DL(U), FPK21
+        C0011(BU,48), FPK38+.12, 20   ! set the accumulator's low half
+        D+MG(U), FPK35
+        CT0110(BU,60), FPK21, 68   ! exponent and high order fraction
+        SIC, SEN
+        BRGZ, SERS
+        CT0110(BU,48), FPK21+.12, 20   ! low order fraction
+        SIC, SEN
+        BRGZ, SERS
+        B, $+.32   ! F209A6: exponents of opnds in N and XFN ranges
+        DL(U), FK38
+        C0011(BU,48), FK38+.12, 20   ! set the accumulator's low half
+        D+MG(U), FK49
+        CT0110(BU,60), FK38, 68   ! exponent and high order fraction
+        SIC, SEN
+        BRGZ, SERS
+        CT0110(BU,48), FK38+.12, 20   ! low order fraction
+        SIC, SEN
+        BRGZ, SERS
+        B, $+.32   ! F209A7: exponents of opnds in XFN and XFP ranges
+        DL(U), FK25
+        C0011(BU,48), FK25+.12, 20   ! set the accumulator's low half
+        D+MG(U), FK24
+        CT0110(BU,60), FK24, 68   ! exponent and high order fraction
+        SIC, SEN
+        BRGZ, SERS
+        CT0110(BU,48), FPK0+.12, 20   ! low order fraction
+        SIC, SEN
+        BRGZ, SERS
+        B, $+.32   ! F209A8: exponents of opnds in XFN and N ranges
+        DL(U), FK49
+        C0011(BU,48), FK49+.12, 20   ! set the accumulator's low half
+        D+MG(U), FK38
+        CT0110(BU,60), FK38, 68   ! exponent and high order fraction
+        SIC, SEN
+        BRGZ, SERS
+        CT0110(BU,48), FPK0+.12, 20   ! low order fraction
+        SIC, SEN
+        BRGZ, SERS
+        B, $+.32   ! F209A9: exponents of opnds in XFN range
+        DL(U), FK50
+        C0011(BU,48), FK50+.12, 20   ! set the accumulator's low half
+        D+MG(U), FPK2
+        CT0110(BU,60), FK50, 68   ! exponent and high order fraction
+        SIC, SEN
+        BRGZ, SERS
+        CT0110(BU,48), FK50+.12, 20   ! low order fraction
+        SIC, SEN
+        BRGZ, SERS
+PASS    BEW, $                 ! 015363.40: F209A exits here
+        END, SAP10
