@@ -688,8 +688,28 @@ hand vectors alone. "Enables" notes the dependency chain.
    noisy-mode fill that fpNormalize48 exists for, and the
    generated-flag case where the -48 underflows. Everything so far is
    SLO(U). F211A5 onward (016201.00) is where to look.
-   Next: F211A5 onward, then D*, LFT, *+, and D/ (which needs the
-   multi-cycle unit).
+   jb_af1c F211A7-A10 (p.114, 28 rows, the "TEST NORMALIZATION
+   MODIFIER" section) is the first SLO(N) anywhere and CAUGHT A REAL
+   MODEL BUG -- in fpMakeExp, which predates both new instructions.
+   A7 and A8 check that a flagged accumulator exponent suppresses the
+   shift; A9 is the real normalization, FPK53's fraction having 46
+   leading zeros so +50 goes through -48 to +2 and then 46 places left
+   to -44 (FK51). A10 drives the exponent to -1073, out of range, and
+   expects FK112 -- whose exponent field is -49, and 1073 - 1024 = 49.
+   So the machine keeps the LOW TEN BITS of an out-of-range magnitude
+   and uses EF only to mark the overflow, where fpMakeExp wrote
+   "em = gen ? 10'd0 : truncate(pack(mag))" and stored XFN -0. A10
+   halted at 016243.00 with A7-A9 green (A9 normalizes too but stays
+   in range), and the fix -- always keeping the low ten bits -- leaves
+   the whole suite green, so nothing had been written against the
+   wrong behaviour.
+   Worth noting how it was found: the arithmetic was pre-computed
+   against every expected constant BEFORE the run, which is what made
+   the -49 visible as a discrepancy rather than as a mysterious halt.
+   That step is cheap and has now paid for itself twice.
+   Next: F211B "TEST UNCHANGED REGISTERS" (from 016244.00, label
+   FSLO2) and F211C "INDICATOR TEST", then D*, LFT, *+, and D/ (which
+   needs the multi-cycle unit).
    Its prologue is FSR1 (015772.00) and F210A1 begins at SAP11
    (015775.00): DL(U) FPK26, C0011 FK40+.12 into offset 20, then
    SRD(U) ROS, L(BU) FK35, CT0110(BU,60) ROS,4 -- "error if 1 not

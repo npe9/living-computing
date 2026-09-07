@@ -1,0 +1,125 @@
+! Floating-point diagnostic jb_af1c, routine F211 "STORE LOW ORDER
+! TEST ROUTINE", "TEST NORMALIZATION MODIFIER", sub-tests A7-A10
+! (docs/jb_af1c_floating-point.pdf p.114, octal 016217.00-016243.00,
+! the routine's own exit "BD,$+1.0"). Twenty-eight rows, closing
+! F211A.
+!
+! The first SLO(N) anywhere, and between them these four cover every
+! part of SLO the earlier sub-tests could not reach. A1-A6 are all
+! SLO(U).
+!
+!   A7  FK23 (XFP +1023) with FK26's fraction in the low half. The
+!       accumulator exponent is FLAGGED, so p.97 says normalization is
+!       suppressed -- and FK26 is the expected result, still
+!       unnormalized (155555555555, three leading zeros). Asking for
+!       (N) must change nothing.
+!   A8  the same in XFN with FK25 and FK30 (1fffffffffff).
+!   A9  the real normalization. FPK37 is exponent +50; FPK53's
+!       fraction is 000000000002 -- a single bit near the bottom, 46
+!       leading zeros. SLO(N) subtracts 48 to get +2, then shifts left
+!       46 places to 800000000000, taking the exponent to -44.
+!       Expected FK51: exponent -44, fraction 800000000000. The
+!       listing says so: "CHECK RESULT WITH EXP+-44".
+!   A10 the GENERATED flag. FK111 is exponent -1023; FK88's fraction
+!       normalizes two places; so the exponent goes -1023 - 48 - 2 =
+!       -1073, which is out of range. p.97: "When the exponent with
+!       the low order fraction has EF of 1 as a result of the
+!       operation, the indicator settings are for generated exponent
+!       flags. Normalization, if specified, in this case DOES occur."
+!       The listing's own comment is "GENERATED EXP FLAG".
+!
+! A10 CAUGHT A REAL MODEL BUG, and the prediction written here before
+! the run was borne out exactly. FK112 is XFN with exponent field -49,
+! and 1073 - 1024 = 49: the machine keeps the LOW TEN BITS of an
+! out-of-range magnitude in the exponent field and uses EF only to
+! mark that it overflowed. fpMakeExp instead wrote em = 0 whenever it
+! generated a flag --
+!
+!     Bit#(10) em = gen ? 10'd0 : truncate(pack(mag));
+!
+! -- so the model stored XFN -0 where the listing wants XFN -49. A10
+! halted on its CT0110 with SIC storing 016243.00, and A7, A8 and A9
+! all passed, A9 being the control: it normalizes too, but stays in
+! range and so never reaches the clamp. The fix is to drop the
+! conditional and always keep the low ten bits.
+!
+! The bug is in code much older than SLO. fpMakeExp is shared by
+! fpAdd, fpAddDouble, SRD and SLO, and every exponent any of them
+! builds goes through it. Nothing in the suite had pinned it, because
+! nothing before A10 drove an exponent out of range and then LOOKED at
+! the field rather than just at EF. The full suite stays green with
+! the fix, so nothing had been written against the wrong behaviour
+! either.
+!
+! ROS (022355) is the routine's scratch word, not a pool constant.
+! Framework substitutes as everywhere else in this series: SERS (octal
+! 1304) -> FAIL halt, SEN (octal 1310) -> scratch. Constants from the
+! pools pp.176-179. PASS sits at 016243.00, on the routine's exit.
+!
+! Instructions: DL(U), C0011, SLO(N), L, CT0110, SIC, BRGZ.
+! verify_fp_arith_f211a7_10_listing.py checks every word bit-for-bit.
+
+! -- SSIP framework substitutes --
+        SLC, (8)1304.0
+SERS    BEW, $
+        SLC, (8)1310.0
+SEN     DD(BU,64,8), 0
+
+! -- the routine's scratch word --
+        SLC, (8)22355.0
+ROS     DD(BU,64,8), 0
+
+! -- constants (pools pp.176-179) --
+        SLC, (8)022052.0
+FPK37   DD(BU,64,8), (8)0031125252525252525240
+        SLC, (8)022072.0
+FPK53   DD(BU,64,8), (8)0000400000000000000040
+        SLC, (8)022171.0
+FK23    DD(BU,64,8), (8)1777525252525252525240
+        SLC, (8)22173.0
+FK25    DD(BU,64,8), (8)1577777777777777777760
+FK26    DD(BU,64,8), (8)1777412525252525252520
+        SLC, (8)022200.0
+FK30    DD(BU,64,8), (8)1577617777777777777760
+        SLC, (8)022225.0
+FK51    DD(BU,64,8), (8)0026300000000000000000
+        SLC, (8)022271.0
+FK88    DD(BU,64,8), (8)1577624713560247135620
+        SLC, (8)022320.0
+FK111   DD(BU,64,8), (8)0777625777252525777250
+FK112   DD(BU,64,8), (8)1030723456701234567100
+
+! The listing prints no label at 016217.00 -- ENTRY is ours, needed
+! only as the END operand.
+! -- code (verbatim, at the listing's addresses) --
+        SLC, (8)16217.0
+ENTRY   DL(U), FK23                            ! F211A7: exp in XFP rng
+        C0011(BU,48), FK26+.12, 20
+        SLO(N), ROS
+        L(BU), FK26
+        CT0110(BU,60), ROS, 4
+        SIC, SEN
+        BRGZ, SERS
+        DL(U), FK25                            ! F211A8: exp in XFN rng
+        C0011(BU,48), FK30+.12, 20
+        SLO(N), ROS
+        L(BU), FK30
+        CT0110(BU,60), ROS, 4
+        SIC, SEN
+        BRGZ, SERS
+        DL(U), FPK37                           ! F211A9: exp + +50, N rng
+        C0011(BU,48), FPK53+.12, 20
+        SLO(N), ROS
+        L(BU), FK51
+        CT0110(BU,60), ROS, 4                  ! check result with exp + -44
+        SIC, SEN
+        BRGZ, SERS
+        DL(U), FK111                           ! F211A10: exp + -1023, N rng
+        C0011(BU,48), FK88+.12, 20
+        SLO(N), ROS
+        L(BU), FK112
+        CT0110(BU,60), ROS, 4                  ! generated exp flag
+        SIC, SEN
+        BRGZ, SERS
+PASS    BEW, $                                 ! 016243.00: the routine's exit ("BD,$+1.0")
+        END, ENTRY

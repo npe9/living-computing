@@ -105,7 +105,14 @@ function Tuple2#(FpNum, Bool) fpMakeExp(Int#(14) e, Bit#(48) frac, Bit#(1) sign,
   Bool neg = (e < 0);
   Int#(14) mag = neg ? -e : e;
   Bool gen = (mag > 1023);
-  Bit#(10) em = gen ? 10'd0 : truncate(pack(mag));
+  // An out-of-range exponent keeps the LOW TEN BITS of its magnitude;
+  // EF only marks that it overflowed. This used to write zero on a
+  // generated flag, which is wrong and which nothing caught until
+  // jb_af1c F211A10: that sub-test drives SLO's exponent to -1073 and
+  // expects FK112, whose exponent field is -49 -- and 1073 - 1024 = 49.
+  // Zeroing it halted A10 on its CT0110 at 016243.00 while A7-A9,
+  // including A9's in-range normalization, all passed.
+  Bit#(10) em = truncate(pack(mag));
   return tuple2(FpNum { ef: gen ? 1 : 0, em: em, es: neg ? 1 : 0, frac: frac, sign: sign, flags: flags }, gen);
 endfunction
 

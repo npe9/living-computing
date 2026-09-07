@@ -724,6 +724,24 @@ run "FP store low order, exponent minus 48 (jb_af1c F211A3-A4 on the model)" ./r
     "PC=$(python3 -c 'from strap_asm import assemble; print(assemble(open("programs/fp_arith_f211a3_4.strap").read()).symtab["PASS"]//32)')" \
     "SEN:712=0"
 
+# F211A7-A10, the routine's "TEST NORMALIZATION MODIFIER" section and
+# the first SLO(N) anywhere -- A1-A6 are all SLO(U). A7/A8 check that a
+# FLAGGED accumulator exponent suppresses the shift (FK26 and FK30 are
+# still unnormalized). A9 is the real normalization: FPK53's fraction
+# has 46 leading zeros, so +50 goes through -48 to +2 and then 46
+# places left to -44 (FK51). A10 drives the exponent out of range to
+# -1073 and expects FK112, whose exponent field is -49 = 1073 - 1024.
+#
+# A10 CAUGHT A REAL BUG in fpMakeExp, which is shared by fpAdd,
+# fpAddDouble, SRD and SLO: it wrote em = 0 on a generated flag, where
+# the machine keeps the low ten bits of the magnitude and uses EF only
+# to mark the overflow. Nothing else in the suite pins that -- A9
+# normalizes too but stays in range.
+run "FP store low order, normalization modifier (jb_af1c F211A7-A10, encoding)" python3 verify_fp_arith_f211a7_10_listing.py
+run "FP store low order, normalization modifier (jb_af1c F211A7-A10 on the model)" ./run_program.sh programs/fp_arith_f211a7_10.strap StretchFpAddDblMgFTb \
+    "PC=$(python3 -c 'from strap_asm import assemble; print(assemble(open("programs/fp_arith_f211a7_10.strap").read()).symtab["PASS"]//32)')" \
+    "SEN:712=0"
+
 # -- 1j. Store-close-to-fetch: store a word then immediately reload it;
 # the load must read the new value, not the stale one. The hazard the FP
 # sign-modifier codesign exposed; fixed by tracking each E-box level's
