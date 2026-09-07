@@ -598,6 +598,17 @@ run "FP add double magnitude forced zero, LS off (jb_af1c F209E9 on the model)" 
     "PC=$(python3 -c 'from strap_asm import assemble; print(assemble(open("programs/fp_arith_f209e9.strap").read()).symtab["PASS"]//32)')" \
     "SEN:712=0"
 
+# -- F210 STORE ROUNDED. A1-A2 are the diagnostic that drove writing
+# SRD's execute arm (it decoded but set OP-invalid before this). Both
+# are the flagged case: a 96-bit all-ones accumulator fraction, so the
+# +1 at IBM 60 carries the whole way out, the overflow is lost and the
+# exponent is unchanged -- expecting FK35 (XFP) and FPK59 (XFN) with a
+# ZERO fraction, plus a BZB on the stored sign bit.
+run "FP store rounded (jb_af1c F210A1-A2, encoding)" python3 verify_fp_arith_f210a1_2_listing.py
+run "FP store rounded (jb_af1c F210A1-A2 on the model)" ./run_program.sh programs/fp_arith_f210a1_2.strap StretchFpAddDblMgFTb \
+    "PC=$(python3 -c 'from strap_asm import assemble; print(assemble(open("programs/fp_arith_f210a1_2.strap").read()).symtab["PASS"]//32)')" \
+    "SEN:712=0"
+
 # -- 1j. Store-close-to-fetch: store a word then immediately reload it;
 # the load must read the new value, not the stale one. The hazard the FP
 # sign-modifier codesign exposed; fixed by tracking each E-box level's

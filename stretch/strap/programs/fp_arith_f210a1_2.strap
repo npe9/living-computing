@@ -1,0 +1,104 @@
+! Floating-point diagnostic jb_af1c, routine F210 "STORE ROUNDED TEST
+! ROUTINE", sub-tests A1-A2 (docs/jb_af1c_floating-point.pdf p.110,
+! octal 015775.00-016014.00, where F210A3 begins).
+!
+! The first block since F204 that is NOT a pure transcription: SRD
+! (STORE ROUNDED, opcode 0101110) decodes but has no execute arm, so
+! this program is the diagnostic that drives writing one.
+!
+! What the manual says (Ref. Manual p.96, "Store Rounded"). Rounding
+! adds one to the accumulator fraction AT BIT POSITION 60, giving a
+! 96-bit sum and a possible overflow bit; the 48 low-order bits are
+! discarded. Unnormalized, the 48 high-order bits go to storage bits
+! 12-59 and the overflow bit does not enter storage but sets LC. The
+! accumulator sign, as changed by the sign modifiers, goes to storage
+! bit 60 and the accumulator flag bits to 61-63. The entire
+! accumulator and its sign byte register remain UNCHANGED. In the XFP
+! or XFN range the rounding is still performed but the exponent is not
+! changed, normalization is suppressed, and a rounding overflow bit is
+! simply lost.
+!
+! A1 and A2 are both the flagged case, and they are a clean first test
+! because their arithmetic is unambiguous:
+!
+!   A1  DL(U) FPK26 (XFP, high fraction all ones) then C0011 drops
+!       FK40's all-ones fraction into the low half, so the accumulator
+!       fraction is 96 ones. Adding 1 at IBM 60 carries the whole way
+!       out: the 96-bit sum is 2^47-1, its high 48 bits are zero, and
+!       the overflow is lost. Expected result FK35 -- XFP, same
+!       exponent, fraction ZERO.
+!   A2  the same shape in the XFN range with FK25, expecting FPK59.
+!
+! Each then asks two questions: CT0110(BU,60) against ROS at offset 4,
+! which covers word bits 4-63 -- exponent and fraction, skipping the
+! sign and flags -- and BZB on ROS bit 60, the stored sign.
+!
+! A reading note on the printed comments. A1 says "EXP + +2047" where
+! FPK26 decodes to XFP +1023, and A2 says "EXP + -1791" where FK25 is
+! XFN -767. Both differ by exactly 1024: the listing writes the
+! flagged exponent as its true out-of-range value, EF contributing the
+! 1024. The constants are transcribed as printed; only the comments
+! use that convention.
+!
+! ROS (022355) is the routine's scratch word, not a pool constant --
+! SRD writes it and the checks read it back. It is reserved here the
+! same way fp_arith_f204b.strap reserves it.
+!
+! Framework substitutes as everywhere else in this series: SERS (octal
+! 1304) -> FAIL halt, SEN (octal 1310) -> scratch. Constants from the
+! pools pp.176-177. PASS sits at 016014.00, where F210A3 begins.
+!
+! Instructions: B, DL(U), C0011, SRD(U), L, CT0110, SIC, BZB, BRGZ.
+! verify_fp_arith_f210a1_2_listing.py checks every word bit-for-bit.
+
+! -- SSIP framework substitutes --
+        SLC, (8)1304.0
+SERS    BEW, $
+        SLC, (8)1310.0
+SEN     DD(BU,64,8), 0
+
+! -- the routine's scratch word --
+        SLC, (8)22355.0
+ROS     DD(BU,64,8), 0
+
+! -- constants (pools pp.176-177) --
+        SLC, (8)022037.0
+FPK26   DD(BU,64,8), (8)1777577777777777777760
+        SLC, (8)022100.0
+FPK59   DD(BU,64,8), (8)1577600000000000000000
+        SLC, (8)022173.0
+FK25    DD(BU,64,8), (8)1577777777777777777760
+        SLC, (8)022205.0
+FK35    DD(BU,64,8), (8)1777400000000000000000
+        SLC, (8)022212.0
+FK40    DD(BU,64,8), (8)1777577777777777777770
+
+! The listing prints no label at 015775.00 -- ENTRY is ours, needed
+! only as the END operand. (SAP11 labels it in the listing, but that
+! is the SSIP prologue's target, not this block's.)
+! -- code (verbatim, at the listing's addresses) --
+        SLC, (8)15775.0
+ENTRY   B, $+.32                             ! F210A1: exponent of operand in XFP range
+        DL(U), FPK26                         ! exp + +2047
+        C0011(BU,48), FK40+.12, 20
+        SRD(U), ROS
+        L(BU), FK35
+        CT0110(BU,60), ROS, 4                ! error if 1 not added in bit pos 60
+        SIC, SEN
+        BRGZ, SERS                           ! of accumulator
+        BZB, ROS+.60, $+2.0                  ! check sign bit + 0
+        SIC, SEN
+        B, SERS
+        B, $+.32                             ! F210A2: exponent of operand in XFN range
+        DL(U), FK25                          ! exp + -1791
+        C0011(BU,48), FK25+.12, 20
+        SRD(U), ROS
+        L(BU), FPK59
+        CT0110(BU,60), ROS, 4
+        SIC, SEN
+        BRGZ, SERS
+        BZB, ROS+.60, $+2.0
+        SIC, SEN
+        B, SERS
+PASS    BEW, $                               ! 016014.00: where F210A3 begins
+        END, ENTRY

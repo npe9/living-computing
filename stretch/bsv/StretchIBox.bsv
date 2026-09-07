@@ -47,7 +47,8 @@ endfunction
 function Maybe#(WordAddr) storeTarget(StretchStorage st, DecodedInstr d);
   case (d) matches
     tagged Fp .f:
-      if (f.code == 7'b0001110 || f.code == 7'b0001010 || f.code == 7'b0101010)
+      if (f.code == 7'b0001110 || f.code == 7'b0001010 || f.code == 7'b0101010
+          || f.code == 7'b0101110)   // SRD also writes its effective address
         return tagged Valid effAddr18(st, f.addr, f.idx);
       else return tagged Invalid;
     tagged VflInt .v:

@@ -1403,6 +1403,7 @@ function ActionValue#(Tuple4#(HWordAddr, Maybe#(Tuple2#(Bit#(4), IndexWord)),
         Word64 accS = st.readAccSign();
         Bit#(7) c = fp.code;
         Bool isST = (c == 7'b0001110);
+        Bool isSRD = (c == 7'b0101110);  // STORE ROUNDED (p.96)
         // Divide (/ and R/) is deferred to the multi-cycle arithmetic
         // unit (plan stage 4e): done combinationally here it unfolds
         // into a full-width divider, and the real machine's divide is
@@ -1415,7 +1416,8 @@ function ActionValue#(Tuple4#(HWordAddr, Maybe#(Tuple2#(Bit#(4), IndexWord)),
                    || c == 7'b0010010 || c == 7'b0110010 || c == 7'b0010110 || c == 7'b0110110
                    || c == 7'b0011010 || c == 7'b1010110 || isEplI || isSHF
                    || c == 7'b1000110 || c == 7'b1100110   // DL / DLWF
-                   || c == 7'b1000010 || c == 7'b1100010);  // D+ / D+MG
+                   || c == 7'b1000010 || c == 7'b1100010   // D+ / D+MG
+                   || isSRD);                              // SRD
         if (!known)
           ind = setOpInvalid(ind);   // /, R/, the rest of double precision, SRT, LFT, *+ ...: not yet
         else if (isST) begin
@@ -1424,6 +1426,64 @@ function ActionValue#(Tuple4#(HWordAddr, Maybe#(Tuple2#(Bit#(4), IndexWord)),
           ind = setBit(ind, ind_MOP, 1);
           ind = setResultIndicatorsFp(ind, v);
           ind = setRangeIndicators(ind, fpRangeBits(v, False, v.ef == 1));
+        end else if (isSRD) begin
+          // STORE ROUNDED (p.96). "The contents of the accumulator
+          // after rounding are placed in the location specified by the
+          // effective address." Rounding adds one to the accumulator
+          // fraction AT BIT POSITION 60, which in the 96-bit IBM 12-107
+          // fraction is frac[47] (IBM bit n is frac[107-n]); that gives
+          // a 96-bit sum and a possible overflow bit, and "the 48
+          // low-order bits are discarded" -- the kept half is IBM 12-59,
+          // sum[95:48], which is exactly the fraction fpdFromWord puts
+          // a single-precision word into.
+          //
+          // Nothing here writes the accumulator: "the entire accumulator
+          // and its sign byte register remain unchanged throughout the
+          // operation unless used as the effective address."
+          Word64 accR = st.readAccRight();
+          FpDouble da = fpdFromAcc(accL, accR, accS);
+          Bit#(97) sum  = {1'b0, da.frac} + (97'b1 << 47);
+          Bit#(1)  ovf  = sum[96];
+          Bit#(48) hi48 = sum[95:48];
+          // "The sign of the accumulator, as changed by the sign
+          // modifiers, is placed in storage bit 60. The accumulator flag
+          // bits are placed in storage bits 61-63."
+          Bit#(1) msign = fpApplySignMods(acc, fp.absSign, fp.invSign).sign;
+          FpNum out; Bool lc = False; Bool gen = False;
+          if (da.ef == 1) begin
+            // "If the value of the operand lies in the XFP or XFN range,
+            // the rounding process is performed, but the exponent is not
+            // changed. Normalization, if specified, is suppressed. If,
+            // as a result of rounding, the fraction has an overflow bit
+            // set, the overflow bit is lost."
+            out = FpNum { ef: da.ef, em: da.em, es: da.es, frac: hi48,
+                          sign: msign, flags: da.flags };
+            lc = (ovf == 1) && !normalized;
+          end else begin
+            // Unnormalized: "the 48 high-order bits of the sum are placed
+            // in storage bits 12-59. The overflow bit does not enter
+            // storage but sets the lost carry indicator (LC) on."
+            // Normalized: "the 48-bit sum is then normalized... Low-order
+            // zeros are always supplied in the case of the left shift.
+            // Noisy mode does not affect this operation" -- hence the
+            // False for noisy whatever NM says. Feeding the 48-bit sum
+            // as {hi48, 48'd0} makes fpNormalize96Wide's left shift a
+            // zero-filled 48-bit shift and its overflow case the same
+            // right-shift-one; its lostCarry is already "ovf and not
+            // normalized", which is the rule both paragraphs describe.
+            let {w96, adj, l} = fpNormalize96Wide(ovf, {hi48, 48'd0}, normalized, False);
+            let {o, g} = fpMakeExp(signExtend(fpExp(fpdHead(da))) + adj,
+                                   w96[95:48], msign, da.flags);
+            out = o; gen = g; lc = l;
+          end
+          st.writeWord(ea, fpToWord(out));
+          // "These indicators are set as in ADD TO MEMORY": MOP, the
+          // arithmetic result four, LC, the exponent range five, ZM.
+          ind = setBit(ind, ind_MOP, 1);
+          ind = setResultIndicatorsFp(ind, out);
+          if (lc) ind = setBit(ind, ind_LC, 1);
+          ind = setRangeIndicators(ind, fpRangeBits(out, gen, da.ef == 1));
+          ind = setBit(ind, ind_ZM, 0);
         end else if (isSHF) begin
           // Shift Fraction (p.101): shift the 48-bit accumulator
           // fraction; bits 0-10 of the effective address = amount,
