@@ -610,7 +610,34 @@ hand vectors alone. "Enables" notes the dependency chain.
    Note SRD's normalized path on the UNFLAGGED side is still
    unexercised: F210A8 "TEST NORMALIZATION PROCESS" (016054.40) is
    where that starts, and it is also still the first candidate for LC.
-   Next: F210A8 onward (p.111, from 016054.40), then SLO.
+   jb_af1c F210A8 (p.111) closes F210A and is the ONE sub-test in the
+   routine where SRD actually normalizes: FK47 (exponent +50, fraction
+   000fffffffff) with FK22's all-ones low half rounds to
+   001000000000, which shifts eleven places left to 800000000000 and
+   takes the exponent to +39 -- exactly FK52, pre-computed before the
+   run. Forcing the unflagged path never to normalize halts it at
+   016062.00 with A1-A7 green; A6/A7 survive because they are flagged,
+   where the shift was already suppressed.
+   jb_af1c F210B "TEST UNCHANGED REGISTERS" (p.111, 27 rows) guards
+   p.96's "the entire accumulator and its sign byte register remain
+   unchanged". B2's questions are live -- redirecting SRD's write to
+   the accumulator's left half halts B2A (016103.40) and to the sign
+   byte halts B2C (016107.40) -- while B1's do not fire, its registers
+   being zero and a zero write leaving them zero.
+   A STRUCTURAL FINDING from trying to break it the other way. SRD
+   cannot be made to violate the rule by ADDING a write: an
+   st.writeWord(addrAccSignByte, ...) alongside the existing
+   st.writeWord(ea, ...) is a COMPILE error (bsc G0004, "methods that
+   conflict in parallel"), because the variable-address write may
+   itself target the sign byte -- the manual's own "unless used as the
+   effective address". So the current write-port arrangement enforces
+   the rule that F210B checks. That guarantee belongs to the
+   arrangement, not to SRD, and section 1c step 5c's refactor
+   (storage through request/response methods) is precisely what would
+   change it -- which is the case for keeping F210B in the suite even
+   though no single-line mutation isolates it today.
+   Next: F210C "ACCUMULATOR FLAGS TO MEMORY FLAGS" (p.111-112, from
+   016111.40, label FSR3), then SLO.
    Its prologue is FSR1 (015772.00) and F210A1 begins at SAP11
    (015775.00): DL(U) FPK26, C0011 FK40+.12 into offset 20, then
    SRD(U) ROS, L(BU) FK35, CT0110(BU,60) ROS,4 -- "error if 1 not

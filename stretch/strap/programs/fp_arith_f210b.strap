@@ -45,6 +45,37 @@
 ! Instructions: C0000, CM0000, C1111, CM1111, SRD(U), CT0101, CT0011,
 ! CT1010, CT1100, SIC, B, BRGZ.
 ! verify_fp_arith_f210b_listing.py checks every word bit-for-bit.
+!
+! Observed: passed on the first run, and probing it turned up two
+! things worth keeping.
+!
+! First, B2's questions are live. Redirecting SRD's one write to the
+! accumulator's left half halts B2A at 016103.40, and redirecting it
+! to the sign byte halts B2C at 016107.40 -- each the address right
+! after its own BRGZ. B1's questions do NOT fire under either: its
+! registers are zero and a zero write leaves them zero. That confirms
+! the reading above, that B2 is the load-bearing half.
+!
+! Second, and more interesting: SRD CANNOT be made to violate the rule
+! by ADDING a write. Putting an st.writeWord(addrAccSignByte, ...)
+! alongside the existing st.writeWord(ea, ...) is a compile error, not
+! a test failure -- bsc G0004, "Rule RL_rl_exec_resume uses methods
+! that conflict in parallel: st_accSignByte.write(...) and
+! st_accSignByte.write(...)" -- because st.writeWord(ea, ...) may
+! itself target the sign byte, which is exactly the manual's "unless
+! used as the effective address". A variable-address write and a
+! fixed-address write to the same register cannot be scheduled
+! together in one arm. So today the structure of the E-box enforces
+! the rule that F210B checks, and the only way to break it is to
+! redirect the write rather than add one.
+!
+! That is worth remembering rather than celebrating: the guarantee
+! belongs to the current write-port arrangement, not to SRD. The
+! planned E-box refactor -- routing storage through request/response
+! methods (plan section 1c step 5c) -- changes exactly that
+! arrangement, and F210B is what will notice if the rule is lost in
+! the process. That is the case for keeping it in the suite even
+! though no single-line mutation isolates it today.
 
 ! -- SSIP framework substitutes --
         SLC, (8)1304.0
