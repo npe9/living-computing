@@ -190,9 +190,14 @@ hand vectors alone. "Enables" notes the dependency chain.
    What jb_af1c reaches after F206 is DOUBLE PRECISION -- F207 LOAD
    DOUBLE (A arithmetic, B unchanged registers, C, E load double with
    flag, pp.89-96), F208 ADD DOUBLE (D+), F209 DOUBLE ADD TO MAGNITUDE
-   (D+MG / D-MGA) and STORE ROUNDED (SRD) -- and it only gets to F212
-   F+ (add to fraction) and F213 E+I (add immediate to exponent)
-   around pp.128-135, with multiply later still. So the next codesign
+   (D+MG / D-MGA) and STORE ROUNDED (SRD) -- and it only gets to F+
+   (add to fraction) and E+I (add immediate to exponent) later still,
+   with multiply later than that. (This sentence used to name those
+   two as "F212" and "F213 ... around pp.128-135". Falsified from the
+   page 2026-09-07: F212 is the SHIFT FRACTION TEST ROUTINE and it
+   begins on p.115, immediately after F211. The routine numbers for
+   F+ and E+I were a guess; they are left unnamed here rather than
+   guessed a second time.) So the next codesign
    step is not another transcription but the double-precision datapath
    the model does not have: the 96-bit fraction across the
    accumulator's two halves, DL/DLWF, D+/D+MG/D-/D-MGA, SRD/SLO/LFT.
@@ -723,7 +728,54 @@ hand vectors alone. "Enables" notes the dependency chain.
    F211 is transcribed A1-A4, A7-A10 and B-C; A5-A6 are deliberately
    skipped as more SLO(U) exponent-walking (2-48=-46, then -94), with
    no behaviour A3-A4 does not already cover.
-   Next: D*, LFT and *+, then D/ -- which is the one that needs a
+   SHIFT FRACTION MADE 96-BIT, driven by jb_af1c F212 "SHIFT FRACTION
+   TEST ROUTINE" (pp.115-121), the block immediately after F211.
+   Reference Manual p.102: "Only accumulator bits 12-107 participate
+   in the shifting; all other accumulator bits remain unchanged" -- 96
+   bits across BOTH accumulator halves. The model's SHF arm shifted
+   the 48-bit high half only and wrote back accLeft alone, so a bit
+   starting in the low half could neither move nor be lost. F212A12 is
+   the row that sees it: Z,$IND clears the indicators, FPK0 goes in
+   the high half and FPK34 in the LOW (its fraction is 000000000001,
+   one bit at IBM 107), then SHFL(U),107 must leave both halves +0 and
+   turn LC ON (BZLC,SERS "ERROR IF LC INDICATOR OFF"). Injecting the
+   old behaviour back -- reading the low half as zero -- halts A12 at
+   016365.40 (SEN = 016366.00, the instruction after that BZLC) while
+   A1-A11 STAYS GREEN. That green is the point, not a disappointment:
+   A1-A11 load with DL (which zeroes the low half) and shift LEFT, so
+   the low half is zero before and after and they cannot discriminate.
+   Shift counts wider than the field are capped before forming "what
+   fell off the top" -- A12 shifts left 107, A24 right 107.
+   ALSO FIXED, MANUAL-PINNED NOT DIAGNOSTIC-PINNED: the arm used to OR
+   ones into the vacated positions under noisy mode. p.102 rules that
+   out -- "The operation is not affected by the normalization
+   modifier. No noisy mode one bits are entered on left shift if noisy
+   mode is specified" -- but every SHF in F212 is (U) and none selects
+   noisy mode, so nothing transcribed would have caught it. Recorded
+   as a manual reading, not a diagnostic result.
+   ENCODING: SHF's amount rides in the address field as amount<<7 and
+   its DIRECTION is spelled with the SIGN MODIFIERS, not with address
+   bit 11 -- p.102, "the sign of the shift ... is subject to
+   modification by the sign modifiers". The listing prints SHFL(U),1
+   and SHFR(U),1 with the SAME address (200 octal, direction bit
+   CLEAR), differing only in bits 19-20: SHFL/SHFA = A (.67),
+   SHFR/SHFNA = A+N (.77), SHFN = N (.57), bare SHF = neither (.47).
+   Emitting amount*128+64 for SHFR would have been wrong twice -- the
+   address would not match the page, and N would invert a set bit back
+   to a LEFT shift, which for a symmetric operand can pass silently.
+   strap_asm gained SHFL and SHFR; SHFA/SHFN/SHFNA need no rule, since
+   the generic suffix loop strips them to SHF, itself a real FP op.
+   The listing's "Z,SIND" is Z,$IND -- STRAP's dollar sign scanned as
+   an S -- and $IND is the Appendix A system symbol for word 11.
+   F212 is transcribed A1-A11 and A12-A23. STILL TO DO in F212:
+   A24-A30 (SHFR 107 with LC required OFF; A25's CM1111 patch proving
+   bits right of the effective address are ignored; A26 "NORM MOD
+   IGNORED"; A27-A30 XFP/XFN operands), B1-B4 (the four sign-modifier
+   combinations, where SHFA/SHFN/SHFNA get exercised), C1-C3 (TEST
+   UNCHANGED REGISTERS: L0-11, R44-63, SB0-7 -- the guard on the new
+   three-write arm) and D1-D5+ (indicator tests).
+
+   Next after F212: D*, LFT and *+, then D/ -- which is the one that needs a
    multi-cycle unit, because an unrolled combinational 48-place divide
    is a different proposition from the 48x48 multiplies already in
    fpMul. (This paragraph previously called that "section 1c step 5c's

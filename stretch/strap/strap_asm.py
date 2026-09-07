@@ -729,6 +729,26 @@ def strip_fp_sign(op):
         return ("D+MG", 0, 1)
     if op == "D-MGA":
         return ("D+MG", 1, 1)
+    # SHIFT FRACTION's direction mnemonics (F212, jb_af1c pp.115-121).
+    # SHF's direction is bit 11 of the effective address, and Reference
+    # Manual p.102 adds "the sign of the shift -- bit 11 of the
+    # effective address, or shift amount -- is subject to modification
+    # by the sign modifiers". So STRAP spells the direction with the
+    # sign modifiers and leaves the ADDRESS carrying the amount alone:
+    # SHFL is A (absolute -> sign 0 -> left), SHFR is A+N (absolute
+    # then inverted -> right). The listing prints SHFL(U),1 as
+    # "200.67 20" and SHFR(U),1 as "200.77 20" -- the SAME address 200
+    # (= amount 1 << 7, direction bit CLEAR in both), differing only in
+    # bits 19-20. Emitting n*128+64 for SHFR would be wrong twice over:
+    # the address would not match the listing, and N would invert a
+    # set bit back to a LEFT shift.
+    # SHFA/SHFN/SHFNA (F212B's modifier-combination tests) need no rule
+    # here -- the generic suffix loop above strips them, since the
+    # remainder "SHF" is itself a real FP op.
+    if op == "SHFL":
+        return ("SHF", 1, 0)
+    if op == "SHFR":
+        return ("SHF", 1, 1)
     return None
 
 

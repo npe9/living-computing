@@ -1543,33 +1543,70 @@ function ActionValue#(Tuple4#(HWordAddr, Maybe#(Tuple2#(Bit#(4), IndexWord)),
           ind = setRangeIndicators(ind, fpRangeBits(out, gen, da.ef == 1));
           ind = setBit(ind, ind_ZM, 0);
         end else if (isSHF) begin
-          // Shift Fraction (p.101): shift the 48-bit accumulator
-          // fraction; bits 0-10 of the effective address = amount,
-          // bit 11 = direction (0 left, 1 right), the direction subject
-          // to the sign modifiers. Exponent unchanged. A one shifted
-          // left past the top (bit 12) sets LC; noisy mode fills a left
-          // shift with ones. Does not address storage.
+          // Shift Fraction (p.102): shift the accumulator fraction in
+          // the direction and amount given by effective-address bits
+          // 0-11 -- amount in bits 0-10 (ea[17:7]), direction in bit 11
+          // (ea[6]), 0 left and 1 right -- with that direction bit read
+          // as the SIGN of the shift and so "subject to modification by
+          // the sign modifiers". Bits to the right of the effective
+          // address (ea[5:0]) are ignored; jb_af1c F212A25 patches them
+          // to ones with a CM1111 and demands the shift is unaffected.
+          //
+          // "Only accumulator bits 12-107 participate in the shifting;
+          // all other accumulator bits remain unchanged" -- so this is
+          // a 96-BIT shift across BOTH accumulator halves, not the
+          // 48-bit one this arm used to do. The old version read and
+          // wrote only accLeft, which left the low half untouched and
+          // could never set LC from a bit that started there; jb_af1c
+          // F212A12 (SHFL 107 with the low half loaded from FPK34,
+          // demanding a zero result and LC ON via BZLC) is the row
+          // that catches it. The exponent is not changed by this
+          // operation, and neither is the sign byte.
+          FpDouble ds = fpdFromAcc(accL, st.readAccRight(), accS);
           Bit#(11) amt = ea[17:7];
           Bit#(1) dir = ea[6];
           if (fp.absSign == 1) dir = 0;
           if (fp.invSign == 1) dir = ~dir;
-          FpNum v = acc;
+          // A shift of 96 or more clears the fraction either way, and
+          // capping here keeps the "what fell off the top" expression
+          // below from underflowing 96 - amt. amt is 11 bits, so 107
+          // (F212A12/A24) and anything up to 2047 land in this case.
+          Bit#(11) sh = (amt > 96) ? 96 : amt;
+          FpDouble v = ds;
           Bool lc = False;
-          if (dir == 0) begin // left
-            Bit#(96) wide = {48'b0, acc.frac} << amt;
-            v.frac = wide[47:0];
-            lc = (wide[95:48] != 0);
-            if (noisy && amt != 0) v.frac = v.frac | (48'hFFFFFFFFFFFF >> (48 - (amt > 48 ? 48 : amt[5:0])));
-          end else begin // right
-            Bit#(96) wide = {48'b0, acc.frac} >> amt;
-            v.frac = wide[47:0];
+          if (dir == 0) begin
+            // "If a one bit is shifted left beyond accumulator bit
+            // position 12, it is lost and the lost carry indicator is
+            // set to one." The bits that pass bit 12 are the top `sh`
+            // of the fraction. At sh == 0 the shift loses nothing:
+            // >> 96 is zero in BSV, which is the answer we want.
+            lc = ((ds.frac >> (96 - sh)) != 0);
+            v.frac = ds.frac << sh;
+            // p.102: "The operation is not affected by the
+            // normalization modifier. No noisy mode one bits are
+            // entered on left shift if noisy mode is specified." This
+            // arm used to OR ones into the vacated positions under
+            // `noisy`, which the manual rules out; "zeros are inserted
+            // in the bit positions which are vacated" with no
+            // exception. Manual-pinned, not diagnostic-pinned: every
+            // SHF in F212 is (U) and none of it selects noisy mode, so
+            // nothing transcribed here would have caught it.
+          end else begin
+            // "A one bit shifted right beyond accumulator bit position
+            // 107 is lost, but no indicator is turned on" -- so no LC
+            // on this side. F212A24 (SHFR 107) checks exactly that
+            // with BLC,SERS "ERROR IF LC INDICATOR ON".
+            v.frac = ds.frac >> sh;
           end
-          st.writeWord(addrAccLeft, fpAccLeft(v, accL));
-          st.writeWord(addrAccSignByte, fpSignByte(v, accS));
+          st.writeWord(addrAccLeft, fpdAccLeft(v));
+          st.writeWord(addrAccRight, fpdAccRight(v, st.readAccRight()));
+          st.writeWord(addrAccSignByte, sbWith(accS, ds.sign, sbFlags(accS)));
+          FpNum vind = fpdHead(v);
+          vind.frac = (v.frac == 0) ? 0 : 48'b1;
           ind = setBit(ind, ind_MOP, 0);
-          ind = setResultIndicatorsFp(ind, v);
+          ind = setResultIndicatorsFp(ind, vind);
           if (lc) ind = setBit(ind, ind_LC, 1);
-          ind = setRangeIndicators(ind, fpRangeBits(v, False, v.ef == 1));
+          ind = setRangeIndicators(ind, fpRangeBits(vind, False, vind.ef == 1));
           ind = setBit(ind, ind_ZM, 0);
         end else if (isEplI) begin
           // Add Immediate to Exponent (p.102): bits 0-11 of the

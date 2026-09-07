@@ -1,0 +1,154 @@
+! jb_af1c F212A1-A11 -- "----F212---SHIFT FRACTION TEST ROUTINE",
+! "-ARITHMETIC CHECKS F212A", p.115, transcribed verbatim from the
+! listing at its own addresses (SAP13 = 016267.40).
+!
+! This is the first block to exercise SHIFT FRACTION as the 96-BIT
+! operation the Reference Manual p.102 describes: "Only accumulator
+! bits 12-107 participate in the shifting; all other accumulator bits
+! remain unchanged."  The model's SHF arm shifted only the 48-bit high
+! half before this block; see the header of fp_arith_f212a12_23.strap
+! for the row that actually catches that.
+!
+! ENCODING.  SHF's direction is effective-address bit 11 and its
+! amount bits 0-10, so the address field carries amount<<7.  p.102
+! adds that the direction bit is "the SIGN of the shift ... subject to
+! modification by the sign modifiers", which is how STRAP spells the
+! direction: SHFL is SHF with A (absolute -> positive -> left).  The
+! listing prints SHFL(U),1 as "200.67 20" -- address 200 octal = 1<<7
+! with the direction bit CLEAR -- and SHFR(U),1 as "200.77 20", the
+! SAME address with A+N.  Every row's encoding below was read off the
+! page and is checked by verify_fp_arith_f212a1_11_listing.py.
+!
+! ARITHMETIC, pre-computed against the pool (p.176) before running:
+!   DL(U),FPK87 loads FPK87's fraction into IBM 12-59 and ZEROES the
+!   low half, so frac96 = FPK87.frac << 48.  Shifting that left n
+!   places must leave the high half equal to FPK(87+n)'s fraction and
+!   the low half zero, for n = 1..10 -- FPK87..FPK97 are successive
+!   left shifts of one another.  Verified for all ten before writing:
+!     SHFL 1 -> FPK88   SHFL 6  -> FPK93
+!     SHFL 2 -> FPK89   SHFL 7  -> FPK94
+!     SHFL 3 -> FPK90   SHFL 8  -> FPK95
+!     SHFL 4 -> FPK91   SHFL 9  -> FPK96
+!     SHFL 5 -> FPK92   SHFL 10 -> FPK97
+!   A1 (SHFL 0) is the identity: high stays FPK87, low stays 0.
+!
+! Each sub-test checks the high order fraction at connective offset 68
+! (IBM 0-59) and the low order at offset 20 (IBM 60-107), so both
+! halves are read every time -- an implementation that shifted only
+! the high half would still pass A1-A11, because the low half is zero
+! throughout.  A12 is where that stops being true.
+
+! -- SSIP framework substitutes (as everywhere else in this series):
+! -- SERS (octal 1304) -> FAIL halt, SEN (octal 1310) -> scratch.
+        SLC, (8)1304.0
+SERS    BEW, $
+        SLC, (8)1310.0
+SEN     DD(BU,64,8), 0
+
+! -- constants (pool p.176) --
+        SLC, (8)22005.0
+FPK0    DD(BU,64), (8)0000000000000000000000
+        SLC, (8)22125.0
+FPK87   DD(BU,64), (8)0001000077777777777760
+FPK88   DD(BU,64), (8)0001000177777777777740
+FPK89   DD(BU,64), (8)0001000377777777777700
+FPK90   DD(BU,64), (8)0001000777777777777600
+FPK91   DD(BU,64), (8)0001001777777777777400
+FPK92   DD(BU,64), (8)0001003777777777777000
+FPK93   DD(BU,64), (8)0001007777777777776000
+FPK94   DD(BU,64), (8)0001017777777777774000
+FPK95   DD(BU,64), (8)0001037777777777770000
+FPK96   DD(BU,64), (8)0001077777777777760000
+FPK97   DD(BU,64), (8)0001177777777777740000
+
+        SLC, (8)16267.40
+SAP13   DL(U), FPK87                        ! F212A1
+        SHFL(U), 0.0
+        CT0110(BU,48), FPK87+.12, 68        ! high order fract. remain same
+        SIC, SEN
+        BRGZ, SERS
+        CT0110(BU,48), FPK0+.12, 20         ! low order fract. remain +0
+        SIC, SEN
+        BRGZ, SERS
+        DL(U), FPK87                        ! F212A2
+        SHFL(U), 128.0
+        CT0110(BU,48), FPK88+.12, 68        ! 96 bit fract. shifted left 1
+        SIC, SEN
+        BRGZ, SERS
+        CT0110(BU,48), FPK0+.12, 20
+        SIC, SEN
+        BRGZ, SERS
+        DL(U), FPK87                        ! F212A3
+        SHFL(U), 256.0
+        CT0110(BU,48), FPK89+.12, 68        ! shifted left 2
+        SIC, SEN
+        BRGZ, SERS
+        CT0110(BU,48), FPK0+.12, 20
+        SIC, SEN
+        BRGZ, SERS
+        DL(U), FPK87                        ! F212A4
+        SHFL(U), 384.0
+        CT0110(BU,48), FPK90+.12, 68        ! shifted left 3
+        SIC, SEN
+        BRGZ, SERS
+        CT0110(BU,48), FPK0+.12, 20
+        SIC, SEN
+        BRGZ, SERS
+        DL(U), FPK87                        ! F212A5
+        SHFL(U), 512.0
+        CT0110(BU,48), FPK91+.12, 68        ! shifted left 4
+        SIC, SEN
+        BRGZ, SERS
+        CT0110(BU,48), FPK0+.12, 20
+        SIC, SEN
+        BRGZ, SERS
+        DL(U), FPK87                        ! F212A6
+        SHFL(U), 640.0
+        CT0110(BU,48), FPK92+.12, 68        ! shifted left 5
+        SIC, SEN
+        BRGZ, SERS
+        CT0110(BU,48), FPK0+.12, 20
+        SIC, SEN
+        BRGZ, SERS
+        DL(U), FPK87                        ! F212A7
+        SHFL(U), 768.0
+        CT0110(BU,48), FPK93+.12, 68        ! shifted left 6
+        SIC, SEN
+        BRGZ, SERS
+        CT0110(BU,48), FPK0+.12, 20
+        SIC, SEN
+        BRGZ, SERS
+        DL(U), FPK87                        ! F212A8
+        SHFL(U), 896.0
+        CT0110(BU,48), FPK94+.12, 68        ! shifted left 7
+        SIC, SEN
+        BRGZ, SERS
+        CT0110(BU,48), FPK0+.12, 20
+        SIC, SEN
+        BRGZ, SERS
+        DL(U), FPK87                        ! F212A9
+        SHFL(U), 1024.0
+        CT0110(BU,48), FPK95+.12, 68        ! shifted left 8
+        SIC, SEN
+        BRGZ, SERS
+        CT0110(BU,48), FPK0+.12, 20
+        SIC, SEN
+        BRGZ, SERS
+        DL(U), FPK87                        ! F212A10
+        SHFL(U), 1152.0
+        CT0110(BU,48), FPK96+.12, 68        ! shifted left 9
+        SIC, SEN
+        BRGZ, SERS
+        CT0110(BU,48), FPK0+.12, 20
+        SIC, SEN
+        BRGZ, SERS
+        DL(U), FPK87                        ! F212A11
+        SHFL(U), 1280.0
+        CT0110(BU,48), FPK97+.12, 68        ! shifted left 10
+        SIC, SEN
+        BRGZ, SERS
+        CT0110(BU,48), FPK0+.12, 20
+        SIC, SEN
+        BRGZ, SERS
+PASS    BEW, $
+        END, SAP13

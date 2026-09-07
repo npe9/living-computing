@@ -1,0 +1,174 @@
+! jb_af1c F212A12-A23, p.116-118 (octal 016356.40-016467.40),
+! transcribed verbatim from the listing.
+!
+! THIS IS THE BLOCK THAT DRIVES THE 96-BIT SHIFT.  Until this session
+! the model's SHF arm shifted only the 48-bit high half of the
+! accumulator fraction and wrote back only accLeft; Reference Manual
+! p.102 says "Only accumulator bits 12-107 participate in the
+! shifting", which is 96 bits across BOTH halves.  A1-A11 could not
+! see the difference, because they load with DL (which zeroes the low
+! half) and shift LEFT, so the low half is zero before and after.
+!
+! F212A12 is the row that can.  It clears the indicators with Z,IND,
+! loads FPK0 (zero) into the high half and FPK34 into the LOW half,
+! then does SHFL(U),107.  FPK34's fraction is 000000000001 -- a single
+! one bit at IBM 107, the very bottom of the low half.  Shifting 107
+! places left carries it out past IBM bit 12, so:
+!   - the high order fraction must be +0  (checked at offset 68)
+!   - the low order fraction must be +0   (checked at offset 20)
+!   - and LC must be ON                   (BZLC,SERS "ERROR IF LC
+!     INDICATOR OFF" -- p.102, "if a one bit is shifted left beyond
+!     accumulator bit position 12, it is lost and the lost carry
+!     indicator is set to one")
+! Under the old 48-bit arm the low half was never read, so the shifted
+! quantity was FPK0 = 0, nothing was lost, and LC stayed OFF -- A12
+! halts at 016365.40.  Note the shift count 107 also exceeds the 96-bit
+! field, which is why the arm caps it before forming "what fell off
+! the top"; 107<<7 = 13696 is the address, printed "32600.67 20".
+!
+! A13-A23 then walk SHFR 0..10 with the high half zero and the low
+! half FPK97, checking the low half against FPK97,96,...,87 in turn --
+! FPK87..FPK97 being successive left shifts of one another, so a right
+! shift of n must land on FPK(97-n).  All eleven were computed against
+! the pool (p.176) before running.  These rows exercise the low half
+! on its own; A12 is the only one that crosses the halfway boundary.
+
+! -- SSIP framework substitutes: SERS (octal 1304) -> FAIL halt,
+! -- SEN (octal 1310) -> scratch.
+        SLC, (8)1304.0
+SERS    BEW, $
+        SLC, (8)1310.0
+SEN     DD(BU,64,8), 0
+
+! -- constants (pool p.176) --
+        SLC, (8)22005.0
+FPK0    DD(BU,64), (8)0000000000000000000000
+        SLC, (8)22047.0
+FPK34   DD(BU,64), (8)0001000000000000000020
+        SLC, (8)22125.0
+FPK87   DD(BU,64), (8)0001000077777777777760
+FPK88   DD(BU,64), (8)0001000177777777777740
+FPK89   DD(BU,64), (8)0001000377777777777700
+FPK90   DD(BU,64), (8)0001000777777777777600
+FPK91   DD(BU,64), (8)0001001777777777777400
+FPK92   DD(BU,64), (8)0001003777777777777000
+FPK93   DD(BU,64), (8)0001007777777777776000
+FPK94   DD(BU,64), (8)0001017777777777774000
+FPK95   DD(BU,64), (8)0001037777777777770000
+FPK96   DD(BU,64), (8)0001077777777777760000
+FPK97   DD(BU,64), (8)0001177777777777740000
+
+        SLC, (8)16356.40
+FSHF1   Z, $IND                             ! F212A12
+        DL(U), FPK0
+        C0011(BU,48), FPK34+.12, 20
+        SHFL(U), 13696.0
+        CT0110(BU,48), FPK0+.12, 68         ! test high order fract. + 0
+        SIC, SEN
+        BRGZ, SERS
+        CT0110(BU,48), FPK0+.12, 20         ! test low order fract. + 0
+        SIC, SEN
+        BRGZ, SERS
+        SIC, SEN
+        BZLC, SERS                          ! error if LC indicator off
+        DL(U), FPK0                         ! F212A13
+        C0011(BU,48), FPK97+.12, 20
+        SHFR(U), 0.0
+        CT0110(BU,48), FPK0+.12, 68         ! does high order fract. remain same
+        SIC, SEN
+        BRGZ, SERS
+        CT0110(BU,48), FPK97+.12, 20        ! does low order fract. remain same
+        SIC, SEN
+        BRGZ, SERS
+        DL(U), FPK0                         ! F212A14
+        C0011(BU,48), FPK97+.12, 20
+        SHFR(U), 128.0
+        CT0110(BU,48), FPK0+.12, 68         ! was 96 bit fract. shifted right 1
+        SIC, SEN
+        BRGZ, SERS
+        CT0110(BU,48), FPK96+.12, 20
+        SIC, SEN
+        BRGZ, SERS
+        DL(U), FPK0                         ! F212A15
+        C0011(BU,48), FPK97+.12, 20
+        SHFR(U), 256.0
+        CT0110(BU,48), FPK0+.12, 68         ! shifted right 2
+        SIC, SEN
+        BRGZ, SERS
+        CT0110(BU,48), FPK95+.12, 20
+        SIC, SEN
+        BRGZ, SERS
+        DL(U), FPK0                         ! F212A16
+        C0011(BU,48), FPK97+.12, 20
+        SHFR(U), 384.0
+        CT0110(BU,48), FPK0+.12, 68         ! shifted right 3
+        SIC, SEN
+        BRGZ, SERS
+        CT0110(BU,48), FPK94+.12, 20
+        SIC, SEN
+        BRGZ, SERS
+        DL(U), FPK0                         ! F212A17
+        C0011(BU,48), FPK97+.12, 20
+        SHFR(U), 512.0
+        CT0110(BU,48), FPK0+.12, 68         ! shifted right 4
+        SIC, SEN
+        BRGZ, SERS
+        CT0110(BU,48), FPK93+.12, 20
+        SIC, SEN
+        BRGZ, SERS
+        DL(U), FPK0                         ! F212A18
+        C0011(BU,48), FPK97+.12, 20
+        SHFR(U), 640.0
+        CT0110(BU,48), FPK0+.12, 68         ! shifted right 5
+        SIC, SEN
+        BRGZ, SERS
+        CT0110(BU,48), FPK92+.12, 20
+        SIC, SEN
+        BRGZ, SERS
+        DL(U), FPK0                         ! F212A19
+        C0011(BU,48), FPK97+.12, 20
+        SHFR(U), 768.0
+        CT0110(BU,48), FPK0+.12, 68         ! shifted right 6
+        SIC, SEN
+        BRGZ, SERS
+        CT0110(BU,48), FPK91+.12, 20
+        SIC, SEN
+        BRGZ, SERS
+        DL(U), FPK0                         ! F212A20
+        C0011(BU,48), FPK97+.12, 20
+        SHFR(U), 896.0
+        CT0110(BU,48), FPK0+.12, 68         ! shifted right 7
+        SIC, SEN
+        BRGZ, SERS
+        CT0110(BU,48), FPK90+.12, 20
+        SIC, SEN
+        BRGZ, SERS
+        DL(U), FPK0                         ! F212A21
+        C0011(BU,48), FPK97+.12, 20
+        SHFR(U), 1024.0
+        CT0110(BU,48), FPK0+.12, 68         ! shifted right 8
+        SIC, SEN
+        BRGZ, SERS
+        CT0110(BU,48), FPK89+.12, 20
+        SIC, SEN
+        BRGZ, SERS
+        DL(U), FPK0                         ! F212A22
+        C0011(BU,48), FPK97+.12, 20
+        SHFR(U), 1152.0
+        CT0110(BU,48), FPK0+.12, 68         ! shifted right 9
+        SIC, SEN
+        BRGZ, SERS
+        CT0110(BU,48), FPK88+.12, 20
+        SIC, SEN
+        BRGZ, SERS
+        DL(U), FPK0                         ! F212A23
+        C0011(BU,48), FPK97+.12, 20
+        SHFR(U), 1280.0
+        CT0110(BU,48), FPK0+.12, 68         ! was 96 bit fraction shifted right 10
+        SIC, SEN
+        BRGZ, SERS
+        CT0110(BU,48), FPK87+.12, 20
+        SIC, SEN
+        BRGZ, SERS
+PASS    BEW, $
+        END, FSHF1

@@ -755,6 +755,20 @@ run "FP store low order, unchanged registers and MOP (jb_af1c F211B-C on the mod
     "PC=$(python3 -c 'from strap_asm import assemble; print(assemble(open("programs/fp_arith_f211bc.strap").read()).symtab["PASS"]//32)')" \
     "SEN:712=0"
 
+# -- F212 SHIFT FRACTION. The first block to exercise SHF as the 96-BIT
+# -- operation Reference Manual p.102 describes ("only accumulator bits
+# -- 12-107 participate"); the arm shifted only the 48-bit high half
+# -- before this. A1-A11 cannot see that (DL zeroes the low half and
+# -- they shift LEFT); A12 can, and does -- see that program's header.
+run "FP shift fraction, left-shift walk (jb_af1c F212A1-A11, encoding)" python3 verify_fp_arith_f212a1_11_listing.py
+run "FP shift fraction, left-shift walk (jb_af1c F212A1-A11 on the model)" ./run_program.sh programs/fp_arith_f212a1_11.strap StretchFpShfATb \
+    "PC=$(python3 -c 'from strap_asm import assemble; print(assemble(open("programs/fp_arith_f212a1_11.strap").read()).symtab["PASS"]//32)')" \
+    "SEN:712=0"
+run "FP shift fraction, 96-bit lost carry and right-shift walk (jb_af1c F212A12-A23, encoding)" python3 verify_fp_arith_f212a12_23_listing.py
+run "FP shift fraction, 96-bit lost carry and right-shift walk (jb_af1c F212A12-A23 on the model)" ./run_program.sh programs/fp_arith_f212a12_23.strap StretchFpShfBTb \
+    "PC=$(python3 -c 'from strap_asm import assemble; print(assemble(open("programs/fp_arith_f212a12_23.strap").read()).symtab["PASS"]//32)')" \
+    "SEN:712=0"
+
 # -- 1j. Store-close-to-fetch: store a word then immediately reload it;
 # the load must read the new value, not the stale one. The hazard the FP
 # sign-modifier codesign exposed; fixed by tracking each E-box level's
