@@ -1,0 +1,183 @@
+! Floating-point diagnostic jb_af1c, routine F209B "TESTS OF SIGN AND
+! MODIFIER COMBINATIONS" for ADD DOUBLE TO MAGNITUDE, sub-tests B1-B8
+! (docs/jb_af1c_floating-point.pdf pp.102-104, octal
+! 015365.40-015471.00, where F209B9 begins).
+!
+! This is the block that actually exercises D+MG. F209A ran nine
+! arithmetic checks with every operand positive, so no sum was ever
+! negative and not one magnitude-specific rule was reached -- see that
+! program's header. Here the accumulator is loaded negative with DLN
+! in half the sub-tests, and the operand carries the negative sign
+! modifier in half, so the forced zero and the sign restore are both
+! on the table.
+!
+! The listing's shorthand is the same as F208B's: MS is the memory
+! operand's sign, ACS the accumulator's, and N and A are the two SIGN
+! modifiers (N = negative, A = absolute), NOT the normalization
+! modifier -- every D+MG here is written (U).
+!
+!   B1  D+MG    acc +   MS+ACS+N+A+0
+!   B2  D+MGA   acc +   MS+ACS+N+0, A+1
+!   B3  D-MG    acc +   MS+ACS+A+0, N+1
+!   B4  D-MGA   acc +   MS+ACS+0, N+A+1
+!   B5  D+MG    acc -   MS+N+A+0, ACS+1
+!   B6  D+MGA   acc -   MS+N+0, ACS+A+1
+!   B7  D-MG    acc -   MS+A+0, ACS+N+1
+!   B8  D-MGA   acc -   MS+0, ACS+N+A+1
+!
+! Each checks both fraction halves and then the sign bit itself with
+! BZB (expect +) or BB (expect -) on the accumulator sign byte at
+! 10.04. B1-B4 expect a positive result, B5-B8 a negative one, which
+! is the whole point: D+MG must hand back the accumulator's OWN sign
+! whatever the addition did to it.
+!
+! Framework substitutes as everywhere else in this series: SERS (octal
+! 1304) -> FAIL halt, SEN (octal 1310) -> scratch. Constants from the
+! pool p.176. B9-B13 are not transcribed here; PASS sits exactly where
+! B9 begins.
+!
+! Instructions: B, DL(U), DLN(U), C0011 into the accumulator at offset
+! 20, D+MG(U)/D+MGA(U)/D-MG(U)/D-MGA(U), CT0110 over 48-bit fields at
+! offsets 20 and 68, BB and BZB on a literal bit address, SIC, BRGZ.
+! verify_fp_arith_f209b1_8_listing.py checks every word bit-for-bit.
+!
+! Observed: all eight passed on the first run, and unlike F209A this
+! block does bite. Two of D+MG's four magnitude-specific rules are
+! covered, both by B5, the first sub-test with a negative accumulator:
+!   - not forcing the accumulator's sign positive before the add halts
+!     at B5's low order fraction check (SIC stores 015433.40);
+!   - not restoring the accumulator's own sign afterward halts at B5's
+!     sign bit check (SIC stores 015437.40).
+!
+! The other two are still NOT covered. Disabling either forced-zero
+! arm -- flagged or unflagged -- leaves all eight passing. Every
+! sub-test here uses FPK39 as the memory operand and checks a non-zero
+! result, so no sum comes out negative and no zero is ever forced.
+! B9-B13, which bring FPK40 and FPK119 as operands, are the next place
+! to look; the unflagged forced zero is also what would settle which
+! exponent it keeps, still open from F209A.
+
+! -- SSIP framework substitutes --
+        SLC, (8)1304.0
+SERS    BEW, $
+        SLC, (8)1310.0
+SEN     DD(BU,64,8), 0
+
+! -- constants (pool p.176) --
+
+        SLC, (8)22032.0
+FPK21   DD(BU,64,8), (8)0031177777777777777767
+        SLC, (8)22050.0
+FPK35   DD(BU,64,8), (8)0001125252525252525240
+        SLC, (8)22052.0
+FPK37   DD(BU,64,8), (8)0031125252525252525240
+FPK38   DD(BU,64,8), (8)0031052525252525252520
+FPK39   DD(BU,64,8), (8)0001052525252525252520
+
+! -- code (verbatim, at the listing's addresses) --
+        SLC, (8)15365.40
+FADM2   DL(U), FPK21   ! F209B1: MS+ACS+N+A+0
+        C0011(BU,48), FPK35+.12, 20   ! set the accumulator's low half
+        D+MG(U), FPK39
+        CT0110(BU,48), FPK21+.12, 20   ! test low order result fraction
+        SIC, SEN
+        BRGZ, SERS
+        CT0110(BU,48), FPK21+.12, 68   ! test high order result fraction
+        SIC, SEN
+        BRGZ, SERS
+        BZB, 10.04, $+2.0   ! test the accumulator sign bit: expect +
+        SIC, SEN
+        B, SERS
+        B, $+.32   ! F209B2: MS+ACS+N+0, A+1
+        DL(U), FPK21
+        C0011(BU,48), FPK35+.12, 20   ! set the accumulator's low half
+        D+MGA(U), FPK39
+        CT0110(BU,48), FPK21+.12, 20   ! test low order result fraction
+        SIC, SEN
+        BRGZ, SERS
+        CT0110(BU,48), FPK21+.12, 68   ! test high order result fraction
+        SIC, SEN
+        BRGZ, SERS
+        BZB, 10.04, $+2.0   ! test the accumulator sign bit: expect +
+        SIC, SEN
+        B, SERS
+        B, $+.32   ! F209B3: MS+ACS+A+0, N+1
+        DL(U), FPK38
+        C0011(BU,48), FPK37+.12, 20   ! set the accumulator's low half
+        D-MG(U), FPK39
+        CT0110(BU,48), FPK39+.12, 20   ! test low order result fraction
+        SIC, SEN
+        BRGZ, SERS
+        CT0110(BU,48), FPK39+.12, 68   ! test high order result fraction
+        SIC, SEN
+        BRGZ, SERS
+        BZB, 10.04, $+2.0   ! test the accumulator sign bit: expect +
+        SIC, SEN
+        B, SERS
+        B, $+.32   ! F209B4: MS+ACS+0, N+A+1
+        DL(U), FPK38
+        C0011(BU,48), FPK37+.12, 20   ! set the accumulator's low half
+        D-MGA(U), FPK39
+        CT0110(BU,48), FPK39+.12, 20   ! test low order result fraction
+        SIC, SEN
+        BRGZ, SERS
+        CT0110(BU,48), FPK39+.12, 68   ! test high order result fraction
+        SIC, SEN
+        BRGZ, SERS
+        BZB, 10.04, $+2.0   ! test the accumulator sign bit: expect +
+        SIC, SEN
+        B, SERS
+        B, $+.32   ! F209B5: MS+N+A+0, ACS+1
+        DLN(U), FPK21
+        C0011(BU,48), FPK37+.12, 20   ! set the accumulator's low half
+        D+MG(U), FPK39
+        CT0110(BU,48), FPK21+.12, 20   ! test low order result fraction
+        SIC, SEN
+        BRGZ, SERS
+        CT0110(BU,48), FPK21+.12, 68   ! test high order result fraction
+        SIC, SEN
+        BRGZ, SERS
+        BB, 10.04, $+2.0   ! test the accumulator sign bit: expect -
+        SIC, SEN
+        B, SERS
+        B, $+.32   ! F209B6: MS+N+0, ACS+A+1
+        DLN(U), FPK21
+        C0011(BU,48), FPK37+.12, 20   ! set the accumulator's low half
+        D+MGA(U), FPK39
+        CT0110(BU,48), FPK21+.12, 20   ! test low order result fraction
+        SIC, SEN
+        BRGZ, SERS
+        CT0110(BU,48), FPK21+.12, 68   ! test high order result fraction
+        SIC, SEN
+        BRGZ, SERS
+        BB, 10.04, $+2.0   ! test the accumulator sign bit: expect -
+        SIC, SEN
+        B, SERS
+        B, $+.32   ! F209B7: MS+A+0, ACS+N+1
+        DLN(U), FPK38
+        C0011(BU,48), FPK37+.12, 20   ! set the accumulator's low half
+        D-MG(U), FPK39
+        CT0110(BU,48), FPK39+.12, 20   ! test low order result fraction
+        SIC, SEN
+        BRGZ, SERS
+        CT0110(BU,48), FPK39+.12, 68   ! test high order result fraction
+        SIC, SEN
+        BRGZ, SERS
+        BB, 10.04, $+2.0   ! test the accumulator sign bit: expect -
+        SIC, SEN
+        B, SERS
+        B, $+.32   ! F209B8: MS+0, ACS+N+A+1
+        DLN(U), FPK38
+        C0011(BU,48), FPK37+.12, 20   ! set the accumulator's low half
+        D-MGA(U), FPK39
+        CT0110(BU,48), FPK39+.12, 20   ! test low order result fraction
+        SIC, SEN
+        BRGZ, SERS
+        CT0110(BU,48), FPK39+.12, 68   ! test high order result fraction
+        SIC, SEN
+        BRGZ, SERS
+        BB, 10.04, $+2.0   ! test the accumulator sign bit: expect -
+        SIC, SEN
+        B, SERS
+PASS    BEW, $                 ! 015471.00: where F209B9 begins
+        END, FADM2

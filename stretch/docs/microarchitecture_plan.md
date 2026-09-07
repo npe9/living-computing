@@ -400,11 +400,29 @@ hand vectors alone. "Enables" notes the dependency chain.
    confirms it -- A2 starts eleven half-words after A1, not thirteen);
    and sub-tests 5 and 6 are labelled F209D5/F209D6 between A4 and A7,
    almost certainly a typo in the SSIP source.
-   Next: F209B ("TESTS OF SIGN AND MODIFIER COMBINATIONS", B1-B13, pp.
-   102-103) -- the block that actually covers the magnitude rules,
-   since it brings DLN accumulators and D-MG/D-MGA operands. It will
-   need D-MG and D-MGA rules in strap_asm.py's strip_fp_sign, the same
-   shape as D-/D-A. Then SRD. Still open in double
+   jb_af1c F209B1-B8 (pp.102-104) is the block F209A could not be. It
+   sweeps D+MG, D+MGA, D-MG and D-MGA against both accumulator signs
+   -- DL versus DLN -- and checks each result on both fraction halves
+   and then on the sign bit itself. D-MG and D-MGA needed rules in
+   strap_asm.py's strip_fp_sign, the same shape as D-/D-A before them
+   (D+MG = .46, D+MGA = .66, D-MG = .56, D-MGA = .76). All eight
+   passed on the first run.
+   Two of D+MG's four magnitude-specific rules are now covered, both
+   by B5, the first sub-test with a DLN accumulator: not forcing the
+   accumulator's sign positive before the add halts at B5's low order
+   fraction check (SIC stores 015433.40), and not restoring the
+   accumulator's own sign afterward halts at B5's sign bit check
+   (015437.40).
+   The other two are still NOT covered, and this was checked rather
+   than assumed: disabling either forced-zero arm, flagged or
+   unflagged, leaves all eight passing. Every sub-test here uses FPK39
+   as its memory operand and checks a non-zero result, so no sum comes
+   out negative and no zero is ever forced. The unflagged forced zero
+   is also what would settle which exponent it keeps -- fpAdd's `big`
+   against the manual's "accumulator operand" -- still open.
+   Next: F209B9-B13 (from 015471.00), which bring FPK40 and FPK119 as
+   memory operands and are the next candidate for reaching a forced
+   zero. Then SRD. Still open in double
    precision: D+MG, D-, SRD, SLO, D*, D/, LFT -- the first real double-precision
    ARITHMETIC, which needs the 96-bit adder and the accumulator's low
    half as a genuine operand rather than something only cleared.

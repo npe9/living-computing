@@ -492,6 +492,21 @@ run "FP add double magnitude (jb_af1c F209A1-A9 on the model)" ./run_program.sh 
     "PC=$(python3 -c 'from strap_asm import assemble; print(assemble(open("programs/fp_arith_f209a.strap").read()).symtab["PASS"]//32)')" \
     "SEN:712=0"
 
+# jb_af1c F209B1-B8 (pp.102-104): D+MG's sign and modifier
+# combinations -- D+MG, D+MGA, D-MG, D-MGA against both accumulator
+# signs. This is the block F209A could not be: two of D+MG's four
+# magnitude rules are covered, both by B5, the first sub-test with a
+# DLN accumulator. Not forcing the accumulator sign positive halts at
+# B5's low order check (015433.40); not restoring the accumulator's
+# own sign afterward halts at B5's sign bit check (015437.40).
+# Still NOT covered: either forced-zero arm. Disabling both leaves all
+# eight passing -- every sub-test checks a non-zero result, so no sum
+# comes out negative. B9-B13 are the next place to look.
+run "FP add double magnitude signs (jb_af1c F209B1-B8, encoding)" python3 verify_fp_arith_f209b1_8_listing.py
+run "FP add double magnitude signs (jb_af1c F209B1-B8 on the model)" ./run_program.sh programs/fp_arith_f209b1_8.strap StretchFpAddDblMgBTb \
+    "PC=$(python3 -c 'from strap_asm import assemble; print(assemble(open("programs/fp_arith_f209b1_8.strap").read()).symtab["PASS"]//32)')" \
+    "SEN:712=0"
+
 # -- 1j. Store-close-to-fetch: store a word then immediately reload it;
 # the load must read the new value, not the stale one. The hazard the FP
 # sign-modifier codesign exposed; fixed by tracking each E-box level's

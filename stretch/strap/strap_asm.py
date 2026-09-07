@@ -722,6 +722,13 @@ def strip_fp_sign(op):
         return ("D+", 0, 1)
     if op == "D-A":
         return ("D+", 1, 1)
+    # And ADD DOUBLE TO MAGNITUDE's (F209B, pp.102-103), the same shape
+    # again: D-MG is D+MG with N, D-MGA with both. D+MGA needs no rule,
+    # since the generic "A" suffix strips to D+MG, which is a real op.
+    if op == "D-MG":
+        return ("D+MG", 0, 1)
+    if op == "D-MGA":
+        return ("D+MG", 1, 1)
     return None
 
 
