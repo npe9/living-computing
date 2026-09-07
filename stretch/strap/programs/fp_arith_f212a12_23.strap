@@ -32,6 +32,15 @@
 ! shift of n must land on FPK(97-n).  All eleven were computed against
 ! the pool (p.176) before running.  These rows exercise the low half
 ! on its own; A12 is the only one that crosses the halfway boundary.
+!
+! COVERAGE LIMIT, measured by injection rather than assumed: no row
+! in F212A1-A23 requires LC to be OFF after a LEFT shift. A12 wants
+! it ON, and A24 -- the "ERROR IF LC INDICATOR ON" row -- shifts
+! RIGHT, where the model cannot set it at all. Forcing the model's
+! LC true unconditionally on a left shift leaves BOTH blocks green.
+! So this block pins that LC comes on when it should, and not that
+! it stays off when it should. A24 and D1 are where that closes.
+
 
 ! -- SSIP framework substitutes: SERS (octal 1304) -> FAIL halt,
 ! -- SEN (octal 1310) -> scratch.

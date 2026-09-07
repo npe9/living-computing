@@ -37,6 +37,15 @@
 ! halves are read every time -- an implementation that shifted only
 ! the high half would still pass A1-A11, because the low half is zero
 ! throughout.  A12 is where that stops being true.
+!
+! COVERAGE LIMIT, measured by injection rather than assumed: no row
+! in F212A1-A23 requires LC to be OFF after a LEFT shift. A12 wants
+! it ON, and A24 -- the "ERROR IF LC INDICATOR ON" row -- shifts
+! RIGHT, where the model cannot set it at all. Forcing the model's
+! LC true unconditionally on a left shift leaves BOTH blocks green.
+! So this block pins that LC comes on when it should, and not that
+! it stays off when it should. A24 and D1 are where that closes.
+
 
 ! -- SSIP framework substitutes (as everywhere else in this series):
 ! -- SERS (octal 1304) -> FAIL halt, SEN (octal 1310) -> scratch.

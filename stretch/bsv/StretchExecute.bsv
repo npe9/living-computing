@@ -1562,7 +1562,8 @@ function ActionValue#(Tuple4#(HWordAddr, Maybe#(Tuple2#(Bit#(4), IndexWord)),
           // demanding a zero result and LC ON via BZLC) is the row
           // that catches it. The exponent is not changed by this
           // operation, and neither is the sign byte.
-          FpDouble ds = fpdFromAcc(accL, st.readAccRight(), accS);
+          Word64 accRs = st.readAccRight();
+          FpDouble ds = fpdFromAcc(accL, accRs, accS);
           Bit#(11) amt = ea[17:7];
           Bit#(1) dir = ea[6];
           if (fp.absSign == 1) dir = 0;
@@ -1580,6 +1581,13 @@ function ActionValue#(Tuple4#(HWordAddr, Maybe#(Tuple2#(Bit#(4), IndexWord)),
             // set to one." The bits that pass bit 12 are the top `sh`
             // of the fraction. At sh == 0 the shift loses nothing:
             // >> 96 is zero in BSV, which is the answer we want.
+            // COVERAGE LIMIT, measured 2026-09-07: nothing transcribed
+            // requires LC to be OFF after a LEFT shift. A12 wants it
+            // ON; A24 is the LC-off row but shifts RIGHT, where this
+            // branch never runs. Forcing `lc = True` here leaves both
+            // F212A1-A11 and A12-A23 green, so the sh == 0 case below
+            // (which leans on BSV's >> 96 being zero) is unguarded by
+            // any test. F212D1, still to transcribe, is an LC row.
             lc = ((ds.frac >> (96 - sh)) != 0);
             v.frac = ds.frac << sh;
             // p.102: "The operation is not affected by the
@@ -1599,7 +1607,7 @@ function ActionValue#(Tuple4#(HWordAddr, Maybe#(Tuple2#(Bit#(4), IndexWord)),
             v.frac = ds.frac >> sh;
           end
           st.writeWord(addrAccLeft, fpdAccLeft(v));
-          st.writeWord(addrAccRight, fpdAccRight(v, st.readAccRight()));
+          st.writeWord(addrAccRight, fpdAccRight(v, accRs));
           st.writeWord(addrAccSignByte, sbWith(accS, ds.sign, sbFlags(accS)));
           FpNum vind = fpdHead(v);
           vind.frac = (v.frac == 0) ? 0 : 48'b1;

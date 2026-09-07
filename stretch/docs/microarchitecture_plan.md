@@ -774,6 +774,28 @@ hand vectors alone. "Enables" notes the dependency chain.
    combinations, where SHFA/SHFN/SHFNA get exercised), C1-C3 (TEST
    UNCHANGED REGISTERS: L0-11, R44-63, SB0-7 -- the guard on the new
    three-write arm) and D1-D5+ (indicator tests).
+   COVERAGE LIMIT, measured not assumed: NOTHING in A1-A23 requires LC
+   to be OFF after a LEFT shift. A12 wants it ON; A24 is the "ERROR IF
+   LC INDICATOR ON" row but shifts RIGHT, where the model cannot set
+   it at all. Forcing lc = True unconditionally on the left branch
+   leaves BOTH blocks green -- so the sh == 0 case (which leans on
+   BSV's >> 96 being zero) is currently unguarded by any test. A24 and
+   D1 are where that closes. Noted in the arm and in both program
+   headers rather than left as an assumption.
+   ONE TRAP WAITING IN F212D1, worth writing down before it becomes a
+   mysterious halt: now that SHF is 96-bit, THE ACCUMULATOR'S LOW HALF
+   IS LIVE STATE ACROSS SUB-TESTS. The single-precision FP arms write
+   only addrAccLeft and addrAccSignByte -- fpAccLeft(x, oldLeft)
+   preserves IBM 60-63 and nothing touches addrAccRight -- so an L or
+   a + leaves whatever the previous instruction put in the low half,
+   and a subsequent left shift pulls accRight[63:20] up into the high
+   half. This is faithful (D+'s own p.95 text has bits 108-127 remain
+   unchanged), and it was invisible while SHF was 48-bit. F212D1 is
+   where it starts to matter: it does C1111(BU,64),FPK1,64 and
+   C1111(BU,64),FPK1 (both halves all ones), SHFL(U),1, then later
+   L(U),FK134 and another SHFL(U),1 -- and that L does NOT clear the
+   low half. Pre-compute D1 by carrying accRight forward from
+   sub-test to sub-test, not by assuming zero the way A1-A23 could.
 
    Next after F212: D*, LFT and *+, then D/ -- which is the one that needs a
    multi-cycle unit, because an unrolled combinational 48-place divide
