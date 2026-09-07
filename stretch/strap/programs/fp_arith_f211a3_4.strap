@@ -1,0 +1,87 @@
+! Floating-point diagnostic jb_af1c, routine F211 "STORE LOW ORDER
+! TEST ROUTINE", sub-tests A3-A4 (docs/jb_af1c_floating-point.pdf
+! p.113, octal 016163.00-016201.00, where F211A5 begins).
+!
+! The first UNFLAGGED SLO, and so the first thing anywhere to exercise
+! the instruction's headline rule: "the exponent is obtained by
+! SUBTRACTING 48 from the exponent in bits 0-11 of the accumulator"
+! (Ref. Manual p.97). F211A1-A2 are both flagged, where the
+! accumulator's exponent is kept unchanged, so neither of them can see
+! the subtraction at all.
+!
+! Both sub-tests are the same shape -- load a double, drop its own
+! fraction into the low half with C0011 so the low 48 bits are known,
+! store with SLO(U), and compare against a constant that is the same
+! fraction at an exponent 48 lower:
+!
+!   A3  FPK28 is exponent +256, fraction ffffffffffff.
+!       SLO(U) stores fraction ffffffffffff at exponent 256 - 48 = 208.
+!       Expected FPK44: exponent +208, fraction ffffffffffff.
+!       The listing says so itself -- "TEST RESULT EXP+208".
+!   A4  FPK38 is exponent +50, fraction 555555555555.
+!       SLO(U) stores it at 50 - 48 = 2.
+!       Expected FPK39: exponent +2, fraction 555555555555.
+!       The listing: "CHECK OPND WITH EXPONENT++2".
+!
+! A4 is the sharper of the two because its arithmetic is small enough
+! to be unambiguous: an exponent of +2 can only have come from 50 - 48.
+! A3's +208 confirms the same rule at a distance from zero.
+!
+! Both are SLO(U), so the normalization path -- and with it the noisy
+! mode question that fpNormalize48 exists for -- is still unexercised.
+! So is the generated-flag case, where subtracting 48 underflows and
+! p.97 says normalization DOES occur. Those wait for later sub-tests.
+!
+! ROS (022355) is the routine's scratch word, not a pool constant.
+! Framework substitutes as everywhere else in this series: SERS (octal
+! 1304) -> FAIL halt, SEN (octal 1310) -> scratch. Constants from the
+! pools pp.176-177. PASS sits at 016201.00, where F211A5 begins.
+!
+! Instructions: DL(U), C0011, SLO(U), L, CT0110, SIC, BZB, BRGZ, B.
+! verify_fp_arith_f211a3_4_listing.py checks every word bit-for-bit.
+
+! -- SSIP framework substitutes --
+        SLC, (8)1304.0
+SERS    BEW, $
+        SLC, (8)1310.0
+SEN     DD(BU,64,8), 0
+
+! -- the routine's scratch word --
+        SLC, (8)22355.0
+ROS     DD(BU,64,8), 0
+
+! -- constants (pools pp.176-177) --
+        SLC, (8)022041.0
+FPK28   DD(BU,64,8), (8)0200177777777777777760
+        SLC, (8)022053.0
+FPK38   DD(BU,64,8), (8)0031052525252525252520
+FPK39   DD(BU,64,8), (8)0001052525252525252520
+        SLC, (8)022061.0
+FPK44   DD(BU,64,8), (8)0150177777777777777760
+
+! The listing prints no label at 016163.00 -- ENTRY is ours, needed
+! only as the END operand.
+! -- code (verbatim, at the listing's addresses) --
+        SLC, (8)16163.0
+ENTRY   DL(U), FPK28                           ! F211A3: acc exp + +256
+        C0011(BU,48), FPK28+.12, 20
+        SLO(U), ROS
+        L(BU), FPK44
+        CT0110(BU,60), ROS, 4                  ! test result exp+208, fract+1 s
+        SIC, SEN
+        BRGZ, SERS
+        BZB, ROS+.60, $+2.0
+        SIC, SEN
+        B, SERS
+        DL(U), FPK38                           ! F211A4: acc exp + +50
+        C0011(BU,48), FPK38+.12, 20
+        SLO(U), ROS
+        L(BU), FPK39
+        CT0110(BU,60), ROS, 4                  ! check opnd with exponent + +2
+        SIC, SEN
+        BRGZ, SERS
+        BZB, ROS+.60, $+2.0
+        SIC, SEN
+        B, SERS
+PASS    BEW, $                                 ! 016201.00: where F211A5 begins
+        END, ENTRY
