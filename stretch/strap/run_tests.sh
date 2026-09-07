@@ -507,6 +507,20 @@ run "FP add double magnitude signs (jb_af1c F209B1-B8 on the model)" ./run_progr
     "PC=$(python3 -c 'from strap_asm import assemble; print(assemble(open("programs/fp_arith_f209b1_8.strap").read()).symtab["PASS"]//32)')" \
     "SEN:712=0"
 
+# jb_af1c F209B9-B13 (pp.104-105): the same sweep with the MEMORY
+# operand negative (FPK40, and FK119 which holds identical bits).
+# Also does not reach the forced zero, and now the reason is clear:
+# throughout F209B the accumulator sits at exponent +50 and the
+# operand at +2, so the accumulator dominates by 48 places and no sum
+# can come out negative. The forced zero has its own routine, F209E
+# "TEST FORCED ZERO RESULT" (p.107), whose E1 adds two constants at
+# the SAME exponent. PASS here is at 015543.00, where B14 begins --
+# F209B runs to B16, not transcribed.
+run "FP add double magnitude signs 2 (jb_af1c F209B9-B13, encoding)" python3 verify_fp_arith_f209b9_13_listing.py
+run "FP add double magnitude signs 2 (jb_af1c F209B9-B13 on the model)" ./run_program.sh programs/fp_arith_f209b9_13.strap StretchFpAddDblMgCTb \
+    "PC=$(python3 -c 'from strap_asm import assemble; print(assemble(open("programs/fp_arith_f209b9_13.strap").read()).symtab["PASS"]//32)')" \
+    "SEN:712=0"
+
 # -- 1j. Store-close-to-fetch: store a word then immediately reload it;
 # the load must read the new value, not the stale one. The hazard the FP
 # sign-modifier codesign exposed; fixed by tracking each E-box level's

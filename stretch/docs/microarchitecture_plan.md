@@ -420,9 +420,28 @@ hand vectors alone. "Enables" notes the dependency chain.
    out negative and no zero is ever forced. The unflagged forced zero
    is also what would settle which exponent it keeps -- fpAdd's `big`
    against the manual's "accumulator operand" -- still open.
-   Next: F209B9-B13 (from 015471.00), which bring FPK40 and FPK119 as
-   memory operands and are the next candidate for reaching a forced
-   zero. Then SRD. Still open in double
+   jb_af1c F209B9-B13 (pp.104-105) does the same sweep with the MEMORY
+   operand negative -- FPK40, and FK119 at 022330, which holds
+   identical bits. All five passed on the first run, and they do not
+   reach the forced zero either. The reason is now clear rather than
+   incidental: throughout F209B the accumulator sits at exponent +50
+   and the memory operand at +2, so the accumulator dominates by 48
+   places and no sum can come out negative. Only the sign forcing is
+   covered (halt 015537.00).
+   The forced zero has its own routine, which the page scan turned up:
+   F209E "TEST FORCED ZERO RESULT" (p.107). Its E1 is DL(U) FPK38 then
+   D-MG(U) FPK37 -- two constants at the SAME exponent, which is what
+   lets a negative sum happen -- and it checks the result fraction
+   against FPK0 at both offsets. That is the block to transcribe if
+   the forced zero is the target, and it is also what would settle
+   which exponent the unflagged forced zero keeps.
+   The same scan corrected a claim: F209B runs to B16, not B13, so
+   015543.00 is where B14 begins and not the routine's exit. The
+   program and verifier say so. Between B13 and F209E lie B14-B16,
+   F209C ("UNCHANGED REGISTERS", C1-C2) and F209D ("TESTS OF
+   INDICATORS", D1-D8).
+   Next: F209E (the forced zero), or F209B14-B16 / F209C / F209D in
+   diagnostic order. Then SRD. Still open in double
    precision: D+MG, D-, SRD, SLO, D*, D/, LFT -- the first real double-precision
    ARITHMETIC, which needs the 96-bit adder and the accumulator's low
    half as a genuine operand rather than something only cleared.
