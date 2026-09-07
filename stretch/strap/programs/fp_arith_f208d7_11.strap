@@ -1,0 +1,152 @@
+! Floating-point diagnostic jb_af1c, routine F208D "INDICATOR TESTS"
+! for ADD DOUBLE, sub-tests D7-D11 -- the "TEST EXPONENT RANGE
+! INDICATORS" half (docs/jb_af1c_floating-point.pdf pp.99-100, octal
+! 015167.40-015265.00, where the listing's own exit BD,$+1.0 begins).
+! D1-D6, the Lost Carry and Lost Significance half, are in
+! programs/fp_arith_f208d1_6.strap and end exactly where this begins.
+!
+! Five sub-tests, one per exponent-range indicator. Each clears every
+! indicator with Z,$IND, builds an accumulator with DL(U), runs one
+! D+, then asks with BB that the indicator it is about is ON and with
+! BZB that the others are OFF:
+!
+!   D7   XPFP (11.28)  FK23  + FK24  exp ++1791, unnormalized
+!   D8   XPO  (11.29)  FK38  + FK38  exp ++1023, NORMALIZED
+!   D9   XPH  (11.30)  FK25  + FK22  exp +-1791 and ++512
+!   D10  XPL  (11.31)  FPK28 + FPK27 exp ++256 and +-2047
+!   D11  XPU  (11.32)  FK39  + FK39  exp +-1023, NORMALIZED
+!
+! The "off" lists are not uniform and are transcribed as printed: D7
+! checks five, including ZM at 11.33, while D8-D11 check only the four
+! other exponent-range bits. Nothing in the listing explains why D7
+! alone looks at ZM; it is simply what is there.
+!
+! Framework substitutes as everywhere else in this series: SERS (octal
+! 1304) -> FAIL halt, SEN (octal 1310) -> scratch. Constants from the
+! pool pp.176-177.
+!
+! Instructions: B, DL(U), Z,$IND, D+(U)/D+(N), BB and BZB on indicator
+! bits 11.28-11.33, SIC.
+! verify_fp_arith_f208d7_11_listing.py checks every word bit-for-bit.
+
+! -- SSIP framework substitutes --
+        SLC, (8)1304.0
+SERS    BEW, $
+        SLC, (8)1310.0
+SEN     DD(BU,64,8), 0
+
+! -- constants (pool pp.176-177) --
+
+        SLC, (8)22040.0
+FPK27   DD(BU,64,8), (8)1777677777777777777760
+FPK28   DD(BU,64,8), (8)0200177777777777777760
+        SLC, (8)22170.0
+FK22    DD(BU,64,8), (8)0400177777777777777760
+FK23    DD(BU,64,8), (8)1777525252525252525240
+FK24    DD(BU,64,8), (8)1577452525252525252520
+FK25    DD(BU,64,8), (8)1577777777777777777760
+        SLC, (8)22210.0
+FK38    DD(BU,64,8), (8)0777572525252525252520
+FK39    DD(BU,64,8), (8)0777625252525252525240
+
+! -- code (verbatim, at the listing's addresses) --
+        SLC, (8)15167.40
+SAP9G  DL(U), FK23   ! F208D7: test XPFP on
+        Z, $IND   ! clear every indicator first
+        D+(U), FK24
+        BB, 11.28, $+2.   ! error if XPFP off
+        SIC, SEN
+        B, SERS
+        BZB, 11.29, $+2.   ! error if XPO on
+        SIC, SEN
+        B, SERS
+        BZB, 11.30, $+2.   ! error if XPH on
+        SIC, SEN
+        B, SERS
+        BZB, 11.31, $+2.   ! error if XPL on
+        SIC, SEN
+        B, SERS
+        BZB, 11.32, $+2.   ! error if XPU on
+        SIC, SEN
+        B, SERS
+        BZB, 11.33, $+2.   ! error if ZM on
+        SIC, SEN
+        B, SERS
+        B, $+.32   ! F208D8: test XPO, on condition
+       DL(U), FK38
+        Z, $IND   ! clear every indicator first
+        D+(N), FK38
+        BB, 11.29, $+2.   ! error if XPO off
+        SIC, SEN
+        B, SERS
+        BZB, 11.28, $+2.   ! error if XPFP on
+        SIC, SEN
+        B, SERS
+        BZB, 11.30, $+2.   ! error if XPH on
+        SIC, SEN
+        B, SERS
+        BZB, 11.31, $+2.   ! error if XPL on
+        SIC, SEN
+        B, SERS
+        BZB, 11.32, $+2.   ! error if XPU on
+        SIC, SEN
+        B, SERS
+        B, $+.32   ! F208D9: test XPH, on condition
+       DL(U), FK25
+        Z, $IND   ! clear every indicator first
+        D+(U), FK22
+        BB, 11.30, $+2.   ! error if XPH off
+        SIC, SEN
+        B, SERS
+        BZB, 11.28, $+2.   ! error if XPFP on
+        SIC, SEN
+        B, SERS
+        BZB, 11.29, $+2.   ! error if XPO on
+        SIC, SEN
+        B, SERS
+        BZB, 11.31, $+2.   ! error if XPL on
+        SIC, SEN
+        B, SERS
+        BZB, 11.32, $+2.   ! error if XPU on
+        SIC, SEN
+        B, SERS
+        B, $+.32   ! F208D10: test XPL, on condition
+       DL(U), FPK28
+        Z, $IND   ! clear every indicator first
+        D+(U), FPK27
+        BB, 11.31, $+2.   ! error if XPL off
+        SIC, SEN
+        B, SERS
+        BZB, 11.28, $+2.   ! error if XPFP on
+        SIC, SEN
+        B, SERS
+        BZB, 11.29, $+2.   ! error if XPO on
+        SIC, SEN
+        B, SERS
+        BZB, 11.30, $+2.   ! error if XPH on
+        SIC, SEN
+        B, SERS
+        BZB, 11.32, $+2.   ! error if XPU on
+        SIC, SEN
+        B, SERS
+        B, $+.32   ! F208D11: test XPU, on condition
+       DL(U), FK39
+        Z, $IND   ! clear every indicator first
+        D+(N), FK39
+        BB, 11.32, $+2.   ! error if XPU off
+        SIC, SEN
+        B, SERS
+        BZB, 11.28, $+2.   ! error if XPFP on
+        SIC, SEN
+        B, SERS
+        BZB, 11.29, $+2.   ! error if XPO on
+        SIC, SEN
+        B, SERS
+        BZB, 11.30, $+2.   ! error if XPH on
+        SIC, SEN
+        B, SERS
+        BZB, 11.31, $+2.   ! error if XPL on
+        SIC, SEN
+        B, SERS
+PASS    BEW, $                 ! 015265.00: F208D exits here
+        END, SAP9G

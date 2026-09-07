@@ -465,6 +465,20 @@ run "FP add double indicators (jb_af1c F208D1-D6 on the model)" ./run_program.sh
     "PC=$(python3 -c 'from strap_asm import assemble; print(assemble(open("programs/fp_arith_f208d1_6.strap").read()).symtab["PASS"]//32)')" \
     "SEN:712=0"
 
+# jb_af1c F208D7-D11 (pp.99-100): the exponent-range half of the same
+# routine -- one sub-test per indicator (XPFP, XPO, XPH, XPL, XPU),
+# each asserting its own is on and the others off. This is the ONLY
+# place in the suite that checks D+'s range indicators at all: making
+# D+ never report a propagated exponent flag leaves F208A, F208B,
+# F208C and F208D1-D6 all green and halts at D7's XPFP check (SIC
+# stores 015173.00). The "off" lists are not uniform -- D7 checks five
+# including ZM at 11.33, D8-D11 only four -- and are transcribed as
+# printed.
+run "FP add double exp range (jb_af1c F208D7-D11, encoding)" python3 verify_fp_arith_f208d7_11_listing.py
+run "FP add double exp range (jb_af1c F208D7-D11 on the model)" ./run_program.sh programs/fp_arith_f208d7_11.strap StretchFpAddDblETb \
+    "PC=$(python3 -c 'from strap_asm import assemble; print(assemble(open("programs/fp_arith_f208d7_11.strap").read()).symtab["PASS"]//32)')" \
+    "SEN:712=0"
+
 # -- 1j. Store-close-to-fetch: store a word then immediately reload it;
 # the load must read the new value, not the stale one. The hazard the FP
 # sign-modifier codesign exposed; fixed by tracking each E-box level's

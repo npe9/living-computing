@@ -354,10 +354,25 @@ hand vectors alone. "Enables" notes the dependency chain.
    that double precision has proved a rule single precision states but
    does not test -- worth remembering as a standing asymmetry in
    jb_af1c's coverage rather than a claim about the model.
-   Next: F208D7-D11 ("TEST EXPONENT RANGE INDICATORS", the same shape
-   as F204D/F206D but over indicator bits 11.28-11.33, D7 including
-   ZM at 11.33 where D8 checks only 28/30/31/32), then F209's D+MG and
-   SRD. Still open in double
+   jb_af1c F208D7-D11 (pp.99-100) completes F208 and closes on
+   015265.00, the listing's own exit. Five sub-tests, one per
+   exponent-range indicator -- XPFP, XPO, XPH, XPL, XPU -- each
+   asserting its own is on and the others off after a single D+, with
+   Z,$IND clearing everything first. All five passed on the first run.
+   Their value is coverage rather than a fix: this is the only place
+   in the suite that checks D+'s range indicators at all. Making D+
+   never report a propagated exponent flag leaves F208A, F208B, F208C
+   and F208D1-D6 all green and halts at D7's XPFP check, SIC storing
+   015173.00.
+   The "off" lists are not uniform and are transcribed as printed: D7
+   checks five, including ZM at 11.33, while D8-D11 check only the
+   four other exponent-range bits. Nothing in the listing explains why
+   D7 alone looks at ZM.
+   With that, ADD DOUBLE is done end to end: A (arithmetic), B (signs
+   and modifiers), C (unchanged registers), D (indicators), every
+   block closing on the listing's own exit address, and 342 code rows
+   read off the printed encoding column individually.
+   Next: F209's D+MG and SRD. Still open in double
    precision: D+MG, D-, SRD, SLO, D*, D/, LFT -- the first real double-precision
    ARITHMETIC, which needs the 96-bit adder and the accumulator's low
    half as a genuine operand rather than something only cleared.
