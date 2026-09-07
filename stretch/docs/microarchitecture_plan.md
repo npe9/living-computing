@@ -581,7 +581,22 @@ hand vectors alone. "Enables" notes the dependency chain.
    one lands in the discarded half, not in the kept fraction -- and
    nothing in the routine so far distinguishes IBM 60 from IBM 61 or
    lower. Worth remembering if a later SRD sub-test ever disagrees.
-   Next: F210A5 onward (p.110, from 016032.00), then SLO.
+   jb_af1c F210A5 (p.110) closes F210A "ARITHMETIC CHECKS" in eleven
+   rows, and it is the unflagged analogue of A1: a 96-bit all-ones
+   fraction in the N range at exponent +2, so the rounding overflows
+   out of the kept 48 bits, and the expected result FPK67 still has
+   exponent +2. That is the unnormalized rule -- "the overflow bit
+   does not enter storage but sets LC" -- and A5 is the only place it
+   meets an exponent that would move if the carry were absorbed.
+   Absorbing it halts A5 at 016037.40 with F210A1-A2 and F210A3-A4
+   both green.
+   STILL UNCOVERED in F210A: the lost carry indicator itself. A5
+   produces the overflow that sets LC and never asks about it; there
+   is no BLC or BZLC anywhere in A1-A5. The routine's "TEST
+   NORMALIZATION MODIFIER" section (F210A6, from 016041.40) is the
+   next candidate, and it is also the first thing that will exercise
+   SRD's NORMALIZED path -- every sub-test so far is SRD(U).
+   Next: F210A6 onward (p.110-111, from 016041.40), then SLO.
    Its prologue is FSR1 (015772.00) and F210A1 begins at SAP11
    (015775.00): DL(U) FPK26, C0011 FK40+.12 into offset 20, then
    SRD(U) ROS, L(BU) FK35, CT0110(BU,60) ROS,4 -- "error if 1 not

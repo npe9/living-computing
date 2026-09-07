@@ -1,0 +1,81 @@
+! Floating-point diagnostic jb_af1c, routine F210 "STORE ROUNDED TEST
+! ROUTINE", sub-test A5 (docs/jb_af1c_floating-point.pdf p.110, octal
+! 016032.00-016041.40, where the routine's "TEST NORMALIZATION
+! MODIFIER" section and F210A6 begin). Eleven rows, and it closes out
+! F210A "ARITHMETIC CHECKS".
+!
+! A5 is the UNFLAGGED analogue of A1, and it asks the one thing about
+! SRD that no sub-test so far has:
+!
+!   DL(U) FPK32 -- exponent +2, fraction all ones -- then C0011 drops
+!   FPK32's all-ones fraction into the low half as well, so the
+!   accumulator fraction is 96 ONES in the N range. SRD(U) rounds: the
+!   +1 at IBM 60 carries the whole way out, the 96-bit sum is 2^47-1
+!   with its high 48 bits zero, and there is an overflow bit.
+!
+!   Expected result FPK67 -- exponent STILL +2, fraction ZERO.
+!
+! That is the unnormalized overflow rule: "the overflow bit does not
+! enter storage but sets the lost carry indicator (LC) on" (p.96). The
+! exponent is NOT bumped to absorb it. A1 and A2 cannot check this
+! because they are flagged, where the exponent is left alone by a
+! different rule entirely; A3 and A4 cannot, because neither overflows
+! out of the kept 48 bits. A5 is the first and only place the
+! unnormalized overflow meets an exponent that WOULD move if the model
+! treated the carry the way a normalized operation does.
+!
+! ROS (022355) is the routine's scratch word, not a pool constant.
+! Framework substitutes as everywhere else in this series: SERS (octal
+! 1304) -> FAIL halt, SEN (octal 1310) -> scratch. Constants from the
+! pools pp.176-177. PASS sits at 016041.40, where F210A6 begins.
+!
+! Instructions: B, DL(U), C0011, SRD(U), L, CT0110, SIC, BZB, BRGZ.
+! verify_fp_arith_f210a5_listing.py checks every word bit-for-bit.
+!
+! Observed: passed on the first run, and an injection confirms it is
+! the sole guard for that rule. Absorbing the unnormalized overflow
+! into the exponent -- adding (ovf == 1 ? 1 : 0) alongside the
+! normalization adjustment -- halts A5 with SIC storing 016037.40, the
+! address right after its BRGZ, while F210A1-A2 and F210A3-A4 both
+! stay green. Nothing else in the suite watches it, exactly as the
+! reasoning above predicted.
+!
+! Still NOT covered by anything in F210A: the lost carry indicator
+! itself. A5 produces the overflow that sets LC and never asks about
+! it -- there is no BLC or BZLC anywhere in A1-A5. The routine's "TEST
+! NORMALIZATION MODIFIER" section from 016041.40 is the next place
+! that could.
+
+! -- SSIP framework substitutes --
+        SLC, (8)1304.0
+SERS    BEW, $
+        SLC, (8)1310.0
+SEN     DD(BU,64,8), 0
+
+! -- the routine's scratch word --
+        SLC, (8)22355.0
+ROS     DD(BU,64,8), 0
+
+! -- constants (pools pp.176-177) --
+        SLC, (8)022045.0
+FPK32   DD(BU,64,8), (8)0001177777777777777760
+        SLC, (8)022107.0
+FPK67   DD(BU,64,8), (8)0001000000000000000000
+
+! The listing prints no label at 016032.00 -- ENTRY is ours, needed
+! only as the END operand.
+! -- code (verbatim, at the listing's addresses) --
+        SLC, (8)16032.0
+ENTRY   B, $+.32                               ! F210A5: exponent of acc. operand in N range
+        DL(U), FPK32
+        C0011(BU,48), FPK32+.12, 20
+        SRD(U), ROS                            ! adds 1 in bit position 60 of fraction
+        L(BU), FPK67
+        CT0110(BU,60), ROS, 4                  ! test result exp + +2, fract + 0 s
+        SIC, SEN
+        BRGZ, SERS
+        BZB, ROS+.60, $+2.0
+        SIC, SEN
+        B, SERS
+PASS    BEW, $                                 ! 016041.40: where F210A6 begins
+        END, ENTRY

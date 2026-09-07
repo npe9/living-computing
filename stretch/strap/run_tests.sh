@@ -622,6 +622,20 @@ run "FP store rounded, N range (jb_af1c F210A3-A4 on the model)" ./run_program.s
     "PC=$(python3 -c 'from strap_asm import assemble; print(assemble(open("programs/fp_arith_f210a3_4.strap").read()).symtab["PASS"]//32)')" \
     "SEN:712=0"
 
+# F210A5 closes F210A "ARITHMETIC CHECKS". It is the unflagged
+# analogue of A1: a 96-bit all-ones fraction in the N range at exponent
+# +2, so the rounding overflows out of the kept 48 bits -- and the
+# expected result FPK67 still has exponent +2. That is the unnormalized
+# rule, "the overflow bit does not enter storage but sets LC", and A5
+# is the only sub-test where it meets an exponent that would move if
+# the carry were absorbed the way a normalized operation absorbs it.
+# A1/A2 are flagged (exponent left alone by a different rule) and
+# A3/A4 never overflow out of the kept 48.
+run "FP store rounded, unnormalized overflow (jb_af1c F210A5, encoding)" python3 verify_fp_arith_f210a5_listing.py
+run "FP store rounded, unnormalized overflow (jb_af1c F210A5 on the model)" ./run_program.sh programs/fp_arith_f210a5.strap StretchFpAddDblMgFTb \
+    "PC=$(python3 -c 'from strap_asm import assemble; print(assemble(open("programs/fp_arith_f210a5.strap").read()).symtab["PASS"]//32)')" \
+    "SEN:712=0"
+
 # -- 1j. Store-close-to-fetch: store a word then immediately reload it;
 # the load must read the new value, not the stale one. The hazard the FP
 # sign-modifier codesign exposed; fixed by tracking each E-box level's
