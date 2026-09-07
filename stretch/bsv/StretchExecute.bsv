@@ -1404,6 +1404,7 @@ function ActionValue#(Tuple4#(HWordAddr, Maybe#(Tuple2#(Bit#(4), IndexWord)),
         Bit#(7) c = fp.code;
         Bool isST = (c == 7'b0001110);
         Bool isSRD = (c == 7'b0101110);  // STORE ROUNDED (p.96)
+        Bool isSLO = (c == 7'b1001110);  // STORE LOW ORDER (p.97)
         // Divide (/ and R/) is deferred to the multi-cycle arithmetic
         // unit (plan stage 4e): done combinationally here it unfolds
         // into a full-width divider, and the real machine's divide is
@@ -1417,7 +1418,7 @@ function ActionValue#(Tuple4#(HWordAddr, Maybe#(Tuple2#(Bit#(4), IndexWord)),
                    || c == 7'b0011010 || c == 7'b1010110 || isEplI || isSHF
                    || c == 7'b1000110 || c == 7'b1100110   // DL / DLWF
                    || c == 7'b1000010 || c == 7'b1100010   // D+ / D+MG
-                   || isSRD);                              // SRD
+                   || isSRD || isSLO);                     // SRD / SLO
         if (!known)
           ind = setOpInvalid(ind);   // /, R/, the rest of double precision, SRT, LFT, *+ ...: not yet
         else if (isST) begin
@@ -1482,6 +1483,63 @@ function ActionValue#(Tuple4#(HWordAddr, Maybe#(Tuple2#(Bit#(4), IndexWord)),
           ind = setBit(ind, ind_MOP, 1);
           ind = setResultIndicatorsFp(ind, out);
           if (lc) ind = setBit(ind, ind_LC, 1);
+          ind = setRangeIndicators(ind, fpRangeBits(out, gen, da.ef == 1));
+          ind = setBit(ind, ind_ZM, 0);
+        end else if (isSLO) begin
+          // STORE LOW ORDER (p.97). "The low-order part of a
+          // double-length accumulator fraction with appropriate
+          // exponent is placed in the location specified by the
+          // effective address." The fraction is accumulator bits
+          // 60-107 -- frac[47:0] of the 96-bit IBM 12-107 fraction --
+          // and "the exponent is obtained by subtracting 48 from the
+          // exponent in bits 0-11 of the accumulator".
+          //
+          // As with SRD, nothing here writes the accumulator: "the
+          // entire accumulator and sign byte register remain unchanged
+          // throughout the operation unless used as the effective
+          // address."
+          Word64 accR = st.readAccRight();
+          FpDouble da = fpdFromAcc(accL, accR, accS);
+          Bit#(48) lo48 = da.frac[47:0];
+          // "The accumulator sign, as modified by the sign modifiers,
+          // and the accumulator flag bits, sign byte register bit
+          // positions 4-7, are placed in bits 60-63 of the storage
+          // word."
+          Bit#(1) msign = fpApplySignMods(acc, fp.absSign, fp.invSign).sign;
+          FpNum out; Bool gen = False;
+          if (da.ef == 1) begin
+            // "When the exponent, accumulator bit positions 0-11, is
+            // flagged, the same exponent is set with the low-order
+            // fraction when stored. The indicator settings are for
+            // propagated flags. For this case normalization, if
+            // specified, is suppressed."
+            out = FpNum { ef: da.ef, em: da.em, es: da.es, frac: lo48,
+                          sign: msign, flags: da.flags };
+          end else begin
+            // Unnormalized: "the low-order exponent and fraction remain
+            // unchanged". Normalized: shifted left until a one is
+            // leftmost, with noisy mode entering ONES from the right --
+            // fpNormalize48, not fpNormalize96Wide, because SLO has no
+            // low half for the latter's fill to land in.
+            //
+            // The -48 can underflow into a GENERATED flag, and p.97 is
+            // explicit that this case differs from the propagated one:
+            // "normalization, if specified, in this case does occur".
+            // That is why the shift happens BEFORE fpMakeExp decides
+            // whether a flag was generated, rather than being
+            // suppressed by it.
+            let {f48, adj} = fpNormalize48(lo48, normalized, noisy);
+            let {o, g} = fpMakeExp(signExtend(fpExp(fpdHead(da))) - 48 + adj,
+                                   f48, msign, da.flags);
+            out = o; gen = g;
+          end
+          st.writeWord(ea, fpToWord(out));
+          // "The above indicators are set as in STORE": MOP, the
+          // arithmetic result four, the exponent range four, ZM. Note
+          // p.97 lists no LOST CARRY for SLO -- there is no carry out
+          // of a shift -- unlike SRD.
+          ind = setBit(ind, ind_MOP, 1);
+          ind = setResultIndicatorsFp(ind, out);
           ind = setRangeIndicators(ind, fpRangeBits(out, gen, da.ef == 1));
           ind = setBit(ind, ind_ZM, 0);
         end else if (isSHF) begin

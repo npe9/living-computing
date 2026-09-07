@@ -168,6 +168,24 @@ function Tuple3#(Bit#(96), Int#(14), Bool) fpNormalize96Wide(Bit#(1) ovf, Bit#(9
   end
 endfunction
 
+// SLO's normalization (p.97). Its fraction is the accumulator's LOW
+// 48 bits, shifted left "until a high-order one bit is leftmost", and
+// "if noisy mode is also specified, ones are entered from the right
+// during the normalization shifting; otherwise zeros". That is the
+// opposite of SRD, where "noisy mode does not affect this operation" --
+// so this cannot go through fpNormalize96Wide, whose noisy fill lands
+// in the low 48 bits that SLO does not have.
+function Tuple2#(Bit#(48), Int#(14)) fpNormalize48(Bit#(48) f, Bool normalized, Bool noisy);
+  if (!normalized || f == 0) return tuple2(f, 0);
+  else begin
+    let nz = countZerosMSB(f);
+    Bit#(48) w = f << nz;
+    if (noisy) w = w | ((48'b1 << nz) - 1);
+    Int#(14) n = unpack(zeroExtend(pack(nz)));
+    return tuple2(w, -n);
+  end
+endfunction
+
 // Single-precision view of the same normalization: the high 48 bits.
 function Tuple3#(Bit#(48), Int#(14), Bool) fpNormalize96(Bit#(1) ovf, Bit#(96) f96, Bool normalized, Bool noisy);
   let {w, adj, lc} = fpNormalize96Wide(ovf, f96, normalized, noisy);

@@ -700,6 +700,19 @@ run "FP store rounded, MOP and LC indicators (jb_af1c F210D on the model)" ./run
     "PC=$(python3 -c 'from strap_asm import assemble; print(assemble(open("programs/fp_arith_f210d.strap").read()).symtab["PASS"]//32)')" \
     "SEN:712=0"
 
+# -- F211 STORE LOW ORDER. A1-A2 are the diagnostic that drove SLO's
+# execute arm, the second instruction this series has implemented from
+# its own test. Both are the flagged case, where the accumulator's
+# exponent is kept and normalization suppressed, so neither exercises
+# the headline rule -- the stored exponent is the accumulator's MINUS
+# 48 -- which waits for F211A3. SLO needs its own fpNormalize48 because
+# noisy mode enters ONES from the right here, where SRD's normalization
+# is explicitly unaffected by it.
+run "FP store low order (jb_af1c F211A1-A2, encoding)" python3 verify_fp_arith_f211a1_2_listing.py
+run "FP store low order (jb_af1c F211A1-A2 on the model)" ./run_program.sh programs/fp_arith_f211a1_2.strap StretchFpAddDblMgFTb \
+    "PC=$(python3 -c 'from strap_asm import assemble; print(assemble(open("programs/fp_arith_f211a1_2.strap").read()).symtab["PASS"]//32)')" \
+    "SEN:712=0"
+
 # -- 1j. Store-close-to-fetch: store a word then immediately reload it;
 # the load must read the new value, not the stale one. The hazard the FP
 # sign-modifier codesign exposed; fixed by tracking each E-box level's

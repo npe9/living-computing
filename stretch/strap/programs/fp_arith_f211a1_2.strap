@@ -1,0 +1,107 @@
+! Floating-point diagnostic jb_af1c, routine F211 "STORE LOW ORDER
+! TEST ROUTINE", "ARITHMETIC CHECKS F211A", sub-tests A1-A2
+! (docs/jb_af1c_floating-point.pdf p.113, octal 016144.40-016163.00,
+! where F211A3 begins).
+!
+! The diagnostic that drives SLO (STORE LOW ORDER, opcode 1001110),
+! which decodes but has no execute arm -- exactly the position SRD was
+! in before F210.
+!
+! What the manual says (Ref. Manual p.97). "The low-order part of a
+! double-length accumulator fraction with appropriate exponent is
+! placed in the location specified by the effective address." The
+! fraction is accumulator bits 60-107 -- the LOW half -- and "the
+! exponent is obtained by SUBTRACTING 48 from the exponent in bits
+! 0-11 of the accumulator". Normalized, the low-order fraction is
+! shifted left until a one is leftmost, and "if noisy mode is also
+! specified, ONES are entered from the right during the normalization
+! shifting; otherwise zeros" -- unlike SRD, where noisy mode does not
+! affect the operation at all. The accumulator sign as modified, and
+! the accumulator flag bits (sign byte 4-7), go to storage bits 60-63.
+! The accumulator and sign byte remain unchanged.
+!
+! Two special cases. When the ACCUMULATOR exponent is flagged, "the
+! same exponent is set with the low-order fraction when stored", the
+! indicators are for propagated flags, and normalization is
+! suppressed. When the exponent WITH THE LOW ORDER FRACTION has EF of
+! 1 as a result of the operation -- that is, when subtracting 48
+! underflows -- the indicators are for generated flags and
+! "normalization, if specified, in this case DOES occur".
+!
+! A1 and A2 are both the flagged case, so neither exercises the -48 --
+! the same shape F210A1-A2 had for SRD, and for the same reason: they
+! are the clean first test.
+!
+!   A1  DL(U) FK40 (XFP +1023, sign 1) with C0011 dropping FK23's
+!       fraction aaaaaaaaaaaa into the low half. SLO(U) stores that
+!       low half with the accumulator's own exponent, which is exactly
+!       FK23's exponent and fraction. BB then checks the stored sign
+!       bit is 1, FK40's sign.
+!   A2  the same in XFN with FK25 and FK30, expecting FK30, and BZB
+!       checking the stored sign is 0.
+!
+! Transcribed as printed: A2's comment reads "ACC EXP IN XFP RNG"
+! where FK25 decodes to XFN -767. A1's says the same and FK40 really
+! is XFP. The listing repeated the comment; the constants are what
+! they are.
+!
+! A1 opens with Z,$IND, clearing the indicator register before the
+! operation -- the first block in this series to do so.
+!
+! ROS (022355) is the routine's scratch word, not a pool constant.
+! Framework substitutes as everywhere else in this series: SERS (octal
+! 1304) -> FAIL halt, SEN (octal 1310) -> scratch. Constants from the
+! pool p.178. PASS sits at 016163.00, where F211A3 begins.
+!
+! Instructions: DL(U), Z, C0011, SLO(U), L, CT0110, SIC, BB, BZB,
+! BRGZ, B.
+! verify_fp_arith_f211a1_2_listing.py checks every word bit-for-bit.
+
+! -- SSIP framework substitutes --
+        SLC, (8)1304.0
+SERS    BEW, $
+        SLC, (8)1310.0
+SEN     DD(BU,64,8), 0
+
+! -- the routine's scratch word --
+        SLC, (8)22355.0
+ROS     DD(BU,64,8), 0
+
+! -- constants (pool p.178) --
+        SLC, (8)022171.0
+FK23    DD(BU,64,8), (8)1777525252525252525240
+        SLC, (8)022173.0
+FK25    DD(BU,64,8), (8)1577777777777777777760
+        SLC, (8)022200.0
+FK30    DD(BU,64,8), (8)1577617777777777777760
+        SLC, (8)022212.0
+FK40    DD(BU,64,8), (8)1777577777777777777770
+
+! The listing labels 016144.40 SAP12, an SSIP prologue target rather
+! than this block's own name; ENTRY is ours, needed only as the END
+! operand.
+! -- code (verbatim, at the listing's addresses) --
+        SLC, (8)16144.40
+ENTRY   DL(U), FK40                            ! F211A1: acc exp in XFP rng
+        Z, $IND
+        C0011(BU,48), FK23+.12, 20
+        SLO(U), ROS
+        L(BU), FK23
+        CT0110(BU,60), ROS, 4                  ! was fract stored with mem,exp+acc.exp
+        SIC, SEN
+        BRGZ, SERS
+        BB, ROS+.60, $+2.0
+        SIC, SEN
+        B, SERS
+        DL(U), FK25                            ! F211A2: acc exp in XFN rng (printed XFP)
+        C0011(BU,48), FK30+.12, 20
+        SLO(U), ROS
+        L(BU), FK30
+        CT0110(BU,60), ROS, 4
+        SIC, SEN
+        BRGZ, SERS
+        BZB, ROS+.60, $+2.0
+        SIC, SEN
+        B, SERS
+PASS    BEW, $                                 ! 016163.00: where F211A3 begins
+        END, ENTRY
