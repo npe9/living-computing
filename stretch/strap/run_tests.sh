@@ -531,6 +531,17 @@ run "FP add double magnitude signs 3 (jb_af1c F209B14-B16 on the model)" ./run_p
     "PC=$(python3 -c 'from strap_asm import assemble; print(assemble(open("programs/fp_arith_f209b14_16.strap").read()).symtab["PASS"]//32)')" \
     "SEN:712=0"
 
+# jb_af1c F209C (pp.105-106): "UNCHANGED REGISTERS" for D+MG. Unlike
+# F208C, which checked only sign byte bits 5-7 with a 3-bit field at
+# 10.5, this checks all EIGHT bits at 10.0 -- so C2 covers the sign
+# (bit 4) as well as the flags. Two injections halt on it (SIC stores
+# 015614.40): not restoring the accumulator's own sign, and taking the
+# sign byte's flags from the result instead of from accS.
+run "FP add double magnitude unchanged regs (jb_af1c F209C1-C2, encoding)" python3 verify_fp_arith_f209c_listing.py
+run "FP add double magnitude unchanged regs (jb_af1c F209C1-C2 on the model)" ./run_program.sh programs/fp_arith_f209c.strap StretchFpAddDblMgETb \
+    "PC=$(python3 -c 'from strap_asm import assemble; print(assemble(open("programs/fp_arith_f209c.strap").read()).symtab["PASS"]//32)')" \
+    "SEN:712=0"
+
 # -- 1j. Store-close-to-fetch: store a word then immediately reload it;
 # the load must read the new value, not the stale one. The hazard the FP
 # sign-modifier codesign exposed; fixed by tracking each E-box level's

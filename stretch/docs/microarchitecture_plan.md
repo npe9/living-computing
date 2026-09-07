@@ -446,10 +446,21 @@ hand vectors alone. "Enables" notes the dependency chain.
    programs, each ending exactly where the next begins, and the last
    closing on the listing's own exit. All sixteen sub-tests pass and
    none of them reaches the forced zero.
-   Next: F209C ("UNCHANGED REGISTERS", C1-C2) and F209D ("TESTS OF
-   INDICATORS", D1-D8) in diagnostic order, then F209E -- the one
-   block that covers D+MG's forced zero and the one that should
-   settle which exponent it keeps. Then SRD. Still open in double
+   jb_af1c F209C (pp.105-106, C1-C2, "UNCHANGED REGISTERS") passes,
+   and its C2 is the strongest single check in the D+MG work. Where
+   F208C looked at only sign byte bits 5-7 with a 3-bit field at 10.5,
+   F209C checks all EIGHT bits at 10.0, so C2 covers the sign (bit 4)
+   as well as the flags. Two separate injections halt on it: not
+   restoring the accumulator's own sign after the add, and taking the
+   sign byte's flag bits from the result instead of from accS. F208C2
+   caught the second for D+ but could not have caught the first.
+   C2's accumulator is all ones, so EF = 1 and the add takes the
+   flagged path -- which makes it a check of what "hand back the
+   operand whole" may touch in the magnitude direction too.
+   Next: F209D ("TESTS OF INDICATORS", D1-D8) in diagnostic order,
+   then F209E -- the one block that covers D+MG's forced zero and the
+   one that should settle which exponent it keeps. Then SRD. Still
+   open in double
    precision: D+MG, D-, SRD, SLO, D*, D/, LFT -- the first real double-precision
    ARITHMETIC, which needs the 96-bit adder and the accumulator's low
    half as a genuine operand rather than something only cleared.

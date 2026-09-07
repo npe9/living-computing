@@ -1,0 +1,86 @@
+! Floating-point diagnostic jb_af1c, routine F209C "UNCHANGED
+! REGISTERS" for ADD DOUBLE TO MAGNITUDE (docs/jb_af1c_
+! floating-point.pdf pp.105-106, octal 015576.40-015614.40, where
+! F209D begins): what D+MG must leave alone.
+!
+! Same shape as F208C for D+, with one difference that matters. F208C
+! checked only sign byte bits 5-7, the data flags, with a 3-bit field
+! at 10.5. F209C checks all EIGHT bits at 10.0 -- so it covers bit 4,
+! the sign, as well. C1 requires the whole byte to stay 0 and C2
+! requires it to stay all ones, which makes C2 a direct check of
+! D+MG's sign restore: the accumulator was made negative by CM1111,
+! the addition assumes it positive, and the accumulator's own sign has
+! to come back.
+!
+!   C1  Z on $L, $R and $SB clears all three accumulator words, then
+!       D+MG(U) FPK50. R44-63 (IBM 108-127, outside the fraction) must
+!       remain 0, and so must the sign byte.
+!   C2  C1111 forces both accumulator halves to all ones and CM1111
+!       the whole sign byte, then D+MG(U) FPK0. Both must remain 1.
+!
+! C2's accumulator is all ones, so EF = 1 and the add takes the
+! FLAGGED path: the accumulator is XFN, FPK0 is in the N range, and
+! Figure 23 hands back the operand whole. The sign byte must still
+! come out all ones -- bits 5-7 because ADD leaves them alone (the
+! rule F208C2 pinned), bit 4 because D+MG restores the accumulator's
+! own sign, and bits 0-3 because nothing writes them.
+!
+! Framework substitutes as everywhere else in this series: SERS (octal
+! 1304) -> FAIL halt, SEN (octal 1310) -> scratch. Constants from the
+! pool p.176.
+!
+! Instructions: B, Z on $L/$R/$SB, C1111 and CM1111, D+MG(U), CT0101,
+! CT0110, CT1010 and CT1100 over 20- and 8-bit fields, SIC, BRGZ.
+! verify_fp_arith_f209c_listing.py checks every word bit-for-bit.
+!
+! Observed: both passed on the first run, and C2's eight-bit check is
+! the strongest single check in the D+MG work so far. Two separate
+! injections halt on it (SIC stores 015614.40, the half-word after the
+! BRGZ at 015614.00 guarding the CT1100 at 015612.40):
+!   - not restoring the accumulator's own sign after the add, which
+!     leaves bit 4 wrong;
+!   - taking the sign byte's flag bits from the result instead of from
+!     accS, which leaves bits 5-7 wrong.
+! F208C2 caught the second for D+ but could not catch the first, since
+! it only looked at three bits. Checking all eight in one field is
+! what makes C2 cover both at once.
+
+! -- SSIP framework substitutes --
+        SLC, (8)1304.0
+SERS    BEW, $
+        SLC, (8)1310.0
+SEN     DD(BU,64,8), 0
+
+! -- constants (pool p.176) --
+
+        SLC, (8)22005.0
+FPK0    DD(BU,64,8), (8)0000000000000000000000
+FPK1    DD(BU,64,8), (8)1777777777777777777777
+        SLC, (8)22067.0
+FPK50   DD(BU,64,8), (8)0031377777777777777760
+
+! -- code (verbatim, at the listing's addresses) --
+        SLC, (8)15576.40
+FADM3   Z, $L                  ! F209C1: R 44-63 and SB 0-7 remain 0
+        Z, $R
+        Z, $SB
+        D+MG(U), FPK50
+        CT0101(BU,20), FPK0    ! does R44-63 remain +0
+        SIC, SEN
+        BRGZ, SERS
+        CT0110(BU,8), 10.0     ! does SB0-7 remain +0
+        SIC, SEN
+        BRGZ, SERS
+        B, $+.32               ! F209C2: 1 s remain 1 s, R44-63 and SB0-7
+        C1111(BU,64), FPK1, 64 ! accumulator left  := all ones
+        C1111(BU,64), FPK1     ! accumulator right := all ones
+        CM1111(BU,8), 10.0     ! sign byte := all ones, sign and flags
+        D+MG(U), FPK0
+        CT1010(BU,20), FPK1    ! does R44-63 remain +1
+        SIC, SEN
+        BRGZ, SERS
+        CT1100(BU,8), 10.0     ! does SB0-7 remain +1
+        SIC, SEN
+        BRGZ, SERS
+PASS    BEW, $                 ! 015614.40: where F209D begins
+        END, FADM3
