@@ -1,0 +1,109 @@
+! Floating-point diagnostic jb_af1c, routine F209E "TEST FORCED ZERO
+! RESULT", sub-tests E5-E8 (docs/jb_af1c_floating-point.pdf p.108,
+! octal 015727.40-015765.00, where F209E9 begins).
+!
+! The same forced zero as E1-E4, reached from the other direction.
+! E1-E4 subtracted a larger positive operand; E5-E8 ADD a negative one:
+!
+!   FPK38 = 0031052525252525252520
+!   FPK43 = 0031125252525252525250
+!
+! FPK43 is FPK37 with its sign bit set -- same exponent 0031, same
+! magnitude, negative. So D+MG(U) FPK43 adds a negative operand of
+! larger magnitude to the accumulator's magnitude, the sum comes out
+! negative, and p.95's forced zero applies. E1-E4 got there through
+! D-MG on a positive operand; these get there through D+MG on a
+! negative one, which is the arm of the sign-modifier decode that
+! E1-E4 never touch.
+!
+!   E5  MS+1, ACS+N+A+0    DL(U)  FPK38 + D+MG(U)  FPK43   sign 0
+!   E6  MS+N+A+1, ACS+0    DL(U)  FPK38 + D-MGA(U) FPK43   sign 0
+!   E7  MS+ACS+1, N+A+0    DLN(U) FPK38 + D+MG(U)  FPK43   sign 1
+!   E8  MS+ACS+N+A+1       DLN(U) FPK38 + D-MGA(U) FPK43   sign 1
+!
+! E6 and E8 are worth reading twice: D-MGA applies A first (forcing
+! FPK43 positive) and then the minus (making it negative again), so
+! they land on the same arithmetic as E5 and E7 by a different route
+! through strip_fp_sign. That double inversion is what they check.
+!
+! As in E1-E4 the two CT0110 tests are 48 bits at offsets 20 and 68,
+! covering IBM 12-107 -- the fraction only. The exponent at IBM 0-11
+! is never compared here either, and the operand exponents are equal,
+! so this block cannot settle the standing exponent question.
+!
+! E5 has no leading B,$+.32: it begins immediately after E4's last
+! branch, at 015727.40.
+!
+! Framework substitutes as everywhere else in this series: SERS (octal
+! 1304) -> FAIL halt, SEN (octal 1310) -> scratch. Constants from the
+! pool p.176. PASS sits at 015765.00, where F209E9 begins.
+!
+! Instructions: B, DL(U), DLN(U), D+MG(U), D-MGA(U), CT0110, SIC, BB,
+! BZB and BRGZ.
+! verify_fp_arith_f209e5_8_listing.py checks every word bit-for-bit.
+
+! -- SSIP framework substitutes --
+        SLC, (8)1304.0
+SERS    BEW, $
+        SLC, (8)1310.0
+SEN     DD(BU,64,8), 0
+
+! -- constants (pool p.176) --
+        SLC, (8)022005.0
+FPK0    DD(BU,64,8), (8)0000000000000000000000
+        SLC, (8)022053.0
+FPK38   DD(BU,64,8), (8)0031052525252525252520
+        SLC, (8)022060.0
+FPK43   DD(BU,64,8), (8)0031125252525252525250
+
+! -- code (verbatim, at the listing's addresses) --
+        SLC, (8)15727.40
+ENTRY   DL(U), FPK38                       ! F209E5: MS+1, ACS+N+A+0
+        D+MG(U), FPK43
+        CT0110(BU,48), FPK0+.12, 20        ! test low order result fraction = 0
+        SIC, SEN
+        BRGZ, SERS
+        CT0110(BU,48), FPK0+.12, 68        ! test high order result fraction = 0
+        SIC, SEN
+        BRGZ, SERS
+        BZB, 10.4, $+2.0                   ! test sign bit = 0
+        SIC, SEN
+        B, SERS
+        B, $+.32                           ! F209E6: MS+N+A+1, ACS+0
+        DL(U), FPK38
+        D-MGA(U), FPK43
+        CT0110(BU,48), FPK0+.12, 20
+        SIC, SEN
+        BRGZ, SERS
+        CT0110(BU,48), FPK0+.12, 68
+        SIC, SEN
+        BRGZ, SERS
+        BZB, 10.4, $+2.0                   ! test sign bit = 0
+        SIC, SEN
+        B, SERS
+        B, $+.32                           ! F209E7: MS+ACS+1, N+A+0
+        DLN(U), FPK38
+        D+MG(U), FPK43
+        CT0110(BU,48), FPK0+.12, 20
+        SIC, SEN
+        BRGZ, SERS
+        CT0110(BU,48), FPK0+.12, 68
+        SIC, SEN
+        BRGZ, SERS
+        BB, 10.4, $+2.0                    ! test sign bit = 1
+        SIC, SEN
+        B, SERS
+        B, $+.32                           ! F209E8: MS+ACS+N+A+1
+        DLN(U), FPK38
+        D-MGA(U), FPK43
+        CT0110(BU,48), FPK0+.12, 20
+        SIC, SEN
+        BRGZ, SERS
+        CT0110(BU,48), FPK0+.12, 68
+        SIC, SEN
+        BRGZ, SERS
+        BB, 10.4, $+2.0                    ! test sign bit = 1
+        SIC, SEN
+        B, SERS
+PASS    BEW, $                             ! 015765.00: where F209E9 begins
+        END, ENTRY

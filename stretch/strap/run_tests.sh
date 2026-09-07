@@ -575,6 +575,16 @@ run "FP add double magnitude forced zero (jb_af1c F209E1-E4 on the model)" ./run
     "PC=$(python3 -c 'from strap_asm import assemble; print(assemble(open("programs/fp_arith_f209e1_4.strap").read()).symtab["PASS"]//32)')" \
     "SEN:712=0"
 
+# F209E5-E8 reach the same forced zero from the other side: FPK43 is
+# FPK37 with its sign bit set, so D+MG adds a NEGATIVE operand of
+# larger magnitude instead of subtracting a positive one. E6 and E8 use
+# D-MGA, whose A-then-minus double inversion lands on the same
+# arithmetic by a different route through strip_fp_sign.
+run "FP add double magnitude forced zero (jb_af1c F209E5-E8, encoding)" python3 verify_fp_arith_f209e5_8_listing.py
+run "FP add double magnitude forced zero (jb_af1c F209E5-E8 on the model)" ./run_program.sh programs/fp_arith_f209e5_8.strap StretchFpAddDblMgFTb \
+    "PC=$(python3 -c 'from strap_asm import assemble; print(assemble(open("programs/fp_arith_f209e5_8.strap").read()).symtab["PASS"]//32)')" \
+    "SEN:712=0"
+
 # -- 1j. Store-close-to-fetch: store a word then immediately reload it;
 # the load must read the new value, not the stale one. The hazard the FP
 # sign-modifier codesign exposed; fixed by tracking each E-box level's
