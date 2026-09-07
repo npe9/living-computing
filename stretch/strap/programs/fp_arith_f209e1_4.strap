@@ -65,7 +65,12 @@
 ! BRGZ, its "test high order result fraction = 0" question -- while
 ! F209A, F209C, F209D1-D5 and F209D6-D9 all stay green. So this block
 ! is the suite's only oracle for that path; until now the unflagged
-! forced zero was written from p.95 and never executed.
+! forced zero was written from p.95 and never executed. The injection
+! was re-run against EVERY D+MG program -- F209A, F209B1-B8,
+! F209B9-B13, F209B14-B16, F209C, F209D1-D5, F209D6-D9 -- and all
+! seven stay green, so "the first one anywhere" is measured rather
+! than argued. F209E5-E8 halts too, at 015734.40, its E5 asking the
+! same high-order fraction question.
 !
 ! (E1's low-order question survives the injection and the high-order
 ! one catches it: without the forced zero the negative sum's bottom 48

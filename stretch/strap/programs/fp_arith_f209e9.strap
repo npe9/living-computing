@@ -1,0 +1,78 @@
+! Floating-point diagnostic jb_af1c, routine F209E "TEST FORCED ZERO
+! RESULT", sub-test E9 (docs/jb_af1c_floating-point.pdf pp.108-109,
+! octal 015765.00-015770.00, the routine's own exit "BD,$+1.0").
+! Six rows, and it closes out ADD DOUBLE TO MAGNITUDE: F209 is now
+! transcribed end to end.
+!
+! Small, and the most pointed question in the whole F209E block. It
+! clears LS with BLSZ, runs the E8 arithmetic again -- DLN(U) FPK38
+! then D-MGA(U) FPK43, which the listing itself annotates "FORCED ZERO
+! RESULT" -- and asks once, with BLS, that LS came out OFF.
+!
+! That makes it the oracle for the last unverified term in the model's
+! double-precision LS rule:
+!
+!   r.ls = (res.frac == 0) && !(a.frac == 0 && b.frac == 0)
+!                          && !forcedZero;
+!
+! F208D5 forced the res.frac term. F209D7 forced the both-zero term.
+! The !forcedZero term has never been under a run: a forced zero has a
+! zero result fraction, so without that term LS would come on, and
+! nothing until now both produced a forced zero and asked about LS.
+! E9 does exactly that, in one instruction and one question.
+!
+! Note what E9 is NOT: it is not a repeat of E8's fraction and sign
+! checks. E8 asked what the result IS; E9 asks what the result did to
+! the indicator. Same arithmetic, different question -- which is why
+! it needs the BLSZ to clear LS first, and why it is the only one of
+! the nine sub-tests with no CT0110 in it at all.
+!
+! Framework substitutes as everywhere else in this series: SERS (octal
+! 1304) -> FAIL halt, SEN (octal 1310) -> scratch. Constants from the
+! pool p.176. PASS sits at 015770.00, on the routine's exit; the four
+! rows after it (BD,$+1.0 / B,FADM4 / SIC,SENO+.32 / B,SSW) are the
+! SSIP return and are not transcribed. F210 "STORE ROUNDED TEST
+! ROUTINE" begins at 015772.00.
+!
+! Instructions: B, BLSZ, DLN(U), D-MGA(U), SIC, BLS.
+! verify_fp_arith_f209e9_listing.py checks every word bit-for-bit.
+!
+! Observed: passes, as predicted. Dropping the !forcedZero term --
+! r.ls = (res.frac == 0) && !(a.frac == 0 && b.frac == 0) -- halts E9
+! with SIC storing 015770.00, the address right after its one
+! BLS,SERS, while F209D6-D9 and F208D7-D11 both stay green. So E9 is
+! the suite's only oracle for that term, and all three terms of the
+! double-precision LS rule are now under a run.
+!
+! (Both were re-measured on a cleaned build tree. An earlier attempt
+! reported a PASS for E9 that came from a stale simulator -- the
+! give-away was the PC, 14314, which belongs to F209E5-E8 rather than
+! E9's 14320. If a run's PC does not match the program's own PASS
+! symbol, the binary is stale: delete bsv/build, bsv/simbuild and the
+! _sim artifacts and rebuild.)
+
+! -- SSIP framework substitutes --
+        SLC, (8)1304.0
+SERS    BEW, $
+        SLC, (8)1310.0
+SEN     DD(BU,64,8), 0
+
+! -- constants (pool p.176) --
+        SLC, (8)022053.0
+FPK38   DD(BU,64,8), (8)0031052525252525252520
+        SLC, (8)022060.0
+FPK43   DD(BU,64,8), (8)0031125252525252525250
+
+! The listing prints no label at 015765.00 -- ENTRY is ours, needed
+! only as the END operand. The listing's FADM4 is at 015672.00, on
+! F209E1, and this routine's exit branches back to it.
+! -- code (verbatim, at the listing's addresses) --
+        SLC, (8)15765.0
+ENTRY   B, $+.32                       ! F209E9: test LS ind., off condition
+        BLSZ, $+.32
+        DLN(U), FPK38
+        D-MGA(U), FPK43                ! forced zero result
+        SIC, SEN
+        BLS, SERS                      ! error if LS indicator on
+PASS    BEW, $                         ! 015770.00: the routine's exit ("BD,$+1.0")
+        END, ENTRY

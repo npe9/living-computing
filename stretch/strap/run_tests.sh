@@ -585,6 +585,19 @@ run "FP add double magnitude forced zero (jb_af1c F209E5-E8 on the model)" ./run
     "PC=$(python3 -c 'from strap_asm import assemble; print(assemble(open("programs/fp_arith_f209e5_8.strap").read()).symtab["PASS"]//32)')" \
     "SEN:712=0"
 
+# F209E9 closes F209 out. Six rows: clear LS with BLSZ, run E8's
+# arithmetic (which the listing itself annotates "FORCED ZERO RESULT"),
+# ask once that LS came out OFF. It is the suite's only oracle for the
+# !forcedZero term in r.ls = (res.frac == 0) && !(a.frac == 0 &&
+# b.frac == 0) && !forcedZero -- F208D5 forced the res.frac term and
+# F209D7 the both-zero term, but a forced zero HAS a zero result
+# fraction, so without that term LS would come on and nothing until now
+# both produced a forced zero and asked about LS.
+run "FP add double magnitude forced zero, LS off (jb_af1c F209E9, encoding)" python3 verify_fp_arith_f209e9_listing.py
+run "FP add double magnitude forced zero, LS off (jb_af1c F209E9 on the model)" ./run_program.sh programs/fp_arith_f209e9.strap StretchFpAddDblMgFTb \
+    "PC=$(python3 -c 'from strap_asm import assemble; print(assemble(open("programs/fp_arith_f209e9.strap").read()).symtab["PASS"]//32)')" \
+    "SEN:712=0"
+
 # -- 1j. Store-close-to-fetch: store a word then immediately reload it;
 # the load must read the new value, not the stale one. The hazard the FP
 # sign-modifier codesign exposed; fixed by tracking each E-box level's
