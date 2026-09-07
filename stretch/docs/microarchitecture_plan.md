@@ -517,8 +517,38 @@ hand vectors alone. "Enables" notes the dependency chain.
    accumulator's) and fpAdd's (keep the larger operand's) would agree
    here even if the exponent were checked. Whether anything in jb_af1c
    distinguishes them is still unknown.
-   Next: F209E9 (from 015765.00, "TEST LS IND., OFF CONDITION") and
-   whatever follows it, then SRD. Still open in double
+   jb_af1c F209E9 (pp.108-109) closes F209 out in six rows: clear LS
+   with BLSZ, re-run E8's arithmetic (which the listing itself
+   annotates "FORCED ZERO RESULT"), ask once with BLS that LS came out
+   OFF. It is the oracle for the last unverified term in the
+   double-precision LS rule -- F208D5 forced the res.frac term and
+   F209D7 the both-zero term, but a forced zero HAS a zero result
+   fraction, so without !forcedZero LS would come on and nothing until
+   now both produced a forced zero and asked about LS. Dropping it
+   halts E9 at 015770.00 with F209D6-D9 and F208D7-D11 green. All
+   three terms are now under a run.
+   One more injection pins the D-MGA claim in E5-E8: dropping the abs
+   bit from strip_fp_sign's D-MGA rule halts E6 (015744.00), while
+   F209E1-E4 stays green (its D-MGA operand FPK37 is already positive,
+   so abs is a no-op) and F209E9 stays green (its question is blind to
+   it -- no abs means no forced zero, and LS is off either way). E6/E8
+   are the only place in the suite where the A-then-minus ordering is
+   observable.
+   METHOD NOTE, learned the hard way this session. A killed injection
+   script left stale artifacts in bsv/build, bsv/simbuild and the _sim
+   binaries, and a subsequent run reported PASS from a stale
+   simulator. The give-away was the PC: 14314, which belongs to
+   F209E5-E8, not E9's 14320. Every run_program.sh result prints the
+   PC alongside the program's own PASS symbol -- if they disagree, the
+   binary is stale. Delete the three artifacts and rebuild before
+   trusting anything.
+   Next: F210 "STORE ROUNDED TEST ROUTINE" (p.110, from 015772.00).
+   Its prologue is FSR1 (015772.00) and F210A1 begins at SAP11
+   (015775.00): DL(U) FPK26, C0011 FK40+.12 into offset 20, then
+   SRD(U) ROS, L(BU) FK35, CT0110(BU,60) ROS,4 -- "error if 1 not
+   added in bit pos 60". So unlike everything since F204 this one is
+   not a pure transcription: SRD is not implemented yet, and F210 is
+   the diagnostic driving it. Still open in double
    precision: D+MG, D-, SRD, SLO, D*, D/, LFT -- the first real double-precision
    ARITHMETIC, which needs the 96-bit adder and the accumulator's low
    half as a genuine operand rather than something only cleared.

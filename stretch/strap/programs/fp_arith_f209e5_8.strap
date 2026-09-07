@@ -41,6 +41,29 @@
 ! Instructions: B, DL(U), DLN(U), D+MG(U), D-MGA(U), CT0110, SIC, BB,
 ! BZB and BRGZ.
 ! verify_fp_arith_f209e5_8_listing.py checks every word bit-for-bit.
+!
+! Observed: all four passed on the first run, and an injection confirms
+! the D-MGA claim above rather than leaving it as reasoning. Dropping
+! the abs bit from strip_fp_sign's D-MGA rule -- returning
+! ("D+MG", 0, 1) instead of ("D+MG", 1, 1), so the minus is applied
+! without the preceding absolute -- halts E6 with SIC storing
+! 015744.00, the address right after its high-order fraction question.
+!
+! The discrimination is exact, and worth stating because two other
+! blocks use D-MGA and neither can see it:
+!
+!   F209E1-E4 stays green because its D-MGA operand is FPK37, which is
+!   already POSITIVE -- abs is a no-op there, so both spellings give
+!   the same operand. Only E5-E8's negative FPK43 tells them apart.
+!
+!   F209E9 stays green because it asks only about LS. Without the abs,
+!   the operand comes out positive, the sum is positive and nonzero,
+!   so there is no forced zero and no zero result fraction -- LS is
+!   off either way, which is what E9 demands.
+!
+! So E6 (and E8, which is the same arithmetic with the accumulator
+! negative) is the only place in the suite where the A-then-minus
+! ordering is observable at all.
 
 ! -- SSIP framework substitutes --
         SLC, (8)1304.0
