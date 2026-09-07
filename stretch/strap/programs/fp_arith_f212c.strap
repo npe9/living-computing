@@ -1,0 +1,65 @@
+! jb_af1c F212C "TEST UNCHANGED REGISTERS", pp.119-120 (octal
+! 016571.40-016605.00, the block's own exit "BD,$+1.0"), transcribed
+! verbatim.
+!
+! THIS IS THE GUARD ON THE NEW THREE-WRITE SHF ARM.  Making SHIFT
+! FRACTION 96-bit turned the arm from two accumulator writes into
+! three -- accLeft, accRight and the sign byte -- and the risk in that
+! rearrangement is clobbering something the manual says the shift must
+! leave alone.  Reference Manual p.102: "Only accumulator bits 12-107
+! participate in the shifting; all other accumulator bits remain
+! unchanged", plus "No change in the exponent field of the accumulator
+! operand is made by this operation."  F212C asks exactly that, in
+! three separate questions, after filling BOTH accumulator halves and
+! the sign byte with ones and shifting left one place:
+!
+!   C1  CT1010(BU,12), FPK1, 116   does L0-11 remain +1-S
+!       -- offset 116 is IBM 0-11, the EXPONENT field.
+!   C2  CT1010(BU,20), FPK1        does R44-63 remain +1-S
+!       -- offset 0, twenty bits: IBM 108-127, the part of the right
+!          half OUTSIDE the 96-bit fraction.  fpdAccRight carries
+!          oldRight[19:0] through untouched, and this is what says so.
+!   C3  CT1100(BU,8), 10.0         does SB0-7 remain +1-S
+!       -- word 10, the sign byte.
+!
+! A left shift of one on an all-ones fraction is the right stimulus
+! for this: it moves every fraction bit, so anything that leaked into
+! the exponent, into IBM 108-127, or into the sign byte would show.
+!
+! ENCODING NOTE: the listing prints the third row as "BBZ,8,13,$+1." --
+! that "8,13" is STRAP's word.bit notation "8.13" (word 8, the
+! accumulator's left half; bit 13), scanned with the point as a comma.
+! It assembles to "10.15 80 016573.74 06", the 0o10/0o15 pair being
+! exactly word 8 and bit 13.  Its target $+1. is the very next
+! instruction, so it is a no-op branch either way.
+
+! -- SSIP framework substitutes: SERS (octal 1304) -> FAIL halt,
+! -- SEN (octal 1310) -> scratch.
+        SLC, (8)1304.0
+SERS    BEW, $
+        SLC, (8)1310.0
+SEN     DD(BU,64,8), 0
+
+! -- constants (pool p.176) --
+        SLC, (8)22006.0
+FPK1    DD(BU,64), (8)1777777777777777777777
+
+        SLC, (8)16571.40
+FSF4    C1111(BU,64), FPK1, 64               ! accumulator RIGHT half := ones
+        BBZ, 8.13, $+1.0
+        C1111(BU,64), FPK1                   ! accumulator LEFT half := ones
+        CM1111(BU,8), 10.0                   ! sign byte := ones
+        SHFL(U), 128.0
+        CT1010(BU,12), FPK1, 116             ! F212C1 does L0-11 remain + 1 - s
+        SIC, SEN
+        BRGZ, SERS
+        CT1010(BU,20), FPK1                  ! F212C2 does R44-63 remain + 1 - s
+        SIC, SEN
+        BRGZ, SERS
+        CT1100(BU,8), 10.0                   ! F212C3 does SB0-7 remain + 1 - s
+        SIC, SEN
+        BRGZ, SERS
+        SIC, SEN
+        BRGZ, SERS
+PASS    BEW, $                               ! 016605.00: the block's exit "BD,$+1.0"
+        END, FSF4

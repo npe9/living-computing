@@ -821,10 +821,38 @@ hand vectors alone. "Enables" notes the dependency chain.
    covered store-then-LOAD; store-then-EXECUTE had no test at all,
    which is why this survived.
 
-   STILL TO DO in F212: B1-B4 (the four sign-modifier combinations,
-   where SHFA/SHFN/SHFNA get exercised), C1-C3 (TEST UNCHANGED
-   REGISTERS: L0-11, R44-63, SB0-7 -- the guard on the new three-write
-   SHF arm) and D1-D5+ (indicator tests).
+   F212B AND F212C DONE. B "TESTS OF SIGN AND MODIFIER COMBINATIONS"
+   (p.119) runs the four spellings, all at the same address 200 octal
+   with the direction bit CLEAR, so the direction is entirely the
+   modifiers' doing: SHFR ".77" A+N right, SHFA ".67" A left, SHFN
+   ".57" N right, SHFNA ".77" A+N right. B1 and B4 assemble to the
+   IDENTICAL word -- the page prints it twice -- so between them they
+   pin the STRAP spellings, not the machine. B3 IS THE ONLY
+   DISCRIMINATING ROW: it is the one place N acts WITHOUT A, so it is
+   what separates "invert the address bit" from "ignore N unless A is
+   present". Injecting exactly that (invert only when absSign is also
+   set) halts B3 at its first check -- SEN 016557.40, the BRGZ after
+   the high-order question -- while F212A12-A23 STAYS GREEN, because
+   every SHFR there carries A and cannot see the difference.
+   C "TEST UNCHANGED REGISTERS" (pp.119-120) is the guard on the new
+   three-write SHF arm, and it earns that name: fill both accumulator
+   halves and the sign byte with ones, SHFL 1, then ask three separate
+   questions -- C1 CT1010(BU,12) at offset 116 (IBM 0-11, the
+   EXPONENT), C2 CT1010(BU,20) at offset 0 (IBM 108-127, the part of
+   the right half OUTSIDE the fraction), C3 CT1100(BU,8) on word 10
+   (the sign byte). Injecting the obvious way to break the new arm --
+   fpdAccRight(v, 0) instead of fpdAccRight(v, accRs), dropping
+   oldRight[19:0] -- halts C2 (SEN 016602.00) while F212B stays green,
+   since B never looks at those bits. So the two blocks are not
+   redundant: each catches what the other cannot.
+   ENCODING NOTE worth keeping: the page prints C's third row as
+   "BBZ,8,13,$+1." -- that comma is STRAP's word.bit POINT, scanned
+   wrong. It is BBZ,8.13 (word 8, bit 13), which is exactly the 0o10 /
+   0o15 pair in the assembled "10.15 80 016573.74 06".
+
+   STILL TO DO in F212: D1-D5+ (indicator tests) -- and note the trap
+   recorded above, that D1 is where the accumulator's low half first
+   carries forward across sub-tests.
    COVERAGE LIMIT, measured not assumed: NOTHING in A1-A23 requires LC
    to be OFF after a LEFT shift. A12 wants it ON; A24 is the "ERROR IF
    LC INDICATOR ON" row but shifts RIGHT, where the model cannot set

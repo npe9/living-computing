@@ -778,6 +778,15 @@ run "FP shift fraction, LC off / self-modifying / norm-mod / flagged (jb_af1c F2
 # -- bits the shift ignores, so stale and fresh are both no-ops there:
 # -- it proves the machine does not hang, not that the re-fetch saw the
 # -- new word. This one makes the two outcomes different.
+run "FP shift fraction, sign/modifier combinations (jb_af1c F212B, encoding)" python3 verify_fp_arith_f212b_listing.py
+run "FP shift fraction, sign/modifier combinations (jb_af1c F212B on the model)" ./run_program.sh programs/fp_arith_f212b.strap StretchFpShfDTb \
+    "PC=$(python3 -c 'from strap_asm import assemble; print(assemble(open("programs/fp_arith_f212b.strap").read()).symtab["PASS"]//32)')" \
+    "SEN:712=0"
+run "FP shift fraction, unchanged registers (jb_af1c F212C, encoding)" python3 verify_fp_arith_f212c_listing.py
+run "FP shift fraction, unchanged registers (jb_af1c F212C on the model)" ./run_program.sh programs/fp_arith_f212c.strap StretchFpShfETb \
+    "PC=$(python3 -c 'from strap_asm import assemble; print(assemble(open("programs/fp_arith_f212c.strap").read()).symtab["PASS"]//32)')" \
+    "SEN:712=0"
+
 run "Program store compare: store then EXECUTE the modified instruction" ./run_program.sh programs/store_then_execute.strap StretchStoreExecTb \
     "RESULT:$(python3 -c 'from strap_asm import assemble; print(assemble(open("programs/store_then_execute.strap").read()).symtab["RESULT"]//64)')=0x20"
 

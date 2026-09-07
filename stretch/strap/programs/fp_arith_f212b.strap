@@ -1,0 +1,84 @@
+! jb_af1c F212B "TESTS OF SIGN AND MODIFIER COMBINATIONS", p.119
+! (octal 016540.40-016567.40, the block's own exit "BD,$+1.0"),
+! transcribed verbatim.  The listing's own subtitle is "-N AND A ARE
+! MODIFIERS" and it labels the rows -N+0 A+1, -N+1 A+0, -N+A+1.
+!
+! This is the block that exercises the three spellings F212A never
+! used.  Reference Manual p.102 makes effective-address bit 11 the
+! SIGN of the shift, "subject to modification by the sign modifiers",
+! so the direction is whatever the modifiers make of that bit -- and
+! every row here uses address 200 octal, in which the direction bit is
+! CLEAR.  The four combinations and what they must therefore do:
+!
+!   B1  SHFR   A=1 N=1  ".77"  absolute then inverted -> RIGHT
+!   B2  SHFA   A=1 N=0  ".67"  absolute              -> LEFT
+!   B3  SHFN   A=0 N=1  ".57"  inverted              -> RIGHT
+!   B4  SHFNA  A=1 N=1  ".77"  absolute then inverted -> RIGHT
+!
+! B3 IS THE DISCRIMINATING ROW.  It is the only one where N acts
+! WITHOUT A, so it is the only one that can tell "invert the address
+! bit" from "ignore N unless A is present": with the bit clear, N
+! alone must still produce a RIGHT shift.  B1 and B4 assemble to the
+! identical encoding ".77" and differ only in how STRAP spells them,
+! so between them they pin the mnemonics, not the machine.
+!
+! Arithmetic (already established by F212A, same shifts):
+!   B1/B3/B4  high=FPK0, low=FPK97, shift RIGHT 1 -> low = FPK96
+!   B2        high=FPK87, low=0,    shift LEFT  1 -> high = FPK88
+! so a wrong direction shows up immediately in the high/low checks.
+
+! -- SSIP framework substitutes: SERS (octal 1304) -> FAIL halt,
+! -- SEN (octal 1310) -> scratch.
+        SLC, (8)1304.0
+SERS    BEW, $
+        SLC, (8)1310.0
+SEN     DD(BU,64,8), 0
+
+! -- constants (pool p.176) --
+        SLC, (8)22005.0
+FPK0    DD(BU,64), (8)0000000000000000000000
+        SLC, (8)22125.0
+FPK87   DD(BU,64), (8)0001000077777777777760
+FPK88   DD(BU,64), (8)0001000177777777777740
+        SLC, (8)22136.0
+FPK96   DD(BU,64), (8)0001077777777777760000
+FPK97   DD(BU,64), (8)0001177777777777740000
+
+        SLC, (8)16540.40
+FSF3    DL(U), FPK0                          ! F212B1
+        C0011(BU,48), FPK97+.12, 20
+        SHFR(U), 128.0
+        CT0110(BU,48), FPK0+.12, 68          ! fract. shifted right 1
+        SIC, SEN
+        BRGZ, SERS
+        CT0110(BU,48), FPK96+.12, 20
+        SIC, SEN
+        BRGZ, SERS
+        DL(U), FPK87                         ! F212B2  - N+0  A+1
+        SHFA(U), 128.0
+        CT0110(BU,48), FPK88+.12, 68         ! fract. shifted left 1
+        SIC, SEN
+        BRGZ, SERS
+        CT0110(BU,48), FPK0+.12, 20
+        SIC, SEN
+        BRGZ, SERS
+        DL(U), FPK0                          ! F212B3  - N+1  A+0
+        C0011(BU,48), FPK97+.12, 20
+        SHFN(U), 128.0
+        CT0110(BU,48), FPK0+.12, 68          ! fract. shifted right 1
+        SIC, SEN
+        BRGZ, SERS
+        CT0110(BU,48), FPK96+.12, 20
+        SIC, SEN
+        BRGZ, SERS
+        DL(U), FPK0                          ! F212B4  - N+A+1
+        C0011(BU,48), FPK97+.12, 20
+        SHFNA(U), 128.0
+        CT0110(BU,48), FPK0+.12, 68          ! fract. shifted right 1
+        SIC, SEN
+        BRGZ, SERS
+        CT0110(BU,48), FPK96+.12, 20
+        SIC, SEN
+        BRGZ, SERS
+PASS    BEW, $                               ! 016567.40: the block's exit "BD,$+1.0"
+        END, FSF3
