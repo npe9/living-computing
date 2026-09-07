@@ -472,10 +472,53 @@ hand vectors alone. "Enables" notes the dependency chain.
    with BRZ (1304.34 C2). The encodings distinguish them, so it is the
    listing's own inconsistency; D1 asks about RGZ twice and never
    about RZ.
-   Next: F209D6-D9 (the Lost Significance half, from 015652.00), then
-   F209E -- still the one block that covers D+MG's forced zero and the
-   one that should settle which exponent it keeps. Then SRD. Still
-   open in double
+   jb_af1c F209D6-D9 (p.107) is the Lost Significance half, and D7 --
+   DL(U) FPK0 + D+MG(U) FPK0, a zero result that must NOT set LS -- is
+   the printed source of the exception clause in the F208D5 LS fix,
+   which until now rested on p.96's wording alone. Dropping that clause
+   halts D7 (SIC stores 015661.00) and leaves F209D1-D5 and F208D7-D11
+   green. D9 is the first LS question put to the flagged path; setting
+   r.ls on fpAddDouble's flagged-path return halts it (015670.00), so
+   that path's silence on LS is pinned rather than merely untested.
+   BLSZ (46) was new encoding ground -- the first branch-on-indicator
+   with both the clear and branch-on bits set -- and assembled right
+   unchanged. Transcribed as printed: D8's header says "LS INDICATOR
+   OFF" while its question is BZLS, "error if LS ind off", which
+   requires it ON; the encodings settle it.
+   Checking the label column while transcribing turned up a fidelity
+   slip worth remembering. F209D1-D5 carried FADM4 as its entry label,
+   but p.106 prints NO label at 015614.40, and the listing's real FADM4
+   is at 015672.00, on F209E1. FADM2 (015365.40) and FADM3 (015576.40,
+   confirmed by the exit's B,FADM3) are genuine. Both F209D programs
+   now use ENTRY, with a note; F209E uses FADM4 at its true address.
+   jb_af1c F209E "TEST FORCED ZERO RESULT" (pp.107-108) is the block
+   the whole D+MG series was heading toward: E1-E4 (015672.00) is the
+   first thing anywhere in jb_af1c that reaches fpAddDouble's UNFLAGGED
+   forced zero. FPK37 and FPK38 share exponent 0031 with |FPK37| >
+   |FPK38|, so subtracting FPK37 from the accumulator's magnitude
+   gives the negative sum p.95 replaces with a zero fraction.
+   Constant-folding the forced-zero guard to False halts E1 at
+   015677.00 and leaves F209A, F209C, F209D1-D5 and F209D6-D9 all
+   green: nothing else in the suite covers it, and the path had been
+   written from the manual and never executed. E3 and E4 load the
+   accumulator negative, putting the forced zero and the F209D1
+   sign-restore ordering in the same instruction.
+   E5-E8 (p.108) reach the same forced zero from the other side. FPK43
+   is FPK37 with its sign bit set -- same exponent, same magnitude,
+   negative -- so D+MG ADDS a larger negative operand where E1-E4
+   subtracted a positive one. E6 and E8 use D-MGA, whose A-then-minus
+   double inversion lands on the same arithmetic through a different
+   route in strip_fp_sign. All eight passed on the first run.
+   **The exponent question survives F209E untouched, and the earlier
+   expectation that F209E would settle it was wrong.** Every CT0110 in
+   E1-E8 is 48 bits at offset 20 or 68, together covering IBM 12-107 --
+   the fraction only. IBM 0-11 is never compared. And both operands
+   share an exponent throughout, so the manual's reading (keep the
+   accumulator's) and fpAdd's (keep the larger operand's) would agree
+   here even if the exponent were checked. Whether anything in jb_af1c
+   distinguishes them is still unknown.
+   Next: F209E9 (from 015765.00, "TEST LS IND., OFF CONDITION") and
+   whatever follows it, then SRD. Still open in double
    precision: D+MG, D-, SRD, SLO, D*, D/, LFT -- the first real double-precision
    ARITHMETIC, which needs the 96-bit adder and the accumulator's low
    half as a genuine operand rather than something only cleared.
