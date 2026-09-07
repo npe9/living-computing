@@ -38,6 +38,19 @@
 !
 ! Instructions: B, BMOPZ, BZMOP, BLCZ, BZLC, DL(U), C0011, SRD(U), SIC.
 ! verify_fp_arith_f210d_listing.py checks every word bit-for-bit.
+!
+! Observed: both passed on the first run, and both questions are live.
+! Suppressing MOP halts D1 with SIC storing 016133.40; suppressing LC
+! halts D2 with SIC storing 016137.40 -- each the address right after
+! its own branch.
+!
+! The LC result is the one that closes a gap this routine had carried
+! from the start. F210A5 stays GREEN under the same suppression, and
+! so does F210C. A5 runs the identical operand and produces the
+! identical overflow, but asks only what the overflow did to the
+! stored word; D2 is the only thing in the suite that asks what it did
+! to the indicator. The two are complementary halves of the
+! unnormalized-overflow rule, not duplicates of each other.
 
 ! -- SSIP framework substitutes --
         SLC, (8)1304.0

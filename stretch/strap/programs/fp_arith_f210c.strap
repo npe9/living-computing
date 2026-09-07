@@ -33,6 +33,22 @@
 ! Instructions: CM1111, Z, SRD(U), CT0011, CT1100, C1111, SIC, B,
 ! BRGZ.
 ! verify_fp_arith_f210c_listing.py checks every word bit-for-bit.
+!
+! Observed: both passed on the first run, and C1's question is live --
+! forcing the UNFLAGGED branch to write flags 3'b111 instead of the
+! accumulator's halts C1 with SIC storing 016116.40, right after its
+! first BRGZ, while F210A3-A4 stays green.
+!
+! Worth recording precisely which branch that is. The same forcing
+! applied to the FLAGGED branch changes nothing anywhere: C1's
+! accumulator is zeroed by Z,$L / Z,$R / Z,$SB so EF is 0 and it takes
+! the unflagged path, and C2's accumulator is all ones so it takes the
+! flagged path but already expects flags of 7. So C2 cannot see the
+! flagged branch's flag handling at all, and C1 cannot see it either.
+! Nothing in F210 does. That is a real gap, and it is narrow: it is
+! the one case where SRD returns a survivor's flags rather than the
+! accumulator's, and no sub-test distinguishes them because the two
+! agree everywhere F210 looks.
 
 ! -- SSIP framework substitutes --
         SLC, (8)1304.0

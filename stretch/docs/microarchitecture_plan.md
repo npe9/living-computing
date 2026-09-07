@@ -636,8 +636,34 @@ hand vectors alone. "Enables" notes the dependency chain.
    (storage through request/response methods) is precisely what would
    change it -- which is the case for keeping F210B in the suite even
    though no single-line mutation isolates it today.
-   Next: F210C "ACCUMULATOR FLAGS TO MEMORY FLAGS" (p.111-112, from
-   016111.40, label FSR3), then SLO.
+   jb_af1c F210C "ACCUMULATOR FLAGS TO MEMORY FLAGS" (pp.111-112, 22
+   rows) guards the other half of p.96's storage-word sentence -- the
+   accumulator flag bits go to storage bits 61-63, where F210A's BZB
+   questions covered only bit 60, the sign. C1 pre-loads ROS with ONES
+   before zeroing the accumulator, making it a test of COPYING rather
+   than of leaving alone. Forcing the unflagged branch to write flags
+   111 halts C1 at 016116.40 with F210A3-A4 green.
+   A NARROW GAP found while probing C: the same forcing applied to the
+   FLAGGED branch changes nothing anywhere. C1's accumulator is zeroed
+   so it takes the unflagged path; C2's is all ones so it takes the
+   flagged path but already expects flags of 7. Nothing in F210
+   distinguishes the flagged branch's flag handling, because the two
+   readings agree everywhere the routine looks.
+   jb_af1c F210D "TESTS OF INDICATORS" (p.112, 13 rows) closes F210
+   out, and D2 is the LOST CARRY oracle recorded as missing since A5.
+   D1 clears MOP with BMOPZ and asks with BZMOP that a to-memory
+   operation set it; D2 clears LC with BLCZ, runs the same 96-ones
+   operand at exponent +2 that A5 uses, and asks with BZLC that the
+   rounding overflow set LC. Suppressing MOP halts D1 (016133.40),
+   suppressing LC halts D2 (016137.40) -- and under the LC suppression
+   F210A5 and F210C both stay GREEN. A5 and D2 are complementary
+   halves of one rule: what the overflow did to the stored word, and
+   what it did to the indicator.
+   F210 IS NOW TRANSCRIBED END TO END, 015775.00 to 016137.40 across
+   seven programs, each ending exactly where the next begins.
+   Next: SLO (STORE LOW ORDER, Ref. Manual p.97) -- decoded as
+   1001110 but with no execute arm, the same position SRD was in.
+   Then D*, LFT, *+, and D/ (which needs the multi-cycle unit).
    Its prologue is FSR1 (015772.00) and F210A1 begins at SAP11
    (015775.00): DL(U) FPK26, C0011 FK40+.12 into offset 20, then
    SRD(U) ROS, L(BU) FK35, CT0110(BU,60) ROS,4 -- "error if 1 not
