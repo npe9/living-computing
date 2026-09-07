@@ -632,10 +632,13 @@ hand vectors alone. "Enables" notes the dependency chain.
    itself target the sign byte -- the manual's own "unless used as the
    effective address". So the current write-port arrangement enforces
    the rule that F210B checks. That guarantee belongs to the
-   arrangement, not to SRD, and section 1c step 5c's refactor
-   (storage through request/response methods) is precisely what would
-   change it -- which is the case for keeping F210B in the suite even
-   though no single-line mutation isolates it today.
+   arrangement, not to SRD, so F210B stays in the suite even though no
+   single-line mutation isolates it today: it is the guard that would
+   catch the rule being lost if the write ports are ever rearranged.
+   (This previously named "section 1c step 5c's refactor" as the thing
+   that would rearrange them. That refactor has since been withdrawn --
+   see the 1c-audit -- so no such change is planned; the guard is kept
+   against any future one.)
    jb_af1c F210C "ACCUMULATOR FLAGS TO MEMORY FLAGS" (pp.111-112, 22
    rows) guards the other half of p.96's storage-word sentence -- the
    accumulator flag bits go to storage bits 61-63, where F210A's BZB
@@ -720,10 +723,17 @@ hand vectors alone. "Enables" notes the dependency chain.
    F211 is transcribed A1-A4, A7-A10 and B-C; A5-A6 are deliberately
    skipped as more SLO(U) exponent-walking (2-48=-46, then -94), with
    no behaviour A3-A4 does not already cover.
-   Next: D*, LFT and *+, then D/ -- which needs the multi-cycle unit,
-   i.e. section 1c step 5c's E-box refactor. That refactor is now the
-   gating item for the rest of double precision, as well as being the
-   one Piccolo-grounded structural gap the audit left open.
+   Next: D*, LFT and *+, then D/ -- which is the one that needs a
+   multi-cycle unit, because an unrolled combinational 48-place divide
+   is a different proposition from the 48x48 multiplies already in
+   fpMul. (This paragraph previously called that "section 1c step 5c's
+   E-box refactor" and "the gating item for the rest of double
+   precision". Both were wrong, corrected 2026-09-07: step 5c is
+   routing STORAGE through request/response methods so mkEBox can be
+   synthesized, which the 1c-audit has since withdrawn as unjustified
+   and unwanted; what D/ needs is a divide BOX -- Piccolo's
+   mkMBox/mkFPU idiom, plan steps 2-3 -- which is a separate and much
+   smaller piece of work. And it gates D/ only, not D*, LFT or *+.)
    Its prologue is FSR1 (015772.00) and F210A1 begins at SAP11
    (015775.00): DL(U) FPK26, C0011 FK40+.12 into offset 20, then
    SRD(U) ROS, L(BU) FK35, CT0110(BU,60) ROS,4 -- "error if 1 not
@@ -971,8 +981,22 @@ volumes have text layers; the rest are read as page images.
 ### 1c-audit. Measured against Piccolo, 2026-09-07
 
 Asked directly: "is the structure still wrong?" Answer: **no, not in the
-way README item 9 meant it** -- with one genuine gap left. This is a
-point-by-point measurement, not a recollection. Piccolo numbers are from
+way README item 9 meant it.** This is a point-by-point measurement, not
+a recollection. The eight rows score **5 match, 1 n/a, 2 differ**.
+
+(The first draft ended "with one genuine gap left" and named the
+E-box's storage access as that gap; both halves of that were withdrawn
+the same day -- see "The gap that isn't one" below. A replacement line
+then claimed "seven of eight rows match, and the eighth differs by a
+decision that is still deliberate", which is the same overclaim with
+the sign flipped, and is also withdrawn: it silently dropped the
+`stage body` row. Two rows differ, and only ONE of them is a deliberate
+decision. The other -- `execute()` at 1679 lines against Piccolo's
+largest stage function at 310 -- is README item 9's "giant
+combinational FUNCTION" half, and it is still genuinely open. Nothing
+measured on 2026-09-07 touches it: a synthesis boundary was never what
+would shorten a 1679-line function, which is exactly why withdrawing
+the boundary plan does not close this row.) Piccolo numbers are from
 `raw.githubusercontent.com/bluespec/Piccolo/master/src_Core/CPU/`.
 
 | | Piccolo | Stretch today | |
@@ -993,15 +1017,87 @@ debug and trace edges (and for the `Server` faces of its boxes). Both
 lines are corrected above. Anyone building to the old wording would have
 inserted FIFOs Piccolo does not have.
 
-**The one real gap.** README item 9's critique had two halves. The
-monolithic-RULE half is fixed (9 rules, largest 122 lines). The giant
-combinational-FUNCTION half is not: `execute()` is 1679 lines against
-Piccolo's largest stage function at 310, and it makes 74 direct `st.`
-calls into storage. Those direct calls -- not the line count -- are what
-stop `mkEBox` from carrying its own `(* synthesize *)`, exactly as step
-5c already noted: it would have to route storage through request/
-response methods first. That is the concrete, Piccolo-grounded next
-move, and it is the only one.
+**The gap that isn't one (corrected 2026-09-07, same day, after
+measuring).** An earlier draft of this section called `execute()`'s
+direct `st.` calls "the one real gap" and named routing storage through
+request/response methods -- so that `mkEBox` could carry its own
+`(* synthesize *)` -- as "the concrete, Piccolo-grounded next move, and
+the only one." **That was wrong on its own evidence, twice over.**
+
+1. *It contradicts row 1 of the table above.* Piccolo's
+   `mkCPU_Stage1/2/3` carry no `(* synthesize *)`; neither does
+   `mkEBox`; the row scores that a match. Giving `mkEBox` a synthesis
+   boundary would move this model AWAY from the stage idiom, not toward
+   it. The modules Piccolo *does* synthesize are `mkMBox` and `mkFPU` --
+   multi-cycle `rg_state` FSMs behind `Server` faces -- which is plan
+   steps 2-3, deferred on separate measured grounds, not step 5c.
+2. *The call count was miscounted.* "74 direct `st.` calls" is the whole
+   of `StretchExecute.bsv`, dominated by the `execute()` *function*,
+   which takes `StretchStorage st` as a parameter -- and Piccolo does
+   exactly the same thing (`mkCPU_Stage2(verbosity, csr_regfile,
+   near_mem.dmem)`, whose `fv_out` calls the memory argument directly;
+   row "stage deps" scores that a match too). `mkEBox` itself makes
+   **four**: `st.readWordReq` x2, `st.responseReady`, `st.readWordResp`.
+
+**And the surviving justification was measured and does not hold.**
+README item 9's real argument for splitting is elaboration cost: it
+"splits the design across compilation units so no single rule elaborates
+everything." Item 9 already records two *disproven* cost hypotheses
+(replication; the FP datapath). Measured 2026-09-07 on a clean tree,
+this is the third:
+
+| | cost | paid |
+|---|---|---|
+| all `.bo` compiles + `mkStretchCore` elaboration + testbench | 139s wall / 117s user | once per clean tree |
+| `mkStretchCore.cxx` (5.9 MB generated C++) -> `.o` | ~10s | once per clean tree |
+| per-testbench elaborate, core cached | **0.73s** | x66 program runs |
+| per-testbench link, core `.o` cached | **1.29s** | x66 program runs |
+
+Measured end to end rather than inferred, because the inference was
+wrong: `run_tests.sh` on a WARM tree is **228.77s wall (3.81 min)**,
+129 sections, zero failures. Its 66 `run_program.sh` invocations account
+for ~133s of that (66 x ~2.0s elaborate+link); the balance is Bluesim
+runtime plus the ~63 non-`bsc` sections. A COLD tree adds the ~149s
+one-time column on top, so a from-scratch suite is ~6.3 min, not 3.5.
+The recorded "~3.5 min suite" is the warm figure and is about right for
+that; it was never the cold one. (An earlier draft of this paragraph
+wrote "~2.5 min one-time against ~2.2 min of per-test work -- which is
+where the recorded ~3.5 min comes from". 2.5 + 2.2 = 4.7, not 3.5;
+that sentence claimed a re-derivation it had not done, which is the
+same species of error as the ones this section exists to correct.)
+
+None of that changes the verdict, and it sharpens it: the one-time
+column is ~40% of a cold run and the refactor could shave only part of
+its elaboration half. The `(* synthesize *)` boundary on `mkStretchCore`
+(item 10) already captured essentially all of the available win: it is
+what makes the per-testbench elaboration 0.73s instead of ~120s. A
+second boundary at `mkEBox` could shave only a fraction of the
+elaboration half of a one-time 2.5 min, in exchange for a structure
+further from the reference. **Not worth doing, and not done.**
+
+A measurement trap worth recording: the *first* testbench link after a
+clean tree takes 11.7s, because that is when `mkStretchCore.cxx` gets
+compiled. Every link after it takes 1.29s and does not rebuild
+`mkStretchCore.o`. Timing one link off a fresh tree and multiplying by
+66 overstates the suite's link cost by ~9x -- it was very nearly the
+number this section was going to be written around.
+
+**What is still genuinely open** is BOTH differing rows, and withdrawing
+the boundary plan closes neither.
+
+*`stage body`* -- `execute()` at 1679 lines vs Stage2's 310 -- is
+untouched by anything measured here; shortening it is a decomposition
+problem, not a synthesis-boundary one. No work is scheduled against it
+and none should be until there is a reason beyond the line count.
+
+*`expensive datapath`* -- the multi-cycle boxes. That stays
+deferred for FP add/multiply on the 2026-09-04 grounds. It becomes live
+the moment `D/` is transcribed, because an unrolled combinational
+48-place divide is a different proposition from a 48x48 multiply -- and
+the Piccolo-idiomatic answer there is a small divide box (one
+`(* synthesize *)` multi-cycle FSM behind a `Server`), NOT a wholesale
+E-box refactor. Those two were conflated; they are separate pieces of
+work and only the second one is justified.
 
 **Not a gap:** the FBox/MBox item. Piccolo's boxes really are multi-cycle
 synthesized FSMs, so the idiom is confirmed -- but the 2026-09-04
@@ -1010,9 +1106,13 @@ already models FP as multi-cycle via E-box TIMING budgets, and the FP
 datapath was disproven as the elaboration cost). Restating, not
 reopening.
 
-**Not measured here:** build and suite times. The "~117s core, ~3.5 min
-suite" figures elsewhere in this document are the 2026-09-04
-measurement and were not re-taken for this audit.
+**Measured after all.** The line that stood here said build and suite
+times "were not re-taken for this audit." They have been -- see the
+table above. The 2026-09-04 figures hold up: 139s wall for a clean
+build of everything (the old "~117s core" is exactly the user-time
+figure, 117.40s), and the suite's shape is one-time-heavy, not
+per-test-heavy. Nothing added since 2026-09-04 (SRD, SLO, the whole
+F209-F211 block) moved the elaboration cost measurably.
 
 ## 2. Where the current model stands
 

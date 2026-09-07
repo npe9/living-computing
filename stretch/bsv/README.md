@@ -534,11 +534,26 @@ of these).
    in plan §1c.) That restructure is the real fix --
    and it doubles as the cycle-accuracy goal, since the real 7030 E-box
    *is* multi-cycle serial (SAU) and parallel (PAU) units (plan item 5).
-   It splits the design across compilation units so no single rule
-   elaborates everything. It is a fundamental rewrite of
-   `StretchCore`/`StretchExecute`, not a local patch. The simulation
-   itself is milliseconds; it is all elaboration + codegen + link --
-   which is why builds run in the background here.
+   The "it splits the design across compilation units so no single rule
+   elaborates everything" argument that stood here is **hypothesis C,
+   and it is also disproven** (measured 2026-09-07, plan 1c-audit): the
+   `(* synthesize *)` boundary of item 10 already captured that win, and
+   the per-testbench elaboration behind it is **0.73s**. A clean tree
+   costs 139s wall / 117s user once, then ~2s per testbench (0.73s
+   elaborate + 1.29s link). Whole suite measured the same day: 228.77s
+   wall on a warm tree (129 sections, zero failures), ~6.3 min from
+   cold. A second boundary at `mkEBox` would shave a
+   fraction of a one-time 2.5 min and is not worth doing -- and by the
+   audit's own table it would move the model AWAY from Piccolo, whose
+   stage modules carry no `(* synthesize *)` either. So the remaining
+   case for the restructure is cycle-accuracy alone, not build time, and
+   it narrows to the multi-cycle-box half: live for `D/`, deferred for
+   the rest. The full version of it would be a fundamental rewrite of
+   `StretchCore`/`StretchExecute`, not a local patch -- which, with no
+   build-time case left, is a further reason to take only the piece
+   that has a reason. The simulation itself is milliseconds; it is all
+   elaboration + codegen + link -- which is why builds run in the
+   background here.
 10. **The fix that worked: `(* synthesize *)` on `mkStretchCore`
    (2026-09-04, plan §1c step 5a).** After step 4 made the core
    rule-based, the testbench's `run` rule became trivial (`step()` is
@@ -547,7 +562,13 @@ of these).
    ONE compilation unit built once per suite run and linked by every
    testbench: ~117s for the core, then ~0s elaborate + ~10s link per
    testbench, versus ~120s each before (the suite: ~12 min -> ~3.5
-   min). Two constraints the boundary imposes on testbenches: no rule
+   min). Re-measured 2026-09-07 and refined: the per-testbench
+   elaborate is 0.73s and the link is **1.29s**, not ~10s. The ~10s is
+   real but is paid ONCE -- it is the first link after a clean tree
+   compiling `simbuild/mkStretchCore.cxx` (5.9 MB of generated C++)
+   into a `.o` that every later link reuses untouched. Time one link on
+   a fresh tree and multiply by 66 and you overstate the suite's link
+   cost about ninefold. Two constraints the boundary imposes on testbenches: no rule
    may call `core.setPC` together with a `core.mem.*` method (KPNS
    #29), and the exported bus-channel methods (`laReq`, `fetchReq`,
    ...) are assumed callable in any clock, so the every-clock core
