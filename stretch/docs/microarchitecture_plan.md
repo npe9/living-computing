@@ -523,14 +523,27 @@ feature gets a discriminating test proven by a reverted injection.
 
 ### 1c. Idiomatic Bluespec rewrite plan (mandatory -- AGENTS.md)
 
-The model is currently one ~1450-line combinational `execute()` (the
-whole E-box) inlined into a single monolithic `StretchCore.step()`
-rule. It must be rewritten to the structure of Bluespec's own RISC-V
-cores (Piccolo/Flute): separate pipeline-stage modules through FIFOs,
-expensive datapath in multi-cycle "box" sub-modules, off-pipe paths as
-separate rules. Reference cores are studied (bsv/README.md item 9). The
-correctness oracle throughout is the existing regression suite: every
-step keeps it green (behavior unchanged) and is a committed milestone.
+The model was one ~1450-line combinational `execute()` (the whole
+E-box) inlined into a single monolithic `StretchCore.step()` rule. It
+had to be rewritten to the structure of Bluespec's own RISC-V cores
+(Piccolo/Flute): separate pipeline-stage modules, expensive datapath in
+multi-cycle "box" sub-modules, off-pipe paths as separate rules.
+Reference cores are studied (bsv/README.md item 9). The correctness
+oracle throughout is the existing regression suite: every step keeps it
+green (behavior unchanged) and is a committed milestone.
+
+**Correction (2026-09-07), from reading Piccolo's own source rather
+than describing it from memory.** Earlier revisions of this section and
+of README item 9 said the target was "separate pipeline-stage modules
+communicating through FIFOs". That is NOT Piccolo's idiom and the
+wording was wrong. In `src_Core/CPU/CPU.bsv`, stages hand off through
+combinational `.out` bundles and `enq`/`deq` methods inside one
+`rl_pipe` rule -- `stage3.enq(stage2.out.data_to_stage3); stage2.deq;`
+-- and the only FIFOs are at the edges: `f_reset_reqs`/`f_reset_rsps`,
+the GDB `f_run_halt_*`/`f_gpr_*` pairs, and `f_trace_data`. Nothing
+between stages. Anyone reading the old wording would have refactored
+the model AWAY from the reference. See the audit at the end of this
+section.
 
 Staged, each step green and committed:
 
@@ -560,8 +573,8 @@ Staged, each step green and committed:
    multiply/divide), each a singleton module.
 4. **Split `step()` into per-stage rules.** Replace the one giant
    method with an I-box (fetch/decode/prepare/index) rule, look-ahead
-   rules, and the E-box interaction, communicating through FIFOs /
-   registers -- the `rl_pipe` + off-pipe-rules shape. **Done** (suite
+   rules, and the E-box interaction, communicating through registers
+   -- the `rl_pipe` + off-pipe-rules shape. **Done** (suite
    green, every CYCLES<= bound unchanged). How the harness contract
    was kept: `step()` is now an `Action` that sends a `tick` pulse and
    every core rule is gated on it, so one call is still exactly one
@@ -663,7 +676,7 @@ reserve modules for genuinely multi-cycle units. So the REAL remaining
 "weird Verilog" for Stretch is the monolithic `step()` method itself:
 one giant rule doing fetch + look-ahead + execute + I/O. The
 highest-value idiomatic work is therefore steps 4-5 (split `step()`
-into per-stage RULES, then STAGE MODULES with FIFO/register hand-off,
+into per-stage RULES, then STAGE MODULES with register hand-off,
 the `rl_pipe` + off-pipe-rules shape), not step 2. Step 1 (E-box as a
 module) still stands as the foundation; steps 2-3 (multi-cycle boxes)
 become an OPTIONAL cycle-accuracy refinement, done only if/when a
@@ -700,6 +713,52 @@ and the CE manuals `R23-9732_Manual04_7101_CPU_Jan63.pdf` (section 3:
 flow, block and timing charts) and `R23-9694/9695` (CE programming
 introduction). Only Buchholz and the two Performance Characteristics
 volumes have text layers; the rest are read as page images.
+
+### 1c-audit. Measured against Piccolo, 2026-09-07
+
+Asked directly: "is the structure still wrong?" Answer: **no, not in the
+way README item 9 meant it** -- with one genuine gap left. This is a
+point-by-point measurement, not a recollection. Piccolo numbers are from
+`raw.githubusercontent.com/bluespec/Piccolo/master/src_Core/CPU/`.
+
+| | Piccolo | Stretch today | |
+|---|---|---|---|
+| `(* synthesize *)` | `mkCPU` only; `mkCPU_Stage1/2/3` have none | `mkStretchCore` only; `mkInstrBuffers`, `mkLookAhead`, `mkEBox` have none | match |
+| stage hand-off | combinational `.out` bundles + `enq`/`deq` in `rl_pipe` | combinational method calls + `mkReg`/`mkCReg(2)`/`mkConfigReg` | match |
+| FIFOs between stages | **none** | none | match |
+| FIFOs at edges | reset, GDB (`f_gpr_*`, `f_run_halt_*`), `f_trace_data` | none yet (no debug/trace edges exist) | n/a |
+| stage deps | module arguments (`mkCPU_Stage2(verbosity, csr_regfile, near_mem.dmem)`) | module arguments (`mkEBox #(StretchStorage st, StretchIO io)`) | match |
+| rule shape | one `rl_pipe` + off-pipe rules (`rl_trap`, `rl_stage1_interrupt`, FENCE/WFI) | 9 rules: `rl_clock`/`rl_la_fetch`/`rl_ic_controls` + 6 mutually-exclusive decision arms, largest `rl_prepare` 122 lines | match |
+| stage body | combinational `fv_out`: Stage1 75 lines, **Stage2 310**, Stage3 41 | `execute()` **1679 lines** (StretchExecute.bsv:412) | **differs, 5.4x** |
+| expensive datapath | `mkMBox` and `mkFPU` ARE `(* synthesize *)`, multi-cycle `rg_state` FSMs behind `Server` req/rsp | `fpAddDouble` etc. are plain combinational functions; multi-cycle-ness lives in TIMING as E-box budgets | **differs, by prior decision** |
+
+**What this changes.** The plan and README item 9 both said the target
+was "stage modules communicating through FIFOs". Piccolo does not do
+that; it hand-offs combinationally and reserves FIFOs for the reset,
+debug and trace edges (and for the `Server` faces of its boxes). Both
+lines are corrected above. Anyone building to the old wording would have
+inserted FIFOs Piccolo does not have.
+
+**The one real gap.** README item 9's critique had two halves. The
+monolithic-RULE half is fixed (9 rules, largest 122 lines). The giant
+combinational-FUNCTION half is not: `execute()` is 1679 lines against
+Piccolo's largest stage function at 310, and it makes 74 direct `st.`
+calls into storage. Those direct calls -- not the line count -- are what
+stop `mkEBox` from carrying its own `(* synthesize *)`, exactly as step
+5c already noted: it would have to route storage through request/
+response methods first. That is the concrete, Piccolo-grounded next
+move, and it is the only one.
+
+**Not a gap:** the FBox/MBox item. Piccolo's boxes really are multi-cycle
+synthesized FSMs, so the idiom is confirmed -- but the 2026-09-04
+reassessment above stands on its own two measured grounds (Stretch
+already models FP as multi-cycle via E-box TIMING budgets, and the FP
+datapath was disproven as the elaboration cost). Restating, not
+reopening.
+
+**Not measured here:** build and suite times. The "~117s core, ~3.5 min
+suite" figures elsewhere in this document are the 2026-09-04
+measurement and were not re-taken for this audit.
 
 ## 2. Where the current model stands
 

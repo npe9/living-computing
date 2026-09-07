@@ -521,10 +521,17 @@ of these).
    it. The user's read was right about the STRUCTURE though -- this is
    "weird Verilog, not Bluespec": one monolithic combinational `execute`
    in one rule, rather than the idiomatic Bluespec CPU (Piccolo/Flute):
-   **separate pipeline-stage MODULES communicating through FIFOs, with a
-   small orchestration rule, and the expensive datapath (FP, multiply,
-   divide) as MULTI-CYCLE stateful sub-modules ("boxes") rather than
-   giant combinational functions.** That restructure is the real fix --
+   **separate pipeline-stage MODULES with a small orchestration rule,
+   and the expensive datapath (FP, multiply, divide) as MULTI-CYCLE
+   stateful sub-modules ("boxes") rather than giant combinational
+   functions.** (This item originally said the stages communicate
+   "through FIFOs". Corrected 2026-09-07 after actually reading
+   Piccolo's `CPU.bsv` instead of describing it from memory: its stages
+   hand off through combinational `.out` bundles and `enq`/`deq` inside
+   one `rl_pipe` rule, and its only FIFOs are at the reset, GDB and
+   trace edges -- none between stages. Building to the old wording
+   would have moved this model AWAY from the reference. See the audit
+   in plan §1c.) That restructure is the real fix --
    and it doubles as the cycle-accuracy goal, since the real 7030 E-box
    *is* multi-cycle serial (SAU) and parallel (PAU) units (plan item 5).
    It splits the design across compilation units so no single rule
