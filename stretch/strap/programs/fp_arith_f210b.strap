@@ -1,0 +1,94 @@
+! Floating-point diagnostic jb_af1c, routine F210 "STORE ROUNDED TEST
+! ROUTINE", section B "TEST UNCHANGED REGISTERS", sub-tests B1-B2
+! (docs/jb_af1c_floating-point.pdf p.111, octal 016064.00-016107.40,
+! the routine's own exit "BD,$+1.0").
+!
+! The oracle for one sentence of the manual (p.96): "The entire
+! accumulator and its sign byte register remain unchanged throughout
+! the operation unless used as the effective address." Nothing in
+! F210A checks it -- every sub-test there reads ROS, never the
+! accumulator -- and the model satisfies it only by not writing them,
+! which is the kind of thing that stays true by accident until someone
+! adds a write.
+!
+! Same shape as F209C, applied to SRD instead of D+MG. Each sub-test
+! sets all three registers to a known pattern, runs one SRD(U), and
+! then asks three separate questions:
+!
+!   B1  C0000 zeroes the accumulator left and right and CM0000 the
+!       sign byte; after SRD(U) ROS, CT0101 checks L0-63 and R0-63 are
+!       still zero and CT0011 checks SB0-7.
+!   B2  C1111/CM1111 set all three to ones; CT1010, CT1010 and CT1100
+!       check they are still ones.
+!
+! B2 is the stronger of the two, for the same reason F209C2 was: an
+! all-ones accumulator has EF = 1, so the flagged path runs, and an
+! all-ones sign byte means the sign and all three flag bits are set --
+! so a model that wrote back any part of what it computed would be
+! caught. B1's zeros would survive several kinds of wrong write.
+!
+! Note that ROS itself is never checked here. These six questions are
+! about what SRD did NOT touch, not about what it stored; F210A
+! already covered the result.
+!
+! FSR2 is the listing's own label and sits at its real address,
+! 016064.00 -- the routine's exit branches back to it.
+!
+! ROS (022355) is the routine's scratch word, not a pool constant.
+! Framework substitutes as everywhere else in this series: SERS (octal
+! 1304) -> FAIL halt, SEN (octal 1310) -> scratch. Constants from the
+! pool p.176. PASS sits at 016107.40, on the routine's exit; the four
+! rows after it (BD,$+1.0 / B,FSR2 / SIC,SENO+.32 / B,SSW) are the
+! SSIP return and are not transcribed. F210C "ACCUMULATOR FLAGS TO
+! MEMORY FLAGS" begins at 016111.40 with label FSR3.
+!
+! Instructions: C0000, CM0000, C1111, CM1111, SRD(U), CT0101, CT0011,
+! CT1010, CT1100, SIC, B, BRGZ.
+! verify_fp_arith_f210b_listing.py checks every word bit-for-bit.
+
+! -- SSIP framework substitutes --
+        SLC, (8)1304.0
+SERS    BEW, $
+        SLC, (8)1310.0
+SEN     DD(BU,64,8), 0
+
+! -- the routine's scratch word --
+        SLC, (8)22355.0
+ROS     DD(BU,64,8), 0
+
+! -- constants (pool p.176) --
+        SLC, (8)022005.0
+FPK0    DD(BU,64,8), (8)0000000000000000000000
+FPK1    DD(BU,64,8), (8)1777777777777777777777
+
+! -- code (verbatim, at the listing's addresses) --
+        SLC, (8)16064.0
+FSR2    C0000(BU,64), FPK0, 64                 ! F210B1: 0 s remain 0 s
+        C0000(BU,64), FPK0
+        CM0000(BU,8), 10.0
+        SRD(U), ROS
+        CT0101(BU,64), FPK0, 64                ! B1A: does L0-63 remain + 0
+        SIC, SEN
+        BRGZ, SERS
+        CT0101(BU,64), FPK0                    ! B1B: does R0-63 remain + 0
+        SIC, SEN
+        BRGZ, SERS
+        CT0011(BU,8), 10.0                     ! B1C: does SB0-7 remain + 0
+        SIC, SEN
+        BRGZ, SERS
+        B, $+.32                               ! F210B2: 1 s remain 1 s
+        C1111(BU,64), FPK1, 64
+        C1111(BU,64), FPK1
+        CM1111(BU,8), 10.0
+        SRD(U), ROS
+        CT1010(BU,64), FPK1, 64                ! B2A: does L0-63 remain + 1 s
+        SIC, SEN
+        BRGZ, SERS
+        CT1010(BU,64), FPK1                    ! B2B: does R0-63 remain + 1 s
+        SIC, SEN
+        BRGZ, SERS
+        CT1100(BU,8), 10.0                     ! B2C: does SB0-7 remain + 1 s
+        SIC, SEN
+        BRGZ, SERS
+PASS    BEW, $                                 ! 016107.40: the routine's exit ("BD,$+1.0")
+        END, FSR2

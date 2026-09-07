@@ -1,0 +1,87 @@
+! Floating-point diagnostic jb_af1c, routine F210 "STORE ROUNDED TEST
+! ROUTINE", sub-test A8 -- "TEST NORMALIZATION PROCESS"
+! (docs/jb_af1c_floating-point.pdf p.111, octal 016054.40-016062.00,
+! the routine's own exit "BD,$+1.0"). Eight rows, and it closes F210A.
+!
+! The first UNFLAGGED SRD(N): the one sub-test in the whole routine
+! where SRD actually normalizes. A6 and A7 were SRD(N) too, but in the
+! XFP/XFN ranges where normalization is suppressed, so the shift never
+! ran. Here it runs, and it runs eleven places:
+!
+!   FK47 is exponent +50, fraction 000fffffffff -- eleven leading
+!   zeros. C0011 drops FK22's all-ones fraction into the low half, so
+!   the 96-bit fraction is 000fffffffff_ffffffffffff.
+!   SRD(N) rounds: the +1 at IBM 60 carries out of the low half and
+!   the kept 48 bits become 001000000000, with no overflow.
+!   Normalizing that shifts left ELEVEN places to 800000000000 and
+!   takes the exponent from +50 to +39.
+!
+!   Expected FK52 = exponent +39, fraction 800000000000.
+!
+! So A8 pins three things nothing before it touches: that the shift
+! happens at all on the unflagged path, that its distance is counted
+! from the ROUNDED sum rather than the original fraction (the original
+! has eleven leading zeros only after the rounding carry lands), and
+! that the exponent is adjusted by the shift.
+!
+! The manual adds "Low-order zeros are always supplied in the case of
+! the left shift. Noisy mode does not affect this operation" (p.96) --
+! the reason the model normalizes with noisy False whatever NM says.
+! A8 cannot check that clause, though: its shifted-in bits are all
+! zero either way here, because the rounded sum ends in zeros.
+!
+! ROS (022355) is the routine's scratch word, not a pool constant.
+! Framework substitutes as everywhere else in this series: SERS (octal
+! 1304) -> FAIL halt, SEN (octal 1310) -> scratch. Constants from the
+! pool p.178. PASS sits at 016062.00, on the routine's exit; the four
+! rows after it (BD,$+1.0 / B,FSR1 / SIC,SENO+.32 / B,SSW) are the
+! SSIP return and are not transcribed. F210B "TEST UNCHANGED
+! REGISTERS" begins at 016064.00 with label FSR2.
+!
+! Instructions: B, DL(U), C0011, SRD(N), L, CT0110, SIC, BRGZ.
+! verify_fp_arith_f210a8_listing.py checks every word bit-for-bit.
+!
+! Observed: passed on the first run, with the pre-computed arithmetic
+! matching FK52 exactly. An injection confirms it is the sole guard
+! for SRD's unflagged normalization: forcing fpNormalize96Wide's mode
+! to False -- so the unflagged path never shifts, whatever (N) says --
+! halts A8 with SIC storing 016062.00, right after its BRGZ, while
+! F210A1-A2, F210A3-A4, F210A5 and F210A6-A7 all stay green.
+!
+! That A6-A7 survives it is the point: they are SRD(N) too, but
+! flagged, so their normalization was already suppressed and turning
+! it off changes nothing. A8 is the only sub-test in F210 where the
+! shift actually runs.
+
+! -- SSIP framework substitutes --
+        SLC, (8)1304.0
+SERS    BEW, $
+        SLC, (8)1310.0
+SEN     DD(BU,64,8), 0
+
+! -- the routine's scratch word --
+        SLC, (8)22355.0
+ROS     DD(BU,64,8), 0
+
+! -- constants (pool p.178) --
+        SLC, (8)022170.0
+FK22    DD(BU,64,8), (8)0400177777777777777760
+        SLC, (8)022221.0
+FK47    DD(BU,64,8), (8)0031000017777777777760
+        SLC, (8)022226.0
+FK52    DD(BU,64,8), (8)0023500000000000000000
+
+! The listing prints no label at 016054.40 -- ENTRY is ours, needed
+! only as the END operand.
+! -- code (verbatim, at the listing's addresses) --
+        SLC, (8)16054.40
+ENTRY   B, $+.32                               ! F210A8: test normalization process
+        DL(U), FK47
+        C0011(BU,48), FK22+.12, 20
+        SRD(N), ROS
+        L(BU), FK52
+        CT0110(BU,60), ROS, 4                  ! test result exponent and fraction
+        SIC, SEN
+        BRGZ, SERS
+PASS    BEW, $                                 ! 016062.00: the routine's exit ("BD,$+1.0")
+        END, ENTRY

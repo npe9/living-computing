@@ -650,6 +650,33 @@ run "FP store rounded, normalization suppressed (jb_af1c F210A6-A7 on the model)
     "PC=$(python3 -c 'from strap_asm import assemble; print(assemble(open("programs/fp_arith_f210a6_7.strap").read()).symtab["PASS"]//32)')" \
     "SEN:712=0"
 
+# F210A8 "TEST NORMALIZATION PROCESS" closes F210A, and is the one
+# sub-test in the routine where SRD actually normalizes: FK47
+# (exponent +50, fraction 000fffffffff) with FK22's all-ones low half
+# rounds to 001000000000, which shifts ELEVEN places left to
+# 800000000000 and takes the exponent to +39 -- exactly FK52. Forcing
+# the unflagged path never to normalize halts it at 016062.00 with
+# A1-A7 green; A6/A7 survive because they are flagged, where the
+# normalization was already suppressed.
+run "FP store rounded, normalization process (jb_af1c F210A8, encoding)" python3 verify_fp_arith_f210a8_listing.py
+run "FP store rounded, normalization process (jb_af1c F210A8 on the model)" ./run_program.sh programs/fp_arith_f210a8.strap StretchFpAddDblMgFTb \
+    "PC=$(python3 -c 'from strap_asm import assemble; print(assemble(open("programs/fp_arith_f210a8.strap").read()).symtab["PASS"]//32)')" \
+    "SEN:712=0"
+
+# F210B "TEST UNCHANGED REGISTERS" is the oracle for one sentence of
+# p.96: "the entire accumulator and its sign byte register remain
+# unchanged throughout the operation". Nothing in F210A checks it --
+# every sub-test there reads ROS, never the accumulator -- and the
+# model satisfies it only by not writing them. B1 sets all three to
+# zero and B2 to ones, each running one SRD(U) and then asking three
+# separate questions (L0-63, R0-63, SB0-7). B2 is the stronger: an
+# all-ones accumulator has EF=1 so the flagged path runs, and the sign
+# byte's sign and all three flag bits are set.
+run "FP store rounded, unchanged registers (jb_af1c F210B, encoding)" python3 verify_fp_arith_f210b_listing.py
+run "FP store rounded, unchanged registers (jb_af1c F210B on the model)" ./run_program.sh programs/fp_arith_f210b.strap StretchFpAddDblMgFTb \
+    "PC=$(python3 -c 'from strap_asm import assemble; print(assemble(open("programs/fp_arith_f210b.strap").read()).symtab["PASS"]//32)')" \
+    "SEN:712=0"
+
 # -- 1j. Store-close-to-fetch: store a word then immediately reload it;
 # the load must read the new value, not the stale one. The hazard the FP
 # sign-modifier codesign exposed; fixed by tracking each E-box level's
