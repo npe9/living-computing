@@ -542,6 +542,17 @@ run "FP add double magnitude unchanged regs (jb_af1c F209C1-C2 on the model)" ./
     "PC=$(python3 -c 'from strap_asm import assemble; print(assemble(open("programs/fp_arith_f209c.strap").read()).symtab["PASS"]//32)')" \
     "SEN:712=0"
 
+# jb_af1c F209D1-D5 (pp.106-107): D+MG's arithmetic result indicators
+# RLZ, RZ, RGZ and RN. D1 and D2 load the accumulator NEGATIVE with
+# DLN, and D+MG assumes it positive for the addition -- so the sign
+# has to be restored before the INDICATORS are set, not merely before
+# the sign byte is written. Restoring it only at the byte write leaves
+# F209C passing and halts at D1's BZRLZ (SIC stores 015620.00).
+run "FP add double magnitude indicators (jb_af1c F209D1-D5, encoding)" python3 verify_fp_arith_f209d1_5_listing.py
+run "FP add double magnitude indicators (jb_af1c F209D1-D5 on the model)" ./run_program.sh programs/fp_arith_f209d1_5.strap StretchFpAddDblMgFTb \
+    "PC=$(python3 -c 'from strap_asm import assemble; print(assemble(open("programs/fp_arith_f209d1_5.strap").read()).symtab["PASS"]//32)')" \
+    "SEN:712=0"
+
 # -- 1j. Store-close-to-fetch: store a word then immediately reload it;
 # the load must read the new value, not the stale one. The hazard the FP
 # sign-modifier codesign exposed; fixed by tracking each E-box level's

@@ -457,8 +457,23 @@ hand vectors alone. "Enables" notes the dependency chain.
    C2's accumulator is all ones, so EF = 1 and the add takes the
    flagged path -- which makes it a check of what "hand back the
    operand whole" may touch in the magnitude direction too.
-   Next: F209D ("TESTS OF INDICATORS", D1-D8) in diagnostic order,
-   then F209E -- the one block that covers D+MG's forced zero and the
+   jb_af1c F209D1-D5 (pp.106-107) covers D+MG's arithmetic result
+   indicators -- RLZ, RZ, RGZ, RN -- one SIC/branch pair per question.
+   D1 and D2 pin an ordering nothing before them could: their
+   accumulators are loaded NEGATIVE with DLN, and D+MG assumes the
+   accumulator positive for the addition, so the sign must be restored
+   before the INDICATORS are set, not merely before the sign byte is
+   written. Restoring it only at the byte write leaves F209C -- which
+   checks all eight sign byte bits -- passing, and halts at D1's first
+   question, BZRLZ. The byte is correct in that state; only an
+   indicator test can see it.
+   Transcribed as printed: D1's third question is BRGZ (1304.35 42)
+   where its comment says "error if RZ on", and D2 asks that question
+   with BRZ (1304.34 C2). The encodings distinguish them, so it is the
+   listing's own inconsistency; D1 asks about RGZ twice and never
+   about RZ.
+   Next: F209D6-D9 (the Lost Significance half, from 015652.00), then
+   F209E -- still the one block that covers D+MG's forced zero and the
    one that should settle which exponent it keeps. Then SRD. Still
    open in double
    precision: D+MG, D-, SRD, SLO, D*, D/, LFT -- the first real double-precision

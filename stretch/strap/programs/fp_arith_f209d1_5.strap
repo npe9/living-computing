@@ -1,0 +1,130 @@
+! Floating-point diagnostic jb_af1c, routine F209D "TESTS OF
+! INDICATORS" for ADD DOUBLE TO MAGNITUDE, sub-tests D1-D5
+! (docs/jb_af1c_floating-point.pdf pp.106-107, octal
+! 015614.40-015652.00, where F209D6 begins): the four arithmetic
+! result indicators -- RLZ, RZ, RGZ and RN.
+!
+! Each sub-test runs one D+MG and then asks after every indicator in
+! turn, one SIC/branch pair per question, the branch going to the
+! error halt when the answer is wrong:
+!
+!   D1  RLZ and RN on   DLN accumulator (FPK31 with FPK37's fraction
+!                       in its low half) + FPK39
+!   D2  RLZ and RN on   DLN FPK37 + FPK38, low half left zero
+!   D3  RZ on           an all-ones right half from C1111, then DL(U)
+!                       FPK0 + D+MG(U) FPK0 -- a zero result
+!   D4  RGZ on          DL(U) FPK31 + FPK32
+!   D5  RGZ on          DL(U) FPK37 + FPK38
+!
+! D1 and D2 are the ones that bear on the model. Their accumulators
+! are loaded NEGATIVE with DLN, and D+MG assumes the accumulator
+! positive for the addition -- so a result whose indicators were fed
+! the addition's sign would read RGZ, not RLZ and RN. The sign has to
+! be restored BEFORE the indicators are set, not merely before the
+! sign byte is written. That ordering is what these two check.
+!
+! Transcribed as printed: D1's third question is BRGZ where its
+! comment says "error if RZ on", and D2 asks the same question with
+! BRZ. The encodings are unambiguous -- 1304.35 42 against
+! 1304.34 C2 -- so this is the listing's own inconsistency, not a
+! transcription slip. D1 therefore asks about RGZ twice and never
+! about RZ.
+!
+! Framework substitutes as everywhere else in this series: SERS (octal
+! 1304) -> FAIL halt, SEN (octal 1310) -> scratch. Constants from the
+! pool p.176. D6-D9, the Lost Significance half, are not transcribed
+! here; PASS sits exactly where D6 begins.
+!
+! Instructions: B, DL(U), DLN(U), C0011 into the accumulator at offset
+! 20, C1111, D+MG(U), SIC, and the eight indicator branches
+! BZRLZ/BRLZ, BZRZ/BRZ, BZRGZ/BRGZ, BZRN/BRN.
+! verify_fp_arith_f209d1_5_listing.py checks every word bit-for-bit.
+!
+! Observed: all five passed on the first run, and D1 pins an ordering
+! that nothing before it could. Restoring the accumulator's sign only
+! where the sign BYTE is written -- so the byte comes out right but
+! the result indicators are fed the addition's sign -- leaves F209C
+! passing and halts at D1's first question, BZRLZ (SIC stores
+! 015620.00). F209C checks all eight sign byte bits and still cannot
+! see this, because the byte is correct; only an indicator test can.
+
+! -- SSIP framework substitutes --
+        SLC, (8)1304.0
+SERS    BEW, $
+        SLC, (8)1310.0
+SEN     DD(BU,64,8), 0
+
+! -- constants (pool p.176) --
+
+        SLC, (8)22005.0
+FPK0    DD(BU,64,8), (8)0000000000000000000000
+FPK1    DD(BU,64,8), (8)1777777777777777777777
+        SLC, (8)22044.0
+FPK31   DD(BU,64,8), (8)0031000000000000000000
+FPK32   DD(BU,64,8), (8)0001177777777777777760
+        SLC, (8)22052.0
+FPK37   DD(BU,64,8), (8)0031125252525252525240
+FPK38   DD(BU,64,8), (8)0031052525252525252520
+FPK39   DD(BU,64,8), (8)0001052525252525252520
+
+! -- code (verbatim, at the listing's addresses) --
+        SLC, (8)15614.40
+FADM4   B, $+.32                 ! F209D1: RLZ and RN on
+        DLN(U), FPK31            ! L12-59 +0, LR60-107 unequal to 0
+        C0011(BU,48), FPK37+.12, 20
+        D+MG(U), FPK39
+        SIC, SEN
+        BZRLZ, SERS              ! error if RLZ off
+        SIC, SEN
+        BZRN, SERS               ! error if RN off
+        SIC, SEN
+        BRGZ, SERS               ! listing's comment says "error if RZ on"
+        SIC, SEN
+        BRGZ, SERS
+        B, $+.32                 ! F209D2: RLZ and RN on
+        DLN(U), FPK37            ! L12-59 unequal to 0, LR60-107 +0
+        D+MG(U), FPK38
+        SIC, SEN
+        BZRLZ, SERS              ! error if RLZ indicator off
+        SIC, SEN
+        BZRN, SERS               ! error if RN indicator off
+        SIC, SEN
+        BRZ, SERS                ! error if RZ indicator on
+        SIC, SEN
+        BRGZ, SERS
+        B, $+.32                 ! F209D3: RZ indicator on
+        C1111(BU,64), FPK1       ! R44-63 unequal to 0
+        DL(U), FPK0              ! L12-59 +0, LR60-107 +0
+        D+MG(U), FPK0
+        SIC, SEN
+        BZRZ, SERS               ! error if RZ indicator off
+        SIC, SEN
+        BRLZ, SERS               ! error if RLZ indicator on
+        SIC, SEN
+        BRN, SERS                ! error if RN indicator on
+        SIC, SEN
+        BRGZ, SERS
+        B, $+.32                 ! F209D4: RGZ indicator on
+        DL(U), FPK31             ! L12-59 +0, LR60-107 unequal to 0
+        D+MG(U), FPK32
+        SIC, SEN
+        BZRGZ, SERS              ! error if RGZ indicator off
+        SIC, SEN
+        BRLZ, SERS               ! error if RLZ indicator on
+        SIC, SEN
+        BRN, SERS                ! error if RN indicator on
+        SIC, SEN
+        BRZ, SERS                ! error if RZ indicator on
+        B, $+.32                 ! F209D5: RGZ indicator on
+        DL(U), FPK37             ! L12-59 unequal to 0, LR60-107 +0
+        D+MG(U), FPK38
+        SIC, SEN
+        BZRGZ, SERS              ! error if RGZ indicator off
+        SIC, SEN
+        BRLZ, SERS               ! error if RLZ indicator on
+        SIC, SEN
+        BRN, SERS                ! error if RN indicator on
+        SIC, SEN
+        BRZ, SERS                ! error if RZ indicator on
+PASS    BEW, $                   ! 015652.00: where F209D6 begins
+        END, FADM4
