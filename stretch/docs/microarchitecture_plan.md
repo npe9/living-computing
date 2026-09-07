@@ -596,7 +596,21 @@ hand vectors alone. "Enables" notes the dependency chain.
    NORMALIZATION MODIFIER" section (F210A6, from 016041.40) is the
    next candidate, and it is also the first thing that will exercise
    SRD's NORMALIZED path -- every sub-test so far is SRD(U).
-   Next: F210A6 onward (p.110-111, from 016041.40), then SLO.
+   jb_af1c F210A6-A7 (p.111), the routine's "TEST NORMALIZATION
+   MODIFIER" section, is the FIRST SRD(N) in the diagnostic -- every
+   sub-test through A5 is SRD(U), so the model's normalized path had
+   never run. A6/A7 run it in the XFP and XFN ranges, where p.96 says
+   normalization is suppressed, and their expected results FK109 and
+   FK110 are still UNNORMALIZED (four and two leading zeros). Both
+   passed first run. Honouring the modifier for flagged operands halts
+   A6 at 016047.00 with A1-A5 all green -- A1/A2 are flagged too but
+   round to a ZERO fraction, and normalizing zero shifts nothing, so
+   A6/A7 are the first flagged sub-tests whose result is nonzero AND
+   unnormalized, which is what it takes to tell the behaviours apart.
+   Note SRD's normalized path on the UNFLAGGED side is still
+   unexercised: F210A8 "TEST NORMALIZATION PROCESS" (016054.40) is
+   where that starts, and it is also still the first candidate for LC.
+   Next: F210A8 onward (p.111, from 016054.40), then SLO.
    Its prologue is FSR1 (015772.00) and F210A1 begins at SAP11
    (015775.00): DL(U) FPK26, C0011 FK40+.12 into offset 20, then
    SRD(U) ROS, L(BU) FK35, CT0110(BU,60) ROS,4 -- "error if 1 not

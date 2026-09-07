@@ -636,6 +636,20 @@ run "FP store rounded, unnormalized overflow (jb_af1c F210A5 on the model)" ./ru
     "PC=$(python3 -c 'from strap_asm import assemble; print(assemble(open("programs/fp_arith_f210a5.strap").read()).symtab["PASS"]//32)')" \
     "SEN:712=0"
 
+# F210A6-A7, the routine's "TEST NORMALIZATION MODIFIER" section and
+# the first SRD(N) in the diagnostic -- every sub-test through A5 is
+# SRD(U), so the model's normalized path had never run. In the XFP and
+# XFN ranges "normalization, if specified, is suppressed", and the
+# expected results FK109/FK110 are still unnormalized, which is what
+# makes these the oracle for that clause. Honouring the modifier for
+# flagged operands halts A6 at 016047.00 with A1-A5 green: A1/A2 are
+# flagged too but round to a ZERO fraction, and normalizing zero shifts
+# nothing.
+run "FP store rounded, normalization suppressed (jb_af1c F210A6-A7, encoding)" python3 verify_fp_arith_f210a6_7_listing.py
+run "FP store rounded, normalization suppressed (jb_af1c F210A6-A7 on the model)" ./run_program.sh programs/fp_arith_f210a6_7.strap StretchFpAddDblMgFTb \
+    "PC=$(python3 -c 'from strap_asm import assemble; print(assemble(open("programs/fp_arith_f210a6_7.strap").read()).symtab["PASS"]//32)')" \
+    "SEN:712=0"
+
 # -- 1j. Store-close-to-fetch: store a word then immediately reload it;
 # the load must read the new value, not the stale one. The hazard the FP
 # sign-modifier codesign exposed; fixed by tracking each E-box level's

@@ -1,0 +1,97 @@
+! Floating-point diagnostic jb_af1c, routine F210 "STORE ROUNDED TEST
+! ROUTINE", sub-tests A6-A7 -- the routine's "TEST NORMALIZATION
+! MODIFIER" section (docs/jb_af1c_floating-point.pdf p.111, octal
+! 016041.40-016054.40, where F210A8 "TEST NORMALIZATION PROCESS"
+! begins).
+!
+! The first SRD(N) anywhere. Every sub-test through A5 is SRD(U), so
+! until now the model's normalized path has never run. A6 and A7 run
+! it in the XFP and XFN ranges, where the manual (p.96) says
+! "Normalization, if specified, is suppressed" -- so what they check
+! is that asking for normalization changes NOTHING:
+!
+!   A6  DL(U) FK21 -- XFP +1023, high fraction 07ffffffffff, which is
+!       unnormalized (its top five bits are zero) -- then C0011 drops
+!       FK22's all-ones fraction into the low half. SRD(N) rounds: the
+!       +1 at IBM 60 carries out of the low half into the high, giving
+!       07ffffffffff + 1 = 080000000000.
+!       Expected FK109 = XFP +1023, fraction 080000000000.
+!   A7  the same shape in XFN with FK30 (1fffffffffff), expecting
+!       FK110 (200000000000).
+!
+! Both expected results are still unnormalized -- 080000000000 has
+! four leading zeros and 200000000000 has two. That is the whole
+! point. Had the (N) been honoured, the fraction would have been
+! shifted left and the exponent adjusted, and neither FK109 nor FK110
+! would match. So these two are the oracle for the "normalization is
+! suppressed in the flagged ranges" clause, which nothing before them
+! could reach.
+!
+! Note the shape difference from A1-A5: A6 and A7 ask only the CT0110
+! question and carry no BZB on the stored sign bit.
+!
+! ROS (022355) is the routine's scratch word, not a pool constant.
+! Framework substitutes as everywhere else in this series: SERS (octal
+! 1304) -> FAIL halt, SEN (octal 1310) -> scratch. Constants from the
+! pools pp.178-179. PASS sits at 016054.40, where F210A8 begins.
+!
+! Instructions: B, DL(U), C0011, SRD(N), L, CT0110, SIC, BRGZ.
+! verify_fp_arith_f210a6_7_listing.py checks every word bit-for-bit.
+!
+! Observed: both passed on the first run -- the model already
+! suppressed normalization for flagged operands, written from p.96 and
+! never executed until now. An injection confirms these two are its
+! only oracle: making the flagged branch honour the modifier (feeding
+! its kept 48 bits through fpNormalize96Wide with the specified mode)
+! halts A6 with SIC storing 016047.00, right after its BRGZ, while
+! F210A1-A2, F210A3-A4 and F210A5 all stay green.
+!
+! The reason the earlier blocks cannot see it is worth keeping: A1 and
+! A2 are flagged too, but their rounding carries all the way out and
+! leaves a ZERO fraction, and normalizing zero shifts nothing. A6 and
+! A7 are the first flagged sub-tests whose result fraction is nonzero
+! AND unnormalized, which is exactly what it takes to tell the two
+! behaviours apart.
+
+! -- SSIP framework substitutes --
+        SLC, (8)1304.0
+SERS    BEW, $
+        SLC, (8)1310.0
+SEN     DD(BU,64,8), 0
+
+! -- the routine's scratch word --
+        SLC, (8)22355.0
+ROS     DD(BU,64,8), 0
+
+! -- constants (pools pp.178-179) --
+        SLC, (8)022167.0
+FK21    DD(BU,64,8), (8)1777403777777777777760
+FK22    DD(BU,64,8), (8)0400177777777777777760
+        SLC, (8)022200.0
+FK30    DD(BU,64,8), (8)1577617777777777777760
+        SLC, (8)022316.0
+FK109   DD(BU,64,8), (8)1777404000000000000000
+FK110   DD(BU,64,8), (8)1577620000000000000000
+
+! The listing prints no label at 016041.40 -- ENTRY is ours, needed
+! only as the END operand.
+! -- code (verbatim, at the listing's addresses) --
+        SLC, (8)16041.40
+ENTRY   B, $+.32                               ! F210A6: accumulator exponent XFP range
+        DL(U), FK21                            ! test normalization modifier ignored
+        C0011(BU,48), FK22+.12, 20
+        SRD(N), ROS
+        L(BU), FK109
+        CT0110(BU,60), ROS, 4                  ! test norm mod ignored
+        SIC, SEN
+        BRGZ, SERS
+        B, $+.32                               ! F210A7: accumulator exponent XFN range
+        DL(U), FK30                            ! test normalization modifier ignored
+        C0011(BU,48), FK22+.12, 20
+        SRD(N), ROS
+        L(BU), FK110
+        CT0110(BU,60), ROS, 4                  ! test norm mod ignored
+        SIC, SEN
+        BRGZ, SERS
+PASS    BEW, $                                 ! 016054.40: where F210A8 begins
+        END, ENTRY
