@@ -67,9 +67,14 @@ FPK37   DD(BU,64,8), (8)0031125252525252525240
 FPK38   DD(BU,64,8), (8)0031052525252525252520
 FPK39   DD(BU,64,8), (8)0001052525252525252520
 
+! The listing prints NO label at this address -- ENTRY is ours, needed
+! only as the END operand. The listing's own FADM4 is at 015672.00, on
+! F209E1; FADM2 (015365.40) and FADM3 (015576.40) are real and are used
+! at their real addresses in the F209B and F209C programs.
+!
 ! -- code (verbatim, at the listing's addresses) --
         SLC, (8)15614.40
-FADM4   B, $+.32                 ! F209D1: RLZ and RN on
+ENTRY   B, $+.32                 ! F209D1: RLZ and RN on
         DLN(U), FPK31            ! L12-59 +0, LR60-107 unequal to 0
         C0011(BU,48), FPK37+.12, 20
         D+MG(U), FPK39
@@ -127,4 +132,4 @@ FADM4   B, $+.32                 ! F209D1: RLZ and RN on
         SIC, SEN
         BRZ, SERS                ! error if RZ indicator on
 PASS    BEW, $                   ! 015652.00: where F209D6 begins
-        END, FADM4
+        END, ENTRY

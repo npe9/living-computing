@@ -42,6 +42,20 @@
 ! Instructions: B, DL(U), C0011, D+MG(U), D-MG(U), SIC, and the three
 ! LS branches BLSZ, BZLS and BLS.
 ! verify_fp_arith_f209d6_9_listing.py checks every word bit-for-bit.
+!
+! Observed: all four passed on the first run, and two injections show
+! neither passes vacuously.
+!
+!   Dropping the both-zero exception -- r.ls = (res.frac == 0) &&
+!   !forcedZero -- halts D7 with SIC storing 015661.00, the address
+!   right after D7's BLS,SERS. F209D1-D5 and F208D7-D11 both stay
+!   green, so D7 is the only oracle in the suite for that clause; it
+!   had been carrying it on the strength of p.96's wording alone.
+!
+!   Setting r.ls on fpAddDouble's flagged-path return halts D9 with
+!   SIC storing 015670.00, right after D9's BLS,SERS. The flagged path
+!   never assigns r.ls today, so D9 is what pins that silence as
+!   deliberate rather than accidental.
 
 ! -- SSIP framework substitutes --
         SLC, (8)1304.0
@@ -65,9 +79,14 @@ FK35    DD(BU,64,8), (8)1777400000000000000000
         SLC, (8)022210.0
 FK38    DD(BU,64,8), (8)0777572525252525252520
 
+! The listing prints NO label at this address -- ENTRY is ours, needed
+! only as the END operand. The listing's own FADM4 is at 015672.00, on
+! F209E1; FADM2 (015365.40) and FADM3 (015576.40) are real and are used
+! at their real addresses in the F209B and F209C programs.
+!
 ! -- code (verbatim, at the listing's addresses) --
         SLC, (8)15652.0
-FADM6   B, $+.32                         ! F209D6: LS indicator on
+ENTRY   B, $+.32                         ! F209D6: LS indicator on
         BLSZ, $+.32
         DL(U), FPK31
         C0011(BU,48), FPK32+.12, 20
@@ -94,4 +113,4 @@ FADM6   B, $+.32                         ! F209D6: LS indicator on
         SIC, SEN
         BLS, SERS                        ! error if LS indicator on
 PASS    BEW, $                   ! 015670.00: the routine's exit ("BD,$+1.0")
-        END, FADM6
+        END, ENTRY
