@@ -609,6 +609,19 @@ run "FP store rounded (jb_af1c F210A1-A2 on the model)" ./run_program.sh program
     "PC=$(python3 -c 'from strap_asm import assemble; print(assemble(open("programs/fp_arith_f210a1_2.strap").read()).symtab["PASS"]//32)')" \
     "SEN:712=0"
 
+# F210A3-A4, the UNFLAGGED (N range) case A1-A2 never reach, and the
+# complement of their coverage. Injecting the rounding one place LOW
+# (IBM 59, inside the kept fraction) halts A3 at 016020.40 while A1-A2
+# stays green. Neither block sees a rounding placed one place HIGH
+# (IBM 61): A3's fraction is zero so nothing carries either way, and
+# A4's low half is all ones so everything does. Together they pin the
+# BOUNDARY -- the rounding one lands in the discarded half -- not the
+# exact bit.
+run "FP store rounded, N range (jb_af1c F210A3-A4, encoding)" python3 verify_fp_arith_f210a3_4_listing.py
+run "FP store rounded, N range (jb_af1c F210A3-A4 on the model)" ./run_program.sh programs/fp_arith_f210a3_4.strap StretchFpAddDblMgFTb \
+    "PC=$(python3 -c 'from strap_asm import assemble; print(assemble(open("programs/fp_arith_f210a3_4.strap").read()).symtab["PASS"]//32)')" \
+    "SEN:712=0"
+
 # -- 1j. Store-close-to-fetch: store a word then immediately reload it;
 # the load must read the new value, not the stale one. The hazard the FP
 # sign-modifier codesign exposed; fixed by tracking each E-box level's

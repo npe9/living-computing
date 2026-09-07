@@ -565,7 +565,23 @@ hand vectors alone. "Enables" notes the dependency chain.
    run that decides. Note that whichever way it goes, A1/A2 stay green
    -- so A3 is not redundant with them, it is the only thing that can
    settle it.
-   Next: F210A3-A4 (p.110, from 016014.00), then the rest of F210.
+   jb_af1c F210A3-A4 (p.110) answers it, and the answer is that the
+   model was right and the question above was mis-posed: both passed
+   on the first run with the rounding at IBM 60. A3's offset-68 check
+   reads what the manual implies; the reading that FPK68's low-order
+   one had to come from the rounding was simply wrong.
+   The coverage it adds is real but narrower than "pins the position".
+   Injecting the rounding one place LOW (IBM 59, inside the KEPT
+   fraction) halts A3 at 016020.40 while A1-A2 stays green -- the
+   complement of A1-A2's blindness. But rounding one place HIGH (IBM
+   61) leaves BOTH green, because for these operands any one placed
+   below IBM 60 propagates the same carry: A3's fraction is zero so
+   nothing carries either way, and A4's low half is all ones so
+   everything does. So A1-A4 together pin the BOUNDARY -- the rounding
+   one lands in the discarded half, not in the kept fraction -- and
+   nothing in the routine so far distinguishes IBM 60 from IBM 61 or
+   lower. Worth remembering if a later SRD sub-test ever disagrees.
+   Next: F210A5 onward (p.110, from 016032.00), then SLO.
    Its prologue is FSR1 (015772.00) and F210A1 begins at SAP11
    (015775.00): DL(U) FPK26, C0011 FK40+.12 into offset 20, then
    SRD(U) ROS, L(BU) FK35, CT0110(BU,60) ROS,4 -- "error if 1 not

@@ -1,0 +1,123 @@
+! Floating-point diagnostic jb_af1c, routine F210 "STORE ROUNDED TEST
+! ROUTINE", sub-tests A3-A4 (docs/jb_af1c_floating-point.pdf p.110,
+! octal 016014.00-016032.00, where F210A5 begins). Both are the
+! UNFLAGGED (N range) case, which F210A1-A2 never reach.
+!
+! A3 is the sub-test that settles where SRD rounds, and it is worth
+! saying in advance what is at stake, because A1-A2 cannot see it:
+! injecting the rounding one place low or one place high leaves them
+! both green (their fraction is 96 ones, so any +1 in the discarded
+! half carries out identically). A3 is the only thing that can tell.
+!
+!   A3  DL(U) FPK0 -- a ZERO accumulator, exponent 0, fraction 0 --
+!       then SRD(U) ROS, and the expected result is
+!       FPK68 = 0000000000000000000020, whose fraction is 1 in its
+!       LEAST significant bit, IBM 59.
+!
+! The manual (p.96) says rounding adds one "in bit position 60", and
+! IBM 60 is the top of the DISCARDED half (the kept fraction is IBM
+! 12-59). Adding 1 at IBM 60 to a zero fraction therefore stores a
+! ZERO fraction -- not the one FPK68 wants. So one of two things is
+! true, and the run decides which:
+!
+!   either SRD really rounds at IBM 59 and "bit position 60" counts
+!   from somewhere other than the accumulator bit numbering used
+!   everywhere else in this series,
+!
+!   or A3's check is not asking what it appears to. Note that A3's
+!   CT0110 uses offset 68 where A1, A2 and A4 all use offset 4 -- the
+!   only such difference in the block -- and its printed comment is
+!   "TEST MEM WORD+0.... 020" rather than the "ERROR IF 1 NOT ADDED IN
+!   BIT POS 60" the others carry.
+!
+! A4 is the ordinary carry case: DL(U) FPK67 (exponent +2, fraction 0)
+! with C0011 dropping FPK1's all-ones fraction into the low half, so
+! the rounding carries out of the discarded half and into IBM 59.
+! Expected FPK34 = exponent +2, fraction 1 -- the listing's "TEST
+! MEMORY WORD WITH EXP + +2" says the exponent is NOT adjusted, which
+! is the unnormalized rule.
+!
+! Between them A3 and A4 pin the rounding position from both sides: A4
+! shows the carry lands in IBM 59, A3 shows what a bare +1 does.
+!
+! ROS (022355) is the routine's scratch word, not a pool constant.
+! Framework substitutes as everywhere else in this series: SERS (octal
+! 1304) -> FAIL halt, SEN (octal 1310) -> scratch. Constants from the
+! pools pp.176-177. PASS sits at 016032.00, where F210A5 begins.
+!
+! Instructions: B, DL(U), C0011, SRD(U), L, CT0110, SIC, BZB, BRGZ.
+! verify_fp_arith_f210a3_4_listing.py checks every word bit-for-bit.
+!
+! Observed: both passed on the first run, with the model rounding at
+! IBM 60 as written from the manual. The conflict this header
+! anticipated did NOT materialise -- A3's offset-68 check reads what
+! the manual implies, and the earlier reading of it (that FPK68's
+! low-order one had to come from the rounding) was wrong.
+!
+! What A3-A4 does and does not pin, measured by injection:
+!
+!   no rounding at all       -> halts A3-A4 (016030.00) AND A1-A2
+!   round at IBM 59 instead  -> halts A3-A4 (016020.40, A3's own
+!                               question); A1-A2 stays GREEN
+!   round at IBM 61 instead  -> BOTH stay green
+!
+! So the honest statement is narrower than "A3 pins the position". A3
+! pins the BOUNDARY: the rounding one must land in the DISCARDED half,
+! IBM 60 or below, and not in the kept fraction at IBM 59. It does not
+! pin which bit of the discarded half, because for both of these
+! operands any one placed below IBM 60 propagates the same carry --
+! A3's fraction is zero (nothing carries either way) and A4's low half
+! is all ones (everything carries). Rounding at IBM 61, 62, ... would
+! survive the whole routine so far.
+!
+! That is still exactly the coverage A1-A2 lacked, and the two blocks
+! are complementary rather than redundant: the IBM 59 injection is
+! invisible to A1-A2 and fatal to A3.
+
+! -- SSIP framework substitutes --
+        SLC, (8)1304.0
+SERS    BEW, $
+        SLC, (8)1310.0
+SEN     DD(BU,64,8), 0
+
+! -- the routine's scratch word --
+        SLC, (8)22355.0
+ROS     DD(BU,64,8), 0
+
+! -- constants (pools pp.176-177) --
+        SLC, (8)022005.0
+FPK0    DD(BU,64,8), (8)0000000000000000000000
+FPK1    DD(BU,64,8), (8)1777777777777777777777
+        SLC, (8)022047.0
+FPK34   DD(BU,64,8), (8)0001000000000000000020
+        SLC, (8)022107.0
+FPK67   DD(BU,64,8), (8)0001000000000000000000
+FPK68   DD(BU,64,8), (8)0000000000000000000020
+
+! The listing prints no label at 016014.00 -- ENTRY is ours, needed
+! only as the END operand.
+! -- code (verbatim, at the listing's addresses) --
+        SLC, (8)16014.0
+ENTRY   B, $+.32                               ! F210A3: exponent of operand in N range
+        DL(U), FPK0
+        SRD(U), ROS                            ! adds 1 in bit position 60 of fraction
+        L(BU), FPK68
+        CT0110(BU,60), ROS, 68                 ! test mem word+0.... 020
+        SIC, SEN
+        BRGZ, SERS
+        BZB, ROS+.60, $+2.0
+        SIC, SEN
+        B, SERS
+        B, $+.32                               ! F210A4: exponent of operand in N range
+        DL(U), FPK67
+        C0011(BU,48), FPK1+.12, 20
+        SRD(U), ROS                            ! adds 1 in bit position 60 of fraction
+        L(BU), FPK34
+        CT0110(BU,60), ROS, 4                  ! test memory word with exp + +2
+        SIC, SEN
+        BRGZ, SERS
+        BZB, ROS+.60, $+2.0
+        SIC, SEN
+        B, SERS
+PASS    BEW, $                                 ! 016032.00: where F210A5 begins
+        END, ENTRY
