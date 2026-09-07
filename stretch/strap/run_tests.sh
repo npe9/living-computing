@@ -713,6 +713,17 @@ run "FP store low order (jb_af1c F211A1-A2 on the model)" ./run_program.sh progr
     "PC=$(python3 -c 'from strap_asm import assemble; print(assemble(open("programs/fp_arith_f211a1_2.strap").read()).symtab["PASS"]//32)')" \
     "SEN:712=0"
 
+# F211A3-A4 are the first UNFLAGGED SLO, and so the first exercise of
+# its headline rule: the stored exponent is the accumulator's MINUS 48.
+# A1-A2 are both flagged, where the exponent is kept unchanged, so
+# neither can see the subtraction. A3 stores FPK28's fraction at
+# 256-48=208 (FPK44) and A4 stores FPK38's at 50-48=2 (FPK39); the
+# listing's own comments say "EXP+208" and "EXPONENT++2".
+run "FP store low order, exponent minus 48 (jb_af1c F211A3-A4, encoding)" python3 verify_fp_arith_f211a3_4_listing.py
+run "FP store low order, exponent minus 48 (jb_af1c F211A3-A4 on the model)" ./run_program.sh programs/fp_arith_f211a3_4.strap StretchFpAddDblMgFTb \
+    "PC=$(python3 -c 'from strap_asm import assemble; print(assemble(open("programs/fp_arith_f211a3_4.strap").read()).symtab["PASS"]//32)')" \
+    "SEN:712=0"
+
 # -- 1j. Store-close-to-fetch: store a word then immediately reload it;
 # the load must read the new value, not the stale one. The hazard the FP
 # sign-modifier codesign exposed; fixed by tracking each E-box level's

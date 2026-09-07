@@ -661,9 +661,35 @@ hand vectors alone. "Enables" notes the dependency chain.
    what it did to the indicator.
    F210 IS NOW TRANSCRIBED END TO END, 015775.00 to 016137.40 across
    seven programs, each ending exactly where the next begins.
-   Next: SLO (STORE LOW ORDER, Ref. Manual p.97) -- decoded as
-   1001110 but with no execute arm, the same position SRD was in.
-   Then D*, LFT, *+, and D/ (which needs the multi-cycle unit).
+   SLO (STORE LOW ORDER) IMPLEMENTED, driven by jb_af1c F211 "STORE
+   LOW ORDER TEST ROUTINE" -- the second instruction this series has
+   written from its own diagnostic. Per Ref. Manual p.97 the stored
+   fraction is the accumulator's LOW half (bits 60-107) and the stored
+   exponent is the accumulator's MINUS 48; sign and flags go to
+   storage bits 60-63; the accumulator is not written. A flagged
+   accumulator exponent is kept and normalization suppressed
+   (propagated flags); an underflow of the -48 gives a GENERATED flag,
+   and p.97 is explicit that normalization then DOES occur, which is
+   why the shift precedes fpMakeExp rather than being suppressed by
+   it. p.97 lists no LC for SLO, unlike SRD.
+   SLO needed its own fpNormalize48. p.97 says "if noisy mode is also
+   specified, ONES are entered from the right during the normalization
+   shifting", where p.96 says of SRD that "noisy mode does not affect
+   this operation" -- and fpNormalize96Wide could not serve, because
+   its noisy fill lands in the low 48 bits, exactly the half SLO does
+   not have.
+   F211A1-A2 (p.113, 21 rows) are the flagged case and drove the
+   implementation. F211A3-A4 (20 rows) are the first UNFLAGGED SLO and
+   the only exercise of the -48: A3 takes FPK28 at +256 to FPK44 at
+   +208, A4 takes FPK38 at +50 to FPK39 at +2, and the listing's own
+   comments say "EXP+208" and "EXPONENT++2". Changing the subtraction
+   to 47 halts A3 at 016170.00 with A1-A2 green.
+   STILL UNEXERCISED in SLO: the normalized path, and with it the
+   noisy-mode fill that fpNormalize48 exists for, and the
+   generated-flag case where the -48 underflows. Everything so far is
+   SLO(U). F211A5 onward (016201.00) is where to look.
+   Next: F211A5 onward, then D*, LFT, *+, and D/ (which needs the
+   multi-cycle unit).
    Its prologue is FSR1 (015772.00) and F210A1 begins at SAP11
    (015775.00): DL(U) FPK26, C0011 FK40+.12 into offset 20, then
    SRD(U) ROS, L(BU) FK35, CT0110(BU,60) ROS,4 -- "error if 1 not

@@ -39,6 +39,13 @@
 !
 ! Instructions: DL(U), C0011, SLO(U), L, CT0110, SIC, BZB, BRGZ, B.
 ! verify_fp_arith_f211a3_4_listing.py checks every word bit-for-bit.
+!
+! Observed: both passed on the first run, with the arithmetic
+! pre-computed against FPK44 and FPK39 before the run. An injection
+! confirms they are the only oracle for the subtraction: changing it
+! from 48 to 47 halts A3 with SIC storing 016170.00, the address
+! right after its BRGZ, while F211A1-A2 stays green -- exactly as predicted, since
+! A1-A2 are flagged and never subtract anything.
 
 ! -- SSIP framework substitutes --
         SLC, (8)1304.0
