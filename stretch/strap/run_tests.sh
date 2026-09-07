@@ -553,6 +553,15 @@ run "FP add double magnitude indicators (jb_af1c F209D1-D5 on the model)" ./run_
     "PC=$(python3 -c 'from strap_asm import assemble; print(assemble(open("programs/fp_arith_f209d1_5.strap").read()).symtab["PASS"]//32)')" \
     "SEN:712=0"
 
+# F209D6-D9, the Lost Significance half of the same routine. D7 (zero
+# plus zero must NOT set LS) is the printed source of the exception
+# clause in the F208D5 LS fix; D9 is the first LS question put to the
+# flagged path, where fpAddDouble returns a survivor whole.
+run "FP add double magnitude LS indicator (jb_af1c F209D6-D9, encoding)" python3 verify_fp_arith_f209d6_9_listing.py
+run "FP add double magnitude LS indicator (jb_af1c F209D6-D9 on the model)" ./run_program.sh programs/fp_arith_f209d6_9.strap StretchFpAddDblMgFTb \
+    "PC=$(python3 -c 'from strap_asm import assemble; print(assemble(open("programs/fp_arith_f209d6_9.strap").read()).symtab["PASS"]//32)')" \
+    "SEN:712=0"
+
 # -- 1j. Store-close-to-fetch: store a word then immediately reload it;
 # the load must read the new value, not the stale one. The hazard the FP
 # sign-modifier codesign exposed; fixed by tracking each E-box level's

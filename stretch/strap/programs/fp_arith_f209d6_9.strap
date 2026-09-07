@@ -1,0 +1,97 @@
+! Floating-point diagnostic jb_af1c, routine F209D "TESTS OF
+! INDICATORS" for ADD DOUBLE TO MAGNITUDE, sub-tests D6-D9
+! (docs/jb_af1c_floating-point.pdf p.107, octal 015652.00-015670.00,
+! where the routine's own exit "BD,$+1.0" begins): the Lost
+! Significance indicator, the half of F209D that D1-D5 left behind.
+!
+! Each sub-test clears LS with BLSZ, runs one add, and asks once:
+!
+!   D6  LS on   DL(U) FPK31 with FPK32's fraction dropped into the low
+!               half by C0011, then D-MG(U) FPK32 -- a cancelling
+!               subtract, so the result fraction goes to zero
+!   D7  LS off  DL(U) FPK0 + D+MG(U) FPK0 -- zero plus zero
+!   D8  LS on   DL(U) FPK21 with FPK41's fraction in the low half,
+!               then D+MG(U) FPK42
+!   D9  LS off  DL(U) FK35 + D+MG(U) FK38, the flagged path (FK35 has
+!               EF=1); the listing notes "result contains propagated
+!               EF+1"
+!
+! D7 is the one that bears directly on the model. It is the printed
+! source of the exception clause in the F208D5 LS fix: a zero result
+! sets LS only when the operands were not BOTH zero. Zero plus zero
+! is a zero result whose significance was never lost, and F209D7 is
+! the listing asking exactly that. D9 is the first LS question put to
+! the flagged path, where fpAddDouble returns a survivor whole.
+!
+! Transcribed as printed: D8's header comment reads "LS INDICATOR OFF"
+! but its one question is BZLS, "error if LS ind off" -- so the test
+! requires LS ON and the header contradicts it. The encodings are
+! unambiguous (1304.15 40 is BZLS, against 1304.15 42 for BLS), so
+! this is the listing's own inconsistency, the same class as D1's
+! BRGZ-labelled-RZ. Transcribed as the encoding column reads.
+!
+! New encoding ground: BLSZ (1304.15 46 / 15653.15 46) is the first
+! branch-on-indicator in this series with both the clear and the
+! branch-on bits set. BZLS is 40 and BLS is 42, as in D1-D5's family;
+! 46 is a combination nothing before this block reached.
+!
+! Framework substitutes as everywhere else in this series: SERS (octal
+! 1304) -> FAIL halt, SEN (octal 1310) -> scratch. Constants from the
+! pools p.176. PASS sits at 015670.00, on the routine's exit.
+!
+! Instructions: B, DL(U), C0011, D+MG(U), D-MG(U), SIC, and the three
+! LS branches BLSZ, BZLS and BLS.
+! verify_fp_arith_f209d6_9_listing.py checks every word bit-for-bit.
+
+! -- SSIP framework substitutes --
+        SLC, (8)1304.0
+SERS    BEW, $
+        SLC, (8)1310.0
+SEN     DD(BU,64,8), 0
+
+! -- constants (pools p.176) --
+        SLC, (8)22005.0
+FPK0    DD(BU,64,8), (8)0000000000000000000000
+        SLC, (8)022032.0
+FPK21   DD(BU,64,8), (8)0031177777777777777767
+        SLC, (8)022044.0
+FPK31   DD(BU,64,8), (8)0031000000000000000000
+FPK32   DD(BU,64,8), (8)0001177777777777777760
+        SLC, (8)022056.0
+FPK41   DD(BU,64,8), (8)0001040000000000000000
+FPK42   DD(BU,64,8), (8)0001460000000000000000
+        SLC, (8)022205.0
+FK35    DD(BU,64,8), (8)1777400000000000000000
+        SLC, (8)022210.0
+FK38    DD(BU,64,8), (8)0777572525252525252520
+
+! -- code (verbatim, at the listing's addresses) --
+        SLC, (8)15652.0
+FADM6   B, $+.32                         ! F209D6: LS indicator on
+        BLSZ, $+.32
+        DL(U), FPK31
+        C0011(BU,48), FPK32+.12, 20
+        D-MG(U), FPK32
+        SIC, SEN
+        BZLS, SERS                       ! error if LS indicator not on
+        B, $+.32                         ! F209D7: LS indicator off
+        BLSZ, $+.32
+        DL(U), FPK0
+        D+MG(U), FPK0
+        SIC, SEN
+        BLS, SERS                        ! error if LS indicator on
+        B, $+.32                         ! F209D8: printed "LS INDICATOR OFF"
+        BLSZ, $+.32
+        DL(U), FPK21
+        C0011(BU,48), FPK41+.12, 20
+        D+MG(U), FPK42
+        SIC, SEN
+        BZLS, SERS                       ! error if LS ind off
+        B, $+.32                         ! F209D9: test LS ind., off condition
+        BLSZ, $+.32
+        DL(U), FK35
+        D+MG(U), FK38                    ! result contains propagated EF+1
+        SIC, SEN
+        BLS, SERS                        ! error if LS indicator on
+PASS    BEW, $                   ! 015670.00: the routine's exit ("BD,$+1.0")
+        END, FADM6
