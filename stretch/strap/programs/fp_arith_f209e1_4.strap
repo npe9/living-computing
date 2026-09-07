@@ -1,0 +1,137 @@
+! Floating-point diagnostic jb_af1c, routine F209E "TEST FORCED ZERO
+! RESULT", sub-tests E1-E4 (docs/jb_af1c_floating-point.pdf pp.107-108,
+! octal 015672.00-015727.40, where F209E5 begins).
+!
+! This is the block the ADD DOUBLE TO MAGNITUDE series has been
+! heading toward: the first one anywhere in jb_af1c that reaches
+! fpAddDouble's UNFLAGGED forced zero. Everything before it -- F209A,
+! all sixteen of F209B, F209C, F209D -- either never entered the
+! addMag rules at all or sat at exponents too far apart for the sum to
+! come out negative. Here the two operands share an exponent:
+!
+!   FPK37 = 0031125252525252525240
+!   FPK38 = 0031052525252525252520
+!
+! Same exponent 0031, and |FPK37| > |FPK38|. So loading FPK38 and then
+! subtracting FPK37 from the accumulator's MAGNITUDE gives a negative
+! sum, which p.95 says is replaced by a zero fraction.
+!
+! The four sub-tests are the four sign-modifier combinations, and each
+! asks the same three questions -- low order fraction zero, high order
+! fraction zero, sign bit:
+!
+!   E1  MS+ACS+N+A+0   DL(U)  FPK38 + D-MG(U)  FPK37   sign 0
+!   E2  MS+ACS+0,N+A+1 DL(U)  FPK38 + D-MGA(U) FPK37   sign 0
+!   E3  MS+A+0,ACS+N+1 DLN(U) FPK38 + D-MG(U)  FPK37   sign 1
+!   E4  MS+0,ACS+N+A+1 DLN(U) FPK38 + D-MGA(U) FPK37   sign 1
+!
+! E3 and E4 are the ones that matter most: the accumulator is loaded
+! NEGATIVE, D+MG forces it positive to do the addition, the sum comes
+! out negative, and the forced zero must still carry the accumulator's
+! ORIGINAL sign -- so the sign bit reads 1. That is the F209D1 sign
+! ordering and the forced zero in the same instruction.
+!
+! What this block does NOT settle: the exponent. Both CT0110 tests are
+! 48 bits wide, at offsets 20 and 68, which together cover IBM 12-107
+! -- the fraction only. The exponent at IBM 0-11 (offset 116) is never
+! compared. So the standing question from F209A -- whether an
+! unflagged forced zero keeps the accumulator's exponent (the manual's
+! reading) or the larger operand's (what fpAdd does) -- survives this
+! block untouched. Here the two exponents are equal, so the two
+! readings agree and nothing could distinguish them anyway.
+!
+! Transcribed as printed: E4's sign-bit failure path is BRGZ,SERS
+! (1304.35 42) where E1, E2 and E3 all use B,SERS (1304.10 00). The
+! encodings are unambiguous, so this is the listing's own variation --
+! E4's sign-bit question can only halt when RGZ happens to be on --
+! and it is transcribed as the encoding column reads.
+!
+! FADM4 is the listing's own label and sits at its real address,
+! 015672.00. (The F209D programs deliberately do not use it; see the
+! note in fp_arith_f209d1_5.strap.)
+!
+! Framework substitutes as everywhere else in this series: SERS (octal
+! 1304) -> FAIL halt, SEN (octal 1310) -> scratch. Constants from the
+! pool p.176. PASS sits at 015727.40, where F209E5 begins.
+!
+! Instructions: B, DL(U), DLN(U), D-MG(U), D-MGA(U), CT0110, SIC, BB,
+! BZB and BRGZ.
+! verify_fp_arith_f209e1_4_listing.py checks every word bit-for-bit.
+!
+! Observed: all four passed on the first run, and an injection confirms
+! the claim above. Replacing the unflagged forced-zero guard
+! "if (addMag && sum != 0 && sign == 1)" with a constant False halts
+! E1 with SIC storing 015677.00 -- the address right after E1's second
+! BRGZ, its "test high order result fraction = 0" question -- while
+! F209A, F209C, F209D1-D5 and F209D6-D9 all stay green. So this block
+! is the suite's only oracle for that path; until now the unflagged
+! forced zero was written from p.95 and never executed.
+!
+! (E1's low-order question survives the injection and the high-order
+! one catches it: without the forced zero the negative sum's bottom 48
+! bits happen to come out zero anyway.)
+
+! -- SSIP framework substitutes --
+        SLC, (8)1304.0
+SERS    BEW, $
+        SLC, (8)1310.0
+SEN     DD(BU,64,8), 0
+
+! -- constants (pool p.176) --
+        SLC, (8)022005.0
+FPK0    DD(BU,64,8), (8)0000000000000000000000
+        SLC, (8)022052.0
+FPK37   DD(BU,64,8), (8)0031125252525252525240
+FPK38   DD(BU,64,8), (8)0031052525252525252520
+
+! -- code (verbatim, at the listing's addresses) --
+        SLC, (8)15672.0
+FADM4   DL(U), FPK38                       ! F209E1: MS+ACS+N+A+0
+        D-MG(U), FPK37
+        CT0110(BU,48), FPK0+.12, 20        ! test low order result fraction = 0
+        SIC, SEN
+        BRGZ, SERS
+        CT0110(BU,48), FPK0+.12, 68        ! test high order result fraction = 0
+        SIC, SEN
+        BRGZ, SERS
+        BZB, 10.4, $+2.0                   ! test sign bit = 0
+        SIC, SEN
+        B, SERS
+        B, $+.32                           ! F209E2: MS+ACS+0, N+A+1
+        DL(U), FPK38
+        D-MGA(U), FPK37
+        CT0110(BU,48), FPK0+.12, 20
+        SIC, SEN
+        BRGZ, SERS
+        CT0110(BU,48), FPK0+.12, 68
+        SIC, SEN
+        BRGZ, SERS
+        BZB, 10.4, $+2.0                   ! test sign bit = 0
+        SIC, SEN
+        B, SERS
+        B, $+.32                           ! F209E3: MS+A+0, ACS+N+1
+        DLN(U), FPK38
+        D-MG(U), FPK37
+        CT0110(BU,48), FPK0+.12, 20
+        SIC, SEN
+        BRGZ, SERS
+        CT0110(BU,48), FPK0+.12, 68
+        SIC, SEN
+        BRGZ, SERS
+        BB, 10.4, $+2.0                    ! test sign bit = 1
+        SIC, SEN
+        B, SERS
+        B, $+.32                           ! F209E4: MS+0, ACS+N+A+1
+        DLN(U), FPK38
+        D-MGA(U), FPK37
+        CT0110(BU,48), FPK0+.12, 20
+        SIC, SEN
+        BRGZ, SERS
+        CT0110(BU,48), FPK0+.12, 68
+        SIC, SEN
+        BRGZ, SERS
+        BB, 10.4, $+2.0                    ! test sign bit = 1
+        SIC, SEN
+        BRGZ, SERS                         ! printed BRGZ here, not the B,SERS of E1-E3
+PASS    BEW, $                             ! 015727.40: where F209E5 begins
+        END, FADM4

@@ -562,6 +562,19 @@ run "FP add double magnitude LS indicator (jb_af1c F209D6-D9 on the model)" ./ru
     "PC=$(python3 -c 'from strap_asm import assemble; print(assemble(open("programs/fp_arith_f209d6_9.strap").read()).symtab["PASS"]//32)')" \
     "SEN:712=0"
 
+# F209E1-E4 "TEST FORCED ZERO RESULT". The first block anywhere in
+# jb_af1c that reaches fpAddDouble's UNFLAGGED forced zero: FPK37 and
+# FPK38 share exponent 0031 with |FPK37| > |FPK38|, so subtracting
+# FPK37 from the accumulator's magnitude gives a negative sum. Turning
+# the forced-zero guard off halts E1 (SIC stores 015677.00) and leaves
+# F209A/C/D green, so nothing else in the suite covers it. It pins the
+# result fraction and the sign but NOT the exponent -- both CT0110s
+# cover IBM 12-107 only.
+run "FP add double magnitude forced zero (jb_af1c F209E1-E4, encoding)" python3 verify_fp_arith_f209e1_4_listing.py
+run "FP add double magnitude forced zero (jb_af1c F209E1-E4 on the model)" ./run_program.sh programs/fp_arith_f209e1_4.strap StretchFpAddDblMgFTb \
+    "PC=$(python3 -c 'from strap_asm import assemble; print(assemble(open("programs/fp_arith_f209e1_4.strap").read()).symtab["PASS"]//32)')" \
+    "SEN:712=0"
+
 # -- 1j. Store-close-to-fetch: store a word then immediately reload it;
 # the load must read the new value, not the stale one. The hazard the FP
 # sign-modifier codesign exposed; fixed by tracking each E-box level's
