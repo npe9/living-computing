@@ -1,0 +1,84 @@
+! Floating-point diagnostic jb_af1c, routine F211 "STORE LOW ORDER
+! TEST ROUTINE", sections B "TEST UNCHANGED REGISTERS" and C
+! "INDICATOR TEST" (docs/jb_af1c_floating-point.pdf p.114, octal
+! 016245.00-016262.40, the routine's own exit "BD,$+1.0"). Twenty
+! rows, and they close F211 out.
+!
+! B1 is the SLO analogue of F210B: set the accumulator's left half,
+! right half and sign byte all to ones, run one SLO(U), then ask three
+! separate questions -- L0-63, R0-63 and SB0-7 -- that none of them
+! moved. p.97 says "the entire accumulator and sign byte register
+! remain unchanged throughout the operation unless used as the
+! effective address", and as with SRD the model satisfies it only by
+! not writing them.
+!
+! Note what F211B does NOT have: a zero-pattern sub-test. F210B ran
+! both B1 (zeros) and B2 (ones); F211B has only the ones. That is the
+! stronger of the two anyway -- an all-ones accumulator is flagged, so
+! the flagged path runs, and the sign byte has its sign and all three
+! flag bits set -- and F210B's own probing showed the zero half never
+! fires, since a zero write leaves zeros zero.
+!
+! C IS THE INTERESTING OMISSION. It clears MOP with BMOPZ, runs one
+! SLO(U), and asks with BZMOP that it came on -- and that is the WHOLE
+! indicator test. There is no LC question anywhere in F211, where
+! F210D2 had one for SRD. That matches the manual exactly: p.97 lists
+! SLO's indicators as MOP, the arithmetic result four, the exponent
+! range four and ZM, with no LOST CARRY, because a shift has no carry
+! to lose. The model was written that way from the page; F211C is the
+! listing agreeing by omission.
+!
+! ROS (022355) is the routine's scratch word, not a pool constant.
+! FSLO2 is the listing's own label at its real address, 016245.00 --
+! the routine's exit branches back to it.
+!
+! Framework substitutes as everywhere else in this series: SERS (octal
+! 1304) -> FAIL halt, SEN (octal 1310) -> scratch. Constants from the
+! pool p.176. PASS sits at 016262.40, on the routine's exit; the four
+! rows after it (BD,$+1.0 / B,FSLO2 / SIC,SENO+.32 / B,SSW) are the
+! SSIP return and are not transcribed.
+!
+! Instructions: C1111, CM1111, SLO(U), CT1010, CT1100, SIC, BRGZ, B,
+! BMOPZ, BZMOP, DL(U), C0011.
+! verify_fp_arith_f211bc_listing.py checks every word bit-for-bit.
+
+! -- SSIP framework substitutes --
+        SLC, (8)1304.0
+SERS    BEW, $
+        SLC, (8)1310.0
+SEN     DD(BU,64,8), 0
+
+! -- the routine's scratch word --
+        SLC, (8)22355.0
+ROS     DD(BU,64,8), 0
+
+! -- constants (pool p.176) --
+        SLC, (8)022006.0
+FPK1    DD(BU,64,8), (8)1777777777777777777777
+        SLC, (8)022052.0
+FPK37   DD(BU,64,8), (8)0031125252525252525240
+
+! -- code (verbatim, at the listing's addresses) --
+        SLC, (8)16245.0
+FSLO2   C1111(BU,64), FPK1, 64                 ! F211B1: 1 s remain 1 s
+        C1111(BU,64), FPK1
+        CM1111(BU,8), 10.0
+        SLO(U), ROS
+        CT1010(BU,64), FPK1, 64                ! does L0-63 remain + 1 s
+        SIC, SEN
+        BRGZ, SERS
+        CT1010(BU,64), FPK1                    ! does R0-63 remain + 1 s
+        SIC, SEN
+        BRGZ, SERS
+        CT1100(BU,8), 10.0                     ! does the SB remain + 1 s
+        SIC, SEN
+        BRGZ, SERS
+        B, $+.32                               ! F211C: MOP indicator, off to on condition
+        BMOPZ, $+.32
+        DL(U), FPK37
+        C0011(BU,48), FPK37+.12, 20
+        SLO(U), ROS
+        SIC, SEN
+        BZMOP, SERS                            ! error if MOP indicator off
+PASS    BEW, $                                 ! 016262.40: the routine's exit ("BD,$+1.0")
+        END, FSLO2

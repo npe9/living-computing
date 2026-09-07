@@ -742,6 +742,19 @@ run "FP store low order, normalization modifier (jb_af1c F211A7-A10 on the model
     "PC=$(python3 -c 'from strap_asm import assemble; print(assemble(open("programs/fp_arith_f211a7_10.strap").read()).symtab["PASS"]//32)')" \
     "SEN:712=0"
 
+# F211B-C close F211 out. B1 is the SLO analogue of F210B: all three
+# registers set to ones, one SLO(U), then three questions that none of
+# them moved. C is the interesting one by OMISSION -- its whole
+# indicator test is BMOPZ/BZMOP, and there is no LC question anywhere
+# in F211 where F210D2 had one for SRD. That matches p.97, which lists
+# no LOST CARRY among SLO's indicators because a shift has no carry to
+# lose; the model was written that way from the page, and the listing
+# agrees by leaving the question out.
+run "FP store low order, unchanged registers and MOP (jb_af1c F211B-C, encoding)" python3 verify_fp_arith_f211bc_listing.py
+run "FP store low order, unchanged registers and MOP (jb_af1c F211B-C on the model)" ./run_program.sh programs/fp_arith_f211bc.strap StretchFpAddDblMgFTb \
+    "PC=$(python3 -c 'from strap_asm import assemble; print(assemble(open("programs/fp_arith_f211bc.strap").read()).symtab["PASS"]//32)')" \
+    "SEN:712=0"
+
 # -- 1j. Store-close-to-fetch: store a word then immediately reload it;
 # the load must read the new value, not the stale one. The hazard the FP
 # sign-modifier codesign exposed; fixed by tracking each E-box level's

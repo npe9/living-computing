@@ -707,9 +707,23 @@ hand vectors alone. "Enables" notes the dependency chain.
    against every expected constant BEFORE the run, which is what made
    the -49 visible as a discrepancy rather than as a mysterious halt.
    That step is cheap and has now paid for itself twice.
-   Next: F211B "TEST UNCHANGED REGISTERS" (from 016244.00, label
-   FSLO2) and F211C "INDICATOR TEST", then D*, LFT, *+, and D/ (which
-   needs the multi-cycle unit).
+   jb_af1c F211B-C (p.114, 20 rows) closes F211. B1 is the SLO
+   analogue of F210B -- all three registers set to ones, one SLO(U),
+   three questions that none moved -- and has no zero-pattern
+   sub-test, which F210B's probing showed never fires anyway. C is
+   interesting by OMISSION: its whole indicator test is BMOPZ/BZMOP,
+   and there is no LC question anywhere in F211 where F210D2 had one
+   for SRD. That matches p.97, which lists no LOST CARRY among SLO's
+   indicators because a shift has no carry to lose. The model was
+   written that way from the page and the listing agrees by leaving
+   the question out.
+   F211 is transcribed A1-A4, A7-A10 and B-C; A5-A6 are deliberately
+   skipped as more SLO(U) exponent-walking (2-48=-46, then -94), with
+   no behaviour A3-A4 does not already cover.
+   Next: D*, LFT and *+, then D/ -- which needs the multi-cycle unit,
+   i.e. section 1c step 5c's E-box refactor. That refactor is now the
+   gating item for the rest of double precision, as well as being the
+   one Piccolo-grounded structural gap the audit left open.
    Its prologue is FSR1 (015772.00) and F210A1 begins at SAP11
    (015775.00): DL(U) FPK26, C0011 FK40+.12 into offset 20, then
    SRD(U) ROS, L(BU) FK35, CT0110(BU,60) ROS,4 -- "error if 1 not
