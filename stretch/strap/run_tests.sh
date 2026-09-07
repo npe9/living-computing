@@ -521,6 +521,16 @@ run "FP add double magnitude signs 2 (jb_af1c F209B9-B13 on the model)" ./run_pr
     "PC=$(python3 -c 'from strap_asm import assemble; print(assemble(open("programs/fp_arith_f209b9_13.strap").read()).symtab["PASS"]//32)')" \
     "SEN:712=0"
 
+# jb_af1c F209B14-B16 (p.105): the last three, with BOTH signs
+# negative -- DLN accumulator and FPK40 operand -- closing F209B's
+# grid. With these the routine is transcribed end to end, 015365.40
+# to 015574.40 across three programs, each ending where the next
+# begins. Still no forced zero anywhere in F209B.
+run "FP add double magnitude signs 3 (jb_af1c F209B14-B16, encoding)" python3 verify_fp_arith_f209b14_16_listing.py
+run "FP add double magnitude signs 3 (jb_af1c F209B14-B16 on the model)" ./run_program.sh programs/fp_arith_f209b14_16.strap StretchFpAddDblMgDTb \
+    "PC=$(python3 -c 'from strap_asm import assemble; print(assemble(open("programs/fp_arith_f209b14_16.strap").read()).symtab["PASS"]//32)')" \
+    "SEN:712=0"
+
 # -- 1j. Store-close-to-fetch: store a word then immediately reload it;
 # the load must read the new value, not the stale one. The hazard the FP
 # sign-modifier codesign exposed; fixed by tracking each E-box level's

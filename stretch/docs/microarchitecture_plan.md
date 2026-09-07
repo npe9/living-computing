@@ -440,8 +440,16 @@ hand vectors alone. "Enables" notes the dependency chain.
    program and verifier say so. Between B13 and F209E lie B14-B16,
    F209C ("UNCHANGED REGISTERS", C1-C2) and F209D ("TESTS OF
    INDICATORS", D1-D8).
-   Next: F209E (the forced zero), or F209B14-B16 / F209C / F209D in
-   diagnostic order. Then SRD. Still open in double
+   jb_af1c F209B14-B16 (p.105) closes the routine: both signs negative
+   -- DLN accumulator and FPK40 operand -- completing the grid. F209B
+   is now transcribed end to end, 015365.40 to 015574.40 across three
+   programs, each ending exactly where the next begins, and the last
+   closing on the listing's own exit. All sixteen sub-tests pass and
+   none of them reaches the forced zero.
+   Next: F209C ("UNCHANGED REGISTERS", C1-C2) and F209D ("TESTS OF
+   INDICATORS", D1-D8) in diagnostic order, then F209E -- the one
+   block that covers D+MG's forced zero and the one that should
+   settle which exponent it keeps. Then SRD. Still open in double
    precision: D+MG, D-, SRD, SLO, D*, D/, LFT -- the first real double-precision
    ARITHMETIC, which needs the 96-bit adder and the accumulator's low
    half as a genuine operand rather than something only cleared.
