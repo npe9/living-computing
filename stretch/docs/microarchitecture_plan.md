@@ -324,8 +324,40 @@ hand vectors alone. "Enables" notes the dependency chain.
    test, with F204 beginning straight after -- and F205C checks +MG's
    sign byte bits 0-3 only, not 5-7. It rests on p.86 being ADD's own
    page and on the code path being the same one F208C2 proved.
-   Next: F208D (six or more sub-tests), then F209's D+MG and SRD.
-   Still open in double
+   jb_af1c F208D1-D6 (pp.98-99, "INDICATOR TESTS") caught a second
+   real bug, in Lost Significance. D1 against D2 is the same addition
+   one modifier apart -- FPK21 + FPK21 unnormalized sets LC, and
+   normalized does not, because the normalizing right shift keeps the
+   carry. D3 against D4 is p.96's "at least one operand is non-zero"
+   clause: an exact cancellation sets LS, FPK0 + FPK0 does not.
+   D5 is the one that bit. Its accumulator is
+   0xffffffffffff400000000000 and its operand shifts right 47 places
+   to 0xc00000000000, so the 97-bit sum is a 1 followed by 96 zeros:
+   the carry is lost and what lands in the accumulator is 96 zeros.
+   LS was testing the 97-bit intermediate, saw a non-zero value and
+   stayed off; p.96 asks whether "the 96 bits of the RESULT fraction
+   are zero", and the listing demands LS on. Fixed by testing
+   res.frac. zeroResult, on the 97-bit sum, is left alone -- it serves
+   the separate normalization-suppression rule.
+   D6 is the only sub-test in the block that says anything about the
+   flagged path's indicators: FK35 is flagged and FK32 is in the N
+   range, so Figure 23 returns one operand whole rather than adding,
+   and although that operand's fraction is zero, LS must stay off,
+   because nothing was lost. The model already did this (the flagged
+   branch never sets ls) and D6 now holds it in place.
+   The same LS fix was applied to single-precision fpAdd. As with the
+   sign-byte flags in F208C, that half is NOT under the oracle: no
+   single-precision sub-test in the suite distinguishes the two forms,
+   because F204D's and F206D's LS tests reach the indicator only
+   through exact cancellations, where the intermediate sum and the
+   result fraction are both zero. That is now twice in this series
+   that double precision has proved a rule single precision states but
+   does not test -- worth remembering as a standing asymmetry in
+   jb_af1c's coverage rather than a claim about the model.
+   Next: F208D7-D11 ("TEST EXPONENT RANGE INDICATORS", the same shape
+   as F204D/F206D but over indicator bits 11.28-11.33, D7 including
+   ZM at 11.33 where D8 checks only 28/30/31/32), then F209's D+MG and
+   SRD. Still open in double
    precision: D+MG, D-, SRD, SLO, D*, D/, LFT -- the first real double-precision
    ARITHMETIC, which needs the 96-bit adder and the accumulator's low
    half as a genuine operand rather than something only cleared.

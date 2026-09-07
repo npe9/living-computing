@@ -450,6 +450,21 @@ run "FP add double unchanged regs (jb_af1c F208C1-C2 on the model)" ./run_progra
     "PC=$(python3 -c 'from strap_asm import assemble; print(assemble(open("programs/fp_arith_f208c.strap").read()).symtab["PASS"]//32)')" \
     "SEN:712=0"
 
+# jb_af1c F208D1-D6 (pp.98-99): ADD DOUBLE's Lost Carry and Lost
+# Significance indicators. D1 against D2 is one modifier apart -- the
+# same addition unnormalized then normalized -- and D3 against D4 is
+# p.96's "at least one operand is non-zero" clause. D5 caught a real
+# bug: LS was testing the 97-bit intermediate sum, but an unnormalized
+# add can carry out of the top with all 96 low bits zero, and what
+# lands in the accumulator is then 96 zeros. Reverting the fix halts
+# at D5's BZLS (SIC stores 015164.40). D6 is the one sub-test that
+# says anything about the flagged path's indicators: a flagged result
+# with a zero fraction must still leave LS off.
+run "FP add double indicators (jb_af1c F208D1-D6, encoding)" python3 verify_fp_arith_f208d1_6_listing.py
+run "FP add double indicators (jb_af1c F208D1-D6 on the model)" ./run_program.sh programs/fp_arith_f208d1_6.strap StretchFpAddDblDTb \
+    "PC=$(python3 -c 'from strap_asm import assemble; print(assemble(open("programs/fp_arith_f208d1_6.strap").read()).symtab["PASS"]//32)')" \
+    "SEN:712=0"
+
 # -- 1j. Store-close-to-fetch: store a word then immediately reload it;
 # the load must read the new value, not the stale one. The hazard the FP
 # sign-modifier codesign exposed; fixed by tracking each E-box level's

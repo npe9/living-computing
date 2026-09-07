@@ -341,7 +341,15 @@ function FpResult fpAdd(FpNum a, FpNum b, Bool normalized, Bool noisy, Bool addM
       r.res = res;
       r.lc = lostCarry;
       r.generated = gen;
-      r.ls = zeroResult && !(a.frac == 0 && b.frac == 0) && !forcedZero;
+      // Same rule as ADD DOUBLE's below, and for the same reason: LS
+      // asks whether the RESULT fraction is zero, and an unnormalized
+      // add can carry out of the top leaving 48 zeros behind. Proven
+      // for D+ by jb_af1c F208D5; NOT proven here -- no single-
+      // precision sub-test in the suite distinguishes the two forms,
+      // and the F204D/F206D indicator blocks reach LS only through
+      // exact cancellations, where sum and result fraction are both
+      // zero anyway.
+      r.ls = (res.frac == 0) && !(a.frac == 0 && b.frac == 0) && !forcedZero;
       return r;
     end
   end
@@ -478,7 +486,18 @@ function FpdResult fpAddDouble(FpDouble a, FpDouble b, Bool normalized, Bool noi
       r.res = res; r.lc = lostCarry; r.generated = g;
       // "LS is set to one when at least one operand is non-zero and
       // when the 96 bits of the result fraction are zero" (p.96).
-      r.ls = zeroResult && !(a.frac == 0 && b.frac == 0);
+      // LS asks about the RESULT fraction, not the intermediate sum:
+      // "LS is set to one when at least one operand is non-zero and
+      // when the 96 bits of the result fraction are zero" (p.96). An
+      // unnormalized add can carry out of the top with all 96 low bits
+      // zero -- the carry is lost, and what lands in the accumulator is
+      // 96 zeros -- so `sum` is non-zero while the result fraction is
+      // not. jb_af1c F208D5 is exactly that: 0xffffffffffff400000000000
+      // plus 0x600000000000 shifted right 47 gives 1 followed by 96
+      // zeros. Testing `sum` there leaves LS off and the listing
+      // demands it on. (zeroResult, on the 97-bit sum, stays as it is
+      // for the separate normalization-suppression rule.)
+      r.ls = (res.frac == 0) && !(a.frac == 0 && b.frac == 0);
       return r;
     end
   end

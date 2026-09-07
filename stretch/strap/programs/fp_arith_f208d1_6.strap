@@ -1,0 +1,107 @@
+! Floating-point diagnostic jb_af1c, routine F208D "INDICATOR TESTS"
+! for ADD DOUBLE, sub-tests D1-D6 (docs/jb_af1c_floating-point.pdf
+! pp.98-99, octal 015145.00-015167.40, where F208D7 / SAP9G begins):
+! the Lost Carry and Lost Significance indicators.
+!
+! Each sub-test clears the indicator it is about to test with the
+! branch-and-zero form (BLCZ / BLSZ branch over the next half-word AND
+! zero the indicator), runs one D+, then asks with BZLC/BLC or
+! BZLS/BLS whether it came on.
+!
+!   D1  LC on:  FPK21 + FPK21 unnormalized. Both fractions have the
+!       top bit set, so the sum carries out of bit 12 and the carry is
+!       lost -- there is no post-shift to catch it.
+!   D2  LC off: the same addition NORMALIZED. The normalizing right
+!       shift keeps the carry, so LC stays off. D1 against D2 is the
+!       whole point: same operands, one modifier apart.
+!   D3  LS on:  an exact cancellation. FPK31 with FPK33's fraction in
+!       its low half, minus FPK33, is a zero 96-bit result fraction
+!       while NEITHER operand is zero.
+!   D4  LS off: FPK0 + FPK0. The result fraction is zero too, but so
+!       are both operands, and p.96 sets LS only "when at least one
+!       operand is non-zero".  D3 against D4 is that clause.
+!   D5  LS on:  FPK21 with FPK41's fraction, plus FPK42.
+!   D6  LS off: the listing's note is "result contains propagated
+!       EF+1". FK35 is flagged and FK32 is in the N range, so this
+!       goes down the FLAGGED path, which returns one operand whole
+!       rather than adding -- and the operand it returns has a zero
+!       fraction. LS must still stay off, because nothing was lost:
+!       no addition happened. That is the one sub-test here that says
+!       anything about the flagged path's indicators.
+!
+! Framework substitutes as everywhere else in this series: SERS (octal
+! 1304) -> FAIL halt, SEN (octal 1310) -> scratch. Constants from the
+! pool pp.176-177. D7-D11, "TEST EXPONENT RANGE INDICATORS", are not
+! transcribed here; PASS sits exactly where SAP9G begins.
+!
+! Note on lengths: the branch-on-INDICATOR ops are half-word (format
+! 2), unlike the branch-on-BIT ops BB/BZB, which are full-word. That
+! is what makes D1 five half-words rather than six.
+!
+! Instructions: B, BLCZ/BZLC/BLC, BLSZ/BZLS/BLS, DL(U), C0011 into the
+! accumulator at offset 20, D+(U)/D+(N)/D-(U), SIC.
+! verify_fp_arith_f208d1_6_listing.py checks every word bit-for-bit.
+
+! -- SSIP framework substitutes --
+        SLC, (8)1304.0
+SERS    BEW, $
+        SLC, (8)1310.0
+SEN     DD(BU,64,8), 0
+
+! -- constants (pool pp.176-177) --
+
+        SLC, (8)22005.0
+FPK0    DD(BU,64,8), (8)0000000000000000000000
+        SLC, (8)22032.0
+FPK21   DD(BU,64,8), (8)0031177777777777777767
+        SLC, (8)22044.0
+FPK31   DD(BU,64,8), (8)0031000000000000000000
+        SLC, (8)22046.0
+FPK33   DD(BU,64,8), (8)0001177777777777777740
+        SLC, (8)22056.0
+FPK41   DD(BU,64,8), (8)0001040000000000000000
+FPK42   DD(BU,64,8), (8)0001460000000000000000
+        SLC, (8)22202.0
+FK32    DD(BU,64,8), (8)0027125252525252525000
+        SLC, (8)22205.0
+FK35    DD(BU,64,8), (8)1777400000000000000000
+
+! -- code (verbatim, at the listing's addresses) --
+        SLC, (8)15145.0
+SAP9F   BLCZ, $+.32            ! F208D1: test LC ind on, unnormalized
+        DL(U), FPK21
+        D+(U), FPK21
+        SIC, SEN
+        BZLC, SERS             ! error if LC not on
+        B, $+.32               ! F208D2: test LC ind off, normalized
+        BLCZ, $+.32
+        DL(U), FPK21
+        D+(N), FPK21
+        SIC, SEN
+        BLC, SERS              ! error if LC on
+        B, $+.32               ! F208D3: test LS ind, on condition
+        BLSZ, $+.32
+        DL(U), FPK31
+        C0011(BU,48), FPK33+.12, 20
+        D-(U), FPK33           ! zero result fraction, neither operand zero
+        SIC, SEN
+        BZLS, SERS             ! error if LS not on
+        BLSZ, $+.32            ! F208D4: test LS ind off
+        DL(U), FPK0
+        D+(U), FPK0            ! zero result fraction, both operands zero
+        SIC, SEN
+        BLS, SERS              ! error if LS on
+        BLSZ, $+.32            ! F208D5: test LS ind on
+        DL(U), FPK21
+        C0011(BU,48), FPK41+.12, 20
+        D+(U), FPK42
+        SIC, SEN
+        BZLS, SERS             ! error if LS ind off
+        B, $+.32               ! F208D6: test LS ind, off condition
+        BLSZ, $+.32            ! result contains propagated EF+1
+        DL(U), FK35
+        D+(U), FK32
+        SIC, SEN
+        BLS, SERS              ! error if LS on
+PASS    BEW, $                 ! 015167.40: where F208D7 / SAP9G begins
+        END, SAP9F
