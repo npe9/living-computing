@@ -1638,7 +1638,20 @@ function ActionValue#(Tuple4#(HWordAddr, Maybe#(Tuple2#(Bit#(4), IndexWord)),
             v.ef = w.ef; v.em = w.em; v.es = w.es;
             prop = True;
           end else begin
-            Int#(14) e = signExtend(fpExp(fpdHead(da))) + signExtend(fpExp(imm));
+            // The sign modifiers act on the ADDEND's exponent sign,
+            // and only here: p.102's "the sign modifiers are ignored
+            // if either one or both of the exponents are in the XFP or
+            // XFN range" applies to E+I as much as to E+, so the range
+            // test above sees the UNMODIFIED immediate.  jb_af1c
+            // F213-XB is the block that drives this ("THE SIGN
+            // MODIFIERS APPLY TO THE SIGN OF THE EXPONENT ONLY"); its
+            // sixteen sub-tests are all N-range, so they pin the
+            // application but not the ignoring -- F213B's B10/B11 are
+            // what pin that, for E+.
+            FpNum oe = imm;
+            if (fp.absSign == 1) oe.es = 0;
+            if (fp.invSign == 1) oe.es = ~oe.es;
+            Int#(14) e = signExtend(fpExp(fpdHead(da))) + signExtend(fpExp(oe));
             let {h0, g} = fpMakeExp(e, 48'b0, da.sign, da.flags);
             v.ef = h0.ef; v.em = h0.em; v.es = h0.es; gen = g;
             if (normalized && v.frac != 0 && (v.ef == 0 || v.es == 0)) begin

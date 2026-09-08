@@ -749,6 +749,20 @@ def strip_fp_sign(op):
         return ("E+", 0, 1)
     if op == "E-A":
         return ("E+", 1, 1)
+    # ADD IMMEDIATE TO EXPONENT (F213-XB, jb_af1c pp.135-136) is the
+    # one family whose modifier letters sit INSIDE the mnemonic rather
+    # than at the end, because the "I" belongs to the operation:
+    # E+I, E+AI, E-I, E-AI.  The trailing-suffix loop above cannot
+    # reach them -- "E+AI" ends in I -- so all three need their own
+    # rule, unlike E+A/F+A/D+A which the generic "A" strips.  The
+    # listing prints them ".47", ".67", ".57" and ".77", the same two
+    # modifier bits in the same place as every other FP op.
+    if op == "E+AI":
+        return ("E+I", 1, 0)
+    if op == "E-I":
+        return ("E+I", 0, 1)
+    if op == "E-AI":
+        return ("E+I", 1, 1)
     # SHIFT FRACTION's direction mnemonics (F212, jb_af1c pp.115-121).
     # SHF's direction is bit 11 of the effective address, and Reference
     # Manual p.102 adds "the sign of the shift -- bit 11 of the

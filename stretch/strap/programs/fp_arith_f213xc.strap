@@ -1,0 +1,62 @@
+! jb_af1c F213-X "ADD TO EXPONENT IMMEDIATE TEST", sub-block F213-XC
+! "TEST UNCHANGED REGS", p.136 (octal 017613.00-017627.40, the block's
+! own exit "BD,$+1.0").  This completes F213-X.
+!
+! The same pair as F213C, run through E+I instead of E+: zero
+! everything, run one E+I, and check that the accumulator's low twenty
+! bits and the whole sign byte came through; then repeat with
+! everything set to ones.  As in F213C the sign byte is checked in ONE
+! eight-bit connective rather than two pieces, because E+I never
+! writes the sign.
+!
+!   XC1  Z,$L / Z,$R / Z,$SB, then E+I(U),+6.  Accumulator exponent 0
+!        and addend +6 are both N, so this is an ordinary sum.
+!   XC2  C1111 both halves and CM1111 the sign byte, then E+I(U),+7.
+!        All-ones makes the accumulator's exponent field 2047 with
+!        ES 1 -- XFN -- so this one takes the FLAGGED path and the
+!        accumulator's exponent survives.  The two sub-tests therefore
+!        cover both of E+I's paths, which the comments do not say.
+!
+! A QUIRK OF THE DIAGNOSTIC, transcribed as printed: XC2's final
+! comparison has no SIC/branch after it.  Every other check in F213 is
+! followed by "SIC,SEN / BRGZ,SERS", but here the CT1100 at 017626.40
+! runs and its result is never examined -- the BD,$+1.0 follows
+! immediately at 017627.40.  So "DOES SB0-7 REMAIN+1-S" is computed
+! and discarded, and XC2 effectively checks only R44-63.  The
+! instruction lengths leave no room for a missing row: CT1100 is a
+! full word occupying 017626.40 and 017627.00, and BD is printed at
+! 017627.40.  Kept as the listing has it rather than "corrected".
+
+! -- SSIP framework substitutes: SERS (octal 1304) -> FAIL halt,
+! -- SEN (octal 1310) -> scratch.
+        SLC, (8)1304.0
+SERS    BEW, $
+        SLC, (8)1310.0
+SEN     DD(BU,64,8), 0
+
+! -- constants (pool p.176) --
+        SLC, (8)22005.0
+FPK0    DD(BU,64,8), (8)0000000000000000000000
+FPK1    DD(BU,64,8), (8)1777777777777777777777
+
+        SLC, (8)17613.0
+FAE14   Z, $L                                ! F213XC1 - R44-63 and SB0-7 rem 0 s
+        Z, $R
+        Z, $SB
+        E+I(U), +6
+        CT0101(BU,20), FPK0                  ! does R44-63 remain +0-s
+        SIC, SEN
+        BRGZ, SERS
+        CT0011(BU,8), $SB                    ! does SB0-7 remain +0-s
+        SIC, SEN
+        BRGZ, SERS
+        C1111(BU,64), FPK1, 64               ! F213XC2 - R44-63 and SB0-7 rem 1 s
+        C1111(BU,64), FPK1
+        CM1111(BU,8), $SB
+        E+I(U), +7
+        CT1010(BU,20), FPK1                  ! does R44-63 remain +1-s
+        SIC, SEN
+        BRGZ, SERS
+        CT1100(BU,8), $SB                    ! does SB0-7 remain +1-s (never tested)
+PASS    BEW, $                               ! 017627.40: the block's exit "BD,$+1.0"
+        END, FAE14

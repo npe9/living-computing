@@ -1,0 +1,167 @@
+! jb_af1c F213-X "ADD TO EXPONENT IMMEDIATE TEST", sub-block F213-XB
+! "TEST SIGN AND MOD COMBS", pp.135-136 (octal 017531.00-017611.00,
+! the block's own exit "BD,$+1.0").  Continues fp_arith_f213xa.strap.
+!
+! The listing's header states the rule, and states it more narrowly
+! than F213B's did: "MS+MEM. SIGN, ACS+ACC. SIGN, N AND A ARE
+! MODIFIERS" and "THE SIGN MODIFIERS APPLY TO THE SIGN OF THE EXPONENT
+! ONLY".  For E+I there is no addressed operand at all, so the only
+! sign in play is the ADDEND's own ES, carried in bit 6 of the
+! effective address.
+!
+! Sixteen sub-tests over the four modifier spellings and four
+! accumulator/immediate pairs.  A forces the addend's exponent sign
+! positive, N inverts it, and the two compose in that order:
+!
+!   XB1  FPK13  +7 + E+I   +6   -> +13  FPK14
+!   XB2  FPK13  +7 + E+AI  +6   -> +13  FPK14   (A on a positive: no change)
+!   XB3  FPK13  +7 + E-I   +6   ->  +1  FPK4
+!   XB4  FPK13  +7 + E-AI  +6   ->  +1  FPK4
+!   XB5  FPK51  -6 + E+I   +7   ->  +1  FPK4
+!   XB6  FPK51  -6 + E+AI  +7   ->  +1  FPK4
+!   XB7  FPK51  -6 + E-I   +250 -> -256 FK34
+!   XB8  FPK51  -6 + E-AI  +250 -> -256 FK34
+!   XB9  FPK14 +13 + E+I    -7  ->  +6  FPK11
+!   XB10 FPK14 +13 + E+AI   -5  -> +18  FK121  (A on a NEGATIVE: flips)
+!   XB11 FPK14 +13 + E-I    -5  -> +18  FK121
+!   XB12 FPK14 +13 + E-AI   -7  ->  +6  FPK11
+!   XB13 FPK51  -6 + E+I  -250  -> -256 FK34
+!   XB14 FPK51  -6 + E+AI   -7  ->  +1  FPK4
+!   XB15 FPK51  -6 + E-I    -7  ->  +1  FPK4
+!   XB16 FPK51  -6 + E-AI -250  -> -256 FK34
+!
+! WHICH ROWS ACTUALLY CARRY WHICH MODIFIER, since the sixteen look
+! like a clean 4x4 and are not.  A can only be seen where the addend
+! is NEGATIVE, and N only where it changes the sign that survives:
+!   XB2, XB6      A on a positive addend -- no change, blind to A.
+!   XB12, XB16    A then N on a negative addend: A makes it positive
+!                 and N puts it back, so the pair CANCELS and the
+!                 result equals the unmodified one -- blind to both.
+!   XB10, XB14    A alone on a negative addend -- these carry A.
+!   XB3, XB4, XB7, XB8, XB11, XB15  carry N.
+! The same cancellation as F213B's B16, in a block that repeats it
+! four times over.
+!
+! ALL SIXTEEN ARE N-RANGE, on both sides.  So this block pins that the
+! modifiers ARE applied, and pins nothing about p.102's "the sign
+! modifiers are ignored if either one or both of the exponents are in
+! the XFP or XFN range".  For E+ that rule is pinned by F213B10/B11;
+! for E+I nothing in the diagnostic reaches it, and the model follows
+! the manual there by analogy with E+.  Recorded rather than assumed.
+!
+! All sixteen expected exponents were computed from the pool constants
+! and the immediates' own encodings before the model ran.
+!
+! ASSEMBLER NOTE: E+AI, E-I and E-AI are the one family whose modifier
+! letters sit INSIDE the mnemonic, because the "I" belongs to the
+! operation.  The generic trailing-N/A suffix rule cannot reach them
+! -- "E+AI" ends in I -- so all three needed their own entries, unlike
+! E+A, F+A or D+A.  They print .67, .57 and .77 against plain E+I's
+! .47: the same two modifier bits, in the same place, as every other
+! floating-point op in this diagnostic.
+
+! -- SSIP framework substitutes: SERS (octal 1304) -> FAIL halt,
+! -- SEN (octal 1310) -> scratch.
+        SLC, (8)1304.0
+SERS    BEW, $
+        SLC, (8)1310.0
+SEN     DD(BU,64,8), 0
+
+! -- constants (pools pp.176-179) --
+        SLC, (8)22011.0
+FPK4    DD(BU,64,8), (8)0000452525252525252520
+        SLC, (8)22020.0
+FPK11   DD(BU,64,8), (8)0003001252525252525240
+        SLC, (8)22022.0
+FPK13   DD(BU,64,8), (8)0003400525252525252520
+FPK14   DD(BU,64,8), (8)0006400005252525252520
+        SLC, (8)22070.0
+FPK51   DD(BU,64,8), (8)0003201252525252525240
+        SLC, (8)22204.0
+FK34    DD(BU,64,8), (8)0200377777777777777770
+        SLC, (8)22332.0
+FK121   DD(BU,64,8), (8)0011000000000000000000
+
+        SLC, (8)17531.0
+FAE13   DL(U), FPK13                        ! F213XB1 - MS+ACS+N+A+0
+        E+I(U), +6                         
+        CT0110(BU,12), FPK14, 116       ! test result exponent +13
+        SIC, SEN
+        BRGZ, SERS
+        DL(U), FPK13                        ! F213XB2 - MS+ACS+N+0, A+1
+        E+AI(U), +6                         
+        CT0110(BU,12), FPK14, 116       ! test result exponent +13
+        SIC, SEN
+        BRGZ, SERS
+        DL(U), FPK13                        ! F213XB3 - MS+ACS+A+0, N+1
+        E-I(U), +6                         
+        CT0110(BU,12), FPK4, 116        ! test result exponent +1
+        SIC, SEN
+        BRGZ, SERS
+        DL(U), FPK13                        ! F213XB4 - MS+ACS+0, N+A+1
+        E-AI(U), +6                         
+        CT0110(BU,12), FPK4, 116        ! test result exponent +1
+        SIC, SEN
+        BRGZ, SERS
+        DL(U), FPK51                        ! F213XB5 - MS+N+A+0, ACS+1
+        E+I(U), +7                         
+        CT0110(BU,12), FPK4, 116        ! test result exponent +1
+        SIC, SEN
+        BRGZ, SERS
+        DL(U), FPK51                        ! F213XB6 - MS+N+0+0, ACS+A+1
+        E+AI(U), +7                         
+        CT0110(BU,12), FPK4, 116        ! test result exponent +1
+        SIC, SEN
+        BRGZ, SERS
+        DL(U), FPK51                        ! F213XB7 - MS+A+0+0, ACS+N+1
+        E-I(U), +250                       
+        CT0110(BU,12), FK34, 116        ! test result exponent -256
+        SIC, SEN
+        BRGZ, SERS
+        DL(U), FPK51                        ! F213XB8 - MS+0, ACS+N+A+1
+        E-AI(U), +250                       
+        CT0110(BU,12), FK34, 116        ! test result exponent -256
+        SIC, SEN
+        BRGZ, SERS
+        DL(U), FPK14                        ! F213XB9 - MS+1, ACS+N+A+0
+        E+I(U), -7                         
+        CT0110(BU,12), FPK11, 116       ! test result exponent +6
+        SIC, SEN
+        BRGZ, SERS
+        DL(U), FPK14                        ! F213XB10 - MS+A+1, ACS+N+0
+        E+AI(U), -5                         
+        CT0110(BU,12), FK121, 116       ! test result exponent +18
+        SIC, SEN
+        BRGZ, SERS
+        DL(U), FPK14                        ! F213XB11 - MS+N+1, ACS+A+0
+        E-I(U), -5                         
+        CT0110(BU,12), FK121, 116       ! test result exponent +18
+        SIC, SEN
+        BRGZ, SERS
+        DL(U), FPK14                        ! F213XB12 - MS+N+A+1, ACS+0
+        E-AI(U), -7                         
+        CT0110(BU,12), FPK11, 116       ! test result exponent +6
+        SIC, SEN
+        BRGZ, SERS
+        DL(U), FPK51                        ! F213XB13 - MS+ACS+1, N+A+0
+        E+I(U), -250                       
+        CT0110(BU,12), FK34, 116        ! test result exponent -256
+        SIC, SEN
+        BRGZ, SERS
+        DL(U), FPK51                        ! F213XB14 - MS+ACS+A+1, N+0
+        E+AI(U), -7                         
+        CT0110(BU,12), FPK4, 116        ! test result exponent +1
+        SIC, SEN
+        BRGZ, SERS
+        DL(U), FPK51                        ! F213XB15 - MS+ACS+N+1, A+0
+        E-I(U), -7                         
+        CT0110(BU,12), FPK4, 116        ! test result exponent +1
+        SIC, SEN
+        BRGZ, SERS
+        DL(U), FPK51                        ! F213XB16 - MS+ACS+N+A+1
+        E-AI(U), -250                       
+        CT0110(BU,12), FK34, 116        ! test result exponent -256
+        SIC, SEN
+        BRGZ, SERS
+PASS    BEW, $                               ! 017611.00: the block's exit "BD,$+1.0"
+        END, FAE13
