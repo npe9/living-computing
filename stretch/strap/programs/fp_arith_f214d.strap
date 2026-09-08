@@ -1,0 +1,213 @@
+! jb_af1c F214 "MULTIPLY TEST ROUTINE", sub-block F214D "INDICATOR
+! TESTS", pp.139-141 (octal 017762.40-020106.00, the block's own exit
+! "BD,$+1.0").  This completes F214.  Continues fp_arith_f214c.strap.
+!
+! Six sub-tests, one per exponent-range indicator plus ZM, each
+! clearing the indicator register between the load and the multiply and
+! then asserting that exactly ONE of the six came on.
+!
+!   D1  FK59 +1024 XFP * FK35  +2047 XFP -> +1024  XPFP  (bit 28)
+!   D2  FK62 +1023 N   * FK63  +1023 N   -> +2046  XPO   (bit 29)
+!   D3  FK22  +512 N   * FPK74    +3 N   ->  +515  XPH   (bit 30)
+!   D4  FPK28 +256 N   * FPK42    +3 N   ->  +259  XPL   (bit 31)
+!   D5  FK39 -1023 N   * FK3      -7 N   -> -1030  XPU   (bit 32)
+!   D6  FK66    +3 N   * FK91     +0 N   ->    +3  ZM    (bit 33)
+!
+! D1 AND D2 SEPARATE PROPAGATED FROM GENERATED A SECOND TIME.  F213D5
+! and D6 made that distinction through E+; these make it through
+! multiply, and the two indicators again share a predicate the pocket
+! card states identically ("E >= 2^10" for both XPFP and XPO).  D1's
+! operands are both already XFP so Figure 32 propagates the flag; D2's
+! are both N and their product's exponent 2046 crosses the boundary, so
+! the flag is generated.
+!
+! D6 IS THE ONE NOTHING HAS EXERCISED BEFORE.  ZM is "zero multiply":
+! FK91's fraction is zero, so the product is zero, and a NORMALIZED
+! multiply of an order-of-magnitude zero above -1024 sets it.  Note the
+! sub-test inverts the block's order -- five BZBs for the exponent
+! indicators first, then "BB,11.33 -TEST ZM IND ON" last -- where D1-D5
+! test their own indicator first and the other five after.
+!
+! D1 has no leading "B,$+.32"; D2-D6 do, so D1 spans thirteen and a
+! half words from 017762.40 and the rest are fourteen each, putting
+! their bases at 020000, 020016, 020034, 020052 and 020070 and the exit
+! at 020106.00.
+!
+! All six expected exponents and indicator predicates were computed
+! from the pool constants and the pocket card's indicator list before
+! the model ran.
+!
+! TRANSCRIPTION NOTE: the page prints the branch target field of some
+! BZB rows as ".24" where others in the same block print ".34" -- D2's
+! BZB,11.28 reads "020006.34 00" while D3's, D4's and D6's read
+! "...24 00".  Every one of these is the same "$+2." branch, so the
+! field cannot legitimately differ; read as OCR damage (2 for 3) and
+! transcribed as .34 throughout, which is what the assembler produces
+! and what the majority of the rows print.
+
+! -- SSIP framework substitutes: SERS (octal 1304) -> FAIL halt,
+! -- SEN (octal 1310) -> scratch.
+        SLC, (8)1304.0
+SERS    BEW, $
+        SLC, (8)1310.0
+SEN     DD(BU,64,8), 0
+
+! -- constants (pools pp.176-179) --
+        SLC, (8)22041.0
+FPK28   DD(BU,64,8), (8)0200177777777777777760
+        SLC, (8)22057.0
+FPK42   DD(BU,64,8), (8)0001460000000000000000
+        SLC, (8)22115.0
+FPK74   DD(BU,64,8), (8)0001500000000000000000
+        SLC, (8)22145.0
+FK3     DD(BU,64,8), (8)0003700000000000000000
+        SLC, (8)22170.0
+FK22    DD(BU,64,8), (8)0400177777777777777760
+        SLC, (8)22205.0
+FK35    DD(BU,64,8), (8)1777400000000000000000
+        SLC, (8)22211.0
+FK39    DD(BU,64,8), (8)0777625252525252525240
+        SLC, (8)22235.0
+FK59    DD(BU,64,8), (8)1000024713560247135620
+        SLC, (8)22240.0
+FK62    DD(BU,64,8), (8)0777424713560247135620
+FK63    DD(BU,64,8), (8)0777500000000000000000
+        SLC, (8)22244.0
+FK66    DD(BU,64,8), (8)0001476743126765431260
+        SLC, (8)22274.0
+FK91    DD(BU,64,8), (8)0000000000000000000002
+
+        SLC, (8)17762.40
+SAP17C  L(U), FK59                          ! F214D1 - test XPFP off to on
+        Z, $IND
+        *(U), FK35
+        BB, 11.28, $+2.0                     ! error if XPFP off and,
+        SIC, SEN
+        B, SERS                              ! other exponent inds. on
+        BZB, 11.29, $+2.0
+        SIC, SEN
+        B, SERS
+        BZB, 11.30, $+2.0
+        SIC, SEN
+        B, SERS
+        BZB, 11.31, $+2.0
+        SIC, SEN
+        B, SERS
+        BZB, 11.32, $+2.0
+        SIC, SEN
+        B, SERS
+        BZB, 11.33, $+2.0   ! test ZM ind off
+        SIC, SEN
+        B, SERS
+        B, $+.32                             ! F214D2 - test XPO, off to on
+        L(U), FK62
+        Z, $IND
+        *(U), FK63
+        BB, 11.29, $+2.0                     ! error if XPO off and,
+        SIC, SEN
+        B, SERS                              ! other exponent inds. on
+        BZB, 11.28, $+2.0
+        SIC, SEN
+        B, SERS
+        BZB, 11.30, $+2.0
+        SIC, SEN
+        B, SERS
+        BZB, 11.31, $+2.0
+        SIC, SEN
+        B, SERS
+        BZB, 11.32, $+2.0
+        SIC, SEN
+        B, SERS
+        BZB, 11.33, $+2.0   ! test ZM ind off
+        SIC, SEN
+        B, SERS
+        B, $+.32                             ! F214D3 - test XPH, off to on
+        L(U), FK22
+        Z, $IND
+        *(U), FPK74
+        BB, 11.30, $+2.0                     ! error if XPH off and,
+        SIC, SEN
+        B, SERS                              ! other exponent inds. on
+        BZB, 11.28, $+2.0
+        SIC, SEN
+        B, SERS
+        BZB, 11.29, $+2.0
+        SIC, SEN
+        B, SERS
+        BZB, 11.31, $+2.0
+        SIC, SEN
+        B, SERS
+        BZB, 11.32, $+2.0
+        SIC, SEN
+        B, SERS
+        BZB, 11.33, $+2.0   ! test ZM ind off
+        SIC, SEN
+        B, SERS
+        B, $+.32                             ! F214D4 - test XPL, off to on
+        L(U), FPK28
+        Z, $IND
+        *(U), FPK42
+        BB, 11.31, $+2.0                     ! error if XPL off and,
+        SIC, SEN
+        B, SERS                              ! other exponent inds. on
+        BZB, 11.28, $+2.0
+        SIC, SEN
+        B, SERS
+        BZB, 11.29, $+2.0
+        SIC, SEN
+        B, SERS
+        BZB, 11.30, $+2.0
+        SIC, SEN
+        B, SERS
+        BZB, 11.32, $+2.0
+        SIC, SEN
+        B, SERS
+        BZB, 11.33, $+2.0   ! test ZM ind off
+        SIC, SEN
+        B, SERS
+        B, $+.32                             ! F214D5 - test XPU, off to on
+        L(U), FK39
+        Z, $IND
+        *(U), FK3
+        BB, 11.32, $+2.0                     ! error if XPU off and,
+        SIC, SEN
+        B, SERS                              ! other exponent inds. on
+        BZB, 11.28, $+2.0
+        SIC, SEN
+        B, SERS
+        BZB, 11.29, $+2.0
+        SIC, SEN
+        B, SERS
+        BZB, 11.30, $+2.0
+        SIC, SEN
+        B, SERS
+        BZB, 11.31, $+2.0
+        SIC, SEN
+        B, SERS
+        BZB, 11.33, $+2.0   ! test ZM ind off
+        SIC, SEN
+        B, SERS
+        B, $+.32                             ! F214D6 - test ZM, off to on
+        L(U), FK66
+        Z, $IND
+        *(N), FK91
+        BZB, 11.28, $+2.0
+        SIC, SEN
+        B, SERS
+        BZB, 11.29, $+2.0
+        SIC, SEN
+        B, SERS
+        BZB, 11.30, $+2.0
+        SIC, SEN
+        B, SERS
+        BZB, 11.31, $+2.0
+        SIC, SEN
+        B, SERS
+        BZB, 11.32, $+2.0
+        SIC, SEN
+        B, SERS
+        BB, 11.33, $+2.0                     ! test ZM ind on
+        SIC, SEN
+        B, SERS
+PASS    BEW, $                               ! 020106.00: the block's exit "BD,$+1.0"
+        END, SAP17C
