@@ -1297,12 +1297,19 @@ hand vectors alone. "Enables" notes the dependency chain.
    arithmetic checks then F214B sign and modifier combinations. `*` is
    already implemented, so this exercises fpMul -- including the Fig.32
    path it has always had and which F213 has only now given a second
-   caller. CAUTION ON THE CONSTANTS: A2's comment gives FK60's exponent
-   as -1024 while a first reading of pool p.178 decodes +1024. -1024
-   needs EF 1 with ES 1, which puts a 2 in the fifth octal digit
-   (1000200000000000000000), and the scan of that row is garbled
-   exactly there. Re-read the page rather than infer it -- the same
-   discipline the FPK23 and FPK49 calls needed. Then D*, LFT and *+,
+   caller. FK60 IS SETTLED, AND MY FIRST GUESS AT IT WAS WRONG.
+   3f0f5db's message says the value is 1000200000000000000000, inferred
+   from "-1024 needs EF 1 with ES 1, so a 2 in the fifth octal digit".
+   It is 1000300000000000000000. The '2' reading gives a ZERO fraction,
+   and A2's own title is "NON ZERO MULTIPLICAND FRACT."; the '3' gives
+   fraction 800000000000. Three independent constraints pick it and
+   none picks the other: the exponent -1024, the non-zero fraction, and
+   the product itself -- FK59.frac x FK60.frac keeping the top 48 bits
+   is 14e5dc14e5dc, which is exactly FK15's fraction, the constant A2
+   compares against. My earlier note also mis-indexed the octal digits
+   (FK59 reads +1024 only when digit 4 is counted correctly), which is
+   what produced the false "+1024 vs -1024" conflict in the first
+   place. Arithmetic settled it, as with FPK23; inference did not. Then D*, LFT and *+,
    then D/ -- which is the one that needs a
    multi-cycle unit, because an unrolled combinational 48-place divide
    is a different proposition from the 48x48 multiplies already in
