@@ -1,0 +1,108 @@
+! jb_af1c F214 "MULTIPLY TEST ROUTINE", sub-block F214B "TESTS OF SIGN
+! AND MODIFIER COMBINATIONS", p.138 (octal 017673.40-017727.00, the
+! block's own exit "B,$+1.").  Continues fp_arith_f214a.strap.
+!
+! Header: "MS+MEM. SIGN, ACS+ACC. SIGN, N AND A ARE MODIFIERS".  For
+! multiply the modifiers act on the multiplicand's FRACTION sign, not
+! on its exponent -- the opposite of E+ and E+I, where the header said
+! "the sign modifiers apply to the sign of the exponent only".  The
+! product's sign is the exclusive-or of the two fraction signs.
+!
+! All five sub-tests multiply the same magnitudes, so every one expects
+! the same 60-bit result (FK16, exponent +3, fraction 14e5dc14e5dc) and
+! differs ONLY in the sign bit, checked separately with BB or BZB on
+! sign-byte bit 4:
+!
+!   B1  L  FPK52 (+) * FPK82 (-)            -> sign 1
+!   B2  LN FPK52 (-) * FPK82 (-)            -> sign 0
+!   B3  L  FPK52 (+) * FPK84 (+) with N     -> sign 1
+!   B4  L  FPK52 (+) * FPK84 (+) with N+A   -> sign 1
+!   B5  LN FPK52 (-) * FPK82 (-) with N+A   -> sign 0
+!
+! B4 IS BLIND TO A AND B5 CARRIES IT, the same asymmetry this
+! diagnostic keeps producing.  A forces the multiplicand's sign
+! positive, so it can only be seen where that sign is NEGATIVE:
+!   B4 addresses FPK84, whose sign is already positive, so A changes
+!      nothing and N+A gives exactly what N alone gives in B3.
+!   B5 addresses FPK82, whose sign is negative, so A clears it and N
+!      then sets it again; drop A and the product comes out negative
+!      instead of positive.
+! So of the two rows that write N+A, only B5 can fail if absSign is
+! wrong.
+!
+! ASSEMBLER NOTE: *N and *NA need no new rules -- the generic
+! trailing-N/A suffix strips them to `*`, which is a real FP op.  Note
+! the listing's two uses of "%N" around multiply mean different things:
+! "*%N¤,FK63" in F214A5 is the NORMALIZED modifier on a bare `*`
+! (printed .01, unnorm 0), while "*N%U¤,FPK84" here is the mnemonic
+! `*N` with the unnormalized modifier (printed .51, unnorm 1 and
+! invSign 1).  The printed code tells them apart; the source spelling
+! nearly does not.
+!
+! All five expected results were computed from the pool constants
+! before the model ran.
+
+! -- SSIP framework substitutes: SERS (octal 1304) -> FAIL halt,
+! -- SEN (octal 1310) -> scratch.
+        SLC, (8)1304.0
+SERS    BEW, $
+        SLC, (8)1310.0
+SEN     DD(BU,64,8), 0
+
+! -- constants (pools pp.176-177) --
+        SLC, (8)22071.0
+FPK52   DD(BU,64,8), (8)0001024713560247135620
+        SLC, (8)22122.0
+FPK82   DD(BU,64,8), (8)0000500000000000000010
+FPK84   DD(BU,64,8), (8)0000500000000000000000
+        SLC, (8)22162.0
+FK16    DD(BU,64,8), (8)0001412345670123456700
+
+        SLC, (8)17673.40
+        B, $+.32                             ! F214B1 - MS+1, ACS+N+A+0
+F214B1  L(U), FPK52
+        *(U), FPK82                          ! sign of fract. is negative
+        CT0110(BU,60), FK16, 68              ! test result of multiplication
+        SIC, SEN
+        BRGZ, SERS
+        BB, 10.4, POR1                       ! test sign bit +1
+        SIC, SEN
+        B, SERS
+        B, $+.32                             ! F214B2 - MS+ACS+1, N+A+0
+POR1    LN(U), FPK52                         ! acc sign neg
+        *(U), FPK82                          ! memory sign negative
+        CT0110(BU,60), FK16, 68              ! test result
+        SIC, SEN
+        BRGZ, SERS
+        BZB, 10.4, POR2                      ! test sign bit +0
+        SIC, SEN
+        B, SERS
+        B, $+.32                             ! F214B3 - MS+ACS+A+0, N+1
+POR2    L(U), FPK52                          ! acc sign pos
+        *N(U), FPK84                         ! memory sign, neg.
+        CT0110(BU,60), FK16, 68
+        SIC, SEN
+        BRGZ, SERS
+        BB, 10.4, POR3                       ! test sign bit +1
+        SIC, SEN
+        B, SERS
+        B, $+.32                             ! F214B4 - MS+ACS+0, N+A+1
+POR3    L(U), FPK52                          ! acc sign pos
+        *NA(U), FPK84                        ! mem. sign, neg
+        CT0110(BU,60), FK16, 68
+        SIC, SEN
+        BRGZ, SERS
+        BB, 10.4, POR4                       ! test sign bit +1
+        SIC, SEN
+        B, SERS
+        B, $+.32                             ! F214B5 - MS+ACS+N+A+1
+POR4    LN(U), FPK52                         ! acc sign neg
+        *NA(U), FPK82                        ! mem. sign, neg.
+        CT0110(BU,60), FK16, 68
+        SIC, SEN
+        BRGZ, SERS
+        BZB, 10.4, POR5                      ! test sign bit +0
+        SIC, SEN
+        B, SERS
+POR5    BEW, $                               ! 017727.00: the block's exit "B,$+1."
+        END, F214B1

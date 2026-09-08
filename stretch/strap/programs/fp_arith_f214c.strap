@@ -1,0 +1,90 @@
+! jb_af1c F214 "MULTIPLY TEST ROUTINE", sub-block F214C "TESTS OF
+! UNCHANGED REGISTERS", pp.138-139 (octal 017731.00-017760.40, the
+! block's own exit "B,$+1.").  Continues fp_arith_f214b.strap.
+!
+! THIS BLOCK ANSWERS THE QUESTION F214A COULD NOT.  F214A checks only
+! the exponent and the high fraction, so nothing there says whether
+! multiply writes the accumulator's low half -- and the machine has a
+! 96-bit accumulator, so it is a fair question.  C2 settles it:
+!
+!   C2  fills the sign byte, the LEFT word and -- via L(BU),FPK1 --
+!       the RIGHT word with ones, multiplies by FPK0 (zero), and then
+!       demands "TEST R +1 S": the whole right word STILL ALL ONES.
+!
+! A multiply that wrote a 96-bit product into IBM 12-107 would put
+! zeros through IBM 64-107 and fail that check.  So MULTIPLY LEAVES
+! IBM 64-127 ALONE.  C1 is the same test from the other side: clear
+! everything, multiply by FPK56, and require the right word to remain
+! zero.  Together they pin the behaviour from both polarities, the way
+! F212XC and F213C do for their instructions.
+!
+! WHICH OPERAND EACH CONNECTIVE ACTUALLY LOOKS AT, since it decides
+! what the checks mean.  Reading the four truth-table bits as the
+! results for (memory, accumulator) = (0,0),(0,1),(1,0),(1,1):
+!   CT0101 = 0,1,0,1  ->  the ACCUMULATOR bit; memory is a dummy
+!   CT1010 = 1,0,1,0  ->  NOT the accumulator bit; memory is a dummy
+!   CT0011 = 0,0,1,1  ->  the MEMORY bit, i.e. the sign byte at word 10
+!   CT1100 = 1,1,0,0  ->  NOT the memory bit
+! So the L60-63 and R checks read the accumulator and ignore their
+! addressed constant entirely, while the SB checks read memory.
+!
+! TRANSCRIPTION NOTE: C2's first check has its two columns disagree.
+! The source column reads "CT1010%BU,4¤,FPK1,64" but the printed code
+! is "22005.00 80 004040.25 70", and 022005 is FPK0, not FPK1 (022006).
+! Transcribed to match the PRINTED CODE, which is what this verifier
+! reproduces.  It cannot change the test either way: CT1010's result
+! does not depend on the memory operand at all, per the table above, so
+! FPK0 and FPK1 give the same answer.  The row immediately after it
+! prints 22006 and does read FPK1, which is why the disagreement is
+! visible at all.
+
+! -- SSIP framework substitutes: SERS (octal 1304) -> FAIL halt,
+! -- SEN (octal 1310) -> scratch.
+        SLC, (8)1304.0
+SERS    BEW, $
+        SLC, (8)1310.0
+SEN     DD(BU,64,8), 0
+
+! -- constants (pool p.176) --
+        SLC, (8)22005.0
+FPK0    DD(BU,64,8), (8)0000000000000000000000
+FPK1    DD(BU,64,8), (8)1777777777777777777777
+        SLC, (8)22075.0
+FPK56   DD(BU,64,8), (8)0002024713560247135627
+
+        SLC, (8)17731.0
+F214C   CM0000(BU,8), $SB                    ! F214C1 - 0 s remain 0
+        C0000(BU,64), FPK0, 64
+        C0000(BU,64), FPK0
+        *(U), FPK56
+        CT0101(BU,4), FPK0, 64               ! test L60-63 +0
+        SIC, SEN
+        BRGZ, SERS
+        CT0101(BU,64), FPK0                  ! test R +0
+        SIC, SEN
+        BRGZ, SERS
+        CT0011(BU,4), $SB                    ! test SB0-3 +0
+        SIC, SEN
+        BRGZ, SERS
+        CT0011(BU,3), $SB+.5                 ! test SB 5-7 +0
+        SIC, SEN
+        BRGZ, SERS
+        B, $+.32                             ! F214C2 - 1 s remain 1 s
+        L(BU), FPK1                          ! fills the RIGHT word with ones
+        CM1111(BU,8), $SB
+        C1111(BU,64), FPK1, 64               ! fills the LEFT word with ones
+        *(U), FPK0
+        CT1010(BU,4), FPK0, 64               ! test L60-63 +1 s  (see note)
+        SIC, SEN
+        BRGZ, SERS
+        CT1010(BU,64), FPK1                  ! test R +1 s -- the load-bearing row
+        SIC, SEN
+        BRGZ, SERS
+        CT1100(BU,4), $SB                    ! test SB 0-3 +1 s
+        SIC, SEN
+        BRGZ, SERS
+        CT1100(BU,3), $SB+.5                 ! test SB5-7 +1 s
+        SIC, SEN
+        BRGZ, SERS
+PASS    BEW, $                               ! 017760.40: the block's exit "B,$+1."
+        END, F214C
