@@ -1791,9 +1791,20 @@ function ActionValue#(Tuple4#(HWordAddr, Maybe#(Tuple2#(Bit#(4), IndexWord)),
               FpdResult r = fpAddDouble(da, db, normalized, noisy, False);
               st.writeWord(addrAccLeft, fpdAccLeft(r.res));
               st.writeWord(addrAccRight, fpdAccRight(r.res, accR));
-              // Sign byte: bit 4 from the sum, flags from accS -- the
-              // same reasoning as D+ (the flagged path can return the
-              // storage operand whole, carrying ITS flags in r.res).
+              // Sign byte: bit 4 from the sum, flags from accS. NOTE
+              // that for F+, unlike D+, sbFlags(accS) and r.res.flags
+              // are provably the SAME thing: fpAddDouble's unflagged
+              // path builds its result with `flags: a.flags` always,
+              // and the exponent substitution above makes any flagged
+              // pair like-flagged with EQUAL exponents, so the
+              // tie-break returns `a`. There is no F+ input that can
+              // separate them, and jb_af1c F212XC1 does not, despite
+              // addressing an operand whose flag bits are 111 against
+              // a just-zeroed accumulator ("MEM FLAGS+7") -- injecting
+              // r.res.flags here leaves XC green. accS is written for
+              // uniformity with D+, where the two DO differ (its
+              // flagged path can return the storage operand whole) and
+              // where F208C2 pins the choice.
               st.writeWord(addrAccSignByte, sbWith(accS, r.res.sign, sbFlags(accS)));
               ind = setBit(ind, ind_MOP, 0);
               FpNum vind = fpdHead(r.res);
@@ -1804,6 +1815,15 @@ function ActionValue#(Tuple4#(HWordAddr, Maybe#(Tuple2#(Bit#(4), IndexWord)),
               // low fff...f, an UNCHANGED exponent of +2 and LC ON:
               // the carry out of the 96-bit fraction is simply lost.
               if (r.lc) ind = setBit(ind, ind_LC, 1);
+              // LS is reachable for F+ -- an exact cancellation gives a
+              // zero result fraction with non-zero operands -- but no
+              // row in F212-X produces one. PSH is not reachable at
+              // all: fpAddDouble computes it from |ea - eb|, and the
+              // substitution above forces that difference to zero, so
+              // `adiff > 48` is never true (nor is the `adiff > 95`
+              // early return). The line stays anyway, because keeping
+              // this arm shaped like D+'s is worth more than pruning
+              // dead uniformity -- but it is dead, not merely untested.
               if (r.ls) ind = setBit(ind, ind_LS, 1);
               if (r.psh) ind = setBit(ind, ind_PSH, 1);
               ind = setRangeIndicators(ind, fpRangeBits(vind, r.generated, r.propagated));

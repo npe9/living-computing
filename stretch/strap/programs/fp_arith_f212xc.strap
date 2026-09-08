@@ -18,21 +18,43 @@
 ! rewrite it; 0-3 and 5-7 (the three data flags among them) must not
 ! move.
 !
-! XC1 IS THE ONE THAT DISCRIMINATES, and the listing flags why in its
-! own comment on the F+ row: "MEM FLAGS+7".  FPK21's flag bits are
-! 111, so an implementation that took the sign byte's flags from the
-! ADDRESSED OPERAND rather than from the accumulator would leave SB
-! 5-7 at 7 against an accumulator zeroed a moment earlier, and the
-! "DOES SB5-7 REMAIN+0-S" check would catch it.  The model takes them
-! from accS -- sbWith(accS, sign, sbFlags(accS)) -- for the reason
-! F208C2 pinned on D+, and this is the row that tests it from the
-! other side.
+! WHAT XC1 DOES AND DOES NOT DISCRIMINATE, measured rather than
+! assumed.  The listing flags FPK21's operand with "MEM FLAGS+7" --
+! its flag bits are 111 against an accumulator zeroed a moment
+! earlier -- so it looks like the row that would catch an
+! implementation taking the sign byte's flags from the ADDRESSED
+! OPERAND instead of from accS.  Injecting exactly that
+! (sbWith(accS, sign, r.res.flags) for sbFlags(accS)) leaves BOTH XC
+! sub-tests GREEN.
+!
+! The reason is structural and specific to F+.  On fpAddDouble's
+! unflagged path the result is built with `flags: a.flags`, the
+! accumulator's, always; and on the flagged path F+'s exponent
+! substitution puts the two operands in the SAME range with EQUAL
+! exponents, so the like-flagged tie-break returns `a` -- again the
+! accumulator.  There is no F+ input for which r.res.flags differs
+! from the accumulator's flags, so the two expressions are equivalent
+! here and no diagnostic can separate them.  (For D+ they are not
+! equivalent: the flagged path can return the storage operand whole,
+! carrying ITS flags, which is what F208C2 pinned.)
+!
+! So the check is a real one about the MACHINE -- it would catch a
+! machine that let operand flags leak into the sign byte -- but it
+! cannot fail on this model, and it should not be cited as cover for
+! the sbFlags(accS) choice.  What XC1 and XC2 DO pin is measured
+! below.
 !
 ! Note what XC2's accumulator is: all ones means the exponent field is
 ! all ones too, so the accumulator is XFN and F+ performs no addition.
 ! XC1's is all zeros, an N-range accumulator, so there it does.  The
 ! two sub-tests therefore check the preservation on BOTH of F+'s
 ! paths, which is more than the wording suggests.
+!
+! MEASURED, by injection: dropping F+'s carry-through of IBM 108-127
+! (fpdAccRight's oldRight[19:0]) halts XC2 at 017001.40, its "DOES
+! R44-63 REMAIN+1-S" check.  XC1 cannot see that one -- its low 20
+! bits are zero either way -- which is why the block needs both
+! polarities and not just the zero one.
 !
 ! The connectives read as "result must be all zeros, or BRGZ fires":
 ! CT0101/CT1010 test the ACCUMULATOR field (FPK0/FPK1 are the dummy

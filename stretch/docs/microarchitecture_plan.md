@@ -1012,10 +1012,76 @@ hand vectors alone. "Enables" notes the dependency chain.
    and was corrected to ...250; its KR compares pass either way, which
    is why it went unnoticed. XB uses FPK23, hence the check.
 
-   Next after F212XA: F212XB "SIGN AND MODIFIERS" (016742.00, F+A and
-   F-A against FPK23/FPK40/FPK22 -- and F- is a mnemonic the
-   assembler has not seen), then F212XC "TEST UNCHANGED REGS"
-   (016764.00). Then D*, LFT and *+, then D/ -- which is the one that needs a
+   F212XB AND F212XC DONE, AND F212-X IS COMPLETE (XA, XB, XC;
+   016651.00-017005.40). XB "SIGN AND MODIFIERS" is two sub-tests that
+   address the SAME operand and differ only in the invSign bit: F+A
+   forces it positive so the magnitudes subtract, F-A inverts it back
+   so they add, and each closes with "BB,10.4,$+2.0 -TEST SIGN BIT 1"
+   demanding a negative result either way. F-A is the sixth
+   written-minus mnemonic (after M-, M-A, -MG, M-MG, D-, D-MG) and
+   strap_asm gained the rule; F+A needed none, the generic "A" suffix
+   strips to F+.
+
+   XB CLOSES A GAP XA COULD NOT REACH. Every F212XA row is a plain F+,
+   so nothing there separates db.sign = opnd.sign (sign modifiers
+   already applied) from the raw storage word's sign bit. Injecting
+   the raw bit halts XB at 016746.00 -- XB1's first BRGZ -- and leaves
+   XA green.
+
+   XC "TEST UNCHANGED REGS" zeroes $L/$R/$SB, runs an F+, and checks
+   that R 44-63 (IBM 108-127) and sign byte bits 0-3 and 5-7 survive;
+   then repeats it with everything set to ones. Bit 4 is deliberately
+   excluded, being the result sign. Injecting the loss of
+   fpdAccRight's oldRight[19:0] halts XC2 at 017001.40, its "DOES
+   R44-63 REMAIN+1-S" check; XC1 cannot see it, its low 20 bits being
+   zero either way, which is why the block runs both polarities.
+
+   A CLAIM OF MINE THAT THE INJECTION FALSIFIED, recorded because the
+   commit message for XB/XC (7579bc6) asserts it and is already
+   pushed. I read XC1's "MEM FLAGS+7" comment -- FPK21's flag bits are
+   111 against a just-zeroed accumulator -- as the row that catches an
+   implementation taking the sign byte's flags from the ADDRESSED
+   OPERAND rather than from accS, and said so. It does not. Injecting
+   sbWith(accS, sign, r.res.flags) leaves BOTH XC sub-tests green.
+   The reason is structural and specific to F+: fpAddDouble's
+   unflagged path builds its result with `flags: a.flags` always, and
+   on the flagged path F+'s exponent substitution makes the two
+   operands like-flagged with equal exponents, so the tie-break
+   returns `a`. There is no F+ input for which r.res.flags differs
+   from the accumulator's, so the two expressions are equivalent and
+   nothing can separate them. For D+ they are NOT equivalent -- its
+   flagged path can return the storage operand whole with its own
+   flags, which is what F208C2 pinned -- and that remains the only
+   cover the sbFlags(accS) choice has. XC1's check is still a real
+   test of a MACHINE; it just cannot fail on this model.
+
+   THE UNIFYING MECHANISM, and it is worth stating precisely because
+   it has now bitten three times in this one routine: F+ makes the two
+   operands identical in exponent, which silently MERGES paths a
+   reader expects to be distinct. Everything downstream that
+   discriminates on an exponent difference collapses.
+     - fpAddDouble's like-flagged tie-break becomes an equality test,
+       so the strict `>` -- and only the strict `>` -- returns the
+       accumulator.
+     - r.res.flags becomes provably a.flags on both paths, so
+       sbFlags(accS) and r.res.flags are indistinguishable for F+.
+     - r.psh = (adiff > 48) is DEAD for F+: adiff is always 0. So is
+       the `adiff > 95` early return. The arm still carries the PSH
+       line, deliberately -- keeping it shaped like D+'s is worth more
+       than removing dead uniformity -- but nothing can exercise it.
+   The two mistakes were not the same mistake, either. One was reading
+   an unconditional `if` as an `else`; the other was taking a
+   listing comment that names an interesting input ("MEM FLAGS+7") as
+   evidence that the input discriminates. Only the injections
+   separated them.
+
+   OPEN COVERAGE ON F+, all three of which F212-X cannot close:
+   the normalized path (every one of the thirteen F+ rows is %U); LS,
+   which IS reachable -- an exact cancellation gives a zero result
+   fraction with non-zero operands -- but which no row here produces;
+   and PSH, which is not reachable at all, per above.
+
+   Next after F212-X: D*, LFT and *+, then D/ -- which is the one that needs a
    multi-cycle unit, because an unrolled combinational 48-place divide
    is a different proposition from the 48x48 multiplies already in
    fpMul. (This paragraph previously called that "section 1c step 5c's
