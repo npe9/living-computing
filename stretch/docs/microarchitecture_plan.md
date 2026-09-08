@@ -1153,7 +1153,54 @@ hand vectors alone. "Enables" notes the dependency chain.
    STILL GENUINELY OPEN after F213: E+I, which p.102 makes the same
    operation as E+ but which no transcribed block drives.
 
-   Next after F213B: D*, LFT and *+, then D/ -- which is the one that needs a
+   F213B AND F213C DONE, F213 COMPLETE (A, B, C), commit f134a1d. B is
+   sixteen sign-and-modifier sub-tests, C the unchanged-registers pair;
+   both green on the model first run, suite 156.
+
+   THE GAP FROM d2b730d IS CLOSED, AND MEASURED. F213A could not test
+   p.102's "the sign modifiers are ignored if either one or both of the
+   exponents are in the XFP or XFN range", because every A row is a
+   plain E+. B10 and B11 pair an N accumulator (+256) with FPK48, whose
+   -1791 exponent is XFN, and demand -1791 back. Injecting the fault --
+   apply the modifiers BEFORE the Fig.32 range test -- halts F213B at
+   017221.00, which is B10, and leaves F213A1-A9 green. So the rule the
+   E+ arm followed on the manual's authority alone is now pinned by the
+   diagnostic.
+
+   THE 2x2 IS NOT AS EXHAUSTIVE AS IT LOOKS, and this is the third time
+   in three routines that a suggestive row turned out not to
+   discriminate, so it is worth stating as a pattern rather than an
+   anecdote. Four B sub-tests address the flagged FPK48 across all four
+   modifier combinations, but only two can detect the fault:
+     B13  no modifier   es untouched, FPK48 stays XFN      blind
+     B16  N+A           A clears es, N sets it again --
+                        they CANCEL, FPK48 stays XFN       blind
+     B10  A alone       es cleared -> XFP +1791            discriminates
+     B11  N alone       es cleared -> XFP +1791            discriminates
+   The general shape, seen now at F212XC1 (a substitution had collapsed
+   the two flag sources), at F212XA (an unconditional if read as an
+   else) and here (two modifiers cancelling): WHEN AN INSTRUCTION
+   REWRITES ONE OPERAND FIELD FROM ANOTHER, OR WHEN TWO MODIFIERS TOUCH
+   THE SAME BIT, COUNT THE CASES THAT ACTUALLY REACH THE CODE, NOT THE
+   CASES THE LISTING ENUMERATES.
+
+   Assembler: E-/E-A -> E+ with N / N+A, the seventh and last of the
+   written-minus family (M-, M-A, -MG, M-MG, D-, D-MG, F-, E-).
+
+   F213C checks the sign byte in ONE eight-bit connective where F212XC
+   needed two pieces: E+ never writes the sign, so bit 4 need not be
+   excluded, and the printed code shows it ("010000.07" against
+   F212XC's "004000.07"). Both its sub-tests take the flagged path from
+   opposite sides -- C1's zeroed accumulator against an all-ones FPK1
+   (XFN memory wins), C2's all-ones accumulator, itself XFN, against
+   FPK0 -- which neither comment says.
+
+   Next after F213C: F213D "INDICATOR TESTS" (017265.00), D1-D4 the
+   arithmetic result indicators and D5 onward the exponent range ones
+   (XPFP/XPO/XPH/XPL/XPU through BB,11.28-11.32, plus ZM at 11.33) --
+   the first block to exercise fpRangeBits on E+'s flagged path, which
+   the F213A change made set `propagated`. Then D*, LFT and *+, then
+   D/ -- which is the one that needs a
    multi-cycle unit, because an unrolled combinational 48-place divide
    is a different proposition from the 48x48 multiplies already in
    fpMul. (This paragraph previously called that "section 1c step 5c's
