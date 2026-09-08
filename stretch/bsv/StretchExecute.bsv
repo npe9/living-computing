@@ -1418,6 +1418,7 @@ function ActionValue#(Tuple4#(HWordAddr, Maybe#(Tuple2#(Bit#(4), IndexWord)),
                    || c == 7'b0011010 || c == 7'b1010110 || isEplI || isSHF
                    || c == 7'b1000110 || c == 7'b1100110   // DL / DLWF
                    || c == 7'b1000010 || c == 7'b1100010   // D+ / D+MG
+                   || c == 7'b1010010                     // F+ (ADD TO FRACTION)
                    || isSRD || isSLO);                     // SRD / SLO
         if (!known)
           ind = setOpInvalid(ind);   // /, R/, the rest of double precision, SRT, LFT, *+ ...: not yet
@@ -1746,6 +1747,62 @@ function ActionValue#(Tuple4#(HWordAddr, Maybe#(Tuple2#(Bit#(4), IndexWord)),
               FpNum vind = fpdHead(r.res);
               vind.frac = (r.res.frac == 0) ? 0 : 48'b1;
               ind = setResultIndicatorsFp(ind, vind);
+              if (r.lc) ind = setBit(ind, ind_LC, 1);
+              if (r.ls) ind = setBit(ind, ind_LS, 1);
+              if (r.psh) ind = setBit(ind, ind_PSH, 1);
+              ind = setRangeIndicators(ind, fpRangeBits(vind, r.generated, r.propagated));
+              ind = setBit(ind, ind_ZM, 0);
+            end
+            7'b1010010: begin // F+ (ADD TO FRACTION, p.101)
+              // "The operation is the same as ADD DOUBLE except that
+              // the exponent of the operand in the accumulator is used
+              // for both the addressed operand and the operand in the
+              // accumulator." So the storage operand keeps its
+              // fraction, its sign -- modified by the sign modifiers
+              // before the addition, exactly as for D+ -- and its own
+              // data FLAGS; only ef/em/es are replaced.
+              //
+              // p.101 also says "when the accumulator operand is a
+              // value in the XFP or XFN range, the fraction addition
+              // is not performed." That needs no arm of its own:
+              // forcing the accumulator's exponent onto the storage
+              // operand puts BOTH operands in the SAME range with
+              // EQUAL exponents, and fpAddDouble's like-flagged
+              // TIE-BREAK -- `(fpExp(hb) > fpExp(ha)) ? b : a`, which
+              // overwrites the range ladder above it rather than
+              // being an else on it -- then returns `a`, the
+              // accumulator, because the comparison is strict.
+              // jb_af1c F212XA1-XA3 (an XFP accumulator) and XA7-XA9
+              // (XFN) are exactly that case and demand the
+              // accumulator back untouched; relaxing the `>` to `>=`
+              // halts XA1 at 016654.40. F+ is the only op that makes
+              // the two exponents equal, so those six rows are the
+              // only cover that comparison has at equality.
+              // Conversely XA4 pairs an N accumulator with an XFP
+              // OPERAND and DOES demand the addition -- which is why
+              // the exponent must be forced BEFORE the range test,
+              // not after; dropping the substitution halts XA4 at
+              // 016676.40.
+              Word64 accR = st.readAccRight();
+              FpDouble da = fpdFromAcc(accL, accR, accS);
+              FpDouble db = fpdFromWord(prefetch[0]);
+              db.sign = opnd.sign;   // the sign modifiers, already applied
+              db.ef = da.ef; db.em = da.em; db.es = da.es;
+              FpdResult r = fpAddDouble(da, db, normalized, noisy, False);
+              st.writeWord(addrAccLeft, fpdAccLeft(r.res));
+              st.writeWord(addrAccRight, fpdAccRight(r.res, accR));
+              // Sign byte: bit 4 from the sum, flags from accS -- the
+              // same reasoning as D+ (the flagged path can return the
+              // storage operand whole, carrying ITS flags in r.res).
+              st.writeWord(addrAccSignByte, sbWith(accS, r.res.sign, sbFlags(accS)));
+              ind = setBit(ind, ind_MOP, 0);
+              FpNum vind = fpdHead(r.res);
+              vind.frac = (r.res.frac == 0) ? 0 : 48'b1;
+              ind = setResultIndicatorsFp(ind, vind);
+              // F212XA6 adds 000000000001_ffffffffffff to
+              // ffffffffffff_000000000000 and demands high 000...0,
+              // low fff...f, an UNCHANGED exponent of +2 and LC ON:
+              // the carry out of the 96-bit fraction is simply lost.
               if (r.lc) ind = setBit(ind, ind_LC, 1);
               if (r.ls) ind = setBit(ind, ind_LS, 1);
               if (r.psh) ind = setBit(ind, ind_PSH, 1);

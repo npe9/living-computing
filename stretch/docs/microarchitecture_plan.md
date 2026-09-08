@@ -916,7 +916,106 @@ hand vectors alone. "Enables" notes the dependency chain.
    low half. Pre-compute D1 by carrying accRight forward from
    sub-test to sub-test, not by assuming zero the way A1-A23 could.
 
-   Next after F212: D*, LFT and *+, then D/ -- which is the one that needs a
+   F212-X (ADD TO FRACTION) STARTED, SUB-BLOCK F212XA DONE (pp.122-123,
+   016651.00-016740.00, nine sub-tests XA1-XA9). This is the first
+   model-driving block since F210: F+ was in opcodes.py and in the
+   decoder's valid-op list but not in StretchExecute's `known` set, so
+   it set OP INVALID.
+
+   F+ IS D+ WITH ONE SUBSTITUTION, and the substitution has to happen
+   at the right moment. Reference Manual p.101: "the exponent of the
+   operand in the accumulator is used for both the addressed operand
+   and the operand in the accumulator... When the accumulator operand
+   is a value in the XFP or XFN range, the fraction addition is not
+   performed." Implemented by copying ef/em/es (NOT the flags, which
+   stay the addressed operand's, because that is what the TF/UF/VF
+   indicators and D+'s flagged-survivor path read) from the
+   accumulator onto the storage operand and then calling fpAddDouble
+   unchanged. The second sentence then needs no code: equal exponents
+   put both operands in the same range, so a flagged accumulator takes
+   fpAddDouble's like-flagged branch, which returns `a`.
+
+   ORDER IS THE LOAD-BEARING PART, AND XA4 IS THE ROW THAT PINS IT.
+   Six of the nine sub-tests (XA1-XA3 with an XFP accumulator, XA7-XA9
+   with XFN) demand the accumulator back untouched, and they pass
+   whether the range test happens before or after the substitution.
+   XA4 is the discriminator: an N accumulator with an XFP OPERAND,
+   where the addition must be performed. Test the ranges first and the
+   operand's own XFP exponent sends it down the no-addition path and
+   the sub-test fails. Verified by injection, not by reading.
+
+   NEW COVERAGE, MEASURED: F+ IS THE ONLY OP IN THE TREE THAT FORCES
+   TWO OPERANDS TO EQUAL EXPONENTS, and that turns out to reach a line
+   nothing else did. fpAddDouble's flagged path sets `res` in an
+   else-if ladder over the range combinations and then, for LIKE-
+   flagged pairs, OVERWRITES it unconditionally with the tie-break
+   `res = (fpExp(hb) > fpExp(ha)) ? b : a`. (Unconditionally: the
+   second `if` is not a rung of the ladder above it. Reading it as an
+   else -- which is easy to do and I did -- makes the tie-break look
+   like a no-op at equality, and predicts the opposite of what
+   happens.) Because F+ makes the two exponents exactly equal, the
+   strict `>` is what returns the ACCUMULATOR; `>=` returns the
+   storage operand, whose fraction is {w[51:4], 48'b0}. Injected: XA1
+   then compares 555555555555/000000000000 against FK23/FK22 and
+   halts at 016654.40, its first BRGZ. Scanning every FP add in every
+   program for a like-flagged operand pair finds them in five
+   programs and an EQUAL-exponent one in none, so before F212XA
+   nothing pinned that comparison at equality.
+
+   THREE INJECTIONS, EACH HALTING ON THE ROW IT SHOULD (SIC's stored
+   address decoded from SEN):
+     tie-break `>` -> `>=`          016654.40  XA1's high-half check
+     drop the exponent substitution 016676.40  XA4's high-half check
+     F+ does not report LC          016715.40  XA6's BZLC
+   The second is the order test: with the substitution gone, XA4's
+   XFP operand keeps its own exponent, the pair goes down the flagged
+   path, and the addition that must happen does not.
+
+   A COVERAGE LIMIT, MEASURED FROM THE PRINTED CODE RATHER THAN THE
+   MNEMONICS: every F+ in the whole of F212-X is unnormalized. The
+   unnorm bit is bits-18 of the FP format, printed as the first octal
+   digit of the pair -- .45 for XA1-XA9, XC1 and XC2, .65 for XB1
+   (F+A) and .75 for XB2 (F-A, which is F+ with both sign-modifier
+   bits). All thirteen have it set, so F+'s NORMALIZED path never
+   executes in this routine and will not be closed by finishing XB or
+   XC. Alongside the LC-after-a-left-shift gap from F212D.
+
+   XA6 IS THE ONE ARITHMETIC EDGE: 000000000001_ffffffffffff +
+   ffffffffffff_000000000000 over the 96-bit fraction carries out of
+   IBM bit 12. The listing demands high 000000000000 (FPK67), low
+   ffffffffffff (FPK32), the exponent UNCHANGED at +2, and
+   "BZLC,SERS -- ERROR IF LC INDICATOR OFF": the carry is dropped, not
+   renormalized, and LC records it. All nine expected results were
+   computed from the pool constants against the listing's own
+   comparison operands before the model ran, and the block passed
+   first try.
+
+   TRANSCRIPTION NOTES. (a) XA2's comment reads "-EXP++50" but writes
+   FK38 at 022210, whose exponent is +1023; FPK38 at 022053 is the
+   +50 constant and XA5 is the row that uses it. The range annotation
+   "XFP + N RNGS" is right and FK38 is in the N range, so only the
+   "+50" is loose, and it cannot matter: XA2's accumulator is XFP so
+   the operand's exponent is discarded either way. (b) On p.123 the
+   two connective rows of XA8 print their third field as "30" where
+   all 34 other occurrences of the identical instruction print "80";
+   read as OCR damage. (c) FPK23 is transcribed with two different
+   values in this tree -- ...525250 in three programs, ...525230 in
+   fp_compare_f202g.strap -- and the discrepancy is already SETTLED:
+   F205B's own note records that 3 and 5 are near-identical in the
+   pool's typewriter font and that the block's arithmetic decides it
+   (B20/B22 add FPK4 to the magnitude of FPK23 and expect the
+   all-ones FPK22, which only "250" gives; the model on the "230"
+   reading came out one unit short and halted). Reading p.176 again
+   here reproduced "230" in both the source and the assembled-value
+   column, which is a good reminder that re-OCRing the same scan is
+   not independent evidence. So fp_compare_f202g.strap is the outlier
+   and was corrected to ...250; its KR compares pass either way, which
+   is why it went unnoticed. XB uses FPK23, hence the check.
+
+   Next after F212XA: F212XB "SIGN AND MODIFIERS" (016742.00, F+A and
+   F-A against FPK23/FPK40/FPK22 -- and F- is a mnemonic the
+   assembler has not seen), then F212XC "TEST UNCHANGED REGS"
+   (016764.00). Then D*, LFT and *+, then D/ -- which is the one that needs a
    multi-cycle unit, because an unrolled combinational 48-place divide
    is a different proposition from the 48x48 multiplies already in
    fpMul. (This paragraph previously called that "section 1c step 5c's

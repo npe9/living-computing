@@ -43,7 +43,7 @@ function Bool fetchesOperand(DecodedInstr d);
 endfunction
 // The word an E-box level stores to (Fp ST/M+/M+MG, VflInt
 // ST/M+/M+MG/M+1), for the store-close-to-fetch hazard; Invalid for a
-// level that writes only the accumulator (L/+/E+/SHF/*) or nothing.
+// level that writes only the accumulator (L/+/E+/F+/SHF/*) or nothing.
 function Maybe#(WordAddr) storeTarget(StretchStorage st, DecodedInstr d);
   case (d) matches
     tagged Fp .f:
