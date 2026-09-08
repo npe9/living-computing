@@ -1293,8 +1293,54 @@ hand vectors alone. "Enables" notes the dependency chain.
    calls, this is not OCR damage: the addresses are internally
    consistent. Transcribed as printed.
 
-   Next after F213-X: F214 "MULTIPLY TEST ROUTINE" (017631.40), A1-A6
-   arithmetic checks then F214B sign and modifier combinations. `*` is
+   F214A/B/C DONE (commits 9ee7fcd, fe0c2be), suite 172. The multiply
+   routine found NO BUGS -- fpMul already had the Fig.32 table E+ was
+   missing -- but it converted three assumptions into measured facts:
+   that multiply leaves IBM 64-127 alone, that fpMul's range selector
+   is right across all four combinations, and that multiply's sign
+   modifiers act on the FRACTION sign where E+'s act on the exponent's.
+
+   F214C ANSWERED A QUESTION 9ee7fcd HAD RECORDED AS UNANSWERABLE, two
+   commits later. C2 fills the sign byte, the left word and the right
+   word with ones, multiplies by zero, and demands the right word still
+   be all ones; a 96-bit product written into IBM 12-107 would zero IBM
+   64-107 and fail. So the single-length result the model already
+   produced is correct, for a reason nothing had checked.
+
+   FOUR INJECTIONS, AND ONE OF MY PREDICTIONS WAS WRONG IN A USEFUL
+   WAY:
+     double-length product     predicted C2's R check   halted C2  OK
+     IBM 60-63 not preserved   predicted C1's check     halted C2  WRONG
+     sign modifiers ignored    predicted F214B3         halted B3  OK
+   C1 CANNOT catch the 60-63 clobber. It zeroes everything first, so a
+   fault that WRITES ZEROS leaves it looking correct; only C2, which
+   fills those bits with ones, can see it. That is why the C1/C2 pair
+   is not redundant -- C1 catches "multiply leaves garbage behind", C2
+   catches "multiply clobbers with zeros", and neither alone suffices.
+   Generalises the blindness rule in a new direction: a test whose
+   set-up value equals the faulty output is blind to that fault,
+   whichever way round the values fall.
+
+   Both negative controls held: F214A stays green through the
+   double-length and sign-modifier injections, seeing neither the low
+   half nor the modifiers.
+
+   The A-BLINDNESS PATTERN HAS NOW APPEARED SIX TIMES across four
+   routines and is stable enough to state as a rule: a modifier that
+   FORCES A SIGN POSITIVE is invisible wherever that sign is already
+   positive, so in any N+A matrix expect about half the rows to be
+   blind to A. F214B4 is blind and F214B5 carries it, the same split as
+   F213B's B16/B10 and F213XB's XB12/XB10.
+
+   A SPELLING HAZARD: the listing's two uses of "%N" around multiply
+   mean different things -- F214A5's "*%N" is the NORMALIZED modifier
+   on a bare `*` (printed .01), F214B3's "*N%U" is the mnemonic `*N`
+   with the unnormalized modifier (printed .51). Only the printed code
+   tells them apart. Neither needs an assembler rule.
+
+   Next after F214C: F214D "INDICATOR TESTS" (017762.40), D1 XPFP and
+   D2 XPO onward -- the multiply counterpart of F213D5-D9, and the
+   second caller of fpRangeBits' propagated/generated split. `*` is
    already implemented, so this exercises fpMul -- including the Fig.32
    path it has always had and which F213 has only now given a second
    caller. FK60 IS SETTLED, AND MY FIRST GUESS AT IT WAS WRONG.
