@@ -816,6 +816,16 @@ run "FP add to exponent, normalization (jb_af1c F213A10-A13 on the model)" ./run
     "PC=$(python3 -c 'from strap_asm import assemble; print(assemble(open("programs/fp_arith_f213a10_13.strap").read()).symtab["PASS"]//32)')" \
     "SEN:712=0"
 
+run "FP add to exponent, sign modifiers (jb_af1c F213B, encoding)" python3 verify_fp_arith_f213b_listing.py
+run "FP add to exponent, sign modifiers (jb_af1c F213B on the model)" ./run_program.sh programs/fp_arith_f213b.strap StretchFpAddExpBTb \
+    "PC=$(python3 -c 'from strap_asm import assemble; print(assemble(open("programs/fp_arith_f213b.strap").read()).symtab["PASS"]//32)')" \
+    "SEN:712=0"
+
+run "FP add to exponent, unchanged regs (jb_af1c F213C, encoding)" python3 verify_fp_arith_f213c_listing.py
+run "FP add to exponent, unchanged regs (jb_af1c F213C on the model)" ./run_program.sh programs/fp_arith_f213c.strap StretchFpAddExpCTb \
+    "PC=$(python3 -c 'from strap_asm import assemble; print(assemble(open("programs/fp_arith_f213c.strap").read()).symtab["PASS"]//32)')" \
+    "SEN:712=0"
+
 run "Program store compare: store then EXECUTE the modified instruction" ./run_program.sh programs/store_then_execute.strap StretchStoreExecTb \
     "RESULT:$(python3 -c 'from strap_asm import assemble; print(assemble(open("programs/store_then_execute.strap").read()).symtab["RESULT"]//64)')=0x20"
 

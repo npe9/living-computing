@@ -1,0 +1,67 @@
+! jb_af1c F213 "ADD TO EXPONENT TEST", sub-block F213C "TEST UNCHANGED
+! REGISTERS", p.129 (octal 017245.00-017263.00, the block's own exit
+! "BD,$+1.0").  This completes F213.
+!
+! Two sub-tests, the same shape as F212XC: set everything to a known
+! value, run one E+, and ask that the parts E+ must not disturb came
+! through.  p.102: "Accumulator bits 108-127 and the sign byte register
+! remain unchanged."
+!
+!   C1  Z,$L / Z,$R / Z,$SB -- all zero -- then E+(U),FPK1.
+!       "CHECK R44-63 REMAIN+0" and "CHECK SB0-7 REMAIN+0".
+!   C2  C1111 both halves and CM1111 the sign byte -- all ones -- then
+!       E+(U),FPK0.  "1 S REMAIN 1 S, R44-63 AND SB0-7".
+!
+! NOTE THE FULL SIGN BYTE, 0-7.  F212XC had to check F+'s sign byte in
+! two pieces, 0-3 and 5-7, because bit 4 is the result sign and F+
+! rewrites it.  E+ touches the sign not at all -- it adds exponents and
+! "the fraction and sign of the addressed operands are ignored" -- so
+! this block checks all eight bits in one connective.
+!
+! BOTH SUB-TESTS TAKE THE FLAGGED PATH, from opposite sides, which is
+! worth knowing since neither comment says so:
+!   C1 zeroes the accumulator (exponent 0, N range) and addresses
+!      FPK1, all ones, whose exponent field is 2047 with ES 1 -- XFN.
+!      So Figure 32 gives the MEMORY operand's exponent.
+!   C2 fills the accumulator with ones, which makes ITS exponent field
+!      2047 with ES 1 -- also XFN -- and addresses FPK0, exponent 0 in
+!      the N range, so the ACCUMULATOR's exponent survives.
+! Neither checks the exponent; what they check is that the fraction's
+! low twenty bits and the sign byte are untouched either way.
+
+! -- SSIP framework substitutes: SERS (octal 1304) -> FAIL halt,
+! -- SEN (octal 1310) -> scratch.
+        SLC, (8)1304.0
+SERS    BEW, $
+        SLC, (8)1310.0
+SEN     DD(BU,64,8), 0
+
+! -- constants (pool p.176) --
+        SLC, (8)22005.0
+FPK0    DD(BU,64,8), (8)0000000000000000000000
+FPK1    DD(BU,64,8), (8)1777777777777777777777
+
+        SLC, (8)17245.0
+FAE4    Z, $L                                ! F213C1 - R44-63 and SB0-7 remain 0
+        Z, $R
+        Z, $SB
+        E+(U), FPK1
+        CT0101(BU,20), FPK0                  ! check R44-63 remain +0
+        SIC, SEN
+        BRGZ, SERS
+        CT0011(BU,8), $SB                    ! check SB0-7 remain +0
+        SIC, SEN
+        BRGZ, SERS
+        B, $+.32                             ! F213C2 - 1 s remain 1 s, R44-63 and SB0-7
+        C1111(BU,64), FPK1, 64
+        C1111(BU,64), FPK1
+        CM1111(BU,8), $SB
+        E+(U), FPK0
+        CT1010(BU,20), FPK1                  ! check R44-63 remain +1 s
+        SIC, SEN
+        BRGZ, SERS
+        CT1100(BU,8), $SB                    ! check SB0-7 remain +1 s
+        SIC, SEN
+        BRGZ, SERS
+PASS    BEW, $                               ! 017263.00: the block's exit "BD,$+1.0"
+        END, FAE4

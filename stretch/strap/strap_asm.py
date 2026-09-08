@@ -739,6 +739,16 @@ def strip_fp_sign(op):
         return ("F+", 0, 1)
     if op == "F-A":
         return ("F+", 1, 1)
+    # And ADD TO EXPONENT's (F213B, jb_af1c pp.128-129), the seventh
+    # and last of the family: E- is E+ with N, E-A with both.  The
+    # listing prints E-%U as "22020.55 60" beside E+%U's ".45 60" and
+    # E-A%U as ".75 60" beside E+A%U's ".65 60" -- the same address and
+    # code, differing in the invSign bit alone.  E+A needs no rule,
+    # since the generic "A" suffix strips to E+, a real FP op.
+    if op == "E-":
+        return ("E+", 0, 1)
+    if op == "E-A":
+        return ("E+", 1, 1)
     # SHIFT FRACTION's direction mnemonics (F212, jb_af1c pp.115-121).
     # SHF's direction is bit 11 of the effective address, and Reference
     # Manual p.102 adds "the sign of the shift -- bit 11 of the

@@ -1,0 +1,189 @@
+! jb_af1c F213 "ADD TO EXPONENT TEST", sub-block F213B "TESTS OF SIGN
+! AND MODIFIER VARIATIONS", pp.128-129 (octal 017163.00-017243.00, the
+! block's own exit "BD,$+1.0").  Continues fp_arith_f213a10_13.strap.
+!
+! The listing's own header states the rule: "MS+MEM. SIGN, ACS+ACC.
+! SIGN, N AND A ARE MODIFIERS" and "THE SIGN MODIFIERS APPLY TO THE
+! SIGN OF THE EXPONENTS ONLY".  Sixteen sub-tests, each one DL, one
+! E+ variant and one 12-bit exponent compare.
+!
+! This block closes the coverage gap F213A left open: A1-A13 are all
+! plain E+ with no modifier, so nothing there could test Reference
+! Manual p.102's "the sign modifiers are ignored if either one or both
+! of the exponents are in the XFP or XFN range".
+!
+! TWELVE OF THE SIXTEEN have both exponents in the N range, so the
+! modifiers apply and the result is an ordinary sum.  A is absolute
+! (force the exponent sign positive), N inverts it, and the listing's
+! comment on each E+ row gives the exponent AFTER modification, not the
+! constant's own -- B15's "E-%U,FPK50-EXP++50" addresses a constant
+! whose exponent is -50 and inverts it:
+!
+!   B1  FPK13  +7 + FPK16 +19          -> +26  FPK20
+!   B2  FPK13  +7 + FPK16 +19  A       -> +26  FPK20
+!   B3  FPK16 +19 + FPK11  +6  N       -> +13  FPK14
+!   B4  FPK16 +19 + FPK11  +6  N+A     -> +13  FPK14
+!   B5  FPK51  -6 + FPK16 +19          -> +13  FPK14
+!   B6  FPK51  -6 + FPK16 +19  A       -> +13  FPK14
+!   B7  FPK47 -256 + FPK0  +0  N       -> -256 FPK47
+!   B8  FPK47 -256 + FPK0  +0  N+A     -> -256 FPK47
+!   B9  FPK0    +0 + FPK47 -256        -> -256 FPK47
+!   B12 FPK21 +50 + FPK46 -94  N+A     -> -44  FPK49
+!   B14 FPK45 -46 + FPK50 -50  A       -> +4   FPK8
+!   B15 FPK45 -46 + FPK50 -50  N       -> +4   FPK8
+!
+! THE OTHER FOUR ARE THE POINT OF THE BLOCK.  Each addresses FPK48,
+! whose exponent -1791 is in the XFN range, so Figure 32 decides and
+! the modifiers are ignored entirely -- the result is the MEMORY
+! operand's exponent whatever modifiers are written:
+!
+!   B13 FPK47 -256 + FPK48 -1791  (none)  -> -1791  FK25
+!   B10 FPK28 +256 + FPK48 -1791  A       -> -1791  FK30
+!   B11 FPK28 +256 + FPK48 -1791  N       -> -1791  FK30
+!   B16 FPK47 -256 + FPK48 -1791  N+A     -> -1791  FK25
+!
+! ONLY TWO OF THOSE FOUR ACTUALLY DISCRIMINATE, which is worth saying
+! because the 2x2 looks exhaustive and is not.  The failure mode being
+! guarded against is testing the ranges on the MODIFIED operand, and es
+! is exactly the bit that separates XFP from XFN:
+!   B13 writes no modifier, so es is untouched and FPK48 stays XFN.
+!   B16 writes N+A, and A clears es while N sets it again -- they
+!       cancel, so FPK48 stays XFN too.
+!   B10 (A alone) and B11 (N alone) each leave es 0, which would
+!       reclassify FPK48 as XFP +1791; XFP then beats the N
+!       accumulator and the result would be +1791 instead of -1791.
+! So B10 and B11 are the two rows that carry the rule.  Verified by
+! injection rather than by reading.
+!
+! All sixteen expected exponents were computed from the pool constants
+! before the model ran.
+!
+! TRANSCRIPTION NOTE: B12's compare row prints its operand address as
+! "22056", but FPK49 sits at 022066 -- its neighbours pin it, since
+! FPK47 022064, FPK48 022065, FPK50 022067 and FPK51 022070 are all
+! confirmed by their own rows in this same block, leaving 022066 as
+! FPK49's only possible slot.  022056 holds FPK41, whose exponent is
+! +2 and which would make the sub-test's arithmetic wrong; FPK49's is
+! -44, exactly the "-44" the row's own comment demands.  Read as OCR
+! damage and transcribed as FPK49.
+
+! -- SSIP framework substitutes: SERS (octal 1304) -> FAIL halt,
+! -- SEN (octal 1310) -> scratch.
+        SLC, (8)1304.0
+SERS    BEW, $
+        SLC, (8)1310.0
+SEN     DD(BU,64,8), 0
+
+! -- constants (pools pp.176-178) --
+        SLC, (8)22005.0
+FPK0    DD(BU,64,8), (8)0000000000000000000000
+        SLC, (8)22015.0
+FPK8    DD(BU,64,8), (8)0002005252525252525240
+        SLC, (8)22020.0
+FPK11   DD(BU,64,8), (8)0003001252525252525240
+        SLC, (8)22022.0
+FPK13   DD(BU,64,8), (8)0003400525252525252520
+FPK14   DD(BU,64,8), (8)0006400005252525252520
+        SLC, (8)22025.0
+FPK16   DD(BU,64,8), (8)0011400000052525252520
+        SLC, (8)22031.0
+FPK20   DD(BU,64,8), (8)0015177777752525252520
+FPK21   DD(BU,64,8), (8)0031177777777777777767
+        SLC, (8)22041.0
+FPK28   DD(BU,64,8), (8)0200177777777777777760
+        SLC, (8)22062.0
+FPK45   DD(BU,64,8), (8)0027377777777777777760
+FPK46   DD(BU,64,8), (8)0057377777777777777760
+FPK47   DD(BU,64,8), (8)0200377777777777777760
+FPK48   DD(BU,64,8), (8)1577777777777777777770
+FPK49   DD(BU,64,8), (8)0026377777777777777760
+FPK50   DD(BU,64,8), (8)0031377777777777777760
+FPK51   DD(BU,64,8), (8)0003201252525252525240
+        SLC, (8)22173.0
+FK25    DD(BU,64,8), (8)1577777777777777777760
+        SLC, (8)22200.0
+FK30    DD(BU,64,8), (8)1577617777777777777760
+
+        SLC, (8)17163.0
+FAE3    DL(U), FPK13                         ! F213B1 - MS+ACS+N+A+0; exp ++7
+        E+(U), FPK16                         ! exp ++19
+        CT0110(BU,12), FPK20, 116            ! test result exp. + +26
+        SIC, SEN
+        BRGZ, SERS
+        DL(U), FPK13                         ! F213B2 - MS+ACS+N+0, A+1
+        E+A(U), FPK16                        ! exp ++19
+        CT0110(BU,12), FPK20, 116            ! test result exp. + +26
+        SIC, SEN
+        BRGZ, SERS
+        DL(U), FPK16                         ! F213B3 - MS+ACS+A+0, N+1
+        E-(U), FPK11                         ! modified exp +-6
+        CT0110(BU,12), FPK14, 116            ! test result exp + +13
+        SIC, SEN
+        BRGZ, SERS
+        DL(U), FPK16                         ! F213B4 - MS+ACS+0, N+A+1
+        E-A(U), FPK11                        ! modified exp. +-6
+        CT0110(BU,12), FPK14, 116            ! test result exp. + +13
+        SIC, SEN
+        BRGZ, SERS
+        DL(U), FPK51                         ! F213B5 - MS+N+A+0, ACS+1; exp +-6
+        E+(U), FPK16                         ! exp ++19
+        CT0110(BU,12), FPK14, 116            ! test result exp + +13
+        SIC, SEN
+        BRGZ, SERS
+        DL(U), FPK51                         ! F213B6 - MS+N+0, ACS+A+1; exp +-6
+        E+A(U), FPK16                        ! exp ++19
+        CT0110(BU,12), FPK14, 116            ! test result exp. + +13
+        SIC, SEN
+        BRGZ, SERS
+        DL(U), FPK47                         ! F213B7 - MS+A+0, ACS+N+1; exp +-256
+        E-(U), FPK0                          ! exp +-0
+        CT0110(BU,12), FPK47, 116            ! test result exp. + -256
+        SIC, SEN
+        BRGZ, SERS
+        DL(U), FPK47                         ! F213B8 - MS+0, ACS+N+A+1; exp +-256
+        E-A(U), FPK0                         ! exp +-0
+        CT0110(BU,12), FPK47, 116            ! test result exp. + -256
+        SIC, SEN
+        BRGZ, SERS
+        DL(U), FPK0                          ! F213B9 - MS+1, ACS+N+A+0; exp ++0
+        E+(U), FPK47                         ! exp +-256
+        CT0110(BU,12), FPK47, 116            ! test result exp. + -256
+        SIC, SEN
+        BRGZ, SERS
+        DL(U), FPK28                         ! F213B10 - MS+A+1, ACS+N+0; exp ++256
+        E+A(U), FPK48                        ! exp +-1791 -- XFN, modifiers ignored
+        CT0110(BU,12), FK30, 116             ! check result exp +-1791
+        SIC, SEN
+        BRGZ, SERS
+        DL(U), FPK28                         ! F213B11 - MS+N+1, ACS+A+0; exp ++256
+        E-(U), FPK48                         ! exp +-1791 -- XFN, modifiers ignored
+        CT0110(BU,12), FK30, 116             ! check result exp +-1791
+        SIC, SEN
+        BRGZ, SERS
+        DL(U), FPK21                         ! F213B12 - MS+N+A+1, ACS+0; exp ++50
+        E-A(U), FPK46                        ! exp +-94
+        CT0110(BU,12), FPK49, 116            ! test result exp. + -44
+        SIC, SEN
+        BRGZ, SERS
+        DL(U), FPK47                         ! F213B13 - MS+ACS+1, N+A+0; exp +-256
+        E+(U), FPK48                         ! exp +-1791 -- XFN
+        CT0110(BU,12), FK25, 116             ! test result exp +-1791
+        SIC, SEN
+        BRGZ, SERS
+        DL(U), FPK45                         ! F213B14 - MS+ACS+A+1, N+0; exp +-46
+        E+A(U), FPK50                        ! exp ++50
+        CT0110(BU,12), FPK8, 116             ! test result exp. + +4
+        SIC, SEN
+        BRGZ, SERS
+        DL(U), FPK45                         ! F213B15 - MS+ACS+N+1, A+0; exp +-46
+        E-(U), FPK50                         ! exp ++50
+        CT0110(BU,12), FPK8, 116             ! test result exp. + +4
+        SIC, SEN
+        BRGZ, SERS
+        DL(U), FPK47                         ! F213B16 - MS+ACS+N+A+1; exp +-256
+        E-A(U), FPK48                        ! exp +-1791 -- XFN, modifiers cancel
+        CT0110(BU,12), FK25, 116             ! test result exp +-1791
+        SIC, SEN
+        BRGZ, SERS
+PASS    BEW, $                               ! 017243.00: the block's exit "BD,$+1.0"
+        END, FAE3
