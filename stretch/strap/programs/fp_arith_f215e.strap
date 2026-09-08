@@ -1,0 +1,80 @@
+! jb_af1c F215 "LOAD FACTOR TEST", sub-block F215E "TEST ARITH RESULT
+! INDICATORS", pp.145-146 (octal 020251.40-020270.40, the block's own
+! exit "BD,$+1.0").  Continues fp_arith_f215d.strap.
+!
+! Reference Manual p.98: "Arithmetic Result (RLZ, RZ, RGZ, RN).  These
+! indicators are set according to the arithmetic result which appears
+! in the FT register."  Three sub-tests, one per outcome, each clearing
+! the indicator word first with Z,$IND and then asking about all four
+! indicators -- the one that must be ON and (at least two of) the ones
+! that must be OFF:
+!
+!   E1  LFT(U),FPK1   all ones, sign one  -> RLZ and RN on, RZ and RGZ off
+!   E2  LFT(U),FPK0   zero                -> RZ on, RLZ and RN and RGZ off
+!   E3  LFT(U),FPK32  positive non-zero   -> RGZ on, RLZ and RN and RZ off
+!
+! THE THREE OUTCOMES ARE MUTUALLY EXCLUSIVE AND THE BLOCK CHECKS THAT,
+! not just that the right bit came on.  Each sub-test's last three
+! questions are negative ones, so a model that set every result
+! indicator would fail immediately rather than passing three "is it
+! on?" checks.
+!
+! RN IS NOT REDUNDANT WITH RLZ here even though E1 sets both: RN is the
+! result SIGN and RLZ is the result being less than zero, which differ
+! on a negative zero.  Nothing in F215E separates them -- E2's zero has
+! sign zero -- so that distinction stays uncovered by this block.
+!
+! Z,$IND is an I-box store to word 11 and so must drain the pending
+! E-box levels before it lands; that rule is already in the model
+! (eboxRegister covers words 7-15) and was forced by F204D12.
+
+! -- SSIP framework substitutes: SERS (octal 1304) -> FAIL halt,
+! -- SEN (octal 1310) -> scratch.
+        SLC, (8)1304.0
+SERS    BEW, $
+        SLC, (8)1310.0
+SEN     DD(BU,64,8), 0
+
+! -- constants (pool p.176) --
+        SLC, (8)22005.0
+FPK0    DD(BU,64,8), (8)0000000000000000000000
+FPK1    DD(BU,64,8), (8)1777777777777777777777
+        SLC, (8)22045.0
+FPK32   DD(BU,64,8), (8)0001177777777777777760
+
+        SLC, (8)20251.40
+! F215E1 - RLZ and RN on
+FLF5    Z, $IND
+        LFT(U), FPK1
+        SIC, SEN
+        BZRLZ, SERS                          ! error if RLZ off
+        SIC, SEN
+        BZRN, SERS                           ! error if RN off
+        SIC, SEN
+        BRZ, SERS                            ! error if RZ on
+        SIC, SEN
+        BRGZ, SERS
+! F215E2 - RZ on
+        Z, $IND
+        LFT(U), FPK0
+        SIC, SEN
+        BZRZ, SERS                           ! error if RZ off
+        SIC, SEN
+        BRLZ, SERS                           ! error if RLZ on
+        SIC, SEN
+        BRN, SERS                            ! error if RN on
+        SIC, SEN
+        BRGZ, SERS
+! F215E3 - RGZ on
+        Z, $IND
+        LFT(U), FPK32
+        SIC, SEN
+        BZRGZ, SERS                          ! error if RGZ off
+        SIC, SEN
+        BRLZ, SERS                           ! error if RLZ on
+        SIC, SEN
+        BRN, SERS                            ! error if RN on
+        SIC, SEN
+        BRZ, SERS
+PASS    BEW, $                               ! 020270.40: the block's exit "BD,$+1.0"
+        END, FLF5

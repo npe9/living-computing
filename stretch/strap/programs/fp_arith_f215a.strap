@@ -32,11 +32,15 @@
 !       as its storage operand, so this is a store-close-to-fetch
 !       across two instruction classes as well as an LFT check.
 !
-! WHAT F215 DOES NOT COVER, recorded before running rather than after.
-! Every sub-test here is %U, so LFT's NORMALIZED path is untested; and
-! nothing in F215A or F215B ever looks at FT bits 61-63, so p.98's "FT
-! bits 61-63 are set to zero" is manual-only.  The A-checks read bits
-! 0-59 and bit 60, and F215B reads bit 60 alone.
+! WHAT THIS BLOCK DOES NOT COVER.  Every sub-test here is %U, so LFT's
+! NORMALIZED path is untested here, and the A-checks stop at bit 60 so
+! p.98's "FT bits 61-63 are set to zero" is not covered here either.
+!
+! BOTH OF THOSE CLOSE LATER IN F215 ITSELF, and an earlier version of
+! this comment wrongly said they closed nowhere: F215C's one check is
+! exactly the FT 61-63 zeroing, and all three of F215F's sub-tests are
+! LFT(N) compared across the whole 64-bit word.  Read this paragraph as
+! scoped to F215A alone -- the routine as a whole covers both.
 !
 ! TRANSCRIPTION NOTE: the scan prints A2's LFT at 020200.00.  It cannot
 ! be -- the L above it is at 020177.40 and is a full word, so the LFT

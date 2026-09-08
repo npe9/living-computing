@@ -1,0 +1,45 @@
+! jb_af1c F215 "LOAD FACTOR TEST", sub-block F215C "TEST CHANGED REGS",
+! p.145 (octal 020231.40-020235.40).  Continues fp_arith_f215b.strap;
+! F215D follows immediately at 020236.00, which is why this block has
+! no exit branch of its own.
+!
+! THIS BLOCK CLOSES A GAP F215A AND F215B COULD NOT REACH.  Reference
+! Manual p.98 says "FT bits 61-63 are set to zero"; F215A checks FT
+! bits 0-59 and bit 60, F215B bit 60 alone, so neither can see it.  C's
+! single check is exactly that: CM1111 fills the whole of word 14 with
+! ones, an LFT follows, and CT0110(BU,3) over $FT+.61 demands the top
+! three bits came back zero.
+!
+! IT IS STILL BLIND TO ONE FAULT, and the constant is why.  FPK2's own
+! flag bits are ZERO, so an LFT that copied the operand's flags into FT
+! 61-63 instead of zeroing them would write 000 here and pass.  What C
+! catches is an LFT that leaves those bits ALONE.  Nothing in F215
+! pairs an operand with non-zero flags against a check of FT 61-63 --
+! F215A2 and F215B1 use FPK1, whose flags are 7, but neither looks
+! above bit 60.  Measured, not assumed: see the plan doc's injection
+! table.
+!
+! The comparison reads the accumulator's IBM 125-127 (a 3-bit field at
+! offset 0), which the L(BU) above fills from FPK2's own low three
+! bits -- zero.
+
+! -- SSIP framework substitutes: SERS (octal 1304) -> FAIL halt,
+! -- SEN (octal 1310) -> scratch.
+        SLC, (8)1304.0
+SERS    BEW, $
+        SLC, (8)1310.0
+SEN     DD(BU,64,8), 0
+
+! -- constants (pool p.176) --
+        SLC, (8)22007.0
+FPK2    DD(BU,64,8), (8)1777777777777777777760
+
+        SLC, (8)20231.40
+FLF4    L(BU), FPK2
+        CM1111(BU,64), $FT
+        LFT(U), FPK2
+        CT0110(BU,3), $FT+.61                ! were bits 61-63 of $FT set to zero
+        SIC, SEN
+        BRGZ, SERS
+PASS    BEW, $                               ! 020236.00: F215D's first instruction
+        END, FLF4

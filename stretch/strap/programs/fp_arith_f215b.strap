@@ -28,11 +28,14 @@
 ! .44, LFTA .64 (absolute, +20 octal), LFTN .54 (negate, +10) and
 ! LFTNA .74 (both, +30).
 !
-! LIKE F215A, THIS BLOCK LOOKS AT NOTHING BUT THE SIGN.  The exponent,
+! LIKE F215A, THIS BLOCK LOOKS AT NOTHING BUT THE SIGN: the exponent,
 ! the fraction and p.98's zeroed FT bits 61-63 are all untested here,
-! and F215A's checks stop at bit 60 as well -- so nothing in F215
-! covers "FT bits 61-63 are set to zero", and nothing covers LFT's
-! normalized path (every LFT in the routine is %U).
+! and F215A's checks stop at bit 60 as well.  Both gaps close later in
+! the routine -- F215C checks FT 61-63 and F215F is three LFT(N)s
+! compared across the whole word -- so this is a statement about A and
+! B, not about F215.  (An earlier version of this comment said "nothing
+! in F215 covers" them, which was wrong; C and F had not been read
+! yet.)
 
 ! -- SSIP framework substitutes: SERS (octal 1304) -> FAIL halt,
 ! -- SEN (octal 1310) -> scratch.

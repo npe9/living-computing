@@ -891,6 +891,26 @@ run "FP load factor sign and modifiers (jb_af1c F215B on the model)" ./run_progr
     "PC=$(python3 -c 'from strap_asm import assemble; print(assemble(open("programs/fp_arith_f215b.strap").read()).symtab["PASS"]//32)')" \
     "SEN:712=0"
 
+run "FP load factor changed regs (jb_af1c F215C, encoding)" python3 verify_fp_arith_f215c_listing.py
+run "FP load factor changed regs (jb_af1c F215C on the model)" ./run_program.sh programs/fp_arith_f215c.strap StretchFpLftCTb \
+    "PC=$(python3 -c 'from strap_asm import assemble; print(assemble(open("programs/fp_arith_f215c.strap").read()).symtab["PASS"]//32)')" \
+    "SEN:712=0"
+
+run "FP load factor unchanged regs (jb_af1c F215D, encoding)" python3 verify_fp_arith_f215d_listing.py
+run "FP load factor unchanged regs (jb_af1c F215D on the model)" ./run_program.sh programs/fp_arith_f215d.strap StretchFpLftDTb \
+    "PC=$(python3 -c 'from strap_asm import assemble; print(assemble(open("programs/fp_arith_f215d.strap").read()).symtab["PASS"]//32)')" \
+    "SEN:712=0"
+
+run "FP load factor result indicators (jb_af1c F215E, encoding)" python3 verify_fp_arith_f215e_listing.py
+run "FP load factor result indicators (jb_af1c F215E on the model)" ./run_program.sh programs/fp_arith_f215e.strap StretchFpLftETb \
+    "PC=$(python3 -c 'from strap_asm import assemble; print(assemble(open("programs/fp_arith_f215e.strap").read()).symtab["PASS"]//32)')" \
+    "SEN:712=0"
+
+run "FP load factor normalization modifier (jb_af1c F215F, encoding)" python3 verify_fp_arith_f215f_listing.py
+run "FP load factor normalization modifier (jb_af1c F215F on the model)" ./run_program.sh programs/fp_arith_f215f.strap StretchFpLftFTb \
+    "PC=$(python3 -c 'from strap_asm import assemble; print(assemble(open("programs/fp_arith_f215f.strap").read()).symtab["PASS"]//32)')" \
+    "SEN:712=0"
+
 run "Program store compare: store then EXECUTE the modified instruction" ./run_program.sh programs/store_then_execute.strap StretchStoreExecTb \
     "RESULT:$(python3 -c 'from strap_asm import assemble; print(assemble(open("programs/store_then_execute.strap").read()).symtab["RESULT"]//64)')=0x20"
 

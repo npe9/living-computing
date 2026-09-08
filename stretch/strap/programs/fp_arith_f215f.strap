@@ -1,0 +1,69 @@
+! jb_af1c F215 "LOAD FACTOR TEST", sub-block F215F "TEST NORM MOD",
+! p.146 (octal 020272.40-020305.00, the block's own exit "BD,$+1.0").
+! Continues fp_arith_f215e.strap and finishes F215.
+!
+! THIS BLOCK CLOSES THE SECOND GAP F215A AND F215B LEFT: every LFT in
+! those two is %U, so LFT's NORMALIZED path was untested.  All three
+! sub-tests here are LFT(N), and they cover both outcomes p.98
+! describes -- normalization happening, and normalization suppressed
+! because the operand is in a flagged range.
+!
+!   F1  LFT(N),FK21   exponent +2047, XFP   "ERROR IF RESULT NORMALIZED"
+!   F2  LFT(N),FK30   exponent -1791, XFN   "ERROR IF RESULT NORMALIZED"
+!   F3  LFT(N),FPK10  exponent +5, N        "ERROR IF RESULT NOT NORMALIZED"
+!
+! F1 and F2 are not vacuous: FK21's fraction is 07ffffffffff and FK30's
+! is 1fffffffffff, five and three leading zeros respectively, so both
+! WOULD shift if the range test were missing.  p.98: "When the operand
+! is a value in the XFP or XFN ranges, normalization, if specified, is
+! suppressed."
+!
+! F3 IS AN EXACT-EQUALITY CHECK ACROSS THE WHOLE 64-BIT WORD, which
+! makes it the strongest single row in F215: FPK10 is +5 with fraction
+! 055555555555, five leading zeros, and normalizing it shifts five
+! places to fraction aaaaaaaaaaa0 with exponent +0 -- which is FPK9
+! bit for bit, flag bits and all.  The exponent adjustment, the shift
+! amount, the vacated low-order zeros (noisy mode is off) and the
+! zeroed FT bits 61-63 all have to be right together.
+!
+! Each sub-test loads the accumulator's right word with the value it
+! expects and compares the whole of FT against it with a 64-bit CT0110
+! at offset 0.
+
+! -- SSIP framework substitutes: SERS (octal 1304) -> FAIL halt,
+! -- SEN (octal 1310) -> scratch.
+        SLC, (8)1304.0
+SERS    BEW, $
+        SLC, (8)1310.0
+SEN     DD(BU,64,8), 0
+
+! -- constants (pools pp.176-177) --
+        SLC, (8)22016.0
+FPK9    DD(BU,64,8), (8)0000125252525252525000
+FPK10   DD(BU,64,8), (8)0002402525252525252520
+        SLC, (8)22167.0
+FK21    DD(BU,64,8), (8)1777403777777777777760
+        SLC, (8)22200.0
+FK30    DD(BU,64,8), (8)1577617777777777777760
+
+        SLC, (8)20272.40
+! F215F1 - test norm mod ignored, exponent in XFP range
+FLF6    L(BU,64), FK21
+        LFT(N), FK21
+        CT0110(BU,64), $FT                   ! error if result normalized
+        SIC, SEN
+        BRGZ, SERS
+! F215F2 - test norm mod ignored, exponent in XFN range
+        L(BU,64), FK30
+        LFT(N), FK30
+        CT0110(BU,64), $FT                   ! error if result normalized
+        SIC, SEN
+        BRGZ, SERS
+! F215F3 - test normalization, exponent in N range
+        L(BU,64), FPK9
+        LFT(N), FPK10
+        CT0110(BU,64), $FT                   ! error if result not normalized
+        SIC, SEN
+        BRGZ, SERS
+PASS    BEW, $                               ! 020305.00: the block's exit "BD,$+1.0"
+        END, FLF6

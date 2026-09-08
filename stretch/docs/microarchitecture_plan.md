@@ -1573,15 +1573,25 @@ hand vectors alone. "Enables" notes the dependency chain.
      LFT keeps the operand flags     predicted BOTH PASS  BOTH PASSED
        in FT 61-63
 
-   THE THIRD ONE IS THE POINT. Both program headers claim p.98's "FT
-   bits 61-63 are set to zero" is uncovered by the whole of F215, and
-   that injection is the measurement rather than the claim: FPK1's
-   flags are 7, so the fault genuinely puts 111 where the manual says
-   000, and no row in either block notices. A gap MEASURED is worth
-   more than a gap reasoned about -- this is the first time in the
-   project an injection has been aimed at confirming a gap rather than
-   confirming coverage, and it is the cheaper direction, because a
-   wrong gap claim shows up as a halt.
+   THE THIRD ONE IS THE POINT, though not the point I first drew from
+   it. It measures rather than asserts: FPK1's flags are 7, so the
+   fault genuinely puts 111 where p.98 says 000, and no row in F215A or
+   F215B notices. A gap MEASURED beats a gap reasoned about, and this
+   was the first injection here aimed at confirming a gap rather than
+   coverage -- the cheaper direction, since a wrong gap claim shows up
+   as a halt.
+
+   AND THE CLAIM I ATTACHED TO IT WAS WRONG. I wrote in both program
+   headers and here that "the whole of F215" leaves FT 61-63 and the
+   normalized path uncovered. F215 has four more sub-blocks, on the two
+   pages after the one I had read, and TWO OF THEM ARE EXACTLY THOSE
+   CHECKS: F215C's single row is "WERE BITS 61-63 OF $FT SET TO ZERO",
+   and all three of F215F's sub-tests are LFT(N). The injection was
+   sound; the scope I put around it was not. THE MEASUREMENT WAS OVER
+   A AND B AND I REPORTED IT OVER F215 -- an injection can only speak
+   for the blocks it was run against, and the fix is to run it against
+   the rest rather than to reason about them. Corrected in both headers
+   and re-measured below.
 
    A1 IS BLIND TO AN LFT THAT DOES NOTHING, which is why the first
    injection halts at A2 and not A1: A1's expected FT is zero and FT
@@ -1594,6 +1604,55 @@ hand vectors alone. "Enables" notes the dependency chain.
    the B,SERS itself. SIC stores the address AFTER the branch that
    follows it, so it is 020220.00. The A-side prediction used the rule
    correctly in the same file; only the B-side did not.
+
+   F215 COMPLETE (A 3, B 4, C 1, D 1, E 3, F 3), suite 190. C "TEST
+   CHANGED REGS", D "TEST UNCHANGED REGS", E "TEST ARITH RESULT
+   INDICATORS" and F "TEST NORM MOD" all passed first run with no model
+   change -- the LFT arm as written for A and B was already right for
+   them, including the normalized path F is the first thing to
+   exercise. Every printed word reproduces, and each block's assembled
+   PASS lands on the listing's own exit address.
+
+   D CHECKS THE WHOLE EIGHT-BIT SIGN BYTE, bit 4 included, where
+   F214XB had to skip bit 4 because D* writes the result sign there.
+   LFT writes no accumulator sign at all, so p.98's "the accumulator
+   does not participate in the operation and remains unchanged" is
+   checked with nothing exempted.
+
+   F3 IS THE STRONGEST SINGLE ROW IN F215: an exact 64-bit equality
+   after LFT(N),FPK10. FPK10 is +5 with fraction 055555555555; five
+   places of normalization gives aaaaaaaaaaa0 at exponent +0, which is
+   FPK9 bit for bit. The shift amount, the exponent adjustment, the
+   vacated low-order zeros and the zeroed FT 61-63 all have to be
+   right together. F1 and F2 are the suppression rule and neither is
+   vacuous -- FK21's fraction has five leading zeros and FK30's three,
+   so both would shift if the range test were missing.
+
+   TWO INJECTIONS RE-MEASURING THE GAP OVER ALL SIX BLOCKS, both
+   predicted correctly:
+     LFT copies the operand's flags   predicted ALL SIX PASS   ALL PASSED
+       into FT 61-63
+     LFT writes ONES into FT 61-63    predicted C and F halt
+                                        C halted 020236.00
+                                        F halted 020276.00 (F1)
+                                        A, B, D, E passed
+
+   SO THE GAP IS REAL BUT MUCH NARROWER THAN I SAID. F215C and F215F
+   both catch an LFT that fails to write those bits; what NOTHING in
+   F215 catches is an LFT that writes them FROM THE OPERAND, because
+   every operand paired with a check that reaches bit 61 has zero flags
+   of its own -- FPK2 in C, FK21/FK30/FPK10 in F. The one operand with
+   flags 7 is FPK1, and the four blocks that use it never look above
+   bit 60. That is a one-sentence gap instead of the two-feature gap I
+   first recorded, and it took an injection over all six blocks to say
+   it precisely.
+
+   F215F ALSO COVERS FT 61-63 AS A SIDE EFFECT, which is why the second
+   injection halts twice. Its checks are full 64-bit equalities, so
+   they pin every field at once; C's three-bit check is redundant with
+   them against this particular fault. Predicted before running, on the
+   grounds that F's connective has no byte-size restriction -- if F had
+   not halted, my reading of its field width would have been wrong.
 
    Next: *+ (MULTIPLY AND ADD, p.98) -- and unlike D* and LFT this one
    is NOT free, because it is the only operation that READS FT as an

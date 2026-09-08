@@ -1,0 +1,50 @@
+! jb_af1c F215 "LOAD FACTOR TEST", sub-block F215D "TEST UNCHANGED
+! REGS", p.145 (octal 020236.00-020247.40, the block's own exit
+! "BD,$+1.0").  Continues fp_arith_f215c.strap.
+!
+! The listing's own header states the claim: "ACC AND $SB REMAIN
+! UNCHD".  Reference Manual p.98, "The accumulator does not participate
+! in the operation and remains unchanged" -- so unlike every other
+! floating-point block, this one checks the accumulator to prove
+! NOTHING happened to it.
+!
+! It fills the left word, the right word and the sign byte with ones,
+! does an LFT, and demands all three come back ones.  Note it checks
+! the WHOLE eight-bit sign byte, bit 4 included -- where F214XB had to
+! skip bit 4 because D* writes the result sign there.  LFT writes no
+! accumulator sign at all, so nothing is exempt.
+!
+! Truth tables, read as the results for (memory, accumulator) =
+! (0,0),(0,1),(1,0),(1,1):
+!   CT1010 = 1,0,1,0  ->  NOT the accumulator bit; memory is a dummy
+!   CT1100 = 1,1,0,0  ->  NOT the memory bit, i.e. the sign byte itself
+! so the L and R checks read the accumulator and ignore FPK1 entirely,
+! while the SB check reads word 10.
+
+! -- SSIP framework substitutes: SERS (octal 1304) -> FAIL halt,
+! -- SEN (octal 1310) -> scratch.
+        SLC, (8)1304.0
+SERS    BEW, $
+        SLC, (8)1310.0
+SEN     DD(BU,64,8), 0
+
+! -- constants (pool p.176) --
+        SLC, (8)22006.0
+FPK1    DD(BU,64,8), (8)1777777777777777777777
+
+        SLC, (8)20236.0
+F215D   C1111(BU,64), FPK1, 64               ! left word <- all ones
+        C1111(BU,64), FPK1                   ! right word <- all ones
+        CM1111(BU,8), $SB                    ! sign byte <- all ones
+        LFT(U), FPK1
+        CT1010(BU,64), FPK1, 64              ! does L remain +1 s
+        SIC, SEN
+        BRGZ, SERS
+        CT1010(BU,64), FPK1                  ! does R remain +1 s
+        SIC, SEN
+        BRGZ, SERS
+        CT1100(BU,8), $SB                    ! does SB remain +1 s
+        SIC, SEN
+        BRGZ, SERS
+PASS    BEW, $                               ! 020247.40: the block's exit "BD,$+1.0"
+        END, F215D
