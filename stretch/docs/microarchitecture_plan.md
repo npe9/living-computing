@@ -1195,11 +1195,70 @@ hand vectors alone. "Enables" notes the dependency chain.
    (XFN memory wins), C2's all-ones accumulator, itself XFN, against
    FPK0 -- which neither comment says.
 
-   Next after F213C: F213D "INDICATOR TESTS" (017265.00), D1-D4 the
-   arithmetic result indicators and D5 onward the exponent range ones
-   (XPFP/XPO/XPH/XPL/XPU through BB,11.28-11.32, plus ZM at 11.33) --
-   the first block to exercise fpRangeBits on E+'s flagged path, which
-   the F213A change made set `propagated`. Then D*, LFT and *+, then
+   F213D DONE, F213 COMPLETE (A, B, C, D -- 40 sub-tests), commit
+   320debc. D1-D4 are the arithmetic result indicators, D5-D9 the
+   exponent range ones. D5 AND D6 ARE THE PAIR WORTH HAVING: the pocket
+   card gives indicators 28 (XPFP) and 29 (XPO) what reads as the same
+   predicate, both "E >= 2^10", and both sub-tests produce a result
+   >= 2^10 while demanding their own indicator on and the other OFF. So
+   the distinction is not magnitude but PROVENANCE -- D5's operand is
+   already XFP so Fig.32 propagates its flag, D6's two N operands sum
+   across the boundary so the flag is generated. That is fpRangeBits'
+   two arguments, and F213D is the first block to drive them through
+   E+'s flagged path. Injecting `gen` for `prop` halts D5 at 017317.00;
+   never clearing ZM halts D5's ZM row at 017331.00; F213A stays green
+   through both.
+
+   F213-X (ADD TO EXPONENT IMMEDIATE) DONE, commit b77ea83, AND IT
+   CLOSED THE E+I ITEM THE RIGHT WAY. 1e11abd deliberately did NOT port
+   the E+ fixes to E+I, on the grounds that no block drove it; F213XA
+   is that block and rediscovered both faults independently. E+I now
+   has Fig.32, the ES normalization rule, fpExpFull and the 96-bit
+   fraction on the diagnostic's authority rather than on an argument
+   from similarity. Worth keeping as a method note: when two
+   instructions are "the same operation", waiting for the second one's
+   own block costs only sequencing and buys a real second measurement.
+
+   THE IMMEDIATE HAS A RANGE OF ITS OWN -- E+I's addend is a 12-bit
+   exponent field (EF, ten-bit magnitude, ES at address bits 17, 16-7,
+   6), so +2047 is XFP and -1791 is XFN and Fig.32 applies between the
+   accumulator and the IMMEDIATE. XA1 and XA7 are ties resolved to the
+   accumulator from the XFP and XFN sides; XA8 is the only row the
+   immediate wins. XA8 is also self-modifying ("CHECK THAT BITS TO THE
+   RIGHT OF EFFECTIVE ADDRESS ARE IGNORED"): a CM1111 sets address bits
+   5-0 to ones and the patched instruction then executes, so the block
+   exercises store-close-to-fetch as well.
+
+   THREE INJECTIONS, and the second one is the lesson:
+     no Fig.32 table (the arm as it stood)   halts XA1  017432.00
+     the immediate's ES ignored              halts XA4  017462.00
+     honours the bits to the right           halts XA8  017523.00
+   The ES injection halts at XA4, NOT at XA3, even though XA3 is the
+   earlier row with a negative immediate: XA3's accumulator is XFP
+   +1791 and the sign-flipped immediate is still XFP +1791, so the tie
+   resolves to the accumulator either way and XA3 is blind. That is the
+   "count the cases that actually reach the code" rule turning up
+   unprompted in the results rather than in review.
+
+   The third injection had to be designed for that too. Reading es from
+   ea[0] would have halted at XA3 -- the first negative immediate --
+   and proved nothing about the ignored bits; es = ea[6] ^ ea[5] flips
+   only where XA8's CM1111 patches, so it discriminates XA8 ALONE.
+
+   Assembler: E+I now takes its addend as a SIGNED EXPONENT the way the
+   listing writes it ("E+I(U), +2047"), encoding EF, the low ten bits
+   of the magnitude and ES into address bits 17, 16-7 and 6 -- the same
+   representation fpMakeExp stores and fpExpFull reads back. All five
+   immediates reproduce the printed code. Without a sign the field
+   stays an ordinary effective address (fp_exp_shift.strap's
+   "E+I(N), 128.0"), the two forms told apart by the sign alone.
+
+   Next after F213-X: F213-XB "TEST SIGN AND MOD COMBS" (017531.00),
+   ten sub-tests of the sign modifiers on the IMMEDIATE -- which the
+   E+I arm does not apply at all yet, so this drives real work. It also
+   needs three mnemonics whose modifier letters sit INSIDE the name
+   rather than as a trailing suffix: E+AI, E-I and E-AI, printed .67,
+   .57 and .77 against plain E+I's .47. Then D*, LFT and *+, then
    D/ -- which is the one that needs a
    multi-cycle unit, because an unrolled combinational 48-place divide
    is a different proposition from the 48x48 multiplies already in
