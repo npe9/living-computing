@@ -1253,13 +1253,57 @@ hand vectors alone. "Enables" notes the dependency chain.
    stays an ordinary effective address (fp_exp_shift.strap's
    "E+I(N), 128.0"), the two forms told apart by the sign alone.
 
-   Next after F213-X: F213-XB "TEST SIGN AND MOD COMBS" (017531.00),
-   ten sub-tests of the sign modifiers on the IMMEDIATE -- which the
-   E+I arm does not apply at all yet, so this drives real work. It also
-   needs three mnemonics whose modifier letters sit INSIDE the name
-   rather than as a trailing suffix: E+AI, E-I and E-AI, printed .67,
-   .57 and .77 against plain E+I's .47. Then D*, LFT and *+, then
-   D/ -- which is the one that needs a
+   F213-XB AND F213-XC DONE, F213-X COMPLETE (XA 8, XB 16, XC 2),
+   commit c60b1ad. The E+I arm applied no sign modifiers at all; XB
+   drives them. Its header is narrower than F213B's: for E+I there is
+   no addressed operand, so the only sign in play is the ADDEND's own
+   ES in bit 6 of the effective address.
+
+   PREDICTED, THEN MEASURED -- the first time this session an injection
+   was written down as a falsifiable prediction before running:
+     no modifiers at all   predicted XB3   halted XB3   017542.00
+     invSign dropped       predicted XB3   halted XB3   017542.00
+     absSign dropped       predicted XB10  halted XB10  017567.00
+   F213XA stays green through the first, having no modifiers anywhere.
+   The absSign result is the one worth having: it sails PAST XB2 and
+   XB6, which apply A to a POSITIVE addend and therefore change
+   nothing. XB12 and XB16 are blind for the other reason -- A makes the
+   addend positive and N puts it back, so the pair cancels. Six of the
+   sixteen carry N, two carry A, and four carry nothing at all.
+
+   ALL SIXTEEN ARE N-RANGE, so XB pins that the modifiers are APPLIED
+   and nothing about their being IGNORED when an exponent is flagged.
+   For E+ that is F213B10/B11; for E+I no block reaches it and the
+   model follows p.102 by analogy. OPEN, and not closable inside F213.
+
+   Assembler: E+AI, E-I, E-AI are the one family whose modifier letters
+   sit INSIDE the mnemonic (the "I" belongs to the operation), so the
+   generic trailing-N/A rule cannot reach them and all three needed
+   explicit entries -- unlike E+A, F+A, D+A. They print .67, .57, .77
+   against plain E+I's .47.
+
+   A DEFECT IN THE DIAGNOSTIC ITSELF, not in the scan: F213XC2's final
+   CT1100 ("DOES SB0-7 REMAIN+1-S") has no SIC/branch after it, where
+   every other check in F213 does, so the comparison runs and its
+   result is discarded and XC2 effectively checks only R44-63. The
+   instruction lengths rule out a dropped row -- CT1100 is a full word
+   at 017626.40-017627.00 and BD is printed at 017627.40, leaving
+   nowhere for the pair -- and the assembled PASS lands on 017627.40
+   independently. Unlike the FPK23 "230/250" and FPK49 "22056/022066"
+   calls, this is not OCR damage: the addresses are internally
+   consistent. Transcribed as printed.
+
+   Next after F213-X: F214 "MULTIPLY TEST ROUTINE" (017631.40), A1-A6
+   arithmetic checks then F214B sign and modifier combinations. `*` is
+   already implemented, so this exercises fpMul -- including the Fig.32
+   path it has always had and which F213 has only now given a second
+   caller. CAUTION ON THE CONSTANTS: A2's comment gives FK60's exponent
+   as -1024 while a first reading of pool p.178 decodes +1024. -1024
+   needs EF 1 with ES 1, which puts a 2 in the fifth octal digit
+   (1000200000000000000000), and the scan of that row is garbled
+   exactly there. Re-read the page rather than infer it -- the same
+   discipline the FPK23 and FPK49 calls needed. Then D*, LFT and *+,
+   then D/ -- which is the one that needs a
    multi-cycle unit, because an unrolled combinational 48-place divide
    is a different proposition from the 48x48 multiplies already in
    fpMul. (This paragraph previously called that "section 1c step 5c's
