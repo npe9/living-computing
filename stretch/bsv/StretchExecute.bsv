@@ -1975,9 +1975,17 @@ function ActionValue#(Tuple4#(HWordAddr, Maybe#(Tuple2#(Bit#(4), IndexWord)),
               // through.  jb_af1c F214XB1/XB2 check exactly that, with
               // a CT0101/CT1010 over R 44-63 = IBM 108-127.
               //
-              // The MULTIPLIER is still the 48-bit accumulator fraction
-              // of bits 12-59, as under MULTIPLY: p.97 changes only
-              // where the product GOES, not what is multiplied.
+              // The MULTIPLIER is taken as the 48-bit accumulator
+              // fraction of bits 12-59, as under MULTIPLY, on the
+              // reading that p.97 changes only where the product GOES.
+              // NOTHING IN F214-X CHECKS THAT, and structurally cannot:
+              // every XA sub-test enters with IBM 60-107 already zero
+              // (INJ1, which never wrote the right word, still passed
+              // XA1's low-half check against zero), and with a zero low
+              // half a 96-bit multiplier gives the identical product;
+              // XB's accumulator low half is NOT zero but XB inspects
+              // only IBM 108-127 and the sign byte. Manual-only until a
+              // later block loads the low half with DL and multiplies.
               Word64 accR = st.readAccRight();
               FpdResult r = fpMulDouble(acc, opnd, normalized, noisy);
               st.writeWord(addrAccLeft, fpdAccLeft(r.res));

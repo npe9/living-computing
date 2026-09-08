@@ -1437,7 +1437,8 @@ hand vectors alone. "Enables" notes the dependency chain.
    All three XA results and both XB set-ups were computed from the pool
    constants before the model ran, and both programs passed first try.
 
-   THREE INJECTIONS, ALL THREE PREDICTED CORRECTLY:
+   THREE INJECTIONS, ALL THREE PREDICTED CORRECTLY (and the first
+   of them turned out to prove a fourth thing -- see the gaps below):
      D* leaves IBM 60-127 alone     predicted XA2 low   halted 020131.00
        (i.e. behaves like *)        predicted XB PASSES  XB PASSED
      D* zeroes IBM 108-127          predicted XB2 R      halted 020161.00
@@ -1457,16 +1458,46 @@ hand vectors alone. "Enables" notes the dependency chain.
    something no arithmetic block does: D* carries the ACCUMULATOR's
    flags through unchanged.
 
-   TWO GAPS RECORDED RATHER THAN GUESSED AT. All five D* instructions
+   FOUR GAPS RECORDED RATHER THAN GUESSED AT. All five D* instructions
    in F214-X are %U, so nothing here exercises D* NORMALIZED -- the
-   same gap F214A had before its A5. And fpMulDouble's
+   same gap F214A had before its A5. fpMulDouble's
    order-of-magnitude-zero branch is unreachable from this block:
    XA1's product IS zero, but its operands are both flagged so the
    Fig.32 arm returns before reaching it, and every other product here
    is non-zero. That is the F214D ZM mechanism exactly -- A BRANCH
    UPSTREAM MAKES A DOWNSTREAM LINE UNREACHABLE FOR THE INPUTS IN PLAY
    -- caught this time before writing the code rather than after
-   mis-aiming an injection at it.
+   mis-aiming an injection at it. And D*'s sign modifiers are untested
+   here: F214B covered MULTIPLY's modifier matrix, but F214-X has no
+   equivalent, XB being unchanged-regs. That is code-identity risk
+   rather than untested-logic risk (fpMulDouble's sign is fpMul's
+   `a.sign ^ b.sign` and the arm's operand path is `*`'s), but it is
+   not covered and should not read as though it were.
+
+   THE FOURTH GAP IS THE ONE I ASSERTED MOST CONFIDENTLY, and my own
+   injection is what disproves the assertion. The D* arm passes the
+   48-bit accumulator fraction as the multiplier, on the reading that
+   p.97 changes only where the product goes. NOTHING IN F214-X CHECKS
+   THAT, and structurally nothing can. INJ1 never wrote the right word,
+   yet XA1's low-half check against zero still PASSED -- which means
+   the accumulator's IBM 60-107 is already zero when every XA
+   sub-test's D* runs, and with a zero low half a 96-bit multiplier and
+   a 48-bit one give the identical product. XB's low half is NOT zero
+   (XB2 fills it with ones) but XB inspects only IBM 108-127 and the
+   sign byte, never the product. So the block is blind to it from both
+   sides. The comment in StretchExecute.bsv now says so instead of
+   stating it as fact; it wants a later block that loads the low half
+   with DL and then multiplies.
+
+   A NOTE FOR WHOEVER REVISITS fpMakeExp: the zero-product exponent
+   override now exists in TWO places, fpMul and fpMulDouble, both
+   writing `em = (mag > 1023) ? 0 : truncate(pack(mag))`. That sits
+   against fpMakeExp's own comment -- the one jb_af1c F211A10 forced --
+   which says an out-of-range exponent keeps the LOW TEN BITS rather
+   than zero. Whether the zero-product path should follow that rule is
+   a pre-existing fpMul question that D* inherited rather than
+   introduced, but there are two sites now, so an answer that fixes
+   only one is not an answer.
 
    ARITHMETIC BEAT THE SCAN AGAIN, on an ADDRESS this time rather than
    a constant. The scan prints F214XB2's first check at 020157.40. It
