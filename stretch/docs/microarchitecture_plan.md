@@ -1081,7 +1081,79 @@ hand vectors alone. "Enables" notes the dependency chain.
    fraction with non-zero operands -- but which no row here produces;
    and PSH, which is not reachable at all, per above.
 
-   Next after F212-X: D*, LFT and *+, then D/ -- which is the one that needs a
+   F213 (ADD TO EXPONENT) DONE, AND IT FOUND THREE BUGS IN AN
+   INSTRUCTION THAT HAD BEEN GREEN FOR MONTHS. E+ was implemented long
+   ago as a plain exponent sum and nothing had ever contradicted it.
+   A1-A9 (pp.125-126) walk Fig.32's range table exhaustively and A10-A13
+   (pp.126-127) the normalization modifier; commit 1e11abd.
+
+     1. No flagged-range table. p.102 defines E+'s flagged behaviour by
+        reference to MULTIPLY -- Fig.32, XFP over everything, XFN over
+        N, ties to the accumulator. fpMul already had the selector; it
+        is now fpExpRangeWinner and both callers share it.
+     2. Normalization was 48-bit where p.102 says "the accumulator
+        exponent and fraction bits 12-107 are normalized", and the arm
+        never wrote addrAccRight at all. Same paragraph, third clause,
+        also wrong: a generated EF suppressed normalization for either
+        sign, where the rule is "occurs if ES is 0 and is suppressed if
+        ES is 1".
+     3. fpExp DROPS EF. An exponent that has to be arithmetic across
+        the flagged boundary loses 1024.
+
+   BUG 3 WAS UNREACHABLE UNTIL BUG 2 WAS FIXED -- the old guard never
+   normalized a flagged value, so the path was dead code. That is the
+   second time in two routines that a fix has uncovered a fault beneath
+   it (F212's PSH deadness was the other shape of the same thing), and
+   it is an argument for re-running the diagnostic after every fix
+   rather than batching them.
+
+   fpExp IS DELIBERATELY LEFT WRONG-LOOKING. It returns the ten-bit
+   magnitude field, which is what every existing caller wants: a
+   comparison between two operands of the SAME range sees the same EF
+   on both, so the missing 1024 cancels. fpExpFull adds it and is used
+   only where a value must survive the boundary. The two coincide
+   exactly when ef == 0, which is WHY L/LWF/E+I are still correct with
+   the plain one -- each guards normalization on v.ef == 0. Recorded
+   next to fpExpFull, because loosening such a guard without switching
+   the function reintroduces A12.
+
+   WHAT THE INJECTIONS MEASURED, and the one place the block is blunt:
+     plain exponent sum (the arm as it stood)   halts A1  017017.00
+     generated EF always suppresses (old rule)  halts A12 017150.40
+     normalize only the high 48                 halts A12 017150.40
+   The last two, AND bug 3, all halt at the SAME row with byte-identical
+   SEN. A12 carries three distinct faults and cannot separate them;
+   what separated them was reading the accumulator, where ACCR came
+   back exactly right and ACCL's exponent field was 37 against FK57's
+   1061. Worth remembering: a halt address identifies a row, not a
+   cause, and when several faults converge on one row the register dump
+   is the only thing that distinguishes them.
+
+   Modelling the injected arm over all nine A-rows (fpExp's dropped EF
+   included) says A5 is the ONLY sub-test a plain sum satisfies -- it
+   is the only one that adds anything -- so eight of nine carry the
+   range table. A9 is the narrowest miss, failing by one in em (766
+   against 767, since -767-1023 = -1790 and 1790-1024 = 766).
+
+   COVERAGE GAP IN F213A, CLOSED BY THE VERY NEXT BLOCK. No E+ row in
+   A1-A13 carries a sign modifier (A1-A9 print ".45 60", A10-A13 ".05
+   60"; absSign and invSign zero in both), so nothing there tests "the
+   sign modifiers are ignored if either one or both of the exponents
+   are in the XFP or XFN range" -- which matters because es is exactly
+   what separates XFP from XFN. F213B "TESTS OF SIGN AND MODIFIER
+   VARIATIONS" (p.128, from 017163.00) is that test, and its own header
+   states the rule the other way round: "THE SIGN MODIFIERS APPLY TO
+   THE SIGN OF THE EXPONENTS ONLY". So the gap is a to-do, not a
+   permanent hole -- do not cite it as unclosable the way the F+
+   normalized-path gap genuinely is. F213B also brings E-, a written-
+   minus mnemonic the assembler has not seen (E-%U prints "22020.55
+   60", E+ with invSign; E-A%U prints ".75 60"), which will be the
+   seventh of that family after M-, -MG, M-MG, D-, D-MG and F-.
+
+   STILL GENUINELY OPEN after F213: E+I, which p.102 makes the same
+   operation as E+ but which no transcribed block drives.
+
+   Next after F213B: D*, LFT and *+, then D/ -- which is the one that needs a
    multi-cycle unit, because an unrolled combinational 48-place divide
    is a different proposition from the 48x48 multiplies already in
    fpMul. (This paragraph previously called that "section 1c step 5c's
