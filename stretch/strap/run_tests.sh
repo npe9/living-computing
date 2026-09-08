@@ -786,6 +786,10 @@ run "FP shift fraction, unchanged registers (jb_af1c F212C, encoding)" python3 v
 run "FP shift fraction, unchanged registers (jb_af1c F212C on the model)" ./run_program.sh programs/fp_arith_f212c.strap StretchFpShfETb \
     "PC=$(python3 -c 'from strap_asm import assemble; print(assemble(open("programs/fp_arith_f212c.strap").read()).symtab["PASS"]//32)')" \
     "SEN:712=0"
+run "FP shift fraction, indicator tests (jb_af1c F212D, encoding)" python3 verify_fp_arith_f212d_listing.py
+run "FP shift fraction, indicator tests (jb_af1c F212D on the model)" ./run_program.sh programs/fp_arith_f212d.strap StretchFpShfFTb \
+    "PC=$(python3 -c 'from strap_asm import assemble; print(assemble(open("programs/fp_arith_f212d.strap").read()).symtab["PASS"]//32)')" \
+    "SEN:712=0"
 
 run "Program store compare: store then EXECUTE the modified instruction" ./run_program.sh programs/store_then_execute.strap StretchStoreExecTb \
     "RESULT:$(python3 -c 'from strap_asm import assemble; print(assemble(open("programs/store_then_execute.strap").read()).symtab["RESULT"]//64)')=0x20"

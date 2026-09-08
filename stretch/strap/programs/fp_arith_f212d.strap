@@ -1,0 +1,126 @@
+! jb_af1c F212D "INDICATOR TESTS", pp.120-121 (octal
+! 016606.00-016644.00, the block's own exit "BD,$+1.0"), transcribed
+! verbatim.  This closes F212.
+!
+! D1 is LOST CARRY, "TEST LC IND OFF TO ON", in three sub-cases, each
+! preceded by a BLCZ that clears LC so the next one starts from off:
+!   a. C1111 fills BOTH accumulator halves with ones, SHFL 1 -- the
+!      whole 96-bit fraction is ones, so a one leaves IBM 12 -> LC on.
+!   b. L(U),FK134 then SHFL 1.  FK134's fraction is 800000000000, a
+!      single one in the top bit, so that one leaves IBM 12 -> LC on.
+!   c. L(U),FK134 then SHFL 2, closed with BZLCZ (branch if LC off,
+!      clearing it) -> LC on.
+!
+! A NOTE ON THE LOW HALF, correcting something this project's own plan
+! said.  L(U) is single-precision: it replaces the accumulator's high
+! half and sign byte and does NOT touch the low half, so in b and c
+! the low half still holds what the PREVIOUS shift left there
+! (fffffffffffe after a, and so on).  That carry-forward is real and
+! is worth knowing.  But it does NOT change D1's answers: at shift
+! counts of 1 and 2 the bits that leave IBM 12 come from the high half
+! alone, and FK134's top fraction bit is 1 either way.  The plan had
+! recorded D1 as the place where the carried low half "starts to
+! matter"; computing it says otherwise, so D1 tests LC, not the
+! carry-forward.  All three sub-cases verified before running.
+!
+! D2-D5 are the ARITHMETIC RESULT INDICATORS, and between them they
+! cover all four.  Each clears the indicator register with Z,$IND
+! first, then asks that the right one came on AND that the other three
+! stayed off:
+!   D2  DL(U),FK55  (fraction 1fffffffffff, sign NEGATIVE), SHF(U),3
+!       -- plain SHF, ".47", the only row in F212 with neither sign
+!       modifier, so its direction comes from address bit 11 (clear =
+!       left).  Result nonzero negative -> RLZ and RN on, RZ/RGZ off.
+!   D3  DLN(U),FPK0 -- load double NEGATIVE of zero, so the result is
+!       a NEGATIVE ZERO: RN and RZ on, RLZ and RGZ off.  That is the
+!       interesting one, and the model agrees by construction --
+!       setResultIndicatorsFp has RLZ = !zero && negative but RN =
+!       sign, so a negative zero sets RN without RLZ.
+!   D4  DL(U),FPK0 -- positive zero: RZ on, the other three off.
+!   D5  DL(U),FK21 (positive, nonzero), SHFL 5 -> RGZ on.
+!
+! TRANSCRIPTION NOTE: D5's comment reads "RLZ,RN AND RZ INDS.ON" but
+! only two branches follow it, BRLZ and BRN -- there is no BRZ row,
+! and the addresses are contiguous (016642.40, 016643.00, 016643.40),
+! so there is no room for one.  Transcribed as printed; the comment
+! over-lists.
+
+! -- SSIP framework substitutes: SERS (octal 1304) -> FAIL halt,
+! -- SEN (octal 1310) -> scratch.
+        SLC, (8)1304.0
+SERS    BEW, $
+        SLC, (8)1310.0
+SEN     DD(BU,64,8), 0
+
+! -- constants (pools pp.176-178) --
+        SLC, (8)22005.0
+FPK0    DD(BU,64), (8)0000000000000000000000
+FPK1    DD(BU,64), (8)1777777777777777777777
+        SLC, (8)22167.0
+FK21    DD(BU,64), (8)1777403777777777777760
+        SLC, (8)22231.0
+FK55    DD(BU,64), (8)1777617777777777777770
+        SLC, (8)22347.0
+FK134   DD(BU,64), (8)0000100000000000000000
+
+        SLC, (8)16606.0
+FSF5    BLCZ, $+.32                          ! F212D1 - test LC ind, off to on
+        C1111(BU,64), FPK1, 64
+        C1111(BU,64), FPK1
+        SHFL(U), 128.0
+        SIC, SEN
+        BZLC, SERS                           ! error if LC indicator off
+        BLCZ, $+.32
+        L(U), FK134
+        SHFL(U), 128.0
+        SIC, SEN
+        BZLC, SERS
+        BLCZ, $+.32
+        L(U), FK134
+        SHFL(U), 256.0
+        SIC, SEN
+        BZLCZ, SERS
+        DL(U), FK55                          ! F212D2 - test RLZ and RN, off to on
+        Z, $IND
+        SHF(U), 384.0
+        SIC, SEN
+        BZRLZ, SERS                          ! error if RLZ and RN off and,
+        SIC, SEN
+        BZRN, SERS                           ! RZ and RGZ indicators on
+        SIC, SEN
+        BRZ, SERS
+        SIC, SEN
+        BRGZ, SERS
+        DLN(U), FPK0                         ! F212D3 - test RN and RZ, off to on
+        Z, $IND
+        SHFL(U), 0.0
+        SIC, SEN
+        BZRN, SERS                           ! error if RN and RZ off and,
+        SIC, SEN
+        BZRZ, SERS                           ! RLZ and RGZ indicators on
+        SIC, SEN
+        BRLZ, SERS
+        SIC, SEN
+        BRGZ, SERS
+        DL(U), FPK0                          ! F212D4 - test RZ, off to on
+        Z, $IND
+        SHFL(U), 0.0
+        SIC, SEN
+        BZRZ, SERS                           ! error if RZ off and,
+        SIC, SEN
+        BRLZ, SERS                           ! RLZ, RN and RGZ inds. on
+        SIC, SEN
+        BRN, SERS
+        SIC, SEN
+        BRGZ, SERS
+        DL(U), FK21                          ! F212D5 - test RGZ, off to on
+        Z, $IND
+        SHFL(U), 640.0
+        SIC, SEN
+        BZRGZ, SERS                          ! error if RGZ off and,
+        SIC, SEN
+        BRLZ, SERS                           ! RLZ, RN and RZ inds. on
+        SIC, SEN
+        BRN, SERS
+PASS    BEW, $                               ! 016644.00: the block's exit "BD,$+1.0"
+        END, FSF5

@@ -850,9 +850,49 @@ hand vectors alone. "Enables" notes the dependency chain.
    wrong. It is BBZ,8.13 (word 8, bit 13), which is exactly the 0o10 /
    0o15 pair in the assembled "10.15 80 016573.74 06".
 
-   STILL TO DO in F212: D1-D5+ (indicator tests) -- and note the trap
-   recorded above, that D1 is where the accumulator's low half first
-   carries forward across sub-tests.
+   F212D DONE, AND F212 IS COMPLETE (A, B, C, D). D1 is LOST CARRY in
+   three sub-cases, each preceded by a BLCZ clearing LC: ones in both
+   halves + SHFL 1; L(U),FK134 + SHFL 1; L(U),FK134 + SHFL 2, closed
+   with BZLCZ. D2-D5 cover all four arithmetic result indicators, each
+   after a Z,$IND, asking that the right one came on AND the other
+   three stayed off: D2 FK55 negative nonzero -> RLZ+RN; D3
+   DLN(U),FPK0 a NEGATIVE ZERO -> RN+RZ with RLZ and RGZ off; D4
+   positive zero -> RZ; D5 FK21 positive nonzero -> RGZ. D2's SHF(U),3
+   (".47 20") is the only shift in all of F212 carrying NEITHER sign
+   modifier, so its direction comes from address bit 11 alone.
+   D3 IS THE INTERESTING ROW and it is verified by injection: the
+   model's setResultIndicatorsFp has RLZ = !zero && negative but RN =
+   sign outright, so a negative zero sets RN WITHOUT RLZ. Making RN
+   depend on !zero as well halts D3 at its BZRN (SEN 016627.00, the
+   check immediately after DLN(U),FPK0) while F212B stays green.
+
+   CORRECTION TO THIS DOCUMENT'S OWN NOTE ABOVE. The "ONE TRAP WAITING
+   IN F212D1" paragraph said D1 is where the carried-forward low half
+   "starts to matter" and to pre-compute D1 by carrying accRight
+   forward. The MECHANISM is real -- L(U) is single-precision, writes
+   only the high half and sign byte, and leaves the low half holding
+   what the previous shift left (fffffffffffe after D1a) -- but the
+   CONCLUSION was wrong: at shift counts of 1 and 2 the bits that
+   leave IBM 12 come from the high half alone, and FK134's top
+   fraction bit is 1, so D1's LC answers do not depend on the low half
+   at all. Computed before running, not discovered by a halt. D1 tests
+   LOST CARRY, not the carry-forward; nothing transcribed so far tests
+   the carry-forward.
+
+   THE LC COVERAGE GAP PERSISTS ACROSS THE WHOLE ROUTINE, and that is
+   now measured rather than inferred from A alone: with lc forced True
+   unconditionally on a left shift, F212D and F212A24-A30 BOTH stay
+   green. So no row anywhere in F212 requires LC to be OFF after a
+   LEFT shift -- A24 is the LC-off row and it shifts RIGHT, and every
+   LC question in D1 wants LC ON. Still open, and no longer expected
+   to close inside F212.
+
+   NEXT IN THE LISTING: p.122 banners "----F212-X---ADD TO FRACTION
+   ROUTINE", so F+ (ADD TO FRACTION, opcode 1010010, not yet
+   implemented) is what immediately follows F212, beginning at SAP14
+   016651.00 with F212XA1. That settles the question the older
+   paragraph above left open by guessing -- F+ is next, and it is a
+   MODEL-DRIVING block rather than a pure transcription.
    COVERAGE LIMIT, measured not assumed: NOTHING in A1-A23 requires LC
    to be OFF after a LEFT shift. A12 wants it ON; A24 is the "ERROR IF
    LC INDICATOR ON" row but shifts RIGHT, where the model cannot set
