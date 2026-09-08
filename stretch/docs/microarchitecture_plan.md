@@ -1411,6 +1411,85 @@ hand vectors alone. "Enables" notes the dependency chain.
    and unwanted; what D/ needs is a divide BOX -- Piccolo's
    mkMBox/mkFPU idiom, plan steps 2-3 -- which is a separate and much
    smaller piece of work. And it gates D/ only, not D*, LFT or *+.)
+
+   F214-X DONE (XA 3, XB 2), suite 178, AND IT ADDED AN INSTRUCTION.
+   D* (MULTIPLY DOUBLE, opcode 1011010) had been in the decoder's valid
+   list since the tables were transcribed but never in the executor's
+   `known`, so this is the first new FP instruction since F+. Reference
+   Manual p.97 defines it in one sentence -- "the operation is the same
+   as MULTIPLY, except that the 96-bit product fraction is placed in
+   accumulator bits 12-107" -- and fpMulDouble is fpMul line for line
+   with fpNormalize96 swapped for fpNormalize96Wide and the product
+   kept whole instead of p[95:48].
+
+   WHAT MAKES THE BLOCK WORTH HAVING is that it is shaped to see
+   exactly that difference. Every F214XA sub-test checks the result in
+   THREE pieces -- the exponent at offset 116, the high fraction at 68
+   (IBM 12-59) and the LOW fraction at 20 (IBM 60-107) -- where F214A,
+   MULTIPLY's arithmetic block, checked only the first two and could
+   not have checked the third, since F214C proves MULTIPLY leaves IBM
+   64-127 alone. XA2 is the discriminating row: FPK52 x FPK53 has a
+   ZERO high half and puts the whole answer, 539770539772, in the low
+   one. F214XB is D*'s F214C, drawing the line at the other end: p.97
+   says D* writes IBM 12-107, and XB1/XB2 demand IBM 108-127 survive
+   from both polarities.
+
+   All three XA results and both XB set-ups were computed from the pool
+   constants before the model ran, and both programs passed first try.
+
+   THREE INJECTIONS, ALL THREE PREDICTED CORRECTLY:
+     D* leaves IBM 60-127 alone     predicted XA2 low   halted 020131.00
+       (i.e. behaves like *)        predicted XB PASSES  XB PASSED
+     D* zeroes IBM 108-127          predicted XB2 R      halted 020161.00
+                                    predicted XA PASSES  XA PASSED
+     D* zeroes the sign-byte flags  predicted XB2 SB5-7  halted 020165.00
+                                    predicted XA PASSES  XA PASSED
+
+   Each halt is the instruction after the BRGZ following the check I
+   named, which is where SIC leaves it. The two PASSES matter as much
+   as the three halts: they are what says the XA and XB checks are
+   measuring different things rather than both tripping on any fault.
+
+   THE SIGN-BYTE CHECKS SKIP BIT 4 ON PURPOSE and that is why the third
+   injection has somewhere to land. XB tests SB 0-3 and SB 5-7, never
+   bit 4, because bit 4 is the result sign and D* is entitled to write
+   it -- which leaves 5-7, the flag bits, covered. So XB2 pins
+   something no arithmetic block does: D* carries the ACCUMULATOR's
+   flags through unchanged.
+
+   TWO GAPS RECORDED RATHER THAN GUESSED AT. All five D* instructions
+   in F214-X are %U, so nothing here exercises D* NORMALIZED -- the
+   same gap F214A had before its A5. And fpMulDouble's
+   order-of-magnitude-zero branch is unreachable from this block:
+   XA1's product IS zero, but its operands are both flagged so the
+   Fig.32 arm returns before reaching it, and every other product here
+   is non-zero. That is the F214D ZM mechanism exactly -- A BRANCH
+   UPSTREAM MAKES A DOWNSTREAM LINE UNREACHABLE FOR THE INPUTS IN PLAY
+   -- caught this time before writing the code rather than after
+   mis-aiming an injection at it.
+
+   ARITHMETIC BEAT THE SCAN AGAIN, on an ADDRESS this time rather than
+   a constant. The scan prints F214XB2's first check at 020157.40. It
+   cannot be: the D* above it is at 020156.40 and XB1 shows D* is a
+   half word (its own D* at 020145.00 is followed by a connective at
+   020145.40). Reading the row as 020157.00 puts all eleven rows below
+   it on their printed addresses through B,SSW at 020166.40; reading it
+   as .40 puts none of them there. Eleven independent constraints
+   against one smudged digit.
+
+   AND THE ASSEMBLER CONFIRMED THE OPCODE WITHOUT BEING TOLD. D* was
+   already in FP_CODES from the opcode-table transcription, so
+   "D*(U),FPK53" assembled to 22072.45 A0 -- the listing's printed word
+   -- with no work on the assembler at all. Two independent
+   transcriptions, the opcode table and this listing page, agreeing.
+
+   Next: F215 "LOAD FACTOR TEST" (p.144, 020167.00-020231.00), which
+   drives LFT -- the same situation, decoded but not in `known`. F215A
+   is three arithmetic checks against the Factor register (word 14) and
+   F215B four sign/modifier combinations. After that the still-open
+   model items are *+ (no structural work needed) and D/, which needs a
+   divide box -- Piccolo's mkMBox/mkFPU idiom, plan steps 2-3.
+
    Its prologue is FSR1 (015772.00) and F210A1 begins at SAP11
    (015775.00): DL(U) FPK26, C0011 FK40+.12 into offset 20, then
    SRD(U) ROS, L(BU) FK35, CT0110(BU,60) ROS,4 -- "error if 1 not

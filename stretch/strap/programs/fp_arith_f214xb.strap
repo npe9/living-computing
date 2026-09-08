@@ -1,0 +1,98 @@
+! jb_af1c F214-X "MULTIPLY DOUBLE TEST", sub-block F214XB "TEST
+! UNCHANGED REGS", p.143 (octal 020142.00-020165.00, the block's own
+! exit "B,$+1.").  Continues fp_arith_f214xa.strap.
+!
+! This is D*'s answer to F214C, and it draws the line at the other end
+! of the fraction.  F214C proved MULTIPLY leaves IBM 64-127 alone; p.97
+! says D* writes IBM 12-107, so the open question is whether it stops
+! there.  XB1 and XB2 check IBM 108-127 from both polarities:
+!
+!   XB1  "0 S REM 0"  -- left word FPK52, right word zeroed, sign byte
+!        zeroed, then D*(U),FPK53.  R 44-63 must still be zero.
+!   XB2  "1 S REM 1"  -- left word FPK52, right word all ones, sign
+!        byte all ones, same D*.  R 44-63 must still be ones.
+!
+! "R 44-63" is the RIGHT accumulator word's bits 44-63, i.e. IBM
+! 108-127 -- the twenty bits just past the product field.  The check is
+! a 20-bit connective at offset 0, and offset 0 is the right word's
+! right end, so it reads exactly those bits.  XB2 is the load-bearing
+! one: D* genuinely writes IBM 64-107 here (FPK52 x FPK53 puts
+! 539770539772 in the low half, per F214XA2), so a model that ran the
+! product one word wide, or that wrote the whole right word, fails it.
+!
+! WHICH OPERAND EACH CONNECTIVE LOOKS AT, reading the truth table as
+! the results for (memory, accumulator) = (0,0),(0,1),(1,0),(1,1):
+!   CT0101 = 0,1,0,1  ->  the ACCUMULATOR bit; memory is a dummy
+!   CT1010 = 1,0,1,0  ->  NOT the accumulator bit; memory is a dummy
+!   CT0011 = 0,0,1,1  ->  the MEMORY bit, i.e. the sign byte at word 10
+!   CT1100 = 1,1,0,0  ->  NOT the memory bit
+! So the R checks read the accumulator and ignore their addressed
+! constant entirely, while the SB checks read memory.
+!
+! THE SIGN-BYTE CHECKS SKIP BIT 4 ON PURPOSE.  They test SB 0-3 and SB
+! 5-7, never bit 4, because bit 4 is the result sign and D* is entitled
+! to write it.  SB 5-7 are the flag bits, so XB2 does pin something the
+! arithmetic block does not: D* must carry the ACCUMULATOR's flags
+! through unchanged (a model that zeroed them would leave 000 where
+! XB2 demands 111).
+!
+! TRANSCRIPTION NOTE on XB2's first check.  The scan prints its address
+! as 020157.40, which cannot be right: the D* above it is at 020156.40
+! and XB1 proves D* is a half word (its own D* at 020145.00 is followed
+! by a connective at 020145.40).  Taking the row as 020157.00 makes
+! every one of the eleven rows below it land on its printed address,
+! through B,SSW at 020166.40; taking it as .40 makes all eleven wrong.
+! Transcribed as 020157.00.
+!
+! The listing labels this block "F214B" in its left column even though
+! it sits inside F214X -- a name it already used for the MULTIPLY
+! sign-modifier block.  Renamed F214XB here to keep the two apart; the
+! label is only a branch target for the mode loop, which is not
+! transcribed.
+
+! -- SSIP framework substitutes: SERS (octal 1304) -> FAIL halt,
+! -- SEN (octal 1310) -> scratch.
+        SLC, (8)1304.0
+SERS    BEW, $
+        SLC, (8)1310.0
+SEN     DD(BU,64,8), 0
+
+! -- constants (pool p.176) --
+        SLC, (8)22005.0
+FPK0    DD(BU,64,8), (8)0000000000000000000000
+FPK1    DD(BU,64,8), (8)1777777777777777777777
+        SLC, (8)22071.0
+FPK52   DD(BU,64,8), (8)0001024713560247135620
+FPK53   DD(BU,64,8), (8)0000400000000000000040
+
+        SLC, (8)20142.0
+! F214XB1 - 0 s remain 0
+F214XB  C0011(BU,64), FPK52, 64              ! left word <- FPK52
+        C0000(BU,64), FPK0                   ! right word <- 0
+        CM0000(BU,8), $SB
+        D*(U), FPK53
+        CT0101(BU,20), FPK0                  ! does R44-63 remain +0
+        SIC, SEN
+        BRGZ, SERS
+        CT0011(BU,4), $SB                    ! does SB0-3 remain +0
+        SIC, SEN
+        BRGZ, SERS
+        CT0011(BU,3), $SB+.5                 ! does SB5-7 remain +0
+        SIC, SEN
+        BRGZ, SERS
+! F214XB2 - 1 s remain 1 s
+        C0011(BU,64), FPK52, 64              ! left word <- FPK52
+        C1111(BU,64), FPK1                   ! right word <- all ones
+        CM1111(BU,8), $SB
+        D*(U), FPK53
+        CT1010(BU,20), FPK1                  ! does R44-63 remain +1 s
+        SIC, SEN
+        BRGZ, SERS
+        CT1100(BU,4), $SB                    ! does SB0-3 remain +1 s
+        SIC, SEN
+        BRGZ, SERS
+        CT1100(BU,3), $SB+.5                 ! does SB5-7 remain +1 s
+        SIC, SEN
+        BRGZ, SERS
+PASS    BEW, $                               ! 020165.00: the block's exit "B,$+1."
+        END, F214XB

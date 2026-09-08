@@ -871,6 +871,16 @@ run "FP multiply indicator tests (jb_af1c F214D on the model)" ./run_program.sh 
     "PC=$(python3 -c 'from strap_asm import assemble; print(assemble(open("programs/fp_arith_f214d.strap").read()).symtab["PASS"]//32)')" \
     "SEN:712=0"
 
+run "FP multiply double arithmetic (jb_af1c F214XA, encoding)" python3 verify_fp_arith_f214xa_listing.py
+run "FP multiply double arithmetic (jb_af1c F214XA on the model)" ./run_program.sh programs/fp_arith_f214xa.strap StretchFpMulDblATb \
+    "PC=$(python3 -c 'from strap_asm import assemble; print(assemble(open("programs/fp_arith_f214xa.strap").read()).symtab["PASS"]//32)')" \
+    "SEN:712=0"
+
+run "FP multiply double unchanged regs (jb_af1c F214XB, encoding)" python3 verify_fp_arith_f214xb_listing.py
+run "FP multiply double unchanged regs (jb_af1c F214XB on the model)" ./run_program.sh programs/fp_arith_f214xb.strap StretchFpMulDblBTb \
+    "PC=$(python3 -c 'from strap_asm import assemble; print(assemble(open("programs/fp_arith_f214xb.strap").read()).symtab["PASS"]//32)')" \
+    "SEN:712=0"
+
 run "Program store compare: store then EXECUTE the modified instruction" ./run_program.sh programs/store_then_execute.strap StretchStoreExecTb \
     "RESULT:$(python3 -c 'from strap_asm import assemble; print(assemble(open("programs/store_then_execute.strap").read()).symtab["RESULT"]//64)')=0x20"
 

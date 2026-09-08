@@ -1,0 +1,117 @@
+! jb_af1c F214-X "MULTIPLY DOUBLE TEST", sub-block F214XA "ARITHMETIC
+! CHECKS", p.142 (octal 020113.00-020140.00, the block's own exit
+! "BD,$+1.0").  F214XB, the unchanged-register tests, follows.
+!
+! THIS BLOCK INTRODUCES D* TO THE MODEL.  The opcode 1011010 was in the
+! decoder's valid list but not in the executor's, so D* was a new
+! instruction here.  Reference Manual p.97 defines it in one sentence:
+! "The operation is the same as MULTIPLY, except that the 96-bit
+! product fraction is placed in accumulator bits 12-107."
+!
+! That is the whole difference, and it is exactly what this block is
+! shaped to see.  MULTIPLY forms the same 96-bit product and keeps only
+! its high half; D* keeps all of it.  So every sub-test here checks the
+! result in THREE pieces -- the twelve exponent bits at offset 116, the
+! high fraction (48 bits at offset 68 = IBM 12-59) and the LOW fraction
+! (48 bits at offset 20 = IBM 60-107) -- where F214A, the MULTIPLY
+! block, checked only the first two.  F214A could not check the third,
+! because F214C proves MULTIPLY leaves IBM 64-127 alone.
+!
+!   XA1  FK36 +1024 XFP  D*  FK35 +2047 XFP   "EXPONENTS IN XFP RNG"
+!        Figure 32 ties to the accumulator -> exp +1024 (FK59's field).
+!        FK35's fraction is zero, so the whole 96-bit product is zero
+!        and BOTH halves are checked against FK35+.12, which is zero.
+!   XA2  FPK52 +2 N  D*  FPK53 +1 N            "EXPONENTS IN N RNG"
+!        Unflagged: the exponents add to +3 (FPK54's field).  This is
+!        the sub-test that pins D* apart from *: the product's high 48
+!        bits are ZERO (checked against FPK0+.12) and everything lands
+!        in the low half, 539770539772 = FPK54+.12.  Under MULTIPLY
+!        that low half would keep whatever L left there.
+!   XA3  FK61 -1024 XFN  D*  FK65 -1791 XFN   "EXPONENTS IN XFN RNG"
+!        Figure 32 again ties to the accumulator -> exp -1024; the
+!        product is 7d63287d632b in the low half (FK103+.12), high
+!        half zero.
+!
+! So XA1 and XA3 are the flagged path (Fig.32, normalization
+! suppressed, fraction unnormalized) and XA2 the plain summed-exponent
+! path.  All three are %U, so nothing here exercises D* NORMALIZED --
+! recorded as a coverage gap, the same one F214A had before A5.
+!
+! The order-of-magnitude-zero rule in fpMulDouble is likewise untouched
+! by this block: XA1's product IS zero but it takes the flagged path
+! and returns before reaching that branch, and XA2/XA3 are non-zero.
+!
+! All three expected results were computed from the pool constants
+! before the model ran (FPK54 p.176, FK35/FK36/FK59/FK61/FK65 p.178,
+! FK103 p.179).
+!
+! The listing's mode-select prologue at 020110.00-020112.40
+! (L%BU=,FMD / ST%BU=,DPET13 / SIC,RET1 / B,IDE1) is SSIP framework and
+! is not transcribed, as in every other block here; this program starts
+! at the first arithmetic instruction, 020113.00.
+
+! -- SSIP framework substitutes: SERS (octal 1304) -> FAIL halt,
+! -- SEN (octal 1310) -> scratch.
+        SLC, (8)1304.0
+SERS    BEW, $
+        SLC, (8)1310.0
+SEN     DD(BU,64,8), 0
+
+! -- constants (pools pp.176, 178, 179) --
+        SLC, (8)22005.0
+FPK0    DD(BU,64,8), (8)0000000000000000000000
+        SLC, (8)22071.0
+FPK52   DD(BU,64,8), (8)0001024713560247135620
+FPK53   DD(BU,64,8), (8)0000400000000000000040
+FPK54   DD(BU,64,8), (8)0001451627340516273440
+        SLC, (8)22205.0
+FK35    DD(BU,64,8), (8)1777400000000000000000
+FK36    DD(BU,64,8), (8)1000177777777777777760
+        SLC, (8)22235.0
+FK59    DD(BU,64,8), (8)1000024713560247135620
+        SLC, (8)22237.0
+FK61    DD(BU,64,8), (8)1000224713560247135620
+        SLC, (8)22243.0
+FK65    DD(BU,64,8), (8)1577600000000000000060
+        SLC, (8)22310.0
+FK103   DD(BU,64,8), (8)0001476543120765431260
+
+        SLC, (8)20113.0
+! F214XA1 - exponents in XFP rng
+F214XA  L(U), FK36                           ! exp acc + +1024
+        D*(U), FK35                          ! exp.mem++2047
+        CT0110(BU,12), FK59, 116             ! test result exp++1024
+        SIC, SEN
+        BRGZ, SERS
+        CT0110(BU,48), FK35+.12, 68          ! check result fract+0
+        SIC, SEN
+        BRGZ, SERS
+        CT0110(BU,48), FK35+.12, 20
+        SIC, SEN
+        BRGZ, SERS
+! F214XA2 - exponents in N rng
+        L(U), FPK52                          ! exp.acc++2
+        D*(U), FPK53                         ! exp.mem++1
+        CT0110(BU,12), FPK54, 116            ! check result exp++3
+        SIC, SEN
+        BRGZ, SERS
+        CT0110(BU,48), FPK0+.12, 68          ! check high order result fract.
+        SIC, SEN
+        BRGZ, SERS
+        CT0110(BU,48), FPK54+.12, 20         ! check low order result fract.
+        SIC, SEN
+        BRGZ, SERS
+! F214XA3 - exponents in XFN rng
+        L(U), FK61                           ! exp.acc.+-1024
+        D*(U), FK65                          ! exp.mem+-1791
+        CT0110(BU,12), FK61, 116             ! check result exp+-1024
+        SIC, SEN
+        BRGZ, SERS
+        CT0110(BU,48), FPK0+.12, 68          ! check high order fract.
+        SIC, SEN
+        BRGZ, SERS
+        CT0110(BU,48), FK103+.12, 20         ! chk low order fract
+        SIC, SEN
+        BRGZ, SERS
+PASS    BEW, $                               ! 020140.00: the block's exit "BD,$+1.0"
+        END, F214XA

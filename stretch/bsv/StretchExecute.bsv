@@ -1415,7 +1415,7 @@ function ActionValue#(Tuple4#(HWordAddr, Maybe#(Tuple2#(Bit#(4), IndexWord)),
         Bool known = (c == 7'b0000010 || c == 7'b0100010 || c == 7'b0000110 || c == 7'b0100110
                    || c == 7'b0001010 || c == 7'b0101010 || isST
                    || c == 7'b0010010 || c == 7'b0110010 || c == 7'b0010110 || c == 7'b0110110
-                   || c == 7'b0011010 || c == 7'b1010110 || isEplI || isSHF
+                   || c == 7'b0011010 || c == 7'b1011010 || c == 7'b1010110 || isEplI || isSHF
                    || c == 7'b1000110 || c == 7'b1100110   // DL / DLWF
                    || c == 7'b1000010 || c == 7'b1100010   // D+ / D+MG
                    || c == 7'b1010010                     // F+ (ADD TO FRACTION)
@@ -1960,6 +1960,36 @@ function ActionValue#(Tuple4#(HWordAddr, Maybe#(Tuple2#(Bit#(4), IndexWord)),
               ind = setBit(ind, ind_MOP, 0);
               ind = setResultIndicatorsFp(ind, r.res);
               ind = setRangeIndicators(ind, fpRangeBits(r.res, r.generated, r.propagated));
+              ind = setBit(ind, ind_ZM, pack(r.zm));
+            end
+            7'b1011010: begin // D* (multiply double, p.97): "the same
+                              // as MULTIPLY, except that the 96-bit
+                              // product fraction is placed in
+                              // accumulator bits 12-107" -- so where *
+                              // keeps the product's high half and drops
+                              // the rest, D* keeps all of it, and IBM
+                              // 60-63 (which * preserves) become part
+                              // of the result fraction.
+              // Accumulator bits 108-127 lie outside the product field
+              // and survive; fpdAccRight carries oldRight[19:0]
+              // through.  jb_af1c F214XB1/XB2 check exactly that, with
+              // a CT0101/CT1010 over R 44-63 = IBM 108-127.
+              //
+              // The MULTIPLIER is still the 48-bit accumulator fraction
+              // of bits 12-59, as under MULTIPLY: p.97 changes only
+              // where the product GOES, not what is multiplied.
+              Word64 accR = st.readAccRight();
+              FpdResult r = fpMulDouble(acc, opnd, normalized, noisy);
+              st.writeWord(addrAccLeft, fpdAccLeft(r.res));
+              st.writeWord(addrAccRight, fpdAccRight(r.res, accR));
+              st.writeWord(addrAccSignByte, sbWith(accS, r.res.sign, r.res.flags));
+              ind = setBit(ind, ind_MOP, 0);
+              // The indicators want a 48-bit stand-in; only "is the
+              // fraction zero" matters and that is a 96-bit question.
+              FpNum rind = fpdHead(r.res);
+              rind.frac = (r.res.frac == 0) ? 0 : 48'b1;
+              ind = setResultIndicatorsFp(ind, rind);
+              ind = setRangeIndicators(ind, fpRangeBits(rind, r.generated, r.propagated));
               ind = setBit(ind, ind_ZM, pack(r.zm));
             end
             7'b1010110: begin // E+ (add to exponent, p.102): the

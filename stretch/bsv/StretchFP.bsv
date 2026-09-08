@@ -449,6 +449,7 @@ typedef struct {
   Bool psh;
   Bool generated;
   Bool propagated;
+  Bool zm;          // zero multiply (MULTIPLY DOUBLE only)
 } FpdResult deriving (Bits, Eq, FShow);
 
 // ADD DOUBLE (p.95). `a` is the accumulator operand, `b` the storage
@@ -477,7 +478,7 @@ typedef struct {
 function FpdResult fpAddDouble(FpDouble a, FpDouble b, Bool normalized, Bool noisy,
                                Bool addMag);
   FpdResult r = FpdResult { res: a, lc: False, ls: False, psh: False,
-                            generated: False, propagated: False };
+                            generated: False, propagated: False, zm: False };
   // Only the accumulator's MAGNITUDE takes part; its sign is what the
   // forced-zero rule below is compared against, so force it first.
   if (addMag) a.sign = 0;
@@ -668,6 +669,59 @@ function FpResult fpMul(FpNum a, FpNum b, Bool normalized, Bool noisy);
       gen = (mag > 1023);
     end
     r.res = res; r.generated = gen;
+    r.zm = normalized && zero && (e > -1024);
+    return r;
+  end
+endfunction
+
+// MULTIPLY DOUBLE (D*, Ref. Manual p.97): "The operation is the same
+// as MULTIPLY, except that the 96-bit product fraction is placed in
+// accumulator bits 12-107." So the two 48-bit fractions still make a
+// 96-bit product, but nothing is discarded off the right end -- where
+// MULTIPLY keeps p[95:48] and drops the rest, D* keeps all of it --
+// and the normalization MULTIPLY applies to the high half applies to
+// the whole 96 bits (fpNormalize96Wide, whose vacated low-order bits
+// are exactly where noisy mode's one-bits belong).
+//
+// Accumulator bits 108-127 are outside the product field and are left
+// alone; jb_af1c F214XB checks that with a CT0101 over R 44-63.
+//
+// Everything else -- Fig.32's exponent table on a flagged operand, the
+// summed exponent otherwise, the order-of-magnitude-zero rule, ZM --
+// is MULTIPLY's, so the two arms below mirror fpMul line for line.
+function FpdResult fpMulDouble(FpNum a, FpNum b, Bool normalized, Bool noisy);
+  FpDouble z = FpDouble { ef: a.ef, em: a.em, es: a.es, frac: 0,
+                          sign: a.sign, flags: a.flags };
+  FpdResult r = FpdResult { res: z, lc: False, ls: False, psh: False,
+                            generated: False, propagated: False, zm: False };
+  Bit#(1) sign = a.sign ^ b.sign;
+  Bit#(96) p = zeroExtend(a.frac) * zeroExtend(b.frac);
+  if (a.ef == 1 || b.ef == 1) begin
+    // Fig.32: XFP dominates; XFN otherwise; ties to the accumulator.
+    // The product fraction is unnormalized and EF is propagated.
+    FpNum w = fpExpRangeWinner(a, b);
+    r.res = FpDouble { ef: w.ef, em: w.em, es: w.es, frac: p,
+                       sign: sign, flags: a.flags };
+    r.propagated = True;
+    return r;
+  end else begin
+    Int#(14) e = signExtend(fpExp(a)) + signExtend(fpExp(b));
+    let {frac96, adj, lc} = fpNormalize96Wide(0, p, normalized, noisy);
+    Bool zero = (p == 0);
+    let {h, gen} = fpMakeExp(e + (zero ? 0 : adj), 48'b0, sign, a.flags);
+    if (zero) begin
+      // Order-of-magnitude zero keeps the summed exponent unmodified,
+      // as in fpMul. Nothing in F214X reaches this: XA1's zero product
+      // is on the flagged path above, and XA2/XA3 are both non-zero.
+      Int#(14) mag = (e < 0) ? -e : e;
+      h.ef = (mag > 1023) ? 1 : 0;
+      h.em = (mag > 1023) ? 0 : truncate(pack(mag));
+      h.es = (e < 0) ? 1 : 0;
+      gen = (mag > 1023);
+    end
+    r.res = FpDouble { ef: h.ef, em: h.em, es: h.es, frac: frac96,
+                       sign: sign, flags: a.flags };
+    r.generated = gen;
     r.zm = normalized && zero && (e > -1024);
     return r;
   end
