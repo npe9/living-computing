@@ -1934,22 +1934,79 @@ function ActionValue#(Tuple4#(HWordAddr, Maybe#(Tuple2#(Bit#(4), IndexWord)),
                               // subject to the sign modifiers) is added
                               // to the accumulator's exponent; fraction
                               // and sign of the operand are ignored.
-              FpNum oe = opnd0;
-              if (fp.absSign == 1) oe.es = 0;
-              if (fp.invSign == 1) oe.es = ~oe.es;
-              Int#(14) e = signExtend(fpExp(acc)) + signExtend(fpExp(oe));
-              let {v0, gen} = fpMakeExp(e, acc.frac, acc.sign, acc.flags);
-              FpNum v = v0;
-              if (normalized && v.ef == 0 && v.frac != 0) begin
-                let {f48, adj, lc} = fpNormalize96(0, {v.frac, 48'b0}, True, noisy);
-                let {vn, g} = fpMakeExp(signExtend(fpExp(v)) + adj, f48, v.sign, v.flags);
-                v = vn; gen = gen || g;
+              // NORMALIZATION HERE IS 96-BIT.  p.102: "When normalized
+              // operation is specified, the accumulator exponent and
+              // fraction bits 12-107 are normalized.  Accumulator bits
+              // 108-127 and the sign byte register remain unchanged."
+              // jb_af1c F213A12 is what forces it: a high half of
+              // 000fffffffff over a low half of ffffffffffff, and after
+              // a normalized E+ the listing demands high ffffffffffff
+              // (FK57) and LOW fffffffff000 (FK48) -- the twelve
+              // leading zeros leave the whole IBM 12-107 fraction,
+              // pulling the low half up, and the exponent drops by 12
+              // from +1073 to FK57's +1061.  A13 checks it again
+              // independently with a shift of 10.  This arm used to
+              // normalize {frac, 48'b0} and never wrote addrAccRight.
+              Word64 accR = st.readAccRight();
+              FpDouble da = fpdFromAcc(accL, accR, accS);
+              FpDouble v = da; Bool gen = False; Bool prop = False;
+              if (da.ef == 1 || opnd0.ef == 1) begin
+                // "When the exponents of either or both operands lie in
+                // the XFP or XFN range, the rules for exponent handling
+                // follow the definitions given under MULTIPLY" -- Fig.32
+                // -- and "when either operand has EF of 1, the result
+                // will have a propagated EF of 1 and normalization, if
+                // specified, is suppressed. In this case the result
+                // fraction is the original accumulator fraction."
+                //
+                // THE RANGE TEST USES THE UNMODIFIED OPERAND. p.102:
+                // "the sign modifiers are ignored if either one or both
+                // of the exponents are in the XFP or XFN range" -- and
+                // es is exactly what separates XFP from XFN, so applying
+                // a modifier first would RECLASSIFY the operand and pick
+                // the wrong winner.
+                //
+                // The winner's exponent is taken WHOLE rather than
+                // recomputed: routing it through fpMakeExp would
+                // re-derive ef/em/es from an integer, and jb_af1c
+                // F213A3 pairs the XFP boundary value +2047 with an XFN
+                // -2047 precisely there.
+                FpNum w = fpExpRangeWinner(fpdHead(da), opnd0);
+                v.ef = w.ef; v.em = w.em; v.es = w.es;
+                prop = True;
+              end else begin
+                FpNum oe = opnd0;
+                if (fp.absSign == 1) oe.es = 0;
+                if (fp.invSign == 1) oe.es = ~oe.es;
+                Int#(14) e = signExtend(fpExp(fpdHead(da))) + signExtend(fpExp(oe));
+                let {h0, g} = fpMakeExp(e, 48'b0, da.sign, da.flags);
+                v.ef = h0.ef; v.em = h0.em; v.es = h0.es; gen = g;
+                // "When both operands have EF of 0, the result exponent
+                // may have a GENERATED EF of 1. For this case
+                // normalization, if specified, occurs if ES is 0 and is
+                // suppressed if ES is 1." So a generated EF only
+                // suppresses normalization on the NEGATIVE side; the
+                // arm previously suppressed it for either sign.
+                if (normalized && v.frac != 0 && (v.ef == 0 || v.es == 0)) begin
+                  let {w96, adj, lc} = fpNormalize96Wide(0, v.frac, True, noisy);
+                  // fpExpFull, not fpExp: at this point v's exponent may
+                  // already carry a GENERATED EF (A12's +1073 is held as
+                  // EF 1 / EM 49), and the shift has to come off the
+                  // whole value, not off the ten-bit field.
+                  let {h1, g2} = fpMakeExp(fpExpFull(fpdHead(v)) + adj,
+                                           48'b0, v.sign, v.flags);
+                  v.ef = h1.ef; v.em = h1.em; v.es = h1.es; v.frac = w96;
+                  gen = gen || g2;
+                end
               end
-              st.writeWord(addrAccLeft, fpAccLeft(v, accL));
-              st.writeWord(addrAccSignByte, fpSignByte(v, accS));
+              st.writeWord(addrAccLeft, fpdAccLeft(v));
+              st.writeWord(addrAccRight, fpdAccRight(v, accR));
+              st.writeWord(addrAccSignByte, sbWith(accS, v.sign, sbFlags(accS)));
               ind = setBit(ind, ind_MOP, 0);
-              ind = setResultIndicatorsFp(ind, v);
-              ind = setRangeIndicators(ind, fpRangeBits(v, gen, !gen && v.ef == 1));
+              FpNum vind = fpdHead(v);
+              vind.frac = (v.frac == 0) ? 0 : 48'b1;
+              ind = setResultIndicatorsFp(ind, vind);
+              ind = setRangeIndicators(ind, fpRangeBits(vind, gen, prop));
               ind = setBit(ind, ind_ZM, 0);
             end
             default: ind = setOpInvalid(ind);

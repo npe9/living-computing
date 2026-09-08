@@ -1,0 +1,194 @@
+! jb_af1c F213 "ADD TO EXPONENT TEST", sub-block F213A "ARITHMETIC
+! CHECKS", sub-tests A1-A9, pp.125-126 (octal 017012.40-017126.40).
+! A10-A13, the normalization-modifier tests, continue in
+! fp_arith_f213a10_13.strap.
+!
+! E+ was already implemented, but only as a plain exponent SUM.  These
+! nine sub-tests are the flagged-range table, and eight of them fail
+! against a sum.  Reference Manual p.102: "When the exponents of either
+! or both operands lie in the XFP or XFN range, the rules for exponent
+! handling follow the definitions given under MULTIPLY... When either
+! operand has EF of 1, the result will have a propagated EF of 1 and
+! normalization, if specified, is suppressed.  In this case the result
+! fraction is the original accumulator fraction."
+!
+! Figure 32 (p.102) is that table: XFP dominates every combination,
+! XFN dominates N, and a tie between two operands of the same range
+! goes to the accumulator.  The nine sub-tests walk it exactly, and
+! each names in its own comment which operand's exponent must survive:
+!
+!   A1  XFP  acc FK36  +1024 + XFP mem FK23  +2047 -> acc   "+ORIGINAL ACC. EXP"
+!   A2  XFP  acc FK36  +1024 + N   mem FK38  +1023 -> acc   "+ORIGINAL ACC. EXP"
+!   A3  XFP  acc FK21  +2047 + XFN mem FPK2  -2047 -> acc
+!   A4  N    acc FK38  +1023 + XFP mem FK36  +1024 -> mem   "+EXP. FROM MEM."
+!   A5  N    acc FPK32    +2 + N   mem FPK35    +2 -> SUM +4 (FPK62)
+!   A6  N    acc FPK32    +2 + XFN mem FK25  -1791 -> mem   "+EXP. MEM"
+!   A7  XFN  acc FK25  -1791 + XFP mem FK24  +1791 -> mem   "+EXP. MEM"
+!   A8  XFN  acc FK25  -1791 + N   mem FK38  +1023 -> acc   "+EXP. ACC"
+!   A9  XFN  acc FK25  -1791 + XFN mem FPK2  -2047 -> acc   "+ACC. EXP"
+!
+! A5 is the only one that adds anything.  A4 and A7 are the two that a
+! sum cannot fake in either direction, since they demand the MEMORY
+! operand's exponent -- and A7 is the sharper of the pair, because
+! there the memory operand is the one with the LARGER magnitude while
+! in A4 it is the accumulator, so no "take the bigger" rule explains
+! both.
+!
+! Each sub-test checks three fields separately: the exponent (12 bits
+! at offset 116, IBM 0-11), the high fraction (48 at offset 68, IBM
+! 12-59) and the low fraction (48 at offset 20, IBM 60-107).  Note
+! that in A4, A6 and A7 the EXPONENT is compared against the memory
+! operand while the FRACTION is compared against the original
+! accumulator -- p.102's "the result fraction is the original
+! accumulator fraction", checked from both sides.
+!
+! Each sub-test is preceded by a "B,$+.32" that simply falls through to
+! the next half word; transcribed as printed.
+
+! -- SSIP framework substitutes: SERS (octal 1304) -> FAIL halt,
+! -- SEN (octal 1310) -> scratch.
+        SLC, (8)1304.0
+SERS    BEW, $
+        SLC, (8)1310.0
+SEN     DD(BU,64,8), 0
+
+! -- constants (pools pp.176-178) --
+        SLC, (8)22007.0
+FPK2    DD(BU,64,8), (8)1777777777777777777760
+        SLC, (8)22045.0
+FPK32   DD(BU,64,8), (8)0001177777777777777760
+        SLC, (8)22050.0
+FPK35   DD(BU,64,8), (8)0001125252525252525240
+        SLC, (8)22103.0
+FPK62   DD(BU,64,8), (8)0002177777777777777760
+        SLC, (8)22167.0
+FK21    DD(BU,64,8), (8)1777403777777777777760
+        SLC, (8)22171.0
+FK23    DD(BU,64,8), (8)1777525252525252525240
+FK24    DD(BU,64,8), (8)1577452525252525252520
+FK25    DD(BU,64,8), (8)1577777777777777777760
+        SLC, (8)22206.0
+FK36    DD(BU,64,8), (8)1000177777777777777760
+        SLC, (8)22210.0
+FK38    DD(BU,64,8), (8)0777572525252525252520
+
+        SLC, (8)17012.40
+SAP15   B, $+.32                             ! F213A1 - exponents in XFP range
+        DL(U), FK36                          ! acc exp ++1024
+        C0011(BU,48), FK36+.12, 20
+        E+(U), FK23                          ! mem exp ++2047
+        CT0110(BU,12), FK36, 116             ! result exp + original acc. exp
+        SIC, SEN
+        BRGZ, SERS
+        CT0110(BU,48), FK36+.12, 68          ! check acc. fract. unchanged
+        SIC, SEN
+        BRGZ, SERS
+        CT0110(BU,48), FK36+.12, 20
+        SIC, SEN
+        BRGZ, SERS
+        B, $+.32                             ! F213A2 - exponents in XFP and N ranges
+        DL(U), FK36                          ! acc ++1024
+        C0011(BU,48), FK36+.12, 20
+        E+(U), FK38                          ! mem ++1023
+        CT0110(BU,12), FK36, 116             ! result exp + original acc. exp
+        SIC, SEN
+        BRGZ, SERS
+        CT0110(BU,48), FK36+.12, 68          ! check acc. fract. unchanged
+        SIC, SEN
+        BRGZ, SERS
+        CT0110(BU,48), FK36+.12, 20
+        SIC, SEN
+        BRGZ, SERS
+        B, $+.32                             ! F213A3 - exponents in XFP and XFN ranges
+        DL(U), FK21                          ! acc ++2047
+        C0011(BU,48), FK21+.12, 20
+        E+(U), FPK2                          ! mem +-2047
+        CT0110(BU,12), FK21, 116
+        SIC, SEN
+        BRGZ, SERS
+        CT0110(BU,48), FK21+.12, 68
+        SIC, SEN
+        BRGZ, SERS
+        CT0110(BU,48), FK21+.12, 20
+        SIC, SEN
+        BRGZ, SERS
+        B, $+.32                             ! F213A4 - exponents in N and XFP ranges
+        DL(U), FK38                          ! acc ++1023
+        C0011(BU,48), FK38+.12, 20
+        E+(U), FK36                          ! mem ++1024
+        CT0110(BU,12), FK36, 116             ! result exp + exp. from mem.
+        SIC, SEN
+        BRGZ, SERS
+        CT0110(BU,48), FK38+.12, 68          ! check for original acc. fract.
+        SIC, SEN
+        BRGZ, SERS
+        CT0110(BU,48), FK38+.12, 20
+        SIC, SEN
+        BRGZ, SERS
+        B, $+.32                             ! F213A5 - exponents in N range
+        DL(U), FPK32                         ! acc ++2
+        C0011(BU,48), FPK32+.12, 20
+        E+(U), FPK35                         ! mem ++2
+        CT0110(BU,12), FPK62, 116            ! check result exp. ++4
+        SIC, SEN
+        BRGZ, SERS
+        CT0110(BU,48), FPK32+.12, 68         ! check for original acc. fract.
+        SIC, SEN
+        BRGZ, SERS
+        CT0110(BU,48), FPK32+.12, 20
+        SIC, SEN
+        BRGZ, SERS
+        B, $+.32                             ! F213A6 - exponents in N and XFN range
+        DL(U), FPK32                         ! acc ++2
+        C0011(BU,48), FPK32+.12, 20
+        E+(U), FK25                          ! mem +-1791
+        CT0110(BU,12), FK25, 116             ! check result exp + exp. mem
+        SIC, SEN
+        BRGZ, SERS
+        CT0110(BU,48), FPK32+.12, 68         ! check for original acc. fract.
+        SIC, SEN
+        BRGZ, SERS
+        CT0110(BU,48), FPK32+.12, 20
+        SIC, SEN
+        BRGZ, SERS
+        B, $+.32                             ! F213A7 - exponents in XFN and XFP ranges
+        DL(U), FK25                          ! acc +-1791
+        C0011(BU,48), FK25+.12, 20
+        E+(U), FK24                          ! mem ++1791
+        CT0110(BU,12), FK24, 116             ! check result exp + exp. mem
+        SIC, SEN
+        BRGZ, SERS
+        CT0110(BU,48), FK25+.12, 68          ! check for original acc. fract.
+        SIC, SEN
+        BRGZ, SERS
+        CT0110(BU,48), FK25+.12, 20
+        SIC, SEN
+        BRGZ, SERS
+        B, $+.32                             ! F213A8 - exponents in XFN and N ranges
+        DL(U), FK25                          ! acc +-1791
+        C0011(BU,48), FK25+.12, 20
+        E+(U), FK38                          ! mem ++1023
+        CT0110(BU,12), FK25, 116             ! check result exp + exp. acc
+        SIC, SEN
+        BRGZ, SERS
+        CT0110(BU,48), FK25+.12, 68          ! check for original acc. fract.
+        SIC, SEN
+        BRGZ, SERS
+        CT0110(BU,48), FK25+.12, 20
+        SIC, SEN
+        BRGZ, SERS
+        B, $+.32                             ! F213A9 - exponents in XFN range
+        DL(U), FK25                          ! acc +-1791
+        C0011(BU,48), FK25+.12, 20
+        E+(U), FPK2                          ! mem +-2047
+        CT0110(BU,12), FK25, 116             ! check result exp + acc. exp
+        SIC, SEN
+        BRGZ, SERS
+        CT0110(BU,48), FK25+.12, 68          ! check for original acc. fract.
+        SIC, SEN
+        BRGZ, SERS
+        CT0110(BU,48), FK25+.12, 20
+        SIC, SEN
+        BRGZ, SERS
+PASS    BEW, $                               ! 017127.00: F213A10 continues here
+        END, SAP15

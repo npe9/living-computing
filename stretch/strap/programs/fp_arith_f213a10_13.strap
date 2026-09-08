@@ -1,0 +1,143 @@
+! jb_af1c F213 "ADD TO EXPONENT TEST", sub-block F213A "NORMALIZATION
+! MODIFIER", sub-tests A10-A13, pp.126-127 (octal
+! 017127.00-017161.00, the block's own exit "BD,$+1.0").  This
+! completes F213.  Continues fp_arith_f213a1_9.strap.
+!
+! These are the only NORMALIZED E+ rows in the diagnostic -- they print
+! ".05 60" where A1-A9 print ".45 60", the difference being the unnorm
+! bit -- and between them they pin the whole of p.102's normalization
+! rule, which has three clauses:
+!
+!   "When either operand has EF of 1... normalization, if specified,
+!   is suppressed."                                            -> A10
+!   "When both operands have EF of 0, the result exponent may have a
+!   generated EF of 1.  For this case normalization, if specified,
+!   occurs if ES is 0 and is suppressed if ES is 1."      -> A11, A12
+!   (and the ordinary case, no EF at all)                      -> A13
+!
+!   A10  acc FK21 XFP +2047 + FK39 N -1023.  Flagged, so suppressed:
+!        "RESULT EXP. HAS PROPAGATED EF+1", "ERROR IF RESULT
+!        NORMALIZED".  FK21's fraction 07ffffffffff has five leading
+!        zeros, so a normalize would visibly move it; the result must
+!        still be FK21 exactly.
+!   A11  acc FK39 N -1023 + FK39 N -1023 = -2046: a GENERATED EF with
+!        ES+1, so normalization is SUPPRESSED.  "RESULT HAS GEN EF+1 +
+!        ES+1", "ERROR IF RESULT NORMALIZED"; result is FK56, whose
+!        fraction 2aaaaaaaaaaa is FK39's untouched.
+!   A12  acc FK47 N +50 over a low half of FK46, + FK38 N +1023 =
+!        +1073: a generated EF with ES+0, so normalization OCCURS.
+!   A13  acc FPK87 N +2 over a low half of FPK32, + FPK88 N +2 = +4,
+!        no EF at all, so normalization occurs.  "RESULT HAS EF+0".
+!
+! A12 AND A13 ARE THE TWO THAT MAKE E+'s NORMALIZATION 96-BIT, and the
+! arithmetic is worth writing out because it is what drove the model
+! change.  p.102: "the accumulator exponent and fraction bits 12-107
+! are normalized.  Accumulator bits 108-127 and the sign byte register
+! remain unchanged."  Bits 12-107 is the WHOLE 96-bit fraction, both
+! halves:
+!
+!   A12  in   000fffffffff ffffffffffff   exponent +50 + +1023 = +1073
+!        12 leading zeros -> shift left 12
+!        out  ffffffffffff fffffffff000   exponent +1073 - 12 = +1061
+!        and the listing checks high against FK57 (fraction
+!        ffffffffffff, exponent +1061) and LOW against FK48 (fraction
+!        fffffffff000).  A model that normalized only the high 48 with
+!        zeros below would leave the low half at FK46's ffffffffffff
+!        and fail the second check.
+!
+!   A13  in   003fffffffff ffffffffffff   exponent +2 + +2 = +4
+!        10 leading zeros -> shift left 10
+!        out  ffffffffffff fffffffffc00   exponent +4 - 10 = -6
+!        checked against FK58 (fraction ffffffffffff, exponent -6) and
+!        FPK97 (fraction fffffffffc00).
+!
+! Both were computed from the pool constants before the model ran.
+!
+! COVERAGE NOTE: no E+ row anywhere in F213 carries a sign modifier --
+! A1-A9 print ".45 60" and A10-A13 ".05 60", and in both the absSign
+! and invSign bits are zero.  So nothing here tests p.102's "the sign
+! modifiers are ignored if either one or both of the exponents are in
+! the XFP or XFN range", which matters because es is exactly what
+! separates XFP from XFN: applying a modifier before the range test
+! would reclassify the operand and pick the wrong winner.  The model
+! tests the ranges on the unmodified operand on the manual's authority
+! alone.
+!
+! ASSEMBLER NOTE: these rows are written "E+(N)", not bare "E+".
+! strap_asm follows C22-6531 p.9 case 3, where a floating-point-only op
+! with no explicit dds is NORMALIZED except for E+ and E+I, which
+! default to UNNORMALIZED -- so the listing's "%N" is the explicit
+! normalized modifier and a bare E+ would assemble as ".45 60".
+
+! -- SSIP framework substitutes: SERS (octal 1304) -> FAIL halt,
+! -- SEN (octal 1310) -> scratch.
+        SLC, (8)1304.0
+SERS    BEW, $
+        SLC, (8)1310.0
+SEN     DD(BU,64,8), 0
+
+! -- constants (pools pp.176-178) --
+        SLC, (8)22045.0
+FPK32   DD(BU,64,8), (8)0001177777777777777760
+        SLC, (8)22125.0
+FPK87   DD(BU,64,8), (8)0001000077777777777760
+FPK88   DD(BU,64,8), (8)0001000177777777777740
+        SLC, (8)22137.0
+FPK97   DD(BU,64,8), (8)0001177777777777740000
+        SLC, (8)22167.0
+FK21    DD(BU,64,8), (8)1777403777777777777760
+        SLC, (8)22210.0
+FK38    DD(BU,64,8), (8)0777572525252525252520
+FK39    DD(BU,64,8), (8)0777625252525252525240
+        SLC, (8)22220.0
+FK46    DD(BU,64,8), (8)1746577777777777777760
+FK47    DD(BU,64,8), (8)0031000017777777777760
+FK48    DD(BU,64,8), (8)0030177777777777600000
+        SLC, (8)22232.0
+FK56    DD(BU,64,8), (8)1777225252525252525240
+FK57    DD(BU,64,8), (8)1022577777777777777760
+FK58    DD(BU,64,8), (8)0003377777777777777760
+
+        SLC, (8)17127.0
+FAE2    B, $+.32                             ! F213A10 - check normalization suppressed
+        DL(U), FK21
+        C0011(BU,48), FK21+.12, 20
+        E+(N), FK39                             ! result exp. has propagated EF+1
+        CT0110(BU,60), FK21, 68              ! error if result normalized
+        SIC, SEN
+        BRGZ, SERS
+        CT0110(BU,48), FK21+.12, 20
+        SIC, SEN
+        BRGZ, SERS
+        B, $+.32                             ! F213A11 - check normalization suppressed
+        DL(U), FK39
+        C0011(BU,48), FK39+.12, 20
+        E+(N), FK39                             ! result has gen EF+1 + ES+1
+        CT0110(BU,60), FK56, 68              ! error if result normalized
+        SIC, SEN
+        BRGZ, SERS
+        CT0110(BU,48), FK56+.12, 20
+        SIC, SEN
+        BRGZ, SERS
+        B, $+.32                             ! F213A12 - check normalization occurs
+        DL(U), FK47
+        C0011(BU,48), FK46+.12, 20
+        E+(N), FK38                             ! result has generated EF+1 and, ES+0
+        CT0110(BU,60), FK57, 68              ! error if result not normalized
+        SIC, SEN
+        BRGZ, SERS
+        CT0110(BU,48), FK48+.12, 20
+        SIC, SEN
+        BRGZ, SERS
+        B, $+.32                             ! F213A13 - check normalization occurs
+        DL(U), FPK87
+        C0011(BU,48), FPK32+.12, 20
+        E+(N), FPK88                            ! result has EF+0
+        CT0110(BU,60), FK58, 68              ! error if result not normalized
+        SIC, SEN
+        BRGZ, SERS
+        CT0110(BU,48), FPK97+.12, 20
+        SIC, SEN
+        BRGZ, SERS
+PASS    BEW, $                               ! 017161.00: the block's exit "BD,$+1.0"
+        END, FAE2

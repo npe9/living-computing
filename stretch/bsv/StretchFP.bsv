@@ -94,6 +94,32 @@ function Int#(13) fpExp(FpNum x);
   return (x.es == 1) ? -m : m;
 endfunction
 
+// The full signed exponent VALUE, EF's 1024 included.  fpExp above
+// returns only the ten-bit magnitude field, which is all that a
+// comparison between two operands of the SAME range needs and is what
+// every existing caller wants.  But an exponent that has to be
+// ARITHMETIC across the flagged boundary -- adjusted by a
+// normalization shift and re-encoded -- needs the 1024 that EF stands
+// for, because fpMakeExp stores an out-of-range exponent as "the LOW
+// TEN BITS of its magnitude; EF only marks that it overflowed".
+// jb_af1c F213A12 is where that matters: a generated XFP exponent of
+// +1073 is held as EF 1 / EM 49, and normalizing shifts it by 12.
+// Through fpExp that reads as 49 - 12 = 37, an N-range exponent;
+// through this it reads as 1073 - 12 = 1061, which is FK57's.
+//
+// THE TWO COINCIDE EXACTLY WHEN ef == 0, which is why every other
+// normalizing arm (L, LWF, E+I, ...) is correct with the plain fpExp:
+// each guards its normalization with `v.ef == 0`, so it never
+// normalizes a flagged value. The rule for anyone touching them: an
+// arm that can normalize a POSSIBLY-FLAGGED value must use fpExpFull.
+// Loosening such a guard without also switching the function
+// reintroduces the F213A12 bug -- do not "clean up" the inconsistency
+// by deleting this function.
+function Int#(14) fpExpFull(FpNum x);
+  Int#(14) m = unpack(zeroExtend({x.ef, x.em}));
+  return (x.es == 1) ? -m : m;
+endfunction
+
 function Bool isXFP(FpNum x) = (x.ef == 1 && x.es == 0);
 function Bool isXFN(FpNum x) = (x.ef == 1 && x.es == 1);
 function Bool isN(FpNum x)   = (x.ef == 0);
@@ -601,6 +627,18 @@ function Int#(2) fpCompare(FpNum a, FpNum b, Bool magnitude);
   end
 endfunction
 
+// ---- Figure 32, the EXPONENT MULTIPLICATION TABLE (Ref. Manual
+// p.102). XFP dominates every combination, XFN dominates N, and two
+// operands of the same range tie to `a` -- which for every caller here
+// is the accumulator. MULTIPLY defines the table and ADD TO EXPONENT
+// is defined by reference to it: "When the exponents of either or both
+// operands lie in the XFP or XFN range, the rules for exponent
+// handling follow the definitions given under MULTIPLY" (p.102). Only
+// meaningful when a.ef == 1 || b.ef == 1; the N/N cell of the table is
+// the ordinary arithmetic each caller does on its own.
+function FpNum fpExpRangeWinner(FpNum a, FpNum b) =
+  (isXFP(a) || isXFP(b)) ? (isXFP(a) ? a : b) : (isXFN(a) ? a : b);
+
 // ---- MULTIPLY (p.92): 96-bit product, exponent sum, post-normalization
 // up to 96 places, ZM for a normalized order-of-magnitude zero above
 // -1024.
@@ -608,9 +646,9 @@ function FpResult fpMul(FpNum a, FpNum b, Bool normalized, Bool noisy);
   FpResult r = fpNoResult(a);
   Bit#(1) sign = a.sign ^ b.sign;
   if (a.ef == 1 || b.ef == 1) begin
-    // Fig.23 multiplication table: XFP dominates; XFN otherwise;
+    // Fig.32 multiplication table: XFP dominates; XFN otherwise;
     // result fraction = unnormalized product, EF propagated.
-    FpNum res = (isXFP(a) || isXFP(b)) ? (isXFP(a) ? a : b) : (isXFN(a) ? a : b);
+    FpNum res = fpExpRangeWinner(a, b);
     Bit#(96) p = zeroExtend(a.frac) * zeroExtend(b.frac);
     res.frac = p[95:48];
     res.sign = sign;
