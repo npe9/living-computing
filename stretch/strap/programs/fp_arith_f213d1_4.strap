@@ -1,0 +1,105 @@
+! jb_af1c F213 "ADD TO EXPONENT TEST", sub-block F213D "INDICATOR
+! TESTS", part one: "ARITHMETIC RESULT INDICATORS" D1-D4, p.130 (octal
+! 017265.00-017312.40).  D5 onward, the exponent range indicators,
+! continue in fp_arith_f213d5_8.strap.
+!
+! Four sub-tests, each clearing the indicator register with Z,$IND
+! between the load and the E+, then asking that exactly one result
+! indicator came on and the other three stayed off.  Between them they
+! cover all four:
+!
+!   D1  DL(U),FPK1 + E+(U),FPK3   -> RLZ and RN on, RZ and RGZ off
+!   D2  DLN(U),FPK0 + E+(U),FPK0  -> RN and RZ on, RLZ and RGZ off
+!   D3  DL(U),FPK0 + E+(U),FPK0   -> RZ on, the other three off
+!   D4  DL(U),FPK28 + E+(U),FPK28 -> RGZ on, the other three off
+!
+! D2 IS THE INTERESTING ONE, and it is the same negative-zero case
+! F212D3 pinned for SHF: DLN loads the NEGATIVE of zero, so the result
+! is a negative zero, and the listing demands RN and RZ on together
+! with RLZ off.  setResultIndicatorsFp has RLZ = !zero && negative but
+! RN = sign, so a negative zero sets RN without RLZ by construction.
+!
+! WHICH PATH EACH SUB-TEST TAKES, since none of the comments say and
+! two of them are not the obvious one:
+!   D1  the accumulator is FPK1, all ones, whose exponent field is
+!       2047 with ES 1 -- XFN -- against FPK3 in the N range, so
+!       Figure 32 applies and the accumulator's exponent survives.
+!       The fraction is all ones and the sign negative, which is what
+!       the indicators are actually about.
+!   D2-D4 have both operands in the N range, so these are ordinary
+!       exponent sums: 0+0, 0+0 and +256 + +256 = +512.
+!
+! A NOTE ON THE ACCUMULATOR'S LOW HALF, which matters here because no
+! sub-test writes it: DL replaces the high half only, and E+ does not
+! touch the fraction at all, so the low half holds whatever it had.
+! Running D1-D4 from a cleared machine it stays zero throughout, so
+! D2's and D3's "zero result" really is zero.  Were these rows reached
+! with a dirty low half -- as they are in the listing's own flow, which
+! arrives here straight from F213C2's all-ones accumulator -- RZ would
+! not come on.  The listing gets away with it because F213C2's last act
+! is an E+ whose result it never inspects; this transcription starts
+! clean and says so rather than relying on it.
+
+! -- SSIP framework substitutes: SERS (octal 1304) -> FAIL halt,
+! -- SEN (octal 1310) -> scratch.
+        SLC, (8)1304.0
+SERS    BEW, $
+        SLC, (8)1310.0
+SEN     DD(BU,64,8), 0
+
+! -- constants (pool p.176) --
+        SLC, (8)22005.0
+FPK0    DD(BU,64,8), (8)0000000000000000000000
+FPK1    DD(BU,64,8), (8)1777777777777777777777
+        SLC, (8)22010.0
+FPK3    DD(BU,64,8), (8)0000125252525252525240
+        SLC, (8)22041.0
+FPK28   DD(BU,64,8), (8)0200177777777777777760
+
+        SLC, (8)17265.0
+FAE5    DL(U), FPK1                          ! F213D1 - test RLZ and RN, off to on
+        Z, $IND
+        E+(U), FPK3
+        SIC, SEN
+        BZRLZ, SERS                          ! error if RLZ, RN off and RZ or RGZ on
+        SIC, SEN
+        BZRN, SERS
+        SIC, SEN
+        BRZ, SERS
+        SIC, SEN
+        BRGZ, SERS
+        DLN(U), FPK0                         ! F213D2 - test RN and RZ, off to on
+        Z, $IND
+        E+(U), FPK0
+        SIC, SEN
+        BZRN, SERS                           ! error if RN, RZ off and RLZ or RGZ on
+        SIC, SEN
+        BZRZ, SERS
+        SIC, SEN
+        BRLZ, SERS
+        SIC, SEN
+        BRGZ, SERS
+        DL(U), FPK0                          ! F213D3 - test RZ, off to on
+        Z, $IND
+        E+(U), FPK0
+        SIC, SEN
+        BZRZ, SERS                           ! error if RZ off and RLZ, RN or RGZ on
+        SIC, SEN
+        BRLZ, SERS
+        SIC, SEN
+        BRN, SERS
+        SIC, SEN
+        BRGZ, SERS
+        DL(U), FPK28                         ! F213D4 - test RGZ, off to on
+        Z, $IND
+        E+(U), FPK28
+        SIC, SEN
+        BZRGZ, SERS                          ! error if RGZ off and RLZ, RN or RZ on
+        SIC, SEN
+        BRLZ, SERS
+        SIC, SEN
+        BRN, SERS
+        SIC, SEN
+        BRZ, SERS
+PASS    BEW, $                               ! 017313.00: F213D5 continues here
+        END, FAE5
