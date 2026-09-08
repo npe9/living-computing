@@ -836,6 +836,11 @@ run "FP add to exponent, range indicators (jb_af1c F213D5-D9 on the model)" ./ru
     "PC=$(python3 -c 'from strap_asm import assemble; print(assemble(open("programs/fp_arith_f213d5_9.strap").read()).symtab["PASS"]//32)')" \
     "SEN:712=0"
 
+run "FP add immediate to exponent (jb_af1c F213XA, encoding)" python3 verify_fp_arith_f213xa_listing.py
+run "FP add immediate to exponent (jb_af1c F213XA on the model)" ./run_program.sh programs/fp_arith_f213xa.strap StretchFpAddExpImmTb \
+    "PC=$(python3 -c 'from strap_asm import assemble; print(assemble(open("programs/fp_arith_f213xa.strap").read()).symtab["PASS"]//32)')" \
+    "SEN:712=0"
+
 run "Program store compare: store then EXECUTE the modified instruction" ./run_program.sh programs/store_then_execute.strap StretchStoreExecTb \
     "RESULT:$(python3 -c 'from strap_asm import assemble; print(assemble(open("programs/store_then_execute.strap").read()).symtab["RESULT"]//64)')=0x20"
 

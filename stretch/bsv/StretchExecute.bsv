@@ -1622,20 +1622,40 @@ function ActionValue#(Tuple4#(HWordAddr, Maybe#(Tuple2#(Bit#(4), IndexWord)),
           // effective address form a 12-bit exponent added to the
           // accumulator's exponent; fraction unchanged, normalized if
           // specified. Does not address storage.
+          // p.102 makes this E+ exactly: "The operation is the same as
+          // ADD TO EXPONENT, except that the addend is bits 0-11 of the
+          // effective address."  So Figure 32, the ES normalization
+          // rule and the 96-bit fraction all apply here too, and
+          // jb_af1c F213-X drives them here the way F213A drove them
+          // through E+.  The addend carries its own ES, and E+I has no
+          // storage operand, so there are no sign modifiers in play.
           FpNum imm = FpNum { ef: ea[17], em: ea[16:7], es: ea[6], frac: 0, sign: 0, flags: 0 };
-          Int#(14) e = signExtend(fpExp(acc)) + signExtend(fpExp(imm));
-          let {v0, gen} = fpMakeExp(e, acc.frac, acc.sign, acc.flags);
-          FpNum v = v0;
-          if (normalized && v.ef == 0 && v.frac != 0) begin
-            let {f48, adj, lc} = fpNormalize96(0, {v.frac, 48'b0}, True, noisy);
-            let {vn, g} = fpMakeExp(signExtend(fpExp(v)) + adj, f48, v.sign, v.flags);
-            v = vn; gen = gen || g;
+          Word64 accR = st.readAccRight();
+          FpDouble da = fpdFromAcc(accL, accR, accS);
+          FpDouble v = da; Bool gen = False; Bool prop = False;
+          if (da.ef == 1 || imm.ef == 1) begin
+            FpNum w = fpExpRangeWinner(fpdHead(da), imm);
+            v.ef = w.ef; v.em = w.em; v.es = w.es;
+            prop = True;
+          end else begin
+            Int#(14) e = signExtend(fpExp(fpdHead(da))) + signExtend(fpExp(imm));
+            let {h0, g} = fpMakeExp(e, 48'b0, da.sign, da.flags);
+            v.ef = h0.ef; v.em = h0.em; v.es = h0.es; gen = g;
+            if (normalized && v.frac != 0 && (v.ef == 0 || v.es == 0)) begin
+              let {w96, adj, lc} = fpNormalize96Wide(0, v.frac, True, noisy);
+              let {h1, g2} = fpMakeExp(fpExpFull(fpdHead(v)) + adj, 48'b0, v.sign, v.flags);
+              v.ef = h1.ef; v.em = h1.em; v.es = h1.es; v.frac = w96;
+              gen = gen || g2;
+            end
           end
-          st.writeWord(addrAccLeft, fpAccLeft(v, accL));
-          st.writeWord(addrAccSignByte, fpSignByte(v, accS));
+          st.writeWord(addrAccLeft, fpdAccLeft(v));
+          st.writeWord(addrAccRight, fpdAccRight(v, accR));
+          st.writeWord(addrAccSignByte, sbWith(accS, v.sign, sbFlags(accS)));
           ind = setBit(ind, ind_MOP, 0);
-          ind = setResultIndicatorsFp(ind, v);
-          ind = setRangeIndicators(ind, fpRangeBits(v, gen, !gen && v.ef == 1));
+          FpNum vind = fpdHead(v);
+          vind.frac = (v.frac == 0) ? 0 : 48'b1;
+          ind = setResultIndicatorsFp(ind, vind);
+          ind = setRangeIndicators(ind, fpRangeBits(vind, gen, prop));
           ind = setBit(ind, ind_ZM, 0);
         end else if (prefetchCount < 1)
           needsRead = tagged Valid ea;

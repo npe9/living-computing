@@ -1564,9 +1564,35 @@ def emit_statement(stmt, symtab, image):
         if sm is not None:
             fp_base, absSign, invSign = sm
         base, paren = split_field_trailing_paren(stmt.fields[0])
-        target_bits = eval_expr(base, symtab, loc, lineno=stmt.lineno)
-        addr18 = (target_bits >> 6) & 0x3FFFF
         idx = eval_reg(paren, symtab, stmt.lineno)
+        if fp_base == "E+I" and base.strip()[:1] in "+-":
+            # ADD IMMEDIATE TO EXPONENT takes its addend as a SIGNED
+            # EXPONENT when written with an explicit sign, which is how
+            # jb_af1c F213-X spells it ("E+I%U,+2047", "E+I%U,-1791").
+            # Reference Manual p.102: "the addend is bits 0-11 of the
+            # effective address".  Those twelve bits are an ordinary
+            # exponent field -- EF, a ten-bit magnitude, then ES -- and
+            # they sit in the 18-bit address field at bits 17, 16-7 and
+            # 6.  An out-of-range magnitude keeps its LOW TEN BITS with
+            # EF marking the overflow, the same representation
+            # fpMakeExp stores and fpExpFull reads back (see
+            # StretchFP.bsv); +2047 is therefore EF 1 with a magnitude
+            # field of 1023, printed 777600, and -1791 is EF 1 with 767
+            # and ES 1, printed 677700.  Verified against all five
+            # immediates F213XA prints.
+            #
+            # Without a sign the field stays an ordinary effective
+            # address, which is how fp_exp_shift.strap writes it
+            # ("E+I(N), 128.0" for +1); the two forms are told apart by
+            # the sign alone, exactly as the listing tells them apart.
+            v = eval_expr(base.strip().lstrip("+"), symtab, loc, lineno=stmt.lineno)
+            mag = abs(v)
+            addr18 = (((1 if mag > 1023 else 0) << 17)
+                      | ((mag & 0x3FF) << 7)
+                      | ((1 if v < 0 else 0) << 6))
+        else:
+            target_bits = eval_expr(base, symtab, loc, lineno=stmt.lineno)
+            addr18 = (target_bits >> 6) & 0x3FFFF
         image.deposit_half(loc // 32, enc_fp(addr18, unnorm, absSign, invSign, FP_CODES[fp_base], idx))
         return
 

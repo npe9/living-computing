@@ -1,0 +1,179 @@
+! jb_af1c F213-X "ADD TO EXPONENT IMMEDIATE TEST", sub-block F213XA
+! "ARITHMETIC CHECKS", pp.133-134 (octal 017426.00-017527.00, the
+! block's own exit "BD,$+1.0").
+!
+! This is E+I's version of F213A, and it drives the same model work:
+! the E+I arm had neither Figure 32 nor the corrected normalization
+! rule, exactly as E+ did not, because p.102 makes them one operation
+! -- "The operation is the same as ADD TO EXPONENT, except that the
+! addend is bits 0-11 of the effective address."
+!
+! Those twelve bits are an ordinary exponent field, EF then a ten-bit
+! magnitude then ES, sitting in the 18-bit address at bits 17, 16-7
+! and 6.  So the immediate has a RANGE of its own and Figure 32
+! applies to it:
+!
+!   XA1  FK24  +1791 XFP + imm +2047 XFP -> acc  +1791  (tie)
+!   XA2  FK36  +1024 XFP + imm +1023 N   -> acc  +1024
+!   XA3  FK24  +1791 XFP + imm -1791 XFN -> acc  +1791
+!   XA4  FK39  -1023 N   + imm -1023 N   -> sum  -2046  FK56
+!   XA5  FPK32    +2 N   + imm    +2 N   -> sum     +4  FPK62
+!   XA6  FK49  -1024 XFN + imm -1023 N   -> acc  -1024
+!   XA7  FPK2  -2047 XFN + imm -1791 XFN -> acc  -2047  (tie)
+!   XA8  FPK47  -256 N   + imm -1791 XFN -> imm  -1791  FK25
+!
+! Only XA4 and XA5 add anything; the other six are the range table.
+! XA1 and XA7 are the two ties, and they resolve to the accumulator
+! from the XFP and the XFN side respectively.  XA8 is the only one
+! where the IMMEDIATE wins, which is what makes it the discriminator
+! for the table's direction -- see below.
+!
+! XA8 IS ALSO SELF-MODIFYING, and the listing says why in its own
+! header: "CHECK THAT BITS TO THE RIGHT OF EFFECTIVE ADDRESS ARE
+! IGNORED".  A CM1111 writes ones into six bits at DIN+.12 -- six bits
+! twelve into the E+I instruction word, which are address bits 5-0,
+! the six BELOW the twelve the exponent occupies -- and then that same
+! patched instruction is executed.  The result must be the unmodified
+! -1791.  So this exercises the store-close-to-fetch path as well, the
+! way F212A25 and store_then_execute.strap do.
+!
+! All eight expected exponents were computed from the pool constants
+! and the immediates' own encodings before the model ran.
+!
+! ASSEMBLER NOTE: the immediates are written the way the listing
+! writes them, as SIGNED EXPONENTS ("E+I(U), +2047"), which strap_asm
+! gained for this block.  Without a sign the field stays an ordinary
+! effective address, as fp_exp_shift.strap writes it -- the two forms
+! are told apart by the sign alone.  The five distinct immediates here
+! assemble to 777600, 377600, 677700, 377700 and 000400, matching the
+! listing's printed code exactly.
+
+! -- SSIP framework substitutes: SERS (octal 1304) -> FAIL halt,
+! -- SEN (octal 1310) -> scratch.
+        SLC, (8)1304.0
+SERS    BEW, $
+        SLC, (8)1310.0
+SEN     DD(BU,64,8), 0
+
+! -- constants (pools pp.176-178) --
+        SLC, (8)22007.0
+FPK2    DD(BU,64,8), (8)1777777777777777777760
+        SLC, (8)22045.0
+FPK32   DD(BU,64,8), (8)0001177777777777777760
+        SLC, (8)22064.0
+FPK47   DD(BU,64,8), (8)0200377777777777777760
+        SLC, (8)22103.0
+FPK62   DD(BU,64,8), (8)0002177777777777777760
+        SLC, (8)22172.0
+FK24    DD(BU,64,8), (8)1577452525252525252520
+FK25    DD(BU,64,8), (8)1577777777777777777760
+        SLC, (8)22206.0
+FK36    DD(BU,64,8), (8)1000177777777777777760
+        SLC, (8)22211.0
+FK39    DD(BU,64,8), (8)0777625252525252525240
+        SLC, (8)22223.0
+FK49    DD(BU,64,8), (8)1000377777777777777760
+        SLC, (8)22232.0
+FK56    DD(BU,64,8), (8)1777225252525252525240
+
+        SLC, (8)17426.0
+SAP16   DL(U), FK24                          ! F213XA1 - exponent acc++1791
+        C0011(BU,48), FK24+.12, 20
+        E+I(U), +2047                        ! eff. add ress++2047
+        CT0110(BU,12), FK24, 116             ! check result exp.+acc.exp.
+        SIC, SEN
+        BRGZ, SERS
+        CT0110(BU,48), FK24+.12, 68          ! check original acc. fraction
+        SIC, SEN
+        BRGZ, SERS
+        CT0110(BU,48), FK24+.12, 20
+        SIC, SEN
+        BRGZ, SERS
+        DL(U), FK36                          ! F213XA2 - exp acc + +1024
+        C0011(BU,48), FK36+.12, 20
+        E+I(U), +1023                        ! eff. add ress++1023
+        CT0110(BU,12), FK36, 116             ! check result exp+acc.exp
+        SIC, SEN
+        BRGZ, SERS
+        CT0110(BU,48), FK36+.12, 68          ! check acc fract. unchanged
+        SIC, SEN
+        BRGZ, SERS
+        CT0110(BU,48), FK36+.12, 20
+        SIC, SEN
+        BRGZ, SERS
+        DL(U), FK24                          ! F213XA3 - exp acc + +1791
+        C0011(BU,48), FK24+.12, 20
+        E+I(U), -1791                        ! eff. address+-1791
+        CT0110(BU,12), FK24, 116             ! check result exp+acc.exp
+        SIC, SEN
+        BRGZ, SERS
+        CT0110(BU,48), FK24+.12, 68          ! check acc.fraction unchanged
+        SIC, SEN
+        BRGZ, SERS
+        CT0110(BU,48), FK24+.12, 20
+        SIC, SEN
+        BRGZ, SERS
+        DL(U), FK39                          ! F213XA4 - exp acc + -1023
+        C0011(BU,48), FK39+.12, 20
+        E+I(U), -1023                        ! eff. address+-1023
+        CT0110(BU,12), FK56, 116             ! check result exp+-2046
+        SIC, SEN
+        BRGZ, SERS
+        CT0110(BU,48), FK39+.12, 68          ! check acc.fraction unchanged
+        SIC, SEN
+        BRGZ, SERS
+        CT0110(BU,48), FK39+.12, 20
+        SIC, SEN
+        BRGZ, SERS
+        DL(U), FPK32                         ! F213XA5 - exp acc + +2
+        C0011(BU,48), FPK32+.12, 20
+        E+I(U), +2                           ! eff. address++2
+        CT0110(BU,12), FPK62, 116            ! check result exp++4
+        SIC, SEN
+        BRGZ, SERS
+        CT0110(BU,48), FPK32+.12, 68         ! check acc.fract.unchanged
+        SIC, SEN
+        BRGZ, SERS
+        CT0110(BU,48), FPK32+.12, 20         ! check acc.fract.unchanged
+        SIC, SEN
+        BRGZ, SERS
+        DL(U), FK49                          ! F213XA6 - exp acc + -1024
+        C0011(BU,48), FK49+.12, 20
+        E+I(U), -1023                        ! eff. address + -1023
+        CT0110(BU,12), FK49, 116             ! check result exp + acc. exp
+        SIC, SEN
+        BRGZ, SERS
+        CT0110(BU,48), FK49+.12, 68          ! check acc.fract.unchanged
+        SIC, SEN
+        BRGZ, SERS
+        CT0110(BU,48), FK49+.12, 20
+        SIC, SEN
+        BRGZ, SERS
+        DL(U), FPK2                          ! F213XA7 - exp acc + -2047
+        C0011(BU,48), FPK2+.12, 20
+        E+I(U), -1791                        ! eff. address+-1791
+        CT0110(BU,12), FPK2, 116             ! check result exp.+acc.exp.
+        SIC, SEN
+        BRGZ, SERS
+        CT0110(BU,48), FPK2+.12, 68          ! check acc.fract.unchanged
+        SIC, SEN
+        BRGZ, SERS
+        CT0110(BU,48), FPK2+.12, 20
+        SIC, SEN
+        BRGZ, SERS
+! F213XA8 - check that bits to the right of effective address are ignored
+        CM1111(BU,6,8), DIN+.12              ! enters 1-s to right of eff.address
+        DL(U), FPK47                         ! exp.acc+-256
+        C0011(BU,48), FPK47+.12, 20
+DIN     E+I(U), -1791                        ! eff.address+-1791
+        CT0110(BU,12), FK25, 116             ! check result exp+-1791
+        SIC, SEN
+        BRGZ, SERS
+        CT0110(BU,48), FPK47+.12, 68
+        SIC, SEN
+        BRGZ, SERS
+        CT0110(BU,48), FPK47+.12, 20
+        SIC, SEN
+        BRGZ, SERS
+PASS    BEW, $                               ! 017527.00: the block's exit "BD,$+1.0"
+        END, SAP16
