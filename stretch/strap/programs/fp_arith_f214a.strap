@@ -1,0 +1,124 @@
+! jb_af1c F214 "MULTIPLY TEST ROUTINE", sub-block F214A "ARITHMETIC
+! CHECKS", p.137 (octal 017634.40-017671.40, the block's own exit
+! "B,$+1.").  F214B, the sign and modifier combinations, follows.
+!
+! `*` was already implemented, so this is a pure transcription -- the
+! first test of fpMul against the diagnostic rather than against
+! hand-written vectors.  All six expected results were computed from
+! the pool constants before the model ran.
+!
+!   A1  FK59 +1024 XFP * FK35 +2047 XFP  "ZERO MULTIPLICAND FRACT."
+!       Fig.32 ties to the accumulator -> exp +1024; FK35's fraction
+!       is zero so the product is zero (checked against FPK0).
+!   A2  FK59 +1024 XFP * FK60 -1024 XFN  "NON ZERO MULTIPLICAND FRACT."
+!       XFP dominates -> exp +1024, fraction 14e5dc14e5dc (FK15).
+!   A3  FK61 -1024 XFN * FPK80 +2 N      XFN dominates N -> exp -1024,
+!       same fraction.
+!   A4  FPK52 +2 N * FPK80 +2 N          both unflagged: exponents ADD
+!       to +4 and the 60-bit result is FK15 exactly.
+!   A5  FK62 +1023 N * FK63 +1023 N, NORMALIZED.  2046 with a shift of
+!       three gives +2043, and the 60-bit result is FK102 -- note the
+!       exponent has a GENERATED EF, so FK102 is in the XFP range.
+!   A6  FK59 * FK60 again but NORMALIZED, "ERROR IF RESULT NORMALIZED":
+!       a flagged operand suppresses normalization, so the result is
+!       A2's exactly.
+!
+! So A1-A3 and A6 are the Figure 32 path, A4 the plain one, A5 the
+! normalizing one, and A6 the interaction between the two.
+!
+! ON THE ACCUMULATOR'S LOW HALF: these sub-tests load with L, not DL,
+! and check only the exponent (12 bits at offset 116) and the high
+! fraction (48 at offset 68), or the two together (60 at 68).  Nothing
+! here inspects IBM 60-107, so nothing here can say whether multiply
+! produces the double-length product the machine's 96-bit accumulator
+! implies.  Recorded because the model's fpMul returns a single-length
+! result; if a later F214 block checks the low half, that is where it
+! will show.
+!
+! TRANSCRIPTION NOTE: FK60 (pool p.178, octal 22236) reads
+! 1000300000000000000000, not the ...200... an earlier note in this
+! project inferred.  The '2' reading gives a ZERO fraction and A2's own
+! title is "NON ZERO MULTIPLICAND FRACT."; the '3' gives 800000000000.
+! Three constraints pick it -- the exponent -1024, the non-zero
+! fraction, and the product FK59.frac x FK60.frac whose top 48 bits are
+! 14e5dc14e5dc, exactly the FK15 that A2 compares against.
+
+! -- SSIP framework substitutes: SERS (octal 1304) -> FAIL halt,
+! -- SEN (octal 1310) -> scratch.
+        SLC, (8)1304.0
+SERS    BEW, $
+        SLC, (8)1310.0
+SEN     DD(BU,64,8), 0
+
+! -- constants (pools pp.176-179) --
+        SLC, (8)22005.0
+FPK0    DD(BU,64,8), (8)0000000000000000000000
+        SLC, (8)22071.0
+FPK52   DD(BU,64,8), (8)0001024713560247135620
+        SLC, (8)22121.0
+FPK80   DD(BU,64,8), (8)0001100000000000000000
+        SLC, (8)22161.0
+FK15    DD(BU,64,8), (8)0002012345670123456700
+        SLC, (8)22205.0
+FK35    DD(BU,64,8), (8)1777400000000000000000
+        SLC, (8)22235.0
+FK59    DD(BU,64,8), (8)1000024713560247135620
+FK60    DD(BU,64,8), (8)1000300000000000000000
+FK61    DD(BU,64,8), (8)1000224713560247135620
+FK62    DD(BU,64,8), (8)0777424713560247135620
+FK63    DD(BU,64,8), (8)0777500000000000000000
+        SLC, (8)22307.0
+FK102   DD(BU,64,8), (8)1775523456701234567100
+
+        SLC, (8)17634.40
+SAP17   B, $+.32                             ! F214A1 - zero multiplicand fract.
+        L(U), FK59                           ! exponent + +1024
+        *(U), FK35                           ! exp ++2047
+        CT0110(BU,12), FK59, 116             ! check result exp. ++1024
+        SIC, SEN
+        BRGZ, SERS
+        CT0110(BU,48), FPK0+.12, 68          ! check result fract. +0
+        SIC, SEN
+        BRGZ, SERS
+        B, $+.32                             ! F214A2 - non zero multiplicand fract.
+        L(U), FK59                           ! exp ++1024
+        *(U), FK60                           ! exp +-1024
+        CT0110(BU,12), FK59, 116             ! check result exp ++1024
+        SIC, SEN
+        BRGZ, SERS
+        CT0110(BU,48), FK15+.12, 68          ! check result fract.
+        SIC, SEN
+        BRGZ, SERS
+        B, $+.32                             ! F214A3
+        L(U), FK61                           ! exp +-1024
+        *(U), FPK80                          ! exp ++2
+        CT0110(BU,12), FK61, 116             ! test result exponent+-1024
+        SIC, SEN
+        BRGZ, SERS
+        CT0110(BU,48), FK15+.12, 68          ! check result fraction
+        SIC, SEN
+        BRGZ, SERS
+        B, $+.32                             ! F214A4
+        L(U), FPK52                          ! exp ++2
+        *(U), FPK80                          ! exp ++2
+        CT0110(BU,60), FK15, 68              ! check result fract. and exp ++4
+        SIC, SEN
+        BRGZ, SERS
+! -- test normalization modifier --
+        B, $+.32                             ! F214A5
+        L(U), FK62                           ! exp ++1023
+        *(N), FK63                           ! exp ++1023
+        CT0110(BU,60), FK102, 68             ! check that fract normalized
+        SIC, SEN
+        BRGZ, SERS
+        B, $+.32                             ! F214A6 - test normalization suppressed
+        L(U), FK59                           ! exp ++1024
+        *(N), FK60                           ! exp +-1024
+        CT0110(BU,12), FK59, 116             ! error if result normalized
+        SIC, SEN
+        BRGZ, SERS
+        CT0110(BU,48), FK15+.12, 68
+        SIC, SEN
+        BRGZ, SERS
+PASS    BEW, $                               ! 017671.40: the block's exit "B,$+1."
+        END, SAP17
