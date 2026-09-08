@@ -796,6 +796,16 @@ run "FP add to fraction (jb_af1c F212XA on the model)" ./run_program.sh programs
     "PC=$(python3 -c 'from strap_asm import assemble; print(assemble(open("programs/fp_arith_f212xa.strap").read()).symtab["PASS"]//32)')" \
     "SEN:712=0"
 
+run "FP add to fraction, sign and modifiers (jb_af1c F212XB, encoding)" python3 verify_fp_arith_f212xb_listing.py
+run "FP add to fraction, sign and modifiers (jb_af1c F212XB on the model)" ./run_program.sh programs/fp_arith_f212xb.strap StretchFpAddFracBTb \
+    "PC=$(python3 -c 'from strap_asm import assemble; print(assemble(open("programs/fp_arith_f212xb.strap").read()).symtab["PASS"]//32)')" \
+    "SEN:712=0"
+
+run "FP add to fraction, unchanged regs (jb_af1c F212XC, encoding)" python3 verify_fp_arith_f212xc_listing.py
+run "FP add to fraction, unchanged regs (jb_af1c F212XC on the model)" ./run_program.sh programs/fp_arith_f212xc.strap StretchFpAddFracCTb \
+    "PC=$(python3 -c 'from strap_asm import assemble; print(assemble(open("programs/fp_arith_f212xc.strap").read()).symtab["PASS"]//32)')" \
+    "SEN:712=0"
+
 run "Program store compare: store then EXECUTE the modified instruction" ./run_program.sh programs/store_then_execute.strap StretchStoreExecTb \
     "RESULT:$(python3 -c 'from strap_asm import assemble; print(assemble(open("programs/store_then_execute.strap").read()).symtab["RESULT"]//64)')=0x20"
 

@@ -729,6 +729,16 @@ def strip_fp_sign(op):
         return ("D+MG", 0, 1)
     if op == "D-MGA":
         return ("D+MG", 1, 1)
+    # And ADD TO FRACTION's (F212-XB, jb_af1c p.123), the same shape a
+    # sixth time: F- is F+ with N, F-A with both.  The listing prints
+    # F+A%U as "22055.65 20" and F-A%U as "22055.75 20" -- the same
+    # address and the same code, differing only in the invSign bit.
+    # F+A needs no rule, since the generic "A" suffix above strips to
+    # F+, which is a real FP op; "F-" is not, so these do.
+    if op == "F-":
+        return ("F+", 0, 1)
+    if op == "F-A":
+        return ("F+", 1, 1)
     # SHIFT FRACTION's direction mnemonics (F212, jb_af1c pp.115-121).
     # SHF's direction is bit 11 of the effective address, and Reference
     # Manual p.102 adds "the sign of the shift -- bit 11 of the

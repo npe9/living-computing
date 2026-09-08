@@ -1,0 +1,83 @@
+! jb_af1c F212-X "ADD TO FRACTION ROUTINE", sub-block F212XB "SIGN AND
+! MODIFIERS", p.123 (octal 016742.00-016762.00, the block's own exit
+! "BD,$+1.0"), transcribed verbatim.  Continues fp_arith_f212xa.strap.
+!
+! The listing's own header names the four variables: "MS = MEM.SIGN,
+! ACS = ACC.SIGN, N AND A ARE MODIFIERS".  Both sub-tests load the
+! same negative accumulator and address the same negative operand, so
+! MS and ACS are 1 throughout and only the MODIFIERS vary -- which is
+! the point, since A and N act on the ADDRESSED operand's sign alone:
+!
+!   XB1  F+A  "MS+ACS+A+1  N+0"     A forces the operand POSITIVE, so
+!        a negative accumulator meets a positive operand and the
+!        magnitudes SUBTRACT.
+!   XB2  F-A  "MS+ACS+N+A+1"        A forces positive and N then
+!        inverts, so the operand is NEGATIVE again, signs agree, and
+!        the magnitudes ADD.
+!
+! F-A is a written-minus mnemonic the assembler had not seen: F- is F+
+! with the N modifier, F-A with both, exactly as M-/D-/D-MG already
+! are.  The listing prints F+A%U as "22055.65 20" and F-A%U as
+! "22055.75 20" -- same address, same code, differing in one bit.
+!
+! The arithmetic, computed before running.  The accumulator is FPK23
+! (exp +1, fraction aaaaaaaaaaaa, sign NEGATIVE) over a low half of
+! FPK22's fraction (ffffffffffff); the operand is FPK40 (exp +2,
+! fraction 555555555555, sign negative), whose exponent F+ discards in
+! favour of the accumulator's +1:
+!
+!   XB1  aaaaaaaaaaaa_ffffffffffff - 555555555555_000000000000
+!        = 555555555555_ffffffffffff, still negative
+!        -> high FPK24, low FPK22, exp +1     ("EXP++1")
+!   XB2  aaaaaaaaaaaa_ffffffffffff + 555555555555_000000000000
+!        = ffffffffffff_ffffffffffff, negative, no carry out
+!        -> high FPK22, low FPK22, exp +1     ("EXP++1, FRACT+1-S")
+!
+! Each sub-test then closes with "BB,10.4,$+2.0 -TEST SIGN BIT 1":
+! branch over the error exit if sign-byte bit 4 is one, so BOTH
+! results must come out NEGATIVE.  That is the accumulator's own sign
+! surviving in XB1's subtraction (where the accumulator dominates) and
+! the agreed sign in XB2.
+
+! -- SSIP framework substitutes: SERS (octal 1304) -> FAIL halt,
+! -- SEN (octal 1310) -> scratch.
+        SLC, (8)1304.0
+SERS    BEW, $
+        SLC, (8)1310.0
+SEN     DD(BU,64,8), 0
+
+! -- constants (pool p.176) --
+        SLC, (8)22033.0
+FPK22   DD(BU,64,8), (8)0000577777777777777760
+FPK23   DD(BU,64,8), (8)0000525252525252525250
+FPK24   DD(BU,64,8), (8)0000452525252525252530
+        SLC, (8)22055.0
+FPK40   DD(BU,64,8), (8)0001052525252525252530
+
+        SLC, (8)16742.0
+FAF3    DL(U), FPK23                         ! F212XB1 - MS+ACS+A+1, N+0
+        C0011(BU,48), FPK22+.12, 20          ! set the accumulator's low half
+        F+A(U), FPK40                        ! exp ++2, discarded for the acc's +1
+        CT0110(BU,60), FPK24, 68             ! test high order result fract,
+        SIC, SEN
+        BRGZ, SERS                           ! and exp ++1
+        CT0110(BU,48), FPK22+.12, 20         ! test low order result fract.
+        SIC, SEN
+        BRGZ, SERS
+        BB, 10.4, $+2.0                      ! test sign bit 1
+        SIC, SEN
+        B, SERS
+        DL(U), FPK23                         ! F212XB2 - MS+ACS+N+A+1
+        C0011(BU,48), FPK22+.12, 20
+        F-A(U), FPK40
+        CT0110(BU,60), FPK22, 68
+        SIC, SEN
+        BRGZ, SERS
+        CT0110(BU,48), FPK22+.12, 20         ! test result exp++1, fract+1-s
+        SIC, SEN
+        BRGZ, SERS
+        BB, 10.4, $+2.0                      ! test sign bit 1
+        SIC, SEN
+        B, SERS
+PASS    BEW, $                               ! 016762.00: the block's exit "BD,$+1.0"
+        END, FAF3

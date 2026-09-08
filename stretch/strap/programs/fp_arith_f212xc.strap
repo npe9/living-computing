@@ -1,0 +1,92 @@
+! jb_af1c F212-X "ADD TO FRACTION ROUTINE", sub-block F212XC "TEST
+! UNCHANGED REGS", pp.123-124 (octal 016764.00-017005.40, the block's
+! own exit "BD,$+1.0").  This completes F212-X.
+!
+! Neither sub-test looks at the arithmetic at all.  Each sets the
+! whole accumulator and sign byte to a known value, runs one F+, and
+! asks that the parts F+ must NOT disturb came through unchanged:
+!
+!   XC1  Z,$L / Z,$R / Z,$SB -- everything zero -- then F+(U),FPK21.
+!        "R 44-63, SB 0-3 + 5-7 REM 0".
+!   XC2  C1111 both halves and CM1111 the sign byte -- everything one
+!        -- then F+(U),FPK37.  "R 44-63, SB 0-3 + 5-7 REM 1".
+!
+! R 44-63 is word 9 bits 44-63, which is IBM 108-127: the twenty bits
+! below the 96-bit fraction, which fpdAccRight carries through from
+! the old right half.  SB 0-3 and 5-7 are the sign byte with BIT 4
+! DELIBERATELY EXCLUDED, because bit 4 is the result sign and F+ does
+! rewrite it; 0-3 and 5-7 (the three data flags among them) must not
+! move.
+!
+! XC1 IS THE ONE THAT DISCRIMINATES, and the listing flags why in its
+! own comment on the F+ row: "MEM FLAGS+7".  FPK21's flag bits are
+! 111, so an implementation that took the sign byte's flags from the
+! ADDRESSED OPERAND rather than from the accumulator would leave SB
+! 5-7 at 7 against an accumulator zeroed a moment earlier, and the
+! "DOES SB5-7 REMAIN+0-S" check would catch it.  The model takes them
+! from accS -- sbWith(accS, sign, sbFlags(accS)) -- for the reason
+! F208C2 pinned on D+, and this is the row that tests it from the
+! other side.
+!
+! Note what XC2's accumulator is: all ones means the exponent field is
+! all ones too, so the accumulator is XFN and F+ performs no addition.
+! XC1's is all zeros, an N-range accumulator, so there it does.  The
+! two sub-tests therefore check the preservation on BOTH of F+'s
+! paths, which is more than the wording suggests.
+!
+! The connectives read as "result must be all zeros, or BRGZ fires":
+! CT0101/CT1010 test the ACCUMULATOR field (FPK0/FPK1 are the dummy
+! storage operand), CT0011/CT1100 test the MEMORY field at $SB.
+!
+! TRANSCRIPTION NOTE: the page prints the SIC after XC2's CT1010 at
+! 017000.00, but CT1010 is a full word starting at 016777.40 and so
+! occupies 017000.00 itself; the BRGZ that pairs with that SIC is
+! printed at 017001.00, which puts the SIC at 017000.40.  Taken as
+! 017000.40 -- the derivation and the following row agree, and only
+! the one printed address does not.
+
+! -- SSIP framework substitutes: SERS (octal 1304) -> FAIL halt,
+! -- SEN (octal 1310) -> scratch.
+        SLC, (8)1304.0
+SERS    BEW, $
+        SLC, (8)1310.0
+SEN     DD(BU,64,8), 0
+
+! -- constants (pool p.176) --
+        SLC, (8)22005.0
+FPK0    DD(BU,64,8), (8)0000000000000000000000
+FPK1    DD(BU,64,8), (8)1777777777777777777777
+        SLC, (8)22032.0
+FPK21   DD(BU,64,8), (8)0031177777777777777767
+        SLC, (8)22052.0
+FPK37   DD(BU,64,8), (8)0031125252525252525240
+
+        SLC, (8)16764.0
+FAF4    Z, $L                                ! F212XC1 - R 44-63, SB 0-3 + 5-7 rem 0
+        Z, $R
+        Z, $SB
+        F+(U), FPK21                         ! mem flags + 7
+        CT0101(BU,20), FPK0                  ! does R 44-63 remain +0-s
+        SIC, SEN
+        BRGZ, SERS
+        CT0011(BU,4), $SB                    ! does SB0-3 remain +0-s
+        SIC, SEN
+        BRGZ, SERS
+        CT0011(BU,3), $SB+.5                 ! does SB5-7 remain +0-s
+        SIC, SEN
+        BRGZ, SERS
+        C1111(BU,64), FPK1, 64               ! F212XC2 - R 44-63, SB 0-3 + 5-7 rem 1
+        C1111(BU,64), FPK1
+        CM1111(BU,8), $SB
+        F+(U), FPK37
+        CT1010(BU,20), FPK1                  ! does R44-63 remain +1-s
+        SIC, SEN
+        BRGZ, SERS
+        CT1100(BU,4), $SB                    ! does SB0-3 remain +1-s
+        SIC, SEN
+        BRGZ, SERS
+        CT1100(BU,3), $SB+.5                 ! does SB 5-7 remain +1-s
+        SIC, SEN
+        BRGZ, SERS
+PASS    BEW, $                               ! 017005.40: the block's exit "BD,$+1.0"
+        END, FAF4

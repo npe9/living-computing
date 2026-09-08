@@ -12,7 +12,14 @@ prog = assemble(open("programs/fp_compare_f202g.strap").read())
 
 CONST_ROWS = [
     ("022006.00", "1777777777777777777777", "FPK1"),
-    ("022034.00", "0000525252525252525230", "FPK23"),
+    # FPK23: the scan's last group reads as "230" or "250" -- 3 and 5
+    # are near-identical in the pool's typewriter font.  It is "250",
+    # settled by F205B, whose B20/B22 add FPK4 to the magnitude of
+    # FPK23 and expect the all-ones FPK22.  This file asserted "230"
+    # until 2026-09-07; G17/G18's KR compares pass either way, which is
+    # why the disagreement with verify_fp_arith_f205b_listing.py went
+    # unnoticed.
+    ("022034.00", "0000525252525252525250", "FPK23"),
     ("022173.00", "1577777777777777777760", "FK25"),
     ("022202.00", "0027125252525252525000", "FK32"),
     ("022204.00", "0200377777777777777770", "FK34"),
