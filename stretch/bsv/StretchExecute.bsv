@@ -1415,7 +1415,8 @@ function ActionValue#(Tuple4#(HWordAddr, Maybe#(Tuple2#(Bit#(4), IndexWord)),
         Bool known = (c == 7'b0000010 || c == 7'b0100010 || c == 7'b0000110 || c == 7'b0100110
                    || c == 7'b0001010 || c == 7'b0101010 || isST
                    || c == 7'b0010010 || c == 7'b0110010 || c == 7'b0010110 || c == 7'b0110110
-                   || c == 7'b0011010 || c == 7'b1011010 || c == 7'b1010110 || isEplI || isSHF
+                   || c == 7'b0011010 || c == 7'b1011010 || c == 7'b1001010
+                   || c == 7'b1010110 || isEplI || isSHF
                    || c == 7'b1000110 || c == 7'b1100110   // DL / DLWF
                    || c == 7'b1000010 || c == 7'b1100010   // D+ / D+MG
                    || c == 7'b1010010                     // F+ (ADD TO FRACTION)
@@ -1692,6 +1693,51 @@ function ActionValue#(Tuple4#(HWordAddr, Maybe#(Tuple2#(Bit#(4), IndexWord)),
               st.writeWord(addrAccSignByte, fpSignByte(v, accS));
               ind = setBit(ind, ind_MOP, 0);
               ind = setResultIndicatorsFp(ind, v);
+              ind = setRangeIndicators(ind, fpRangeBits(v, gen, !gen && v.ef == 1));
+              ind = setBit(ind, ind_ZM, 0);
+            end
+            7'b1001010: begin // LFT (LOAD FACTOR, p.98)
+              // "The operand specified by the effective address is
+              // placed in the factor register, FT.  The accumulator
+              // does not participate in the operation and remains
+              // unchanged."  So this is LOAD with word 14 as the
+              // destination and no sign byte: exponent and fraction to
+              // FT bits 0-59, the sign-modified sign to FT bit 60, and
+              // "FT bits 61-63 are set to zero" -- which is why
+              // v.flags is cleared rather than taken from the operand
+              // the way LWF takes it.  fpMakeExp passes flags through
+              // unaltered, so the zero survives the normalized path.
+              //
+              // FT IS THE ONLY REGISTER NO OTHER OPERATION TOUCHES:
+              // p.98, "LOAD FACTOR is the only operation which changes
+              // the contents of FT as an integral part of its
+              // performance.  FT is not changed by any other operation
+              // unless it is addressed explicitly."
+              FpNum v = opnd;
+              v.flags = 0;
+              Bool gen = False;
+              // "If a shift of 48 or more is required, normalization is
+              // suppressed and the order of magnitude zero is stored in
+              // bits 0-59."  A 48-bit fraction needs a shift of 48 or
+              // more exactly when it is ZERO -- any one-bit is within
+              // 47 places of the top -- so LOAD's `frac != 0` guard is
+              // that rule, not merely an optimization: a zero fraction
+              // skips normalization and keeps the operand's own
+              // exponent, which is what an order-of-magnitude zero is.
+              if (normalized && v.ef == 0 && v.frac != 0) begin
+                let {f48, adj, lc} = fpNormalize96(0, {v.frac, 48'b0}, True, noisy);
+                let {vn, g} = fpMakeExp(signExtend(fpExp(v)) + adj, f48, v.sign, v.flags);
+                v = vn; gen = g;
+              end
+              st.writeWord(addrFactor, fpToWord(v));
+              ind = setBit(ind, ind_MOP, 0);
+              ind = setResultIndicatorsFp(ind, v);
+              // p.98 lists XPU alongside XPFP/XPH/XPL where LOAD's list
+              // has only the first three -- LOAD cannot drive an
+              // exponent down, LFT's normalization can.  fpRangeBits
+              // already derives XPU from `generated && es == 1`, so the
+              // call is LOAD's unchanged and the difference is in which
+              // inputs can reach it, not in the function.
               ind = setRangeIndicators(ind, fpRangeBits(v, gen, !gen && v.ef == 1));
               ind = setBit(ind, ind_ZM, 0);
             end

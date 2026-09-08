@@ -1521,6 +1521,91 @@ hand vectors alone. "Enables" notes the dependency chain.
    model items are *+ (no structural work needed) and D/, which needs a
    divide box -- Piccolo's mkMBox/mkFPU idiom, plan steps 2-3.
 
+   F215 DONE (A 3, B 4), suite 182, AND IT ADDED LFT. Same situation as
+   D* a page earlier: opcode 1001010 was in the decoder's valid list
+   and in the assembler's FP_CODES from the opcode-table transcription,
+   never in the executor's `known`. Reference Manual p.98 makes LOAD
+   FACTOR a LOAD with word 14 as the destination and no sign byte --
+   operand to FT bits 0-59, sign-modified sign to FT bit 60, FT bits
+   61-63 set to zero, accumulator untouched -- so the arm is the L arm
+   with `st.writeWord(addrFactor, fpToWord(v))` in place of the two
+   accumulator writes.
+
+   THREE READINGS CHECKED RATHER THAN COPIED FROM L, because p.98's
+   wording differs from LOAD's in three places and only one of the
+   three turned out to be a real difference:
+     "FT bits 61-63 are set to zero" -- v.flags = 0, and fpMakeExp
+       passes flags through unaltered so the zero survives the
+       normalized path. Real difference from LWF, which keeps them.
+     p.98's indicator list has XPU where LOAD's has only XPFP/XPH/XPL
+       -- but fpRangeBits already derives XPU from `generated && es ==
+       1`, so the call is LOAD's unchanged. The difference is in which
+       inputs can reach it (LOAD cannot drive an exponent down,
+       LFT's normalization can), not in the function. Not a code
+       difference; commented so it is not re-litigated.
+     "If a shift of 48 or more is required, normalization is suppressed
+       and the order of magnitude zero is stored in bits 0-59" -- a
+       48-bit fraction needs a shift of 48 or more exactly when it is
+       ZERO, so LOAD's `frac != 0` guard IS that rule rather than an
+       optimization. Also commented, since it reads like a missing case
+       otherwise.
+
+   HOW THE BLOCK READS A REGISTER IT CANNOT LOAD THE ACCUMULATOR WITH.
+   FT is word 14, so a connective addresses it as storage. Each A
+   sub-test fills the accumulator's RIGHT word with the value it
+   expects and XORs FT against it -- CT0110(BU,60), $FT, 4, where
+   offset 4 is IBM 64-123, the right word's own bits 0-59 -- then
+   checks the sign separately with BZB/BB on $FT+.60, since bit 60 sits
+   outside that field.
+
+   A3 IS A STORE-CLOSE-TO-FETCH ACROSS INSTRUCTION CLASSES: a CM1111
+   writes ones into word 14 and the very next instruction reads word 14
+   as its FP storage operand. Written down as a prediction beforehand,
+   since Connective is not in storeTarget; it passed, E-box levels
+   being in program order. No storeTarget entry was added -- code
+   nothing drives is untested code.
+
+   THREE INJECTIONS, ALL THREE SUB-TEST PREDICTIONS RIGHT:
+     LFT writes the accumulator,     predicted A2 halted A2  020203.00
+       not FT                        predicted B1 halted B1  020220.00
+     LFT ignores the sign modifiers  predicted B2 halted B2  020222.40
+                                     predicted A PASSES  A PASSED
+     LFT keeps the operand flags     predicted BOTH PASS  BOTH PASSED
+       in FT 61-63
+
+   THE THIRD ONE IS THE POINT. Both program headers claim p.98's "FT
+   bits 61-63 are set to zero" is uncovered by the whole of F215, and
+   that injection is the measurement rather than the claim: FPK1's
+   flags are 7, so the fault genuinely puts 111 where the manual says
+   000, and no row in either block notices. A gap MEASURED is worth
+   more than a gap reasoned about -- this is the first time in the
+   project an injection has been aimed at confirming a gap rather than
+   confirming coverage, and it is the cheaper direction, because a
+   wrong gap claim shows up as a halt.
+
+   A1 IS BLIND TO AN LFT THAT DOES NOTHING, which is why the first
+   injection halts at A2 and not A1: A1's expected FT is zero and FT
+   starts zero. Exactly F214C1's shape -- a test whose set-up value
+   equals the faulty output cannot see the fault.
+
+   ONE PREDICTION ARITHMETIC SLIP, recorded because it is the kind that
+   looks like a wrong prediction and is not. I named B1 correctly for
+   the first injection but wrote its SEN as 020217.40, the address of
+   the B,SERS itself. SIC stores the address AFTER the branch that
+   follows it, so it is 020220.00. The A-side prediction used the rule
+   correctly in the same file; only the B-side did not.
+
+   Next: *+ (MULTIPLY AND ADD, p.98) -- and unlike D* and LFT this one
+   is NOT free, because it is the only operation that READS FT as an
+   operand: "The operand in the FT register, designated as the
+   multiplicand, is multiplied by the operand specified by the
+   effective address, designated as the multiplier. The product is
+   added to the contents of the accumulator, bits 0-107." So it is
+   fpMulDouble followed by fpAddDouble, and p.98 says the intermediate
+   product fraction "remains unnormalized throughout the addition".
+   Then D/, which needs a divide box -- Piccolo's mkMBox/mkFPU idiom,
+   plan steps 2-3.
+
    Its prologue is FSR1 (015772.00) and F210A1 begins at SAP11
    (015775.00): DL(U) FPK26, C0011 FK40+.12 into offset 20, then
    SRD(U) ROS, L(BU) FK35, CT0110(BU,60) ROS,4 -- "error if 1 not

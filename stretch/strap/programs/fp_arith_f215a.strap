@@ -1,0 +1,93 @@
+! jb_af1c F215 "LOAD FACTOR TEST", sub-block F215A "ARITHMETIC CHECKS",
+! p.144 (octal 020172.00-020213.40, the block's own exit "BD,$+1.0").
+! F215B, the sign-modifier combinations, follows.
+!
+! THIS BLOCK ADDS LFT (LOAD FACTOR, opcode 1001010) TO THE MODEL -- the
+! same situation D* was in a page earlier: in the decoder's valid-op
+! list since the opcode tables were transcribed, never in the
+! executor's.  Reference Manual p.98: "The operand specified by the
+! effective address is placed in the factor register, FT.  The
+! accumulator does not participate in the operation and remains
+! unchanged."  So it is LOAD with word 14 as the destination, no sign
+! byte, the sign-modified sign in FT bit 60, and FT bits 61-63 set to
+! zero.
+!
+! HOW THE BLOCK READS A REGISTER IT CANNOT LOAD THE ACCUMULATOR WITH.
+! FT is word 14, so a connective can address it as storage -- and that
+! is exactly what these checks do.  Each sub-test first fills the
+! accumulator's RIGHT word with the value it expects, then compares FT
+! against it:
+!
+!   CT0110(BU,60), $FT, 4     XOR of FT bits 0-59 against accumulator
+!                             IBM 64-123, which is the right word's own
+!                             bits 0-59.  Zero result means they match.
+!   BZB / BB, $FT+.60         the sign bit on its own, since bit 60 is
+!                             outside the 60-bit field above.
+!
+!   A1  L(BU),FPK0  then LFT(U),FPK0   -- FT 0-59 zero, sign zero.
+!   A2  L(BU),FPK1  then LFT(U),FPK1   -- FT 0-59 all ones, sign one.
+!   A3  L(BU),FPK1, CM1111(BU,64),$FT, then LFT(U),$FT -- the same
+!       answer reached by loading FT FROM ITSELF.  A connective writes
+!       ones into word 14 and the very next instruction reads word 14
+!       as its storage operand, so this is a store-close-to-fetch
+!       across two instruction classes as well as an LFT check.
+!
+! WHAT F215 DOES NOT COVER, recorded before running rather than after.
+! Every sub-test here is %U, so LFT's NORMALIZED path is untested; and
+! nothing in F215A or F215B ever looks at FT bits 61-63, so p.98's "FT
+! bits 61-63 are set to zero" is manual-only.  The A-checks read bits
+! 0-59 and bit 60, and F215B reads bit 60 alone.
+!
+! TRANSCRIPTION NOTE: the scan prints A2's LFT at 020200.00.  It cannot
+! be -- the L above it is at 020177.40 and is a full word, so the LFT
+! is at 020200.40, and every one of the nineteen rows below it then
+! lands on its printed address through B,SSW at 020215.00.  Same shape
+! as F214XB2's misread row.  Transcribed as 020200.40.
+!
+! The listing's mode-select prologue at 020167.00-020171.40 is SSIP
+! framework and is not transcribed; this program starts at SAP19,
+! 020172.00.
+
+! -- SSIP framework substitutes: SERS (octal 1304) -> FAIL halt,
+! -- SEN (octal 1310) -> scratch.
+        SLC, (8)1304.0
+SERS    BEW, $
+        SLC, (8)1310.0
+SEN     DD(BU,64,8), 0
+
+! -- constants (pool p.176) --
+        SLC, (8)22005.0
+FPK0    DD(BU,64,8), (8)0000000000000000000000
+FPK1    DD(BU,64,8), (8)1777777777777777777777
+
+        SLC, (8)20172.0
+! F215A1
+SAP19   L(BU), FPK0
+        LFT(U), FPK0
+        CT0110(BU,60), $FT, 4                ! test $FT0-59 +0
+        SIC, SEN
+        BRGZ, SERS
+        BZB, $FT+.60, $+2.0                  ! test sign bit of $FT +0
+        SIC, SEN
+        B, SERS
+! F215A2
+        L(BU), FPK1
+        LFT(U), FPK1
+        CT0110(BU,60), $FT, 4                ! test $FT0-59 +1 s
+        SIC, SEN
+        BRGZ, SERS
+        BB, $FT+.60, $+2.0                   ! test sign bit of $FT +1
+        SIC, SEN
+        B, SERS
+! F215A3 - load FT from FT itself
+        L(BU), FPK1
+        CM1111(BU,64), $FT
+        LFT(U), $FT
+        CT0110(BU,60), $FT, 4                ! test $FT 0-59 +1 s
+        SIC, SEN
+        BRGZ, SERS
+        BB, $FT+.60, $+2.0                   ! test sign bit of $FT +1
+        SIC, SEN
+        B, SERS
+PASS    BEW, $                               ! 020213.40: the block's exit "BD,$+1.0"
+        END, SAP19

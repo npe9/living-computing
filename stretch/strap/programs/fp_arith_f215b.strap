@@ -1,0 +1,72 @@
+! jb_af1c F215 "LOAD FACTOR TEST", sub-block F215B "TEST SIGN + MOD
+! COMBS", p.144 (octal 020215.40-020227.40, the block's own exit
+! "BD,$+1.0").  Continues fp_arith_f215a.strap.
+!
+! The listing's own header spells out the axes: "MS+MEM. SIGN, N AND A
+! ARE MODIFIERS".  Four rows, each an LFT whose only check is FT bit
+! 60 -- p.98's "the sign of the addressed operand as modified by the
+! sign modifiers is placed in FT bit 60".
+!
+!   B1  LFT   FPK1    MS 1, no modifiers      -> sign 1   BB
+!   B2  LFTA  FPK1    MS 1, A (absolute)      -> sign 0   BZB
+!   B3  LFTN  FPK32   MS 0, N (negate)        -> sign 1   BB
+!   B4  LFTNA FPK32   MS 0, N and A           -> sign 1   BB
+!
+! FPK1 is all ones so its sign bit is one; FPK32 (0001177777777777777760)
+! has bit 60 zero.  The modifiers apply absolute first, then negative,
+! which is why B4 -- absolute over an already-positive sign, then
+! inverted -- lands on one just as B3 does.
+!
+! THAT PAIR IS THE BLOCK'S ONE BLIND SPOT, and it is this project's
+! recurring shape: a modifier that forces a sign positive is invisible
+! wherever that sign is already positive.  FPK32's sign is zero, so
+! B4's A does nothing and B3 and B4 differ only in the modifier bit
+! the instruction carries, not in the answer either produces.  B2 is
+! the row that actually exercises A, over FPK1's one.
+!
+! The four encodings differ only in the two modifier bits: LFT prints
+! .44, LFTA .64 (absolute, +20 octal), LFTN .54 (negate, +10) and
+! LFTNA .74 (both, +30).
+!
+! LIKE F215A, THIS BLOCK LOOKS AT NOTHING BUT THE SIGN.  The exponent,
+! the fraction and p.98's zeroed FT bits 61-63 are all untested here,
+! and F215A's checks stop at bit 60 as well -- so nothing in F215
+! covers "FT bits 61-63 are set to zero", and nothing covers LFT's
+! normalized path (every LFT in the routine is %U).
+
+! -- SSIP framework substitutes: SERS (octal 1304) -> FAIL halt,
+! -- SEN (octal 1310) -> scratch.
+        SLC, (8)1304.0
+SERS    BEW, $
+        SLC, (8)1310.0
+SEN     DD(BU,64,8), 0
+
+! -- constants (pool p.176) --
+        SLC, (8)22006.0
+FPK1    DD(BU,64,8), (8)1777777777777777777777
+        SLC, (8)22045.0
+FPK32   DD(BU,64,8), (8)0001177777777777777760
+
+        SLC, (8)20215.40
+! F215B1 - MS 1, N and A both zero
+FLF3    LFT(U), FPK1
+        BB, $FT+.60, $+2.0                   ! test sign bit of $FT +1
+        SIC, SEN
+        B, SERS
+! F215B2 - MS 1, A one
+        LFTA(U), FPK1
+        BZB, $FT+.60, $+2.0                  ! test sign bit of $FT +0
+        SIC, SEN
+        B, SERS
+! F215B3 - MS 0, N one
+        LFTN(U), FPK32
+        BB, $FT+.60, $+2.0                   ! test sign bit of $FT +1
+        SIC, SEN
+        B, SERS
+! F215B4 - MS 0, N and A both one
+        LFTNA(U), FPK32
+        BB, $FT+.60, $+2.0                   ! test sign bit of $FT +1
+        SIC, SEN
+        B, SERS
+PASS    BEW, $                               ! 020227.40: the block's exit "BD,$+1.0"
+        END, FLF3
