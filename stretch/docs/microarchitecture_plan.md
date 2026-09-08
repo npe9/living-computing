@@ -1338,9 +1338,53 @@ hand vectors alone. "Enables" notes the dependency chain.
    with the unnormalized modifier (printed .51). Only the printed code
    tells them apart. Neither needs an assembler rule.
 
-   Next after F214C: F214D "INDICATOR TESTS" (017762.40), D1 XPFP and
-   D2 XPO onward -- the multiply counterpart of F213D5-D9, and the
-   second caller of fpRangeBits' propagated/generated split. `*` is
+   F214D DONE, F214 COMPLETE (A, B, C, D), commit cedeaa1, suite 174.
+   D6 IS THE FIRST TEST OF ZM ANYWHERE IN THE TRANSCRIBED DIAGNOSTIC:
+   fpMul has always set it from `normalized && zero && (e > -1024)` and
+   nothing had ever reached that condition. D1/D2 separate propagated
+   from generated a second time, now through multiply where F213D5/D6
+   did it through E+, so fpRangeBits' two boolean arguments finally
+   have two independent callers.
+
+   THREE INJECTIONS, TWO PREDICTED AND ONE WRONG IN THE MOST USEFUL WAY
+   YET:
+     ZM never set                   predicted D6   halted D6  020106.00
+     ZM ignores the (N) modifier    predicted D1   PASSED -- nothing
+                                                   in F214 catches it
+     flagged reported as generated  predicted D1   halted D1  017766.00
+
+   WHY THE SECOND PREDICTION WAS WRONG, and it is the sharpest instance
+   of this session's recurring rule. I reasoned that D1 would catch it
+   because D1's product is zero (FK35's fraction is zero) and its
+   multiply is unnormalized. But D1's operands are BOTH FLAGGED --
+   FK59 XFP times FK35 XFP -- so fpMul takes the Fig.32 path and
+   RETURNS EARLY, never reaching the zm assignment at all. The line I
+   was testing is unreachable for those inputs.
+
+   Scanning all fifteen multiplies in F214: the only one where dropping
+   `normalized` changes anything is C1 (FPK0 x FPK56, unflagged, zero
+   product, unnormalized) -- and C1 checks REGISTERS, not indicators.
+   So nothing in F214 discriminates that term. A real gap, characterised
+   exactly rather than guessed at.
+
+   This is the same mechanism as F+'s exponent substitution: A BRANCH
+   UPSTREAM MAKES A DOWNSTREAM LINE UNREACHABLE FOR THE INPUTS IN PLAY.
+   Until now that rule had only caught claims about what a LISTING row
+   discriminates; here it caught an INJECTION DESIGN, which is worse,
+   because a badly aimed injection that happens to fail looks like
+   confirmation.
+
+   A SECOND PROCESS NOTE: the first attempt at the third injection
+   never ran, because its `assert s.count(old)==1` found the pattern
+   twice in StretchFP.bsv (fpMul at line 656 and again at 695). The
+   assert did its job -- an ambiguous edit would have patched the wrong
+   function or both, and produced a result that looked meaningful and
+   was not. Keep anchoring these edits on the enclosing function.
+
+   Next after F214: F215 and onward in the diagnostic's own order; the
+   still-open model items are D*, LFT and *+ (no structural work
+   needed) and then D/, which needs a divide box -- Piccolo's
+   mkMBox/mkFPU idiom, plan steps 2-3. `*` is
    already implemented, so this exercises fpMul -- including the Fig.32
    path it has always had and which F213 has only now given a second
    caller. FK60 IS SETTLED, AND MY FIRST GUESS AT IT WAS WRONG.
