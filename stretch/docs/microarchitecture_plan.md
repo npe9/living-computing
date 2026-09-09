@@ -1902,13 +1902,62 @@ hand vectors alone. "Enables" notes the dependency chain.
    different from MULTIPLY is reached exactly once in the whole routine
    and discriminated nowhere.
 
-   Next: F217 "DIVIDE TEST ROUTINE" (p.154, F217A eight sub-tests
-   including a ZERO DIVISOR case), which drives / -- and / , R/, D/ and
-   SRT are all still unimplemented and all want the same divide box,
-   Piccolo's mkMBox/mkFPU idiom, plan steps 2-3. So it is four
-   operations and one structural piece rather than one operation. p.99
-   also gives the remainder register a role nothing in the model uses
-   yet.
+   / (DIVIDE) IMPLEMENTED, F217A DONE (8 sub-tests), suite 200.
+
+   THE "DIVIDE BOX / PICCOLO mkMBox IDIOM, PLAN STEPS 2-3" NOTE THAT
+   HAS BEEN IN THIS DOC FOR MONTHS IS WITHDRAWN. It predates the
+   evidence. fpMul already does a combinational 48x48 multiply and
+   fpMulDouble a 96-bit one; a 96-step unrolled compare-subtract is the
+   same class of thing and keeps the E-box's shape. A multi-cycle
+   divider is a structural change nothing in the diagnostic forces.
+   This is the second such withdrawal, after "section 1c step 5c's
+   E-box refactor" -- both were plans made before the work that would
+   have justified them.
+
+   THE DIAGNOSTIC CAUGHT A REAL BUG ON THE FIRST RUN, which is the
+   first time that has happened with a freshly written function rather
+   than an old one. I wrote fpDivFrac as 49 compare-subtract steps,
+   reasoning that the quotient needs 49 bits. Wrong: the quotient needs
+   49 bits but the DIVIDEND has 96, and stopping early computes
+   floor(dvd[95:47] / dvs) rather than floor(dvd / dvs). F217A1 divides
+   a value by itself and wants 2^48; the short loop returned 2. It
+   halted at 020635.40 -- A1's own row -- on the first execution.
+
+   AND A DEAD FUNCTION HAD BEEN WRONG THE WHOLE TIME. StretchFP.bsv
+   already contained an FpResult fpDiv, never in the executor's `known`
+   list and so never run. Its flagged table tested the DIVIDEND's range
+   first, so an XFN dividend over an XFP divisor kept the dividend's
+   exponent where p.94 gives it the divisor's with the sign reversed --
+   which is exactly F217A3 (FK86 -1791 over FK59 +1024, answer FK60's
+   -1024). It would have passed A1, A4, A5, A6 and A7. Removed and
+   replaced. Dead code does not get checked, and this one had been
+   sitting there looking finished.
+
+   F217A CANNOT SEE THE DIVISION AT ALL, and that is measured rather
+   than argued. Every one of the seven quotients is exactly
+   800000000000: after pre-normalization the dividend either EQUALS the
+   divisor (A1, A3, A4, A6) or is exactly half of it (A2, A5, A7).
+   Replacing the whole of fpDivFrac with a two-way constant selector --
+   "1.0 if the dividend is not smaller, else 0.5", no division
+   whatsoever -- leaves all eight sub-tests green. So what A1 pins is
+   that the equal case gives 2^48, not that 48 quotient bits are
+   developed; the 96-step loop is unexercised by this block. Nothing
+   here reads LZC or PF either.
+
+   A8 IS THE ZERO DIVISOR and the arm writes NOTHING for it -- not the
+   same value back. p.93: "the accumulator and the sign byte register
+   remain unchanged. The data flag and MOP indicators will be set but
+   the arithmetic result and exponent range indicators are not
+   changed." A8 checks the dividend's exponent and fraction survive; it
+   cannot check the sign byte, since FPK52 and the divisor are both
+   positive and a wrongly written sign would still read zero.
+
+   Next: F217B (4 sign/modifier rows) and F217C (unchanged registers),
+   both on p.155, which finish F217. Then R/, D/ and SRT -- R/ is
+   p.94's "same process with dividends and divisors interchanged" and
+   falls out of fpDiv, but it waits for a block that drives it. p.99
+   also gives the remainder register a role nothing uses yet; D/ is
+   what needs it.
 
 
 

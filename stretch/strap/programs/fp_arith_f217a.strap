@@ -1,0 +1,137 @@
+! jb_af1c F217 "DIVIDE TEST ROUTINE", sub-block F217A "ARITHMETIC
+! CHECKS", p.154 (octal 020632.40-020664.40, the block's own exit
+! "BD,$+1.0").  F217B and F217C follow.
+!
+! THIS BLOCK ADDS / (DIVIDE, opcode 0011110), the first of the four
+! operations that were still unimplemented -- /, R/, D/ and SRT all
+! want the same divider.  Reference Manual pp.93-94.
+!
+! THE SHAPE OF THE OPERATION.  The dividend is the accumulator's LEFT
+! half, the divisor the addressed operand.  "The quotient exponent and
+! fraction replace accumulator bits 0-59.  Accumulator bits 60-127
+! remain unchanged. ... No remainder is retained by this operation."
+! Before dividing, BOTH operands are pre-normalized -- the divisor
+! always, "independent of the normalization modifier", with its shift
+! going into the left zeros counter; the dividend by the LESSER of the
+! divisor's shift and its own requirement when unnormalized, fully when
+! normalized, with the same amount coming back off LZC.
+!
+!   A1  FK83  +1028 XFP / FK59  +1024 XFP -> FK84  +1028
+!   A2  FPK52    +2 N   / FK85  +1024 XFP -> FK60  -1024
+!   A3  FK86  -1791 XFN / FK59  +1024 XFP -> FK60  -1024
+!   A4  FPK64    +2 N   / FPK52    +2 N   -> FPK80    +2
+!   A5  FPK52    +2 N   / FPK64    +2 N   -> FK87     +0
+!   A6  FK86  -1791 XFN / FPK52    +2 N   -> FK100 -1791
+!   A7  FK88  -1791 XFN / FK89  -1024 XFN -> FK90  +1024
+!   A8  FPK52    +2 N   / FPK29 zero fraction -- ZERO DIVISOR
+!
+! A2 AND A3 ARE THE ROWS THAT PIN p.94's TABLE THE RIGHT WAY ROUND.
+! Both have an XFP divisor and both give the DIVISOR's exponent with
+! its sign reversed, -1024, rather than the dividend's -- A3 in
+! particular, whose dividend is XFN at -1791 and whose answer is
+! nonetheless -1024.  An implementation that tested the dividend's
+! range first would return -1791 and pass A1, A4, A5, A6 and A7.
+!
+! A8 IS THE ZERO DIVISOR.  p.93: "When division is suppressed because
+! of a zero divisor, the accumulator and the sign byte register remain
+! unchanged.  The data flag and MOP indicators will be set but the
+! arithmetic result and exponent range indicators are not changed."  So
+! the arm writes NOTHING -- not the same value back -- and A8 checks the
+! dividend's exponent and fraction are still there.  It cannot check
+! the sign byte: FPK52 is positive and so is the divisor, so a wrongly
+! written sign would still read zero.
+!
+! WHAT THIS BLOCK CANNOT SEE, computed before it was run.  EVERY ONE OF
+! THE SEVEN QUOTIENTS IS EXACTLY 800000000000 -- one half.  The
+! constants are chosen so that after pre-normalization the dividend
+! either equals the divisor (A1, A3, A4, A6) or is exactly half of it
+! (A2, A5, A7), which are the two cases a restoring divide settles in
+! its first step.  So F217A pins the exponent table thoroughly and the
+! quotient FRACTION hardly at all; nothing here develops a
+! non-trivial 48-bit quotient.  Nor does anything read LZC or PF.
+
+! -- SSIP framework substitutes: SERS (octal 1304) -> FAIL halt,
+! -- SEN (octal 1310) -> scratch.
+        SLC, (8)1304.0
+SERS    BEW, $
+        SLC, (8)1310.0
+SEN     DD(BU,64,8), 0
+
+! -- constants (pools pp.176-179) --
+        SLC, (8)22042.0
+FPK29   DD(BU,64,8), (8)0000400000000000000000
+        SLC, (8)22071.0
+FPK52   DD(BU,64,8), (8)0001024713560247135620
+        SLC, (8)22104.0
+FPK64   DD(BU,64,8), (8)0001051627340516273450
+        SLC, (8)22121.0
+FPK80   DD(BU,64,8), (8)0001100000000000000000
+        SLC, (8)22235.0
+FK59    DD(BU,64,8), (8)1000024713560247135620
+FK60    DD(BU,64,8), (8)1000300000000000000000
+        SLC, (8)22264.0
+FK83    DD(BU,64,8), (8)1002051627340516273440
+FK84    DD(BU,64,8), (8)1002100000000000000000
+FK85    DD(BU,64,8), (8)1000051627340516273440
+FK86    DD(BU,64,8), (8)1577651627340516273440
+FK87    DD(BU,64,8), (8)0000100000000000000000
+FK88    DD(BU,64,8), (8)1577624713560247135620
+FK89    DD(BU,64,8), (8)1000251627340516273440
+FK90    DD(BU,64,8), (8)1000100000000000000000
+        SLC, (8)22305.0
+FK100   DD(BU,64,8), (8)1577700000000000000000
+
+        SLC, (8)20632.40
+! F217A1 - exps of opnds in XFP rng
+SAP21   L(U), FK83
+        /(U), FK59
+        CT0110(BU,60), FK84, 68
+        SIC, SEN
+        BRGZ, SERS
+! F217A2 - exp ++2 over exp ++1024
+        L(U), FPK52
+        /(U), FK85
+        CT0110(BU,60), FK60, 68
+        SIC, SEN
+        BRGZ, SERS
+! F217A3 - exp +-1791 over exp ++1024
+        L(U), FK86
+        /(U), FK59
+        CT0110(BU,60), FK60, 68
+        SIC, SEN
+        BRGZ, SERS
+! F217A4 - exponents in N rng
+        L(U), FPK64
+        /(U), FPK52
+        CT0110(BU,60), FPK80, 68             ! check result exp ++2 and,
+        SIC, SEN
+        BRGZ, SERS
+! F217A5
+        L(U), FPK52
+        /(U), FPK64
+        CT0110(BU,60), FK87, 68              ! check result exp ++0 and,
+        SIC, SEN
+        BRGZ, SERS
+! F217A6 - exp +-1791 over exp ++2
+        L(U), FK86
+        /(U), FPK52
+        CT0110(BU,60), FK100, 68
+        SIC, SEN
+        BRGZ, SERS
+! F217A7 - exp +-1791 over exp +-1024
+        L(U), FK88
+        /(U), FK89
+        CT0110(BU,60), FK90, 68              ! check result exp ++1024 and,
+        SIC, SEN
+        BRGZ, SERS
+! F217A8 - zero divisor
+        L(U), FPK52
+        /(U), FPK29
+        CT0110(BU,12), FPK52, 116
+        SIC, SEN
+        BRGZ, SERS
+        CT0110(BU,48), FPK52+.12, 68         ! check dividend fraction
+        SIC, SEN
+        BRGZ, SERS
+PASS    BEW, $                               ! 020664.40: the block's exit "BD,$+1.0"
+        END, SAP21

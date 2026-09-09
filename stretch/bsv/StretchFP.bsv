@@ -674,6 +674,150 @@ function FpResult fpMul(FpNum a, FpNum b, Bool normalized, Bool noisy);
   end
 endfunction
 
+// Restoring division of a 96-bit dividend fraction by a 48-bit divisor
+// fraction (Ref. Manual pp.93-94).  The caller pre-normalizes both, so
+// the divisor's high bit is one and the quotient needs 49 bits: 48 for
+// the fraction plus the one p.94 calls the "quotient overflow
+// condition", which arises whenever the dividend fraction is not
+// smaller than the divisor's.
+//
+// Ninety-six compare-subtract steps, unrolled.  That is the same class
+// of thing as fpMul's combinational 48x48 multiply and fpMulDouble's
+// 96-bit one, and it keeps the E-box's shape; a multi-cycle divider is
+// a structural change nothing in the diagnostic asks for.
+//
+// IT IS 96 STEPS AND NOT 49, WHICH IS THE BUG jb_af1c F217A1 CAUGHT ON
+// THE FIRST RUN.  Stopping after 49 iterations computes
+// floor(dvd[95:47] / dvs), not floor(dvd / dvs) -- the whole 96-bit
+// dividend has to be consumed.  A1 divides a value by itself and wants
+// 2^48; the short loop returns 2.  The quotient still needs only 49
+// bits, because dvs is pre-normalized so dvs >= 2^47 and the quotient
+// is under 2^49; the leading iterations produce zero bits, so shifting
+// a 49-bit accumulator left and dropping its top bit is safe until the
+// final step, where the top bit is the one p.94 calls quotient
+// overflow.  `rem` likewise stays below dvs and so fits in 49 bits.
+function Tuple2#(Bit#(49), Bit#(49)) fpDivFrac(Bit#(96) dvd, Bit#(48) dvs);
+  Bit#(49) rem = 0;
+  Bit#(49) q   = 0;
+  Bit#(49) d   = {1'b0, dvs};
+  for (Integer i = 95; i >= 0; i = i - 1) begin
+    rem = {rem[47:0], dvd[i]};
+    if (rem >= d) begin
+      rem = rem - d;
+      q = {q[47:0], 1'b1};
+    end else
+      q = {q[47:0], 1'b0};
+  end
+  return tuple2(q, rem);
+endfunction
+
+typedef struct {
+  FpNum   res;
+  Bool    zd;         // zero divisor: the operation is suppressed entirely
+  Bool    pf;         // partial field: unnormalized operation with LZC > 0
+  Bit#(7) lzc;        // left zeros count, p.94's "excess of divisor shifting"
+  Bool    generated;
+  Bool    propagated;
+} FpDivResult deriving (Bits, Eq, FShow);
+
+// DIVIDE (/, pp.93-94).  `dvd` is the accumulator operand (the
+// dividend), `dvs` the addressed operand (the divisor), already
+// sign-modified.
+//
+// The shape p.93 describes:
+//   - pre-normalize the DIVISOR always, "independent of the
+//     normalization modifier", putting the shift into LZC;
+//   - a zero divisor fraction suppresses everything and sets ZD, with
+//     the accumulator and sign byte left alone;
+//   - extend the dividend to 96 bits and shift it left -- fully if
+//     normalized, otherwise by the LESSER of the divisor's shift and
+//     the dividend's own requirement -- taking the same amount off LZC;
+//   - divide, and if the quotient overflows add one to the dividend
+//     exponent and to LZC and take the top 48 bits;
+//   - quotient exponent = adjusted dividend exponent minus adjusted
+//     divisor exponent.
+// When either operand is flagged the fraction is developed exactly the
+// same way ("the pre-normalization process follows the rules for
+// unnormalized processing") and only the EXPONENT comes from p.94's
+// table instead of the subtraction.
+function FpDivResult fpDiv(FpNum dvd, FpNum dvs, Bool normalized, Bool noisy);
+  FpDivResult r = FpDivResult { res: dvd, zd: False, pf: False, lzc: 0,
+                                generated: False, propagated: False };
+  if (dvs.frac == 0) begin
+    // "When the indicator ZD is set to one, further processing of the
+    // division is suspended and the accumulator contents remain
+    // undisturbed."  The caller writes nothing at all.
+    r.zd = True;
+    return r;
+  end else begin
+  Bit#(1) sign = dvd.sign ^ dvs.sign;
+  Bool flagged = (dvd.ef == 1 || dvs.ef == 1);
+
+  // Divisor pre-normalization.  Noisy mode with a normalized quotient
+  // shifts ones in rather than zeros (p.93).
+  UInt#(6) vsu = countZerosMSB(dvs.frac);
+  Int#(14) vs  = unpack(zeroExtend(pack(vsu)));
+  Bit#(48) vf  = dvs.frac << vsu;
+  if (normalized && noisy) vf = vf | ((48'b1 << vsu) - 1);
+  Int#(14) ve  = fpExpFull(dvs) - vs;
+  Int#(14) lzc = vs;
+
+  // The dividend becomes a 96-bit fraction.  Normalized noisy mode
+  // extends it with ones instead of zeros.
+  Bit#(96) d96 = { dvd.frac, (normalized && noisy) ? 48'hFFFFFFFFFFFF : 48'h000000000000 };
+  UInt#(7) dreqU = countZerosMSB(d96);
+  Int#(14) dreq  = unpack(zeroExtend(pack(dreqU)));
+  // "the amount of the shift is equal to the shift that occurred in
+  // divisor normalization, or the left shift required for dividend
+  // normalization, whichever is less" -- and when normalized, the
+  // dividend is fully normalized instead.  A zero dividend shifts by
+  // the LZC value only.
+  Int#(14) ds = (dvd.frac == 0) ? lzc
+              : (normalized && !flagged) ? dreq
+              : ((vs < dreq) ? vs : dreq);
+  Bit#(7) dsB = truncate(pack(ds));
+  d96 = d96 << dsB;
+  Int#(14) de = fpExpFull(dvd) - ds;
+  lzc = lzc - ds;
+
+  let {q, rem} = fpDivFrac(d96, vf);
+  Bool ovf = (q[48] == 1);
+  Bit#(48) qf = ovf ? q[48:1] : q[47:0];
+  if (ovf) begin de = de + 1; lzc = lzc + 1; end
+
+  FpNum res = dvd;
+  Bool gen = False;
+  if (flagged) begin
+    // p.94's table.  A divisor in the XFN range, or an XFP divisor
+    // against an N or XFN dividend, gives the divisor's exponent with
+    // its sign reversed; everything else gives the dividend's.
+    Int#(14) e = (isXFN(dvs) || (isXFP(dvs) && !isXFP(dvd))) ? -fpExpFull(dvs)
+                                                             : fpExpFull(dvd);
+    let {h, g} = fpMakeExp(e, qf, sign, dvd.flags);
+    res = h;
+    // "When either operand in division has EF of 1, the exponent of
+    // the result always has a propagated EF of 1."
+    res.ef = 1;
+    r.propagated = True;
+  end else begin
+    let {h, g} = fpMakeExp(de - ve, qf, sign, dvd.flags);
+    res = h; gen = g;
+    if (normalized && res.frac != 0) begin
+      let {f48, adj, lc} = fpNormalize96(0, {res.frac, 48'b0}, True, noisy);
+      let {h2, g2} = fpMakeExp(fpExpFull(res) + adj, f48, sign, dvd.flags);
+      res = h2; gen = gen || g2;
+    end
+  end
+  r.res = res;
+  r.generated = gen;
+  // "This indicator is turned on when unnormalized operation is
+  // specified, if the left zeros counter (LZC) is greater than zero."
+  r.pf  = !normalized && (lzc > 0);
+  r.lzc = (lzc < 0) ? 0 : truncate(pack(lzc));
+  return r;
+  end
+endfunction
+
 // MULTIPLY DOUBLE (D*, Ref. Manual p.97): "The operation is the same
 // as MULTIPLY, except that the 96-bit product fraction is placed in
 // accumulator bits 12-107." So the two 48-bit fractions still make a
@@ -727,63 +871,14 @@ function FpdResult fpMulDouble(FpNum a, FpNum b, Bool normalized, Bool noisy);
   end
 endfunction
 
-// ---- DIVIDE (p.93-94): a / b (a = dividend from the accumulator,
-// b = divisor from storage; recip = True swaps them, R/). Both
-// pre-normalized; quotient exponent = dividend - divisor exponents (+1
-// when the dividend fraction >= divisor fraction, with the quotient
-// then developed from a right-shifted dividend); zero divisor -> ZD,
-// nothing changes.
-function FpResult fpDiv(FpNum a, FpNum b, Bool normalized, Bool noisy);
-  FpResult r = fpNoResult(a);
-  if (b.frac == 0) begin r.zd = True; return r; end
-  else if (a.ef == 1 || b.ef == 1) begin
-    // Fig.23 division table.
-    FpNum res = a;
-    if (isXFP(a) && isXFP(b)) res = a;
-    else if (isXFN(a) && isXFN(b)) res = a;
-    else if (isXFP(a)) res = a;                         // XFP dividend -> XFP
-    else if (isXFN(a)) res = a;                         // XFN dividend / N or XFP -> XFN
-    else if (isXFP(b)) begin res = b; res.es = 1; end   // N / XFP -> XFN (exponent sign reversed)
-    else begin res = b; res.es = 0; end                 // N / XFN -> XFP
-    res.sign = a.sign ^ b.sign; res.flags = a.flags;
-    r.res = res; r.propagated = True;
-    return r;
-  end else begin
-    // Pre-normalize divisor and dividend (shift counts adjust exponents).
-    UInt#(6) nzd = countZerosMSB(b.frac);
-    Bit#(48) fd = b.frac << nzd; Int#(14) nd = unpack(zeroExtend(pack(nzd)));
-    Bool zeroDividend = (a.frac == 0);
-    UInt#(6) nza = zeroDividend ? 0 : countZerosMSB(a.frac);
-    Bit#(48) fa = a.frac << nza; Int#(14) na = unpack(zeroExtend(pack(nza)));
-    // The divisor is non-zero here (checked above), but Bluesim
-    // evaluates the division even on the suppressed path, so never let
-    // a zero reach the divider.
-    Bit#(48) fdSafe = (fd == 0) ? 48'd1 : fd;
-    Int#(14) e = (signExtend(fpExp(a)) - na) - (signExtend(fpExp(b)) - nd);
-    Bit#(1) sign = a.sign ^ b.sign;
-    Bit#(96) num = {fa, 48'b0};
-    Bit#(48) q;
-    if (fa >= fd) begin
-      // Quotient overflow: exponent +1, quotient from the dividend
-      // shifted right one place.
-      e = e + 1;
-      Bit#(96) qq = (num >> 1) / zeroExtend(fdSafe);
-      q = qq[47:0];
-    end else begin
-      Bit#(96) qq = num / zeroExtend(fdSafe);
-      q = qq[47:0];
-    end
-    if (zeroDividend) q = 0;
-    let {res, gen} = fpMakeExp(e, q, sign, a.flags);
-    if (zeroDividend) begin
-      Int#(14) mag = (e < 0) ? -e : e;
-      res.ef = (mag > 1023) ? 1 : 0; res.em = (mag > 1023) ? 0 : truncate(pack(mag)); res.es = (e < 0) ? 1 : 0;
-      gen = (mag > 1023);
-    end
-    r.res = res; r.generated = gen;
-    return r;
-  end
-endfunction
+// The earlier FpResult fpDiv that stood here has been removed.  It was
+// dead code -- never in the executor's `known` list -- and its flagged
+// table was wrong in a way jb_af1c F217A3 catches: it tested the
+// DIVIDEND's range first, so an XFN dividend over an XFP divisor kept
+// the dividend's exponent, where p.94 gives it the divisor's exponent
+// with the sign reversed.  A3 is exactly that case (FK86 -1791 over
+// FK59 +1024) and demands FK60's -1024.  fpDiv above is the
+// replacement; see its header for the rules it follows.
 
 // Exponent range indicator selection for a result (p.85-86): returns
 // which of XPFP / XPO / XPH / XPL / XPU applies (as a 5-bit one-hot in

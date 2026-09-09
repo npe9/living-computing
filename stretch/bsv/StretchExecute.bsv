@@ -1416,13 +1416,14 @@ function ActionValue#(Tuple4#(HWordAddr, Maybe#(Tuple2#(Bit#(4), IndexWord)),
                    || c == 7'b0001010 || c == 7'b0101010 || isST
                    || c == 7'b0010010 || c == 7'b0110010 || c == 7'b0010110 || c == 7'b0110110
                    || c == 7'b0011010 || c == 7'b1011010 || c == 7'b1001010 || c == 7'b0111010
+                   || c == 7'b0011110                     // / (DIVIDE)
                    || c == 7'b1010110 || isEplI || isSHF
                    || c == 7'b1000110 || c == 7'b1100110   // DL / DLWF
                    || c == 7'b1000010 || c == 7'b1100010   // D+ / D+MG
                    || c == 7'b1010010                     // F+ (ADD TO FRACTION)
                    || isSRD || isSLO);                     // SRD / SLO
         if (!known)
-          ind = setOpInvalid(ind);   // /, R/, the rest of double precision, SRT, LFT, *+ ...: not yet
+          ind = setOpInvalid(ind);   // R/, D/, SRT: not yet -- they want the same divide box as /
         else if (isST) begin
           FpNum v = fpApplySignMods(acc, fp.absSign, fp.invSign);
           st.writeWord(ea, fpToWord(v));
@@ -2007,6 +2008,49 @@ function ActionValue#(Tuple4#(HWordAddr, Maybe#(Tuple2#(Bit#(4), IndexWord)),
               ind = setResultIndicatorsFp(ind, r.res);
               ind = setRangeIndicators(ind, fpRangeBits(r.res, r.generated, r.propagated));
               ind = setBit(ind, ind_ZM, pack(r.zm));
+            end
+            7'b0011110: begin // / (DIVIDE, pp.93-94)
+              // "The operand in the left half of the accumulator, the
+              // dividend, is divided by the addressed operand, the
+              // divisor. ... The quotient exponent and fraction replace
+              // accumulator bits 0-59.  Accumulator bits 60-127 remain
+              // unchanged.  The quotient sign replaces the accumulator
+              // sign in bit position 4 of the sign byte register.  No
+              // remainder is retained by this operation."
+              //
+              // So the accumulator's RIGHT word is never written, and
+              // fpAccLeft carries IBM 60-63 through -- the same shape
+              // MULTIPLY has, and the reason / needs no readAccRight.
+              FpDivResult r = fpDiv(acc, opnd, normalized, noisy);
+              ind = setBit(ind, ind_MOP, 0);
+              if (r.zd) begin
+                // p.93: "When division is suppressed because of a zero
+                // divisor, the accumulator and the sign byte register
+                // remain unchanged.  The data flag and MOP indicators
+                // will be set but the arithmetic result and exponent
+                // range indicators are not changed."  Nothing is
+                // written -- not even the same value back -- and ZM is
+                // left alone too, since p.94 turns ZM off "except for
+                // the case of a zero divisor".
+                ind = setBit(ind, ind_ZD, 1);
+              end else begin
+                st.writeWord(addrAccLeft, fpAccLeft(r.res, accL));
+                st.writeWord(addrAccSignByte, fpSignByte(r.res, accS));
+                // LZC is IBM bits 17-23 of word 7 and shares that word
+                // with the all-ones count at 44-50, which has to
+                // survive; IBM bit n is model bit 63-n, so 17-23 is
+                // [46:40].  p.94: the count "remains available for
+                // program use until the LZC is changed by integer
+                // multiplication, LOAD TRANSIT, division or connective
+                // operations".  NOTHING IN F217 READS IT, nor PF which
+                // is derived from it -- both are manual-only here.
+                Word64 zoc = st.readZerosOnesCounts();
+                st.writeWord(addrLeftZerosCount, { zoc[63:47], r.lzc, zoc[39:0] });
+                ind = setResultIndicatorsFp(ind, r.res);
+                ind = setRangeIndicators(ind, fpRangeBits(r.res, r.generated, r.propagated));
+                if (r.pf) ind = setBit(ind, ind_PF, 1);
+                ind = setBit(ind, ind_ZM, 0);
+              end
             end
             7'b1011010: begin // D* (multiply double, p.97): "the same
                               // as MULTIPLY, except that the 96-bit

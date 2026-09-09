@@ -125,6 +125,10 @@ interface StretchStorage;
   // combinational treatment. Word 14 is Reg-backed for the same reason
   // 8-10 are: 0-31 never move to BRAM.
   method Word64 readFactor();
+  // Address 7, the zeros/ones counts.  DIVIDE writes the left zeros
+  // count into IBM bits 17-23 and must not disturb the all-ones count
+  // at 44-50, so the arm needs to read the word first.
+  method Word64 readZerosOnesCounts();
 endinterface
 
 // mkStretchStorage: the CPU's view of storage. Addresses 0-31 are
@@ -421,6 +425,10 @@ module mkStretchStorage(StretchStorage);
 
   method Word64 readFactor();
     return factor;
+  endmethod
+
+  method Word64 readZerosOnesCounts();
+    return zerosOnesCounts;
   endmethod
 
 endmodule
