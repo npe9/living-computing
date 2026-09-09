@@ -2254,7 +2254,62 @@ hand vectors alone. "Enables" notes the dependency chain.
    Next: F219 "NOISY MODE TEST ROUTINE" (p.169 on). Every operation it
    uses is already implemented -- ADD, ADD TO MAGNITUDE, LOAD, LOAD
    WITH FLAG -- so it is a pure transcription, and it drives the NOISY
-   MODE paths, which almost nothing so far has. Then R/, D/ and SRT -- R/ is
+   MODE paths, which almost nothing so far has.
+
+   F219A-D DONE (8 sub-tests), suite 234, AND IT FOUND TWO MODEL BUGS
+   -- the first block in a long while to fail on its first run, and it
+   failed for two independent reasons. Every operation it uses was
+   already implemented; what was untested was NOISY MODE, which nothing
+   before F219 ever switched on. F219 sets it once with a BB1 on
+   indicator 63 and leaves it on.
+
+   BUG ONE: fpAdd's noisy extension. p.87, verbatim: "When the noisy
+   mode and normalized operation are specified, the 48-bit fraction of
+   the number WITH HIGH EXPONENT is extended with 48 low-order
+   one-bits. If the operands have equal exponents, the ACCUMULATOR
+   operand is extended. The extension takes place before the
+   intermediate sum is formed." fpAdd extended BOTH operands with
+   ZEROS and let noisy mode show only in fpNormalize96's fill of
+   positions vacated during normalization. Two different answers, and
+   A1 is where they part: the ones carry out of the low half, so the
+   listing wants aaaaaaaaaaad where the old code gives aaaaaaaaaaab.
+
+   THE BLOCK ALSO PINS "ONE OPERAND, NOT BOTH". A3 has equal exponents
+   and B2 a shift of one, which are exactly the two shapes where the
+   second operand's ones would still be in range. Extending both gives
+   800000000000 at +2 for A3 (against ffffffffffff at +1) and
+   aaaaaaaaaaaf for B2 (against aaaaaaaaaaab).
+
+   BUG TWO: LOAD's noisy normalization was 96-bit. The L/LWF arm
+   normalized {frac, 48'b0} through fpNormalize96, so the noisy ones
+   landed in a low half LOAD then discards. LOAD is a 48-bit "Replace"
+   per p.86's table with no 96-bit intermediate; it wants
+   fpNormalize48, which already existed for SLO. C1 catches it: FPK77's
+   fraction is 000000000007, forty-five leading zeros, and the answer
+   wanted is ffffffffffff where the 96-bit route gives e00000000000.
+   LFT had the identical fault and is fixed with it. DL and DLWF are
+   deliberately NOT changed -- for LOAD DOUBLE the vacated positions
+   ARE accumulator bits 60-107, which is why that arm uses
+   fpNormalize96Wide and says so.
+
+   THREE INJECTIONS, ALL THREE PREDICTED EXACTLY:
+     fpAdd extends both with zeros (the old code)  halted A1  021456.40
+     fpAdd extends BOTH with ones                  halted A3  021464.40
+     L and LFT back to the 96-bit normalize        halted C1  021475.00
+
+   Neither change touches the non-noisy paths -- the extension is zero
+   when noisy is off, and fpNormalize48 and fpNormalize96 agree when
+   nothing is shifted in -- and the suite confirms it at 234 sections.
+
+   C2 IS THE OTHER SIDE OF C1 and worth its own line: FPK31's fraction
+   is ZERO, so normalization is not performed at all and the answer is
+   FPK31 unchanged. A model that normalized a zero fraction, or filled
+   ones into one, passes C1 and fails C2.
+
+   Next: F219E onward (p.170) -- ADD TO MEMORY, ADD MAGNITUDE TO
+   MEMORY, STORE, and the four COMPARE checks, all in noisy mode. F219
+   runs to at least p.170 and the compares are the interesting part,
+   since noisy mode's effect on a comparison is not obvious. Then R/, D/ and SRT -- R/ is
    p.94's "same process with dividends and divisors interchanged" and
    falls out of fpDiv, but it waits for a block that drives it. p.99
    also gives the remainder register a role nothing uses yet; D/ is

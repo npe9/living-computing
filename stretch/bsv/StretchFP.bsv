@@ -337,8 +337,32 @@ function FpResult fpAdd(FpNum a, FpNum b, Bool normalized, Bool noisy, Bool addM
       if (big.frac == 0 && !bothZero) r.ls = True;
       return r;
     end else begin
-      Bit#(96) fb = {big.frac, 48'b0};
-      Bit#(96) fs = {sml.frac, 48'b0} >> adiff;
+      // NOISY MODE EXTENDS ONE OPERAND WITH ONES, NOT BOTH, AND ONLY
+      // WHEN NORMALIZED.  p.87, verbatim: "When the noisy mode and
+      // normalized operation are specified, the 48-bit fraction of the
+      // number with high exponent is extended with 48 low-order
+      // one-bits.  If the operands have equal exponents, the
+      // accumulator operand is extended.  The extension takes place
+      // before the intermediate sum is formed."
+      //
+      // This function used to extend BOTH with zeros and let noisy
+      // mode show only in fpNormalize96's fill of the vacated
+      // positions.  jb_af1c F219A1 is what catches that: FPK38 + FPK35
+      // wants aaaaaaaaaaad and the zero-extended form gives
+      // aaaaaaaaaaab, the ones-carry out of the low half being the
+      // whole difference.  F219A3 and F219B2 then pin that it is ONE
+      // operand and not both -- with equal exponents (A3) or a shift of
+      // one (B2), extending both leaves the shifted operand's ones in
+      // play and the answers come out ffffffffffff and aaaaaaaaaaaf
+      // where the listing wants ffffffffffff at a different exponent
+      // and aaaaaaaaaaab.
+      //
+      // On a tie `big` is `a`, so the accumulator gets the ones unless
+      // the accumulator is `b` -- which is M+'s case, accIsB.
+      Bool onesToBig = (diff != 0) || !accIsB;
+      Bit#(48) ext = (normalized && noisy) ? 48'hFFFFFFFFFFFF : 48'h000000000000;
+      Bit#(96) fb = { big.frac, onesToBig ? ext : 48'h000000000000 };
+      Bit#(96) fs = { sml.frac, onesToBig ? 48'h000000000000 : ext } >> adiff;
       Bit#(97) sum;
       Bit#(1) sign;
       Bool forcedZero = False;

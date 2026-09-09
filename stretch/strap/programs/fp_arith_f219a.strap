@@ -1,0 +1,139 @@
+! jb_af1c F219 "NOISY MODE TEST ROUTINE", sub-blocks A (add checks),
+! B (add to magnitude), C (load) and D (load with flag), p.169 (octal
+! 021451.40-021501.40).  F219E follows at 021502.00.
+!
+! EVERY OPERATION HERE WAS ALREADY IMPLEMENTED, AND THE BLOCK STILL
+! FOUND TWO BUGS.  Noisy mode is set once, by a BB1 on indicator 63,
+! and left on for the whole routine; nothing before F219 ever set it,
+! so every noisy path in the model was untested until now.
+!
+! WHAT ADD DOES IN NOISY MODE.  Reference Manual p.87, verbatim: "When
+! the noisy mode and normalized operation are specified, the 48-bit
+! fraction of the number WITH HIGH EXPONENT is extended with 48
+! low-order one-bits.  If the operands have equal exponents, the
+! ACCUMULATOR operand is extended.  The extension takes place before
+! the intermediate sum is formed."  One operand, not both, and only
+! when normalized.  fpAdd extended BOTH with zeros and let noisy show
+! only in the fill of positions vacated during normalization, which is
+! a different answer:
+!
+!   A1  L(U) FPK38 + (N) FPK35   the ones carry out of the low half;
+!       wanted aaaaaaaaaaad, the zero-extended form gives aaaaaaaaaaab
+!   A2  the same pair the other way round -- FPK38 is the high exponent
+!       either way, so the answer is the same and the block is showing
+!       that it follows the EXPONENT and not which side the operand is
+!   A3  equal exponents, so only the accumulator is extended; extending
+!       both would carry and give 800000000000 at +2 instead of
+!       ffffffffffff at +1
+!   B1, B2  the same for ADD TO MAGNITUDE; B2's shift of one is what
+!       distinguishes "one operand" from "both", since with a shift of
+!       one the other operand's ones would still be mostly in range
+!
+! WHAT LOAD DOES.  C1 normalizes FPK77, whose fraction is 000000000007
+! -- forty-five leading zeros -- and wants ffffffffffff: every vacated
+! position filled with a one.  The L arm normalized through
+! fpNormalize96, which puts the noisy ones in a low half that LOAD then
+! discards, so it produced e00000000000.  LOAD is a 48-bit "Replace"
+! per p.86's table and has no 96-bit intermediate; it wants
+! fpNormalize48.  LFT had the same fault and is fixed with it.  DL and
+! DLWF are deliberately left alone -- for LOAD DOUBLE the vacated
+! positions ARE accumulator bits 60-107.
+!
+!   C2  the other side of the same rule: FPK31's fraction is ZERO, so
+!       normalization is not performed at all and the answer is FPK31
+!       unchanged.  A model that normalized a zero fraction, or that
+!       filled ones into one, fails here and passes C1.
+!   D   LWF of FK113, forty-seven leading zeros, wanting ffffffffffff.
+!
+! All five arithmetic answers were computed from the constants and the
+! manual's rule before either fix was made.
+
+! -- SSIP framework substitutes: SERS (octal 1304) -> FAIL halt,
+! -- SEN (octal 1310) -> scratch.
+        SLC, (8)1304.0
+SERS    BEW, $
+        SLC, (8)1310.0
+SEN     DD(BU,64,8), 0
+
+! -- constants (pools pp.176-179) --
+        SLC, (8)22012.0
+FPK5    DD(BU,64,8), (8)0001025252525252525240
+        SLC, (8)22014.0
+FPK7    DD(BU,64,8), (8)0001412525252525252520
+FPK8    DD(BU,64,8), (8)0002005252525252525240
+        SLC, (8)22033.0
+FPK22   DD(BU,64,8), (8)0000577777777777777760
+        SLC, (8)22044.0
+FPK31   DD(BU,64,8), (8)0031000000000000000000
+FPK32   DD(BU,64,8), (8)0001177777777777777760
+        SLC, (8)22050.0
+FPK35   DD(BU,64,8), (8)0001125252525252525240
+        SLC, (8)22053.0
+FPK38   DD(BU,64,8), (8)0031052525252525252520
+FPK39   DD(BU,64,8), (8)0001052525252525252520
+        SLC, (8)22120.0
+FPK77   DD(BU,64,8), (8)0001000000000000000160
+        SLC, (8)22140.0
+FPK98   DD(BU,64,8), (8)0030525252525252525320
+FPK99   DD(BU,64,8), (8)0000525252525252525260
+        SLC, (8)22322.0
+FK113   DD(BU,64,8), (8)0003000000000000000027
+        SLC, (8)22333.0
+FK122   DD(BU,64,8), (8)0025777777777777777760
+FK123   DD(BU,64,8), (8)0024777777777777777760
+
+        SLC, (8)21451.40
+! -- ADD CHECKS --
+! F219A1 - exp mem + exp acc + +48
+SAP25   BB1, $NM, $+1.0                      ! turn noisy mode on
+        Z, $L
+        Z, $R
+        L(U), FPK38                          ! extended with 48 low-order one bits
+        +(N), FPK35
+        CT0110(BU,60), FPK98, 68
+        SIC, SEN
+        BRGZ, SERS
+! F219A2 - the same pair, sides swapped
+        L(U), FPK35
+        +(N), FPK38                          ! mem. fract. extended with 48 low-order 1 bits
+        CT0110(BU,60), FPK98, 68
+        SIC, SEN
+        BRGZ, SERS
+! F219A3 - exp mem + exp acc (equal): the ACCUMULATOR is extended
+        L(U), FPK39
+        +(N), FPK5
+        CT0110(BU,60), FPK22, 68
+        SIC, SEN
+        BRGZ, SERS
+! -- ADD TO MAGNITUDE CHECKS --
+! F219B1 - exp mem + exp acc + +48
+        L(U), FPK38
+        +MG(N), FPK32
+        CT0110(BU,60), FPK98, 68
+        SIC, SEN
+        BRGZ, SERS
+! F219B2 - exp mem unequal to exp acc, by one
+        L(U), FPK8
+        +MG(N), FPK7
+        CT0110(BU,60), FPK99, 68
+        SIC, SEN
+        BRGZ, SERS
+! -- LOAD CHECKS --
+! F219C1 - 0 s leading 0 s, 48
+        L(N), FPK77
+        CT0110(BU,60), FK122, 68
+        SIC, SEN
+        BRGZ, SERS
+! F219C2 - 48 leading 0 s: normalization NOT performed
+        L(N), FPK31
+        CT0110(BU,60), FPK31, 68             ! check normalization not performed
+        SIC, SEN
+        BRGZ, SERS
+! -- LOAD WITH FLAG CHECK --
+! F219D - SB 5-7 set to 1, lead 0s + 47
+        LWF(N), FK113
+        CT0110(BU,60), FK123, 68
+        SIC, SEN
+        BRGZ, SERS
+PASS    BEW, $                               ! 021502.00: F219E's first instruction
+        END, SAP25

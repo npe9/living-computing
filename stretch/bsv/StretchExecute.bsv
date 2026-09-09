@@ -1702,7 +1702,20 @@ function ActionValue#(Tuple4#(HWordAddr, Maybe#(Tuple2#(Bit#(4), IndexWord)),
               v.flags = (c == 7'b0100110) ? opnd0.flags : 0;
               Bool gen = False;
               if (normalized && v.ef == 0 && v.frac != 0) begin
-                let {f48, adj, lc} = fpNormalize96(0, {v.frac, 48'b0}, True, noisy);
+                // FORTY-EIGHT BITS, NOT NINETY-SIX.  This is a
+                // 48-bit fraction with no 96-bit intermediate, so
+                // noisy mode's one-bits belong IN it; routing through
+                // fpNormalize96 put them in a low half that is then
+                // discarded, leaving zeros where the shifted-in ones
+                // belong.  jb_af1c F219C1 catches it -- FPK77's
+                // fraction is 000000000007, forty-five leading zeros,
+                // and the answer wanted is ffffffffffff where the
+                // 96-bit route gives e00000000000.
+                //
+                // DL and DLWF are deliberately NOT changed: for LOAD
+                // DOUBLE the vacated positions ARE real accumulator
+                // bits 60-107, so fpNormalize96Wide is right there.
+                let {f48, adj} = fpNormalize48(v.frac, True, noisy);
                 let {vn, g} = fpMakeExp(signExtend(fpExp(v)) + adj, f48, v.sign, v.flags);
                 v = vn; gen = g;
               end
@@ -1742,7 +1755,20 @@ function ActionValue#(Tuple4#(HWordAddr, Maybe#(Tuple2#(Bit#(4), IndexWord)),
               // skips normalization and keeps the operand's own
               // exponent, which is what an order-of-magnitude zero is.
               if (normalized && v.ef == 0 && v.frac != 0) begin
-                let {f48, adj, lc} = fpNormalize96(0, {v.frac, 48'b0}, True, noisy);
+                // FORTY-EIGHT BITS, NOT NINETY-SIX.  This is a
+                // 48-bit fraction with no 96-bit intermediate, so
+                // noisy mode's one-bits belong IN it; routing through
+                // fpNormalize96 put them in a low half that is then
+                // discarded, leaving zeros where the shifted-in ones
+                // belong.  jb_af1c F219C1 catches it -- FPK77's
+                // fraction is 000000000007, forty-five leading zeros,
+                // and the answer wanted is ffffffffffff where the
+                // 96-bit route gives e00000000000.
+                //
+                // DL and DLWF are deliberately NOT changed: for LOAD
+                // DOUBLE the vacated positions ARE real accumulator
+                // bits 60-107, so fpNormalize96Wide is right there.
+                let {f48, adj} = fpNormalize48(v.frac, True, noisy);
                 let {vn, g} = fpMakeExp(signExtend(fpExp(v)) + adj, f48, v.sign, v.flags);
                 v = vn; gen = g;
               end

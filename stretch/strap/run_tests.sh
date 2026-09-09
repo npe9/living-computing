@@ -1016,6 +1016,11 @@ run "FP store root indicators (jb_af1c F218D on the model)" ./run_program.sh pro
     "PC=$(python3 -c 'from strap_asm import assemble; print(assemble(open("programs/fp_arith_f218d.strap").read()).symtab["PASS"]//32)')" \
     "SEN:712=0"
 
+run "FP noisy mode add/load (jb_af1c F219A-D, encoding)" python3 verify_fp_arith_f219a_listing.py
+run "FP noisy mode add/load (jb_af1c F219A-D on the model)" ./run_program.sh programs/fp_arith_f219a.strap StretchFpNoisyATb \
+    "PC=$(python3 -c 'from strap_asm import assemble; print(assemble(open("programs/fp_arith_f219a.strap").read()).symtab["PASS"]//32)')" \
+    "SEN:712=0"
+
 run "Program store compare: store then EXECUTE the modified instruction" ./run_program.sh programs/store_then_execute.strap StretchStoreExecTb \
     "RESULT:$(python3 -c 'from strap_asm import assemble; print(assemble(open("programs/store_then_execute.strap").read()).symtab["RESULT"]//64)')=0x20"
 
