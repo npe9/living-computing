@@ -1415,7 +1415,7 @@ function ActionValue#(Tuple4#(HWordAddr, Maybe#(Tuple2#(Bit#(4), IndexWord)),
         Bool known = (c == 7'b0000010 || c == 7'b0100010 || c == 7'b0000110 || c == 7'b0100110
                    || c == 7'b0001010 || c == 7'b0101010 || isST
                    || c == 7'b0010010 || c == 7'b0110010 || c == 7'b0010110 || c == 7'b0110110
-                   || c == 7'b0011010 || c == 7'b1011010 || c == 7'b1001010
+                   || c == 7'b0011010 || c == 7'b1011010 || c == 7'b1001010 || c == 7'b0111010
                    || c == 7'b1010110 || isEplI || isSHF
                    || c == 7'b1000110 || c == 7'b1100110   // DL / DLWF
                    || c == 7'b1000010 || c == 7'b1100010   // D+ / D+MG
@@ -2045,6 +2045,88 @@ function ActionValue#(Tuple4#(HWordAddr, Maybe#(Tuple2#(Bit#(4), IndexWord)),
               ind = setResultIndicatorsFp(ind, rind);
               ind = setRangeIndicators(ind, fpRangeBits(rind, r.generated, r.propagated));
               ind = setBit(ind, ind_ZM, pack(r.zm));
+            end
+            7'b0111010: begin // *+ (MULTIPLY AND ADD, pp.98-99)
+              // "The operand in the FT register, designated as the
+              // multiplicand, is multiplied by the operand specified by
+              // the effective address, designated as the multiplier.
+              // The product is added to the contents of the
+              // accumulator, bits 0-107.  The sum exponent and fraction
+              // replace accumulator bits 0-107.  The sign of the sum
+              // replaces the accumulator sign, sign byte register bit
+              // 4.  Accumulator bits 108-127 remain unchanged."
+              //
+              // So it is fpMulDouble feeding fpAddDouble, and the
+              // manual says so: "the intermediate product fraction
+              // remains unnormalized throughout the addition" and
+              // "subsequent to the multiplication, an addition is
+              // performed similar to that described in ADD DOUBLE".
+              //
+              // THE ARGUMENT ORDER OF THE MULTIPLY IS LOAD-BEARING, and
+              // it is the one place *+ differs from MULTIPLY.  p.99:
+              // "When both operands are in the XFP range or both in the
+              // XFN range, the product exponent is the exponent of the
+              // operand specified by the EFFECTIVE ADDRESS" -- where
+              // Fig.32, and so fpMul and D*, give it to the accumulator
+              // side.  fpExpRangeWinner resolves a same-range pair to
+              // its FIRST argument, so passing (opnd, ftv) is exactly
+              // that rule and nothing else in fpMulDouble is
+              // asymmetric: the sign is an xor, the fraction a product,
+              // and the unflagged exponent a sum.
+              //
+              // Note this is NOT only a tie-break here.  p.99 gives the
+              // effective address the exponent whenever both operands
+              // share a flagged range, whatever their magnitudes --
+              // which is why the rule cannot be expressed by ordering
+              // the arguments to a comparison.
+              Word64 accR = st.readAccRight();
+              FpDouble da = fpdFromAcc(accL, accR, accS);
+              FpNum ftv = fpFromWord(st.readFactor());
+              // Normalization and noisy mode belong to the ADDITION
+              // only: p.99, "the intermediate product fraction remains
+              // unnormalized throughout the addition", and noisy's
+              // one-bits enter "during the left shifting associated
+              // with normalization" of the sum.
+              FpdResult m = fpMulDouble(opnd, ftv, False, False);
+              FpdResult r = fpAddDouble(da, m.res, normalized, noisy, False);
+              st.writeWord(addrAccLeft, fpdAccLeft(r.res));
+              st.writeWord(addrAccRight, fpdAccRight(r.res, accR));
+              // The sign byte takes the sum's sign and the ACCUMULATOR's
+              // flag bits, as ADD DOUBLE does -- so r.res.flags never
+              // reaches storage and m.res.flags (which fpMulDouble takes
+              // from its first argument, here the storage operand) is
+              // inert.  Said explicitly because it looks like it matters.
+              st.writeWord(addrAccSignByte, sbWith(accS, r.res.sign, sbFlags(accS)));
+              ind = setBit(ind, ind_MOP, 0);
+              FpNum vind = fpdHead(r.res);
+              vind.frac = (r.res.frac == 0) ? 0 : 48'b1;
+              ind = setResultIndicatorsFp(ind, vind);
+              if (r.lc) ind = setBit(ind, ind_LC, 1);
+              if (r.ls) ind = setBit(ind, ind_LS, 1);
+              if (r.psh) ind = setBit(ind, ind_PSH, 1);
+              // p.99's generated/propagated rule falls out of the
+              // composition rather than needing code.  "Generated if all
+              // operands are initially in the N range" is fpAddDouble's
+              // unflagged path (gen from fpMakeExp, propagated False);
+              // "or if the intermediate product has a value in the XFN
+              // range with a propagated exponent flag while the
+              // accumulator operand is in the N range but the sum has EF
+              // of 1, ES of 1 owing to final normalization" is its
+              // FLAGGED path, where an unflagged survivor still
+              // normalizes and fpMakeExp reports the underflow -- and
+              // fpRangeBits' propagated arm requires es == 0, so an
+              // es == 1 result falls through to the generated one.
+              // "All other cases lead to a propagated EF of 1" is
+              // r.propagated = (res.ef == 1).  Nothing in F216A checks
+              // an indicator, so none of this is covered there.
+              ind = setRangeIndicators(ind, fpRangeBits(vind, r.generated, r.propagated));
+              // p.99: "If the final result, after addition, is an order
+              // of magnitude zero with exponent greater than -1024 this
+              // indicator will be turned on, otherwise, if on, it will
+              // be turned off."  Unlike MULTIPLY's ZM this carries no
+              // `normalized` term.
+              ind = setBit(ind, ind_ZM,
+                           pack((r.res.frac == 0) && (fpExpFull(vind) > -1024)));
             end
             7'b1010110: begin // E+ (add to exponent, p.102): the
                               // addressed operand's exponent (its sign

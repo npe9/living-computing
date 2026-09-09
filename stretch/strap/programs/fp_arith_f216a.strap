@@ -1,0 +1,188 @@
+! jb_af1c F216 "MULTIPLY AND ADD TEST", sub-block F216A "ARITHMETIC
+! CHECKS", pp.147-148 (octal 020312.00-020367.00, the block's own exit
+! "BD,$+1.0").  F216B, the sign and modifier combinations, follows.
+!
+! THIS BLOCK ADDS *+ (MULTIPLY AND ADD, opcode 0111010), and unlike D*
+! and LFT it is not a one-line instruction.  Reference Manual p.98:
+! "The operand in the FT register, designated as the multiplicand, is
+! multiplied by the operand specified by the effective address,
+! designated as the multiplier.  The product is added to the contents
+! of the accumulator, bits 0-107."  It is the only operation that READS
+! the factor register, which is why F215 had to come first.
+!
+! In the model it is fpMulDouble feeding fpAddDouble, which is what the
+! manual describes: "the intermediate product fraction remains
+! unnormalized throughout the addition" and "subsequent to the
+! multiplication, an addition is performed similar to that described in
+! ADD DOUBLE".
+!
+! THE ONE PLACE *+ DIFFERS FROM MULTIPLY is the product exponent when
+! both multiply operands share a flagged range.  p.99: "When both
+! operands are in the XFP range or both in the XFN range, the product
+! exponent is the exponent of the operand specified by the EFFECTIVE
+! ADDRESS" -- where Figure 32, and so MULTIPLY and D*, give it to the
+! accumulator-side operand.  Note this is not a tie-break: it holds
+! whatever the two magnitudes are.
+!
+! HOW EACH SUB-TEST BUILDS A 96-BIT ACCUMULATOR.  DL(U) puts a
+! constant's exponent and fraction in IBM 0-59 and zeroes 60-107, then
+! C0011(BU,48),FPK27+.12,20 writes FPK27's fraction into IBM 60-107.
+! So the accumulator fraction is {constant, FPK27} = {x, 7fffffffffff}.
+!
+!   A1  acc FK68 +2047 XFP; FT FK59 +1024 XFP; mem FK67 +1791 XFP.
+!       Product exponent is the memory operand's +1791; the addition
+!       then keeps the accumulator, +2047 being the larger XFP.
+!       Result = the accumulator, unchanged.
+!   A2  acc FK18 +4 N; FT FK61 -1024 XFN; mem FPK80 +2 N.  XFN
+!       dominates N in the product; N beats XFN in the addition, so
+!       again the accumulator survives.
+!   A3  the same from the other side: FT FPK52 +2 N, mem FK60 -1024 XFN.
+!   A4  acc FK18 +4 N; FT FK61 -1024 XFN; mem FK67 +1791 XFP.  XFP
+!       dominates in the product and XFP wins the addition, so THE
+!       PRODUCT lands in the accumulator -- the first sub-test whose
+!       result is not the accumulator it started with.  FK61 x FK67 is
+!       29cbb829cbb9 x 800000000000, a clean 47-place shift, so the
+!       96-bit product is FK16's fraction over FK67's, which is exactly
+!       what the two fraction checks name.
+!   A5  acc FK69 -2047 XFN; FT FK59 +1024 XFP; mem FPK80 +2 N.  XFP
+!       dominates both times, so the product wins again, at FK59's
+!       +1024 -- FK36's exponent field.
+!   A6  THE ONLY UNFLAGGED SUB-TEST, and so the only real arithmetic:
+!       acc FK18 +4, FT FPK52 +2, mem FPK80 +2.  The product exponent
+!       is the SUM, +4, equal to the accumulator's, so nothing shifts
+!       and the two 96-bit fractions add directly:
+!         eb1a23eb1a23 7fffffffffff  (accumulator)
+!       + 14e5dc14e5dc 800000000000  (product)
+!       = ffffffffffff ffffffffffff  with no carry out
+!       and both halves are checked against FPK32's all-ones fraction.
+!
+! WHAT F216A CANNOT SEE, worked out before running and then MEASURED.
+! A1 is the only sub-test whose multiply operands share a flagged
+! range, so it is the only candidate for the memory-wins rule above --
+! and it cannot discriminate it either, because the addition discards
+! the product whether its exponent is FK67's +1791 or FK59's +1024;
+! the accumulator's +2047 beats both.  Injecting Figure 32's tie
+! direction in place of p.99's leaves all six sub-tests green, so the
+! one rule that makes *+ different from MULTIPLY is untested here.  Nothing here checks an indicator, so
+! the LC/LS/PSH/ZM wiring and p.99's generated-vs-propagated rule are
+! untouched.  And no sub-test has an exponent difference at all -- A6's
+! is zero and the other five never reach the addition's arithmetic --
+! so the preparatory shift, the >48 PSH threshold and the >95
+! not-added threshold are all untested here.
+!
+! TRANSCRIPTION NOTE: A5's exponent check is commented "+1026" in the
+! scan.  It compares against FK36, whose exponent field is +1024, and
+! p.99 gives the product the XFP operand's exponent, FK59's +1024 --
+! not the sum 1024+2.  FK36 is also used by F214XA1 as +1024, verified
+! there independently.  The comment digit is a misread; the check is
+! unambiguous.
+
+! -- SSIP framework substitutes: SERS (octal 1304) -> FAIL halt,
+! -- SEN (octal 1310) -> scratch.
+        SLC, (8)1304.0
+SERS    BEW, $
+        SLC, (8)1310.0
+SEN     DD(BU,64,8), 0
+
+! -- constants (pools pp.176-178) --
+        SLC, (8)22040.0
+FPK27   DD(BU,64,8), (8)1777677777777777777760
+        SLC, (8)22045.0
+FPK32   DD(BU,64,8), (8)0001177777777777777760
+        SLC, (8)22071.0
+FPK52   DD(BU,64,8), (8)0001024713560247135620
+        SLC, (8)22121.0
+FPK80   DD(BU,64,8), (8)0001100000000000000000
+        SLC, (8)22162.0
+FK16    DD(BU,64,8), (8)0001412345670123456700
+        SLC, (8)22164.0
+FK18    DD(BU,64,8), (8)0002165432107654321060
+        SLC, (8)22206.0
+FK36    DD(BU,64,8), (8)1000177777777777777760
+        SLC, (8)22235.0
+FK59    DD(BU,64,8), (8)1000024713560247135620
+FK60    DD(BU,64,8), (8)1000300000000000000000
+FK61    DD(BU,64,8), (8)1000224713560247135620
+        SLC, (8)22245.0
+FK67    DD(BU,64,8), (8)1577500000000000000000
+FK68    DD(BU,64,8), (8)1777565432107654321060
+FK69    DD(BU,64,8), (8)1777765432107654321060
+
+        SLC, (8)20312.0
+! F216A1 - exponents all XFP; the accumulator's +2047 survives
+SAP20   DL(U), FK68                          ! exp++2047
+        C0011(BU,48), FPK27+.12, 20
+        LFT(U), FK59                         ! exp++1024
+        *+(U), FK67                          ! exp++1791, adds product to acc.
+        CT0110(BU,60), FK68, 68              ! check result exp and high order fract
+        SIC, SEN
+        BRGZ, SERS
+        CT0110(BU,48), FPK27+.12, 20         ! check low order fract
+        SIC, SEN
+        BRGZ, SERS
+! F216A2 - XFN product against an N accumulator; N wins
+        DL(U), FK18                          ! exp++4
+        C0011(BU,48), FPK27+.12, 20
+        LFT(U), FK61                         ! exp+-1024
+        *+(U), FPK80                         ! exp++2
+        CT0110(BU,60), FK18, 68              ! check result exp and high order fract
+        SIC, SEN
+        BRGZ, SERS
+        CT0110(BU,48), FPK27+.12, 20         ! check low order fract
+        SIC, SEN
+        BRGZ, SERS
+! F216A3 - the same with the ranges swapped between FT and memory
+        DL(U), FK18                          ! exp++4
+        C0011(BU,48), FPK27+.12, 20
+        LFT(U), FPK52                        ! exp++2
+        *+(U), FK60                          ! exp+-1024
+        CT0110(BU,60), FK18, 68              ! check result exp and h o fract
+        SIC, SEN
+        BRGZ, SERS
+        CT0110(BU,48), FPK27+.12, 20         ! check low order fract
+        SIC, SEN
+        BRGZ, SERS
+! F216A4 - XFP product wins the addition; the product lands in the acc
+        DL(U), FK18                          ! exp++4
+        C0011(BU,48), FPK27+.12, 20
+        LFT(U), FK61                         ! exp+-1024
+        *+(U), FK67                          ! exp++1791
+        CT0110(BU,12), FK67, 116             ! check result exp++1791
+        SIC, SEN
+        BRGZ, SERS
+        CT0110(BU,48), FK16+.12, 68          ! check high order fract
+        SIC, SEN
+        BRGZ, SERS
+        CT0110(BU,48), FK67+.12, 20          ! check low order fract
+        SIC, SEN
+        BRGZ, SERS
+! F216A5 - XFP product over an XFN accumulator
+        DL(U), FK69                          ! exp+-2047
+        C0011(BU,48), FPK27+.12, 20
+        LFT(U), FK59                         ! exp++1024
+        *+(U), FPK80                         ! exp++2
+        CT0110(BU,12), FK36, 116             ! check result exp+ +1024 (see note)
+        SIC, SEN
+        BRGZ, SERS
+        CT0110(BU,48), FK16+.12, 68          ! check high order fract
+        SIC, SEN
+        BRGZ, SERS
+        CT0110(BU,48), FK67+.12, 20          ! check low order fract
+        SIC, SEN
+        BRGZ, SERS
+! F216A6 - all operands unflagged: the only real 96-bit addition
+        DL(U), FK18                          ! exp++4
+        C0011(BU,48), FPK27+.12, 20
+        LFT(U), FPK52                        ! exp++2
+        *+(U), FPK80                         ! exp++2
+        CT0110(BU,12), FK18, 116             ! test result exp++4
+        SIC, SEN
+        BRGZ, SERS
+        CT0110(BU,48), FPK32+.12, 68         ! test high order fract +1-s
+        SIC, SEN
+        BRGZ, SERS
+        CT0110(BU,48), FPK32+.12, 20         ! test low order fract +1-s
+        SIC, SEN
+        BRGZ, SERS
+PASS    BEW, $                               ! 020367.00: the block's exit "BD,$+1.0"
+        END, SAP20

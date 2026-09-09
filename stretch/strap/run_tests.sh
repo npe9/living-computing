@@ -911,6 +911,11 @@ run "FP load factor normalization modifier (jb_af1c F215F on the model)" ./run_p
     "PC=$(python3 -c 'from strap_asm import assemble; print(assemble(open("programs/fp_arith_f215f.strap").read()).symtab["PASS"]//32)')" \
     "SEN:712=0"
 
+run "FP multiply and add arithmetic (jb_af1c F216A, encoding)" python3 verify_fp_arith_f216a_listing.py
+run "FP multiply and add arithmetic (jb_af1c F216A on the model)" ./run_program.sh programs/fp_arith_f216a.strap StretchFpMulAddATb \
+    "PC=$(python3 -c 'from strap_asm import assemble; print(assemble(open("programs/fp_arith_f216a.strap").read()).symtab["PASS"]//32)')" \
+    "SEN:712=0"
+
 run "Program store compare: store then EXECUTE the modified instruction" ./run_program.sh programs/store_then_execute.strap StretchStoreExecTb \
     "RESULT:$(python3 -c 'from strap_asm import assemble; print(assemble(open("programs/store_then_execute.strap").read()).symtab["RESULT"]//64)')=0x20"
 

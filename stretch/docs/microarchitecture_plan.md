@@ -1665,6 +1665,85 @@ hand vectors alone. "Enables" notes the dependency chain.
    Then D/, which needs a divide box -- Piccolo's mkMBox/mkFPU idiom,
    plan steps 2-3.
 
+   *+ (MULTIPLY AND ADD) IMPLEMENTED, F216A DONE (6 sub-tests), suite
+   192. It really is fpMulDouble feeding fpAddDouble, and the two
+   existing functions covered it with no change to either -- the arm is
+   the composition plus the indicator wiring. It needed one new storage
+   method, a combinational readFactor() alongside readAccLeft/Right,
+   because *+ is the only operation that READS word 14.
+
+   THE ONE PLACE *+ DIFFERS FROM MULTIPLY IS AN ARGUMENT ORDER. p.99:
+   "When both operands are in the XFP range or both in the XFN range,
+   the product exponent is the exponent of the operand specified by the
+   EFFECTIVE ADDRESS" -- where Fig.32, and so fpMul and D*, give it to
+   the accumulator-side operand. fpExpRangeWinner resolves a same-range
+   pair to its FIRST argument, and nothing else in fpMulDouble is
+   asymmetric (the sign is an xor, the fraction a product, the
+   unflagged exponent a sum), so fpMulDouble(opnd, ftv) IS the rule.
+   Worth noting it is not a tie-break: p.99 gives the effective address
+   the exponent whatever the two magnitudes are.
+
+   p.99's GENERATED/PROPAGATED RULE NEEDED NO CODE, which is worth
+   recording because it looks like it should. Its three clauses map
+   onto the composition exactly: "generated if all operands are
+   initially in the N range" is fpAddDouble's unflagged path; the
+   second clause -- an XFN product with a propagated flag against an N
+   accumulator, the sum reaching EF 1 / ES 1 "owing to final
+   normalization" -- is its FLAGGED path, where an unflagged survivor
+   still normalizes and fpMakeExp reports the underflow, and
+   fpRangeBits' propagated arm requires es == 0 so an es == 1 result
+   falls through to the generated one; "all other cases lead to a
+   propagated EF of 1" is r.propagated = (res.ef == 1). Checked against
+   the code before writing the arm rather than assumed.
+
+   A6 IS THE ONLY SUB-TEST THAT DOES ARITHMETIC. A1-A3 are range-table
+   cases where the accumulator survives and A4-A5 ones where the
+   product wins whole; only A6 has every operand unflagged, and its
+   product exponent equals the accumulator's so nothing even shifts:
+     eb1a23eb1a23 7fffffffffff   (accumulator, DL + a C0011 of FPK27)
+   + 14e5dc14e5dc 800000000000   (product, FPK52 x FPK80)
+   = ffffffffffff ffffffffffff   no carry out
+   and both halves are checked against FPK32. So F216A pins the range
+   tables and the 96-bit product placement; the preparatory shift, the
+   >48 PSH threshold and the >95 not-added threshold are all untouched
+   here, as is every indicator.
+
+   THREE INJECTIONS, TWO PREDICTED AND ONE WRONG IN A WAY WORTH
+   KEEPING:
+     Fig.32 tie direction        predicted ALL PASS   ALL PASSED
+       (accumulator wins)
+     multiplicand from the acc   predicted A4 halt    halted A2 020325.00
+       instead of FT
+     accumulator low half zero   predicted A1 halt    halted A1 020320.40
+
+   THE FIRST IS THE MEASUREMENT. A1 is the only sub-test whose two
+   multiply operands share a flagged range, so it is the only candidate
+   for the memory-wins rule -- and it cannot discriminate it either,
+   because the addition discards the product whichever exponent it
+   carries: FK68's +2047 beats both FK67's +1791 and FK59's +1024. So
+   the one rule that makes *+ different from MULTIPLY is UNTESTED by
+   F216A, measured rather than argued. Whether F216B reaches it is the
+   next thing to find out.
+
+   WHY THE SECOND PREDICTION WAS WRONG, and it is a new instance of an
+   old rule rather than a new rule. I predicted A4 on the grounds that
+   "A1-A3's products are discarded, so a wrong multiplicand cannot
+   show" -- which is true OF THE CORRECT MODEL. Under the fault the
+   multiplicand becomes the ACCUMULATOR, and in A2 that swaps FK61
+   (XFN) for FK18 (N), so both multiply operands are now unflagged, the
+   product is no longer in a flagged range, and the addition stops
+   discarding it. The fault moved an operand between range classes and
+   thereby changed which branch the sub-test takes.
+
+   So: A BRANCH UPSTREAM MAKES A DOWNSTREAM LINE UNREACHABLE FOR THE
+   INPUTS IN PLAY (F214D) has a converse -- AN INJECTION CAN CHANGE
+   WHICH BRANCH IS TAKEN, so a prediction must re-run the range logic
+   UNDER THE FAULT, not under the correct model. Both halves of this
+   are about the same mistake: reasoning about control flow from the
+   wrong version of the program.
+
+
+
    Its prologue is FSR1 (015772.00) and F210A1 begins at SAP11
    (015775.00): DL(U) FPK26, C0011 FK40+.12 into offset 20, then
    SRD(U) ROS, L(BU) FK35, CT0110(BU,60) ROS,4 -- "error if 1 not

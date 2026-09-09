@@ -119,6 +119,12 @@ interface StretchStorage;
   method Word64 readAccLeft();
   method Word64 readAccRight();
   method Word64 readAccSign();   // address 10, the accumulator sign byte register
+  // Address 14, the factor register. MULTIPLY AND ADD reads it as its
+  // multiplicand (Ref. Manual p.98) and needs it in the same cycle it
+  // executes, exactly as it needs the accumulator, so it gets the same
+  // combinational treatment. Word 14 is Reg-backed for the same reason
+  // 8-10 are: 0-31 never move to BRAM.
+  method Word64 readFactor();
 endinterface
 
 // mkStretchStorage: the CPU's view of storage. Addresses 0-31 are
@@ -411,6 +417,10 @@ module mkStretchStorage(StretchStorage);
 
   method Word64 readAccRight();
     return accRight;
+  endmethod
+
+  method Word64 readFactor();
+    return factor;
   endmethod
 
 endmodule
