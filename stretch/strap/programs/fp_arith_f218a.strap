@@ -30,6 +30,11 @@
 !   A5  FK126 +1791 XFP, ODD      -> FK74   +1791 unchanged
 !   A6  FK75  +1024 XFP           -> FK76   +1024 unchanged
 !   A7  FK78  -1024 XFN           -> FK60   -1024 unchanged
+!   A8  FK127 -2047 XFN, ODD      -> FK80   -2047 unchanged
+!   A9  FK75  SRT(N), XFP          -> FK76   (normalization suppressed)
+!   A10 FK78  SRT(N), XFN          -> FK60   (normalization suppressed)
+!   A11 FK81  SRT(N), N range      -> FK82   (normalized)
+!   A12 FK135 negative radicand    -> FK136  (IR on, stored sign +)
 !
 ! HOW THE CHECK IS ARRANGED.  Each sub-test loads the EXPECTED result
 ! into the accumulator's right word with an L(BU,64), then the operand
@@ -44,7 +49,26 @@
 ! sixth floating-point operation that stores to its effective address,
 ! after ST, M+, M+MG, SRD and SLO.
 !
-! All seven were computed from the constants before the block was run,
+! A9-A11 TEST THE NORMALIZATION MODIFIER, and A12 the imaginary root.
+! p.93 suppresses normalization for XFP and XFN, so A9 and A10 are
+! SRT(N) whose answers are A6's and A7's unchanged ("error if result
+! norm"); A11 is the N-range case that must normalize.
+!
+! A12 IS THE ONE ROW THAT PINS THE NEGATIVE SIGN MODIFIER'S RULE.  Its
+! radicand FK135 has a NEGATIVE sign, so p.93 turns the imaginary root
+! indicator on -- and the root is still taken.  The comparison is a
+! full 64-bit CT0110, so it covers bit 60, and FK136's sign is ZERO:
+! "The negative sign modifier is applied to the result of the square
+! root process as in the store operation.  When this modifier is zero,
+! the sign of the stored result is positive."  The radicand's sign
+! never reaches the stored word.
+!
+! WHAT A12 DOES NOT DO is check IR itself.  Its BIRZ branches to $+.32,
+! which is the very next half word, so both paths continue to the same
+! place -- the branch is there to CLEAR IR on the way out, not to test
+! it.  So SRT sets IR and nothing in F218 ever looks at it.
+!
+! All twelve were computed from the constants before the block was run,
 ! with the fraction root taken as the integer square root of the
 ! fraction extended with 48 low-order zeros, which is p.93's "during
 ! the process the fraction is extended with low-order zeros".
@@ -74,8 +98,16 @@ FK74    DD(BU,64,8), (8)1577440000000000000000
 FK75    DD(BU,64,8), (8)1000010000000000000000
 FK76    DD(BU,64,8), (8)1000040000000000000000
 FK78    DD(BU,64,8), (8)1000240000000000000000
+        SLC, (8)22261.0
+FK80    DD(BU,64,8), (8)1777620000000000000000
+FK81    DD(BU,64,8), (8)0005010000000000000000
+FK82    DD(BU,64,8), (8)0002100000000000000000
         SLC, (8)22337.0
 FK126   DD(BU,64,8), (8)1577420000000000000000
+FK127   DD(BU,64,8), (8)1777604000000000000000
+        SLC, (8)22350.0
+FK135   DD(BU,64,8), (8)0707070707070670707070
+FK136   DD(BU,64,8), (8)0343525252525237777760
         SLC, (8)22355.0
 ROS     DD(BU,64,8), 0
 
@@ -135,5 +167,43 @@ SAP24   B, $+.32
         CT0110(BU,64), ROS                   ! check result exp +-1024 and,
         SIC, SEN
         BRGZ, SERS                           ! result fraction is .01000...
-PASS    BEW, $                               ! 021311.40
+! F218A8 - exp +-2047 XFN, ODD: fraction halves, exponent does not
+        B, $+.32
+        L(BU,64), FK80
+        L(U), FK127                          ! exp +-2047
+        SRT(U), ROS
+        CT0110(BU,64), ROS                   ! check result exp +-2047 and,
+        SIC, SEN
+        BRGZ, SERS                           ! result fraction is .001000...
+! F218A9 - test normalization modifier, exp in XFP range: SUPPRESSED
+        L(BU,64), FK76
+        L(U), FK75
+        SRT(N), ROS
+        CT0110(BU,64), ROS
+        SIC, SEN
+        BRGZ, SERS                           ! error if result norm
+! F218A10 - exp in XFN range: SUPPRESSED
+        B, $+.32
+        L(BU,64), FK60
+        L(U), FK78
+        SRT(N), ROS
+        CT0110(BU,64), ROS
+        SIC, SEN
+        BRGZ, SERS                           ! error if result norm
+! F218A11 - exponent in N range: NORMALIZED
+        L(BU,64), FK82
+        L(U), FK81
+        SRT(N), ROS
+        CT0110(BU,64), ROS
+        SIC, SEN
+        BRGZ, SERS                           ! error if result not norm
+! F218A12 - IMAGINARY ROOT, exponent in N range, fraction sign neg
+        L(U), FK135
+        SRT(U), ROS
+        L(BU,64), FK136
+        CT0110(BU,64), ROS
+        SIC, SEN
+        BRGZ, SERS
+        BIRZ, $+.32                          ! clear IR before leaving
+PASS    BEW, $                               ! 021337.00: the block's exit "BD,$+1.0"
         END, SAP24

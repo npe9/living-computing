@@ -2185,7 +2185,36 @@ hand vectors alone. "Enables" notes the dependency chain.
    The check arrangement is neat enough to record: each sub-test loads
    the EXPECTED answer into the accumulator's RIGHT word and the
    operand into the LEFT, so one accumulator holds both the question
-   and the answer, and the comparison is ROS against the right word. Then R/, D/ and SRT -- R/ is
+   and the answer, and the comparison is ROS against the right word.
+
+   F218A EXTENDED TO ALL TWELVE SUB-TESTS (p.166 had A8-A12), suite
+   228, still first run. A8 is the odd-exponent flagged rule again at
+   -2047. A9-A11 are the normalization modifier: SRT(N) suppressed for
+   XFP and XFN, applied in the N range. A12 is the imaginary root.
+
+   A12 SHARPENS WHAT I HAD RECORDED. When only A1-A7 were transcribed I
+   noted that nothing exercised SRT's two sign modifiers or IR. A12
+   does exercise one of them: its radicand FK135 is NEGATIVE, and the
+   comparison is a full 64-bit CT0110 covering bit 60, where FK136's
+   sign is ZERO. That is p.93's "the negative sign modifier is applied
+   to the result of the square root process as in the store operation.
+   When this modifier is zero, the sign of the stored result is
+   positive" -- the radicand's sign never reaches the stored word.
+
+   BUT A12 STILL DOES NOT CHECK IR. Its BIRZ branches to $+.32, the
+   very next half word, so both paths continue to the same place: the
+   branch is there to CLEAR IR on the way out, not to test it. SRT sets
+   IR and nothing in F218A reads it.
+
+   Next: F218B "SIGN AND MODIFIER COMBINATIONS" (p.167 on), which is
+   where the modifiers are actually driven -- and it needs assembler
+   work first. The mnemonics are SRT / SRTA / SNRT / SNRTA, printing
+   .46 / .66 / .56 / .76, so the NEGATIVE modifier is spelled by an "N"
+   INSIDE the name ("Store Negative RooT") rather than as a trailing
+   suffix. strip_fp_sign handles SRTA already (the remainder SRT is in
+   FP_CODES) but not SNRT or SNRTA; they need the same explicit
+   treatment as M-/M-A and the E+AI/E-I/E-AI family. That is the third
+   mnemonic family whose modifier letters do not sit at the end. Then R/, D/ and SRT -- R/ is
    p.94's "same process with dividends and divisors interchanged" and
    falls out of fpDiv, but it waits for a block that drives it. p.99
    also gives the remainder register a role nothing uses yet; D/ is
