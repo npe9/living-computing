@@ -695,6 +695,18 @@ def strip_fp_sign(op):
     # p.55-58): M- is M+ with the negative sign modifier (printed code
     # 22355.50 A0 vs M+'s .40), M-A is M+ with both (.70; M+A is .60).
     # Same pocket-card rule as "-" being "+" with the N modifier.
+    # STORE ROOT's negative form puts its N INSIDE the mnemonic: SRT is
+    # the plain store, SRTA takes the absolute modifier (and is reached
+    # by the suffix loop above, SRT being a real FP op), but the
+    # negative one is spelled "Store Negative RooT".  jb_af1c F218B
+    # prints SRT .46, SRTA .66, SNRT .56 and SNRTA .76, so SNRT is SRT
+    # with the invert-sign modifier and SNRTA with both.  Third family
+    # in this file whose modifier letters are not a trailing suffix,
+    # after the written-minus forms below and E+AI/E-I/E-AI.
+    if op == "SNRT":
+        return ("SRT", 0, 1)
+    if op == "SNRTA":
+        return ("SRT", 1, 1)
     if op == "M-":
         return ("M+", 0, 1)
     if op == "M-A":

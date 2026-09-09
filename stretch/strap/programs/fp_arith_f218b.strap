@@ -1,0 +1,140 @@
+! jb_af1c F218 "STORE ROOT TEST", sub-block F218B "SIGN AND MODIFIER
+! COMBINATIONS", pp.167-168 (octal 021341.00-021424.40, the block's own
+! exit "BD,$+1.0").  Continues fp_arith_f218a.strap.
+!
+! Eight rows over the listing's own axes -- "ACS+ACC. SIGN, N AND A ARE
+! MODIFIERS" -- and they exist to pin one sentence of p.93: "The
+! negative sign modifier is applied to the result of the square root
+! process as in the store operation.  When this modifier is zero, the
+! sign of the stored result is positive.  When this modifier is one,
+! the sign of the stored result is negative."
+!
+! SO THE STORED SIGN IS THE MODIFIER AND NOTHING ELSE.  B1-B4 take the
+! root of a POSITIVE accumulator and B5-B8 of a NEGATIVE one (the LN
+! load inverts it), and within each group the answer follows N alone:
+! B1, B2, B5, B6 store positive and B3, B4, B7, B8 negative.  The
+! accumulator's own sign never reaches the stored word, which is the
+! whole point of the B5-B8 half.
+!
+! THE MNEMONICS PUT THE NEGATIVE MODIFIER INSIDE THE NAME.  SRT is the
+! plain store, SRTA takes the absolute modifier, and the negative forms
+! are SNRT and SNRTA -- "Store Negative RooT" -- printing .46, .66, .56
+! and .76.  strip_fp_sign reaches SRTA through its ordinary suffix loop
+! but needed explicit entries for SNRT and SNRTA, the third family here
+! whose modifier letters are not a trailing suffix.
+!
+! Each row also re-checks the exponent and fraction with a 60-bit
+! CT0110 at offset 4, against F218A2's answer (B1, B2) or F218A4's
+! (B3-B8), so a modifier that disturbed the arithmetic would show.
+!
+! TRANSCRIPTION NOTE: the scan prints B5's first SIC at "021409.00",
+! which is not an octal address at all.  The chain from B5's B,$+.32 at
+! 021372.40 puts it at 021400.00, and every row after it lands on its
+! printed address from there.
+
+! -- SSIP framework substitutes: SERS (octal 1304) -> FAIL halt,
+! -- SEN (octal 1310) -> scratch.
+        SLC, (8)1304.0
+SERS    BEW, $
+        SLC, (8)1310.0
+SEN     DD(BU,64,8), 0
+
+! -- constants (pool p.177) --
+        SLC, (8)22112.0
+FPK71   DD(BU,64,8), (8)0030000000000000001420
+FPK72   DD(BU,64,8), (8)0001560000000000000000
+FPK73   DD(BU,64,8), (8)0030000000000000000400
+FPK74   DD(BU,64,8), (8)0001500000000000000000
+        SLC, (8)22355.0
+ROS     DD(BU,64,8), 0
+
+        SLC, (8)21341.0
+! F218B1 - ACS+N+A+0
+F218B   L(BU,64), FPK72
+        L(N), FPK71
+        SRT(U), ROS
+        CT0110(BU,60), ROS, 4                ! test result exp and fract.
+        SIC, SEN
+        BRGZ, SERS
+        BZB, ROS+.60, $+2.0                 ! is sign bit 0
+        SIC, SEN
+        B, SERS
+! F218B2 - ACS+N+0, A+1
+        B, $+.32
+        L(BU,64), FPK72
+        L(N), FPK71
+        SRTA(U), ROS
+        CT0110(BU,60), ROS, 4                ! test result exp and fract.
+        SIC, SEN
+        BRGZ, SERS
+        BZB, ROS+.60, $+2.0                 ! is sign bit 0
+        SIC, SEN
+        B, SERS
+! F218B3 - ACS+A+0, N+1
+        B, $+.32
+        L(BU,64), FPK74
+        L(N), FPK73
+        SNRT(U), ROS
+        CT0110(BU,60), ROS, 4                ! test result exp and fract.
+        SIC, SEN
+        BRGZ, SERS
+        BB, ROS+.60, $+2.0                  ! is sign bit 1
+        SIC, SEN
+        B, SERS
+! F218B4 - ACS+0, N+A+1
+        B, $+.32
+        L(BU,64), FPK74
+        L(N), FPK73
+        SNRTA(U), ROS
+        CT0110(BU,60), ROS, 4                ! test result exp and fract.
+        SIC, SEN
+        BRGZ, SERS
+        BB, ROS+.60, $+2.0                  ! is sign bit 1
+        SIC, SEN
+        B, SERS
+! F218B5 - ACS+1, N+A+0
+        B, $+.32
+        L(BU,64), FPK74
+        LN(N), FPK73
+        SRT(U), ROS
+        CT0110(BU,60), ROS, 4                ! test result exp and fract.
+        SIC, SEN
+        BRGZ, SERS
+        BZB, ROS+.60, $+2.0                 ! is sign bit 0
+        SIC, SEN
+        B, SERS
+! F218B6 - ACS+A+1, N+0
+        B, $+.32
+        L(BU,64), FPK74
+        LN(N), FPK73
+        SRTA(U), ROS
+        CT0110(BU,60), ROS, 4                ! test result exp and fract.
+        SIC, SEN
+        BRGZ, SERS
+        BZB, ROS+.60, $+2.0                 ! is sign bit 0
+        SIC, SEN
+        B, SERS
+! F218B7 - ACS+N+1, A+0
+        B, $+.32
+        L(BU,64), FPK74
+        LN(N), FPK73
+        SNRT(U), ROS
+        CT0110(BU,60), ROS, 4                ! test result exp and fract.
+        SIC, SEN
+        BRGZ, SERS
+        BB, ROS+.60, $+2.0                  ! is sign bit 1
+        SIC, SEN
+        B, SERS
+! F218B8 - ACS+N+A+1
+        B, $+.32
+        L(BU,64), FPK74
+        LN(N), FPK73
+        SNRTA(U), ROS
+        CT0110(BU,60), ROS, 4                ! test result exp and fract.
+        SIC, SEN
+        BRGZ, SERS
+        BB, ROS+.60, $+2.0                  ! is sign bit 1
+        SIC, SEN
+        B, SERS
+PASS    BEW, $                               ! 021424.40: the block exit "BD,$+1.0"
+        END, F218B

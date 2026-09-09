@@ -1001,6 +1001,21 @@ run "FP store root arithmetic (jb_af1c F218A on the model)" ./run_program.sh pro
     "PC=$(python3 -c 'from strap_asm import assemble; print(assemble(open("programs/fp_arith_f218a.strap").read()).symtab["PASS"]//32)')" \
     "SEN:712=0"
 
+run "FP store root sign and modifiers (jb_af1c F218B, encoding)" python3 verify_fp_arith_f218b_listing.py
+run "FP store root sign and modifiers (jb_af1c F218B on the model)" ./run_program.sh programs/fp_arith_f218b.strap StretchFpSqrtBTb \
+    "PC=$(python3 -c 'from strap_asm import assemble; print(assemble(open("programs/fp_arith_f218b.strap").read()).symtab["PASS"]//32)')" \
+    "SEN:712=0"
+
+run "FP store root unchanged regs (jb_af1c F218C, encoding)" python3 verify_fp_arith_f218c_listing.py
+run "FP store root unchanged regs (jb_af1c F218C on the model)" ./run_program.sh programs/fp_arith_f218c.strap StretchFpSqrtCTb \
+    "PC=$(python3 -c 'from strap_asm import assemble; print(assemble(open("programs/fp_arith_f218c.strap").read()).symtab["PASS"]//32)')" \
+    "SEN:712=0"
+
+run "FP store root indicators (jb_af1c F218D, encoding)" python3 verify_fp_arith_f218d_listing.py
+run "FP store root indicators (jb_af1c F218D on the model)" ./run_program.sh programs/fp_arith_f218d.strap StretchFpSqrtDTb \
+    "PC=$(python3 -c 'from strap_asm import assemble; print(assemble(open("programs/fp_arith_f218d.strap").read()).symtab["PASS"]//32)')" \
+    "SEN:712=0"
+
 run "Program store compare: store then EXECUTE the modified instruction" ./run_program.sh programs/store_then_execute.strap StretchStoreExecTb \
     "RESULT:$(python3 -c 'from strap_asm import assemble; print(assemble(open("programs/store_then_execute.strap").read()).symtab["RESULT"]//64)')=0x20"
 

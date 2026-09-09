@@ -1,0 +1,54 @@
+! jb_af1c F218 "STORE ROOT TEST", sub-block F218D "TESTS OF
+! INDICATORS", p.168 (octal 021440.00-021444.40, the block's own exit
+! "B,$+1.").  Continues fp_arith_f218c.strap and finishes F218 -- and
+! with it the floating-point diagnostic.
+!
+! One sub-test, two questions, and between them they close the last gap
+! F218A left open.  p.93/95 for SRT: "To-Memory Operation (MOP).  This
+! indicator is set to ONE" -- SRT is the only floating-point operation
+! that sets MOP rather than clearing it, apart from the other stores --
+! and "Imaginary Root (IR).  This indicator is turned on when the
+! accumulator sign, as modified by the absolute sign modifier, is
+! negative."
+!
+! An LN load makes the accumulator negative, Z,$IND clears the
+! indicator word, a plain SRT (no absolute modifier, so IR is not
+! suppressed) runs, and both indicators must come on.  F218A12 set IR
+! and then cleared it with a BIRZ without ever asking; this is where it
+! is asked.
+!
+! The trailing Z,$IND leaves the indicator word clean for whatever
+! follows, which matters because IR is permanent.
+!
+! TRANSCRIPTION NOTE: the source column reads "LN%N=,FPK72" but the
+! printed code is 22114.10 60, and 022114 is FPK73, not FPK72 (022113).
+! Transcribed from the PRINTED CODE, as F214C2's similar disagreement
+! was.  It cannot change the test: both constants are positive before
+! the LN inverts them, and nothing here checks the root's value.
+
+! -- SSIP framework substitutes: SERS (octal 1304) -> FAIL halt,
+! -- SEN (octal 1310) -> scratch.
+        SLC, (8)1304.0
+SERS    BEW, $
+        SLC, (8)1310.0
+SEN     DD(BU,64,8), 0
+
+! -- constants (pool p.177) --
+        SLC, (8)22114.0
+FPK73   DD(BU,64,8), (8)0030000000000000000400
+        SLC, (8)22355.0
+ROS     DD(BU,64,8), 0
+
+        SLC, (8)21440.0
+! F218D - test MOP and IR indicators on
+F218D   B, $+.32
+        LN(N), FPK73                         ! accumulator sign made negative
+        Z, $IND
+        SRT(U), ROS
+        SIC, SEN
+        BZMOP, SERS                          ! error if MOP indicator off
+        SIC, SEN
+        BZIR, SERS                           ! error if IR off
+        Z, $IND
+PASS    BEW, $                               ! 021444.40: the block's exit "B,$+1."
+        END, F218D

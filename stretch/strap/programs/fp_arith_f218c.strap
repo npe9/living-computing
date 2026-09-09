@@ -1,0 +1,49 @@
+! jb_af1c F218 "STORE ROOT TEST", sub-block F218C "TEST UNCHANGED
+! REGISTERS", p.168 (octal 021426.40-021437.40).  Continues
+! fp_arith_f218b.strap; F218D follows at 021440.00, so this block has
+! no exit branch of its own.
+!
+! p.95: "The entire accumulator and its sign byte remain unchanged."
+! SRT is the only floating-point operation of which that is true
+! without exception -- every other store still writes an indicator or a
+! sign somewhere -- so this is the only unchanged-registers block in
+! the whole diagnostic that checks the WHOLE EIGHT-BIT SIGN BYTE, bit 4
+! included.  F214XB, F216C and F217WD all had to skip bit 4 because
+! their operations put a result sign there.
+!
+!   C1  does L 0-63 remain +1 s
+!   C2  does R 0-63 remain +1 s
+!   C3  does SB 0-7 remain +1 s
+!
+! The SRT is SRTA -- the absolute modifier -- so the imaginary root
+! indicator cannot come on and the block tests only what it means to.
+
+! -- SSIP framework substitutes: SERS (octal 1304) -> FAIL halt,
+! -- SEN (octal 1310) -> scratch.
+        SLC, (8)1304.0
+SERS    BEW, $
+        SLC, (8)1310.0
+SEN     DD(BU,64,8), 0
+
+! -- constants (pool p.176) --
+        SLC, (8)22006.0
+FPK1    DD(BU,64,8), (8)1777777777777777777777
+        SLC, (8)22355.0
+ROS     DD(BU,64,8), 0
+
+        SLC, (8)21426.40
+F218C   C1111(BU,64), FPK1, 64               ! left word <- all ones
+        C1111(BU,64), FPK1                   ! right word <- all ones
+        CM1111(BU,8), $SB                    ! sign byte <- all ones
+        SRTA(U), ROS
+        CT1010(BU,64), FPK1, 64              ! does L 0-63 remain +1 s
+        SIC, SEN
+        BRGZ, SERS
+        CT1010(BU,64), FPK1                  ! does R 0-63 remain +1 s
+        SIC, SEN
+        BRGZ, SERS
+        CT1100(BU,8), $SB                    ! does SB 0-7 remain +1 s
+        SIC, SEN
+        BRGZ, SERS
+PASS    BEW, $                               ! 021440.00: F218D's first instruction
+        END, F218C
