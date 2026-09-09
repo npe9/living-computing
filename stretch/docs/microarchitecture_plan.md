@@ -2060,9 +2060,53 @@ hand vectors alone. "Enables" notes the dependency chain.
    exponent underflowing past -1024, which is exactly what the
    dividend-exponent-less-48 rule can produce.
 
-   Next: F217WB/WC/WD, then WE with the RU indicator. After that only
-   R/ and SRT remain; R/ is p.94's "same process with dividends and
-   divisors interchanged" and falls out of fpDiv. Then R/, D/ and SRT -- R/ is
+   F217-W COMPLETE (WA 7, WB 4, WC 1, WD 1, WE 2), suite 216, and
+   checked: p.162 begins F217-XA "RECIPROCAL DIVIDE TESTS", so WE is
+   the last sub-block.
+
+   WA, WC AND WD ARE p.94's WRITEBACK RULE FROM ALL THREE SIDES -- what
+   D/ writes (quotient in accumulator 0-60 including the 49th bit, and
+   the remainder in word 13), what it ZEROES (61-107), and what it
+   LEAVES (108-127 and every sign byte bit but 4). WC and WD are the
+   telling pair: from the same all-ones accumulator, WC demands 61-107
+   become zero and WD demands 108-127 stay ones, so between them the
+   boundary sits exactly where the manual puts it.
+
+   F217WE ADDED THE RU INDICATOR (34, remainder underflow), the last
+   indicator in the floating-point set with no writer. Two rows, and
+   the pair is the whole definition: WE1 divides FK98 (-1021) by FK97
+   (-1022), both unflagged, so the remainder exponent is the adjusted
+   dividend exponent less 48 = -1070 -- out of range by GENERATION, and
+   the listing says so: "REMAINDER EXP. HAS GENERATED EF+1, ES+1". WE2
+   reuses F217WA1's flagged pair, whose remainder exponent is the
+   dividend's own +1028: EF of 1 but PROPAGATED and positive. RU on,
+   then RU off.
+
+   In the model that is fpMakeExp's generated flag together with
+   es == 1 -- the same test fpRangeBits uses to tell XPU from XPFP, now
+   applied to the remainder. MEASURED with two injections, both
+   predicted:
+     RU on any out-of-range remainder exponent  halted WE2  021125.40
+     RU never set                               halted WE1  021123.00
+   The first is the one that matters: WE2's remainder exponent IS out
+   of range, just positive, so a model that only asked "is it out of
+   range" passes WE1 and fails only there.
+
+   EACH WE ROW OPENS WITH A BRUZ, the fourth class-P indicator in this
+   diagnostic that the authors clear before testing (PSH, LC, PF, RU).
+   WE2 is the row asking for RU OFF, so it is precisely the one a stale
+   indicator would break -- the same shape as F216B's masked injection,
+   guarded against here by the listing itself.
+
+   Next: F217-XA "RECIPROCAL DIVIDE TESTS" (p.162, 8 sub-tests
+   mirroring F217A with the operands interchanged), which drives R/.
+   p.94: "The operand specified by the effective address, the dividend,
+   is divided by the operand in the left half of the accumulator, the
+   divisor... the same as the process described in DIVIDE with the
+   exception of the interchange of the operands." So the arm is
+   fpDiv(opnd, acc) rather than fpDiv(acc, opnd), and the sign
+   modifiers still land on the addressed operand -- which for R/ is the
+   DIVIDEND. After that only SRT remains. Then R/, D/ and SRT -- R/ is
    p.94's "same process with dividends and divisors interchanged" and
    falls out of fpDiv, but it waits for a block that drives it. p.99
    also gives the remainder register a role nothing uses yet; D/ is

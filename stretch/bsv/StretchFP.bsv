@@ -879,6 +879,8 @@ typedef struct {
   Bool     zd;
   Bool     pf;
   Bool     lc;
+  Bool     ru;        // remainder underflow: the REMAINDER exponent is
+                      // <= -1024 by GENERATION, not by propagation
   Bit#(7)  lzc;
   Bool     generated;
   Bool     propagated;
@@ -917,7 +919,7 @@ typedef struct {
 function FpDivDblResult fpDivDouble(FpDouble dvd, FpNum dvs, Bool normalized, Bool noisy);
   FpNum z = fpdHead(dvd);
   FpDivDblResult r = FpDivDblResult { res: z, q49: 0, rem: z, zd: False, pf: False,
-                                      lc: False, lzc: 0, generated: False,
+                                      lc: False, ru: False, lzc: 0, generated: False,
                                       propagated: False };
   if (dvs.frac == 0) begin
     r.zd = True;
@@ -979,6 +981,16 @@ function FpDivDblResult fpDivDouble(FpDouble dvd, FpNum dvs, Bool normalized, Bo
   Int#(14) rexp = flagged ? fpExpFull(fpdHead(dvd)) : (de - 48);
   let {rh, rg} = fpMakeExp(rexp, remFrac, dvd.sign, 3'b0);
   r.rem = rh;
+  // REMAINDER UNDERFLOW (RU, indicator 34): the remainder exponent has
+  // gone at or below -1024 by GENERATION.  jb_af1c F217WE is built to
+  // separate that from a merely propagated flag: WE1 divides FK98
+  // (-1021) by FK97 (-1022), both unflagged, so the remainder exponent
+  // is the adjusted dividend exponent less 48 = -1070 and RU must come
+  // on; WE2 uses F217WA1's flagged pair, whose remainder exponent is
+  // the dividend's own +1028 -- EF of 1 but PROPAGATED and positive --
+  // and RU must stay off.  fpMakeExp's generated flag with es == 1 is
+  // exactly that distinction.
+  r.ru = rg && (rh.es == 1);
 
   r.pf  = !normalized && (lzc > 0);
   r.lzc = (lzc < 0) ? 0 : truncate(pack(lzc));

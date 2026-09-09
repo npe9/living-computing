@@ -1,0 +1,64 @@
+! jb_af1c F217-W "DIVIDE DOUBLE TEST", sub-block F217WE "REMAINDER
+! UNFLO IND TESTS", pp.160-161 (octal 021120.40-021125.40, the block's
+! own exit "BD,$+1.0").  Continues fp_arith_f217wd.strap and finishes
+! F217-W -- and with it the floating-point routine.
+!
+! Two sub-tests, and between them they are the whole definition of the
+! REMAINDER UNDERFLOW indicator (RU, number 34, "E <= -2^10").  The
+! point is not that a remainder exponent can be out of range but that
+! RU distinguishes HOW it got there:
+!
+!   WE1  "RU IND OFF TO ON".  FK98 (-1021) over FK97 (-1022), both in
+!        the N range.  The remainder exponent is the adjusted dividend
+!        exponent less 48 = -1070, which is out of range by GENERATION,
+!        and the listing says so in its own comment: "REMAINDER EXP.
+!        HAS GENERATED EF+1, ES+1".  BZRU -- error if RU off.
+!   WE2  "RU IND OFF TO OFF".  FK83 over FK59, which is F217WA1's pair.
+!        Both are flagged, so the remainder exponent is the DIVIDEND's
+!        own +1028: EF of 1, but PROPAGATED and positive.  BRU -- error
+!        if RU on.
+!
+! So a propagated flag must NOT set RU and a generated underflow must.
+! In the model that is exactly fpMakeExp's generated flag taken
+! together with es == 1, which is the same test fpRangeBits uses to
+! tell XPU from XPFP -- the remainder gets the treatment the quotient
+! exponent already had.
+!
+! EACH ROW OPENS WITH A BRUZ to clear RU first.  RU is permanent, like
+! PSH, LC and PF, so WE2 would otherwise inherit WE1's setting and pass
+! for the wrong reason -- and WE2 is the row that asks for RU to be
+! OFF, so it is precisely the one that a stale indicator would break.
+! That is the fourth place in this diagnostic where the authors clear a
+! class-P indicator before testing it.
+
+! -- SSIP framework substitutes: SERS (octal 1304) -> FAIL halt,
+! -- SEN (octal 1310) -> scratch.
+        SLC, (8)1304.0
+SERS    BEW, $
+        SLC, (8)1310.0
+SEN     DD(BU,64,8), 0
+
+! -- constants (pool p.178) --
+        SLC, (8)22235.0
+FK59    DD(BU,64,8), (8)1000024713560247135620
+        SLC, (8)22264.0
+FK83    DD(BU,64,8), (8)1002051627340516273440
+        SLC, (8)22302.0
+FK97    DD(BU,64,8), (8)0777251627340516273440
+FK98    DD(BU,64,8), (8)0776624713560247135620
+
+        SLC, (8)21120.40
+! F217WE1 - RU ind off to on: remainder exp has GENERATED EF+1, ES+1
+MID10   DL(U), FK98
+        BRUZ, $+.32
+        D/(U), FK97
+        SIC, SEN
+        BZRU, SERS                           ! error if RU off
+! F217WE2 - RU ind off to off: remainder exp has PROPAGATED EF+1
+        DL(U), FK83
+        BRUZ, $+.32
+        D/(U), FK59
+        SIC, SEN
+        BRU, SERS                            ! error if RU on
+PASS    BEW, $                               ! 021125.40: the block's exit "BD,$+1.0"
+        END, MID10

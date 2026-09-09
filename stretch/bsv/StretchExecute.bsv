@@ -2093,6 +2093,7 @@ function ActionValue#(Tuple4#(HWordAddr, Maybe#(Tuple2#(Bit#(4), IndexWord)),
                 ind = setRangeIndicators(ind, fpRangeBits(r.res, r.generated, r.propagated));
                 if (r.pf) ind = setBit(ind, ind_PF, 1);
                 if (r.lc) ind = setBit(ind, ind_LC, 1);
+                if (r.ru) ind = setBit(ind, ind_RU, 1);
                 ind = setBit(ind, ind_ZM, 0);
               end
             end
