@@ -1,0 +1,213 @@
+! jb_af1c F216 "MULTIPLY AND ADD TEST", sub-block F216D "INDICATOR
+! TESTS", pp.151-153 (octal 020511.40-020625.40, the block's own exit
+! "B,$+1.").  Continues fp_arith_f216c.strap and finishes F216.
+!
+! THIS BLOCK CLOSES F216A's LARGEST GAP.  F216A checks no indicator at
+! all and has no exponent difference anywhere, so the preparatory shift
+! and the whole exponent-range ladder were untouched by it.  D1 is the
+! shift and D2-D7 are the ladder, one indicator at a time.
+!
+!   D1  "ADD SHIFT GREATER THAN 48".  FK4 is +198 and the product is
+!       +4, a difference of 194 -- over the 48 that sets PSH and over
+!       the 95 past which the smaller operand is not added at all.  A
+!       BPSHZ clears PSH first so the check cannot inherit it, which
+!       matters because PSH is a class-P indicator: set by an
+!       operation, never cleared by one.
+!   D2  XPFP: FK59 +1024 XFP dominates the multiply and then the
+!       addition, so the result is a PROPAGATED flag.
+!   D3  XPO: FK38 +1023 plus a product at +1023, NORMALIZED -- the
+!       96-bit sum carries out, the shift-right takes the exponent to
+!       +1024, and 1024 is out of range, so the flag is GENERATED.
+!   D4  XPH: the difference is 1535, so the accumulator is not added
+!       and the result is the product at +512.
+!   D5  XPL: FK61 and FK60 are both XFN, so this is the first
+!       both-operands-in-one-flagged-range multiply in F216 -- but
+!       both carry exponent -1024, so it still cannot tell p.99's
+!       "the effective address's exponent" from Figure 32's rule.
+!       The addition then keeps the N accumulator at +256.
+!   D6  XPU: FK39 -1023 plus a product at -1023, NORMALIZED -- two
+!       places of left shift take the exponent to -1025, generated.
+!   D7  all five off: the result is -1024, an XFN with a propagated
+!       flag, and fpRangeBits lists nothing for that case.
+!
+! EACH SUB-TEST ASKS ABOUT ALL FIVE INDICATORS, not just the one that
+! should come on -- the four negative questions are what stop a model
+! that sets the whole ladder from passing five positive ones.  Z,$IND
+! clears the word first, which is why the block can ask negatives at
+! all.
+!
+! TWO ROWS ARE NORMALIZED AND THE SOURCE COLUMN HIDES IT.  D3 and D6
+! read as "*+%N=" and the surrounding blocks use %N for a SIGN
+! modifier, but their printed code is .03 against the .43 of every
+! other *+ here -- bit 18 clear, which is the NORMALIZATION modifier.
+! Taking them as sign modifiers gives +1023 and -1023; taking them as
+! normalized gives +1024 and -1025, which is exactly what the
+! listing's own "RESULT EXP" comments say.  All seven expected
+! indicators were computed from the constants before transcription.
+
+! -- SSIP framework substitutes: SERS (octal 1304) -> FAIL halt,
+! -- SEN (octal 1310) -> scratch.
+        SLC, (8)1304.0
+SERS    BEW, $
+        SLC, (8)1310.0
+SEN     DD(BU,64,8), 0
+
+! -- constants (pools pp.176-178) --
+        SLC, (8)22041.0
+FPK28   DD(BU,64,8), (8)0200177777777777777760
+        SLC, (8)22071.0
+FPK52   DD(BU,64,8), (8)0001024713560247135620
+        SLC, (8)22121.0
+FPK80   DD(BU,64,8), (8)0001100000000000000000
+        SLC, (8)22123.0
+FPK84   DD(BU,64,8), (8)0000500000000000000000
+        SLC, (8)22146.0
+FK4     DD(BU,64,8), (8)0143177777777777777760
+        SLC, (8)22164.0
+FK18    DD(BU,64,8), (8)0002165432107654321060
+        SLC, (8)22210.0
+FK38    DD(BU,64,8), (8)0777572525252525252520
+FK39    DD(BU,64,8), (8)0777625252525252525240
+        SLC, (8)22223.0
+FK49    DD(BU,64,8), (8)1000377777777777777760
+        SLC, (8)22235.0
+FK59    DD(BU,64,8), (8)1000024713560247135620
+FK60    DD(BU,64,8), (8)1000300000000000000000
+FK61    DD(BU,64,8), (8)1000224713560247135620
+        SLC, (8)22250.0
+FK70    DD(BU,64,8), (8)0777165432107654321060
+        SLC, (8)22252.0
+FK72    DD(BU,64,8), (8)0777224713560247135620
+FK73    DD(BU,64,8), (8)0000700000000000000000
+
+        SLC, (8)20511.40
+! F216D1 - test PSH, off to on
+F216D   BPSHZ, $+.32                         ! clear PSH first
+        DL(U), FK4
+        C0011(BU,48), FK4+.12, 20
+        LFT(U), FPK52
+        *+(U), FPK80                         ! add shift greater than 48
+        SIC, SEN
+        BZPSH, SERS                          ! error if PSH not on
+! F216D2 - test XPFP off to on (result exp ++1024)
+        DL(U), FK18
+        LFT(U), FK59
+        Z, $IND
+        *+(U), FPK80
+        BB, $XPFP+.0, $+2.                     ! error if XPFP off
+        SIC, SEN
+        B, SERS                              ! ...and other exponent inds. on
+        BZB, $XPO+.0, $+2.
+        SIC, SEN
+        B, SERS
+        BZB, $XPH+.0, $+2.
+        SIC, SEN
+        B, SERS
+        BZB, $XPL+.0, $+2.
+        SIC, SEN
+        B, SERS
+        BZB, $XPU+.0, $+2.
+        SIC, SEN
+        B, SERS
+! F216D3 - test XPO off to on (result exp ++1024)
+        DL(U), FK38
+        LFT(U), FK70
+        Z, $IND
+        *+(N), FPK84
+        BB, $XPO+.0, $+2.                     ! error if XPO off
+        SIC, SEN
+        B, SERS                              ! ...and other exponent inds. on
+        BZB, $XPFP+.0, $+2.
+        SIC, SEN
+        B, SERS
+        BZB, $XPH+.0, $+2.
+        SIC, SEN
+        B, SERS
+        BZB, $XPL+.0, $+2.
+        SIC, SEN
+        B, SERS
+        BZB, $XPU+.0, $+2.
+        SIC, SEN
+        B, SERS
+! F216D4 - test XPH off to on (result exp ++512)
+        DL(U), FK39
+        LFT(U), FPK28
+        Z, $IND
+        *+(U), FPK28
+        BB, $XPH+.0, $+2.                     ! error if XPH off
+        SIC, SEN
+        B, SERS                              ! ...and other exponent inds. on
+        BZB, $XPFP+.0, $+2.
+        SIC, SEN
+        B, SERS
+        BZB, $XPO+.0, $+2.
+        SIC, SEN
+        B, SERS
+        BZB, $XPL+.0, $+2.
+        SIC, SEN
+        B, SERS
+        BZB, $XPU+.0, $+2.
+        SIC, SEN
+        B, SERS
+! F216D5 - test XPL off to on (result exp ++256)
+        DL(U), FPK28
+        LFT(U), FK61
+        Z, $IND
+        *+(U), FK60
+        BB, $XPL+.0, $+2.                     ! error if XPL off
+        SIC, SEN
+        B, SERS                              ! ...and other exponent inds. on
+        BZB, $XPFP+.0, $+2.
+        SIC, SEN
+        B, SERS
+        BZB, $XPO+.0, $+2.
+        SIC, SEN
+        B, SERS
+        BZB, $XPH+.0, $+2.
+        SIC, SEN
+        B, SERS
+        BZB, $XPU+.0, $+2.
+        SIC, SEN
+        B, SERS
+! F216D6 - test XPU ind off to on (result exp +-1025)
+        DL(U), FK39
+        LFT(U), FK72
+        Z, $IND
+        *+(N), FK73
+        BB, $XPU+.0, $+2.                     ! error if XPU off
+        SIC, SEN
+        B, SERS                              ! ...and other exponent inds. on
+        BZB, $XPFP+.0, $+2.
+        SIC, SEN
+        B, SERS
+        BZB, $XPO+.0, $+2.
+        SIC, SEN
+        B, SERS
+        BZB, $XPH+.0, $+2.
+        SIC, SEN
+        B, SERS
+        BZB, $XPL+.0, $+2.
+        SIC, SEN
+        B, SERS
+! F216D7 - test all exp inds off (result exp +-1024)
+        DL(U), FK49
+        LFT(U), FK61
+        Z, $IND
+        *+(U), FPK80                         ! exp +-1024
+        BZB, $XPFP+.0, $+2.
+        SIC, SEN
+        B, SERS
+        BZB, $XPO+.0, $+2.
+        SIC, SEN
+        B, SERS
+        BZB, $XPH+.0, $+2.
+        SIC, SEN
+        B, SERS
+        BZB, $XPL+.0, $+2.
+        SIC, SEN
+        B, SERS
+        BZB, $XPU+.0, $+2.
+        SIC, SEN
+        B, SERS
+PASS    BEW, $                               ! 020625.40: the block's exit "B,$+1."
+        END, F216D

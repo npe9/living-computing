@@ -1859,12 +1859,56 @@ hand vectors alone. "Enables" notes the dependency chain.
    untouched when F216A landed -- are covered two pages later. That is
    the third time in three routines.
 
-   Next: F216D (pp.151-153), then D/ (DIVIDE DOUBLE, p.99) -- the last
-   floating-point operation, and the one needing real structural work:
-   a divide box on Piccolo's mkMBox/mkFPU idiom, plan steps 2-3. Note
-   / , R/ and SRT are also still unimplemented and want the same box,
-   so it is four operations rather than one. p.99 also gives the
-   remainder register a role nothing in the model uses yet.
+   F216D DONE (7 sub-tests), F216 COMPLETE (A 6, B 16, C 2, D 7), suite
+   198 -- and this time "complete" was CHECKED rather than assumed:
+   p.154 begins F217 "DIVIDE TEST ROUTINE", so D really is the last
+   sub-block. That is the new rule working on its first outing.
+
+   F216D passed first run, which means *+'s indicator wiring -- written
+   blind from p.99 and the composition, and covered by nothing in
+   F216A/B/C -- was right. D1 is the >48 preparatory shift (FK4 at +198
+   against a product at +4, a difference of 194, over both the 48 that
+   sets PSH and the 95 past which the smaller operand is not added at
+   all). D2-D7 walk XPFP/XPO/XPH/XPL/XPU one at a time, and each
+   sub-test asks about ALL FIVE: the four negative questions are what
+   stop a model that sets the whole ladder from passing five positive
+   ones.
+
+   D1 OPENS WITH A BPSHZ, AND NOW I KNOW WHY. It clears PSH before the
+   test, because PSH is class P like LC -- set by an operation, never
+   cleared by one. F216B's lesson from the other side: the diagnostic's
+   own authors guard against exactly the contamination that masked my
+   modifiers injection. Where a block does NOT clear a permanent
+   indicator (F216B never clears LC), that is the block relying on
+   ordering instead, and it is where an injection can mask itself.
+
+   TWO ROWS ARE NORMALIZED AND THE SOURCE COLUMN HIDES IT. D3 and D6
+   read as "*+%N=" and every neighbouring block uses %N for a SIGN
+   modifier, but their printed code is .03 against the .43 of every
+   other *+ in F216 -- bit 18 clear, the NORMALIZATION modifier. Taken
+   as sign modifiers they give +1023 and -1023; taken as normalized
+   they give +1024 (the 96-bit sum carries out, shift right one,
+   generated -> XPO) and -1025 (two places of left shift, generated ->
+   XPU), which is exactly what the listing's own "RESULT EXP" comments
+   say. The printed word settled it against my first reading of the
+   source column -- the same rule that settled FPK23, FK60 and F216A's
+   "+1026", now applied to a MODIFIER rather than a constant or an
+   address.
+
+   D5 IS THE FIRST BOTH-OPERANDS-IN-ONE-FLAGGED-RANGE MULTIPLY IN F216
+   (FK61 and FK60 are both XFN), so p.99's effective-address rule is
+   finally REACHED -- but both operands carry exponent -1024, so it
+   still cannot be told from Figure 32's. The rule that makes *+
+   different from MULTIPLY is reached exactly once in the whole routine
+   and discriminated nowhere.
+
+   Next: F217 "DIVIDE TEST ROUTINE" (p.154, F217A eight sub-tests
+   including a ZERO DIVISOR case), which drives / -- and / , R/, D/ and
+   SRT are all still unimplemented and all want the same divide box,
+   Piccolo's mkMBox/mkFPU idiom, plan steps 2-3. So it is four
+   operations and one structural piece rather than one operation. p.99
+   also gives the remainder register a role nothing in the model uses
+   yet.
 
 
 
