@@ -1416,14 +1416,14 @@ function ActionValue#(Tuple4#(HWordAddr, Maybe#(Tuple2#(Bit#(4), IndexWord)),
                    || c == 7'b0001010 || c == 7'b0101010 || isST
                    || c == 7'b0010010 || c == 7'b0110010 || c == 7'b0010110 || c == 7'b0110110
                    || c == 7'b0011010 || c == 7'b1011010 || c == 7'b1001010 || c == 7'b0111010
-                   || c == 7'b0011110                     // / (DIVIDE)
+                   || c == 7'b0011110 || c == 7'b1011110   // / and D/
                    || c == 7'b1010110 || isEplI || isSHF
                    || c == 7'b1000110 || c == 7'b1100110   // DL / DLWF
                    || c == 7'b1000010 || c == 7'b1100010   // D+ / D+MG
                    || c == 7'b1010010                     // F+ (ADD TO FRACTION)
                    || isSRD || isSLO);                     // SRD / SLO
         if (!known)
-          ind = setOpInvalid(ind);   // R/, D/, SRT: not yet -- they want the same divide box as /
+          ind = setOpInvalid(ind);   // R/ and SRT: not yet
         else if (isST) begin
           FpNum v = fpApplySignMods(acc, fp.absSign, fp.invSign);
           st.writeWord(ea, fpToWord(v));
@@ -2049,6 +2049,50 @@ function ActionValue#(Tuple4#(HWordAddr, Maybe#(Tuple2#(Bit#(4), IndexWord)),
                 ind = setResultIndicatorsFp(ind, r.res);
                 ind = setRangeIndicators(ind, fpRangeBits(r.res, r.generated, r.propagated));
                 if (r.pf) ind = setBit(ind, ind_PF, 1);
+                ind = setBit(ind, ind_ZM, 0);
+              end
+            end
+            7'b1011110: begin // D/ (DIVIDE DOUBLE, p.94)
+              // "The quotient exponent and fraction replace accumulator
+              // bits 0-60.  Accumulator bits 61-107 are set to zero.
+              // The sign of the quotient replaces the accumulator sign.
+              // Accumulator bits 108-127 remain unchanged.  The
+              // remainder is placed in the remainder register, RM
+              // address 13.  The original accumulator sign becomes the
+              // sign of the remainder RM register bit 60.  The flag
+              // bits 61-63 of the remainder register are set to zero."
+              //
+              // So the accumulator's left word carries the exponent,
+              // FORTY-EIGHT quotient bits and then the FORTY-NINTH in
+              // IBM 60, with 61-63 zero; the right word is zeroed
+              // through IBM 107 and keeps 108-127.  That 49th bit is
+              // what makes the field 0-60 rather than DIVIDE's 0-59,
+              // and jb_af1c F217WA checks it in every sub-test.
+              Word64 accR = st.readAccRight();
+              FpDouble da = fpdFromAcc(accL, accR, accS);
+              FpDivDblResult r = fpDivDouble(da, opnd, normalized, noisy);
+              ind = setBit(ind, ind_MOP, 0);
+              if (r.zd) begin
+                // As in DIVIDE: nothing is written and the result and
+                // range indicators are left alone.
+                ind = setBit(ind, ind_ZD, 1);
+              end else begin
+                st.writeWord(addrAccLeft,
+                             { r.res.ef, r.res.em, r.res.es, r.res.frac, r.q49, 3'b0 });
+                st.writeWord(addrAccRight, { 44'b0, accR[19:0] });
+                st.writeWord(addrAccSignByte, fpSignByte(r.res, accS));
+                // RM: exponent and fraction in bits 0-59, the ORIGINAL
+                // accumulator sign in bit 60, flags 61-63 zero.
+                st.writeWord(addrRemainder,
+                             { r.rem.ef, r.rem.em, r.rem.es, r.rem.frac, r.rem.sign, 3'b0 });
+                Word64 zoc = st.readZerosOnesCounts();
+                st.writeWord(addrLeftZerosCount, { zoc[63:47], r.lzc, zoc[39:0] });
+                FpNum vind = r.res;
+                vind.frac = (r.res.frac == 0 && r.q49 == 0) ? 0 : 48'b1;
+                ind = setResultIndicatorsFp(ind, vind);
+                ind = setRangeIndicators(ind, fpRangeBits(r.res, r.generated, r.propagated));
+                if (r.pf) ind = setBit(ind, ind_PF, 1);
+                if (r.lc) ind = setBit(ind, ind_LC, 1);
                 ind = setBit(ind, ind_ZM, 0);
               end
             end

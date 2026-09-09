@@ -1,0 +1,169 @@
+! jb_af1c F217-W "DIVIDE DOUBLE TEST", sub-block F217WA "ARITHMETIC
+! CHECKS", pp.158-159 (octal 020772.40-021062.40, the block's own exit
+! "BD,$+1.0").
+!
+! THIS BLOCK ADDS D/ (DIVIDE DOUBLE, opcode 1011110), and it is the
+! only operation that uses the REMAINDER REGISTER.  Reference Manual
+! p.94: "The operand in the accumulator bits 0-107, the dividend, is
+! divided by the operand specified by the effective address... The
+! quotient exponent and fraction replace accumulator bits 0-60.
+! Accumulator bits 61-107 are set to zero. ... Accumulator bits 108-127
+! remain unchanged.  The remainder is placed in the remainder register,
+! RM address 13.  The original accumulator sign becomes the sign of the
+! remainder RM register bit 60.  The flag bits 61-63 of the remainder
+! register are set to zero."
+!
+! WHAT MAKES THE FIELD 0-60 AND NOT 0-59 is a FORTY-NINTH quotient bit,
+! and every sub-test checks it with a BZB on word 8 bit 60, expecting
+! zero.  All seven divisions are exact, so the bit is zero in all of
+! them and the block does not pin which reading of it applies -- the
+! bit dropped by the quotient-overflow right shift, or the next bit the
+! division would produce.
+!
+! THE SEVEN QUOTIENTS ARE F217A's SEVEN QUOTIENTS.  The dividends,
+! divisors and expected exponent-and-fraction constants are exactly
+! A1-A7's, which makes this a clean test of what DOUBLE adds to DIVIDE
+! rather than a re-test of the division: the quotient must come out the
+! same, and the 49th bit and the remainder are the new part.
+!
+! THE REMAINDER EXPONENT SPLITS THE WAY THE QUOTIENT'S DOES.  Where
+! either operand is flagged (WA1, WA2, WA3, WA6, WA7) it is the
+! DIVIDEND's own exponent; where both are in the N range (WA4, WA5) it
+! is the adjusted dividend exponent -- the quotient overflow's +1
+! included -- less 48, the remainder being what is left after 48
+! quotient bits.  WA4 and WA5 pin that half: both have dividends at +2
+! and want -46 and -47.  All seven remainder FRACTIONS are zero, so
+! nothing here develops a non-trivial remainder.
+
+! -- SSIP framework substitutes: SERS (octal 1304) -> FAIL halt,
+! -- SEN (octal 1310) -> scratch.
+        SLC, (8)1304.0
+SERS    BEW, $
+        SLC, (8)1310.0
+SEN     DD(BU,64,8), 0
+
+! -- constants (pools pp.176-179) --
+        SLC, (8)22071.0
+FPK52   DD(BU,64,8), (8)0001024713560247135620
+        SLC, (8)22104.0
+FPK64   DD(BU,64,8), (8)0001051627340516273440
+        SLC, (8)22107.0
+FPK67   DD(BU,64,8), (8)0001000000000000000000
+        SLC, (8)22121.0
+FPK80   DD(BU,64,8), (8)0001100000000000000000
+        SLC, (8)22235.0
+FK59    DD(BU,64,8), (8)1000024713560247135620
+FK60    DD(BU,64,8), (8)1000300000000000000000
+        SLC, (8)22264.0
+FK83    DD(BU,64,8), (8)1002051627340516273440
+FK84    DD(BU,64,8), (8)1002100000000000000000
+FK85    DD(BU,64,8), (8)1000051627340516273440
+FK86    DD(BU,64,8), (8)1577651627340516273440
+FK87    DD(BU,64,8), (8)0000100000000000000000
+FK88    DD(BU,64,8), (8)1577624713560247135620
+FK89    DD(BU,64,8), (8)1000251627340516273440
+FK90    DD(BU,64,8), (8)1000100000000000000000
+        SLC, (8)22275.0
+FK92    DD(BU,64,8), (8)1002000000000000000000
+FK93    DD(BU,64,8), (8)1577600000000000000000
+        SLC, (8)22305.0
+FK100   DD(BU,64,8), (8)1577700000000000000000
+        SLC, (8)22313.0
+FK106   DD(BU,64,8), (8)0027600000000000000000
+        SLC, (8)22331.0
+FK120   DD(BU,64,8), (8)0027200000000000000000
+
+        SLC, (8)20772.40
+! F217WA1 - exponents of opnds in XFP rng
+SAP22   DL(U), FK83
+        D/(U), FK59
+        CT0110(BU,60), FK84, 68           ! check result exp and quotient
+        SIC, SEN
+        BRGZ, SERS
+        BZB, $L+.60, $+2.0                   ! check 49th quotient bit + 0
+        SIC, SEN
+        B, SERS
+        L(BU), FK92
+        CT0110(BU,64), $RM                   ! check RR exp and fract
+        SIC, SEN
+        BRGZ, SERS
+! F217WA2 - exps in XFP and N rngs
+        DL(U), FPK52
+        D/(U), FK85
+        CT0110(BU,60), FK60, 68           ! check result exp and quotient
+        SIC, SEN
+        BRGZ, SERS
+        BZB, $L+.60, $+2.0                   ! check 49th quotient bit + 0
+        SIC, SEN
+        B, SERS
+        L(BU), FPK67
+        CT0110(BU,64), $RM                   ! check RR exp and fract
+        SIC, SEN
+        BRGZ, SERS
+! F217WA3 - exps in XFP and XFN rngs
+        DL(U), FK86
+        D/(U), FK59
+        CT0110(BU,60), FK60, 68           ! check result exp and quotient
+        SIC, SEN
+        BRGZ, SERS
+        BZB, $L+.60, $+2.0                   ! check 49th quotient bit + 0
+        SIC, SEN
+        B, SERS
+        L(BU), FK93
+        CT0110(BU,64), $RM                   ! check RR exp and fract
+        SIC, SEN
+        BRGZ, SERS
+! F217WA4 - exps in N rng
+        DL(U), FPK64
+        D/(U), FPK52
+        CT0110(BU,60), FPK80, 68          ! check result exp and quotient
+        SIC, SEN
+        BRGZ, SERS
+        BZB, $L+.60, $+2.0                   ! check 49th quotient bit + 0
+        SIC, SEN
+        B, SERS
+        L(BU), FK120
+        CT0110(BU,64), $RM                   ! check RR exp and fract
+        SIC, SEN
+        BRGZ, SERS
+! F217WA5 - exponents in N rng
+        DL(U), FPK52
+        D/(U), FPK64
+        CT0110(BU,60), FK87, 68           ! check result exp and quotient
+        SIC, SEN
+        BRGZ, SERS
+        BZB, $L+.60, $+2.0                   ! check 49th quotient bit + 0
+        SIC, SEN
+        B, SERS
+        L(BU), FK106
+        CT0110(BU,64), $RM                   ! check RR exp and fract
+        SIC, SEN
+        BRGZ, SERS
+! F217WA6 - exps in N and XFN rngs
+        DL(U), FK86
+        D/(U), FPK52
+        CT0110(BU,60), FK100, 68          ! check result exp and quotient
+        SIC, SEN
+        BRGZ, SERS
+        BZB, $L+.60, $+2.0                   ! check 49th quotient bit + 0
+        SIC, SEN
+        B, SERS
+        L(BU), FK93
+        CT0110(BU,64), $RM                   ! check RR exp and fract
+        SIC, SEN
+        BRGZ, SERS
+! F217WA7 - exps in XFN rng
+        DL(U), FK88
+        D/(U), FK89
+        CT0110(BU,60), FK90, 68           ! check result exp and quotient
+        SIC, SEN
+        BRGZ, SERS
+        BZB, $L+.60, $+2.0                   ! check 49th quotient bit + 0
+        SIC, SEN
+        B, SERS
+        L(BU), FK93
+        CT0110(BU,64), $RM                   ! check RR exp and fract
+        SIC, SEN
+        BRGZ, SERS
+PASS    BEW, $                               ! 021062.40: the block exit "BD,$+1.0"
+        END, SAP22

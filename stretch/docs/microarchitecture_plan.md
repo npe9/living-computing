@@ -2017,13 +2017,52 @@ hand vectors alone. "Enables" notes the dependency chain.
    diagnostic's own authors clear before testing (PSH, LC, PF), and it
    is the pattern F216B's masked injection taught me to look for.
 
-   Next: F217-W "DIVIDE DOUBLE TEST" (p.158 on), which drives D/ -- the
-   last floating-point operation and the one that finally needs the
-   REMAINDER REGISTER. Its checks read word 13 directly ("CHECK RR
-   EXP++1028,FRACT+0") and also ask about a 49TH QUOTIENT BIT via
-   BZB on word 8 bit 60, which is p.94's "the quotient exponent and
-   fraction replace accumulator bits 0-60". After that only R/ and SRT
-   remain, and R/ falls out of fpDiv with the operands interchanged. Then R/, D/ and SRT -- R/ is
+   D/ (DIVIDE DOUBLE) IMPLEMENTED, F217WA DONE (7 sub-tests), suite 208.
+   Passed first run. It is the only operation that uses the REMAINDER
+   REGISTER, so word 13 finally has a writer.
+
+   THE BLOCK IS BUILT TO ISOLATE WHAT DOUBLE ADDS. Its seven dividends,
+   divisors and expected quotient constants are exactly F217A1-A7's, so
+   the quotient must come out unchanged and everything new is in two
+   places: a FORTY-NINTH quotient bit in accumulator IBM 60 -- which is
+   why p.94's field is 0-60 and not DIVIDE's 0-59 -- and the remainder.
+   Each sub-test checks the 49th bit with a BZB on word 8 bit 60 and
+   the remainder with a 64-bit connective on word 13.
+
+   THE REMAINDER EXPONENT SPLITS THE WAY THE QUOTIENT'S DOES, which is
+   the one rule the manual does not state outright and the listing
+   does. Where either operand is flagged (WA1, WA2, WA3, WA6, WA7) it
+   is the DIVIDEND's own exponent; where both are in the N range (WA4,
+   WA5) it is the adjusted dividend exponent -- the quotient overflow's
+   +1 included -- less 48, the remainder being what is left after 48
+   quotient bits. WA4 and WA5 are what pin it: both have dividends at
+   +2 and want -46 and -47. Derived from those two rows and then
+   checked against the other five before writing any code.
+
+   TWO GAPS RECORDED. All seven divisions are exact, so every 49th bit
+   is zero and the block cannot say which reading of it applies -- the
+   bit dropped by the quotient-overflow right shift, or the next bit
+   the division would produce; the implementation does the first on an
+   overflow and the second otherwise. And all seven remainder FRACTIONS
+   are zero, so nothing here develops a non-trivial remainder or can
+   reach p.94's "if the low-order 49th bit dropped in storing is a one,
+   the lost carry indicator is turned on" -- which a restoring divide
+   never reaches anyway, since its remainder is already under the
+   divisor and so under 2^48.
+
+   F217-W IS NOT FINISHED, checked on p.160: WB "TEST SIGN AND MOD
+   COMBS" (4 rows), WC "TEST CHANGED REGS" (whose CT0110(BU,47) at
+   offset 20 is exactly p.94's "accumulator bits 61-107 are set to
+   zero"), WD "TEST UNCHANGED REGS", and WE "REMAINDER UNFLO IND
+   TESTS" -- which drives the RU indicator, remainder underflow, that
+   nothing in the model sets yet. WE1's comment says why it exists:
+   "REMAINDER EXP. HAS GENERATED EF+1, ES+1", i.e. the remainder
+   exponent underflowing past -1024, which is exactly what the
+   dividend-exponent-less-48 rule can produce.
+
+   Next: F217WB/WC/WD, then WE with the RU indicator. After that only
+   R/ and SRT remain; R/ is p.94's "same process with dividends and
+   divisors interchanged" and falls out of fpDiv. Then R/, D/ and SRT -- R/ is
    p.94's "same process with dividends and divisors interchanged" and
    falls out of fpDiv, but it waits for a block that drives it. p.99
    also gives the remainder register a role nothing uses yet; D/ is

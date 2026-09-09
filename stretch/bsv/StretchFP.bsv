@@ -871,6 +871,121 @@ function FpdResult fpMulDouble(FpNum a, FpNum b, Bool normalized, Bool noisy);
   end
 endfunction
 
+typedef struct {
+  FpNum    res;        // quotient: exponent, high 48 fraction bits, sign
+  Bit#(1)  q49;        // the 49th quotient bit -> accumulator IBM 60
+  FpNum    rem;        // remainder for RM (word 13); its sign is the
+                       // ORIGINAL accumulator sign, per p.94
+  Bool     zd;
+  Bool     pf;
+  Bool     lc;
+  Bit#(7)  lzc;
+  Bool     generated;
+  Bool     propagated;
+} FpDivDblResult deriving (Bits, Eq, FShow);
+
+// DIVIDE DOUBLE (D/, p.94).  "The operand in the accumulator bits
+// 0-107, the dividend, is divided by the operand specified by the
+// effective address, the divisor. ... The quotient exponent and
+// fraction replace accumulator bits 0-60.  Accumulator bits 61-107 are
+// set to zero. ... Accumulator bits 108-127 remain unchanged.  The
+// remainder is placed in the remainder register, RM address 13.  The
+// original accumulator sign becomes the sign of the remainder RM
+// register bit 60.  The flag bits 61-63 of the remainder register are
+// set to zero."
+//
+// Everything before the writeback is DIVIDE's, with one difference and
+// one addition.  The difference: the dividend is the accumulator's own
+// 96-bit fraction rather than a 48-bit one extended with zeros.  The
+// addition: a FORTY-NINTH quotient bit, which is what makes the
+// accumulator field 0-60 rather than 0-59, and the remainder.
+//
+// THE 49TH BIT IS ONE MORE RESTORING STEP.  On a quotient overflow the
+// 49-bit quotient is shifted right one and the bit shifted out is the
+// 49th; otherwise it is the next bit the division would have produced,
+// obtained from the remainder fpDivFrac already returns.  jb_af1c
+// F217WA checks it in all seven sub-tests and expects zero in every
+// one -- all seven divisions are exact -- so which of the two readings
+// applies is not pinned there.
+//
+// THE REMAINDER EXPONENT follows the quotient's split: when either
+// operand is flagged it is the DIVIDEND's own exponent, and otherwise
+// it is the adjusted dividend exponent (the quotient overflow's +1
+// included) less 48, the remainder being what is left after 48
+// quotient bits.  F217WA4 and WA5 are what pin the unflagged half:
+// they want -46 and -47 from dividends at +2.
+function FpDivDblResult fpDivDouble(FpDouble dvd, FpNum dvs, Bool normalized, Bool noisy);
+  FpNum z = fpdHead(dvd);
+  FpDivDblResult r = FpDivDblResult { res: z, q49: 0, rem: z, zd: False, pf: False,
+                                      lc: False, lzc: 0, generated: False,
+                                      propagated: False };
+  if (dvs.frac == 0) begin
+    r.zd = True;
+    return r;
+  end else begin
+  Bit#(1) sign = dvd.sign ^ dvs.sign;
+  Bool flagged = (dvd.ef == 1 || dvs.ef == 1);
+
+  UInt#(6) vsu = countZerosMSB(dvs.frac);
+  Int#(14) vs  = unpack(zeroExtend(pack(vsu)));
+  Bit#(48) vf  = dvs.frac << vsu;
+  if (normalized && noisy) vf = vf | ((48'b1 << vsu) - 1);
+  Int#(14) ve  = fpExpFull(dvs) - vs;
+  Int#(14) lzc = vs;
+
+  Bit#(96) d96  = dvd.frac;
+  UInt#(7) dreqU = countZerosMSB(d96);
+  Int#(14) dreq  = unpack(zeroExtend(pack(dreqU)));
+  Int#(14) ds = (d96 == 0) ? lzc
+              : (normalized && !flagged) ? dreq
+              : ((vs < dreq) ? vs : dreq);
+  Bit#(7) dsB = truncate(pack(ds));
+  d96 = d96 << dsB;
+  Int#(14) de = fpExpFull(fpdHead(dvd)) - ds;
+  lzc = lzc - ds;
+
+  let {q, rem} = fpDivFrac(d96, vf);
+  Bool ovf = (q[48] == 1);
+  Bit#(48) qf = ovf ? q[48:1] : q[47:0];
+  // One more restoring step for the 49th bit, from the remainder.
+  Bit#(49) rem2 = {rem[47:0], 1'b0};
+  Bool take = (rem2 >= {1'b0, vf});
+  Bit#(49) remAfter = take ? (rem2 - {1'b0, vf}) : rem2;
+  Bit#(1) b49 = ovf ? q[0] : (take ? 1'b1 : 1'b0);
+  Bit#(48) remFrac = ovf ? remAfter[47:0] : rem[47:0];
+  if (ovf) begin de = de + 1; lzc = lzc + 1; end
+
+  FpNum res = fpdHead(dvd);
+  Bool gen = False;
+  if (flagged) begin
+    Int#(14) e = (isXFN(dvs) || (isXFP(dvs) && !isXFP(fpdHead(dvd)))) ? -fpExpFull(dvs)
+                                                                     : fpExpFull(fpdHead(dvd));
+    let {h, g} = fpMakeExp(e, qf, sign, dvd.flags);
+    res = h; res.ef = 1;
+    r.propagated = True;
+  end else begin
+    let {h, g} = fpMakeExp(de - ve, qf, sign, dvd.flags);
+    res = h; gen = g;
+  end
+  r.res = res;
+  r.q49 = b49;
+  r.generated = gen;
+
+  // The remainder.  p.94: unnormalized stores "the 48 high-order bits
+  // of the remainder"; a restoring divide leaves rem < divisor < 2^48,
+  // so nothing is dropped and LC cannot fire here.  The manual's
+  // 49-significant-bit case is unreachable in this formulation and is
+  // untested by F217WA, whose seven remainders are all zero.
+  Int#(14) rexp = flagged ? fpExpFull(fpdHead(dvd)) : (de - 48);
+  let {rh, rg} = fpMakeExp(rexp, remFrac, dvd.sign, 3'b0);
+  r.rem = rh;
+
+  r.pf  = !normalized && (lzc > 0);
+  r.lzc = (lzc < 0) ? 0 : truncate(pack(lzc));
+  return r;
+  end
+endfunction
+
 // The earlier FpResult fpDiv that stood here has been removed.  It was
 // dead code -- never in the executor's `known` list -- and its flagged
 // table was wrong in a way jb_af1c F217A3 catches: it tested the
