@@ -1742,7 +1742,7 @@ hand vectors alone. "Enables" notes the dependency chain.
    are about the same mistake: reasoning about control flow from the
    wrong version of the program.
 
-   F216B DONE (16 sub-tests), F216 COMPLETE, suite 194. Passed first
+   F216B DONE (16 sub-tests), suite 194. Passed first
    run with no model change. It is the full 2x2x2x2 of memory sign
    (FPK80 / FPK86, identical but for bit 60), accumulator sign (DL /
    DLN) and *+'s own N and A modifiers; fifteen rows check the sign
@@ -1823,10 +1823,48 @@ hand vectors alone. "Enables" notes the dependency chain.
    and which assemble to the listing's printed words exactly, so no
    assembler change was needed and F214B's spelling is untouched.
 
-   Next: D/ (DIVIDE DOUBLE, p.99) is the last floating-point operation
-   left, and the one that needs real structural work -- a divide box,
-   Piccolo's mkMBox/mkFPU idiom, plan steps 2-3. p.99 also describes
-   the remainder register's role, which nothing in the model uses yet.
+   "F216 COMPLETE" IN e067fb4's COMMIT MESSAGE IS WRONG, AND IT IS THE
+   SECOND TIME. F216 has C and D sub-blocks on pp.151-153: F216C "TEST
+   OF UNCHANGED REGISTERS" and F216D "INDICATOR TESTS". I declared
+   completion after transcribing the pages I had read, exactly as with
+   F215's "the whole of F215" claim two entries above. The commit is
+   pushed and its message cannot be corrected in place; this is the
+   correction.
+
+   THE STANDING RULE FROM NOW ON: READ THE NEXT PAGE BEFORE SAYING A
+   ROUTINE IS COMPLETE. Every jb_af1c routine so far has had more
+   sub-blocks than the first page showed -- F214 had X, F214X had B,
+   F215 had C/D/E/F, F216 has C/D. The cost of one more page read is
+   nothing against the cost of a wrong claim in a pushed message, and
+   twice now the extra sub-blocks have been exactly the ones that close
+   the gaps the earlier ones left open.
+
+   F216C DONE (2 sub-tests), suite 196. *+'s version of F214XB: p.98's
+   "accumulator bits 108-127 remain unchanged" checked from both
+   polarities, with the sign byte's bit 4 skipped because the sum's
+   sign belongs there. C2 is load-bearing -- its DL zeroes IBM 60-107
+   while leaving 108-127 as ones, so *+ genuinely writes across 60-107
+   and the twenty bits above have to survive it. SB 5-7 are the flag
+   bits, so C2 also pins that *+ carries the accumulator's flags
+   through, which is what the arm's sbWith(accS, sign, sbFlags(accS))
+   does. Passed first run.
+
+   F216D IS THE INDICATOR BLOCK AND IT CLOSES F216A's LARGEST GAP.
+   F216A checks no indicator at all and has no exponent difference
+   anywhere; F216D1 is titled "ADD SHIFT GREATER THAN 48" and asks
+   BZPSH, and D2-D6 walk the exponent range indicators one at a time
+   (XPFP, XPO, XPH, XPL, XPU), each clearing $IND first and then
+   demanding the right one on AND the other four off. So the PSH
+   threshold and the whole XPFP/XPO/XPH/XPL/XPU ladder -- recorded as
+   untouched when F216A landed -- are covered two pages later. That is
+   the third time in three routines.
+
+   Next: F216D (pp.151-153), then D/ (DIVIDE DOUBLE, p.99) -- the last
+   floating-point operation, and the one needing real structural work:
+   a divide box on Piccolo's mkMBox/mkFPU idiom, plan steps 2-3. Note
+   / , R/ and SRT are also still unimplemented and want the same box,
+   so it is four operations rather than one. p.99 also gives the
+   remainder register a role nothing in the model uses yet.
 
 
 

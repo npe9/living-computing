@@ -921,6 +921,11 @@ run "FP multiply and add sign and modifiers (jb_af1c F216B on the model)" ./run_
     "PC=$(python3 -c 'from strap_asm import assemble; print(assemble(open("programs/fp_arith_f216b.strap").read()).symtab["PASS"]//32)')" \
     "SEN:712=0"
 
+run "FP multiply and add unchanged regs (jb_af1c F216C, encoding)" python3 verify_fp_arith_f216c_listing.py
+run "FP multiply and add unchanged regs (jb_af1c F216C on the model)" ./run_program.sh programs/fp_arith_f216c.strap StretchFpMulAddCTb \
+    "PC=$(python3 -c 'from strap_asm import assemble; print(assemble(open("programs/fp_arith_f216c.strap").read()).symtab["PASS"]//32)')" \
+    "SEN:712=0"
+
 run "Program store compare: store then EXECUTE the modified instruction" ./run_program.sh programs/store_then_execute.strap StretchStoreExecTb \
     "RESULT:$(python3 -c 'from strap_asm import assemble; print(assemble(open("programs/store_then_execute.strap").read()).symtab["RESULT"]//64)')=0x20"
 

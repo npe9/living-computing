@@ -1,0 +1,86 @@
+! jb_af1c F216 "MULTIPLY AND ADD TEST", sub-block F216C "TEST OF
+! UNCHANGED REGISTERS", p.151 (octal 020464.00-020507.40, the block's
+! own exit "B,$+1.").  Continues fp_arith_f216b.strap.  F216D, the
+! indicator tests, follows.
+!
+! *+'s version of F214XB: p.98 says "accumulator bits 108-127 remain
+! unchanged" and that the sum's sign replaces "sign byte register bit
+! 4", so C1 and C2 check IBM 108-127 and the sign byte's OTHER seven
+! bits from both polarities.
+!
+!   C1  "0 S REMAIN 0 S" -- L(BU),FPK0 zeroes the right word and
+!       CM0000 the sign byte, then *+ runs.  R 44-63 (= IBM 108-127)
+!       must still be zero, and SB 0-3 and SB 5-7 likewise.
+!   C2  "1 S REMAIN 1 S" -- the same from the other side, and this is
+!       the load-bearing one: the right word is filled with ones, then
+!       DL(U),FPK62 zeroes IBM 60-107 while leaving 108-127 alone, so
+!       *+ genuinely writes across IBM 60-107 and the twenty bits above
+!       it have to survive that.
+!
+! Bit 4 is skipped in both, as in F214XB, because bit 4 is the result
+! sign and *+ is entitled to write it.  SB 5-7 are the flag bits, so
+! C2 pins that *+ carries the accumulator's flags through -- which is
+! what the arm's sbWith(accS, sign, sbFlags(accS)) does.
+!
+! Truth tables, as the results for (memory, accumulator) =
+! (0,0),(0,1),(1,0),(1,1):
+!   CT0101 = 0,1,0,1  ->  the ACCUMULATOR bit; memory is a dummy
+!   CT1010 = 1,0,1,0  ->  NOT the accumulator bit
+!   CT0011 = 0,0,1,1  ->  the MEMORY bit, i.e. the sign byte at word 10
+!   CT1100 = 1,1,0,0  ->  NOT the memory bit
+!
+! C2's C1111 into the LEFT word is redundant -- the DL two rows later
+! overwrites the whole of IBM 0-59 and zeroes 60-107 -- but it is in
+! the listing and is transcribed as printed.
+
+! -- SSIP framework substitutes: SERS (octal 1304) -> FAIL halt,
+! -- SEN (octal 1310) -> scratch.
+        SLC, (8)1304.0
+SERS    BEW, $
+        SLC, (8)1310.0
+SEN     DD(BU,64,8), 0
+
+! -- constants (pool p.176) --
+        SLC, (8)22005.0
+FPK0    DD(BU,64,8), (8)0000000000000000000000
+FPK1    DD(BU,64,8), (8)1777777777777777777777
+        SLC, (8)22071.0
+FPK52   DD(BU,64,8), (8)0001024713560247135620
+        SLC, (8)22103.0
+FPK62   DD(BU,64,8), (8)0002177777777777777760
+        SLC, (8)22121.0
+FPK80   DD(BU,64,8), (8)0001100000000000000000
+
+        SLC, (8)20464.0
+! F216C1 - 0 s remain 0 s
+F216C   L(BU), FPK0
+        CM0000(BU,8), $SB
+        LFT(U), FPK52
+        *+(U), FPK80
+        CT0101(BU,20), FPK0                  ! does R44-63 remain +0 s
+        SIC, SEN
+        BRGZ, SERS
+        CT0011(BU,4), $SB                    ! does SB0-3 remain +0 s
+        SIC, SEN
+        BRGZ, SERS
+        CT0011(BU,3), $SB+.5                 ! does SB5-7 remain +0 s
+        SIC, SEN
+        BRGZ, SERS
+! F216C2 - 1 s remain 1 s
+        L(BU), FPK1
+        C1111(BU,64), FPK1, 64
+        DL(U), FPK62
+        CM1111(BU,8), $SB
+        LFT(U), FPK52
+        *+(U), FPK80
+        CT1010(BU,20), FPK1                  ! does R44-63 remain +1 s
+        SIC, SEN
+        BRGZ, SERS
+        CT1100(BU,4), $SB                    ! does SB0-3 remain +1 s
+        SIC, SEN
+        BRGZ, SERS
+        CT1100(BU,3), $SB+.5                 ! does SB5-7 remain +1 s
+        SIC, SEN
+        BRGZ, SERS
+PASS    BEW, $                               ! 020507.40: the block's exit "B,$+1."
+        END, F216C
