@@ -2145,7 +2145,47 @@ hand vectors alone. "Enables" notes the dependency chain.
    The entire accumulator and its sign byte remain unchanged." p.93 has
    the details: the exponent is divided by two, an odd exponent adds
    one and shifts the fraction right one place, and the fraction square
-   root is taken to 48 bits. Then R/, D/ and SRT -- R/ is
+   root is taken to 48 bits.
+
+   SRT (STORE ROOT) IMPLEMENTED, F218A DONE (7 sub-tests), suite 226,
+   passed first run. WITH IT EVERY FLOATING-POINT OPERATION IN THE
+   OPCODE TABLE IS IMPLEMENTED -- the executor's `known` list no longer
+   has a "not yet" arm.
+
+   fpSqrt48 is a restoring bit-by-bit square root, 48 steps, over the
+   fraction extended with 48 low-order zeros -- p.93's own phrase.
+   Same class of thing as the combinational multiply and divide, and
+   the same argument against a multi-cycle unit.
+
+   THE RULE EASIEST TO GET WRONG, and F218A5 pins it. For the N range
+   an odd exponent has one ADDED and the fraction shifted right, so the
+   value is unchanged and an even exponent is left to halve. But for
+   XFP and XFN, "the exponent is not modified as a result of the
+   shift": the fraction still halves, the exponent does not move, and
+   the result exponent is the operand's. A5 is FK126 at +1791, odd,
+   whose answer keeps +1791 with the fraction halved before the root.
+   An implementation that added one there, or that skipped the shift,
+   fails A5 and passes A6 and A7, both even.
+
+   THE SIGN MODIFIERS DO TWO DIFFERENT JOBS in SRT, unlike every other
+   operation: the ABSOLUTE one applies to the accumulator sign BEFORE
+   the extraction and governs whether IR can come on, while the
+   NEGATIVE one applies to the RESULT "as in the store operation", so
+   the stored sign is just that modifier. Nothing in F218A uses either
+   -- all seven are SRT(U) over positive operands -- so both readings
+   and the IR indicator are manual-only here.
+
+   EVERY F218A SUB-TEST IS A STORE-CLOSE-TO-FETCH: the SRT writes ROS
+   and the very next instruction reads ROS as its memory operand. SRT
+   therefore joins the I-box's storeTarget, the sixth FP operation
+   storing to its effective address after ST, M+, M+MG, SRD and SLO.
+   Unlike the storeTarget entry declined for D*, this one is driven --
+   seven times over in this block.
+
+   The check arrangement is neat enough to record: each sub-test loads
+   the EXPECTED answer into the accumulator's RIGHT word and the
+   operand into the LEFT, so one accumulator holds both the question
+   and the answer, and the comparison is ROS against the right word. Then R/, D/ and SRT -- R/ is
    p.94's "same process with dividends and divisors interchanged" and
    falls out of fpDiv, but it waits for a block that drives it. p.99
    also gives the remainder register a role nothing uses yet; D/ is
