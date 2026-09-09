@@ -2214,7 +2214,47 @@ hand vectors alone. "Enables" notes the dependency chain.
    suffix. strip_fp_sign handles SRTA already (the remainder SRT is in
    FP_CODES) but not SNRT or SNRTA; they need the same explicit
    treatment as M-/M-A and the E+AI/E-I/E-AI family. That is the third
-   mnemonic family whose modifier letters do not sit at the end. Then R/, D/ and SRT -- R/ is
+   mnemonic family whose modifier letters do not sit at the end.
+
+   F218 COMPLETE (A 12, B 8, C 3, D 1), suite 232, and checked: p.169
+   begins F219 "NOISY MODE TEST ROUTINE". B, C and D all passed first
+   run once the assembler knew SNRT.
+
+   (Correction to 49c6f0a's message, which said suite 228: extending
+   F218A added no new sections, the program being already wired. It was
+   226 there and is 232 now, with B, C and D added.)
+
+   F218B IS EIGHT ROWS FOR ONE SENTENCE. p.93: the stored sign is the
+   NEGATIVE MODIFIER and nothing else. B1-B4 root a positive
+   accumulator and B5-B8 a negative one -- the LN load inverts it --
+   and within each group the answer follows N alone. So the
+   accumulator's own sign never reaches the stored word, which is what
+   the B5-B8 half exists to show.
+
+   F218C IS THE ONLY UNCHANGED-REGISTERS BLOCK IN THE WHOLE DIAGNOSTIC
+   THAT CHECKS ALL EIGHT SIGN-BYTE BITS. p.95's "the entire accumulator
+   and its sign byte remain unchanged" holds for SRT without exception,
+   where F214XB, F216C and F217WD all had to skip bit 4 because their
+   operations put a result sign there.
+
+   F218D CLOSES THE LAST GAP: it is where IR is finally asked about.
+   F218A12 set IR and cleared it with a BIRZ without ever testing it; D
+   makes the accumulator negative with an LN, clears $IND, runs a plain
+   SRT and demands both MOP and IR. SRT is also the operation that SETS
+   MOP rather than clearing it.
+
+   TWO MORE SCAN CORRECTIONS, both settled by the address chain.
+   F218B5's first SIC prints as "021409.00", which is not an octal
+   address at all; the chain from B5's B,$+.32 at 021372.40 puts it at
+   021400.00 and every later row on its printed address. And F218D's
+   source column reads LN%N=,FPK72 while its printed code is 22114,
+   which is FPK73 -- transcribed from the printed code, as F214C2's
+   similar disagreement was.
+
+   Next: F219 "NOISY MODE TEST ROUTINE" (p.169 on). Every operation it
+   uses is already implemented -- ADD, ADD TO MAGNITUDE, LOAD, LOAD
+   WITH FLAG -- so it is a pure transcription, and it drives the NOISY
+   MODE paths, which almost nothing so far has. Then R/, D/ and SRT -- R/ is
    p.94's "same process with dividends and divisors interchanged" and
    falls out of fpDiv, but it waits for a block that drives it. p.99
    also gives the remainder register a role nothing uses yet; D/ is
