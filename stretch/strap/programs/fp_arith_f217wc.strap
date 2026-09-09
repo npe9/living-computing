@@ -1,0 +1,41 @@
+! jb_af1c F217-W "DIVIDE DOUBLE TEST", sub-block F217WC "TEST CHANGED
+! REGS", p.160 (octal 021100.40-021105.00, the block's own exit
+! "B,$+1.0").  Continues fp_arith_f217wb.strap.
+!
+! ONE CHECK, AND IT IS THE OTHER HALF OF p.94's WRITEBACK RULE.  Where
+! F217WA pinned what D/ writes -- the quotient in accumulator bits 0-60
+! and the remainder in word 13 -- this pins what it ZEROES:
+! "Accumulator bits 61-107 are set to zero."  The listing's own header
+! spells the field out as "CHK L 61-63 AND R 0-43 +0", which is the
+! left word's last three bits and the right word's first forty-four --
+! IBM 61 through 107, forty-seven bits.
+!
+! Both accumulator words are filled with ones first, so the zeroing has
+! to actually happen rather than being inherited.  The check is a
+! 47-bit CT0110 at offset 20, whose right end is IBM 107, against
+! FPK0's zeros.
+!
+! The divisor is FPK1, all ones -- a real division, not a suppressed
+! one; its fraction is ffffffffffff.
+
+! -- SSIP framework substitutes: SERS (octal 1304) -> FAIL halt,
+! -- SEN (octal 1310) -> scratch.
+        SLC, (8)1304.0
+SERS    BEW, $
+        SLC, (8)1310.0
+SEN     DD(BU,64,8), 0
+
+! -- constants (pool p.176) --
+        SLC, (8)22005.0
+FPK0    DD(BU,64,8), (8)0000000000000000000000
+FPK1    DD(BU,64,8), (8)1777777777777777777777
+
+        SLC, (8)21100.40
+F217WC  C1111(BU,64), FPK1, 64               ! left word <- all ones
+        C1111(BU,64), FPK1                   ! right word <- all ones
+        D/(U), FPK1
+        CT0110(BU,47), FPK0, 20              ! check acc. bits set to zero
+        SIC, SEN
+        BRGZ, SERS
+PASS    BEW, $                               ! 021105.00: the block's exit "B,$+1.0"
+        END, F217WC

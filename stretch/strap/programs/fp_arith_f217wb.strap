@@ -1,0 +1,63 @@
+! jb_af1c F217-W "DIVIDE DOUBLE TEST", sub-block F217WB "TEST SIGN AND
+! MOD COMBS", p.160 (octal 021064.40-021100.00).  Continues
+! fp_arith_f217wa.strap; F217WC follows at 021100.40, so this block has
+! no exit branch of its own.
+!
+! D/'s version of F217B, and the same four rows: memory sign,
+! accumulator sign, and the N and A modifiers, each checked by one bit
+! -- the quotient sign in sign byte bit 4.
+!
+!   WB1  DLN FPK64 (acc sign 1) / FPK52 (0)   -> 1   BB
+!   WB2  DL  FPK64 (acc sign 0) / FPK55 (1)   -> 1   BB
+!   WB3  DLN FPK64 (acc sign 1) / FPK55 (1)   -> 0   BZB
+!   WB4  DLN FPK64 (acc sign 1) / NA FPK55    -> 0   BZB
+!
+! As in F217B, WB4's A modifier is invisible: FPK55's sign is already
+! 1, so absolute-then-negate lands where negate alone would, and WB3
+! and WB4 expect the same answer.
+!
+! The sign byte is the only thing checked, so nothing here looks at the
+! quotient, the 49th bit or the remainder.
+
+! -- SSIP framework substitutes: SERS (octal 1304) -> FAIL halt,
+! -- SEN (octal 1310) -> scratch.
+        SLC, (8)1304.0
+SERS    BEW, $
+        SLC, (8)1310.0
+SEN     DD(BU,64,8), 0
+
+! -- constants (pool pp.176-177) --
+        SLC, (8)22071.0
+FPK52   DD(BU,64,8), (8)0001024713560247135620
+        SLC, (8)22074.0
+FPK55   DD(BU,64,8), (8)0001024713560247135630
+        SLC, (8)22104.0
+FPK64   DD(BU,64,8), (8)0001051627340516273440
+
+        SLC, (8)21064.40
+! F217WB1 - MS 0, N+A 0, ACS 1
+MID6    DLN(U), FPK64
+        D/(U), FPK52
+        BB, $SB+.4, $+2.0                    ! test sign bit + 1
+        SIC, SEN
+        B, SERS
+! F217WB2 - MS 1, ACS+N+A 0
+        DL(U), FPK64
+        D/(U), FPK55
+        BB, $SB+.4, $+2.0                    ! test sign bit + 1
+        SIC, SEN
+        B, SERS
+! F217WB3 - MS+ACS 1, N+A 0
+        DLN(U), FPK64
+        D/(U), FPK55
+        BZB, $SB+.4, $+2.0                   ! test sign bit + 0
+        SIC, SEN
+        B, SERS
+! F217WB4 - MS+ACS+N+A 1
+        DLN(U), FPK64
+        D/NA(U), FPK55
+        BZB, $SB+.4, $+2.0                   ! test sign bit + 0
+        SIC, SEN
+        B, SERS
+PASS    BEW, $                               ! 021100.40: F217WC's first instruction
+        END, MID6

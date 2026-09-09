@@ -1,0 +1,47 @@
+! jb_af1c F217-W "DIVIDE DOUBLE TEST", sub-block F217WD "TEST UNCHANGED
+! REGS", p.160 (octal 021107.00-021120.00).  Continues
+! fp_arith_f217wc.strap; F217WE follows at 021120.40, so this block has
+! no exit branch of its own.
+!
+! The third face of p.94's writeback rule.  WA checked what D/ writes,
+! WC what it zeroes, and WD what it must leave alone: "Accumulator bits
+! 108-127 remain unchanged", and of the sign byte only bit 4 -- the
+! quotient sign -- may be touched.
+!
+! L, R and the sign byte are filled with ones; after the division R
+! 44-63 (= IBM 108-127) must still be ones, and so must SB 0-3 and
+! SB 5-7.  SB 5-7 are the flag bits, so this pins that D/ carries the
+! accumulator's flags through.
+!
+! Note the contrast with F217WC one block earlier: WC demands IBM
+! 61-107 become ZERO from the same all-ones start, and WD demands IBM
+! 108-127 stay ONES.  The boundary between them is exactly where p.94
+! puts it.
+
+! -- SSIP framework substitutes: SERS (octal 1304) -> FAIL halt,
+! -- SEN (octal 1310) -> scratch.
+        SLC, (8)1304.0
+SERS    BEW, $
+        SLC, (8)1310.0
+SEN     DD(BU,64,8), 0
+
+! -- constants (pool p.176) --
+        SLC, (8)22006.0
+FPK1    DD(BU,64,8), (8)1777777777777777777777
+
+        SLC, (8)21107.0
+FDD5    C1111(BU,64), FPK1, 64               ! left word <- all ones
+        C1111(BU,64), FPK1                   ! right word <- all ones
+        CM1111(BU,8), $SB                    ! sign byte <- all ones
+        D/(U), FPK1
+        CT1010(BU,20), FPK1                  ! does R44-63 remain +1 s
+        SIC, SEN
+        BRGZ, SERS
+        CT1100(BU,4), $SB                    ! does SB0-3 remain +1 s
+        SIC, SEN
+        BRGZ, SERS
+        CT1100(BU,3), $SB+.5                 ! does SB5-7 remain +1 s
+        SIC, SEN
+        BRGZ, SERS
+PASS    BEW, $                               ! 021120.40: F217WE's first instruction
+        END, FDD5

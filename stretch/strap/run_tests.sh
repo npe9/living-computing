@@ -956,6 +956,21 @@ run "FP divide double arithmetic (jb_af1c F217WA on the model)" ./run_program.sh
     "PC=$(python3 -c 'from strap_asm import assemble; print(assemble(open("programs/fp_arith_f217wa.strap").read()).symtab["PASS"]//32)')" \
     "SEN:712=0"
 
+run "FP divide double sign and modifiers (jb_af1c F217WB, encoding)" python3 verify_fp_arith_f217wb_listing.py
+run "FP divide double sign and modifiers (jb_af1c F217WB on the model)" ./run_program.sh programs/fp_arith_f217wb.strap StretchFpDivDblBTb \
+    "PC=$(python3 -c 'from strap_asm import assemble; print(assemble(open("programs/fp_arith_f217wb.strap").read()).symtab["PASS"]//32)')" \
+    "SEN:712=0"
+
+run "FP divide double changed regs (jb_af1c F217WC, encoding)" python3 verify_fp_arith_f217wc_listing.py
+run "FP divide double changed regs (jb_af1c F217WC on the model)" ./run_program.sh programs/fp_arith_f217wc.strap StretchFpDivDblCTb \
+    "PC=$(python3 -c 'from strap_asm import assemble; print(assemble(open("programs/fp_arith_f217wc.strap").read()).symtab["PASS"]//32)')" \
+    "SEN:712=0"
+
+run "FP divide double unchanged regs (jb_af1c F217WD, encoding)" python3 verify_fp_arith_f217wd_listing.py
+run "FP divide double unchanged regs (jb_af1c F217WD on the model)" ./run_program.sh programs/fp_arith_f217wd.strap StretchFpDivDblDTb \
+    "PC=$(python3 -c 'from strap_asm import assemble; print(assemble(open("programs/fp_arith_f217wd.strap").read()).symtab["PASS"]//32)')" \
+    "SEN:712=0"
+
 run "Program store compare: store then EXECUTE the modified instruction" ./run_program.sh programs/store_then_execute.strap StretchStoreExecTb \
     "RESULT:$(python3 -c 'from strap_asm import assemble; print(assemble(open("programs/store_then_execute.strap").read()).symtab["RESULT"]//64)')=0x20"
 
