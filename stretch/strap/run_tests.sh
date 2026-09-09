@@ -946,6 +946,11 @@ run "FP divide unchanged regs (jb_af1c F217C on the model)" ./run_program.sh pro
     "PC=$(python3 -c 'from strap_asm import assemble; print(assemble(open("programs/fp_arith_f217c.strap").read()).symtab["PASS"]//32)')" \
     "SEN:712=0"
 
+run "FP divide indicators (jb_af1c F217D, encoding)" python3 verify_fp_arith_f217d_listing.py
+run "FP divide indicators (jb_af1c F217D on the model)" ./run_program.sh programs/fp_arith_f217d.strap StretchFpDivDTb \
+    "PC=$(python3 -c 'from strap_asm import assemble; print(assemble(open("programs/fp_arith_f217d.strap").read()).symtab["PASS"]//32)')" \
+    "SEN:712=0"
+
 run "Program store compare: store then EXECUTE the modified instruction" ./run_program.sh programs/store_then_execute.strap StretchStoreExecTb \
     "RESULT:$(python3 -c 'from strap_asm import assemble; print(assemble(open("programs/store_then_execute.strap").read()).symtab["RESULT"]//64)')=0x20"
 

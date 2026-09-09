@@ -1,0 +1,149 @@
+! jb_af1c F217 "DIVIDE TEST ROUTINE", sub-block F217D "TESTS OF
+! INDICATORS", pp.156-157 (octal 020717.00-020765.40, the block's own
+! exit "BD,$+1.0").  Continues fp_arith_f217c.strap and finishes F217.
+!
+! THIS BLOCK DRIVES EVERYTHING F217A LEFT UNTOUCHED: the zero-divisor
+! indicator and the data flags, the arithmetic result indicators across
+! a suppressed division, and -- in D3 to D6 -- the LEFT ZEROS COUNTER
+! and the PARTIAL FIELD indicator, which no earlier block has ever
+! read.
+!
+!   D1  Z,$IND then / by FPK66, whose fraction is zero and whose FLAG
+!       BITS ARE ALL THREE SET.  p.93: "The data flag and MOP
+!       indicators will be set but the arithmetic result and exponent
+!       range indicators are not changed."  So ZD, TF, UF and VF must
+!       all come on.
+!   D2  the other half of that sentence.  Z,$IND, then an L of FPK52
+!       which turns RGZ on, then a division by the zero-fraction FPK29.
+!       RGZ must SURVIVE and RLZ, RZ and RN stay off -- the suppressed
+!       division must not touch the result indicators at all.
+!   D3  LZC ++2.  FPK64 / FPK52: the divisor needs two places of
+!       pre-normalization, the dividend one, and the quotient overflows,
+!       so 2 - 1 + 1 = 2.  PF must be ON (unnormalized with LZC > 0).
+!   D4  LZC ++0.  FPK52 / FPK64, the same pair the other way round: one
+!       place of divisor shift, one of dividend shift, no overflow.
+!       PF must be OFF.
+!   D5  LZC ++2 again, from FK83 +1028 / FK59 +1024 -- the same
+!       fractions as D3 but with flagged exponents, which shows the
+!       counter is set from the FRACTION work and not from the
+!       exponent path.
+!   D6  LZC ++0 with both operands XFN, FK88 -1791 / FK89 -1024.
+!
+! HOW THE LZC CHECK WORKS.  A CM0000 clears word 7 bits 17-23 first.
+! The expected value is loaded into the accumulator's RIGHT word by an
+! L(BU,64) -- FK91 is 2, FPK0 is 0 -- so it lands in IBM 121-127.  The
+! CT0110 then XORs the seven bits of LZC at word 7 bit 17 against those
+! same seven accumulator bits at offset 0.  Note this reads word 7 as
+! ordinary storage, which is what p.94 means by "the contents of LZC
+! remain available for program use".
+!
+! A BPFZ BEFORE EACH DIVISION CLEARS PF, for the same reason F216D1
+! opens with a BPSHZ: PF is class P, set by an operation and never
+! cleared by one, so a check that did not clear it first would inherit
+! whatever an earlier row left.  D6 puts its BPFZ before the CM0000
+! rather than after the loads; transcribed in the printed order.
+!
+! All six were computed from the constants before the block was run.
+
+! -- SSIP framework substitutes: SERS (octal 1304) -> FAIL halt,
+! -- SEN (octal 1310) -> scratch.
+        SLC, (8)1304.0
+SERS    BEW, $
+        SLC, (8)1310.0
+SEN     DD(BU,64,8), 0
+
+! -- constants (pools pp.176-178) --
+        SLC, (8)22005.0
+FPK0    DD(BU,64,8), (8)0000000000000000000000
+        SLC, (8)22042.0
+FPK29   DD(BU,64,8), (8)0000400000000000000000
+        SLC, (8)22071.0
+FPK52   DD(BU,64,8), (8)0001024713560247135620
+        SLC, (8)22104.0
+FPK64   DD(BU,64,8), (8)0001051627340516273440
+        SLC, (8)22106.0
+FPK66   DD(BU,64,8), (8)0000400000000000000007
+        SLC, (8)22235.0
+FK59    DD(BU,64,8), (8)1000024713560247135620
+        SLC, (8)22264.0
+FK83    DD(BU,64,8), (8)1002051627340516273440
+        SLC, (8)22271.0
+FK88    DD(BU,64,8), (8)1577624713560247135620
+FK89    DD(BU,64,8), (8)1000251627340516273440
+        SLC, (8)22274.0
+FK91    DD(BU,64,8), (8)0000000000000000000002
+
+        SLC, (8)20717.0
+! F217D1 - zero divisor: ZD and the data flags come on
+FD5     L(U), FPK52
+        Z, $IND
+        /(U), FPK66
+        SIC, SEN
+        BZZD, SERS                           ! error if ZD indicator off
+        SIC, SEN
+        BZTF, SERS                           ! error if TF ind. off
+        SIC, SEN
+        BZUF, SERS                           ! error if UF ind. off
+        SIC, SEN
+        BZVF, SERS
+! F217D2 - and the arithmetic result indicators are NOT changed
+        B, $+.32
+        Z, $IND
+        L(U), FPK52                          ! turns on RGZ indicator
+        /(U), FPK29
+        SIC, SEN
+        BZRGZ, SERS                          ! error if RGZ off
+        SIC, SEN
+        BRLZ, SERS                           ! error if other indicators on
+        SIC, SEN
+        BRZ, SERS
+        SIC, SEN
+        BRN, SERS
+! F217D3 - LZC ++2, PF on
+        B, $+.32
+        CM0000(BU,7), $LZC
+        L(BU,64), FK91
+        L(U), FPK64
+        BPFZ, $+.32
+        /(U), FPK52
+        CT0110(BU,7), $LZC                   ! test LZC ++2
+        SIC, SEN
+        BRGZ, SERS
+        SIC, SEN
+        BZPF, SERS
+! F217D4 - LZC ++0, PF off
+        B, $+.32
+        CM0000(BU,7), $LZC
+        L(BU,64), FPK0
+        L(U), FPK52
+        BPFZ, $+.32
+        /(U), FPK64
+        CT0110(BU,7), $LZC                   ! test LZC ++0
+        SIC, SEN
+        BRGZ, SERS
+        SIC, SEN
+        BPF, SERS
+! F217D5 - LZC ++2 with flagged exponents
+        B, $+.32
+        CM0000(BU,7), $LZC
+        L(BU,64), FK91
+        L(U), FK83                           ! exp ++1028
+        BPFZ, $+.32
+        /(U), FK59                           ! exp ++1024
+        CT0110(BU,7), $LZC                   ! test LZC ++2
+        SIC, SEN
+        BRGZ, SERS
+! F217D6 - LZC ++0 with both operands XFN
+        B, $+.32
+        BPFZ, $+.32
+        CM0000(BU,7), $LZC
+        L(BU,64), FPK0
+        L(U), FK88                           ! exp +-1791
+        /(U), FK89                           ! exp +-1024
+        CT0110(BU,7), $LZC                   ! check LZC ++0
+        SIC, SEN
+        BRGZ, SERS
+        SIC, SEN
+        BPF, SERS
+PASS    BEW, $                               ! 020765.40: the block's exit "BD,$+1.0"
+        END, FD5

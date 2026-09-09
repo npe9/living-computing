@@ -1983,7 +1983,47 @@ hand vectors alone. "Enables" notes the dependency chain.
    routines running where the sub-blocks past the first page are the
    ones that close the first page's gaps.
 
-   Next: F217D. Then R/, D/ and SRT -- R/ is
+   F217D DONE (6 sub-tests), F217 COMPLETE (A 8, B 4, C 1, D 6), suite
+   206 -- and complete was CHECKED: p.158 begins F217-W "DIVIDE DOUBLE
+   TEST", so D is the last sub-block. Passed first run, which means the
+   ZD path, the data flags, LZC and PF were all right as written, none
+   of them exercised by anything before.
+
+   D1 AND D2 ARE THE TWO HALVES OF ONE SENTENCE in p.93: "the
+   accumulator and the sign byte register remain unchanged. The data
+   flag and MOP indicators will be set but the arithmetic result and
+   exponent range indicators are not changed." D1 divides by FPK66 --
+   a zero fraction whose FLAG BITS ARE ALL THREE SET -- and demands ZD,
+   TF, UF and VF all come on. D2 turns RGZ on with an L, divides by the
+   zero-fraction FPK29, and demands RGZ SURVIVES with RLZ, RZ and RN
+   still off. A suppressed division that touched the result indicators
+   would fail D2 while passing everything else.
+
+   D3-D6 ARE THE FIRST READS OF THE LEFT ZEROS COUNTER ANYWHERE IN THE
+   TRANSCRIBED DIAGNOSTIC. The check is a connective on word 7 bits
+   17-23 against the accumulator's IBM 121-127, loaded beforehand with
+   FK91 (2) or FPK0 (0) through an L(BU,64) -- so LZC is read as
+   ordinary storage, which is exactly what p.94 means by "the contents
+   of LZC remain available for program use". D3 wants 2 (divisor shift
+   2, dividend shift 1, plus 1 for the quotient overflow), D4 wants 0
+   from the same pair reversed, D5 wants 2 again from FK83/FK59 --
+   the same FRACTIONS as D3 with flagged exponents, which is what shows
+   the counter comes from the fraction work and not the exponent path
+   -- and D6 wants 0 with both operands XFN.
+
+   EACH LZC ROW OPENS WITH A BPFZ, for the same reason F216D1 opens
+   with a BPSHZ: PF is class P, set by an operation and never cleared
+   by one. That is now the third permanent indicator where the
+   diagnostic's own authors clear before testing (PSH, LC, PF), and it
+   is the pattern F216B's masked injection taught me to look for.
+
+   Next: F217-W "DIVIDE DOUBLE TEST" (p.158 on), which drives D/ -- the
+   last floating-point operation and the one that finally needs the
+   REMAINDER REGISTER. Its checks read word 13 directly ("CHECK RR
+   EXP++1028,FRACT+0") and also ask about a 49TH QUOTIENT BIT via
+   BZB on word 8 bit 60, which is p.94's "the quotient exponent and
+   fraction replace accumulator bits 0-60". After that only R/ and SRT
+   remain, and R/ falls out of fpDiv with the operands interchanged. Then R/, D/ and SRT -- R/ is
    p.94's "same process with dividends and divisors interchanged" and
    falls out of fpDiv, but it waits for a block that drives it. p.99
    also gives the remainder register a role nothing uses yet; D/ is
