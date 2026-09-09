@@ -2106,7 +2106,46 @@ hand vectors alone. "Enables" notes the dependency chain.
    exception of the interchange of the operands." So the arm is
    fpDiv(opnd, acc) rather than fpDiv(acc, opnd), and the sign
    modifiers still land on the addressed operand -- which for R/ is the
-   DIVIDEND. After that only SRT remains. Then R/, D/ and SRT -- R/ is
+   DIVIDEND. After that only SRT remains.
+
+   R/ DONE, F217-X COMPLETE (XA 8, XB 4, XC 1, XD 4), suite 224, and
+   checked: p.165 begins F218 "STORE ROOT TEST", so XD is the last
+   sub-block. Every one of the four passed first run.
+
+   R/ IS ONE LINE OF DIFFERENCE and the block is built to prove it.
+   F217-XA is F217A with the operands swapped between accumulator and
+   storage, checking the SAME seven constants, so an arm that failed to
+   interchange them fails every row -- measured: injecting fpDiv(acc,
+   opnd) halts at XA1, SEN 021136.00. XD is F217D3-D6 the same way, and
+   expects the same LZC values, which is right because LZC records the
+   excess of divisor shift over dividend shift and that is a property
+   of the PAIR, not of where each operand sits.
+
+   XA8 IS THE ZERO DIVISOR FROM THE OTHER SIDE: for R/ the accumulator
+   IS the divisor, so the suppression is triggered by the accumulator's
+   fraction and the check is "CHECK THAT DIVISOR REMAINS IN ACC."
+
+   ONE PLACE THE MODEL HAD TO CHOOSE AND F217-X CANNOT ADJUDICATE. For
+   R/ the result's flag bits come from the DIVIDEND, which is the
+   storage operand, so the arm writes the sign byte with sbFlags(accS)
+   explicitly rather than through fpSignByte -- the accumulator's own
+   flags are what should survive, as everywhere else. F217-XC checks SB
+   5-7, but it fills the sign byte with ones AND uses FPK1 (flags 7) as
+   the dividend, so both readings write 111 and it passes either way.
+   Recorded rather than claimed.
+
+   XB IS WHERE FPK69 FINALLY EARNS ITS KEEP: it and FPK64 are the pool
+   sign-pair I conflated in F217A, and XB uses both, one row apart,
+   with the sign as the only thing checked.
+
+   Next: F218 "STORE ROOT TEST" (p.165 on), which drives SRT -- the
+   last floating-point operation with no implementation. p.94: "The
+   square root of the operand in the left half of the accumulator is
+   placed in the storage location specified by the effective address.
+   The entire accumulator and its sign byte remain unchanged." p.93 has
+   the details: the exponent is divided by two, an odd exponent adds
+   one and shifts the fraction right one place, and the fraction square
+   root is taken to 48 bits. Then R/, D/ and SRT -- R/ is
    p.94's "same process with dividends and divisors interchanged" and
    falls out of fpDiv, but it waits for a block that drives it. p.99
    also gives the remainder register a role nothing uses yet; D/ is

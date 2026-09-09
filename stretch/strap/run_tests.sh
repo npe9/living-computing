@@ -981,6 +981,21 @@ run "FP reciprocal divide arithmetic (jb_af1c F217XA on the model)" ./run_progra
     "PC=$(python3 -c 'from strap_asm import assemble; print(assemble(open("programs/fp_arith_f217xa.strap").read()).symtab["PASS"]//32)')" \
     "SEN:712=0"
 
+run "FP reciprocal divide sign and modifiers (jb_af1c F217XB, encoding)" python3 verify_fp_arith_f217xb_listing.py
+run "FP reciprocal divide sign and modifiers (jb_af1c F217XB on the model)" ./run_program.sh programs/fp_arith_f217xb.strap StretchFpRecipDivBTb \
+    "PC=$(python3 -c 'from strap_asm import assemble; print(assemble(open("programs/fp_arith_f217xb.strap").read()).symtab["PASS"]//32)')" \
+    "SEN:712=0"
+
+run "FP reciprocal divide unchanged regs (jb_af1c F217XC, encoding)" python3 verify_fp_arith_f217xc_listing.py
+run "FP reciprocal divide unchanged regs (jb_af1c F217XC on the model)" ./run_program.sh programs/fp_arith_f217xc.strap StretchFpRecipDivCTb \
+    "PC=$(python3 -c 'from strap_asm import assemble; print(assemble(open("programs/fp_arith_f217xc.strap").read()).symtab["PASS"]//32)')" \
+    "SEN:712=0"
+
+run "FP reciprocal divide indicators (jb_af1c F217XD, encoding)" python3 verify_fp_arith_f217xd_listing.py
+run "FP reciprocal divide indicators (jb_af1c F217XD on the model)" ./run_program.sh programs/fp_arith_f217xd.strap StretchFpRecipDivDTb \
+    "PC=$(python3 -c 'from strap_asm import assemble; print(assemble(open("programs/fp_arith_f217xd.strap").read()).symtab["PASS"]//32)')" \
+    "SEN:712=0"
+
 run "Program store compare: store then EXECUTE the modified instruction" ./run_program.sh programs/store_then_execute.strap StretchStoreExecTb \
     "RESULT:$(python3 -c 'from strap_asm import assemble; print(assemble(open("programs/store_then_execute.strap").read()).symtab["RESULT"]//64)')=0x20"
 

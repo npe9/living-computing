@@ -1,0 +1,99 @@
+! jb_af1c F217-XD "INDICATOR TESTS", p.164 (octal 021214.40-021245.40,
+! the block's own exit "B,$+1.0").  Continues fp_arith_f217xc.strap and
+! finishes F217-X.
+!
+! R/'s version of F217D3-D6: the LEFT ZEROS COUNTER and the PARTIAL
+! FIELD indicator, with the operands interchanged.  Each of the four
+! rows uses the same PAIR of constants as its F217D counterpart, just
+! with the dividend in storage and the divisor in the accumulator, and
+! expects the same LZC -- which is the point, since LZC records the
+! excess of divisor shift over dividend shift and that is a property of
+! the pair rather than of where each one sits.
+!
+!   XD1  acc FPK52 (divisor), R/ FPK64 (dividend)  -> LZC 2, PF on
+!   XD2  acc FPK64, R/ FPK52                       -> LZC 0, PF off
+!   XD3  acc FK59  (+1024 XFP), R/ FK83 (+1028)    -> LZC 2, no PF check
+!   XD4  acc FK89  (-1024 XFN), R/ FK88 (-1791)    -> LZC 0, PF off
+!
+! XD1/XD2 are F217D3/D4's pair and XD3/XD4 are D5/D6's.  XD3 checks no
+! PF, exactly as F217D5 does not.
+!
+! The LZC check works as it does in F217D: a CM0000 clears word 7 bits
+! 17-23, the expected value is loaded into the accumulator's right word
+! by an L(BU,64) so it lands in IBM 121-127, and the CT0110 XORs the
+! two seven-bit fields.  Each row opens with a BPFZ to clear PF, which
+! is permanent.
+!
+! Note the L(BU,64) that sets up the expected LZC runs BEFORE the L(U)
+! that loads the divisor -- the first fills the right word, the second
+! the left, so they do not collide.
+
+! -- SSIP framework substitutes: SERS (octal 1304) -> FAIL halt,
+! -- SEN (octal 1310) -> scratch.
+        SLC, (8)1304.0
+SERS    BEW, $
+        SLC, (8)1310.0
+SEN     DD(BU,64,8), 0
+
+! -- constants (pools pp.176-178) --
+        SLC, (8)22005.0
+FPK0    DD(BU,64,8), (8)0000000000000000000000
+        SLC, (8)22071.0
+FPK52   DD(BU,64,8), (8)0001024713560247135620
+        SLC, (8)22104.0
+FPK64   DD(BU,64,8), (8)0001051627340516273440
+        SLC, (8)22235.0
+FK59    DD(BU,64,8), (8)1000024713560247135620
+        SLC, (8)22264.0
+FK83    DD(BU,64,8), (8)1002051627340516273440
+        SLC, (8)22271.0
+FK88    DD(BU,64,8), (8)1577624713560247135620
+FK89    DD(BU,64,8), (8)1000251627340516273440
+        SLC, (8)22274.0
+FK91    DD(BU,64,8), (8)0000000000000000000002
+
+        SLC, (8)21214.40
+! F217XD1 - exps in N rng: LZC ++2, PF on
+MID20   CM0000(BU,7), $LZC
+        L(BU,64), FK91
+        L(U), FPK52
+        BPFZ, $+.32
+        R/(U), FPK64
+        CT0110(BU,7), $LZC                   ! check LZC ++2
+        SIC, SEN
+        BRGZ, SERS
+        SIC, SEN
+        BZPF, SERS                           ! error if PF off
+! F217XD2 - exps in N rng: LZC ++0, PF off
+        CM0000(BU,7), $LZC
+        L(BU,64), FPK0
+        L(U), FPK64
+        BPFZ, $+.32
+        R/(U), FPK52
+        CT0110(BU,7), $LZC                   ! check LZC ++0
+        SIC, SEN
+        BRGZ, SERS
+        SIC, SEN
+        BPF, SERS                            ! error if PF on
+! F217XD3 - exps in XFP rng: LZC ++2
+        CM0000(BU,7), $LZC
+        L(BU,64), FK91
+        L(U), FK59
+        BPFZ, $+.32
+        R/(U), FK83
+        CT0110(BU,7), $LZC                   ! check LZC ++2
+        SIC, SEN
+        BRGZ, SERS
+! F217XD4 - exps in XFN rng: LZC ++0, PF off
+        CM0000(BU,7), $LZC
+        L(BU,64), FPK0
+        L(U), FK89
+        BPFZ, $+.32
+        R/(U), FK88
+        CT0110(BU,7), $LZC                   ! check LZC ++0
+        SIC, SEN
+        BRGZ, SERS
+        SIC, SEN
+        BPF, SERS                            ! error if PF on
+PASS    BEW, $                               ! 021245.40: the block's exit "B,$+1.0"
+        END, MID20

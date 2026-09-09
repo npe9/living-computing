@@ -1,0 +1,69 @@
+! jb_af1c F217-XB "TEST SIGN AND MOD COMBS", p.163 (octal
+! 021165.00-021200.40).  Continues fp_arith_f217xa.strap; F217-XC
+! follows at 021201.00, so this block has no exit branch of its own.
+!
+! R/'s version of F217B, and the four rows use the pool's sign-pair
+! twice over: FPK64 and FPK69 are the same number but for bit 3, so
+! the memory sign can be changed without changing anything else.
+!
+!   XB1  LN FPK52 (acc sign 1)  R/ FPK64 (0)   -> 1   BB
+!   XB2  L  FPK52 (acc sign 0)  R/ FPK69 (1)   -> 1   BB
+!   XB3  LN FPK52 (acc sign 1)  R/ FPK69 (1)   -> 0   BZB
+!   XB4  LN FPK52 (acc sign 1)  R/NA FPK69     -> 0   BZB
+!
+! FPK69 IS THE CONSTANT THAT CAUGHT ME OUT IN F217A: I transcribed
+! FPK64 as FPK69's value there, and F217A could not see it because all
+! its checks stop at IBM 59 while the two differ only at bit 60.  Here
+! both are used, side by side, and the sign is the only thing checked.
+!
+! As in every other sign matrix in this diagnostic, XB4's A modifier is
+! invisible -- FPK69's sign is already 1, so absolute-then-negate lands
+! where negate alone would -- and XB3 and XB4 expect the same answer.
+!
+! Note the modifier goes on the R/, and for R/ the addressed operand is
+! the DIVIDEND, so these four rows are the only place in F217-X where
+! p.94's "the sign of the dividend is modified by the sign modifiers"
+! is exercised at all.
+
+! -- SSIP framework substitutes: SERS (octal 1304) -> FAIL halt,
+! -- SEN (octal 1310) -> scratch.
+        SLC, (8)1304.0
+SERS    BEW, $
+        SLC, (8)1310.0
+SEN     DD(BU,64,8), 0
+
+! -- constants (pool pp.176-177) --
+        SLC, (8)22071.0
+FPK52   DD(BU,64,8), (8)0001024713560247135620
+        SLC, (8)22104.0
+FPK64   DD(BU,64,8), (8)0001051627340516273440
+        SLC, (8)22111.0
+FPK69   DD(BU,64,8), (8)0001051627340516273450
+
+        SLC, (8)21165.0
+! F217XB1 - MS 0, N+A 0, ACS 1
+MID17   LN(U), FPK52
+        R/(U), FPK64
+        BB, $SB+.4, $+2.0                    ! is sign 1
+        SIC, SEN
+        B, SERS
+! F217XB2 - MS 1, ACS+N+A 0
+        L(U), FPK52
+        R/(U), FPK69
+        BB, $SB+.4, $+2.0                    ! is sign 1
+        SIC, SEN
+        B, SERS
+! F217XB3 - MS+ACS 1, N+A 0
+        LN(U), FPK52
+        R/(U), FPK69
+        BZB, $SB+.4, $+2.0                   ! is sign 0
+        SIC, SEN
+        B, SERS
+! F217XB4 - MS+ACS+N+A 1
+        LN(U), FPK52
+        R/NA(U), FPK69
+        BZB, $SB+.4, $+2.0                   ! is sign 0
+        SIC, SEN
+        B, SERS
+PASS    BEW, $                               ! 021201.00: F217-XC's first instruction
+        END, MID17

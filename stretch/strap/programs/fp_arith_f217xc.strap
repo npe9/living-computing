@@ -1,0 +1,49 @@
+! jb_af1c F217-XC "TEST UNCHANGED REGS", p.163 (octal
+! 021201.00-021212.40, the block's own exit "B,$+1.0").  Continues
+! fp_arith_f217xb.strap and finishes F217-X.
+!
+! p.94: R/'s writeback is DIVIDE's -- "The quotient exponent and
+! fraction replace accumulator bits 0-59.  Accumulator bits 60-127
+! remain unchanged" -- so this fills L, R and the sign byte with ones,
+! does an R/, and demands the right word and the sign byte's other
+! seven bits come back ones.  Bit 4 is skipped, being the quotient
+! sign.
+!
+! IT CANNOT DISCRIMINATE WHERE THE FLAG BITS COME FROM, which is worth
+! recording because R/ is the one operation where the question has two
+! plausible answers.  The arm takes SB 5-7 from the ACCUMULATOR, since
+! for R/ the result's own flags come from the dividend -- the storage
+! operand -- and the accumulator's are what should survive.  But here
+! the sign byte is filled with ones (flags 7) and the dividend is FPK1
+! (flags 7), so both readings write 111 and XC passes either way.
+!
+! The divisor is the accumulator, all ones, whose fraction is
+! ffffffffffff -- a real division, not a suppressed one.
+
+! -- SSIP framework substitutes: SERS (octal 1304) -> FAIL halt,
+! -- SEN (octal 1310) -> scratch.
+        SLC, (8)1304.0
+SERS    BEW, $
+        SLC, (8)1310.0
+SEN     DD(BU,64,8), 0
+
+! -- constants (pool p.176) --
+        SLC, (8)22006.0
+FPK1    DD(BU,64,8), (8)1777777777777777777777
+
+        SLC, (8)21201.0
+F217XC  C1111(BU,64), FPK1, 64               ! left word <- all ones
+        C1111(BU,64), FPK1                   ! right word <- all ones
+        CM1111(BU,8), $SB                    ! sign byte <- all ones
+        R/(U), FPK1
+        CT1010(BU,64), FPK1                  ! does R remain +1 s
+        SIC, SEN
+        BRGZ, SERS
+        CT1100(BU,4), $SB                    ! does SB 0-3 remain +1 s
+        SIC, SEN
+        BRGZ, SERS
+        CT1100(BU,3), $SB+.5                 ! does SB 5-7 remain +1 s
+        SIC, SEN
+        BRGZ, SERS
+PASS    BEW, $                               ! 021212.40: the block's exit "B,$+1.0"
+        END, F217XC
