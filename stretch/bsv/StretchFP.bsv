@@ -871,6 +871,87 @@ function FpdResult fpMulDouble(FpNum a, FpNum b, Bool normalized, Bool noisy);
   end
 endfunction
 
+// Square root of a 48-bit FRACTION, to 48 bits (Ref. Manual p.93).
+// The radicand is the fraction extended with 48 low-order zeros --
+// "during the process the fraction is extended with low-order zeros"
+// -- so this is the integer square root of a 96-bit value, and the
+// classic restoring bit-by-bit method gives one root bit per step.
+//
+// `rem` stays at or below twice the root so far, hence under 2^49
+// before its shift and under 2^51 after; the trial subtrahend is under
+// 2^50.  Fifty-two bits covers both.
+function Bit#(48) fpSqrt48(Bit#(48) frac);
+  Bit#(96) n   = { frac, 48'b0 };
+  Bit#(52) rem = 0;
+  Bit#(48) root = 0;
+  for (Integer i = 47; i >= 0; i = i - 1) begin
+    rem = { rem[49:0], n[2*i+1], n[2*i] };
+    Bit#(52) trial = zeroExtend({ root, 2'b01 });
+    if (rem >= trial) begin
+      rem  = rem - trial;
+      root = { root[46:0], 1'b1 };
+    end else
+      root = { root[46:0], 1'b0 };
+  end
+  return root;
+endfunction
+
+typedef struct {
+  FpNum   res;         // the value stored: exponent, fraction, sign
+  Bool    ir;          // imaginary root: the radicand's sign is negative
+  Bool    generated;
+  Bool    propagated;
+} FpSqrtResult deriving (Bits, Eq, FShow);
+
+// STORE ROOT (SRT, pp.93 and 95).  "The square root of the operand in
+// the left half of the accumulator is placed in the storage location
+// specified by the effective address.  The entire accumulator and its
+// sign byte remain unchanged."
+//
+// p.93 for the N range: "The exponent is divided by two.  When the
+// exponent is odd, a one is added to the exponent prior to the
+// division and the fraction is shifted right one position."  That
+// keeps the value the same -- halving the fraction and adding one to
+// the exponent cancel -- and leaves an even exponent to halve.
+//
+// AND FOR THE FLAGGED RANGES THE SHIFT HAPPENS BUT THE ADDITION DOES
+// NOT: "the result exponent is the same as the operand exponent...
+// Note that when the operand exponent is odd the fraction is shifted
+// one position to the right prior to taking the square root.  However,
+// the exponent is not modified as a result of the shift for operands
+// in the XFP or XFN range."  jb_af1c F218A5 is exactly that case --
+// FK126 at +1791, an odd exponent, whose answer keeps +1791.
+//
+// The sign modifiers do two different jobs here (p.93): the ABSOLUTE
+// one is applied to the accumulator sign BEFORE the extraction and
+// governs whether IR can come on, and the NEGATIVE one is applied to
+// the RESULT "as in the store operation" -- so the stored sign is just
+// the negative modifier, positive when it is zero.
+function FpSqrtResult fpSqrt(FpNum a, Bit#(1) absSign, Bit#(1) negSign,
+                             Bool normalized);
+  Bit#(1) radicand = (absSign == 1) ? 0 : a.sign;
+  Int#(14) e  = fpExpFull(a);
+  Bit#(48) fr = a.frac;
+  Bool flagged = (a.ef == 1);
+  if (pack(e)[0] == 1) begin
+    fr = fr >> 1;
+    if (!flagged) e = e + 1;
+  end
+  Bit#(48) q = fpSqrt48(fr);
+  Int#(14) re = flagged ? e : (e >> 1);   // arithmetic shift: e is even here
+  let {h, gen} = fpMakeExp(re, q, negSign, a.flags);
+  FpNum res = h;
+  if (normalized && !flagged && res.frac != 0) begin
+    // "No noisy mode 1-bits are entered when normalizing and noisy
+    // mode are specified", so this normalization is never noisy.
+    let {f48, adj, lc} = fpNormalize96(0, {res.frac, 48'b0}, True, False);
+    let {h2, g2} = fpMakeExp(fpExpFull(res) + adj, f48, negSign, a.flags);
+    res = h2; gen = gen || g2;
+  end
+  return FpSqrtResult { res: res, ir: (radicand == 1),
+                        generated: gen, propagated: flagged };
+endfunction
+
 typedef struct {
   FpNum    res;        // quotient: exponent, high 48 fraction bits, sign
   Bit#(1)  q49;        // the 49th quotient bit -> accumulator IBM 60

@@ -1417,19 +1417,35 @@ function ActionValue#(Tuple4#(HWordAddr, Maybe#(Tuple2#(Bit#(4), IndexWord)),
                    || c == 7'b0010010 || c == 7'b0110010 || c == 7'b0010110 || c == 7'b0110110
                    || c == 7'b0011010 || c == 7'b1011010 || c == 7'b1001010 || c == 7'b0111010
                    || c == 7'b0011110 || c == 7'b1011110 || c == 7'b0111110  // /, D/, R/
+                   || c == 7'b1101110                     // SRT (STORE ROOT)
                    || c == 7'b1010110 || isEplI || isSHF
                    || c == 7'b1000110 || c == 7'b1100110   // DL / DLWF
                    || c == 7'b1000010 || c == 7'b1100010   // D+ / D+MG
                    || c == 7'b1010010                     // F+ (ADD TO FRACTION)
                    || isSRD || isSLO);                     // SRD / SLO
         if (!known)
-          ind = setOpInvalid(ind);   // SRT: not yet
+          ind = setOpInvalid(ind);   // every floating-point operation is now implemented
         else if (isST) begin
           FpNum v = fpApplySignMods(acc, fp.absSign, fp.invSign);
           st.writeWord(ea, fpToWord(v));
           ind = setBit(ind, ind_MOP, 1);
           ind = setResultIndicatorsFp(ind, v);
           ind = setRangeIndicators(ind, fpRangeBits(v, False, v.ef == 1));
+        end else if (c == 7'b1101110) begin // SRT (STORE ROOT, pp.93, 95)
+          // A store, so like ST it needs no operand fetch and is
+          // handled before the prefetch requirement below.
+          FpSqrtResult r = fpSqrt(acc, fp.absSign, fp.invSign, normalized);
+          // "As with other store operations, the accumulator flag bits,
+          // sign byte register bits 5-7, are placed in the flag bit
+          // positions, bits 61-63 of the addressed storage location."
+          st.writeWord(ea, { r.res.ef, r.res.em, r.res.es, r.res.frac,
+                             r.res.sign, sbFlags(accS) });
+          // "The entire accumulator and its sign byte remain unchanged."
+          ind = setBit(ind, ind_MOP, 1);
+          ind = setResultIndicatorsFp(ind, r.res);
+          ind = setRangeIndicators(ind, fpRangeBits(r.res, r.generated, r.propagated));
+          if (r.ir) ind = setBit(ind, ind_IR, 1);
+          ind = setBit(ind, ind_ZM, 0);
         end else if (isSRD) begin
           // STORE ROUNDED (p.96). "The contents of the accumulator
           // after rounding are placed in the location specified by the

@@ -1,0 +1,139 @@
+! jb_af1c F218 "STORE ROOT TEST", sub-block F218A "ARITHMETIC CHECKS",
+! p.165 (octal 021252.40-021311.40).
+!
+! THIS BLOCK ADDS SRT (STORE ROOT, opcode 1101110) -- the last
+! floating-point operation with no implementation.  Reference Manual
+! p.95: "The square root of the operand in the left half of the
+! accumulator is placed in the storage location specified by the
+! effective address.  The entire accumulator and its sign byte remain
+! unchanged."
+!
+! p.93 has the arithmetic: "The exponent is divided by two.  When the
+! exponent is odd, a one is added to the exponent prior to the division
+! and the fraction is shifted right one position."  Halving the
+! fraction and adding one to the exponent cancel, so the value is
+! unchanged and what is left is an even exponent to halve.
+!
+! THE FLAGGED RANGES SHIFT BUT DO NOT ADD, which is the one rule here
+! that is easy to get wrong: "the result exponent is the same as the
+! operand exponent... Note that when the operand exponent is odd the
+! fraction is shifted one position to the right prior to taking the
+! square root.  However, the exponent is not modified as a result of
+! the shift for operands in the XFP or XFN range."  A5 is exactly that
+! -- FK126 at +1791, odd, whose answer keeps +1791 with the fraction
+! halved before the root.
+!
+!   A1  FPK67  +2, fract 0        -> FPK29  +1, fract 0
+!   A2  FPK71 normalized, +6      -> FPK72  +3, fract e00000000000
+!   A3  FPK75  +3 (ODD), fract 0  -> FPK67  +2  (exponent +1 then /2)
+!   A4  FPK73 normalized, +5 ODD  -> FPK74  +3, fract 800000000000
+!   A5  FK126 +1791 XFP, ODD      -> FK74   +1791 unchanged
+!   A6  FK75  +1024 XFP           -> FK76   +1024 unchanged
+!   A7  FK78  -1024 XFN           -> FK60   -1024 unchanged
+!
+! HOW THE CHECK IS ARRANGED.  Each sub-test loads the EXPECTED result
+! into the accumulator's right word with an L(BU,64), then the operand
+! into the left word, then SRTs to the scratch word ROS and compares
+! ROS against the accumulator's right word with a 64-bit CT0110.  So
+! the same instruction that supplies the operand also supplies the
+! answer, in the other half of the accumulator.
+!
+! THAT MAKES EVERY SUB-TEST A STORE-CLOSE-TO-FETCH: the SRT writes ROS
+! and the very next instruction reads it as its memory operand.  SRT
+! had to be added to the I-box's storeTarget for that -- it is the
+! sixth floating-point operation that stores to its effective address,
+! after ST, M+, M+MG, SRD and SLO.
+!
+! All seven were computed from the constants before the block was run,
+! with the fraction root taken as the integer square root of the
+! fraction extended with 48 low-order zeros, which is p.93's "during
+! the process the fraction is extended with low-order zeros".
+
+! -- SSIP framework substitutes: SERS (octal 1304) -> FAIL halt,
+! -- SEN (octal 1310) -> scratch.
+        SLC, (8)1304.0
+SERS    BEW, $
+        SLC, (8)1310.0
+SEN     DD(BU,64,8), 0
+
+! -- constants (pools pp.176-179) --
+        SLC, (8)22042.0
+FPK29   DD(BU,64,8), (8)0000400000000000000000
+        SLC, (8)22107.0
+FPK67   DD(BU,64,8), (8)0001000000000000000000
+        SLC, (8)22112.0
+FPK71   DD(BU,64,8), (8)0030000000000000001420
+FPK72   DD(BU,64,8), (8)0001560000000000000000
+FPK73   DD(BU,64,8), (8)0030000000000000000400
+FPK74   DD(BU,64,8), (8)0001500000000000000000
+FPK75   DD(BU,64,8), (8)0001400000000000000000
+        SLC, (8)22236.0
+FK60    DD(BU,64,8), (8)1000300000000000000000
+        SLC, (8)22254.0
+FK74    DD(BU,64,8), (8)1577440000000000000000
+FK75    DD(BU,64,8), (8)1000010000000000000000
+FK76    DD(BU,64,8), (8)1000040000000000000000
+FK78    DD(BU,64,8), (8)1000240000000000000000
+        SLC, (8)22337.0
+FK126   DD(BU,64,8), (8)1577420000000000000000
+        SLC, (8)22355.0
+ROS     DD(BU,64,8), 0
+
+        SLC, (8)21252.40
+! F218A1 - exponents of opnds in N range
+SAP24   B, $+.32
+        L(BU,64), FPK29                      ! the expected answer, into the right word
+        L(U), FPK67                          ! exp ++2, fract +0
+        SRT(U), ROS
+        CT0110(BU,64), ROS                   ! test result exp ++1, fract +0
+        SIC, SEN
+        BRGZ, SERS
+! F218A2
+        B, $+.32
+        L(BU,64), FPK72
+        L(N), FPK71                          ! norm. exp ++6, fract +49
+        SRT(U), ROS
+        CT0110(BU,64), ROS                   ! test result exp ++3, fract +7
+        SIC, SEN
+        BRGZ, SERS
+! F218A3 - odd exponent
+        B, $+.32
+        L(BU,64), FPK67
+        L(U), FPK75                          ! exp ++3, fract +0
+        SRT(U), ROS
+        CT0110(BU,64), ROS                   ! test result exp ++2, fract +0
+        SIC, SEN
+        BRGZ, SERS
+! F218A4 - odd exponent, normalized load
+        B, $+.32
+        L(BU,64), FPK74
+        L(N), FPK73                          ! norm. exp ++5, fract +16
+        SRT(U), ROS
+        CT0110(BU,64), ROS                   ! test result exp ++3, fract +4
+        SIC, SEN
+        BRGZ, SERS
+! F218A5 - exponents of opnds in XFP rng; ODD exponent, NOT modified
+        L(BU,64), FK74
+        L(U), FK126                          ! exp ++1791
+        SRT(U), ROS
+        CT0110(BU,64), ROS                   ! check result exp ++1791 and,
+        SIC, SEN
+        BRGZ, SERS                           ! result fraction is .1000...
+! F218A6
+        B, $+.32
+        L(BU,64), FK76
+        L(U), FK75                           ! exp +1024
+        SRT(U), ROS
+        CT0110(BU,64), ROS                   ! check result exp ++1024 and,
+        SIC, SEN
+        BRGZ, SERS                           ! result fraction is .01000...
+! F218A7 - exponents of opnds in XFN range
+        B, $+.32
+        L(BU,64), FK60
+        L(U), FK78                           ! exp +-1024
+        SRT(U), ROS
+        CT0110(BU,64), ROS                   ! check result exp +-1024 and,
+        SIC, SEN
+        BRGZ, SERS                           ! result fraction is .01000...
+PASS    BEW, $                               ! 021311.40
+        END, SAP24
