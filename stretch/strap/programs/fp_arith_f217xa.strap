@@ -1,0 +1,123 @@
+! jb_af1c F217-XA "RECIPROCAL DIVIDE TESTS", sub-block "ARITHMETIC
+! CHECKS", p.162 (octal 021133.00-021163.00, the block's own exit
+! "B,$+1.").
+!
+! THIS BLOCK ADDS R/ (RECIPROCAL DIVIDE, opcode 0111110).  Reference
+! Manual p.94: "The operand specified by the effective address, the
+! dividend, is divided by the operand in the left half of the
+! accumulator, the divisor.  The sign of the dividend is modified by
+! the sign modifiers prior to the division. ... The division process is
+! the same as the process described in DIVIDE with the exception of the
+! interchange of the operands used for dividends and divisor."
+!
+! So the whole instruction is DIVIDE with its two operands the other
+! way round, and this block is F217A with the same swap: XA1-XA7 use
+! F217A1-A7's pairs reversed between accumulator and storage, and check
+! against the SAME seven constants.  That makes it a clean test of the
+! interchange itself -- if the arm divided the accumulator by the
+! operand, as / does, every row would come out wrong.
+!
+!   XA1  acc FK59  +1024 XFP,  R/ FK83  +1028 XFP  -> FK84
+!   XA2  acc FK85  +1024 XFP,  R/ FPK52    +2 N    -> FK60
+!   XA3  acc FK59  +1024 XFP,  R/ FK86 -1791 XFN   -> FK60
+!   XA4  acc FPK52    +2 N,    R/ FPK64    +2 N    -> FPK80
+!   XA5  acc FPK64    +2 N,    R/ FPK52    +2 N    -> FK87
+!   XA6  acc FPK52    +2 N,    R/ FK86 -1791 XFN   -> FK100
+!   XA7  acc FK89  -1024 XFN,  R/ FK88 -1791 XFN   -> FK90
+!   XA8  acc FPK29, whose fraction is ZERO -- and for R/ the
+!        accumulator is the DIVISOR, so this is the zero-divisor case
+!        approached from the opposite side to F217A8.  The check is
+!        "CHECK THAT DIVISOR REMAINS IN ACC.": nothing is written, so
+!        FPK29's own exponent and fraction must still be there.
+!
+! THE SIGN MODIFIERS STILL APPLY TO THE ADDRESSED OPERAND, which for
+! R/ is the DIVIDEND rather than the divisor.  Nothing here uses one --
+! all eight are plain R/(U) -- so that reading is manual-only in this
+! block.
+!
+! As in F217A, every quotient is exactly 800000000000, so the block
+! pins the exponent table and the operand interchange and says nothing
+! about the development of the quotient fraction.
+
+! -- SSIP framework substitutes: SERS (octal 1304) -> FAIL halt,
+! -- SEN (octal 1310) -> scratch.
+        SLC, (8)1304.0
+SERS    BEW, $
+        SLC, (8)1310.0
+SEN     DD(BU,64,8), 0
+
+! -- constants (pools pp.176-179) --
+        SLC, (8)22042.0
+FPK29   DD(BU,64,8), (8)0000400000000000000000
+        SLC, (8)22071.0
+FPK52   DD(BU,64,8), (8)0001024713560247135620
+        SLC, (8)22104.0
+FPK64   DD(BU,64,8), (8)0001051627340516273440
+        SLC, (8)22121.0
+FPK80   DD(BU,64,8), (8)0001100000000000000000
+        SLC, (8)22235.0
+FK59    DD(BU,64,8), (8)1000024713560247135620
+FK60    DD(BU,64,8), (8)1000300000000000000000
+        SLC, (8)22264.0
+FK83    DD(BU,64,8), (8)1002051627340516273440
+FK84    DD(BU,64,8), (8)1002100000000000000000
+FK85    DD(BU,64,8), (8)1000051627340516273440
+FK86    DD(BU,64,8), (8)1577651627340516273440
+FK87    DD(BU,64,8), (8)0000100000000000000000
+FK88    DD(BU,64,8), (8)1577624713560247135620
+FK89    DD(BU,64,8), (8)1000251627340516273440
+FK90    DD(BU,64,8), (8)1000100000000000000000
+        SLC, (8)22305.0
+FK100   DD(BU,64,8), (8)1577700000000000000000
+
+        SLC, (8)21133.0
+! F217XA1 - exp ++1024 over exp ++1028
+SAP23   L(U), FK59
+        R/(U), FK83
+        CT0110(BU,60), FK84, 68           ! check result exp and quotient
+        SIC, SEN
+        BRGZ, SERS
+! F217XA2 - exp ++1024 over exp ++2
+        L(U), FK85
+        R/(U), FPK52
+        CT0110(BU,60), FK60, 68           ! check result exp and quotient
+        SIC, SEN
+        BRGZ, SERS
+! F217XA3 - exp ++1024 over exp +-1791
+        L(U), FK59
+        R/(U), FK86
+        CT0110(BU,60), FK60, 68           ! check result exp and quotient
+        SIC, SEN
+        BRGZ, SERS
+! F217XA4 - exponents in N rng
+        L(U), FPK52
+        R/(U), FPK64
+        CT0110(BU,60), FPK80, 68          ! check result exp and quotient
+        SIC, SEN
+        BRGZ, SERS
+! F217XA5 - exponents in N rng
+        L(U), FPK64
+        R/(U), FPK52
+        CT0110(BU,60), FK87, 68           ! check result exp and quotient
+        SIC, SEN
+        BRGZ, SERS
+! F217XA6 - exp ++2 over exp +-1791
+        L(U), FPK52
+        R/(U), FK86
+        CT0110(BU,60), FK100, 68          ! check result exp and quotient
+        SIC, SEN
+        BRGZ, SERS
+! F217XA7 - exp +-1024 over exp +-1791
+        L(U), FK89
+        R/(U), FK88
+        CT0110(BU,60), FK90, 68           ! check result exp and quotient
+        SIC, SEN
+        BRGZ, SERS
+! F217XA8 - zero divisor
+        L(U), FPK29
+        R/(U), FPK52
+        CT0110(BU,60), FPK29, 68          ! check that divisor remains in acc.
+        SIC, SEN
+        BRGZ, SERS
+PASS    BEW, $                               ! 021163.00: the block exit "B,$+1."
+        END, SAP23

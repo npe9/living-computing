@@ -1416,14 +1416,14 @@ function ActionValue#(Tuple4#(HWordAddr, Maybe#(Tuple2#(Bit#(4), IndexWord)),
                    || c == 7'b0001010 || c == 7'b0101010 || isST
                    || c == 7'b0010010 || c == 7'b0110010 || c == 7'b0010110 || c == 7'b0110110
                    || c == 7'b0011010 || c == 7'b1011010 || c == 7'b1001010 || c == 7'b0111010
-                   || c == 7'b0011110 || c == 7'b1011110   // / and D/
+                   || c == 7'b0011110 || c == 7'b1011110 || c == 7'b0111110  // /, D/, R/
                    || c == 7'b1010110 || isEplI || isSHF
                    || c == 7'b1000110 || c == 7'b1100110   // DL / DLWF
                    || c == 7'b1000010 || c == 7'b1100010   // D+ / D+MG
                    || c == 7'b1010010                     // F+ (ADD TO FRACTION)
                    || isSRD || isSLO);                     // SRD / SLO
         if (!known)
-          ind = setOpInvalid(ind);   // R/ and SRT: not yet
+          ind = setOpInvalid(ind);   // SRT: not yet
         else if (isST) begin
           FpNum v = fpApplySignMods(acc, fp.absSign, fp.invSign);
           st.writeWord(ea, fpToWord(v));
@@ -2044,6 +2044,44 @@ function ActionValue#(Tuple4#(HWordAddr, Maybe#(Tuple2#(Bit#(4), IndexWord)),
                 // multiplication, LOAD TRANSIT, division or connective
                 // operations".  NOTHING IN F217 READS IT, nor PF which
                 // is derived from it -- both are manual-only here.
+                Word64 zoc = st.readZerosOnesCounts();
+                st.writeWord(addrLeftZerosCount, { zoc[63:47], r.lzc, zoc[39:0] });
+                ind = setResultIndicatorsFp(ind, r.res);
+                ind = setRangeIndicators(ind, fpRangeBits(r.res, r.generated, r.propagated));
+                if (r.pf) ind = setBit(ind, ind_PF, 1);
+                ind = setBit(ind, ind_ZM, 0);
+              end
+            end
+            7'b0111110: begin // R/ (RECIPROCAL DIVIDE, p.94)
+              // "The operand specified by the effective address, the
+              // dividend, is divided by the operand in the left half of
+              // the accumulator, the divisor.  The sign of the dividend
+              // is modified by the sign modifiers prior to the
+              // division. ... The division process is the same as the
+              // process described in DIVIDE with the exception of the
+              // interchange of the operands used for dividends and
+              // divisor."
+              //
+              // So the whole of R/ is fpDiv with its two arguments the
+              // other way round.  The sign modifiers still land on the
+              // ADDRESSED operand, which here is the dividend rather
+              // than the divisor, and `opnd` already carries them.
+              FpDivResult r = fpDiv(opnd, acc, normalized, noisy);
+              ind = setBit(ind, ind_MOP, 0);
+              if (r.zd) begin
+                // The zero divisor is now the ACCUMULATOR's fraction.
+                // Nothing is written, as in DIVIDE; jb_af1c F217XA8
+                // checks it from that side, asking that "the divisor
+                // remains in the accumulator".
+                ind = setBit(ind, ind_ZD, 1);
+              end else begin
+                st.writeWord(addrAccLeft, fpAccLeft(r.res, accL));
+                // Spelled out rather than fpSignByte'd, because for R/
+                // the result's flag bits come from the DIVIDEND, which
+                // is the storage operand -- the accumulator's own flags
+                // are what must survive, as everywhere else.  For / the
+                // two happen to coincide.
+                st.writeWord(addrAccSignByte, sbWith(accS, r.res.sign, sbFlags(accS)));
                 Word64 zoc = st.readZerosOnesCounts();
                 st.writeWord(addrLeftZerosCount, { zoc[63:47], r.lzc, zoc[39:0] });
                 ind = setResultIndicatorsFp(ind, r.res);
