@@ -1742,6 +1742,93 @@ hand vectors alone. "Enables" notes the dependency chain.
    are about the same mistake: reasoning about control flow from the
    wrong version of the program.
 
+   F216B DONE (16 sub-tests), F216 COMPLETE, suite 194. Passed first
+   run with no model change. It is the full 2x2x2x2 of memory sign
+   (FPK80 / FPK86, identical but for bit 60), accumulator sign (DL /
+   DLN) and *+'s own N and A modifiers; fifteen rows check the sign
+   byte's bit 4 and B7 also checks LOST CARRY.
+
+   AND IT TURNS OUT TO HAVE NO DISCRIMINATING POWER OVER *+'s SIGN
+   MODIFIERS AT ALL. That took five injections to establish and two of
+   my predictions were wrong, so the reasoning is worth setting down.
+
+   FIRST, THE FIFTEEN SIGN CHECKS ARE BLIND BY CONSTRUCTION. The
+   accumulator is FPK62 (+4, fraction all ones) or FPK60 (+3), the
+   product is FPK52 x FPK80 -- so the accumulator's magnitude dominates
+   the product in every row. Same signs: the sum keeps the common sign.
+   Opposite signs: the larger magnitude wins, which is the accumulator
+   again. So the result sign IS the accumulator sign in all sixteen
+   rows whatever the product's sign is. Computed from the constants
+   first, then measured: forcing the product's sign to the
+   accumulator's leaves every row green.
+
+   SECOND, B7's CARRY CHECK IS LIVE BUT CANNOT SEE THE MODIFIERS
+   EITHER, and this is the part I got wrong. Whether the addition ADDS
+   or SUBTRACTS does depend on the product's sign, and B7 is
+   DLN FPK62 with *+N FPK80 -- both negative, so they add, carry out of
+   96 bits, and set LC. The listing knows: B7 alone carries the comment
+   "PRODUCES LOST CARRY" and the extra BZLC. I predicted that ignoring
+   the modifiers would halt there. It did not.
+
+   WHY: LC IS CLASS P -- set by an operation, never cleared by one,
+   "off only by interruption or branch-on-indicator". In the correct
+   model B1-B6 are all carry-free and B7 is THE FIRST ROW TO CARRY;
+   the block is built that way. Under the fault, B3 and B4 acquire
+   carries they do not have correctly, LC is already on when B7's BZLC
+   runs, and the check cannot tell that B7 itself failed to carry.
+   THE FAULT MASKED ITSELF THROUGH A DIFFERENT SUB-TEST.
+
+   Two more injections separated "B7 is dead" from "the fault masked
+   itself", and both halted at B7 with SEN 020420.40:
+     LC never set at all              B7 halts -> the check IS live
+     modifiers ignored AND LC cleared  B7 halts -> stickiness was the
+       by every *+                       masking mechanism
+
+   FIVE INJECTIONS OVER F216A AND F216B:
+     modifiers ignored             predicted B7 halt   BOTH PASSED (masked)
+     Fig.32 tie direction          predicted BOTH PASS BOTH PASSED
+     product sign := acc sign      predicted BOTH PASS BOTH PASSED
+     LC never set                  predicted B7 halt   halted 020420.40
+     modifiers ignored + LC clear  predicted B7 halt   halted 020420.40
+
+   THE NEW RULE, and it is a third member of a family. F214D gave "a
+   branch upstream can make a downstream line unreachable"; F216A gave
+   its converse, "an injection can change which branch is taken". This
+   is the third: A FAULT CAN TRIP THE VERY STICKY STATE A LATER CHECK
+   RELIES ON BEING CLEAN, so an injection can be masked by its own
+   effect on an EARLIER sub-test. All three are the same underlying
+   error -- reasoning about the faulty program using the correct
+   program's control flow or state.
+
+   Practically: when a check reads a PERMANENT indicator, the
+   injection has to be paired with a run that clears it, or the result
+   is uninterpretable. That is what the fifth injection is for, and it
+   should be the standard companion to any indicator-based prediction
+   from here on.
+
+   EVERY F216B OPERAND IS UNFLAGGED, so p.99's "both operands in the
+   same flagged range -> the effective address's exponent" is not
+   reached here either. Measured, not assumed: injecting Fig.32's tie
+   direction leaves both F216A and F216B green. That rule -- the ONE
+   thing that makes *+ different from MULTIPLY -- is untested by the
+   whole of F216.
+
+   A SPELLING COLLISION WORTH RECORDING. The listing writes *+'s
+   modifier forms as "*A", "*N", "*NA". Those exact mnemonics already
+   mean MULTIPLY with the same modifiers in F214B, where "*N" prints
+   .51 (opcode 0011010) against F216B's .53 (0111010). The source
+   language is genuinely ambiguous and only the surrounding block
+   resolves it. The transcription writes "*+A" / "*+N" / "*+NA", which
+   strip_fp_sign already handles (the remainder "*+" is in FP_CODES)
+   and which assemble to the listing's printed words exactly, so no
+   assembler change was needed and F214B's spelling is untouched.
+
+   Next: D/ (DIVIDE DOUBLE, p.99) is the last floating-point operation
+   left, and the one that needs real structural work -- a divide box,
+   Piccolo's mkMBox/mkFPU idiom, plan steps 2-3. p.99 also describes
+   the remainder register's role, which nothing in the model uses yet.
+
+
 
 
    Its prologue is FSR1 (015772.00) and F210A1 begins at SAP11

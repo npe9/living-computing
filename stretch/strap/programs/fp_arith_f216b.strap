@@ -1,0 +1,196 @@
+! jb_af1c F216 "MULTIPLY AND ADD TEST", sub-block F216B "TESTS OF SIGN
+! AND MODIFIER COMBINATIONS", pp.149-150 (octal 020371.00-020462.00,
+! the block's own exit "BD,$+1.0").  Continues fp_arith_f216a.strap.
+!
+! The listing's own header names the axes: "MS+MEM.SIGN, ACS+ACC. SIGN,
+! N AND A ARE MODIFIERS".  Sixteen rows, the full 2x2x2x2 of memory
+! sign (FPK80 positive / FPK86 negative, otherwise identical), the
+! accumulator sign (DL / DLN), and the two sign modifiers on the *+
+! itself.  Fifteen of them check one bit: the accumulator sign, sign
+! byte bit 4.  B7 alone also checks the LOST CARRY indicator.
+!
+! ONLY B7 CAN SEE THE MODIFIERS AT ALL, and working out why is the
+! point of this block.  The accumulator is FPK62 (+4, fraction all
+! ones) or FPK60 (+3), and the product is FPK52 x FPK80 -- so the
+! accumulator's magnitude dominates the product in every one of the
+! sixteen rows.  When the two signs agree the sum keeps that sign; when
+! they disagree the larger magnitude wins, and that is the accumulator
+! again.  So THE RESULT SIGN IS THE ACCUMULATOR SIGN IN ALL SIXTEEN
+! ROWS regardless of what the product's sign turns out to be, and the
+! fifteen BZB/BB checks are blind to MS, N and A alike.
+!
+! What is NOT blind is whether the addition adds or subtracts.  Same
+! signs carry out of the 96-bit sum and set LOST CARRY; opposite signs
+! subtract and do not.  B7 is DLN FPK62 (accumulator negative) with
+! *+N FPK80 (product negative), so the two agree, the carry happens,
+! and the listing says so in its own comment: "PRODUCES LOST CARRY".
+!
+! BUT B7 CANNOT CATCH A MODIFIER FAULT EITHER, and the reason is worth
+! knowing.  LC is a class-P indicator: set by an operation, never
+! cleared by one.  In the correct model B1-B6 are all carry-free and
+! B7 is THE FIRST ROW TO CARRY -- the block is built that way.  Ignore
+! the modifiers and B3 and B4 acquire carries they should not have, so
+! LC is already on by the time B7's BZLC runs and the check cannot see
+! that B7 itself failed to carry.  The fault masks itself through an
+! earlier sub-test.  Measured: injecting "modifiers ignored" leaves all
+! sixteen rows green, while the same injection paired with an LC clear
+! on every *+ halts at B7 -- and so does simply never setting LC, which
+! is what proves B7's check is live at all.
+!
+! So the sixteen-row matrix confirms that the accumulator's sign
+! survives, and discriminates NOTHING about *+'s sign modifiers.  All
+! of this was computed from the constants before the block was run and
+! then measured by injection -- see the plan doc for the table.
+!
+! EVERY OPERAND HERE IS UNFLAGGED (FPK52 +2, FPK80/FPK86 +2, FPK60 +3,
+! FPK62 +4), so F216B does not reach p.99's "both operands in the same
+! flagged range -> the effective address's exponent" rule either.  That
+! gap, opened in F216A, stays open through the whole of F216.
+!
+! SPELLING NOTE.  The listing writes these as "*A", "*N" and "*NA".
+! Those exact mnemonics already mean MULTIPLY with the same modifiers
+! in F214B, where "*N" prints .51 (opcode 0011010); here they print
+! .53 (opcode 0111010), MULTIPLY AND ADD.  The source language is
+! ambiguous and only context resolves it, so this transcription writes
+! the unambiguous "*+N" / "*+A" / "*+NA", which assemble to the
+! listing's printed words exactly and leave F214B's spelling alone.
+!
+! DL(U) zeroes accumulator bits 60-107, and unlike F216A this block
+! does not fill them, so the accumulator fraction is {constant, 0}.
+
+! -- SSIP framework substitutes: SERS (octal 1304) -> FAIL halt,
+! -- SEN (octal 1310) -> scratch.
+        SLC, (8)1304.0
+SERS    BEW, $
+        SLC, (8)1310.0
+SEN     DD(BU,64,8), 0
+
+! -- constants (pools pp.176-177) --
+        SLC, (8)22071.0
+FPK52   DD(BU,64,8), (8)0001024713560247135620
+        SLC, (8)22101.0
+FPK60   DD(BU,64,8), (8)0001526150437261504320
+        SLC, (8)22103.0
+FPK62   DD(BU,64,8), (8)0002177777777777777760
+        SLC, (8)22121.0
+FPK80   DD(BU,64,8), (8)0001100000000000000000
+        SLC, (8)22124.0
+FPK86   DD(BU,64,8), (8)0001100000000000000010
+
+        SLC, (8)20371.0
+! F216B1  - MS 0, ACS 0, N 0, A 0
+F216B1  DL(U),  FPK60
+        LFT(U), FPK52
+        *+(U),  FPK80
+        BZB, $SB+.4, $+2.0                ! test sign bit + 0
+        SIC, SEN
+        B, SERS
+! F216B2  - MS 0, ACS 0, N 0, A 1
+        DL(U),  FPK60
+        LFT(U), FPK52
+        *+A(U), FPK80
+        BZB, $SB+.4, $+2.0                ! test sign bit + 0
+        SIC, SEN
+        B, SERS
+! F216B3  - MS 0, ACS 0, A 0, N 1
+        DL(U),  FPK62
+        LFT(U), FPK52
+        *+N(U), FPK80
+        BZB, $SB+.4, $+2.0                ! test sign bit + 0
+        SIC, SEN
+        B, SERS
+! F216B4  - MS 0, ACS 0, N 1, A 1
+        DL(U),  FPK62
+        LFT(U), FPK52
+        *+NA(U), FPK80
+        BZB, $SB+.4, $+2.0                ! test sign bit + 0
+        SIC, SEN
+        B, SERS
+! F216B5  - MS 0, N 0, A 0, ACS 1
+        DLN(U), FPK62
+        LFT(U), FPK52
+        *+(U),  FPK80
+        BB, $SB+.4, $+2.0                 ! test sign bit + 1
+        SIC, SEN
+        B, SERS
+! F216B6  - MS 0, N 0, ACS 1, A 1
+        DLN(U), FPK62
+        LFT(U), FPK52
+        *+A(U), FPK80
+        BB, $SB+.4, $+2.0                 ! test sign bit + 1
+        SIC, SEN
+        B, SERS
+! F216B7  - MS 0, A 0, ACS 1, N 1  -- PRODUCES LOST CARRY
+        DLN(U), FPK62
+        LFT(U), FPK52
+        *+N(U), FPK80
+        SIC, SEN
+        BZLC, SERS                           ! error if LC off
+        BB, $SB+.4, $+2.0                 ! test sign bit + 1
+        SIC, SEN
+        B, SERS
+! F216B8  - MS 0, ACS 1, N 1, A 1
+        DLN(U), FPK62
+        LFT(U), FPK52
+        *+NA(U), FPK80
+        BB, $SB+.4, $+2.0                 ! test sign bit + 1
+        SIC, SEN
+        B, SERS
+! F216B9  - MS 1, ACS 0, N 0, A 0
+        DL(U),  FPK62
+        LFT(U), FPK52
+        *+(U),  FPK86
+        BZB, $SB+.4, $+2.0                ! test sign bit + 0
+        SIC, SEN
+        B, SERS
+! F216B10 - MS 1, A 1, ACS 0, N 0
+        DL(U),  FPK62
+        LFT(U), FPK52
+        *+A(U), FPK86
+        BZB, $SB+.4, $+2.0                ! test sign bit + 0
+        SIC, SEN
+        B, SERS
+! F216B11 - MS 1, N 1, ACS 0, A 0
+        DL(U),  FPK62
+        LFT(U), FPK52
+        *+N(U), FPK86
+        BZB, $SB+.4, $+2.0                ! test sign bit + 0
+        SIC, SEN
+        B, SERS
+! F216B12 - MS 1, N 1, A 1, ACS 0
+        DL(U),  FPK62
+        LFT(U), FPK52
+        *+NA(U), FPK86
+        BZB, $SB+.4, $+2.0                ! test sign bit + 0
+        SIC, SEN
+        B, SERS
+! F216B13 - MS 1, ACS 1, N 0, A 0
+        DLN(U), FPK62
+        LFT(U), FPK52
+        *+(U),  FPK86
+        BB, $SB+.4, $+2.0                 ! test sign bit + 1
+        SIC, SEN
+        B, SERS
+! F216B14 - MS 1, ACS 1, A 1, N 0
+        DLN(U), FPK62
+        LFT(U), FPK52
+        *+A(U), FPK86
+        BB, $SB+.4, $+2.0                 ! test sign bit + 1
+        SIC, SEN
+        B, SERS
+! F216B15 - MS 1, ACS 1, N 1, A 0
+        DLN(U), FPK62
+        LFT(U), FPK52
+        *+N(U), FPK86
+        BB, $SB+.4, $+2.0                 ! test sign bit + 1
+        SIC, SEN
+        B, SERS
+! F216B16 - MS 1, ACS 1, N 1, A 1
+        DLN(U), FPK62
+        LFT(U), FPK52
+        *+NA(U), FPK86
+        BB, $SB+.4, $+2.0                 ! test sign bit + 1
+        SIC, SEN
+        B, SERS
+PASS    BEW, $                               ! 020462.00: the block's exit "BD,$+1.0"
+        END, F216B1
