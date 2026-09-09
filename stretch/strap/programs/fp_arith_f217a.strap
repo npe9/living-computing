@@ -41,6 +41,13 @@
 ! the sign byte: FPK52 is positive and so is the divisor, so a wrongly
 ! written sign would still read zero.
 !
+! TRANSCRIPTION NOTE: FPK64 is 0001051627340516273440.  An earlier
+! version of this file had ...450, which is FPK69 -- the pool puts the
+! two one after another and they differ in EXACTLY ONE BIT, bit 3, the
+! sign.  F217A could not see the difference, because all its checks are
+! 60-bit fields ending at IBM 59 and the sign is IBM 60.  F217B's four
+! rows are all sign tests and do see it.
+!
 ! WHAT THIS BLOCK CANNOT SEE, computed before it was run.  EVERY ONE OF
 ! THE SEVEN QUOTIENTS IS EXACTLY 800000000000 -- one half.  The
 ! constants are chosen so that after pre-normalization the dividend
@@ -63,7 +70,7 @@ FPK29   DD(BU,64,8), (8)0000400000000000000000
         SLC, (8)22071.0
 FPK52   DD(BU,64,8), (8)0001024713560247135620
         SLC, (8)22104.0
-FPK64   DD(BU,64,8), (8)0001051627340516273450
+FPK64   DD(BU,64,8), (8)0001051627340516273440
         SLC, (8)22121.0
 FPK80   DD(BU,64,8), (8)0001100000000000000000
         SLC, (8)22235.0

@@ -1,0 +1,76 @@
+! jb_af1c F217 "DIVIDE TEST ROUTINE", sub-block F217B "TESTS OF SIGN
+! AND MODIFIER COMBINATIONS", p.155 (octal 020666.40-020703.00).
+! Continues fp_arith_f217a.strap; F217C follows immediately at
+! 020703.40, which is why this block has no exit branch of its own.
+!
+! The listing's header names the axes: "MS+MEM. SIGN, ACS+ACC. SIGN, N
+! AND A ARE MODIFIERS".  Four rows, each checking one bit -- the
+! quotient sign in sign byte bit 4.  p.93: "The quotient sign replaces
+! the accumulator sign in bit position 4 of the sign byte register",
+! and the sign is "determined by the rules of algebra using the
+! accumulator sign and the effective sign of the addressed operand".
+!
+!   B1  LN FPK64 (acc sign 1) / FPK52 (0)       -> 1   BB
+!   B2  L  FPK64 (acc sign 0) / FPK55 (1)       -> 1   BB
+!   B3  LN FPK64 (acc sign 1) / FPK55 (1)       -> 0   BZB
+!   B4  LN FPK64 (acc sign 1) / NA FPK55        -> 0   BZB
+!
+! THE POOL IS BUILT FOR THIS.  FPK52 and FPK55 are the same number but
+! for bit 3, and so are FPK64 and FPK69 -- the constants come in
+! sign-pairs so a block like this can vary one axis at a time.  It is
+! also what makes FPK64 easy to mis-transcribe as FPK69: they differ in
+! that one bit and sit next to each other in the pool.
+!
+! B4 IS THE ONLY ROW WITH A MODIFIER, and its A is invisible: FPK55's
+! sign is already 1, so absolute-then-negate gives 1 just as negate
+! alone would.  B4 and B3 therefore expect the same answer and differ
+! only in the modifier bits the instruction carries.  That is the
+! recurring shape -- a modifier that forces a sign positive cannot be
+! seen where the sign is already what it would become -- and it means
+! the A modifier is untested by F217 unless B3/B4 are read as a pair
+! against an implementation that ignores N as well.
+
+! -- SSIP framework substitutes: SERS (octal 1304) -> FAIL halt,
+! -- SEN (octal 1310) -> scratch.
+        SLC, (8)1304.0
+SERS    BEW, $
+        SLC, (8)1310.0
+SEN     DD(BU,64,8), 0
+
+! -- constants (pool pp.176-177) --
+        SLC, (8)22071.0
+FPK52   DD(BU,64,8), (8)0001024713560247135620
+        SLC, (8)22074.0
+FPK55   DD(BU,64,8), (8)0001024713560247135630
+        SLC, (8)22104.0
+FPK64   DD(BU,64,8), (8)0001051627340516273440
+
+        SLC, (8)20666.40
+! F217B1 - MS 0, N+A 0, ACS 1
+F217B   LN(U), FPK64
+        /(U), FPK52
+        BB, $SB+.4, $+2.0                    ! test sign bit + 1
+        SIC, SEN
+        B, SERS
+! F217B2 - MS 1, ACS+N+A 0
+ROD1    L(U), FPK64
+        /(U), FPK55
+        BB, $SB+.4, $+2.0                    ! test sign bit + 1
+        SIC, SEN
+        B, SERS
+! F217B3 - MS+ACS 1, N+A 0
+        B, $+.32
+ROD2    LN(U), FPK64
+        /(U), FPK55
+        BZB, $SB+.4, $+2.0                   ! test sign bit + 0
+        SIC, SEN
+        B, SERS
+! F217B4 - MS+ACS+N+A 1
+        B, $+.32
+ROD3    LN(U), FPK64
+        /NA(U), FPK55
+        BZB, $SB+.4, $+2.0                   ! test sign bit + 0
+        SIC, SEN
+        B, SERS
+PASS    BEW, $                               ! 020703.40: F217C's first instruction
+        END, F217B

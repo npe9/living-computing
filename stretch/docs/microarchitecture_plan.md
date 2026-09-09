@@ -1941,8 +1941,9 @@ hand vectors alone. "Enables" notes the dependency chain.
    "1.0 if the dividend is not smaller, else 0.5", no division
    whatsoever -- leaves all eight sub-tests green. So what A1 pins is
    that the equal case gives 2^48, not that 48 quotient bits are
-   developed; the 96-step loop is unexercised by this block. Nothing
-   here reads LZC or PF either.
+   developed; the 96-step loop is unexercised by this block. Nothing in
+   F217A reads LZC or PF either -- but F217D does, so that gap closes
+   one page on; see below.
 
    A8 IS THE ZERO DIVISOR and the arm writes NOTHING for it -- not the
    same value back. p.93: "the accumulator and the sign byte register
@@ -1952,8 +1953,37 @@ hand vectors alone. "Enables" notes the dependency chain.
    cannot check the sign byte, since FPK52 and the divisor are both
    positive and a wrongly written sign would still read zero.
 
-   Next: F217B (4 sign/modifier rows) and F217C (unchanged registers),
-   both on p.155, which finish F217. Then R/, D/ and SRT -- R/ is
+   F217B AND F217C DONE, both first run, suite 204. B is four sign rows
+   checking sign byte bit 4; the pool supplies sign-pairs for it
+   (FPK52/FPK55 and FPK64/FPK69 are each the same number but for bit
+   3). B4's A modifier is invisible -- FPK55's sign is already 1 -- so
+   B3 and B4 expect the same answer, the recurring blind spot. C fills
+   L, R and the sign byte with ones, divides by FPK1 (a real division,
+   fraction ffffffffffff), and demands R and the sign byte's other
+   seven bits survive.
+
+   THE SIGN-PAIR POOL CAUGHT ME OUT AND F217A COULD NOT. I transcribed
+   FPK64 as 0001051627340516273450, which is FPK69 -- the two sit next
+   to each other in the pool and differ in EXACTLY ONE BIT, bit 3, the
+   sign. Every F217A check is a 60-bit field ending at IBM 59, so the
+   sign is outside all of them and the block passed with the wrong
+   constant, verifier included, because the same wrong value was in
+   both. F217B's rows are all sign tests and would have caught it; I
+   found it reading B's constants instead. The lesson is narrow and
+   worth keeping: A CONSTANT VERIFIED ONLY BY A BLOCK THAT CANNOT SEE
+   ONE OF ITS FIELDS IS VERIFIED ONLY IN THE FIELDS THAT BLOCK READS.
+   The listing-oracle check does not help here, because it compares the
+   assembled constant against what I typed into the verifier.
+
+   F217 IS NOT FINISHED: p.156 has F217D "TESTS OF INDICATORS", D1-D6+,
+   and it drives exactly what F217A left untouched -- D1 checks ZD and
+   the data flags after a zero divisor, D2 the arithmetic result
+   indicators, and D3/D4/D5 read the LEFT ZEROS COUNTER directly
+   ("CT0110%BU,7=,7.17 -TEST LZC++2") and branch on PF. That is four
+   routines running where the sub-blocks past the first page are the
+   ones that close the first page's gaps.
+
+   Next: F217D. Then R/, D/ and SRT -- R/ is
    p.94's "same process with dividends and divisors interchanged" and
    falls out of fpDiv, but it waits for a block that drives it. p.99
    also gives the remainder register a role nothing uses yet; D/ is

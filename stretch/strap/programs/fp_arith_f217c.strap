@@ -1,0 +1,50 @@
+! jb_af1c F217 "DIVIDE TEST ROUTINE", sub-block F217C (unchanged
+! registers), p.155 (octal 020703.40-020715.00, the block's own exit
+! "B,$+1.").  Continues fp_arith_f217b.strap and finishes F217.
+!
+! p.93: "The quotient exponent and fraction replace accumulator bits
+! 0-59.  Accumulator bits 60-127 remain unchanged. ... No remainder is
+! retained by this operation."  One sub-test: fill the left word, the
+! right word and the sign byte with ones, divide, and demand the right
+! word and the sign byte's other seven bits come back ones.
+!
+! Bit 4 is skipped because it is the quotient sign, which / is entitled
+! to write.  SB 5-7 are the flag bits, so this pins that / carries the
+! accumulator's flags through -- fpSignByte takes them from the result,
+! whose flags fpDiv sets from the dividend.
+!
+! THE DIVISOR IS FPK1, all ones, which is a perfectly good divisor: its
+! fraction is ffffffffffff, so there is no zero-divisor suppression
+! here and the division really happens.  Both operands are XFN at
+! -2047, so p.94's "divisor in the XFN range" rule gives the quotient
+! the divisor's exponent with its sign reversed, +2047 in the XFP
+! range.  None of that is checked -- the block only asks what did NOT
+! change.
+
+! -- SSIP framework substitutes: SERS (octal 1304) -> FAIL halt,
+! -- SEN (octal 1310) -> scratch.
+        SLC, (8)1304.0
+SERS    BEW, $
+        SLC, (8)1310.0
+SEN     DD(BU,64,8), 0
+
+! -- constants (pool p.176) --
+        SLC, (8)22006.0
+FPK1    DD(BU,64,8), (8)1777777777777777777777
+
+        SLC, (8)20703.40
+F217C   C1111(BU,64), FPK1, 64               ! left word <- all ones
+        C1111(BU,64), FPK1                   ! right word <- all ones
+        CM1111(BU,8), $SB                    ! sign byte <- all ones
+        /(U), FPK1
+        CT1010(BU,64), FPK1                  ! does R remain +1 s
+        SIC, SEN
+        BRGZ, SERS
+        CT1100(BU,4), $SB                    ! does SB0-3 remain +1 s
+        SIC, SEN
+        BRGZ, SERS
+        CT1100(BU,3), $SB+.5                 ! does SB5-7 remain +1 s
+        SIC, SEN
+        BRGZ, SERS
+PASS    BEW, $                               ! 020715.00: the block's exit "B,$+1."
+        END, F217C
