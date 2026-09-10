@@ -2987,6 +2987,52 @@ hand vectors alone. "Enables" notes the dependency chain.
    opening than any single F2xx block; recorded here so the decision
    to start it is made deliberately.
 
+   ITEM (3) IS DONE. execute() is 466 lines, from the 2,270 the review
+   found. Seven functions came out of it, and the useful result is not
+   the line count but that the boundaries fell into FOUR SHAPES, not
+   seven:
+
+     fpStoreClass   323   indicators only
+     fpArithClass   698   indicators only (plus an operand in)
+     vflIntOp       310   needsRead + vflPending + indicators
+     connectiveOp   165   needsRead + vflPending + indicators
+     dirIndexOp     152   needsRead + shared index write + indicators
+     immIndexOp     108   needsRead + shared index write + indicators
+     ioOpExec       161   needsRead + ioStart + indicators
+     progressiveIndex 12  a pure function shared by two of them
+
+   THE SHAPES ARE THE SEAMS THE HARDWARE CONSTRAINT ALREADY CUT, and
+   the extraction only named them. Both Fp classes return indicators
+   alone because a store or an arithmetic op writes storage once and is
+   done. The two VFL-format arms share VflOutcome because they are two
+   spellings of one instruction format -- which is the same fact
+   progressiveIndex found from the other direction, that they shared
+   nine lines verbatim. The two index-format arms share IndexOutcome
+   for exactly the same reason. And ioOpExec is alone in its shape
+   because it is alone in reaching the I/O interface.
+
+   The `vflPending` channel exists separately from `doIdxWrite` only
+   because bsc will not take two st.writeIndex call sites in one
+   execute() invocation, so VflInt's progressive update needed its own.
+   That is a scheduling constraint showing through as a type. Worth
+   keeping visible rather than tidying away.
+
+   MY OWN ESTIMATE WAS OFF AND THE MEASUREMENT CORRECTS IT. The entry
+   above put the reachable size at "roughly 380" by subtracting the
+   arms' line counts from 984. The answer is 466: each call site costs
+   six or seven lines of unpacking that the subtraction did not
+   account for, and the arms were measured slightly larger once their
+   true end lines were found. 466 is the measured number; 380 was an
+   arithmetic guess about a measurement, which is the same category of
+   error as reading a scan instead of computing from it.
+
+   ALL SEVEN CUTS ARE PURE RELOCATION. No line of logic moved; the
+   diffs are the arm bodies dedented by two, plus parameter names
+   substituted for four locals, plus the typedefs that gave five
+   anonymous DecodedInstr payloads names so they could be passed at
+   all. Each named payload cost exactly one construction site in
+   StretchDecode.bsv. Suite unchanged at 242 sections throughout.
+
    STILL OPEN FROM THE REVIEW: the rest of (3) the literal 5'b01111
    means CM in the connective path and V+CR in the direct-index path,
    eleven occurrences, with the same collision for 5'b10111 and

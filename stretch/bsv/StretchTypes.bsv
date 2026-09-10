@@ -398,6 +398,12 @@ typedef struct { HWordAddr addr; Bit#(4) j; Bit#(5) code; Bit#(4) idx; } DixInst
 typedef struct { HWordAddr imm; Bit#(4) j; Bit#(4) code; } ImmInstr
   deriving (Bits, Eq, FShow);
 
+// The IoOp payload.  Its arm is the only one that reaches the I/O
+// interface, so it is the only one whose extracted function takes a
+// StretchIO as well as a StretchStorage.
+typedef struct { BitAddr addr1; Bit#(4) i1; WordAddr addr2; Bit#(4) op; Bit#(4) i2; } IoInstr
+  deriving (Bits, Eq, FShow);
+
 typedef union tagged {
   // Integer arithmetic / radix conversion, Figure 6 "INTEGER" row,
   // p.18; opcode field IBM bits 51-59 = abc(3)+code(6), pocket card
@@ -463,7 +469,7 @@ typedef union tagged {
   // SIC (Store Instruction Counter If), Bit Branching. Kept distinct
   // (rather than merged into `Unimplemented`) so future work can add
   // execution without re-deriving the format.
-  struct { BitAddr addr1; Bit#(4) i1; WordAddr addr2; Bit#(4) op; Bit#(4) i2; } IoOp;
+  IoInstr IoOp;
   struct { BitAddr addr; Bit#(4) idx; HalfWord32 inner; } Sic;
   struct { BitAddr addr1; Bit#(4) i1; HWordAddr addr2; Bit#(3) modAbc;
            Bit#(1) idx; } BitBranch;
