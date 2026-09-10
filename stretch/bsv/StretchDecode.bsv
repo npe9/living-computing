@@ -254,8 +254,8 @@ endfunction
 function Maybe#(DecodedInstr) tryDirIndex(HalfWord32 hw);
   Bit#(5) code = hw[8:4];
   return isValidDirIndexOp(code)
-    ? tagged Valid (tagged DirIndex { addr: hw[31:13], j: hw[12:9],
-                                       code: code, idx: hw[3:0] })
+    ? tagged Valid (tagged DirIndex DixInstr { addr: hw[31:13], j: hw[12:9],
+                                               code: code, idx: hw[3:0] })
     : tagged Invalid;
 endfunction
 

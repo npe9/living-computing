@@ -2034,6 +2034,186 @@ function ActionValue#(VflOutcome)
   endactionvalue
 endfunction
 
+// ---------------------------------------------------------------------
+// DIRECT INDEX ARITHMETIC (p.22-23), lifted whole out of execute().
+//
+// A THIRD SHAPE OF BOUNDARY, and worth saying why there are three
+// rather than one.  The Fp classes return only indicators.  The two
+// VFL-format arms return indicators, a read request, and a deferred
+// index write of their own kind (vflPending).  This one returns
+// indicators, a read request, and the SHARED deferred index write --
+// doIdxWrite, idxWriteReg, idxWriteVal -- which is a different channel
+// from vflPending and exists for the reason the caller's own comment
+// gives: bsc will not take two st.writeIndex call sites in one
+// execute() invocation, so VflInt's progressive update needed a
+// channel of its own and everything else shares this one.
+//
+// Measured before cutting: over 138 lines this arm never mentions
+// vflPending, ioStart, io., next, fallthrough, pc or len, and of
+// storage uses only readIndex and writeHWWithWord.
+// ---------------------------------------------------------------------
+typedef struct {
+  Maybe#(WordAddr) needsRead;
+  Bool             doIdxWrite;
+  Bit#(4)          idxWriteReg;
+  IndexWord        idxWriteVal;
+  Word64           ind;
+} IndexOutcome;
+
+function ActionValue#(IndexOutcome)
+    dirIndexOp(StretchStorage st, DixInstr di_,
+               Vector#(2, Word64) prefetch, Bit#(2) prefetchCount, Word64 ind0);
+  actionvalue
+    Maybe#(WordAddr) needsRead = tagged Invalid;
+    Bool doIdxWrite = False;
+    Bit#(4) idxWriteReg = 0;
+    IndexWord idxWriteVal = IndexWord{addr:0, sign:0, flag:0, count:0, refill:0};
+    Word64 ind = ind0;
+
+      HWordAddr ea = effAddr19(st, di_.addr, di_.idx);
+      IndexWord x = st.readIndex(di_.j);
+      // Reference Manual p.24: "The index-flag and index-result
+      // indicators are set in all of the preceding direct index
+      // arithmetic operations [LX/LV/LC/LR/SX/SV/SC/SR/V+/V+C/V+CR].
+      // The index-comparison indicators are unchanged." -- and p.23:
+      // they "describe the index after the index modification is
+      // completed". So loads set them from the NEW index word and
+      // stores from the (unchanged) current one. Before this was
+      // added only V+/V+C/V+CR set them; caught by I-Box 1's
+      // SIC-B,ZIND block (p.50-51), which tests XF/XCZ/XVGZ/XVLZ/
+      // XVZ straight after an LX.
+      case (di_.code)
+        dixop_LX: begin // LX -- prefetch/bail-out shape (same as
+          // VflInt L/K/+ above). Half-word reads never cross a word
+          // boundary (a half-word always fits within the one word
+          // it addresses), so this and every other DirIndex
+          // read-only arm below needs exactly 0-1 reads, never 2.
+          if (prefetchCount >= 1) begin
+            idxWriteReg = di_.j; doIdxWrite = True;
+            idxWriteVal = unpackIndexWord(prefetch[0]);
+            ind = setIndexResultIndicatorsF(ind, idxWriteVal);
+          end else
+            needsRead = tagged Valid ea[18:1];
+        end
+        dixop_SX: begin // SX
+          st.writeWord(ea[18:1], packIndexWord(x));
+          ind = setIndexResultIndicatorsF(ind, x);
+        end
+        dixop_LV: begin // LV
+          if (prefetchCount >= 1) begin
+            Bit#(32) h = (ea[0] == 0) ? prefetch[0][63:32] : prefetch[0][31:0];
+            idxWriteReg = di_.j; doIdxWrite = True;
+            idxWriteVal = IndexWord{addr:h[31:8], sign:h[7:7], flag:x.flag,
+                                            count:x.count, refill:x.refill};
+            ind = setIndexResultIndicatorsF(ind, idxWriteVal);
+          end else
+            needsRead = tagged Valid ea[18:1];
+        end
+        dixop_SV: begin // SV -- prefetch/bail-out shape: unlike the
+          // read-only arms above, this writes back using the SAME
+          // read's response (a genuinely dependent chain), but
+          // since writes stay single-cycle throughout this whole
+          // migration, resuming with prefetch[0] available is
+          // enough to both compute and issue the write in one go --
+          // no second bail needed.
+          if (prefetchCount >= 1) begin
+            Bit#(32) h = (ea[0] == 0) ? prefetch[0][63:32] : prefetch[0][31:0];
+            writeHWWithWord(st, ea, {x.addr, x.sign, h[6:0]}, prefetch[0]);
+            ind = setIndexResultIndicatorsF(ind, x);
+          end else
+            needsRead = tagged Valid ea[18:1];
+        end
+        dixop_LC: begin // LC
+          if (prefetchCount >= 1) begin
+            Bit#(32) h = (ea[0] == 0) ? prefetch[0][63:32] : prefetch[0][31:0];
+            idxWriteReg = di_.j; doIdxWrite = True;
+            idxWriteVal = IndexWord{addr:x.addr, sign:x.sign, flag:x.flag,
+                                            count:h[31:14], refill:x.refill};
+            ind = setIndexResultIndicatorsF(ind, idxWriteVal);
+          end else
+            needsRead = tagged Valid ea[18:1];
+        end
+        dixop_SC: begin // SC -- same shape as SV above.
+          if (prefetchCount >= 1) begin
+            Bit#(32) h = (ea[0] == 0) ? prefetch[0][63:32] : prefetch[0][31:0];
+            writeHWWithWord(st, ea, {x.count, 7'b0, h[6:0]}, prefetch[0]);
+            ind = setIndexResultIndicatorsF(ind, x);
+          end else
+            needsRead = tagged Valid ea[18:1];
+        end
+        dixop_LR: begin // LR
+          if (prefetchCount >= 1) begin
+            Bit#(32) h = (ea[0] == 0) ? prefetch[0][63:32] : prefetch[0][31:0];
+            idxWriteReg = di_.j; doIdxWrite = True;
+            idxWriteVal = IndexWord{addr:x.addr, sign:x.sign, flag:x.flag,
+                                            count:x.count, refill:h[31:14]};
+            ind = setIndexResultIndicatorsF(ind, idxWriteVal);
+          end else
+            needsRead = tagged Valid ea[18:1];
+        end
+        dixop_SR: begin // SR -- same shape as SV above.
+          if (prefetchCount >= 1) begin
+            Bit#(32) h = (ea[0] == 0) ? prefetch[0][63:32] : prefetch[0][31:0];
+            writeHWWithWord(st, ea, {x.refill, 7'b0, h[6:0]}, prefetch[0]);
+            ind = setIndexResultIndicatorsF(ind, x);
+          end else
+            needsRead = tagged Valid ea[18:1];
+        end
+        dixop_V_PLUS, dixop_V_PLUS_C, dixop_V_PLUS_CR: begin // V+ / V+C / V+CR --
+          // prefetch/bail-out shape with up to 2 SEQUENTIAL reads:
+          // readHW's own half-word read (prefetch[0]), then, only
+          // for V+CR when the count reaches zero, a second refill
+          // read (prefetch[1]) -- the first arm converted needing 2
+          // reads for a genuinely sequential reason (a value from
+          // the first read decides whether a second is needed at
+          // all), distinct from VflInt's crossing case (2 reads
+          // always needed together for one field). Same 2-slot
+          // prefetch bound covers both shapes.
+          if (prefetchCount >= 1) begin
+            Bit#(32) h = (ea[0] == 0) ? prefetch[0][63:32] : prefetch[0][31:0];
+            SM128 opnd = SM128{sign: h[7], mag: zeroExtend(h[31:8])};
+            SM128 val  = SM128{sign: x.sign, mag: zeroExtend(x.addr)};
+            SM128 sum  = smAdd(val, opnd);
+            IndexWord x1 = IndexWord{addr: truncate(sum.mag), sign: sum.sign, flag: x.flag,
+                                      count: x.count, refill: x.refill};
+            if (di_.code != dixop_V_PLUS) x1.count = x1.count - 1;
+            Bool needsRefill = (di_.code == dixop_V_PLUS_CR) && (x1.count == 0);
+            if (needsRefill && prefetchCount < 2) begin
+              needsRead = tagged Valid zeroExtend(x1.refill);
+            end else begin
+              IndexWord x2 = needsRefill ? unpackIndexWord(prefetch[1]) : x1;
+              idxWriteReg = di_.j; doIdxWrite = True;
+              idxWriteVal = x2;
+              ind = setIndexResultIndicatorsF(ind, x1); // reflects state before any refill, p.23
+            end
+          end else
+            needsRead = tagged Valid ea[18:1];
+        end
+        dixop_KV: begin // KV
+          if (prefetchCount >= 1) begin
+            Bit#(32) h = (ea[0] == 0) ? prefetch[0][63:32] : prefetch[0][31:0];
+            SM128 opnd = SM128{sign: h[7], mag: zeroExtend(h[31:8])};
+            SM128 val  = SM128{sign: x.sign, mag: zeroExtend(x.addr)};
+            ind = setIndexCmpIndicatorsF(ind, smCompare(val, opnd));
+          end else
+            needsRead = tagged Valid ea[18:1];
+        end
+        dixop_KC: begin // KC
+          if (prefetchCount >= 1) begin
+            Bit#(32) h = (ea[0] == 0) ? prefetch[0][63:32] : prefetch[0][31:0];
+            Cmp3 c = (x.count == h[31:14]) ? CmpEqual : (x.count < h[31:14]) ? CmpLow : CmpHigh;
+            ind = setIndexCmpIndicatorsF(ind, c);
+          end else
+            needsRead = tagged Valid ea[18:1];
+        end
+        default: ind = setOpInvalid(ind); // RNX, LVE, SVA: out of scope
+      endcase
+    return IndexOutcome{needsRead: needsRead, doIdxWrite: doIdxWrite,
+                        idxWriteReg: idxWriteReg, idxWriteVal: idxWriteVal,
+                        ind: ind};
+  endactionvalue
+endfunction
+
 function ActionValue#(ExecResult)
     execute(StretchStorage st, StretchIO io, HWordAddr pc, InstrLen len, DecodedInstr di,
             Vector#(2, Word64) prefetch, Bit#(2) prefetchCount) =
@@ -2093,144 +2273,12 @@ function ActionValue#(ExecResult)
       // Direct index arithmetic (p.22-23).
       // -----------------------------------------------------------
       tagged DirIndex .di_: begin
-        HWordAddr ea = effAddr19(st, di_.addr, di_.idx);
-        IndexWord x = st.readIndex(di_.j);
-        // Reference Manual p.24: "The index-flag and index-result
-        // indicators are set in all of the preceding direct index
-        // arithmetic operations [LX/LV/LC/LR/SX/SV/SC/SR/V+/V+C/V+CR].
-        // The index-comparison indicators are unchanged." -- and p.23:
-        // they "describe the index after the index modification is
-        // completed". So loads set them from the NEW index word and
-        // stores from the (unchanged) current one. Before this was
-        // added only V+/V+C/V+CR set them; caught by I-Box 1's
-        // SIC-B,ZIND block (p.50-51), which tests XF/XCZ/XVGZ/XVLZ/
-        // XVZ straight after an LX.
-        case (di_.code)
-          dixop_LX: begin // LX -- prefetch/bail-out shape (same as
-            // VflInt L/K/+ above). Half-word reads never cross a word
-            // boundary (a half-word always fits within the one word
-            // it addresses), so this and every other DirIndex
-            // read-only arm below needs exactly 0-1 reads, never 2.
-            if (prefetchCount >= 1) begin
-              idxWriteReg = di_.j; doIdxWrite = True;
-              idxWriteVal = unpackIndexWord(prefetch[0]);
-              ind = setIndexResultIndicatorsF(ind, idxWriteVal);
-            end else
-              needsRead = tagged Valid ea[18:1];
-          end
-          dixop_SX: begin // SX
-            st.writeWord(ea[18:1], packIndexWord(x));
-            ind = setIndexResultIndicatorsF(ind, x);
-          end
-          dixop_LV: begin // LV
-            if (prefetchCount >= 1) begin
-              Bit#(32) h = (ea[0] == 0) ? prefetch[0][63:32] : prefetch[0][31:0];
-              idxWriteReg = di_.j; doIdxWrite = True;
-              idxWriteVal = IndexWord{addr:h[31:8], sign:h[7:7], flag:x.flag,
-                                              count:x.count, refill:x.refill};
-              ind = setIndexResultIndicatorsF(ind, idxWriteVal);
-            end else
-              needsRead = tagged Valid ea[18:1];
-          end
-          dixop_SV: begin // SV -- prefetch/bail-out shape: unlike the
-            // read-only arms above, this writes back using the SAME
-            // read's response (a genuinely dependent chain), but
-            // since writes stay single-cycle throughout this whole
-            // migration, resuming with prefetch[0] available is
-            // enough to both compute and issue the write in one go --
-            // no second bail needed.
-            if (prefetchCount >= 1) begin
-              Bit#(32) h = (ea[0] == 0) ? prefetch[0][63:32] : prefetch[0][31:0];
-              writeHWWithWord(st, ea, {x.addr, x.sign, h[6:0]}, prefetch[0]);
-              ind = setIndexResultIndicatorsF(ind, x);
-            end else
-              needsRead = tagged Valid ea[18:1];
-          end
-          dixop_LC: begin // LC
-            if (prefetchCount >= 1) begin
-              Bit#(32) h = (ea[0] == 0) ? prefetch[0][63:32] : prefetch[0][31:0];
-              idxWriteReg = di_.j; doIdxWrite = True;
-              idxWriteVal = IndexWord{addr:x.addr, sign:x.sign, flag:x.flag,
-                                              count:h[31:14], refill:x.refill};
-              ind = setIndexResultIndicatorsF(ind, idxWriteVal);
-            end else
-              needsRead = tagged Valid ea[18:1];
-          end
-          dixop_SC: begin // SC -- same shape as SV above.
-            if (prefetchCount >= 1) begin
-              Bit#(32) h = (ea[0] == 0) ? prefetch[0][63:32] : prefetch[0][31:0];
-              writeHWWithWord(st, ea, {x.count, 7'b0, h[6:0]}, prefetch[0]);
-              ind = setIndexResultIndicatorsF(ind, x);
-            end else
-              needsRead = tagged Valid ea[18:1];
-          end
-          dixop_LR: begin // LR
-            if (prefetchCount >= 1) begin
-              Bit#(32) h = (ea[0] == 0) ? prefetch[0][63:32] : prefetch[0][31:0];
-              idxWriteReg = di_.j; doIdxWrite = True;
-              idxWriteVal = IndexWord{addr:x.addr, sign:x.sign, flag:x.flag,
-                                              count:x.count, refill:h[31:14]};
-              ind = setIndexResultIndicatorsF(ind, idxWriteVal);
-            end else
-              needsRead = tagged Valid ea[18:1];
-          end
-          dixop_SR: begin // SR -- same shape as SV above.
-            if (prefetchCount >= 1) begin
-              Bit#(32) h = (ea[0] == 0) ? prefetch[0][63:32] : prefetch[0][31:0];
-              writeHWWithWord(st, ea, {x.refill, 7'b0, h[6:0]}, prefetch[0]);
-              ind = setIndexResultIndicatorsF(ind, x);
-            end else
-              needsRead = tagged Valid ea[18:1];
-          end
-          dixop_V_PLUS, dixop_V_PLUS_C, dixop_V_PLUS_CR: begin // V+ / V+C / V+CR --
-            // prefetch/bail-out shape with up to 2 SEQUENTIAL reads:
-            // readHW's own half-word read (prefetch[0]), then, only
-            // for V+CR when the count reaches zero, a second refill
-            // read (prefetch[1]) -- the first arm converted needing 2
-            // reads for a genuinely sequential reason (a value from
-            // the first read decides whether a second is needed at
-            // all), distinct from VflInt's crossing case (2 reads
-            // always needed together for one field). Same 2-slot
-            // prefetch bound covers both shapes.
-            if (prefetchCount >= 1) begin
-              Bit#(32) h = (ea[0] == 0) ? prefetch[0][63:32] : prefetch[0][31:0];
-              SM128 opnd = SM128{sign: h[7], mag: zeroExtend(h[31:8])};
-              SM128 val  = SM128{sign: x.sign, mag: zeroExtend(x.addr)};
-              SM128 sum  = smAdd(val, opnd);
-              IndexWord x1 = IndexWord{addr: truncate(sum.mag), sign: sum.sign, flag: x.flag,
-                                        count: x.count, refill: x.refill};
-              if (di_.code != dixop_V_PLUS) x1.count = x1.count - 1;
-              Bool needsRefill = (di_.code == dixop_V_PLUS_CR) && (x1.count == 0);
-              if (needsRefill && prefetchCount < 2) begin
-                needsRead = tagged Valid zeroExtend(x1.refill);
-              end else begin
-                IndexWord x2 = needsRefill ? unpackIndexWord(prefetch[1]) : x1;
-                idxWriteReg = di_.j; doIdxWrite = True;
-                idxWriteVal = x2;
-                ind = setIndexResultIndicatorsF(ind, x1); // reflects state before any refill, p.23
-              end
-            end else
-              needsRead = tagged Valid ea[18:1];
-          end
-          dixop_KV: begin // KV
-            if (prefetchCount >= 1) begin
-              Bit#(32) h = (ea[0] == 0) ? prefetch[0][63:32] : prefetch[0][31:0];
-              SM128 opnd = SM128{sign: h[7], mag: zeroExtend(h[31:8])};
-              SM128 val  = SM128{sign: x.sign, mag: zeroExtend(x.addr)};
-              ind = setIndexCmpIndicatorsF(ind, smCompare(val, opnd));
-            end else
-              needsRead = tagged Valid ea[18:1];
-          end
-          dixop_KC: begin // KC
-            if (prefetchCount >= 1) begin
-              Bit#(32) h = (ea[0] == 0) ? prefetch[0][63:32] : prefetch[0][31:0];
-              Cmp3 c = (x.count == h[31:14]) ? CmpEqual : (x.count < h[31:14]) ? CmpLow : CmpHigh;
-              ind = setIndexCmpIndicatorsF(ind, c);
-            end else
-              needsRead = tagged Valid ea[18:1];
-          end
-          default: ind = setOpInvalid(ind); // RNX, LVE, SVA: out of scope
-        endcase
+        IndexOutcome xo <- dirIndexOp(st, di_, prefetch, prefetchCount, ind);
+        needsRead   = xo.needsRead;
+        doIdxWrite  = xo.doIdxWrite;
+        idxWriteReg = xo.idxWriteReg;
+        idxWriteVal = xo.idxWriteVal;
+        ind         = xo.ind;
       end
 
       // -----------------------------------------------------------

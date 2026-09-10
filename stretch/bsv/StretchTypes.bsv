@@ -389,6 +389,10 @@ typedef struct { VflAddr a; VflMod m; Bit#(6) code; } VflInstr
 typedef struct { VflAddr a; Bit#(4) conn; Bit#(5) suffix; } ConnInstr
   deriving (Bits, Eq, FShow);
 
+// The DirIndex payload, named so its arm can leave execute() too.
+typedef struct { HWordAddr addr; Bit#(4) j; Bit#(5) code; Bit#(4) idx; } DixInstr
+  deriving (Bits, Eq, FShow);
+
 typedef union tagged {
   // Integer arithmetic / radix conversion, Figure 6 "INTEGER" row,
   // p.18; opcode field IBM bits 51-59 = abc(3)+code(6), pocket card
@@ -408,7 +412,7 @@ typedef union tagged {
 
   // Direct index arithmetic, Figure 6 "DIRECT INDEX" row: half-word,
   // ADDRESS[0:18](19b) + J[19:22] + OP[23:27](5b) + I[28:31].
-  struct { HWordAddr addr; Bit#(4) j; Bit#(5) code; Bit#(4) idx; } DirIndex;
+  DixInstr DirIndex;
 
   // Immediate index arithmetic, Figure 6 "IMMEDIATE INDEX" row:
   // ADDRESS[0:18](19b, the immediate value) + J[19:22] + lit"10000"[23:27]
