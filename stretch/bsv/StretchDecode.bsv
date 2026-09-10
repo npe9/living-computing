@@ -146,7 +146,7 @@ function DecodedInstr decodeFullWord(Word64 w);
 
   // Otherwise: VFL integer/radix-conversion or connective.
   else if (isConnSuffix(suffix))
-    return tagged Connective { a: a, conn: conn4, suffix: suffix };
+    return tagged Connective ConnInstr { a: a, conn: conn4, suffix: suffix };
   else if (isVflIntCode(code6))
     return tagged VflInt VflInstr { a: a, m: m, code: code6 };
   else

@@ -383,6 +383,12 @@ typedef struct {
 typedef struct { VflAddr a; VflMod m; Bit#(6) code; } VflInstr
   deriving (Bits, Eq, FShow);
 
+// The Connective payload, named for the same reason VflInstr is: its
+// arm is lifted out of execute() and has to be passed whole.  The two
+// share VflAddr, which is what let progressiveIndex serve both.
+typedef struct { VflAddr a; Bit#(4) conn; Bit#(5) suffix; } ConnInstr
+  deriving (Bits, Eq, FShow);
+
 typedef union tagged {
   // Integer arithmetic / radix conversion, Figure 6 "INTEGER" row,
   // p.18; opcode field IBM bits 51-59 = abc(3)+code(6), pocket card
@@ -391,7 +397,7 @@ typedef union tagged {
 
   // Connectives (16 boolean functions), same shape, opcode field
   // CONN(4, bits 51-54) + suffix(5, bits 55-59).
-  struct { VflAddr a; Bit#(4) conn; Bit#(5) suffix; } Connective;
+  ConnInstr Connective;
 
   // Floating point, Figure 6 "FLOATING POINT" row: half-word,
   // ADDRESS[0:17] (18b, a full-word address -- FP operands are always

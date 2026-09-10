@@ -1851,6 +1851,189 @@ function ActionValue#(VflOutcome)
   endactionvalue
 endfunction
 
+// ---------------------------------------------------------------------
+// CONNECTIVES (the sixteen boolean functions), lifted whole out of
+// execute().
+//
+// ITS BOUNDARY IS EXACTLY vflIntOp'S, which is why it returns the same
+// VflOutcome rather than a type of its own: over 155 lines it touches
+// needsRead, vflPending and ind and nothing else of execute()'s
+// locals -- no doIdxWrite, no idxWriteVal, no ioStart, no io., no
+// next, no fallthrough, no pc, no len -- and of storage only readIndex
+// and writeWord.  The two VFL-format arms ask the caller for the same
+// three things because they share the format, and the shared type says
+// so.
+//
+// needsRead is threaded rather than returned for the same reason it is
+// in vflIntOp: the trailing progressive-index block reads it.
+// ---------------------------------------------------------------------
+function ActionValue#(VflOutcome)
+    connectiveOp(StretchStorage st, ConnInstr cn,
+                 Vector#(2, Word64) prefetch, Bit#(2) prefetchCount, Word64 ind0);
+  actionvalue
+    Maybe#(WordAddr) needsRead = tagged Invalid;
+    Maybe#(Tuple2#(Bit#(4), IndexWord)) vflPending = tagged Invalid;
+    Word64 ind = ind0;
+
+      Bool isProgressive = (cn.a.p != 0 && cn.a.p != 4);
+      Bool immediate = (cn.a.p == 4);
+      if (isProgressive && cn.a.i1 == 0) begin
+        ind = setOpInvalid(ind);
+      end else if (cn.suffix == conn_CM && immediate) begin
+        // CM + immediate: "Immediate addressing is not possible in
+        // operations whose result is placed in storage... the
+        // operation is not performed and the OP indicator is turned
+        // on" (p.56) -- same rule already enforced for VflInt's
+        // ST/M+ above.
+        ind = setOpInvalid(ind);
+      end else begin
+        Bit#(7) len_ = effLength(cn.a.length);
+        IndexWord xIdx = st.readIndex(cn.a.i1);
+        BitAddr ea = isProgressive ? xIdx.addr : effAddr24(st, cn.a.addr, cn.a.i1);
+        Bit#(8) offSh = zeroExtend(cn.a.offset);
+        Bit#(8) len8 = zeroExtend(len_);
+        Bit#(64) fieldMask = (len_ == 64) ? '1 : ((1 << len8) - 1);
+        Bool vflOk = True; // p.21/22: a suppressed VFL-format op skips
+                            // the progressive increment too, same
+                            // rule as VflInt.
+        Bit#(2) vflReadsUsed = 0; // see VflInt's identical field above
+                            // for why this exists (xw_refill bisection).
+        Bool vflWriteArmHandled = False; // see VflInt's identical field
+                            // above -- CM (the only suffix here that
+                            // writes to storage) sets this when it
+                            // resolves its own progressive update
+                            // inline, same reason as VflInt's ST/M+.
+
+        // Progressive-index bookkeeping, hoisted up front for the
+        // same reason as VflInt's identical block: CM needs to know
+        // BEFORE it reads/writes whether a refill will also be
+        // needed, so it can defer its write rather than issue one in
+        // the same execute() call as a refill's readWordReq.
+        Tuple2#(IndexWord, Bool) vflPx = progressiveIndex(cn.a, xIdx);
+        IndexWord vflPx1 = tpl_1(vflPx);
+        Bool vflNeedsRefill = tpl_2(vflPx);
+
+        if (cn.suffix == conn_CM && fieldCrosses(ea, len_)) begin
+          // CM writing a crossing field: same single-word-write
+          // limitation as VflInt's ST/M+ (writeField's precondition).
+          ind = setOpInvalid(ind);
+          vflOk = False;
+        end else if (cn.suffix == conn_CM && vflNeedsRefill) begin
+          // CM with a refill also pending: deferred-write shape, same
+          // as VflInt's ST -- own field word first, refill second,
+          // write only once both are in hand (see vflWriteArmHandled's
+          // comment above for why this can't share the generic
+          // C/CT/CM read-then-dispatch path below). CM is always
+          // non-crossing and non-immediate here (both forced invalid
+          // above), so its own read is always exactly 1 slot.
+          vflWriteArmHandled = True;
+          WordAddr w0 = baWord(ea);
+          Bit#(6) off = baBit(ea);
+          if (prefetchCount >= 2) begin
+            Word64 mHiWord = prefetch[0];
+            Bit#(64) m = extractFieldBits(prefetch[0], 0, off, len_);
+            SM128 acc = readAcc(st);
+            Bit#(64) a = truncate(acc.mag >> offSh) & fieldMask;
+            Bit#(64) result = applyConnective(cn.conn, m, a) & fieldMask;
+            writeFieldWithHi(st, ea, len_, result, mHiWord);
+            ind = setConnectiveIndicatorsF(ind, True, result == 0);
+            vflPending = tagged Valid tuple2(cn.a.i1, unpackIndexWord(prefetch[1]));
+            ind = setIndexResultIndicatorsF(ind, vflPx1); // pre-refill state, p.21
+          end else if (prefetchCount == 1)
+            needsRead = tagged Valid zeroExtend(vflPx1.refill);
+          else
+            needsRead = tagged Valid w0;
+        end else begin
+          Bit#(64) m = 0;
+          Word64 mHiWord = 0; // valid only for CM (the only suffix
+                               // that writes back); see below.
+          if (immediate) begin
+            m = immediateOperand(cn.a.addr, len_);
+          end else begin
+            // C/CT/CM all share this prefetch/bail-out shape. CM is
+            // guaranteed non-crossing by the outer guard above (and
+            // guaranteed !immediate by the check further above), so
+            // it always takes the !crosses branch below and needs
+            // exactly 1 read -- the same shape VflInt M+/ST have.
+            // C/CT, unlike CM, are NOT restricted to non-crossing
+            // (neither writes to general storage: C writes the
+            // accumulator, CT writes nothing), so they can genuinely
+            // need the 2-read crossing path.
+            WordAddr w0 = baWord(ea);
+            Bit#(6) off = baBit(ea);
+            if (!fieldCrosses(ea, len_)) begin
+              if (prefetchCount >= 1) begin
+                m = extractFieldBits(prefetch[0], 0, off, len_);
+                if (cn.suffix == conn_CM) mHiWord = prefetch[0]; // CM's writeback needs the raw word
+                vflReadsUsed = 1;
+              end else
+                needsRead = tagged Valid w0;
+            end else begin
+              if (prefetchCount >= 2) begin
+                m = extractFieldBits(prefetch[0], prefetch[1], off, len_);
+                vflReadsUsed = 2;
+              end else if (prefetchCount == 1)
+                needsRead = tagged Valid (w0 + 1);
+              else
+                needsRead = tagged Valid w0;
+            end
+          end
+          if (!isValid(needsRead)) begin
+            SM128 acc = readAcc(st);
+            Bit#(64) a = truncate(acc.mag >> offSh) & fieldMask;
+            Bit#(64) result = applyConnective(cn.conn, m, a) & fieldMask;
+            Bool resultZero = (result == 0);
+
+            case (cn.suffix)
+              conn_C: begin // C: result replaces the accumulator
+                              // field; the rest of the accumulator is
+                              // unchanged (p.76 "In CONNECT... The
+                              // remainder of the accumulator remains
+                              // unchanged").
+                Bit#(128) fieldMask128 = zeroExtend(fieldMask) << offSh;
+                Bit#(128) resultSh = zeroExtend(result) << offSh;
+                SM128 merged = SM128 { sign: acc.sign,
+                                        mag: (acc.mag & ~fieldMask128) | resultSh };
+                writeAcc(st, merged);
+              end
+              conn_CM: writeFieldWithHi(st, ea, len_, result, mHiWord); // CM
+              conn_CT: begin end // CT: result discarded, indicators only
+              default: ind = setOpInvalid(ind); // unreachable: StretchDecode's
+                                                 // isConnSuffix only admits these
+                                                 // three patterns; kept for bsc's
+                                                 // exhaustiveness check, same style
+                                                 // as VflInt's own default arm above.
+            endcase
+
+            ind = setConnectiveIndicatorsF(ind, cn.suffix == conn_CM, resultZero);
+          end
+        end
+
+        if (!isValid(needsRead) && isProgressive && vflOk && !vflWriteArmHandled) begin
+          // C/CT's shared progressive-index completion (CM resolves
+          // its own inline above -- see vflWriteArmHandled). Reuses
+          // vflPx1/vflNeedsRefill computed up front; same shape as
+          // VflInt's identical trailing block.
+          if (vflNeedsRefill && vflReadsUsed >= 2) begin
+            // See VflInt's identical comment above: a crossing-field
+            // read (C/CT only -- CM is always non-crossing, forced
+            // invalid above) plus a refill would need a 3rd prefetch
+            // slot. Not reachable by any current test.
+            ind = setOpInvalid(ind);
+          end else if (vflNeedsRefill && prefetchCount < vflReadsUsed + 1) begin
+            needsRead = tagged Valid zeroExtend(vflPx1.refill);
+          end else begin
+            Bit#(1) slot = truncate(vflReadsUsed);
+            IndexWord px2 = vflNeedsRefill ? unpackIndexWord(prefetch[slot]) : vflPx1;
+            vflPending = tagged Valid tuple2(cn.a.i1, px2);
+            ind = setIndexResultIndicatorsF(ind, vflPx1); // pre-refill state, p.21
+          end
+        end
+      end
+    return VflOutcome{needsRead: needsRead, vflPending: vflPending, ind: ind};
+  endactionvalue
+endfunction
+
 function ActionValue#(ExecResult)
     execute(StretchStorage st, StretchIO io, HWordAddr pc, InstrLen len, DecodedInstr di,
             Vector#(2, Word64) prefetch, Bit#(2) prefetchCount) =
@@ -2354,161 +2537,10 @@ function ActionValue#(ExecResult)
       // this file (PF isn't implemented for VflInt either). Not
       // exercised by any program yet with BS!=8.
       tagged Connective .cn: begin
-        Bool isProgressive = (cn.a.p != 0 && cn.a.p != 4);
-        Bool immediate = (cn.a.p == 4);
-        if (isProgressive && cn.a.i1 == 0) begin
-          ind = setOpInvalid(ind);
-        end else if (cn.suffix == conn_CM && immediate) begin
-          // CM + immediate: "Immediate addressing is not possible in
-          // operations whose result is placed in storage... the
-          // operation is not performed and the OP indicator is turned
-          // on" (p.56) -- same rule already enforced for VflInt's
-          // ST/M+ above.
-          ind = setOpInvalid(ind);
-        end else begin
-          Bit#(7) len_ = effLength(cn.a.length);
-          IndexWord xIdx = st.readIndex(cn.a.i1);
-          BitAddr ea = isProgressive ? xIdx.addr : effAddr24(st, cn.a.addr, cn.a.i1);
-          Bit#(8) offSh = zeroExtend(cn.a.offset);
-          Bit#(8) len8 = zeroExtend(len_);
-          Bit#(64) fieldMask = (len_ == 64) ? '1 : ((1 << len8) - 1);
-          Bool vflOk = True; // p.21/22: a suppressed VFL-format op skips
-                              // the progressive increment too, same
-                              // rule as VflInt.
-          Bit#(2) vflReadsUsed = 0; // see VflInt's identical field above
-                              // for why this exists (xw_refill bisection).
-          Bool vflWriteArmHandled = False; // see VflInt's identical field
-                              // above -- CM (the only suffix here that
-                              // writes to storage) sets this when it
-                              // resolves its own progressive update
-                              // inline, same reason as VflInt's ST/M+.
-
-          // Progressive-index bookkeeping, hoisted up front for the
-          // same reason as VflInt's identical block: CM needs to know
-          // BEFORE it reads/writes whether a refill will also be
-          // needed, so it can defer its write rather than issue one in
-          // the same execute() call as a refill's readWordReq.
-          Tuple2#(IndexWord, Bool) vflPx = progressiveIndex(cn.a, xIdx);
-          IndexWord vflPx1 = tpl_1(vflPx);
-          Bool vflNeedsRefill = tpl_2(vflPx);
-
-          if (cn.suffix == conn_CM && fieldCrosses(ea, len_)) begin
-            // CM writing a crossing field: same single-word-write
-            // limitation as VflInt's ST/M+ (writeField's precondition).
-            ind = setOpInvalid(ind);
-            vflOk = False;
-          end else if (cn.suffix == conn_CM && vflNeedsRefill) begin
-            // CM with a refill also pending: deferred-write shape, same
-            // as VflInt's ST -- own field word first, refill second,
-            // write only once both are in hand (see vflWriteArmHandled's
-            // comment above for why this can't share the generic
-            // C/CT/CM read-then-dispatch path below). CM is always
-            // non-crossing and non-immediate here (both forced invalid
-            // above), so its own read is always exactly 1 slot.
-            vflWriteArmHandled = True;
-            WordAddr w0 = baWord(ea);
-            Bit#(6) off = baBit(ea);
-            if (prefetchCount >= 2) begin
-              Word64 mHiWord = prefetch[0];
-              Bit#(64) m = extractFieldBits(prefetch[0], 0, off, len_);
-              SM128 acc = readAcc(st);
-              Bit#(64) a = truncate(acc.mag >> offSh) & fieldMask;
-              Bit#(64) result = applyConnective(cn.conn, m, a) & fieldMask;
-              writeFieldWithHi(st, ea, len_, result, mHiWord);
-              ind = setConnectiveIndicatorsF(ind, True, result == 0);
-              vflPending = tagged Valid tuple2(cn.a.i1, unpackIndexWord(prefetch[1]));
-              ind = setIndexResultIndicatorsF(ind, vflPx1); // pre-refill state, p.21
-            end else if (prefetchCount == 1)
-              needsRead = tagged Valid zeroExtend(vflPx1.refill);
-            else
-              needsRead = tagged Valid w0;
-          end else begin
-            Bit#(64) m = 0;
-            Word64 mHiWord = 0; // valid only for CM (the only suffix
-                                 // that writes back); see below.
-            if (immediate) begin
-              m = immediateOperand(cn.a.addr, len_);
-            end else begin
-              // C/CT/CM all share this prefetch/bail-out shape. CM is
-              // guaranteed non-crossing by the outer guard above (and
-              // guaranteed !immediate by the check further above), so
-              // it always takes the !crosses branch below and needs
-              // exactly 1 read -- the same shape VflInt M+/ST have.
-              // C/CT, unlike CM, are NOT restricted to non-crossing
-              // (neither writes to general storage: C writes the
-              // accumulator, CT writes nothing), so they can genuinely
-              // need the 2-read crossing path.
-              WordAddr w0 = baWord(ea);
-              Bit#(6) off = baBit(ea);
-              if (!fieldCrosses(ea, len_)) begin
-                if (prefetchCount >= 1) begin
-                  m = extractFieldBits(prefetch[0], 0, off, len_);
-                  if (cn.suffix == conn_CM) mHiWord = prefetch[0]; // CM's writeback needs the raw word
-                  vflReadsUsed = 1;
-                end else
-                  needsRead = tagged Valid w0;
-              end else begin
-                if (prefetchCount >= 2) begin
-                  m = extractFieldBits(prefetch[0], prefetch[1], off, len_);
-                  vflReadsUsed = 2;
-                end else if (prefetchCount == 1)
-                  needsRead = tagged Valid (w0 + 1);
-                else
-                  needsRead = tagged Valid w0;
-              end
-            end
-            if (!isValid(needsRead)) begin
-              SM128 acc = readAcc(st);
-              Bit#(64) a = truncate(acc.mag >> offSh) & fieldMask;
-              Bit#(64) result = applyConnective(cn.conn, m, a) & fieldMask;
-              Bool resultZero = (result == 0);
-
-              case (cn.suffix)
-                conn_C: begin // C: result replaces the accumulator
-                                // field; the rest of the accumulator is
-                                // unchanged (p.76 "In CONNECT... The
-                                // remainder of the accumulator remains
-                                // unchanged").
-                  Bit#(128) fieldMask128 = zeroExtend(fieldMask) << offSh;
-                  Bit#(128) resultSh = zeroExtend(result) << offSh;
-                  SM128 merged = SM128 { sign: acc.sign,
-                                          mag: (acc.mag & ~fieldMask128) | resultSh };
-                  writeAcc(st, merged);
-                end
-                conn_CM: writeFieldWithHi(st, ea, len_, result, mHiWord); // CM
-                conn_CT: begin end // CT: result discarded, indicators only
-                default: ind = setOpInvalid(ind); // unreachable: StretchDecode's
-                                                   // isConnSuffix only admits these
-                                                   // three patterns; kept for bsc's
-                                                   // exhaustiveness check, same style
-                                                   // as VflInt's own default arm above.
-              endcase
-
-              ind = setConnectiveIndicatorsF(ind, cn.suffix == conn_CM, resultZero);
-            end
-          end
-
-          if (!isValid(needsRead) && isProgressive && vflOk && !vflWriteArmHandled) begin
-            // C/CT's shared progressive-index completion (CM resolves
-            // its own inline above -- see vflWriteArmHandled). Reuses
-            // vflPx1/vflNeedsRefill computed up front; same shape as
-            // VflInt's identical trailing block.
-            if (vflNeedsRefill && vflReadsUsed >= 2) begin
-              // See VflInt's identical comment above: a crossing-field
-              // read (C/CT only -- CM is always non-crossing, forced
-              // invalid above) plus a refill would need a 3rd prefetch
-              // slot. Not reachable by any current test.
-              ind = setOpInvalid(ind);
-            end else if (vflNeedsRefill && prefetchCount < vflReadsUsed + 1) begin
-              needsRead = tagged Valid zeroExtend(vflPx1.refill);
-            end else begin
-              Bit#(1) slot = truncate(vflReadsUsed);
-              IndexWord px2 = vflNeedsRefill ? unpackIndexWord(prefetch[slot]) : vflPx1;
-              vflPending = tagged Valid tuple2(cn.a.i1, px2);
-              ind = setIndexResultIndicatorsF(ind, vflPx1); // pre-refill state, p.21
-            end
-          end
-        end
+        VflOutcome co <- connectiveOp(st, cn, prefetch, prefetchCount, ind);
+        needsRead  = co.needsRead;
+        vflPending = co.vflPending;
+        ind        = co.ind;
       end
       tagged Fp .fp: begin
         // Floating point, single precision (StretchFP.bsv, Reference
