@@ -694,12 +694,26 @@ function ActionValue#(Word64) fpStoreClass(StretchStorage st, Bit#(7) c,
         // the LC-off row but shifts RIGHT, where this branch never
         // runs.
         //
-        // THE BLOCK THAT WOULD CLOSE IT is in the PAU GATES ROUTINE
-        // (p.180 on, 022363.00): its SHF0 loop does `SHF(U),0` -- a
-        // shift of exactly zero -- and then checks both accumulator
-        // halves. A shift of zero must leave LC off, which is this
-        // case precisely. Naming it here so the next transcription
-        // has a reason rather than an order.
+        // NO BLOCK IS KNOWN TO CLOSE IT, and the two candidates
+        // this note has named were both wrong. F212D1 was named
+        // before it was transcribed and turned out to drive LC ON.
+        // The PAU GATES ROUTINE's SHF0 loop was named next, because
+        // it does `SHF(U),0` -- a shift of exactly zero, which is
+        // the fragile case -- but reading pp.180-181 shows every
+        // block of that routine branches only on RZ from its two CT
+        // compares. Nothing in it tests LC at all, so it cannot see
+        // this.
+        //
+        // THE RULE THAT COST TWICE: a pointer to a future block must
+        // name the BRANCH that would fail, not just the operation
+        // that would differ. `SHF(U),0` differs; `BZB,$RZ` does not
+        // look at what differs.
+        //
+        // What would close it is a left shift whose top `sh` bits
+        // are zero, followed by a branch on LC being off. F212's
+        // LC-off row (A24) shifts RIGHT; F212D1's three sub-cases
+        // all drive it on. Left unowned rather than pointed at
+        // again.
         lc = ((ds.frac >> (96 - sh)) != 0);
         v.frac = ds.frac << sh;
         // p.102: "The operation is not affected by the

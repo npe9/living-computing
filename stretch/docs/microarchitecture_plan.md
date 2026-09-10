@@ -2963,13 +2963,41 @@ hand vectors alone. "Enables" notes the dependency chain.
    coverage claim carries a date for the same reason a reachability
    claim does.
 
-   AND THE GREP NAMED THE NEXT TARGET. The PAU GATES ROUTINE (p.180
-   on, 022363.00) opens with a loop, SHF0, whose body is
-   `L(BU,64),WRDA[X1],64 / +(BU,64),WRDB[X1],0 / SHF(U),0 / two CTs /
-   CBR+,X1,SHF0`. A shift of EXACTLY ZERO, checked on both accumulator
-   halves -- which is the unguarded case, precisely. The note in the
-   SHF arm now names it, so the next transcription has a reason rather
-   than an order.
+   AND THEN I MADE THE SAME MISTAKE AGAIN, IN THE SAME HOUR. Having
+   just corrected a note that pointed at F212D1 without checking what
+   F212D1 branches on, I wrote a note pointing at the PAU GATES
+   ROUTINE's SHF0 loop -- `L(BU,64),WRDA[X1],64 / +(BU,64),WRDB[X1],0 /
+   SHF(U),0 / two CTs / CBR+,X1,SHF0` -- on the grounds that a shift of
+   EXACTLY ZERO is the fragile case. It is. But reading pp.180-181
+   shows every block of that routine (SHF0, SHFR1-3, SHFL1-3, ...)
+   branches only on RZ from its two CT compares. NOTHING IN IT TESTS
+   LC. It cannot see the injection.
+
+   Worse, the fragile expression is `lc = ((ds.frac >> (96 - sh)) !=
+   0)` and nothing else: at sh == 0 the fraction path is `ds.frac << 0`,
+   which is trivially right. So SHF0's two CTs would not touch the
+   unguarded code even incidentally.
+
+   THE RULE THAT COST TWICE, now written down: A POINTER TO A FUTURE
+   BLOCK MUST NAME THE BRANCH THAT WOULD FAIL, NOT JUST THE OPERATION
+   THAT WOULD DIFFER. `SHF(U),0` differs from what the model does
+   wrong; `BZB,$RZ` does not look at what differs. Both bad pointers
+   named an operation and neither checked a branch.
+
+   The gap is left UNOWNED. What would close it is a left shift whose
+   top `sh` bits are zero followed by a branch on LC being off; F212's
+   LC-off row shifts right, and F212D1's three sub-cases all drive it
+   on. Marked, dated, and not pointed at a third time.
+
+   AND THE JUSTIFICATION FOR OPENING PAU EVAPORATES WITH IT. The
+   routine was costed honestly as a bigger opening than any F2xx block,
+   and the reason to pay that was the LC gap. It is not the reason any
+   more. What SHF0 DOES pin is different and still worth having -- that
+   a shift of exactly zero leaves both accumulator halves unchanged,
+   checked at 52 bits high and 44 low, across a whole indexed table --
+   but that is a claim about the shifter's data path and the index
+   machinery, not about LC, and the decision to open the routine should
+   be made on that basis rather than inherited.
 
    WHAT THE PAU ROUTINE IS, AND WHY IT IS A DIFFERENT KIND OF WORK
    FROM F2xx. Its own header: "THIS ROUTINE TESTS THE SEVERAL GATES
