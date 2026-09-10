@@ -2807,6 +2807,18 @@ hand vectors alone. "Enables" notes the dependency chain.
    also gives the remainder register a role nothing uses yet; D/ is
    what needs it.
 
+   WHERE THE SPLIT CAN ACTUALLY LAND, since the review's sketch of a
+   "roughly sixty-line dispatcher" is out of reach from the arms alone
+   and should not be quoted as the target. execute() is 984 lines
+   today. The four arms still to move -- IoOp 202, Connective about
+   154 after the progressive-index dedup, DirIndex 146, ImmIndex 103
+   -- come to about 605, which leaves roughly 380: the preamble, the
+   branch and miscellaneous arms, and the epilogue. That 380 is the
+   honest target for finishing item (3). Getting below it would mean
+   moving the preamble and the branch arms too, which is a different
+   decision from the one the review argued for and should be made on
+   its own merits rather than inherited from a round number.
+
 
 
 
