@@ -1,0 +1,85 @@
+! jb_af1c "PAU GATES ROUTINE", the SHF0 block, p.180 and p.199
+! (octal 022367.00-022400.00).  The routine's own header: "THIS ROUTINE
+! TESTS THE SEVERAL GATES AND REGISTERS LOCATED IN PANELS A1, A2, A3,
+! A4 AND B1 OF FRAME 25, AND ALL OF FRAMES 26 AND 27.  ONLY THE
+! FRACTION OPERATIONS ARE CHECKED ... INCLUDED IN THE TESTS FOR THE
+! GATES ARE TESTS OF THE F REGISTER AND SHIFT CONTROL REGISTER."
+!
+! WHY THIS BLOCK AND NOT THE WHOLE ROUTINE.  Everything transcribed so
+! far -- every F2xx block -- is a straight line over a constant pool.
+! This is the first LOOP: LX loads an index register from a control
+! word, the operands are indexed (WRDA($X1), WRDB($X1)), and CBR+
+! counts and branches and refills.  It exercises the index machinery
+! and the VFL data path together, which nothing in the suite does, and
+! it does it over a table rather than a hand-picked pair.  SHF0 is the
+! smallest block of the routine that has all of that, and it is
+! self-contained for a reason worth noticing: the shift is by ZERO, so
+! the expected values ARE the input tables and no separate result
+! table is needed.  Every other block of the routine (SHFR1-3,
+! SHFL1-3, ...) shifts by a real amount and needs its own WRDAR/WRDBR
+! or WRDAL/WRDBL pair.
+!
+! WHAT IT CHECKS.  Each iteration loads WRDA[i] into the accumulator's
+! left word (64 bits at offset 64 = IBM 0-63), adds WRDB[i] into the
+! right word (64 bits at offset 0 = IBM 64-127), shifts the fraction
+! by zero, and then compares IBM 12-63 against WRDA's own bits 12-63
+! and IBM 64-107 against WRDB's bits 0-43.  A shift of zero must leave
+! both halves exactly as they were.  The error exits on p.198 name the
+! three ways it can go wrong: "ZERO SHIFT HI 52 BITS", "ZERO SHIFT LOW
+! 44 BITS" and "ZERO PRE SHIFT DECODING".
+!
+! WHAT IT DOES NOT CHECK, recorded so the next reader does not repeat
+! my mistake: it never branches on LC.  Its only indicator branches are
+! the two BZB on $RZ from the CT compares.  A note in the SHF arm once
+! claimed this block would close the left-shift-with-LC-off coverage
+! gap; it cannot, and that note has been retracted.
+!
+! THIS BLOCK CANNOT TELL WHETHER ITS OWN LOOP RAN, and the suite entry
+! carries two extra assertions because of it.  Measured by injection:
+! make the 24-bit VFL effective address ignore its index register
+! entirely, or make CBR never take its branch so the loop runs once
+! instead of twice, and in BOTH cases the block reports no error and
+! reaches its exit.  The reason is the same thing that makes it
+! compact: because the shift is by zero the expected values are the
+! inputs, and the CTs index them through the SAME register as the
+! operands, so a wrong index moves both sides together.  A loop that
+! silently ran once still reaches the end.
+!
+! So the run_tests entry also asserts the accumulator's FINAL contents
+! -- WRDA[1] in the left word, WRDB[1] in the right -- which is state
+! that accumulates across iterations and which both injections do
+! change.  Without those two checks this program is close to vacuous
+! on the model; with them it pins that the index register stepped and
+! that the loop went round twice.
+!
+! FRAMEWORK SUBSTITUTIONS.  CHKSZ is the routine's shared "size check"
+! error path (it eventually reaches the PE2NA/PE2NB/PE2P exits on
+! p.198); here it is a halt at its own address.  The block's tail --
+! SIC,SENO+.32 / B,SSW -- is the SSIP return and becomes PASS.
+
+! -- SSIP framework substitutes --
+        SLC, (8)23733.0
+CHKSZ   BEW, $
+
+! -- index control word and data tables (p.199) --
+        SLC, (8)24117.0
+XA      XW, 0, 2, XA                 ! VALUE 0, COUNT 2, REFILL itself
+WRDA    DD(BU,64,8), (8)0000125252525252525252
+        DD(BU,64,8), (8)0000052525252525252525
+WRDB    DD(BU,64,8), (8)1252525252525250000000
+        DD(BU,64,8), (8)0525252525252524000000
+
+        SLC, (8)22367.0
+SAP25   LX, $X1, XA
+SHF0    L(BU,64), WRDA($X1), 64
+        +(BU,64), WRDB($X1), 0
+        SHF(U), 0
+        CT0110(BU,52), WRDA+.12($X1), 64     ! zero shift, high 52 bits
+        BZB, $RZ, CHKSZ
+        CT0110(BU,44), WRDB($X1), 20         ! zero shift, low 44 bits
+        BZB, $RZ, CHKSZ
+        CBR+, $X1, SHF0
+        B, $+1.
+        B, SHF0
+PASS    BEW, $
+        END, SAP25

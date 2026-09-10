@@ -1041,6 +1041,16 @@ run "FP noisy mode fraction/exponent ops (jb_af1c F219Z-C1A on the model)" ./run
     "PC=$(python3 -c 'from strap_asm import assemble; print(assemble(open("programs/fp_arith_f219e.strap").read()).symtab["PASS"]//32)')" \
     "SEN:712=0"
 
+run "PAU gates SHF0 loop (jb_af1c, encoding)" python3 verify_pau_shf0_listing.py
+# The accumulator checks are NOT optional decoration: measured by
+# injection, this block reports no error either when the effective
+# address ignores its index register or when the loop runs once
+# instead of twice.  ACCL/ACCR are what catch both -- see the
+# program's own header.
+run "PAU gates SHF0 loop (indexed VFL + CBR+ on the model)" ./run_program.sh programs/pau_shf0.strap StretchPauShf0Tb \
+    "PC=$(python3 -c 'from strap_asm import assemble; print(assemble(open("programs/pau_shf0.strap").read()).symtab["PASS"]//32)')" \
+    "ACCL:8=1501199875790165" "ACCR:9=6148914691236167680"
+
 run "Program store compare: store then EXECUTE the modified instruction" ./run_program.sh programs/store_then_execute.strap StretchStoreExecTb \
     "RESULT:$(python3 -c 'from strap_asm import assemble; print(assemble(open("programs/store_then_execute.strap").read()).symtab["RESULT"]//64)')=0x20"
 

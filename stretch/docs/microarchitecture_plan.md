@@ -3061,6 +3061,63 @@ hand vectors alone. "Enables" notes the dependency chain.
    all. Each named payload cost exactly one construction site in
    StretchDecode.bsv. Suite unchanged at 242 sections throughout.
 
+   THE PAU GATES ROUTINE IS OPEN, one block of it: SHF0 (p.180 for the
+   code, p.199 for the tables). Opened on the merits stated when the LC
+   justification was retracted, not on that justification.
+
+   IT IS THE FIRST LOOP IN THE SUITE. Everything before it is a
+   straight line over a constant pool. This one loads an index register
+   from a control word with LX, indexes BOTH its operands through it
+   (WRDA($X1), WRDB($X1)), and closes with CBR+ -- count, branch and
+   refill. SHF0 is the smallest block of the routine that has all of
+   that, and it is self-contained for a reason: the shift is by ZERO,
+   so the expected values ARE the input tables and no result table is
+   needed. Every other block (SHFR1-3, SHFL1-3, ...) shifts by a real
+   amount and needs its own WRDAR/WRDBR or WRDAL/WRDBL pair.
+
+   THE ENCODING PASSED FIRST TIME, ALL TWELVE ROWS AND FOUR DATA WORDS,
+   which is a stronger result than it looks. Nothing in the assembler
+   was written for this routine, and the rows check three things no
+   earlier table does: that an indexed VFL operand puts its index
+   register in the second half-word (the "81" where an unindexed
+   operand prints "80"), that XW lays VALUE, COUNT and REFILL where the
+   machine reads them, and that CBR+'s count-and-branch encoding is
+   right. IBM's own printed output agreed with all of it.
+
+   AND THEN THE BLOCK TURNED OUT TO BE NEARLY BLIND, WHICH IS THE
+   FINDING. It passes on the model. It also passes with the 24-bit VFL
+   effective address IGNORING its index register entirely, and it
+   passes with CBR never taking its branch so the loop runs ONCE
+   instead of twice. Both measured, both predicted.
+
+   (e) A BLOCK WHOSE EXPECTED VALUES ARE INDEXED BY THE SAME REGISTER
+   AS ITS INPUTS CANNOT DETECT A WRONG INDEX. The self-consistency that
+   makes SHF0 compact -- expected equals input, because the shift is
+   zero -- is exactly what blinds it: a wrong index moves both sides
+   together. And reaching the exit never required iterating at all.
+
+   THE RULE THAT FOLLOWS, and it is new because nothing before this was
+   a loop: WHEN TRANSCRIBING A LOOP, ASSERT ON STATE THAT ACCUMULATES
+   ACROSS ITERATIONS. The suite entry checks the accumulator's FINAL
+   contents -- WRDA[1] in the left word, WRDB[1] in the right -- and
+   those two assertions are what both injections fail. Without them the
+   program is close to vacuous on the model; with them it pins that the
+   index register stepped and that the loop went round twice.
+
+   Note what this is NOT. It is not a defect in the historical routine.
+   On the real machine a loop that ran once would be a machine fault
+   the surrounding SSIP framework and the other blocks would catch
+   elsewhere; the block's job is to report a gate failure, not to
+   audit its own control flow. It is a limit on what a block transcribed
+   IN ISOLATION can tell us, and the fix belongs in the testbench, not
+   in the transcription.
+
+   ONE THING THE BLOCK ESTABLISHED IN PASSING: the accumulator's low
+   half is zero before the `+(BU,64), WRDB($X1), 0` on the second
+   iteration, since the sum equals WRDB[1] exactly rather than
+   WRDB[0]+WRDB[1]. So a VFL LOAD of 64 bits at offset 64 clears what
+   it does not write. Nothing had shown that before.
+
    STILL OPEN FROM THE REVIEW: the rest of (3) the literal 5'b01111
    means CM in the connective path and V+CR in the direct-index path,
    eleven occurrences, with the same collision for 5'b10111 and
