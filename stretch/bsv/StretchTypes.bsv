@@ -393,6 +393,11 @@ typedef struct { VflAddr a; Bit#(4) conn; Bit#(5) suffix; } ConnInstr
 typedef struct { HWordAddr addr; Bit#(4) j; Bit#(5) code; Bit#(4) idx; } DixInstr
   deriving (Bits, Eq, FShow);
 
+// The ImmIndex payload.  Its arm's boundary turns out to be identical
+// to DirIndex's, so both return the same IndexOutcome.
+typedef struct { HWordAddr imm; Bit#(4) j; Bit#(4) code; } ImmInstr
+  deriving (Bits, Eq, FShow);
+
 typedef union tagged {
   // Integer arithmetic / radix conversion, Figure 6 "INTEGER" row,
   // p.18; opcode field IBM bits 51-59 = abc(3)+code(6), pocket card
@@ -417,7 +422,7 @@ typedef union tagged {
   // Immediate index arithmetic, Figure 6 "IMMEDIATE INDEX" row:
   // ADDRESS[0:18](19b, the immediate value) + J[19:22] + lit"10000"[23:27]
   // + OP[28:31](4b).
-  struct { HWordAddr imm; Bit#(4) j; Bit#(4) code; } ImmIndex;
+  ImmInstr ImmIndex;
 
   // Count and branch, Figure 6 "COUNT AND BRANCH" row: half-word,
   // ADDRESS[0:18](19b) + J[19:22] + V(ab)[23:24] + lit"1001"[25:28] +

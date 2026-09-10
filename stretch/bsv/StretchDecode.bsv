@@ -262,8 +262,8 @@ endfunction
 function Maybe#(DecodedInstr) tryImmIndex(HalfWord32 hw);
   // literal 10000 at bits 23-27 (local): hw[8:4]
   return (hw[8:4] == litImmIndex)
-    ? tagged Valid (tagged ImmIndex { imm: hw[31:13], j: hw[12:9],
-                                       code: hw[3:0] })
+    ? tagged Valid (tagged ImmIndex ImmInstr { imm: hw[31:13], j: hw[12:9],
+                                               code: hw[3:0] })
     : tagged Invalid;
 endfunction
 

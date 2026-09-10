@@ -2214,6 +2214,131 @@ function ActionValue#(IndexOutcome)
   endactionvalue
 endfunction
 
+// ---------------------------------------------------------------------
+// IMMEDIATE INDEX ARITHMETIC, lifted whole out of execute().
+//
+// ITS BOUNDARY IS IDENTICAL TO dirIndexOp'S, so it returns the same
+// IndexOutcome: needsRead, the shared deferred index write, and the
+// indicators.  That is the second pair of arms to come out sharing a
+// return type, after the two VFL-format ones, and for the same reason
+// -- they are two spellings of one instruction format, so they ask the
+// caller for the same things.
+//
+// Count-and-branch is NOT here: CB/CBR/CBZ/CBRZ are their own arm and
+// go through evalBranch, which is why nothing in these ninety-four
+// lines touches `next` or `fallthrough` even though the immediate
+// index forms look as though they might.
+// ---------------------------------------------------------------------
+function ActionValue#(IndexOutcome)
+    immIndexOp(StretchStorage st, ImmInstr ii,
+               Vector#(2, Word64) prefetch, Bit#(2) prefetchCount, Word64 ind0);
+  actionvalue
+    Maybe#(WordAddr) needsRead = tagged Invalid;
+    Bool doIdxWrite = False;
+    Bit#(4) idxWriteReg = 0;
+    IndexWord idxWriteVal = IndexWord{addr:0, sign:0, flag:0, count:0, refill:0};
+    Word64 ind = ind0;
+
+      IndexWord x = st.readIndex(ii.j);
+      // Reference Manual p.25, per operation: the 19-bit address part
+      // is NOT a raw integer. Value operations (LVI/LVNI/V+I.../KVI/
+      // KVNI) use "the address part, bits 0-18, of the instruction"
+      // as bits 0-18 OF THE VALUE FIELD, "bits 19-24 set to zero"
+      // (or "zeros added to bits 19-24") -- i.e. the field is the
+      // word-and-half part of a bit address, value = field << 5.
+      // Count/refill operations (LCI/LRI/C+I/C-I/KCI) use "bits 0-17
+      // of the address part" -- the field's TOP 18 bits. An earlier
+      // version used the raw 19-bit field for values and its LOW 18
+      // bits for counts; caught by strap/verify_ibox1_listing.py,
+      // where I-Box 1's "LCI,$X1,4" prints as 4.03 02 (count 4 in
+      // bits 0-17), then confirmed against p.25.
+      Bit#(24) immVal24 = {ii.imm, 5'b0};
+      Bit#(18) imm18 = ii.imm[18:1];
+      SM128 immSM = SM128{sign: 0, mag: zeroExtend(immVal24)};
+      SM128 val = SM128{sign: x.sign, mag: zeroExtend(x.addr)};
+      case (ii.code)
+        4'b0001: begin // LVI
+          idxWriteReg = ii.j; doIdxWrite = True;
+          idxWriteVal = IndexWord{addr: immVal24, sign: 0,
+                   flag: x.flag, count: x.count, refill: x.refill};
+        end
+        4'b1001: begin // LVNI
+          idxWriteReg = ii.j; doIdxWrite = True;
+          idxWriteVal = IndexWord{addr: immVal24, sign: 1,
+                   flag: x.flag, count: x.count, refill: x.refill};
+        end
+        4'b0010: begin // LCI
+          idxWriteReg = ii.j; doIdxWrite = True;
+          idxWriteVal = IndexWord{addr: x.addr, sign: x.sign,
+                   flag: x.flag, count: imm18, refill: x.refill};
+        end
+        4'b0011: begin // LRI
+          idxWriteReg = ii.j; doIdxWrite = True;
+          idxWriteVal = IndexWord{addr: x.addr, sign: x.sign,
+                   flag: x.flag, count: x.count, refill: imm18};
+        end
+        4'b0000: begin // C+I
+          idxWriteReg = ii.j; doIdxWrite = True;
+          idxWriteVal = IndexWord{addr: x.addr, sign: x.sign, flag: x.flag,
+                   count: x.count + imm18, refill: x.refill};
+        end
+        4'b1000: begin // C-I
+          idxWriteReg = ii.j; doIdxWrite = True;
+          idxWriteVal = IndexWord{addr: x.addr, sign: x.sign, flag: x.flag,
+                   count: x.count - imm18, refill: x.refill};
+        end
+        4'b0101, 4'b0110, 4'b0111: begin // V+I / V+IC / V+ICR --
+          // prefetch/bail-out shape, inlining maybeRefill's own
+          // condition (doRefill && x1.count==0) rather than calling
+          // it, since only the ICR variant can ever need the read.
+          SM128 sum = smAdd(val, immSM);
+          IndexWord x1 = IndexWord{addr: truncate(sum.mag), sign: sum.sign,
+                           flag: x.flag, count: x.count, refill: x.refill};
+          if (ii.code != 4'b0101) x1.count = x1.count - 1;
+          if (ii.code == 4'b0111 && x1.count == 0) begin
+            if (prefetchCount >= 1) begin
+              idxWriteReg = ii.j; doIdxWrite = True;
+              idxWriteVal = unpackIndexWord(prefetch[0]);
+              ind = setIndexResultIndicatorsF(ind, x1);
+            end else
+              needsRead = tagged Valid zeroExtend(x1.refill);
+          end else begin
+            idxWriteReg = ii.j; doIdxWrite = True;
+            idxWriteVal = x1; ind = setIndexResultIndicatorsF(ind, x1);
+          end
+        end
+        4'b1101, 4'b1110, 4'b1111: begin // V-I / V-IC / V-ICR --
+          // same shape as V+I/V+IC/V+ICR above.
+          SM128 diff = smAdd(val, SM128{sign: ~immSM.sign, mag: immSM.mag});
+          IndexWord x1 = IndexWord{addr: truncate(diff.mag), sign: diff.sign,
+                           flag: x.flag, count: x.count, refill: x.refill};
+          if (ii.code != 4'b1101) x1.count = x1.count - 1;
+          if (ii.code == 4'b1111 && x1.count == 0) begin
+            if (prefetchCount >= 1) begin
+              idxWriteReg = ii.j; doIdxWrite = True;
+              idxWriteVal = unpackIndexWord(prefetch[0]);
+              ind = setIndexResultIndicatorsF(ind, x1);
+            end else
+              needsRead = tagged Valid zeroExtend(x1.refill);
+          end else begin
+            idxWriteReg = ii.j; doIdxWrite = True;
+            idxWriteVal = x1; ind = setIndexResultIndicatorsF(ind, x1);
+          end
+        end
+        4'b0100: ind = setIndexCmpIndicatorsF(ind, smCompare(val, immSM)); // KVI
+        4'b1100: ind = setIndexCmpIndicatorsF(ind, smCompare(val, SM128{sign:~immSM.sign, mag:immSM.mag})); // KVNI
+        4'b1010: begin // KCI
+          Cmp3 c = (x.count==imm18) ? CmpEqual : (x.count<imm18) ? CmpLow : CmpHigh;
+          ind = setIndexCmpIndicatorsF(ind, c);
+        end
+        default: ind = setOpInvalid(ind); // LVS: out of scope
+      endcase
+    return IndexOutcome{needsRead: needsRead, doIdxWrite: doIdxWrite,
+                        idxWriteReg: idxWriteReg, idxWriteVal: idxWriteVal,
+                        ind: ind};
+  endactionvalue
+endfunction
+
 function ActionValue#(ExecResult)
     execute(StretchStorage st, StretchIO io, HWordAddr pc, InstrLen len, DecodedInstr di,
             Vector#(2, Word64) prefetch, Bit#(2) prefetchCount) =
@@ -2287,100 +2412,12 @@ function ActionValue#(ExecResult)
       // above plus the mnemonic table -- see bsv/README.md "Scope").
       // -----------------------------------------------------------
       tagged ImmIndex .ii: begin
-        IndexWord x = st.readIndex(ii.j);
-        // Reference Manual p.25, per operation: the 19-bit address part
-        // is NOT a raw integer. Value operations (LVI/LVNI/V+I.../KVI/
-        // KVNI) use "the address part, bits 0-18, of the instruction"
-        // as bits 0-18 OF THE VALUE FIELD, "bits 19-24 set to zero"
-        // (or "zeros added to bits 19-24") -- i.e. the field is the
-        // word-and-half part of a bit address, value = field << 5.
-        // Count/refill operations (LCI/LRI/C+I/C-I/KCI) use "bits 0-17
-        // of the address part" -- the field's TOP 18 bits. An earlier
-        // version used the raw 19-bit field for values and its LOW 18
-        // bits for counts; caught by strap/verify_ibox1_listing.py,
-        // where I-Box 1's "LCI,$X1,4" prints as 4.03 02 (count 4 in
-        // bits 0-17), then confirmed against p.25.
-        Bit#(24) immVal24 = {ii.imm, 5'b0};
-        Bit#(18) imm18 = ii.imm[18:1];
-        SM128 immSM = SM128{sign: 0, mag: zeroExtend(immVal24)};
-        SM128 val = SM128{sign: x.sign, mag: zeroExtend(x.addr)};
-        case (ii.code)
-          4'b0001: begin // LVI
-            idxWriteReg = ii.j; doIdxWrite = True;
-            idxWriteVal = IndexWord{addr: immVal24, sign: 0,
-                     flag: x.flag, count: x.count, refill: x.refill};
-          end
-          4'b1001: begin // LVNI
-            idxWriteReg = ii.j; doIdxWrite = True;
-            idxWriteVal = IndexWord{addr: immVal24, sign: 1,
-                     flag: x.flag, count: x.count, refill: x.refill};
-          end
-          4'b0010: begin // LCI
-            idxWriteReg = ii.j; doIdxWrite = True;
-            idxWriteVal = IndexWord{addr: x.addr, sign: x.sign,
-                     flag: x.flag, count: imm18, refill: x.refill};
-          end
-          4'b0011: begin // LRI
-            idxWriteReg = ii.j; doIdxWrite = True;
-            idxWriteVal = IndexWord{addr: x.addr, sign: x.sign,
-                     flag: x.flag, count: x.count, refill: imm18};
-          end
-          4'b0000: begin // C+I
-            idxWriteReg = ii.j; doIdxWrite = True;
-            idxWriteVal = IndexWord{addr: x.addr, sign: x.sign, flag: x.flag,
-                     count: x.count + imm18, refill: x.refill};
-          end
-          4'b1000: begin // C-I
-            idxWriteReg = ii.j; doIdxWrite = True;
-            idxWriteVal = IndexWord{addr: x.addr, sign: x.sign, flag: x.flag,
-                     count: x.count - imm18, refill: x.refill};
-          end
-          4'b0101, 4'b0110, 4'b0111: begin // V+I / V+IC / V+ICR --
-            // prefetch/bail-out shape, inlining maybeRefill's own
-            // condition (doRefill && x1.count==0) rather than calling
-            // it, since only the ICR variant can ever need the read.
-            SM128 sum = smAdd(val, immSM);
-            IndexWord x1 = IndexWord{addr: truncate(sum.mag), sign: sum.sign,
-                             flag: x.flag, count: x.count, refill: x.refill};
-            if (ii.code != 4'b0101) x1.count = x1.count - 1;
-            if (ii.code == 4'b0111 && x1.count == 0) begin
-              if (prefetchCount >= 1) begin
-                idxWriteReg = ii.j; doIdxWrite = True;
-                idxWriteVal = unpackIndexWord(prefetch[0]);
-                ind = setIndexResultIndicatorsF(ind, x1);
-              end else
-                needsRead = tagged Valid zeroExtend(x1.refill);
-            end else begin
-              idxWriteReg = ii.j; doIdxWrite = True;
-              idxWriteVal = x1; ind = setIndexResultIndicatorsF(ind, x1);
-            end
-          end
-          4'b1101, 4'b1110, 4'b1111: begin // V-I / V-IC / V-ICR --
-            // same shape as V+I/V+IC/V+ICR above.
-            SM128 diff = smAdd(val, SM128{sign: ~immSM.sign, mag: immSM.mag});
-            IndexWord x1 = IndexWord{addr: truncate(diff.mag), sign: diff.sign,
-                             flag: x.flag, count: x.count, refill: x.refill};
-            if (ii.code != 4'b1101) x1.count = x1.count - 1;
-            if (ii.code == 4'b1111 && x1.count == 0) begin
-              if (prefetchCount >= 1) begin
-                idxWriteReg = ii.j; doIdxWrite = True;
-                idxWriteVal = unpackIndexWord(prefetch[0]);
-                ind = setIndexResultIndicatorsF(ind, x1);
-              end else
-                needsRead = tagged Valid zeroExtend(x1.refill);
-            end else begin
-              idxWriteReg = ii.j; doIdxWrite = True;
-              idxWriteVal = x1; ind = setIndexResultIndicatorsF(ind, x1);
-            end
-          end
-          4'b0100: ind = setIndexCmpIndicatorsF(ind, smCompare(val, immSM)); // KVI
-          4'b1100: ind = setIndexCmpIndicatorsF(ind, smCompare(val, SM128{sign:~immSM.sign, mag:immSM.mag})); // KVNI
-          4'b1010: begin // KCI
-            Cmp3 c = (x.count==imm18) ? CmpEqual : (x.count<imm18) ? CmpLow : CmpHigh;
-            ind = setIndexCmpIndicatorsF(ind, c);
-          end
-          default: ind = setOpInvalid(ind); // LVS: out of scope
-        endcase
+        IndexOutcome xo <- immIndexOp(st, ii, prefetch, prefetchCount, ind);
+        needsRead   = xo.needsRead;
+        doIdxWrite  = xo.doIdxWrite;
+        idxWriteReg = xo.idxWriteReg;
+        idxWriteVal = xo.idxWriteVal;
+        ind         = xo.ind;
       end
 
       // -----------------------------------------------------------
