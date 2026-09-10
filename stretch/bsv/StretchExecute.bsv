@@ -46,6 +46,7 @@ package StretchExecute;
 import Vector::*;
 import StretchTypes::*;
 import StretchStorage::*;
+import StretchMemory::*;  // installed(): the address-invalid bound
 import StretchIO::*;
 import StretchVFL::*;
 import StretchALU::*;
@@ -417,6 +418,330 @@ endfunction
 // convert; a THIRD simultaneous read (e.g. a crossing field combined
 // with a refill in the SAME arm) is a known, not-yet-encountered gap,
 // flagged here rather than silently mishandled should it arise.
+// ---------------------------------------------------------------------
+// The floating-point operations that read NO storage operand: ST, SRT,
+// SRD, SLO, SHF and E+I.  execute()'s Fp arm already drew this seam for
+// itself -- these are the ones handled BEFORE the prefetch requirement,
+// precisely because none of them fetches an operand -- so lifting them
+// out is a move, not a redesign.
+//
+// The only state crossing the boundary is the indicator word, in and
+// out; everything else the group does is a write through `st`.  That is
+// what made this the right first cut of a 2,270-line function: ten
+// values in, one out, and no participation in needsRead, the deferred
+// index write, or the I/O start.  The one-write-per-instruction rule
+// for `indicators` (see this file's header) is untouched -- `ind` is
+// still a value threaded to a single commit in the caller.
+//
+// The Fp payload is an anonymous struct inside DecodedInstr, so the two
+// sign-modifier bits are passed as themselves rather than as `fp`.
+// ---------------------------------------------------------------------
+function ActionValue#(Word64) fpStoreClass(StretchStorage st, Bit#(7) c,
+                                           Bit#(1) absSign, Bit#(1) invSign,
+                                           WordAddr ea, FpNum acc, Word64 accL,
+                                           Word64 accS, Bool normalized, Bool noisy,
+                                           Word64 ind0);
+  actionvalue
+    Word64 ind = ind0;
+    Bool isST   = (c == fpop_ST);
+    Bool isSRD  = (c == fpop_SRD);
+    Bool isSLO  = (c == fpop_SLO);
+    Bool isSHF  = (c == fpop_SHF);
+    Bool isEplI = (c == fpop_E_PLUS_I);
+    if (isST) begin
+      FpNum v = fpApplySignMods(acc, absSign, invSign);
+      // STORE NORMALIZES.  p.90, verbatim: "When normalized
+      // operation is specified, the 48-bit operand fraction in the
+      // accumulator is normalized before being placed in storage.
+      // If the noisy mode is also specified, ones enter the
+      // low-order fraction bit positions as they are shifted left
+      // on normalization.  Normalization is suppressed when the 48
+      // fraction bits are zero."  And on the next paragraph: "When
+      // the exponent flag is 1, in the accumulator operand,
+      // normalization, if specified, is suppressed... Thus, for
+      // values with initially flagged exponent, the value in
+      // storage is the same value as appears in the accumulator."
+      //
+      // This arm applied the sign modifiers and wrote, with no
+      // normalization at all.  jb_af1c F219G catches it: ST(N) of
+      // FPK77, fraction 000000000007, must store FK122's
+      // ffffffffffff at -43.  Forty-eight bits, not ninety-six, for
+      // the same reason LOAD is -- there is no 96-bit intermediate
+      // here for noisy ones to fall into.
+      Bool gen = False;
+      if (normalized && v.ef == 0 && v.frac != 0) begin
+        let {f48, adj} = fpNormalize48(v.frac, True, noisy);
+        let {vn, g} = fpMakeExp(signExtend(fpExp(v)) + adj, f48, v.sign, v.flags);
+        v = vn; gen = g;
+      end
+      st.writeWord(ea, fpToWord(v));
+      ind = setBit(ind, ind_MOP, 1);
+      ind = setResultIndicatorsFp(ind, v);
+      // "If an EF of 1 is generated during normalization, the
+      // exponent range indicator XPU is turned on."
+      ind = setRangeIndicators(ind, fpRangeBits(v, gen, !gen && v.ef == 1));
+    end else if (c == fpop_SRT) begin // SRT (STORE ROOT, pp.93, 95)
+      // A store, so like ST it needs no operand fetch and is
+      // handled before the prefetch requirement below.
+      FpSqrtResult r = fpSqrt(acc, absSign, invSign, normalized);
+      // "As with other store operations, the accumulator flag bits,
+      // sign byte register bits 5-7, are placed in the flag bit
+      // positions, bits 61-63 of the addressed storage location."
+      st.writeWord(ea, { r.res.ef, r.res.em, r.res.es, r.res.frac,
+                         r.res.sign, sbFlags(accS) });
+      // "The entire accumulator and its sign byte remain unchanged."
+      ind = setBit(ind, ind_MOP, 1);
+      ind = setResultIndicatorsFp(ind, r.res);
+      ind = setRangeIndicators(ind, fpRangeBits(r.res, r.generated, r.propagated));
+      if (r.ir) ind = setBit(ind, ind_IR, 1);
+      ind = setBit(ind, ind_ZM, 0);
+    end else if (isSRD) begin
+      // STORE ROUNDED (p.96). "The contents of the accumulator
+      // after rounding are placed in the location specified by the
+      // effective address." Rounding adds one to the accumulator
+      // fraction AT BIT POSITION 60, which in the 96-bit IBM 12-107
+      // fraction is frac[47] (IBM bit n is frac[107-n]); that gives
+      // a 96-bit sum and a possible overflow bit, and "the 48
+      // low-order bits are discarded" -- the kept half is IBM 12-59,
+      // sum[95:48], which is exactly the fraction fpdFromWord puts
+      // a single-precision word into.
+      //
+      // Nothing here writes the accumulator: "the entire accumulator
+      // and its sign byte register remain unchanged throughout the
+      // operation unless used as the effective address."
+      Word64 accR = st.readAccRight();
+      FpDouble da = fpdFromAcc(accL, accR, accS);
+      Bit#(97) sum  = {1'b0, da.frac} + (97'b1 << 47);
+      Bit#(1)  ovf  = sum[96];
+      Bit#(48) hi48 = sum[95:48];
+      // "The sign of the accumulator, as changed by the sign
+      // modifiers, is placed in storage bit 60. The accumulator flag
+      // bits are placed in storage bits 61-63."
+      Bit#(1) msign = fpApplySignMods(acc, absSign, invSign).sign;
+      FpNum out; Bool lc = False; Bool gen = False;
+      if (da.ef == 1) begin
+        // "If the value of the operand lies in the XFP or XFN range,
+        // the rounding process is performed, but the exponent is not
+        // changed. Normalization, if specified, is suppressed. If,
+        // as a result of rounding, the fraction has an overflow bit
+        // set, the overflow bit is lost."
+        out = FpNum { ef: da.ef, em: da.em, es: da.es, frac: hi48,
+                      sign: msign, flags: da.flags };
+        lc = (ovf == 1) && !normalized;
+      end else begin
+        // Unnormalized: "the 48 high-order bits of the sum are placed
+        // in storage bits 12-59. The overflow bit does not enter
+        // storage but sets the lost carry indicator (LC) on."
+        // Normalized: "the 48-bit sum is then normalized... Low-order
+        // zeros are always supplied in the case of the left shift.
+        // Noisy mode does not affect this operation" -- hence the
+        // False for noisy whatever NM says. Feeding the 48-bit sum
+        // as {hi48, 48'd0} makes fpNormalize96Wide's left shift a
+        // zero-filled 48-bit shift and its overflow case the same
+        // right-shift-one; its lostCarry is already "ovf and not
+        // normalized", which is the rule both paragraphs describe.
+        let {w96, adj, l} = fpNormalize96Wide(ovf, {hi48, 48'd0}, normalized, False);
+        let {o, g} = fpMakeExp(signExtend(fpExp(fpdHead(da))) + adj,
+                               w96[95:48], msign, da.flags);
+        out = o; gen = g; lc = l;
+      end
+      st.writeWord(ea, fpToWord(out));
+      // "These indicators are set as in ADD TO MEMORY": MOP, the
+      // arithmetic result four, LC, the exponent range five, ZM.
+      ind = setBit(ind, ind_MOP, 1);
+      ind = setResultIndicatorsFp(ind, out);
+      if (lc) ind = setBit(ind, ind_LC, 1);
+      ind = setRangeIndicators(ind, fpRangeBits(out, gen, da.ef == 1));
+      ind = setBit(ind, ind_ZM, 0);
+    end else if (isSLO) begin
+      // STORE LOW ORDER (p.97). "The low-order part of a
+      // double-length accumulator fraction with appropriate
+      // exponent is placed in the location specified by the
+      // effective address." The fraction is accumulator bits
+      // 60-107 -- frac[47:0] of the 96-bit IBM 12-107 fraction --
+      // and "the exponent is obtained by subtracting 48 from the
+      // exponent in bits 0-11 of the accumulator".
+      //
+      // As with SRD, nothing here writes the accumulator: "the
+      // entire accumulator and sign byte register remain unchanged
+      // throughout the operation unless used as the effective
+      // address."
+      Word64 accR = st.readAccRight();
+      FpDouble da = fpdFromAcc(accL, accR, accS);
+      Bit#(48) lo48 = da.frac[47:0];
+      // "The accumulator sign, as modified by the sign modifiers,
+      // and the accumulator flag bits, sign byte register bit
+      // positions 4-7, are placed in bits 60-63 of the storage
+      // word."
+      Bit#(1) msign = fpApplySignMods(acc, absSign, invSign).sign;
+      FpNum out; Bool gen = False;
+      if (da.ef == 1) begin
+        // "When the exponent, accumulator bit positions 0-11, is
+        // flagged, the same exponent is set with the low-order
+        // fraction when stored. The indicator settings are for
+        // propagated flags. For this case normalization, if
+        // specified, is suppressed."
+        out = FpNum { ef: da.ef, em: da.em, es: da.es, frac: lo48,
+                      sign: msign, flags: da.flags };
+      end else begin
+        // Unnormalized: "the low-order exponent and fraction remain
+        // unchanged". Normalized: shifted left until a one is
+        // leftmost, with noisy mode entering ONES from the right --
+        // fpNormalize48, not fpNormalize96Wide, because SLO has no
+        // low half for the latter's fill to land in.
+        //
+        // The -48 can underflow into a GENERATED flag, and p.97 is
+        // explicit that this case differs from the propagated one:
+        // "normalization, if specified, in this case does occur".
+        // That is why the shift happens BEFORE fpMakeExp decides
+        // whether a flag was generated, rather than being
+        // suppressed by it.
+        let {f48, adj} = fpNormalize48(lo48, normalized, noisy);
+        let {o, g} = fpMakeExp(signExtend(fpExp(fpdHead(da))) - 48 + adj,
+                               f48, msign, da.flags);
+        out = o; gen = g;
+      end
+      st.writeWord(ea, fpToWord(out));
+      // "The above indicators are set as in STORE": MOP, the
+      // arithmetic result four, the exponent range four, ZM. Note
+      // p.97 lists no LOST CARRY for SLO -- there is no carry out
+      // of a shift -- unlike SRD.
+      ind = setBit(ind, ind_MOP, 1);
+      ind = setResultIndicatorsFp(ind, out);
+      ind = setRangeIndicators(ind, fpRangeBits(out, gen, da.ef == 1));
+      ind = setBit(ind, ind_ZM, 0);
+    end else if (isSHF) begin
+      // Shift Fraction (p.102): shift the accumulator fraction in
+      // the direction and amount given by effective-address bits
+      // 0-11 -- amount in bits 0-10 (ea[17:7]), direction in bit 11
+      // (ea[6]), 0 left and 1 right -- with that direction bit read
+      // as the SIGN of the shift and so "subject to modification by
+      // the sign modifiers". Bits to the right of the effective
+      // address (ea[5:0]) are ignored; jb_af1c F212A25 patches them
+      // to ones with a CM1111 and demands the shift is unaffected.
+      //
+      // "Only accumulator bits 12-107 participate in the shifting;
+      // all other accumulator bits remain unchanged" -- so this is
+      // a 96-BIT shift across BOTH accumulator halves, not the
+      // 48-bit one this arm used to do. The old version read and
+      // wrote only accLeft, which left the low half untouched and
+      // could never set LC from a bit that started there; jb_af1c
+      // F212A12 (SHFL 107 with the low half loaded from FPK34,
+      // demanding a zero result and LC ON via BZLC) is the row
+      // that catches it. The exponent is not changed by this
+      // operation, and neither is the sign byte.
+      Word64 accRs = st.readAccRight();
+      FpDouble ds = fpdFromAcc(accL, accRs, accS);
+      Bit#(11) amt = ea[17:7];
+      Bit#(1) dir = ea[6];
+      if (absSign == 1) dir = 0;
+      if (invSign == 1) dir = ~dir;
+      // A shift of 96 or more clears the fraction either way, and
+      // capping here keeps the "what fell off the top" expression
+      // below from underflowing 96 - amt. amt is 11 bits, so 107
+      // (F212A12/A24) and anything up to 2047 land in this case.
+      Bit#(11) sh = (amt > 96) ? 96 : amt;
+      FpDouble v = ds;
+      Bool lc = False;
+      if (dir == 0) begin
+        // "If a one bit is shifted left beyond accumulator bit
+        // position 12, it is lost and the lost carry indicator is
+        // set to one." The bits that pass bit 12 are the top `sh`
+        // of the fraction. At sh == 0 the shift loses nothing:
+        // >> 96 is zero in BSV, which is the answer we want.
+        // COVERAGE LIMIT, measured 2026-09-07: nothing transcribed
+        // requires LC to be OFF after a LEFT shift. A12 wants it
+        // ON; A24 is the LC-off row but shifts RIGHT, where this
+        // branch never runs. Forcing `lc = True` here leaves both
+        // F212A1-A11 and A12-A23 green, so the sh == 0 case below
+        // (which leans on BSV's >> 96 being zero) is unguarded by
+        // any test. F212D1, still to transcribe, is an LC row.
+        lc = ((ds.frac >> (96 - sh)) != 0);
+        v.frac = ds.frac << sh;
+        // p.102: "The operation is not affected by the
+        // normalization modifier. No noisy mode one bits are
+        // entered on left shift if noisy mode is specified." This
+        // arm used to OR ones into the vacated positions under
+        // `noisy`, which the manual rules out; "zeros are inserted
+        // in the bit positions which are vacated" with no
+        // exception. Manual-pinned, not diagnostic-pinned: every
+        // SHF in F212 is (U) and none of it selects noisy mode, so
+        // nothing transcribed here would have caught it.
+      end else begin
+        // "A one bit shifted right beyond accumulator bit position
+        // 107 is lost, but no indicator is turned on" -- so no LC
+        // on this side. F212A24 (SHFR 107) checks exactly that
+        // with BLC,SERS "ERROR IF LC INDICATOR ON".
+        v.frac = ds.frac >> sh;
+      end
+      st.writeWord(addrAccLeft, fpdAccLeft(v));
+      st.writeWord(addrAccRight, fpdAccRight(v, accRs));
+      st.writeWord(addrAccSignByte, sbWith(accS, ds.sign, sbFlags(accS)));
+      FpNum vind = fpdHead(v);
+      vind.frac = (v.frac == 0) ? 0 : 48'b1;
+      ind = setBit(ind, ind_MOP, 0);
+      ind = setResultIndicatorsFp(ind, vind);
+      if (lc) ind = setBit(ind, ind_LC, 1);
+      ind = setRangeIndicators(ind, fpRangeBits(vind, False, vind.ef == 1));
+      ind = setBit(ind, ind_ZM, 0);
+    end else if (isEplI) begin
+      // Add Immediate to Exponent (p.102): bits 0-11 of the
+      // effective address form a 12-bit exponent added to the
+      // accumulator's exponent; fraction unchanged, normalized if
+      // specified. Does not address storage.
+      // p.102 makes this E+ exactly: "The operation is the same as
+      // ADD TO EXPONENT, except that the addend is bits 0-11 of the
+      // effective address."  So Figure 32, the ES normalization
+      // rule and the 96-bit fraction all apply here too, and
+      // jb_af1c F213-X drives them here the way F213A drove them
+      // through E+.  The addend carries its own ES, and E+I has no
+      // storage operand, so there are no sign modifiers in play.
+      FpNum imm = FpNum { ef: ea[17], em: ea[16:7], es: ea[6], frac: 0, sign: 0, flags: 0 };
+      Word64 accR = st.readAccRight();
+      FpDouble da = fpdFromAcc(accL, accR, accS);
+      FpDouble v = da; Bool gen = False; Bool prop = False;
+      if (da.ef == 1 || imm.ef == 1) begin
+        FpNum w = fpExpRangeWinner(fpdHead(da), imm);
+        v.ef = w.ef; v.em = w.em; v.es = w.es;
+        prop = True;
+      end else begin
+        // The sign modifiers act on the ADDEND's exponent sign,
+        // and only here: p.102's "the sign modifiers are ignored
+        // if either one or both of the exponents are in the XFP or
+        // XFN range" applies to E+I as much as to E+, so the range
+        // test above sees the UNMODIFIED immediate.  jb_af1c
+        // F213-XB is the block that drives this ("THE SIGN
+        // MODIFIERS APPLY TO THE SIGN OF THE EXPONENT ONLY"); its
+        // sixteen sub-tests are all N-range, so they pin the
+        // application but not the ignoring -- F213B's B10/B11 are
+        // what pin that, for E+.
+        FpNum oe = imm;
+        if (absSign == 1) oe.es = 0;
+        if (invSign == 1) oe.es = ~oe.es;
+        Int#(14) e = signExtend(fpExp(fpdHead(da))) + signExtend(fpExp(oe));
+        let {h0, g} = fpMakeExp(e, 48'b0, da.sign, da.flags);
+        v.ef = h0.ef; v.em = h0.em; v.es = h0.es; gen = g;
+        if (normalized && v.frac != 0 && (v.ef == 0 || v.es == 0)) begin
+          let {w96, adj, lc} = fpNormalize96Wide(0, v.frac, True, noisy);
+          let {h1, g2} = fpMakeExp(fpExpFull(fpdHead(v)) + adj, 48'b0, v.sign, v.flags);
+          v.ef = h1.ef; v.em = h1.em; v.es = h1.es; v.frac = w96;
+          gen = gen || g2;
+        end
+      end
+      st.writeWord(addrAccLeft, fpdAccLeft(v));
+      st.writeWord(addrAccRight, fpdAccRight(v, accR));
+      st.writeWord(addrAccSignByte, sbWith(accS, v.sign, sbFlags(accS)));
+      ind = setBit(ind, ind_MOP, 0);
+      FpNum vind = fpdHead(v);
+      vind.frac = (v.frac == 0) ? 0 : 48'b1;
+      ind = setResultIndicatorsFp(ind, vind);
+      ind = setRangeIndicators(ind, fpRangeBits(vind, gen, prop));
+      ind = setBit(ind, ind_ZM, 0);
+    end
+    return ind;
+  endactionvalue
+endfunction
+
 // What execute() hands back: the next instruction address, progressive
 // indexing's deferred index write, an I/O transfer to start, and the
 // word a still-unsatisfied operand read wants.  Declared here rather
@@ -1410,7 +1735,7 @@ function ActionValue#(ExecResult)
         // E+I, whose "address" is a shift spec / immediate exponent
         // and is explicitly not boundary-monitored (Reference Manual
         // pp.101-102).
-        if (ea >= 18'd98304 && fp.code != fpop_SHF && fp.code != fpop_E_PLUS_I)
+        if (!installed(ea) && fp.code != fpop_SHF && fp.code != fpop_E_PLUS_I)
           ind = setBit(ind, ind_AD, 1);
         else begin
         Bool normalized = (fp.unnorm == 0);
@@ -1422,13 +1747,19 @@ function ActionValue#(ExecResult)
         Bool isST = (c == fpop_ST);
         Bool isSRD = (c == fpop_SRD);  // STORE ROUNDED (p.96)
         Bool isSLO = (c == fpop_SLO);  // STORE LOW ORDER (p.97)
-        // Divide (/ and R/) is deferred to the multi-cycle arithmetic
-        // unit (plan stage 4e): done combinationally here it unfolds
-        // into a full-width divider, and the real machine's divide is
-        // iterative anyway (~3.5 quotient bits per cycle, Buchholz
-        // p.213). Until then it decodes but does not execute.
+        // (A note here used to say divide was "deferred to the
+        // multi-cycle arithmetic unit... decodes but does not execute".
+        // /, R/, D/ and SRT are all implemented now, combinationally,
+        // for the same reason fpMul is: see fpDivFrac's header. The
+        // real machine's divide really is iterative -- about 3.5
+        // quotient bits per cycle, Buchholz p.213 -- but that is a
+        // timing property this model expresses as a cycle budget in
+        // StretchTiming, not as datapath structure.)
         Bool isSHF = (c == fpop_SHF);
         Bool isEplI = (c == fpop_E_PLUS_I);  // E+I (add immediate to exponent)
+        // The no-operand store group, lifted into fpStoreClass above.
+        Bool isStoreClass = isST || isSRD || isSLO || isSHF || isEplI
+                            || (c == fpop_SRT);
         Bool known = (c == fpop_PLUS || c == fpop_PLUS_MG || c == fpop_L || c == fpop_LWF
                    || c == fpop_M_PLUS || c == fpop_M_PLUS_MG || isST
                    || c == fpop_K || c == fpop_KMG || c == fpop_KR || c == fpop_KMGR
@@ -1442,295 +1773,9 @@ function ActionValue#(ExecResult)
                    || isSRD || isSLO);                     // SRD / SLO
         if (!known)
           ind = setOpInvalid(ind);   // every floating-point operation is now implemented
-        else if (isST) begin
-          FpNum v = fpApplySignMods(acc, fp.absSign, fp.invSign);
-          // STORE NORMALIZES.  p.90, verbatim: "When normalized
-          // operation is specified, the 48-bit operand fraction in the
-          // accumulator is normalized before being placed in storage.
-          // If the noisy mode is also specified, ones enter the
-          // low-order fraction bit positions as they are shifted left
-          // on normalization.  Normalization is suppressed when the 48
-          // fraction bits are zero."  And on the next paragraph: "When
-          // the exponent flag is 1, in the accumulator operand,
-          // normalization, if specified, is suppressed... Thus, for
-          // values with initially flagged exponent, the value in
-          // storage is the same value as appears in the accumulator."
-          //
-          // This arm applied the sign modifiers and wrote, with no
-          // normalization at all.  jb_af1c F219G catches it: ST(N) of
-          // FPK77, fraction 000000000007, must store FK122's
-          // ffffffffffff at -43.  Forty-eight bits, not ninety-six, for
-          // the same reason LOAD is -- there is no 96-bit intermediate
-          // here for noisy ones to fall into.
-          Bool gen = False;
-          if (normalized && v.ef == 0 && v.frac != 0) begin
-            let {f48, adj} = fpNormalize48(v.frac, True, noisy);
-            let {vn, g} = fpMakeExp(signExtend(fpExp(v)) + adj, f48, v.sign, v.flags);
-            v = vn; gen = g;
-          end
-          st.writeWord(ea, fpToWord(v));
-          ind = setBit(ind, ind_MOP, 1);
-          ind = setResultIndicatorsFp(ind, v);
-          // "If an EF of 1 is generated during normalization, the
-          // exponent range indicator XPU is turned on."
-          ind = setRangeIndicators(ind, fpRangeBits(v, gen, !gen && v.ef == 1));
-        end else if (c == fpop_SRT) begin // SRT (STORE ROOT, pp.93, 95)
-          // A store, so like ST it needs no operand fetch and is
-          // handled before the prefetch requirement below.
-          FpSqrtResult r = fpSqrt(acc, fp.absSign, fp.invSign, normalized);
-          // "As with other store operations, the accumulator flag bits,
-          // sign byte register bits 5-7, are placed in the flag bit
-          // positions, bits 61-63 of the addressed storage location."
-          st.writeWord(ea, { r.res.ef, r.res.em, r.res.es, r.res.frac,
-                             r.res.sign, sbFlags(accS) });
-          // "The entire accumulator and its sign byte remain unchanged."
-          ind = setBit(ind, ind_MOP, 1);
-          ind = setResultIndicatorsFp(ind, r.res);
-          ind = setRangeIndicators(ind, fpRangeBits(r.res, r.generated, r.propagated));
-          if (r.ir) ind = setBit(ind, ind_IR, 1);
-          ind = setBit(ind, ind_ZM, 0);
-        end else if (isSRD) begin
-          // STORE ROUNDED (p.96). "The contents of the accumulator
-          // after rounding are placed in the location specified by the
-          // effective address." Rounding adds one to the accumulator
-          // fraction AT BIT POSITION 60, which in the 96-bit IBM 12-107
-          // fraction is frac[47] (IBM bit n is frac[107-n]); that gives
-          // a 96-bit sum and a possible overflow bit, and "the 48
-          // low-order bits are discarded" -- the kept half is IBM 12-59,
-          // sum[95:48], which is exactly the fraction fpdFromWord puts
-          // a single-precision word into.
-          //
-          // Nothing here writes the accumulator: "the entire accumulator
-          // and its sign byte register remain unchanged throughout the
-          // operation unless used as the effective address."
-          Word64 accR = st.readAccRight();
-          FpDouble da = fpdFromAcc(accL, accR, accS);
-          Bit#(97) sum  = {1'b0, da.frac} + (97'b1 << 47);
-          Bit#(1)  ovf  = sum[96];
-          Bit#(48) hi48 = sum[95:48];
-          // "The sign of the accumulator, as changed by the sign
-          // modifiers, is placed in storage bit 60. The accumulator flag
-          // bits are placed in storage bits 61-63."
-          Bit#(1) msign = fpApplySignMods(acc, fp.absSign, fp.invSign).sign;
-          FpNum out; Bool lc = False; Bool gen = False;
-          if (da.ef == 1) begin
-            // "If the value of the operand lies in the XFP or XFN range,
-            // the rounding process is performed, but the exponent is not
-            // changed. Normalization, if specified, is suppressed. If,
-            // as a result of rounding, the fraction has an overflow bit
-            // set, the overflow bit is lost."
-            out = FpNum { ef: da.ef, em: da.em, es: da.es, frac: hi48,
-                          sign: msign, flags: da.flags };
-            lc = (ovf == 1) && !normalized;
-          end else begin
-            // Unnormalized: "the 48 high-order bits of the sum are placed
-            // in storage bits 12-59. The overflow bit does not enter
-            // storage but sets the lost carry indicator (LC) on."
-            // Normalized: "the 48-bit sum is then normalized... Low-order
-            // zeros are always supplied in the case of the left shift.
-            // Noisy mode does not affect this operation" -- hence the
-            // False for noisy whatever NM says. Feeding the 48-bit sum
-            // as {hi48, 48'd0} makes fpNormalize96Wide's left shift a
-            // zero-filled 48-bit shift and its overflow case the same
-            // right-shift-one; its lostCarry is already "ovf and not
-            // normalized", which is the rule both paragraphs describe.
-            let {w96, adj, l} = fpNormalize96Wide(ovf, {hi48, 48'd0}, normalized, False);
-            let {o, g} = fpMakeExp(signExtend(fpExp(fpdHead(da))) + adj,
-                                   w96[95:48], msign, da.flags);
-            out = o; gen = g; lc = l;
-          end
-          st.writeWord(ea, fpToWord(out));
-          // "These indicators are set as in ADD TO MEMORY": MOP, the
-          // arithmetic result four, LC, the exponent range five, ZM.
-          ind = setBit(ind, ind_MOP, 1);
-          ind = setResultIndicatorsFp(ind, out);
-          if (lc) ind = setBit(ind, ind_LC, 1);
-          ind = setRangeIndicators(ind, fpRangeBits(out, gen, da.ef == 1));
-          ind = setBit(ind, ind_ZM, 0);
-        end else if (isSLO) begin
-          // STORE LOW ORDER (p.97). "The low-order part of a
-          // double-length accumulator fraction with appropriate
-          // exponent is placed in the location specified by the
-          // effective address." The fraction is accumulator bits
-          // 60-107 -- frac[47:0] of the 96-bit IBM 12-107 fraction --
-          // and "the exponent is obtained by subtracting 48 from the
-          // exponent in bits 0-11 of the accumulator".
-          //
-          // As with SRD, nothing here writes the accumulator: "the
-          // entire accumulator and sign byte register remain unchanged
-          // throughout the operation unless used as the effective
-          // address."
-          Word64 accR = st.readAccRight();
-          FpDouble da = fpdFromAcc(accL, accR, accS);
-          Bit#(48) lo48 = da.frac[47:0];
-          // "The accumulator sign, as modified by the sign modifiers,
-          // and the accumulator flag bits, sign byte register bit
-          // positions 4-7, are placed in bits 60-63 of the storage
-          // word."
-          Bit#(1) msign = fpApplySignMods(acc, fp.absSign, fp.invSign).sign;
-          FpNum out; Bool gen = False;
-          if (da.ef == 1) begin
-            // "When the exponent, accumulator bit positions 0-11, is
-            // flagged, the same exponent is set with the low-order
-            // fraction when stored. The indicator settings are for
-            // propagated flags. For this case normalization, if
-            // specified, is suppressed."
-            out = FpNum { ef: da.ef, em: da.em, es: da.es, frac: lo48,
-                          sign: msign, flags: da.flags };
-          end else begin
-            // Unnormalized: "the low-order exponent and fraction remain
-            // unchanged". Normalized: shifted left until a one is
-            // leftmost, with noisy mode entering ONES from the right --
-            // fpNormalize48, not fpNormalize96Wide, because SLO has no
-            // low half for the latter's fill to land in.
-            //
-            // The -48 can underflow into a GENERATED flag, and p.97 is
-            // explicit that this case differs from the propagated one:
-            // "normalization, if specified, in this case does occur".
-            // That is why the shift happens BEFORE fpMakeExp decides
-            // whether a flag was generated, rather than being
-            // suppressed by it.
-            let {f48, adj} = fpNormalize48(lo48, normalized, noisy);
-            let {o, g} = fpMakeExp(signExtend(fpExp(fpdHead(da))) - 48 + adj,
-                                   f48, msign, da.flags);
-            out = o; gen = g;
-          end
-          st.writeWord(ea, fpToWord(out));
-          // "The above indicators are set as in STORE": MOP, the
-          // arithmetic result four, the exponent range four, ZM. Note
-          // p.97 lists no LOST CARRY for SLO -- there is no carry out
-          // of a shift -- unlike SRD.
-          ind = setBit(ind, ind_MOP, 1);
-          ind = setResultIndicatorsFp(ind, out);
-          ind = setRangeIndicators(ind, fpRangeBits(out, gen, da.ef == 1));
-          ind = setBit(ind, ind_ZM, 0);
-        end else if (isSHF) begin
-          // Shift Fraction (p.102): shift the accumulator fraction in
-          // the direction and amount given by effective-address bits
-          // 0-11 -- amount in bits 0-10 (ea[17:7]), direction in bit 11
-          // (ea[6]), 0 left and 1 right -- with that direction bit read
-          // as the SIGN of the shift and so "subject to modification by
-          // the sign modifiers". Bits to the right of the effective
-          // address (ea[5:0]) are ignored; jb_af1c F212A25 patches them
-          // to ones with a CM1111 and demands the shift is unaffected.
-          //
-          // "Only accumulator bits 12-107 participate in the shifting;
-          // all other accumulator bits remain unchanged" -- so this is
-          // a 96-BIT shift across BOTH accumulator halves, not the
-          // 48-bit one this arm used to do. The old version read and
-          // wrote only accLeft, which left the low half untouched and
-          // could never set LC from a bit that started there; jb_af1c
-          // F212A12 (SHFL 107 with the low half loaded from FPK34,
-          // demanding a zero result and LC ON via BZLC) is the row
-          // that catches it. The exponent is not changed by this
-          // operation, and neither is the sign byte.
-          Word64 accRs = st.readAccRight();
-          FpDouble ds = fpdFromAcc(accL, accRs, accS);
-          Bit#(11) amt = ea[17:7];
-          Bit#(1) dir = ea[6];
-          if (fp.absSign == 1) dir = 0;
-          if (fp.invSign == 1) dir = ~dir;
-          // A shift of 96 or more clears the fraction either way, and
-          // capping here keeps the "what fell off the top" expression
-          // below from underflowing 96 - amt. amt is 11 bits, so 107
-          // (F212A12/A24) and anything up to 2047 land in this case.
-          Bit#(11) sh = (amt > 96) ? 96 : amt;
-          FpDouble v = ds;
-          Bool lc = False;
-          if (dir == 0) begin
-            // "If a one bit is shifted left beyond accumulator bit
-            // position 12, it is lost and the lost carry indicator is
-            // set to one." The bits that pass bit 12 are the top `sh`
-            // of the fraction. At sh == 0 the shift loses nothing:
-            // >> 96 is zero in BSV, which is the answer we want.
-            // COVERAGE LIMIT, measured 2026-09-07: nothing transcribed
-            // requires LC to be OFF after a LEFT shift. A12 wants it
-            // ON; A24 is the LC-off row but shifts RIGHT, where this
-            // branch never runs. Forcing `lc = True` here leaves both
-            // F212A1-A11 and A12-A23 green, so the sh == 0 case below
-            // (which leans on BSV's >> 96 being zero) is unguarded by
-            // any test. F212D1, still to transcribe, is an LC row.
-            lc = ((ds.frac >> (96 - sh)) != 0);
-            v.frac = ds.frac << sh;
-            // p.102: "The operation is not affected by the
-            // normalization modifier. No noisy mode one bits are
-            // entered on left shift if noisy mode is specified." This
-            // arm used to OR ones into the vacated positions under
-            // `noisy`, which the manual rules out; "zeros are inserted
-            // in the bit positions which are vacated" with no
-            // exception. Manual-pinned, not diagnostic-pinned: every
-            // SHF in F212 is (U) and none of it selects noisy mode, so
-            // nothing transcribed here would have caught it.
-          end else begin
-            // "A one bit shifted right beyond accumulator bit position
-            // 107 is lost, but no indicator is turned on" -- so no LC
-            // on this side. F212A24 (SHFR 107) checks exactly that
-            // with BLC,SERS "ERROR IF LC INDICATOR ON".
-            v.frac = ds.frac >> sh;
-          end
-          st.writeWord(addrAccLeft, fpdAccLeft(v));
-          st.writeWord(addrAccRight, fpdAccRight(v, accRs));
-          st.writeWord(addrAccSignByte, sbWith(accS, ds.sign, sbFlags(accS)));
-          FpNum vind = fpdHead(v);
-          vind.frac = (v.frac == 0) ? 0 : 48'b1;
-          ind = setBit(ind, ind_MOP, 0);
-          ind = setResultIndicatorsFp(ind, vind);
-          if (lc) ind = setBit(ind, ind_LC, 1);
-          ind = setRangeIndicators(ind, fpRangeBits(vind, False, vind.ef == 1));
-          ind = setBit(ind, ind_ZM, 0);
-        end else if (isEplI) begin
-          // Add Immediate to Exponent (p.102): bits 0-11 of the
-          // effective address form a 12-bit exponent added to the
-          // accumulator's exponent; fraction unchanged, normalized if
-          // specified. Does not address storage.
-          // p.102 makes this E+ exactly: "The operation is the same as
-          // ADD TO EXPONENT, except that the addend is bits 0-11 of the
-          // effective address."  So Figure 32, the ES normalization
-          // rule and the 96-bit fraction all apply here too, and
-          // jb_af1c F213-X drives them here the way F213A drove them
-          // through E+.  The addend carries its own ES, and E+I has no
-          // storage operand, so there are no sign modifiers in play.
-          FpNum imm = FpNum { ef: ea[17], em: ea[16:7], es: ea[6], frac: 0, sign: 0, flags: 0 };
-          Word64 accR = st.readAccRight();
-          FpDouble da = fpdFromAcc(accL, accR, accS);
-          FpDouble v = da; Bool gen = False; Bool prop = False;
-          if (da.ef == 1 || imm.ef == 1) begin
-            FpNum w = fpExpRangeWinner(fpdHead(da), imm);
-            v.ef = w.ef; v.em = w.em; v.es = w.es;
-            prop = True;
-          end else begin
-            // The sign modifiers act on the ADDEND's exponent sign,
-            // and only here: p.102's "the sign modifiers are ignored
-            // if either one or both of the exponents are in the XFP or
-            // XFN range" applies to E+I as much as to E+, so the range
-            // test above sees the UNMODIFIED immediate.  jb_af1c
-            // F213-XB is the block that drives this ("THE SIGN
-            // MODIFIERS APPLY TO THE SIGN OF THE EXPONENT ONLY"); its
-            // sixteen sub-tests are all N-range, so they pin the
-            // application but not the ignoring -- F213B's B10/B11 are
-            // what pin that, for E+.
-            FpNum oe = imm;
-            if (fp.absSign == 1) oe.es = 0;
-            if (fp.invSign == 1) oe.es = ~oe.es;
-            Int#(14) e = signExtend(fpExp(fpdHead(da))) + signExtend(fpExp(oe));
-            let {h0, g} = fpMakeExp(e, 48'b0, da.sign, da.flags);
-            v.ef = h0.ef; v.em = h0.em; v.es = h0.es; gen = g;
-            if (normalized && v.frac != 0 && (v.ef == 0 || v.es == 0)) begin
-              let {w96, adj, lc} = fpNormalize96Wide(0, v.frac, True, noisy);
-              let {h1, g2} = fpMakeExp(fpExpFull(fpdHead(v)) + adj, 48'b0, v.sign, v.flags);
-              v.ef = h1.ef; v.em = h1.em; v.es = h1.es; v.frac = w96;
-              gen = gen || g2;
-            end
-          end
-          st.writeWord(addrAccLeft, fpdAccLeft(v));
-          st.writeWord(addrAccRight, fpdAccRight(v, accR));
-          st.writeWord(addrAccSignByte, sbWith(accS, v.sign, sbFlags(accS)));
-          ind = setBit(ind, ind_MOP, 0);
-          FpNum vind = fpdHead(v);
-          vind.frac = (v.frac == 0) ? 0 : 48'b1;
-          ind = setResultIndicatorsFp(ind, vind);
-          ind = setRangeIndicators(ind, fpRangeBits(vind, gen, prop));
-          ind = setBit(ind, ind_ZM, 0);
+        else if (isStoreClass) begin
+          ind <- fpStoreClass(st, c, fp.absSign, fp.invSign, ea, acc, accL, accS,
+                              normalized, noisy, ind);
         end else if (prefetchCount < 1)
           needsRead = tagged Valid ea;
         else begin

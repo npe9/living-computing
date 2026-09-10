@@ -2492,7 +2492,39 @@ hand vectors alone. "Enables" notes the dependency chain.
    they are the same pattern in different fields and sharing a constant
    would assert a relationship that does not exist.
 
-   STILL OPEN FROM THE REVIEW: (3) the literal 5'b01111
+   THE FIRST CUT OF execute() IS MADE. fpStoreClass now holds the six
+   floating-point operations that read NO storage operand -- ST, SRT,
+   SRD, SLO, SHF, E+I -- and execute() is 1,991 lines rather than
+   2,270. That is a move, not a redesign: the Fp arm already handled
+   this group BEFORE the prefetch requirement, precisely because none
+   of them fetches an operand, so the seam was drawn in the code
+   already and lifting along it needed no judgement about which arm
+   goes where.
+
+   THE MEASUREMENT THAT SAID IT WAS SAFE came before the cut. Over the
+   289 lines: zero references to needsRead, doIdxWrite, idxWriteVal,
+   ioStart or io., one mention of prefetch and that inside a comment,
+   ten writes through `st`, and twenty-six assignments to `ind`. So the
+   only state crossing the boundary is the indicator word, in and out --
+   ten values in, one out. The one-write-per-instruction rule for
+   `indicators` is untouched: `ind` is still a value threaded to a
+   single commit in the caller, which is what the review predicted and
+   why it advised not to over-warn about it.
+
+   Two incidental fixes found while reading that prologue, both the same
+   species as the stale file header: a comment saying divide "is
+   deferred to the multi-cycle arithmetic unit... decodes but does not
+   execute" (four divide operations later), and the literal 18'd98304
+   where StretchMemory has had `installed(a)` and InstalledWords all
+   along.
+
+   ONE PROCESS NOTE, THIRD TIME: I chained the extraction edit and the
+   build into one shell command again, the assert failed on stale line
+   numbers, and the build cheerfully compiled the UNMODIFIED file and
+   reported success. An anchored edit fails safe for the FILE and not
+   for the PIPELINE. Edit, verify, then build, as separate commands.
+
+   STILL OPEN FROM THE REVIEW: the rest of (3) the literal 5'b01111
    means CM in the connective path and V+CR in the direct-index path,
    eleven occurrences, with the same collision for 5'b10111 and
    5'b00111; (3) execute() is 2,270 lines with a 13-arm case whose Fp
