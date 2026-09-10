@@ -2617,6 +2617,115 @@ hand vectors alone. "Enables" notes the dependency chain.
    write site per path; an arm that had not would need that done
    first, not the cut abandoned.
 
+   F219K THROUGH P2 DONE (pp.171-172, 021537.40-021573.00): compare
+   magnitude for range, multiply, divide, reciprocal divide, store root
+   and add double. Every one of them PASSED FIRST RUN -- the first
+   block of F219 to find nothing -- so the whole of its value is in
+   what the injections proved it can see.
+
+   These are the operations F219A-J never reached under noisy mode.
+   All of them already took a `noisy` argument; none had ever been RUN
+   with it set, so the plumbing was untested rather than absent. That
+   is a distinction worth keeping: "implemented" and "exercised" are
+   not the same claim, and only the second one a diagnostic can make.
+
+   SIX INJECTIONS, PREDICTION WRITTEN FIRST, ONE PREDICTION WRONG:
+
+     A  divide, dividend NOT extended with noisy ones
+        predicted PASS -- measured FAIL, caught by F219M
+     B  divide, divisor NOT extended with noisy ones
+        predicted FAIL -- measured FAIL, caught by F219M
+     C  multiply, noisy ones OR-ed into the 48-bit result
+        predicted FAIL -- measured FAIL, caught by F219L
+     D  store root, a one bit left in the root
+        predicted FAIL -- measured FAIL, caught by F219O
+     E  add double, normalization not noisy
+        predicted FAIL -- measured FAIL, caught by F219P1's LOW half
+     F  KMGR loses its magnitude modifier
+        predicted PASS -- measured PASS, caught by nothing
+
+   WHY A WAS WRONG, WHICH IS THE INTERESTING PART. The reasoning was
+   that removing the dividend's noisy extension leaves the RATIO
+   unchanged, since the divisor is extended too. It does not. F219M
+   divides FK95 by FK96, two constants with the IDENTICAL fraction
+   0x1fffffffffff at exponents +8 and +6, and the answer it wants is
+   exactly 1.0 -- which appears as +0.800000000000 at +3, since 1.0 is
+   not a representable normalized fraction. That answer comes out only
+   if the extended dividend is exactly divisible by the extended
+   divisor, which happens only when BOTH carry their ones. Extend
+   neither and the quotient is still exact; extend one and it is not.
+
+   So F219M is not testing "does divide do something under noisy mode".
+   It is testing that the dividend's extension and the divisor's
+   extension AGREE, and the constants were chosen with identical
+   fractions to make that the only way through. Injections A and B are
+   the two halves of that one claim, and both are caught.
+
+   F219L AND THE OTHER DIRECTION. Multiply's expected value is the
+   CLEAN product: FPK52 x FPK80 normalizes left three, and the three
+   positions noisy mode fills sit forty-five places below the 48-bit
+   answer, in a half the result discards. The block asserts that noisy
+   mode does NOT leak upward, and injection C -- which makes it leak --
+   is caught. A block whose expected value is the clean result is still
+   a noisy-mode test; it is the negative half of the rule.
+
+   F219O SAYS SO IN ITS OWN PRINTED COMMENT: "CHECK NO LOW ORDER ONE
+   BITS IN RESULT". The root of FK81 terminates exactly, and the model
+   already carried a verbatim quotation for why -- "No noisy mode
+   1-bits are entered when normalizing and noisy mode are specified" --
+   with fpSqrt not even taking a `noisy` argument. Injection D confirms
+   the block would have caught it if it did.
+
+   F219P1'S LOW HALF IS THE POSITIVE CASE. The accumulator holds
+   {0x555555555555, 0x555555555555} at +50 (DL of FPK38 with a C0011
+   writing FPK38's own fraction into the low half); D+ of FPK35 at +2,
+   exactly 48 lower, adds 0xaaaaaaaaaaaa into the low half and gives
+   0x555555555555_FFFFFFFFFFFF. That normalizes left ONE, and the
+   vacated position is bit 0 of the 96 -- inside the low half, which
+   the second CT checks against FPK32's 0xffffffffffff. Without the
+   noisy fill it reads 0xFFFFFFFFFFFE. Injection E halts at exactly
+   that second check.
+
+   Note what this means for fpAddDouble: it has NO noisy pre-extension
+   of its operands, unlike fpAdd, and that is right -- the operands are
+   already 96 bits wide and there is nothing below them to extend into.
+   p.87's pre-extension rule is about a 48-bit fraction acquiring a low
+   half it did not have. F219P1 exercises the OTHER half of noisy mode,
+   the normalization fill, and passes.
+
+   A ROW PRINTED OUT OF ORDER NEARLY COST P2 ITS CHECK. The SIC and
+   BRGZ that test P2's low-half compare are printed at the TOP of
+   p.172, above F219P3, not below the compare at the bottom of the
+   page -- this listing does not always print in address order. The
+   first transcription ended at the compare, so P2's low half was
+   COMPARED AND NEVER TESTED: the indicators were set and nothing
+   branched on them. Neither check could see it. The listing verifier
+   only compares encodings that are present, and the model run passed
+   because a compare with no branch cannot fail.
+
+   That is the same shape as the FPK64/FPK69 lesson, one level up: a
+   constant checked only by a block that cannot see one of its fields
+   is verified only in the fields that block reads -- and an
+   INSTRUCTION transcribed without the branch that reads its result is
+   not tested at all. The rule that follows: after the last row of a
+   page, look for the rows that page prints out of order before
+   declaring the block transcribed.
+
+   DL READS ONE WORD, NOT TWO. Worth recording because it looks like
+   it should: LOAD DOUBLE takes a single 64-bit operand and SETS
+   accumulator bits 60-107 to zero (p.96) rather than fetching a
+   second word. So `DL(U), FK124` never touches 22336, and the pool
+   words adjacent to each DL operand -- FPK36, FPK39, FK125 -- do not
+   need declaring for the transcription to be exact.
+
+   F219K DISCRIMINATES NOTHING, AND IT IS WORTH SAYING SO. KMGR on
+   FK124 against FPK32 -- both positive -- gives the same answer as
+   F219J's KR, so dropping the magnitude modifier entirely changes no
+   bit the block can see. It is a coverage line in the historical
+   routine, not a test the model can fail. Recording that is the same
+   discipline as recording a caught fault: a block that passes is only
+   evidence about the paths an injection shows it can reach.
+
    STILL OPEN FROM THE REVIEW: the rest of (3) the literal 5'b01111
    means CM in the connective path and V+CR in the direct-index path,
    eleven occurrences, with the same collision for 5'b10111 and

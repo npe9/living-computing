@@ -1,0 +1,194 @@
+! jb_af1c F219 "NOISY MODE TEST ROUTINE", sub-blocks K through P2,
+! pp.171-172 (octal 021537.40-021573.00): compare magnitude for range,
+! multiply, divide, reciprocal divide, store root, and add double.
+!
+! F219A carried A through J and left off at 021537.40 with noisy mode
+! STILL ON -- the routine sets it once and every block from there on
+! inherits it.  This program picks up at exactly that address and
+! re-establishes the same state at its own start.
+!
+! WHAT THIS BLOCK IS FOR.  A-J covered add, add to magnitude, load,
+! load with flag, add to memory, store and the three compares.  K-P2
+! reach the operations A-J never touched under noisy mode: MULTIPLY,
+! DIVIDE, RECIPROCAL DIVIDE, STORE ROOT and ADD DOUBLE.  Every one of
+! them was implemented before F219 and every one of them passes `noisy`
+! into the model's FP functions -- but nothing had ever RUN them with
+! noisy set, so whether that plumbing is correct is untested.
+!
+! THE RULE BEING TESTED.  p.87: noisy mode enters ones, not zeros, into
+! the low-order positions vacated by left-shift normalization; and, for
+! ADD only, the operand with the HIGH EXPONENT is pre-extended with 48
+! low-order one bits before the intermediate sum is formed.  The
+! interesting question for K-P2 is what that means for an operation
+! whose intermediate result is already 96 bits wide, where the vacated
+! positions are in a low half the 48-bit answer discards.
+!
+! F219K  COMPARE MAGNITUDE FOR RANGE.  F219J did KR; this is KMGR, the
+!        magnitude form, on the same pair (FK124 loaded double
+!        unnormalized, compared against FPK32) and expecting the same
+!        AH.  The BB1 sets AH first, deliberately -- it is checking that
+!        a compare-for-range LEAVES AH set, not that it sets it.  NM is
+!        untouched here, unlike F219H/I, which cleared $IND and had to
+!        put noisy mode back.
+!
+! F219L  MULTIPLY.  FPK52 = +0.29cbb829cbb9 at +2 loaded unnormalized,
+!        times FPK80 = +0.800000000000 at +2, normalized.  The 48x48
+!        product is EXACT in 96 bits; the sum of exponents is +4 and the
+!        product 0x29cbb829cbb9/2^49 has three leading zeros, so
+!        normalization shifts left three and the exponent lands at +1.
+!        0x29cbb829cbb9 << 2 = 0xa72ee0a72ee4, which is FK118's fraction
+!        exactly, at FK118's exponent of +1.  The three positions noisy
+!        mode fills with ones are at the BOTTOM of the 96-bit product,
+!        forty-five places below the 48-bit answer, so the expected
+!        value is the clean product and the block is asserting that
+!        noisy mode does not leak upward.
+!
+! F219M  DIVIDE.  FK95 = +0.1fffffffffff at +8 over FK96 = the same
+!        fraction at +6.  The quotient fraction is exactly 1.0, which is
+!        not a representable normalized fraction, so it comes out as
+!        +0.800000000000 with the exponent one higher: 8-6+1 = +3, which
+!        is FPK74.  An exact division with a zero remainder: nothing is
+!        vacated, so again the expectation is the clean quotient.
+!
+! F219N  RECIPROCAL DIVIDE.  The same two constants the other way round
+!        through R/, which divides the MEMORY operand by the
+!        accumulator, so the quotient is the same and the expected value
+!        is FPK74 again.  The pair L,/ and L,R/ with the operands
+!        swapped is the standard way this diagnostic shows that an
+!        operation follows its named operand and not its position.
+!
+! F219O  STORE ROOT.  FK81 = +0.100000000000 at +10, whose square root
+!        is +0.800000000000 at +5 -- but the listing's own comment says
+!        what is really being checked: "CHECK NO LOW ORDER ONE BITS IN
+!        RESULT".  SRT stores the root to ROS; the L(BU,64) of FK82 and
+!        the CT against ROS at offset 4 compare SIXTY bits starting four
+!        bits in, which is the fraction and the sign and NOT the flag
+!        byte.  A root is developed one bit at a time and terminates
+!        exactly here, so a noisy implementation that filled the tail
+!        would show up immediately.
+!
+! F219P1 ADD DOUBLE, exponent of memory equal to exponent of
+!        accumulator, both extended by 48.  FPK38 is loaded double
+!        unnormalized and its own fraction written into the
+!        accumulator's low half by the C0011, so the accumulator holds a
+!        96-bit value whose halves are the same; D+ then adds FPK35.
+!        The two CT lines check the accumulator's high half against
+!        FPK99 and its low half against FPK32 -- a double-precision
+!        answer needs both halves checked, which single-precision
+!        blocks like F219A never had to do.
+!
+! F219P2 The same sum with the operands swapped, and this time WITHOUT
+!        the C0011: the accumulator's low half is whatever DL(U) of
+!        FPK35 left there.  High half against FPK99 again, low half
+!        against FPK38.
+
+! -- SSIP framework substitutes: SERS (octal 1304) -> FAIL halt,
+! -- SEN (octal 1310) -> scratch.
+        SLC, (8)1304.0
+SERS    BEW, $
+        SLC, (8)1310.0
+SEN     DD(BU,64,8), 0
+
+! -- constants (pools pp.176-179) --
+        SLC, (8)22045.0
+FPK32   DD(BU,64,8), (8)0001177777777777777760
+        SLC, (8)22050.0
+FPK35   DD(BU,64,8), (8)0001125252525252525240
+        SLC, (8)22053.0
+FPK38   DD(BU,64,8), (8)0031052525252525252520
+        SLC, (8)22071.0
+FPK52   DD(BU,64,8), (8)0001024713560247135620
+        SLC, (8)22115.0
+FPK74   DD(BU,64,8), (8)0001500000000000000000
+        SLC, (8)22121.0
+FPK80   DD(BU,64,8), (8)0001100000000000000000
+        SLC, (8)22140.0
+        DD(BU,64,8), (8)0030525252525252525320
+FPK99   DD(BU,64,8), (8)0000525252525252525260
+        SLC, (8)22262.0
+FK81    DD(BU,64,8), (8)0005010000000000000000
+FK82    DD(BU,64,8), (8)0002100000000000000000
+        SLC, (8)22300.0
+FK95    DD(BU,64,8), (8)0004017777777777777760
+FK96    DD(BU,64,8), (8)0003017777777777777760
+        SLC, (8)22327.0
+FK118   DD(BU,64,8), (8)0000523456701234567100
+        SLC, (8)22335.0
+FK124   DD(BU,64,8), (8)0002417777777777777760
+        SLC, (8)22355.0
+ROS     DD(BU,64,8), 0
+
+! One half-word before the block, so that F219K's own first
+! instruction lands on 021537.40 exactly and every address below
+! matches the listing column: F219 sets noisy mode once, back in
+! F219A, and this program has to re-establish it.
+        SLC, (8)21536.40
+SAP25   BB1, $NM, $+1.0                      ! noisy mode is on for all of F219
+! -- COMPARE MAGNITUDE FOR RANGE CHECK --
+! F219K
+        B, $+.32
+        BB1, $AH, $+1.0                      ! set AH: a range compare must leave it set
+        DL(U), FK124
+        KMGR(N), FPK32
+        SIC, SEN
+        BZAH, SERS                           ! error if AH off
+! -- MULTIPLY CHECK --
+! F219L
+        B, $+.32
+        L(U), FPK52
+        *(N), FPK80
+        CT0110(BU,60), FK118, 68             ! the clean product: noisy ones stay low
+        SIC, SEN
+        BRGZ, SERS
+! -- DIVIDE CHECK --
+! F219M
+        B, $+.32
+        L(U), FK95
+        /(N), FK96
+        CT0110(BU,60), FPK74, 68
+        SIC, SEN
+        BRGZ, SERS
+! -- RECIPROCAL DIVIDE CHECK --
+! F219N
+        B, $+.32
+        L(U), FK96
+        R/(N), FK95
+        CT0110(BU,60), FPK74, 68
+        SIC, SEN
+        BRGZ, SERS
+! -- STORE ROOT CHECK --
+! F219O
+        B, $+.32
+        L(U), FK81
+        SRT(N), ROS
+        L(BU,64), FK82
+        CT0110(BU,60), ROS, 4                ! check no low order one bits in result
+        SIC, SEN
+        BRGZ, SERS
+! -- ADD DOUBLE CHECK --
+! F219P1 - exp mem + exp acc + +48
+        DL(U), FPK38
+        C0011(BU,48), FPK38+.12, 20          ! set the accumulator's low half
+        D+(N), FPK35
+        CT0110(BU,48), FPK99+.12, 68         ! high half
+        SIC, SEN
+        BRGZ, SERS
+        CT0110(BU,48), FPK32+.12, 20         ! low half
+        SIC, SEN
+        BRGZ, SERS
+! F219P2 - the same pair, sides swapped, no C0011
+        DL(U), FPK35
+        D+(N), FPK38
+        CT0110(BU,48), FPK99+.12, 68         ! high half
+        SIC, SEN
+        BRGZ, SERS
+        CT0110(BU,48), FPK38+.12, 20         ! low half
+! The SIC/BRGZ that tests this last compare is printed at the TOP of
+! p.172, above F219P3 -- the listing's rows are not in address order
+! there.  Reading only the bottom of the page would leave P2's low
+! half compared and never tested, which is the same shape of hole as
+! a constant checked by a block that cannot see one of its fields.
+        SIC, SEN
+        BRGZ, SERS
+PASS    BEW, $
+        END, SAP25
