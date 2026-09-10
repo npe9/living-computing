@@ -1170,11 +1170,19 @@ function FpDivDblResult fpDivDouble(FpDouble dvd, FpNum dvs, Bool normalized, Bo
   r.q49 = b49;
   r.generated = gen;
 
-  // The remainder.  p.94: unnormalized stores "the 48 high-order bits
-  // of the remainder"; a restoring divide leaves rem < divisor < 2^48,
-  // so nothing is dropped and LC cannot fire here.  The manual's
-  // 49-significant-bit case is unreachable in this formulation and is
-  // untested by F217WA, whose seven remainders are all zero.
+  // The remainder.  p.99: unnormalized stores "the 48 high-order bits
+  // of the remainder"; normalized normalizes it and drops the low bit
+  // of a 49-bit one.
+  //
+  // THIS NOTE USED TO SAY the 49-significant-bit case was "unreachable
+  // in this formulation and untested by F217WA, whose seven remainders
+  // are all zero", and that LC could never fire here.  Both were true
+  // of the old formulation and both are now wrong: F219Y reaches it
+  // exactly -- r48 = 0x1F3EFBEFBEFC1, forty-nine significant bits,
+  // low-order bit one -- and it was the block that showed the old
+  // formulation was computing the residue of the wrong quotient.
+  // "Unreachable" was a statement about what had been transcribed, not
+  // about the machine, and it expired when a block arrived.
   Int#(14) rexp = flagged ? fpExpFull(fpdHead(dvd)) : (de - 48 + rexpAdj);
   let {rh, rg} = fpMakeExp(rexp, remFrac, dvd.sign, 3'b0);
   r.rem = rh;

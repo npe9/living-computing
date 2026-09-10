@@ -681,13 +681,25 @@ function ActionValue#(Word64) fpStoreClass(StretchStorage st, Bit#(7) c,
         // set to one." The bits that pass bit 12 are the top `sh`
         // of the fraction. At sh == 0 the shift loses nothing:
         // >> 96 is zero in BSV, which is the answer we want.
-        // COVERAGE LIMIT, measured 2026-09-07: nothing transcribed
-        // requires LC to be OFF after a LEFT shift. A12 wants it
-        // ON; A24 is the LC-off row but shifts RIGHT, where this
-        // branch never runs. Forcing `lc = True` here leaves both
-        // F212A1-A11 and A12-A23 green, so the sh == 0 case below
-        // (which leans on BSV's >> 96 being zero) is unguarded by
-        // any test. F212D1, still to transcribe, is an LC row.
+        // COVERAGE LIMIT, RE-MEASURED 2026-09-10 against the full
+        // 242-section suite: nothing transcribed requires LC to be
+        // OFF after a LEFT shift. Forcing `lc = True` here leaves
+        // EVERY section green, so the sh == 0 case below (which
+        // leans on BSV's >> 96 being zero) is unguarded.
+        //
+        // The earlier note said "F212D1, still to transcribe, is an
+        // LC row". F212D1 has since been transcribed and it does not
+        // close this: its three sub-cases all drive LC ON (ones
+        // leaving IBM 12), never off. A12 wants it on too; A24 is
+        // the LC-off row but shifts RIGHT, where this branch never
+        // runs.
+        //
+        // THE BLOCK THAT WOULD CLOSE IT is in the PAU GATES ROUTINE
+        // (p.180 on, 022363.00): its SHF0 loop does `SHF(U),0` -- a
+        // shift of exactly zero -- and then checks both accumulator
+        // halves. A shift of zero must leave LC off, which is this
+        // case precisely. Naming it here so the next transcription
+        // has a reason rather than an order.
         lc = ((ds.frac >> (96 - sh)) != 0);
         v.frac = ds.frac << sh;
         // p.102: "The operation is not affected by the

@@ -2936,6 +2936,57 @@ hand vectors alone. "Enables" notes the dependency chain.
    from a routine whose every operation was implemented before it was
    transcribed.
 
+   THE GREP WORKED, WHICH IS THE POINT OF WRITING THE RULE DOWN.
+   Searching the model for claims held on the manual's authority alone
+   turned up four, and acting on them took an hour and produced three
+   corrections:
+
+   ONE. fpDivDouble's remainder note said the 49-significant-bit case
+   was "unreachable in this formulation and untested by F217WA, whose
+   seven remainders are all zero", and that LC could never fire there.
+   Both were true when written and both were made false by F219Y in
+   the same session -- it reaches that case exactly. "Unreachable" was
+   a statement about what had been TRANSCRIBED, not about the machine,
+   and it expired when a block arrived. The note now says so.
+
+   TWO. The SHF arm's left-shift note said "F212D1, still to
+   transcribe, is an LC row". F212D1 has since been transcribed, and
+   it does NOT close the gap: its three sub-cases all drive LC ON (a
+   one leaving IBM 12), never off. So the pointer was stale in one
+   direction and wrong in the other -- the block arrived and did not
+   do what the note expected of it.
+
+   THREE. The gap itself was RE-MEASURED rather than assumed. Forcing
+   `lc = True` after every left shift leaves the ENTIRE 242-section
+   suite green, so the sh == 0 case remains unguarded. The old
+   measurement was dated 2026-09-07 against a much smaller suite; a
+   coverage claim carries a date for the same reason a reachability
+   claim does.
+
+   AND THE GREP NAMED THE NEXT TARGET. The PAU GATES ROUTINE (p.180
+   on, 022363.00) opens with a loop, SHF0, whose body is
+   `L(BU,64),WRDA[X1],64 / +(BU,64),WRDB[X1],0 / SHF(U),0 / two CTs /
+   CBR+,X1,SHF0`. A shift of EXACTLY ZERO, checked on both accumulator
+   halves -- which is the unguarded case, precisely. The note in the
+   SHF arm now names it, so the next transcription has a reason rather
+   than an order.
+
+   WHAT THE PAU ROUTINE IS, AND WHY IT IS A DIFFERENT KIND OF WORK
+   FROM F2xx. Its own header: "THIS ROUTINE TESTS THE SEVERAL GATES
+   AND REGISTERS LOCATED IN PANELS A1, A2, A3, A4 AND B1 OF FRAME 25,
+   AND ALL OF FRAMES 26 AND 27. ONLY THE FRACTION OPERATIONS ARE
+   CHECKED ... INCLUDED IN THE TESTS FOR THE GATES ARE TESTS OF THE F
+   REGISTER AND SHIFT CONTROL REGISTER." Where F2xx blocks are
+   straight-line sequences over a constant pool, this is a LOOP over
+   indexed data tables (WRDA at 024120, WRDB at 024122, the index
+   control word XA at 024117) driven by LX and CBR+. It exercises the
+   shifter and the index machinery together, which nothing transcribed
+   does, and it needs framework symbols the F2xx programs never
+   touched -- CHKSZ, SSW, SENO, RET1, IDF1, FPGR, DPET13 -- plus data
+   tables on pages not yet located. Costed honestly, it is a bigger
+   opening than any single F2xx block; recorded here so the decision
+   to start it is made deliberately.
+
    STILL OPEN FROM THE REVIEW: the rest of (3) the literal 5'b01111
    means CM in the connective path and V+CR in the direct-index path,
    eleven occurrences, with the same collision for 5'b10111 and
