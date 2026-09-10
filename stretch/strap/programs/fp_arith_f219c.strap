@@ -165,5 +165,20 @@ SAP25   BB1, $NM, $+1.0
         CT0110(BU,48), FPK58+.12, 20         ! low half: two noisy ones
         SIC, SEN
         BRGZ, SERS
+! F219S does not end with its two CTs.  The next page opens with three
+! more checks that belong to it: DLWF takes the operand's flag bits
+! into the sign byte AND sets the data-flag indicators TF, UF and VF,
+! and those three are what the CTs cannot see -- both CT windows (IBM
+! 0-59 and 60-107) stop short of the flag byte.  Transcribing only to
+! the bottom of p.172 would have left DLWF's whole difference from DL
+! untested here, which an injection confirmed before these lines were
+! added: dropping the operand's flags changed nothing the block could
+! see.  FPK56 carries all three flag bits, so all three must be on.
+        SIC, SEN
+        BZTF, SERS                           ! error if data flag inds. off
+        SIC, SEN
+        BZUF, SERS
+        SIC, SEN
+        BZVF, SERS
 PASS    BEW, $
         END, SAP25

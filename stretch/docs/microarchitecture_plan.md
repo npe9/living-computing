@@ -2787,12 +2787,33 @@ hand vectors alone. "Enables" notes the dependency chain.
    concluding from a passing injection that a block discriminates
    nothing, count the sites that implement the rule.
 
-   J IS A GENUINE NON-DISCRIMINATION AND THE PROGRAM SAYS SO IN ITS OWN
-   COMMENT. S's high-half CT covers sixty bits from offset 68, IBM
-   0-59, which stops short of the flag byte, and its low-half CT covers
-   IBM 60-107, which is fraction. DLWF's whole difference from DL --
-   keeping the operand's flags -- is outside both windows. F215's
-   blocks are where that is tested; here it is invisible.
+   AND THEN F219S TURNED OUT NOT TO END WHERE THE PAGE DID. Injection
+   J -- DLWF dropping the operand's flag bits -- passed, and the first
+   reading of that was that S simply cannot see flags: its high-half CT
+   covers IBM 0-59 and its low-half CT IBM 60-107, and the flag byte is
+   outside both windows. That reading was incomplete. The NEXT PAGE
+   opens with three more checks that belong to S:
+
+     SIC / BZTF, SERS   "ERROR IF DATA FLAG INDS. OFF"   021637.00
+     SIC / BZUF, SERS                                    021640.00
+     SIC / BZVF, SERS                                    021641.00
+
+   FPK56 carries all three flag bits, and the block insists all three
+   indicators come on. This is the second time in two blocks that the
+   rows completing a check were somewhere other than under it -- P2's
+   were at the top of its own page, S's are on the following one. The
+   rule stands and generalizes: a block is not transcribed until the
+   rows that READ its result are found, wherever the printer put them.
+
+   The three rows changed the answer for J only partly, which is worth
+   being exact about. J still passes: the data-flag indicators are set
+   at the top of fpArithClass, from the OPERAND's flags, for every FP
+   arithmetic operation -- not from the loaded value's `v.flags`, which
+   is what J breaks. So DLWF's flag-to-sign-byte path really is
+   invisible here and F215 remains where it is tested. But a new
+   injection, K, removing those three setBit lines outright, halts at
+   021637.40 -- the first of the new checks -- so the rows are not
+   redundant: they reach a path nothing in the suite had tested.
 
    STILL OPEN FROM THE REVIEW: the rest of (3) the literal 5'b01111
    means CM in the connective path and V+CR in the direct-index path,

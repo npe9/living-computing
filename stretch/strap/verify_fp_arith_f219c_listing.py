@@ -98,6 +98,13 @@ CODE_ROWS = [
     ('021634.40', '22077.14 80 060012.15 70', 'S CT0110(BU,48), FPK58+.12, 20'),
     ('021635.40', '1310.00 80', 'S SIC, SEN'),
     ('021636.00', '1304.35 42', 'S BRGZ, SERS'),
+    # F219S continues onto p.173: the data-flag indicator checks.
+    ('021636.40', '1310.00 80', 'S SIC, SEN'),
+    ('021637.00', '1304.21 C0', 'S BZTF, SERS   error if data flag inds. off'),
+    ('021637.40', '1310.00 80', 'S SIC, SEN'),
+    ('021640.00', '1304.22 40', 'S BZUF, SERS'),
+    ('021640.40', '1310.00 80', 'S SIC, SEN'),
+    ('021641.00', '1304.22 C0', 'S BZVF, SERS'),
 ]
 
 if __name__ == "__main__":
