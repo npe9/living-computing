@@ -355,6 +355,38 @@ endfunction
 // Immediate operand per p.~90 "Immediate Addressing": the instruction's
 // 24-bit address field supplies the *leftmost* len_ bits of the
 // operand, zero-filled on the right if len_ > 24.
+// -------------------------------------------------------------------
+// PROGRESSIVE-INDEX BOOKKEEPING, p.21 "Progressive Indexing". After
+// the effective address is taken from the index register's own value
+// field, the instruction's address part -- reused as a plain positive
+// increment, not an address -- is added (P 1-3) or subtracted (P 5-7)
+// back into that value field; the count field goes down for every P
+// but 1 and 5; and P 3/7 refill when that count reaches zero.
+//
+// Computed from Reg-only state (the index register and the
+// instruction's own fields) with no BRAM dependency at all, so an arm
+// that also writes storage -- VFL ST/M+, connective CM -- can learn
+// BEFORE it acts whether a refill read will also be needed, and defer
+// its write rather than issue a write and a refill's readWordReq in
+// the same execute() call (see vflWriteArmHandled).
+//
+// VflInt and Connective carried character-identical copies of this,
+// differing only in which arm's `a` they read -- which is the same
+// VflAddr type in both. Both call here now.
+// -------------------------------------------------------------------
+function Tuple2#(IndexWord, Bool) progressiveIndex(VflAddr a, IndexWord x);
+  Bool sub = (a.p >= 5);
+  SM128 val = SM128{sign: x.sign, mag: zeroExtend(x.addr)};
+  SM128 inc = SM128{sign: (sub ? 1 : 0), mag: zeroExtend(a.addr)};
+  SM128 sum = smAdd(val, inc);
+  IndexWord px = IndexWord{addr: truncate(sum.mag), sign: sum.sign,
+                           flag: x.flag, count: x.count, refill: x.refill};
+  Bit#(3) low = a.p - (sub ? 4 : 0);
+  if (low != 1) px.count = px.count - 1;
+  Bool progressive = (a.p != 0 && a.p != 4);
+  return tuple2(px, progressive && (low == 3 && px.count == 0));
+endfunction
+
 function Bit#(64) immediateOperand(Bit#(24) addr, Bit#(7) len_);
   if (len_ <= 24) begin
     Bit#(7) sh = 24 - len_;
@@ -1567,15 +1599,9 @@ function ActionValue#(ExecResult)
           // both reads are in hand rather than writing immediately and
           // then also trying to issue a refill request in the same
           // execute() call.
-          SM128 pVal = SM128{sign: xIdx.sign, mag: zeroExtend(xIdx.addr)};
-          Bool pSub = (vi.a.p >= 5);
-          SM128 pInc = SM128{sign: (pSub ? 1 : 0), mag: zeroExtend(vi.a.addr)};
-          SM128 pSum = smAdd(pVal, pInc);
-          IndexWord vflPx1 = IndexWord{addr: truncate(pSum.mag), sign: pSum.sign,
-                           flag: xIdx.flag, count: xIdx.count, refill: xIdx.refill};
-          Bit#(3) pLow = vi.a.p - (pSub ? 4 : 0);
-          if (pLow != 1) vflPx1.count = vflPx1.count - 1;
-          Bool vflNeedsRefill = isProgressive && (pLow == 3 && vflPx1.count == 0);
+          Tuple2#(IndexWord, Bool) vflPx = progressiveIndex(vi.a, xIdx);
+          IndexWord vflPx1 = tpl_1(vflPx);
+          Bool vflNeedsRefill = tpl_2(vflPx);
 
           case (vi.code)
             6'b000101: begin // L (Load) -- first arm converted to the
@@ -2306,15 +2332,9 @@ function ActionValue#(ExecResult)
           // BEFORE it reads/writes whether a refill will also be
           // needed, so it can defer its write rather than issue one in
           // the same execute() call as a refill's readWordReq.
-          SM128 pVal = SM128{sign: xIdx.sign, mag: zeroExtend(xIdx.addr)};
-          Bool pSub = (cn.a.p >= 5);
-          SM128 pInc = SM128{sign: (pSub ? 1 : 0), mag: zeroExtend(cn.a.addr)};
-          SM128 pSum = smAdd(pVal, pInc);
-          IndexWord vflPx1 = IndexWord{addr: truncate(pSum.mag), sign: pSum.sign,
-                           flag: xIdx.flag, count: xIdx.count, refill: xIdx.refill};
-          Bit#(3) pLow = cn.a.p - (pSub ? 4 : 0);
-          if (pLow != 1) vflPx1.count = vflPx1.count - 1;
-          Bool vflNeedsRefill = isProgressive && (pLow == 3 && vflPx1.count == 0);
+          Tuple2#(IndexWord, Bool) vflPx = progressiveIndex(cn.a, xIdx);
+          IndexWord vflPx1 = tpl_1(vflPx);
+          Bool vflNeedsRefill = tpl_2(vflPx);
 
           if (cn.suffix == conn_CM && fieldCrosses(ea, len_)) begin
             // CM writing a crossing field: same single-word-write

@@ -2551,6 +2551,37 @@ hand vectors alone. "Enables" notes the dependency chain.
    relocation plus the substitution of three names (fp.absSign,
    fp.invSign, prefetch[0]) for their parameters.
 
+   AND A FIND THAT CHANGED THE ORDER OF THE REST. Measuring VflInt
+   for the third cut turned up something better than a relocation:
+   the Connective arm carried a CHARACTER-IDENTICAL copy of VflInt's
+   progressive-index bookkeeping -- pVal/pSub/pInc/pSum/vflPx1/pLow/
+   vflNeedsRefill, nine lines, differing only in whether they read
+   vi.a or cn.a, which is the same VflAddr type in both. Connective's
+   locals are even still NAMED after Vfl (vflPx1, vflNeedsRefill),
+   which is the fingerprint of the copy.
+
+   Two greps decided the helper's signature, and both had to be run
+   before writing it rather than after:
+
+     - isProgressive is computed identically in the two arms
+       (a.p != 0 && a.p != 4), so the helper derives it and does not
+       take it as a parameter;
+     - pLow, pSub, pVal, pInc and pSum are read NOWHERE outside the
+       two blocks, so a two-value return is enough and the helper
+       need not hand back its scaffolding.
+
+   progressiveIndex(VflAddr a, IndexWord x) -> (IndexWord, Bool).
+   Both arms now call it. Build clean, suite unchanged at 234.
+
+   THE NEAR-MISSES ARE LEFT ALONE, DELIBERATELY. DirIndex's V+ block
+   and ImmIndex's C+I/C-I blocks have the SAME SHAPE -- value plus
+   increment, count down except for the no-count opcode, refill when
+   the count reaches zero -- but different opcode tests and different
+   increment sources. They are not copies of one another, and folding
+   them into one helper would be a forced fit that hid three real
+   distinctions behind a parameter. The rule this settles: extract
+   what is identical, not what merely rhymes.
+
    STILL OPEN FROM THE REVIEW: the rest of (3) the literal 5'b01111
    means CM in the connective path and V+CR in the direct-index path,
    eleven occurrences, with the same collision for 5'b10111 and
