@@ -2524,6 +2524,33 @@ hand vectors alone. "Enables" notes the dependency chain.
    reported success. An anchored edit fails safe for the FILE and not
    for the PIPELINE. Edit, verify, then build, as separate commands.
 
+   AND THE SECOND CUT: fpArithClass takes the other half of the same
+   seam -- the loads, adds, compares, multiplies, divides, LFT, *+ and
+   E+, everything the Fp arm reaches only after the prefetch
+   requirement is satisfied, which is exactly the set that needs an
+   operand word.
+
+   THE FP ARM IS NOW 72 LINES, from 1,038. execute() is 1,305, from
+   2,270. What is left in the arm is the part that genuinely belongs to
+   the caller: the effective address, the address-invalid guard, the
+   accumulator reads, the modifier booleans, the `known` test, and the
+   prefetch bail -- deciding to ASK for a read is the caller's
+   business, and both extracted functions are only ever entered once
+   the decision is made.
+
+   Same measurement discipline as the first cut, and the same answer:
+   over 688 lines, zero references to needsRead, doIdxWrite,
+   idxWriteVal, ioStart or io.; thirty-seven writes through `st`;
+   eighty-nine assignments to `ind`; and the only DecodedInstr fields
+   used are the two sign-modifier bits. One value added over
+   fpStoreClass's boundary -- the operand word itself, which is what
+   the two halves differ by and why the seam falls where it does.
+
+   Both builds were clean first time, and the suite is unchanged at 234
+   sections. Neither cut moved a line of logic: the diffs are pure
+   relocation plus the substitution of three names (fp.absSign,
+   fp.invSign, prefetch[0]) for their parameters.
+
    STILL OPEN FROM THE REVIEW: the rest of (3) the literal 5'b01111
    means CM in the connective path and V+CR in the direct-index path,
    eleven occurrences, with the same collision for 5'b10111 and

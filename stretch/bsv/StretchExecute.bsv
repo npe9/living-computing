@@ -742,6 +742,721 @@ function ActionValue#(Word64) fpStoreClass(StretchStorage st, Bit#(7) c,
   endactionvalue
 endfunction
 
+// ---------------------------------------------------------------------
+// The floating-point operations that DO read a storage operand: the
+// loads, the adds, the compares, the multiplies, the divides, LFT, *+
+// and E+.  The other half of the seam fpStoreClass took -- everything
+// execute()'s Fp arm reaches only after the prefetch requirement is
+// satisfied, which is exactly the set that needs an operand word.
+//
+// Same boundary as fpStoreClass with one value added, the operand word
+// itself.  Measured before the cut: over 688 lines, zero references to
+// needsRead, doIdxWrite, idxWriteVal, ioStart or io.; thirty-seven
+// writes through `st`; eighty-nine assignments to `ind`; and the only
+// DecodedInstr fields used are the two sign-modifier bits.  The
+// prefetch bail-out stays in the caller, because deciding to ask for a
+// read is the caller's business -- this function is only ever entered
+// once the word is in hand.
+// ---------------------------------------------------------------------
+function ActionValue#(Word64) fpArithClass(StretchStorage st, Bit#(7) c,
+                                           Bit#(1) absSign, Bit#(1) invSign,
+                                           WordAddr ea, FpNum acc, Word64 accL,
+                                           Word64 accS, Bool normalized, Bool noisy,
+                                           Word64 operand, Word64 ind0);
+  actionvalue
+    Word64 ind = ind0;
+    FpNum opnd0 = fpFromWord(operand);
+    FpNum opnd = fpApplySignMods(opnd0, absSign, invSign);
+    ind = setBit(ind, ind_TF, opnd0.flags[2]);
+    ind = setBit(ind, ind_UF, opnd0.flags[1]);
+    ind = setBit(ind, ind_VF, opnd0.flags[0]);
+    case (c)
+      fpop_L, fpop_LWF: begin // L / LWF
+        FpNum v = opnd;
+        v.flags = (c == fpop_LWF) ? opnd0.flags : 0;
+        Bool gen = False;
+        if (normalized && v.ef == 0 && v.frac != 0) begin
+          // FORTY-EIGHT BITS, NOT NINETY-SIX.  This is a
+          // 48-bit fraction with no 96-bit intermediate, so
+          // noisy mode's one-bits belong IN it; routing through
+          // fpNormalize96 put them in a low half that is then
+          // discarded, leaving zeros where the shifted-in ones
+          // belong.  jb_af1c F219C1 catches it -- FPK77's
+          // fraction is 000000000007, forty-five leading zeros,
+          // and the answer wanted is ffffffffffff where the
+          // 96-bit route gives e00000000000.
+          //
+          // DL and DLWF are deliberately NOT changed: for LOAD
+          // DOUBLE the vacated positions ARE real accumulator
+          // bits 60-107, so fpNormalize96Wide is right there.
+          let {f48, adj} = fpNormalize48(v.frac, True, noisy);
+          let {vn, g} = fpMakeExp(signExtend(fpExp(v)) + adj, f48, v.sign, v.flags);
+          v = vn; gen = g;
+        end
+        st.writeWord(addrAccLeft, fpAccLeft(v, accL));
+        st.writeWord(addrAccSignByte, fpSignByte(v, accS));
+        ind = setBit(ind, ind_MOP, 0);
+        ind = setResultIndicatorsFp(ind, v);
+        ind = setRangeIndicators(ind, fpRangeBits(v, gen, !gen && v.ef == 1));
+        ind = setBit(ind, ind_ZM, 0);
+      end
+      fpop_LFT: begin // LFT (LOAD FACTOR, p.98)
+        // "The operand specified by the effective address is
+        // placed in the factor register, FT.  The accumulator
+        // does not participate in the operation and remains
+        // unchanged."  So this is LOAD with word 14 as the
+        // destination and no sign byte: exponent and fraction to
+        // FT bits 0-59, the sign-modified sign to FT bit 60, and
+        // "FT bits 61-63 are set to zero" -- which is why
+        // v.flags is cleared rather than taken from the operand
+        // the way LWF takes it.  fpMakeExp passes flags through
+        // unaltered, so the zero survives the normalized path.
+        //
+        // FT IS THE ONLY REGISTER NO OTHER OPERATION TOUCHES:
+        // p.98, "LOAD FACTOR is the only operation which changes
+        // the contents of FT as an integral part of its
+        // performance.  FT is not changed by any other operation
+        // unless it is addressed explicitly."
+        FpNum v = opnd;
+        v.flags = 0;
+        Bool gen = False;
+        // "If a shift of 48 or more is required, normalization is
+        // suppressed and the order of magnitude zero is stored in
+        // bits 0-59."  A 48-bit fraction needs a shift of 48 or
+        // more exactly when it is ZERO -- any one-bit is within
+        // 47 places of the top -- so LOAD's `frac != 0` guard is
+        // that rule, not merely an optimization: a zero fraction
+        // skips normalization and keeps the operand's own
+        // exponent, which is what an order-of-magnitude zero is.
+        if (normalized && v.ef == 0 && v.frac != 0) begin
+          // FORTY-EIGHT BITS, NOT NINETY-SIX.  This is a
+          // 48-bit fraction with no 96-bit intermediate, so
+          // noisy mode's one-bits belong IN it; routing through
+          // fpNormalize96 put them in a low half that is then
+          // discarded, leaving zeros where the shifted-in ones
+          // belong.  jb_af1c F219C1 catches it -- FPK77's
+          // fraction is 000000000007, forty-five leading zeros,
+          // and the answer wanted is ffffffffffff where the
+          // 96-bit route gives e00000000000.
+          //
+          // DL and DLWF are deliberately NOT changed: for LOAD
+          // DOUBLE the vacated positions ARE real accumulator
+          // bits 60-107, so fpNormalize96Wide is right there.
+          let {f48, adj} = fpNormalize48(v.frac, True, noisy);
+          let {vn, g} = fpMakeExp(signExtend(fpExp(v)) + adj, f48, v.sign, v.flags);
+          v = vn; gen = g;
+        end
+        st.writeWord(addrFactor, fpToWord(v));
+        ind = setBit(ind, ind_MOP, 0);
+        ind = setResultIndicatorsFp(ind, v);
+        // p.98 lists XPU alongside XPFP/XPH/XPL where LOAD's list
+        // has only the first three -- LOAD cannot drive an
+        // exponent down, LFT's normalization can.  fpRangeBits
+        // already derives XPU from `generated && es == 1`, so the
+        // call is LOAD's unchanged and the difference is in which
+        // inputs can reach it, not in the function.
+        ind = setRangeIndicators(ind, fpRangeBits(v, gen, !gen && v.ef == 1));
+        ind = setBit(ind, ind_ZM, 0);
+      end
+      fpop_DL, fpop_DLWF: begin // DL / DLWF (p.96)
+        // LOAD DOUBLE "is the same as LOAD except that the
+        // accumulator bits 60-107 are set to zero": the exponent
+        // and fraction replace bits 0-59, bits 60-107 -- the low
+        // half of the double-precision 96-bit fraction -- are
+        // cleared, and bits 108-127 remain unchanged. DLWF
+        // additionally takes the addressed operand's flag bits
+        // into the sign byte's bits 5-7 (and the TF/UF/VF
+        // indicators), where DL zeroes them; that is the same
+        // difference L and LWF already have.
+        //
+        // In the accumulator's 128 magnitude bits, IBM bit n is
+        // bit 127-n, so the fraction's low half lands as the
+        // left half's bits 60-63 and the right half's 64-107,
+        // and 108-127 are the right half's low 20 bits.
+        //
+        // Normalization is over the WHOLE 96-bit fraction. With
+        // the low half zero the shift can still only be up to 47
+        // places (the leading one is in the high half), so the
+        // exponent adjustment matches LOAD's -- but noisy mode
+        // does differ: its one-bits go into the vacated
+        // low-order positions, which here are real accumulator
+        // bits 60-107 rather than bits that fall off the end.
+        // That is why this uses fpNormalize96Wide.
+        FpNum v = opnd;
+        v.flags = (c == fpop_DLWF) ? opnd0.flags : 0;
+        Bit#(96) f96 = {v.frac, 48'b0};
+        Bool gen = False;
+        if (normalized && v.ef == 0 && v.frac != 0) begin
+          let {w96, adj, lc} = fpNormalize96Wide(0, f96, True, noisy);
+          let {vn, g} = fpMakeExp(signExtend(fpExp(v)) + adj, w96[95:48], v.sign, v.flags);
+          v = vn; gen = g; f96 = w96;
+        end
+        Word64 accR = st.readAccRight();
+        st.writeWord(addrAccLeft, { v.ef, v.em, v.es, v.frac, f96[47:44] });
+        st.writeWord(addrAccRight, { f96[43:0], accR[19:0] });
+        st.writeWord(addrAccSignByte, fpSignByte(v, accS));
+        ind = setBit(ind, ind_MOP, 0);
+        ind = setResultIndicatorsFp(ind, v);
+        ind = setRangeIndicators(ind, fpRangeBits(v, gen, !gen && v.ef == 1));
+        ind = setBit(ind, ind_ZM, 0);
+      end
+      fpop_D_PLUS, fpop_D_PLUS_MG: begin // D+ / D+MG (p.95)
+        // ADD DOUBLE works on the accumulator's whole 96-bit
+        // fraction, IBM bits 12-107, against a storage operand
+        // extended with 48 low-order zeros. Bits 108-127 are
+        // outside the fraction and are carried through
+        // untouched, exactly as for DL.
+        Word64 accR = st.readAccRight();
+        FpDouble da = fpdFromAcc(accL, accR, accS);
+        FpDouble db = fpdFromWord(operand);
+        db.sign = opnd.sign;   // the sign modifiers, already applied
+        FpdResult r = fpAddDouble(da, db, normalized, noisy, c == fpop_D_PLUS_MG);
+        // ADD DOUBLE TO MAGNITUDE keeps the accumulator's OWN
+        // sign whatever the sum did -- "the sign remains
+        // unchanged" for a positive sum, and for a forced zero
+        // "the sign and exponent of the accumulator operand
+        // remain equal to the original" (p.95). fpAddDouble
+        // forced a.sign positive to decide the forced zero, so
+        // put the real one back here, exactly as the +MG arm
+        // does with acc.sign.
+        if (c == fpop_D_PLUS_MG) r.res.sign = sbSign(accS);
+        st.writeWord(addrAccLeft, fpdAccLeft(r.res));
+        st.writeWord(addrAccRight, fpdAccRight(r.res, accR));
+        // ADD leaves sign byte bits 0-3 and 5-7 alone and replaces
+        // only bit 4 with the sum's sign (p.86), and D+ is "similar
+        // to ADD". Take the flag bits from accS and say so, rather
+        // than from r.res: on the unflagged path r.res.flags is
+        // the accumulator's own and the two agree, but the FLAGGED
+        // path returns one operand WHOLE, so when the survivor is
+        // the storage operand r.res.flags is ITS flags. jb_af1c
+        // F208C2 is exactly that case -- an all-ones accumulator
+        // (flags 111) plus FPK0 (flags 000) -- and the listing
+        // demands 111 afterward. The TF/UF/VF INDICATORS are a
+        // separate thing and do come from the addressed operand
+        // (p.87, set above for every FP op with an operand).
+        st.writeWord(addrAccSignByte, sbWith(accS, r.res.sign, sbFlags(accS)));
+        ind = setBit(ind, ind_MOP, 0);
+        // The result indicators only ever ask whether the result
+        // fraction is zero and what its sign is, so they are fed
+        // a narrow view whose fraction is zero exactly when the
+        // 96-bit one is.
+        FpNum vind = fpdHead(r.res);
+        vind.frac = (r.res.frac == 0) ? 0 : 48'b1;
+        ind = setResultIndicatorsFp(ind, vind);
+        if (r.lc) ind = setBit(ind, ind_LC, 1);
+        if (r.ls) ind = setBit(ind, ind_LS, 1);
+        if (r.psh) ind = setBit(ind, ind_PSH, 1);
+        ind = setRangeIndicators(ind, fpRangeBits(vind, r.generated, r.propagated));
+        ind = setBit(ind, ind_ZM, 0);
+      end
+      fpop_F_PLUS: begin // F+ (ADD TO FRACTION, p.101)
+        // "The operation is the same as ADD DOUBLE except that
+        // the exponent of the operand in the accumulator is used
+        // for both the addressed operand and the operand in the
+        // accumulator." So the storage operand keeps its
+        // fraction, its sign -- modified by the sign modifiers
+        // before the addition, exactly as for D+ -- and its own
+        // data FLAGS; only ef/em/es are replaced.
+        //
+        // p.101 also says "when the accumulator operand is a
+        // value in the XFP or XFN range, the fraction addition
+        // is not performed." That needs no arm of its own:
+        // forcing the accumulator's exponent onto the storage
+        // operand puts BOTH operands in the SAME range with
+        // EQUAL exponents, and fpAddDouble's like-flagged
+        // TIE-BREAK -- `(fpExp(hb) > fpExp(ha)) ? b : a`, which
+        // overwrites the range ladder above it rather than
+        // being an else on it -- then returns `a`, the
+        // accumulator, because the comparison is strict.
+        // jb_af1c F212XA1-XA3 (an XFP accumulator) and XA7-XA9
+        // (XFN) are exactly that case and demand the
+        // accumulator back untouched; relaxing the `>` to `>=`
+        // halts XA1 at 016654.40. F+ is the only op that makes
+        // the two exponents equal, so those six rows are the
+        // only cover that comparison has at equality.
+        // Conversely XA4 pairs an N accumulator with an XFP
+        // OPERAND and DOES demand the addition -- which is why
+        // the exponent must be forced BEFORE the range test,
+        // not after; dropping the substitution halts XA4 at
+        // 016676.40.
+        Word64 accR = st.readAccRight();
+        FpDouble da = fpdFromAcc(accL, accR, accS);
+        FpDouble db = fpdFromWord(operand);
+        db.sign = opnd.sign;   // the sign modifiers, already applied
+        db.ef = da.ef; db.em = da.em; db.es = da.es;
+        FpdResult r = fpAddDouble(da, db, normalized, noisy, False);
+        st.writeWord(addrAccLeft, fpdAccLeft(r.res));
+        st.writeWord(addrAccRight, fpdAccRight(r.res, accR));
+        // Sign byte: bit 4 from the sum, flags from accS. NOTE
+        // that for F+, unlike D+, sbFlags(accS) and r.res.flags
+        // are provably the SAME thing: fpAddDouble's unflagged
+        // path builds its result with `flags: a.flags` always,
+        // and the exponent substitution above makes any flagged
+        // pair like-flagged with EQUAL exponents, so the
+        // tie-break returns `a`. There is no F+ input that can
+        // separate them, and jb_af1c F212XC1 does not, despite
+        // addressing an operand whose flag bits are 111 against
+        // a just-zeroed accumulator ("MEM FLAGS+7") -- injecting
+        // r.res.flags here leaves XC green. accS is written for
+        // uniformity with D+, where the two DO differ (its
+        // flagged path can return the storage operand whole) and
+        // where F208C2 pins the choice.
+        st.writeWord(addrAccSignByte, sbWith(accS, r.res.sign, sbFlags(accS)));
+        ind = setBit(ind, ind_MOP, 0);
+        FpNum vind = fpdHead(r.res);
+        vind.frac = (r.res.frac == 0) ? 0 : 48'b1;
+        ind = setResultIndicatorsFp(ind, vind);
+        // F212XA6 adds 000000000001_ffffffffffff to
+        // ffffffffffff_000000000000 and demands high 000...0,
+        // low fff...f, an UNCHANGED exponent of +2 and LC ON:
+        // the carry out of the 96-bit fraction is simply lost.
+        if (r.lc) ind = setBit(ind, ind_LC, 1);
+        // LS is reachable for F+ -- an exact cancellation gives a
+        // zero result fraction with non-zero operands -- but no
+        // row in F212-X produces one. PSH is not reachable at
+        // all: fpAddDouble computes it from |ea - eb|, and the
+        // substitution above forces that difference to zero, so
+        // `adiff > 48` is never true (nor is the `adiff > 95`
+        // early return). The line stays anyway, because keeping
+        // this arm shaped like D+'s is worth more than pruning
+        // dead uniformity -- but it is dead, not merely untested.
+        if (r.ls) ind = setBit(ind, ind_LS, 1);
+        if (r.psh) ind = setBit(ind, ind_PSH, 1);
+        ind = setRangeIndicators(ind, fpRangeBits(vind, r.generated, r.propagated));
+        ind = setBit(ind, ind_ZM, 0);
+      end
+      fpop_PLUS, fpop_PLUS_MG: begin // + / +MG
+        FpResult r = fpAdd(acc, opnd, normalized, noisy, c == fpop_PLUS_MG, False);
+        // ADD TO MAGNITUDE (p.88): only the accumulator's MAGNITUDE
+        // takes part, and the result keeps the accumulator's own
+        // sign -- a forced zero included. jb_af1c F205B checks the
+        // sign byte after every +MG/+MGA/-MG/-MGA: bit 1 whenever
+        // the accumulator was loaded with LN, whatever the sum.
+        if (c == fpop_PLUS_MG) r.res.sign = acc.sign;
+        st.writeWord(addrAccLeft, fpAccLeft(r.res, accL));
+        // Sign byte bits 5-7 are the accumulator's own, for the
+        // same reason as D+ below: p.86 is ADD's own page and says
+        // bits 0-3 and 5-7 "remain unchanged", but fpAdd's FLAGGED
+        // path returns one operand WHOLE, so r.res.flags is the
+        // STORAGE operand's whenever that operand is the survivor.
+        // Proven for D+ by jb_af1c F208C2; NOT proven here, because
+        // jb_af1c has no "TEST UNCHANGED REGISTERS" routine for
+        // plain ADD -- F203 ends at F203B, the exponent-range
+        // indicator test, and F204 begins straight after. F205C
+        // checks +MG's sign byte bits 0-3 only, not 5-7.
+        st.writeWord(addrAccSignByte, sbWith(accS, r.res.sign, sbFlags(accS)));
+        ind = setBit(ind, ind_MOP, 0);
+        ind = setResultIndicatorsFp(ind, r.res);
+        if (r.lc) ind = setBit(ind, ind_LC, 1);
+        if (r.ls) ind = setBit(ind, ind_LS, 1);
+        if (r.psh) ind = setBit(ind, ind_PSH, 1);
+        ind = setRangeIndicators(ind, fpRangeBits(r.res, r.generated, r.propagated));
+        ind = setBit(ind, ind_ZM, 0);
+      end
+      fpop_M_PLUS, fpop_M_PLUS_MG: begin // M+ / M+MG
+        FpNum a = acc;
+        FpNum b = opnd0; if (absSign == 1) b.sign = 0;
+        // ADD MAGNITUDE TO MEMORY (p.89): "the accumulator operand
+        // sign is assumed positive BEFORE the negative sign
+        // modification occurs". The negative-sign modifier here
+        // is the one the M-MG mnemonic sets (invSign), NOT
+        // the (N) in M+MG(N), which is the normalization
+        // modifier: M-MG adds a NEGATIVE accumulator operand,
+        // not the negation of whatever sign it was loaded with.
+        // (fpAdd leaves this to the caller for the to-memory
+        // direction; see its header.)
+        if (c == fpop_M_PLUS_MG) a.sign = 0;
+        if (invSign == 1) a.sign = ~a.sign;
+        FpResult r = fpAdd(b, a, normalized, noisy, c == fpop_M_PLUS_MG, True);
+        FpNum v = r.res; v.flags = opnd0.flags;
+        // ADD MAGNITUDE TO MEMORY keeps the ADDRESSED operand's own
+        // original sign, whatever the sum's: only its magnitude took
+        // part. The mirror of p.88's rule for the accumulator-
+        // changing direction -- "in an ADD TO MAGNITUDE operation,
+        // the sign byte register bit position 4 never changes" --
+        // and of the +MG line above. It covers the forced zero
+        // (p.83: "the unmodified original fraction sign of the
+        // addressed operand in ADD MAGNITUDE TO MEMORY", which is
+        // opnd0's, NOT b's after the absolute modifier) and the
+        // ordinary sum alike. jb_af1c F206B19/B24: M+MGA and M-MGA
+        // of a NEGATIVE memory operand, whose sign A makes positive
+        // for the arithmetic; the sum is positive, and the sign
+        // stored is still the negative one. Storing the sum's sign
+        // halted at B19's BB.
+        if (c == fpop_M_PLUS_MG) v.sign = opnd0.sign;
+        st.writeWord(ea, fpToWord(v));
+        ind = setBit(ind, ind_MOP, 1);
+        ind = setResultIndicatorsFp(ind, v);
+        if (r.lc) ind = setBit(ind, ind_LC, 1);
+        if (r.ls) ind = setBit(ind, ind_LS, 1);
+        if (r.psh) ind = setBit(ind, ind_PSH, 1);
+        ind = setRangeIndicators(ind, fpRangeBits(v, r.generated, r.propagated));
+        ind = setBit(ind, ind_ZM, 0);
+      end
+      fpop_K, fpop_KMG, fpop_KR, fpop_KMGR: begin // K / KMG / KR / KMGR
+        Bool magnitude = (c == fpop_KMG || c == fpop_KMGR);
+        Bool range = (c == fpop_KR || c == fpop_KMGR);
+        Int#(2) cmp = fpCompare(acc, opnd, magnitude, normalized, noisy);
+        ind = setBit(ind, ind_MOP, 0);
+        Int#(13) ea_ = fpExp(acc), eb_ = fpExp(opnd);
+        Int#(14) d = signExtend(ea_) - signExtend(eb_);
+        if (acc.ef == 0 && opnd.ef == 0 && ((d > 48) || (d < -48))) ind = setBit(ind, ind_PSH, 1);
+        if (!range) begin
+          ind = setBit(ind, ind_AL, pack(cmp < 0));
+          ind = setBit(ind, ind_AE, pack(cmp == 0));
+          ind = setBit(ind, ind_AH, pack(cmp > 0));
+        end else if (ind[63 - ind_AH] == 1) begin
+          // KR/KMGR (Compare for Range), Ref. Manual p.91: when
+          // the gate AH is on, set AE to "accumulator low"
+          // (acc < operand). AL and AH are NOT changed -- AH is
+          // the input gate, not a result; and when AH is off the
+          // comparison indicators are left unchanged (the
+          // fall-through of this `else if`). Verified against
+          // jb_af1c F202G11-18 (programs/fp_compare_f202g.strap).
+          ind = setBit(ind, ind_AE, pack(cmp < 0));
+        end
+      end
+      fpop_STAR: begin // *
+        FpResult r = fpMul(acc, opnd, normalized, noisy);
+        st.writeWord(addrAccLeft, fpAccLeft(r.res, accL));
+        st.writeWord(addrAccSignByte, fpSignByte(r.res, accS));
+        ind = setBit(ind, ind_MOP, 0);
+        ind = setResultIndicatorsFp(ind, r.res);
+        ind = setRangeIndicators(ind, fpRangeBits(r.res, r.generated, r.propagated));
+        ind = setBit(ind, ind_ZM, pack(r.zm));
+      end
+      fpop_SLASH: begin // / (DIVIDE, pp.93-94)
+        // "The operand in the left half of the accumulator, the
+        // dividend, is divided by the addressed operand, the
+        // divisor. ... The quotient exponent and fraction replace
+        // accumulator bits 0-59.  Accumulator bits 60-127 remain
+        // unchanged.  The quotient sign replaces the accumulator
+        // sign in bit position 4 of the sign byte register.  No
+        // remainder is retained by this operation."
+        //
+        // So the accumulator's RIGHT word is never written, and
+        // fpAccLeft carries IBM 60-63 through -- the same shape
+        // MULTIPLY has, and the reason / needs no readAccRight.
+        FpDivResult r = fpDiv(acc, opnd, normalized, noisy);
+        ind = setBit(ind, ind_MOP, 0);
+        if (r.zd) begin
+          // p.93: "When division is suppressed because of a zero
+          // divisor, the accumulator and the sign byte register
+          // remain unchanged.  The data flag and MOP indicators
+          // will be set but the arithmetic result and exponent
+          // range indicators are not changed."  Nothing is
+          // written -- not even the same value back -- and ZM is
+          // left alone too, since p.94 turns ZM off "except for
+          // the case of a zero divisor".
+          ind = setBit(ind, ind_ZD, 1);
+        end else begin
+          st.writeWord(addrAccLeft, fpAccLeft(r.res, accL));
+          st.writeWord(addrAccSignByte, fpSignByte(r.res, accS));
+          // LZC is IBM bits 17-23 of word 7 and shares that word
+          // with the all-ones count at 44-50, which has to
+          // survive; IBM bit n is model bit 63-n, so 17-23 is
+          // [46:40].  p.94: the count "remains available for
+          // program use until the LZC is changed by integer
+          // multiplication, LOAD TRANSIT, division or connective
+          // operations".  NOTHING IN F217 READS IT, nor PF which
+          // is derived from it -- both are manual-only here.
+          Word64 zoc = st.readZerosOnesCounts();
+          st.writeWord(addrLeftZerosCount, { zoc[63:47], r.lzc, zoc[39:0] });
+          ind = setResultIndicatorsFp(ind, r.res);
+          ind = setRangeIndicators(ind, fpRangeBits(r.res, r.generated, r.propagated));
+          if (r.pf) ind = setBit(ind, ind_PF, 1);
+          ind = setBit(ind, ind_ZM, 0);
+        end
+      end
+      fpop_R_SLASH: begin // R/ (RECIPROCAL DIVIDE, p.94)
+        // "The operand specified by the effective address, the
+        // dividend, is divided by the operand in the left half of
+        // the accumulator, the divisor.  The sign of the dividend
+        // is modified by the sign modifiers prior to the
+        // division. ... The division process is the same as the
+        // process described in DIVIDE with the exception of the
+        // interchange of the operands used for dividends and
+        // divisor."
+        //
+        // So the whole of R/ is fpDiv with its two arguments the
+        // other way round.  The sign modifiers still land on the
+        // ADDRESSED operand, which here is the dividend rather
+        // than the divisor, and `opnd` already carries them.
+        FpDivResult r = fpDiv(opnd, acc, normalized, noisy);
+        ind = setBit(ind, ind_MOP, 0);
+        if (r.zd) begin
+          // The zero divisor is now the ACCUMULATOR's fraction.
+          // Nothing is written, as in DIVIDE; jb_af1c F217XA8
+          // checks it from that side, asking that "the divisor
+          // remains in the accumulator".
+          ind = setBit(ind, ind_ZD, 1);
+        end else begin
+          st.writeWord(addrAccLeft, fpAccLeft(r.res, accL));
+          // Spelled out rather than fpSignByte'd, because for R/
+          // the result's flag bits come from the DIVIDEND, which
+          // is the storage operand -- the accumulator's own flags
+          // are what must survive, as everywhere else.  For / the
+          // two happen to coincide.
+          st.writeWord(addrAccSignByte, sbWith(accS, r.res.sign, sbFlags(accS)));
+          Word64 zoc = st.readZerosOnesCounts();
+          st.writeWord(addrLeftZerosCount, { zoc[63:47], r.lzc, zoc[39:0] });
+          ind = setResultIndicatorsFp(ind, r.res);
+          ind = setRangeIndicators(ind, fpRangeBits(r.res, r.generated, r.propagated));
+          if (r.pf) ind = setBit(ind, ind_PF, 1);
+          ind = setBit(ind, ind_ZM, 0);
+        end
+      end
+      fpop_D_SLASH: begin // D/ (DIVIDE DOUBLE, p.94)
+        // "The quotient exponent and fraction replace accumulator
+        // bits 0-60.  Accumulator bits 61-107 are set to zero.
+        // The sign of the quotient replaces the accumulator sign.
+        // Accumulator bits 108-127 remain unchanged.  The
+        // remainder is placed in the remainder register, RM
+        // address 13.  The original accumulator sign becomes the
+        // sign of the remainder RM register bit 60.  The flag
+        // bits 61-63 of the remainder register are set to zero."
+        //
+        // So the accumulator's left word carries the exponent,
+        // FORTY-EIGHT quotient bits and then the FORTY-NINTH in
+        // IBM 60, with 61-63 zero; the right word is zeroed
+        // through IBM 107 and keeps 108-127.  That 49th bit is
+        // what makes the field 0-60 rather than DIVIDE's 0-59,
+        // and jb_af1c F217WA checks it in every sub-test.
+        Word64 accR = st.readAccRight();
+        FpDouble da = fpdFromAcc(accL, accR, accS);
+        FpDivDblResult r = fpDivDouble(da, opnd, normalized, noisy);
+        ind = setBit(ind, ind_MOP, 0);
+        if (r.zd) begin
+          // As in DIVIDE: nothing is written and the result and
+          // range indicators are left alone.
+          ind = setBit(ind, ind_ZD, 1);
+        end else begin
+          st.writeWord(addrAccLeft,
+                       { r.res.ef, r.res.em, r.res.es, r.res.frac, r.q49, 3'b0 });
+          st.writeWord(addrAccRight, { 44'b0, accR[19:0] });
+          st.writeWord(addrAccSignByte, fpSignByte(r.res, accS));
+          // RM: exponent and fraction in bits 0-59, the ORIGINAL
+          // accumulator sign in bit 60, flags 61-63 zero.
+          st.writeWord(addrRemainder,
+                       { r.rem.ef, r.rem.em, r.rem.es, r.rem.frac, r.rem.sign, 3'b0 });
+          Word64 zoc = st.readZerosOnesCounts();
+          st.writeWord(addrLeftZerosCount, { zoc[63:47], r.lzc, zoc[39:0] });
+          FpNum vind = r.res;
+          vind.frac = (r.res.frac == 0 && r.q49 == 0) ? 0 : 48'b1;
+          ind = setResultIndicatorsFp(ind, vind);
+          ind = setRangeIndicators(ind, fpRangeBits(r.res, r.generated, r.propagated));
+          if (r.pf) ind = setBit(ind, ind_PF, 1);
+          if (r.lc) ind = setBit(ind, ind_LC, 1);
+          if (r.ru) ind = setBit(ind, ind_RU, 1);
+          ind = setBit(ind, ind_ZM, 0);
+        end
+      end
+      fpop_D_STAR: begin // D* (multiply double, p.97): "the same
+                        // as MULTIPLY, except that the 96-bit
+                        // product fraction is placed in
+                        // accumulator bits 12-107" -- so where *
+                        // keeps the product's high half and drops
+                        // the rest, D* keeps all of it, and IBM
+                        // 60-63 (which * preserves) become part
+                        // of the result fraction.
+        // Accumulator bits 108-127 lie outside the product field
+        // and survive; fpdAccRight carries oldRight[19:0]
+        // through.  jb_af1c F214XB1/XB2 check exactly that, with
+        // a CT0101/CT1010 over R 44-63 = IBM 108-127.
+        //
+        // The MULTIPLIER is taken as the 48-bit accumulator
+        // fraction of bits 12-59, as under MULTIPLY, on the
+        // reading that p.97 changes only where the product GOES.
+        // NOTHING IN F214-X CHECKS THAT, and structurally cannot:
+        // every XA sub-test enters with IBM 60-107 already zero
+        // (INJ1, which never wrote the right word, still passed
+        // XA1's low-half check against zero), and with a zero low
+        // half a 96-bit multiplier gives the identical product;
+        // XB's accumulator low half is NOT zero but XB inspects
+        // only IBM 108-127 and the sign byte. Manual-only until a
+        // later block loads the low half with DL and multiplies.
+        Word64 accR = st.readAccRight();
+        FpdResult r = fpMulDouble(acc, opnd, normalized, noisy);
+        st.writeWord(addrAccLeft, fpdAccLeft(r.res));
+        st.writeWord(addrAccRight, fpdAccRight(r.res, accR));
+        st.writeWord(addrAccSignByte, sbWith(accS, r.res.sign, r.res.flags));
+        ind = setBit(ind, ind_MOP, 0);
+        // The indicators want a 48-bit stand-in; only "is the
+        // fraction zero" matters and that is a 96-bit question.
+        FpNum rind = fpdHead(r.res);
+        rind.frac = (r.res.frac == 0) ? 0 : 48'b1;
+        ind = setResultIndicatorsFp(ind, rind);
+        ind = setRangeIndicators(ind, fpRangeBits(rind, r.generated, r.propagated));
+        ind = setBit(ind, ind_ZM, pack(r.zm));
+      end
+      fpop_STAR_PLUS: begin // *+ (MULTIPLY AND ADD, pp.98-99)
+        // "The operand in the FT register, designated as the
+        // multiplicand, is multiplied by the operand specified by
+        // the effective address, designated as the multiplier.
+        // The product is added to the contents of the
+        // accumulator, bits 0-107.  The sum exponent and fraction
+        // replace accumulator bits 0-107.  The sign of the sum
+        // replaces the accumulator sign, sign byte register bit
+        // 4.  Accumulator bits 108-127 remain unchanged."
+        //
+        // So it is fpMulDouble feeding fpAddDouble, and the
+        // manual says so: "the intermediate product fraction
+        // remains unnormalized throughout the addition" and
+        // "subsequent to the multiplication, an addition is
+        // performed similar to that described in ADD DOUBLE".
+        //
+        // THE ARGUMENT ORDER OF THE MULTIPLY IS LOAD-BEARING, and
+        // it is the one place *+ differs from MULTIPLY.  p.99:
+        // "When both operands are in the XFP range or both in the
+        // XFN range, the product exponent is the exponent of the
+        // operand specified by the EFFECTIVE ADDRESS" -- where
+        // Fig.32, and so fpMul and D*, give it to the accumulator
+        // side.  fpExpRangeWinner resolves a same-range pair to
+        // its FIRST argument, so passing (opnd, ftv) is exactly
+        // that rule and nothing else in fpMulDouble is
+        // asymmetric: the sign is an xor, the fraction a product,
+        // and the unflagged exponent a sum.
+        //
+        // Note this is NOT only a tie-break here.  p.99 gives the
+        // effective address the exponent whenever both operands
+        // share a flagged range, whatever their magnitudes --
+        // which is why the rule cannot be expressed by ordering
+        // the arguments to a comparison.
+        Word64 accR = st.readAccRight();
+        FpDouble da = fpdFromAcc(accL, accR, accS);
+        FpNum ftv = fpFromWord(st.readFactor());
+        // Normalization and noisy mode belong to the ADDITION
+        // only: p.99, "the intermediate product fraction remains
+        // unnormalized throughout the addition", and noisy's
+        // one-bits enter "during the left shifting associated
+        // with normalization" of the sum.
+        FpdResult m = fpMulDouble(opnd, ftv, False, False);
+        FpdResult r = fpAddDouble(da, m.res, normalized, noisy, False);
+        st.writeWord(addrAccLeft, fpdAccLeft(r.res));
+        st.writeWord(addrAccRight, fpdAccRight(r.res, accR));
+        // The sign byte takes the sum's sign and the ACCUMULATOR's
+        // flag bits, as ADD DOUBLE does -- so r.res.flags never
+        // reaches storage and m.res.flags (which fpMulDouble takes
+        // from its first argument, here the storage operand) is
+        // inert.  Said explicitly because it looks like it matters.
+        st.writeWord(addrAccSignByte, sbWith(accS, r.res.sign, sbFlags(accS)));
+        ind = setBit(ind, ind_MOP, 0);
+        FpNum vind = fpdHead(r.res);
+        vind.frac = (r.res.frac == 0) ? 0 : 48'b1;
+        ind = setResultIndicatorsFp(ind, vind);
+        if (r.lc) ind = setBit(ind, ind_LC, 1);
+        if (r.ls) ind = setBit(ind, ind_LS, 1);
+        if (r.psh) ind = setBit(ind, ind_PSH, 1);
+        // p.99's generated/propagated rule falls out of the
+        // composition rather than needing code.  "Generated if all
+        // operands are initially in the N range" is fpAddDouble's
+        // unflagged path (gen from fpMakeExp, propagated False);
+        // "or if the intermediate product has a value in the XFN
+        // range with a propagated exponent flag while the
+        // accumulator operand is in the N range but the sum has EF
+        // of 1, ES of 1 owing to final normalization" is its
+        // FLAGGED path, where an unflagged survivor still
+        // normalizes and fpMakeExp reports the underflow -- and
+        // fpRangeBits' propagated arm requires es == 0, so an
+        // es == 1 result falls through to the generated one.
+        // "All other cases lead to a propagated EF of 1" is
+        // r.propagated = (res.ef == 1).  Nothing in F216A checks
+        // an indicator, so none of this is covered there.
+        ind = setRangeIndicators(ind, fpRangeBits(vind, r.generated, r.propagated));
+        // p.99: "If the final result, after addition, is an order
+        // of magnitude zero with exponent greater than -1024 this
+        // indicator will be turned on, otherwise, if on, it will
+        // be turned off."  Unlike MULTIPLY's ZM this carries no
+        // `normalized` term.
+        ind = setBit(ind, ind_ZM,
+                     pack((r.res.frac == 0) && (fpExpFull(vind) > -1024)));
+      end
+      fpop_E_PLUS: begin // E+ (add to exponent, p.102): the
+                        // addressed operand's exponent (its sign
+                        // subject to the sign modifiers) is added
+                        // to the accumulator's exponent; fraction
+                        // and sign of the operand are ignored.
+        // NORMALIZATION HERE IS 96-BIT.  p.102: "When normalized
+        // operation is specified, the accumulator exponent and
+        // fraction bits 12-107 are normalized.  Accumulator bits
+        // 108-127 and the sign byte register remain unchanged."
+        // jb_af1c F213A12 is what forces it: a high half of
+        // 000fffffffff over a low half of ffffffffffff, and after
+        // a normalized E+ the listing demands high ffffffffffff
+        // (FK57) and LOW fffffffff000 (FK48) -- the twelve
+        // leading zeros leave the whole IBM 12-107 fraction,
+        // pulling the low half up, and the exponent drops by 12
+        // from +1073 to FK57's +1061.  A13 checks it again
+        // independently with a shift of 10.  This arm used to
+        // normalize {frac, 48'b0} and never wrote addrAccRight.
+        Word64 accR = st.readAccRight();
+        FpDouble da = fpdFromAcc(accL, accR, accS);
+        FpDouble v = da; Bool gen = False; Bool prop = False;
+        if (da.ef == 1 || opnd0.ef == 1) begin
+          // "When the exponents of either or both operands lie in
+          // the XFP or XFN range, the rules for exponent handling
+          // follow the definitions given under MULTIPLY" -- Fig.32
+          // -- and "when either operand has EF of 1, the result
+          // will have a propagated EF of 1 and normalization, if
+          // specified, is suppressed. In this case the result
+          // fraction is the original accumulator fraction."
+          //
+          // THE RANGE TEST USES THE UNMODIFIED OPERAND. p.102:
+          // "the sign modifiers are ignored if either one or both
+          // of the exponents are in the XFP or XFN range" -- and
+          // es is exactly what separates XFP from XFN, so applying
+          // a modifier first would RECLASSIFY the operand and pick
+          // the wrong winner.
+          //
+          // The winner's exponent is taken WHOLE rather than
+          // recomputed: routing it through fpMakeExp would
+          // re-derive ef/em/es from an integer, and jb_af1c
+          // F213A3 pairs the XFP boundary value +2047 with an XFN
+          // -2047 precisely there.
+          FpNum w = fpExpRangeWinner(fpdHead(da), opnd0);
+          v.ef = w.ef; v.em = w.em; v.es = w.es;
+          prop = True;
+        end else begin
+          FpNum oe = opnd0;
+          if (absSign == 1) oe.es = 0;
+          if (invSign == 1) oe.es = ~oe.es;
+          Int#(14) e = signExtend(fpExp(fpdHead(da))) + signExtend(fpExp(oe));
+          let {h0, g} = fpMakeExp(e, 48'b0, da.sign, da.flags);
+          v.ef = h0.ef; v.em = h0.em; v.es = h0.es; gen = g;
+          // "When both operands have EF of 0, the result exponent
+          // may have a GENERATED EF of 1. For this case
+          // normalization, if specified, occurs if ES is 0 and is
+          // suppressed if ES is 1." So a generated EF only
+          // suppresses normalization on the NEGATIVE side; the
+          // arm previously suppressed it for either sign.
+          if (normalized && v.frac != 0 && (v.ef == 0 || v.es == 0)) begin
+            let {w96, adj, lc} = fpNormalize96Wide(0, v.frac, True, noisy);
+            // fpExpFull, not fpExp: at this point v's exponent may
+            // already carry a GENERATED EF (A12's +1073 is held as
+            // EF 1 / EM 49), and the shift has to come off the
+            // whole value, not off the ten-bit field.
+            let {h1, g2} = fpMakeExp(fpExpFull(fpdHead(v)) + adj,
+                                     48'b0, v.sign, v.flags);
+            v.ef = h1.ef; v.em = h1.em; v.es = h1.es; v.frac = w96;
+            gen = gen || g2;
+          end
+        end
+        st.writeWord(addrAccLeft, fpdAccLeft(v));
+        st.writeWord(addrAccRight, fpdAccRight(v, accR));
+        st.writeWord(addrAccSignByte, sbWith(accS, v.sign, sbFlags(accS)));
+        ind = setBit(ind, ind_MOP, 0);
+        FpNum vind = fpdHead(v);
+        vind.frac = (v.frac == 0) ? 0 : 48'b1;
+        ind = setResultIndicatorsFp(ind, vind);
+        ind = setRangeIndicators(ind, fpRangeBits(vind, gen, prop));
+        ind = setBit(ind, ind_ZM, 0);
+      end
+      default: ind = setOpInvalid(ind);
+    endcase
+    return ind;
+  endactionvalue
+endfunction
+
 // What execute() hands back: the next instruction address, progressive
 // indexing's deferred index write, an I/O transfer to start, and the
 // word a still-unsatisfied operand read wants.  Declared here rather
@@ -1779,694 +2494,8 @@ function ActionValue#(ExecResult)
         end else if (prefetchCount < 1)
           needsRead = tagged Valid ea;
         else begin
-          FpNum opnd0 = fpFromWord(prefetch[0]);
-          FpNum opnd = fpApplySignMods(opnd0, fp.absSign, fp.invSign);
-          ind = setBit(ind, ind_TF, opnd0.flags[2]);
-          ind = setBit(ind, ind_UF, opnd0.flags[1]);
-          ind = setBit(ind, ind_VF, opnd0.flags[0]);
-          case (c)
-            fpop_L, fpop_LWF: begin // L / LWF
-              FpNum v = opnd;
-              v.flags = (c == fpop_LWF) ? opnd0.flags : 0;
-              Bool gen = False;
-              if (normalized && v.ef == 0 && v.frac != 0) begin
-                // FORTY-EIGHT BITS, NOT NINETY-SIX.  This is a
-                // 48-bit fraction with no 96-bit intermediate, so
-                // noisy mode's one-bits belong IN it; routing through
-                // fpNormalize96 put them in a low half that is then
-                // discarded, leaving zeros where the shifted-in ones
-                // belong.  jb_af1c F219C1 catches it -- FPK77's
-                // fraction is 000000000007, forty-five leading zeros,
-                // and the answer wanted is ffffffffffff where the
-                // 96-bit route gives e00000000000.
-                //
-                // DL and DLWF are deliberately NOT changed: for LOAD
-                // DOUBLE the vacated positions ARE real accumulator
-                // bits 60-107, so fpNormalize96Wide is right there.
-                let {f48, adj} = fpNormalize48(v.frac, True, noisy);
-                let {vn, g} = fpMakeExp(signExtend(fpExp(v)) + adj, f48, v.sign, v.flags);
-                v = vn; gen = g;
-              end
-              st.writeWord(addrAccLeft, fpAccLeft(v, accL));
-              st.writeWord(addrAccSignByte, fpSignByte(v, accS));
-              ind = setBit(ind, ind_MOP, 0);
-              ind = setResultIndicatorsFp(ind, v);
-              ind = setRangeIndicators(ind, fpRangeBits(v, gen, !gen && v.ef == 1));
-              ind = setBit(ind, ind_ZM, 0);
-            end
-            fpop_LFT: begin // LFT (LOAD FACTOR, p.98)
-              // "The operand specified by the effective address is
-              // placed in the factor register, FT.  The accumulator
-              // does not participate in the operation and remains
-              // unchanged."  So this is LOAD with word 14 as the
-              // destination and no sign byte: exponent and fraction to
-              // FT bits 0-59, the sign-modified sign to FT bit 60, and
-              // "FT bits 61-63 are set to zero" -- which is why
-              // v.flags is cleared rather than taken from the operand
-              // the way LWF takes it.  fpMakeExp passes flags through
-              // unaltered, so the zero survives the normalized path.
-              //
-              // FT IS THE ONLY REGISTER NO OTHER OPERATION TOUCHES:
-              // p.98, "LOAD FACTOR is the only operation which changes
-              // the contents of FT as an integral part of its
-              // performance.  FT is not changed by any other operation
-              // unless it is addressed explicitly."
-              FpNum v = opnd;
-              v.flags = 0;
-              Bool gen = False;
-              // "If a shift of 48 or more is required, normalization is
-              // suppressed and the order of magnitude zero is stored in
-              // bits 0-59."  A 48-bit fraction needs a shift of 48 or
-              // more exactly when it is ZERO -- any one-bit is within
-              // 47 places of the top -- so LOAD's `frac != 0` guard is
-              // that rule, not merely an optimization: a zero fraction
-              // skips normalization and keeps the operand's own
-              // exponent, which is what an order-of-magnitude zero is.
-              if (normalized && v.ef == 0 && v.frac != 0) begin
-                // FORTY-EIGHT BITS, NOT NINETY-SIX.  This is a
-                // 48-bit fraction with no 96-bit intermediate, so
-                // noisy mode's one-bits belong IN it; routing through
-                // fpNormalize96 put them in a low half that is then
-                // discarded, leaving zeros where the shifted-in ones
-                // belong.  jb_af1c F219C1 catches it -- FPK77's
-                // fraction is 000000000007, forty-five leading zeros,
-                // and the answer wanted is ffffffffffff where the
-                // 96-bit route gives e00000000000.
-                //
-                // DL and DLWF are deliberately NOT changed: for LOAD
-                // DOUBLE the vacated positions ARE real accumulator
-                // bits 60-107, so fpNormalize96Wide is right there.
-                let {f48, adj} = fpNormalize48(v.frac, True, noisy);
-                let {vn, g} = fpMakeExp(signExtend(fpExp(v)) + adj, f48, v.sign, v.flags);
-                v = vn; gen = g;
-              end
-              st.writeWord(addrFactor, fpToWord(v));
-              ind = setBit(ind, ind_MOP, 0);
-              ind = setResultIndicatorsFp(ind, v);
-              // p.98 lists XPU alongside XPFP/XPH/XPL where LOAD's list
-              // has only the first three -- LOAD cannot drive an
-              // exponent down, LFT's normalization can.  fpRangeBits
-              // already derives XPU from `generated && es == 1`, so the
-              // call is LOAD's unchanged and the difference is in which
-              // inputs can reach it, not in the function.
-              ind = setRangeIndicators(ind, fpRangeBits(v, gen, !gen && v.ef == 1));
-              ind = setBit(ind, ind_ZM, 0);
-            end
-            fpop_DL, fpop_DLWF: begin // DL / DLWF (p.96)
-              // LOAD DOUBLE "is the same as LOAD except that the
-              // accumulator bits 60-107 are set to zero": the exponent
-              // and fraction replace bits 0-59, bits 60-107 -- the low
-              // half of the double-precision 96-bit fraction -- are
-              // cleared, and bits 108-127 remain unchanged. DLWF
-              // additionally takes the addressed operand's flag bits
-              // into the sign byte's bits 5-7 (and the TF/UF/VF
-              // indicators), where DL zeroes them; that is the same
-              // difference L and LWF already have.
-              //
-              // In the accumulator's 128 magnitude bits, IBM bit n is
-              // bit 127-n, so the fraction's low half lands as the
-              // left half's bits 60-63 and the right half's 64-107,
-              // and 108-127 are the right half's low 20 bits.
-              //
-              // Normalization is over the WHOLE 96-bit fraction. With
-              // the low half zero the shift can still only be up to 47
-              // places (the leading one is in the high half), so the
-              // exponent adjustment matches LOAD's -- but noisy mode
-              // does differ: its one-bits go into the vacated
-              // low-order positions, which here are real accumulator
-              // bits 60-107 rather than bits that fall off the end.
-              // That is why this uses fpNormalize96Wide.
-              FpNum v = opnd;
-              v.flags = (c == fpop_DLWF) ? opnd0.flags : 0;
-              Bit#(96) f96 = {v.frac, 48'b0};
-              Bool gen = False;
-              if (normalized && v.ef == 0 && v.frac != 0) begin
-                let {w96, adj, lc} = fpNormalize96Wide(0, f96, True, noisy);
-                let {vn, g} = fpMakeExp(signExtend(fpExp(v)) + adj, w96[95:48], v.sign, v.flags);
-                v = vn; gen = g; f96 = w96;
-              end
-              Word64 accR = st.readAccRight();
-              st.writeWord(addrAccLeft, { v.ef, v.em, v.es, v.frac, f96[47:44] });
-              st.writeWord(addrAccRight, { f96[43:0], accR[19:0] });
-              st.writeWord(addrAccSignByte, fpSignByte(v, accS));
-              ind = setBit(ind, ind_MOP, 0);
-              ind = setResultIndicatorsFp(ind, v);
-              ind = setRangeIndicators(ind, fpRangeBits(v, gen, !gen && v.ef == 1));
-              ind = setBit(ind, ind_ZM, 0);
-            end
-            fpop_D_PLUS, fpop_D_PLUS_MG: begin // D+ / D+MG (p.95)
-              // ADD DOUBLE works on the accumulator's whole 96-bit
-              // fraction, IBM bits 12-107, against a storage operand
-              // extended with 48 low-order zeros. Bits 108-127 are
-              // outside the fraction and are carried through
-              // untouched, exactly as for DL.
-              Word64 accR = st.readAccRight();
-              FpDouble da = fpdFromAcc(accL, accR, accS);
-              FpDouble db = fpdFromWord(prefetch[0]);
-              db.sign = opnd.sign;   // the sign modifiers, already applied
-              FpdResult r = fpAddDouble(da, db, normalized, noisy, c == fpop_D_PLUS_MG);
-              // ADD DOUBLE TO MAGNITUDE keeps the accumulator's OWN
-              // sign whatever the sum did -- "the sign remains
-              // unchanged" for a positive sum, and for a forced zero
-              // "the sign and exponent of the accumulator operand
-              // remain equal to the original" (p.95). fpAddDouble
-              // forced a.sign positive to decide the forced zero, so
-              // put the real one back here, exactly as the +MG arm
-              // does with acc.sign.
-              if (c == fpop_D_PLUS_MG) r.res.sign = sbSign(accS);
-              st.writeWord(addrAccLeft, fpdAccLeft(r.res));
-              st.writeWord(addrAccRight, fpdAccRight(r.res, accR));
-              // ADD leaves sign byte bits 0-3 and 5-7 alone and replaces
-              // only bit 4 with the sum's sign (p.86), and D+ is "similar
-              // to ADD". Take the flag bits from accS and say so, rather
-              // than from r.res: on the unflagged path r.res.flags is
-              // the accumulator's own and the two agree, but the FLAGGED
-              // path returns one operand WHOLE, so when the survivor is
-              // the storage operand r.res.flags is ITS flags. jb_af1c
-              // F208C2 is exactly that case -- an all-ones accumulator
-              // (flags 111) plus FPK0 (flags 000) -- and the listing
-              // demands 111 afterward. The TF/UF/VF INDICATORS are a
-              // separate thing and do come from the addressed operand
-              // (p.87, set above for every FP op with an operand).
-              st.writeWord(addrAccSignByte, sbWith(accS, r.res.sign, sbFlags(accS)));
-              ind = setBit(ind, ind_MOP, 0);
-              // The result indicators only ever ask whether the result
-              // fraction is zero and what its sign is, so they are fed
-              // a narrow view whose fraction is zero exactly when the
-              // 96-bit one is.
-              FpNum vind = fpdHead(r.res);
-              vind.frac = (r.res.frac == 0) ? 0 : 48'b1;
-              ind = setResultIndicatorsFp(ind, vind);
-              if (r.lc) ind = setBit(ind, ind_LC, 1);
-              if (r.ls) ind = setBit(ind, ind_LS, 1);
-              if (r.psh) ind = setBit(ind, ind_PSH, 1);
-              ind = setRangeIndicators(ind, fpRangeBits(vind, r.generated, r.propagated));
-              ind = setBit(ind, ind_ZM, 0);
-            end
-            fpop_F_PLUS: begin // F+ (ADD TO FRACTION, p.101)
-              // "The operation is the same as ADD DOUBLE except that
-              // the exponent of the operand in the accumulator is used
-              // for both the addressed operand and the operand in the
-              // accumulator." So the storage operand keeps its
-              // fraction, its sign -- modified by the sign modifiers
-              // before the addition, exactly as for D+ -- and its own
-              // data FLAGS; only ef/em/es are replaced.
-              //
-              // p.101 also says "when the accumulator operand is a
-              // value in the XFP or XFN range, the fraction addition
-              // is not performed." That needs no arm of its own:
-              // forcing the accumulator's exponent onto the storage
-              // operand puts BOTH operands in the SAME range with
-              // EQUAL exponents, and fpAddDouble's like-flagged
-              // TIE-BREAK -- `(fpExp(hb) > fpExp(ha)) ? b : a`, which
-              // overwrites the range ladder above it rather than
-              // being an else on it -- then returns `a`, the
-              // accumulator, because the comparison is strict.
-              // jb_af1c F212XA1-XA3 (an XFP accumulator) and XA7-XA9
-              // (XFN) are exactly that case and demand the
-              // accumulator back untouched; relaxing the `>` to `>=`
-              // halts XA1 at 016654.40. F+ is the only op that makes
-              // the two exponents equal, so those six rows are the
-              // only cover that comparison has at equality.
-              // Conversely XA4 pairs an N accumulator with an XFP
-              // OPERAND and DOES demand the addition -- which is why
-              // the exponent must be forced BEFORE the range test,
-              // not after; dropping the substitution halts XA4 at
-              // 016676.40.
-              Word64 accR = st.readAccRight();
-              FpDouble da = fpdFromAcc(accL, accR, accS);
-              FpDouble db = fpdFromWord(prefetch[0]);
-              db.sign = opnd.sign;   // the sign modifiers, already applied
-              db.ef = da.ef; db.em = da.em; db.es = da.es;
-              FpdResult r = fpAddDouble(da, db, normalized, noisy, False);
-              st.writeWord(addrAccLeft, fpdAccLeft(r.res));
-              st.writeWord(addrAccRight, fpdAccRight(r.res, accR));
-              // Sign byte: bit 4 from the sum, flags from accS. NOTE
-              // that for F+, unlike D+, sbFlags(accS) and r.res.flags
-              // are provably the SAME thing: fpAddDouble's unflagged
-              // path builds its result with `flags: a.flags` always,
-              // and the exponent substitution above makes any flagged
-              // pair like-flagged with EQUAL exponents, so the
-              // tie-break returns `a`. There is no F+ input that can
-              // separate them, and jb_af1c F212XC1 does not, despite
-              // addressing an operand whose flag bits are 111 against
-              // a just-zeroed accumulator ("MEM FLAGS+7") -- injecting
-              // r.res.flags here leaves XC green. accS is written for
-              // uniformity with D+, where the two DO differ (its
-              // flagged path can return the storage operand whole) and
-              // where F208C2 pins the choice.
-              st.writeWord(addrAccSignByte, sbWith(accS, r.res.sign, sbFlags(accS)));
-              ind = setBit(ind, ind_MOP, 0);
-              FpNum vind = fpdHead(r.res);
-              vind.frac = (r.res.frac == 0) ? 0 : 48'b1;
-              ind = setResultIndicatorsFp(ind, vind);
-              // F212XA6 adds 000000000001_ffffffffffff to
-              // ffffffffffff_000000000000 and demands high 000...0,
-              // low fff...f, an UNCHANGED exponent of +2 and LC ON:
-              // the carry out of the 96-bit fraction is simply lost.
-              if (r.lc) ind = setBit(ind, ind_LC, 1);
-              // LS is reachable for F+ -- an exact cancellation gives a
-              // zero result fraction with non-zero operands -- but no
-              // row in F212-X produces one. PSH is not reachable at
-              // all: fpAddDouble computes it from |ea - eb|, and the
-              // substitution above forces that difference to zero, so
-              // `adiff > 48` is never true (nor is the `adiff > 95`
-              // early return). The line stays anyway, because keeping
-              // this arm shaped like D+'s is worth more than pruning
-              // dead uniformity -- but it is dead, not merely untested.
-              if (r.ls) ind = setBit(ind, ind_LS, 1);
-              if (r.psh) ind = setBit(ind, ind_PSH, 1);
-              ind = setRangeIndicators(ind, fpRangeBits(vind, r.generated, r.propagated));
-              ind = setBit(ind, ind_ZM, 0);
-            end
-            fpop_PLUS, fpop_PLUS_MG: begin // + / +MG
-              FpResult r = fpAdd(acc, opnd, normalized, noisy, c == fpop_PLUS_MG, False);
-              // ADD TO MAGNITUDE (p.88): only the accumulator's MAGNITUDE
-              // takes part, and the result keeps the accumulator's own
-              // sign -- a forced zero included. jb_af1c F205B checks the
-              // sign byte after every +MG/+MGA/-MG/-MGA: bit 1 whenever
-              // the accumulator was loaded with LN, whatever the sum.
-              if (c == fpop_PLUS_MG) r.res.sign = acc.sign;
-              st.writeWord(addrAccLeft, fpAccLeft(r.res, accL));
-              // Sign byte bits 5-7 are the accumulator's own, for the
-              // same reason as D+ below: p.86 is ADD's own page and says
-              // bits 0-3 and 5-7 "remain unchanged", but fpAdd's FLAGGED
-              // path returns one operand WHOLE, so r.res.flags is the
-              // STORAGE operand's whenever that operand is the survivor.
-              // Proven for D+ by jb_af1c F208C2; NOT proven here, because
-              // jb_af1c has no "TEST UNCHANGED REGISTERS" routine for
-              // plain ADD -- F203 ends at F203B, the exponent-range
-              // indicator test, and F204 begins straight after. F205C
-              // checks +MG's sign byte bits 0-3 only, not 5-7.
-              st.writeWord(addrAccSignByte, sbWith(accS, r.res.sign, sbFlags(accS)));
-              ind = setBit(ind, ind_MOP, 0);
-              ind = setResultIndicatorsFp(ind, r.res);
-              if (r.lc) ind = setBit(ind, ind_LC, 1);
-              if (r.ls) ind = setBit(ind, ind_LS, 1);
-              if (r.psh) ind = setBit(ind, ind_PSH, 1);
-              ind = setRangeIndicators(ind, fpRangeBits(r.res, r.generated, r.propagated));
-              ind = setBit(ind, ind_ZM, 0);
-            end
-            fpop_M_PLUS, fpop_M_PLUS_MG: begin // M+ / M+MG
-              FpNum a = acc;
-              FpNum b = opnd0; if (fp.absSign == 1) b.sign = 0;
-              // ADD MAGNITUDE TO MEMORY (p.89): "the accumulator operand
-              // sign is assumed positive BEFORE the negative sign
-              // modification occurs". The negative-sign modifier here
-              // is the one the M-MG mnemonic sets (fp.invSign), NOT
-              // the (N) in M+MG(N), which is the normalization
-              // modifier: M-MG adds a NEGATIVE accumulator operand,
-              // not the negation of whatever sign it was loaded with.
-              // (fpAdd leaves this to the caller for the to-memory
-              // direction; see its header.)
-              if (c == fpop_M_PLUS_MG) a.sign = 0;
-              if (fp.invSign == 1) a.sign = ~a.sign;
-              FpResult r = fpAdd(b, a, normalized, noisy, c == fpop_M_PLUS_MG, True);
-              FpNum v = r.res; v.flags = opnd0.flags;
-              // ADD MAGNITUDE TO MEMORY keeps the ADDRESSED operand's own
-              // original sign, whatever the sum's: only its magnitude took
-              // part. The mirror of p.88's rule for the accumulator-
-              // changing direction -- "in an ADD TO MAGNITUDE operation,
-              // the sign byte register bit position 4 never changes" --
-              // and of the +MG line above. It covers the forced zero
-              // (p.83: "the unmodified original fraction sign of the
-              // addressed operand in ADD MAGNITUDE TO MEMORY", which is
-              // opnd0's, NOT b's after the absolute modifier) and the
-              // ordinary sum alike. jb_af1c F206B19/B24: M+MGA and M-MGA
-              // of a NEGATIVE memory operand, whose sign A makes positive
-              // for the arithmetic; the sum is positive, and the sign
-              // stored is still the negative one. Storing the sum's sign
-              // halted at B19's BB.
-              if (c == fpop_M_PLUS_MG) v.sign = opnd0.sign;
-              st.writeWord(ea, fpToWord(v));
-              ind = setBit(ind, ind_MOP, 1);
-              ind = setResultIndicatorsFp(ind, v);
-              if (r.lc) ind = setBit(ind, ind_LC, 1);
-              if (r.ls) ind = setBit(ind, ind_LS, 1);
-              if (r.psh) ind = setBit(ind, ind_PSH, 1);
-              ind = setRangeIndicators(ind, fpRangeBits(v, r.generated, r.propagated));
-              ind = setBit(ind, ind_ZM, 0);
-            end
-            fpop_K, fpop_KMG, fpop_KR, fpop_KMGR: begin // K / KMG / KR / KMGR
-              Bool magnitude = (c == fpop_KMG || c == fpop_KMGR);
-              Bool range = (c == fpop_KR || c == fpop_KMGR);
-              Int#(2) cmp = fpCompare(acc, opnd, magnitude, normalized, noisy);
-              ind = setBit(ind, ind_MOP, 0);
-              Int#(13) ea_ = fpExp(acc), eb_ = fpExp(opnd);
-              Int#(14) d = signExtend(ea_) - signExtend(eb_);
-              if (acc.ef == 0 && opnd.ef == 0 && ((d > 48) || (d < -48))) ind = setBit(ind, ind_PSH, 1);
-              if (!range) begin
-                ind = setBit(ind, ind_AL, pack(cmp < 0));
-                ind = setBit(ind, ind_AE, pack(cmp == 0));
-                ind = setBit(ind, ind_AH, pack(cmp > 0));
-              end else if (ind[63 - ind_AH] == 1) begin
-                // KR/KMGR (Compare for Range), Ref. Manual p.91: when
-                // the gate AH is on, set AE to "accumulator low"
-                // (acc < operand). AL and AH are NOT changed -- AH is
-                // the input gate, not a result; and when AH is off the
-                // comparison indicators are left unchanged (the
-                // fall-through of this `else if`). Verified against
-                // jb_af1c F202G11-18 (programs/fp_compare_f202g.strap).
-                ind = setBit(ind, ind_AE, pack(cmp < 0));
-              end
-            end
-            fpop_STAR: begin // *
-              FpResult r = fpMul(acc, opnd, normalized, noisy);
-              st.writeWord(addrAccLeft, fpAccLeft(r.res, accL));
-              st.writeWord(addrAccSignByte, fpSignByte(r.res, accS));
-              ind = setBit(ind, ind_MOP, 0);
-              ind = setResultIndicatorsFp(ind, r.res);
-              ind = setRangeIndicators(ind, fpRangeBits(r.res, r.generated, r.propagated));
-              ind = setBit(ind, ind_ZM, pack(r.zm));
-            end
-            fpop_SLASH: begin // / (DIVIDE, pp.93-94)
-              // "The operand in the left half of the accumulator, the
-              // dividend, is divided by the addressed operand, the
-              // divisor. ... The quotient exponent and fraction replace
-              // accumulator bits 0-59.  Accumulator bits 60-127 remain
-              // unchanged.  The quotient sign replaces the accumulator
-              // sign in bit position 4 of the sign byte register.  No
-              // remainder is retained by this operation."
-              //
-              // So the accumulator's RIGHT word is never written, and
-              // fpAccLeft carries IBM 60-63 through -- the same shape
-              // MULTIPLY has, and the reason / needs no readAccRight.
-              FpDivResult r = fpDiv(acc, opnd, normalized, noisy);
-              ind = setBit(ind, ind_MOP, 0);
-              if (r.zd) begin
-                // p.93: "When division is suppressed because of a zero
-                // divisor, the accumulator and the sign byte register
-                // remain unchanged.  The data flag and MOP indicators
-                // will be set but the arithmetic result and exponent
-                // range indicators are not changed."  Nothing is
-                // written -- not even the same value back -- and ZM is
-                // left alone too, since p.94 turns ZM off "except for
-                // the case of a zero divisor".
-                ind = setBit(ind, ind_ZD, 1);
-              end else begin
-                st.writeWord(addrAccLeft, fpAccLeft(r.res, accL));
-                st.writeWord(addrAccSignByte, fpSignByte(r.res, accS));
-                // LZC is IBM bits 17-23 of word 7 and shares that word
-                // with the all-ones count at 44-50, which has to
-                // survive; IBM bit n is model bit 63-n, so 17-23 is
-                // [46:40].  p.94: the count "remains available for
-                // program use until the LZC is changed by integer
-                // multiplication, LOAD TRANSIT, division or connective
-                // operations".  NOTHING IN F217 READS IT, nor PF which
-                // is derived from it -- both are manual-only here.
-                Word64 zoc = st.readZerosOnesCounts();
-                st.writeWord(addrLeftZerosCount, { zoc[63:47], r.lzc, zoc[39:0] });
-                ind = setResultIndicatorsFp(ind, r.res);
-                ind = setRangeIndicators(ind, fpRangeBits(r.res, r.generated, r.propagated));
-                if (r.pf) ind = setBit(ind, ind_PF, 1);
-                ind = setBit(ind, ind_ZM, 0);
-              end
-            end
-            fpop_R_SLASH: begin // R/ (RECIPROCAL DIVIDE, p.94)
-              // "The operand specified by the effective address, the
-              // dividend, is divided by the operand in the left half of
-              // the accumulator, the divisor.  The sign of the dividend
-              // is modified by the sign modifiers prior to the
-              // division. ... The division process is the same as the
-              // process described in DIVIDE with the exception of the
-              // interchange of the operands used for dividends and
-              // divisor."
-              //
-              // So the whole of R/ is fpDiv with its two arguments the
-              // other way round.  The sign modifiers still land on the
-              // ADDRESSED operand, which here is the dividend rather
-              // than the divisor, and `opnd` already carries them.
-              FpDivResult r = fpDiv(opnd, acc, normalized, noisy);
-              ind = setBit(ind, ind_MOP, 0);
-              if (r.zd) begin
-                // The zero divisor is now the ACCUMULATOR's fraction.
-                // Nothing is written, as in DIVIDE; jb_af1c F217XA8
-                // checks it from that side, asking that "the divisor
-                // remains in the accumulator".
-                ind = setBit(ind, ind_ZD, 1);
-              end else begin
-                st.writeWord(addrAccLeft, fpAccLeft(r.res, accL));
-                // Spelled out rather than fpSignByte'd, because for R/
-                // the result's flag bits come from the DIVIDEND, which
-                // is the storage operand -- the accumulator's own flags
-                // are what must survive, as everywhere else.  For / the
-                // two happen to coincide.
-                st.writeWord(addrAccSignByte, sbWith(accS, r.res.sign, sbFlags(accS)));
-                Word64 zoc = st.readZerosOnesCounts();
-                st.writeWord(addrLeftZerosCount, { zoc[63:47], r.lzc, zoc[39:0] });
-                ind = setResultIndicatorsFp(ind, r.res);
-                ind = setRangeIndicators(ind, fpRangeBits(r.res, r.generated, r.propagated));
-                if (r.pf) ind = setBit(ind, ind_PF, 1);
-                ind = setBit(ind, ind_ZM, 0);
-              end
-            end
-            fpop_D_SLASH: begin // D/ (DIVIDE DOUBLE, p.94)
-              // "The quotient exponent and fraction replace accumulator
-              // bits 0-60.  Accumulator bits 61-107 are set to zero.
-              // The sign of the quotient replaces the accumulator sign.
-              // Accumulator bits 108-127 remain unchanged.  The
-              // remainder is placed in the remainder register, RM
-              // address 13.  The original accumulator sign becomes the
-              // sign of the remainder RM register bit 60.  The flag
-              // bits 61-63 of the remainder register are set to zero."
-              //
-              // So the accumulator's left word carries the exponent,
-              // FORTY-EIGHT quotient bits and then the FORTY-NINTH in
-              // IBM 60, with 61-63 zero; the right word is zeroed
-              // through IBM 107 and keeps 108-127.  That 49th bit is
-              // what makes the field 0-60 rather than DIVIDE's 0-59,
-              // and jb_af1c F217WA checks it in every sub-test.
-              Word64 accR = st.readAccRight();
-              FpDouble da = fpdFromAcc(accL, accR, accS);
-              FpDivDblResult r = fpDivDouble(da, opnd, normalized, noisy);
-              ind = setBit(ind, ind_MOP, 0);
-              if (r.zd) begin
-                // As in DIVIDE: nothing is written and the result and
-                // range indicators are left alone.
-                ind = setBit(ind, ind_ZD, 1);
-              end else begin
-                st.writeWord(addrAccLeft,
-                             { r.res.ef, r.res.em, r.res.es, r.res.frac, r.q49, 3'b0 });
-                st.writeWord(addrAccRight, { 44'b0, accR[19:0] });
-                st.writeWord(addrAccSignByte, fpSignByte(r.res, accS));
-                // RM: exponent and fraction in bits 0-59, the ORIGINAL
-                // accumulator sign in bit 60, flags 61-63 zero.
-                st.writeWord(addrRemainder,
-                             { r.rem.ef, r.rem.em, r.rem.es, r.rem.frac, r.rem.sign, 3'b0 });
-                Word64 zoc = st.readZerosOnesCounts();
-                st.writeWord(addrLeftZerosCount, { zoc[63:47], r.lzc, zoc[39:0] });
-                FpNum vind = r.res;
-                vind.frac = (r.res.frac == 0 && r.q49 == 0) ? 0 : 48'b1;
-                ind = setResultIndicatorsFp(ind, vind);
-                ind = setRangeIndicators(ind, fpRangeBits(r.res, r.generated, r.propagated));
-                if (r.pf) ind = setBit(ind, ind_PF, 1);
-                if (r.lc) ind = setBit(ind, ind_LC, 1);
-                if (r.ru) ind = setBit(ind, ind_RU, 1);
-                ind = setBit(ind, ind_ZM, 0);
-              end
-            end
-            fpop_D_STAR: begin // D* (multiply double, p.97): "the same
-                              // as MULTIPLY, except that the 96-bit
-                              // product fraction is placed in
-                              // accumulator bits 12-107" -- so where *
-                              // keeps the product's high half and drops
-                              // the rest, D* keeps all of it, and IBM
-                              // 60-63 (which * preserves) become part
-                              // of the result fraction.
-              // Accumulator bits 108-127 lie outside the product field
-              // and survive; fpdAccRight carries oldRight[19:0]
-              // through.  jb_af1c F214XB1/XB2 check exactly that, with
-              // a CT0101/CT1010 over R 44-63 = IBM 108-127.
-              //
-              // The MULTIPLIER is taken as the 48-bit accumulator
-              // fraction of bits 12-59, as under MULTIPLY, on the
-              // reading that p.97 changes only where the product GOES.
-              // NOTHING IN F214-X CHECKS THAT, and structurally cannot:
-              // every XA sub-test enters with IBM 60-107 already zero
-              // (INJ1, which never wrote the right word, still passed
-              // XA1's low-half check against zero), and with a zero low
-              // half a 96-bit multiplier gives the identical product;
-              // XB's accumulator low half is NOT zero but XB inspects
-              // only IBM 108-127 and the sign byte. Manual-only until a
-              // later block loads the low half with DL and multiplies.
-              Word64 accR = st.readAccRight();
-              FpdResult r = fpMulDouble(acc, opnd, normalized, noisy);
-              st.writeWord(addrAccLeft, fpdAccLeft(r.res));
-              st.writeWord(addrAccRight, fpdAccRight(r.res, accR));
-              st.writeWord(addrAccSignByte, sbWith(accS, r.res.sign, r.res.flags));
-              ind = setBit(ind, ind_MOP, 0);
-              // The indicators want a 48-bit stand-in; only "is the
-              // fraction zero" matters and that is a 96-bit question.
-              FpNum rind = fpdHead(r.res);
-              rind.frac = (r.res.frac == 0) ? 0 : 48'b1;
-              ind = setResultIndicatorsFp(ind, rind);
-              ind = setRangeIndicators(ind, fpRangeBits(rind, r.generated, r.propagated));
-              ind = setBit(ind, ind_ZM, pack(r.zm));
-            end
-            fpop_STAR_PLUS: begin // *+ (MULTIPLY AND ADD, pp.98-99)
-              // "The operand in the FT register, designated as the
-              // multiplicand, is multiplied by the operand specified by
-              // the effective address, designated as the multiplier.
-              // The product is added to the contents of the
-              // accumulator, bits 0-107.  The sum exponent and fraction
-              // replace accumulator bits 0-107.  The sign of the sum
-              // replaces the accumulator sign, sign byte register bit
-              // 4.  Accumulator bits 108-127 remain unchanged."
-              //
-              // So it is fpMulDouble feeding fpAddDouble, and the
-              // manual says so: "the intermediate product fraction
-              // remains unnormalized throughout the addition" and
-              // "subsequent to the multiplication, an addition is
-              // performed similar to that described in ADD DOUBLE".
-              //
-              // THE ARGUMENT ORDER OF THE MULTIPLY IS LOAD-BEARING, and
-              // it is the one place *+ differs from MULTIPLY.  p.99:
-              // "When both operands are in the XFP range or both in the
-              // XFN range, the product exponent is the exponent of the
-              // operand specified by the EFFECTIVE ADDRESS" -- where
-              // Fig.32, and so fpMul and D*, give it to the accumulator
-              // side.  fpExpRangeWinner resolves a same-range pair to
-              // its FIRST argument, so passing (opnd, ftv) is exactly
-              // that rule and nothing else in fpMulDouble is
-              // asymmetric: the sign is an xor, the fraction a product,
-              // and the unflagged exponent a sum.
-              //
-              // Note this is NOT only a tie-break here.  p.99 gives the
-              // effective address the exponent whenever both operands
-              // share a flagged range, whatever their magnitudes --
-              // which is why the rule cannot be expressed by ordering
-              // the arguments to a comparison.
-              Word64 accR = st.readAccRight();
-              FpDouble da = fpdFromAcc(accL, accR, accS);
-              FpNum ftv = fpFromWord(st.readFactor());
-              // Normalization and noisy mode belong to the ADDITION
-              // only: p.99, "the intermediate product fraction remains
-              // unnormalized throughout the addition", and noisy's
-              // one-bits enter "during the left shifting associated
-              // with normalization" of the sum.
-              FpdResult m = fpMulDouble(opnd, ftv, False, False);
-              FpdResult r = fpAddDouble(da, m.res, normalized, noisy, False);
-              st.writeWord(addrAccLeft, fpdAccLeft(r.res));
-              st.writeWord(addrAccRight, fpdAccRight(r.res, accR));
-              // The sign byte takes the sum's sign and the ACCUMULATOR's
-              // flag bits, as ADD DOUBLE does -- so r.res.flags never
-              // reaches storage and m.res.flags (which fpMulDouble takes
-              // from its first argument, here the storage operand) is
-              // inert.  Said explicitly because it looks like it matters.
-              st.writeWord(addrAccSignByte, sbWith(accS, r.res.sign, sbFlags(accS)));
-              ind = setBit(ind, ind_MOP, 0);
-              FpNum vind = fpdHead(r.res);
-              vind.frac = (r.res.frac == 0) ? 0 : 48'b1;
-              ind = setResultIndicatorsFp(ind, vind);
-              if (r.lc) ind = setBit(ind, ind_LC, 1);
-              if (r.ls) ind = setBit(ind, ind_LS, 1);
-              if (r.psh) ind = setBit(ind, ind_PSH, 1);
-              // p.99's generated/propagated rule falls out of the
-              // composition rather than needing code.  "Generated if all
-              // operands are initially in the N range" is fpAddDouble's
-              // unflagged path (gen from fpMakeExp, propagated False);
-              // "or if the intermediate product has a value in the XFN
-              // range with a propagated exponent flag while the
-              // accumulator operand is in the N range but the sum has EF
-              // of 1, ES of 1 owing to final normalization" is its
-              // FLAGGED path, where an unflagged survivor still
-              // normalizes and fpMakeExp reports the underflow -- and
-              // fpRangeBits' propagated arm requires es == 0, so an
-              // es == 1 result falls through to the generated one.
-              // "All other cases lead to a propagated EF of 1" is
-              // r.propagated = (res.ef == 1).  Nothing in F216A checks
-              // an indicator, so none of this is covered there.
-              ind = setRangeIndicators(ind, fpRangeBits(vind, r.generated, r.propagated));
-              // p.99: "If the final result, after addition, is an order
-              // of magnitude zero with exponent greater than -1024 this
-              // indicator will be turned on, otherwise, if on, it will
-              // be turned off."  Unlike MULTIPLY's ZM this carries no
-              // `normalized` term.
-              ind = setBit(ind, ind_ZM,
-                           pack((r.res.frac == 0) && (fpExpFull(vind) > -1024)));
-            end
-            fpop_E_PLUS: begin // E+ (add to exponent, p.102): the
-                              // addressed operand's exponent (its sign
-                              // subject to the sign modifiers) is added
-                              // to the accumulator's exponent; fraction
-                              // and sign of the operand are ignored.
-              // NORMALIZATION HERE IS 96-BIT.  p.102: "When normalized
-              // operation is specified, the accumulator exponent and
-              // fraction bits 12-107 are normalized.  Accumulator bits
-              // 108-127 and the sign byte register remain unchanged."
-              // jb_af1c F213A12 is what forces it: a high half of
-              // 000fffffffff over a low half of ffffffffffff, and after
-              // a normalized E+ the listing demands high ffffffffffff
-              // (FK57) and LOW fffffffff000 (FK48) -- the twelve
-              // leading zeros leave the whole IBM 12-107 fraction,
-              // pulling the low half up, and the exponent drops by 12
-              // from +1073 to FK57's +1061.  A13 checks it again
-              // independently with a shift of 10.  This arm used to
-              // normalize {frac, 48'b0} and never wrote addrAccRight.
-              Word64 accR = st.readAccRight();
-              FpDouble da = fpdFromAcc(accL, accR, accS);
-              FpDouble v = da; Bool gen = False; Bool prop = False;
-              if (da.ef == 1 || opnd0.ef == 1) begin
-                // "When the exponents of either or both operands lie in
-                // the XFP or XFN range, the rules for exponent handling
-                // follow the definitions given under MULTIPLY" -- Fig.32
-                // -- and "when either operand has EF of 1, the result
-                // will have a propagated EF of 1 and normalization, if
-                // specified, is suppressed. In this case the result
-                // fraction is the original accumulator fraction."
-                //
-                // THE RANGE TEST USES THE UNMODIFIED OPERAND. p.102:
-                // "the sign modifiers are ignored if either one or both
-                // of the exponents are in the XFP or XFN range" -- and
-                // es is exactly what separates XFP from XFN, so applying
-                // a modifier first would RECLASSIFY the operand and pick
-                // the wrong winner.
-                //
-                // The winner's exponent is taken WHOLE rather than
-                // recomputed: routing it through fpMakeExp would
-                // re-derive ef/em/es from an integer, and jb_af1c
-                // F213A3 pairs the XFP boundary value +2047 with an XFN
-                // -2047 precisely there.
-                FpNum w = fpExpRangeWinner(fpdHead(da), opnd0);
-                v.ef = w.ef; v.em = w.em; v.es = w.es;
-                prop = True;
-              end else begin
-                FpNum oe = opnd0;
-                if (fp.absSign == 1) oe.es = 0;
-                if (fp.invSign == 1) oe.es = ~oe.es;
-                Int#(14) e = signExtend(fpExp(fpdHead(da))) + signExtend(fpExp(oe));
-                let {h0, g} = fpMakeExp(e, 48'b0, da.sign, da.flags);
-                v.ef = h0.ef; v.em = h0.em; v.es = h0.es; gen = g;
-                // "When both operands have EF of 0, the result exponent
-                // may have a GENERATED EF of 1. For this case
-                // normalization, if specified, occurs if ES is 0 and is
-                // suppressed if ES is 1." So a generated EF only
-                // suppresses normalization on the NEGATIVE side; the
-                // arm previously suppressed it for either sign.
-                if (normalized && v.frac != 0 && (v.ef == 0 || v.es == 0)) begin
-                  let {w96, adj, lc} = fpNormalize96Wide(0, v.frac, True, noisy);
-                  // fpExpFull, not fpExp: at this point v's exponent may
-                  // already carry a GENERATED EF (A12's +1073 is held as
-                  // EF 1 / EM 49), and the shift has to come off the
-                  // whole value, not off the ten-bit field.
-                  let {h1, g2} = fpMakeExp(fpExpFull(fpdHead(v)) + adj,
-                                           48'b0, v.sign, v.flags);
-                  v.ef = h1.ef; v.em = h1.em; v.es = h1.es; v.frac = w96;
-                  gen = gen || g2;
-                end
-              end
-              st.writeWord(addrAccLeft, fpdAccLeft(v));
-              st.writeWord(addrAccRight, fpdAccRight(v, accR));
-              st.writeWord(addrAccSignByte, sbWith(accS, v.sign, sbFlags(accS)));
-              ind = setBit(ind, ind_MOP, 0);
-              FpNum vind = fpdHead(v);
-              vind.frac = (v.frac == 0) ? 0 : 48'b1;
-              ind = setResultIndicatorsFp(ind, vind);
-              ind = setRangeIndicators(ind, fpRangeBits(vind, gen, prop));
-              ind = setBit(ind, ind_ZM, 0);
-            end
-            default: ind = setOpInvalid(ind);
-          endcase
+          ind <- fpArithClass(st, c, fp.absSign, fp.invSign, ea, acc, accL, accS,
+                              normalized, noisy, prefetch[0], ind);
         end
         end  // AD guard
       end
