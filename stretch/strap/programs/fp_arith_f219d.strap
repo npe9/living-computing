@@ -1,0 +1,192 @@
+! jb_af1c F219 "NOISY MODE TEST ROUTINE", sub-blocks T through Y,
+! pp.173-174 (octal 021641.40-021712.40): store rounded, store low
+! order, multiply double, load factor, multiply and add, divide double.
+!
+! F219C carried P3 through S and stopped at 021641.00.  Noisy mode is
+! still on, so this program re-establishes it one word before the
+! block starts and every address from 021641.40 matches the listing.
+!
+! F219Y CLOSES A STANDING GAP.  The plan has recorded since the divide
+! work that "p.99 gives the remainder register a role nothing uses
+! yet; D/ is what needs it".  F219Y is that block: it divides, checks
+! the quotient, checks the 49TH QUOTIENT BIT on its own -- the
+! listing's own comment reads "NOISY MODE FAILED IF 49TH QUOT BIT NOT
+! A ONE" -- and then loads FK139 and compares it against $RM.  Nothing
+! in the suite had ever read the remainder register.
+!
+! F219T  STORE ROUNDED, and the listing says "TEST NOT AFFECTED BY
+!        NOISY MODE".  FPK87 = +0.003fffffffff at +2 with FPK32's
+!        0xffffffffffff written into the low half, so the 96-bit
+!        fraction has ten leading zeros; normalizing shifts left ten
+!        and the high half becomes 0xffffffffffff at -8.  Rounding
+!        then carries all the way out and gives +0.800000000000 at
+!        -7, which is FK3.  The point is that this answer does not
+!        move when the ten vacated positions are filled with ones
+!        rather than zeros: they are in the low half, and the rounding
+!        carries either way.
+!
+! F219U1 STORE LOW ORDER with the accumulator's exponent at 96.  SLO
+!        normalizes the accumulator's LOW 48 bits on their own (p.97,
+!        "if noisy mode is also specified, ones are entered from the
+!        right during the shifting"), which is the opposite of SRD,
+!        where "noisy mode does not affect this operation".  FPK28 at
+!        +256 with FPK87's fraction below it; expected FK4.
+!
+! F219U2 The same with the accumulator's exponent under 48, and an
+!        operand pair (FPK25, FPK27) that puts an XFN value in the low
+!        half; expected FPK45.
+!
+! F219V  MULTIPLY DOUBLE.  FPK52 times FK5 = 0x29cbb829cbb9 x 0x20,
+!        a product with FORTY-FIVE leading zeros in the 96-bit
+!        register, so the exponent goes from 2+1 = +3 to -42 and the
+!        high half normalizes to FK6's 0xa72ee0a72ee4.  The low half
+!        is checked against FK7's 0x1fffffffffff, which is forty-five
+!        ones and three zeros from the product's own tail: D* keeps
+!        the whole 96-bit product, so unlike single-precision multiply
+!        the noisy fill is part of the answer.
+!
+! F219W  LOAD FACTOR.  LFT(N) of FPK77 normalizes into the FACTOR
+!        register, word 14, and the CT reads that register directly at
+!        offset 4.  FPK77's fraction is 0x000000000007 -- forty-five
+!        leading zeros -- so the answer is FK122's 0xffffffffffff:
+!        every vacated position a one.  This is the load-factor twin
+!        of F219C1's LOAD check, and it is why LFT needed the same
+!        48-bit normalization LOAD did.
+!
+! F219X  MULTIPLY AND ADD.  The accumulator is FK8 with FK9's fraction
+!        below it, the factor is FPK52 loaded unnormalized, and *+
+!        multiplies the factor by FK5 and adds.  Both halves are
+!        checked against FK10.
+!
+! F219Y  DIVIDE DOUBLE, three separate checks: the quotient against
+!        FK138, the 49th quotient bit against FPK80's fraction, and
+!        the REMAINDER register against FK139.
+
+! -- SSIP framework substitutes: SERS (octal 1304) -> FAIL halt,
+! -- SEN (octal 1310) -> scratch.
+        SLC, (8)1304.0
+SERS    BEW, $
+        SLC, (8)1310.0
+SEN     DD(BU,64,8), 0
+
+! -- constants (pools pp.176-179) --
+        SLC, (8)22036.0
+FPK25   DD(BU,64,8), (8)0001560000000000000000
+        SLC, (8)22040.0
+FPK27   DD(BU,64,8), (8)1777677777777777777760
+FPK28   DD(BU,64,8), (8)0200177777777777777760
+        SLC, (8)22045.0
+FPK32   DD(BU,64,8), (8)0001177777777777777760
+        SLC, (8)22062.0
+FPK45   DD(BU,64,8), (8)0027377777777777777760
+        SLC, (8)22071.0
+FPK52   DD(BU,64,8), (8)0001024713560247135620
+        SLC, (8)22120.0
+FPK77   DD(BU,64,8), (8)0001000000000000000160
+FPK80   DD(BU,64,8), (8)0001100000000000000000
+        SLC, (8)22125.0
+FPK87   DD(BU,64,8), (8)0001000077777777777760
+        SLC, (8)22145.0
+FK3     DD(BU,64,8), (8)0003700000000000000000
+FK4     DD(BU,64,8), (8)0143177777777777777760
+FK5     DD(BU,64,8), (8)0000400000000000001000
+FK6     DD(BU,64,8), (8)0025323456701234567100
+FK7     DD(BU,64,8), (8)0001017777777777777760
+FK8     DD(BU,64,8), (8)0001400000000000000040
+FK9     DD(BU,64,8), (8)0001143210765432106760
+FK10    DD(BU,64,8), (8)0025377777777777777760
+        SLC, (8)22234.0
+FK58    DD(BU,64,8), (8)0003377777777777777760
+        SLC, (8)22333.0
+FK122   DD(BU,64,8), (8)0025777777777777777760
+        SLC, (8)22345.0
+FK132   DD(BU,64,8), (8)0003077000000000000000
+        SLC, (8)22352.0
+FK137   DD(BU,64,8), (8)0034400000000000000000
+FK138   DD(BU,64,8), (8)0002501010101010100770
+FK139   DD(BU,64,8), (8)0023374767676767677000
+        SLC, (8)22355.0
+ROS     DD(BU,64,8), 0
+
+! One word before the block, so F219T's first instruction lands on
+! 021641.40: F219 sets noisy mode once, in F219A.
+        SLC, (8)21640.40
+SAP25   BB1, $NM, $+1.0
+! -- STORE ROUNDED CHECK --
+! F219T
+        B, $+.32
+        DL(U), FPK87
+        C0011(BU,48), FPK32+.12, 20
+        SRD(N), ROS
+        L(BU), FK3
+        CT0110(BU,60), ROS, 4                ! test not affected by noisy mode
+        SIC, SEN
+        BRGZ, SERS
+! -- STORE LOW ORDER CHECK --
+! F219U1 - exp acc = 96
+        DL(U), FPK28
+        C0011(BU,48), FPK87+.12, 20
+        SLO(N), ROS
+        L(BU,64), FK4
+        CT0110(BU,60), ROS, 4
+        SIC, SEN
+        BRGZ, SERS
+! F219U2 - exp acc < 48
+        DL(U), FPK25
+        C0011(BU,48), FPK27+.12, 20
+        SLO(N), ROS
+        L(BU,64), FPK45
+        CT0110(BU,60), ROS, 4
+        SIC, SEN
+        BRGZ, SERS
+! -- MULTIPLY DOUBLE CHECK --
+! F219V
+        B, $+.32
+        L(U), FPK52
+        D*(N), FK5
+        CT0110(BU,60), FK6, 68               ! high half
+        SIC, SEN
+        BRGZ, SERS
+        CT0110(BU,48), FK7+.12, 20           ! low half: forty-five noisy ones
+        SIC, SEN
+        BRGZ, SERS
+! -- LOAD FACTOR CHECK --
+! F219W
+        B, $+.32
+        LFT(N), FPK77
+        L(BU), FK122
+        CT0110(BU,60), $FT, 4                ! the factor register, word 14
+        SIC, SEN
+        BRGZ, SERS
+! -- MULTIPLY AND ADD CHECK --
+! F219X
+        B, $+.32
+        DL(U), FK8
+        C0011(BU,48), FK9+.12, 20
+        LFT(U), FPK52
+        *+(N), FK5
+        CT0110(BU,60), FK10, 68              ! high half
+        SIC, SEN
+        BRGZ, SERS
+        CT0110(BU,48), FK10+.12, 20          ! low half
+        SIC, SEN
+        BRGZ, SERS
+! -- DIVIDE DOUBLE CHECK --
+! F219Y
+        B, $+.32
+        L(U), FK137
+        C0011(BU,48), FK58+.12, 20
+        D/(N), FK132
+        CT0110(BU,60), FK138, 68
+        SIC, SEN
+        BRGZ, SERS
+        CT0110(BU,48), FPK80+.12, 20         ! check 49th quotient bit
+        SIC, SEN
+        BRGZ, SERS                           ! noisy mode failed if 49th quot
+                                             ! bit not a one
+        L(BU), FK139                         ! check the remainder
+        CT0110(BU,60), $RM, 4
+        SIC, SEN
+        BRGZ, SERS
+PASS    BEW, $
+        END, SAP25

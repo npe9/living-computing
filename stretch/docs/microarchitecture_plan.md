@@ -2815,6 +2815,78 @@ hand vectors alone. "Enables" notes the dependency chain.
    021637.40 -- the first of the new checks -- so the rows are not
    redundant: they reach a path nothing in the suite had tested.
 
+   F219T THROUGH Y DONE (pp.173-174, 021641.40-021712.40): store
+   rounded, store low order, multiply double, load factor, multiply and
+   add, divide double. THIS ONE FOUND TWO BUGS, after three blocks that
+   found none, and it closes a gap the plan has carried since the
+   divide work: "p.99 gives the remainder register a role nothing uses
+   yet; D/ is what needs it." F219Y is that block, and nothing in the
+   suite had ever read $RM.
+
+   IT HALTED AT THE 49TH QUOTIENT BIT, which is what the listing's own
+   comment predicts: "NOISY MODE FAILED IF 49TH QUOT BIT NOT A ONE".
+
+   BUG ONE: fpDivDouble never entered noisy ones into the dividend.
+   Single DIVIDE gives its 48-bit dividend a 96-bit form by extending
+   it with ones; a DOUBLE dividend is ALREADY 96 bits, so the only
+   positions noisy mode can fill are the ones the pre-division
+   normalization shift vacates -- and that shift entered zeros. F219Y
+   shifts the dividend forty-eight places, so forty-eight ones were
+   missing. The quotient came out right anyway (0x82082082081f, FK138)
+   which is why the block's FIRST check passed; only the 49th bit
+   showed it.
+
+   BUG TWO: THE REMAINDER BELONGED TO THE WRONG QUOTIENT. p.99,
+   verbatim: "the remainder may be 48 or 49 bits AFTER A 48-BIT
+   QUOTIENT IS DEVELOPED. In normalized operation, the entire remainder
+   is normalized and in the case of 49 significant bits, the low-order
+   bit is discarded ... If the low-order 49th bit dropped in storing is
+   a one, the lost carry indicator (LC) is turned on." The model stored
+   the residue left AFTER the 49th quotient bit was taken. The right
+   number is the residue matching the 48-bit quotient: with the
+   quotient overflowed, the stored 48 bits are q[48:1] and the divide
+   has consumed one further bit q[0], so the residue is rem with that
+   one divisor added back --
+
+     r48 = rem + q[0]*vf = 0xf7efbefbefc0 + 0xfc0000000001
+         = 0x1F3EFBEFBEFC1                    (49 significant bits)
+     discard the low-order bit -> 0xF9F7DF7DF7E0 = FK139 exactly.
+
+   The arithmetic was done before the fix, from the manual's sentence,
+   and the model then agreed to the bit.
+
+   AND THE FIRST VERSION OF THE FIX BROKE F217WA4, which is the suite
+   earning its keep. WA4 is a D/(U) -- UNNORMALIZED -- whose remainder
+   is zero, and the fix normalized the 49-bit residue unconditionally,
+   shifting WA4's remainder exponent from -46 to -47. p.99 gates that:
+   "in NORMALIZED operation the entire remainder is normalized", and
+   "in UNNORMALIZED operation the 48 high-order bits are stored". A
+   zero remainder is not normalized either, for the same reason a zero
+   fraction is not normalized anywhere else. Both conditions are in the
+   guard now.
+
+   WHAT IS DELIBERATELY LEFT SHORT. "The entire remainder is
+   normalized" would mean shifting a residue with several leading
+   zeros; the fix shifts one place, because one place is what the
+   49-bit case needs and nothing transcribed reaches the others. The
+   comment says so at the site rather than guessing a general shift no
+   block can check. LC is set from the dropped bit on p.99's authority
+   alone -- F219Y does not branch on LC -- and that too is marked.
+
+   THE OTHER FIVE BLOCKS PASSED FIRST RUN, and two are worth recording
+   for the shape of the rule they show:
+
+     V   MULTIPLY DOUBLE is F219L's opposite. L wanted the CLEAN
+         product because its noisy fill landed in a discarded half; V
+         keeps the whole 96-bit product, so its low half is checked
+         against FK7's 0x1fffffffffff -- forty-five noisy ones and
+         three bits of the product's own tail. Same operation, same
+         rule, opposite expected value, because the result is twice as
+         wide.
+     T   STORE ROUNDED says "TEST NOT AFFECTED BY NOISY MODE" and means
+         it: the rounding carries out of a low half that is all ones
+         either way.
+
    STILL OPEN FROM THE REVIEW: the rest of (3) the literal 5'b01111
    means CM in the connective path and V+CR in the direct-index path,
    eleven occurrences, with the same collision for 5'b10111 and
@@ -2826,7 +2898,8 @@ hand vectors alone. "Enables" notes the dependency chain.
    p.94's "same process with dividends and divisors interchanged" and
    falls out of fpDiv, but it waits for a block that drives it. p.99
    also gives the remainder register a role nothing uses yet; D/ is
-   what needs it.
+   what needs it. -- CLOSED by F219Y, which reads $RM and found two
+   faults doing it; see that entry.
 
    WHERE THE SPLIT CAN ACTUALLY LAND, since the review's sketch of a
    "roughly sixty-line dispatcher" is out of reach from the arms alone

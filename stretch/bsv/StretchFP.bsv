@@ -1084,18 +1084,74 @@ function FpDivDblResult fpDivDouble(FpDouble dvd, FpNum dvs, Bool normalized, Bo
               : ((vs < dreq) ? vs : dreq);
   Bit#(7) dsB = truncate(pack(ds));
   d96 = d96 << dsB;
+  // NOISY MODE REACHES A DOUBLE DIVIDEND HERE AND NOWHERE ELSE.
+  // Single DIVIDE gives its 48-bit dividend a 96-bit form by extending
+  // it with ones (see fpDiv above); a DOUBLE dividend is already 96
+  // bits wide, so the only positions noisy mode can fill are the ones
+  // this pre-division normalization shift vacates.  p.87's rule is
+  // that ones, not zeros, enter the low-order positions vacated by a
+  // left shift, and this shift is one.  Without it jb_af1c F219Y's
+  // 49th quotient bit comes out zero, which is precisely the symptom
+  // the listing names: "NOISY MODE FAILED IF 49TH QUOT BIT NOT A ONE".
+  if (normalized && noisy && ds > 0) d96 = d96 | ((96'b1 << dsB) - 1);
   Int#(14) de = fpExpFull(fpdHead(dvd)) - ds;
   lzc = lzc - ds;
 
   let {q, rem} = fpDivFrac(d96, vf);
   Bool ovf = (q[48] == 1);
   Bit#(48) qf = ovf ? q[48:1] : q[47:0];
-  // One more restoring step for the 49th bit, from the remainder.
+  // The 49th quotient bit, accumulator IBM 60 -- p.99: "the quotient
+  // exponent and fraction replace accumulator bits 0-60".  When the
+  // quotient overflowed those 49 bits are already in hand and the last
+  // of them IS that bit; otherwise it takes one more restoring step.
   Bit#(49) rem2 = {rem[47:0], 1'b0};
   Bool take = (rem2 >= {1'b0, vf});
-  Bit#(49) remAfter = take ? (rem2 - {1'b0, vf}) : rem2;
   Bit#(1) b49 = ovf ? q[0] : (take ? 1'b1 : 1'b0);
-  Bit#(48) remFrac = ovf ? remAfter[47:0] : rem[47:0];
+  // THE REMAINDER BELONGS TO THE 48-BIT QUOTIENT, not to the 49-bit
+  // one.  p.99, verbatim: "the remainder may be 48 or 49 bits AFTER A
+  // 48-BIT QUOTIENT IS DEVELOPED.  In normalized operation, the entire
+  // remainder is normalized and in the case of 49 significant bits,
+  // the low-order bit is discarded ... If the low-order 49th bit
+  // dropped in storing is a one, the lost carry indicator (LC) is
+  // turned on."
+  //
+  // When the quotient overflowed, the stored 48 bits are q[48:1] and
+  // the divide has consumed one further quotient bit, q[0].  The
+  // residue that matches the 48-bit quotient is therefore rem with
+  // that one divisor added back, a 49-bit quantity; its top bit says
+  // whether the remainder has 49 significant bits, in which case the
+  // low-order bit is the one p.99 discards.  This function used to
+  // store the residue left AFTER the 49th bit was taken, which is a
+  // different number and is what F219Y caught.
+  Bit#(49) r48 = {1'b0, rem[47:0]} + ((ovf && q[0] == 1) ? {1'b0, vf} : 49'b0);
+  Bit#(48) remFrac;
+  Bool remDropped = False;
+  Int#(14) rexpAdj = 0;
+  if (!ovf) remFrac = rem[47:0];
+  else if (r48[48] == 1) begin
+    // 49 significant bits: p.99 discards the low-order one and LC
+    // records whether it was a one.  This is the case F219Y reaches
+    // and the only one any transcribed block pins.
+    remFrac = r48[48:1];
+    remDropped = (r48[0] == 1);
+  end else if (normalized && r48 != 0) begin
+    // Fewer than 49 significant bits, with normalization asked for:
+    // one shift brings the leading bit up.  A remainder with MORE
+    // than one leading zero would need more, which "the entire
+    // remainder is normalized" calls for and nothing transcribed
+    // reaches -- left at one place deliberately rather than guessed.
+    remFrac = r48[47:0];
+    rexpAdj = -1;
+  end else begin
+    // Unnormalized operation, or a zero remainder, which is not
+    // normalized any more than a zero fraction is anywhere else.
+    // p.99: "In unnormalized operation, the 48 high-order bits of the
+    // remainder are stored."  F217WA4 is exactly this -- a D/(U)
+    // whose remainder is zero -- and it caught the first version of
+    // this fix, which shifted its exponent from -46 to -47 by
+    // normalizing a zero.
+    remFrac = r48[48:1];
+  end
   if (ovf) begin de = de + 1; lzc = lzc + 1; end
 
   FpNum res = fpdHead(dvd);
@@ -1119,7 +1175,7 @@ function FpDivDblResult fpDivDouble(FpDouble dvd, FpNum dvs, Bool normalized, Bo
   // so nothing is dropped and LC cannot fire here.  The manual's
   // 49-significant-bit case is unreachable in this formulation and is
   // untested by F217WA, whose seven remainders are all zero.
-  Int#(14) rexp = flagged ? fpExpFull(fpdHead(dvd)) : (de - 48);
+  Int#(14) rexp = flagged ? fpExpFull(fpdHead(dvd)) : (de - 48 + rexpAdj);
   let {rh, rg} = fpMakeExp(rexp, remFrac, dvd.sign, 3'b0);
   r.rem = rh;
   // REMAINDER UNDERFLOW (RU, indicator 34): the remainder exponent has
@@ -1132,6 +1188,10 @@ function FpDivDblResult fpDivDouble(FpDouble dvd, FpNum dvs, Bool normalized, Bo
   // and RU must stay off.  fpMakeExp's generated flag with es == 1 is
   // exactly that distinction.
   r.ru = rg && (rh.es == 1);
+  // p.99 again: LC comes on when the discarded 49th bit was a one.
+  // F219Y does not branch on LC, so this line is on the manual's
+  // authority alone and no transcribed block pins it yet.
+  r.lc = remDropped;
 
   r.pf  = !normalized && (lzc > 0);
   r.lzc = (lzc < 0) ? 0 : truncate(pack(lzc));
