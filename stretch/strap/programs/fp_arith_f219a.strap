@@ -1,6 +1,8 @@
-! jb_af1c F219 "NOISY MODE TEST ROUTINE", sub-blocks A (add checks),
-! B (add to magnitude), C (load) and D (load with flag), p.169 (octal
-! 021451.40-021501.40).  F219E follows at 021502.00.
+! jb_af1c F219 "NOISY MODE TEST ROUTINE", sub-blocks A-G, pp.169-170
+! (octal 021451.40-021521.40): add, add to magnitude, load, load with
+! flag, add to memory, add magnitude to memory and store.  F219H, the
+! first of the compare checks, follows at 021522.00 and re-sets noisy
+! mode for itself.
 !
 ! EVERY OPERATION HERE WAS ALREADY IMPLEMENTED, AND THE BLOCK STILL
 ! FOUND TWO BUGS.  Noisy mode is set once, by a BB1 on indicator 63,
@@ -45,8 +47,21 @@
 !       filled ones into one, fails here and passes C1.
 !   D   LWF of FK113, forty-seven leading zeros, wanting ffffffffffff.
 !
-! All five arithmetic answers were computed from the constants and the
-! manual's rule before either fix was made.
+! E AND F CARRY THE SAME RULE INTO ADD TO MEMORY, and p.89 states it
+! there in the same words: "When noisy mode and normalized operation
+! are specified, the fraction of the operand associated with the larger
+! exponents, or the accumulator fraction if the exponents are equal, is
+! extended with 48 low-order ones before the sum is formed."  M+ goes
+! through fpAdd, so the A-block fix covers it -- including the
+! equal-exponent case, where for M+ the accumulator is the STORAGE-side
+! argument and the ones have to follow it rather than the position.
+!
+! G IS THE STORE CHECK and it wants ST(N) to normalize: FPK77 again,
+! and again the answer is FK122.  The ST arm applies the sign modifiers
+! and writes, with no normalization at all.
+!
+! All the arithmetic answers were computed from the constants and the
+! manual's rules before any fix was made.
 
 ! -- SSIP framework substitutes: SERS (octal 1304) -> FAIL halt,
 ! -- SEN (octal 1310) -> scratch.
@@ -78,9 +93,15 @@ FPK98   DD(BU,64,8), (8)0030525252525252525320
 FPK99   DD(BU,64,8), (8)0000525252525252525260
         SLC, (8)22322.0
 FK113   DD(BU,64,8), (8)0003000000000000000027
+        SLC, (8)22323.0
+FK114   DD(BU,64,8), (8)0031000000000000000020
+FK115   DD(BU,64,8), (8)0030000000000000000040
+FK116   DD(BU,64,8), (8)0002117777777777777760
         SLC, (8)22333.0
 FK122   DD(BU,64,8), (8)0025777777777777777760
 FK123   DD(BU,64,8), (8)0024777777777777777760
+        SLC, (8)22355.0
+ROS     DD(BU,64,8), 0
 
         SLC, (8)21451.40
 ! -- ADD CHECKS --
@@ -135,5 +156,33 @@ SAP25   BB1, $NM, $+1.0                      ! turn noisy mode on
         CT0110(BU,60), FK123, 68
         SIC, SEN
         BRGZ, SERS
-PASS    BEW, $                               ! 021502.00: F219E's first instruction
+! -- ADD TO MEMORY CHECK --
+! F219E - exp mem + exp acc + +48
+        L(BU), FK114
+        ST(BU,64), ROS                       ! ROS <- FK114, the memory operand
+        L(U), FK115
+        M+(N), ROS                           ! mem. fract. extended with 48 low-order 1 bits
+        L(BU), FK116                         ! the expected answer, into the right word
+        CT0110(BU,60), ROS, 4
+        SIC, SEN
+        BRGZ, SERS
+! -- ADD MAGNITUDE TO MEMORY CHECK --
+! F219F - the same operands through M+MG
+        L(BU), FK114
+        ST(BU,64), ROS
+        L(U), FK115
+        M+MG(N), ROS                         ! mem. fract. extended with 48 low order 1 bits
+        L(BU), FK116
+        CT0110(BU,60), ROS, 4
+        SIC, SEN
+        BRGZ, SERS
+! -- STORE CHECK --
+! F219G - 0 s leading 0 s, 48
+        L(U), FPK77
+        ST(N), ROS
+        L(BU), FK122
+        CT0110(BU,60), ROS, 4
+        SIC, SEN
+        BRGZ, SERS
+PASS    BEW, $                               ! 021522.00: F219H's first instruction
         END, SAP25

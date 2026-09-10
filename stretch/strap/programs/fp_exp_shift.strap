@@ -4,7 +4,11 @@
 ! (fp_exp_expected.py). Each: load 2.0, apply the op, store.
 !   E+I +1 : 2.0 -> 4.0 (address 128 -> 12-bit exponent field = +1)
 !   E+  ONE: 2.0 + ONE's exponent(+1) -> 4.0
-!   SHF R1 : fraction 0.5 -> 0.25, exponent 2 unchanged -> unnormalized
+!   SHF R1 : fraction 0.5 -> 0.25, exponent 2 unchanged.  The ST(N)
+!            that follows then RENORMALIZES it back to 0.5 at exponent
+!            1 -- p.90, "the 48-bit operand fraction in the accumulator
+!            is normalized before being placed in storage".  The stored
+!            word is the same value, not the same encoding.
 START   L(N), TWO
         E+I(N), 128.0       ! add immediate exponent +1
         ST(N), REPLI

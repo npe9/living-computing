@@ -1427,10 +1427,36 @@ function ActionValue#(Tuple4#(HWordAddr, Maybe#(Tuple2#(Bit#(4), IndexWord)),
           ind = setOpInvalid(ind);   // every floating-point operation is now implemented
         else if (isST) begin
           FpNum v = fpApplySignMods(acc, fp.absSign, fp.invSign);
+          // STORE NORMALIZES.  p.90, verbatim: "When normalized
+          // operation is specified, the 48-bit operand fraction in the
+          // accumulator is normalized before being placed in storage.
+          // If the noisy mode is also specified, ones enter the
+          // low-order fraction bit positions as they are shifted left
+          // on normalization.  Normalization is suppressed when the 48
+          // fraction bits are zero."  And on the next paragraph: "When
+          // the exponent flag is 1, in the accumulator operand,
+          // normalization, if specified, is suppressed... Thus, for
+          // values with initially flagged exponent, the value in
+          // storage is the same value as appears in the accumulator."
+          //
+          // This arm applied the sign modifiers and wrote, with no
+          // normalization at all.  jb_af1c F219G catches it: ST(N) of
+          // FPK77, fraction 000000000007, must store FK122's
+          // ffffffffffff at -43.  Forty-eight bits, not ninety-six, for
+          // the same reason LOAD is -- there is no 96-bit intermediate
+          // here for noisy ones to fall into.
+          Bool gen = False;
+          if (normalized && v.ef == 0 && v.frac != 0) begin
+            let {f48, adj} = fpNormalize48(v.frac, True, noisy);
+            let {vn, g} = fpMakeExp(signExtend(fpExp(v)) + adj, f48, v.sign, v.flags);
+            v = vn; gen = g;
+          end
           st.writeWord(ea, fpToWord(v));
           ind = setBit(ind, ind_MOP, 1);
           ind = setResultIndicatorsFp(ind, v);
-          ind = setRangeIndicators(ind, fpRangeBits(v, False, v.ef == 1));
+          // "If an EF of 1 is generated during normalization, the
+          // exponent range indicator XPU is turned on."
+          ind = setRangeIndicators(ind, fpRangeBits(v, gen, !gen && v.ef == 1));
         end else if (c == 7'b1101110) begin // SRT (STORE ROOT, pp.93, 95)
           // A store, so like ST it needs no operand fetch and is
           // handled before the prefetch requirement below.

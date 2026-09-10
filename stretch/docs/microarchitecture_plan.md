@@ -2306,10 +2306,56 @@ hand vectors alone. "Enables" notes the dependency chain.
    FPK31 unchanged. A model that normalized a zero fraction, or filled
    ones into one, passes C1 and fails C2.
 
-   Next: F219E onward (p.170) -- ADD TO MEMORY, ADD MAGNITUDE TO
-   MEMORY, STORE, and the four COMPARE checks, all in noisy mode. F219
-   runs to at least p.170 and the compares are the interesting part,
-   since noisy mode's effect on a comparison is not obvious. Then R/, D/ and SRT -- R/ is
+   F219E, F AND G DONE (extended into the same program, since noisy
+   mode is set once in A and left on), suite 234 -- AND G FOUND A THIRD
+   BUG.
+
+   E and F carry the ADD rule into ADD TO MEMORY and p.89 states it
+   there in the same words: "the fraction of the operand associated
+   with the larger exponents, or the accumulator fraction if the
+   exponents are equal, is extended with 48 low-order ones before the
+   sum is formed". M+ goes through fpAdd, so the A-block fix covered
+   it, including the equal-exponent case where for M+ the accumulator
+   is the storage-side argument and the ones have to follow the
+   OPERAND, not the position. Both passed first try after that fix.
+
+   BUG THREE: STORE DID NOT NORMALIZE AT ALL. The ST arm applied the
+   sign modifiers and wrote. p.90, verbatim: "When normalized operation
+   is specified, the 48-bit operand fraction in the accumulator is
+   normalized before being placed in storage. If the noisy mode is also
+   specified, ones enter the low-order fraction bit positions as they
+   are shifted left on normalization. Normalization is suppressed when
+   the 48 fraction bits are zero." Plus, from the next paragraph,
+   suppression on a flagged exponent and XPU when normalization
+   generates an EF of 1. F219G is ST(N) of FPK77 wanting FK122 --
+   the same pair C1 uses for LOAD -- and it halted at 021522.00
+   exactly as predicted.
+
+   AND IT BROKE A HAND-WRITTEN TEST, WHICH IS THE POINT. fp_exp_shift
+   does SHF right one and then ST(N), and fp_exp_expected.py said the
+   stored word was the UNNORMALIZED 0.25 at exponent 2. It is 0.5 at
+   exponent 1 -- the same value, renormalized by the store. That
+   expectation was written from the model's behaviour rather than from
+   the manual, so it encoded the bug. The transcribed diagnostic and
+   the manual agree against it, so the expectation was corrected. Worth
+   keeping as a warning about hand-written oracles: they can only
+   confirm what you already believed.
+
+   A PROCESS SLIP TO NOT REPEAT: I started a second run_tests.sh while
+   the first was still running, and they raced on bsv/simbuild -- one
+   deleted the directory the other was writing into, producing a
+   "Directory does not exist" failure that looked like a model error
+   and was not. One suite at a time.
+
+   Next: F219H, I and J (p.170) -- COMPARE, COMPARE MAGNITUDE and
+   COMPARE FOR RANGE, each clearing $IND and re-setting noisy mode for
+   itself. p.90 gives their rule and it is ADD's: "the normalization
+   modifier affects the operation only during noisy mode operation.
+   When noisy mode and normalized operation are specified, the operand
+   having the higher exponent, or the accumulator operand if both
+   operands have equal exponents, is extended with 48 low-order ones
+   prior to forming the intermediate difference, as in ADD." So the
+   fpAdd fix may already cover them -- which the blocks will say. Then R/, D/ and SRT -- R/ is
    p.94's "same process with dividends and divisors interchanged" and
    falls out of fpDiv, but it waits for a block that drives it. p.99
    also gives the remainder register a role nothing uses yet; D/ is

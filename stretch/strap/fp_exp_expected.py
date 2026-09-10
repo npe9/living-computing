@@ -19,7 +19,19 @@ ONE   = enc(1.0)            # exp 1 (E+ uses only its exponent)
 EPLI  = enc(4.0)
 # E+ adds ONE's exponent (+1) to 2.0 -> 4.0
 EPL   = enc(4.0)
-# SHF right 1: frac 0.5 -> 0.25, exponent 2 unchanged (unnormalized)
-em, frac = 2, (1<<47)>>1     # 0.5 = bit47; >>1 = 0.25
+# SHF right 1 leaves the accumulator unnormalized: fraction 0.5 -> 0.25
+# with exponent 2 unchanged.  The program then stores it with ST(N), and
+# STORE NORMALIZES -- Ref. Manual p.90, "When normalized operation is
+# specified, the 48-bit operand fraction in the accumulator is
+# normalized before being placed in storage" -- so what lands in RSHF is
+# 0.5 at exponent 1, the same value renormalized.
+#
+# This expectation used to be the unnormalized 0.25 at exponent 2,
+# because the ST arm did not normalize at all.  jb_af1c F219G is what
+# found that: it stores FPK77 with ST(N) and demands FK122, which is
+# FPK77 normalized with noisy mode's ones shifted in.  The listing and
+# the manual agree against this hand-written expectation, so it is the
+# expectation that was wrong.
+em, frac = 1, (1<<47)        # 0.25 at exponent 2, renormalized by ST(N)
 SHF = (em<<53)|((frac&((1<<48)-1))<<4)
 print(f"TWO=0x{TWO:016x} ONE=0x{ONE:016x} REPLI=0x{EPLI:016x} REPL=0x{EPL:016x} RSHF=0x{SHF:016x}")
