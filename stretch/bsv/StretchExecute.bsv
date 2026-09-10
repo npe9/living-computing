@@ -11,14 +11,22 @@
 // unconditional branching, Store Zero / Refill, and direct
 // (non-backward, single-word) Transmit.
 //
-// Every other decoded format/opcode -- decimal arithmetic, floating
-// point arithmetic beyond L/ST, radix conversion, input-output,
-// interrupts, bit branching, EX/EXIC, RNX/LVE/SVA, LVS, Transmit
-// backward/swap -- sets indicator 15 (OP, Operation Code Invalid) and
-// otherwise acts as a no-op, matching the documented real-machine
-// behavior for an invalid/suppressed instruction (Reference Card,
-// indicator class "S": "execution of instruction is suppressed"). See
-// bsv/README.md "Scope" for the full accounting and citations.
+// Every decoded format/opcode NOT yet implemented -- decimal
+// arithmetic, radix conversion, interrupts, EX/EXIC, RNX/LVE/SVA, LVS,
+// Transmit backward/swap -- sets indicator 15 (OP, Operation Code
+// Invalid) and otherwise acts as a no-op, matching the documented
+// real-machine behavior for an invalid/suppressed instruction
+// (Reference Card, indicator class "S": "execution of instruction is
+// suppressed"). See bsv/README.md "Scope" for the full accounting and
+// citations.
+//
+// THIS LIST USED TO INCLUDE "floating point arithmetic beyond L/ST",
+// "input-output" and "bit branching". All three are now implemented --
+// the whole floating-point opcode table as of jb_af1c F218, I/O in the
+// IoOp arm, bit branching in the BitBranch arm -- and the header had
+// been contradicting the code (and its own `known` list) for some
+// time. Found by a structural review, not by a test: a stale comment
+// is exactly the thing a regression suite cannot catch.
 //
 // INDICATORS ARE WRITTEN EXACTLY ONCE PER INSTRUCTION. A plain
 // register (which is what `indicators` is, see StretchStorage.bsv)
@@ -409,8 +417,17 @@ endfunction
 // convert; a THIRD simultaneous read (e.g. a crossing field combined
 // with a refill in the SAME arm) is a known, not-yet-encountered gap,
 // flagged here rather than silently mishandled should it arise.
-function ActionValue#(Tuple4#(HWordAddr, Maybe#(Tuple2#(Bit#(4), IndexWord)),
-                               Maybe#(IoXfer), Maybe#(WordAddr)))
+// What execute() hands back: the next instruction address, progressive
+// indexing's deferred index write, an I/O transfer to start, and the
+// word a still-unsatisfied operand read wants.  Declared here rather
+// than beside mkEBox at the foot of the file so execute() can name it;
+// BSV needs the typedef before its first use, which is the only reason
+// the signature used to spell the Tuple4 out longhand and the call
+// sites read it through tpl_1..tpl_4.
+typedef Tuple4#(HWordAddr, Maybe#(Tuple2#(Bit#(4), IndexWord)),
+                Maybe#(IoXfer), Maybe#(WordAddr)) ExecResult;
+
+function ActionValue#(ExecResult)
     execute(StretchStorage st, StretchIO io, HWordAddr pc, InstrLen len, DecodedInstr di,
             Vector#(2, Word64) prefetch, Bit#(2) prefetchCount) =
   actionvalue
@@ -2681,8 +2698,7 @@ function ActionValue#(Tuple4#(HWordAddr, Maybe#(Tuple2#(Bit#(4), IndexWord)),
 // call sites are mutually-exclusive branches of step(), so they share
 // this one instance's method port. (This step alone is behavior-neutral
 // scaffolding; step 2 makes the FP/VFL datapath multi-cycle boxes.)
-typedef Tuple4#(HWordAddr, Maybe#(Tuple2#(Bit#(4), IndexWord)),
-                Maybe#(IoXfer), Maybe#(WordAddr)) ExecResult;
+// (ExecResult is declared above execute(), which needs it.)
 
 // What a completed instruction hands back to the instruction unit.
 typedef struct {

@@ -2385,7 +2385,80 @@ hand vectors alone. "Enables" notes the dependency chain.
    That is FOUR noisy-mode faults from one routine (fpAdd's operand
    extension, LOAD/LFT's 96-bit normalization, STORE's missing
    normalization, and fpCompare's two), none of which anything before
-   F219 could reach, because nothing before it ever set indicator 63. Then R/, D/ and SRT -- R/ is
+   F219 could reach, because nothing before it ever set indicator 63.
+
+   A STRUCTURAL REVIEW AGAINST PICCOLO, run in parallel at the owner's
+   request, plus a magic-number audit. Three findings acted on, one
+   recorded and deliberately left alone.
+
+   THE MASK REGISTER WAS WRONG, and no test could have caught it.
+   StretchStorage initialised word 12 to 64'hFFFF_0000_0000_0000 with a
+   {16'hFFFF, v[47:16], 16'h0000} write mask -- sixteen forced ones,
+   thirty-two writable bits. Its own comment, the write site's comment
+   and StretchTypes' addrMask comment ALL say IBM bits 0-19 are always
+   one, which is twenty bits and twenty-eight writable, and so does the
+   Appendix A field table in this document. Three descriptions against
+   one implementation, and the implementation lost. Corrected to
+   64'hFFFFF000_00000000 and {20'hFFFFF, v[43:16], 16'h0000}. Nothing
+   in the transcribed diagnostic touches word 12, so the regression net
+   was never going to find it -- which is the argument for reading the
+   code as well as running it.
+
+   THE FILE HEADER OF StretchExecute.bsv HAD BEEN LYING for a long
+   time: it listed "floating point arithmetic beyond L/ST",
+   "input-output" and "bit branching" among the unimplemented
+   operations that set OP and no-op. All three have been implemented
+   for a while, and line 1427 of the same file says so. A stale comment
+   is precisely what a regression suite cannot catch.
+
+   ExecResult NOW SITS ABOVE execute(). It was defined at the foot of
+   the file, after the function that should return it, so the signature
+   spelled its Tuple4 out longhand and mkEBox read it back through
+   tpl_1..tpl_4. Behaviour-neutral and compiler-checked.
+
+   AND THIRTY BARE CASE LABELS IN StretchStorage GOT THEIR NAMES.
+   lookupSpecial and writeWord both switched on 1..15 while
+   StretchTypes had named every one of those addresses since the file
+   was written.
+
+   ONE FINDING RECORDED RATHER THAN FIXED. fpMul and fpMulDouble each
+   carry a line-for-line copy of an order-of-magnitude-zero exponent
+   block that sets em = 0 when the summed exponent is out of range.
+   fpMakeExp's own header records that zeroing em is WRONG -- jb_af1c
+   F211A10 forced it to keep the low ten bits instead. The two rules
+   disagree, and the disagreement is only visible if you read both
+   copies. But nothing reaches either block (recorded when D* landed: a
+   flagged operand returns before it, and every unflagged product in
+   the diagnostic is non-zero), so there is no evidence either way, and
+   guessing is what the FK60 episode taught me not to do. Left as-is
+   with this note; a later block producing an unflagged zero product
+   with an out-of-range exponent will settle it.
+
+   WHAT THE REVIEW SAID THE MODEL DOES BETTER, worth recording because
+   it bears on what NOT to change: DecodedInstr as a union tagged with
+   per-format payloads is stronger than Piccolo's flat Decoded_Instr
+   (the case is exhaustive and type-checked); StretchFP's forty
+   top-level pure functions returning named result structs are more
+   testable than Piccolo's single 1,284-line mkFBox_Core FSM; and the
+   citation density -- a manual page or a jb_af1c case tag on nearly
+   every non-obvious line -- has no Piccolo equivalent and is the thing
+   no refactor may shred. The review explicitly advised AGAINST
+   pipelining execute(), adding pipeline registers, or replacing the
+   tick/step() harness: all three are synthesis-motivated and would
+   cost this model both testability and its cycle-budget fidelity.
+
+   STILL OPEN FROM THE REVIEW, in priority order: (1) named opcode
+   constants -- there are none, where Piccolo has 196, and the FP
+   opcode set is written out by hand three times (isValidFpCode, the
+   `known` chain, and the dispatch arms; they currently AGREE, so this
+   is drift-prevention rather than a bug); (2) the literal 5'b01111
+   means CM in the connective path and V+CR in the direct-index path,
+   eleven occurrences, with the same collision for 5'b10111 and
+   5'b00111; (3) execute() is 2,270 lines with a 13-arm case whose Fp
+   arm alone is 1,038 -- and that arm already has its seam drawn, a
+   no-operand store class and an operand-fetching arithmetic class, so
+   splitting it is mechanical if done one arm at a time against the
+   testbenches. Then R/, D/ and SRT -- R/ is
    p.94's "same process with dividends and divisors interchanged" and
    falls out of fpDiv, but it waits for a block that drives it. p.99
    also gives the remainder register a role nothing uses yet; D/ is

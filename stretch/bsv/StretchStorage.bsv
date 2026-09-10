@@ -178,7 +178,16 @@ module mkStretchStorage(StretchStorage);
   Reg#(Word64) accRight              <- mkReg(0); // addr 9
   Reg#(Word64) accSignByte           <- mkReg(0); // addr 10, IBM bits 0-7 (BSV 63:56) only
   Reg#(Word64) indicators            <- mkReg(0); // addr 11
-  Reg#(Word64) mask                  <- mkReg(64'hFFFF_0000_0000_0000); // addr 12: bits0-19=1,48-63=0
+  // addr 12. IBM bits 0-19 are always one and 48-63 always zero, so
+  // only IBM 20-47 -- model bits 43-16, twenty-eight of them -- are
+  // writable. This used to be 64'hFFFF_0000_0000_0000 with a
+  // {16'hFFFF, v[47:16], 16'h0000} write mask, which forces only IBM
+  // 0-15 and leaves thirty-two bits writable; the register, its write
+  // masker and StretchTypes' own comment all said 0-19 while the code
+  // did 0-15. Nothing drives word 12 in the transcribed diagnostic, so
+  // this was never caught by a test -- found by a code review against
+  // the Appendix A field table.
+  Reg#(Word64) mask                  <- mkReg(64'hFFFFF000_00000000);
   Reg#(Word64) remainder             <- mkReg(0); // addr 13
   Reg#(Word64) factor                <- mkReg(0); // addr 14
   Reg#(Word64) transit                <- mkReg(0); // addr 15
@@ -257,21 +266,21 @@ module mkStretchStorage(StretchStorage);
   function Word64 lookupSpecial(WordAddr a);
     case (a)
       addrZero: return 0; // permanently protected zero, p. "SPECIAL STORAGE ASSIGNMENT"
-      1: return intervalTimerAndClock;
-      2: return interruptionAddress;
-      3: return boundaryReg;
-      4: return maintenanceBits;
-      5: return channelAddress;
-      6: return otherCpuBits;
-      7: return zerosOnesCounts;
-      8: return accLeft;
-      9: return accRight;
-      10: return accSignByte;
-      11: return indicators;
-      12: return mask;
-      13: return remainder;
-      14: return factor;
-      15: return transit;
+      addrIntervalTimer: return intervalTimerAndClock;
+      addrInterruptAddr: return interruptionAddress;
+      addrUpperBoundary: return boundaryReg;
+      addrMaintenanceBits: return maintenanceBits;
+      addrChannelAddress: return channelAddress;
+      addrOtherCpuBits: return otherCpuBits;
+      addrLeftZerosCount: return zerosOnesCounts;
+      addrAccLeft: return accLeft;
+      addrAccRight: return accRight;
+      addrAccSignByte: return accSignByte;
+      addrIndicators: return indicators;
+      addrMask: return mask;
+      addrRemainder: return remainder;
+      addrFactor: return factor;
+      addrTransit: return transit;
       default:
         if (a >= addrIndexBase && a < addrIndexBase + 16)
           return xreg[a - addrIndexBase];
@@ -346,18 +355,18 @@ module mkStretchStorage(StretchStorage);
   method Action writeWord(WordAddr a, Word64 v);
     case (a)
       addrZero: noAction; // writes to Zero are discarded (permanently protected)
-      1: intervalTimerAndClock <= v; // simplification: full word writable; real HW
+      addrIntervalTimer: intervalTimerAndClock <= v; // simplification: full word writable; real HW
                                       // splits timer(read/write except store-type ops)
                                       // vs clock(read-only) -- see README "Scope".
-      2: interruptionAddress <= v;   // permanently protected on real HW; not enforced
-      3: boundaryReg <= v;           // permanently protected on real HW; not enforced
-      4: maintenanceBits <= v;
-      5: noAction; // Channel Address is read-only ("b" footnote)
-      6: otherCpuBits <= v;
-      7: zerosOnesCounts <= v;
-      8: accLeft <= v;
-      9: accRight <= v;
-      10: accSignByte <= {v[63:56], 56'b0};   // IBM bits 0-7: the sign byte
+      addrInterruptAddr: interruptionAddress <= v;   // permanently protected on real HW; not enforced
+      addrUpperBoundary: boundaryReg <= v;           // permanently protected on real HW; not enforced
+      addrMaintenanceBits: maintenanceBits <= v;
+      addrChannelAddress: noAction; // read-only ("b" footnote)
+      addrOtherCpuBits: otherCpuBits <= v;
+      addrLeftZerosCount: zerosOnesCounts <= v;
+      addrAccLeft: accLeft <= v;
+      addrAccRight: accRight <= v;
+      addrAccSignByte: accSignByte <= {v[63:56], 56'b0};   // IBM bits 0-7: the sign byte
       // SIMPLIFICATION: real hardware lets a generic STORE-type
       // instruction write indicator bits 20-63 directly (Reference
       // Card footnote c: only bits 0-19 are read-only). This
@@ -369,11 +378,11 @@ module mkStretchStorage(StretchStorage);
       // same rule. Indicators remain fully readable and are still set
       // by every instruction that defines them -- only the "poke via
       // STORE" path is unavailable. See bsv/README.md "Scope".
-      11: noAction;
-      12: mask <= {16'hFFFF, v[47:16], 16'h0000};     // bits0-19=1, 48-63=0 always
-      13: remainder <= v;
-      14: factor <= v;
-      15: transit <= v;
+      addrIndicators: noAction;
+      addrMask: mask <= {20'hFFFFF, v[43:16], 16'h0000};   // IBM 0-19 = 1, 48-63 = 0 always
+      addrRemainder: remainder <= v;
+      addrFactor: factor <= v;
+      addrTransit: transit <= v;
       default:
         if (a >= addrIndexBase && a < addrIndexBase + 16)
           xreg[a - addrIndexBase] <= v;
