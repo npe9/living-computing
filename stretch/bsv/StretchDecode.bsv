@@ -148,7 +148,7 @@ function DecodedInstr decodeFullWord(Word64 w);
   else if (isConnSuffix(suffix))
     return tagged Connective { a: a, conn: conn4, suffix: suffix };
   else if (isVflIntCode(code6))
-    return tagged VflInt { a: a, m: m, code: code6 };
+    return tagged VflInt VflInstr { a: a, m: m, code: code6 };
   else
     return tagged Invalid;
 endfunction

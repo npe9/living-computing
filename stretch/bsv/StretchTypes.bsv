@@ -376,11 +376,18 @@ typedef struct {
   Bit#(1) decimal;  // c: 0=binary, 1=decimal (NOT IMPLEMENTED, see README)
 } VflMod deriving (Bits, Eq, FShow);
 
+// The VflInt payload, named rather than anonymous so the arm that
+// handles it can be lifted out of execute() into a function that
+// takes it whole.  Connective and the rest stay anonymous until
+// they need the same.
+typedef struct { VflAddr a; VflMod m; Bit#(6) code; } VflInstr
+  deriving (Bits, Eq, FShow);
+
 typedef union tagged {
   // Integer arithmetic / radix conversion, Figure 6 "INTEGER" row,
   // p.18; opcode field IBM bits 51-59 = abc(3)+code(6), pocket card
   // "INTEGER ARITHMETIC" table.
-  struct { VflAddr a; VflMod m; Bit#(6) code; } VflInt;
+  VflInstr VflInt;
 
   // Connectives (16 boolean functions), same shape, opcode field
   // CONN(4, bits 51-54) + suffix(5, bits 55-59).

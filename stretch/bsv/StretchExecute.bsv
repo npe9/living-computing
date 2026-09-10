@@ -1499,6 +1499,340 @@ endfunction
 typedef Tuple4#(HWordAddr, Maybe#(Tuple2#(Bit#(4), IndexWord)),
                 Maybe#(IoXfer), Maybe#(WordAddr)) ExecResult;
 
+// ---------------------------------------------------------------------
+// VFL INTEGER ARITHMETIC (binary mode only; decimal is out of scope,
+// see file header), lifted whole out of execute().
+//
+// The boundary was measured before it was cut, as with the two Fp
+// classes.  Over 300 lines this arm touches, of execute()'s own
+// locals, exactly three: needsRead, vflPending and ind -- so those
+// three are the return channel and nothing else crosses.  It never
+// mentions doIdxWrite, idxWriteVal, ioStart, io., next, fallthrough,
+// pc or len; of storage it uses only readIndex and writeWord.
+//
+// needsRead is read as well as written here (the trailing
+// progressive-index block is guarded on `!isValid(needsRead)`, so an
+// arm that has already asked for a read suppresses it), which is why
+// it is threaded through rather than merely returned.
+// ---------------------------------------------------------------------
+typedef struct {
+  Maybe#(WordAddr) needsRead;
+  Maybe#(Tuple2#(Bit#(4), IndexWord)) vflPending;
+  Word64 ind;
+} VflOutcome;
+
+function ActionValue#(VflOutcome)
+    vflIntOp(StretchStorage st, VflInstr vi,
+             Vector#(2, Word64) prefetch, Bit#(2) prefetchCount, Word64 ind0);
+  actionvalue
+    Maybe#(WordAddr) needsRead = tagged Invalid;
+    Maybe#(Tuple2#(Bit#(4), IndexWord)) vflPending = tagged Invalid;
+    Word64 ind = ind0;
+
+      Bool isProgressive = (vi.a.p != 0 && vi.a.p != 4);
+      if (vi.m.decimal == 1)
+        ind = setOpInvalid(ind);
+      else if (isProgressive && vi.a.i1 == 0)
+        ind = setOpInvalid(ind);
+      else begin
+        Bit#(7) len_ = effLength(vi.a.length);
+        Bit#(4) bsz  = effByteSize(vi.a.bs);
+        Bool immediate = (vi.a.p == 4);
+        IndexWord xIdx = st.readIndex(vi.a.i1);
+        BitAddr ea = isProgressive ? xIdx.addr : effAddr24(st, vi.a.addr, vi.a.i1);
+        Bit#(8) offSh = zeroExtend(vi.a.offset);
+        Bool vflOk = True; // p.21: a suppressed VFL op (ST/M+
+                            // immediate-or-crossing) skips the
+                            // progressive increment too.
+        Bit#(2) vflReadsUsed = 0; // how many prefetch slots THIS
+                            // arm's own (non-immediate) read already
+                            // consumed once it completes -- the
+                            // progressive-indexing block below reads
+                            // this to pick up at the next free slot
+                            // for its own refill read, instead of
+                            // colliding with (and silently reading
+                            // stale data from) whatever slot this
+                            // arm already used. Found via xw_refill's
+                            // regression failure: ST's RMW read and
+                            // the refill read both defaulted to
+                            // prefetch[0]/prefetchCount>=1, so the
+                            // refill read was never actually issued.
+        Bool vflWriteArmHandled = False; // ST/M+ set this when THEY
+                            // resolve their own progressive update
+                            // inline (see their arms below) instead
+                            // of via the shared trailing block --
+                            // required because st.writeWord and a
+                            // refill's readWordReq both route through
+                            // storage's single BRAM port's
+                            // request.put, and bsc (correctly)
+                            // refuses two request.put call sites in
+                            // one execute() invocation (G0004) even
+                            // when they're on provably-exclusive
+                            // paths across different case arms --
+                            // found when this fix's first version hit
+                            // exactly that conflict in RL_stepRnx.
+
+        // Progressive-index bookkeeping, computed up front from
+        // Reg-only state (xIdx, the instruction's own fields) -- no
+        // BRAM dependency at all. Arms that also write to storage
+        // (ST/M+) need to know BEFORE they act whether a refill read
+        // will also be required, so they can defer their write until
+        // both reads are in hand rather than writing immediately and
+        // then also trying to issue a refill request in the same
+        // execute() call.
+        Tuple2#(IndexWord, Bool) vflPx = progressiveIndex(vi.a, xIdx);
+        IndexWord vflPx1 = tpl_1(vflPx);
+        Bool vflNeedsRefill = tpl_2(vflPx);
+
+        case (vi.code)
+          6'b000101: begin // L (Load) -- first arm converted to the
+            // prefetch/bail-out staging (docs/phase2_arm_inventory.md).
+            // Every other arm below still calls readField/readHW/
+            // maybeRefill directly (the OLD, still-synchronous
+            // st.readWord path) -- unconverted, unaffected, working
+            // exactly as before.
+            Bit#(64) raw = 0;
+            if (immediate) begin
+              raw = immediateOperand(vi.a.addr, len_);
+            end else begin
+              WordAddr w0 = baWord(ea);
+              Bit#(6) off = baBit(ea);
+              if (!fieldCrosses(ea, len_)) begin
+                if (prefetchCount >= 1) begin
+                  raw = extractFieldBits(prefetch[0], 0, off, len_);
+                  vflReadsUsed = 1;
+                end else
+                  needsRead = tagged Valid w0;
+              end else begin
+                if (prefetchCount >= 2) begin
+                  raw = extractFieldBits(prefetch[0], prefetch[1], off, len_);
+                  vflReadsUsed = 2;
+                end else if (prefetchCount == 1)
+                  needsRead = tagged Valid (w0 + 1);
+                else
+                  needsRead = tagged Valid w0;
+              end
+            end
+            if (!isValid(needsRead)) begin
+              SM128 sm = fieldToSM(raw, len_, bsz, vi.m.unsign, vi.m.invert);
+              SM128 shifted = SM128 { sign: sm.sign, mag: sm.mag << offSh };
+              writeAcc(st, shifted);
+              ind = setResultIndicatorsF(ind, shifted);
+            end
+          end
+          6'b001101: begin // ST (Store) -- prefetch/bail-out shape,
+            // inlining writeField's own internal RMW read rather
+            // than calling it: guaranteed non-crossing (checked
+            // just above), so exactly 1 read, same as SV/SC/SR.
+            if (immediate || fieldCrosses(ea, len_)) begin
+              ind = setOpInvalid(ind);
+              vflOk = False;
+            end else begin
+              SM128 acc = readAcc(st);
+              SM128 shifted = SM128 { sign: acc.sign, mag: acc.mag >> offSh };
+              Bit#(1) fsign = (vi.m.invert == 1) ? ~shifted.sign : shifted.sign;
+              Bit#(64) packedField = smToField(SM128{sign:fsign, mag:shifted.mag}, len_, bsz, vi.m.unsign);
+              WordAddr w0 = baWord(ea);
+              Bit#(6) off = baBit(ea);
+              if (!vflNeedsRefill) begin
+                if (prefetchCount >= 1) begin
+                  st.writeWord(w0, insertFieldBits(prefetch[0], off, len_, packedField));
+                  vflReadsUsed = 1;
+                end else
+                  needsRead = tagged Valid w0;
+              end else begin
+                // A refill is also needed: defer the write until
+                // BOTH reads (this field's word and the refill word)
+                // are in hand, so no execute() call ever issues a
+                // write and a new read request at once. See
+                // vflWriteArmHandled's own comment above.
+                vflWriteArmHandled = True;
+                if (prefetchCount >= 2) begin
+                  st.writeWord(w0, insertFieldBits(prefetch[0], off, len_, packedField));
+                  vflPending = tagged Valid tuple2(vi.a.i1, unpackIndexWord(prefetch[1]));
+                  ind = setIndexResultIndicatorsF(ind, vflPx1); // pre-refill state, p.21
+                end else if (prefetchCount == 1)
+                  needsRead = tagged Valid zeroExtend(vflPx1.refill);
+                else
+                  needsRead = tagged Valid w0;
+              end
+            end
+          end
+          6'b000001: begin // + (Add; "-" is this opcode with invert=1)
+            // Same prefetch/bail-out shape as L above.
+            Bit#(64) raw = 0;
+            if (immediate) begin
+              raw = immediateOperand(vi.a.addr, len_);
+            end else begin
+              WordAddr w0 = baWord(ea);
+              Bit#(6) off = baBit(ea);
+              if (!fieldCrosses(ea, len_)) begin
+                if (prefetchCount >= 1) begin
+                  raw = extractFieldBits(prefetch[0], 0, off, len_);
+                  vflReadsUsed = 1;
+                end else
+                  needsRead = tagged Valid w0;
+              end else begin
+                if (prefetchCount >= 2) begin
+                  raw = extractFieldBits(prefetch[0], prefetch[1], off, len_);
+                  vflReadsUsed = 2;
+                end else if (prefetchCount == 1)
+                  needsRead = tagged Valid (w0 + 1);
+                else
+                  needsRead = tagged Valid w0;
+              end
+            end
+            if (!isValid(needsRead)) begin
+              SM128 opnd = fieldToSM(raw, len_, bsz, vi.m.unsign, vi.m.invert);
+              SM128 opndSh = SM128 { sign: opnd.sign, mag: opnd.mag << offSh };
+              SM128 acc = readAcc(st);
+              SM128 sum = smAdd(acc, opndSh);
+              writeAcc(st, sum);
+              ind = setResultIndicatorsF(ind, sum);
+            end
+          end
+          6'b001001: begin // M+ (Add to Memory) -- prefetch/bail-out
+            // shape, inlining readFieldWithHi/writeFieldWithHi's
+            // own logic rather than calling them: guaranteed
+            // non-crossing (checked just above), exactly 1 read.
+            if (immediate || fieldCrosses(ea, len_)) begin
+              ind = setOpInvalid(ind);
+              vflOk = False;
+            end else begin
+              WordAddr w0 = baWord(ea);
+              Bit#(6) off = baBit(ea);
+              SM128 acc = readAcc(st);
+              SM128 accSh = SM128 { sign: acc.sign, mag: acc.mag >> offSh };
+              if (!vflNeedsRefill) begin
+                if (prefetchCount >= 1) begin
+                  Bit#(64) raw = extractFieldBits(prefetch[0], 0, off, len_);
+                  SM128 opnd = fieldToSM(raw, len_, bsz, vi.m.unsign, vi.m.invert);
+                  SM128 sum = smAdd(opnd, accSh);
+                  st.writeWord(w0, insertFieldBits(prefetch[0], off, len_,
+                                                    smToField(sum, len_, bsz, vi.m.unsign)));
+                  ind = setResultIndicatorsF(ind, sum);
+                  vflReadsUsed = 1;
+                end else
+                  needsRead = tagged Valid w0;
+              end else begin
+                // Same deferred-write shape as ST above.
+                vflWriteArmHandled = True;
+                if (prefetchCount >= 2) begin
+                  Bit#(64) raw = extractFieldBits(prefetch[0], 0, off, len_);
+                  SM128 opnd = fieldToSM(raw, len_, bsz, vi.m.unsign, vi.m.invert);
+                  SM128 sum = smAdd(opnd, accSh);
+                  st.writeWord(w0, insertFieldBits(prefetch[0], off, len_,
+                                                    smToField(sum, len_, bsz, vi.m.unsign)));
+                  vflPending = tagged Valid tuple2(vi.a.i1, unpackIndexWord(prefetch[1]));
+                  ind = setResultIndicatorsF(ind, sum);
+                  ind = setIndexResultIndicatorsF(ind, vflPx1); // pre-refill state, p.21
+                end else if (prefetchCount == 1)
+                  needsRead = tagged Valid zeroExtend(vflPx1.refill);
+                else
+                  needsRead = tagged Valid w0;
+              end
+            end
+          end
+          6'b010001: begin // K (Compare) -> AL/AE/AH -- same
+            // prefetch/bail-out shape as L above.
+            Bit#(64) raw = 0;
+            if (immediate) begin
+              raw = immediateOperand(vi.a.addr, len_);
+            end else begin
+              WordAddr w0 = baWord(ea);
+              Bit#(6) off = baBit(ea);
+              if (!fieldCrosses(ea, len_)) begin
+                if (prefetchCount >= 1) begin
+                  raw = extractFieldBits(prefetch[0], 0, off, len_);
+                  vflReadsUsed = 1;
+                end else
+                  needsRead = tagged Valid w0;
+              end else begin
+                if (prefetchCount >= 2) begin
+                  raw = extractFieldBits(prefetch[0], prefetch[1], off, len_);
+                  vflReadsUsed = 2;
+                end else if (prefetchCount == 1)
+                  needsRead = tagged Valid (w0 + 1);
+                else
+                  needsRead = tagged Valid w0;
+              end
+            end
+            if (!isValid(needsRead)) begin
+              SM128 opnd = fieldToSM(raw, len_, bsz, vi.m.unsign, vi.m.invert);
+              SM128 opndSh = SM128 { sign: opnd.sign, mag: opnd.mag << offSh };
+              SM128 acc = readAcc(st);
+              Cmp3 c = smCompare(acc, opndSh);
+              ind = setAccCmpIndicatorsF(ind, c);
+            end
+          end
+          default: begin
+            ind = setOpInvalid(ind);
+            vflOk = False;
+          end
+        endcase
+
+        // The progressive-index write-back is threaded out to a
+        // SEPARATE return channel (`vflPending`, realized as a real
+        // `st.writeIndex` call by the CALLER, StretchCore.step) --
+        // not folded into this function's own `doIdxWrite` (used by
+        // every other format below). Reason: L/ST/+/M+ each already
+        // call `st.writeWord` (via writeAcc/writeField) from inside
+        // this same `case (vi.code)`; once two or more of those
+        // arms ALSO conditionally call `st.writeIndex` (even via the
+        // shared `doIdxWrite` local), bsc's scheduler reports
+        // spurious G0004 write/write conflicts between arms that
+        // are mutually exclusive by construction. No other format
+        // in this file has an arm that both writes general storage
+        // and writes an index register, so this is the first place
+        // that combination arises -- isolating the index write into
+        // a value returned from (rather than performed inside) this
+        // function was the fix that survived bisection (see the
+        // exploratory diagnosis in git history / session notes: the
+        // same code, with the write left inside this function,
+        // reproduced the conflict even reduced to just two
+        // memory-writing VflInt arms with all other sites removed).
+        // Guarded on needsRead too, not just isProgressive/vflOk:
+        // if the arm above bailed out waiting on a BRAM-eligible
+        // read, this must NOT run -- it would set vflPending and
+        // mutate ind despite the instruction not actually having
+        // completed, breaking the bail-out contract (see execute()'s
+        // own header comment: nothing after a bail may touch the
+        // shared outputs).
+        if (!isValid(needsRead) && isProgressive && vflOk && !vflWriteArmHandled) begin
+          // L/+/K's shared progressive-index completion: their own
+          // read (if any) never collides with a refill read (they
+          // only write to Regs -- accumulator/indicators -- not
+          // storage), so this can safely bail for the refill itself
+          // when needed. ST/M+ instead resolve their own progressive
+          // update inline in their arms above (vflWriteArmHandled),
+          // since THEIR completion is a storage write that cannot
+          // share an execute() call with a new read request -- see
+          // vflWriteArmHandled's own comment. vflPx1/vflNeedsRefill
+          // computed once, up front, before the case (see there).
+          if (vflNeedsRefill && vflReadsUsed >= 2) begin
+            // The arm above already used both prefetch slots (a
+            // crossing-field read); a refill on top of that would
+            // need a 3rd slot, beyond this design's 2-slot bound.
+            // Not reachable by any current test (see
+            // docs/phase2_arm_inventory.md, "V+/V+C/V+CR" note) --
+            // flagged explicitly rather than silently misreading
+            // stale prefetch data, the same class of bug this fix
+            // corrects for the (own-read + refill) case below.
+            ind = setOpInvalid(ind);
+          end else if (vflNeedsRefill && prefetchCount < vflReadsUsed + 1) begin
+            needsRead = tagged Valid zeroExtend(vflPx1.refill);
+          end else begin
+            Bit#(1) slot = truncate(vflReadsUsed);
+            IndexWord px2 = vflNeedsRefill ? unpackIndexWord(prefetch[slot]) : vflPx1;
+            vflPending = tagged Valid tuple2(vi.a.i1, px2);
+            ind = setIndexResultIndicatorsF(ind, vflPx1); // pre-refill state, p.21
+          end
+        end
+      end
+    return VflOutcome{needsRead: needsRead, vflPending: vflPending, ind: ind};
+  endactionvalue
+endfunction
+
 function ActionValue#(ExecResult)
     execute(StretchStorage st, StretchIO io, HWordAddr pc, InstrLen len, DecodedInstr di,
             Vector#(2, Word64) prefetch, Bit#(2) prefetchCount) =
@@ -1548,306 +1882,10 @@ function ActionValue#(ExecResult)
       // register here).
       // -----------------------------------------------------------
       tagged VflInt .vi: begin
-        Bool isProgressive = (vi.a.p != 0 && vi.a.p != 4);
-        if (vi.m.decimal == 1)
-          ind = setOpInvalid(ind);
-        else if (isProgressive && vi.a.i1 == 0)
-          ind = setOpInvalid(ind);
-        else begin
-          Bit#(7) len_ = effLength(vi.a.length);
-          Bit#(4) bsz  = effByteSize(vi.a.bs);
-          Bool immediate = (vi.a.p == 4);
-          IndexWord xIdx = st.readIndex(vi.a.i1);
-          BitAddr ea = isProgressive ? xIdx.addr : effAddr24(st, vi.a.addr, vi.a.i1);
-          Bit#(8) offSh = zeroExtend(vi.a.offset);
-          Bool vflOk = True; // p.21: a suppressed VFL op (ST/M+
-                              // immediate-or-crossing) skips the
-                              // progressive increment too.
-          Bit#(2) vflReadsUsed = 0; // how many prefetch slots THIS
-                              // arm's own (non-immediate) read already
-                              // consumed once it completes -- the
-                              // progressive-indexing block below reads
-                              // this to pick up at the next free slot
-                              // for its own refill read, instead of
-                              // colliding with (and silently reading
-                              // stale data from) whatever slot this
-                              // arm already used. Found via xw_refill's
-                              // regression failure: ST's RMW read and
-                              // the refill read both defaulted to
-                              // prefetch[0]/prefetchCount>=1, so the
-                              // refill read was never actually issued.
-          Bool vflWriteArmHandled = False; // ST/M+ set this when THEY
-                              // resolve their own progressive update
-                              // inline (see their arms below) instead
-                              // of via the shared trailing block --
-                              // required because st.writeWord and a
-                              // refill's readWordReq both route through
-                              // storage's single BRAM port's
-                              // request.put, and bsc (correctly)
-                              // refuses two request.put call sites in
-                              // one execute() invocation (G0004) even
-                              // when they're on provably-exclusive
-                              // paths across different case arms --
-                              // found when this fix's first version hit
-                              // exactly that conflict in RL_stepRnx.
-
-          // Progressive-index bookkeeping, computed up front from
-          // Reg-only state (xIdx, the instruction's own fields) -- no
-          // BRAM dependency at all. Arms that also write to storage
-          // (ST/M+) need to know BEFORE they act whether a refill read
-          // will also be required, so they can defer their write until
-          // both reads are in hand rather than writing immediately and
-          // then also trying to issue a refill request in the same
-          // execute() call.
-          Tuple2#(IndexWord, Bool) vflPx = progressiveIndex(vi.a, xIdx);
-          IndexWord vflPx1 = tpl_1(vflPx);
-          Bool vflNeedsRefill = tpl_2(vflPx);
-
-          case (vi.code)
-            6'b000101: begin // L (Load) -- first arm converted to the
-              // prefetch/bail-out staging (docs/phase2_arm_inventory.md).
-              // Every other arm below still calls readField/readHW/
-              // maybeRefill directly (the OLD, still-synchronous
-              // st.readWord path) -- unconverted, unaffected, working
-              // exactly as before.
-              Bit#(64) raw = 0;
-              if (immediate) begin
-                raw = immediateOperand(vi.a.addr, len_);
-              end else begin
-                WordAddr w0 = baWord(ea);
-                Bit#(6) off = baBit(ea);
-                if (!fieldCrosses(ea, len_)) begin
-                  if (prefetchCount >= 1) begin
-                    raw = extractFieldBits(prefetch[0], 0, off, len_);
-                    vflReadsUsed = 1;
-                  end else
-                    needsRead = tagged Valid w0;
-                end else begin
-                  if (prefetchCount >= 2) begin
-                    raw = extractFieldBits(prefetch[0], prefetch[1], off, len_);
-                    vflReadsUsed = 2;
-                  end else if (prefetchCount == 1)
-                    needsRead = tagged Valid (w0 + 1);
-                  else
-                    needsRead = tagged Valid w0;
-                end
-              end
-              if (!isValid(needsRead)) begin
-                SM128 sm = fieldToSM(raw, len_, bsz, vi.m.unsign, vi.m.invert);
-                SM128 shifted = SM128 { sign: sm.sign, mag: sm.mag << offSh };
-                writeAcc(st, shifted);
-                ind = setResultIndicatorsF(ind, shifted);
-              end
-            end
-            6'b001101: begin // ST (Store) -- prefetch/bail-out shape,
-              // inlining writeField's own internal RMW read rather
-              // than calling it: guaranteed non-crossing (checked
-              // just above), so exactly 1 read, same as SV/SC/SR.
-              if (immediate || fieldCrosses(ea, len_)) begin
-                ind = setOpInvalid(ind);
-                vflOk = False;
-              end else begin
-                SM128 acc = readAcc(st);
-                SM128 shifted = SM128 { sign: acc.sign, mag: acc.mag >> offSh };
-                Bit#(1) fsign = (vi.m.invert == 1) ? ~shifted.sign : shifted.sign;
-                Bit#(64) packedField = smToField(SM128{sign:fsign, mag:shifted.mag}, len_, bsz, vi.m.unsign);
-                WordAddr w0 = baWord(ea);
-                Bit#(6) off = baBit(ea);
-                if (!vflNeedsRefill) begin
-                  if (prefetchCount >= 1) begin
-                    st.writeWord(w0, insertFieldBits(prefetch[0], off, len_, packedField));
-                    vflReadsUsed = 1;
-                  end else
-                    needsRead = tagged Valid w0;
-                end else begin
-                  // A refill is also needed: defer the write until
-                  // BOTH reads (this field's word and the refill word)
-                  // are in hand, so no execute() call ever issues a
-                  // write and a new read request at once. See
-                  // vflWriteArmHandled's own comment above.
-                  vflWriteArmHandled = True;
-                  if (prefetchCount >= 2) begin
-                    st.writeWord(w0, insertFieldBits(prefetch[0], off, len_, packedField));
-                    vflPending = tagged Valid tuple2(vi.a.i1, unpackIndexWord(prefetch[1]));
-                    ind = setIndexResultIndicatorsF(ind, vflPx1); // pre-refill state, p.21
-                  end else if (prefetchCount == 1)
-                    needsRead = tagged Valid zeroExtend(vflPx1.refill);
-                  else
-                    needsRead = tagged Valid w0;
-                end
-              end
-            end
-            6'b000001: begin // + (Add; "-" is this opcode with invert=1)
-              // Same prefetch/bail-out shape as L above.
-              Bit#(64) raw = 0;
-              if (immediate) begin
-                raw = immediateOperand(vi.a.addr, len_);
-              end else begin
-                WordAddr w0 = baWord(ea);
-                Bit#(6) off = baBit(ea);
-                if (!fieldCrosses(ea, len_)) begin
-                  if (prefetchCount >= 1) begin
-                    raw = extractFieldBits(prefetch[0], 0, off, len_);
-                    vflReadsUsed = 1;
-                  end else
-                    needsRead = tagged Valid w0;
-                end else begin
-                  if (prefetchCount >= 2) begin
-                    raw = extractFieldBits(prefetch[0], prefetch[1], off, len_);
-                    vflReadsUsed = 2;
-                  end else if (prefetchCount == 1)
-                    needsRead = tagged Valid (w0 + 1);
-                  else
-                    needsRead = tagged Valid w0;
-                end
-              end
-              if (!isValid(needsRead)) begin
-                SM128 opnd = fieldToSM(raw, len_, bsz, vi.m.unsign, vi.m.invert);
-                SM128 opndSh = SM128 { sign: opnd.sign, mag: opnd.mag << offSh };
-                SM128 acc = readAcc(st);
-                SM128 sum = smAdd(acc, opndSh);
-                writeAcc(st, sum);
-                ind = setResultIndicatorsF(ind, sum);
-              end
-            end
-            6'b001001: begin // M+ (Add to Memory) -- prefetch/bail-out
-              // shape, inlining readFieldWithHi/writeFieldWithHi's
-              // own logic rather than calling them: guaranteed
-              // non-crossing (checked just above), exactly 1 read.
-              if (immediate || fieldCrosses(ea, len_)) begin
-                ind = setOpInvalid(ind);
-                vflOk = False;
-              end else begin
-                WordAddr w0 = baWord(ea);
-                Bit#(6) off = baBit(ea);
-                SM128 acc = readAcc(st);
-                SM128 accSh = SM128 { sign: acc.sign, mag: acc.mag >> offSh };
-                if (!vflNeedsRefill) begin
-                  if (prefetchCount >= 1) begin
-                    Bit#(64) raw = extractFieldBits(prefetch[0], 0, off, len_);
-                    SM128 opnd = fieldToSM(raw, len_, bsz, vi.m.unsign, vi.m.invert);
-                    SM128 sum = smAdd(opnd, accSh);
-                    st.writeWord(w0, insertFieldBits(prefetch[0], off, len_,
-                                                      smToField(sum, len_, bsz, vi.m.unsign)));
-                    ind = setResultIndicatorsF(ind, sum);
-                    vflReadsUsed = 1;
-                  end else
-                    needsRead = tagged Valid w0;
-                end else begin
-                  // Same deferred-write shape as ST above.
-                  vflWriteArmHandled = True;
-                  if (prefetchCount >= 2) begin
-                    Bit#(64) raw = extractFieldBits(prefetch[0], 0, off, len_);
-                    SM128 opnd = fieldToSM(raw, len_, bsz, vi.m.unsign, vi.m.invert);
-                    SM128 sum = smAdd(opnd, accSh);
-                    st.writeWord(w0, insertFieldBits(prefetch[0], off, len_,
-                                                      smToField(sum, len_, bsz, vi.m.unsign)));
-                    vflPending = tagged Valid tuple2(vi.a.i1, unpackIndexWord(prefetch[1]));
-                    ind = setResultIndicatorsF(ind, sum);
-                    ind = setIndexResultIndicatorsF(ind, vflPx1); // pre-refill state, p.21
-                  end else if (prefetchCount == 1)
-                    needsRead = tagged Valid zeroExtend(vflPx1.refill);
-                  else
-                    needsRead = tagged Valid w0;
-                end
-              end
-            end
-            6'b010001: begin // K (Compare) -> AL/AE/AH -- same
-              // prefetch/bail-out shape as L above.
-              Bit#(64) raw = 0;
-              if (immediate) begin
-                raw = immediateOperand(vi.a.addr, len_);
-              end else begin
-                WordAddr w0 = baWord(ea);
-                Bit#(6) off = baBit(ea);
-                if (!fieldCrosses(ea, len_)) begin
-                  if (prefetchCount >= 1) begin
-                    raw = extractFieldBits(prefetch[0], 0, off, len_);
-                    vflReadsUsed = 1;
-                  end else
-                    needsRead = tagged Valid w0;
-                end else begin
-                  if (prefetchCount >= 2) begin
-                    raw = extractFieldBits(prefetch[0], prefetch[1], off, len_);
-                    vflReadsUsed = 2;
-                  end else if (prefetchCount == 1)
-                    needsRead = tagged Valid (w0 + 1);
-                  else
-                    needsRead = tagged Valid w0;
-                end
-              end
-              if (!isValid(needsRead)) begin
-                SM128 opnd = fieldToSM(raw, len_, bsz, vi.m.unsign, vi.m.invert);
-                SM128 opndSh = SM128 { sign: opnd.sign, mag: opnd.mag << offSh };
-                SM128 acc = readAcc(st);
-                Cmp3 c = smCompare(acc, opndSh);
-                ind = setAccCmpIndicatorsF(ind, c);
-              end
-            end
-            default: begin
-              ind = setOpInvalid(ind);
-              vflOk = False;
-            end
-          endcase
-
-          // The progressive-index write-back is threaded out to a
-          // SEPARATE return channel (`vflPending`, realized as a real
-          // `st.writeIndex` call by the CALLER, StretchCore.step) --
-          // not folded into this function's own `doIdxWrite` (used by
-          // every other format below). Reason: L/ST/+/M+ each already
-          // call `st.writeWord` (via writeAcc/writeField) from inside
-          // this same `case (vi.code)`; once two or more of those
-          // arms ALSO conditionally call `st.writeIndex` (even via the
-          // shared `doIdxWrite` local), bsc's scheduler reports
-          // spurious G0004 write/write conflicts between arms that
-          // are mutually exclusive by construction. No other format
-          // in this file has an arm that both writes general storage
-          // and writes an index register, so this is the first place
-          // that combination arises -- isolating the index write into
-          // a value returned from (rather than performed inside) this
-          // function was the fix that survived bisection (see the
-          // exploratory diagnosis in git history / session notes: the
-          // same code, with the write left inside this function,
-          // reproduced the conflict even reduced to just two
-          // memory-writing VflInt arms with all other sites removed).
-          // Guarded on needsRead too, not just isProgressive/vflOk:
-          // if the arm above bailed out waiting on a BRAM-eligible
-          // read, this must NOT run -- it would set vflPending and
-          // mutate ind despite the instruction not actually having
-          // completed, breaking the bail-out contract (see execute()'s
-          // own header comment: nothing after a bail may touch the
-          // shared outputs).
-          if (!isValid(needsRead) && isProgressive && vflOk && !vflWriteArmHandled) begin
-            // L/+/K's shared progressive-index completion: their own
-            // read (if any) never collides with a refill read (they
-            // only write to Regs -- accumulator/indicators -- not
-            // storage), so this can safely bail for the refill itself
-            // when needed. ST/M+ instead resolve their own progressive
-            // update inline in their arms above (vflWriteArmHandled),
-            // since THEIR completion is a storage write that cannot
-            // share an execute() call with a new read request -- see
-            // vflWriteArmHandled's own comment. vflPx1/vflNeedsRefill
-            // computed once, up front, before the case (see there).
-            if (vflNeedsRefill && vflReadsUsed >= 2) begin
-              // The arm above already used both prefetch slots (a
-              // crossing-field read); a refill on top of that would
-              // need a 3rd slot, beyond this design's 2-slot bound.
-              // Not reachable by any current test (see
-              // docs/phase2_arm_inventory.md, "V+/V+C/V+CR" note) --
-              // flagged explicitly rather than silently misreading
-              // stale prefetch data, the same class of bug this fix
-              // corrects for the (own-read + refill) case below.
-              ind = setOpInvalid(ind);
-            end else if (vflNeedsRefill && prefetchCount < vflReadsUsed + 1) begin
-              needsRead = tagged Valid zeroExtend(vflPx1.refill);
-            end else begin
-              Bit#(1) slot = truncate(vflReadsUsed);
-              IndexWord px2 = vflNeedsRefill ? unpackIndexWord(prefetch[slot]) : vflPx1;
-              vflPending = tagged Valid tuple2(vi.a.i1, px2);
-              ind = setIndexResultIndicatorsF(ind, vflPx1); // pre-refill state, p.21
-            end
-          end
-        end
+        VflOutcome vo <- vflIntOp(st, vi, prefetch, prefetchCount, ind);
+        needsRead  = vo.needsRead;
+        vflPending = vo.vflPending;
+        ind        = vo.ind;
       end
 
       // -----------------------------------------------------------

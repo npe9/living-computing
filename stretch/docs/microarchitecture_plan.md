@@ -2582,6 +2582,41 @@ hand vectors alone. "Enables" notes the dependency chain.
    distinctions behind a parameter. The rule this settles: extract
    what is identical, not what merely rhymes.
 
+   THE THIRD CUT: vflIntOp, the whole VFL integer arm, 302 lines down
+   to six. execute() is now 984 lines, from 2,270 where the review
+   found it.
+
+   This one needed a named type first. The VflInt payload was an
+   ANONYMOUS struct inside DecodedInstr, which cannot be passed to a
+   function; naming it VflInstr is what made the cut possible, and it
+   cost one construction site (StretchDecode.bsv's `tagged VflInt {...}`
+   becomes `tagged VflInt VflInstr {...}` -- bsc says so plainly:
+   "Constructor `VflInt' for type `DecodedInstr' does not have named
+   fields").
+
+   The boundary is wider than the Fp classes' and was measured the same
+   way. Of execute()'s locals this arm touches exactly three --
+   needsRead, vflPending and ind -- so those three are the return
+   channel (a VflOutcome struct) and nothing else crosses. It never
+   mentions doIdxWrite, idxWriteVal, ioStart, io., next, fallthrough,
+   pc or len; of storage it uses only readIndex and writeWord.
+
+   needsRead is threaded rather than merely returned, because the
+   trailing progressive-index block READS it: `!isValid(needsRead)`
+   suppresses the update when an arm above has already asked for a
+   read. An out-parameter would have been wrong.
+
+   THE G0004 RISK DID NOT MATERIALIZE. The arm's own comments warn
+   that bsc refuses two request.put call sites in one execute()
+   invocation even on provably-exclusive paths across different case
+   arms, which is why vflWriteArmHandled exists at all -- so moving
+   four st.writeWord sites and a refill's readWordReq into a
+   package-level function was a pure-relocation diff that could
+   legitimately have changed the scheduling verdict. It built clean.
+   The reason is that this arm had ALREADY consolidated itself to one
+   write site per path; an arm that had not would need that done
+   first, not the cut abandoned.
+
    STILL OPEN FROM THE REVIEW: the rest of (3) the literal 5'b01111
    means CM in the connective path and V+CR in the direct-index path,
    eleven occurrences, with the same collision for 5'b10111 and
