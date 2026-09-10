@@ -100,6 +100,7 @@ FK116   DD(BU,64,8), (8)0002117777777777777760
         SLC, (8)22333.0
 FK122   DD(BU,64,8), (8)0025777777777777777760
 FK123   DD(BU,64,8), (8)0024777777777777777760
+FK124   DD(BU,64,8), (8)0002417777777777777760
         SLC, (8)22355.0
 ROS     DD(BU,64,8), 0
 
@@ -156,6 +157,22 @@ SAP25   BB1, $NM, $+1.0                      ! turn noisy mode on
         CT0110(BU,60), FK123, 68
         SIC, SEN
         BRGZ, SERS
+! H, I AND J ARE THE COMPARES, and p.90 gives them ADD's rule: "Since
+! there is no stored arithmetic result in a comparison operation, the
+! normalization modifier affects the operation only during noisy mode
+! operation.  When noisy mode and normalized operation are specified,
+! the operand having the higher exponent, or the accumulator operand if
+! both operands have equal exponents, is extended with 48 low-order
+! ones prior to forming the intermediate difference, as in ADD."  So
+! the fpAdd fix should carry them, and each expects EQUAL: FK124 at +5
+! against FPK32 at +2 differ only below the 48 bits the comparison
+! keeps.
+!
+! H and I clear $IND, which also clears NOISY MODE -- indicator 63 is
+! in that word -- so each has to set it again with its own BB1.  J does
+! not clear, so it inherits NM from I and uses its BB1 on the AH
+! indicator instead.
+!
 ! -- ADD TO MEMORY CHECK --
 ! F219E - exp mem + exp acc + +48
         L(BU), FK114
@@ -184,5 +201,35 @@ SAP25   BB1, $NM, $+1.0                      ! turn noisy mode on
         CT0110(BU,60), ROS, 4
         SIC, SEN
         BRGZ, SERS
-PASS    BEW, $                               ! 021522.00: F219H's first instruction
+! -- COMPARE CHECK --
+! F219H
+        B, $+.32
+        Z, $IND
+        BB1, $NM, $+1.0                      ! Z,$IND cleared NM; set it again
+        DL(U), FK124
+        K(N), FPK32
+        SIC, SEN
+        BZAE, SERS                           ! error if AE off
+        SIC, SEN
+        BAH, SERS                            ! error if AH on
+! -- COMPARE MAGNITUDE CHECK --
+! F219I
+        B, $+.32
+        Z, $IND
+        BB1, $NM, $+1.0
+        DL(U), FK124
+        KMG(N), FPK32
+        SIC, SEN
+        BZAE, SERS                           ! error if AE off
+        SIC, SEN
+        BAH, SERS                            ! error if AH on
+! -- COMPARE FOR RANGE CHECK --
+! F219J
+        B, $+.32
+        BB1, $AH, $+1.0                      ! set AH, not NM: NM is still on
+        DL(U), FK124
+        KR(N), FPK32
+        SIC, SEN
+        BZAH, SERS                           ! error if AH off
+PASS    BEW, $                               ! 021537.40
         END, SAP25

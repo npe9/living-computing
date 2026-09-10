@@ -620,7 +620,34 @@ endfunction
 
 // ---- COMPARE (p.90-91): algebraic comparison a ? b. Returns -1/0/+1
 // (accumulator low / equal / high).
-function Int#(2) fpCompare(FpNum a, FpNum b, Bool magnitude);
+// COMPARE (K/KMG/KR/KMGR, p.90).  "The two numbers are compared
+// algebraically by subtraction... In the intermediate stage the
+// subtraction operation is identical to ADD except for a sign
+// inversion.  The result is discarded and the comparison result
+// indicators rather than the arithmetic result indicators are set...
+// When the exponent difference is 48 or less, A ZERO RESULT IS
+// CONSIDERED AN EQUALITY, and for this case + 0 is equal to - 0."
+//
+// Two consequences this function used to miss, both found by jb_af1c
+// F219H:
+//
+//   * "A zero result" is ADD's result, which is the HIGH 48 BITS of the
+//     96-bit difference.  Two numbers differing only below that are
+//     EQUAL to a compare.  Comparing the full 96 bits made F219H's
+//     FK124-against-FPK32 come out low.
+//   * Noisy mode reaches comparisons: "Since there is no stored
+//     arithmetic result in a comparison operation, the normalization
+//     modifier affects the operation only during noisy mode operation.
+//     When noisy mode and normalized operation are specified, the
+//     operand having the higher exponent, or the accumulator operand if
+//     both operands have equal exponents, is extended with 48 low-order
+//     ones prior to forming the intermediate difference, as in ADD."
+//     So the same one-operand extension fpAdd does.
+//
+// Normalization on its own changes nothing here, which is why the
+// difference is taken unnormalized however the modifier is set.
+function Int#(2) fpCompare(FpNum a, FpNum b, Bool magnitude,
+                           Bool normalized, Bool noisy);
   if (magnitude) a.sign = 0;
   // Zero fractions: "plus zero is equal to negative zero"; otherwise
   // sign, then exponent, then fraction (Fig.24), with flagged ranges
@@ -641,10 +668,19 @@ function Int#(2) fpCompare(FpNum a, FpNum b, Bool magnitude);
       Int#(14) adiff = (diff < 0) ? -diff : diff;
       if (adiff > 48) mag = (diff > 0) ? 1 : -1;   // judged by exponent (p.90)
       else begin
-        // Align and compare 96-bit magnitudes.
-        Bit#(96) fa = {a.frac, 48'b0}, fb = {b.frac, 48'b0};
+        // Align and subtract.  The ones go to the higher-exponent
+        // operand, or to the accumulator (`a`) on a tie, exactly as in
+        // fpAdd.
+        Bit#(48) ext = (normalized && noisy) ? 48'hFFFFFFFFFFFF : 48'h000000000000;
+        Bool aBig = (diff >= 0);
+        Bit#(96) fa = { a.frac, aBig ? ext : 48'h000000000000 };
+        Bit#(96) fb = { b.frac, aBig ? 48'h000000000000 : ext };
         if (diff > 0) fb = fb >> adiff; else fa = fa >> adiff;
-        if (fa > fb) mag = 1; else if (fa < fb) mag = -1; else mag = 0;
+        Bit#(96) d96 = (fa >= fb) ? (fa - fb) : (fb - fa);
+        // "a zero result is considered an equality" -- the result is
+        // ADD's 48 high-order bits, not the whole 96-bit difference.
+        if (d96[95:48] == 0) mag = 0;
+        else mag = (fa > fb) ? 1 : -1;
       end
     end
     if (aZero && bZero) return 0;

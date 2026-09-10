@@ -2355,7 +2355,37 @@ hand vectors alone. "Enables" notes the dependency chain.
    having the higher exponent, or the accumulator operand if both
    operands have equal exponents, is extended with 48 low-order ones
    prior to forming the intermediate difference, as in ADD." So the
-   fpAdd fix may already cover them -- which the blocks will say. Then R/, D/ and SRT -- R/ is
+   fpAdd fix may already cover them -- which the blocks will say.
+
+   F219H, I AND J DONE, F219A-J COMPLETE (11 sub-tests), suite 234 --
+   AND THE COMPARES FOUND A FOURTH FAULT, in fpCompare, which the fpAdd
+   fix did NOT cover because fpCompare never saw noisy mode at all.
+   Two things were wrong, and H catches both at once:
+
+     * fpCompare took neither `normalized` nor `noisy`. p.90: "the
+       normalization modifier affects the operation only during noisy
+       mode operation. When noisy mode and normalized operation are
+       specified, the operand having the higher exponent, or the
+       accumulator operand if both operands have equal exponents, is
+       extended with 48 low-order ones prior to forming the
+       intermediate difference, as in ADD."
+     * IT COMPARED THE FULL 96-BIT ALIGNED MAGNITUDES. p.90 says the
+       subtraction "is identical to ADD except for a sign inversion"
+       and that "a zero result is considered an equality" -- and ADD's
+       result is the HIGH 48 BITS of the 96-bit intermediate. Two
+       numbers differing only below that are EQUAL to a compare.
+
+   F219H is DL(U) FK124 (+5, fraction 1fffffffffff) against K(N) FPK32
+   (+2, ffffffffffff). Aligned, they differ by 1fffffffffff -- entirely
+   below bit 48 -- so the answer is AE, and the old code reported AL.
+   Both corrections are needed: with the full-96 comparison the noisy
+   extension alone flips AL to AH, and with the high-48 rule alone the
+   answer is right for the wrong reason.
+
+   That is FOUR noisy-mode faults from one routine (fpAdd's operand
+   extension, LOAD/LFT's 96-bit normalization, STORE's missing
+   normalization, and fpCompare's two), none of which anything before
+   F219 could reach, because nothing before it ever set indicator 63. Then R/, D/ and SRT -- R/ is
    p.94's "same process with dividends and divisors interchanged" and
    falls out of fpDiv, but it waits for a block that drives it. p.99
    also gives the remainder register a role nothing uses yet; D/ is

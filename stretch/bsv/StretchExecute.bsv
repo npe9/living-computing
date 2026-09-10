@@ -2048,7 +2048,7 @@ function ActionValue#(Tuple4#(HWordAddr, Maybe#(Tuple2#(Bit#(4), IndexWord)),
             7'b0010010, 7'b0110010, 7'b0010110, 7'b0110110: begin // K / KMG / KR / KMGR
               Bool magnitude = (c == 7'b0110010 || c == 7'b0110110);
               Bool range = (c == 7'b0010110 || c == 7'b0110110);
-              Int#(2) cmp = fpCompare(acc, opnd, magnitude);
+              Int#(2) cmp = fpCompare(acc, opnd, magnitude, normalized, noisy);
               ind = setBit(ind, ind_MOP, 0);
               Int#(13) ea_ = fpExp(acc), eb_ = fpExp(opnd);
               Int#(14) d = signExtend(ea_) - signExtend(eb_);
