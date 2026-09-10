@@ -265,6 +265,50 @@ Bit#(6) ind_AL   = 60; Bit#(6) ind_AE   = 61; Bit#(6) ind_AH   = 62;
 Bit#(6) ind_NM   = 63;
 
 // ---------------------------------------------------------------------
+// Floating-point operation codes, IBM bits 5-11 of the instruction.
+// These are the same twenty-nine codes the assembler carries in
+// strap/opcodes.py FP_CODES, and the identifier keeps the machine's own
+// mnemonic so a listing row and a case arm read alike ("*+" is
+// fpop_STAR_PLUS, "R/" is fpop_R_SLASH).
+//
+// They existed as bare 7-bit literals in three places that each wrote
+// the whole set out by hand -- isValidFpCode in StretchDecode, the
+// `known` disjunction in StretchExecute, and the dispatch arms
+// themselves.  The three agreed, but three hand-maintained copies of a
+// twenty-nine element set is a drift generator, and the mnemonic was
+// carried only in a trailing comment.
+// ---------------------------------------------------------------------
+Bit#(7) fpop_PLUS        = 7'b0000010;   // +
+Bit#(7) fpop_L           = 7'b0000110;   // L
+Bit#(7) fpop_M_PLUS      = 7'b0001010;   // M+
+Bit#(7) fpop_ST          = 7'b0001110;   // ST
+Bit#(7) fpop_K           = 7'b0010010;   // K
+Bit#(7) fpop_KR          = 7'b0010110;   // KR
+Bit#(7) fpop_STAR        = 7'b0011010;   // *
+Bit#(7) fpop_SLASH       = 7'b0011110;   // /
+Bit#(7) fpop_PLUS_MG     = 7'b0100010;   // +MG
+Bit#(7) fpop_LWF         = 7'b0100110;   // LWF
+Bit#(7) fpop_M_PLUS_MG   = 7'b0101010;   // M+MG
+Bit#(7) fpop_SRD         = 7'b0101110;   // SRD
+Bit#(7) fpop_KMG         = 7'b0110010;   // KMG
+Bit#(7) fpop_KMGR        = 7'b0110110;   // KMGR
+Bit#(7) fpop_STAR_PLUS   = 7'b0111010;   // *+
+Bit#(7) fpop_R_SLASH     = 7'b0111110;   // R/
+Bit#(7) fpop_D_PLUS      = 7'b1000010;   // D+
+Bit#(7) fpop_DL          = 7'b1000110;   // DL
+Bit#(7) fpop_LFT         = 7'b1001010;   // LFT
+Bit#(7) fpop_SLO         = 7'b1001110;   // SLO
+Bit#(7) fpop_F_PLUS      = 7'b1010010;   // F+
+Bit#(7) fpop_E_PLUS      = 7'b1010110;   // E+
+Bit#(7) fpop_D_STAR      = 7'b1011010;   // D*
+Bit#(7) fpop_D_SLASH     = 7'b1011110;   // D/
+Bit#(7) fpop_D_PLUS_MG   = 7'b1100010;   // D+MG
+Bit#(7) fpop_DLWF        = 7'b1100110;   // DLWF
+Bit#(7) fpop_SRT         = 7'b1101110;   // SRT
+Bit#(7) fpop_SHF         = 7'b1110010;   // SHF
+Bit#(7) fpop_E_PLUS_I    = 7'b1110110;   // E+I
+
+// ---------------------------------------------------------------------
 // Decoded-instruction representation.
 //
 // Per the advisor guidance captured in bsv/README.md ("decode

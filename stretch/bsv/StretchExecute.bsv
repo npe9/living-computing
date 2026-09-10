@@ -1410,7 +1410,7 @@ function ActionValue#(ExecResult)
         // E+I, whose "address" is a shift spec / immediate exponent
         // and is explicitly not boundary-monitored (Reference Manual
         // pp.101-102).
-        if (ea >= 18'd98304 && fp.code != 7'b1110010 && fp.code != 7'b1110110)
+        if (ea >= 18'd98304 && fp.code != fpop_SHF && fp.code != fpop_E_PLUS_I)
           ind = setBit(ind, ind_AD, 1);
         else begin
         Bool normalized = (fp.unnorm == 0);
@@ -1419,26 +1419,26 @@ function ActionValue#(ExecResult)
         Word64 accL = st.readAccLeft();
         Word64 accS = st.readAccSign();
         Bit#(7) c = fp.code;
-        Bool isST = (c == 7'b0001110);
-        Bool isSRD = (c == 7'b0101110);  // STORE ROUNDED (p.96)
-        Bool isSLO = (c == 7'b1001110);  // STORE LOW ORDER (p.97)
+        Bool isST = (c == fpop_ST);
+        Bool isSRD = (c == fpop_SRD);  // STORE ROUNDED (p.96)
+        Bool isSLO = (c == fpop_SLO);  // STORE LOW ORDER (p.97)
         // Divide (/ and R/) is deferred to the multi-cycle arithmetic
         // unit (plan stage 4e): done combinationally here it unfolds
         // into a full-width divider, and the real machine's divide is
         // iterative anyway (~3.5 quotient bits per cycle, Buchholz
         // p.213). Until then it decodes but does not execute.
-        Bool isSHF = (c == 7'b1110010);
-        Bool isEplI = (c == 7'b1110110);  // E+I (add immediate to exponent)
-        Bool known = (c == 7'b0000010 || c == 7'b0100010 || c == 7'b0000110 || c == 7'b0100110
-                   || c == 7'b0001010 || c == 7'b0101010 || isST
-                   || c == 7'b0010010 || c == 7'b0110010 || c == 7'b0010110 || c == 7'b0110110
-                   || c == 7'b0011010 || c == 7'b1011010 || c == 7'b1001010 || c == 7'b0111010
-                   || c == 7'b0011110 || c == 7'b1011110 || c == 7'b0111110  // /, D/, R/
-                   || c == 7'b1101110                     // SRT (STORE ROOT)
-                   || c == 7'b1010110 || isEplI || isSHF
-                   || c == 7'b1000110 || c == 7'b1100110   // DL / DLWF
-                   || c == 7'b1000010 || c == 7'b1100010   // D+ / D+MG
-                   || c == 7'b1010010                     // F+ (ADD TO FRACTION)
+        Bool isSHF = (c == fpop_SHF);
+        Bool isEplI = (c == fpop_E_PLUS_I);  // E+I (add immediate to exponent)
+        Bool known = (c == fpop_PLUS || c == fpop_PLUS_MG || c == fpop_L || c == fpop_LWF
+                   || c == fpop_M_PLUS || c == fpop_M_PLUS_MG || isST
+                   || c == fpop_K || c == fpop_KMG || c == fpop_KR || c == fpop_KMGR
+                   || c == fpop_STAR || c == fpop_D_STAR || c == fpop_LFT || c == fpop_STAR_PLUS
+                   || c == fpop_SLASH || c == fpop_D_SLASH || c == fpop_R_SLASH
+                   || c == fpop_SRT
+                   || c == fpop_E_PLUS || isEplI || isSHF
+                   || c == fpop_DL || c == fpop_DLWF
+                   || c == fpop_D_PLUS || c == fpop_D_PLUS_MG
+                   || c == fpop_F_PLUS
                    || isSRD || isSLO);                     // SRD / SLO
         if (!known)
           ind = setOpInvalid(ind);   // every floating-point operation is now implemented
@@ -1474,7 +1474,7 @@ function ActionValue#(ExecResult)
           // "If an EF of 1 is generated during normalization, the
           // exponent range indicator XPU is turned on."
           ind = setRangeIndicators(ind, fpRangeBits(v, gen, !gen && v.ef == 1));
-        end else if (c == 7'b1101110) begin // SRT (STORE ROOT, pp.93, 95)
+        end else if (c == fpop_SRT) begin // SRT (STORE ROOT, pp.93, 95)
           // A store, so like ST it needs no operand fetch and is
           // handled before the prefetch requirement below.
           FpSqrtResult r = fpSqrt(acc, fp.absSign, fp.invSign, normalized);
@@ -1740,9 +1740,9 @@ function ActionValue#(ExecResult)
           ind = setBit(ind, ind_UF, opnd0.flags[1]);
           ind = setBit(ind, ind_VF, opnd0.flags[0]);
           case (c)
-            7'b0000110, 7'b0100110: begin // L / LWF
+            fpop_L, fpop_LWF: begin // L / LWF
               FpNum v = opnd;
-              v.flags = (c == 7'b0100110) ? opnd0.flags : 0;
+              v.flags = (c == fpop_LWF) ? opnd0.flags : 0;
               Bool gen = False;
               if (normalized && v.ef == 0 && v.frac != 0) begin
                 // FORTY-EIGHT BITS, NOT NINETY-SIX.  This is a
@@ -1769,7 +1769,7 @@ function ActionValue#(ExecResult)
               ind = setRangeIndicators(ind, fpRangeBits(v, gen, !gen && v.ef == 1));
               ind = setBit(ind, ind_ZM, 0);
             end
-            7'b1001010: begin // LFT (LOAD FACTOR, p.98)
+            fpop_LFT: begin // LFT (LOAD FACTOR, p.98)
               // "The operand specified by the effective address is
               // placed in the factor register, FT.  The accumulator
               // does not participate in the operation and remains
@@ -1827,7 +1827,7 @@ function ActionValue#(ExecResult)
               ind = setRangeIndicators(ind, fpRangeBits(v, gen, !gen && v.ef == 1));
               ind = setBit(ind, ind_ZM, 0);
             end
-            7'b1000110, 7'b1100110: begin // DL / DLWF (p.96)
+            fpop_DL, fpop_DLWF: begin // DL / DLWF (p.96)
               // LOAD DOUBLE "is the same as LOAD except that the
               // accumulator bits 60-107 are set to zero": the exponent
               // and fraction replace bits 0-59, bits 60-107 -- the low
@@ -1852,7 +1852,7 @@ function ActionValue#(ExecResult)
               // bits 60-107 rather than bits that fall off the end.
               // That is why this uses fpNormalize96Wide.
               FpNum v = opnd;
-              v.flags = (c == 7'b1100110) ? opnd0.flags : 0;
+              v.flags = (c == fpop_DLWF) ? opnd0.flags : 0;
               Bit#(96) f96 = {v.frac, 48'b0};
               Bool gen = False;
               if (normalized && v.ef == 0 && v.frac != 0) begin
@@ -1869,7 +1869,7 @@ function ActionValue#(ExecResult)
               ind = setRangeIndicators(ind, fpRangeBits(v, gen, !gen && v.ef == 1));
               ind = setBit(ind, ind_ZM, 0);
             end
-            7'b1000010, 7'b1100010: begin // D+ / D+MG (p.95)
+            fpop_D_PLUS, fpop_D_PLUS_MG: begin // D+ / D+MG (p.95)
               // ADD DOUBLE works on the accumulator's whole 96-bit
               // fraction, IBM bits 12-107, against a storage operand
               // extended with 48 low-order zeros. Bits 108-127 are
@@ -1879,7 +1879,7 @@ function ActionValue#(ExecResult)
               FpDouble da = fpdFromAcc(accL, accR, accS);
               FpDouble db = fpdFromWord(prefetch[0]);
               db.sign = opnd.sign;   // the sign modifiers, already applied
-              FpdResult r = fpAddDouble(da, db, normalized, noisy, c == 7'b1100010);
+              FpdResult r = fpAddDouble(da, db, normalized, noisy, c == fpop_D_PLUS_MG);
               // ADD DOUBLE TO MAGNITUDE keeps the accumulator's OWN
               // sign whatever the sum did -- "the sign remains
               // unchanged" for a positive sum, and for a forced zero
@@ -1888,7 +1888,7 @@ function ActionValue#(ExecResult)
               // forced a.sign positive to decide the forced zero, so
               // put the real one back here, exactly as the +MG arm
               // does with acc.sign.
-              if (c == 7'b1100010) r.res.sign = sbSign(accS);
+              if (c == fpop_D_PLUS_MG) r.res.sign = sbSign(accS);
               st.writeWord(addrAccLeft, fpdAccLeft(r.res));
               st.writeWord(addrAccRight, fpdAccRight(r.res, accR));
               // ADD leaves sign byte bits 0-3 and 5-7 alone and replaces
@@ -1918,7 +1918,7 @@ function ActionValue#(ExecResult)
               ind = setRangeIndicators(ind, fpRangeBits(vind, r.generated, r.propagated));
               ind = setBit(ind, ind_ZM, 0);
             end
-            7'b1010010: begin // F+ (ADD TO FRACTION, p.101)
+            fpop_F_PLUS: begin // F+ (ADD TO FRACTION, p.101)
               // "The operation is the same as ADD DOUBLE except that
               // the exponent of the operand in the accumulator is used
               // for both the addressed operand and the operand in the
@@ -1994,14 +1994,14 @@ function ActionValue#(ExecResult)
               ind = setRangeIndicators(ind, fpRangeBits(vind, r.generated, r.propagated));
               ind = setBit(ind, ind_ZM, 0);
             end
-            7'b0000010, 7'b0100010: begin // + / +MG
-              FpResult r = fpAdd(acc, opnd, normalized, noisy, c == 7'b0100010, False);
+            fpop_PLUS, fpop_PLUS_MG: begin // + / +MG
+              FpResult r = fpAdd(acc, opnd, normalized, noisy, c == fpop_PLUS_MG, False);
               // ADD TO MAGNITUDE (p.88): only the accumulator's MAGNITUDE
               // takes part, and the result keeps the accumulator's own
               // sign -- a forced zero included. jb_af1c F205B checks the
               // sign byte after every +MG/+MGA/-MG/-MGA: bit 1 whenever
               // the accumulator was loaded with LN, whatever the sum.
-              if (c == 7'b0100010) r.res.sign = acc.sign;
+              if (c == fpop_PLUS_MG) r.res.sign = acc.sign;
               st.writeWord(addrAccLeft, fpAccLeft(r.res, accL));
               // Sign byte bits 5-7 are the accumulator's own, for the
               // same reason as D+ below: p.86 is ADD's own page and says
@@ -2022,7 +2022,7 @@ function ActionValue#(ExecResult)
               ind = setRangeIndicators(ind, fpRangeBits(r.res, r.generated, r.propagated));
               ind = setBit(ind, ind_ZM, 0);
             end
-            7'b0001010, 7'b0101010: begin // M+ / M+MG
+            fpop_M_PLUS, fpop_M_PLUS_MG: begin // M+ / M+MG
               FpNum a = acc;
               FpNum b = opnd0; if (fp.absSign == 1) b.sign = 0;
               // ADD MAGNITUDE TO MEMORY (p.89): "the accumulator operand
@@ -2034,9 +2034,9 @@ function ActionValue#(ExecResult)
               // not the negation of whatever sign it was loaded with.
               // (fpAdd leaves this to the caller for the to-memory
               // direction; see its header.)
-              if (c == 7'b0101010) a.sign = 0;
+              if (c == fpop_M_PLUS_MG) a.sign = 0;
               if (fp.invSign == 1) a.sign = ~a.sign;
-              FpResult r = fpAdd(b, a, normalized, noisy, c == 7'b0101010, True);
+              FpResult r = fpAdd(b, a, normalized, noisy, c == fpop_M_PLUS_MG, True);
               FpNum v = r.res; v.flags = opnd0.flags;
               // ADD MAGNITUDE TO MEMORY keeps the ADDRESSED operand's own
               // original sign, whatever the sum's: only its magnitude took
@@ -2052,7 +2052,7 @@ function ActionValue#(ExecResult)
               // for the arithmetic; the sum is positive, and the sign
               // stored is still the negative one. Storing the sum's sign
               // halted at B19's BB.
-              if (c == 7'b0101010) v.sign = opnd0.sign;
+              if (c == fpop_M_PLUS_MG) v.sign = opnd0.sign;
               st.writeWord(ea, fpToWord(v));
               ind = setBit(ind, ind_MOP, 1);
               ind = setResultIndicatorsFp(ind, v);
@@ -2062,9 +2062,9 @@ function ActionValue#(ExecResult)
               ind = setRangeIndicators(ind, fpRangeBits(v, r.generated, r.propagated));
               ind = setBit(ind, ind_ZM, 0);
             end
-            7'b0010010, 7'b0110010, 7'b0010110, 7'b0110110: begin // K / KMG / KR / KMGR
-              Bool magnitude = (c == 7'b0110010 || c == 7'b0110110);
-              Bool range = (c == 7'b0010110 || c == 7'b0110110);
+            fpop_K, fpop_KMG, fpop_KR, fpop_KMGR: begin // K / KMG / KR / KMGR
+              Bool magnitude = (c == fpop_KMG || c == fpop_KMGR);
+              Bool range = (c == fpop_KR || c == fpop_KMGR);
               Int#(2) cmp = fpCompare(acc, opnd, magnitude, normalized, noisy);
               ind = setBit(ind, ind_MOP, 0);
               Int#(13) ea_ = fpExp(acc), eb_ = fpExp(opnd);
@@ -2085,7 +2085,7 @@ function ActionValue#(ExecResult)
                 ind = setBit(ind, ind_AE, pack(cmp < 0));
               end
             end
-            7'b0011010: begin // *
+            fpop_STAR: begin // *
               FpResult r = fpMul(acc, opnd, normalized, noisy);
               st.writeWord(addrAccLeft, fpAccLeft(r.res, accL));
               st.writeWord(addrAccSignByte, fpSignByte(r.res, accS));
@@ -2094,7 +2094,7 @@ function ActionValue#(ExecResult)
               ind = setRangeIndicators(ind, fpRangeBits(r.res, r.generated, r.propagated));
               ind = setBit(ind, ind_ZM, pack(r.zm));
             end
-            7'b0011110: begin // / (DIVIDE, pp.93-94)
+            fpop_SLASH: begin // / (DIVIDE, pp.93-94)
               // "The operand in the left half of the accumulator, the
               // dividend, is divided by the addressed operand, the
               // divisor. ... The quotient exponent and fraction replace
@@ -2137,7 +2137,7 @@ function ActionValue#(ExecResult)
                 ind = setBit(ind, ind_ZM, 0);
               end
             end
-            7'b0111110: begin // R/ (RECIPROCAL DIVIDE, p.94)
+            fpop_R_SLASH: begin // R/ (RECIPROCAL DIVIDE, p.94)
               // "The operand specified by the effective address, the
               // dividend, is divided by the operand in the left half of
               // the accumulator, the divisor.  The sign of the dividend
@@ -2175,7 +2175,7 @@ function ActionValue#(ExecResult)
                 ind = setBit(ind, ind_ZM, 0);
               end
             end
-            7'b1011110: begin // D/ (DIVIDE DOUBLE, p.94)
+            fpop_D_SLASH: begin // D/ (DIVIDE DOUBLE, p.94)
               // "The quotient exponent and fraction replace accumulator
               // bits 0-60.  Accumulator bits 61-107 are set to zero.
               // The sign of the quotient replaces the accumulator sign.
@@ -2220,7 +2220,7 @@ function ActionValue#(ExecResult)
                 ind = setBit(ind, ind_ZM, 0);
               end
             end
-            7'b1011010: begin // D* (multiply double, p.97): "the same
+            fpop_D_STAR: begin // D* (multiply double, p.97): "the same
                               // as MULTIPLY, except that the 96-bit
                               // product fraction is placed in
                               // accumulator bits 12-107" -- so where *
@@ -2258,7 +2258,7 @@ function ActionValue#(ExecResult)
               ind = setRangeIndicators(ind, fpRangeBits(rind, r.generated, r.propagated));
               ind = setBit(ind, ind_ZM, pack(r.zm));
             end
-            7'b0111010: begin // *+ (MULTIPLY AND ADD, pp.98-99)
+            fpop_STAR_PLUS: begin // *+ (MULTIPLY AND ADD, pp.98-99)
               // "The operand in the FT register, designated as the
               // multiplicand, is multiplied by the operand specified by
               // the effective address, designated as the multiplier.
@@ -2340,7 +2340,7 @@ function ActionValue#(ExecResult)
               ind = setBit(ind, ind_ZM,
                            pack((r.res.frac == 0) && (fpExpFull(vind) > -1024)));
             end
-            7'b1010110: begin // E+ (add to exponent, p.102): the
+            fpop_E_PLUS: begin // E+ (add to exponent, p.102): the
                               // addressed operand's exponent (its sign
                               // subject to the sign modifiers) is added
                               // to the accumulator's exponent; fraction

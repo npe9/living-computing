@@ -218,35 +218,35 @@ endfunction
 
 function Bool isValidFpCode(Bit#(7) c);
   return case (c)
-    7'b0000010, // +
-    7'b0100010, // +MG
-    7'b0000110, // L
-    7'b0100110, // LWF
-    7'b0001010, // M+
-    7'b0101010, // M+MG
-    7'b0001110, // ST
-    7'b0010010, // K
-    7'b0110010, // KMG
-    7'b0010110, // KR
-    7'b0110110, // KMGR
-    7'b0011010, // *
-    7'b0011110, // /
-    7'b0111110, // R/
-    7'b1101110, // SRT
-    7'b1000010, // D+
-    7'b1100010, // D+MG
-    7'b1000110, // DL
-    7'b1100110, // DLWF
-    7'b0101110, // SRD
-    7'b1001110, // SLO
-    7'b1011010, // D*
-    7'b1001010, // LFT
-    7'b0111010, // *+
-    7'b1011110, // D/
-    7'b1010010, // F+
-    7'b1110010, // SHF
-    7'b1010110, // E+
-    7'b1110110: True; // E+I
+    fpop_PLUS,
+    fpop_PLUS_MG,
+    fpop_L,
+    fpop_LWF,
+    fpop_M_PLUS,
+    fpop_M_PLUS_MG,
+    fpop_ST,
+    fpop_K,
+    fpop_KMG,
+    fpop_KR,
+    fpop_KMGR,
+    fpop_STAR,
+    fpop_SLASH,
+    fpop_R_SLASH,
+    fpop_SRT,
+    fpop_D_PLUS,
+    fpop_D_PLUS_MG,
+    fpop_DL,
+    fpop_DLWF,
+    fpop_SRD,
+    fpop_SLO,
+    fpop_D_STAR,
+    fpop_LFT,
+    fpop_STAR_PLUS,
+    fpop_D_SLASH,
+    fpop_F_PLUS,
+    fpop_SHF,
+    fpop_E_PLUS,
+    fpop_E_PLUS_I: True; // E+I
     default: False;
   endcase;
 endfunction

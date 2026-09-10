@@ -37,7 +37,7 @@ function Bool fetchesOperand(DecodedInstr d);
   case (d) matches
     tagged VflInt .v: return v.a.p != 4;
     tagged Connective .c: return c.a.p != 4;
-    tagged Fp .f: return f.code == 7'b0000110;   // FP L; ST fetches nothing
+    tagged Fp .f: return f.code == fpop_L;   // FP L; ST fetches nothing
     default: return False;
   endcase
 endfunction
@@ -48,9 +48,9 @@ endfunction
 function Maybe#(WordAddr) storeTarget(StretchStorage st, DecodedInstr d);
   case (d) matches
     tagged Fp .f:
-      if (f.code == 7'b0001110 || f.code == 7'b0001010 || f.code == 7'b0101010
-          || f.code == 7'b0101110 || f.code == 7'b1001110    // SRD and SLO write theirs too
-          || f.code == 7'b1101110)                           // SRT stores the root there
+      if (f.code == fpop_ST || f.code == fpop_M_PLUS || f.code == fpop_M_PLUS_MG
+          || f.code == fpop_SRD || f.code == fpop_SLO    // SRD and SLO write theirs too
+          || f.code == fpop_SRT)                           // SRT stores the root there
         return tagged Valid effAddr18(st, f.addr, f.idx);
       else return tagged Invalid;
     tagged VflInt .v:

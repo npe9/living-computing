@@ -2447,11 +2447,34 @@ hand vectors alone. "Enables" notes the dependency chain.
    tick/step() harness: all three are synthesis-motivated and would
    cost this model both testability and its cycle-budget fidelity.
 
-   STILL OPEN FROM THE REVIEW, in priority order: (1) named opcode
-   constants -- there are none, where Piccolo has 196, and the FP
-   opcode set is written out by hand three times (isValidFpCode, the
-   `known` chain, and the dispatch arms; they currently AGREE, so this
-   is drift-prevention rather than a bug); (2) the literal 5'b01111
+   NAMED OPCODE CONSTANTS DONE, the review's first item. StretchTypes
+   now carries all twenty-nine floating-point codes as fpop_*, beside
+   the ind_* and addr* blocks it already had, and all 104 raw 7-bit
+   literals across StretchExecute, StretchDecode and StretchIBox are
+   gone. The identifier keeps the machine's own mnemonic -- "*+" is
+   fpop_STAR_PLUS, "R/" is fpop_R_SLASH -- so a listing row and a case
+   arm read alike.
+
+   THE SUBSTITUTION WAS CHECKED BEFORE IT WAS MADE: every 7-bit binary
+   literal in those files is an FP opcode (29 distinct, 104
+   occurrences, nothing else uses that width), so a global replacement
+   could not touch anything else. VFL codes are 6-bit and connective
+   and direct-index codes 5-bit, which is also why those are still to
+   do.
+
+   Twenty-eight trailing comments that did nothing but restate the
+   mnemonic came out with them -- that was the point of the change. The
+   case arms KEPT their comments, because those carry manual page
+   references ("// LFT (LOAD FACTOR, p.98)") rather than the mnemonic
+   alone.
+
+   The three hand-maintained copies of the set are still three copies;
+   naming them does not merge them. isValidFpCode says what DECODES and
+   `known` says what is IMPLEMENTED, and although those sets are equal
+   today, conflating them would throw away the distinction the moment a
+   decodable-but-unimplemented operation appears again.
+
+   STILL OPEN FROM THE REVIEW, in priority order: (2) the literal 5'b01111
    means CM in the connective path and V+CR in the direct-index path,
    eleven occurrences, with the same collision for 5'b10111 and
    5'b00111; (3) execute() is 2,270 lines with a 13-arm case whose Fp
