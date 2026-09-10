@@ -2726,6 +2726,74 @@ hand vectors alone. "Enables" notes the dependency chain.
    discipline as recording a caught fault: a block that passes is only
    evidence about the paths an injection shows it can reach.
 
+   F219P3 THROUGH S DONE (p.172, 021575.00-021636.00): add double with
+   equal exponents, add double to magnitude, load double and load
+   double with flag. Passed first run, like K-P2.
+
+   THESE ARE THE POSITIVE HALF OF THE RULE. K-P2 were mostly negative:
+   multiply, divide and store root all want the CLEAN answer, because
+   the positions noisy mode fills lie below the 48 bits the result
+   keeps. P3-S are all DOUBLE-precision operations whose low 48 bits
+   are a real part of the answer and get their own CT -- so the ones
+   normalization shifts in are visible, and in two of these blocks they
+   are the ENTIRE content of the low half:
+
+     R1  DL(N) of FPK16, whose fraction has NINETEEN leading zeros.
+         The high half normalizes to FPK17's 0xaaaaaaa80000 at exponent
+         zero, and the low half -- which LOAD DOUBLE sets to zero
+         BEFORE normalizing -- comes back 0x00000007ffff. Nineteen
+         ones. FK128 is that constant and exists in the pool for
+         nothing else.
+     S   DLWF(N) of FPK56, two leading zeros: high half FPK76, low half
+         0x000000000003. FPK58 is those two ones.
+
+   And Q2 is the sharpest of the three arithmetic ones. The accumulator
+   is FPK16 at +19 with FK125's fraction below it; the memory operand
+   FPK18 at +6, so the alignment shift is thirteen. The 96-bit sum is
+   0x00007ffffffffffffffffffff -- thirteen leading zeros -- and
+   normalizing left thirteen gives 0xffffffffffff_ffffffffe000. The
+   expected low half is FPK32's 0xffffffffffff, so the last THIRTEEN
+   bits of the wanted answer are noisy-mode ones and nothing else.
+   Computed before the run, and the run agreed.
+
+   FIVE INJECTIONS, AND THE ONE THAT DID NOT BEHAVE ADDS A FOURTH
+   MEMBER TO THE METHODOLOGICAL FAMILY:
+
+     G   add double, normalization not noisy
+         predicted FAIL -- measured FAIL, caught by P3's LOW half
+     H   load double, normalization not noisy
+         predicted FAIL -- measured FAIL, caught by R1's LOW half
+     I   the zero-fraction guard removed from the DL arm
+         predicted FAIL -- measured PASS, caught by NOTHING
+     I2  the same rule removed at BOTH of its sites
+         predicted FAIL -- measured FAIL, caught by R2's high half
+     J   DLWF loses the operand's flag bits
+         predicted PASS -- measured PASS, caught by nothing
+
+   (d) A FAULT INJECTED AT ONE SITE CAN BE MASKED BY A REDUNDANT
+   IMPLEMENTATION OF THE SAME RULE ELSEWHERE. R2 tests p.81's zero
+   suppression -- "if the 96-bit intermediate sum has a zero fraction,
+   normalization, if specified, will be suppressed" -- and the DL arm
+   guards it with `v.frac != 0`. Removing that guard changes nothing,
+   because fpNormalize96Wide opens with `if (v == 0) return tuple3(0,
+   0, False)` and suppresses it a second time. Break both and R2 halts
+   immediately.
+
+   So the first injection's PASS was NOT evidence that R2 is blind. It
+   was evidence that the model is belt-and-braces at that rule. The
+   three earlier members of this family are all about a fault being
+   unreachable or redirected; this one is about the fault being
+   reachable and CORRECTED on the way. The practical rule: before
+   concluding from a passing injection that a block discriminates
+   nothing, count the sites that implement the rule.
+
+   J IS A GENUINE NON-DISCRIMINATION AND THE PROGRAM SAYS SO IN ITS OWN
+   COMMENT. S's high-half CT covers sixty bits from offset 68, IBM
+   0-59, which stops short of the flag byte, and its low-half CT covers
+   IBM 60-107, which is fraction. DLWF's whole difference from DL --
+   keeping the operand's flags -- is outside both windows. F215's
+   blocks are where that is tested; here it is invisible.
+
    STILL OPEN FROM THE REVIEW: the rest of (3) the literal 5'b01111
    means CM in the connective path and V+CR in the direct-index path,
    eleven occurrences, with the same collision for 5'b10111 and
