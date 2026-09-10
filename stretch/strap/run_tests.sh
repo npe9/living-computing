@@ -1036,6 +1036,11 @@ run "FP noisy mode multiply/divide double (jb_af1c F219T-Y on the model)" ./run_
     "PC=$(python3 -c 'from strap_asm import assemble; print(assemble(open("programs/fp_arith_f219d.strap").read()).symtab["PASS"]//32)')" \
     "SEN:712=0"
 
+run "FP noisy mode fraction/exponent ops (jb_af1c F219Z-C1A, encoding)" python3 verify_fp_arith_f219e_listing.py
+run "FP noisy mode fraction/exponent ops (jb_af1c F219Z-C1A on the model)" ./run_program.sh programs/fp_arith_f219e.strap StretchFpNoisyETb \
+    "PC=$(python3 -c 'from strap_asm import assemble; print(assemble(open("programs/fp_arith_f219e.strap").read()).symtab["PASS"]//32)')" \
+    "SEN:712=0"
+
 run "Program store compare: store then EXECUTE the modified instruction" ./run_program.sh programs/store_then_execute.strap StretchStoreExecTb \
     "RESULT:$(python3 -c 'from strap_asm import assemble; print(assemble(open("programs/store_then_execute.strap").read()).symtab["RESULT"]//64)')=0x20"
 

@@ -696,9 +696,15 @@ function ActionValue#(Word64) fpStoreClass(StretchStorage st, Bit#(7) c,
         // arm used to OR ones into the vacated positions under
         // `noisy`, which the manual rules out; "zeros are inserted
         // in the bit positions which are vacated" with no
-        // exception. Manual-pinned, not diagnostic-pinned: every
-        // SHF in F212 is (U) and none of it selects noisy mode, so
-        // nothing transcribed here would have caught it.
+        // exception. NOW DIAGNOSTIC-PINNED, which it was not when
+        // this comment was first written: every SHF in F212 is (U)
+        // and none of it selects noisy mode, so nothing transcribed
+        // then would have caught it -- but jb_af1c F219A1A is a
+        // SHF(N) with noisy mode on, carrying the printed comment
+        // "TEST NOT AFFECTED BY NOISY MODE" on both of its
+        // compares and demanding FPK0's zeros in the low half. An
+        // injection that fills the vacated positions halts it at
+        // 021726.40.
       end else begin
         // "A one bit shifted right beyond accumulator bit position
         // 107 is lost, but no indicator is turned on" -- so no LC

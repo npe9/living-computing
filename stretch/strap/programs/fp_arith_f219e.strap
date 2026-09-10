@@ -1,0 +1,131 @@
+! jb_af1c F219 "NOISY MODE TEST ROUTINE", sub-blocks Z, A1A, B1A and
+! C1A, p.174 (octal 021713.00-021745.40): add fraction, shift fraction,
+! add exponent and add exponent immediate.  These are the last blocks
+! of the routine -- the listing's next two rows are BD, ROSA and a CNOP
+! at 021746.00, the exit -- so this program finishes F219.
+!
+! WHAT IS LEFT TO TEST BY THIS POINT.  A through Y covered every
+! arithmetic operation noisy mode can touch.  What remains is the four
+! that operate on PARTS of a floating-point number rather than the
+! number: F+ adds to the fraction alone, SHF shifts the fraction alone,
+! and E+ / E+I add to the exponent alone.  Two of them are affected by
+! noisy mode and two are not, and the listing says which in its own
+! printed comments -- A1A carries "TEST NOT AFFECTED BY NOISY MODE" on
+! both of its compares.
+!
+! F219Z   ADD TO FRACTION.  FPK11 loaded double unnormalized with
+!         FPK32's 0xffffffffffff written into the low half, plus
+!         FPK13's fraction.  Three checks: the exponent field alone
+!         (twelve bits at offset 116) against FPK0, then both halves
+!         against FPK1.  FPK0 is all zeros and FPK1 all ones, which is
+!         what makes this block readable: the answer is the exponent
+!         gone to zero and every fraction bit set.
+!
+! F219A1A SHIFT FRACTION, and the one place in the routine where a
+!         shift is NOT a normalization.  SHF(N) of 16384.0 -- a count
+!         of 128 -- shifts FPK87's fraction, and both compares carry
+!         the printed comment "NOT AFFECTED BY NOISY MODE".  p.102
+!         is why: "No noisy mode 1-bits are entered on left shift if
+!         noisy mode is specified", which is the opposite of every
+!         other left shift in the machine.  The block asserts the
+!         high half is FPK67 and the low half FPK0's zeros -- so a
+!         model that filled the vacated positions would fail on the
+!         low half immediately.
+!
+! F219B1A ADD TO EXPONENT.  FPK77 with FPK32's fraction below it, plus
+!         FPK71's exponent; expected FK130 high, FPK62 low.  The
+!         fraction is untouched by an exponent operation, so the low
+!         half is a check that nothing leaked into it.
+!
+! F219C1A ADD TO EXPONENT IMMEDIATE, the same shape with an immediate
+!         of 5 instead of a storage operand; expected FK11 in both
+!         halves.
+
+! -- SSIP framework substitutes: SERS (octal 1304) -> FAIL halt,
+! -- SEN (octal 1310) -> scratch.
+        SLC, (8)1304.0
+SERS    BEW, $
+        SLC, (8)1310.0
+SEN     DD(BU,64,8), 0
+
+! -- constants (pools pp.176-179) --
+        SLC, (8)22005.0
+FPK0    DD(BU,64,8), (8)0000000000000000000000
+FPK1    DD(BU,64,8), (8)1777777777777777777777
+        SLC, (8)22020.0
+FPK11   DD(BU,64,8), (8)0003001252525252525240
+        SLC, (8)22022.0
+FPK13   DD(BU,64,8), (8)0003400525252525252520
+        SLC, (8)22045.0
+FPK32   DD(BU,64,8), (8)0001177777777777777760
+        SLC, (8)22103.0
+FPK62   DD(BU,64,8), (8)0002177777777777777760
+        SLC, (8)22107.0
+FPK67   DD(BU,64,8), (8)0001000000000000000000
+        SLC, (8)22112.0
+FPK71   DD(BU,64,8), (8)0030000000000000001420
+        SLC, (8)22120.0
+FPK77   DD(BU,64,8), (8)0001000000000000000160
+        SLC, (8)22125.0
+FPK87   DD(BU,64,8), (8)0001000077777777777760
+        SLC, (8)22155.0
+FK11    DD(BU,64,8), (8)0023377777777777777760
+        SLC, (8)22343.0
+FK130   DD(BU,64,8), (8)0002577777777777777760
+
+! One word before the block, so F219Z's first instruction lands on
+! 021713.00: F219 sets noisy mode once, in F219A.
+        SLC, (8)21712.0
+SAP25   BB1, $NM, $+1.0
+! -- ADD FRACTION CHECK --
+! F219Z
+        B, $+.32
+        DL(U), FPK11
+        C0011(BU,48), FPK32+.12, 20
+        F+(N), FPK13
+        CT0110(BU,12), FPK0, 116             ! the exponent field alone
+        SIC, SEN
+        BRGZ, SERS
+        CT0110(BU,48), FPK1+.12, 68          ! high half
+        SIC, SEN
+        BRGZ, SERS
+        CT0110(BU,48), FPK1+.12, 20          ! low half
+        SIC, SEN
+        BRGZ, SERS
+! -- SHIFT FRACTION CHECK --
+! F219A1A
+        B, $+.32
+        DL(U), FPK87
+        SHF(N), 16384.0                      ! a shift count of 128
+        CT0110(BU,60), FPK67, 68             ! test not affected by noisy mode
+        SIC, SEN
+        BRGZ, SERS
+        CT0110(BU,48), FPK0+.12, 20          ! not affected by noisy mode
+        SIC, SEN
+        BRGZ, SERS
+! -- ADD EXPONENT CHECK --
+! F219B1A
+        B, $+.32
+        DL(U), FPK77
+        C0011(BU,48), FPK32+.12, 20
+        E+(N), FPK71
+        CT0110(BU,60), FK130, 68
+        SIC, SEN
+        BRGZ, SERS
+        CT0110(BU,48), FPK62+.12, 20
+        SIC, SEN
+        BRGZ, SERS
+! -- ADD EXPONENT IMMEDIATE CHECK --
+! F219C1A
+        B, $+.32
+        DL(U), FPK77
+        C0011(BU,48), FPK32+.12, 20
+        E+I(N), 640.0                        ! an immediate of 5
+        CT0110(BU,60), FK11, 68
+        SIC, SEN
+        BRGZ, SERS
+        CT0110(BU,48), FK11+.12, 20
+        SIC, SEN
+        BRGZ, SERS
+PASS    BEW, $
+        END, SAP25

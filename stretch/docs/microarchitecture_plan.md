@@ -2887,6 +2887,55 @@ hand vectors alone. "Enables" notes the dependency chain.
          it: the rounding carries out of a low half that is all ones
          either way.
 
+   F219 IS COMPLETE. Z, A1A, B1A and C1A (p.174,
+   021713.00-021745.40) finish it -- the listing's next two rows are
+   BD, ROSA and a CNOP at 021746.00, the exit. All four passed first
+   run.
+
+   What was left to test by this point is the four operations that work
+   on PARTS of a floating-point number rather than the number: F+ on
+   the fraction alone, SHF on the fraction alone, E+ and E+I on the
+   exponent alone. Two are affected by noisy mode and two are not, and
+   the routine says which in its own printed comments.
+
+   F219A1A CONVERTS A MANUAL-ONLY CLAIM INTO A DIAGNOSTIC-PINNED ONE,
+   which is the most valuable thing in the block. The SHF arm carried
+   this note, written when the arm was fixed: "Manual-pinned, not
+   diagnostic-pinned: every SHF in F212 is (U) and none of it selects
+   noisy mode, so nothing transcribed here would have caught it." The
+   rule is p.102's -- "No noisy mode one bits are entered on left shift
+   if noisy mode is specified" -- which makes SHF the one left shift in
+   the machine that does not fill. A1A is a SHF(N) with noisy mode on,
+   carrying "TEST NOT AFFECTED BY NOISY MODE" on both compares and
+   demanding FPK0's zeros in the low half. Injection L, which fills the
+   vacated positions, halts it at 021726.40. The comment at the site
+   has been updated to say so.
+
+   That is worth naming as a category of its own. The model carries a
+   number of claims held on the manual's authority alone, each marked
+   as such at its site. A transcribed block that reaches one does not
+   change the behaviour -- it changes what the marking should say, and
+   the marking is only honest if it is revisited when a block arrives.
+   Grepping for those notes is a way of choosing what to transcribe
+   next.
+
+   TWO IMMEDIATE OPERANDS HERE ARE WRITTEN AS BIT ADDRESSES, which is
+   how STRAP spells them and how the listing prints them: SHF's count
+   of 128 is 16384.0 and prints 040000.07; E+I's immediate of 5 is
+   640.0 and prints 001200.07. Both were pinned against the assembler
+   BEFORE the verify table was written, rather than reverse-engineered
+   from the octal -- the same discipline as computing an expected value
+   before running.
+
+   AND THE RUNNING TALLY FOR F219, over five programs and pp.169-174:
+   four faults from A-J (fpAdd's operand extension, LOAD and LFT's
+   96-bit normalization, STORE's missing normalization, and fpCompare's
+   two), none from K-P2, none from P3-S, two from T-Y (fpDivDouble's
+   dividend extension and its remainder), none from Z-C1A. Six faults,
+   all in code that was already written and already believed correct,
+   from a routine whose every operation was implemented before it was
+   transcribed.
+
    STILL OPEN FROM THE REVIEW: the rest of (3) the literal 5'b01111
    means CM in the connective path and V+CR in the direct-index path,
    eleven occurrences, with the same collision for 5'b10111 and
