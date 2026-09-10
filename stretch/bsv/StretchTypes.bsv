@@ -309,6 +309,46 @@ Bit#(7) fpop_SHF         = 7'b1110010;   // SHF
 Bit#(7) fpop_E_PLUS_I    = 7'b1110110;   // E+I
 
 // ---------------------------------------------------------------------
+// Direct index-arithmetic operation codes, IBM bits 23-27, and the
+// three CONNECTIVE suffixes, IBM bits 55-59.  Both fields are five
+// bits wide and THREE OF THE PATTERNS COLLIDE:
+//
+//     00111   LR   (direct index)   /   C    (connective)
+//     01111   V+CR (direct index)   /   CM   (connective)
+//     10111   SR   (direct index)   /   CT   (connective)
+//
+// As bare literals, grepping for one of a pair finds the other -- and
+// 5'b01111 in particular appeared eleven times across three files,
+// meaning CM in most of them and V+CR in the rest.  Naming them is the
+// only way to tell those apart at a glance.
+// ---------------------------------------------------------------------
+Bit#(5) dixop_LX         = 5'b00001;   // LX
+Bit#(5) dixop_LV         = 5'b00011;   // LV
+Bit#(5) dixop_LC         = 5'b00101;   // LC
+Bit#(5) dixop_LR         = 5'b00111;   // LR
+Bit#(5) dixop_KV         = 5'b01001;   // KV
+Bit#(5) dixop_V_PLUS     = 5'b01011;   // V+
+Bit#(5) dixop_V_PLUS_C   = 5'b01101;   // V+C
+Bit#(5) dixop_V_PLUS_CR  = 5'b01111;   // V+CR
+Bit#(5) dixop_SX         = 5'b10001;   // SX
+Bit#(5) dixop_SV         = 5'b10011;   // SV
+Bit#(5) dixop_SC         = 5'b10101;   // SC
+Bit#(5) dixop_SR         = 5'b10111;   // SR
+Bit#(5) dixop_KC         = 5'b11001;   // KC
+Bit#(5) dixop_LVE        = 5'b11011;   // LVE
+Bit#(5) dixop_SVA        = 5'b11101;   // SVA
+Bit#(5) dixop_RNX        = 5'b11111;   // RNX
+
+Bit#(5) conn_C  = 5'b00111;   // C  -- result replaces the accumulator field
+Bit#(5) conn_CM = 5'b01111;   // CM -- result replaces the storage field
+Bit#(5) conn_CT = 5'b10111;   // CT -- result discarded, indicators only
+
+// Format markers.  Both are 5'b10000 but in different fields, which is
+// why they are named apart rather than shared.
+Bit#(5) litIoOp     = 5'b10000;   // IBM 55-59: the I/O format marker
+Bit#(5) litImmIndex = 5'b10000;   // IBM 23-27: the immediate-index marker
+
+// ---------------------------------------------------------------------
 // Decoded-instruction representation.
 //
 // Per the advisor guidance captured in bsv/README.md ("decode

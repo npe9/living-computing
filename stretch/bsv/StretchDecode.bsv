@@ -69,7 +69,7 @@ function VflAddr vflAddrOf(Word64 w);
 endfunction
 
 function Bool isConnSuffix(Bit#(5) s) =
-  (s == 5'b00111) || (s == 5'b01111) || (s == 5'b10111);
+  (s == conn_C) || (s == conn_CM) || (s == conn_CT);
 
 // Known VFL integer-arithmetic / radix-conversion base codes (pocket
 // card "INTEGER ARITHMETIC" + "RADIX CONVERSION" tables, the 6 bits
@@ -124,7 +124,7 @@ function DecodedInstr decodeFullWord(Word64 w);
   // addr2 = IBM bits 32-49 (18 bits) = w[31:14]; op = IBM bits 51-54
   // (4 bits) = w[12:9]; i2 = IBM bits 60-63 = w[3:0]. See StretchTypes'
   // IoOp comment for the op-field bit layout.
-  else if (w[8:4] == 5'b10000)
+  else if (w[8:4] == litIoOp)
     return tagged IoOp { addr1: a.addr, i1: a.i1, addr2: w[31:14],
                           op: w[12:9], i2: w[3:0] };
 
@@ -191,22 +191,22 @@ endfunction
 
 function Bool isValidDirIndexOp(Bit#(5) c);
   return case (c)
-    5'b00001, // LX
-    5'b00011, // LV
-    5'b00101, // LC
-    5'b00111, // LR
-    5'b10001, // SX
-    5'b10011, // SV
-    5'b10101, // SC
-    5'b10111, // SR
-    5'b01011, // V+
-    5'b01101, // V+C
-    5'b01111, // V+CR
-    5'b01001, // KV
-    5'b11001, // KC
-    5'b11111, // RNX
-    5'b11011, // LVE
-    5'b11101: True; // SVA
+    dixop_LX, // LX
+    dixop_LV, // LV
+    dixop_LC, // LC
+    dixop_LR, // LR
+    dixop_SX, // SX
+    dixop_SV, // SV
+    dixop_SC, // SC
+    dixop_SR, // SR
+    dixop_V_PLUS, // V+
+    dixop_V_PLUS_C, // V+C
+    dixop_V_PLUS_CR, // V+CR
+    dixop_KV, // KV
+    dixop_KC, // KC
+    dixop_RNX, // RNX
+    dixop_LVE, // LVE
+    dixop_SVA: True; // SVA
     default: False;
   endcase;
 endfunction
@@ -261,7 +261,7 @@ endfunction
 
 function Maybe#(DecodedInstr) tryImmIndex(HalfWord32 hw);
   // literal 10000 at bits 23-27 (local): hw[8:4]
-  return (hw[8:4] == 5'b10000)
+  return (hw[8:4] == litImmIndex)
     ? tagged Valid (tagged ImmIndex { imm: hw[31:13], j: hw[12:9],
                                        code: hw[3:0] })
     : tagged Invalid;

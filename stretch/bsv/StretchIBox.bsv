@@ -114,7 +114,7 @@ function Bool iboxHazard(StretchStorage st, Bool guessPending, DecodedInstr d, V
   case (d) matches
     tagged DirIndex .x: begin
       HWordAddr ea = effAddr19(st, x.addr, x.idx);
-      Bool refillWord = (x.code == 5'b01111) && levelHolds(lv, zeroExtend(st.readIndex(x.j).refill)); // V+CR
+      Bool refillWord = (x.code == dixop_V_PLUS_CR) && levelHolds(lv, zeroExtend(st.readIndex(x.j).refill)); // V+CR
       h = levelHolds(lv, ea[18:1]) || refillWord;
     end
     tagged ImmIndex .x:

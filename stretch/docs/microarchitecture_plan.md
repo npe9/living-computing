@@ -2474,7 +2474,25 @@ hand vectors alone. "Enables" notes the dependency chain.
    today, conflating them would throw away the distinction the moment a
    decodable-but-unimplemented operation appears again.
 
-   STILL OPEN FROM THE REVIEW, in priority order: (2) the literal 5'b01111
+   THE FIVE-BIT COLLISION IS NAMED TOO, the review's second item. The
+   direct-index operation codes (IBM 23-27) and the connective suffixes
+   (IBM 55-59) are both five-bit fields and THREE PATTERNS COLLIDE:
+   00111 is LR and also C, 01111 is V+CR and also CM, 10111 is SR and
+   also CT. As bare literals, grepping for one of a pair found the
+   other -- 5'b01111 appeared eleven times across three files, meaning
+   CM in most of them and V+CR in the rest.
+
+   Unlike the seven-bit pass, this one could NOT be global: the same
+   literal means different things by context, so it was done by arm --
+   StretchExecute's DirIndex arm and Connective arm separately,
+   StretchDecode's suffix-validity test and its direct-index list
+   separately, and StretchIBox's single refill test. 43 replacements,
+   and the two remaining 5'b10000 markers were named apart as litIoOp
+   (IBM 55-59) and litImmIndex (IBM 23-27) rather than shared, because
+   they are the same pattern in different fields and sharing a constant
+   would assert a relationship that does not exist.
+
+   STILL OPEN FROM THE REVIEW: (3) the literal 5'b01111
    means CM in the connective path and V+CR in the direct-index path,
    eleven occurrences, with the same collision for 5'b10111 and
    5'b00111; (3) execute() is 2,270 lines with a 13-arm case whose Fp

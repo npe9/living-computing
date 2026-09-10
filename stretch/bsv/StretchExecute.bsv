@@ -801,7 +801,7 @@ function ActionValue#(ExecResult)
         // SIC-B,ZIND block (p.50-51), which tests XF/XCZ/XVGZ/XVLZ/
         // XVZ straight after an LX.
         case (di_.code)
-          5'b00001: begin // LX -- prefetch/bail-out shape (same as
+          dixop_LX: begin // LX -- prefetch/bail-out shape (same as
             // VflInt L/K/+ above). Half-word reads never cross a word
             // boundary (a half-word always fits within the one word
             // it addresses), so this and every other DirIndex
@@ -813,11 +813,11 @@ function ActionValue#(ExecResult)
             end else
               needsRead = tagged Valid ea[18:1];
           end
-          5'b10001: begin // SX
+          dixop_SX: begin // SX
             st.writeWord(ea[18:1], packIndexWord(x));
             ind = setIndexResultIndicatorsF(ind, x);
           end
-          5'b00011: begin // LV
+          dixop_LV: begin // LV
             if (prefetchCount >= 1) begin
               Bit#(32) h = (ea[0] == 0) ? prefetch[0][63:32] : prefetch[0][31:0];
               idxWriteReg = di_.j; doIdxWrite = True;
@@ -827,7 +827,7 @@ function ActionValue#(ExecResult)
             end else
               needsRead = tagged Valid ea[18:1];
           end
-          5'b10011: begin // SV -- prefetch/bail-out shape: unlike the
+          dixop_SV: begin // SV -- prefetch/bail-out shape: unlike the
             // read-only arms above, this writes back using the SAME
             // read's response (a genuinely dependent chain), but
             // since writes stay single-cycle throughout this whole
@@ -841,7 +841,7 @@ function ActionValue#(ExecResult)
             end else
               needsRead = tagged Valid ea[18:1];
           end
-          5'b00101: begin // LC
+          dixop_LC: begin // LC
             if (prefetchCount >= 1) begin
               Bit#(32) h = (ea[0] == 0) ? prefetch[0][63:32] : prefetch[0][31:0];
               idxWriteReg = di_.j; doIdxWrite = True;
@@ -851,7 +851,7 @@ function ActionValue#(ExecResult)
             end else
               needsRead = tagged Valid ea[18:1];
           end
-          5'b10101: begin // SC -- same shape as SV above.
+          dixop_SC: begin // SC -- same shape as SV above.
             if (prefetchCount >= 1) begin
               Bit#(32) h = (ea[0] == 0) ? prefetch[0][63:32] : prefetch[0][31:0];
               writeHWWithWord(st, ea, {x.count, 7'b0, h[6:0]}, prefetch[0]);
@@ -859,7 +859,7 @@ function ActionValue#(ExecResult)
             end else
               needsRead = tagged Valid ea[18:1];
           end
-          5'b00111: begin // LR
+          dixop_LR: begin // LR
             if (prefetchCount >= 1) begin
               Bit#(32) h = (ea[0] == 0) ? prefetch[0][63:32] : prefetch[0][31:0];
               idxWriteReg = di_.j; doIdxWrite = True;
@@ -869,7 +869,7 @@ function ActionValue#(ExecResult)
             end else
               needsRead = tagged Valid ea[18:1];
           end
-          5'b10111: begin // SR -- same shape as SV above.
+          dixop_SR: begin // SR -- same shape as SV above.
             if (prefetchCount >= 1) begin
               Bit#(32) h = (ea[0] == 0) ? prefetch[0][63:32] : prefetch[0][31:0];
               writeHWWithWord(st, ea, {x.refill, 7'b0, h[6:0]}, prefetch[0]);
@@ -877,7 +877,7 @@ function ActionValue#(ExecResult)
             end else
               needsRead = tagged Valid ea[18:1];
           end
-          5'b01011, 5'b01101, 5'b01111: begin // V+ / V+C / V+CR --
+          dixop_V_PLUS, dixop_V_PLUS_C, dixop_V_PLUS_CR: begin // V+ / V+C / V+CR --
             // prefetch/bail-out shape with up to 2 SEQUENTIAL reads:
             // readHW's own half-word read (prefetch[0]), then, only
             // for V+CR when the count reaches zero, a second refill
@@ -894,8 +894,8 @@ function ActionValue#(ExecResult)
               SM128 sum  = smAdd(val, opnd);
               IndexWord x1 = IndexWord{addr: truncate(sum.mag), sign: sum.sign, flag: x.flag,
                                         count: x.count, refill: x.refill};
-              if (di_.code != 5'b01011) x1.count = x1.count - 1;
-              Bool needsRefill = (di_.code == 5'b01111) && (x1.count == 0);
+              if (di_.code != dixop_V_PLUS) x1.count = x1.count - 1;
+              Bool needsRefill = (di_.code == dixop_V_PLUS_CR) && (x1.count == 0);
               if (needsRefill && prefetchCount < 2) begin
                 needsRead = tagged Valid zeroExtend(x1.refill);
               end else begin
@@ -907,7 +907,7 @@ function ActionValue#(ExecResult)
             end else
               needsRead = tagged Valid ea[18:1];
           end
-          5'b01001: begin // KV
+          dixop_KV: begin // KV
             if (prefetchCount >= 1) begin
               Bit#(32) h = (ea[0] == 0) ? prefetch[0][63:32] : prefetch[0][31:0];
               SM128 opnd = SM128{sign: h[7], mag: zeroExtend(h[31:8])};
@@ -916,7 +916,7 @@ function ActionValue#(ExecResult)
             end else
               needsRead = tagged Valid ea[18:1];
           end
-          5'b11001: begin // KC
+          dixop_KC: begin // KC
             if (prefetchCount >= 1) begin
               Bit#(32) h = (ea[0] == 0) ? prefetch[0][63:32] : prefetch[0][31:0];
               Cmp3 c = (x.count == h[31:14]) ? CmpEqual : (x.count < h[31:14]) ? CmpLow : CmpHigh;
@@ -1236,7 +1236,7 @@ function ActionValue#(ExecResult)
         Bool immediate = (cn.a.p == 4);
         if (isProgressive && cn.a.i1 == 0) begin
           ind = setOpInvalid(ind);
-        end else if (cn.suffix == 5'b01111 && immediate) begin
+        end else if (cn.suffix == conn_CM && immediate) begin
           // CM + immediate: "Immediate addressing is not possible in
           // operations whose result is placed in storage... the
           // operation is not performed and the OP indicator is turned
@@ -1276,12 +1276,12 @@ function ActionValue#(ExecResult)
           if (pLow != 1) vflPx1.count = vflPx1.count - 1;
           Bool vflNeedsRefill = isProgressive && (pLow == 3 && vflPx1.count == 0);
 
-          if (cn.suffix == 5'b01111 && fieldCrosses(ea, len_)) begin
+          if (cn.suffix == conn_CM && fieldCrosses(ea, len_)) begin
             // CM writing a crossing field: same single-word-write
             // limitation as VflInt's ST/M+ (writeField's precondition).
             ind = setOpInvalid(ind);
             vflOk = False;
-          end else if (cn.suffix == 5'b01111 && vflNeedsRefill) begin
+          end else if (cn.suffix == conn_CM && vflNeedsRefill) begin
             // CM with a refill also pending: deferred-write shape, same
             // as VflInt's ST -- own field word first, refill second,
             // write only once both are in hand (see vflWriteArmHandled's
@@ -1327,7 +1327,7 @@ function ActionValue#(ExecResult)
               if (!fieldCrosses(ea, len_)) begin
                 if (prefetchCount >= 1) begin
                   m = extractFieldBits(prefetch[0], 0, off, len_);
-                  if (cn.suffix == 5'b01111) mHiWord = prefetch[0]; // CM's writeback needs the raw word
+                  if (cn.suffix == conn_CM) mHiWord = prefetch[0]; // CM's writeback needs the raw word
                   vflReadsUsed = 1;
                 end else
                   needsRead = tagged Valid w0;
@@ -1348,7 +1348,7 @@ function ActionValue#(ExecResult)
               Bool resultZero = (result == 0);
 
               case (cn.suffix)
-                5'b00111: begin // C: result replaces the accumulator
+                conn_C: begin // C: result replaces the accumulator
                                 // field; the rest of the accumulator is
                                 // unchanged (p.76 "In CONNECT... The
                                 // remainder of the accumulator remains
@@ -1359,8 +1359,8 @@ function ActionValue#(ExecResult)
                                           mag: (acc.mag & ~fieldMask128) | resultSh };
                   writeAcc(st, merged);
                 end
-                5'b01111: writeFieldWithHi(st, ea, len_, result, mHiWord); // CM
-                5'b10111: begin end // CT: result discarded, indicators only
+                conn_CM: writeFieldWithHi(st, ea, len_, result, mHiWord); // CM
+                conn_CT: begin end // CT: result discarded, indicators only
                 default: ind = setOpInvalid(ind); // unreachable: StretchDecode's
                                                    // isConnSuffix only admits these
                                                    // three patterns; kept for bsc's
@@ -1368,7 +1368,7 @@ function ActionValue#(ExecResult)
                                                    // as VflInt's own default arm above.
               endcase
 
-              ind = setConnectiveIndicatorsF(ind, cn.suffix == 5'b01111, resultZero);
+              ind = setConnectiveIndicatorsF(ind, cn.suffix == conn_CM, resultZero);
             end
           end
 
