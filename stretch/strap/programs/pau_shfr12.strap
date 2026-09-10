@@ -1,0 +1,154 @@
+! jb_af1c "PAU GATES ROUTINE", the SHFR1 and SHFR2 blocks, p.180 and
+! p.199 (octal 022400.40-022424.40).
+!
+! WHY THESE TWO NEXT.  SHF0, the block before them, turned out to be
+! nearly blind on the model: its shift is by zero, so its expected
+! values ARE its input tables, and because the compares index them
+! through the SAME register as the operands, a wrong index moves both
+! sides together.  Ignoring the index register entirely, or running
+! the loop once instead of twice, both leave it reporting no error.
+!
+! I EXPECTED SHFR1 AND SHFR2 TO FIX THAT, AND THEY DO NOT.  The
+! reasoning was that their expected values come from SEPARATE tables --
+! WRDAR1/WRDBR1 and WRDAR2/WRDBR2 -- so the compares would no longer
+! move with the operands.  Measured by injection, that is wrong: with
+! the 24-bit VFL effective address ignoring its index register
+! entirely, these blocks STILL report no error and still reach their
+! exit.  The separateness of the table is irrelevant.  What blinds the
+! block is that both sides -- operands AND expected values -- are
+! indexed through the SAME register, so a wrong index selects entry 0
+! on both sides and entry 0 matches entry 0.
+!
+! The corrected rule: a block that indexes its operands and its
+! expected values through one register cannot detect a wrong index, no
+! matter how many tables it has.  Only an assertion on state outside
+! its own compares can see it, which is why the suite entry checks the
+! accumulator's final contents.
+!
+! A SECOND MEASUREMENT WORTH KEEPING.  Making CBR never take its
+! branch, so each block runs one iteration instead of two, leaves
+! EVERYTHING passing here -- including the accumulator check that
+! caught the same injection on SHF0.  The reason is that CBR+ adds one
+! to the value field whether or not it branches: SHFR1's single pass
+! uses entry 0 and still advances X1, so SHFR2's single pass uses
+! entry 1 and the final accumulator is the value two full loops would
+! have left.  Two blocks running once each are indistinguishable, at
+! the end, from one block running twice.
+!
+! WHAT THEY DO.  Each iteration loads WRDA[i] into the accumulator's
+! left word (64 bits at offset 64 = IBM 0-63) and adds WRDB[i] into
+! the right (offset 0 = IBM 64-127), then shifts the 96-bit fraction
+! -- IBM 12-107 -- RIGHT by one place (SHFR1) or two (SHFR2), and
+! compares IBM 12-63 against WRDAR*'s bits 12-63 and IBM 64-107
+! against WRDBR*'s bits 0-43.
+!
+! THE ARITHMETIC, computed from the tables before the first run.  The
+! two table entries give 96-bit fractions of alternating bits:
+!
+!   iteration 0   frac96 = aaaaaaaaaaaaaaaaaaaaaaaa
+!   iteration 1   frac96 = 555555555555555555555555
+!
+! so a right shift of one turns the first into 5555... and the second
+! into 2aaa..., and a right shift of two turns them into 2aaa... and
+! 1555... .  All four land exactly on the WRDAR*/WRDBR* entries.  The
+! tables are built from alternating bits precisely so that a shift of
+! n is visible as a different constant for every n.
+!
+! ERROR EXITS ARE INLINE HERE, unlike SHF0's branch to the shared
+! CHKSZ: PE4A/PE4B and PE6A/PE6B sit in the block with their own
+! SIC,SEN and B,SERS, and the listing names each failure -- "R1
+! SHIFT-HI 52 BITS OR EXP DEC", "R1 SHIFT-LOW 44 BITS", and the same
+! pair for R2.  So this program needs no framework substitution beyond
+! SERS and SEN.
+!
+! HOW THE SHIFT COUNT IS SPELLED.  The listing writes SHF(U),-1 and
+! SHF(U),-2; this assembler takes the ENCODED operand instead, exactly
+! as the existing F212 programs write SHFL(N),128.0 for a shift of one.
+! The encoding is AMOUNT x 128, plus 64 when the shift is to the right,
+! which three independent rows of this routine confirm:
+!
+!     SHF(U), 0   -> 000000.47      SHF(U), 1  -> 000200.47   (128)
+!     SHF(U),-1   -> 000300.47      SHF(U), 2  -> 000400.47   (256)
+!     SHF(U),-2   -> 000500.47      SHF(U), 3  -> 000600.47   (384)
+!     SHF(U),-3   -> 000700.47
+!
+! so 192 is right-one and 320 is right-two.  Written as the encoded
+! value rather than guessed from the octal: the pattern was derived
+! from the pairs above and then checked against every row.
+!
+! ONE WORD BEFORE THE BLOCK: in the routine, X1 arrives already
+! refilled by the previous block's CBR+, which refills from XA when
+! the count reaches zero.  Standing alone, this program does its own
+! LX at 022400.00 -- the half-word the listing gives to the previous
+! block's B,SSW -- so every address from 022400.40 matches the column.
+
+! -- SSIP framework substitutes: SERS (octal 1304) -> FAIL halt,
+! -- SEN (octal 1310) -> scratch.
+        SLC, (8)1304.0
+SERS    BEW, $
+        SLC, (8)1310.0
+SEN     DD(BU,64,8), 0
+SENO    DD(BU,64,8), 0
+
+! -- index control word and data tables (p.199) --
+        SLC, (8)24117.0
+XA      XW, 0, 2, XA
+WRDA    DD(BU,64,8), (8)0000125252525252525252
+        DD(BU,64,8), (8)0000052525252525252525
+WRDB    DD(BU,64,8), (8)1252525252525250000000
+        DD(BU,64,8), (8)0525252525252524000000
+WRDAR1  DD(BU,64,8), (8)0000052525252525252525
+        DD(BU,64,8), (8)0000025252525252525252
+WRDBR1  DD(BU,64,8), (8)0525252525252524000000
+        DD(BU,64,8), (8)1252525252525250000000
+WRDAR2  DD(BU,64,8), (8)0000025252525252525252
+        DD(BU,64,8), (8)0000012525252525252525
+WRDBR2  DD(BU,64,8), (8)1252525252525250000000
+        DD(BU,64,8), (8)0525252525252524000000
+
+        SLC, (8)22400.0
+SAP25   LX, $X1, XA
+! -- SHIFT RIGHT ONE --
+SHFR1   L(BU,64), WRDA($X1), 64
+        +(BU,64), WRDB($X1), 0
+        SHF(U), 192.0                        ! -1: right one, see the note below
+        CT0110(BU,52), WRDAR1+.12($X1), 64
+        BZB, $RZ, PE4A
+        B, $+1.32
+PE4A    SIC, SEN
+        B, SERS                              ! R1 shift-hi 52 bits or exp dec
+        CT0110(BU,44), WRDBR1($X1), 20
+        BZB, $RZ, PE4B
+        B, $+1.32
+PE4B    SIC, SEN
+        B, SERS                              ! R1 shift-low 44 bits
+        CBR+, $X1, SHFR1
+        B, $+1.
+        B, SHFR1
+        SIC, SENO+.32
+! The listing has B,SSW here, the SSIP return between blocks.  Standing
+! alone this program runs the two blocks back to back, so that row is
+! SUBSTITUTED by a branch to the next half-word -- the same kind of
+! substitution as SERS and SEN, and the only row in this program whose
+! encoding is not checked against the listing.
+        B, $+.32
+! -- SHIFT RIGHT TWO --
+SHFR2   L(BU,64), WRDA($X1), 64
+        +(BU,64), WRDB($X1), 0
+        SHF(U), 320.0                        ! -2: right two
+        CT0110(BU,52), WRDAR2+.12($X1), 64
+        BZB, $RZ, PE6A
+        B, $+1.32
+PE6A    SIC, SEN
+        B, SERS                              ! R2 shift-hi 52 bits or exp dec
+        CT0110(BU,44), WRDBR2($X1), 20
+        BZB, $RZ, PE6B
+        B, $+1.32
+PE6B    SIC, SEN
+        B, SERS                              ! R2 shift-low 44 bits
+        CBR+, $X1, SHFR2
+        B, $+1.
+        B, SHFR2
+        SIC, SENO+.32
+PASS    BEW, $                               ! substitutes for B, SSW
+        END, SAP25

@@ -1051,6 +1051,15 @@ run "PAU gates SHF0 loop (indexed VFL + CBR+ on the model)" ./run_program.sh pro
     "PC=$(python3 -c 'from strap_asm import assemble; print(assemble(open("programs/pau_shf0.strap").read()).symtab["PASS"]//32)')" \
     "ACCL:8=1501199875790165" "ACCR:9=6148914691236167680"
 
+run "PAU gates SHFR1/SHFR2 (jb_af1c, encoding)" python3 verify_pau_shfr12_listing.py
+# ACCL/ACCR again, and for a sharper reason than in SHF0: measured by
+# injection, these blocks do NOT catch a wrong index through their own
+# branches even though their expected values live in separate tables --
+# both sides are indexed by the same register.  See the program header.
+run "PAU gates SHFR1/SHFR2 (shift right one and two on the model)" ./run_program.sh programs/pau_shfr12.strap StretchPauShfR12Tb \
+    "PC=$(python3 -c 'from strap_asm import assemble; print(assemble(open("programs/pau_shfr12.strap").read()).symtab["PASS"]//32)')" \
+    "ACCL:8=375299968947541" "ACCR:9=6148914691236167680"
+
 run "Program store compare: store then EXECUTE the modified instruction" ./run_program.sh programs/store_then_execute.strap StretchStoreExecTb \
     "RESULT:$(python3 -c 'from strap_asm import assemble; print(assemble(open("programs/store_then_execute.strap").read()).symtab["RESULT"]//64)')=0x20"
 

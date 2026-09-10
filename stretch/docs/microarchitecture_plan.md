@@ -3061,6 +3061,54 @@ hand vectors alone. "Enables" notes the dependency chain.
    all. Each named payload cost exactly one construction site in
    StretchDecode.bsv. Suite unchanged at 242 sections throughout.
 
+   SHFR1 AND SHFR2 FOLLOWED, AND DISPROVED THE HYPOTHESIS THEY WERE
+   TRANSCRIBED TO TEST (pp.180-181, 022400.40-022430.00). Encoding
+   passed first time: thirty-four code rows and twelve data words.
+
+   THE HYPOTHESIS. SHF0 is blind to a wrong index because its shift is
+   zero, so its expected values ARE its inputs. SHFR1 and SHFR2 compare
+   against SEPARATE tables -- WRDAR1/WRDBR1, WRDAR2/WRDBR2 -- so I
+   expected them to catch an index fault that SHF0 could not, and wrote
+   that into the program's header before measuring.
+
+   MEASUREMENT SAYS NO. With the 24-bit VFL effective address ignoring
+   its index register entirely, SHFR1 and SHFR2 STILL report no error
+   and still reach their exit. The separateness of the table is
+   IRRELEVANT. What blinds the block is that both sides -- operands and
+   expected values -- are indexed through the SAME register: a wrong
+   index selects entry 0 on both sides, and entry 0 matches entry 0.
+
+   (e) CORRECTED. A block that indexes its operands and its expected
+   values through one register cannot detect a wrong index, NO MATTER
+   HOW MANY TABLES IT HAS. The first statement of this rule blamed the
+   zero shift and the shared table; both were incidental. Only an
+   assertion on state outside the block's own compares can see an index
+   fault, which is what the accumulator checks are for.
+
+   AND A SECOND MEASUREMENT THAT UNDERMINES THOSE CHECKS TOO, in this
+   program though not in SHF0. Making CBR never take its branch, so
+   each block runs ONE iteration instead of two, leaves EVERYTHING
+   passing here -- including the accumulator assertion that caught the
+   same injection on SHF0. The reason is that CBR+ adds one to the
+   value field whether or not it branches. SHFR1's single pass uses
+   entry 0 and still advances X1, so SHFR2's single pass uses entry 1,
+   and the final accumulator is exactly what two full loops would have
+   left. TWO BLOCKS RUNNING ONCE EACH ARE INDISTINGUISHABLE, AT THE
+   END, FROM ONE BLOCK RUNNING TWICE.
+
+   That is worth stating as its own caution: an assertion on final
+   state measures the END of a computation, and a fault that changes
+   the PATH without changing the endpoint is invisible to it. The
+   accumulator checks are still worth having -- they catch the index
+   fault that nothing else does -- but they are not a general
+   substitute for the block's own branches, and this program shows the
+   case where they are not enough.
+
+   BOTH PREDICTIONS FOR THIS PROGRAM WERE WRONG, which is two in two.
+   The value of writing them down first is entirely in that: neither
+   error would have been visible if the injections had been run without
+   a prediction to contradict.
+
    THE PAU GATES ROUTINE IS OPEN, one block of it: SHF0 (p.180 for the
    code, p.199 for the tables). Opened on the merits stated when the LC
    justification was retracted, not on that justification.
