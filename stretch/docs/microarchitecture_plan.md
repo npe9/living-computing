@@ -3061,6 +3061,49 @@ hand vectors alone. "Enables" notes the dependency chain.
    all. Each named payload cost exactly one construction site in
    StretchDecode.bsv. Suite unchanged at 242 sections throughout.
 
+   IBOX-2 IS OPEN. Its LOAD INDEX CNTRL CHECK (pp.6 and 200,
+   006506.00-006521.00) is the first block transcribed from jb_ax2a,
+   and every row of a tape the project had never touched matched the
+   listing on the first attempt -- including three XW forms this
+   assembler had never been asked for: a zero index word, a NEGATIVE
+   value (100VO prints 777777.77 80, sign bit set) and a count-only
+   word (100CO prints 0.00 0F 777760.00 00).
+
+   It cleared the bar before being written. Nothing in the suite
+   touches $X0 AT ALL, and only one program anywhere uses BXCZ or BXVZ.
+
+   WHAT IT PINS. Index register zero is special as an ADDRESS MODIFIER
+   -- i=0 means "no indexing", which is why effAddr24 returns its
+   argument unchanged -- but it is an ORDINARY REGISTER for LX and for
+   the index indicators. I002 is what says so: it loads $X0 with an
+   index word of all ones and treats "both count and value read zero"
+   as an ERROR. A register 0 hardwired to read back as zero -- the RISC
+   convention, and a perfectly plausible thing to have implemented --
+   is exactly what that catches. The model already had it right, and
+   an injection making $X0 read as zero halts the block.
+
+   A second injection confirms I006 separates the two indicator fields:
+   deriving XVZ from the whole index word rather than the value field
+   alone halts it too. Both caught through the block's own branches, no
+   testbench assertion needed -- the shape criterion holding up on a
+   new tape.
+
+   WHY THE PAGE SEARCH IS WORTH RECORDING. The code is on p.6 and its
+   index words are on p.200 of a 203-page listing, found by binary
+   search on the address column (p.60 -> 0141xx, p.120 -> 0141xx,
+   p.186 -> 0166xx, p.198 -> 0172xx, p.200 -> 0173xx). Constants living
+   two hundred pages from the code that uses them is the normal shape
+   of these tapes, and the address column crops cheaply enough that
+   three or four renders locate anything.
+
+   WHAT THIS TAPE HAS THAT jb_af1c DOES NOT, from the two pages read so
+   far: a bit-by-bit sweep of the 24-bit index VALUE field (BIT0
+   through BIT23, each a single-bit XW, asserting XVZ stays off), and
+   SIC-LINKED SUBROUTINES -- `SIC,I0010` stores a return address INTO a
+   `$B,0` instruction, which is self-modifying return linkage. Neither
+   has an equivalent in the floating-point tape. Both are the obvious
+   next blocks.
+
    WHICH DIAGNOSTIC NEXT, ASSESSED RATHER THAN ASSUMED. Of the
    machine's diagnostics in docs/, three I-box tapes and the I/O
    exchange tape have NEVER been opened -- zero programs between them:

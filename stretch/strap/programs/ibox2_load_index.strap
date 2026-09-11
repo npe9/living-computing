@@ -1,0 +1,84 @@
+! jb_ax2a "IBOX-2", the LOAD INDEX CNTRL CHECK, pp.6 and 200
+! (octal 006506.00-006521.00).  The first block transcribed from this
+! tape -- ibox-2 had never been opened.
+!
+! WHY THIS TAPE AND WHY THIS BLOCK.  Three I-box tapes (ibox-2, ibox-3,
+! ibox-5) and the I/O exchange tape had zero programs between them.
+! The I/O tape was opened and ruled out: its first divergence would hit
+! StretchIO's documented simplification (chaining and multiple-block
+! are deliberately unimplemented), so its failures would be known scope
+! rather than findings.  The I-box tapes have no such problem.
+!
+! And this block clears the bar the session has been applying: name the
+! model path it reaches, and check first that nothing already reaches
+! it.  NOTHING IN THE SUITE TOUCHES $X0 AT ALL, and only one program
+! anywhere uses BXCZ or BXVZ.
+!
+! WHAT IT CHECKS.  Index register ZERO is special as an ADDRESS
+! MODIFIER -- i=0 means "no indexing", which is why effAddr24 returns
+! its argument unchanged for it -- but it is an ordinary register for
+! LX and for the index indicators, and that is what these four cases
+! pin:
+!
+!   I001  LX $X0 with the ZERO index word, then BXCZ and BXVZ, either
+!         of which skips the error.  Falling through to the error means
+!         neither count nor value read as zero: "BOTH COUNT AND VALUE
+!         NOT ZERO".
+!   I002  LX $X0 with an index word of ALL ONES.  Here the sense is
+!         inverted: BXCZ then BXVZ both taken leads to the error "BOTH
+!         COUNT AND VALUE ZERO", so a register 0 that read back as zero
+!         -- a plausible implementation, and the RISC convention -- is
+!         exactly what this catches.
+!   I005  the zero word again, the same way as I001.
+!   I006  value all ones with a count of zero, asserting XVZ is OFF;
+!         then count all ones with a value of zero, asserting XCZ is
+!         off.  These separate the two fields: a model that derived one
+!         indicator from the whole word rather than its own field would
+!         pass I001 and I002 and fail here.
+!
+! The block continues past this program with a SIC-linked subroutine
+! (SIC stores a return address INTO a `$B,0` instruction, which is
+! self-modifying return linkage) and then a bit-by-bit sweep of the
+! 24-bit value field, BIT0 through BIT23.  Both are left for later; this
+! is the straight-line part.
+
+! -- SSIP framework substitutes: SERS (octal 1304) -> FAIL halt,
+! -- SEN (octal 1310) -> scratch.
+        SLC, (8)1304.0
+SERS    BEW, $
+        SLC, (8)1310.0
+SEN     DD(BU,64,8), 0
+
+! -- index words (p.200) --
+        SLC, (8)17306.0
+I00Z    XW, 0, 0, 0, 0                       ! zero index word
+I00O    DD(BU,64,8), (8)1777777777777777777777   ! index word of ones
+I00VO   XW, -(8)777777.77, 0, 0              ! value all ones
+I00CO   XW, 0, (8)777777, 0                  ! count all ones
+
+        SLC, (8)6506.0
+I001    LX, $X0, I00Z                        ! load with zero
+        BXCZ, I002
+        BXVZ, I002
+        SIC, SEN
+        B, SERS                              ! both count and value not zero
+I002    LX, $X0, I00O                        ! load with ones
+        BXCZ, I003
+        B, I005
+I003    BXVZ, I004
+        B, I005
+I004    SIC, SEN
+        B, SERS                              ! both count and value zero
+I005    LX, $X0, I00Z                        ! load with zero
+        BXCZ, I006
+        BXVZ, I006
+        SIC, SEN
+        B, SERS                              ! both count and value not zero
+I006    LX, $X0, I00VO                       ! value all ones
+        SIC, SEN
+        BXVZ, SERS                           ! no bits in value field
+        LX, $X0, I00CO                       ! count all ones
+        SIC, SEN
+        BXCZ, SERS                           ! no bits in count field
+PASS    BEW, $
+        END, I001

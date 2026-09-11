@@ -1083,6 +1083,15 @@ run "PAU gates SRTE30 (jb_af1c, encoding)" python3 verify_pau_srte30_listing.py
 run "PAU gates SRTE30 (store root, odd exponent, 49-bit radicand)" ./run_program.sh programs/pau_srte30.strap StretchPauSrte30Tb \
     "PC=$(python3 -c 'from strap_asm import assemble; print(assemble(open("programs/pau_srte30.strap").read()).symtab["PASS"]//32)')"
 
+run "IBOX-2 load index control check (jb_ax2a, encoding)" python3 verify_ibox2_load_index_listing.py
+# The first block from jb_ax2a; the tape had never been opened.  Nothing
+# else in the suite touches $X0, and only one other program uses
+# BXCZ/BXVZ.  Two injections -- index register 0 reading back as zero,
+# and XVZ derived from the whole index word -- are both caught by the
+# block's own branches.
+run "IBOX-2 load index control check (LX into \$X0, BXCZ/BXVZ)" ./run_program.sh programs/ibox2_load_index.strap StretchIbox2LoadIndexTb \
+    "PC=$(python3 -c 'from strap_asm import assemble; print(assemble(open("programs/ibox2_load_index.strap").read()).symtab["PASS"]//32)')"
+
 run "Program store compare: store then EXECUTE the modified instruction" ./run_program.sh programs/store_then_execute.strap StretchStoreExecTb \
     "RESULT:$(python3 -c 'from strap_asm import assemble; print(assemble(open("programs/store_then_execute.strap").read()).symtab["RESULT"]//64)')=0x20"
 
