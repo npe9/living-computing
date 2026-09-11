@@ -1,0 +1,107 @@
+! jb_af1c "PAU GATES ROUTINE", the multi-bit square-root cases of
+! CHKSSR, p.195 and pp.199-200 (octal 023636.40-023666.00).
+!
+! WHY THESE FOUR AND NOT THE TEN BEFORE THEM.  The CHKSSR sweep that
+! pau_chkssr.strap transcribes walks a SINGLE one-bit down the
+! radicand, and its own entry records the limit that follows: a single
+! bit at an odd IBM position gives an even fraction exponent, so every
+! root there is an exact power of two.  Those cases pin WHERE the root
+! lands and nothing else.  The sweep continues on p.194 through
+! positions 31 down to 13 -- ten more of exactly the same -- and then
+! p.195 changes shape, which is where this program picks up.
+!
+! THESE FOUR HAVE MULTI-BIT RADICANDS, and the listing names each one
+! in its error exit: "SQ RT OF .1001----", "SQ RT OF .011001---", "SQ
+! RT OF .110001----", "SQ RT OF .11100001---".  They are perfect
+! squares chosen so the ROOT has several bits set rather than one:
+!
+!     .1001       = (3/4)^2     -> root .11        c00000000000
+!     .011001     = (5/8)^2     -> root .101       a00000000000
+!     .110001     = (7/8)^2     -> root .111       e00000000000
+!     .11100001   = (15/16)^2   -> root .1111      f00000000000
+!
+! That is the property the single-bit sweep cannot reach.  A
+! restoring root develops one bit per step by subtracting a trial
+! value and keeping it only if the remainder stays non-negative; with
+! a single-bit radicand exactly one of those subtractions succeeds, so
+! the sweep never exercises the step where a PREVIOUSLY ACCEPTED root
+! bit feeds the next trial.  Here two, three and four bits are
+! accepted in turn.
+!
+! All four expected values were computed from the constants and
+! checked against an integer square root before the first run.
+!
+! WHAT IS STILL NOT TESTED, said plainly so this block is not read as
+! more than it is: these radicands are perfect squares, so the root is
+! still EXACT and the remainder still ends at zero.  Nothing here
+! exercises how an inexact root truncates.  The routine continues past
+! this program -- SRTE30 is a "SHIFT R1-BIT LOST" check and SRNDT
+! begins a STORE ROUNDED sequence -- and those are the next places to
+! look for it.
+!
+! HOW THE OPERANDS ARE BUILT.  Each case loads a few bits of a constant
+! into the top of the accumulator's fraction, the accumulator offset
+! choosing where they land: offset 112 with 4 bits puts them at IBM
+! 12-15, offset 110 with 5 bits at IBM 13-17 (so the fraction's leading
+! bit is a zero), offset 110 with 6 bits at IBM 12-17, offset 108 with
+! 8 bits at IBM 12-19.  The VFL load clears the rest, which is what
+! makes these radicands exactly the bit patterns the comments name.
+
+! -- SSIP framework substitutes: SERS (octal 1304) -> FAIL halt,
+! -- SEN (octal 1310) -> scratch.
+        SLC, (8)1304.0
+SERS    BEW, $
+        SLC, (8)1310.0
+SEN     DD(BU,64,8), 0
+
+! -- data (pp.199-200) --
+        SLC, (8)24204.0
+SMANR3  DD(BU,64,8), (8)0001600000000000000000
+SMANR4  DD(BU,64,8), (8)0002200000000000000000
+        SLC, (8)24213.0
+NORL2   DD(BU,64,8), (8)0000025000000000000000
+        SLC, (8)24237.0
+SRSG    DD(BU,64,8), (8)0000000000000000000000
+SRCNSA  DD(BU,64,8), (8)1420000000000000000000
+SRCNSB  DD(BU,64,8), (8)1440000000000000000000
+SRCNSC  DD(BU,64,8), (8)1604740000000000000000
+
+        SLC, (8)23636.40
+! -- square root of .1001 --
+CHKSS2  L(BU,4), SMANR4+.8, 112
+        SRT(U), SRSG
+        L(BU,48), SRSG+.12, 68
+        CT0110(BU,48), SMANR3+.10, 68
+        BZB, $RZ, SRTE26
+        B, $+1.32
+SRTE26  SIC, SEN
+        B, SERS                              ! sq rt of .1001----
+! -- square root of .011001 --
+        L(BU,5), SRCNSB, 110
+        SRT(U), SRSG
+        L(BU,48), SRSG+.12, 68
+        CT0110(BU,48), NORL2+.16, 68
+        BZB, $RZ, SRTE27
+        B, $+1.32
+SRTE27  SIC, SEN
+        B, SERS                              ! sq rt of .011001---
+! -- square root of .110001 --
+        L(BU,6), SRCNSA, 110
+        SRT(U), SRSG
+        L(BU,48), SRSG+.12, 68
+        CT0110(BU,48), SMANR3+.9, 68
+        BZB, $RZ, SRTE28
+        B, $+1.32
+SRTE28  SIC, SEN
+        B, SERS                              ! sq rt of .110001----
+! -- square root of .11100001 --
+        L(BU,8), SRCNSC, 108
+        SRT(U), SRSG
+        L(BU,48), SRSG+.12, 68
+        CT0110(BU,48), SRCNSC+.10, 68
+        BZB, $RZ, SRTE29
+        B, $+1.32
+SRTE29  SIC, SEN
+        B, SERS                              ! sq rt of .11100001---
+PASS    BEW, $
+        END, CHKSS2

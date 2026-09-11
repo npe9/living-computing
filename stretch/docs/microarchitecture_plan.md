@@ -3061,6 +3061,51 @@ hand vectors alone. "Enables" notes the dependency chain.
    all. Each named payload cost exactly one construction site in
    StretchDecode.bsv. Suite unchanged at 242 sections throughout.
 
+   AND THE MULTI-BIT ROOT CASES AFTER IT (p.195,
+   023636.40-023666.00), which are the first block in this session
+   whose value over its predecessor was MEASURED rather than argued.
+
+   CHKSSR's sweep pins where a root lands and nothing else -- every
+   radicand is a single bit, so every root is an exact power of two.
+   p.195 changes shape: four multi-bit radicands, each named in its own
+   error exit, "SQ RT OF .1001----", ".011001---", ".110001----",
+   ".11100001---". They are perfect squares whose ROOTS have two, three
+   and four bits set:
+
+     .1001      = (3/4)^2    -> .11        c00000000000
+     .011001    = (5/8)^2    -> .101       a00000000000
+     .110001    = (7/8)^2    -> .111       e00000000000
+     .11100001  = (15/16)^2  -> .1111      f00000000000
+
+   WHY THAT MATTERS FOR A RESTORING ROOT. Each step subtracts a trial
+   value and keeps the bit only if the remainder stays non-negative,
+   and the trial is built from the root SO FAR -- {root, 2'b01}, four
+   times the root plus one. With a single-bit radicand exactly one
+   subtraction succeeds, and it succeeds at a step where the root so
+   far is still zero. So the sweep never exercises the step where a
+   previously accepted root bit feeds the next trial. These four do,
+   two and three and four times over.
+
+   AND THE MARGIN WAS MEASURED, NOT ASSERTED. Injection T replaces the
+   trial with a constant 1, which is what it degenerates to when
+   previously accepted bits are ignored. Simulated first in Python over
+   both blocks' radicands, then run on the model: ALL FOURTEEN
+   single-bit cases pass unchanged, ALL FOUR multi-bit cases halt. The
+   prediction and the measurement agreed exactly.
+
+   THAT IS THE ANSWER TO "IS THIS BLOCK WORTH TRANSCRIBING". Not "it
+   looks like more coverage" but: construct the fault the new block
+   should catch and the old one should not, and check both. When the
+   old block already catches it, the new one is rows without value.
+   Here it is not.
+
+   WHAT IS STILL NOT REACHED, so this is not read as more than it is:
+   these radicands are perfect squares, so the root is exact and the
+   remainder ends at zero. Nothing yet exercises how an INEXACT root
+   truncates. The routine continues -- SRTE30 is a "SHIFT R1-BIT LOST"
+   check and SRNDT begins a STORE ROUNDED sequence at 023675.40 -- and
+   those are where to look next.
+
    AND THEN CHKSSR, WHICH IS THE SHAPE THAT WORKS (pp.192-193,
    023410.40-023462.00). After two blocks that measured as weakly
    discriminating, the right response was not to transcribe a third of

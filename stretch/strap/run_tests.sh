@@ -1068,6 +1068,14 @@ run "PAU gates CHKSSR (jb_af1c, encoding)" python3 verify_pau_chkssr_listing.py
 run "PAU gates CHKSSR (store root, one bit walked down the radicand)" ./run_program.sh programs/pau_chkssr.strap StretchPauChkSsrTb \
     "PC=$(python3 -c 'from strap_asm import assemble; print(assemble(open("programs/pau_chkssr.strap").read()).symtab["PASS"]//32)')"
 
+run "PAU gates CHKSSR multi-bit roots (jb_af1c, encoding)" python3 verify_pau_chkssr2_listing.py
+# These four earn their place by a measured margin over the sweep
+# above: an injection making the root trial ignore previously accepted
+# root bits leaves ALL FOURTEEN single-bit cases passing and halts all
+# four of these.  See the program header.
+run "PAU gates CHKSSR multi-bit roots (perfect squares with several root bits)" ./run_program.sh programs/pau_chkssr2.strap StretchPauChkSsr2Tb \
+    "PC=$(python3 -c 'from strap_asm import assemble; print(assemble(open("programs/pau_chkssr2.strap").read()).symtab["PASS"]//32)')"
+
 run "Program store compare: store then EXECUTE the modified instruction" ./run_program.sh programs/store_then_execute.strap StretchStoreExecTb \
     "RESULT:$(python3 -c 'from strap_asm import assemble; print(assemble(open("programs/store_then_execute.strap").read()).symtab["RESULT"]//64)')=0x20"
 
