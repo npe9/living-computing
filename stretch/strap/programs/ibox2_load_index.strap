@@ -55,6 +55,15 @@ I00Z    XW, 0, 0, 0, 0                       ! zero index word
 I00O    DD(BU,64,8), (8)1777777777777777777777   ! index word of ones
 I00VO   XW, -(8)777777.77, 0, 0              ! value all ones
 I00CO   XW, 0, (8)777777, 0                  ! count all ones
+        SLC, (8)17326.0
+BIT0    XW, (8)400000.00, 0, 0
+BIT1    XW, (8)200000.00, 0, 0
+BIT2    XW, (8)100000.00, 0, 0
+BIT3    XW, (8)40000.00, 0, 0
+BIT4    XW, (8)20000.00, 0, 0
+BIT5    XW, (8)10000.00, 0, 0
+BIT6    XW, (8)4000.00, 0, 0
+BIT7    XW, (8)2000.00, 0, 0
 
         SLC, (8)6506.0
 I001    LX, $X0, I00Z                        ! load with zero
@@ -80,5 +89,78 @@ I006    LX, $X0, I00VO                       ! value all ones
         LX, $X0, I00CO                       ! count all ones
         SIC, SEN
         BXCZ, SERS                           ! no bits in count field
+! -- the SIC-linked subroutine, and the value-field bit sweep --
+!
+! SIC stores the address of the instruction after the branch that
+! FOLLOWS it, and here that address is stored INTO I0010, which is a
+! branch instruction.  So `SIC,I0010 / B,I007` is a subroutine call and
+! I0010 is the return -- self-modifying return linkage, with the
+! written word executed a few instructions later.  Nothing in jb_af1c
+! does this.
+!
+! I WROTE HERE THAT THE SWEEP EXERCISES THE MODEL'S STORE-THEN-EXECUTE
+! PATH ONCE PER BIT, AND MEASUREMENT SAYS IT DOES NOT.  Disabling the
+! look-ahead's recent-store invalidation entirely -- the guard in
+! StretchIBox that discards a prefetched word when storage has just
+! been written at its address -- leaves this program passing.  The
+! reason is distance: SIC writes I0010, then a branch is taken to the
+! subroutine and five instructions execute before I0010 is reached, by
+! which time nothing stale is held.  The hazard needs a store followed
+! IMMEDIATELY by execution of the written word, which is what
+! store_then_execute.strap is for.
+!
+! What the sweep does exercise is the linkage itself: eight calls and
+! eight returns through a word that is rewritten each time.  That is
+! worth having and is not the same claim.
+        SIC, I0010                           ! go chk ix 0 is 0
+        B, I007
+        B, I0011
+I007    LX, $X0, I00Z                        ! subroutine: load index
+        BXCZ, I008                           ! reg 0 to 0 and chk for
+        B, I009                              ! same
+I008    BXVZ, I0010
+I009    SIC, SEN
+        B, SERS                              ! count or value not zero
+! The listing spells this `$B,0`; the `$` marks it as the word SIC
+! writes into.  Same encoding either way (000000.10 00).
+I0010   B, 0.0
+I0011   LX, $X0, BIT0                        ! start check of each bit in value
+        SIC, SEN
+        BXVZ, SERS                           ! no bit 0
+        SIC, I0010                           ! clr ix 0
+        B, I007
+        LX, $X0, BIT1
+        SIC, SEN
+        BXVZ, SERS                           ! no bit 1
+        SIC, I0010                           ! clr ix 0
+        B, I007
+        LX, $X0, BIT2
+        SIC, SEN
+        BXVZ, SERS                           ! no bit 2
+        SIC, I0010                           ! clr ix 0
+        B, I007
+        LX, $X0, BIT3
+        SIC, SEN
+        BXVZ, SERS                           ! no bit 3
+        SIC, I0010                           ! clr ix 0
+        B, I007
+        LX, $X0, BIT4
+        SIC, SEN
+        BXVZ, SERS                           ! no bit 4
+        SIC, I0010                           ! clr ix 0
+        B, I007
+        LX, $X0, BIT5
+        SIC, SEN
+        BXVZ, SERS                           ! no bit 5
+        SIC, I0010                           ! clr ix 0
+        B, I007
+        LX, $X0, BIT6
+        SIC, SEN
+        BXVZ, SERS                           ! no bit 6
+        SIC, I0010                           ! clr ix 0
+        B, I007
+        LX, $X0, BIT7
+        SIC, SEN
+        BXVZ, SERS                           ! no bit 7
 PASS    BEW, $
         END, I001

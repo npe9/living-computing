@@ -3061,6 +3061,40 @@ hand vectors alone. "Enables" notes the dependency chain.
    all. Each named payload cost exactly one construction site in
    StretchDecode.bsv. Suite unchanged at 242 sections throughout.
 
+   IBOX-2'S FIRST BLOCK EXTENDED through its SIC-linked subroutine and
+   the first eight bits of the value-field sweep (006521.40-006551.00),
+   sixty-one rows verified.
+
+   THE SWEEP WORKS: dropping the top bit of the 24-bit index value
+   field -- making it 23 bits -- halts the block at BIT0's check. That
+   is what a bit-by-bit sweep is for and it does its job.
+
+   AND A CLAIM I PUT IN THE PROGRAM'S HEADER WAS WRONG, again. I wrote
+   that the sweep exercises the model's store-then-execute path once
+   per bit, since SIC writes a return address INTO a branch instruction
+   that is then executed. Measurement: disabling the look-ahead's
+   recent-store invalidation ENTIRELY -- the guard in StretchIBox that
+   discards a prefetched word when storage has just been written at its
+   address -- leaves the program passing.
+
+   The reason is DISTANCE. SIC writes I0010, a branch is taken to the
+   subroutine, and five instructions execute before I0010 is reached;
+   by then nothing stale is held. The hazard needs a store followed
+   IMMEDIATELY by execution of the written word, which is exactly what
+   store_then_execute.strap already covers.
+
+   So the block exercises the LINKAGE -- eight calls and eight returns
+   through a word rewritten each time -- and not the hazard. Those are
+   different claims and the header now says which one it is.
+
+   THAT IS THREE PROGRAM-HEADER CLAIMS DISPROVED BY MEASUREMENT IN ONE
+   SESSION: SHFR1/2's separate tables, the accumulator assertions'
+   reach, and now this. The pattern in all three is the same -- a
+   plausible mechanism written down as though verified, when what was
+   verified was only that the block passes. The habit that catches it
+   is cheap: for every "this exercises X" in a header, name the
+   injection that would prove it and run it.
+
    IBOX-2 IS OPEN. Its LOAD INDEX CNTRL CHECK (pp.6 and 200,
    006506.00-006521.00) is the first block transcribed from jb_ax2a,
    and every row of a tape the project had never touched matched the
