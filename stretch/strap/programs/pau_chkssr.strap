@@ -1,0 +1,139 @@
+! jb_af1c "PAU GATES ROUTINE", the CHKSSR block, pp.192-193 and p.199
+! (octal 023410.40-023462.00): STORE ROOT with a single one-bit walked
+! down the radicand.
+!
+! WHY THIS BLOCK RATHER THAN MORE SHIFT BLOCKS.  SHF0, SHFR1 and SHFR2
+! all have the same shape -- load, add, shift, two indexed compares,
+! CBR+ -- and measurement showed that shape is weakly discriminating:
+! both the operands and the expected values are indexed through one
+! register, so a wrong index moves both sides together and the block
+! reports nothing.  Transcribing SHFR3, SHFL1, SHFL2 and the rest would
+! add more of exactly that.  CHKSSR is a different shape and a much
+! sharper one:
+!
+!   * NO INDEX REGISTER.  Every operand is a plain address, so nothing
+!     here is blind the way the shift blocks are.
+!   * STRAIGHT LINE, with a separate error exit per case, each naming
+!     its own failure: "RDCND WAS ALL ZERO", "RDCND HAD 1 IN POS 59",
+!     "... POS 57", and so on down.
+!   * It drives SQUARE ROOT bit by bit.  F219O touched SRT exactly
+!     once; this walks a single one-bit through the radicand and checks
+!     the root at each position, which is a direct test of the 48-step
+!     restoring root at every place a bit can sit.
+!
+! HOW IT WORKS.  Each case loads ONE bit -- WRDB's leading one -- into
+! the accumulator at a chosen offset, so the radicand is a single one
+! at IBM position 59, 57, 55, ... (the accumulator offset 68, 70, 72,
+! ... names it: offset n puts the bit at IBM 127-n).  SRT(U) stores the
+! root to SRSG; the root is loaded back and compared against a 48-bit
+! window of SMANL1.
+!
+! THE EXPECTED-VALUE TABLE IS ONE CONSTANT READ AT SLIDING OFFSETS,
+! which is worth noticing.  SMANL1 through SMANL4 form a bit string in
+! which the 48-bit window starting at bit 50 is 000001000000, the one
+! starting at bit 51 is 000002000000, at 52 is 000004000000 and so on:
+! successive powers of two, one per case.  So the whole expected-value
+! table for the sequence is four words read at +.50, +.51, +.52 ...
+! Every one was computed here from the constants and checked against an
+! integer square root before the first run.
+!
+!   radicand bit 59 -> fraction 000000000001 -> root 000001000000
+!   radicand bit 57 -> fraction 000000000004 -> root 000002000000
+!   radicand bit 55 -> fraction 000000000010 -> root 000004000000
+!   radicand bit 53 -> fraction 000000000040 -> root 000008000000
+!   radicand bit 51 -> fraction 000000000100 -> root 000010000000
+!   radicand bit 49 -> fraction 000000000400 -> root 000020000000
+!   radicand bit 47 -> fraction 000000001000 -> root 000040000000
+!
+! The sequence continues past this program (SRTE8 onward, positions 45,
+! 43, 41 ... on p.193 and beyond); this transcribes it as far as
+! SRTE7's error exit, which is the last row on p.192 plus the two rows
+! that finish it at the top of p.193.
+
+! -- SSIP framework substitutes: SERS (octal 1304) -> FAIL halt,
+! -- SEN (octal 1310) -> scratch.
+        SLC, (8)1304.0
+SERS    BEW, $
+        SLC, (8)1310.0
+SEN     DD(BU,64,8), 0
+
+! -- data (p.199 and p.200) --
+        SLC, (8)24122.0
+WRDB    DD(BU,64,8), (8)1252525252525250000000
+        DD(BU,64,8), (8)0525252525252524000000
+        SLC, (8)24201.0
+SMANO   DD(BU,64,8), (8)0000000000000000000000
+        SLC, (8)24206.0
+SMANL1  DD(BU,64,8), (8)0000400000000000000000
+SMANL2  DD(BU,64,8), (8)0001000000000000000000
+SMANL3  DD(BU,64,8), (8)0001400000000000000000
+SMANL4  DD(BU,64,8), (8)0002000000000000000000
+        SLC, (8)24237.0
+SRSG    DD(BU,64,8), (8)0000000000000000000000
+
+        SLC, (8)23410.40
+! -- a zero radicand must give a zero root --
+CHKSSR  L(BU,1), SMANO, 0
+        SRT(U), SRSG
+        L(BU,48), SRSG+.12, 68
+        CT0110(BU,48), SMANO, 68
+        BZB, $RZ, SRTE1
+        B, $+1.32
+SRTE1   SIC, SEN
+        B, SERS                              ! rdcnd was all zero
+! -- a single one at IBM position 59 --
+        L(BU,1), WRDB, 68
+        SRT(U), SRSG
+        L(BU,48), SRSG+.12, 68
+        CT0110(BU,48), SMANL1+.50, 68
+        BZB, $RZ, SRTE2
+        B, $+1.32
+SRTE2   SIC, SEN
+        B, SERS                              ! rdcnd had 1 in pos 59
+! -- a single one at IBM position 57 --
+        L(BU,1), WRDB, 70
+        SRT(U), SRSG
+        L(BU,48), SRSG+.12, 68
+        CT0110(BU,48), SMANL1+.51, 68
+        BZB, $RZ, SRTE3
+        B, $+1.32
+SRTE3   SIC, SEN
+        B, SERS                              ! rdcnd had 1 in pos 57
+! -- a single one at IBM position 55 --
+        L(BU,1), WRDB, 72
+        SRT(U), SRSG
+        L(BU,48), SRSG+.12, 68
+        CT0110(BU,48), SMANL1+.52, 68
+        BZB, $RZ, SRTE4
+        B, $+1.32
+SRTE4   SIC, SEN
+        B, SERS                              ! rdcnd had 1 in pos 55
+! -- a single one at IBM position 53 --
+        L(BU,1), WRDB, 74
+        SRT(U), SRSG
+        L(BU,48), SRSG+.12, 68
+        CT0110(BU,48), SMANL1+.53, 68
+        BZB, $RZ, SRTE5
+        B, $+1.32
+SRTE5   SIC, SEN
+        B, SERS                              ! rdcnd had 1 in pos 53
+! -- a single one at IBM position 51 --
+        L(BU,1), WRDB, 76
+        SRT(U), SRSG
+        L(BU,48), SRSG+.12, 68
+        CT0110(BU,48), SMANL1+.54, 68
+        BZB, $RZ, SRTE6
+        B, $+1.32
+SRTE6   SIC, SEN
+        B, SERS                              ! rdcnd had 1 in pos 51
+! -- a single one at IBM position 49 --
+        L(BU,1), WRDB, 78
+        SRT(U), SRSG
+        L(BU,48), SRSG+.12, 68
+        CT0110(BU,48), SMANL1+.55, 68
+        BZB, $RZ, SRTE7
+        B, $+1.32
+SRTE7   SIC, SEN
+        B, SERS                              ! rdcnd had 1 in pos 49
+PASS    BEW, $
+        END, CHKSSR

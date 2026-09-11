@@ -1060,6 +1060,14 @@ run "PAU gates SHFR1/SHFR2 (shift right one and two on the model)" ./run_program
     "PC=$(python3 -c 'from strap_asm import assemble; print(assemble(open("programs/pau_shfr12.strap").read()).symtab["PASS"]//32)')" \
     "ACCL:8=375299968947541" "ACCR:9=6148914691236167680"
 
+run "PAU gates CHKSSR (jb_af1c, encoding)" python3 verify_pau_chkssr_listing.py
+# No ACCL/ACCR here, and that is the point: unlike the shift blocks,
+# CHKSSR uses no index register and has a separate error exit per case,
+# so it discriminates through its OWN branches -- two square-root
+# injections halt it at SERS.
+run "PAU gates CHKSSR (store root, one bit walked down the radicand)" ./run_program.sh programs/pau_chkssr.strap StretchPauChkSsrTb \
+    "PC=$(python3 -c 'from strap_asm import assemble; print(assemble(open("programs/pau_chkssr.strap").read()).symtab["PASS"]//32)')"
+
 run "Program store compare: store then EXECUTE the modified instruction" ./run_program.sh programs/store_then_execute.strap StretchStoreExecTb \
     "RESULT:$(python3 -c 'from strap_asm import assemble; print(assemble(open("programs/store_then_execute.strap").read()).symtab["RESULT"]//64)')=0x20"
 

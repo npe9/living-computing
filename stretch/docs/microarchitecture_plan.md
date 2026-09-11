@@ -3061,6 +3061,63 @@ hand vectors alone. "Enables" notes the dependency chain.
    all. Each named payload cost exactly one construction site in
    StretchDecode.bsv. Suite unchanged at 242 sections throughout.
 
+   AND THEN CHKSSR, WHICH IS THE SHAPE THAT WORKS (pp.192-193,
+   023410.40-023462.00). After two blocks that measured as weakly
+   discriminating, the right response was not to transcribe a third of
+   the same shape -- SHFR3, SHFL1, SHFL2 and the rest differ only in
+   the shift amount -- but to look for a block shaped differently.
+
+   CHKSSR walks a single one-bit down the radicand and takes its square
+   root at each position: "RDCND WAS ALL ZERO", "RDCND HAD 1 IN POS
+   59", "... POS 57", down through 49 in the part transcribed here. It
+   differs from the shift blocks in every way that mattered:
+
+     * NO INDEX REGISTER. Every operand is a plain address, so none of
+       the index blindness applies.
+     * A SEPARATE ERROR EXIT PER CASE, each naming its own failure,
+       rather than one shared CHKSZ.
+     * It drives SQUARE ROOT bit by bit. F219O touched SRT exactly
+       once; this exercises the 48-step restoring root at seven
+       positions.
+
+   AND IT DISCRIMINATES THROUGH ITS OWN BRANCHES, which no PAU block
+   had yet. Two injections -- the root landing one bit position too
+   low, and the odd-exponent pre-shift test inverted -- both halt it at
+   SERS. No testbench assertion needed; the block catches them itself.
+   Its run_tests entry has no ACCL/ACCR precisely because it does not
+   need them.
+
+   THE EXPECTED-VALUE TABLE IS ONE CONSTANT READ AT SLIDING OFFSETS,
+   worth recording as a piece of 1960 test-writing craft. SMANL1
+   through SMANL4 form a bit string whose 48-bit window starting at bit
+   50 is 000001000000, at 51 is 000002000000, at 52 is 000004000000 --
+   successive powers of two, one per case. Seven expected values out of
+   four words, addressed as SMANL1+.50, +.51, +.52 ... Every one was
+   computed here from the constants and checked against an integer
+   square root before the first run.
+
+   ONE TRANSCRIPTION ERROR, AND THE ORACLE CAUGHT IT IN THE USEFUL
+   DIRECTION. The generated verify table had the operand offset field
+   wrong: it is the offset DIVIDED BY TWO, so an accumulator offset of
+   68 prints as 0010(42) octal and 70 as 0010(43), not 42 and 44. The
+   assembler was right and my table was wrong. Worth saying because the
+   listing oracle is usually described as checking the assembler; it
+   checks the transcription just as often, and this time that is which
+   way it fired.
+
+   WHAT THE THREE PAU BLOCKS ADD UP TO. SHF0: blind to a wrong index,
+   and with only one block also blind to a short loop; needs testbench
+   assertions to say anything. SHFR1/SHFR2: still blind to a wrong
+   index, and the assertions that rescued SHF0 are themselves blind to
+   a short loop here, because CBR+ advances the value whether or not it
+   branches. CHKSSR: catches both of its injections unaided. The lesson
+   is not that indexed loop blocks are worthless -- they exercise the
+   index machinery, and running them is how the blindness was found --
+   but that WHAT A BLOCK CAN SEE IS A PROPERTY OF ITS SHAPE, and the
+   shape is visible before transcribing it. Straight-line code with
+   per-case exits and unindexed operands is worth more per row than a
+   loop whose two sides move together.
+
    SHFR1 AND SHFR2 FOLLOWED, AND DISPROVED THE HYPOTHESIS THEY WERE
    TRANSCRIBED TO TEST (pp.180-181, 022400.40-022430.00). Encoding
    passed first time: thirty-four code rows and twelve data words.
