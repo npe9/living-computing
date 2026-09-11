@@ -3087,6 +3087,19 @@ hand vectors alone. "Enables" notes the dependency chain.
    Its run_tests entry has no ACCL/ACCR precisely because it does not
    need them.
 
+   EXTENDED TO ITS FULL RUN: fourteen positions, IBM 59 down to 33,
+   plus the all-zero case -- SRTE15's exit at 023541.40 is the last of
+   them and SMANL1+.63 the last window the four-word table reaches at a
+   one-bit stride. 128 rows, all verified.
+
+   AND A LIMIT OF THE BLOCK WORTH STATING, since it bounds what the
+   coverage means. A single bit at an ODD IBM position gives an EVEN
+   fraction exponent, so every root here is an exact power of two.
+   These fourteen cases pin WHERE the root lands -- which is what the
+   injections confirm they catch -- but none of them exercises how it
+   ROUNDS, because none has a remainder. An inexact radicand would be
+   a different test and this block does not contain one.
+
    THE EXPECTED-VALUE TABLE IS ONE CONSTANT READ AT SLIDING OFFSETS,
    worth recording as a piece of 1960 test-writing craft. SMANL1
    through SMANL4 form a bit string whose 48-bit window starting at bit

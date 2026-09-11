@@ -45,10 +45,22 @@
 !   radicand bit 49 -> fraction 000000000400 -> root 000020000000
 !   radicand bit 47 -> fraction 000000001000 -> root 000040000000
 !
-! The sequence continues past this program (SRTE8 onward, positions 45,
-! 43, 41 ... on p.193 and beyond); this transcribes it as far as
-! SRTE7's error exit, which is the last row on p.192 plus the two rows
-! that finish it at the top of p.193.
+!   radicand bit 47 -> fraction 000000001000 -> root 000040000000
+!   radicand bit 45 -> fraction 000000004000 -> root 000080000000
+!   radicand bit 43 -> fraction 000000010000 -> root 000100000000
+!   radicand bit 41 -> fraction 000000040000 -> root 000200000000
+!   radicand bit 39 -> fraction 000000100000 -> root 000400000000
+!   radicand bit 37 -> fraction 000000400000 -> root 000800000000
+!   radicand bit 35 -> fraction 000001000000 -> root 001000000000
+!   radicand bit 33 -> fraction 000004000000 -> root 002000000000
+!
+! FOURTEEN POSITIONS, 59 down to 33, which is where the run on p.193
+! ends -- SRTE15's exit is the last of them, and SMANL1+.63 is the last
+! window the four-word table reaches at a one-bit stride.  Every root
+! here is an exact power of two, because a single bit at an odd IBM
+! position gives an even fraction exponent; that is a property of the
+! block, not of the algorithm, and it means these cases pin WHERE the
+! root lands rather than how it rounds.
 
 ! -- SSIP framework substitutes: SERS (octal 1304) -> FAIL halt,
 ! -- SEN (octal 1310) -> scratch.
@@ -135,5 +147,77 @@ SRTE6   SIC, SEN
         B, $+1.32
 SRTE7   SIC, SEN
         B, SERS                              ! rdcnd had 1 in pos 49
+! -- a single one at IBM position 47 --
+        L(BU,1), WRDB, 80
+        SRT(U), SRSG
+        L(BU,48), SRSG+.12, 68
+        CT0110(BU,48), SMANL1+.56, 68
+        BZB, $RZ, SRTE8
+        B, $+1.32
+SRTE8   SIC, SEN
+        B, SERS                              ! rdcnd had 1 in pos 47
+! -- a single one at IBM position 45 --
+        L(BU,1), WRDB, 82
+        SRT(U), SRSG
+        L(BU,48), SRSG+.12, 68
+        CT0110(BU,48), SMANL1+.57, 68
+        BZB, $RZ, SRTE9
+        B, $+1.32
+SRTE9   SIC, SEN
+        B, SERS                              ! rdcnd had 1 in pos 45
+! -- a single one at IBM position 43 --
+        L(BU,1), WRDB, 84
+        SRT(U), SRSG
+        L(BU,48), SRSG+.12, 68
+        CT0110(BU,48), SMANL1+.58, 68
+        BZB, $RZ, SRTE10
+        B, $+1.32
+SRTE10  SIC, SEN
+        B, SERS                              ! rdcnd had 1 in pos 43
+! -- a single one at IBM position 41 --
+        L(BU,1), WRDB, 86
+        SRT(U), SRSG
+        L(BU,48), SRSG+.12, 68
+        CT0110(BU,48), SMANL1+.59, 68
+        BZB, $RZ, SRTE11
+        B, $+1.32
+SRTE11  SIC, SEN
+        B, SERS                              ! rdcnd had 1 in pos 41
+! -- a single one at IBM position 39 --
+        L(BU,1), WRDB, 88
+        SRT(U), SRSG
+        L(BU,48), SRSG+.12, 68
+        CT0110(BU,48), SMANL1+.60, 68
+        BZB, $RZ, SRTE12
+        B, $+1.32
+SRTE12  SIC, SEN
+        B, SERS                              ! rdcnd had 1 in pos 39
+! -- a single one at IBM position 37 --
+        L(BU,1), WRDB, 90
+        SRT(U), SRSG
+        L(BU,48), SRSG+.12, 68
+        CT0110(BU,48), SMANL1+.61, 68
+        BZB, $RZ, SRTE13
+        B, $+1.32
+SRTE13  SIC, SEN
+        B, SERS                              ! rdcnd had 1 in pos 37
+! -- a single one at IBM position 35 --
+        L(BU,1), WRDB, 92
+        SRT(U), SRSG
+        L(BU,48), SRSG+.12, 68
+        CT0110(BU,48), SMANL1+.62, 68
+        BZB, $RZ, SRTE14
+        B, $+1.32
+SRTE14  SIC, SEN
+        B, SERS                              ! rdcnd had 1 in pos 35
+! -- a single one at IBM position 33 --
+        L(BU,1), WRDB, 94
+        SRT(U), SRSG
+        L(BU,48), SRSG+.12, 68
+        CT0110(BU,48), SMANL1+.63, 68
+        BZB, $RZ, SRTE15
+        B, $+1.32
+SRTE15  SIC, SEN
+        B, SERS                              ! rdcnd had 1 in pos 33
 PASS    BEW, $
         END, CHKSSR

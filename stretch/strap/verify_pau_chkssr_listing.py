@@ -4,24 +4,27 @@
 pp.199-200 (data).
 
 CHKSSR walks a single one-bit down the radicand and takes its square
-root at each position.  It was chosen over the routine's remaining
-shift blocks because it is a different and sharper shape: no index
-register (so none of the index blindness the shift blocks have), a
-straight line with a separate error exit per case, and a direct
-bit-by-bit exercise of STORE ROOT, which F219O touched exactly once.
+root at each position -- fourteen of them, IBM 59 down to 33, plus the
+all-zero case.  It was chosen over the routine's remaining shift
+blocks because it is a different and sharper shape: no index register
+(so none of the index blindness the shift blocks have), a straight
+line with a separate error exit per case, and a direct bit-by-bit
+exercise of STORE ROOT, which F219O touched exactly once.  Two
+square-root injections halt it at SERS through its own branches.
 
 The expected values are one constant read at sliding offsets: the
 48-bit window into SMANL1 starting at bit 50 is 000001000000, at 51 is
 000002000000, at 52 is 000004000000 -- successive powers of two, one
-per case.  All seven were computed from the constants and checked
-against an integer square root before the first run.
+per case, fourteen of them out of four words.  All were computed from
+the constants and checked against an integer square root before the
+first run.
 
 A note on the operand offset field, which cost one pass of this table:
 it is the offset DIVIDED BY TWO, so an accumulator offset of 68 prints
 as 0010(42) octal and 70 as 0010(43).  The assembler had it right and
 the first version of this generator did not -- the listing oracle
 catching the transcription rather than the model, which is the
-direction it is supposed to work in as often as the other.
+direction it works in as often as the other.
 """
 from strap_asm import assemble
 from listing_oracle import check_rows, finish
@@ -96,6 +99,70 @@ CODE_ROWS = [
     ('023461.00', '23462.50 00', 'B, $+1.32'),
     ('023461.40', '1310.00 80', 'SRTE7 SIC, SEN'),
     ('023462.00', '1304.10 00', 'B, SERS   rdcnd had 1 in pos 49'),
+    ('023462.40', '24122.00 80 001050.20 50', 'L(BU,1), WRDB, 80'),
+    ('023463.40', '24237.46 E0', 'SRT(U), SRSG'),
+    ('023464.00', '24237.14 80 060042.20 50', 'L(BU,48), SRSG+.12, 68'),
+    ('023465.00', '24206.70 80 060042.15 70', 'CT0110(BU,48), SMANL1+.56, 68'),
+    ('023466.00', '13.71 80 023467.74 00', 'BZB, $RZ, SRTE8'),
+    ('023467.00', '23470.50 00', 'B, $+1.32'),
+    ('023467.40', '1310.00 80', 'SRTE8 SIC, SEN'),
+    ('023470.00', '1304.10 00', 'B, SERS   rdcnd had 1 in pos 47'),
+    ('023470.40', '24122.00 80 001051.20 50', 'L(BU,1), WRDB, 82'),
+    ('023471.40', '24237.46 E0', 'SRT(U), SRSG'),
+    ('023472.00', '24237.14 80 060042.20 50', 'L(BU,48), SRSG+.12, 68'),
+    ('023473.00', '24206.71 80 060042.15 70', 'CT0110(BU,48), SMANL1+.57, 68'),
+    ('023474.00', '13.71 80 023475.74 00', 'BZB, $RZ, SRTE9'),
+    ('023475.00', '23476.50 00', 'B, $+1.32'),
+    ('023475.40', '1310.00 80', 'SRTE9 SIC, SEN'),
+    ('023476.00', '1304.10 00', 'B, SERS   rdcnd had 1 in pos 45'),
+    ('023476.40', '24122.00 80 001052.20 50', 'L(BU,1), WRDB, 84'),
+    ('023477.40', '24237.46 E0', 'SRT(U), SRSG'),
+    ('023500.00', '24237.14 80 060042.20 50', 'L(BU,48), SRSG+.12, 68'),
+    ('023501.00', '24206.72 80 060042.15 70', 'CT0110(BU,48), SMANL1+.58, 68'),
+    ('023502.00', '13.71 80 023503.74 00', 'BZB, $RZ, SRTE10'),
+    ('023503.00', '23504.50 00', 'B, $+1.32'),
+    ('023503.40', '1310.00 80', 'SRTE10 SIC, SEN'),
+    ('023504.00', '1304.10 00', 'B, SERS   rdcnd had 1 in pos 43'),
+    ('023504.40', '24122.00 80 001053.20 50', 'L(BU,1), WRDB, 86'),
+    ('023505.40', '24237.46 E0', 'SRT(U), SRSG'),
+    ('023506.00', '24237.14 80 060042.20 50', 'L(BU,48), SRSG+.12, 68'),
+    ('023507.00', '24206.73 80 060042.15 70', 'CT0110(BU,48), SMANL1+.59, 68'),
+    ('023510.00', '13.71 80 023511.74 00', 'BZB, $RZ, SRTE11'),
+    ('023511.00', '23512.50 00', 'B, $+1.32'),
+    ('023511.40', '1310.00 80', 'SRTE11 SIC, SEN'),
+    ('023512.00', '1304.10 00', 'B, SERS   rdcnd had 1 in pos 41'),
+    ('023512.40', '24122.00 80 001054.20 50', 'L(BU,1), WRDB, 88'),
+    ('023513.40', '24237.46 E0', 'SRT(U), SRSG'),
+    ('023514.00', '24237.14 80 060042.20 50', 'L(BU,48), SRSG+.12, 68'),
+    ('023515.00', '24206.74 80 060042.15 70', 'CT0110(BU,48), SMANL1+.60, 68'),
+    ('023516.00', '13.71 80 023517.74 00', 'BZB, $RZ, SRTE12'),
+    ('023517.00', '23520.50 00', 'B, $+1.32'),
+    ('023517.40', '1310.00 80', 'SRTE12 SIC, SEN'),
+    ('023520.00', '1304.10 00', 'B, SERS   rdcnd had 1 in pos 39'),
+    ('023520.40', '24122.00 80 001055.20 50', 'L(BU,1), WRDB, 90'),
+    ('023521.40', '24237.46 E0', 'SRT(U), SRSG'),
+    ('023522.00', '24237.14 80 060042.20 50', 'L(BU,48), SRSG+.12, 68'),
+    ('023523.00', '24206.75 80 060042.15 70', 'CT0110(BU,48), SMANL1+.61, 68'),
+    ('023524.00', '13.71 80 023525.74 00', 'BZB, $RZ, SRTE13'),
+    ('023525.00', '23526.50 00', 'B, $+1.32'),
+    ('023525.40', '1310.00 80', 'SRTE13 SIC, SEN'),
+    ('023526.00', '1304.10 00', 'B, SERS   rdcnd had 1 in pos 37'),
+    ('023526.40', '24122.00 80 001056.20 50', 'L(BU,1), WRDB, 92'),
+    ('023527.40', '24237.46 E0', 'SRT(U), SRSG'),
+    ('023530.00', '24237.14 80 060042.20 50', 'L(BU,48), SRSG+.12, 68'),
+    ('023531.00', '24206.76 80 060042.15 70', 'CT0110(BU,48), SMANL1+.62, 68'),
+    ('023532.00', '13.71 80 023533.74 00', 'BZB, $RZ, SRTE14'),
+    ('023533.00', '23534.50 00', 'B, $+1.32'),
+    ('023533.40', '1310.00 80', 'SRTE14 SIC, SEN'),
+    ('023534.00', '1304.10 00', 'B, SERS   rdcnd had 1 in pos 35'),
+    ('023534.40', '24122.00 80 001057.20 50', 'L(BU,1), WRDB, 94'),
+    ('023535.40', '24237.46 E0', 'SRT(U), SRSG'),
+    ('023536.00', '24237.14 80 060042.20 50', 'L(BU,48), SRSG+.12, 68'),
+    ('023537.00', '24206.77 80 060042.15 70', 'CT0110(BU,48), SMANL1+.63, 68'),
+    ('023540.00', '13.71 80 023541.74 00', 'BZB, $RZ, SRTE15'),
+    ('023541.00', '23542.50 00', 'B, $+1.32'),
+    ('023541.40', '1310.00 80', 'SRTE15 SIC, SEN'),
+    ('023542.00', '1304.10 00', 'B, SERS   rdcnd had 1 in pos 33'),
 ]
 
 if __name__ == "__main__":
