@@ -1092,6 +1092,13 @@ run "IBOX-2 load index control check (jb_ax2a, encoding)" python3 verify_ibox2_l
 run "IBOX-2 load index control check (LX into \$X0, BXCZ/BXVZ)" ./run_program.sh programs/ibox2_load_index.strap StretchIbox2LoadIndexTb \
     "PC=$(python3 -c 'from strap_asm import assemble; print(assemble(open("programs/ibox2_load_index.strap").read()).symtab["PASS"]//32)')"
 
+run "IBOX-2 KV and KVI check (jb_ax2a, encoding)" python3 verify_ibox2_kv_kvi_listing.py
+# Nothing else in the suite uses KV, KVI, BXL, BXH or BXE.  Reversing
+# the index compare's high and low is caught by the block's own
+# branches.
+run "IBOX-2 KV and KVI check (index compare, XL/XE/XH)" ./run_program.sh programs/ibox2_kv_kvi.strap StretchIbox2KvKviTb \
+    "PC=$(python3 -c 'from strap_asm import assemble; print(assemble(open("programs/ibox2_kv_kvi.strap").read()).symtab["I023"]//32)')"
+
 run "Program store compare: store then EXECUTE the modified instruction" ./run_program.sh programs/store_then_execute.strap StretchStoreExecTb \
     "RESULT:$(python3 -c 'from strap_asm import assemble; print(assemble(open("programs/store_then_execute.strap").read()).symtab["RESULT"]//64)')=0x20"
 

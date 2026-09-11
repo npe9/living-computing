@@ -1,0 +1,99 @@
+! jb_ax2a "IBOX-2", the LX DATA / KV AND KVI CHECK, p.13 and p.200
+! (octal 006713.00-006734.00).
+!
+! WHY THIS BLOCK.  It clears the bar by a wide margin: NOTHING in the
+! suite uses KV, KVI, BXL, BXH or BXE.  Index comparison and its three
+! result indicators -- XL, XE, XH, indicators 52-54 -- are entirely
+! untouched by anything transcribed so far.
+!
+! It was also chosen over the obvious alternative, and the choice was
+! measured.  After the value and count sweeps the natural next step
+! looked like the REFILL field's sweep, but two checks killed it:
+! dropping the refill field's bottom bit already fails twenty-nine
+! sections of the existing suite (xw_refill, the CBR+ blocks and the
+! PAU programs all round-trip refill fields), and the listing has no
+! refill sweep anyway -- p.13 leaves the sweeps behind and opens this.
+!
+! WHAT IT CHECKS.  $X0 is loaded with BIT0's index word, whose value
+! field is 400000.00, and then compared four ways:
+!
+!   I020  KV  against BIT0 itself      -> EQUAL: XL and XH must be off,
+!                                        XE on.
+!   I021  KVI against the immediate    -> EQUAL again, by the immediate
+!         400000.0                       path rather than the storage
+!                                        one.
+!   I022  KV  against BIT1 (200000.00) -> the accumulator index is
+!                                        HIGHER: XL and XE off, XH on.
+!         KVI against 200000.0         -> the same, immediate.
+!
+! So each of KV and KVI is driven through two of the three outcomes,
+! and every check names the indicator that must NOT be on as well as
+! the one that must.  The LOW outcome is not reached here.
+!
+! It also depends on the SIC-linked subroutine from the previous block
+! (I007 at 006523.00, returning through the `$B,0` at I0010), which
+! this program carries at its own addresses so the whole thing stands
+! alone.
+
+! -- SSIP framework substitutes: SERS (octal 1304) -> FAIL halt,
+! -- SEN (octal 1310) -> scratch.
+        SLC, (8)1304.0
+SERS    BEW, $
+        SLC, (8)1310.0
+SEN     DD(BU,64,8), 0
+
+! -- index words (p.200) --
+        SLC, (8)17306.0
+I00Z    XW, 0, 0, 0, 0
+        SLC, (8)17326.0
+BIT0    XW, (8)400000.00, 0, 0
+BIT1    XW, (8)200000.00, 0, 0
+
+! -- the subroutine the block calls, at its own addresses --
+        SLC, (8)6523.0
+I007    LX, $X0, I00Z
+        BXCZ, I008
+        B, I009
+I008    BXVZ, I0010
+I009    SIC, SEN
+        B, SERS                              ! count or value not zero
+I0010   B, 0.0
+
+        SLC, (8)6713.0
+I020    SIC, I0010                           ! test bit 0
+        B, I007
+        LX, $X0, BIT0
+        KV, $X0, BIT0                        ! equal condition, KV
+        SIC, SEN
+        BXL, SERS
+        SIC, SEN
+        BXH, SERS
+        BXE, I021
+        SIC, SEN
+        B, SERS
+I021    KVI, $X0, (8)400000.0                ! equal condition, KVI
+        SIC, SEN
+        BXL, SERS
+        SIC, SEN
+        BXH, SERS
+        BXE, I022
+        SIC, SEN
+        B, SERS
+I022    KV, $X0, BIT1                        ! index hi condition, KV
+        SIC, SEN
+        BXL, SERS
+        SIC, SEN
+        BXE, SERS
+        BXH, I023
+        SIC, SEN
+        B, SERS
+        KVI, $X0, (8)200000.0                ! index hi condition, KVI
+        SIC, SEN
+        BXL, SERS
+        SIC, SEN
+        BXE, SERS
+        BXH, I023
+        SIC, SEN
+        B, SERS
+I023    BEW, $
+        END, I020

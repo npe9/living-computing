@@ -3061,6 +3061,26 @@ hand vectors alone. "Enables" notes the dependency chain.
    all. Each named payload cost exactly one construction site in
    StretchDecode.bsv. Suite unchanged at 242 sections throughout.
 
+   THE KV AND KVI CHECK (p.13, 006713.00-006734.00), chosen over the
+   refill sweep for the reasons the entry below records.
+
+   Nothing in the suite used KV, KVI, BXL, BXH or BXE: index
+   COMPARISON and its three result indicators -- XL, XE, XH, indicators
+   52-54 -- were untouched by everything transcribed before it. $X0 is
+   loaded with BIT0 (value 400000.00) and compared four ways: KV and
+   KVI against an equal operand, then KV and KVI against BIT1
+   (200000.00) where the index is higher. Each check names the
+   indicator that must be OFF as well as the one that must be on, which
+   is why reversing the compare's high and low halts it.
+
+   Two of the three outcomes, twice each. The LOW outcome is not
+   reached by this block, and saying so is the difference between
+   "index comparison is tested" and what is actually true.
+
+   Forty-four rows verified, including both KVI immediates, which
+   print their operand in the address field (400000.01 04) where KV
+   prints a storage address (17326.00 90).
+
    AND THE COUNT FIELD AFTER IT (pp.10-12, 006622.40-006676.00), which
    the previous entry's conclusion predicted before the page was
    opened. If a bit sweep is a test of field width and placement, the
@@ -3083,8 +3103,28 @@ hand vectors alone. "Enables" notes the dependency chain.
    with hand-written bit ranges. That is exactly the kind of code where
    an off-by-one in a range is invisible to ordinary tests and obvious
    to a sweep. Two of the five fields are now pinned at both edges. The
-   refill field (BIT46-BIT63, constants at 017404-017425) is the
-   obvious remaining one, and the listing has a sweep for it too.
+   refill field (BIT46-BIT63, constants at 017404-017425) looked like
+   the obvious remaining one.
+
+   IT IS NOT, AND TWO CHECKS SAID SO BEFORE ANY OF IT WAS WRITTEN. I
+   had also said "the listing has a sweep for it too". Both halves were
+   wrong:
+
+     * THE REFILL FIELD IS ALREADY COVERED. Dropping its bottom bit
+       fails TWENTY-NINE sections of the existing suite -- xw_refill,
+       the CBR+ blocks and the PAU programs all build XW words with
+       refill fields and read them back. A sweep would have added rows
+       and no discrimination.
+     * THE LISTING DOES NOT HAVE ONE. p.13 leaves the sweeps behind
+       entirely and opens "1202 --- LX DATA, KV AND KVI CHECK". The
+       BIT46-BIT63 constants exist in the pool but this block does not
+       use them.
+
+   Guessing what a listing contains is the same error as guessing what
+   it prints, and it costs the same way: the fix is to look. What p.13
+   DOES offer clears the bar easily -- nothing in the suite uses KV,
+   KVI, BXL, BXH or BXE, so index comparison and its three indicators
+   (XL, XE, XH) are untouched.
 
    AND THEN TO ALL TWENTY-FOUR BITS (pp.7-9, through 006622.00), with
    the margin measured BOTH WAYS before and after -- the discipline the
