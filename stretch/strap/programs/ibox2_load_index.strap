@@ -64,6 +64,22 @@ BIT4    XW, (8)20000.00, 0, 0
 BIT5    XW, (8)10000.00, 0, 0
 BIT6    XW, (8)4000.00, 0, 0
 BIT7    XW, (8)2000.00, 0, 0
+BIT8    XW, (8)1000.00, 0, 0
+BIT9    XW, (8)400.00, 0, 0
+BIT10   XW, (8)200.00, 0, 0
+BIT11   XW, (8)100.00, 0, 0
+BIT12   XW, (8)40.00, 0, 0
+BIT13   XW, (8)20.00, 0, 0
+BIT14   XW, (8)10.00, 0, 0
+BIT15   XW, (8)4.00, 0, 0
+BIT16   XW, (8)2.00, 0, 0
+BIT17   XW, (8)1.00, 0, 0
+BIT18   XW, (8)0.40, 0, 0
+BIT19   XW, (8)0.20, 0, 0
+BIT20   XW, (8)0.10, 0, 0
+BIT21   XW, (8)0.04, 0, 0
+BIT22   XW, (8)0.02, 0, 0
+BIT23   XW, (8)0.01, 0, 0
 
         SLC, (8)6506.0
 I001    LX, $X0, I00Z                        ! load with zero
@@ -162,5 +178,87 @@ I0011   LX, $X0, BIT0                        ! start check of each bit in value
         LX, $X0, BIT7
         SIC, SEN
         BXVZ, SERS                           ! no bit 7
+        SIC, I0010                           ! clr ix 0
+        B, I007
+        LX, $X0, BIT8
+        SIC, SEN
+        BXVZ, SERS                           ! no bit 8
+        SIC, I0010                           ! clr ix 0
+        B, I007
+        LX, $X0, BIT9
+        SIC, SEN
+        BXVZ, SERS                           ! no bit 9
+        SIC, I0010                           ! clr ix 0
+        B, I007
+        LX, $X0, BIT10
+        SIC, SEN
+        BXVZ, SERS                           ! no bit 10
+        SIC, I0010                           ! clr ix 0
+        B, I007
+        LX, $X0, BIT11
+        SIC, SEN
+        BXVZ, SERS                           ! no bit 11
+        SIC, I0010                           ! clr ix 0
+        B, I007
+        LX, $X0, BIT12
+        SIC, SEN
+        BXVZ, SERS                           ! no bit 12
+        SIC, I0010                           ! clr ix 0
+        B, I007
+        LX, $X0, BIT13
+        SIC, SEN
+        BXVZ, SERS                           ! no bit 13
+        SIC, I0010                           ! clr ix 0
+        B, I007
+        LX, $X0, BIT14
+        SIC, SEN
+        BXVZ, SERS                           ! no bit 14
+        SIC, I0010                           ! clr ix 0
+        B, I007
+        LX, $X0, BIT15
+        SIC, SEN
+        BXVZ, SERS                           ! no bit 15
+        SIC, I0010                           ! clr ix 0
+        B, I007
+        LX, $X0, BIT16
+        SIC, SEN
+        BXVZ, SERS                           ! no bit 16
+        SIC, I0010                           ! clr ix 0
+        B, I007
+        LX, $X0, BIT17
+        SIC, SEN
+        BXVZ, SERS                           ! no bit 17
+        SIC, I0010                           ! clr ix 0
+        B, I007
+        LX, $X0, BIT18
+        SIC, SEN
+        BXVZ, SERS                           ! no bit 18
+        SIC, I0010                           ! clr ix 0
+        B, I007
+        LX, $X0, BIT19
+        SIC, SEN
+        BXVZ, SERS                           ! no bit 19
+        SIC, I0010                           ! clr ix 0
+        B, I007
+        LX, $X0, BIT20
+        SIC, SEN
+        BXVZ, SERS                           ! no bit 20
+        SIC, I0010                           ! clr ix 0
+        B, I007
+        LX, $X0, BIT21
+        SIC, SEN
+        BXVZ, SERS                           ! no bit 21
+        SIC, I0010                           ! clr ix 0
+        B, I007
+        LX, $X0, BIT22
+        SIC, SEN
+        BXVZ, SERS                           ! no bit 22
+        SIC, I0010                           ! clr ix 0
+        B, I007
+        LX, $X0, BIT23
+        SIC, SEN
+        BXVZ, SERS                           ! no bit 23
+        SIC, I0010                           ! clr ix 0 once more
+        B, I007
 PASS    BEW, $
         END, I001

@@ -3061,6 +3061,27 @@ hand vectors alone. "Enables" notes the dependency chain.
    all. Each named payload cost exactly one construction site in
    StretchDecode.bsv. Suite unchanged at 242 sections throughout.
 
+   AND THEN TO ALL TWENTY-FOUR BITS (pp.7-9, through 006622.00), with
+   the margin measured BOTH WAYS before and after -- the discipline the
+   CHKSSR multi-bit case established, applied deliberately this time
+   rather than discovered:
+
+     injection: the index value field drops its BOTTOM bit (bit 23)
+       against the 8-bit sweep   -> PASSES.  Not caught.
+       against the 24-bit sweep  -> FAILS at BIT23's check.
+
+   The eight-bit version covers the TOP of the field; the bottom edge
+   is a different bug and needs its own case. That is the whole
+   argument for the other sixteen, and it is an argument with a
+   measurement under it rather than "more coverage is better".
+
+   It also settles what these single-bit sweeps are for in general. A
+   bit sweep is not a thorough test of the operation -- LX is the same
+   instruction twenty-four times -- it is a test of FIELD WIDTH AND
+   PLACEMENT, and its value is concentrated at the two edges. The
+   fourteen middle cases are cheap insurance against a mis-shifted
+   field; the first and last are the ones that pay.
+
    IBOX-2'S FIRST BLOCK EXTENDED through its SIC-linked subroutine and
    the first eight bits of the value-field sweep (006521.40-006551.00),
    sixty-one rows verified.
