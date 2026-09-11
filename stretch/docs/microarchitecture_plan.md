@@ -3061,6 +3061,47 @@ hand vectors alone. "Enables" notes the dependency chain.
    all. Each named payload cost exactly one construction site in
    StretchDecode.bsv. Suite unchanged at 242 sections throughout.
 
+   AND THEN THE ROUTINE'S OWN HEADER EXPLAINED BOTH RESULTS, which is
+   worth more than another block would have been.
+
+   p.180, verbatim: "THIS ROUTINE TESTS THE SEVERAL GATES AND REGISTERS
+   LOCATED IN PANELS A1, A2, A3, A4 AND B1 OF FRAME 25, AND ALL OF
+   FRAMES 26 AND 27. **ONLY THE FRACTION OPERATIONS ARE CHECKED. SAU
+   HANDLING OF EXPONENTS IS NOT CHECKED.**"
+
+   That is why the shift blocks found nothing and SRTE30 found a bug.
+   Every other block of the routine builds its operand with a VFL load,
+   which clears the exponent field, so every other block runs with an
+   exponent of zero -- exactly as the header says. SRTE30 is the
+   exception: it ADDS a one into IBM 10 to make the exponent odd, and
+   that single deviation from the routine's own stated scope is what
+   reached a path nothing else could.
+
+   THE BLOCK THAT VIOLATED ITS ROUTINE'S HEADER IS THE ONE THAT FOUND
+   THE FAULT. Recorded as a heuristic in its own right: a diagnostic's
+   preamble says where its authors believed its coverage lay, and the
+   places where a block does something its preamble disclaims are worth
+   reading first.
+
+   AND IT DOWNGRADES THE REST OF THE ROUTINE HONESTLY. What remains is
+   fraction-path and shifter coverage, which F212 and F213 already
+   exercise. Two candidates were checked against the model before
+   transcribing rather than after:
+
+     CHKL4 and CHKRST use `E+(N), SMANO` and `E+(U), SMANO` -- adding
+     ZERO to the exponent, so E+ is being used purely to force (or
+     suppress) a normalization of the 96-bit accumulator. That looked
+     promising until the E+ arm turned out to carry a comment saying
+     its 96-bit normalization was forced by F213A12, with the
+     constants and the expected halves spelled out. Already covered;
+     not transcribed.
+
+   That is the discipline working in the cheap direction. "Is this
+   block worth transcribing" is answerable before the transcription, by
+   naming the model path it would reach and looking to see whether
+   something already reaches it -- and the answer here was no twice and
+   yes once, for seven rows that found a real bug.
+
    SRTE30 FOUND A BUG (p.195, 023666.40-023673.00), the first from the
    PAU routine and the reason for having transcribed any of it.
 
