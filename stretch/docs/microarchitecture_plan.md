@@ -3061,6 +3061,59 @@ hand vectors alone. "Enables" notes the dependency chain.
    all. Each named payload cost exactly one construction site in
    StretchDecode.bsv. Suite unchanged at 242 sections throughout.
 
+   WHICH DIAGNOSTIC NEXT, ASSESSED RATHER THAN ASSUMED. Of the
+   machine's diagnostics in docs/, three I-box tapes and the I/O
+   exchange tape have NEVER been opened -- zero programs between them:
+
+     jb_ax2a ibox-2   203pp   untouched
+     jb_ax3a ibox-3   215pp   untouched
+     jb_ax5b ibox-5   116pp   untouched
+     ka_ex1  bx-0      78pp   untouched
+     ja_ax1a ibox-1            used (6 programs)
+     jb_ax4b ibox-4            used (3 programs)
+     jb_af1c floating-point    used (43 programs)
+
+   KA_EX1 WAS OPENED AND RULED OUT, which is worth recording so it is
+   not opened again. It is the I/O exchange test, not the B-box as its
+   name suggests, and it does contain STRAP listings (p.45 has
+   byte-level DD tables for card and printer patterns). But an I/O
+   diagnostic would run straight into the model's DOCUMENTED scope:
+   StretchIO.bsv states plainly that "chaining and multiple-block
+   operation are also NOT implemented ... the chain/multiple flags are
+   captured in the control word (readable via CCW) but the transfer FSM
+   in StretchCore ignores them". Its failures would be known scope, not
+   findings. A diagnostic whose first divergence is a deliberate
+   simplification teaches nothing, and transcribing it would produce
+   red tests that have to be explained away rather than fixed.
+
+   IT DID CONFIRM SOMETHING, INDEPENDENTLY. p.14 of ka_ex1 gives the
+   control-word OP encoding as a table of three flags, which matches
+   the model's field assignments exactly (chain IBM 25, multiple IBM
+   26, skip IBM 27) and names the eight operations:
+
+     CR    0 0 0   Count Within Record
+     CCR   0 0 1   Chain Counts Within Record
+     CD    0 1 0   Count Disregarding Record
+     CDSC  0 1 1   Count Disregarding Record, Skip and Chain
+     SCR   1 0 0   Skip, Count Within Record
+     SCCR  1 0 1   Skip, Chain Counts Within Record
+     SCD   1 1 0   Skip, Count Disregarding Record
+     SCDSC 1 1 1   Skip, Count Disregarding Record, Skip and Chain
+
+   A second primary source agreeing with the Reference Manual on a bit
+   layout is worth having written down, and the eight mnemonics are
+   what a CW pseudo-op would need if STRAP's CW is ever implemented --
+   strap_asm raises "not implemented by this assembler yet" for it
+   today, and the I/O programs build packed control words as raw DD
+   values instead.
+
+   THE I-BOX TAPES ARE THE BETTER FRONTIER and are left named rather
+   than opened. They exercise instruction fetch, look-ahead and branch
+   guessing -- a unit the model implements in earnest (StretchIBox.bsv,
+   la_branch_guess, la_timing_*) and which ibox-1 and ibox-4 already
+   found bugs in -- so unlike the I/O tape their first divergence would
+   be a real answer either way.
+
    AND THEN THE ROUTINE'S OWN HEADER EXPLAINED BOTH RESULTS, which is
    worth more than another block would have been.
 
