@@ -3061,6 +3061,31 @@ hand vectors alone. "Enables" notes the dependency chain.
    all. Each named payload cost exactly one construction site in
    StretchDecode.bsv. Suite unchanged at 242 sections throughout.
 
+   AND THE COUNT FIELD AFTER IT (pp.10-12, 006622.40-006676.00), which
+   the previous entry's conclusion predicted before the page was
+   opened. If a bit sweep is a test of field width and placement, the
+   natural counterpart to the value field is the OTHER field, with its
+   own two edges -- and p.10 opens "START CHK OF EACH BIT IN COUNT".
+
+   Eighteen bits, IBM 28-45, BIT28 at 2^17 and BIT45 at 2^0, using
+   BXCZ where the value sweep used BXVZ. Both edges measured:
+
+     count field drops its BOTTOM bit (IBM 45)  -> FAILS
+     count field drops its TOP bit    (IBM 28)  -> FAILS
+
+   Forty-two index words and the whole two-field sweep verified against
+   the listing; the program is one block of 006506.00-006676.00 and
+   every address matches.
+
+   WHAT THE TWO SWEEPS TOGETHER ARE WORTH. The index word has four
+   fields -- value (24), sign (1), flags (3), count (18), refill (18)
+   -- and unpackIndexWord slices all of them out of one 64-bit word
+   with hand-written bit ranges. That is exactly the kind of code where
+   an off-by-one in a range is invisible to ordinary tests and obvious
+   to a sweep. Two of the five fields are now pinned at both edges. The
+   refill field (BIT46-BIT63, constants at 017404-017425) is the
+   obvious remaining one, and the listing has a sweep for it too.
+
    AND THEN TO ALL TWENTY-FOUR BITS (pp.7-9, through 006622.00), with
    the margin measured BOTH WAYS before and after -- the discipline the
    CHKSSR multi-bit case established, applied deliberately this time

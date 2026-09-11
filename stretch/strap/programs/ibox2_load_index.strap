@@ -80,6 +80,25 @@ BIT20   XW, (8)0.10, 0, 0
 BIT21   XW, (8)0.04, 0, 0
 BIT22   XW, (8)0.02, 0, 0
 BIT23   XW, (8)0.01, 0, 0
+        SLC, (8)17362.0
+BIT28   XW, 0, 131072, 0
+BIT29   XW, 0, 65536, 0
+BIT30   XW, 0, 32768, 0
+BIT31   XW, 0, 16384, 0
+BIT32   XW, 0, 8192, 0
+BIT33   XW, 0, 4096, 0
+BIT34   XW, 0, 2048, 0
+BIT35   XW, 0, 1024, 0
+BIT36   XW, 0, 512, 0
+BIT37   XW, 0, 256, 0
+BIT38   XW, 0, 128, 0
+BIT39   XW, 0, 64, 0
+BIT40   XW, 0, 32, 0
+BIT41   XW, 0, 16, 0
+BIT42   XW, 0, 8, 0
+BIT43   XW, 0, 4, 0
+BIT44   XW, 0, 2, 0
+BIT45   XW, 0, 1, 0
 
         SLC, (8)6506.0
 I001    LX, $X0, I00Z                        ! load with zero
@@ -260,5 +279,100 @@ I0011   LX, $X0, BIT0                        ! start check of each bit in value
         BXVZ, SERS                           ! no bit 23
         SIC, I0010                           ! clr ix 0 once more
         B, I007
+! -- start chk of each bit in COUNT (p.10-12) --
+!
+! The counterpart sweep, and the reason for it is the same measured
+! one: a bit sweep tests FIELD WIDTH AND PLACEMENT, and its value sits
+! at the two edges.  The count field is eighteen bits, IBM 28-45, so
+! BIT28 is 2^17 at the top and BIT45 is 2^0 at the bottom.  The value
+! sweep above cannot reach either -- it is a different field.
+        LX, $X0, BIT28
+        SIC, SEN
+        BXCZ, SERS                           ! no bit 28
+        SIC, I0010                           ! clr ix 0
+        B, I007
+        LX, $X0, BIT29
+        SIC, SEN
+        BXCZ, SERS                           ! no bit 29
+        SIC, I0010                           ! clr ix 0
+        B, I007
+        LX, $X0, BIT30
+        SIC, SEN
+        BXCZ, SERS                           ! no bit 30
+        SIC, I0010                           ! clr ix 0
+        B, I007
+        LX, $X0, BIT31
+        SIC, SEN
+        BXCZ, SERS                           ! no bit 31
+        SIC, I0010                           ! clr ix 0
+        B, I007
+        LX, $X0, BIT32
+        SIC, SEN
+        BXCZ, SERS                           ! no bit 32
+        SIC, I0010                           ! clr ix 0
+        B, I007
+        LX, $X0, BIT33
+        SIC, SEN
+        BXCZ, SERS                           ! no bit 33
+        SIC, I0010                           ! clr ix 0
+        B, I007
+        LX, $X0, BIT34
+        SIC, SEN
+        BXCZ, SERS                           ! no bit 34
+        SIC, I0010                           ! clr ix 0
+        B, I007
+        LX, $X0, BIT35
+        SIC, SEN
+        BXCZ, SERS                           ! no bit 35
+        SIC, I0010                           ! clr ix 0
+        B, I007
+        LX, $X0, BIT36
+        SIC, SEN
+        BXCZ, SERS                           ! no bit 36
+        SIC, I0010                           ! clr ix 0
+        B, I007
+        LX, $X0, BIT37
+        SIC, SEN
+        BXCZ, SERS                           ! no bit 37
+        SIC, I0010                           ! clr ix 0
+        B, I007
+        LX, $X0, BIT38
+        SIC, SEN
+        BXCZ, SERS                           ! no bit 38
+        SIC, I0010                           ! clr ix 0
+        B, I007
+        LX, $X0, BIT39
+        SIC, SEN
+        BXCZ, SERS                           ! no bit 39
+        SIC, I0010                           ! clr ix 0
+        B, I007
+        LX, $X0, BIT40
+        SIC, SEN
+        BXCZ, SERS                           ! no bit 40
+        SIC, I0010                           ! clr ix 0
+        B, I007
+        LX, $X0, BIT41
+        SIC, SEN
+        BXCZ, SERS                           ! no bit 41
+        SIC, I0010                           ! clr ix 0
+        B, I007
+        LX, $X0, BIT42
+        SIC, SEN
+        BXCZ, SERS                           ! no bit 42
+        SIC, I0010                           ! clr ix 0
+        B, I007
+        LX, $X0, BIT43
+        SIC, SEN
+        BXCZ, SERS                           ! no bit 43
+        SIC, I0010                           ! clr ix 0
+        B, I007
+        LX, $X0, BIT44
+        SIC, SEN
+        BXCZ, SERS                           ! no bit 44
+        SIC, I0010                           ! clr ix 0
+        B, I007
+        LX, $X0, BIT45
+        SIC, SEN
+        BXCZ, SERS                           ! no bit 45
 PASS    BEW, $
         END, I001
