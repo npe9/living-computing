@@ -3061,6 +3061,55 @@ hand vectors alone. "Enables" notes the dependency chain.
    all. Each named payload cost exactly one construction site in
    StretchDecode.bsv. Suite unchanged at 242 sections throughout.
 
+   SRTE30 FOUND A BUG (p.195, 023666.40-023673.00), the first from the
+   PAU routine and the reason for having transcribed any of it.
+
+   It is seven rows. It loads a single fraction bit at IBM 59, then
+   ADDS a one into IBM 10 -- the low bit of EM -- which makes the
+   exponent +1, ODD. Every square-root case in the suite before it had
+   an even exponent, because a VFL load leaves the exponent field zero;
+   this is the first that does not. And its branch is BBZ where every
+   other check uses BZB: BZB branches when the indicator is zero, BBZ
+   when it is one, so this halts if the root comes back ZERO. Its
+   message says what that would mean: "SHIFT R1-BIT LOST".
+
+   THE MODEL HALTED, AS PREDICTED IN THE PROGRAM'S HEADER BEFORE THE
+   RUN. p.95, verbatim: "When the exponent is odd, a one is added to
+   the exponent prior to the division and the fraction is shifted right
+   one position. Subsequently, the square root of the 48- OR 49-BIT
+   FRACTION is obtained."
+
+   FORTY-EIGHT *OR FORTY-NINE*. The shifted-out bit is not lost -- it
+   becomes the radicand's 49th bit. fpSqrt held the radicand in a
+   Bit#(48) and did `fr = fr >> 1`, which drops it, so a radicand whose
+   only fraction bit sat at IBM 59 came back with a root of zero. The
+   fix shifts the 96-BIT radicand instead:
+
+       Bit#(96) rad = { a.frac, 48'b0 };
+       if (pack(e)[0] == 1) rad = rad >> 1;
+
+   and fpSqrt48 becomes a thin wrapper on a new fpSqrt96. Nothing with
+   an even exponent changes, and nothing with an odd exponent and an
+   EVEN fraction changes either -- only an odd fraction has a bit to
+   lose -- which is why the suite went from halting to green with no
+   other movement.
+
+   WHY NOTHING FOUND THIS BEFORE, which is the part worth keeping. F219O
+   is a store-root block and it passed; so did the fourteen single-bit
+   positions and the four multi-bit perfect squares. All of them build
+   their radicand with a VFL load, and a VFL load clears the exponent
+   field, so all of them have an even exponent and none can reach the
+   odd-exponent path at all. The path was not weakly tested; it was
+   UNREACHABLE by every block transcribed, and no amount of more
+   square-root cases of the same construction would have found it. What
+   found it was a block that built its operand differently.
+
+   THAT IS THE ARGUMENT FOR READING AHEAD RATHER THAN TRANSCRIBING IN
+   ORDER. The ten single-bit cases on p.194 sitting between the sweep
+   and this one would have added nothing; skipping them and taking the
+   seven rows that construct their operand a different way found a real
+   fault in the model.
+
    AND THE MULTI-BIT ROOT CASES AFTER IT (p.195,
    023636.40-023666.00), which are the first block in this session
    whose value over its predecessor was MEASURED rather than argued.

@@ -940,8 +940,13 @@ endfunction
 // `rem` stays at or below twice the root so far, hence under 2^49
 // before its shift and under 2^51 after; the trial subtrahend is under
 // 2^50.  Fifty-two bits covers both.
-function Bit#(48) fpSqrt48(Bit#(48) frac);
-  Bit#(96) n   = { frac, 48'b0 };
+// The root of a 96-bit radicand.  p.95 has the fraction being 48 OR 49
+// bits -- 49 when an odd exponent has forced a right shift -- so the
+// radicand cannot be held in a Bit#(48) without losing the shifted-out
+// bit.  It is passed in already scaled: a 48-bit fraction F is
+// {F, 48'b0}, and the 49-bit form is that shifted right one, which
+// keeps the bit F would have dropped.
+function Bit#(48) fpSqrt96(Bit#(96) n);
   Bit#(52) rem = 0;
   Bit#(48) root = 0;
   for (Integer i = 47; i >= 0; i = i - 1) begin
@@ -955,6 +960,9 @@ function Bit#(48) fpSqrt48(Bit#(48) frac);
   end
   return root;
 endfunction
+
+// The 48-bit entry point, kept for callers with an even exponent.
+function Bit#(48) fpSqrt48(Bit#(48) frac) = fpSqrt96({ frac, 48'b0 });
 
 typedef struct {
   FpNum   res;         // the value stored: exponent, fraction, sign
@@ -991,13 +999,30 @@ function FpSqrtResult fpSqrt(FpNum a, Bit#(1) absSign, Bit#(1) negSign,
                              Bool normalized);
   Bit#(1) radicand = (absSign == 1) ? 0 : a.sign;
   Int#(14) e  = fpExpFull(a);
-  Bit#(48) fr = a.frac;
   Bool flagged = (a.ef == 1);
+  // THE RADICAND IS 48 OR 49 BITS, p.95 verbatim: "When the exponent is
+  // odd, a one is added to the exponent prior to the division and the
+  // fraction is shifted right one position.  Subsequently, the square
+  // root of the 48- OR 49-BIT FRACTION is obtained."
+  //
+  // This used to shift a Bit#(48) right one, which drops the bit that
+  // leaves the bottom -- so a radicand whose only fraction bit was at
+  // IBM 59 came back with a root of zero.  The PAU GATES ROUTINE's
+  // SRTE30 is built to catch exactly that and says so in its own error
+  // message, "SHIFT R1-BIT LOST": it loads a single bit at IBM 59, adds
+  // a one into IBM 10 to make the exponent odd, and halts if the root
+  // is zero.  Shifting the 96-bit radicand instead keeps the bit as the
+  // 49th, which is what the manual's "48- or 49-bit" means.
+  //
+  // Nothing with an even exponent changes, and nothing with an odd
+  // exponent and an EVEN fraction changes either: only an odd fraction
+  // has a bit to lose.
+  Bit#(96) rad = { a.frac, 48'b0 };
   if (pack(e)[0] == 1) begin
-    fr = fr >> 1;
+    rad = rad >> 1;
     if (!flagged) e = e + 1;
   end
-  Bit#(48) q = fpSqrt48(fr);
+  Bit#(48) q = fpSqrt96(rad);
   Int#(14) re = flagged ? e : (e >> 1);   // arithmetic shift: e is even here
   let {h, gen} = fpMakeExp(re, q, negSign, a.flags);
   FpNum res = h;

@@ -1076,6 +1076,13 @@ run "PAU gates CHKSSR multi-bit roots (jb_af1c, encoding)" python3 verify_pau_ch
 run "PAU gates CHKSSR multi-bit roots (perfect squares with several root bits)" ./run_program.sh programs/pau_chkssr2.strap StretchPauChkSsr2Tb \
     "PC=$(python3 -c 'from strap_asm import assemble; print(assemble(open("programs/pau_chkssr2.strap").read()).symtab["PASS"]//32)')"
 
+run "PAU gates SRTE30 (jb_af1c, encoding)" python3 verify_pau_srte30_listing.py
+# The block that found the 49-bit radicand bug: a single fraction bit
+# at IBM 59 with an ODD exponent, halting if the root comes back zero.
+# Its own message is "SHIFT R1-BIT LOST".
+run "PAU gates SRTE30 (store root, odd exponent, 49-bit radicand)" ./run_program.sh programs/pau_srte30.strap StretchPauSrte30Tb \
+    "PC=$(python3 -c 'from strap_asm import assemble; print(assemble(open("programs/pau_srte30.strap").read()).symtab["PASS"]//32)')"
+
 run "Program store compare: store then EXECUTE the modified instruction" ./run_program.sh programs/store_then_execute.strap StretchStoreExecTb \
     "RESULT:$(python3 -c 'from strap_asm import assemble; print(assemble(open("programs/store_then_execute.strap").read()).symtab["RESULT"]//64)')=0x20"
 

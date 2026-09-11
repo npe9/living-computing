@@ -1,0 +1,53 @@
+! jb_af1c "PAU GATES ROUTINE", the SRTE30 check, p.195 and p.199
+! (octal 023666.40-023673.00): STORE ROOT of a radicand with a single
+! fraction bit AND AN ODD EXPONENT.
+!
+! WHY THIS ONE.  Every square-root case transcribed so far -- CHKSSR's
+! fourteen single-bit positions and the four multi-bit perfect squares
+! -- has an EVEN exponent, because the radicand is built by a VFL load
+! that leaves the exponent field zero.  This block is the first that
+! does not: after loading the fraction bit it ADDS a one into IBM 10,
+! which is the low bit of EM, making the exponent +1.
+!
+! WHAT THAT TRIPS.  p.95: a square root halves the exponent, so an odd
+! exponent must be made even first, and the model does it by shifting
+! the fraction right one and adding one to the exponent.  Here the
+! fraction is a SINGLE bit at IBM 59 -- the very bottom of the
+! fraction -- so a right shift of one would push it out entirely and
+! the root would come back zero.
+!
+! AND THE BLOCK CALLS THAT AN ERROR.  Its branch is BBZ, not the BZB
+! every other check uses: BZB branches when the indicator is ZERO ("the
+! compare failed"), BBZ branches when it is ONE.  So this halts when
+! RZ is on -- when the root came out zero -- and its message says why:
+! "SHIFT R1-BIT LOST".  The block exists to assert that the bit is NOT
+! lost.
+!
+! That makes it a direct test of something no transcribed block has
+! reached, and a prediction worth recording before running it: if the
+! model drops the bit, this halts at SRTE30.
+
+! -- SSIP framework substitutes: SERS (octal 1304) -> FAIL halt,
+! -- SEN (octal 1310) -> scratch.
+        SLC, (8)1304.0
+SERS    BEW, $
+        SLC, (8)1310.0
+SEN     DD(BU,64,8), 0
+
+! -- data (pp.199-200) --
+        SLC, (8)24122.0
+WRDB    DD(BU,64,8), (8)1252525252525250000000
+        DD(BU,64,8), (8)0525252525252524000000
+        SLC, (8)24237.0
+SRSG    DD(BU,64,8), (8)0000000000000000000000
+
+        SLC, (8)23666.40
+SR30    L(BU,1), WRDB, 68                    ! a single fraction bit at IBM 59
+        +(BU,1), WRDB, 117                   ! and a one into IBM 10: exponent +1
+        SRT(U), SRSG
+        BBZ, $RZ, SRTE30                     ! halt if the root came out ZERO
+        B, $+1.32
+SRTE30  SIC, SEN
+        B, SERS                              ! shift r1-bit lost
+PASS    BEW, $
+        END, SR30
