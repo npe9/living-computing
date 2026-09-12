@@ -3061,6 +3061,41 @@ hand vectors alone. "Enables" notes the dependency chain.
    all. Each named payload cost exactly one construction site in
    StretchDecode.bsv. Suite unchanged at 242 sections throughout.
 
+   A COVERAGE TABLE THAT LIED, AND WHAT IT TEACHES. Choosing the next
+   block by page order had run out -- p.16 simply repeats the KV/KVI
+   pattern for BIT3, and more of the same shape is worth little -- so I
+   built a table instead: grep every index-arithmetic mnemonic across
+   the programs and take the ones with a count of zero. It reported
+   V+, V+C, V+CR, V+I, V-I, C+I and C-I all at ZERO, alongside KC, KCI,
+   LR, RNX and SVA.
+
+   Seven of those twelve were wrong. The pattern was
+   `(^|[[:space:]])V+[(,]` and `+` IS A REGEX QUANTIFIER: `V+` matches
+   one or more V, never the mnemonic. Every operation whose name
+   contains + or - read as untested.
+
+   THE MEASUREMENT CAUGHT IT. Before transcribing anything I injected
+   the fault the supposedly-missing coverage would catch -- direct
+   index V+ adding zero instead of its operand -- and SIX SECTIONS
+   FAILED: the look-ahead timing loop (whose name is literally
+   "L/+/ST/V+/CB loop") and Problem 2.2 Method 1, a historical program
+   from the Programming Examples manual. V+ was never untested; it was
+   untested-by-grep.
+
+   THE RULE: GREP IS NOT A COVERAGE MEASURE, AN INJECTION IS. A grep
+   over source text answers "does this string appear", which is a
+   question about spelling. Whether a model path is reachable is a
+   question about execution and only an injection answers it. The table
+   is worth keeping as a CANDIDATE LIST -- it is cheap and it narrows
+   the search -- but every candidate needs one injection before it
+   justifies a transcription, and that injection costs one suite run.
+
+   Corrected with fixed-string matching, the candidates now are KC,
+   KCI, LR, RNX, SVA, V+C, V+CR, V-I, C+I, C-I and SC. Each is a
+   CANDIDATE, not a gap; LC's count of 941 in the same table is a false
+   positive the other way (it matches inside BLC and $LC), which is the
+   same lesson from the opposite direction.
+
    THE KV AND KVI CHECK (p.13, 006713.00-006734.00), chosen over the
    refill sweep for the reasons the entry below records.
 
