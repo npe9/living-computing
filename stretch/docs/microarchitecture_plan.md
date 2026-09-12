@@ -3061,6 +3061,55 @@ hand vectors alone. "Enables" notes the dependency chain.
    all. Each named payload cost exactly one construction site in
    StretchDecode.bsv. Suite unchanged at 242 sections throughout.
 
+   THE BLOCK THAT CLOSES THREE OF THE NINE IS FOUND AND SCOUTED:
+   jb_ax4b IBOX-4 p.150, "TEST 5E, CHK PROG IX V+ICR" and "TEST 5F,
+   CHK PROG IX V-I", at 011214.00 onward. It uses KC, SR and V-I --
+   three of the nine measured gaps -- in a straight line with per-check
+   SIC/BZXE pairs and NO SVA, so it is runnable as it stands.
+
+   Its shape, per test:
+
+     LX,$X1,148XW6                     load the progressive control word
+     L(V+ICR)(BU,64,8), 1.0($X1)       a VFL load with progressive index
+     LX,$X2,$R  /  KV,$X2,148K25       did it fetch the right operand
+     KV,$X1,148K28                     did it modify the value correctly
+     KC,$X1,BIT17                      did it modify the COUNT correctly
+     SR,$X1,$X1  /  LX,$X1,$X1         did it refill correctly
+                                       (checked with BZXVZ)
+
+   TEST 5F is the same with V-I instead of V+ICR.
+
+   CONSTANTS ALREADY READ OFF pp.153-154, so the transcription does not
+   need the page hunt again:
+
+     148K25  011352  XW,(8)123456.70          123456.70 00 000000.00 00
+     148K26  011353  XW,(8)765432.10          765432.10 00 000000.00 00
+     148K27  011354  XW,(8)123456.70          123456.70 00 000000.00 00
+     148K28  011355  XW,148K26,1,0            11353.00 00 000020.00 00
+     148XW6  011366  XW,148K25,1,148K28       11352.00 00 000020.22 ED
+     148XW7  011367  XW,148K27,1,0            11354.00 00 000020.00 00
+     148DMP  011373  XW,0,0,0                 0.00 00 000000.00 00
+
+   STILL TO FIND: BIT17 at 013075, which the KC check compares against
+   -- a different constant block from the 148-series, and the only
+   piece missing. ibox-4's BIT0M..BIT23M (negative value words) are on
+   p.154 at 011374-011423 if they turn out to be wanted too.
+
+   AND A STRUCTURAL FACT FROM docs/archival_inventory.md WORTH
+   PROMOTING, because it explains why ibox-2 worked and sets the price
+   of the other tapes: IBOX-3, IBOX-4 AND IBOX-5 USE SVA as a
+   self-modifying-code mechanism, patching operand and address fields
+   into scratch instruction templates before falling through to execute
+   them. SVA is `setOpInvalid` in the model. So those three tapes are
+   only usable in slices chosen to avoid it -- p.150's block is one
+   such slice -- and opening them properly means implementing SVA
+   first. Appendix A already specifies it ("replace the address field,
+   18/19/24 bits per the target op's class, of the instruction at the
+   effective address with bits 0-17/18/23 of J's value field"), and
+   StretchDecode already classifies instructions well enough to pick
+   the width. IBOX-5's routine 1262 needs EX/EXIC as well, which has no
+   decode tag at all -- a larger job.
+
    AND THEN THE CANDIDATES WERE MEASURED, ALL OF THEM, IN ONE SUITE RUN.
    The entry below ends by saying each candidate needs its own
    injection before it justifies a transcription, and that this costs
