@@ -3061,6 +3061,49 @@ hand vectors alone. "Enables" notes the dependency chain.
    all. Each named payload cost exactly one construction site in
    StretchDecode.bsv. Suite unchanged at 242 sections throughout.
 
+   AND THEN THE CANDIDATES WERE MEASURED, ALL OF THEM, IN ONE SUITE RUN.
+   The entry below ends by saying each candidate needs its own
+   injection before it justifies a transcription, and that this costs
+   one suite run apiece -- eleven runs. It does not. BREAK THEM ALL AT
+   ONCE: if the suite still passes, no test detected any of the
+   changes, and for faults sitting in disjoint operation arms that
+   settles every one of them together.
+
+   Nine implemented candidates were broken simultaneously:
+
+     SC      stores a zeroed count field
+     KC      compares always equal
+     C+I     ignores its immediate
+     C-I     ignores its immediate
+     V-I     (with V-IC, V-ICR) subtracts nothing
+     KCI     compares always equal
+     LR      loads a zeroed half-word
+     V+CR    never refills
+
+   ALL 256 SECTIONS PASSED. Every one of those nine is genuinely
+   unreachable by anything transcribed -- measured now, not inferred
+   from a grep, and the distinction matters because the same list built
+   by grep had seven wrong entries an hour earlier.
+
+   (The other two candidates, RNX and SVA, together with LVE and LVS,
+   are `setOpInvalid` in the model -- deliberately out of scope. They
+   cannot be "broken" because there is nothing there; they would need
+   implementing before they could be tested, which is a different kind
+   of work and should not sit in the same list.)
+
+   THE TECHNIQUE IS WORTH THE NAME. A combined injection answers N
+   coverage questions in one run when the expected answer is "none of
+   these is covered", which is the common case for a candidate list.
+   If it FAILS, bisect; if it passes, every member is settled. Nine
+   answers for the price of one is the difference between a measurement
+   worth doing and one that gets skipped.
+
+   WHAT IT MAKES WORTH TRANSCRIBING. Nine measured gaps, all in index
+   arithmetic, and the IBOX-2 tape is an index-arithmetic diagnostic.
+   Its KV/KVI check is already transcribed; a KC/KCI counterpart is the
+   obvious next block and now has a measurement behind it rather than a
+   guess.
+
    A COVERAGE TABLE THAT LIED, AND WHAT IT TEACHES. Choosing the next
    block by page order had run out -- p.16 simply repeats the KV/KVI
    pattern for BIT3, and more of the same shape is worth little -- so I
