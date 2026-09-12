@@ -48,6 +48,7 @@ I00Z    XW, 0, 0, 0, 0
         SLC, (8)17326.0
 BIT0    XW, (8)400000.00, 0, 0
 BIT1    XW, (8)200000.00, 0, 0
+BIT2    XW, (8)100000.00, 0, 0
 
 ! -- the subroutine the block calls, at its own addresses --
         SLC, (8)6523.0
@@ -95,5 +96,75 @@ I022    KV, $X0, BIT1                        ! index hi condition, KV
         BXH, I023
         SIC, SEN
         B, SERS
-I023    BEW, $
+I023    B, $+1.0
+! The listing continues here with BD,I020 / SIC,SENO+.32 / B,SSW --
+! the SSIP return between sub-blocks -- and then an ident block before
+! I024 at 006740.40.  Standing alone this program bridges the gap with
+! a single branch, the same substitution the PAU SHFR program makes.
+! Only this one row's encoding differs from the listing, and the verify
+! table leaves it out.
+        NOP                                  ! 006735.00, so the branch below
+        B, I024                              ! sits at 006735.40 where B,$+1.0 points
+! -- the same three outcomes again, one bit down, and this time the
+! -- LOW condition too (p.14, 006740.40-006771.40).
+!
+! The block above reaches EQUAL and HIGH and stops.  This one loads
+! $X0 with BIT1 instead and compares it against BIT1 (equal), BIT2
+! (smaller, so the index is HIGH) and BIT0 (larger, so the index is
+! LOW) -- completing all three outcomes for both KV and KVI.  Note how
+! the low checks invert which branches are errors: BXH and BXE become
+! the failures and BXL is the one that must be taken.
+        SLC, (8)6740.40
+I024    SIC, I0010                           ! test bit 1
+        B, I007
+        LX, $X0, BIT1
+        KV, $X0, BIT1                        ! equal condition, KV
+        SIC, SEN
+        BXL, SERS
+        SIC, SEN
+        BXH, SERS
+        BXE, I025
+        SIC, SEN
+        B, SERS
+I025    KVI, $X0, (8)200000.0                ! equal condition, KVI
+        SIC, SEN
+        BXL, SERS
+        SIC, SEN
+        BXH, SERS
+        BXE, I026
+        SIC, SEN
+        B, SERS
+I026    KV, $X0, BIT2                        ! index hi condition, KV
+        SIC, SEN
+        BXL, SERS
+        SIC, SEN
+        BXE, SERS
+        BXH, I027
+        SIC, SEN
+        B, SERS
+I027    KVI, $X0, (8)100000.0                ! index hi condition, KVI
+        SIC, SEN
+        BXL, SERS
+        SIC, SEN
+        BXE, SERS
+        BXH, I028
+        SIC, SEN
+        B, SERS
+I028    KV, $X0, BIT0                        ! index LOW condition, KV
+        SIC, SEN
+        BXH, SERS
+        SIC, SEN
+        BXE, SERS
+        BXL, I029
+        SIC, SEN
+        B, SERS
+I029    KVI, $X0, (8)400000.0                ! index LOW condition, KVI
+        SIC, SEN
+        BXH, SERS
+        SIC, SEN
+        BXE, SERS
+        BXL, I0210
+        SIC, SEN
+        B, SERS
+I0210   BEW, $
         END, I020

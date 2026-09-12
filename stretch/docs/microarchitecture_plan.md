@@ -3073,9 +3073,27 @@ hand vectors alone. "Enables" notes the dependency chain.
    indicator that must be OFF as well as the one that must be on, which
    is why reversing the compare's high and low halts it.
 
-   Two of the three outcomes, twice each. The LOW outcome is not
-   reached by this block, and saying so is the difference between
-   "index comparison is tested" and what is actually true.
+   Two of the three outcomes, twice each -- and then p.14 supplied the
+   third. I024-I029 load $X0 with BIT1 instead and compare it against
+   BIT1 (equal), BIT2 (smaller, index HIGH) and BIT0 (larger, index
+   LOW), completing all three for both KV and KVI. The low checks
+   invert which branches are errors: BXH and BXE become the failures
+   and BXL is the one that must be taken. Forcing XL permanently off
+   now halts the block, which it would not have done an hour ago.
+
+   Ninety-three rows verified. The gap between the two sub-blocks --
+   where the listing has its SSIP return and an ident block -- is
+   bridged by a NOP and a branch, and only those two rows differ from
+   the listing.
+
+   THE BRIDGE COST TWO ATTEMPTS AND THE REASON IS WORTH A LINE. `B,
+   $+1.0` from 006734.40 targets 006735.40, not 006735.00, because
+   `$+1.0` is plus one WORD from a half-word boundary. The first bridge
+   sat at 006735.00 and execution ran into zeroed storage, which
+   decodes as a branch to zero -- the failure printed as "PC = 0"
+   rather than a halt at SERS, and that distinction is the tell: a halt
+   at 1416 means the program rejected something, PC 0 means it fell off
+   the end of what was assembled.
 
    Forty-four rows verified, including both KVI immediates, which
    print their operand in the address field (400000.01 04) where KV
