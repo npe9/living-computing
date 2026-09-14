@@ -3075,19 +3075,29 @@ hand vectors alone. "Enables" notes the dependency chain.
               V-I (direct)  the ImmIndex opcode, NOT the VFL modifier
               V+CR          its refill path
 
-     UNSETTLED  SR          The block uses it, but the one injection
-                            tried against it -- storing a zeroed refill
-                            -- passed, and that was in the round whose
-                            other two injections were pointed the wrong
-                            way. It has not been re-tested in a
-                            direction known to be right, so SR is
-                            recorded as unsettled rather than covered
-                            or open. Saying which of the three it is
-                            costs one more program run and has not been
-                            spent.
+     CLOSED   SR            -- settled with the one program run the
+                            previous version of this entry said had not
+                            been spent. Storing an ALL-ONES refill
+                            halts the block.
 
-   That is the honest shape of it: two closed, seven measured open, one
-   unsettled and named as such rather than rounded into either column.
+   AND SR'S FIRST RESULT WAS THE WRONG-DIRECTION ERROR A THIRD TIME,
+   which is enough repetitions to state the rule properly. The check
+   after SR is `BZXVZ,SERS`, and the encodings settle what that means:
+   IBOX-2's BXVZ prints 1304.31 42 while this prints 1304.31 40 -- same
+   target, different condition bit -- so BZXVZ branches when XVZ is
+   ZERO, i.e. when the value is NOT zero. The block therefore EXPECTS
+   the value to be zero after SR and LX, and "SR stores a zeroed
+   refill" produces exactly the expected state. It could not fail.
+
+   THE RULE: AN INJECTION MUST MOVE THE MODEL AWAY FROM WHAT THE BLOCK
+   ASSERTS, AND THE ONLY RELIABLE WAY TO KNOW WHICH WAY THAT IS, IS TO
+   READ THE BRANCH -- not the mnemonic's name, not the comment beside
+   it, the CONDITION BIT in its printed encoding. Three times in this
+   session an injection was chosen from what the operation does rather
+   than from what the check asserts, and all three times it passed and
+   looked like blindness. The listing prints the condition; use it.
+
+   That is the honest shape of it: three closed, seven measured open.
 
    IT IS TRANSCRIBED AND IT DISCRIMINATES -- but the first round of
    injections said it did not, and the error was mine in two distinct
