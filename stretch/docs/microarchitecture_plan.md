@@ -3061,6 +3061,34 @@ hand vectors alone. "Enables" notes the dependency chain.
    all. Each named payload cost exactly one construction site in
    StretchDecode.bsv. Suite unchanged at 242 sections throughout.
 
+   THE GAP LIST RE-MEASURED AFTER THE BLOCK LANDED (2026-09-14), one
+   suite run for seven answers:
+
+     CLOSED   KC            -- CmpHigh halts TEST 5E at its count check
+     CLOSED   progressiveIndex -- the shared VFL progressive path;
+                             failing to advance the value halts it
+     STILL OPEN, all seven broken together and all 258 sections passed:
+              SC            store count
+              LR            load refill
+              KCI           compare count immediate
+              C+I, C-I      count immediate arithmetic
+              V-I (direct)  the ImmIndex opcode, NOT the VFL modifier
+              V+CR          its refill path
+
+     UNSETTLED  SR          The block uses it, but the one injection
+                            tried against it -- storing a zeroed refill
+                            -- passed, and that was in the round whose
+                            other two injections were pointed the wrong
+                            way. It has not been re-tested in a
+                            direction known to be right, so SR is
+                            recorded as unsettled rather than covered
+                            or open. Saying which of the three it is
+                            costs one more program run and has not been
+                            spent.
+
+   That is the honest shape of it: two closed, seven measured open, one
+   unsettled and named as such rather than rounded into either column.
+
    IT IS TRANSCRIBED AND IT DISCRIMINATES -- but the first round of
    injections said it did not, and the error was mine in two distinct
    ways worth separating.
