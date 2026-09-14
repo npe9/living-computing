@@ -1,0 +1,95 @@
+! jb_ax3a "IBOX-3", routine 1222 blocks I2228-I2230, p.143 (octal
+! 030273.00-030317.40): SVA INTO A DIRECT INDEX INSTRUCTION, IN INDEX
+! CORE STORAGE.
+!
+! WHY THIS BLOCK, given that ibox3_sva_fp already runs.  That block
+! pins SVA's 18-bit width; this one pins the 19-bit width, and the two
+! are the SAME SIX CHECKS with two comparisons reversed.  Reading them
+! side by side is what establishes the rule, because neither alone
+! does:
+!
+!   store a lone bit 18, then compare against I22K3D (bits 19-23):
+!     FP target     BXL -- result must be LOW, bit 18 NOT stored
+!     direct index  BXH -- result must be HIGH, bit 18 IS stored
+!
+! The listing's error text says the same thing in words: "STORES BIT
+! 18" is the FP failure and "FAILS TO STORE BIT 18" is this one.
+!
+! AND THE TARGET IS AN INDEX REGISTER.  Where the FP block works in
+! external memory through I22WRK, this one uses $X3 -- word 19, index
+! core storage -- for the template, the SVA and the read-back.  So it
+! also covers SVA writing a half-word into a register word, which is a
+! different path in the model from an ordinary storage write.
+!
+! I22K4 is the template: an LV whose half-word is 0.00 30, and whose
+! bits 26-27 are 11.  As with the FP block, it goes into the work area
+! by LX then SX, so those two bits have to survive a trip through an
+! index register -- the round trip that packIndexWord used to zero.
+!
+! The five test words are the same as the FP block's:
+!   I22K3A bits 0-17 ones   I22K3B bits 18-23 ones   I22K3C bit 18
+!   I22K3D bits 19-23       I22K3E bit 23
+!
+! -- SSIP framework substitutes: SERS (octal 1304) -> FAIL halt,
+! -- SEN (octal 1310) -> scratch for SIC.
+        SLC, (8)1304.0
+SERS    BEW, $
+        SLC, (8)1310.0
+SEN     DD(BU,64,8), 0
+
+! -- constants for 1222 (p.165) --
+        SLC, (8)31305.0
+I22K3A  XW, (8)777777.0, 0, 0                ! test wd: bits 0-17 ones
+I22K3B  XW, (8)0.77, 0, 0                    ! test wd: bits 18-23 ones
+I22K3C  XW, 0.32, 0, 0                       ! test wd: bit 18
+I22K3D  XW, 0.31, 0, 0                       ! test wd: bits 19-23
+I22K3E  XW, 0.01, 0, 0                       ! test wd: bit 23
+        SLC, (8)31314.0
+I22K4   LV, $X0, 0.0                         ! direct index template; bits 26,27 = 11
+        NOP
+
+        SLC, (8)30273.0
+I2228   LX, $X0, I22K3A
+        LX, $X1, I22K4
+        SX, $X1, $X3
+        SVA, $X0, $X3
+        LX, $X2, $X3
+        KV, $X2, I22K3B
+        BXH, $+2.0
+        SIC, SEN                             ! SVA into dir ix inst in ix core stg
+        B, SERS                              ! fails to store any bits in 0-17.
+        B, I2229
+        KV, $X2, I22K3A
+        BXL, $+1.0
+        B, $+1.32
+        SIC, SEN                             ! SVA into dir ix inst in ix core stg
+        B, SERS                              ! fails to store all bits in 0-17.
+I2229   SX, $X1, $X3
+        LX, $X0, I22K3C
+        SVA, $X0, $X3
+        LX, $X2, $X3
+        KV, $X2, I22K3B
+        BXH, $+1.0
+        B, $+2.0
+        SIC, SEN                             ! SVA into dir ix inst in ix core stg
+        B, SERS                              ! picks up some bits in 0-17.
+        B, I2230
+        KV, $X2, I22K3D
+        BXH, $+1.32
+        SIC, SEN                             ! SVA into dir ix inst in ix core stg
+        B, SERS                              ! fails to store bit 18.
+I2230   SX, $X1, $X3
+        LX, $X0, I22K3D
+        SVA, $X0, $X3
+        LX, $X2, $X3
+        KV, $X2, I22K3C
+        BXL, $+2.0
+        SIC, SEN                             ! SVA into dir ix inst in ix core stg
+        B, SERS                              ! picks up some bits in 0-18.
+        B, I2230A
+        KV, $X2, I22K3E
+        BXL, $+1.32
+        SIC, SEN                             ! SVA into dir ix inst in ix core stg
+        B, SERS                              ! store some bits in 19-23.
+I2230A  BEW, $
+        END, I2228

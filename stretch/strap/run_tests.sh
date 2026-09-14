@@ -1235,6 +1235,22 @@ run "IBOX-3 SVA into a floating-point instruction (jb_ax3a, encoding)" python3 v
 run "IBOX-3 SVA into a floating-point instruction (18-bit address field)" ./run_program.sh programs/ibox3_sva_fp.strap StretchIbox3SvaFpTb \
     "PC=$(python3 -c 'from strap_asm import assemble; print(assemble(open("programs/ibox3_sva_fp.strap").read()).symtab["I2234"]//32)')"
 
+run "IBOX-3 SVA into a direct index instruction (jb_ax3a, encoding)" python3 verify_ibox3_sva_dix_listing.py
+# The 19-bit half of the width rule, and the reason both blocks are
+# here: they are the SAME SIX CHECKS with two comparisons reversed.
+# After storing a lone bit 18 and comparing against I22K3D, the FP
+# target must be LOW (bit 18 not stored) and this one must be HIGH
+# (bit 18 stored).  Neither block alone establishes the rule.
+# The target is $X3 -- word 19, index core storage -- so this also
+# covers SVA writing a half-word into a register word rather than into
+# ordinary memory.
+# Measured: forcing the 18-bit rule for every class halts this block at
+# its fourth check, "fails to store bit 18" (SEN = 030311.40), while
+# the FP block keeps passing -- which is what pins the two widths
+# against each other.
+run "IBOX-3 SVA into a direct index instruction (19-bit, into a register)" ./run_program.sh programs/ibox3_sva_dix.strap StretchIbox3SvaDixTb \
+    "PC=$(python3 -c 'from strap_asm import assemble; print(assemble(open("programs/ibox3_sva_dix.strap").read()).symtab["I2230A"]//32)')"
+
 run "Program store compare: store then EXECUTE the modified instruction" ./run_program.sh programs/store_then_execute.strap StretchStoreExecTb \
     "RESULT:$(python3 -c 'from strap_asm import assemble; print(assemble(open("programs/store_then_execute.strap").read()).symtab["RESULT"]//64)')=0x20"
 
