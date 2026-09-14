@@ -3215,6 +3215,85 @@ hand vectors alone. "Enables" notes the dependency chain.
               V-I (direct)  the ImmIndex opcode, NOT the VFL modifier
               V+CR          its refill path
 
+   AND THE SEVEN ARE NOW SIX CLOSED AND ONE BLOCKED (2026-09-14, five
+   blocks transcribed from ja_ax1a pp.34-41, all of them matching the
+   listing's encodings on the first attempt, each one injected):
+
+     CLOSED   C+I, SC       ibox1_cpi_chain   pp.38, 59
+     CLOSED   C-I           ibox1_cmi_chain   pp.38-39
+     CLOSED   KCI           ibox1_kci         pp.40-41 + p.28 constants
+     CLOSED   V-I (direct)  ibox1_vmi         pp.35-36
+     CLOSED   V+CR refill   ibox1_vpicr       p.35 + p.34 constants
+     BLOCKED  LR            -- see below; not a to-do
+
+   LR IS BLOCKED, NOT UNSTARTED, and the distinction is worth writing
+   down so it is not re-scouted. The deck's only LR test is IBQ30 at
+   005074.00, "LOAD + STORE REFILL IN INTERNAL MEMORY", and every one
+   of its groups round-trips the refill through the INDICATOR REGISTER:
+   `SR,$X1,$IND+.32` then `LR,$X1,$IND+.32`. Word 11's upper half is
+   thirty-two live indicators (XPU, ZM, XL, XE, XH, AL/AE/AH, NM...)
+   and the deck is using them as scratch. The model keeps word 11
+   read-only through generic STORE -- the same documented limit that
+   makes `ibox1_p43_p51_span.strap` start at 5123.00 rather than at
+   the LR group above it. Closing LR means making thirty-two indicator
+   bits generally writable by any program, which is a model change with
+   real blast radius and is a decision to take deliberately, not a
+   quiet next step.
+
+   THE C-I BLOCK FOUND SOMETHING ABOUT THE HARNESS, not about the
+   model, and it is the most useful result of the five. Injected with a
+   no-op C-I, the block STILL REACHED ITS EXIT. Its manufactured chain
+   ends at 004723, two words short of the next test, so a count that
+   never moves sends the very first link to the fall-through instead of
+   into a branch-to-self. The C+I sibling hangs on the identical
+   injection; this one walks out looking like a pass.
+
+   SO "REACHES PASS" IS NOT A CHECK FOR A BLOCK WHOSE FAILURE MODE IS
+   ENDING EARLY. The fix was not to weaken the transcription or invent
+   a check: the block's real outputs are the four half-words it
+   manufactures, and the listing's own comments say what each must
+   become ("-BE, IBP76 + BD, $"). Those four words are now what the
+   harness compares, derived in run_tests.sh from the symbol table so
+   an SLC change cannot silently re-point them. Under the injection all
+   four hold 4723.04 -- the count that never changed -- and the PC
+   check still passes. A fourth failure signature, then, beside halt-at
+   -1416, PC=0 and step-cap: PASSES WHILE BROKEN, and only a check on
+   the block's own output can see it.
+
+   WHAT EACH OF THE OTHER FOUR INJECTIONS DID, for the record, all
+   pointed by reading the branch's condition bit rather than the
+   operation's name:
+
+     KCI forced to compare EQUAL always -> hangs at 004766.00, the
+       "hang up if not XL" after IKCI2 (the block asserts LOW there).
+     V-I made a no-op -> IBP13 branches to itself at 004562.40.
+     V+ICR's count decrement removed -> test 1's count never reaches
+       zero, so no refill fires, IBN1 stays "BE,$" and hangs.
+     C+I made a no-op -> step cap (measured earlier, PC 011556).
+
+   AND V+ICR'S BLOCK IS THE ONE WORTH HAVING for a reason beyond the
+   opcode. Its first test loads count 1, runs ONE V+ICR to take the
+   count to zero, and stores the REFILLED word with SX over IBN1 --
+   where it is then EXECUTED. IBM70's word is not an index word at
+   all: it is "NOP,0" followed by "BD,IBN3", two valid instructions,
+   which is what the deck means by "IBN1 SHOULD NOW BE TWO VALID OP".
+   The refill has to deliver that word bit for bit, because the machine
+   runs it. The second test is the complementary case -- a V+ICR whose
+   count does NOT reach zero -- and checks value, count and refill
+   through three SEPARATE manufactured branches rather than one
+   combined comparison.
+
+   AND IT IS A STORE-CLOSE-TO-FETCH TEST AT DISTANCE TWO, which the
+   deck says out loud: the SX is followed by "NOP,0" annotated "SPACE
+   FOR STORE CLOSE TO" and "CNOP,0" annotated "INSTRUCT FETCH
+   INTERLOCK" -- two half-words between the store and the instruction
+   it modifies. Every other self-modifying chain in these decks stores
+   many instructions ahead of its target. It passed on the first run,
+   so the model's store-to-fetch forwarding is right at that distance;
+   worth knowing which mechanism to look at first if it ever stops
+   passing, because a fetch-interlock failure here would look exactly
+   like an index-arithmetic bug.
+
      CLOSED   SR            -- settled with the one program run the
                             previous version of this entry said had not
                             been spent. Storing an ALL-ONES refill

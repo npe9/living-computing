@@ -1133,10 +1133,65 @@ run "IBOX-1 C-I chain (ja_ax1a, encoding)" python3 verify_ibox1_cmi_chain_listin
 # the no-op injection all four hold 4723.04 (the count that never
 # changed) instead of 4722/4717/4720/4716.  "Reaches PASS" is not a
 # check for a block whose failure mode is ENDING EARLY.
+# The four expected words are DERIVED, not written out: each link must
+# end up holding a branch to the next link (modifier 04, the one COM04
+# adds) beside the untouched "BD,$" of its own second half (modifier
+# 44).  Only those two modifiers are literals -- they are exactly what
+# the listing's comments assert.
+CMI_CHECKS=$(python3 -c 'from strap_asm import assemble
+p = assemble(open("programs/ibox1_cmi_chain.strap").read())
+h = lambda w, f: (w << 14) | (f << 8)
+print(" ".join("%s:%d=0x%016x" % (n, p.symtab[n] // 64,
+      (h(p.symtab[t] // 64, 0o04) << 32) | h(p.symtab[n] // 64, 0o44))
+      for n, t in (("IBP71", "IBP76"), ("IBP76", "IBP73"),
+                   ("IBP73", "IBP74"), ("IBP74", "IBP72"))))')
 run "IBOX-1 C-I chain (self-modifying branch chain, C-I)" ./run_program.sh programs/ibox1_cmi_chain.strap StretchIbox1CmiChainTb \
     "PC=$(python3 -c 'from strap_asm import assemble; print(assemble(open("programs/ibox1_cmi_chain.strap").read()).symtab["PASS"]//32)')" \
-    "IBP71:2509=0x0274840002736400" "IBP76:2514=0x0273c4000274a400" \
-    "IBP73:2511=0x027404000273e400" "IBP74:2512=0x0273840002742400"
+    $CMI_CHECKS
+
+run "IBOX-1 KCI (ja_ax1a, encoding)" python3 verify_ibox1_kci_listing.py
+# The listing's own COMPARE COUNT IMMEDIATE test, closing KCI.  Pure
+# hang-based: every check is a branch that must or must not be taken.
+# It pins the 18-bit immediate at both ends (all ones, one in bit 0,
+# one in bit 17) and it runs "branch and leave the indicator on",
+# "hang if it went off", "hang if it stayed on" three deep, which no
+# other block in the suite does.  Measured: KCI forced to compare
+# EQUAL always hangs at 004766.00, the "hang up if not XL" after
+# IKCI2 -- the block asserts LOW there, so "always equal" is the way
+# the injection has to point.
+run "IBOX-1 KCI (compare count immediate, indicator reset)" ./run_program.sh programs/ibox1_kci.strap StretchIbox1KciTb \
+    "PC=$(python3 -c 'from strap_asm import assemble; print(assemble(open("programs/ibox1_kci.strap").read()).symtab["PASS"]//32)')"
+
+run "IBOX-1 V-I (ja_ax1a, encoding)" python3 verify_ibox1_vmi_listing.py
+# V-I as a DIRECT IMMEDIATE OPCODE -- not the "V-I" that is a
+# progressive modifier on a VFL instruction, which ibox4_prog_ix_v
+# already reaches through progressiveIndex().  Two facilities, one
+# spelling; the distinction cost a wrong-way injection once.
+# The block subtracts 777776.0 and adds 777777.0 back, so the
+# sign-magnitude adder runs in both directions, and its last store is
+# an SX of the whole index word over the pair IBP10/IBP11 -- the value
+# half must be right AND the word must be stored whole.  Measured:
+# V-I made a no-op leaves IBP13 branching to itself at 004562.40.
+run "IBOX-1 V-I (subtract from value immediate, SX of the whole word)" ./run_program.sh programs/ibox1_vmi.strap StretchIbox1VmiTb \
+    "PC=$(python3 -c 'from strap_asm import assemble; print(assemble(open("programs/ibox1_vmi.strap").read()).symtab["PASS"]//32)')"
+
+run "IBOX-1 V+ICR (ja_ax1a, encoding)" python3 verify_ibox1_vpicr_listing.py
+# Closes V+ICR's REFILL path, the last of the five gaps that is not
+# blocked.  The first test loads count 1, runs ONE V+ICR to take the
+# count to zero, and stores the REFILLED word with SX over IBN1 --
+# where it is then EXECUTED: IBM70's word is not an index word at all
+# but "NOP,0" followed by "BD,IBN3", which is what the deck means by
+# "IBN1 SHOULD NOW BE TWO VALID OP".  The refill has to deliver that
+# word bit for bit, because the machine runs it.  The second test is
+# the complementary case -- a V+ICR whose count does NOT reach zero --
+# and checks value, count and refill through three SEPARATE
+# manufactured branches.  The block is also a store-close-to-fetch
+# test at distance two, which the deck's own comments name ("SPACE FOR
+# STORE CLOSE TO" / "INSTRUCT FETCH INTERLOCK"); it passed first run.
+# Measured: deleting the count decrement stops the refill firing and
+# the machine spins on IBN1's untouched "BE,$" at 004526.00.
+run "IBOX-1 V+ICR (refill, executed as two instructions)" ./run_program.sh programs/ibox1_vpicr.strap StretchIbox1VpicrTb \
+    "PC=$(python3 -c 'from strap_asm import assemble; print(assemble(open("programs/ibox1_vpicr.strap").read()).symtab["PASS"]//32)')"
 
 run "Program store compare: store then EXECUTE the modified instruction" ./run_program.sh programs/store_then_execute.strap StretchStoreExecTb \
     "RESULT:$(python3 -c 'from strap_asm import assemble; print(assemble(open("programs/store_then_execute.strap").read()).symtab["RESULT"]//64)')=0x20"

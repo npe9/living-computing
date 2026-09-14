@@ -1,0 +1,90 @@
+! ja_ax1a "IBOX-1", routine IKCI-IKCI12, pp.40-41 (octal
+! 004763.00-005007.40): %KCI%, COMPARE COUNT IMMEDIATE.
+!
+! WHY THIS BLOCK.  KCI was one of the five index operations the suite
+! was measured not to reach.  This is the listing's own test for it,
+! and unlike the C+I/C-I chains on the preceding pages it needs no
+! arithmetic derivation: every check is a branch that must or must not
+! be taken, and a wrong one lands on a BD,$ and hangs.
+!
+! WHAT IT ACTUALLY COVERS, which is more than "does KCI compare".
+! Only two counts are ever loaded -- 0 (IBKVDA) and 1 in bit 0
+! (IBKVDF) -- and every immediate is a boundary pattern of the 18-bit
+! field: all ones, all zeros, one in bit 0, one in bit 17, ones with a
+! zero in bit 17.  That is a FIELD-WIDTH test as much as a comparison
+! test: it pins both ends of the immediate and both ends of the count.
+!
+! AND IT TESTS THE INDICATORS, not just the comparison.  The listing
+! uses all four spellings of the branch, and their difference is the
+! whole point of the trailing checks:
+!
+!   BXL,$+1.0    branch if XL, LEAVE XL ON
+!   BZXLZ,$      hang if XL off -- so it must STILL be on
+!   BXLZ,$       hang if XL on  -- so BZXLZ must have RESET it
+!
+! Three instructions in a row that only agree if "branch and leave"
+! and "branch and zero" really are different operations.  IKCI8 runs
+! the full three; IKCI10 and IKCI11 repeat the pattern for XH and for
+! the two indicators that must be OFF.
+!
+! IKCI12's VFs are MEANT to be executed: "-NOP,-.32".
+
+        SLC, (8)4202.0
+IBKVDA  VF, 0.00                             ! +0S
+IBKVDB  VF, (8)777777.77                     ! +1S
+IBKVDC  VF, (8)377777.77                     ! +1S, 0 in bit 0
+IBKVDD  VF, (8)777777.76                     ! +1S, 0 in bit 23
+IBKVDE  VF, (8)777776.77                     ! +1S, 0 in bit 17
+IBKVDF  VF, (8)400000.00                     ! +0S, 1 in bit 0
+IBKVDG  VF, (8)0.01                          ! +0S, 1 in bit 23
+IBKVDH  VF, (8)1.00                          ! +0S, 1 in bit 17
+IBKVDU  VF, (8)400001.0
+IBKVDV  VF, (8)377777.0
+
+        SLC, (8)4763.0
+IKCI    LC, $X1, IBKVDA                      ! LC, 18-0 S
+IKCI1   KCI, $X1, 0                          ! KCI, 18-0 S
+        BXEZ, $+1.0                          ! branch if XE
+        BD, $                                ! hang up if not XE
+IKCI2   KCI, $X1, (8)777777                  ! KCI, 18-1 S
+        BXLZ, $+1.0                          ! branch if XL
+        BD, $                                ! hang up if not XL
+IKCI3   KCI, $X1, (8)400000                  ! KCI, 1+17-0 S
+        BZXLZ, $                             ! hang up if not XL
+IKCI4   KCI, $X1, 1                          ! KCI, 17-0 S + 1 in 17
+        BXL, $+1.0                           ! branch if XL, leave XL on
+        BD, $                                ! hang up if not XL
+        BZXLZ, $                             ! hang up if XL off
+! restart of routine
+IKCI5   LC, $X1, IBKVDF                      ! LC, 1 in 0 + 17-0 S
+IKCI6   KCI, $X1, (8)400000                  ! KCI, 1 in 0 + 17-0 S
+        BXEZ, $+1.0                          ! branch if XE
+        BD, $                                ! hang up if not XE
+IKCI7   KCI, $X1, 1                          ! KCI, 17-0 S + 1 in 17
+        BZXHZ, $                             ! hang up if not XH
+IKCI8   KCI, $X1, (8)777777                  ! KCI, 18-1 S
+        BXL, $+1.0                           ! branch if XL, leave XL on
+        BD, $                                ! hang up if not XL
+        BZXLZ, $                             ! hang up if XL off
+        BXLZ, $                              ! hang up if XL on
+IKCI9   KCI, $X1, (8)377777                  ! KCI, 0+17-1 S
+        BXHZ, $+1.0                          ! branch if XH
+        BD, $                                ! hang up if not XH
+IKCI10  KCI, $X1, (8)777776                  ! KCI, 17-1 S + 0 in 17
+        BZXHZ, $+1.0                         ! branch if not XH
+        BD, $                                ! hang up if XH
+        BZXL, $                              ! hang up if not XL
+        BXLZ, $+1.0                          ! branch if XL
+        BD, $                                ! hang up if not XL
+        BXEZ, $                              ! hang up if XE
+IKCI11  KCI, $X1, 0                          ! KCI, 18-0 S
+        BXH, $+1.0                           ! branch if XH
+        BD, $                                ! hang up if not XH
+        BZXHZ, $                             ! hang up if XH off
+        BXLZ, $                              ! hang up if XL
+        BXEZ, $                              ! hang up if XE
+        CNOP
+IKCI12  VF, (8)777777.70                     ! executed as NOP,-.32
+        VF, (8)777777.70                     ! executed as NOP,-.32
+PASS    BEW, $
+        END, IKCI

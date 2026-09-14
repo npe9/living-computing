@@ -1,0 +1,75 @@
+! ja_ax1a "IBOX-1", routine IBP-IBP14, pp.35-36 (octal
+! 004551.00-004564.40): %V-I%, ADD TO VALUE - IMMEDIATE.
+!
+! WHY THIS BLOCK.  V-I as a DIRECT IMMEDIATE OPCODE was one of the
+! five index operations the suite was measured not to reach.  Note
+! which V-I this is: ibox4_prog_ix_v already reaches the "V-I" that is
+! spelled as a PROGRESSIVE MODIFIER on a VFL instruction, which goes
+! through an entirely different path (progressiveIndex).  Two
+! facilities, one spelling -- a distinction that cost a wrong-way
+! injection once already, so it is written down here.
+!
+! HOW IT CHECKS ITSELF.  Same self-modifying idea as the C+I/C-I
+! chains, but built on the VALUE field, so it stores with SV (and once
+! with SX) instead of going round through the count.  Every other word
+! in the tail is "B,$", a branch to itself; the run only reaches the
+! exit if all four stores manufactured the right branch.
+!
+! THE ARITHMETIC, derived from the constants before the first run.
+! IBPA1's value is IBP13+.04 = 004562.44, and the immediate of a VALUE
+! operation is the 19-bit address field placed in bits 0-18 with bits
+! 19-23 zeroed (Ref. Manual p.25), i.e. a bit address, not an integer:
+!
+!   IBP1  V-I 0.32     004562.04   SV into IBP13 -> BD, IBP12
+!   IBP2  V-I 2.0      004560.04   SV into IBP12 -> BD, IBP8
+!   IBP3  V-I 777776.0 then V+I 777777.0  = net +1.0
+!                      004561.04   SV into IBP8  -> BD, IBP10
+!   IBP4  V-I 2.32     004556.44   SX into IBP10 -> BD, IBP5
+!
+! so the chain is IBP4A -> IBP13 -> IBP12 -> IBP8 -> IBP10 -> IBP5 ->
+! IBP14, which is what the listing's own comments name.
+!
+! TWO THINGS THIS BLOCK DOES THAT THE COUNT CHAINS CANNOT:
+!
+!   * IBP3 subtracts 777776.0 and then adds 777777.0.  The immediate
+!     is a MAGNITUDE, not a two's-complement integer, so this is a
+!     subtraction that drives the value NEGATIVE and an addition that
+!     brings it back -- the sign-magnitude adder is exercised in both
+!     directions, and a V-I that quietly ignored the sign would land
+!     the chain a long way from IBP10.
+!   * IBP4 stores with SX, the whole 64-bit index word, over the word
+!     that holds IBP10 AND IBP11.  So the same store that manufactures
+!     the last branch also drops the count and refill fields into
+!     IBP11 -- the listing annotates it "-ALL ONES" -- and IBPA1's
+!     refill of -1 is what makes them ones.  The value half must be
+!     right AND the word must be stored whole.
+!
+! IBP14's VFs are MEANT to be executed: "-NOP,-.32".
+
+        SLC, (8)4551.0
+IBP     LX, $X1, IBPA1                       ! set up XW
+IBP1    V-I, $X1, 0.32                       ! subtract from value +.32
+        SV, $X1, IBP13                       ! store new value
+IBP2    V-I, $X1, 2.0                        ! subtract from value +2.0
+        SV, $X1, IBP12                       ! store new value
+IBP3    V-I, $X1, (8)777776.0                ! -C-1.0
+        V+I, $X1, (8)777777.0                ! -V+1.0
+        SV, $X1, IBP8                        ! store new value
+IBP4    V-I, $X1, 2.32                       ! subtract from value 2.32
+        SX, $X1, IBP10                       ! store index
+        CNOP
+IBP4A   B, IBP13                             ! branch to test IBP13
+IBP5    B, IBP14                             ! go to next routine
+IBP6    B, $                                 ! hang up
+IBP7    B, $                                 ! hang up
+IBP8    B, $                                 ! becomes BD, IBP10
+IBP9    B, $                                 ! hang up
+IBP10   B, $                                 ! becomes BD, IBP5
+IBP11   B, $                                 ! becomes all ones
+IBP12   B, $                                 ! becomes BD, IBP8
+IBP13   B, $                                 ! becomes BD, IBP12
+IBPA1   XW, IBP13+(8).04, (8)37777, -1       ! common XW
+IBP14   VF, (8)777777.70                     ! executed as NOP,-.32
+        VF, (8)777777.70                     ! executed as NOP,-.32
+PASS    BEW, $
+        END, IBP

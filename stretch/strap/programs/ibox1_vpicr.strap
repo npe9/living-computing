@@ -1,0 +1,107 @@
+! ja_ax1a "IBOX-1", routine IBN-IBN11, p.35 (octal 004523.40-004550.40),
+! with its constants at 004512.00-004523.00 from p.34:
+! %V+ICR%, ADD TO VALUE IMMEDIATE, COUNT + REFILL.
+!
+! WHY THIS BLOCK.  V+ICR's REFILL PATH was one of the five index
+! operations the suite was measured not to reach.  Every other
+! progressive-index block in the suite either never counts down to
+! zero or was written to avoid the refill; this one is the listing's
+! own refill test and it does nothing else.
+!
+! THE FIRST TEST IS THE WHOLE POINT, and it is three instructions long.
+! IBM61 holds value IBN+.4, COUNT 1, REFILL IBM70.  One V+ICR takes
+! the count to zero, which forces the refill, so X1 is no longer the
+! word that was loaded -- it is IBM70's word.  SX then stores that
+! word over IBN1.  IBM70's word is NOT an index word at all: it is
+! "NOP,0" followed by "BD,IBN3", TWO VALID INSTRUCTIONS, which is what
+! the listing means by "IBN1 SHOULD NOW BE TWO VALID OP".  Execution
+! falls straight into them and carries on.  Without the refill IBN1
+! stays "BE,$" and the machine hangs on a branch to itself.
+!
+! A refill that fetched the right word into the wrong fields would not
+! survive either: the stored word has to be IBM70's word EXACTLY, bit
+! for bit, because it is being executed.
+!
+! THE SECOND TEST checks the opposite case -- a V+ICR whose count does
+! NOT reach zero -- and it checks all three fields separately, each
+! through the same trick of manufacturing a branch:
+!
+!   V  stored straight into IBN5, which must then branch to 004537.40
+!      ("BD,IBN6"), stepping over the BD,$ at 004537.00.
+!   C  round-tripped through ISTOY (SC then LV, which multiplies it by
+!      64), added to IBM76's dummy address, stored into IBN8: count 1
+!      lands on 004543.40, count 2 would land a word further on.
+!   R  round-tripped the same way through SR, added to IBM77's 1.4,
+!      stored into IBN9: refill IBN9 gives 004547.00, IBN10.
+!
+! So the block proves that ONE V+ICR decremented the count by exactly
+! one, left the refill field alone, and added exactly 2.0 to the
+! value -- with three independent branches, not one combined check.
+!
+! Note IBM62's value is written IBN4+.36 and IBM61's IBN+.4: those bit
+! offsets are DECIMAL (.36 prints as .44 octal), unlike the explicitly
+! octal (8).04 of the neighbouring routines.
+
+        SLC, (8)6105.0
+ISTOY   DD(BU,64,8), 0
+
+        SLC, (8)4512.0
+IBM61   XW, IBN+.4, 1, IBM70                 ! XW for V+ICR tests
+IBM62   XW, IBN4+.36, 2, IBN9
+IBM63   XW, 0, 0, 0                          ! temp IX wd storage
+IBM64   XW, 0, 0, 0
+IBM65   XW, 0, 0, 0
+IBM70   NOP, 0
+        BD, IBN3
+IBM71   BE, 0                                ! count storage area
+IBM72   BE, 0                                ! refill storage area
+IBM73   BE, 0                                ! temp V storage
+IBM74   BE, 0                                ! temp C storage
+IBM75   BE, 0                                ! temp R storage
+IBM76   VF, IBN8+(8).04                      ! dummy address, see IBN6
+IBM77   VF, 1.4                              ! one word and 4 bits
+IBN     LX, $X1, IBM61                       ! start V+ICR tests
+        V+ICR, $X1, 2.0                      ! V was IBN+.4, C was 1, R was IBM70
+        SX, $X1, IBN1                        ! IBN1 should now be two valid op
+        NOP, 0                               ! space for store close to
+        CNOP                                 ! instruct fetch interlock
+IBN1    BE, $                                ! becomes NOP,0
+        BE, $                                ! becomes BD,IBN3
+IBN2    BD, $
+IBN3    LX, $X1, IBM62                       ! start next test
+        V+ICR, $X1, 2.0                      ! C was 2, so no refill
+        SX, $X1, IBM63                       ! V is IBN4+.4+, C is 1, R is IBN9
+        SV, $X1, IBM73                       ! temp storage, V is
+        SV, $X1, IBN5
+        SC, $X1, ISTOY
+        LV, $X1, ISTOY
+        SV, $X1, IBM74                       ! C is 1
+        SR, $X1, ISTOY
+        LV, $X1, ISTOY
+        SV, $X1, IBM75                       ! R is IBN9
+IBN4    NOP, 0
+        LV, $X1, IBM73
+        NOP, 0
+IBN5    BE, $                                ! becomes BD, IBN4+2.4 if V correct
+        BD, $
+        BD, IBN6                             ! to test count field
+        BD, $
+IBN6    LV, $X1, IBM76                       ! test count field for 1
+        V+, $X1, IBM74
+IBN7    SV, $X1, IBN8
+        NOP, 0
+IBN8    BE, $                                ! becomes BD,IBN8+1 if count correct
+        NOP
+        LV, $X1, IBM75                       ! test refill field
+        V+, $X1, IBM77
+        SV, $X1, IBN9
+        NOP, 0
+        NOP, 0
+IBN9    BE, $                                ! becomes BD,IBN10 if refill unchanged
+        BD, $
+IBN10   BD, IBN11                            ! to skip over V+ICR on this modi-
+        NOP, 0                               ! fied IX word because now the same
+        NOP, -1                              ! as the first test.
+IBN11   NOP, 0.0
+PASS    BEW, $
+        END, IBN
