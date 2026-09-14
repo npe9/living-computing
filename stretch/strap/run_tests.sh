@@ -1117,6 +1117,27 @@ run "IBOX-1 C+I chain (ja_ax1a, encoding)" python3 verify_ibox1_cpi_chain_listin
 run "IBOX-1 C+I chain (self-modifying branch chain, C+I and SC)" ./run_program.sh programs/ibox1_cpi_chain.strap StretchIbox1CpiChainTb \
     "PC=$(python3 -c 'from strap_asm import assemble; print(assemble(open("programs/ibox1_cpi_chain.strap").read()).symtab["PASS"]//32)')"
 
+run "IBOX-1 C-I chain (ja_ax1a, encoding)" python3 verify_ibox1_cmi_chain_listing.py
+# The C+I routine's sibling, immediately after it in the listing, with
+# the same self-modifying structure and the opposite sign.  Closes C-I,
+# one of the five gaps left after the C+I block.  Its third step
+# subtracts MINUS one, so the sequence is -1, -3, +1, -2 and the chain
+# runs backwards and then forwards through the same six words.
+# MEASURED, and the measurement changed the check: with C-I made a
+# no-op the block still REACHES ITS EXIT.  Its chain ends two words
+# short of the next test, so a count that never moves sends the first
+# link straight to the fall-through instead of hanging -- the one
+# failure signature this structure cannot produce.  What does
+# discriminate is the block's real output: the four half-words it
+# manufactures, whose values the listing's own comments name.  Under
+# the no-op injection all four hold 4723.04 (the count that never
+# changed) instead of 4722/4717/4720/4716.  "Reaches PASS" is not a
+# check for a block whose failure mode is ENDING EARLY.
+run "IBOX-1 C-I chain (self-modifying branch chain, C-I)" ./run_program.sh programs/ibox1_cmi_chain.strap StretchIbox1CmiChainTb \
+    "PC=$(python3 -c 'from strap_asm import assemble; print(assemble(open("programs/ibox1_cmi_chain.strap").read()).symtab["PASS"]//32)')" \
+    "IBP71:2509=0x0274840002736400" "IBP76:2514=0x0273c4000274a400" \
+    "IBP73:2511=0x027404000273e400" "IBP74:2512=0x0273840002742400"
+
 run "Program store compare: store then EXECUTE the modified instruction" ./run_program.sh programs/store_then_execute.strap StretchStoreExecTb \
     "RESULT:$(python3 -c 'from strap_asm import assemble; print(assemble(open("programs/store_then_execute.strap").read()).symtab["RESULT"]//64)')=0x20"
 

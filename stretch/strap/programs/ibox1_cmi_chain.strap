@@ -1,0 +1,115 @@
+! ja_ax1a "IBOX-1", routine IBP66-IBP77, pp.38-39 (octal
+! 004677.00-004723.40): four SUBTRACT-FROM-COUNT-IMMEDIATE steps that
+! manufacture their own branch instructions.
+!
+! WHY THIS BLOCK.  C-I was one of the five index-arithmetic operations
+! still shown unreachable by the whole suite after ibox1_cpi_chain
+! closed C+I and SC.  This is the sibling routine, and the listing
+! places it immediately after: same scratch cells, same self-checking
+! trick, opposite sign.
+!
+! HOW IT CHECKS ITSELF.  There is no SERS.  Each step stores the COUNT
+! to scratch, reads it back as a VALUE, adds COM04, and stores the
+! result OVER a branch-to-self further down the block.  Right
+! arithmetic turns that word into a branch to the next link; wrong
+! arithmetic leaves it branching to itself and THE MACHINE STOPS.
+! The round trip through ISTOY multiplies the count by 64 (SC writes
+! the 18-bit count into the top of a half-word, LV reads the top 24
+! bits back as a value), so a count becomes a word address; COM04
+! adds 4, which sets bits 19-23 to the branch opcode.  The arithmetic
+! manufactures an instruction, not merely an address.
+!
+! THE ARITHMETIC, all four sums derived from the constants before this
+! was ever run.  LCI,$X1,IBP77 gives count = 04723, and C-I takes the
+! TOP 18 BITS of its 19-bit field (Ref. Manual p.25):
+!
+!   IBP67  C-I  1   count 04722   SV into IBP71 writes 4722.04 -> IBP76
+!   IBP68  C-I  3   count 04717   SV into IBP76 writes 4717.04 -> IBP73
+!   IBP69  C-I -1   count 04720   SV into IBP73 writes 4720.04 -> IBP74
+!   IBP70  C-I  2   count 04716   SV into IBP74 writes 4716.04 -> IBP72
+!
+! giving IBP71 -> IBP76 -> IBP73 -> IBP74 -> IBP72, exactly the chain
+! the listing's own comments name, and IBP72's second half-word ends
+! it at IBP77.
+!
+! WHAT THIS ADDS OVER THE C+I SIBLING, which matters because the two
+! routines otherwise look alike:
+!
+!   * The third step's immediate is (8)777777.0, whose top 18 bits are
+!     minus one, so C-I must ADD there: the sequence is -1, -3, +1, -2
+!     and the chain runs backwards (IBP76 -> IBP73) and then forwards
+!     again through the same six words.
+!   * IBP75 is a branch-to-self pair that NOTHING in a correct run
+!     ever reaches; it sits at 004721, between two live links, so a
+!     count that is low by one lands in it and hangs.
+!   * LX,$X1,ISTOZ re-seeds the register from storage before the chain
+!     starts -- the C+I routine left its register alone.
+!
+! AND ONE THING IT DOES NOT DO, measured rather than assumed.  Unlike
+! the C+I routine, THIS BLOCK CANNOT HANG ON A DEAD C-I.  Its chain
+! ends at 004723, two words short of the next test, so a count that
+! never moves at all makes the very first link branch to the
+! fall-through and the machine walks out of the block as if it had
+! passed.  A no-op C-I was injected and the run reached the exit.
+! What separates the two runs is the block's actual output -- the four
+! half-words it manufactures, which the listing's own comments name --
+! so those are what the harness checks.  Under the injection all four
+! held 4723.04, the count that never changed.  "Reaches the exit" is
+! not a check for a block whose failure mode is ENDING EARLY.
+!
+! IBP77's VFs are MEANT to be executed: the listing annotates them
+! "-NOP,-.32", so the chain ends by falling through them.
+
+        SLC, (8)6104.0
+ISTOZ   DD(BU,64,8), 0
+ISTOY   DD(BU,64,8), 0
+COM04   VF, 0.04
+
+        SLC, (8)4677.0
+! The listing writes these count immediates as ADDRESS EXPRESSIONS
+! (LCI,$X1,IBP77 and C-I,$X1,3.0) but the field they encode is the
+! WORD part, and this assembler wants the count value itself.
+IBP66   LCI, $X1, (8)4723                    ! set up count (= IBP77)
+        CNOP
+IBP67   C-I, $X1, 1                          ! C-1.0
+        SC, $X1, ISTOY
+        LV, $X1, ISTOY
+        V+, $X1, COM04
+        SV, $X1, IBP71                       ! store for test
+        NOP, 0.0
+IBP68   C-I, $X1, 3                          ! C-3.0
+        SC, $X1, ISTOY
+        LV, $X1, ISTOY
+        V+, $X1, COM04
+        SV, $X1, IBP76                       ! store for test
+        NOP, 0.0
+IBP69   C-I, $X1, (8)777777                  ! C+1.0
+        SC, $X1, ISTOY
+        LV, $X1, ISTOY
+        V+, $X1, COM04
+        SV, $X1, IBP73                       ! store for test
+        NOP, 0.0
+IBP70   C-I, $X1, 2                          ! C-2.0
+        SC, $X1, ISTOY
+        LV, $X1, ISTOY
+        V+, $X1, COM04
+        SV, $X1, IBP74                       ! store for test
+        NOP, 0.0
+        LX, $X1, ISTOZ
+        CNOP
+IBP71   B, 0.0
+        BD, $                                ! becomes a branch to IBP76 + BD,$
+IBP72   NOP, -1
+        BD, IBP77                            ! still NOP,-1 + BD,IBP77
+IBP73   B, 0.0
+        BD, $                                ! becomes a branch to IBP74 + BD,$
+IBP74   B, 0.0
+        BD, $                                ! becomes a branch to IBP72 + BD,$
+IBP75   B, $
+        BD, $
+IBP76   B, 0.0
+        BD, $                                ! becomes a branch to IBP73 + BD,$
+IBP77   VF, (8)777777.70                     ! executed as NOP,-.32
+        VF, (8)777777.70                     ! executed as NOP,-.32
+PASS    BEW, $
+        END, IBP66
