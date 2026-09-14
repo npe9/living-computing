@@ -86,7 +86,7 @@ in parentheses); **open** = no stage assigned yet.
 | Floating-point arithmetic (all ops), timing per table 2 and CE figs 3.8.x | Ref. Manual pp.78-94; CE 3.3.x/3.8.x | partial (4c): single-precision L/LWF/+/+MG/M+/M+MG/ST/K/KMG/KR/KMGR/*/E+/E+I/SHF; divide, double precision, root (SRT), LFT, *+, F+ open. K compare VERIFIED against jb_af1c F202A1-6/A15-20 (all of AL/AE/AH, normal + XFN/XFP ranges). jb_af1c F202G (KR Compare-for-Range, p.45) RUNS and passes (`fp_compare_f202g.strap`, `verify_fp_compare_g_listing.py`): `Z,$IND` clears indicators (b1a6ad0), `BB1,$AH` sets the gate (63721f1), and KR was fixed to p.91 -- it sets AE to "accumulator low" and leaves AL and AH unchanged (the range path had wrongly set AH := acc>=opnd). Discriminating on KR's AE via G15. (F202G's own operands do not distinguish the AH-leave-vs-set aspect -- its AH-preset sub-tests all have cmp>=0 -- but p.91 mandates leaving AH.) |
 | Decimal VFL, radix conversion, VFL multiply/divide | Ref. Manual; CE 3.11.x | open |
 | Branch on Bit (BB/BB1/BBN/BBZ/BZB/BZB1/BZBN/BZBZ): test one bit anywhere in storage, take the branch if it matches instruction bit 62, then set the bit per bits 60-61 whether or not the branch was taken | Ref. Manual p.41; X22-6533 pocket card "BRANCH ON BIT" | executed, including a BB that changes an INDICATOR-register bit (word 11, positions 20-63, p.41 -- folded into `ind` rather than the no-op writeWord(11)) (StretchExecute BitBranch arm; `strap/programs/bb_branch_on_bit.strap`, `bb_indicator.strap`, `verify_bb_encoding.py`, `verify_bb_listing.py`) |
-| EX/EXIC (with LA drains, table 6; Ref. Manual pp.49-50: subject instruction may not change the interruption state or the IC -- EXE indicator; pseudo-IC stepped after fetch, before execution), LVE, SVA, RNX, LVS, swap/backward transmit | Ref. Manual pp.26-30 (LVE: indirect addressing, 1 ms limit -> USA; SVA: replaces the 18/19/24-bit address field per the target's class; RNX: rename via X0's refill; LVS: sum of the value fields selected by address bits 0-15; T/SWAP: count rules, backward stepping); Perf. Char. table 6 | open, specified |
+| EX/EXIC (with LA drains, table 6; Ref. Manual pp.49-50: subject instruction may not change the interruption state or the IC -- EXE indicator; pseudo-IC stepped after fetch, before execution), LVE, RNX, LVS, swap/backward transmit | Ref. Manual pp.26-30 (LVE: indirect addressing, 1 ms limit -> USA; RNX: rename via X0's refill; LVS: sum of the value fields selected by address bits 0-15; T/SWAP: count rules, backward stepping); Perf. Char. table 6 | open, specified |
 | Interrupt system: indicators, mask, left-most-one, the "free instruction" | Ref. Manual pp.43-50 (indicator list with mask/class per indicator, definitions, mask register: bits 0-19 always 1, 20-47 settable, 48-63 always 0; interruption address register; the single interruption instruction fetched from IA + leftmost indicator number, IC not stepped, executed before a second interruption); Blosk pp.16-17; Buchholz ch.10 | open, specified |
 | Address Invalid (AD): effective word address beyond installed core -> AD + no-op | Ref. Manual p.20 | partial: floating-point operand addresses (StretchExecute Fp arm); other classes open |
 | Storage protection: two address boundary registers (word 3: UB bits 0-17, LB 32-49, control bit 57), alarm on an effective address inside OR outside the region (control-bit selectable), storing in protected areas suppressed, indicators DS (store)/DF (fetch)/IF (instruction fetch), gated by the interrupt system + mask | Ref. Manual p.15 "Address Monitoring", indicator defs pp.44-45, Appendix C (word 3 layout) | specified (overview); the control-bit polarity (which value protects inside vs outside) still needs Appendix C / the CE manual before implementing -- the closest 7030 analogue to a mandatory-access-control model |
@@ -3503,10 +3503,11 @@ hand vectors alone. "Enables" notes the dependency chain.
    of the other tapes: IBOX-3, IBOX-4 AND IBOX-5 USE SVA as a
    self-modifying-code mechanism, patching operand and address fields
    into scratch instruction templates before falling through to execute
-   them. SVA is `setOpInvalid` in the model. So those three tapes are
-   only usable in slices chosen to avoid it -- p.150's block is one
-   such slice -- and opening them properly means implementing SVA
-   first. Appendix A already specifies it ("replace the address field,
+   them. SVA was `setOpInvalid` in the model WHEN THIS WAS WRITTEN, so
+   those three tapes were only usable in slices chosen to avoid it --
+   p.150's block is one such slice. It is implemented now, with all
+   three address widths driven by routine 1222 (see the SVA entry
+   above), so that price has been paid. Appendix A already specifies it ("replace the address field,
    18/19/24 bits per the target op's class, of the instruction at the
    effective address with bits 0-17/18/23 of J's value field"), and
    StretchDecode already classifies instructions well enough to pick
@@ -5547,7 +5548,7 @@ divide, compare-field variants, `SF`, `M±1`, `M±A`, transit ops.
 (advance value, count, count+refill), `KV KC` (compare value/count),
 `RNX LVE LVS SVA` (rename, load value effective, load value with sum,
 store value in address). *Modeled*: `LX LV LC LR SX SV SC SR V+ V+C V+CR
-KV KC`. *Open*: `V- V-C V-CR` (subtract), `RNX LVE LVS SVA`.
+KV KC SVA`. *Open*: `V- V-C V-CR` (subtract), `RNX LVE LVS`.
 
 **Immediate index arithmetic (half word).** `LVI LVNI LCI LRI C+I C-I
 V+I V+IC V+ICR V-I V-IC V-ICR KVI KVNI KCI LVS`. *Modeled*: all but
