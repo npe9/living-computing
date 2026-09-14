@@ -3094,11 +3094,42 @@ hand vectors alone. "Enables" notes the dependency chain.
    transcribing: it is the third pseudo-op shape in these decks after
    DD and XW, and the listing prints it differently again.
 
-   WHAT IS LEFT TO DECIDE, honestly: the four sums must be computed
-   from the constants and checked before the run, exactly as F219's
-   expected values were, because a wrong sum here does not print a
-   diagnosis -- it hangs. That is the work this block needs and it has
-   not been done; the scouting is complete and the arithmetic is not.
+   THE ARITHMETIC IS NOW DONE, and it lands on the listing's stated
+   chain exactly. Three model facts make it computable without running
+   anything:
+
+     * LCI and C+I take "bits 0-17 of the address part" -- the 19-bit
+       field's TOP 18 bits, not the raw field. The model carries this
+       with its p.25 citation and says it was caught by
+       verify_ibox1_listing.py, where "LCI,$X1,4" prints 4.03 02.
+     * SC writes {count(18), 7 zeros, 7 preserved} into a half-word;
+       LV reads its top 24 bits as the value. So the round trip
+       through ISTOY multiplies the count by 64 -- it turns a COUNT
+       into the WORD ADDRESS of a bit address.
+     * COM04 is a VF whose 24-bit value is 0.04, so V+ adds 4 -- which
+       sets bits 19-23 of the resulting half-word to 00100, and that
+       is the branch opcode. The arithmetic does not merely compute an
+       address; it manufactures an instruction.
+
+   Then, with LCI giving count = 04667:
+
+     IBP55  C+I 3   count 04672  SV into IBP59 writes 4672.04 -> IBP61
+     IBP56  C+I 1   count 04673  SV into IBP61 writes 4673.04 -> IBP62
+     IBP57  C+I 2   count 04675  SV into IBP62 writes 4675.04 -> IBP64
+     IBP58  C+I -1  count 04674  SV into IBP64 writes 4674.04 -> IBP63
+
+   IBP59 -> IBP61 -> IBP62 -> IBP64 -> IBP63 -> IBP65, which is exactly
+   the chain the listing's own comments name. Four independent sums,
+   every one landing on a label that already exists in the block.
+
+   THE FOURTH IS THE ONE WORTH HAVING: C+I with 0o777777.0, whose top
+   18 bits are 0o777777 -- MINUS ONE in eighteen-bit two's complement.
+   So the sequence is +3, +1, +2, -1, and the -1 is why the chain goes
+   IBP64 -> IBP63, backwards, the only link that does. A count
+   subtraction that silently did nothing would send it to IBP65's
+   address instead and the machine would run on into data.
+
+   Nothing has been transcribed yet, but nothing needs guessing now.
 
    THE NEXT BLOCK IS SCOUTED: IBOX-1 pp.36-37, routine IBP14A-IBP45 at
    004565.00-004637.00. Two adjacent test groups, "SV-IC" (add to value
