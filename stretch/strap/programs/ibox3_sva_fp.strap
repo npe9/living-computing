@@ -1,0 +1,122 @@
+! jb_ax3a "IBOX-3", routine 1222 blocks I2231-I2233, p.144 (octal
+! 030324.00-030350.40): SVA (STORE VALUE IN ADDRESS) INTO A FLOATING
+! POINT INSTRUCTION -- "CHECK STORE OF 18 BITS ONLY".
+!
+! WHY THIS BLOCK.  SVA was setOpInvalid in the model, which is what
+! made I-Box 3, -4 and -5 (524 pages of diagnostics) usable only in
+! slices chosen to avoid it.  Routine 1222 is the listing's own SVA
+! test, and this is the sub-block that pins the ADDRESS FIELD WIDTH.
+!
+! AND THE WIDTH IS WHY THE BLOCK IS WORTH HAVING, because the manual
+! does not say it.  Ref. Manual p.29 says the field replaced is "the
+! first 18, 19, or 24 bits of the value field", and its only mention of
+! 18 is a programming note about the second half-word of TRANSMIT and
+! SWAP.  The deck says otherwise, in its error messages:
+!
+!   SVA into a DIRECT INDEX instruction   -> "FAILS TO STORE BIT 18"
+!   SVA into a FLOATING POINT instruction -> "STORES BIT 18"
+!
+! One class must have bit 18 replaced and the other must not.  That
+! matches the formats: every half-length format has a 19-bit address at
+! 0-18 EXCEPT floating point, whose address is 18 bits with the a/b/c
+! modifiers at 18-20.  The model's SVA was written with two widths and
+! this block is what corrected it.
+!
+! HOW IT PROVES THE WIDTH, using five test words and nothing else:
+!
+!   I22K3A  bits 0-17 all ones     the 18-bit field, full
+!   I22K3B  bits 18-23 all ones    everything ABOVE the field
+!   I22K3C  bit 18 only
+!   I22K3D  bits 19-23 only
+!   I22K3E  bit 23 only
+!
+! and three passes over the same work area:
+!
+!   I2231  store A.  Result must be > B (else "fails to store any bits
+!          in 0-17") and not < A (else "fails to store all bits").
+!   I2232  store C, a lone bit 18.  Result must NOT be > B (else "picks
+!          up some bits in 0-17") and must be < D -- which for a
+!          FLOATING POINT target means bit 18 did NOT go in.  The
+!          direct-index version of this same check has the comparison
+!          the other way round.
+!   I2233  store D, bits 19-23.  Result must be < D ("picks up some
+!          bits in 0-18") and < E ("stores some bits in 19-23"), i.e.
+!          nothing at all may be stored.
+!
+! So the block pins the field at both ends and in the middle: bits 0-17
+! all replaced, bit 18 untouched, bits 19-23 untouched.
+!
+! THE TEMPLATE IS THE OTHER HALF OF THE TRICK.  I22K2 is an FP LOAD
+! whose half-word is 0.00 60, and the listing's comment names the
+! detail that matters -- "A FP INSTRUCT BITS 26 AND 27 OF WHICH ARE 10".
+! Those two bits are what make the op field decode as floating point.
+! The block puts the template into the work area with LX then SX, so
+! bits 26 and 27 have to survive a trip through an index register.
+!
+! -- SSIP framework substitutes: SERS (octal 1304) -> FAIL halt,
+! -- SEN (octal 1310) -> scratch for SIC.
+        SLC, (8)1304.0
+SERS    BEW, $
+        SLC, (8)1310.0
+SEN     DD(BU,64,8), 0
+
+! -- constants for 1222 (p.165) --
+        SLC, (8)31304.0
+I22K2   L(N), 0.0                            ! FP load; bits 26,27 = 10
+        NOP
+I22K3A  XW, (8)777777.0, 0, 0                ! test wd: bits 0-17 ones
+I22K3B  XW, (8)0.77, 0, 0                    ! test wd: bits 18-23 ones
+I22K3C  XW, 0.32, 0, 0                       ! test wd: bit 18
+I22K3D  XW, 0.31, 0, 0                       ! test wd: bits 19-23
+I22K3E  XW, 0.01, 0, 0                       ! test wd: bit 23
+! I22WRK is "DR%BU,64,8,%1%" in the listing -- a RESERVED word, a
+! pseudo-op this assembler does not have.  A zeroed word is the same
+! thing here: the block stores the template into it before every use.
+        SLC, (8)31322.0
+I22WRK  DD(BU,64,8), 0
+
+        SLC, (8)30324.0
+I2231   LX, $X0, I22K3A                      ! check store of 18 bits only into
+        LX, $X1, I22K2                       ! a FP instruct bits 26 and 27
+        SX, $X1, I22WRK                      ! of which are 10.
+        SVA, $X0, I22WRK
+        LX, $X2, I22WRK
+        KV, $X2, I22K3B
+        BXH, $+2.0
+        SIC, SEN                             ! SVA into FP inst in ext mem fails
+        B, SERS                              ! to store any bits in 0-17.
+        B, I2232
+        KV, $X2, I22K3A
+        BXL, $+1.0
+        B, $+1.32
+        SIC, SEN                             ! SVA into FP inst in ext mem fails
+        B, SERS                              ! to store all bits in 0-17.
+I2232   SX, $X1, I22WRK
+        LX, $X0, I22K3C
+        SVA, $X0, I22WRK
+        LX, $X2, I22WRK
+        KV, $X2, I22K3B
+        BXH, $+1.0
+        B, $+2.0
+        SIC, SEN                             ! SVA into FP inst in ext mem picks
+        B, SERS                              ! up some bits in 0-17.
+        B, I2233
+        KV, $X2, I22K3D
+        BXL, $+1.32
+        SIC, SEN                             ! SVA into FP inst in ext mem stores
+        B, SERS                              ! bit 18.
+I2233   SX, $X1, I22WRK
+        LX, $X0, I22K3D
+        SVA, $X0, I22WRK
+        LX, $X2, I22WRK
+        KV, $X2, I22K3D
+        BXL, $+2.0
+        SIC, SEN                             ! SVA into FP inst in ext mem picks
+        B, SERS                              ! up some bits in 0-18.
+        B, I2234
+        KV, $X2, I22K3E
+        BXL, $+1.32
+        SIC, SEN                             ! SVA into FP inst in ext mem stores
+        B, SERS                              ! some bits in 19-23.
+I2234   BEW, $
+        END, I2231

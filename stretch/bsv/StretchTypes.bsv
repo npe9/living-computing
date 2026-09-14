@@ -91,22 +91,44 @@ typedef struct {
   Bit#(24) addr;   // IBM bits 0-23
   Bit#(1)  sign;   // IBM bit 24
   Bit#(1)  flag;   // IBM bit 25 (index flag XF)
+  Bit#(2)  spare;  // IBM bits 26-27 -- see below
   Bit#(18) count;  // IBM bits 28-45
   Bit#(18) refill; // IBM bits 46-63
 } IndexWord deriving (Bits, Eq, FShow);
+
+// IBM BITS 26-27 ARE NOT USED BY THE INDEX MACHINERY AND ARE STILL
+// CARRIED, which is not a tidiness point -- `spare` was added because a
+// diagnostic failed without it.  packIndexWord used to write 2'b00
+// there, so every LX-then-SX round trip through an index register
+// quietly rewrote those two bits.
+//
+// I-Box 3's routine 1222 (jb_ax3a p.144) puts a FLOATING POINT LOAD
+// into an index register with LX, stores it into a work area with SX,
+// and then does SVA into it -- and its comment names exactly what it
+// depends on: "A FP INSTRUCT BITS 26 AND 27 OF WHICH ARE 10".  Those
+// two bits are part of the operation code that makes the half-word
+// decode as floating point.  Zeroed, the template decoded as a
+// branch-on-indicator instead, SVA used a 19-bit address field instead
+// of 18, and the deck's "STORES BIT 18" check fired.
+//
+// An index register lives in index core storage, which is ordinary
+// 64-bit words; LX loads the whole word and SX stores the whole word.
+// The deck relies on that, so the round trip has to be lossless.
 
 function IndexWord unpackIndexWord(Word64 w);
   return IndexWord {
     addr:   w[63:40], // bits 0-23
     sign:   w[39:39], // bit 24
     flag:   w[38:38], // bit 25
+    spare:  w[37:36], // bits 26-27, unused by the index machinery but
+                      // preserved: see the note on IndexWord above
     count:  w[35:18], // bits 28-45
     refill: w[17:0]   // bits 46-63
   };
 endfunction
 
 function Word64 packIndexWord(IndexWord x);
-  return { x.addr, x.sign, x.flag, 2'b00, x.count, x.refill };
+  return { x.addr, x.sign, x.flag, x.spare, x.count, x.refill };
 endfunction
 
 // Signed 25-bit value field (24-bit magnitude + sign), per p.21:

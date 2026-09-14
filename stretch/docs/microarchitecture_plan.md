@@ -3248,6 +3248,51 @@ hand vectors alone. "Enables" notes the dependency chain.
    names what each routine covers in one line each; reading it costs
    one page render and would have prevented the wrong entry.
 
+   AND I-BOX 3 PAID FOR ITSELF TWICE, because routine 1222 -- the same
+   tape's SVA test -- produced a MODEL BUG and a SPEC CORRECTION in one
+   block. SVA itself was `setOpInvalid`, which is what made I-Box 3, -4
+   and -5 usable only in slices chosen to avoid it; implementing it was
+   the standing item. Blocks I2231-I2233 (p.144, 030324.00-030350.40)
+   are the listing's own test for it, and they found:
+
+   (1) THE THIRD ADDRESS WIDTH IS FLOATING POINT, WHICH THE MANUAL DOES
+   NOT SAY. Ref. Manual p.29 gives "the first 18, 19, or 24 bits of the
+   value field" and its ONLY mention of 18 is a programming note about
+   the second half-word of TRANSMIT and SWAP -- so the arm was written
+   with two widths, 24 for a full-word first half and 19 for everything
+   half-length. The deck settles it in its error messages:
+
+     SVA into a DIRECT INDEX instruction   -> "FAILS TO STORE BIT 18"
+     SVA into a FLOATING POINT instruction -> "STORES BIT 18"
+
+   One class must have bit 18 replaced and the other must not, and the
+   formats agree: every half-length format carries a 19-bit address at
+   0-18 EXCEPT floating point, whose address is 18 bits with the a/b/c
+   modifiers at 18-20 -- StretchDecode's tryFpFixed already reads
+   hw[31:14] where tryDirIndex reads hw[31:13]. The class test is the
+   machine's own decode in the machine's own priority order, i.e.
+   decodeHalfWord. (T/SWAP second half-words, the case the manual's
+   note is actually about, are still not distinguishable from the
+   half-word alone and are not modeled.)
+
+   (2) AN INDEX REGISTER MUST ROUND-TRIP ALL SIXTY-FOUR BITS. This one
+   is a real bug and the block was built to catch it. packIndexWord
+   wrote `2'b00` into IBM bits 26-27, so every LX-then-SX through an
+   index register quietly rewrote them. The deck's comment names the
+   dependency outright -- "A FP INSTRUCT BITS 26 AND 27 OF WHICH ARE
+   10" -- because those two bits are part of the operation code that
+   makes the half-word decode as floating point. Zeroed, the template
+   decoded as a BRANCH ON INDICATOR instead (its literal 1000 sits at
+   the same place), SVA used 19 bits, and "STORES BIT 18" fired.
+   IndexWord now carries a `spare` field; eighteen construction sites.
+
+   THE DIAGNOSIS WAS CONFIRMED BEFORE THE FIX, not after, and cheaply:
+   the block's six checks each store the instruction counter through
+   SIC before branching to SERS, so which check fired is readable out
+   of SEN. It held 030342.40 -- the fourth check, "STORES BIT 18",
+   exactly as predicted. One extra run to turn "it halts" into "it
+   halts HERE"; worth it before a twenty-site model change.
+
    What routine 1230 checks, which is more than "does LR load": the
    same LR runs three times per block, from EXTERNAL memory, from INDEX
    CORE STORAGE ($X1, word 17) and from INTERNAL memory ($R, word 9),

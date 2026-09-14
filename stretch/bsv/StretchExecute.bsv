@@ -88,7 +88,7 @@ function BranchOutcome evalBranch(StretchStorage st, DecodedInstr d, Word64 ind0
                                   Bit#(2) slot);
   BranchOutcome o = BranchOutcome {
     needsRead: tagged Invalid, readsUsed: 0, doIdxWrite: False, idxWriteReg: 0,
-    idxWriteVal: IndexWord{addr:0, sign:0, flag:0, count:0, refill:0},
+    idxWriteVal: IndexWord{addr:0, sign:0, flag:0, spare:0, count:0, refill:0},
     ind: ind0, taken: False, target: 0 };
   case (d) matches
 
@@ -117,7 +117,7 @@ function BranchOutcome evalBranch(StretchStorage st, DecodedInstr d, Word64 ind0
       SM128 newVal = smAdd(val, dSM);
       Bit#(18) newCount = x.count - 1;
       IndexWord x1 = IndexWord{addr: truncate(newVal.mag), sign: newVal.sign,
-                       flag: x.flag, count: newCount, refill: x.refill};
+                       flag: x.flag, spare: x.spare, count: newCount, refill: x.refill};
       // Prefetch/bail-out shape, inlining maybeRefill's own
       // condition (doRefill && x1.count==0) rather than calling it.
       Bool doRefill = (cb.refill == 1) && (x1.count == 0);
@@ -380,7 +380,7 @@ function Tuple2#(IndexWord, Bool) progressiveIndex(VflAddr a, IndexWord x);
   SM128 inc = SM128{sign: (sub ? 1 : 0), mag: zeroExtend(a.addr)};
   SM128 sum = smAdd(val, inc);
   IndexWord px = IndexWord{addr: truncate(sum.mag), sign: sum.sign,
-                           flag: x.flag, count: x.count, refill: x.refill};
+                           flag: x.flag, spare: x.spare, count: x.count, refill: x.refill};
   Bit#(3) low = a.p - (sub ? 4 : 0);
   if (low != 1) px.count = px.count - 1;
   Bool progressive = (a.p != 0 && a.p != 4);
@@ -2081,7 +2081,7 @@ function ActionValue#(IndexOutcome)
     Maybe#(WordAddr) needsRead = tagged Invalid;
     Bool doIdxWrite = False;
     Bit#(4) idxWriteReg = 0;
-    IndexWord idxWriteVal = IndexWord{addr:0, sign:0, flag:0, count:0, refill:0};
+    IndexWord idxWriteVal = IndexWord{addr:0, sign:0, flag:0, spare:0, count:0, refill:0};
     Word64 ind = ind0;
 
       HWordAddr ea = effAddr19(st, di_.addr, di_.idx);
@@ -2118,6 +2118,7 @@ function ActionValue#(IndexOutcome)
             Bit#(32) h = (ea[0] == 0) ? prefetch[0][63:32] : prefetch[0][31:0];
             idxWriteReg = di_.j; doIdxWrite = True;
             idxWriteVal = IndexWord{addr:h[31:8], sign:h[7:7], flag:x.flag,
+                                            spare:x.spare,
                                             count:x.count, refill:x.refill};
             ind = setIndexResultIndicatorsF(ind, idxWriteVal);
           end else
@@ -2142,6 +2143,7 @@ function ActionValue#(IndexOutcome)
             Bit#(32) h = (ea[0] == 0) ? prefetch[0][63:32] : prefetch[0][31:0];
             idxWriteReg = di_.j; doIdxWrite = True;
             idxWriteVal = IndexWord{addr:x.addr, sign:x.sign, flag:x.flag,
+                                            spare:x.spare,
                                             count:h[31:14], refill:x.refill};
             ind = setIndexResultIndicatorsF(ind, idxWriteVal);
           end else
@@ -2160,6 +2162,7 @@ function ActionValue#(IndexOutcome)
             Bit#(32) h = (ea[0] == 0) ? prefetch[0][63:32] : prefetch[0][31:0];
             idxWriteReg = di_.j; doIdxWrite = True;
             idxWriteVal = IndexWord{addr:x.addr, sign:x.sign, flag:x.flag,
+                                            spare:x.spare,
                                             count:x.count, refill:h[31:14]};
             ind = setIndexResultIndicatorsF(ind, idxWriteVal);
           end else
@@ -2189,6 +2192,7 @@ function ActionValue#(IndexOutcome)
             SM128 val  = SM128{sign: x.sign, mag: zeroExtend(x.addr)};
             SM128 sum  = smAdd(val, opnd);
             IndexWord x1 = IndexWord{addr: truncate(sum.mag), sign: sum.sign, flag: x.flag,
+                                      spare: x.spare,
                                       count: x.count, refill: x.refill};
             if (di_.code != dixop_V_PLUS) x1.count = x1.count - 1;
             Bool needsRefill = (di_.code == dixop_V_PLUS_CR) && (x1.count == 0);
@@ -2220,7 +2224,64 @@ function ActionValue#(IndexOutcome)
           end else
             needsRead = tagged Valid ea[18:1];
         end
-        default: ind = setOpInvalid(ind); // RNX, LVE, SVA: out of scope
+        dixop_SVA: begin // SVA (Store Value in Address), Ref. Manual
+          // p.29: "The first 18, 19, or 24 bits of the value field of
+          // the index word specified by J replace the address field of
+          // the instruction specified by the effective address."
+          //
+          // THE WIDTH COMES FROM THE TARGET, not from SVA: p.29
+          // "Address Insertion" -- "The length of the address field is
+          // determined from the instruction operation code", the
+          // half-word being "either a half length instruction or the
+          // first half of a full length instruction". That is exactly
+          // the distinction instrLen() already reads off Figure 6's
+          // length tag: every full-word format carries the literal
+          // 1000 at bits 24-27 and has a 24-bit address at 0-23; every
+          // half-length format has a 19-bit address at 0-18.
+          //
+          // AND THE THIRD WIDTH, 18, IS FLOATING POINT -- which the
+          // manual does not say and the DIAGNOSTIC DOES. p.29's only
+          // mention of 18 bits is a programming note about the second
+          // half-word of TRANSMIT and SWAP, so this arm was first
+          // written with two widths, 24 and 19. I-Box 3's routine 1222
+          // ("checks SVA to all classes of instructions") settles it:
+          // for a DIRECT INDEX target its error message is "FAILS TO
+          // STORE BIT 18", and for a FLOATING POINT target, three
+          // pages earlier, the error is "STORES BIT 18". One class
+          // must have bit 18 replaced and the other must not.
+          //
+          // That matches the formats exactly: every half-length format
+          // carries a 19-bit address at 0-18 EXCEPT floating point,
+          // whose address is 18 bits (0-17) with the a/b/c modifiers
+          // at 18-20 -- StretchDecode's tryFpFixed reads hw[31:14]
+          // where tryDirIndex reads hw[31:13]. So the class test is
+          // the machine's own decode, in the machine's own priority
+          // order, which is what decodeHalfWord already is.
+          //
+          // (TRANSMIT/SWAP second half-words, the case the manual's
+          // note is actually about, are still not distinguishable from
+          // the half-word alone and are not modeled.)
+          //
+          // The index register is NOT modified; "the index flag and
+          // index result indicators are set according to the contents
+          // of the index register specified by J", so this takes the
+          // store shape (indicators from the unchanged x), like SV.
+          if (prefetchCount >= 1) begin
+            Bit#(32) h = (ea[0] == 0) ? prefetch[0][63:32] : prefetch[0][31:0];
+            Bool fpTarget = False;
+            case (decodeHalfWord(h)) matches
+              tagged Fp .*: fpTarget = True;
+              default:      fpTarget = False;
+            endcase
+            Bit#(32) nh = (instrLen(h) == Full) ? {x.addr,       h[7:0]}   // 24
+                        : fpTarget              ? {x.addr[23:6], h[13:0]}  // 18
+                        :                         {x.addr[23:5], h[12:0]}; // 19
+            writeHWWithWord(st, ea, nh, prefetch[0]);
+            ind = setIndexResultIndicatorsF(ind, x);
+          end else
+            needsRead = tagged Valid ea[18:1];
+        end
+        default: ind = setOpInvalid(ind); // RNX, LVE: out of scope
       endcase
     return IndexOutcome{needsRead: needsRead, doIdxWrite: doIdxWrite,
                         idxWriteReg: idxWriteReg, idxWriteVal: idxWriteVal,
@@ -2250,7 +2311,7 @@ function ActionValue#(IndexOutcome)
     Maybe#(WordAddr) needsRead = tagged Invalid;
     Bool doIdxWrite = False;
     Bit#(4) idxWriteReg = 0;
-    IndexWord idxWriteVal = IndexWord{addr:0, sign:0, flag:0, count:0, refill:0};
+    IndexWord idxWriteVal = IndexWord{addr:0, sign:0, flag:0, spare:0, count:0, refill:0};
     Word64 ind = ind0;
 
       IndexWord x = st.readIndex(ii.j);
@@ -2274,31 +2335,33 @@ function ActionValue#(IndexOutcome)
         4'b0001: begin // LVI
           idxWriteReg = ii.j; doIdxWrite = True;
           idxWriteVal = IndexWord{addr: immVal24, sign: 0,
-                   flag: x.flag, count: x.count, refill: x.refill};
+                   flag: x.flag, spare: x.spare, count: x.count, refill: x.refill};
         end
         4'b1001: begin // LVNI
           idxWriteReg = ii.j; doIdxWrite = True;
           idxWriteVal = IndexWord{addr: immVal24, sign: 1,
-                   flag: x.flag, count: x.count, refill: x.refill};
+                   flag: x.flag, spare: x.spare, count: x.count, refill: x.refill};
         end
         4'b0010: begin // LCI
           idxWriteReg = ii.j; doIdxWrite = True;
           idxWriteVal = IndexWord{addr: x.addr, sign: x.sign,
-                   flag: x.flag, count: imm18, refill: x.refill};
+                   flag: x.flag, spare: x.spare, count: imm18, refill: x.refill};
         end
         4'b0011: begin // LRI
           idxWriteReg = ii.j; doIdxWrite = True;
           idxWriteVal = IndexWord{addr: x.addr, sign: x.sign,
-                   flag: x.flag, count: x.count, refill: imm18};
+                   flag: x.flag, spare: x.spare, count: x.count, refill: imm18};
         end
         4'b0000: begin // C+I
           idxWriteReg = ii.j; doIdxWrite = True;
           idxWriteVal = IndexWord{addr: x.addr, sign: x.sign, flag: x.flag,
+                   spare: x.spare,
                    count: x.count + imm18, refill: x.refill};
         end
         4'b1000: begin // C-I
           idxWriteReg = ii.j; doIdxWrite = True;
           idxWriteVal = IndexWord{addr: x.addr, sign: x.sign, flag: x.flag,
+                   spare: x.spare,
                    count: x.count - imm18, refill: x.refill};
         end
         4'b0101, 4'b0110, 4'b0111: begin // V+I / V+IC / V+ICR --
@@ -2307,7 +2370,7 @@ function ActionValue#(IndexOutcome)
           // it, since only the ICR variant can ever need the read.
           SM128 sum = smAdd(val, immSM);
           IndexWord x1 = IndexWord{addr: truncate(sum.mag), sign: sum.sign,
-                           flag: x.flag, count: x.count, refill: x.refill};
+                           flag: x.flag, spare: x.spare, count: x.count, refill: x.refill};
           if (ii.code != 4'b0101) x1.count = x1.count - 1;
           if (ii.code == 4'b0111 && x1.count == 0) begin
             if (prefetchCount >= 1) begin
@@ -2325,7 +2388,7 @@ function ActionValue#(IndexOutcome)
           // same shape as V+I/V+IC/V+ICR above.
           SM128 diff = smAdd(val, SM128{sign: ~immSM.sign, mag: immSM.mag});
           IndexWord x1 = IndexWord{addr: truncate(diff.mag), sign: diff.sign,
-                           flag: x.flag, count: x.count, refill: x.refill};
+                           flag: x.flag, spare: x.spare, count: x.count, refill: x.refill};
           if (ii.code != 4'b1101) x1.count = x1.count - 1;
           if (ii.code == 4'b1111 && x1.count == 0) begin
             if (prefetchCount >= 1) begin
@@ -2557,7 +2620,7 @@ function ActionValue#(ExecResult)
     // mutually-exclusive arms, not a method call site.
     Bool doIdxWrite = False;
     Bit#(4) idxWriteReg = 0;
-    IndexWord idxWriteVal = IndexWord{addr:0, sign:0, flag:0, count:0, refill:0};
+    IndexWord idxWriteVal = IndexWord{addr:0, sign:0, flag:0, spare:0, count:0, refill:0};
     Maybe#(Tuple2#(Bit#(4), IndexWord)) vflPending = tagged Invalid;
 
     // A started RD/W transfer, similarly threaded out rather than

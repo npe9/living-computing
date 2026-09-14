@@ -1209,6 +1209,32 @@ run "IBOX-3 LR (jb_ax3a, encoding)" python3 verify_ibox3_lr_listing.py
 run "IBOX-3 LR (load refill from all three memories)" ./run_program.sh programs/ibox3_lr.strap StretchIbox3LrTb \
     "PC=$(python3 -c 'from strap_asm import assemble; print(assemble(open("programs/ibox3_lr.strap").read()).symtab["PASS"]//32)')"
 
+run "IBOX-3 SVA into a floating-point instruction (jb_ax3a, encoding)" python3 verify_ibox3_sva_fp_listing.py
+# SVA was setOpInvalid, which is what made I-Box 3, -4 and -5 usable
+# only in slices chosen to avoid it.  This is the listing's own SVA
+# test, and it found TWO things the Reference Manual does not say.
+#
+# (1) THE THIRD ADDRESS WIDTH IS FLOATING POINT.  p.29 gives "18, 19 or
+# 24 bits" and attributes 18 only to TRANSMIT/SWAP second half-words,
+# so SVA was first written with two widths.  The deck's error messages
+# settle it: a DIRECT INDEX target that "FAILS TO STORE BIT 18" is
+# broken, and an FP target that "STORES BIT 18" is broken.  FP's
+# address is 18 bits (a/b/c modifiers at 18-20); every other
+# half-length format has 19.
+#
+# (2) AN INDEX REGISTER MUST ROUND-TRIP ALL 64 BITS.  packIndexWord
+# wrote 2'b00 into IBM bits 26-27, so LX-then-SX rewrote them.  The
+# deck's comment names the dependency -- "A FP INSTRUCT BITS 26 AND 27
+# OF WHICH ARE 10" -- and with them zeroed the template decoded as a
+# branch-on-indicator, SVA used 19 bits, and "STORES BIT 18" fired.
+# Confirmed by reading back what SIC recorded (SEN = 030342.40, the
+# fourth of the block's six checks) before the fix.
+#
+# Measured: SVA made a no-op halts at the FIRST check, "fails to store
+# any bits in 0-17" (SEN = 030330.40).
+run "IBOX-3 SVA into a floating-point instruction (18-bit address field)" ./run_program.sh programs/ibox3_sva_fp.strap StretchIbox3SvaFpTb \
+    "PC=$(python3 -c 'from strap_asm import assemble; print(assemble(open("programs/ibox3_sva_fp.strap").read()).symtab["I2234"]//32)')"
+
 run "Program store compare: store then EXECUTE the modified instruction" ./run_program.sh programs/store_then_execute.strap StretchStoreExecTb \
     "RESULT:$(python3 -c 'from strap_asm import assemble; print(assemble(open("programs/store_then_execute.strap").read()).symtab["RESULT"]//64)')=0x20"
 
