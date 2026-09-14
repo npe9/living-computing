@@ -1245,11 +1245,40 @@ run "IBOX-3 SVA into a direct index instruction (jb_ax3a, encoding)" python3 ver
 # covers SVA writing a half-word into a register word rather than into
 # ordinary memory.
 # Measured: forcing the 18-bit rule for every class halts this block at
-# its fourth check, "fails to store bit 18" (SEN = 030311.40), while
-# the FP block keeps passing -- which is what pins the two widths
-# against each other.
+# its fourth check, "fails to store bit 18" (SEN = 030311.40).  That
+# injection cannot affect the FP block, whose target already decodes as
+# Fp and so takes the same arm either way -- which is why the pair is
+# what pins the two widths, and why only this half of it was run.
 run "IBOX-3 SVA into a direct index instruction (19-bit, into a register)" ./run_program.sh programs/ibox3_sva_dix.strap StretchIbox3SvaDixTb \
     "PC=$(python3 -c 'from strap_asm import assemble; print(assemble(open("programs/ibox3_sva_dix.strap").read()).symtab["I2230A"]//32)')"
+
+run "IBOX-3 SVA into a full-word instruction (jb_ax3a, encoding)" python3 verify_ibox3_sva_full_listing.py
+# The THIRD width, 24 -- and the one neither other block could reach.
+# Both of their templates are half-length (I22K2 op 0x60, I22K4 op
+# 0x30), so dirIndexOp's `instrLen(h) == Full` arm was implemented from
+# Ref. Manual p.29 alone and driven by nothing at all.  Measured both
+# ways: with that arm forced to the 19-bit path the other 274 sections
+# ALL still pass, and this one halts at SERS on its first check with
+# SEN = 030176.00, "SVA above bit to ext mem failed".
+#
+# The listing also STATES the whole width rule, which p.29 does not.
+# The comment block closing the series (p.140) gives the machine's own
+# length tag, read outward from bit 27:
+#   bit 27 = 1         direct index 19    bits 24-27 = 1000   full wd  24
+#   bits 26-27 = 10    FP           18    bits 23-27 = 10000  immed ix 19
+#   bits 25-27 = 100   CB/BIND      19    bits 23-27 = 00000  misc     19
+# Those six patterns partition bits 23-27 exactly, so it is a decision
+# and not a priority order, and decodeHalfWord agrees case for case.
+# The trio is now tight in both directions: this block fails if SVA
+# stores too FEW bits for a full word, and the direct-index block's
+# sixth check ("store some bits in 19-23") fails if it stores too many.
+#
+# Two data bits, 22 and 23, both above a 19-bit field, each stored to
+# all three memories -- I22WRK (external), $R (word 9, internal) and
+# $X1 itself (word 17, index core storage).  $R is the one path of the
+# three that no earlier SVA block covers.
+run "IBOX-3 SVA into a full-word instruction (24-bit, three memories)" ./run_program.sh programs/ibox3_sva_full.strap StretchIbox3SvaFullTb \
+    "PC=$(python3 -c 'from strap_asm import assemble; print(assemble(open("programs/ibox3_sva_full.strap").read()).symtab["I2221A"]//32)')"
 
 run "Program store compare: store then EXECUTE the modified instruction" ./run_program.sh programs/store_then_execute.strap StretchStoreExecTb \
     "RESULT:$(python3 -c 'from strap_asm import assemble; print(assemble(open("programs/store_then_execute.strap").read()).symtab["RESULT"]//64)')=0x20"

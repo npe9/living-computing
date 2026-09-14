@@ -3275,6 +3275,51 @@ hand vectors alone. "Enables" notes the dependency chain.
    note is actually about, are still not distinguishable from the
    half-word alone and are not modeled.)
 
+   THE DECK LATER STATES THE WHOLE RULE, AND THAT SUPERSEDES THE
+   INFERENCE ABOVE. The pair of error messages is what CAUGHT the
+   error; it is not the best citation for the rule. Three pages earlier
+   (p.140), the comment block closing the SVA data-bit series writes
+   out all six cases:
+
+     1. IF BIT 27 IS 1, INSTRUCTION IS DIRECT INDEX, STORE 19 BITS.
+     2. IF BITS 26 AND 27 ARE 10, INSTRUCTIO IS FP, STORE 18 BITS.
+     3. IF BITS 25-27 ARE 100, INSTRUCT IS CB OR BIND, STORE 19 BITS.
+     4. IF BITS 24-27 ARE 1000, INSTRUCT IS FULL WD, STORE 24 BITS.
+     5. IF BITS 23-27 ARE 10000, INSTRUCT IS IMMED IX, STORE 19 BITS.
+     6. IF BITS 23-27 ARE 00000, INSTRUCT IS MISC, STORE 19 BITS.
+
+   ("INSTRUCTIO" is the listing's typo.) That is the machine's own
+   length tag read outward from bit 27, and the six patterns PARTITION
+   bits 23-27 exactly -- xxxx1, xxx10, xx100, x1000, 10000, 00000 --
+   so it is a decision table, not a priority order, and whether
+   decodeHalfWord happens to try formats in the same sequence is
+   irrelevant to the agreement. Case for case: FP -> 18, the full-word
+   tag -> 24, cases 1, 3, 5 and 6 -> 19, which is what the model does.
+
+   (3) AND THE 24-BIT WIDTH HAD NO TEST AT ALL, which only showed up
+   when the question was asked directly. Both SVA blocks transcribed
+   first use half-length templates -- I22K2 is op 0x60, I22K4 is op
+   0x30 -- so `instrLen(h) == Full` was implemented from p.29 alone and
+   driven by nothing in 274 sections. Measured rather than argued:
+   forcing that arm to the 19-bit path leaves the entire suite green.
+   Section I2221 (pp.139-140, 030167.00-030214.40) closes it, using
+   I22K1 -- "$L%BU,0", a full-word VFL Load, bits 24-27 = 1000 -- and
+   the two data bits ABOVE a 19-bit field, 22 and 23. Under the same
+   injection it halts at SERS with SEN = 030176.00, its first check.
+
+   With it the trio bounds the width from both sides: this block fails
+   if SVA stores too FEW bits for a full word, and the direct-index
+   block's sixth check ("store some bits in 19-23") fails if it stores
+   too many. And I2221 stores to all three memories per bit -- I22WRK,
+   $R (word 9) and $X1 itself (word 17) -- so it is also the only SVA
+   coverage of the internal-memory path.
+
+   THE GENERAL RULE THIS IS THE SECOND INSTANCE OF: an arm written from
+   a manual and never driven is not covered by a passing suite, and the
+   cheapest way to find out is to BREAK IT AND RUN. Two of SVA's three
+   widths had blocks behind them and read as "tested"; the third read
+   the same way and had nothing.
+
    (2) AN INDEX REGISTER MUST ROUND-TRIP ALL SIXTY-FOUR BITS. This one
    is a real bug and the block was built to catch it. packIndexWord
    wrote `2'b00` into IBM bits 26-27, so every LX-then-SX through an
@@ -5333,7 +5378,13 @@ TR00.722. Perf. Char. = 7030 Performance Characteristics vol.1 (Mar 61).
 - **Store Value in Address (SVA)** (p.29-30): replace the address field
   (18/19/24 bits per the target op's class) of the instruction at the
   effective address with bits 0-17/18/23 of J's value field. Used for
-  self-modifying setup in the diagnostics.
+  self-modifying setup in the diagnostics. The manual gives only the
+  three numbers; the width rule itself comes from jb_ax3a p.140, which
+  writes it out as the machine's own length tag read outward from bit
+  27 -- bit27=1 direct index 19, bits26-27=10 FP 18, bits25-27=100
+  CB/BIND 19, bits24-27=1000 full word 24, bits23-27=10000 immediate
+  index 19, bits23-27=00000 misc 19. All three widths are exercised
+  (ibox3_sva_fp, _dix, _full).
 - **Transmit (T) / Swap (SWAP)** (p.30-31): move a block of `count` full
   words (count from index J bits 28-45, 0 meaning 2^18; or immediate,
   bits 51-54, 0 meaning 16) from the left effective address to the right.

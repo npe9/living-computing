@@ -1,0 +1,123 @@
+! jb_ax3a "IBOX-3", routine 1222 section I2221, pp.139-140 (octal
+! 030167.00-030214.40): "CHECK SVA TO 3 MEMS, DATA BIT 22" and "...
+! DATA BIT 23" -- SVA into a FULL-WORD instruction, the 24-bit width.
+!
+! WHY THIS BLOCK.  ibox3_sva_fp pins SVA's 18-bit width and
+! ibox3_sva_dix pins the 19-bit width.  The third width, 24, was
+! implemented from Ref. Manual p.29 alone and had NO test: both of the
+! other blocks' templates are half-length (I22K2 op 0x60, I22K4 op
+! 0x30), so the `instrLen(h) == Full` arm of dirIndexOp's SVA was
+! unreachable by the whole suite.  MEASURED, not assumed: with that arm
+! forced to the 19-bit path, all 274 sections that existed before this
+! one still pass.  The gap was real, and this section is what closes
+! it -- under the same injection this block halts at SERS with SEN =
+! 030176.00, its FIRST check, "SVA above bit to ext mem failed".
+!
+! AND THE LISTING STATES THE RULE, which the Reference Manual does not.
+! p.140, in the comment block that closes this series:
+!
+!   1. IF BIT 27 IS 1, INSTRUCTION IS DIRECT INDEX, STORE 19 BITS.
+!   2. IF BITS 26 AND 27 ARE 10, INSTRUCTIO IS FP, STORE 18 BITS.
+!   3. IF BITS 25-27 ARE 100, INSTRUCT IS CB OR BIND, STORE 19 BITS.
+!   4. IF BITS 24-27 ARE 1000, INSTRUCT IS FULL WD, STORE 24 BITS.
+!   5. IF BITS 23-27 ARE 10000, INSTRUCT IS IMMED IX, STORE 19 BITS.
+!   6. IF BITS 23-27 ARE 00000, INSTRUCT IS MISC, STORE 19 BITS.
+!
+! That is the machine's own length tag, read outward from bit 27: the
+! six patterns partition bits 23-27 exactly (xxxx1, xxx10, xx100,
+! x1000, 10000, 00000), so the ladder is a decision, not a priority
+! order.  And it agrees case for case with what the model does by
+! running decodeHalfWord -- FP -> 18, the full-word tag -> 24,
+! everything else (cases 1, 3, 5, 6) -> 19.  It is worth having in the
+! repository in the deck's own words, because p.29 gives only the three
+! numbers and one misleading note about TRANSMIT/SWAP.
+!
+! (Case 2's "INSTRUCTIO" is the listing's typo, kept as printed.)
+!
+! HOW IT PROVES 24 RATHER THAN 19.  The template I22K1 is "$L%BU,0", a
+! full-word VFL Load whose address field is zero; the test values are
+! IBIT22 and IBIT23, single bits at value positions 22 and 23 -- ABOVE
+! a 19-bit field (0-18).  Store, read back, compare for EQUALITY:
+!
+!   24 bits stored  ->  the bit lands, KV compares equal, BXE taken
+!   19 bits stored  ->  bits 19-23 keep the template's zeros, the
+!                       value reads back 0, KV is unequal, and the
+!                       block halts on "SVA ABOVE BIT TO ... FAILED"
+!
+! The IBITs are NEGATIVE ("%8-0.02"): their sign bit is 1, and so is
+! the template's, so the comparison is of two like-signed values and
+! the equality turns on the magnitude field alone.
+!
+! AND IT DOES ALL THREE MEMORIES per bit, which neither earlier block
+! does: I22WRK (external), $R (word 9, internal memory) and $X1 itself
+! (word 17, index core storage).  The three NOPs between the last
+! store and the first read-back are the listing's own settling gap.
+!
+! -- SSIP framework substitutes: SERS (octal 1304) -> FAIL halt,
+! -- SEN (octal 1310) -> scratch for SIC.
+        SLC, (8)1304.0
+SERS    BEW, $
+        SLC, (8)1310.0
+SEN     DD(BU,64,8), 0
+
+! -- constants for 1222 (p.165) --
+        SLC, (8)31301.0
+IBIT22  XW, -(8)0.02, 0, 0                   ! test wd: bit 22, negative
+IBIT23  XW, -(8)0.01, 0, 0                   ! test wd: bit 23, negative
+! I22K1 is "$L%BU,0": a VFL Load with the default data description.
+! Its bits 24-27 are 1000 -- the full-word length tag, case 4 above.
+I22K1   L, 0.0
+! I22WRK is "DR%BU,64,8,%1%" in the listing -- a RESERVED word, a
+! pseudo-op this assembler does not have.  A zeroed word is the same
+! thing here: the block stores the template into it before every use.
+        SLC, (8)31322.0
+I22WRK  DD(BU,64,8), 0
+
+        SLC, (8)30167.0
+I2221   LX, $X0, IBIT22                      ! check SVA to 3 mems, data bit 22.
+        LX, $X1, I22K1
+        SX, $X1, I22WRK
+        SVA, $X0, I22WRK
+        SX, $X1, $R
+        SVA, $X0, $R
+        SVA, $X0, $X1
+        NOP
+        NOP
+        NOP
+        KV, $X0, I22WRK
+        BXE, $+1.32
+        SIC, SEN
+        B, SERS                              ! SVA above bit to ext mem failed.
+        KV, $X0, $R
+        BXE, $+1.32
+        SIC, SEN
+        B, SERS                              ! SVA above bit to int mem failed.
+        KV, $X0, $X1
+        BXE, $+1.32
+        SIC, SEN
+        B, SERS                              ! SVA above bit to ix core stg failed.
+
+        LX, $X0, IBIT23                      ! check SVA to 3 mems, data bit 23.
+        LX, $X1, I22K1
+        SX, $X1, I22WRK
+        SVA, $X0, I22WRK
+        SX, $X1, $R
+        SVA, $X0, $R
+        SVA, $X0, $X1
+        NOP
+        NOP
+        NOP
+        KV, $X0, I22WRK
+        BXE, $+1.32
+        SIC, SEN
+        B, SERS                              ! SVA above bit to ext mem failed.
+        KV, $X0, $R
+        BXE, $+1.32
+        SIC, SEN
+        B, SERS                              ! SVA above bit to int mem failed.
+        KV, $X0, $X1
+        BXE, $+1.32
+        SIC, SEN
+        B, SERS                              ! SVA above bit to ix core stg failed.
+I2221A  BEW, $
+        END, I2221
