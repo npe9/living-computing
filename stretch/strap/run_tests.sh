@@ -1108,6 +1108,15 @@ run "IBOX-4 progressive index V+ICR / V-I (jb_ax4b, encoding)" python3 verify_ib
 run "IBOX-4 progressive index V+ICR / V-I (KC, SR, progressive value)" ./run_program.sh programs/ibox4_prog_ix_v.strap StretchIbox4ProgIxVTb \
     "PC=$(python3 -c 'from strap_asm import assemble; print(assemble(open("programs/ibox4_prog_ix_v.strap").read()).symtab["PASS"]//32)')"
 
+run "IBOX-1 C+I chain (ja_ax1a, encoding)" python3 verify_ibox1_cpi_chain_listing.py
+# Closes C+I and SC, two of the seven measured gaps.  The block has no
+# SERS: each step manufactures the next branch instruction out of the
+# count arithmetic, so breaking C+I HANGS the machine (step cap) and
+# breaking SC runs it off into zeroed storage (PC=0) -- two of the
+# three failure signatures, neither of them a halt at 1416.
+run "IBOX-1 C+I chain (self-modifying branch chain, C+I and SC)" ./run_program.sh programs/ibox1_cpi_chain.strap StretchIbox1CpiChainTb \
+    "PC=$(python3 -c 'from strap_asm import assemble; print(assemble(open("programs/ibox1_cpi_chain.strap").read()).symtab["PASS"]//32)')"
+
 run "Program store compare: store then EXECUTE the modified instruction" ./run_program.sh programs/store_then_execute.strap StretchStoreExecTb \
     "RESULT:$(python3 -c 'from strap_asm import assemble; print(assemble(open("programs/store_then_execute.strap").read()).symtab["RESULT"]//64)')=0x20"
 

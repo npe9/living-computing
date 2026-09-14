@@ -3129,7 +3129,36 @@ hand vectors alone. "Enables" notes the dependency chain.
    subtraction that silently did nothing would send it to IBP65's
    address instead and the machine would run on into data.
 
-   Nothing has been transcribed yet, but nothing needs guessing now.
+   AND IT IS NOW TRANSCRIBED AND RUNNING. Thirty-eight rows verified,
+   every label landing on its listing address -- and the derived chain
+   targets 04672, 04673, 04675, 04674 are exactly IBP61, IBP62, IBP64
+   and IBP63's assembled addresses, so the arithmetic and the
+   transcription agree independently.
+
+   ONE SPELLING GAP, THE SAME CLASS AS SHF'S SHIFT COUNT. The listing
+   writes count immediates as ADDRESS EXPRESSIONS -- LCI,$X1,IBP58+2.32
+   and C+I,$X1,3.0 -- but the field they encode is the WORD part, and
+   this assembler wants the count value itself. Written as (8)4667 and
+   3, every row matches. Third time this has come up (SHF's count, the
+   XW value forms, now this): the listing's source column and this
+   assembler's input are not always the same language, and the octal
+   column is what adjudicates.
+
+   IT CLOSES C+I AND SC, measured both ways:
+
+     C+I ignores its immediate  -> STEP CAP reached, PC stuck at 011556
+     SC stores a zeroed count   -> PC = 0
+
+   Two of the three failure signatures in one block, and NEITHER is a
+   halt at 1416. That taxonomy -- 1416 means the program rejected
+   something, PC=0 means it fell off the end of what was assembled, a
+   step cap means it is spinning on a branch-to-self -- was written
+   down two entries ago from the IBOX-2 bridge mishap, and it paid for
+   itself here: both results read instantly as "the chain broke where
+   the injection broke it" rather than as a puzzle.
+
+   Seven open gaps become five: SC and C+I are closed, leaving LR,
+   KCI, C-I, V-I (the direct opcode) and V+CR's refill.
 
    THE NEXT BLOCK IS SCOUTED: IBOX-1 pp.36-37, routine IBP14A-IBP45 at
    004565.00-004637.00. Two adjacent test groups, "SV-IC" (add to value

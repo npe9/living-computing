@@ -1,0 +1,102 @@
+! ja_ax1a "IBOX-1", routine IBP54-IBP65, pp.38 and 59 (octal
+! 004653.00-004676.00): four COUNT-IMMEDIATE steps that manufacture
+! their own branch instructions.
+!
+! WHY THIS BLOCK.  Measured, not guessed: nine index-arithmetic
+! operations were shown unreachable by the whole suite in one combined
+! injection, and after IBOX-4 closed KC and SR, seven remained.  This
+! block uses C+I FOUR TIMES and SC FOUR TIMES -- two of the seven --
+! plus LCI, LV, SV and V+.
+!
+! HOW IT CHECKS ITSELF, which is unlike anything else in the suite.
+! There is no SERS.  Each step stores the COUNT to scratch, reads it
+! back as a VALUE, adds a constant, and stores the result OVER a
+! branch-to-self further down the block.  If the arithmetic is right
+! the overwritten word becomes a branch to the next link; if it is
+! wrong the word stays a branch to itself and THE MACHINE STOPS.
+!
+! THE ARITHMETIC, all four sums derived from the constants before this
+! was ever run.  Three facts make it computable on paper:
+!
+!   * LCI and C+I take "bits 0-17 of the address part" (p.25) -- the
+!     19-bit field's TOP 18 bits, not the raw field.
+!   * SC writes {count(18), 7 zeros, 7 preserved} into a half-word and
+!     LV reads its top 24 bits as the value, so the round trip through
+!     ISTOY MULTIPLIES THE COUNT BY 64 -- it turns a count into the
+!     word address of a bit address.
+!   * COM04 is a VF whose 24-bit value is 0.04, so V+ adds 4, which
+!     sets bits 19-23 of the result to 00100 -- the branch opcode.
+!     The arithmetic manufactures an instruction, not just an address.
+!
+! With LCI giving count = 04667:
+!
+!   IBP55  C+I  3   count 04672   SV into IBP59 writes 4672.04 -> IBP61
+!   IBP56  C+I  1   count 04673   SV into IBP61 writes 4673.04 -> IBP62
+!   IBP57  C+I  2   count 04675   SV into IBP62 writes 4675.04 -> IBP64
+!   IBP58  C+I -1   count 04674   SV into IBP64 writes 4674.04 -> IBP63
+!
+! giving IBP59 -> IBP61 -> IBP62 -> IBP64 -> IBP63 -> IBP65, exactly
+! the chain the listing's own comments name.
+!
+! THE FOURTH STEP IS THE ONE WORTH HAVING.  Its immediate is
+! (8)777777.0, whose top 18 bits are MINUS ONE in eighteen-bit two's
+! complement, so the sequence is +3, +1, +2, -1 -- and the -1 is why
+! the chain runs IBP64 -> IBP63, backwards, the only link that does.
+! A count subtraction that silently did nothing would send it to
+! IBP65's address instead and the machine would run on into data.
+!
+! IBP65's VF is MEANT to be executed: the listing annotates it
+! "-NOP,-.32", so the chain ends by falling through it.
+
+        SLC, (8)6105.0
+ISTOY   DD(BU,64,8), 0
+COM04   VF, 0.04
+
+        SLC, (8)4653.0
+! The listing writes these count immediates as ADDRESS EXPRESSIONS
+! (LCI,$X1,IBP58+2.32 and C+I,$X1,3.0) but the field they encode is
+! the WORD part, and this assembler wants the count value itself --
+! the same spelling gap as SHF's shift count.  The model's own note
+! on p.25 records the verified form: "LCI,$X1,4" prints 4.03 02.
+! IBP58+2.32 is word 04667, so that is what is written here.
+IBP54   LCI, $X1, (8)4667                    ! set up count (= IBP58+2.32)
+IBP55   C+I, $X1, 3                          ! C+3.0
+        SC, $X1, ISTOY
+        LV, $X1, ISTOY
+        V+, $X1, COM04
+        SV, $X1, IBP59                       ! store for test
+        NOP, 0.0
+IBP56   C+I, $X1, 1                          ! C+1.0
+        SC, $X1, ISTOY
+        LV, $X1, ISTOY
+        V+, $X1, COM04
+        SV, $X1, IBP61                       ! store for test
+        NOP, 0.0
+IBP57   C+I, $X1, 2                          ! C+2.0
+        SC, $X1, ISTOY
+        LV, $X1, ISTOY
+        V+, $X1, COM04
+        SV, $X1, IBP62                       ! store for test
+        NOP, 0.0
+IBP58   C+I, $X1, (8)777777                  ! C-1.0
+        SC, $X1, ISTOY
+        LV, $X1, ISTOY
+        V+, $X1, COM04
+        SV, $X1, IBP64                       ! store for test
+        NOP, 0.0
+        NOP
+IBP59   B, 0.0
+        BD, $                                ! becomes a branch to IBP61 + BD,$
+IBP60   BD, $
+        BD, $
+IBP61   B, $
+        BD, $                                ! becomes a branch to IBP62 + BD,$
+IBP62   B, $
+        BD, $                                ! becomes a branch to IBP64 + BD,$
+IBP63   NOP, -1
+        BD, IBP65                            ! still NOP-1 + BD,IBP65
+IBP64   B, $
+        BD, $                                ! becomes a branch to IBP63 + BD,$
+IBP65   VF, (8)777777.70                     ! executed as NOP,-.32
+PASS    BEW, $
+        END, IBP54
