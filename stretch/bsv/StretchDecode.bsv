@@ -76,7 +76,25 @@ endfunction
 // hardware selects it combinationally from the length tag and cannot
 // consult a table of which operation codes are assigned. Asking the
 // decode instead disagrees with p.140 on 768 half-words -- the three
-// 7-bit codes ending in 10 that isValidFpCode does not list.
+// 7-bit codes ending in 10 that isValidFpCode does not list (1101010,
+// 1111010, 1111110), where bits 26-27 say FLOATING POINT and 18 bits
+// but the decode returns Invalid and the width falls back to 19.
+//
+// HOW THE 18 WAS FOUND, before p.140 was read. Ref. Manual p.29 gives
+// "the first 18, 19, or 24 bits of the value field" and mentions 18
+// ONLY in a programming note about the second half-word of TRANSMIT
+// and SWAP, so this was first written with two widths, 24 and 19.
+// Routine 1222's error messages settle it without the table: a DIRECT
+// INDEX target that "FAILS TO STORE BIT 18" is broken, and a FLOATING
+// POINT target that "STORES BIT 18" is broken, so one class must have
+// bit 18 replaced and the other must not. The formats agree -- every
+// half-length format carries a 19-bit address at 0-18 EXCEPT floating
+// point, whose address is 18 bits with the a/b/c modifiers at 18-20
+// (tryFpFixed reads hw[31:14] where tryDirIndex reads hw[31:13]).
+//
+// (TRANSMIT/SWAP second half-words, the case the manual's note is
+// actually about, are still not distinguishable from the half-word
+// alone and are not modeled.)
 // ---------------------------------------------------------------------
 function HalfWord32 svaReplaceAddr(HalfWord32 h, Bit#(24) v);
   return (instrLen(h) == Full) ? {v,       h[7:0]}   // 24, case 4

@@ -2231,65 +2231,13 @@ function ActionValue#(IndexOutcome)
           //
           // THE WIDTH COMES FROM THE TARGET, not from SVA: p.29
           // "Address Insertion" -- "The length of the address field is
-          // determined from the instruction operation code", the
-          // half-word being "either a half length instruction or the
-          // first half of a full length instruction". That is exactly
-          // the distinction instrLen() already reads off Figure 6's
-          // length tag: every full-word format carries the literal
-          // 1000 at bits 24-27 and has a 24-bit address at 0-23; every
-          // half-length format has a 19-bit address at 0-18.
-          //
-          // AND THE THIRD WIDTH, 18, IS FLOATING POINT -- which the
-          // manual does not say and the DIAGNOSTIC DOES. p.29's only
-          // mention of 18 bits is a programming note about the second
-          // half-word of TRANSMIT and SWAP, so this arm was first
-          // written with two widths, 24 and 19. I-Box 3's routine 1222
-          // ("checks SVA to all classes of instructions") settles it:
-          // for a DIRECT INDEX target its error message is "FAILS TO
-          // STORE BIT 18", and for a FLOATING POINT target, three
-          // pages earlier, the error is "STORES BIT 18". One class
-          // must have bit 18 replaced and the other must not.
-          //
-          // That matches the formats exactly: every half-length format
-          // carries a 19-bit address at 0-18 EXCEPT floating point,
-          // whose address is 18 bits (0-17) with the a/b/c modifiers
-          // at 18-20 -- StretchDecode's tryFpFixed reads hw[31:14]
-          // where tryDirIndex reads hw[31:13].
-          //
-          // AND THE DECK STATES THE WHOLE TABLE, which is why the test
-          // below is on BITS and not on decodeHalfWord. Three pages
-          // before the block that forced the correction, p.140 closes
-          // the SVA data-bit series with the machine's own length tag,
-          // read outward from bit 27:
-          //
-          //   1. bit 27 = 1        direct index       19 bits
-          //   2. bits 26-27 = 10   floating point     18 bits
-          //   3. bits 25-27 = 100  CB or BIND         19 bits
-          //   4. bits 24-27 = 1000 full word          24 bits
-          //   5. bits 23-27 = 10000 immediate index   19 bits
-          //   6. bits 23-27 = 00000 misc              19 bits
-          //
-          // Those six patterns partition bits 23-27 exactly -- xxxx1,
-          // xxx10, xx100, x1000, 10000, 00000 -- so the table is a
-          // DECISION on five bits, not a lookup through the operation
-          // code, and it collapses to the two tests below.
-          //
-          // THIS IS NOT THE SAME AS ASKING decodeHalfWord, and the
-          // difference is measurable: StretchSvaWidthSweep sweeps all
-          // 2^14 half-words and, with the class taken from the decode,
-          // reports 768 disagreements. They are the three 7-bit codes
-          // ending in 10 that isValidFpCode does not list (1101010,
-          // 1111010, 1111110): bits 26-27 say FLOATING POINT and 18
-          // bits, but the decode returns Invalid and the width falls
-          // back to 19. Real hardware selects the width combinationally
-          // from the length tag and cannot consult an assignment
-          // table, so the bit test is the faithful one -- and it also
-          // stops SVA's width depending on how complete this model's
-          // operation tables happen to be.
-          //
-          // (TRANSMIT/SWAP second half-words, the case the manual's
-          // note is actually about, are still not distinguishable from
-          // the half-word alone and are not modeled.)
+          // determined from the instruction operation code". That rule
+          // is svaReplaceAddr, beside instrLen in StretchDecode, where
+          // its whole story lives: jb_ax3a p.140's six-case length tag,
+          // why the test is on BITS rather than on decodeHalfWord, and
+          // the 768 half-words the two disagree about. It is a function
+          // and not inline here so that StretchSvaWidthSweep can sweep
+          // the code the model runs rather than a copy of it.
           //
           // The index register is NOT modified; "the index flag and
           // index result indicators are set according to the contents
@@ -2297,9 +2245,6 @@ function ActionValue#(IndexOutcome)
           // store shape (indicators from the unchanged x), like SV.
           if (prefetchCount >= 1) begin
             Bit#(32) h = (ea[0] == 0) ? prefetch[0][63:32] : prefetch[0][31:0];
-            // The table itself is svaReplaceAddr, beside instrLen in
-            // StretchDecode, so that StretchSvaWidthSweep can sweep this
-            // exact function rather than a copy of it.
             Bit#(32) nh = svaReplaceAddr(h, x.addr);
             writeHWWithWord(st, ea, nh, prefetch[0]);
             ind = setIndexResultIndicatorsF(ind, x);
