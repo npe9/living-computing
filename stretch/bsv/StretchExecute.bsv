@@ -2254,9 +2254,38 @@ function ActionValue#(IndexOutcome)
           // carries a 19-bit address at 0-18 EXCEPT floating point,
           // whose address is 18 bits (0-17) with the a/b/c modifiers
           // at 18-20 -- StretchDecode's tryFpFixed reads hw[31:14]
-          // where tryDirIndex reads hw[31:13]. So the class test is
-          // the machine's own decode, in the machine's own priority
-          // order, which is what decodeHalfWord already is.
+          // where tryDirIndex reads hw[31:13].
+          //
+          // AND THE DECK STATES THE WHOLE TABLE, which is why the test
+          // below is on BITS and not on decodeHalfWord. Three pages
+          // before the block that forced the correction, p.140 closes
+          // the SVA data-bit series with the machine's own length tag,
+          // read outward from bit 27:
+          //
+          //   1. bit 27 = 1        direct index       19 bits
+          //   2. bits 26-27 = 10   floating point     18 bits
+          //   3. bits 25-27 = 100  CB or BIND         19 bits
+          //   4. bits 24-27 = 1000 full word          24 bits
+          //   5. bits 23-27 = 10000 immediate index   19 bits
+          //   6. bits 23-27 = 00000 misc              19 bits
+          //
+          // Those six patterns partition bits 23-27 exactly -- xxxx1,
+          // xxx10, xx100, x1000, 10000, 00000 -- so the table is a
+          // DECISION on five bits, not a lookup through the operation
+          // code, and it collapses to the two tests below.
+          //
+          // THIS IS NOT THE SAME AS ASKING decodeHalfWord, and the
+          // difference is measurable: StretchSvaWidthSweep sweeps all
+          // 2^14 half-words and, with the class taken from the decode,
+          // reports 768 disagreements. They are the three 7-bit codes
+          // ending in 10 that isValidFpCode does not list (1101010,
+          // 1111010, 1111110): bits 26-27 say FLOATING POINT and 18
+          // bits, but the decode returns Invalid and the width falls
+          // back to 19. Real hardware selects the width combinationally
+          // from the length tag and cannot consult an assignment
+          // table, so the bit test is the faithful one -- and it also
+          // stops SVA's width depending on how complete this model's
+          // operation tables happen to be.
           //
           // (TRANSMIT/SWAP second half-words, the case the manual's
           // note is actually about, are still not distinguishable from
@@ -2268,14 +2297,10 @@ function ActionValue#(IndexOutcome)
           // store shape (indicators from the unchanged x), like SV.
           if (prefetchCount >= 1) begin
             Bit#(32) h = (ea[0] == 0) ? prefetch[0][63:32] : prefetch[0][31:0];
-            Bool fpTarget = False;
-            case (decodeHalfWord(h)) matches
-              tagged Fp .*: fpTarget = True;
-              default:      fpTarget = False;
-            endcase
-            Bit#(32) nh = (instrLen(h) == Full) ? {x.addr,       h[7:0]}   // 24
-                        : fpTarget              ? {x.addr[23:6], h[13:0]}  // 18
-                        :                         {x.addr[23:5], h[12:0]}; // 19
+            // The table itself is svaReplaceAddr, beside instrLen in
+            // StretchDecode, so that StretchSvaWidthSweep can sweep this
+            // exact function rather than a copy of it.
+            Bit#(32) nh = svaReplaceAddr(h, x.addr);
             writeHWWithWord(st, ea, nh, prefetch[0]);
             ind = setIndexResultIndicatorsF(ind, x);
           end else

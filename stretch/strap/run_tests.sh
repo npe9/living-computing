@@ -93,6 +93,46 @@ run "I-Box 4 listing bit-exact comparison" python3 verify_ibox4_listing.py
 # -- 1. Hand-assembled BSV smoke test (StretchSmoke.bsv, not STRAP-derived) --
 cd "$BSV_DIR"
 run "bsv smoke test (make run)" make run
+# -- 1b. StretchDecode's instruction formats swept against the length
+# tag jb_ax3a p.140 states, over all 2^14 half-words (both with the
+# address field zeroed and all ones).  Not a program: it drives
+# decodeHalfWord directly.
+#
+# It exists because dirIndexOp's SVA arm picks its address width off
+# bits 24-27 and 26-27 rather than off decodeHalfWord, which is what
+# p.140 describes and what hardware can actually do -- the width is
+# combinational on the length tag and cannot consult a table of which
+# operation codes are assigned.  Measured, and the reason for the
+# change: taking the class from the decode instead disagrees with p.140
+# on 768 of the 32768 half-words, all of them the three 7-bit codes
+# ending in 10 that isValidFpCode does not list (1101010, 1111010,
+# 1111110).  Bits 26-27 say FP and 18 bits; the decode says Invalid and
+# the width fell back to 19.
+#
+# The sweep checks TWO different things, and it is worth being exact
+# about which protects what.
+#
+# (a) It probes svaReplaceAddr itself -- the function dirIndexOp calls
+# -- at every half-word, by substituting an all-zero and an all-one
+# value and XORing the results to mark exactly the bits replaced. That
+# pins the width, that the field is the TOP of the half-word, and that
+# the bits below survive. This is the only check anywhere that can see
+# the change: the new rule is a strict superset of the old (every
+# fpop_* ends in 10), so no ASSIGNED operation code moves and every
+# transcribed block passes either way. A green suite is not evidence
+# for this change; the sweep is. Negative control: putting the
+# decode-based class test back reports the 768 mismatches again.
+#
+# (b) It checks that every format decodeHalfWord DOES recognize sits
+# inside the tag class p.140 assigns it. That is NOT protecting SVA any
+# more -- SVA no longer consults the decode -- it protects the decode
+# tables, which fetch and execute do depend on, and whose disagreement
+# with the tag is what made the old width wrong. Negative control:
+# changing tryCountBranch's literal from 1001 to 0001 reports 1536
+# mismatches. (Adding a bogus FP code does NOT break it -- Fp is tried
+# last and every code ending in 00 is already claimed by an earlier
+# format, which the testbench header works out.)
+run "SVA width vs jb_ax3a p.140 (all 2^14 half-words)" ./run_tb.sh StretchSvaWidthSweep
 cd "$STRAP_DIR"
 
 # Timing bounds ("CYCLES<=N", the clock count at halt with one clock =

@@ -3320,6 +3320,60 @@ hand vectors alone. "Enables" notes the dependency chain.
    widths had blocks behind them and read as "tested"; the third read
    the same way and had nothing.
 
+   (4) AND THE TABLE IS WORTH MORE THAN THE THREE BLOCKS, because it is
+   a claim about all 2^14 half-words and they pin three points. Having
+   it, the natural question is whether the model agrees with it
+   everywhere -- and it did not. SVA had been taking the class from
+   decodeHalfWord; a sweep (bsv/StretchSvaWidthSweep.bsv) shows that
+   disagrees with p.140 on 768 half-words, all of them the three 7-bit
+   codes ending in 10 that isValidFpCode does not list (1101010,
+   1111010, 1111110). Bits 26-27 say FLOATING POINT and 18 bits; the
+   decode returns Invalid and the width fell back to 19.
+
+   THE FIX IS ALSO THE MORE FAITHFUL MODEL. Real hardware selects the
+   width combinationally from the length tag; it cannot consult a table
+   of which operation codes happen to be assigned. So SVA now tests the
+   bits p.140 names, and its width no longer depends on how complete
+   this model's operation tables are -- a dependency that was invisible
+   until the table made it askable.
+
+   AND THE CHANGE ITSELF HAS A TEST, which took care to arrange. The
+   new rule is a strict SUPERSET of the old -- every fpop_* ends in 10
+   -- so no assigned operation code moves and all three transcribed
+   blocks pass either way. A green suite is not evidence for it. So the
+   replacement was factored out of dirIndexOp into svaReplaceAddr,
+   beside instrLen, and the sweep probes THAT function at every
+   half-word: substitute an all-zero and an all-one value, XOR the
+   results, and the bits that differ are exactly the ones replaced.
+   That pins the width, that the field is the top of the half-word, and
+   that everything below it survives. Putting the decode-based test
+   back reports the 768 again, through the permanent test rather than a
+   one-off. (The first version of this sweep compared a copy of the
+   width formula against another copy of the same formula, which can
+   only ever pass.)
+
+   THE SECOND HALF OF THE SWEEP PROTECTS SOMETHING ELSE, and the
+   distinction is worth keeping straight: every format decodeHalfWord
+   DOES recognize must sit inside the tag class p.140 assigns it
+   (DirIndex needs bit 27, Fp needs bits 26-27 = 10, CB and BIND need
+   bits 25-27 = 100, and a full-word tag must not decode as any
+   half-length format). That holds for all 32768 cases swept. It is not
+   guarding SVA any more -- SVA does not consult the decode -- it
+   guards the decode tables, which fetch and execute depend on, and
+   whose disagreement with the tag is what made the old width wrong.
+
+   A NEGATIVE CONTROL THAT FAILED, AND WHAT IT SHOWED. The first
+   attempt to break the sweep -- adding a bogus code ending in 00 to
+   isValidFpCode -- changed nothing, because tryFpFixed is tried LAST
+   and every code ending in 00 is already claimed by an earlier format:
+   bits 26-27 = 00 forces the rest to be the CB/BIND tag, the full-word
+   tag, the immediate index literal, or tryBranchOrMisc's two literals.
+   So the FP table alone cannot break the tag structure; it takes an
+   edit to one of the earlier formats, and changing tryCountBranch's
+   literal from 1001 to 0001 duly reports 1536 mismatches. A control
+   that does not fire is worth reading rather than replacing -- this
+   one was evidence about the decode's shape.
+
    (2) AN INDEX REGISTER MUST ROUND-TRIP ALL SIXTY-FOUR BITS. This one
    is a real bug and the block was built to catch it. packIndexWord
    wrote `2'b00` into IBM bits 26-27, so every LX-then-SX through an

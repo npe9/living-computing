@@ -53,6 +53,38 @@ function InstrLen instrLen(HalfWord32 hw0);
 endfunction
 
 // ---------------------------------------------------------------------
+// SVA's address replacement, which is the length tag applied.
+//
+// jb_ax3a p.140 closes routine 1222's SVA data-bit series by writing
+// out the rule the Reference Manual only numbers:
+//
+//   1. bit 27 = 1         direct index      19 bits
+//   2. bits 26-27 = 10    floating point    18 bits
+//   3. bits 25-27 = 100   CB or BIND        19 bits
+//   4. bits 24-27 = 1000  full word         24 bits
+//   5. bits 23-27 = 10000 immediate index   19 bits
+//   6. bits 23-27 = 00000 misc              19 bits
+//
+// Those six patterns partition bits 23-27 exactly, so the table is a
+// decision on five bits and collapses to the two tests below. It lives
+// here, next to instrLen, rather than inline in dirIndexOp, so that
+// StretchSvaWidthSweep can sweep the FUNCTION THE MODEL RUNS over all
+// 2^14 half-words instead of restating the formula and comparing it
+// with itself.
+//
+// The width is deliberately NOT taken from decodeHalfWord: real
+// hardware selects it combinationally from the length tag and cannot
+// consult a table of which operation codes are assigned. Asking the
+// decode instead disagrees with p.140 on 768 half-words -- the three
+// 7-bit codes ending in 10 that isValidFpCode does not list.
+// ---------------------------------------------------------------------
+function HalfWord32 svaReplaceAddr(HalfWord32 h, Bit#(24) v);
+  return (instrLen(h) == Full) ? {v,       h[7:0]}   // 24, case 4
+       : (h[5:4] == 2'b10)     ? {v[23:6], h[13:0]}  // 18, case 2
+       :                         {v[23:5], h[12:0]}; // 19, cases 1,3,5,6
+endfunction
+
+// ---------------------------------------------------------------------
 // Full-word formats
 // ---------------------------------------------------------------------
 
