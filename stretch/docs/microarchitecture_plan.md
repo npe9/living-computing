@@ -3061,6 +3061,45 @@ hand vectors alone. "Enables" notes the dependency chain.
    all. Each named payload cost exactly one construction site in
    StretchDecode.bsv. Suite unchanged at 242 sections throughout.
 
+   AND A BETTER ONE ON p.38, WITH EVERY CONSTANT NOW FOUND: routine
+   IBP54-IBP65 at 004653.00-004676.00. It uses C+I FOUR TIMES and SC
+   FOUR TIMES -- two of the seven open gaps -- plus LCI, LV, SV and V+,
+   in the same self-modifying hang structure as p.37 but more compactly
+   and with no second group entangled with it.
+
+     IBP54  LCI,$X1,IBP58+2.32     set up the count
+     IBP55  C+I,$X1,3.0            then, four times over:
+            SC,$X1,ISTOY             store the COUNT to scratch,
+            LV,$X1,ISTOY             read it back as a VALUE,
+            V+,$X1,COM04             add a constant,
+            SV,$X1,IBP59             and store the result OVER a
+                                     branch-to-self further down.
+
+   The listing prints what each overwritten pair BECOMES ("-BE, IBP61 +
+   BD, $"), so the intended chain is unambiguous: IBP59 -> IBP61 ->
+   IBP62 -> IBP64 -> IBP63 -> IBP65. Every link is a branch target
+   COMPUTED by the index arithmetic under test. Get any of the four
+   sums wrong and the machine stops on a branch-to-self instead of
+   reporting an error.
+
+   ALL CONSTANTS ARE NOW LOCATED, which was the gating unknown:
+
+     ISTOZ   006104   DD(BU,64,8), 0        (all zeros)
+     ISTOY   006105   DD(BU,64,8), 0        (all zeros)
+     COM04   006106   VF, 0.04              prints 0.04+
+     IBP59-IBP65      004670-004676, inside the block itself
+
+   COM04 being a VF -- a 24-bit value field with a sign, printing
+   "0.04+" rather than as a full word -- is worth noting before
+   transcribing: it is the third pseudo-op shape in these decks after
+   DD and XW, and the listing prints it differently again.
+
+   WHAT IS LEFT TO DECIDE, honestly: the four sums must be computed
+   from the constants and checked before the run, exactly as F219's
+   expected values were, because a wrong sum here does not print a
+   diagnosis -- it hangs. That is the work this block needs and it has
+   not been done; the scouting is complete and the arithmetic is not.
+
    THE NEXT BLOCK IS SCOUTED: IBOX-1 pp.36-37, routine IBP14A-IBP45 at
    004565.00-004637.00. Two adjacent test groups, "SV-IC" (add to value
    immediate + count) and "V-ICR", and between them they use SC, SR,
