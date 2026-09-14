@@ -1,0 +1,91 @@
+! jb_ax4b "IBOX-4", TEST 5E and TEST 5F from routine 148, pp.150 and
+! 153-154 and 191 (octal 011214.00-011234.40): "CHK PROG IX V+ICR" and
+! "CHK PROG IX V-I".
+!
+! WHY THIS BLOCK, AND THE MEASUREMENT BEHIND IT.  Nine index-arithmetic
+! operations were shown unreachable by the whole suite in a single
+! combined injection -- SC, KC, KCI, LR, C+I, C-I, V-I, V+CR's refill
+! and V+C.  This block uses KC, SR and V-I, three of those nine, and it
+! is a straight line with per-check SIC/BZXE pairs and NO SVA, so
+! unlike most of IBOX-4 it runs as it stands.
+!
+! WHAT IT CHECKS.  Each test loads a progressive-index control word,
+! performs ONE VFL load through it, and then asks four questions in
+! turn, each with its own error exit:
+!
+!   KV $X2 vs 148K25   did the load fetch the right OPERAND?  ($X2 is
+!                      loaded from $R, the accumulator's right word,
+!                      where the 64-bit VFL load put it.)
+!   KV $X1 vs 148K28   did progressive indexing modify the index
+!                      VALUE correctly?
+!   KC $X1 vs BIT17    did it modify the index COUNT correctly?
+!   SR/LX then BZXVZ   did it REFILL correctly?
+!
+! THE TWO TESTS SHARE THEIR EXPECTED VALUES, WHICH IS THE ELEGANT PART.
+! 148XW6 starts the value at 148K25's address (011352) and V+ICR adds
+! one word, giving 011353.  148XW7 starts it at 148K27's address
+! (011354) and V-I subtracts one word, giving 011353 again.  So a
+! single constant -- 148K28, whose value field is 011353 -- is the
+! expected result for both directions, and the same KV checks both.
+!
+! BIT17's count field is zero, so the KC check asserts the count was
+! decremented to zero by V+ICR.  It is the same BIT17 the IBOX-2 tape
+! uses at a different address: both tapes lay their BIT0-BIT63 tables
+! out identically (value 0-23, sign 24, flags 25-27, count 28-45,
+! refill 46-63), which is worth knowing before hunting a constant.
+
+! -- SSIP framework substitutes: SERS (octal 1304) -> FAIL halt,
+! -- SEN (octal 1310) -> scratch.
+        SLC, (8)1304.0
+SERS    BEW, $
+        SLC, (8)1310.0
+SEN     DD(BU,64,8), 0
+
+! -- routine 148's constants (p.153) --
+        SLC, (8)11352.0
+K25     XW, (8)123456.70
+K26     XW, (8)765432.10
+K27     XW, (8)123456.70
+K28     XW, K26, 1, 0
+        SLC, (8)11366.0
+XW6     XW, K25, 1, K28
+XW7     XW, K27, 1, 0
+! -- the bit table (p.191); BIT17's count field is zero --
+        SLC, (8)13075.0
+BIT17   XW, (8)1.00, 0, 0
+
+        SLC, (8)11214.0
+T5E     LX, $X1, XW6                         ! test 5E, chk prog ix V+ICR
+        L(V+ICR)(BU,64,8), 1.0($X1)
+        LX, $X2, $R
+        KV, $X2, K25
+        SIC, SEN
+        BZXE, SERS                           ! failed to obtain correct operand
+        KV, $X1, K28
+        SIC, SEN
+        BZXE, SERS                           ! failed to modify ix value correctly
+        KC, $X1, BIT17
+        SIC, SEN
+        BZXE, SERS                           ! modified index count incorrectly
+        SR, $X1, $X1
+        LX, $X1, $X1
+        SIC, SEN
+        BZXVZ, SERS                          ! refilled incorrectly
+T5F     LX, $X1, XW7                         ! test 5F, chk prog ix V-I
+        L(V-I)(BU,64,8), 1.0($X1)
+        LX, $X2, $R
+        KV, $X2, K25
+        SIC, SEN
+        BZXE, SERS                           ! failed to obtain correct operand
+        KV, $X1, K28
+        SIC, SEN
+        BZXE, SERS                           ! failed to modify ix value correctly
+        KC, $X1, BIT17
+        SIC, SEN
+        BZXE, SERS                           ! modified index count
+        SR, $X1, $X1
+        LX, $X1, $X1
+        SIC, SEN
+        BZXVZ, SERS                          ! refilled
+PASS    BEW, $
+        END, T5E

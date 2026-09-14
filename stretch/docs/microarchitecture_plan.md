@@ -3061,6 +3061,44 @@ hand vectors alone. "Enables" notes the dependency chain.
    all. Each named payload cost exactly one construction site in
    StretchDecode.bsv. Suite unchanged at 242 sections throughout.
 
+   IT IS TRANSCRIBED AND IT DISCRIMINATES -- but the first round of
+   injections said it did not, and the error was mine in two distinct
+   ways worth separating.
+
+   TEST 5E and 5F run and pass; thirty-nine rows verified against
+   pp.150, 153 and 191 on the first attempt, from a third tape,
+   including the V+ICR and V-I progressive forms.
+
+   THEN THREE INJECTIONS ALL PASSED, which looked like the block being
+   blind. It was not:
+
+     (1) WRONG DIRECTION. I injected "KC compares always EQUAL". The
+         block's check is BZXE,SERS -- halt if NOT equal -- so it
+         ASSERTS equality, and an injection that forces equality can
+         only make it pass harder. Injecting CmpHigh instead halts it
+         at once.
+     (2) WRONG ARM. I injected the ImmIndex V-I arm (4'b1101). But
+         `L(V-I)(BU,64,8), 1.0($X1)` is a VFL instruction with a
+         progressive-index MODIFIER; it goes through the shared
+         progressiveIndex() function, not the direct V-I opcode at all.
+         Patching progressiveIndex halts the block immediately.
+
+   A CONTROL SETTLED IT. Forcing XE permanently off -- which any
+   working BZXE check must notice -- halts the block, proving the
+   checks are live before any conclusion was drawn about them. That
+   control should have been the FIRST injection, not the fourth: when
+   several injections pass together, the cheapest explanation to
+   eliminate is that the harness is not testing anything.
+
+   AND THE SECOND ERROR CORRECTS THE ENTRY BELOW. The nine-way
+   measurement listed "V-I" as unreachable, and this block does not
+   reach it either -- the mnemonic in the listing is a VFL MODIFIER
+   spelled the same way as the direct-index opcode. Two different
+   machine facilities share one spelling, and a coverage list keyed on
+   spelling will confuse them. That is the grep lesson again, one level
+   deeper: matching the string correctly is not enough when the same
+   string names two things.
+
    THE BLOCK THAT CLOSES THREE OF THE NINE IS FOUND AND SCOUTED:
    jb_ax4b IBOX-4 p.150, "TEST 5E, CHK PROG IX V+ICR" and "TEST 5F,
    CHK PROG IX V-I", at 011214.00 onward. It uses KC, SR and V-I --

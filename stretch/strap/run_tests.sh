@@ -1099,6 +1099,15 @@ run "IBOX-2 KV and KVI check (jb_ax2a, encoding)" python3 verify_ibox2_kv_kvi_li
 run "IBOX-2 KV and KVI check (index compare, all three of XL/XE/XH)" ./run_program.sh programs/ibox2_kv_kvi.strap StretchIbox2KvKviTb \
     "PC=$(python3 -c 'from strap_asm import assemble; print(assemble(open("programs/ibox2_kv_kvi.strap").read()).symtab["I0210"]//32)')"
 
+run "IBOX-4 progressive index V+ICR / V-I (jb_ax4b, encoding)" python3 verify_ibox4_prog_ix_v_listing.py
+# Chosen by measurement: uses KC and the shared progressive-index path,
+# both shown unreachable by a combined nine-way injection.  KC comparing
+# always HIGH, and progressiveIndex never advancing the value, each halt
+# it.  Note the injections must be pointed the RIGHT WAY -- the block
+# asserts EQUAL, so "always equal" cannot fail it.
+run "IBOX-4 progressive index V+ICR / V-I (KC, SR, progressive value)" ./run_program.sh programs/ibox4_prog_ix_v.strap StretchIbox4ProgIxVTb \
+    "PC=$(python3 -c 'from strap_asm import assemble; print(assemble(open("programs/ibox4_prog_ix_v.strap").read()).symtab["PASS"]//32)')"
+
 run "Program store compare: store then EXECUTE the modified instruction" ./run_program.sh programs/store_then_execute.strap StretchStoreExecTb \
     "RESULT:$(python3 -c 'from strap_asm import assemble; print(assemble(open("programs/store_then_execute.strap").read()).symtab["RESULT"]//64)')=0x20"
 
