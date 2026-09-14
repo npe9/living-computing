@@ -3061,6 +3061,47 @@ hand vectors alone. "Enables" notes the dependency chain.
    all. Each named payload cost exactly one construction site in
    StretchDecode.bsv. Suite unchanged at 242 sections throughout.
 
+   THE NEXT BLOCK IS SCOUTED: IBOX-1 pp.36-37, routine IBP14A-IBP45 at
+   004565.00-004637.00. Two adjacent test groups, "SV-IC" (add to value
+   immediate + count) and "V-ICR", and between them they use SC, SR,
+   V-IC, V-ICR, V+I, LV, SV and SX -- including SC, which is one of the
+   seven still open, and the V-ICR refill path which is V+CR's mirror.
+
+   ITS STRUCTURE IS NEW TO THIS SUITE and is the reason to want it.
+   IBP30-IBP32 is a SELF-MODIFYING REFILL TEST with no SERS at all:
+
+     IBP30  LX,$X1,IBPA3          set up the control word
+            V-ICR,$X1,2.0         "SHOULD REFILL"
+            SX,$X1,IBP31          store the refilled index word OVER
+                                  the two instructions at IBP31
+     IBP31  BE,$                  which are branch-to-self -- a HANG --
+            BE,$                  until the store overwrites them with
+                                  NOP and B,IBP33 (the listing prints
+                                  both the before and the after)
+     IBP32  BD,$                  "HANG UP"
+
+   So a refill that does not happen does not report an error; THE
+   MACHINE STOPS. That is a failure mode nothing transcribed has: every
+   block so far halts at SERS, which a testbench sees as PC=1416. A
+   hang shows as PC stuck somewhere else entirely, and the PC=0 lesson
+   from the IBOX-2 bridge is the neighbouring case -- three distinct
+   failure signatures now, each meaning something different.
+
+   CONSTANTS TO COLLECT BEFORE TRANSCRIBING (addresses read off the
+   code column, values not yet read):
+
+     IBPA3   004620   XW,IBPA3+.34,1,IBPA4   prints 4620.42 00 000020.11 91
+     IBPA4   004621   NOP,(8)525252.0        prints 525252.30 00
+     IBPA5   004650   (the second control word, value not yet read)
+     ISTOY   006105   scratch, target of SC and SR
+     ISTOZ   006104   scratch
+     IBPSTO  004647   scratch
+     COM04   006106   the constant V+ adds
+
+   The accumulate-and-compare group on p.36 shares those scratch cells,
+   so the two groups want transcribing together or not at all -- p.36's
+   checks are not inline, and a slice of it alone would assert nothing.
+
    THE GAP LIST RE-MEASURED AFTER THE BLOCK LANDED (2026-09-14), one
    suite run for seven answers:
 
