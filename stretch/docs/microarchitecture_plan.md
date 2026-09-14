@@ -3224,21 +3224,39 @@ hand vectors alone. "Enables" notes the dependency chain.
      CLOSED   KCI           ibox1_kci         pp.40-41 + p.28 constants
      CLOSED   V-I (direct)  ibox1_vmi         pp.35-36
      CLOSED   V+CR refill   ibox1_vpicr       p.35 + p.34 constants
-     BLOCKED  LR            -- see below; not a to-do
+     CLOSED   LR            ibox3_lr          jb_ax3a p.200 + p.213/214
 
-   LR IS BLOCKED, NOT UNSTARTED, and the distinction is worth writing
-   down so it is not re-scouted. The deck's only LR test is IBQ30 at
-   005074.00, "LOAD + STORE REFILL IN INTERNAL MEMORY", and every one
-   of its groups round-trips the refill through the INDICATOR REGISTER:
-   `SR,$X1,$IND+.32` then `LR,$X1,$IND+.32`. Word 11's upper half is
-   thirty-two live indicators (XPU, ZM, XL, XE, XH, AL/AE/AH, NM...)
-   and the deck is using them as scratch. The model keeps word 11
-   read-only through generic STORE -- the same documented limit that
-   makes `ibox1_p43_p51_span.strap` start at 5123.00 rather than at
-   the LR group above it. Closing LR means making thirty-two indicator
-   bits generally writable by any program, which is a model change with
-   real blast radius and is a decision to take deliberately, not a
-   quiet next step.
+   AND LR'S ENTRY IS A CORRECTION OF THIS ONE. What stood here said LR
+   was BLOCKED, on the grounds that I-Box 1's only LR test -- IBQ30 at
+   005074.00, "LOAD + STORE REFILL IN INTERNAL MEMORY" -- round-trips
+   the refill through the INDICATOR REGISTER (`SR,$X1,$IND+.32` then
+   `LR,$X1,$IND+.32`), using thirty-two live indicators as scratch,
+   which this model keeps read-only. All of that is true, and none of
+   it is a fact about LR.
+
+   I-BOX 3'S ROUTINE 1230, "TEST LOAD REFILL AND LOAD REFILL IMMED.",
+   tests the same operation with no indicator register in it anywhere,
+   and needs nothing the model did not already have. Two blocks
+   transcribed (I301/I302, p.200, 032636.40-032661.40); 43 rows matched
+   the listing first try; it runs; and the nine-way injection's own LR
+   fault -- "LR loads a zeroed half-word" -- halts it at SERS.
+
+   THE RULE: A TAPE'S TEST FOR AN OPERATION IS NOT THE ONLY TEST FOR
+   IT. "Blocked" is a claim about a diagnostic, and it should never be
+   promoted to a claim about the instruction without looking at the
+   other tapes first. I-Box 3's own routine list (front matter, p.2)
+   names what each routine covers in one line each; reading it costs
+   one page render and would have prevented the wrong entry.
+
+   What routine 1230 checks, which is more than "does LR load": the
+   same LR runs three times per block, from EXTERNAL memory, from INDEX
+   CORE STORAGE ($X1, word 17) and from INTERNAL memory ($R, word 9),
+   so a load path or a store path that worked only on real storage
+   fails here and only here. And the two constants are cut to match:
+   BIT63 is `XW,0,0,1` (refill 1) while BIT17 is `XW,(8)1.00,0,0`
+   (value 1.00, whose top 18 bits are 1) -- one a refill field, the
+   other a value field, the same eighteen bits, so the whole check
+   is expressible in KV value comparisons.
 
    THE C-I BLOCK FOUND SOMETHING ABOUT THE HARNESS, not about the
    model, and it is the most useful result of the five. Injected with a

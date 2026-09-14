@@ -1193,6 +1193,22 @@ run "IBOX-1 V+ICR (ja_ax1a, encoding)" python3 verify_ibox1_vpicr_listing.py
 run "IBOX-1 V+ICR (refill, executed as two instructions)" ./run_program.sh programs/ibox1_vpicr.strap StretchIbox1VpicrTb \
     "PC=$(python3 -c 'from strap_asm import assemble; print(assemble(open("programs/ibox1_vpicr.strap").read()).symtab["PASS"]//32)')"
 
+run "IBOX-3 LR (jb_ax3a, encoding)" python3 verify_ibox3_lr_listing.py
+# Closes LR, the last of the nine index operations the combined
+# injection found unreachable -- and CORRECTS a claim: LR was recorded
+# as blocked because I-Box 1's only LR test round-trips the refill
+# through the indicator register, which this model keeps read-only.
+# I-Box 3's routine 1230 tests the same operation with no indicator
+# register in it at all.  A tape's test for an operation is not the
+# only test for it.
+# Each block runs the same LR three times -- from external memory, from
+# index core storage ($X1, word 17) and from internal memory ($R,
+# word 9) -- so an LR that worked only on real storage fails here.
+# Measured: LR loading a zeroed half-word (the nine-way injection's own
+# LR fault) halts at SERS, PC=1416.
+run "IBOX-3 LR (load refill from all three memories)" ./run_program.sh programs/ibox3_lr.strap StretchIbox3LrTb \
+    "PC=$(python3 -c 'from strap_asm import assemble; print(assemble(open("programs/ibox3_lr.strap").read()).symtab["PASS"]//32)')"
+
 run "Program store compare: store then EXECUTE the modified instruction" ./run_program.sh programs/store_then_execute.strap StretchStoreExecTb \
     "RESULT:$(python3 -c 'from strap_asm import assemble; print(assemble(open("programs/store_then_execute.strap").read()).symtab["RESULT"]//64)')=0x20"
 

@@ -1,0 +1,109 @@
+! jb_ax3a "IBOX-3", routine 1230 "TEST LOAD REFILL AND LOAD REFILL
+! IMMED.", blocks I301 and I302, p.200 (octal 032636.40-032661.40):
+! LOAD REFILL from all three memories.
+!
+! WHY THIS BLOCK, AND A CORRECTION.  LR was the last of the nine index
+! operations a combined injection showed the suite could not reach, and
+! the previous entry in the plan recorded it as BLOCKED: I-Box 1's only
+! LR test round-trips the refill through the INDICATOR register
+! (SR,$X1,$IND+.32 then LR,$X1,$IND+.32), which this model does not
+! honor.  That was true of I-Box 1 and wrong as a statement about LR.
+! I-Box 3's routine 1230 tests exactly the same operation with no
+! indicator register anywhere in it, and needs nothing the model does
+! not already have.  The lesson is narrow and worth keeping: A TAPE'S
+! TEST FOR AN OPERATION IS NOT THE ONLY TEST FOR IT.
+!
+! WHAT "ALL THREE MEMORIES" MEANS, and why it is the point.  Each block
+! performs the same LR three times over, from three different places:
+!
+!   LR,$X0,BIT17    external memory -- an ordinary storage word
+!   LR,$X0,$X1      index core storage -- word 17, a register
+!   LR,$X0,$R       internal memory -- word 9, the accumulator's right
+!
+! so an LR that worked only on real storage, or a store path that
+! silently dropped writes to the register words, fails here and only
+! here.
+!
+! HOW IT CHECKS ITSELF, which needs one arithmetic observation.  The
+! reference is built by SR: SR,$X0,$X2 writes $X0's REFILL into bits
+! 0-17 of X2's half-word, i.e. into the top 18 bits of X2's VALUE
+! field.  Every later check re-stores the loaded refill into I30ST the
+! same way and compares with KV, which compares VALUE fields.  So the
+! test is "the refill that came back equals the refill that went in",
+! expressed entirely in value comparisons.
+!
+! AND THE TWO CONSTANTS ARE CHOSEN TO MATCH, which is what makes the
+! block work at all:
+!
+!   BIT63  XW,0,0,1        refill = 1
+!   BIT17  XW,(8)1.00,0,0  value = 1.00, whose TOP 18 BITS are 1
+!
+! BIT63 seeds the refill through SR; BIT17 is the word LR reads it back
+! from, and LR takes bits 0-17 of the half-word.  One is a refill field,
+! the other a value field, and they are the same eighteen bits.  I302
+! repeats it one bit over: BIT62's refill is 2 and BIT16's value is
+! 2.00, whose top 18 bits are 2.
+!
+! -- SSIP framework substitutes: SERS (octal 1304) -> FAIL halt,
+! -- SEN (octal 1310) -> scratch for SIC.
+        SLC, (8)1304.0
+SERS    BEW, $
+        SLC, (8)1310.0
+SEN     DD(BU,64,8), 0
+
+! I30ST is "DR%BU,64,8,%1%" in the listing -- a RESERVED word, a
+! pseudo-op this assembler does not have.  A zeroed word is the same
+! thing here: the block stores to it before every read.
+        SLC, (8)33301.0
+I30ST   DD(BU,64,8), 0
+
+        SLC, (8)33351.0
+BIT16   XW, (8)2.00, 0, 0
+BIT17   XW, (8)1.00, 0, 0
+
+        SLC, (8)33427.0
+BIT62   XW, 0, 0, 2
+BIT63   XW, 0, 0, 1
+
+        SLC, (8)32636.40
+I301    LX, $X0, BIT63                       ! operand used in LR
+        BD, $+.32
+        SR, $X0, $X1                         ! place in index storage
+        SR, $X0, $R                          ! place in internal reg
+        SR, $X0, $X2                         ! set up X2 for KV
+        LR, $X0, BIT17
+        SR, $X0, I30ST
+        KV, $X2, I30ST
+        SIC, SEN                             ! failed to load bit 63
+        BZXE, SERS                           ! from ext mem
+        LR, $X0, $X1
+        SR, $X0, I30ST
+        KV, $X2, I30ST
+        SIC, SEN                             ! failed to load bit 63
+        BZXE, SERS                           ! from index storage
+        LR, $X0, $R
+        SR, $X0, I30ST
+        KV, $X2, I30ST
+        SIC, SEN                             ! failed to load bit 63
+        BZXE, SERS                           ! from internal reg
+I302    LX, $X0, BIT62                       ! operand used in LR
+        SR, $X0, $X1                         ! place in index storage
+        SR, $X0, $R                          ! place in internal reg
+        SR, $X0, $X2                         ! set up X2 for KV
+        LR, $X0, BIT16
+        SR, $X0, I30ST
+        KV, $X2, I30ST
+        SIC, SEN                             ! failed to load bit 62
+        BZXE, SERS                           ! from ext mem
+        LR, $X0, $X1
+        SR, $X0, I30ST
+        KV, $X2, I30ST
+        SIC, SEN                             ! failed to load bit 62
+        BZXE, SERS                           ! from index storage
+        LR, $X0, $R
+        SR, $X0, I30ST
+        KV, $X2, I30ST
+        SIC, SEN                             ! failed to load bit 62
+        BZXE, SERS                           ! from internal reg
+PASS    BEW, $
+        END, I301
