@@ -3730,7 +3730,26 @@ hand vectors alone. "Enables" notes the dependency chain.
    V-IC, V-ICR AND LRI ARE CLOSED (ibox1_vic_chain, ja_ax1a pp.36-37
    routine IBP14A-IBP29; ibox1_vicr_chain, p.37 routine IBP30-IBP53;
    ibox3_lri, jb_ax3a pp.210-212 routine 1230 blocks I3021-I3027).
-   Two remain: LVNI and V+IC.  KVNI is closed (ibox1_kvni, ja_ax1a
+   ONE REMAINS: V+IC.  LVNI is closed (ibox1_lvni, ja_ax1a p.30 routine
+   IBH30-IBH40), the SMALLEST self-checking block in the suite --
+   twenty half-words with no constants outside itself, because the V+
+   operand IBH39 is a BD,$ sitting INSIDE the block, used as data.
+
+   AND IT GAVE THE SHARPEST "REACHES PASS IS NOT A CHECK" YET, the
+   same lesson ibox1_cmi_chain taught but arriving from the opposite
+   direction. The block works BECAUSE LVNI's result is negative: each
+   test loads minus an immediate, adds that one fixed positive
+   half-word, and the four sums step DOWN by half-words, walking back
+   through the chain. Make LVNI load PLUS -- that is, make it LVI --
+   and every sum comes out too LARGE, so IBH34 becomes a branch to
+   004312.00, which is IBH40, THE EXIT. The block jumps past its own
+   chain and halts normally: all three manufactured words wrong, PC
+   check green. There the chain ended two words SHORT of the next test;
+   here a too-large sum leaps FORWARD onto the exit. Both times the
+   only thing that sees it is a check on the block's own manufactured
+   output.
+
+   KVNI is closed (ibox1_kvni, ja_ax1a
    p.40 routine IKVNI-IKVNI8), found by the map in ONE page render: the
    routine list placed it between the C-I block (pp.38-39) and the KCI
    block (pp.40-41), both already transcribed.

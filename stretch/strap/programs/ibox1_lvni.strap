@@ -1,0 +1,71 @@
+! ja_ax1a "IBOX-1", routine IBH30-IBH40, p.30 (octal 004301.00-
+! 004312.40): "%LVNI% **** LOAD VALUE NEGATIVE IMMEDIATE".
+!
+! WHY THIS BLOCK.  LVNI was one of eight modeled index operations a
+! coverage screen found in ZERO suite programs, all eight then
+! confirmed by poisoning them at once.  ja_ax1a's routine list (pp.3-4)
+! gives it one line, "Same as LV & SV", and because that list is in
+! PROGRAM ORDER it placed the block before V+IC (p.33) and after the KC
+! section -- one page render found it.
+!
+! IT IS THE SMALLEST SELF-CHECKING BLOCK IN THE SUITE, twenty
+! half-words with no constants outside itself, and it works because
+! LVNI's result is NEGATIVE.  Each test loads minus an immediate, adds
+! one fixed positive half-word, and stores the sum over a
+! branch-to-self:
+!
+!   LVNI,$X1,<n>   value = -<n>
+!   V+,$X1,IBH39   value += IBH39, which is 4311.44 -- and IBH39 is a
+!                  BD,$ sitting INSIDE the block, used as data
+!   SV,$X1,IBH3x   the sum becomes a branch
+!
+! So the arithmetic only lands on a valid link if the sign is right: a
+! LVNI that loaded PLUS the immediate would push every sum past the
+! chain instead of walking back down it.  The four immediates are .32,
+! 1.0, 1.32 and 2.0 -- half a word, one word, one and a half, two --
+! so the four sums step down by half-words from 4311.04 to 4307.44.
+!
+! THE CHAIN, all four manufactured links on it:
+!
+!   IBH34 -> IBH38 -> IBH36 -> IBH37 -> IBH35 -> IBH40
+!
+! and IBH35 is the one link the block does NOT rewrite: the listing
+! annotates it "REMAINS BD,IBH 40", the exit.  Every target matches the
+! listing's own comments.
+!
+! IBH40's two NOPs are MEANT to be executed; the block ends by falling
+! through them.
+!
+! AND "REACHES PASS" IS NOT A CHECK HERE, which is the opposite of
+! ibox1_vic_chain and ibox1_vpc_chain and had to be measured to find
+! out.  With LVNI made to load PLUS the immediate -- that is, made into
+! LVI -- all four sums come out too LARGE, and the first link, IBH34,
+! becomes a branch to 004312.00, which is IBH40: the exit.  The block
+! branches straight past its own chain and halts normally.  All three
+! manufactured words are wrong and the PC check passes.  The word
+! checks are what catch it, and they are the reason this entry has
+! them.
+
+        SLC, (8)4301.0
+IBH30   LVNI, $X1, 0.32
+        V+, $X1, IBH39
+        SV, $X1, IBH34
+IBH31   LVNI, $X1, 1.0
+        V+, $X1, IBH39
+        SV, $X1, IBH36
+IBH32   LVNI, $X1, 1.32
+        V+, $X1, IBH39
+        SV, $X1, IBH38
+IBH33   LVNI, $X1, 2.0
+        V+, $X1, IBH39
+        SV, $X1, IBH37
+IBH34   BE, $                                ! becomes BD, IBH38
+IBH35   BD, IBH40                            ! remains BD, IBH40
+IBH36   BE, $                                ! becomes BD, IBH37
+IBH37   BE, $                                ! becomes BD, IBH35
+IBH38   BE, $                                ! becomes BD, IBH36
+IBH39   BD, $                                ! also the V+ operand: 4311.44
+IBH40   NOP, (8)777777.0                     ! executed as NOP
+        NOP, (8)777777.0                     ! executed as NOP
+PASS    BEW, $
+        END, IBH30

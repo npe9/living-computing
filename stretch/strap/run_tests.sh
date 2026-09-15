@@ -1388,6 +1388,44 @@ run "IBOX-1 V-ICR chain (refill over a live instruction pair)" ./run_program.sh 
     "PC=$(python3 -c 'from strap_asm import assemble; print(assemble(open("programs/ibox1_vicr_chain.strap").read()).symtab["PASS"]//32)')" \
     $VICR_CHECKS
 
+run "IBOX-1 LVNI (ja_ax1a, encoding)" python3 verify_ibox1_lvni_listing.py
+# LVNI, load value negative immediate, and the seventh of the eight
+# confirmed-uncovered index operations.  The smallest self-checking
+# block in the suite: twenty half-words and no constants outside
+# itself -- the V+ operand IBH39 is a BD,$ sitting INSIDE the block,
+# used as data.
+#
+# It works BECAUSE the result is negative.  Each test loads minus an
+# immediate, adds the one fixed positive half-word, and stores the sum
+# over a branch-to-self; the four immediates (.32, 1.0, 1.32, 2.0) step
+# the four sums DOWN by half-words, walking back through the chain
+# IBH34 -> IBH38 -> IBH36 -> IBH37 -> IBH35 -> IBH40.  IBH35 is the one
+# link never rewritten: the listing annotates it "REMAINS BD,IBH 40".
+#
+# "REACHES PASS" IS NOT A CHECK HERE, and this is the clearest case of
+# that in the suite.  With LVNI made to load PLUS -- that is, made into
+# LVI -- every sum comes out too large and IBH34 becomes a branch to
+# 004312.00, which is IBH40, THE EXIT.  The block jumps past its own
+# chain and halts normally: all three manufactured words are wrong and
+# the PC check still passes.  Measured, not assumed, and the reason the
+# word checks below exist.
+LVNI_CHECKS=$(python3 -c 'from strap_asm import assemble
+p = assemble(open("programs/ibox1_lvni.strap").read())
+ha = lambda n: p.symtab[n] // 32
+bd = lambda n: ((ha(n) >> 1) << 14) | ((ha(n) & 1) << 13) | (0b001 << 10)
+words = {}
+for link, tgt in (("IBH34", "IBH38"), ("IBH36", "IBH37"),
+                  ("IBH37", "IBH35"), ("IBH38", "IBH36")):
+    w, half = ha(link) >> 1, ha(link) & 1
+    base = p.words.get(w, 0)
+    hi, lo = words.get(w, ((base >> 32) & 0xffffffff, base & 0xffffffff))
+    words[w] = (bd(tgt), lo) if half == 0 else (hi, bd(tgt))
+print(" ".join("W%o:%d=0x%016x" % (w, w, (words[w][0] << 32) | words[w][1])
+               for w in sorted(words)))')
+run "IBOX-1 LVNI (load value negative immediate)" ./run_program.sh programs/ibox1_lvni.strap StretchIbox1LvniTb \
+    "PC=$(python3 -c 'from strap_asm import assemble; print(assemble(open("programs/ibox1_lvni.strap").read()).symtab["PASS"]//32)')" \
+    $LVNI_CHECKS
+
 run "IBOX-1 KVNI (ja_ax1a, encoding)" python3 verify_ibox1_kvni_listing.py
 # KVNI, compare value NEGATIVE immediate -- the sign-flipped twin of
 # KVI (closed by ibox2_kv_kvi) and the sixth of the eight
