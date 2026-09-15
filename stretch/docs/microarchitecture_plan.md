@@ -3820,6 +3820,34 @@ hand vectors alone. "Enables" notes the dependency chain.
    that routine is precisely the thing that would drive and then guard
    it.
 
+   HOW TEST 1 IS BUILT, decoded far enough that the next session can
+   start on it rather than on the arithmetic. Its constants are the
+   BIT table at 013054 (BIT_n = a 64-bit word with IBM bit n set, the
+   same shape ibox3_lr uses), and which FIELD each one lands in is the
+   whole trick:
+
+     BIT59  IBM bit 59 -> the REFILL field = 020   the seed
+     BIT13  IBM bit 13 -> the VALUE  field = 020   the expected result
+     BIT14  IBM bit 14 -> the VALUE  field = 010   a decoy location
+     BIT16  IBM bit 16 -> the VALUE  field = 002   a decoy location
+
+   So LX,$X15,BIT59 seeds $X15's refill with 020, R,$X15 must refill
+   from word 020, and KVI then checks the value that arrived. The
+   decoys are how the sweep says WHICH location was used -- hence the
+   error text "REFILLED X15 FROM LOCN 10 INSTEAD OF LOCN 20".
+
+   AND THE SETUP PLANTS ITS MARKERS IN THE SPECIAL REGISTERS. SX,$X0,8
+   writes an index word into word 8, SV,$X0,2 into word 2, SV,$X1,1
+   into word 1 -- which are $L (accumulator left), IA (interruption
+   address) and IT (interval timer). That is deliberate, because words
+   1-15 are exactly the range test 2's "NOPING IF RF IS FROM 1 TO 15"
+   is about. It also means the block leans on StretchStorage's
+   special-register write paths, several of which this model
+   deliberately simplifies (the interval timer is fully writable here
+   where real hardware splits timer from clock; word 11 is read-only
+   through ordinary stores). Those simplifications need checking
+   against this block before its results are read.
+
    A SECOND SEMANTIC THE MODEL DOES NOT IMPLEMENT, from the same
    header: "NOPING IF RF IS FROM 1 TO 15". Words 1-15 are the special registers, and
    the deck expects a refill whose address falls there to be
