@@ -41,15 +41,42 @@
 //
 // Also checked, and the reason this file is named for SVA: the model's
 // own svaReplaceAddr -- the function dirIndexOp calls -- is probed at
-// every half-word by substituting an all-zero and an all-one value and
-// XORing the results, which marks exactly the bits it replaced.  That
-// pins the width, that the replaced field is the TOP of the half-word,
-// and that the bits below it survive.  And a full-word length tag must
-// not decode as any half-length format.
+// every half-word, in two ways that catch different things.
+//
+//   (a) EXTENT.  Substitute an all-zero and an all-one value and XOR
+//       the results: the differing bits are exactly the ones replaced.
+//       That pins how many bits move, that they are the TOP of the
+//       half-word, and that the bits below survive.
+//
+//   (b) PRESERVATION.  (a) cancels a CONSTANT clobber outside the
+//       field: returning {v, 8'b0} instead of {v, h[7:0]} gives the
+//       same XOR and passes.  So also check that nothing outside the
+//       bits (a) identified differs from the original half-word.  The
+//       transcribed blocks cannot see this either -- they read back
+//       with LX then KV, which compares the value field, bits 0-23,
+//       and never looks at the operation byte.
+//
+//   (c) ORDER.  (a) is BLIND TO A PERMUTATION -- all-zero and all-one
+//       are symmetric under any reordering of the value field, so
+//       swapping two of its bits passes it, and passes the whole
+//       277-section suite besides: the transcribed blocks test IBM
+//       bits 22-23 (ibox3_sva_full) and all-ones patterns over 0-17
+//       (ibox3_sva_fp, _dix), where a swap of two ones is invisible.
+//       So walk a ONE-HOT value through IBM bits 0-23 and require the
+//       results to move exactly one bit each, to start at the
+//       half-word's top bit, to decrease strictly, and to stop after
+//       the width (a).  Those four together force the mapping to be
+//       the identity, top-down, without writing the mapping here --
+//       which is the whole point, since restating it would only
+//       compare a copy of the formula with another copy.  (a) cancels
+//       a clobber here too, for the same reason -- base and the
+//       one-hot result both carry it -- which is why (b) is separate.
+//
+// And a full-word length tag must not decode as any half-length format.
 //
 // NOTE ON WHAT THE DECODE SWEEP DOES AND DOES NOT PROTECT.  Since SVA
 // no longer consults decodeHalfWord, the format check below is not
-// guarding SVA's width -- svaReplaceAddr's own probe is.  What it
+// guarding SVA's width -- svaReplaceAddr's own probes are.  What it
 // guards is the decode tables' agreement with the deck's tag, which
 // fetch and execute do depend on, and which is what made the old
 // decode-based width wrong in the first place.
@@ -81,12 +108,48 @@ module mkStretchSvaWidthSweep(Empty);
   Reg#(Bit#(32)) seenDix <- mkReg(0);
   Reg#(Bit#(32)) seenFp  <- mkReg(0);
 
+  // The one-hot walk runs one step per cycle rather than unrolled.
+  // Twenty-four flat copies of svaReplaceAddr plus the comparison chain
+  // is a lot of combinational logic for bsc to elaborate 2^15 times
+  // over -- the unrolled version did not finish compiling in ten
+  // minutes.  Sequenced, it is one instance and 32768*25 cycles, which
+  // Bluesim does in under a second.
+  Reg#(Bit#(5))  k         <- mkReg(0);
+  Reg#(Bit#(32)) walkPrev  <- mkReg(32'hffffffff);
+  Reg#(Bit#(8))  walkN     <- mkReg(0);
+  Reg#(Bool)     walkOk    <- mkReg(True);
+  Reg#(Bool)     walkEnded <- mkReg(False);
+
   // The deck's table as a width, and as dirIndexOp spells it.
   function Bit#(8) tableWidth(HalfWord32 hw);
     return (hw[7:4] == 4'b1000) ? 24 : (hw[5:4] == 2'b10) ? 18 : 19;
   endfunction
 
-  rule sweep (i < 32768);
+  // ORDER, one step per cycle.  Walk a one-hot value through IBM bits
+  // 0-23 (v[23] is IBM bit 0) and require: one bit moves per step, the
+  // first lands on the half-word's top bit, each lands strictly below
+  // the last, and the in-field steps are a PREFIX whose length is the
+  // width.  Together those force the identity mapping, top-down,
+  // without writing the mapping down here -- which is the point, since
+  // restating it would only compare a copy of the formula with a copy.
+  rule walk (i < 32768 && k < 24);
+    HalfWord32 hw = (i[14] == 0) ? {18'b0, i[13:0]} : {18'h3ffff, i[13:0]};
+    Bit#(32) f = svaReplaceAddr(hw, 24'b1 << (23 - k)) ^ svaReplaceAddr(hw, 24'h000000);
+    if (f == 0)
+      walkEnded <= True;                                    // outside the field
+    else begin
+      Bool bad0 = walkEnded                                 // must be a prefix
+                || ((f & (f - 1)) != 0)                     // exactly one bit
+                || (f >= walkPrev)                          // strictly decreasing
+                || (k == 0 && f != 32'h80000000);           // starts at the top
+      if (bad0) walkOk <= False;
+      walkPrev <= f;
+      walkN    <= walkN + 1;
+    end
+    k <= k + 1;
+  endrule
+
+  rule sweep (i < 32768 && k == 24);
     HalfWord32 hw = (i[14] == 0) ? {18'b0, i[13:0]} : {18'h3ffff, i[13:0]};
     DecodedInstr d = decodeHalfWord(hw);
 
@@ -113,13 +176,14 @@ module mkStretchSvaWidthSweep(Empty);
       ok = False; why = "full-word tag (bits 24-27 = 1000) decoded as a half-length format";
     end
 
-    // THE MODEL'S OWN REPLACEMENT, probed rather than restated.
-    // Substituting an all-zero and an all-one value and XORing the two
-    // results marks exactly the bits svaReplaceAddr replaced, so this
-    // checks three things at once: how many bits move, that they are
-    // the TOP bits of the half-word, and that everything below them is
-    // preserved. Comparing a copy of the formula against another copy
-    // of the formula, which is what stood here first, checks nothing.
+    // EXTENT.  Substituting an all-zero and an all-one value and XORing
+    // the results marks exactly the bits svaReplaceAddr replaced: how
+    // many move, and that they are the TOP of the half-word.  Probed,
+    // not restated -- comparing a copy of the formula against another
+    // copy of the formula, which is what stood here first, checks
+    // nothing.  What this CANNOT see is a constant clobber below the
+    // field (it cancels) or a permutation within it (all-zero and
+    // all-one are symmetric under reordering), hence the next two.
     Bit#(32) moved = svaReplaceAddr(hw, 24'h000000) ^ svaReplaceAddr(hw, 24'hffffff);
     Bit#(8)  t     = tableWidth(hw);
     Bit#(32) want  = (t == 24) ? 32'hffffff00    // bits 0-23
@@ -128,6 +192,23 @@ module mkStretchSvaWidthSweep(Empty);
     if (moved != want) begin
       ok = False; why = "svaReplaceAddr moved the wrong bits for this tag";
     end
+
+    // PRESERVATION.  Everything OUTSIDE the bits the extent probe
+    // identified must come through untouched.  Derived from `moved`
+    // rather than by restating where the field ends, and needed
+    // because a constant clobber cancels out of both XOR probes.
+    if (((svaReplaceAddr(hw, 24'ha5c39e) ^ hw) & ~moved) != 0) begin
+      ok = False; why = "svaReplaceAddr changed bits outside the replaced field";
+    end
+
+    // ORDER: the verdict of the 24 walk steps that just ran.
+    if (!walkOk) begin
+      ok = False; why = "one-hot walk: value bits are not placed top-down, in order";
+    end else if (walkN != t) begin
+      ok = False; why = "one-hot walk: wrong number of value bits reach the half-word";
+    end
+    k <= 0; walkPrev <= 32'hffffffff; walkN <= 0;
+    walkOk <= True; walkEnded <= False;
 
     // Coverage counters, so a decode that silently stopped matching
     // anything cannot pass this by classifying nothing.

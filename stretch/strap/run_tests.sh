@@ -113,15 +113,37 @@ run "bsv smoke test (make run)" make run
 # about which protects what.
 #
 # (a) It probes svaReplaceAddr itself -- the function dirIndexOp calls
-# -- at every half-word, by substituting an all-zero and an all-one
-# value and XORing the results to mark exactly the bits replaced. That
-# pins the width, that the field is the TOP of the half-word, and that
-# the bits below survive. This is the only check anywhere that can see
-# the change: the new rule is a strict superset of the old (every
+# -- at every half-word, in three ways, because one probe turned out to
+# check much less than it looked like:
+#
+#   EXTENT        substitute an all-zero and an all-one value, XOR the
+#                 results: the differing bits are the ones replaced.
+#   PRESERVATION  nothing OUTSIDE those bits may differ from the
+#                 original half-word.  Needed because a constant
+#                 clobber CANCELS out of every XOR probe, and the
+#                 transcribed blocks read back with LX then KV, which
+#                 compares the value field and never sees the op byte.
+#   ORDER         walk a one-hot value through IBM bits 0-23; require
+#                 one bit per step, the first at the half-word's top
+#                 bit, strictly decreasing, and a prefix as long as the
+#                 width.  Needed because EXTENT is blind to a
+#                 PERMUTATION -- all-zero and all-one are symmetric
+#                 under reordering.
+#
+# MEASURED, and the reason all three exist: swapping two bits of the
+# value field passes the extent probe AND all 277 sections.  The
+# transcribed blocks test IBM bits 22-23 (ibox3_sva_full) and all-ones
+# patterns over 0-17 (ibox3_sva_fp, _dix), where a swap of two ones is
+# invisible.  Negative controls, each firing on its own probe: the
+# permutation reports "not placed top-down, in order"; returning
+# {v, 8'b0} reports "changed bits outside the replaced field"; putting
+# the decode-based class test back reports the 768 mismatches again.
+#
+# This is also the only check anywhere that can see the width change
+# itself: the bit rule is a strict superset of the decode rule (every
 # fpop_* ends in 10), so no ASSIGNED operation code moves and every
-# transcribed block passes either way. A green suite is not evidence
-# for this change; the sweep is. Negative control: putting the
-# decode-based class test back reports the 768 mismatches again.
+# transcribed block passes either way.  A green suite is not evidence
+# for that change; the sweep is.
 #
 # (b) It checks that every format decodeHalfWord DOES recognize sits
 # inside the tag class p.140 assigns it. That is NOT protecting SVA any

@@ -3158,13 +3158,13 @@ hand vectors alone. "Enables" notes the dependency chain.
    the injection broke it" rather than as a puzzle.
 
    Seven open gaps become five: SC and C+I are closed, leaving LR,
-   KCI, C-I, V-I (the direct opcode) and V+CR's refill.
+   KCI, C-I, V-I (the direct opcode) and V+ICR's refill.
 
    THE NEXT BLOCK IS SCOUTED: IBOX-1 pp.36-37, routine IBP14A-IBP45 at
    004565.00-004637.00. Two adjacent test groups, "SV-IC" (add to value
    immediate + count) and "V-ICR", and between them they use SC, SR,
    V-IC, V-ICR, V+I, LV, SV and SX -- including SC, which is one of the
-   seven still open, and the V-ICR refill path which is V+CR's mirror.
+   seven still open, and the V-ICR refill path which is V+ICR's mirror.
 
    ITS STRUCTURE IS NEW TO THIS SUITE and is the reason to want it.
    IBP30-IBP32 is a SELF-MODIFYING REFILL TEST with no SERS at all:
@@ -3213,7 +3213,7 @@ hand vectors alone. "Enables" notes the dependency chain.
               KCI           compare count immediate
               C+I, C-I      count immediate arithmetic
               V-I (direct)  the ImmIndex opcode, NOT the VFL modifier
-              V+CR          its refill path
+              V+ICR         its refill path
 
    AND THE SEVEN ARE NOW SIX CLOSED AND ONE BLOCKED (2026-09-14, five
    blocks transcribed from ja_ax1a pp.34-41, all of them matching the
@@ -3223,7 +3223,7 @@ hand vectors alone. "Enables" notes the dependency chain.
      CLOSED   C-I           ibox1_cmi_chain   pp.38-39
      CLOSED   KCI           ibox1_kci         pp.40-41 + p.28 constants
      CLOSED   V-I (direct)  ibox1_vmi         pp.35-36
-     CLOSED   V+CR refill   ibox1_vpicr       p.35 + p.34 constants
+     CLOSED   V+ICR refill  ibox1_vpicr       p.35 + p.34 constants
      CLOSED   LR            ibox3_lr          jb_ax3a p.200 + p.213/214
 
    AND LR'S ENTRY IS A CORRECTION OF THIS ONE. What stood here said LR
@@ -3336,6 +3336,43 @@ hand vectors alone. "Enables" notes the dependency chain.
    bits p.140 names, and its width no longer depends on how complete
    this model's operation tables are -- a dependency that was invisible
    until the table made it askable.
+
+   AND THE SWEEP ITSELF NEEDED THREE PROBES, NOT ONE, which only came
+   out by attacking it. The extent probe below (all-zero XOR all-one)
+   is blind to two whole classes of error, and so is the entire
+   transcribed suite:
+
+     A PERMUTATION of the value field. All-zero and all-one are
+     symmetric under any reordering, so the probe cancels. MEASURED:
+     swapping IBM bits 0 and 1 passes all 277 sections. The blocks test
+     IBM bits 22-23 (ibox3_sva_full) and all-ones patterns over 0-17
+     (ibox3_sva_fp, _dix), where swapping two ones changes nothing.
+     Closed by walking a ONE-HOT value through bits 0-23 and requiring
+     one bit per step, the first at the half-word's top bit, strictly
+     decreasing, and a prefix as long as the width -- four conditions
+     that force the identity mapping without writing it down.
+
+     A CONSTANT CLOBBER below the field. Returning {v, 8'b0} instead of
+     {v, h[7:0]} cancels out of every XOR probe, including the one-hot
+     walk (base and result both carry it). The blocks cannot see it
+     either: they read back with LX then KV, which compares the value
+     field, bits 0-23, and never looks at the operation byte. Closed by
+     checking that nothing outside the bits the extent probe identified
+     differs from the original half-word.
+
+   Each has its own negative control and each fires on its own probe.
+   The general shape is worth keeping: A PROBE THAT CANCELS THE ERROR
+   IT IS MEANT TO CATCH LOOKS EXACTLY LIKE A PASSING ONE, and symmetric
+   inputs (all-zero, all-one) cancel more than they appear to.
+
+   TWO MECHANICAL NOTES FROM BUILDING IT. The first version unrolled 24
+   copies of svaReplaceAddr per half-word and bsc did not finish
+   elaborating in ten minutes; sequenced one step per cycle it is one
+   instance, 32768*25 cycles, and compiles in seconds. And an "applied,
+   and it passes" result was once the UNMODIFIED file passing: a `&&`
+   chain with a bad relative path short-circuited before the edit, and
+   only the trailing command ran. Absolute paths, and check that an
+   edit actually landed before reading its result.
 
    AND THE CHANGE ITSELF HAS A TEST, which took care to arrange. The
    new rule is a strict SUPERSET of the old -- every fpop_* ends in 10
@@ -3645,6 +3682,37 @@ hand vectors alone. "Enables" notes the dependency chain.
    CANDIDATE, not a gap; LC's count of 941 in the same table is a false
    positive the other way (it matches inside BLC and $LC), which is the
    same lesson from the opposite direction.
+
+   RE-SCREENED 2026-09-14, AND THE CORRECTED LIST ABOVE WAS WRONG IN
+   THREE DIFFERENT WAYS. The screen this entry asked for is: take the
+   mnemonic token before the comma and test it for MEMBERSHIP in
+   opcodes.py's own DIR_INDEX_CODES / IMM_INDEX_CODES, so `+` is never
+   a quantifier and BLC/$LC cannot match LC. (That screen gives LC = 2
+   where the broken one gave 941, which is the cleanest evidence it is
+   now right.) Run against the 140 programs run_tests.sh actually
+   references, the modeled index operations at ZERO are:
+
+     V+C, V+CR (direct)   LVNI, LRI, KVNI, V+IC, V-IC, V-ICR (immediate)
+
+   Against the eleven above: eight (KC, KCI, LR, SVA, V-I, C+I, C-I,
+   SC) are now nonzero because they were transcribed -- ordinary
+   staleness. RNX was never a candidate: it is `setOpInvalid`, like
+   V-/V-C/V-CR, and an UNIMPLEMENTED operation is not a coverage gap,
+   it is a different row of the table entirely. And six of the eight
+   found now -- LVNI, LRI, KVNI, V+IC, V-IC, V-ICR -- were OMITTED
+   outright, because the old screen's operation list never reached
+   them. That is the one worth remembering: "the corrected list" read
+   as complete and was not, and nothing about a list of gaps tells you
+   what it failed to look at.
+
+   THE RULE ABOVE STILL BINDS, and for a reason the screen cannot fix:
+   zero occurrences means not WRITTEN, not not EXECUTED, and these
+   decks MANUFACTURE instructions at runtime by storing into
+   instruction fields -- SV into a branch, SVA into an address. A
+   static screen structurally cannot see an operation built that way.
+   So the eight are candidates until one combined poison run says
+   otherwise: green confirms all eight at once, and any failure names
+   an operation assembled at runtime, which would be the better find.
 
    THE KV AND KVI CHECK (p.13, 006713.00-006734.00), chosen over the
    refill sweep for the reasons the entry below records.
