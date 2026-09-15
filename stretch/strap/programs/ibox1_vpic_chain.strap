@@ -1,0 +1,160 @@
+! ja_ax1a "IBOX-1", routine IBM-IBM60, pp.33-34 (octal 004423.00-
+! 004511.00): "%V+IC% **** ADD TO VALUE IMMEDIATE + COUNT".
+!
+! WHY THIS BLOCK.  V+IC was the LAST of eight modeled index operations
+! a coverage screen found in ZERO suite programs, all eight confirmed
+! by poisoning them at once (277 sections still passed).  It is the
+! largest of the eight and was left until last for that reason.
+!
+! IT IS THE ONLY TWO-PHASE BLOCK IN THE SUITE, and that is the point.
+! Every other self-modifying chain here manufactures its links and
+! branches through them.  This one proves the VALUE and the COUNT
+! separately:
+!
+!   PHASE 1 (IBM2-IBM7) runs six V+IC tests.  Each stores the resulting
+!   VALUE over one branch-to-self, and each stores its COUNT into a
+!   plain data word -- IBM29-IBM34, which the listing labels "COUNT
+!   FIELD STORAGE, P-1" through "P-6".  Those are not branches and are
+!   never executed.  IBM8 marks the seam: "PROVE ADD TO VALUE".
+!
+!   PHASE 2 (IBM35-IBM40), the listing's "RESTART OF ROUTINE", reads
+!   each stored count back, adds IBM59 -- a 0.4 constant annotated "TO
+!   CONVERT C TO BD, C" -- and stores the sum over a SECOND set of
+!   branch-to-self links.  IBM23 is the hinge: "TO PROVE COUNTING OPN".
+!
+! So the value chain is IBM9 -> IBM11 -> IBM15 -> IBM21 -> IBM19 ->
+! IBM27 -> IBM23, and the count chain IBM41 -> IBM43 -> IBM45 ->
+! IBM47 -> IBM49 -> IBM51 -> IBM53 -> IBM55 -> IBM60.  Every target
+! matches the listing's own comments.
+!
+! AN ASYMMETRY THAT LOOKS LIKE AN ERROR AND IS NOT.  IBM2 and IBM7
+! apply V+ COM04 before storing their count; IBM3 through IBM6 store
+! the RAW count.  Phase 2 then adds IBM59's 4 to all six alike, so
+! IBM53 and IBM43 end up holding 8 in the low bits and the other four
+! hold 4.  The branch code at IBM bits 19-21 is BE = 000, BD = 001,
+! B = 010, so the first two become B and the rest BD.  All six are
+! unconditional branches to the addresses the listing names, and the
+! chain is unaffected -- which is why the listing calls them all "BD",
+! the same looseness ibox1_vic_chain and ibox1_vpc_chain record.
+!
+! THE SEED.  IBM58 carries value IBM9+.04 and count 04506, so the six
+! immediates (1.0, 2.0, 3.0, 262143., 4.0, 262142. -- the last two are
+! minus one and minus two word) walk the value forward and back while
+! the count falls by one each time, from 04505 down to 04500.
+!
+! IBM60 is where the listing goes on to the next routine with a
+! BD,IBN; this transcription ends there.
+        SLC, (8)6104.0
+ISTOZ   DD(BU,64,8), 0
+ISTOY   DD(BU,64,8), 0
+COM04   VF, 0.04
+
+        SLC, (8)4423.0
+IBM     NOP, -1.0                            ! start V+IC test
+IBM1    LX, $X1, IBM58                       ! set up, V is N, C is P
+IBM2    V+IC, $X1, 1.0                       ! N+1, P-1
+        SV, $X1, IBM9
+        SC, $X1, ISTOY
+        LV, $X1, ISTOY
+        V+, $X1, COM04
+        SV, $X1, IBM29
+        LV, $X1, IBM9
+IBM3    V+IC, $X1, 2.0                       ! N+3, P-2
+        SV, $X1, IBM11
+        SC, $X1, ISTOY
+        LV, $X1, ISTOY
+        SV, $X1, IBM30
+        LV, $X1, IBM11
+IBM4    V+IC, $X1, 3.0                       ! N+6, P-3
+        SV, $X1, IBM15
+        SC, $X1, ISTOY
+        LV, $X1, ISTOY
+        SV, $X1, IBM31
+        LV, $X1, IBM15
+IBM5    V+IC, $X1, 262143.0                  ! N+5, P-4
+        SV, $X1, IBM21
+        SC, $X1, ISTOY
+        LV, $X1, ISTOY
+        SV, $X1, IBM32
+        LV, $X1, IBM21
+IBM6    V+IC, $X1, 4.0                       ! N+9, P-5
+        SV, $X1, IBM19
+        SC, $X1, ISTOY
+        LV, $X1, ISTOY
+        SV, $X1, IBM33
+        LV, $X1, IBM19
+IBM7    V+IC, $X1, 262142.0                  ! N+7, P-6
+        SV, $X1, IBM27
+        SC, $X1, ISTOY
+        LV, $X1, ISTOY
+        V+, $X1, COM04
+        SV, $X1, IBM34
+        LV, $X1, IBM27
+IBM8    NOP, 0.0                             ! prove add to value
+IBM9    BE, $                                ! becomes BD, IBM11, from IBM2A
+IBM10   BD, $
+IBM11   BE, $                                ! becomes BD, IBM15, from IBM3A
+IBM12   BD, $
+IBM13   BD, $
+IBM14   BD, $
+IBM15   BE, $                                ! becomes BD, IBM21, from IBM4A
+IBM16   BD, $
+IBM17   BD, $
+IBM18   BD, $
+IBM19   BE, $                                ! becomes BD, IBM27, from IBM6A
+IBM20   BD, $
+IBM21   BE, $                                ! becomes BD, IBM19, from IBM5A
+IBM22   BD, $
+IBM23   BD, IBM35                            ! to prove counting opn
+IBM24   BD, $
+IBM25   BD, $
+IBM26   BD, $
+IBM27   BE, $                                ! becomes BD, IBM23, from IBM7
+IBM28   BD, $
+IBM29   BE, 0                                ! count field storage, P-1
+IBM30   BE, 0                                ! P-2
+IBM31   BE, 0                                ! P-3
+IBM32   BE, 0                                ! P-4
+IBM33   BE, 0                                ! P-5
+IBM34   BE, 0                                ! P-6
+IBM35   LX, $X1, IBM59                       ! V has .4 to give BD opn code
+        V+, $X1, IBM29
+        SV, $X1, IBM53                       ! P-1 with BD opn code
+IBM36   LX, $X1, IBM59
+        V+, $X1, IBM30                       ! P-2 with BD op code
+        SV, $X1, IBM51
+IBM37   LX, $X1, IBM59
+        V+, $X1, IBM31                       ! P-3 with BD op code
+        SV, $X1, IBM49
+IBM38   LX, $X1, IBM59
+        V+, $X1, IBM32                       ! P-4 with BD op code
+        SV, $X1, IBM47
+IBM39   LX, $X1, IBM59
+        V+, $X1, IBM33                       ! P-5 with BD op code
+        SV, $X1, IBM45
+IBM40   LX, $X1, IBM59
+        V+, $X1, IBM34                       ! P-6 with BD op code
+        SV, $X1, IBM43
+        CNOP
+IBM41   BD, IBM43
+IBM42   BD, $
+IBM43   BE, $                                ! becomes BD, IBM45 from IBM40/7B
+IBM44   BD, $
+IBM45   BE, $                                ! becomes BD, IBM47 from IBM39/6B
+IBM46   BD, $
+IBM47   BE, $                                ! becomes BD, IBM49 from IBM38/5B
+IBM48   BD, $
+IBM49   BE, $                                ! becomes BD, IBM51 from IBM37/4B
+IBM50   BD, $
+IBM51   BE, $                                ! becomes BD, IBM53 from IBM36/3B
+IBM52   BD, $
+IBM53   BE, $                                ! becomes BD, IBM55 from IBM35/2B
+IBM54   BD, $
+IBM55   BD, IBM60                            ! to next test
+IBM56   NOP, -1.0
+IBM57   NOP, -1.0
+IBM58   XW, IBM9+(8)0.04, (8)4506, 0
+IBM59   XW, 0.4, 0, 0                        ! to convert C to BD, C
+IBM60   NOP, -1
+PASS    BEW, $
+        END, IBM

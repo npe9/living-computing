@@ -1258,6 +1258,55 @@ run "IBOX-1 V+C chain (self-modifying branch chain, V+C)" ./run_program.sh progr
     "PC=$(python3 -c 'from strap_asm import assemble; print(assemble(open("programs/ibox1_vpc_chain.strap").read()).symtab["PASS"]//32)')" \
     $VPC_CHECKS
 
+run "IBOX-1 V+IC chain (ja_ax1a, encoding)" python3 verify_ibox1_vpic_chain_listing.py
+# V+IC, and with it the LAST of the eight modeled index operations a
+# coverage screen found in zero suite programs.  The largest of the
+# eight, left until last for that reason.
+#
+# THE ONLY TWO-PHASE BLOCK IN THE SUITE, and that is why it is worth
+# its length.  Every other self-modifying chain here manufactures its
+# links and branches through them.  This one proves the VALUE and the
+# COUNT separately: phase 1 (IBM2-IBM7) stores each V+IC result over
+# one branch-to-self and each COUNT into a plain data word
+# (IBM29-IBM34, "COUNT FIELD STORAGE"), and phase 2 -- the listing's
+# "RESTART OF ROUTINE" -- reads those counts back, adds IBM59 (a 0.4
+# constant annotated "TO CONVERT C TO BD, C") and stores the sums over
+# a SECOND chain.  IBM8 marks the seam, "PROVE ADD TO VALUE"; IBM23 is
+# the hinge, "TO PROVE COUNTING OPN".
+#
+# AN ASYMMETRY THAT READS LIKE AN ERROR AND IS NOT, worked out before
+# the block would assemble sensibly: IBM2 and IBM7 apply V+ COM04
+# before storing their count, IBM3-IBM6 store the RAW count, and phase
+# 2 adds IBM59's 4 to all six alike.  So IBM53 and IBM43 end up with 8
+# in the low bits and the rest with 4 -- and since the branch code at
+# IBM bits 19-21 is BE = 000, BD = 001, B = 010, the first two become B
+# and the rest BD.  All six branch unconditionally to the addresses the
+# listing names, which is why it calls them all "BD".  Confirmed in the
+# run: W4477 and W4504 carry code 010, the other ten 001.
+#
+# Measured, and the signature splits exactly on the phase boundary:
+# with V+IC decrementing the count twice, all SIX value-chain words
+# still pass and all SIX count-chain words fail.
+VPIC_CHECKS=$(python3 -c 'from strap_asm import assemble
+p = assemble(open("programs/ibox1_vpic_chain.strap").read())
+ha = lambda n: p.symtab[n] // 32
+br = lambda t, c: ((ha(t) >> 1) << 14) | ((ha(t) & 1) << 13) | (c << 10)
+chain = [("IBM9", "IBM11", 1), ("IBM11", "IBM15", 1), ("IBM15", "IBM21", 1),
+         ("IBM21", "IBM19", 1), ("IBM19", "IBM27", 1), ("IBM27", "IBM23", 1),
+         ("IBM43", "IBM45", 2), ("IBM45", "IBM47", 1), ("IBM47", "IBM49", 1),
+         ("IBM49", "IBM51", 1), ("IBM51", "IBM53", 1), ("IBM53", "IBM55", 2)]
+words = {}
+for link, tgt, code in chain:
+    w, half = ha(link) >> 1, ha(link) & 1
+    base = p.words.get(w, 0)
+    hi, lo = words.get(w, ((base >> 32) & 0xffffffff, base & 0xffffffff))
+    words[w] = (br(tgt, code), lo) if half == 0 else (hi, br(tgt, code))
+print(" ".join("W%o:%d=0x%016x" % (w, w, (words[w][0] << 32) | words[w][1])
+               for w in sorted(words)))')
+run "IBOX-1 V+IC chain (two phases: value, then count)" ./run_program.sh programs/ibox1_vpic_chain.strap StretchIbox1VpicChainTb \
+    "PC=$(python3 -c 'from strap_asm import assemble; print(assemble(open("programs/ibox1_vpic_chain.strap").read()).symtab["PASS"]//32)')" \
+    $VPIC_CHECKS
+
 run "IBOX-1 V+CR refill (ja_ax1a, encoding)" python3 verify_ibox1_vpcr_refill_listing.py
 # V+CR's first test, the section immediately after V+C on the same page
 # and the fifth of the eight confirmed-uncovered index operations.

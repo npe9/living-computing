@@ -3730,7 +3730,37 @@ hand vectors alone. "Enables" notes the dependency chain.
    V-IC, V-ICR AND LRI ARE CLOSED (ibox1_vic_chain, ja_ax1a pp.36-37
    routine IBP14A-IBP29; ibox1_vicr_chain, p.37 routine IBP30-IBP53;
    ibox3_lri, jb_ax3a pp.210-212 routine 1230 blocks I3021-I3027).
-   ONE REMAINS: V+IC.  LVNI is closed (ibox1_lvni, ja_ax1a p.30 routine
+   ALL EIGHT ARE NOW CLOSED.  V+IC was the last (ibox1_vpic_chain,
+   ja_ax1a pp.33-34 routine IBM-IBM60), and it is the ONLY TWO-PHASE
+   BLOCK IN THE SUITE: phase 1 stores each V+IC result over one chain
+   of branch-to-self half-words and each COUNT into a plain data word
+   (IBM29-IBM34, "COUNT FIELD STORAGE"), and phase 2 -- the listing's
+   "RESTART OF ROUTINE" -- reads those counts back, adds IBM59 (a 0.4
+   constant annotated "TO CONVERT C TO BD, C") and stores the sums over
+   a SECOND chain.  IBM8 marks the seam ("PROVE ADD TO VALUE") and
+   IBM23 the hinge ("TO PROVE COUNTING OPN").  With V+IC decrementing
+   the count twice, the failure splits exactly on that boundary: all
+   six VALUE-chain words pass, all six COUNT-chain words fail.
+
+   AN ASYMMETRY THAT READS LIKE AN ERROR AND IS NOT, and it had to be
+   resolved before the block could be derived at all.  IBM2 and IBM7
+   apply V+ COM04 before storing their count; IBM3-IBM6 store the RAW
+   count; phase 2 then adds IBM59's 4 to all six alike.  So IBM53 and
+   IBM43 end up with 8 in the low bits and the other four with 4 -- and
+   since the branch code at IBM bits 19-21 is BE = 000, BD = 001,
+   B = 010, the first two become B and the rest BD.  All six branch
+   unconditionally to the addresses the listing names, which is why it
+   calls them all "BD".  Confirmed in the run: W4477 and W4504 carry
+   code 010, the other ten 001.
+
+   AND ONE MORE LOW-RESOLUTION MISREAD, the third this project has
+   recorded.  IBM58's value read as 4447.04 at 70 dpi and would not
+   reconcile with anything; at 240 dpi it is 4447.44, and the whole
+   seed falls into place.  GO TO 240 DPI BEFORE TREATING A VALUE AS A
+   PUZZLE -- the same lesson as 5001.33 vs 5002.33 and 4544.40 vs
+   4542.40.
+
+   LVNI is closed (ibox1_lvni, ja_ax1a p.30 routine
    IBH30-IBH40), the SMALLEST self-checking block in the suite --
    twenty half-words with no constants outside itself, because the V+
    operand IBH39 is a BD,$ sitting INSIDE the block, used as data.
