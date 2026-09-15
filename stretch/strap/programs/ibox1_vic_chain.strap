@@ -1,0 +1,110 @@
+! ja_ax1a "IBOX-1", routine IBP14A-IBP29, pp.36-37 (octal
+! 004565.00-004613.40): "%V-IC% ADD TO VALUE %-% IMMED. + COUNT" --
+! four V-IC steps that manufacture their own branch instructions.
+!
+! WHY THIS BLOCK.  V-IC was one of EIGHT modeled index operations a
+! coverage screen found in ZERO of the 140 programs run_tests.sh
+! references (the others: V+C, V+CR, LVNI, LRI, KVNI, V+IC, V-ICR).
+! A SCREEN IS ONLY A CANDIDATE LIST -- these decks manufacture
+! instructions at runtime by storing into instruction fields, which a
+! static scan cannot see -- so all eight were confirmed by poisoning
+! them at once: 277 sections still passed.  It is also the block the
+! plan doc scouted long ago and never took.
+!
+! HOW IT CHECKS ITSELF -- and this one checks itself COMPLETELY, which
+! is unusual.  There is no SERS.  IBP19 through IBP28 are ten
+! branch-to-self half-words, and the four tests store over EIGHT of
+! them: the value after each V-IC goes to one, and the count -- routed
+! through ISTOY by SC then LV, which multiplies it by 64 and so turns a
+! count into a word address -- goes to another, after V+ COM04 adds 4
+! to set the branch opcode.  Right arithmetic turns each into a branch
+! to the next link; wrong arithmetic leaves it branching to itself and
+! THE MACHINE STOPS.
+!
+! The chain runs IBP19 -> IBP26 -> IBP24 -> IBP22 -> IBP20 -> IBP28 ->
+! IBP27 -> IBP23 -> IBP25 -> IBP21 -> IBP29, and only IBP20 and IBP21
+! are original.  ALL EIGHT manufactured half-words are on that path, so
+! unlike ibox1_cmi_chain -- where "reaches the exit" was NOT a check,
+! because that block's failure mode was ending early -- here reaching
+! the exit really does mean every one of the eight came out right.  The
+! harness checks the eight words anyway, so a failure says WHICH.
+!
+! THE ARITHMETIC, derived from the constants before this was ever run.
+! IBPA2 seeds value = IBP28 + .04 and count = IBP28's word, 04611:
+!
+!   IBP15  V-IC .02   -> IBP28 = 4610.44 (IBP27)   IBP19 = 4610.04 (IBP26)
+!   IBP16  V-IC 2.0   -> IBP27 = 4606.44 (IBP23)   IBP26 = 4607.04 (IBP24)
+!   IBP17  V-IC -2.0  -> IBP23 = 4607.44 (IBP25)   IBP24 = 4606.04 (IBP22)
+!          then V+I -1.0
+!   IBP18  V-IC 2.0   -> IBP25 = 4605.44 (IBP21)   IBP22 = 4605.04 (IBP20)
+!
+! All eight targets are exactly the ones the listing's own comments
+! name.  IBP17 is the interesting step: V-IC subtracts a NEGATIVE
+! immediate and V+I then adds one, so the count falls by one while the
+! value rises -- the two halves of the operation moving opposite ways.
+!
+! ONE DISCREPANCY WITH THE LISTING'S COMMENTS, recorded rather than
+! smoothed over.  It annotates the four count-path links "BE" (IBP19,
+! IBP22, IBP24, IBP26) and the four value-path links "BD".  All eight
+! actually assemble as BD: COM04 adds 4, which sets IBM bit 21, and the
+! 3-bit branch code at bits 19-21 is BE = 000, BD = 001, B = 010 --
+! checked by assembling each mnemonic, not read off the page.  BD and
+! BE are both unconditional branches, so the chain is unaffected and
+! the addresses the comments give are all correct; only the mnemonic
+! is loose.
+!
+! IBP29's VFs are MEANT to be executed: the listing annotates them
+! "-NOP,-.32", so the chain ends by falling through them.
+
+        SLC, (8)6104.0
+ISTOZ   DD(BU,64,8), 0
+ISTOY   DD(BU,64,8), 0
+COM04   VF, 0.04
+
+        SLC, (8)4565.0
+IBP14A  LX, $X1, IBPA2                       ! set up XW
+IBP15   V-IC, $X1, 0.32                      ! V-.02, C-1.0
+        SV, $X1, IBP28                       ! store value
+        SC, $X1, ISTOY
+        LV, $X1, ISTOY
+        V+, $X1, COM04
+        SV, $X1, IBP19
+        LV, $X1, IBP28
+IBP16   V-IC, $X1, 2.0                       ! V-2.0, C-1.0
+        SV, $X1, IBP27                       ! store value
+        SC, $X1, ISTOY
+        LV, $X1, ISTOY
+        V+, $X1, COM04
+        SV, $X1, IBP26
+        LV, $X1, IBP27
+IBP17   V-IC, $X1, (8)777776.0               ! C-1.0
+        V+I, $X1, (8)777777.0                ! V+1.0
+        SV, $X1, IBP23                       ! store value
+        SC, $X1, ISTOY
+        LV, $X1, ISTOY
+        V+, $X1, COM04
+        SV, $X1, IBP24
+        LV, $X1, IBP23
+IBP18   V-IC, $X1, 2.0                       ! V-2.0, C-1.0
+        SV, $X1, IBP25                       ! store value
+        SC, $X1, ISTOY
+        LV, $X1, ISTOY
+        V+, $X1, COM04
+        SV, $X1, IBP22
+        NOP, 0.0
+IBP19   B, $                                 ! becomes BE, IBP26
+        CNOP
+IBP20   B, IBP28                             ! branch to value test
+IBP21   B, IBP29                             ! branch out
+IBP22   B, $                                 ! becomes BE, IBP20
+IBP23   B, $                                 ! becomes BD, IBP25
+IBP24   B, $                                 ! becomes BE, IBP22
+IBP25   B, $                                 ! becomes BD, IBP21
+IBP26   B, $                                 ! becomes BE, IBP24
+IBP27   B, $                                 ! becomes BD, IBP23
+IBP28   B, $                                 ! becomes BD, IBP27
+IBPA2   XW, IBP28+(8)0.04, (8)4611, -1       ! common XW (count = IBP28 as a WORD)
+IBP29   VF, (8)777777.70                     ! executed as NOP,-.32
+        VF, (8)777777.70                     ! executed as NOP,-.32
+PASS    BEW, $
+        END, IBP14A

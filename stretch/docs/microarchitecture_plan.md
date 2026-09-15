@@ -3714,6 +3714,54 @@ hand vectors alone. "Enables" notes the dependency chain.
    otherwise: green confirms all eight at once, and any failure names
    an operation assembled at runtime, which would be the better find.
 
+   RUN, AND ALL EIGHT CONFIRMED. Poisoning V+C and V+CR (count
+   decremented twice), LVNI (wrong value), LRI (wrong refill), KVNI
+   (wrong compare) and V+IC, V-IC, V-ICR (count decremented twice)
+   ALL AT ONCE left 277 sections passing. The shared arms were
+   corrupted under a code test so the tested member of each group --
+   V+, V+I, V+ICR, V-I -- was spared, which is what makes one run
+   attributable: the prediction was "nothing fails", and nothing did.
+
+   THE CONFIRMED GAP LIST, then, is eight operations:
+
+     direct index   V+C, V+CR
+     immediate      LVNI, LRI, KVNI, V+IC, V-IC, V-ICR
+
+   V-IC IS THE FIRST CLOSED (ibox1_vic_chain, ja_ax1a pp.36-37, routine
+   IBP14A-IBP29) -- the block this document scouted long ago and never
+   took. Its companion on p.37, IBP30-IBP53, is V-ICR and closes a
+   second; it is a larger job because it also exercises SR, a refill
+   through IBPA4, and an index word reloaded straight over a pair of
+   instructions.
+
+   AND THE V-IC BLOCK CHECKS ITSELF COMPLETELY, which is the contrast
+   worth recording against ibox1_cmi_chain three entries up. Ten
+   branch-to-self half-words, eight of them stored over: the value
+   after each V-IC into one, the count -- through ISTOY by SC then LV,
+   which multiplies it by 64 and so turns a count into a word address,
+   then V+ COM04 to set the branch opcode -- into another. ALL EIGHT
+   lie on the traversal path, so "reaches the exit" really does mean
+   all eight came out right, where for the C-I chain it meant nothing.
+
+   THE INJECTION'S SIGNATURE WAS PRECISE ENOUGH TO READ. Under V-IC
+   decrementing twice the block hangs (step cap) and every COUNT-path
+   link is wrong while W4611 -- the one word holding only a VALUE-path
+   link, which the count cannot reach -- still passes. A block that
+   fails in a shape you can explain is worth more than one that merely
+   goes red.
+
+   TWO SMALL THINGS THE TRANSCRIPTION SETTLED BY MEASUREMENT rather
+   than by reading the page. The XW seed word wants the COUNT as a word
+   address where the listing writes an address expression (the same
+   wrinkle ibox1_cmi_chain's header records for LCI), which showed up
+   as a wrong count field and nothing else. And the listing annotates
+   four of the eight manufactured links "BE" and four "BD": assembling
+   each branch mnemonic and reading the bits gives BE = 000, BD = 001,
+   B = 010 at IBM bits 19-21, and COM04's +4 sets bit 21 -- so all
+   eight are BD. The addresses its comments give are all correct; only
+   the mnemonic is loose, and since both branch unconditionally the
+   chain is unaffected.
+
    THE KV AND KVI CHECK (p.13, 006713.00-006734.00), chosen over the
    refill sweep for the reasons the entry below records.
 

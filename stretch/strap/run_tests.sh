@@ -1211,6 +1211,60 @@ run "IBOX-1 C-I chain (self-modifying branch chain, C-I)" ./run_program.sh progr
     "PC=$(python3 -c 'from strap_asm import assemble; print(assemble(open("programs/ibox1_cmi_chain.strap").read()).symtab["PASS"]//32)')" \
     $CMI_CHECKS
 
+run "IBOX-1 V-IC chain (ja_ax1a, encoding)" python3 verify_ibox1_vic_chain_listing.py
+# V-IC ("add to value immediate + count"), one of EIGHT modeled index
+# operations a coverage screen found in ZERO of the 140 programs this
+# file references -- the others V+C, V+CR, LVNI, LRI, KVNI, V+IC and
+# V-ICR.  The screen is only sound for the ZERO side, and not even
+# there on its own: these decks MANUFACTURE instructions at runtime by
+# storing into instruction fields, which a static scan cannot see.  So
+# it was confirmed by injection -- poisoning all eight at once left
+# every section passing.
+#
+# THIS BLOCK CHECKS ITSELF COMPLETELY, which is unusual and is the
+# contrast with ibox1_cmi_chain above.  IBP19 through IBP28 are ten
+# branch-to-self half-words, and the four tests store over EIGHT of
+# them: the value after each V-IC into one, and the count -- routed
+# through ISTOY by SC then LV, which multiplies it by 64 and so turns a
+# count into a word address, then V+ COM04 to set the branch opcode --
+# into another.  All eight lie on the path IBP19 -> IBP26 -> IBP24 ->
+# IBP22 -> IBP20 -> IBP28 -> IBP27 -> IBP23 -> IBP25 -> IBP21, so here
+# "reaches the exit" really does mean all eight came out right, where
+# for the C-I chain it meant nothing.  The word checks are kept anyway
+# so a failure says WHICH link broke.
+#
+# IBP17 is the step worth having: V-IC subtracts a NEGATIVE immediate
+# and V+I then adds one, so the count falls while the value rises --
+# the two halves of the operation moving opposite ways.
+#
+# Measured, with the eight-op poison still in place: V-IC decrementing
+# the count twice hangs the block on a branch-to-self (step cap) and
+# reports every COUNT-path link wrong while W4611 -- the one word
+# holding only a VALUE-path link, which the count cannot reach -- still
+# passes.  A signature that specific is what makes the block diagnostic
+# rather than merely red.
+# The eight expected half-words are DERIVED, not written out: each link
+# must hold a BD (branch code 001 at IBM bits 19-21, which is what
+# COM04's +4 sets) to the link the listing's comments name.
+VIC_CHECKS=$(python3 -c 'from strap_asm import assemble
+p = assemble(open("programs/ibox1_vic_chain.strap").read())
+ha = lambda n: p.symtab[n] // 32
+bd = lambda n: ((ha(n) >> 1) << 14) | ((ha(n) & 1) << 13) | (0b001 << 10)
+chain = dict((("IBP19", "IBP26"), ("IBP22", "IBP20"), ("IBP23", "IBP25"),
+              ("IBP24", "IBP22"), ("IBP25", "IBP21"), ("IBP26", "IBP24"),
+              ("IBP27", "IBP23"), ("IBP28", "IBP27")))
+words = {}
+for link, tgt in chain.items():
+    w, half = ha(link) >> 1, ha(link) & 1
+    base = p.words.get(w, 0)
+    hi, lo = words.get(w, ((base >> 32) & 0xffffffff, base & 0xffffffff))
+    words[w] = (bd(tgt), lo) if half == 0 else (hi, bd(tgt))
+print(" ".join("W%o:%d=0x%016x" % (w, w, (words[w][0] << 32) | words[w][1])
+               for w in sorted(words)))')
+run "IBOX-1 V-IC chain (self-modifying branch chain, V-IC)" ./run_program.sh programs/ibox1_vic_chain.strap StretchIbox1VicChainTb \
+    "PC=$(python3 -c 'from strap_asm import assemble; print(assemble(open("programs/ibox1_vic_chain.strap").read()).symtab["PASS"]//32)')" \
+    $VIC_CHECKS
+
 run "IBOX-1 KCI (ja_ax1a, encoding)" python3 verify_ibox1_kci_listing.py
 # The listing's own COMPARE COUNT IMMEDIATE test, closing KCI.  Pure
 # hang-based: every check is a branch that must or must not be taken.
