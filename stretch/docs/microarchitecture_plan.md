@@ -3732,6 +3732,38 @@ hand vectors alone. "Enables" notes the dependency chain.
    ibox3_lri, jb_ax3a pp.210-212 routine 1230 blocks I3021-I3027).
    Five remain: V+C, V+CR, LVNI, KVNI, V+IC.
 
+   AND ALL FIVE ARE IN ONE TAPE, which its own front matter says
+   outright. ja_ax1a pp.3-4 list every operation the program covers,
+   one line each, and the five are all there:
+
+     V+C    "BD setup as before.  All positions of Y Registers varies
+             stored address."
+     V+CR   "Same as V+C.  One case no refill, other case refills."
+     LVNI   "Same as LV & SV."
+     KVNI   "Same as KV."
+     V+IC   "Same as V+C."
+
+   The list is in program order, which makes it a map: V+C and V+CR sit
+   early, before B(IND)/KV/KC; then LVI, LVNI, LCI, LRI; then V+I,
+   V+IC, V+ICR, V-I, V-IC, V-ICR, C+I, C-I; then KVI, KVNI, KCI. The
+   blocks already transcribed pin that order to addresses -- V+IC at
+   p.33 (section IBM, 004423.00), V+ICR at p.35 (IBN), V-I at pp.35-36
+   (IBP), V-IC at pp.36-37 (IBP14A), V-ICR at p.37 (IBP30) -- so V+C
+   and V+CR are earlier than p.33 and KVNI is later than the C-I block
+   at pp.38-39. READING A TAPE'S ROUTINE LIST FIRST IS THE THIRD TIME
+   THIS HAS PAID; it is the same one-page render that would have
+   prevented the wrong "LR is blocked" entry.
+
+   V+IC IS SCOUTED: ja_ax1a pp.33-34, section IBM at 004423.00 through
+   the IBM56-IBM74 constants at 004505-004521. Same self-modifying
+   chain idiom as ibox1_vic_chain but in TWO PHASES, which is what
+   makes it worth having: IBM1-IBM7 run seven V+IC tests storing each
+   value over one link and each COUNT into a plain word (IBM29-IBM34,
+   "COUNT FIELD STORAGE"), and then IBM35-IBM40 -- the listing's
+   "RESTART OF ROUTINE" -- convert those counts into branches by adding
+   IBM59 (a 0.04 constant the listing annotates "TO CONVERT C TO BD,
+   C") and store them over a second set of links.
+
    LRI IS ROUTINE 1230'S OTHER HALF -- the routine is named "TEST LOAD
    REFILL AND LOAD REFILL IMMED." and ibox3_lr took only the LR part
    from p.200. One more case of A TAPE'S TEST FOR AN OPERATION NOT
