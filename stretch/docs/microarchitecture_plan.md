@@ -3727,12 +3727,29 @@ hand vectors alone. "Enables" notes the dependency chain.
      direct index   V+C, V+CR
      immediate      LVNI, LRI, KVNI, V+IC, V-IC, V-ICR
 
-   V-IC IS THE FIRST CLOSED (ibox1_vic_chain, ja_ax1a pp.36-37, routine
-   IBP14A-IBP29) -- the block this document scouted long ago and never
-   took. Its companion on p.37, IBP30-IBP53, is V-ICR and closes a
-   second; it is a larger job because it also exercises SR, a refill
-   through IBPA4, and an index word reloaded straight over a pair of
-   instructions.
+   V-IC AND V-ICR ARE CLOSED (ibox1_vic_chain, ja_ax1a pp.36-37 routine
+   IBP14A-IBP29; ibox1_vicr_chain, p.37 routine IBP30-IBP53) -- the
+   blocks this document scouted long ago and never took. Six remain:
+   V+C, V+CR, LVNI, LRI, KVNI, V+IC.
+
+   AND THE V-ICR BLOCK CARRIES A TRICK WORTH NAMING, because nothing
+   else in the suite does it. IBPA4 is not a constant: it is TWO
+   INSTRUCTIONS sharing a word, a NOP and a B,IBP33. IBPA3 carries
+   count 1 and refill IBPA4, so a single V-ICR drives the count to
+   zero, the refill reloads the index register FROM THAT WORD, and SX
+   writes it straight over IBP31, where it is executed as the pair it
+   always was. An index word and an instruction pair are the same 64
+   bits and the deck uses that identity as its test. With V-ICR made
+   never to refill, the run stops at octal 004617.00 -- IBP32, the
+   half-word the listing itself labels "HANG UP" -- and IBP31 holds the
+   un-refilled index word.
+
+   SCOPE NOTE, because the block is long and most of its length is not
+   new: SR already appears in ibox1_vpicr, ibox3_lr and
+   ibox4_prog_ix_v, and V+ICR's refill is closed by ibox1_vpicr. The
+   new surface is V-ICR's own count-and-refill arm driven BOTH ways --
+   one that must refill, one that must not -- plus the IBP30-IBP32
+   trick. Worth writing down so the next reader does not re-derive it.
 
    AND THE V-IC BLOCK CHECKS ITSELF COMPLETELY, which is the contrast
    worth recording against ibox1_cmi_chain three entries up. Ten

@@ -1265,6 +1265,44 @@ run "IBOX-1 V-IC chain (self-modifying branch chain, V-IC)" ./run_program.sh pro
     "PC=$(python3 -c 'from strap_asm import assemble; print(assemble(open("programs/ibox1_vic_chain.strap").read()).symtab["PASS"]//32)')" \
     $VIC_CHECKS
 
+run "IBOX-1 V-ICR chain (ja_ax1a, encoding)" python3 verify_ibox1_vicr_chain_listing.py
+# V-ICR, the companion of V-IC on the facing page and the second of the
+# eight confirmed-uncovered index operations to be closed.
+#
+# WHAT IS NEW HERE is narrower than the block is long: SR already
+# appears in ibox1_vpicr, ibox3_lr and ibox4_prog_ix_v, and V+ICR's
+# refill is closed by ibox1_vpicr.  The new surface is V-ICR's own
+# count-and-refill arm, driven BOTH ways -- one V-ICR that must refill
+# and one that must not -- plus the IBP30-IBP32 trick, which has no
+# parallel anywhere else in the suite.
+#
+# THAT TRICK IS THE REASON TO WANT THE BLOCK.  IBPA4 is not a constant,
+# it is TWO INSTRUCTIONS sharing a word: a NOP and a B,IBP33.  IBPA3
+# carries count 1 and refill IBPA4, so one V-ICR drives the count to
+# zero, the refill reloads the index register FROM THAT WORD, and SX
+# writes it straight over IBP31 where it is executed as the pair it
+# always was.  An index word and an instruction pair are the same 64
+# bits and the deck uses that identity as its test.
+#
+# Measured, and the signature is the deck's own: with V-ICR made never
+# to refill, the run stops at PC 4894 -- octal 004617.00, which is
+# IBP32, the half-word the listing labels "HANG UP" -- and IBP31 holds
+# the un-refilled index word instead of IBPA4's.  The four chain links
+# are then never stored at all.
+VICR_CHECKS=$(python3 -c 'from strap_asm import assemble
+p = assemble(open("programs/ibox1_vicr_chain.strap").read())
+ha = lambda n: p.symtab[n] // 32
+bd = lambda n: ((ha(n) >> 1) << 14) | ((ha(n) & 1) << 13) | (0b001 << 10)
+out = ["REFILLED_IBP31:%d=0x%016x" % (ha("IBP31") >> 1, p.words[ha("IBPA4") >> 1])]
+for link, tgt in (("IBP46", "IBP49"), ("IBP49", "IBP50"),
+                  ("IBP50", "IBP52"), ("IBP52", "IBP53")):
+    w = ha(link) >> 1
+    out.append("%s:%d=0x%016x" % (link, w, (bd(tgt) << 32) | (p.words.get(w, 0) & 0xffffffff)))
+print(" ".join(out))')
+run "IBOX-1 V-ICR chain (refill over a live instruction pair)" ./run_program.sh programs/ibox1_vicr_chain.strap StretchIbox1VicrChainTb \
+    "PC=$(python3 -c 'from strap_asm import assemble; print(assemble(open("programs/ibox1_vicr_chain.strap").read()).symtab["PASS"]//32)')" \
+    $VICR_CHECKS
+
 run "IBOX-1 KCI (ja_ax1a, encoding)" python3 verify_ibox1_kci_listing.py
 # The listing's own COMPARE COUNT IMMEDIATE test, closing KCI.  Pure
 # hang-based: every check is a branch that must or must not be taken.

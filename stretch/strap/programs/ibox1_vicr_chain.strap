@@ -1,0 +1,126 @@
+! ja_ax1a "IBOX-1", routine IBP30-IBP53, p.37 (octal 004614.00-
+! 004652.40): "%V-ICR% ADD TO VALUE %-% IMMED., COUNT, + REFILL".
+!
+! WHY THIS BLOCK.  V-ICR was one of EIGHT modeled index operations a
+! coverage screen found in ZERO of the 140 programs run_tests.sh
+! references, all eight then confirmed by poisoning them at once (277
+! sections still passed).  ibox1_vic_chain closed V-IC from the facing
+! page; this is its companion and closes V-ICR.
+!
+! WHAT IS ACTUALLY NEW HERE, since most of the block's length is
+! operations that already have coverage.  SR appears in ibox1_vpicr,
+! ibox3_lr and ibox4_prog_ix_v; V+ICR's refill path is closed by
+! ibox1_vpicr.  The new surface is V-ICR's own count-and-refill arm --
+! exercised BOTH ways, refilling and not -- and the IBP30-IBP32 trick
+! below, which has no parallel anywhere in the suite.
+!
+! THE REFILL TEST IS THE REASON TO WANT THIS BLOCK.  IBPA4 is not a
+! constant, it is TWO INSTRUCTIONS: a NOP and a B,IBP33, sharing one
+! word.  IBPA3 carries count 1 and refill IBPA4, so the single V-ICR at
+! IBP30 drives the count to zero, the refill reloads the index register
+! FROM THAT WORD, and SX then writes it straight over IBP31 -- where it
+! is immediately executed as the two instructions it always was.  A
+! refill that does not happen leaves IBP31 holding the decremented
+! index word instead, control falls into IBP32's BD,$ and THE MACHINE
+! STOPS.  An index word and an instruction pair are the same 64 bits,
+! and the deck uses that identity as its test.
+!
+! THE OTHER TWO TESTS are a V-ICR that must NOT refill (count 2 -> 1)
+! and one that must (count 1 -> 0, refilling from IBPA6), each feeding
+! the same self-modifying branch chain ibox1_vic_chain uses: the value
+! goes over one link, and the count and refill are summed -- SC/LV for
+! the count, SR/LV for the refill, V+ COM04 for the branch opcode, then
+! V+ IBPSTO to add them, which is what the listing calls "ADD C+R" --
+! and stored over another.
+!
+! THE ARITHMETIC, derived before this was ever run.  IBPA5 seeds value
+! = IBP51+.36, count 2, refill IBPA6:
+!
+!   IBP34  V-ICR 2.32, no refill  -> IBP46 = 4643.04 (IBP49)
+!          C+R = 1*64 + IBPA6*64 + 4 -> IBP52 = 4652.04 (IBP53)
+!   IBP40  V-ICR 0.32, REFILLS    -> IBP50 = 4646.04 (IBP52)
+!          C+R = 4*64 + IBP46*64 + 4 -> IBP49 = 4644.04 (IBP50)
+!
+! so the chain runs IBP46 -> IBP49 -> IBP50 -> IBP52 -> IBP53, and all
+! four manufactured links are on it.  Every address matches the
+! listing's own comments.  (As in ibox1_vic_chain, those comments
+! annotate two of the four "BE" where the encoding is BD -- COM04's +4
+! sets IBM bit 21 and the branch code at bits 19-21 is BE = 000,
+! BD = 001.  Both branch unconditionally, so the chain is unaffected.)
+!
+! IBP47, IBP48, IBP51 and IBPSTO are not links: IBPSTO is the scratch
+! the C+R sum passes through, and the others are padding that keeps the
+! link addresses where the arithmetic puts them.
+!
+! IBP53's two VFs are MEANT to be executed as NOPs, and the listing
+! writes the same value twice in different bases -- "%8=777777.70" and
+! "262143.56" -- which assemble identically.
+
+        SLC, (8)6104.0
+ISTOZ   DD(BU,64,8), 0
+ISTOY   DD(BU,64,8), 0
+COM04   VF, 0.04
+
+        SLC, (8)4614.0
+IBP30   LX, $X1, IBPA3                       ! set up XW
+        V-ICR, $X1, 2.0                      ! should refill
+        SX, $X1, IBP31
+        NOP, 0.0
+        CNOP
+IBP31   BE, $                                ! becomes NOP, (8)525252.0
+        BE, $                                ! becomes B, IBP33
+IBP32   BD, $                                ! hang up
+IBPA3   XW, IBPA3+0.34, 1, IBPA4             ! common XW
+IBPA4   NOP, (8)525252.0
+        B, IBP33                             ! refill XW
+IBP33   LX, $X1, IBPA5                       ! set up XW
+IBP34   V-ICR, $X1, 2.32                     ! shouldnt refill V-2.32
+IBP35   SV, $X1, IBP46                       ! store value
+        SC, $X1, ISTOY
+        LV, $X1, ISTOY
+IBP36   SV, $X1, IBPSTO
+        SR, $X1, ISTOY
+        LV, $X1, ISTOY
+        V+, $X1, COM04
+IBP37   SV, $X1, ISTOZ
+        LV, $X1, ISTOZ
+IBP38   V+, $X1, IBPSTO                      ! add C+R
+IBP39   SV, $X1, IBP52                       ! store C+R
+        LV, $X1, IBP46
+        NOP, 0.0
+IBP40   V-ICR, $X1, 0.32                     ! should refill
+IBP41   SV, $X1, IBP50                       ! store value
+        SC, $X1, ISTOY
+        LV, $X1, ISTOY
+IBP42   SV, $X1, IBPSTO
+        SR, $X1, ISTOY
+        LV, $X1, ISTOY
+        V+, $X1, COM04
+IBP43   SV, $X1, ISTOZ
+        LX, $X1, ISTOZ
+IBP44   V+, $X1, IBPSTO                      ! add C+R
+IBP45   SV, $X1, IBP49                       ! store C+R
+        LX, $X1, ISTOZ
+        CNOP
+IBP46   BE, 0
+        BD, $                                ! becomes BD, IBP49 + BD, $
+IBP47   BE, 0
+        BD, $
+IBP48   BE, 0
+        BD, $
+IBP49   BE, 0
+        BD, $                                ! becomes BE, IBP50 + BD, $
+IBP50   BE, 0
+        BD, $                                ! becomes BE, IBP52 + BD, $
+IBP51   BE, 0
+        BD, $
+IBP52   BE, 0
+        BD, $                                ! becomes BD, IBP53 + BD, $
+IBPSTO  BE, 0                                ! store area
+        BD, $
+IBPA5   XW, IBP51+0.36, 2, IBPA6             ! common XW
+IBPA6   XW, IBP52+0.04, 4, IBP46             ! refill XW
+IBP53   VF, (8)777777.70                     ! executed as NOP,-.32
+        VF, 262143.56                        ! executed as NOP,-.32
+PASS    BEW, $
+        END, IBP30
