@@ -3773,8 +3773,37 @@ hand vectors alone. "Enables" notes the dependency chain.
    refilled index word corrupted in both arms, all 293 sections still
    pass. Note the result is specifically about the R and RCZ
    INSTRUCTIONS -- the refill FIELD is round-tripped by CB/CBR and the
-   PAU programs, which is a different path. ja_ax1a's routine list does
-   NOT name them, so they are tested on some other tape.
+   PAU programs, which is a different path.
+
+   AND THEY ARE SCOUTED. ja_ax1a's routine list does not name them, but
+   I-BOX 4's does: jb_ax4b p.2, routine 1238, "Checks R and RCZ from
+   all three memories where legal". The routine starts at p.57 --
+   "----1238---REFILL AND REFILL IF COUNT ZERO", entry I38 at
+   005277.00 -- and runs to 005450.00 across pp.57-62. Its own header
+   sets out three tests:
+
+     TEST 1  basic control and the X TO W TRANSFER, which it checks BIT
+             BY BIT because that path "has not been previously checked"
+             (the refill data itself it does not re-check, on the
+             grounds that those paths already were)
+     TEST 2  six cases of addressing, AND NOPING IF RF IS FROM 1 TO 15
+     TEST 3  RCZ, zero gating
+
+   Later pages sweep the refill address over powers of two, checking
+   that the refill came from location 20 and not from 1, 2, 4, 10, 40,
+   100 ... 20000 -- the error text is "REFILLED X15 FROM LOCN 40
+   INSTEAD OF LOCN 20". Test 1 closes R, test 3 closes RCZ.
+
+   A SEMANTIC THE MODEL DOES NOT IMPLEMENT, found by reading that
+   header and worth flagging before the block is transcribed: "NOPING
+   IF RF IS FROM 1 TO 15". Words 1-15 are the special registers, and
+   the deck expects a refill whose address falls there to be
+   SUPPRESSED. execute()'s R arm has no such check -- it issues
+   `needsRead = x.refill` unconditionally and writes back whatever
+   comes -- so on this model a refill from word 1-15 reads a special
+   register and installs it as an index word. Test 2 is what would
+   catch it. This is a READING of the deck, not yet a measurement:
+   confirming it means transcribing the block.
 
    ALL EIGHT ARE NOW CLOSED.  V+IC was the last (ibox1_vpic_chain,
    ja_ax1a pp.33-34 routine IBM-IBM60), and it is the ONLY TWO-PHASE
