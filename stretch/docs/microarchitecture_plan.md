@@ -3730,6 +3730,52 @@ hand vectors alone. "Enables" notes the dependency chain.
    V-IC, V-ICR AND LRI ARE CLOSED (ibox1_vic_chain, ja_ax1a pp.36-37
    routine IBP14A-IBP29; ibox1_vicr_chain, p.37 routine IBP30-IBP53;
    ibox3_lri, jb_ax3a pp.210-212 routine 1230 blocks I3021-I3027).
+   AND THE SCREEN GENERALISES, BUT MOST OF WHAT IT FLAGS IS NOT A GAP.
+   Run over the WHOLE opcode space rather than index arithmetic alone
+   (FP_CODES, VFL_INT_CODES, CB_CODES, BB_CODES, UNCOND_BRANCH_CODES,
+   MISC_CODES, IO_OP and the two index tables), 31 of 116 mnemonics
+   come out at zero. Sorted by what zero actually MEANS:
+
+     FP 0/29, CB 0/16, immediate index 0/15   genuinely covered
+     VFL int      10/24   UNIMPLEMENTED -- vflIntOp has arms for only
+                          L, ST, +, M+ and K; the rest are setOpInvalid
+     I/O          11/11   out of scope
+     direct index  2/16   LVE, RNX -- unimplemented
+     misc          4/ 5   EX, EXIC unimplemented; R and RCZ IMPLEMENTED
+     BB            3/ 8   SCREEN ARTIFACT, see below
+
+   TWO SYSTEMATIC FLAWS THE INDEX RUN NEVER EXPOSED, both worth
+   knowing before this screen is trusted again:
+
+   (a) FP AND VFL SHARE MNEMONICS -- +, K, *, /, LWF, SRD, LFT, *+,
+       +MG, M+MG are all in both tables, and the two are distinguished
+       by the data description, not by the name. Merging them into one
+       namespace makes an FP program's "+" count as covering VFL's.
+       The VFL row above is only readable because the ten that came out
+       zero happen to be the VFL-ONLY names.
+
+   (b) HAND-WRITTEN BSV TESTBENCHES ARE NOT STRAP PROGRAMS. BZB1,
+       BZBN and BZBZ read as zero while StretchBBTb and its siblings
+       drive them through fifteen suite entries. A screen over
+       programs/ cannot see them at all.
+
+   AND THE REAL LESSON: THE INDEX-ARITHMETIC LIST WAS UNUSUAL. Index
+   arithmetic is essentially fully implemented, so "zero occurrences"
+   meant a real coverage gap eight times out of eight. Everywhere else
+   zero mostly means NOT IMPLEMENTED, which is a different row of the
+   table -- exactly the distinction the RNX correction above records.
+   Before treating a zero as a gap, check that the operation has an
+   execute arm and not a setOpInvalid.
+
+   TWO NEW GAPS DO SURVIVE THAT FILTER: R (Refill, unconditional) and
+   RCZ (Refill on Count Zero), both implemented in execute()'s
+   BranchOrMisc arm and both at zero. CONFIRMED BY INJECTION: with the
+   refilled index word corrupted in both arms, all 293 sections still
+   pass. Note the result is specifically about the R and RCZ
+   INSTRUCTIONS -- the refill FIELD is round-tripped by CB/CBR and the
+   PAU programs, which is a different path. ja_ax1a's routine list does
+   NOT name them, so they are tested on some other tape.
+
    ALL EIGHT ARE NOW CLOSED.  V+IC was the last (ibox1_vpic_chain,
    ja_ax1a pp.33-34 routine IBM-IBM60), and it is the ONLY TWO-PHASE
    BLOCK IN THE SUITE: phase 1 stores each V+IC result over one chain
