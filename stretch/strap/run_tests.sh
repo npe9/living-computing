@@ -1388,6 +1388,36 @@ run "IBOX-1 V-ICR chain (refill over a live instruction pair)" ./run_program.sh 
     "PC=$(python3 -c 'from strap_asm import assemble; print(assemble(open("programs/ibox1_vicr_chain.strap").read()).symtab["PASS"]//32)')" \
     $VICR_CHECKS
 
+run "IBOX-1 KVNI (ja_ax1a, encoding)" python3 verify_ibox1_kvni_listing.py
+# KVNI, compare value NEGATIVE immediate -- the sign-flipped twin of
+# KVI (closed by ibox2_kv_kvi) and the sixth of the eight
+# confirmed-uncovered index operations.
+#
+# FOUND BY THE MAP: ja_ax1a's routine list gives KVNI one line, "Same
+# as KV", and because that list is in PROGRAM ORDER it placed the block
+# between the C-I block (pp.38-39, ibox1_cmi_chain) and the KCI block
+# (pp.40-41, ibox1_kci), both already transcribed.  One page render
+# found it.
+#
+# Purely hang-based, like ibox1_kci: no SERS, nothing stored, every
+# check a branch-to-self that must NOT be taken or a branch-forward
+# that must be.  Three checks name the indicator that must be OFF (BXL,
+# BXH, BXE) and three the one that must be ON in the branch-and-zero
+# form (BZXEZ, BZXLZ, BZXHZ), so it separates "indicator set" from
+# "branch on it and clear it".
+#
+# THE OPERANDS STRADDLE ZERO, which is the point of testing the
+# negative form: the first group loads MINUS (1 in bit 0) and compares
+# against +400000.0 expecting EQUAL -- a case only KVNI can pass,
+# because the immediate is negated first.
+#
+# Measured: with the negation removed so KVNI behaves as KVI, the run
+# halts at 004747.40 -- the FIRST check, the BXL the listing annotates
+# "HANG UP IF LOW" -- because minus compares low against a positive
+# immediate instead of equal.
+run "IBOX-1 KVNI (compare value negative immediate)" ./run_program.sh programs/ibox1_kvni.strap StretchIbox1KvniTb \
+    "PC=$(python3 -c 'from strap_asm import assemble; print(assemble(open("programs/ibox1_kvni.strap").read()).symtab["PASS"]//32)')"
+
 run "IBOX-1 KCI (ja_ax1a, encoding)" python3 verify_ibox1_kci_listing.py
 # The listing's own COMPARE COUNT IMMEDIATE test, closing KCI.  Pure
 # hang-based: every check is a branch that must or must not be taken.

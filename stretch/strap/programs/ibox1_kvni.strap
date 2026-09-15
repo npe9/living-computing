@@ -1,0 +1,76 @@
+! ja_ax1a "IBOX-1", routine IKVNI-IKVNI8, p.40 (octal 004746.40-
+! 004762.40): "%KVNI% **** COMPARE VALUE %-% IMMEDIATE".
+!
+! WHY THIS BLOCK.  KVNI was one of eight modeled index operations a
+! coverage screen found in ZERO suite programs, all eight then
+! confirmed by poisoning them at once.  ja_ax1a's routine list (pp.3-4)
+! gives it one line -- "Same as KV" -- and, because that list is in
+! PROGRAM ORDER, placed it between the C-I block (pp.38-39, already
+! transcribed as ibox1_cmi_chain) and the KCI block (pp.40-41,
+! ibox1_kci).  One page render found it.
+!
+! WHAT KVNI IS.  Compare Value Negative Immediate: the index value is
+! compared against the NEGATIVE of the immediate, so the operation is
+! the sign-flipped twin of KVI (closed by ibox2_kv_kvi).  Everything it
+! can report is one of the three index comparison indicators -- XL, XE,
+! XH, indicators 52-54.
+!
+! HOW IT CHECKS ITSELF: PURELY BY HANGING, like ibox1_kci.  There is no
+! SERS and nothing is stored.  Every check is a branch-to-self that
+! must NOT be taken, or a branch-forward that must be.  Three of them
+! name the indicator that must be off (BXL, BXH, BXE hang up if low,
+! high, equal) and three name the one that must be on, in the "branch
+! and zero" form (BZXEZ, BZXLZ, BZXHZ hang up if NOT equal, low, high)
+! -- so the block distinguishes "indicator set" from "branch on it and
+! clear it", which are different operations.
+!
+! THE TWO OPERANDS ARE CHOSEN TO STRADDLE ZERO, which is the point of
+! testing the negative form at all:
+!
+!   IKVNI-IKVNI3   load IBKVDO = MINUS (1 in bit 0), then compare
+!                  against +400000.0, +377777.0 and +400000.40 --
+!                  equal, then low, then high
+!   IKVNI4-IKVNI7  load IBKVDA = PLUS zero, then compare against 0.0,
+!                  0.32 and 777777.40 -- equal, then high, then high
+!
+! The first group's equality case is the one that only KVNI can pass:
+! a negative value compares EQUAL to a positive immediate precisely
+! because the immediate is negated first.
+!
+! IKVNI8's VFs are MEANT to be executed: the listing annotates them
+! "-NOP,-.32", so the block ends by falling through them.
+
+! -- the two constants this block loads, from p.28's IBKVD table --
+        SLC, (8)4202.0
+IBKVDA  VF, 0.00                             ! +0S
+        SLC, (8)4212.0
+IBKVDO  VF, -(8)400000.00                    ! -0S, 1 in bit 0
+
+        SLC, (8)4746.40
+IKVNI   LV, $X1, IBKVDO                      ! LV, -, 24-0 S
+IKVNI1  KVNI, $X1, (8)400000.0               ! KVNI, -, 1 in bit 0 + 18-0 S
+        BXL, $                               ! hang up if low
+        BXH, $                               ! hang up if high
+        BZXEZ, $                             ! hang up if not equal
+IKVNI2  KVNI, $X1, (8)377777.0               ! KVNI, -, 18-1 S + 0 in 18
+        BXH, $                               ! hang up if high
+        BXE, $                               ! hang up if equal
+        BZXLZ, $                             ! hang up if not low
+IKVNI3  KVNI, $X1, (8)400000.40              ! KVNI, 1 in 0 + 1..+17-0 S
+        BXE, $                               ! hang up if equal
+        BZXHZ, $                             ! hang up if not high
+IKVNI4  LV, $X1, IBKVDA                      ! LV, +, 24-0 S
+IKVNI5  KVNI, $X1, 0.0                       ! KVNI, -, 18-0 S
+        BXEZ, $+1.0                          ! branch if XE
+        BD, $                                ! hang up if not XE
+IKVNI6  KVNI, $X1, 0.32                      ! KVNI, -, 18-0 S + 1 in 18
+        BXHZ, $+1.0                          ! branch if XH
+        BD, $                                ! hang up if not XH
+IKVNI7  KVNI, $X1, (8)777777.40              ! KVNI, -, 19-1 S
+        BXHZ, $+1.0                          ! branch if XH
+        BD, $                                ! hang up if not XH
+        CNOP
+IKVNI8  VF, (8)777777.70                     ! executed as NOP,-.32
+        VF, (8)777777.70                     ! executed as NOP,-.32
+PASS    BEW, $
+        END, IKVNI

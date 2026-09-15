@@ -3730,7 +3730,32 @@ hand vectors alone. "Enables" notes the dependency chain.
    V-IC, V-ICR AND LRI ARE CLOSED (ibox1_vic_chain, ja_ax1a pp.36-37
    routine IBP14A-IBP29; ibox1_vicr_chain, p.37 routine IBP30-IBP53;
    ibox3_lri, jb_ax3a pp.210-212 routine 1230 blocks I3021-I3027).
-   Three remain: LVNI, KVNI, V+IC.  V+C and V+CR are closed
+   Two remain: LVNI and V+IC.  KVNI is closed (ibox1_kvni, ja_ax1a
+   p.40 routine IKVNI-IKVNI8), found by the map in ONE page render: the
+   routine list placed it between the C-I block (pp.38-39) and the KCI
+   block (pp.40-41), both already transcribed.
+
+   ITS OPERANDS STRADDLE ZERO, which is the point of the negative form.
+   The first group loads MINUS (1 in bit 0) and compares against
+   +400000.0 expecting EQUAL -- a case only KVNI can pass, because the
+   immediate is negated first.  Measured: with the negation removed so
+   KVNI behaves as KVI, the run halts at 004747.40, the FIRST check,
+   the BXL the listing annotates "HANG UP IF LOW".
+
+   TWO TRANSCRIPTION SLIPS WORTH THE WARNING.  The constant is IBKVDO,
+   letter O, not IBKVD0 -- the table runs ...N, O, P, Q, W, X and a
+   digit there is a misreading.  And an SLC to a HALF-WORD boundary
+   written "(8)4746.32" is wrong: the (8) prefix makes BOTH parts
+   octal, so the listing's 004746.40 is "(8)4746.40".  The assembler
+   caught that one as an alignment error rather than silently
+   misplacing the block, which is the good failure mode.
+
+   V+IC REMAINS THE LARGER JOB and has an asymmetry that must be worked
+   out before its expected values can be derived: IBM2 and IBM7 apply
+   V+ COM04 before storing their count, while IBM3-IBM6 store the RAW
+   count for the "RESTART OF ROUTINE" phase (IBM35-IBM40) to convert by
+   adding IBM59.  That changes which opcode each manufactured link ends
+   up holding, and the two paths must be reconciled first.  V+C and V+CR are closed
    (ibox1_vpc_chain, ja_ax1a pp.22-23 routine IBG39-IBG54;
    ibox1_vpcr_refill, p.23 routine IBG55-IBG64), and V+C was found BY
    THE MAP below rather than by page order: the routine list bounded it
