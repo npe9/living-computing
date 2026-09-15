@@ -3794,9 +3794,34 @@ hand vectors alone. "Enables" notes the dependency chain.
    100 ... 20000 -- the error text is "REFILLED X15 FROM LOCN 40
    INSTEAD OF LOCN 20". Test 1 closes R, test 3 closes RCZ.
 
-   A SEMANTIC THE MODEL DOES NOT IMPLEMENT, found by reading that
-   header and worth flagging before the block is transcribed: "NOPING
-   IF RF IS FROM 1 TO 15". Words 1-15 are the special registers, and
+   AND A MODEL BUG, which scouting the block turned up before a line of
+   it was transcribed. R AND RCZ TAKE THEIR OPERAND FROM THE WRONG
+   FIELD. Two independent sources agree on the right one:
+
+     - This document's own spec entry for R/RCZ (Ref. Manual p.26,
+       below) says the instruction replaces "the full word at THE
+       EFFECTIVE ADDRESS's word with the word at THAT index word's
+       REFILL field".
+     - The listing encodes it that way. jb_ax4b p.58 has "R,$X15"
+       assembling to 37.02 00: the ADDRESS field holds 037, which is
+       word 31 -- index register 15 -- and the idx field is 0.
+
+   execute()'s arm instead does `st.readIndex(bm.idx)` and writes back
+   to `idxWriteReg = bm.idx`. But bm.idx is hw[3:0], IBM bits 28-31 --
+   the register that MODIFIES the address, which is a different thing
+   entirely, and which Z in the same case statement correctly feeds
+   through effAddr24. So on "R,$X15" this model refills index register
+   0 from index register 0's refill field and never touches $X15.
+
+   THE BUG IS LATENT because R and RCZ are executed by nothing, which
+   the injection above measured. The fix belongs WITH the transcription
+   of routine 1238, not before it: a correction with no test behind it
+   is the same mistake the SVA width change nearly was, and test 1 of
+   that routine is precisely the thing that would drive and then guard
+   it.
+
+   A SECOND SEMANTIC THE MODEL DOES NOT IMPLEMENT, from the same
+   header: "NOPING IF RF IS FROM 1 TO 15". Words 1-15 are the special registers, and
    the deck expects a refill whose address falls there to be
    SUPPRESSED. execute()'s R arm has no such check -- it issues
    `needsRead = x.refill` unconditionally and writes back whatever
