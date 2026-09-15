@@ -1258,6 +1258,44 @@ run "IBOX-1 V+C chain (self-modifying branch chain, V+C)" ./run_program.sh progr
     "PC=$(python3 -c 'from strap_asm import assemble; print(assemble(open("programs/ibox1_vpc_chain.strap").read()).symtab["PASS"]//32)')" \
     $VPC_CHECKS
 
+run "IBOX-1 V+CR refill (ja_ax1a, encoding)" python3 verify_ibox1_vpcr_refill_listing.py
+# V+CR's first test, the section immediately after V+C on the same page
+# and the fifth of the eight confirmed-uncovered index operations.
+#
+# WHAT IS NEW, narrowly: V+ICR's refill is closed by ibox1_vpicr and
+# V-ICR's by ibox1_vicr_chain, but both are IMMEDIATE.  This is the
+# DIRECT-INDEX refill -- the arm whose operand half-word comes from
+# storage (IBG59, value 4) rather than from the instruction.
+#
+# ALL THREE FIELDS OF THE REFILLED INDEX WORD ARE CHECKED, each by its
+# own link: the value goes straight to IBG57, the count through ISTOY
+# by SC/LV, and the refill through ISTOY by SR/LV.  The chain runs
+# IBG57 -> IBG61 -> IBG58 -> IBG64 and every manufactured half-word is
+# on it.
+#
+# MEASURED, and the deck predicted its own failure.  The listing
+# annotates the two stores after the V+CR "IF NOT SV WILL BE B,IBG63"
+# and "WHICH WILL CAUSE HANG UP".  With direct-index V+CR made never to
+# refill, IBG57 comes out holding exactly B,003766.00 -- IBG63 -- and
+# the run stops there, because IBG63's own first half-word (3766.04, a
+# constant) decodes as a branch to itself.  The deck laid its constants
+# out so that a failed refill lands on a self-branch.
+VPCR_CHECKS=$(python3 -c 'from strap_asm import assemble
+p = assemble(open("programs/ibox1_vpcr_refill.strap").read())
+ha = lambda n: p.symtab[n] // 32
+bd = lambda n: ((ha(n) >> 1) << 14) | ((ha(n) & 1) << 13) | (0b001 << 10)
+words = {}
+for link, tgt in (("IBG57", "IBG61"), ("IBG58", "IBG64"), ("IBG61", "IBG58")):
+    w, half = ha(link) >> 1, ha(link) & 1
+    base = p.words.get(w, 0)
+    hi, lo = words.get(w, ((base >> 32) & 0xffffffff, base & 0xffffffff))
+    words[w] = (bd(tgt), lo) if half == 0 else (hi, bd(tgt))
+print(" ".join("W%o:%d=0x%016x" % (w, w, (words[w][0] << 32) | words[w][1])
+               for w in sorted(words)))')
+run "IBOX-1 V+CR refill (direct index, all three fields)" ./run_program.sh programs/ibox1_vpcr_refill.strap StretchIbox1VpcrRefillTb \
+    "PC=$(python3 -c 'from strap_asm import assemble; print(assemble(open("programs/ibox1_vpcr_refill.strap").read()).symtab["PASS"]//32)')" \
+    $VPCR_CHECKS
+
 run "IBOX-1 V-IC chain (ja_ax1a, encoding)" python3 verify_ibox1_vic_chain_listing.py
 # V-IC ("add to value immediate + count"), one of EIGHT modeled index
 # operations a coverage screen found in ZERO of the 140 programs this

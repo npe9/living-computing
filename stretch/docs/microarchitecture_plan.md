@@ -3730,12 +3730,36 @@ hand vectors alone. "Enables" notes the dependency chain.
    V-IC, V-ICR AND LRI ARE CLOSED (ibox1_vic_chain, ja_ax1a pp.36-37
    routine IBP14A-IBP29; ibox1_vicr_chain, p.37 routine IBP30-IBP53;
    ibox3_lri, jb_ax3a pp.210-212 routine 1230 blocks I3021-I3027).
-   Four remain: V+CR, LVNI, KVNI, V+IC.  V+C is closed
-   (ibox1_vpc_chain, ja_ax1a pp.22-23 routine IBG39-IBG54), and it was
-   found BY THE MAP below rather than by page order: the routine list
-   bounded it to before p.33 and two low-resolution renders found the
-   banner.  V+CR is the very next section in the listing, starting at
-   003754.00 on the same page.
+   Three remain: LVNI, KVNI, V+IC.  V+C and V+CR are closed
+   (ibox1_vpc_chain, ja_ax1a pp.22-23 routine IBG39-IBG54;
+   ibox1_vpcr_refill, p.23 routine IBG55-IBG64), and V+C was found BY
+   THE MAP below rather than by page order: the routine list bounded it
+   to before p.33 and two low-resolution renders found the banner.
+
+   V+CR'S DECK PREDICTED ITS OWN FAILURE AND THE INJECTION REPRODUCED
+   IT VERBATIM, which is the most satisfying confirmation this method
+   has produced. The listing annotates the two stores after the V+CR
+   "IF NOT SV WILL BE B,IBG63" and "WHICH WILL CAUSE HANG UP". With
+   direct-index V+CR made never to refill, IBG57 comes out holding
+   exactly B,003766.00 -- IBG63 -- and the run stops there, because
+   IBG63's own first half-word (3764.04... printed 3766.04, a CONSTANT,
+   the initial XW) decodes as a branch to itself. The deck laid its
+   constants out so that a failed refill lands on a self-branch.
+
+   AND THE NEW SURFACE IS NARROW, worth stating so it is not
+   re-derived: V+ICR's refill is closed by ibox1_vpicr and V-ICR's by
+   ibox1_vicr_chain, but BOTH ARE IMMEDIATE. This is the DIRECT-INDEX
+   refill, whose operand half-word comes from storage rather than from
+   the instruction. All three fields of the refilled index word are
+   checked by separate links -- value straight to IBG57, count through
+   ISTOY by SC/LV, refill through ISTOY by SR/LV.
+
+   ONLY THE SECTION'S FIRST TEST IS TAKEN, the listing's own "START OF
+   TEST" through where it writes "RESTART OF ROUTINE". The remainder,
+   IBG65-IBG91 at 003770.00-004022.40, runs the complementary pair (a
+   V+CR that must NOT refill, count 2, then one that must). That test
+   alone closes the operation; the other would add the boundary on the
+   far side.
 
    AND ALL FIVE ARE IN ONE TAPE, which its own front matter says
    outright. ja_ax1a pp.3-4 list every operation the program covers,

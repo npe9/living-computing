@@ -1,0 +1,76 @@
+! ja_ax1a "IBOX-1", routine IBG55-IBG64, p.23 (octal 003754.00-
+! 003767.40): "%V+CR% **** ADD TO VALUE, COUNT, + REFILL", its first
+! test -- the listing's own "START OF TEST", ending where the listing
+! writes "RESTART OF ROUTINE".
+!
+! WHY THIS BLOCK.  V+CR was one of eight modeled index operations a
+! coverage screen found in ZERO suite programs, all eight confirmed by
+! poisoning them at once.  It is the section immediately after V+C
+! (ibox1_vpc_chain) on the same page, found the same way: ja_ax1a's own
+! routine list, whose line for it reads "Same as V+C.  One case no
+! refill, other case refills."
+!
+! WHAT IS NEW, stated narrowly.  V+ICR's refill is closed by
+! ibox1_vpicr and V-ICR's by ibox1_vicr_chain; both are IMMEDIATE.
+! This is the DIRECT-INDEX refill -- the arm that reads its operand
+! half-word from storage (IBG59, holding value 4) rather than from the
+! instruction -- and nothing reached it.
+!
+! THE DECK NAMES ITS OWN FAILURE MODE, which is why this one test is
+! worth having on its own.  IBG63 seeds count 1 and refill IBG62, so
+! the single V+CR at IBG56 drives the count to zero and must refill.
+! The listing annotates what happens if it does not, on the two stores
+! that follow: "IF NOT SV WILL BE B,IBG63" and "WHICH WILL CAUSE HANG
+! UP".  A refill that does not happen leaves the value four bits past
+! IBG63 instead of at IBG61, and the chain branches back into the
+! constants and stops.
+!
+! THE ARITHMETIC, derived before this was ever run.  After the refill
+! the register holds IBG62's word -- value IBG61+.04, count 03763,
+! refill 03767 -- and the three stores manufacture:
+!
+!   SV -> IBG57 = 3764.44  (IBG61)   the refilled VALUE
+!   SV -> IBG61 = 3763.04  (IBG58)   the refilled COUNT, via ISTOY
+!   SV -> IBG58 = 3767.04  (IBG64)   the refilled REFILL, via SR
+!
+! so all three of the index word's fields are checked, each by a
+! separate link, and the chain runs IBG57 -> IBG61 -> IBG58 -> IBG64.
+! Every manufactured half-word is on that path.  Each target is exactly
+! what the listing's comments name.
+!
+! WHAT IS LEFT OF THE SECTION.  The "RESTART OF ROUTINE" half,
+! IBG65-IBG91 at 003770.00-004022.40, runs the complementary pair -- a
+! V+CR that must NOT refill (count 2) and then one that must -- and is
+! not transcribed here.  This test alone closes the operation; that one
+! would add the boundary on the other side.
+
+        SLC, (8)6104.0
+ISTOZ   DD(BU,64,8), 0
+ISTOY   DD(BU,64,8), 0
+COM04   VF, 0.04
+
+        SLC, (8)3754.0
+IBG55   LX, $X1, IBG63                       ! LX with count 1 = one
+IBG56   V+CR, $X1, IBG59                     ! should cause refill
+        SV, $X1, IBG57                       ! if not SV will be B, IBG63
+        SC, $X1, ISTOY
+        LV, $X1, ISTOY
+        V+, $X1, COM04
+        SV, $X1, IBG61                       ! which will cause hang up
+        NOP, 0.0
+        SR, $X1, ISTOY
+        LV, $X1, ISTOY
+        V+, $X1, COM04
+        SV, $X1, IBG58                       ! to be stored at IBG57
+        LV, $X1, IBG57
+IBG57   B, $                                 ! should become BD, IBG61
+IBG58   B, $                                 ! should become BD, IBG64
+IBG59   BD, (8)0.0                           ! the V+CR operand: value 4
+IBG60   VF, (8)777777.50
+IBG61   B, $                                 ! should become BD, IBG58
+IBG62   XW, IBG61+(8)0.04, (8)3763, IBG64    ! refill XW
+IBG63   XW, IBG63+(8)0.04, 1, IBG62          ! initial XW
+IBG64   NOP, (8)777777.0                     ! executed as NOP
+        NOP, (8)777777.0                     ! executed as NOP
+PASS    BEW, $
+        END, IBG55
