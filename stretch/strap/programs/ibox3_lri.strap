@@ -1,0 +1,174 @@
+! jb_ax3a "IBOX-3", routine 1230 blocks I3021-I3027, pp.210-212 (octal
+! 033174.00-033270.00): LOAD REFILL IMMEDIATE, swept over every bit of
+! the refill field.
+!
+! WHY THIS BLOCK.  LRI was one of eight modeled index operations a
+! coverage screen found in ZERO suite programs, all eight then
+! confirmed by poisoning them at once (277 sections still passed).
+! Routine 1230 is "TEST LOAD REFILL AND LOAD REFILL IMMED."; ibox3_lr
+! took its LR half from p.200 and left this, its LRI half, untaken.
+!
+! HOW ONE TEST WORKS, and why the two immediates differ by a factor of
+! 64.  Each test is six half-words:
+!
+!   LVI,$X2,<n>.0   load the EXPECTED value into $X2
+!   LRI,$X0,<n>     load <n> into $X0's REFILL field -- under test
+!   SR,$X0,I30ST    store that refill out to a word
+!   KV,$X2,I30ST    compare the expected value against it
+!   SIC,SEN / BZXE,SERS
+!
+! SR writes the 18-bit refill into bits 0-17 of a half-word, so reading
+! it back as a 24-bit value field multiplies it by 64.  LVI's operand
+! is written "<n>." -- a bit address, word <n> bit 0, which is 64*<n>
+! -- and LRI's is a bare count.  The same octal digits appear in both
+! operands and the block still compares equal, which is the whole
+! trick: the two immediate FORMS are different (Ref. Manual p.25 --
+! value operations take the address part shifted left five, count
+! operations take the field's top 18 bits) and the deck relies on
+! exactly that difference lining up.
+!
+! WHY THE WHOLE SWEEP AND NOT A SAMPLE.  This repository already
+! measured that BIT SWEEPS ARE FIELD-WIDTH TESTS whose value is at the
+! two EDGES -- an 8-bit sweep did not catch a bottom-bit drop where the
+! 24-bit one did.  The refill field is IBM bits 46-63, so the edges are
+! bit 63 (I3021's first test) and bit 46 (I3026's last), and taking
+! either end alone would leave the other unpinned.  Twenty tests: the
+! eighteen single bits, then ALL ONES and ALL ZEROS.
+!
+! The listing labels every third test -- I3021, I3022, I3023, I3024,
+! I3025, I3026, I3027 -- and only the first carries a BD,$+.32.
+        SLC, (8)1304.0
+SERS    BEW, $
+        SLC, (8)1310.0
+SEN     DD(BU,64,8), 0
+
+! I30ST is "DR%BU,64,8,%1%" in the listing -- a RESERVED word, a
+! pseudo-op this assembler does not have.  A zeroed word is the same
+! thing here: SR re-stores the loaded refill into it before every KV.
+        SLC, (8)33301.0
+I30ST   DD(BU,64,8), 0
+
+        SLC, (8)33174.0
+I3021   LVI, $X2, (8)000001.0      ! test bit 63
+        BD, $+.32
+        LRI, $X0, (8)000001
+        SR, $X0, I30ST
+        KV, $X2, I30ST
+        SIC, SEN
+        BZXE, SERS                           ! failed to load bit 63
+        LVI, $X2, (8)000002.0      ! test bit 62
+        LRI, $X0, (8)000002
+        SR, $X0, I30ST
+        KV, $X2, I30ST
+        SIC, SEN
+        BZXE, SERS                           ! failed to load bit 62
+        LVI, $X2, (8)000004.0      ! test bit 61
+        LRI, $X0, (8)000004
+        SR, $X0, I30ST
+        KV, $X2, I30ST
+        SIC, SEN
+        BZXE, SERS                           ! failed to load bit 61
+I3022   LVI, $X2, (8)000010.0      ! test bit 60
+        LRI, $X0, (8)000010
+        SR, $X0, I30ST
+        KV, $X2, I30ST
+        SIC, SEN
+        BZXE, SERS                           ! failed to load bit 60
+        LVI, $X2, (8)000020.0      ! test bit 59
+        LRI, $X0, (8)000020
+        SR, $X0, I30ST
+        KV, $X2, I30ST
+        SIC, SEN
+        BZXE, SERS                           ! failed to load bit 59
+        LVI, $X2, (8)000040.0      ! test bit 58
+        LRI, $X0, (8)000040
+        SR, $X0, I30ST
+        KV, $X2, I30ST
+        SIC, SEN
+        BZXE, SERS                           ! failed to load bit 58
+I3023   LVI, $X2, (8)000100.0      ! test bit 57
+        LRI, $X0, (8)000100
+        SR, $X0, I30ST
+        KV, $X2, I30ST
+        SIC, SEN
+        BZXE, SERS                           ! failed to load bit 57
+        LVI, $X2, (8)000200.0      ! test bit 56
+        LRI, $X0, (8)000200
+        SR, $X0, I30ST
+        KV, $X2, I30ST
+        SIC, SEN
+        BZXE, SERS                           ! failed to load bit 56
+        LVI, $X2, (8)000400.0      ! test bit 55
+        LRI, $X0, (8)000400
+        SR, $X0, I30ST
+        KV, $X2, I30ST
+        SIC, SEN
+        BZXE, SERS                           ! failed to load bit 55
+I3024   LVI, $X2, (8)001000.0      ! test bit 54
+        LRI, $X0, (8)001000
+        SR, $X0, I30ST
+        KV, $X2, I30ST
+        SIC, SEN
+        BZXE, SERS                           ! failed to load bit 54
+        LVI, $X2, (8)002000.0      ! test bit 53
+        LRI, $X0, (8)002000
+        SR, $X0, I30ST
+        KV, $X2, I30ST
+        SIC, SEN
+        BZXE, SERS                           ! failed to load bit 53
+        LVI, $X2, (8)004000.0      ! test bit 52
+        LRI, $X0, (8)004000
+        SR, $X0, I30ST
+        KV, $X2, I30ST
+        SIC, SEN
+        BZXE, SERS                           ! failed to load bit 52
+I3025   LVI, $X2, (8)010000.0      ! test bit 51
+        LRI, $X0, (8)010000
+        SR, $X0, I30ST
+        KV, $X2, I30ST
+        SIC, SEN
+        BZXE, SERS                           ! failed to load bit 51
+        LVI, $X2, (8)020000.0      ! test bit 50
+        LRI, $X0, (8)020000
+        SR, $X0, I30ST
+        KV, $X2, I30ST
+        SIC, SEN
+        BZXE, SERS                           ! failed to load bit 50
+        LVI, $X2, (8)040000.0      ! test bit 49
+        LRI, $X0, (8)040000
+        SR, $X0, I30ST
+        KV, $X2, I30ST
+        SIC, SEN
+        BZXE, SERS                           ! failed to load bit 49
+I3026   LVI, $X2, (8)100000.0      ! test bit 48
+        LRI, $X0, (8)100000
+        SR, $X0, I30ST
+        KV, $X2, I30ST
+        SIC, SEN
+        BZXE, SERS                           ! failed to load bit 48
+        LVI, $X2, (8)200000.0      ! test bit 47
+        LRI, $X0, (8)200000
+        SR, $X0, I30ST
+        KV, $X2, I30ST
+        SIC, SEN
+        BZXE, SERS                           ! failed to load bit 47
+        LVI, $X2, (8)400000.0      ! test bit 46
+        LRI, $X0, (8)400000
+        SR, $X0, I30ST
+        KV, $X2, I30ST
+        SIC, SEN
+        BZXE, SERS                           ! failed to load bit 46
+I3027   LVI, $X2, (8)777777.0      ! test all ones
+        LRI, $X0, (8)777777
+        SR, $X0, I30ST
+        KV, $X2, I30ST
+        SIC, SEN
+        BZXE, SERS                           ! failed to load all ones
+        LVI, $X2, (8)000000.0      ! test all zeros
+        LRI, $X0, (8)000000
+        SR, $X0, I30ST
+        KV, $X2, I30ST
+        SIC, SEN
+        BZXE, SERS                           ! failed to load all zeros
+PASS    BEW, $
+        END, I3021

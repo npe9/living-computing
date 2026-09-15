@@ -3727,10 +3727,45 @@ hand vectors alone. "Enables" notes the dependency chain.
      direct index   V+C, V+CR
      immediate      LVNI, LRI, KVNI, V+IC, V-IC, V-ICR
 
-   V-IC AND V-ICR ARE CLOSED (ibox1_vic_chain, ja_ax1a pp.36-37 routine
-   IBP14A-IBP29; ibox1_vicr_chain, p.37 routine IBP30-IBP53) -- the
-   blocks this document scouted long ago and never took. Six remain:
-   V+C, V+CR, LVNI, LRI, KVNI, V+IC.
+   V-IC, V-ICR AND LRI ARE CLOSED (ibox1_vic_chain, ja_ax1a pp.36-37
+   routine IBP14A-IBP29; ibox1_vicr_chain, p.37 routine IBP30-IBP53;
+   ibox3_lri, jb_ax3a pp.210-212 routine 1230 blocks I3021-I3027).
+   Five remain: V+C, V+CR, LVNI, KVNI, V+IC.
+
+   LRI IS ROUTINE 1230'S OTHER HALF -- the routine is named "TEST LOAD
+   REFILL AND LOAD REFILL IMMED." and ibox3_lr took only the LR part
+   from p.200. One more case of A TAPE'S TEST FOR AN OPERATION NOT
+   BEING THE ONLY TEST FOR IT, the lesson that entry already records,
+   arriving from the other direction: the second half of the same
+   routine was sitting there the whole time.
+
+   ITS SIX-HALF-WORD TEST TURNS ON THE TWO IMMEDIATE FORMS BEING
+   DIFFERENT, which is worth knowing because it reads like a typo
+   otherwise. The same octal digits appear in both operands and KV
+   still compares equal: LVI,$X2,<n>. is a VALUE operation and takes
+   the address part shifted left five, so "<n>." is 64*n; LRI,$X0,<n>
+   is a COUNT operation and takes a bare count into the refill field;
+   and SR then writes that 18-bit refill into bits 0-17 of a half-word,
+   where reading it back as a 24-bit value multiplies by 64 again.
+
+   AND THE WHOLE SWEEP EARNS ITS LENGTH, measured, not assumed. The
+   entry above already established that bit sweeps are field-width
+   tests whose value is at the two EDGES. The refill field is IBM bits
+   46-63, and each edge catches only its own fault: LRI dropping bit 63
+   halts at SEN = 033177.40, the FIRST test, while LRI dropping bit 46
+   halts at SEN = 033262.40, the EIGHTEENTH. Neither is visible to the
+   other end, so a sample from one end would have left the other
+   unpinned.
+
+   ONE DEPARTURE FROM METHOD, flagged because it is the only one in the
+   suite. verify_ibox3_lri_listing.py GENERATES its oracle rows from a
+   table where every other verify script writes them out longhand. The
+   block is twenty near-identical six-row tests differing in one octal
+   immediate; the (bit, immediate) table was read off all three pages
+   and the row pattern confirmed against the printed encodings on every
+   test before being written down, so what is generated is the
+   REPETITION and not the values. The script asserts both the row count
+   and that its last row lands on the listing's own final address.
 
    AND THE V-ICR BLOCK CARRIES A TRICK WORTH NAMING, because nothing
    else in the suite does it. IBPA4 is not a constant: it is TWO

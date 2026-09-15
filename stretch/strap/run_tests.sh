@@ -1363,6 +1363,31 @@ run "IBOX-3 LR (jb_ax3a, encoding)" python3 verify_ibox3_lr_listing.py
 run "IBOX-3 LR (load refill from all three memories)" ./run_program.sh programs/ibox3_lr.strap StretchIbox3LrTb \
     "PC=$(python3 -c 'from strap_asm import assemble; print(assemble(open("programs/ibox3_lr.strap").read()).symtab["PASS"]//32)')"
 
+run "IBOX-3 LRI (jb_ax3a, encoding)" python3 verify_ibox3_lri_listing.py
+# Routine 1230's other half.  It is named "TEST LOAD REFILL AND LOAD
+# REFILL IMMED."; ibox3_lr took the LR part from p.200 and left this.
+# LRI was one of the eight confirmed-uncovered index operations.
+#
+# ONE TEST IS SIX HALF-WORDS and turns on the two IMMEDIATE FORMS being
+# different: LVI,$X2,<n>. loads the expected VALUE (Ref. Manual p.25 --
+# value operations take the address part shifted left five, so "<n>."
+# is 64*n), LRI,$X0,<n> loads a bare count into the REFILL field, and
+# SR then writes that 18-bit refill into bits 0-17 of a half-word,
+# where reading it back as a 24-bit value multiplies it by 64 again.
+# The same octal digits appear in both operands and KV still compares
+# equal.  The deck is relying on exactly that difference lining up.
+#
+# THE WHOLE SWEEP IS HERE, all twenty tests, and the reason is measured
+# rather than assumed.  This repository already found that bit sweeps
+# are field-width tests whose value is at the two EDGES.  The refill
+# field is IBM bits 46-63, and each edge catches only its own fault:
+# LRI dropping bit 63 halts at SEN = 033177.40, the FIRST test, while
+# LRI dropping bit 46 halts at SEN = 033262.40, the EIGHTEENTH.
+# Neither injection is visible to the other end of the sweep, so taking
+# a sample from one end would have left the other unpinned.
+run "IBOX-3 LRI (refill immediate, every bit of the field)" ./run_program.sh programs/ibox3_lri.strap StretchIbox3LriTb \
+    "PC=$(python3 -c 'from strap_asm import assemble; print(assemble(open("programs/ibox3_lri.strap").read()).symtab["PASS"]//32)')"
+
 run "IBOX-3 SVA into a floating-point instruction (jb_ax3a, encoding)" python3 verify_ibox3_sva_fp_listing.py
 # SVA was setOpInvalid, which is what made I-Box 3, -4 and -5 usable
 # only in slices chosen to avoid it.  This is the listing's own SVA
