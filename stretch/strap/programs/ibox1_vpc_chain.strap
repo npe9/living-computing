@@ -1,0 +1,105 @@
+! ja_ax1a "IBOX-1", routine IBG39-IBG54, pp.22-23 (octal
+! 003725.00-003753.40): "%V+C% **** ADD TO VALUE + COUNT".
+!
+! WHY THIS BLOCK.  V+C was one of eight modeled index operations a
+! coverage screen found in ZERO of the suite's programs, all eight then
+! confirmed by poisoning them at once (277 sections still passed).
+! It was found by reading ja_ax1a's OWN ROUTINE LIST (pp.3-4), which
+! names every operation the tape covers, one line each, in program
+! order -- V+C's line is "BD setup as before.  All positions of Y
+! Registers varies stored address."  Cross-referencing that order
+! against the blocks already taken bounded V+C to before p.33, and two
+! low-resolution page renders found the banner.
+!
+! WHICH V+ THIS IS.  V+ itself is direct-index ADD TO VALUE and is
+! everywhere in the suite; V+I, V+ICR and V-I.. all have their own
+! blocks.  V+C is the DIRECT-INDEX form that adds to the value AND
+! decrements the count, and the listing annotates its two effects on
+! consecutive lines: "ADD TO VALUE A HALF" then "DIMINISH COUNT BY
+! ONE".  Nothing in the suite reached it.
+!
+! HOW IT CHECKS ITSELF, and it checks itself COMPLETELY.  IBG44 through
+! IBG51 are eight branch-to-self half-words and the four tests store
+! over ALL EIGHT: the value after each V+C into one, and the count --
+! routed through ISTOY by SC then LV, which multiplies it by 64 and so
+! turns a count into a word address, then V+ COM04 to set the branch
+! opcode -- into another.  The chain runs
+!
+!   IBG44 -> IBG47 -> IBG45 -> IBG46 -> IBG48 -> IBG51 -> IBG49 ->
+!   IBG50 -> IBG52 -> IBG54
+!
+! and every manufactured link is on it, so reaching the exit really
+! does mean all eight came out right.  Wrong arithmetic leaves a link
+! branching to itself and THE MACHINE STOPS.
+!
+! THE OPERAND IS ONE COMMON HALF-WORD.  All four V+C instructions
+! address IBEN7, which holds 0.32 -- thirty-two bits, half a word -- so
+! each test adds the same half-word to the value while the count falls
+! by one each time.  The value therefore walks IBG44 -> IBG44+.44 ->
+! IBG45+.04 -> ... and the count walks 03752 -> 03751 -> 03750 ->
+! 03747 -> 03746, which is why the eight targets come out as they do.
+! Every one matches the listing's own comments.
+!
+! (As in ibox1_vic_chain, the listing annotates the four count-path
+! links "BE" where the encoding is BD -- COM04's +4 sets IBM bit 21 and
+! the branch code at bits 19-21 is BE = 000, BD = 001.  Both branch
+! unconditionally, so the chain is unaffected; the addresses its
+! comments give are all correct.)
+!
+! IBG54's two NOPs are MEANT to be executed: IBG52 branches to them and
+! the block ends by falling through.
+
+        SLC, (8)6104.0
+ISTOZ   DD(BU,64,8), 0
+ISTOY   DD(BU,64,8), 0
+COM04   VF, 0.04
+
+        SLC, (8)3725.0
+IBG39   LX, $X1, IBG53                       ! load index
+IBG40   V+C, $X1, IBEN7                      ! add to value a half
+        SV, $X1, IBG47                       ! diminish count by one
+        SC, $X1, ISTOY
+        LV, $X1, ISTOY
+        V+, $X1, COM04
+        SV, $X1, IBG50                       ! store values
+        LV, $X1, IBG47
+IBG41   V+C, $X1, IBEN7                      ! + counts
+        SV, $X1, IBG45                       ! into proper
+        SC, $X1, ISTOY
+        LV, $X1, ISTOY
+        V+, $X1, COM04
+        SV, $X1, IBG48                       ! areas + try
+        LV, $X1, IBG45
+IBG42   V+C, $X1, IBEN7                      ! to branch thru.
+        SV, $X1, IBG44
+        SC, $X1, ISTOY
+        LV, $X1, ISTOY
+        V+, $X1, COM04
+        SV, $X1, IBG49
+        LV, $X1, IBG44
+IBG43   V+C, $X1, IBEN7
+        SV, $X1, IBG46
+        SC, $X1, ISTOY
+        LV, $X1, ISTOY
+        V+, $X1, COM04
+        SV, $X1, IBG51
+        CNOP
+IBG44   BE, $                                ! value  -> BD, IBG47
+IBG45   BE, $                                ! test   -> BD, IBG46
+IBG46   BE, $                                ! area.  -> BD, IBG48
+IBG47   BE, $                                ! area.  -> BD, IBG45
+IBG48   BD, $                                ! count  -> BE, IBG51
+        BD, $
+IBG49   BD, $                                ! test   -> BE, IBG50
+        BD, $
+IBG50   BD, $                                ! area.  -> BE, IBG52
+        BD, $
+IBG51   BD, $                                !        -> BE, IBG49
+        BD, $
+IBG52   B, IBG54
+IBEN7   BE, 0.32                             ! common value
+IBG53   XW, IBG44+(8)0.04, (8)3752, 0        ! common XW
+IBG54   NOP, (8)777777.0                     ! executed as NOP
+        NOP, (8)777777.0                     ! executed as NOP
+PASS    BEW, $
+        END, IBG39

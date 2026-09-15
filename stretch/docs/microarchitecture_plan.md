@@ -3730,7 +3730,12 @@ hand vectors alone. "Enables" notes the dependency chain.
    V-IC, V-ICR AND LRI ARE CLOSED (ibox1_vic_chain, ja_ax1a pp.36-37
    routine IBP14A-IBP29; ibox1_vicr_chain, p.37 routine IBP30-IBP53;
    ibox3_lri, jb_ax3a pp.210-212 routine 1230 blocks I3021-I3027).
-   Five remain: V+C, V+CR, LVNI, KVNI, V+IC.
+   Four remain: V+CR, LVNI, KVNI, V+IC.  V+C is closed
+   (ibox1_vpc_chain, ja_ax1a pp.22-23 routine IBG39-IBG54), and it was
+   found BY THE MAP below rather than by page order: the routine list
+   bounded it to before p.33 and two low-resolution renders found the
+   banner.  V+CR is the very next section in the listing, starting at
+   003754.00 on the same page.
 
    AND ALL FIVE ARE IN ONE TAPE, which its own front matter says
    outright. ja_ax1a pp.3-4 list every operation the program covers,

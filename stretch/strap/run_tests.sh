@@ -1211,6 +1211,53 @@ run "IBOX-1 C-I chain (self-modifying branch chain, C-I)" ./run_program.sh progr
     "PC=$(python3 -c 'from strap_asm import assemble; print(assemble(open("programs/ibox1_cmi_chain.strap").read()).symtab["PASS"]//32)')" \
     $CMI_CHECKS
 
+run "IBOX-1 V+C chain (ja_ax1a, encoding)" python3 verify_ibox1_vpc_chain_listing.py
+# V+C, the DIRECT-INDEX "add to value and count", and the fourth of the
+# eight confirmed-uncovered index operations to be closed.  Not to be
+# confused with V+ (everywhere in the suite), V+I, V+IC or V+ICR: this
+# is the half-word direct form, and the listing annotates its two
+# effects on consecutive lines -- "ADD TO VALUE A HALF" then "DIMINISH
+# COUNT BY ONE".
+#
+# FOUND BY READING THE TAPE'S OWN ROUTINE LIST.  ja_ax1a pp.3-4 name
+# every operation the program covers, one line each, IN PROGRAM ORDER.
+# Cross-referencing that order against the blocks already transcribed
+# bounded V+C to before p.33, and two low-resolution renders found the
+# banner.  That is the third time reading a routine list first has
+# paid, and it is the same one-page render that would have prevented
+# the wrong "LR is blocked" entry.
+#
+# It checks itself COMPLETELY, like ibox1_vic_chain and unlike
+# ibox1_cmi_chain: IBG44-IBG51 are eight branch-to-self half-words and
+# the four tests store over ALL EIGHT -- the value after each V+C into
+# one, the count (through ISTOY by SC then LV, which multiplies it by
+# 64, then V+ COM04 for the branch opcode) into another -- and every
+# one is on the path IBG44 -> IBG47 -> IBG45 -> IBG46 -> IBG48 ->
+# IBG51 -> IBG49 -> IBG50 -> IBG52.
+#
+# Measured, and the signature splits exactly as the block's structure
+# predicts: with V+C decrementing the count twice, the two words
+# holding only VALUE-path links still pass while all four COUNT-path
+# words are wrong and the exit is never reached.
+VPC_CHECKS=$(python3 -c 'from strap_asm import assemble
+p = assemble(open("programs/ibox1_vpc_chain.strap").read())
+ha = lambda n: p.symtab[n] // 32
+bd = lambda n: ((ha(n) >> 1) << 14) | ((ha(n) & 1) << 13) | (0b001 << 10)
+chain = (("IBG44", "IBG47"), ("IBG45", "IBG46"), ("IBG46", "IBG48"),
+         ("IBG47", "IBG45"), ("IBG48", "IBG51"), ("IBG49", "IBG50"),
+         ("IBG50", "IBG52"), ("IBG51", "IBG49"))
+words = {}
+for link, tgt in chain:
+    w, half = ha(link) >> 1, ha(link) & 1
+    base = p.words.get(w, 0)
+    hi, lo = words.get(w, ((base >> 32) & 0xffffffff, base & 0xffffffff))
+    words[w] = (bd(tgt), lo) if half == 0 else (hi, bd(tgt))
+print(" ".join("W%o:%d=0x%016x" % (w, w, (words[w][0] << 32) | words[w][1])
+               for w in sorted(words)))')
+run "IBOX-1 V+C chain (self-modifying branch chain, V+C)" ./run_program.sh programs/ibox1_vpc_chain.strap StretchIbox1VpcChainTb \
+    "PC=$(python3 -c 'from strap_asm import assemble; print(assemble(open("programs/ibox1_vpc_chain.strap").read()).symtab["PASS"]//32)')" \
+    $VPC_CHECKS
+
 run "IBOX-1 V-IC chain (ja_ax1a, encoding)" python3 verify_ibox1_vic_chain_listing.py
 # V-IC ("add to value immediate + count"), one of EIGHT modeled index
 # operations a coverage screen found in ZERO of the 140 programs this
