@@ -3742,8 +3742,8 @@ hand vectors alone. "Enables" notes the dependency chain.
    "IF NOT SV WILL BE B,IBG63" and "WHICH WILL CAUSE HANG UP". With
    direct-index V+CR made never to refill, IBG57 comes out holding
    exactly B,003766.00 -- IBG63 -- and the run stops there, because
-   IBG63's own first half-word (3764.04... printed 3766.04, a CONSTANT,
-   the initial XW) decodes as a branch to itself. The deck laid its
+   IBG63's own first half-word -- 3766.04, a CONSTANT, the value field
+   of the initial XW -- decodes as a branch to itself. The deck laid its
    constants out so that a failed refill lands on a self-branch.
 
    AND THE NEW SURFACE IS NARROW, worth stating so it is not
