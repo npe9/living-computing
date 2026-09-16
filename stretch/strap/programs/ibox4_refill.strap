@@ -1,0 +1,102 @@
+! jb_ax4b "IBOX-4", routine 1238 test 1, first check, p.58 (octal
+! 005303.00-005313.00): "----1238---REFILL AND REFILL IF COUNT ZERO",
+! the R (Refill) instruction.
+!
+! WHY THIS BLOCK, AND WHAT IT CAUGHT.  R and RCZ were found by
+! screening the whole opcode space: both are implemented in execute()
+! and both appeared in ZERO of the suite's programs, which an injection
+! confirmed (293 sections passed with the refilled word corrupted in
+! both arms).  I-Box 4's routine list named where they are tested --
+! "1238 Checks R and RCZ from all three memories where legal" -- and
+! this is the first check of its first test.
+!
+! IT FOUND A REAL BUG.  execute()'s arm read `st.readIndex(bm.idx)`,
+! but bm.idx is IBM bits 28-31, the register that MODIFIES the address,
+! not the operand.  Ref. Manual p.26 says R replaces the word at the
+! EFFECTIVE ADDRESS with the word its refill field names, and the
+! listing agrees: "R,$X15" assembles to 37.02 00 -- address 037, which
+! is word 31, which IS index register 15 -- with idx = 0.  So the model
+! refilled $X0 from $X0 and never touched $X15.  This block halted at
+! SERS with SEN = 005313.00, its first check, and passes with the arm
+! corrected.
+!
+! HOW ONE CHECK PROVES IT, using four BIT words and nothing else.
+! BIT_n is a 64-bit word with IBM bit n set, and WHICH FIELD the bit
+! lands in is the whole trick:
+!
+!   BIT59  bit 59 -> the REFILL field = 020   the seed, into $X15
+!   BIT13  bit 13 -> the VALUE  field = 020   loaded into $X0, which
+!                                             IS word 020 -- so this
+!                                             plants the expected
+!                                             result at the refill
+!                                             source in one move
+!   BIT14  bit 14 -> the VALUE  field = 010   decoy, stored at word 8
+!   BIT16  bit 16 -> the VALUE  field = 002   decoy, stored at word 1
+!
+! R,$X15 must therefore refill from word 020 and leave $X15 holding
+! value 020 = 1024; KVI then compares against 0.40 = 32 and BXH must be
+! taken.  A refill from the decoy at word 1 gives value 2, which is LOW,
+! and the check fires.  The decoys are how the rest of the routine --
+! not transcribed here -- names the wrong source: "REFILLED X15 FROM
+! LOCN 10 INSTEAD OF LOCN 20".
+!
+! THE SETUP WRITES INTO THE SPECIAL REGISTERS ON PURPOSE.  SX,$X0,8
+! goes to word 8 ($L), SV,$X0,2 to word 1 (IT, the interval timer) and
+! SV,$X1,1 to word 0 (Z), because words 1-15 are exactly what test 2's
+! "NOPING IF RF IS FROM 1 TO 15" is about.  Two of those meet model
+! simplifications and both turn out FAITHFUL here: writes to word 0 are
+! discarded, which is what the routine's "DID IT REFILL FROM ZERO"
+! check needs, and word 1 is fully writable in this model where real
+! hardware resists store-type writes to the timer -- but I-Box 4's
+! operating procedure disables the time clock before the program runs
+! ("4) Disable Interrupt and Time Clock"), which is why the deck can
+! use it as scratch.
+!
+! WHAT IS LEFT.  This is one check of test 1.  The rest of test 1 is
+! the refill-address sweep over 0, 1, 2, 4, 10, 40 ... 20000 across
+! pp.58-62; test 2 is six addressing cases and the 1-to-15 NOP rule;
+! test 3 is RCZ and zero gating.  RCZ is still driven by nothing.
+
+! -- SSIP framework substitutes: SERS (octal 1304) -> FAIL halt,
+! -- SEN (octal 1310) -> scratch for SIC.
+        SLC, (8)1304.0
+SERS    BEW, $
+        SLC, (8)1310.0
+SEN     DD(BU,64,8), 0
+
+! -- the four BIT words this segment loads, from jb_ax4b's BIT table
+! -- at 013054 (pp.191-192).  BIT_n is a 64-bit word with IBM bit n
+! -- set, and WHICH FIELD the bit lands in is the whole trick.
+        SLC, (8)13071.0
+BIT13   XW, (8)20.00, 0, 0                   ! bit 13 -> VALUE = 020
+BIT14   XW, (8)10.00, 0, 0                   ! bit 14 -> VALUE = 010
+        SLC, (8)13074.0
+BIT16   XW, (8)2.00, 0, 0                    ! bit 16 -> VALUE = 002
+        SLC, (8)13147.0
+BIT59   XW, 0, 0, 16                         ! bit 59 -> REFILL = 020
+
+! -- I3813 is "TERM TEST 1", the continuation into the rest of the
+! -- sweep; stubbed as a halt at its own address.
+        SLC, (8)5437.40
+I3813   BEW, $
+
+        SLC, (8)5303.0
+I381    LX, $X15, BIT59                      ! check basic control - all addresses
+        LX, $X0, BIT14                       ! in comments below are octal.
+        SX, $X0, 8
+        LX, $X0, BIT16
+        SV, $X0, 2
+        LX, $X0, BIT13
+        LX, $X1, 0
+        SV, $X1, 1
+        R, $X15
+        NOP
+        NOP
+        NOP
+        KVI, $X15, (8)0.40
+        BXH, $+2.0
+        SIC, SEN                             ! refilled X15 from locn 1 instead
+        B, SERS                              ! of locn 20.
+        B, I3813                             ! term test 1.
+PASS    BEW, $
+        END, I381

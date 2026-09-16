@@ -1258,6 +1258,43 @@ run "IBOX-1 V+C chain (self-modifying branch chain, V+C)" ./run_program.sh progr
     "PC=$(python3 -c 'from strap_asm import assemble; print(assemble(open("programs/ibox1_vpc_chain.strap").read()).symtab["PASS"]//32)')" \
     $VPC_CHECKS
 
+run "IBOX-4 R refill (jb_ax4b, encoding)" python3 verify_ibox4_refill_listing.py
+# R (Refill), routine 1238 test 1's first check -- AND THE BLOCK THAT
+# CAUGHT A REAL BUG.  execute()'s arm read `st.readIndex(bm.idx)`, but
+# bm.idx is IBM bits 28-31, the register that MODIFIES the address, not
+# the operand.  Ref. Manual p.26 says R replaces the word at the
+# EFFECTIVE ADDRESS with the word its refill field names, and the
+# listing agrees: "R,$X15" assembles to 37.02 00 -- address 037, word
+# 31, which IS index register 15 -- with idx = 0.  So the model
+# refilled $X0 from $X0 and never touched $X15.
+#
+# FOUND BY SCREENING, CONFIRMED BY INJECTION, THEN CAUGHT BY THE DECK.
+# R and RCZ are implemented and appeared in zero programs; poisoning
+# both left 293 sections passing.  I-Box 4's routine list named where
+# they are tested ("1238 Checks R and RCZ from all three memories where
+# legal").  Transcribed, the block halted at SERS with SEN =
+# 005313.00 -- its first check, "REFILLED X15 FROM LOCN 1 INSTEAD OF
+# LOCN 20" -- and passes with the arm corrected.  The fix landed WITH
+# its test, which is the point: a correction with no test behind it is
+# the mistake the SVA width change nearly was.
+#
+# ONE CHECK PROVES IT with four BIT words (BIT_n = a 64-bit word with
+# IBM bit n set) and nothing else, and which FIELD each bit lands in is
+# the trick: BIT59 -> REFILL = 020, the seed; BIT13 -> VALUE = 020,
+# loaded into $X0 which IS word 020, planting the expected result at
+# the refill source in one move; BIT14 and BIT16 -> 010 and 002, decoys
+# stored at words 8 and 1.
+#
+# SCOPE the fix keeps, stated rather than hidden: an index word held
+# outside index core storage needs two SEQUENTIAL reads (the word at
+# the effective address, then the word its refill names), which is the
+# shape V+CR has and this arm does not.  That case is left invalid, and
+# the rest of routine 1238 -- which checks "all three memories" -- is
+# what should drive it.  RCZ is still driven by nothing.
+run "IBOX-4 R refill (effective address, not the index field)" ./run_program.sh programs/ibox4_refill.strap StretchIbox4RefillTb \
+    "PC=$(python3 -c 'from strap_asm import assemble; print(assemble(open("programs/ibox4_refill.strap").read()).symtab["PASS"]//32)')" \
+    "SEN:712=0"
+
 run "IBOX-1 V+IC chain (ja_ax1a, encoding)" python3 verify_ibox1_vpic_chain_listing.py
 # V+IC, and with it the LAST of the eight modeled index operations a
 # coverage screen found in zero suite programs.  The largest of the

@@ -2695,24 +2695,45 @@ function ActionValue#(ExecResult)
               else
                 st.writeWord(zw, 0);
             end
-            3'b000: begin // R (Refill, unconditional) -- prefetch/
-              // bail-out shape (same as VflInt L/K/+ above).
-              IndexWord x = st.readIndex(bm.idx);
-              if (prefetchCount >= 1) begin
-                idxWriteReg = bm.idx; doIdxWrite = True;
-                idxWriteVal = unpackIndexWord(prefetch[0]);
+            3'b000, 3'b001: begin // R / RCZ -- Refill, and Refill on
+              // Count Zero.  Ref. Manual p.26: the operand is the
+              // index word AT THE EFFECTIVE ADDRESS, and that word's
+              // REFILL field (bits 46-63) names the word which
+              // replaces it.  RCZ acts only if its count (28-45) is
+              // zero.
+              //
+              // THIS USED TO READ bm.idx AND IT WAS WRONG.  bm.idx is
+              // hw[3:0], IBM bits 28-31 -- the register that MODIFIES
+              // the address, which Z three arms down correctly feeds
+              // through effAddr24.  Reading it as the OPERAND meant
+              // "R,$X15" refilled index register 0 from index register
+              // 0's refill field and never touched $X15.  The listing
+              // is unambiguous: jb_ax4b p.58 assembles "R,$X15" to
+              // 37.02 00, address 037 = word 31 = $X15, idx = 0.
+              // MEASURED, not merely read: routine 1238's test 1
+              // halted at SERS with SEN = 005313.00, its first check,
+              // "REFILLED X15 FROM LOCN 1 INSTEAD OF LOCN 20".
+              WordAddr rw = baWord(effAddr24(st, {bm.addr, 5'b0}, bm.idx));
+              if (rw >= addrIndexBase && rw < addrIndexBase + 16) begin
+                Bit#(4) j = truncate(rw - addrIndexBase);
+                IndexWord x = st.readIndex(j);
+                if (bm.code == 3'b000 || x.count == 0) begin
+                  if (prefetchCount >= 1) begin
+                    idxWriteReg = j; doIdxWrite = True;
+                    idxWriteVal = unpackIndexWord(prefetch[0]);
+                  end else
+                    needsRead = tagged Valid zeroExtend(x.refill);
+                end
               end else
-                needsRead = tagged Valid zeroExtend(x.refill);
-            end
-            3'b001: begin // RCZ (Refill on Count Zero)
-              IndexWord x = st.readIndex(bm.idx);
-              if (x.count == 0) begin
-                if (prefetchCount >= 1) begin
-                  idxWriteReg = bm.idx; doIdxWrite = True;
-                  idxWriteVal = unpackIndexWord(prefetch[0]);
-                end else
-                  needsRead = tagged Valid zeroExtend(x.refill);
-              end
+                // SCOPE: an index word held OUTSIDE index core storage
+                // needs two SEQUENTIAL reads -- the word at the
+                // effective address, then the word its refill field
+                // names -- which is the shape V+CR already has and
+                // this arm does not. Routine 1238 checks R and RCZ
+                // "from all three memories"; the rest of that routine
+                // is what should drive it. Left invalid rather than
+                // silently wrong.
+                ind = setOpInvalid(ind);
             end
             default: ind = setOpInvalid(ind); // EX, EXIC: out of scope
           endcase

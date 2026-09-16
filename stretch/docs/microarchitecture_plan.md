@@ -3813,12 +3813,23 @@ hand vectors alone. "Enables" notes the dependency chain.
    through effAddr24. So on "R,$X15" this model refills index register
    0 from index register 0's refill field and never touches $X15.
 
-   THE BUG IS LATENT because R and RCZ are executed by nothing, which
-   the injection above measured. The fix belongs WITH the transcription
-   of routine 1238, not before it: a correction with no test behind it
-   is the same mistake the SVA width change nearly was, and test 1 of
-   that routine is precisely the thing that would drive and then guard
-   it.
+   MEASURED AND FIXED, and in that order. The first check of routine
+   1238's test 1 is transcribed (ibox4_refill, p.58, 005303.00-
+   005313.00); against the unfixed arm it halted at SERS with
+   SEN = 005313.00 -- its own first check, "REFILLED X15 FROM LOCN 1
+   INSTEAD OF LOCN 20" -- and it passes with the arm corrected to use
+   the effective address. The fix landed WITH its test, which is why
+   the bug was recorded and left alone when it was only a reading: a
+   correction with no test behind it is the same mistake the SVA width
+   change nearly was.
+
+   SCOPE THE FIX KEEPS, stated rather than hidden. An index word held
+   OUTSIDE index core storage needs two SEQUENTIAL reads -- the word at
+   the effective address, then the word its refill field names -- which
+   is the shape V+CR already has and this arm does not. That case is
+   left setOpInvalid. Routine 1238 checks R and RCZ "from all three
+   memories", so the rest of it is what should drive the general form.
+   RCZ itself is still driven by nothing.
 
    HOW TEST 1 IS BUILT, decoded far enough that the next session can
    start on it rather than on the arithmetic. Its constants are the
