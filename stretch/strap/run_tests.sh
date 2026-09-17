@@ -157,6 +157,36 @@ run "B(IND) routine, all five groups (ja_ax1a, encoding)" python3 verify_ibox1_b
 run "B(IND) routine, all five groups (model)" ./run_program.sh programs/ibox1_bind.strap StretchIbox1BindTb \
     "PC=4196"          # 004062.00, the half-word after the routine's last printed line
 
+run "B(IND) XL block (ja_ax1a, encoding)" python3 verify_ibox1_bind_xl_listing.py
+# ja_ax1a p.25's IBIN35-IBIN41, the "RESTART OF ROUTINE" section that
+# tests BRANCH ON XL -- and the only place in the deck that writes the
+# INDICATOR REGISTER through ordinary storage.
+#
+# It is a different mechanism from the five groups above.  Those reach
+# their indicators through an index LOAD, so the deck sets them by
+# choosing a seed word.  XL is an index COMPARISON indicator and no
+# index load touches it, so the deck pokes the bit in by hand:
+#
+#   LX, $X1, IBXWZ        set XW to zero
+#   LV, $X1, IBXWZ6       load bit 20, %XL IND%
+#   SV, $X1, $IND+.32     store in IND reg.
+#
+# $IND is word 11 and SV stores the 24-bit value field at a BIT
+# address, so the store covers IBM bits 32-55; value bit 20 lands at
+# 32+20 = 52, which is XL.  The Reference Card's footnote c -- only
+# indicator bits 0-19 are read-only -- is what that permission is.
+#
+# THIS BLOCK FOUND A REAL GAP, fail-first.  st.writeWord(11) was a
+# deliberate no-op, so the block hung at IBIN36 (004063.40), the deck's
+# own "hang up if bit off" -- exactly the line predicted from reading
+# the storage path, before any change was made.  The fix folds the
+# half-word into the `ind` value the execute stage already writes once
+# per instruction, which is the same technique the BB arm used for a
+# single bit; all four index half-word stores (SV, SC, SR, SVA) go
+# through it, not just the witnessed one.  See bsv/README.md "Scope".
+run "B(IND) XL block (indicator register written by SV)" ./run_program.sh programs/ibox1_bind_xl.strap StretchIbox1BindXlTb \
+    "PC=4212"          # 004072.00, the half-word after IBIN41's second NOP
+
 # -- 0e. I-Box 4 routine 150's CB / CB+ / CBR / CBR+ blocks (plus their
 # LX/SX setup and XW index words) assembled verbatim at the listing's
 # own addresses and compared against docs/jb_ax4b_ibox-4.pdf pp.155/159's

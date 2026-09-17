@@ -225,6 +225,30 @@ function Action writeHWWithWord(StretchStorage st, HWordAddr ha, Bit#(32) v, Wor
     st.writeWord(wa, neww);
   endaction;
 
+// A half-word store whose target is word 11, the INDICATOR REGISTER.
+// st.writeWord(11) is a deliberate no-op: the execute stage writes
+// `indicators` exactly once per instruction via setIndicatorBits, and a
+// plain register cannot take two independent writes in one rule. So the
+// store is FOLDED into `ind`, the Word64 that shared tail writes -- the
+// same technique the BB arm already uses for a single bit (see the
+// `bw == 11` case), generalised to a half-word.
+//
+// Reference Card footnote c: only indicator bits 0-19 are read-only.
+// The high half (IBM 32-63, BSV 31:0) is therefore unrestricted; the
+// low half (IBM 0-31) may write only IBM 20-31, which is BSV 43:32 =
+// nh[11:0], so IBM 0-19 = BSV 63:44 is preserved.
+//
+// WITNESSED BY: ja_ax1a p.25's IBIN35 block, which sets XL by hand with
+// SV,$X1,$IND+.32 because no index operation touches XL. Only the HIGH
+// half is exercised by that deck; the low-half arm is written to the
+// footnote rather than to a listing, and is marked here as such so the
+// difference in evidence is visible.
+function Bool isIndicatorHW(HWordAddr ha) = (ha[18:1] == addrIndicators);
+
+function Word64 foldIndicatorHW(Word64 ind, HWordAddr ha, Bit#(32) nh) =
+  (ha[0] == 1) ? {ind[63:32], nh}                    // IBM 32-63, all writable
+               : {ind[63:44], nh[11:0], ind[31:0]};  // IBM 0-19 read-only
+
 // ---------------------------------------------------------------------
 // Accumulator as a 128-bit sign-magnitude value (see StretchALU.bsv
 // header for the documented simplification).
@@ -2140,7 +2164,11 @@ function ActionValue#(IndexOutcome)
           // no second bail needed.
           if (prefetchCount >= 1) begin
             Bit#(32) h = (ea[0] == 0) ? prefetch[0][63:32] : prefetch[0][31:0];
-            writeHWWithWord(st, ea, {x.addr, x.sign, h[6:0]}, prefetch[0]);
+            begin
+              Bit#(32) nh = {x.addr, x.sign, h[6:0]};
+              if (isIndicatorHW(ea)) ind = foldIndicatorHW(ind, ea, nh);
+              else writeHWWithWord(st, ea, nh, prefetch[0]);
+            end
             ind = setIndexResultIndicatorsF(ind, x);
           end else
             needsRead = tagged Valid ea[18:1];
@@ -2159,7 +2187,11 @@ function ActionValue#(IndexOutcome)
         dixop_SC: begin // SC -- same shape as SV above.
           if (prefetchCount >= 1) begin
             Bit#(32) h = (ea[0] == 0) ? prefetch[0][63:32] : prefetch[0][31:0];
-            writeHWWithWord(st, ea, {x.count, 7'b0, h[6:0]}, prefetch[0]);
+            begin
+              Bit#(32) nh = {x.count, 7'b0, h[6:0]};
+              if (isIndicatorHW(ea)) ind = foldIndicatorHW(ind, ea, nh);
+              else writeHWWithWord(st, ea, nh, prefetch[0]);
+            end
             ind = setIndexResultIndicatorsF(ind, x);
           end else
             needsRead = tagged Valid ea[18:1];
@@ -2178,7 +2210,11 @@ function ActionValue#(IndexOutcome)
         dixop_SR: begin // SR -- same shape as SV above.
           if (prefetchCount >= 1) begin
             Bit#(32) h = (ea[0] == 0) ? prefetch[0][63:32] : prefetch[0][31:0];
-            writeHWWithWord(st, ea, {x.refill, 7'b0, h[6:0]}, prefetch[0]);
+            begin
+              Bit#(32) nh = {x.refill, 7'b0, h[6:0]};
+              if (isIndicatorHW(ea)) ind = foldIndicatorHW(ind, ea, nh);
+              else writeHWWithWord(st, ea, nh, prefetch[0]);
+            end
             ind = setIndexResultIndicatorsF(ind, x);
           end else
             needsRead = tagged Valid ea[18:1];
@@ -2253,7 +2289,8 @@ function ActionValue#(IndexOutcome)
           if (prefetchCount >= 1) begin
             Bit#(32) h = (ea[0] == 0) ? prefetch[0][63:32] : prefetch[0][31:0];
             Bit#(32) nh = svaReplaceAddr(h, x.addr);
-            writeHWWithWord(st, ea, nh, prefetch[0]);
+            if (isIndicatorHW(ea)) ind = foldIndicatorHW(ind, ea, nh);
+            else writeHWWithWord(st, ea, nh, prefetch[0]);
             ind = setIndexResultIndicatorsF(ind, x);
           end else
             needsRead = tagged Valid ea[18:1];

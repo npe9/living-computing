@@ -228,12 +228,31 @@ it recognizes independent of what the datapath implements.
   VFL sign sat in bit 0 of word 8 over a 127-bit magnitude and word 10
   kept its LOW byte; the diagnostic's full-64-bit checks of the left
   half and its CM1111/CT1100 on `10.0` exposed both.
-- **Word 11 (Indicators) cannot be written via a generic STORE.**
-  Real hardware allows writing bits 20-63 directly; here the execute
-  stage owns the single per-instruction write to `indicators` (see
-  "Toolchain"), so a STORE targeting word 11 is a no-op. Indicators
-  remain fully readable and are still set by every instruction that
-  defines them.
+- **Word 11 (Indicators): the index half-word stores now write it; the
+  general STORE path still does not.** Real hardware allows writing
+  bits 20-63 directly (Reference Card footnote c). The execute stage
+  still owns the single per-instruction write to `indicators` (see
+  "Toolchain"), so `st.writeWord(11)` remains a no-op; instead the four
+  index half-word stores -- `SV`, `SC`, `SR` and `SVA` -- FOLD their
+  half-word into the `ind` value that write uses, via
+  `isIndicatorHW`/`foldIndicatorHW` in `StretchExecute.bsv`. The `BB`
+  arm already did this for a single bit. Other store-type instructions
+  targeting word 11 are still no-ops.
+
+  Driven out by ja_ax1a p.25's IBIN35 block
+  (`strap/programs/ibox1_bind_xl.strap`), which sets XL by hand --
+  `LX` to zero, `LV` of a word with value bit 20 set, then
+  `SV,$X1,$IND+.32`, landing 32+20 = 52 = XL -- because no index
+  operation touches XL. Before the change the block hung at IBIN36
+  (004063.40, the deck's own "hang up if bit off"); after it, it runs
+  to the end.
+
+  Two things there rest on the footnote rather than on a listing, and
+  are marked as such in the code: the LOW half's preservation of IBM
+  0-19 (the deck only ever stores to the high half), and the ORDER
+  when a store's half-word overlaps the index result indicators the
+  same instruction sets -- the store is applied first, then
+  `setIndexResultIndicatorsF`. The deck does not discriminate either.
 - **Transmit moves one word**, not `count` words (see "Toolchain").
 - **A crossing-field VFL store under progressive indexing suppresses
   the increment too, not just the store.** This falls directly out of
