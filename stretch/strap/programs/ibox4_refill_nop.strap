@@ -1,0 +1,150 @@
+! jb_ax4b "IBOX-4", routine 1238 test 2, cases 2G and 2H, p.65 (octal
+! 005527.00-005542.00): the REFILL ADDRESS GATE.
+!
+! WHY BOTH CASES ARE IN ONE PROGRAM.  The routine's header states the
+! rule as "NOPING IF RF IS FROM 1 TO 15", and the obvious way to write
+! that -- suppress a refill whose address is below 16 -- is WRONG.  Test
+! 2 pins the boundary from both sides, in adjacent cases:
+!
+!   2G  "CHK REFILL FRM LOCN 0"   word 0 DOES refill, from the
+!       permanently protected zero.  Failure text: "FAILED TO REFILL
+!       FRM LOCN 0".
+!   2H  "CHK NO REFILL FRM LOCNS 1 THROUGH 17" (octal, so 1-15) --
+!       those are suppressed.  Failure text: "DID REFILL".
+!
+! So `refill < 16` passes 2H and FAILS 2G.  Measured all three ways:
+!
+!   no suppression          2G passes, 2H halts at 005674.00, the
+!                           first entry of the routine's error table
+!   refill >= 16            2G halts at SERS, 2H passes
+!   refill == 0 || >= 16    both pass
+!
+! HOW 2H WORKS, because it is the most self-modifying block taken so
+! far.  $X14 starts at I38XW5 (value word 1, count 15) and $X15 at
+! I38XW6 (value -> the error table).  Each pass, two SVAs patch the
+! ADDRESS FIELDS of two instructions further down: I3824's
+! "LRI,$X0,0.0" gets the next refill location, and I3825's "$B,0" gets
+! the next error-table entry.  LVI plants a known value, R must leave
+! it alone, KVI checks.  V+I/C-I/BXCZ walk the location and count the
+! loop down.  The listing writes I3825 as "$B,0" -- the dollar prefix
+! marking an opcode assembled as a patchable word, the same convention
+! as "$L%BU" and "$RNX" in ja_ax1a's constants.
+!
+! I38B6 onward is the routine's error table, one entry per location
+! tried; stubbed here as halts at their own addresses so a wrong refill
+! stops instead of running on.
+!
+! AND THE CONTROL CAUGHT MY OWN BUG BEFORE IT CAUGHT THE MODEL'S.  The
+! "refill >= 16" injection PASSED when it should have failed, because
+! the entry point was END,I3822 -- after the 2G section -- so 2G never
+! ran.  A two-case block that only ever executed one case, and green.
+! The entry is now I382G.
+
+        SLC, (8)1304.0
+SERS    BEW, $
+        SLC, (8)1310.0
+SEN     DD(BU,64,8), 0
+
+! -- common constants (p.190) --
+        SLC, (8)13034.0
+I00Z    XW, 0, 0, 0                          ! zero indx wd.
+        SLC, (8)13036.0
+I00VO   XW, -(8)777777.77, 0, 0              ! indx wd. of ones, negative
+
+! -- constants for 1238 (p.67) --
+        SLC, (8)5576.0
+I38XW5  XW, 1.0, 15, 0                       ! value word 1, count 15
+I38XW6  XW, (8)5674.0, 0, 0                  ! value -> the error table
+
+! -- I38B6 onward is the routine's error table, one entry per location
+! -- tried; stubbed as halts at their own addresses so a wrong refill
+! -- stops instead of running on.
+        SLC, (8)5674.0
+        BEW, $
+        BEW, $
+        BEW, $
+        BEW, $
+        BEW, $
+        BEW, $
+        BEW, $
+        BEW, $
+        BEW, $
+        BEW, $
+        BEW, $
+        BEW, $
+        BEW, $
+        BEW, $
+        BEW, $
+        BEW, $
+        BEW, $
+        BEW, $
+        BEW, $
+        BEW, $
+        BEW, $
+        BEW, $
+        BEW, $
+        BEW, $
+        BEW, $
+        BEW, $
+        BEW, $
+        BEW, $
+        BEW, $
+        BEW, $
+        BEW, $
+        BEW, $
+        BEW, $
+        BEW, $
+        BEW, $
+        BEW, $
+        BEW, $
+        BEW, $
+        BEW, $
+        BEW, $
+        BEW, $
+        BEW, $
+        BEW, $
+        BEW, $
+        BEW, $
+        BEW, $
+        BEW, $
+        BEW, $
+        BEW, $
+        BEW, $
+        BEW, $
+        BEW, $
+        BEW, $
+        BEW, $
+        BEW, $
+        BEW, $
+        BEW, $
+        BEW, $
+        BEW, $
+        BEW, $
+
+        SLC, (8)5527.0
+I382G   LX, $X0, I00VO                       ! test 2G - chk refill frm locn 0.
+        R, $X0
+        KV, $X0, I00Z
+        BXE, $+1.32
+        SIC, SEN
+        B, SERS                              ! failed to refill frm locn 0.
+I3822   LX, $X14, I38XW5                     ! test 2H - chk no refill frm locns
+        LX, $X15, I38XW6                     ! 1 through 17.
+        Z, $X0
+I3823   SVA, $X14, I3824
+        SVA, $X15, I3825
+        LVI, $X0, (8)765432.40
+I3824   LRI, $X0, 0.0
+        R, $X0
+        KVI, $X0, (8)765432.40
+        BXE, $+1.0
+I3825   B, 0                                 ! listing writes "$B,0" -- did refill.
+I3826   V+I, $X14, 1.0
+        C-I, $X14, 1
+        BXCZ, I3827
+        V+I, $X15, 2.0
+        B, I3823
+I3827   B, $+1.0
+        BEW, $                               ! 005542.40 -- the listing has BD,I3821
+PASS    BEW, $                               ! 005543.00 -- I3827 branches here
+        END, I382G

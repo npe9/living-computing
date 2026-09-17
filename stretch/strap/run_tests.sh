@@ -1351,6 +1351,39 @@ run "IBOX-4 R from external memory (two sequential reads)" ./run_program.sh prog
     "PC=$(python3 -c 'from strap_asm import assemble; print(assemble(open("programs/ibox4_r_extmem.strap").read()).symtab["PASS"]//32)')" \
     "SEN:712=0"
 
+run "IBOX-4 refill address gate (jb_ax4b, encoding)" python3 verify_ibox4_refill_nop_listing.py
+# Routine 1238 test 2 cases 2G and 2H -- the REFILL ADDRESS GATE, and
+# the reason they are ONE program.  The routine header states the rule
+# as "NOPING IF RF IS FROM 1 TO 15", and the obvious way to write that
+# -- suppress a refill addressed below 16 -- is WRONG.  Test 2 pins the
+# boundary from both sides in adjacent cases: 2G "CHK REFILL FRM LOCN
+# 0" (word 0 DOES refill, from the permanently protected zero) and 2H
+# "CHK NO REFILL FRM LOCNS 1 THROUGH 17" (octal, so 1-15, suppressed).
+#
+# MEASURED ALL THREE WAYS:
+#   no suppression        2G passes, 2H halts at 005674.00, the first
+#                         entry of the routine's own error table
+#   refill >= 16          2G halts at SERS, 2H passes
+#   refill == 0 or >= 16  both pass
+#
+# 2H IS THE MOST SELF-MODIFYING BLOCK IN THE SUITE.  Each pass, two
+# SVAs patch the ADDRESS FIELDS of two instructions further down:
+# I3824's "LRI,$X0,0.0" gets the next refill location and I3825's
+# "$B,0" gets the next error-table entry.  LVI plants a known value, R
+# must leave it alone, KVI checks, and V+I/C-I/BXCZ walk the location
+# and count the loop down.  (The listing's "$B,0" is the dollar prefix
+# marking an opcode assembled as a patchable word -- same convention as
+# "$L%BU" and "$RNX" in ja_ax1a's constants.)
+#
+# AND THE CONTROL CAUGHT A BUG IN THE TEST BEFORE IT CAUGHT ONE IN THE
+# MODEL.  The "refill >= 16" injection PASSED when it should have
+# failed, because the entry point was END,I3822 -- after the 2G section
+# -- so 2G never ran: a two-case block that executed one case, green.
+# Fixed to enter at I382G.  A control is worth running even when you
+# expect it to confirm what you already believe.
+run "IBOX-4 refill address gate (locn 0 refills, 1-15 do not)" ./run_program.sh programs/ibox4_refill_nop.strap StretchIbox4RefillNopTb \
+    "PC=$(python3 -c 'from strap_asm import assemble; print(assemble(open("programs/ibox4_refill_nop.strap").read()).symtab["PASS"]//32)')"
+
 run "IBOX-1 V+IC chain (ja_ax1a, encoding)" python3 verify_ibox1_vpic_chain_listing.py
 # V+IC, and with it the LAST of the eight modeled index operations a
 # coverage screen found in zero suite programs.  The largest of the

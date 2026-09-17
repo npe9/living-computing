@@ -2713,11 +2713,29 @@ function ActionValue#(ExecResult)
               // MEASURED, not merely read: routine 1238's test 1
               // halted at SERS with SEN = 005313.00, its first check,
               // "REFILLED X15 FROM LOCN 1 INSTEAD OF LOCN 20".
+              // AND A REFILL ADDRESS OF 1-15 IS SUPPRESSED, which the
+              // routine's own header states -- "NOPING IF RF IS FROM 1
+              // TO 15" -- and test 2 pins from BOTH sides:
+              //
+              //   TEST 2G  "CHK REFILL FRM LOCN 0"      word 0 DOES
+              //            refill, from the permanently protected
+              //            zero; its failure text is "FAILED TO
+              //            REFILL FRM LOCN 0"
+              //   TEST 2H  "CHK NO REFILL FRM LOCNS 1 THROUGH 17"
+              //            (octal, so 1-15) -- suppressed, failure
+              //            text "DID REFILL"
+              //
+              // So the obvious spelling, `refill < 16`, is WRONG: it
+              // would pass 2H and fail 2G. Zero refills; only 1-15 are
+              // gated. Both cases are in ibox4_refill_nop, together,
+              // for exactly that reason.
+              function Bool refillLegal(Bit#(18) rf) =
+                (rf == 0) || (rf >= 16);
               WordAddr rw = baWord(effAddr24(st, {bm.addr, 5'b0}, bm.idx));
               if (rw >= addrIndexBase && rw < addrIndexBase + 16) begin
                 Bit#(4) j = truncate(rw - addrIndexBase);
                 IndexWord x = st.readIndex(j);
-                if (bm.code == 3'b000 || x.count == 0) begin
+                if ((bm.code == 3'b000 || x.count == 0) && refillLegal(x.refill)) begin
                   if (prefetchCount >= 1) begin
                     idxWriteReg = j; doIdxWrite = True;
                     idxWriteVal = unpackIndexWord(prefetch[0]);
@@ -2742,7 +2760,7 @@ function ActionValue#(ExecResult)
                   needsRead = tagged Valid rw;
                 else begin
                   IndexWord x = unpackIndexWord(prefetch[0]);
-                  if (bm.code == 3'b000 || x.count == 0) begin
+                  if ((bm.code == 3'b000 || x.count == 0) && refillLegal(x.refill)) begin
                     if (prefetchCount >= 2)
                       st.writeWord(rw, prefetch[1]);
                     else

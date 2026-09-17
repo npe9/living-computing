@@ -3904,6 +3904,24 @@ hand vectors alone. "Enables" notes the dependency chain.
    the pair is worth having together -- 2G is the guard against an
    over-eager implementation of 2H.
 
+   IMPLEMENTED AND MEASURED ALL THREE WAYS (ibox4_refill_nop, both
+   cases in one program because neither alone pins the rule):
+
+     no suppression        2G passes, 2H halts at 005674.00, the first
+                           entry of the routine's own error table
+     refill >= 16          2G halts at SERS, 2H passes
+     refill == 0 or >= 16  both pass
+
+   AND THE CONTROL CAUGHT THE TEST BEFORE IT CAUGHT THE MODEL. The
+   "refill >= 16" injection PASSED when it should have failed, because
+   the entry point was END,I3822 -- after the 2G section -- so 2G never
+   ran. A two-case block executing one case, and green. That is the
+   strongest argument yet for running a control you expect to confirm
+   what you already believe: it is the only thing that distinguishes
+   "my test works" from "my test is inert", and every earlier control
+   in this document was justified on the weaker ground of showing a
+   block discriminates.
+
    2H'S STRUCTURE, decoded so it can be started cleanly. I3822 at
    005532.00 seeds $X14 from I38XW5 (value 1.0, count 15) and $X15 from
    I38XW6, then loops I3823-I3826: two SVAs patch the address fields of
