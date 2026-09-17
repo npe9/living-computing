@@ -3887,7 +3887,32 @@ hand vectors alone. "Enables" notes the dependency chain.
    against this block before its results are read.
 
    A SECOND SEMANTIC THE MODEL DOES NOT IMPLEMENT, from the same
-   header: "NOPING IF RF IS FROM 1 TO 15". Words 1-15 are the special registers, and
+   header: "NOPING IF RF IS FROM 1 TO 15" -- AND THE BOUNDARY IS
+   SHARPER THAN THAT PHRASE SUGGESTS. Test 2 spells it out in two
+   adjacent cases on p.65:
+
+     TEST 2G  "CHK REFILL FRM LOCN 0"      -- a refill from word 0
+              DOES happen, and its failure text is "FAILED TO REFILL
+              FRM LOCN 0"
+     TEST 2H  "CHK NO REFILL FRM LOCNS 1 THROUGH 17" (octal, so 1-15
+              decimal) -- those must be SUPPRESSED, failure text
+              "DID REFILL"
+
+   So it is not "suppress low addresses": word 0 refills, from the
+   permanently protected zero, and only 1-15 are gated. A fix that
+   tested `refill < 16` would pass 2H and FAIL 2G, which is exactly why
+   the pair is worth having together -- 2G is the guard against an
+   over-eager implementation of 2H.
+
+   2H'S STRUCTURE, decoded so it can be started cleanly. I3822 at
+   005532.00 seeds $X14 from I38XW5 (value 1.0, count 15) and $X15 from
+   I38XW6, then loops I3823-I3826: two SVAs patch the address fields of
+   I3824's "LRI,$X0,0.0" and I3825's "B,0", so each pass sets $X0's
+   refill to the next location 1..17 and points the failure branch at
+   the next entry of the error table at 005630. LVI plants a known
+   value, R must NOT disturb it, and KVI checks. C-I/BXCZ count the
+   loop down. Taking it needs that error table as well as the two
+   XW constants. Words 1-15 are the special registers, and
    the deck expects a refill whose address falls there to be
    SUPPRESSED. execute()'s R arm has no such check -- it issues
    `needsRead = x.refill` unconditionally and writes back whatever
