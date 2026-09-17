@@ -1,0 +1,60 @@
+! ja_ax1a "IBOX-1", routine IBIN1-IBIN6, p.24 (octal 004023.00-
+! 004031.40): "BRANCH ON I BOX INDICATORS %B-IND%", the XF group.
+!
+! WHY THIS BLOCK.  index_result_indicators.strap pins the index RESULT
+! indicators for the immediate operations, but every index word in it
+! has flag 0, so XF -- the index flag indicator -- was pinned nowhere.
+! This is the deck's own test of it, and being a transcription it meets
+! the stronger of the two standards used in this suite.
+!
+! IT ALSO PINS THE BRANCH-AND-ZERO CLEAR.  The mnemonics here are the
+! full grammar: a leading Z means BRANCH IF THE BIT IS OFF, a trailing
+! Z means TURN THE BIT OFF after testing.  The listing's own comments
+! give the truth table, and the block walks XF through both polarities
+! and then clears it:
+!
+!   IBIN1  BZXF,$      hang up if bit off      XF on  -> no branch
+!   IBIN2  BXF,$+1.0   dont branch if bit off  XF on  -> branch, over
+!                                              a BD,$ "hang up if no branch"
+!   IBIN3  BZXFZ,$     hang up if bit off OR TURN OFF -- no branch, and
+!                                              the trailing Z clears XF
+!   IBIN4  BXF,$       hang up if bit on       XF now off -> no branch
+!   IBIN5  BZXF,$+1.0  branch if bit off       XF off -> branch, over
+!                                              a BD,$ "hang up if bit on"
+!
+! So a model that never set XF hangs at IBIN1, and one that set it but
+! ignored the trailing-Z clear hangs at IBIN4.  Both measured below.
+!
+! THE SEED IS ONE WORD.  IBXWZO is value -1, flag 1, count 0, refill 0
+! -- negative, flagged and zero-count at once, which is why the listing
+! calls it "COMMON XW FOR XF,XCZ,XVLZ" and reuses it for the XCZ and
+! XVLZ groups that follow (not transcribed here).
+!
+! A DISCREPANCY IN XW's FOURTH FIELD, recorded because it is unresolved
+! rather than because it matters here.  The listing writes this constant
+! "XW,-1,0,0,4" and assembles flag = 1, refill = 0; jb_ax4b p.67 writes
+! "I38B46 XW,0,0,0,%8=400000" and assembles refill = 0400000, flag = 0.
+! Both were re-read at 400 dpi to rule out a misread.  Under any single
+! field order one of them is wrong, so the two tapes appear to use
+! different XW conventions -- plausibly different STRAP versions, since
+! they are different programs.  C22-6531 and C28-6129 have no text layer
+! to settle it.  This assembler treats the fourth field as a one-bit
+! flag, so the source below writes 1 where the listing writes 4; the
+! ASSEMBLED WORD is identical to the listing's, which is what the verify
+! script checks.
+
+        SLC, (8)4023.0
+IBINX   LX, $X1, IBXWZO                      ! turn on XF, XCZ, XVLZ
+IBIN1   BZXF, $                              ! hang up if bit off
+IBIN2   BXF, $+1.0                           ! dont branch if bit off
+        BD, $                                ! hang up if no branch
+IBIN3   BZXFZ, $                             ! hang up if bit off or turn off
+IBIN4   BXF, $                               ! hang up if bit on
+IBIN5   BZXF, $+1.0                          ! branch if bit off
+        BD, $                                ! hang up if bit on
+        B, IBIN6                             ! branch out
+IBXWZO  XW, -1, 0, 0, 1                      ! listing writes "XW,-1,0,0,4"
+IBIN6   VF, (8)777777.70                     ! executed as NOP,-.32
+        VF, (8)777777.70                     ! executed as NOP,-.32
+PASS    BEW, $
+        END, IBINX

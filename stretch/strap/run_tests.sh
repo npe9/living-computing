@@ -109,6 +109,33 @@ run "Store Zero clears the indicator register" ./run_program.sh programs/z_ind_c
 run "Index result indicators (LVNI, LCI, LRI, C+I)" ./run_program.sh programs/index_result_indicators.strap StretchIndexResultIndTb \
     "PC=$(python3 -c 'from strap_asm import assemble; print(assemble(open("programs/index_result_indicators.strap").read()).symtab["PASS"]//32)')"
 
+run "B(IND) XF group (ja_ax1a, encoding)" python3 verify_ibox1_bind_xf_listing.py
+# ja_ax1a p.24's "BRANCH ON I BOX INDICATORS", the XF group -- the
+# deck's own test of the index FLAG indicator, which nothing pinned:
+# every index word in index_result_indicators.strap has flag 0, so that
+# program covers the RESULT indicators only.  Being a transcription,
+# this meets the stronger of the two standards used here.
+#
+# It also pins the BRANCH-AND-ZERO CLEAR.  The mnemonic grammar is a
+# leading Z for "branch if the bit is OFF" and a trailing Z for "turn
+# the bit off after testing", and the block walks XF through both
+# polarities before clearing it with BZXFZ.
+#
+# Measured, two injections, each halting where the listing's own
+# comment says it should: with LX setting no indicators it hangs at
+# IBIN1 (004023.40, "hang up if bit off"); with the trailing-Z clear
+# disabled it hangs at IBIN4 (004025.40, "hang up if bit on"), XF never
+# having been turned off.
+#
+# The seed constant is one word doing three jobs -- value -1, flag 1,
+# count 0 -- which is why the listing calls it "COMMON XW FOR XF, XCZ,
+# XVLZ" and reuses it for the two groups after this one.  Note the XW
+# fourth-field discrepancy recorded in the program header: ja_ax1a and
+# jb_ax4b appear to use different conventions for it, both re-read at
+# 400 dpi, and neither STRAP manual has a text layer to settle it.
+run "B(IND) XF group (index flag, branch-and-zero clear)" ./run_program.sh programs/ibox1_bind_xf.strap StretchIbox1BindXfTb \
+    "PC=4148"          # 004032.00, the listing's own next-routine boundary
+
 # -- 0e. I-Box 4 routine 150's CB / CB+ / CBR / CBR+ blocks (plus their
 # LX/SX setup and XW index words) assembled verbatim at the listing's
 # own addresses and compared against docs/jb_ax4b_ibox-4.pdf pp.155/159's
