@@ -71,8 +71,10 @@ This targets **ISA-level correctness for a documented subset**, not a
 cycle-accurate replica of the real machine (which pipelined and
 looked ahead — its most famous engineering feature; see "Not modeled"
 below) and not the complete instruction set (which includes decimal
-arithmetic, full floating point, I/O channels, and an interrupt
-system, several of them large enough to be their own projects).
+arithmetic, radix conversion, `EX`/`EXIC`, most I/O control, and an
+interrupt system, several of them large enough to be their own
+projects). Floating point is no longer on that list -- all 29 FP
+operation codes execute; see "Executed" below.
 
 ### Executed
 
@@ -156,8 +158,14 @@ system, several of them large enough to be their own projects).
 - **Refill / Refill on Count Zero / Store Zero**.
 - **Transmit** — forward only, **one word per instruction** (see
   "Toolchain" below for why).
-- **Floating point `L`/`ST`** only (plain data movement; see FpWord in
-  StretchTypes.bsv for the register layout).
+- **Floating point** — all 29 operation codes have execute arms: `L`/
+  `ST` and the `LWF`/`LFT`/`DL`/`DLWF` load family, `+`/`+MG`/`M+`/
+  `M+MG`/`D+`/`D+MG`/`F+`/`E+`/`E+I`, `*`/`*+`/`D*`, `/`/`R/`/`D/`,
+  the compares `K`/`KR`/`KMG`/`KMGR`, and `SHF`/`SLO`/`SRD`/`SRT`.
+  Driven by jb_af1c, which is the most heavily transcribed tape here.
+  (This bullet used to read "`L`/`ST` only, plain data movement"; that
+  went stale as the F20x families landed. See FpWord in
+  StretchTypes.bsv for the register layout.)
 - **Input-Output** — `RD`, `W`, `CCW` (Copy Control Word), `REL`
   (Release), `CTL` (Control), and their `SEOP` forms, against a
   **simulated** Exchange and three fixed devices (a card reader,
