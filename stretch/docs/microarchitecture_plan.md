@@ -3929,15 +3929,17 @@ hand vectors alone. "Enables" notes the dependency chain.
    refill to the next location 1..17 and points the failure branch at
    the next entry of the error table at 005630. LVI plants a known
    value, R must NOT disturb it, and KVI checks. C-I/BXCZ count the
-   loop down. Taking it needs that error table as well as the two
-   XW constants. Words 1-15 are the special registers, and
-   the deck expects a refill whose address falls there to be
-   SUPPRESSED. execute()'s R arm has no such check -- it issues
-   `needsRead = x.refill` unconditionally and writes back whatever
-   comes -- so on this model a refill from word 1-15 reads a special
-   register and installs it as an index word. Test 2 is what would
-   catch it. This is a READING of the deck, not yet a measurement:
-   confirming it means transcribing the block.
+   loop down. It needed that error table as well as the two XW
+   constants; both are in ibox4_refill_nop, the table stubbed as halts
+   at its own addresses.
+
+   THAT PARAGRAPH USED TO END "this is a READING of the deck, not yet a
+   measurement". It is a measurement now. Words 1-15 are the special
+   registers, the deck expects a refill addressed there to be
+   SUPPRESSED, execute()'s R arm had no such check, and transcribing
+   test 2 halted the model at 005674.00 -- the first entry of the
+   routine's own error table -- exactly as predicted. The gate is
+   implemented and the entry above records what pinned its boundary.
 
    ALL EIGHT ARE NOW CLOSED.  V+IC was the last (ibox1_vpic_chain,
    ja_ax1a pp.33-34 routine IBM-IBM60), and it is the ONLY TWO-PHASE
