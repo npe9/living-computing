@@ -1,0 +1,79 @@
+! The index flag and index RESULT indicators, for the immediate index
+! operations that were not setting them.
+!
+! Ref. Manual p.25, directly under SUBTRACT IMMEDIATE FROM COUNT: "The
+! index flag and index result indicators are set in all of the
+! preceding immediate index arithmetic operations. The index comparison
+! indicators are not changed."  "All of the preceding" covers LVI,
+! LVNI, LCI, LRI, V+I.., V-I.., C+I and C-I.  Six of those set nothing
+! in this model until pp.24-25 were read: LVI, LVNI, LCI, LRI, C+I and
+! C-I.
+!
+! WHY THIS IS HAND-WRITTEN rather than transcribed, which is the
+! exception here and wants justifying.  C-I got its witness from the
+! deck -- jb_ax4b routine 1238 test 3 does C-I then BXCZ back to back,
+! and without the fix that loop never ends.  LVI got one by accident,
+! from the I/O test's whole-indicator-word check.  For the other four
+! there is no deck witness to find: the diagnostics verify a count or
+! value by COMPARING it (KC/KV, which set the COMPARISON indicators)
+! and branching on that, not by branching on the operation's own result
+! indicators.  jb_ax4b routine 1236, a whole routine "Checks C+I and
+! C-I", is built that way throughout -- C+I, then KC, then BXE.  So
+! these four are fixed on the manual's authority, and this program is
+! what keeps that honest.  It is manual-derived, NOT deck-derived, and
+! that is the weaker of the two standards used in this suite.
+!
+! Each test clears the indicator register first, so the indicator it
+! then branches on must have been turned on by the operation under
+! test.  Without the fix the branch is not taken and the program halts
+! on the FAIL line naming the operation.
+!
+! MEASURED, one injection per operation, each removing only that arm's
+! setIndexResultIndicatorsF call.  Every one halts on ITS OWN failure
+! line, so the four tests are independent rather than one firing four
+! times:
+!
+!   LVNI  halts 002101.40      LRI  halts 002105.40
+!   LCI   halts 002103.40      C+I  halts 002107.40
+!   (PASS is 002110.00)
+!
+! AND THE FIRST RUN OF THOSE INJECTIONS WAS INERT, which is worth more
+! than the result.  All four reported "injected" and all four PASSED.
+! The harness sliced each arm up to the following "end", so the arm's
+! last line carried NO trailing newline, while the removal pattern
+! included one -- the replace matched nothing and the script still said
+! it had worked.  The assert checked only that the call was PRESENT
+! beforehand, never that it was GONE after.  Four silent no-ops
+! reported as four successful injections, and a green result meaning
+! nothing.  The fixed harness asserts the call is absent afterwards.
+! Same failure as the refill-gate control that passed because the entry
+! point skipped half the block: when a control comes back green,
+! suspect the control.
+!
+! NOT COVERED: XF.  Every index word here has flag 0, so the tests pin
+! the result indicators only.  A word with the flag set, loaded and
+! then branched on with BXF, would add it.
+
+        SLC, (8)2100.0
+START   Z, $IND
+        LVNI, $X1, 1                 ! value := -(1 << 5), negative
+        BXVLZ, T2                    ! LVNI must turn on XVLZ
+        BEW, $                       ! FAIL: LVNI set no result indicators
+
+T2      Z, $IND
+        LCI, $X1, 0                  ! count := 0
+        BXCZ, T3                     ! LCI must turn on XCZ
+        BEW, $                       ! FAIL: LCI set no result indicators
+
+T3      Z, $IND
+        LRI, $X1, 4                  ! refill := 4; value still negative
+        BXVLZ, T4                    ! LRI must turn on XVLZ
+        BEW, $                       ! FAIL: LRI set no result indicators
+
+T4      Z, $IND
+        C+I, $X1, 0                  ! count := 0 + 0, still zero
+        BXCZ, PASS                   ! C+I must turn on XCZ
+        BEW, $                       ! FAIL: C+I set no result indicators
+
+PASS    BEW, $
+        END, START

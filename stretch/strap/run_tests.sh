@@ -83,6 +83,32 @@ run "Branch-on-Bit sets an indicator bit" ./run_program.sh programs/bb_indicator
 run "Store Zero clears the indicator register" ./run_program.sh programs/z_ind_clear.strap StretchZIndTb \
     "PC=$(python3 -c 'from strap_asm import assemble; print(assemble(open("programs/z_ind_clear.strap").read()).symtab["PASS"]//32)')"
 
+# -- 0d5. The index flag and RESULT indicators, for the immediate index
+# operations that were not setting them.  Ref. Manual p.25, under
+# SUBTRACT IMMEDIATE FROM COUNT: "The index flag and index result
+# indicators are set in all of the preceding immediate index arithmetic
+# operations."  That covers LVI, LVNI, LCI, LRI, C+I and C-I, none of
+# which did.
+#
+# HAND-WRITTEN, not transcribed, and that wants saying.  C-I got its
+# witness from the deck (jb_ax4b routine 1238 test 3 does C-I then
+# BXCZ, and without the fix that loop never ends); LVI got one from the
+# I/O test's whole-indicator-word check.  For the other four there is
+# no deck witness to find: the diagnostics verify a count or value by
+# COMPARING it and branching on the COMPARISON indicators, never on the
+# operation's own result indicators -- jb_ax4b routine 1236, a whole
+# routine "Checks C+I and C-I", is C+I then KC then BXE throughout.  So
+# these four rest on the manual, and this program keeps that honest at
+# the weaker of the two standards used in this suite.
+#
+# Measured, one injection per arm: LVNI halts at 002101.40, LCI at
+# 002103.40, LRI at 002105.40, C+I at 002107.40 -- each on its own
+# failure line, so the four are independent.  (The first attempt at
+# those injections was INERT and reported success; see the program
+# header.)  XF is not covered: every index word here has flag 0.
+run "Index result indicators (LVNI, LCI, LRI, C+I)" ./run_program.sh programs/index_result_indicators.strap StretchIndexResultIndTb \
+    "PC=$(python3 -c 'from strap_asm import assemble; print(assemble(open("programs/index_result_indicators.strap").read()).symtab["PASS"]//32)')"
+
 # -- 0e. I-Box 4 routine 150's CB / CB+ / CBR / CBR+ blocks (plus their
 # LX/SX setup and XW index words) assembled verbatim at the listing's
 # own addresses and compared against docs/jb_ax4b_ibox-4.pdf pp.155/159's

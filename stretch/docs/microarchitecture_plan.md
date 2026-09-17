@@ -3905,8 +3905,40 @@ hand vectors alone. "Enables" notes the dependency chain.
    old rule. It is not right when the primary source STATES the
    behaviour for the named operations. Then the suite run's job is
    narrower: to show nothing already depends on the omission. It says
-   nothing positive about the fix, and the arm comments say so: no deck
-   block yet reads the indicators of LVI, LVNI, LCI, LRI or C+I.
+   nothing positive about the fix.
+
+   AND THEN ALL SIX GOT WITNESSES. C-I had the deck's (routine 1238
+   test 3). LVI got one by accident, from the I/O test's
+   whole-indicator-word check, once that check was corrected. For the
+   other four there is NO DECK WITNESS TO FIND, and that is a fact
+   about the diagnostics' style worth recording: they verify a count or
+   value by COMPARING it and branching on the COMPARISON indicators,
+   never on the operation's own RESULT indicators. jb_ax4b routine
+   1236, a whole routine titled "Checks C+I and C-I", is C+I then KC
+   then BXE throughout. So programs/index_result_indicators.strap is
+   hand-written -- manual-derived, not deck-derived, which is the
+   weaker of the two standards in this suite, and it says so in its own
+   header. Each of the four halts on its own failure line under its own
+   injection, so they are four independent tests.
+
+   XF IS STILL NOT PINNED anywhere: every index word in that program
+   has flag 0, so the tests cover the result indicators only. A word
+   with the flag set, loaded and then branched on with BXF, would add
+   it -- and the B(IND) routine at ja_ax1a p.24 (004023.00, "TURN ON
+   XF,XCZ,XVLZ" then BZXF) is exactly that block if it is ever wanted.
+
+   A HARNESS FAILURE WORTH MORE THAN THE RESULT IT HID. The first run
+   of those four injections was INERT: all four printed "injected" and
+   all four PASSED. The script sliced each case arm up to the following
+   "end", so the arm's last line carried no trailing newline, while the
+   removal pattern included one -- the replace matched nothing and
+   reported success. The assert checked only that the call was PRESENT
+   before, never that it was GONE after. The reading "my test does not
+   discriminate" was available and wrong. THE RULE: when a control
+   comes back green, suspect the control -- and make an injection
+   assert its own postcondition, not just its precondition. This is the
+   second instance; the refill-address gate's control passed because
+   the entry point skipped the half of the block it was meant to test.
 
    WHICH WORD the result indicators report is not stated for C-I. The
    RESULT is used, as LV/LC/LR use their new word, and p.25's
