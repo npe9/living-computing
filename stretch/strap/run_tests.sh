@@ -187,6 +187,33 @@ run "B(IND) XL block (ja_ax1a, encoding)" python3 verify_ibox1_bind_xl_listing.p
 run "B(IND) XL block (indicator register written by SV)" ./run_program.sh programs/ibox1_bind_xl.strap StretchIbox1BindXlTb \
     "PC=4212"          # 004072.00, the half-word after IBIN41's second NOP
 
+run "Index result indicators: OFF states and clearing" ./run_program.sh programs/index_indicators_off.strap StretchIndexIndOffTb \
+    "PC=2330"          # 002204.40; hand-written, so this is not a listing fact --
+                       # if the program's layout changes, update it deliberately
+# THE CONTROL FOR A HOLE THE DECK LEFT OPEN.  ibox1_bind.strap pins all
+# five index result indicators ON, and the only OFF it checks is the one
+# the trailing-Z clear produces -- never an indicator off because its
+# condition is false.  Measured: a model that sets XF, XCZ, XVLZ, XVZ and
+# XVGZ unconditionally to 1 passes that whole deck routine, and passes
+# index_result_indicators.strap too, whose checks are all branch-IF-ON.
+#
+# This is the complement.  HAND-WRITTEN from the Reference Manual, which
+# is the weaker of the two standards here and says so in its header: the
+# deck has no block that checks these off.  p.24 -- an index load sets
+# the flag and result indicators FROM THE LOADED WORD -- makes all five
+# assigned, so a load must clear the ones whose condition is false.
+#
+# Every off-check follows an on-state, so each one tests CLEARING rather
+# than mere absence.  The three words are the deck's own seed constants
+# (IBXWZO, IBXWZ2, IBXWZ1), walking the value negative, positive, zero.
+#
+# Two injections, failing at different lines, each where the semantics
+# predict:
+#   all five forced ON        -> 002202.00, BXVZ,$  (first off-check)
+#   sets but never clears     -> 002203.40, BXF,$   (first clear-check,
+#                                after the second load)
+# The first is exactly the injection that passes everywhere else.
+
 # -- 0e. I-Box 4 routine 150's CB / CB+ / CBR / CBR+ blocks (plus their
 # LX/SX setup and XW index words) assembled verbatim at the listing's
 # own addresses and compared against docs/jb_ax4b_ibox-4.pdf pp.155/159's

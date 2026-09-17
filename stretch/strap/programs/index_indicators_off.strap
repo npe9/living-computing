@@ -1,0 +1,65 @@
+! Index result indicators: the OFF states, and that a load CLEARS.
+!
+! WHY THIS EXISTS.  ibox1_bind.strap transcribes ja_ax1a's whole
+! "BRANCH ON I BOX INDICATORS" routine and pins all five index result
+! indicators -- but only ON.  Every group there checks its indicator
+! set, and the only OFF any of them checks is the one the trailing-Z
+! CLEAR produces, never an indicator off because its condition is
+! false.  That was measured, not guessed: a model that sets XF, XCZ,
+! XVLZ, XVZ and XVGZ UNCONDITIONALLY TO 1 on every index load passes
+! the entire deck routine, and passes index_result_indicators.strap
+! too, whose checks are all branch-IF-ON.
+!
+! So this program is the complement, and it is the control for that
+! injection: with the indicators forced on it must FAIL.
+!
+! WEAKER STANDARD, STATED.  This is HAND-WRITTEN from the Reference
+! Manual, not transcribed from a listing -- the deck has no block that
+! checks these off.  p.24: an index load sets the index flag and index
+! result indicators from the loaded word, so all five are ASSIGNED,
+! which means a load must clear the ones whose condition is false.
+!
+! EVERY OFF-CHECK FOLLOWS AN ON-STATE, which is the whole point.  The
+! three words below are the deck's own three seed constants -- IBXWZO,
+! IBXWZ2 and IBXWZ1 from ja_ax1a pp.24-25 -- and they walk the value
+! negative, positive and zero.  Loading the second after the first
+! demands that XF, XCZ and XVLZ be turned OFF, not merely left alone;
+! a model that only ever sets bits fails there rather than at the end.
+!
+! The idiom is the deck's: B<ind>,$ hangs if the bit is ON, BZ<ind>,$
+! hangs if the bit is OFF.
+
+        SLC, (8)2200.0
+!
+! ---- value -1, flag 1, count 0: XF, XCZ, XVLZ on; XVZ, XVGZ off ----
+START   LX, $X1, WNEG
+        BZXF, $                      ! hang up if XF off
+        BZXCZ, $                     ! hang up if XCZ off
+        BZXVLZ, $                    ! hang up if XVLZ off
+        BXVZ, $                      ! hang up if XVZ on
+        BXVGZ, $                     ! hang up if XVGZ on
+!
+! ---- value +1, flag 0, count 1: only XVGZ on ----------------------
+! Everything checked off here was ON a moment ago, so each of these
+! four is a test that the load CLEARED it.
+        LX, $X1, WPOS
+        BXF, $                       ! hang up if XF on
+        BXCZ, $                      ! hang up if XCZ on
+        BXVLZ, $                     ! hang up if XVLZ on
+        BXVZ, $                      ! hang up if XVZ on
+        BZXVGZ, $                    ! hang up if XVGZ off
+!
+! ---- value 0, flag 0, count 1: only XVZ on ------------------------
+! XVGZ was on a moment ago and must now be off.
+        LX, $X1, WZERO
+        BZXVZ, $                     ! hang up if XVZ off
+        BXVGZ, $                     ! hang up if XVGZ on
+        BXF, $                       ! hang up if XF on
+        BXCZ, $                      ! hang up if XCZ on
+        BXVLZ, $                     ! hang up if XVLZ on
+        B, PASS
+WNEG    XW, -1, 0, 0, 1              ! ja_ax1a's IBXWZO
+WPOS    XW, 1, 1, 0, 0               ! ja_ax1a's IBXWZ2
+WZERO   XW, 0, 1, 0, 0               ! ja_ax1a's IBXWZ1
+PASS    BEW, $
+        END, START

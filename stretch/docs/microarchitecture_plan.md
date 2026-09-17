@@ -3953,8 +3953,8 @@ hand vectors alone. "Enables" notes the dependency chain.
    turned on by the right load and turned off by the trailing Z, and
    nothing whatever about the conditions being discriminating.
 
-   THAT IS AN OPEN COVERAGE HOLE, stated as a hole rather than papered
-   over: nothing in the suite currently pins the OFF-state of XF, XCZ,
+   THAT WAS AN OPEN COVERAGE HOLE, and programs/index_indicators_off.strap
+   now closes it. Nothing in the suite pinned the OFF-state of XF, XCZ,
    XVLZ, XVZ or XVGZ. index_result_indicators.strap does not close it -- every
    check in it is Z,$IND then the operation then a branch-IF-ON, so the
    same unconditional injection passes it too; that was run, not
@@ -3973,7 +3973,27 @@ hand vectors alone. "Enables" notes the dependency chain.
    REGISTER to set XL by hand, with BZXL/BXL/BZXLZ over it. That would
    pin the indicator register as an addressable word and the branch
    machinery over an indicator no index load touches, which nothing
-   does today. It still would not close the off-state hole.
+   does today. It still would not close the off-state hole;
+   index_indicators_off.strap does.
+
+   HOW THE HOLE WAS CLOSED, and why the program is the weaker kind.
+   The deck has no block that checks an index indicator OFF because its
+   condition is false, so index_indicators_off.strap is HAND-WRITTEN
+   from p.24 -- an index load sets the flag and result indicators FROM
+   THE LOADED WORD, which makes all five ASSIGNED, so a load must clear
+   the ones whose condition is false. It uses the deck's own three seed
+   constants (IBXWZO, IBXWZ2, IBXWZ1), which walk the value negative,
+   positive and zero, and it orders them so that EVERY off-check
+   follows an on-state -- each one therefore tests clearing, not mere
+   absence.
+
+   Two injections, failing at different lines, each where the semantics
+   predict: all five forced ON halts at 002202.00 (BXVZ,$, the first
+   off-check), and "sets but never clears" -- OR the new indicators
+   into the old instead of assigning -- halts at 002203.40 (BXF,$, the
+   first clear-check, after the second load). The first of those is
+   exactly the injection that passes ibox1_bind.strap and
+   index_result_indicators.strap, so this program is its control.
 
    A CLAIM OF MINE THAT THE INJECTION CAUGHT. I wrote in the program
    header that a model computing XVZ as "not XVGZ" would pass the first
