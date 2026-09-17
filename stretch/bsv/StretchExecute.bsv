@@ -306,8 +306,15 @@ function Word64 setIndexResultIndicatorsF(Word64 ind, IndexWord x);
   return i5;
 endfunction
 
-function Word64 setIndexCmpIndicatorsF(Word64 ind, Cmp3 c);
-  Word64 i1 = setBit(ind, ind_XL, pack(c == CmpLow));
+// The compare operations set the index FLAG as well as the three
+// comparison indicators -- Ref. Manual p.24 for KV and KC ("The
+// index-flag and index-comparison indicators are set in each of the last
+// two operations; the index result indicators are not set in these
+// operations") and p.25 for KVI, KVNI and KCI in the same words.  This
+// helper used to set only XL/XE/XH, so all five compares left XF stale.
+function Word64 setIndexCmpIndicatorsF(Word64 ind, IndexWord x, Cmp3 c);
+  Word64 i0 = setBit(ind, ind_XF, x.flag);
+  Word64 i1 = setBit(i0,  ind_XL, pack(c == CmpLow));
   Word64 i2 = setBit(i1,  ind_XE, pack(c == CmpEqual));
   Word64 i3 = setBit(i2,  ind_XH, pack(c == CmpHigh));
   return i3;
@@ -2212,7 +2219,7 @@ function ActionValue#(IndexOutcome)
             Bit#(32) h = (ea[0] == 0) ? prefetch[0][63:32] : prefetch[0][31:0];
             SM128 opnd = SM128{sign: h[7], mag: zeroExtend(h[31:8])};
             SM128 val  = SM128{sign: x.sign, mag: zeroExtend(x.addr)};
-            ind = setIndexCmpIndicatorsF(ind, smCompare(val, opnd));
+            ind = setIndexCmpIndicatorsF(ind, x, smCompare(val, opnd));
           end else
             needsRead = tagged Valid ea[18:1];
         end
@@ -2220,7 +2227,7 @@ function ActionValue#(IndexOutcome)
           if (prefetchCount >= 1) begin
             Bit#(32) h = (ea[0] == 0) ? prefetch[0][63:32] : prefetch[0][31:0];
             Cmp3 c = (x.count == h[31:14]) ? CmpEqual : (x.count < h[31:14]) ? CmpLow : CmpHigh;
-            ind = setIndexCmpIndicatorsF(ind, c);
+            ind = setIndexCmpIndicatorsF(ind, x, c);
           end else
             needsRead = tagged Valid ea[18:1];
         end
@@ -2306,46 +2313,59 @@ function ActionValue#(IndexOutcome)
           idxWriteReg = ii.j; doIdxWrite = True;
           idxWriteVal = IndexWord{addr: immVal24, sign: 0,
                    flag: x.flag, spare: x.spare, count: x.count, refill: x.refill};
+          ind = setIndexResultIndicatorsF(ind, idxWriteVal);
         end
         4'b1001: begin // LVNI
           idxWriteReg = ii.j; doIdxWrite = True;
           idxWriteVal = IndexWord{addr: immVal24, sign: 1,
                    flag: x.flag, spare: x.spare, count: x.count, refill: x.refill};
+          ind = setIndexResultIndicatorsF(ind, idxWriteVal);
         end
         4'b0010: begin // LCI
           idxWriteReg = ii.j; doIdxWrite = True;
           idxWriteVal = IndexWord{addr: x.addr, sign: x.sign,
                    flag: x.flag, spare: x.spare, count: imm18, refill: x.refill};
+          ind = setIndexResultIndicatorsF(ind, idxWriteVal);
         end
         4'b0011: begin // LRI
           idxWriteReg = ii.j; doIdxWrite = True;
           idxWriteVal = IndexWord{addr: x.addr, sign: x.sign,
                    flag: x.flag, spare: x.spare, count: x.count, refill: imm18};
+          ind = setIndexResultIndicatorsF(ind, idxWriteVal);
         end
         4'b0000: begin // C+I
           idxWriteReg = ii.j; doIdxWrite = True;
           idxWriteVal = IndexWord{addr: x.addr, sign: x.sign, flag: x.flag,
                    spare: x.spare,
                    count: x.count + imm18, refill: x.refill};
+          ind = setIndexResultIndicatorsF(ind, idxWriteVal);
         end
         4'b1000: begin // C-I
           idxWriteReg = ii.j; doIdxWrite = True;
           idxWriteVal = IndexWord{addr: x.addr, sign: x.sign, flag: x.flag,
                    spare: x.spare,
                    count: x.count - imm18, refill: x.refill};
-          // C-I SETS THE INDEX RESULT INDICATORS, and it has to: the
-          // deck's own zero-gating loop (jb_ax4b routine 1238 test 3)
-          // does C-I then BXCZ back to back, so the branch is reading
-          // XCZ from this instruction.  Without it the loop never
-          // terminates -- measured, as a step cap spinning at
-          // 005553.40.  Every DIRECT index load (LV/LC/LR) already set
-          // these; six IMMEDIATE arms did not.
+          // THE IMMEDIATE INDEX OPERATIONS SET THE INDEX FLAG AND
+          // RESULT INDICATORS.  Ref. Manual p.25, directly after this
+          // operation: "The index flag and index result indicators are
+          // set in all of the preceding immediate index arithmetic
+          // operations. The index comparison indicators are not
+          // changed."  LVI, LVNI, LCI, LRI, C+I and C-I all omitted it.
           //
-          // SCOPE: C+I, LVI, LVNI, LCI and LRI have the SAME gap and
-          // nothing in the suite drives them, so they are left alone
-          // rather than changed without evidence.  A block that does
-          // C+I or an immediate load followed by a branch on an index
-          // indicator is what would settle each.
+          // C-I was found first, by the deck: jb_ax4b routine 1238
+          // test 3 does C-I then BXCZ back to back, and without this
+          // the loop never terminates (a step cap spinning at
+          // 005553.40).  The other five were then corrected on the
+          // manual's sentence, which names them all; no deck block in
+          // the suite yet reads their indicators.
+          //
+          // WHICH WORD: the manual does not say before or after.  The
+          // RESULT is used, as LV/LC/LR do with their new word, and
+          // the p.25 programming note supports it -- "to set the index
+          // flag and index result indicators according to the status
+          // of an index without modifying that index", use V+I with a
+          // zero address, which only makes sense if the indicators
+          // report the index as it stands after the operation.
           ind = setIndexResultIndicatorsF(ind, idxWriteVal);
         end
         4'b0101, 4'b0110, 4'b0111: begin // V+I / V+IC / V+ICR --
@@ -2386,11 +2406,11 @@ function ActionValue#(IndexOutcome)
             idxWriteVal = x1; ind = setIndexResultIndicatorsF(ind, x1);
           end
         end
-        4'b0100: ind = setIndexCmpIndicatorsF(ind, smCompare(val, immSM)); // KVI
-        4'b1100: ind = setIndexCmpIndicatorsF(ind, smCompare(val, SM128{sign:~immSM.sign, mag:immSM.mag})); // KVNI
+        4'b0100: ind = setIndexCmpIndicatorsF(ind, x, smCompare(val, immSM)); // KVI
+        4'b1100: ind = setIndexCmpIndicatorsF(ind, x, smCompare(val, SM128{sign:~immSM.sign, mag:immSM.mag})); // KVNI
         4'b1010: begin // KCI
           Cmp3 c = (x.count==imm18) ? CmpEqual : (x.count<imm18) ? CmpLow : CmpHigh;
-          ind = setIndexCmpIndicatorsF(ind, c);
+          ind = setIndexCmpIndicatorsF(ind, x, c);
         end
         default: ind = setOpInvalid(ind); // LVS: out of scope
       endcase

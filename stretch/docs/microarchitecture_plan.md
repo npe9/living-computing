@@ -3883,23 +3883,46 @@ hand vectors alone. "Enables" notes the dependency chain.
    the index result indicators. Every DIRECT index load (LV/LC/LR)
    already set them; six IMMEDIATE arms (LVI, LVNI, LCI, LRI, C+I, C-I)
    did not. Without the fix the loop never terminates: a step cap
-   spinning at 005553.40. ONLY C-I IS FIXED, since only C-I is driven;
-   the other five carry the identical gap and a note on the C-I arm
-   saying what would settle each -- a block doing one of them followed
-   by a branch on an index indicator.
+   spinning at 005553.40. C-I was fixed first, because the deck drove
+   it.
 
-   (What stood here before, kept because the reasoning is the lesson:)
-   Self-modifying, and AN ATTEMPT TO DERIVE IT
-   DID NOT RECONCILE, which is recorded here rather than guessed at.
-   Two SVAs patch I3830's "LC,$X0,0" and I3831's "B,0" each pass. $X14
-   comes from I38XW7 = XW,BIT0,18,0, so its VALUE is BIT0's ADDRESS
-   (013054) and V+I walks it one word per pass -- meaning LC loads its
-   count from BIT0, BIT1, ... in turn. But BIT0 through BIT17 carry
-   their bit in the VALUE field, so their COUNT field is zero, which
-   would make RCZ fire and the loop report "REFILL WHEN COUNT NOT
-   ZERO" on the first pass. Something in that reading is wrong -- most
-   likely which field LC takes, or which table $X14 actually walks.
-   Re-read pp.66-67 at 240 dpi before writing anything.
+   AND THEN THE MANUAL SETTLED THE REST, which changes what "no test
+   drives it" should mean. Ref. Manual p.25, directly under C-I:
+   "The index flag and index result indicators are set in ALL OF THE
+   PRECEDING immediate index arithmetic operations. The index
+   comparison indicators are not changed." That sentence names LVI,
+   LVNI, LCI, LRI and C+I outright, so their omission is a stated
+   defect rather than a suspicion, and they are now fixed on its
+   authority. p.24 says the same for the direct side, and adds for KV
+   and KC -- and p.25 again for KVI, KVNI and KCI -- that "the
+   index-flag and index-comparison indicators are set". The shared
+   compare helper set only XL/XE/XH, so ALL FIVE compares left XF
+   stale; it now takes the index word and sets XF from its flag.
+
+   THE DISTINCTION WORTH KEEPING. Leaving a suspected gap alone for
+   want of a test is right when the gap is INFERRED -- the SVA width
+   change was derived, and a green suite could not tell it from the
+   old rule. It is not right when the primary source STATES the
+   behaviour for the named operations. Then the suite run's job is
+   narrower: to show nothing already depends on the omission. It says
+   nothing positive about the fix, and the arm comments say so: no deck
+   block yet reads the indicators of LVI, LVNI, LCI, LRI or C+I.
+
+   WHICH WORD the result indicators report is not stated for C-I. The
+   RESULT is used, as LV/LC/LR use their new word, and p.25's
+   programming note supports it: "to set the index flag and index
+   result indicators according to the status of an index without
+   modifying that index", use V+I with a zero address.
+
+   HOW IT WAS RESOLVED, since the route is the useful part. The first
+   reading assumed LC loads an INDEX WORD's count field (bits 28-45).
+   BIT0-BIT17 carry their bit in the value field, so under that reading
+   every count would be zero, RCZ would fire on pass one, and the loop
+   could not do what its title says. That contradiction was written
+   down as an open question naming two suspects -- which field LC
+   takes, or which table $X14 walks -- instead of being papered over
+   with a derivation that read well. Checking the model's LC arm
+   settled it on the first suspect in one look.
 
    HOW TEST 1 IS BUILT, decoded far enough that the next session can
    start on it rather than on the arithmetic. Its constants are the

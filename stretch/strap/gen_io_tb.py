@@ -25,6 +25,13 @@ from gen_tb import generate
 
 PROGRAM = "programs/io_reader_printer.strap"
 
+from opcodes import INDICATOR_BITS
+
+
+def _ind(name):
+    """Weight of an indicator in the 64-bit word: IBM bit n is 1 << (63-n)."""
+    return 1 << (63 - INDICATOR_BITS[name])
+
 # StretchIO.bsv: chanReader=32, chanPrinter=33. Reference Manual p.111:
 # the 7-bit channel number occupies instruction bits 12-18 of the
 # 24-bit channel-address field, not its low bits -- see the .strap
@@ -140,11 +147,26 @@ def main():
         ("DEST2_1_untouched_by_SKIP", str(dest2 + 1), 0xDEAD0002),
         ("DEST2_2_untouched_by_SKIP", str(dest2 + 2), 0xDEAD0003),
         ("CCWF_after_RELSEOP", str(ccwf), exp_ccwf),
-        # ind_UNRJ (StretchTypes.bsv, indicator 7) is the only indicator
-        # bit anything in this program touches -- the final RD to
-        # channel 0 (no device installed) is the only reject in the
-        # whole run. weight = 1 << (63-7) = 1 << 56.
-        ("UNRJ_indicator", "11", 1 << 56),
+        # The whole indicator word, so it has to account for everything
+        # that touches it.  ind_UNRJ (indicator 7) is set by the final RD
+        # to channel 0 (no device installed) -- the only reject in the run.
+        #
+        # This comment used to say UNRJ was the ONLY indicator anything
+        # here touches, and the expected value encoded that.  It was wrong:
+        # the program opens with LVI,$1,32 and LVI,$2,33, and Ref. Manual
+        # p.25 says "the index flag and index result indicators are set in
+        # all of the preceding immediate index arithmetic operations" --
+        # which includes LVI.  The model omitted that, so the omission sat
+        # inside this expected value until the model was corrected, when
+        # this check failed with exactly XCZ and XVGZ extra.
+        #
+        # The last index operation is LVI,$2,33: count 0 (XCZ on), value
+        # 33<<5 = 1056, positive and non-zero (XVGZ on, XVZ and XVLZ off),
+        # flag 0 (XF off).  Nothing after it touches index indicators.
+        # This is therefore the suite's one witness that LVI sets its
+        # result indicators -- it pins XCZ and XVGZ, and XF only as clear.
+        ("UNRJ_indicator", "11",
+         _ind("UNRJ") | _ind("XCZ") | _ind("XVGZ")),
     ]
     printer_checks = [
         ("PRINTER0", 0, 111),
