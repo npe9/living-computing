@@ -1295,6 +1295,34 @@ run "IBOX-4 R refill (effective address, not the index field)" ./run_program.sh 
     "PC=$(python3 -c 'from strap_asm import assemble; print(assemble(open("programs/ibox4_refill.strap").read()).symtab["PASS"]//32)')" \
     "SEN:712=0"
 
+run "IBOX-4 RCZ (jb_ax4b, encoding)" python3 verify_ibox4_rcz_listing.py
+# RCZ (Refill on Count Zero), routine 1238 test 3's first check, and
+# the LAST operation the whole-opcode screen found implemented and
+# driven by nothing.  Six half-words: I38K1 is an index word whose
+# COUNT IS ZERO and whose refill names I38XW3, so the single RCZ must
+# fire; KV compares.  The listing's error text is the specification --
+# "RCZ FAILS TO REFILL WHEN CT ZERO".
+#
+# I38XW3 is deliberately unlike anything else in storage (value
+# 123456.76, count 543210, refill 123456) so a refill that happened but
+# landed elsewhere cannot compare equal by accident.
+#
+# WHY ibox4_refill AND NOT THIS BLOCK CAUGHT THE OPERAND BUG, which is
+# worth knowing before trusting either: execute() used to read
+# `st.readIndex(bm.idx)` where the operand is the EFFECTIVE ADDRESS,
+# and here the two COINCIDE -- "RCZ,$X0" addresses word 020 = word 16 =
+# index register 0, and its idx field is also 0, so the old arm passed
+# this check by luck.  Test 1's "R,$X15" addresses word 037 = word 31
+# with idx = 0, where they differ, and that is the one that halted.  A
+# block only discriminates where its operands make the wrong answer
+# different from the right one.
+#
+# Measured: with RCZ made never to refill, the run halts at SERS with
+# SEN = 005551.00, the deck's own check.
+run "IBOX-4 RCZ (refill on count zero)" ./run_program.sh programs/ibox4_rcz.strap StretchIbox4RczTb \
+    "PC=$(python3 -c 'from strap_asm import assemble; print(assemble(open("programs/ibox4_rcz.strap").read()).symtab["PASS"]//32)')" \
+    "SEN:712=0"
+
 run "IBOX-1 V+IC chain (ja_ax1a, encoding)" python3 verify_ibox1_vpic_chain_listing.py
 # V+IC, and with it the LAST of the eight modeled index operations a
 # coverage screen found in zero suite programs.  The largest of the

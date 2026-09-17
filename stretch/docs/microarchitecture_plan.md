@@ -3829,7 +3829,34 @@ hand vectors alone. "Enables" notes the dependency chain.
    is the shape V+CR already has and this arm does not. That case is
    left setOpInvalid. Routine 1238 checks R and RCZ "from all three
    memories", so the rest of it is what should drive the general form.
-   RCZ itself is still driven by nothing.
+
+   RCZ IS CLOSED TOO (ibox4_rcz, p.66, test 3's first check, six
+   half-words): I38K1 is an index word whose COUNT IS ZERO and whose
+   refill names I38XW3, so the single RCZ must fire and KV compares.
+   With RCZ made never to refill it halts at SERS with SEN =
+   005551.00, the deck's own "RCZ FAILS TO REFILL WHEN CT ZERO".
+
+   AND WHY THAT BLOCK COULD NOT HAVE FOUND THE OPERAND BUG, which is
+   the point worth keeping. For "RCZ,$X0" the effective address and the
+   idx field COINCIDE -- it addresses word 020 = word 16 = index
+   register 0, and its idx field is also 0 -- so the old, wrong arm
+   would have passed it by luck. Test 1's "R,$X15" addresses word 037 =
+   word 31 with idx = 0, where the two differ, and that is the one that
+   halted. A BLOCK ONLY DISCRIMINATES WHERE ITS OPERANDS MAKE THE WRONG
+   ANSWER DIFFERENT FROM THE RIGHT ONE; two blocks can exercise the
+   same corrected code and only one of them ever be able to catch the
+   fault. Both suite comments say so, because a reader taking ibox4_rcz
+   as evidence for the operand semantics would be taking a coincidence.
+
+   WHAT REMAINS OF ROUTINE 1238: test 1's refill-address sweep over
+   powers of two (pp.58-62), test 2's six addressing cases and the
+   1-to-15 NOP rule, and test 3's zero-gating loop (I3829-I3833,
+   005551.00-005560.40) -- the complement of the check taken, verifying
+   RCZ does NOT refill while the count is non-zero. That loop is
+   self-modifying in a way worth knowing before starting it: I3830's
+   "LC,$X0,0" and I3831's "B,0" are PLACEHOLDERS whose address fields
+   SVA fills in each time round, walking the count value and the branch
+   target together.
 
    HOW TEST 1 IS BUILT, decoded far enough that the next session can
    start on it rather than on the arithmetic. Its constants are the

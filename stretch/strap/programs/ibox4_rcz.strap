@@ -1,0 +1,53 @@
+! jb_ax4b "IBOX-4", routine 1238 test 3, first check, p.66 (octal
+! 005546.00-005550.40): "-TEST 3." -- RCZ (Refill on Count Zero).
+!
+! WHY THIS BLOCK.  RCZ was the LAST of the operations a whole-opcode
+! screen found implemented but driven by nothing.  Its companion R is
+! closed by ibox4_refill from test 1 of the same routine; this is the
+! six half-words that close RCZ.
+!
+! WHAT IT CHECKS, in one step.  I38K1 is an index word whose COUNT IS
+! ZERO and whose refill names I38XW3, so the single RCZ must fire and
+! replace $X0 with I38XW3's word; KV then compares the two.  The
+! listing's error text is the specification: "RCZ FAILS TO REFILL WHEN
+! CT ZERO".
+!
+! I38XW3 is deliberately unlike anything else in storage --
+! value 123456.76, count 543210, refill 123456 -- so a refill that
+! happened but landed somewhere else cannot compare equal by accident.
+!
+! AND A NOTE ON WHY ibox4_refill WAS THE BLOCK THAT CAUGHT THE OPERAND
+! BUG, not this one.  execute() used to read `st.readIndex(bm.idx)`
+! where the operand is the EFFECTIVE ADDRESS.  Here the two coincide:
+! "RCZ,$X0" addresses word 020 = word 16 = index register 0, and its
+! idx field is also 0, so the old arm would have passed this check by
+! luck.  Test 1's "R,$X15" addresses word 037 = word 31 = index
+! register 15 with idx = 0, where the two differ -- and that is the one
+! that halted.  A block only discriminates where its operands make the
+! wrong answer different from the right one.
+!
+! WHAT IS LEFT of test 3: after this check it goes on to "CHECK ZERO
+! GATING OF RCZ", an SVA-driven loop over I3829-I3833 that walks a
+! count down with C-I and verifies RCZ does NOT refill while the count
+! is non-zero.  Not transcribed here.
+
+        SLC, (8)1304.0
+SERS    BEW, $
+        SLC, (8)1310.0
+SEN     DD(BU,64,8), 0
+
+! -- constants for 1238 (p.67) --
+        SLC, (8)5574.0
+I38XW3  XW, (8)123456.76, (8)543210, (8)123456
+        SLC, (8)5625.0
+I38K1   XW, 0, 0, I38XW3                     ! count 0, refill -> I38XW3
+
+        SLC, (8)5546.0
+I3828   LX, $X0, I38K1                       ! start check of RCZ.
+        RCZ, $X0
+        KV, $X0, I38XW3
+        BXE, $+1.32
+        SIC, SEN
+        B, SERS                              ! RCZ fails to refill when ct zero.
+PASS    BEW, $
+        END, I3828
