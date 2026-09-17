@@ -109,10 +109,11 @@ run "Store Zero clears the indicator register" ./run_program.sh programs/z_ind_c
 run "Index result indicators (LVNI, LCI, LRI, C+I)" ./run_program.sh programs/index_result_indicators.strap StretchIndexResultIndTb \
     "PC=$(python3 -c 'from strap_asm import assemble; print(assemble(open("programs/index_result_indicators.strap").read()).symtab["PASS"]//32)')"
 
-run "B(IND) routine, all four groups (ja_ax1a, encoding)" python3 verify_ibox1_bind_listing.py
-# ja_ax1a pp.24-25's "BRANCH ON I BOX INDICATORS", all four groups --
-# XF, XCZ, XVLZ, XVZ.  56 checks: 12 label addresses against the
-# addresses the page prints beside them, 44 rows of machine code.
+run "B(IND) routine, all five groups (ja_ax1a, encoding)" python3 verify_ibox1_bind_listing.py
+# ja_ax1a pp.24-25's "BRANCH ON I BOX INDICATORS", all five groups --
+# XF, XCZ, XVLZ, XVZ, XVGZ -- every indicator an index load sets.  70
+# checks: 14 label addresses against the addresses the page prints
+# beside them, 56 rows of machine code.
 #
 # It pins the index FLAG indicator, which nothing else did: every index
 # word in index_result_indicators.strap has flag 0, so that program
@@ -121,17 +122,18 @@ run "B(IND) routine, all four groups (ja_ax1a, encoding)" python3 verify_ibox1_b
 # OFF" and a trailing Z for "turn the bit off after testing", and each
 # group walks its indicator through both polarities before clearing it.
 #
-# Three injections, measured:
+# Four injections, measured:
 #   LX sets no indicators     -> IBIN1  (004023.40, "hang up if bit off")
 #   trailing-Z does not clear -> IBIN4  (004025.40, "hang up if bit on")
 #   XVZ never set             -> IBIN22 (004044.40, "hang up if bit off")
+#   XVGZ never set            -> IBIN29 (004053.40, "hang up if bit off")
 # Each halts at the line whose own comment names that failure.  The deck
 # diagnoses itself; that is what transcription buys over a hand-written
 # vector.
 #
 # AND ONE INJECTION THAT PASSED, which is the block's honest limit:
-# setting XF, XCZ, XVLZ and XVZ unconditionally to 1 on every index load
-# passes the whole routine.  Every group checks its indicator ON, and
+# setting all five unconditionally to 1 on every index load passes the
+# whole routine (re-measured after the XVGZ group was added).  Every group checks its indicator ON, and
 # the only OFF it checks is the one the trailing Z produces -- never an
 # indicator off because its condition is false.  A green result here is
 # evidence that each indicator can be turned on and cleared, not that
@@ -144,14 +146,16 @@ run "B(IND) routine, all four groups (ja_ax1a, encoding)" python3 verify_ibox1_b
 # passes, because XVZ is only ever observed under a word whose value IS
 # zero.  Recorded in the program header.
 #
-# The two seed words are the reason the groups can share: IBXWZO is
+# The three seed words are the reason the groups can share: IBXWZO is
 # value -1, flag 1, count 0 -- negative, flagged and zero-count at once,
-# which the listing calls "COMMON XW FOR XF,XCZ,XVLZ" -- and IBXWZ1 is
-# value 0, count 1 for XVZ.  See the program header for the XW
+# which the listing calls "COMMON XW FOR XF,XCZ,XVLZ" -- and IBXWZ1 and
+# IBXWZ2 are value 0 and value 1, count 1, for XVZ and XVGZ.  The three
+# walk the value negative, zero and positive while leaving the other
+# fields alone, which is the only way one routine reaches all three.  See the program header for the XW
 # fourth-field discrepancy between this tape and jb_ax4b, now narrowed
 # to the four-operand form alone.
-run "B(IND) routine, all four groups (model)" ./run_program.sh programs/ibox1_bind.strap StretchIbox1BindTb \
-    "PC=4182"          # 004053.00, the half-word after the routine's last printed line
+run "B(IND) routine, all five groups (model)" ./run_program.sh programs/ibox1_bind.strap StretchIbox1BindTb \
+    "PC=4196"          # 004062.00, the half-word after the routine's last printed line
 
 # -- 0e. I-Box 4 routine 150's CB / CB+ / CBR / CBR+ blocks (plus their
 # LX/SX setup and XW index words) assembled verbatim at the listing's

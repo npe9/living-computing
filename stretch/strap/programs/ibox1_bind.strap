@@ -1,6 +1,7 @@
-! ja_ax1a "IBOX-1", routine IBIN1-IBIN27, pp.24-25 (octal 004023.00-
-! 004052.40): "BRANCH ON I BOX INDICATORS %B-IND%", all four groups --
-! XF, XCZ, XVLZ and XVZ.
+! ja_ax1a "IBOX-1", routine IBIN1-IBIN34, pp.24-25 (octal 004023.00-
+! 004061.40): "BRANCH ON I BOX INDICATORS %B-IND%", all five groups --
+! XF, XCZ, XVLZ, XVZ and XVGZ -- which is every indicator an index load
+! sets.
 !
 ! WHY THIS BLOCK.  index_result_indicators.strap pins the index RESULT
 ! indicators for the immediate operations, but every index word in it
@@ -24,17 +25,23 @@
 !                                              a BD,$ "hang up if bit on"
 !
 ! So a model that never set XF hangs at IBIN1, and one that set it but
-! ignored the trailing-Z clear hangs at IBIN4.  Both measured below.
+! ignored the trailing-Z clear hangs at IBIN4.  Both measured, along
+! with a model that never sets XVZ (hangs at IBIN22) and one that never
+! sets XVGZ (hangs at IBIN29).  Four faults, four distinct halts, each
+! at the line whose own comment names that failure.
 !
 ! WHAT THIS ROUTINE DOES NOT PIN, measured rather than guessed.  Every
 ! group checks its indicator ON, and the only OFF it checks is the one
 ! the trailing-Z CLEAR produces -- never an indicator off because its
-! condition is false.  So a model that sets XF, XCZ, XVLZ and XVZ
-! unconditionally to 1 on every index load passes this entire routine.
+! condition is false.  So a model that sets XF, XCZ, XVLZ, XVZ
+! and XVGZ unconditionally to 1 on every index load passes this entire
+! routine.
 ! That was injected and it passed, which is the honest statement of the
 ! block's reach: it pins that each indicator can be turned on by the
 ! right load and turned off by the trailing Z, and nothing whatever
-! about the conditions being discriminating.
+! about the conditions being discriminating.  Re-measured after the
+! XVGZ group was added, since the program changed and the old
+! measurement was about the old program.
 !
 ! NOTHING ELSE IN THE SUITE CLOSES THAT HOLE either, so it is recorded
 ! as a hole rather than pointed at some other program.  I first wrote
@@ -118,7 +125,7 @@ IBIN6   VF, (8)777777.70                     ! executed as NOP,-.32
 !
 ! ---- XCZ: the index count zero -----------------------------------
 ! No reload: the XF group left the same index word in $X1, and its
-! count is still zero.  The four groups share two constants between
+! count is still zero.  The five groups share three constants between
 ! them, which is the whole reason the listing calls IBXWZO "COMMON".
 IBIN8   BZXCZ, $                             ! hang up if bit off
 IBIN9   BXCZ, $+1.0                          ! dont branch if bit off
@@ -155,7 +162,7 @@ IBIN20  VF, (8)777777.70                     ! executed as NOP,-.32
 ! only ever observed under IBXWZ1, whose value IS zero, and there "not
 ! XVGZ" and "value is zero" agree.  The deck never observes XVZ under a
 ! nonzero value, so nothing here can tell the two rules apart.
-IBIN21  LX, $X1, IBXWZ1                      ! turn on XVZ
+        LX, $X1, IBXWZ1                      ! turn on XVZ
 IBIN22  BZXVZ, $                             ! hang up if bit off
 IBIN23  BXVZ, $+1.0                          ! dont branch if bit off
         BD, $                                ! hang up if no branch
@@ -166,6 +173,25 @@ IBIN26  BZXVZ, $+1.0                         ! branch if bit off
         B, IBIN27                            ! branch out
 IBXWZ1  XW, 0, 1, 0, 0                       ! common XW for XVZ
 IBIN27  VF, (8)777777.70                     ! executed as NOP,-.32
+        VF, (8)777777.70                     ! executed as NOP,-.32
+!
+! ---- XVGZ: the index value greater than zero ---------------------
+! "RESTART OF ROUTINE" in the listing, and a third constant: IBXWZ2 is
+! value 1, count 1, flag 0.  The three seed words between them put the
+! value negative, zero and positive while leaving the other fields
+! alone, which is the only reason one routine can reach XVLZ, XVZ and
+! XVGZ at all.
+        LX, $X1, IBXWZ2                      ! turn on XVGZ
+IBIN29  BZXVGZ, $                            ! hang up if bit off
+IBIN30  BXVGZ, $+1.0                         ! dont branch if bit off
+        BD, $                                ! hang up if no branch
+IBIN31  BZXVGZZ, $                           ! hang up if bit off or turn off
+IBIN32  BXVGZ, $                             ! hang up if bit on
+IBIN33  BZXVGZ, $+1.0                        ! branch if bit off
+        BD, $                                ! hang up if bit on
+        B, IBIN34                            ! branch out
+IBXWZ2  XW, 1, 1, 0, 0                       ! common XW for XVGZ
+IBIN34  VF, (8)777777.70                     ! executed as NOP,-.32
         VF, (8)777777.70                     ! executed as NOP,-.32
 PASS    BEW, $
         END, IBINX

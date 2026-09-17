@@ -1,10 +1,11 @@
 #!/usr/bin/env python3
-"""verify_ibox1_bind_listing.py -- IBOX-1 routine IBIN1-IBIN27
+"""verify_ibox1_bind_listing.py -- IBOX-1 routine IBIN1-IBIN34
 (programs/ibox1_bind.strap) against ja_ax1a pp.24-25.
 
-"BRANCH ON I BOX INDICATORS", all four groups: the deck's own test of
+"BRANCH ON I BOX INDICATORS", all five groups: the deck's own test of
 the index FLAG, COUNT ZERO, VALUE LESS THAN ZERO and VALUE ZERO
-indicators, and of the branch-on-indicator grammar including the
+and VALUE GREATER THAN ZERO indicators, and of the
+branch-on-indicator grammar including the
 trailing-Z clear.
 """
 from strap_asm import assemble
@@ -13,8 +14,8 @@ from listing_oracle import check_rows, finish
 prog = assemble(open("programs/ibox1_bind.strap").read())
 
 # PASS's address is a LISTING fact, not something to read back out of the
-# assembler: 004053.00 is the half-word after the routine's last printed
-# line, IBIN27's second NOP at 004052.40.  Deriving the expectation from
+# assembler: 004062.00 is the half-word after the routine's last printed
+# line, IBIN34's second NOP at 004061.40.  Deriving the expectation from
 # prog.symtab instead would move the goalpost with the ball -- any pad or
 # filler that shifted the layout would shift the expectation too and stay
 # green.  Every other label below is checked the same way, against the
@@ -22,8 +23,10 @@ prog = assemble(open("programs/ibox1_bind.strap").read())
 SYMBOLS = {
     "IBINX":  "004023.00", "IBIN1":  "004023.40", "IBXWZO": "004030.00",
     "IBIN6":  "004031.00", "IBIN8":  "004032.00", "IBIN13": "004036.00",
-    "IBIN15": "004037.00", "IBIN20": "004043.00", "IBIN21": "004044.00",
-    "IBXWZ1": "004051.00", "IBIN27": "004052.00", "PASS":   "004053.00",
+    "IBIN15": "004037.00", "IBIN20": "004043.00",
+    "IBXWZ1": "004051.00", "IBIN27": "004052.00",
+    "IBIN29": "004053.40", "IBXWZ2": "004060.00", "IBIN34": "004061.00",
+    "PASS":   "004062.00",
 }
 
 # The two seed words.  IBXWZO is value -1, flag 1, count 0, refill 0;
@@ -37,6 +40,7 @@ SYMBOLS = {
 DATA_ROWS = [
     ('004030.00', '0.01 C0 000000.00 00', 'IBXWZO XW, -1, 0, 0, 1   common XW for XF, XCZ, XVLZ'),
     ('004051.00', '0.00 00 000020.00 00', 'IBXWZ1 XW, 0, 1, 0, 0    common XW for XVZ'),
+    ('004060.00', '0.01 00 000020.00 00', 'IBXWZ2 XW, 1, 1, 0, 0    common XW for XVGZ'),
 ]
 
 XF_ROWS = [
@@ -80,7 +84,7 @@ XVLZ_ROWS = [
 ]
 
 XVZ_ROWS = [
-    ('004044.00', '4051.02 10', 'IBIN21 LX, $X1, IBXWZ1   turn on XVZ'),
+    ('004044.00', '4051.02 10', 'LX, $X1, IBXWZ1   turn on XVZ'),
     ('004044.40', '4044.71 40', 'IBIN22 BZXVZ, $      hang up if bit off'),
     ('004045.00', '4046.31 42', 'IBIN23 BXVZ, $+1.0   dont branch if bit off'),
     ('004045.40', '4045.44 00', 'BD, $                hang up if no branch'),
@@ -93,6 +97,20 @@ XVZ_ROWS = [
     ('004052.40', '777777.70+', 'VF, (8)777777.70         executed as NOP,-.32'),
 ]
 
+XVGZ_ROWS = [
+    ('004053.00', '4060.02 10', 'LX, $X1, IBXWZ2   turn on XVGZ'),
+    ('004053.40', '4053.71 C0', 'IBIN29 BZXVGZ, $      hang up if bit off'),
+    ('004054.00', '4055.31 C2', 'IBIN30 BXVGZ, $+1.0   dont branch if bit off'),
+    ('004054.40', '4054.44 00', 'BD, $                 hang up if no branch'),
+    ('004055.00', '4055.31 C4', 'IBIN31 BZXVGZZ, $     hang up if bit off or turn off'),
+    ('004055.40', '4055.71 C2', 'IBIN32 BXVGZ, $       hang up if bit on'),
+    ('004056.00', '4057.31 C0', 'IBIN33 BZXVGZ, $+1.0  branch if bit off'),
+    ('004056.40', '4056.44 00', 'BD, $                 hang up if bit on'),
+    ('004057.00', '4061.10 00', 'B, IBIN34             branch out'),
+    ('004061.00', '777777.70+', 'IBIN34 VF, (8)777777.70  executed as NOP,-.32'),
+    ('004061.40', '777777.70+', 'VF, (8)777777.70         executed as NOP,-.32'),
+]
+
 if __name__ == "__main__":
     fails = check_rows(prog, [], symbols=SYMBOLS)
     fails += check_rows(prog, DATA_ROWS, label="data ")
@@ -100,4 +118,5 @@ if __name__ == "__main__":
     fails += check_rows(prog, XCZ_ROWS,  label="XCZ ")
     fails += check_rows(prog, XVLZ_ROWS, label="XVLZ ")
     fails += check_rows(prog, XVZ_ROWS,  label="XVZ ")
+    fails += check_rows(prog, XVGZ_ROWS, label="XVGZ ")
     finish(fails)
