@@ -27,10 +27,23 @@
 ! would pass either way -- the same asymmetry ibox4_rcz has against the
 ! operand bug, and worth knowing before citing any of them.
 !
-! WHAT IS LEFT of test 2: cases 2B through 2F, and the part the
-! routine's own header calls "NOPING IF RF IS FROM 1 TO 15" -- a refill
-! whose address falls in the special registers should be suppressed,
-! which this model still does not implement.
+! 2B IS HERE TOO, and honestly it is DECK COVERAGE rather than a second
+! discriminator.  It is the adjacent case -- "OP ADR IS EM, RF ADR IS
+! XS" -- so the operand is still external memory (the two-read form)
+! but the refill SOURCE is word 021, an index register.  The model
+! services both reads through one deferred-address channel, with
+! StretchStorage routing register-versus-core beneath it, so no
+! injection in this arm fails 2B while 2A passes: I tried, and the
+! corrupted-second-read injection halts 2A first.  2B is in the same
+! program because the two cases are adjacent and share every constant,
+! and because the listing's four cases only make sense read together.
+!
+! WHAT IS LEFT of test 2: cases 2C through 2F.  2C and 2D put the
+! OPERAND in index core storage, so they take the one-read path
+! ibox4_refill already drives and would pass under either
+! implementation -- which is why 2A, not they, was the case worth
+! fetching first.  Cases 2G and 2H, the refill address gate, are
+! closed by ibox4_refill_nop.
 
         SLC, (8)1304.0
 SERS    BEW, $
@@ -42,7 +55,8 @@ SEN     DD(BU,64,8), 0
 I38XW3  XW, (8)123456.76, (8)543210, (8)123456
         SLC, (8)5625.0
 I38K1   XW, 0, 0, I38XW3                     ! count 0, refill -> I38XW3
-        SLC, (8)5627.0
+        SLC, (8)5626.0
+I38K2   XW, 0, 0, (8)21                      ! refill -> word 021 = $X1
 I38RFL  NOP                                  ! scratch: an index word is
         NOP                                  ! stored over this pair
 
@@ -57,5 +71,16 @@ I3821   LX, $X1, I38K1                       ! start 6 cases of addressing.
         BXE, $+1.32
         SIC, SEN
         B, SERS                              ! failed to refill ext mem frm ext mem.
+        LX, $X1, I38XW3                      ! test 2B - op adr is EM.
+        LX, $X0, I38K2                       !           RF adr is XS.
+        SX, $X0, I38RFL
+        R, I38RFL
+        NOP
+        NOP
+        LX, $X0, I38RFL
+        KV, $X0, I38XW3
+        BXE, $+1.32
+        SIC, SEN
+        B, SERS                              ! failed to refill ext mem frm ix stg.
 PASS    BEW, $
         END, I3821

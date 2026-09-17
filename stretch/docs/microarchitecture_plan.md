@@ -3848,15 +3848,38 @@ hand vectors alone. "Enables" notes the dependency chain.
    fault. Both suite comments say so, because a reader taking ibox4_rcz
    as evidence for the operand semantics would be taking a coincidence.
 
-   WHAT REMAINS OF ROUTINE 1238: test 1's refill-address sweep over
-   powers of two (pp.58-62), test 2's six addressing cases and the
-   1-to-15 NOP rule, and test 3's zero-gating loop (I3829-I3833,
-   005551.00-005560.40) -- the complement of the check taken, verifying
-   RCZ does NOT refill while the count is non-zero. That loop is
-   self-modifying in a way worth knowing before starting it: I3830's
-   "LC,$X0,0" and I3831's "B,0" are PLACEHOLDERS whose address fields
-   SVA fills in each time round, walking the count value and the branch
-   target together.
+   WHAT REMAINS OF ROUTINE 1238, with what is known about each:
+
+   TEST 1'S REFILL-ADDRESS SWEEP (pp.58-62) -- checks the refill came
+   from location 020 and not from 0, 1, 2, 4, 10, 40 ... 20000. Large
+   and mechanical; the first check is already taken as ibox4_refill.
+
+   TEST 2 CASES 2C AND 2D -- operand in index core storage, so they
+   take the ONE-read path ibox4_refill already drives and pass under
+   either implementation. Low value; take them only for completeness.
+
+   TEST 2 CASES 2E AND 2F -- "OP ADR IS IM": the operand is INTERNAL
+   MEMORY, reached by a VFL load into the accumulator, and R then
+   refills word 9 ($R) in place. That would exercise the two-read form
+   with a SPECIAL REGISTER as the operand, which nothing else does. The
+   catch is that it depends on the model's VFL L placing the loaded
+   word exactly in $R, which is a separate question from the refill
+   arm; settle that first or the result will not mean what it looks
+   like.
+
+   TEST 3'S ZERO-GATING LOOP (I3829-I3833, 005551.00-005560.40) -- the
+   complement of the check ibox4_rcz takes: RCZ must NOT refill while
+   the count is non-zero. Self-modifying, and AN ATTEMPT TO DERIVE IT
+   DID NOT RECONCILE, which is recorded here rather than guessed at.
+   Two SVAs patch I3830's "LC,$X0,0" and I3831's "B,0" each pass. $X14
+   comes from I38XW7 = XW,BIT0,18,0, so its VALUE is BIT0's ADDRESS
+   (013054) and V+I walks it one word per pass -- meaning LC loads its
+   count from BIT0, BIT1, ... in turn. But BIT0 through BIT17 carry
+   their bit in the VALUE field, so their COUNT field is zero, which
+   would make RCZ fire and the loop report "REFILL WHEN COUNT NOT
+   ZERO" on the first pass. Something in that reading is wrong -- most
+   likely which field LC takes, or which table $X14 actually walks.
+   Re-read pp.66-67 at 240 dpi before writing anything.
 
    HOW TEST 1 IS BUILT, decoded far enough that the next session can
    start on it rather than on the arithmetic. Its constants are the

@@ -1347,6 +1347,14 @@ run "IBOX-4 R from external memory (jb_ax4b, encoding)" python3 verify_ibox4_r_e
 # either implementation.  Same asymmetry as ibox4_rcz against the
 # operand bug -- cite the case that separates them, not the one that
 # happens to agree.
+#
+# 2B IS ALSO HERE, and it is DECK COVERAGE rather than a second
+# discriminator: its refill SOURCE is an index register where 2A's is
+# external memory, but the model services both reads through one
+# deferred-address channel, so no injection in this arm fails 2B while
+# 2A passes.  Tried it -- the corrupted-second-read injection halts 2A
+# first.  Said here so the pair is not cited as two independent
+# witnesses when it is one.
 run "IBOX-4 R from external memory (two sequential reads)" ./run_program.sh programs/ibox4_r_extmem.strap StretchIbox4RExtmemTb \
     "PC=$(python3 -c 'from strap_asm import assemble; print(assemble(open("programs/ibox4_r_extmem.strap").read()).symtab["PASS"]//32)')" \
     "SEN:712=0"
