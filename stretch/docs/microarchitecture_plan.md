@@ -3921,11 +3921,56 @@ hand vectors alone. "Enables" notes the dependency chain.
    header. Each of the four halts on its own failure line under its own
    injection, so they are four independent tests.
 
-   XF IS STILL NOT PINNED anywhere: every index word in that program
-   has flag 0, so the tests cover the result indicators only. A word
-   with the flag set, loaded and then branched on with BXF, would add
-   it -- and the B(IND) routine at ja_ax1a p.24 (004023.00, "TURN ON
-   XF,XCZ,XVLZ" then BZXF) is exactly that block if it is ever wanted.
+   XF IS NOW PINNED, by the block that paragraph named. ja_ax1a
+   pp.24-25's "BRANCH ON I BOX INDICATORS" is transcribed whole as
+   programs/ibox1_bind.strap -- all four groups, XF, XCZ, XVLZ and XVZ,
+   004023.00-004052.40, 56 checks (12 label addresses against the
+   addresses the page prints beside them, 44 rows of machine code), all
+   green on the first assembly. It also pins the BRANCH-AND-ZERO CLEAR,
+   which nothing had exercised: the mnemonic grammar is a leading Z for
+   "branch if the bit is OFF" and a trailing Z for "turn the bit off
+   after testing", and each group walks its indicator through both
+   polarities before clearing it with the doubled form.
+
+   Three injections, each halting at the line whose own comment names
+   that exact failure: LX setting no indicators -> IBIN1 (004023.40,
+   "hang up if bit off"); the trailing-Z clear disabled -> IBIN4
+   (004025.40, "hang up if bit on"); XVZ never set -> IBIN22
+   (004044.40, "hang up if bit off"). The deck diagnoses itself, which
+   is what transcription buys over a hand-written vector -- the halt
+   address IS the diagnosis, written in 1960.
+
+   AND A FOURTH INJECTION THAT PASSED, which is worth more than the
+   three that failed. Setting XF, XCZ, XVLZ and XVZ UNCONDITIONALLY TO
+   1 on every index load passes the entire routine. Every group checks
+   its indicator ON, and the only OFF any of them checks is the one the
+   trailing-Z CLEAR produces -- never an indicator off because its
+   condition is false. So the block pins that each indicator can be
+   turned on by the right load and turned off by the trailing Z, and
+   nothing whatever about the conditions being discriminating.
+
+   THAT IS AN OPEN COVERAGE HOLE, stated as a hole rather than papered
+   over: nothing in the suite currently pins the OFF-state of XF, XCZ,
+   XVLZ or XVZ. index_result_indicators.strap does not close it -- every
+   check in it is Z,$IND then the operation then a branch-IF-ON, so the
+   same unconditional injection passes it too; that was run, not
+   assumed. The compares are a weaker disclaimer than first written:
+   they go through setIndexCmpIndicatorsF, which that injection does
+   not touch and which DOES set XF from the flag, so the compare path's
+   XF is uncovered either way rather than complementary. p.25 shows
+   "RESTART OF ROUTINE"
+   sections immediately after IBIN20 and IBIN27, and if one of those
+   reloads $X1 and then takes a BZ<ind> branch, it is the block that
+   closes this, and the obvious next transcription.
+
+   A CLAIM OF MINE THAT THE INJECTION CAUGHT. I wrote in the program
+   header that a model computing XVZ as "not XVGZ" would pass the first
+   three groups and fail in the XVZ group. It is false and the
+   injection passed. XVZ is only ever observed under IBXWZ1, whose
+   value IS zero, and there the two rules agree. Same rule as always: a
+   green result is only evidence about faults its inputs could have
+   made visible -- and the rule applies to the claims I write about my
+   own tests, not only to the tests.
 
    A HARNESS FAILURE WORTH MORE THAN THE RESULT IT HID. The first run
    of those four injections was INERT: all four printed "injected" and

@@ -109,32 +109,49 @@ run "Store Zero clears the indicator register" ./run_program.sh programs/z_ind_c
 run "Index result indicators (LVNI, LCI, LRI, C+I)" ./run_program.sh programs/index_result_indicators.strap StretchIndexResultIndTb \
     "PC=$(python3 -c 'from strap_asm import assemble; print(assemble(open("programs/index_result_indicators.strap").read()).symtab["PASS"]//32)')"
 
-run "B(IND) XF group (ja_ax1a, encoding)" python3 verify_ibox1_bind_xf_listing.py
-# ja_ax1a p.24's "BRANCH ON I BOX INDICATORS", the XF group -- the
-# deck's own test of the index FLAG indicator, which nothing pinned:
-# every index word in index_result_indicators.strap has flag 0, so that
-# program covers the RESULT indicators only.  Being a transcription,
-# this meets the stronger of the two standards used here.
+run "B(IND) routine, all four groups (ja_ax1a, encoding)" python3 verify_ibox1_bind_listing.py
+# ja_ax1a pp.24-25's "BRANCH ON I BOX INDICATORS", all four groups --
+# XF, XCZ, XVLZ, XVZ.  56 checks: 12 label addresses against the
+# addresses the page prints beside them, 44 rows of machine code.
 #
-# It also pins the BRANCH-AND-ZERO CLEAR.  The mnemonic grammar is a
-# leading Z for "branch if the bit is OFF" and a trailing Z for "turn
-# the bit off after testing", and the block walks XF through both
-# polarities before clearing it with BZXFZ.
+# It pins the index FLAG indicator, which nothing else did: every index
+# word in index_result_indicators.strap has flag 0, so that program
+# covers the RESULT indicators only.  It also pins the BRANCH-AND-ZERO
+# CLEAR -- the mnemonic grammar is a leading Z for "branch if the bit is
+# OFF" and a trailing Z for "turn the bit off after testing", and each
+# group walks its indicator through both polarities before clearing it.
 #
-# Measured, two injections, each halting where the listing's own
-# comment says it should: with LX setting no indicators it hangs at
-# IBIN1 (004023.40, "hang up if bit off"); with the trailing-Z clear
-# disabled it hangs at IBIN4 (004025.40, "hang up if bit on"), XF never
-# having been turned off.
+# Three injections, measured:
+#   LX sets no indicators     -> IBIN1  (004023.40, "hang up if bit off")
+#   trailing-Z does not clear -> IBIN4  (004025.40, "hang up if bit on")
+#   XVZ never set             -> IBIN22 (004044.40, "hang up if bit off")
+# Each halts at the line whose own comment names that failure.  The deck
+# diagnoses itself; that is what transcription buys over a hand-written
+# vector.
 #
-# The seed constant is one word doing three jobs -- value -1, flag 1,
-# count 0 -- which is why the listing calls it "COMMON XW FOR XF, XCZ,
-# XVLZ" and reuses it for the two groups after this one.  Note the XW
-# fourth-field discrepancy recorded in the program header: ja_ax1a and
-# jb_ax4b appear to use different conventions for it, both re-read at
-# 400 dpi, and neither STRAP manual has a text layer to settle it.
-run "B(IND) XF group (index flag, branch-and-zero clear)" ./run_program.sh programs/ibox1_bind_xf.strap StretchIbox1BindXfTb \
-    "PC=4148"          # 004032.00, the listing's own next-routine boundary
+# AND ONE INJECTION THAT PASSED, which is the block's honest limit:
+# setting XF, XCZ, XVLZ and XVZ unconditionally to 1 on every index load
+# passes the whole routine.  Every group checks its indicator ON, and
+# the only OFF it checks is the one the trailing Z produces -- never an
+# indicator off because its condition is false.  A green result here is
+# evidence that each indicator can be turned on and cleared, not that
+# the conditions discriminate.  For that, see index_result_indicators
+# and the KV/KC compare programs, where an indicator being OFF is what
+# the branch depends on.
+#
+# A second claim I wrote here was false and the injection caught it: I
+# expected "XVZ computed as not-XVGZ" to fail in the XVZ group, and it
+# passes, because XVZ is only ever observed under a word whose value IS
+# zero.  Recorded in the program header.
+#
+# The two seed words are the reason the groups can share: IBXWZO is
+# value -1, flag 1, count 0 -- negative, flagged and zero-count at once,
+# which the listing calls "COMMON XW FOR XF,XCZ,XVLZ" -- and IBXWZ1 is
+# value 0, count 1 for XVZ.  See the program header for the XW
+# fourth-field discrepancy between this tape and jb_ax4b, now narrowed
+# to the four-operand form alone.
+run "B(IND) routine, all four groups (model)" ./run_program.sh programs/ibox1_bind.strap StretchIbox1BindTb \
+    "PC=4182"          # 004053.00, the half-word after the routine's last printed line
 
 # -- 0e. I-Box 4 routine 150's CB / CB+ / CBR / CBR+ blocks (plus their
 # LX/SX setup and XW index words) assembled verbatim at the listing's

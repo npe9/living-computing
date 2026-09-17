@@ -1,5 +1,6 @@
-! ja_ax1a "IBOX-1", routine IBIN1-IBIN6, p.24 (octal 004023.00-
-! 004031.40): "BRANCH ON I BOX INDICATORS %B-IND%", the XF group.
+! ja_ax1a "IBOX-1", routine IBIN1-IBIN27, pp.24-25 (octal 004023.00-
+! 004052.40): "BRANCH ON I BOX INDICATORS %B-IND%", all four groups --
+! XF, XCZ, XVLZ and XVZ.
 !
 ! WHY THIS BLOCK.  index_result_indicators.strap pins the index RESULT
 ! indicators for the immediate operations, but every index word in it
@@ -24,6 +25,30 @@
 !
 ! So a model that never set XF hangs at IBIN1, and one that set it but
 ! ignored the trailing-Z clear hangs at IBIN4.  Both measured below.
+!
+! WHAT THIS ROUTINE DOES NOT PIN, measured rather than guessed.  Every
+! group checks its indicator ON, and the only OFF it checks is the one
+! the trailing-Z CLEAR produces -- never an indicator off because its
+! condition is false.  So a model that sets XF, XCZ, XVLZ and XVZ
+! unconditionally to 1 on every index load passes this entire routine.
+! That was injected and it passed, which is the honest statement of the
+! block's reach: it pins that each indicator can be turned on by the
+! right load and turned off by the trailing Z, and nothing whatever
+! about the conditions being discriminating.
+!
+! NOTHING ELSE IN THE SUITE CLOSES THAT HOLE either, so it is recorded
+! as a hole rather than pointed at some other program.  I first wrote
+! here that index_result_indicators.strap and the KV/KC programs were
+! the complementary evidence.  They are not.  Every check in
+! index_result_indicators is Z,$IND then the operation then a branch-
+! IF-ON, so the same unconditional injection passes it too -- measured,
+! not assumed.  The compares are a weaker disclaimer than I first
+! wrote: they run through setIndexCmpIndicatorsF, which the injection
+! above does not touch, and which DOES set XF from the flag.  So the
+! compare path's XF is simply not covered either way by anything here.
+! The block that would close it is a restart section on p.25
+! -- there is one right after IBIN20 and another after IBIN27 -- if one
+! of them reloads $X1 and then takes a BZ<ind> branch.
 !
 ! THE SEED IS ONE WORD.  IBXWZO is value -1, flag 1, count 0, refill 0
 ! -- negative, flagged and zero-count at once, which is why the listing
@@ -76,6 +101,8 @@
 ! IBIN1 -- which is precisely the first injection below.
 
         SLC, (8)4023.0
+!
+! ---- XF: the index flag ------------------------------------------
 IBINX   LX, $X1, IBXWZO                      ! turn on XF, XCZ, XVLZ
 IBIN1   BZXF, $                              ! hang up if bit off
 IBIN2   BXF, $+1.0                           ! dont branch if bit off
@@ -87,6 +114,58 @@ IBIN5   BZXF, $+1.0                          ! branch if bit off
         B, IBIN6                             ! branch out
 IBXWZO  XW, -1, 0, 0, 1                      ! listing writes "XW,-1,0,0,4"
 IBIN6   VF, (8)777777.70                     ! executed as NOP,-.32
+        VF, (8)777777.70                     ! executed as NOP,-.32
+!
+! ---- XCZ: the index count zero -----------------------------------
+! No reload: the XF group left the same index word in $X1, and its
+! count is still zero.  The four groups share two constants between
+! them, which is the whole reason the listing calls IBXWZO "COMMON".
+IBIN8   BZXCZ, $                             ! hang up if bit off
+IBIN9   BXCZ, $+1.0                          ! dont branch if bit off
+        BD, $                                ! hang up if no branch
+IBIN10  BZXCZZ, $                            ! hang up if bit off or turn off
+IBIN11  BXCZ, $                              ! hang up if bit on
+IBIN12  BZXCZ, $+1.0                         ! branch if bit off
+        BD, $                                ! hang up if bit on
+        B, IBIN13                            ! branch out
+IBIN13  VF, (8)777777.70                     ! executed as NOP,-.32
+        VF, (8)777777.70                     ! executed as NOP,-.32
+!
+! ---- XVLZ: the index value less than zero ------------------------
+IBIN15  BZXVLZ, $                            ! hang up if bit off
+IBIN16  BXVLZ, $+1.0                         ! dont branch if bit off
+        BD, $                                ! hang up if no branch
+IBIN17  BZXVLZZ, $                           ! hang up if bit off or turn off
+IBIN18  BXVLZ, $                             ! hang up if bit on
+IBIN19  BZXVLZ, $+1.0                        ! branch if bit off
+        BD, $                                ! hang up if bit on
+        B, IBIN20                            ! branch out
+IBIN20  VF, (8)777777.70                     ! executed as NOP,-.32
+        VF, (8)777777.70                     ! executed as NOP,-.32
+!
+! ---- XVZ: the index value zero -----------------------------------
+! This group needs the OTHER constant: IBXWZO's value is -1, so XVZ is
+! off under it, and the deck reloads $X1 with IBXWZ1 -- value 0, count
+! 1, flag 0 -- to turn XVZ on.  A model that never sets XVZ hangs at
+! IBIN22, measured.
+!
+! I first wrote here that a model computing XVZ as "not XVGZ" would
+! pass the first three groups and fail in this one.  That is FALSE, and
+! the injection that was supposed to confirm it passed instead.  XVZ is
+! only ever observed under IBXWZ1, whose value IS zero, and there "not
+! XVGZ" and "value is zero" agree.  The deck never observes XVZ under a
+! nonzero value, so nothing here can tell the two rules apart.
+IBIN21  LX, $X1, IBXWZ1                      ! turn on XVZ
+IBIN22  BZXVZ, $                             ! hang up if bit off
+IBIN23  BXVZ, $+1.0                          ! dont branch if bit off
+        BD, $                                ! hang up if no branch
+IBIN24  BZXVZZ, $                            ! hang up if bit off or turn off
+IBIN25  BXVZ, $                              ! hang up if bit on
+IBIN26  BZXVZ, $+1.0                         ! branch if bit off
+        BD, $                                ! hang up if bit on
+        B, IBIN27                            ! branch out
+IBXWZ1  XW, 0, 1, 0, 0                       ! common XW for XVZ
+IBIN27  VF, (8)777777.70                     ! executed as NOP,-.32
         VF, (8)777777.70                     ! executed as NOP,-.32
 PASS    BEW, $
         END, IBINX
