@@ -1323,6 +1323,34 @@ run "IBOX-4 RCZ (refill on count zero)" ./run_program.sh programs/ibox4_rcz.stra
     "PC=$(python3 -c 'from strap_asm import assemble; print(assemble(open("programs/ibox4_rcz.strap").read()).symtab["PASS"]//32)')" \
     "SEN:712=0"
 
+run "IBOX-4 R from external memory (jb_ax4b, encoding)" python3 verify_ibox4_r_extmem_listing.py
+# Routine 1238 test 2's first case, "OP ADR IS EM, RF ADR IS EM", and
+# the block that drove the two-sequential-read form into execute().
+#
+# ibox4_refill and ibox4_rcz both address an INDEX REGISTER, which the
+# arm reads combinationally -- one read and done.  This case addresses
+# EXTERNAL MEMORY: I38RFL is an ordinary storage word (a NOP pair used
+# as scratch), SX plants an index word over it, and R must refill it in
+# place.  That needs the word at the effective address AND then the word
+# its refill field names, which is V+CR's shape and for the same
+# reason: a value from the first read decides the address of the
+# second.  Until this block that case was setOpInvalid with the scope
+# stated.
+#
+# MEASURED BOTH WAYS: against the setOpInvalid arm it halts at SERS
+# with SEN = 005503.00, the deck's own "FAILED TO REFILL EXT MEM FRM
+# EXT MEM"; with the two-read form it passes.
+#
+# AND NOTE WHICH CASES COULD HAVE FOUND IT.  The listing's four are
+# 2A (EM/EM), 2B (EM/XS), 2C (XS/EM) and 2D (XS/XS); only 2A and 2B
+# have the OPERAND outside index core storage, so 2C and 2D pass under
+# either implementation.  Same asymmetry as ibox4_rcz against the
+# operand bug -- cite the case that separates them, not the one that
+# happens to agree.
+run "IBOX-4 R from external memory (two sequential reads)" ./run_program.sh programs/ibox4_r_extmem.strap StretchIbox4RExtmemTb \
+    "PC=$(python3 -c 'from strap_asm import assemble; print(assemble(open("programs/ibox4_r_extmem.strap").read()).symtab["PASS"]//32)')" \
+    "SEN:712=0"
+
 run "IBOX-1 V+IC chain (ja_ax1a, encoding)" python3 verify_ibox1_vpic_chain_listing.py
 # V+IC, and with it the LAST of the eight modeled index operations a
 # coverage screen found in zero suite programs.  The largest of the

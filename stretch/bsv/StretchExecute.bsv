@@ -2724,16 +2724,32 @@ function ActionValue#(ExecResult)
                   end else
                     needsRead = tagged Valid zeroExtend(x.refill);
                 end
-              end else
-                // SCOPE: an index word held OUTSIDE index core storage
-                // needs two SEQUENTIAL reads -- the word at the
-                // effective address, then the word its refill field
-                // names -- which is the shape V+CR already has and
-                // this arm does not. Routine 1238 checks R and RCZ
-                // "from all three memories"; the rest of that routine
-                // is what should drive it. Left invalid rather than
-                // silently wrong.
-                ind = setOpInvalid(ind);
+              end else begin
+                // ANYWHERE ELSE the index word is an ordinary storage
+                // word, so it takes TWO SEQUENTIAL reads -- the same
+                // shape V+CR has, and for the same reason: a value
+                // from the first read decides the address of the
+                // second.
+                //
+                //   prefetch[0]  the index word at the effective
+                //                address, whose refill field names
+                //   prefetch[1]  the word that replaces it
+                //
+                // Driven by routine 1238 test 2, whose first two cases
+                // are exactly this: "TEST 2A - OP ADR IS EM, RF ADR IS
+                // EM" and "TEST 2B - OP ADR IS EM, RF ADR IS XS".
+                if (prefetchCount == 0)
+                  needsRead = tagged Valid rw;
+                else begin
+                  IndexWord x = unpackIndexWord(prefetch[0]);
+                  if (bm.code == 3'b000 || x.count == 0) begin
+                    if (prefetchCount >= 2)
+                      st.writeWord(rw, prefetch[1]);
+                    else
+                      needsRead = tagged Valid zeroExtend(x.refill);
+                  end
+                end
+              end
             end
             default: ind = setOpInvalid(ind); // EX, EXIC: out of scope
           endcase

@@ -1,0 +1,61 @@
+! jb_ax4b "IBOX-4", routine 1238 test 2, case 2A, p.64 (octal
+! 005476.00-005502.40): "START 6 CASES OF ADDRESSING", the first --
+! "OP ADR IS EM, RF ADR IS EM".
+!
+! WHY THIS BLOCK.  ibox4_refill and ibox4_rcz close R and RCZ, but both
+! address an INDEX REGISTER, and the arm they drive reads one
+! combinationally.  This case addresses EXTERNAL MEMORY: I38RFL is an
+! ordinary storage word (a NOP pair used as scratch), SX plants an index
+! word over it, and R must refill it in place.  That needs TWO
+! SEQUENTIAL reads -- the word at the effective address, then the word
+! its refill field names -- which the arm did not have.  It was left
+! setOpInvalid with the scope stated, and this is the block that drove
+! the general form.
+!
+! MEASURED BOTH WAYS.  Against the setOpInvalid arm this halts at SERS
+! with SEN = 005503.00, which is the deck's own "FAILED TO REFILL EXT
+! MEM FRM EXT MEM"; with the two-read form it passes.
+!
+! THE FOUR CASES the listing names, of which this is the first:
+!
+!   2A  op adr EM, rf adr EM     this block
+!   2B  op adr EM, rf adr XS     also needs the two-read form
+!   2C  op adr XS, rf adr EM     the one-read path already had
+!   2D  op adr XS, rf adr XS     likewise
+!
+! so 2A is the case that separates the two implementations, and 2C/2D
+! would pass either way -- the same asymmetry ibox4_rcz has against the
+! operand bug, and worth knowing before citing any of them.
+!
+! WHAT IS LEFT of test 2: cases 2B through 2F, and the part the
+! routine's own header calls "NOPING IF RF IS FROM 1 TO 15" -- a refill
+! whose address falls in the special registers should be suppressed,
+! which this model still does not implement.
+
+        SLC, (8)1304.0
+SERS    BEW, $
+        SLC, (8)1310.0
+SEN     DD(BU,64,8), 0
+
+! -- constants for 1238 (p.67) --
+        SLC, (8)5574.0
+I38XW3  XW, (8)123456.76, (8)543210, (8)123456
+        SLC, (8)5625.0
+I38K1   XW, 0, 0, I38XW3                     ! count 0, refill -> I38XW3
+        SLC, (8)5627.0
+I38RFL  NOP                                  ! scratch: an index word is
+        NOP                                  ! stored over this pair
+
+        SLC, (8)5476.0
+I3821   LX, $X1, I38K1                       ! start 6 cases of addressing.
+        SX, $X1, I38RFL                      ! test 2A - op adr is EM.
+        R, I38RFL                            !           RF adr is EM.
+        NOP
+        NOP
+        LX, $X0, I38RFL
+        KV, $X0, I38XW3
+        BXE, $+1.32
+        SIC, SEN
+        B, SERS                              ! failed to refill ext mem frm ext mem.
+PASS    BEW, $
+        END, I3821
