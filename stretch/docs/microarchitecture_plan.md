@@ -3923,26 +3923,30 @@ hand vectors alone. "Enables" notes the dependency chain.
 
    XF IS NOW PINNED, by the block that paragraph named. ja_ax1a
    pp.24-25's "BRANCH ON I BOX INDICATORS" is transcribed whole as
-   programs/ibox1_bind.strap -- all four groups, XF, XCZ, XVLZ and XVZ,
-   004023.00-004052.40, 56 checks (12 label addresses against the
-   addresses the page prints beside them, 44 rows of machine code), all
+   programs/ibox1_bind.strap -- all five groups, XF, XCZ, XVLZ, XVZ and
+   XVGZ, which is every indicator an index load sets,
+   004023.00-004061.40, 70 checks (14 label addresses against the
+   addresses the page prints beside them, 56 rows of machine code), all
    green on the first assembly. It also pins the BRANCH-AND-ZERO CLEAR,
    which nothing had exercised: the mnemonic grammar is a leading Z for
    "branch if the bit is OFF" and a trailing Z for "turn the bit off
    after testing", and each group walks its indicator through both
    polarities before clearing it with the doubled form.
 
-   Three injections, each halting at the line whose own comment names
+   Four injections, each halting at the line whose own comment names
    that exact failure: LX setting no indicators -> IBIN1 (004023.40,
    "hang up if bit off"); the trailing-Z clear disabled -> IBIN4
    (004025.40, "hang up if bit on"); XVZ never set -> IBIN22
-   (004044.40, "hang up if bit off"). The deck diagnoses itself, which
+   (004044.40, "hang up if bit off"); XVGZ never set -> IBIN29
+   (004053.40, "hang up if bit off"). The deck diagnoses itself, which
    is what transcription buys over a hand-written vector -- the halt
    address IS the diagnosis, written in 1960.
 
-   AND A FOURTH INJECTION THAT PASSED, which is worth more than the
-   three that failed. Setting XF, XCZ, XVLZ and XVZ UNCONDITIONALLY TO
-   1 on every index load passes the entire routine. Every group checks
+   AND A FIFTH INJECTION THAT PASSED, which is worth more than the four
+   that failed. Setting all five UNCONDITIONALLY TO 1 on every index
+   load passes the entire routine -- re-measured after the XVGZ group
+   was added, since the program had changed and the old measurement was
+   about the old program. Every group checks
    its indicator ON, and the only OFF any of them checks is the one the
    trailing-Z CLEAR produces -- never an indicator off because its
    condition is false. So the block pins that each indicator can be
@@ -3951,17 +3955,25 @@ hand vectors alone. "Enables" notes the dependency chain.
 
    THAT IS AN OPEN COVERAGE HOLE, stated as a hole rather than papered
    over: nothing in the suite currently pins the OFF-state of XF, XCZ,
-   XVLZ or XVZ. index_result_indicators.strap does not close it -- every
+   XVLZ, XVZ or XVGZ. index_result_indicators.strap does not close it -- every
    check in it is Z,$IND then the operation then a branch-IF-ON, so the
    same unconditional injection passes it too; that was run, not
    assumed. The compares are a weaker disclaimer than first written:
    they go through setIndexCmpIndicatorsF, which that injection does
    not touch and which DOES set XF from the flag, so the compare path's
-   XF is uncovered either way rather than complementary. p.25 shows
-   "RESTART OF ROUTINE"
-   sections immediately after IBIN20 and IBIN27, and if one of those
-   reloads $X1 and then takes a BZ<ind> branch, it is the block that
-   closes this, and the obvious next transcription.
+   XF is uncovered either way rather than complementary.
+
+   The p.25 "RESTART OF ROUTINE" sections were read to see whether
+   either closes it, and neither does. The first turned out to be a
+   FIFTH GROUP of the same routine -- XVGZ, IBIN29-IBIN34, off a third
+   seed word IBXWZ2 XW,1,1,0,0 -- and is now transcribed, the same
+   ON-only shape. The second, IBIN35 onward, is a DIFFERENT MECHANISM
+   and the next thing worth transcribing: LX to zero, LV of a single
+   bit, then SV,$X1,$IND+.32 storing straight into the INDICATOR
+   REGISTER to set XL by hand, with BZXL/BXL/BZXLZ over it. That would
+   pin the indicator register as an addressable word and the branch
+   machinery over an indicator no index load touches, which nothing
+   does today. It still would not close the off-state hole.
 
    A CLAIM OF MINE THAT THE INJECTION CAUGHT. I wrote in the program
    header that a model computing XVZ as "not XVGZ" would pass the first
