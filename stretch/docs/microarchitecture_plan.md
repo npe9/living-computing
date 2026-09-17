@@ -3867,9 +3867,29 @@ hand vectors alone. "Enables" notes the dependency chain.
    arm; settle that first or the result will not mean what it looks
    like.
 
-   TEST 3'S ZERO-GATING LOOP (I3829-I3833, 005551.00-005560.40) -- the
-   complement of the check ibox4_rcz takes: RCZ must NOT refill while
-   the count is non-zero. Self-modifying, and AN ATTEMPT TO DERIVE IT
+   TEST 3'S ZERO-GATING LOOP -- NOW CLOSED (ibox4_rcz_zerogate), and
+   the open question below resolved exactly where it said to look. The
+   suspect named first was right: LC takes h[31:14], the top 18 bits of
+   the addressed HALF-WORD, not an index word's count field. So
+   stepping $X14 through BIT0 ... BIT17 loads counts 2^17 ... 2^0 --
+   EVERY ONE of the 18 count bits, one per pass -- and RCZ must refill
+   for none of them. That is what "zero gating" means. Measured: with
+   RCZ's zero test narrowed to the low 8 bits, 2^17 misreads as zero and
+   the run halts at 005732.00, entry 0 of the routine's error table,
+   which names the missed bit.
+
+   AND IT FOUND A FOURTH MODEL BUG. The loop does C-I then BXCZ back
+   to back, so the branch reads XCZ from the C-I -- and C-I did not set
+   the index result indicators. Every DIRECT index load (LV/LC/LR)
+   already set them; six IMMEDIATE arms (LVI, LVNI, LCI, LRI, C+I, C-I)
+   did not. Without the fix the loop never terminates: a step cap
+   spinning at 005553.40. ONLY C-I IS FIXED, since only C-I is driven;
+   the other five carry the identical gap and a note on the C-I arm
+   saying what would settle each -- a block doing one of them followed
+   by a branch on an index indicator.
+
+   (What stood here before, kept because the reasoning is the lesson:)
+   Self-modifying, and AN ATTEMPT TO DERIVE IT
    DID NOT RECONCILE, which is recorded here rather than guessed at.
    Two SVAs patch I3830's "LC,$X0,0" and I3831's "B,0" each pass. $X14
    comes from I38XW7 = XW,BIT0,18,0, so its VALUE is BIT0's ADDRESS

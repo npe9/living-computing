@@ -2333,6 +2333,20 @@ function ActionValue#(IndexOutcome)
           idxWriteVal = IndexWord{addr: x.addr, sign: x.sign, flag: x.flag,
                    spare: x.spare,
                    count: x.count - imm18, refill: x.refill};
+          // C-I SETS THE INDEX RESULT INDICATORS, and it has to: the
+          // deck's own zero-gating loop (jb_ax4b routine 1238 test 3)
+          // does C-I then BXCZ back to back, so the branch is reading
+          // XCZ from this instruction.  Without it the loop never
+          // terminates -- measured, as a step cap spinning at
+          // 005553.40.  Every DIRECT index load (LV/LC/LR) already set
+          // these; six IMMEDIATE arms did not.
+          //
+          // SCOPE: C+I, LVI, LVNI, LCI and LRI have the SAME gap and
+          // nothing in the suite drives them, so they are left alone
+          // rather than changed without evidence.  A block that does
+          // C+I or an immediate load followed by a branch on an index
+          // indicator is what would settle each.
+          ind = setIndexResultIndicatorsF(ind, idxWriteVal);
         end
         4'b0101, 4'b0110, 4'b0111: begin // V+I / V+IC / V+ICR --
           // prefetch/bail-out shape, inlining maybeRefill's own

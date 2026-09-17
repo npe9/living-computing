@@ -1392,6 +1392,30 @@ run "IBOX-4 refill address gate (jb_ax4b, encoding)" python3 verify_ibox4_refill
 run "IBOX-4 refill address gate (locn 0 refills, 1-15 do not)" ./run_program.sh programs/ibox4_refill_nop.strap StretchIbox4RefillNopTb \
     "PC=$(python3 -c 'from strap_asm import assemble; print(assemble(open("programs/ibox4_refill_nop.strap").read()).symtab["PASS"]//32)')"
 
+run "IBOX-4 RCZ zero gating (jb_ax4b, encoding)" python3 verify_ibox4_rcz_zerogate_listing.py
+# Routine 1238 test 3's second half, the complement of ibox4_rcz: RCZ
+# must NOT refill while the count is NON-zero, walked over EVERY ONE of
+# the 18 count bits.  LC takes h[31:14] -- the top 18 bits of the
+# addressed HALF-WORD -- so stepping $X14 through BIT0, BIT1, ... loads
+# counts 2^17, 2^16, ... 2^0 in turn.  That is what "zero gating"
+# means: RCZ's zero test has to look at all of them.
+#
+# Measured: with the test narrowed to the low 8 count bits, 2^17
+# misreads as zero, RCZ wrongly fires on pass one, and the run halts at
+# 005732.00 -- entry 0 of the routine's error table, the 2^17 entry.
+# The table names which count bit was missed.
+#
+# AND IT FOUND A SECOND MODEL BUG, without whose fix it cannot run at
+# all.  The loop does C-I then BXCZ back to back, so the branch reads
+# XCZ from the C-I -- and C-I did not set the index result indicators.
+# Every DIRECT index load (LV/LC/LR) already set them; six IMMEDIATE
+# arms did not.  Without the fix the loop never terminates: a step cap
+# spinning at 005553.40.  C+I, LVI, LVNI, LCI and LRI have the SAME gap
+# and nothing drives them, so they are left alone -- the note on the
+# C-I arm says what would settle each.
+run "IBOX-4 RCZ zero gating (all 18 count bits)" ./run_program.sh programs/ibox4_rcz_zerogate.strap StretchIbox4RczZeroGateTb \
+    "PC=$(python3 -c 'from strap_asm import assemble; print(assemble(open("programs/ibox4_rcz_zerogate.strap").read()).symtab["PASS"]//32)')"
+
 run "IBOX-1 V+IC chain (ja_ax1a, encoding)" python3 verify_ibox1_vpic_chain_listing.py
 # V+IC, and with it the LAST of the eight modeled index operations a
 # coverage screen found in zero suite programs.  The largest of the

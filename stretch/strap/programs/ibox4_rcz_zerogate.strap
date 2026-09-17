@@ -1,0 +1,174 @@
+! jb_ax4b "IBOX-4", routine 1238 test 3's second half, p.66 (octal
+! 005551.00-005561.00): "CHECK ZERO GATING OF RCZ" -- the complement of
+! ibox4_rcz, verifying RCZ does NOT refill while the count is NON-zero.
+!
+! AND MY FIRST DERIVATION OF IT WAS WRONG, which is why the plan doc
+! carried it as an open question rather than a plan.  $X14 starts from
+! I38XW7 = XW,BIT0,18,0, so its VALUE is BIT0's ADDRESS and V+I walks
+! it one word per pass -- LC therefore loads from BIT0, BIT1, ... in
+! turn.  I read that as loading an index word's COUNT FIELD, which for
+! BIT0..BIT17 is zero, and the whole loop made no sense.  LC actually
+! takes h[31:14], the top 18 bits of the addressed HALF-WORD.  So the
+! counts are BIT0's 2^17, BIT1's 2^16, ... BIT17's 2^0 -- EVERY SINGLE
+! BIT of the 18-bit count field, one per pass.  That is what "zero
+! gating" means: RCZ's zero test must look at all of them.
+!
+! MEASURED: with RCZ's test narrowed to the low 8 count bits, 2^17
+! misreads as zero, RCZ wrongly fires on pass one, and the run halts at
+! 005732.00 -- entry 0 of the routine's error table, the 2^17 entry.
+! The table names which count bit was missed.
+!
+! IT ALSO FOUND A SECOND MODEL BUG, and could not have run without the
+! fix.  The loop does C-I then BXCZ back to back, so the branch reads
+! XCZ from the C-I -- and C-I did not set the index result indicators.
+! Every DIRECT index load (LV/LC/LR) already set them; six IMMEDIATE
+! arms did not.  Without the fix the loop never terminates: measured,
+! as a step cap spinning at 005553.40.  C+I, LVI, LVNI, LCI and LRI
+! have the same gap with nothing driving them, and are deliberately
+! left alone; see the note on the C-I arm.
+!
+! I3830's "LC,$X0,0" and I3831's "$B,0" are PLACEHOLDERS -- two SVAs
+! patch their address fields each pass, walking the count source and
+! the error-table target together.  I38B7 onward is that table, stubbed
+! here as halts at their own addresses.
+!
+! THE PASS PLACEMENT TRAP, hit twice now: I3833's "B,$+1.0" targets a
+! WORD later, not the next half-word, so PASS needs a filler ahead of
+! it.  The first time (ibox4_refill_nop) it showed up as PC = 0.
+
+        SLC, (8)1304.0
+SERS    BEW, $
+        SLC, (8)1310.0
+SEN     DD(BU,64,8), 0
+
+! -- common constants (p.190) --
+        SLC, (8)13034.0
+I00Z    XW, 0, 0, 0                          ! zero indx wd.
+
+! -- the BIT table (p.191).  LC reads the top 18 bits of the addressed
+! -- HALF-WORD, so BIT0..BIT17 give counts 2^17 down to 2^0 -- every
+! -- single bit of the count field, which is what "zero gating" means.
+        SLC, (8)13054.0
+BIT0    XW, (8)400000.00, 0, 0        ! count bit -> 2^17
+BIT1    XW, (8)200000.00, 0, 0        ! count bit -> 2^16
+BIT2    XW, (8)100000.00, 0, 0        ! count bit -> 2^15
+BIT3    XW, (8)40000.00, 0, 0         ! count bit -> 2^14
+BIT4    XW, (8)20000.00, 0, 0         ! count bit -> 2^13
+BIT5    XW, (8)10000.00, 0, 0         ! count bit -> 2^12
+BIT6    XW, (8)4000.00, 0, 0          ! count bit -> 2^11
+BIT7    XW, (8)2000.00, 0, 0          ! count bit -> 2^10
+BIT8    XW, (8)1000.00, 0, 0          ! count bit -> 2^9
+BIT9    XW, (8)400.00, 0, 0           ! count bit -> 2^8
+BIT10   XW, (8)200.00, 0, 0           ! count bit -> 2^7
+BIT11   XW, (8)100.00, 0, 0           ! count bit -> 2^6
+BIT12   XW, (8)40.00, 0, 0            ! count bit -> 2^5
+BIT13   XW, (8)20.00, 0, 0            ! count bit -> 2^4
+BIT14   XW, (8)10.00, 0, 0            ! count bit -> 2^3
+BIT15   XW, (8)4.00, 0, 0             ! count bit -> 2^2
+BIT16   XW, (8)2.00, 0, 0             ! count bit -> 2^1
+BIT17   XW, (8)1.00, 0, 0             ! count bit -> 2^0
+
+! -- constants for 1238 (p.67) --
+        SLC, (8)5574.0
+I38XW3  XW, (8)123456.76, (8)543210, (8)123456
+        SLC, (8)5600.0
+I38XW7  XW, (8)13054.0, 18, 0                ! value -> BIT0, count 18
+I38XW8  XW, (8)5732.0, 0, 0                  ! value -> the error table
+
+! -- I38B7 onward is this test's error table, one entry per count bit;
+! -- stubbed as halts at their own addresses.
+        SLC, (8)5732.0
+        BEW, $
+        BEW, $
+        BEW, $
+        BEW, $
+        BEW, $
+        BEW, $
+        BEW, $
+        BEW, $
+        BEW, $
+        BEW, $
+        BEW, $
+        BEW, $
+        BEW, $
+        BEW, $
+        BEW, $
+        BEW, $
+        BEW, $
+        BEW, $
+        BEW, $
+        BEW, $
+        BEW, $
+        BEW, $
+        BEW, $
+        BEW, $
+        BEW, $
+        BEW, $
+        BEW, $
+        BEW, $
+        BEW, $
+        BEW, $
+        BEW, $
+        BEW, $
+        BEW, $
+        BEW, $
+        BEW, $
+        BEW, $
+        BEW, $
+        BEW, $
+        BEW, $
+        BEW, $
+        BEW, $
+        BEW, $
+        BEW, $
+        BEW, $
+        BEW, $
+        BEW, $
+        BEW, $
+        BEW, $
+        BEW, $
+        BEW, $
+        BEW, $
+        BEW, $
+        BEW, $
+        BEW, $
+        BEW, $
+        BEW, $
+        BEW, $
+        BEW, $
+        BEW, $
+        BEW, $
+        BEW, $
+        BEW, $
+        BEW, $
+        BEW, $
+        BEW, $
+        BEW, $
+        BEW, $
+        BEW, $
+        BEW, $
+        BEW, $
+        BEW, $
+        BEW, $
+
+        SLC, (8)5551.0
+I382Z   LX, $X14, I38XW7                     ! check zero gating of RCZ.
+        LX, $X15, I38XW8
+I3829   SVA, $X14, I3830
+        SVA, $X15, I3831
+        LRI, $X0, (8)5574                    ! = I38XW3 as a COUNT immediate
+I3830   LC, $X0, 0                           ! patched: the count to load
+        LV, $X0, I00Z
+        RCZ, $X0
+        KV, $X0, I00Z
+        BXE, $+1.0
+I3831   B, 0                                 ! listing "$B,0" -- refill when count not zero.
+I3832   C-I, $X14, 1
+        BXCZ, I3833
+        V+I, $X14, 1.0
+        V+I, $X15, 2.0
+        B, I3829
+I3833   B, $+1.0                             ! targets 005562.00, a WORD on
+        BEW, $                               ! 005561.40 -- so PASS is not
+PASS    BEW, $                               ! the next half-word but the next word
+        END, I382Z
