@@ -31,17 +31,49 @@
 ! XVLZ groups that follow (not transcribed here).
 !
 ! A DISCREPANCY IN XW's FOURTH FIELD, recorded because it is unresolved
-! rather than because it matters here.  The listing writes this constant
-! "XW,-1,0,0,4" and assembles flag = 1, refill = 0; jb_ax4b p.67 writes
-! "I38B46 XW,0,0,0,%8=400000" and assembles refill = 0400000, flag = 0.
-! Both were re-read at 400 dpi to rule out a misread.  Under any single
-! field order one of them is wrong, so the two tapes appear to use
-! different XW conventions -- plausibly different STRAP versions, since
-! they are different programs.  C22-6531 and C28-6129 have no text layer
-! to settle it.  This assembler treats the fourth field as a one-bit
-! flag, so the source below writes 1 where the listing writes 4; the
-! ASSEMBLED WORD is identical to the listing's, which is what the verify
-! script checks.
+! rather than because it matters here.  It is narrower than it first
+! looked, so what follows is the narrowed version.
+!
+! THE TWO TAPES AGREE ON THE THREE-OPERAND FORM: XW, value, count,
+! refill.  Three rows say so, and every field of all three reconciles.
+! On this same page, IBG88 XW,IBG80.04,IBG91,IBG82 assembles
+! "4006.04 00 100420.10 08" -- value = the BIT address of IBG80.04,
+! count = 04021 = IBG91's WORD, refill = 04010 = IBG82's word -- and
+! IBG87 XW,IBG81.04,2,IBG88 gives count = 2, refill = 04016 = IBG88.
+! On jb_ax4b p.67, I38K1 XW,0,0,I38XW3 assembles "0.00 00 000000.13 7C",
+! refill = 05574 = I38XW3's word.  Same order on both tapes.
+!
+! THEY DIFFER ONLY IN THE FOUR-OPERAND FORM, and there is exactly one
+! sample of it per tape.  Here IBXWZO XW,-1,0,0,4 assembles
+! "0.01 C0 000000.00 00": the 4 lands as the FLAG, IBM bit 25, and
+! refill stays 0.  On jb_ax4b, XW,0,0,0,%8=10000 assembles
+! "0.00 00 000000.20 00": the last operand lands in the REFILL field,
+! setting IBM bit 51, which is exactly where an 18-bit refill holding
+! 2**12 puts it.  (That row is one line of a BIT_n table, so its
+! neighbours walk the bit across the field and confirm the placement.)
+! Both rows were read at 400 dpi.  No single field order satisfies both,
+! and no single FIELD does either: a field left-justified at bit 25
+! explains the 4 but not the 010000, and one right-justified at bit 63
+! explains the 010000 but not the 4.
+!
+! Note that the deck's own control flow independently requires flag = 1
+! here, whatever the printed byte says -- IBIN1 is BZXF,$ , "hang up if
+! bit off", so XF must be ON after the LX.  The reading is not resting
+! on the C0 alone.
+!
+! So: two XW conventions, plausibly two STRAP versions, since these are
+! different programs.  C22-6531 and C28-6129 have no text layer to
+! settle it.  What would settle it is a four-operand XW with a LARGE
+! last field somewhere on ja_ax1a, or a small one on jb_ax4b -- either
+! fixes the field width on its own tape.  This assembler treats the
+! fourth field as a one-bit flag, so the source below writes 1 where the
+! listing writes 4; the ASSEMBLED WORD is identical to the listing's,
+! which is what the verify script checks.
+!
+! That deviation is load-bearing, not cosmetic.  If someone later
+! "reconciles" it toward the jb_ax4b reading, XW,-1,0,0,1 becomes
+! refill = 1 with flag = 0, XF never lights, and this block halts at
+! IBIN1 -- which is precisely the first injection below.
 
         SLC, (8)4023.0
 IBINX   LX, $X1, IBXWZO                      ! turn on XF, XCZ, XVLZ
