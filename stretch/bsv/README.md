@@ -240,12 +240,16 @@ it recognizes independent of what the datapath implements.
   targeting word 11 are still no-ops.
 
   Driven out by ja_ax1a p.25's IBIN35 block
-  (`strap/programs/ibox1_bind_xl.strap`), which sets XL by hand --
+  (`strap/programs/ibox1_bind_ind.strap`), which sets XL by hand --
   `LX` to zero, `LV` of a word with value bit 20 set, then
   `SV,$X1,$IND+.32`, landing 32+20 = 52 = XL -- because no index
   operation touches XL. Before the change the block hung at IBIN36
   (004063.40, the deck's own "hang up if bit off"); after it, it runs
-  to the end.
+  to the end. The XE and XH blocks that follow (pp.25-26) do the same
+  with value bits 21 and 22, landing on indicator bits 53 and 54, so
+  the store's bit PLACEMENT is pinned and not merely its existence: a
+  fold keeping only bit 52 passes the XL block and halts at the XE
+  block's first check.
 
   Two things there rest on the footnote rather than on a listing, and
   are marked as such in the code: the LOW half's preservation of IBM

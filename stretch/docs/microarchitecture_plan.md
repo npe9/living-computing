@@ -3968,13 +3968,44 @@ hand vectors alone. "Enables" notes the dependency chain.
    FIFTH GROUP of the same routine -- XVGZ, IBIN29-IBIN34, off a third
    seed word IBXWZ2 XW,1,1,0,0 -- and is now transcribed, the same
    ON-only shape. The second, IBIN35 onward, is a DIFFERENT MECHANISM
-   and the next thing worth transcribing: LX to zero, LV of a single
-   bit, then SV,$X1,$IND+.32 storing straight into the INDICATOR
-   REGISTER to set XL by hand, with BZXL/BXL/BZXLZ over it. That would
-   pin the indicator register as an addressable word and the branch
-   machinery over an indicator no index load touches, which nothing
-   does today. It still would not close the off-state hole;
+   and is now transcribed whole as programs/ibox1_bind_ind.strap
+   (IBIN35-IBIN55, pp.25-26, 55 checks): three blocks -- XL, XE, XH --
+   ending where "COMPARE VALUE %KV%" begins. Each does LX to zero, LV
+   of a single bit, then SV,$X1,$IND+.32 storing straight into the
+   INDICATOR REGISTER, with BZ/B/BZ..Z over it, because XL, XE and XH
+   are COMPARISON indicators and no index load touches them. One
+   constant changes between the three: value bit 20, 21, 22 ->
+   indicator bit 52, 53, 54. It does not close the off-state hole;
    index_indicators_off.strap does.
+
+   IT FOUND A REAL GAP, fail-first. st.writeWord(11) was a deliberate
+   no-op (README "Scope": the execute stage owns the single
+   per-instruction write to `indicators`, and a plain register cannot
+   take two independent writes in one rule), so the block hung at
+   IBIN36 -- 004063.40, the deck's own "hang up if bit off" -- which is
+   the line predicted from reading the storage path BEFORE anything was
+   changed. Locating the fault before fixing it is what makes the pass
+   afterwards mean something. The fix folds the half-word into the
+   `ind` value that single write already uses, the same technique the
+   BB arm adopted for one bit; all four index half-word stores (SV, SC,
+   SR, SVA) go through it, not only the witnessed one, because leaving
+   the other three silently wrong is the failure mode this suite exists
+   to catch.
+
+   TRANSCRIBING ALL THREE EARNS ITS KEEP, measured: a fold that keeps
+   only indicator bit 52 passes the XL block and halts at IBIN43
+   (004073.40), the XE block's first check. Three blocks pin the
+   store's bit PLACEMENT; one pins only its existence.
+
+   ANOTHER LOW-RESOLUTION MISREAD, and this time the ENCODING PATTERN
+   caught it before the page did. Five XH rows read as ...72/...32 at a
+   small crop and are ...73/...33; the assembler disagreed and was
+   right. The structural reason to believe it: bits 19-23 carry the
+   indicator address and the op byte's high bit splits each pair, so
+   XCZ/XVLZ = 24, XVZ/XVGZ = 25, XL/XE = 26, and XH must be 27 -- an XH
+   sharing 26 would make BZXH and BZXL the same instruction. A
+   transcription disagreeing with a model that has been right about the
+   other six cases is a reason to re-render, not to edit the model.
 
    HOW THE HOLE WAS CLOSED, and why the program is the weaker kind.
    The deck has no block that checks an index indicator OFF because its

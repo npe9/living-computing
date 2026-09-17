@@ -157,10 +157,11 @@ run "B(IND) routine, all five groups (ja_ax1a, encoding)" python3 verify_ibox1_b
 run "B(IND) routine, all five groups (model)" ./run_program.sh programs/ibox1_bind.strap StretchIbox1BindTb \
     "PC=4196"          # 004062.00, the half-word after the routine's last printed line
 
-run "B(IND) XL block (ja_ax1a, encoding)" python3 verify_ibox1_bind_xl_listing.py
-# ja_ax1a p.25's IBIN35-IBIN41, the "RESTART OF ROUTINE" section that
-# tests BRANCH ON XL -- and the only place in the deck that writes the
-# INDICATOR REGISTER through ordinary storage.
+run "B(IND) XL/XE/XH blocks (ja_ax1a, encoding)" python3 verify_ibox1_bind_ind_listing.py
+# ja_ax1a pp.25-26's IBIN35-IBIN55: the three "RESTART OF ROUTINE"
+# sections that test BRANCH ON XL, XE and XH -- the only places in the
+# deck that write the INDICATOR REGISTER through ordinary storage, and
+# the tail of the routine, ending where "COMPARE VALUE %KV%" begins.
 #
 # It is a different mechanism from the five groups above.  Those reach
 # their indicators through an index LOAD, so the deck sets them by
@@ -170,6 +171,9 @@ run "B(IND) XL block (ja_ax1a, encoding)" python3 verify_ibox1_bind_xl_listing.p
 #   LX, $X1, IBXWZ        set XW to zero
 #   LV, $X1, IBXWZ6       load bit 20, %XL IND%
 #   SV, $X1, $IND+.32     store in IND reg.
+#
+# The same shape three times with one constant changing: value bit 20,
+# 21, 22 -> indicator bit 52, 53, 54 = XL, XE, XH.
 #
 # $IND is word 11 and SV stores the 24-bit value field at a BIT
 # address, so the store covers IBM bits 32-55; value bit 20 lands at
@@ -184,8 +188,20 @@ run "B(IND) XL block (ja_ax1a, encoding)" python3 verify_ibox1_bind_xl_listing.p
 # per instruction, which is the same technique the BB arm used for a
 # single bit; all four index half-word stores (SV, SC, SR, SVA) go
 # through it, not just the witnessed one.  See bsv/README.md "Scope".
-run "B(IND) XL block (indicator register written by SV)" ./run_program.sh programs/ibox1_bind_xl.strap StretchIbox1BindXlTb \
-    "PC=4212"          # 004072.00, the half-word after IBIN41's second NOP
+#
+# THE THREE BLOCKS ARE NOT REDUNDANT, measured: a fold that keeps only
+# indicator bit 52 passes the XL block and halts at IBIN43 (004073.40),
+# the XE block's first check.  Transcribing all three is what makes the
+# store's bit placement testable rather than just its existence.
+#
+# One transcription note.  Five XH rows read as ...72/...32 at a small
+# crop and are ...73/...33; the assembler disagreed and was right.  What
+# flagged it before the re-render was the encoding pattern -- bits 19-23
+# hold the indicator address and the op byte's high bit splits each
+# pair, so XCZ/XVLZ = 24, XVZ/XVGZ = 25, XL/XE = 26, and XH must be 27;
+# an XH sharing 26 would make BZXH and BZXL the same instruction.
+run "B(IND) XL/XE/XH blocks (indicator register written by SV)" ./run_program.sh programs/ibox1_bind_ind.strap StretchIbox1BindIndTb \
+    "PC=4240"          # 004110.00, the half-word after IBIN55's second NOP
 
 run "Index result indicators: OFF states and clearing" ./run_program.sh programs/index_indicators_off.strap StretchIndexIndOffTb \
     "PC=2330"          # 002204.40; hand-written, so this is not a listing fact --
