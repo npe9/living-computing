@@ -204,6 +204,58 @@ run "B(IND) XL/XE/XH blocks (indicator register written by SV)" ./run_program.sh
     "PC=4240"          # 004110.00, the half-word after IBIN55's second NOP
 
 run "Indicator coverage audit (ratchet)" python3 audit_indicator_coverage.py
+run "Opcode coverage audit (ratchet)" python3 audit_opcode_coverage.py
+# The same question one level up: not which INDICATORS nothing looks at,
+# but which OPERATIONS nothing exercises.  Also a ratchet.
+#
+# IT EARNED ITS KEEP ON THE FIRST RUN.  It found BR -- BRANCH RELATIVE
+# -- listed in bsv/README.md among the implemented unconditional
+# branches and implemented by the model as an ABSOLUTE branch identical
+# to B.  Two primary sources say otherwise: the X22-6533 pocket card
+# gives B = 010000000 and BR = 011000000, a DIFFERENT operation code
+# named "Branch Relative"; and Reference Manual p.42 says "a simple
+# storage of the instruction counter without branching action is
+# accomplished by STORE INSTRUCTION COUNTER IF BRANCH RELATIVE with a
+# branch address of 0" -- an address of 0 producing NO BRANCHING ACTION
+# only works if it is a displacement.  The old absolute reading would
+# have branched to 0.0, which p.39 separately calls an invalid
+# branching address, so it was wrong twice over.
+#
+# BR now sets OP instead of branching wrongly; see br_unimplemented
+# below.  It is NOT implemented as relative, because the base is only
+# strongly implied (p.39: the counter is stepped to the fall-through
+# before execution, so fall-through + 0 is "no branching action") and
+# the sign and units are not established by anything read so far.
+# Implementing it would be a guess dressed as a fix.
+#
+# Of the 22 unused mnemonics, 15 are documented scope limits that reach
+# setOpInvalid -- only five VFL integer arms exist (L, ST, +, M+, K),
+# which accounts for the ten compare/convert codes.  The other SEVEN
+# are implemented and simply undriven, and that is the actionable list:
+# BZB1/BZBN/BZBZ (branch-if-off with set-one / invert / set-zero) and
+# the four I/O Suppress-End-Of-Op forms.
+
+run "BR (Branch Relative) is unimplemented, and says so" ./run_program.sh programs/br_unimplemented.strap StretchBrUnimplTb \
+    "PC=2695"          # 002503.40; hand-written, not a listing fact
+# Pins the honest state: BR sets OP and does NOT branch.  Uses the OP
+# indicator that op_ad_indicators.strap pinned, which is the point of
+# having pinned it.
+#
+# A SILENT WRONG ANSWER BECAME A VISIBLE UNIMPLEMENTED ONE.  Before
+# this, BR branched to an absolute address; a deck using BR would have
+# gone somewhere plausible-looking and wrong.  Now it fails loud.
+#
+# THE FIX HAD TO BE MADE TWICE, and the test is what caught that.  The
+# first attempt set OP in evalBranch's BranchOrMisc arm -- and the
+# program still failed, at "hang up if OP off", because execute()'s own
+# BranchOrMisc arm keeps only o.taken and o.target and DISCARDS o.ind.
+# (The SIC arm does propagate o.ind, so a SIC-prefixed BR was covered by
+# the first change alone.)  Writing the test first is what turned a
+# silently ineffective edit into a visible failure.
+#
+# When someone implements Branch Relative, THIS is the program that
+# fails, and the comment in the source is what they need.
+
 # Which indicators does the model WRITE that no program ever NAMES?
 # Static, one second, and it runs as a ratchet: a new indicator write
 # with no program looking at it fails here instead of landing silently.

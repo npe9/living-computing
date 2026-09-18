@@ -159,7 +159,35 @@ function BranchOutcome evalBranch(StretchStorage st, DecodedInstr d, Word64 ind0
     // by execute()'s own BranchOrMisc arm; a caller only hands the
     // non-misc shape here.
     tagged BranchOrMisc .bm: begin
-      if (!bm.misc && bm.code != 3'b110) begin
+      // BRANCH RELATIVE (code 011) is NOT an absolute branch, and this
+      // model does not implement it -- so it fails loud rather than
+      // branching to the wrong place.  Two primary sources:
+      //
+      //   * X22-6533 pocket card, UNCONDITIONAL BRANCHING: the codes are
+      //     B 010000000, BR 011000000, BE 000000000, BD 001000000,
+      //     BEW 100000000, NOP 110000000, and BR is named "Branch
+      //     Relative" -- a distinct operation, not a spelling of B.
+      //   * Reference Manual p.42: "A simple storage of the instruction
+      //     counter without branching action is accomplished by STORE
+      //     INSTRUCTION COUNTER IF BRANCH RELATIVE with a branch address
+      //     of 0."  A branch address of 0 meaning NO BRANCHING ACTION is
+      //     only possible if the address is a displacement.
+      //
+      // The base is almost certainly the stepped instruction counter:
+      // p.39 says "after an instruction is fetched, but before its
+      // execution, the instruction counter contents are stepped in
+      // ordinary fashion... prior to any attempt to replace the
+      // instruction counter contents", so during execution the counter
+      // already holds the fall-through, and fall-through + 0 is exactly
+      // "no branching action".  What is NOT established here is whether
+      // the displacement is signed and in what units, so implementing it
+      // would be a guess; setOpInvalid is the honest state until a deck
+      // block or the Unconditional Branching page settles it.  Nothing
+      // in the suite uses BR -- the opcode-coverage audit is what found
+      // it -- so nothing regresses.
+      if (bm.code == 3'b011)
+        o.ind = setOpInvalid(ind0);
+      else if (!bm.misc && bm.code != 3'b110) begin
         o.taken = True;
         o.target = effAddr19(st, bm.addr, bm.idx);
       end
@@ -2749,8 +2777,19 @@ function ActionValue#(ExecResult)
       // -----------------------------------------------------------
       tagged BranchOrMisc .bm: begin
         if (!bm.misc) begin
-          BranchOutcome o = evalBranch(st, di, ind, prefetch, prefetchCount, 0);
-          if (o.taken) next = o.target;
+          // BRANCH RELATIVE (011) is not implemented -- see evalBranch's
+          // BranchOrMisc arm for the two primary sources.  It is handled
+          // here as well as there because this arm keeps only `o.taken`
+          // and `o.target` and DISCARDS `o.ind`, so evalBranch's
+          // setOpInvalid never reaches the indicator word on this path.
+          // (The SIC arm does propagate `o.ind`, so a SIC-prefixed BR is
+          // covered by evalBranch alone.)
+          if (bm.code == 3'b011)
+            ind = setOpInvalid(ind);
+          else begin
+            BranchOutcome o = evalBranch(st, di, ind, prefetch, prefetchCount, 0);
+            if (o.taken) next = o.target;
+          end
         end else begin
           case (bm.code)
             3'b100: begin // Z (Store Zero)

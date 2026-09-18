@@ -1,0 +1,50 @@
+! BRANCH RELATIVE is not implemented, and says so.
+!
+! HOW THIS WAS FOUND.  audit_opcode_coverage-style screening of the
+! assembler's mnemonic tables against every program turned up 23
+! mnemonics STRAP can emit that no program uses.  Most are documented
+! scope limits -- EX, EXIC, RNX, LOC, the radix-conversion family.  BR
+! was not: bsv/README.md listed it among the IMPLEMENTED unconditional
+! branches, "B BR BE BD BEW NOP", and the model branched on it exactly
+! as it branches on B.
+!
+! TWO PRIMARY SOURCES SAY THAT IS WRONG.
+!
+!   X22-6533 pocket card, UNCONDITIONAL BRANCHING: B is 010000000 and
+!   BR is 011000000, a DIFFERENT operation code, and BR is named
+!   "Branch Relative".
+!
+!   Reference Manual p.42: "A simple storage of the instruction counter
+!   without branching action is accomplished by STORE INSTRUCTION
+!   COUNTER IF BRANCH RELATIVE with a branch address of 0."  A branch
+!   address of 0 producing NO BRANCHING ACTION is only possible if the
+!   address is a displacement.  Under the old absolute reading it would
+!   have branched to 0.0 -- which p.39 also calls an invalid branching
+!   address ("the addresses between 0.0 and 31.32 are invalid branching
+!   addresses"), so the old behaviour was wrong twice over.
+!
+! WHY NOT JUST IMPLEMENT IT.  The base is almost certainly the stepped
+! instruction counter -- p.39: "after an instruction is fetched, but
+! before its execution, the instruction counter contents are stepped in
+! ordinary fashion... prior to any attempt to replace the instruction
+! counter contents" -- so the counter already holds the fall-through
+! during execution, and fall-through + 0 is exactly "no branching
+! action".  But whether the displacement is SIGNED, and in what UNITS,
+! is not established by anything read so far.  Implementing it would be
+! a guess dressed as a fix.  Failing loud is the honest state, and it
+! replaces a SILENT WRONG BRANCH with a visible unimplemented operation.
+!
+! WHAT THIS PROGRAM PINS: that BR sets OP and does not branch.  It uses
+! the OP indicator pinned by op_ad_indicators.strap.  When someone
+! implements Branch Relative, this program is what fails, and the
+! comment above is what they need.
+
+        SLC, (8)2500.0
+START   BB, $OP, $                   ! hang up if OP on -- must start off
+        BR, FAIL                     ! not implemented: sets OP, no branch
+        BZB, $OP, $                  ! hang up if OP off
+        B, PASS                      ! BR must have fallen through to here
+FAIL    BEW, $                       ! BR branched: wrong, and the deck
+                                     !   would have gone somewhere absolute
+PASS    BEW, $
+        END, START

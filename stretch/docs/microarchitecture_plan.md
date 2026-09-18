@@ -4149,6 +4149,63 @@ hand vectors alone. "Enables" notes the dependency chain.
    "the injection fired" without asking WHICH check caught it is how a
    half-tested pair looks fully tested.
 
+   THE SAME AUDIT ONE LEVEL UP found a real model bug.
+   strap/audit_opcode_coverage.py asks which OPERATIONS STRAP can emit
+   that no program uses -- 22 of 116 -- and the first run turned up BR.
+
+   BR IS "BRANCH RELATIVE", NOT A SPELLING OF B. bsv/README.md listed
+   it among the implemented unconditional branches and the model
+   executed it as an ABSOLUTE branch identical to B. Two primary
+   sources contradict that:
+
+     X22-6533 pocket card, UNCONDITIONAL BRANCHING: B = 010000000,
+     BR = 011000000 -- a different operation code -- named "Branch
+     Relative".
+
+     Reference Manual p.42: "A simple storage of the instruction
+     counter without branching action is accomplished by STORE
+     INSTRUCTION COUNTER IF BRANCH RELATIVE with a branch address of
+     0." An address of 0 producing NO BRANCHING ACTION is only possible
+     if the address is a displacement. Under the absolute reading it
+     would have branched to 0.0 -- which p.39 separately calls an
+     invalid branching address ("the addresses between 0.0 and 31.32
+     are invalid branching addresses"), so the old behaviour was wrong
+     twice over.
+
+   NOT IMPLEMENTED, DELIBERATELY. BR now sets OP and does not branch,
+   pinned by programs/br_unimplemented.strap. The base is almost
+   certainly the stepped instruction counter -- p.39: "after an
+   instruction is fetched, but before its execution, the instruction
+   counter contents are stepped in ordinary fashion... prior to any
+   attempt to replace the instruction counter contents", so the counter
+   already holds the fall-through and fall-through + 0 is exactly "no
+   branching action" -- but whether the displacement is SIGNED and in
+   what UNITS is not established by anything read so far. Implementing
+   it would be a guess dressed as a fix. A silent wrong answer became a
+   visible unimplemented one, which is the honest intermediate state.
+
+   THE FIX HAD TO BE MADE TWICE, and only the test caught it. The first
+   edit set OP in evalBranch's BranchOrMisc arm; the program still
+   failed, at "hang up if OP off", because execute()'s own BranchOrMisc
+   arm keeps o.taken and o.target and DISCARDS o.ind. (The SIC arm does
+   propagate o.ind, so a SIC-prefixed BR was covered by the first edit
+   alone.) Writing the test before the fix is what turned a silently
+   ineffective edit into a visible failure -- the same fail-first
+   discipline that located the AD gap, applied to my own change rather
+   than to the model.
+
+   A USEFUL BY-PRODUCT: the run confirmed that Z,$IND really does clear
+   the indicators, through the same word-11 fold, which several
+   hand-written programs rely on and none had established.
+
+   OF THE 22 UNUSED MNEMONICS, 15 are documented scope limits reaching
+   setOpInvalid -- only five VFL integer arms exist (L, ST, +, M+, K),
+   which accounts for the ten compare/convert codes -- and SEVEN are
+   implemented and simply undriven: BZB1/BZBN/BZBZ (branch-if-off with
+   set-one / invert / set-zero) and the four I/O Suppress-End-Of-Op
+   forms. That is the actionable list, and each is a test someone could
+   write today.
+
    A CLAIM OF MINE THAT THE INJECTION CAUGHT. I wrote in the program
    header that a model computing XVZ as "not XVGZ" would pass the first
    three groups and fail in the XVZ group. It is false and the
