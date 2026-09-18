@@ -492,6 +492,33 @@ run "Address modification by a NEGATIVE index value" ./run_program.sh programs/i
 # whose bit is zero; BZB branches when the bit is off, so the wrong
 # address hangs.  Measured: the mutation halts at 003302.40.
 
+run "Negative index modification on the FP path (third copy)" ./run_program.sh programs/fp_negative_modifier.strap StretchFpNegIdxTb \
+    "PC=3598"          # 003416.00; hand-written, not a listing fact
+# THE THIRD COPY OF ONE RULE.  p.20-21's signed address modification is
+# written out three independent times in this model:
+#   effAddr18  floating point           <- this program
+#   effAddr19  branches                 <- branch_index_modified.strap
+#   effAddr24  bit-addressed operations <- index_negative_modifier.strap
+# Each was mutated separately and EACH SURVIVED until its own program
+# existed.  Closing one said nothing about the others.  A test named
+# "index modification works" would have implied all three, and how many
+# copies exist is a fact about the code that has to be looked up --
+# no test can report it.
+#
+# Same shape as the effAddr24 program: FPVAL holds a non-zero fraction,
+# the load addresses FPA2 one word above it with an index value of one
+# NEGATIVE, and DUMMY sits on the far side as the wrong answer, zero and
+# therefore unequal.  Measured: the mutation halts at 003403.40.
+#
+# UNITS, RECORDED AS AN OPEN OBSERVATION.  effAddr18 adds the index
+# value truncated to 18 bits to a WORD address, so a value of 1 moves
+# one WORD; effAddr24 adds the same field to a BIT address, where 1
+# moves one bit.  The value field is a 24-bit BIT address, so the two
+# helpers read one field in different units.  That may be right -- the
+# FP address field is itself an 18-bit word address -- but nothing
+# transcribed pins it and this program does not settle it.  It pins the
+# SIGN only.
+
 run "Mask register fixed and writable fields (word 12)" ./run_program.sh programs/mask_register_fields.strap StretchMaskTb \
     "PC=3229"          # 003135.40; hand-written, not a listing fact
 # A FIX WHOSE OWN COMMENT SAID NO TEST WOULD NOTICE IT.

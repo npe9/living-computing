@@ -4282,6 +4282,35 @@ hand vectors alone. "Enables" notes the dependency chain.
    That is the same shape as SIC's AD-and-store pair: WHEN TWO CODE
    PATHS IMPLEMENT THE SAME RULE INDEPENDENTLY, ONE TEST WITNESSES ONE
    PATH. Worth checking for a second copy whenever a rule is closed.
+
+   AND THERE WAS A THIRD. Acting on that immediately turned up
+   effAddr18, the floating-point helper, which writes the same sign
+   test out again. Mutated on its own it SURVIVED too, so all three
+   copies of p.20-21's signed address modification were untested for
+   the negative case and each was covered only once it had its own
+   program:
+
+     effAddr18  floating point            fp_negative_modifier.strap
+     effAddr19  branches                  branch_index_modified.strap
+     effAddr24  bit-addressed operations  index_negative_modifier.strap
+
+   THE GENERAL FORM, stated precisely: a test named "index modification
+   works" would have implied all three, and HOW MANY COPIES EXIST IS A
+   FACT ABOUT THE CODE THAT HAS TO BE LOOKED UP -- no test can report
+   it, and no coverage audit did. Five rounds of reference auditing
+   found nothing here; one mutation per copy found all three.
+
+   AN OPEN OBSERVATION, NOT A CLAIM. effAddr18 adds the index value
+   truncated to 18 bits to a WORD address, so a value of 1 moves one
+   WORD; effAddr24 adds the same field to a BIT address, where 1 moves
+   one bit. The value field is a 24-bit BIT address in the index word
+   format, so the two helpers read one field in different units. That
+   may be right -- the FP address field is itself an 18-bit word
+   address, so the hardware plausibly shifts -- but nothing transcribed
+   pins it, and fp_negative_modifier.strap does not settle it: it is
+   built around whatever units the model already uses and pins the SIGN
+   only. Recorded rather than asserted, because claiming an unsourced
+   rule is exactly how BR's absolute branch got into the README.
    programs/index_negative_modifier.strap reaches effAddr24 through
    Branch-on-Bit, with a decoy word on the far side that must stay
    zero; the mutation halts at 003302.40.

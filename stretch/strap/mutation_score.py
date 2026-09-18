@@ -186,6 +186,19 @@ MUTATIONS = [
      " programs/index_negative_modifier.strap -- note effAddr19 keeps a"
      " SEPARATE copy of the sign test, closed by branch_index_modified."),
 
+    # THE THIRD COPY.  Address modification's sign test is written out
+    # independently in effAddr18 (FP), effAddr19 (branches) and
+    # effAddr24 (bit-addressed).  Two are now pinned; this asks about
+    # the third.  Suggested directly by the pair above -- when a rule
+    # has more than one implementation, each needs its own witness.
+    ("effaddr18-ignores-index-sign", "bsv/StretchExecute.bsv",
+     "    Bit#(18) m = truncate(x.addr);\n    return (x.sign == 1) ? (raw - m) : (raw + m);\n  end\nendfunction\n\n// readHW",
+     "    Bit#(18) m = truncate(x.addr);\n    return raw + m;\n  end\nendfunction\n\n// readHW",
+     "The FLOATING-POINT address helper ignores the index value's sign"
+     " (p.20-21); effAddr18 is a third independent copy of that test."
+     "  Closed by programs/fp_negative_modifier.strap.  All THREE copies"
+     " survived until each got its own program."),
+
     ("vfl-length-zero-is-zero", "bsv/StretchExecute.bsv",
      "        Bit#(7) len_ = effLength(vi.a.length);",
      "        Bit#(7) len_ = zeroExtend(vi.a.length);",

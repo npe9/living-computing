@@ -1,0 +1,51 @@
+! Address modification by a negative index, on the FLOATING-POINT path.
+!
+! THE THIRD COPY OF ONE RULE.  Reference Manual p.20-21 says the SIGNED
+! value field of the index register is added to the instruction's
+! address field, and the model writes that test out THREE independent
+! times:
+!
+!   effAddr18  floating point            <- this program
+!   effAddr19  branches                  <- branch_index_modified.strap
+!   effAddr24  bit-addressed operations  <- index_negative_modifier.strap
+!
+! Each was mutated separately and each survived until its own program
+! existed.  Closing one said nothing about the others, which is the
+! point: A TEST NAMED "INDEX MODIFICATION WORKS" WOULD HAVE IMPLIED ALL
+! THREE.  How many copies there are is a fact about the code that has to
+! be looked up; no test can report it.
+!
+! THE SHAPE, same as the effAddr24 program.  FPVAL holds a non-zero
+! fraction.  The load addresses FPA2 -- the word just above it -- with
+! an index value of one, NEGATIVE, so the effective address comes back
+! to FPVAL.  With the sign ignored it runs the other way to DUMMY, which
+! is zero and therefore compares unequal.  DUMMY exists only to be the
+! wrong answer.
+!
+! UNITS, RECORDED AS AN OPEN OBSERVATION RATHER THAN A CLAIM.  effAddr18
+! adds the index value truncated to 18 bits to a WORD address, so a
+! value of 1 moves ONE WORD -- whereas effAddr24 adds the same field to
+! a BIT address, where 1 moves one bit.  The value field is a 24-bit BIT
+! address in the index word format, so the two helpers interpret the
+! same field in different units.  That may well be right (the FP address
+! field is itself 18 bits, a word address), but nothing transcribed
+! pins it, and this program does not settle it: it pins the SIGN only,
+! and is built around whatever units the model uses.
+!
+! WEAKER STANDARD, STATED: hand-written from p.20-21, not transcribed.
+
+        SLC, (8)3400.0
+START   LX, $1, WMINUS1              ! index value = 1 word, NEGATIVE
+        L(U), FPA2($1)               ! FPA2 - 1 = FPVAL, the non-zero one
+        K(N), FPVAL                  ! compare the accumulator with it
+        BZB, $AE, $                  ! hang up if not equal: with the sign
+                                     !   ignored the load took DUMMY, which
+                                     !   is zero
+        B, PASS
+!
+FPVAL   DD(BU,64), 2251799813685248  ! fraction 2**47, exponent 0
+FPA2    DD(BU,64), 0                 ! the addressed word; content unused
+DUMMY   DD(BU,64), 0                 ! the wrong answer: must stay zero
+WMINUS1 XW, -(8)0.01, 0, 0, 0        ! value 1, sign 1
+PASS    BEW, $
+        END, START
