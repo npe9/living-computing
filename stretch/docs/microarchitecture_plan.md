@@ -4256,6 +4256,41 @@ hand vectors alone. "Enables" notes the dependency chain.
        through an index register. The whole address-modification path
        for branch targets was unexercised.
 
+   SECOND CAMPAIGN, after closing all three: 9/10 CAUGHT, and the one
+   survivor is the EXPECTED one -- ad-bound-off-by-one, the SIC
+   read-bail guard already shown to be an optimisation rather than a
+   correctness requirement, since the AD branch downstream suppresses
+   the store regardless. That is an independent confirmation of the
+   earlier reading rather than a restatement of it: I had claimed it
+   from one hand-built injection, and a campaign that knew nothing
+   about the claim agreed.
+
+   THE OTHER HALF OF THE SECOND CAMPAIGN'S SIGNAL IS THE TIMING. The
+   three former survivors are now caught in ~2.4 minutes each, by the
+   test written for each, where index-flag-from-count previously took
+   10.9 minutes and landed in an I/O test. WHERE a mutant is caught,
+   and HOW EARLY, is what distinguishes a deliberate catch from a
+   lucky one.
+
+   REGRESSION MUTATIONS are the next seam, and the model's own "used
+   to" comments are the index to it. The codebase mostly tracks which
+   past fixes are diagnostic-pinned -- the index spare bits 26-27 name
+   I-Box 3 routine 1222, the SHF noisy-fill names F212 -- which is
+   exactly why the MASK REGISTER comment stands out by saying the
+   opposite: "nothing drives word 12 in the transcribed diagnostic, so
+   this was never caught by a test -- found by a code review against
+   the Appendix A field table."
+
+   programs/mask_register_fields.strap closes it. p.45 and the Appendix
+   A field table: mask bits 0-19 permanently one, 20-47 settable, 48-63
+   permanently zero. BIT 16 IS THE WHOLE POINT -- the old code forced
+   only 0-15, so only an attempt to clear bit 16 that must fail
+   separates the two boundaries; bit 0 passes under both and proves
+   nothing. Measured: reverting the masker and the register's initial
+   value to the pre-fix boundary halts at 003101.00, the bit-16 check,
+   and nowhere else. That is the XF/count lesson applied BEFORE writing
+   the test rather than after -- probe the boundary, not the middle.
+
    AND ONE CAUGHT RESULT THAT WAS WORSE NEWS THAN A SURVIVOR.
    index-flag-from-count was caught -- 300 sections later, by an I/O
    test, by accident. Every index word in every purpose-written

@@ -469,6 +469,32 @@ run "Branch target modified by an index register" ./run_program.sh programs/bran
 # (8)0.01.  Measured: the mutation now halts at TGT, 002721.00, the
 # deck-style "hang up: the index was ignored".
 
+run "Mask register fixed and writable fields (word 12)" ./run_program.sh programs/mask_register_fields.strap StretchMaskTb \
+    "PC=3229"          # 003135.40; hand-written, not a listing fact
+# A FIX WHOSE OWN COMMENT SAID NO TEST WOULD NOTICE IT.
+# StretchStorage.bsv, on the mask register: "...the register, its write
+# masker and StretchTypes' own comment all said 0-19 while the code did
+# 0-15.  NOTHING DRIVES WORD 12 IN THE TRANSCRIBED DIAGNOSTIC, SO THIS
+# WAS NEVER CAUGHT BY A TEST -- found by a code review against the
+# Appendix A field table."  A corrected boundary with nothing to stop it
+# being undone is the same shape as the compares' XF, except the code
+# states it outright.
+#
+# The rule, Reference Manual p.45 and the Appendix A field table: mask
+# bits 0-19 are permanently ONE, 20-47 are program settable, 48-63 are
+# permanently ZERO.  All three regions are checked.
+#
+# BIT 16 IS THE WHOLE POINT, not bit 0.  The old code forced only IBM
+# 0-15, so bits 16-19 were writable; the corrected code forces 0-19.
+# Only an attempt to CLEAR bit 16 that must fail separates them -- bit 0
+# passes under both and proves nothing.  Measured: reverting the masker
+# and the register's initial value to the pre-fix 0-15 boundary halts at
+# 003101.00, the bit-16 check, and nowhere else.
+#
+# There is no $ symbol for word 12, so it is addressed numerically:
+# word 12 is octal 14 and the bit is an octal fraction, so (8)14.20 is
+# word 12 bit 16.
+
 # -- 0e. I-Box 4 routine 150's CB / CB+ / CBR / CBR+ blocks (plus their
 # LX/SX setup and XW index words) assembled verbatim at the listing's
 # own addresses and compared against docs/jb_ax4b_ibox-4.pdf pp.155/159's

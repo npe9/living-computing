@@ -26,6 +26,16 @@ observable behaviour survives by definition and means nothing.  Each
 entry below therefore records WHAT WOULD GO WRONG in the real machine,
 so a survivor can be triaged as "missing test" versus "unobservable".
 
+SECOND CAMPAIGN, after closing the three survivors: 9/10, and the one
+survivor is the EXPECTED one -- ad-bound-off-by-one, the SIC read-bail
+guard already shown to be an optimisation rather than a correctness
+requirement (the AD branch downstream suppresses the store anyway).  An
+independent confirmation of that reading rather than a restatement of
+it.  The three former survivors are now caught in ~2.4 minutes each, by
+the test written for each, instead of 10.9 minutes by an unrelated one:
+WHERE and HOW FAST a mutant is caught is the signal that the catch is
+deliberate.
+
 FIRST CAMPAIGN, 2026-09-18: 5/8 scored, 2 skipped on stale patterns
 (both since fixed -- a SKIP is the harness admitting it did not test
 anything, which is the right failure mode and easy to overlook in a
@@ -107,6 +117,23 @@ MUTATIONS = [
      "                ind = ind & 64'hFFFFF00000000000;",
      "                ind = ind;",
      "Z,$IND stops clearing the settable indicator bits (p.41)."),
+
+    # REGRESSION MUTATIONS: bugs the project already fixed, reverted, to
+    # ask whether the fix would survive being undone.  cmp-leaves-flag
+    # above started as one of these and SURVIVED -- a documented fix with
+    # no test.  These two come from the same seam, the model's own "used
+    # to" comments.
+    ("mask-boundary-0-15", "bsv/StretchStorage.bsv",
+     "      addrMask: mask <= {20'hFFFFF, v[43:16], 16'h0000};   // IBM 0-19 = 1, 48-63 = 0 always",
+     "      addrMask: mask <= {16'hFFFF, v[47:16], 16'h0000};",
+     "The mask register forces only IBM 0-15, the pre-fix boundary; the"
+     " comment on that fix says it was never caught by a test."),
+
+    ("index-spare-bits-zeroed", "bsv/StretchTypes.bsv",
+     "  return { x.addr, x.sign, x.flag, x.spare, x.count, x.refill };",
+     "  return { x.addr, x.sign, x.flag, 2'b00, x.count, x.refill };",
+     "packIndexWord drops IBM bits 26-27, so an LX/SX round trip rewrites"
+     " them -- the bug I-Box 3 routine 1222 (jb_ax3a p.144) once caught."),
 
     ("branch-target-unmodified", "bsv/StretchExecute.bsv",
      "        o.target = effAddr19(st, bm.addr, bm.idx);",

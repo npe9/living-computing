@@ -1,0 +1,60 @@
+! The MASK register's fixed and writable fields (word 12).
+!
+! WHY THIS EXISTS, in the model's own words.  StretchStorage.bsv, on the
+! mask register:
+!
+!   "This used to be 64'hFFFF_0000_0000_0000 with a {16'hFFFF, v[47:16],
+!    16'h0000} write mask, which forces only IBM 0-15 and leaves
+!    thirty-two bits writable; the register, its write masker and
+!    StretchTypes' own comment all said 0-19 while the code did 0-15.
+!    NOTHING DRIVES WORD 12 IN THE TRANSCRIBED DIAGNOSTIC, SO THIS WAS
+!    NEVER CAUGHT BY A TEST -- found by a code review against the
+!    Appendix A field table."
+!
+! A fix whose own comment records that no test would notice it is a
+! standing invitation to undo it.  This is that test.
+!
+! THE RULE, Reference Manual p.45 and the Appendix A field table: mask
+! register bits 0-19 are permanently ONE, bits 20-47 are program
+! settable, and bits 48-63 are permanently ZERO.  All three regions are
+! checked here, because the bug that was fixed moved the boundary --
+! only a test that probes ON the boundary distinguishes 0-19 from 0-15.
+!
+! BIT 16 IS THE WHOLE POINT.  Under the old code IBM bits 16-19 were
+! writable; under the corrected code they are forced to one.  So the
+! decisive check is an attempt to CLEAR bit 16 and the requirement that
+! it stay set.  Bit 0 would pass either way and proves nothing.
+!
+! There is no $ symbol for word 12, so it is addressed numerically:
+! word 12 is octal 14, and bit N is the octal fraction -- (8)14.20 is
+! word 12 bit 16, (8)14.24 is bit 20, (8)14.60 is bit 48.
+!
+! WEAKER STANDARD, STATED: hand-written from the manual's field table,
+! not transcribed.  No deck block drives word 12 at all.
+
+        SLC, (8)3100.0
+!
+! ---- IBM bits 0-19 are permanently ONE -----------------------------
+! Bit 16 is the boundary the old code got wrong; bit 19 is the far end
+! of the same region.  Both must resist being cleared.
+START   BBZ, (8)14.20, $+1.0         ! try to clear bit 16
+        BZB, (8)14.20, $             ! hang up if bit 16 is off
+        BBZ, (8)14.23, $+1.0         ! try to clear bit 19
+        BZB, (8)14.23, $             ! hang up if bit 19 is off
+!
+! ---- IBM bits 20-47 are program settable ---------------------------
+        BBZ, (8)14.24, $+1.0         ! clear bit 20
+        BB, (8)14.24, $              ! hang up if bit 20 is on
+        BB1, (8)14.24, $+1.0         ! set bit 20
+        BZB, (8)14.24, $             ! hang up if bit 20 is off
+        BB1, (8)14.57, $+1.0         ! set bit 47, the far end
+        BZB, (8)14.57, $             ! hang up if bit 47 is off
+!
+! ---- IBM bits 48-63 are permanently ZERO ---------------------------
+        BB1, (8)14.60, $+1.0         ! try to set bit 48
+        BB, (8)14.60, $              ! hang up if bit 48 is on
+        BB1, (8)14.77, $+1.0         ! try to set bit 63
+        BB, (8)14.77, $              ! hang up if bit 63 is on
+        B, PASS
+PASS    BEW, $
+        END, START
