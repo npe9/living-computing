@@ -143,12 +143,14 @@ MUTATIONS = [
      "    r.zm = normalized && zero && (e > -1024);",
      "    r.zm = zero && (e > -1024);",
      "MULTIPLY's zero-multiply indicator ignores the normalization"
-     " modifier; p.99 gives ZM the normalized term for * but NOT for *+."),
+     " modifier; p.99 gives ZM the normalized term for * but NOT for *+."
+     "  Closed by programs/fp_zm_terms.strap case 2."),
 
     ("zm-exponent-bound", "bsv/StretchFP.bsv",
      "    r.zm = normalized && zero && (e > -1024);",
      "    r.zm = normalized && zero && (e >= -1024);",
-     "ZM's exponent bound is off by one: p.99 says GREATER THAN -1024."),
+     "ZM's exponent bound is off by one: p.99 says GREATER THAN -1024."
+     "  Closed by programs/fp_zm_terms.strap case 3."),
 
     ("noisy-fill-zeros", "bsv/StretchFP.bsv",
      "      if (noisy) w = w | ((96'b1 << nz) - 1);",

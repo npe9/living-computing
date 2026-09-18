@@ -495,6 +495,40 @@ run "Mask register fixed and writable fields (word 12)" ./run_program.sh program
 # word 12 is octal 14 and the bit is an octal fraction, so (8)14.20 is
 # word 12 bit 16.
 
+run "ZM's normalized term and exponent bound" ./run_program.sh programs/fp_zm_terms.strap StretchFpZmTb \
+    "PC=3352"          # 003230.00; hand-written, not a listing fact
+# Two mutation survivors, both ZM.  fpMul sets it as
+# "normalized && zero && (e > -1024)" (p.99), and jb_af1c F214D6 -- the
+# first and only test of ZM anywhere in the transcribed diagnostic --
+# pins the indicator's EXISTENCE, not its two qualifying terms.
+#
+# THE NORMALIZED TERM was already characterised in the plan doc, after
+# an injection "wrong in the most useful way yet": the only F214
+# multiply where dropping `normalized` changes anything is C1, and C1
+# checks REGISTERS, not indicators.  The campaign rediscovered that
+# without being told, which is the right confirmation for a gap that was
+# found by reasoning.  THE EXPONENT BOUND is new -- nothing transcribed
+# lands a zero product ON the boundary, so > and >= are the same.
+#
+# The constants are built from the format directly (fpFromWord: ef at
+# 63, em at 62-53, es at 52, fraction at 51-4) because the pool has
+# nothing with a zero fraction at a chosen exponent.  A multiply by a
+# zero-fraction operand gives a zero product whose exponent is the SUM,
+# so -512 x -512 lands on exactly -1024, the boundary itself.
+#
+# CASE 1 IS A POSITIVE CONTROL AND NOT OPTIONAL: without it a model that
+# never set ZM would pass both off-checks.  Measured, three distinct
+# halts:
+#   ZM never set            -> 003202.40, case 1   (the control)
+#   normalized term dropped -> 003204.00, case 2
+#   bound >= instead of >   -> 003211.00, case 3
+#
+# ONE TRAP, ON RECORD AND WALKED INTO ANYWAY: a bare `*` is AMBIGUOUS
+# and assembles as a 64-bit VFL instruction (op 0x80), not an FP
+# multiply -- exactly as a bare `L` does.  It must be written `*(N)`.
+# The first version of this program used `*` and failed in a way that
+# looked like a model bug.
+
 # -- 0e. I-Box 4 routine 150's CB / CB+ / CBR / CBR+ blocks (plus their
 # LX/SX setup and XW index words) assembled verbatim at the listing's
 # own addresses and compared against docs/jb_ax4b_ibox-4.pdf pp.155/159's

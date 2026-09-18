@@ -1,0 +1,79 @@
+! ZM's two terms: the normalization modifier and the exponent bound.
+!
+! HOW THESE WERE FOUND.  mutation_score.py's zm-drops-normalized-term
+! and zm-exponent-bound both SURVIVED the whole suite.
+!
+! ZM (indicator 33, ZERO MULTIPLY) is set by fpMul as
+!
+!     normalized && zero && (e > -1024)
+!
+! -- Reference Manual p.99.  jb_af1c F214D6 is the first and only test
+! of ZM anywhere in the transcribed diagnostic, and it pins the
+! indicator's EXISTENCE, not the two qualifying terms.
+!
+! THE NORMALIZED TERM was already characterised in the plan doc, after
+! an injection that was "wrong in the most useful way yet": the only
+! multiply in F214 where dropping `normalized` changes anything is C1
+! (FPK0 x FPK56, unflagged, zero product, unnormalized) -- and C1 checks
+! REGISTERS, not indicators.  So nothing in F214 discriminates it.  The
+! mutation campaign rediscovered that independently.
+!
+! THE EXPONENT BOUND is new: p.99 says GREATER THAN -1024, and nothing
+! transcribed lands a zero product ON the boundary, so > and >= are
+! indistinguishable.
+!
+! THE CONSTANTS are built from the format directly (StretchFP's
+! fpFromWord: ef at bit 63, em at 62-53, es at 52, fraction at 51-4), because
+! the pool has nothing with a zero fraction at a chosen exponent:
+!
+!   ZF0     fraction 0, exponent 0
+!   NZF0    fraction 2**47, exponent 0
+!   ZF512   fraction 0, exponent -512
+!   NZF512  fraction 2**47, exponent -512
+!
+! A multiply by a zero-fraction operand gives a zero product whose
+! exponent is the SUM, so ZF0 x NZF0 lands at 0 and ZF512 x NZF512 lands
+! at exactly -1024, the boundary itself.
+!
+! CASE 1 IS A POSITIVE CONTROL and it is not optional: without it, a
+! model that never set ZM at all would pass both off-checks and the
+! program would prove nothing.  That is the same trap the index
+! indicators were in before index_indicators_off existed.
+!
+! ONE TRAP, ALREADY ON RECORD AND WALKED INTO ANYWAY: a bare `*` is
+! AMBIGUOUS and assembles as a 64-bit VFL instruction (op 0x80), not a
+! floating-point multiply -- exactly as a bare `L` does.  The normalized
+! multiply has to be written `*(N)`.  The first version of this program
+! used `*` and failed in a way that looked like a model bug.
+!
+! WEAKER STANDARD, STATED: hand-written from p.99, not transcribed.
+
+        SLC, (8)3200.0
+!
+! ---- case 1: normalized, zero product, exponent 0 -> ZM ON ---------
+START   Z, $IND                      ! ZM is bit 33, so Z,$IND clears it
+        L(U), ZF0                    ! accumulator := fraction 0, exponent 0
+        *(N), NZF0                   ! NORMALIZED multiply, zero product
+        BZB, $ZM, $                  ! hang up if ZM off -- the control
+!
+! ---- case 2: UNNORMALIZED -> ZM OFF -------------------------------
+        Z, $IND
+        L(U), ZF0
+        *(U), NZF0                   ! same operands, unnormalized
+        BB, $ZM, $                   ! hang up if ZM on -- `normalized` is
+                                     !   false, so the term must gate it
+!
+! ---- case 3: exponent exactly -1024 -> ZM OFF ---------------------
+        Z, $IND
+        L(U), ZF512                  ! exponent -512
+        *(N), NZF512                 ! -512 + -512 = -1024, the boundary
+        BB, $ZM, $                   ! hang up if ZM on -- p.99 says
+                                     !   GREATER than -1024, not >=
+        B, PASS
+!
+ZF0     DD(BU,64), 0                 ! fraction 0, exponent 0
+NZF0    DD(BU,64), 2251799813685248  ! fraction 2**47, exponent 0
+ZF512   DD(BU,64), 4616189618054758400   ! fraction 0, exponent -512
+NZF512  DD(BU,64), 4618441417868443648   ! fraction 2**47, exponent -512
+PASS    BEW, $
+        END, START

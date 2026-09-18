@@ -4256,6 +4256,46 @@ hand vectors alone. "Enables" notes the dependency chain.
        through an index register. The whole address-modification path
        for branch targets was unexercised.
 
+   THIRD CAMPAIGN pushed into FP and VFL, where most of the model's
+   complexity lives and where jb_af1c -- the most heavily transcribed
+   tape -- is the only driver: 14/17. Every REGRESSION mutation whose
+   comment named a witness was caught BY that witness (the index spare
+   bits by IBOX-3's SVA block, the noisy fill by F219, the mask
+   boundary by the program added for it), so the codebase's claims
+   about its own coverage check out.
+
+   TWO NEW SURVIVORS, both ZM, and both now closed by
+   programs/fp_zm_terms.strap. fpMul sets ZM as
+   "normalized && zero && (e > -1024)" (p.99), and F214D6 -- the first
+   and only test of ZM anywhere in the transcribed diagnostic -- pins
+   the indicator's EXISTENCE, not its two qualifying terms.
+
+     The NORMALIZED term was already characterised in this document,
+     after an injection "wrong in the most useful way yet": the only
+     F214 multiply where dropping `normalized` changes anything is C1,
+     and C1 checks REGISTERS, not indicators. The campaign
+     rediscovered that without being told, which is the right kind of
+     confirmation for a gap that had been found by reasoning alone.
+
+     The EXPONENT BOUND is new. Nothing transcribed lands a zero
+     product ON the boundary, so > and >= were indistinguishable.
+
+   THE CONSTANTS had to be built from the format directly (fpFromWord:
+   ef at 63, em at 62-53, es at 52, fraction at 51-4) because the pool
+   has nothing with a zero fraction at a chosen exponent. A multiply by
+   a zero-fraction operand gives a zero product whose exponent is the
+   SUM, so -512 x -512 lands on exactly -1024. Case 1 is a POSITIVE
+   CONTROL and not optional: without it a model that never set ZM would
+   pass both off-checks -- the same trap the index indicators were in.
+   Three distinct halts, one per case.
+
+   AND A TRAP ALREADY ON RECORD, WALKED INTO ANYWAY: a bare `*` is
+   ambiguous and assembles as a 64-bit VFL instruction, not an FP
+   multiply, exactly as a bare `L` does. The first version of the
+   program used `*` and failed in a way that looked like a model bug.
+   Knowing a trap is written down is not the same as remembering it at
+   the moment it applies.
+
    SECOND CAMPAIGN, after closing all three: 9/10 CAUGHT, and the one
    survivor is the EXPECTED one -- ad-bound-off-by-one, the SIC
    read-bail guard already shown to be an optimisation rather than a
