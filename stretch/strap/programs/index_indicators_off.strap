@@ -57,9 +57,40 @@ START   LX, $X1, WNEG
         BXF, $                       ! hang up if XF on
         BXCZ, $                      ! hang up if XCZ on
         BXVLZ, $                     ! hang up if XVLZ on
+!
+! ---- breaking the flag/count CONFOUND -----------------------------
+! The three words above are the deck's own seed constants, and in all
+! three FLAG == (COUNT == 0).  That is a confound, and it made every
+! index-indicator program here blind to a model reporting XF from the
+! COUNT field instead of the flag: a mutation doing exactly that was
+! caught 300 sections later by an I/O test, incidentally, and by
+! nothing written for the purpose.  These two words vary the fields
+! INDEPENDENTLY, one in each direction.
+        LX, $X1, WFLAG               ! flag 1, count 1
+        BZXF, $                      ! hang up if XF off -- flag is 1
+        BXCZ, $                      ! hang up if XCZ on -- count is NOT 0
+        LX, $X1, WNOFLG              ! flag 0, count 0
+        BXF, $                       ! hang up if XF on  -- flag is 0
+        BZXCZ, $                     ! hang up if XCZ off -- count IS 0
+!
+! ---- a NEGATIVE ZERO value ----------------------------------------
+! p.24: XVLZ is set when the value field is "non-zero and negative",
+! so a value of minus zero must leave XVLZ OFF and XVZ ON.  Nothing
+! reached this: dropping the non-zero term survived the whole suite.
+! The word is a raw DD literal because the assembler normalises -0 in
+! an XW value field to +0 -- IBM bit 24 is the sign (2**39) and bit 45
+! is the low bit of count (2**18).
+        LX, $X1, WNEGZ               ! value -0, count 1
+        BZXVZ, $                     ! hang up if XVZ off -- value IS zero
+        BXVLZ, $                     ! hang up if XVLZ on -- zero is not
+                                     !   "non-zero and negative"
+        BXVGZ, $                     ! hang up if XVGZ on
         B, PASS
 WNEG    XW, -1, 0, 0, 1              ! ja_ax1a's IBXWZO
 WPOS    XW, 1, 1, 0, 0               ! ja_ax1a's IBXWZ2
 WZERO   XW, 0, 1, 0, 0               ! ja_ax1a's IBXWZ1
+WFLAG   XW, 1, 1, 0, 1               ! flag 1 with a NON-zero count
+WNOFLG  XW, 1, 0, 0, 0               ! flag 0 with a zero count
+WNEGZ   DD(BU,64), 549756076032      ! value -0 (sign bit 24), count 1
 PASS    BEW, $
         END, START

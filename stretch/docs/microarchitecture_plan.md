@@ -4231,6 +4231,45 @@ hand vectors alone. "Enables" notes the dependency chain.
    not exist. THE RULE, now in the script's header: before writing a
    test for anything an audit names, GREP FOR THE OTHER SPELLING.
 
+   MUTATION SCORING IS WHAT THE AUDITS CANNOT DO, and it changed the
+   picture immediately. Both audits ask "is anything completely
+   untouched" and both now say no; neither asks "would any program
+   NOTICE if the model were wrong". strap/mutation_score.py applies
+   single-point mutations that some primary source contradicts, runs
+   the suite against each with the new FAIL_FAST=1, and reports
+   survivors. First campaign: 5/8 scored (2 skipped on stale patterns,
+   since fixed -- a SKIP is the harness admitting it tested nothing,
+   and is easy to miss in a summary line).
+
+   THREE SURVIVORS, all real missing tests, all now closed:
+
+     xvlz-ignores-zero -- no program ever loaded a NEGATIVE ZERO index
+       word, so dropping XVLZ's non-zero term was invisible. p.24 sets
+       XVLZ only when the value is "non-zero and negative".
+     cmp-leaves-flag -- the compares' XF. This is the bug
+       StretchExecute's own comment records as previously FIXED ("this
+       helper used to set only XL/XE/XH, so all five compares left XF
+       stale"). A documented past fix with no regression test is an
+       invitation to reintroduce it silently.
+     branch-target-unmodified -- effAddr19 returns the raw address when
+       idx is 0, so a survivor means NOT ONE PROGRAM IN 160+ branched
+       through an index register. The whole address-modification path
+       for branch targets was unexercised.
+
+   AND ONE CAUGHT RESULT THAT WAS WORSE NEWS THAN A SURVIVOR.
+   index-flag-from-count was caught -- 300 sections later, by an I/O
+   test, by accident. Every index word in every purpose-written
+   index-indicator program had flag == (count == 0): the deck's three
+   seed constants, inherited without ever checking whether the two
+   fields varied independently. A CONFOUNDED INPUT MAKES A WHOLE FAMILY
+   OF TESTS BLIND, and nothing else here could have shown it -- the
+   suite was green and both audits were empty while the tests could not
+   tell the flag from the count. WHERE a mutant is caught matters as
+   much as WHETHER it is; a catch 300 sections away from the subsystem
+   is a near miss, not a pass. Closed by WFLAG (flag 1, count 1) and
+   WNOFLG (flag 0, count 0), which vary the fields independently in
+   both directions.
+
    RDSEOP AND CTLSEOP are now driven too, by io_tape.strap steps 10-11,
    and the audit's actionable list is EMPTY: every operation STRAP can
    emit that the model implements is driven by some program, and what

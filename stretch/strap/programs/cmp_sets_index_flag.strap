@@ -1,0 +1,55 @@
+! The index COMPARES set XF -- a fixed bug with no regression test.
+!
+! HOW THIS WAS FOUND.  mutation_score.py mutated setIndexCmpIndicatorsF
+! to leave XF alone, and the mutation SURVIVED the entire suite.  That
+! is not a hypothetical defect: StretchExecute's own comment on that
+! function records it as a bug that WAS there --
+!
+!   "This helper used to set only XL/XE/XH, so all five compares left
+!    XF stale."
+!
+! -- fixed earlier in the project, and nothing was ever written that
+! would notice it coming back.  A documented past fix with no test is
+! an invitation to reintroduce it silently.
+!
+! THE RULE, Reference Manual p.24 for KV and KC and p.25 for KVI, KVNI
+! and KCI, in the same words: "The index-flag and index-comparison
+! indicators are set in each of the last two operations; the index
+! result indicators are not set in these operations."
+!
+! WHY XF CAN BE FORCED HERE.  XF is indicator bit 38, and p.41 lets
+! BRANCH ON BIT "test and change the contents of positions 20-63 of the
+! indicator register" -- so unlike AD (bit 16), XF can be driven to a
+! known state before each compare.  That is what makes both directions
+! testable in one program: set XF wrong, run the compare, and require
+! the compare to have corrected it.
+!
+! BOTH DIRECTIONS, because a compare that merely ORed the flag in would
+! pass the first half.
+!
+! WEAKER STANDARD, STATED: hand-written from p.24, not transcribed.
+
+        SLC, (8)2700.0
+!
+! ---- a compare must turn XF ON when the index flag is 1 ------------
+START   LX, $X1, WFLAG               ! flag 1, so XF is on after the load
+        BBZ, $XF, $+1.0              ! force XF OFF, whatever it was
+        BB, $XF, $                   ! hang up if XF on -- the clear failed
+        KV, $X1, WFLAG               ! COMPARE VALUE: must set XF from the
+                                     !   index word's flag, which is 1
+        BZXF, $                      ! hang up if XF off -- the compare did
+                                     !   not set it
+!
+! ---- and OFF when the index flag is 0 ------------------------------
+        LX, $X1, WNOFLG              ! flag 0
+        BB1, $XF, $+1.0              ! force XF ON, whatever it was
+        BZB, $XF, $                  ! hang up if XF off -- the set failed
+        KV, $X1, WNOFLG              ! the compare must now CLEAR XF
+        BXF, $                       ! hang up if XF on -- the compare only
+                                     !   sets, never clears
+        B, PASS
+!
+WFLAG   XW, 1, 1, 0, 1               ! value 1, count 1, flag 1
+WNOFLG  XW, 1, 0, 0, 0               ! value 1, count 0, flag 0
+PASS    BEW, $
+        END, START

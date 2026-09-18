@@ -33,7 +33,20 @@ run() {
   status=0
   "$@" > "$TMPOUT" 2>&1 || status=$?
   tail -20 "$TMPOUT"
-  if [ "$status" -ne 0 ] || grep -q "TEST(S) FAILED" "$TMPOUT"; then FAILED=1; fi
+  if [ "$status" -ne 0 ] || grep -q "TEST(S) FAILED" "$TMPOUT"; then
+    FAILED=1
+    # FAIL_FAST=1 stops at the first failing section instead of running
+    # the whole suite.  Default OFF, so an ordinary run still reports
+    # EVERY failure -- which is what you want when judging a change.
+    # It exists for MUTATION SCORING (mutation_score.py): a mutant that
+    # the suite catches should cost seconds, not the full ~13 minutes,
+    # and only SURVIVORS need a complete run.  Never use it to decide
+    # whether a change is good; one failure is not the failure list.
+    if [ -n "$FAIL_FAST" ]; then
+      echo "FAIL_FAST: stopping at first failing section ($name)"
+      exit 1
+    fi
+  fi
   echo
 }
 
@@ -376,7 +389,7 @@ run "AD by SIC below 16.0 (the other trigger)" ./run_program.sh programs/ad_sic_
 # guard is an optimisation, not a correctness requirement.
 
 run "Index result indicators: OFF states and clearing" ./run_program.sh programs/index_indicators_off.strap StretchIndexIndOffTb \
-    "PC=2330"          # 002204.40; hand-written, so this is not a listing fact --
+    "PC=2346"          # 002215.00; hand-written, so this is not a listing fact --
                        # if the program's layout changes, update it deliberately
 # THE CONTROL FOR A HOLE THE DECK LEFT OPEN.  ibox1_bind.strap pins all
 # five index result indicators ON, and the only OFF it checks is the one
@@ -401,6 +414,60 @@ run "Index result indicators: OFF states and clearing" ./run_program.sh programs
 #   sets but never clears     -> 002203.40, BXF,$   (first clear-check,
 #                                after the second load)
 # The first is exactly the injection that passes everywhere else.
+#
+# TWO LATER ADDITIONS, both from mutation_score.py.
+#
+# THE FLAG/COUNT CONFOUND.  The three words above are the deck's own
+# seed constants, and in ALL THREE flag == (count == 0).  That made
+# every purpose-written index-indicator program blind to a model
+# reporting XF from the COUNT field: that mutation was caught 300
+# sections later by an I/O test, by accident.  WFLAG (flag 1, count 1)
+# and WNOFLG (flag 0, count 0) vary the two independently, one in each
+# direction, and the mutation now halts here at 002202.40.  A green
+# suite and two empty audits did not show this; only mutation did.
+#
+# NEGATIVE ZERO.  p.24 sets XVLZ when the value is "non-zero AND
+# negative", so minus zero must leave XVLZ off and XVZ on.  Dropping
+# the non-zero term SURVIVED the whole suite.  The word is a raw DD
+# literal because the assembler normalises -0 in an XW value field to
+# +0; the mutation now halts at 002211.00.
+
+run "Index compares set XF (a fixed bug with no test)" ./run_program.sh programs/cmp_sets_index_flag.strap StretchCmpXfTb \
+    "PC=2964"          # 002664.00; hand-written, not a listing fact
+# mutation_score.py mutated setIndexCmpIndicatorsF to leave XF alone and
+# the mutation SURVIVED the entire suite.  That is not hypothetical:
+# StretchExecute's own comment on that function records it as a bug that
+# WAS there -- "This helper used to set only XL/XE/XH, so all five
+# compares left XF stale" -- fixed earlier in the project, with nothing
+# written that would notice it coming back.  A documented past fix with
+# no regression test is an invitation to reintroduce it silently.
+#
+# p.24 for KV/KC and p.25 for KVI/KVNI/KCI, same words: "the index-flag
+# and index-comparison indicators are set in each of the last two
+# operations".  XF is bit 38, so BRANCH ON BIT can drive it to a known
+# state first (p.41 allows positions 20-63) -- which is what makes both
+# directions testable: force XF wrong, compare, require the compare to
+# have corrected it.  BOTH directions, because a compare that merely
+# ORed the flag in would pass the first half.  Measured: the mutation
+# now halts at 002655.00.
+
+run "Branch target modified by an index register" ./run_program.sh programs/branch_index_modified.strap StretchBrIdxTb \
+    "PC=3014"          # 002723.00; hand-written, not a listing fact
+# Replacing "o.target = effAddr19(st, bm.addr, bm.idx)" with the raw
+# address -- dropping index modification of branch targets entirely --
+# SURVIVED the whole suite.  effAddr19 returns the raw address when idx
+# is 0, so a survivor means exactly one thing: not one program in 160+
+# branched through an index register.  The feature was completely
+# unexercised.
+#
+# p.20-21 "Address Modification" plus p.39, which applies it to
+# branching like anything else.  UNITS ARE THE TRICK: effAddr19 adds
+# the index value's low 19 bits to a HALF-WORD address while the value
+# field is a BIT address, so a value of 1 moves the target one
+# half-word.  LVI cannot express that (it shifts its immediate left by
+# five), so the offset comes from an XW whose value is the bit address
+# (8)0.01.  Measured: the mutation now halts at TGT, 002721.00, the
+# deck-style "hang up: the index was ignored".
 
 # -- 0e. I-Box 4 routine 150's CB / CB+ / CBR / CBR+ blocks (plus their
 # LX/SX setup and XW index words) assembled verbatim at the listing's
