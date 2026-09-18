@@ -4300,6 +4300,38 @@ hand vectors alone. "Enables" notes the dependency chain.
    it, and no coverage audit did. Five rounds of reference auditing
    found nothing here; one mutation per copy found all three.
 
+   THE SAME PATTERN IN A SECOND SUBSYSTEM, which is what makes it a
+   pattern rather than a coincidence. "if (!seop) cw.eop = 1" -- p.121,
+   a SEOP form must not set the control word's EOP bit -- is written
+   out SIX times: normal completion, the End Exception path, CTL
+   REWIND, BACKSPACE BLOCK's two sub-cases, and REL. Three were driven
+   by io_reader_printer and io_tape steps 10-11. The other three each
+   SURVIVED their mutation for eleven minutes, and io_tape steps 12-15
+   now close them.
+
+   EACH MUTATION FAILS EXACTLY ONE CHECK, AND THE RIGHT ONE: end
+   exception -> CCWP, backspace at the load point -> CCWM, backspace
+   success -> CCWO. That one-to-one mapping is the evidence that each
+   check witnesses its own copy, rather than one check incidentally
+   covering several -- which is the failure mode this whole line of
+   work keeps turning up.
+
+   THE PREDICTIONS CAME FROM VALUES THE SUITE ALREADY VERIFIES: each
+   expected control word is the existing NON-SEOP expectation with
+   eop=0, since exp_ccwI (load-point reject) and exp_ccwJ (end
+   exception) are those same operations without SEOP. CCWO equals CCWN
+   for the same reason CCWL equals CCWK -- a successful BACKSPACE under
+   SEOP writes its control word back untouched. All four matched first
+   time.
+
+   AND TWO DISCOVERY ROUTES WERE NEEDED. A name-family scan found the
+   effAddr trio (same rule, different widths, different variable names,
+   so no textual duplicate-finder would have seen it). Grepping one
+   distinctive line found the six SEOP copies (identical text, six call
+   sites, so no name scan would have seen it). Neither tool finds the
+   other's case, and the only thing that finds both is asking the model
+   whether anything notices.
+
    AN OPEN OBSERVATION, NOT A CLAIM. effAddr18 adds the index value
    truncated to 18 bits to a WORD address, so a value of 1 moves one
    WORD; effAddr24 adds the same field to a BIT address, where 1 moves

@@ -2536,6 +2536,22 @@ run "Input-Output (reader/printer)" ./run_io_test.sh StretchIoReaderPrinterTb
 # setting eop; CTL(SEOP) REWIND then reads that word back and must
 # write it out untouched, so CCWL must equal CCWK bit for bit.
 #
+# STEPS 12-15 close the rest of the SEOP rule.  "if (!seop) cw.eop = 1"
+# is written out SIX times in this model -- normal completion, the End
+# Exception path, CTL REWIND, BACKSPACE BLOCK's two sub-cases, and REL.
+# Steps 10-11 and io_reader_printer drive three; these drive the other
+# three, which had survived their mutations for 11 minutes apiece.
+# Each expectation is the existing NON-SEOP one with eop=0 -- compare
+# exp_ccwI and exp_ccwJ, the same operations without SEOP -- so the
+# predictions come from values the suite already verifies.  Measured,
+# one mutation per copy, each failing exactly ONE check and the right
+# one: end exception -> CCWP, backspace at the load point -> CCWM,
+# backspace success -> CCWO.
+#
+# ONE RULE, SIX COPIES.  This is the effAddr lesson in a second place:
+# a test of one copy says nothing about the others, and how many copies
+# exist is a fact about the code, not something a test can report.
+#
 # Two injections, and the second is why BOTH checks exist:
 #   RD ignores its SEOP flag  -> CCWK fails (and CCWL with it, since
 #                                CCWL inherits the same control word)

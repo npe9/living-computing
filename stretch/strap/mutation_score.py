@@ -113,6 +113,33 @@ MUTATIONS = [
      "      if (rem1 == 0) begin\n        cw.eop = 1; // INJECTED",
      "A READ SEOP sets the EOP status bit; p.121 says it must not."),
 
+    # THE SEOP RULE HAS SIX COPIES.  "if (!seop) cw.eop = 1" is written
+    # out six times -- normal completion, the end-exception path, CTL
+    # REWIND, BACKSPACE BLOCK's two sub-cases, and REL.  Three are now
+    # driven (io_reader_printer's W/REL, io_tape's RD/CTL REWIND).
+    # These ask about the other three, following the effAddr lesson:
+    # one rule, many copies, one witness each.
+    ("seop-ignored-on-end-exception", "bsv/StretchCore.bsv",
+     "      ControlWord cw = ioDev.readChanCW(x.ch);\n      cw.ee = 1;\n      if (!x.suppressEop) cw.eop = 1;",
+     "      ControlWord cw = ioDev.readChanCW(x.ch);\n      cw.ee = 1;\n      cw.eop = 1;",
+     "A transfer that runs out of material sets EOP even under SEOP"
+     " (p.121); this is the End Exception path, a separate copy."
+     "  Closed by io_tape.strap step 15 (CCWP)."),
+
+    ("seop-ignored-on-backspace-at-load-point", "bsv/StretchExecute.bsv",
+     "                    cw.epgk = 1;\n                    if (!seop) cw.eop = 1;",
+     "                    cw.epgk = 1;\n                    cw.eop = 1;",
+     "BACKSPACE BLOCK rejected at the load point sets EOP under SEOP"
+     " (p.136 for the reject, p.121 for SEOP); a separate copy."
+     "  Closed by io_tape.strap step 12 (CCWM)."),
+
+    ("seop-ignored-on-backspace", "bsv/StretchExecute.bsv",
+     "                    io.setTapePos(io.tapePos() - 1);\n                    if (!seop) cw.eop = 1;",
+     "                    io.setTapePos(io.tapePos() - 1);\n                    cw.eop = 1;",
+     "A successful BACKSPACE BLOCK sets EOP under SEOP; a separate copy."
+     "  Closed by io_tape.strap step 14 (CCWO).  All SIX copies of this"
+     " one rule now have a witness; three survived until these."),
+
     ("store-zero-spares-indicators", "bsv/StretchExecute.bsv",
      "                ind = ind & 64'hFFFFF00000000000;",
      "                ind = ind;",

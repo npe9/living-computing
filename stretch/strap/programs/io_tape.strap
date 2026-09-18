@@ -109,6 +109,27 @@ START   LVI, $1, 34      !X1 = tape channel 34: LVI puts it in value bits 0-18, 
                             !captured and must leave it EXACTLY as it is
         CCW, 0($1), CCWL   !expect CCWL == CCWK, bit for bit
 
+!   12-15. THE OTHER THREE COPIES OF THE SEOP RULE.  "if (!seop)
+!   cw.eop = 1" is written out SIX times in this model -- normal
+!   completion, the End Exception path, CTL REWIND, BACKSPACE BLOCK's
+!   two sub-cases, and REL.  Steps 10-11 above and io_reader_printer
+!   between them drive three.  These drive the rest.  One rule, six
+!   copies, and a test of one says nothing about the others: the same
+!   lesson the three effAddr helpers taught.
+        CTL(SEOP), 0($1), 126  !BACKSPACE SEOP at the load point (position
+                            !0, from the REWIND above): rejected with
+                            !epgk, and eop must STAY 0
+        CCW, 0($1), CCWM
+        RD(SEOP), 0($1), CTLW8 !move off the load point, position 0->1
+        CCW, 0($1), CCWN
+        CTL(SEOP), 0($1), 126  !BACKSPACE SEOP that SUCCEEDS, position
+                            !1->0: the other sub-case, a separate copy
+        CCW, 0($1), CCWO
+        RD(SEOP), 0($1), CTLW9 !20 words against a 16-word tape from
+                            !position 0: End Exception, and its copy of
+                            !the rule must leave eop 0 too
+        CCW, 0($1), CCWP
+
         BEW, $
         CNOP               !word-align the data section below (full-word
                             !I/O instructions are half-word aligned, so
@@ -122,6 +143,8 @@ CTLW4   DD(BU,64), 0        !patched: dataAddr=BLOCK3, count=2
 CTLW5   DD(BU,64), 0        !patched: dataAddr=BLOCK4, count=1
 CTLW6   DD(BU,64), 0        !patched: dataAddr=DEST_EE, count=20
 CTLW7   DD(BU,64), 0        !patched: dataAddr=BLOCK5, count=1
+CTLW8   DD(BU,64), 0        !patched: dataAddr=BLOCK6, count=1
+CTLW9   DD(BU,64), 0        !patched: dataAddr=BLOCK7, count=20
 CCWA    DD(BU,64), 0
 CCWB    DD(BU,64), 0
 CCWC    DD(BU,64), 0
@@ -134,11 +157,17 @@ CCWI    DD(BU,64), 0
 CCWJ    DD(BU,64), 0
 CCWK    DD(BU,64), 0
 CCWL    DD(BU,64), 0
+CCWM    DD(BU,64), 0
+CCWN    DD(BU,64), 0
+CCWO    DD(BU,64), 0
+CCWP    DD(BU,64), 0
 BLOCK1  DD(BU,64), 0,0,0,0
 BLOCK2  DD(BU,64), 0,0,0,0
 BLOCK3  DD(BU,64), 0,0
 BLOCK4  DD(BU,64), 0
 BLOCK5  DD(BU,64), 0
+BLOCK6  DD(BU,64), 0
+BLOCK7  DD(BU,64), 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
 SRC     DD(BU,64), 999,888
 DEST_EE DD(BU,64), 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
 
