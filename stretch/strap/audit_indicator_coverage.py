@@ -90,13 +90,11 @@ def value_checked():
 # silently.  Shrink this set when one gets pinned; grow it only with a
 # reason written down.
 #
-#   OP (15, "Operation Code Invalid") -- setOpInvalid, 24 sites.  README
-#       claims decoded-but-unexecuted instructions "set indicator 15, OP,
-#       and no-op"; nothing checks either half of that claim.
-#   AD (16, "Address Invalid") -- set on a branch whose target is inside
-#       special storage (ha < 32) and on an FP operand address that is
-#       not installed.  Both reachable, neither exercised.
-KNOWN_GAP = {"OP", "AD"}
+# Currently EMPTY: every indicator the model writes is named by at least
+# one program.  OP and AD were the last two and are pinned by
+# programs/op_ad_indicators.strap.  Note what that does and does not
+# mean -- see the "reference, not discrimination" caveat above.
+KNOWN_GAP = set()
 
 
 def main():
@@ -128,8 +126,12 @@ def main():
     if now_kept:
         print(f"\nFAIL: {', '.join(now_kept)} is now covered -- remove it from KNOWN_GAP.")
         return 1
-    print(f"\nPASS: gap is exactly the {len(KNOWN_GAP)} known and documented "
-          f"({', '.join(sorted(KNOWN_GAP))}).")
+    if KNOWN_GAP:
+        print(f"\nPASS: gap is exactly the {len(KNOWN_GAP)} known and documented "
+              f"({', '.join(sorted(KNOWN_GAP))}).")
+    else:
+        print(f"\nPASS: every indicator the model writes ({len(written)}) is named "
+              f"by at least one program.")
     return 0
 
 

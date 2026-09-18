@@ -4068,6 +4068,42 @@ hand vectors alone. "Enables" notes the dependency chain.
    if it were wrong" -- XF was mentioned by several and pinned by none
    until ibox1_bind.strap. A hit means look closer, not covered.
 
+   BOTH ARE NOW PINNED by programs/op_ad_indicators.strap, so KNOWN_GAP
+   is empty and the ratchet holds at "every indicator the model writes
+   (35) is named by at least one program". Hand-written from the manual
+   and from the README's own claim -- the weaker standard -- because no
+   deck block transcribed so far reaches either bit.
+
+   BOTH POLARITIES, which is now the standing pattern for an indicator
+   test: each bit is checked OFF after an ordinary instruction FIRST,
+   and only then ON after the offending one. OP and AD are set-only in
+   the model -- nothing clears either -- so the off-check has to come
+   first to mean anything.
+
+   Three injections, three distinct halts, all predicted:
+     OP never set   -> 002305.40, the BZB,$OP,$ after LVE
+     AD never set   -> 002311.00, the BZB,$AD,$ after the off-core load
+     both forced ON -> 002300.40, the FIRST off-check, after an
+                       ordinary LX
+   The last is the analogue of the injection that passed everywhere
+   before index_indicators_off existed. Here it fails.
+
+   A REAL INTERACTION FOUND BY THE AD CASE, worth recording because
+   nothing else in the suite reaches it. The program makes StretchCore
+   print "E-box instruction at 2449 executed at preparation
+   (classification mismatch)". That is neither a defect nor noise. The
+   core prepares an operand-fetching E-box instruction by running
+   execute() with no operand and expecting it to BAIL OUT with the
+   address it wants -- a probe that is side-effect-free precisely
+   because the instruction cannot finish without its operand. The AD
+   guard skips the operand read entirely, so the instruction COMPLETES
+   inside the probe. The core detects exactly that case, says so, and
+   commits the probe as the execution, which is why AD ends up set and
+   the accumulator untouched. The classification cannot know in
+   advance, because AD depends on the effective address, which is not
+   known until execute computes it. Left as is, with the message
+   documented in run_tests.sh as expected on this path.
+
    A CLAIM OF MINE THAT THE INJECTION CAUGHT. I wrote in the program
    header that a model computing XVZ as "not XVGZ" would pass the first
    three groups and fail in the XVZ group. It is false and the

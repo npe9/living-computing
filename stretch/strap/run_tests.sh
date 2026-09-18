@@ -226,11 +226,51 @@ run "Indicator coverage audit (ratchet)" python3 audit_indicator_coverage.py
 # version reported 29 gaps, most of them its own blind spots.  An audit
 # that has not been audited is a claim, not a measurement.
 #
-# Current gap, both real and both documented in KNOWN_GAP: OP
-# ("Operation Code Invalid", 24 setOpInvalid sites -- README claims
-# unexecuted instructions set it and no-op, and neither half is
-# checked) and AD ("Address Invalid", set on a branch into special
-# storage and on an uninstalled FP operand address).
+# The gap it found -- OP and AD -- is now closed by
+# programs/op_ad_indicators.strap below, so KNOWN_GAP is empty and the
+# ratchet holds at "every indicator the model writes is named by some
+# program".  That is a floor, not a ceiling: see the caveat above.
+
+run "OP and AD indicators (both polarities)" ./run_program.sh programs/op_ad_indicators.strap StretchOpAdIndTb \
+    "PC=2462"          # 002315.40; hand-written, not a listing fact
+# The two indicators the audit found written-but-unwatched.  HAND-WRITTEN
+# from the manual and from the README's own claim -- the weaker standard
+# -- because no deck block transcribed so far reaches either bit.
+#
+#   OP (15) "Operation Code Invalid".  bsv/README.md says instructions
+#   decoded but not executed "set indicator 15, OP, and no-op, matching
+#   real-machine behavior for a suppressed instruction".  24 setOpInvalid
+#   sites, and neither half of that claim was checked.  LVE is out of
+#   scope here, so it must set OP and leave $X1 alone; both are checked.
+#
+#   AD (16) "Address Invalid".  Reference Manual p.20: an effective word
+#   address beyond the installed core sets AD and the instruction "is
+#   executed as a NO OPERATION".  The core is six units, InstalledWords
+#   = 98304 = (8)300000, so L(N),(8)400000.0 is off the end.  AD must
+#   come on and the accumulator must be untouched; both are checked.
+#
+# BOTH POLARITIES, which is the whole lesson of index_indicators_off:
+# each bit is checked OFF after an ordinary instruction FIRST and only
+# then ON after the offending one.  Three injections, three distinct
+# halts, all predicted:
+#   OP never set        -> 002305.40  (BZB,$OP,$ after the LVE)
+#   AD never set        -> 002311.00  (BZB,$AD,$ after the off-core load)
+#   both forced ON      -> 002300.40  (the FIRST off-check, after an
+#                                      ordinary LX)
+# That last one is the analogue of the injection that passed everywhere
+# before index_indicators_off existed.  Here it fails.
+#
+# EXPECTED NOISE, and a real interaction worth knowing about.  This
+# program makes StretchCore print "E-box instruction at 2449 executed at
+# preparation (classification mismatch)".  It is not a defect and it is
+# not spurious: the core probes an operand-fetching E-box instruction by
+# running execute() with no operand and expecting it to bail out with
+# the address it wants, but the AD guard skips the operand read
+# entirely, so the instruction COMPLETES during what was meant to be a
+# side-effect-free probe.  The core detects exactly that, says so, and
+# commits the probe as the execution -- which is why AD is set and the
+# accumulator is untouched.  The classification cannot know in advance,
+# because AD depends on the effective address.
 
 run "Index result indicators: OFF states and clearing" ./run_program.sh programs/index_indicators_off.strap StretchIndexIndOffTb \
     "PC=2330"          # 002204.40; hand-written, so this is not a listing fact --

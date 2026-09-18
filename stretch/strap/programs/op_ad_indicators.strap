@@ -1,0 +1,66 @@
+! OP and AD: the two indicators the model writes and nothing looked at.
+!
+! WHY THIS EXISTS.  audit_indicator_coverage.py asks which indicators
+! the model WRITES that no program ever NAMES, and after three rounds of
+! correcting the audit itself the answer was exactly two: OP and AD.
+! Both are reachable, both are claimed in bsv/README.md, and neither
+! half of either claim was checked anywhere.
+!
+!   OP, bit 15, "Operation Code Invalid".  README: instructions that are
+!   decoded but not executed "set indicator 15, OP, and no-op, matching
+!   real-machine behavior for a suppressed instruction".  24 setOpInvalid
+!   sites in StretchExecute and nothing ever read the bit.
+!
+!   AD, bit 16, "Address Invalid".  Reference Manual p.20: an effective
+!   word address beyond the installed core sets AD and the instruction
+!   "is executed as a NO OPERATION".  The model's core is six units,
+!   InstalledWords = 98304 = (8)300000 words, so (8)400000.0 is off the
+!   end of it.
+!
+! WEAKER STANDARD, STATED.  Hand-written from the manual and from the
+! README's own claim, not transcribed -- no deck block found so far
+! reaches either bit.  What it pins is a documented model behaviour, so
+! a regression that silently executed a suppressed instruction, or
+! quietly honoured an address off the end of core, would be caught.
+!
+! BOTH POLARITIES, which is the lesson from the index indicators.  A
+! test that only checked the bits ON would pass a model that set them
+! always, so each one is checked OFF after an ordinary instruction
+! FIRST, and only then ON after the offending one.  OP and AD are
+! set-only in the model -- nothing ever clears them -- so the off-check
+! has to come first to mean anything, and it does.
+
+        SLC, (8)2300.0
+!
+! ---- neither bit is on after an ordinary instruction ---------------
+START   LX, $X1, WSEED               ! a perfectly ordinary index load
+        BB, $OP, $                   ! hang up if OP on
+        BB, $AD, $                   ! hang up if AD on
+        L(N), FKONE                  ! an ordinary FP load, address installed
+        BB, $OP, $                   ! hang up if OP on
+        BB, $AD, $                   ! hang up if AD on
+!
+! ---- OP: a decoded-but-unexecuted operation ------------------------
+! LVE is out of scope in this model (StretchExecute's dixop default),
+! so it must set OP and change nothing.
+        LVE, $X1, WOTHER             ! out of scope -> OP, and a no-op
+        BZB, $OP, $                  ! hang up if OP off
+        BB, $AD, $                   ! hang up if AD on -- OP must not imply AD
+! and the suppressed instruction must not have touched the index:
+        KV, $X1, WSEED               ! $X1 still equals the seed?
+        BZXE, $                      ! hang up if not equal
+!
+! ---- AD: an effective address beyond the installed core ------------
+! The accumulator still holds FKONE.  A floating-point load from off
+! the end of core must set AD and leave it alone.
+        L(N), (8)400000.0            ! beyond InstalledWords -> AD, no-op
+        BZB, $AD, $                  ! hang up if AD off
+        K(N), FKONE                  ! accumulator unchanged?
+        BZB, $AE, $                  ! hang up if not equal
+        B, PASS
+!
+WSEED   XW, 1, 1, 0, 0
+WOTHER  XW, -1, 0, 0, 1
+FKONE   DD(BU,64,8), (8)0400000000000000000000
+PASS    BEW, $
+        END, START
