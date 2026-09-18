@@ -4256,6 +4256,36 @@ hand vectors alone. "Enables" notes the dependency chain.
        through an index register. The whole address-modification path
        for branch targets was unexercised.
 
+   FOURTH CAMPAIGN: 18/20, with both ZM mutations now caught in 2.5
+   minutes by the program written for them. Three addressing/counting
+   mutations added, chosen where the manual states an EXACT BIT
+   POSITION, which is where an off-by-a-power-of-two hides. Two were
+   caught at once -- Count-and-Branch's H adding a word instead of a
+   half-word by I-Box 1's pp.43-51 span, and a VFL length of 0 meaning
+   0 instead of 64 by the smoke test.
+
+   THE THIRD SURVIVED, AND THE STRUCTURAL LESSON IS SHARPER THAN THE
+   GAP. effAddr24 always adding -- ignoring the index value's SIGN --
+   survived the whole suite: not one program in 160+ indexes with a
+   NEGATIVE value. Index words with negative values are everywhere in
+   the suite, but as DATA; none was being used as a MODIFIER.
+
+   THIS IS NOT THE HELPER CLOSED BY branch_index_modified.strap. That
+   one closed effAddr19, the 19-bit half-word-address helper the
+   branches use. effAddr24 is the BIT-address helper behind VFL,
+   connectives, Store Zero, Refill and Branch-on-Bit, and it keeps its
+   OWN copy of the sign test. Closing one said nothing about the other:
+   two helpers, two mutations, two tests. A single test called "index
+   modification works" would have looked like coverage of both, and
+   only the campaign distinguished them.
+
+   That is the same shape as SIC's AD-and-store pair: WHEN TWO CODE
+   PATHS IMPLEMENT THE SAME RULE INDEPENDENTLY, ONE TEST WITNESSES ONE
+   PATH. Worth checking for a second copy whenever a rule is closed.
+   programs/index_negative_modifier.strap reaches effAddr24 through
+   Branch-on-Bit, with a decoy word on the far side that must stay
+   zero; the mutation halts at 003302.40.
+
    THIRD CAMPAIGN pushed into FP and VFL, where most of the model's
    complexity lives and where jb_af1c -- the most heavily transcribed
    tape -- is the only driver: 14/17. Every REGRESSION mutation whose

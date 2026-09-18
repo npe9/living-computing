@@ -170,6 +170,28 @@ MUTATIONS = [
      "Count-type immediates take the bottom 18 bits of the address field"
      " instead of the top 18 (p.25)."),
 
+    # ADDRESSING AND COUNTING.  Rules stated by the manual as exact bit
+    # positions, which is where an off-by-a-power-of-two hides.
+    ("cb-half-adds-a-word", "bsv/StretchExecute.bsv",
+     "                          2'b01: 32;",
+     "                          2'b01: 64;",
+     "Count-and-Branch H adds a WORD where p.41 says a half-word -- 'add"
+     " one in bit position 18', which is 32 bits of bit address, not 64."),
+
+    ("effaddr-ignores-index-sign", "bsv/StretchExecute.bsv",
+     "    return (x.sign == 1) ? (raw - x.addr) : (raw + x.addr);",
+     "    return raw + x.addr;",
+     "Address modification always ADDS, ignoring the index value's sign;"
+     " p.20-21 says the SIGNED value field is added.  Closed by"
+     " programs/index_negative_modifier.strap -- note effAddr19 keeps a"
+     " SEPARATE copy of the sign test, closed by branch_index_modified."),
+
+    ("vfl-length-zero-is-zero", "bsv/StretchExecute.bsv",
+     "        Bit#(7) len_ = effLength(vi.a.length);",
+     "        Bit#(7) len_ = zeroExtend(vi.a.length);",
+     "A VFL length field of 0 means 0 bits instead of 64 (the LENGTH"
+     " field's documented '0 means 64' convention)."),
+
     ("branch-target-unmodified", "bsv/StretchExecute.bsv",
      "        o.target = effAddr19(st, bm.addr, bm.idx);",
      "        o.target = zeroExtend(bm.addr);",

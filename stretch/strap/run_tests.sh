@@ -469,6 +469,29 @@ run "Branch target modified by an index register" ./run_program.sh programs/bran
 # (8)0.01.  Measured: the mutation now halts at TGT, 002721.00, the
 # deck-style "hang up: the index was ignored".
 
+run "Address modification by a NEGATIVE index value" ./run_program.sh programs/index_negative_modifier.strap StretchNegIdxTb \
+    "PC=3472"          # 003320.00; hand-written, not a listing fact
+# Replacing effAddr24's signed add with an unconditional one -- dropping
+# the index value's SIGN -- survived the whole suite.  effAddr24 is the
+# address-modification helper behind every bit-addressed instruction, so
+# a survivor means not one program in 160+ ever indexes with a NEGATIVE
+# value.  Index words with negative values are everywhere in the suite;
+# none was being used as a MODIFIER.
+#
+# NOT THE SAME GAP as the branch test above.  That one closed
+# effAddr19, the 19-bit half-word helper the branches use, and
+# effAddr19 keeps its OWN copy of the sign test.  Closing one said
+# nothing about the other: two helpers, two mutations, two tests.  A
+# single "index modification works" test would have looked like
+# coverage of both.
+#
+# p.20-21: the SIGNED value field is added to the address field.  SCR's
+# bit 0 is set and the BZB addresses SCR2 -- one word ABOVE it --
+# modified by an index one word NEGATIVE, so the effective address comes
+# back to SCR.  With the sign ignored it runs the other way to DUMMY,
+# whose bit is zero; BZB branches when the bit is off, so the wrong
+# address hangs.  Measured: the mutation halts at 003302.40.
+
 run "Mask register fixed and writable fields (word 12)" ./run_program.sh programs/mask_register_fields.strap StretchMaskTb \
     "PC=3229"          # 003135.40; hand-written, not a listing fact
 # A FIX WHOSE OWN COMMENT SAID NO TEST WOULD NOTICE IT.

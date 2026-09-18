@@ -1,0 +1,49 @@
+! Address modification by a NEGATIVE index value.
+!
+! HOW THIS WAS FOUND.  mutation_score.py replaced effAddr24's
+!
+!     return (x.sign == 1) ? (raw - x.addr) : (raw + x.addr);
+!
+! with an unconditional add -- dropping the index value's SIGN -- and it
+! survived the whole suite.  effAddr24 is the address-modification
+! helper behind every bit-addressed instruction in the model, so a
+! survivor means one thing: not one program in 160+ ever indexes with a
+! NEGATIVE value.  Index words with negative values exist all over the
+! suite; none of them is used as a MODIFIER.
+!
+! NOT THE SAME GAP as branch_index_modified.strap.  That one closed
+! effAddr19, the 19-bit half-word-address helper the branches use, and
+! effAddr19 keeps its own copy of the sign test.  Closing one said
+! nothing about the other -- two helpers, two tests.  This is the
+! bit-address side, reached here through BRANCH ON BIT.
+!
+! THE RULE, Reference Manual p.20-21 "Address Modification": the SIGNED
+! value field of the index register is added to the instruction's
+! address field, and "the carry out of the top bit is ignored".
+!
+! THE SHAPE.  SCR's bit 0 is set, and the BZB addresses SCR2 -- one word
+! ABOVE it -- modified by an index whose value is one word NEGATIVE, so
+! the effective address comes back to SCR.  With the sign ignored the
+! address runs the other way, to DUMMY, whose bit 0 is zero.  BZB
+! branches when the bit is OFF, so the wrong address hangs and the right
+! one falls through.  DUMMY exists only to be the wrong answer, and it
+! must stay zero.
+!
+! WEAKER STANDARD, STATED: hand-written from p.20-21, not transcribed.
+
+        SLC, (8)3300.0
+START   BB1, SCR, $+1.0              ! set SCR bit 0 to one
+        BZB, SCR, $                  ! hang up if that did not take
+        LX, $1, WMINUSW              ! index value = one word, NEGATIVE
+        BZB, SCR2($1), $             ! SCR2 - one word = SCR, whose bit is 1,
+                                     !   so this must NOT branch.  With the
+                                     !   sign ignored it addresses DUMMY,
+                                     !   whose bit is 0, and hangs here.
+        B, PASS
+!
+SCR     DD(BU,64), 0                 ! the right answer; bit 0 gets set
+SCR2    DD(BU,64), 0                 ! the unmodified address
+DUMMY   DD(BU,64), 0                 ! the wrong answer: must stay zero
+WMINUSW XW, -(8)1.0, 0, 0, 0         ! value 64 bits = one word, sign 1
+PASS    BEW, $
+        END, START
