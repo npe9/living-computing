@@ -73,15 +73,18 @@ UNIMPLEMENTED = {
 # IMPLEMENTED BUT UNEXERCISED -- the model has real arms for these and
 # nothing drives them.  This is the actionable list: each is a test
 # someone could write today.
-UNEXERCISED = {
-    "RDSEOP", "CTLSEOP",                  # I/O Suppress-End-Of-Op forms
-    # BZB1/BZBN/BZBZ were here and are now driven by
-    # programs/bb_branch_if_off.strap.
-    #
-    # WSEOP and RELSEOP were here too, WRONGLY: io_reader_printer.strap
-    # drives both, spelling them W(SEOP) and REL(SEOP).  See
-    # used_mnemonics() -- the audit was counting only the base mnemonic.
-}
+# EMPTY.  Every operation STRAP can emit that the model implements is now
+# driven by at least one program.  What is left unused is exactly the
+# unimplemented set above.  How the list emptied, in order:
+#   BZB1/BZBN/BZBZ -> programs/bb_branch_if_off.strap
+#   WSEOP/RELSEOP  -> never actually missing; io_reader_printer.strap
+#                     drives both, spelling them W(SEOP) and REL(SEOP),
+#                     and the audit was counting only the base mnemonic
+#                     (see used_mnemonics)
+#   RDSEOP/CTLSEOP -> programs/io_tape.strap, steps 10-11
+# The "reference, not discrimination" caveat still applies: this says
+# nothing is untouched, not that anything is well tested.
+UNEXERCISED = set()
 KNOWN_GAP = UNIMPLEMENTED | UNEXERCISED
 
 

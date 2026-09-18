@@ -4231,8 +4231,31 @@ hand vectors alone. "Enables" notes the dependency chain.
    not exist. THE RULE, now in the script's header: before writing a
    test for anything an audit names, GREP FOR THE OTHER SPELLING.
 
-   That leaves RDSEOP and CTLSEOP -- genuinely unused, both spellings
-   checked.
+   RDSEOP AND CTLSEOP are now driven too, by io_tape.strap steps 10-11,
+   and the audit's actionable list is EMPTY: every operation STRAP can
+   emit that the model implements is driven by some program, and what
+   remains unused is exactly the unimplemented set.
+
+   ORDER WAS THE WHOLE TRICK, and it is the same trick as AD's two
+   triggers. CTL reads the CHANNEL's existing control word rather than
+   adopting a fresh one from storage, so its eop must be 0 going in --
+   and only a preceding SEOP operation can leave it that way. RD(SEOP)
+   adopts CTLW7 wholesale (eop=0) and completes without setting eop;
+   CTL(SEOP) REWIND then reads that word back and must write it out
+   untouched, so CCWL must equal CCWK bit for bit. io_reader_printer
+   had already discovered this shape, putting a W(SEOP) before its
+   REL(SEOP) for exactly the same reason.
+
+   TWO INJECTIONS, AND THE SECOND IS WHY BOTH CHECKS EXIST:
+
+     RD ignores its SEOP flag  -> CCWK fails, and CCWL with it, since
+                                  CCWL inherits the same control word
+     CTL ignores its SEOP flag -> CCWL fails ALONE, CCWK still passing
+
+   The difference is the single EOP bit each time, 0x1662.. against
+   0x1660... Without CCWL a CTL that ignored SEOP would be invisible --
+   which is precisely the bug REL(SEOP) was once found to have, caught
+   then by review rather than by a test.
 
    A CLAIM OF MINE THAT THE INJECTION CAUGHT. I wrote in the program
    header that a model computing XVZ as "not XVGZ" would pass the first

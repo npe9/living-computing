@@ -78,8 +78,9 @@ def main():
     block4 = word_addr(prog, "BLOCK4")
     src_addr = word_addr(prog, "SRC")
     dest_ee = word_addr(prog, "DEST_EE")
-    ctlw = {n: word_addr(prog, f"CTLW{n}") for n in range(1, 7)}
-    ccw = {c: word_addr(prog, f"CCW{c}") for c in "ABCDEFGHIJ"}
+    ctlw = {n: word_addr(prog, f"CTLW{n}") for n in range(1, 8)}
+    ccw = {c: word_addr(prog, f"CCW{c}") for c in "ABCDEFGHIJKL"}
+    block5 = word_addr(prog, "BLOCK5")
 
     # Patch the six input control words with their real dataAddr/count
     # -- see io_tape.strap's header for what each step is testing.
@@ -89,6 +90,7 @@ def main():
     prog.words[ctlw[4]] = pack_cw(dataAddr=block3, count=2)
     prog.words[ctlw[5]] = pack_cw(dataAddr=block4, count=1)
     prog.words[ctlw[6]] = pack_cw(dataAddr=dest_ee, count=20)
+    prog.words[ctlw[7]] = pack_cw(dataAddr=block5, count=1)
 
     # Expected control-word values, derived by walking the exact same
     # position transitions io_tape.strap's header comment describes.
@@ -129,6 +131,18 @@ def main():
     exp_ccwJ = pack_cw(dataAddr=dest_ee + 16, unitReady=1, ee=1, eop=1, count=4)
     # position: 0 -> 16 (exhausted)
 
+    # Steps 10-11, the SEOP forms.  The plain REWIND before them puts
+    # the tape at 0 and leaves eop=1 on the channel; RD(SEOP) then ADOPTS
+    # ctlw[7] wholesale (eop=0) and, on completion, sets dataAddr and
+    # count but NOT eop -- StretchCore's "if (!x.suppressEop) cw.eop = 1".
+    exp_ccwK = pack_cw(dataAddr=block5 + 1, unitReady=1, eop=0, count=0)
+    # CTL(SEOP) REWIND reads the CHANNEL's control word -- the one CCWK
+    # just captured -- and writes it back with eop untouched, so the two
+    # must be bit-for-bit identical.  A CTL that ignored its SEOP flag
+    # would show eop=1 here and nowhere else, which is exactly the bug
+    # REL(SEOP) was once found to have in io_reader_printer.strap.
+    exp_ccwL = exp_ccwK
+
     checks = [
         ("BLOCK1_0", str(block1), TAPE_IMAGE[0]),
         ("BLOCK1_1", str(block1 + 1), TAPE_IMAGE[1]),
@@ -161,6 +175,8 @@ def main():
         ("CCWH_after_REWIND2", str(ccw["H"]), exp_ccwH),
         ("CCWI_after_BACKSPACE_at_load_point_EPGK", str(ccw["I"]), exp_ccwI),
         ("CCWJ_after_EE", str(ccw["J"]), exp_ccwJ),
+        ("CCWK_after_RDSEOP", str(ccw["K"]), exp_ccwK),
+        ("CCWL_after_CTLSEOP", str(ccw["L"]), exp_ccwL),
         # DEST_EE spot checks: first 8 words are the tape's original
         # content (never overwritten); words 8-9 are what the W step
         # wrote (999, 888) -- persisting through two REWINDs proves

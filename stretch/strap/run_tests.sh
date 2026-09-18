@@ -2347,6 +2347,24 @@ run "Input-Output (reader/printer)" ./run_io_test.sh StretchIoReaderPrinterTb
 # the tape's own (deliberately small) capacity, not the reader/
 # printer's. Expected values derived in gen_tape_tb.py by walking the
 # same position transitions io_tape.strap's own header documents.
+#
+# STEPS 10-11 close the opcode audit's list: RD(SEOP) and CTL(SEOP),
+# the last two operations the model implemented and nothing drove.  A
+# SEOP form must not set the control word's EOP bit on completion
+# (p.121).  ORDER IS THE WHOLE TRICK: CTL reads the CHANNEL's existing
+# control word instead of adopting a fresh one from storage, so its eop
+# has to be 0 going in, and only a preceding SEOP operation leaves it
+# that way -- the same shape as io_reader_printer's W(SEOP) before its
+# REL(SEOP).  RD(SEOP) adopts CTLW7 wholesale and finishes without
+# setting eop; CTL(SEOP) REWIND then reads that word back and must
+# write it out untouched, so CCWL must equal CCWK bit for bit.
+#
+# Two injections, and the second is why BOTH checks exist:
+#   RD ignores its SEOP flag  -> CCWK fails (and CCWL with it, since
+#                                CCWL inherits the same control word)
+#   CTL ignores its SEOP flag -> CCWL fails ALONE, CCWK still passing
+# The difference in each case is the single EOP bit, 0x1662.. against
+# 0x1660...  Without CCWL, a CTL that ignored SEOP would be invisible.
 run "Input-Output (tape)" ./run_tape_test.sh StretchIoTapeTb
 
 # -- cleanup: generated .bsv testbenches and Bluesim build products are

@@ -94,6 +94,21 @@ START   LVI, $1, 34      !X1 = tape channel 34: LVI puts it in value bits 0-18, 
                             !EE+EOP with count field showing 4 remaining
         CCW, 0($1), CCWJ
 
+!   10-11. RD(SEOP) and CTL(SEOP) -- the last two operations the opcode
+!   coverage audit found implemented and undriven.  A SEOP form must NOT
+!   set the control word's EOP status bit on completion (p.121).  Order
+!   matters: CTL reads the CHANNEL's existing control word rather than
+!   adopting a fresh one from storage, so its eop has to be 0 going in,
+!   and only a preceding SEOP operation can leave it that way.  That is
+!   the same shape as io_reader_printer.strap's W(SEOP) before its
+!   REL(SEOP), and for the same reason.
+        CTL, 0($1), 94     !plain REWIND first, for a known position 0
+        RD(SEOP), 0($1), CTLW7 !RDSEOP: 1 word, position 0->1, EOP suppressed
+        CCW, 0($1), CCWK   !expect eop=0 -- a plain RD here would give 1
+        CTL(SEOP), 0($1), 94 !REWIND SEOP: reads the control word CCWK just
+                            !captured and must leave it EXACTLY as it is
+        CCW, 0($1), CCWL   !expect CCWL == CCWK, bit for bit
+
         BEW, $
         CNOP               !word-align the data section below (full-word
                             !I/O instructions are half-word aligned, so
@@ -106,6 +121,7 @@ CTLW3   DD(BU,64), 0        !patched: dataAddr=SRC, count=2
 CTLW4   DD(BU,64), 0        !patched: dataAddr=BLOCK3, count=2
 CTLW5   DD(BU,64), 0        !patched: dataAddr=BLOCK4, count=1
 CTLW6   DD(BU,64), 0        !patched: dataAddr=DEST_EE, count=20
+CTLW7   DD(BU,64), 0        !patched: dataAddr=BLOCK5, count=1
 CCWA    DD(BU,64), 0
 CCWB    DD(BU,64), 0
 CCWC    DD(BU,64), 0
@@ -116,10 +132,13 @@ CCWG    DD(BU,64), 0
 CCWH    DD(BU,64), 0
 CCWI    DD(BU,64), 0
 CCWJ    DD(BU,64), 0
+CCWK    DD(BU,64), 0
+CCWL    DD(BU,64), 0
 BLOCK1  DD(BU,64), 0,0,0,0
 BLOCK2  DD(BU,64), 0,0,0,0
 BLOCK3  DD(BU,64), 0,0
 BLOCK4  DD(BU,64), 0
+BLOCK5  DD(BU,64), 0
 SRC     DD(BU,64), 999,888
 DEST_EE DD(BU,64), 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
 
