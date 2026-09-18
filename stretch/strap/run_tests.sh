@@ -203,6 +203,35 @@ run "B(IND) XL/XE/XH blocks (ja_ax1a, encoding)" python3 verify_ibox1_bind_ind_l
 run "B(IND) XL/XE/XH blocks (indicator register written by SV)" ./run_program.sh programs/ibox1_bind_ind.strap StretchIbox1BindIndTb \
     "PC=4240"          # 004110.00, the half-word after IBIN55's second NOP
 
+run "Indicator coverage audit (ratchet)" python3 audit_indicator_coverage.py
+# Which indicators does the model WRITE that no program ever NAMES?
+# Static, one second, and it runs as a ratchet: a new indicator write
+# with no program looking at it fails here instead of landing silently.
+#
+# It exists because of the hole above.  A model that set all five index
+# result indicators unconditionally to 1 passed 300+ sections, since
+# every check everywhere branched IF ON.  That was found by attacking a
+# green suite; this looks for the same shape across all 56 indicators at
+# once.
+#
+# IT IS A REFERENCE AUDIT, NOT A DISCRIMINATION AUDIT, and its header
+# says so: it answers "does any program mention this", never "would any
+# program notice if it were wrong".  XF was named by several programs
+# and pinned by none until ibox1_bind.strap.
+#
+# It needed three corrections before its output meant anything, each a
+# mechanism programs use that I had not accounted for: BRANCH ON BIT
+# against word 11 (ZM, via F214D6's BZB,11.33), the $<IND> symbol as an
+# operand (NM, via F219's BB1,$NM), and stripping comments.  The first
+# version reported 29 gaps, most of them its own blind spots.  An audit
+# that has not been audited is a claim, not a measurement.
+#
+# Current gap, both real and both documented in KNOWN_GAP: OP
+# ("Operation Code Invalid", 24 setOpInvalid sites -- README claims
+# unexecuted instructions set it and no-op, and neither half is
+# checked) and AD ("Address Invalid", set on a branch into special
+# storage and on an uninstalled FP operand address).
+
 run "Index result indicators: OFF states and clearing" ./run_program.sh programs/index_indicators_off.strap StretchIndexIndOffTb \
     "PC=2330"          # 002204.40; hand-written, so this is not a listing fact --
                        # if the program's layout changes, update it deliberately

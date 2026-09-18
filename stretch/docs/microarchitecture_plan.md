@@ -4026,6 +4026,48 @@ hand vectors alone. "Enables" notes the dependency chain.
    exactly the injection that passes ibox1_bind.strap and
    index_result_indicators.strap, so this program is its control.
 
+   THAT HOLE PROMPTED A SEARCH FOR THE SAME SHAPE ELSEWHERE, and
+   strap/audit_indicator_coverage.py is it: which indicators does the
+   model WRITE that no program ever NAMES? Static, one second, wired
+   into the suite as a RATCHET so a new indicator write with nothing
+   looking at it fails rather than landing silently.
+
+   THE AUDIT NEEDED AUDITING, THREE TIMES, and that is the part worth
+   keeping. Version one reported 29 gaps. Nearly all were its own blind
+   spots -- mechanisms programs use that I had not accounted for:
+
+     - ZM came back untested, and this document already said F214D6 was
+       its first test anywhere. Programs test indicators with BRANCH ON
+       BIT against word 11 (BZB, 11.33, $+2.0), the indicator register
+       as ordinary storage, not only with B<ind> mnemonics.
+     - NM came back untested, and F219 turns noisy mode on with
+       BB1, $NM, $+1.0. The $<IND> symbol resolves to word 11, that bit.
+     - Comments name indicators constantly, so prose counted as
+       coverage until they were stripped.
+
+   Each correction shrank the list. An audit that has not been audited
+   is a claim, not a measurement -- and the thing that caught all three
+   was checking its output against what this document and the programs
+   already recorded, rather than believing the tool.
+
+   WHAT SURVIVED: exactly two, and both are real.
+
+     OP (bit 15, "Operation Code Invalid") -- setOpInvalid, 24 sites.
+       bsv/README.md claims decoded-but-unexecuted instructions "set
+       indicator 15, OP, and no-op, matching real-machine behavior for
+       a suppressed instruction". NEITHER HALF of that claim is checked
+       anywhere.
+     AD (bit 16, "Address Invalid") -- set on a branch whose target is
+       inside special storage (ha < 32, StretchExecute ~2900) and on an
+       FP operand address that is not installed (~3003). Both reachable,
+       neither exercised.
+
+   Those are the next two things to pin. Note what the audit is NOT: it
+   is a REFERENCE audit, not a discrimination audit. It answers "does
+   any program mention this indicator", never "would any program notice
+   if it were wrong" -- XF was mentioned by several and pinned by none
+   until ibox1_bind.strap. A hit means look closer, not covered.
+
    A CLAIM OF MINE THAT THE INJECTION CAUGHT. I wrote in the program
    header that a model computing XVZ as "not XVGZ" would pass the first
    three groups and fail in the XVZ group. It is false and the
