@@ -1,0 +1,61 @@
+! AD by the OTHER route: SIC storing below 19-bit address 16.0.
+!
+! WHY A SECOND PROGRAM AND NOT MORE LINES IN THE FIRST.  AD has two
+! triggers in the model, and op_ad_indicators.strap only reaches one of
+! them (a floating-point operand address beyond the installed core).
+! The other is here.  It needs its own program because AD IS SET-ONLY:
+! nothing in the model clears it, and BRANCH ON BIT cannot either --
+! Reference Manual p.41 lets BB "test and change the contents of
+! positions 20-63 of the indicator register", and AD is bit 16, inside
+! the read-only 0-19 region.  So a second AD case appended to the first
+! program would find AD already on and its on-check would prove
+! nothing.  Starting from a fresh program is what makes the check
+! discriminating -- the same reason the off-checks come first there.
+!
+! THE RULE, Reference Manual p.42, quoted in StretchExecute's SIC arm:
+! "The instruction counter may be stored in any available location with
+! 19-bit address 16.0 or above" -- below that, AD is set and NOTHING IS
+! STORED.  Both halves are checked here.
+!
+! THE ONE-BIT TRICK.  $FT is word 14, the Factor register: below 16.0,
+! freely readable and writable, and with no side effects of its own.
+! Set its bit 0 to one, then aim SIC at it.  SIC stores the instruction
+! counter into bits 0-18 of the target half-word, and the counter here
+! is a small address whose top bit is 0, so a store that actually
+! happened would CLEAR that bit.  One BZB then distinguishes "nothing
+! was stored" from "something was" -- no compare, no second constant.
+!
+! WEAKER STANDARD, STATED: hand-written from the manual, not
+! transcribed.  No deck block found so far aims a SIC below 16.0.
+!
+! BOTH HALVES DISCRIMINATE, measured separately, because one injection
+! could not separate them: the obvious mutation (drop the ha < 32 test)
+! both skips AD and performs the store, so it only proves whichever
+! check comes first.
+!
+!   AD never set (if (ha < 32) -> if (False))    halts 002404.00, the
+!                                                  BZB,$AD,$
+!   AD set but the store happens anyway          halts 002405.00, the
+!     (an extra writeWord inside the AD branch)    BZB,$FT,$
+!
+! AND ONE INJECTION THAT PASSED, which says something about the model
+! rather than about this program.  Relaxing the READ-bail guard from
+! "o.taken && ha >= 32" to "ha >= 0" -- so SIC below 16.0 goes and
+! fetches its target word before discarding it -- changes nothing
+! observable, because the AD branch downstream suppresses the store
+! regardless.  That guard is an optimisation, not a correctness
+! requirement: it avoids a pointless read of a special register.  Worth
+! knowing before anyone "simplifies" it and expects a test to notice.
+
+        SLC, (8)2400.0
+START   BB, $AD, $                   ! hang up if AD on -- it must start off
+        BB1, $FT, $+1.0              ! set Factor bit 0 to one
+        BZB, $FT, $                  ! hang up if that did not take
+        SIC, $FT                     ! store IC below 16.0 -> AD, no store
+        B, ADSIC                     !   the branch SIC prefixes; taken
+ADSIC   BZB, $AD, $                  ! hang up if AD off
+        BZB, $FT, $                  ! hang up if the bit was cleared:
+                                     !   nothing may have been stored
+        B, PASS
+PASS    BEW, $
+        END, START

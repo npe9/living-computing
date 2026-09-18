@@ -4104,6 +4104,51 @@ hand vectors alone. "Enables" notes the dependency chain.
    known until execute computes it. Left as is, with the message
    documented in run_tests.sh as expected on this path.
 
+   AD's SECOND TRIGGER needed a SECOND PROGRAM, and the reason is worth
+   keeping. programs/ad_sic_indicator.strap covers SIC storing below
+   19-bit address 16.0 -- Reference Manual p.42, "the instruction
+   counter may be stored in any available location with 19-bit address
+   16.0 or above", below which AD is set and NOTHING IS STORED. It
+   cannot live in op_ad_indicators.strap because AD IS SET-ONLY:
+   nothing in the model clears it, and BRANCH ON BIT cannot either --
+   p.41 only lets BB change indicator positions 20-63, and AD is bit
+   16. A second AD case appended to the first program would find AD
+   already on and its on-check would prove nothing. A fresh program is
+   what makes the check discriminating, the same reason the off-checks
+   come first.
+
+   THE ONE-BIT TRICK, reusable: $FT is word 14, the Factor register --
+   below 16.0, freely writable, no side effects. Set its bit 0 with
+   BB1, aim the SIC at it, and since SIC stores the counter into bits
+   0-18 of the target half-word and the counter's top bit is 0 at these
+   addresses, a store that actually happened CLEARS that bit. One BZB
+   then separates "nothing stored" from "something was" -- no compare,
+   no second constant, no expected-value table.
+
+   BOTH HALVES HAD TO BE MEASURED SEPARATELY, because one injection
+   cannot separate them: dropping the ha < 32 test both skips AD AND
+   performs the store, so it only ever proves whichever check comes
+   first. The second needed a mutation that sets AD and stores anyway.
+
+     AD never set                  -> 002404.00, the BZB,$AD,$
+     AD set but the store happens  -> 002405.00, the BZB,$FT,$
+
+   AND ONE INJECTION THAT PASSED, which is a fact about the model, not
+   about the program. Relaxing the READ-bail guard from
+   "o.taken && ha >= 32" to "ha >= 0" -- so a SIC below 16.0 goes and
+   fetches its target word before discarding it -- changes nothing
+   observable, because the AD branch downstream suppresses the store
+   regardless. That guard is an OPTIMISATION, not a correctness
+   requirement: it avoids a pointless read of a special register. Worth
+   recording before someone simplifies it and expects a test to notice.
+
+   THE GENERAL SHAPE, now seen enough times to name it: when one
+   mutation disables two behaviours at once, a single test can only
+   witness the first. Either order the checks so the one you care about
+   comes first, or build a mutation that breaks exactly one. Reporting
+   "the injection fired" without asking WHICH check caught it is how a
+   half-tested pair looks fully tested.
+
    A CLAIM OF MINE THAT THE INJECTION CAUGHT. I wrote in the program
    header that a model computing XVZ as "not XVGZ" would pass the first
    three groups and fail in the XVZ group. It is false and the

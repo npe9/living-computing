@@ -23,6 +23,13 @@
 ! a regression that silently executed a suppressed instruction, or
 ! quietly honoured an address off the end of core, would be caught.
 !
+! ONLY ONE OF AD's TWO TRIGGERS IS HERE.  The other -- SIC storing
+! below 19-bit address 16.0 -- is in ad_sic_indicator.strap, and it has
+! to be a separate program: AD is SET-ONLY (nothing in the model clears
+! it, and BB cannot, since p.41 only lets BB change indicator positions
+! 20-63 and AD is bit 16), so a second AD case appended here would find
+! AD already on and prove nothing.
+!
 ! BOTH POLARITIES, which is the lesson from the index indicators.  A
 ! test that only checked the bits ON would pass a model that set them
 ! always, so each one is checked OFF after an ordinary instruction

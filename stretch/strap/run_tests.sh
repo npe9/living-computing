@@ -272,6 +272,36 @@ run "OP and AD indicators (both polarities)" ./run_program.sh programs/op_ad_ind
 # accumulator is untouched.  The classification cannot know in advance,
 # because AD depends on the effective address.
 
+run "AD by SIC below 16.0 (the other trigger)" ./run_program.sh programs/ad_sic_indicator.strap StretchAdSicTb \
+    "PC=2573"          # 002406.40; hand-written, not a listing fact
+# AD's SECOND trigger, and a separate program on purpose.  AD is
+# SET-ONLY -- nothing in the model clears it, and BRANCH ON BIT cannot,
+# because Reference Manual p.41 only lets BB change indicator positions
+# 20-63 and AD is bit 16.  So appending this case to op_ad_indicators
+# would find AD already on and its check would prove nothing.  A fresh
+# program is what makes the on-check discriminating.
+#
+# The rule, Reference Manual p.42: "the instruction counter may be
+# stored in any available location with 19-bit address 16.0 or above"
+# -- below that AD is set and NOTHING IS STORED.  $FT is word 14, the
+# Factor register: below 16.0, freely writable, no side effects.  Set
+# its bit 0, aim SIC at it, and since SIC stores the counter into bits
+# 0-18 of the target half-word and the counter's top bit is 0 here, a
+# store that actually happened would clear that bit.  One BZB then
+# separates "nothing stored" from "something was", with no compare.
+#
+# BOTH HALVES MEASURED SEPARATELY, because one injection cannot
+# separate them -- dropping the ha < 32 test both skips AD and performs
+# the store, so it only proves whichever check comes first:
+#   AD never set                   -> 002404.00  the BZB,$AD,$
+#   AD set but the store happens   -> 002405.00  the BZB,$FT,$
+#
+# AND ONE INJECTION THAT PASSED, a fact about the model: relaxing the
+# READ-bail guard from "o.taken && ha >= 32" to "ha >= 0", so a SIC
+# below 16.0 fetches its target before discarding it, changes nothing
+# observable -- the AD branch suppresses the store regardless.  That
+# guard is an optimisation, not a correctness requirement.
+
 run "Index result indicators: OFF states and clearing" ./run_program.sh programs/index_indicators_off.strap StretchIndexIndOffTb \
     "PC=2330"          # 002204.40; hand-written, so this is not a listing fact --
                        # if the program's layout changes, update it deliberately
