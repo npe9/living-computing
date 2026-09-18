@@ -364,6 +364,9 @@ endfunction
 // two operations; the index result indicators are not set in these
 // operations") and p.25 for KVI, KVNI and KCI in the same words.  This
 // helper used to set only XL/XE/XH, so all five compares left XF stale.
+// NOW PINNED by strap/programs/cmp_sets_index_flag.strap -- it was not
+// when the fix landed, and mutation_score.py's cmp-leaves-flag survived
+// the whole suite until that program was written.
 function Word64 setIndexCmpIndicatorsF(Word64 ind, IndexWord x, Cmp3 c);
   Word64 i0 = setBit(ind, ind_XF, x.flag);
   Word64 i1 = setBit(i0,  ind_XL, pack(c == CmpLow));

@@ -135,6 +135,39 @@ MUTATIONS = [
      "packIndexWord drops IBM bits 26-27, so an LX/SX round trip rewrites"
      " them -- the bug I-Box 3 routine 1222 (jb_ax3a p.144) once caught."),
 
+    # FP AND VFL INTERNALS.  The first two campaigns probed index,
+    # branch and I/O; most of the model's complexity is in floating
+    # point, and it is driven by jb_af1c, the most heavily transcribed
+    # tape.  These ask whether that transcription discriminates.
+    ("zm-drops-normalized-term", "bsv/StretchFP.bsv",
+     "    r.zm = normalized && zero && (e > -1024);",
+     "    r.zm = zero && (e > -1024);",
+     "MULTIPLY's zero-multiply indicator ignores the normalization"
+     " modifier; p.99 gives ZM the normalized term for * but NOT for *+."),
+
+    ("zm-exponent-bound", "bsv/StretchFP.bsv",
+     "    r.zm = normalized && zero && (e > -1024);",
+     "    r.zm = normalized && zero && (e >= -1024);",
+     "ZM's exponent bound is off by one: p.99 says GREATER THAN -1024."),
+
+    ("noisy-fill-zeros", "bsv/StretchFP.bsv",
+     "      if (noisy) w = w | ((96'b1 << nz) - 1);",
+     "      if (False) w = w | ((96'b1 << nz) - 1);",
+     "Noisy mode stops entering ones on normalization (p.84); F219 turns"
+     " noisy mode on for its whole run."),
+
+    ("lc-takes-index-count", "bsv/StretchExecute.bsv",
+     "                                            count:h[31:14], refill:x.refill};",
+     "                                            count:h[17:0], refill:x.refill};",
+     "LOAD COUNT takes the wrong 18 bits of the addressed half-word;"
+     " p.24 says the count field comes from its TOP 18 bits."),
+
+    ("imm-count-low-bits", "bsv/StretchExecute.bsv",
+     "      Bit#(18) imm18 = ii.imm[18:1];",
+     "      Bit#(18) imm18 = ii.imm[17:0];",
+     "Count-type immediates take the bottom 18 bits of the address field"
+     " instead of the top 18 (p.25)."),
+
     ("branch-target-unmodified", "bsv/StretchExecute.bsv",
      "        o.target = effAddr19(st, bm.addr, bm.idx);",
      "        o.target = zeroExtend(bm.addr);",
