@@ -256,6 +256,27 @@ run "BR (Branch Relative) is unimplemented, and says so" ./run_program.sh progra
 # When someone implements Branch Relative, THIS is the program that
 # fails, and the comment in the source is what they need.
 
+run "BB branch-if-off variants (BZB1, BZBN, BZBZ)" ./run_program.sh programs/bb_branch_if_off.strap StretchBbOffTb \
+    "PC=2834"          # 002611.00; hand-written, not a listing fact
+# Three of the seven implemented-but-undriven operations the opcode
+# audit named.  bb_branch_on_bit and bb_indicator drive the branch-IF-ON
+# half of the family (BB, BB1, BBZ, BBN); the branch-IF-OFF forms that
+# also CHANGE the bit had no coverage at all.
+#
+# THE RULE IT REALLY PINS is the one that is easy to get wrong -- p.41:
+# "WHETHER OR NOT the branch was taken, the tested bit is set".  Step 2
+# is that case alone: the bit is ON, so a BZBN does not branch, and it
+# must still be inverted.
+#
+# Three injections, three distinct halts, all predicted:
+#   modifier applied only when the branch is taken
+#                              -> 002603.40  the BB,SCR,$ after BZBN,
+#                                            i.e. exactly the p.41 case
+#   branch polarity inverted   -> 002601.00  "BZB1 should have branched"
+#   set-to-one writes zero     -> 002601.40  T1's "hang up if bit off"
+#
+# Remaining from that list: the four I/O Suppress-End-Of-Op forms.
+
 # Which indicators does the model WRITE that no program ever NAMES?
 # Static, one second, and it runs as a ratchet: a new indicator write
 # with no program looking at it fails here instead of landing silently.

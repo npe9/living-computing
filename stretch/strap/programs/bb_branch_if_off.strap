@@ -1,0 +1,51 @@
+! The three BRANCH-ON-BIT variants nothing drove: BZB1, BZBN, BZBZ.
+!
+! HOW THEY WERE FOUND.  audit_opcode_coverage.py screens every mnemonic
+! STRAP can emit against every program.  Of the 22 unused, 15 are
+! documented scope limits that reach setOpInvalid; seven are IMPLEMENTED
+! and simply undriven.  These are three of the seven.
+!
+! WHAT IS NEW.  bb_branch_on_bit.strap and bb_indicator.strap drive the
+! branch-IF-ON half of the family (BB, BB1, BBZ, BBN).  The branch-IF-OFF
+! half with a modifier -- BZB1, BZBN, BZBZ -- had no coverage at all.
+! BZB itself is used widely; it is the three that also CHANGE the bit
+! that were missing.
+!
+! THE MODIFIER TABLE, Reference Manual p.41 and the X22-6533 pocket card
+! ("Branch when bit tested matches"): instruction bits 60-61 give
+! 00 unchanged, 01 set to zero, 10 inverted, 11 set to one, and bit 62
+! selects branch-if-on (BB*) or branch-if-off (BZB*).
+!
+! THE RULE THIS BLOCK REALLY PINS is the one that is easy to get wrong:
+! "WHETHER OR NOT the branch was taken, the tested bit is set" (p.41).
+! Step 2 below is that case on its own -- the bit is ON, so a BZBN does
+! NOT branch, and it must still be inverted.  A model that only applied
+! the modifier on the taken path would pass steps 1 and 3 and fail step
+! 2.
+!
+! WEAKER STANDARD, STATED: hand-written from p.41, not transcribed.  No
+! deck block found so far uses a branch-if-off form with a modifier.
+
+        SLC, (8)2600.0
+!
+! ---- step 1: bit off -> BZB1 branches, and sets the bit to one ------
+START   BZB1, SCR, T1                ! off: branch taken, bit := 1
+        BEW, $                       ! hang up: BZB1 should have branched
+T1      BZB, SCR, $                  ! hang up if bit off -- it must be 1 now
+!
+! ---- step 2: bit on -> BZBN does NOT branch, and still inverts ------
+        BZBN, SCR, NOBR              ! on: no branch, but bit := inverted
+        BB, SCR, $                   ! hang up if bit on -- invert must have
+                                     !   happened on the NOT-taken path
+!
+! ---- step 3: bit off -> BZBZ branches, and leaves it zero -----------
+        BZBZ, SCR, T3                ! off: branch taken, bit := 0
+        BEW, $                       ! hang up: BZBZ should have branched
+T3      BB, SCR, $                   ! hang up if bit on -- must still be 0
+        B, PASS
+!
+NOBR    BEW, $                       ! hang up: BZBN branched on a bit that
+                                     !   was ON, and BZB* branches if OFF
+SCR     DD(BU,64,8), 0               ! the scratch word; bit 0 is the target
+PASS    BEW, $
+        END, START

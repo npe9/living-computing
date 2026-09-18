@@ -4198,13 +4198,41 @@ hand vectors alone. "Enables" notes the dependency chain.
    the indicators, through the same word-11 fold, which several
    hand-written programs rely on and none had established.
 
-   OF THE 22 UNUSED MNEMONICS, 15 are documented scope limits reaching
+   OF THE UNUSED MNEMONICS, 15 are documented scope limits reaching
    setOpInvalid -- only five VFL integer arms exist (L, ST, +, M+, K),
-   which accounts for the ten compare/convert codes -- and SEVEN are
-   implemented and simply undriven: BZB1/BZBN/BZBZ (branch-if-off with
-   set-one / invert / set-zero) and the four I/O Suppress-End-Of-Op
-   forms. That is the actionable list, and each is a test someone could
-   write today.
+   which accounts for the ten compare/convert codes. The rest were the
+   actionable list, and it has shrunk twice since.
+
+   BZB1/BZBN/BZBZ are now driven by programs/bb_branch_if_off.strap.
+   bb_branch_on_bit and bb_indicator drive the branch-IF-ON half of the
+   family; the branch-IF-OFF forms that also CHANGE the bit had no
+   coverage at all. The rule the block really pins is p.41's "WHETHER
+   OR NOT the branch was taken, the tested bit is set" -- step 2 is
+   that case alone, a BZBN on a bit that is ON, which does not branch
+   and must still invert. Three injections, three distinct halts, all
+   predicted: modifier applied only on the taken path -> 002603.40
+   (exactly that step); branch polarity inverted -> 002601.00;
+   set-to-one writing zero -> 002601.40.
+
+   WSEOP AND RELSEOP WERE NEVER UNEXERCISED -- the audit was wrong, for
+   the fourth time, and in a new way. io_reader_printer.strap drives
+   both and has since it was written; it spells them W(SEOP) and
+   REL(SEOP). An I/O operation has two spellings that assemble
+   identically (strap_asm: `lookup = op + 'SEOP'` when the modifier is
+   present and the base is an I/O op), and the audit counted only the
+   base mnemonic.
+
+   THE PATTERN IS NOW UNMISTAKABLE. Using the assembler's PARSER is not
+   the same as using the assembler's NAME RESOLUTION, and every one of
+   these four misses was the audit not knowing a way the thing could be
+   written: branch-on-bit against word 11 (ZM), the $<IND> symbol (NM),
+   comments, and now modifier spellings. What caught all four was
+   checking a suspicious result against the program that supposedly did
+   not exist. THE RULE, now in the script's header: before writing a
+   test for anything an audit names, GREP FOR THE OTHER SPELLING.
+
+   That leaves RDSEOP and CTLSEOP -- genuinely unused, both spellings
+   checked.
 
    A CLAIM OF MINE THAT THE INJECTION CAUGHT. I wrote in the program
    header that a model computing XVZ as "not XVGZ" would pass the first

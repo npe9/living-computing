@@ -34,6 +34,15 @@ neither the assembler nor any program knows about is invisible to it.
 The parse comes from strap_asm.iter_statements, the assembler's own
 statement parser, deliberately: the indicator audit needed three
 corrections because it re-invented parsing that already existed.
+
+AND IT STILL NEEDED A FOURTH.  Using the assembler's parser is not the
+same as using the assembler's NAME RESOLUTION.  An I/O operation has two
+spellings that assemble identically -- "W(SEOP)" and "WSEOP" -- and
+programs use the modifier form, so the first version reported WSEOP and
+RELSEOP as unexercised while io_reader_printer.strap was driving both.
+Checking a suspicious result against the program that supposedly does
+not exist is what caught it, again.  Before writing a test for anything
+this names, GREP FOR THE OTHER SPELLING.
 """
 import glob, os, re, sys
 
@@ -65,9 +74,13 @@ UNIMPLEMENTED = {
 # nothing drives them.  This is the actionable list: each is a test
 # someone could write today.
 UNEXERCISED = {
-    "BZB1", "BZBN", "BZBZ",               # BB family: branch-if-off with
-                                          #   set-to-one / invert / set-to-zero
-    "RDSEOP", "WSEOP", "CTLSEOP", "RELSEOP",  # I/O Suppress-End-Of-Op forms
+    "RDSEOP", "CTLSEOP",                  # I/O Suppress-End-Of-Op forms
+    # BZB1/BZBN/BZBZ were here and are now driven by
+    # programs/bb_branch_if_off.strap.
+    #
+    # WSEOP and RELSEOP were here too, WRONGLY: io_reader_printer.strap
+    # drives both, spelling them W(SEOP) and REL(SEOP).  See
+    # used_mnemonics() -- the audit was counting only the base mnemonic.
 }
 KNOWN_GAP = UNIMPLEMENTED | UNEXERCISED
 
@@ -80,12 +93,30 @@ def known_mnemonics():
     return out
 
 
+IO_BASE_OPS = {"RD", "W", "CTL", "LOC", "REL"}
+
+
 def used_mnemonics():
+    """{MNEMONIC: {files}} -- every operation any program actually emits.
+
+    An I/O operation has TWO spellings that assemble identically:
+    "W(SEOP)" and "WSEOP" (strap_asm.py: `lookup = op + 'SEOP' if
+    seop_mod and op in IO_BASE_OPS`).  Programs use the modifier form, so
+    counting only `st.op` reported WSEOP and RELSEOP as unexercised while
+    io_reader_printer.strap was driving both -- the fourth blind spot
+    this pair of audits has had, after branch-on-bit, $<IND> symbols and
+    comments.  Normalising here mirrors what the assembler does.
+    """
     out = {}
     for f in sorted(glob.glob(os.path.join(HERE, 'programs', '*.strap'))):
         for st in iter_statements(open(f).read()):
-            if st.op:
-                out.setdefault(st.op.upper(), set()).add(os.path.basename(f))
+            if not st.op:
+                continue
+            op = st.op.upper()
+            seop = bool(st.mods) and st.mods[0].strip().upper() == 'SEOP'
+            if seop and op in IO_BASE_OPS:
+                op += 'SEOP'
+            out.setdefault(op, set()).add(os.path.basename(f))
     return out
 
 
