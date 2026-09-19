@@ -124,6 +124,11 @@ Triage survivors into *missing test* / *equivalent mutant* / *expected*
 before writing anything. `ad-bound-off-by-one` is the one documented
 expected survivor.
 
+Last run 2026-09-19, after the boundary registers: **29/30**, survivor
+`ad-bound-off-by-one` as expected. `prot-carve-out-as-or` was caught in
+2.2 min by its own section — a catch where it was aimed, not a near
+miss.
+
 `python3 strap/line_addresses.py programs/X.strap` prints the address
 of every instruction line, in the listings' octal convention. Every
 injection address a new test records should come from it, and it will

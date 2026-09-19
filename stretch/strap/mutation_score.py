@@ -26,6 +26,22 @@ observable behaviour survives by definition and means nothing.  Each
 entry below therefore records WHAT WOULD GO WRONG in the real machine,
 so a survivor can be triaged as "missing test" versus "unobservable".
 
+LATEST CAMPAIGN, 2026-09-19, after the address boundary registers:
+29/30, and the only survivor is still ad-bound-off-by-one, the expected
+one.  The table has tripled since the second campaign and the score has
+not moved off "everything but the documented survivor", which is the
+result to want: new mutations are being added for new subsystems rather
+than to pad a number.
+
+prot-carve-out-as-or was caught in 2.2 minutes BY ITS OWN SECTION,
+"Storage protection: the address boundary registers".  That is the
+reading the project cares about.  A catch by some unrelated section
+would have meant some other test is accidentally sensitive to whether
+the special registers 4-31 signal -- a near miss, and a reason to
+distrust both tests.  Caught where it was aimed, it says the word-4
+store in storage_protection_boundary.strap is doing the job it was
+written for.
+
 SECOND CAMPAIGN, after closing the three survivors: 9/10, and the one
 survivor is the EXPECTED one -- ad-bound-off-by-one, the SIC read-bail
 guard already shown to be an optimisation rather than a correctness
