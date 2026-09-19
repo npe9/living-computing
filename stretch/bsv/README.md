@@ -152,21 +152,23 @@ operation codes execute; see "Executed" below.
   (encoding field-by-field vs the decoder's bit positions).
 - **Count and Branch / Count, Branch and Refill**.
 - **Branch on Indicator**.
-- **Unconditional branching** (`B BE BD BEW NOP`) — `BE`/`BD`/`BEW`
+- **Unconditional branching** (`B BR BE BD BEW NOP`) — `BE`/`BD`/`BEW`
   all branch identically; the enabled/disabled distinction is
-  interrupt-system state this implementation doesn't have. **`BR`
-  (BRANCH RELATIVE) is NOT implemented** and sets `OP`: it used to be
-  listed here and executed as an absolute branch identical to `B`,
-  which two primary sources contradict — the X22-6533 pocket card gives
-  `B` = 010000000 and `BR` = 011000000, a *different* operation code
-  named "Branch Relative", and Reference Manual p.42 says "a simple
-  storage of the instruction counter without branching action is
-  accomplished by STORE INSTRUCTION COUNTER IF BRANCH RELATIVE with a
-  branch address of 0", which only works if the address is a
-  displacement. Found by `strap/audit_opcode_coverage.py`; pinned by
-  `strap/programs/br_unimplemented.strap`. The base is almost certainly
-  the stepped instruction counter (p.39), but the sign and units are
-  not established, so it is left unimplemented rather than guessed.
+  interrupt-system state this implementation doesn't have. **`BR` is
+  BRANCH RELATIVE**, p.40: "causes the absolute value of the effective
+  address to be added to the instruction counter contents. Bits 0-18 of
+  the sum replace the instruction counter contents." The base is the
+  *stepped* counter (p.39 steps it before execution), so the address
+  field is a displacement in half-words. It previously executed as an
+  absolute branch identical to `B` — found by
+  `strap/audit_opcode_coverage.py`, then left explicitly unimplemented
+  until p.40 was located rather than guessed at, and now pinned by
+  `strap/programs/br_relative.strap`. *Known limit*: p.40 says
+  **absolute value**, and an effective address can only go negative via
+  index modification; `effAddr19` returns an unsigned result with no
+  sign beside it, so an index-modified `BR` that goes negative uses the
+  wrapped value rather than the magnitude. Nothing transcribed
+  exercises that.
 - **Refill / Refill on Count Zero / Store Zero**.
 - **Transmit** — forward only, **one word per instruction** (see
   "Toolchain" below for why).

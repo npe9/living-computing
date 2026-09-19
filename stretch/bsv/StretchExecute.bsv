@@ -81,6 +81,11 @@ typedef struct {
   Word64    ind;
   Bool      taken;
   HWordAddr target;
+  // BRANCH RELATIVE's `target` is a DISPLACEMENT, not an address: the
+  // caller adds the stepped instruction counter.  evalBranch cannot,
+  // having no fall-through in scope, so every caller must -- which is
+  // why this flag exists rather than a second target field.
+  Bool      relative;
 } BranchOutcome deriving (Bits, Eq);
 
 function BranchOutcome evalBranch(StretchStorage st, DecodedInstr d, Word64 ind0,
@@ -89,7 +94,7 @@ function BranchOutcome evalBranch(StretchStorage st, DecodedInstr d, Word64 ind0
   BranchOutcome o = BranchOutcome {
     needsRead: tagged Invalid, readsUsed: 0, doIdxWrite: False, idxWriteReg: 0,
     idxWriteVal: IndexWord{addr:0, sign:0, flag:0, spare:0, count:0, refill:0},
-    ind: ind0, taken: False, target: 0 };
+    ind: ind0, taken: False, target: 0, relative: False };
   case (d) matches
 
     // Count and Branch / Count, Branch and Refill.
@@ -185,11 +190,35 @@ function BranchOutcome evalBranch(StretchStorage st, DecodedInstr d, Word64 ind0
       // block or the Unconditional Branching page settles it.  Nothing
       // in the suite uses BR -- the opcode-coverage audit is what found
       // it -- so nothing regresses.
-      if (bm.code == 3'b011)
-        o.ind = setOpInvalid(ind0);
-      else if (!bm.misc && bm.code != 3'b110) begin
+      if (!bm.misc && bm.code != 3'b110) begin
         o.taken = True;
         o.target = effAddr19(st, bm.addr, bm.idx);
+        // BRANCH RELATIVE (011), p.40 verbatim: "This instruction
+        // causes the absolute value of the effective address to be
+        // added to the instruction counter contents.  Bits 0-18 of the
+        // sum replace the instruction counter contents."  The base is
+        // the STEPPED counter (p.39 steps it before execution), so
+        // `target` is a displacement here and the caller adds the
+        // fall-through; the 19-bit wrap IS "bits 0-18 of the sum".
+        //
+        // p.42 corroborates and is what broke the old absolute
+        // reading: "a simple storage of the instruction counter
+        // WITHOUT BRANCHING ACTION is accomplished by STORE
+        // INSTRUCTION COUNTER IF BRANCH RELATIVE with a branch address
+        // of 0."  Zero lands on the fall-through only if the base is
+        // the stepped counter; absolute, it would branch to 0.0, which
+        // p.39 calls an invalid branching address.
+        //
+        // KNOWN LIMIT, deliberate.  p.40 says ABSOLUTE VALUE, and an
+        // effective address can only go negative through index
+        // modification (p.20: the instruction's address part is "a
+        // positive unsigned field").  effAddr19 returns an unsigned
+        // 19-bit result with no sign carried alongside, so an
+        // index-modified BR whose effective address goes negative uses
+        // the wrapped value, not the magnitude.  Nothing transcribed
+        // exercises it and inventing a representation would be
+        // guessing.
+        o.relative = (bm.code == 3'b011);
       end
     end
 
@@ -2796,14 +2825,14 @@ function ActionValue#(ExecResult)
         if (o.needsRead matches tagged Invalid) begin
           ind = o.ind; doIdxWrite = o.doIdxWrite;
           idxWriteReg = o.idxWriteReg; idxWriteVal = o.idxWriteVal;
-          if (o.taken) next = o.target;
+          if (o.taken) next = o.relative ? (fallthrough + o.target) : o.target;
         end
       end
 
       tagged BranchInd .*: begin
         BranchOutcome o = evalBranch(st, di, ind, prefetch, prefetchCount, 0);
         ind = o.ind;
-        if (o.taken) next = o.target;
+        if (o.taken) next = o.relative ? (fallthrough + o.target) : o.target;
       end
 
       // -----------------------------------------------------------
@@ -2811,19 +2840,8 @@ function ActionValue#(ExecResult)
       // -----------------------------------------------------------
       tagged BranchOrMisc .bm: begin
         if (!bm.misc) begin
-          // BRANCH RELATIVE (011) is not implemented -- see evalBranch's
-          // BranchOrMisc arm for the two primary sources.  It is handled
-          // here as well as there because this arm keeps only `o.taken`
-          // and `o.target` and DISCARDS `o.ind`, so evalBranch's
-          // setOpInvalid never reaches the indicator word on this path.
-          // (The SIC arm does propagate `o.ind`, so a SIC-prefixed BR is
-          // covered by evalBranch alone.)
-          if (bm.code == 3'b011)
-            ind = setOpInvalid(ind);
-          else begin
-            BranchOutcome o = evalBranch(st, di, ind, prefetch, prefetchCount, 0);
-            if (o.taken) next = o.target;
-          end
+          BranchOutcome o = evalBranch(st, di, ind, prefetch, prefetchCount, 0);
+          if (o.taken) next = o.relative ? (fallthrough + o.target) : o.target;
         end else begin
           case (bm.code)
             3'b100: begin // Z (Store Zero)
@@ -2968,7 +2986,7 @@ function ActionValue#(ExecResult)
             // step() call, before the next instruction fetches.
             if (o.doIdxWrite) vflPending = tagged Valid tuple2(o.idxWriteReg, o.idxWriteVal);
             if (o.taken) begin
-              next = o.target;
+              next = o.relative ? (fallthrough + o.target) : o.target;
               if (ha < 32)
                 ind = setBit(ind, ind_AD, 1);
               else begin

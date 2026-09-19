@@ -270,12 +270,13 @@ run "Opcode coverage audit (ratchet)" python3 audit_opcode_coverage.py
 # have branched to 0.0, which p.39 separately calls an invalid
 # branching address, so it was wrong twice over.
 #
-# BR now sets OP instead of branching wrongly; see br_unimplemented
-# below.  It is NOT implemented as relative, because the base is only
-# strongly implied (p.39: the counter is stepped to the fall-through
-# before execution, so fall-through + 0 is "no branching action") and
-# the sign and units are not established by anything read so far.
-# Implementing it would be a guess dressed as a fix.
+# BR was first made to set OP instead of branching wrongly, because the
+# base, sign and units were not established by anything read at the
+# time -- implementing it then would have been a guess dressed as a
+# fix.  A later research pass found p.40, which states all three, and
+# it is now implemented from that source; see br_relative below.  The
+# refusal to guess cost one commit and bought a correct
+# implementation.
 #
 # Of the 22 unused mnemonics, 15 are documented scope limits that reach
 # setOpInvalid -- only five VFL integer arms exist (L, ST, +, M+, K),
@@ -284,26 +285,41 @@ run "Opcode coverage audit (ratchet)" python3 audit_opcode_coverage.py
 # BZB1/BZBN/BZBZ (branch-if-off with set-one / invert / set-zero) and
 # the four I/O Suppress-End-Of-Op forms.
 
-run "BR (Branch Relative) is unimplemented, and says so" ./run_program.sh programs/br_unimplemented.strap StretchBrUnimplTb \
-    "PC=2695"          # 002503.40; hand-written, not a listing fact
-# Pins the honest state: BR sets OP and does NOT branch.  Uses the OP
-# indicator that op_ad_indicators.strap pinned, which is the point of
-# having pinned it.
+run "BR (Branch Relative)" ./run_program.sh programs/br_relative.strap StretchBrRelTb \
+    "PC=4103"          # 004003.40; hand-written, not a listing fact
+# BR IS NOW IMPLEMENTED, and this replaces br_unimplemented.strap.
+# p.40 verbatim: "This instruction causes the absolute value of the
+# effective address to be added to the instruction counter contents.
+# Bits 0-18 of the sum replace the instruction counter contents."  The
+# base is the STEPPED counter (p.39 steps it before execution), so the
+# address field is a DISPLACEMENT in half-words and the 19-bit wrap is
+# "bits 0-18 of the sum".
 #
-# A SILENT WRONG ANSWER BECAME A VISIBLE UNIMPLEMENTED ONE.  Before
-# this, BR branched to an absolute address; a deck using BR would have
-# gone somewhere plausible-looking and wrong.  Now it fails loud.
+# THE ROUTE HERE IS THE POINT.  audit_opcode_coverage.py found BR listed
+# among the implemented branches and executed as an ABSOLUTE branch
+# identical to B -- contradicted by the pocket card, which gives B and
+# BR different operation codes and names BR "Branch Relative".  It was
+# then left UNIMPLEMENTED rather than guessed at, because the base, sign
+# and units were unestablished.  A research pass found p.40, which
+# settles all three, so it is implemented FROM A SOURCE.  Refusing to
+# guess cost one commit and bought a correct implementation.
 #
-# THE FIX HAD TO BE MADE TWICE, and the test is what caught that.  The
-# first attempt set OP in evalBranch's BranchOrMisc arm -- and the
-# program still failed, at "hang up if OP off", because execute()'s own
-# BranchOrMisc arm keeps only o.taken and o.target and DISCARDS o.ind.
-# (The SIC arm does propagate o.ind, so a SIC-prefixed BR was covered by
-# the first change alone.)  Writing the test first is what turned a
-# silently ineffective edit into a visible failure.
+# CASE 1 IS THE MANUAL'S OWN WORKED EXAMPLE AND DOES NOT DISCRIMINATE.
+# p.42: "a simple storage of the instruction counter WITHOUT BRANCHING
+# ACTION is accomplished by STORE INSTRUCTION COUNTER IF BRANCH RELATIVE
+# with a branch address of 0."  A zero displacement must land on the
+# fall-through -- but so does a BR that does nothing at all, which is
+# what the unimplemented version did.  It is kept because it is the
+# manual's own statement and the thing that broke the absolute reading;
+# CASE 2, a displacement of two, is what actually discriminates.
+# Measured: before the fix this program halted at 004002.00, the "no
+# branch" hang.
 #
-# When someone implements Branch Relative, THIS is the program that
-# fails, and the comment in the source is what they need.
+# KNOWN LIMIT, in the code too: p.40 says ABSOLUTE VALUE, and an
+# effective address can only go negative through index modification.
+# effAddr19 returns an unsigned result with no sign beside it, so an
+# index-modified BR whose effective address goes negative uses the
+# wrapped value, not the magnitude.  Nothing transcribed exercises it.
 
 run "BB branch-if-off variants (BZB1, BZBN, BZBZ)" ./run_program.sh programs/bb_branch_if_off.strap StretchBbOffTb \
     "PC=2834"          # 002611.00; hand-written, not a listing fact

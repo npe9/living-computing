@@ -1,0 +1,59 @@
+! BRANCH RELATIVE (BR), Reference Manual p.40.
+!
+! THE DEFINITION, verbatim: "This instruction causes the absolute value
+! of the effective address to be added to the instruction counter
+! contents.  Bits 0-18 of the sum replace the instruction counter
+! contents."
+!
+! HOW THIS BLOCK CAME ABOUT.  audit_opcode_coverage.py found BR listed
+! among the implemented unconditional branches and executed as an
+! ABSOLUTE branch identical to B -- contradicted by the X22-6533 pocket
+! card, which gives B 010000000 and BR 011000000 as different operation
+! codes and names BR "Branch Relative".  It was then left UNIMPLEMENTED
+! (setting OP) rather than guessed at, because the base, sign and units
+! were not established.  p.40 establishes all three, so it is now
+! implemented and this program replaces br_unimplemented.strap.
+!
+! THE BASE IS THE STEPPED INSTRUCTION COUNTER.  p.39: "After an
+! instruction is fetched, but before its execution, the instruction
+! counter contents are stepped in ordinary fashion... prior to any
+! attempt to replace the instruction counter contents."  So during
+! execution the counter already holds the FALL-THROUGH address.
+!
+! CASE 1 IS THE MANUAL'S OWN WORKED EXAMPLE.  p.42: "A simple storage
+! of the instruction counter without branching action is accomplished
+! by STORE INSTRUCTION COUNTER IF BRANCH RELATIVE WITH A BRANCH ADDRESS
+! OF 0."  A displacement of zero must therefore land on the
+! fall-through -- no branching action -- which is only possible if the
+! base is the stepped counter.  That sentence is what made the absolute
+! reading impossible: under it, BR,0 would branch to 0.0, which p.39
+! separately calls an invalid branching address.
+!
+! NOT SIGNED.  p.40 takes the ABSOLUTE VALUE, and p.20 says the address
+! part of an instruction "is interpreted as a positive unsigned field".
+! A sign can only enter through index modification, and BR discards it.
+! This program uses no index, so it does not exercise that clause --
+! see the note in run_tests.sh.
+!
+! UNITS ARE HALF-WORDS: the instruction counter is 19 bits and its
+! nineteenth bit selects the half-word, and p.40 says "bits 0-18 of the
+! sum" replace it.
+!
+! WEAKER STANDARD, STATED: hand-written from p.40 and p.42, not
+! transcribed.  No deck block found so far uses BR with a non-zero
+! displacement.
+
+        SLC, (8)4000.0
+!
+! ---- case 1: a displacement of ZERO is no branching action ---------
+START   BR, 0                        ! target = the stepped counter itself
+        B, C2                        ! the fall-through: where it must land
+        BEW, $                       ! hang up: BR went somewhere else
+!
+! ---- case 2: a displacement of TWO half-words ----------------------
+C2      BR, 2                        ! target = fall-through + 2
+        BEW, $                       ! fall-through + 0: hang up, no branch
+        BEW, $                       ! fall-through + 1: hang up, short
+        B, PASS                      ! fall-through + 2: the correct landing
+PASS    BEW, $
+        END, START
