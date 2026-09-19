@@ -216,7 +216,7 @@ run "B(IND) XL/XE/XH blocks (ja_ax1a, encoding)" python3 verify_ibox1_bind_ind_l
 run "B(IND) XL/XE/XH blocks (indicator register written by SV)" ./run_program.sh programs/ibox1_bind_ind.strap StretchIbox1BindIndTb \
     "PC=4240"          # 004110.00, the half-word after IBIN55's second NOP
 
-run "SSIP SIP17 indicator-reset chain (ja_ua1_ssip, encoding)" python3 verify_ssip_sip17_listing.py
+run "SSIP SIP16/SIP17 reset blocks (ja_ua1_ssip, encoding)" python3 verify_ssip_sip17_listing.py
 # FIRST TRANSCRIPTION FROM ja_ua1_ssip, the System Test Program's
 # supervisor.  Its listing is PDF pp.7-52, 1-up fanfold with NO printed
 # page numbers, so it is cited by PDF page -- unlike every other tape
@@ -246,6 +246,24 @@ run "SSIP SIP17 indicator-reset chain (ja_ua1_ssip, encoding)" python3 verify_ss
 #     11 calls it "CPU Signal (CPUS)" and this project took CPUS from
 #     there; SSIP writes BCPUZ.  Both are now in INDICATOR_BITS as an
 #     alias.
+#
+# SIP16, the block above it, is transcribed too, and it is the one that
+# matters for the interrupt system: it resets the system's OWN control
+# state -- word 1 (interval timer), word 2 (interruption address), word
+# 3 (boundary registers) and word 12 (mask).  Words 1, 2 and 3 are the
+# PERMANENTLY PROTECTED area (p.31), and a BD guarded the sequence,
+# commented "DISABLE BEFORE RESET OF PROTECTED AREA".  That is the
+# deck's own witness for what p.45 states -- DS/DF/IF are raised only
+# "while the interruption system was enabled" -- and when protection is
+# implemented here this block is the natural test: it must succeed
+# disabled and be suppressed enabled.
+#
+# A LABEL ERROR THIS FOUND, in my own earlier transcription: SIP17
+# labels the BXVLZ at 001571.00, not the BMKZ chain at 001572.00.  The
+# verify script could not have caught it -- it checks the address a
+# symbol resolves to, and a symbol on the wrong row still resolves to
+# something.  Reading further up the page for the next block is what
+# caught it.
 #
 # Encoding-only, deliberately: the block ends by branching to an
 # external return, so running it needs a harness this does not have.

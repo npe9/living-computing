@@ -37,9 +37,59 @@
 ! sign, and the assembled half-word is identical -- both branch to the
 ! next half-word, which is what the listing's 1601.50 00 encodes.
 
-RET1    SYN, (8)1307.0               ! external: the print/return entry
-        SLC, (8)1572.0
-SIP17   BMKZ, $+.32                  ! 0  machine check
+! External symbols, given by SYN at the addresses the listing prints.
+! Rows that name one check the opcode and modifier bits only, since
+! their address came from the same print -- listing_oracle's own
+! convention.
+RET1    SYN, (8)1307.0               ! the print/return entry
+INT     SYN, (8)1353.0               ! the interrupt table origin
+DSIP31  SYN, (8)2060.0               ! SSIP's mask constant
+DSIP1   SYN, (8)2025.0               ! switches A and B
+DSIP20  SYN, (8)2046.0               ! switch A
+DSIP21  SYN, (8)2046.40              ! switch B -- same word, second half
+DSIP22  SYN, (8)2047.0               ! switch C
+!
+! ---- SIP16: reset the interrupt system's own control state --------
+! This is the block that writes the PERMANENTLY PROTECTED area.  p.31:
+! "Locations 1, 2, and 3 are referred to as the permanently protected
+! area of storage.  References to these locations always give an
+! address monitoring signal, regardless of the contents of the boundary
+! registers or the setting of the boundary control bit."  Words 1, 2
+! and 3 are the interval timer, the interruption address register and
+! the boundary registers -- the interrupt system protecting its own
+! control state.
+!
+! AND THE DECK DISABLES INTERRUPTS BEFORE TOUCHING IT.  A BD guarded
+! this sequence, commented "DISABLE BEFORE RESET OF PROTECTED AREA",
+! which is the deck's own witness for what p.45 states: DS/DF/IF are
+! raised only "while the interruption system was enabled".  A program
+! that needs to rewrite the protected area turns the system off first.
+! When storage protection is implemented here, this block is the
+! natural test -- it must succeed disabled and be suppressed enabled.
+        SLC, (8)1563.40
+! THE LABEL SITS ON THE BXVLZ, NOT ON THE CHAIN.  The first version of
+! this program put SIP17 on the BMKZ at 001572.00, which is wrong: the
+! listing labels the BXVLZ two half-words earlier.  Caught by reading
+! further up the page while scouting the next block -- the sort of
+! error a verify script cannot find, because it checks the address a
+! symbol resolves to, and a symbol on the wrong row still resolves to
+! something.
+        SV, $X13, 1.0                ! reset interval timer      (word 1, P)
+        LX, $X13, DSIP31             ! SSIP's mask constant
+        SX, $X13, 12.0               ! reset mask                (word 12)
+SIP16   LX, $X13, 0.0                ! X13 := the protected zero
+        SX, $X13, 3.0                ! reset boundaries and control bit
+                                     !                           (word 3, P)
+        LVI, $X13, INT               ! the interrupt table origin
+        SV, $X13, 2.0                ! reset interrupt address   (word 2, P)
+        LV, $X13, DSIP1              ! reset switches A and B
+        SV, $X13, DSIP20
+        SV, $X13, DSIP21
+        LV, $X13, DSIP22             ! test that switch C is not on
+SIP17   BXVLZ, $                     ! * error made in SSIP -- hang if set
+        LX, $X13, 0.0                ! X13 := the protected zero, for the
+                                     !   SX that sweeps the rest below
+        BMKZ, $+.32                  ! 0  machine check
         BIKZ, $+.32                  ! 1  instruction check   -RESET INDICATORS
         BIJZ, $+.32                  ! 2  instruction reject
         BEKZ, $+.32                  ! 3  exchange check

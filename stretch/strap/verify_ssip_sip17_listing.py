@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""verify_ssip_sip17_listing.py -- SSIP's SIP17 indicator-reset chain
+"""verify_ssip_sip17_listing.py -- SSIP's SIP16/SIP17 reset blocks
 (programs/ssip_sip17_reset.strap) against ja_ua1_ssip PDF pp.17-18.
 
 Twenty branch-on-indicator-and-clear instructions in NUMERIC ORDER,
@@ -15,7 +15,28 @@ from listing_oracle import check_rows, finish
 
 prog = assemble(open("programs/ssip_sip17_reset.strap").read())
 
+# SIP16: the block that resets the interrupt system's own control
+# state, including the PERMANENTLY PROTECTED words 1, 2 and 3 (p.31).
+# Rows naming an external symbol (INT, DSIP*) check the opcode and
+# modifier bits only, their address having come from the same print.
+SIP16_ROWS = [
+    ('001563.40', '1.33 30',    'SV, $X13, 1.0     reset interval timer (word 1, P)'),
+    ('001564.00', '2060.32 10', 'LX, $X13, DSIP31  SSIP mask constant (ext)'),
+    ('001564.40', '14.33 10',   'SX, $X13, 12.0    reset mask (word 12)'),
+    ('001565.00', '0.32 10',    'SIP16 LX, $X13, 0.0  X13 := the protected zero'),
+    ('001565.40', '3.33 10',    'SX, $X13, 3.0     reset boundaries + control bit (word 3, P)'),
+    ('001566.00', '1353.33 01', 'LVI, $X13, INT    interrupt table origin (ext)'),
+    ('001566.40', '2.33 30',    'SV, $X13, 2.0     reset interrupt address (word 2, P)'),
+    ('001567.00', '2025.32 30', 'LV, $X13, DSIP1   reset switches A and B (ext)'),
+    ('001567.40', '2046.33 30', 'SV, $X13, DSIP20  (ext)'),
+    ('001570.00', '2046.73 30', 'SV, $X13, DSIP21  (ext, same word second half)'),
+    ('001570.40', '2047.32 30', 'LV, $X13, DSIP22  test switch C is not on (ext)'),
+]
+
 ROWS = [
+    # SIP17 labels the BXVLZ, not the chain -- see the program header.
+    ('001571.00', '1571.30 C2', 'SIP17 BXVLZ, $   * error made in SSIP'),
+    ('001571.40', '0.32 10',    'LX, $X13, 0.0    X13 := the protected zero'),
     ('001572.00', '1572.40 46', 'BMKZ, $+.32      0  machine check'),
     ('001572.40', '1573.00 C6', 'BIKZ, $+.32      1  -RESET INDICATORS'),
     ('001573.00', '1573.41 46', 'BIJZ, $+.32      2  instruction reject'),
@@ -49,7 +70,9 @@ EXTERNAL_ROWS = [
 ]
 
 if __name__ == "__main__":
-    fails = check_rows(prog, [], symbols={"SIP17": "001572.00"})
+    fails = check_rows(prog, [], symbols={"SIP16": "001565.00",
+                                          "SIP17": "001571.00"})
+    fails += check_rows(prog, SIP16_ROWS, label="SIP16 ")
     fails += check_rows(prog, ROWS, label="chain ")
     fails += check_rows(prog, EXTERNAL_ROWS, label="ext ")
     finish(fails)
