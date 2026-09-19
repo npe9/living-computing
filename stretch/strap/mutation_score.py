@@ -62,7 +62,7 @@ MATTERS AS MUCH AS WHETHER IT IS.
 
 Usage:  python3 mutation_score.py [--list] [--only NAME]
 """
-import os, re, subprocess, sys, time
+import atexit, os, re, signal, subprocess, sys, time
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(HERE)
@@ -239,6 +239,51 @@ MUTATIONS = [
 ]
 
 
+# RESTORE MUST SURVIVE A SIGNAL.  The try/finally below restores the
+# model after each mutation, but a SIGTERM during the subprocess run
+# skips it and leaves the tree MUTATED -- demonstrated by killing a
+# campaign mid-run, which left an XVLZ mutation sitting in
+# StretchExecute.bsv looking exactly like a normal edit.  A mutated file
+# mistaken for real work is the worst failure this script can have, so
+# the pending restore is registered globally and replayed on exit and on
+# a signal.
+_PENDING = {}   # path -> original contents
+
+
+def _restore_all(*_):
+    for path, src in list(_PENDING.items()):
+        try:
+            open(os.path.join(ROOT, path), 'w').write(src)
+        except OSError:
+            pass
+        _PENDING.pop(path, None)
+
+
+atexit.register(_restore_all)
+for _sig in (signal.SIGTERM, signal.SIGINT, signal.SIGHUP):
+    try:
+        signal.signal(_sig, lambda s, f: (_restore_all(), sys.exit(128 + s)))
+    except (ValueError, OSError):
+        pass
+
+
+def check_tree_clean():
+    """Refuse to start on an already-modified model: a leftover mutation
+    from a killed run would otherwise be scored as if it were the real
+    thing, and every result would be quietly wrong."""
+    r = subprocess.run(["git", "diff", "--name-only", "--", "bsv/"],
+                       cwd=ROOT, capture_output=True, text=True)
+    dirty = [f for f in r.stdout.split() if f.strip()]
+    if dirty:
+        print("refusing to run: the model has uncommitted changes:", file=sys.stderr)
+        for f in dirty:
+            print(f"  {f}", file=sys.stderr)
+        print("A leftover mutation would be scored as the real model.",
+              file=sys.stderr)
+        return False
+    return True
+
+
 def apply(path, old, new):
     full = os.path.join(ROOT, path)
     src = open(full).read()
@@ -247,6 +292,7 @@ def apply(path, old, new):
     out = src.replace(old, new, 1)
     if out == src:
         return None, "replacement changed nothing"
+    _PENDING[path] = src
     open(full, 'w').write(out)
     return src, None
 
@@ -260,6 +306,8 @@ def main():
     if "--only" in sys.argv:
         only = sys.argv[sys.argv.index("--only") + 1]
 
+    if not check_tree_clean():
+        return 2
     env = dict(os.environ, FAIL_FAST="1")
     results = []
     for name, path, old, new, why in MUTATIONS:
@@ -281,6 +329,7 @@ def main():
                 where = m.group(1)
         finally:
             open(os.path.join(ROOT, path), 'w').write(saved)
+            _PENDING.pop(path, None)
         dt = time.time() - t0
         verdict = "caught" if caught else "SURVIVED"
         print(f"{verdict:9} {name:28} {dt/60:5.1f} min  {where}", flush=True)

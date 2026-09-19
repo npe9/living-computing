@@ -1,0 +1,152 @@
+! Every floating-point operation but MULTIPLY clears ZM.
+!
+! THE SCALE.  "ind = setBit(ind, ind_ZM, 0)" appears SIXTEEN times in
+! StretchExecute, once in each non-multiply FP arm -- L/LWF, LFT,
+! DL/DLWF, D+/D+MG, F+, +/+MG, M+/M+MG, /, R/, D/, E+ and others.  ZM is
+! a MULTIPLY-ONLY indicator, so every other operation has to turn it
+! off, and the model writes that out per arm.
+!
+! WHAT WITNESSED IT BEFORE.  One copy: the plan doc records that "never
+! clearing ZM halts D5's ZM row at 017331.00".  One of sixteen.  This is
+! the same one-rule-many-copies shape as the three effAddr helpers and
+! the six SEOP sites, at larger scale -- and found the same way, by
+! grepping a distinctive line rather than by any coverage audit.
+!
+! ELEVEN ARMS ARE COVERED HERE: L, +, /, LFT, DL, M+, F+, D+, R/, D/
+! and E+.  Measured one mutation per arm, each halting at its own
+! check -- and F+ is in the list only because the FIRST version of this
+! program described F+ in its header and did not test it.  That
+! mutation passed.  A description is not coverage, and the mutation is
+! what told them apart.
+!
+! WHY ONE PROGRAM INSTEAD OF SIXTEEN.  The copies are uniform: each is
+! the same assignment in a different arm, so one program can walk them.
+! Each case sets ZM with a normalized multiply whose product is order-of-
+! magnitude zero -- the only way to turn ZM on -- confirms it is on, runs
+! the operation under test, and requires it to be off again.  The
+! "confirm it is on" step is not decoration: without it a model that
+! never set ZM would pass every off-check, which is the trap
+! index_indicators_off was written for.
+!
+! ZF0 has a zero fraction at exponent 0 and NZF0 a fraction of 2**47 at
+! exponent 0, so ZF0 x NZF0 is a zero product at exponent 0 -- inside
+! the "greater than -1024" bound, so ZM comes on.  See fp_zm_terms.strap
+! for that bound and for the normalization term.
+!
+! A bare `*` is ambiguous and assembles as VFL; the multiply must be
+! written `*(N)`.
+!
+! WEAKER STANDARD, STATED: hand-written from p.99, not transcribed.
+
+        SLC, (8)3500.0
+!
+! ---- L (LOAD) ------------------------------------------------------
+START   Z, $IND
+        L(U), ZF0
+        *(N), NZF0                   ! ZM on: zero product, exponent 0
+        BZB, $ZM, $                  ! hang up if ZM off -- the control
+        L(N), NZF0                   ! the operation under test
+        BB, $ZM, $                   ! hang up if ZM still on
+!
+! ---- + (ADD) -------------------------------------------------------
+        L(U), ZF0
+        *(N), NZF0
+        BZB, $ZM, $
+        +(N), NZF0
+        BB, $ZM, $
+!
+! ---- / (DIVIDE) ----------------------------------------------------
+        L(U), ZF0
+        *(N), NZF0
+        BZB, $ZM, $
+        /(N), NZF0
+        BB, $ZM, $
+!
+! ---- LFT (LOAD FACTOR) ---------------------------------------------
+        L(U), ZF0
+        *(N), NZF0
+        BZB, $ZM, $
+        LFT(N), NZF0
+        BB, $ZM, $
+!
+! ---- DL (LOAD DOUBLE) ----------------------------------------------
+        L(U), ZF0
+        *(N), NZF0
+        BZB, $ZM, $
+        DL(N), NZF0
+        BB, $ZM, $
+!
+! ---- M+ (ADD TO MEMORY) --------------------------------------------
+        L(U), ZF0
+        *(N), NZF0
+        BZB, $ZM, $
+        M+(N), SCRATCH
+        BB, $ZM, $
+!
+! ---- F+ (ADD TO FRACTION, p.101) -----------------------------------
+! Added after the first version of this program: mutating F+'s copy
+! PASSED, because the program had no F+ case.  The header had listed F+
+! among the arms without testing it -- a description is not coverage.
+        L(U), ZF0
+        *(N), NZF0
+        BZB, $ZM, $
+        F+(N), NZF0
+        BB, $ZM, $
+!
+! ---- D+ (ADD DOUBLE, p.95) -----------------------------------------
+        L(U), ZF0
+        *(N), NZF0
+        BZB, $ZM, $
+        D+(N), NZF0
+        BB, $ZM, $
+!
+! ---- R/ IS DELIBERATELY ABSENT, and why is worth writing down. -----
+! An R/ case was here and it hung at its own check.  That is not a
+! model bug, it is the line being UNREACHABLE for these inputs.  For
+! RECIPROCAL DIVIDE the divisor is the ACCUMULATOR (p.94: the operands
+! are interchanged), and R/'s ZM clear sits inside the else of
+! "if (r.zd)".  ZM can only be ON after a multiply that left an
+! order-of-magnitude ZERO product in the accumulator -- so the divisor
+! is always zero, r.zd always fires, and the ZM clear is always
+! skipped.  ZD is set instead.
+!
+! That leaves a question rather than a verdict: to reach the line, the
+! accumulator must be made non-zero while ZM stays on, and every
+! FLOATING-POINT operation clears ZM on the way past.  Whether some
+! non-FP path can write the accumulator without clearing ZM is not
+! established here, so the line is recorded as possibly-unreachable,
+! not as dead code.  The mechanism is the one already named in the plan
+! doc -- A BRANCH UPSTREAM MAKES A DOWNSTREAM LINE UNREACHABLE FOR THE
+! INPUTS IN PLAY -- and here it caught a test DESIGN, not the model.
+!
+! ---- D/ (DIVIDE DOUBLE, p.94) --------------------------------------
+        L(U), ZF0
+        *(N), NZF0
+        BZB, $ZM, $
+        D/(N), NZF0
+        BB, $ZM, $
+!
+! ---- E+ (ADD TO EXPONENT, p.102) -----------------------------------
+        L(U), ZF0
+        *(N), NZF0
+        BZB, $ZM, $
+        E+(N), NZF0
+        BB, $ZM, $
+        B, PASS
+!
+! THE CONSTANTS NEED AN EXPLICIT ORIGIN, and finding out why cost a
+! debugging round.  DD emits at the location counter, so a data section
+! written straight after the code sits wherever the code happens to
+! end -- and when this program grew from six cases to eleven, the code
+! ran straight over ZF0 and NZF0.  The assembler said nothing.  The
+! symptom was case 1 failing, the very first check, which had passed
+! minutes earlier with identical source: the multiply's operand was no
+! longer zero, so the product was not zero and ZM never came on.  An
+! explicit SLC puts the data out of reach of the code however much the
+! code grows.
+        SLC, (8)3600.0
+ZF0     DD(BU,64), 0                 ! fraction 0, exponent 0
+NZF0    DD(BU,64), 2251799813685248  ! fraction 2**47, exponent 0
+SCRATCH DD(BU,64), 0                 ! M+'s destination
+PASS    BEW, $
+        END, START

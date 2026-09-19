@@ -579,6 +579,50 @@ run "ZM's normalized term and exponent bound" ./run_program.sh programs/fp_zm_te
 # The first version of this program used `*` and failed in a way that
 # looked like a model bug.
 
+run "Every FP operation but MULTIPLY clears ZM" ./run_program.sh programs/fp_zm_cleared.strap StretchFpZmClrTb \
+    "PC=3846"          # 003606.00; hand-written, not a listing fact
+# ONE RULE, SIXTEEN COPIES -- the largest instance of the pattern so
+# far, and found the same way as the six SEOP copies: by grepping a
+# distinctive line, not by any coverage audit.  ZM is a MULTIPLY-ONLY
+# indicator, so every other FP arm has to turn it off, and
+# "ind = setBit(ind, ind_ZM, 0)" is written out once per arm.
+#
+# WHAT WITNESSED IT BEFORE: one copy.  The plan doc records that "never
+# clearing ZM halts D5's ZM row at 017331.00".  One of sixteen.
+#
+# TEN ARMS ARE COVERED HERE -- L, +, /, LFT, DL, M+, F+, D+, D/, E+ --
+# by one program rather than ten, because the copies are uniform.  Each
+# case sets ZM with a normalized multiply whose product is
+# order-of-magnitude zero, CONFIRMS IT IS ON, runs the operation, and
+# requires it off.  The confirm step is not decoration: without it a
+# model that never set ZM would pass every off-check.
+#
+# Measured, one mutation per arm, each halting at its OWN check.
+#
+# F+ IS IN THE LIST BECAUSE ITS MUTATION PASSED.  The first version of
+# this program described F+ in its header and did not test it.  A
+# description is not coverage, and only the mutation told them apart.
+#
+# R/ IS DELIBERATELY ABSENT.  Its case hung, and not because of a model
+# bug: for RECIPROCAL DIVIDE the divisor is the ACCUMULATOR (p.94,
+# operands interchanged), and R/'s ZM clear sits inside the else of
+# "if (r.zd)".  ZM can only be on after a multiply that left an
+# order-of-magnitude ZERO product in the accumulator, so the divisor is
+# always zero, r.zd always fires, and the clear is always skipped.
+# Reaching it needs a non-zero accumulator while ZM stays on, and every
+# FP operation clears ZM on the way past -- so the line is recorded as
+# POSSIBLY-UNREACHABLE, not as dead code, since no non-FP path was
+# checked.  A branch upstream making a downstream line unreachable is
+# the mechanism the plan doc already names; here it caught a test
+# DESIGN, not the model.
+#
+# THE CONSTANTS NEED AN EXPLICIT SLC.  DD emits at the location
+# counter, so a data section after the code sits wherever the code ends
+# -- and growing this program from six cases to eleven ran the code
+# straight over ZF0 and NZF0, silently.  The symptom was case 1, the
+# FIRST check, failing with identical source that had passed minutes
+# before: the multiply's operand was no longer zero.
+
 # -- 0e. I-Box 4 routine 150's CB / CB+ / CBR / CBR+ blocks (plus their
 # LX/SX setup and XW index words) assembled verbatim at the listing's
 # own addresses and compared against docs/jb_ax4b_ibox-4.pdf pp.155/159's

@@ -4324,6 +4324,57 @@ hand vectors alone. "Enables" notes the dependency chain.
    SEOP writes its control word back untouched. All four matched first
    time.
 
+   A THIRD INSTANCE, AND THE LARGEST: "ind = setBit(ind, ind_ZM, 0)"
+   appears SIXTEEN times. ZM is a MULTIPLY-ONLY indicator, so every
+   other floating-point arm must turn it off, and the model writes that
+   out once per arm -- L/LWF, LFT, DL/DLWF, D+, F+, +, M+, /, R/, D/,
+   E+ and more. What witnessed it before: ONE copy, the plan doc's own
+   note that "never clearing ZM halts D5's ZM row at 017331.00".
+   programs/fp_zm_cleared.strap now covers TEN in a single program,
+   since the copies are uniform, each case setting ZM with a zero-
+   product multiply, confirming it is on, running the operation, and
+   requiring it off. One mutation per arm, each halting at its own
+   check.
+
+   F+ IS IN THAT PROGRAM BECAUSE ITS MUTATION PASSED. The first version
+   listed F+ in its header among the arms and did not test it. A
+   DESCRIPTION IS NOT COVERAGE, and only the mutation told the two
+   apart -- the same error as claiming a test discriminates without
+   injecting against it, one level up.
+
+   R/ IS DELIBERATELY ABSENT, and the reason is a finding. Its case
+   hung, and not from a model bug: for RECIPROCAL DIVIDE the divisor is
+   the ACCUMULATOR (p.94, the operands are interchanged), and R/'s ZM
+   clear sits inside the else of "if (r.zd)". ZM can only be ON after a
+   multiply that left an order-of-magnitude ZERO product in the
+   accumulator -- so the divisor is always zero, r.zd always fires, and
+   the clear is always skipped. Reaching it needs a non-zero
+   accumulator while ZM stays on, and every FP operation clears ZM on
+   the way past. Recorded as POSSIBLY-UNREACHABLE rather than dead
+   code, because no non-FP path was checked. This is the plan's own
+   "a branch upstream makes a downstream line unreachable" rule
+   catching a test DESIGN rather than the model, for the second time.
+
+   TWO TOOLING FAILURES THE SAME SESSION FOUND AND FIXED.
+
+     mutation_score.py's restore WAS NOT SIGNAL-SAFE. Stopping a
+     campaign left StretchExecute.bsv mutated, because SIGTERM skips
+     the try/finally -- and a leftover mutation looks exactly like an
+     ordinary edit, so every later result would have been scored
+     against a wrong model. The pending restore is now global, replayed
+     on exit and on SIGTERM/SIGINT/SIGHUP, and a clean-tree guard
+     refuses to start when bsv/ has uncommitted changes. Both verified.
+
+     A SILENT CODE/DATA COLLISION. DD emits at the location counter, so
+     a data section written after the code sits wherever the code ends.
+     Growing fp_zm_cleared from six cases to eleven ran the code
+     straight over its own constants, and the assembler said nothing.
+     The symptom was perfect misdirection: case 1, the FIRST check,
+     failing with identical source that had passed minutes earlier,
+     because the multiply's operand was no longer zero. An explicit SLC
+     puts data out of reach however much the code grows -- worth doing
+     in any hand-written program with a data section.
+
    AND TWO DISCOVERY ROUTES WERE NEEDED. A name-family scan found the
    effAddr trio (same rule, different widths, different variable names,
    so no textual duplicate-finder would have seen it). Grepping one
