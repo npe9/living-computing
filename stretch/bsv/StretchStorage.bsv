@@ -121,6 +121,17 @@ interface StretchStorage;
   method Bool irqEnabled();
   method Action setIrqEnabled(Bool e);
 
+  // THE ADDRESS BOUNDARY REGISTERS, word 3, read as one word.  p.31:
+  // "The upper boundary and lower boundary registers are located in
+  // bits 0-17 and 32-49, respectively, of storage location 3", and
+  // "the boundary control bit, bit 57 of storage location 3,
+  // determines which condition will cause an address monitoring
+  // signal."  The fields are pulled apart on the EXECUTE side, in
+  // protViolates, for the same scheduling reason irqEnabled is a plain
+  // Reg read: a readWord() in a rule that also writes storage is the
+  // G0004 conflict that killed the first design.
+  method Word64 readBoundaries();
+
   method IndexWord readIndex(Bit#(4) j);
   method Action writeIndex(Bit#(4) j, IndexWord v);
   // All sixteen index words at once: the instruction unit snapshots
@@ -426,6 +437,7 @@ module mkStretchStorage(StretchStorage);
   endmethod
 
   method Bool irqEnabled() = irqEn;
+  method Word64 readBoundaries() = boundaryReg;
   method Action setIrqEnabled(Bool e);
     irqEn <= e;
   endmethod

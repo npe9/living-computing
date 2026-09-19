@@ -145,6 +145,27 @@ MUTATIONS = [
      "                ind = ind;",
      "Z,$IND stops clearing the settable indicator bits (p.41)."),
 
+    # THE 0-31 CARVE-OUT IN STORAGE PROTECTION.  p.31: "The monitoring
+    # of references to locations 0-31 is INDEPENDENT of the contents of
+    # the boundary registers... References to locations 0 and 4 through
+    # 31, inclusive, never cause an address monitoring signal."  Written
+    # as "permanently protected OR in/outside the area", a SET boundary
+    # control bit makes every special register 4-31 signal, because they
+    # lie outside any area a program can name.  That is not a cosmetic
+    # difference: 43 of the 64 st.writeWord sites write a constant
+    # address in 4-31 and carry no protection check at all, on exactly
+    # this sentence.  The mutant silently invalidates that argument, and
+    # nothing but storage_protection_boundary.strap's word-4 store can
+    # see it -- which is why it is worth a slot here rather than only an
+    # injection line in run_tests.sh.
+    ("prot-carve-out-as-or", "bsv/StretchExecute.bsv",
+     "  Bool signalled = (a < 32) ? (a >= 1 && a <= 3)\n"
+     "                            : ((ctl == 1) ? !inArea : inArea);",
+     "  Bool signalled = (a >= 1 && a <= 3)\n"
+     "                            || ((ctl == 1) ? !inArea : inArea);",
+     "The special registers 4-31 signal a protection violation when the"
+     " boundary control bit is set; p.31 says they never signal."),
+
     # REGRESSION MUTATIONS: bugs the project already fixed, reverted, to
     # ask whether the fix would survive being undone.  cmp-leaves-flag
     # above started as one of these and SURVIVED -- a documented fix with

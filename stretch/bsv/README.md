@@ -305,12 +305,24 @@ it recognizes independent of what the datapath implements.
   modeled is the *installed-core* limit a real installation had
   (smaller than the address space): addressing beyond it would trip
   AD, Address Invalid, on real hardware; here every address is backed.
+  (Since superseded: `StretchMemory.bsv` now has an `InstalledWords`
+  bound of 98,304 words, and reads past it return zero while writes are
+  dropped. AD itself is still not raised there, but that address class
+  is now named in the model, and storage protection's `protViolates`
+  exempts it -- p.32: "An address which actuates indicator AD, address
+  invalid, is not compared with the contents of the boundary registers
+  and cannot actuate any of the address alarm indicators.")
 
 ### Not modeled at all
 
 Interrupts, memory protection enforcement (addresses described as
 "permanently protected" are documented but not enforced against
-writes from user code beyond a few no-op cases), the interval
+writes from user code beyond a few no-op cases -- SINCE SUPERSEDED:
+address monitoring is now enforced for STORE-type references, both the
+permanently protected words 1-3 and the area named by the boundary
+registers in word 3, gated on the interrupt-system enable bit; DF, IF,
+whole-operation termination and the straddling rule are still not
+modeled, see `StretchExecute.bsv`'s `protViolates`), the interval
 timer/clock actually ticking, and — the machine's defining engineering
 feature — **instruction lookahead and pipelining**. (Since superseded:
 the look-ahead and the instruction unit now exist as rules in

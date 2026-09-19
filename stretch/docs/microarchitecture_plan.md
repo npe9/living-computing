@@ -89,7 +89,7 @@ in parentheses); **open** = no stage assigned yet.
 | EX/EXIC (with LA drains, table 6; Ref. Manual pp.49-50: subject instruction may not change the interruption state or the IC -- EXE indicator; pseudo-IC stepped after fetch, before execution), LVE, RNX, LVS, swap/backward transmit | Ref. Manual pp.26-30 (LVE: indirect addressing, 1 ms limit -> USA; RNX: rename via X0's refill; LVS: sum of the value fields selected by address bits 0-15; T/SWAP: count rules, backward stepping); Perf. Char. table 6 | open, specified |
 | Interrupt system: indicators, mask, left-most-one, the "free instruction" | Ref. Manual pp.43-50 (indicator list with mask/class per indicator, definitions, mask register: bits 0-19 always 1, 20-47 settable, 48-63 always 0; interruption address register; the single interruption instruction fetched from IA + leftmost indicator number, IC not stepped, executed before a second interruption); Blosk pp.16-17; Buchholz ch.10 | open, specified |
 | Address Invalid (AD): effective word address beyond installed core -> AD + no-op | Ref. Manual p.20 | partial: floating-point operand addresses (StretchExecute Fp arm); other classes open |
-| Storage protection: two address boundary registers (word 3: UB bits 0-17, LB 32-49, control bit 57), alarm on an effective address inside OR outside the region (control-bit selectable), storing in protected areas suppressed, indicators DS (store)/DF (fetch)/IF (instruction fetch), gated by the interrupt system + mask | Ref. Manual p.15 "Address Monitoring", indicator defs pp.44-45, Appendix C (word 3 layout) | specified (overview); the control-bit polarity (which value protects inside vs outside) still needs Appendix C / the CE manual before implementing -- the closest 7030 analogue to a mandatory-access-control model |
+| Storage protection: two address boundary registers (word 3: UB bits 0-17, LB 32-49, control bit 57), alarm on an effective address inside OR outside the region (control-bit selectable), storing in protected areas suppressed, indicators DS (store)/DF (fetch)/IF (instruction fetch), gated by the interrupt system + mask | Ref. Manual p.15 "Address Monitoring", **pp.31-32 in full**, indicator defs pp.44-45, Appendix C (word 3 layout) | executed for STORE-type references: the permanently protected words 1-3, the boundary-register area with either control-bit polarity, gated on the enable bit, address-invalid addresses exempt (StretchExecute `protViolates`; `strap/programs/storage_protection.strap`, `storage_protection_boundary.strap`). THE CONTROL-BIT POLARITY DID NOT NEED APPENDIX C: p.31 states it outright -- control bit zero signals INSIDE the area, one signals OUTSIDE. Still open: DF, IF, whole-operation termination, the straddling rule |
 | Interval timer and time clock | Ref. Manual p.15 "Clocks" (interval timer measures a short interval, settable, sets an indicator (Time Signal, TS) when the period ends, can cause an interrupt; time clock runs continuously, not programmer-alterable, for logging/time-of-day); word 1 = timer bits 0-18 + clock 28-63 (Appendix C); rate per Blosk p.6 | specified; needs the exact step rate confirmed before implementing |
 | ECC/parity: check cycles, correction, indicators, I-checker conflicts | Blosk p.15; Perf. Char. p.3-19 | partial (check cycle only) |
 | Exchange as a bus requester with real overlap; disk synchronizer | Buchholz ch.16 | open (I/O is a synchronous FSM today) |
@@ -6687,6 +6687,35 @@ TR00.722. Perf. Char. = 7030 Performance Characteristics vol.1 (Mar 61).
   Recorded rather than hacked around. The enable bit ALONE compiles
   fine and is unobservable from a program, so adding it without
   protection would be untested state -- worse than nothing.
+
+  RESOLVED THE SAME DAY, AND THE OBSTACLE ABOVE WAS NOT REAL. Of the 64
+  `st.writeWord` sites, 43 write a CONSTANT special-register address --
+  the accumulator halves, the sign byte, the zeros/ones counts,
+  remainder, factor -- all in words 4-31, which p.31 says never signal.
+  Only the computed-address stores can reach a monitored word, and they
+  now share ONE execute-side predicate, `protViolates`, with about
+  twenty mechanical uses. The "refactor of 64 call sites" was a count I
+  had written down and never checked; checking it was what unblocked
+  the work. The wire-from-storage design that would not schedule was
+  never needed.
+
+  THEN THE BOUNDARY REGISTERS, from pp.31-32 in full rather than the
+  p.15 overview. `protViolates` reads word 3 through a plain-Reg
+  `readBoundaries()` method -- the same shape as `irqEnabled()`, for the
+  same scheduling reason -- and splits out upper (bits 0-17), lower
+  (32-49) and the control bit (57) on the execute side. The 0-31
+  carve-out GATES the compare rather than sitting beside it, which is
+  what keeps the 43 unguarded constant-address stores correct: with the
+  control bit set they would all be "outside the area". An
+  address-invalid address is exempt (p.32).
+
+  Still open, each its own piece: DF and IF (both mask-dependent,
+  unlike DS, which p.32 says is permanently masked on), whole-operation
+  TERMINATION (p.32 terminates the operation; this suppresses only the
+  store, so a `BB` whose write is suppressed still branches), and the
+  straddling rule (p.31: "an instruction or data field which straddles
+  a boundary always gives an address monitoring signal" -- this
+  compares one word address per store, not a field's extent).
 - **Correction-routine patterns** (p.48-49): single instruction; a
   subroutine entered by STORE-INSTRUCTION-COUNTER-IF-BRANCH-DISABLED and
   returned by BRANCH ENABLED; up to 48 routines addressed from the
@@ -6822,13 +6851,27 @@ TR00.722. Perf. Char. = 7030 Performance Characteristics vol.1 (Mar 61).
   installed sets AD; the instruction executes as a NO OPERATION. A
   branch to an invalid address is also a no-op; a negative effective
   address is not invalid (its magnitude is used).
-- **Address monitoring / storage protection** (p.15): two boundary
-  registers (word 3: upper 0-17, lower 32-49, control bit 57) define a
-  region; an alarm (DS store / DF fetch / IF instruction fetch, gated by
-  the interrupt system enabled + mask) fires for an effective address
-  inside OR outside the region, control-bit selectable; storing in
-  protected areas is suppressed. (Control-bit polarity still to source
-  from Appendix C.)
+- **Address monitoring / storage protection** (p.15, and pp.31-32 in
+  full): two boundary registers (word 3: upper 0-17, lower 32-49,
+  control bit 57) define a region; an alarm (DS store / DF fetch / IF
+  instruction fetch, gated by the interrupt system enabled + mask)
+  fires for an effective address inside OR outside the region,
+  control-bit selectable; storing in protected areas is suppressed.
+  THE POLARITY WAS NEVER AN OPEN QUESTION -- p.31 says it in one
+  sentence: "When the boundary control bit is zero, a signal is
+  obtained for a comparand inside the specified area.  When the
+  boundary control bit is one, a signal is obtained for a comparand
+  outside the specified area."  This file carried "still to source from
+  Appendix C" in two places for months because the overview on p.15 was
+  read and the operand-designation chapter twenty pages later was not.
+  The area is HALF-OPEN, [lower, upper): p.31, "all words in subsequent
+  locations up to, but not including, the address in the upper boundary
+  register", and "if it is equal or smaller, no words are contained in
+  the core storage area".  References to locations 0-31 are INDEPENDENT
+  of the boundary registers -- 1, 2, 3 always signal, 0 and 4-31 never
+  do -- which is a gate on the boundary compare, not a clause beside
+  it: with the control bit set, the special registers 4-31 lie outside
+  every area a program can name.
 - **Clocks** (p.15): interval timer measures short intervals, settable,
   sets Time Signal (TS) when the period ends, can interrupt; time clock
   runs continuously, not programmer-alterable. Word 1 = timer bits 0-18,

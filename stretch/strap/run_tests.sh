@@ -266,12 +266,85 @@ run "Storage protection, gated on the interrupt enable bit" ./run_program.sh pro
 #                                                the store wrongly suppressed
 #   BE does not enable            -> 004105.00  as the first, correctly
 #
-# NOT IMPLEMENTED, deliberately: the BOUNDARY REGISTERS (word 3, upper
-# in bits 0-17, lower in 32-49, control bit 57 -- note the
-# counter-intuitive order, p.31), DF and IF, and full operation
-# TERMINATION.  p.32 says the whole operation is terminated; this
-# suppresses the STORE only, so a BB whose write is suppressed still
-# takes its branch.  Nothing transcribed distinguishes the two.
+# THE BOUNDARY REGISTERS ARE THE SECTION BELOW; what is still not
+# implemented is DF and IF (both mask-dependent, unlike DS), full
+# operation TERMINATION -- p.32 says the whole operation is terminated,
+# this suppresses the STORE only, so a BB whose write is suppressed
+# still takes its branch -- and the straddling rule.  Nothing
+# transcribed distinguishes them.
+
+run "Storage protection: the address boundary registers" ./run_program.sh programs/storage_protection_boundary.strap StretchProtBndTb \
+    "PC=4283"          # 004135.40; hand-written, not a listing fact
+# THE BOUNDARY REGISTERS, the second half of address monitoring.  Word
+# 3 holds the upper boundary in bits 0-17, the lower in 32-49 and the
+# boundary control bit at 57 (p.31 -- upper is named first and sits
+# LOWER in the word).  The area is HALF-OPEN: p.31, "all words in
+# subsequent locations up to, but not including, the address in the
+# upper boundary register", and "if it is equal or smaller, no words
+# are contained in the core storage area", which needs no guard of its
+# own because the comparison is already false for every address.
+#
+# THE CONTROL-BIT POLARITY WAS NOT AN OPEN QUESTION.  This project's
+# plan carried "still to source from Appendix C" in two places; p.31
+# settles it in one sentence -- zero signals for a comparand INSIDE the
+# area, one for a comparand OUTSIDE.  The p.15 overview had been read
+# and the operand-designation chapter twenty pages later had not.  The
+# cost of that was two "open question" entries and an unimplemented
+# subsystem; the fix was rendering two pages.
+#
+# THE 0-31 CARVE-OUT GATES THE COMPARE, it does not sit beside it.
+# p.31 says monitoring of 0-31 is INDEPENDENT of the boundary
+# registers.  Written as "permanent OR boundary", a set control bit
+# makes words 4-31 signal -- they are outside every area a program can
+# name -- and those are exactly the 43 constant-address st.writeWord
+# sites that go unguarded on the argument that 4-31 never signal.  The
+# carve-out is what keeps that argument true, which is why the program
+# stores to word 4 with the control bit set.
+#
+# HOW THE BOUNDARIES GET LOADED, and the layout that makes it work.
+# SSIP's SIP16 resets word 2 with LVI then SV; the same pair loads a
+# boundary because SV writes its 24-bit value into bits 0-23 of a
+# half-word, so a WORD-ALIGNED bit address lands with its word number
+# in bits 0-17 of that half -- where both boundary registers live.  And
+# SV preserves the low seven bits it read back, so a store to the lower
+# half leaves bit 57, the control bit, alone.
+#
+# Seven injections, each predicted before it was run.  Every address
+# below is reproducible with
+#   python3 line_addresses.py programs/storage_protection_boundary.strap
+# which prints the row it names -- so these are checkable, not folklore:
+#
+#   boundaries never consulted     -> 004107.40  BB,  WLOW, $
+#   lower exclusive (>= -> >)      -> 004107.40  BB,  WLOW, $
+#   upper/lower fields swapped     -> 004107.40  BB,  WLOW, $  (area empty)
+#   upper inclusive (< -> <=)      -> 004114.40  BZB, WABOVE, $
+#   control-bit polarity inverted  -> 004105.00  BZB, WBELOW, $
+#   carve-out written as OR        -> 004130.40  BZB, 4.0, $
+#   address-invalid exemption gone -> 004134.40  BDS, $
+#
+# THE LAST ONE READ BACK 004135.00, ONE HALF-WORD PAST ITS CHECK, AND
+# THAT IS A PROPERTY OF THE HARNESS, NOT THE TEST.  A hang is a branch
+# to itself, and the instruction counter OSCILLATES between the
+# branch's address and the half-word after it while it spins; the step
+# cap samples whichever clock it lands on.  Measured directly, by
+# generating the same testbench three times: caps of 30000 and 30001
+# report 004135.00, a cap of 30002 reports 004134.40.  Every other
+# injection in this file happens to sample the branch's own address,
+# which is why it took an injection landing on the other phase to
+# notice.  Read a hang address as accurate to one half-word.
+#
+# AND THE OFFSET IS OCTAL.  004107.40 is word 04107, bit 32.  The
+# program's own source is DECIMAL unless "(8)" says otherwise, so the
+# boundary control bit is written "3.57" there and printed "3.71" by
+# line_addresses.py.  The first draft of this block recorded ".32" for
+# every one of these, which is the decimal offset -- caught by running
+# the new tool over storage_protection.strap above and watching it
+# reproduce that section's ".40" addresses exactly.
+#
+# NOT IMPLEMENTED, stated in protViolates: DF and IF (both
+# mask-dependent, unlike DS), full operation TERMINATION, and the
+# straddling rule (p.31: a field crossing a boundary always signals --
+# this compares one word address per store, not a field's extent).
 
 run "SSIP SIP16/SIP17 reset blocks (ja_ua1_ssip, encoding)" python3 verify_ssip_sip17_listing.py
 # FIRST TRANSCRIPTION FROM ja_ua1_ssip, the System Test Program's

@@ -235,9 +235,12 @@ endfunction
 // Bit#(n) wraparound gives for free.
 // ---------------------------------------------------------------------
 
-// STORAGE PROTECTION, the permanently protected area.  p.31: "The
-// monitoring of references to locations 0-31 is independent of the
-// contents of the boundary registers.  Locations 1, 2, and 3 are
+// STORAGE PROTECTION / ADDRESS MONITORING, for STORE-type references.
+// Two areas: the permanently protected words, and the one the boundary
+// registers name.
+//
+// p.31: "The monitoring of references to locations 0-31 is independent
+// of the contents of the boundary registers.  Locations 1, 2, and 3 are
 // referred to as the permanently protected area of storage.
 // References to these locations always give an address monitoring
 // signal, regardless of the contents of the boundary registers or the
@@ -253,22 +256,72 @@ endfunction
 // Gated on the enable bit because p.45 defines the indicator as a
 // store attempted "while the interruption system was enabled".
 //
-// THE BOUNDARY REGISTERS ARE NOT IMPLEMENTED: word 3 holds an upper
-// boundary in bits 0-17, a lower in 32-49 and a control bit at 57
-// (p.31, note the counter-intuitive order), and none of it is
-// consulted.  This covers only the permanently protected locations,
-// which need no boundary setup -- and which are the ones a deck
-// actually reaches, SSIP's SIP16 writing words 1, 2 and 3 with
-// interrupts disabled first.
+// THE BOUNDARY REGISTERS, now consulted.  p.31: "A core storage area
+// is defined by placing an address in each of two address boundary
+// registers.  This area includes the word specified by the address in
+// the lower boundary register and all words in subsequent locations up
+// to, but not including, the address in the upper boundary register...
+// If it is equal or smaller, no words are contained in the core
+// storage area.  The upper boundary and lower boundary registers are
+// located in bits 0-17 and 32-49, respectively, of storage location 3.
+//
+// The boundary control bit, bit 57 of storage location 3, determines
+// which condition will cause an address monitoring signal.  When the
+// boundary control bit is zero, a signal is obtained for a comparand
+// INSIDE the specified area.  When the boundary control bit is one, a
+// signal is obtained for a comparand OUTSIDE the specified area."
+//
+// Note the order -- upper first, lower second -- and that the interval
+// is HALF-OPEN: [lower, upper).  `upper <= lower` needs no separate
+// guard; the comparison is already false for every address, which is
+// what "no words are contained" means.
+//
+// THE 0-31 CARVE-OUT GATES THE BOUNDARY COMPARE; it does not sit
+// beside it.  That is the word INDEPENDENT in the p.31 sentence quoted
+// at the top of this comment, read strictly: for an address below 32
+// the boundary registers are not consulted at all.
+//
+// Writing that as `permanent || boundary` would be wrong, and wrong in
+// a way that matters here: with the control bit set (signal outside),
+// words 4-31 are outside any area a program can name, so they would
+// all signal -- and words 4-31 are exactly the special registers the
+// 43 constant-address st.writeWord sites below write without a guard.
+// The carve-out is what keeps that argument true, so it is structural,
+// not decoration.
+//
+// AN ADDRESS-INVALID ADDRESS IS EXEMPT.  p.32: "An address which
+// actuates indicator AD, address invalid, is not compared with the
+// contents of the boundary registers and cannot actuate any of the
+// address alarm indicators."  Uninstalled addresses are that class
+// (StretchMemory's `installed`); the model does not yet raise AD for
+// them, but it must not raise DS either, which without this clause a
+// control bit of one would do for every one of them.
 //
 // ONE PREDICATE, USED AT EACH COMPUTED-ADDRESS STORE.  Of the 64
 // st.writeWord sites in this file, 43 write a CONSTANT special-register
 // address -- the accumulator halves, its sign byte, the zeros/ones
 // counts, remainder, factor -- all in 4-31, which p.31 says never
-// signal.  Only the computed-address stores can land in 1-3, and they
-// share this one function rather than repeating the rule.
-function Bool protViolates(StretchStorage st, WordAddr a) =
-  st.irqEnabled() && (a >= 1 && a <= 3);
+// signal.  Only the computed-address stores can reach the monitored
+// area, and they share this one function rather than repeating the
+// rule.
+//
+// STILL NOT IMPLEMENTED, and each is its own piece of work: DF and IF
+// (both mask-dependent, unlike DS), full operation TERMINATION (p.32
+// terminates the whole operation; this suppresses only the store, so a
+// BB whose write is suppressed still branches), and the straddling
+// rule ("an instruction or data field which straddles a boundary
+// always gives an address monitoring signal", p.31) -- this compares
+// one word address per store, not a field's extent.
+function Bool protViolates(StretchStorage st, WordAddr a);
+  Word64  b     = st.readBoundaries();
+  WordAddr upper = b[63:46];   // IBM bits 0-17
+  WordAddr lower = b[31:14];   // IBM bits 32-49
+  Bit#(1)  ctl   = b[6];       // IBM bit 57
+  Bool inArea = (a >= lower) && (a < upper);
+  Bool signalled = (a < 32) ? (a >= 1 && a <= 3)
+                            : ((ctl == 1) ? !inArea : inArea);
+  return st.irqEnabled() && installed(a) && signalled;
+endfunction
 
 function BitAddr effAddr24(StretchStorage st, BitAddr raw, Bit#(4) idx);
   if (idx == 0)

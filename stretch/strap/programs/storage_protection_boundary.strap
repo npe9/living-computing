@@ -1,0 +1,140 @@
+! Storage protection: the ADDRESS BOUNDARY REGISTERS and the boundary
+! control bit.  The companion to storage_protection.strap, which covers
+! the permanently protected area (words 1-3) only.
+!
+! THE RULES, all from Reference Manual p.31-32.
+!
+! p.31, "Definition of Monitored Area": "A core storage area is defined
+! by placing an address in each of two address boundary registers.
+! This area includes the word specified by the address in the lower
+! boundary register and all words in subsequent locations up to, but
+! not including, the address in the upper boundary register.  The
+! address in the upper boundary register is normally larger than that
+! in the lower boundary register.  If it is equal or smaller, no words
+! are contained in the core storage area.  The upper boundary and lower
+! boundary registers are located in bits 0-17 and 32-49, respectively,
+! of storage location 3."  UPPER IS NAMED FIRST AND SITS LOWER IN THE
+! WORD; that order is the trap this program pins.
+!
+! p.31: "The boundary control bit, bit 57 of storage location 3,
+! determines which condition will cause an address monitoring signal.
+! When the boundary control bit is zero, a signal is obtained for a
+! comparand inside the specified area.  When the boundary control bit
+! is one, a signal is obtained for a comparand outside the specified
+! area."  BOTH POLARITIES ARE EXERCISED BELOW; one of them alone leaves
+! the sense of the compare free.
+!
+! p.31: "The monitoring of references to locations 0-31 is independent
+! of the contents of the boundary registers... References to locations
+! 0 and 4 through 31, inclusive, never cause an address monitoring
+! signal."  INDEPENDENT, not additional -- with the control bit set,
+! words 4-31 are outside every area a program can name, so a rule
+! written as "permanently protected OR outside the area" would signal
+! on the special registers.  Phase B checks word 4 for exactly that.
+!
+! p.32: "An address which actuates indicator AD, address invalid, is
+! not compared with the contents of the boundary registers and cannot
+! actuate any of the address alarm indicators."  The last block stores
+! past the installed core with the control bit set, where a missing
+! exemption would raise DS.
+!
+! HOW THE BOUNDARIES ARE LOADED, and why this idiom.  SSIP's SIP16
+! resets word 2 with "LVI,$X13,INT" then "SV,$X13,2.0" -- a bit address
+! into an index value field, then a half-word store.  The same pair
+! works for the boundaries because the fields line up: SV writes the
+! 24-bit value into bits 0-23 of its half-word, so a WORD-aligned bit
+! address lands with its word number in bits 0-17 of that half -- which
+! is where both boundary registers live.  And SV's low seven bits are
+! read back from storage, so a store to the LOWER half (bits 32-63)
+! leaves bit 57, the control bit, alone.  The register layout is built
+! for this sequence.
+!
+! AND THE STORES HAPPEN WITH THE SYSTEM DISABLED, because word 3 is
+! itself permanently protected -- SIP16's "BD" is commented "DISABLE
+! BEFORE RESET OF PROTECTED AREA".
+!
+! PHASE A USES BIT 0 OF EACH TEST WORD AND PHASE B USES BIT 1, so no
+! check in the second phase can pass on a bit the first phase left set.
+!
+! WEAKER STANDARD: hand-written from p.31 and p.32.  No listing in this
+! collection sets a boundary register to a non-zero value.
+
+        SLC, (8)4100.0
+!
+! ---- phase A: control bit 0, a signal INSIDE the area --------------
+START   BD, $+.32                    ! disable: word 3 is protected
+        LVI, $X13, WLOW              ! the lower boundary's bit address
+        SV,  $X13, $LB               ! lower boundary := WLOW  (bits 32-49)
+        LVI, $X13, WABOVE            ! the upper boundary's bit address
+        SV,  $X13, $UB               ! upper boundary := WABOVE (bits 0-17)
+        BBZ, 3.57, $+1.0             ! control bit := 0: signal INSIDE
+        BE,  $+.32                   ! enable the interrupt system
+!
+! below the area: the store lands
+        BB1, WBELOW, $+1.0
+        BZB, WBELOW, $               ! hang if off -- the store must have landed
+        BDS, $                       ! hang if DS is on
+! at the lower boundary: INSIDE, so suppressed.  Pins >= against >.
+        BB1, WLOW, $+1.0
+        BB,  WLOW, $                 ! hang if on -- the store must be suppressed
+        BZDSZ, $                     ! hang if DS is off; clear it for the next check
+! one below the upper boundary: still inside
+        BB1, WHIGH, $+1.0
+        BB,  WHIGH, $
+        BZDSZ, $
+! at the upper boundary: OUTSIDE, "up to, but not including".  Pins <
+!   against <=, which is the whole content of the half-open interval.
+        BB1, WABOVE, $+1.0
+        BZB, WABOVE, $
+        BDS, $
+!
+! ---- phase B: control bit 1, a signal OUTSIDE the area -------------
+        BD, $+.32                    ! disable again to reach word 3
+        BB1, 3.57, $+1.0             ! control bit := 1: signal OUTSIDE
+        BE,  $+.32
+!
+! inside the area: now the store lands
+        BB1, WLOW+.1, $+1.0
+        BZB, WLOW+.1, $
+        BDS, $
+! below the area: outside, so suppressed
+        BB1, WBELOW+.1, $+1.0
+        BB,  WBELOW+.1, $
+        BZDSZ, $
+! at the upper boundary: outside, so suppressed -- the same address
+!   that was PERMITTED in phase A, which is how the polarity is pinned
+!   rather than the compare
+        BB1, WABOVE+.1, $+1.0
+        BB,  WABOVE+.1, $
+        BZDSZ, $
+!
+! word 4 is a special register: p.31 says 4 through 31 NEVER signal,
+! and with the control bit set it lies outside the area.  The store
+! must land and DS must stay off.
+        BB1, 4.0, $+1.0
+        BZB, 4.0, $
+        BDS, $
+!
+! word 3 is permanently protected "regardless of... the setting of the
+! boundary control bit".  Its bit 0 is the upper boundary's high bit,
+! so a store that is not suppressed would also move the boundary.
+        BB1, 3.0, $+1.0
+        BZDSZ, $
+!
+! past the installed core: address-invalid, exempt from address
+! monitoring (p.32).  Outside the area, so a missing exemption raises
+! DS here.
+        BB1, (8)300000.0, $+1.0
+        BDS, $
+        B, PASS
+PASS    BEW, $
+!
+! ---- the monitored area and its neighbours ------------------------
+! An explicit SLC: DD emits at the location counter, and code that
+! grows would otherwise overrun its own data.
+        SLC, (8)4300.0
+WBELOW  DD, 0                        ! below the lower boundary
+WLOW    DD, 0                        ! == the lower boundary, first word in
+WHIGH   DD, 0                        ! == upper-1, last word in
+WABOVE  DD, 0                        ! == the upper boundary, first word out
+        END, START
