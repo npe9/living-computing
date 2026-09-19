@@ -249,9 +249,37 @@ MUTATIONS = [
     # effAddr24 (bit-addressed).  Two are now pinned; this asks about
     # the third.  Suggested directly by the pair above -- when a rule
     # has more than one implementation, each needs its own witness.
+    # UNITS, not sign.  These two revert the helpers to adding the index
+    # value STRAIGHT to a word / half-word address, which is what they
+    # did until p.20-21 was read properly: the instruction's short
+    # address is extended with low-order zeros into the 24-bit domain
+    # and the value goes in as-is, so one word is 64 and one half-word
+    # is 32.  Distinct from the sign mutations below -- a test can pin
+    # the sign and still say nothing about the units, which is exactly
+    # what fp_negative_modifier did for months.
+    ("effaddr19-wrong-units", "bsv/StretchExecute.bsv",
+     "    BitAddr base = {raw, 5'b0};        // 19-bit half-word address -> bits 0-18\n"
+     "    BitAddr ea   = (x.sign == 1) ? (base - x.addr) : (base + x.addr);\n"
+     "    return ea[23:5];                   // only the applicable part",
+     "    Bit#(19) m = truncate(x.addr);\n"
+     "    return (x.sign == 1) ? (raw - m) : (raw + m);",
+     "The BRANCH address helper adds the index value straight to a"
+     " half-word address -- 32x too far (p.20-21)."),
+
+    ("effaddr18-wrong-units", "bsv/StretchExecute.bsv",
+     "    BitAddr base = {raw, 6'b0};        // 18-bit word address -> bits 0-17\n"
+     "    BitAddr ea   = (x.sign == 1) ? (base - x.addr) : (base + x.addr);\n"
+     "    return ea[23:6];                   // only the applicable part",
+     "    Bit#(18) m = truncate(x.addr);\n"
+     "    return (x.sign == 1) ? (raw - m) : (raw + m);",
+     "The FLOATING-POINT address helper adds the index value straight to"
+     " a word address -- 64x too far (p.20-21)."),
+
     ("effaddr19-ignores-index-sign", "bsv/StretchExecute.bsv",
-     "    Bit#(19) m = truncate(x.addr);\n    return (x.sign == 1) ? (raw - m) : (raw + m);",
-     "    Bit#(19) m = truncate(x.addr);\n    return raw + m;",
+     "    BitAddr ea   = (x.sign == 1) ? (base - x.addr) : (base + x.addr);\n"
+     "    return ea[23:5];",
+     "    BitAddr ea   = base + x.addr;\n"
+     "    return ea[23:5];",
      "The BRANCH address helper ignores the index value's sign (p.20-21)."
      "  This one existed only after an audit: branch_index_modified.strap"
      " originally used a POSITIVE index, which cannot tell raw-m from"
@@ -259,8 +287,10 @@ MUTATIONS = [
      " false for effAddr19."),
 
     ("effaddr18-ignores-index-sign", "bsv/StretchExecute.bsv",
-     "    Bit#(18) m = truncate(x.addr);\n    return (x.sign == 1) ? (raw - m) : (raw + m);\n  end\nendfunction\n\n// readHW",
-     "    Bit#(18) m = truncate(x.addr);\n    return raw + m;\n  end\nendfunction\n\n// readHW",
+     "    BitAddr ea   = (x.sign == 1) ? (base - x.addr) : (base + x.addr);\n"
+     "    return ea[23:6];",
+     "    BitAddr ea   = base + x.addr;\n"
+     "    return ea[23:6];",
      "The FLOATING-POINT address helper ignores the index value's sign"
      " (p.20-21); effAddr18 is a third independent copy of that test."
      "  Closed by programs/fp_negative_modifier.strap."),

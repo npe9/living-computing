@@ -215,13 +215,43 @@ function BitAddr effAddr24(StretchStorage st, BitAddr raw, Bit#(4) idx);
   end
 endfunction
 
+// THE ADDITION HAPPENS IN THE 24-BIT BIT-ADDRESS DOMAIN, always.
+// Reference Manual p.20-21: "The value field of the index is
+// interpreted as a signed 24-bit field.  The address part of the
+// instruction is interpreted as a positive unsigned field.  The length
+// of the address field depends upon the instruction class.  THE MISSING
+// LOW-ORDER BITS, IF ANY, ARE ALWAYS ASSUMED TO BE ZERO", and then
+// (p.21) "The effective address which results from an indexing
+// operation always has 24 numeric bits and a sign.  Depending upon the
+// operation, a full-word, half-word, or bit-address may be required.
+// In each case, ONLY THE APPLICABLE PART of the effective address is
+// used.  The non-applicable part is ignored."
+//
+// So the INSTRUCTION's short address is what gets aligned -- extended
+// with low-order zeros into the 24-bit domain -- and the index value
+// goes in as-is.  The scaling lives in the programmer's constant, never
+// in a hardware shift: ONE WORD IS AN INDEX VALUE OF 64 AND ONE
+// HALF-WORD IS 32.  Corroborated by p.41's index-increment table, which
+// equates "H add half to value" with "add one in bit position 18" and
+// "+ add one to value" with bit position 17 -- weights 2**5 and 2**6
+// over a value field whose bits are 0-23.
+//
+// These two helpers previously added the value STRAIGHT to a word or
+// half-word address, which is wrong by 64x and 32x respectively.
+// Nothing caught it because no transcribed deck indexes a
+// floating-point or branch address at all -- the same fact that let
+// mutation_score.py's branch-target-unmodified survive until
+// branch_index_modified.strap existed.  effAddr24 was always right,
+// because for it the instruction address is already a bit address and
+// there is nothing to align.
 function HWordAddr effAddr19(StretchStorage st, HWordAddr raw, Bit#(4) idx);
   if (idx == 0)
     return raw;
   else begin
     IndexWord x = st.readIndex(idx);
-    Bit#(19) m = truncate(x.addr);
-    return (x.sign == 1) ? (raw - m) : (raw + m);
+    BitAddr base = {raw, 5'b0};        // 19-bit half-word address -> bits 0-18
+    BitAddr ea   = (x.sign == 1) ? (base - x.addr) : (base + x.addr);
+    return ea[23:5];                   // only the applicable part
   end
 endfunction
 
@@ -230,8 +260,9 @@ function WordAddr effAddr18(StretchStorage st, WordAddr raw, Bit#(4) idx);
     return raw;
   else begin
     IndexWord x = st.readIndex(idx);
-    Bit#(18) m = truncate(x.addr);
-    return (x.sign == 1) ? (raw - m) : (raw + m);
+    BitAddr base = {raw, 6'b0};        // 18-bit word address -> bits 0-17
+    BitAddr ea   = (x.sign == 1) ? (base - x.addr) : (base + x.addr);
+    return ea[23:6];                   // only the applicable part
   end
 endfunction
 

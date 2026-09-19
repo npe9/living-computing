@@ -22,15 +22,21 @@
 ! is zero and therefore compares unequal.  DUMMY exists only to be the
 ! wrong answer.
 !
-! UNITS, RECORDED AS AN OPEN OBSERVATION RATHER THAN A CLAIM.  effAddr18
-! adds the index value truncated to 18 bits to a WORD address, so a
-! value of 1 moves ONE WORD -- whereas effAddr24 adds the same field to
-! a BIT address, where 1 moves one bit.  The value field is a 24-bit BIT
-! address in the index word format, so the two helpers interpret the
-! same field in different units.  That may well be right (the FP address
-! field is itself 18 bits, a word address), but nothing transcribed
-! pins it, and this program does not settle it: it pins the SIGN only,
-! and is built around whatever units the model uses.
+! UNITS -- THE OPEN QUESTION THIS PROGRAM ONCE RECORDED IS NOW CLOSED.
+! It used to say the two helpers read one field in different units and
+! that nothing transcribed settled it.  The Reference Manual does, on
+! p.20-21: the instruction's short address is extended with low-order
+! zeros into the 24-bit domain and the index value is added AS-IS, so
+! ONE WORD IS AN INDEX VALUE OF 64.  effAddr18 was adding it straight
+! to a word address -- wrong by 64x.
+!
+! A WARNING FROM THIS PROGRAM'S OWN HISTORY.  With value 1 it passed
+! under BOTH the wrong and the corrected model, for different reasons:
+! subtracting one BIT from a word-aligned address borrows below the
+! boundary, and the truncation to a word address gives the same answer
+! as subtracting 64.  So it never discriminated the units, only the
+! sign -- which is exactly what its header claimed, and the claim was
+! right.  With the constant corrected to 64 it now pins both.
 !
 ! WEAKER STANDARD, STATED: hand-written from p.20-21, not transcribed.
 
@@ -46,6 +52,6 @@ START   LX, $1, WMINUS1              ! index value = 1 word, NEGATIVE
 FPVAL   DD(BU,64), 2251799813685248  ! fraction 2**47, exponent 0
 FPA2    DD(BU,64), 0                 ! the addressed word; content unused
 DUMMY   DD(BU,64), 0                 ! the wrong answer: must stay zero
-WMINUS1 XW, -(8)0.01, 0, 0, 0        ! value 1, sign 1
+WMINUS1 XW, -(8)1.0, 0, 0, 0         ! value 64 = ONE WORD, sign 1
 PASS    BEW, $
         END, START

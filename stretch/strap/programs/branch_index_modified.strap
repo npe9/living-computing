@@ -14,12 +14,17 @@
 ! like anything else -- "any of these instruction types may cause a new
 ! value to be transferred to the instruction counter".
 !
-! UNITS ARE THE TRICK.  effAddr19 adds the index value's low 19 bits to
-! a HALF-WORD address, and the value field is a BIT address, so a value
-! of 1 moves the target by one half-word.  LVI cannot express that --
-! it shifts its immediate left by five (see io_reader_printer.strap's
-! own note) -- so the offset comes from an XW whose value field is the
-! bit address (8)0.01, which is 1.
+! UNITS.  p.20-21: the instruction's short address field is extended
+! with low-order zeros into the 24-bit domain and the index value is
+! added AS-IS, so ONE HALF-WORD IS AN INDEX VALUE OF 32, not 1.  These
+! constants said 1 when this program was written, because the model
+! then added the value straight to a half-word address -- wrong by 32x,
+! and invisible because nothing else indexes a branch target.  With the
+! model corrected, a value of 1 is one BIT and truncates away, so the
+! old constants now FAIL here at T1, which is how the fix was
+! confirmed.  LVI cannot express 32 either (it shifts its immediate
+! left by five), so the offset comes from an XW value field written as
+! the bit address (8)0.40.
 !
 ! WEAKER STANDARD, STATED: hand-written from p.20-21, not transcribed.
 
@@ -45,7 +50,7 @@ L2      B, PASS                      ! T2 - 1: the correct landing
 T2      BEW, $                       ! hang up: modification dropped
         BEW, $                       ! hang up: the SIGN was ignored, so
                                      !   the branch ran the wrong way
-WPLUS1  XW, (8)0.01, 0, 0, 0         ! value 1, sign 0
-WMINUS1 XW, -(8)0.01, 0, 0, 0        ! value 1, sign 1
+WPLUS1  XW, (8)0.40, 0, 0, 0         ! value 32 = ONE HALF-WORD, sign 0
+WMINUS1 XW, -(8)0.40, 0, 0, 0        ! value 32 = ONE HALF-WORD, sign 1
 PASS    BEW, $
         END, START

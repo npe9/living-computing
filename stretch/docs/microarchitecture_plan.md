@@ -4399,17 +4399,50 @@ hand vectors alone. "Enables" notes the dependency chain.
    other's case, and the only thing that finds both is asking the model
    whether anything notices.
 
-   AN OPEN OBSERVATION, NOT A CLAIM. effAddr18 adds the index value
-   truncated to 18 bits to a WORD address, so a value of 1 moves one
-   WORD; effAddr24 adds the same field to a BIT address, where 1 moves
-   one bit. The value field is a 24-bit BIT address in the index word
-   format, so the two helpers read one field in different units. That
-   may be right -- the FP address field is itself an 18-bit word
-   address, so the hardware plausibly shifts -- but nothing transcribed
-   pins it, and fp_negative_modifier.strap does not settle it: it is
-   built around whatever units the model already uses and pins the SIGN
-   only. Recorded rather than asserted, because claiming an unsourced
-   rule is exactly how BR's absolute branch got into the README.
+   THAT OPEN OBSERVATION IS NOW CLOSED, AND IT WAS A REAL BUG. The
+   question was whether effAddr18 and effAddr24 reading one field in
+   different units could be right. The Reference Manual settles it on
+   p.20-21: "The value field of the index is interpreted as a signed
+   24-bit field. The address part of the instruction is interpreted as
+   a positive unsigned field... THE MISSING LOW-ORDER BITS, IF ANY, ARE
+   ALWAYS ASSUMED TO BE ZERO", and then "The effective address which
+   results from an indexing operation always has 24 numeric bits and a
+   sign... In each case, ONLY THE APPLICABLE PART of the effective
+   address is used."
+
+   So the INSTRUCTION's short address is what gets aligned, and the
+   index value goes in AS-IS: ONE WORD IS AN INDEX VALUE OF 64 AND ONE
+   HALF-WORD IS 32. Corroborated by p.41's index-increment table, which
+   equates "H add half to value" with "add one in bit position 18" and
+   "+ add one to value" with position 17 -- weights 2**5 and 2**6 over
+   a value field whose bits are 0-23. effAddr18 and effAddr19 were
+   adding the value straight to a word / half-word address, wrong by
+   64x and 32x. effAddr24 was always right, having nothing to align.
+
+   WHY NOTHING CAUGHT IT: no transcribed deck indexes a floating-point
+   or branch address at all -- the same fact that let
+   branch-target-unmodified survive until branch_index_modified.strap
+   existed. One root cause, two symptoms: the mutation campaign found
+   the missing coverage, the manual found the wrong behaviour under it.
+
+   AND FAIL-FIRST CAUGHT SOMETHING I WOULD HAVE MISSED. After the fix
+   branch_index_modified FAILED, its constants having encoded the old
+   units -- that breakage is the evidence the fix took effect. But
+   fp_negative_modifier PASSED, and the reason matters: with a value of
+   1, subtracting one BIT from a word-aligned address borrows below the
+   boundary, so the truncation to a word address gives the same answer
+   as subtracting 64. It passed under BOTH the wrong and the corrected
+   model, for different reasons, and therefore never discriminated the
+   units at all -- only the sign, which is exactly what its header
+   claimed. The claim was honest; what I had not seen was how narrow it
+   was. With the constants corrected to 32 and 64 both programs now pin
+   units AND sign, and reverting the helpers fails both -- the branch
+   one landing 32 half-words away, at 8034.
+
+   THE GENERAL SHAPE, worth more than the bug: A TEST CAN PIN ONE
+   PROPERTY OF A RULE AND SAY NOTHING ABOUT ANOTHER, and an input that
+   happens to agree under both readings hides the difference. Same
+   family as the flag/count confound and the positive-index sign test.
    programs/index_negative_modifier.strap reaches effAddr24 through
    Branch-on-Bit, with a decoy word on the far side that must stay
    zero; the mutation halts at 003302.40.
