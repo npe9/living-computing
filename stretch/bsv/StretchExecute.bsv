@@ -235,6 +235,41 @@ endfunction
 // Bit#(n) wraparound gives for free.
 // ---------------------------------------------------------------------
 
+// STORAGE PROTECTION, the permanently protected area.  p.31: "The
+// monitoring of references to locations 0-31 is independent of the
+// contents of the boundary registers.  Locations 1, 2, and 3 are
+// referred to as the permanently protected area of storage.
+// References to these locations always give an address monitoring
+// signal, regardless of the contents of the boundary registers or the
+// setting of the boundary control bit.  References to locations 0 and
+// 4 through 31, inclusive, never cause an address monitoring signal."
+//
+// p.32 on a STORE: "Since this indicator [DS] is permanently masked
+// on, storing in core storage is always suppressed, and the operation
+// is always terminated."  DS is bit 19 and mask bits 0-19 are
+// permanently one, so a store-type reference is ALWAYS suppressed --
+// no mask-dependent branch, unlike DF and IF.
+//
+// Gated on the enable bit because p.45 defines the indicator as a
+// store attempted "while the interruption system was enabled".
+//
+// THE BOUNDARY REGISTERS ARE NOT IMPLEMENTED: word 3 holds an upper
+// boundary in bits 0-17, a lower in 32-49 and a control bit at 57
+// (p.31, note the counter-intuitive order), and none of it is
+// consulted.  This covers only the permanently protected locations,
+// which need no boundary setup -- and which are the ones a deck
+// actually reaches, SSIP's SIP16 writing words 1, 2 and 3 with
+// interrupts disabled first.
+//
+// ONE PREDICATE, USED AT EACH COMPUTED-ADDRESS STORE.  Of the 64
+// st.writeWord sites in this file, 43 write a CONSTANT special-register
+// address -- the accumulator halves, its sign byte, the zeros/ones
+// counts, remainder, factor -- all in 4-31, which p.31 says never
+// signal.  Only the computed-address stores can land in 1-3, and they
+// share this one function rather than repeating the rule.
+function Bool protViolates(StretchStorage st, WordAddr a) =
+  st.irqEnabled() && (a >= 1 && a <= 3);
+
 function BitAddr effAddr24(StretchStorage st, BitAddr raw, Bit#(4) idx);
   if (idx == 0)
     return raw;
@@ -628,7 +663,8 @@ function ActionValue#(Word64) fpStoreClass(StretchStorage st, Bit#(7) c,
         let {vn, g} = fpMakeExp(signExtend(fpExp(v)) + adj, f48, v.sign, v.flags);
         v = vn; gen = g;
       end
-      st.writeWord(ea, fpToWord(v));
+      if (protViolates(st, ea)) ind = setBit(ind, ind_DS, 1);
+      else st.writeWord(ea, fpToWord(v));
       ind = setBit(ind, ind_MOP, 1);
       ind = setResultIndicatorsFp(ind, v);
       // "If an EF of 1 is generated during normalization, the
@@ -641,7 +677,8 @@ function ActionValue#(Word64) fpStoreClass(StretchStorage st, Bit#(7) c,
       // "As with other store operations, the accumulator flag bits,
       // sign byte register bits 5-7, are placed in the flag bit
       // positions, bits 61-63 of the addressed storage location."
-      st.writeWord(ea, { r.res.ef, r.res.em, r.res.es, r.res.frac,
+      if (protViolates(st, ea)) ind = setBit(ind, ind_DS, 1);
+      else st.writeWord(ea, { r.res.ef, r.res.em, r.res.es, r.res.frac,
                          r.res.sign, sbFlags(accS) });
       // "The entire accumulator and its sign byte remain unchanged."
       ind = setBit(ind, ind_MOP, 1);
@@ -699,7 +736,8 @@ function ActionValue#(Word64) fpStoreClass(StretchStorage st, Bit#(7) c,
                                w96[95:48], msign, da.flags);
         out = o; gen = g; lc = l;
       end
-      st.writeWord(ea, fpToWord(out));
+      if (protViolates(st, ea)) ind = setBit(ind, ind_DS, 1);
+      else st.writeWord(ea, fpToWord(out));
       // "These indicators are set as in ADD TO MEMORY": MOP, the
       // arithmetic result four, LC, the exponent range five, ZM.
       ind = setBit(ind, ind_MOP, 1);
@@ -755,7 +793,8 @@ function ActionValue#(Word64) fpStoreClass(StretchStorage st, Bit#(7) c,
                                f48, msign, da.flags);
         out = o; gen = g;
       end
-      st.writeWord(ea, fpToWord(out));
+      if (protViolates(st, ea)) ind = setBit(ind, ind_DS, 1);
+      else st.writeWord(ea, fpToWord(out));
       // "The above indicators are set as in STORE": MOP, the
       // arithmetic result four, the exponent range four, ZM. Note
       // p.97 lists no LOST CARRY for SLO -- there is no carry out
@@ -1270,7 +1309,8 @@ function ActionValue#(Word64) fpArithClass(StretchStorage st, Bit#(7) c,
         // stored is still the negative one. Storing the sum's sign
         // halted at B19's BB.
         if (c == fpop_M_PLUS_MG) v.sign = opnd0.sign;
-        st.writeWord(ea, fpToWord(v));
+        if (protViolates(st, ea)) ind = setBit(ind, ind_DS, 1);
+        else st.writeWord(ea, fpToWord(v));
         ind = setBit(ind, ind_MOP, 1);
         ind = setResultIndicatorsFp(ind, v);
         if (r.lc) ind = setBit(ind, ind_LC, 1);
@@ -1790,7 +1830,8 @@ function ActionValue#(VflOutcome)
               Bit#(6) off = baBit(ea);
               if (!vflNeedsRefill) begin
                 if (prefetchCount >= 1) begin
-                  st.writeWord(w0, insertFieldBits(prefetch[0], off, len_, packedField));
+                  if (protViolates(st, w0)) ind = setBit(ind, ind_DS, 1);
+                  else st.writeWord(w0, insertFieldBits(prefetch[0], off, len_, packedField));
                   vflReadsUsed = 1;
                 end else
                   needsRead = tagged Valid w0;
@@ -1802,7 +1843,8 @@ function ActionValue#(VflOutcome)
                 // vflWriteArmHandled's own comment above.
                 vflWriteArmHandled = True;
                 if (prefetchCount >= 2) begin
-                  st.writeWord(w0, insertFieldBits(prefetch[0], off, len_, packedField));
+                  if (protViolates(st, w0)) ind = setBit(ind, ind_DS, 1);
+                  else st.writeWord(w0, insertFieldBits(prefetch[0], off, len_, packedField));
                   vflPending = tagged Valid tuple2(vi.a.i1, unpackIndexWord(prefetch[1]));
                   ind = setIndexResultIndicatorsF(ind, vflPx1); // pre-refill state, p.21
                 end else if (prefetchCount == 1)
@@ -1862,7 +1904,8 @@ function ActionValue#(VflOutcome)
                   Bit#(64) raw = extractFieldBits(prefetch[0], 0, off, len_);
                   SM128 opnd = fieldToSM(raw, len_, bsz, vi.m.unsign, vi.m.invert);
                   SM128 sum = smAdd(opnd, accSh);
-                  st.writeWord(w0, insertFieldBits(prefetch[0], off, len_,
+                  if (protViolates(st, w0)) ind = setBit(ind, ind_DS, 1);
+                  else st.writeWord(w0, insertFieldBits(prefetch[0], off, len_,
                                                     smToField(sum, len_, bsz, vi.m.unsign)));
                   ind = setResultIndicatorsF(ind, sum);
                   vflReadsUsed = 1;
@@ -1875,7 +1918,8 @@ function ActionValue#(VflOutcome)
                   Bit#(64) raw = extractFieldBits(prefetch[0], 0, off, len_);
                   SM128 opnd = fieldToSM(raw, len_, bsz, vi.m.unsign, vi.m.invert);
                   SM128 sum = smAdd(opnd, accSh);
-                  st.writeWord(w0, insertFieldBits(prefetch[0], off, len_,
+                  if (protViolates(st, w0)) ind = setBit(ind, ind_DS, 1);
+                  else st.writeWord(w0, insertFieldBits(prefetch[0], off, len_,
                                                     smToField(sum, len_, bsz, vi.m.unsign)));
                   vflPending = tagged Valid tuple2(vi.a.i1, unpackIndexWord(prefetch[1]));
                   ind = setResultIndicatorsF(ind, sum);
@@ -2232,7 +2276,8 @@ function ActionValue#(IndexOutcome)
             needsRead = tagged Valid ea[18:1];
         end
         dixop_SX: begin // SX
-          st.writeWord(ea[18:1], packIndexWord(x));
+          if (protViolates(st, ea[18:1])) ind = setBit(ind, ind_DS, 1);
+          else st.writeWord(ea[18:1], packIndexWord(x));
           ind = setIndexResultIndicatorsF(ind, x);
         end
         dixop_LV: begin // LV
@@ -2258,6 +2303,7 @@ function ActionValue#(IndexOutcome)
             begin
               Bit#(32) nh = {x.addr, x.sign, h[6:0]};
               if (isIndicatorHW(ea)) ind = foldIndicatorHW(ind, ea, nh);
+              else if (protViolates(st, ea[18:1])) ind = setBit(ind, ind_DS, 1);
               else writeHWWithWord(st, ea, nh, prefetch[0]);
             end
             ind = setIndexResultIndicatorsF(ind, x);
@@ -2281,6 +2327,7 @@ function ActionValue#(IndexOutcome)
             begin
               Bit#(32) nh = {x.count, 7'b0, h[6:0]};
               if (isIndicatorHW(ea)) ind = foldIndicatorHW(ind, ea, nh);
+              else if (protViolates(st, ea[18:1])) ind = setBit(ind, ind_DS, 1);
               else writeHWWithWord(st, ea, nh, prefetch[0]);
             end
             ind = setIndexResultIndicatorsF(ind, x);
@@ -2304,6 +2351,7 @@ function ActionValue#(IndexOutcome)
             begin
               Bit#(32) nh = {x.refill, 7'b0, h[6:0]};
               if (isIndicatorHW(ea)) ind = foldIndicatorHW(ind, ea, nh);
+              else if (protViolates(st, ea[18:1])) ind = setBit(ind, ind_DS, 1);
               else writeHWWithWord(st, ea, nh, prefetch[0]);
             end
             ind = setIndexResultIndicatorsF(ind, x);
@@ -2381,6 +2429,7 @@ function ActionValue#(IndexOutcome)
             Bit#(32) h = (ea[0] == 0) ? prefetch[0][63:32] : prefetch[0][31:0];
             Bit#(32) nh = svaReplaceAddr(h, x.addr);
             if (isIndicatorHW(ea)) ind = foldIndicatorHW(ind, ea, nh);
+            else if (protViolates(st, ea[18:1])) ind = setBit(ind, ind_DS, 1);
             else writeHWWithWord(st, ea, nh, prefetch[0]);
             ind = setIndexResultIndicatorsF(ind, x);
           end else
@@ -2676,7 +2725,8 @@ function ActionValue#(IoOutcome)
           end
           3'b100: // CCW (Copy Control Word): no EOP indication given
                    // (p.122), so the control word here is left alone.
-            st.writeWord(effA2, packControlWord(io.readChanCW(chAddr)));
+            if (protViolates(st, effA2)) ind = setBit(ind, ind_DS, 1);
+            else st.writeWord(effA2, packControlWord(io.readChanCW(chAddr)));
           3'b000, 3'b001: begin // RD, W
             Bool wrongUnit = (base == 3'b000)
               ? (!readerCh && !tapeCh)   // RD valid on reader or tape
@@ -2840,6 +2890,22 @@ function ActionValue#(ExecResult)
       // -----------------------------------------------------------
       tagged BranchOrMisc .bm: begin
         if (!bm.misc) begin
+          // THE ENABLE BIT, p.40: BRANCH ENABLED (000) enables the
+          // interrupt system, BRANCH DISABLED (001) disables it,
+          // BRANCH ENABLED AND WAIT (100) enables.  All three act
+          // UNCONDITIONALLY and BEFORE the branch, so even a
+          // suppressed one still changes the bit.  B (010), BR (011)
+          // and NOP (110) leave it alone.
+          //
+          // Nothing else of the interrupt system exists: there is no
+          // interruption mechanism, and BE/BD/BEW remain identical AS
+          // BRANCHES.  The bit is here because storage protection is
+          // gated on it (p.45), which is what makes it observable.
+          case (bm.code)
+            3'b000, 3'b100: st.setIrqEnabled(True);   // BE, BEW
+            3'b001:         st.setIrqEnabled(False);  // BD
+            default:        noAction;
+          endcase
           BranchOutcome o = evalBranch(st, di, ind, prefetch, prefetchCount, 0);
           if (o.taken) next = o.relative ? (fallthrough + o.target) : o.target;
         end else begin
@@ -2855,7 +2921,8 @@ function ActionValue#(ExecResult)
                 // This is the diagnostic's `Z,$IND` reset before a test.
                 ind = ind & 64'hFFFFF00000000000;
               else
-                st.writeWord(zw, 0);
+                if (protViolates(st, zw)) ind = setBit(ind, ind_DS, 1);
+                else st.writeWord(zw, 0);
             end
             3'b000, 3'b001: begin // R / RCZ -- Refill, and Refill on
               // Count Zero.  Ref. Manual p.26: the operand is the
@@ -2924,7 +2991,8 @@ function ActionValue#(ExecResult)
                   IndexWord x = unpackIndexWord(prefetch[0]);
                   if ((bm.code == 3'b000 || x.count == 0) && refillLegal(x.refill)) begin
                     if (prefetchCount >= 2)
-                      st.writeWord(rw, prefetch[1]);
+                      if (protViolates(st, rw)) ind = setBit(ind, ind_DS, 1);
+                      else st.writeWord(rw, prefetch[1]);
                     else
                       needsRead = tagged Valid zeroExtend(x.refill);
                   end
@@ -2994,7 +3062,8 @@ function ActionValue#(ExecResult)
                 HalfWord32 old = (ha[0] == 0) ? w[63:32] : w[31:0];
                 HalfWord32 hwv = {fallthrough, old[12:0]};
                 Word64 w2 = (ha[0] == 0) ? {hwv, w[31:0]} : {w[63:32], hwv};
-                st.writeWord(ha[18:1], w2);
+                if (protViolates(st, ha[18:1])) ind = setBit(ind, ind_DS, 1);
+                else st.writeWord(ha[18:1], w2);
               end
             end
           end
@@ -3027,7 +3096,8 @@ function ActionValue#(ExecResult)
           WordAddr srcBase = baWord(effAddr24(st, t.addr1, t.i1));
           WordAddr dstBase = (effAddr19(st, t.addr2, t.i2))[18:1];
           if (prefetchCount >= 1)
-            st.writeWord(dstBase, prefetch[0]);
+            if (protViolates(st, dstBase)) ind = setBit(ind, ind_DS, 1);
+            else st.writeWord(dstBase, prefetch[0]);
           else
             needsRead = tagged Valid srcBase;
         end
@@ -3229,7 +3299,8 @@ function ActionValue#(ExecResult)
               if (baBit(ba) >= 20)
                 ind = insertFieldBits(ind, baBit(ba), 1, zeroExtend(nb));
             end else
-              st.writeWord(bw, insertFieldBits(prefetch[0], baBit(ba), 1,
+              if (protViolates(st, bw)) ind = setBit(ind, ind_DS, 1);
+              else st.writeWord(bw, insertFieldBits(prefetch[0], baBit(ba), 1,
                                                zeroExtend(nb)));
           end
         end else

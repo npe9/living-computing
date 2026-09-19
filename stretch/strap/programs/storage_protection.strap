@@ -1,0 +1,68 @@
+! Storage protection: the permanently protected area, gated on the
+! interrupt-system enable bit.
+!
+! THE RULES, all from the Reference Manual.
+!
+! p.31: "The monitoring of references to locations 0-31 is independent
+! of the contents of the boundary registers.  Locations 1, 2, and 3 are
+! referred to as the permanently protected area of storage.  References
+! to these locations always give an address monitoring signal,
+! regardless of the contents of the boundary registers or the setting
+! of the boundary control bit.  References to locations 0 and 4 through
+! 31, inclusive, never cause an address monitoring signal."
+!
+! p.32, on a STORE specifically: "Since this indicator [DS] is
+! permanently masked on, storing in core storage is always suppressed,
+! and the operation is always terminated."  DS is bit 19 and mask bits
+! 0-19 are permanently one, so there is no mask-dependent branch here,
+! unlike DF and IF.
+!
+! p.45: the indicator means a store was attempted "WHILE THE
+! INTERRUPTION SYSTEM WAS ENABLED".  So protection is gated on the
+! enable bit -- which is why that bit exists in this model at all, and
+! why it is the smallest piece of the interrupt system that a program
+! can observe.
+!
+! THE DECK AGREES, AND SAID SO FIRST.  SSIP's SIP16
+! (ssip_sip17_reset.strap) rewrites words 1, 2 and 3 -- the interval
+! timer, the interruption address register and the boundary registers
+! -- and a BD guards the sequence, commented "DISABLE BEFORE RESET OF
+! PROTECTED AREA".  A program that needs to write protected storage
+! turns the system off first.  This program is that behaviour in two
+! directions.
+!
+! WHY WORD 3 AND BRANCH ON BIT.  Word 3 is in the permanently protected
+! set, so no boundary registers need setting -- and none are
+! implemented.  BB both writes and reads a single bit, so one
+! instruction type shows the store's effect and the absence of it.
+!
+! KNOWN DEVIATION, STATED: p.32 says the whole operation is
+! "terminated", and this model suppresses only the STORE -- a BB whose
+! write is suppressed still takes its branch.  Nothing transcribed
+! distinguishes the two, and the branch is not what DS reports.
+!
+! WEAKER STANDARD: hand-written from p.31/p.32/p.45.  The deck block it
+! mirrors is transcribed separately and is encoding-only.
+
+        SLC, (8)4100.0
+!
+! ---- disabled: the store into protected storage SUCCEEDS -----------
+! Disabled is also the reset state (p.53), so the BD is belt and
+! braces -- and it is what SIP16 does before its own protected writes.
+START   BD, $+.32                    ! disable the interrupt system
+        BB1, 3.0, $+1.0              ! set bit 0 of word 3
+        BZB, 3.0, $                  ! hang up if bit 0 is off: the store
+                                     !   must have landed
+        BB, $DS, $                   ! hang up if DS is on: nothing was
+                                     !   protected while disabled
+!
+! ---- enabled: the same store is SUPPRESSED and DS comes on ---------
+        BE, $+.32                    ! enable the interrupt system
+        BBZ, 3.0, $+1.0              ! try to CLEAR bit 0 of word 3
+        BZB, 3.0, $                  ! hang up if bit 0 is off -- it must
+                                     !   still be set, the store suppressed
+        BZB, $DS, $                  ! hang up if DS is off -- it must have
+                                     !   been raised
+        B, PASS
+PASS    BEW, $
+        END, START

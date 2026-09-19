@@ -16,6 +16,20 @@ trap 'rm -f "$TMPOUT"' EXIT
 
 FAILED=0
 
+# A LINE CONTINUATION MUST BE A SINGLE BACKSLASH.  "\\" at end of line
+# is an ESCAPED backslash: the command ends there and the next line
+# becomes its own command ("PC=4239: command not found").  sh -n
+# accepts it, and so does a check that just counts the arguments `run`
+# receives -- both the correct and the broken form pass five, because
+# the stray backslash IS the fifth.  That check was written to catch
+# this exact bug and could not see it.  This one looks at the file.
+if grep -qE '\\\\$' "$0"; then
+  echo "refusing to run: a line in $0 ends in a doubled backslash," >&2
+  grep -nE '\\\\$' "$0" >&2
+  echo "which splits that command in two at runtime." >&2
+  exit 2
+fi
+
 run() {
   # run NAME -- prints a header, runs "$@", tracks pass/fail without
   # aborting the whole suite on one failure. Deliberately NOT
@@ -215,6 +229,49 @@ run "B(IND) XL/XE/XH blocks (ja_ax1a, encoding)" python3 verify_ibox1_bind_ind_l
 # an XH sharing 26 would make BZXH and BZXL the same instruction.
 run "B(IND) XL/XE/XH blocks (indicator register written by SV)" ./run_program.sh programs/ibox1_bind_ind.strap StretchIbox1BindIndTb \
     "PC=4240"          # 004110.00, the half-word after IBIN55's second NOP
+
+run "Storage protection, gated on the interrupt enable bit" ./run_program.sh programs/storage_protection.strap StretchProtTb \
+    "PC=4239"          # 004107.40; hand-written, not a listing fact
+# THE FIRST PIECE OF THE INTERRUPT SYSTEM, and the smallest one a
+# program can observe.  p.45 defines DS/DF/IF as raised "while the
+# interruption system was enabled", so the enable bit had to come with
+# it -- adding that bit alone would have been untested state.
+#
+# p.31: locations 1, 2 and 3 are permanently protected "regardless of
+# the contents of the boundary registers or the setting of the boundary
+# control bit"; 0 and 4-31 never signal.  p.32 on a store: "Since this
+# indicator [DS] is permanently masked on, storing in core storage is
+# always suppressed" -- no mask-dependent branch, unlike DF and IF.
+# p.40: BE enables, BD disables, BEW enables, all unconditionally and
+# before the branch.
+#
+# THE DECK SAID IT FIRST.  SSIP's SIP16 rewrites words 1, 2 and 3 and a
+# BD guards it, commented "DISABLE BEFORE RESET OF PROTECTED AREA".
+# This program is that behaviour in both directions.
+#
+# HOW IT IS BUILT, and why not the obvious way.  A first attempt had
+# storage suppress the store at its single writeWord choke point and
+# report it back on a wire; that does not schedule -- bsc lifts the
+# wire's read into the rule predicate, which conflicts with the same
+# rule writing it.  So the decision is made on the EXECUTE side, by one
+# shared predicate, protViolates.  Of the 64 st.writeWord sites, 43
+# write a CONSTANT special-register address (accumulator halves, sign
+# byte, zeros/ones counts, remainder, factor) -- all in 4-31, which
+# p.31 says never signal -- so only the computed-address stores are
+# guarded.  One rule in one function, twenty mechanical uses of it.
+#
+# Three injections, and the gating is two-sided:
+#   protection never fires        -> 004105.00  the ENABLED case
+#   ignores the enable bit        -> 004101.40  the DISABLED case,
+#                                                the store wrongly suppressed
+#   BE does not enable            -> 004105.00  as the first, correctly
+#
+# NOT IMPLEMENTED, deliberately: the BOUNDARY REGISTERS (word 3, upper
+# in bits 0-17, lower in 32-49, control bit 57 -- note the
+# counter-intuitive order, p.31), DF and IF, and full operation
+# TERMINATION.  p.32 says the whole operation is terminated; this
+# suppresses the STORE only, so a BB whose write is suppressed still
+# takes its branch.  Nothing transcribed distinguishes the two.
 
 run "SSIP SIP16/SIP17 reset blocks (ja_ua1_ssip, encoding)" python3 verify_ssip_sip17_listing.py
 # FIRST TRANSCRIPTION FROM ja_ua1_ssip, the System Test Program's

@@ -100,6 +100,27 @@ interface StretchStorage;
   method Word64 readIndicators();
   method Action setIndicatorBits(Word64 v);
 
+  // THE INTERRUPT-SYSTEM ENABLE BIT.  One flip-flop, no nesting:
+  // BRANCH ENABLED sets it, BRANCH DISABLED clears it, BRANCH ENABLED
+  // AND WAIT sets it, and all three act UNCONDITIONALLY and BEFORE the
+  // branch (p.40).  Reset state is DISABLED (p.53, for both IPL and
+  // initial power-on).
+  //
+  // Nothing else of the interrupt system exists yet.  The bit is here
+  // because STORAGE PROTECTION is gated on it -- p.45's DS/DF/IF
+  // definitions each say "while the interruption system was enabled"
+  // -- and protection is the smallest piece of the interrupt system
+  // observable without the interruption mechanism itself.
+  //
+  // A plain Reg read, deliberately: the execute stage decides
+  // protection on its own side (see protViolates there) rather than
+  // storage reporting a suppression back across the module boundary.
+  // The reporting version does not schedule -- bsc lifts the wire's
+  // read into the rule predicate, which then conflicts with the same
+  // rule writing it.
+  method Bool irqEnabled();
+  method Action setIrqEnabled(Bool e);
+
   method IndexWord readIndex(Bit#(4) j);
   method Action writeIndex(Bit#(4) j, IndexWord v);
   // All sixteen index words at once: the instruction unit snapshots
@@ -162,6 +183,7 @@ module mkStretchStorage(StretchStorage);
   Vector#(NumTags, RWire#(WordAddr))       reqW      <- replicateM(mkRWire);
   Vector#(NumTags, PulseWire)              takeW     <- replicateM(mkPulseWire);
   RWire#(MemReq)   storeW <- mkRWire;   // writeWord (core storage) this clock
+  Reg#(Bool)       irqEn  <- mkReg(False);  // interrupt system: reset = disabled
   Reg#(Maybe#(WordAddr)) recentStoreReg <- mkReg(tagged Invalid); // see recentStore()
   function Bool memInRange(WordAddr a) = installed(a);
   function Bool isSpecialAddr(WordAddr a) = (a < 32);
@@ -401,6 +423,11 @@ module mkStretchStorage(StretchStorage);
   // repeated single-bit set calls).
   method Word64 readIndicators();
     return indicators;
+  endmethod
+
+  method Bool irqEnabled() = irqEn;
+  method Action setIrqEnabled(Bool e);
+    irqEn <= e;
   endmethod
 
   method Action setIndicatorBits(Word64 v);

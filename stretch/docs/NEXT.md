@@ -18,7 +18,28 @@ And one rule that outranks both: **a green test is only evidence about
 faults its inputs could have made visible.** Every new test gets an
 injection that must fail, at a named address, in *its own* check.
 
-## 1. Storage protection (blocked on a refactor — do this first)
+## 1. Storage protection — DONE (2026-09-19)
+
+Implemented and tested: `programs/storage_protection.strap`, three
+injections, two-sided gating. The enable bit (BE/BD/BEW, p.40) and the
+permanently protected locations 1–3 (p.31), with DS always suppressing
+a store (p.32) and the whole thing gated on the enable bit (p.45).
+
+**The "64 call sites" obstacle was not real.** 43 of them write a
+*constant* special-register address — accumulator halves, sign byte,
+zeros/ones counts, remainder, factor — all in words 4–31, which p.31
+says never signal. Only the computed-address stores can land in the
+protected area, and they share one predicate, `protViolates`. The
+wire-from-storage design that would not schedule was never needed.
+
+Still open here, and each is its own piece: the **boundary registers**
+(word 3, upper in bits 0–17, lower in 32–49, control bit 57 — note the
+order), **DF and IF** (both mask-dependent, unlike DS), and full
+operation **termination** (p.32 terminates the whole operation; this
+suppresses only the store, so a `BB` whose write is suppressed still
+branches).
+
+## 1b. Original entry, kept for the reasoning (superseded)
 
 `bsv/StretchExecute.bsv` reaches `st.writeWord` from **64 call sites**.
 Protection needs one place that both suppresses the store and reports
