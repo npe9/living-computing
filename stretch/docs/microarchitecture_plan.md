@@ -6650,6 +6650,43 @@ TR00.722. Perf. Char. = 7030 Performance Characteristics vol.1 (Mar 61).
   treats BE/BD/BEW as plain branches today -- the enable flag is the
   small state to add (a Reg#(Bool)), a prerequisite for DS/DF/IF and
   interruptions.
+
+  ATTEMPTED 2026-09-19 AND REVERTED, and the reason is a real
+  constraint rather than a false start. The plan was the smallest
+  TESTABLE slice of the interrupt system: the enable bit plus storage
+  protection for the permanently protected locations 1-3, because p.45
+  gates DS/DF/IF on "while the interruption system was enabled" and
+  p.32 says DS is permanently masked on, so a protected store is
+  ALWAYS suppressed with no mask-dependent branch. Locations 1,2,3 are
+  protected regardless of the boundary registers (p.31), so no boundary
+  setup is needed, and a two-sided test falls straight out: disabled,
+  the store proceeds; enabled, it is suppressed and DS comes on.
+  Checked first that no transcribed program stores to words 1-3, so
+  nothing would regress.
+
+  WHERE IT BROKE: storage cannot report same-cycle protection status to
+  the execute stage. `writeWord` is the single choke point for
+  suppression -- 64 call sites in StretchExecute reach it -- but it
+  cannot raise DS, because the execute stage owns the one
+  per-instruction write to `indicators`. Reporting the suppression on a
+  DWire and folding DS in (either in the shared tail or inside
+  setIndicatorBits) fails to schedule: bsc pulls the wire's read into
+  the RULE PREDICATE, which then conflicts with the same rule writing
+  it (G0004, confirmed with -show-range-conflict, the predicate
+  containing st_protW.wget). A `schedule (writeWord) SB (...)`
+  annotation does not parse in this bsc.
+
+  WHAT THE REAL FIX LOOKS LIKE: route the 64 store sites through ONE
+  execute-side path that both checks protection and stores -- an
+  ActionValue returning whether the store was suppressed, so the
+  indicator decision happens where `ind` lives. That is a refactor of
+  64 call sites, not a bolt-on, and it is exactly the
+  one-rule-many-copies shape this project keeps meeting: the 64 sites
+  are why the check cannot simply be written at each of them.
+
+  Recorded rather than hacked around. The enable bit ALONE compiles
+  fine and is unobservable from a program, so adding it without
+  protection would be untested state -- worse than nothing.
 - **Correction-routine patterns** (p.48-49): single instruction; a
   subroutine entered by STORE-INSTRUCTION-COUNTER-IF-BRANCH-DISABLED and
   returned by BRANCH ENABLED; up to 48 routines addressed from the
