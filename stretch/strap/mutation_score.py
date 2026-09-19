@@ -187,15 +187,27 @@ MUTATIONS = [
     # multiply leaves at zero), so mutating it would be an EQUIVALENT
     # MUTANT and would survive for a reason that says nothing about the
     # suite.  See fp_zm_cleared.strap's header.
+    # NOTE ON THE SHAPE OF THESE TWO.  They REMOVE the arm's clear.  An
+    # earlier version INSERTED "ZM := 1" at the top of each arm instead,
+    # and both survived -- because the arm's own clear runs afterwards
+    # and undoes the insert.  Two equivalent mutants, built by me, of
+    # exactly the kind this file's header warns about: a mutation whose
+    # effect a later statement overwrites cannot change anything.
+    # Removing the behaviour is the reliable shape; inserting a wrong
+    # value is only safe when nothing downstream rewrites it.
     ("zm-not-cleared-by-load", "bsv/StretchExecute.bsv",
-     "      fpop_L, fpop_LWF: begin // L / LWF",
-     "      fpop_L, fpop_LWF: begin // L / LWF\n        ind = setBit(ind, ind_ZM, 1); // INJECTED",
+     "        ind = setRangeIndicators(ind, fpRangeBits(v, gen, !gen && v.ef == 1));\n"
+     "        ind = setBit(ind, ind_ZM, 0);\n      end\n      fpop_LFT:",
+     "        ind = setRangeIndicators(ind, fpRangeBits(v, gen, !gen && v.ef == 1));\n"
+     "      end\n      fpop_LFT:",
      "LOAD leaves ZM set; ZM is a multiply-only indicator and every"
      " other arm must clear it (p.99)."),
 
     ("zm-not-cleared-by-e-plus", "bsv/StretchExecute.bsv",
-     "      fpop_E_PLUS: begin // E+ (add to exponent, p.102): the",
-     "      fpop_E_PLUS: begin // E+ (add to exponent, p.102): the\n        ind = setBit(ind, ind_ZM, 1); // INJECTED",
+     "        ind = setRangeIndicators(ind, fpRangeBits(vind, gen, prop));\n"
+     "        ind = setBit(ind, ind_ZM, 0);\n      end\n      default:",
+     "        ind = setRangeIndicators(ind, fpRangeBits(vind, gen, prop));\n"
+     "      end\n      default:",
      "ADD TO EXPONENT leaves ZM set; a different copy of the same rule."),
 
     ("noisy-fill-zeros", "bsv/StretchFP.bsv",

@@ -216,6 +216,42 @@ run "B(IND) XL/XE/XH blocks (ja_ax1a, encoding)" python3 verify_ibox1_bind_ind_l
 run "B(IND) XL/XE/XH blocks (indicator register written by SV)" ./run_program.sh programs/ibox1_bind_ind.strap StretchIbox1BindIndTb \
     "PC=4240"          # 004110.00, the half-word after IBIN55's second NOP
 
+run "SSIP SIP17 indicator-reset chain (ja_ua1_ssip, encoding)" python3 verify_ssip_sip17_listing.py
+# FIRST TRANSCRIPTION FROM ja_ua1_ssip, the System Test Program's
+# supervisor.  Its listing is PDF pp.7-52, 1-up fanfold with NO printed
+# page numbers, so it is cited by PDF page -- unlike every other tape
+# here.  (archival_inventory.md implies this tape is prose only; it is
+# not, and that note needs correcting.)
+#
+# SIP17 walks indicators 0 through 19 IN NUMERIC ORDER, one
+# branch-on-indicator-and-clear each, then sweeps the rest with a single
+# SX into word 11.  That makes it a self-checking table of two things at
+# once -- the indicator NUMBERING for bits 0-19 and the
+# branch-on-indicator ENCODING rule -- so an error anywhere in that
+# range shows as exactly one row's mismatch.  Twenty independent checks
+# in twenty-two half-words, all green on the first assembly.
+#
+# IT NAMES THE INDICATORS NOTHING ELSE REACHES.  OP (15), AD (16), USA
+# (17), EXE (18), DS (19) are the instruction-exception group;
+# op_ad_indicators.strap pins OP and AD by hand FROM THE MANUAL, and
+# this is a DECK naming all five.
+#
+# TWO THINGS THE LISTING SETTLES INDEPENDENTLY.
+#   * SLOT 14 IS NOT AN INDICATOR.  Every other row is a
+#     branch-on-indicator; 001601.00 is a plain "B,$.32", stepping over
+#     bit 14 because there is nothing there to test.  INDICATOR_BITS has
+#     always had a gap at 14 -- this is a second witness to it, from a
+#     programmer who had the machine.
+#   * THE DECKS SPELL INDICATOR 5 "CPU".  The Reference Manual's Figure
+#     11 calls it "CPU Signal (CPUS)" and this project took CPUS from
+#     there; SSIP writes BCPUZ.  Both are now in INDICATOR_BITS as an
+#     alias.
+#
+# Encoding-only, deliberately: the block ends by branching to an
+# external return, so running it needs a harness this does not have.
+# The listing oracle is the strongest encoding check in the project and
+# stands on its own.
+
 run "Indicator coverage audit (ratchet)" python3 audit_indicator_coverage.py
 run "Opcode coverage audit (ratchet)" python3 audit_opcode_coverage.py
 # The same question one level up: not which INDICATORS nothing looks at,

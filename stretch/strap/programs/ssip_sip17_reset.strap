@@ -1,0 +1,64 @@
+! ja_ua1_ssip "SSIP", the SIP17 indicator-reset chain, PDF pp.17-18
+! (octal 001572.00-001604.40).  "RESET INDICATORS".
+!
+! FIRST TRANSCRIPTION FROM THIS TAPE.  ja_ua1_ssip is the System Test
+! Program's supervisor; its listing is PDF pp.7-52 (1-up fanfold, no
+! printed page numbers, so cite by PDF page).
+!
+! WHY THIS BLOCK.  It walks indicators 0 through 19 IN NUMERIC ORDER,
+! one BRANCH-ON-INDICATOR-AND-CLEAR each, then sweeps the rest with a
+! single SX into word 11.  That makes it a self-checking table of two
+! things at once: the indicator NUMBERING for bits 0-19, and the
+! branch-on-indicator ENCODING rule.  If either is wrong anywhere in
+! that range, exactly one row's machine code disagrees -- twenty
+! independent checks in twenty-two half-words.
+!
+! IT ALSO REACHES THE INDICATORS NOTHING ELSE DOES.  OP (15), AD (16),
+! USA (17), EXE (18) and DS (19) are the instruction-exception group;
+! op_ad_indicators.strap pins OP and AD by hand from the manual, and
+! this is a DECK naming all five.
+!
+! TWO THINGS THE LISTING SETTLES.
+!
+! SLOT 14 IS NOT AN INDICATOR.  Where every other row is a
+! branch-on-indicator, 001601.00 is a plain "B,$.32" -- the chain steps
+! over bit 14 with an ordinary branch because there is nothing there to
+! test.  strap/opcodes.py's INDICATOR_BITS has always had a gap at 14;
+! this is a second, independent witness to it, from a programmer who
+! had the machine.
+!
+! THE DECKS SPELL INDICATOR 5 "CPU", not CPUS.  The Reference Manual's
+! Figure 11 calls it "CPU Signal (CPUS)" and this project took CPUS
+! from there.  SSIP writes BCPUZ.  Both are now in INDICATOR_BITS, as
+! an alias, because the manual's name is what every comment here uses
+! and the deck's name is what the listing needs.
+!
+! B,$.32 is written "B,$+.32" below: this assembler wants the explicit
+! sign, and the assembled half-word is identical -- both branch to the
+! next half-word, which is what the listing's 1601.50 00 encodes.
+
+RET1    SYN, (8)1307.0               ! external: the print/return entry
+        SLC, (8)1572.0
+SIP17   BMKZ, $+.32                  ! 0  machine check
+        BIKZ, $+.32                  ! 1  instruction check   -RESET INDICATORS
+        BIJZ, $+.32                  ! 2  instruction reject
+        BEKZ, $+.32                  ! 3  exchange check
+        BTSZ, $+.32                  ! 4  time signal
+        BCPUZ, $+.32                 ! 5  CPU signal  (deck spelling: CPU)
+        BEKJZ, $+.32                 ! 6  exchange check reject
+        BUNRJZ, $+.32                ! 7  unit not ready reject
+        BCBJZ, $+.32                 ! 8  channel busy reject
+        BEPGKZ, $+.32                ! 9  exchange program check
+        BUKZ, $+.32                  ! 10 unit check
+        BEEZ, $+.32                  ! 11 end exception
+        BEOPZ, $+.32                 ! 12 end of operation
+        BCSZ, $+.32                  ! 13 channel signal
+        B, $+.32                     ! 14 RESERVED -- a plain branch
+        BOPZ, $+.32                  ! 15 operation code invalid
+        BADZ, $+.32                  ! 16 address invalid
+        BUSAZ, $+.32                 ! 17 unended sequence of addresses
+        BEXEZ, $+.32                 ! 18 execute exception
+        BDSZ, $+.32                  ! 19 data store
+        SX, $X13, 11.0               ! reset rest of ind.
+        B, RET1                      ! back to the caller
+        END, SIP17

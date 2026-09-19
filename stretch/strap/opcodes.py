@@ -292,6 +292,23 @@ INDICATOR_BITS = {
     "LS": 26, "PSH": 27, "XPFP": 28, "XPO": 29, "XPH": 30, "XPL": 31,
     "XPU": 32, "ZM": 33, "RU": 34, "TF": 35, "UF": 36, "VF": 37,
     "XF": 38, "BTR": 39, "DTR": 40,
+    # "CPU" is the DECKS' spelling of indicator 5, which the Reference
+    # Manual's Figure 11 calls CPUS ("CPU Signal").  ja_ua1_ssip's SIP17
+    # reset chain writes BCPUZ, so the assembler has to know both; the
+    # bit is the same.  Kept as an alias rather than a rename because
+    # the manual's name is the one every comment here already uses.
+    "CPU": 5,
+    # 41-47, the PROGRAM indicators.  Not in the Reference Manual's
+    # Figure 11 text this project transcribed, but named by the decks
+    # themselves: ja_ua1_ssip's DINT1 indicator-name table (PDF p.36)
+    # lists them as the seven entries immediately after DTR, and the
+    # run VF, XF, BTR, DTR, PG0 anchors the numbering against values
+    # already held here (VF 37, XF 38, BTR 39, DTR 40).  Corroborated
+    # independently by ka_ua1's F6T master interrupt table, whose only
+    # un-vectored slots are 4 and 13 -- TS and CS under this same
+    # numbering.  Two tapes, two programmers, one scheme.
+    "PG0": 41, "PG1": 42, "PG2": 43, "PG3": 44, "PG4": 45, "PG5": 46,
+    "PG6": 47,
     "XCZ": 48, "XVLZ": 49, "XVZ": 50, "XVGZ": 51, "XL": 52, "XE": 53,
     "XH": 54, "MOP": 55, "RLZ": 56, "RZ": 57, "RGZ": 58, "RN": 59,
     "AL": 60, "AE": 61, "AH": 62, "NM": 63,
