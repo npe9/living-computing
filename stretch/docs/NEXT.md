@@ -147,9 +147,13 @@ Out of scope by design: cycle-accurate timing.
 * R/'s ZM clear may be **unreachable** (the divisor is the accumulator,
   which a ZM-setting multiply leaves at zero). Only FP paths were
   checked.
-* `ja_ua1_ssip` has a full listing at **PDF pp.7–52**, 1-up fanfold
-  with no printed page numbers — cite by PDF page.
-  `docs/archival_inventory.md` implies prose-only and needs correcting.
+* ~~`ja_ua1_ssip` has a full listing at PDF pp.7–52 and
+  `archival_inventory.md` implies prose-only~~ — **corrected
+  2026-09-19.** The boundaries were checked against the pages, not
+  recalled: p.6 is the Maintenance Tape Control Card, p.7 opens with
+  `PRINID, SSIP CBD 2-9-61 JA UA1`, p.52 closes with `END` at
+  002732.71. Still cite it by PDF page: 1-up fanfold, no printed page
+  numbers, unlike every other tape here.
 * Reference Manual **PDF page = printed page + 3**.
 
 ## Traps this project has paid for

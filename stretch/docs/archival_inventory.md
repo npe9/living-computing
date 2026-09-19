@@ -804,7 +804,9 @@ reasoning and for what got transcribed instead.
    separate companion documents by their respective System Analysis
    Guides, neither found on bitsavers so far.
 5. Longer-term: `ja_ua1_ssip` (foundational dependency nearly every
-   other diagnostic test needs resident), `jb_af1c_floating-point` and
+   other diagnostic test needs resident -- and note it carries a full
+   STRAP listing at PDF pp.7-52, not prose alone, as its table row now
+   records; SIP16/SIP17 are transcribed), `jb_af1c_floating-point` and
    the VFL circuitry test (`JB AV1C`, exercises Stretch's signature
    FP/VFL extensions), and the `ce/` Customer Engineering manuals
    (not yet inventoried in this pass).
@@ -860,7 +862,7 @@ reverse index (source -> transcription/implementation).
 | `ja_bb6b_worst_pat_test.pdf` (20pp) | Worst-pattern memory test | Source | NOT YET -- runnable against `StretchMemory.bsv` (the interleaved units); a memory-model codesign target |
 | `ja_bm6a_unique_adr_test.pdf` (11pp) | Unique-address memory test | Source | NOT YET -- memory-model target |
 | `ja_bp6a_memory_patterns_test.pdf` (6pp) | Memory-patterns test | Source | NOT YET -- smallest memory test, good first memory codesign target |
-| `ja_ua1_ssip.pdf` | SSIP (System Test Program supervisor) | Source | the framework the diagnostics run under; explains the SIC/BEW pass-fail idiom the transcriptions reproduce externally |
+| `ja_ua1_ssip.pdf` (52pp; **pp.7-52 an unbroken STRAP listing**) | SSIP (System Test Program supervisor), JA UA1, "SSIP CBD 2-9-61" | Source | RUN (partial): `ssip_sip17_reset` (SIP16/SIP17, PDF pp.17-18, bit-exact vs `../strap/verify_ssip_sip17_listing.py`), which named the five instruction-exception indicators and settled that slot 14 is not one. CORRECTED 2026-09-19: this row previously described the file as framework prose only. It is not. pp.1-6 are the writeup and the Maintenance Tape Control Card; p.7 opens with the source line "PRINID, SSIP CBD 2-9-61 JA UA1" and p.52 closes with `END,%8@100.` at 002732.71. The listing is 1-up fanfold with NO printed page numbers, so it is cited by PDF page, unlike every other tape here. It also explains the SIC/BEW pass-fail idiom the transcriptions reproduce externally. |
 | `ja_uc1a_maintenance_tape.pdf` | Maintenance-tape builder | Source | needs full tape/channel I/O |
 | `ka_ua1_diagnostic_ctl_pgm.pdf` (154pp) | Diagnostic Control Program (DCP), control section F1, pp.19-152 an unbroken STRAP listing | Source | RUN (partial): `dcp_maintenance_compool` (SYN symbol table pp.129-130, verified vs the printed address column); Memory Compare/Panel Dump need CTL/LOC + H-routines + print macros |
 | `ka_ex1_bx-0.pdf`, `ka_ex1b_bx-0.pdf` | BX-0 (exchange/box) test | Source | needs the exchange as a real bus requester |
