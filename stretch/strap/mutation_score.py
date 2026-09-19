@@ -179,6 +179,25 @@ MUTATIONS = [
      "ZM's exponent bound is off by one: p.99 says GREATER THAN -1024."
      "  Closed by programs/fp_zm_terms.strap case 3."),
 
+    # ZM's CLEAR, two of sixteen copies.  Representatives only: the
+    # copies are uniform and fp_zm_cleared.strap walks ten of them, so
+    # two here keep the campaign honest without ten 11-minute runs.
+    # R/'s copy is deliberately NOT here -- it is unreachable while ZM
+    # is on (the divisor is the accumulator, which a ZM-setting
+    # multiply leaves at zero), so mutating it would be an EQUIVALENT
+    # MUTANT and would survive for a reason that says nothing about the
+    # suite.  See fp_zm_cleared.strap's header.
+    ("zm-not-cleared-by-load", "bsv/StretchExecute.bsv",
+     "      fpop_L, fpop_LWF: begin // L / LWF",
+     "      fpop_L, fpop_LWF: begin // L / LWF\n        ind = setBit(ind, ind_ZM, 1); // INJECTED",
+     "LOAD leaves ZM set; ZM is a multiply-only indicator and every"
+     " other arm must clear it (p.99)."),
+
+    ("zm-not-cleared-by-e-plus", "bsv/StretchExecute.bsv",
+     "      fpop_E_PLUS: begin // E+ (add to exponent, p.102): the",
+     "      fpop_E_PLUS: begin // E+ (add to exponent, p.102): the\n        ind = setBit(ind, ind_ZM, 1); // INJECTED",
+     "ADD TO EXPONENT leaves ZM set; a different copy of the same rule."),
+
     ("noisy-fill-zeros", "bsv/StretchFP.bsv",
      "      if (noisy) w = w | ((96'b1 << nz) - 1);",
      "      if (False) w = w | ((96'b1 << nz) - 1);",
@@ -218,13 +237,21 @@ MUTATIONS = [
     # effAddr24 (bit-addressed).  Two are now pinned; this asks about
     # the third.  Suggested directly by the pair above -- when a rule
     # has more than one implementation, each needs its own witness.
+    ("effaddr19-ignores-index-sign", "bsv/StretchExecute.bsv",
+     "    Bit#(19) m = truncate(x.addr);\n    return (x.sign == 1) ? (raw - m) : (raw + m);",
+     "    Bit#(19) m = truncate(x.addr);\n    return raw + m;",
+     "The BRANCH address helper ignores the index value's sign (p.20-21)."
+     "  This one existed only after an audit: branch_index_modified.strap"
+     " originally used a POSITIVE index, which cannot tell raw-m from"
+     " raw+m, so the claim that all three effAddr copies were pinned was"
+     " false for effAddr19."),
+
     ("effaddr18-ignores-index-sign", "bsv/StretchExecute.bsv",
      "    Bit#(18) m = truncate(x.addr);\n    return (x.sign == 1) ? (raw - m) : (raw + m);\n  end\nendfunction\n\n// readHW",
      "    Bit#(18) m = truncate(x.addr);\n    return raw + m;\n  end\nendfunction\n\n// readHW",
      "The FLOATING-POINT address helper ignores the index value's sign"
      " (p.20-21); effAddr18 is a third independent copy of that test."
-     "  Closed by programs/fp_negative_modifier.strap.  All THREE copies"
-     " survived until each got its own program."),
+     "  Closed by programs/fp_negative_modifier.strap."),
 
     ("vfl-length-zero-is-zero", "bsv/StretchExecute.bsv",
      "        Bit#(7) len_ = effLength(vi.a.length);",
@@ -284,6 +311,33 @@ def check_tree_clean():
     return True
 
 
+def check_baseline_green(env0):
+    """Refuse to score against a suite that is ALREADY failing.
+
+    Learned the hard way.  A program was edited while a campaign ran, so
+    one section failed unconditionally; under FAIL_FAST every remaining
+    mutation stopped at THAT section and was scored "caught".  The run
+    reported 26/26 and meant nothing -- a pre-existing failure is
+    indistinguishable from a catch, and it masks every mutation after
+    it.  One unmutated run up front costs ~11 minutes and makes the
+    whole campaign trustworthy; without it the campaign can only ever
+    over-report.
+    """
+    print("baseline: running the suite unmutated ...", flush=True)
+    p = subprocess.run(["./run_tests.sh"], cwd=HERE, env=env0,
+                       capture_output=True, text=True, timeout=3600)
+    if p.returncode != 0 or "TEST(S) FAILED" in p.stdout:
+        print("refusing to run: the suite is not green BEFORE any mutation.",
+              file=sys.stderr)
+        for ln in p.stdout.splitlines():
+            if ln.startswith("FAIL") or "FAIL_FAST" in ln:
+                print(f"  {ln}", file=sys.stderr)
+        print("Every mutation would be 'caught' by that failure.", file=sys.stderr)
+        return False
+    print("baseline: green.", flush=True)
+    return True
+
+
 def apply(path, old, new):
     full = os.path.join(ROOT, path)
     src = open(full).read()
@@ -308,6 +362,8 @@ def main():
 
     if not check_tree_clean():
         return 2
+    if not check_baseline_green(env0=dict(os.environ)):
+        return 3
     env = dict(os.environ, FAIL_FAST="1")
     results = []
     for name, path, old, new, why in MUTATIONS:

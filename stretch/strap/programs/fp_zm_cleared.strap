@@ -12,8 +12,10 @@
 ! the six SEOP sites, at larger scale -- and found the same way, by
 ! grepping a distinctive line rather than by any coverage audit.
 !
-! ELEVEN ARMS ARE COVERED HERE: L, +, /, LFT, DL, M+, F+, D+, R/, D/
-! and E+.  Measured one mutation per arm, each halting at its own
+! TEN ARMS ARE COVERED HERE: L, +, /, LFT, DL, M+, F+, D+, D/ and E+.
+! R/ is NOT among them -- see the note further down; it was listed here
+! in an earlier draft, which is precisely the F+ mistake this same
+! header goes on to describe, made again two lines above the warning.  Measured one mutation per arm, each halting at its own
 ! check -- and F+ is in the list only because the FIRST version of this
 ! program described F+ in its header and did not test it.  That
 ! mutation passed.  A description is not coverage, and the mutation is

@@ -24,11 +24,28 @@
 ! WEAKER STANDARD, STATED: hand-written from p.20-21, not transcribed.
 
         SLC, (8)2740.0
-START   LX, $1, WONE                 ! index value = 1 half-word
-        B, TGT($1)                   ! must land one half-word PAST TGT
-TGT     BEW, $                       ! hang up: the index was ignored and
-                                     !   the branch landed on the raw target
-        B, PASS                      ! TGT + 1: the correct landing
-WONE    XW, (8)0.01, 0, 0, 0         ! value = bit address 1 = one half-word
+!
+! ---- case 1: a POSITIVE index value --------------------------------
+START   LX, $1, WPLUS1               ! index value = +1 half-word
+        B, T1($1)                    ! must land one half-word PAST T1
+T1      BEW, $                       ! hang up: modification dropped
+L1      B, C2                        ! T1 + 1: the correct landing
+!
+! ---- case 2: a NEGATIVE index value --------------------------------
+! Case 1 alone does NOT pin the sign.  effAddr19 reads
+! "(x.sign == 1) ? (raw - m) : (raw + m)", and a POSITIVE value takes
+! the same branch whether or not the sign is honoured -- so case 1 dies
+! only to a mutation that drops modification ENTIRELY, which is what it
+! was originally written against.  An audit caught the claim that this
+! program pinned the signed rule; it did not.  Only a negative value
+! separates "raw - m" from "raw + m".
+C2      LX, $1, WMINUS1              ! index value = -1 half-word
+        B, T2($1)                    ! must land one half-word BEFORE T2
+L2      B, PASS                      ! T2 - 1: the correct landing
+T2      BEW, $                       ! hang up: modification dropped
+        BEW, $                       ! hang up: the SIGN was ignored, so
+                                     !   the branch ran the wrong way
+WPLUS1  XW, (8)0.01, 0, 0, 0         ! value 1, sign 0
+WMINUS1 XW, -(8)0.01, 0, 0, 0        ! value 1, sign 1
 PASS    BEW, $
         END, START

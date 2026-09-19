@@ -318,7 +318,7 @@ run "BB branch-if-off variants (BZB1, BZBN, BZBZ)" ./run_program.sh programs/bb_
 # program".  That is a floor, not a ceiling: see the caveat above.
 
 run "OP and AD indicators (both polarities)" ./run_program.sh programs/op_ad_indicators.strap StretchOpAdIndTb \
-    "PC=2462"          # 002315.40; hand-written, not a listing fact
+    "PC=2462"          # 002317.00; hand-written, not a listing fact
 # The two indicators the audit found written-but-unwatched.  HAND-WRITTEN
 # from the manual and from the README's own claim -- the weaker standard
 # -- because no deck block transcribed so far reaches either bit.
@@ -389,7 +389,7 @@ run "AD by SIC below 16.0 (the other trigger)" ./run_program.sh programs/ad_sic_
 # guard is an optimisation, not a correctness requirement.
 
 run "Index result indicators: OFF states and clearing" ./run_program.sh programs/index_indicators_off.strap StretchIndexIndOffTb \
-    "PC=2346"          # 002215.00; hand-written, so this is not a listing fact --
+    "PC=2346"          # 002225.00; hand-written, so this is not a listing fact --
                        # if the program's layout changes, update it deliberately
 # THE CONTROL FOR A HOLE THE DECK LEFT OPEN.  ibox1_bind.strap pins all
 # five index result indicators ON, and the only OFF it checks is the one
@@ -423,17 +423,17 @@ run "Index result indicators: OFF states and clearing" ./run_program.sh programs
 # reporting XF from the COUNT field: that mutation was caught 300
 # sections later by an I/O test, by accident.  WFLAG (flag 1, count 1)
 # and WNOFLG (flag 0, count 0) vary the two independently, one in each
-# direction, and the mutation now halts here at 002202.40.  A green
+# direction, and the mutation now halts here at 002211.40.  A green
 # suite and two empty audits did not show this; only mutation did.
 #
 # NEGATIVE ZERO.  p.24 sets XVLZ when the value is "non-zero AND
 # negative", so minus zero must leave XVLZ off and XVZ on.  Dropping
 # the non-zero term SURVIVED the whole suite.  The word is a raw DD
 # literal because the assembler normalises -0 in an XW value field to
-# +0; the mutation now halts at 002211.00.
+# +0; the mutation now halts at 002215.00.
 
 run "Index compares set XF (a fixed bug with no test)" ./run_program.sh programs/cmp_sets_index_flag.strap StretchCmpXfTb \
-    "PC=2964"          # 002664.00; hand-written, not a listing fact
+    "PC=2964"          # 002712.00; hand-written, not a listing fact
 # mutation_score.py mutated setIndexCmpIndicatorsF to leave XF alone and
 # the mutation SURVIVED the entire suite.  That is not hypothetical:
 # StretchExecute's own comment on that function records it as a bug that
@@ -449,10 +449,10 @@ run "Index compares set XF (a fixed bug with no test)" ./run_program.sh programs
 # directions testable: force XF wrong, compare, require the compare to
 # have corrected it.  BOTH directions, because a compare that merely
 # ORed the flag in would pass the first half.  Measured: the mutation
-# now halts at 002655.00.
+# now halts at 002703.00.
 
 run "Branch target modified by an index register" ./run_program.sh programs/branch_index_modified.strap StretchBrIdxTb \
-    "PC=3014"          # 002723.00; hand-written, not a listing fact
+    "PC=3022"          # 002747.00; hand-written, not a listing fact
 # Replacing "o.target = effAddr19(st, bm.addr, bm.idx)" with the raw
 # address -- dropping index modification of branch targets entirely --
 # SURVIVED the whole suite.  effAddr19 returns the raw address when idx
@@ -460,17 +460,30 @@ run "Branch target modified by an index register" ./run_program.sh programs/bran
 # branched through an index register.  The feature was completely
 # unexercised.
 #
+# TWO CASES, AND THE SECOND ONE WAS MISSING UNTIL AN AUDIT CAUGHT IT.
+# The original program used a POSITIVE index value, and effAddr19 reads
+# "(x.sign == 1) ? (raw - m) : (raw + m)" -- a positive value takes the
+# same branch whether or not the sign is honoured.  So it died only to a
+# mutation that dropped modification ENTIRELY, and what it pinned was
+# "modification happens", NOT "the sign is honoured".  Four places
+# (a commit message, the plan doc, fp_negative_modifier's header and
+# mutation_score.py) claimed a three-row table in which all three
+# effAddr helpers had their SIGNED rule pinned; for effAddr19 that was
+# false.  Case 2 uses a negative value and closes it: measured, mutating
+# effAddr19 to "return raw + m" now halts at 002744.00, the "the SIGN
+# was ignored" line, and passed before.
+#
 # p.20-21 "Address Modification" plus p.39, which applies it to
 # branching like anything else.  UNITS ARE THE TRICK: effAddr19 adds
 # the index value's low 19 bits to a HALF-WORD address while the value
 # field is a BIT address, so a value of 1 moves the target one
 # half-word.  LVI cannot express that (it shifts its immediate left by
 # five), so the offset comes from an XW whose value is the bit address
-# (8)0.01.  Measured: the mutation now halts at TGT, 002721.00, the
+# (8)0.01.  Measured: the mutation now halts at TGT, 002741.00, the
 # deck-style "hang up: the index was ignored".
 
 run "Address modification by a NEGATIVE index value" ./run_program.sh programs/index_negative_modifier.strap StretchNegIdxTb \
-    "PC=3472"          # 003320.00; hand-written, not a listing fact
+    "PC=3472"          # 003310.00; hand-written, not a listing fact
 # Replacing effAddr24's signed add with an unconditional one -- dropping
 # the index value's SIGN -- survived the whole suite.  effAddr24 is the
 # address-modification helper behind every bit-addressed instruction, so
@@ -493,7 +506,7 @@ run "Address modification by a NEGATIVE index value" ./run_program.sh programs/i
 # address hangs.  Measured: the mutation halts at 003302.40.
 
 run "Negative index modification on the FP path (third copy)" ./run_program.sh programs/fp_negative_modifier.strap StretchFpNegIdxTb \
-    "PC=3598"          # 003416.00; hand-written, not a listing fact
+    "PC=3598"          # 003407.00; hand-written, not a listing fact
 # THE THIRD COPY OF ONE RULE.  p.20-21's signed address modification is
 # written out three independent times in this model:
 #   effAddr18  floating point           <- this program
@@ -508,7 +521,7 @@ run "Negative index modification on the FP path (third copy)" ./run_program.sh p
 # Same shape as the effAddr24 program: FPVAL holds a non-zero fraction,
 # the load addresses FPA2 one word above it with an index value of one
 # NEGATIVE, and DUMMY sits on the far side as the wrong answer, zero and
-# therefore unequal.  Measured: the mutation halts at 003403.40.
+# therefore unequal.  Measured: the mutation halts at 003401.40.
 #
 # UNITS, RECORDED AS AN OPEN OBSERVATION.  effAddr18 adds the index
 # value truncated to 18 bits to a WORD address, so a value of 1 moves
@@ -520,7 +533,7 @@ run "Negative index modification on the FP path (third copy)" ./run_program.sh p
 # SIGN only.
 
 run "Mask register fixed and writable fields (word 12)" ./run_program.sh programs/mask_register_fields.strap StretchMaskTb \
-    "PC=3229"          # 003135.40; hand-written, not a listing fact
+    "PC=3229"          # 003116.40; hand-written, not a listing fact
 # A FIX WHOSE OWN COMMENT SAID NO TEST WOULD NOTICE IT.
 # StretchStorage.bsv, on the mask register: "...the register, its write
 # masker and StretchTypes' own comment all said 0-19 while the code did
@@ -546,7 +559,7 @@ run "Mask register fixed and writable fields (word 12)" ./run_program.sh program
 # word 12 bit 16.
 
 run "ZM's normalized term and exponent bound" ./run_program.sh programs/fp_zm_terms.strap StretchFpZmTb \
-    "PC=3352"          # 003230.00; hand-written, not a listing fact
+    "PC=3352"          # 003214.00; hand-written, not a listing fact
 # Two mutation survivors, both ZM.  fpMul sets it as
 # "normalized && zero && (e > -1024)" (p.99), and jb_af1c F214D6 -- the
 # first and only test of ZM anywhere in the transcribed diagnostic --
@@ -569,9 +582,9 @@ run "ZM's normalized term and exponent bound" ./run_program.sh programs/fp_zm_te
 # CASE 1 IS A POSITIVE CONTROL AND NOT OPTIONAL: without it a model that
 # never set ZM would pass both off-checks.  Measured, three distinct
 # halts:
-#   ZM never set            -> 003202.40, case 1   (the control)
+#   ZM never set            -> 003201.40, case 1   (the control)
 #   normalized term dropped -> 003204.00, case 2
-#   bound >= instead of >   -> 003211.00, case 3
+#   bound >= instead of >   -> 003206.40, case 3
 #
 # ONE TRAP, ON RECORD AND WALKED INTO ANYWAY: a bare `*` is AMBIGUOUS
 # and assembles as a 64-bit VFL instruction (op 0x80), not an FP
@@ -580,7 +593,7 @@ run "ZM's normalized term and exponent bound" ./run_program.sh programs/fp_zm_te
 # looked like a model bug.
 
 run "Every FP operation but MULTIPLY clears ZM" ./run_program.sh programs/fp_zm_cleared.strap StretchFpZmClrTb \
-    "PC=3846"          # 003606.00; hand-written, not a listing fact
+    "PC=3846"          # 003603.00; hand-written, not a listing fact
 # ONE RULE, SIXTEEN COPIES -- the largest instance of the pattern so
 # far, and found the same way as the six SEOP copies: by grepping a
 # distinctive line, not by any coverage audit.  ZM is a MULTIPLY-ONLY

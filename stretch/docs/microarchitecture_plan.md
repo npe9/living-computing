@@ -4300,6 +4300,22 @@ hand vectors alone. "Enables" notes the dependency chain.
    it, and no coverage audit did. Five rounds of reference auditing
    found nothing here; one mutation per copy found all three.
 
+   AND THE THREE-ROW TABLE WAS WRONG WHEN FIRST WRITTEN. An audit of
+   this session caught it: branch_index_modified.strap used a POSITIVE
+   index value, and effAddr19 reads "(x.sign == 1) ? (raw - m) :
+   (raw + m)", so a positive value takes the same branch either way.
+   That program died only to a mutation dropping modification ENTIRELY,
+   which is what it was written against -- so it pinned "modification
+   happens", not "the sign is honoured", while four places (a commit
+   message, this document, a program header and mutation_score.py) said
+   all three copies had the SIGNED rule pinned. A second case with a
+   negative value closes it: mutating effAddr19 to "return raw + m" now
+   halts at 002744.00 and passed before. THE LESSON IS NOT ABOUT
+   effAddr: a test only discriminates against the faults its INPUTS can
+   expose, and a positive index cannot expose a sign error. Choosing an
+   input that cannot fail is the same mistake as the flag/count
+   confound, in a different dress.
+
    THE SAME PATTERN IN A SECOND SUBSYSTEM, which is what makes it a
    pattern rather than a coincidence. "if (!seop) cw.eop = 1" -- p.121,
    a SEOP form must not set the control word's EOP bit -- is written
