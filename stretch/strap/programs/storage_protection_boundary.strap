@@ -63,6 +63,8 @@
 !
 ! ---- phase A: control bit 0, a signal INSIDE the area --------------
 START   BD, $+.32                    ! disable: word 3 is protected
+        LVI, $X13, TBL               ! the interruption table origin
+        SV,  $X13, $IA               ! word 2 is protected too, so disabled
         LVI, $X13, WLOW              ! the lower boundary's bit address
         SV,  $X13, $LB               ! lower boundary := WLOW  (bits 32-49)
         LVI, $X13, WABOVE            ! the upper boundary's bit address
@@ -73,20 +75,22 @@ START   BD, $+.32                    ! disable: word 3 is protected
 ! below the area: the store lands
         BB1, WBELOW, $+1.0
         BZB, WBELOW, $               ! hang if off -- the store must have landed
-        BDS, $                       ! hang if DS is on
+        BB,  6.0, $                  ! hang if DS's routine ran
 ! at the lower boundary: INSIDE, so suppressed.  Pins >= against >.
         BB1, WLOW, $+1.0
         BB,  WLOW, $                 ! hang if on -- the store must be suppressed
-        BZDSZ, $                     ! hang if DS is off; clear it for the next check
+        BZB, 6.0, $                  ! hang if DS's routine did not run
+        BBZ, 6.0, $+1.0              !   ... and clear it for the next check
 ! one below the upper boundary: still inside
         BB1, WHIGH, $+1.0
         BB,  WHIGH, $
-        BZDSZ, $
+        BZB, 6.0, $                  ! hang if DS's routine did not run
+        BBZ, 6.0, $+1.0              !   ... and clear it for the next check
 ! at the upper boundary: OUTSIDE, "up to, but not including".  Pins <
 !   against <=, which is the whole content of the half-open interval.
         BB1, WABOVE, $+1.0
         BZB, WABOVE, $
-        BDS, $
+        BB,  6.0, $                  ! the store must NOT have been suppressed
 !
 ! ---- phase B: control bit 1, a signal OUTSIDE the area -------------
         BD, $+.32                    ! disable again to reach word 3
@@ -96,36 +100,39 @@ START   BD, $+.32                    ! disable: word 3 is protected
 ! inside the area: now the store lands
         BB1, WLOW+.1, $+1.0
         BZB, WLOW+.1, $
-        BDS, $
+        BB,  6.0, $                  ! the store must NOT have been suppressed
 ! below the area: outside, so suppressed
         BB1, WBELOW+.1, $+1.0
         BB,  WBELOW+.1, $
-        BZDSZ, $
+        BZB, 6.0, $                  ! hang if DS's routine did not run
+        BBZ, 6.0, $+1.0              !   ... and clear it for the next check
 ! at the upper boundary: outside, so suppressed -- the same address
 !   that was PERMITTED in phase A, which is how the polarity is pinned
 !   rather than the compare
         BB1, WABOVE+.1, $+1.0
         BB,  WABOVE+.1, $
-        BZDSZ, $
+        BZB, 6.0, $                  ! hang if DS's routine did not run
+        BBZ, 6.0, $+1.0              !   ... and clear it for the next check
 !
 ! word 4 is a special register: p.31 says 4 through 31 NEVER signal,
 ! and with the control bit set it lies outside the area.  The store
 ! must land and DS must stay off.
         BB1, 4.0, $+1.0
         BZB, 4.0, $
-        BDS, $
+        BB,  6.0, $                  ! the store must NOT have been suppressed
 !
 ! word 3 is permanently protected "regardless of... the setting of the
 ! boundary control bit".  Its bit 0 is the upper boundary's high bit,
 ! so a store that is not suppressed would also move the boundary.
         BB1, 3.0, $+1.0
-        BZDSZ, $
+        BZB, 6.0, $                  ! hang if DS's routine did not run
+        BBZ, 6.0, $+1.0              !   ... and clear it for the next check
 !
 ! past the installed core: address-invalid, exempt from address
 ! monitoring (p.32).  Outside the area, so a missing exemption raises
 ! DS here.
         BB1, (8)300000.0, $+1.0
-        BDS, $
+        BB,  6.0, $                  ! the store must NOT have been suppressed
         B, PASS
 PASS    BEW, $
 !
@@ -137,4 +144,22 @@ WBELOW  DD, 0                        ! below the lower boundary
 WLOW    DD, 0                        ! == the lower boundary, first word in
 WHIGH   DD, 0                        ! == upper-1, last word in
 WABOVE  DD, 0                        ! == the upper boundary, first word out
+!
+! ---- the interruption table ----------------------------------------
+! A protected STORE raises DS, and DS is permanently masked (p.48), so
+! an ENABLED machine takes an interruption rather than leaving the
+! indicator for the program to read.  The violation is therefore
+! observed through this routine, which is how the machine reports it.
+!
+! ITS MARKER IS WORD 6, and that is forced.  p.31: locations "0 and 4
+! through 31, inclusive, never cause an address monitoring signal".
+! With the control bit set, EVERY address outside the monitored area
+! signals -- so a marker in ordinary core would be suppressed and raise
+! DS again, and the machine would interrupt forever.  Word 6 is in the
+! carve-out and cannot.  (Word 4 is already this program's witness THAT
+! the carve-out works, so the marker uses a different one.)
+        SLC, (8)4500.0
+TBL     DD, 0                        ! entry N is at TBL+N words
+        SLC, (8)4523.0
+DSRTN   BB1, 6.0, $+1.0              ! entry 19 = DS
         END, START

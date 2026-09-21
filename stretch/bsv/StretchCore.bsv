@@ -86,6 +86,18 @@ module mkStretchCore(StretchCore);
   Reg#(Maybe#(Tuple2#(Bit#(4), IndexWord))) pendingIdxWrite <- mkReg(tagged Invalid);
   Reg#(Maybe#(IoXfer)) ioPending <- mkReg(tagged Invalid);
 
+  // ---- The interruption mechanism (Ref. Manual p.48) ----
+  // Valid while THE ONE instruction at the effective interruption
+  // address is in flight, holding that address.  Its Validity is what
+  // makes the instruction counter stand still: p.48, "the instruction
+  // counter is stepped neither before nor during the execution of the
+  // instruction at the effective interruption address; however, the
+  // instruction counter can be replaced as the result of a successful
+  // branching operation."  So pcReg is not touched while this is
+  // Valid, and commitNext below makes the one decision -- branched, or
+  // fell through -- in one place.
+  Reg#(Maybe#(HWordAddr)) intPC <- mkReg(tagged Invalid);
+
   // (The 1Y/2Y buffers and their IC controls: `ibuf`, StretchIBox.bsv.)
   // Restart requests (branch taken inside step(); setPC from outside)
   // as sequence numbers, so each register has exactly one writer.
@@ -128,6 +140,47 @@ module mkStretchCore(StretchCore);
   // with the owner tag saying whether the instruction unit dispatched
   // it directly or the look-ahead did.)
 
+  // THE ONE PLACE AN INSTRUCTION'S NEXT ADDRESS IS COMMITTED, so the
+  // interruption's "do not step the instruction counter" rule is
+  // written once rather than at each completion site.  Ordinarily this
+  // is just `pcReg <= next`.  While the interruption instruction is in
+  // flight it is not: p.48 says the instruction counter is not stepped
+  // for it, "however, the instruction counter can be replaced as the
+  // result of a successful branching operation" -- so a fall-through
+  // leaves pcReg pointing where it already pointed (at the instruction
+  // that had not yet run when the interruption was taken), and a taken
+  // branch replaces it.
+  //
+  // Fall-through is recognised as "next is the address after this
+  // instruction", which is exactly how the rest of this file already
+  // tells a taken branch from a sequential completion (see the `taken`
+  // computations below).
+  //
+  // IT ALSO OWNS branchSeq, the fetch-stream restart, and that is not
+  // tidiness -- it is forced.  Written as a write here PLUS the callers'
+  // own `if (taken) branchSeq <= ...`, bsc rejects both callers with
+  // G0004, "uses methods that conflict in parallel": two writes to one
+  // register from a function call and a statement beside it cannot be
+  // ordered, even though two plain assignments could.  So the question
+  // "did the instruction stream jump?" has to be answered in the same
+  // place as "where does it go next?", which is where it belonged.
+  function Action commitNext(HWordAddr pc, InstrLen len, HWordAddr next);
+    action
+      Bool taken = (next != pc + ((len == Full) ? 2 : 1));
+      if (intPC matches tagged Valid .ip) begin
+        if (taken) pcReg <= next;   // "replaced as the result of a
+                                    //  successful branching operation"
+        intPC <= tagged Invalid;
+        // Always a restart: the stream jumps back to the instruction
+        // counter, the mirror of the jump INTO the interruption.
+        branchSeq <= branchSeq + 1;
+      end else begin
+        pcReg <= next;
+        if (taken) branchSeq <= branchSeq + 1;
+      end
+    endaction
+  endfunction
+
   // Dispatch a freshly decoded I-box-class instruction to the E-box
   // (no operand words yet). Either it completes in this clock,
   // committing exactly as execute() always did, or the E-box holds it
@@ -137,11 +190,10 @@ module mkStretchCore(StretchCore);
       let r <- ebox.start(pc, len, di, replicate(0), 0, OwnerIbox);
       startClk <= clk;
       if (r matches tagged Valid .o) begin
-        pcReg <= o.next;
+        commitNext(pc, len, o.next);
         pendingIdxWrite <= o.idxWrite;
         ioPending <= o.ioStart;
         Bool taken = (o.next != pc + ((len == Full) ? 2 : 1));
-        if (taken) branchSeq <= branchSeq + 1;
         ibusy <= budgetClocks(di, taken);   // completed in the dispatch clock
         return o.next == pc;
       end else
@@ -199,8 +251,38 @@ module mkStretchCore(StretchCore);
                      && (!isValid(la.headLevel().da) || isValid(la.headLevel().data));
   Bool armRemove   = !armRecover && !isValid(ioPending) && !isValid(pendingIdxWrite)
                      && !resumeReady && headReady;
+
+  // ---- THE INTERRUPTION MECHANISM (Ref. Manual p.48) ----
+  //
+  // "Thus, interruption requires the mask bit to be 1, the indicator
+  // bit to be 1, and the mechanism to be enabled."  All three are
+  // tested inside StretchStorage, which owns all three registers, and
+  // arrive here as one latched Maybe: see interruptDue() there for why
+  // reading `mask` from a core rule breaks the smoke test's loader
+  // rather than this file.
+  Maybe#(Tuple2#(Bit#(6), WordAddr)) intDue = st.interruptDue();
+
+  // WHEN IT FIRES, AND THE SIMPLIFICATION THAT IS.  p.48: "Interruption
+  // is permitted after the execution of an instruction is completed,
+  // terminated, or suppressed and before execution of the next
+  // instruction" -- an INSTRUCTION boundary.  This model fires it at a
+  // QUIESCENT boundary instead: look-ahead empty, E-box idle, no
+  // instruction's time budget still running.  On the real machine an
+  // interruption drains the look-ahead, so the two coincide whenever
+  // the levels are empty; where they differ, this one is LATER, never
+  // earlier, and an instruction already loaded into a level will
+  // complete before the interruption is taken.  Stated here, in
+  // run_tests.sh and in bsv/README.md rather than left to be
+  // discovered, and the test's instruction stream is written so the
+  // two conditions coincide -- otherwise the test would be evidence
+  // only about the weaker rule.
+  Bool armInterrupt = !armRecover && !isValid(ioPending) && !isValid(pendingIdxWrite)
+                      && !resumeReady && !headReady
+                      && !isValid(intPC)          // one instruction, then done
+                      && la.count() == 0 && !ebox.busy() && ebusy == 0 && ibusy == 0
+                      && isValid(intDue);
   Bool armPrepare  = !armRecover && !isValid(ioPending) && !isValid(pendingIdxWrite)
-                     && !resumeReady && !headReady;
+                     && !resumeReady && !headReady && !armInterrupt;
 
   (* fire_when_enabled *)
   rule rl_clock (tick);
@@ -221,7 +303,12 @@ module mkStretchCore(StretchCore);
   // ---- IC controls: run every clock, alongside the instruction FSM ----
   rule rl_ic_controls (tick);
     Bool restart = (restartSeq != restartSeen) || (branchSeq != branchSeen);
-    ibuf.advance(pcReg[18:1], restart);
+    // While the interruption instruction is in flight the fetch stream
+    // follows IT, not the instruction counter -- the counter is
+    // deliberately standing still (p.48).
+    HWordAddr fetchPC = fromMaybe(pcReg, intPC);
+    ibuf.advance(fetchPC[18:1], restart);
+
     if (restart) begin
       restartSeen <= restartSeq;
       branchSeen <= branchSeq;
@@ -369,9 +456,8 @@ module mkStretchCore(StretchCore);
         ebn = eboxClocks(di);
         la.retireHead();
       end else begin
-        pcReg <= o.next;
+        commitNext(pc, len, o.next);
         Bool taken = (o.next != pc + ((len == Full) ? 2 : 1));
-        if (taken) branchSeq <= branchSeq + 1;
         Bit#(32) elapsed = clk - startClk;
         Bit#(16) budget = budgetClocks(di, taken);
         ibusy <= (elapsed >= zeroExtend(budget)) ? 0 : budget - truncate(elapsed);
@@ -416,6 +502,37 @@ module mkStretchCore(StretchCore);
     haltedReg <= False;
   endrule
 
+  // Take the interruption.  Which indicator and which address were
+  // decided in StretchStorage's intDueCalc (leftmost masked indicator;
+  // EIA = interruption address + N, in WORDS, p.48); what is left here
+  // is the part that belongs to the instruction unit -- turn that
+  // indicator off, point the fetch stream at the routine, and stop the
+  // instruction counter.
+  rule rl_interrupt (tick && armInterrupt);
+    let {n, eia} = validValue(intDue);
+
+    // "After this leftmost indicator has been turned off" -- and only
+    // that one: the rest of the masked set stays on and interrupts
+    // again, in priority order, before the instruction counter's own
+    // next instruction runs (p.48's programming note).
+    st.setIndicatorBits(setBit(st.readIndicators(), n, 0));
+
+    HWordAddr epc = {eia, 1'b0};
+    intPC <= tagged Valid epc;
+    // The instruction stream jumps, so the Y buffers must refill from
+    // the new address.  That is what branchSeq does for a taken branch
+    // (rl_ic_controls turns a change into `restart`), and an
+    // interruption is the same discontinuity: nothing else in this
+    // model reaches forward to fetch an address of its own.
+    branchSeq <= branchSeq + 1;
+
+    // p.48: the fetch of THIS instruction cannot turn on IF "even
+    // though it might lie in the protected area of core storage".
+    // Nothing to do here -- IF is not implemented at all (see
+    // StretchExecute's protViolates) -- but when it is, this is the
+    // fetch that must be exempt.
+  endrule
+
   rule rl_prepare (tick && armPrepare);
     // Preparation: transfer the next instruction from the Y buffers
     // (both halves of a full-word instruction, which may straddle
@@ -424,7 +541,10 @@ module mkStretchCore(StretchCore);
     // drained. Stall until the word(s) are buffered and checked.
     Vector#(4, LaLevel) nl = la.levels();
     Bool done = False;
-    HWordAddr pc = pcReg;
+    // While the interruption instruction is in flight, THAT is the
+    // instruction being prepared; pcReg is left pointing at the
+    // instruction the interruption displaced (p.48).
+    HWordAddr pc = fromMaybe(pcReg, intPC);
     Maybe#(Tuple2#(InstrLen, DecodedInstr)) prepared = tagged Invalid;
     if (ibuf.lookup(pc[18:1]) matches tagged Valid .w0) begin
       HalfWord32 hw0 = (pc[0] == 0) ? w0[63:32] : w0[31:0];
@@ -448,6 +568,21 @@ module mkStretchCore(StretchCore);
       ibusy <= ibusy - 1;   // previous instruction's time budget still running
     else if (!st.writeReady())
       noAction;   // a storing instruction could find the queue full: wait
+    else if (prepared matches tagged Valid {.len, .di}
+             &&& isEboxClass(di) &&& isValid(intPC)) begin
+      // NOT IMPLEMENTED, and loud about it.  An interruption
+      // instruction that is E-box class would have to be loaded into a
+      // look-ahead level, and a level steps the instruction counter --
+      // the one thing p.48 forbids here.  Real interruption tables hold
+      // branches and SIC (p.48-49: "a subroutine entered by STORE-
+      // INSTRUCTION-COUNTER-IF-BRANCH-DISABLED and returned by BRANCH
+      // ENABLED"), all I-box class, so this is a bound on the model
+      // rather than on the machine.  Treated as a fall-through so the
+      // program keeps running and its own check fails, instead of
+      // silently stepping the counter.
+      $display("StretchCore: interruption instruction at %0d is E-box class -- not implemented", pc);
+      commitNext(pc, len, pc + ((len == Full) ? 2 : 1));
+    end
     else if (prepared matches tagged Valid {.len, .di} &&& isEboxClass(di)) begin
       if (la.count() < 4 && !progressivePending) begin
         Maybe#(WordAddr) da = tagged Invalid;
@@ -461,7 +596,7 @@ module mkStretchCore(StretchCore);
           else begin
             // Classified as fetching but completed: treat as executed.
             $display("StretchCore: E-box instruction at %0d executed at preparation (classification mismatch)", pc);
-            pcReg <= next;
+            commitNext(pc, len, next);
             pendingIdxWrite <= vflPending;
             ioPending <= ioStart;
             loaded = False;
@@ -510,7 +645,7 @@ module mkStretchCore(StretchCore);
         end
       end
     end else if (prepared matches tagged Valid {.len, .di} &&& di matches tagged BranchInd .bi
-                 &&& !indexIndicator(bi.indNum)) begin
+                 &&& !indexIndicator(bi.indNum) &&& !isValid(intPC)) begin
       // A branch on an arithmetic indicator: guess not taken (plan
       // §6d). Load it as a branch level with its target, snapshot the
       // index words and indicators, and carry on down the fall-

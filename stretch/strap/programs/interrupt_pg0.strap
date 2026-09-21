@@ -1,0 +1,152 @@
+! The interruption mechanism: fire, run ONE instruction, and return
+! with the instruction counter where it was.
+!
+! THE RULES, all Reference Manual p.48.
+!
+! "Thus, interruption requires the mask bit to be 1, the indicator bit
+! to be 1, and the mechanism to be enabled."  This program supplies all
+! three and removes them one at a time in the injections.
+!
+! "When a program interruption occurs, a mechanism develops the number
+! of the leftmost actuated indicator whose mask bit is one.  After this
+! leftmost indicator has been turned off, the developed number is added
+! to the contents of the interruption address register to form the
+! effective interruption address.  This address does not replace the
+! contents of the instruction counter but is used to fetch a single
+! instruction which is executed before a second interruption can
+! occur."
+!
+! "The instruction counter is stepped neither before nor during the
+! execution of the instruction at the effective interruption address;
+! however, the instruction counter can be replaced as the result of a
+! successful branching operation."
+!
+! WHY PG0.  p.46: "41-47.  Program Indicators Zero through Six
+! (PG0-PG6).  These indicators are set by programming only."  So the
+! provocation needs no arithmetic fault and no I/O -- the program turns
+! the indicator on itself, deterministically, and 41 is inside the
+! settable mask range.  p.48 sanctions both writes: "Individual mask
+! bits with addresses 12.20 through 12.47 can be set or changed by
+! connective operations, arithmetic operations, or BRANCH ON BIT", and
+! BRANCH ON BIT reaches indicator bits 20-63 (p.41).  Both of those
+! paths are already transcribed and tested here (bb_indicator.strap,
+! the mask's fixed/writable fields).
+!
+! THE DECK DOES EXACTLY THIS, and it was found after this program was
+! designed, not before: jb_ax5b routine 1260 (PDF p.45) sets one
+! indicator bit in word 11, sets "MASK BIT OF TEST IND BIT" in word 12,
+! executes "BE,$+.32  -ENABLE AND AWAIT INTERRUPT", and falls through
+! to an error path commented "FAILED TO INTERRUPT ON IND MK".  That
+! block is not transcribed yet -- it needs SSIP's save/restore harness
+! -- so this program remains the WEAKER STANDARD, hand-written from
+! p.48.  See docs/NEXT.md for what transcribing 1260 would settle.
+!
+! THE UNITS ARE WORDS, AND THIS PROGRAM PINS THAT.  p.48: "The initial
+! instruction for a routine occupies all or half of a location in a
+! table of 48 successive full-word locations.  The address of the first
+! location is contained in the interruption address register."  So the
+! developed number counts WORDS.  If it counted half-words instead, an
+! interruption on indicator 41 would land at half-word TBL*2+41 rather
+! than word TBL+41 -- forty-one half-words away -- and HWRONG below
+! sits exactly there to catch it.
+!
+! WEAKER STANDARD: hand-written from p.48.
+
+        SLC, (8)4100.0
+!
+! ---- set up, with the system disabled ------------------------------
+! Word 2 is permanently protected (p.31), so the interruption address
+! can only be written while disabled -- which is what SSIP's SIP16 does
+! before it rewrites words 1, 2 and 3.
+START   BD, $+.32                    ! disable
+        LVI, $X13, TBL               ! the table origin, as a bit address
+        SV,  $X13, $IA               ! interruption address := TBL (word 2, 0-17)
+        BB1, 12.41, $+1.0            ! mask bit 41 on: PG0 may interrupt
+        BB,  MARK, $                 ! hang if MARK is already set -- it must not be
+        BB,  $PG0, $                 ! hang if PG0 is already on
+!
+! ---- two of the three conditions: NOTHING may happen ----------------
+! Mask bit 1 and indicator bit 1, but the mechanism disabled.  p.48
+! requires all three, so this must be inert -- and it is the half of
+! the test that a model ignoring the enable bit would fail.
+        BB1, $PG0, $+1.0             ! turn PG0 on while DISABLED
+        BZB, $PG0, $                 ! hang if PG0 went off by itself
+        BB,  MARK, $                 ! hang if MARK is set: nothing may have run
+!
+! ---- the third condition: fire ---------------------------------------
+! BE acts unconditionally and before the branch (p.40), so the
+! interruption follows this instruction, not some later one.
+        BE,  $+.32                   ! enable
+!
+! Execution resumes HERE, because the routine at TBL+41 does not
+! branch: "the instruction counter is stepped neither before nor
+! during" it.
+AFTER   BZB, MARK, $                 ! hang if MARK is off: the routine never ran
+        BB,  $PG0, $                 ! hang if PG0 is still on: it must be turned
+                                     !   off BEFORE the address is formed
+!
+! ---- the mask is REQUIRED, and only the masked indicator is chosen --
+! THIS BLOCK EXISTS BECAUSE THE FIRST ONE COULD NOT SEE THE MASK.  An
+! injection replacing "indicators & mask" with "indicators" passed
+! everything above: the only indicator the first block turns on is the
+! one it also masks, so honouring the mask and ignoring it give the
+! same answer.  That is the "a green test is only evidence about faults
+! its inputs could have made visible" rule catching this file, and the
+! fix is an indicator that is ON and NOT masked.
+!
+! PG0 (41) is left unmasked and on; PG2 (43) is masked and on.  p.48
+! requires all three conditions per indicator, so the interruption must
+! be taken on 43 and 41 must be left completely alone -- neither
+! interrupting nor, since only "this leftmost indicator has been turned
+! off", cleared.  A model ignoring the mask would take 41 first,
+! because 41 is further left, and clear it.
+        BD,  $+.32                   ! disable to rearrange the mask
+        BBZ, 12.41, $+1.0            ! mask bit 41 OFF -- PG0 may not interrupt
+        BB1, 12.43, $+1.0            ! mask bit 43 ON  -- PG2 may
+        BB1, $PG0, $+1.0             ! PG0 on: actuated but NOT masked
+        BB1, $PG2, $+1.0             ! PG2 on: actuated AND masked
+        BB,  MARK2, $                ! hang if MARK2 is already set
+        BE,  $+.32                   ! enable
+AFTER2  BZB, MARK2, $                ! hang if MARK2 is off: 43's routine never ran
+        BB,  $PG2, $                 ! hang if PG2 is still on
+        BZB, $PG0, $                 ! hang if PG0 went OFF -- unmasked, it must be
+                                     !   neither taken nor turned off
+        B, PASS
+PASS    BEW, $
+!
+! ---- the interruption table ----------------------------------------
+! Only the three words around indicator 41 are populated; nothing else
+! is ever fetched if the mechanism is right, and a landing outside them
+! runs into untouched storage, which halts the run at the step cap.
+        SLC, (8)4450.0
+E40     B, $                         ! indicator 40 -- must not be reached
+        SLC, (8)4451.0
+E41     BB1, MARK, $+1.0             ! PG0's routine: ONE instruction, and it
+                                     !   does NOT branch, so the counter stands
+        SLC, (8)4452.0
+E42     B, $                         ! indicator 42 -- must not be reached
+        SLC, (8)4453.0
+E43     BB1, MARK2, $+1.0            ! PG2's routine, for the mask block below
+!
+! Where HALF-word indexing would land instead of word indexing:
+! TBL*2 + 41 half-words = word 04424, second half.  Reached only if the
+! developed number is added in the wrong units.
+!
+! NOTE THE .40.  A "(8)" radix prefix applies to BOTH halves of a bit
+! address, so the offset here is OCTAL too: .40 is 32 bits, the second
+! half-word.  Written ".32" first, which is octal 32 = 26 bits, and the
+! assembler refused it -- "alignment gap at bit 148762 is 6 bits, not a
+! whole number of half-words".  The same decimal/octal confusion that
+! put seven wrong addresses in run_tests.sh last session; caught here
+! by the assembler instead of by review.
+        SLC, (8)4424.40
+HWRONG  B, $
+!
+! ---- data ----------------------------------------------------------
+        SLC, (8)4300.0
+MARK    DD, 0                        ! the routine's only side effect
+        SLC, (8)4301.0
+MARK2   DD, 0                        ! the same, for the mask block
+        SLC, (8)4400.0
+TBL     DD, 0                        ! the table origin; entry N is TBL+N words
+        END, START

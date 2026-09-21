@@ -42,6 +42,7 @@ package StretchStorage;
 
 import Vector::*;
 import FIFOF::*;
+import ConfigReg::*;   // see intDueCalc below
 import StretchTypes::*;
 import StretchMemory::*;
 
@@ -132,6 +133,31 @@ interface StretchStorage;
   // G0004 conflict that killed the first design.
   method Word64 readBoundaries();
 
+  // IS AN INTERRUPTION DUE, AND WHERE DOES IT GO?  Answered HERE, not
+  // in the core, and latched: Valid(N, EIA) when p.48's three
+  // conditions hold -- "interruption requires the mask bit to be 1, the
+  // indicator bit to be 1, and the mechanism to be enabled" -- where N
+  // is the leftmost such indicator's number and EIA the word address
+  // its routine starts at.
+  //
+  // THIS LIVES IN STORAGE BECAUSE OF WHAT IT READS.  The obvious shape
+  // -- expose readMask() and readInterruptAddr() and let the core
+  // combine them -- compiles mkStretchCore and then breaks the SMOKE
+  // TEST with G0004: readWordResp() reads every special register
+  // through lookupSpecial, writeWord() writes them, and a new read of
+  // `mask` from a core rule that runs every clock forces an ordering
+  // between those two exported methods that the harness's own loader
+  // rule cannot satisfy.  Reading `mask`, `indicators`, `irqEn` and
+  // `interruptionAddress` from inside the module that owns them costs
+  // the core nothing: it reads one register.
+  //
+  // Latched rather than combinational for the same reason irqEnabled
+  // and readBoundaries are plain Reg reads -- the core needs this in a
+  // rule PREDICATE.  The cost is one clock of delay before an
+  // interruption is taken, which no program can observe and which is
+  // late rather than early.
+  method Maybe#(Tuple2#(Bit#(6), WordAddr)) interruptDue();
+
   method IndexWord readIndex(Bit#(4) j);
   method Action writeIndex(Bit#(4) j, IndexWord v);
   // All sixteen index words at once: the instruction unit snapshots
@@ -194,15 +220,17 @@ module mkStretchStorage(StretchStorage);
   Vector#(NumTags, RWire#(WordAddr))       reqW      <- replicateM(mkRWire);
   Vector#(NumTags, PulseWire)              takeW     <- replicateM(mkPulseWire);
   RWire#(MemReq)   storeW <- mkRWire;   // writeWord (core storage) this clock
-  Reg#(Bool)       irqEn  <- mkReg(False);  // interrupt system: reset = disabled
+  Reg#(Bool)       irqEn  <- mkConfigReg(False); // interrupt system: reset = disabled (ConfigReg: intDueCalc)
   Reg#(Maybe#(WordAddr)) recentStoreReg <- mkReg(tagged Invalid); // see recentStore()
   function Bool memInRange(WordAddr a) = installed(a);
   function Bool isSpecialAddr(WordAddr a) = (a < 32);
 
   // Named CPU registers backing addresses 0-31.
   Reg#(Word64) intervalTimerAndClock <- mkReg(0); // addr 1: bits 0-18 timer, 28-63 clock
-  Reg#(Word64) interruptionAddress   <- mkReg(0); // addr 2
+  Reg#(Word64) interruptionAddress   <- mkConfigReg(0); // addr 2 (ConfigReg: intDueCalc)
   Reg#(Word64) boundaryReg           <- mkReg(0); // addr 3
+  // See the interruptDue() comment in the interface above.
+  Reg#(Maybe#(Tuple2#(Bit#(6), WordAddr))) intDueReg <- mkReg(tagged Invalid);
   Reg#(Word64) maintenanceBits       <- mkReg(0); // addr 4
   Reg#(Word64) channelAddress        <- mkReg(0); // addr 5
   Reg#(Word64) otherCpuBits          <- mkReg(0); // addr 6
@@ -210,7 +238,7 @@ module mkStretchStorage(StretchStorage);
   Reg#(Word64) accLeft               <- mkReg(0); // addr 8
   Reg#(Word64) accRight              <- mkReg(0); // addr 9
   Reg#(Word64) accSignByte           <- mkReg(0); // addr 10, IBM bits 0-7 (BSV 63:56) only
-  Reg#(Word64) indicators            <- mkReg(0); // addr 11
+  Reg#(Word64) indicators            <- mkConfigReg(0); // addr 11 (ConfigReg: intDueCalc)
   // addr 12. IBM bits 0-19 are always one and 48-63 always zero, so
   // only IBM 20-47 -- model bits 43-16, twenty-eight of them -- are
   // writable. This used to be 64'hFFFF_0000_0000_0000 with a
@@ -220,11 +248,55 @@ module mkStretchStorage(StretchStorage);
   // did 0-15. Nothing drives word 12 in the transcribed diagnostic, so
   // this was never caught by a test -- found by a code review against
   // the Appendix A field table.
-  Reg#(Word64) mask                  <- mkReg(64'hFFFFF000_00000000);
+  Reg#(Word64) mask                  <- mkConfigReg(64'hFFFFF000_00000000); // ConfigReg: intDueCalc
   Reg#(Word64) remainder             <- mkReg(0); // addr 13
   Reg#(Word64) factor                <- mkReg(0); // addr 14
   Reg#(Word64) transit                <- mkReg(0); // addr 15
   Vector#(16, Reg#(Word64)) xreg      <- replicateM(mkReg(0)); // addr 16-31
+
+  // p.48: "a mechanism develops the number of the leftmost actuated
+  // indicator whose mask bit is one ... the developed number is added
+  // to the contents of the interruption address register to form the
+  // effective interruption address."
+  //
+  // LEFTMOST IS THE LOWEST INDICATOR NUMBER, which is the HIGHEST index
+  // of the Bit#(64): IBM bit n is index 63-n everywhere in this model.
+  // p.48 says why the choice of leftmost matters -- "the leftmost one
+  // identification defines the relative priority of actuated indicators
+  // if more than one has its corresponding mask bit turned on".
+  //
+  // THE TABLE IS 48 SUCCESSIVE FULL-WORD LOCATIONS, so N counts WORDS.
+  // p.48: "The initial instruction for a routine occupies all or half
+  // of a location in a table of 48 successive full-word locations.  The
+  // address of the first location is contained in the interruption
+  // address register.  The interruption address register contains 18
+  // bits and has address 2.0."  Bits 0-17 of word 2 are indices 63-46,
+  // read exactly as the boundary registers are.
+  // THE REGISTERS IT READS ARE ConfigRegs, AND THAT IS WHAT MAKES IT
+  // SCHEDULE.  A plain rule reading `indicators`/`mask`/
+  // `interruptionAddress` while the exported writeWord also writes them
+  // is a read-before-write ordering, and combined with the core's rules
+  // that closes a loop through the synthesized boundary: bsc rejects it
+  // with G0095, "a path containing rules was detected between the
+  // scheduling of method mem_writeWord and its execution", naming
+  // mem_writeWord -> rl_prepare -> intDueCalc -> mem_writeWord.
+  // mkConfigReg breaks exactly that: the read is unordered against the
+  // write and always yields the value at the start of the clock, which
+  // is the semantics this rule already wanted.
+  rule intDueCalc;
+    Word64 pending = indicators & mask;
+    Bit#(6) n = 0;
+    Bool found = False;
+    for (Integer i = 63; i >= 0; i = i - 1)
+      if (!found && pending[i] == 1) begin
+        found = True;
+        n = fromInteger(63 - i);
+      end
+    WordAddr iar = interruptionAddress[63:46];
+    intDueReg <= (irqEn && found)
+                 ? tagged Valid tuple2(n, iar + zeroExtend(n))
+                 : tagged Invalid;
+  endrule
 
   // The one rule that moves requests to the bus and responses back.
   // Every register it writes is written nowhere else; the methods
@@ -438,6 +510,7 @@ module mkStretchStorage(StretchStorage);
 
   method Bool irqEnabled() = irqEn;
   method Word64 readBoundaries() = boundaryReg;
+  method Maybe#(Tuple2#(Bit#(6), WordAddr)) interruptDue() = intDueReg;
   method Action setIrqEnabled(Bool e);
     irqEn <= e;
   endmethod

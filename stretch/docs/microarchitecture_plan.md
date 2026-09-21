@@ -6644,12 +6644,73 @@ TR00.722. Perf. Char. = 7030 Performance Characteristics vol.1 (Mar 61).
   second interruption can occur. The instruction counter is not stepped;
   a successful branch in that instruction can replace it. IF cannot be
   turned on by the fetch of that instruction even in protected storage.
+
+  IMPLEMENTED 2026-09-21, from p.48 in full rather than the overview.
+  `StretchStorage`'s `intDueCalc` answers "is one due, and where does it
+  go" -- leftmost masked indicator, EIA = IAR + N **in words** ("a table
+  of 48 successive full-word locations") -- and `StretchCore`'s
+  `rl_interrupt` turns that indicator off, points the fetch stream at
+  the routine and leaves the instruction counter alone.
+  `commitNext` is the single place the counter is committed, so
+  "not stepped, but replaceable by a successful branch" is written once
+  rather than at each of the three completion sites.
+
+  THREE SCHEDULING LESSONS, each one a rebuild:
+  * Two writes to `branchSeq` in one rule -- one inside a called
+    function, one beside it -- is G0004, "methods that conflict in
+    parallel". Two plain assignments would have been fine; a function
+    call plus an assignment cannot be ordered. So `commitNext` owns the
+    fetch-stream restart as well as the address.
+  * Reading `mask`/`indicators` from a CORE rule to build the predicate
+    compiled `mkStretchCore` and then broke the SMOKE TEST's loader:
+    `readWordResp` reads every special register through `lookupSpecial`
+    and `writeWord` writes them, so a new read forced an ordering
+    between two exported methods the harness uses in one rule. The
+    decision moved inside `StretchStorage`, which owns all four
+    registers; the core reads one latched `Maybe`.
+  * That rule then closed a loop through the synthesized boundary
+    (G0095, `mem_writeWord -> rl_prepare -> intDueCalc ->
+    mem_writeWord`). `mkConfigReg` on the four registers breaks it: the
+    read is unordered against the write and yields the start-of-clock
+    value, which is what the rule wanted anyway.
+
+  AND THE FINDING THAT COST THE MOST, which is also the model being
+  right: A PROGRAM CANNOT POLL DS. DS is indicator 19 and mask bits
+  0-19 are permanently 1, so an ENABLED machine raising DS interrupts
+  at once and the mechanism turns that indicator off before forming the
+  address -- it is gone before the next instruction. Both
+  storage-protection programs read DS directly and both had been green
+  only because interruptions did not exist; with the mechanism in, both
+  ran away to address 0, interrupting to word 19 with the interruption
+  address register never set (measured: `n=19 eia=19 pc=4234`). They
+  now observe the violation through the routine at table entry 19,
+  which is how the machine reports it, and are stronger for it: they
+  witness the suppression AND the interruption that p.32 and p.48
+  together require. It is also why the decks poll indicators with the
+  system disabled -- jb_af1c's operator sets *Interrupt disable* at the
+  console before the tape is loaded.
+
+  The marker those routines set has to live in words 4-31 (p.31: "0 and
+  4 through 31, inclusive, never cause an address monitoring signal").
+  With the boundary control bit set every address outside the monitored
+  area signals, so a marker in ordinary core would be suppressed, raise
+  DS again, and interrupt forever.
+
+  AND ONE MORE BEHAVIOURAL SURPRISE, same character. A ZERO
+  HALF-WORD DECODES AS `BE, 0` -- BranchOrMisc code 000 is BRANCH
+  ENABLED. The smoke test ran its RNX check by stepping 40 clocks and
+  hoping untouched storage stayed quiet; with interruptions implemented
+  it no longer does. Measured: `BE` executed at half-word 80, and the
+  interruption fired the moment RNX set OP -- correctly, since OP is
+  indicator 15 and mask bits 0-19 are permanently 1, and an
+  interruption turns its indicator off. The test now disables first and
+  halts on a self-branch instead of wandering.
 - **Enable state**: BRANCH ENABLED (BE) enables the interrupt system,
   BRANCH DISABLED (BD) disables it, BRANCH ENABLED AND WAIT (BEW)
-  enables and stops (there is no machine stop; only BEW). The model
-  treats BE/BD/BEW as plain branches today -- the enable flag is the
-  small state to add (a Reg#(Bool)), a prerequisite for DS/DF/IF and
-  interruptions.
+  enables and stops (there is no machine stop; only BEW). (Since
+  superseded twice: the enable flag was added with storage protection
+  on 2026-09-19 and now gates the interruption mechanism itself. The
+  paragraph below is kept for the reasoning, not as current state.)
 
   ATTEMPTED 2026-09-19 AND REVERTED, and the reason is a real
   constraint rather than a false start. The plan was the smallest

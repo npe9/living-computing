@@ -44,25 +44,56 @@
 ! WEAKER STANDARD: hand-written from p.31/p.32/p.45.  The deck block it
 ! mirrors is transcribed separately and is encoding-only.
 
+! A PROGRAM CANNOT POLL DS.  This program used to read DS directly,
+! with "BZB,$DS,$", and that was only ever possible because the
+! interruption mechanism did not exist yet.  DS is indicator 19 and
+! mask bits 0-19 are permanently 1 (p.48), so the moment an ENABLED
+! machine raises DS it takes an interruption -- and the mechanism
+! "turns off" that indicator before forming the address (p.48).  By the
+! time the next instruction runs, DS is gone.  That is also why SSIP
+! polls indicators with the system DISABLED.
+!
+! So the violation is observed the way the machine actually reports it:
+! through the interruption routine at table entry 19.  This program is
+! strictly stronger for it -- it now witnesses the suppression AND the
+! interruption that p.32 and p.48 together require, where before it saw
+! only a bit.
+!
+! THE MARKER LIVES IN WORD 4, and that is not arbitrary.  p.31:
+! locations "0 and 4 through 31, inclusive, never cause an address
+! monitoring signal".  Word 3's bit 0 is set below, which makes the
+! upper boundary 131072 and puts every ordinary address inside the
+! monitored area -- so a marker anywhere in core would itself be
+! suppressed and raise DS again, forever.  Word 4 cannot.
+
         SLC, (8)4100.0
 !
 ! ---- disabled: the store into protected storage SUCCEEDS -----------
 ! Disabled is also the reset state (p.53), so the BD is belt and
 ! braces -- and it is what SIP16 does before its own protected writes.
 START   BD, $+.32                    ! disable the interrupt system
+        LVI, $X13, TBL               ! the interruption table origin
+        SV,  $X13, $IA               ! word 2 is protected: disabled first,
+                                     !   exactly as SIP16 does it
         BB1, 3.0, $+1.0              ! set bit 0 of word 3
         BZB, 3.0, $                  ! hang up if bit 0 is off: the store
                                      !   must have landed
-        BB, $DS, $                   ! hang up if DS is on: nothing was
-                                     !   protected while disabled
+        BB, 6.0, $                   ! hang up if DS's routine has run:
+                                     !   nothing was protected while disabled
 !
-! ---- enabled: the same store is SUPPRESSED and DS comes on ---------
+! ---- enabled: the same store is SUPPRESSED and DS interrupts -------
         BE, $+.32                    ! enable the interrupt system
         BBZ, 3.0, $+1.0              ! try to CLEAR bit 0 of word 3
         BZB, 3.0, $                  ! hang up if bit 0 is off -- it must
                                      !   still be set, the store suppressed
-        BZB, $DS, $                  ! hang up if DS is off -- it must have
-                                     !   been raised
+        BZB, 6.0, $                  ! hang up if DS's routine did NOT run
         B, PASS
 PASS    BEW, $
+!
+! ---- the interruption table ----------------------------------------
+        SLC, (8)4400.0
+TBL     DD, 0                        ! entry N is at TBL+N words
+        SLC, (8)4423.0
+DSRTN   BB1, 6.0, $+1.0              ! entry 19 = DS: record the violation
+                                     !   in a word that can never signal
         END, START

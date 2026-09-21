@@ -315,7 +315,19 @@ it recognizes independent of what the datapath implements.
 
 ### Not modeled at all
 
-Interrupts, memory protection enforcement (addresses described as
+Interrupts (SINCE SUPERSEDED: the interruption mechanism itself is
+implemented -- `StretchStorage`'s `intDueCalc` decides whether one is
+due and where it goes, `StretchCore`'s `rl_interrupt` takes it. What is
+still missing is the *timing* of it: p.48 permits an interruption
+"after the execution of an instruction is completed, terminated, or
+suppressed and before execution of the next instruction", an
+INSTRUCTION boundary, and this model takes it at a QUIESCENT boundary
+instead -- look-ahead empty, E-box idle, no time budget running. On the
+real machine an interruption drains the look-ahead so the two coincide
+when the levels are empty; where they differ this one is LATER, never
+earlier. Also not modeled: an interruption instruction that is E-box
+class, which fails loud rather than silently stepping the counter),
+memory protection enforcement (addresses described as
 "permanently protected" are documented but not enforced against
 writes from user code beyond a few no-op cases -- SINCE SUPERSEDED:
 address monitoring is now enforced for STORE-type references, both the

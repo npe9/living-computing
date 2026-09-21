@@ -51,6 +51,9 @@ function HalfWord32 encCountBranch(HWordAddr addr, Bit#(4) j, Bit#(2) v,
   { addr, j, v, 4'b1001, refill, bz, idx };
 
 function HalfWord32 encNop() = { 19'b0, 3'b110, 6'b000000, 4'b0 }; // NOP=110
+// Unconditional-branch half-words, same format: BD=001, B=010.
+function HalfWord32 encBD(HWordAddr t) = { t, 3'b001, 6'b000000, 4'b0 };
+function HalfWord32 encB(HWordAddr t)  = { t, 3'b010, 6'b000000, 4'b0 };
 
 (* synthesize *)
 module mkStretchTb(Empty);
@@ -109,7 +112,9 @@ module mkStretchTb(Empty);
   // phase). 21 phases (0-20): 4 plain writeWord + 6 putFull (each 1
   // phase, unaffected by the BRAM migration -- writes stay
   // single-cycle throughout) + 5 putHW pairs (each now 2 phases) + 1
-  // setPC = 4+6+10+1 = 21.
+  // setPC = 4+6+10+1 = 21.  The seventh putFull -- word 45, RNX plus
+  // its halt -- rides along in phase 18, whose putHWReq writes
+  // nothing; see the comment there.
   // Stage-1 memory (StretchMemory.bsv): stores queue behind busy
   // units and reads answer after a variable number of clocks, so the
   // setup waits for writeReady() before each store and for
@@ -147,7 +152,36 @@ module mkStretchTb(Empty);
       15: putHWResp();
       16: putHWReq(79, encNop());
       17: putHWResp();
-      18: putHWReq(90, 32'hFFFF_FFFF); // decodes as DirIndex RNX; execute -> OP invalid
+      // THE RNX CHECK RUNS DISABLED AND HALTS ON ITS OWN, and both of
+      // those are load-bearing now that the interruption mechanism
+      // exists.  A ZERO HALF-WORD DECODES AS `BE, 0` -- BranchOrMisc
+      // code 000 is BRANCH ENABLED -- so a machine that runs off the
+      // end of this program into untouched storage turns the
+      // interruption system ON.  It always did; it used not to matter.
+      // It matters now: OP is indicator 15, mask bits 0-19 are
+      // permanently 1 (Ref. Manual p.48), so an enabled machine with OP
+      // on takes an interruption, and the interruption TURNS OP OFF --
+      // which is correct, and which this check would then read as a
+      // failure.  Measured before this was fixed: `BE` executed at
+      // half-word 80 during the arithmetic loop above, and the
+      // interruption fired at half-word 91 the moment RNX set OP.
+      //
+      // So: BD first (disable), then RNX, then a branch to itself so
+      // the machine STOPS instead of wandering.  The previous version
+      // relied on "40 clocks is ample, and small enough that whatever
+      // unwritten storage holds after it gets little chance to run",
+      // which was a hope about untouched memory rather than a property
+      // of the program.
+      // Both in phase 18, which is legal precisely because putHWReq
+      // performs NO storage write -- so this phase still makes exactly
+      // one, which is the discipline this file's header describes.  A
+      // phase of its own would collide with setStart at phase 20.
+      18: action
+            putHWReq(89, encBD(90));     // disable, then fall into RNX
+            // Word 45 in one write: RNX in half 0, a branch to itself
+            // in half 1, so the machine stops rather than running on.
+            putFull(90, { 32'hFFFF_FFFF, encB(91) });
+          endaction
       19: putHWResp();
     endcase
     phase <= phase + 1;
@@ -231,7 +265,8 @@ module mkStretchTb(Empty);
   // interact with the core's rules in ways whose orderings cannot both
   // be honored in one clock), so a rule may not call both.
   rule restartRnx (phase == 26);
-    core.setPC(90);
+    core.setPC(89);   // the BD, which falls into RNX at 90
+
     stepCount <= 0; // reused for the RNX counted loop below
     phase <= 27;
   endrule

@@ -182,6 +182,25 @@ MUTATIONS = [
      "The special registers 4-31 signal a protection violation when the"
      " boundary control bit is set; p.31 says they never signal."),
 
+    # THE MASK, IN THE INTERRUPTION MECHANISM.  p.48: "interruption
+    # requires the mask bit to be 1, the indicator bit to be 1, and the
+    # mechanism to be enabled."  Dropping the mask takes an interruption
+    # on any actuated indicator, and takes it on the wrong one whenever
+    # an unmasked indicator sits further left than a masked one.
+    #
+    # THIS ENTRY EXISTS BECAUSE THE MUTATION SURVIVED.  The first
+    # version of interrupt_pg0.strap turned on exactly one indicator and
+    # masked exactly that one, so "indicators & mask" and "indicators"
+    # could not be told apart, and the injection passed clean.  The
+    # program now leaves PG0 actuated and UNMASKED beside a masked PG2.
+    # Kept here so the campaign notices if that second block is ever
+    # weakened back.
+    ("int-mask-ignored", "bsv/StretchStorage.bsv",
+     "    Word64 pending = indicators & mask;",
+     "    Word64 pending = indicators;",
+     "An interruption is taken on an indicator whose mask bit is zero;"
+     " p.48 requires the mask bit, the indicator bit and the enable."),
+
     # REGRESSION MUTATIONS: bugs the project already fixed, reverted, to
     # ask whether the fix would survive being undone.  cmp-leaves-flag
     # above started as one of these and SURVIVED -- a documented fix with

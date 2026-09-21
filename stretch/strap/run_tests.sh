@@ -231,7 +231,7 @@ run "B(IND) XL/XE/XH blocks (indicator register written by SV)" ./run_program.sh
     "PC=4240"          # 004110.00, the half-word after IBIN55's second NOP
 
 run "Storage protection, gated on the interrupt enable bit" ./run_program.sh programs/storage_protection.strap StretchProtTb \
-    "PC=4239"          # 004107.40; hand-written, not a listing fact
+    "PC=4241"          # 004110.40; hand-written, not a listing fact
 # THE FIRST PIECE OF THE INTERRUPT SYSTEM, and the smallest one a
 # program can observe.  p.45 defines DS/DF/IF as raised "while the
 # interruption system was enabled", so the enable bit had to come with
@@ -260,11 +260,26 @@ run "Storage protection, gated on the interrupt enable bit" ./run_program.sh pro
 # p.31 says never signal -- so only the computed-address stores are
 # guarded.  One rule in one function, twenty mechanical uses of it.
 #
-# Three injections, and the gating is two-sided:
-#   protection never fires        -> 004105.00  the ENABLED case
-#   ignores the enable bit        -> 004101.40  the DISABLED case,
-#                                                the store wrongly suppressed
-#   BE does not enable            -> 004105.00  as the first, correctly
+# REWRITTEN 2026-09-21, when the interruption mechanism landed.  This
+# program used to read DS directly with "BZB,$DS,$", which was only
+# ever possible because interruptions did not exist.  DS is indicator
+# 19 and mask bits 0-19 are permanently 1 (p.48), so an ENABLED machine
+# raising DS interrupts at once and the mechanism turns that indicator
+# off before forming the address -- it is gone before the next
+# instruction.  Measured when this test first failed: n=19, eia=19,
+# pc=4234, running away to 0 because the interruption address register
+# had never been set.  The violation is now observed through the
+# routine at table entry 19, which is how the machine reports it, and
+# the test is stronger for it: it witnesses the suppression AND the
+# interruption that p.32 and p.48 together require.  It is also why the
+# decks poll indicators with the system DISABLED.
+#
+# Two injections, re-measured against the rewritten program, and the
+# gating is two-sided:
+#   protection never fires  -> 004106.00  BZB, 3.0, $   the ENABLED case;
+#                                         the store landed and cleared the bit
+#   ignores the enable bit  -> 004102.40  BZB, 3.0, $   the DISABLED case;
+#                                         the store was wrongly suppressed
 #
 # THE BOUNDARY REGISTERS ARE THE SECTION BELOW; what is still not
 # implemented is DF and IF (both mask-dependent, unlike DS), full
@@ -274,7 +289,7 @@ run "Storage protection, gated on the interrupt enable bit" ./run_program.sh pro
 # transcribed distinguishes them.
 
 run "Storage protection: the address boundary registers" ./run_program.sh programs/storage_protection_boundary.strap StretchProtBndTb \
-    "PC=4283"          # 004135.40; hand-written, not a listing fact
+    "PC=4305"          # 004150.40; hand-written, not a listing fact
 # THE BOUNDARY REGISTERS, the second half of address monitoring.  Word
 # 3 holds the upper boundary in bits 0-17, the lower in 32-49 and the
 # boundary control bit at 57 (p.31 -- upper is named first and sits
@@ -314,24 +329,42 @@ run "Storage protection: the address boundary registers" ./run_program.sh progra
 #   python3 line_addresses.py programs/storage_protection_boundary.strap
 # which prints the row it names -- so these are checkable, not folklore:
 #
-#   boundaries never consulted     -> 004107.40  BB,  WLOW, $
-#   lower exclusive (>= -> >)      -> 004107.40  BB,  WLOW, $
-#   upper/lower fields swapped     -> 004107.40  BB,  WLOW, $  (area empty)
-#   upper inclusive (< -> <=)      -> 004114.40  BZB, WABOVE, $
-#   control-bit polarity inverted  -> 004105.00  BZB, WBELOW, $
-#   carve-out written as OR        -> 004130.40  BZB, 4.0, $
-#   address-invalid exemption gone -> 004134.40  BDS, $
+#   boundaries never consulted     -> 004111.00  BB,  WLOW, $
+#   lower exclusive (>= -> >)      -> 004111.00  BB,  WLOW, $
+#   upper/lower fields swapped     -> 004111.00  BB,  WLOW, $  (area empty)
+#   upper inclusive (< -> <=)      -> 004121.00  BZB, WABOVE, $
+#   control-bit polarity inverted  -> 004106.00  BZB, WBELOW, $
+#   address-invalid exemption gone -> 004147.00  BB,  6.0, $
+#   carve-out written as OR        -> step cap, and the REASON is the
+#     point.  With the control bit set that mutation makes words 4-31
+#     signal -- and word 6 is where DS's interruption routine writes its
+#     marker.  So the mutation makes the REPORTING MECHANISM ITSELF
+#     violate: the marker store is suppressed, DS comes on again, and
+#     the machine interrupts forever.  It is self-defeating in exactly
+#     the way that shows why the carve-out is structural.  Worth
+#     stating plainly that this is a WEAKER witness than the named
+#     address it used to have (004130.40, before the rewrite below).
 #
-# THE LAST ONE READ BACK 004135.00, ONE HALF-WORD PAST ITS CHECK, AND
-# THAT IS A PROPERTY OF THE HARNESS, NOT THE TEST.  A hang is a branch
-# to itself, and the instruction counter OSCILLATES between the
+# ALL OF THESE WERE RE-MEASURED 2026-09-21 against the rewritten
+# program.  This test, like its companion above, used to poll DS with
+# BZDSZ; it now checks the interruption routine's marker instead, for
+# the reason given in that section.  THE MARKER LIVES IN WORD 6 AND HAS
+# TO: p.31 exempts locations 0 and 4-31 from monitoring, and with the
+# control bit set every address outside the monitored area signals, so
+# a marker anywhere in ordinary core would be suppressed and raise DS
+# again.  Word 4 is already this program's witness THAT the carve-out
+# works, so the marker uses a different one.
+#
+# A HANG ADDRESS IS ACCURATE TO ONE HALF-WORD, NOT EXACTLY, and that is
+# a property of the harness rather than of any test.  A hang is a
+# branch to itself, and the instruction counter OSCILLATES between the
 # branch's address and the half-word after it while it spins; the step
 # cap samples whichever clock it lands on.  Measured directly, by
-# generating the same testbench three times: caps of 30000 and 30001
-# report 004135.00, a cap of 30002 reports 004134.40.  Every other
+# generating the same testbench three times against the PRE-REWRITE
+# version of this program: caps of 30000 and 30001 reported 004135.00,
+# a cap of 30002 reported 004134.40, one half-word apart.  Every other
 # injection in this file happens to sample the branch's own address,
-# which is why it took an injection landing on the other phase to
-# notice.  Read a hang address as accurate to one half-word.
+# which is why it took one landing on the other phase to notice.
 #
 # AND THE OFFSET IS OCTAL.  004107.40 is word 04107, bit 32.  The
 # program's own source is DECIMAL unless "(8)" says otherwise, so the
@@ -345,6 +378,81 @@ run "Storage protection: the address boundary registers" ./run_program.sh progra
 # mask-dependent, unlike DS), full operation TERMINATION, and the
 # straddling rule (p.31: a field crossing a boundary always signals --
 # this compares one word address per store, not a field's extent).
+
+run "The interruption mechanism (fire, one instruction, return)" ./run_program.sh programs/interrupt_pg0.strap StretchIntPg0Tb \
+    "PC=4263" "MARK:2240=0x8000000000000000" "MARK2:2241=0x8000000000000000"
+    # 004123.40; hand-written, not a listing fact
+# THE INTERRUPTION ITSELF.  p.48: "interruption requires the mask bit
+# to be 1, the indicator bit to be 1, and the mechanism to be enabled",
+# and then "a mechanism develops the number of the leftmost actuated
+# indicator whose mask bit is one.  After this leftmost indicator has
+# been turned off, the developed number is added to the contents of the
+# interruption address register to form the effective interruption
+# address.  This address does not replace the contents of the
+# instruction counter but is used to fetch a single instruction."
+#
+# WHY PG0 AND PG2.  p.46: "Program Indicators Zero through Six
+# (PG0-PG6).  These indicators are set by programming only."  41-47 sit
+# inside the settable mask range, so the provocation needs no
+# arithmetic fault and no I/O -- and both writes are sanctioned in
+# terms: p.48 says mask bits 12.20-12.47 "can be set or changed by ...
+# BRANCH ON BIT", and p.41 lets BRANCH ON BIT reach indicator bits
+# 20-63.  Both of those paths were already tested here before this
+# program used them.
+#
+# THE UNITS ARE WORDS.  p.48: "a table of 48 successive FULL-WORD
+# locations", and the interruption address register "contains 18 bits
+# and has address 2.0".  HWRONG is planted at exactly the address
+# half-word indexing would reach instead, so the two readings cannot
+# both pass.
+#
+# AND THE DECK AGREES, checked because a scouting pass suggested it
+# might not.  jb_ax5b PDF p.86 declares the interruption table
+# "160IT  DR%BU,64,8@,64" at 023201.00 with the next symbol 160DMP at
+# 023301.00 -- a gap of octal 100, exactly 64 WORDS, holding the 48
+# maskable indicators with room over.  The three consecutive HALF-words
+# at 16090 (p.48, "HI,BEFORE / OK, AT / LO,AFTER ... INTRPTS ENTER
+# HERE") that looked like half-word slots are a TEMPLATE copied into
+# those word slots -- p.86 has "160K6  BD,16090" as a single half-word
+# at 023047.00.  See docs/NEXT.md for the full reasoning.
+#
+# Seven injections; every address reproducible with
+#   python3 line_addresses.py programs/interrupt_pg0.strap
+#
+#   mechanism never fires        -> 004110.00  BZB, MARK, $   (the routine
+#                                              never ran)
+#   enable bit ignored           -> 004105.40  BZB, $PG0, $   (it fired in
+#                                              the DISABLED phase and cleared PG0)
+#   EIA in half-words, not words -> 004424.40  HWRONG
+#   EIA one word low             -> 004450.00  E40
+#   EIA one word high            -> 004452.00  E42
+#   mask ignored                 -> 004122.00  BZB, $PG0, $   (unmasked PG0
+#                                              was taken and cleared)
+#   indicator not turned off     -> step cap, and p.48 says why: "if the
+#     interruption instruction does not disable the system ... another
+#     succeeding interruption will be caused by the new leftmost
+#     selected indicator before the execution of an instruction
+#     addressed by the instruction counter."  The model loops exactly as
+#     described, so there is no address to name -- the halt is the
+#     manual's own prediction, not a missing check.
+#
+# THE MASK BLOCK IS HERE BECAUSE THE FIRST BLOCK COULD NOT SEE THE MASK.
+# With only block 1, replacing "indicators & mask" with "indicators"
+# passed everything: the sole indicator turned on was also the one
+# masked, so both rules give the same answer.  A SURVIVING injection is
+# the "green test is only evidence about faults its inputs could have
+# made visible" rule landing on this file.  Block 2 leaves PG0 actuated
+# and UNMASKED beside a masked PG2, so ignoring the mask takes the
+# wrong -- further left -- indicator and clears it.
+#
+# NOT IMPLEMENTED, stated in StretchCore: the interruption is taken at a
+# QUIESCENT boundary (look-ahead empty, E-box idle) rather than p.48's
+# instruction boundary; on the real machine an interruption drains the
+# look-ahead, so the two coincide when the levels are empty and this one
+# is otherwise LATER, never earlier.  An E-box-class interruption
+# instruction fails loud rather than stepping the counter.  Leftmost
+# PRIORITY between two MASKED indicators has no witness yet -- see
+# docs/NEXT.md.
 
 run "SSIP SIP16/SIP17 reset blocks (ja_ua1_ssip, encoding)" python3 verify_ssip_sip17_listing.py
 # FIRST TRANSCRIPTION FROM ja_ua1_ssip, the System Test Program's
