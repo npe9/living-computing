@@ -380,8 +380,8 @@ run "Storage protection: the address boundary registers" ./run_program.sh progra
 # this compares one word address per store, not a field's extent).
 
 run "The interruption mechanism (fire, one instruction, return)" ./run_program.sh programs/interrupt_pg0.strap StretchIntPg0Tb \
-    "PC=4263" "MARK:2240=0x8000000000000000" "MARK2:2241=0x8000000000000000"
-    # 004123.40; hand-written, not a listing fact
+    "PC=4272" "MARK:2240=0x8000000000000000" "MARK2:2241=0x8000000000000000"
+    # 004130.00; hand-written, not a listing fact
 # THE INTERRUPTION ITSELF.  p.48: "interruption requires the mask bit
 # to be 1, the indicator bit to be 1, and the mechanism to be enabled",
 # and then "a mechanism develops the number of the leftmost actuated
@@ -416,7 +416,7 @@ run "The interruption mechanism (fire, one instruction, return)" ./run_program.s
 # those word slots -- p.86 has "160K6  BD,16090" as a single half-word
 # at 023047.00.  See docs/NEXT.md for the full reasoning.
 #
-# Seven injections; every address reproducible with
+# Nine injections; every address reproducible with
 #   python3 line_addresses.py programs/interrupt_pg0.strap
 #
 #   mechanism never fires        -> 004110.00  BZB, MARK, $   (the routine
@@ -428,6 +428,21 @@ run "The interruption mechanism (fire, one instruction, return)" ./run_program.s
 #   EIA one word high            -> 004452.00  E42
 #   mask ignored                 -> 004122.00  BZB, $PG0, $   (unmasked PG0
 #                                              was taken and cleared)
+#   counter never replaced by a  -> 004126.00  NORET
+#     successful branch
+#   counter always replaced,     -> 004452.00  E42
+#     even on fall-through
+#
+# THOSE LAST TWO ARE WHY BOTH ARMS NEED THEIR OWN WITNESS.  p.48 says
+# the instruction counter "is stepped neither before nor during" the
+# interruption instruction, "however, [it] can be replaced as the
+# result of a successful branching operation" -- two rules in one
+# sentence, and a model can get either one right while getting the
+# other wrong.  Never replacing passes both fall-through blocks and
+# strands the branching one at NORET.  ALWAYS replacing passes the
+# branching block and sends the fall-through blocks to the NEXT table
+# slot, E42.  Block 3 exists because writing the summary of blocks 1
+# and 2 made it plain neither could see the branch clause.
 #   indicator not turned off     -> step cap, and p.48 says why: "if the
 #     interruption instruction does not disable the system ... another
 #     succeeding interruption will be caused by the new leftmost
@@ -451,8 +466,9 @@ run "The interruption mechanism (fire, one instruction, return)" ./run_program.s
 # look-ahead, so the two coincide when the levels are empty and this one
 # is otherwise LATER, never earlier.  An E-box-class interruption
 # instruction fails loud rather than stepping the counter.  Leftmost
-# PRIORITY between two MASKED indicators has no witness yet -- see
-# docs/NEXT.md.
+# PRIORITY between two MASKED indicators has no witness yet: every
+# block here has exactly one MASKED indicator actuated, so a model
+# choosing the rightmost masked one would pass -- see docs/NEXT.md.
 
 run "SSIP SIP16/SIP17 reset blocks (ja_ua1_ssip, encoding)" python3 verify_ssip_sip17_listing.py
 # FIRST TRANSCRIPTION FROM ja_ua1_ssip, the System Test Program's

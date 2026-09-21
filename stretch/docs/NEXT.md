@@ -109,13 +109,15 @@ that indicator off → EIA = IAR + N **in words** → fetch and execute
 **one** instruction, instruction counter **not** stepped. The enable
 bit gates everything.
 
-**Implemented but NOT witnessed**, and listed below rather than left in
-that sentence: "the instruction counter can be replaced as the result
-of a successful branching operation" (p.48). Both blocks of
-`interrupt_pg0.strap` use an interruption instruction that falls
-through, so the branch arm of `commitNext` has no test. An untested
-path described as tested is the failure this project keeps a rule
-about.
+And "the instruction counter can be replaced as the result of a
+successful branching operation" (p.48) — witnessed by a third block,
+added because writing the summary made it obvious the first two could
+not see it. Both used a routine that falls through, so the branch arm
+of `commitNext` had no test; PG3's routine is a branch, `NORET` is
+where the counter would return if the branch were ignored and it hangs
+there. That is p.48-49's correction-routine shape: "a subroutine
+entered by STORE-INSTRUCTION-COUNTER-IF-BRANCH-DISABLED and returned
+by BRANCH ENABLED".
 `StretchStorage`'s `intDueCalc` decides; `StretchCore`'s `rl_interrupt`
 takes it; `commitNext` is the one place the counter is committed.
 
@@ -165,15 +167,6 @@ the next hand-written program.
 
 ### Still open here, each its own piece
 
-* **A BRANCHING interruption instruction.** p.48: the instruction
-  counter "can be replaced as the result of a successful branching
-  operation", and p.48-49's correction-routine pattern is exactly that
-  — "a subroutine entered by STORE-INSTRUCTION-COUNTER-IF-BRANCH-
-  DISABLED and returned by BRANCH ENABLED". `commitNext` implements it
-  in one place; nothing exercises it. The block is short: mask one more
-  program indicator, put `B, RESUME` in its table slot, and make the
-  instruction the counter would have returned to a hang, so restoring
-  the counter instead of branching fails at a named address.
 * **Leftmost PRIORITY between two MASKED indicators** has no witness.
   Both blocks have exactly one masked indicator actuated, so "leftmost"
   is untested — a model picking the rightmost masked one passes today.

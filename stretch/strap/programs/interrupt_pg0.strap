@@ -111,6 +111,30 @@ AFTER2  BZB, MARK2, $                ! hang if MARK2 is off: 43's routine never 
         BB,  $PG2, $                 ! hang if PG2 is still on
         BZB, $PG0, $                 ! hang if PG0 went OFF -- unmasked, it must be
                                      !   neither taken nor turned off
+!
+! ---- the counter IS replaced by a successful branch ----------------
+! p.48: "The instruction counter is stepped neither before nor during
+! the execution of the instruction at the effective interruption
+! address; however, the instruction counter can be replaced as the
+! result of a SUCCESSFUL BRANCHING OPERATION."  Both blocks above use a
+! routine that falls through, so neither can see that clause -- which
+! is the same blindness the mask block was added to fix, and it is
+! listed in NEXT.md rather than left implied.
+!
+! PG3's routine is a branch.  NORET is where the counter would come
+! back to if the branch were ignored, and it hangs; RESUME is where the
+! branch goes.  p.48-49's correction-routine pattern is exactly this
+! shape -- "a subroutine entered by STORE-INSTRUCTION-COUNTER-IF-
+! BRANCH-DISABLED and returned by BRANCH ENABLED".
+!
+! PG0 is still actuated and still unmasked here, so the masked PG3 must
+! be chosen over it a second time, with a different routine.
+        BD,  $+.32                   ! disable to set the mask
+        BB1, 12.44, $+1.0            ! mask bit 44 on -- PG3 may interrupt
+        BB1, $PG3, $+1.0             ! PG3 on
+        BE,  $+.32                   ! enable: the interruption follows
+NORET   B, $                         ! HANG -- the counter must NOT return here
+RESUME  BB,  $PG3, $                 ! hang if PG3 is still on
         B, PASS
 PASS    BEW, $
 !
@@ -127,6 +151,9 @@ E41     BB1, MARK, $+1.0             ! PG0's routine: ONE instruction, and it
 E42     B, $                         ! indicator 42 -- must not be reached
         SLC, (8)4453.0
 E43     BB1, MARK2, $+1.0            ! PG2's routine, for the mask block below
+        SLC, (8)4454.0
+E44     B, RESUME                    ! PG3's routine: a BRANCH, so it replaces
+                                     !   the instruction counter
 !
 ! Where HALF-word indexing would land instead of word indexing:
 ! TBL*2 + 41 half-words = word 04424, second half.  Reached only if the
