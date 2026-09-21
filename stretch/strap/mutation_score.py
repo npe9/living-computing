@@ -26,7 +26,37 @@ observable behaviour survives by definition and means nothing.  Each
 entry below therefore records WHAT WOULD GO WRONG in the real machine,
 so a survivor can be triaged as "missing test" versus "unobservable".
 
-LATEST CAMPAIGN, 2026-09-19, after the address boundary registers:
+LATEST CAMPAIGN, 2026-09-21, after the interruption mechanism: 31/32,
+survivor still ad-bound-off-by-one.  Both new entries were caught by
+the section written for them, in ~3.3 minutes, which is essentially the
+rebuild floor -- see the cost note at the end of this docstring.
+
+AND ONE RESULT THAT IS A TICK IN THE COUNT AND A DEGRADATION IN THE
+EVIDENCE.  prot-carve-out-as-or used to be caught by "Storage
+protection: the address boundary registers", by its deliberate store to
+word 4 -- a named-address check written for exactly that mutation.  It
+is now caught 3.2 minutes in by the SIBLING section, "Storage
+protection, gated on the interrupt enable bit", and by a different
+mechanism: since both protection programs now report violations through
+an interruption routine whose marker lives in word 6, the mutation
+makes that marker store signal, so the machine interrupts forever and
+the run dies at the step cap.
+
+That is a worse witness than the one it replaced -- a loop instead of a
+named row -- and it means the boundary program's word-4 store is no
+longer what catches this mutant.  The count did not move; the evidence
+did.  Recorded here rather than left to be rediscovered, because "31/32"
+on its own would hide it.
+
+CAMPAIGN COST, measured 2026-09-21 (see bsv/README.md item 9): every
+mutant edits the model, so every mutant pays a full core
+re-elaboration.  Split, in an isolated tree: bsc -g (elaborate,
+schedule, generate C++) 119s CPU; bsc -e (compile 8.8MB of generated
+C++ and link) 24s; Bluesim execution 0.31s.  The floor is therefore
+~2.5 minutes per mutant before a single test runs, which is why 32
+mutants cost ninety minutes while a 326-section suite costs thirteen.
+
+CAMPAIGN 2026-09-19, after the address boundary registers:
 29/30, and the only survivor is still ad-bound-off-by-one, the expected
 one.  The table has tripled since the second campaign and the score has
 not moved off "everything but the documented survivor", which is the
@@ -200,6 +230,27 @@ MUTATIONS = [
      "    Word64 pending = indicators;",
      "An interruption is taken on an indicator whose mask bit is zero;"
      " p.48 requires the mask bit, the indicator bit and the enable."),
+
+    # THE BRANCH CLAUSE OF THE INTERRUPTION.  p.48 packs two rules into
+    # one sentence: the instruction counter "is stepped neither before
+    # nor during the execution of the instruction at the effective
+    # interruption address; however, the instruction counter can be
+    # replaced as the result of a successful branching operation."  A
+    # model can honour either and break the other, invisibly, because
+    # each is tested by a different kind of interruption routine.  This
+    # mutation keeps the counter standing even when the routine
+    # branches, which strands the program at the instruction the
+    # interruption displaced -- p.48-49's whole correction-routine
+    # pattern, "entered by STORE-INSTRUCTION-COUNTER-IF-BRANCH-DISABLED
+    # and returned by BRANCH ENABLED", stops working.
+    #
+    # Only block 3 of interrupt_pg0.strap can see it; blocks 1 and 2
+    # use a routine that falls through and pass the mutant clean.
+    ("int-branch-never-replaces-ic", "bsv/StretchCore.bsv",
+     "        if (taken) pcReg <= next;   // \"replaced as the result of a",
+     "        if (False && taken) pcReg <= next;   // \"replaced as the result of a",
+     "A branching interruption instruction leaves the instruction counter"
+     " where it was; p.48 says a successful branch replaces it."),
 
     # REGRESSION MUTATIONS: bugs the project already fixed, reverted, to
     # ask whether the fix would survive being undone.  cmp-leaves-flag

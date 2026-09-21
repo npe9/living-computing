@@ -635,7 +635,20 @@ of these).
    elaborate is 0.73s and the link is **1.29s**, not ~10s. The ~10s is
    real but is paid ONCE -- it is the first link after a clean tree
    compiling `simbuild/mkStretchCore.cxx` (5.9 MB of generated C++)
-   into a `.o` that every later link reuses untouched. Time one link on
+   into a `.o` that every later link reuses untouched.
+   (**Re-measured 2026-09-21**, with the three phases separated in an
+   isolated tree: `bsc -g` -- elaborate, schedule, generate C++ --
+   **119s CPU**, confirming the ~121s above independently; `bsc -e` --
+   compile the generated core C++ and link -- **24s**; and the Bluesim
+   executable itself **0.31s**. So elaboration is ~87% of a cold build,
+   the C++ compile ~12%, and running the simulation is free. The core
+   `.cxx` has grown from the 5.9 MB recorded above to **8.8 MB**, which
+   is why that once-per-tree link is now 24s rather than ~10s. This is
+   also the whole cost model of `strap/mutation_score.py`: every mutant
+   edits the model, so every mutant pays a full core re-elaboration
+   before its first test runs -- a ~2.5 minute floor, which is why 32
+   mutants cost ninety minutes while a 326-section suite costs
+   thirteen.) Time one link on
    a fresh tree and multiply by 66 and you overstate the suite's link
    cost about ninefold. Two constraints the boundary imposes on testbenches: no rule
    may call `core.setPC` together with a `core.mem.*` method (KPNS

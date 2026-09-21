@@ -246,10 +246,19 @@ Triage survivors into *missing test* / *equivalent mutant* / *expected*
 before writing anything. `ad-bound-off-by-one` is the one documented
 expected survivor.
 
-Last run 2026-09-19, after the boundary registers: **29/30**, survivor
-`ad-bound-off-by-one` as expected. `prot-carve-out-as-or` was caught in
-2.2 min by its own section — a catch where it was aimed, not a near
-miss.
+Last run 2026-09-21, after the interruption mechanism: **31/32**,
+survivor `ad-bound-off-by-one` as expected. Both interruption entries
+were caught by the section written for them. But `prot-carve-out-as-or`
+**moved**: it used to be caught by the boundary program's deliberate
+store to word 4, a named-address check; it is now caught by the sibling
+protection section, as a step-cap loop, because both programs report
+through an interruption routine whose marker the mutation suppresses.
+Same count, worse evidence — read the campaign that way, not as a
+ratio.
+
+A campaign costs ~90 minutes for 32 mutants because each one edits the
+model and so pays a full core re-elaboration first: measured 119s CPU
+for `bsc -g`, 24s for `bsc -e`, and 0.31s for the simulation itself.
 
 `python3 strap/line_addresses.py programs/X.strap` prints the address
 of every instruction line, in the listings' octal convention. Every
