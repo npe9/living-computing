@@ -688,6 +688,27 @@ smaller, well-scoped remaining gap, not a rejected candidate.
 
 ### I-Box 5 (`jb_ax5b_ibox-5.pdf`, 116 pages)
 
+**THE ROUTINE INDEX, transcribed from the write-up at PDF p.2 (printed
+p.2) on 2026-09-21 -- read first-hand, verbatim.** Five routines, and
+knowing which is which turns "somewhere in 116 pages" into a page hunt
+with a target:
+
+| routine | what the write-up says it checks |
+|---|---|
+| **1260** | "the mask register, the Interrupt Address register, **the ability to interrupt**, the Indicator register, **unique interruption for bits 0-47**, I-Box indicators, **Upper and Lower Bounds registers and address monitoring** and 'NOP-ing' of illegal instructions" |
+| **1268** | "**DF and IF** close to data store for all three memories. (Internal, External, and Index Memories)" |
+| **1262** | "EX and EXIC" |
+| **1274** | "that those instructions which can have a 19 bit address but use only 18 do in fact truncate the nineteenth bit" |
+| **1258** | "the Interval Timer and Time Clock" |
+
+Two of these map straight onto open work. **1260** covers everything
+implemented on 2026-09-19 to -21 -- mask, interruption address,
+interruption, boundary registers, address monitoring -- and its "unique
+interruption for bits 0-47" is the per-indicator priority walk whose
+landing code is at PDF pp.45/48. **1268 is the only known deck test of
+DF and IF**, the two address-monitoring indicators this model still
+does not implement; when they are written, that routine is the oracle.
+
 Purpose (verbatim): tests "the time clock, interval timer, mask and
 indicator registers, interrupt system, boundary control, execute
 instructions, Look-Ahead forwarding, and the proper truncation of

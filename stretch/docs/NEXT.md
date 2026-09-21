@@ -247,11 +247,27 @@ until it has been.
    what the model does with them;
    `storage_protection_boundary.strap` is still the behavioural test
    and is still hand-written.
-2. **`jb_ax5b` pp.66-79** — reported as TEST 7 / 8A / 8B, the
-   *positive* boundary-interrupt cases (mask set, interruption
-   expected). Not read by the scouting pass. p.80's TEST 8C case 3 was
-   read and is the *negative* case: mask zeroed, a fetch above the
-   upper boundary must set no DF and cause no interruption.
+2. **`jb_ax5b` routine 1260** — and the page hunt is now targeted,
+   because the write-up's routine index was read first-hand on
+   2026-09-21 (PDF p.2, transcribed into `archival_inventory.md`).
+   1260 is the one: *"the mask register, the Interrupt Address
+   register, the ability to interrupt, the Indicator register, unique
+   interruption for bits 0-47, I-Box indicators, Upper and Lower Bounds
+   registers and address monitoring."* That is everything built on
+   2026-09-19 to -21, in one deck routine.
+
+   A caution recorded from trying: pp.66–79 were guessed to hold the
+   *positive* boundary-interrupt cases. p.66 read first-hand is the
+   tail of a per-bit error table — *"UPPER BOUNDARY DATA FAILURE, BIT
+   9"* — so that range is error routines, not the driver. The guess
+   came from a scouting pass's inference, not from a page. Find the
+   driver before transcribing.
+
+3. **`jb_ax5b` routine 1268** — *"Checks DF and IF close to data store
+   for all three memories"*. The only known deck test of the two
+   address-monitoring indicators this model does not implement. When DF
+   and IF are written, that routine is the oracle, so read it before
+   designing them rather than after.
 
 ## 3. Standing practice, after every batch
 
