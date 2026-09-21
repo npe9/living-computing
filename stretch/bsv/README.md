@@ -646,9 +646,17 @@ of these).
    is why that once-per-tree link is now 24s rather than ~10s. This is
    also the whole cost model of `strap/mutation_score.py`: every mutant
    edits the model, so every mutant pays a full core re-elaboration
-   before its first test runs -- a ~2.5 minute floor, which is why 32
-   mutants cost ninety minutes while a 326-section suite costs
-   thirteen.) Time one link on
+   before its first test runs -- a ~2.5 minute floor.
+   **CORRECTION**: this said "which is why 32 mutants cost ninety
+   minutes"; that was the floor multiplied out, written as though it
+   were measured, and it is wrong by 2.4x. Summing a real serial run
+   gives 220 minutes of mutants plus a 13 minute baseline, near four
+   hours -- most mutants are caught well past the floor, and any that
+   runs the whole suite takes 13-16 minutes. `--jobs 12` brings that to
+   **53 minutes wall for 183 minutes of CPU**; the remaining floor is
+   the serial baseline plus the slowest single survivor, 25.6 min,
+   since a survivor is by definition the mutant that runs the whole
+   suite.) Time one link on
    a fresh tree and multiply by 66 and you overstate the suite's link
    cost about ninefold. Two constraints the boundary imposes on testbenches: no rule
    may call `core.setPC` together with a `core.mem.*` method (KPNS

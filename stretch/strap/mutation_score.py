@@ -26,7 +26,11 @@ observable behaviour survives by definition and means nothing.  Each
 entry below therefore records WHAT WOULD GO WRONG in the real machine,
 so a survivor can be triaged as "missing test" versus "unobservable".
 
-LATEST CAMPAIGN, 2026-09-21, after the interruption mechanism: 31/32,
+LATEST CAMPAIGN, 2026-09-21, first run under --jobs 12: 32/33, survivor
+still ad-bound-off-by-one.  All four interruption entries caught, each
+by the block written for it.  53 minutes wall against 233 serial.
+
+EARLIER THAT DAY, after the interruption mechanism: 31/32,
 survivor still ad-bound-off-by-one.  Both new entries were caught by
 the section written for them, in ~3.3 minutes, which is essentially the
 rebuild floor -- see the cost note at the end of this docstring.
@@ -48,13 +52,33 @@ longer what catches this mutant.  The count did not move; the evidence
 did.  Recorded here rather than left to be rediscovered, because "31/32"
 on its own would hide it.
 
-CAMPAIGN COST, measured 2026-09-21 (see bsv/README.md item 9): every
+CAMPAIGN COST, and a figure I got wrong before measuring it.  Every
 mutant edits the model, so every mutant pays a full core
 re-elaboration.  Split, in an isolated tree: bsc -g (elaborate,
 schedule, generate C++) 119s CPU; bsc -e (compile 8.8MB of generated
-C++ and link) 24s; Bluesim execution 0.31s.  The floor is therefore
-~2.5 minutes per mutant before a single test runs, which is why 32
-mutants cost ninety minutes while a 326-section suite costs thirteen.
+C++ and link) 24s; Bluesim execution 0.31s.  bsc is SINGLE-THREADED --
+119s user against 172s real.
+
+I wrote "32 mutants cost ninety minutes" here, in bsv/README.md and in
+a commit message, from that ~2.5 min/mutant floor.  IT WAS AN ESTIMATE
+PRESENTED AS A MEASUREMENT, and it was wrong by a factor of 2.4:
+summing the per-mutant times of the 2026-09-21 serial run gives 220
+minutes for 32 mutants, plus a ~13 minute baseline -- near four hours,
+not ninety minutes.  The floor is a floor; most mutants are caught well
+past it, and the ones that run the whole suite take 13-16 minutes each.
+
+MEASURED, BOTH MODES, 33 mutants on a 16-core machine:
+  serial    220 min of mutants + 13 min baseline  = ~233 min
+  --jobs 12 53 min wall, 183 min CPU              = 4.4x faster
+The 183/53 = 3.4x effective parallelism is not 12x, and the reason is
+structural rather than a tuning problem: the baseline is one serial
+suite run (13 min), and the tail is the SLOWEST SINGLE MUTANT -- the
+survivor, at 25.6 min, because a survivor is exactly the mutant that
+runs the whole suite to the end.  So in parallel mode the campaign
+costs baseline + slowest survivor, and adding cores past that buys
+nothing.  The docstring above says the wall-clock "is dominated by
+survivors -- which is the right way round"; in parallel that stops
+being a tendency and becomes the actual formula.
 
 CAMPAIGN 2026-09-19, after the address boundary registers:
 29/30, and the only survivor is still ad-bound-off-by-one, the expected
@@ -108,7 +132,7 @@ MATTERS AS MUCH AS WHETHER IT IS.
 
 Usage:  python3 mutation_score.py [--list] [--only NAME]
 """
-import atexit, os, re, signal, subprocess, sys, time
+import atexit, os, re, shutil, signal, subprocess, sys, tempfile, time
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(HERE)
@@ -518,6 +542,96 @@ def apply(path, old, new):
     return src, None
 
 
+# ---------------------------------------------------------------------
+# PARALLEL MODE (--jobs N).  Why it exists, and why it is also SAFER.
+#
+# The serial loop below runs one mutant at a time, and each mutant pays
+# a full core re-elaboration before its first test: measured 119s CPU
+# for `bsc -g`, 24s for `bsc -e`, 0.31s for the simulation itself (see
+# bsv/README.md item 9).  bsc is SINGLE-THREADED -- 119s user against
+# 172s real -- so a 33-mutant campaign used one core of sixteen for an
+# hour and a half.  Nothing about the work is large; it was queued up
+# single file.
+#
+# Each mutant gets its own CLONED tree instead.  On APFS `cp -c` is a
+# copy-on-write clone: the whole bsv/ + strap/ pair is ~6 MB and clones
+# in about a millisecond, so the copies cost neither time nor disk.  A
+# worker needs only those two directories -- `docs/` appears in this
+# tree only inside comments, checked before relying on it.
+#
+# AND THE REAL TREE IS NEVER MUTATED.  The serial path edits the model
+# in place and restores it afterwards, guarded by atexit and a signal
+# handler because a killed campaign once left an XVLZ mutation sitting
+# in StretchExecute.bsv looking exactly like real work.  In parallel
+# mode that failure mode does not exist: the source of truth is only
+# ever read.
+# ---------------------------------------------------------------------
+
+def _clone_tree(dest):
+    """A worker tree: bsv/ + strap/, APFS-cloned so it is effectively free."""
+    os.makedirs(dest, exist_ok=True)
+    for d in ("bsv", "strap"):
+        subprocess.run(["cp", "-c", "-R", os.path.join(ROOT, d), dest + os.sep],
+                       check=True)
+
+
+def _run_one(spec, dest, env):
+    """Apply one mutation inside its own tree and run the suite there."""
+    name, path, old, new, why = spec
+    _clone_tree(dest)
+    full = os.path.join(dest, path)
+    src = open(full).read()
+    if old not in src:
+        return (name, "SKIP", 0.0, why, "pattern absent in " + path)
+    out = src.replace(old, new, 1)
+    if out == src:
+        return (name, "SKIP", 0.0, why, "replacement changed nothing")
+    open(full, "w").write(out)
+    t0 = time.time()
+    p = subprocess.run(["./run_tests.sh"], cwd=os.path.join(dest, "strap"),
+                       env=env, capture_output=True, text=True, timeout=7200)
+    dt = time.time() - t0
+    where = ""
+    m = re.search(r"FAIL_FAST: stopping at first failing section \((.*)\)", p.stdout)
+    if m:
+        where = m.group(1)
+    return (name, "caught" if p.returncode != 0 else "SURVIVED", dt, why, where)
+
+
+def run_parallel(specs, jobs, workroot):
+    """Results are collected out of order and REPORTED IN TABLE ORDER, so
+    the output does not depend on which worker happened to finish first."""
+    from concurrent.futures import ThreadPoolExecutor, as_completed
+    env = dict(os.environ, FAIL_FAST="1")
+    print(f"running {len(specs)} mutants {jobs} at a time, "
+          f"each in its own cloned tree under {workroot}", flush=True)
+    done = {}
+    with ThreadPoolExecutor(max_workers=jobs) as pool:
+        futs = [pool.submit(_run_one, sp, os.path.join(workroot, sp[0]), env)
+                for sp in specs]
+        # Print as they land, so a long campaign shows progress...
+        for f in as_completed(futs):
+            name, verdict, dt, why, where = f.result()
+            done[name] = (name, verdict, dt, why, where)
+            print(f"{verdict:9} {name:28} {dt/60:5.1f} min  {where}", flush=True)
+    # ... but REPORT in table order, so the summary does not depend on
+    # which worker happened to finish first.
+    return [done[sp[0]] for sp in specs if sp[0] in done]
+
+
+def report(results):
+    """One summary shape for both modes.  Entries are (name, verdict,
+    seconds, why, ...) -- the parallel path carries a fifth field."""
+    print()
+    survivors = [r for r in results if r[1] == "SURVIVED"]
+    scored = [r for r in results if r[1] in ("caught", "SURVIVED")]
+    if scored:
+        print(f"mutation score: {len(scored)-len(survivors)}/{len(scored)} caught")
+    for r in survivors:
+        print(f"  SURVIVED {r[0]}: {r[3]}")
+    return 0
+
+
 def main():
     if "--list" in sys.argv:
         for n, f, _, _, why in MUTATIONS:
@@ -526,11 +640,25 @@ def main():
     only = None
     if "--only" in sys.argv:
         only = sys.argv[sys.argv.index("--only") + 1]
+    jobs = 1
+    if "--jobs" in sys.argv:
+        jobs = int(sys.argv[sys.argv.index("--jobs") + 1])
 
     if not check_tree_clean():
         return 2
     if not check_baseline_green(env0=dict(os.environ)):
         return 3
+
+    specs = [m for m in MUTATIONS if not only or m[0] == only]
+
+    if jobs > 1:
+        workroot = os.path.join(tempfile.gettempdir(), "stretch-mutants")
+        shutil.rmtree(workroot, ignore_errors=True)
+        os.makedirs(workroot, exist_ok=True)
+        results = run_parallel(specs, jobs, workroot)
+        shutil.rmtree(workroot, ignore_errors=True)
+        return report(results)
+
     env = dict(os.environ, FAIL_FAST="1")
     results = []
     for name, path, old, new, why in MUTATIONS:
@@ -558,14 +686,7 @@ def main():
         print(f"{verdict:9} {name:28} {dt/60:5.1f} min  {where}", flush=True)
         results.append((name, verdict, dt, why))
 
-    print()
-    survivors = [r for r in results if r[1] == "SURVIVED"]
-    scored = [r for r in results if r[1] in ("caught", "SURVIVED")]
-    if scored:
-        print(f"mutation score: {len(scored)-len(survivors)}/{len(scored)} caught")
-    for name, _, _, why in survivors:
-        print(f"  SURVIVED {name}: {why}")
-    return 0
+    return report(results)
 
 
 if __name__ == "__main__":

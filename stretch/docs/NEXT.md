@@ -275,9 +275,16 @@ through an interruption routine whose marker the mutation suppresses.
 Same count, worse evidence — read the campaign that way, not as a
 ratio.
 
-A campaign costs ~90 minutes for 32 mutants because each one edits the
-model and so pays a full core re-elaboration first: measured 119s CPU
-for `bsc -g`, 24s for `bsc -e`, and 0.31s for the simulation itself.
+**Run it with `--jobs 12`.** Each mutant gets its own APFS-cloned tree,
+so the real model is never mutated at all — and a campaign costs **53
+minutes instead of 233**. (The "~90 minutes" this file used to give was
+the per-mutant floor multiplied out and written as though measured; the
+real serial figure is 220 minutes of mutants plus a 13 minute baseline.
+Every mutant pays a full core re-elaboration first: 119s CPU for
+`bsc -g`, 24s for `bsc -e`, 0.31s for the simulation itself, and bsc is
+single-threaded.) What is left after parallelising is the serial
+baseline plus the slowest single **survivor** — 25.6 min, because a
+survivor is exactly the mutant nothing stops early.
 
 `python3 strap/line_addresses.py programs/X.strap` prints the address
 of every instruction line, in the listings' octal convention. Every
