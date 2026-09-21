@@ -1,0 +1,64 @@
+! ja_ax1a "I-Box 1", the ENSU interrupt-and-boundary setup block,
+! PDF p.56 (octal 005731.00-005736.40).
+!
+! WHY THIS BLOCK.  It is the only place in the tapes scouted so far
+! that SETS THE ADDRESS BOUNDARY REGISTERS from a literal and prints
+! the assembled boundary word beside it.  The boundary registers were
+! implemented here on 2026-09-19 from Reference Manual p.31 alone and
+! tested by hand -- the WEAKER of this project's two standards.  This
+! is the stronger one, and it agrees field for field.
+!
+! WHAT THE BOUNDARY WORD SAYS.  "XW,%8@777777.00,2,%8@100" prints as
+!   777777.00 00   000040.00 40
+! and the line above it is commented "-32.0-262143.".  Reading the two
+! printed half-words through the listing's own format (bits 0-17 as an
+! octal word, 18-23 as octal, 24-31 as hex):
+!   * FIRST half-word, bits 0-17 = octal 777777 = 262143.  That is the
+!     UPPER BOUNDARY, in bits 0-17, exactly where p.31 puts it.
+!   * SECOND half-word, bits 32-49 = octal 40 = 32.  That is the LOWER
+!     BOUNDARY, in bits 32-49 -- printed directly, not inferred.
+!   * SECOND half-word, bits 56-63 = hex 40 = 0100 0000, so BIT 57 IS
+!     ONE.  That is the BOUNDARY CONTROL BIT, and one means "a signal
+!     is obtained for a comparand OUTSIDE the specified area" (p.31).
+! Upper 262143, lower 32, control one: everything except words 32
+! through 262142 is monitored -- which is what the deck's own comment
+! "32.0-262143." says in five characters.  Three field positions and a
+! polarity, confirmed by a programmer who had the machine.
+!
+! THE POLARITY IS THE PART THAT MATTERS MOST.  microarchitecture_
+! plan.md carried "the control-bit polarity still needs Appendix C"
+! for months; p.31 settled it, and this deck is an independent second
+! witness -- a housekeeping routine that wants to protect everything
+! OUTSIDE its own working area and sets the bit to do it.
+!
+! IT ALSO NAMES $MASK.  "SX,$X1,$MASK -MASK REG. TO ZEROS" assembles
+! to "14.03 10": octal 14 is decimal word 12, the mask register.  The
+! assembler's SYSTEM_SYMBOLS had every other special register and not
+! that one; it does now, on this row's evidence.
+!
+! TRANSCRIPTION, checked bit-exactly by verify_ibox1_ensu_listing.py.
+
+! External symbols, given by SYN at the addresses the listing prints
+! for them elsewhere in the same tape (PDF p.59).  Rows naming one
+! check the opcode and modifier bits only -- their address came from
+! the same print.
+INT1    SYN, (8)6054.0               ! the all-NOP interrupt table
+WEN6    SYN, (8)6102.0               ! the all-zeros word
+
+        SLC, (8)5731.0
+        CNOP                         ! already word-aligned: emits nothing
+ENSU    BD, $+.32                    ! -SET        disable before touching
+                                     !             the protected words
+        LVI, $X1, INT1               ! -UP
+        SV,  $X1, $IA                ! -INTERRUPT  word 2, the interruption
+                                     !             address register
+        LX,  $X1, WEN6               ! -RESET      the all-zeros word
+        SX,  $X1, $MASK              ! -MASK REG. TO ZEROS   word 12
+        LX,  $X1, BOUND              ! -SET UP
+        SX,  $X1, 3.0                ! -BOUNDARIES word 3
+        B,   BOUND+1.0               ! -32.0-262143.   step over the datum
+BOUND   XW, (8)777777.00, 2, (8)100  ! -BOUNDARIES WORD
+        BE,  $+.32                   ! -ADDRESS    enable again
+        CNOP                         ! emits one NOP: the counter is at
+                                     !   005736.40, an odd half-word
+        END, ENSU

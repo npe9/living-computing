@@ -274,6 +274,12 @@ SYSTEM_SYMBOLS = {
     "L":   (8, 0),    # Left Half of Accumulator
     "LB":  (3, 32),   # Lower Boundary, 32-49
     "LZC": (7, 17),   # Left Zeros Count, 17-23
+    # $MASK, the mask register.  Added 2026-09-21 from ja_ax1a p.56,
+    # where "SX,$X1,$MASK  -MASK REG. TO ZEROS" assembles to "14.03 10"
+    # -- octal 14 is decimal word 12, which is the mask (Ref. Manual
+    # p.48, "the mask has address 12").  The decks spell it $MASK; this
+    # table had every other special register and not that one.
+    "MASK": (12, 0),  # Mask register; 0-19 always 1, 48-63 always 0
     "MB":  (4, 0),    # Maintenance Bits
     "R":   (9, 0),    # Right Half of Accumulator
     "RM":  (13, 0),   # Remainder

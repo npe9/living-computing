@@ -220,14 +220,26 @@ until it has been.
 
 ### Two leads worth taking before the rest of the mechanism
 
-1. **`ja_ax1a` p.56, `ENSU`** — reported as a short, self-contained
-   block that loads the interruption address, zeroes the mask, and sets
-   the **address boundary registers** from a literal, with the
-   assembled boundary word printed beside it and a comment reading it
-   out as *32.0 - 262143*. §1a's boundary-register work is
-   manual-derived only; this would give it a **transcription**, which
-   is the standard that outranks it. Smallest high-value item on this
-   list.
+1. ~~**`ja_ax1a` p.56, `ENSU`**~~ — **DONE 2026-09-21.**
+   `programs/ibox1_ensu.strap`, thirteen rows bit-exact on the first
+   assembly against `verify_ibox1_ensu_listing.py`. The boundary
+   registers now have a **transcription** as well as hand-written
+   tests. The printed boundary word gives upper (bits 0–17) = 262143,
+   lower (bits 32–49) = 32 and **bit 57 set**, beside the deck's own
+   comment *"-32.0-262143."* — so the control-bit polarity that this
+   project spent months calling an open question has a second,
+   independent witness: a housekeeping routine guarding everything
+   outside its own working area. It also named `$MASK` (word 12),
+   which `opcodes.py` was missing.
+
+   **It is an encoding oracle, not a behavioural one.** Against this
+   model's 98,304 installed words, that very setting monitors nothing
+   but the permanently protected words 1–3 — everything installed
+   above 31 is inside the area and everything above that is
+   address-invalid and exempt. So it pins where the fields are, not
+   what the model does with them;
+   `storage_protection_boundary.strap` is still the behavioural test
+   and is still hand-written.
 2. **`jb_ax5b` pp.66-79** — reported as TEST 7 / 8A / 8B, the
    *positive* boundary-interrupt cases (mask set, interruption
    expected). Not read by the scouting pass. p.80's TEST 8C case 3 was

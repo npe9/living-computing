@@ -379,6 +379,40 @@ run "Storage protection: the address boundary registers" ./run_program.sh progra
 # straddling rule (p.31: a field crossing a boundary always signals --
 # this compares one word address per store, not a field's extent).
 
+run "I-Box 1 ENSU: the boundary word, bit-exact (ja_ax1a p.56)" python3 verify_ibox1_ensu_listing.py
+# THE BOUNDARY REGISTERS GET A TRANSCRIPTION.  They were implemented on
+# 2026-09-19 from Reference Manual p.31 and tested only by hand-written
+# programs -- the weaker of this project's two standards.  This block is
+# IBM's own assembler printing a boundary word, which checks the field
+# placement with no dependence on the model or on my reading of p.31:
+#
+#   bits 0-17  = octal 777777 = 262143   the UPPER boundary
+#   bits 32-49 = octal 40     = 32       the LOWER boundary
+#   bits 56-63 = hex 40 = 0100 0000      BIT 57 SET: the control bit
+#
+# and the deck's comment on the line above reads "-32.0-262143.".  Upper,
+# lower and the control bit, each printed where p.31 says it lives.
+#
+# THE POLARITY GETS A SECOND WITNESS, which is the part that was an open
+# question in this project for months: control bit ONE means "a signal
+# is obtained for a comparand OUTSIDE the specified area", and here a
+# housekeeping routine sets it to guard everything outside its own
+# working area.  That is the natural use of that polarity, from a
+# programmer who had the machine.
+#
+# IT ALSO NAMES $MASK: "SX,$X1,$MASK" prints as "14.03 10", octal 14 =
+# decimal word 12.  opcodes.py's SYSTEM_SYMBOLS had every other special
+# register and not that one; it does now, on this row.
+#
+# WHAT THIS IS NOT.  It is an ENCODING oracle, not a behavioural one.
+# Run against this model's 98,304 installed words, the deck's own
+# setting -- lower 32, upper 262143, signal OUTSIDE -- monitors nothing
+# except the permanently protected words 1-3: everything installed above
+# 31 is inside the area, and everything above it is address-invalid and
+# exempt (p.32).  So it pins where the fields are, not what the model
+# does with them; storage_protection_boundary.strap remains the
+# behavioural test, and remains hand-written.
+
 run "The interruption mechanism (fire, one instruction, return)" ./run_program.sh programs/interrupt_pg0.strap StretchIntPg0Tb \
     "PC=4272" "MARK:2240=0x8000000000000000" "MARK2:2241=0x8000000000000000"
     # 004130.00; hand-written, not a listing fact

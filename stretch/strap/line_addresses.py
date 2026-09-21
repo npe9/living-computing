@@ -78,7 +78,13 @@ def line_addresses(source):
             rows.append((prog.symtab[name],
                          None if name.startswith('_LA') else name,
                          src[i]))
-    rows.sort()
+    # Sort by ADDRESS ONLY.  Sorting the whole tuple compares the
+    # label next when two rows share an address -- which happens as
+    # soon as a program has both a labelled row and an unlabelled one
+    # at the same place (a SYN, or a CNOP that emits nothing) -- and
+    # then str vs None raises.  Python's sort is stable, so ties keep
+    # their source order.
+    rows.sort(key=lambda r: r[0])
     return rows
 
 
