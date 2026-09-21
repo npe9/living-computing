@@ -252,6 +252,24 @@ MUTATIONS = [
      "A branching interruption instruction leaves the instruction counter"
      " where it was; p.48 says a successful branch replaces it."),
 
+    # LEFTMOST PRIORITY.  p.48: "a mechanism develops the number of the
+    # LEFTMOST actuated indicator whose mask bit is one", and the
+    # programming note explains the consequence -- "the leftmost one
+    # identification defines the relative priority of actuated
+    # indicators if more than one has its corresponding mask bit turned
+    # on".  Scanning the other way takes the lowest-priority pending
+    # interruption first, which on a real machine means a machine check
+    # waits behind a program indicator.
+    #
+    # Only block 4 of interrupt_pg0.strap can see it.  Blocks 1-3 each
+    # actuate exactly ONE masked indicator, so leftmost and rightmost
+    # pick the same one and the mutant passes them clean.
+    ("int-rightmost-not-leftmost", "bsv/StretchStorage.bsv",
+     "    for (Integer i = 63; i >= 0; i = i - 1)",
+     "    for (Integer i = 0; i <= 63; i = i + 1)",
+     "The interruption is taken on the RIGHTMOST masked indicator;"
+     " p.48 says the leftmost, and calls that the priority rule."),
+
     # REGRESSION MUTATIONS: bugs the project already fixed, reverted, to
     # ask whether the fix would survive being undone.  cmp-leaves-flag
     # above started as one of these and SURVIVED -- a documented fix with

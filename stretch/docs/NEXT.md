@@ -109,6 +109,21 @@ that indicator off → EIA = IAR + N **in words** → fetch and execute
 **one** instruction, instruction counter **not** stepped. The enable
 bit gates everything.
 
+**Leftmost priority is witnessed too, by a fourth block** — added for
+the same reason as the second and third, that the existing ones could
+not see the rule. Each of blocks 1–3 actuates exactly ONE masked
+indicator, so a model choosing the *rightmost* masked one passed all of
+them. Block 4 actuates PG4 (45) and PG5 (46) while PG0 (41) is still
+actuated and still unmasked from block 2, so three different wrong
+rules give three different answers. The order is observed without any
+instruction that can report two things at once: PG4's routine sets a
+bit and falls through, PG5's branches on that same bit, so the branch
+happens exactly when PG4 went first — and that branch is also what
+moves the counter off a hang. One block, three rules: leftmost rather
+than rightmost, only *that* indicator turned off (PG5 must still be
+actuated to cause the second interruption), and the second interruption
+arriving before the counter's own next instruction.
+
 And "the instruction counter can be replaced as the result of a
 successful branching operation" (p.48) — witnessed by a third block,
 added because writing the summary made it obvious the first two could
@@ -167,14 +182,6 @@ the next hand-written program.
 
 ### Still open here, each its own piece
 
-* **Leftmost PRIORITY between two MASKED indicators** has no witness.
-  Both blocks have exactly one masked indicator actuated, so "leftmost"
-  is untested — a model picking the rightmost masked one passes today.
-  Needs two masked indicators on at once and a way to observe which
-  routine ran *first*; p.48 says the second interruption follows
-  immediately, "before the execution of an instruction addressed by the
-  instruction counter", so both routines run and only the ORDER
-  distinguishes them.
 * **Timing**: p.48 permits an interruption at an *instruction*
   boundary; this model takes it at a *quiescent* one (look-ahead empty,
   E-box idle). Later, never earlier.

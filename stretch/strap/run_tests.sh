@@ -414,8 +414,9 @@ run "I-Box 1 ENSU: the boundary word, bit-exact (ja_ax1a p.56)" python3 verify_i
 # behavioural test, and remains hand-written.
 
 run "The interruption mechanism (fire, one instruction, return)" ./run_program.sh programs/interrupt_pg0.strap StretchIntPg0Tb \
-    "PC=4272" "MARK:2240=0x8000000000000000" "MARK2:2241=0x8000000000000000"
-    # 004130.00; hand-written, not a listing fact
+    "PC=4289" "MARK:2240=0x8000000000000000" "MARK2:2241=0x8000000000000000" \
+    "ORDER:2242=0x8000000000000000"
+    # 004140.40; hand-written, not a listing fact
 # THE INTERRUPTION ITSELF.  p.48: "interruption requires the mask bit
 # to be 1, the indicator bit to be 1, and the mechanism to be enabled",
 # and then "a mechanism develops the number of the leftmost actuated
@@ -450,7 +451,7 @@ run "The interruption mechanism (fire, one instruction, return)" ./run_program.s
 # those word slots -- p.86 has "160K6  BD,16090" as a single half-word
 # at 023047.00.  See docs/NEXT.md for the full reasoning.
 #
-# Nine injections; every address reproducible with
+# Ten injections; every address reproducible with
 #   python3 line_addresses.py programs/interrupt_pg0.strap
 #
 #   mechanism never fires        -> 004110.00  BZB, MARK, $   (the routine
@@ -466,6 +467,8 @@ run "The interruption mechanism (fire, one instruction, return)" ./run_program.s
 #     successful branch
 #   counter always replaced,     -> 004452.00  E42
 #     even on fall-through
+#   rightmost masked indicator   -> 004135.40  WRONG
+#     instead of leftmost
 #
 # THOSE LAST TWO ARE WHY BOTH ARMS NEED THEIR OWN WITNESS.  p.48 says
 # the instruction counter "is stepped neither before nor during" the
@@ -499,10 +502,25 @@ run "The interruption mechanism (fire, one instruction, return)" ./run_program.s
 # instruction boundary; on the real machine an interruption drains the
 # look-ahead, so the two coincide when the levels are empty and this one
 # is otherwise LATER, never earlier.  An E-box-class interruption
-# instruction fails loud rather than stepping the counter.  Leftmost
-# PRIORITY between two MASKED indicators has no witness yet: every
-# block here has exactly one MASKED indicator actuated, so a model
-# choosing the rightmost masked one would pass -- see docs/NEXT.md.
+# instruction fails loud rather than stepping the counter.
+#
+# LEFTMOST PRIORITY IS BLOCK 4, and it was added because blocks 1-3
+# could not see it: each actuates exactly ONE masked indicator, so a
+# model choosing the RIGHTMOST masked one passed all of them.  Block 4
+# actuates PG4 (45) and PG5 (46) while PG0 (41) is still on and still
+# UNMASKED from block 2, so three different wrong rules give three
+# different answers -- ignore the mask and 41 is chosen, take the
+# rightmost and 46 is, take the leftmost masked and 45 is.
+#
+# The ORDER is observed without any instruction that can report two
+# things at once: PG4's routine SETS a bit and falls through, PG5's
+# BRANCHES on that same bit, so the branch is taken exactly when PG4
+# went first -- and that branch is also what moves the counter off
+# WRONG, which hangs.  It witnesses three rules together: leftmost
+# rather than rightmost; only THAT indicator turned off, since PG5 must
+# still be actuated to cause the second interruption; and the second
+# interruption arriving before the counter's own next instruction, which
+# is p.48's programming note in one block.
 
 run "SSIP SIP16/SIP17 reset blocks (ja_ua1_ssip, encoding)" python3 verify_ssip_sip17_listing.py
 # FIRST TRANSCRIPTION FROM ja_ua1_ssip, the System Test Program's

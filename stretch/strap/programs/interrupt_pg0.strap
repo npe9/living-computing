@@ -135,6 +135,48 @@ AFTER2  BZB, MARK2, $                ! hang if MARK2 is off: 43's routine never 
         BE,  $+.32                   ! enable: the interruption follows
 NORET   B, $                         ! HANG -- the counter must NOT return here
 RESUME  BB,  $PG3, $                 ! hang if PG3 is still on
+!
+! ---- LEFTMOST wins, and only IT is turned off ----------------------
+! p.48: "a mechanism develops the number of the LEFTMOST actuated
+! indicator whose mask bit is one", and the programming note says why
+! it matters: "the leftmost one identification defines the relative
+! priority of actuated indicators if more than one has its
+! corresponding mask bit turned on when interruption occurs.  If the
+! interruption instruction does not disable the system in such a case,
+! then another succeeding interruption will be caused by the new
+! leftmost selected indicator BEFORE the execution of an instruction
+! addressed by the instruction counter."
+!
+! Every block above actuates exactly ONE masked indicator, so none of
+! them can tell leftmost from rightmost -- a model picking the
+! rightmost masked indicator passes all of them.  This one actuates
+! two, PG4 (45) and PG5 (46), and PG0 (41) is STILL on and still
+! unmasked from the mask block, so three different wrong rules give
+! three different answers: ignore the mask and 41 is chosen, take the
+! rightmost and 46 is, take the leftmost MASKED and 45 is.
+!
+! HOW THE ORDER IS OBSERVED, given that both routines run.  PG4's
+! routine SETS a bit in ORDER and falls through.  PG5's routine BRANCHES
+! on that same bit: it can only find it already set if PG4 went first.
+! So the branch is taken exactly when the order was right, and the
+! branch is also what moves the counter off WRONG -- which hangs.
+!
+! It witnesses three rules at once: leftmost rather than rightmost;
+! only THAT indicator turned off, since PG5 must still be actuated to
+! cause the second interruption; and the second interruption arriving
+! before the counter's own next instruction runs.
+        BD,  $+.32                   ! disable to set the mask
+        BB1, 12.45, $+1.0            ! mask bit 45 on -- PG4
+        BB1, 12.46, $+1.0            ! mask bit 46 on -- PG5
+        BB1, $PG4, $+1.0             ! PG4 on
+        BB1, $PG5, $+1.0             ! PG5 on
+        BB,  ORDER, $                ! hang if ORDER is already set
+        BE,  $+.32                   ! enable: two interruptions follow
+WRONG   B, $                         ! HANG -- reached if PG5's routine did
+                                     !   not find PG4's mark, i.e. the wrong
+                                     !   indicator was taken first
+GOOD    BB,  $PG4, $                 ! hang if PG4 is still on
+        BB,  $PG5, $                 ! hang if PG5 is still on
         B, PASS
 PASS    BEW, $
 !
@@ -154,6 +196,12 @@ E43     BB1, MARK2, $+1.0            ! PG2's routine, for the mask block below
         SLC, (8)4454.0
 E44     B, RESUME                    ! PG3's routine: a BRANCH, so it replaces
                                      !   the instruction counter
+        SLC, (8)4455.0
+E45     BB1, ORDER, $+1.0            ! PG4 (leftmost): leave a mark, fall through
+        SLC, (8)4456.0
+E46     BB,  ORDER, GOOD             ! PG5 (second): branch only if PG4's mark is
+                                     !   already there -- i.e. only if the order
+                                     !   was right
 !
 ! Where HALF-word indexing would land instead of word indexing:
 ! TBL*2 + 41 half-words = word 04424, second half.  Reached only if the
@@ -174,6 +222,8 @@ HWRONG  B, $
 MARK    DD, 0                        ! the routine's only side effect
         SLC, (8)4301.0
 MARK2   DD, 0                        ! the same, for the mask block
+        SLC, (8)4302.0
+ORDER   DD, 0                        ! PG4's mark, read by PG5's routine
         SLC, (8)4400.0
 TBL     DD, 0                        ! the table origin; entry N is TBL+N words
         END, START
