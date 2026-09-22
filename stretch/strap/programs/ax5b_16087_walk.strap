@@ -1,0 +1,110 @@
+! jb_ax5b "I-Box 5", routine 1260's INDICATOR-WALK DRIVER -- the six
+! half-words that set one indicator, set its mask bit, enable, and
+! await the interruption.  PDF p.45 (printed p.42), octal
+! 021376.40-021402.00, transcribed VERBATIM at the listing's own
+! addresses and checked bit-exactly by verify_ax5b_16087_listing.py.
+!
+! THIS IS THE BLOCK docs/NEXT.md HAS POINTED AT SINCE 2026-09-21.  The
+! write-up's routine index says 1260 checks "the ability to interrupt
+! ... unique interruption for bits 0-47", and this is where it does
+! it: the deck's own version of what programs/interrupt_pg0.strap
+! does hand-written from Reference Manual p.48.
+!
+!     16087  SIC,160SX1          -TURN ON BIT 20-47.
+!            B,160S1
+!            TI,1,BIT0(X1),$IND  -SET ONE OF 20-47
+!     16088  TI,1,BIT0(X1),$MASK -SET MASK BIT OF TEST IND BIT
+!            BE,$+.32            -ENABLE AND AWAIT INTERRUPT
+!            BD,160B13(X6)
+!
+! Set indicator bit N in word 11.  Set mask bit N in word 12.  Enable.
+! If the machine interrupts, control never reaches the BD; if it does
+! not, the BD dispatches into the per-indicator error table 160B13,
+! indexed by X6, whose entries read "FAILED TO INTERRUPT ON IND MK /
+! IN 1 MILLISEC.", then IK, IJ, EK, TS, CPUS, EKJ, UNRJ, CBJ, EPGK,
+! UK, EE, EOP, CS.  p.48's three conditions -- mask bit one, indicator
+! bit one, mechanism enabled -- supplied one indicator at a time.
+!
+! IT NEEDED AN INSTRUCTION THIS ASSEMBLER DID NOT HAVE.  TI is
+! TRANSMIT IMMEDIATE, and its format came from the POCKET CARD, not
+! from this listing (AGENTS.md rule 4).  X22-6533's pcard-1 gives the
+! source form -- "TRANSMIT--Strap Format: OP, J, A1(I1), A2(I2)" --
+! and the eight mnemonics T/TI/TB/TBI and SWAP/SWAPI/SWAPB/SWAPBI.
+! pcard-3's "TRANSMIT OPERATIONS" box gives the word:
+!
+!   |   ADDRESS   |1000| I |   ADDRESS   | J |FD|BI|10| I |
+!   0            18  24   28  32          51  55    58 60 63
+!
+!   SWAP  ab110     Instr'n Modifiers = ab
+!   T     ab010       a = 0, forward       a = 1, backward
+!                     b = 0, direct count  b = 1, immediate count
+!
+! That layout, written into opcodes.TRANSMIT_CODES and
+! strap_asm.enc_transmit, reproduces BOTH printed half-words of the
+! rows below with nothing read off this page.  A1 is a 24-bit BIT
+! address, A2 a 19-bit HALF-WORD address, J four bits -- and with the
+! immediate modifier J IS the count, so the encoder refuses a J that
+! does not fit rather than truncating it.
+!
+! THE TWO TI ROWS ARE FULL WORDS AT ODD HALF-WORDS, 021377.40 and
+! 021400.40, each straddling a word boundary (Ref. Manual p.39).  That
+! is what made this page look a half-word short for a whole session
+! when its addresses were read at 200 dpi; see ax5b_16086_ds.strap.
+!
+! WHAT THE 600 DPI RE-READ CORRECTED.  The last row's machine code is
+! "21402.44 06", not "...00": at 200 dpi the low digit was lost under
+! an ink smudge.  With 06 the row decomposes cleanly -- bit 18 set so
+! the target is 021402.40, code 001 = BD, literal 000000, index 0110 =
+! $X6 -- and 021402.40 is exactly where the page prints the label
+! 160B13.  Every field of this block now agrees with every other.
+!
+! THREE EXTERNAL SYMBOLS THIS BLOCK LOCATES, each from its own row's
+! printed address field:
+!   160SX1 = 023041.00   (SIC,160SX1 -> "23041.00 80")
+!   160S1  = 022741.00   (B,160S1    -> "22741.10 00")
+!   160B13 = 021402.40   (BD,...     -> "21402.44 06")
+! docs/NEXT.md carried "160S1/160SX1 ... still not located" from the
+! day the file's claim about them was disproved; they are located now,
+! and 160SX1 is the same word the 160K constant table is based at (see
+! docs/archival_inventory.md).
+!
+! AND BIT0 A THIRD TIME.  The first TI's A1 prints as 24522.00, so
+! BIT0 is at 024522.00 -- which p.114's constants table prints
+! directly and which 16071's BIT18 (024544.00, 18 words along)
+! implies.  Three independent routes to one address.
+!
+! A HAZARD THIS TRANSCRIPTION CREATES, stated because the assembler
+! can now emit Transmit at all: StretchExecute.bsv's Transmit arm
+! moves exactly ONE word and ignores both the immediate-count bit and
+! J, so a count other than 1 would assemble correctly and execute
+! wrongly rather than failing loud.  Every count here is 1, so
+! nothing in this file is affected; the note belongs with the encoder
+! and is repeated in opcodes.TRANSMIT_CODES.
+!
+! WHAT THIS IS AND IS NOT.  An ENCODING oracle, like the other four
+! blocks of this routine.  It cannot run: 160S1 is a subroutine that
+! is not transcribed, 160B13's table is not transcribed, and X1/X6
+! are set up by code outside this range.
+!
+! SUBSTITUTIONS: two.  (1) The deck's numeric labels (16087, 16088,
+! 160SX1, 160S1, 160B13) are prefixed with "L" where they begin with a
+! digit, because this assembler reads a leading digit as an address.
+! (2) The listing's "%...@" index parentheses are written "(...)",
+! the same restoration ibox1_sic_cb_cbz.strap describes.
+
+! External symbols, given by SYN at the addresses this block's own
+! rows print for them.  Rows naming one check the opcode and modifier
+! bits; their address came from the same print.
+L160SX1 SYN, (8)23041.0            ! the SIC return link
+L160S1  SYN, (8)22741.0            ! the save/restore subroutine
+BIT0    SYN, (8)24522.0            ! the bit-mask constant table
+L160B13 SYN, (8)21402.40           ! the per-indicator error table
+
+        SLC, (8)21376.40
+L16087  SIC, L160SX1               ! -TURN ON BIT 20-47.
+        B,   L160S1
+        TI,  1, BIT0($X1), $IND    ! -SET ONE OF 20-47
+L16088  TI,  1, BIT0($X1), $MASK   ! -SET MASK BIT OF TEST IND BIT
+        BE,  $+.32                 ! -ENABLE AND AWAIT INTERRUPT
+        BD,  L160B13($X6)          !  reached only if it did NOT
+        END, L16087

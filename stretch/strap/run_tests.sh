@@ -469,6 +469,60 @@ run "I-Box 5 routine 1260's DS block, bit-exact (jb_ax5b pp.43-44)" python3 veri
 # behind it.  Four injections, each with its own named failure set,
 # are recorded in verify_ax5b_16086_listing.py's header.
 
+run "I-Box 5 routine 1260's indicator walk + TRANSMIT IMMEDIATE (jb_ax5b p.45)" python3 verify_ax5b_16087_listing.py
+# THE BLOCK docs/NEXT.md HAS POINTED AT SINCE 2026-09-21, and the
+# reason it waited: it needed an instruction this assembler did not
+# have.  Six half-words -- set one indicator bit in word 11, set its
+# mask bit in word 12, "BE,$+.32  -ENABLE AND AWAIT INTERRUPT", and a
+# BD that is reached only if the machine did NOT interrupt, dispatching
+# into the per-indicator error table 160B13 indexed by X6.  It is the
+# deck's own version of what interrupt_pg0.strap does hand-written from
+# Reference Manual p.48.
+#
+# TRANSMIT IMMEDIATE CAME FROM THE POCKET CARD, NOT THIS LISTING, which
+# is AGENTS.md rule 4.  X22-6533 pcard-1: "TRANSMIT--Strap Format: OP,
+# J, A1(I1), A2(I2)", eight mnemonics T/TI/TB/TBI and the four SWAPs.
+# pcard-3's "TRANSMIT OPERATIONS" box:
+#
+#   |   ADDRESS   |1000| I |   ADDRESS   | J |FD|BI|10| I |
+#   0            18  24   28  32          51  55    58 60 63
+#   SWAP ab110   T ab010    a = forward/backward, b = direct/immediate
+#
+# opcodes.TRANSMIT_CODES carries that diagram; strap_asm.enc_transmit
+# implements it; and it then reproduced BOTH printed half-words of BOTH
+# TI rows with nothing read off the page.  Only TI has a listing
+# witness -- the other seven are card-only, and the table says so,
+# following the CB_CODES precedent.
+#
+# TWO FULL WORDS AT ODD HALF-WORDS, 021377.40 and 021400.40, each
+# straddling a word boundary (Ref. Manual p.39).  That is what made
+# this page look a half-word short for a session when its addresses
+# were read at 200 dpi.  The straddle was tested in isolation before
+# this block was written, because no other program in the suite places
+# a full word at an odd half-word.
+#
+# A 600 DPI CORRECTION, and the injection that makes it matter.  The
+# last row is "21402.44 06", not "...00" -- the low digit was lost at
+# 200 dpi under an ink smudge.  With 06 the row decomposes cleanly:
+# bit 18 set so the target is 021402.40, code 001 = BD, literal 000000,
+# index 0110 = $X6, and 021402.40 is exactly where the page prints the
+# label 160B13.  Dropping the index field in enc_branch_or_misc fails
+# this row and only this row.
+#
+# THREE SYMBOLS LOCATED, each from its own row's printed address field:
+# 160SX1 = 023041.00, 160S1 = 022741.00, 160B13 = 021402.40.
+# docs/NEXT.md had carried 160S1/160SX1 as "not located" ever since the
+# claim that they were a prerequisite was disproved.  And BIT0 =
+# 024522.00 for the third independent time (p.114's table prints it,
+# 16071's BIT18 implies it, this row's A1 field states it).
+#
+# THE HAZARD THIS CREATES, stated because the assembler can now emit
+# Transmit at all: StretchExecute.bsv's Transmit arm moves exactly ONE
+# word and ignores both the immediate-count bit and J, so a count other
+# than 1 would assemble correctly and execute wrongly rather than
+# failing loud.  Every count in this block is 1.  Recorded in
+# TRANSMIT_CODES, in strap_asm.py's format list and in strap/README.md.
+
 run "I-Box 5 routine 1260's TS block, bit-exact (jb_ax5b p.41)" python3 verify_ax5b_16071_listing.py
 # THE INTERVAL TIMER GETS A SECOND DECK ORACLE, eight rows long.
 # Reference Manual p.44: "4. Time Signal (TS).  The interval timer has

@@ -150,9 +150,17 @@ execute partially, document the rest" ethos of the Bluespec model):
        characteristically unlike the rest of this codebase's "bare
        integer used as-is" rule and needs to be written explicitly by
        the caller until/unless verified enough to automate.
-    10-12 (transmit/swap, bit branch, LVS) -- not implemented; these
-       are exactly the formats StretchExecute.bsv doesn't execute
-       either, so there is nothing to verify by encoding them yet.
+    10-12 -- BIT BRANCH is implemented (BB_CODES / enc_branch_on_bit)
+       and so is TRANSMIT/SWAP (TRANSMIT_CODES / enc_transmit, added
+       2026-09-22 from pocket card X22-6533 for jb_ax5b p.45's
+       "TI,1,BIT0(X1),$IND").  LVS is not.  This entry used to say all
+       three were unimplemented "because StretchExecute.bsv doesn't
+       execute them either", which was wrong on both counts: the model
+       executes Transmit forward, one word per instruction, and has a
+       BranchOnBit arm.  NOTE the resulting hazard, also stated in
+       opcodes.TRANSMIT_CODES: the model's Transmit arm IGNORES the
+       immediate-count bit and J, so a count other than 1 assembles
+       correctly and executes wrongly rather than failing loud.
 
 UNITS -- the one subtlety worth flagging explicitly: this assembler's
 internal location counter and every symbol value is a BIT count
@@ -216,6 +224,7 @@ from opcodes import (
     IMM_INDEX_CODES, UNCOND_BRANCH_CODES, MISC_CODES, INDICATOR_BITS,
     MODE_BITS, MODE_DEFAULT_BS, PROGRESSIVE_SECONDARY_OP, CONNECTIVE_SUFFIX,
     IO_OP, CB_CODES, IMM_INDEX_COUNT_OPS, SYSTEM_SYMBOLS, BB_CODES,
+    TRANSMIT_CODES,
 )
 
 # Input-Output base mnemonics (before an optional "(SEOP)" modifier or
@@ -353,6 +362,28 @@ def enc_branch_or_misc(addr19, code, misc, idx):
     assert w == 32
     return v
 
+
+def enc_transmit(bitaddr24, i1, addr19, j, backward, immCount, swap, i2):
+    """TRANSMIT / SWAP, pocket card X22-6533's "TRANSMIT OPERATIONS"
+    field diagram (opcodes.TRANSMIT_CODES carries the diagram itself):
+
+      |   ADDRESS   |1000| I |   ADDRESS   | J |FD|BI|10| I |
+      0            18  24   28  32          51  55    58 60 63
+
+    A1 is a 24-bit BIT address (bits 0-23) with index I1 at 28-31, the
+    literal 1000 at 24-27 shared with SIC and BRANCH ON BIT; A2 is a
+    19-bit HALF-WORD address at 32-50 with index I2 at 60-63; J is
+    four bits at 51-54, and bits 55-59 are a (backward), b (immediate
+    count) and 010 Transmit / 110 Swap.
+
+    Confirmed against a printed instruction before being used:
+    jb_ax5b p.45's "TI,1,BIT0%$X1,$IND" prints "24522.00 81
+    000013.02 A0", and this function reproduces both half-words."""
+    v, w = cat((bitaddr24, 24), (0b1000, 4), (i1, 4),
+               (addr19, 19), (j, 4), (backward, 1), (immCount, 1),
+               (1 if swap else 0, 1), (0b10, 2), (i2, 4))
+    assert w == 64
+    return v
 
 def enc_branch_on_bit(bitaddr24, i1, addr19, mod2, cond1, idx1):
     # Branch on Bit, full word (X22-6533 pocket card / RefMan p.41):
@@ -980,6 +1011,11 @@ def statement_size(stmt):
     # NOT deposit_full, which is reserved for word-aligned DATA (XW).
     if op in BB_CODES:
         return HALF, FULL  # Branch on Bit, full-word instruction (p.41)
+    if op in TRANSMIT_CODES:
+        # TRANSMIT/SWAP, full-word instruction that may sit at an ODD
+        # half-word -- jb_ax5b p.45 places two of them at 021377.40 and
+        # 021400.40, each straddling a word boundary (Ref. Manual p.39).
+        return HALF, FULL
     if op in IO_BASE_OPS or op in IO_OP:
         return HALF, FULL
     kind, *_ = classify_vfl_or_fp(stmt)
@@ -1438,6 +1474,37 @@ def emit_statement(stmt, symtab, image):
         addr19 = eval_addr_field(base, symtab, loc, 5, lineno=stmt.lineno) & 0x7FFFF
         idx = eval_reg(paren, symtab, stmt.lineno) & 0x1
         image.deposit_half(loc // 32, enc_branch_ind(addr19, indnum, clear, branchOn, idx))
+        return
+
+    if op in TRANSMIT_CODES:
+        # TRANSMIT / SWAP, Strap Format "OP, J, A1(I1), A2(I2)"
+        # (X22-6533 pocket card, pcard-1's TRANSMIT heading).  A1 is a
+        # BIT address, so its base is evaluated to raw bits (>>0, like
+        # SIC's and BRANCH ON BIT's B); A2 is a HALF-WORD address
+        # (bit-address terms >>5, like BRANCH ON BIT's A).
+        if len(stmt.fields) != 3:
+            raise AssemblerError(
+                f"{op} takes J, A1(I1) and A2(I2) fields "
+                "(pocket card: OP, J, A1(I1), A2(I2))", stmt.lineno)
+        j = eval_expr(stmt.fields[0], symtab, loc, lineno=stmt.lineno)
+        # J is FOUR bits (51-54).  With the immediate-count modifier it
+        # IS the count, so a count that does not fit has to be refused
+        # rather than truncated -- every numeric field this project has
+        # silently truncated has cost a session (see docs/NEXT.md's
+        # trap list).
+        if not 0 <= j <= 15:
+            raise AssemblerError(
+                f"{op}'s J field is 4 bits (pocket card, bits 51-54); "
+                f"{j} does not fit", stmt.lineno)
+        a1base, a1paren = split_field_trailing_paren(stmt.fields[1])
+        a2base, a2paren = split_field_trailing_paren(stmt.fields[2])
+        bitaddr24 = eval_expr(a1base, symtab, loc, lineno=stmt.lineno) & 0xFFFFFF
+        i1 = eval_reg(a1paren, symtab, stmt.lineno) & 0xF
+        addr19 = eval_addr_field(a2base, symtab, loc, 5, lineno=stmt.lineno) & 0x7FFFF
+        i2 = eval_reg(a2paren, symtab, stmt.lineno) & 0xF
+        backward, immCount, swap = TRANSMIT_CODES[op]
+        image.deposit_word_instr(loc, enc_transmit(bitaddr24, i1, addr19, j,
+                                                   backward, immCount, swap, i2))
         return
 
     if op in BB_CODES:

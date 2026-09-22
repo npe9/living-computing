@@ -56,14 +56,15 @@ bits 0-47, I-Box indicators, Upper and Lower Bounds registers and
 address monitoring."* That is everything built 2026-09-19 to -21, in
 one deck routine.
 
-**pp.41–44 are NOT the prerequisite.** This file said "SSIP's
-`160S1`/`160SX1` save/restore harness, reported at `ax5b` pp.41–44".
-Read first-hand 2026-09-22, they are 1260's per-indicator blocks,
-16071 (`TS`) through 16086 (`DS`). `160S1`/`160SX1` are *call sites*
-on p.45 and are still not located; nothing so far has needed them.
-Third entry in this file's own "distrust a blocker recorded here"
-trap. The page-by-page record is in `archival_inventory.md` §"I-Box
-5".
+**The prerequisite this file recorded never existed.** It said
+"SSIP's `160S1`/`160SX1` save/restore harness, reported at `ax5b`
+pp.41–44". Those pages are 1260's per-indicator blocks, 16071 (`TS`)
+through 16086 (`DS`). All four transcribable ones were done without
+any harness — and then the driver itself (p.45) was done too. Third
+entry in this file's own "distrust a blocker recorded here" trap.
+`160S1` = 022741.00 and `160SX1` = 023041.00, read off the driver's
+own printed address fields; nothing has needed either. The
+page-by-page record is in `archival_inventory.md` §"I-Box 5".
 
 **16086, the DS block, is done** — `programs/ax5b_16086_ds.strap`,
 bit-exact via `verify_ax5b_16086_listing.py`, record in
@@ -85,13 +86,20 @@ oracle for the interval timer — Reference Manual p.44, *"Time Signal
 Routine 1258 is no longer the only oracle, and is no longer the
 cheapest.
 
-**Then the indicator walk at 16087/16088 (p.45), and it needs `TI`
-first.** `TI` is not in this assembler; its format must come from the
-pocket card or the Reference Manual, never from the listing's usage
-(AGENTS.md rule 4). The page's layout is settled — the two `TI`s are
-full words at odd half-words, 16088 is at 021400.40 — with the
-reasoning in `archival_inventory.md`; **read p.45 at 600 dpi, not
-200**, which is what made it look inconsistent for a session.
+**The indicator walk at 16087/16088 (p.45) is done** —
+`programs/ax5b_16087_walk.strap`, and it brought **TRANSMIT/SWAP into
+the assembler** (all eight mnemonics, from pocket card X22-6533; only
+`TI` has a listing witness). Record in `run_tests.sh` §"…indicator
+walk + TRANSMIT IMMEDIATE".
+
+**A hazard that came with it.** The assembler can now emit Transmit,
+but `StretchExecute.bsv`'s Transmit arm moves exactly one word and
+ignores both the immediate-count bit and `J`. A count other than 1
+assembles correctly and executes *wrongly* rather than failing loud —
+against this project's "fails loud, never silently" convention. Fixing
+it means either multi-word Transmit (item 5) or making the execute arm
+reject a count it will not honour. **The second is cheap and should
+come first.**
 
 **Caution, paid for** — and note it is about the *boundary* driver,
 which finding the indicator-walk driver at 16087/16088 does **not**

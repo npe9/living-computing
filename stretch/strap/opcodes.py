@@ -249,6 +249,55 @@ BB_CODES = {
 }
 
 # ---------------------------------------------------------------------
+# TRANSMIT / SWAP.  SOURCE: pocket card X22-6533, read first-hand
+# 2026-09-22 -- "TRANSMIT--Strap Format: OP, J, A1(I1), A2(I2)" on
+# pcard-1, and the "TRANSMIT OPERATIONS" field diagram on pcard-3:
+#
+#   |   ADDRESS   |1000| I |   ADDRESS   | J |FD|BI|10| I |
+#   0            18  24   28  32          51  55    58 60 63
+#
+#   SWAP  ab110        Instr'n Modifiers = ab
+#   T     ab010          a = 0, forward       a = 1, backward
+#                        b = 0, direct count  b = 1, immediate count
+#
+# So bits 55-59 are a,b then 010 (Transmit) or 110 (Swap); bits 24-27
+# are the literal 1000 shared with SIC / BRANCH ON BIT / INPUT-OUTPUT;
+# A1 is a 24-bit BIT address with index I1 at 28-31, A2 a 19-bit
+# HALF-WORD address with index I2 at 60-63, and J is four bits at
+# 51-54.  StretchDecode.bsv's Transmit arm reads exactly these fields
+# (backward = w[8], immCount = w[7], sub-op = w[6:4]) and cites the
+# same card row; this table is that layout written down for the
+# encoder, cross-checked against a printed instruction (see below).
+#
+# WITNESSED: only TI.  jb_ax5b p.45 prints "TI,1,BIT0%$X1,$IND" as
+# "24522.00 81 000013.02 A0", and the layout above reproduces both
+# half-words exactly (programs/ax5b_16087_walk.strap).  The other
+# seven are from the card alone and have no listing row in this
+# project yet -- stated here for the same reason the CB_CODES comment
+# states its provenance.
+#
+# A HAZARD THIS TABLE CREATES, stated because the assembler can now
+# emit words the model mis-executes: StretchExecute.bsv's Transmit arm
+# moves exactly ONE word and ignores both `immCount` and `j`, so any
+# count but 1 assembles correctly and then executes wrongly rather
+# than failing loud.  Backward IS consulted (it sets Operation Code
+# Invalid), so TB/TBI/SWAPB/SWAPBI fail loud as the convention wants.
+# See bsv/README.md "Transmit -- forward only, one word per
+# instruction" and docs/NEXT.md section 5.
+# ---------------------------------------------------------------------
+TRANSMIT_CODES = {
+    # mnemonic: (backward, immCount, swap)
+    "T":       (0, 0, 0),
+    "TI":      (0, 1, 0),
+    "TB":      (1, 0, 0),
+    "TBI":     (1, 1, 0),
+    "SWAP":    (0, 0, 1),
+    "SWAPI":   (0, 1, 1),
+    "SWAPB":   (1, 0, 1),
+    "SWAPBI":  (1, 1, 1),
+}
+
+# ---------------------------------------------------------------------
 # Indicator names -> bit number in word 11 (StretchTypes.bsv ind_*).
 # Used both for $<name> system symbols and for parsing Branch-on-
 # -Indicator mnemonics B[Z]<name>[Z] (C22-6531 Appendix A footnote 2).

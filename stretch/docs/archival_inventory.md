@@ -709,7 +709,7 @@ pages hold nothing of the kind. What they actually contain, in order:
 | pages | what is there |
 |---|---|
 | pp.41-44 | **the per-indicator turn-on blocks**, 16071 through 16086 -- one per I-Box indicator (`TS`, `CPUS`, `EKJ`, `UNRJ`, `CBJ`, `EPGK`, `UK`, `EE`, `EOP`, `CS`, `RESRVD`, `OP`, `AD`, `USA`, `EXE`, `DS`). Sixteen blocks, but not sixteen tests -- see the triage below. |
-| p.45 | **the indicator-walk driver**, 16087/16088: `SIC,160SX1` / `B,160S1`, `TI,1,BIT0%$X1,$IND` *"SET ONE OF 20-47"*, `TI,1,BIT0%$X1,$MASK` *"SET MASK BIT OF TEST IND BIT"*, `BE,$+.32` *"ENABLE AND AWAIT INTERRUPT"*, then `BD,160B13%$X6` -- an indexed dispatch into the per-indicator error table `160B13`, whose entries read *"FAILED TO INTERRUPT ON IND MK / IN 1 MILLISEC."*, then IK, IJ, EK, TS, CPUS, EKJ, UNRJ, CBJ, EPGK, UK, EE, EOP, CS. |
+| p.45 | **the indicator-walk driver**, 16087/16088 -- **transcribed** as `strap/programs/ax5b_16087_walk.strap`, six rows bit-exact via `strap/verify_ax5b_16087_listing.py`: `SIC,160SX1` / `B,160S1`, `TI,1,BIT0%$X1,$IND` *"SET ONE OF 20-47"*, `TI,1,BIT0%$X1,$MASK` *"SET MASK BIT OF TEST IND BIT"*, `BE,$+.32` *"ENABLE AND AWAIT INTERRUPT"*, then `BD,160B13%$X6` -- an indexed dispatch into the per-indicator error table `160B13`, whose entries read *"FAILED TO INTERRUPT ON IND MK / IN 1 MILLISEC."*, then IK, IJ, EK, TS, CPUS, EKJ, UNRJ, CBJ, EPGK, UK, EE, EOP, CS. |
 
 **The sixteen blocks triaged** (read from pp.41-44, not inferred):
 
@@ -796,6 +796,41 @@ fields, bit 24 needs a `DD(BU,64,8)`, and bits 25-35 move into `XW`'s
 COUNT and REFILL operands (`XW,0,0,0,4`, `XW,0,131072,0`). The
 programmer used whichever pseudo-op could reach the bit.
 
+**TRANSMIT IMMEDIATE, and where it came from.** p.45's driver needed
+`TI`, which this assembler did not have. Its format came from the
+**pocket card X22-6533**, read first-hand 2026-09-22, never from the
+listing (AGENTS.md rule 4). pcard-1: *"TRANSMIT--Strap Format: OP, J,
+A1(I1), A2(I2)"*, with eight mnemonics -- `T`, `TI`, `TB`, `TBI`,
+`SWAP`, `SWAPI`, `SWAPB`, `SWAPBI`. pcard-3's "TRANSMIT OPERATIONS"
+box gives the word:
+
+```
+|   ADDRESS   |1000| I |   ADDRESS   | J |FD|BI|10| I |
+0            18  24   28  32          51  55    58 60 63
+
+SWAP  ab110      Instr'n Modifiers = ab
+T     ab010        a = 0, forward       a = 1, backward
+                   b = 0, direct count  b = 1, immediate count
+```
+
+A1 is a 24-bit **bit** address with index I1 at 28-31; the literal
+1000 at 24-27 is the one `SIC`, `BRANCH ON BIT` and `INPUT-OUTPUT`
+share; A2 is a 19-bit **half-word** address with index I2 at 60-63;
+`J` is four bits at 51-54 and, with the immediate modifier, IS the
+count. Written into `opcodes.TRANSMIT_CODES` and
+`strap_asm.enc_transmit`, that layout reproduced **both** printed
+half-words of **both** `TI` rows on p.45 with nothing read off the
+page. Only `TI` has a listing witness here; the other seven are
+card-only, stated in the table the way `CB_CODES` states its own
+provenance.
+
+**A hazard the encoder creates.** `StretchExecute.bsv`'s Transmit arm
+moves exactly one word and ignores both the immediate-count bit and
+`J`, so a count other than 1 now assembles correctly and executes
+*wrongly* rather than failing loud -- against this project's
+convention. Recorded in `TRANSMIT_CODES`, `strap_asm.py`'s format
+list, `strap/README.md` and `docs/NEXT.md`.
+
 **A free corroboration between the two transcriptions.** `160K7` is
 023050.00 (from 16082's `LX,$X4,160K7`, p.41) and `160K16` is
 023061.00 (from 16086's `LX,$X4,160K16`, p.43). Those are 9768 and
@@ -809,8 +844,14 @@ this is coincidence, is not settled by anything read so far.
 * **16086** (`DS`) is transcribed; see below.
 
 `160S1`/`160SX1` are **call sites** on p.45 (`SIC` stores the return
-link at `160SX1`, `B` enters `160S1`); the subroutine itself is still
-not located, and nothing transcribed so far has needed it.
+link at `160SX1`, `B` enters `160S1`). Both are **located** from those
+rows' own printed address fields: `SIC,160SX1` prints `23041.00 80`
+so 160SX1 = **023041.00**, and `B,160S1` prints `22741.10 00` so
+160S1 = **022741.00** (on PDF p.82-83 by the address scan). Nothing
+transcribed has needed the subroutine's body. Note that 023041.00 is
+also the base the `160K<n>` constant table is numbered from -- see
+below; whether 160SX1 is literally `160K0`'s word or merely adjacent
+is not settled by anything read.
 
 **16086, the DS block, is transcribed** --
 `strap/programs/ax5b_16086_ds.strap`, nineteen half-words checked

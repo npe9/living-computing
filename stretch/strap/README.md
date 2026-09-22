@@ -819,8 +819,18 @@ field ignored) and `test_slc.py` for each one under test. `CNOP`
 is implemented too, tested in the same file and against I-Box 1's own
 two printed `CNOP` rows.
 
+Transmit/Swap **are** encoded as of 2026-09-22 — all eight mnemonics
+(`T`/`TI`/`TB`/`TBI`, `SWAP`/`SWAPI`/`SWAPB`/`SWAPBI`), from pocket
+card X22-6533's "TRANSMIT OPERATIONS" box, for `jb_ax5b` p.45's
+`TI,1,BIT0(X1),$IND`. Only `TI` has a listing witness; the other seven
+are card-only, and `opcodes.TRANSMIT_CODES` says which is which.
 Notably **not** implemented yet: multi-word Transmit — the same gap
-`../bsv/README.md`'s "Next steps" names on the execute side. Also not
+`../bsv/README.md`'s "Next steps" names on the execute side, and now a
+sharper one, because the assembler can emit a count the model ignores.
+The execute arm moves exactly one word whatever `J` and the
+immediate-count bit say, so a count other than 1 assembles correctly
+and executes wrongly rather than failing loud; stated in
+`TRANSMIT_CODES` and in this file's `strap_asm.py` docstring. Also not
 implemented: `LVE` (see "Gotchas" item 12; `SIC`, its companion there,
 is now implemented on both sides — item 16), VFL Immediate's
 `N`/`NI` suffixes, and `(radix)digits` literals outside `DD` (item 11).
