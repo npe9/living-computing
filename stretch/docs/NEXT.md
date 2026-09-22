@@ -70,15 +70,20 @@ bit-exact via `verify_ax5b_16086_listing.py`, record in
 `run_tests.sh` §"I-Box 5 routine 1260's DS block". It is an ENCODING
 oracle; storage protection's behavioural test stays hand-written.
 
-**16082 (`OP`) and 16083 (`AD`) are done too** —
-`programs/ax5b_16082_op_ad.strap`, contiguous at 017225.00–017234.40,
-bit-exact via `verify_ax5b_16082_16083_listing.py`, record in
-`run_tests.sh` §"I-Box 5 routine 1260's OP and AD blocks".
+**So are 16082 (`OP`), 16083 (`AD`) and 16071 (`TS`)** —
+`ax5b_16082_op_ad.strap` and `ax5b_16071_ts.strap`, records in
+`run_tests.sh`. **That is every transcribable block on pp.41–44.**
+What remains there is out of reach for a stated reason: 16072–16081
+are three-line `B`/`CNOP`/`DR` stubs for indicators a program cannot
+provoke, 16084 needs `LVE` and 16085 needs `EX`, both deferred in
+item 5.
 
-**Next: 16071 (`TS`)**, the last unblocked block on pp.41–44. Skip
-16072–16081 — three-line `B`/`CNOP`/`DR` stubs for indicators a
-program cannot provoke, not tests. 16084 needs `LVE` and 16085 needs
-`EX`, both deferred in item 5.
+**16071 changes item 5's timer entry.** It is a second, eight-row deck
+oracle for the interval timer — Reference Manual p.44, *"Time Signal
+(TS). The interval timer has become zero."* — and it is in place
+*before* the timer is implemented, which is the order item 2 asks for.
+Routine 1258 is no longer the only oracle, and is no longer the
+cheapest.
 
 **Then the indicator walk at 16087/16088 (p.45), and it needs `TI`
 first.** `TI` is not in this assembler; its format must come from the
@@ -157,8 +162,10 @@ Decimal VFL (`c=1`) and radix conversion; `EX`/`EXIC` (deck oracle:
 `ax5b` routine 1262); `RNX`/`LVE`/`LVS`; Transmit backward/`SWAP`/
 multi-word; I/O chaining and multiple-block; `LOC` and the
 unimplemented `CTL` function codes; channel status reaching the CPU
-indicators; the interval timer actually ticking (deck oracle: `ax5b`
-routine 1258); 19-bit address truncation (routine 1274).
+indicators; the interval timer actually ticking (deck oracles: `ax5b`
+routine 1258, and the much smaller routine 1260 block 16071, already
+transcribed as `ax5b_16071_ts.strap` — implementing the timer is what
+would let it RUN); 19-bit address truncation (routine 1274).
 
 Out of scope by design: cycle-accurate timing.
 

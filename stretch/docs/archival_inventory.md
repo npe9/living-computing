@@ -722,9 +722,27 @@ pages hold nothing of the kind. What they actually contain, in order:
 * **16084** (`USA`) turns on its indicator with `LVE`; **16085**
   (`EXE`) with `EX`. Both instructions are deferred in `NEXT.md` §5,
   so both blocks are blocked on an implementation, not on a harness.
-* **16071** (`TS`) uses only instructions this project already has
-  (`LX`/`SV`/`LCI`/`CB`/`BTS`/`SIC`/`B`) and is the last untranscribed
-  one of the sixteen.
+* **16071** (`TS`) is **transcribed** -- 016007.00-016012.40,
+  `strap/programs/ax5b_16071_ts.strap`, eight rows checked by
+  `strap/verify_ax5b_16071_listing.py`. It is an INTERVAL TIMER test:
+  Reference Manual p.44, "4. Time Signal (TS). The interval timer has
+  become zero." The block loads the timer with the value one, spins
+  512 times on a `CB` to itself, and asks `BTS` whether TS came on.
+  That makes it a second deck oracle for the timer, eight rows against
+  routine 1258's whole routine, and it is in place BEFORE the timer is
+  implemented. It also gives `BTS` (indicator 4) and an `LCI` count
+  field -- the field `strap/README.md`'s Gotchas item 16 records as
+  having once been encoded wrongly. The pocket card's footnote (a) on
+  the interval-timer row (`microarchitecture_plan.md` A.10) explains
+  the instruction choice: that register is "read-only except for
+  store-value/count/refill/address", so `SV` is one of the few
+  operations that can write it at all. And the block must be running
+  **disabled** -- word 1 is permanently protected (Ref. Manual p.31)
+  and p.45 suppresses such a store "while the interruption system was
+  enabled" -- which is not shown in its eight rows but follows from
+  those two pages. Note the symmetry with 16086, which uses the SAME
+  instruction on the SAME word as its DS provocation, enabled,
+  expecting suppression.
 * **16082** (`OP`) and **16083** (`AD`) are **transcribed** --
   contiguous at 017225.00-017234.40,
   `strap/programs/ax5b_16082_op_ad.strap`, fifteen rows checked by
@@ -743,6 +761,40 @@ pages hold nothing of the kind. What they actually contain, in order:
   021400.40 is a `SYN` input to the check, chosen so the rows match.
   What the rows add is that this assembler places bit 18 where the
   listing places it.)
+
+**THE `BIT` TABLE, found and read first-hand on PDF p.114.** Three
+pages of this routine name a `BIT<n>` symbol -- 16071 uses `BIT18`
+(p.41, printed 024544.00) and the indicator-walk driver uses
+`BIT0%$X1` (p.45, first operand printed 24522) -- which made
+`BIT<n>` = 024522 + n a reasonable guess. It is no longer a guess.
+Under the heading **"-COMMON CONSTANTS FOR FETCH ONLY"**, p.114
+prints the table itself:
+
+| symbol | source | printed | address |
+|---|---|---|---|
+| `BIT0` | `XW,(8)400000.00,0,0` | `400000.00 00 000000.00 00` | 024522.00 |
+| `BIT1` | `XW,(8)200000.00,0,0` | `200000.00 00 000000.00 00` | 024523.00 |
+| ... | | | |
+| `BIT17` | `XW,(8)1.00,0,0` | `1.00 00 000000.00 00` | 024543.00 |
+| `BIT18` | `XW,(8).40,0,0` | `0.40 00 000000.00 00` | 024544.00 |
+| `BIT19` | `XW,(8).20,0,0` | `0.20 00 000000.00 00` | 024545.00 |
+| ... | | | |
+| `BIT24` | `DD(BU,64,8),(8)...010...` | 22 octal digits, bit 24 | 024552.00 |
+| `BIT25` | `XW,0,0,0,4` | `0.00 40 000000.00 00` | 024553.00 |
+| ... to `BIT35` | | | 024565.00 |
+
+So **`BIT<n>` is the full word whose only set bit is bit n**, and the
+table runs from 024522.00 at one word per bit. Read the printed code,
+not the name: `BIT18`'s `0.40 00` is bits 0-17 zero and the octal pair
+40 = 100000, i.e. bit 18. `BIT0`'s `400000.00` is bit 0. The
+arithmetic guessed from two other pages is exactly right, and
+**`BIT0` = 024522.00 is now a printed fact**, which the eventual `TI`
+transcription of p.45 will need.
+
+Note the encoding variety in one table: bits 0-23 are `XW` value
+fields, bit 24 needs a `DD(BU,64,8)`, and bits 25-35 move into `XW`'s
+COUNT and REFILL operands (`XW,0,0,0,4`, `XW,0,131072,0`). The
+programmer used whichever pseudo-op could reach the bit.
 
 **A free corroboration between the two transcriptions.** `160K7` is
 023050.00 (from 16082's `LX,$X4,160K7`, p.41) and `160K16` is
@@ -971,7 +1023,7 @@ reverse index (source -> transcription/implementation).
 | `jb_ax2a_ibox-2.pdf` (203pp) | I-Box 2 diagnostic | Source | surveyed (archival pass); SVA/SIC blockers |
 | `jb_ax3a_ibox-3.pdf` (~200pp) | I-Box 3 diagnostic | Source | surveyed; SVA (~50pp section), SIC |
 | `jb_ax4b_ibox-4.pdf` (~200pp) | I-Box 4 diagnostic | Source | RUN: `ibox4_cb_count_branch`, `ibox4_cbr_refill`; bit-exact vs `verify_ibox4_listing.py` (pp.155/159); section 138 rejected ($R), the pp.58-62 KV/$R pages sourced the Appendix-A system symbols |
-| `jb_ax5b_ibox-5.pdf` (116pp) | I-Box 5 diagnostic | Source | routine index transcribed (p.2); 1260's pp.41-45 read first-hand; **blocks 16082, 16083 and 16086 transcribed** (`ax5b_16082_op_ad.strap`, `ax5b_16086_ds.strap`); interrupt/timer/boundary/EX -- the largest unmodeled-hardware concentration |
+| `jb_ax5b_ibox-5.pdf` (116pp) | I-Box 5 diagnostic | Source | routine index transcribed (p.2); 1260's pp.41-45 read first-hand; **every transcribable block of 1260's pp.41-44 transcribed** -- 16071, 16082, 16083, 16086 (`ax5b_16071_ts.strap`, `ax5b_16082_op_ad.strap`, `ax5b_16086_ds.strap`); interrupt/timer/boundary/EX -- the largest unmodeled-hardware concentration |
 | `jb_af1c_floating-point.pdf` (282pp) | **Floating-point (PAU) diagnostic**, SMFF-1C, JB AF1C, Apr 15 1961, SSIP-controlled | Source | IN PROGRESS -- its routine F200 (LOAD TEST) drove out and verified the assembler's FP sign-modifier loads (LN/LA/LNA), bit-exact vs its printed code (`../strap/verify_fp_signmods.py`), and exposed a real look-ahead store-close-to-fetch gap (see plan). Running a full block still needs branch-on-bit (`BB`/`BB1`/`BZB`, decoded not executed) and the SSIP framework; blocks using divide/double wait for stage 4e. |
 | `ja_bb6b_worst_pat_test.pdf` (20pp) | Worst-pattern memory test | Source | NOT YET -- runnable against `StretchMemory.bsv` (the interleaved units); a memory-model codesign target |
 | `ja_bm6a_unique_adr_test.pdf` (11pp) | Unique-address memory test | Source | NOT YET -- memory-model target |

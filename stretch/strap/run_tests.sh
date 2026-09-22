@@ -469,6 +469,58 @@ run "I-Box 5 routine 1260's DS block, bit-exact (jb_ax5b pp.43-44)" python3 veri
 # behind it.  Four injections, each with its own named failure set,
 # are recorded in verify_ax5b_16086_listing.py's header.
 
+run "I-Box 5 routine 1260's TS block, bit-exact (jb_ax5b p.41)" python3 verify_ax5b_16071_listing.py
+# THE INTERVAL TIMER GETS A SECOND DECK ORACLE, eight rows long.
+# Reference Manual p.44: "4. Time Signal (TS).  The interval timer has
+# become zero."  16071 loads the timer with the value ONE, spins 512
+# times on a COUNT AND BRANCH to itself, then asks BTS whether TS came
+# on; failing that it reports "UNABLE TO TURN TS ON."
+#
+# EVERY STEP OF THAT IS PRINTED SOMEWHERE, none of it read off a
+# symbol's name.  PDF p.114, "-COMMON CONSTANTS FOR FETCH ONLY",
+# prints the BIT table: BIT<n> is the word whose only set bit is bit
+# n, one word per bit from BIT0 at 024522.00, and BIT18's own row
+# ("XW,(8).40,0,0" -> "0.40 00 000000.00 00") has bit 18 set.  The
+# pocket card X22-6533-1 (docs/microarchitecture_plan.md A.10) puts
+# the interval timer at word 1 bits 0-18, so bit 18 is its low-order
+# bit -- the value one -- and the card's footnote (a) says that
+# register is "read-only except for store-value/count/refill/address",
+# which is why the deck reaches it with SV and not a general store.
+#
+# WHAT THE ROWS DO NOT SHOW: the system must be DISABLED here.  Word 1
+# is permanently protected (p.31) and p.45 raises DS and suppresses
+# the store when such a reference happens "while the interruption
+# system was enabled".  Entailed by two manual pages, not transcribed
+# from this one.  Note the symmetry with 16086, which uses the SAME
+# instruction on the SAME word as its DS provocation, enabled,
+# expecting suppression -- the two blocks are storage_protection.
+# strap's two directions, written by IBM.
+#
+# docs/NEXT.md §5 defers "the interval timer actually ticking" and
+# names routine 1258 as the oracle for it.  This is a much smaller
+# second one, inside a routine already being transcribed, and it is in
+# place BEFORE the timer is implemented -- which is the order
+# docs/NEXT.md item 2 asks for: let the oracle shape the
+# implementation rather than retrofitting it.
+#
+# THREE ENCODINGS.  BTS "21400.42 42" is indicator 4, a fourth widely-
+# spaced number through the field that straddles the printed octal/hex
+# boundary (BOP 15, BAD 16, BDS 19, BADZ 16 are the others).  LCI
+# "1000.11 02" is 512 as an 18-bit COUNT in the top 18 bits of the
+# 19-bit field rather than an address -- strap/README.md's Gotchas item
+# 16 records that field being encoded wrongly once, and this is a
+# second independent witness.  CB "16010.50 48" is a count-and-branch
+# to ITSELF, and "$" is this block's only operand that is not an
+# external symbol, so it is its only real address check.
+#
+# A LESSON RECORDED IN THE VERIFY SCRIPT.  Two of that file's three
+# injection results were written down as PREDICTIONS before being run,
+# and both were wrong: TS 4->5 moves the HEX byte and not the octal
+# pair (4 and 5 differ only in the bit that lands at 24), and breaking
+# enc_branch_or_misc fails NOTHING here because a count-and-branch has
+# its own encoder.  The header now carries what the injections
+# actually did, with the wrong predictions beside them.
+
 run "I-Box 5 routine 1260's OP and AD blocks, bit-exact (jb_ax5b pp.41-42)" python3 verify_ax5b_16082_16083_listing.py
 # TWO MORE BLOCKS FROM THE SAME ROUTINE, and they exist for one row
 # pair.  16082 and 16083 are contiguous (017225.00-017234.40) and both

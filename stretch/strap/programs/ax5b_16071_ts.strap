@@ -1,0 +1,130 @@
+! jb_ax5b "I-Box 5", routine 1260's TS block -- the deck's own test
+! that the INTERVAL TIMER counts down and raises Time Signal.  PDF
+! p.41 (printed p.38), octal 016007.00-016012.40, transcribed VERBATIM
+! at the listing's own addresses and checked bit-exactly by
+! verify_ax5b_16071_listing.py.
+!
+! WHAT TS IS, from the primary source.  Reference Manual p.44,
+! "Attention Request": "4. Time Signal (TS).  The interval timer has
+! become zero."  Eight words, and they explain every instruction here.
+!
+! HOW THE BLOCK WORKS, and this one IS traceable end to end -- every
+! step below is printed somewhere, none of it read off a symbol's name:
+!   LX,$X4,BIT18       load the whole word at BIT18.  The BIT table is
+!                      printed on PDF p.114 under "-COMMON CONSTANTS
+!                      FOR FETCH ONLY": BIT<n> is the word whose only
+!                      set bit is bit n, one word per bit from
+!                      BIT0 at 024522.00, so BIT18 is at 024544.00 --
+!                      which is exactly what this row's operand
+!                      prints.  BIT18's own row reads
+!                      "XW,(8).40,0,0" assembling to
+!                      "0.40 00 000000.00 00": bits 0-17 zero, octal
+!                      pair 40 = 100000, i.e. BIT 18 SET.  The value
+!                      is read, not inferred from the name.
+!   SV,$X4,1.0         store that value into word 1.  The pocket card
+!                      X22-6533-1's special-storage table (transcribed
+!                      first-hand in docs/microarchitecture_plan.md
+!                      A.10) puts the INTERVAL TIMER at word 1 bits
+!                      0-18, so bit 18 is its low-order bit and the
+!                      timer is set to ONE -- one tick from zero.
+!                      The card's footnote (a) on that row says the
+!                      timer is "read-only except for store-value/
+!                      count/refill/address", so SV is not an
+!                      arbitrary choice of store: it is one of the few
+!                      operations that can write this register at all.
+!
+!   AND THE DECK MUST BE RUNNING DISABLED HERE, which these eight rows
+!   do NOT show.  Word 1 is one of Reference Manual p.31's permanently
+!   protected locations, and p.45 raises DS on a to-memory operation
+!   into that area "while the interruption system was enabled", which
+!   also suppresses the store.  So this SV lands only with the system
+!   off.  That is entailed by two manual pages, not transcribed from
+!   this page -- the BD that does it is outside the range.
+!
+!   A SYMMETRY WORTH NOTING.  16086 (ax5b_16086_ds.strap) uses
+!   "SV,$X4,1.00" as its DS PROVOCATION, enabled, expecting the store
+!   to be suppressed.  This block uses the same instruction on the
+!   same word as a legitimate timer load, disabled, expecting it to
+!   land.  Same instruction, opposite intent, distinguished only by
+!   the enable bit -- which is exactly the two-directional rule
+!   storage_protection.strap tests.
+!   LCI,$X4,512        a count of 512...
+!   CB,$X4,$           ...counted down by a COUNT AND BRANCH that
+!                      branches to ITSELF.  That is the wait: 512
+!                      iterations for the timer to reach zero.
+!   BTS,16088          Time Signal on?  Then on to the indicator walk
+!                      at 16088.  Otherwise SIC,SEN / B,SERS reports
+!                      "UNABLE TO TURN TS ON." and B,16093 moves to
+!                      the next test.
+!
+! WHY IT IS WORTH TRANSCRIBING.  docs/NEXT.md §5 defers "the interval
+! timer actually ticking" and names routine 1258 as its deck oracle.
+! This is a SECOND oracle for the same hardware, eight rows long,
+! inside a routine already being transcribed -- and it is far smaller
+! than 1258.
+!
+! THREE ENCODINGS IT PINS.
+!   * BTS "21400.42 42" -- branch on indicator 4.  With BOP (15) and
+!     BAD (16) in ax5b_16082_op_ad.strap and BDS (19) / BADZ (16) in
+!     ax5b_16086_ds.strap, that is four widely-spaced indicator
+!     numbers through a field that straddles the listing's printed
+!     octal/hex boundary.  Moving TS from 4 to 5 changes ONLY the hex
+!     byte, the same way moving OP from 15 to 14 does -- the two ends
+!     of the range fail in the same field, which is what a straddling
+!     field looks like from either side.
+!
+!     This is also a FIFTH witness that 16088 is at 021400.40: ".42"
+!     is 100010, bit 18 set.  As in the other two blocks, L16088's
+!     .40 is a SYN below -- an INPUT to the check -- so the passing
+!     row is not the witness; the printed code read at 600 dpi is.
+!   * LCI "1000.11 02" -- 512 decimal is octal 1000, printed in the
+!     WORD-address column because LCI's operand is an 18-bit count in
+!     the top 18 bits of the 19-bit field, not an address (Reference
+!     Manual p.25).  strap/README.md's Gotchas item 16 records that
+!     this exact field was once encoded wrongly and was caught by
+!     verify_ibox1_listing.py; this is a second witness for it.
+!   * CB "16010.50 48" -- a count-and-branch to ITSELF at 016010.40.
+!     Bit 18 of the target is one, and "$" is the only operand on
+!     these pages that can be checked without an external symbol.
+!
+! A CROSS-PAGE CHECK THAT THEN BECAME A PRINTED FACT.  BIT18 is
+! 024544.00 here; on p.45 the indicator-walk driver's
+! "TI,1,BIT0%$X1,$IND" prints its first operand as 24522, and
+! 024544 - 024522 = 18 exactly, which made BIT<n> = 024522 + n a
+! good guess.  p.114 then prints the table itself and the guess is
+! right -- including BIT0 = 024522.00, which the eventual TI
+! transcription of p.45 will need.  The same thing happened with
+! 160K7/160K16 and 023041 + n, which is still only the arithmetic;
+! see docs/archival_inventory.md for both.
+!
+! WHAT THIS IS AND IS NOT.  An ENCODING oracle, like the other two
+! blocks from this routine.  It is NOT run on the model: the block
+! falls through into the SEN/SERS error harness and 16093, none of it
+! transcribed, and this model's interval timer does not tick (NEXT.md
+! §5).  Running it is exactly what implementing the timer would make
+! possible, which is the reason to have the oracle first.
+!
+! SUBSTITUTIONS: one, the same systematic one as the other two blocks.
+! This deck labels its blocks with NUMBERS (16071, 16093, 16088) and
+! this assembler reads a leading digit as an address, so every such
+! label is prefixed with "L".  Nothing else is changed.
+
+! External symbols, given by SYN at the addresses this same listing
+! prints for them.  Every row but the CB names one, so the CB's "$"
+! is this block's only internal address check.
+BIT18   SYN, (8)24544.0            ! the constant whose bit 18 is one
+SEN     SYN, (8)1310.0             ! the SIC error-entry link
+SERS    SYN, (8)1304.0             ! the error-report routine
+L16093  SYN, (8)21734.0            ! the "next test" exit
+L16088  SYN, (8)21400.40           ! the per-indicator interrupt walk
+
+        SLC, (8)16007.0
+L16071  LX,  $X4, BIT18            ! -TS          the value one
+        SV,  $X4, 1.0              !              into the interval timer
+        LCI, $X4, 512              !              a count of 512...
+        CB,  $X4, $                !              ...spun down on itself
+        BTS, L16088                !              Time Signal on?
+        SIC, SEN                   ! -UNABLE TO TURN TS ON.
+        B,   SERS
+        B,   L16093
+        END, L16071
