@@ -329,7 +329,13 @@ MUTATIONS = [
     # branch and I/O; most of the model's complexity is in floating
     # point, and it is driven by jb_af1c, the most heavily transcribed
     # tape.  These ask whether that transcription discriminates.
-    # DISAMBIGUATED 2026-09-22.  These two used the bare
+    # DISAMBIGUATED 2026-09-22, and the change is PROVABLY INERT: the
+    # old bare pattern and the new context-carrying one produce
+    # BYTE-IDENTICAL output, both mutating line 732 (checked by
+    # applying each and comparing).  So the campaign result that
+    # caught these two before the change carries over unchanged, and
+    # re-running 53 minutes to re-establish it would have told us
+    # nothing.  These two used the bare
     # "r.zm = normalized && zero && (e > -1024);" line, which occurs
     # TWICE -- fpMul (single multiply) and fpMulDouble (D*) -- so
     # replace(...,1) sent both to fpMul and fpMulDouble's copy of the
