@@ -814,6 +814,66 @@ run "Opcode coverage audit (ratchet)" python3 audit_opcode_coverage.py
 # BZB1/BZBN/BZBZ (branch-if-off with set-one / invert / set-zero) and
 # the four I/O Suppress-End-Of-Op forms.
 
+run "TRANSMIT: what is honoured, and what is refused out loud" ./run_program.sh programs/transmit_scope.strap StretchTransmitScopeTb \
+    "PC=4248" "DST1:2177=0x9249249249249249" "DST2:2178=0" "DST3:2179=0" \
+    "DST4:2180=0" "DST5:2181=0" "DST6:2182=0" "SRC:2176=0x9249249249249249"
+    # 004114.00; hand-written from Ref. Manual pp.30-31 and the card
+# A CLAIM IN bsv/README.md THAT WAS TWO-THIRDS FALSE, found 2026-09-22.
+# Its "decoded but not executed (sets indicator 15, OP, and no-ops)"
+# list has always named "Transmit backward/SWAP/multi-word".  Only
+# BACKWARD was true:
+#
+#   * StretchDecode matched sub-ops 010 (Transmit) and 110 (Swap) in
+#     ONE condition and recorded NEITHER -- StretchTypes' Transmit
+#     struct had no `swap` field -- so a forward SWAP arrived at the
+#     execute stage indistinguishable from a Transmit and was executed
+#     as one;
+#   * the execute arm moves one word and never read the count, so any
+#     multi-word Transmit moved one word.
+#
+# Both SILENT: no indicator, no failure, a wrong store.  DEMONSTRATED
+# before fixing: "SWAPI,1,SRC,DST" left SRC alone and copied it into
+# DST (0x9249249249249249) with OP clear.
+#
+# WHY IT COULD STAY FALSE.  Neither was reachable from STRAP -- this
+# assembler could not encode Transmit at all until TRANSMIT_CODES
+# landed the same day, for jb_ax5b p.45.  A README claim that nothing
+# can express is a claim nothing can break, which is this project's
+# own corollary applied to prose instead of a test.
+#
+# THE FIX reads bit 57 (Ref. Manual pp.30-31: "modifier bits 55-57 ...
+# 57 = bidirectional (swap)", agreeing with the card's ab010/ab110)
+# and gates on a count it can honour.  pp.30-31 also give the count:
+# index J bits 28-45, 0 meaning 2^18; or immediate, bits 51-54, where
+# **0 MEANS SIXTEEN**.  So "one word" is exactly immCount=1 and j=1 --
+# a "j==0 means none" reading would let a sixteen-word transmit pass.
+# A DIRECT count lives in a register this arm never reads, so every
+# direct count is refused: conservative by construction, refusing a
+# direct count of one it would have executed correctly rather than
+# executing a direct count of n as one word.
+#
+# FIVE INJECTIONS, each naming one block, each observed -- and the
+# program hangs at the FIRST failing block, so every rule needed its
+# own injection rather than one that breaks three:
+#   decoder stops capturing bit 57  -> 004102.40  (SWAPI moved a word)
+#   count check removed             -> 004104.40  (TI,2 moved a word)
+#   j == 1 relaxed to j <= 1        -> 004106.40  (TI,0 = SIXTEEN)
+#   immediate modifier ignored      -> 004110.40  (T,1 direct count)
+#   backward check removed          -> 004112.40  (TBI moved a word)
+#
+# THE SURVIVOR THAT TAUGHT THE MOST.  Block 6 was first written TB --
+# backward with a DIRECT count -- and removing the backward check
+# changed NOTHING, because the count rule refuses every direct count
+# anyway.  The block could not witness the rule it was written to
+# guard.  TBI (backward, immediate count one) makes oneWordForward
+# TRUE, so only the backward check can refuse it, and the injection
+# then bites.
+#
+# AND BLOCK 1 IS WHAT KEEPS THE FIX HONEST: TI with an immediate count
+# of one must STILL STORE.  DST1 is checked in every run above and
+# passes under all five injections, so "OP on everything" is excluded.
+# It is also the shape jb_ax5b p.45 actually uses.
+
 run "BR (Branch Relative)" ./run_program.sh programs/br_relative.strap StretchBrRelTb \
     "PC=4103"          # 004003.40; hand-written, not a listing fact
 # BR IS NOW IMPLEMENTED, and this replaces br_unimplemented.strap.

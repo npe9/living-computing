@@ -92,14 +92,17 @@ the assembler** (all eight mnemonics, from pocket card X22-6533; only
 `TI` has a listing witness). Record in `run_tests.sh` §"…indicator
 walk + TRANSMIT IMMEDIATE".
 
-**A hazard that came with it.** The assembler can now emit Transmit,
-but `StretchExecute.bsv`'s Transmit arm moves exactly one word and
-ignores both the immediate-count bit and `J`. A count other than 1
-assembles correctly and executes *wrongly* rather than failing loud —
-against this project's "fails loud, never silently" convention. Fixing
-it means either multi-word Transmit (item 5) or making the execute arm
-reject a count it will not honour. **The second is cheap and should
-come first.**
+**That immediately exposed a silent bug, now fixed.** Making Transmit
+encodable made two long-standing `bsv/README.md` claims testable for
+the first time — and two-thirds of one was false. The decoder
+discarded bit 57, so a forward `SWAP` executed as a one-word Transmit;
+and the count was never read, so a multi-word Transmit moved one word.
+Both silent. The decoder now captures bit 57 and the arm honours only
+an immediate count of one (Ref. Manual pp.30-31: immediate 0 means
+*sixteen*; a direct count lives in a register this arm never reads, so
+all of them are refused). Guard:
+`programs/transmit_scope.strap`, six blocks, five injections, one per
+rule. Record in `run_tests.sh` §"TRANSMIT: what is honoured…".
 
 **Caution, paid for** — and note it is about the *boundary* driver,
 which finding the indicator-walk driver at 16087/16088 does **not**
@@ -240,6 +243,13 @@ printed page numbers.
   the injected bytecode is reused. Cost one wrong injection result,
   where injection 2 appeared to break a row injection 1 had broken.
   `rm -rf strap/__pycache__` on both sides of every injection.
+* **A claim nothing can express is a claim nothing checks.**
+  `bsv/README.md` said Transmit backward/`SWAP`/multi-word all set
+  indicator 15; only `backward` did, for as long as the assembler
+  could not encode a Transmit at all. The corollary above is usually
+  applied to tests; it applies to prose too, and the tell is the same
+  — ask what input could falsify the sentence, and check that one
+  exists.
 * **Distrust a blocker recorded in this file.** THREE times the thing
   stopping work was a claim here, not anything in the machine: "64 call
   sites need refactoring" (43 wrote constants that could never trip the

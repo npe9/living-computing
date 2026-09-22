@@ -472,8 +472,20 @@ typedef union tagged {
   struct { HWordAddr addr; Bit#(3) code; Bool misc; Bit#(4) idx; } BranchOrMisc;
 
   // Transmit, Figure 6 "TRANSMIT" row: full word.
+  //
+  // `swap` is IBM bit 57.  It used to be MISSING here, and the decoder
+  // matched sub-ops 010 (Transmit) and 110 (Swap) in one condition
+  // without recording which -- so a SWAP executed as a forward
+  // one-word Transmit, silently, while bsv/README.md and
+  // StretchExecute.bsv's own header both claimed it set indicator 15.
+  // Unreachable from STRAP until strap_asm gained TRANSMIT_CODES on
+  // 2026-09-22, and demonstrated that day: "SWAPI,1,SRC,DST" left SRC
+  // alone and copied it into DST (0x9249249249249249), OP clear.
+  // Reference Manual pp.30-31: modifier bits 55-57 are 57 =
+  // bidirectional (swap), 56 = immediate count, 55 = backward.
   struct { BitAddr addr1; Bit#(4) i1; HWordAddr addr2; Bit#(4) j;
-           Bit#(1) backward; Bit#(1) immCount; Bit#(4) i2; } Transmit;
+           Bit#(1) backward; Bit#(1) immCount; Bit#(1) swap;
+           Bit#(4) i2; } Transmit;
 
   // Input-Output, Reference Manual "IBM 7619 Exchange" pp.104-127,
   // pocket card "INPUT-OUTPUT OPERATIONS" row: full word,

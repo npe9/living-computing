@@ -8,13 +8,16 @@
 // that case's own scope note), direct and immediate index arithmetic
 // (pp.22-27), count-and-branch and branch-on-indicator (pp.~26-27,
 // pocket card X22-6533-1 "INDEX BRANCHING"/"INDICATOR BRANCHING"),
-// unconditional branching, Store Zero / Refill, and direct
-// (non-backward, single-word) Transmit.
+// unconditional branching, Store Zero / Refill, and forward non-swap
+// Transmit with an IMMEDIATE COUNT OF ONE (the only count this model
+// can honour -- Ref. Manual pp.30-31).
 //
 // Every decoded format/opcode NOT yet implemented -- decimal
 // arithmetic, radix conversion, interrupts, EX/EXIC, RNX/LVE/SVA, LVS,
-// Transmit backward/swap -- sets indicator 15 (OP, Operation Code
-// Invalid) and otherwise acts as a no-op, matching the documented
+// Transmit backward/swap/multi-word/direct-count -- sets indicator 15
+// (OP, Operation Code Invalid) and otherwise acts as a no-op, and for
+// Transmit that was only TRUE OF `backward` until 2026-09-22: see the
+// Transmit arm and StretchTypes' Transmit comment.  Matching the documented
 // real-machine behavior for an invalid/suppressed instruction
 // (Reference Card, indicator class "S": "execution of instruction is
 // suppressed"). See bsv/README.md "Scope" for the full accounting and
@@ -3139,8 +3142,32 @@ function ActionValue#(ExecResult)
       // Multi-word Transmit is a documented gap, not a silent one.
       // -----------------------------------------------------------
       tagged Transmit .t: begin
-        if (t.backward == 1)
-          ind = setOpInvalid(ind); // SWAP / backward transmit: out of scope
+        // WHAT THIS ARM CAN HONOUR: one word, forward, not a swap.
+        // Everything else sets OP and no-ops, which is what
+        // bsv/README.md's "decoded but not executed" list has always
+        // CLAIMED for "Transmit backward/SWAP/multi-word" and what
+        // only `backward` actually did until 2026-09-22.
+        //
+        // THE COUNT. Reference Manual pp.30-31: the count is index J's
+        // bits 28-45 (0 meaning 2^18), or -- with the immediate
+        // modifier, bit 56 -- instruction bits 51-54, where **0 MEANS
+        // SIXTEEN**. So "one word" is exactly immCount=1 and j=1;
+        // j=0 is a sixteen-word transmit and must NOT pass. A DIRECT
+        // count lives in an index register this arm never reads, so no
+        // direct count can be honoured at all and all of them set OP --
+        // conservative by construction: it refuses a direct count of
+        // one that it would in fact have executed correctly, rather
+        // than executing a direct count of n as one word.
+        //
+        // SWAP was the silent case. The decoder used to discard bit
+        // 57, so a forward SWAP arrived here as a Transmit and this
+        // arm moved one word and set nothing -- demonstrated on
+        // 2026-09-22 with "SWAPI,1,SRC,DST", which left SRC alone and
+        // copied it into DST with OP clear. Unreachable from STRAP
+        // until strap_asm gained TRANSMIT_CODES the same day.
+        Bool oneWordForward = (t.immCount == 1 && t.j == 4'd1);
+        if (t.backward == 1 || t.swap == 1 || !oneWordForward)
+          ind = setOpInvalid(ind);
         else begin
           // Prefetch/bail-out shape: reads srcBase, writes the SAME
           // value verbatim to dstBase once available -- a dependent

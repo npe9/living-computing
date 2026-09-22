@@ -170,8 +170,13 @@ operation codes execute; see "Executed" below.
   wrapped value rather than the magnitude. Nothing transcribed
   exercises that.
 - **Refill / Refill on Count Zero / Store Zero**.
-- **Transmit** — forward only, **one word per instruction** (see
-  "Toolchain" below for why).
+- **Transmit** — forward, non-swap, **immediate count of one only**.
+  Every other form (backward, `SWAP`, any other immediate count, and
+  every *direct* count, whose register this arm does not read) sets OP
+  and no-ops. Ref. Manual pp.30-31 gives the count as index J bits
+  28-45 (0 meaning 2^18) or immediate bits 51-54 where **0 means
+  sixteen**, so "one word" is exactly immediate-and-one. See
+  "Toolchain" below for why one word.
 - **Floating point** — all 29 operation codes have execute arms: `L`/
   `ST` and the `LWF`/`LFT`/`DL`/`DLWF` load family, `+`/`+MG`/`M+`/
   `M+MG`/`D+`/`D+MG`/`F+`/`E+`/`E+I`, `*`/`*+`/`D*`, `/`/`R/`/`D/`,
@@ -206,9 +211,27 @@ operation codes execute; see "Executed" below.
 
 Decimal-mode VFL (`c=1`), radix conversion, floating-point arithmetic
 beyond L/ST, Input-Output's `LOC` and most of `CTL` (see above),
-`EX`/`EXIC`, Transmit backward/`SWAP`/multi-word. (SIC, Store
-Instruction Counter If, and Bit Branching both moved to "Executed" —
-see there.)
+`EX`/`EXIC`, Transmit backward/`SWAP`/multi-word/direct-count. (SIC,
+Store Instruction Counter If, and Bit Branching both moved to
+"Executed" — see there.)
+
+**The Transmit entry was two-thirds FALSE until 2026-09-22**, and is
+worth keeping as an example of how that happens. Only `backward` set
+OP. `StretchDecode` matched sub-ops `010` (Transmit) and `110` (Swap)
+in one condition and recorded *neither* — `StretchTypes`' `Transmit`
+struct had no `swap` field — so a forward `SWAP` reached the execute
+stage indistinguishable from a Transmit and was executed as one. And
+the execute arm never read the count, so a multi-word Transmit moved
+one word. Both silent: no indicator, no failure, a wrong store.
+Demonstrated before fixing — `SWAPI,1,SRC,DST` left `SRC` alone and
+copied it into `DST` with OP clear.
+
+It could stay false because **nothing could express it**: this
+project's assembler could not encode Transmit at all until
+`TRANSMIT_CODES` landed the same day. A claim no test can break is a
+claim nothing checks, which is `docs/NEXT.md`'s own corollary applied
+to prose. The guard is now `strap/programs/transmit_scope.strap`, six
+blocks and five injections, one per rule.
 
 Per the "decode completely, execute partially" principle: every format
 in Figure 6 has a `DecodedInstr` constructor and is field-extracted

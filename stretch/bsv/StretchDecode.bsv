@@ -182,10 +182,18 @@ function DecodedInstr decodeFullWord(Word64 w);
   // 25-27) is 010 (Transmit) or 110 (Swap); bits 55-56 are the a/b
   // (backward/immediate-count) modifiers. SOURCE: pocket card
   // "TRANSMIT OPERATIONS" row.
+  //
+  // BIT 57 IS THE SWAP BIT and is now CAPTURED. This arm used to
+  // accept both sub-ops and keep neither, so Swap reached the execute
+  // stage indistinguishable from Transmit and was executed as one --
+  // see StretchTypes' Transmit comment for the demonstration. The two
+  // sources agree on which bit it is: the pocket card prints the
+  // literals as ab010 / ab110, and Reference Manual pp.30-31 lists
+  // "modifier bits 55-57 ... 57 = bidirectional (swap)".
   else if (w[6:4] == 3'b010 || w[6:4] == 3'b110)
     return tagged Transmit { addr1: a.addr, i1: a.i1, addr2: w[31:13],
                               j: w[12:9], backward: w[8:8], immCount: w[7:7],
-                              i2: w[3:0] };
+                              swap: w[6:6], i2: w[3:0] };
 
   // SIC (STORE INSTRUCTION COUNTER IF): second half-word is itself a
   // valid half-word branch instruction (Unconditional Branch,

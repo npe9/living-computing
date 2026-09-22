@@ -1,0 +1,105 @@
+! TRANSMIT: what this model honours, and what it refuses out loud.
+!
+! WHY THIS PROGRAM EXISTS.  bsv/README.md's "decoded but not executed
+! (sets indicator 15, OP, and no-ops)" list has always named "Transmit
+! backward/SWAP/multi-word".  Until 2026-09-22 only BACKWARD was true:
+!
+!   * the decoder matched sub-ops 010 (Transmit) and 110 (Swap) in one
+!     condition and recorded NEITHER -- StretchTypes' Transmit struct
+!     had no `swap` field -- so a forward SWAP arrived at the execute
+!     stage indistinguishable from a Transmit and was executed as one;
+!   * the execute arm moves exactly one word and never looked at the
+!     count, so any multi-word Transmit moved one word.
+!
+! Both were SILENT: no indicator, no failure, a wrong store.  Neither
+! was reachable from STRAP, because this assembler could not encode
+! Transmit at all until TRANSMIT_CODES landed the same day -- which is
+! why a claim in the README could stay false.  Demonstrated before it
+! was fixed: "SWAPI,1,SRC,DST" left SRC alone and copied it into DST
+! (0x9249249249249249) with OP clear.
+!
+! WHAT THE MANUAL SAYS THE COUNT IS.  Reference Manual pp.30-31: the
+! count is index J's bits 28-45, 0 meaning 2^18; or, with the
+! immediate modifier (bit 56), instruction bits 51-54, where **0 MEANS
+! SIXTEEN**.  So the only count this arm can honour is immediate-and-
+! -one; TI,0 is a sixteen-word transmit and must be refused, which is
+! the case a "j == 0 means no words" reading would get wrong.
+!
+! A DIRECT COUNT IS REFUSED WHOLESALE, and that is deliberately
+! conservative: the count register is never read here, so the arm
+! cannot know whether a direct count is one.  It therefore refuses a
+! direct count of one that it would have executed correctly, rather
+! than executing a direct count of n as one word.  Stated in the
+! execute arm.
+!
+! THE CASE THAT KEEPS THIS HONEST is the first one.  If the fix were
+! "OP on everything", block 1 would fail: TI with an immediate count
+! of one must STILL STORE, and that is the shape jb_ax5b p.45 actually
+! uses (ax5b_16087_walk.strap).
+!
+! EACH BLOCK ISOLATES ONE RULE, and that is not decorative: the
+! program hangs at the FIRST failing block, so an injection breaking
+! several is only ever observed at the earliest.  The four injections
+! recorded in run_tests.sh therefore target one block each.
+!
+! WEAKER STANDARD: hand-written from Reference Manual pp.30-31 and the
+! pocket card's TRANSMIT box.  No listing prints a SWAP or a
+! multi-word Transmit anywhere this project has read.
+
+        SLC, (8)4100.0
+!
+! ---- 1. TI, immediate count 1: HONOURED, the word moves -----------
+START   TI,    1, SRC, DST1
+        BOP,   $                     ! hang if OP came on: this one is legal
+!
+! ---- 2. SWAPI: refused.  The case that was silently wrong ---------
+        SWAPI, 1, SRC, DST2
+        BZOP,  $                     ! hang if OP did NOT come on
+        BOPZ,  $+.32                 ! clear OP for the next case
+!
+! ---- 3. TI, immediate count 2: refused, multi-word ----------------
+        TI,    2, SRC, DST3
+        BZOP,  $
+        BOPZ,  $+.32
+!
+! ---- 4. TI, immediate count 0 = SIXTEEN (pp.30-31): refused -------
+! The case a "0 means none" reading gets wrong.
+        TI,    0, SRC, DST4
+        BZOP,  $
+        BOPZ,  $+.32
+!
+! ---- 5. T, DIRECT count: refused, the count register is unread ----
+        T,     1, SRC, DST5
+        BZOP,  $
+        BOPZ,  $+.32
+!
+! ---- 6. TBI, backward: refused.  This check already existed, and is
+!         here so that removing it fails a test ---------------------
+! IT MUST BE TBI, NOT TB, and that was found by the injection rather
+! than by thinking.  TB is backward with a DIRECT count, so the count
+! rule refuses it too -- removing the backward check changed nothing
+! and the whole block still passed.  TBI is backward with an
+! immediate count of one, so oneWordForward is TRUE and the backward
+! check is the ONLY thing that can refuse it.
+        TBI,   1, SRC, DST6
+        BZOP,  $
+        BOPZ,  $+.32
+        B, PASS
+PASS    BEW, $
+!
+! ---- data ---------------------------------------------------------
+        SLC, (8)4200.0
+SRC     DD(BU,64,8), (8)1111111111111111111111
+        SLC, (8)4201.0
+DST1    DD(BU,64,8), 0               ! must RECEIVE src
+        SLC, (8)4202.0
+DST2    DD(BU,64,8), 0               ! must stay zero
+        SLC, (8)4203.0
+DST3    DD(BU,64,8), 0
+        SLC, (8)4204.0
+DST4    DD(BU,64,8), 0
+        SLC, (8)4205.0
+DST5    DD(BU,64,8), 0
+        SLC, (8)4206.0
+DST6    DD(BU,64,8), 0
+        END, START
