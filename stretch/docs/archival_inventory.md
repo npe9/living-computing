@@ -722,12 +722,38 @@ pages hold nothing of the kind. What they actually contain, in order:
 * **16084** (`USA`) turns on its indicator with `LVE`; **16085**
   (`EXE`) with `EX`. Both instructions are deferred in `NEXT.md` §5,
   so both blocks are blocked on an implementation, not on a harness.
-* **16071** (`TS`), **16082** (`OP`) and **16083** (`AD`) use only
-  instructions this project already has --
-  `LX`/`SV`/`LCI`/`CB`/`BTS`/`SIC`/`B`,
-  `LX`/`SX`/`NOP`/`CNOP`/`XW`/`BOP`/`SIC`/`B`, and
-  `SV`/`NOP`/`BAD`/`SIC`/`B` respectively. Those three and 16086 are
-  the transcribable part of pp.41-44.
+* **16071** (`TS`) uses only instructions this project already has
+  (`LX`/`SV`/`LCI`/`CB`/`BTS`/`SIC`/`B`) and is the last untranscribed
+  one of the sixteen.
+* **16082** (`OP`) and **16083** (`AD`) are **transcribed** --
+  contiguous at 017225.00-017234.40,
+  `strap/programs/ax5b_16082_op_ad.strap`, fifteen rows checked by
+  `strap/verify_ax5b_16082_16083_listing.py`. They exist for one row
+  pair: `BOP,16088` prints `21400.47 C2` and `BAD,16088` prints
+  `21400.50 42` -- the same target through indicator 15 and indicator
+  16. The 6-bit indicator number sits at bits 19-24 while the listing
+  prints bits 18-23 as octal and 24-31 as hex, so the number
+  STRADDLES the two printed fields. Moving OP from 15 to 14 leaves
+  the octal pair at `.47` untouched and shows up only in the hex
+  byte; a check reading one field would miss it. Both rows also carry
+  bit 18 of their target set, making these the **third and fourth
+  witnesses that 16088 is at 021400.40** -- and the first from a page
+  other than 43-45. (Provenance: the witness is the printed code read
+  off pp.41-42 at 600 dpi, not the passing rows -- `L16088`'s
+  021400.40 is a `SYN` input to the check, chosen so the rows match.
+  What the rows add is that this assembler places bit 18 where the
+  listing places it.)
+
+**A free corroboration between the two transcriptions.** `160K7` is
+023050.00 (from 16082's `LX,$X4,160K7`, p.41) and `160K16` is
+023061.00 (from 16086's `LX,$X4,160K16`, p.43). Those are 9768 and
+9777, nine words apart for nine in the index, so `160K<n>` is a
+regular table at **023041 + n words**. Two externals read from two
+different pages agree under one rule, which neither page states.
+Observed alongside it, not concluded: `SIC,160SX1` on p.45 prints
+`23041.00 80`, so 160SX1 occupies exactly that implied base word.
+Whether the K table starts at a `160K0` that is the same location, or
+this is coincidence, is not settled by anything read so far.
 * **16086** (`DS`) is transcribed; see below.
 
 `160S1`/`160SX1` are **call sites** on p.45 (`SIC` stores the return
@@ -945,7 +971,7 @@ reverse index (source -> transcription/implementation).
 | `jb_ax2a_ibox-2.pdf` (203pp) | I-Box 2 diagnostic | Source | surveyed (archival pass); SVA/SIC blockers |
 | `jb_ax3a_ibox-3.pdf` (~200pp) | I-Box 3 diagnostic | Source | surveyed; SVA (~50pp section), SIC |
 | `jb_ax4b_ibox-4.pdf` (~200pp) | I-Box 4 diagnostic | Source | RUN: `ibox4_cb_count_branch`, `ibox4_cbr_refill`; bit-exact vs `verify_ibox4_listing.py` (pp.155/159); section 138 rejected ($R), the pp.58-62 KV/$R pages sourced the Appendix-A system symbols |
-| `jb_ax5b_ibox-5.pdf` (116pp) | I-Box 5 diagnostic | Source | routine index transcribed (p.2); 1260's pp.41-45 read first-hand; **block 16086 transcribed** (`ax5b_16086_ds.strap`); interrupt/timer/boundary/EX -- the largest unmodeled-hardware concentration |
+| `jb_ax5b_ibox-5.pdf` (116pp) | I-Box 5 diagnostic | Source | routine index transcribed (p.2); 1260's pp.41-45 read first-hand; **blocks 16082, 16083 and 16086 transcribed** (`ax5b_16082_op_ad.strap`, `ax5b_16086_ds.strap`); interrupt/timer/boundary/EX -- the largest unmodeled-hardware concentration |
 | `jb_af1c_floating-point.pdf` (282pp) | **Floating-point (PAU) diagnostic**, SMFF-1C, JB AF1C, Apr 15 1961, SSIP-controlled | Source | IN PROGRESS -- its routine F200 (LOAD TEST) drove out and verified the assembler's FP sign-modifier loads (LN/LA/LNA), bit-exact vs its printed code (`../strap/verify_fp_signmods.py`), and exposed a real look-ahead store-close-to-fetch gap (see plan). Running a full block still needs branch-on-bit (`BB`/`BB1`/`BZB`, decoded not executed) and the SSIP framework; blocks using divide/double wait for stage 4e. |
 | `ja_bb6b_worst_pat_test.pdf` (20pp) | Worst-pattern memory test | Source | NOT YET -- runnable against `StretchMemory.bsv` (the interleaved units); a memory-model codesign target |
 | `ja_bm6a_unique_adr_test.pdf` (11pp) | Unique-address memory test | Source | NOT YET -- memory-model target |

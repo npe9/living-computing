@@ -469,6 +469,49 @@ run "I-Box 5 routine 1260's DS block, bit-exact (jb_ax5b pp.43-44)" python3 veri
 # behind it.  Four injections, each with its own named failure set,
 # are recorded in verify_ax5b_16086_listing.py's header.
 
+run "I-Box 5 routine 1260's OP and AD blocks, bit-exact (jb_ax5b pp.41-42)" python3 verify_ax5b_16082_16083_listing.py
+# TWO MORE BLOCKS FROM THE SAME ROUTINE, and they exist for one row
+# pair.  16082 and 16083 are contiguous (017225.00-017234.40) and both
+# branch to the SAME target through DIFFERENT indicator numbers:
+#
+#     BOP,16088   21400.47 C2      indicator 15
+#     BAD,16088   21400.50 42      indicator 16
+#
+# WHY THAT PAIR IS WORTH A FILE.  enc_branch_ind puts the 6-bit
+# indicator number at bits 19-24, and the listing prints bits 18-23 as
+# an octal pair and 24-31 as hex -- so the number STRADDLES the two
+# printed fields, five bits in one and one in the other.  Two rows with
+# the same address and adjacent numbers differ in BOTH fields at once.
+# The injection proves the point: moving OP from 15 to 14 leaves the
+# octal pair at .47 untouched and shows up ONLY in the hex byte, which
+# a check reading one field would have missed.  The 16086 block's
+# BDS/BADZ (19 and 16) never exercised a number whose top bit differs.
+#
+# A THIRD AND FOURTH WITNESS FOR 16088 AT 021400.40, and this time from
+# pp.41-42 rather than pp.43-45.  Both rows carry bit 18 of the target
+# set.  The address a 200 dpi render got wrong is now agreed on by two
+# pages and three encodings -- but note the provenance: L16088's .40 is
+# a SYN, an INPUT to the check, so the PASS is not the witness.  The
+# witness is the printed code, ".47" = 100111 and ".50" = 101000, read
+# at 600 dpi.  The rows add that the assembler places bit 18 where the
+# listing does.
+#
+# AND ONE HONEST NEGATIVE, recorded in the verify script rather than
+# quietly dropped: breaking CNOP's full-word alignment fails NOTHING
+# here, because at 017227.00 the counter is already word-aligned and
+# this block's CNOP emits nothing either way.  This file does not
+# witness CNOP; verify_ibox1_ensu_listing.py does, where the CNOP lands
+# on an odd half-word.
+#
+# WHAT THIS IS NOT.  An ENCODING oracle again.  Neither block can run:
+# both fall through into the SEN/SERS error harness and 16093, none of
+# it transcribed, and 160K7's contents are not printed on these pages.
+# The block's SHAPE -- store a word over a zeroed full-word slot, two
+# NOPs, then fall straight INTO the slot -- reads like self-modifying
+# code planting an invalid operation code, which is what "-OP" and
+# "UNABLE TO TURN OP ON." would need; that is inference and the
+# program's header says so.
+
 run "The interruption mechanism (fire, one instruction, return)" ./run_program.sh programs/interrupt_pg0.strap StretchIntPg0Tb \
     "PC=4289" "MARK:2240=0x8000000000000000" "MARK2:2241=0x8000000000000000" \
     "ORDER:2242=0x8000000000000000"

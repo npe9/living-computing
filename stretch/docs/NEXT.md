@@ -70,9 +70,13 @@ bit-exact via `verify_ax5b_16086_listing.py`, record in
 `run_tests.sh` §"I-Box 5 routine 1260's DS block". It is an ENCODING
 oracle; storage protection's behavioural test stays hand-written.
 
-**Next three, in order, all unblocked**: 16071 (`TS`), 16083 (`AD`),
-16082 (`OP`). Every instruction in them is already implemented.
-Skip 16072–16081 — three-line `B`/`CNOP`/`DR` stubs for indicators a
+**16082 (`OP`) and 16083 (`AD`) are done too** —
+`programs/ax5b_16082_op_ad.strap`, contiguous at 017225.00–017234.40,
+bit-exact via `verify_ax5b_16082_16083_listing.py`, record in
+`run_tests.sh` §"I-Box 5 routine 1260's OP and AD blocks".
+
+**Next: 16071 (`TS`)**, the last unblocked block on pp.41–44. Skip
+16072–16081 — three-line `B`/`CNOP`/`DR` stubs for indicators a
 program cannot provoke, not tests. 16084 needs `LVE` and 16085 needs
 `EX`, both deferred in item 5.
 
