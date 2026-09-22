@@ -711,6 +711,30 @@ pages hold nothing of the kind. What they actually contain, in order:
 | pp.41-44 | **the per-indicator turn-on blocks**, 16071 through 16086 -- one per I-Box indicator (`TS`, `CPUS`, `EKJ`, `UNRJ`, `CBJ`, `EPGK`, `UK`, `EE`, `EOP`, `CS`, `RESRVD`, `OP`, `AD`, `USA`, `EXE`, `DS`). Sixteen blocks, but not sixteen tests -- see the triage below. |
 | p.45 | **the indicator-walk driver**, 16087/16088 -- **transcribed** as `strap/programs/ax5b_16087_walk.strap`, six rows bit-exact via `strap/verify_ax5b_16087_listing.py`: `SIC,160SX1` / `B,160S1`, `TI,1,BIT0%$X1,$IND` *"SET ONE OF 20-47"*, `TI,1,BIT0%$X1,$MASK` *"SET MASK BIT OF TEST IND BIT"*, `BE,$+.32` *"ENABLE AND AWAIT INTERRUPT"*, then `BD,160B13%$X6` -- an indexed dispatch into the per-indicator error table `160B13`, whose entries read *"FAILED TO INTERRUPT ON IND MK / IN 1 MILLISEC."*, then IK, IJ, EK, TS, CPUS, EKJ, UNRJ, CBJ, EPGK, UK, EE, EOP, CS. |
 
+**ROUTINE 1268 TEST 1 -- transcribable, and what the pen marks mean.**
+Test 2 is transcribed (see below). Test 1, the store-to-INSTRUCTION-
+-fetch half at PDF p.110, is not, and the reason is worth recording
+because the page carries HANDWRITTEN annotations on exactly the rows
+that matter. At 600 dpi they are a reader's explanation, not a
+correction:
+
+* `1682 XW,0,0,0` prints `0.00 00 000000.00 00`, and its second
+  half-word is boxed in pen with "LVI" written in the comment column.
+  That is a note that the slot is OVERWRITTEN at run time -- the block
+  does `SX,$X1,1682` twice, first with `168K1`'s word (`Z,$X2` + NOP)
+  and then with `168K2`'s (`LVI,$X2,(8)777777.40` + NOP) -- so what
+  executes there is not what the listing prints.
+* `LX,$X2,$X2` at 024343.00 is circled. It reads X2 from its own word,
+  which changes nothing but SETS THE INDEX RESULT INDICATORS from X2's
+  value (Ref. Manual p.23), which is how the following `BXVZ,SERS`
+  observes whether the LVI or the stale `Z` ran.
+
+So the printed machine code is the assembler's own output and is
+trustworthy; the marks explain the self-modification. **Case 1A is
+transcribable now** (LX/SX/NOP/XW/SIC/BXVZ, all implemented). Cases
+1B and 1C use `EX,$X3` and `EX,$R` and are blocked on `EX`, deferred
+in `NEXT.md` section 5.
+
 **The sixteen blocks triaged** (read from pp.41-44, not inferred):
 
 * **16072-16081** (`CPUS`, `EKJ`, `UNRJ`, `CBJ`, `EPGK`, `UK`, `EE`,
@@ -891,9 +915,25 @@ Two of these map straight onto open work. **1260** covers everything
 implemented on 2026-09-19 to -21 -- mask, interruption address,
 interruption, boundary registers, address monitoring -- and its "unique
 interruption for bits 0-47" is the per-indicator priority walk whose
-landing code is at PDF pp.45/48. **1268 is the only known deck test of
-DF and IF**, the two address-monitoring indicators this model still
-does not implement; when they are written, that routine is the oracle.
+landing code is at PDF pp.45/48.
+
+**A CORRECTION THIS DOCUMENT OWED ITSELF.** This paragraph used to
+read "**1268 is the only known deck test of DF and IF**, the two
+address-monitoring indicators this model still does not implement;
+when they are written, that routine is the oracle." That is wrong, and
+the paragraph twenty lines below -- calling 1268 "Look-Ahead
+store-to-fetch/store-to-load forwarding" -- was right. The two
+readings sat in the same file until the routine was read first-hand on
+2026-09-22. Its own header (PDF p.110) is *"1268 -- IF AND DF CLOSE TO
+DS"*, and its error messages are *"EXECUTED OLD INSTRUCTION FROM
+EXT."* and *"LOADED OLD DATA FROM EXT MEM."*: the wrong **value**
+arrived, not an indicator failed to set. `DF`/`IF` are the Data Fetch
+and Instruction Fetch **paths**, "close to DS" is close to a Data
+Store, and nothing in the routine writes a mask, sets a boundary
+register, branches on DF or IF, or touches protected storage.
+**The DF and IF indicators have no deck oracle in this document.**
+`docs/NEXT.md` item 2 had inherited the wrong reading and is corrected
+too.
 
 Purpose (verbatim): tests "the time clock, interval timer, mask and
 indicator registers, interrupt system, boundary control, execute
@@ -912,8 +952,12 @@ the self-modifying-code mechanism the diagnostic relies on throughout
 can't run without SIC+SVA support first. Two real bright spots:
 routine 1268 (Look-Ahead store-to-fetch/store-to-load forwarding,
 pp.110-112) is the cheapest routine in the whole document to reason
-about (~3 pages, 6 sub-cases, no interrupt/timer entanglement) despite
-testing an unmodeled feature; and routine 1274 (address-truncation
+about (~3 pages, 6 sub-cases, no interrupt/timer entanglement) -- this
+reading is the correct one, see the correction above, and its TEST 2
+is now transcribed AND run
+(`strap/programs/ax5b_1683_df_close_to_ds.strap`); the feature is in
+fact modelled, so the deck is an oracle for existing behaviour rather
+than a target for new work; and routine 1274 (address-truncation
 checks for `LX/SX/Refill/StoreZero/Transmit`, pp.112-116) looked like
 **the single cleanest, most isolable cross-validation target found
 across all five documents** on first read, but turned out to be

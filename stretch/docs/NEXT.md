@@ -119,17 +119,36 @@ faults and *polls*). `ja_ax1a` deliberately prevents one — its own
 writeup says it "provides an Interrupt hang-up if for some reason the
 system should become enabled", and its `INT1` table is all `NOP,0`.
 
-## 2. DF and IF — read routine 1268 first
+## 2. DF and IF — and routine 1268 is NOT their oracle
 
 The two address-monitoring indicators the model does not implement.
 p.32: DF suppresses the data fetch and terminates *if its mask bit is
 one*; IF interrupts before the instruction that caused it. Both are
 mask-dependent, unlike DS.
 
-`jb_ax5b` routine 1268 — *"Checks DF and IF close to data store for
-all three memories"* — is the only known deck test of them. **Read it
-before designing them**, so the oracle shapes the implementation
-rather than being retrofitted to it.
+**This item used to say `jb_ax5b` routine 1268 was "the only known
+deck test of them" and to read it first. That was a misreading, and
+it is corrected.** Read first-hand 2026-09-22, the routine's own
+header is *"1268 — IF AND DF CLOSE TO DS"* and its error messages are
+*"EXECUTED OLD INSTRUCTION FROM EXT."* and *"LOADED OLD DATA FROM EXT
+MEM."* — the wrong **value** arrived, not an indicator failed to set
+(compare 1260's *"UNABLE TO TURN AD ON."*). `DF`/`IF` there are the
+Data Fetch and Instruction Fetch **paths**; "close to DS" is close to
+a Data Store. It is a look-ahead forwarding test, and
+`archival_inventory.md` already said so in one of the two places it
+described the routine.
+
+**So DF and IF have no deck oracle anywhere read so far.** Designing
+them means Reference Manual p.32 alone — the weaker standard, stated
+as such in whatever program tests them, exactly as storage protection
+was until `ax5b_16086_ds.strap`.
+
+**What 1268 turned out to be good for** is in
+`run_tests.sh` §"I-Box 5 routine 1268 test 2" —
+`programs/ax5b_1683_df_close_to_ds.strap`, transcribed and **run**.
+Its encoding is the discriminating standard; its run passes but does
+**not** witness forwarding on this model, measured. That is item 3's
+business now, not item 2's.
 
 ## 3. Smaller open pieces inside what is built
 
@@ -269,6 +288,21 @@ printed page numbers.
   the injected bytecode is reused. Cost one wrong injection result,
   where injection 2 appeared to break a row injection 1 had broken.
   `rm -rf strap/__pycache__` on both sides of every injection.
+* **When one document says a thing twice, check it does not say two
+  different things.** `archival_inventory.md` described routine 1268
+  in two paragraphs twenty lines apart — once as the deck test of the
+  DF/IF *indicators*, once as a look-ahead *forwarding* test. Only the
+  second was right, and `NEXT.md` item 2 was built on the first for a
+  year of work. A summary is not a source; the routine's own header
+  settled it in one reading.
+* **A deck can be the WEAKER test.** Routine 1268's forwarding check
+  passes on this model even with the store-queue drain removed,
+  because it spaces its store and load one instruction apart — tight
+  enough for the real machine's look-ahead, not for this model's
+  shallower pipeline. The hand-written `ebox_register_close_to_fetch`
+  catches what the 1961 diagnostic misses. Transcription is the
+  stronger standard for *encodings*; it is not automatically the
+  stronger standard for *behaviour*.
 * **A claim nothing can express is a claim nothing checks.**
   `bsv/README.md` said Transmit backward/`SWAP`/multi-word all set
   indicator 15; only `backward` did, for as long as the assembler

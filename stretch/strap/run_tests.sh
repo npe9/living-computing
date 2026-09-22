@@ -3057,6 +3057,56 @@ run "Program store compare: store then EXECUTE the modified instruction" ./run_p
 # store target (plan stage 3a note). This exact pattern failed before.
 run "Look-ahead: store-close-to-fetch" ./run_scf_test.sh
 
+run "I-Box 5 routine 1268 test 2, bit-exact (jb_ax5b p.111)" python3 verify_ax5b_1683_listing.py
+run "I-Box 5 routine 1268 test 2, ON THE MODEL (the deck's own logic)" ./run_program.sh programs/ax5b_1683_df_close_to_ds.strap StretchAx5b1683Tb \
+    "PC=20988"         # 024376.00, where the listing continues
+# DOCS/NEXT.md ITEM 2 WAS BUILT ON A MISREADING, corrected here.  It
+# called routine 1268 "the only known deck test" of the DF and IF
+# ADDRESS-MONITORING INDICATORS and said to read it before designing
+# them.  Read first-hand, the routine's own header (PDF p.110) is
+# "1268 -- IF AND DF CLOSE TO DS", and its error messages settle it:
+# "EXECUTED OLD INSTRUCTION FROM EXT." (test 1) and "LOADED OLD DATA
+# FROM EXT MEM." (test 2).  Routine 1260's indicator blocks say
+# "UNABLE TO TURN AD ON." when an INDICATOR fails; these say the wrong
+# VALUE arrived.  DF and IF are the Data Fetch and Instruction Fetch
+# PATHS; "close to DS" is close to a Data Store.  1268 is a look-ahead
+# store-to-fetch / store-to-load forwarding test.  Nothing in it writes
+# a mask, sets a boundary register, branches on DF or IF, or touches
+# protected storage -- 168K3 is ordinary storage at 024411.00.
+#
+# docs/archival_inventory.md contained BOTH readings, twenty lines
+# apart; the "Look-Ahead store-to-fetch/store-to-load forwarding" one
+# was right.  So the DF and IF INDICATORS have NO deck oracle in this
+# document, and item 2 has to fall back on Reference Manual p.32.
+#
+# WHAT THE BLOCK DOES, three times: zero a destination, load X1 with an
+# index word of ones, STORE it, immediately LOAD it back, and branch to
+# the error routine if what came back is zero.  The destinations are
+# 168K3 (external), $X4 (index storage) and $R (internal).
+#
+# TWO STANDARDS, AND THEY ARE NOT EQUAL.  The ENCODING check is
+# discriminating: Z's misc code, the misc literal, and XVZ's indicator
+# number each fail their own rows (6, 6 and 3), recorded in the verify
+# script.  The RUN passes, and MEASURED 2026-09-22 it does NOT witness
+# forwarding on this model: removing StretchStorage.bsv's
+# "&& !storeQ.notEmpty" store-queue drain leaves this block green AND
+# leaves store_close_to_fetch.strap green, while
+# ebox_register_close_to_fetch.strap fails two checks (SEN
+# 0x0700e00000000000 for 0, halt 1416 for 14343).  The guard is
+# witnessed -- by the hand-written E-box test, not by the deck's.
+#
+# WHY THE DECK IS THE WEAKER TEST HERE, which is worth knowing before
+# reaching for a deck as an oracle: it spaces its store and load one
+# instruction apart, tight enough for the real machine's look-ahead and
+# not tight enough for this model's shallower pipeline, so the store
+# queue has drained before the load issues.  The E-box test
+# manufactures a tighter overlap on purpose.  A 1961 diagnostic being
+# too GENTLE for a 2026 model is the reverse of the usual direction.
+#
+# So the run is a regression guard today and becomes a real oracle when
+# the look-ahead's LAAR forwarding replaces the ordering rule --
+# StretchStorage.bsv's own comment says that is stage 3.
+
 # -- 2. Problem 2.1: Cyclic Bit Shifting --
 run "Problem 2.1" ./run_program.sh programs/problem_2_1.strap StretchProblem21Tb \
     "DOG_rotated:32=0x6e5d4c3b2a19087f" \
