@@ -161,6 +161,19 @@ MUTATIONS = [
      "                True; // INJECTED",
      "Refill accepts addresses 1-15; p.26 restricts it to 16.0 and above."),
 
+    # THE BUG THIS MUTANT REPRODUCES WAS REAL, and shipped.  Until
+    # 2026-09-22 the decoder matched sub-ops 010 (Transmit) and 110
+    # (Swap) in one condition and recorded neither, so a forward SWAP
+    # executed as a one-word Transmit -- silently, with no indicator --
+    # while bsv/README.md claimed it set OP.  Nothing could express a
+    # SWAP in STRAP until the assembler gained TRANSMIT_CODES, so
+    # nothing could catch it.  Dropping bit 57 again is exactly that
+    # bug; programs/transmit_scope.strap block 2 fails at 004102.40.
+    ("transmit-swap-ignored", "bsv/StretchDecode.bsv",
+     "                              swap: w[6:6], i2: w[3:0] };",
+     "                              swap: 1'b0, i2: w[3:0] };",
+     "A forward SWAP decodes as a Transmit and executes as one, the way it did before 2026-09-22 (pocket card: sub-op 110 vs 010; Ref. Manual pp.30-31 'bit 57 = bidirectional').  Closed by programs/transmit_scope.strap block 2."),
+
     ("sva-width-18-for-19", "bsv/StretchDecode.bsv",
      "       : (h[5:4] == 2'b10)     ? {v[23:6], h[13:0]}  // 18, case 2",
      "       : (h[5:4] == 2'b10)     ? {v[23:5], h[12:0]}  // INJECTED",
@@ -315,18 +328,45 @@ MUTATIONS = [
     # branch and I/O; most of the model's complexity is in floating
     # point, and it is driven by jb_af1c, the most heavily transcribed
     # tape.  These ask whether that transcription discriminates.
+    # DISAMBIGUATED 2026-09-22.  These two used the bare
+    # "r.zm = normalized && zero && (e > -1024);" line, which occurs
+    # TWICE -- fpMul (single multiply) and fpMulDouble (D*) -- so
+    # replace(...,1) sent both to fpMul and fpMulDouble's copy of the
+    # rule was never mutated.  Each pattern now carries the preceding
+    # line, which differs between the two functions, and each site has
+    # its own pair.  The _ambiguous guard above now refuses a repeat.
     ("zm-drops-normalized-term", "bsv/StretchFP.bsv",
-     "    r.zm = normalized && zero && (e > -1024);",
-     "    r.zm = zero && (e > -1024);",
-     "MULTIPLY's zero-multiply indicator ignores the normalization"
-     " modifier; p.99 gives ZM the normalized term for * but NOT for *+."
-     "  Closed by programs/fp_zm_terms.strap case 2."),
+     """    r.res = res; r.generated = gen;
+    r.zm = normalized && zero && (e > -1024);""",
+     """    r.res = res; r.generated = gen;
+    r.zm = zero && (e > -1024);""",
+     "fpMul: MULTIPLY's zero-multiply indicator ignores the normalization modifier; p.99 gives ZM the normalized term for * but NOT for *+.  Closed by programs/fp_zm_terms.strap case 2."),
 
     ("zm-exponent-bound", "bsv/StretchFP.bsv",
-     "    r.zm = normalized && zero && (e > -1024);",
-     "    r.zm = normalized && zero && (e >= -1024);",
-     "ZM's exponent bound is off by one: p.99 says GREATER THAN -1024."
-     "  Closed by programs/fp_zm_terms.strap case 3."),
+     """    r.res = res; r.generated = gen;
+    r.zm = normalized && zero && (e > -1024);""",
+     """    r.res = res; r.generated = gen;
+    r.zm = normalized && zero && (e >= -1024);""",
+     "fpMul: ZM's exponent bound is off by one: p.99 says GREATER THAN -1024.  Closed by programs/fp_zm_terms.strap case 3."),
+
+    # THE COPY THE TABLE WAS BLIND TO.  p.99's ZM rule is implemented
+    # twice; until 2026-09-22 nothing mutated or tested fpMulDouble's.
+    # Measured that day: injecting the exponent-bound fault at
+    # fpMulDouble and running the WHOLE suite gave 3059 PASS, 0 FAIL.
+    # programs/fp_zm_terms_double.strap is the witness these two need.
+    ("zm-double-drops-normalized-term", "bsv/StretchFP.bsv",
+     """    r.generated = gen;
+    r.zm = normalized && zero && (e > -1024);""",
+     """    r.generated = gen;
+    r.zm = zero && (e > -1024);""",
+     "fpMulDouble: D*'s zero-multiply indicator ignores the normalization modifier (p.99).  Closed by programs/fp_zm_terms_double.strap case 2."),
+
+    ("zm-double-exponent-bound", "bsv/StretchFP.bsv",
+     """    r.generated = gen;
+    r.zm = normalized && zero && (e > -1024);""",
+     """    r.generated = gen;
+    r.zm = normalized && zero && (e >= -1024);""",
+     "fpMulDouble: D*'s ZM exponent bound is off by one (p.99).  Closed by programs/fp_zm_terms_double.strap case 3 -- the fault that survived the entire suite before that program existed."),
 
     # ZM's CLEAR, two of sixteen copies.  Representatives only: the
     # copies are uniform and fp_zm_cleared.strap walks ten of them, so
@@ -529,11 +569,42 @@ def check_baseline_green(env0):
     return True
 
 
+# ---------------------------------------------------------------------
+# A PATTERN MUST MATCH EXACTLY ONCE, and this guard exists because it
+# once did not.  Both `apply` paths below used `src.replace(old, new,
+# 1)`, which silently mutates the FIRST occurrence when a pattern
+# matches several.  p.99's ZM rule is implemented twice in
+# StretchFP.bsv -- fpMul and fpMulDouble -- in character-for-character
+# identical lines, and BOTH the zm-drops-normalized-term and
+# zm-exponent-bound mutants used that line as their pattern.  So both
+# mutated fpMul, both were reported "caught" by the ZM section, and
+# fpMulDouble's copy of the rule was never touched by the campaign at
+# all.  Measured 2026-09-22: injecting the same fault directly into
+# fpMulDouble and running the whole suite gave 3059 PASS, 0 FAIL -- a
+# rule with no witness anywhere, hidden behind a 32/33 score.
+#
+# A duplicate pattern is therefore a TOOLING BUG, not a mutant: it
+# makes the table claim coverage of a site it does not touch.  Reported
+# loudly, with the line numbers, so the fix is to disambiguate the
+# pattern rather than to wonder why a mutant survived.
+# ---------------------------------------------------------------------
+def _ambiguous(path, old, src):
+    lines = src.split("\n")
+    first = old.strip().split("\n")[0]
+    hits = [i + 1 for i, l in enumerate(lines) if first in l]
+    return (f"AMBIGUOUS pattern in {path}: matches {src.count(old)} times "
+            f"(lines {hits}) -- replace(...,1) would mutate only the first, "
+            f"so this mutant cannot witness the others.  Disambiguate it "
+            f"with surrounding context, and give each copy its own mutant.")
+
+
 def apply(path, old, new):
     full = os.path.join(ROOT, path)
     src = open(full).read()
     if old not in src:
         return None, f"pattern absent in {path}"
+    if src.count(old) != 1:
+        return None, _ambiguous(path, old, src)
     out = src.replace(old, new, 1)
     if out == src:
         return None, "replacement changed nothing"
@@ -583,6 +654,8 @@ def _run_one(spec, dest, env):
     src = open(full).read()
     if old not in src:
         return (name, "SKIP", 0.0, why, "pattern absent in " + path)
+    if src.count(old) != 1:
+        return (name, "SKIP", 0.0, why, _ambiguous(path, old, src))
     out = src.replace(old, new, 1)
     if out == src:
         return (name, "SKIP", 0.0, why, "replacement changed nothing")

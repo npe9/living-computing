@@ -1,0 +1,72 @@
+! ZM's normalized term and exponent bound, on the DOUBLE multiply.
+!
+! WHY A SECOND PROGRAM FOR THE SAME RULE.  p.99's ZM rule is
+! implemented TWICE in StretchFP.bsv, in two different functions:
+!
+!     line 732   fpMul        (*  -- single-length multiply)
+!     line 929   fpMulDouble  (D* -- double-length multiply)
+!
+! and the two lines are character-for-character identical:
+!     r.zm = normalized && zero && (e > -1024);
+!
+! fp_zm_terms.strap covers the first.  NOTHING covered the second.
+! Measured 2026-09-22 before this program existed: changing line 929's
+! "(e > -1024)" to "(e >= -1024)" and running the WHOLE suite gave
+! 3059 PASS, 0 FAIL -- the fault survived every test in the project.
+! The mutation campaign could not see it either: the two ZM mutants in
+! mutation_score.py use that identical string as their search pattern
+! and apply() does replace(old, new, 1), so BOTH of them mutate line
+! 732 and neither ever touches fpMulDouble.
+!
+! This is docs/NEXT.md's own trap -- "when a rule has more than one
+! implementation, each copy needs its own witness", a list that already
+! records ZM's clear at 16 copies -- caught on the copy the tooling
+! was blind to rather than on the model.
+!
+! THE THREE CASES ARE fp_zm_terms.strap's, with D* for *.  The
+! operands are unchanged: a zero product is zero whichever length the
+! multiply keeps, and the exponent sum is the same, so the same
+! constants exercise the same three branches of the same expression.
+!
+! p.99, via fp_zm_terms.strap's transcription of it: ZM is set by a
+! MULTIPLY whose product is zero, only when NORMALIZED, and only when
+! the exponent is GREATER THAN -1024.
+!
+! THE `*` TRAP APPLIES HERE TOO: a bare `D*` would be ambiguous the way
+! a bare `*` is, so the modifier is always written -- D*(N) / D*(U).
+!
+! WEAKER STANDARD, STATED: hand-written from p.99, not transcribed --
+! the same standard as fp_zm_terms.strap, which it extends.
+
+        SLC, (8)3300.0
+!
+! ---- case 1: normalized, zero product, exponent 0 -> ZM ON ---------
+START   Z, $IND                      ! ZM is bit 33, so Z,$IND clears it
+        L(U), ZF0                    ! accumulator := fraction 0, exponent 0
+        D*(N), NZF0                  ! NORMALIZED double multiply, zero product
+        BZB, $ZM, $                  ! hang up if ZM off -- the control
+!
+! ---- case 2: UNNORMALIZED -> ZM OFF -------------------------------
+        Z, $IND
+        L(U), ZF0
+        D*(U), NZF0                  ! same operands, unnormalized
+        BB, $ZM, $                   ! hang up if ZM on -- `normalized` is
+                                     !   false, so the term must gate it
+!
+! ---- case 3: exponent exactly -1024 -> ZM OFF ---------------------
+! THE CASE THAT CATCHES THE SURVIVING FAULT.  An injection changing
+! line 929's "(e > -1024)" to ">=" passes cases 1 and 2 and fails only
+! here.
+        Z, $IND
+        L(U), ZF512                  ! exponent -512
+        D*(N), NZF512                ! -512 + -512 = -1024, the boundary
+        BB, $ZM, $                   ! hang up if ZM on -- p.99 says
+                                     !   GREATER than -1024, not >=
+        B, PASS
+!
+ZF0     DD(BU,64), 0                 ! fraction 0, exponent 0
+NZF0    DD(BU,64), 2251799813685248  ! fraction 2**47, exponent 0
+ZF512   DD(BU,64), 4616189618054758400   ! fraction 0, exponent -512
+NZF512  DD(BU,64), 4618441417868443648   ! fraction 2**47, exponent -512
+PASS    BEW, $
+        END, START

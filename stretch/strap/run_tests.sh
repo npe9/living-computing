@@ -1201,6 +1201,41 @@ run "Mask register fixed and writable fields (word 12)" ./run_program.sh program
 
 run "ZM's normalized term and exponent bound" ./run_program.sh programs/fp_zm_terms.strap StretchFpZmTb \
     "PC=3352"          # 003214.00; hand-written, not a listing fact
+
+run "ZM on the DOUBLE multiply (the copy nothing tested)" ./run_program.sh programs/fp_zm_terms_double.strap StretchFpZmDblTb \
+    "PC=3480"          # 003314.00; hand-written, not a listing fact
+# THE SAME RULE, THE OTHER IMPLEMENTATION.  p.99's ZM rule is written
+# TWICE in StretchFP.bsv, character for character:
+#
+#     line 732  fpMul        (*)     covered by fp_zm_terms.strap
+#     line 929  fpMulDouble  (D*)    covered by NOTHING until now
+#
+# MEASURED 2026-09-22, and this is the number that matters: changing
+# line 929's "(e > -1024)" to "(e >= -1024)" and running the WHOLE
+# suite gave 3059 PASS, 0 FAIL.  A rule of the machine with no witness
+# anywhere in the project, sitting behind a 32/33 mutation score.
+#
+# THE MUTATION TABLE COULD NOT SEE IT EITHER, and that is the part
+# worth remembering.  Both ZM mutants used that identical line as
+# their search pattern, and mutation_score.apply() did
+# replace(old, new, 1) -- so BOTH mutated fpMul, both were reported
+# "caught" by the section above, and fpMulDouble was never touched.
+# The score was right, the evidence was not.  mutation_score.py now
+# REFUSES a pattern that does not match exactly once (see _ambiguous),
+# the two old mutants carry their preceding line to disambiguate them,
+# and zm-double-drops-normalized-term / zm-double-exponent-bound
+# target this copy.
+#
+# This program is fp_zm_terms.strap's three cases with D* for *: a
+# zero product is zero whichever length the multiply keeps, and the
+# exponent sum is the same, so the same constants drive the same three
+# branches.  Case 3 is the one that bites -- injecting ">=" at line 929
+# halts it at 003306.40, its own "BB,$ZM,$", not at PASS.
+#
+# docs/NEXT.md's trap list has said for a long time that "when a rule
+# has more than one implementation, each copy needs its own witness",
+# and names ZM's clear at 16 copies.  This is that trap found on the
+# INSTRUMENT rather than the model.
 # Two mutation survivors, both ZM.  fpMul sets it as
 # "normalized && zero && (e > -1024)" (p.99), and jb_af1c F214D6 -- the
 # first and only test of ZM anywhere in the transcribed diagnostic --

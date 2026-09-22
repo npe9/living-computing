@@ -154,12 +154,32 @@ the slowest single **survivor**, because a survivor is exactly the
 mutant nothing stops early.
 
 Read **where** and **how fast** each mutant died, not the count. A
-catch far from its own subsystem is a near miss. Last run 32/33,
-survivor `ad-bound-off-by-one`, the one documented expected survivor —
-but `prot-carve-out-as-or` **moved** to the sibling section and became
-a step-cap loop instead of a named-address check. Same count, worse
-evidence. Triage into *missing test* / *equivalent mutant* /
-*expected* before writing anything.
+catch far from its own subsystem is a near miss. Triage into *missing
+test* / *equivalent mutant* / *expected* before writing anything.
+
+**Run 2026-09-22: 32/33, survivor `ad-bound-off-by-one`** — the one
+documented expected survivor. `prot-carve-out-as-or` is back in its
+own section, so the regression the previous run flagged is resolved.
+Four near misses remain, all pre-existing: `seop-ignored-on-backspace`
+caught by *FP sign modifiers*, `seop-ignored-on-backspace-at-load-point`
+by *Address Invalid*, and `imm-count-low-bits` / `vfl-length-zero-is-zero`
+only by the catch-all smoke test.
+
+**AND THE COUNT HID AN UNTESTED RULE.** Both ZM mutants reported
+"caught by their own section" — truthfully — while mutating the *same*
+line. p.99's ZM rule is implemented twice in `StretchFP.bsv`,
+character for character, in `fpMul` and `fpMulDouble`; both mutants
+used that line as their pattern and `apply()` did
+`replace(old, new, 1)`. Injecting the same fault directly into
+`fpMulDouble` and running the whole suite gave **3059 PASS, 0 FAIL**.
+Now: `mutation_score.py` refuses a pattern that does not match exactly
+once, the two mutants carry their preceding line to disambiguate them,
+`zm-double-*` target the second copy, and
+`programs/fp_zm_terms_double.strap` is the witness. 36 mutants.
+
+**So: a mutation score is evidence about the sites the table names,
+and nothing else.** Before trusting one, check the table can still
+reach every site it claims — that check is now automatic.
 
 `python3 strap/line_addresses.py programs/X.strap` prints every
 instruction line's address in the listings' octal convention. Every
@@ -217,7 +237,13 @@ printed page numbers.
   resolves.
 * When a rule has more than one implementation, each copy needs its own
   witness. `effAddr18/19/24` (3 copies), the SEOP rule (6), ZM's clear
-  (16).
+  (16). **The MUTATION TABLE is subject to this rule too**, and broke
+  it: two ZM mutants both hit `fpMul` because their pattern also
+  matched `fpMulDouble` and `apply()` replaced only the first, so one
+  copy of p.99's rule was untested by the suite *and* invisible to the
+  campaign — 3059 PASS against a deliberate fault. A pattern matching
+  twice is a tooling bug, not a mutant; `mutation_score.py` now
+  refuses one.
 * **A hang address read at the step cap is accurate to one half-word,
   not exactly.** The instruction counter oscillates between a
   self-branch and the half-word after it; the cap samples whichever
