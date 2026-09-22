@@ -168,7 +168,8 @@ MUTATIONS = [
     # while bsv/README.md claimed it set OP.  Nothing could express a
     # SWAP in STRAP until the assembler gained TRANSMIT_CODES, so
     # nothing could catch it.  Dropping bit 57 again is exactly that
-    # bug; programs/transmit_scope.strap block 2 fails at 004102.40.
+    # bug; programs/transmit_scope.strap block 2 fails at 004102.40 --
+    # verified by injecting exactly that decoder edit, not assumed.
     ("transmit-swap-ignored", "bsv/StretchDecode.bsv",
      "                              swap: w[6:6], i2: w[3:0] };",
      "                              swap: 1'b0, i2: w[3:0] };",
@@ -354,6 +355,15 @@ MUTATIONS = [
     # Measured that day: injecting the exponent-bound fault at
     # fpMulDouble and running the WHOLE suite gave 3059 PASS, 0 FAIL.
     # programs/fp_zm_terms_double.strap is the witness these two need.
+    #
+    # BOTH VERIFIED INDIVIDUALLY, applied through this table's own
+    # `old`/`new` rather than retyped, each landing on line 929 and
+    # each caught by the case its description names:
+    #   zm-double-drops-normalized-term -> halt 003304.00 (case 2)
+    #   zm-double-exponent-bound        -> halt 003306.40 (case 3)
+    # The commit that added them said they were "proven by the
+    # injection above"; that was true of the exponent bound only, and
+    # the normalized term was verified afterwards.
     ("zm-double-drops-normalized-term", "bsv/StretchFP.bsv",
      """    r.generated = gen;
     r.zm = normalized && zero && (e > -1024);""",
