@@ -413,6 +413,62 @@ run "I-Box 1 ENSU: the boundary word, bit-exact (ja_ax1a p.56)" python3 verify_i
 # does with them; storage_protection_boundary.strap remains the
 # behavioural test, and remains hand-written.
 
+run "I-Box 5 routine 1260's DS block, bit-exact (jb_ax5b pp.43-44)" python3 verify_ax5b_16086_listing.py
+# THE DECK THAT TESTED THIS HARDWARE, found by reading pp.41-45 of
+# jb_ax5b first-hand on 2026-09-22.  Storage protection and the
+# interruption mechanism were both implemented from the Reference
+# Manual and tested only by hand-written programs -- the weaker of
+# this project's two standards, stated as such in their own headers.
+# Block 16086 is IBM's own test of the same rule, and its error
+# message spells it out in eight words:
+#
+#     "SV TO 1.0 FAILS TO SET DS WHEN ENABLED."
+#
+# WORD 1, DS, AND THE ENABLE GATE -- the three things protViolates
+# implements, asserted by a programmer with the machine in front of
+# them.  storage_protection.strap picked WORD 3 out of p.31's three
+# permanently protected locations; the deck picks word 1, and the two
+# together are the pair p.31 names.  "WHEN ENABLED" is the p.45 clause
+# that put the enable bit into this model at all.
+#
+# AND IT DISABLES BEFORE IT POLLS.  The BDS that reads the indicator
+# comes AFTER "16086A BD,$+.32", never before.  That is the "a program
+# cannot poll DS while enabled" trap in docs/NEXT.md -- paid for here
+# by a rewrite of storage_protection.strap -- confirmed independently
+# by the deck's own instruction order.
+#
+# FOUR ENCODINGS NO LISTING HAD CHECKED: BDS "21375.51 C2" (branch on
+# indicator 19), BADZ "21376.10 46" (branch on indicator 16 and zero
+# it -- the trailing-Z grammar, until now inferred from C22-6531
+# Appendix A's footnote and never seen printed), SVA into $IA
+# "2.13 D0", and DD(BU,32,8) printed as 11 octal digits, a row shape
+# listing_oracle.py did not have.  Nineteen half-words, all nineteen
+# right on the first assembly.
+#
+# AND A RESOLUTION LESSON.  A 200 dpi render of p.45 put the row
+# labelled 16088 at 021400.00, and the page then looked a half-word
+# short.  Re-read at 600 dpi it prints 021400.40.  The encoding here
+# says the same independently -- "B,16088" prints "21400.50 00" and
+# bit 18 is the top bit of that octal pair -- but note that L16088's
+# .40 is a SYN, an INPUT to the check, so the PASS is not the witness;
+# the two readings are.  What the row adds is that this assembler puts
+# bit 18 where the listing puts it, which the third injection below
+# witnesses by removing it.  With .40 settled, p.45 is
+# self-consistent: the two TI instructions there are FULL WORDS at ODD
+# half-words (021377.40 and 021400.40, legal per Reference Manual
+# p.39), each straddling a word boundary, and the "BE,$+.32  -ENABLE
+# AND AWAIT INTERRUPT" after them lands at 021401.40 with its printed
+# target 021402.00.  The apparent half-word-short arithmetic was a
+# full word read as a half, at a resolution too low to see it.
+#
+# WHAT THIS IS NOT.  An ENCODING oracle, like the ENSU block above.
+# The 16086 fragment cannot run: it needs 16085B's all-NOP interrupt
+# table (built by 16085A), the SEN/SERS error harness and the constant
+# 160K16.  storage_protection.strap remains the behavioural test and
+# remains hand-written; what changed is that its rule now has a deck
+# behind it.  Four injections, each with its own named failure set,
+# are recorded in verify_ax5b_16086_listing.py's header.
+
 run "The interruption mechanism (fire, one instruction, return)" ./run_program.sh programs/interrupt_pg0.strap StretchIntPg0Tb \
     "PC=4289" "MARK:2240=0x8000000000000000" "MARK2:2241=0x8000000000000000" \
     "ORDER:2242=0x8000000000000000"

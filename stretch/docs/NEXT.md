@@ -35,14 +35,16 @@ inputs made visible.
 
 | piece | record |
 |---|---|
-| Storage protection, permanently protected words 1–3 | `run_tests.sh` §"Storage protection, gated on…"; plan A.3 |
+| Storage protection, permanently protected words 1–3 | `run_tests.sh` §"Storage protection, gated on…"; plan A.3; the rule **transcribed** by `verify_ax5b_16086_listing.py` (encoding only — the behavioural test is still hand-written) |
 | Address boundary registers + control bit | same file §"…the address boundary registers"; **transcribed** by `verify_ibox1_ensu_listing.py` |
 | The interruption mechanism | `run_tests.sh` §"The interruption mechanism"; plan A.3 |
 
 All three are implemented, injected, and in the mutation table. The
-boundary registers have both standards; storage protection and the
-interruption mechanism are still **manual-derived only** — which is
-what item 1 is for.
+boundary registers have both standards. Storage protection's **rule**
+now has a deck behind it (`ax5b` 16086 says word 1, DS and "when
+enabled" in its own error message) but its **behaviour** test is still
+hand-written, and the interruption mechanism is still
+**manual-derived only** — which is what the rest of item 1 is for.
 
 ## 1. `jb_ax5b` routine 1260 — make the interrupt work deck-verified
 
@@ -54,16 +56,37 @@ bits 0-47, I-Box indicators, Upper and Lower Bounds registers and
 address monitoring."* That is everything built 2026-09-19 to -21, in
 one deck routine.
 
-**Prerequisite**: SSIP's `160S1`/`160SX1` save/restore harness,
-reported at `ax5b` pp.41–44. Nothing from 1260 can run without it.
+**pp.41–44 are NOT the prerequisite.** This file said "SSIP's
+`160S1`/`160SX1` save/restore harness, reported at `ax5b` pp.41–44".
+Read first-hand 2026-09-22, they are 1260's per-indicator blocks,
+16071 (`TS`) through 16086 (`DS`). `160S1`/`160SX1` are *call sites*
+on p.45 and are still not located; nothing so far has needed them.
+Third entry in this file's own "distrust a blocker recorded here"
+trap. The page-by-page record is in `archival_inventory.md` §"I-Box
+5".
 
-**The shape is already confirmed** at PDF p.45: set one indicator bit
-in word 11, set the matching mask bit in word 12, `BE,$+.32` commented
-*"ENABLE AND AWAIT INTERRUPT"*, falling through to *"FAILED TO
-INTERRUPT ON IND MK"*, looped over every maskable indicator — which is
-independently the shape of `programs/interrupt_pg0.strap`.
+**16086, the DS block, is done** — `programs/ax5b_16086_ds.strap`,
+bit-exact via `verify_ax5b_16086_listing.py`, record in
+`run_tests.sh` §"I-Box 5 routine 1260's DS block". It is an ENCODING
+oracle; storage protection's behavioural test stays hand-written.
 
-**Caution, paid for**: pp.66–79 were *guessed* to hold the positive
+**Next three, in order, all unblocked**: 16071 (`TS`), 16083 (`AD`),
+16082 (`OP`). Every instruction in them is already implemented.
+Skip 16072–16081 — three-line `B`/`CNOP`/`DR` stubs for indicators a
+program cannot provoke, not tests. 16084 needs `LVE` and 16085 needs
+`EX`, both deferred in item 5.
+
+**Then the indicator walk at 16087/16088 (p.45), and it needs `TI`
+first.** `TI` is not in this assembler; its format must come from the
+pocket card or the Reference Manual, never from the listing's usage
+(AGENTS.md rule 4). The page's layout is settled — the two `TI`s are
+full words at odd half-words, 16088 is at 021400.40 — with the
+reasoning in `archival_inventory.md`; **read p.45 at 600 dpi, not
+200**, which is what made it look inconsistent for a session.
+
+**Caution, paid for** — and note it is about the *boundary* driver,
+which finding the indicator-walk driver at 16087/16088 does **not**
+discharge: pp.66–79 were *guessed* to hold the positive
 boundary-interrupt cases. p.66 read first-hand is the tail of a per-bit
 error table, *"UPPER BOUNDARY DATA FAILURE, BIT 9"*. That guess came
 from a scouting pass's inference, not from a page. **Find the driver
@@ -162,7 +185,11 @@ printed page numbers.
   counter, so growing code silently overruns its own constants.
 * Compute octal addresses with a helper. Every one written by eye in
   this project has been wrong.
-* Never edit a file while a suite or campaign is reading it.
+* **Never edit a file while a suite or campaign is reading it** —
+  worst of all `run_tests.sh`, which `sh` reads by BYTE OFFSET as it
+  goes, so editing a comment anywhere above the live line shifts every
+  later offset and the shell resumes mid-token. Kill the run and
+  restart; there is no salvaging it.
 * A verify script cannot tell you a **label** is on the wrong row: it
   checks what a symbol resolves to, and a misplaced symbol still
   resolves.
@@ -188,8 +215,17 @@ printed page numbers.
   the interruption routine; put its marker in words 4–31, which p.31
   exempts from monitoring, or the marker store violates too and the
   machine interrupts forever.
-* **Distrust a blocker recorded in this file.** Twice the thing
+* **Reverting an injection with `cp` can leave a stale
+  `__pycache__`**: CPython compares source mtime at one-second
+  granularity, so a restore inside the same second is not noticed and
+  the injected bytecode is reused. Cost one wrong injection result,
+  where injection 2 appeared to break a row injection 1 had broken.
+  `rm -rf strap/__pycache__` on both sides of every injection.
+* **Distrust a blocker recorded in this file.** THREE times the thing
   stopping work was a claim here, not anything in the machine: "64 call
   sites need refactoring" (43 wrote constants that could never trip the
-  rule) and "the control-bit polarity needs Appendix C" (p.31 states it
-  outright). Re-derive an obstacle before accepting it.
+  rule), "the control-bit polarity needs Appendix C" (p.31 states it
+  outright), and "1260 needs SSIP's `160S1` harness, reported at
+  pp.41–44" (pp.41–44 are the per-indicator blocks, one of which was
+  transcribed the same morning with no harness at all). Re-derive an
+  obstacle before accepting it.

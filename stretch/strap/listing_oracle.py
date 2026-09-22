@@ -16,7 +16,8 @@ full-word instruction or XW prints as two such groups. Two other row
 shapes occur:
   - VF prints its 24-bit value as W.B (octal) followed by the sign,
     "777777.70+" -- only the value field and sign bit are printed.
-  - DD(BU,64,8) prints the whole word as 22 octal digits.
+  - DD(BU,64,8) prints the whole word as 22 octal digits, and
+    DD(BU,32,8) prints its half-word as 11 (jb_ax5b p.43).
 
 Usage: build a list of (octal location, printed text) rows transcribed
 from the page, assemble the verbatim source (placed at the listing's
@@ -67,6 +68,10 @@ def render(prog, octal_loc, printed):
         return f"{mag >> 6:06o}.{mag & 0x3F:02o}{'-' if sign else '+'}"
     if len(toks) == 1 and len(toks[0]) == 22:
         return f"{word:022o}"
+    if len(toks) == 1 and len(toks[0]) == 11:
+        # DD(BU,32,8): the listing prints a 32-bit datum as its own
+        # half-word, 11 octal digits (jb_ax5b p.43's "00000003740").
+        return f"{half:011o}"
     if len(toks) == 4:
         # A full-word instruction or XW, read across the word boundary
         # if it is at an odd half-word.

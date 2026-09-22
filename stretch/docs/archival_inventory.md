@@ -701,6 +701,73 @@ with a target:
 | **1274** | "that those instructions which can have a 19 bit address but use only 18 do in fact truncate the nineteenth bit" |
 | **1258** | "the Interval Timer and Time Clock" |
 
+**ROUTINE 1260'S LAYOUT, pp.41-45 read first-hand 2026-09-22.**
+`docs/NEXT.md` had carried "SSIP's `160S1`/`160SX1` save/restore
+harness, reported at `ax5b` pp.41-44" as 1260's prerequisite. Those
+pages hold nothing of the kind. What they actually contain, in order:
+
+| pages | what is there |
+|---|---|
+| pp.41-44 | **the per-indicator turn-on blocks**, 16071 through 16086 -- one per I-Box indicator (`TS`, `CPUS`, `EKJ`, `UNRJ`, `CBJ`, `EPGK`, `UK`, `EE`, `EOP`, `CS`, `RESRVD`, `OP`, `AD`, `USA`, `EXE`, `DS`). Sixteen blocks, but not sixteen tests -- see the triage below. |
+| p.45 | **the indicator-walk driver**, 16087/16088: `SIC,160SX1` / `B,160S1`, `TI,1,BIT0%$X1,$IND` *"SET ONE OF 20-47"*, `TI,1,BIT0%$X1,$MASK` *"SET MASK BIT OF TEST IND BIT"*, `BE,$+.32` *"ENABLE AND AWAIT INTERRUPT"*, then `BD,160B13%$X6` -- an indexed dispatch into the per-indicator error table `160B13`, whose entries read *"FAILED TO INTERRUPT ON IND MK / IN 1 MILLISEC."*, then IK, IJ, EK, TS, CPUS, EKJ, UNRJ, CBJ, EPGK, UK, EE, EOP, CS. |
+
+**The sixteen blocks triaged** (read from pp.41-44, not inferred):
+
+* **16072-16081** (`CPUS`, `EKJ`, `UNRJ`, `CBJ`, `EPGK`, `UK`, `EE`,
+  `EOP`, `CS`, `RESRVD`) are three lines each -- `B,16093` to the next
+  test, a `CNOP` commented *"CANT TURN ON"*, and `DR%BU,64,8,64`.
+  Error-report placeholders for indicators a program cannot provoke on
+  its own. Ten of the sixteen, and nothing to transcribe in any of
+  them.
+* **16084** (`USA`) turns on its indicator with `LVE`; **16085**
+  (`EXE`) with `EX`. Both instructions are deferred in `NEXT.md` §5,
+  so both blocks are blocked on an implementation, not on a harness.
+* **16071** (`TS`), **16082** (`OP`) and **16083** (`AD`) use only
+  instructions this project already has --
+  `LX`/`SV`/`LCI`/`CB`/`BTS`/`SIC`/`B`,
+  `LX`/`SX`/`NOP`/`CNOP`/`XW`/`BOP`/`SIC`/`B`, and
+  `SV`/`NOP`/`BAD`/`SIC`/`B` respectively. Those three and 16086 are
+  the transcribable part of pp.41-44.
+* **16086** (`DS`) is transcribed; see below.
+
+`160S1`/`160SX1` are **call sites** on p.45 (`SIC` stores the return
+link at `160SX1`, `B` enters `160S1`); the subroutine itself is still
+not located, and nothing transcribed so far has needed it.
+
+**16086, the DS block, is transcribed** --
+`strap/programs/ax5b_16086_ds.strap`, nineteen half-words checked
+bit-exactly by `strap/verify_ax5b_16086_listing.py` against the
+printed machine code at octal 021365.00-021376.00. It is the deck's
+own test of storage protection and its error message states the rule
+this project had only from the Reference Manual: *"SV TO 1.0 FAILS TO
+SET DS WHEN ENABLED."* -- word 1 (one of p.31's permanently protected
+locations), the DS indicator, and the enable gate. It polls DS only
+after `16086A BD,$+.32` disables the system, independently confirming
+the "a program cannot poll DS while enabled" rule. Four encodings no
+listing in this project had checked: `BDS`, `BADZ` (the trailing-Z
+"and zero the indicator" grammar, until now only inferred from
+C22-6531 Appendix A's footnote), `SVA` into `$IA`, and `DD(BU,32,8)`
+printed as 11 octal digits.
+
+**p.45's address column, re-read at 600 dpi.** A 200 dpi render gave
+`021400.00` for the row labelled 16088 and the page then looked a
+half-word short. At 600 dpi the six rows print 021376.40, 021377.00,
+**021400.40**, 021401.40, 021402.00 — with 021377.40 between the
+second and third. So both `TI` instructions are FULL WORDS at ODD
+half-words (021377.40 and 021400.40), each straddling a word boundary
+per Reference Manual p.39; the apparent short arithmetic was a full
+word read as a half. The transcribed block agrees independently:
+`B,16088` prints `21400.50 00`, and bit 18 — the top bit of that
+octal pair — is one. Two witnesses, one printed and one encoded.
+(Handwritten reader's marks sit beside 021377.00 and 021377.40; the
+printed text under them is intact.)
+
+**`TI` is the one instruction 1260's driver needs and this project
+does not have.** It is not in `strap/opcodes.py`. Per AGENTS.md rule
+4 its format must come from the pocket card or the Reference Manual,
+never from the listing's usage -- so p.45 stays untranscribed until
+it does.
+
 Two of these map straight onto open work. **1260** covers everything
 implemented on 2026-09-19 to -21 -- mask, interruption address,
 interruption, boundary registers, address monitoring -- and its "unique
@@ -878,7 +945,7 @@ reverse index (source -> transcription/implementation).
 | `jb_ax2a_ibox-2.pdf` (203pp) | I-Box 2 diagnostic | Source | surveyed (archival pass); SVA/SIC blockers |
 | `jb_ax3a_ibox-3.pdf` (~200pp) | I-Box 3 diagnostic | Source | surveyed; SVA (~50pp section), SIC |
 | `jb_ax4b_ibox-4.pdf` (~200pp) | I-Box 4 diagnostic | Source | RUN: `ibox4_cb_count_branch`, `ibox4_cbr_refill`; bit-exact vs `verify_ibox4_listing.py` (pp.155/159); section 138 rejected ($R), the pp.58-62 KV/$R pages sourced the Appendix-A system symbols |
-| `jb_ax5b_ibox-5.pdf` (~200pp) | I-Box 5 diagnostic | Source | surveyed; interrupt/timer/boundary/EX -- the largest unmodeled-hardware concentration |
+| `jb_ax5b_ibox-5.pdf` (116pp) | I-Box 5 diagnostic | Source | routine index transcribed (p.2); 1260's pp.41-45 read first-hand; **block 16086 transcribed** (`ax5b_16086_ds.strap`); interrupt/timer/boundary/EX -- the largest unmodeled-hardware concentration |
 | `jb_af1c_floating-point.pdf` (282pp) | **Floating-point (PAU) diagnostic**, SMFF-1C, JB AF1C, Apr 15 1961, SSIP-controlled | Source | IN PROGRESS -- its routine F200 (LOAD TEST) drove out and verified the assembler's FP sign-modifier loads (LN/LA/LNA), bit-exact vs its printed code (`../strap/verify_fp_signmods.py`), and exposed a real look-ahead store-close-to-fetch gap (see plan). Running a full block still needs branch-on-bit (`BB`/`BB1`/`BZB`, decoded not executed) and the SSIP framework; blocks using divide/double wait for stage 4e. |
 | `ja_bb6b_worst_pat_test.pdf` (20pp) | Worst-pattern memory test | Source | NOT YET -- runnable against `StretchMemory.bsv` (the interleaved units); a memory-model codesign target |
 | `ja_bm6a_unique_adr_test.pdf` (11pp) | Unique-address memory test | Source | NOT YET -- memory-model target |
