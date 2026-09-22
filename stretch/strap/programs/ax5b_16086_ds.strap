@@ -43,15 +43,24 @@
 !   SV,$X4,1.32        the deck says "TURN ON $AD ON".  16083, the AD
 !                      block on p.41, opens with the same instruction
 !                      under the comment "-AD".
-!   LX / SX            LX and SX move a WHOLE 64-bit index word
-!                      (StretchExecute.bsv's dixop_LX/dixop_SX use
-!                      unpackIndexWord/packIndexWord, unlike LV/SV
-!                      which touch only the value half).  So
-!                      "LX,$X4,16086 / SX,$X4,16085B+15.0" copies the
-!                      whole word at 021365 -- this block's own
-!                      SV,$X4,1.00 half-word together with the 3740
-!                      datum beside it -- into 16085B word 15, and
-!                      160K16's word into 16085B word 16.
+!   LX / SX            LX and SX move a WHOLE 64-bit word, and that is
+!                      the Reference Manual's own wording, not this
+!                      model's.  p.23, LOAD INDEX: "The index word
+!                      specified by J is replaced by the FULL-WORD
+!                      specified by bits 0-17 of the effective
+!                      address", against LOAD VALUE on the same page:
+!                      "the value field, bits 0-24 ... is replaced by
+!                      bits 0-24 of the HALF-WORD specified by bits
+!                      0-18".  The paragraph introducing direct index
+!                      arithmetic names LX and SX as the pair: "the
+!                      two exceptions use only 18 bits of the
+!                      effective address because they require
+!                      full-word operands".  So "LX,$X4,16086 /
+!                      SX,$X4,16085B+15.0" copies the whole word at
+!                      021365 -- this block's own SV,$X4,1.00
+!                      half-word together with the 3740 datum beside
+!                      it -- into 16085B word 15, and 160K16's word
+!                      into 16085B word 16.
 !   16085B word N      p.48: the interruption table is "48 successive
 !                      full-word locations" and the developed
 !                      indicator number is added to the interruption

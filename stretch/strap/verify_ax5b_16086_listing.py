@@ -56,9 +56,10 @@ observed failure sets, not predicted ones:
       021376.00  B,L16088   -> "21400.10 00"         the two targets
                                                      at odd half-words)
   dds_length_bits ignores the declared length (always 64)
-      021365.40 and every row after it, plus the L16086A/L16086B
-      symbol checks -- the DD's SIZE is what aligns the rest of the
-      block (15 rows)
+      20 of the 22 checks fail.  The only two that survive are the
+      symbol L16086 and the row at 021365.00 -- everything at or
+      after the DD moves, because the DD's SIZE is what aligns the
+      rest of the block
 
 A WARNING PAID FOR HERE.  Reverting an injection with `cp` can leave a
 STALE __pycache__: CPython compares the source's mtime at
