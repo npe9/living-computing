@@ -3137,6 +3137,44 @@ run "I-Box 5 routine 1260 TEST 7b ON THE MODEL (18 LB bits + control bit)" ./run
 # A FOURTH CONFIRMATION OF THE BIT TABLE: BIT57 prints 24613, BIT11
 # prints 24535, and 024522 + 57 = 024613, 024522 + 11 = 024535.
 
+run "I-Box 5 routine 1260's 160S1, bit-exact (jb_ax5b pp.83-84)" python3 verify_ax5b_160s1_listing.py
+# THE ROUTINE THIS PLAN MYTHOLOGISED.  docs/NEXT.md opened with
+# "Prerequisite: SSIP's 160S1/160SX1 save/restore harness, reported at
+# ax5b pp.41-44.  Nothing from 1260 can run without it."  Every clause
+# was wrong.  It is local to routine 1260, not SSIP's.  It CLEARS
+# INDICATORS 0-19 rather than saving or restoring anything.  It is at
+# pp.83-84, 022741.00, not pp.41-44.  And four blocks of 1260 were
+# transcribed without it before anyone opened the page.  Its own
+# comment: "-SUBROUTINE TO CLR INDS 0-19, AND CHK THAT THEY ARE CLRD."
+#
+# What it IS needed for is the p.71 comparison driver, which calls it.
+#
+# THE SHAPE, once per indicator: branch-on-indicator-and-zero to skip
+# if already clear, then TI,1,11.0,$X1 -- Transmit Immediate one word
+# FROM word 11, the indicator register, INTO $X1 -- then KVI against
+# that indicator's mask and a branch to SERS naming it.  MK, IK, IJ,
+# EK, TS, CPUS, EKJ, UNRJ, CBJ, EPGK, UK, EE, EOP, CS, "IND NO. 14".
+# Eighty-one rows.
+#
+# FIFTEEN USES OF TRANSMIT IMMEDIATE, every one "13.00 80 000021.02
+# A0", each a full word at an odd half-word.  Before TRANSMIT_CODES
+# landed today this routine could not have been assembled at all.
+#
+# AND IT FOUND AN ASSEMBLER BUG, which is the best reason to transcribe
+# a deck.  Its ONE XW row, at 023016.00, was the single mismatch in 45:
+# expected flag byte 46, produced 06.  XW's fourth operand is THREE
+# bits -- IBM 25-27, the index flag plus the two spare bits -- and
+# strap_asm.py masked it to one, so ",4" and ",2" both encoded as zero
+# and ",1" set the flag instead of the second spare.  p.114's own BIT
+# table settles it in three adjacent rows: BIT25 is "XW,0,0,0,4",
+# BIT26 ",2", BIT27 ",1", printing bits 25, 26 and 27.  Only one
+# existing program passed a non-zero fourth operand
+# (op_ad_indicators.strap's WOTHER, never inspected).
+#
+# Injections, observed: enc_transmit's A1 as a half-word address (all
+# fifteen TI rows); MK's indicator number (022741.40); XW's fourth
+# operand masked back to one bit (023016.00 -- the row that found it).
+
 run "I-Box 5 routine 1260 TEST 7: the COMPARISON driver (jb_ax5b p.71)" python3 verify_ax5b_160105_listing.py
 # THE BLOCK ITEM 1 HAS WANTED SINCE THE SCOUTING PASS.  pp.65 and 68
 # test whether the boundary REGISTERS HOLD THEIR BITS; this one tests

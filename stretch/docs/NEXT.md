@@ -149,7 +149,8 @@ the interruption table `160IT` at 023201.00, and `BOUND0`/`BOUND1` at
 *without* a harness, which is why the file's original "prerequisite"
 claim was wrong. This one needs it for real.
 
-**`160S1` IS LOCATED AND READ — and it is not what this file has ever
+**`160S1` IS TRANSCRIBED** — `programs/ax5b_160s1_clr_inds.strap`,
+pp.83-84, 81 rows bit-exact — **and it is not what this file has ever
 called it.** PDF p.83, 022741.00. The original claim was "SSIP's
 `160S1`/`160SX1` save/restore harness"; the correction after that said
 they were "call sites… still not located". Both were wrong about what
@@ -165,9 +166,20 @@ off, with a per-indicator message: *"UNABLE TO CLEAR MK."*, *"…CLR IK
 OR ABOVE IND."*, then IJ, EK, TS, CPUS. Roughly forty rows, every
 instruction already implemented, and it needs no harness of its own.
 
-So the comparison block's real dependencies are `160S1` (now located),
-the interruption table `160IT` at 023201.00, and `BOUND0`/`BOUND1` —
-none of them the mythical SSIP harness. **Next: transcribe `160S1`.**
+So the comparison block's real dependencies are `160S1` (now
+transcribed), the interruption table `160IT` at 023201.00, and
+`BOUND0`/`BOUND1` — none of them the mythical SSIP harness.
+
+**And transcribing it found an assembler bug.** `160S1`'s one `XW`
+row was the single mismatch in 45: `XW`'s fourth operand is **three
+bits** (IBM 25-27, the index flag plus two spare) and `strap_asm.py`
+masked it to one, so `,4` and `,2` encoded as zero and `,1` set the
+flag instead of the second spare. p.114's own table settles it —
+`BIT25` is `XW,0,0,0,4`, `BIT26` `,2`, `BIT27` `,1`. Fixed.
+
+**Next on item 1**: the interruption table `160IT` at 023201.00 and
+`BOUND0`/`BOUND1` at 023302/023303, after which the p.71 comparison
+block can run.
 
 **Do not re-scout these — bounded negatives, 2026-09-21:**
 `jb_af1c` never provokes an interruption (no `BE`, `BEW`, mask write,
@@ -442,6 +454,11 @@ printed page numbers.
   the injected bytecode is reused. Cost one wrong injection result,
   where injection 2 appeared to break a row injection 1 had broken.
   `rm -rf strap/__pycache__` on both sides of every injection.
+* **`run_tests.sh` must not be edited while ANYTHING is running** —
+  not "remember that `sh` reads by byte offset", just don't touch it.
+  Violated twice in two days despite being on this list, the second
+  time while a suite was 1290 checks in. Start the edit *after* the
+  run reports, or kill the run first.
 * **A direct-index address is HALF-WORD granular**, 18-bit word plus a
   one-bit half-word select — so an encoding oracle cannot see a
   special register's bit offset within its half-word. Measured:

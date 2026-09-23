@@ -93,19 +93,33 @@
 ! bit off", so XF must be ON after the LX.  The reading is not resting
 ! on the C0 alone.
 !
-! So: two XW conventions, plausibly two STRAP versions, since these are
-! different programs.  C22-6531 and C28-6129 have no text layer to
-! settle it.  What would settle it is a four-operand XW with a LARGE
-! last field somewhere on ja_ax1a, or a small one on jb_ax4b -- either
-! fixes the field width on its own tape.  This assembler treats the
-! fourth field as a one-bit flag, so the source below writes 1 where the
-! listing writes 4; the ASSEMBLED WORD is identical to the listing's,
-! which is what the verify script checks.
+! HALF-RESOLVED 2026-09-23, and the deviation this note used to
+! describe is GONE.  The note asked for "a four-operand XW with a
+! LARGE last field somewhere on ja_ax1a, or a SMALL one on jb_ax4b".
+! What turned up instead settles the field's WIDTH from a third tape:
+! jb_ax5b p.114's BIT table prints three adjacent rows --
 !
-! That deviation is load-bearing, not cosmetic.  If someone later
-! "reconciles" it toward the jb_ax4b reading, XW,-1,0,0,1 becomes
-! refill = 1 with flag = 0, XF never lights, and this block halts at
-! IBIN1 -- which is precisely the first injection below.
+!     BIT25  XW,0,0,0,4  ->  0.00 40   IBM bit 25
+!     BIT26  XW,0,0,0,2  ->  0.00 20   IBM bit 26
+!     BIT27  XW,0,0,0,1  ->  0.00 10   IBM bit 27
+!
+! -- so on THIS convention the fourth operand is a THREE-BIT field at
+! IBM 25-27: the index flag plus the two spare bits, left-justified at
+! 25.  That is consistent with ja_ax1a's single sample (4 -> bit 25)
+! and explains it without special-casing.  strap_asm.py implemented a
+! ONE-bit flag until now, which is why the source below had to write 1
+! where the listing writes 4; it now implements the three-bit field,
+! and the source writes 4 exactly as the listing does.
+!
+! STILL UNRESOLVED: jb_ax4b's XW,0,0,0,%8=10000 -> IBM bit 51, which a
+! three-bit field at 25-27 cannot produce (010000 masks to 0).  Two
+! conventions across tapes remains the reading; what is new is that
+! ONE of them is now pinned by three rows instead of one.
+!
+! The deck's own control flow independently requires flag = 1 here --
+! IBIN1 is BZXF,$ , "hang up if bit off" -- so the reading never rested
+! on the printed byte alone, and the first injection below still
+! catches a flag that fails to light.
 
         SLC, (8)4023.0
 !
@@ -119,7 +133,7 @@ IBIN4   BXF, $                               ! hang up if bit on
 IBIN5   BZXF, $+1.0                          ! branch if bit off
         BD, $                                ! hang up if bit on
         B, IBIN6                             ! branch out
-IBXWZO  XW, -1, 0, 0, 1                      ! listing writes "XW,-1,0,0,4"
+IBXWZO  XW, -1, 0, 0, 4                      ! exactly as the listing writes it
 IBIN6   VF, (8)777777.70                     ! executed as NOP,-.32
         VF, (8)777777.70                     ! executed as NOP,-.32
 !

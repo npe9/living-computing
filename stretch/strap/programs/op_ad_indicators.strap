@@ -67,7 +67,7 @@ START   LX, $X1, WSEED               ! a perfectly ordinary index load
         B, PASS
 !
 WSEED   XW, 1, 1, 0, 0
-WOTHER  XW, -1, 0, 0, 1
+WOTHER  XW, -1, 0, 0, 4              ! 4 = the flag, IBM bit 25
 FKONE   DD(BU,64,8), (8)0400000000000000000000
 PASS    BEW, $
         END, START

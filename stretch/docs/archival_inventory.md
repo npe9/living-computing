@@ -993,8 +993,9 @@ Whether the K table starts at a `160K0` that is the same location, or
 this is coincidence, is not settled by anything read so far.
 * **16086** (`DS`) is transcribed; see below.
 
-**`160S1` IS AT 022741.00 ON PDF p.83, AND IT IS AN INDICATOR-CLEARING
-SUBROUTINE**, not a save/restore harness — read first-hand
+**`160S1` IS TRANSCRIBED** (`strap/programs/ax5b_160s1_clr_inds.strap`,
+81 rows) **and it is an INDICATOR-CLEARING SUBROUTINE at 022741.00 on
+PDF pp.83-84**, not a save/restore harness — read first-hand
 2026-09-23. Its own comment reads *"SUBROUTINE TO CLR INDS 0-19, AND
 CHK THAT THEY ARE CLRD."* It clears each permanently-masked indicator
 with `TI,1,11.0,$X1` and checks it went off, reporting per indicator:

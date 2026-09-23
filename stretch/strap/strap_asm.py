@@ -1375,9 +1375,27 @@ def emit_statement(stmt, symtab, image):
         # "BIT59 XW,0,0,16" prints refill 000000.00 10 = word 16).
         refill = eval_addr_field(stmt.fields[2], symtab, loc, 6, lineno=stmt.lineno) & 0x3FFFF \
             if len(stmt.fields) >= 3 and stmt.fields[2].strip() else 0
-        flagbit = eval_expr(stmt.fields[3], symtab, loc, lineno=stmt.lineno) & 0x1 \
+        # XW's FOURTH OPERAND IS THREE BITS, IBM 25-27 -- the index
+        # flag plus the two spare bits -- not one.  This read `& 0x1`
+        # and `<< 38` until 2026-09-23, so ",4" and ",2" both encoded
+        # as ZERO and ",1" set the FLAG (IBM 25) instead of the second
+        # spare bit (IBM 27).
+        #
+        # THE ORACLE IS jb_ax5b p.114's OWN BIT TABLE, three adjacent
+        # rows that can only be read one way:
+        #     BIT25  XW,0,0,0,4  ->  0.00 40   IBM bit 25
+        #     BIT26  XW,0,0,0,2  ->  0.00 20   IBM bit 26
+        #     BIT27  XW,0,0,0,1  ->  0.00 10   IBM bit 27
+        # and p.84's "XW,$+1.07,(8)300000,(8)014000,4" prints its flag
+        # bit set, which `& 0x1` turned off.
+        #
+        # BSV 36-38 is IBM 25-27 (63 - 27 = 36).  Only one program used
+        # a non-zero fourth operand before this fix --
+        # op_ad_indicators.strap's WOTHER, whose contents are never
+        # inspected (it is the operand of an out-of-scope LVE).
+        flagbits = eval_expr(stmt.fields[3], symtab, loc, lineno=stmt.lineno) & 0x7 \
             if len(stmt.fields) >= 4 and stmt.fields[3].strip() else 0
-        packed = (mag << 40) | (sign << 39) | (flagbit << 38) | (count << 18) | refill
+        packed = (mag << 40) | (sign << 39) | (flagbits << 36) | (count << 18) | refill
         image.deposit_full(loc, packed)
         return
 

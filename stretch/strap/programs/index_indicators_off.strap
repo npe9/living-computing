@@ -86,10 +86,10 @@ START   LX, $X1, WNEG
                                      !   "non-zero and negative"
         BXVGZ, $                     ! hang up if XVGZ on
         B, PASS
-WNEG    XW, -1, 0, 0, 1              ! ja_ax1a's IBXWZO
+WNEG    XW, -1, 0, 0, 4              ! ja_ax1a's IBXWZO, as the listing writes it
 WPOS    XW, 1, 1, 0, 0               ! ja_ax1a's IBXWZ2
 WZERO   XW, 0, 1, 0, 0               ! ja_ax1a's IBXWZ1
-WFLAG   XW, 1, 1, 0, 1               ! flag 1 with a NON-zero count
+WFLAG   XW, 1, 1, 0, 4               ! flag 1 (4 = IBM bit 25) with a NON-zero count
 WNOFLG  XW, 1, 0, 0, 0               ! flag 0 with a zero count
 WNEGZ   DD(BU,64), 549756076032      ! value -0 (sign bit 24), count 1
 PASS    BEW, $
