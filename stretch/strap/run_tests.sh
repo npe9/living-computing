@@ -3137,6 +3137,42 @@ run "I-Box 5 routine 1260 TEST 7b ON THE MODEL (18 LB bits + control bit)" ./run
 # A FOURTH CONFIRMATION OF THE BIT TABLE: BIT57 prints 24613, BIT11
 # prints 24535, and 024522 + 57 = 024613, 024522 + 11 = 024535.
 
+run "I-Box 5 routine 1260 TEST 7: the COMPARISON driver (jb_ax5b p.71)" python3 verify_ax5b_160105_listing.py
+# THE BLOCK ITEM 1 HAS WANTED SINCE THE SCOUTING PASS.  pp.65 and 68
+# test whether the boundary REGISTERS HOLD THEIR BITS; this one tests
+# whether the COMPARISON FIRES.  The deck's own summary:
+#
+#   -TEST THE COMPARE CKTS, SETUP INTERRUPT TABLE.  UB HAS X, LB HAS
+#   -X-2.  FETCH FROM X+1 TO CHK UB COMP, FROM X-3 TO CHK LB COMP,
+#   -AND FROM X-1 TO CHECK WITHIN RANGE OF X IS FROM 000040 THRU
+#   -777777 OCTAL.
+#
+# Upper bound X, lower bound X-2, three fetches -- above, below,
+# inside -- swept across the range.  It builds the interruption table
+# in a CB+ loop, points entry 16 at 160107, calls SSIP's save/restore
+# through "SIC,160SX1 / B,160S1", clears 160AD1/160AD3, sets the
+# bounds, ENABLES with "BE,$+.32", fetches, and lands at one of the
+# deck's two labelled entries: 160107 "-AD INTRPTS ENTER HERE." and
+# 16010A "-ALL INTRPTS EXCEPT AD ENTER HERE."
+#
+# AND IT USES TRANSMIT IMMEDIATE.  "TI,1,BOUND1,3.0" moves one word
+# into word 3 -- the boundary register itself -- a FULL WORD at an ODD
+# half-word (022365.40 straddling into 022366.00), the same shape as
+# p.45's.  Until TRANSMIT_CODES landed this block could not have been
+# assembled at all; this is TI's first use outside the page it came
+# from, and it encodes right on the first try.
+#
+# ENCODING ONLY, for a specific reason rather than a general one: it
+# needs 160S1's body (SSIP save/restore at 022741.00, still not
+# transcribed), the interruption table 160IT at 023201.00, and
+# BOUND0/BOUND1 at 023302/023303.  That is the harness item 1 has
+# always needed -- and this is the first block where the need is real
+# rather than assumed.  Fifty-two rows, right on the first assembly.
+#
+# Injections, observed: enc_transmit's immediate-count bit (the TI row,
+# 022365.40); BD's branch code (all seven BD rows); BZB's modifier
+# (022357.00, the one branch-on-bit).
+
 run "I-Box 5 routine 1268 test 1A, bit-exact (jb_ax5b p.110)" python3 verify_ax5b_1681_listing.py
 run "I-Box 5 routine 1268 test 1A, ON THE MODEL (self-modifying execution)" ./run_program.sh programs/ax5b_1681_if_close_to_ds.strap StretchAx5b1681Tb \
     "PC=20937"         # 024344.40, where the listing continues into test 1B

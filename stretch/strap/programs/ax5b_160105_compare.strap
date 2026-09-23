@@ -1,0 +1,122 @@
+! jb_ax5b "I-Box 5", routine 1260 TEST 7's COMPARISON DRIVER -- the
+! block docs/NEXT.md item 1 has wanted since the scouting pass.  PDF
+! p.71 (printed p.68), octal 022346.40-022401.00, transcribed VERBATIM
+! at the listing's own addresses and checked bit-exactly by
+! verify_ax5b_160105_listing.py.
+!
+! THIS IS THE POSITIVE BOUNDARY-INTERRUPT CASE.  pp.65 and 68 test
+! whether the boundary REGISTERS HOLD THEIR BITS
+! (ax5b_16099_ub_data.strap, ax5b_160102_lb_ctl.strap).  This one
+! tests whether the COMPARISON FIRES -- it sets boundaries, ENABLES,
+! fetches from an address outside them, and expects an address-
+! -monitoring interruption.  The deck's own summary, from the comment
+! column:
+!
+!     -TEST THE COMPARE CKTS, SETUP INTERRUPT TABLE.  UB HAS X, LB HAS
+!     -X-2.  FETCH FROM X+1 TO CHK UB COMP, FROM X-3 TO CHK LB COMP,
+!     -AND FROM X-1 TO CHECK WITHIN RANGE OF X IS FROM 000040 THRU
+!     -777777 OCTAL.
+!
+! So: upper bound X, lower bound X-2, and three fetches -- one above,
+! one below, one inside -- swept across the whole address range.
+!
+! IT IS INTERRUPT-DRIVEN, which is what makes it the hard one.  It
+! builds the interruption table by copying 160K12 through it
+! ("SX,$X2,160IT($X1)" in a CB+ loop), points entry 16 at 160107,
+! calls SSIP's save/restore through "SIC,160SX1 / B,160S1", clears the
+! first-interrupt flags 160AD1/160AD3, sets the bounds, enables with
+! "BE,$+.32", does the fetch, and lands in one of two places the deck
+! labels for itself: 160107 "-AD INTRPTS ENTER HERE." and 16010A
+! "-ALL INTRPTS EXCEPT AD ENTER HERE."
+!
+! AND IT USES TRANSMIT IMMEDIATE.  "TI,1,BOUND1,3.0" moves one word
+! into word 3 -- the boundary register itself -- and it is a FULL WORD
+! at an ODD half-word (022365.40, straddling into 022366.00), the same
+! shape as p.45's two TIs.  Until TRANSMIT_CODES landed earlier today
+! this block could not have been assembled at all; this is the first
+! use of TI outside the page it was derived for.
+!
+! ENCODING ONLY, and the reason is specific: it cannot run without
+! 160S1's body (the SSIP save/restore subroutine at 022741.00, still
+! not transcribed -- see docs/NEXT.md), the interruption table 160IT
+! at 023201.00, and the boundary control words BOUND0/BOUND1 at
+! 023302/023303.  Those are the harness item 1 has always needed, and
+! this block is where the need is real rather than assumed.
+!
+! SUBSTITUTIONS: one.  Numeric labels are prefixed "L" (160105, 160106,
+! 160107, 160108, 160109, 16010A, 160110, 160111, 160122, 160IT,
+! 160XW1, 160XW3, 160K12, 160SX1, 160S1, 160AD1, 160AD3).  Nothing
+! else is changed; every external is given by SYN at the address this
+! block's own rows print for it.
+
+L160XW1 SYN, (8)23065.0
+L160K12 SYN, (8)23055.0
+L160IT  SYN, (8)23201.0
+INT     SYN, (8)1353.0
+L160XW3 SYN, (8)23067.0
+BOUND0  SYN, (8)23302.0
+BOUND1  SYN, (8)23303.0
+BIT57   SYN, (8)24613.0
+L160SX1 SYN, (8)23041.0
+L160S1  SYN, (8)22741.0
+L160AD1 SYN, (8)23063.0
+L160AD3 SYN, (8)23064.0
+L160122 SYN, (8)22506.40
+L160110 SYN, (8)22401.40
+L160111 SYN, (8)22414.0
+SEN0    SYN, (8)1311.0
+SSW     SYN, (8)1301.0
+        SLC, (8)22346.40
+L160105 LX,  $X1, L160XW1        ! -TEST THE COMPARE CKTS, SETUP
+        LX,  $X2, L160K12        ! -INTERRUPT TABLE.  UB HAS X, LB HAS
+        SX,  $X2, L160IT($X1)    ! -X-2.  FETCH FROM X+1 TO CHK UB COMP,
+        CB+, $X1, $-.32          ! -FROM X-3 TO CHK LB COMP, AND FROM
+        LVI, $X1, INT            ! -X-1 TO CHECK WITHIN RANGE OF X IS
+        LX,  $X2, L160XW3        ! -FROM 000040 THRU 777777 OCTAL.
+        Z,   BOUND0
+        LX,  $X13, BIT57
+        SX,  $X13, BOUND1
+        LVI, $X3, L160107
+        SVA, $X3, L160IT+16
+        SIC, L160SX1             ! -CLEAR INDS 0-19
+        B,   L160S1
+        Z,   L160AD1             ! -CLEAR FIRST INTERRUPT INDICATORS
+        Z,   L160AD3
+L160106 LVI, $X3, L160107+.32
+        SVA, $X3, L160107
+        BZB, 4.60, L160122
+        LVI, $X3, L160109
+        SVA, $X3, L16010A
+        BD,  $+.32
+        Z,   $MASK               ! -SETUP UB + LB.
+        SV,  $X2, BOUND0+.32     ! -LOWER BOUND
+        SV,  $X2, BOUND1+.32
+        V+I, $X2, 2.0
+        SV,  $X2, BOUND0         ! -UPPER BOUND
+        SV,  $X2, BOUND1
+        Z,   $IND
+        BDFZ, $+.32
+        TI,  1, BOUND1, 3.0
+        SR,  $X1, $IA
+        BE,  $+.32
+        LX,  $X13, 0($X2)        ! -FETCH FROM UB, BC IS 1.
+        BD,  $+.32
+        SV,  $X1, $IA
+        BD,  L160109
+L16010A BD,  $+.32               ! -ALL INTRPTS EXCEPT AD ENTER HERE.
+L160107 BD,  $+.32               ! -AD INTRPTS ENTER HERE.
+        SV,  $X1, $IA
+        LV,  $X13, L160AD1       ! -DID WE INTRPT LAST TIME THRU.
+        BXVZ, L160108
+        LX,  $X15, 3.0
+        B,   L160122
+L160108 V+I, $X13, (8)777777.40
+        SV,  $X13, L160AD1
+        B,   L160111             ! -UB FROM AD.
+L160109 BDFZ, L160110
+        B,   $+1.0
+        BD,  L160106
+        SIC, SEN0+.32
+        B,   SSW                 ! -TO SSIP.
+        BD,  L160122             ! -TERMINATE.
+        END, L160105

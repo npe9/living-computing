@@ -993,6 +993,14 @@ Whether the K table starts at a `160K0` that is the same location, or
 this is coincidence, is not settled by anything read so far.
 * **16086** (`DS`) is transcribed; see below.
 
+**`160S1` IS AT 022741.00 ON PDF p.83, AND IT IS AN INDICATOR-CLEARING
+SUBROUTINE**, not a save/restore harness — read first-hand
+2026-09-23. Its own comment reads *"SUBROUTINE TO CLR INDS 0-19, AND
+CHK THAT THEY ARE CLRD."* It clears each permanently-masked indicator
+with `TI,1,11.0,$X1` and checks it went off, reporting per indicator:
+*"UNABLE TO CLEAR MK."*, *"…CLR IK OR ABOVE IND."*, then IJ, EK, TS,
+CPUS. About forty rows; every instruction in it is implemented.
+
 `160S1`/`160SX1` are **call sites** on p.45 (`SIC` stores the return
 link at `160SX1`, `B` enters `160S1`). Both are **located** from those
 rows' own printed address fields: `SIC,160SX1` prints `23041.00 80`

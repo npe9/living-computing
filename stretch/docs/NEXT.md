@@ -134,11 +134,40 @@ control-bit test, 37 rows bit-exact, and it localises a fault to the
 bit (drop IBM 49 → the table's "BIT 49" entry; drop IBM 57 → `SERS`
 with *"UNABLE TO SET BNDRY CNTRL TO 1."*).
 
-**Still to do on the boundaries: p.71, the comparisons** — *"FETCH
-FROM X-1 TO CHK UB COMP."* and *"FROM X-3 TO CHK LB COMP."* — which is
-the one this item always wanted, and the only part that tests the
-monitoring actually **firing** rather than the registers holding
-their bits.
+**p.71, the comparisons, is transcribed** —
+`programs/ax5b_160105_compare.strap`, 52 rows bit-exact on first
+assembly. This is the block the item always wanted: it sets bounds,
+**enables**, fetches outside them and expects an address-monitoring
+interruption (*"UB HAS X, LB HAS X-2. FETCH FROM X+1 TO CHK UB COMP,
+FROM X-3 TO CHK LB COMP, AND FROM X-1 TO CHECK WITHIN RANGE"*). It is
+also the first use of `TI` outside the page it was derived from.
+
+**ENCODING ONLY, and this is where the harness finally matters.** It
+cannot run without `160S1`'s body (SSIP's save/restore at 022741.00),
+the interruption table `160IT` at 023201.00, and `BOUND0`/`BOUND1` at
+023302/023303. Every earlier block in this routine was transcribed
+*without* a harness, which is why the file's original "prerequisite"
+claim was wrong. This one needs it for real.
+
+**`160S1` IS LOCATED AND READ — and it is not what this file has ever
+called it.** PDF p.83, 022741.00. The original claim was "SSIP's
+`160S1`/`160SX1` save/restore harness"; the correction after that said
+they were "call sites… still not located". Both were wrong about what
+it *is*. Its own comment:
+
+> `160S1  SX,$X1,160DMP   -SUBROUTINE TO CLR INDS 0-19,`
+> `       BMKZ,$+.32      -AND CHK THAT THEY ARE CLRD.`
+
+It is a **clear-indicators-0-19 subroutine local to routine 1260** —
+it clears each permanently-masked indicator with
+`TI,1,11.0,$X1` (Transmit Immediate into word 11) and checks it went
+off, with a per-indicator message: *"UNABLE TO CLEAR MK."*, *"…CLR IK
+OR ABOVE IND."*, then IJ, EK, TS, CPUS. Roughly forty rows, every
+instruction already implemented, and it needs no harness of its own.
+
+So the comparison block's real dependencies are `160S1` (now located),
+the interruption table `160IT` at 023201.00, and `BOUND0`/`BOUND1` —
+none of them the mythical SSIP harness. **Next: transcribe `160S1`.**
 
 **Do not re-scout these — bounded negatives, 2026-09-21:**
 `jb_af1c` never provokes an interruption (no `BE`, `BEW`, mask write,
