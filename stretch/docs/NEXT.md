@@ -178,37 +178,49 @@ baseline. What remains after parallelising is the serial baseline plus
 the slowest single **survivor**, because a survivor is exactly the
 mutant nothing stops early.
 
-Read **where** and **how fast** each mutant died, not the count. A
-catch far from its own subsystem is a near miss. Triage into *missing
-test* / *equivalent mutant* / *expected* before writing anything.
+Read the **SURVIVOR** list, and the count. Triage into *missing test*
+/ *equivalent mutant* / *expected* before writing anything.
+
+**Do NOT read the section column as "the catcher".** It is the FIRST
+section to fail, because each mutant runs with `FAIL_FAST=1` — so for
+a broad fault it names whatever broad test runs earliest, which says
+nothing about coverage. This file used to say "a catch far from its
+own subsystem is a near miss", and that rule gave the wrong answer
+every time it was applied (see below). To find out whether a rule
+actually has a witness, re-run that one mutant with `FAIL_FAST` unset
+and read the whole list of failing sections.
 
 **Run 2026-09-22: 32/33, survivor `ad-bound-off-by-one`** — the one
 documented expected survivor. `prot-carve-out-as-or` is back in its
 own section, so the regression the previous run flagged is resolved.
 
-**TWO OF THE "NEAR MISSES" IN THAT RUN WERE THE TOOL'S OWN FAULT.**
-It first read as four: the two `seop-ignored-on-backspace*` mutants
-caught by *FP sign modifiers* and *Address Invalid*, and
-`imm-count-low-bits` / `vfl-length-zero-is-zero` caught only by the
-smoke test. The SEOP pair was a **measurement artifact**. Five test
-scripts — `run_fp_addr_test.sh`, `run_fp_exp_test.sh`,
-`run_fp_test.sh`, `run_fp_signmod_test.sh`, `run_scf_test.sh` — wrote
-a *fixed* path under `/tmp` and then re-read it. The campaign runs 12
-mutants in parallel, each in its own **cloned tree** — but `/tmp` is
-not cloned, so all twelve wrote and re-read the same file. The race
-failed whichever of those scripts lost it, and `FAIL_FAST` then named
-that section as the catcher. Run serially, both SEOP mutants are
-caught by `io_tape` at exactly the checks their own entries name
-(`CCWO_backspace_SEOP_success`, `CCWM_backspace_SEOP_at_load_point`).
-Each script now uses `${TMPDIR:-/tmp}/<name>.$$.strap`.
+**ALL FOUR "NEAR MISSES" IN THAT RUN WERE WRONG**, for two different
+reasons, and both were the measurement rather than the model.
 
-So the **verdicts were sound and the attributions were not**: a `/tmp`
-race makes the suite fail for no reason, and `mutation_score.py` marks
-a mutant caught when the suite fails — so it could also mark a real
-SURVIVOR as caught. That did not happen here (32/33 is confirmed), but
-it is the failure mode to remember. **Two genuine near misses remain**:
-`imm-count-low-bits` and `vfl-length-zero-is-zero`, both caught only
-by the smoke test.
+*Two were a `/tmp` race.* Five test scripts — `run_fp_addr_test.sh`,
+`run_fp_exp_test.sh`, `run_fp_test.sh`, `run_fp_signmod_test.sh`,
+`run_scf_test.sh` — wrote a *fixed* path under `/tmp` and re-read it.
+The campaign runs 12 mutants in parallel, each in its own **cloned
+tree** — but `/tmp` is not cloned, so all twelve raced on one file and
+`FAIL_FAST` named whichever script lost. Run serially, both
+`seop-ignored-on-backspace*` mutants are caught by `io_tape` at
+exactly the checks their entries name. Each script now uses
+`${TMPDIR:-/tmp}/<name>.$$.strap`.
+
+*Two were the `FAIL_FAST` label*, and this is the more embarrassing
+one because the rule that produced them was written in this file.
+`imm-count-low-bits` and `vfl-length-zero-is-zero` were both recorded
+as "caught only by the catch-all smoke test". Re-run with `FAIL_FAST`
+unset:
+
+| mutant | sections that fail |
+|---|---|
+| `imm-count-low-bits` | **10**, including `IBOX-1 KCI`, `IBOX-3 LRI`, `IBOX-1 C+I`, `C-I` — named for the very instructions the rule governs |
+| `vfl-length-zero-is-zero` | **38**, most of them FP and VFL sections on its own subsystem |
+
+Both rules are heavily witnessed. **There are no near misses in this
+campaign.** `mutation_score.py` now prints the column as
+`first-fail:` so it cannot be read as the catcher.
 
 **AND THE COUNT HID AN UNTESTED RULE.** Both ZM mutants reported
 "caught by their own section" — truthfully — while mutating the *same*
@@ -314,6 +326,14 @@ printed page numbers.
   the injected bytecode is reused. Cost one wrong injection result,
   where injection 2 appeared to break a row injection 1 had broken.
   `rm -rf strap/__pycache__` on both sides of every injection.
+* **A summary column is not a measurement.** `mutation_score.py`
+  printed the first failing section; this file read it as "the
+  catcher" and built a near-miss rule on it. Every application of
+  that rule was wrong. The tell: ask what the number would look like
+  if the thing it names were merely *earliest* rather than *causal* —
+  and if you cannot tell the two apart from the summary, go get the
+  raw output. Both retractions today came from reading full logs
+  instead of a one-line attribution.
 * **An instrument that runs in parallel needs its isolation checked,
   not assumed.** `mutation_score.py` gives each mutant its own cloned
   tree — and five test scripts then wrote a FIXED `/tmp` path outside

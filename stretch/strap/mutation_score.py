@@ -87,14 +87,36 @@ not moved off "everything but the documented survivor", which is the
 result to want: new mutations are being added for new subsystems rather
 than to pad a number.
 
-prot-carve-out-as-or was caught in 2.2 minutes BY ITS OWN SECTION,
-"Storage protection: the address boundary registers".  That is the
-reading the project cares about.  A catch by some unrelated section
-would have meant some other test is accidentally sensitive to whether
-the special registers 4-31 signal -- a near miss, and a reason to
-distrust both tests.  Caught where it was aimed, it says the word-4
-store in storage_protection_boundary.strap is doing the job it was
-written for.
+READ THE SECTION COLUMN AS "FIRST TO FAIL", NOT "THE CATCHER".  This
+was wrong in this file and in docs/NEXT.md until 2026-09-23, and the
+wrongness produced confident, false conclusions.  Each mutant runs
+with FAIL_FAST=1, so run_tests.sh stops at the FIRST failing section
+-- which for a broad fault is whatever broad test runs earliest, not
+the test that covers the rule.  Measured:
+
+  imm-count-low-bits   reported "bsv smoke test".  With FAIL_FAST off
+                       it fails TEN sections, four of them named for
+                       the very instructions the rule governs:
+                       IBOX-1 KCI, IBOX-3 LRI, IBOX-1 C+I, C-I.
+  vfl-length-zero-is-zero  reported "bsv smoke test".  With FAIL_FAST
+                       off it fails THIRTY-EIGHT, most of them FP and
+                       VFL sections on its own subsystem.
+
+Both had been recorded as "near misses" -- mutants caught far from
+home, implying the rule had no witness of its own.  Both in fact have
+many.  So a catch attributed to an unrelated section proves NOTHING
+about coverage; it usually just means that section runs early.
+
+WHAT THE COLUMN IS STILL GOOD FOR: spotting when a mutant's first
+failure is suspiciously early or in a section that shares a resource
+with it (that is how the /tmp race was found -- see run_*.sh).  WHAT
+IT IS NOT GOOD FOR: deciding a rule is under-tested.  For that,
+re-run the one mutant with FAIL_FAST unset and read the whole list of
+failing sections, which is what the two measurements above did.
+
+The SURVIVOR list is unaffected by any of this and remains the
+campaign's real signal: a mutant nothing caught is a rule nothing
+tests.
 
 SECOND CAMPAIGN, after closing the three survivors: 9/10, and the one
 survivor is the EXPECTED one -- ad-bound-off-by-one, the SIC read-bail
@@ -702,7 +724,7 @@ def run_parallel(specs, jobs, workroot):
         for f in as_completed(futs):
             name, verdict, dt, why, where = f.result()
             done[name] = (name, verdict, dt, why, where)
-            print(f"{verdict:9} {name:28} {dt/60:5.1f} min  {where}", flush=True)
+            print(f"{verdict:9} {name:28} {dt/60:5.1f} min  first-fail: {where}", flush=True)
     # ... but REPORT in table order, so the summary does not depend on
     # which worker happened to finish first.
     return [done[sp[0]] for sp in specs if sp[0] in done]
@@ -772,7 +794,7 @@ def main():
             _PENDING.pop(path, None)
         dt = time.time() - t0
         verdict = "caught" if caught else "SURVIVED"
-        print(f"{verdict:9} {name:28} {dt/60:5.1f} min  {where}", flush=True)
+        print(f"{verdict:9} {name:28} {dt/60:5.1f} min  first-fail: {where}", flush=True)
         results.append((name, verdict, dt, why))
 
     return report(results)
