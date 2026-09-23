@@ -185,10 +185,30 @@ test* / *equivalent mutant* / *expected* before writing anything.
 **Run 2026-09-22: 32/33, survivor `ad-bound-off-by-one`** — the one
 documented expected survivor. `prot-carve-out-as-or` is back in its
 own section, so the regression the previous run flagged is resolved.
-Four near misses remain, all pre-existing: `seop-ignored-on-backspace`
-caught by *FP sign modifiers*, `seop-ignored-on-backspace-at-load-point`
-by *Address Invalid*, and `imm-count-low-bits` / `vfl-length-zero-is-zero`
-only by the catch-all smoke test.
+
+**TWO OF THE "NEAR MISSES" IN THAT RUN WERE THE TOOL'S OWN FAULT.**
+It first read as four: the two `seop-ignored-on-backspace*` mutants
+caught by *FP sign modifiers* and *Address Invalid*, and
+`imm-count-low-bits` / `vfl-length-zero-is-zero` caught only by the
+smoke test. The SEOP pair was a **measurement artifact**. Five test
+scripts — `run_fp_addr_test.sh`, `run_fp_exp_test.sh`,
+`run_fp_test.sh`, `run_fp_signmod_test.sh`, `run_scf_test.sh` — wrote
+a *fixed* path under `/tmp` and then re-read it. The campaign runs 12
+mutants in parallel, each in its own **cloned tree** — but `/tmp` is
+not cloned, so all twelve wrote and re-read the same file. The race
+failed whichever of those scripts lost it, and `FAIL_FAST` then named
+that section as the catcher. Run serially, both SEOP mutants are
+caught by `io_tape` at exactly the checks their own entries name
+(`CCWO_backspace_SEOP_success`, `CCWM_backspace_SEOP_at_load_point`).
+Each script now uses `${TMPDIR:-/tmp}/<name>.$$.strap`.
+
+So the **verdicts were sound and the attributions were not**: a `/tmp`
+race makes the suite fail for no reason, and `mutation_score.py` marks
+a mutant caught when the suite fails — so it could also mark a real
+SURVIVOR as caught. That did not happen here (32/33 is confirmed), but
+it is the failure mode to remember. **Two genuine near misses remain**:
+`imm-count-low-bits` and `vfl-length-zero-is-zero`, both caught only
+by the smoke test.
 
 **AND THE COUNT HID AN UNTESTED RULE.** Both ZM mutants reported
 "caught by their own section" — truthfully — while mutating the *same*
@@ -294,6 +314,16 @@ printed page numbers.
   the injected bytecode is reused. Cost one wrong injection result,
   where injection 2 appeared to break a row injection 1 had broken.
   `rm -rf strap/__pycache__` on both sides of every injection.
+* **An instrument that runs in parallel needs its isolation checked,
+  not assumed.** `mutation_score.py` gives each mutant its own cloned
+  tree — and five test scripts then wrote a FIXED `/tmp` path outside
+  it, so twelve jobs raced on one file and the campaign blamed
+  whichever script lost. Ask what a parallel job touches that the
+  clone does not cover: `/tmp`, build caches, `__pycache__`. Three
+  separate bugs this session were the same shape — shared state behind
+  apparent isolation. A fourth was self-inflicted: running a test in a
+  tree a background job was mid-rebuild in, which `bsc` reported as a
+  stale `.bo`.
 * **When one document says a thing twice, check it does not say two
   different things.** `archival_inventory.md` described routine 1268
   in two paragraphs twenty lines apart — once as the deck test of the

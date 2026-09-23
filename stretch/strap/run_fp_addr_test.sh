@@ -9,14 +9,22 @@
 # derived from the manual's ST/result-indicator semantics, not fitted.
 set -e
 STRAP_DIR="$(cd "$(dirname "$0")" && pwd)"; cd "$STRAP_DIR"
+# UNIQUE temp path, per invocation.  This script used to write a
+# FIXED path under /tmp and then re-read it.  mutation_score.py runs
+# 12 mutants in parallel, each in its own CLONED TREE -- but /tmp is
+# not cloned, so all 12 wrote and re-read the same file.  The race
+# failed this test spuriously and made the campaign attribute
+# mutants to whichever of these five scripts lost it.  See
+# docs/NEXT.md section 4.
+OUT="${TMPDIR:-/tmp}/fpad.$$.strap"
 eval "$(python3 fp_arith_expected.py)"   # sets TWO=0x...
-python3 - "$TWO" <<PY > /tmp/fpad.strap
+python3 - "$TWO" <<PY > "$OUT"
 import sys
 s=open('programs/fp_addr_invalid.strap').read()
-open('/tmp/fpad.strap','w').write(s.replace('TWO     DD(BU,64), 0', f'TWO     DD(BU,64), {int(sys.argv[1],16)}'))
+open('$OUT','w').write(s.replace('TWO     DD(BU,64), 0', f'TWO     DD(BU,64), {int(sys.argv[1],16)}'))
 PY
-SAVE=$(python3 -c "from strap_asm import assemble;print(assemble(open('/tmp/fpad.strap').read()).symtab['ACCSAVE']//64)")
-exec ./run_program.sh /tmp/fpad.strap StretchFpAdTb \
+SAVE=$(python3 -c "from strap_asm import assemble;print(assemble(open('$OUT').read()).symtab['ACCSAVE']//64)")
+exec ./run_program.sh "$OUT" StretchFpAdTb \
     "ACC_unchanged:$SAVE=$TWO" \
     "AD_and_store:11=0x0000800000000120" \
     "CYCLES<=100000"
