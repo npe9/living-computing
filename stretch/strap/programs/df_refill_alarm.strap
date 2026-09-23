@@ -1,0 +1,127 @@
+! DF on a REFILL ADDRESS -- Reference Manual p.32, class 3, the half of
+! it that names operations: "the refill address used in index refill
+! operations and the operations REFILL and REFILL ON COUNT ZERO."
+!
+! WEAKER STANDARD, hand-written from p.32, for the reason
+! df_data_fetch_alarm.strap gives at length: no listing this project
+! has read tests DF at all.  This is the companion to that program --
+! it covers R and RCZ; that one covers p.32's class 1.  The OTHER nine
+! refill-read sites, the ones progressive indexing and count-branching
+! issue, are still unmonitored and this program does not touch them.
+!
+! WHERE THE SIGNAL GOES, and the constraint that decides it.  Routine
+! 1238's test 2 (jb_ax4b p.58-59) established that a refill address of
+! 1-15 is SUPPRESSED and that word 0 does refill -- "CHK REFILL FRM
+! LOCN 0" against "CHK NO REFILL FRM LOCNS 1 THROUGH 17" -- which the
+! model spells refillLegal.  RCZ adds a second gate: it "acts only if
+! its count is zero" (p.26).  A refill that either gate suppresses
+! READS NOTHING, and p.32's own first sentence is "all storage
+! addresses ACTUALLY USED by the CPU in the course of an operation are
+! subject to address monitoring."  So dfSignal sits INSIDE both gates,
+! and the block below that runs RCZ with a non-zero count is what makes
+! that placement a tested claim rather than a comment.
+!
+! AND ONLY A REFILL ADDRESS OF 32 OR MORE CAN EVER SIGNAL.  p.31's
+! carve-out means words 0 and 4-31 never do; 1-3 always do but are the
+! permanently protected registers; 1-15 are suppressed anyway and 16-31
+! are the index registers.  So the monitored area here holds ordinary
+! core, which is the only place a refill source can be that matters.
+!
+! MASK-ZERO ONLY, same scope as df_data_fetch_alarm.strap and for the
+! same reason: p.32's mask-one behaviour is suppression and
+! termination, and this model has no termination mechanism.
+!
+! Instructions: BD, BE, LVI, SV, LX, SX, KV, R, RCZ, NOP, BB, BB1,
+! BBZ, BZB, B, BEW -- all implemented.
+
+        SLC, (8)4100.0
+START   BD,  $+.32                   ! disable: words 2 and 3 are protected
+        LVI, $X13, TBL
+        SV,  $X13, $IA
+        LVI, $X13, RFSRC
+        SV,  $X13, $LB               ! lower boundary := RFSRC
+        LVI, $X13, ABOVE
+        SV,  $X13, $UB               ! upper boundary := ABOVE
+        BBZ, 3.57, $+1.0             ! control bit := 0: signal INSIDE
+        BBZ, 12.20, $+1.0            ! DF's mask bit := 0
+        BE,  $+.32
+!
+! ---- 1. R refilling an INDEX REGISTER from the monitored area -----
+        LX,  $X0,  K1                ! K1 is outside; its refill is RFSRC
+        R,   $X0
+        BZB, $DF,  $                 ! hang if the refill address missed DF
+        BB,  $IF,  $                 ! hang if it lit bit 21 instead of 20
+        BBZ, $DF,  $+1.0
+        KV,  $X0,  RFCOPY            ! and the refill LANDED: mask zero,
+        BZB, $XE,  $                 !   so the operation proceeds
+!
+! ---- 2. RCZ with a NON-ZERO count refills nothing ----------------
+!   The gate that makes the placement above a claim.  K2's refill names
+!   the same monitored word, and RCZ must not read it.
+        LX,  $X1,  K2                ! count non-zero, refill -> RFSRC
+        RCZ, $X1
+        BB,  $DF,  $                 ! hang if a suppressed refill lit DF
+        KV,  $X1,  K2COPY            ! and nothing was refilled
+        BZB, $XE,  $
+!
+! ---- 3. RCZ with a zero count does refill ------------------------
+        LX,  $X1,  K1                ! count 0, refill -> RFSRC
+        RCZ, $X1
+        BZB, $DF,  $                 ! hang if RCZ's refill missed DF
+        BBZ, $DF,  $+1.0
+!
+! ---- 4. R whose operand word is in EXTERNAL MEMORY ---------------
+!   Two sequential reads: the index word at the effective address, then
+!   the word its refill field names.  EXIDX is OUTSIDE the area, so
+!   only the second read can signal.
+        LX,  $X2,  K1
+        SX,  $X2,  EXIDX
+        R,   EXIDX
+        NOP
+        NOP
+        BZB, $DF,  $                 ! hang if the external path missed DF
+        BBZ, $DF,  $+1.0
+!
+! ---- 5. and that path's own operand read is a STORE --------------
+!   EXIN sits INSIDE the area and R writes it back, so p.32 puts its
+!   read on the DS side.  Its refill names a word OUTSIDE, so DF has
+!   nothing else to fire on and a model that signalled DF for `rw`
+!   would be caught here.  The NOPs give the interruption its quiescent
+!   boundary -- see df_data_fetch_alarm.strap's note.
+        R,   EXIN
+        NOP
+        NOP
+        NOP
+        NOP
+        NOP
+        NOP
+        NOP
+        NOP
+        BB,  $DF,  $                 ! hang if the operand read lit DF
+        BZB, 6.0,  $                 ! hang if DS's routine did not run
+        BBZ, 6.0,  $+1.0
+        B,   PASS
+PASS    BEW, $
+!
+! ---- constants, all OUTSIDE the monitored area -------------------
+        SLC, (8)4200.0
+K1      XW, 0, 0, RFSRC              ! count 0, refill -> RFSRC (inside)
+K2      XW, 0, 7, RFSRC              ! count 7: RCZ must not fire
+K2COPY  XW, 0, 7, RFSRC              ! ... and $X1 must still equal it
+RFCOPY  XW, (8)123456.76, (8)543210, (8)123456
+EXIDX   NOP                          ! scratch: an index word is stored here
+        NOP
+OUTSRC  XW, (8)765432.10, 0, 0       ! a refill source OUTSIDE the area
+!
+! ---- the monitored area ------------------------------------------
+        SLC, (8)4300.0
+RFSRC   XW, (8)123456.76, (8)543210, (8)123456   ! == the lower boundary
+EXIN    XW, 0, 0, OUTSRC             ! an index word INSIDE the area
+ABOVE   DD(BU,64,8), 0               ! == the upper boundary, first word out
+!
+! ---- the interruption table --------------------------------------
+        SLC, (8)4500.0
+TBL     DD, 0
+        SLC, (8)4523.0
+DSRTN   BB1, 6.0, $+1.0              ! entry 19 = DS
+        END, START

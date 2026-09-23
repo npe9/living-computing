@@ -224,8 +224,50 @@ program is stores for exactly that reason, and the injection that adds
 
 **Class 3 is NOT done**: the eleven `needsRead = tagged Valid
 zeroExtend(...refill)` sites. Each is a data fetch by p.32 and none
-signals. This is the next piece of DF, and it is smaller than class 1
-was.
+signals.
+
+**AND THE ESTIMATE THAT USED TO SIT HERE WAS WRONG.** This line read
+"the next piece of DF, and it is smaller than class 1 was". It is
+not. Class 1 was four sites with a clean `ea` already in scope at
+each. Class 3 is eleven sites across five functions — `evalBranch`,
+`vflIntOp`, `connectiveOp`, `dirIndexOp`, `immIndexOp`, plus the
+`R`/`RCZ` arm's two paths — and each needs the signal placed so it
+lands on the COMPLETING call while being gated off the paths where the
+refill is skipped: `vflOk` false, `vflReadsUsed >= 2` (which becomes
+`setOpInvalid`), and `refillLegal` false. The trap about distrusting a
+blocker recorded in this file has a mirror image, and this was it: an
+UNDERSTATED estimate is the same failure mode, and costs the same way.
+
+**TWO CONSTRAINTS THAT SHAPE THE WORK**, both already in the model:
+
+1. `refillLegal(rf) = (rf == 0) || (rf >= 16)` — refill addresses
+   1–15 are SUPPRESSED, so no read happens and no DF may fire. This is
+   a deck fact, from routine 1238's TEST 2G/2H (word 0 does refill,
+   1–15 do not), and it is the tightest constraint on where the signal
+   can go: before the `refillLegal` gate is wrong.
+2. `protViolates` consults the boundaries only for `a >= 32`. Refill 0
+   is in p.31's carve-out, 1–15 are suppressed, 16–31 are the index
+   registers and also carved out. So **only a refill address ≥ 32 can
+   ever raise DF**, which is what the test program has to set up and
+   all it has to set up.
+
+**SPLIT ON p.32'S OWN SEAM**, which names two things: "the refill
+address used in *index refill operations*" and "*the operations REFILL
+and REFILL ON COUNT ZERO*".
+
+* **`R`/`RCZ`: DONE.** `programs/df_refill_alarm.strap`, both paths
+  (index register and the external-memory one that takes two
+  sequential reads), five injections. It answered the thing that was
+  not known: class 1's pattern — set the signal where the address is
+  computed, let the bailing call discard it, let the resuming call set
+  it again — holds for refills unchanged. The one addition is that the
+  signal must sit INSIDE `refillLegal` and RCZ's count gate, because a
+  suppressed refill reads nothing and p.32 monitors addresses
+  "actually used".
+* **Progressive and count refills second** — the other nine sites.
+  Write ONE function, build it, run it, then replicate; these interact
+  with control flow the change reshapes, unlike class 1's four
+  independent anchors.
 
 **The mask-dependent half is not done, for DF or DS.** p.32: "if the
 DF mask bit is one, the data fetch is suppressed and the operation

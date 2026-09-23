@@ -318,9 +318,12 @@ endfunction
 // this suppresses only the store, so a BB whose write is suppressed
 // still branches).  p.32's class 3 for DF, "the refill address used in
 // index refill operations and the operations REFILL and REFILL ON
-// COUNT ZERO" -- the model issues a refill read at eleven sites (every
-// `needsRead = tagged Valid zeroExtend(...refill)` in this file) and
-// none of them signals.  And the straddling rule ("an instruction or data
+// COUNT ZERO" -- HALF DONE.  The two named operations, R and RCZ, now
+// signal on both their paths (index register and external memory).
+// The other nine sites, the refills that progressive indexing and
+// count-branching issue, still do not; they are the same rule and a
+// separate piece of work, because each has to be gated off the paths
+// where the refill is computed and then skipped.  And the straddling rule ("an instruction or data
 // field which straddles a boundary always gives an address monitoring
 // signal", p.31) for STORES: dfSignal's callers ask about both words
 // of a crossing field, the store sites still compare one word each.
@@ -3116,6 +3119,13 @@ function ActionValue#(ExecResult)
                 Bit#(4) j = truncate(rw - addrIndexBase);
                 IndexWord x = st.readIndex(j);
                 if ((bm.code == 3'b000 || x.count == 0) && refillLegal(x.refill)) begin
+                  // DF, p.32 class 3: "the refill address used in
+                  // index refill operations and the operations REFILL
+                  // and REFILL ON COUNT ZERO."  INSIDE this gate, not
+                  // before it -- a refill that RCZ's count suppresses,
+                  // or that refillLegal suppresses, reads nothing, and
+                  // p.32 monitors "storage addresses actually used".
+                  ind = dfSignal(st, zeroExtend(x.refill), ind);
                   if (prefetchCount >= 1) begin
                     idxWriteReg = j; doIdxWrite = True;
                     idxWriteVal = unpackIndexWord(prefetch[0]);
@@ -3141,6 +3151,12 @@ function ActionValue#(ExecResult)
                 else begin
                   IndexWord x = unpackIndexWord(prefetch[0]);
                   if ((bm.code == 3'b000 || x.count == 0) && refillLegal(x.refill)) begin
+                    // DF, p.32 class 3 -- see the sibling gate above.
+                    // `rw` itself gets no DF: it is read here and
+                    // WRITTEN below, so p.32 puts it on the DS side,
+                    // and the protViolates call below is where it is
+                    // answered.
+                    ind = dfSignal(st, zeroExtend(x.refill), ind);
                     if (prefetchCount >= 2)
                       if (protViolates(st, rw)) ind = setBit(ind, ind_DS, 1);
                       else st.writeWord(rw, prefetch[1]);

@@ -365,6 +365,47 @@ run "DF: the data-fetch address alarm, p.32 class 1" ./run_program.sh programs/d
 # at the same address, so "BB, $IF, $" sits beside the first check to
 # assert the neighbour is OFF.  Without it the bit NUMBER is assumed
 # rather than tested.
+
+run "DF on a refill address: R and RCZ (p.32 class 3)" ./run_program.sh programs/df_refill_alarm.strap StretchDfRfTb \
+    "PC=4285"          # 004136.40; hand-written, not a listing fact
+# THE OTHER HALF OF p.32'S CLASS 3, and the manual's own seam: "the
+# refill address used in index refill operations and the operations
+# REFILL and REFILL ON COUNT ZERO".  This covers the two NAMED
+# operations, both their paths -- the index-register one and the
+# external-memory one that takes two sequential reads.  The nine
+# refill reads that progressive indexing and count-branching issue are
+# still unmonitored, and that is said on protViolates and in NEXT.md
+# rather than left to be found.
+#
+# THE SIGNAL SITS INSIDE BOTH SUPPRESSION GATES, and that is the whole
+# content of the placement.  refillLegal suppresses a refill address of
+# 1-15 -- a DECK fact, routine 1238's TEST 2G against TEST 2H, "CHK
+# REFILL FRM LOCN 0" and "CHK NO REFILL FRM LOCNS 1 THROUGH 17" -- and
+# RCZ "acts only if its count is zero" (p.26).  A refill either gate
+# suppresses READS NOTHING, and p.32 opens "all storage addresses
+# ACTUALLY USED by the CPU in the course of an operation are subject to
+# address monitoring."  Block 2 runs RCZ with a count of seven whose
+# refill field names the monitored word, which is what makes that a
+# tested claim; injection 3 hoists the signal one line outward and
+# block 2 is what catches it.
+#
+# ONLY A REFILL ADDRESS OF 32 OR MORE CAN EVER SIGNAL, which is why the
+# monitored area here is ordinary core and nothing else.  p.31's
+# carve-out means 0 and 4-31 never signal; 1-15 are suppressed by
+# refillLegal anyway and 16-31 are the index registers.
+#
+# Five injections, each predicted before it was run, each landing on
+# the predicted address.  Reproduce any row with
+#   python3 line_addresses.py programs/df_refill_alarm.strap
+#
+#   index-register signal removed   -> 004107.00  BZB, $DF,  $
+#   external-memory signal removed  -> 004124.40  BZB, $DF,  $
+#   signal hoisted OUTSIDE the gate -> 004114.40  BB,  $DF,  $  (after RCZ,
+#                                       count 7 -- the refill never happened)
+#   external path signals `rw` too  -> 004133.00  BB,  $DF,  $  (after R on a
+#                                       word INSIDE the area, which R rewrites,
+#                                       so p.32 puts its read on the DS side)
+#   dfSignal sets IF (21) not DF    -> 004107.00  BZB, $DF,  $
 # THE BOUNDARY REGISTERS, the second half of address monitoring.  Word
 # 3 holds the upper boundary in bits 0-17, the lower in 32-49 and the
 # boundary control bit at 57 (p.31 -- upper is named first and sits

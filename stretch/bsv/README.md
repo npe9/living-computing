@@ -358,7 +358,9 @@ permanently protected words 1-3 and the area named by the boundary
 registers in word 3, gated on the interrupt-system enable bit, and for
 FETCH-type references in p.32's class 1 -- "the effective address of
 all fetch-type operations with a direct address" -- which turns DF on;
-p.32's class 3 for DF (the refill addresses), IF entirely, the
+p.32's class 3 for DF is half done -- R and REFILL ON COUNT ZERO
+signal on both their paths, the nine refill reads that progressive
+indexing and count-branching issue do not.  IF entirely, the
 MASK-DEPENDENT half of DF and DS, and the straddling rule are still
 not modeled, see `StretchExecute.bsv`'s `protViolates` and `dfSignal`), the interval
 timer/clock actually ticking, and — the machine's defining engineering

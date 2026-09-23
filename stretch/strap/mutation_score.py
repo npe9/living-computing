@@ -302,6 +302,25 @@ MUTATIONS = [
      " p.32 class 1 covers every fetch-type operation with a direct"
      " address, not only the VFL and floating-point ones."),
 
+    # DF CLASS 3, AND THE GATE THAT DECIDES WHERE THE SIGNAL GOES.  A
+    # refill whose address is 1-15 is suppressed (routine 1238's TEST
+    # 2G/2H), and RCZ's refill happens only when the count is zero
+    # (p.26).  Either way nothing is read, and p.32 monitors "all
+    # storage addresses ACTUALLY USED".  This mutant hoists the signal
+    # one line outward, past RCZ's count gate, so a refill that never
+    # happens turns DF on.  Only df_refill_alarm.strap's second block
+    # -- RCZ with a count of seven whose refill field names the
+    # monitored word -- can see it.
+    ("df-refill-signals-before-gate", "bsv/StretchExecute.bsv",
+     "                if ((bm.code == 3'b000 || x.count == 0) && refillLegal(x.refill)) begin\n"
+     "                  // DF, p.32 class 3:",
+     "                ind = dfSignal(st, zeroExtend(x.refill), ind);\n"
+     "                if ((bm.code == 3'b000 || x.count == 0) && refillLegal(x.refill)) begin\n"
+     "                  // DF, p.32 class 3:",
+     "A refill that RCZ's count gate suppresses turns DF on anyway;"
+     " p.32 monitors addresses actually used, and a suppressed refill"
+     " reads none."),
+
     # THE MASK, IN THE INTERRUPTION MECHANISM.  p.48: "interruption
     # requires the mask bit to be 1, the indicator bit to be 1, and the
     # mechanism to be enabled."  Dropping the mask takes an interruption
