@@ -711,6 +711,76 @@ pages hold nothing of the kind. What they actually contain, in order:
 | pp.41-44 | **the per-indicator turn-on blocks**, 16071 through 16086 -- one per I-Box indicator (`TS`, `CPUS`, `EKJ`, `UNRJ`, `CBJ`, `EPGK`, `UK`, `EE`, `EOP`, `CS`, `RESRVD`, `OP`, `AD`, `USA`, `EXE`, `DS`). Sixteen blocks, but not sixteen tests -- see the triage below. |
 | p.45 | **the indicator-walk driver**, 16087/16088 -- **transcribed** as `strap/programs/ax5b_16087_walk.strap`, six rows bit-exact via `strap/verify_ax5b_16087_listing.py`: `SIC,160SX1` / `B,160S1`, `TI,1,BIT0%$X1,$IND` *"SET ONE OF 20-47"*, `TI,1,BIT0%$X1,$MASK` *"SET MASK BIT OF TEST IND BIT"*, `BE,$+.32` *"ENABLE AND AWAIT INTERRUPT"*, then `BD,160B13%$X6` -- an indexed dispatch into the per-indicator error table `160B13`, whose entries read *"FAILED TO INTERRUPT ON IND MK / IN 1 MILLISEC."*, then IK, IJ, EK, TS, CPUS, EKJ, UNRJ, CBJ, EPGK, UK, EE, EOP, CS. |
 
+**ROUTINE 1262 -- "TEST EX AND EXIC", read first-hand 2026-09-23.**
+It begins at PDF p.87 and runs to ~p.110. Its purpose block, read at
+600 dpi and transcribed verbatim:
+
+```
+----1262----TEST EX AND EXIC.
+-THIS TEST IS COMPOSED OF THREE BASIC
+-TESTS WHICH CHECK THE ABOVE TWO
+-INSTRUCTIONS AS FOLLOWS.
+    -TEST 1 CHECKS THE EXECUTION OF
+        -ALL CLASSES OF INSTRUCTIONS
+        -AND THAT ILLEGAL EXECUTES WILL
+        -SET THE CORRECT INDICATORS.
+    -TEST 2 CHECKS THE OPERATION OF
+        -THE EXIC INSTRUCTION.  ILLEGAL
+        -COMBINATIONS ARE USED TO CHECK
+        -THAT THE CORRECT INDICATORS
+        -ARE SET.
+    -TEST 3 CHECKS THE ILLEGAL COMBINATIONS
+        -OF EX AND EXIC.
+```
+
+**WHAT THE EXIC BLOCKS PIN DOWN**, read first-hand from PDF p.101,
+which is the clearest page. Each block repeats one shape per
+instruction class:
+
+```
+LVI,$X1,<err>   SVA,$X1,162ITE     point the interrupt table entry
+LVI,$X1,162SUB  SVA,$X1,162PSI     set the PSEUDO-IC to the subject
+LX,$X1,162EXF   SX,$X1,162SUB      plant the subject instruction
+Z,$IND  Z,$MASK  Z,$L  Z,$R        clear indicators, mask, accumulator
+LV,$X2,162PSI                      remember the pseudo-IC
+EXIC,162PSI                        <- the instruction under test
+BD,<next>
+<err>  SIC,SEN / B,SERS   "-INT WHEN EXIC TO / -A FLT PT INSTRUCT."
+<next> LX,$X1,$L
+       SIC,SEN / BXVZ,SERS "-SUBJ INST WAS FLT PT / -AND WAS NOT EXECUTED."
+       V+I,$X2,0.32  KV,$X2,162PSI
+       SIC,SEN / BZXE,SERS "-PSEUDO IC NOT STEPPED .32 CORRECTLY
+                            / -WHEN SUBJ INST WAS IMMED IX."
+```
+
+Three separate rules per class, each with its own error message:
+1. `EXIC` to that class must **not** interrupt;
+2. the subject instruction must actually **execute** (checked by its
+   effect -- here `$L`, the accumulator's left half);
+3. the **pseudo-IC must be stepped** by the subject instruction's
+   length -- `.32`, one half-word -- which the block verifies by adding
+   `0.32` to the saved value and comparing (`V+I` then `KV`).
+
+Classes seen on p.101 alone: MISC, FLT PT, FULL WD VFL, IMMED IX.
+Sighted by OCR on neighbouring pages and NOT yet read first-hand, so
+treat as pointers rather than quotations: p.92 "TEST 1CA, ENABLE
+AFTER EX", "TEST 1CB, CHK ADR MONITOR", "TEST 1CC, CHK EX OF BRANCH
+AND EXE"; p.98 "EXIC RELINQUISHES CONTROL TO INSTRUCT", "PSEUDO IC
+UNCHANGED BY EXIC"; p.99 "TEST 2B, CHK EXIC OF NON BRANCH".
+
+**This is the oracle `NEXT.md` section 5 wanted for `EX`/`EXIC`,** and
+reading it first is what item 2 asks for -- let the oracle shape the
+implementation rather than retrofitting one. It pairs with Reference
+Manual p.45's definition of indicator 18: "*Execute Exception (EXE).
+An instruction was executed under control of the EXECUTE or the
+EXECUTE INDIRECT AND COUNT operations that attempted to change the
+contents of the instruction counter. The subject operation was
+suppressed.*"
+
+**Unblocking value**: `EX` is what 1268 cases 1B/1C need (`EX,$X3`,
+`EX,$R`) and what 1260 blocks 16084/16085 need. Four already-located
+transcription targets wait on it.
+
 **ROUTINE 1268 TEST 1 -- transcribable, and what the pen marks mean.**
 Test 2 is transcribed (see below). Test 1, the store-to-INSTRUCTION-
 -fetch half at PDF p.110, is not, and the reason is worth recording

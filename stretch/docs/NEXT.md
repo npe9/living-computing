@@ -244,10 +244,37 @@ injection address a new test records should come from it, and it
 reproduces the ones already recorded — which is what makes them
 checkable rather than folklore.
 
+## 4a. `EX`/`EXIC` — the oracle is read; implement from it
+
+**The highest-leverage unimplemented instruction**, because four
+already-located transcription targets wait on it: `jb_ax5b` routine
+1268 cases 1B/1C (`EX,$X3`, `EX,$R`) and routine 1260 blocks 16084
+(`LVE`) / 16085 (`EX`).
+
+**Routine 1262 is its deck oracle and has been read first-hand**
+(2026-09-23, PDF pp.87–110; purpose block and the p.101 EXIC blocks
+transcribed in `archival_inventory.md`). Its own header: *"TEST EX
+AND EXIC"*, in three parts — test 1 the execution of **all classes**
+of instruction plus the indicators illegal executes set; test 2 the
+`EXIC` instruction; test 3 the **illegal combinations** of the two.
+
+**What p.101 pins down, three rules per instruction class**, each with
+its own error message: `EXIC` to that class must not interrupt; the
+subject instruction must actually execute; and the **pseudo-IC must be
+stepped by the subject's length** (`.32` for a half-word), which the
+deck checks with `V+I` then `KV`.
+
+Pair it with Reference Manual p.45 on indicator 18 (EXE): an
+instruction executed under `EX`/`EXIC` that *"attempted to change the
+contents of the instruction counter"* is **suppressed**.
+
+Design from those, then transcribe 1262 as the acceptance test — the
+order item 2 asks for and did not get.
+
 ## 5. Deferred, each its own piece of work
 
-Decimal VFL (`c=1`) and radix conversion; `EX`/`EXIC` (deck oracle:
-`ax5b` routine 1262); `RNX`/`LVE`/`LVS`; Transmit backward/`SWAP`/
+Decimal VFL (`c=1`) and radix conversion; `RNX`/`LVE`/`LVS`;
+Transmit backward/`SWAP`/
 multi-word; I/O chaining and multiple-block; `LOC` and the
 unimplemented `CTL` function codes; channel status reaching the CPU
 indicators; the interval timer actually ticking (deck oracles: `ax5b`
