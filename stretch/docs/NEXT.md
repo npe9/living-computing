@@ -143,12 +143,18 @@ them means Reference Manual p.32 alone — the weaker standard, stated
 as such in whatever program tests them, exactly as storage protection
 was until `ax5b_16086_ds.strap`.
 
-**What 1268 turned out to be good for** is in
-`run_tests.sh` §"I-Box 5 routine 1268 test 2" —
-`programs/ax5b_1683_df_close_to_ds.strap`, transcribed and **run**.
-Its encoding is the discriminating standard; its run passes but does
-**not** witness forwarding on this model, measured. That is item 3's
-business now, not item 2's.
+**What 1268 turned out to be good for.** Both halves are transcribed
+and **run**: `ax5b_1683_df_close_to_ds.strap` (test 2, the load side)
+and `ax5b_1681_if_close_to_ds.strap` (test 1A, the
+instruction-fetch side). Records in `run_tests.sh`. In both, the
+encoding is the discriminating standard and the run is a regression
+guard — measured, neither witnesses forwarding, because the deck's
+spacing is too gentle for this model's pipeline. Test 1A does witness
+something the project had no direct test for: the `LX`/`SX` **index-word
+round trip**, since it plants an arbitrary instruction through
+`packIndexWord` and executes it.
+
+**Left on 1268**: cases 1B and 1C, blocked on `EX` (item 5).
 
 ## 3. Smaller open pieces inside what is built
 

@@ -3057,6 +3057,46 @@ run "Program store compare: store then EXECUTE the modified instruction" ./run_p
 # store target (plan stage 3a note). This exact pattern failed before.
 run "Look-ahead: store-close-to-fetch" ./run_scf_test.sh
 
+run "I-Box 5 routine 1268 test 1A, bit-exact (jb_ax5b p.110)" python3 verify_ax5b_1681_listing.py
+run "I-Box 5 routine 1268 test 1A, ON THE MODEL (self-modifying execution)" ./run_program.sh programs/ax5b_1681_if_close_to_ds.strap StretchAx5b1681Tb \
+    "PC=20937"         # 024344.40, where the listing continues into test 1B
+# THE INSTRUCTION-FETCH HALF of routine 1268, and the neatest block in
+# it.  The deck plants a whole word over location 1682 TWICE and then
+# FALLS INTO 1682 and executes what is there -- first [Z,$X2 | NOP],
+# then [LVI,$X2,(8)777777.40 | NOP].  "LX,$X2,$X2" re-reads X2 without
+# changing it, purely so the index result indicators describe X2 (Ref.
+# Manual p.23); the following BXVZ tests them, and value-zero means the
+# stale Z ran: "EXECUTED OLD INSTRUCTION FROM EXT."
+#
+# THE PEN MARKS ON p.110 ARE A READER'S NOTE, resolved at 600 dpi
+# BEFORE transcribing: the XW's second half-word is boxed with "LVI"
+# written beside it (the slot is overwritten at run time, so what
+# executes is not what the listing prints) and "LX,$X2,$X2" is circled
+# (the indicator trick).  Explanations, not corrections.
+#
+# THE RUN WITNESSES THE LX/SX INDEX-WORD ROUND TRIP, which is worth
+# more here than the forwarding it cannot see.  LX and SX move a WHOLE
+# 64-bit word, so an arbitrary INSTRUCTION is planted through
+# packIndexWord/unpackIndexWord.  Injecting packIndexWord to zero
+# `count` (IBM 28-45) halts the program at 1416 = 001304.00 = SERS --
+# the deck's OWN error path -- because IBM bit 31 lives in `count` and
+# is part of the planted LVI's J field, so the plant stops being
+# "LVI,$X2" and X2 stays zero.  Dropping `addr` bit 23 also fails, but
+# at PC 0, chaotically.
+#
+# AND A MUTANT IT PROVABLY CANNOT HELP, computed rather than guessed.
+# The existing index-spare-bits-zeroed mutant zeroes IBM bits 26-27.
+# The planted words are 168K1 = 0x0004920000001800 and
+# 168K2 = 0xffffe50100001800; sign, flag AND SPARE are already zero in
+# both, so that mutant cannot change what is planted and this block
+# passes under it.  It stays the campaign's slowest near-miss, caught
+# 23 minutes away by "IBOX-3 SVA into a floating-point instruction".
+# Knowing WHY a test cannot catch something beats hoping it does.
+#
+# WHAT THE RUN DOES NOT WITNESS: look-ahead forwarding.  Two NOPs sit
+# between the store and the fetch -- gentler even than test 2, which is
+# already too gentle for this model.  Regression guard, not oracle.
+
 run "I-Box 5 routine 1268 test 2, bit-exact (jb_ax5b p.111)" python3 verify_ax5b_1683_listing.py
 run "I-Box 5 routine 1268 test 2, ON THE MODEL (the deck's own logic)" ./run_program.sh programs/ax5b_1683_df_close_to_ds.strap StretchAx5b1683Tb \
     "PC=20988"         # 024376.00, where the listing continues

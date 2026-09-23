@@ -1,0 +1,100 @@
+! jb_ax5b "I-Box 5", routine 1268 TEST 1A -- the deck's own test that
+! an INSTRUCTION FETCHED CLOSE TO A STORE fetches the new instruction.
+! PDF p.110 (printed p.107), octal 024337.00-024344.00, transcribed
+! VERBATIM at the listing's own addresses, checked bit-exactly by
+! verify_ax5b_1681_listing.py AND RUN ON THE MODEL.
+!
+! WHAT 1268 IS: see ax5b_1683_df_close_to_ds.strap's header.  Briefly:
+! docs/NEXT.md called it the deck test of the DF and IF INDICATORS; it
+! is not.  Its header is "1268 -- IF AND DF CLOSE TO DS" and its error
+! messages are "EXECUTED OLD INSTRUCTION FROM EXT." and "LOADED OLD
+! DATA FROM EXT MEM." -- the wrong VALUE arrived.  DF and IF are the
+! Data Fetch and Instruction Fetch PATHS.  Test 2 is the load side;
+! this is the INSTRUCTION side.
+!
+! HOW IT WORKS, and it is the neatest block in the routine.  The deck
+! stores a whole word over location 1682, twice, and then FALLS INTO
+! 1682 and executes whatever is there:
+!
+!   LX,$X1,168K1 / SX,$X1,1682    plant  [Z,$X2 | NOP]
+!   NOP / NOP
+!   LX,$X1,168K2 / SX,$X1,1682    plant  [LVI,$X2,(8)777777.40 | NOP]
+!   1682 XW,0,0,0                 ...the slot, executed as planted
+!   LX,$X2,$X2                    re-read X2 to SET THE INDICATORS
+!   SIC,SEN / BXVZ,SERS           "EXECUTED OLD INSTRUCTION FROM EXT."
+!
+! If the instruction fetch saw the second store, the LVI runs and X2
+! becomes 777777.40; if it executed the stale first one, the Z runs
+! and X2 is zero.  "LX,$X2,$X2" reads X2 from its own word -- changing
+! nothing -- purely so the index result indicators describe X2 (Ref.
+! Manual p.23), which is what the following BXVZ tests.
+!
+! THE PEN MARKS ON THIS PAGE ARE A READER'S NOTE, NOT A CORRECTION,
+! and they were resolved at 600 dpi before anything was transcribed:
+! the XW's second half-word is boxed with "LVI" written beside it --
+! flagging that the slot is overwritten at run time, so what executes
+! is not what the listing prints -- and "LX,$X2,$X2" is circled,
+! flagging the indicator trick above.  The printed machine code is the
+! assembler's own output and is what this file checks.
+!
+! THIS RUNS, AND IT EXERCISES SOMETHING WORTH EXERCISING: a stored
+! word being fetched and executed as an instruction, through LX/SX,
+! which move a WHOLE 64-bit index word (Ref. Manual p.23).  So it also
+! witnesses that packIndexWord/unpackIndexWord ROUND-TRIP an arbitrary
+! instruction word -- if any bit were dropped, the planted LVI would
+! decode as something else and X2 would not come out 777777.40.
+!
+! WHAT IT DOES NOT WITNESS, measured rather than assumed -- the same
+! limit as test 2, and worse here.  This block puts TWO NOPs between
+! the store and the fetch, so it is even gentler than test 2, which is
+! already too gentle for this model: removing StretchStorage.bsv's
+! "&& !storeQ.notEmpty" store-queue drain leaves test 2 green while
+! the hand-written ebox_register_close_to_fetch.strap fails.  Treat
+! the run as a regression guard on self-modifying execution, not as an
+! oracle for look-ahead forwarding.
+!
+! SUBSTITUTIONS: three, all named.
+!   1. Numeric labels prefixed "L" (1681, 1682, 168K1, 168K2).
+!   2. SERS is a "B,$" HANG at its own printed address 001304.00; the
+!      real error-report routine is not transcribed.
+!   3. A "BEW,$" exit at 024344.40, where the listing continues into
+!      test 1B ("LX,$X1,168K1  -TEST 1B, IF CLOSE TO DS IN IX STG.").
+!      1B and 1C need EX, deferred in docs/NEXT.md section 5.
+! 168K1 and 168K2 are transcribed from p.111 at their printed
+! addresses, not manufactured.
+
+L168K1  SYN, (8)24407.0            ! [Z,$X2 | NOP]      (p.111)
+L168K2  SYN, (8)24410.0            ! [LVI,$X2,.. | NOP] (p.111)
+SEN     SYN, (8)1310.0
+SERS    SYN, (8)1304.0
+
+        SLC, (8)24337.0
+L1681   LX,  $X1, L168K1           ! -TEST 1A,IF CLOSE TO DS IN EXT MEM.
+        SX,  $X1, L1682            !  plant the OLD instruction
+        NOP
+        NOP
+        LX,  $X1, L168K2
+        SX,  $X1, L1682            !  plant the NEW one over it
+L1682   XW,  0, 0, 0               !  the slot -- executed as planted
+        LX,  $X2, $X2              !  re-read X2 to set the indicators
+        SIC, SEN
+        BXVZ, SERS                 ! -EXECUTED OLD INSTRUCTION FROM EXT.
+!
+! ---- substitution 3: the exit ---------------------------------------
+        SLC, (8)24344.40
+PASS    BEW, $
+!
+! ---- the routine's constants, transcribed from p.111 ----------------
+        SLC, (8)24407.0
+K1      Z,   $X2                   ! 168K1: the OLD instruction
+        NOP
+        SLC, (8)24410.0
+K2      LVI, $X2, (8)777777.40     ! 168K2: the NEW one
+        NOP
+!
+        SLC, (8)1310.0
+SENW    DD(BU,64), 0               ! SIC's target
+! ---- substitution 2: SERS is a hang ---------------------------------
+        SLC, (8)1304.0
+SERSH   B, $
+        END, L1681

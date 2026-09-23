@@ -731,9 +731,25 @@ correction:
 
 So the printed machine code is the assembler's own output and is
 trustworthy; the marks explain the self-modification. **Case 1A is
-transcribable now** (LX/SX/NOP/XW/SIC/BXVZ, all implemented). Cases
-1B and 1C use `EX,$X3` and `EX,$R` and are blocked on `EX`, deferred
-in `NEXT.md` section 5.
+transcribed and runs** --
+`strap/programs/ax5b_1681_if_close_to_ds.strap`, ten rows bit-exact
+via `strap/verify_ax5b_1681_listing.py`, with `168K1`/`168K2`
+transcribed from p.111 at their printed addresses rather than
+manufactured. Cases 1B and 1C use `EX,$X3` and `EX,$R` and are blocked
+on `EX`, deferred in `NEXT.md` section 5.
+
+**What running it buys, and what it provably cannot.** `LX`/`SX` move
+a whole 64-bit word, so the block plants an arbitrary INSTRUCTION
+through `packIndexWord`/`unpackIndexWord` and then executes it --
+which makes it a witness for that round trip. Zeroing `count` in
+`packIndexWord` halts it at SERS, the deck's own error path, because
+IBM bit 31 is part of the planted `LVI`'s J field. But the existing
+`index-spare-bits-zeroed` mutant (IBM bits 26-27) **cannot** be caught
+here: the planted words are `0x0004920000001800` and
+`0xffffe50100001800`, and both already have sign, flag and spare zero.
+Computed from the assembled words, not guessed -- and it means that
+mutant keeps its 23-minute near-miss catch in the I-Box 3 SVA
+section.
 
 **The sixteen blocks triaged** (read from pp.41-44, not inferred):
 
