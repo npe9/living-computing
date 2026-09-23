@@ -271,6 +271,38 @@ contents of the instruction counter"* is **suppressed**.
 Design from those, then transcribe 1262 as the acceptance test — the
 order item 2 asks for and did not get.
 
+**AND IT FITS THE MACHINERY THAT IS ALREADY THERE** — read out of
+`StretchExecute.bsv`'s `mkEBox` and `StretchCore.bsv`'s
+`rl_exec_resume` on 2026-09-23, so this part is *verified structure*,
+not a sketch. `execute()` is a pure function and Bluespec will not let
+it recurse, which is the obvious reason to think `EX` is hard. It
+isn't, because the E-box already has a **bail-out and resume** path
+for instructions that need an operand word:
+
+* `start()` runs `execute()`; if it returns `needsRead`, the E-box
+  issues the read, stores the instruction in `held`, and returns
+  Invalid;
+* `resume()` collects the word into `prefetch` and **re-runs
+  `execute()` with the same held instruction**.
+
+*Proposed* (not yet built): `EX`'s arm returns `needsRead` = the
+subject's address, exactly like any operand fetch. Then `resume()`,
+seeing the held instruction is `EX`/`EXIC`, **decodes the fetched word
+and installs the SUBJECT as the held instruction** — `execute(... ,
+decode(v), emptyPrefetch, 0)` instead of re-running the `EX`. The
+subject's own `needsRead` then works normally, because it is now the
+held instruction. No recursion, no second `execute()` instantiation,
+and the cycle it costs is one the bail-out already pays.
+
+Two consequences that fall out of that shape and match the sources:
+* the instruction counter advances past the **`EX`**, because
+  `commitNext` uses the held `pc`/`len` — which is what Ref. Manual
+  p.45 requires, a subject that tries to change the IC being
+  *suppressed* with EXE set;
+* `EXIC` additionally steps its **pseudo-IC** by the subject's length,
+  which is routine 1262's third check per class (`.32` for a
+  half-word).
+
 ## 5. Deferred, each its own piece of work
 
 Decimal VFL (`c=1`) and radix conversion; `RNX`/`LVE`/`LVS`;
