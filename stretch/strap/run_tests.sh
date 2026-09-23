@@ -3100,6 +3100,43 @@ run "I-Box 5 routine 1260 TEST 7 ON THE MODEL (all 18 boundary bits)" ./run_prog
 # code (022215.40), KV's direct-index code (022222.40), XE's indicator
 # number (022223.00).
 
+run "I-Box 5 routine 1260 TEST 7: lower boundary + control bit (jb_ax5b p.68)" python3 verify_ax5b_160102_listing.py
+run "I-Box 5 routine 1260 TEST 7b ON THE MODEL (18 LB bits + control bit)" ./run_program.sh programs/ax5b_160102_lb_ctl.strap StretchAx5b160102Tb \
+    "PC=18830"         # 022307.00, where the listing continues
+# THE REST OF TEST 7, from p.68 -- the other register and the control
+# bit.  The upper half is the section above.  The lower loop mirrors it
+# with three differences: it stores through $LB (word 3 bits 32-49),
+# indexes its error table with $X2, and that table is 160B18 at
+# 022313.40, whose entries pp.69-70 print as "LOWER BOUNDARY DATA
+# FAILURE, BIT 32" upward.
+#
+# THE CONTROL-BIT TEST is the neat one.  Word 3 bit 57 is the boundary
+# control bit (p.31: it "determines which condition will cause an
+# address monitoring signal").  The deck sets it from BIT57, reads word
+# 3 back, moves the refill field with "SR,$X1,$X1", and compares
+# against BIT11 -- because bit 57 sits at refill position 57-46 = 11.
+# Then "Z,$UB" clears it and it compares against 100Z.
+#
+# IT LOCALISES A FAULT TO THE BIT, both halves, addresses computed
+# BEFORE the runs and both hit:
+#   drop IBM bit 49 (bottom of the lower boundary)
+#       -> 18890 = 022313.40 + 17*1.32, the table's "BIT 49" entry
+#   drop IBM bit 57 (the control bit)
+#       -> 1416 = 001304.00 = SERS, via the first BZXE,
+#          "UNABLE TO SET BNDRY CNTRL TO 1."
+#
+# AND A LIMIT WORTH KNOWING, found by trying the obvious encoding
+# injection and watching it SURVIVE.  Moving $LB within its half-word
+# -- (3,32) -> (3,33), (3,40), even (3,63) -- fails nothing.  A
+# direct-index address is 19 bits: an 18-bit word plus a ONE-BIT
+# half-word select, so the offset inside the half-word is not encoded.
+# (3,31) and (4,32) do fail.  So this oracle pins $LB to word 3's
+# second half-word and no further; that bits 32-49 specifically are the
+# lower boundary comes from the pocket card and p.31.
+#
+# A FOURTH CONFIRMATION OF THE BIT TABLE: BIT57 prints 24613, BIT11
+# prints 24535, and 024522 + 57 = 024613, 024522 + 11 = 024535.
+
 run "I-Box 5 routine 1268 test 1A, bit-exact (jb_ax5b p.110)" python3 verify_ax5b_1681_listing.py
 run "I-Box 5 routine 1268 test 1A, ON THE MODEL (self-modifying execution)" ./run_program.sh programs/ax5b_1681_if_close_to_ds.strap StretchAx5b1681Tb \
     "PC=20937"         # 024344.40, where the listing continues into test 1B

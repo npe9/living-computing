@@ -128,9 +128,17 @@ the bit**: dropping IBM bit 17 from `boundaryReg` halts it at
 022263.00, the error table's eighteenth entry. Record in
 `run_tests.sh` §"…TEST 7".
 
-**Still to do on the boundaries**: p.67 (lower boundary data, control
-bit) and **p.71 (the comparisons)** — the latter being the one this
-item always wanted.
+**p.68 is transcribed and runs too** —
+`programs/ax5b_160102_lb_ctl.strap`: the lower-boundary loop and the
+control-bit test, 37 rows bit-exact, and it localises a fault to the
+bit (drop IBM 49 → the table's "BIT 49" entry; drop IBM 57 → `SERS`
+with *"UNABLE TO SET BNDRY CNTRL TO 1."*).
+
+**Still to do on the boundaries: p.71, the comparisons** — *"FETCH
+FROM X-1 TO CHK UB COMP."* and *"FROM X-3 TO CHK LB COMP."* — which is
+the one this item always wanted, and the only part that tests the
+monitoring actually **firing** rather than the registers holding
+their bits.
 
 **Do not re-scout these — bounded negatives, 2026-09-21:**
 `jb_af1c` never provokes an interruption (no `BE`, `BEW`, mask write,
@@ -405,6 +413,13 @@ printed page numbers.
   the injected bytecode is reused. Cost one wrong injection result,
   where injection 2 appeared to break a row injection 1 had broken.
   `rm -rf strap/__pycache__` on both sides of every injection.
+* **A direct-index address is HALF-WORD granular**, 18-bit word plus a
+  one-bit half-word select — so an encoding oracle cannot see a
+  special register's bit offset within its half-word. Measured:
+  moving `$LB` from (3,32) to (3,33), (3,40) or even (3,63) fails
+  nothing; (3,31) and (4,32) do. That bits 32-49 are the lower
+  boundary comes from the pocket card and p.31, not from any listing
+  row. Found by trying the obvious injection and watching it survive.
 * **A substitution can discard the thing that makes a test useful.**
   Routine 1260's boundary driver branches into an EIGHTEEN-entry
   error table, `B,160B17($X3)`, indexed — so the halt address names

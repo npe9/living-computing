@@ -1,0 +1,164 @@
+! jb_ax5b "I-Box 5", routine 1260 TEST 7 continued -- "CHK LOWER
+! BOUNDARY DATA." and "CHK BOUNDARY CONTROL BIT."  PDF p.68 (printed
+! p.65), octal 022264.40-022306.40, transcribed VERBATIM at the
+! listing's own addresses, checked bit-exactly by
+! verify_ax5b_160102_listing.py AND RUN ON THE MODEL.
+!
+! The upper-boundary half is ax5b_16099_ub_data.strap (p.65).  This is
+! the rest of TEST 7: the other register, and the control bit.
+!
+! THE LOWER-BOUNDARY LOOP (160102/160103) MIRRORS THE UPPER ONE
+! exactly -- eighteen iterations, because the lower boundary is word 3
+! bits 32-49 -- with three differences worth naming: it stores through
+! $LB rather than $UB, it indexes its error table with $X2 rather than
+! $X3, and that table is 160B18 at 022313.40, whose entries pp.69-70
+! print as "LOWER BOUNDARY DATA FAILURE, BIT 32" upward.
+!
+! THE CONTROL-BIT TEST is the interesting half.  Word 3 bit 57 is the
+! boundary control bit (Ref. Manual p.31: it "determines which
+! condition will cause an address monitoring signal").  The deck sets
+! it from BIT57, reads word 3 back, moves the refill field with
+! "SR,$X1,$X1", and compares against BIT11 -- bit 57 sits at refill
+! position 57-46 = 11.  Then it clears word 3 with "Z,$UB" and
+! compares against 100Z, the zero index word.  Two error messages:
+! "-UNABLE TO SET BNDRY CNTRL TO 1." and "...TO 0."
+!
+! A FOURTH CONFIRMATION OF THE BIT TABLE.  This page names BIT57 and
+! BIT11; they print as 24613 and 24535, and 024522 + 57 = 024613,
+! 024522 + 11 = 024535.  The rule read off p.114 holds at 0, 11, 17,
+! 18 and 57.  100Z prints as 24502, matching p.114's "ZERO INDX WD."
+!
+! WHY IT RUNS DISABLED: word 3 is permanently protected (p.31), so an
+! enabled store into it raises DS and is suppressed.  Disabled is the
+! reset state and this block never enables.
+!
+! SUBSTITUTIONS: three, the same shape as the p.65 block.
+!   1. Numeric labels prefixed "L".
+!   2. 160B18's eighteen entries are "B,$" hangs at the deck's own
+!      three-half-word spacing, so a failure on bit N halts at
+!      160B18 + N*1.32 and the address NAMES THE BIT.  The deck's real
+!      entries end "BD,160104" -- it REPORTS AND CONTINUES, testing all
+!      eighteen; these hangs stop at the first.  SERS is a hang too.
+!   3. A "BEW,$" exit at 022307.00, where the listing continues with
+!      "B,$+1.0".
+! BIT0..BIT17, BIT57 and 100Z are derived from p.114's stated rule
+! rather than transcribed row by row.
+
+BIT0    SYN, (8)24522.0
+BIT11   SYN, (8)24535.0
+BIT57   SYN, (8)24613.0
+L100Z   SYN, (8)24502.0
+L160B18 SYN, (8)22313.40
+SEN     SYN, (8)1310.0
+SERS    SYN, (8)1304.0
+
+        SLC, (8)22264.40
+L160102 LVI, $X1, 0.0              ! -CHK LOWER BOUNDARY DATA.
+        LCI, $X1, 18
+        LVI, $X2, 0.0
+L160103 Z,   $MASK
+        LV,  $X3, BIT0($X1)
+        SV,  $X3, $LB              !  word 3 bits 32-49
+        NOP
+        NOP
+        NOP
+        NOP
+        LV,  $X3, $LB
+        KV,  $X3, BIT0($X1)
+        BXE, $+1.0
+        B,   L160B18($X2)          ! -DATA ERROR.
+L160104 V+I, $X2, 1.32
+        CB+, $X1, L160103
+!
+        LX,  $X1, BIT57            ! -CHK BOUNDARY CONTROL BIT.
+        SX,  $X1, $UB
+        NOP
+        NOP
+        NOP
+        NOP
+        LX,  $X1, $UB
+        SR,  $X1, $X1
+        KV,  $X1, BIT11            !  bit 57 is refill position 11
+        SIC, SEN
+        BZXE, SERS                 ! -UNABLE TO SET BNDRY CNTRL TO 1.
+!
+        Z,   $UB
+        NOP
+        NOP
+        NOP
+        NOP
+        LX,  $X1, $UB
+        SR,  $X1, $X1
+        KV,  $X1, L100Z
+        SIC, SEN
+        BZXE, SERS                 ! -UNABLE TO SET BNDRY CNTRL TO 0.
+!
+        SLC, (8)22307.0
+PASS    BEW, $
+!
+        SLC, (8)1304.0
+SERSH   B, $
+        SLC, (8)1310.0
+SENW    DD(BU,64), 0
+!
+        SLC, (8)22313.40
+L0      B, $                       ! LOWER BOUNDARY DATA FAILURE, BIT 32
+        SLC, (8)22315.0
+L1      B, $                       ! LOWER BOUNDARY DATA FAILURE, BIT 33
+        SLC, (8)22316.40
+L2      B, $                       ! LOWER BOUNDARY DATA FAILURE, BIT 34
+        SLC, (8)22320.0
+L3      B, $                       ! LOWER BOUNDARY DATA FAILURE, BIT 35
+        SLC, (8)22321.40
+L4      B, $                       ! LOWER BOUNDARY DATA FAILURE, BIT 36
+        SLC, (8)22323.0
+L5      B, $                       ! LOWER BOUNDARY DATA FAILURE, BIT 37
+        SLC, (8)22324.40
+L6      B, $                       ! LOWER BOUNDARY DATA FAILURE, BIT 38
+        SLC, (8)22326.0
+L7      B, $                       ! LOWER BOUNDARY DATA FAILURE, BIT 39
+        SLC, (8)22327.40
+L8      B, $                       ! LOWER BOUNDARY DATA FAILURE, BIT 40
+        SLC, (8)22331.0
+L9      B, $                       ! LOWER BOUNDARY DATA FAILURE, BIT 41
+        SLC, (8)22332.40
+L10     B, $                       ! LOWER BOUNDARY DATA FAILURE, BIT 42
+        SLC, (8)22334.0
+L11     B, $                       ! LOWER BOUNDARY DATA FAILURE, BIT 43
+        SLC, (8)22335.40
+L12     B, $                       ! LOWER BOUNDARY DATA FAILURE, BIT 44
+        SLC, (8)22337.0
+L13     B, $                       ! LOWER BOUNDARY DATA FAILURE, BIT 45
+        SLC, (8)22340.40
+L14     B, $                       ! LOWER BOUNDARY DATA FAILURE, BIT 46
+        SLC, (8)22342.0
+L15     B, $                       ! LOWER BOUNDARY DATA FAILURE, BIT 47
+        SLC, (8)22343.40
+L16     B, $                       ! LOWER BOUNDARY DATA FAILURE, BIT 48
+        SLC, (8)22345.0
+L17     B, $                       ! LOWER BOUNDARY DATA FAILURE, BIT 49
+!
+        SLC, (8)24502.0
+Z100    DD(BU,64), 0               ! 100Z, "ZERO INDX WD."
+        SLC, (8)24522.0
+B0      DD(BU,64), 9223372036854775808  ! BIT0
+B1      DD(BU,64), 4611686018427387904  ! BIT1
+B2      DD(BU,64), 2305843009213693952  ! BIT2
+B3      DD(BU,64), 1152921504606846976  ! BIT3
+B4      DD(BU,64), 576460752303423488  ! BIT4
+B5      DD(BU,64), 288230376151711744  ! BIT5
+B6      DD(BU,64), 144115188075855872  ! BIT6
+B7      DD(BU,64), 72057594037927936  ! BIT7
+B8      DD(BU,64), 36028797018963968  ! BIT8
+B9      DD(BU,64), 18014398509481984  ! BIT9
+B10     DD(BU,64), 9007199254740992  ! BIT10
+B11     DD(BU,64), 4503599627370496  ! BIT11
+B12     DD(BU,64), 2251799813685248  ! BIT12
+B13     DD(BU,64), 1125899906842624  ! BIT13
+B14     DD(BU,64), 562949953421312  ! BIT14
+B15     DD(BU,64), 281474976710656  ! BIT15
+B16     DD(BU,64), 140737488355328  ! BIT16
+B17     DD(BU,64), 70368744177664  ! BIT17
+        SLC, (8)24613.0
+B57     DD(BU,64), 64  ! BIT57
+        END, L160102
