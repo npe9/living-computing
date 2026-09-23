@@ -719,7 +719,9 @@ pp.46-86 for BOUND/MONITOR and reading the hits:
 | page | sub-test |
 |---|---|
 | p.65 | *"TEST 7 CHKS BOUNDARY CONTROL."* / *"CHK UPPER BOUNDARY DATA."* -- driver at 16099/160100, per-bit error table `160B17` |
-| p.67 | *"CHK LOWER BOUNDARY DATA."*, *"CHK BOUNDARY CONTROL BIT."* |
+| p.67 | tail of the upper-boundary error table (BIT10–BIT17) |
+| p.68 | *"CHK LOWER BOUNDARY DATA."* (driver 160102/160103) and *"CHK BOUNDARY CONTROL BIT."* |
+| pp.69–70 | the lower-boundary error table, bits 32–49 |
 | p.71 | *"FETCH FROM X-1 TO CHK UB COMP."*, *"FROM X-3 TO CHK LB COMP."* |
 
 pp.65-70 are **register data-path tests** -- can each field hold each
@@ -727,6 +729,20 @@ of its bits. p.71 is the **comparison** test, i.e. the address
 monitoring actually firing, which is what "positive boundary-interrupt
 cases" meant. The guess was wrong in range (65-71, not 66-79) and in
 kind (mostly data, not interrupts).
+
+**p.68's two sub-tests, read first-hand.** The lower-boundary driver
+is 160102/160103 at 022264.40-022274.00 and mirrors the upper one
+exactly: eighteen iterations, `SV,$X3,$LB` into word 3 bits 32-49,
+four NOPs, read back, `KV`, and on mismatch `B,160B18($X2)` into a
+per-bit table whose entries pp.69-70 print as *"LOWER BOUNDARY DATA
+FAILURE, BIT 32"* upward. Then the control-bit test at
+022274.40-022306.40 sets word 3 bit 57 from `BIT57` and checks it
+reads back (*"UNABLE TO SET BNDRY CNTRL TO 1."*), then clears it with
+`Z,$UB` and checks again (*"...TO 0."*).
+
+**A third confirmation of the BIT table's rule**: this page's
+`LX,$X1,BIT57` prints `24613.02 10`, and 024522 + 57 = 024613. The
+rule read off p.114 holds at bit 57 as well as at 0, 17 and 18.
 
 **p.65 is transcribed and runs**
 (`strap/programs/ax5b_16099_ub_data.strap`): eighteen iterations,

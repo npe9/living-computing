@@ -113,7 +113,9 @@ the hits gives the real layout:
 | page | sub-test |
 |---|---|
 | p.65 | *"TEST 7 CHKS BOUNDARY CONTROL."* / *"CHK UPPER BOUNDARY DATA."* — driver at 16099/160100 |
-| p.67 | *"CHK LOWER BOUNDARY DATA."*, *"CHK BOUNDARY CONTROL BIT."* |
+| p.67 | tail of the upper-boundary error table (BIT10–BIT17) |
+| p.68 | *"CHK LOWER BOUNDARY DATA."* (driver 160102/160103) and *"CHK BOUNDARY CONTROL BIT."* |
+| pp.69–70 | the lower-boundary error table, bits 32–49 |
 | **p.71** | *"FETCH FROM X-1 TO CHK UB COMP."*, *"FROM X-3 TO CHK LB COMP."* |
 
 pp.65–70 test whether the **registers hold their bits**; **p.71** tests
