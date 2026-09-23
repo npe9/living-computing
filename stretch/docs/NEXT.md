@@ -190,27 +190,76 @@ system should become enabled", and its `INT1` table is all `NOP,0`.
 
 ## 2. DF and IF — and routine 1268 is NOT their oracle
 
-The two address-monitoring indicators the model does not implement.
-p.32: DF suppresses the data fetch and terminates *if its mask bit is
-one*; IF interrupts before the instruction that caused it. Both are
-mask-dependent, unlike DS.
+**DF's class 1 is now implemented and tested.** `programs/df_data_
+fetch_alarm.strap` + `dfSignal` in `StretchExecute.bsv`. What is left
+of this item is IF (all of it), DF's class 3, and the mask-dependent
+half of both. Read the rest of this section for what was settled on
+the way, because the correction below is the reason it took a
+re-reading of the primary source rather than a deck.
 
-**This item used to say `jb_ax5b` routine 1268 was "the only known
-deck test of them" and to read it first. That was a misreading, and
-it is corrected.** Read first-hand 2026-09-22, the routine's own
-header is *"1268 — IF AND DF CLOSE TO DS"* and its error messages are
-*"EXECUTED OLD INSTRUCTION FROM EXT."* and *"LOADED OLD DATA FROM EXT
-MEM."* — the wrong **value** arrived, not an indicator failed to set
-(compare 1260's *"UNABLE TO TURN AD ON."*). `DF`/`IF` there are the
-Data Fetch and Instruction Fetch **paths**; "close to DS" is close to
-a Data Store. It is a look-ahead forwarding test, and
+p.32 (PDF page 35 of `22-6530-2_7030RefMan.pdf`; printed page + 3)
+is the whole of the primary source, and it gives a CLOSED LIST rather
+than a rule to generalise:
+
+> *Address monitoring for Data Fetch includes: 1. The effective
+> address of all fetch-type operations with a direct address. 2. The
+> effective address at each level of the LOAD VALUE EFFECTIVE
+> operation with the exception of the final effective address which is
+> loaded into the specified index register. 3. The refill address used
+> in index refill operations and the operations REFILL and REFILL ON
+> COUNT ZERO.*
+
+**Class 1: done.** Four opcode-gated call sites — VFL `L`/`+`/`K`,
+connective `C`/`CT`, the direct-index loads and compares, the
+floating-point arithmetic class. NOT one guard at the single
+`st.readWordReq` they all funnel through, and that is the design
+decision worth keeping: a read-modify-write STORE (`ST`, `M+`, `SV`,
+`SC`, `SR`, `SVA`, `CM`, `BB`'s bit change) reads its word through that
+same path, and p.32 puts those on the DS side — a fetch-type operation
+is one whose contents "are not subject to change". Half the test
+program is stores for exactly that reason, and the injection that adds
+`dixop_SV` to the predicate is what makes those lines evidence.
+
+**Class 2 is moot**: LVE decodes Operation Code Invalid in this model.
+
+**Class 3 is NOT done**: the eleven `needsRead = tagged Valid
+zeroExtend(...refill)` sites. Each is a data fetch by p.32 and none
+signals. This is the next piece of DF, and it is smaller than class 1
+was.
+
+**The mask-dependent half is not done, for DF or DS.** p.32: "if the
+DF mask bit is one, the data fetch is suppressed and the operation
+terminated". The INDICATOR is set either way — the mask decides only
+what happens next — so setting it needed no mask read at all, which is
+why class 1 landed without touching `StretchStorage`'s mask. But
+termination needs a mechanism this model does not have, and
+`protViolates`' scope note now says so in one place for all three
+indicators. The test program runs the mask-ZERO case only and says
+why.
+
+**IF is untouched.** Its own spec is an interruption-TIMING rule —
+"the interruption occurs before execution of the instruction causing
+the indication and after execution of all preceding instructions has
+been completed or terminated" — which belongs with item 3, and its
+other half ("the entire branch operation, including any counting, bit
+changing, or index alteration, is suppressed") touches every branch
+arm. Deliberately a separate commit.
+
+**THIS ITEM USED TO SAY `jb_ax5b` ROUTINE 1268 WAS "the only known
+deck test of them". That was a misreading, and it is corrected.**
+Read first-hand 2026-09-22, the routine's own header is *"1268 — IF
+AND DF CLOSE TO DS"* and its error messages are *"EXECUTED OLD
+INSTRUCTION FROM EXT."* and *"LOADED OLD DATA FROM EXT MEM."* — the
+wrong **value** arrived, not an indicator failed to set (compare
+1260's *"UNABLE TO TURN AD ON."*). `DF`/`IF` there are the Data Fetch
+and Instruction Fetch **paths**; "close to DS" is close to a Data
+Store. It is a look-ahead forwarding test, and
 `archival_inventory.md` already said so in one of the two places it
 described the routine.
 
-**So DF and IF have no deck oracle anywhere read so far.** Designing
-them means Reference Manual p.32 alone — the weaker standard, stated
-as such in whatever program tests them, exactly as storage protection
-was until `ax5b_16086_ds.strap`.
+**So DF and IF have no deck oracle anywhere read so far**, and
+`df_data_fetch_alarm.strap` is written to the WEAKER standard and says
+so in its first line.
 
 **What 1268 turned out to be good for.** Both halves are transcribed
 and **run**: `ax5b_1683_df_close_to_ds.strap` (test 2, the load side)
@@ -521,3 +570,27 @@ printed page numbers.
   pp.41–44" (pp.41–44 are the per-indicator blocks, one of which was
   transcribed the same morning with no harness at all). Re-derive an
   obstacle before accepting it.
+* **An interruption-reporting check needs room for the interruption.**
+  A violation reported through a routine is only visible after the
+  machine has actually taken the interruption, and this model takes it
+  at a QUIESCENT boundary (look-ahead empty, E-box idle), not at the
+  instruction boundary p.48 names — later, never earlier, as
+  `StretchCore.bsv` says. The two storage-protection programs violate
+  with a `BB` bit change and get away with one instruction of slack;
+  `df_data_fetch_alarm.strap` violates with a VFL `ST`, which bails
+  out once for its read-modify-write read, and one instruction was not
+  enough. It halted with DS **on** in word 11 and word 6 still zero,
+  which reads exactly like a protection bug and is not one. When a
+  check fails, dump the indicator word before theorising: `run_program.sh`
+  takes extra `label:addr=expected` checks and a deliberately wrong
+  expected value prints the actual.
+* **A check that cannot fail is not a check, and indicators make that
+  easy to miss.** `df_data_fetch_alarm.strap`'s second block tested
+  RGZ to prove an unmonitored load still landed — but the FIRST block
+  had already left RGZ on, so the line could not have failed. Any
+  indicator asserted more than once needs clearing in between, and the
+  clear is part of the test, not tidying.
+* **Neighbouring bit numbers need a check of their own.** DF is 20 and
+  IF is 21. An injection that swaps them and an injection that removes
+  the signal entirely both halt at the same address, so neither proves
+  the *number* — until a line asserts the neighbour is OFF.

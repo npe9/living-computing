@@ -308,13 +308,22 @@ endfunction
 // area, and they share this one function rather than repeating the
 // rule.
 //
-// STILL NOT IMPLEMENTED, and each is its own piece of work: DF and IF
-// (both mask-dependent, unlike DS), full operation TERMINATION (p.32
-// terminates the whole operation; this suppresses only the store, so a
-// BB whose write is suppressed still branches), and the straddling
-// rule ("an instruction or data field which straddles a boundary
-// always gives an address monitoring signal", p.31) -- this compares
-// one word address per store, not a field's extent.
+// STILL NOT IMPLEMENTED, and each is its own piece of work.  IF, the
+// instruction-fetch alarm, entirely.  The MASK-DEPENDENT half of DF --
+// dfSignal below turns the indicator on, which p.32 says happens
+// whatever the mask bit is, but "if the DF mask bit is one, the data
+// fetch is suppressed and the operation terminated" needs a
+// termination mechanism this model does not have.  Full operation
+// TERMINATION for DS likewise (p.32 terminates the whole operation;
+// this suppresses only the store, so a BB whose write is suppressed
+// still branches).  p.32's class 3 for DF, "the refill address used in
+// index refill operations and the operations REFILL and REFILL ON
+// COUNT ZERO" -- the model issues a refill read at eleven sites (every
+// `needsRead = tagged Valid zeroExtend(...refill)` in this file) and
+// none of them signals.  And the straddling rule ("an instruction or data
+// field which straddles a boundary always gives an address monitoring
+// signal", p.31) for STORES: dfSignal's callers ask about both words
+// of a crossing field, the store sites still compare one word each.
 function Bool protViolates(StretchStorage st, WordAddr a);
   Word64  b     = st.readBoundaries();
   WordAddr upper = b[63:46];   // IBM bits 0-17
@@ -482,6 +491,37 @@ function Word64 setBit(Word64 w, Bit#(6) n, Bit#(1) v);
 endfunction
 
 function Word64 setOpInvalid(Word64 ind) = setBit(ind, ind_OP, 1);
+
+// DF, THE DATA-FETCH ADDRESS ALARM (indicator 20).  Same comparand as
+// DS: p.32 separates the two by the KIND of reference, not by the
+// address, so this shares protViolates rather than restating its
+// rules, its 0-31 carve-out, its enable gate or its AD exemption.
+//
+// p.32: "When an address alarm is caused by a data address used in a
+// fetch-type operation, indicator DF is turned on.  If the DF mask bit
+// is one, the data fetch is suppressed and the operation terminated.
+// If the DF mask bit is zero, the operation proceeds normally.  A
+// fetch-type operation is one in which the contents of an addressed
+// storage location are read out for use but are not subject to
+// change."
+//
+// WHY THIS READS NO MASK BIT.  The indicator is turned on either way
+// -- the mask decides only what happens NEXT -- so setting it is
+// mask-independent.  Suppression and termination are the
+// mask-dependent half and are NOT implemented; see the "STILL NOT
+// IMPLEMENTED" note on protViolates, and the scope statement in
+// programs/df_data_fetch_alarm.strap, which tests the mask-zero case
+// only for exactly that reason.
+//
+// WHERE IT IS CALLED, and why not at the single read.  Every operand
+// word this file reads leaves through one st.readWordReq in mkEBox,
+// and signalling there would be wrong: a read-modify-write STORE (VFL
+// ST/M+, SX/SV/SC/SR, SVA, CM, BB's bit change) reads its word through
+// that same path, and p.32 puts those on the DS side -- their contents
+// ARE "subject to change".  So the call sites below are gated by
+// operation, one per instruction format.
+function Word64 dfSignal(StretchStorage st, WordAddr a, Word64 ind) =
+  protViolates(st, a) ? setBit(ind, ind_DF, 1) : ind;
 
 function Word64 setResultIndicatorsF(Word64 ind, SM128 v);
   Bool z = (v.mag == 0);
@@ -1834,6 +1874,36 @@ function ActionValue#(VflOutcome)
         IndexWord vflPx1 = tpl_1(vflPx);
         Bool vflNeedsRefill = tpl_2(vflPx);
 
+        // DF, p.32 class 1: "the effective address of all fetch-type
+        // operations with a direct address".  L, + (and - , which is
+        // + with invert) and K read their field and leave it alone;
+        // ST and M+ write it back, so their read belongs to a STORE
+        // and signals DS at the write below.  That distinction is why
+        // this is gated by opcode instead of sitting at the one
+        // readWordReq all of them funnel through.
+        //
+        // IMMEDIATE ADDRESSING HAS NO STORAGE OPERAND -- p.32 says
+        // "with a direct address" -- so it is excluded rather than
+        // monitored against the instruction's own address field.
+        //
+        // BOTH WORDS OF A CROSSING FIELD.  p.31: "an instruction or
+        // data field which straddles a boundary always gives an
+        // address monitoring signal."  This model compares one word
+        // address at a time, so a crossing field asks twice, which is
+        // that rule for the two-word case.
+        //
+        // RUN ON EVERY CALL, including the one that bails out for the
+        // operand read: that call's `ind` is discarded (execute()
+        // returns entry values when needsRead is Valid), and the
+        // resuming call reaches this line again with the same `ea`.
+        Bool vflFetchType = (vi.code == 6'b000101)    // L
+                         || (vi.code == 6'b000001)    // + , -
+                         || (vi.code == 6'b010001);   // K
+        if (vflFetchType && !immediate) begin
+          ind = dfSignal(st, baWord(ea), ind);
+          if (fieldCrosses(ea, len_)) ind = dfSignal(st, baWord(ea) + 1, ind);
+        end
+
         case (vi.code)
           6'b000101: begin // L (Load) -- first arm converted to the
             // prefetch/bail-out staging (docs/phase2_arm_inventory.md).
@@ -2149,6 +2219,15 @@ function ActionValue#(VflOutcome)
         IndexWord vflPx1 = tpl_1(vflPx);
         Bool vflNeedsRefill = tpl_2(vflPx);
 
+        // DF, p.32 class 1 -- see vflIntOp's fuller note above.  CT's
+        // result "is not placed anywhere" (p.76) and C's goes to the
+        // accumulator, so both are fetch-type; CM writes the field
+        // back and is not.
+        if (cn.suffix != conn_CM && !immediate) begin
+          ind = dfSignal(st, baWord(ea), ind);
+          if (fieldCrosses(ea, len_)) ind = dfSignal(st, baWord(ea) + 1, ind);
+        end
+
         if (cn.suffix == conn_CM && fieldCrosses(ea, len_)) begin
           // CM writing a crossing field: same single-word-write
           // limitation as VflInt's ST/M+ (writeField's precondition).
@@ -2318,6 +2397,22 @@ function ActionValue#(IndexOutcome)
       // added only V+/V+C/V+CR set them; caught by I-Box 1's
       // SIC-B,ZIND block (p.50-51), which tests XF/XCZ/XVGZ/XVLZ/
       // XVZ straight after an LX.
+      // DF, p.32 class 1 -- see vflIntOp's fuller note above.  The
+      // loads and the compares read a half-word and leave it alone;
+      // SX/SV/SC/SR and SVA write it back, so their read belongs to a
+      // store and signals DS at the write.  A half-word never crosses
+      // a word boundary, so one address is the whole question here.
+      // (LVE, p.32's class 2, decodes Operation Code Invalid in this
+      // model's default arm below, so its per-level monitoring is
+      // moot rather than missing.)
+      Bool dixFetchType = (di_.code == dixop_LX) || (di_.code == dixop_LV)
+                       || (di_.code == dixop_LC) || (di_.code == dixop_LR)
+                       || (di_.code == dixop_KV) || (di_.code == dixop_KC)
+                       || (di_.code == dixop_V_PLUS)
+                       || (di_.code == dixop_V_PLUS_C)
+                       || (di_.code == dixop_V_PLUS_CR);
+      if (dixFetchType) ind = dfSignal(st, ea[18:1], ind);
+
       case (di_.code)
         dixop_LX: begin // LX -- prefetch/bail-out shape (same as
           // VflInt L/K/+ above). Half-word reads never cross a word
@@ -3277,6 +3372,13 @@ function ActionValue#(ExecResult)
                    || c == fpop_D_PLUS || c == fpop_D_PLUS_MG
                    || c == fpop_F_PLUS
                    || isSRD || isSLO);                     // SRD / SLO
+        // DF, p.32 class 1 -- see vflIntOp's fuller note above.  The
+        // arithmetic class is exactly the floating-point group that
+        // fetches an operand word; the store class (ST/SRT/SRD/SLO/
+        // SHF/E+I) reads none, which is why it was lifted out into
+        // fpStoreClass in the first place.
+        if (known && !isStoreClass) ind = dfSignal(st, ea, ind);
+
         if (!known)
           ind = setOpInvalid(ind);   // every floating-point operation is now implemented
         else if (isStoreClass) begin

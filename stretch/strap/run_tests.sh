@@ -290,6 +290,81 @@ run "Storage protection, gated on the interrupt enable bit" ./run_program.sh pro
 
 run "Storage protection: the address boundary registers" ./run_program.sh programs/storage_protection_boundary.strap StretchProtBndTb \
     "PC=4305"          # 004150.40; hand-written, not a listing fact
+
+run "DF: the data-fetch address alarm, p.32 class 1" ./run_program.sh programs/df_data_fetch_alarm.strap StretchDfTb \
+    "PC=4306"          # 004151.00; hand-written, not a listing fact
+# THE THIRD ADDRESS ALARM, and the first subsystem this project has
+# implemented from the Reference Manual with no deck anywhere to check
+# it against.  p.32: "When an address alarm is caused by a data address
+# used in a fetch-type operation, indicator DF is turned on... A
+# fetch-type operation is one in which the contents of an addressed
+# storage location are read out for use but are not subject to change."
+#
+# p.32 GIVES A CLOSED LIST, not a rule to generalise, and this is
+# CLASS 1 of its three: "the effective address of all fetch-type
+# operations with a direct address."  Class 2, each level of LOAD VALUE
+# EFFECTIVE, is moot -- LVE decodes Operation Code Invalid here.  Class
+# 3, "the refill address used in index refill operations and the
+# operations REFILL and REFILL ON COUNT ZERO", is NOT implemented: the
+# model issues a refill read at eleven sites and none of them signals.
+# Both are said in the program and on protViolates rather than left to
+# be found.
+#
+# NOT ONE GUARD AT THE ONE READ THEY ALL FUNNEL THROUGH, and that is
+# the decision worth keeping.  Every operand word this model reads
+# leaves through a single st.readWordReq in mkEBox -- but a
+# read-modify-write STORE (VFL ST/M+, SX/SV/SC/SR, SVA, CM, BB's bit
+# change) reads its word through that same path, and p.32 puts those on
+# the DS side: their contents ARE "subject to change".  So DF is set at
+# four opcode-gated sites instead, one per instruction format -- VFL
+# L/+/K, connective C/CT, the direct-index loads and compares, and the
+# floating-point arithmetic class -- and half the program is stores.
+#
+# THE MASK IS NEVER READ, and p.32 is why: "If the DF mask bit is one,
+# the data fetch is suppressed and the operation terminated.  If the DF
+# mask bit is zero, the operation proceeds normally."  The INDICATOR
+# goes on either way; the mask decides only what happens next.  So
+# turning it on needs no mask bit, and suppression/termination -- the
+# mask-dependent half, which DS does not have either -- stays
+# unimplemented.  The program runs the mask-ZERO case only and says so,
+# because nothing it could write for mask-one would pass for the right
+# reason.
+#
+# THE NOPS AFTER EACH STORE ARE NOT PADDING.  A DS violation is
+# reported by INTERRUPTING, and this model takes an interruption at a
+# QUIESCENT boundary rather than the instruction boundary p.48 names --
+# later, never earlier, as StretchCore.bsv states.  A VFL ST bails out
+# once for its read-modify-write read, so it holds the E-box a call
+# longer than the BB-style stores the two storage_protection programs
+# use.  Measured: with one instruction of slack the check halted with DS
+# ON in word 11 and word 6 still zero, which reads exactly like a
+# protection bug and is not one.
+#
+# EIGHT INJECTIONS, each predicted before it was run, each landing on
+# the predicted address.  Reproduce any row with
+#   python3 line_addresses.py programs/df_data_fetch_alarm.strap
+#
+#   VFL fetch guard removed         -> 004107.00  BZB, $DF,  $
+#   K dropped from that predicate   -> 004114.00  BZB, $DF,  $
+#   ST ADDED to that predicate      -> 004127.00  BB,  $DF,  $   (after ST)
+#   direct-index guard removed      -> 004132.40  BZB, $DF,  $
+#   SV ADDED to that predicate      -> 004141.00  BB,  $DF,  $   (after SV)
+#   floating-point guard removed    -> 004144.40  BZB, $DF,  $
+#   connective guard removed        -> 004147.40  BZB, $DF,  $
+#   dfSignal sets IF (21) not DF    -> 004107.00  BZB, $DF,  $
+#
+# THE TWO "ADDED" ROWS ARE THE ONES THAT EARN THE STORE BLOCKS.  Without
+# them the store halves of this program are lines that cannot fail, and
+# the claim that DF and DS are separated would be untested -- the funnel
+# design would pass everything else here.  Both are standing mutants:
+# df-store-read-signals-fetch and df-index-fetch-unsignalled in
+# mutation_score.py.
+#
+# AND THE "SETS IF" ROW ONLY MEANS SOMETHING BECAUSE OF ONE LINE.  DF is
+# 20 and IF is 21; removing the signal and moving it one bit left halt
+# at the same address, so "BB, $IF, $" sits beside the first check to
+# assert the neighbour is OFF.  Without it the bit NUMBER is assumed
+# rather than tested.
 # THE BOUNDARY REGISTERS, the second half of address monitoring.  Word
 # 3 holds the upper boundary in bits 0-17, the lower in 32-49 and the
 # boundary control bit at 57 (p.31 -- upper is named first and sits

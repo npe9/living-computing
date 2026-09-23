@@ -1,0 +1,195 @@
+! DF -- the DATA FETCH address alarm (indicator 20), mask-zero case.
+!
+! WEAKER STANDARD, and stated as such.  Nothing in the listings this
+! project has read tests DF.  jb_ax5b routine 1268 looked like the
+! oracle and is not: its header is "1268 - IF AND DF CLOSE TO DS" and
+! its error messages are "LOADED OLD DATA FROM EXT MEM." and "EXECUTED
+! OLD INSTRUCTION FROM EXT." -- the wrong VALUE arriving, not an
+! indicator failing to set (compare routine 1260's "UNABLE TO TURN AD
+! ON.").  DF and IF there are the data-fetch and instruction-fetch
+! PATHS, and "close to DS" is close to a Data Store.  Both halves of
+! 1268 are transcribed and run elsewhere in this suite; neither is an
+! oracle for this indicator.  So this program is hand-written from
+! Reference Manual p.32, exactly as storage_protection.strap was
+! written before ax5b_16086_ds.strap gave DS a deck.
+!
+! THE RULE, p.32 verbatim: "When an address alarm is caused by a data
+! address used in a fetch-type operation, indicator DF is turned on.
+! If the DF mask bit is one, the data fetch is suppressed and the
+! operation terminated.  If the DF mask bit is zero, the operation
+! proceeds normally.  A fetch-type operation is one in which the
+! contents of an addressed storage location are read out for use but
+! are not subject to change."
+!
+! AND THE ENABLE GATE, same page: "When the interruption system is
+! disabled, address monitoring is ineffective... the DS, DF and IF
+! indicators cannot be turned on when the system is disabled."
+!
+! THIS PROGRAM RUNS THE MASK-ZERO CASE ONLY, which is a scope
+! statement and not an omission left implicit.  With the mask bit zero
+! the machine sets DF and carries on -- both halves observable, and
+! both checked below.  With the mask bit ONE the machine must SUPPRESS
+! the fetch and TERMINATE the operation, and this model has no
+! termination mechanism at all: protViolates' comment in
+! StretchExecute.bsv has said so since DS was written ("this
+! suppresses only the store, so a BB whose write is suppressed still
+! branches").  A mask-one case here would complete the operation and
+! then interrupt, so nothing here tests it, because nothing here could
+! pass for the right reason.
+!
+! IT IS CLASS 1 OF p.32'S THREE.  "Address monitoring for Data Fetch
+! includes: 1. The effective address of all fetch-type operations with
+! a direct address.  2. The effective address at each level of the LOAD
+! VALUE EFFECTIVE operation with the exception of the final effective
+! address which is loaded into the specified index register.  3. The
+! refill address used in index refill operations and the operations
+! REFILL and REFILL ON COUNT ZERO."  LVE is out of scope in this model
+! (dirIndexOp's default arm decodes it Operation Code Invalid), so
+! class 2 is moot.  Class 3, the refill addresses, is NOT implemented
+! and NOT tested here -- the model reads a refill word at seven sites
+! and none of them signals.
+!
+! WHAT SEPARATES DF FROM DS, and why half of this program is stores.
+! A read-modify-write store -- VFL ST, direct-index SV -- READS its
+! word before writing it, and this model's single read path serves
+! fetches and stores alike.  p.32 puts that read on the STORE side: a
+! fetch-type operation is one whose contents "are not subject to
+! change", which a store's word plainly is.  So every store below must
+! raise DS and leave DF alone, and a model that signalled DF wherever
+! it issued a read would fail at exactly those three lines.
+!
+! THE MASK BIT IS STORED rather than left at its reset value.  p.37:
+! bits 20-47 of the mask register "can be set to either zero or one by
+! storing the desired value in these positions".  This model resets the
+! mask to FFFFF000.00000000, so bit 20 is zero already, and a check
+! that leaned on that would be testing the reset value, not the rule.
+! Word 12 is in p.31's 0-31 carve-out, so storing it never signals.
+!
+! Instructions: BD, BE, LVI, SV, L(BU), K(BU), ST(BU), L(N), LV,
+! CT0110, BB, BB1, BBZ, BZB, B, BEW -- all implemented.
+!
+! NOTE THE MODIFIER, because it picks the instruction FORMAT and this
+! program needs both.  "L(U)" is the half-word FLOATING-POINT load
+! (U = unnormalized); "L(BU,64,8)" is the full-word VFL load.  They go
+! down different arms of the model and each needs its own check.
+
+        SLC, (8)4100.0
+START   BD,  $+.32                   ! disable: words 2 and 3 are protected
+        LVI, $X13, TBL
+        SV,  $X13, $IA
+        LVI, $X13, WLOW
+        SV,  $X13, $LB               ! lower boundary := WLOW
+        LVI, $X13, WABOVE
+        SV,  $X13, $UB               ! upper boundary := WABOVE
+        BBZ, 3.57, $+1.0             ! control bit := 0: signal INSIDE
+        BBZ, 12.20, $+1.0            ! DF's mask bit := 0
+        BE,  $+.32                   ! monitoring is ineffective disabled
+!
+! ---- 1. a fetch-type VFL operation, direct address, inside --------
+        L(BU,64,8), WLOW
+        BZB, $DF,  $                 ! hang if DF did not light
+        BB,  $IF,  $                 ! hang if it lit the NEIGHBOURING bit
+                                     !   too: DF is 20 and IF is 21, and
+                                     !   without this line the injection
+                                     !   that swaps them is indistinguish-
+                                     !   able from the one that removes
+                                     !   the signal
+        BZB, $RGZ, $                 ! hang if the value never arrived:
+                                     !   mask zero, so the load proceeds.
+                                     !   RGZ is still off here -- nothing
+                                     !   above this line sets it, because
+                                     !   LVI and SV set the INDEX result
+                                     !   indicators (XF/XCZ/XV*), not the
+                                     !   accumulator's
+        BBZ, $DF,  $+1.0             !   ... clear DF for the next check
+!
+! ---- 1b. the other two fetch-type VFL codes ----------------------
+!   L, + and K are the VFL-format operations that read storage without
+!   changing it; a predicate narrowed to L alone would pass check 1.
+        K(BU,64,8), WHIGH
+        BZB, $DF,  $
+        BBZ, $DF,  $+1.0
+!
+! ---- 2. the same operation OUTSIDE the area ----------------------
+        BBZ, $RGZ, $+1.0             ! clear RGZ: check 1 left it ON, and a
+                                     !   check that cannot fail is not one
+        L(BU,64,8), WBELOW
+        BB,  $DF,  $                 ! hang if an unmonitored fetch lit DF
+        BZB, $RGZ, $                 ! hang if THAT load did not land either
+!
+! THE NOPS AFTER EACH STORE ARE NOT PADDING.  DS is permanently masked
+! on, so an enabled machine reports a store violation by INTERRUPTING,
+! and this model takes an interruption at a QUIESCENT boundary --
+! look-ahead empty, E-box idle -- rather than at the instruction
+! boundary p.48 names.  StretchCore.bsv states that deviation and says
+! it is "LATER, never earlier", and that "the test's instruction stream
+! is written so the two conditions coincide".  A VFL ST bails out once
+! for its read-modify-write read, so it leaves the E-box busy a call
+! longer than the BB-style stores the two storage_protection programs
+! use, and one instruction of slack is not enough: measured, the check
+! below halted with DS ON in word 11 and word 6 still zero.  The count
+! is generous rather than tuned -- a stream that only just works would
+! be a test of the timing, which is not what this file is about.
+!
+! ---- 3. a store inside the area is DS, not DF --------------------
+        ST(BU,64,8), WLOW
+        NOP
+        NOP
+        NOP
+        NOP
+        NOP
+        NOP
+        NOP
+        NOP
+        BB,  $DF,  $                 ! hang if a store's own read lit DF
+        BZB, 6.0,  $                 ! hang if DS's routine did not run
+        BBZ, 6.0,  $+1.0
+!
+! ---- 4. direct index arithmetic: LV fetches, SV stores -----------
+        LV,  $X14, WLOW
+        BZB, $DF,  $                 ! hang if a direct-index FETCH missed DF
+        BBZ, $DF,  $+1.0
+        SV,  $X14, WLOW
+        NOP
+        NOP
+        NOP
+        NOP
+        NOP
+        NOP
+        NOP
+        NOP
+        BB,  $DF,  $                 ! hang if a direct-index STORE lit DF
+        BZB, 6.0,  $
+        BBZ, 6.0,  $+1.0
+!
+! ---- 5. the floating-point operand fetch -------------------------
+        L(N), WHIGH
+        BZB, $DF,  $
+        BBZ, $DF,  $+1.0
+!
+! ---- 6. a connective that only reads -----------------------------
+!   CONNECT FOR TEST, p.76: the result "is not placed anywhere", so it
+!   is fetch-type by p.32's own definition.  CONNECT TO MEMORY is not,
+!   and is not used here.
+        CT0110(BU,64), WHIGH
+        BZB, $DF,  $
+        B,   PASS
+PASS    BEW, $
+!
+! ---- the monitored area and its neighbours -----------------------
+        SLC, (8)4300.0
+WBELOW  DD(BU,64,8), (8)0000125252525252525240   ! below the lower boundary
+WLOW    DD(BU,64,8), (8)0000125252525252525240   ! == the lower boundary
+WHIGH   DD(BU,64,8), 0                           ! inside the area
+WABOVE  DD(BU,64,8), 0                           ! == the upper boundary
+!
+! ---- the interruption table --------------------------------------
+!   Only DS interrupts here: it is permanently masked on (p.48), and
+!   DF's mask bit is zero by the store above.  The marker is word 6 for
+!   the reason storage_protection_boundary.strap gives -- it is in the
+!   0-31 carve-out and cannot itself signal.
+        SLC, (8)4500.0
+TBL     DD, 0                        ! entry N is at TBL+N words
+        SLC, (8)4523.0
+DSRTN   BB1, 6.0, $+1.0              ! entry 19 = DS
+        END, START

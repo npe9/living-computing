@@ -355,9 +355,12 @@ memory protection enforcement (addresses described as
 writes from user code beyond a few no-op cases -- SINCE SUPERSEDED:
 address monitoring is now enforced for STORE-type references, both the
 permanently protected words 1-3 and the area named by the boundary
-registers in word 3, gated on the interrupt-system enable bit; DF, IF,
-whole-operation termination and the straddling rule are still not
-modeled, see `StretchExecute.bsv`'s `protViolates`), the interval
+registers in word 3, gated on the interrupt-system enable bit, and for
+FETCH-type references in p.32's class 1 -- "the effective address of
+all fetch-type operations with a direct address" -- which turns DF on;
+p.32's class 3 for DF (the refill addresses), IF entirely, the
+MASK-DEPENDENT half of DF and DS, and the straddling rule are still
+not modeled, see `StretchExecute.bsv`'s `protViolates` and `dfSignal`), the interval
 timer/clock actually ticking, and — the machine's defining engineering
 feature — **instruction lookahead and pipelining**. (Since superseded:
 the look-ahead and the instruction unit now exist as rules in

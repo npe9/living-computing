@@ -272,6 +272,36 @@ MUTATIONS = [
      "The special registers 4-31 signal a protection violation when the"
      " boundary control bit is set; p.31 says they never signal."),
 
+    # DF, AND THE ONE FAULT THE FUNNEL DESIGN WOULD HAVE HAD.  Every
+    # operand word this model reads leaves through a single
+    # st.readWordReq, and guarding THAT would have been one line
+    # instead of four gated sites -- and wrong, because a
+    # read-modify-write STORE reads its word through the same path and
+    # p.32 puts those on the DS side ("a fetch-type operation is one in
+    # which the contents of an addressed storage location are read out
+    # for use but are not subject to change").  This mutant IS that
+    # design, applied to one opcode: SV reads a half-word before it
+    # rewrites it, and a model that called that a fetch would turn DF
+    # on.  Only df_data_fetch_alarm.strap's store blocks can see it.
+    ("df-store-read-signals-fetch", "bsv/StretchExecute.bsv",
+     "                       || (di_.code == dixop_KV) || (di_.code == dixop_KC)",
+     "                       || (di_.code == dixop_KV) || (di_.code == dixop_KC)\n"
+     "                       || (di_.code == dixop_SV)",
+     "A direct-index STORE's read-modify-write read turns DF on; p.32"
+     " puts a store's own read on the DS side, not the DF side."),
+
+    # And the other direction: the signal removed entirely from one of
+    # the four formats.  Kept separate from the mutant above because
+    # they fail at different addresses and for opposite reasons -- one
+    # says DF fires where it must not, one says it does not fire where
+    # it must.
+    ("df-index-fetch-unsignalled", "bsv/StretchExecute.bsv",
+     "      if (dixFetchType) ind = dfSignal(st, ea[18:1], ind);",
+     "      if (False) ind = dfSignal(st, ea[18:1], ind);",
+     "A direct-index LOAD from the monitored area does not turn DF on;"
+     " p.32 class 1 covers every fetch-type operation with a direct"
+     " address, not only the VFL and floating-point ones."),
+
     # THE MASK, IN THE INTERRUPTION MECHANISM.  p.48: "interruption
     # requires the mask bit to be 1, the indicator bit to be 1, and the
     # mechanism to be enabled."  Dropping the mask takes an interruption
