@@ -455,6 +455,55 @@ run "DF on a refill address: CBR, V+CR, V+ICR, V-ICR (p.32 class 3)" ./run_progr
 #   V+CR signal OUTSIDE its gate    -> 004121.40  BB,  $DF,  $  (count 5)
 #   V+ICR signal removed            -> 004123.40  BZB, $DF,  $
 #   V-ICR signal removed            -> 004130.40  BZB, $DF,  $
+
+run "DF on a refill address: the VFL-format arms (p.32 class 3)" ./run_program.sh programs/df_refill_vfl_alarm.strap StretchDfRfvTb \
+    "PC=4290"          # 004141.00; hand-written, not a listing fact
+# THE LAST FIVE OF THE ELEVEN, and with them p.32's class 3 is
+# complete: every refill read in StretchExecute.bsv now signals.  These
+# are the refills PROGRESSIVE INDEXING issues from the two VFL-format
+# arms, and they are the only ones that needed control flow reshaped
+# rather than a line inserted.
+#
+# TWO SHAPES, EACH APPEARING TWICE.  L, + and K resolve their
+# progressive update through a SHARED TRAILING BLOCK -- their own read
+# never collides with a refill read, since they write only the
+# accumulator and the indicators -- while ST and M+ resolve it INLINE,
+# because their completion is a storage write that cannot share an
+# execute() call with a new read request.  The connectives repeat the
+# split exactly: C and CT through a trailing block, CM inline.  And
+# connectiveOp carries its OWN COPY of that trailing block, so a check
+# on vflIntOp's says nothing about it -- which is why blocks 5 and 6
+# below exist and why injections 5 and 6 target the second copy.
+#
+# THE RESHAPE, and why it is not an insertion.  The trailing block
+# reads "if (vflNeedsRefill && vflReadsUsed >= 2) setOpInvalid; else
+# if (vflNeedsRefill && ...) needsRead = refill; else ...".  The first
+# arm SUPPRESSES THE WHOLE OPERATION (a crossing-field read plus a
+# refill would need a third prefetch slot), so no refill read happens
+# there and the signal cannot sit beside that test -- it has to move
+# inside the else.  And it needs its own vflNeedsRefill guard on top,
+# because the block runs for EVERY progressive VFL operation, refill or
+# not.  Injections 2 and 6 are exactly that guard removed.
+#
+# THE INDEX VALUE POINTS OUTSIDE THE AREA AND THE REFILL FIELD POINTS
+# INSIDE, which is what makes each block name one address.  A
+# progressive VFL operation monitors its operand address too (class 1,
+# already covered), so a value inside would light DF whether the refill
+# signalled or not; and for ST, M+ and CM the operand address is a
+# STORE, so a value inside would raise DS and interrupt as well.  The
+# "BB, 6.0, $" lines confirm those writes stayed silent.
+#
+# Seven injections, each predicted before it was run, each landing on
+# the predicted address.  Reproduce any row with
+#   python3 line_addresses.py programs/df_refill_vfl_alarm.strap
+#
+#   vflIntOp trailing signal removed  -> 004107.40  BZB, $DF,  $
+#   vflIntOp trailing, guard removed  -> 004114.00  BB,  $DF,  $  (count 5)
+#   ST inline signal removed          -> 004116.40  BZB, $DF,  $
+#   M+ inline signal removed          -> 004123.00  BZB, $DF,  $
+#   CT trailing signal removed        -> 004127.40  BZB, $DF,  $
+#   CT trailing, guard removed        -> 004133.00  BB,  $DF,  $  (count 5)
+#   CM inline signal removed          -> 004135.40  BZB, $DF,  $
 # THE BOUNDARY REGISTERS, the second half of address monitoring.  Word
 # 3 holds the upper boundary in bits 0-17, the lower in 32-49 and the
 # boundary control bit at 57 (p.31 -- upper is named first and sits

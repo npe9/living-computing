@@ -1,0 +1,124 @@
+! DF on a refill address, the last of Reference Manual p.32's class 3:
+! the refills the VFL-FORMAT operations issue through progressive
+! indexing.  Its two companions cover the operations p.32 names
+! outright (df_refill_alarm.strap: R, RCZ) and the index-arithmetic
+! and count-branch refills (df_refill_index_alarm.strap: CBR, V+CR,
+! V+ICR, V-ICR).
+!
+! WEAKER STANDARD, hand-written from p.32, for the reason
+! df_data_fetch_alarm.strap states at length.
+!
+! FIVE SITES, TWO SHAPES, ACROSS TWO FUNCTIONS.  p.21 gives progressive indexing its
+! refill: with the secondary operation V+ICR the index counts down and
+! is refilled when the count reaches zero.  In this model L, + and K
+! resolve that through a SHARED trailing block -- their own read never
+! collides with a refill read, since they write only the accumulator
+! and the indicators -- while ST and M+ resolve it INLINE in their own
+! arms, because their completion is a storage write that cannot share
+! an execute() call with a new read request.  Both shapes are below.
+!
+! THE INDEX VALUE POINTS OUTSIDE THE AREA AND THE REFILL FIELD POINTS
+! INSIDE, which is what makes each block name one address.  A
+! progressive VFL operation monitors its operand address too -- that is
+! p.32 class 1, already covered -- so a value inside the area would
+! light DF whether the refill signalled or not.  And for ST and M+ the
+! operand address is a STORE, so a value inside the area would raise DS
+! and interrupt as well.
+!
+! THE COUNT-FIVE BLOCK IS THE GATE, same as its companions: a refill
+! that does not happen reads nothing, and p.32 monitors addresses
+! "actually used".  In the shared trailing block that gate matters
+! twice over, because that block runs for EVERY progressive VFL
+! operation whether it refills or not.
+!
+! MASK-ZERO ONLY, same scope and reason as the companions.
+!
+! Instructions: BD, BE, LVI, SV, LX, L(V+ICR), ST(V+ICR), M+(V+ICR),
+! CT0110(V+ICR), CM1111(V+ICR), BB, BB1, BBZ, BZB, B, BEW -- all
+! implemented.
+
+        SLC, (8)4100.0
+START   BD,  $+.32
+        LVI, $X13, TBL
+        SV,  $X13, $IA
+        LVI, $X13, RFSRC
+        SV,  $X13, $LB               ! lower boundary := RFSRC
+        LVI, $X13, ABOVE
+        SV,  $X13, $UB               ! upper boundary := ABOVE
+        BBZ, 3.57, $+1.0             ! control bit := 0: signal INSIDE
+        BBZ, 12.20, $+1.0            ! DF's mask bit := 0
+        BE,  $+.32
+!
+! ---- 1. L, the shared trailing block, count 1 -> 0 ---------------
+        LX,  $X7,  PK1               ! value -> DATAW (outside), count 1,
+                                     !   refill -> RFSRC (inside)
+        L(V+ICR)(BU,64,8), 0($X7), 0
+        BZB, $DF,  $                 ! hang if the refill address missed DF
+        BB,  $IF,  $                 ! hang if it lit bit 21 instead of 20
+        BBZ, $DF,  $+1.0
+!
+! ---- 2. the same, count 5: no refill, so nothing to monitor ------
+        LX,  $X7,  PK5
+        L(V+ICR)(BU,64,8), 0($X7), 0
+        BB,  $DF,  $                 ! hang if a refill that never happened
+                                     !   lit DF -- and this block also pins
+                                     !   that the trailing block does not
+                                     !   signal for a progressive operation
+                                     !   with no refill at all
+!
+! ---- 3. ST, the inline shape ------------------------------------
+        LX,  $X8,  PK1
+        ST(V+ICR)(BU,64,8), 0($X8), 0
+        BZB, $DF,  $                 ! hang if ST's inline refill missed DF
+        BBZ, $DF,  $+1.0
+        BB,  6.0,  $                 ! and the STORE itself must not have
+                                     !   signalled: DATAW is outside
+!
+! ---- 4. M+, the same inline shape -------------------------------
+        LX,  $X9,  PK1
+        M+(V+ICR)(BU,64,8), 0($X9), 0
+        BZB, $DF,  $                 ! hang if M+'s inline refill missed DF
+        BBZ, $DF,  $+1.0
+        BB,  6.0,  $
+!
+! ---- 5. CT, the CONNECTIVE form of the shared trailing block -----
+!   connectiveOp carries its own copy of that block, so vflIntOp's
+!   count-five check above says nothing about this one.
+        LX,  $X10, PK1
+        CT0110(V+ICR)(BU,64), 0($X10), 0
+        BZB, $DF,  $                 ! hang if CT's refill missed DF
+        BBZ, $DF,  $+1.0
+!
+! ---- 6. and that block's own count gate -------------------------
+        LX,  $X10, PK5
+        CT0110(V+ICR)(BU,64), 0($X10), 0
+        BB,  $DF,  $
+!
+! ---- 7. CM, the connective inline shape -------------------------
+!   CM writes its field back, so p.32 puts THAT address on the DS
+!   side; only the refill address below can raise DF.
+        LX,  $X11, PK1
+        CM1111(V+ICR)(BU,64), 0($X11), 0
+        BZB, $DF,  $                 ! hang if CM's inline refill missed DF
+        BBZ, $DF,  $+1.0
+        BB,  6.0,  $                 ! and CM's own write must not signal
+        B,   PASS
+PASS    BEW, $
+!
+! ---- constants, all OUTSIDE the monitored area -------------------
+        SLC, (8)4200.0
+PK1     XW, DATAW, 1, RFSRC          ! count 1: the refill fires
+PK5     XW, DATAW, 5, RFSRC          ! count 5: it must not
+DATAW   DD(BU,64,8), (8)0000125252525252525240
+!
+! ---- the monitored area ------------------------------------------
+        SLC, (8)4300.0
+RFSRC   XW, (8)123456.76, (8)543210, (8)123456   ! == the lower boundary
+ABOVE   DD(BU,64,8), 0               ! == the upper boundary, first word out
+!
+! ---- the interruption table --------------------------------------
+        SLC, (8)4500.0
+TBL     DD, 0
+        SLC, (8)4523.0
+DSRTN   BB1, 6.0, $+1.0              ! entry 19 = DS
+        END, START

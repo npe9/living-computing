@@ -358,9 +358,10 @@ permanently protected words 1-3 and the area named by the boundary
 registers in word 3, gated on the interrupt-system enable bit, and for
 FETCH-type references in p.32's class 1 -- "the effective address of
 all fetch-type operations with a direct address" -- which turns DF on;
-p.32's class 3 for DF is all but the VFL-format arms -- R and REFILL ON
-COUNT ZERO on both their paths, plus CBR, V+CR, V+ICR and V-ICR; the
-five refill reads inside vflIntOp and connectiveOp do not signal yet.  IF entirely, the
+p.32's classes 1 and 3 for DF are complete -- every fetch-type
+operation with a direct address, and all eleven refill reads -- and
+class 2 (LOAD VALUE EFFECTIVE) is moot since LVE decodes Operation Code
+Invalid here.  IF entirely, the
 MASK-DEPENDENT half of DF and DS, and the straddling rule are still
 not modeled, see `StretchExecute.bsv`'s `protViolates` and `dfSignal`), the interval
 timer/clock actually ticking, and — the machine's defining engineering

@@ -325,12 +325,14 @@ endfunction
 // this suppresses only the store, so a BB whose write is suppressed
 // still branches).  p.32's class 3 for DF, "the refill address used in
 // index refill operations and the operations REFILL and REFILL ON
-// COUNT ZERO" -- HALF DONE.  The two named operations, R and RCZ, now
-// signal on both their paths (index register and external memory).
-// The other nine sites, the refills that progressive indexing and
-// count-branching issue, still do not; they are the same rule and a
-// separate piece of work, because each has to be gated off the paths
-// where the refill is computed and then skipped.  And the straddling rule ("an instruction or data
+// COUNT ZERO" -- DONE.  All eleven refill reads in this file signal:
+// R and RCZ on both their paths, CBR, V+CR, V+ICR, V-ICR, and the
+// VFL-format ones that progressive indexing issues (L/+/K through
+// their shared trailing block, ST/M+/CM inline).  Each sits INSIDE
+// its own suppression gate, because a refill that is computed and
+// then skipped reads nothing and p.32 monitors addresses "actually
+// used".  So class 1 and class 3 are complete and class 2 is moot;
+// what remains of DF is the MASK-DEPENDENT half, above.  And the straddling rule ("an instruction or data
 // field which straddles a boundary always gives an address monitoring
 // signal", p.31) for STORES: dfSignal's callers ask about both words
 // of a crossing field, the store sites still compare one word each.
@@ -1978,6 +1980,13 @@ function ActionValue#(VflOutcome)
                 // write and a new read request at once. See
                 // vflWriteArmHandled's own comment above.
                 vflWriteArmHandled = True;
+                // DF, p.32 class 3.  Reached only when the operation
+                // is valid (the outer test rejects immediate and
+                // crossing) AND vflNeedsRefill, so the refill
+                // genuinely happens -- the gate every other class-3
+                // site states explicitly, this one gets from its
+                // position.
+                ind = dfSignal(st, zeroExtend(vflPx1.refill), ind);
                 if (prefetchCount >= 2) begin
                   if (protViolates(st, w0)) ind = setBit(ind, ind_DS, 1);
                   else st.writeWord(w0, insertFieldBits(prefetch[0], off, len_, packedField));
@@ -2050,6 +2059,13 @@ function ActionValue#(VflOutcome)
               end else begin
                 // Same deferred-write shape as ST above.
                 vflWriteArmHandled = True;
+                // DF, p.32 class 3.  Reached only when the operation
+                // is valid (the outer test rejects immediate and
+                // crossing) AND vflNeedsRefill, so the refill
+                // genuinely happens -- the gate every other class-3
+                // site states explicitly, this one gets from its
+                // position.
+                ind = dfSignal(st, zeroExtend(vflPx1.refill), ind);
                 if (prefetchCount >= 2) begin
                   Bit#(64) raw = extractFieldBits(prefetch[0], 0, off, len_);
                   SM128 opnd = fieldToSM(raw, len_, bsz, vi.m.unsign, vi.m.invert);
@@ -2153,13 +2169,23 @@ function ActionValue#(VflOutcome)
             // stale prefetch data, the same class of bug this fix
             // corrects for the (own-read + refill) case below.
             ind = setOpInvalid(ind);
-          end else if (vflNeedsRefill && prefetchCount < vflReadsUsed + 1) begin
-            needsRead = tagged Valid zeroExtend(vflPx1.refill);
           end else begin
-            Bit#(1) slot = truncate(vflReadsUsed);
-            IndexWord px2 = vflNeedsRefill ? unpackIndexWord(prefetch[slot]) : vflPx1;
-            vflPending = tagged Valid tuple2(vi.a.i1, px2);
-            ind = setIndexResultIndicatorsF(ind, vflPx1); // pre-refill state, p.21
+            // DF, p.32 class 3.  INSIDE this else, not beside the
+            // test above it: that arm suppresses the whole operation
+            // (a crossing-field read plus a refill would need a third
+            // prefetch slot), so no refill read happens there, and
+            // p.32 monitors addresses "actually used".  Gated on
+            // vflNeedsRefill because this block runs for EVERY
+            // progressive VFL operation, refill or not.
+            if (vflNeedsRefill) ind = dfSignal(st, zeroExtend(vflPx1.refill), ind);
+            if (vflNeedsRefill && prefetchCount < vflReadsUsed + 1) begin
+              needsRead = tagged Valid zeroExtend(vflPx1.refill);
+            end else begin
+              Bit#(1) slot = truncate(vflReadsUsed);
+              IndexWord px2 = vflNeedsRefill ? unpackIndexWord(prefetch[slot]) : vflPx1;
+              vflPending = tagged Valid tuple2(vi.a.i1, px2);
+              ind = setIndexResultIndicatorsF(ind, vflPx1); // pre-refill state, p.21
+            end
           end
         end
       end
@@ -2252,6 +2278,13 @@ function ActionValue#(VflOutcome)
           // non-crossing and non-immediate here (both forced invalid
           // above), so its own read is always exactly 1 slot.
           vflWriteArmHandled = True;
+          // DF, p.32 class 3.  This branch is entered only on
+          // "CM && vflNeedsRefill", so the refill genuinely happens --
+          // the gate the other class-3 sites state explicitly, this
+          // one gets from its position, exactly as vflIntOp's two
+          // inline shapes do.  CM's own field word gets no DF: it is
+          // read and written back, so p.32 puts it on the DS side.
+          ind = dfSignal(st, zeroExtend(vflPx1.refill), ind);
           WordAddr w0 = baWord(ea);
           Bit#(6) off = baBit(ea);
           if (prefetchCount >= 2) begin
@@ -2345,13 +2378,20 @@ function ActionValue#(VflOutcome)
             // invalid above) plus a refill would need a 3rd prefetch
             // slot. Not reachable by any current test.
             ind = setOpInvalid(ind);
-          end else if (vflNeedsRefill && prefetchCount < vflReadsUsed + 1) begin
-            needsRead = tagged Valid zeroExtend(vflPx1.refill);
           end else begin
-            Bit#(1) slot = truncate(vflReadsUsed);
-            IndexWord px2 = vflNeedsRefill ? unpackIndexWord(prefetch[slot]) : vflPx1;
-            vflPending = tagged Valid tuple2(cn.a.i1, px2);
-            ind = setIndexResultIndicatorsF(ind, vflPx1); // pre-refill state, p.21
+            // DF, p.32 class 3 -- the same reshape vflIntOp's
+            // identical block carries, and for the same reason: the
+            // arm above suppresses the whole operation, so no refill
+            // read happens there.
+            if (vflNeedsRefill) ind = dfSignal(st, zeroExtend(vflPx1.refill), ind);
+            if (vflNeedsRefill && prefetchCount < vflReadsUsed + 1) begin
+              needsRead = tagged Valid zeroExtend(vflPx1.refill);
+            end else begin
+              Bit#(1) slot = truncate(vflReadsUsed);
+              IndexWord px2 = vflNeedsRefill ? unpackIndexWord(prefetch[slot]) : vflPx1;
+              vflPending = tagged Valid tuple2(cn.a.i1, px2);
+              ind = setIndexResultIndicatorsF(ind, vflPx1); // pre-refill state, p.21
+            end
           end
         end
       end

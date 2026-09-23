@@ -190,10 +190,12 @@ system should become enabled", and its `INT1` table is all `NOP,0`.
 
 ## 2. DF and IF — and routine 1268 is NOT their oracle
 
-**DF's class 1 is now implemented and tested.** `programs/df_data_
-fetch_alarm.strap` + `dfSignal` in `StretchExecute.bsv`. What is left
-of this item is IF (all of it), DF's class 3, and the mask-dependent
-half of both. Read the rest of this section for what was settled on
+**DF IS DONE except its mask-dependent half.** Classes 1 and 3 are
+implemented and tested — `dfSignal` in `StretchExecute.bsv`, four
+programs, twenty-six injections — and class 2 is moot. What is left of
+this ITEM is **IF, all of it**, plus the mask-dependent half (which DS
+does not have either, and which needs a termination mechanism the
+model lacks). Read the rest of this section for what was settled on
 the way, because the correction below is the reason it took a
 re-reading of the primary source rather than a deck.
 
@@ -222,65 +224,31 @@ program is stores for exactly that reason, and the injection that adds
 
 **Class 2 is moot**: LVE decodes Operation Code Invalid in this model.
 
-**Class 3 is NOT done**: the eleven `needsRead = tagged Valid
-zeroExtend(...refill)` sites. Each is a data fetch by p.32 and none
-signals.
+**Class 3: DONE.** All eleven refill reads signal, across three
+programs and eighteen injections:
 
-**AND THE ESTIMATE THAT USED TO SIT HERE WAS WRONG.** This line read
-"the next piece of DF, and it is smaller than class 1 was". It is
-not. Class 1 was four sites with a clean `ea` already in scope at
-each. Class 3 is eleven sites across five functions — `evalBranch`,
-`vflIntOp`, `connectiveOp`, `dirIndexOp`, `immIndexOp`, plus the
-`R`/`RCZ` arm's two paths — and each needs the signal placed so it
-lands on the COMPLETING call while being gated off the paths where the
-refill is skipped: `vflOk` false, `vflReadsUsed >= 2` (which becomes
-`setOpInvalid`), and `refillLegal` false. The trap about distrusting a
-blocker recorded in this file has a mirror image, and this was it: an
-UNDERSTATED estimate is the same failure mode, and costs the same way.
+* `df_refill_alarm.strap` — `R` and `RCZ`, both paths (index register,
+  and the external-memory one that takes two sequential reads).
+* `df_refill_index_alarm.strap` — `CBR`, `V+CR`, `V+ICR`, `V-ICR`.
+* `df_refill_vfl_alarm.strap` — the five progressive-indexing refills
+  in the two VFL-format arms: `L`/`+`/`K` through a shared trailing
+  block, `ST`/`M+` inline, and the connectives repeating the same
+  split with `C`/`CT` trailing and `CM` inline.
 
-**TWO CONSTRAINTS THAT SHAPE THE WORK**, both already in the model:
+**Every signal sits INSIDE its own suppression gate**, because a
+refill that is computed and then skipped reads nothing and p.32
+monitors addresses "actually used". Three things that gate on:
+`refillLegal`, RCZ's and CBR's count conditions, and — in the two
+trailing blocks — the `vflReadsUsed >= 2` arm that suppresses the whole
+operation. Every one of those has a paired negative block and an
+injection that hoists the signal outside it.
 
-1. `refillLegal(rf) = (rf == 0) || (rf >= 16)` — refill addresses
-   1–15 are SUPPRESSED, so no read happens and no DF may fire. This is
-   a deck fact, from routine 1238's TEST 2G/2H (word 0 does refill,
-   1–15 do not), and it is the tightest constraint on where the signal
-   can go: before the `refillLegal` gate is wrong.
-2. `protViolates` consults the boundaries only for `a >= 32`. Refill 0
-   is in p.31's carve-out, 1–15 are suppressed, 16–31 are the index
-   registers and also carved out. So **only a refill address ≥ 32 can
-   ever raise DF**, which is what the test program has to set up and
-   all it has to set up.
-
-**SPLIT ON p.32'S OWN SEAM**, which names two things: "the refill
-address used in *index refill operations*" and "*the operations REFILL
-and REFILL ON COUNT ZERO*".
-
-* **`R`/`RCZ`: DONE.** `programs/df_refill_alarm.strap`, both paths
-  (index register and the external-memory one that takes two
-  sequential reads), five injections. It answered the thing that was
-  not known: class 1's pattern — set the signal where the address is
-  computed, let the bailing call discard it, let the resuming call set
-  it again — holds for refills unchanged. The one addition is that the
-  signal must sit INSIDE `refillLegal` and RCZ's count gate, because a
-  suppressed refill reads nothing and p.32 monitors addresses
-  "actually used".
-* **Progressive and count refills: FOUR OF NINE DONE.**
-  `programs/df_refill_index_alarm.strap` covers `CBR` (in
-  `evalBranch`), `V+CR` (`dirIndexOp`) and `V+ICR`/`V-ICR`
-  (`immIndexOp`) — six injections, every block paired count-one
-  against count-five so each count gate is tested rather than
-  asserted. One placement detail worth keeping: in `evalBranch` the
-  signal must come AFTER `o.ind = setIndexResultIndicatorsF(ind0, x1)`,
-  which assigns from `ind0` and would otherwise discard it.
-
-  **LEFT: the five VFL-format sites** — `vflIntOp`'s `ST` and `M+`
-  inline refills plus its trailing shared progressive block, and
-  `connectiveOp`'s `CM` inline refill plus its trailing block. These
-  are the ones that need control flow reshaped rather than a line
-  inserted: `vflNeedsRefill` is computed up front and stays true
-  through the `setOpInvalid` paths (`vflOk` false, `vflReadsUsed >= 2`),
-  so the signal has to move inside the `else` of those tests. Write
-  ONE function, build it, run it, then replicate.
+**Two placement details worth keeping.** In `evalBranch` the signal
+must come AFTER `o.ind = setIndexResultIndicatorsF(ind0, x1)`, which
+assigns from `ind0` and would discard it. And `connectiveOp` carries
+its OWN copy of the trailing block, so a check on `vflIntOp`'s says
+nothing about it — both copies need their own blocks and their own
+injections.
 
 **The mask-dependent half is not done, for DF or DS.** p.32: "if the
 DF mask bit is one, the data fetch is suppressed and the operation
