@@ -1,0 +1,100 @@
+! jb_ax5b "I-Box 5", routine 1260's CONSTANTS AND INTERRUPT TABLE --
+! PDF p.86 (printed p.83), octal 023042.00-023070.00, transcribed
+! VERBATIM at the listing's own addresses and checked bit-exactly by
+! verify_ax5b_160k_listing.py.
+!
+! WHY THIS BLOCK.  It is the harness the p.71 comparison driver needs
+! (ax5b_160105_compare.strap), and it SETTLES THREE THINGS that
+! earlier transcriptions in this project had to leave open or infer.
+!
+! 1. 160K7 IS THE ILLEGAL OP.  ax5b_16082_op_ad.strap SYN'd 160K7 from
+!    "LX,$X4,160K7 -> 23050.10 10" on p.41 and its header said, under
+!    "NOT TRACED": "WHAT 160K7 CONTAINS.  Only its address, 023050.00,
+!    is printed here.  The block's SHAPE ... reads like self-modifying
+!    code planting an invalid operation code ... Nothing on these pages
+!    says so."  p.86 says so:
+!        160K7  %8@DD%BU,32,8@,3740   -ILLEGAL OP, NO. 31.
+!    The inference was right and is now a printed fact.
+!
+! 2. 160K16 IS "BD,16086A", confirming the external
+!    ax5b_16086_ds.strap SYN'd from p.43's "LX,$X4,160K16".
+!
+! 3. THE INTERRUPT TABLE IS 64 WORDS, STATED RATHER THAN REASONED.
+!        160IT   DR%BU,64,8@,64    023201.00
+!        160DMP  XW,0,0,0,0        023301.00
+!    023301 - 023201 = 0o100 = 64.  run_tests.sh's "The interruption
+!    mechanism" section had REASONED the units were "64 full words,
+!    from 160IT at 023201.00 to 160DMP at 023301.00"; the DR row
+!    states the 64 directly.
+!
+! AND 160K12 IS THE TABLE'S DEFAULT ENTRY: "BD,16010A" twice, so every
+! interruption disables and branches to the label p.71 calls "-ALL
+! INTRPTS EXCEPT AD ENTER HERE."  160XW1 ("XW,0,64,160IT" -- count 64,
+! refill 160IT) is what the comparison driver's CB+ loop walks to copy
+! it into all 64 slots.
+!
+! IT ALSO EXPOSED AN ASSEMBLER GAP, the third this routine has found.
+! "C+I,$X1,160DMP" at 023044.00 prints "23301.03 00" -- 160DMP's WORD
+! address in bits 0-17 -- and the assembler evaluated the label to a
+! BIT address and wrapped it.  Count-type immediates now use
+! eval_addr_field with shift 6, exactly as XW's refill field already
+! did: a label scales >>6, a bare integer counts words, so
+! "LCI,$X1,18" is unchanged.  (The first two gaps: TRANSMIT/SWAP not
+! encodable at all, found by p.45's TI; XW's fourth operand masked to
+! one bit, found by 160S1's single XW row.)
+!
+! ENCODING ONLY: these are constants, with nothing to execute.  The
+! rows past 023070.00 -- 160XW5-9, USAWD, USALVE, 160INT, 160IT,
+! 160DMP, BOUND0, BOUND1 -- are not transcribed here; USALVE needs
+! LVE and the DR reserves are better given to whatever program
+! actually runs the table.
+!
+! SUBSTITUTIONS: one.  Numeric labels prefixed "L".  Every external is
+! given by SYN at the address this block's own rows print for it.
+
+L160DMP SYN, (8)23301.0
+L16035  SYN, (8)14642.0
+L16090  SYN, (8)21512.40
+L16097  SYN, (8)22072.0
+L16010A SYN, (8)22371.40
+L16086A SYN, (8)21372.40
+L160107 SYN, (8)22372.0
+L160IT  SYN, (8)23201.0
+        SLC, (8)23042.0
+L160K1  XW, (8)777777.60, 0, 0
+L160K2  SX, $X1, L160DMP
+        NOP
+L160K3  C+I, $X1, L160DMP
+        NOP
+L160K4  SV, $X1, L160DMP
+        NOP
+L160K5  BD, L16035
+        BD, L16035
+L160K6  BD, L16090
+        NOP
+L160K7  DD(BU,32,8), (8)3740     ! -ILLEGAL OP, NO. 31.
+        NOP
+L160K8  BD, L16097
+        NOP
+L160K9  XW, -1.0, 0, 0
+L160K10 XW, 1.0, 1, 0
+L160K11 XW, -3.0, 63, 0
+L160K12 BD, L16010A
+        BD, L16010A
+L160K13 NOP
+        NOP
+L160K14 XW, -0.1, 0, 0
+L160K15 XW, -(8)777777.60, 0, 0
+L160K16 BD, L16086A
+        BD, L16086A
+L160K17 BD, L160107
+        BD, L160107
+L160AD1 NOP
+L160AD2 NOP
+L160AD3 NOP
+        NOP
+L160XW1 XW, 0, 64, L160IT
+L160XW2 XW, 0, 48, 0
+L160XW3 XW, (8)101.0, 0, 0
+L160XW4 XW, 0, 63, L160IT
+        END, L160K1

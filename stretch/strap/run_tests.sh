@@ -3137,6 +3137,45 @@ run "I-Box 5 routine 1260 TEST 7b ON THE MODEL (18 LB bits + control bit)" ./run
 # A FOURTH CONFIRMATION OF THE BIT TABLE: BIT57 prints 24613, BIT11
 # prints 24535, and 024522 + 57 = 024613, 024522 + 11 = 024535.
 
+run "I-Box 5 routine 1260's constants + interrupt table (jb_ax5b p.86)" python3 verify_ax5b_160k_listing.py
+# THE HARNESS THE p.71 COMPARISON DRIVER NEEDS, and it settles three
+# things earlier transcriptions here had to leave open or infer.
+#
+# 160K7 IS THE ILLEGAL OP.  ax5b_16082_op_ad.strap SYN'd it from p.41
+# and listed under "NOT TRACED": "WHAT 160K7 CONTAINS.  Only its
+# address, 023050.00, is printed here.  The block's SHAPE ... reads
+# like self-modifying code planting an invalid operation code ...
+# Nothing on these pages says so."  p.86 says so:
+#     160K7  %8@DD%BU,32,8@,3740   -ILLEGAL OP, NO. 31.
+#
+# 160K16 IS "BD,16086A", confirming ax5b_16086_ds.strap's external.
+#
+# THE INTERRUPT TABLE IS 64 WORDS, STATED RATHER THAN REASONED.
+# "160IT DR%BU,64,8@,64" sits at 023201.00 and 160DMP at 023301.00,
+# 0o100 words later.  This suite's "The interruption mechanism"
+# section had REASONED the units were "64 full words, from 160IT at
+# 023201.00 to 160DMP at 023301.00" -- the DR row states the 64.
+#
+# And 160K12 is the table's DEFAULT ENTRY, "BD,16010A" twice: every
+# interruption disables and branches to what p.71 labels "-ALL INTRPTS
+# EXCEPT AD ENTER HERE."  160XW1 -- "XW,0,64,160IT", count 64, refill
+# the table -- is what the comparison driver's CB+ loop walks to copy
+# that entry into all 64 slots.
+#
+# IT ALSO EXPOSED THE THIRD ASSEMBLER GAP THIS ROUTINE HAS FOUND.
+# "C+I,$X1,160DMP" at 023044.00 prints "23301.03 00" -- the label's
+# WORD address in bits 0-17 -- and count-type immediates evaluated a
+# label to a BIT address, which wrapped.  They now use eval_addr_field
+# with shift 6, exactly as XW's refill field already did, so a label
+# scales >>6 and a bare integer counts words ("LCI,$X1,18" unchanged).
+# The first two: TRANSMIT/SWAP not encodable at all (found by p.45's
+# TI) and XW's fourth operand masked to one bit (found by 160S1's
+# single XW row).  Each was one row using a feature nothing else did.
+#
+# Injections, observed: count-immediates back to eval_expr (023044.00,
+# the row that found it); C+I's immediate-index code (023044.00); BD's
+# branch code (all ten BD rows).
+
 run "I-Box 5 routine 1260's 160S1, bit-exact (jb_ax5b pp.83-84)" python3 verify_ax5b_160s1_listing.py
 # THE ROUTINE THIS PLAN MYTHOLOGISED.  docs/NEXT.md opened with
 # "Prerequisite: SSIP's 160S1/160SX1 save/restore harness, reported at

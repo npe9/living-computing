@@ -1456,7 +1456,16 @@ def emit_statement(stmt, symtab, image):
             # (Reference Manual p.25) -- an 18-bit integer in the TOP
             # 18 bits of the 19-bit field. I-Box 1's "LCI,$X1,4" prints
             # as 4.03 02 (docs/ja_ax1a_ibox-1.pdf p.50): 4 in bits 0-17.
-            n = eval_expr(stmt.fields[1], symtab, loc, lineno=stmt.lineno)
+            # A LABEL operand is a WORD address, not a bit count.
+            # jb_ax5b p.86's "C+I,$X1,160DMP" prints "23301.03 00" --
+            # 160DMP's WORD, 023301, sitting in bits 0-17 -- and
+            # eval_expr returns its BIT address, which wrapped.
+            # eval_addr_field with shift 6 is what XW's refill field
+            # already uses for the same reason: "a label's bit count
+            # scales >>6, a bare integer counts words", so LCI,$X1,18
+            # is unchanged.
+            n = eval_addr_field(stmt.fields[1], symtab, loc, 6,
+                                lineno=stmt.lineno)
             imm19 = (n & 0x3FFFF) << 1
         else:
             # Value immediates: the field is bits 0-18 of a bit address
