@@ -104,13 +104,31 @@ all of them are refused). Guard:
 `programs/transmit_scope.strap`, six blocks, five injections, one per
 rule. Record in `run_tests.sh` §"TRANSMIT: what is honoured…".
 
-**Caution, paid for** — and note it is about the *boundary* driver,
-which finding the indicator-walk driver at 16087/16088 does **not**
-discharge: pp.66–79 were *guessed* to hold the positive
-boundary-interrupt cases. p.66 read first-hand is the tail of a per-bit
-error table, *"UPPER BOUNDARY DATA FAILURE, BIT 9"*. That guess came
-from a scouting pass's inference, not from a page. **Find the driver
-before transcribing.**
+**The boundary driver is found, and the guess it replaces was wrong
+in range AND in kind.** This file said pp.66–79 held "the positive
+boundary-interrupt cases" — an inference from a scouting pass, not a
+page. Scanning pp.46–86 for BOUND/MONITOR on 2026-09-23 and reading
+the hits gives the real layout:
+
+| page | sub-test |
+|---|---|
+| p.65 | *"TEST 7 CHKS BOUNDARY CONTROL."* / *"CHK UPPER BOUNDARY DATA."* — driver at 16099/160100 |
+| p.67 | *"CHK LOWER BOUNDARY DATA."*, *"CHK BOUNDARY CONTROL BIT."* |
+| **p.71** | *"FETCH FROM X-1 TO CHK UB COMP."*, *"FROM X-3 TO CHK LB COMP."* |
+
+pp.65–70 test whether the **registers hold their bits**; **p.71** tests
+whether the **comparison fires**, and p.71 is what "positive
+boundary-interrupt cases" actually means.
+
+**p.65 is transcribed and runs** — `programs/ax5b_16099_ub_data.strap`,
+sixteen rows bit-exact, and it **catches a boundary fault and names
+the bit**: dropping IBM bit 17 from `boundaryReg` halts it at
+022263.00, the error table's eighteenth entry. Record in
+`run_tests.sh` §"…TEST 7".
+
+**Still to do on the boundaries**: p.67 (lower boundary data, control
+bit) and **p.71 (the comparisons)** — the latter being the one this
+item always wanted.
 
 **Do not re-scout these — bounded negatives, 2026-09-21:**
 `jb_af1c` never provokes an interruption (no `BE`, `BEW`, mask write,
@@ -385,6 +403,13 @@ printed page numbers.
   the injected bytecode is reused. Cost one wrong injection result,
   where injection 2 appeared to break a row injection 1 had broken.
   `rm -rf strap/__pycache__` on both sides of every injection.
+* **A substitution can discard the thing that makes a test useful.**
+  Routine 1260's boundary driver branches into an EIGHTEEN-entry
+  error table, `B,160B17($X3)`, indexed — so the halt address names
+  which bit failed. A first transcription collapsed it to one hang;
+  an injected bit-17 fault then branched past its end into untouched
+  storage, decoded `BE,0` and ran to 0. Still "caught", but unable to
+  say what. When a deck spaces a table, the spacing is the diagnosis.
 * **A summary column is not a measurement.** `mutation_score.py`
   printed the first failing section; this file read it as "the
   catcher" and built a near-miss rule on it. Every application of

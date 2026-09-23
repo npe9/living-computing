@@ -3057,6 +3057,49 @@ run "Program store compare: store then EXECUTE the modified instruction" ./run_p
 # store target (plan stage 3a note). This exact pattern failed before.
 run "Look-ahead: store-close-to-fetch" ./run_scf_test.sh
 
+run "I-Box 5 routine 1260 TEST 7: upper-boundary data, bit-exact (jb_ax5b p.65)" python3 verify_ax5b_16099_listing.py
+run "I-Box 5 routine 1260 TEST 7 ON THE MODEL (all 18 boundary bits)" ./run_program.sh programs/ax5b_16099_ub_data.strap StretchAx5b16099Tb \
+    "PC=18730"         # 022225.00, where the listing continues
+# THE DRIVER docs/NEXT.md ASKED FOR, found 2026-09-23.  Item 1 warned
+# that "pp.66-79 were GUESSED to hold the positive boundary-interrupt
+# cases" -- a scouting pass's inference, not a page -- and said FIND
+# THE DRIVER BEFORE TRANSCRIBING.  Scanning pp.46-86 for BOUND/MONITOR
+# and reading the hits gives the real layout:
+#
+#   p.65  "TEST 7 CHKS BOUNDARY CONTROL." / "CHK UPPER BOUNDARY DATA."
+#         <- this block, driver at 16099/160100
+#   p.67  "CHK LOWER BOUNDARY DATA." and "CHK BOUNDARY CONTROL BIT."
+#   p.71  "FETCH FROM X-1 TO CHK UB COMP." / "FROM X-3 TO CHK LB COMP."
+#         <- the COMPARISON tests, i.e. the positive address-monitoring
+#            cases the plan was actually after
+#
+# So pp.65-70 test whether the REGISTERS HOLD THEIR BITS and p.71 tests
+# whether the comparison FIRES.  The guess was wrong in range and kind.
+#
+# THE BLOCK is eighteen iterations, because the upper boundary is word
+# 3 bits 0-17 -- exactly eighteen bits.  Write BIT<n> into $UB, four
+# NOPs (the deck's own spacing), read back, KV, and on mismatch branch
+# into the per-bit error table 160B17 INDEXED by $X3, which steps by
+# 1.32 because each entry is three half-words.
+#
+# IT CATCHES A BOUNDARY FAULT AND NAMES THE BIT.  StretchStorage.bsv
+# holds word 3 in a dedicated register, so dropping one bit of it is
+# precisely the fault this block hunts.  Injecting
+#   addrUpperBoundary: boundaryReg <= (v & ~(64'b1 << 46));
+# -- IBM bit 17 -- halts at 022263.00, the table's EIGHTEENTH entry,
+# "UPPER BOUNDARY DATA FAILURE, BIT 17".  Clean it halts at PASS.
+#
+# AND THE TABLE'S SIZE IS LOAD-BEARING.  A first version collapsed the
+# eighteen entries into ONE hang; the bit-17 injection then branched
+# past its end into untouched storage, decoded BE,0 (NEXT.md's trap
+# list) and ran the counter to 0 -- caught, but unable to say WHICH
+# bit.  Keeping the deck's shape is what turns "something broke" into
+# "bit 17 broke".
+#
+# Encoding injections, observed, one row each: LCI's immediate-index
+# code (022215.40), KV's direct-index code (022222.40), XE's indicator
+# number (022223.00).
+
 run "I-Box 5 routine 1268 test 1A, bit-exact (jb_ax5b p.110)" python3 verify_ax5b_1681_listing.py
 run "I-Box 5 routine 1268 test 1A, ON THE MODEL (self-modifying execution)" ./run_program.sh programs/ax5b_1681_if_close_to_ds.strap StretchAx5b1681Tb \
     "PC=20937"         # 024344.40, where the listing continues into test 1B

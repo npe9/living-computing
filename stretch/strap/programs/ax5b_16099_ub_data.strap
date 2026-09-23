@@ -1,0 +1,181 @@
+! jb_ax5b "I-Box 5", routine 1260 TEST 7 -- "CHK UPPER BOUNDARY DATA",
+! the per-bit data test of the UPPER BOUNDARY register.  PDF p.65
+! (printed p.62), octal 022215.00-022224.40, transcribed VERBATIM at
+! the listing's own addresses, checked bit-exactly by
+! verify_ax5b_16099_listing.py AND RUN ON THE MODEL.
+!
+! THIS IS THE DRIVER docs/NEXT.md ASKED FOR, and finding it corrects
+! the guess the file warned about.  Item 1 said: "pp.66-79 were
+! GUESSED to hold the positive boundary-interrupt cases.  p.66 read
+! first-hand is the tail of a per-bit error table, 'UPPER BOUNDARY
+! DATA FAILURE, BIT 9'.  That guess came from a scouting pass's
+! inference, not from a page.  FIND THE DRIVER BEFORE TRANSCRIBING."
+!
+! The driver is here, at 16099/160100 on p.65, and what it drives is
+! NOT an interrupt test.  It is a DATA-PATH test of the boundary
+! register.  Mapped 2026-09-23 by scanning pp.46-86 for BOUND/MONITOR
+! and then reading the hits:
+!
+!     p.65   "TEST 7 CHKS BOUNDARY CONTROL." / "CHK UPPER BOUNDARY
+!            DATA."  -- this block
+!     p.67   "CHK LOWER BOUNDARY DATA." and "CHK BOUNDARY CONTROL BIT."
+!     p.71   "FETCH FROM X-1 TO CHK UB COMP." and "FROM X-3 TO CHK LB
+!            COMP."  <- the COMPARISON tests, i.e. the positive
+!            address-monitoring cases the plan was actually after
+!
+! So pp.65-70 test whether the REGISTERS HOLD THEIR BITS, and p.71
+! tests whether the comparison FIRES.  The plan's "pp.66-79" was wrong
+! in range and in kind.
+!
+! WHAT THE BLOCK DOES.  Eighteen iterations -- the upper boundary is
+! word 3 bits 0-17, which is exactly eighteen bits:
+!
+!     LCI,$X1,18            the loop count
+!     160100 Z,$MASK        clear the mask each time round
+!     LV,$X2,BIT0(X1)       take the word whose only set bit is bit X1
+!     SV,$X2,$UB            write it into the upper boundary
+!     NOP NOP NOP NOP       four, to let the write land
+!     LV,$X2,$UB            read it back
+!     KV,$X2,BIT0(X1)       compare against what went in
+!     BXE,$+1.0             equal -> skip the error branch
+!     B,160B17(X3)          "-DATA ERROR." -- into the per-bit table
+!     160101 V+I,$X3,1.32   step to the next error entry (3 half-words)
+!     CB+,$X1,160100        count and loop
+!
+! and 160B17's entries are "UPPER BOUNDARY DATA FAILURE, BIT 0." up to
+! BIT 17, three half-words each -- which is why X3 advances by 1.32.
+!
+! THE FOUR NOPs ARE THE DECK'S, not padding added here.  They sit
+! between the store into word 3 and the read back, and they are the
+! same shape as routine 1268's store-close-to-fetch spacing.
+!
+! AND IT CATCHES A BOUNDARY FAULT AND NAMES THE BIT.  Measured
+! 2026-09-23.  StretchStorage.bsv holds word 3 in a dedicated register
+! ("addrUpperBoundary: boundaryReg <= v"), so dropping one bit of it
+! is exactly the hardware fault this block was written to find.
+! Injecting
+!     addrUpperBoundary: boundaryReg <= (v & ~(64'b1 << 46));
+! -- IBM bit 17, the top of the upper boundary field -- halts the
+! program at 022263.00, which is 160B17's EIGHTEENTH entry, "UPPER
+! BOUNDARY DATA FAILURE, BIT 17".  Clean, it halts at PASS.  A 1961
+! diagnostic identifying which bit of a 2026 model's register failed.
+!
+! THE TABLE'S SIZE IS LOAD-BEARING, and this was got wrong first.  The
+! branch is "B,160B17($X3)" -- INDEXED -- so a failure on bit N lands
+! at 160B17 + N*1.32.  A first version of this transcription collapsed
+! the eighteen-entry table into ONE hang; the bit-17 injection then
+! branched past its end into untouched storage, which decodes as BE,0
+! (docs/NEXT.md's trap list) and ran the counter to 0.  The deck steps
+! $X3 by 1.32 precisely because each entry is three half-words; keep
+! the shape and the halt address names the bit, discard it and the
+! test can only say "something broke".
+!
+! WHY IT RUNS DISABLED.  Word 3 is one of Reference Manual p.31's
+! permanently protected locations, so an enabled store into it raises
+! DS and is suppressed.  Disabled is the reset state (p.53), and this
+! block never enables.
+!
+! SUBSTITUTIONS: three.
+!   1. Numeric labels prefixed "L" (16099, 160100, 160101, 160B17).
+!   2. 160B17, the per-bit error table, is a "B,$" HANG at its printed
+!      address 022231.40 -- so a failure halts there and the PC names
+!      it.  The real table's eighteen entries are not transcribed.
+!   3. A "BEW,$" exit at 022225.00, where the listing continues with
+!      "B,$+1.0".
+! BIT0..BIT17 are DERIVED from p.114's table, which prints the rule
+! ("BIT<n> is the word whose only set bit is bit n", BIT0 at
+! 024522.00, one word per bit) rather than being transcribed row by
+! row -- stated so the derivation is visible.
+
+BIT0    SYN, (8)24522.0
+L160B17 SYN, (8)22231.40
+
+        SLC, (8)22215.0
+L16099  LVI, $X1, 0.0              ! -TEST 7 CHKS BOUNDARY CONTROL.
+        LCI, $X1, 18               ! -CHK UPPER BOUNDARY DATA.
+        LVI, $X3, 0.0
+L160100 Z,   $MASK
+        LV,  $X2, BIT0($X1)
+        SV,  $X2, $UB              !  write bit X1 into the upper boundary
+        NOP
+        NOP
+        NOP
+        NOP
+        LV,  $X2, $UB              !  read it back
+        KV,  $X2, BIT0($X1)
+        BXE, $+1.0                 !  equal -> skip
+        B,   L160B17($X3)          ! -DATA ERROR.
+L160101 V+I, $X3, 1.32
+        CB+, $X1, L160100
+!
+! ---- substitution 3: the exit ---------------------------------------
+        SLC, (8)22225.0
+PASS    BEW, $
+!
+! ---- substitution 2: the error table, EIGHTEEN entries -------------
+! The deck's 160B17 has one three-half-word entry per bit, which is
+! why the driver steps $X3 by 1.32.  A single hang is NOT enough: the
+! branch is INDEXED, so a failure on bit N lands at 160B17 + N*1.32.
+! Measured the hard way -- with one hang, an injected bit-17 fault
+! branched into untouched storage, which decodes as BE,0 (see
+! docs/NEXT.md's trap list) and ran the counter to 0.  With all
+! eighteen, the halt address NAMES THE BIT, exactly as the real table
+! does.
+        SLC, (8)22231.40
+E0      B, $                       ! UPPER BOUNDARY DATA FAILURE, BIT 0
+        SLC, (8)22233.0
+E1      B, $                       ! UPPER BOUNDARY DATA FAILURE, BIT 1
+        SLC, (8)22234.40
+E2      B, $                       ! UPPER BOUNDARY DATA FAILURE, BIT 2
+        SLC, (8)22236.0
+E3      B, $                       ! UPPER BOUNDARY DATA FAILURE, BIT 3
+        SLC, (8)22237.40
+E4      B, $                       ! UPPER BOUNDARY DATA FAILURE, BIT 4
+        SLC, (8)22241.0
+E5      B, $                       ! UPPER BOUNDARY DATA FAILURE, BIT 5
+        SLC, (8)22242.40
+E6      B, $                       ! UPPER BOUNDARY DATA FAILURE, BIT 6
+        SLC, (8)22244.0
+E7      B, $                       ! UPPER BOUNDARY DATA FAILURE, BIT 7
+        SLC, (8)22245.40
+E8      B, $                       ! UPPER BOUNDARY DATA FAILURE, BIT 8
+        SLC, (8)22247.0
+E9      B, $                       ! UPPER BOUNDARY DATA FAILURE, BIT 9
+        SLC, (8)22250.40
+E10     B, $                       ! UPPER BOUNDARY DATA FAILURE, BIT 10
+        SLC, (8)22252.0
+E11     B, $                       ! UPPER BOUNDARY DATA FAILURE, BIT 11
+        SLC, (8)22253.40
+E12     B, $                       ! UPPER BOUNDARY DATA FAILURE, BIT 12
+        SLC, (8)22255.0
+E13     B, $                       ! UPPER BOUNDARY DATA FAILURE, BIT 13
+        SLC, (8)22256.40
+E14     B, $                       ! UPPER BOUNDARY DATA FAILURE, BIT 14
+        SLC, (8)22260.0
+E15     B, $                       ! UPPER BOUNDARY DATA FAILURE, BIT 15
+        SLC, (8)22261.40
+E16     B, $                       ! UPPER BOUNDARY DATA FAILURE, BIT 16
+        SLC, (8)22263.0
+E17     B, $                       ! UPPER BOUNDARY DATA FAILURE, BIT 17
+!
+! ---- BIT0..BIT17, derived from p.114's rule -------------------------
+        SLC, (8)24522.0
+B0      DD(BU,64), 9223372036854775808  ! BIT0
+B1      DD(BU,64), 4611686018427387904  ! BIT1
+B2      DD(BU,64), 2305843009213693952  ! BIT2
+B3      DD(BU,64), 1152921504606846976  ! BIT3
+B4      DD(BU,64), 576460752303423488  ! BIT4
+B5      DD(BU,64), 288230376151711744  ! BIT5
+B6      DD(BU,64), 144115188075855872  ! BIT6
+B7      DD(BU,64), 72057594037927936  ! BIT7
+B8      DD(BU,64), 36028797018963968  ! BIT8
+B9      DD(BU,64), 18014398509481984  ! BIT9
+B10     DD(BU,64), 9007199254740992  ! BIT10
+B11     DD(BU,64), 4503599627370496  ! BIT11
+B12     DD(BU,64), 2251799813685248  ! BIT12
+B13     DD(BU,64), 1125899906842624  ! BIT13
+B14     DD(BU,64), 562949953421312  ! BIT14
+B15     DD(BU,64), 281474976710656  ! BIT15
+B16     DD(BU,64), 140737488355328  ! BIT16
+B17     DD(BU,64), 70368744177664  ! BIT17
+        END, L16099

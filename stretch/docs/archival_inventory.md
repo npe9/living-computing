@@ -711,6 +711,30 @@ pages hold nothing of the kind. What they actually contain, in order:
 | pp.41-44 | **the per-indicator turn-on blocks**, 16071 through 16086 -- one per I-Box indicator (`TS`, `CPUS`, `EKJ`, `UNRJ`, `CBJ`, `EPGK`, `UK`, `EE`, `EOP`, `CS`, `RESRVD`, `OP`, `AD`, `USA`, `EXE`, `DS`). Sixteen blocks, but not sixteen tests -- see the triage below. |
 | p.45 | **the indicator-walk driver**, 16087/16088 -- **transcribed** as `strap/programs/ax5b_16087_walk.strap`, six rows bit-exact via `strap/verify_ax5b_16087_listing.py`: `SIC,160SX1` / `B,160S1`, `TI,1,BIT0%$X1,$IND` *"SET ONE OF 20-47"*, `TI,1,BIT0%$X1,$MASK` *"SET MASK BIT OF TEST IND BIT"*, `BE,$+.32` *"ENABLE AND AWAIT INTERRUPT"*, then `BD,160B13%$X6` -- an indexed dispatch into the per-indicator error table `160B13`, whose entries read *"FAILED TO INTERRUPT ON IND MK / IN 1 MILLISEC."*, then IK, IJ, EK, TS, CPUS, EKJ, UNRJ, CBJ, EPGK, UK, EE, EOP, CS. |
 
+**ROUTINE 1260'S BOUNDARY TESTS -- located 2026-09-23**, correcting a
+guess `NEXT.md` had carried since the scouting pass. It claimed
+pp.66-79 held "the positive boundary-interrupt cases". Scanning
+pp.46-86 for BOUND/MONITOR and reading the hits:
+
+| page | sub-test |
+|---|---|
+| p.65 | *"TEST 7 CHKS BOUNDARY CONTROL."* / *"CHK UPPER BOUNDARY DATA."* -- driver at 16099/160100, per-bit error table `160B17` |
+| p.67 | *"CHK LOWER BOUNDARY DATA."*, *"CHK BOUNDARY CONTROL BIT."* |
+| p.71 | *"FETCH FROM X-1 TO CHK UB COMP."*, *"FROM X-3 TO CHK LB COMP."* |
+
+pp.65-70 are **register data-path tests** -- can each field hold each
+of its bits. p.71 is the **comparison** test, i.e. the address
+monitoring actually firing, which is what "positive boundary-interrupt
+cases" meant. The guess was wrong in range (65-71, not 66-79) and in
+kind (mostly data, not interrupts).
+
+**p.65 is transcribed and runs**
+(`strap/programs/ax5b_16099_ub_data.strap`): eighteen iterations,
+because the upper boundary is word 3 bits 0-17. It catches a dropped
+boundary bit and **names it** -- injecting
+`boundaryReg <= (v & ~(64'b1 << 46))` halts at 022263.00, the table's
+"UPPER BOUNDARY DATA FAILURE, BIT 17" entry.
+
 **ROUTINE 1262 -- "TEST EX AND EXIC", read first-hand 2026-09-23.**
 It begins at PDF p.87 and runs to ~p.110. Its purpose block, read at
 600 dpi and transcribed verbatim:
