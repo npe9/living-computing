@@ -264,10 +264,23 @@ and REFILL ON COUNT ZERO*".
   signal must sit INSIDE `refillLegal` and RCZ's count gate, because a
   suppressed refill reads nothing and p.32 monitors addresses
   "actually used".
-* **Progressive and count refills second** — the other nine sites.
-  Write ONE function, build it, run it, then replicate; these interact
-  with control flow the change reshapes, unlike class 1's four
-  independent anchors.
+* **Progressive and count refills: FOUR OF NINE DONE.**
+  `programs/df_refill_index_alarm.strap` covers `CBR` (in
+  `evalBranch`), `V+CR` (`dirIndexOp`) and `V+ICR`/`V-ICR`
+  (`immIndexOp`) — six injections, every block paired count-one
+  against count-five so each count gate is tested rather than
+  asserted. One placement detail worth keeping: in `evalBranch` the
+  signal must come AFTER `o.ind = setIndexResultIndicatorsF(ind0, x1)`,
+  which assigns from `ind0` and would otherwise discard it.
+
+  **LEFT: the five VFL-format sites** — `vflIntOp`'s `ST` and `M+`
+  inline refills plus its trailing shared progressive block, and
+  `connectiveOp`'s `CM` inline refill plus its trailing block. These
+  are the ones that need control flow reshaped rather than a line
+  inserted: `vflNeedsRefill` is computed up front and stays true
+  through the `setOpInvalid` paths (`vflOk` false, `vflReadsUsed >= 2`),
+  so the signal has to move inside the `else` of those tests. Write
+  ONE function, build it, run it, then replicate.
 
 **The mask-dependent half is not done, for DF or DS.** p.32: "if the
 DF mask bit is one, the data fetch is suppressed and the operation
@@ -478,6 +491,20 @@ Out of scope by design: cycle-accurate timing.
 
 ## 6. Open questions — record, do not guess
 
+**Does `refillLegal` apply to refills other than `R`/`RCZ`?** The
+model suppresses a refill whose address is 1-15 for those two
+operations only, on routine 1238's TEST 2G/2H ("CHK REFILL FRM LOCN
+0" against "CHK NO REFILL FRM LOCNS 1 THROUGH 17"). Reference Manual
+pp.25-26 were read for this and describe `R`, `RCZ`, `V+ICR`, `CB` and
+`CBR` without mentioning the rule at all — it is a machine behaviour
+the deck established empirically for the REFILL operations, not
+something the manual states anywhere. So whether `CBR`, `V+CR`,
+`V+ICR` and `V-ICR` suppress the same way is unsourced in BOTH
+directions, and the asymmetry now in the model is untested either way.
+Do not resolve it by symmetry; it wants a deck block, and `jb_ax4b`
+routine 1238 is where one would be if it exists.
+
+
 * `BR`'s **absolute value** clause is unexercised: an effective address
   can only go negative through index modification, and `effAddr19`
   carries no sign beside its result.
@@ -636,3 +663,14 @@ printed page numbers.
   IF is 21. An injection that swaps them and an injection that removes
   the signal entirely both halt at the same address, so neither proves
   the *number* — until a line asserts the neighbour is OFF.
+* **A branch target of `$+1.0` is wrong after a HALF-WORD instruction.**
+  `CBR` is half-word format, so `$+1.0` from it is the *second*
+  half-word of a following full-word instruction, not the next
+  instruction. Written that way, `df_refill_index_alarm.strap` decoded
+  garbage, raised OP, interrupted into a zero table entry — and still
+  PASSED, because the interruption returned and every later check ran.
+  The only sign was one line of stderr: "interruption instruction at
+  4766 is E-box class -- not implemented". **Read the model's stderr on
+  a green run**; a program can pass while doing something else entirely.
+  `$+.32` is the next half-word; `$+1.0` is right only after a
+  full-word instruction.

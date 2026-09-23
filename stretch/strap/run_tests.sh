@@ -406,6 +406,55 @@ run "DF on a refill address: R and RCZ (p.32 class 3)" ./run_program.sh programs
 #                                       word INSIDE the area, which R rewrites,
 #                                       so p.32 puts its read on the DS side)
 #   dfSignal sets IF (21) not DF    -> 004107.00  BZB, $DF,  $
+
+run "DF on a refill address: CBR, V+CR, V+ICR, V-ICR (p.32 class 3)" ./run_program.sh programs/df_refill_index_alarm.strap StretchDfRfxTb \
+    "PC=4282"          # 004135.00; hand-written, not a listing fact
+# THE OTHER HALF OF THE SAME SENTENCE: "the refill address used in
+# INDEX REFILL OPERATIONS".  The companion above covers the two
+# operations p.32 names outright; this covers the refills COUNT AND
+# BRANCH and the index-arithmetic operations issue when a count reaches
+# zero.  With it, all eleven refill reads in StretchExecute.bsv signal
+# except the five in the two VFL-format arms, which are the last piece
+# of DF and are a control-flow reshape rather than an insertion.
+#
+# EVERY BLOCK IS PAIRED, count-one against count-five.  p.26: CBR "is
+# identical to COUNT AND BRANCH, except that in addition the index word
+# specified by J is refilled if the count reached zero", and V+ICR
+# likewise.  A refill that does not happen reads nothing, so each
+# signal sits inside its own count gate and the count-five block is
+# what makes that a tested claim -- injections 2 and 4 hoist the CBR
+# and V+CR signals one line outward and those blocks catch them.
+#
+# AN OPEN QUESTION THIS DOES NOT ANSWER, recorded in docs/NEXT.md.
+# refillLegal -- a refill address of 1-15 is suppressed -- is applied
+# to R and RCZ ONLY, on routine 1238's TEST 2G/2H.  Reference Manual
+# pp.25-26 were read for this program and describe R, RCZ, V+ICR, CB
+# and CBR WITHOUT MENTIONING THE RULE; the deck established it
+# empirically for the REFILL operations alone.  So whether these four
+# suppress the same way is unsourced in both directions, and the
+# asymmetry now in the model is untested either way.  Not resolved by
+# symmetry here, which is what AGENTS.md rule 4 forbids.
+#
+# AND THE FIRST VERSION OF THIS PROGRAM PASSED WHILE DOING SOMETHING
+# ELSE.  Block 2's CBR branched to "$+1.0", but CBR is HALF-WORD
+# format, so that target is the SECOND half-word of the full-word BB
+# beneath it.  It decoded garbage, raised OP, and the machine
+# interrupted into a zero table entry -- and the run still said ALL
+# TESTS PASSED, because the interruption returned and every later check
+# ran.  The only sign was one line of stderr, "interruption instruction
+# at 4766 is E-box class -- not implemented".  Read the model's stderr
+# on a GREEN run.
+#
+# Six injections, each predicted before it was run, each landing on the
+# predicted address.  Reproduce any row with
+#   python3 line_addresses.py programs/df_refill_index_alarm.strap
+#
+#   CBR signal removed              -> 004107.00  BZB, $DF,  $
+#   CBR signal OUTSIDE its gate     -> 004114.40  BB,  $DF,  $  (count 5)
+#   V+CR signal removed             -> 004116.40  BZB, $DF,  $
+#   V+CR signal OUTSIDE its gate    -> 004121.40  BB,  $DF,  $  (count 5)
+#   V+ICR signal removed            -> 004123.40  BZB, $DF,  $
+#   V-ICR signal removed            -> 004130.40  BZB, $DF,  $
 # THE BOUNDARY REGISTERS, the second half of address monitoring.  Word
 # 3 holds the upper boundary in bits 0-17, the lower in 32-49 and the
 # boundary control bit at 57 (p.31 -- upper is named first and sits

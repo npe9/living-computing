@@ -137,6 +137,13 @@ function BranchOutcome evalBranch(StretchStorage st, DecodedInstr d, Word64 ind0
         o.doIdxWrite = True; o.idxWriteReg = cb.j; o.idxWriteVal = x2;
         o.ind = setIndexResultIndicatorsF(ind0, x1); // per p.23: indicators reflect
                                                       // state *before* any refill.
+        // DF, p.32 class 3, the other half of the sentence: "the
+        // refill address used in INDEX REFILL OPERATIONS".  AFTER the
+        // line above, not before it -- that one assigns from `ind0`
+        // and would discard the signal.  Inside `doRefill`, for the
+        // reason the R/RCZ arm's own note gives: a refill that does
+        // not happen reads nothing.
+        if (doRefill) o.ind = dfSignal(st, zeroExtend(x1.refill), o.ind);
         Bool take = (cb.branchIfZero == 1) ? (newCount == 0) : (newCount != 0);
         if (take) begin
           o.taken = True;
@@ -2532,6 +2539,11 @@ function ActionValue#(IndexOutcome)
                                       count: x.count, refill: x.refill};
             if (di_.code != dixop_V_PLUS) x1.count = x1.count - 1;
             Bool needsRefill = (di_.code == dixop_V_PLUS_CR) && (x1.count == 0);
+            // DF, p.32 class 3 -- see evalBranch's note.  This is a
+            // SECOND monitored address for the same instruction: the
+            // half-word operand was already asked about above, through
+            // dixFetchType, and this is the refill source.
+            if (needsRefill) ind = dfSignal(st, zeroExtend(x1.refill), ind);
             if (needsRefill && prefetchCount < 2) begin
               needsRead = tagged Valid zeroExtend(x1.refill);
             end else begin
@@ -2708,6 +2720,11 @@ function ActionValue#(IndexOutcome)
                            flag: x.flag, spare: x.spare, count: x.count, refill: x.refill};
           if (ii.code != 4'b0101) x1.count = x1.count - 1;
           if (ii.code == 4'b0111 && x1.count == 0) begin
+            // DF, p.32 class 3 -- see evalBranch's note.  The
+            // immediate index operations read NO operand, so unlike
+            // V+CR above this refill address is the only storage
+            // address the instruction uses at all.
+            ind = dfSignal(st, zeroExtend(x1.refill), ind);
             if (prefetchCount >= 1) begin
               idxWriteReg = ii.j; doIdxWrite = True;
               idxWriteVal = unpackIndexWord(prefetch[0]);
@@ -2726,6 +2743,8 @@ function ActionValue#(IndexOutcome)
                            flag: x.flag, spare: x.spare, count: x.count, refill: x.refill};
           if (ii.code != 4'b1101) x1.count = x1.count - 1;
           if (ii.code == 4'b1111 && x1.count == 0) begin
+            // DF, p.32 class 3 -- same as V+ICR above.
+            ind = dfSignal(st, zeroExtend(x1.refill), ind);
             if (prefetchCount >= 1) begin
               idxWriteReg = ii.j; doIdxWrite = True;
               idxWriteVal = unpackIndexWord(prefetch[0]);

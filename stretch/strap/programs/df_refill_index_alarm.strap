@@ -1,0 +1,134 @@
+! DF on a refill address, the OTHER half of Reference Manual p.32's
+! class 3: "the refill address used in INDEX REFILL OPERATIONS".
+! df_refill_alarm.strap covers the two operations the same sentence
+! names, R and REFILL ON COUNT ZERO; this covers the refills that
+! COUNT AND BRANCH and the index-arithmetic operations issue when a
+! count reaches zero -- CBR, V+CR, V+ICR and V-ICR.
+!
+! WEAKER STANDARD, hand-written from p.32, for the reason
+! df_data_fetch_alarm.strap states: no listing this project has read
+! tests DF at all.
+!
+! EVERY BLOCK IS PAIRED, count-one against count-five, and the pairing
+! is the point.  p.26 says CBR "is identical to COUNT AND BRANCH,
+! except that in addition the index word specified by J is refilled if
+! the count reached zero", and V+ICR "except that in addition the
+! index specified by J is refilled if the count reached zero".  A
+! refill that does not happen reads nothing, and p.32's own opening
+! sentence is "all storage addresses ACTUALLY USED by the CPU in the
+! course of an operation are subject to address monitoring".  So every
+! signal below sits inside its own count gate, and the count-five
+! block is what makes that a tested claim.
+!
+! AN OPEN QUESTION THIS TOUCHES AND DOES NOT ANSWER.  The model
+! suppresses a refill whose address is 1-15 for R and RCZ only --
+! refillLegal, from routine 1238's TEST 2G/2H.  Whether the same
+! suppression applies to these refills is NOT stated on pp.25-26,
+! which were read for this program and describe R, RCZ, V+ICR, CB and
+! CBR without mentioning it; 1238 established it empirically for the
+! REFILL operations alone.  The asymmetry in the model is therefore
+! untested in either direction and is recorded in docs/NEXT.md rather
+! than guessed at here.  It does not affect this program: every refill
+! address below is ordinary core, and p.31's carve-out means only an
+! address of 32 or more could signal anyway.
+!
+! MASK-ZERO ONLY, same scope and same reason as its two companions.
+!
+! Instructions: BD, BE, LVI, SV, LX, KV, CBR, V+CR, V+ICR, V-ICR, BB,
+! BB1, BBZ, BZB, B, BEW -- all implemented.
+
+        SLC, (8)4100.0
+START   BD,  $+.32
+        LVI, $X13, TBL
+        SV,  $X13, $IA
+        LVI, $X13, RFSRC
+        SV,  $X13, $LB               ! lower boundary := RFSRC
+        LVI, $X13, ABOVE
+        SV,  $X13, $UB               ! upper boundary := ABOVE
+        BBZ, 3.57, $+1.0             ! control bit := 0: signal INSIDE
+        BBZ, 12.20, $+1.0            ! DF's mask bit := 0
+        BE,  $+.32
+!
+! ---- 1. COUNT, BRANCH AND REFILL, count 1 -> 0 -------------------
+!   The count reaches zero, so CBR refills and does NOT branch.
+        LX,  $X3,  KC1               ! count 1, refill -> RFSRC
+        CBR, $X3,  $                 ! hang if it branched at count zero
+        BZB, $DF,  $                 ! hang if the refill address missed DF
+        BB,  $IF,  $                 ! hang if it lit bit 21 instead of 20
+        BBZ, $DF,  $+1.0
+        KV,  $X3,  RFCOPY            ! and the refill LANDED
+        BZB, $XE,  $
+!
+! ---- 2. the same instruction whose count does NOT reach zero -----
+        LX,  $X3,  KC5               ! count 5, same refill field
+        CBR, $X3,  $+.32             ! branches: count is not zero.  THE
+                                     !   TARGET IS THE NEXT HALF-WORD, not
+                                     !   the next WORD: CBR is half-word
+                                     !   format, so "$+1.0" lands on the
+                                     !   SECOND half of the full-word BB
+                                     !   below.  Written that way first, it
+                                     !   decoded garbage, raised OP, and the
+                                     !   machine interrupted into a zero
+                                     !   table entry -- and the program still
+                                     !   PASSED, because the interruption
+                                     !   returned and every later check ran.
+        BB,  $DF,  $                 ! hang if a refill that never happened
+                                     !   lit DF
+!
+! ---- 3. ADD TO VALUE, COUNT AND REFILL, count 1 -> 0 -------------
+!   ZEROW is OUTSIDE the area, so the operand half-word cannot signal
+!   and only the refill address can.
+        LX,  $X4,  KC1
+        V+CR, $X4, ZEROW
+        BZB, $DF,  $                 ! hang if V+CR's refill missed DF
+        BBZ, $DF,  $+1.0
+!
+! ---- 4. and the same with a count that does not reach zero -------
+        LX,  $X4,  KC5
+        V+CR, $X4, ZEROW
+        BB,  $DF,  $
+!
+! ---- 5. ADD IMMEDIATE TO VALUE, COUNT AND REFILL -----------------
+!   The immediate forms read NO operand, so this refill address is the
+!   only storage address the instruction uses at all.
+        LX,  $X5,  KC1
+        V+ICR, $X5, 0
+        BZB, $DF,  $
+        BBZ, $DF,  $+1.0
+!
+! ---- 6. and its count gate ---------------------------------------
+        LX,  $X5,  KC5
+        V+ICR, $X5, 0
+        BB,  $DF,  $
+!
+! ---- 7. SUBTRACT IMMEDIATE FROM VALUE, COUNT AND REFILL ----------
+        LX,  $X6,  KC1
+        V-ICR, $X6, 0
+        BZB, $DF,  $
+        BBZ, $DF,  $+1.0
+!
+! ---- 8. and its count gate ---------------------------------------
+        LX,  $X6,  KC5
+        V-ICR, $X6, 0
+        BB,  $DF,  $
+        B,   PASS
+PASS    BEW, $
+!
+! ---- constants, all OUTSIDE the monitored area -------------------
+        SLC, (8)4200.0
+KC1     XW, 0, 1, RFSRC              ! count 1: the refill fires
+KC5     XW, 0, 5, RFSRC              ! count 5: it must not
+RFCOPY  XW, (8)123456.76, (8)543210, (8)123456
+ZEROW   DD(BU,64,8), 0               ! V+CR's operand half-word
+!
+! ---- the monitored area ------------------------------------------
+        SLC, (8)4300.0
+RFSRC   XW, (8)123456.76, (8)543210, (8)123456   ! == the lower boundary
+ABOVE   DD(BU,64,8), 0               ! == the upper boundary, first word out
+!
+! ---- the interruption table --------------------------------------
+        SLC, (8)4500.0
+TBL     DD, 0
+        SLC, (8)4523.0
+DSRTN   BB1, 6.0, $+1.0              ! entry 19 = DS
+        END, START
