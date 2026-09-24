@@ -306,9 +306,44 @@ round trip**, since it plants an arbitrary instruction through
 * **An E-box-class interruption instruction** fails loud rather than
   stepping the counter.
 * **`BEW`** — "branch enabled and wait" — is modelled as a plain
-  enabling branch. `ja_ax1a` p.58 is *reported* to drive it from the
-  interval timer and fall through, which would be both the real
-  behaviour and a transcribable block. Not verified first-hand.
+  enabling branch. **VERIFIED FIRST-HAND 2026-09-23, and this bullet
+  used to be wrong in both halves.** It said `ja_ax1a` p.58 drives it
+  from the interval timer "and fall through, which would be both the
+  real behaviour and a transcribable block".
+
+  Reference Manual **printed p.40** (PDF page 43) settles what it
+  does: *"This instruction provides a means of stopping program
+  execution. The interruption mechanism is enabled, and the
+  instruction counter contents are replaced with bits 0-18 of the
+  effective address of the operation as in BRANCH ENABLED. However, no
+  further instruction will be executed until after an interruption
+  occurs."* So `BEW` **BRANCHES** — it does not fall through — and the
+  distinctive part is the WAIT that follows the branch.
+
+  `ja_ax1a` p.58 does have the block, under a `%BEW%` banner ("BRANCH
+  ENABLED + WAIT") followed by a `%SIC-BEW%` one, and the shape agrees
+  with the manual rather than with this bullet: each
+  `BEW,ISBEnn` is followed by a `BD,$` at the FALL-THROUGH address and
+  then by its target, so the hang is what a machine that failed to
+  branch would reach. `ISBE37 BEW,ISBE38` prints `6031.60 00` at
+  `006030.40`; bit 18 is set, so the target is `006031.40`, which is
+  `ISBE38` — two half-words past the `BD,$`.
+
+  **AND THE BLOCK CANNOT WITNESS THE WAIT.** Since `BEW` always
+  branches, control reaches the target whether the wait is modelled or
+  not; the `BD,$` is unreachable on any machine that branches at all.
+  It is an ENCODING oracle (strong — it covers `BEW` and the `SIC`
+  prefix on `BEW`, neither of which any transcription here has) plus a
+  weak run test. Same shape as the "a deck can be the WEAKER test"
+  trap below.
+
+  **What the wait would cost.** A test that could see it needs an
+  instruction at the target that must NOT run until an interruption
+  arrives — and the only source of one here is the interval timer,
+  which this model does not tick (`bsv/README.md` scope). So
+  implementing `BEW`'s wait is coupled to making the timer run, and
+  the four blocks on p.58 all set `$IT` first for exactly that reason.
+  Transcribe the encodings first; they stand on their own.
 
 ## 4. Standing practice, after every batch
 
@@ -331,9 +366,30 @@ every time it was applied (see below). To find out whether a rule
 actually has a witness, re-run that one mutant with `FAIL_FAST` unset
 and read the whole list of failing sections.
 
-**Run 2026-09-22: 32/33, survivor `ad-bound-off-by-one`** — the one
-documented expected survivor. `prot-carve-out-as-or` is back in its
-own section, so the regression the previous run flagged is resolved.
+**Run 2026-09-23: 38/39, survivor `ad-bound-off-by-one`** — the one
+documented expected survivor, after DF landed. All three DF mutants
+caught by the sections written for them: `df-index-fetch-unsignalled`
+and `df-store-read-signals-fetch` by "DF: the data-fetch address
+alarm, p.32 class 1", `df-refill-signals-before-gate` by "DF on a
+refill address: R and RCZ". `prot-carve-out-as-or` is still in its own
+section.
+
+**AND THE DF SECTION DISPLACED TWO first-fail LABELS**, which is the
+`prot-carve-out-as-or` story again and is recorded for the same
+reason: the count did not move, the named evidence did.
+`int-mask-ignored` and `vfl-length-zero-is-zero` now both report
+"first-fail: DF: ... class 1". Neither is a regression, and for
+`int-mask-ignored` it is not even an accident —
+`df_data_fetch_alarm.strap` sets DF's mask bit to zero and depends on
+NOT interrupting, so a model that ignores the mask changes its control
+flow. That makes the DF program a genuine SECOND witness of p.48's
+mask rule, independent of `interrupt_pg0`. But the label still says
+nothing about which section *covers* either rule; per the rule below,
+only a re-run with `FAIL_FAST` unset does.
+
+**Run 2026-09-22: 32/33, survivor `ad-bound-off-by-one`.**
+`prot-carve-out-as-or` was back in its own section, so the regression
+the run before it flagged was resolved.
 
 **ALL FOUR "NEAR MISSES" IN THAT RUN WERE WRONG**, for two different
 reasons, and both were the measurement rather than the model.
@@ -642,3 +698,18 @@ printed page numbers.
   a green run**; a program can pass while doing something else entirely.
   `$+.32` is the next half-word; `$+1.0` is right only after a
   full-word instruction.
+* **`run_tests.sh`'s PASS-line count is NOT a count of checks.** `run`
+  does `tail -20 "$TMPOUT"` — deliberately, and its own comment
+  explains why it must not be a pipeline — so every section's log is
+  capped at twenty lines. On the 2026-09-23 run, **133 of 349
+  sections were truncated**, so "3213 PASS" counts *displayed lines*
+  and understates the real number by an unknown, varying amount. It is
+  not even a stable proxy: adding a 32-row transcription moved it by
+  19. Commit messages earlier that day quoted it as though it were a
+  measurement; the green/red conclusions were still sound, because
+  those came from `EXIT=0` and zero `TEST(S) FAILED`, but the number
+  was not what it was called. **Report sections, not PASS lines**:
+  `grep -c '^=== '` against `grep -c 'TEST(S) FAILED'`, plus the exit
+  status. This is "a summary column is not a measurement" again, one
+  level down — and the first version of the trap did not stop it,
+  because the number *looked* like a count of checks.

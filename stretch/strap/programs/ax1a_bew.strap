@@ -1,0 +1,82 @@
+! ja_ax1a "I-BOX 1", the %BEW% and %SIC-BEW% blocks, PDF p.58, octal
+! 006027.40-006047.00.  Its banners: "%BEW% **** BRANCH ENABLED + WAIT
+! **** %BEW%" and "%SIC-BEW% **** STORE IC IF BRANCH ENABLED + WAIT".
+!
+! WHY THIS BLOCK.  BEW is the halt idiom every program in this suite
+! ends with and NOTHING here has ever checked its encoding against a
+! listing; the SIC prefix ON a BEW is a combination no transcription
+! here covers at all.  Four BEW blocks and one SIC-BEW block, 31 rows.
+!
+! WHAT BEW DOES, and the plan used to have this backwards.  Reference
+! Manual printed p.40: "This instruction provides a means of stopping
+! program execution.  The interruption mechanism is enabled, and the
+! instruction counter contents are replaced with bits 0-18 of the
+! effective address of the operation as in BRANCH ENABLED.  However,
+! no further instruction will be executed until after an interruption
+! occurs."  So BEW BRANCHES and then waits.  docs/NEXT.md said this
+! block drove BEW "from the interval timer and fall through"; it does
+! not, and the listing shows why the reading was wrong -- the "BD,$"
+! after each BEW sits at the FALL-THROUGH address and is the hang a
+! machine that failed to branch would reach.
+!
+!   ISBE37  BEW,ISBE38   prints 6031.60 00  at 006030.40
+!           BD,$         prints 6031.04 00  at 006031.00
+!   ISBE38  BD,$+.32     prints 6032.04 00  at 006031.40
+!
+! 0o60 has bit 18 set, so BEW's target is 006031.40 -- ISBE38, two
+! half-words past the hang.
+!
+! THIS IS AN ENCODING ORACLE AND A WEAK RUN TEST, said plainly.
+! Because BEW always branches, control reaches the target whether the
+! WAIT is modelled or not, so no arrangement of these rows can witness
+! it.  Seeing the wait needs an instruction at the target that must not
+! run until an interruption arrives, and the only source of one here is
+! the interval timer -- which this model does not tick.  That is why
+! every block below opens by loading $IT.  The encodings stand on their
+! own; the run does not, and run_tests.sh records it that way.
+!
+! Transcription standard: bit-exact against the printed machine code,
+! verify_ax1a_bew_listing.py.
+
+        SLC, (8)6027.40
+        SV,  $X1, $IT              ! -FOR
+        BE,  $+.32                 ! -BEW TEST
+ISBE37  BEW, ISBE38                ! -BEW TILL I. T. SIGNAL
+        BD,  $                     !  the fall-through hang
+ISBE38  BD,  $+.32                 ! -SET UP
+        LVI, $X1, 1.0              ! -FOR
+        SV,  $X1, $IT              ! -NEXT
+        BE,  $+.32                 ! -BEW TEST
+ISBE39  BEW, ISBE40                ! -BEW TILL I. T. SIGNAL
+        BD,  $
+        NOP, (8)525252.0           ! -OFFSET IN Y REGS
+ISBE40  BD,  $+.32                 ! -SET UP
+        LVI, $X1, 1.0              ! -FOR
+        SV,  $X1, $IT              ! -NEXT
+        BE,  $+.32                 ! -BEW TEST
+ISBE41  BEW, ISBE42                ! -BEW TILL I. T. SIGNAL
+        BD,  $
+ISBE42  BD,  $+.32                 ! -SET UP
+        LVI, $X1, 1.0              ! -FOR
+        SV,  $X1, $IT              ! -NEXT
+        BE,  $+.32                 ! -BEW TEST
+ISBE43  BEW, ISBE44                ! -BEW TILL I. T. SIGNAL
+        BD,  $
+!
+! ---- %SIC-BEW%: STORE IC IF BRANCH ENABLED + WAIT ----------------
+! SIC is a PREFIX fused with its branch into one 64-bit instruction
+! (Reference Manual p.41: "This instruction may always be prefixed to
+! one of the half-word branching instructions.  It is executed if and
+! only if the associated branching is successful."), which is why the
+! two rows below share the word at 006045.00 and both name the same
+! target.
+ISBE44  BD,  $+.32                 ! -SET UP
+        LVI, $X1, 1.0              ! -FOR
+        SV,  $X1, $IT              ! -SIC,BEW
+        BE,  $+.32                 ! -TEST
+ISBE45  SIC, ISBE46+.32
+        BEW, ISBE46+.32            ! -SIC + BEW TILL I.T. SIGNAL
+ISBE46  BD,  $+1.0
+        BD,  $                     ! -BD,$+1.0 + BD, ISBE 46
+        LVI, $X1, 1.0              ! -SETS UP
+        END, ISBE37

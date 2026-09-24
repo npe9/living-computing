@@ -3351,6 +3351,55 @@ run "I-Box 5 routine 1260 TEST 7b ON THE MODEL (18 LB bits + control bit)" ./run
 # A FOURTH CONFIRMATION OF THE BIT TABLE: BIT57 prints 24613, BIT11
 # prints 24535, and 024522 + 57 = 024613, 024522 + 11 = 024535.
 
+run "BEW and SIC-BEW, bit-exact (ja_ax1a p.58)" python3 verify_ax1a_bew_listing.py
+# THE HALT IDIOM, FINALLY CHECKED AGAINST A LISTING.  Every program in
+# this suite ends with "BEW, $" and nothing here had ever checked BEW's
+# encoding against printed machine code.  The SIC prefix ON a BEW is a
+# combination no other transcription covers.  31 rows, ja_ax1a p.58's
+# "%BEW% **** BRANCH ENABLED + WAIT" and "%SIC-BEW% **** STORE IC IF
+# BRANCH ENABLED + WAIT" blocks.
+#
+# AND IT CORRECTS docs/NEXT.md, which said this block drove BEW "from
+# the interval timer and fall through".  It does not.  Reference Manual
+# printed p.40: "The interruption mechanism is enabled, and the
+# instruction counter contents are replaced with bits 0-18 of the
+# effective address of the operation as in BRANCH ENABLED.  However, no
+# further instruction will be executed until after an interruption
+# occurs."  BEW BRANCHES and then waits, and the listing agrees -- the
+# "BD,$" after each BEW sits at the FALL-THROUGH address, the hang a
+# machine that failed to branch would reach:
+#
+#   ISBE37  BEW,ISBE38   6031.60 00   at 006030.40
+#           BD,$         6031.04 00   at 006031.00
+#   ISBE38  BD,$+.32     6032.04 00   at 006031.40
+#
+# 0o60 has bit 18 set, so the target is 006031.40 -- two half-words
+# past the hang.
+#
+# ENCODING ONLY, AND DELIBERATELY NOT RUN.  Because BEW always
+# branches, control reaches the target whether the WAIT is modelled or
+# not, so no arrangement of these rows could witness it.  Seeing the
+# wait needs an instruction at the target that must not execute until
+# an interruption arrives, and the only source of one here is the
+# interval timer -- which this model does not tick (bsv/README.md
+# scope).  That is why all four blocks load $IT first.  Recorded so the
+# section is not mistaken for evidence about the wait.
+#
+# Four injections, each naming a DIFFERENT set of rows:
+#   BEW's code 0b100 -> 0b101  -> 006030.40, 006033.40, 006037.00,
+#                                 006042.00, 006045.40      (5 rows)
+#   BE's  code 0b000 -> 0b010  -> 006030.00, 006033.00, 006036.40,
+#                                 006041.40, 006044.40      (5 rows)
+#   NOP's code 0b110 -> 0b111  -> 006034.40                 (1 row)
+#   enc_sic's literal 1000     -> 006045.00                 (1 row)
+#
+# THE FIRST RUN OF THOSE WAS WRONG, and is recorded because the failure
+# mode is silent.  Without clearing __pycache__ between injections all
+# three reported the SAME five rows -- the first injection's answer,
+# replayed from stale bytecode, since cp-restore within one second
+# leaves the .pyc newer than its source.  The tell was a restored tree
+# that still failed while "git diff" showed nothing.
+
 run "I-Box 5 routine 1260's constants + interrupt table (jb_ax5b p.86)" python3 verify_ax5b_160k_listing.py
 # THE HARNESS THE p.71 COMPARISON DRIVER NEEDS, and it settles three
 # things earlier transcriptions here had to leave open or infer.
