@@ -3034,12 +3034,36 @@ endfunction
 
 function ActionValue#(ExecResult)
     execute(StretchStorage st, StretchIO io, HWordAddr pc, InstrLen len, DecodedInstr di,
-            Vector#(2, Word64) prefetch, Bit#(2) prefetchCount) =
+            Vector#(2, Word64) prefetch, Bit#(2) prefetchCount, Bool atIntAddr) =
   actionvalue
     Maybe#(WordAddr) needsRead = tagged Invalid;
     HWordAddr fallthrough = pc + ((len == Full) ? 2 : 1);
     HWordAddr next = fallthrough;
     Word64 ind = st.readIndicators();
+
+    // IF, p.32 CLASS 1: "The location of each instruction to be
+    // executed with the exception of the single instructions at the
+    // effective interruption address which are executed when an
+    // interruption occurs."  `atIntAddr` is that exception, and it is
+    // why this needs a parameter at all: rl_prepare knows it as
+    // isValid(intPC) and execute() cannot see it.
+    //
+    // WHY HERE AND NOT AT THE FETCH.  The instruction buffers prefetch
+    // ahead speculatively (StretchIBox's 1Y/2Y), and p.32 monitors the
+    // location of instructions TO BE EXECUTED -- a word fetched and
+    // then thrown away by a taken branch must not raise IF.  Every
+    // dispatch path passes the instruction's own `pc` here, so this is
+    // the one place that sees exactly the executed ones.
+    //
+    // AND NOT IN rl_prepare EITHER, which is the other obvious site:
+    // setting the indicator there would make a second writer of
+    // `indicators` in a rule that already calls execute(), the G0004
+    // shape StretchStorage's own comments describe.
+    //
+    // Run on EVERY call including the ones that bail for an operand
+    // read -- that call's `ind` is discarded and the resuming call
+    // reaches this line again with the same `pc`.
+    if (!atIntAddr) ind = ifSignal(st, pc[18:1], ind);
 
     // INDEX-REGISTER WRITES ARE DEFERRED TO ONE CALL, EXACTLY LIKE
     // INDICATORS ABOVE, for every format EXCEPT VflInt's progressive
@@ -3709,10 +3733,11 @@ typedef enum { OwnerIbox, OwnerLA } ExecOwner deriving (Bits, Eq, FShow);
 interface EBox;
   method ActionValue#(ExecResult)
     exec(HWordAddr pc, InstrLen len, DecodedInstr di,
-         Vector#(2, Word64) prefetch, Bit#(2) prefetchCount);
+         Vector#(2, Word64) prefetch, Bit#(2) prefetchCount, Bool atIntAddr);
   method ActionValue#(Maybe#(ExecDone))
     start(HWordAddr pc, InstrLen len, DecodedInstr di,
-          Vector#(2, Word64) prefetch, Bit#(2) prefetchCount, ExecOwner owner);
+          Vector#(2, Word64) prefetch, Bit#(2) prefetchCount, ExecOwner owner,
+          Bool atIntAddr);
   method Bool busy();                 // holding an instruction that waits on a read
   method Bool busyFor(ExecOwner o);   // ... dispatched by o
   method Bool canResume();            // busy and the read has answered
@@ -3725,7 +3750,10 @@ module mkEBox #(StretchStorage st, StretchIO io) (EBox);
   // prefetchCount are the operand words collected so far, so the next
   // run of execute() picks up with one more slot filled (execute()'s
   // header comment has the contract).
-  Reg#(Maybe#(Tuple3#(HWordAddr, InstrLen, DecodedInstr))) held <- mkReg(tagged Invalid);
+  // The flag rides in `held` with the instruction: resume() re-runs
+  // execute() for the SAME instruction, so it must answer p.32's
+  // interruption-address exemption the same way both times.
+  Reg#(Maybe#(Tuple4#(HWordAddr, InstrLen, DecodedInstr, Bool))) held <- mkReg(tagged Invalid);
   Reg#(Vector#(2, Word64)) prefetch      <- mkReg(replicate(0));
   Reg#(Bit#(2))            prefetchCount <- mkReg(0);
   Reg#(ExecOwner)          owner         <- mkReg(OwnerIbox);
@@ -3735,18 +3763,18 @@ module mkEBox #(StretchStorage st, StretchIO io) (EBox);
 
   method ActionValue#(ExecResult)
       exec(HWordAddr pc, InstrLen len, DecodedInstr di,
-           Vector#(2, Word64) pf, Bit#(2) cnt);
-    let r <- execute(st, io, pc, len, di, pf, cnt);
+           Vector#(2, Word64) pf, Bit#(2) cnt, Bool atIntAddr);
+    let r <- execute(st, io, pc, len, di, pf, cnt, atIntAddr);
     return r;
   endmethod
 
   method ActionValue#(Maybe#(ExecDone))
       start(HWordAddr pc, InstrLen len, DecodedInstr di,
-            Vector#(2, Word64) pf, Bit#(2) cnt, ExecOwner o);
-    let r <- execute(st, io, pc, len, di, pf, cnt);
+            Vector#(2, Word64) pf, Bit#(2) cnt, ExecOwner o, Bool atIntAddr);
+    let r <- execute(st, io, pc, len, di, pf, cnt, atIntAddr);
     if (tpl_4(r) matches tagged Valid .a) begin
       st.readWordReq(a);
-      held <= tagged Valid tuple3(pc, len, di);
+      held <= tagged Valid tuple4(pc, len, di, atIntAddr);
       prefetch <= pf;
       prefetchCount <= cnt;
       owner <= o;
@@ -3758,7 +3786,10 @@ module mkEBox #(StretchStorage st, StretchIO io) (EBox);
   method Bool busy() = isValid(held);
   method Bool busyFor(ExecOwner o) = isValid(held) && owner == o;
   method Bool canResume() = isValid(held) && st.responseReady();
-  method Tuple3#(HWordAddr, InstrLen, DecodedInstr) pending() = validValue(held);
+  method Tuple3#(HWordAddr, InstrLen, DecodedInstr) pending();
+    let h = validValue(held);
+    return tuple3(tpl_1(h), tpl_2(h), tpl_3(h));
+  endmethod
 
   method ActionValue#(Maybe#(ExecDone)) resume();
     let ep = validValue(held);
@@ -3766,7 +3797,7 @@ module mkEBox #(StretchStorage st, StretchIO io) (EBox);
     Vector#(2, Word64) pf = prefetch;
     pf[prefetchCount] = v;
     Bit#(2) cnt = prefetchCount + 1;
-    let r <- execute(st, io, tpl_1(ep), tpl_2(ep), tpl_3(ep), pf, cnt);
+    let r <- execute(st, io, tpl_1(ep), tpl_2(ep), tpl_3(ep), pf, cnt, tpl_4(ep));
     if (tpl_4(r) matches tagged Valid .a) begin
       st.readWordReq(a);
       prefetch <= pf;

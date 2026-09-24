@@ -293,58 +293,6 @@ run "Storage protection: the address boundary registers" ./run_program.sh progra
 
 run "DS terminates the whole operation: a suppressed BB does not branch" ./run_program.sh programs/ds_terminates_branch.strap StretchDsTermTb \
     "PC=4262"          # 004123.00; hand-written, not a listing fact
-
-run "IF on a branch target (p.32 class 2)" ./run_program.sh programs/if_branch_alarm.strap StretchIfBrTb \
-    "PC=4364"          # 004206.00; hand-written, not a listing fact
-# THE FIRST HALF OF IF.  p.32 lists three classes for Instruction
-# Fetch; this is class 2, "the branch address of all successful branch
-# operations".  Class 1, "the location of each instruction to be
-# executed", is NOT implemented -- and the deck oracle transcribed
-# beside this one, routine 1260 TEST 8C, tests exactly class 1: every
-# one of its IF cases is straight-line FALL-THROUGH into a below-LB
-# region, none branches into one.  So the half with the strong oracle
-# is the half still to build, and block 3 below pins that it is absent.
-#
-# ONE SITE FOR EVERY BRANCH ARM.  `next` differs from `fallthrough`
-# exactly when a branch was taken, which is what "successful" means
-# here, so the signal sits at execute()'s single commit point and
-# covers BranchInd, BitBranch, the unconditional branches,
-# count-and-branch and SIC's fused branch without repeating the rule.
-# It cannot see a branch whose target IS its own fall-through address;
-# that is stated in the code rather than left to be discovered.
-#
-# A SENTENCE IN p.32 IS AMBIGUOUS AND THE DECK SETTLES IT.  "...the
-# entire branch operation, including any counting, bit changing, or
-# index alteration, is suppressed.  The address boundaries are ignored
-# if the mask bit is zero."  Read alone, that last sentence could mean
-# IF never sets with the mask at zero.  It sets: TEST 8C case 3 is
-# titled "ENABLE MASK 0 FETCH OK IND ON NO INT" and errors with
-# "-INSTRUCT FETCH BELOW LB FAILS TO SET IF, NO INT, MASK 0, ENABLED."
-# So the sentence attaches to the BRANCH SUPPRESSION before it, which
-# also matches the general rule two paragraphs earlier ("if the mask
-# bit is zero, the indicator is set, but the operation proceeds").
-# The suppression is the mask-dependent half and is not implemented.
-#
-# A TARGET BELOW 32 IS AD'S BUSINESS.  p.45: "Branching to an address
-# below 32 also actuates the indicator [AD]"; p.32: an AD address
-# "cannot actuate any of the address alarm indicators".  Hence the
-# "a >= 32" guard in ifSignal -- a different rule from protViolates'
-# carve-out, not a restatement of it.  THAT GUARD IS UNWITNESSED: its
-# injection SURVIVED, because reaching it needs a taken branch to
-# words 1-3, whose contents would then execute, and those words are
-# the boundary registers that define the monitored area.  Recorded in
-# the program as a gap rather than left as a green line implying cover.
-#
-# TWO OF THE FOUR INJECTIONS SURVIVED THE FIRST TIME and the program
-# grew because of it -- the block-3 check could not see "class 1 by
-# accident", because the last in-area instruction was a branch OUT
-# whose target is unmonitored, so IF ended up clear either way.  A NOP
-# now follows the clear, inside the area, and the injection is caught.
-#
-# Three injections, observed:
-#   class-2 signal removed        -> 004300.00  BZB, $IF, $
-#   ifSignal sets DF (20) not IF  -> 004300.00  BZB, $IF, $
-#   signal on EVERY instruction   -> 004200.40  BB,  $IF, $
 # OPERATION TERMINATION, and the deviation protViolates' own note had
 # named since DS was written: "this suppresses only the store, so a BB
 # whose write is suppressed still branches."  It no longer does.
@@ -384,6 +332,82 @@ run "IF on a branch target (p.32 class 2)" ./run_program.sh programs/if_branch_a
 # their own that "terminated" presumably also suppresses, and none of
 # that is implemented or tested.  BB was taken first because its side
 # effect is a BRANCH, which a PC check can see.
+
+run "IF: the instruction-fetch address alarm (p.32 classes 1 and 2)" ./run_program.sh programs/if_branch_alarm.strap StretchIfBrTb \
+    "PC=4253"          # 004116.40; hand-written, not a listing fact
+# BOTH IMPLEMENTED HALVES OF IF.  p.32 lists three classes for
+# Instruction Fetch: class 1 "the location of each instruction to be
+# executed", class 2 "the branch address of all successful branch
+# operations", class 3 the EX/EXIC subject -- moot until EX exists.
+# Its deck oracle is routine 1260 TEST 8C, transcribed beside this
+# (encoding only: running it needs SSIP's 160S1/160SX1 harness).
+#
+# WHERE CLASS 1 GOES, and two obvious sites that are both wrong.  NOT
+# at fetchReq: the instruction buffers prefetch speculatively and p.32
+# monitors instructions TO BE EXECUTED, so a word fetched and then
+# discarded by a taken branch must not raise IF.  NOT in rl_prepare
+# either: that rule already calls execute(), so setting the indicator
+# there makes a second writer of `indicators` in one rule -- the G0004
+# shape StretchStorage's comments describe.  It goes INSIDE execute(),
+# keyed on the instruction's own `pc`, which every dispatch path
+# already passes: the one place that sees exactly the instructions
+# that execute.
+#
+# AND IT NEEDED A PARAMETER, the only invasive part.  p.32 class 1
+# excepts "the single instructions at the effective interruption
+# address which are executed when an interruption occurs".  rl_prepare
+# knows that as isValid(intPC); execute() cannot see it.  So a Bool
+# rides through ebox.exec/ebox.start and lives in the E-box's `held`
+# tuple -- resume() re-runs execute() for the same instruction and must
+# answer the exemption the same way both times.
+#
+# THE FALL-THROUGH ARRANGEMENT IS THE CLASS-1 TEST.  Control reaches
+# PRE, below the lower boundary, and falls straight through into
+# FALLIN, the first word of the area.  No branch enters, so class 2
+# cannot contribute.  Same shape TEST 8C uses -- "SV,$X2,$LB" pointed
+# at the label that follows.
+#
+# CLASS 2 CAN NO LONGER BE ISOLATED, AND ITS INJECTION NOW SURVIVES.
+# A real loss of discrimination, recorded rather than left to be
+# found.  When class 2 was the only implemented half, removing it
+# halted the program -- measured.  Now a branch into the area sets IF
+# via class 2 AND the target executes and sets it again via class 1:
+# same indicator, indistinguishable.  They separate only when the
+# MASK-DEPENDENT half lands, because a protected branch target then
+# suppresses the whole branch operation and control never arrives, so
+# class 1 never fires.
+#
+# A SENTENCE IN p.32 IS AMBIGUOUS AND THE DECK SETTLES IT.  "...the
+# entire branch operation ... is suppressed.  The address boundaries
+# are ignored if the mask bit is zero."  Read alone the last sentence
+# could mean IF never sets with the mask at zero.  It sets: TEST 8C
+# case 3 is titled "ENABLE MASK 0 FETCH OK IND ON NO INT" and errors
+# with "-INSTRUCT FETCH BELOW LB FAILS TO SET IF, NO INT, MASK 0,
+# ENABLED."  So the sentence attaches to the SUPPRESSION before it,
+# matching the general rule two paragraphs earlier.
+#
+# A NEAR-MISS IN THE PROGRAM'S OWN DATA, kept because it would have
+# gone green.  ABOVE first landed at 004300.40 -- the SECOND HALF of
+# FALLIN's word -- because DD does not align after a half-word B.  UB
+# then equalled LB, p.31's half-open area was EMPTY, nothing signalled,
+# and the program would have passed while testing nothing.  An explicit
+# SLC fixes it.
+#
+# Four injections, observed:
+#   class 1 removed               -> 004106.40  BZB, $IF, $
+#   class 1 sets DF (20) not IF   -> 004106.40  BZB, $IF, $
+#   interruption-addr exemption   -> SURVIVES.  Nothing here interrupts,
+#     dropped                        so the exemption is unwitnessed;
+#                                    TEST 8C has the interrupt table and
+#                                    does not run.
+#   class 2 removed               -> SURVIVES, subsumed by class 1 above.
+#
+# ALSO UNWITNESSED: ifSignal's "a >= 32" guard, which exists because
+# p.45 says "Branching to an address below 32 also actuates the
+# indicator [AD]" and p.32 says an AD address "cannot actuate any of
+# the address alarm indicators".  Seeing it needs control actually at
+# words 1-3 -- the boundary registers themselves -- whose contents
+# would then execute.  The model does not raise AD there either.
 
 run "DF: the data-fetch address alarm, p.32 class 1" ./run_program.sh programs/df_data_fetch_alarm.strap StretchDfTb \
     "PC=4306"          # 004151.00; hand-written, not a listing fact

@@ -185,9 +185,10 @@ module mkStretchCore(StretchCore);
   // (no operand words yet). Either it completes in this clock,
   // committing exactly as execute() always did, or the E-box holds it
   // for its operand read and the resume arm finishes it.
-  function ActionValue#(Bool) startExecute(HWordAddr pc, InstrLen len, DecodedInstr di) =
+  function ActionValue#(Bool) startExecute(HWordAddr pc, InstrLen len, DecodedInstr di,
+                                           Bool atIntAddr) =
     actionvalue
-      let r <- ebox.start(pc, len, di, replicate(0), 0, OwnerIbox);
+      let r <- ebox.start(pc, len, di, replicate(0), 0, OwnerIbox, atIntAddr);
       startClk <= clk;
       if (r matches tagged Valid .o) begin
         commitNext(pc, len, o.next);
@@ -477,7 +478,7 @@ module mkStretchCore(StretchCore);
     Vector#(2, Word64) pf = replicate(0);
     Bit#(2) cnt = 0;
     if (h.data matches tagged Valid .d) begin pf[0] = d; cnt = 1; end
-    let r <- ebox.start(h.pc, h.len, h.di, pf, cnt, OwnerLA);
+    let r <- ebox.start(h.pc, h.len, h.di, pf, cnt, OwnerLA, False);
     if (h.branch) begin
       // The guessed branch, now with final indicators (a branch never
       // waits on an operand, so the result is here).
@@ -591,7 +592,7 @@ module mkStretchCore(StretchCore);
           // Side-effect-free probe: execute() with no operand bails
           // out with the address of the operand it needs.
           let {next, vflPending, ioStart, needsRead} <-
-            ebox.exec(pc, len, di, replicate(0), 0);
+            ebox.exec(pc, len, di, replicate(0), 0, isValid(intPC));
           if (needsRead matches tagged Valid .a) da = tagged Valid a;
           else begin
             // Classified as fetching but completed: treat as executed.
@@ -666,7 +667,7 @@ module mkStretchCore(StretchCore);
       // (plan §6c) says wait; never while the arithmetic unit's own
       // instruction is mid-flight (it owns the resume path).
       if (!ebox.busyFor(OwnerLA) && !iboxHazard(st, guessPending, di, nl)) begin
-        let d1 <- startExecute(pc, len, di);
+        let d1 <- startExecute(pc, len, di, isValid(intPC));
         done = d1;
       end
     end

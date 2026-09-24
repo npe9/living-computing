@@ -348,15 +348,53 @@ for the DF half and 21 for the IF half, the block is the **deck's own
 statement that DF is 20 and IF is 21** — numbering this project had
 taken from the manual.
 
+**IF CLASS 2 IS IMPLEMENTED** — "the branch address of all successful
+branch operations", `ifSignal` in `StretchExecute.bsv` at execute()'s
+single commit point, tested by `programs/if_branch_alarm.strap`.
+Deliberately the half WITHOUT the strong oracle, because it is the
+half that is self-contained: it needs no new plumbing, whereas class 1
+needs the interruption-address exemption threaded (below).
+
 **REMAINING ON THIS ITEM, in order:**
-1. **IF itself is still unimplemented.** TEST 8C is now its acceptance
-   test; it is an encoding oracle until the model can run it.
-2. **The mask-dependent half of DF and DS** — case 4 is the oracle.
-3. **p.32's BRANCH clause has no deck test anywhere in this corpus.**
-   Every IF case in TEST 8C is straight-line fall-through into a
-   below-LB region; none branches into one. "the entire branch
-   operation ... is suppressed" stays manual-only, and the
-   `ds_terminates_branch.strap` work is the nearest thing to it.
+
+1. **IF CLASS 1 — "the location of each instruction to be executed".**
+   This is the half TEST 8C actually tests, so it is the one with a
+   deck acceptance test waiting. What it needs, read out of the model
+   2026-09-24:
+   * The signal belongs at **dispatch**, not at `fetchReq`: the
+     instruction buffers prefetch speculatively and p.32 monitors only
+     instructions *to be executed*, so a prefetched-but-never-executed
+     word must not raise it.
+   * `rl_prepare` is that point — but setting the indicator there
+     directly makes a second writer of `indicators` in a rule that
+     already calls `execute()`, which is the documented G0004 shape.
+     Compute it **inside `execute()` from `pc`** instead; every
+     dispatch path (I-box direct, E-box via a look-ahead level, the
+     side-effect-free probe) passes the instruction's own `pc`.
+   * p.32's exemption then has to be threaded: "with the exception of
+     the single instructions at the effective interruption address
+     which are executed when an interruption occurs." `rl_prepare`
+     knows this as `isValid(intPC)`; `execute()` does not. One `Bool`
+     through `ebox.exec`/`ebox.start` and the `held` tuple.
+   * p.50 adds a second exemption for `EX`: "An effective address of
+     EXECUTE that is below 32.00 ... is not monitored ... indicator IF
+     cannot be actuated by these addresses." Moot until `EX` exists.
+
+2. **The mask-dependent half of DF, DS and IF** — TEST 8C case 4 is
+   the oracle for DF/IF, TEST 8B for DS.
+
+3. **p.32's branch-SUPPRESSION clause still has no deck test anywhere
+   in this corpus** — "the entire branch operation, including any
+   counting, bit changing, or index alteration, is suppressed". Class
+   2 now sets the indicator; suppressing the branch is the
+   mask-dependent half, and `ds_terminates_branch.strap` is the
+   nearest thing to it (DS's termination, which IS implemented).
+
+4. **`ifSignal`'s `a >= 32` guard is unwitnessed**, and its injection
+   survived. Testing it needs a taken branch to words 1-3, whose
+   contents would then execute — and those are the boundary registers
+   that define the monitored area. The model also does not raise AD
+   for a low branch (p.45), so the case is doubly unmodelled.
 
 **THIS ITEM USED TO SAY `jb_ax5b` ROUTINE 1268 WAS "the only known
 deck test of them". That was a misreading, and it is corrected.**
@@ -1134,3 +1172,24 @@ printed page numbers.
   CONDS". **When a correction retracts the reason for a claim, retract
   the claim too, or re-derive it.** The tell is a sentence that starts
   "so" and widens the scope of what was just disproved.
+* **A splice with an unverified end marker can delete most of a file
+  and still exit 0.** Editing `run_tests.sh`'s IF section as
+  `s[:i] + new + s[j:]`, with `j` found by searching for another
+  section's name, removed **3266 lines** — the marker sat ~3000 lines
+  later than assumed. The suite then ran **40 sections, all passing,
+  `EXIT=0`**. Nothing in that output says "most of me is missing".
+  What caught it was printing the SECTION COUNT beside the exit
+  status, which is the habit the PASS-count trap above already
+  prescribes — one commit after it was written down. **Assert the
+  bounds of every slice before writing it**: check the first and last
+  line of each piece, and that the pieces rejoin where you think. And
+  when a suite's size can change, compare `grep -c '^run '` against
+  the previous run, not just the exit code.
+* **Inserting after a `run` line puts your comments in front of its
+  comments.** The same edit anchored on a section's `run` line plus
+  its `"PC=..."` line — but that section's explanatory block follows
+  those two lines, so the new section landed BETWEEN a run line and
+  its own commentary, and that commentary then read as though it
+  belonged to the newcomer. A section here is `run` line + `PC` line +
+  comment block; anchor on the whole of it, or on the blank line
+  before the NEXT `run`.
