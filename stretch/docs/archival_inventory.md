@@ -567,7 +567,35 @@ Purpose (verbatim): "test of the direct index arithmetic instructions
 and the transmit and swap operations." Eleven numbered routines
 (132/134/136/138/140/142/144/146/148/150/156); two mid-sequence ones
 (136: C+I/C-I, 140: V+C/V+IC/V-IC) weren't directly sampled and are
-positionally inferred. Concrete gaps: `RNX` (dedicated section 144),
+positionally inferred.
+
+**1242 IS NO LONGER INFERRED, and it is a dedicated routine this list
+did not record.** Read first-hand 2026-09-24, PDF p.80, the routine's
+own banner in the listing:
+
+```
+----1242--- V+CR, V+ICR, V-ICR.
+        -THIS TEST IS COMPOSED OF ROUTINES WHICH
+        -CHECK THE ABOVE INSTRUCTIONS. ALL MEMORIES
+        -WHICH ARE APPLICABLE IN ANY GIVEN TEST
+        -ARE UTILIZED.
+```
+
+So the count-and-refill index family has a routine of its own, which
+matters because that is exactly where the open `refillLegal` question
+had to be answered — and 1242's header carries NO refill-address
+clause, unlike 1238's "NOPING IF RF IS FROM 1 TO 15" and 1244's
+"NO OPPED WHEN... IN THE RANGE OF 1 TO 37 OCTAL". See `docs/NEXT.md`
+item 6.
+
+**A CITATION CORRECTION WORTH KEEPING, because it nearly went into
+this file.** This came to me as "the routine index at PDF p.2". There
+is no routine index there: PDF p.2 is PURPOSE / PROGRAM INTRODUCTION /
+OPERATING PROCEDURE, p.3 is a writeup-addendum cover and p.4 opens the
+listing. Like `jb_ax5b`, this deck carries its routine descriptions as
+BANNER LINES inside the listing itself, not in a front-matter index.
+The substance was right and the citation was not; checking cost one
+render. Concrete gaps: `RNX` (dedicated section 144),
 `SVA` (section 148's *entire* index-modification test relies on SVA
 to record what address each instruction computed -- another
 structural, not just topical, SVA dependency), Transmit backward and

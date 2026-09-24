@@ -535,6 +535,43 @@ function Word64 setOpInvalid(Word64 ind) = setBit(ind, ind_OP, 1);
 function Word64 dfSignal(StretchStorage st, WordAddr a, Word64 ind) =
   protViolates(st, a) ? setBit(ind, ind_DF, 1) : ind;
 
+// IF, THE INSTRUCTION-FETCH ADDRESS ALARM (indicator 21), and so far
+// only p.32's CLASS 2: "Address monitoring for Instruction Fetch
+// includes... 2. The branch address of all successful branch
+// operations."
+//
+// p.32: "When an address alarm is caused by the location of the
+// instruction which is to be executed next, indicator IF is turned
+// on... If the branch address of a successful branch operation is such
+// that control would pass into a protected area, the entire branch
+// operation, including any counting, bit changing, or index
+// alteration, is suppressed.  The address boundaries are ignored if
+// the mask bit is zero."
+//
+// THAT LAST SENTENCE IS AMBIGUOUS AND THE DECK SETTLES IT.  Read
+// alone it could mean the indicator does not set at all when the mask
+// bit is zero.  It does set: routine 1260 TEST 8C case 3 is titled
+// "ENABLE MASK 0 FETCH OK IND ON NO INT" and its error text is
+// "-INSTRUCT FETCH BELOW LB FAILS TO SET IF, NO INT, MASK 0,
+// ENABLED." -- the deck ERRORS if IF fails to set with the mask at
+// zero.  So the sentence attaches to the BRANCH SUPPRESSION just
+// before it, not to the indicator, which also matches the general
+// rule two paragraphs earlier: "if the mask bit is zero, the
+// indicator is set, but the operation proceeds."  The suppression is
+// the mask-dependent half and is NOT implemented; see protViolates.
+//
+// A TARGET BELOW 32 IS AD'S BUSINESS, NOT IF'S.  p.45 on indicator
+// AD: "Branching to an address below 32 also actuates the indicator."
+// And p.32: an address which actuates AD "cannot actuate any of the
+// address alarm indicators."  So the `a >= 32` guard is not an
+// optimisation of protViolates' carve-out -- it is a different rule,
+// and without it a branch to the permanently protected words 1-3
+// would raise IF where the machine raises AD.  NOTE: this model does
+// not yet raise AD for a branch below 32 either, so such a branch
+// currently raises NEITHER.  Stated here rather than left silent.
+function Word64 ifSignal(StretchStorage st, WordAddr a, Word64 ind) =
+  (a >= 32 && protViolates(st, a)) ? setBit(ind, ind_IF, 1) : ind;
+
 function Word64 setResultIndicatorsF(Word64 ind, SM128 v);
   Bool z = (v.mag == 0);
   Word64 i1 = setBit(ind, ind_RLZ, pack(v.sign == 1 && !z));
@@ -3605,6 +3642,21 @@ function ActionValue#(ExecResult)
     endcase
 
     if (needsRead matches tagged Invalid) begin
+      // IF, p.32 class 2, in ONE place for every branch arm in this
+      // function: "the branch address of all successful branch
+      // operations".  `next` differs from `fallthrough` exactly when a
+      // branch was taken, which is what "successful" means here, so
+      // this catches BranchInd, BitBranch, the unconditional branches,
+      // count-and-branch and SIC's fused branch uniformly rather than
+      // repeating the rule in each arm.
+      //
+      // ONE CASE IT CANNOT SEE, stated rather than left to be found: a
+      // branch whose target IS its own fall-through address is
+      // indistinguishable from not branching.  Such a branch is a
+      // no-op in every other respect too, so the only loss is the
+      // alarm it would raise -- and its target is the next instruction,
+      // which p.32 class 1 will monitor once class 1 exists.
+      if (next != fallthrough) ind = ifSignal(st, next[18:1], ind);
       if (doIdxWrite) st.writeIndex(idxWriteReg, idxWriteVal);
       st.setIndicatorBits(ind);
       return tuple4(next, vflPending, ioStart, tagged Invalid);

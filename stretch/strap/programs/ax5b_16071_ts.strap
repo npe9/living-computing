@@ -38,8 +38,29 @@
 !   protected locations, and p.45 raises DS on a to-memory operation
 !   into that area "while the interruption system was enabled", which
 !   also suppresses the store.  So this SV lands only with the system
-!   off.  That is entailed by two manual pages, not transcribed from
-!   this page -- the BD that does it is outside the range.
+!   off.  The BD that does it is outside this range.
+!
+!   THIS USED TO SAY THAT WAS "ENTAILED BY TWO MANUAL PAGES, NOT
+!   TRANSCRIBED FROM THIS PAGE" -- an inference from p.31 plus p.45.
+!   It is not an inference.  Reference Manual printed p.34 (PDF 37),
+!   read first-hand 2026-09-24, states it outright and names this very
+!   instruction:
+!
+!     "The only store-type operations that may store in the left half
+!      of location 1, and hence may be used to set the interval timer,
+!      are STORE VALUE, STORE COUNT, STORE REFILL, and STORE VALUE IN
+!      ADDRESS, and these operations can be performed only when the
+!      interruption system is disabled.  When enabled, these
+!      operations will turn on indicator DS, data store, and be
+!      suppressed."
+!
+!   Same failure mode as the boundary-polarity correction: the
+!   overview chapter (p.15 "Clocks") had been read and the detail
+!   chapter twenty pages later had not.  p.34 also gives the step rate
+!   this project recorded twice as unsourced -- 1,024 (2^10) cycles
+!   per second -- and the reload rule: TS fires on the 1->0 transition
+!   and the NEXT pulse sets the timer to all ones.  See docs/NEXT.md
+!   item 5.
 !
 !   A SYMMETRY WORTH NOTING.  16086 (ax5b_16086_ds.strap) uses
 !   "SV,$X4,1.00" as its DS PROVOCATION, enabled, expecting the store

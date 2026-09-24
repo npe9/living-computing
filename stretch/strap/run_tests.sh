@@ -293,6 +293,58 @@ run "Storage protection: the address boundary registers" ./run_program.sh progra
 
 run "DS terminates the whole operation: a suppressed BB does not branch" ./run_program.sh programs/ds_terminates_branch.strap StretchDsTermTb \
     "PC=4262"          # 004123.00; hand-written, not a listing fact
+
+run "IF on a branch target (p.32 class 2)" ./run_program.sh programs/if_branch_alarm.strap StretchIfBrTb \
+    "PC=4364"          # 004206.00; hand-written, not a listing fact
+# THE FIRST HALF OF IF.  p.32 lists three classes for Instruction
+# Fetch; this is class 2, "the branch address of all successful branch
+# operations".  Class 1, "the location of each instruction to be
+# executed", is NOT implemented -- and the deck oracle transcribed
+# beside this one, routine 1260 TEST 8C, tests exactly class 1: every
+# one of its IF cases is straight-line FALL-THROUGH into a below-LB
+# region, none branches into one.  So the half with the strong oracle
+# is the half still to build, and block 3 below pins that it is absent.
+#
+# ONE SITE FOR EVERY BRANCH ARM.  `next` differs from `fallthrough`
+# exactly when a branch was taken, which is what "successful" means
+# here, so the signal sits at execute()'s single commit point and
+# covers BranchInd, BitBranch, the unconditional branches,
+# count-and-branch and SIC's fused branch without repeating the rule.
+# It cannot see a branch whose target IS its own fall-through address;
+# that is stated in the code rather than left to be discovered.
+#
+# A SENTENCE IN p.32 IS AMBIGUOUS AND THE DECK SETTLES IT.  "...the
+# entire branch operation, including any counting, bit changing, or
+# index alteration, is suppressed.  The address boundaries are ignored
+# if the mask bit is zero."  Read alone, that last sentence could mean
+# IF never sets with the mask at zero.  It sets: TEST 8C case 3 is
+# titled "ENABLE MASK 0 FETCH OK IND ON NO INT" and errors with
+# "-INSTRUCT FETCH BELOW LB FAILS TO SET IF, NO INT, MASK 0, ENABLED."
+# So the sentence attaches to the BRANCH SUPPRESSION before it, which
+# also matches the general rule two paragraphs earlier ("if the mask
+# bit is zero, the indicator is set, but the operation proceeds").
+# The suppression is the mask-dependent half and is not implemented.
+#
+# A TARGET BELOW 32 IS AD'S BUSINESS.  p.45: "Branching to an address
+# below 32 also actuates the indicator [AD]"; p.32: an AD address
+# "cannot actuate any of the address alarm indicators".  Hence the
+# "a >= 32" guard in ifSignal -- a different rule from protViolates'
+# carve-out, not a restatement of it.  THAT GUARD IS UNWITNESSED: its
+# injection SURVIVED, because reaching it needs a taken branch to
+# words 1-3, whose contents would then execute, and those words are
+# the boundary registers that define the monitored area.  Recorded in
+# the program as a gap rather than left as a green line implying cover.
+#
+# TWO OF THE FOUR INJECTIONS SURVIVED THE FIRST TIME and the program
+# grew because of it -- the block-3 check could not see "class 1 by
+# accident", because the last in-area instruction was a branch OUT
+# whose target is unmonitored, so IF ended up clear either way.  A NOP
+# now follows the clear, inside the area, and the injection is caught.
+#
+# Three injections, observed:
+#   class-2 signal removed        -> 004300.00  BZB, $IF, $
+#   ifSignal sets DF (20) not IF  -> 004300.00  BZB, $IF, $
+#   signal on EVERY instruction   -> 004200.40  BB,  $IF, $
 # OPERATION TERMINATION, and the deviation protViolates' own note had
 # named since DS was written: "this suppresses only the store, so a BB
 # whose write is suppressed still branches."  It no longer does.
@@ -2855,7 +2907,14 @@ run "IBOX-4 refill address gate (jb_ax4b, encoding)" python3 verify_ibox4_refill
 #
 # MEASURED ALL THREE WAYS:
 #   no suppression        2G passes, 2H halts at 005674.00, the first
-#                         entry of the routine's own error table
+#                         entry of the routine's own error table --
+#                         whose text, read first-hand at PDF p.70, is
+#                         "-FAILED TO NOP WHEN RF ADR IS 1." under a
+#                         header "-YOU CAME TO THIS ERROR TABLE FROM
+#                         13825".  ("DID REFILL" is the in-line comment
+#                         on a different row; this program STUBS the
+#                         table as bare halts, so that row had never
+#                         been read.)
 #   refill >= 16          2G halts at SERS, 2H passes
 #   refill == 0 or >= 16  both pass
 #

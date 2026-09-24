@@ -4637,8 +4637,23 @@ hand vectors alone. "Enables" notes the dependency chain.
               DOES happen, and its failure text is "FAILED TO REFILL
               FRM LOCN 0"
      TEST 2H  "CHK NO REFILL FRM LOCNS 1 THROUGH 17" (octal, so 1-15
-              decimal) -- those must be SUPPRESSED, failure text
-              "DID REFILL"
+              decimal) -- those must be SUPPRESSED.  "DID REFILL" is
+              the IN-LINE comment on 13825's "$B,0" in the main line;
+              the ERROR TABLE that 2H actually halts in says something
+              else, and the distinction matters because 005674.00 is
+              quoted just below as a measured halt address.  Read
+              first-hand 2026-09-24, jb_ax4b PDF p.70: the table is
+              headed "-YOU CAME TO THIS ERROR TABLE FROM 13825" and
+              its first entry is
+
+                 138B6  SIC,SEN
+                        B,SERS   -FAILED TO NOP WHEN RF ADR IS 1.
+                        B,13826
+
+              with one such entry per location, 1 through 15.  This
+              project's own ibox4_refill_nop.strap STUBS that table as
+              bare halts, so the row at 005674.00 had never been read
+              when its text was written down here
 
    So it is not "suppress low addresses": word 0 refills, from the
    permanently protected zero, and only 1-15 are gated. A fix that

@@ -1,0 +1,131 @@
+! IF on a BRANCH TARGET -- Reference Manual p.32, class 2 of the three
+! the page lists for Instruction Fetch: "The branch address of all
+! successful branch operations."
+!
+! WEAKER STANDARD, hand-written from p.32, AND THAT IS NOW A NARROW
+! CLAIM rather than a blanket one.  A deck oracle for the IF INDICATOR
+! does exist -- jb_ax5b routine 1260 TEST 8C, transcribed here as
+! ax5b_160_test8c.strap -- but every IF case in it is straight-line
+! FALL-THROUGH into a below-LB region, which is p.32's CLASS 1.  None
+! of them branches into a protected area.  So class 2, this block, has
+! no deck test anywhere in the corpus (swept 2026-09-24), while class 1
+! has a good one and is the next piece of work.
+!
+! THE RULE, p.32: "When an address alarm is caused by the location of
+! the instruction which is to be executed next, indicator IF is turned
+! on... If the branch address of a successful branch operation is such
+! that control would pass into a protected area, the entire branch
+! operation, including any counting, bit changing, or index alteration,
+! is suppressed.  The address boundaries are ignored if the mask bit is
+! zero."
+!
+! THE LAST SENTENCE IS AMBIGUOUS AND THE DECK SETTLES IT.  Read alone
+! it could mean the indicator does not set when the mask bit is zero.
+! It does set: TEST 8C case 3 is titled "ENABLE MASK 0 FETCH OK IND ON
+! NO INT" and errors with "-INSTRUCT FETCH BELOW LB FAILS TO SET IF, NO
+! INT, MASK 0, ENABLED."  The sentence attaches to the BRANCH
+! SUPPRESSION before it.  This program runs the mask-ZERO case, so the
+! indicator sets and the branch is NOT suppressed -- and the
+! suppression is the mask-dependent half, which is not implemented.
+!
+! SO THIS BLOCK CHECKS THE INDICATOR AND DELIBERATELY CHECKS THAT THE
+! BRANCH WAS TAKEN.  On a machine with the mask-dependent half the
+! branch would still be taken here, because the mask bit is zero.
+!
+! A TARGET BELOW 32 IS AD'S BUSINESS.  p.45: "Branching to an address
+! below 32 also actuates the indicator [AD]", and p.32 says an AD
+! address "cannot actuate any of the address alarm indicators".  This
+! model does not yet raise AD there, so such a branch raises NEITHER;
+! the last block below pins that IF at least stays off, which is the
+! half that is implemented.
+!
+! Instructions: BD, BE, LVI, SV, BB1, BBZ, BZB, B, BEW -- all
+! implemented.
+
+        SLC, (8)4100.0
+START   BD,  $+.32                   ! disable: words 2 and 3 are protected
+        LVI, $X13, TBL
+        SV,  $X13, $IA
+        LVI, $X13, INAREA
+        SV,  $X13, $LB               ! lower boundary := INAREA
+        LVI, $X13, ABOVE
+        SV,  $X13, $UB               ! upper boundary := ABOVE
+        BBZ, 3.57, $+1.0             ! control bit := 0: signal INSIDE
+        BBZ, 12.21, $+1.0            ! IF's mask bit := 0
+        BE,  $+.32                   ! monitoring is ineffective disabled
+!
+! ---- 1. a branch INTO the monitored area sets IF ----------------
+        B,   INAREA                  ! the target is protected
+!
+!   INAREA is the branch target: control arrives here, because the
+!   mask bit is zero and the suppression is the mask-dependent half.
+        SLC, (8)4300.0
+INAREA  BZB, $IF,  $                 ! hang if the branch target missed IF
+        BB,  $DF,  $                 ! hang if it lit 20 instead of 21
+        BBZ, $IF,  $+1.0
+        NOP                          ! ONE MORE INSTRUCTION FROM INSIDE THE
+                                     !   AREA, and it is what makes block 3
+                                     !   below discriminating.  Its
+                                     !   fall-through is still inside, so a
+                                     !   model that signalled IF for EVERY
+                                     !   instruction's next address -- class
+                                     !   1 by accident -- would light IF here
+                                     !   after it was just cleared.  Without
+                                     !   this NOP the last in-area
+                                     !   instruction was "B,OUT", whose
+                                     !   target is outside, and the injection
+                                     !   SURVIVED.
+        B,   OUT                     ! leave the area before anything else
+ABOVE   DD(BU,64,8), 0               ! == the upper boundary, first word out
+!
+! ---- 2. a branch to an UNMONITORED address must not set IF ------
+        SLC, (8)4200.0
+OUT     B,   $+.32                   ! an ordinary taken branch, outside.
+                                     !   THE TARGET IS THE NEXT HALF-WORD:
+                                     !   B is half-word format, so "$+1.0"
+                                     !   would land on the second half of
+                                     !   the full-word BB below.
+        BB,  $IF,  $                 ! hang if an unmonitored branch lit IF
+!
+! ---- 3. and class 1 really is absent ----------------------------
+!   Block 1 above BRANCHED into the area and then executed three more
+!   instructions FROM inside it, clearing IF on the way out.  Those
+!   fetches are p.32 class 1, which is not implemented -- so IF must
+!   still be off here.  When class 1 lands this check inverts, and
+!   that is the point: it pins which half is built.
+        BB,  $IF,  $                 ! hang if class 1 fired
+!
+! ---- 4. a low BIT address is not a low BRANCH address ----------
+!   ifSignal carries an "a >= 32" guard, because p.45 says "Branching
+!   to an address below 32 also actuates the indicator [AD]" and p.32
+!   says an AD address "cannot actuate any of the address alarm
+!   indicators".  Without it a branch to the permanently protected
+!   words 1-3 would raise IF where the machine raises AD.
+!
+!   THAT GUARD IS NOT WITNESSED BY THIS PROGRAM, and saying so is the
+!   point of this block.  The injection that drops it SURVIVED: the
+!   rows below touch word 3 as a BIT address, not as a branch TARGET,
+!   so no successful branch below 32 ever happens.  Testing it needs a
+!   taken branch to word 1, 2 or 3 -- the interval timer, the
+!   interruption address and the boundary registers -- whose contents
+!   would then be executed as instructions.  Planting an executable
+!   instruction in the very registers that define the monitored area
+!   is possible but self-referential, and this model does not raise AD
+!   for a low branch either, so the case is doubly unmodelled.
+!   Recorded as a gap rather than left as a green line implying cover.
+        BD,  $+.32                   ! disable first: word 3 is protected
+        BB1, 3.0,  $+1.0             ! word 3 as a BIT address, not a target
+        BE,  $+.32
+        BB,  $IF,  $                 ! hang if that lit IF
+        B,   PASS
+PASS    BEW, $
+!
+! ---- the interruption table --------------------------------------
+!   IF's mask bit is zero, so nothing here should interrupt.  The
+!   table exists because DS is permanently masked and a stray store
+!   would otherwise run off into unloaded storage.
+        SLC, (8)4500.0
+TBL     DD, 0
+        SLC, (8)4523.0
+DSRTN   BB1, 6.0, $+1.0              ! entry 19 = DS
+        END, START
