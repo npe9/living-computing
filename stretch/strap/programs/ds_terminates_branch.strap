@@ -1,0 +1,125 @@
+! OPERATION TERMINATION: a BRANCH ON BIT whose store is suppressed must
+! not take its branch either.
+!
+! THE RULE, Reference Manual p.32 on DS: "When an address alarm is
+! caused by a data address used in a store-type operation, indicator DS
+! is turned on.  Since this indicator is permanently masked on, storing
+! in core storage is always suppressed, AND THE OPERATION IS ALWAYS
+! TERMINATED."
+!
+! The branch is part of the operation.  This model suppressed only the
+! STORE until now, and protViolates' own comment has named the gap
+! since DS was written -- "a BB whose write is suppressed still
+! branches".  This is the block that makes it false.
+!
+! CORROBORATION FROM THE OTHER DIRECTION, same page.  p.32 on IF: "If
+! the branch address of a successful branch operation is such that
+! control would pass into a protected area, the entire branch
+! operation, including any counting, bit changing, or index alteration,
+! is suppressed."  That is a different indicator, but it is the manual
+! saying plainly that this machine suppresses a WHOLE branch operation
+! rather than only its store.
+!
+! WEAKER STANDARD: hand-written from p.32, like the DF programs beside
+! it.
+!
+! AND THAT IS NOT FOR WANT OF AN ORACLE -- corrected 2026-09-24.  "No
+! listing in this collection tests termination", which this note used
+! to say, is FALSE.  jb_ax5b routine 1260 TEST 8B (PDF p.75) errors
+! with "-SX ABOVE UB WAS NOT NOPED, DATA WAS STORED WHEN ENABLED.",
+! and TEST 8C (pp.76-83) checks suppression for DF and IF under four
+! enable/mask conditions.  The deck's own write-up (PDF p.8) says TEST
+! 8 checks "THAT CORRECT TERMINATIONS AND SUPPRESSIONS OCCUR".  Those
+! are the acceptance tests this block should be checked against; it
+! was written before they were found.  See docs/NEXT.md item 2.
+!
+! WHAT IS AND IS NOT COVERED.  Only BRANCH ON BIT.  The other
+! store-type operations -- VFL ST and M+, SX/SV/SC/SR, SVA, CM -- have
+! side effects of their own (result indicators, index-result
+! indicators, progressive index updates) which p.32's "terminated"
+! presumably also suppresses, and NONE of that is implemented or tested
+! here.  BB was taken first because its side effect is a BRANCH, which
+! the program counter records and a PC check can see.
+!
+! THE SET-UP STORE HAPPENS DISABLED, because p.32 also says "When the
+! interruption system is disabled, address monitoring is ineffective...
+! the DS, DF and IF indicators cannot be turned on when the system is
+! disabled."  That is what lets the program plant a bit in a word it is
+! about to protect.
+!
+! Instructions: BD, BE, LVI, SV, BB1, BBZ, BZB, B, BEW -- all
+! implemented.
+
+        SLC, (8)4100.0
+START   BD,  $+.32                   ! disable: monitoring is ineffective
+        BB1, PROT.0, $+1.0           ! plant bit 0 of PROT while the store
+                                     !   can still land
+        BZB, PROT.0, $               ! hang if it did not land
+        LVI, $X13, TBL
+        SV,  $X13, $IA
+        LVI, $X13, PROT
+        SV,  $X13, $LB               ! lower boundary := PROT
+        LVI, $X13, ABOVE
+        SV,  $X13, $UB               ! upper boundary := ABOVE
+        BBZ, 3.57, $+1.0             ! control bit := 0: signal INSIDE
+        BE,  $+.32                   ! enable: monitoring is now effective
+!
+! ---- 1. a PURE TEST is not a store-type operation ---------------
+!   BB changes nothing, so p.32's "store-type operation" does not
+!   describe it and nothing may be terminated: the branch must be
+!   taken and DS must stay off, even though the word is protected.
+!
+!   THIS BLOCK EXISTS BECAUSE ITS INJECTION SURVIVED.  The first
+!   version of this program had only the modifying case below, so
+!   dropping the mod==00 exemption from the model changed nothing and
+!   the test still passed -- a condition asserted in a comment and
+!   witnessed by nothing.
+        BB,  PROT.0, OK1
+        B,   $                       ! hang: a pure test must still branch
+OK1     BB,  6.0,  $                 ! hang if DS's routine ran
+!
+! ---- 2. a MODIFYING one is, and is terminated whole -------------
+!   PROT's bit 0 is ONE, so this BBZ would branch to WRONG and would
+!   clear the bit.  Both are part of one store-type operation on a
+!   protected word, so both must be suppressed and DS must be set.
+        BBZ, PROT.0, WRONG
+!
+!   Reached only if the branch was suppressed -- which is why THIS
+!   address, and not the word-6 check below, is what witnesses
+!   termination.  The NOPs give the DS interruption its quiescent
+!   boundary; see df_data_fetch_alarm.strap's note on why this model
+!   takes an interruption later than p.48's instruction boundary.
+!   Measured: with no slack at all the check below halted with the
+!   branch correctly suppressed and word 6 still zero.
+        NOP
+        NOP
+        NOP
+        NOP
+        NOP
+        NOP
+        NOP
+        NOP
+        BZB, 6.0,  $                 ! hang if DS's routine did not run
+        BBZ, 6.0,  $+1.0
+!
+!   ... and the bit change was suppressed too.  Read it back with the
+!   system DISABLED, so this check cannot itself signal.
+        BD,  $+.32
+        BZB, PROT.0, $               ! hang if the bit was cleared
+        B,   PASS
+WRONG   BEW, $                       ! the branch was wrongly taken
+PASS    BEW, $
+!
+! ---- the monitored area ------------------------------------------
+        SLC, (8)4300.0
+PROT    DD(BU,64,8), 0               ! == the lower boundary
+ABOVE   DD(BU,64,8), 0               ! == the upper boundary, first word out
+!
+! ---- the interruption table --------------------------------------
+!   Word 6 is the marker for the reason storage_protection_boundary
+!   gives: it is in p.31's 0-31 carve-out and cannot itself signal.
+        SLC, (8)4500.0
+TBL     DD, 0
+        SLC, (8)4523.0
+DSRTN   BB1, 6.0, $+1.0              ! entry 19 = DS
+        END, START

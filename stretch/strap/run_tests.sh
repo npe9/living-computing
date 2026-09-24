@@ -291,6 +291,48 @@ run "Storage protection, gated on the interrupt enable bit" ./run_program.sh pro
 run "Storage protection: the address boundary registers" ./run_program.sh programs/storage_protection_boundary.strap StretchProtBndTb \
     "PC=4305"          # 004150.40; hand-written, not a listing fact
 
+run "DS terminates the whole operation: a suppressed BB does not branch" ./run_program.sh programs/ds_terminates_branch.strap StretchDsTermTb \
+    "PC=4262"          # 004123.00; hand-written, not a listing fact
+# OPERATION TERMINATION, and the deviation protViolates' own note had
+# named since DS was written: "this suppresses only the store, so a BB
+# whose write is suppressed still branches."  It no longer does.
+#
+# p.32 on DS: "storing in core storage is always suppressed, AND THE
+# OPERATION IS ALWAYS TERMINATED."  The branch is part of the
+# operation.  Corroborated from the other direction on the same page,
+# for IF: "the entire branch operation, including any counting, bit
+# changing, or index alteration, is suppressed" -- the manual saying
+# plainly that this machine suppresses whole branch operations.
+#
+# TWO CONDITIONS GATE IT AND BOTH ARE MEASURED.  A BB with mod == 00
+# changes nothing, so it is not store-type at all and must still
+# branch; and protViolates carries the enable gate, which is what lets
+# the program plant a bit in a word it is about to protect.
+#
+# THE FIRST VERSION OF THIS PROGRAM COULD NOT SEE THE FIRST CONDITION.
+# Its only BB on the protected word was the modifying one, so the
+# injection dropping the mod == 00 exemption SURVIVED -- a condition
+# asserted in a comment and witnessed by nothing.  Block 1 exists
+# because of that survivor, and the re-run catches it.
+#
+# AND A GUARD CAME OUT ON THE SAME EVIDENCE.  storeViolates carried a
+# "bw != 11" term for the indicator register; protViolates ALREADY
+# returns False for word 11 (below 32, outside 1-3), the injection
+# dropping the term changed nothing, and a guard whose comment must
+# explain its own redundancy is decoration.  protViolates is the single
+# authority on which addresses signal.
+#
+# Three injections, re-run after block 1 was added:
+#   termination removed      -> 004122.40  WRONG (the branch was taken)
+#   mod==00 exemption gone   -> 004110.00  B,$ (a pure test was suppressed)
+#   DS not set on suppress   -> 004116.40  BZB, 6.0, $
+#
+# SCOPE, said plainly: only BRANCH ON BIT.  The other store-type
+# operations -- VFL ST/M+, SX/SV/SC/SR, SVA, CM -- have side effects of
+# their own that "terminated" presumably also suppresses, and none of
+# that is implemented or tested.  BB was taken first because its side
+# effect is a BRANCH, which a PC check can see.
+
 run "DF: the data-fetch address alarm, p.32 class 1" ./run_program.sh programs/df_data_fetch_alarm.strap StretchDfTb \
     "PC=4306"          # 004151.00; hand-written, not a listing fact
 # THE THIRD ADDRESS ALARM, and the first subsystem this project has
@@ -3399,6 +3441,117 @@ run "BEW and SIC-BEW, bit-exact (ja_ax1a p.58)" python3 verify_ax1a_bew_listing.
 # replayed from stale bytecode, since cp-restore within one second
 # leaves the .pyc newer than its source.  The tell was a restored tree
 # that still failed while "git diff" showed nothing.
+
+run "I-Box 5 routine 1260 TEST 8C: the DF/IF deck oracle (jb_ax5b PDF pp.80-83)" python3 verify_ax5b_160_test8c_listing.py
+# THE DECK ORACLE FOR DF AND IF -- and finding it corrected a claim
+# this project had already built on.  docs/NEXT.md and
+# archival_inventory.md both said "DF and IF have no deck oracle
+# anywhere read so far".  DF was then implemented from Reference Manual
+# p.32 alone, to the weaker standard, while THIS test sat thirty pages
+# earlier in a document already read.
+#
+# HOW THE FALSE CLAIM GOT THERE, because the shape recurs: this file
+# correctly disproved that routine 1268 was the oracle -- 1268 is a
+# look-ahead forwarding test -- and then wrote "so DF and IF have no
+# deck oracle anywhere", which does not follow, and nothing re-checked
+# it.  A correction that retracts the REASON for a claim must retract
+# the claim or re-derive it.  Fourth instance of "distrust a blocker
+# recorded in this file", and the first where the blocker had already
+# been corrected once.
+#
+# TEST 8C's own title, PDF p.76 at 022546.00:
+#   160127 LVI,$X1,160AD1  -TEST 8C CHECKS DF + IF UNDER 4 CONDS,
+#                          -1. DISABL MASK 0 FETCH OK IND NO INT
+#                          -2. DIAABL MASK 1 FETCH OK NO IND NO INT
+#                          -3. ENABLE MASK 0 FETCH OK IND ON NO INT
+#                          -4. ENABLE MASK 1 NO FETCH IND ON INTRPT
+#
+# CASES 3 AND 4 ARE THE MASK-DEPENDENT PAIR, which is why these two and
+# not the disabled controls.  Both enable; case 3 runs mask 0 and case
+# 4 mask 1, which is exactly p.32's rule.  Their error messages are the
+# contract read against each other -- case 3 fails with "WAS NOPED" (it
+# must have fetched), case 4 with "WAS EXECUTED" (it must not have).
+# That is the oracle for the mask-dependent half this suite records as
+# unimplemented.
+#
+# CNOP IS ALIGNMENT-DEPENDENT and is the trap in this block.  On p.80
+# the preceding BE sits on a .40 half-word, the next is already
+# word-aligned, and CNOP emits NOTHING -- the address column steps
+# straight from 022662.40 to 022663.00.  On p.82 the BE sits on .00 and
+# CNOP emits a filler NOP at 022722.40.  Case 3 is 56 source lines / 55
+# code rows; case 4 is 56/56.  The assembler reproduces both from the
+# same source line, so the program keeps CNOP rather than expanding it.
+#
+# FOUR MORE CONFIRMATIONS OF THE BIT TABLE (024522 + n): BIT14, BIT20,
+# BIT21, BIT57.  And because the deck sets mask bit 20 for the DF half
+# and mask bit 21 for the IF half, this block is the DECK'S OWN
+# statement that DF is indicator 20 and IF is 21 -- numbering this
+# project had taken from the manual.
+#
+# ENCODING ONLY: running it needs SSIP's 160S1/160SX1, the 64-word
+# table at 160IT, and IF, which this model does not implement at all.
+# This is IF's acceptance test, waiting for IF.
+#
+# Three injections, and the third was PREDICTED WRONG, which is kept
+# because it is the CNOP point in miniature:
+#   INDICATOR_BITS["IF"] 21 -> 22  -> 022664.00, 022724.00     (2 rows)
+#   INDICATOR_BITS["DF"] 20 -> 19  -> 022651.40, 022710.40     (2 rows)
+#   p.82 CNOP -> NOP               -> NOTHING.  There CNOP already
+#                                     emits a NOP, so it is the same
+#                                     program.
+#   p.80 CNOP -> NOP               -> 72 rows: it emits nothing there,
+#                                     so a hand-written NOP inserts a
+#                                     half-word and shifts four labels
+#                                     and every row after it.
+
+run "I-Box 5 routine 1262 TEST 2B, EXIC by class (jb_ax5b PDF p.101)" python3 verify_ax5b_162_exic_listing.py
+# ROUTINE 1262 IS THE DECK ORACLE FOR EX/EXIC, the highest-leverage
+# unimplemented instruction in this model -- routine 1268 cases 1B/1C
+# and routine 1260 blocks 16084/16085 all wait on it.  43 half-words,
+# and the first listing witness in this suite for EXIC's encoding and
+# for BZXVZ and BZXE.
+#
+# TEST 2B sweeps five instruction classes (DIR IX, IMMED IX, MISC, FLT
+# PT, FULL WD VFL), checking three rules each, every rule with its own
+# error entry: EXIC to that class must not interrupt; the subject must
+# actually execute; and the PSEUDO-IC must be stepped by the SUBJECT'S
+# LENGTH.
+#
+# THE PSEUDO-IC RULE IS LITERAL, NOT FOLKLORE.  This page shows only
+# ".32", which alone cannot tell "stepped by the subject's length" from
+# "always .32".  PDF p.102 settles it -- the FULL WD VFL class checks
+# with "V+I,$X2,1.0" against "-PSEUDO IC NOT STEPPED 1.0 CORRECTLY /
+# -WHEN SUBJ INST WAS VFL FULL WD."
+#
+# DO NOT READ THE CLASS OFF THE ERROR TEXT.  The deck's messages are
+# clone-and-edit artifacts in BOTH directions: "-WHEN SUBJ INST WAS
+# IMMED IX." appears under MISC and under FLT PT here, copied from the
+# IMMED IX block on PDF p.99 where it is correct; and on p.102 the VFL
+# block's pseudo-IC message was updated while its execute-check message
+# still says "-SUBJ INST WAS FLT PT".  Class identity comes from the
+# header comment and the "LX,$X1,<reg>" row.
+#
+# BZXVZ vs BXVZ IS SEMANTIC and must not be normalised.  MISC does no
+# Z,$X1/Z,$L/Z,$R beforehand and expects the subject to have zeroed the
+# index value, so NONZERO is the error (BZXVZ); FLT PT and VFL clear
+# $L/$R and expect a nonzero result, so ZERO is the error (BXVZ).
+#
+# CITED BY PDF PAGE, and that is not a slip: jb_ax5b's LISTING pages
+# carry no printed page numbers at all -- the "12 11 10 9" down the
+# left margin is fanfold carriage-tape line numbering, and the only
+# printed numbers are in the front write-up, which is scanned 2-up.
+#
+# Encoding only.  Rule (a) works by planting a handler into interrupt
+# table entry 162ITE and awaiting an interruption, so a RUN needs the
+# 64-word table, 160S1 and the 162EX* subject constants -- and EXIC is
+# not EXECUTED by this model at all.  It is in MISC_CODES, so the
+# ASSEMBLER encodes it; that is the whole distinction.
+#
+# Four injections, each naming a different set of rows:
+#   MISC_CODES["EXIC"] 0b011 -> 0b111   -> 023754.40, 023767.00  (2)
+#   MISC_CODES["Z"]    0b100 -> 0b101   -> 7 rows
+#   DIR_INDEX_CODES["SVA"] one bit      -> 4 rows
+#   INDICATOR_BITS["XVZ"] 50 -> 51      -> 023744.40, 023757.40  (2)
 
 run "I-Box 5 routine 1260's constants + interrupt table (jb_ax5b p.86)" python3 verify_ax5b_160k_listing.py
 # THE HARNESS THE p.71 COMPARISON DRIVER NEEDS, and it settles three

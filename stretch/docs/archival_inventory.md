@@ -1066,9 +1066,42 @@ arrived, not an indicator failed to set. `DF`/`IF` are the Data Fetch
 and Instruction Fetch **paths**, "close to DS" is close to a Data
 Store, and nothing in the routine writes a mask, sets a boundary
 register, branches on DF or IF, or touches protected storage.
-**The DF and IF indicators have no deck oracle in this document.**
-`docs/NEXT.md` item 2 had inherited the wrong reading and is corrected
-too.
+**~~The DF and IF indicators have no deck oracle in this document.~~
+FALSE, corrected 2026-09-24 — and the sentence was wrong in the one
+document where it was easiest to check.** Routine 1260 **TEST 8C**,
+PDF pp.76-83 (labels 160127-160146, octal 022546.00-022732.40), is a
+dedicated test of exactly those two indicators. Verified first-hand at
+400 dpi; its title row reads
+
+```
+160127  LVI,$X1,160AD1  -TEST 8C CHECKS DF + IF UNDER 4 CONDS,  23063.03 01  022546.00
+                        -1. DISABL MASK 0 FETCH OK IND NO INT
+                        -2. DIAABL MASK 1 FETCH OK NO IND NO INT
+                        -3. ENABLE MASK 0 FETCH OK IND ON NO INT
+                        -4. ENABLE MASK 1 NO FETCH IND ON INTRPT
+```
+
+and this deck's own write-up (PDF p.8) says TEST 8 checks "THAT THE
+CORRECT INDICATORS AD, DS, DF, IF ARE TURNED ON AND THAT CORRECT
+TERMINATIONS AND SUPPRESSIONS OCCUR WHEN VARIOUS ILLEGAL ADDRESSES ARE
+USED WITH MASK BITS SET TO BOTH ONE AND ZERO."
+
+The paragraph above is still correct **about routine 1268** — it is a
+forwarding test — but the conclusion it drew about the whole document
+did not follow from that and was never re-checked.
+
+**Two more blocks in the same span that this file does not record:**
+* **TEST 8B, PDF p.75** (160123-160Z1, 022513.00-022545.40): DS with
+  the system disabled and enabled, *plus store suppression* --
+  "-SX ABOVE UB WAS NOT NOPED, DATA WAS STORED WHEN ENABLED."  A
+  second and richer DS oracle beyond the transcribed 16086 block.
+* **TEST 7, PDF pp.71-74** (160105-160122): polls DF with
+  `BDFZ`/`BZDFZ` throughout, on the boundary-compare path.
+
+**And the 16071-16086 gap has an explanation, so it is not read as
+absence again.** The sixteen per-indicator turn-on blocks run TS(4) to
+DS(19) and stop. That is not because DF(20) and IF(21) go untested; it
+is because they get their own dedicated TEST 8C.
 
 Purpose (verbatim): tests "the time clock, interval timer, mask and
 indicator registers, interrupt system, boundary control, execute

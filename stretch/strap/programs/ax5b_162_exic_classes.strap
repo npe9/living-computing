@@ -1,0 +1,137 @@
+! jb_ax5b "I-Box 5", routine 1262 ("TEST EX AND EXIC"), TEST 2B --
+! "CHK EXIC OF NON BRANCH CLASS INSTRUCTIONS" -- PDF p.101, octal
+! 023742.40-023767.40.  43 half-words.
+!
+! ROUTINE 1262 IS THE DECK ORACLE FOR EX/EXIC, the highest-leverage
+! unimplemented instruction in this model: four already-located
+! transcription targets wait on it (routine 1268 cases 1B/1C, routine
+! 1260 blocks 16084/16085).  This is the first listing witness here for
+! EXIC's encoding, and for BZXVZ and BZXE.
+!
+! CITED BY PDF PAGE, and that is not a slip.  jb_ax5b's LISTING pages
+! carry no printed page numbers at all -- the "12 11 10 9" down the
+! left margin is fanfold carriage-tape line numbering.  The only
+! printed numbers are in the front write-up, which is scanned 2-up.
+! Every verify_ax5b_*.py here already says "PDF p.NN" for that reason.
+!
+! WHAT TEST 2B DOES, from the header at 023705.00 on PDF p.99:
+! "16260 LVI,$X1,162INT  -TEST 2B, CHK EXIC OF NON BRANCH / -CLASS
+! INSTRUCTIONS, DIR IX."  It sweeps five instruction classes -- DIR IX,
+! IMMED IX, MISC, FLT PT, FULL WD VFL -- and for each one checks three
+! rules, each with its own error entry:
+!
+!   (a) EXIC to that class must NOT interrupt      ("-INT WHEN EXIC TO")
+!   (b) the subject instruction must EXECUTE       ("-...WAS NOT EXECUTED.")
+!   (c) the PSEUDO-IC must be stepped by the
+!       subject's LENGTH                           ("-PSEUDO IC NOT STEPPED")
+!
+! This block holds the MISC class's error entries (16265/16266), the
+! whole FLT PT class (16267/16268), and the FULL WD VFL setup whose own
+! error entries continue on PDF p.102.
+!
+! THE PSEUDO-IC RULE IS LITERAL, NOT FOLKLORE.  p.101 only ever shows
+! ".32", which alone cannot tell "stepped by the subject's length" from
+! "always stepped .32".  PDF p.102 settles it: the FULL WD VFL class
+! checks with "V+I,$X2,1.0" against "-PSEUDO IC NOT STEPPED 1.0
+! CORRECTLY / -WHEN SUBJ INST WAS VFL FULL WD."  A full-word subject
+! steps the pseudo-IC by a full word.
+!
+! DO NOT READ THE CLASS OFF THE ERROR TEXT.  The deck's messages are
+! clone-and-edit artifacts in BOTH directions.  "-WHEN SUBJ INST WAS
+! IMMED IX." appears here under MISC and under FLT PT, because both
+! were copied from the IMMED IX block on p.99 where it is correct; and
+! on p.102 the reverse happens, the VFL block's pseudo-IC message was
+! updated while its execute-check message still says "-SUBJ INST WAS
+! FLT PT".  Class identity comes from the header comment and from the
+! "LX,$X1,<reg>" row, never from the message.
+!
+! BZXVZ vs BXVZ IS SEMANTIC, not noise, and must not be normalised.
+! The polarity tracks each class's expected post-state: MISC does no
+! Z,$X1/Z,$L/Z,$R beforehand and expects the subject to have zeroed
+! the index value, so NONZERO is the error (BZXVZ); FLT PT and VFL
+! clear $L/$R and expect a nonzero result, so ZERO is the error
+! (BXVZ).  p.99's DIR IX and IMMED IX blocks do "Z,$X1" and use BXVZ.
+!
+! ENCODING ONLY, and it could not be otherwise yet.  Rule (a) works by
+! planting a handler address into the interrupt-table entry 162ITE and
+! awaiting an interruption, so a run needs the 64-word table, 160S1,
+! and the 162EX* subject constants -- and EXIC is not EXECUTED by this
+! model at all.  It is in MISC_CODES, so the ASSEMBLER encodes it;
+! that is the whole distinction.
+!
+! Transcription standard: bit-exact against the printed machine code,
+! verify_ax5b_162_exic_listing.py.
+
+        SLC, (8)23742.40
+!
+! ---- MISC class: the error entries for rules (a), (b), (c) -------
+L16265  SIC, SEN                   ! -INT WHEN EXIC TO
+        B,   SERS                  ! -A MISC INSTRUCT.
+L16266  LX,  $X1, $X1
+        SIC, SEN                   ! -SUBJ INST WAS MISC
+        BZXVZ, SERS                ! -AND WAS NOT EXECUTED.
+        V+I, $X2, 0.32
+        KV,  $X2, L162PSI
+        SIC, SEN                   ! -PSEUDO IC NOT STEPPED .32 CORRECTLY
+        BZXE, SERS                 ! -WHEN SUBJ INST WAS IMMED IX.  (stale)
+!
+! ---- FLT PT class: the setup ------------------------------------
+        LVI, $X1, L16267           ! -FLT PT.
+        SVA, $X1, L162ITE          ! plant the handler in the table entry
+        LVI, $X1, L162SUB
+        SVA, $X1, L162PSI          ! point the pseudo-IC at the subject
+        LX,  $X1, L162EXF          ! the floating-point subject instruction
+        SX,  $X1, L162SUB
+        Z,   $IND
+        Z,   $MASK
+        LV,  $X2, L162PSI          ! the pseudo-IC BEFORE the EXIC
+        Z,   $L
+        Z,   $R
+        EXIC, L162PSI
+        BD,  L16268
+!
+! ---- FLT PT class: its three error entries ----------------------
+L16267  SIC, SEN                   ! -INT WHEN EXIC TO
+        B,   SERS                  ! -A FLT PT INSTRUCT.
+L16268  LX,  $X1, $L
+        SIC, SEN                   ! -SUBJ INST WAS FLT PT
+        BXVZ, SERS                 ! -AND WAS NOT EXECUTED.
+        V+I, $X2, 0.32
+        KV,  $X2, L162PSI
+        SIC, SEN                   ! -PSEUDO IC NOT STEPPED .32 CORRECTLY
+        BZXE, SERS                 ! -WHEN SUBJ INST WAS IMMED IX.  (stale)
+!
+! ---- FULL WD VFL class: the setup, error entries on PDF p.102 ---
+!   Note it clears $R but NOT $L -- a full-word VFL subject writes the
+!   right half only, and the missing "Z,$L" is the deck saying so.
+        LVI, $X1, L16269           ! -FULL WD VFL.
+        SVA, $X1, L162ITE
+        LVI, $X1, L162SUB
+        SVA, $X1, L162PSI
+        LX,  $X1, L162EXV          ! the VFL subject instruction
+        SX,  $X1, L162SUB
+        Z,   $IND
+        Z,   $MASK
+        LV,  $X2, L162PSI
+        Z,   $R
+        EXIC, L162PSI
+        BD,  L16270
+!
+! ---- externals, SYN'd at the addresses this same listing prints --
+!   THESE ARE INPUTS TO THE CHECK, NOT WITNESSES, the same caveat
+!   verify_ax5b_16082_16083_listing.py makes about L16088.  No label
+!   row defining any 162* symbol appears on PDF p.101; each address
+!   comes from an OPERAND field.  What the rows prove is that this
+!   assembler places every other field where the listing places it.
+!   Genuinely witnessed by the page's own label column: L16267 at
+!   023755.40 and L16268 at 023756.40.
+SEN     SYN, (8)1310.0             ! the SIC error-entry link
+SERS    SYN, (8)1304.0             ! the error-report routine
+L162ITE SYN, (8)24320.0            ! the interrupt-table entry 1262 plants
+L162PSI SYN, (8)24323.0            ! the pseudo-IC word
+L162SUB SYN, (8)24324.0            ! the subject-instruction slot
+L162EXV SYN, (8)24327.0            ! the VFL subject
+L162EXF SYN, (8)24330.0            ! the floating-point subject
+L16269  SYN, (8)23770.0            ! FULL WD VFL rule (a), PDF p.102
+L16270  SYN, (8)23771.0            ! FULL WD VFL rule (b), PDF p.102
+        END, L16265

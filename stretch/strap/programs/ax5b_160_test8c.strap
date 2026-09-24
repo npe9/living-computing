@@ -1,0 +1,216 @@
+! jb_ax5b "I-Box 5", routine 1260 TEST 8C -- "CHECKS DF + IF UNDER 4
+! CONDS" -- cases 3 and 4, PDF pp.80-83, octal 022640.40-022733.40.
+! One unbroken half-word run of 119 rows.
+!
+! THIS IS THE DECK ORACLE FOR DF AND IF, and finding it corrected a
+! claim this project had built on.  docs/NEXT.md and
+! archival_inventory.md both said "DF and IF have no deck oracle
+! anywhere read so far"; DF was then implemented from Reference Manual
+! p.32 alone, to the weaker standard, while this test sat thirty pages
+! earlier in a document already read.  The claim came from correctly
+! disproving that routine 1268 was the oracle and then over-widening
+! that result.  See docs/NEXT.md item 2.
+!
+! THE TEST'S OWN TITLE, PDF p.76 at 022546.00:
+!
+!   160127 LVI,$X1,160AD1  -TEST 8C CHECKS DF + IF UNDER 4 CONDS,
+!                          -1. DISABL MASK 0 FETCH OK IND NO INT
+!                          -2. DIAABL MASK 1 FETCH OK NO IND NO INT
+!                          -3. ENABLE MASK 0 FETCH OK IND ON NO INT
+!                          -4. ENABLE MASK 1 NO FETCH IND ON INTRPT
+!
+! and the deck's write-up (PDF p.8) on TEST 8 as a whole: "AN
+! ELEMENTARY CHECK TO DETERMINE THAT THE CORRECT INDICATORS AD, DS,
+! DF, IF ARE TURNED ON AND THAT CORRECT TERMINATIONS AND SUPPRESSIONS
+! OCCUR WHEN VARIOUS ILLEGAL ADDRESSES ARE USED WITH MASK BITS SET TO
+! BOTH ONE AND ZERO."
+!
+! CASES 3 AND 4 ARE THE MASK-DEPENDENT PAIR, which is why these two
+! and not the disabled controls.  Both enable the system; case 3 runs
+! with the mask bit ZERO and case 4 with it ONE, and the difference is
+! exactly p.32's rule -- mask 0 and the operation proceeds, mask 1 and
+! it is suppressed.  Read the two `BXVZ`/`BZXVZ` polarities against
+! each other: case 3 errors with "WAS NOPED" (it must have fetched),
+! case 4 with "WAS EXECUTED" (it must not have).
+!
+! HOW THE OFFENDING FETCHES ARE ARRANGED.  For DF, `LV,$X3,160AD3`
+! reads a word above UB.  For IF, `SV,$X2,$LB` sets the LOWER boundary
+! to the address of the label that follows, so the three half-words
+! just before it -- CNOP / LX,$X2,0 / NOP -- are fetched from a
+! protected area as control falls through.  The did-it-execute probe
+! is `LX,$X2,0`: it loads X2 from word zero, and `LX,$X2,$X2` + a
+! value-zero branch afterwards says whether it ran.
+!
+! CNOP IS THE TRAP IN THIS BLOCK, and it is why the two cases have
+! different row counts.  It is ALIGNMENT-DEPENDENT: on p.80 the
+! preceding BE sits on a .40 half-word, the next half-word is already
+! word-aligned, and CNOP emits NOTHING -- the address column steps
+! straight from 022662.40 to 022663.00.  On p.82 the preceding BE sits
+! on .00, so CNOP emits a filler NOP (0.30 00) at 022722.40.  Case 3
+! is 56 source lines and 55 machine-code rows; case 4 is 56 and 56.
+! Keep it as CNOP; do not hand-expand it.
+!
+! THE BIT TABLE GAINS FOUR CONFIRMATIONS.  024522 + n: BIT14 -> 024540,
+! BIT20 -> 024546, BIT21 -> 024547, BIT57 -> 024613, every one matching
+! the rule read off p.114.  And because the deck sets mask bit 20 for
+! the DF half and mask bit 21 for the IF half, this block is the DECK'S
+! OWN statement that DF is indicator 20 and IF is indicator 21.
+!
+! ENCODING ONLY.  Running it needs SSIP's 160S1/160SX1 harness, the
+! 64-word interrupt table at 160IT, and IF -- which this model does not
+! implement at all.  That is the next piece of work, and this is its
+! acceptance test.
+!
+! Transcription standard: bit-exact against the printed machine code,
+! verify_ax5b_160_test8c_listing.py.
+
+        SLC, (8)22640.40
+!
+! ---- CASE 3: enabled, mask 0 -- the indicator sets, the fetch lands
+L160137 LVI, $X1, L160AD1           ! -TEST 8C,CASE 3.
+        LX,  $X2, LBIT57
+        SX,  $X2, 3.0
+        Z,   L160AD3
+        Z,   $MASK
+        SIC, L160SX1
+        B,   L160S1
+        Z,   $IND
+        LVI, $X3, (8)777777.40
+        LVI, $X4, LINT
+        LRI, $X4, L160IT
+        LVI, $X5, L160138
+        SVA, $X5, L160107
+        SV,  $X1, $UB
+        SR,  $X4, $IA
+        BE,  $+.32
+        LV,  $X3, L160AD3           ! the fetch ABOVE UB
+        BD,  $+.32
+        BDFZ, $+1.32
+        SIC, SEN                    ! -FETCH ABOVE UB, ENABLED, MASK 0,
+        B,   SERS                   ! -CAUSES DF NOT TO BE SET, NO INT.
+        BD,  $+1.32
+L160138 SIC, SEN                    ! -INT ON DF, ENABLED, MASK 0, FETCHED
+        B,   SERS                   ! -ABOVE UB.
+        SV,  $X4, $IA
+        LX,  $X3, $X3
+        BXVZ, $+1.32
+        SIC, SEN                    ! -UNABLE TO FETCH ABOVE UB WITH
+        B,   SERS                   ! -MASK 0, SYSTEM ENABLED.
+        LVI, $X2, L160140
+        SV,  $X2, $LB
+        LVI, $X2, L160140
+        SVA, $X2, L160107
+        SR,  $X4, $IA
+        LVI, $X2, (8)777777.0
+        SV,  $X2, $UB
+        BE,  $+.32
+        CNOP                        ! emits NOTHING here: already aligned
+        LX,  $X2, 0                 ! fetched BELOW LB
+L160139 BD,  $+.32
+        BIFZ, L160141
+        SIC, SEN                    ! -INSTRUCT FETCH BELOW LB FAILS TO
+        B,   SERS                   ! -SET IF, NO INT, MASK 0, ENABLED.
+        BD,  L160141
+L160140 SIC, SEN                    ! -INSTRUCT FETCH BELOW LB CAUSES INT,
+        B,   SERS                   ! -MASK 0, SYSTEM ENABLED.
+L160141 SV,  $X4, $IA
+        LX,  $X2, $X2
+        BXVZ, $+1.32
+        SIC, SEN                    ! -INSTRUCT FETCHED BELOW LB, ENABLED,
+        B,   SERS                   ! -MASK 0, WAS NOPED.
+        B,   $+1.0
+        BD,  L160137
+        SIC, LSEN0+.32
+        B,   LSSW                   ! -TO SSIP.
+        BD,  $+.32
+!
+! ---- the continuity bridge on PDF p.81 (case 3 done = bit 14) ----
+        LX,  $X13, LIC260           ! -UPDATE CONTINUITY CHECK.
+        V+,  $X13, LBIT14
+        SX,  $X13, LIC260
+!
+! ---- CASE 4: enabled, mask 1 -- the indicator sets, the fetch does NOT
+L160142 LVI, $X1, L160AD1           ! -TEST 8C, CASE 4.
+        LX,  $X2, LBIT57
+        SX,  $X2, 3.0
+        Z,   L160AD3
+        BD,  $+.32
+        Z,   $MASK
+        SIC, L160SX1
+        B,   L160S1
+        Z,   $IND
+        LVI, $X3, (8)777777.40
+        LVI, $X4, LINT
+        LRI, $X4, L160IT
+        LVI, $X5, L160143
+        SVA, $X5, L160107
+        SV,  $X1, $UB
+        SR,  $X4, $IA
+        LX,  $X6, LBIT20            ! DF's mask bit
+        SX,  $X6, $MASK             !   ... set to ONE
+        BE,  $+.32
+        LV,  $X3, L160AD3           ! the fetch ABOVE UB
+        NOP
+        BD,  $+.32
+        BDFZ, $+2.0
+        SIC, SEN                    ! -FETCH ABOVE UB, ENABLED, MASK 1,
+        B,   SERS                   ! -CAUSES NO INT, DF NOT SET.
+        BD,  L160143
+        SIC, SEN                    ! -FETCH ABOVE UB, ENABLED, MASK 1,
+        B,   SERS                   ! -CAUSES NO INT, DF SET.
+L160143 SV,  $X4, $IA
+        LX,  $X3, $X3
+        BZXVZ, $+1.32
+        SIC, SEN                    ! -FETCHED ABOVE UB WITH MASK 1
+        B,   SERS                   ! -AND SYSTEM ENABLED.
+        LVI, $X2, L160146
+        SV,  $X2, $LB
+        SVA, $X2, L160107
+        SR,  $X4, $IA
+        LVI, $X2, (8)777777.0
+        SV,  $X2, $UB
+        LX,  $X6, LBIT21            ! IF's mask bit
+        SX,  $X6, $MASK             !   ... set to ONE
+        BE,  $+.32
+        CNOP                        ! emits a NOP here: alignment differs
+        LX,  $X2, 0                 ! fetched BELOW LB
+        BD,  $+.32
+L160144 BIFZ, L160145
+        SIC, SEN                    ! -INSTRUCT FETCH BELOW LB CAUSES NO
+        B,   SERS                   ! -INT IF NOT SET, MASK 1, SYSTEM
+        BD,  L160146                ! -ENABLED.
+L160145 SIC, SEN                    ! -INSTRUCT FETCH BELOW LB CAUSES NO
+        B,   SERS                   ! -INT, IF ON, MASK 1, SYSTEM ENABLED.
+L160146 SV,  $X4, $IA
+        LX,  $X2, $X2
+        BZXVZ, $+1.32
+        SIC, SEN                    ! -INSTRUCT FETCHED BELOW LB, ENABLED,
+        B,   SERS                   ! -MASK 1, WAS EXECUTED.
+        B,   $+1.0
+        BD,  L160142
+        SIC, LSEN0+.32
+        B,   LSSW                   ! -TO SSIP.
+        BD,  $+.32
+!
+! ---- externals, SYN'd at the addresses this listing's own encodings
+!      give.  INPUTS to the check, not witnesses -- the same caveat
+!      verify_ax5b_16082_16083_listing.py makes about L16088.  Each
+!      was derived by reading bit 18 out of the octal pair of the row
+!      that names it, so each is itself a checkable claim.
+L160AD1 SYN, (8)23063.0             ! from LVI,$X1,160AD1 = 23063.03 01
+L160AD3 SYN, (8)23064.0             ! from Z,160AD3       = 23064.22 00
+L160107 SYN, (8)22372.0             ! from SVA,$X5,160107 = 22372.13 D0
+L160S1  SYN, (8)22741.0             ! SSIP save/restore
+L160SX1 SYN, (8)23041.0
+L160IT  SYN, (8)23201.0             ! the 64-word interrupt table
+LINT    SYN, (8)1353.0
+SEN     SYN, (8)1310.0
+LSEN0   SYN, (8)1311.0
+SERS    SYN, (8)1304.0
+LSSW    SYN, (8)1301.0
+LIC260  SYN, (8)22737.0             ! the continuity word
+LBIT14  SYN, (8)24540.0             ! 024522 + 14
+LBIT20  SYN, (8)24546.0             ! 024522 + 20 = DF's bit
+LBIT21  SYN, (8)24547.0             ! 024522 + 21 = IF's bit
+LBIT57  SYN, (8)24613.0             ! 024522 + 57 = the boundary control bit
+        END, L160137

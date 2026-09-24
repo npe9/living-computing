@@ -66,9 +66,26 @@ UNIMPLEMENTED = {
     "CV", "DCV", "LCV", "LTRCV",          # radix conversion
     "KE", "KF", "KFE", "KFR",             # compare variants
     "M+1", "LTRS",                        # add-one-to-memory, load transit and set
-    "EX", "EXIC",                         # execute
+    "EX",                                 # execute
     "RNX",                                # rename
     "LOC", "LOCSEOP",                     # locate
+}
+# UNIMPLEMENTED IN THE MODEL BUT EXERCISED FOR ITS ENCODING.  This
+# category exists because EXIC forced it, and the distinction it draws
+# is real: KNOWN_GAP below means "expected to be UNUSED", while
+# UNIMPLEMENTED above is documented as "the model sets OP for these".
+# Those two properties coincided until a TRANSCRIPTION used an
+# instruction the model cannot execute.
+#
+# programs/ax5b_162_exic_classes.strap is jb_ax5b routine 1262 TEST 2B,
+# 43 rows bit-exact against the listing.  It is an ENCODING oracle: the
+# assembler emits EXIC (it is in MISC_CODES), the model decodes it to
+# Operation Code Invalid, and the program is never run.  So EXIC is
+# used, and must leave KNOWN_GAP or the ratchet fails -- but it is not
+# implemented, and listing it here says so rather than letting its
+# absence from UNIMPLEMENTED imply otherwise.
+ENCODING_ONLY = {
+    "EXIC",
 }
 # IMPLEMENTED BUT UNEXERCISED -- the model has real arms for these and
 # nothing drives them.  This is the actionable list: each is a test
@@ -134,6 +151,10 @@ def main():
     print(f"  unimplemented (sets OP)     : {len(UNIMPLEMENTED)}")
     print(f"  implemented, unexercised    : {len(UNEXERCISED)}  <- the actionable list")
     print(f"    {', '.join(sorted(UNEXERCISED))}")
+    print()
+    print(f"  unimplemented but ENCODED by a transcription : "
+          f"{len(ENCODING_ONLY)}  ({', '.join(sorted(ENCODING_ONLY))})")
+    print("    used, so not a gap; not executable, so not implemented.")
     print()
 
     new_gap  = sorted(set(gap) - KNOWN_GAP)

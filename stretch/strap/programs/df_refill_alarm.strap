@@ -2,6 +2,27 @@
 ! it that names operations: "the refill address used in index refill
 ! operations and the operations REFILL and REFILL ON COUNT ZERO."
 !
+!
+! SUPERSEDED 2026-09-24, AND THE CORRECTION MATTERS MORE THAN THE
+! PROGRAM.  The "weaker standard" note above rests on the claim that no
+! listing here tests DF.  THAT CLAIM IS FALSE.  jb_ax5b routine 1260
+! TEST 8C -- PDF pp.76-83, octal 022546.00-022732.40, labels
+! 160127-160146 -- is a dedicated test of the DF AND IF INDICATORS
+! under four enable/mask conditions, verified first-hand at 400 dpi:
+!
+!   160127 LVI,$X1,160AD1  -TEST 8C CHECKS DF + IF UNDER 4 CONDS,
+!                          -1. DISABL MASK 0 FETCH OK IND NO INT
+!                          -2. DIAABL MASK 1 FETCH OK NO IND NO INT
+!                          -3. ENABLE MASK 0 FETCH OK IND ON NO INT
+!                          -4. ENABLE MASK 1 NO FETCH IND ON INTRPT
+!
+! Condition 4 is the MASK-DEPENDENT half these programs scope out.  So
+! this file was written to a weaker standard than was available, in a
+! document this project had already read, thirty pages before the
+! routine whose misreading produced the claim.  The program is not
+! thereby wrong -- but it is not the strongest evidence available, and
+! TEST 8C is the acceptance test it should be checked against.  See
+! docs/NEXT.md item 2.
 ! WEAKER STANDARD, hand-written from p.32, for the reason
 ! df_data_fetch_alarm.strap gives at length: no listing this project
 ! has read tests DF at all.  This is the companion to that program --

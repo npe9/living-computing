@@ -268,6 +268,96 @@ other half ("the entire branch operation, including any counting, bit
 changing, or index alteration, is suppressed") touches every branch
 arm. Deliberately a separate commit.
 
+### CORRECTION, 2026-09-24: THERE *IS* A DECK ORACLE, AND IT IS IN A DOCUMENT THIS PROJECT HAD ALREADY READ
+
+**`jb_ax5b` routine 1260 TEST 8C, PDF pp.76-83, octal
+022546.00-022732.40, labels 160127-160146.** Verified first-hand at
+400 dpi. Its own title row:
+
+```
+160127  LVI,$X1,160AD1  -TEST 8C CHECKS DF + IF UNDER 4 CONDS,  23063.03 01  022546.00
+                        -1. DISABL MASK 0 FETCH OK IND NO INT
+                        -2. DIAABL MASK 1 FETCH OK NO IND NO INT
+                        -3. ENABLE MASK 0 FETCH OK IND ON NO INT
+                        -4. ENABLE MASK 1 NO FETCH IND ON INTRPT
+```
+
+It is a dedicated test of the **DF and IF INDICATORS** across the
+enable bit and the mask bit, and condition 4 is the **MASK-DEPENDENT
+HALF** — "NO FETCH ... INTRPT" — which this file recorded as needing
+"a termination mechanism this model does not have". There is an oracle
+for it. The deck's own write-up (PDF p.8) states the whole of TEST 8:
+*"AN ELEMENTARY CHECK TO DETERMINE THAT THE CORRECT INDICATORS AD, DS,
+DF, IF ARE TURNED ON AND THAT CORRECT TERMINATIONS AND SUPPRESSIONS
+OCCUR WHEN VARIOUS ILLEGAL ADDRESSES ARE USED WITH MASK BITS SET TO
+BOTH ONE AND ZERO."*
+
+**So DF was built here to the weaker standard when a stronger one was
+available**, roughly thirty pages before routine 1268 in the very
+document whose misreading created this item. The four DF programs say
+"no listing this project has read tests DF at all"; that is now false
+and their notes are superseded.
+
+**This is the FOURTH time "distrust a blocker recorded in this file"
+has paid out**, and the first time the blocker was one this file had
+already been corrected once about. The correction below about 1268 is
+still right — 1268 *is* a forwarding test — but it drew a false GLOBAL
+conclusion from a true local one, and nothing re-checked it.
+
+**Reported alongside it, same sweep, also unrecorded here:**
+* **TEST 8B, PDF p.75** (160123-160Z1, 022513.00-022545.40) — a
+  second, richer DS oracle covering enabled/disabled *and* store
+  suppression: *"-SX ABOVE UB WAS NOT NOPED, DATA WAS STORED WHEN
+  ENABLED."*
+* **TEST 7, PDF pp.71-74** (160105-160122) polls DF with `BDFZ`/`BZDFZ`
+  throughout — a second DF oracle, on the boundary-compare path.
+* **p.32's BRANCH clause is still manual-only.** Every IF case in
+  TEST 8C is straight-line fall-through into a below-LB region; none
+  branches into one. "the entire branch operation ... is suppressed"
+  has no deck test in this corpus.
+* **A discrepancy in the header itself, flagged not smoothed.**
+  Condition 1 reads "IND" where the code (`BZIFZ`/`BZDFZ`, branch on
+  indicator ZERO, error on fall-through) expects the indicator NOT
+  set, and condition 2 reads "NO IND". Re-read first-hand at 400 dpi:
+  line 1 does say "IND". Line 2 of the same header also carries the
+  typo "DIAABL", so a typo is plausible — but that is a guess, and the
+  code is the thing to build against.
+
+**TEST 8C CASES 3 AND 4 ARE NOW TRANSCRIBED** —
+`programs/ax5b_160_test8c.strap` +
+`verify_ax5b_160_test8c_listing.py`, PDF pp.80-83, octal
+022640.40-022733.40, **119 rows bit-exact**, one unbroken half-word
+run (the continuity bridge on p.81 closes the gap between the cases).
+
+Cases 3 and 4 were chosen over the disabled controls because they are
+the **mask-dependent pair**: both enable the system, case 3 runs with
+the mask bit zero and case 4 with it one, which is exactly p.32's
+rule. Their error messages are the contract read against each other —
+case 3 fails with "WAS NOPED" (it must have fetched), case 4 with "WAS
+EXECUTED" (it must not have).
+
+**`CNOP` is alignment-dependent and it is the trap in that block.** On
+p.80 the preceding `BE` sits on a `.40` half-word so `CNOP` emits
+NOTHING; on p.82 the `BE` sits on `.00` so it emits a filler `NOP` at
+022722.40. Case 3 is 56 source lines / 55 code rows, case 4 is 56/56.
+The assembler already reproduces both from the same source line.
+
+**Four more confirmations of the BIT table** (024522 + n): BIT14,
+BIT20, BIT21, BIT57 all land. And because the deck sets mask bit 20
+for the DF half and 21 for the IF half, the block is the **deck's own
+statement that DF is 20 and IF is 21** — numbering this project had
+taken from the manual.
+
+**REMAINING ON THIS ITEM, in order:**
+1. **IF itself is still unimplemented.** TEST 8C is now its acceptance
+   test; it is an encoding oracle until the model can run it.
+2. **The mask-dependent half of DF and DS** — case 4 is the oracle.
+3. **p.32's BRANCH clause has no deck test anywhere in this corpus.**
+   Every IF case in TEST 8C is straight-line fall-through into a
+   below-LB region; none branches into one. "the entire branch
+   operation ... is suppressed" stays manual-only, and the
+   `ds_terminates_branch.strap` work is the nearest thing to it.
+
 **THIS ITEM USED TO SAY `jb_ax5b` ROUTINE 1268 WAS "the only known
 deck test of them". That was a misreading, and it is corrected.**
 Read first-hand 2026-09-22, the routine's own header is *"1268 — IF
@@ -280,9 +370,9 @@ Store. It is a look-ahead forwarding test, and
 `archival_inventory.md` already said so in one of the two places it
 described the routine.
 
-**So DF and IF have no deck oracle anywhere read so far**, and
-`df_data_fetch_alarm.strap` is written to the WEAKER standard and says
-so in its first line.
+**~~So DF and IF have no deck oracle anywhere read so far~~ — FALSE,
+see the correction at the top of this item.** Routine 1268 is not
+their oracle; routine 1260 TEST 8C is.
 
 **What 1268 turned out to be good for.** Both halves are transcribed
 and **run**: `ax5b_1683_df_close_to_ds.strap` (test 2, the load side)
@@ -303,6 +393,52 @@ round trip**, since it plants an arbitrary instruction through
   *instruction* boundary; this model takes it at a *quiescent* one
   (look-ahead empty, E-box idle). Later, never earlier. Stated in
   `StretchCore.bsv`, `run_tests.sh` and `bsv/README.md`.
+
+  **THE DISCRIMINATOR EXISTS AND IS ALREADY IN `strap/programs/`** —
+  found 2026-09-24 after an 839-page sweep that expected it elsewhere.
+  Routine 1260 brackets every provoked interruption between an enable
+  and a disable **one instruction apart**, and in this model
+  `intDueCalc` returns Invalid the moment `irqEn` goes false, so a
+  pending interruption simply evaporates and the block falls through
+  its "we did not interrupt" path. From the already-transcribed
+  `ax5b_160105_compare.strap`:
+
+  ```
+      BE,  $+.32
+      LX,  $X13, 0($X2)        ! -FETCH FROM UB, BC IS 1.
+      BD,  $+.32
+  ```
+
+  `ax5b_16087_walk.strap` is tighter still — **zero** instructions of
+  slack between the `BE,$+.32` and the `BD` that would clear it. The
+  same bracket appears on `ax5b` PDF pp.45, 71, 72, 74 and 80.
+
+  **Three qualifications, all load-bearing.** (1) Both blocks are
+  ENCODING-ONLY and unrun — they need `160S1`'s body and the `160IT`
+  table — so the honest statement is "the deck would catch a late
+  interruption", not "this model fails today". (2) The verdict is
+  instruction-class dependent, and this repo already has measured
+  evidence of about one instruction of lateness: `run_tests.sh`'s
+  `df_data_fetch_alarm` note records a VFL `ST` holding the E-box a
+  call longer than a `BB`-style store, which is exactly the shape that
+  loses a one-instruction bracket. (3) **Nothing anywhere compares a
+  STORED instruction counter against an expected address** — SSIP's 48
+  interrupt-table entries all do `SIC,INTZ`, and its write-up explains
+  the printout as *"the address of the instruction following the one
+  causing the interrupt"*, but that value is printed for a human, never
+  `KV`'d against an expectation. That would be the strong
+  discriminator and no deck contains it.
+
+  **Bounded negatives from the same sweep** (839 pages OCR'd): of
+  `jb_ax2a` (203pp), `jb_ax3a` (215pp) and `jb_ax4b` (193pp), the ONLY
+  interrupt-related hits are their operating procedures — *"Disable
+  Interrupt and Time Clock"*. `ja_ax1a` is the one I-Box deck run with
+  interrupts ENABLED, and its own index lists only `BEW — Interrupt by
+  IT` as interrupt-intending. And `ax5b` pp.46-64, undescribed in
+  `archival_inventory.md` and the obvious place to look, turn out to be
+  the per-indicator unique-interruption tests (pp.46-48), the priority
+  tests (pp.49-54) and an after-the-fact indicator scan (pp.55-59) —
+  all timeout- or set-based, **none of them timing discriminators**.
 * **An E-box-class interruption instruction** fails loud rather than
   stepping the counter.
 * **`BEW`** — "branch enabled and wait" — is modelled as a plain
@@ -448,6 +584,125 @@ already-located transcription targets wait on it: `jb_ax5b` routine
 1268 cases 1B/1C (`EX,$X3`, `EX,$R`) and routine 1260 blocks 16084
 (`LVE`) / 16085 (`EX`).
 
+### THE OPERATION SPEC, READ FIRST-HAND 2026-09-24 — printed p.50 (PDF 53)
+
+This item used to carry the E-box design as a *proposal* and the
+manual only by reference. The manual states the whole contract:
+
+> **Execute (EX).** *"Bits 0-18 of the effective address form the
+> address of the location of a subject instruction that is fetched and
+> executed. Subject instructions of EXECUTE may occupy any addressable
+> location. An effective address of EXECUTE that is below 32.00
+> (including addresses between 1.00 and 3.32) is not monitored by the
+> address monitoring mechanism; that is, indicator IF cannot be
+> actuated by these addresses."*
+
+> **Execute Indirect and Count (EXIC).** *"Bits 0-18 of the full-word
+> addressed by bits 0-17 of the effective address are used as a
+> pseudo-instruction counter. The contents of the pseudo-instruction
+> counter address the location of a subject instruction that is
+> fetched and executed. **After the subject instruction has been
+> fetched but prior to its execution, the pseudo-instruction counter
+> is stepped. If the subject instruction is half-length, the
+> pseudo-instruction counter is stepped once; if full-length,
+> twice.**... Pseudo-instruction counters may occupy any of the index
+> registers as well as main core storage locations but **cannot occupy
+> locations addressed between 0 and 15**. Subject instructions of
+> EXECUTE INDIRECT AND COUNT may occupy any available locations with
+> **addresses 32.00 and greater**."*
+
+Those last two sentences are, word for word, the deck's **TEST 3A**
+(pseudo-IC < 15) and **TEST 3B** (subject < 32).
+
+**The EXE rule, printed p.49 (PDF 52):** *"the subject instruction is
+not allowed to change the state of the interruption system or replace
+the contents of the instruction counter. The execution exception
+indicator (EXE) is turned on by any branch operation of a subject
+instruction in which the condition for a successful branch is met.
+When indicator EXE is actuated, the branch and all associated
+operations are not performed. The suppressed actions include the
+disabling in BRANCH DISABLED, the enabling in BRANCH ENABLED or BRANCH
+ENABLED AND WAIT, the counting and refilling in COUNT, BRANCH AND
+REFILL, and so on."* — so EXE suppresses far more than the branch.
+
+Same page, **confirming the design recorded below**: *"When an
+execution operation is initiated in the main program, the instruction
+counter is stepped in normal fashion as in all operations of the main
+program. However, **it is never stepped during the execution of any
+subject instruction** even if the subject instruction is again one of
+the execution instructions."*
+
+**And p.50 on monitoring and interruption**: *"address monitoring is
+always in force during (1) EXECUTE and (2) EXECUTE INDIRECT AND COUNT,
+except for the address of the location of the FIRST LEVEL
+pseudo-instruction counter. Second, at the completion, termination, or
+suppression of an execution operation, interruption is always
+permitted."* — which is what the deck's 1CA/2CA ("ENABLE AFTER
+EX/EXIC") and 1CB/2CB ("CHK ADR MONITOR") test.
+
+**USA, printed p.45:** *"A LOAD VALUE EFFECTIVE, EXECUTE, or EXECUTE
+INDIRECT AND COUNT operation has been in progress for longer than one
+millisecond (several hundred indirect addressing cycles). The
+operation is terminated wherever it may be and the program
+proceeds."* The deck builds a chain of **2049** for this.
+
+### ROUTINE 1262'S BLOCK MAP (PDF pp.87-110, 023304.00-024332.00)
+
+| part | PDF pp. | addresses | entry | what it checks |
+|---|---|---|---|---|
+| head | 87 | 023304.00-023307.00 | `162` | prints ID, `BD,1621` |
+| TEST 1A | 88-89 | 023310.00-023373.00 | `1621` | EX must not relinquish control; seven memory combinations |
+| TEST 1B | 90-91 | 023373.40-023442.00 | `16212` | EX of each non-branch class, **two** checks per class |
+| TEST 1C | 92-94 | 023442.40-023551.00 | `16218` | 1CA enable-after-EX, 1CB address monitor, 1CC EX of branch + EXE |
+| TEST 1D | 95 | 023551.40-023576.00 | `16241` | EXE and USA indicators |
+| TEST 2A | 96-98 | 023576.40-023704.40 | `16247` | EXIC must not relinquish control |
+| TEST 2B | 99-102 | 023705.00-024000.00 | `16260` | EXIC of each class, **three** rules per class |
+| TEST 2C | 103-105 | 024000.40-024107.40 | `16271` | 2CA/2CB/2CC, the EXIC twins of 1C |
+| TEST 2D | 106 | 024110.00-024135.40 | `16294` | EXE and USA for EXIC |
+| TEST 3A | 107-108 | 024136.00-024151.00 | `162100` | pseudo-IC less than 15 |
+| TEST 3B | 108 | 024151.40-024162.00 | — | subject instruction less than 32 |
+| constants | 109 + p.110 top | 024172.00-024332.00 | `162K1`..`162EXI` | incl. the 64-word `162INT` table at 024220.00 |
+
+Continuity bits corroborate the partition: 1A=BIT0 ... 2D=BIT7, TEST
+3=BIT8, and the exit mask `%8@777000.0` is exactly nine ones. Nine
+sub-tests, nine bits.
+
+**TWO EXTENT CORRECTIONS.** 1262 does **not** end at p.109 — its last
+row, `162EXI LVI,$X1,%8@777777.40`, is at 024332.00 on the **top line
+of PDF p.110**, above routine 1268's header. And `162EXI` is
+*referenced* on pp.90, 92, 103 and 107 while being *defined* past
+where anyone would look.
+
+**A HEADER THAT MISDESCRIBES ITS OWN TEST, flagged not smoothed.** The
+routine header says test 3 checks "THE ILLEGAL COMBINATIONS OF EX AND
+EXIC". 3A and 3B are both **EXIC-alone address-range** violations.
+There is no EX-with-EXIC combination test in test 3; the nearest thing
+is TEST 1A's two-level EX-of-EX. Do not go hunting for tests that are
+not there.
+
+### FIRST TRANSCRIPTION TARGET: TEST 3A, `162100`, 024136.00-024151.00, 23 rows
+
+Chosen over the smaller head of `1621` (13 rows) for reasons that are
+about evidence, not size: it is a **whole sub-test** entered by one
+`BD,162100`; both its error messages are **inline in its own comment
+column** rather than an index into a shared table, so a failure names
+itself; it encodes **EXIC**, the harder arm; and its three messages
+*are* the suppression contract — no interrupt on the illegal
+pseudo-IC, AD set, the instruction NOPed — which is exactly p.50's
+"cannot occupy locations addressed between 0 and 15".
+
+**AND IT AVOIDS AN ASSEMBLER PREREQUISITE.** TEST 1A and 1D use
+progressive-indexing notation `%$X1@` (`SX,$X2,162INT%$X1@`) that
+appears in **no** existing `strap/programs/*.strap`, so they would
+carry an assembler change as well. 3A uses none of it, and its one
+exotic row (`%8@DD%BU,32,8@,3740 -ILLEGAL OP.`) is *already*
+transcribed and bit-exact-verified here as `160K7` in
+`ax5b_160k_constants.strap`.
+
+**Not candidates:** TEST 1D and 2D depend on `16084A`/`16084B`, which
+belong to routine 1260 — and 16084 is itself one of the blocks blocked
+on EX.
+
 **Routine 1262 is its deck oracle and has been read first-hand**
 (2026-09-23, PDF pp.87–110; purpose block and the p.101 EXIC blocks
 transcribed in `archival_inventory.md`). Its own header: *"TEST EX
@@ -506,27 +761,174 @@ Decimal VFL (`c=1`) and radix conversion; `RNX`/`LVE`/`LVS`;
 Transmit backward/`SWAP`/
 multi-word; I/O chaining and multiple-block; `LOC` and the
 unimplemented `CTL` function codes; channel status reaching the CPU
-indicators; the interval timer actually ticking (deck oracles: `ax5b`
-routine 1258, and the much smaller routine 1260 block 16071, already
-transcribed as `ax5b_16071_ts.strap` — implementing the timer is what
-would let it RUN); 19-bit address truncation (routine 1274).
+indicators; 19-bit address truncation (routine 1274).
+
+### THE INTERVAL TIMER — the rate is SOURCED, and 1258 is located
+
+**`microarchitecture_plan.md` A.7/A.10 say the step rate "remains to
+source". It is Reference Manual printed p.34 (PDF 37)**, read
+first-hand 2026-09-24:
+
+> *"It is continually stepped down by pulses originating from a stable
+> oscillator. Each time the oscillator delivers a pulse, the value of
+> the timer is read out, decremented by one, and returned to core
+> storage. **The oscillator operates at 1,024 (2¹⁰) cycles per second,
+> or a pulse about every millisecond.** Bits 0-8 show time in seconds.
+> A full cycle is about 8½ minutes.*
+>
+> *The timer runs whenever the machine is operating, which includes
+> also the execution of BRANCH ENABLED AND WAIT. **Whenever it goes
+> from one to zero, it turns on the time signal indicator... The next
+> oscillator pulse then sets the timer to all ones unless the program
+> in the meantime has changed its contents. The timer does not stop
+> after reaching zero.**"*
+
+At `StretchTiming`'s 0.3 µs per model clock that is **one tick every
+~3255 model clocks**. p.35 adds that the time clock is a 36-bit
+up-counter in bits 28-63 driven by *the same* oscillator, "the two
+clocks are updated consecutively in the same time interval".
+
+**THE RELOAD RULE IS THE LOAD-BEARING DETAIL, and getting it wrong
+breaks the whole suite.** Faithful to p.34 — TS only on the 1→0
+transition, reload to all ones — the model starts at 0, reloads on the
+first pulse, and takes 2¹⁹-1 ticks (~1.7×10⁹ model clocks) to come
+back round, so no existing test ever sees TS. A naive "decrement; at
+zero set TS" wraps every ~3255 clocks, and since the model forces mask
+bits 0-19 to one, TS (indicator 4) is ALWAYS masked on and would
+outrank DS and every PG indicator in the leftmost-wins scan. Every
+enabled program would take a TS interruption it never took before.
+
+**And the reload rule has a deck witness**: routine 1258 block
+1589/15810, *"-INTERVAL TIMER FAILS TO STEP FROM 000000.0 TO
+777777.40"*, with `158K1 = 777777.40` — all ones in bits 0-18.
+
+**p.34 ALSO STATES A RULE `ax5b_16071_ts.strap` CURRENTLY INFERS.**
+That program's header says the disabled-execution requirement "is
+entailed by two manual pages, not transcribed from this page". p.34
+states it outright and names the instruction: *"The only store-type
+operations that may store in the left half of location 1... are STORE
+VALUE, STORE COUNT, STORE REFILL, and STORE VALUE IN ADDRESS, and
+these operations can be performed only when the interruption system is
+disabled. When enabled, these operations will turn on indicator DS,
+data store, and be suppressed."* Same failure mode as the
+boundary-polarity correction: the overview chapter was read, the
+chapter twenty pages later was not.
+
+**A THIRD DF INTERACTION, recorded**: p.34 says the timer *"cannot be
+read if indicator DF, data fetch, is masked on and the interruption
+system is enabled"*.
+
+**ROUTINE 1258 IS LOCATED**: `jb_ax5b` **PDF pp.5-7** — the FIRST
+listing pages, immediately after the write-up, not in the tail where
+the routine-index order suggests. Octal **014002.00-014063.40**, ~94
+code/data rows, which would make it the largest single transcription
+in this project (about 1.2× `160s1`). Header: *"1258---CHK TIME CLOCK
+AND INTERVAL TIMER... TEST 1 IS A CURSORY CHECK OF THE TIME CLOCK TO
+SEE THAT IT STEPS CORRECTLY WITHIN THE CORRECT INTERVAL OF TIME. TEST
+2 CHECKS THAT THE INTERVAL TIMER STEPS WITHIN THE ALLOTTED AMOUNT OF
+TIME, AND THAT EACH POSITION CAN HOLD BOTH A ONE AND A ZERO."*
+
+**It is a far better timer oracle than 16071**, which only witnesses
+"TS comes on". 1258 witnesses the tick RATE (twice, "1 MSEC"), the
+RELOAD to all ones, the bits-19-23 clearing from p.34's programming
+note, the decrement by exactly one, and the whole TIME CLOCK with its
+carry between halves. Every instruction it uses is already
+implemented. **But it cannot run until the time clock exists too** —
+Test 1 is half the routine and the model has no clock at all
+(`StretchStorage.bsv`'s `intervalTimerAndClock` is one register that
+nothing steps).
+
+**Do NOT shorten the tick period to make tests cheaper.** Test 1
+checks the clock stepped by EXACTLY ONE between two reads about 78
+model clocks apart; below ~78 clocks per tick it steps twice and Test
+1 fails for the wrong reason. Raise `gen_tb.py`'s step cap instead.
+
+**Implementation hazards, read out of the model** and recorded so the
+next attempt does not rediscover them: the tick must be gated on
+`StretchCore`'s `tick` PulseWire (a free-running rule in
+`StretchStorage` would count down while the harness is still loading
+storage, the way `rule intDueCalc` fires unguarded); it becomes a
+SECOND writer of `intervalTimerAndClock` and a FOURTH, non-exclusive
+writer of `indicators`, both of which this file's own comments say
+must be funnelled to one writer (the `storeW` RWire is the shape it
+already uses); and any new reader of those registers joins the G0095
+path the `mkConfigReg` choices exist to break.
 
 Out of scope by design: cycle-accurate timing.
 
 ## 6. Open questions — record, do not guess
 
-**Does `refillLegal` apply to refills other than `R`/`RCZ`?** The
-model suppresses a refill whose address is 1-15 for those two
-operations only, on routine 1238's TEST 2G/2H ("CHK REFILL FRM LOCN
-0" against "CHK NO REFILL FRM LOCNS 1 THROUGH 17"). Reference Manual
-pp.25-26 were read for this and describe `R`, `RCZ`, `V+ICR`, `CB` and
-`CBR` without mentioning the rule at all — it is a machine behaviour
-the deck established empirically for the REFILL operations, not
-something the manual states anywhere. So whether `CBR`, `V+CR`,
-`V+ICR` and `V-ICR` suppress the same way is unsourced in BOTH
-directions, and the asymmetry now in the model is untested either way.
-Do not resolve it by symmetry; it wants a deck block, and `jb_ax4b`
-routine 1238 is where one would be if it exists.
+**Does `refillLegal` apply to refills other than `R`/`RCZ`?** STILL
+OPEN — but as of 2026-09-24 it is open *with affirmative evidence
+against closing it by symmetry*, which is a stronger position than the
+absence it used to rest on.
+
+The 1-15 gate is sourced for `R`/`RCZ` only, by `jb_ax4b` routine 1238
+test 2G/2H. A **different** refill-address no-op rule, over a
+**different range**, is sourced for `RNX` by TWO independent primary
+sources:
+
+* Reference Manual printed **p.27** (PDF 30), read first-hand
+  2026-09-24, "Rename (RNX)": *"When either the old or the new name of
+  the index refers to one of the locations **0-31**, the instruction is
+  executed as no-operation and indicator AD is set."*
+* `jb_ax4b` routine **1244** ("Checks RNX"), whose header item 4 is
+  *"CHECK THAT THE INSTRUCTION IS NO OPPED WHEN EITHER THE OLD OR THE
+  NEW REFILL FIELD OF IX REG 0 LIES IN THE RANGE OF **1 TO 37
+  OCTAL**"* — 1-31 decimal — with two indexed error tables
+  (*"RNX FAILS TO NOP WHEN IX 0 INITIAL REFILL ADDRESS IS nn."*).
+
+**Two operations, two different ranges, each stated separately.** That
+is the 1961 documentation treating this as PER-OPERATION, and it is
+the reason not to extend either rule to `CBR`/`V+CR`/`V+ICR`/`V-ICR`
+by symmetry.
+
+**And note the manual is not systematically silent about such gates.**
+It states RNX's and omits `R`/`RCZ`'s — yet `R`/`RCZ`'s demonstrably
+exists, because the deck measured it. So silence is weak evidence in
+*either* direction for the remaining four.
+
+The only general statement anywhere is printed **p.22**: *"A refill
+address of zero will replace the index word with all zeros"* — which
+corroborates 2G's positive case and nothing else.
+
+**Swept and negative**, so it need not be redone: routine 1238 in full;
+routine **1242** (which is the dedicated `V+CR`/`V+ICR`/`V-ICR`
+routine — see the correction below); routine 1248 test 5's progressive
+blocks; routine 1250 (`CB`/`CBR`); `ja_ax1a`'s refill blocks;
+`jb_ax2a`/`jb_ax3a`/`jb_ax5b` have no refill *operation* at all.
+Every refill XW exercised in the corpus decodes to a high address or
+an index register 16-31. The one low-address refill XW that exists —
+`142XW4`, refill field 9 = `$R`, in routine 1242 — is **defined and
+never referenced**, so it witnesses nothing.
+
+If this is ever to be closed it needs a source outside the five I-Box
+decks and the Reference Manual. `R23-9732_Manual04_7101_CPU_Jan63` and
+`TR00.722_Stretch_I-Unit_Design_Mar60` are the untouched places where
+an I-box refill-address decode rule would live; neither has been
+searched.
+
+**A SECOND DF SITE, RECORDED HERE BECAUSE IT IS NOT REACHABLE YET.**
+The same p.27 paragraph continues: *"If the interrupt system is
+enabled and if the old name is both out of bounds and invalid, the AD
+and **DS** indicators are set. If the new name is both out of bounds
+and invalid, the AD and **DF** indicators are set."* So `RNX` is an
+address-alarm site for both DS and DF. It is moot today — `RNX`
+decodes Operation Code Invalid in this model — but whoever implements
+`RNX` owes those two clauses, and routine 1244's four-part header
+(with its two indexed error tables) is a complete test plan for it.
+
+**~~One boundary discrepancy to settle if `RNX` is implemented~~ —
+RESOLVED 2026-09-24, and the manual was self-consistent all along.**
+p.27 says `RNX` no-ops for locations 0-31; the deck sweeps 1-37 octal
+(1-31). Printed **p.34**'s left column, read first-hand, is the same
+rule split by address class: item **8** is *"Neither the old nor the
+new name in a RENAME instruction may refer to location 0"* and item
+**7** is *"In the operation RENAME, neither the old nor new name of
+the index register can be in the range 1 through 15."* Location 0 +
+the special registers 1-15 + the index registers 16-31 = p.27's 0-31.
+So the deck simply does not test 0; there is no conflict to settle,
+only a case with no deck witness.
 
 
 * `BR`'s **absolute value** clause is unexercised: an effective address
@@ -655,8 +1057,14 @@ printed page numbers.
   applied to tests; it applies to prose too, and the tell is the same
   — ask what input could falsify the sentence, and check that one
   exists.
-* **Distrust a blocker recorded in this file.** THREE times the thing
-  stopping work was a claim here, not anything in the machine: "64 call
+* **Distrust a blocker recorded in this file.** FOUR times the thing
+  stopping work was a claim here, not anything in the machine, and the
+  fourth is the worst because the claim had already been corrected
+  once: "DF and IF have no deck oracle anywhere read so far" (routine
+  1260 TEST 8C, `jb_ax5b` PDF pp.76-83, is exactly that oracle, thirty
+  pages before the routine whose misreading produced the claim — and
+  the correction that fixed the local misreading left the global
+  conclusion standing). The other three: "64 call
   sites need refactoring" (43 wrote constants that could never trip the
   rule), "the control-bit polarity needs Appendix C" (p.31 states it
   outright), and "1260 needs SSIP's `160S1` harness, reported at
@@ -713,3 +1121,16 @@ printed page numbers.
   status. This is "a summary column is not a measurement" again, one
   level down — and the first version of the trap did not stop it,
   because the number *looked* like a count of checks.
+* **A correction that fixes a local misreading can leave a false
+  GLOBAL conclusion standing.** This file once said `jb_ax5b` routine
+  1268 was "the only known deck test" of DF and IF. Reading 1268
+  first-hand proved it is a look-ahead forwarding test, and the item
+  was rewritten to say so — correctly. But the rewrite also asserted
+  "so DF and IF have no deck oracle anywhere read so far", which does
+  not follow from 1268 being the wrong routine, and nothing ever
+  re-checked it. DF was then implemented to the weaker,
+  manual-derived standard while routine 1260 TEST 8C sat thirty pages
+  earlier in the same PDF, titled "TEST 8C CHECKS DF + IF UNDER 4
+  CONDS". **When a correction retracts the reason for a claim, retract
+  the claim too, or re-derive it.** The tell is a sentence that starts
+  "so" and widens the scope of what was just disproved.

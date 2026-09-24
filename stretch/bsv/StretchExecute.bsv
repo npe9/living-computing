@@ -3535,10 +3535,46 @@ function ActionValue#(ExecResult)
         if (prefetchCount >= 1) begin
           Bit#(6) sh     = 63 - baBit(ba);
           Bit#(1) tested = prefetch[0][sh];
-          if (tested == bb.modAbc[0])
-            next = effAddr19(st, bb.addr2, {3'b0, bb.idx}); // K: X1 only
           Bit#(2) mod = bb.modAbc[2:1];
-          if (mod != 2'b00) begin
+          // OPERATION TERMINATION, p.32, and the deviation protViolates'
+          // own note has named since DS was written: "this suppresses
+          // only the store, so a BB whose write is suppressed still
+          // branches."  It no longer does.
+          //
+          // p.32 on DS: "Since this indicator is permanently masked on,
+          // storing in core storage is always suppressed, AND THE
+          // OPERATION IS ALWAYS TERMINATED."  The branch is part of the
+          // operation, so a BRANCH ON BIT whose bit-change is suppressed
+          // must not take its branch either.  p.32 says the same thing
+          // in the other direction for IF, which is the corroboration
+          // that the machine really does suppress a whole branch rather
+          // than just its store: "the entire branch operation, including
+          // any counting, bit changing, or index alteration, is
+          // suppressed".
+          //
+          // TWO CONDITIONS, and both are load-bearing -- MEASURED, not
+          // assumed.  A BB with mod == 00 CHANGES NOTHING, so it is not
+          // a store-type operation at all and must still branch;
+          // ds_terminates_branch.strap's first block is the one that
+          // holds that, and it exists because the injection dropping
+          // this `changes` term SURVIVED against the program's first
+          // version.  protViolates carries the enable gate, so a
+          // disabled machine branches and stores as before, which is
+          // what lets that program set up a protected word at all.
+          //
+          // A `bw != 11` TERM WAS HERE AND CAME BACK OUT.  Word 11 is
+          // the indicator register and its write is folded into `ind`
+          // rather than issued to storage -- but protViolates ALREADY
+          // returns False for it (11 is below 32 and outside 1-3, so
+          // p.31's carve-out answers it), and the injection dropping
+          // the term changed nothing.  A guard whose own comment has to
+          // explain why it is redundant is decoration; protViolates is
+          // the single authority on which addresses signal.
+          Bool changes = (mod != 2'b00);
+          Bool storeViolates = changes && protViolates(st, bw);
+          if (tested == bb.modAbc[0] && !storeViolates)
+            next = effAddr19(st, bb.addr2, {3'b0, bb.idx}); // K: X1 only
+          if (changes) begin
             Bit#(1) nb = case (mod)
                            2'b01: 1'b0;      // set to zero
                            2'b10: ~tested;   // invert (negate)
@@ -3556,7 +3592,7 @@ function ActionValue#(ExecResult)
               if (baBit(ba) >= 20)
                 ind = insertFieldBits(ind, baBit(ba), 1, zeroExtend(nb));
             end else
-              if (protViolates(st, bw)) ind = setBit(ind, ind_DS, 1);
+              if (storeViolates) ind = setBit(ind, ind_DS, 1);
               else st.writeWord(bw, insertFieldBits(prefetch[0], baBit(ba), 1,
                                                zeroExtend(nb)));
           end
