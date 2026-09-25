@@ -75,8 +75,15 @@
 ! DS and is suppressed.  Disabled is the reset state (p.53), and this
 ! block never enables.
 !
-! SUBSTITUTIONS: three.
-!   1. Numeric labels prefixed "L" (16099, 160100, 160101, 160B17).
+! SUBSTITUTIONS: two, and a third that has been retired.
+!   1. RETIRED.  This item used to read "numeric labels prefixed L
+!      (16099, 160100, 160101, 160B17)", the prefix being needed
+!      because this assembler reads a leading digit as an address.
+!      The leading glyph was measured at 600 dpi and it is the LETTER
+!      I: I6099, I60100, I60101 and I60B17 are legal STRAP-1 symbols
+!      as the page prints them, and are written here unaltered
+!      (docs/listing_typography.md).  The B0..B17 and E0..E17 names
+!      below are this transcription's own and were never part of it.
 !   2. I60B17, the per-bit error table, is a "B,$" HANG at its printed
 !      address 022231.40 -- so a failure halts there and the PC names
 !      it.  The real table's eighteen entries are not transcribed.

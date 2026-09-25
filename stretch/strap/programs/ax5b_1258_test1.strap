@@ -66,7 +66,7 @@
 ! glyph it draws for ")" -- fixed by the same page's
 ! "XW,%8*777777.40,0,0", which is the "(8)" radix prefix this assembler
 ! already accepts.  So the line reads
-! "(IQSZ)DD(BU,64,8),1258   Z": a call of the SSIP/DCP print-formatting
+! "(IQSZ)DD(BU,64,8),I258   Z": a call of the SSIP/DCP print-formatting
 ! macro %IQSZ, the routine's IDENT word.  docs/archival_inventory.md
 ! already records %IQSZ/%IQS* as macros with no counterpart in this
 ! model, and notes that every routine's ident line carries one.
@@ -193,8 +193,10 @@
 ! ICK258.  ICK258's own row on PDF p.5 prints "600000.00 00 000000.00
 ! 00": bits 0 AND 1 set, which is "test 1 done" plus "test 2 done", read
 ! off the constant pool rather than inferred.  That also settles the
-! symbol this file's 014033.00 names: the printer draws letter O and
-! digit 0 with the same glyph, but the encoding is 24522 -- one below
+! symbol this file's 014033.00 names: the printer's letter O and digit
+! 0 are only 15-22% apart in width and not worth resolving by eye
+! (docs/listing_typography.md section 6), but the encoding is 24522 --
+! one below
 ! TEST 2's BIT1 at 24523 -- and ICK258 shows bit 0 is the bit TEST 1
 ! sets.  BIT0, with a digit.
 !
@@ -216,12 +218,18 @@
 ! IDF1), the %IQSZ print macro, and a time clock that ticks.  The model
 ! has none of the three.
 !
-! SUBSTITUTIONS: one, the deck's systematic one.  Labels that begin with
-! a digit (158, 1581, 1581D, 158K1, ...) get an "L" prefix, because this
-! assembler reads a leading digit as an address.  IC258/ICK258 get it
-! too, spelled LIC258/LICK258 to match ax5b_1258_test2.strap: this
-! printer's letter-I and digit-1 are the same glyph, so the prefix is
-! applied uniformly and the choice is moot.  Nothing else is changed.
+! SUBSTITUTIONS: none in the label names, and the "none" is itself a
+! correction.  This file used to read the deck's leading glyph as a
+! digit (158, 1581, 1581D, 158K1, ...) and prefix an "L" to each,
+! because this assembler reads a leading digit as an address; IC258 and
+! ICK258 were spelled LIC258/LICK258 to match ax5b_1258_test2.strap,
+! on the belief that this printer's letter I and digit 1 are the same
+! glyph.  Measured at 600 dpi they are not, and C22-6531 printed p.10
+! forbids a digit-leading symbol outright, so the page's own spellings
+! -- I58, I581...I586, I58ID, I58K1, I58K2, IC258, ICK258 -- are legal
+! STRAP-1 symbols as printed and are written here unaltered.  The
+! measurement, and what it did and did not change, are in
+! docs/listing_typography.md.  Nothing else is changed.
 
 ! ---------------------------------------------------------------------
 ! External symbols, SYN'd at the addresses THIS listing's own printed
@@ -254,10 +262,16 @@ SENO    SYN, (8)1311.0      ! from SIC,SENO+.32     = 1311.40 80
 SERS    SYN, (8)1304.0      ! the error-report routine
 SSW     SYN, (8)1301.0      ! the SSIP return
 !
-! SENO's and DPET13's spellings are not resolvable from the page: this
-! printer's letter O and digit 0 are one glyph, and so are letter I and
-! digit 1.  Both are SYNs, so nothing in this check or any injection
-! depends on either spelling.  SENO follows ax5b_1258_test2.strap;
+! SENO's and DPET13's spellings do not follow from the labels above.
+! The letter-I-versus-digit-1 half of what this note used to claim --
+! that the two are one glyph on this printer -- is settled the other
+! way and is why the labels are spelled I58..., above.  The letter O
+! against digit 0 is a weaker result in the same direction: letter O
+! runs 15-22% wider than digit 0 on both decks, so the two ARE
+! separable, but on n = 3 calibration pairs (docs/listing_typography.md
+! section 6, "moderate, direction only").  Both are SYNs, so nothing in
+! this check or any injection depends on either spelling.  SENO follows
+! ax5b_1258_test2.strap;
 ! DPET13 follows the spelling docs/microarchitecture_plan.md already
 ! carries for the same SSIP symbol in the PAU deck.
 

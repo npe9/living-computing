@@ -228,17 +228,33 @@
 ! THIS page it reads as a digit zero.  verify_ax5b_160_test8b_listing
 ! .py measured the same symbol's DEFINING row on p.114 at 54 px, which
 ! is letter-O.  PDF p.114 prints the row as "SENO SYN,SENO ->
-! 1311.00+".  Unresolved.  The symbol is written LSEN0 here to match
+! 1311.00+".  Still open, but no longer flatly contradictory: that
+! p.114 row was re-measured for docs/listing_typography.md section 6
+! and reads "SENO SYN,SEN0", label 54 px and operand 42 px on one
+! printed line -- a letter-O name aliased to a digit-zero symbol,
+! which is what the two readings here are each seeing.  Section 6
+! rates that moderate, direction only.  The symbol is written LSEN0
+! here to match
 ! verify_ax5b_160_test8b/8c (the same routine 1260 exit sequence), and
 ! it cannot affect a bit either way: it is a SYN whose address came
 ! from the very row that names it.
 !
-! HOUSE STYLE, NOT MEASURED.  This chain printer draws the digit 1 and
-! the letter I with the identical bare vertical stroke.  Every leading
-! stroke here -- 16096, 16097, 16098, 16082A, 160S1, 160SX1, 160XW1,
-! 160IT, 160K8, 160K9, 160K10, 160K11, 100Z, 100O, IC260 -- is read as
-! a digit, which is this project's standing convention (ax5b_16086,
-! ax5b_160102, ax5b_160_test8b/8c all do it).
+! MEASURED, WHERE THIS NOTE USED TO SAY HOUSE STYLE.  It read: "this
+! chain printer draws the digit 1 and the letter I with the identical
+! bare vertical stroke.  Every leading stroke here -- 16096, 16097,
+! 16098, 16082A, 160S1, 160SX1, 160XW1, 160IT, 160K8, 160K9, 160K10,
+! 160K11, 100Z, 100O, IC260 -- is read as a digit, which is this
+! project's standing convention."  The two glyphs are not identical.
+! At 600 dpi this chain's digit 1 carries an upper-left flag and a
+! base serif and measures 30-42 px; the bare stroke measures 9-18, and
+! the populations do not overlap on ~16 000 measured glyphs.  Every
+! one of those leading strokes is the LETTER I -- I6096, I6097,
+! I6098, I6082A, I60S1, I60SX1, I60XW1, I60IT, I60K8, I60K9, I60K10,
+! I60K11, I00Z, I00O, IC260 -- which is also the only reading C22-6531
+! printed p.10 allows.  ax5b_16086, ax5b_160102 and
+! ax5b_160_test8b/8c, named here as the precedent for the old
+! reading, carry the corrected spellings too
+! (docs/listing_typography.md).
 !
 ! -- WHAT IS NOT HERE ------------------------------------------------
 !
@@ -271,11 +287,16 @@
 ! verify_ax5b_160_test6_listing.py.
 !
 ! SUBSTITUTIONS: three, all spelling.
-!   (1) Symbols that begin with a digit are prefixed "L" (L16096,
-!       L16098, L160K9, L100O, ...), and LSEN0/LSSW/LIC260 follow
-!       verify_ax5b_160_test8b/8c so the same symbol has one name
-!       across routine 1260.  BIT7/BIT16/BIT17/BIT25/BIT30/BIT38 need
-!       no prefix and get none, as in ax5b_160102_lb_ctl.strap.
+!   (1) The deck's labels are written as it prints them -- I6096,
+!       I6098, I60K9, I00O, IC260, ... -- and take no prefix.  This
+!       item used to read "symbols that begin with a digit are
+!       prefixed 'L' (L16096, L16098, L160K9, L100O, ...)"; the
+!       glyph note above says why that is gone.  ONE "L" SURVIVES,
+!       and it is not a legality workaround: LSEN0 keeps the spelling
+!       verify_ax5b_160_test8b/8c give the SEN0 exit, so the same
+!       symbol has one name across routine 1260.  SEN, SERS, SSW and
+!       BIT7/BIT16/BIT17/BIT25/BIT30/BIT38 need no prefix and get
+!       none, as in ax5b_160102_lb_ctl.strap.
 !   (2) The listing's octal-literal notation "%8@140000.0" is written
 !       "(8)140000.0", the form C22-6531's radix-entry mode takes and
 !       every other file here uses.  It is load-bearing: this

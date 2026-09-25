@@ -104,9 +104,13 @@
 ! the look-ahead's LAAR forwarding replaces the ordering rule --
 ! StretchStorage.bsv's comment says that is stage 3.
 !
-! SUBSTITUTIONS: three, all named.
-!   1. Numeric labels are prefixed "L" (this assembler reads a leading
-!      digit as an address): 1683, 1000, 168K3.
+! SUBSTITUTIONS: two, all named -- and a third that has been retired.
+!   1. RETIRED.  This item used to read "numeric labels are prefixed
+!      L (this assembler reads a leading digit as an address): 1683,
+!      1000, 168K3."  The leading glyph was measured at 600 dpi and
+!      it is the LETTER I, so I683, I000 and I68K3 are legal STRAP-1
+!      symbols as the page prints them and take no prefix
+!      (docs/listing_typography.md).
 !   2. SERS, the deck's error-report routine, is a "B,$" HANG at its
 !      own printed address 001304.00 -- so a failure halts there and
 !      the testbench's PC check names which case failed.  The real

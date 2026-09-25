@@ -33,7 +33,16 @@
 ! reset state and this block never enables.
 !
 ! SUBSTITUTIONS: three, the same shape as the p.65 block.
-!   1. Numeric labels prefixed "L".
+!   1. None in the deck's own label names.  This item used to read
+!      "numeric labels prefixed L": the leading glyph of I60102,
+!      I60103, I60104, I60B18 and I00Z was read as a digit and an "L"
+!      prefixed to make each legal for this assembler.  Measured, it
+!      is the letter I (docs/listing_typography.md), so the names are
+!      written as the page prints them and nothing is prefixed.  The
+!      L0..L17 labels below are NOT survivors of that: they are this
+!      transcription's own names for the eighteen hangs in item 2,
+!      invented here, and the run has an L0 and an L2..L9 that no
+!      digit reading could ever have produced.
 !   2. I60B18's eighteen entries are "B,$" hangs at the deck's own
 !      three-half-word spacing, so a failure on bit N halts at
 !      I60B18 + N*1.32 and the address NAMES THE BIT.  The deck's real

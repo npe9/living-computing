@@ -121,9 +121,12 @@ width here -- they are evidence that a FULL word at an ODD half-word
 is deposited straddling two words (Ref. Manual p.39), which is what
 puts I60SX1 at 023041.00 rather than 023037.00.
 
-SUBSTITUTIONS: three, all in the program file's header.  The third is
-load-bearing and is recorded rather than smoothed away: the listing
-prints the return row as "$BD,0" and the transcription writes "BD,0".
+SUBSTITUTIONS: two, both in the program file's header, where there
+were three.  The one that went is the old "numeric labels prefixed
+L": the leading glyph is the letter I, so I60DMP and I60SX1 need no
+prefix (docs/listing_typography.md).  Of the two that remain, the
+return row is load-bearing and is recorded rather than smoothed away:
+the listing prints it as "$BD,0" and the transcription writes "BD,0".
 The 32 bits are IDENTICAL -- both produce the printed "0.04 00",
 measured below, not assumed -- but what STRAP's "$" prefix on an
 operation means is not established by any page read for this work.  It

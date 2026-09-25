@@ -493,18 +493,22 @@ base serif; populations that do not overlap on ~16 000 glyphs).  The
 page's true spellings are therefore I68, I681, I683, I68ID, I68K1-3,
 IC268, ICK268, I74 and the banner "----I268---".
 
-A REPO-WIDE RENAME IS IN PROGRESS SEPARATELY.  THIS FILE FOLLOWS THE
-EXISTING 1268 FILES' CURRENT HOUSE STYLE and starts no third
-convention: "L"-prefixed symbol names in the assembler source,
-bare digit-leading spellings in the note column and prose, exactly as
-verify_ax5b_1681_listing.py, verify_ax5b_1268_test1bc_listing.py and
-verify_ax5b_1683_listing.py do today.
+THAT RENAME HAS SINCE BEEN MADE REPO-WIDE, so the page's spellings and
+this file's are now one and the same.  THIS FILE FOLLOWS THE EXISTING
+1268 FILES and starts no second convention: the measured letter-I
+names in the assembler source, in the note column and in the prose
+alike, exactly as verify_ax5b_1681_listing.py,
+verify_ax5b_1268_test1bc_listing.py and verify_ax5b_1683_listing.py
+now do.
 
-ONE EXCEPTION, taken to AVOID a third convention rather than to start
-one: routine 1274's entry label at 024412.00 is written I74 in the
-.strap, because programs/ax5b_1274_truncation.strap already defines
-exactly that symbol at exactly that address.  Writing L174 would
-invent a spelling no file in this repository uses.
+WHEN THIS FILE WAS WRITTEN those three still carried the earlier
+misreading -- a digit read for the letter, with an "L" prefixed to
+make the name legal for this assembler -- so routine 1274's entry
+label at 024412.00 had to be called out as the ONE exception: it is
+written I74 in the .strap because programs/ax5b_1274_truncation.strap
+already defines exactly that symbol at exactly that address, and
+writing L174 would have invented a spelling no file in this repository
+uses.  It is no longer an exception.
 
 NO NEW GLYPH MEASUREMENT WAS MADE IN THIS SESSION, and no measurement
 is claimed.

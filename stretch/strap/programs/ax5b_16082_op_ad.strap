@@ -86,11 +86,16 @@
 ! model: both blocks fall through into the SEN/SERS error harness and
 ! I6093, none of which is transcribed, and I60K7's value is unknown.
 !
-! SUBSTITUTIONS: one, the same systematic one as the 16086 block.
-! This deck labels its blocks with NUMBERS (16082, 16082A, 16083,
-! 16093, 16088) and this assembler reads a leading digit as an
-! address, so every such label is prefixed with "L".  Nothing else is
-! changed.
+! SUBSTITUTIONS: none, where this header used to name one.  It said
+! the deck labels its blocks with NUMBERS (16082, 16082A, 16083,
+! 16093, 16088) and that, since this assembler reads a leading digit
+! as an address, every such label takes an "L" prefix.  The leading
+! glyph was measured at 600 dpi and it is the LETTER I: the deck
+! writes I6082, I6082A, I6083, I6093 and I6088, legal STRAP-1 symbols
+! as they stand, so they are written here unaltered and nothing is
+! prefixed (docs/listing_typography.md).  The routine number in this
+! file's name stays decimal; only the LABELS carry the letter.
+! Nothing else is changed.
 
 ! External symbols, given by SYN at the addresses this same listing
 ! prints for them.  Rows naming one check the opcode and modifier bits

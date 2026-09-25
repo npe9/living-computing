@@ -49,8 +49,15 @@
 ! LVE and the DR reserves are better given to whatever program
 ! actually runs the table.
 !
-! SUBSTITUTIONS: one.  Numeric labels prefixed "L".  Every external is
-! given by SYN at the address this block's own rows print for it.
+! SUBSTITUTIONS: none, where this header used to say "one.  Numeric
+! labels prefixed L."  The prefix was there because this assembler
+! reads a leading digit as an address and the leading glyph was read
+! as a digit.  Measured at 600 dpi it is the LETTER I, so the pool's
+! own names -- I60K1..I60K17, I60XW1..I60XW4, I60AD1..I60AD3,
+! I60DMP, I60IT and the externals -- are legal STRAP-1 symbols as
+! printed and are written unaltered (docs/listing_typography.md).
+! Every external is given by SYN at the address this block's own rows
+! print for it.
 
 I60DMP SYN, (8)23301.0
 I6035  SYN, (8)14642.0

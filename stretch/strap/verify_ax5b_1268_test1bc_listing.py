@@ -291,16 +291,21 @@ right half of the accumulator, as its subject -- appears nowhere else
 in programs/ or verify_*.py.  Flagged as a first only at that
 resolution, an operand pairing rather than an instruction.
 
-GLYPHS.  "IC268" is spelled with a LETTER I and "SEN0" with a DIGIT
-zero, and "1B"/"1C"/"1268"/"168K1" with digits.  All of that is HOUSE
-STYLE, not a measurement made in this session: IC244/IC246/IC258/
-IC260/IC262/IC274 carry the letter across programs/ and verify_*.py,
-and programs/ax5b_1274_truncation.strap records a pixel measurement of
-the "SIC,SEN0+.32" row ("has digit 0 at 45 px") for the digit zero.
-The letter-I-versus-digit-1 question is under active dispute in this
-project; no new convention is started here.  The one measurement this
-session did make is the banner's dash counts, reported above as
-evidence in its own paragraph and acted on only for the banner.
+GLYPHS.  Every label is spelled with a LETTER I -- I681, I68K1, I68K2,
+IC268 -- and "SEN0" with a DIGIT zero, while "1B"/"1C"/"1268" stay
+digits because they are the deck's test and routine NUMBERS rather
+than labels.  When this file was written the letter was house style
+for IC268 alone, carried by IC244/IC246/IC258/IC260/IC262/IC274 across
+programs/ and verify_*.py, while the body labels were written 1681 and
+168K1/2 with an "L" prefixed to make them legal for the assembler, and
+the letter-I-versus-digit-1 question was under active dispute.  It is
+no longer: docs/listing_typography.md settles it by measurement in
+favour of the letter throughout, and the names here are uniform.  The
+digit zero of SEN0 still rests on the pixel measurement
+programs/ax5b_1274_truncation.strap records for the "SIC,SEN0+.32"
+row ("has digit 0 at 45 px").  The one measurement this session did
+make is the banner's dash counts, reported above as evidence in its
+own paragraph and acted on only for the banner.
 
 THIS FILE IS AN ENCODING ORACLE ONLY.  No run was attempted: the
 session that wrote it was instructed not to invoke run_program.sh,

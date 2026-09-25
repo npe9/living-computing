@@ -86,9 +86,14 @@
 ! is not transcribed, I60B13's table is not transcribed, and X1/X6
 ! are set up by code outside this range.
 !
-! SUBSTITUTIONS: two.  (1) The deck's numeric labels (16087, 16088,
+! SUBSTITUTIONS: one, where this header used to name two.  (1)
+! RETIRED.  It used to say the deck's numeric labels (16087, 16088,
 ! 160SX1, 160S1, 160B13) are prefixed with "L" where they begin with a
 ! digit, because this assembler reads a leading digit as an address.
+! They do not begin with a digit: the glyph was measured at 600 dpi
+! and it is the LETTER I, so the deck's own I6087, I6088, I60SX1,
+! I60S1 and I60B13 are legal STRAP-1 symbols unaided and are written
+! here as the page prints them (docs/listing_typography.md).
 ! (2) The listing's "%...@" index parentheses are written "(...)",
 ! the same restoration ibox1_sic_cb_cbz.strap describes.
 

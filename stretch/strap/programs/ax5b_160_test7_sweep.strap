@@ -124,19 +124,26 @@
 ! BOUND0/BOUND1 at 023302/023303.
 !
 ! SUBSTITUTIONS, and the SYN-naming rule stated so the split does not
-! read as accidental.  Numeric labels are prefixed "L" exactly as
-! ax5b_160105_compare.strap and ax5b_160_test7_compare.strap do
-! (L160121, L16012A, L160211, L160212, L16021B, L160213, L160214,
-! L160122, plus the externals L160105, L160106, L160107, L16010A).
-! "0%$X2(0)" is written "0($X2)", as in both adjacent files.  For the
-! two symbols this page needs that the adjacent file does not, the
-! spelling is the one every OTHER file in the repo already uses --
-! LIC260 (ax5b_160_test6, _test8b, _test8c all write it that way) and
-! LBIT10 (ax5b_160_test8b writes LBIT11 / LBIT57).  SEN, SERS, SEN0
-! and SSW keep the adjacent file's unprefixed spelling.  The leading
-! glyph of IC260 is a bare vertical stroke, letter-I by this project's
-! standing HOUSE CONVENTION and not by measurement; the same caveat
-! the pp.72-73 file records for the 160xxx labels applies here.
+! read as accidental.  This paragraph used to open "numeric labels are
+! prefixed 'L' exactly as ax5b_160105_compare.strap and
+! ax5b_160_test7_compare.strap do (L160121, L16012A, L160211, L160212,
+! L16021B, L160213, L160214, L160122, plus the externals L160105,
+! L160106, L160107, L16010A)", and to close by calling the leading
+! glyph of IC260 letter-I by HOUSE CONVENTION and not by measurement.
+! Both halves have been overtaken by the same measurement: at 600 dpi
+! this chain's digit 1 carries an upper-left flag and a base serif at
+! 30-42 px while the bare stroke runs 9-18, and no name field in
+! either deck leads with the flagged glyph.  The labels are therefore
+! I60121, I6012A, I60211, I60212, I6021B, I60213, I60214, I60122,
+! I60105, I60106, I60107, I6010A and IC260 -- one reading, measured
+! rather than conventional, and all of them legal STRAP-1 symbols
+! without a prefix (docs/listing_typography.md).  The pp.72-73 file
+! records the same correction.  "0%$X2(0)" is written "0($X2)", as in
+! both adjacent files.  SEN,
+! SERS, SEN0 and SSW keep the adjacent file's spelling.  ONE "L"
+! SURVIVES and it is not a legality workaround: LBIT10 keeps the form
+! ax5b_160_test8b.strap gives the bit table (LBIT11 / LBIT57), so the
+! same constant has one name across routine 1260.
 !
 ! I60121 AND I60122 ARE *DEFINED* HERE, not SYN'd.  pp.72-73 had to
 ! assume both (I60121 SYN,(8)22461.0 and I60122 SYN,(8)22506.40);

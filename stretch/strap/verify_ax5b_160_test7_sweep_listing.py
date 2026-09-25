@@ -109,13 +109,21 @@ EVERY PRINTED LOCATION IN RANGE CARRIES MACHINE CODE.  No row on this
 page prints a location with a blank code column, so nothing here
 needed an SLC across a gap or a SYN stand-in for a fabricated word.
 
-LETTER I VERSUS DIGIT 1 IS HOUSE STYLE HERE, NOT MEASUREMENT.  The
-leading glyph of every 160xxx label and of IC260 is a bare vertical
-stroke, the same stroke this printer uses for letter I.  Reading the
-160xxx ones as digits, and IC260's as a letter, is this project's
-standing convention (ax5b_16086, ax5b_160102, ax5b_160_test6,
-_test8b, _test8c and the two adjacent TEST 7 files all do it); no new
-convention is started here.  The letter-O-versus-digit-0 width
+LETTER I VERSUS DIGIT 1 IS MEASUREMENT NOW, NOT HOUSE STYLE.  This
+docstring used to read: "the leading glyph of every 160xxx label and
+of IC260 is a bare vertical stroke, the same stroke this printer uses
+for letter I.  Reading the 160xxx ones as digits, and IC260's as a
+letter, is this project's standing convention (ax5b_16086,
+ax5b_160102, ax5b_160_test6, _test8b, _test8c and the two adjacent
+TEST 7 files all do it); no new convention is started here."  Reading
+one bare stroke two ways was the tell.  At 600 dpi this chain's digit
+1 has an upper-left flag and a base serif and measures 30-42 px; the
+bare stroke measures 9-18; the populations do not overlap across
+~16 000 glyphs, and fifteen same-row instances put both in one printed
+token.  Every one of these leads is the LETTER I -- I60121, I6012A,
+I60211, IC260 and the rest -- and the files named above carry the
+corrected spellings too (docs/listing_typography.md).  The
+letter-O-versus-digit-0 width
 calibration for this printer (50-51 px against 44-45 px at 600 dpi,
 established by verify_ax5b_160_test8b_listing.py from p.114) decides
 nothing in this block: the only O/0 ambiguity in range is SEN0, whose

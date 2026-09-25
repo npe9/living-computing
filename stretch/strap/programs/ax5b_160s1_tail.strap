@@ -95,10 +95,15 @@
 !   023035.00  "-UNABLE TO CLR EXE OR ABOVE IND."
 !   023040.00  "-UNABLE TO CLR DS OR ABOVE IND."
 !
-! SUBSTITUTIONS: three.  (1) Numeric labels prefixed "L" (L160DMP,
-! L160SX1), as the head file does.  (2) "%8@n" is written "(8)n", this
-! repo's spelling for the listing's octal-radix prefix.  (3) THE
-! RETURN ROW: the listing prints "$BD,0" and this file writes "BD,0".
+! SUBSTITUTIONS: two, and a third retired.  (1) RETIRED: this item
+! used to read "numeric labels prefixed L (L160DMP, L160SX1), as the
+! head file does."  The head file no longer does, and neither does
+! this one -- the leading glyph was measured at 600 dpi and it is the
+! LETTER I, so I60DMP and I60SX1 are legal STRAP-1 symbols as the page
+! prints them (docs/listing_typography.md).  (2) "%8@n" is written
+! "(8)n", this repo's spelling for the listing's octal-radix prefix.
+! (3) THE RETURN ROW: the listing prints "$BD,0" and this file writes
+! "BD,0".
 ! The 32 bits are identical -- both are the row's printed "0.04 00",
 ! measured, not assumed -- but what STRAP's "$" prefix on an operation
 ! MEANS is not established by any page read here; it appears only on

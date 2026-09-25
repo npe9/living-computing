@@ -100,18 +100,26 @@
 ! witness tiering in verify_ax5b_1268_test1bc_listing.py has no
 ! "label placed by the SLC" to argue about.
 !
-! GLYPHS.  "IC268" is spelled with a LETTER I and "SEN0" with a DIGIT
-! zero.  Both are HOUSE STYLE, not a measurement made here: IC244,
-! IC246, IC258, IC260, IC262 and IC274 appear with the letter across
-! programs/ and verify_*.py, and ax5b_1274_truncation.strap records a
-! pixel measurement of the "SIC,SEN0+.32" row ("has digit 0 at 45
-! px") for the digit.  Likewise "1B"/"1C"/"1268" are written with
-! digits, as every other file in this repo writes them.  No new
-! convention is started here.
+! GLYPHS.  Every label here is spelled with a LETTER I -- I681, I68K1,
+! I68K2, IC268 -- and "SEN0" with a DIGIT zero.  When this file was
+! written the letter I was house style for IC268 only, carried by the
+! IC244/IC246/IC258/IC260/IC262/IC274 spellings already in programs/
+! and verify_*.py, while I681 and I68K1/2 were written 1681 and
+! 168K1/2 with an "L" prefixed to make them legal for this assembler.
+! That reading has since been measured and is wrong: the leading glyph
+! is the letter throughout (docs/listing_typography.md), and the
+! names are now uniform.  The digit zero of SEN0 keeps the pixel
+! measurement ax5b_1274_truncation.strap records for the
+! "SIC,SEN0+.32" row ("has digit 0 at 45 px").  "1B"/"1C"/"1268"
+! remain digits -- they are the deck's test and routine NUMBERS, not
+! labels, and the rename left routine numbers decimal.
 !
-! SUBSTITUTIONS, four, all named:
-!   1. Numeric labels are prefixed "L" (L1681, L168K1, L168K2,
-!      IC268).  The listing writes them bare.
+! SUBSTITUTIONS, three, and a fourth that has been retired:
+!   1. RETIRED.  This item used to read "numeric labels are prefixed
+!      L (L1681, L168K1, L168K2, IC268); the listing writes them
+!      bare".  It came from the misreading the GLYPHS note above
+!      records, and there is no label substitution left: I681, I68K1,
+!      I68K2 and IC268 are written as the listing prints them.
 !   2. ENT1B is this file's own name for the first row.  The listing
 !      prints NO label there; STRAP's END needs one.
 !   3. SERS is a "B,$" HANG at its own printed address 001304.00, and

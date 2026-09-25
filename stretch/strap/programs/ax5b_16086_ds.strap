@@ -104,11 +104,17 @@
 ! storage_protection.strap remains the behavioural test and remains
 ! hand-written; what changes is that its rule now has a deck behind it.
 !
-! SUBSTITUTIONS: three, all of them notation, none of them semantic.
-!   1. This deck labels its blocks with NUMBERS (16086, 16086A,
-!      16086B, 16085B, 16093, 16088) and this assembler reads a
-!      leading digit as an address, so every such label is prefixed
-!      with "L".
+! SUBSTITUTIONS: two, all of them notation, none of them semantic --
+! and a third that has been retired.
+!   1. RETIRED, and the retirement is the correction.  This item used
+!      to read: the deck labels its blocks with NUMBERS (16086,
+!      16086A, 16086B, 16085B, 16093, 16088) and this assembler reads
+!      a leading digit as an address, so every such label is prefixed
+!      with "L".  The leading glyph was measured at 600 dpi and it is
+!      the LETTER I -- I6086, I6086A, I6086B, I6085B, I6093, I6088 --
+!      so the names are legal STRAP-1 symbols unaided and are written
+!      as the page prints them (docs/listing_typography.md).  The
+!      routine number in this file's name stays decimal.
 !   2. The listing's "%8@...@" radix brackets are written in this
 !      project's "(8)" form.
 !   3. The listing's "%BU,32,8@" data description is written

@@ -53,8 +53,13 @@
 ! the run as a regression guard on self-modifying execution, not as an
 ! oracle for look-ahead forwarding.
 !
-! SUBSTITUTIONS: three, all named.
-!   1. Numeric labels prefixed "L" (1681, 1682, 168K1, 168K2).
+! SUBSTITUTIONS: two, all named -- and a third that has been retired.
+!   1. RETIRED.  This item used to read "numeric labels prefixed L
+!      (1681, 1682, 168K1, 168K2)", the prefix being needed because
+!      this assembler reads a leading digit as an address.  The
+!      leading glyph was measured at 600 dpi and it is the LETTER I,
+!      so I681, I682, I68K1 and I68K2 are legal STRAP-1 symbols as
+!      the page prints them (docs/listing_typography.md).
 !   2. SERS is a "B,$" HANG at its own printed address 001304.00; the
 !      real error-report routine is not transcribed.
 !   3. A "BEW,$" exit at 024344.40, where the listing continues into

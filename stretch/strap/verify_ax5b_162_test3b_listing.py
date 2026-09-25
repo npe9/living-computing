@@ -75,12 +75,19 @@ p.108, at 600 dpi, the letter O is 50-51 px wide (the two O's of
 "-NO INTERRUPT WHEN SUBJ INST OF") and the digit 0 is 44-45 px (the
 two 0's of "BD,I62100" on this same page).  The glyph after SEN
 measures 44.  It is the DIGIT, and this file spells the symbol SEN0.
-No such measurement separates 1C262's leading glyph from a letter I:
-in this print chain the digit 1 has no flag, so "162100" and
-"INTERRUPT" begin with the same 12-14 px bare stem.  That reading
-rests on the naming scheme instead -- 1C258, 1C260, 1C262 and, on the
-separately read PDF p.110, "Z,1C268" at 024335.00 inside routine 1268
--- one continuity register per routine, named for its routine number.
+THE LEADING GLYPH DOES YIELD TO MEASUREMENT TOO, and this docstring
+used to say it did not.  It read: "No such measurement separates
+1C262's leading glyph from a letter I: in this print chain the digit 1
+has no flag, so '162100' and 'INTERRUPT' begin with the same 12-14 px
+bare stem."  The digit 1 on this chain does have an upper-left flag
+and a base serif, and measures 30-42 px against 9-18 px for the bare
+stroke, on populations that do not overlap across ~16 000 glyphs
+(docs/listing_typography.md).  So the stroke is the LETTER I and the
+symbols are IC262 and I62100.  The naming scheme -- IC258, IC260,
+IC262 and, on the separately read PDF p.110, "Z,IC268" at 024335.00
+inside routine 1268, one continuity register per routine named for its
+routine number -- still holds, now as corroboration rather than as the
+whole of the reading.
 
 TEST 3A'S FORWARD REFERENCE, CONFIRMED FIRST-HAND.  024155.40 holds
 "%8@DD%BU,32,8@,3740 -ILLEGAL OP." printing 00000003740, byte for byte

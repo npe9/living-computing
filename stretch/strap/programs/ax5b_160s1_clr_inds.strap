@@ -51,9 +51,15 @@
 ! error routine, neither transcribed -- and the point of having it is
 ! the p.71 block, which needs more besides.
 !
-! SUBSTITUTIONS: one.  Numeric labels prefixed "L" (160S1, 160DMP).
-! Every external is given by SYN at the address this block's own rows
-! print for it.
+! SUBSTITUTIONS: none, where this header used to say "one.  Numeric
+! labels prefixed L (160S1, 160DMP)."  The prefix was there because
+! this assembler reads a leading digit as an address; the leading
+! glyph was measured at 600 dpi and it is the LETTER I, so the deck's
+! I60S1 and I60DMP are legal STRAP-1 symbols as printed and are
+! written unaltered (docs/listing_typography.md -- I60S1 at ax5b
+! p.83 is one of the rows that carries the measurement, "I 12, 6 45,
+! 0 48, S 48, 1 34").  Every external is given by SYN at the address
+! this block's own rows print for it.
 
 I60DMP SYN, (8)23301.0
 SEN     SYN, (8)1310.0

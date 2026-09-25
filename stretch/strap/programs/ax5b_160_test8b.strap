@@ -127,15 +127,29 @@
 ! only 2 px outside the digit range, so it is p.114 and the comment
 ! that carry the reading, not p.75 alone.
 !
-! TWO GLYPH CAVEATS THAT CHANGE NO BIT.  The leading character of every
-! 160xxx label is a bare vertical stroke, and this printer sets digit 1
-! and letter I identically (compare "160123" with "INDX"); reading them
-! as digits is this project's standing convention, not a measurement.
-! And by the same calibration SEN0's fourth glyph measures 54 px on
-! p.114, which is letter-O territory, so the symbol may really be
-! "SENO" -- kept as LSEN0 here to match ax5b_160_test8c.strap, and
-! harmless either way since it is a SYN taken from the row that names
-! it.
+! ONE GLYPH CAVEAT THAT CHANGES NO BIT, where this header used to
+! carry two.  The one that went read: "the leading character of every
+! 160xxx label is a bare vertical stroke, and this printer sets digit
+! 1 and letter I identically (compare '160123' with 'INDX'); reading
+! them as digits is this project's standing convention, not a
+! measurement."  It is a measurement now, and it goes the other way:
+! at 600 dpi the digit 1 on this chain carries an upper-left flag and
+! a base serif and runs 30-42 px, the bare stroke runs 9-18, and the
+! two never overlap.  The labels are I60123, I60125, I60126, I60107,
+! I60S1, I60SX1, I60XW1, I60IT, I60K11, I60K17, I60AD1, I60Z1, I00O
+! and IC260 -- letter I throughout, and legal STRAP-1 symbols without
+! a prefix (docs/listing_typography.md).  LINT, LSEN0, LSSW, LBIT11
+! and LBIT57 still carry an "L" because they were prefixed for
+! UNIFORMITY with the rest of this file, not for legality: the deck
+! spells them INT, SEN0, SSW, BIT11 and BIT57, all alphabetic
+! already, and ax5b_160_test8c.strap uses the same names.
+! THE CAVEAT THAT REMAINS: by the p.114 width calibration SEN0's
+! fourth glyph measures 54 px, which is letter-O territory, so the
+! symbol may really be "SENO" -- kept as LSEN0 here to match
+! ax5b_160_test8c.strap, and harmless either way since it is a SYN
+! taken from the row that names it.  docs/listing_typography.md
+! section 6 reads that p.114 row as "SENO SYN,SEN0", at moderate
+! confidence.
 !
 ! NO CNOP IN THIS BLOCK -- unlike TEST 8C next door, nothing here is
 ! alignment-dependent, and every row is a plain half-word or the two

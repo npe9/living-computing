@@ -116,9 +116,14 @@
 ! Transcription standard: bit-exact against the printed machine code,
 ! verify_ax5b_162_test3a_listing.py.
 !
-! SUBSTITUTIONS: two.  Numeric labels prefixed "L" (L162100, L162103),
-! as ax5b_162_exic_classes.strap already does for 1262.  And the DD's
-! datum, printed "%8@DD%BU,32,8@,3740", is written "(8)3740" -- the
+! SUBSTITUTIONS: one, where this header used to name two.  The one
+! that went was "numeric labels prefixed L (L162100, L162103), as
+! ax5b_162_exic_classes.strap already does for 1262".  Neither file
+! prefixes now: the leading glyph was measured at 600 dpi and it is
+! the LETTER I, so I62100, I62103, I62ITE, I62PSI and the rest are
+! legal STRAP-1 symbols as the page prints them
+! (docs/listing_typography.md).  What remains is the DD's datum:
+! printed "%8@DD%BU,32,8@,3740", it is written "(8)3740" -- the
 ! same spelling ax5b_160k_constants.strap uses for the identical word,
 ! which carries no reason there.  The reason, measured rather than
 ! assumed: assembling this block with the operand as a bare "3740"

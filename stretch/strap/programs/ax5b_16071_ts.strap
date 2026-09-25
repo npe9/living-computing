@@ -125,10 +125,16 @@
 ! §5).  Running it is exactly what implementing the timer would make
 ! possible, which is the reason to have the oracle first.
 !
-! SUBSTITUTIONS: one, the same systematic one as the other two blocks.
-! This deck labels its blocks with NUMBERS (16071, 16093, 16088) and
-! this assembler reads a leading digit as an address, so every such
-! label is prefixed with "L".  Nothing else is changed.
+! SUBSTITUTIONS: none, where this header used to name one.  It said
+! the deck labels its blocks with NUMBERS (16071, 16093, 16088) and
+! that, since this assembler reads a leading digit as an address,
+! every such label takes an "L" prefix.  The leading glyph was
+! measured at 600 dpi and it is the LETTER I, not a digit: the deck
+! writes I6071, I6093 and I6088, which are legal STRAP-1 symbols as
+! they stand, so they are written here unaltered and nothing is
+! prefixed.  See docs/listing_typography.md.  The routine number in
+! this file's name stays decimal; only the LABELS carry the letter.
+! Nothing else is changed.
 
 ! External symbols, given by SYN at the addresses this same listing
 ! prints for them.  Every row but the CB names one, so the CB's "$"

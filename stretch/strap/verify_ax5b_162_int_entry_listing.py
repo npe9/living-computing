@@ -95,7 +95,8 @@ check, not a witness: it makes the address field come out right by
 construction, so a row naming one proves only that every OTHER field
 lands where the listing puts it.  That covers the twenty-four branch
 targets I6221...I6299 (all in 1262's body on earlier pages), I000
-(the deck's own numeric label, 024503.00), and I62INT.  Five of the
+(the deck's own label for the all-ones index word, 024503.00), and
+I62INT.  Five of the
 twenty-four are corroborated by a separately read page -- p.93's label
 column prints I6225 at 023474.40, I6226 at 023504.00, I6227 at
 023505.00, I6231 at 023516.40 and I6232 at 023517.40 -- but
@@ -152,7 +153,11 @@ is right for the branch and index classes and wrong here.  The exact
 field boundary is not re-derived for this file: what is measured is
 that the same symbol prints two different pairs.
 
-SUBSTITUTIONS: four, listed in the program file.  The load-bearing one
+SUBSTITUTIONS: three, listed in the program file, where there were
+four.  The one that went is "numeric labels prefixed L": the leading
+glyph of the deck's labels is the letter I, measured, so I62ITE,
+I62K1, I000 and the rest need no prefix (docs/listing_typography.md).
+The load-bearing one
 is that I62BR1 (024323.40) and I62BR2 (024325.00) are printed "$BD,0"
 and written "BD,0"; the 32 bits are identical -- both are the printed
 "0.04 00", measured below -- but STRAP's "$" prefix on an operation is

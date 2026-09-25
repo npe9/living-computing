@@ -129,10 +129,16 @@
 ! ticks -- which this model does not have.  That is the point: this
 ! is the acceptance test for building one.
 !
-! SUBSTITUTIONS: one, the deck's systematic one.  Labels that begin
-! with a digit (1587, 15810, 100Z, 158K1, ...) get an "L" prefix,
-! because this assembler reads a leading digit as an address.
-! Nothing else is changed.
+! SUBSTITUTIONS: none in the label names, and the "none" is a
+! correction.  This file used to read the deck's leading glyph as a
+! digit (1587, 15810, 100Z, 158K1, ...) and prefix an "L" to each,
+! because this assembler reads a leading digit as an address.  The
+! glyph was measured at 600 dpi and it is the LETTER I, which also
+! makes the names legal STRAP-1 symbols unaided (C22-6531 printed
+! p.10 requires an alphabetic first character), so the labels are
+! written as the page prints them -- I587, I5810, I00Z, I58K1, IC258,
+! ICK258 -- and nothing is prefixed.  The measurement and its scope
+! are in docs/listing_typography.md.  Nothing else is changed.
 
 ! ---------------------------------------------------------------------
 ! External symbols, SYN'd at the addresses THIS listing's own printed
@@ -171,16 +177,23 @@ SERS    SYN, (8)1304.0      ! the error-report routine
 SSW     SYN, (8)1301.0      ! the SSIP return
 I60    SYN, (8)14064.0     ! from B,160            = 14064.10 00
 !
-! SENO's spelling is not resolvable from the page.  This printer's
-! letter O and digit 0 are the same glyph -- compare the O of SENO
-! with the two zeros of I00LC in the same column on PDF p.114 -- and
-! this repository already spells it both ways (SENO in
-! programs/pau_shf0.strap, SEN0 in programs/ax5b_160105_compare.strap,
-! LSEN0 in verify_ax5b_160_test8c_listing.py).  The name is a SYN
-! either way, so nothing in this check or any injection depends on it.
-! PDF p.114's constant pool prints the symbol's own row -- "SENO
-! SYN,SENO" assembling to "1311.00+ +00000000" -- which fixes the
-! ADDRESS at 001311.00 and leaves the spelling where it was.
+! SENO's spelling is still open, but NOT for the reason this note used
+! to give.  It said "this printer's letter O and digit 0 are the same
+! glyph"; docs/listing_typography.md section 6 names that sentence and
+! measures it wrong -- letter O runs 15-22% wider than digit 0 on both
+! decks, and section 6's pairs are 55 against 45 (ax5b p.83, one
+! printed comment), 49/42 and 48/43 (ax4b p.6).  What survives is
+! weaker than a settled reading: n = 3
+! calibration pairs, so the direction is established and the magnitude
+! is within reach of ink weight and skew.  The repository already
+! spells this symbol three ways (SENO here and in programs/pau_shf0.
+! strap, SEN0 in programs/ax5b_160105_compare.strap, LSEN0 in
+! verify_ax5b_160_test8c_listing.py).  The name is a SYN in every one
+! of them, so nothing in this check or any injection depends on it.
+! PDF p.114's constant pool prints the symbol's own row -- measured
+! there as "SENO SYN,SEN0", a letter-O label aliased to a digit-zero
+! symbol, assembling to "1311.00+ +00000000" -- which fixes the
+! ADDRESS at 001311.00 and leaves this file's spelling where it was.
 
         SLC, (8)14034.0
 !

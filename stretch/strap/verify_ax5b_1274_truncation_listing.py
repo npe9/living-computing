@@ -216,19 +216,27 @@ against the page.
   That is the one semantically surprising instance and it was measured
   on its own.
 
-  A SUPPORTING ARGUMENT, not a sourced rule: these names are legal
-  STRAP symbols unaided, which is why this file needs none of the "L"
-  prefixes earlier files here apply to "160S1"/"162100".  The claim
-  behind that -- that a STRAP symbol cannot begin with a digit -- is
-  inferred from THIS repo's assembler (strap_asm reads a leading digit
-  as a number) and from the decks' own practice.  C22-6531 is in
-  docs/ but has no text layer and the symbol-formation page was not
-  located, so it is offered as corroboration of the measurement, not
-  as its basis.
+  A SOURCED RULE, where this docstring used to call it only a
+  supporting argument: these names are legal STRAP symbols unaided,
+  which is why this file needs no "L" prefix.  The paragraph said the
+  claim behind that -- that a STRAP symbol cannot begin with a digit
+  -- was inferred from THIS repo's assembler (strap_asm reads a
+  leading digit as a number) and from the decks' own practice, because
+  C22-6531 has no text layer and the symbol-formation page had not
+  been located.  It has been: printed p.10 (PDF p.11) reads "A symbol
+  is any sequence of six or fewer alphabetic and numeric characters
+  conforming to the following conditions: 1. It contains only
+  alphameric characters.  2. Its first character is specifically
+  alphabetic."  The manual grounds the reading rather than merely
+  corroborating it, and its six-character limit is what condemned the
+  "L" prefixes in the first place -- L160107 is seven characters,
+  I60107 is six.  The files that applied "L" to "160S1"/"162100" have
+  since been corrected to I60S1/I62100 (docs/listing_typography.md).
 
-  LETTER O vs DIGIT 0 -- also separable here, which CORRECTS
+  LETTER O vs DIGIT 0 -- also separable here, which CORRECTED
   programs/ax5b_1258_test2.strap's note that "This printer's letter O
-  and digit 0 are the same glyph".  The comparison that carries the
+  and digit 0 are the same glyph"; that file now records the
+  correction rather than the claim.  The comparison that carries the
   argument is WITHIN ONE ROW, 024461.00: the fourth character of
   "SIC,SEN0+.32" measures 45 px and the digit 0 of that same row's
   machine code "1311.40 80" measures 45 px.  So the symbol that row

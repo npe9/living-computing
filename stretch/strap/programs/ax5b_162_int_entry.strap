@@ -97,7 +97,14 @@
 ! and nowhere else, because the SLC across the table re-anchors what
 ! follows.  See the verify script's injection table.
 !
-! SUBSTITUTIONS: four.  (1) Numeric labels prefixed "L".  (2) "%8@n"
+! SUBSTITUTIONS: three, and a fourth retired.  (1) RETIRED: this item
+! used to read "numeric labels prefixed L", the prefix being needed
+! because this assembler reads a leading digit as an address.  The
+! leading glyph was measured at 600 dpi and it is the LETTER I, so
+! the page's own spellings -- I6221..I6299, I62B1..I62B16, I62BR1/2,
+! I62EX*, I62INT, I62ITE, I62K1..I62K6, I62PSI, I62SUB, I62XW1 and
+! I000 -- are legal STRAP-1 symbols unaided and are written as printed
+! (docs/listing_typography.md).  (2) "%8@n"
 ! -> "(8)n" and "%BU@"/"%U@" -> "(BU)"/"(U)", this repo's spellings.
 ! (3) "I62INT%$X1@" does not appear here (it is on p.93).  (4) THE
 ! "$BD,0" ROWS: I62BR1 at 024323.40 and I62BR2 at 024325.00 are

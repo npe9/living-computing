@@ -218,11 +218,18 @@
 ! Transcription standard: bit-exact against the printed machine code,
 ! verify_ax5b_162_test1cc_listing.py.
 !
-! SUBSTITUTIONS: four, all spelling, none semantic.
-!   1. Numeric labels prefixed "L" (L16225...L16240, L162B3...L162B6,
-!      L162INT, L162ITE, L162K1, L162K6, L162XW1, L160S1, L160SX1), as
-!      ax5b_162_exic_classes.strap and ax5b_162_test3a.strap already do
-!      for 1262.  BIT0, SEN and SERS need none.
+! SUBSTITUTIONS: three, all spelling, none semantic -- and a fourth
+! that has been retired.
+!   1. RETIRED.  This item used to read "numeric labels prefixed L
+!      (L16225...L16240, L162B3...L162B6, L162INT, L162ITE, L162K1,
+!      L162K6, L162XW1, L160S1, L160SX1), as ax5b_162_exic_classes.
+!      strap and ax5b_162_test3a.strap already do for 1262.  BIT0,
+!      SEN and SERS need none."  None of those files prefixes now:
+!      the leading glyph was measured at 600 dpi and it is the LETTER
+!      I, so I6225...I6240, I62B3...I62B6, I62INT, I62ITE, I62K1,
+!      I62K6, I62XW1, I60S1 and I60SX1 are legal STRAP-1 symbols as
+!      the page prints them (docs/listing_typography.md).  BIT0, SEN
+!      and SERS never needed anything and still do not.
 !   2. The listing's "%...@" pair is this assembler's "(...)":
 !      "I62INT%$X1@" is written "I62INT($X1)" and
 !      "%8@DD%BU,32,8@,3740" is written "DD(BU,32,8), (8)3740".

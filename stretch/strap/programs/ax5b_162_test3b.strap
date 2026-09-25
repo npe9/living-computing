@@ -221,25 +221,35 @@
 ! Transcription standard: bit-exact against the printed machine code,
 ! verify_ax5b_162_test3b_listing.py.
 !
-! SUBSTITUTIONS: two, the same two TEST 3A made.  Numeric labels take
-! an "L" prefix (L162100, L162104, L168), and "1C262" becomes LIC262
-! -- the same spelling ax5b_160_test8b.strap uses for "1C260" and
-! ax5b_1258_test2.strap for "1C258".  The leading glyph is a bare
-! vertical stroke and no measurement separates it from a letter I: in
-! this print chain the digit 1 has no flag, so "162100" and
-! "INTERRUPT" begin with the same 12-14 px stem at 600 dpi.  The
-! reading rests on the naming scheme -- 1C258, 1C260, 1C262 and, on
-! the separately read PDF p.110, "Z,1C268" at 024335.00 inside routine
-! 1268 -- one continuity register per routine, named for its routine
-! number.  (The neighbouring O-vs-0 question DOES yield to
-! measurement, and goes the other way: at 024163.40 the glyph after
+! SUBSTITUTIONS: one, the same one TEST 3A still makes, where this
+! header used to name two.  The one that went reads, as it stood:
+! "numeric labels take an 'L' prefix (L162100, L162104, L168), and
+! '1C262' becomes LIC262 -- the same spelling ax5b_160_test8b.strap
+! uses for '1C260' and ax5b_1258_test2.strap for '1C258'.  The leading
+! glyph is a bare vertical stroke and no measurement separates it from
+! a letter I: in this print chain the digit 1 has no flag, so '162100'
+! and 'INTERRUPT' begin with the same 12-14 px stem at 600 dpi."
+! THAT SENTENCE IS THE ONE THE MEASUREMENT OVERTURNED.  The digit 1 on
+! this chain does carry an upper-left flag and a base serif, and runs
+! 30-42 px against 9-18 px for the bare stroke; the two populations do
+! not overlap on ~16 000 measured glyphs, and same-row pairs put both
+! in one printed token.  So the stroke is the LETTER I, the labels are
+! I62100, I62104, I68 and IC262, and they are legal STRAP-1 symbols
+! without a prefix.  The naming scheme -- IC258, IC260, IC262 and, on
+! the separately read PDF p.110, "Z,IC268" at 024335.00 inside routine
+! 1268, one continuity register per routine named for its routine
+! number -- still holds; it is now corroboration rather than the whole
+! of the reading.  Evidence in docs/listing_typography.md.
+! (The neighbouring O-vs-0 question yields to measurement too, and
+! comes out the other way round -- a DIGIT, not a letter: at
+! 024163.40 the glyph after
 ! SEN is 44 px, matching the digit 0 of "BD,I62100" on this page,
 ! 44-45 px, against 50-51 px for the letter O of "-NO INTERRUPT WHEN
 ! SUBJ INST OF".  So SEN0, with the digit -- which is how
 ! ax5b_160_test8b.strap spells it and not how
-! verify_ax5b_1258_test2_listing.py's "SENO" does.)  And the DD's
-! datum, printed
-! "%8@DD%BU,32,8@,3740", is written "(8)3740": assembling it as a bare
+! verify_ax5b_1258_test2_listing.py's "SENO" does.)  The substitution
+! that remains is the DD's datum, printed
+! "%8@DD%BU,32,8@,3740" and written "(8)3740": assembling it as a bare
 ! "3740" produces 00000007234, because this assembler's default radix
 ! is DECIMAL and the listing's is octal.  The "(8)" is load-bearing.
 !

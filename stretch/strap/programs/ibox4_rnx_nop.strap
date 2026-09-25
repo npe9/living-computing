@@ -206,11 +206,20 @@
 ! nothing to run here; what a listing can settle is the BIT PATTERN,
 ! and that is what verify_ibox4_rnx_nop_listing.py settles.
 !
-! SUBSTITUTIONS: three, all mechanical.
-!   1. Digit-leading labels take an "L" prefix -- L14412..L14422,
-!      L144B1, L144B1A, L144B2, L144B2A, L144D1, L144D2, L144XW1..3,
-!      L144XWA..C, L146 -- the convention ax5b_162_test3a.strap and
-!      ax5b_162_exic_classes.strap already use.
+! SUBSTITUTIONS: two, all mechanical -- and a third that has been
+! retired.
+!   1. RETIRED.  This item used to read "digit-leading labels take an
+!      'L' prefix -- L14412..L14422, L144B1, L144B1A, L144B2,
+!      L144B2A, L144D1, L144D2, L144XW1..3, L144XWA..C, L146 -- the
+!      convention ax5b_162_test3a.strap and ax5b_162_exic_classes.
+!      strap already use."  Those labels are not digit-leading.  The
+!      glyph was measured at 600 dpi and it is the LETTER I -- the
+!      1244 row at ax4b p.90, "I4412 LX,$X15,I44XW1" (006470.00),
+!      reads I 10, 4 47, 4 49, 1 33, 2 40, letter and digit in one
+!      five-character token -- so I4412..I4422, I44B1, I44B1A, I44B2,
+!      I44B2A, I44D1, I44D2, I44XW1..3, I44XWA..C and I46 are legal
+!      STRAP-1 symbols as printed, and neither of the two files named
+!      above prefixes any more (docs/listing_typography.md).
 !   2. The listing's "$B,0" at I4416 and I4419 is written "B, 0".  The
 !      dollar prefix is the deck's mark for an opcode assembled as a
 !      patchable word (ja_ax1a's "$L%BU" and "$RNX"; 1238's I3825 does

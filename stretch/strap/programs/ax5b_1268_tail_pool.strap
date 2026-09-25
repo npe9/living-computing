@@ -382,26 +382,32 @@
 ! 600 dpi, digit 1 never below 24 px and 99% at 30+, with a flag and
 ! a base serif), so the page's true spellings are I68, I681, I683,
 ! I68ID, I68K1-3, IC268, ICK268, I74 and the banner "----I268---".
-! A repo-wide rename to those spellings is in progress SEPARATELY.
-! THIS FILE FOLLOWS THE EXISTING 1268 FILES' CURRENT HOUSE STYLE and
-! starts no third convention: "L"-prefixed symbol names in the
-! assembler source (I681, I683, I68K1, IC268, ...), bare
-! digit-leading spellings in the comments and in the verify script's
-! note column, exactly as ax5b_1681_if_close_to_ds.strap,
-! ax5b_1268_test1bc.strap and ax5b_1683_df_close_to_ds.strap do.
-! ONE EXCEPTION, taken to AVOID a third convention rather than to
-! start one: routine 1274's entry label at 024412.00 is written I74,
-! because programs/ax5b_1274_truncation.strap already defines exactly
-! that symbol at exactly that address ("SLC, (8)24412.0 / I74 LX,
-! $X1,I74ID").  Writing L174 would invent a spelling no file uses.
+! That rename has since been made repo-wide, so the page's spellings
+! and this file's are now the same thing.  THIS FILE FOLLOWS THE
+! EXISTING 1268 FILES and starts no second convention: the measured
+! letter-I names in the assembler source (I681, I683, I68K1, IC268,
+! ...) and in the comments and the verify script's note column alike,
+! exactly as ax5b_1681_if_close_to_ds.strap, ax5b_1268_test1bc.strap
+! and ax5b_1683_df_close_to_ds.strap now do.  When this file was
+! written those three carried the earlier misreading -- a digit read
+! for the letter, with an "L" prefixed to make the name legal for this
+! assembler -- and I74 at 024412.00 had to be called out as the ONE
+! exception, because programs/ax5b_1274_truncation.strap already
+! defined exactly that symbol at exactly that address ("SLC,
+! (8)24412.0 / I74 LX,$X1,I74ID") and writing L174 would have invented
+! a spelling no file uses.  It is no longer an exception; every 1268
+! file spells the routine the way the page prints it.
 ! No new glyph measurement was made in this session.
 !
 ! ====================================================================
-! SUBSTITUTIONS, five, all named:
-!   1. Numeric labels are prefixed "L" (I681, I683, I68K1, ...),
-!      because this assembler's symbol pattern is [A-Za-z][A-Za-z0-9]*
-!      and reads a leading digit as an address.  The listing writes
-!      them bare (and, per the typography measurement, with a letter).
+! SUBSTITUTIONS, four, and a fifth that has been retired:
+!   1. RETIRED.  This item used to read "numeric labels are prefixed
+!      L, because this assembler's symbol pattern is
+!      [A-Za-z][A-Za-z0-9]* and reads a leading digit as an address".
+!      The listing's own spellings -- I681, I683, I68K1, IC268, ... --
+!      satisfy that pattern unaided once the leading glyph is read as
+!      the letter it is, so there is no label substitution left; see
+!      GLYPHS above and docs/listing_typography.md.
 !   2. L1268T is this file's own name for the tail's first row.  The
 !      listing prints NO label there; STRAP's END needs one.
 !   3. SERS and SSW are "B,$" HANGS at their own printed addresses

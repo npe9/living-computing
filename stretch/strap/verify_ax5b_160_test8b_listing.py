@@ -112,13 +112,23 @@ p.75's third glyph at 49 px is only 2 px outside the digit range, so
 it is the p.114 measurement (51 against 42/42) and the "OF ONES"
 comment that carry the reading, not the p.75 pixel count alone.
 
-TWO GLYPH CAVEATS THAT CHANGE NO BIT BUT SHOULD NOT GO UNRECORDED.
-(1) The leading character of every 160xxx label on p.75 is a bare
+ONE GLYPH CAVEAT THAT CHANGES NO BIT BUT SHOULD NOT GO UNRECORDED,
+where this docstring used to carry two.  (1) IS SETTLED AND GONE.  It
+read: "the leading character of every 160xxx label on p.75 is a bare
 vertical stroke, and this chain printer sets the digit 1 and the
-letter I with the identical glyph -- compare "160123" against "INDX"
+letter I with the identical glyph -- compare '160123' against 'INDX'
 on p.114.  Reading them as digits is this project's standing
 convention (ax5b_16086, ax5b_160102, ax5b_160_test8c all do it), not a
-measurement.  (2) By the same width calibration, SEN0's fourth glyph
+measurement."  It is a measurement now: the digit 1 on this chain has
+an upper-left flag and a base serif and measures 30-42 px against
+9-18 px for the bare stroke, on populations that do not overlap over
+~16 000 glyphs, and C22-6531 printed p.10 forbids a digit-leading
+symbol outright.  The labels are I60123, I60107, I60S1, IC260 and the
+rest, and the three files named above carry the corrected spellings
+too (docs/listing_typography.md).  LINT/LSEN0/LSSW/LBIT11/LBIT57 keep
+their "L" for uniformity with the old spelling, not for legality --
+the deck writes INT, SEN0, SSW, BIT11, BIT57.  (2) THE CAVEAT THAT
+REMAINS: by the p.114 width calibration, SEN0's fourth glyph
 in its defining line on p.114 measures 54 px, which is letter-O
 territory, so the symbol may really be "SENO".  The name is kept as
 LSEN0 to match verify_ax5b_160_test8c_listing.py, and it cannot affect

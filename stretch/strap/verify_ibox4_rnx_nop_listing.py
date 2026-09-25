@@ -217,8 +217,15 @@ for each to land -- and the XW rows naming them still trace back to an
 SLC.  They are asserted below because a wrong one would silently
 mis-aim the stubs, not because they are evidence.
 
-SUBSTITUTIONS: three, all mechanical.  Digit-leading labels take an "L"
-prefix, as ax5b_162_test3a.strap already does.  The listing's "$B,0" at
+SUBSTITUTIONS: two, all mechanical, where this docstring used to name
+three.  The one that went read "digit-leading labels take an 'L'
+prefix, as ax5b_162_test3a.strap already does".  They are not
+digit-leading: measured at 600 dpi the leading glyph is the LETTER I
+(ax4b p.90's "I4412 LX,$X15,I44XW1" reads I 10, 4 47, 4 49, 1 33,
+2 40 -- letter and digit in one token), so I4412..I4422, I44D1/2,
+I44XW1..3, I46 and the rest are legal STRAP-1 symbols unaided and
+ax5b_162_test3a.strap no longer prefixes either
+(docs/listing_typography.md).  The listing's "$B,0" at
 I4416 and I4419 is written "B, 0" -- the dollar prefix is the deck's
 mark for an opcode assembled as a patchable word (ja_ax1a's "$L%BU" and
 "$RNX"; 1238's I3825 at 005537.00 does the same), and it changes no

@@ -316,19 +316,28 @@
 !   so the banner does print a letter I, as do the ident datum "I274"
 !   at 024415.00 and "-CONTINUITY REG I274." at 024470.00.
 !
-!   A SUPPORTING ARGUMENT, not a sourced rule: these names are legal
-!   STRAP symbols unaided, which is why no "L" prefix is needed here
-!   and none is used, where earlier files in this repo prefix "L" to
-!   "160S1"/"162100".  The claim behind that -- that a STRAP symbol
-!   cannot begin with a digit -- is inferred from THIS repo's
-!   assembler (strap_asm reads a leading digit as a number) and from
-!   the decks' practice.  C22-6531 is in docs/ but has no text layer
-!   and its symbol-formation page was not located, so this corroborates
-!   the measurement rather than grounding it.
+!   A SOURCED RULE, where this note used to call it only a supporting
+!   argument: these names are legal STRAP symbols unaided, which is
+!   why no "L" prefix is needed here and none is used.  The note said
+!   the claim behind that -- that a STRAP symbol cannot begin with a
+!   digit -- was inferred from THIS repo's assembler (strap_asm reads
+!   a leading digit as a number) and from the decks' practice, since
+!   C22-6531 has no text layer and its symbol-formation page had not
+!   been located.  It has been located: printed p.10 (PDF p.11) reads
+!   "A symbol is any sequence of six or fewer alphabetic and numeric
+!   characters conforming to the following conditions: 1. It contains
+!   only alphameric characters.  2. Its first character is
+!   specifically alphabetic."  The manual now GROUNDS the reading
+!   rather than corroborating it, and the same p.10 six-character
+!   limit is what condemned the "L" prefixes: L160107 is seven
+!   characters, I60107 is six.  The files that prefixed "L" to
+!   "160S1"/"162100" have since been corrected to I60S1/I62100
+!   (docs/listing_typography.md).
 !
-!   LETTER O vs DIGIT 0.  Also separable on this scan, contrary to the
-!   note in programs/ax5b_1258_test2.strap ("This printer's letter O
-!   and digit 0 are the same glyph").  The comparison that carries the
+!   LETTER O vs DIGIT 0.  Also separable on this scan, contrary to
+!   what programs/ax5b_1258_test2.strap's note used to say ("This
+!   printer's letter O and digit 0 are the same glyph"; that file now
+!   records the correction).  The comparison that carries the
 !   argument is WITHIN ONE ROW, 024461.00: "SIC,SEN0+.32"'s fourth
 !   character measures 45 px while that same row's machine code,
 !   "1311.40 80", has digit 0 at 45 px.  So it is SEN0, with a DIGIT.

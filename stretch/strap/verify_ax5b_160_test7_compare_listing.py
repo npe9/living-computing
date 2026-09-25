@@ -61,13 +61,23 @@ carries another in the same style, "-UNABLE OT CLR OP OR ABOVE IND."
 NOTHING in this block is scan damage; every garble measured is a
 cleanly formed wrong (or missing) character.
 
-LETTER I VERSUS DIGIT 1 IS NOT SEPARABLE ON THIS PRINTER.  The leading
-character of every 160xxx label here is a bare vertical stroke, the
-same stroke the printer uses for the letter I; compare "160110" with
-"INT" on the same line.  Reading them as digits is this project's
-standing house convention (ax5b_16086, ax5b_160102, ax5b_160_test8b
-all do it), NOT a measurement.  Where a measurement WAS made it is
-stated: the letter-O-versus-digit-0 calibration for this printer is
+LETTER I VERSUS DIGIT 1 IS SEPARABLE ON THIS PRINTER, and this
+docstring used to say it was not.  It read: "the leading character of
+every 160xxx label here is a bare vertical stroke, the same stroke the
+printer uses for the letter I; compare '160110' with 'INT' on the same
+line.  Reading them as digits is this project's standing house
+convention (ax5b_16086, ax5b_160102, ax5b_160_test8b all do it), NOT a
+measurement."  The observation was right and the inference backwards.
+"I60110 Z,$X13 -CLR INT 1." at 022401.40 was re-measured at 600 dpi
+for docs/listing_typography.md: the label's lead is 12 px and the I of
+INT is 15, both bare strokes -- but the label's 4th and 5th characters
+are 38 and 36 px and the comment's own trailing "1" is 36, each with
+the flag and base serif the bare stroke lacks.  The two glyphs are in
+that one printed row, and across both decks they never overlap.  So
+the labels here are I60110, I6011A, I60210 and the rest, and the three
+files named above have been corrected with this one.  The other
+measurement this block quotes is unchanged: the
+letter-O-versus-digit-0 calibration for this printer is
 50-51 px for a letter O against 44-45 px for a digit zero at 600 dpi
 (verify_ax5b_160_test8b_listing.py established it from the p.114
 constants block); nothing in THIS block turns on it, because the only

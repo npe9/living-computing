@@ -43,11 +43,17 @@
 ! 023302/023303.  Those are the harness item 1 has always needed, and
 ! this block is where the need is real rather than assumed.
 !
-! SUBSTITUTIONS: one.  Numeric labels are prefixed "L" (160105, 160106,
-! 160107, 160108, 160109, 16010A, 160110, 160111, 160122, 160IT,
-! 160XW1, 160XW3, 160K12, 160SX1, 160S1, 160AD1, 160AD3).  Nothing
-! else is changed; every external is given by SYN at the address this
-! block's own rows print for it.
+! SUBSTITUTIONS: none, and the "none" replaces one.  This header used
+! to read "numeric labels are prefixed L (160105, 160106, 160107,
+! 160108, 160109, 16010A, 160110, 160111, 160122, 160IT, 160XW1,
+! 160XW3, 160K12, 160SX1, 160S1, 160AD1, 160AD3)", the prefix being
+! needed because this assembler reads a leading digit as an address.
+! The glyph was measured at 600 dpi and it is the LETTER I, so those
+! names are I60105, I60106, ... I60AD3 as the page prints them, legal
+! STRAP-1 symbols unaided and written here unaltered
+! (docs/listing_typography.md).  Nothing else is changed; every
+! external is given by SYN at the address this block's own rows print
+! for it.
 
 I60XW1 SYN, (8)23065.0
 I60K12 SYN, (8)23055.0

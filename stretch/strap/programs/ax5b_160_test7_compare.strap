@@ -114,9 +114,16 @@
 ! interruption table I60IT at 023201.00, and BOUND0/BOUND1 at
 ! 023302/023303.
 !
-! SUBSTITUTIONS: one, the same as the p.71 file's.  Numeric labels are
-! prefixed "L" (160110, 16011A, 160210, 160111 ... 160120, plus the
-! externals 160107, 16010A, 160121, 160122, 160AD1, 160AD2, 160AD3).
+! SUBSTITUTIONS: the same as the p.71 file's, and one of them has
+! since been retired.  It read "numeric labels are prefixed 'L'
+! (160110, 16011A, 160210, 160111 ... 160120, plus the externals
+! 160107, 16010A, 160121, 160122, 160AD1, 160AD2, 160AD3)", because
+! this assembler reads a leading digit as an address.  The leading
+! glyph was measured at 600 dpi and it is the LETTER I, so those are
+! I60110, I6011A, I60210, I60111 ... I60120, I60107, I6010A, I60121,
+! I60122, I60AD1, I60AD2, I60AD3 -- legal STRAP-1 symbols as the page
+! prints them, written here unaltered (docs/listing_typography.md).
+! What remains is notation:
 ! "%8(0)777777.40" is written "(8)777777.40" and "0%$X2(0)" is written
 ! "0($X2)", exactly as ax5b_160105_compare.strap writes them.  Nothing
 ! else is changed; every external is given by SYN at the address this

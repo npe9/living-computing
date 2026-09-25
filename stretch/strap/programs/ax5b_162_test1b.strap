@@ -118,10 +118,15 @@
 ! MISC_CODES, so the ASSEMBLER encodes it; that is the whole
 ! distinction, and it is the distinction this file exists to close.
 !
-! SUBSTITUTIONS: numeric labels take an "L" prefix (L16212 ... L16217,
-! L162ITE and friends), as ax5b_162_exic_classes.strap already does for
-! 1262.  "L%BU@" is written "L(BU)", the spelling
-! programs/ax5b_160_test8b.strap uses for the identical row shape.
+! SUBSTITUTIONS: one, where this header used to name two.  It said
+! numeric labels take an "L" prefix (L16212 ... L16217, L162ITE and
+! friends), as ax5b_162_exic_classes.strap then did for 1262.  Neither
+! file does now: the leading glyph was measured at 600 dpi and it is
+! the LETTER I, so I6212 ... I6217, I62ITE, I62EX*, I62XW1 and IC262
+! are legal STRAP-1 symbols as the page prints them and take no prefix
+! (docs/listing_typography.md).  What remains is notation: "L%BU@" is
+! written "L(BU)", the spelling programs/ax5b_160_test8b.strap uses
+! for the identical row shape.
 !
 ! ONE GLYPH CAVEAT THAT CHANGES NO BIT.  The fourth character of SEN0
 ! reads as a letter O on this printer, here and on PDF p.110, so the

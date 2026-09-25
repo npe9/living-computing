@@ -107,14 +107,21 @@ an encoding here and then matched against the table as PDF p.114
 prints it: BIT1 -> 024523 ("200000.00 00 ..."), BIT17 -> 024543
 ("1.00 00 ..."), BIT18 -> 024544 ("0.40 00 ...").
 
-SENO's SPELLING IS NOT RESOLVABLE from the page: this printer draws
-letter O and digit 0 with the same glyph (compare the O of SENO with
-the zeros of I00LC in the same column on PDF p.114), and this
-repository already spells it SENO, SEN0 and LSEN0 in different files.
-p.114 prints the symbol's own row, "SENO SYN,SENO" -> "1311.00+
-+00000000", which fixes the ADDRESS at 001311.00 and settles nothing
-about the name.  Nothing in this check or any injection below depends
-on it.
+SENO's SPELLING IS STILL OPEN, but not for the reason this docstring
+used to give.  It said the printer draws letter O and digit 0 with the
+same glyph; docs/listing_typography.md section 6 names that claim and
+measures it wrong -- letter O runs 15-22% wider than digit 0 on both
+decks, its three calibration pairs being 55 against 45 (ax5b p.83,
+within one printed comment), 49/42 and 48/43 (ax4b p.6).  The result
+is a direction rather than a reading: n = 3, within reach of ink
+weight and skew.  The repository still spells the symbol SENO, SEN0
+and LSEN0 in different files.  p.114 prints its own row, measured
+there as "SENO SYN,SEN0" -> "1311.00+ +00000000": a label and an
+operand that must be DIFFERENT spellings, since a symbol defined as
+itself could not have produced that printed value, with the width
+measurement deciding which is which.  Either way the row fixes the
+ADDRESS at 001311.00.  Nothing in this check or any injection below
+depends on the name.
 
 THERE IS NO CNOP IN THIS RANGE.  The routine's one CNOP is at
 014004.40, in the 158 preamble on PDF p.5, outside the transcript.
