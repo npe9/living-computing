@@ -1,0 +1,231 @@
+! jb_ax5b "I-Box 5", routine 1260 TEST 7's COMPARISON test -- the
+! REMAINDER of the block programs/ax5b_160105_compare.strap starts.
+! PDF pp.72-73, octal 022401.40-022460.40, 92 rows, transcribed
+! VERBATIM at the listing's own addresses and checked bit-exactly by
+! verify_ax5b_160_test7_compare_listing.py.  (This deck's listing pages
+! carry NO printed page numbers; cite PDF pages only.)
+!
+! WHY THIS FILE EXISTS AND NOT A SECOND COPY OF p.71.  The task that
+! commissioned this transcription named PDF p.71 as the target.  p.71
+! is ALREADY in the repo, complete and green: ax5b_160105_compare.strap
+! covers 022346.40-022401.00, every row, and
+! verify_ax5b_160105_listing.py prints ALL TESTS PASSED for it --
+! including the two rows the task quoted as evidence the block was
+! untouched, 022371.40 "16010A BD,$+.32  -ALL INTRPTS EXCEPT AD ENTER
+! HERE." and 022372.00 "160107 BD,$+.32  -AD INTRPTS ENTER HERE."
+! Re-transcribing it under a second name would put two files on one
+! octal range.  So this file takes the UNCOVERED remainder instead,
+! which is also where the interesting part is: p.71 sets the bounds and
+! fetches; pp.72-73 are where the COMPARISON's verdict is checked and
+! where every error message lives.
+!
+! WHAT IT PROVES, and it is the deck's own oracle for the half-open
+! interval.  The driver on p.71 plants LB = L and UB = L+2 and fetches
+! from UB itself with the boundary control bit ONE (signal OUTSIDE),
+! expecting a signal.  This file's first half then fetches from UB-1,
+! same control bit, and demands NO signal:
+!
+!     022410.40  BZDFZ,160111        <- branch on DF OFF is the OK path
+!     022411.00  SIC,SEN   -FETCH FROM UB-1, BC 1,
+!     022411.40  B,SERS    -CAUSES DF TO BE SET.
+!
+! UB signals, UB-1 does not, under one and the same control bit.  That
+! pair is exactly "up to, but NOT INCLUDING, the address in the upper
+! boundary register" (Reference Manual C22-6530-2, printed p.31), and
+! it spans this file and the committed one.
+!
+! THE SECOND HALF IS THE LOWER EDGE, still BC 1: fetch from LB-1 and
+! demand a signal.
+!
+!     022431.00  160114 BDFZ,160115  <- branch on DF ON is the OK path
+!     022431.40  LX,$X15,3.0  -LB COMP FAILED. FETCH FROM LB-1
+!     022432.00  SIC,SEN      -FAILS TO SET DF. IX 15 CONTAINS
+!     022432.40  B,SERS       -LOCN 3.0 AT TIME OF FITCH.
+!
+! THE p.73 HALF FLIPS THE CONTROL BIT.  Everything on p.72 transmits
+! BOUND1 (the word with BIT57 set) into location 3; p.73's
+! "TI,1,BOUND0,3.0" at 022442.40 transmits BOUND0 (bit 57 clear) and
+! fetches from between the two bounds -- "-FETCH FRM LB+1, UB-1, BC IS
+! 0." -- demanding a signal.  So the transcribed range witnesses BOTH
+! arms of the control-bit ternary, not one.
+!
+! BRANCH POLARITY, stated once so it cannot be read backwards: B<IND>
+! branches when the indicator is ON, BZ<IND> when it is OFF, a trailing
+! Z clears it.  In every check here the BRANCH is the OK path and the
+! FALL-THROUGH is the SIC,SEN / B,SERS error pair, and the error text
+! names the ANOMALY, not the requirement.  "-CAUSES DF TO BE SET." is
+! printed on the path taken when DF WAS set and should not have been.
+!
+! THE ERROR MESSAGES AND HEADINGS, verbatim with their octal locations
+! (read at 600 dpi; see the verify script for the glyph measurements):
+!
+!   022401.40  -CLR INT 1.
+!   022406.00  -RESTORE MY INT.
+!   022407.00  -FETCH FROM UB-1, BC IS 1.
+!   022410.00  -RESTORE SSIP INT.
+!   022411.00  -FETCH FROM UB-1, BC 1,
+!   022411.40  -CAUSES DF TO BE SET.
+!   022412.40  -FETCH FROM UB-1, BC 1,
+!   022413.00  -CAUSES AD INTERRUPT.
+!   022413.40  -RESTORE SSIP INT.
+!   022422.00  -FETCH FROM LB-1, BC IS 1.
+!   022424.40  -DID WE INTRPT LAST TIME THRU.
+!   022426.00  -INTERRUPTED TWICE ON A FETCH BELOW
+!   022426.40  -LB,IX 15 CONTAINS CONTENTS OF
+!   022427.00  -LOCN 3.0 AT TIME OF FETCH.
+!   022430.00  -AD INTERRUPT ONCE ON FETCH
+!   022430.40  -BELOW LB.
+!   022431.40  -LB COMP FAILED. FETCH FROM LB-1
+!   022432.00  -FAILS TO SET DF. IX 15 CONTAINS
+!   022432.40  -LOCN 3.0 AT TIME OF FITCH.
+!   022434.40  -TO SSIP
+!   022435.40  -CLR INT 2.
+!   022444.40  -FETCH FRM LB+1, UB-1, BC IS 0.
+!   022447.00  -DID WE INTRPT LAST TIME THRU.
+!   022450.40  -INTERRUPTED TWICE ON A FETCH BETWEEN
+!   022451.00  -UB AND LB, IX 15 CONTAINS CONTENTS OF
+!   022451.40  -LOCN 3.0 AT TIME OF FETCH.
+!   022452.40  -AD INTERRUPT ONCE ON FETCH
+!   022453.00  -BETWEEN UB AND LB.
+!   022454.00  -BETWEEN UB AND LB COMP FAILED. FETCH
+!   022454.40  -BETWEEN THE TWO FAILS TO SET DF. IX 15
+!   022455.00  -CONTAINS LOCN 3.0 AT TIME OF FETCH.
+!   022457.00  -TO SSIP.
+!   022457.40  -TERMINATE.
+!   022460.00  -CLR INT 3.
+!
+! "FITCH" at 022432.40 is the deck's, not the scan's -- the glyph is a
+! clean bare stroke, identical to the I in "TIME" three words earlier,
+! and the SAME message spells "FETCH FROM LB-1" correctly one line
+! above.  "FRM" at 022444.40 is likewise the deck's.  Note also
+! "-TO SSIP" at 022434.40 with NO period where 022457.00 has one.
+!
+! ONE ROW LOOKS LIKE A BUG IN IBM'S OWN DIAGNOSTIC.  At 022452.40 the
+! deck writes "SV,$X14,160AD3" where its two parallel blocks write
+! $X13 (022430.00 "SV,$X13,160AD2", 022460.40 "SV,$X13,160AD3"), and
+! the printed machine code agrees with the source: 23064.35 30 against
+! 23063.73 30 / 23064.33 30, an index field of 14 against 13.  The row
+! is transcribed AS PRINTED.  Whether it is a typo that survived into
+! the shipped deck is not decidable from this page; the observation is
+! that the bits and the letters agree.
+!
+! ENCODING ONLY, same reason as the p.71 half: the block cannot run
+! without SSIP's save/restore at 001301/001304/001310/001311, the
+! interruption table 160IT at 023201.00, and BOUND0/BOUND1 at
+! 023302/023303.
+!
+! SUBSTITUTIONS: one, the same as the p.71 file's.  Numeric labels are
+! prefixed "L" (160110, 16011A, 160210, 160111 ... 160120, plus the
+! externals 160107, 16010A, 160121, 160122, 160AD1, 160AD2, 160AD3).
+! "%8(0)777777.40" is written "(8)777777.40" and "0%$X2(0)" is written
+! "0($X2)", exactly as ax5b_160105_compare.strap writes them.  Nothing
+! else is changed; every external is given by SYN at the address this
+! block's own rows print for it.
+
+L160107 SYN, (8)22372.0
+L16010A SYN, (8)22371.40
+L160121 SYN, (8)22461.0
+L160122 SYN, (8)22506.40
+L160AD1 SYN, (8)23063.0
+L160AD2 SYN, (8)23063.40
+L160AD3 SYN, (8)23064.0
+BOUND0  SYN, (8)23302.0
+BOUND1  SYN, (8)23303.0
+SEN     SYN, (8)1310.0
+SERS    SYN, (8)1304.0
+SEN0    SYN, (8)1311.0
+SSW     SYN, (8)1301.0
+        SLC, (8)22401.40
+L160110 Z,   $X13                ! -CLR INT 1.
+        SV,  $X13, L160AD1
+        TI,  1, BOUND1, 3.0
+        LVI, $X13, L160210
+        SVA, $X13, L160107
+        LVI, $X3, L16011A
+        SVA, $X3, L16010A
+        V-I, $X2, 1.0
+        SR,  $X1, $IA            ! -RESTORE MY INT.
+        BE,  $+.32
+        LX,  $X13, 0($X2)        ! -FETCH FROM UB-1, BC IS 1.
+L16011A BD,  $+.32
+        SV,  $X1, $IA            ! -RESTORE SSIP INT.
+        BZDFZ, L160111
+        SIC, SEN                 ! -FETCH FROM UB-1, BC 1,
+        B,   SERS                ! -CAUSES DF TO BE SET.
+        B,   L160111
+L160210 SIC, SEN                 ! -FETCH FROM UB-1, BC 1,
+        B,   SERS                ! -CAUSES AD INTERRUPT.
+        SV,  $X1, $IA            ! -RESTORE SSIP INT.
+L160111 LVI, $X13, L160112
+        SVA, $X13, L160107
+        LVI, $X3, L160114
+        SVA, $X3, L16010A
+        BDFZ, $+.32
+        Z,   $MASK
+        Z,   $IND
+        TI,  1, BOUND1, 3.0
+        V-I, $X2, 2.0
+        SR,  $X1, $IA
+        BE,  $+.32
+        LX,  $X13, 0($X2)        ! -FETCH FROM LB-1, BC IS 1.
+        BD,  $+.32
+        SV,  $X1, $IA
+        BD,  L160114
+L160112 SV,  $X1, $IA
+        LV,  $X13, L160AD2       ! -DID WE INTRPT LAST TIME THRU.
+        BXVZ, L160113
+        LX,  $X15, 3.0
+        SIC, SEN                 ! -INTERRUPTED TWICE ON A FETCH BELOW
+        B,   SERS                ! -LB,IX 15 CONTAINS CONTENTS OF
+        B,   L160122             ! -LOCN 3.0 AT TIME OF FETCH.
+L160113 V+I, $X13, (8)777777.40
+        SV,  $X13, L160AD2       ! -AD INTERRUPT ONCE ON FETCH
+        B,   L160116             ! -BELOW LB.
+L160114 BDFZ, L160115
+        LX,  $X15, 3.0           ! -LB COMP FAILED. FETCH FROM LB-1
+        SIC, SEN                 ! -FAILS TO SET DF. IX 15 CONTAINS
+        B,   SERS                ! -LOCN 3.0 AT TIME OF FITCH.
+        B,   $+1.0
+        BD,  L160111
+        SIC, SEN0+.32
+        B,   SSW                 ! -TO SSIP
+        BD,  L160122
+L160115 Z,   $X13                ! -CLR INT 2.
+        SV,  $X13, L160AD2
+L160116 LVI, $X13, L160117
+        SVA, $X13, L160107
+        LVI, $X3, L160119
+        SVA, $X3, L16010A
+        BDFZ, $+.32
+        Z,   $MASK
+        Z,   $IND
+        SR,  $X1, $IA
+        TI,  1, BOUND0, 3.0
+        V+I, $X2, 2.0
+        BE,  $+.32
+        LX,  $X13, 0($X2)        ! -FETCH FRM LB+1, UB-1, BC IS 0.
+        BD,  $+.32
+        SV,  $X1, $IA
+        BD,  L160119
+L160117 SV,  $X1, $IA
+        LV,  $X13, L160AD3       ! -DID WE INTRPT LAST TIME THRU.
+        BXVZ, L160118
+        LX,  $X15, 3.0
+        SIC, SEN                 ! -INTERRUPTED TWICE ON A FETCH BETWEEN
+        B,   SERS                ! -UB AND LB, IX 15 CONTAINS CONTENTS OF
+        B,   L160122             ! -LOCN 3.0 AT TIME OF FETCH.
+L160118 V+I, $X13, (8)777777.40
+        SV,  $X14, L160AD3       ! -AD INTERRUPT ONCE ON FETCH
+        B,   L160121             ! -BETWEEN UB AND LB.
+L160119 BDFZ, L160120
+        LX,  $X15, 3.0           ! -BETWEEN UB AND LB COMP FAILED. FETCH
+        SIC, SEN                 ! -BETWEEN THE TWO FAILS TO SET DF. IX 15
+        B,   SERS                ! -CONTAINS LOCN 3.0 AT TIME OF FETCH.
+        B,   $+1.0
+        BD,  L160116
+        SIC, SEN0+.32
+        B,   SSW                 ! -TO SSIP.
+        B,   L160122             ! -TERMINATE.
+L160120 Z,   $X13                ! -CLR INT 3.
+        SV,  $X13, L160AD3
+        END, L160110

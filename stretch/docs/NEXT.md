@@ -1127,6 +1127,27 @@ effect is CLEARING AD. Two causes, two indicators, no arbitration. Not
 a witness. (The same "branch that goes nowhere, written for its
 clearing side effect" idiom appears at 8B's 022517.00.)
 
+### TWO CORROBORATIONS OF COMMITTED MODEL CODE, found while verifying something else
+
+Both read first-hand at 300 dpi, both worth adding to
+`bsv/StretchExecute.bsv` next time that file is open (it was owned by
+other work when they were found, which is the only reason they are
+parked here):
+
+**The interrupt-entry IF exemption has a SECOND, more explicit source.**
+`execute()`'s `atIntAddr` gate currently cites printed p.32 class 1,
+which states the rule as an exception clause. Printed p.48 states it
+outright, in its own sentence: *"The instruction fetch indicator (IF)
+cannot be turned on when this instruction is fetched even though it
+might lie in the protected area of core storage."* That is a better
+citation than the one in the file.
+
+**`ifViolates`'s `a >= 32` gate is sourced twice too.** Printed p.50,
+under EXECUTE: *"An effective address of EXECUTE that is below 32.00
+(including addresses between 1.00 and 3.32) is not monitored by the
+address monitoring mechanism; that is, indicator IF cannot be actuated
+by these addresses."*
+
 ### A free cross-check, and one difference
 
 Reading the indicator names off routine 1260's four 48-entry error
@@ -1138,45 +1159,61 @@ there if anyone is in the file.
 ## 6. Open questions — record, do not guess
 
 **What is the `-ILLEGAL OP.` word doing in routine 1262's TEST 3A and
-3B?** NEW as of 2026-09-24, and it is a *sharper* open question than
-the one it replaces, which is the point of recording it.
+3B?** ASKED AND ANSWERED on 2026-09-24, within hours, and it is kept
+here because *how* it closed is reusable.
 
-What the word IS is now settled, by TEST 1CC (PDF pp.93-94). It is an
-**enable-state probe**: an operation-code-invalid word actuates OP,
-indicator 15, and mask bits 0-19 are permanently one
-(`StretchTypes.bsv` gives `ind_OP = 15`), so executing one interrupts
-**iff the interruption system is enabled**. 1CC uses the identical word
-twice in opposite polarities and its error text pins both directions —
-*"-SYSTEM ENABLED AFTER EX OF / -A BE INSTRUCTION."* where it must not
-interrupt, *"-SYSTEM DISABLED AFTER EX OF / -A BD INSTRUCTION."* where
-it must. That is a deck oracle, not a guess.
+**The answer: it is a higher-priority DECOY that protects AD.** Not a
+probe, which is what it is in TEST 1CC. Three primary-source steps,
+each verified first-hand at 300 dpi:
 
-**But the probe reading contradicts TEST 3B**, and the contradiction is
-the finding. In 3B (p.108) the word sits at 024155.40, between `Z,$X1`
-and the `EXIC` under test at 024156.00. The OK path out of that EXIC is
-an INTERRUPT — that is what makes 024156.40's fall-through the error
-*"-NO INTERRUPT WHEN SUBJ INST OF / -EXIC LESS THAN 32."* and what the
-`SVA` at 024154.40 plants `L162104` for. So the system must be ENABLED
-at 024156.00. If it is also enabled one half-word earlier, the probe
-interrupts FIRST, vectors to that same `L162104` (024157.40), and
-arrives with OP set and AD clear — so the `BADZ` there falls through to
-*"-AD NOT SET..."* and the EXIC under test never runs. The block could
-not pass, and it presumably did.
+1. **The block runs DISABLED.** 1260's `160S1` clear-indicators
+   subroutine returns via `160SX1 $BD,0` at 023041.00 (PDF p.85) —
+   a BRANCH DISABLED whose address the caller's `SIC` plants. Printed
+   p.41: `SIC` stores the instruction counter into bits 0-18 and
+   *"Other bits of the half-word are not disturbed"*. Printed p.40:
+   *"Branch Disabled (BD). This operation disables the interruption
+   mechanism, and then performs the same operation as BRANCH."* No
+   `BE` exists anywhere in `160S1`.
+2. **An execution operation interrupts anyway.** Printed p.50, verbatim:
+   *"Second, at the completion, termination, or suppression of an
+   execution operation, interruption is always permitted."* Its
+   PROGRAMMING NOTE goes further and describes the deck's own follow-up
+   test in advance: *"...it is caused only by the actuated indicator of
+   highest priority whose mask bit is one... **Examination for other
+   actuated indicators can be programmed into the correction
+   routine.**"*
+3. **The interrupt CONSUMES the indicator it vectors on.** Printed
+   p.48, verbatim: *"a mechanism develops the number of the leftmost
+   actuated indicator whose mask bit is one. **After this leftmost
+   indicator has been turned off**, the developed number is added to
+   the contents of the interruption address register."*
 
-Candidates, none checked: (a) the call into 1260's `160S1`
-clear-indicators subroutine at 024152.40-024153.00 returns DISABLED and
-something re-enables before the EXIC; (b) `162ITE`'s landing half is a
-`BD`, so a first interrupt disables and the probe is a deliberate
-ARMING step rather than a probe; (c) the word is somehow not executed,
-which would need a rule about data words in the instruction stream that
-no page states. **Named next step, so this does not rot into a vague
-item: transcribe `160S1` (022741.00-023041.00, PDF pp.83-85) and
-`162ITE` (024320.00, p.109).** Neither is transcribed; more inference
-from the rows already read will not settle it.
+OP is 15, AD is 16. Without the word, the interruption would consume AD
+and the `BADZ` would find it off — a spurious *"-AD NOT SET..."*. With
+it, OP outranks AD, OP is consumed, and AD survives to be tested. The
+deck exercises the p.50 rule independently at block `16225` (p.93),
+which is called with `BD`, never enables, and whose OK path is an
+interruption taken while provably disabled.
+
+**Two things worth carrying forward.**
+
+*The named next step worked; the candidate list did not.* The earlier
+version of this item listed three candidate resolutions and named the
+two untranscribed pages that would decide it. Reading the named pages
+settled it in one pass. **The answer was none of the three candidates.**
+Candidates are a way of showing a question is tractable — not a menu
+the answer comes from — and listing them risks anchoring the search on
+a wrong frame. Name the *evidence* that would decide it, and go read it.
+
+*Two readings of one word were both right.* 1CC uses the identical
+word as a pure enable-state probe; 3A and 3B use it as a decoy. Nothing
+was in conflict — what the word does depends on whether an execution
+operation follows it. The instinct to treat the contradiction as "one
+of these must be wrong" would have thrown away a correct reading.
 
 Recorded in `programs/ax5b_162_test3b.strap` at length and
-cross-referenced from `ax5b_162_test3a.strap`, which previously carried
-the row as simply unexplained.
+cross-referenced from `ax5b_162_test3a.strap`, where the row is now
+marked LOAD-BEARING: it looks removable and is not.
 
 
 **Does `refillLegal` apply to refills other than `R`/`RCZ`?** STILL
@@ -1303,6 +1340,22 @@ printed page numbers.
   counter, so growing code silently overruns its own constants.
 * Compute octal addresses with a helper. Every one written by eye in
   this project has been wrong.
+* **"THAT IS NOT TRANSCRIBED YET" IS A CLAIM, AND IT NEEDS A GREP.**
+  Twice in one session I handed out work whose premise was that a block
+  was untranscribed, and twice it already was. `160S1` — the brief said
+  it was missing; its HEAD had been committed for days
+  (`ax5b_160s1_clr_inds.strap`, pp.83-84) and only the tail was open.
+  TEST 7's comparison test at PDF p.71 — the brief named it as the
+  target and quoted two of its rows as evidence it was untouched; the
+  whole page was already in `ax5b_160105_compare.strap` and already
+  green, *including those two rows*. Both times the agent caught it and
+  redirected to the genuinely uncovered range, so nothing was wasted —
+  but that was their care, not my planning, and a less careful one
+  would have produced a second file over the same octal range. **Before
+  writing a brief that says a block is new, grep the verify files for
+  its octal addresses.** One command. The quoted-row case is the sharper
+  lesson: I cited specific rows as proof of absence without searching
+  for those rows.
 * **A 2-UP SCAN MEANS "WHAT IS ON PDF PAGE N" HAS TWO ANSWERS**, and
   finding one of them looks exactly like finding the answer. A report
   cited "`jb_ax4b`'s routine index at PDF p.2". I rendered p.2, saw

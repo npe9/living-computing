@@ -3,6 +3,15 @@
 ! octal 022741.00-023021.00, transcribed VERBATIM at the listing's own
 ! addresses and checked bit-exactly by verify_ax5b_160s1_listing.py.
 !
+! THIS FILE IS THE HEAD ONLY, 022741.00-023021.00 (PDF pp.83-84).  The
+! TAIL, 023021.40-023041.00 on p.85, is programs/ax5b_160s1_tail.strap
+! -- and it holds the row that matters most in the whole subroutine:
+! the RETURN, "160SX1 $BD,0" at 023041.00.  160S1 returns via a BRANCH
+! DISABLED, so every block that calls "SIC,160SX1 / B,160S1" runs
+! DISABLED afterwards unless it enables for itself.  That fact settled
+! an open question about routine 1262's TEST 3A/3B; see
+! programs/ax5b_162_test3b.strap.  Read the two files together.
+
 ! THIS IS THE ROUTINE docs/NEXT.md MYTHOLOGISED.  The file opened with
 ! "Prerequisite: SSIP's 160S1/160SX1 save/restore harness, reported at
 ! ax5b pp.41-44.  Nothing from 1260 can run without it."  Every clause

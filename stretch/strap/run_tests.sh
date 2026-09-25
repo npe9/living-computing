@@ -2951,6 +2951,65 @@ run "IBOX-4 R from external memory (two sequential reads)" ./run_program.sh prog
 
 run "IBOX-4 refill address gate (jb_ax4b, encoding)" python3 verify_ibox4_refill_nop_listing.py
 run "IBOX-4 routine 1244: RNX's refill-address NOP gate (jb_ax4b PDF pp.90-98)" python3 verify_ibox4_rnx_nop_listing.py
+run "IBOX-4 routine 1246: TRANSMIT and SWAP (jb_ax4b PDF pp.99-100, 112-113)" python3 verify_ax4b_1246_transmit_swap_listing.py
+# THE FIRST LISTING WITNESS FOR PLAIN **T** AND FOR **SWAP** IN THIS
+# REPO.  Before this block, opcodes.TRANSMIT_CODES said so itself --
+# "WITNESSED: only TI ... The other seven are from the card alone and
+# have no listing row in this project yet."  T gains 3 rows, SWAP 1.
+# Five of the eight (TB, TBI, SWAPI, SWAPB, SWAPBI) remain card-only.
+#
+# AND THE PAIR IS THE BEST-CONTROLLED ONE THIS PROJECT HAS:
+#
+#   007374.40  T,   $X1,I46D1,I46D4   7424.00 80 007427.02 20
+#   007405.00  SWAP,$X1,I46D1,I46D4   7424.00 80 007427.02 60
+#
+# Same J, same A1, same A2, same indices -- ONE printed hex digit
+# apart, and that digit is IBM bit 57.  Stronger than the RNX pair
+# above, where the two rows also differ in their operands.  Reference
+# Manual printed p.30: "The choice between unidirectional and
+# bidirectional transmission is specified by modifier bit 57.  A zero
+# specifies unidirectional transmission; a one specifies bidirectional
+# transmission."
+#
+# 119 checks over 102 rows in four blocks: preamble (p.99), TEST 1A
+# EXT-MEM-to-EXT-MEM (p.100), TEST 2C the transmit/swap modifier bit
+# (p.112), and the constants.  The transcriber took 2C rather than the
+# adjacent 1B-1I DELIBERATELY and said why: 2C is the only place in the
+# routine where SWAP appears at all, and 1B is a near-clone of 1A that
+# "adds rows, not kinds."  Next block if anyone continues: TEST 1B at
+# 006772.00, PDF p.101.
+#
+# ONE MEASURED NULL with its arithmetic: masking enc_transmit's A2
+# field to clear bit 50 (the A2 half-word select) changes NOTHING.  All
+# four T/SWAP rows name word-aligned constants, so bit 50 is already
+# zero, and only a Transmit with an ODD-HALF-WORD A2 could catch it --
+# routine 1246 has none.
+#
+# A NEGATIVE ON THE TWO SWAP CLAIMS, which is what this block was
+# partly sent to look for.  Reference Manual printed p.51 says a SWAP
+# against a protected address actuates BOTH DS and DF, and printed p.43
+# Figure 11's footnote S says suppression does not apply "during EX,
+# EXIC, T, and SWAP" -- both verified verbatim here.  This deck is
+# evidence for NEITHER: the banner names no protection, bounds or
+# indicator clause, TEST 2C touches two ordinary words in the routine's
+# own constant block, no DS/DF/IF is branched on anywhere in range, and
+# the deck runs with interrupts disabled.  That is consistent with the
+# wider finding in docs/NEXT.md 5b -- the actuation-priority rule has
+# no deck oracle anywhere.
+#
+# Six injections, observed, aimed at the modifier bits because that is
+# what the block is about:
+#   TRANSMIT_CODES["SWAP"] -> T's code     1 row (hex 60->20, and the
+#       row then prints IDENTICALLY to the T row above it)
+#   TRANSMIT_CODES["T"] -> SWAP's          3 rows (hex 20->60)
+#   TRANSMIT_CODES["T"] bit 56             3 rows (hex 20->A0)
+#   TRANSMIT_CODES["T"] bit 55             3 rows -- OCTAL PAIR moves
+#       02->03, hex byte unchanged.  Three injections on one mnemonic,
+#       three different printed effects.
+#   DIR_INDEX_CODES["KC"] -> KV's          1 row, and it collides
+#       EXACTLY with the KV row three lines up.
+#   enc_transmit A1 (bitaddr24 >> 5)       4 rows, every digit
+
 # A SECOND REFILL-ADDRESS NO-OP RULE, over a DIFFERENT range from the
 # 1-15 rule the block above establishes for R/RCZ -- and the affirmative
 # evidence this project uses against closing the refillLegal question
@@ -3591,6 +3650,70 @@ run "BEW and SIC-BEW, bit-exact (ja_ax1a p.58)" python3 verify_ax1a_bew_listing.
 # leaves the .pyc newer than its source.  The tell was a restored tree
 # that still failed while "git diff" showed nothing.
 
+run "I-Box 5 routine 1260 TEST 6: the free instruction and the I-Box indicators (jb_ax5b PDF pp.61-64)" python3 verify_ax5b_160_test6_listing.py
+# THE LARGEST SINGLE TRANSCRIPTION IN THIS REPO: 159 rows, 182
+# half-words, 022062.00-022214.40, one unbroken run, TEST 6 header to
+# continuity update.  Header: "-TEST 6 CHKS THAT FREE INSTRUCTION / -IS
+# IN FACT FREE, AND THAT I-BOX / -INDS SET ONLY CORRECT INDS."
+#
+# ITS FIRST OUTPUT LINE IS A TILING ASSERTION, "TILING OK: 159 rows,
+# 182 half-words", and that is not decoration.  check_rows reads each
+# listed location independently, so it would never notice a MISSING
+# row.  At this size that matters more than at twenty.
+#
+# THE MEASURED NULL IS THE MOST VALUABLE THING IN THE BLOCK.  Injecting
+# INDICATOR_BITS["XCZ"] 48 -> 49 fails ZERO rows.  The reason is
+# arithmetic: XCZ, XVLZ, XVZ, XVGZ, XL and XH never reach the encoder
+# here at all -- they appear only inside hand-written octal immediates
+# on the KVI rows, which the assembler takes as literals.  The only
+# index indicator this block ENCODES is XE, on its BXE/BZXE rows.
+#
+# SO A TEST WHOSE WHOLE SUBJECT IS SEVEN INDEX INDICATORS IS A LISTING
+# WITNESS FOR THE NUMBERING OF EXACTLY ONE OF THEM.  The other six rest
+# on Figure 11 (printed p.43), not on these pages.  Anyone tempted to
+# call 159 green rows broad coverage of the index indicators should read
+# that sentence first; it is the caveat the transcriber most wanted
+# carried forward, and no amount of row count substitutes for it.
+#
+# Seven injections, observed.  The two bit-18 mask injections are
+# deliberately tiny and that IS the design: only rows whose branch
+# target is a ".40" half-word can move, and almost everything here aims
+# at ".00" or carries address 0 (the NOPs).
+#   DIR_INDEX_CODES["SR"] bit 23        16 rows (octal pair)
+#   MISC_CODES["NOP"] 0b110 -> 0b010    27 rows -- every NOP
+#   branch-on-indicator addr19 & ~1      1 row
+#   uncond-branch/misc addr19 & ~1       2 rows
+#   INDICATOR_BITS["XE"] 53 -> 52       15 rows, HEX BYTE ONLY; the
+#       octal pair does not move at all
+#   IMM_INDEX_CODES["KVI"] 0100 -> 0101 15 rows -- every KVI
+#   INDICATOR_BITS["XCZ"] 48 -> 49       MEASURED NULL, see above
+#
+# THE DECK'S OWN SPELLINGS ARE KEPT, all read at 600 dpi: "-XVGV" at
+# 022123.00 where the error two rows later says "-XVGZ NOT SET
+# CORRECTLY."; "XVD" at 022135.00, which is not an indicator at all
+# (XVZ is meant); and "-XL AND XH NOT CLRD OK" at 022203.00, the only
+# message in the block with no terminal period.
+#
+# TWO CLEAR-GROUP COMMENTS UNDERSTATE THEIR OWN CONSTANT: "-CLR XVLZ
+# AND XVZ." (617777) and "-CLR XVLZ AND XVGZ." (627777) both also have
+# bit 2 clear, i.e. XCZ cleared too.  The constants are right for the
+# hardware; the comments just do not list it.
+#
+# THE NOPS ARE CONJECTURE AND LABELLED AS SUCH.  Most groups put two
+# between the SR and the KVI; two groups have none; and nothing a NOP
+# can do could change what the KVI reads (printed p.40: NO OPERATION's
+# "address and index fields are not interpreted, so they cannot cause
+# any indicators to be actuated").  That they are the "free instruction
+# ... in fact free" of the header is a plausible reading, not a sourced
+# one, and the two groups without them show they are not structurally
+# required.
+#
+# The transcriber cut ELEVEN SOURCE LINES EARLIER than asked, at 16096
+# rather than 16098, and gave the reason: cut at 16098 the block
+# contains NO label reference that is not a SYN -- zero genuine internal
+# address witnesses.  Extending back buys two real ones, a forward
+# reference 18 half-words long and a backward one 175 half-words long.
+
 run "I-Box 5 routine 1260 TEST 8B: DS disabled/enabled + store suppression (jb_ax5b PDF p.75)" python3 verify_ax5b_160_test8b_listing.py
 # A SECOND, RICHER DS ORACLE than the transcribed 16086 block, and the
 # acceptance test for the half of DS this suite calls suppression.
@@ -4118,6 +4241,180 @@ run "I-Box 5 routine 1258 TEST 2: the interval timer (jb_ax5b PDF p.7)" python3 
 #     so the same fault is invisible there.
 
 run "I-Box 5 routine 1260's 160S1, bit-exact (jb_ax5b pp.83-84)" python3 verify_ax5b_160s1_listing.py
+run "I-Box 5 routine 1260's 160S1 TAIL, incl. the return (jb_ax5b PDF p.85)" python3 verify_ax5b_160s1_tail_listing.py
+# TWENTY-SIX ROWS, AND THE LAST TWO ARE WHY.  The section above stops at
+# 023021.00; this one runs 023021.40-023041.00 and reaches the RETURN,
+# which nobody had read:
+#
+#     023040.40         LX,$X1,160DMP     23301.02 10
+#     023041.00  160SX1 $BD,0             0.04 00
+#
+# 160S1 RETURNS VIA A BRANCH DISABLED.  Every 1260/1262 block that opens
+# "SIC,160SX1 / B,160S1" therefore runs DISABLED afterwards unless it
+# enables for itself, and no BE exists anywhere in either half.  The
+# caller's SIC supplies only the address: Reference Manual printed p.41,
+# "the instruction counter contents [are] stored in bits 0-18 of the
+# half word specified by bits 0-18 of the effective storage address.
+# OTHER BITS OF THE HALF WORD ARE NOT DISTURBED" -- so the BD stands.
+# Printed p.40: "Branch Disabled (BD).  This operation disables the
+# interruption mechanism, and then performs the same operation as
+# BRANCH."
+#
+# THAT ONE ROW CLOSED AN OPEN QUESTION about routine 1262's TEST 3A and
+# 3B -- see the TEST 3B section and docs/NEXT.md item 6.  It is the
+# clearest case this project has of a named next step paying off: the
+# 3B block did not guess, it named the two pages that would decide the
+# question, and reading them decided it.
+#
+# KEPT SEPARATE FROM THE HEAD DELIBERATELY, not by accident, and the
+# reason is in the file: both halves are bit-exact and independently
+# checked, this project already splits routines by page and case (8C
+# against 8C_disabled, 3A against 3B), and folding 26 rows into a
+# committed passing file buys tidiness at the cost of touching
+# something that works.  What DID have to change was the NAME -- it
+# arrived as "ax5b_160s1_clear_inds" beside the committed
+# "ax5b_160s1_clr_inds", which is a trap the next reader would pay for.
+#
+# Five injections, observed.  The first is the one that matters:
+#   UNCOND_BRANCH_CODES["BD"] 001 -> 010   1 row, 023041.00 -- the row
+#       the whole answer rests on, and nothing else moves with it.
+#   INDICATOR_BITS["OP"] 15 -> 14          1 row; OCTAL PAIR UNCHANGED,
+#       only the hex byte moves.
+#   enc_branch_ind drops the clear bit     5 rows -- and the five
+#       BZXL,SERS rows are NOT among them, because branches on an INDEX
+#       indicator go through a different encoder.  A measured structural
+#       fact, not a guess about the encoder.
+#   IMM_INDEX_CODES["KVI"] 0100 -> 0101    4 rows (023037.00's KV is
+#       untouched, which separates KV from KVI).
+#   DIR_INDEX_CODES["KV"] 01001 -> 01011   1 row.
+#
+# "-UNABLE OT CLR OP OR ABOVE IND." at 023024.00 is the LISTING'S OWN
+# TYPO and is kept verbatim; the four sibling messages all read "TO".
+
+run "I-Box 5 routine 1262's interrupt entry and constant pool (jb_ax5b PDF p.109)" python3 verify_ax5b_162_int_entry_listing.py
+run "I-Box 5 routine 1274: TRUNCATION OF ADDRESSES, 99 rows (jb_ax5b PDF pp.112-114)" python3 verify_ax5b_1274_truncation_listing.py
+# THE WHOLE ROUTINE, uncut: 99 rows carrying printed machine code,
+# 024412.00-024500.00.  Banner: "----I274---TRUNCATION OF ADDRESSES. /
+# -THIS PROGRAM CHECKS THOSE INSTRUCTIONS WHICH / -USE ONLY PART OF
+# THEIR ADDRESS FIELD."  Seven checks, one per subject: LX, SX, REFILL,
+# EXIC, STORE ZERO, and TRANSMIT twice (left and right half-word).
+#
+# "THE NINETEENTH BIT" IS IBM BIT 18 -- nineteen address bits numbered
+# from zero end at 18 -- and bit 18 is the half-word select, which is
+# why every subject here addresses a full word.
+#
+# AND IT CORRECTS docs/archival_inventory.md, which rejected routine
+# 1274 as "untestable by construction ... fixed-width arithmetic makes
+# representing an address wider than architecturally valid impossible."
+# TRUE OF FIVE OF THE SEVEN SUBJECTS, which are un-indexed and reach
+# bit 18 from SVA rather than from index arithmetic.  NOT true of
+# 024455.00, "TI,1,I74K1,I74K2($X1)" -> "24471.00 80 024472.02 A1",
+# whose A2 is a 19-bit HALF-WORD address with I2 = X1 = 32 bits.  Its
+# failure mode is wrong SCALING inside a perfectly legal 19-bit
+# address: the model's Transmit arm sends A2 through effAddr19, and
+# under the straight-add this project carried before 2026 the 32 would
+# be 32 half-words instead of 32 bits, landing on word 024512 instead
+# of 024472, leaving I74K2 zero and tripping the deck's own check.
+# Reasoned from the page plus a reading of the arm; NOT confirmed in
+# simulation, and the file says so.
+#
+# THE BRANCH-POLARITY SHAPE HERE IS THE OTHER ONE, and the transcriber
+# checked rather than inverting to match a warning.  This block never
+# does "branch to OK, fall through to the error pair": every check is
+# SIC,SEN and THEN a conditional branch TO SERS, so branch-taken IS the
+# error path.  The proof the reading is right is the odd one out -- six
+# checks end BXVZ because correct truncation leaves the target holding
+# I74K1's all-ones value, and BZXVZ at 024447.00 is inverted because
+# STORE ZERO's subject writes zero, so success means the value IS zero.
+# One instruction's semantics flipping one branch is not something a
+# misreading produces.
+#
+# Six injections, observed, and the first two are a matched pair that
+# splits the printed columns:
+#   enc_dir_index drops IBM bit 18        4 rows, OCTAL PAIR only --
+#       exactly the four whose target is an odd half-word; the three
+#       even-target SVAs are silent
+#   DIR_INDEX_CODES["SVA"] 11101 -> 11100 5 rows, HEX BYTE only
+#   enc_imm_index drops IBM bit 18        7 rows, DISJOINT from the
+#       first -- two different address encoders, separately pinned
+#   enc_transmit swaps I1 (28-31) and I2 (60-63)  2 rows, and it lands
+#       in a DIFFERENT printed half-word in each
+#   XW refill eval_addr_field 6 -> 0      1 row
+#   enc_dir_index narrowed off the TOP    MEASURED NULL: the widest
+#       direct-index address here is 024501.40 = half-word 10561, and
+#       IBM bit 0 of a 19-bit field weighs 2^18 = 262144.  Nothing
+#       reaches it.
+#
+# ONE REPO FIRST, after grepping every verify file: TRANSMIT WITH THE
+# INDEX ON A2 (I2, bits 60-63), at 024455.00.  Every other transcribed
+# Transmit leaves I2 zero, so bits 60-63 had never been pinned against
+# a printed word here.  Four further "firsts" were claimed in an early
+# draft and then KNOCKED OUT by grep before the file was finished --
+# R/REFILL, LV, and a label in XW's refill field all had witnesses
+# already.  The corrected claim is in the file.
+#
+# RULE 4 IS FLAGGED HONESTLY AND LOUDLY: the narrative of WHAT EACH
+# SUBJECT DOES -- Refill reloading an index word, EXIC running a
+# pseudo-IC, Store Zero clearing a word, Transmit resolving A1/A2 --
+# is CONJECTURE FROM LISTING USAGE.  No primary-source statement was
+# found for those four, and for Refill the repo's own
+# docs/microarchitecture_plan.md reads differently.  The ENCODING check
+# does not rest on any of it.
+
+# WHAT AN INTERRUPT LANDING ACTUALLY LOOKS LIKE, 54 rows, the whole of
+# p.109, 024172.00-024331.00.
+#
+#     024320.00  162ITE  BD,$   "-ALL INTERRUPTS ENTER HERE."  24320.04 00
+#     024320.40          B,$                                   24320.50 00
+#
+# ONE FULL WORD HOLDING TWO SELF-LOOPS, and the routine picks which one
+# an interruption lands on by which CONSTANT it fills the table with:
+# 162K1 is "BD,162ITE" (pair 04 -> bit 18 = 0 -> the BD half) and 162K6
+# is "B,162ITE+.32" (pair 50 -> bit 18 = 1 -> the B half).  Each is a
+# full word holding the same half-word twice, so one SX writes it into a
+# table entry and a loop fills all 64.
+#
+# THE RULE IS TRANSPARENCY, NOT ENABLE-STATE, and the file says so
+# because the obvious generalisation is wrong: it is NOT "enabled tests
+# use the B half".  Block 16225 is disabled throughout and also uses
+# 162ITE+.32.  The B half is used where the landing must not CHANGE the
+# enable state because the block is about to measure it; the BD half
+# where disabling costs nothing.  3A and 3B both plant into the BD half.
+#
+# WHAT SVA REWRITES, sourced rather than assumed.  Reference Manual
+# printed p.29: "The first 18, 19, or 24 bits of the value field of the
+# index word specified by J replace THE ADDRESS FIELD of the instruction
+# specified by the effective address", width "determined from the
+# instruction operation code".  A half-word branch's address field is
+# bits 0-18 -- bit 18 INCLUDED -- so SVA plants the half-word select too
+# and never touches the BD.
+#
+# Six injections, observed.  The pair that carries the block:
+#   UNCOND_BRANCH_CODES["BD"] 001 -> 100   11 rows INCLUDING 024320.00,
+#       and NOT 024320.40 -- which is exactly the point of the pair.
+#   CNOP alignment removed (FULL,0 -> HALF,0)  7 symbols + 15 rows, and
+#       sharper than a global slide: rows before the first odd-half-word
+#       CNOP do not move, and nothing below 024320.00 moves, because the
+#       SLC re-anchors.
+#
+# THREE MEASURED NULLS, each with its arithmetic, recorded so nobody
+# repeats them.  162INT at 024220.00 prints "100.00" -- a DR RESERVE
+# SIZE, 0o100 = 64 words, not a machine word; no row is asserted and no
+# word fabricated (SLC across, SYN the label).  The check that it is a
+# size: 024220 + 0o100 = 024320, which is where 162ITE is printed.  (The
+# manual calls the table "48 successive full-word locations"; the deck
+# reserves 64.)  024325.40 is a gap before a word-aligned XW and the
+# listing prints nothing there.  And the four CNOPs are a free four-way
+# check: the two at odd half-words print "0.30 00", the two already
+# aligned print nothing and get no address column.
+#
+# ONE CONJECTURE, flagged in the file and not promoted: that the table
+# still holds 162K1 when 3B runs.  pp.94-107 were not swept.  The
+# internal argument is that if it held 162K6, 3B's SVA would plant into
+# a half nothing reaches and the landing would be the untouched "B,$"
+# self-loop, so the block could not pass.  That is an argument, not a
+# page.
+
 # THE ROUTINE THIS PLAN MYTHOLOGISED.  docs/NEXT.md opened with
 # "Prerequisite: SSIP's 160S1/160SX1 save/restore harness, reported at
 # ax5b pp.41-44.  Nothing from 1260 can run without it."  Every clause
@@ -4156,6 +4453,79 @@ run "I-Box 5 routine 1260's 160S1, bit-exact (jb_ax5b pp.83-84)" python3 verify_
 # operand masked back to one bit (023016.00 -- the row that found it).
 
 run "I-Box 5 routine 1260 TEST 7: the COMPARISON driver (jb_ax5b p.71)" python3 verify_ax5b_160105_listing.py
+run "I-Box 5 routine 1260 TEST 7: where the COMPARISON is checked (jb_ax5b PDF pp.72-73)" python3 verify_ax5b_160_test7_compare_listing.py
+# THE CONTINUATION OF THE SECTION ABOVE, 92 rows, 022401.40-022460.40,
+# picking up exactly where p.71's file stops at 022401.00.  p.71 is the
+# SETUP and carries no error messages at all; pp.72-73 are where the
+# comparison's verdict is checked, and every error message lives here.
+#
+# IT IS A DIRECT ORACLE FOR protViolates, not a transitive one.  Every
+# reference in range is a FETCH, so the model path is dfSignal, whose
+# entire body is `protViolates(st, a) ? setBit(ind, ind_DF, 1) : ind`.
+# It CALLS the predicate rather than carrying its own copy of the
+# interval rule, so this deck checks the function under review.
+#
+# BOTH ARMS OF THE CONTROL-BIT TERNARY ARE WITNESSED, which is why the
+# transcription runs to p.73 and not p.72.  Every TI on p.72 moves
+# BOUND1 (bit 57 SET) into location 3; at 022442.40 p.73 moves BOUND0
+# (bit 57 CLEAR) and fetches between the bounds -- "-FETCH FRM LB+1,
+# UB-1, BC IS 0." -- demanding a signal.  And the HALF-OPEN interval
+# [lower, upper) is witnessed ACROSS the two files: p.71 fetches from
+# UB with BC 1 and expects a signal, this block fetches UB-1 with the
+# same control bit and demands NO signal.
+#
+# MY CONJECTURE ABOUT THE 0-31 CARVE-OUT WAS WRONG, and the transcriber
+# tested it instead of confirming it.  TEST 7's header says "RANGE OF X
+# IS FROM 000040 THRU 777777 OCTAL", and 0o40 = 32 looked like the deck
+# respecting the never-signal set for locations 0 and 4-31.  It is not.
+# The sweep's seed is 160XW3 at 023067.00 (PDF p.86), printing
+# "101.00 00" -- so X2 enters holding word 0o101 = 65 and the FIRST X
+# is UB = 0o103, not 0o40.  The header's upper endpoint is exact; its
+# lower endpoint is not what the code does.  **The deck neither
+# confirms nor refutes the carve-out.**  Best guess for the header,
+# flagged as conjecture in the file: a comment left behind by an
+# earlier value of 160XW3.
+#
+# ALL THREE HEADER GARBLES ARE DECK TYPOS, NOT SCAN DAMAGE, and the
+# method for telling them apart is worth keeping: compare the suspect
+# glyph against a CORRECT INSTANCE OF THE SAME LETTER on the same or an
+# adjacent line.  Scan damage leaves a ragged correct letter; a deck
+# typo prints a clean wrong one.  All three print clean wrong letters.
+#   TAFLE for TABLE -- glyph 3 is a crisp F, full top and mid bars, no
+#       trace of either of B's bowls, and the SAME LINE prints a clean
+#       two-bowled B nine characters later in "UB HAS X".
+#   TETCH for FETCH -- glyph 1's stem is CENTRED under its top bar and
+#       there is NO mid bar; this printer's F puts its stem at the LEFT
+#       end of the bar and carries a mid bar (see "FROM" four
+#       characters later).  A dashed form rule runs through the top of
+#       the row, but a rule cannot move a stem to the middle of a
+#       letter nor delete a mid bar.
+#   YB for UB -- two straight diagonal arms meeting a short central
+#       stem; this printer's U has parallel verticals and a round
+#       bottom.  Y and U are adjacent keys on the 026, which is the
+#       only one of the three with an obvious mechanism.
+# The same habit recurs inside the transcribed range: FITCH at
+# 022432.40 (and the SAME MESSAGE spells FETCH correctly one line
+# above), FRM at 022444.40, and "-TO SSIP" at 022434.40 with no period
+# where 022457.00 has one.
+#
+# Eight injections, observed.  The two that WITNESS the bit-18 rule
+# rather than asserting it are the addr19 masks on the two different
+# code paths -- exactly the .40-target rows move and every .00 target
+# is untouched (10 rows and 3 rows respectively).  Two measured NULLs
+# with their arithmetic: INDICATOR_BITS["DS"] 19->18 moves nothing
+# because the only branch-on-indicator mnemonics in range are
+# BDFZ/BZDFZ/BXVZ, so no row's bits 19-24 carry 19; and
+# MODE_DEFAULT_BS["BU"] 8->4 moves nothing because that default is used
+# only when a VFL data description is assembled and there is no VFL row
+# here.
+#
+# ONE ROW TRANSCRIBED AS PRINTED AND NOT EXPLAINED: 022452.40 writes
+# "SV,$X14,160AD3" where both parallel blocks write $X13, and the
+# printed machine code AGREES with the printed source (index field 14
+# against 13).  Whether the shipped deck's first-interrupt flag for the
+# between-bounds case is ever set is not decidable from these pages.
+
 # THE BLOCK ITEM 1 HAS WANTED SINCE THE SCOUTING PASS.  pp.65 and 68
 # test whether the boundary REGISTERS HOLD THEIR BITS; this one tests
 # whether the COMPARISON FIRES.  The deck's own summary:

@@ -1,0 +1,397 @@
+! jb_ax4b "I-BOX 4", routine 1246 ("TEST TRANSMIT AND SWAP") -- the
+! routine's preamble (PDF p.99, octal 006736.00-006741.00), TEST 1A
+! (PDF p.100, 006742.00-006771.40), TEST 2C (PDF p.112,
+! 007372.40-007421.40) and the routine's constant block (PDF p.112 and
+! the first row of p.113, 007422.00-007434.00).  Transcribed VERBATIM
+! at the listing's own addresses and checked bit-exactly by
+! verify_ax4b_1246_transmit_swap_listing.py.
+!
+! CITED BY PDF PAGE ONLY.  jb_ax4b's LISTING pages carry no printed
+! page numbers at all -- the sheets were re-read at 400 and 600 dpi for
+! this transcription, top strip, bottom strip and both edges, and there
+! is no folio anywhere on them.  (The front WRITE-UP is different: it
+! prints "-1-", "-2-" and so on, and those printed numbers ARE cited
+! below where the write-up is quoted.)  "PDF p.NN" here means the PDF's
+! own page, as it already does in verify_ibox4_listing.py and
+! verify_ibox4_rnx_nop_listing.py for this deck.
+!
+! ---------------------------------------------------------------------
+! THE BANNER, PDF p.99, read first-hand at 600 dpi.  VERBATIM -- and
+! this is a CORRECTION to the brief for this transcription, which
+! omitted the two "TWO BASIC ROUTINES" lines:
+!
+!         ----1246---TEST TRANSMIT AND SWAP.
+!
+!         -THIS TEST IS COMPOSED OF TWO BASIC
+!         -ROUTINES WHICH CHECK THE FOLLOWING.
+!
+!                 -1. CHECKS THE NINE POSSIBILITIES
+!                     -OF ADDRESS COMBINATIONS.
+!
+!                 -2. CHECKS THE THREE MODIFIER BITS,
+!
+!                     -A. FORWARD OR BACKWARD.
+!                     -B. DIRECT OR IMMEDIATE
+!                     -C. TRANSMIT OR SWAP.
+!
+! The nine address combinations are TEST 1A through TEST 1I, one per
+! listing page, PDF pp.100-108: EXT MEM / IX STG / INT MEM crossed with
+! itself.  The modifier bits are TEST 2A, 2B and 2C.  TEST 2C is the
+! one transcribed here and it is item 2-C, "TRANSMIT OR SWAP".
+!
+! THE WRITE-UP AGREES, printed p.2 (PDF p.2, right half, its own folio
+! "-2-"), section 4 PROGRAM PHILOSOPHY:
+!
+!     1246    Checks Transmit and Swap using all nine memory
+!             combinations and testing all modifier bits.
+!
+! and printed p.1, section 1 PURPOSE: "The I-Box 4 Program provides the
+! maintenance engineer with a test of the direct index arithmetic
+! instructions and the transmit and swap operations."
+!
+! ---------------------------------------------------------------------
+! EVERY LABEL IN THIS DECK STARTS WITH THE LETTER I, NOT THE DIGIT 1,
+! and saying so corrects this repository.
+!
+! The printer's letter I is a bare vertical stroke 9-13 px wide at 600
+! dpi; its digit 1 has a top-left flag and measures 31-34 px.  The two
+! occur in the SAME printed row on PDF p.99 -- "BD,I461" segments as
+! I(10) 4(47) 6(42) 1(31) -- so this is one ink, one pass, one
+! measurement, not a comparison across pages.  Corroborated on PDF p.90
+! (routine 1244's "I4412", first glyph 10-11 px) and on PDF p.100
+! ("I46D4", "I4610", "BIT45", all with a 8-12 px leading I).
+!
+! C22-6531 printed p.10 (PDF p.11, footer "10") says why, and this is
+! the primary source AGENTS.md rule 4 asks for:
+!
+!     "A symbol is any sequence of six or fewer alphabetic and numeric
+!      characters conforming to the following conditions:
+!        1. It contains only alphameric characters.
+!        2. Its first character is specifically alphabetic.
+!        3. It appears in the name field of an instruction, by virtue
+!           of which it is "defined" and is assigned a value that is
+!           either a 24-bit binary address or an integer, or
+!           occasionally both."
+!
+! A STRAP-1 symbol CANNOT begin with a digit.  "1461" was never a legal
+! name; "I461" is, and it is six-or-fewer characters, as is every other
+! label here (I46, I461, I4610, I46ID, I4626, I46D1, I46XW1, IC246,
+! ICK246 -- the longest are exactly six).  IBM's scheme is the letter I
+! plus the routine's last two digits plus a serial.
+!
+! Earlier transcriptions in this repo read those leading glyphs as the
+! digit 1 and prefixed an "L" to make them legal ("L14412", "L144D1",
+! "L146").  No CHECK was wrong -- every one of those was a SYN-fed
+! external or an anchor -- but the READING was, and this file does not
+! repeat it.  No L-prefix substitution is needed or used here.
+!
+! ---------------------------------------------------------------------
+! WHAT TEST 1A AND TEST 2C ACTUALLY CHECK, and the branch polarity that
+! makes an error message readable.  B<IND> branches when the indicator
+! is ON, BZ<IND> when it is OFF.  The branch is the OK path, the
+! fall-through is the SIC,SEN / B,SERS error pair, and the printed
+! comment on that pair names the ANOMALY, never the requirement.
+!
+! TEST 1A (PDF p.100), "EXT MEM TO EXT MEM", is two halves.
+!   Half 1, at I461: I46D2 is zeroed, X1 is loaded with I00O (the
+!   all-ones constant) and STORED into I46D4, X1 is reloaded with
+!   BIT45 (a count of one -- see below), and T moves one word from
+!   I46D4 to I46D2.  L(BU),I46D2 then reads the destination back and
+!   BZRZ branches if Result Zero is OFF, i.e. if the all-ones word
+!   arrived.  Fall-through is the error "TRANSMIT 1 WD EXT MEM TO EXT
+!   MEM DROPS ALL BITS."  Four further probes compare the received
+!   word against the constant field by field (KV/KC/SR/KVI, bits 0-24,
+!   28-45, 46-63 and bit 25).
+!   Half 2, at I4610: both words are zeroed, one word is transmitted,
+!   and BRZ demands Result Zero ON -- "ABOVE TYPE TRANSMIT PICKS UP
+!   SOME BITS 0-63."
+!
+! TEST 2C (PDF p.112) is the modifier-bit test, and it is a MATCHED
+! PAIR.  At I4626 the sending word I46D1 is zeroed, the receiving word
+! I46D4 is set to all ones, and T,$X1,I46D1,I46D4 moves one word
+! forward with a direct count.  Afterwards I46D1 must STILL be zero
+! (BRZ, Result Zero ON) -- "TRANSMIT DESTROYS ORIGINAL WORD AND
+! THEREFORE ACTS LIKE SWAP" -- and I46D4 must have BECOME zero (BRZ)
+! -- "RECEIVING LOCATION DOES NOT GET FIRST WORD FROM SENDING LOCN."
+! At I4627 the identical setup runs SWAP,$X1,I46D1,I46D4 instead, and
+! the first demand INVERTS: I46D1 must now be NON-zero (BZRZ, Result
+! Zero OFF) -- "SWAP FAILS TO ALTER ORIGINAL WD AND THEREFORE ACTS
+! LIKE TRANSMIT" -- while I46D4 must still have become zero.
+!
+! Reference Manual 22-6530-2 printed p.30 (PDF p.33, footer "30  IBM
+! 7030"), read first-hand, is exactly that contract:
+!
+!     "In unidirectional transmission, data are moved from one storage
+!      location to another storage location.  After completion of the
+!      operation, the data remain unchanged in the original storage
+!      locations.  The data which were originally in the receiving
+!      storage locations are destroyed.  In bidirectional transmission,
+!      data are interchanged."
+!
+!     "Bits 55-57 of the data transmission instructions are used as
+!      modifiers.  The choice between unidirectional and bidirectional
+!      transmission is specified by modifier bit 57.  A zero specifies
+!      unidirectional transmission; a one specifies bidirectional
+!      transmission.  The choice between an immediate or a direct count
+!      is specified by modifier bit 56.  A zero specifies a direct
+!      count; a one specifies an immediate count.  The choice between
+!      forward and backward transmission is specified by modifier bit
+!      55.  A zero specifies forward transmission; a one specifies
+!      backward transmission."
+!
+!     "In direct count operations, the field J, bits 51-54, specifies
+!      an index register.  The count field, bits 28-45, of the index
+!      word in this register is used as a full word count."
+!
+! That last sentence is why every T and SWAP row here is preceded by
+! "LX,$X1,BIT45": BIT45 is the common constant with bit 45 set, bit 45
+! is the LOW-ORDER bit of the count field, so X1's count is 1 and the
+! instruction moves one word.  It also settles the J-field substitution
+! this file makes -- see SUBSTITUTIONS below.
+!
+! ---------------------------------------------------------------------
+! WHAT THIS BLOCK DOES *NOT* SAY, recorded because a measured negative
+! is worth more than an assumed positive.  The brief asked whether this
+! deck bears on two Reference Manual claims about SWAP.  It does not,
+! and here is the evidence rather than the guess:
+!
+!   printed p.43 (PDF p.46), Figure 11's class-letter footnote, read
+!   first-hand, VERBATIM:
+!       "S  The execution of the instruction during which the indicator
+!        is actuated is suppressed, except during EX, EXIC, T, and
+!        SWAP."
+!
+!   printed p.51 (PDF p.54, footer "Instruction Sequencing  51"),
+!   item 2 and item b, VERBATIM:
+!       "For example, in SWAP, if a protected address is encountered,
+!        it will cause termination of the execution.  The transmissions
+!        that would have been performed if the execution had not been
+!        terminated might have encountered an invalid address.  Thus,
+!        possible alerts are prevented."
+!       "In SWAP, however, an encountered protected address will
+!        actuate both indicators DS and DF because each of the two
+!        attempted transmissions causes different alerts."
+!
+! Routine 1246's banner names protection nowhere; its three modifier
+! items are forward/backward, direct/immediate and transmit/swap, and
+! nothing else.  TEST 2C touches only I46D1 and I46D4, two ordinary
+! words in the routine's own constant block, and tests only whether the
+! sending word survives.  No boundary register is set, no DS/DF/IF
+! indicator is branched on anywhere in the block, and the deck's own
+! loading procedure -- write-up printed p.1, section 3.2.1, step 4),
+! read first-hand -- says "Disable Interrupt and Time Clock".  So:
+! neither manual claim is witnessed here, and this block is not
+! evidence for or against either.  The DS/DF-both claim would need a
+! protected operand, which this deck never creates.
+!
+! ---------------------------------------------------------------------
+! SUBSTITUTIONS, four, all mechanical, none touching a bit:
+!
+!   1. "%8@nnn" -> "(8)nnn".  The listing's octal-radix marker.  Load-
+!      bearing: this assembler's default radix is decimal, as the
+!      listing's own is, so an unmarked 777777 would assemble decimal.
+!   2. "L%BU@" -> "L(BU)".  The same bracket convention around a data
+!      description.
+!   3. T/SWAP's J field, written "$X1" on the page, is written "1"
+!      here.  Reference Manual printed p.30 (quoted above): "the field
+!      J, bits 51-54, specifies an index register."  $X1 in the J
+!      position names index register 1, and the printed J field IS 1 --
+!      decoded out of the octal pair of the second half-word, "02" =
+!      000010, bits 51-54 = 0001.  This substitution is therefore
+!      CHECKED by the oracle, not assumed: get it wrong and the second
+!      half-word's octal pair moves.  This assembler's enc_transmit
+!      takes the bare register number, as programs/ax5b_16087_walk.strap
+!      already writes it for TI.
+!   4. The ident row at 006741.00 is NOT transcribed as code.  The page
+!      prints its location and its source --
+!            I46ID   %IQSZ@DD%BU,64,8@,I246     Z
+!      -- and NO machine code whatsoever.  It is a compiler directive
+!      this assembler has no form for, so per the transcription rules
+!      the location counter is SLC'd across it and I46ID is given by
+!      SYN at the address the page prints.  Nothing is fabricated.
+!      Routine 1248 does exactly the same thing at 007440.00 (PDF
+!      p.113), which is how the shape was confirmed rather than guessed.
+!
+! GLYPH AMBIGUITIES RESOLVED BY MEASUREMENT at 600 dpi, not by house
+! style (letter O measures 49-51 px on this printer, digit 0 measures
+! 42-45; letter I 9-13, digit 1 31-34):
+!   I00O   letter I, digit 0, digit 0, letter O -- the trailing glyph
+!          is 49 px.  It is the all-ones constant at 013035.00, the
+!          neighbour of I00Z (013034.00) and I00VO (013036.00) that
+!          this repo already knows from PDF p.190.
+!   SENO   the O after SEN is 42-50 px and visibly round; letter O.
+!          House style in this repo already spells it SENO, and this
+!          is the first time it was measured rather than followed.
+!   I4610  the trailing glyph is 40 px -- DIGIT zero.  I46 + "10".
+!   I46ID  glyphs 10-13 px at positions 1 and 4 -- letter I twice.
+!          I46 + "ID", the ident.  Contrast "I461" one row above,
+!          whose fourth glyph is 31 px, digit 1.
+!
+! ---------------------------------------------------------------------
+! EXTERNAL SYMBOLS are given by SYN at the addresses these very rows
+! print for them, so a row naming one checks its opcode and modifier
+! bits ONLY -- its address came from the same print.  The symbols
+! DEFINED INSIDE this transcription (I461, I4610, I4626, I4627, I4628,
+! IC246, ICK246, I46D1-I46D6, I46XW1-I46XW3) fall out of the location
+! counter and ARE real address checks -- including all four T/SWAP
+! operand fields, which is the point.
+! ---------------------------------------------------------------------
+
+DPET13  SYN, (8)1437.0              ! the ident-storage cell
+RET     SYN, (8)1306.40             ! SSIP's return link (a BIT address)
+IDF1    SYN, (8)1443.0              ! SSIP's "print ID" entry
+SEN     SYN, (8)1310.0              ! SSIP's error-note link
+SENO    SYN, (8)1311.0              ! SSIP's other-note link
+SERS    SYN, (8)1304.0              ! SSIP's error-report entry
+SSW     SYN, (8)1301.0              ! SSIP's sense-switch entry
+I00O    SYN, (8)13035.0             ! common constant: all ones
+BIT0    SYN, (8)13054.0             ! common constant: bit 0 only
+BIT11   SYN, (8)13067.0             ! common constant: bit 11 only
+BIT45   SYN, (8)13131.0             ! common constant: bit 45 only = count 1
+I48     SYN, (8)7435.0              ! routine 1248's entry, PDF p.113
+
+! ---------------------------------------------------------------------
+! PDF p.99, 006736.00-006740.40.  The routine's preamble.
+! ---------------------------------------------------------------------
+        SLC, (8)6736.0
+I46     LX,  $X1, I46ID             ! -UPDATE IDENT.
+        SX,  $X1, DPET13
+        SIC, RET
+        B,   IDF1                   ! -PRINT ID.
+        Z,   IC246
+        BD,  I461
+        CNOP
+! I46ID  %IQSZ@DD%BU,64,8@,I246   Z        006741.00, no machine code
+I46ID   SYN, (8)6741.0
+
+! ---------------------------------------------------------------------
+! PDF p.100, 006742.00-006771.40.  "-TEST 1. NINE ADDRESS COMBINATIONS."
+! TEST 1A, EXT MEM TO EXT MEM.
+! ---------------------------------------------------------------------
+        SLC, (8)6742.0
+I461    Z,   I46D2                  ! -TEST 1A, EXT MEM TO EXT MEM.
+        LX,  $X1, I00O
+        SX,  $X1, I46D4
+        LX,  $X1, BIT45             ! count field = 1 (RefMan p.30)
+        T,   1, I46D4, I46D2        ! listing "T,$X1,I46D4,I46D2"
+        L(BU), I46D2
+        BZRZ, $+2.0                 ! OK path: the word arrived non-zero
+        SIC, SEN                    ! -TRANSMIT 1 WD EXT MEM TO
+        B,   SERS                   ! -EXT MEM DROPS ALL BITS.
+        B,   I4610
+
+        LX,  $X2, I46D2
+        KV,  $X2, I00O
+        BXE, $+1.32
+        SIC, SEN                    ! -ABOVE TYPE TRANSMIT LOSES SOME
+        B,   SERS                   ! -OF BITS 0-24.
+
+        KC,  $X2, I00O
+        BXE, $+1.32
+        SIC, SEN                    ! -ABOVE TYPE TRANSMIT LOSES SOME
+        B,   SERS                   ! -OF BITS 28-45.
+
+        SR,  $X2, $X2
+        KVI, $X2, (8)777777.0       ! listing "KVI,$X2,%8@777777.0"
+        BXE, $+1.32
+        SIC, SEN                    ! -ABOVE TYPE TRANSMIT LOSES SOME
+        B,   SERS                   ! -OF BITS 46 TO 63.
+
+        LX,  $X2, $X2
+        BXF, $+1.32
+        SIC, SEN                    ! -ABOVE TYPE TRANSMIT LOSES
+        B,   SERS                   ! -BIT 25.
+
+I4610   Z,   I46D2                  ! -CHECK FOR SPURIOUS BITS.
+        Z,   I46D4
+        LX,  $X1, BIT45
+        T,   1, I46D4, I46D2        ! listing "T,$X1,I46D4,I46D2"
+        L(BU), I46D2
+        BRZ, $+1.32                 ! OK path: nothing was picked up
+        SIC, SEN                    ! -ABOVE TYPE TRANSMIT PICKS
+        B,   SERS                   ! -UP SOME BITS 0-63.
+
+        B,   $+1.0
+        BD,  I461
+        SIC, SENO+.32
+        B,   SSW                    ! -TO SSIP.
+        BD,  $+.32
+
+        LX,  $X13, IC246            ! -UPDATE CONTINUITY CHECK.
+        V+,  $X13, BIT0
+        SX,  $X13, IC246
+
+! ---------------------------------------------------------------------
+! PDF p.112, 007372.40-007421.40.  "-TEST 2C."  The transmit/swap
+! modifier bit, and the routine's tail.
+! ---------------------------------------------------------------------
+        SLC, (8)7372.40
+I4626   Z,   I46D1                  ! -TEST TRANSMIT-SWAP MODIFIER.
+        LX,  $X1, I00O
+        SX,  $X1, I46D4
+        LX,  $X1, BIT45
+        T,   1, I46D1, I46D4        ! listing "T,$X1,I46D1,I46D4"
+        L(BU), I46D1
+        BRZ, $+2.0                  ! OK path: the SOURCE is still zero
+        SIC, SEN                    ! -TRANSMIT DESTROYS ORIGINAL WORD
+        B,   SERS                   ! -AND THEREFORE ACTS LIKE SWAP.
+        B,   I4627
+
+        L(BU), I46D4
+        BRZ, $+1.32                 ! OK path: the destination took it
+        SIC, SEN                    ! -RECEIVING LOCATION DOES NOT GET
+        B,   SERS                   ! -FIRST WORD FROM SENDING LOCN.
+
+I4627   Z,   I46D1
+        LX,  $X1, I00O
+        SX,  $X1, I46D4
+        LX,  $X1, BIT45
+        SWAP, 1, I46D1, I46D4       ! listing "SWAP,$X1,I46D1,I46D4"
+        L(BU), I46D1
+        BZRZ, $+2.0                 ! OK path: the SOURCE did change
+        SIC, SEN                    ! -SWAP FAILS TO ALTER ORIGINAL WD
+        B,   SERS                   ! -AND THEREFORE ACTS LIKE TRANSMIT
+        B,   I4628
+
+        L(BU), I46D4
+        BRZ, I4628                  ! OK path: the destination took it
+        SIC, SEN                    ! -RECEIVING LOCATION DOES NOT GET
+        B,   SERS                   ! -FIRST WORD FROM SENDING LOCN.
+
+I4628   B,   $+1.0
+        BD,  I4626
+        SIC, SENO+.32
+        B,   SSW
+        BD,  $+.32
+        LX,  $X13, IC246            ! -UPDATE CONTINUITY.
+        V+,  $X13, BIT11
+        SX,  $X13, IC246
+
+        LX,  $X13, IC246            ! -UPDATE CONTINUITY CHECK.
+        KV,  $X13, ICK246
+        SIC, SEN
+        BZXE, SERS                  ! -CONTINUITY ERROR.
+        BD,  I48
+
+! ---------------------------------------------------------------------
+! PDF p.112 (007422.00-007433.00) and the first row of PDF p.113
+! (007434.00).  The routine's constants -- eleven contiguous words,
+! all reached by ONE SLC, so IC246 is the anchor and the other ten
+! are location-counter checks.
+! ---------------------------------------------------------------------
+        SLC, (8)7422.0
+IC246   XW,  0, 0, 0                ! -CONTINUITY REG 1246.
+ICK246  XW,  (8)777700.00, 0, 0
+
+I46D1   XW,  0, 0, 0
+I46D2   XW,  0, 0, 0
+I46D3   XW,  0, 0, 0
+I46D4   XW,  0, 0, 0
+I46D5   XW,  0, 0, 0
+I46D6   XW,  0, 0, 0
+
+I46XW1  XW,  (8)777777.77, 0, 0     ! value = all 24 address bits
+I46XW2  XW,  0, (8)777777, 0        ! count = all 18 bits
+I46XW3  XW,  0, 0, (8)777777        ! refill = all 18 bits
+
+        END, I46

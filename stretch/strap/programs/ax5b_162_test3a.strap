@@ -61,16 +61,31 @@
 ! ENCODING of the row is settled either way, and that is what this
 ! file checks.
 !
-! SINCE THIS FILE WAS WRITTEN, TEST 1CC (pp.93-94) SETTLED WHAT THE
-! WORD IS: an enable-state probe.  An operation-code-invalid word
-! actuates OP, indicator 15, and mask bits 0-19 are permanently one, so
-! executing one interrupts iff the interruption system is enabled --
-! and 1CC uses it twice in opposite polarities with error text that
-! pins both directions.  It did NOT settle what the word is doing
-! HERE; ax5b_162_test3b.strap works through why the probe reading and
-! this block's required control flow contradict each other, and names
-! the two untranscribed pages that would decide it.  Read that note
-! before treating the row as explained.
+! THAT IS NO LONGER TRUE.  The row IS explained, and the explanation
+! makes it LOAD-BEARING rather than decorative -- delete this block
+! only along with the reasoning, because the row looks removable and is
+! not.  Full derivation in ax5b_162_test3b.strap, which carries the
+! identical triple; in short:
+!
+!   * 160S1 (called two rows up) returns via "$BD,0" and never enables,
+!     so this block runs DISABLED.  Printed p.40 for BD, p.41 for how
+!     the caller's SIC plants only the address.
+!   * Printed p.50: "at the completion, termination, or suppression of
+!     an execution operation, interruption is always permitted" -- so
+!     the EXIC interrupts anyway, disabled or not, and the PROGRAMMING
+!     NOTE there even prescribes the follow-up indicator test this
+!     block performs.
+!   * Printed p.48: the interrupt turns OFF the leftmost actuated
+!     indicator before vectoring on it.
+!
+! OP is 15, AD is 16.  WITHOUT this word the interruption would consume
+! AD itself and the AD test below would fail spuriously; WITH it, OP is
+! consumed instead and AD survives to be tested.  The word is a
+! higher-priority DECOY.
+!
+! It is the same word 1CC uses as a pure enable-state probe, and both
+! readings are right: what it does depends on whether an execution
+! operation follows it.
 !
 ! NOTHING HERE IS A FIRST for this assembler, and saying so is the
 ! point.  EXIC is already witnessed by TEST 2B (programs/ax5b_162_

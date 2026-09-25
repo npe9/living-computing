@@ -1,0 +1,498 @@
+! jb_ax5b "I-Box 5", routine 1260, TEST 6 -- "-TEST 6 CHKS THAT FREE
+! INSTRUCTION / -IS IN FACT FREE, AND THAT I-BOX / -INDS SET ONLY
+! CORRECT INDS."  Entry label 16096, PDF pp.61-64, octal
+! 022062.00-022214.40.  159 rows, 182 half-words, one unbroken run.
+!
+! CITED BY PDF PAGE.  jb_ax5b's LISTING pages carry no printed page
+! numbers at all -- the "12 11 10 9" down the left margin is fanfold
+! carriage-tape line numbering, and the only printed numbers are in
+! the front write-up, which is scanned 2-up.  Every verify_ax5b_*.py
+! in this directory says "PDF p.NN" for that reason.
+!
+! WHERE THIS FILE CUTS, AND WHY.  The block was asked for from 16098
+! (022073.00), where the index-indicator groups start.  It is cut
+! eleven source lines earlier, at TEST 6's own header row 16096
+! (022062.00), because that is what gives the check two GENUINE
+! internal address witnesses instead of none: "BD,16098" at 022071.40
+! prints 22073.04 00, a forward reference to a label the counter
+! reached eighteen half-words after the SLC, and "BD,16096" at
+! 022211.40 prints 22062.04 00, a backward reference 175 half-words
+! long.  Cut at 022073.00 the block contains no label
+! reference at all that is not a SYN.  The prologue costs four more
+! externals (BIT38, 160XW1, 16082A, 160IT) and two address
+! expressions, all of which this assembler and this repository
+! already handle.
+!
+! -- THE MECHANISM, entirely from primary sources ---------------------
+!
+! Every group from 16098 on is the same seven-to-nine row figure, and
+! the Reference Manual explains all of it:
+!
+!   Z,$IND            clear the indicator register.  Printed p.42 (PDF
+!                     p.45): "The indicator register has address 11.
+!                     Bit positions 0-19 may be read, but not loaded.
+!                     ...  Bit positions 20-63 may either be read or
+!                     loaded."  So this clears 20-63 only -- which is
+!                     all the test needs, since it is about 48-54.
+!   LX,$X0,<word>     load an index word, which SETS the index result
+!                     indicators.  Printed p.24 (PDF p.27): "The
+!                     index-flag and index-result indicators are set
+!                     in all of the preceding direct index arithmetic
+!                     operations.  The index-comparison indicators are
+!                     unchanged."
+!   TI,1,$IND,$X1     snapshot: transmit word 11 into index word 1.
+!   SR,$X1,$X1        printed p.24, STORE REFILL (SR): "The refill
+!                     field, bits 46-63, of the index word specified
+!                     by J replaces bits 0-17 of the half word
+!                     specified by bits 0-18 of the effective address.
+!                     Bits 18-24 of the half word are set to zero."
+!                     Indicators 48-54 live in bits 48-54 of the
+!                     snapshot, i.e. refill positions 2-8, so this
+!                     moves them into value-field positions 2-8 where
+!                     a value compare can see them.
+!   NOP / NOP         see "THE NOPS" below.
+!   KVI,$X1,(8)N      printed p.25 (PDF p.28), COMPARE VALUE IMMEDIATE
+!                     (KVI): "The address part, bits 0-18, of the
+!                     instruction is compared with bits 0-18 of the
+!                     value field of the index word specified by J.
+!                     Zeros are compared with bits 19-24 of the value
+!                     field."  SR having zeroed 18-24, the comparison
+!                     is exactly "indicators 46-63 against N".
+!   BXE / BZXE        printed p.40 (PDF p.43), BRANCH ON INDICATOR:
+!                     "This operation causes the specified indicator
+!                     to be tested.  If its value matches that of bit
+!                     30 of the instruction, bits 0-18 of the
+!                     effective address replace the instruction
+!                     counter contents."  BXE has bit 30 = 1 (branch
+!                     when XE is ON), BZXE bit 30 = 0 (branch when XE
+!                     is OFF).  Both are printed here and both decode
+!                     that way -- see the verify file.
+!   SIC,SEN           printed p.41 (PDF p.44), STORE INSTRUCTION
+!                     COUNTER IF (SIC): "This instruction may always
+!                     be prefixed to one of the half-word branching
+!                     instructions.  It is executed if and only if the
+!                     associated branching is successful."
+!
+! SO THE BRANCH IS THE OK PATH AND THE FALL-THROUGH IS THE ERROR, and
+! each message names the ANOMALY, not the requirement.  "SIC,SEN /
+! BZXE,SERS" is ONE full-word instruction (p.41's format diagram:
+! address, then 1000, then I, then the half-length branch in bits
+! 32-63): report into SEN and go to SERS only if XE is OFF, i.e. only
+! if the KVI did not match.
+!
+! The indicator NUMBERS come from Figure 11, the Indicator List,
+! printed p.43 (PDF p.46): 48 XCZ "Index Count Zero", 49 XVLZ "Index
+! Value Less than Zero", 50 XVZ "Index Value Zero", 51 XVGZ "Index
+! Value Greater than Zero", 52 XL "Index Low", 53 XE "Index Equal",
+! 54 XH "Index High" -- the first four annotated "Reset by index
+! arithmetic ops. other than comparisons", the last three "Reset by
+! index comparison operations", and every one of them with mask 0, so
+! none can ever interrupt.  Their CONDITIONS are printed p.23 (PDF
+! p.26): XCZ "set to one when the count field is zero", XVLZ "when the
+! value field is non-zero and negative", XVZ "when the value field is
+! zero", XVGZ "when the value field is non-zero and positive"; XL/XE/
+! XH "set to one when the field in the index specified by J is lower
+! than / is equal to / is higher than the comparand".
+!
+! THE THIRTEEN PRINTED CONSTANTS THEREFORE DERIVE, and they do.  After
+! SR, value-field bit b holds indicator 46+b, so XCZ=(8)100000,
+! XVLZ=(8)40000, XVZ=(8)20000, XVGZ=(8)10000, XL=(8)4000, XE=(8)2000,
+! XH=(8)1000, and "all of 46-63 on" is (8)777777.  Reading the deck's
+! own constants (PDF p.114, read at 600 dpi: 100Z "XW,0,0,0,0  -ZERO
+! INDX WD." at 024502.00, 100O "DD(BU,64,8),1777777777777777777777
+! -INDX WD. OF ONES." at 024503.00, BIT16 "XW,(8)2.00,0,0" at
+! 024542.00, BIT17 "XW,(8)1.00,0,0" at 024543.00; and this repo's
+! verify_ax5b_160k_listing.py for 160K9 "XW,-1.0,0,0" 023052.00,
+! 160K10 "XW,1.0,1,0" 023053.00, 160K11 "XW,-3.0,63,0" 023054.00,
+! plus verify_ibox2_load_index_listing.py for BIT30 "XW,0,32768,0"):
+!
+!   set   160K9  count 0, value -1   XCZ+XVLZ  =  140000   022076.40
+!   set   100Z   count 0, value  0   XCZ+XVZ   =  120000   022103.00
+!   set   160K11 count 63, value -3  XVLZ      =   40000   022114.40
+!   set   BIT30  count 32768, val 0  XVZ       =   20000   022121.40
+!   set   160K10 count 1, value +1   XVGZ      =   10000   022126.40
+!   clr   160K10 from all ones       ~(48,49,50) = 617777   022107.40
+!                                     (and again at 022134.00)
+!   clr   BIT30  from all ones       ~(48,49,51) = 627777   022141.40
+!   clr   160K11 from all ones       ~(48,50,51) = 647777   022147.00
+!   KV X1=1.0 vs BIT16=2.0  -> XL              =    4000   022155.00
+!   KV X1=1.0 vs BIT17=1.0  -> XE              =    2000   022162.00
+!   KV X2=2.0 vs BIT17=1.0  -> XH              =    1000   022167.00
+!   clr  KV -> XH  from all ones     ~(52,53)  =  771777   022174.40
+!   clr  KV -> XE  from all ones     ~(52,54)  =  772777   022202.00
+!   clr  KV -> XL  from all ones     ~(53,54)  =  774777   022207.40
+!
+! All thirteen agree with the page.  That is a DERIVATION confirmed
+! against the print, not something the bit-exact check below tests --
+! the check tests field placement.
+!
+! NOTE THE DECK'S OWN WIDER CLAIM in the first three clear-groups: the
+! comments say "-CLR XCZ AND XVLZ, XVZ.", "-CLR XVLZ AND XVZ." and
+! "-CLR XVLZ AND XVGZ.", but 617777 and 627777 both also have bit 2
+! clear, i.e. XCZ cleared as well.  The constants are right for what
+! the hardware does (LX with a non-zero count clears XCZ); two of the
+! three comments simply do not list it.
+!
+! THE NOPS are NOT explained by these pages.  Most groups put two of
+! them between the SR and the KVI, two groups (022101.40 and
+! 022106.00) have none at all, and nothing a NOP can do could change
+! the value field the KVI reads -- printed p.40: "The address and
+! index fields of NO OPERATION are not interpreted, so they cannot
+! cause any indicators to be actuated; no addressable bits or
+! locations are altered."  That they are the "free instruction ... in
+! fact free" of the header is a plausible reading and is recorded here
+! as CONJECTURE; the two groups that omit them show they are not
+! structurally required.  "Free instruction" is the deck's term for
+! the instruction the interruption mechanism executes out of the
+! table, the sense printed p.40 uses: "A BI which addresses indicators
+! 0 through 19 of the indicator register may not be used as free (due
+! to an interrupt) instruction in the interrupt table."  The prologue
+! (16096) builds that table; 16098 onward does not use it.
+!
+! TWO ERROR SHAPES, ONE POLARITY.  The prologue and the first group
+! branch OVER an unconditional error pair ("BD,16098" at 022071.40,
+! "BXE,$+1.32" at 022077.00, each followed by "SIC,SEN / B,SERS");
+! every group after that folds the test into the SIC-prefixed branch
+! ("SIC,SEN / BZXE,SERS").  Same polarity both ways -- the branch is
+! the OK path -- just two spellings.
+!
+! -- THE ERROR MESSAGES, verbatim, with their octal locations --------
+!
+!   022062.00  -TEST 6 CHKS THAT FREE INSTRUCTION
+!   022062.40  -IS IN FACT FREE, AND THAT I-BOX
+!   022063.00  -INDS SET ONLY CORRECT INDS.
+!   022064.40  -2 NOPS
+!   022072.40  -FULL CONTROL GIVEN TO FREE INST.
+!   022073.00  -XCZ AND XVLZ
+!   022100.00  -XCZ AND XVLZ NOT SET CORRECTLY.
+!   022100.40  -XCZ AND XVZ
+!   022104.00  -XCZ AND XVZ NOT SET CORRECTLY.
+!   022104.40  -CLR XCZ AND XVLZ, XVZ.
+!   022110.40  -ABOVE 3 INDS NOT CLRD CORRECTLY.
+!   022111.00  -XVLZ
+!   022115.40  -XVLZ NOT SET CORRECTLY.
+!   022116.00  -XVZ
+!   022122.40  -XVZ NOT SET CORRECTLY.
+!   022123.00  -XVGV
+!   022127.40  -XVGZ NOT SET CORRECTLY.
+!   022130.00  -CLR XVLZ AND XVZ.
+!   022135.00  -XVLZ AND XVD NOT CLRD OK.
+!   022135.40  -CLR XVLZ AND XVGZ.
+!   022142.40  -XVLZ AND XVGZ NOT CLRD OK.
+!   022143.00  -CLR XVZ AND XVGZ
+!   022150.00  -XVZ AND XVGZ NOT CLRD OK.
+!   022150.40  -XL.
+!   022156.00  -XL NOT SET OK.
+!   022156.40  -XE
+!   022163.00  -XE NOT SET OK.
+!   022163.40  -XH
+!   022170.00  -XH NOT SET OK.
+!   022170.40  -CLR XL AND XE.
+!   022175.40  -XL AND XE NOT CLRD OK.
+!   022176.00  -CLR XL AND XH.
+!   022203.00  -XL AND XH NOT CLRD OK
+!   022203.40  -CLR XE AND XH.
+!   022210.40  -XE + XH NOT CLRD OK.
+!   022212.40  -TO SSIP.
+!   022213.40  -UPDATE CONTINUITY CHECK.
+!
+! FOUR OF THOSE ARE THE DECK'S OWN SPELLINGS AND ARE KEPT:
+!   "-XVGV" at 022123.00, where the error message two rows later says
+!      "-XVGZ NOT SET CORRECTLY."  Read at 600 dpi; the last glyph is
+!      a V, not a Z.
+!   "-XVLZ AND XVD NOT CLRD OK." at 022135.00.  "XVD" is not an
+!      indicator; XVZ is meant.  Read at 600 dpi.
+!   "-XL AND XH NOT CLRD OK" at 022203.00, the only message in the
+!      block with NO terminal period.
+!   "-XVZ NOT SET CORRECTLY." at 022122.40 is followed, one character
+!      cell later, by a second smaller and slightly raised mark.  It
+!      is not the same glyph as the sentence's period and is most
+!      likely printer debris, so the message is transcribed ending at
+!      the period and the mark is recorded here rather than invented
+!      into the text.
+!
+! -- GLYPHS ----------------------------------------------------------
+!
+! MEASURED.  "TI,1,100O,$IND" (022104.40 and its six repeats): the
+! fourth glyph of the operand measures 51 px at 600 dpi against 42 and
+! 42 for the two before it, which is letter-O by this project's
+! calibration (digit zero 42-47, letter O 49-54, established in
+! verify_ax5b_160_test8b_listing.py).  Confirmed twice over: the row's
+! own printed address is 24503, and PDF p.114 prints "100O ...
+! -INDX WD. OF ONES." at 024503.00 while "100Z ... -ZERO INDX WD."
+! sits at 024502.00.
+!
+! MEASURED, WITH A CONFLICT, AND IT CHANGES NO BIT.  "SIC,SEN0+.32" at
+! 022212.00: the glyph after SEN measures 40 px, against 41 and 38 for
+! the digits 3 and 2 on the same row and 46 for that row's C -- so on
+! THIS page it reads as a digit zero.  verify_ax5b_160_test8b_listing
+! .py measured the same symbol's DEFINING row on p.114 at 54 px, which
+! is letter-O.  PDF p.114 prints the row as "SENO SYN,SENO ->
+! 1311.00+".  Unresolved.  The symbol is written LSEN0 here to match
+! verify_ax5b_160_test8b/8c (the same routine 1260 exit sequence), and
+! it cannot affect a bit either way: it is a SYN whose address came
+! from the very row that names it.
+!
+! HOUSE STYLE, NOT MEASURED.  This chain printer draws the digit 1 and
+! the letter I with the identical bare vertical stroke.  Every leading
+! stroke here -- 16096, 16097, 16098, 16082A, 160S1, 160SX1, 160XW1,
+! 160IT, 160K8, 160K9, 160K10, 160K11, 100Z, 100O, IC260 -- is read as
+! a digit, which is this project's standing convention (ax5b_16086,
+! ax5b_160102, ax5b_160_test8b/8c all do it).
+!
+! -- WHAT IS NOT HERE ------------------------------------------------
+!
+! NO CNOP, and no row that prints a location without machine code.
+! Both were asked about; neither arises in this block.  Every one of
+! the 159 printed rows carries its code, and the 182 half-words tile
+! 022062.00-022214.40 exactly, with no gap to SLC across and no label
+! to SYN in the middle.  There is also nothing alignment-dependent, so
+! a bad encoding cannot cascade here the way TEST 8C's CNOP does.
+!
+! NOTHING HERE IS A FIRST for this assembler, and the nearest relative
+! is worth naming: verify_ax5b_160102_listing.py already witnesses the
+! identical "SR,$X1,$X1 / KV" refill-into-value idiom at 022300.00 and
+! 022305.00, with the same 21.03 70 encoding.  SIC/B/BD/BE/NOP/LX/SX/
+! Z/TI/KVI/KV/CB+/V+ all have listing witnesses here already; BXE is
+! in 16099 and 160102, BZXE in 1258 TEST 2, 160102 and TEST 3A.  What
+! TEST 6 adds is scale and repetition in one straight line: 23
+! full-word TRANSMIT IMMEDIATEs, 27 NOPs, 18 SICs, 16 LXs, 16 SRs, 15
+! KVI immediates, 15 branch-on-XE rows, 9 "Z,$IND" and 6 KVs, plus the
+! two long internal BD references.
+!
+! ENCODING ONLY.  A run would need SSIP's SEN/SERS/SSW reporting, the
+! 64-word interrupt table 160IT, 1260's 160S1 subroutine and the
+! p.114/115 constant block; none of that is transcribed here.  The
+! block needs no interrupt, no mask and no boundary register to be
+! CHECKED -- the prologue writes $MASK and builds 160IT, but this file
+! only assembles it.
+!
+! Transcription standard: bit-exact against the printed machine code,
+! verify_ax5b_160_test6_listing.py.
+!
+! SUBSTITUTIONS: three, all spelling.
+!   (1) Symbols that begin with a digit are prefixed "L" (L16096,
+!       L16098, L160K9, L100O, ...), and LSEN0/LSSW/LIC260 follow
+!       verify_ax5b_160_test8b/8c so the same symbol has one name
+!       across routine 1260.  BIT7/BIT16/BIT17/BIT25/BIT30/BIT38 need
+!       no prefix and get none, as in ax5b_160102_lb_ctl.strap.
+!   (2) The listing's octal-literal notation "%8@140000.0" is written
+!       "(8)140000.0", the form C22-6531's radix-entry mode takes and
+!       every other file here uses.  It is load-bearing: this
+!       assembler's default radix is DECIMAL.
+!   (3) The listing's index-modifier notation "160IT%$X1@" is written
+!       "L160IT($X1)", as in ax5b_160_test8b.strap.
+!
+! EXTERNALS, SYN'd at the addresses this same listing prints for them.
+! THESE ARE INPUTS TO THE CHECK, NOT WITNESSES: a SYN makes the
+! address field come out right by construction, so a row naming one
+! proves only that every OTHER field lands where the listing puts it.
+! One of them is corroborated from outside: L16082A's 017227.00 is a
+! label DEFINED INSIDE verify_ax5b_16082_16083_listing.py's own
+! transcribed range, and 022064.40's "16082A-1.0" prints 17226 --
+! which is that address minus one word.  Corroboration, not promotion.
+
+L160SX1 SYN, (8)23041.0            ! 1260's SIC return link
+L160S1  SYN, (8)22741.0            ! 1260's "CLR INDS 0-19" subroutine
+L160XW1 SYN, (8)23065.0            ! count 64, refill 160IT
+L16082A SYN, (8)17227.0            ! = 17226 + 1.0; see verify_ax5b_16082_16083
+L160IT  SYN, (8)23201.0            ! the 64-word interruption table
+L160K8  SYN, (8)23051.0            ! "BD,16097"
+L160K9  SYN, (8)23052.0            ! XW,-1.0,0,0
+L160K10 SYN, (8)23053.0            ! XW,1.0,1,0
+L160K11 SYN, (8)23054.0            ! XW,-3.0,63,0
+L100Z   SYN, (8)24502.0            ! p.114 "-ZERO INDX WD."
+L100O   SYN, (8)24503.0            ! p.114 "-INDX WD. OF ONES."
+BIT7    SYN, (8)24531.0            ! 024522 + 7
+BIT16   SYN, (8)24542.0            ! 024522 + 16, value 2.0
+BIT17   SYN, (8)24543.0            ! 024522 + 17, value 1.0
+BIT25   SYN, (8)24553.0            ! 024522 + 25
+BIT30   SYN, (8)24560.0            ! 024522 + 30, count 32768
+BIT38   SYN, (8)24570.0            ! 024522 + 38, count 128
+SEN     SYN, (8)1310.0             ! the SIC error-entry link
+SERS    SYN, (8)1304.0             ! the error-report routine
+LSEN0   SYN, (8)1311.0             ! p.114 prints "SENO SYN,SENO"
+SSW     SYN, (8)1301.0             ! back to SSIP
+LIC260  SYN, (8)22737.0            ! the continuity word
+        SLC, (8)22062.0
+!
+! ---- 16096: set the interruption table up for the free-instruction --
+! ---- half of TEST 6 -------------------------------------------------
+L16096  SIC, L160SX1               ! -TEST 6 CHKS THAT FREE INSTRUCTION
+        B,   L160S1                ! -IS IN FACT FREE, AND THAT I-BOX
+        TI,  1, BIT38, $MASK       ! -INDS SET ONLY CORRECT INDS.
+        LX,  $X1, L160XW1
+        LX,  $X2, L16082A-1.0      ! -2 NOPS
+        SX,  $X2, L160IT($X1)
+        CB+, $X1, $-.32
+        SR,  $X1, $IA
+        LX,  $X1, L160K8
+        SX,  $X1, L160IT+39.0
+        Z,   $IND
+        BE,  $+.32
+        LX,  $X1, BIT25
+        NOP
+        BD,  L16098
+L16097  SIC, SEN
+        B,   SERS                  ! -FULL CONTROL GIVEN TO FREE INST.
+!
+! ---- 16098: the index indicators, set then cleared ------------------
+L16098  Z,   $IND                  ! -XCZ AND XVLZ
+        LX,  $X0, L160K9           !   count 0, value -1
+        TI,  1, $IND, $X1
+        SR,  $X1, $X1
+        NOP
+        NOP
+        KVI, $X1, (8)140000.0
+        BXE, $+1.32                !   equal -> skip the error pair
+        SIC, SEN
+        B,   SERS                  ! -XCZ AND XVLZ NOT SET CORRECTLY.
+!
+        Z,   $IND                  ! -XCZ AND XVZ
+        LX,  $X0, L100Z            !   count 0, value 0
+        TI,  1, $IND, $X1
+        SR,  $X1, $X1
+        KVI, $X1, (8)120000.0
+        SIC, SEN
+        BZXE, SERS                 ! -XCZ AND XVZ NOT SET CORRECTLY.
+!
+        TI,  1, L100O, $IND        ! -CLR XCZ AND XVLZ, XVZ.
+        LX,  $X0, L160K10
+        TI,  1, $IND, $X1
+        SR,  $X1, $X1
+        KVI, $X1, (8)617777.0
+        SIC, SEN
+        BZXE, SERS                 ! -ABOVE 3 INDS NOT CLRD CORRECTLY.
+!
+        Z,   $IND                  ! -XVLZ
+        LX,  $X0, L160K11          !   count 63, value -3
+        TI,  1, $IND, $X1
+        SR,  $X1, $X1
+        NOP
+        NOP
+        KVI, $X1, (8)40000.0
+        SIC, SEN
+        BZXE, SERS                 ! -XVLZ NOT SET CORRECTLY.
+!
+        Z,   $IND                  ! -XVZ
+        LX,  $X0, BIT30            !   count 32768, value 0
+        TI,  1, $IND, $X1
+        SR,  $X1, $X1
+        NOP
+        NOP
+        KVI, $X1, (8)20000.0
+        SIC, SEN
+        BZXE, SERS                 ! -XVZ NOT SET CORRECTLY.
+!
+        Z,   $IND                  ! -XVGV   (the deck's own spelling)
+        LX,  $X0, L160K10          !   count 1, value +1
+        TI,  1, $IND, $X1
+        SR,  $X1, $X1
+        NOP
+        NOP
+        KVI, $X1, (8)10000.0
+        SIC, SEN
+        BZXE, SERS                 ! -XVGZ NOT SET CORRECTLY.
+!
+        TI,  1, L100O, $IND        ! -CLR XVLZ AND XVZ.
+        LX,  $X0, L160K10
+        TI,  1, $IND, $X1
+        SR,  $X1, $X1
+        NOP
+        NOP
+        KVI, $X1, (8)617777.0
+        SIC, SEN
+        BZXE, SERS                 ! -XVLZ AND XVD NOT CLRD OK.
+!
+        TI,  1, L100O, $IND        ! -CLR XVLZ AND XVGZ.
+        LX,  $X0, BIT30
+        TI,  1, $IND, $X1
+        SR,  $X1, $X1
+        NOP
+        NOP
+        KVI, $X1, (8)627777.0
+        SIC, SEN
+        BZXE, SERS                 ! -XVLZ AND XVGZ NOT CLRD OK.
+!
+        TI,  1, L100O, $IND        ! -CLR XVZ AND XVGZ
+        LX,  $X0, L160K11
+        TI,  1, $IND, $X1
+        SR,  $X1, $X1
+        NOP
+        NOP
+        KVI, $X1, (8)647777.0
+        SIC, SEN
+        BZXE, SERS                 ! -XVZ AND XVGZ NOT CLRD OK.
+!
+! ---- the three comparison indicators, by COMPARE VALUE --------------
+        LX,  $X1, BIT17            ! -XL.        X1 := 1.0
+        LX,  $X2, BIT16            !             X2 := 2.0
+        Z,   $IND
+        KV,  $X1, BIT16            !   1.0 vs 2.0 -> XL
+        TI,  1, $IND, $X3
+        SR,  $X3, $X3
+        NOP
+        NOP
+        KVI, $X3, (8)4000.0
+        SIC, SEN
+        BZXE, SERS                 ! -XL NOT SET OK.
+!
+        Z,   $IND                  ! -XE
+        KV,  $X1, BIT17            !   1.0 vs 1.0 -> XE
+        TI,  1, $IND, $X3
+        SR,  $X3, $X3
+        NOP
+        NOP
+        KVI, $X3, (8)2000.0
+        SIC, SEN
+        BZXE, SERS                 ! -XE NOT SET OK.
+!
+        Z,   $IND                  ! -XH
+        KV,  $X2, BIT17            !   2.0 vs 1.0 -> XH
+        TI,  1, $IND, $X3
+        SR,  $X3, $X3
+        NOP
+        NOP
+        KVI, $X3, (8)1000.0
+        SIC, SEN
+        BZXE, SERS                 ! -XH NOT SET OK.
+!
+        TI,  1, L100O, $IND        ! -CLR XL AND XE.
+        KV,  $X2, BIT17            !   XH on, XL and XE off
+        TI,  1, $IND, $X3
+        SR,  $X3, $X3
+        NOP
+        NOP
+        KVI, $X3, (8)771777.0
+        SIC, SEN
+        BZXE, SERS                 ! -XL AND XE NOT CLRD OK.
+!
+        TI,  1, L100O, $IND        ! -CLR XL AND XH.
+        KV,  $X1, BIT17            !   XE on, XL and XH off
+        TI,  1, $IND, $X3
+        SR,  $X3, $X3
+        NOP
+        NOP
+        KVI, $X3, (8)772777.0
+        SIC, SEN
+        BZXE, SERS                 ! -XL AND XH NOT CLRD OK
+!
+        TI,  1, L100O, $IND        ! -CLR XE AND XH.
+        KV,  $X1, BIT16            !   XL on, XE and XH off
+        TI,  1, $IND, $X3
+        SR,  $X3, $X3
+        NOP
+        NOP
+        KVI, $X3, (8)774777.0
+        SIC, SEN
+        BZXE, SERS                 ! -XE + XH NOT CLRD OK.
+        B,   $+1.0
+        BD,  L16096
+        SIC, LSEN0+.32
+        B,   SSW                   ! -TO SSIP.
+        BD,  $+.32
+!
+        LX,  $X13, LIC260          ! -UPDATE CONTINUITY CHECK.
+        V+,  $X13, BIT7
+        SX,  $X13, LIC260
+        END, L16096

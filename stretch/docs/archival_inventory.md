@@ -512,6 +512,38 @@ scenario advisor warned to check for before transcribing. `WEN`/
 `WEN2`/`VEN` was picked instead for being both small and, unlike
 1274, actually capable of failing.
 
+**CORRECTED 2026-09-24: the reasoning above is right about five of
+routine 1274's seven subjects and WRONG about a sixth, and the routine
+has now been transcribed whole** --
+`strap/programs/ax5b_1274_truncation.strap`, 99 rows,
+024412.00-024500.00, PDF pp.112-114, bit-exact and wired into the
+suite. (It also runs three pages earlier and ends two pages earlier
+than this file's page span implied.)
+
+The rejection reasoned that fixed-width BSV arithmetic makes an
+over-wide address unrepresentable. True for the five UN-INDEXED
+subjects, which reach bit 18 from `SVA` rather than from index
+arithmetic. **Not true of 024455.00**, `TI,1,I74K1,I74K2($X1)` printing
+`24471.00 80 024472.02 A1`. Its A2 is a 19-bit HALF-WORD address with
+I2 = X1 = 32 bits, and the model's Transmit arm sends A2 through
+`effAddr19`. **Its failure mode is not an over-wide address but wrong
+SCALING inside a perfectly legal 19-bit one**: under the straight-add
+this project carried before 2026, the 32 would be 32 half-words rather
+than 32 bits, landing on word 024512 instead of 024472, leaving
+`I74K2` zero and tripping the deck's own check. Reasoned from the page
+plus a reading of the arm; NOT confirmed in simulation, and the
+transcription says so.
+
+**The general principle survives intact and is worth restating,
+because it was applied correctly and still reached a wrong answer.**
+"Check whether the candidate can actually fail before transcribing it"
+is right. What went wrong is the SCOPE of the check: the question was
+asked about address WIDTH, which is what the routine's title names,
+and the one row that discriminates fails on scaling instead. A routine
+named "TRUNCATION OF ADDRESSES" turned out to contain a check that is
+not about truncation. **When ruling a block out, rule out each of its
+rows, not its title.**
+
 ### I-Box 2 (`jb_ax2a_ibox-2.pdf`, 203 pages)
 
 Purpose (verbatim): "1) Store Zero in Index Internal and External

@@ -113,19 +113,80 @@
 ! and the EXIC under test would never execute at all.  The block
 ! cannot pass under that reading, and the deck presumably passed.
 !
-! SO SOMETHING IN THE READING IS WRONG, AND THIS FILE DOES NOT KNOW
-! WHICH.  The candidates, none checked against a primary source:
-! 024152.40-024153.00's call into 1260's clear-indicators subroutine
-! may return DISABLED and something between it and the EXIC may
-! re-enable; 162ITE's landing half may be a BD, so a first interrupt
-! disables and the DD is the deliberate arming step rather than a
-! probe; or the DD is simply not executed, which would need a rule
-! about data words in the instruction stream that neither page states.
-! Settling it needs the pages this file did not transcribe -- 160S1 at
-! 022741.00 (pp.83-85) and 162ITE at 024320.00 (p.109) -- not more
-! inference from the rows above.  Recorded as an OPEN QUESTION with a
-! named next step, which is a better position than the "unexplained
-! row" 3A left and a better one than pretending 1CC closed it.
+! AND THE ANSWER IS A FOURTH THING, none of the three candidates this
+! file first listed.  **160S1 RETURNS DISABLED, THE BLOCK STAYS
+! DISABLED, THE DD IS EXECUTED AND DOES ACTUATE OP -- AND THE EXIC
+! INTERRUPTS ANYWAY.**  The word is not a probe here.  It is a
+! higher-priority DECOY, and its job is to keep AD alive for the BADZ
+! to find.
+!
+! Three primary-source steps, each read first-hand at 300 dpi:
+!
+!   1. 160S1 NEVER ENABLES.  Its return, PDF p.85 at 023041.00, is
+!      "160SX1 $BD,0" printing "0.04 00" -- a BRANCH DISABLED whose
+!      address the caller's SIC plants.  Printed p.41: SIC "causes the
+!      instruction counter contents to be stored in bits 0-18 of the
+!      half-word specified by bits 0-18 of the effective storage
+!      address.  OTHER BITS OF THE HALF-WORD ARE NOT DISTURBED." -- so
+!      the SIC fills the address and leaves the BD standing.  Printed
+!      p.40: "Branch Disabled (BD).  This operation disables the
+!      interruption mechanism, and then performs the same operation as
+!      BRANCH."  There is no BE anywhere in 160S1.  TEST 3B is disabled
+!      from 024153.00 onward.
+!
+!   2. AN EXECUTION OPERATION INTERRUPTS EVEN WHILE DISABLED.  Printed
+!      p.50, verified verbatim: "Second, at the completion,
+!      termination, or suppression of an execution operation,
+!      interruption is always permitted."  And its PROGRAMMING NOTE:
+!      "When interruption occurs following an execution operation with
+!      the interruption system disabled, it is caused only by the
+!      actuated indicator of highest priority whose mask bit is one.
+!      Further interruptions cannot occur until either the system is
+!      enabled or another execution operation is completed, terminated,
+!      or suppressed.  EXAMINATION FOR OTHER ACTUATED INDICATORS CAN BE
+!      PROGRAMMED INTO THE CORRECTION ROUTINE."  That last clause is
+!      the BADZ at 024157.40, described by the manual in advance.
+!
+!   3. THE INTERRUPT CONSUMES THE INDICATOR IT VECTORS ON.  Printed
+!      p.48, verified verbatim: "a mechanism develops the number of the
+!      leftmost actuated indicator whose mask bit is one.  AFTER THIS
+!      LEFTMOST INDICATOR HAS BEEN TURNED OFF, the developed number is
+!      added to the contents of the interruption address register."
+!      Mask bits 0-19 are permanently one (same page), so Z,$MASK
+!      cannot affect either indicator here.
+!
+! PUT TOGETHER, THE DD IS LOAD-BEARING.  OP is 15 and AD is 16, so OP
+! is to the LEFT.  At the EXIC's boundary:
+!
+!   * WITHOUT the DD, AD is the leftmost actuated indicator, the
+!     interruption CONSUMES AD, and the BADZ at 024157.40 finds it off
+!     -- a false "-AD NOT SET WHEN SUBJ INST OF / -EXIC LESS THAN 32."
+!     The block could not pass.
+!   * WITH the DD, OP outranks AD, OP is turned off and vectors the
+!     interrupt, and AD SURVIVES for the BADZ.  The block passes.
+!
+! So the two error messages are exactly diagnostic: falling through at
+! 024156.40 means no post-execution interruption happened at all;
+! landing with AD off means the EXIC failed to set AD.  The same
+! reading explains 3A's identical triple at 024144.40.  And it is
+! CONSISTENT with 1CC rather than in conflict with it -- in 1CC the
+! same word has no execution operation following it, so there it really
+! is a pure enable-state probe.  One word, two jobs, decided by what
+! comes after it.
+!
+! THE DECK EXERCISES THE p.50 RULE INDEPENDENTLY, which is what raises
+! this above a manual-only reading: block 16225 on PDF p.93 is called
+! with BD, never enables, and yet FALLING THROUGH its EX is the error
+! "-NO INT TAKEN WHEN BE INSTR EXECUTED, / -BRANCH NOT EXECUTED."  The
+! OK path there is an interruption taken while provably disabled.
+!
+! A NOTE ON HOW THIS WAS FOUND, because the process is repeatable.  The
+! earlier draft of this block listed three candidate resolutions and
+! named the two pages that would decide it -- 160S1 (pp.83-85) and
+! 162ITE (p.109).  Naming the pages worked; listing the candidates did
+! not, and the answer was none of the three.  **Candidates are a way of
+! showing the question is tractable, not a menu the answer comes from.**
+! Reading the named pages is what settled it.
 !
 ! Stated rather than rationalised, in the manner
 ! of ax5b_16082_op_ad.strap's "NOT TRACED" block; the ENCODING of the

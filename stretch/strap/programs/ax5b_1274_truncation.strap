@@ -1,0 +1,530 @@
+! jb_ax5b "I-Box 5", ROUTINE 1274 -- "TRUNCATION OF ADDRESSES", the
+! whole routine, PDF pp.112-114, octal 024412.00-024500.00.  99 rows
+! carry printed machine code; one more (the ident word at 024415.00)
+! prints a LOCATION and no machine code and is SYN'd, not fabricated.
+! Checked bit-exactly by verify_ax5b_1274_truncation_listing.py.
+!
+! CITED BY PDF PAGE.  jb_ax5b's LISTING pages carry no printed page
+! numbers -- the "12 11 10 9" down the left margin is fanfold
+! carriage-tape line numbering.  Every verify_ax5b_*.py here already
+! says "PDF p.NN" for that reason.  The only printed page numbers in
+! this document are in the front write-up, which is scanned 2-up: PDF
+! p.2 holds printed pp.1-2.
+!
+! ------------------------------------------------------------------
+! THE BANNER, verbatim from PDF p.112 (the three comment rows above
+! the first instruction; the location column is blank for all three):
+!
+!     ----I274---TRUNCATION OF ADDRESSES.
+!     -THIS PROGRAM CHECKS THOSE INSTRUCTIONS WHICH
+!     -USE ONLY PART OF THEIR ADDRESS FIELD.
+!
+! THE WRITE-UP, verbatim from PDF p.2 (printed p.2), section 4.0
+! "PROGRAM PHILOSOPHY", the routine index:
+!
+!     1274   Checks that those instructions which can have a 19 bit
+!            address but use only 18 bits do in fact truncate the
+!            nineteenth bit.
+!
+! and printed p.1, section 1 PURPOSE, the clause that names this
+! routine: "... and the proper truncation of addresses for those
+! instructions which use only part of their address field."
+!
+! "THE NINETEENTH BIT" IS IBM BIT 18, 0-origin.  A half-word
+! instruction's address field is bits 0-18 (Reference Manual printed
+! p.20's field diagram, PDF p.23: ADDRESS 0..18, OP. 24, I 28, ...).
+! Nineteen bits numbered from zero end at 18, and bit 18 is exactly
+! the half-word select.  Every subject instruction below addresses a
+! FULL WORD, so bit 18 is the bit that must be thrown away.  The deck
+! plants it the same way seven times: "LVI,$Xn,<word>+.32" puts a
+! value of 32 BITS -- one half-word -- in an index register, and
+! "SVA,$Xn,<target>" copies 19 bits of that value into the target
+! instruction's own address field.
+!
+! ------------------------------------------------------------------
+! THE SEVEN ERROR MESSAGES, verbatim, with the octal location of the
+! row each one is written beside.  Every one is the comment field of
+! the conditional branch:
+!
+!   024421.40  BXVZ,SERS    -LX FAILS TO TRUNCATE BIT 19.
+!   024430.00  BXVZ,SERS    -SX FAILS TO TRUNCATE BIT 19.
+!   024436.00  BXVZ,SERS    -REFILL FAILS TO TRUNCATE BIT 19.
+!   024442.40  BXVZ,SERS    -EXIC FAILS TO TRUNCATE BIT 19.
+!   024447.00  BZXVZ,SERS   -STORE ZERO FAILS TO TRUNCATE BIT 19.
+!   024453.40  BXVZ,SERS    -TRANSMIT FAILS TO TRUNCATE LHW BIT 19.
+!   024457.40  BXVZ,SERS    -TRANSMIT FAILS TO TRUNCATE RHW BIT 19.
+!
+! The four other comments on these pages, also verbatim:
+!   024412.00  -UPDATE IDENT.        024413.40  -PRINT IDENT.
+!   024461.40  -TO SSIP              024462.40  -UPDATE CONTINUITY CHECK
+!   024464.40 / 024465.40 / 024467.00  -LOOP
+!   024467.40  -CONTINUE
+!   024470.00  -CONTINUITY REG I274.
+! and the header over the next routine's pool, PDF p.114, one row
+! BELOW this routine's last: "-COMMON CONSTANTS FOR FETCH ONLY".
+!
+! ------------------------------------------------------------------
+! BRANCH POLARITY.  This block does NOT use the "branch to the OK
+! path, fall through to SIC,SEN / B,SERS" shape.  Every check here is
+!
+!       SIC, SEN
+!       B<cond>, SERS      -<the anomaly>
+!
+! so the SIC/branch pair IS the error report and the branch is TAKEN
+! on failure -- the same shape ax5b_162_test3a.strap already carries
+! ("BZXVZ,SERS  -INSTRUCT NOT NOPED ...").  The message names the
+! ANOMALY.  The test that proves the polarity is read right is the
+! ODD ONE OUT:
+!
+!   Six checks end "BXVZ,SERS" -- branch if XVZ (index Value Zero) is
+!   ON.  Each of those six first loads an index register from a word
+!   that a CORRECT truncation leaves holding I74K1's all-ones value,
+!   so XVZ is OFF and the branch is not taken.  A failure leaves the
+!   word zero and XVZ on -> branch -> report.
+!
+!   ONE check, STORE ZERO at 024447.00, ends "BZXVZ,SERS" -- branch if
+!   XVZ is OFF.  Its pass condition is inverted because the operation
+!   under test WRITES ZERO: I74K2 is loaded with all ones first, "Z"
+!   (patched to I74K2+.32) must zero it, so on success the value IS
+!   zero, XVZ is ON, and BZXVZ does not branch.  If Z failed to
+!   truncate it would zero some other word, I74K2 would still hold
+!   ones, XVZ off -> branch -> report.
+!
+! The flip is the deck's own consistency check on this reading; a
+! polarity that cannot explain it is the wrong polarity.
+!
+! ------------------------------------------------------------------
+! RULE 4, DECLARED RATHER THAN SIDESTEPPED.  AGENTS.md: "Encodings and
+! semantics come from primary sources ... Never infer an instruction's
+! meaning from listing usage alone."  Two claims here ARE sourced: the
+! indexing rule (Reference Manual printed pp.20-21, quoted below) and
+! SVA's address-field replacement (printed p.29, quoted in
+! StretchExecute.bsv's dixop_SVA arm -- "The first 18, 19, or 24 bits
+! of the value field of the index word specified by J replace the
+! address field of the instruction specified by the effective
+! address", with the width taken from the target).
+!
+! THE ACCOUNT BELOW OF WHAT EACH SUBJECT DOES IS CONJECTURE, from
+! listing usage: Refill reloading an index word from its refill field,
+! EXIC running a pseudo-IC, Store Zero clearing a word, Transmit
+! resolving A1/A2 to word addresses.  No primary-source statement was
+! located for any of those four while writing this file.  For Refill,
+! docs/microarchitecture_plan.md's own summary reads differently ("put
+! the effective address's word into J, replace X0's refill with bits
+! 0-17 of the effective address"), which is a second reason to treat
+! the narrative as orientation and not as settled.  NOTHING IN THE
+! CHECK RESTS ON IT: verify_ax5b_1274_truncation_listing.py compares
+! printed bit patterns against assembled ones, and every encoding used
+! comes from opcodes.py, whose citations are the pocket card and the
+! Reference Manual.
+!
+! ------------------------------------------------------------------
+! THE SEVEN SUBJECTS, in order, and what each one is patched to do
+! (CONJECTURE, per the paragraph above).
+!
+!  1. LX   (024420.40, label I742, printed "LX,$X2,0").  SVA plants
+!     I74K1+.32 in its address.  Truncated, it loads word 024471 =
+!     I74K1 = all-ones value -> X2 nonzero.
+!  2. SX   (024425.00, I743, "SX,$X1,0").  X1 holds I74K1's word;
+!     patched address I74K2+.32, so a truncating SX writes word
+!     024472.  Checked by loading X3 from I74K2.
+!  3. REFILL (024433.00, "R,0"; the ONLY subject with no label -- the
+!     SVA one half-word above it writes "$+.32" instead).  I74K2 was
+!     given I74K4's index word, whose REFILL field is I74K1; a
+!     truncating R therefore refills I74K2 from I74K1 and leaves it
+!     holding ones.
+!  4. EXIC (024441.00, "EXIC,I74PSI"; patched to I74PSI+.32).  I74PSI
+!     holds a copy of word 024477 = I74K7, whose value field is
+!     024476.00, so the pseudo-IC runs I74K6, "LVI,$X1,%8@777777.40",
+!     and X1 -- zeroed at 024437.40 -- comes back nonzero.
+!  5. STORE ZERO (024445.40, I744, "Z,0"; patched to I74K2+.32).
+!  6. TRANSMIT, LEFT half-word (024451.00): "TI,1,I74K1(X1),I74K3"
+!     with X1 = 32.  A1 is a 24-BIT BIT ADDRESS, so the index goes
+!     straight in and the +32 lands at bit 18 of the bit address; the
+!     word address is bits 0-17 and bit 18 must be dropped.
+!  7. TRANSMIT, RIGHT half-word (024455.00): "TI,1,I74K1,I74K2(X1)",
+!     same X1 = 32.  A2 is a 19-BIT HALF-WORD ADDRESS, so this is the
+!     other arithmetic entirely -- see the note on the 24-bit domain
+!     below.
+!
+! After the seventh check the routine loops once ("B,$+1.0 /
+! BD,I741"), returns to SSIP ("SIC,SEN0+.32 / B,SSW"), and runs the
+! standard continuity-register update (LX,$X13,BIT0 / SX,$X13,IC274)
+! and the three-KV/KC loop-count block that closes every routine in
+! this deck.
+!
+! ------------------------------------------------------------------
+! DOES THIS DECK BEAR ON bsv/StretchExecute.bsv's "THE ADDITION
+! HAPPENS IN THE 24-BIT BIT-ADDRESS DOMAIN"?  YES -- at exactly one
+! row, and the rest of the block bears on the SENTENCE AFTER it.
+!
+! That comment quotes Reference Manual printed p.20 (PDF p.23): "The
+! value field of the index is interpreted as a signed 24-bit field.
+! The address part of the instruction is interpreted as a positive
+! unsigned field.  The length of the address field depends upon the
+! instruction class.  The missing low-order bits, if any, are always
+! assumed to be zero."  And printed p.21 (PDF p.24): "The effective
+! address which results from an indexing operation always has 24
+! numeric bits and a sign.  Depending upon the operation, a full-word,
+! half-word, or bit-address may be required.  In each case, only the
+! applicable part of the effective address is used.  The
+! non-applicable part is ignored."  Both read first-hand off the page
+! images; the RefMan PDF has no text layer and PDF page = printed
+! page + 3.
+!
+! Five of the seven subjects are NOT INDEXED AT ALL -- bit 18 gets
+! into their address fields from SVA, not from index arithmetic.  They
+! test the SECOND sentence ("only the applicable part ... is used"),
+! which in this model is the "ea[18:1]" half-word-to-word narrowing,
+! not effAddr19's alignment.
+!
+! 024451.00, the LEFT-half Transmit, indexes a 24-bit BIT address --
+! effAddr24, the case that comment says "was always right, because for
+! it the instruction address is already a bit address and there is
+! nothing to align."  It corroborates the claim without discriminating
+! it.
+!
+! 024455.00, the RIGHT-half Transmit, is the discriminating row.  A2
+! is a 19-bit HALF-WORD address (bits 32-50) and its index field I2
+! (bits 60-63) is X1 = 32 bits.  Under the manual's rule the
+! half-word address is extended with low-order zeros into the 24-bit
+! domain first, so 024472.00 + 32 bits = 024472.40, whose word part is
+! still 024472 = I74K2 -- the word the very next rows read back.
+! Under the straight-add the comment says was there before ("These two
+! helpers previously added the value STRAIGHT to a word or half-word
+! address, which is wrong by 64x and 32x respectively"), 32 would be
+! added as 32 HALF-WORDS: half-word 024472*2 + 32, i.e. word 024512,
+! and I74K2 would stay zero and the check would report.  So this deck
+! is an oracle for effAddr19 specifically.
+!
+! THE MODEL SIDE WAS READ, not assumed.  opcodes.TRANSMIT_CODES warns
+! that "StretchExecute.bsv's Transmit arm moves exactly ONE word and
+! ignores both `immCount` and `j`", which left it open whether i2 is
+! consulted at all.  It is, and through exactly this helper:
+! StretchDecode.bsv keeps "addr2: w[31:13] ... i2: w[3:0]", and the
+! execute arm reads
+!     WordAddr srcBase = baWord(effAddr24(st, t.addr1, t.i1));
+!     WordAddr dstBase = (effAddr19(st, t.addr2, t.i2))[18:1];
+! -- A1 through effAddr24 and A2 through effAddr19, whose body is the
+! "{raw, 5'b0}" alignment, the add, and "ea[23:5]".  So the deck
+! exercises the two helpers in two adjacent rows with the same index
+! value in both.
+!
+! That is worth recording against docs/archival_inventory.md, which
+! rejected routine 1274 in 2026 as "untestable by construction ...
+! BSV's fixed-width arithmetic makes representing an address wider
+! than architecturally valid impossible".  True of the five unindexed
+! subjects; NOT true of 024455.00, whose failure mode is a wrong
+! SCALING inside a legal 19-bit address, which no type width forbids.
+! Stated as reasoning from the page and from reading the arm -- this
+! file is an ENCODING check, it does not run the model, and nothing
+! here was confirmed in simulation (see below).
+!
+! ------------------------------------------------------------------
+! WHAT THIS IS AND IS NOT.  An ENCODING oracle.  It cannot run: SERS,
+! SEN, SEN0, RET, SSW, IDF1, DPET13 are SSIP's, not transcribed; the
+! loop block branches to absolute (8)45000.0 and (8)57000.0, which are
+! outside anything this project has; and EXIC/Transmit would need the
+! model's execute path.  What it checks is bit placement, against
+! IBM's own assembler output.
+!
+! ------------------------------------------------------------------
+! WITNESS TIERING.  EVERY "SYN" BELOW IS AN INPUT TO THE CHECK, NOT A
+! WITNESS: a SYN makes the address field come out right by
+! construction, so a row naming one proves only that every OTHER field
+! lands where the listing puts it.  Ten symbols are SYN'd:
+!
+!   SEN SEN0 SERS RET SSW IDF1 DPET13 -- SSIP's entry points.  These
+!     are NOT guesses: PDF p.116, this deck's own SYN table, prints
+!     them in its label column with their values --
+!       SSW SYN,%8@1301.0  ERS SYN,%8@1302.0  SERS SYN,%8@1304.0
+!       RET SYN,%8@1306.40 RET1 SYN,%8@1307.0 RET2 SYN,%8@1307.40
+!       SEN SYN,%8@1310.0  SEN0 SYN,%8@1311.0 DPET13 SYN,%8@1437.0
+!       INT SYN,%8@1353.0  IDF1 SYN,%8@1443.0 IDF2 SYN,%8@1444.40
+!     -- but they are still inputs here, because this file feeds those
+!     same numbers to the assembler.
+!   I00LC BIT0 -- the shared constant pool, PDF p.114's own label
+!     column (I00LC at 024501.00, BIT0 at 024522.00).
+!   I74ID -- defined INSIDE the transcribed range, at 024415.00, and
+!     SYN'd anyway because the page prints NO MACHINE CODE for it (see
+!     the next section).
+!
+! GENUINELY WITNESSED ADDRESSES -- every symbol defined inside the
+! range by a row that prints machine code, so its address is the
+! location counter's own arithmetic over all the preceding rows:
+!   I741 I742 I743 I744 IC274 I74K1 I74K2 I74K3 I74K4 I74K5 I74K6
+!   I74K7 I74PSI
+! plus the three SELF-RELATIVE operands, which name no symbol at all:
+!   024432.40 "SVA,$X2,$+.32"  024440.40 "SVA,$X2,$+.32"
+!   024460.00 "B,$+1.0"        024462.00 "BD,$+.32"
+! I74, the entry label, is deliberately NOT counted: the SLC above it
+! sets the counter to 024412.0 and I74 is the first label after it, so
+! checking it checks the SLC against the number this transcription
+! handed the SLC.  (PDF p.111 does corroborate it independently --
+! routine 1268's last instruction is "BD,I74" at 024404.00, printed
+! "24412.04 00" -- but that is a different page's row, not this
+! block's.)
+!
+! DOES THIS BLOCK WITNESS THE "BIT<n> = 024522 + n" TABLE?  Only BIT0,
+! and only weakly: "LX,$X13,BIT0" at 024462.40 prints "24522.32 10",
+! which fixes BIT0 = 024522.00 -- but this file SYNs BIT0 to that very
+! number, so the row is an input like any other.  No other BIT<n> is
+! named anywhere in routine 1274.  The rule itself rests on PDF p.114
+! and p.115, read here at 300-600 dpi, whose label column runs BIT0 at
+! 024522.00 through BIT63 at 024621.00 without a gap: 0o24621 - 0o24522
+! = 0o77 = 63.
+!
+! ------------------------------------------------------------------
+! ONE ROW HAS A LOCATION AND NO MACHINE CODE, and is not fabricated.
+! PDF p.112 prints
+!
+!     I74ID   %IQSZ@DD%BU,64,8@,I274     Z                024415.00
+!
+! -- the routine's printed identifier, a 64-bit character constant
+! whose "%IQSZ@" entry-mode prefix this assembler does not implement
+! (C22-6531's (R)-radix and mode letters; DDI/CF/RF are listed as not
+! implemented in strap_asm.py's own scope note).  The listing's
+! machine-code column for it is BLANK.  So: "I74ID SYN, (8)24415.0",
+! an explicit "SLC, (8)24416.0" across the word it occupies, and the
+! row is NOT in the checked set.  "LX,$X1,I74ID" at 024412.00
+! therefore has a SYN-supplied address and is an input, not a witness.
+! The "CNOP" one row above it is kept VERBATIM and not hand-expanded;
+! the counter is already at a word boundary (024415.00) when it is
+! reached, so it compiles nothing, exactly as the page shows nothing.
+!
+! ------------------------------------------------------------------
+! GLYPHS.  MEASURED, not assumed, at 600 dpi with a connected-column
+! ink scan (widths in pixels of the glyph's own ink bounding box).
+! NOTHING IN THE CHECK DEPENDS ON ANY OF IT -- this file defines and
+! uses each name consistently, so the oracle is identical under every
+! spelling below.  It is recorded because the names are what a reader
+! compares against the page.
+!
+!   LETTER I vs DIGIT 1.  This print train draws digit 1 with a base
+!   serif and an upper-left flag, and letter I as a bare stroke.  They
+!   are not close: on the row at 024463.40, "LX,$X1,%8@103.0", the
+!   two 1's measure 36 and 39 px; on 024464.00, "KV,$X1,I00LC", the
+!   leading character of the operand measures 17 px, the same as the I
+!   of "LVI" (13 px) and of "SIC" (14 px).  EVERY ROUTINE-1274 SYMBOL
+!   THAT LOOKS LIKE IT STARTS WITH "1" STARTS WITH LETTER I: I74,
+!   I74ID, I741, I742, I743, I744, I74K1..I74K7, I74PSI, IC274, and
+!   the pool's I00LC.  (Label "I741" at 024416.00: leading 14 px,
+!   trailing 36 px -- letter then digit, in the same four characters.)
+!   THE BANNER'S OWN CHARACTER WAS MEASURED SEPARATELY, because it is
+!   the one semantically surprising instance: the glyph before "274"
+!   in "----I274---TRUNCATION OF ADDRESSES." is a 13 px bare stroke,
+!   so the banner does print a letter I, as do the ident datum "I274"
+!   at 024415.00 and "-CONTINUITY REG I274." at 024470.00.
+!
+!   A SUPPORTING ARGUMENT, not a sourced rule: these names are legal
+!   STRAP symbols unaided, which is why no "L" prefix is needed here
+!   and none is used, where earlier files in this repo prefix "L" to
+!   "160S1"/"162100".  The claim behind that -- that a STRAP symbol
+!   cannot begin with a digit -- is inferred from THIS repo's
+!   assembler (strap_asm reads a leading digit as a number) and from
+!   the decks' practice.  C22-6531 is in docs/ but has no text layer
+!   and its symbol-formation page was not located, so this corroborates
+!   the measurement rather than grounding it.
+!
+!   LETTER O vs DIGIT 0.  Also separable on this scan, contrary to the
+!   note in programs/ax5b_1258_test2.strap ("This printer's letter O
+!   and digit 0 are the same glyph").  The comparison that carries the
+!   argument is WITHIN ONE ROW, 024461.00: "SIC,SEN0+.32"'s fourth
+!   character measures 45 px while that same row's machine code,
+!   "1311.40 80", has digit 0 at 45 px.  So it is SEN0, with a DIGIT.
+!   Across rows: digit 0 is 43-48 px in "0.30 00", "24501.02 90" and
+!   "%8@45000.0", letter O is 50 px in "-TO SSIP" at 024461.40.  (The
+!   O of "NOP" measured 58 px, but that band caught a rule line and
+!   the figure is not relied on.)  By the same measurement "BIT0" ends
+!   in a digit (46 px) and "I00LC" is letter-I-zero-zero (17, 43, 43
+!   px on p.113; 12, 43, 45 px at its own label row on p.114).
+!
+!   AND THE DECK CARRIES BOTH SPELLINGS, which is why the earlier note
+!   read its row as meaningless.  PDF p.114's pool prints "SENO
+!   SYN,SEN0": the LABEL's fourth character measures 54 px and the
+!   OPERAND's fourth measures 42 px, against 43 and 45 px for the two
+!   zeros of "I00LC" on the very next row.  It is not the self-SYN
+!   "SENO SYN,SENO" ax5b_1258_test2.strap describes -- it is an ALIAS,
+!   letter-O SENO defined as digit-zero SEN0.  PDF p.116's SYN table,
+!   measured the same way, spells the real symbol with the digit (its
+!   label's fourth character 42 px, the digit 0 ending that row's
+!   "%8@1311.0" also 42 px).  Both rows are outside this range and
+!   both are inputs here either way.
+!
+! ------------------------------------------------------------------
+! FIRSTS FOR THIS REPO.  ONE, after grepping every verify_*.py and
+! programs/*.strap -- which knocked out four candidates that looked
+! like firsts on inspection:
+!   * TRANSMIT WITH THE INDEX ON A2 -- 024455.00,
+!     "TI,1,I74K1,I74K2(X1)" -> "24471.00 80 024472.02 A1", where I2
+!     (bits 60-63) is 1 and I1 (bits 28-31) is 0.  Every other
+!     TRANSMIT transcribed in this project leaves I2 zero:
+!     ax5b_16087_walk's two TI rows index A1, and ax5b_160s1_clr_inds'
+!     fifteen and ax5b_160105_compare's one index neither.  Bits 60-63
+!     of a Transmit have never been pinned against a printed word
+!     before.  024451.00, this block's other TRANSMIT, pins I1 -- so
+!     the two rows exercise the two index fields separately.
+!   NOT firsts, each with the file that already witnessed it (recorded
+!   because each looked like one until it was checked):
+!     "R" (REFILL)  verify_ibox4_r_extmem_listing.py "R, I38RFL" ->
+!                   "5627.02 00"; verify_ibox4_refill_nop_listing.py
+!                   "R, $X0" -> "20.02 00".  024433.00 is a third.
+!     "LV"          verify_ibox1_cpi_chain_listing.py;
+!                   verify_ax5b_160102_listing.py "LV,$X3,BIT0($X1)".
+!     A LABEL in XW's REFILL field -- verify_ax5b_160k_listing.py's
+!                   "L160XW1 XW,0,64,L160IT".  024474.00's "I74K4
+!                   XW,0,0,I74K1" -> "0.00 00 000000.51 39" (bits
+!                   46-63 = 0o24471 = I74K1's WORD address) is a
+!                   SECOND, independent witness for strap_asm's ">> 6"
+!                   bit-address-to-word-address conversion there.
+!     SVA, KV, KC, SR, EXIC, SIC, CNOP, BXVZ, BZXVZ, BZXE.
+!
+! ------------------------------------------------------------------
+! SUBSTITUTIONS, three, all mechanical:
+!   (1) The listing's "%...@" index brackets are written "(...)", as
+!       ax5b_16087_walk.strap and ibox1_sic_cb_cbz.strap already do.
+!       "I74K1%$X1@" -> "I74K1($X1)".
+!   (2) The listing's "%8@" octal radix prefix is written "(8)".
+!   (3) The ident row's "%IQSZ@DD%BU,64,8@,I274  Z" is not
+!       transcribed; see "ONE ROW HAS A LOCATION AND NO MACHINE CODE".
+! Everything else, including "CNOP", is verbatim.
+
+! ---- externals: INPUTS to the check, not witnesses ----------------
+SEN     SYN, (8)1310.0      ! PDF p.116 SYN table: SEN SYN,%8@1310.0
+SEN0    SYN, (8)1311.0      ! PDF p.116: SEN0 SYN,%8@1311.0
+SERS    SYN, (8)1304.0      ! PDF p.116: SERS SYN,%8@1304.0
+RET     SYN, (8)1306.40     ! PDF p.116: RET SYN,%8@1306.40
+SSW     SYN, (8)1301.0      ! PDF p.116: SSW SYN,%8@1301.0
+IDF1    SYN, (8)1443.0      ! PDF p.116: IDF1 SYN,%8@1443.0
+DPET13  SYN, (8)1437.0      ! PDF p.116: DPET13 SYN,%8@1437.0
+I00LC   SYN, (8)24501.0     ! shared pool, PDF p.114's label column
+BIT0    SYN, (8)24522.0     ! shared pool, PDF p.114's label column
+I74ID   SYN, (8)24415.0     ! in range, but the page prints no code
+
+        SLC, (8)24412.0
+!
+! ---- entry: print the ident, clear the continuity register --------
+I74     LX,  $X1, I74ID            ! -UPDATE IDENT.
+        SX,  $X1, DPET13
+        SIC, RET
+        B,   IDF1                  ! -PRINT IDENT.
+        Z,   IC274
+        BD,  I741
+        CNOP
+!
+! 024415.00 holds "%IQSZ@DD%BU,64,8@,I274  Z", the ident word.  The
+! listing prints its LOCATION and no machine code; SLC across it.
+        SLC, (8)24416.0
+!
+! ---- 1. LX: load index from a word, bit 18 must go ----------------
+I741    LVI, $X1, I74K1+.32        ! a value of one half-word
+        SVA, $X1, I742             ! ...into I742's address field
+        NOP
+        Z,   $X2
+        NOP
+I742    LX,  $X2, 0                ! patched to I74K1+.32
+        SIC, SEN
+        BXVZ, SERS                 ! -LX FAILS TO TRUNCATE BIT 19.
+!
+! ---- 2. SX: store index into a word -------------------------------
+        LX,  $X1, I74K1            ! the all-ones index word
+        LVI, $X2, I74K2+.32
+        SVA, $X2, I743
+        NOP
+        Z,   I74K2
+        NOP
+I743    SX,  $X1, 0                ! patched to I74K2+.32
+        NOP
+        NOP
+        Z,   $X3
+        LX,  $X3, I74K2
+        SIC, SEN
+        BXVZ, SERS                 ! -SX FAILS TO TRUNCATE BIT 19.
+!
+! ---- 3. REFILL --------------------------------------------------
+        LX,  $X1, I74K4            ! value 0, count 0, refill = I74K1
+        SX,  $X1, I74K2
+        Z,   I74K3
+        LVI, $X2, I74K2+.32
+        SVA, $X2, $+.32            ! the subject has no label of its own
+        R,   0                     ! patched to I74K2+.32
+        NOP
+        NOP
+        Z,   $X4
+        LX,  $X4, I74K2
+        SIC, SEN
+        BXVZ, SERS                 ! -REFILL FAILS TO TRUNCATE BIT 19.
+!
+! ---- 4. EXIC ------------------------------------------------------
+        LX,  $X1, I74K7            ! a word whose value field is I74K6
+        SX,  $X1, I74PSI
+        Z,   $X1
+        LVI, $X2, I74PSI+.32
+        SVA, $X2, $+.32
+        EXIC, I74PSI               ! patched to I74PSI+.32
+        LX,  $X1, $X1              ! set the indicators from X1
+        SIC, SEN
+        BXVZ, SERS                 ! -EXIC FAILS TO TRUNCATE BIT 19.
+!
+! ---- 5. STORE ZERO (the inverted check) ---------------------------
+        LVI, $X1, I74K2+.32
+        SVA, $X1, I744
+        LX,  $X1, I74K1
+        SX,  $X1, I74K2            ! I74K2 := all ones
+        Z,   $X2
+I744    Z,   0                     ! patched to I74K2+.32
+        LX,  $X2, I74K2
+        SIC, SEN
+        BZXVZ, SERS                ! -STORE ZERO FAILS TO TRUNCATE BIT 19.
+!
+! ---- 6. TRANSMIT, left half-word (A1, a 24-bit BIT address) -------
+        LVI, $X1, 0.32             ! X1 = 32 bits = one half-word
+        Z,   I74K2
+        Z,   I74K3
+        TI,  1, I74K1($X1), I74K3
+        Z,   $X2
+        LX,  $X2, I74K3
+        SIC, SEN
+        BXVZ, SERS                 ! -TRANSMIT FAILS TO TRUNCATE LHW BIT 19.
+!
+! ---- 7. TRANSMIT, right half-word (A2, a 19-bit HALF-WORD address) -
+        Z,   I74K2
+        Z,   I74K3
+        TI,  1, I74K1, I74K2($X1)
+        Z,   $X2
+        LX,  $X2, I74K2
+        SIC, SEN
+        BXVZ, SERS                 ! -TRANSMIT FAILS TO TRUNCATE RHW BIT 19.
+!
+! ---- loop once, return to SSIP, update the continuity register ----
+        B,   $+1.0
+        BD,  I741
+        SIC, SEN0+.32
+        B,   SSW                   ! -TO SSIP
+        BD,  $+.32
+!
+        LX,  $X13, BIT0            ! -UPDATE CONTINUITY CHECK
+        SX,  $X13, IC274
+        LX,  $X1, (8)103.0
+        KV,  $X1, I00LC
+        BZXE, (8)45000.0           ! -LOOP
+        KC,  $X1, I00LC
+        BZXE, (8)45000.0           ! -LOOP
+        SR,  $X1, 17.0
+        KV,  $X1, I00LC+.32
+        BZXE, (8)45000.0           ! -LOOP
+        B,   (8)57000.0            ! -CONTINUE
+IC274   XW,  0, 0, 0               ! -CONTINUITY REG I274.
+!
+! ---- the routine's own constants ----------------------------------
+I74K1   XW,  (8)777777.77, 0, 0
+I74K2   XW,  0, 0, 0
+I74K3   XW,  0, 0, 0
+I74K4   XW,  0, 0, I74K1
+I74K5   XW,  0, 0, 0
+I74K6   LVI, $X1, (8)777777.40
+        LVI, $X1, 0
+I74K7   LX,  $X0, I74K6
+        LV,  $X0, I74K6+.32
+I74PSI  XW,  0, 0, 0
+        END, I74

@@ -268,6 +268,13 @@ Bit#(6) ind_EK   = 3;  Bit#(6) ind_TS   = 4;  Bit#(6) ind_CPUS = 5;
 Bit#(6) ind_EKJ  = 6;  Bit#(6) ind_UNRJ = 7;  Bit#(6) ind_CBJ  = 8;
 Bit#(6) ind_EPGK = 9;  Bit#(6) ind_UK   = 10; Bit#(6) ind_EE   = 11;
 Bit#(6) ind_EOP  = 12; Bit#(6) ind_CS   = 13;
+// 14 is skipped here.  It is not a gap in the transcription: jb_ax5b
+// routine 1260's four 48-entry error tables (PDF pp.45-59) print all
+// 48 indicator names in order, and THE DECK NAMES 14 "RESRVD".  Read
+// straight through, those tables give MK IK IJ EK TS CPUS EKJ UNRJ CBJ
+// EPGK UK EE EOP CS RESRVD OP AD USA EXE DS DF IF LC PF ZD IR LS PSH
+// XPFP XPO XPH XPL XPU ZM RU TF UF VF XF BTR DTR PG0..PG6 -- which is
+// this table exactly, and is a free 48-way cross-check of it.
 Bit#(6) ind_OP   = 15; // Operation Code Invalid
 Bit#(6) ind_AD   = 16; // Address Invalid
 Bit#(6) ind_USA  = 17; Bit#(6) ind_EXE  = 18; Bit#(6) ind_DS   = 19;

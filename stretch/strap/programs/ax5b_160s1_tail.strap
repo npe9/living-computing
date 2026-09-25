@@ -1,0 +1,162 @@
+! jb_ax5b "I-Box 5", routine 1260's 160S1 -- THE TAIL, PDF p.85,
+! octal 023021.40-023041.00, 26 half-words.  THE HEAD of the same
+! subroutine, 022741.00-023021.00 (PDF pp.83-84), is already
+! transcribed in programs/ax5b_160s1_clr_inds.strap; this file does
+! NOT repeat it.  Together the two cover 160S1 whole.
+!
+! KEPT APART DELIBERATELY, and the reason is not the one this file
+! first gave.  It was drafted under an instruction to leave the working
+! tree's diff empty, and said the split was only an artefact of that.
+! With the constraint gone the merge was considered and NOT done: this
+! project routinely splits one routine across files by page and case
+! (8C against 8C_disabled, 3A against 3B), both halves are bit-exact
+! and independently checked, and folding 26 rows into a committed,
+! passing file buys tidiness at the cost of touching something that
+! works.  What DID have to change was the NAME.  This file arrived as
+! `ax5b_160s1_clear_inds.strap` beside the committed
+! `ax5b_160s1_clr_inds.strap` -- two near-identical names for two
+! halves of one subroutine, which is a trap whoever reads them next
+! would have paid for.  `_tail` says what it is.
+!
+! WHY THE LAST TWO ROWS MATTER MORE THAN THE OTHER TWENTY-FOUR.
+! 160S1 is the subroutine every 1260/1262 test block calls as
+! "SIC,160SX1 / B,160S1" before it starts.  What nobody had read was
+! how it RETURNS:
+!
+!     023040.40         LX,$X1,160DMP       23301.02 10
+!     023041.00  160SX1 $BD,0               0.04 00
+!
+! The return is a BRANCH DISABLED whose address field the caller's SIC
+! plants.  Reference Manual printed p.41 (PDF p.44), "Store
+! Instruction Counter If (SIC)": it "causes the instruction counter
+! contents to be stored in bits 0-18 of the half-word specified by
+! bits 0-18 of the effective storage address.  OTHER BITS OF THE
+! HALF-WORD ARE NOT DISTURBED" -- so "SIC,160SX1" fills in the address
+! and leaves the BD standing.  Reference Manual printed p.40 (PDF
+! p.43): "Branch Disabled (BD).
+! This operation disables the interruption mechanism, and then
+! performs the same operation as BRANCH."  So 160S1 RETURNS WITH THE
+! INTERRUPTION SYSTEM DISABLED, and it contains no BE anywhere -- see
+! the head file's forty-five rows and the twenty-six below.  Every
+! caller resumes disabled.
+!
+! THAT SETTLES THE 1262 TEST 3B PUZZLE, and the answer is not that the
+! DD is inert.  TEST 3B (PDF p.108) runs, straight-line and with
+! nothing between the rows:
+!     024152.40 SIC,160SX1 / 024153.00 B,160S1   <- returns DISABLED
+!     024155.00 Z,$X1
+!     024155.40 %8@DD%BU,32,8@,3740  "-ILLEGAL OP."
+!     024156.00 EXIC,162PSI
+! and the OK path out of the EXIC is an INTERRUPTION.  Ref. Manual
+! printed p.50 (PDF p.53): "at the completion, termination, or
+! suppression of an execution operation, interruption is always
+! permitted", and its PROGRAMMING NOTE, "When interruption occurs
+! following an execution operation WITH THE INTERRUPTION SYSTEM
+! DISABLED, it is caused only by the actuated indicator of highest
+! priority whose mask bit is one."  Disabled is exactly the state
+! 160S1 leaves, and the interruption still happens.
+!
+! AND THE DD IS LOAD-BEARING, not decoration.  p.48: an interruption
+! "develops the number of the leftmost actuated indicator whose mask
+! bit is one.  AFTER THIS LEFTMOST INDICATOR HAS BEEN TURNED OFF, the
+! developed number is added to the contents of the interruption
+! address register".  The EXIC sets AD (indicator 16).  Without the
+! DD, AD would be the leftmost actuated indicator, the interruption
+! would CONSUME it, and "BADZ,$+1.32" at the landing would find AD off
+! and report "-AD NOT SET WHEN SUBJ INST OF EXIC LESS THAN 32." -- a
+! false failure.  The DD actuates OP, indicator 15, which OUTRANKS AD;
+! OP is consumed instead and AD survives to be tested.  p.50 names the
+! very row that tests it: "Examination for other actuated indicators
+! can be programmed into the correction routine."
+!
+! The rows below are the other half of that argument: the BOPZ rung at
+! 023021.40 and the BADZ rung at 023024.40 are 160S1 CLEARING
+! indicators 15 and 16, so both are provably off when the block
+! reaches its DD.
+!
+! THE SHAPE, unchanged from the head: branch-on-indicator-and-zero to
+! skip if already clear, TI,1,11.0,$X1 to bring the indicator register
+! into $X1, a compare against that indicator's bit, and "SIC,SEN /
+! BZXL,SERS" naming it.  Five more rungs here -- OP, AD, USA, EXE, DS
+! -- then the restore and the return.
+!
+! ONE ROW IS NOT LIKE THE OTHER FOURTEEN: 023037.00 is "KV,$X1,BIT19",
+! a DIRECT index compare against a stored constant, where every other
+! rung uses the IMMEDIATE form KVI.  DS is indicator 19 and its bit
+! lies below the 19-bit immediate field, so the immediate form cannot
+! reach it.  This is the whole subroutine's only KV.
+!
+! ERROR TEXT, verbatim, "OT" included:
+!   023024.00  "-UNABLE OT CLR OP OR ABOVE IND."   <- the listing's
+!              own typo, kept as printed (compare "PSEDUO" in
+!              ax5b_162_test3a.strap)
+!   023027.00  "-UNABLE TO CLR AD OR ABOVE IND."
+!   023032.00  "-UNABLE TO CLR USA OR ABOVE IND."
+!   023035.00  "-UNABLE TO CLR EXE OR ABOVE IND."
+!   023040.00  "-UNABLE TO CLR DS OR ABOVE IND."
+!
+! SUBSTITUTIONS: three.  (1) Numeric labels prefixed "L" (L160DMP,
+! L160SX1), as the head file does.  (2) "%8@n" is written "(8)n", this
+! repo's spelling for the listing's octal-radix prefix.  (3) THE
+! RETURN ROW: the listing prints "$BD,0" and this file writes "BD,0".
+! The 32 bits are identical -- both are the row's printed "0.04 00",
+! measured, not assumed -- but what STRAP's "$" prefix on an operation
+! MEANS is not established by any page read here; it appears only on
+! rows that are data-in-the-instruction-stream (160SX1 here, 162BR1
+! and 162BR2 on PDF p.109) and is recorded as an open question, not
+! translated away silently.
+!
+! ENCODING ONLY.  Running it needs 160DMP, SERS and the whole of the
+! head; the point of the block is what it proves about the enable
+! state, and that is settled by the printed code.
+!
+! EXTERNALS are SYN'd at the addresses this listing prints for them.
+! EVERY SYN IS AN INPUT TO THE CHECK, NOT A WITNESS: a SYN makes the
+! address field come out right by construction, so those rows prove
+! only that every OTHER field lands where the listing puts it.
+
+L160DMP SYN, (8)23301.0            ! 1260's index save word, p.83/p.85
+SEN     SYN, (8)1310.0             ! the SIC error-entry link
+SERS    SYN, (8)1304.0             ! the error-report routine
+BIT19   SYN, (8)24545.0            ! the DS bit constant, from this row
+        SLC, (8)23021.40
+!
+! ---- OP, indicator 15 ---------------------------------------------
+        BOPZ, $+.32
+        TI,  1, 11.0, $X1
+        KVI, $X1, (8)4.0
+        SIC, SEN                   ! -UNABLE OT CLR OP OR ABOVE IND.
+        BZXL, SERS
+!
+! ---- AD, indicator 16 ---------------------------------------------
+        BADZ, $+.32
+        TI,  1, 11.0, $X1
+        KVI, $X1, 2.0
+        SIC, SEN                   ! -UNABLE TO CLR AD OR ABOVE IND.
+        BZXL, SERS
+!
+! ---- USA, indicator 17 --------------------------------------------
+        BUSAZ, $+.32
+        TI,  1, 11.0, $X1
+        KVI, $X1, 1.0
+        SIC, SEN                   ! -UNABLE TO CLR USA OR ABOVE IND.
+        BZXL, SERS
+!
+! ---- EXE, indicator 18 --------------------------------------------
+        BEXEZ, $+.32
+        TI,  1, 11.0, $X1
+        KVI, $X1, (8)0.40
+        SIC, SEN                   ! -UNABLE TO CLR EXE OR ABOVE IND.
+        BZXL, SERS
+!
+! ---- DS, indicator 19: below the immediate field, so KV ------------
+        BDSZ, $+.32
+        TI,  1, 11.0, $X1
+        KV,  $X1, BIT19
+        SIC, SEN                   ! -UNABLE TO CLR DS OR ABOVE IND.
+        BZXL, SERS
+!
+! ---- restore, and return DISABLED ---------------------------------
+        LX,  $X1, L160DMP
+L160SX1 BD,  0                     ! listing: "$BD,0"; SIC plants the address
+        END, L160SX1
