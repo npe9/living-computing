@@ -315,13 +315,34 @@ conclusion from a true local one, and nothing re-checked it.
   TEST 8C is straight-line fall-through into a below-LB region; none
   branches into one. "the entire branch operation ... is suppressed"
   has no deck test in this corpus.
-* **A discrepancy in the header itself, flagged not smoothed.**
-  Condition 1 reads "IND" where the code (`BZIFZ`/`BZDFZ`, branch on
-  indicator ZERO, error on fall-through) expects the indicator NOT
-  set, and condition 2 reads "NO IND". Re-read first-hand at 400 dpi:
-  line 1 does say "IND". Line 2 of the same header also carries the
-  typo "DIAABL", so a typo is plausible — but that is a guess, and the
-  code is the thing to build against.
+* **The header discrepancy is RESOLVED: line 1's "IND" is a typo, and
+  the code requires DF and IF NOT set.** Settled 2026-09-24 by
+  transcribing cases 1 and 2 themselves
+  (`ax5b_160_test8c_disabled.strap`, 114 rows). Four independent
+  lines of evidence, strongest first: (1) cases 1 and 2's indicator
+  branches are **bit-identical in polarity** — `BZDFZ` prints `...12
+  44` / `...52 44` and `BZIFZ` prints `...12 C4` in both — so
+  whatever `BZ` means, the two cases assert the SAME thing, and "IND"
+  on line 1 cannot be right unless "NO IND" on line 2 is also wrong;
+  (2) the failure text inverts exactly where the expectation does —
+  cases 1 and 2 print "-CAUSES DF TO BE SET, NO INT." while case 3,
+  whose header says "IND ON", prints "-CAUSES DF **NOT** TO BE SET";
+  (3) the mnemonic grammar `B[Z]<ind>[Z]` makes the leading Z branch
+  when the indicator is OFF, and in both disabled cases the branch is
+  the OK path; (4) the same header line 2 spells DISABL as "DIAABL",
+  so it is demonstrably typo-prone.
+
+  **And the two disabled cases are NOT redundant with each other.**
+  Disabled, the deck asserts the mask bit is IRRELEVANT: case 2 sets
+  DF's and IF's mask bits to ONE and still demands the fetch proceed
+  ("-UNABLE TO FETCH ABOVE UB WITH / -MASK 1, SYSTEM DISABLED."),
+  where case 4 — enabled, mask 1 — demands the same fetch be
+  suppressed. That pair is the enable gate stated from both sides.
+
+  **Caveat the transcription records**: this settles what the DECK's
+  code requires, not what the hardware did. The manual's own answer is
+  p.32's "the DS, DF and IF indicators cannot be turned on when the
+  system is disabled", which agrees.
 
 **TEST 8C CASES 3 AND 4 ARE NOW TRANSCRIBED** —
 `programs/ax5b_160_test8c.strap` +
@@ -893,6 +914,100 @@ already uses); and any new reader of those registers joins the G0095
 path the `mkConfigReg` choices exist to break.
 
 Out of scope by design: cycle-accurate timing.
+
+## 5a. FIGURE 11 — the normative class table this project did not know about
+
+**Reference Manual printed p.43 (PDF 46), "Indicator List".** Found
+2026-09-24 and verified first-hand at 400 dpi. It has a **Class**
+column that says, per indicator, what happens to the instruction the
+indicator fires in:
+
+```
+19  DS   1   P,S       Data Store
+20  DF   m   P,S*,C    Data Fetch
+21  IF   m   P,S*,C    Instruction Fetch
+*Class S when mask is one;  otherwise Class C.
+```
+
+and the legend defines the classes:
+
+* **C** — the execution of the instruction during which the indicator
+  is actuated is **completed**.
+* **H** — ... is **terminated**.
+* **S** — ... is **suppressed**, *except during EX, EXIC, T and SWAP*.
+
+**THIS CORRECTS TERMINOLOGY THIS PROJECT HAS COMMITTED.** The DS work
+was built from p.32's sentence "storing in core storage is always
+suppressed, and the operation is always terminated", and the program
+is called `ds_terminates_branch.strap`. p.32 is the storage-protection
+chapter using "terminated" loosely. The INSTRUCTION SEQUENCING chapter
+is where the three words are defined, and it is unambiguous — printed
+**p.45** gives the same answer in prose:
+
+> *"19. Data Store (DS). ... **The operation was suppressed.**"*
+> *"20. Data Fetch (DF). ... If the corresponding mask bit was one,
+> the fetch did not take place, and **the entire operation was
+> suppressed**. If the mask bit was zero, the operation was completed
+> normally."*
+> *"21. Instruction Fetch (IF). ... If the corresponding mask bit was
+> one, the fetch or branch did not take place and **the entire
+> operation was suppressed**. If the mask bit was zero, the
+> instruction was executed normally."*
+
+and printed **p.51** separates the two words outright: *"the execution
+of the instruction in progress is either carried through to completion
+or entirely suppressed before beginning action on the alert. When
+neither is possible, however, execution of the instruction is
+terminated."* **Terminated has only three ways in** (p.52-53): a Class
+H machine-malfunction alert, a Class S alert inside `T`/`SWAP`/`EX`/
+`EXIC`, or a Class S alert during progressive indexing.
+
+**So the behaviour implemented is right and the name is wrong.**
+Mask-zero DF/IF is Class C — "completed" — which is exactly what the
+model does. Mask-one is Class S, SUPPRESSED. Nothing outside
+`T`/`SWAP`/`EX`/`EXIC` is terminated.
+
+### WHAT SUPPRESSION LEAVES BEHIND — p.52, and it reads as exhaustive
+
+> *"In order to allow continuous computer operation, the suppression
+> of an instruction must necessarily exclude the following operations:
+> 1. The actuation of those indicators, associated with the
+> instruction, of Class S, and indicators DF and IF when their mask
+> bits are zero. 2. The actuation of indicators that were caused by
+> conditions unrelated to the instruction in execution. 3. **The
+> stepping of the instruction counter.** 4. **The changing of the
+> state of the interruption system** which occurred as specification
+> of BRANCH ENABLED, BRANCH DISABLED, or BRANCH ENABLED AND WAIT."*
+
+Two consequences the model does not yet implement, both stated rather
+than inferred: **a suppressed `BD` still disables** (and `BE`/`BEW`
+still enable), and the instruction counter still steps.
+
+**AND ONE CONSEQUENCE THAT IS AN INFERENCE, labelled as such.** The
+list is framed as everything that survives, so by closure the result
+indicators, the progressive-index update and a direct-index store's
+index-result indicators are all suppressed. The manual never says so
+in those words. **The deck cannot settle it either**: TEST 8B and TEST
+8C both re-actuate the indicators with a fresh `LX,$Xn,$Xn` before
+testing them, precisely so they do not depend on what a suppressed
+operation left behind. So a green 8B/8C is NOT confirmation of this
+choice.
+
+### TWO MORE RULES FROM p.51, both unimplemented
+
+* **ACTUATION PRIORITY, which is not the same as interruption
+  priority.** *"in the event of such an alert, only the indicator of
+  higher priority is actuated. The order ... is the same as the order
+  shown on the indicator list except that **IF has priority over
+  AD**."* Worked examples: `M+` on a protected operand actuates **DS
+  only, DF unchanged**; `SWAP` actuates **both**, because its two
+  transmissions are separate alerts; a branch address both invalid and
+  protected actuates **AD only** ("an instruction has not been
+  fetched").
+* **AND THAT PRECEDENCE IS ITSELF MASK-DEPENDENT**: for an `EX`/`EXIC`
+  subject address both protected and invalid, *"indicator IF will be
+  actuated. Indicator AD will not be actuated ... **unless the IF mask
+  bit is zero**."*
 
 ## 6. Open questions — record, do not guess
 

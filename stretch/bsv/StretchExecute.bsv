@@ -569,8 +569,20 @@ function Word64 dfSignal(StretchStorage st, WordAddr a, Word64 ind) =
 // would raise IF where the machine raises AD.  NOTE: this model does
 // not yet raise AD for a branch below 32 either, so such a branch
 // currently raises NEITHER.  Stated here rather than left silent.
+function Bool ifViolates(StretchStorage st, WordAddr a) =
+  (a >= 32) && protViolates(st, a);
+
 function Word64 ifSignal(StretchStorage st, WordAddr a, Word64 ind) =
-  (a >= 32 && protViolates(st, a)) ? setBit(ind, ind_IF, 1) : ind;
+  ifViolates(st, a) ? setBit(ind, ind_IF, 1) : ind;
+
+// IS AN ADDRESS ALARM MASKED FOR INTERRUPTION?  p.32: with the mask
+// bit ONE "the operation is terminated and an interruption occurs";
+// with it ZERO "the indicator is set, but the operation proceeds".
+// IBM bit n is BSV bit 63-n, and the mask's bits 0-19 are permanently
+// one (StretchStorage forces them), which is exactly why DS needs no
+// mask test anywhere -- it is always masked on.
+function Bool maskedOn(StretchStorage st, Bit#(6) n) =
+  st.readMask()[63 - n] == 1;
 
 function Word64 setResultIndicatorsF(Word64 ind, SM128 v);
   Bool z = (v.mag == 0);
@@ -3680,7 +3692,34 @@ function ActionValue#(ExecResult)
       // no-op in every other respect too, so the only loss is the
       // alarm it would raise -- and its target is the next instruction,
       // which p.32 class 1 will monitor once class 1 exists.
-      if (next != fallthrough) ind = ifSignal(st, next[18:1], ind);
+      if (next != fallthrough) begin
+        ind = ifSignal(st, next[18:1], ind);
+        // p.32, THE BRANCH-SUPPRESSION CLAUSE: "If the branch address
+        // of a successful branch operation is such that control would
+        // pass into a protected area, the entire branch operation,
+        // INCLUDING ANY COUNTING, BIT CHANGING, OR INDEX ALTERATION,
+        // is suppressed."  That enumeration is the specification, and
+        // the sentence after it -- "The address boundaries are ignored
+        // if the mask bit is zero" -- is what gates it on the mask.
+        // (The deck settles that the INDICATOR still sets with the
+        // mask at zero; see ifSignal's note.)
+        //
+        // WHAT IS SUPPRESSED HERE, and what is not, said plainly.
+        // Suppressed: the branch itself, and the INDEX ALTERATION --
+        // both the shared deferred index write (count-and-branch's
+        // count and refill) and VflInt's progressive update.  NOT yet
+        // suppressed: BIT CHANGING, because BRANCH ON BIT issues its
+        // st.writeWord inside its own arm, before this point.  DS
+        // already has that shape solved one arm over (`storeViolates`
+        // in the BitBranch case), and doing the same for IF needs the
+        // branch-target test moved into that arm.  Stated rather than
+        // left as a silent third of the sentence.
+        if (maskedOn(st, ind_IF) && ifViolates(st, next[18:1])) begin
+          next = fallthrough;
+          doIdxWrite = False;
+          vflPending = tagged Invalid;
+        end
+      end
       if (doIdxWrite) st.writeIndex(idxWriteReg, idxWriteVal);
       st.setIndicatorBits(ind);
       return tuple4(next, vflPending, ioStart, tagged Invalid);

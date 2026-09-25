@@ -45,7 +45,17 @@ $L/$R and expect a nonzero result, so ZERO is the error (BXVZ).
 THE 162* SYMBOLS ARE INPUTS, NOT WITNESSES -- the same caveat
 verify_ax5b_16082_16083_listing.py makes about L16088.  No label row
 defining any of them appears on PDF p.101; every address comes from an
-OPERAND field.  Genuinely witnessed by the page's own label column:
+OPERAND field.
+
+BUT THEY ARE CORROBORATED ON ANOTHER PAGE, found 2026-09-24 while
+transcribing TEST 3A and verified first-hand at 300 dpi.  PDF p.109
+carries 1262's constants area and DOES define them in its LABEL
+column -- "162INT DR%BU,64,8@,64  -INTRPT TABLE." among them, the same
+64-word shape routine 1260 writes as "160IT DR%BU,64,8@,64".  That
+does not turn an input into a witness for THESE rows, which still make
+their addresses come out right by construction; what it does is remove
+the worry that a SYN was merely a number chosen to fit.  Two
+independent readings of two different pages agree.  Genuinely witnessed by the page's own label column:
 L16267 at 023755.40 and L16268 at 023756.40, each confirmed by bit 18
 of the row that names it (23755.43 -> .40, 23756.44 -> .40).
 

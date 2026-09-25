@@ -334,8 +334,8 @@ run "DS terminates the whole operation: a suppressed BB does not branch" ./run_p
 # effect is a BRANCH, which a PC check can see.
 
 run "IF: the instruction-fetch address alarm (p.32 classes 1 and 2)" ./run_program.sh programs/if_branch_alarm.strap StretchIfBrTb \
-    "PC=4253"          # 004116.40; hand-written, not a listing fact
-# BOTH IMPLEMENTED HALVES OF IF.  p.32 lists three classes for
+    "PC=4278"          # 004133.00; hand-written, not a listing fact
+# BOTH IMPLEMENTED HALVES OF IF, AND THE MASK-DEPENDENT SUPPRESSION.  p.32 lists three classes for
 # Instruction Fetch: class 1 "the location of each instruction to be
 # executed", class 2 "the branch address of all successful branch
 # operations", class 3 the EX/EXIC subject -- moot until EX exists.
@@ -401,6 +401,35 @@ run "IF: the instruction-fetch address alarm (p.32 classes 1 and 2)" ./run_progr
 #                                    TEST 8C has the interrupt table and
 #                                    does not run.
 #   class 2 removed               -> SURVIVES, subsumed by class 1 above.
+#
+# THE MASK-DEPENDENT HALF IS HERE TOO, added after the four blocks
+# above.  p.32: "If the branch address of a successful branch operation
+# is such that control would pass into a protected area, the entire
+# branch operation, INCLUDING ANY COUNTING, BIT CHANGING, OR INDEX
+# ALTERATION, is suppressed."  That enumeration is the specification.
+#
+# WHAT IS SUPPRESSED, AND WHAT IS NOT.  Suppressed: the branch itself
+# and the INDEX ALTERATION (the shared deferred index write and
+# VflInt's progressive update).  NOT suppressed: BIT CHANGING, because
+# BRANCH ON BIT issues its st.writeWord inside its own arm, before
+# execute()'s commit point.  DS solved that shape one arm over with
+# `storeViolates`; doing the same for IF needs the branch-target test
+# moved into that arm.  Two thirds of a sentence, said as two thirds.
+#
+# AND FIGURE 11 SAYS THE WORD IS "SUPPRESSED", NOT "TERMINATED".
+# Reference Manual printed p.43's Indicator List gives DS class "P,S"
+# and DF/IF "P,S*,C" with "*Class S when mask is one; otherwise Class
+# C" -- S = suppressed, C = completed.  p.32's "terminated" is the
+# storage-protection chapter using the word loosely; p.45 and p.51 both
+# say suppressed.  See docs/NEXT.md 5a.
+#
+# Three suppression injections, observed:
+#   suppression removed            -> 004302.00  WRONG2, inside the area
+#   suppression NOT gated on mask  -> 004117.00  block 4b's B,$ guard
+#   maskedOn reads bit 20 not 21   -> 004302.00  WRONG2
+#
+# BLOCK 4b EXISTS FOR THE MIDDLE ONE.  Without a taken branch into the
+# area with the mask at ZERO, removing the gate changes nothing here.
 #
 # ALSO UNWITNESSED: ifSignal's "a >= 32" guard, which exists because
 # p.45 says "Branching to an address below 32 also actuates the
@@ -3525,7 +3554,76 @@ run "BEW and SIC-BEW, bit-exact (ja_ax1a p.58)" python3 verify_ax1a_bew_listing.
 # leaves the .pyc newer than its source.  The tell was a restored tree
 # that still failed while "git diff" showed nothing.
 
+run "I-Box 5 routine 1260 TEST 8B: DS disabled/enabled + store suppression (jb_ax5b PDF p.75)" python3 verify_ax5b_160_test8b_listing.py
+# A SECOND, RICHER DS ORACLE than the transcribed 16086 block, and the
+# acceptance test for the half of DS this suite calls suppression.
+# 52 rows.  Header: "-TEST 8B CHKS DS WITH SYSTEMS / -DISABLED, AND
+# ENABLED."  Its three error messages are the contract:
+#   "-SX OUT OF BOUNDS SETS DS WHEN / -SYSTEM DISABLED."
+#   "-NO INTERRUPT OCCURED ON AN / -SX ABOVE UB."      [sic, one R]
+#   "-SX ABOVE UB WAS NOT NOPED, DATA / -WAS STORED WHEN ENABLED."
+#
+# THE LAST ONE IS THE POINT.  The enabled half stores above the upper
+# boundary and then does "L(BU),160AD1" + "BRZ,$+1.32", demanding the
+# target still read ZERO.  IBM's own suite requires the store to be
+# NOPED, not merely flagged -- which is the observable Figure 11 (p.43)
+# calls Class S.  See docs/NEXT.md 5a.
+#
+# TWO ENCODINGS NO LISTING HERE HAD WITNESSED: "BZDSZ" and "BRZ".  BRZ
+# matters as PROVENANCE -- indicator RZ = 57 reached this project from
+# the IBM 7030 Reference Card's "INDICATOR LIST" via
+# bsv/StretchTypes.bsv, whose 48-63 run cites that card and nothing
+# else.  No deck listing had confirmed it until these two rows.
+#
+# Six injections, observed.  The last two exist because the first four
+# all mutate opcode or modifier fields and NONE touches bit 18:
+#   INDICATOR_BITS["DS"] 19->18            -> 2 rows
+#   INDICATOR_BITS["RZ"] 57->56            -> 2 rows
+#   DIR_INDEX_CODES["SX"] one bit          -> 6 rows
+#   MODE_DEFAULT_BS["BU"] 8->4             -> 2 rows (the two L(BU)s)
+#   uncond-branch addr19 mask, bit 18 -> 0 -> 3 rows
+#   branch-on-indicator addr19 mask, same  -> 3 rows
+# Those six rows are exactly the block's ".40" targets; every ".00"
+# target is untouched, which is the bit-18 rule measured from the one
+# direction the opcode injections cannot reach.
+
 run "I-Box 5 routine 1260 TEST 8C: the DF/IF deck oracle (jb_ax5b PDF pp.80-83)" python3 verify_ax5b_160_test8c_listing.py
+run "I-Box 5 routine 1260 TEST 8C cases 1-2: the DISABLED controls (jb_ax5b PDF pp.76-78)" python3 verify_ax5b_160_test8c_disabled_listing.py
+# THE OTHER HALF OF TEST 8C, and it settles a discrepancy this suite
+# recorded as open.  114 rows, cases 1 and 2 contiguous.
+#
+# THE HEADER'S LINE 1 IS A TYPO.  It reads "-1. DISABL MASK 0 FETCH OK
+# IND NO INT" where the CODE requires the indicator NOT set.  Four
+# independent lines of evidence: (1) cases 1 and 2's indicator branches
+# are BIT-IDENTICAL in polarity -- BZDFZ prints "...12 44"/"...52 44"
+# and BZIFZ "...12 C4" in both -- so whatever BZ means, the two cases
+# assert the SAME thing, and "IND" cannot be right unless line 2's "NO
+# IND" is also wrong; (2) the failure text inverts only at case 3,
+# which prints "-CAUSES DF NOT TO BE SET" where 1 and 2 print "-CAUSES
+# DF TO BE SET"; (3) the grammar B[Z]<ind>[Z] makes the leading Z
+# branch when the indicator is OFF, and here the branch is the OK path;
+# (4) line 2 of the same header spells DISABL as "DIAABL".
+#
+# AND THE DISABLED CASES ARE NOT REDUNDANT WITH EACH OTHER.  Disabled,
+# the deck asserts the mask bit is IRRELEVANT: case 2 sets DF's AND
+# IF's mask bits to ONE and still demands the fetch proceed ("-UNABLE
+# TO FETCH ABOVE UB WITH / -MASK 1, SYSTEM DISABLED."), where case 4 --
+# enabled, mask 1 -- demands the same fetch be SUPPRESSED.  That pair
+# is the enable gate stated from both sides, and it is the rule the
+# model's protViolates leans on.
+#
+# CNOP IS INVERTED RELATIVE TO CASES 3/4.  Here case 1 emits the filler
+# NOP (at 022567.40) and case 2 emits nothing; in cases 3/4 the earlier
+# case was the silent one.  Measured inside a single injection: mutating
+# NOP's code fails THREE rows -- the two written NOPs AND case 1's CNOP
+# filler -- while case 2's CNOP contributes nothing at all.
+#
+# Four injections, observed:
+#   INDICATOR_BITS["IF"] 21->22  -> 022571.00, 022627.00        (2 rows)
+#   INDICATOR_BITS["DF"] 20->19  -> 022556.40, 022614.00        (2 rows)
+#   UNCOND_BRANCH_CODES["NOP"]   -> 3 rows, incl. the CNOP filler
+#   UNCOND_BRANCH_CODES["BD"]    -> 11 rows (every BD in the block)
+
 # THE DECK ORACLE FOR DF AND IF -- and finding it corrected a claim
 # this project had already built on.  docs/NEXT.md and
 # archival_inventory.md both said "DF and IF have no deck oracle
@@ -3586,6 +3684,42 @@ run "I-Box 5 routine 1260 TEST 8C: the DF/IF deck oracle (jb_ax5b PDF pp.80-83)"
 #                                     so a hand-written NOP inserts a
 #                                     half-word and shifts four labels
 #                                     and every row after it.
+
+run "I-Box 5 routine 1262 TEST 3A: EXIC's illegal pseudo-IC (jb_ax5b PDF pp.107-108)" python3 verify_ax5b_162_test3a_listing.py
+# THE FIRST TRANSCRIPTION TARGET FOR EX/EXIC, chosen because it is a
+# whole sub-test entered by one BD, its error messages are INLINE in
+# its own comment column rather than an index into a shared table (so
+# a failure names itself), and it encodes EXIC -- the harder arm.
+#
+# ITS THREE MESSAGES ARE THE SPEC, and they are Reference Manual
+# printed p.50 restated: "Pseudo-instruction counters may occupy any
+# of the index registers as well as main core storage locations but
+# cannot occupy locations addressed between 0 and 15."  The deck uses
+# word 9 ($R) and checks that no interruption occurs, that AD is set,
+# and that the instruction is NOPed.
+#
+# A SECOND, INDEPENDENT WITNESS FOR EXIC's ENCODING, and the first
+# with a SYSTEM-SYMBOL operand: "EXIC,$R" at 024145.00.  TEST 2B only
+# ever writes "EXIC,162PSI".
+#
+# MANUAL AND DECK DISAGREE AT THE BOUNDARY, recorded not resolved:
+# p.50 says "between 0 and 15", all three deck messages say "LESS THAN
+# 15".  This block uses word 9, illegal under either reading, so it
+# does not discriminate 15 itself.
+#
+# AN UNEXPLAINED ROW, recorded the way ax5b_16082_op_ad.strap records
+# what it could not trace.  024144.40 holds "%8@DD%BU,32,8@,3740
+# -ILLEGAL OP." -- the same word routine 1260's 160K7 prints -- sitting
+# in the STRAIGHT-LINE instruction path between "Z,$X1" and "EXIC,$R".
+# It is systematic, not a slip: TEST 3B repeats the identical
+# Z,$X1/DD/EXIC triple.  Nothing on those pages explains it.  The
+# row's ENCODING is settled regardless, which is what is checked.
+#
+# Five injections, observed: EXIC's code (1 row); INDICATOR_BITS["AD"]
+# 16->17, which moves the HEX byte only because 16 and 17 differ solely
+# in the bit landing at 24 (1 row); enc_branch_ind dropping the clear
+# bit, the field nothing else in the block exercises (1 row); BD's code
+# (2 rows); LVI's code (3 rows).
 
 run "I-Box 5 routine 1262 TEST 2B, EXIC by class (jb_ax5b PDF p.101)" python3 verify_ax5b_162_exic_listing.py
 # ROUTINE 1262 IS THE DECK ORACLE FOR EX/EXIC, the highest-leverage
@@ -3674,6 +3808,48 @@ run "I-Box 5 routine 1260's constants + interrupt table (jb_ax5b p.86)" python3 
 # Injections, observed: count-immediates back to eval_expr (023044.00,
 # the row that found it); C+I's immediate-index code (023044.00); BD's
 # branch code (all ten BD rows).
+
+run "I-Box 5 routine 1258 TEST 2: the interval timer (jb_ax5b PDF p.7)" python3 verify_ax5b_1258_test2_listing.py
+# THE REAL INTERVAL-TIMER ORACLE.  The already-transcribed 16071 block
+# is 8 rows and witnesses only "TS comes on"; this is 48 rows and
+# witnesses the tick RATE ("-INTERVAL TIMER FAILS TO STEP IN / -ONE
+# MILLISEC"), the DECREMENT BY ONE ("-...FROM 000000.4 TO 000000.0"),
+# the RELOAD TO ALL ONES ("-...FROM 000000.0 TO 777777.40", with
+# constant 158K1 printing 777777.40 00 -- ones in bits 0-18), and the
+# bits-19-23 clearing ("-...FROM 000001.77 TO 000001.00").
+#
+# Routine 1258 sits on PDF pp.5-7 -- the FIRST listing pages, right
+# after the write-up, NOT in the tail where the routine numbering would
+# put it.  TEST 1 (the time clock) is deliberately not transcribed: the
+# model has no time clock at all, so it is further from running.
+#
+# THE DECK WIDENS ITS OWN MESSAGE WHERE IT WIDENS ITS OWN TEST.  Blocks
+# 1588 and 15810 say "IX n CONTAINS ITS NEW VALUE, 0-18."; block 15812
+# -- the one whose constant 158K2 carries bits 19-23 -- says "0-23."
+# That is Reference Manual printed p.34's programming note stated by
+# the deck as the SCOPE OF ITS OWN COMPARISON, not merely implied.
+#
+# THIRTEEN bit-18 branch-target self-checks against the page's own
+# label column, against 16071's one.  That is the concrete sense in
+# which it is the better oracle.  The BIT table rule 024522+n holds
+# three more times here (BIT1, BIT17, BIT18), each read off an encoding
+# and then matched against p.114's own printing.
+#
+# ENCODING ONLY, and the rate claim is the reason it must stay so: "-ONE
+# MILLISEC" and the three 256-count spins are WALL-CLOCK assertions an
+# encoding oracle cannot check.  They are the acceptance criterion for a
+# model whose timer actually ticks -- see docs/NEXT.md item 5.
+#
+# Four injections, observed, and the last two are the interesting ones:
+#   INDICATOR_BITS["XE"] 53->52  -> 6 rows, HEX byte only
+#   INDICATOR_BITS["XE"] 53->51  -> 6 rows, OCTAL pair only
+#     (complements: one indicator apart in opposite directions moves two
+#      DIFFERENT printed fields, which is what a field straddling the
+#      octal/hex boundary looks like from either side)
+#   IMM_INDEX_COUNT_OPS loses LCI -> 3 rows
+#   enc_count_branch target & ~1 -> 1 of the 3 CB rows.  Only
+#     "CB,$X1,L1587A" has a .40 target; the other two are word-aligned,
+#     so the same fault is invisible there.
 
 run "I-Box 5 routine 1260's 160S1, bit-exact (jb_ax5b pp.83-84)" python3 verify_ax5b_160s1_listing.py
 # THE ROUTINE THIS PLAN MYTHOLOGISED.  docs/NEXT.md opened with

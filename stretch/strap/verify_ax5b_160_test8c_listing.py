@@ -12,6 +12,13 @@ thirty pages earlier in a document already read.  The false claim came
 from correctly disproving that routine 1268 was the oracle and then
 widening that result past what it showed.
 
+THE HEADER'S LINE 1 IS A TYPO, settled 2026-09-24 by transcribing
+cases 1 and 2 (verify_ax5b_160_test8c_disabled_listing.py).  It reads
+"IND" where the code requires the indicator NOT set: cases 1 and 2's
+indicator branches are bit-identical in polarity, the failure text
+inverts only at case 3, and line 2 of the same header spells DISABL as
+"DIAABL".  Build against the code.
+
 TEST 8C's own title, PDF p.76 at 022546.00:
 
   160127 LVI,$X1,160AD1  -TEST 8C CHECKS DF + IF UNDER 4 CONDS,

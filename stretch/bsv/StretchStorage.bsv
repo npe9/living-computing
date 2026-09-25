@@ -133,6 +133,23 @@ interface StretchStorage;
   // G0004 conflict that killed the first design.
   method Word64 readBoundaries();
 
+  // THE MASK REGISTER, word 12, read as one word -- for the
+  // MASK-DEPENDENT half of the address alarms.  p.32: when an alarm's
+  // mask bit is one "the operation is terminated and an interruption
+  // occurs"; when it is zero "the indicator is set, but the operation
+  // proceeds".  The execute side needs that bit to decide whether to
+  // suppress, and it pulls the field apart itself, exactly as
+  // protViolates does with readBoundaries.
+  //
+  // THIS IS NOT THE SHAPE THE COMMENT BELOW WARNS ABOUT.  That warning
+  // is about a CORE RULE running every clock reading `mask` and
+  // `interruptionAddress` together to decide an interruption -- which
+  // forced an ordering between readWordResp and writeWord that the
+  // harness's loader could not satisfy.  This is a plain Reg read used
+  // inside execute(), the same shape readBoundaries has had since DS,
+  // and `mask` is already a ConfigReg for the intDueCalc reason below.
+  method Word64 readMask();
+
   // IS AN INTERRUPTION DUE, AND WHERE DOES IT GO?  Answered HERE, not
   // in the core, and latched: Valid(N, EIA) when p.48's three
   // conditions hold -- "interruption requires the mask bit to be 1, the
@@ -510,6 +527,7 @@ module mkStretchStorage(StretchStorage);
 
   method Bool irqEnabled() = irqEn;
   method Word64 readBoundaries() = boundaryReg;
+  method Word64 readMask() = mask;
   method Maybe#(Tuple2#(Bit#(6), WordAddr)) interruptDue() = intDueReg;
   method Action setIrqEnabled(Bool e);
     irqEn <= e;

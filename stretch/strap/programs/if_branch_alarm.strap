@@ -104,6 +104,51 @@ OUT2    BZB, $IF,  $                 ! hang if nothing lit IF
         BB1, 3.0,  $+1.0             ! word 3 as a BIT address, not a target
         BE,  $+.32
         BB,  $IF,  $                 ! hang if that lit IF
+!
+! ---- 4b. MASK ZERO: a branch into the area is NOT suppressed ----
+!   p.32 again: "if the mask bit is zero, the indicator is set, but
+!   the operation proceeds."  This block is what makes the mask GATE
+!   discriminating -- without it, removing the gate from the model
+!   changes nothing here, because no other block branches into the
+!   area with the mask at zero.
+        BBZ, $IF,  $+1.0             ! start from IF off
+        B,   INOK                    ! taken; control MUST arrive
+        B,   $                       ! hang: the branch was suppressed
+                                     !   with the mask at zero
+BACK    BZB, $IF,  $                 ! arrived -- and IF must be on
+        BBZ, $IF,  $+1.0
+!
+! ---- 5. MASK ONE: the branch itself is SUPPRESSED ---------------
+!   p.32: "If the branch address of a successful branch operation is
+!   such that control would pass into a protected area, the entire
+!   branch operation, including any counting, bit changing, or index
+!   alteration, is suppressed."  Everything above ran with IF's mask
+!   bit ZERO, which is the "indicator sets, operation proceeds" path;
+!   this block is the other one.
+!
+!   AND THE INTERRUPTION IS PART OF THE CONTRACT.  With the mask bit
+!   one and the indicator set, p.32's general rule is "the operation is
+!   terminated and an interruption occurs", so entry 21 of the table
+!   must run.  It marks word 7 -- in p.31's 0-31 carve-out, so the
+!   marker store can never itself signal.
+        BBZ, $IF,  $+1.0             ! clear IF before arming its mask
+        BB1, 12.21, $+1.0            ! IF's mask bit := ONE
+        B,   WRONG2                  ! target is INSIDE the area
+!
+!   Reached only because the branch was suppressed.  The NOPs give the
+!   interruption its quiescent boundary -- see df_data_fetch_alarm's
+!   note on why this model takes one later than p.48's instruction
+!   boundary.
+        NOP
+        NOP
+        NOP
+        NOP
+        NOP
+        NOP
+        NOP
+        NOP
+        BZB, 7.0,  $                 ! hang if IF's routine did not run
+        BBZ, 7.0,  $+1.0
         B,   PASS
 PASS    BEW, $
 !
@@ -112,7 +157,11 @@ PASS    BEW, $
 PRE     NOP                          ! the last word BELOW the boundary
         SLC, (8)4300.0
 FALLIN  B,   OUT2                    ! executed from INSIDE the area
-        SLC, (8)4301.0               ! EXPLICIT: without it ABOVE lands at
+        SLC, (8)4301.0
+INOK    B,   BACK                    ! mask-0 target: control MUST arrive
+        SLC, (8)4302.0
+WRONG2  BEW, $                       ! mask-1 target: must NOT arrive
+        SLC, (8)4303.0               ! EXPLICIT: without it ABOVE lands at
                                      !   004300.40 -- the SECOND HALF of
                                      !   FALLIN's own word, because DD does
                                      !   not align after a half-word B.  UB
@@ -130,4 +179,6 @@ ABOVE   DD(BU,64,8), 0               ! == the upper boundary, first word out
 TBL     DD, 0
         SLC, (8)4523.0
 DSRTN   BB1, 6.0, $+1.0              ! entry 19 = DS
+        SLC, (8)4525.0
+IFRTN   BB1, 7.0, $+1.0              ! entry 21 = IF (0o4500 + 0o25)
         END, START

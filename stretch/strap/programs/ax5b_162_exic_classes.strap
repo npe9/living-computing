@@ -121,7 +121,11 @@ L16268  LX,  $X1, $L
 !   THESE ARE INPUTS TO THE CHECK, NOT WITNESSES, the same caveat
 !   verify_ax5b_16082_16083_listing.py makes about L16088.  No label
 !   row defining any 162* symbol appears on PDF p.101; each address
-!   comes from an OPERAND field.  What the rows prove is that this
+!   comes from an OPERAND field.  (CORROBORATED ELSEWHERE, 2026-09-24:
+!   PDF p.109's constants area DOES define them in its label column --
+!   "162INT DR%BU,64,8@,64  -INTRPT TABLE." among them.  That does not
+!   make them witnesses here, but it does mean the addresses are not
+!   just numbers chosen to fit.)  What the rows prove is that this
 !   assembler places every other field where the listing places it.
 !   Genuinely witnessed by the page's own label column: L16267 at
 !   023755.40 and L16268 at 023756.40.

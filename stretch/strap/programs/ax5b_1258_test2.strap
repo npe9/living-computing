@@ -1,0 +1,248 @@
+! jb_ax5b "I-Box 5", routine 1258 "CHK TIME CLOCK AND INTERVAL TIMER",
+! TEST 2 -- the INTERVAL TIMER half.  PDF p.7, octal
+! 014034.00-014063.40, one unbroken half-word run of 48 rows,
+! transcribed VERBATIM at the listing's own addresses and checked
+! bit-exactly by verify_ax5b_1258_test2_listing.py.
+!
+! WHERE IT IS.  Routine 1258 does NOT sit in the tail of the deck
+! where its number would put it: it is the FIRST listing block, PDF
+! pp.5-7, immediately after the prose write-up.  These listing pages
+! carry no printed page numbers, so everything here cites PDF pages.
+!
+! WHAT IT IS.  The deck's own write-up, PDF p.5, printed above the
+! code:
+!
+!   ----1258---CHK TIME CLOCK AND INTERVAL TIMER.
+!       -THIS TEST IS COMPOSED OF TWO ROUTINES
+!       -WHICH CHECK THE FOLLOWING FUNCTIONS.
+!       -TEST 1 IS A CURSORY CHECK OF
+!       -THE TIME CLOCK TO SEE THAT
+!       -IT STEPS CORRECTLY WITHIN
+!       -THE CORRECT INTERVAL OF TIME.
+!       -TEST 2 CHECKS THAT THE INTERVAL
+!       -TIMER STEPS WITHIN THE
+!       -ALLOTTED AMOUNT OF TIME, AND
+!       -THAT EACH POSITION CAN HOLD
+!       -BOTH A ONE AND A ZERO.
+!
+! WHERE THE CUT IS, and it is a clean one.  Test 1 (1581-1586,
+! 014012.00-014033.40) is the TIME CLOCK half and occupies the whole
+! of PDF p.6; it closes with its own three-row continuity block
+! ending at 014033.40.  Test 2 opens the next page at 014034.00 with
+! label 1587 and runs to 014063.40.  Nothing straddles the boundary
+! and no symbol defined in Test 1 is referenced here.  Test 1 is left
+! untranscribed because this model has no time clock at all; the
+! interval timer it does have a place for ($IT, word 1 bits 0-18).
+!
+! WHY THIS IS THE INTERVAL-TIMER ORACLE.  ax5b_16071_ts.strap already
+! holds an eight-row block that sets the timer to one, spins, and asks
+! whether TS came on.  That block witnesses the EXISTENCE of the
+! countdown.  This one witnesses its CONTRACT, in four separate
+! assertions the deck makes in its own error text:
+!
+!   1. THE RATE (1587/1587A/1587B).  Load bit 18 -- the value ONE --
+!      into the timer, then spin a 256-count COUNT AND BRANCH watching
+!      for the timer word to stop equalling 1.0.  If it never does:
+!      "-INTERVAL TIMER FAILS TO STEP IN / -ONE MILLISEC, TERMINATE
+!      TEST 2."  One millisecond is the deck's own statement of the
+!      step rate; Reference Manual printed p.34 gives 1,024 (2^10)
+!      steps per second, i.e. one step per 0.9766 ms.
+!
+!   2. THE DECREMENT (1588).  After the step, the timer must be ZERO:
+!      KV against 100Z, whose own row on PDF p.114 reads
+!      "100Z XW,0,0,0,0  -ZERO INDX WD." and prints
+!      "0.00 00 000000.00 00".  The error text names both endpoints:
+!      "-INTERVAL TIMER FAILS TO STEP / -FROM 000000.4 TO 000000.0.
+!      IX 1 / -CONTAINS ITS NEW VALUE, 0-18."  000000.4 is bit 18 set,
+!      the value one; the step takes exactly one away.
+!
+!   3. THE RELOAD (1589/15810).  Now load ZERO into the timer and spin
+!      again waiting for it to change.  The expected new value is
+!      158K1, whose row on PDF p.5 prints "777777.40 00 000000.00 00"
+!      -- bits 0-17 all ones and octal pair 40 = 100000, i.e. bit 18
+!      also one: ALL ONES IN BITS 0-18 and nothing else.  The error
+!      text: "-INTERVAL TIMER FAILS TO STEP / -FROM 000000.0 TO
+!      777777.40. IX 2 / -CONTAINS ITS NEW VALUE, 0-18."  That is the
+!      1->0->all-ones reload rule, printed, from the deck itself.
+!
+!   4. THE BITS-19-23 CLEARING (15811/15812).  Load 158K2, whose p.5
+!      row prints "1.77 00 000000.00 00" -- bit 17 set AND bits 18-23
+!      all ones.  Bits 19-23 are OUTSIDE the timer's 0-18 field.  Spin
+!      until the word changes, then compare against BIT17
+!      ("1.00 00 000000.00 00", bit 17 alone).  The error text:
+!      "-INTERVAL TIMER FAILS TO STEP / -FROM 000001.77 TO 000001.00.
+!      IX 3 / -CONTAINS ITS NEW VALUE, 0-23."
+!
+!      NOTE THE FIELD WIDTH IN THAT LAST LINE.  Blocks 1588 and 15810
+!      both say "0-18."  This one says "0-23."  The deck widens its
+!      own message exactly where it is testing the five bits the
+!      timer field does not cover, and the expected value has them
+!      CLEAR.  That is Reference Manual printed p.34's programming
+!      note -- bits 19-23 of location 1's left half are set to zero
+!      when the timer is set -- stated by the deck, as the scope of
+!      its own comparison, not merely implied by a constant.
+!
+! THE INDEX REGISTERS CORROBORATE THE COMMENT ROWS.  "IX 1", "IX 2",
+! "IX 3" in the three messages are the index registers of the three
+! KVs -- $X1 at 014041.00, $X2 at 014046.00, $X3 at 014053.40 -- so
+! the comment-to-row assignment is checkable without reading pixel
+! positions.
+!
+! THE SPIN IS THE SAME SHAPE THREE TIMES: LCI,$Xn,256 sets a count,
+! the loop body reloads the timer word and compares, and CB,$Xn,<head>
+! counts down.  Falling out of the CB means 256 iterations with no
+! change, and control drops into the error report.
+!
+! THE BRANCH POLARITY, stated once.  A "BZ<ind>" mnemonic branches
+! while the indicator is OFF and a "B<ind>" while it is ON
+! (strap_asm.classify_branch_indicator: the BZ prefix sets branchOn=0).
+! So BZXE -- XE is indicator 53, compare-equal -- branches while XE is
+! OFF, i.e. while the two values DIFFER: the timer has moved.  BZXVZ --
+! XVZ is 50, index value zero -- branches while XVZ is OFF, i.e. while
+! the value is NONZERO: the timer has reloaded.  And BXE at 014054.00
+! is the other polarity, branching to the exit while XE is ON, i.e.
+! while the value is the expected one.
+!
+! THE THREE "SV,$X0,1.0" ROWS ONLY LAND DISABLED, and this range does
+! not show it.  Word 1 is one of Reference Manual p.31's permanently
+! protected locations, and printed p.34 names this very instruction:
+! "The only store-type operations that may store in the left half of
+! location 1, and hence may be used to set the interval timer, are
+! STORE VALUE, STORE COUNT, STORE REFILL, and STORE VALUE IN ADDRESS,
+! and these operations can be performed only when the interruption
+! system is disabled.  When enabled, these operations will turn on
+! indicator DS, data store, and be suppressed."  The BD that disables
+! the system is outside this range -- see ax5b_16071_ts.strap, which
+! makes the same point about the same word.
+!
+! "1.0" IS TRANSCRIBED VERBATIM and must stay that way.  opcodes.py's
+! SYSTEM_SYMBOLS has "IT": (1, 0), so $IT would assemble to the same
+! bits -- but the deck wrote 1.0 and this is a transcription.
+!
+! THE BIT TABLE GAINS THREE CONFIRMATIONS of 024522 + n, every one
+! read off an encoding here and then matched against the table's own
+! printing on PDF p.114: BIT1 -> 024523, BIT17 -> 024543, BIT18 ->
+! 024544.
+!
+! ENCODING ONLY.  Running it needs SSIP's harness (SEN/SERS/SSW), the
+! interruption system disabled, and an interval timer that actually
+! ticks -- which this model does not have.  That is the point: this
+! is the acceptance test for building one.
+!
+! SUBSTITUTIONS: one, the deck's systematic one.  Labels that begin
+! with a digit (1587, 15810, 100Z, 158K1, ...) get an "L" prefix,
+! because this assembler reads a leading digit as an address.
+! Nothing else is changed.
+
+! ---------------------------------------------------------------------
+! External symbols, SYN'd at the addresses THIS listing's own printed
+! encodings give.  EVERY SYN HERE IS AN INPUT TO THE CHECK, NOT A
+! WITNESS: the address was read out of the very row that names the
+! symbol, so that row can only re-derive what was put in.  The real
+! address checks are the thirteen rows whose targets are labels
+! defined INSIDE this range.
+!
+! Each address was obtained by reading bit 18 out of the octal pair of
+! the naming row, so each is itself a checkable claim.
+!
+! THE ADDRESSES ARE INPUTS; THE VALUES ARE NOT.  Six of these symbols
+! have their CONTENTS printed elsewhere in this same document, read
+! first-hand at 600 dpi, and it is those printings -- not the names --
+! that the docstring's four assertions rest on:
+!   PDF p.114, "-COMMON CONSTANTS FOR FETCH ONLY":
+!       100Z  XW,0,0,0,0  -ZERO INDX WD.  ->  0.00 00 000000.00 00
+!       BIT1  XW,(8)200000.00,0,0        ->  200000.00 00 000000.00 00
+!       BIT17 XW,(8)1.00,0,0             ->  1.00 00 000000.00 00
+!       BIT18 XW,(8).40,0,0              ->  0.40 00 000000.00 00
+!   PDF p.5, routine 1258's own constant pool:
+!       158K1 XW,(8)777777.40,0,0        ->  777777.40 00 000000.00 00
+!       158K2 XW,(8)1.77,0,0             ->  1.77 00 000000.00 00
+BIT18   SYN, (8)24544.0     ! from LX,$X0,BIT18     = 24544.00 10
+BIT17   SYN, (8)24543.0     ! from KV,$X3,BIT17     = 24543.06 90
+BIT1    SYN, (8)24523.0     ! from V+,$X13,BIT1     = 24523.32 B0
+L100Z   SYN, (8)24502.0     ! from KV,$X1,100Z      = 24502.02 90
+L158K1  SYN, (8)14010.0     ! from KV,$X2,158K1     = 14010.04 90
+L158K2  SYN, (8)14011.0     ! from LX,$X0,158K2     = 14011.00 10
+LIC258  SYN, (8)14006.0     ! from LX,$X13,IC258    = 14006.32 10
+LICK258 SYN, (8)14007.0     ! from KV,$X13,ICK258   = 14007.32 90
+SEN     SYN, (8)1310.0      ! the SIC error-entry link
+SENO    SYN, (8)1311.0      ! from SIC,SENO+.32     = 1311.40 80
+SERS    SYN, (8)1304.0      ! the error-report routine
+SSW     SYN, (8)1301.0      ! the SSIP return
+L160    SYN, (8)14064.0     ! from B,160            = 14064.10 00
+!
+! SENO's spelling is not resolvable from the page.  This printer's
+! letter O and digit 0 are the same glyph -- compare the O of SENO
+! with the two zeros of 100LC in the same column on PDF p.114 -- and
+! this repository already spells it both ways (SENO in
+! programs/pau_shf0.strap, SEN0 in programs/ax5b_160105_compare.strap,
+! LSEN0 in verify_ax5b_160_test8c_listing.py).  The name is a SYN
+! either way, so nothing in this check or any injection depends on it.
+! PDF p.114's constant pool prints the symbol's own row -- "SENO
+! SYN,SENO" assembling to "1311.00+ +00000000" -- which fixes the
+! ADDRESS at 001311.00 and leaves the spelling where it was.
+
+        SLC, (8)14034.0
+!
+! ---- the tick RATE: one step in one millisecond -------------------
+L1587   LX,  $X0, BIT18             ! -TEST 2      bit 18 = the value one
+        SV,  $X0, 1.0               !              into the interval timer
+        LCI, $X1, 256
+L1587A  KV,  $X0, 1.0               !              has the timer moved?
+        BZXE, L1588                 !              XE off = they differ: yes
+        CB,  $X1, L1587A            !              ...256 tries
+L1587B  SIC, SEN                    ! -INTERVAL TIMER FAILS TO STEP IN
+        B,   SERS                   ! -ONE MILLISEC, TERMINATE TEST 2.
+        B,   L15813
+!
+! ---- the DECREMENT: 000000.4 -> 000000.0, exactly one -------------
+L1588   LX,  $X1, 1.0
+        KV,  $X1, L100Z             !              the new value must be 0
+        SIC, SEN                    ! -INTERVAL TIMER FAILS TO STEP
+        BZXE, SERS                  ! -FROM 000000.4 TO 000000.0. IX 1
+                                    ! -CONTAINS ITS NEW VALUE, 0-18.
+!
+! ---- the RELOAD: 000000.0 -> 777777.40, all ones in bits 0-18 -----
+        LX,  $X0, L100Z
+        SV,  $X0, 1.0               !              timer := zero
+        LCI, $X4, 256
+L1589   LX,  $X2, 1.0
+        BZXVZ, L15810               !              XVZ off = nonzero: reloaded
+        CB,  $X4, L1589
+        B,   L1587B
+L15810  KV,  $X2, L158K1            !              and it must be ALL ONES
+        SIC, SEN                    ! -INTERVAL TIMER FAILS TO STEP
+        BZXE, SERS                  ! -FROM 000000.0 TO 777777.40. IX 2
+                                    ! -CONTAINS ITS NEW VALUE, 0-18.
+!
+! ---- the BITS 19-23: 000001.77 -> 000001.00, the five clear -------
+        LX,  $X0, L158K2            !              bit 17 + bits 18-23
+        SV,  $X0, 1.0
+        LCI, $X3, 256
+L15811  KV,  $X0, 1.0
+        BZXE, L15812
+        CB,  $X3, L15811
+        B,   L1587B
+L15812  LX,  $X3, 1.0
+        KV,  $X3, BIT17             !              bit 17 ALONE
+        BXE, L15813                 ! -INTERVAL TIMER FAILS TO STEP
+        SIC, SEN                    ! -FROM 000001.77 TO 000001.00. IX 3
+        B,   SERS                   ! -CONTAINS ITS NEW VALUE, 0-23.
+!
+! ---- the exit, and the two continuity blocks ----------------------
+L15813  B,   $+1.0
+        BD,  L1587
+        SIC, SENO+.32
+        B,   SSW
+        BD,  $+.32
+!
+        LX,  $X13, LIC258           ! -UPDATE CONTINUITY CHECK.
+        V+,  $X13, BIT1             !              test 2 done = bit 1
+        SX,  $X13, LIC258
+!
+        LX,  $X13, LIC258           ! -UPDATE CONTINUITY CHECK.
+        KV,  $X13, LICK258          !              against the expected word
+        SIC, SEN
+        BZXE, SERS                  ! -CONTINUITY ERROR.
+        B,   L160                   !              on to routine 160
+        END, L1587
