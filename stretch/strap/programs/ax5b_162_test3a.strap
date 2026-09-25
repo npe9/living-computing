@@ -1,5 +1,5 @@
 ! jb_ax5b "I-Box 5", routine 1262 ("TEST EX AND EXIC"), TEST 3A --
-! "-TEST 3A, PSEUDO IC LESS THAN 15." -- entry label 162100, PDF
+! "-TEST 3A, PSEUDO IC LESS THAN 15." -- entry label I62100, PDF
 ! pp.107-108, octal 024136.00-024151.00.  23 half-words.
 !
 ! CITED BY PDF PAGE, and that is not a slip.  jb_ax5b's LISTING pages
@@ -21,11 +21,11 @@
 !       interruption occurred.  ("PSEDUO" is the listing's own typo;
 !       p.108's two messages spell it "PSEUDO".)
 !   (b) "-AD NOT SET WHEN PSEUDO IC / -OF EXIC LESS THAN 15."
-!       reached from 162103, the handler this test plants in the
+!       reached from I62103, the handler this test plants in the
 !       interrupt entry, when "BADZ,$+1.32" finds AD off.
 !   (c) "-INSTRUCT NOT NOPED WHEN PSEUDO / -IC OF EXIC LESS THAN 15."
 !       "Z,$X1" zeroes index register 1 before the EXIC, and the
-!       subject instruction at 162EXI is "LVI,$X1,%8@777777.40"
+!       subject instruction at I62EXI is "LVI,$X1,%8@777777.40"
 !       (024332.00, PDF p.110), which would make it NONZERO.  So
 !       "LX,$X1,$X1 / BZXVZ,SERS" -- branch to the error report if the
 !       index value is not zero -- is literally "the subject never
@@ -37,20 +37,20 @@
 ! which is illegal under either reading, so nothing on these pages
 ! discriminates 15 itself.  Left as the two quotes stand.
 !
-! THE MACHINERY, row by row.  "SIC,160SX1 / B,160S1" calls routine
+! THE MACHINERY, row by row.  "SIC,I60SX1 / B,I60S1" calls routine
 ! 1260's clear-indicators-0-19 subroutine (022741.00, transcribed in
-! programs/ax5b_160s1_clr_inds.strap).  "LVI,$X1,162SUB /
-! SVA,$X1,162PSI" aims the pseudo-IC word at the subject slot;
-! "LX,$X1,162EXI / SX,$X1,162SUB" loads the subject instruction into
-! that slot; "LX,$X1,162PSI / SX,$X1,$R" is the whole point -- it
-! copies the pseudo-IC into word 9.  "LVI,$X1,162103 / SVA,$X1,162ITE"
-! plants the (b)/(c) handler in 162ITE, the common "-ALL INTERRUPTS
-! ENTER HERE" landing at 024320.00, and "LVI,$X1,162INT / SV,$X1,$IA"
+! programs/ax5b_160s1_clr_inds.strap).  "LVI,$X1,I62SUB /
+! SVA,$X1,I62PSI" aims the pseudo-IC word at the subject slot;
+! "LX,$X1,I62EXI / SX,$X1,I62SUB" loads the subject instruction into
+! that slot; "LX,$X1,I62PSI / SX,$X1,$R" is the whole point -- it
+! copies the pseudo-IC into word 9.  "LVI,$X1,I62103 / SVA,$X1,I62ITE"
+! plants the (b)/(c) handler in I62ITE, the common "-ALL INTERRUPTS
+! ENTER HERE" landing at 024320.00, and "LVI,$X1,I62INT / SV,$X1,$IA"
 ! points the Interruption Address register at the 64-word table.
 !
 ! ONE ROW IS NOT EXPLAINED BY THESE PAGES.  At 024144.40, between
 ! "Z,$X1" and "EXIC,$R", stands "%8@DD%BU,32,8@,3740 -ILLEGAL OP." --
-! the same 00000003740 word that routine 1260's 160K7 prints at
+! the same 00000003740 word that routine 1260's I60K7 prints at
 ! 023050.00 under "-ILLEGAL OP, NO. 31." (programs/ax5b_160k_
 ! constants.strap).  It sits in the straight-line instruction path,
 ! one half-word before the EXIC, and nothing on pp.107-108 says why an
@@ -67,7 +67,7 @@
 ! not.  Full derivation in ax5b_162_test3b.strap, which carries the
 ! identical triple; in short:
 !
-!   * 160S1 (called two rows up) returns via "$BD,0" and never enables,
+!   * I60S1 (called two rows up) returns via "$BD,0" and never enables,
 !     so this block runs DISABLED.  Printed p.40 for BD, p.41 for how
 !     the caller's SIC plants only the address.
 !   * Printed p.50: "at the completion, termination, or suppression of
@@ -89,27 +89,27 @@
 !
 ! NOTHING HERE IS A FIRST for this assembler, and saying so is the
 ! point.  EXIC is already witnessed by TEST 2B (programs/ax5b_162_
-! exic_classes.strap), BADZ's trailing-Z clear bit by 16086B and
+! exic_classes.strap), BADZ's trailing-Z clear bit by I6086B and
 ! SIP17, BZXVZ by TEST 2B, "$+1.32" by ibox3_sva_full's BXE rows, $IA
-! by 16086.  What TEST 3A adds is a SECOND, independent listing
+! by I6086.  What TEST 3A adds is a SECOND, independent listing
 ! witness for EXIC -- this one with a SYSTEM SYMBOL operand, "EXIC,$R"
-! at 024145.00, where 2B only ever wrote "EXIC,162PSI" -- plus 23 more
+! at 024145.00, where 2B only ever wrote "EXIC,I62PSI" -- plus 23 more
 ! rows of field placement and the pseudo-IC legality rule itself.
 !
 ! AND IT UPGRADES TEST 2B'S WEAKEST CLAIM.  ax5b_162_exic_classes.
-! strap's header says of 162ITE/162PSI/162SUB: "No label row defining
+! strap's header says of I62ITE/I62PSI/I62SUB: "No label row defining
 ! any 162* symbol appears on PDF p.101; each address comes from an
 ! OPERAND field."  PDF p.109 defines them in its own LABEL column,
 ! read here at 600 dpi:
-!     162INT  DR%BU,64,8@,64  -INTRPT TABLE.          024220.00
-!     162ITE  BD,$   -ALL INTERRUPTS ENTER HERE.      024320.00
-!     162PSI  LX,$X0,0        -PSEUDO IC.             024323.00
-!     162SUB  XW,0,0,0        -SUBJ INST.             024324.00
-! and PDF p.110 defines 162EXI at 024332.00.  Every one agrees with
+!     I62INT  DR%BU,64,8@,64  -INTRPT TABLE.          024220.00
+!     I62ITE  BD,$   -ALL INTERRUPTS ENTER HERE.      024320.00
+!     I62PSI  LX,$X0,0        -PSEUDO IC.             024323.00
+!     I62SUB  XW,0,0,0        -SUBJ INST.             024324.00
+! and PDF p.110 defines I62EXI at 024332.00.  Every one agrees with
 ! the operand fields on pp.107-108.
 !
 ! ENCODING ONLY, and it could not be otherwise: a run needs the 64-word
-! interrupt table, SSIP's SEN/SERS reporting, 160S1's body, and an
+! interrupt table, SSIP's SEN/SERS reporting, I60S1's body, and an
 ! EXIC the model actually EXECUTES.  EXIC is in MISC_CODES, so the
 ! ASSEMBLER encodes it; that is the whole distinction.
 !
@@ -128,40 +128,40 @@
 !
 ! EXTERNALS, SYN'd at the addresses this same listing prints.  THESE
 ! ARE INPUTS TO THE CHECK, NOT WITNESSES -- the same caveat
-! verify_ax5b_16082_16083_listing.py makes about L16088.  A SYN row
+! verify_ax5b_16082_16083_listing.py makes about I6088.  A SYN row
 ! MAKES the address field come out right, so the rows naming one prove
 ! only that every OTHER field lands where the listing puts it.  The
-! block has exactly TWO genuine address witnesses: L162103, whose
+! block has exactly TWO genuine address witnesses: I62103, whose
 ! address depends on all seventeen preceding half-words being sized
-! right, and the self-relative "$+1.32" at 024146.40.  L162100 is NOT
-! a third -- the SLC above sets the counter to 024136.0 and L162100 is
+! right, and the self-relative "$+1.32" at 024146.40.  I62100 is NOT
+! a third -- the SLC above sets the counter to 024136.0 and I62100 is
 ! the first label after it, so checking it checks the SLC against the
 ! number this transcription fed the SLC.  It is asserted anyway, as
 ! the block's anchor, but it is not evidence.
 
-L160SX1 SYN, (8)23041.0            ! 1260's SIC return link (also p.41)
-L160S1  SYN, (8)22741.0            ! 1260's "CLR INDS 0-19" subroutine
+I60SX1 SYN, (8)23041.0            ! 1260's SIC return link (also p.41)
+I60S1  SYN, (8)22741.0            ! 1260's "CLR INDS 0-19" subroutine
 SEN     SYN, (8)1310.0             ! the SIC error-entry link
 SERS    SYN, (8)1304.0             ! the error-report routine
-L162INT SYN, (8)24220.0            ! the 64-word interrupt table, PDF p.109
-L162ITE SYN, (8)24320.0            ! "-ALL INTERRUPTS ENTER HERE", p.109
-L162PSI SYN, (8)24323.0            ! the pseudo-IC word, p.109
-L162SUB SYN, (8)24324.0            ! the subject-instruction slot, p.109
-L162EXI SYN, (8)24332.0            ! the IMMED IX subject, PDF p.110
+I62INT SYN, (8)24220.0            ! the 64-word interrupt table, PDF p.109
+I62ITE SYN, (8)24320.0            ! "-ALL INTERRUPTS ENTER HERE", p.109
+I62PSI SYN, (8)24323.0            ! the pseudo-IC word, p.109
+I62SUB SYN, (8)24324.0            ! the subject-instruction slot, p.109
+I62EXI SYN, (8)24332.0            ! the IMMED IX subject, PDF p.110
         SLC, (8)24136.0
 !
 ! ---- set the trap up, then put the pseudo-IC where it is illegal ----
-L162100 SIC, L160SX1               ! -TEST 3A, PSEUDO IC LESS THAN 15.
-        B,   L160S1                !   clear indicators 0-19
-        LVI, $X1, L162SUB
-        SVA, $X1, L162PSI          ! aim the pseudo-IC at the subject slot
-        LX,  $X1, L162EXI          ! the IMMED IX subject instruction
-        SX,  $X1, L162SUB
-        LX,  $X1, L162PSI
+I62100 SIC, I60SX1               ! -TEST 3A, PSEUDO IC LESS THAN 15.
+        B,   I60S1                !   clear indicators 0-19
+        LVI, $X1, I62SUB
+        SVA, $X1, I62PSI          ! aim the pseudo-IC at the subject slot
+        LX,  $X1, I62EXI          ! the IMMED IX subject instruction
+        SX,  $X1, I62SUB
+        LX,  $X1, I62PSI
         SX,  $X1, $R               ! THE TEST: pseudo-IC into word 9
-        LVI, $X1, L162103
-        SVA, $X1, L162ITE          ! plant the handler in the entry
-        LVI, $X1, L162INT
+        LVI, $X1, I62103
+        SVA, $X1, I62ITE          ! plant the handler in the entry
+        LVI, $X1, I62INT
         SV,  $X1, $IA              ! point $IA at the 64-word table
         Z,   $X1                   ! so a subject that ran shows up
         DD(BU,32,8), (8)3740       ! -ILLEGAL OP.  (see header)
@@ -169,11 +169,11 @@ L162100 SIC, L160SX1               ! -TEST 3A, PSEUDO IC LESS THAN 15.
         SIC, SEN                   ! -NO INTERRUPT WHEN PSEDUO IC
         BD,  SERS                  ! -OF EXIC LESS THAN 15.
 !
-! ---- 162103: where the interruption lands; rules (b) and (c) -------
-L162103 BADZ, $+1.32               ! AD on -> skip the error, clearing it
+! ---- I62103: where the interruption lands; rules (b) and (c) -------
+I62103 BADZ, $+1.32               ! AD on -> skip the error, clearing it
         SIC, SEN                   ! -AD NOT SET WHEN PSEUDO IC
         BD,  SERS                  ! -OF EXIC LESS THAN 15.
         LX,  $X1, $X1
         SIC, SEN                   ! -INSTRUCT NOT NOPED WHEN PSEUDO
         BZXVZ, SERS                ! -IC OF EXIC LESS THAN 15.
-        END, L162100
+        END, I62100

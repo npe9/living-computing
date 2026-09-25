@@ -11,8 +11,8 @@
 ! together they print the SAME branch target through TWO different
 ! indicator numbers:
 !
-!     BOP,16088   21400.47 C2      indicator 15
-!     BAD,16088   21400.50 42      indicator 16
+!     BOP,I6088   21400.47 C2      indicator 15
+!     BAD,I6088   21400.50 42      indicator 16
 !
 ! THAT PAIR IS THE POINT.  A branch-on-indicator half-word puts the
 ! 6-bit indicator number at bits 19-24, and the listing prints bits
@@ -24,11 +24,11 @@
 ! single row can be.  15 and 16 differ in four of their six bits.
 !
 ! AND THEY CORROBORATE A PAGE FROM A DIFFERENT ONE.  Both rows encode
-! their target's bit 18 as ONE, so 16088 is at 021400.40.  That was
+! their target's bit 18 as ONE, so I6088 is at 021400.40.  That was
 ! established from pp.43-45 (see ax5b_16086_ds.strap); these two rows
 ! are on pp.41-42 and say it again, independently of that reading.
 !
-! NOTE, because the check cannot say it: L16088's 021400.40 is a SYN
+! NOTE, because the check cannot say it: I6088's 021400.40 is a SYN
 ! below, an INPUT to verify_ax5b_16082_16083_listing.py, chosen so the
 ! rows match.  The witness is the PRINTED code -- ".47" is 100111 and
 ! ".50" is 101000, both with bit 18 set -- read off pp.41-42 at 600
@@ -40,19 +40,19 @@
 ! and nothing else.  Below, what is grounded and what is not.
 !
 ! GROUNDED IN THE PAGE OR THE MANUAL:
-!   LX,$X4,160K7 / SX,$X4,16082A
+!   LX,$X4,I60K7 / SX,$X4,I6082A
 !                      LX and SX move a whole 64-bit word (Reference
 !                      Manual p.23: LOAD INDEX replaces the index word
 !                      "by the FULL-WORD specified by bits 0-17 of the
 !                      effective address"; the section's opening
 !                      paragraph names LX and SX as "the two
 !                      exceptions [that] ... require full-word
-!                      operands").  So the constant at 160K7 is copied
-!                      over the whole of 16082A.
-!   16082A XW,0,0,0    an all-zero full word, and the destination of
+!                      operands").  So the constant at I60K7 is copied
+!                      over the whole of I6082A.
+!   I6082A XW,0,0,0    an all-zero full word, and the destination of
 !                      that store.  Its printed code is
 !                      "0.00 00 000000.00 00" -- both half-words zero.
-!   BOP,16088 / BAD,16088
+!   BOP,I6088 / BAD,I6088
 !                      branch on indicator 15 (OP, "operation code
 !                      invalid", Ref. Manual p.23's programming note
 !                      names it) and on indicator 16 (AD).  Taken
@@ -61,30 +61,30 @@
 !                      "UNABLE TO TURN ... ON." message.
 !   SV,$X4,1.32        the AD provocation.  Word 1 bits 28-63 are the
 !                      time clock; the deck's own comment on the same
-!                      instruction in 16086 (p.43) reads "TURN ON $AD
+!                      instruction in I6086 (p.43) reads "TURN ON $AD
 !                      ON".
 !   CNOP               emits NOTHING here: the location counter is at
 !                      017227.00 after the second NOP, already
 !                      word-aligned, and the listing prints no address
-!                      beside it.  16082A needs the alignment because
+!                      beside it.  I6082A needs the alignment because
 !                      XW is a full word.
 !
 ! NOT TRACED, and left as a question rather than a guess:
-!   * WHAT 160K7 CONTAINS.  Only its address, 023050.00, is printed
+!   * WHAT I60K7 CONTAINS.  Only its address, 023050.00, is printed
 !     here.  The block's SHAPE -- store a word over a zeroed full-word
 !     slot, two NOPs, then fall straight INTO that slot -- reads like
 !     self-modifying code planting an invalid operation code to be
 !     executed, which is what "-OP" and "UNABLE TO TURN OP ON." would
-!     require.  Nothing on these pages says so, and 160K7 is not on
+!     require.  Nothing on these pages says so, and I60K7 is not on
 !     them.  Note also that a zero half-word decodes as BE,0 (BranchOr
-!     Misc code 000), so what 16082A holds BEFORE the store is not
+!     Misc code 000), so what I6082A holds BEFORE the store is not
 !     inert -- which is a reason the store must land, not evidence
 !     about what it stores.
 !
 ! WHAT THIS IS AND IS NOT.  An ENCODING oracle, like
 ! ax5b_16086_ds.strap and ibox1_ensu.strap.  It is NOT run on the
 ! model: both blocks fall through into the SEN/SERS error harness and
-! 16093, none of which is transcribed, and 160K7's value is unknown.
+! I6093, none of which is transcribed, and I60K7's value is unknown.
 !
 ! SUBSTITUTIONS: one, the same systematic one as the 16086 block.
 ! This deck labels its blocks with NUMBERS (16082, 16082A, 16083,
@@ -94,32 +94,32 @@
 
 ! External symbols, given by SYN at the addresses this same listing
 ! prints for them.  Rows naming one check the opcode and modifier bits
-! only; their address came from the same print.  L16082A is defined
+! only; their address came from the same print.  I6082A is defined
 ! INSIDE the range, so the row naming it is a real address check.
-L160K7  SYN, (8)23050.0            ! the constant stored over 16082A
+I60K7  SYN, (8)23050.0            ! the constant stored over I6082A
 SEN     SYN, (8)1310.0             ! the SIC error-entry link
 SERS    SYN, (8)1304.0             ! the error-report routine
-L16093  SYN, (8)21734.0            ! the "next test" exit
-L16088  SYN, (8)21400.40           ! the per-indicator interrupt walk;
+I6093  SYN, (8)21734.0            ! the "next test" exit
+I6088  SYN, (8)21400.40           ! the per-indicator interrupt walk;
                                    !   .40 -- see the header
 
         SLC, (8)17225.0
-L16082  LX,  $X4, L160K7           ! -OP
-        SX,  $X4, L16082A          !              over the zeroed slot
+I6082  LX,  $X4, I60K7           ! -OP
+        SX,  $X4, I6082A          !              over the zeroed slot
         NOP
         NOP
         CNOP                       !              emits nothing: already
                                    !              word-aligned
-L16082A XW,  0, 0, 0               !              the slot, all zeros
-        BOP, L16088                !              OP came on -> on we go
+I6082A XW,  0, 0, 0               !              the slot, all zeros
+        BOP, I6088                !              OP came on -> on we go
         SIC, SEN
         B,   SERS                  ! -UNABLE TO TURN OP ON.
-        B,   L16093
-L16083  SV,  $X4, 1.32             ! -AD          store into the time
+        B,   I6093
+I6083  SV,  $X4, 1.32             ! -AD          store into the time
                                    !              clock's word
         NOP
-        BAD, L16088                !              AD came on -> on we go
+        BAD, I6088                !              AD came on -> on we go
         SIC, SEN
         B,   SERS                  ! -UNABLE TO TURN AD ON.
-        B,   L16093
-        END, L16082
+        B,   I6093
+        END, I6082

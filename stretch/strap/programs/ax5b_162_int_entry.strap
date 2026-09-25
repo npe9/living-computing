@@ -5,7 +5,7 @@
 !
 ! THE ROW THE PAGE EXISTS FOR:
 !
-!     024320.00  162ITE  BD,$   "-ALL INTERRUPTS ENTER HERE."  24320.04 00
+!     024320.00  I62ITE  BD,$   "-ALL INTERRUPTS ENTER HERE."  24320.04 00
 !     024320.40          B,$                                   24320.50 00
 !
 ! One FULL WORD holding two self-branches, and the two halves differ
@@ -17,32 +17,32 @@
 ! interrupt routine runs disabled or stays enabled, and routine 1262
 ! picks one per test by storing a different constant into the table:
 !
-!     024172.00  162K1  BD,162ITE     24320.04 00   -> lands at .00
-!     024177.00  162K6  B,162ITE+.32  24320.50 00   -> lands at .40
+!     024172.00  I62K1  BD,I62ITE     24320.04 00   -> lands at .00
+!     024177.00  I62K6  B,I62ITE+.32  24320.50 00   -> lands at .40
 !
 ! Each is a full word with the same half-word instruction in BOTH
-! halves, which is what lets one "SX,$X2,162INT%$X1@" write it into a
+! halves, which is what lets one "SX,$X2,I62INT%$X1@" write it into a
 ! 64-word table entry.  p.93 shows the fill loop for both, at 023474.40
-! ("-DO BE AND BD.", 162K6) and 023522.00 ("-DO BB, SETUP BD INT TBL.",
-! 162K1).
+! ("-DO BE AND BD.", I62K6) and 023522.00 ("-DO BB, SETUP BD INT TBL.",
+! I62K1).
 !
 ! WHICH HALF DOES A TEST AIM AT?  Read the octal pair's TOP BIT, which
-! is bit 18, the half-word select: 162K1's "04" = 000100 has bit 18 =
-! 0, so 024320.00, the BD half; 162K6's "50" = 101000 has bit 18 = 1,
+! is bit 18, the half-word select: I62K1's "04" = 000100 has bit 18 =
+! 0, so 024320.00, the BD half; I62K6's "50" = 101000 has bit 18 = 1,
 ! so 024320.40, the B half.  The rule the pages show is TRANSPARENCY,
 ! not "enabled": the B half is chosen wherever the landing must not
 ! change the enable state, because the block is about to MEASURE it --
-! p.93's 16225 probes "am I still disabled?" and 16229/16232 probes
-! "am I still enabled?", and both write "SVA,$X1,162ITE+.32".  The BD
+! p.93's I6225 probes "am I still disabled?" and I6229/I6232 probes
+! "am I still enabled?", and both write "SVA,$X1,I62ITE+.32".  The BD
 ! half is used where disabling on landing costs nothing, as in TEST 3A
 ! and TEST 3B (pp.107-108), whose landing is the end of the test; both
-! write "SVA,$X1,162ITE".
+! write "SVA,$X1,I62ITE".
 !
-! ONE CONJECTURE, FLAGGED.  That the table still holds 162K1 when TEST
-! 3B runs is not read: pp.94-107 were not swept.  p.93's 16233 block
+! ONE CONJECTURE, FLAGGED.  That the table still holds I62K1 when TEST
+! 3B runs is not read: pp.94-107 were not swept.  p.93's I6233 block
 ! ("-DO BB, SETUP BD INT TBL.") is the last table fill seen, and it
-! loads 162K1.  The internal argument is strong -- if the table still
-! held 162K6 the interrupt would land at 162ITE+.32, which 3A/3B never
+! loads I62K1.  The internal argument is strong -- if the table still
+! held I62K6 the interrupt would land at I62ITE+.32, which 3A/3B never
 ! SVA, so the landing would be the untouched "B,$" self-loop and
 ! neither block could pass -- but it is an argument, not a page.
 !
@@ -52,36 +52,36 @@
 ! replace THE ADDRESS FIELD of the instruction specified by the
 ! effective address", the width being "determined from the instruction
 ! operation code".  A half-word branch's address field is bits 0-18 --
-! 19 bits, bit 18 included -- so an SVA into 162ITE plants a full
+! 19 bits, bit 18 included -- so an SVA into I62ITE plants a full
 ! half-word-resolved target and leaves "BD" standing.  The op is never
 ! rewritten; only the address is.
 !
-! THE TABLE ITSELF.  "162INT DR%BU,64,8@,64 -INTRPT TABLE." at
+! THE TABLE ITSELF.  "I62INT DR%BU,64,8@,64 -INTRPT TABLE." at
 ! 024220.00 prints "100.00" in the machine-code column -- that is the
 ! RESERVE SIZE, 0o100 = 64 words, not a machine word, so NO WORD IS
 ! FABRICATED for it here: the transcription SLCs across the reserve and
 ! takes the label by SYN.  The arithmetic checks: 024220 + 0o100 =
-! 024320, exactly where the page prints 162ITE.  Ref. Manual printed
+! 024320, exactly where the page prints I62ITE.  Ref. Manual printed
 ! p.48 (PDF p.51) describes the table as "48 successive full-word
 ! locations" (indicators 48-63 are permanently masked off); the deck
-! reserves 64 and points $IA at it with 162XW1, "XW,0,64,162INT" at
+! reserves 64 and points $IA at it with I62XW1, "XW,0,64,I62INT" at
 ! 024326.00, whose refill-address field holds 024220.
 !
-! WHAT ELSE IS ON THE PAGE.  162B1-162B16 (024200.00-024217.00) are
+! WHAT ELSE IS ON THE PAGE.  I62B1-I62B16 (024200.00-024217.00) are
 ! the SUBJECT-INSTRUCTION pairs the EX/EXIC tests execute -- each a
 ! branch that should be suppressed by EXE plus the branch that is
 ! taken when it is not (Ref. Manual printed p.49: "The execution
 ! exception indicator (EXE) is turned on by any branch operation of a
 ! subject instruction in which the condition for a successful branch is
 ! met ... The suppressed actions include the disabling in BRANCH
-! DISABLED, the enabling in BRANCH ENABLED").  162B3 is the "BE" pair
-! and 162B4 the "BD" pair that p.93's 16225/16229 blocks execute.
-! 162EX-162EXM (024322.00-024331.00) are the subject instructions
-! themselves, under the comment "-KEEP / -IN / -ORDER", with 162PSI
-! the pseudo-IC word and 162SUB the subject slot.
+! DISABLED, the enabling in BRANCH ENABLED").  I62B3 is the "BE" pair
+! and I62B4 the "BD" pair that p.93's I6225/I6229 blocks execute.
+! I62EX-I62EXM (024322.00-024331.00) are the subject instructions
+! themselves, under the comment "-KEEP / -IN / -ORDER", with I62PSI
+! the pseudo-IC word and I62SUB the subject slot.
 !
 ! A HOLE AT 024325.40, and it is the listing's, not this file's.
-! 162BR2 "$BD,0" is a half-word at 024325.00 and 162XW1 is an XW,
+! I62BR2 "$BD,0" is a half-word at 024325.00 and I62XW1 is an XW,
 ! which must start on a word boundary, so the page jumps straight to
 ! 024326.00.  This assembler aligns full-word items by itself -- the
 ! half-word is left untouched rather than filled -- so no SLC is
@@ -89,23 +89,23 @@
 !
 ! THE FOUR CNOPs ARE A FREE SELF-CHECK on that same alignment rule.
 ! Two of them print a NOP word (024207.40 and 024217.40, both at an
-! ODD half-word) and two print nothing at all (the one above 162K1 and
-! the one above 162EX, both already word-aligned).  All four are kept
+! ODD half-word) and two print nothing at all (the one above I62K1 and
+! the one above I62EX, both already word-aligned).  All four are kept
 ! verbatim, and the assembler reproduces the pattern.  Measured, not
 ! assumed: removing CNOP's alignment moves seven labels and fifteen
-! rows -- from the first ODD-half-word CNOP to the end of the 162B run
+! rows -- from the first ODD-half-word CNOP to the end of the I62B run
 ! and nowhere else, because the SLC across the table re-anchors what
 ! follows.  See the verify script's injection table.
 !
 ! SUBSTITUTIONS: four.  (1) Numeric labels prefixed "L".  (2) "%8@n"
 ! -> "(8)n" and "%BU@"/"%U@" -> "(BU)"/"(U)", this repo's spellings.
-! (3) "162INT%$X1@" does not appear here (it is on p.93).  (4) THE
-! "$BD,0" ROWS: 162BR1 at 024323.40 and 162BR2 at 024325.00 are
+! (3) "I62INT%$X1@" does not appear here (it is on p.93).  (4) THE
+! "$BD,0" ROWS: I62BR1 at 024323.40 and I62BR2 at 024325.00 are
 ! printed "$BD,0" and written "BD,0" here.  The 32 bits are identical
 ! -- both are the printed "0.04 00", measured -- but what STRAP's "$"
 ! prefix on an operation MEANS is not established by any page read for
 ! this work; it occurs only on data-in-the-instruction-stream rows
-! (these two, and 160SX1 at 023041.00).  Left as an open question.
+! (these two, and I60SX1 at 023041.00).  Left as an open question.
 !
 ! ENCODING ONLY.  Nothing here is executed in place: the page is a
 ! constant pool plus the one landing word.
@@ -116,101 +116,101 @@
 ! field come out right by construction, so a row naming one proves
 ! only that every OTHER field lands where the listing puts it.
 
-L16221  SYN, (8)23464.0            ! 24 branch targets in 1262's body,
-L16224  SYN, (8)23473.40           ! each from this page's own printed
-L16225  SYN, (8)23474.40           ! address, bit 18 = top bit of the
-L16226  SYN, (8)23504.0            ! octal pair.  p.93 confirms 16225,
-L16227  SYN, (8)23505.0            ! 16226, 16227, 16231 and 16232 in
-L16231  SYN, (8)23516.40           ! its own label column.
-L16232  SYN, (8)23517.40
-L16234  SYN, (8)23535.0
-L16235  SYN, (8)23536.40
-L16238  SYN, (8)23543.0
-L16239  SYN, (8)23544.40
-L16246  SYN, (8)23571.0
-L16274  SYN, (8)24025.0
-L16277  SYN, (8)24034.0
-L16278  SYN, (8)24035.0
-L16279  SYN, (8)24045.40
-L16280  SYN, (8)24046.40
-L16284  SYN, (8)24060.40
-L16285  SYN, (8)24061.40
-L16287  SYN, (8)24072.40
-L16288  SYN, (8)24074.0
-L16291  SYN, (8)24101.40
-L16292  SYN, (8)24103.0
-L16299  SYN, (8)24130.40
-L1000   SYN, (8)24503.0            ! the deck's own label "1000"
-L162INT SYN, (8)24220.0            ! the reserve: see the header
+I6221  SYN, (8)23464.0            ! 24 branch targets in 1262's body,
+I6224  SYN, (8)23473.40           ! each from this page's own printed
+I6225  SYN, (8)23474.40           ! address, bit 18 = top bit of the
+I6226  SYN, (8)23504.0            ! octal pair.  p.93 confirms I6225,
+I6227  SYN, (8)23505.0            ! I6226, I6227, I6231 and I6232 in
+I6231  SYN, (8)23516.40           ! its own label column.
+I6232  SYN, (8)23517.40
+I6234  SYN, (8)23535.0
+I6235  SYN, (8)23536.40
+I6238  SYN, (8)23543.0
+I6239  SYN, (8)23544.40
+I6246  SYN, (8)23571.0
+I6274  SYN, (8)24025.0
+I6277  SYN, (8)24034.0
+I6278  SYN, (8)24035.0
+I6279  SYN, (8)24045.40
+I6280  SYN, (8)24046.40
+I6284  SYN, (8)24060.40
+I6285  SYN, (8)24061.40
+I6287  SYN, (8)24072.40
+I6288  SYN, (8)24074.0
+I6291  SYN, (8)24101.40
+I6292  SYN, (8)24103.0
+I6299  SYN, (8)24130.40
+I000   SYN, (8)24503.0            ! the deck's own label "I000"
+I62INT SYN, (8)24220.0            ! the reserve: see the header
         SLC, (8)24172.0
 !
 ! ---- the constants routine 1262 stores into the interrupt table ----
         CNOP                       ! -CONSTANTS FOR 1262.  (aligned: no word)
-L162K1  BD,  L162ITE               ! -> the DISABLED landing half
-        BD,  L162ITE
-L162K2  EX,  L162EXT
-        EX,  L162EXT
-L162K3  EX,  $X3
+I62K1  BD,  I62ITE               ! -> the DISABLED landing half
+        BD,  I62ITE
+I62K2  EX,  I62EXT
+        EX,  I62EXT
+I62K3  EX,  $X3
         EX,  $X3
-L162K4  EX,  $L
+I62K4  EX,  $L
         EX,  $L
-L162K5  EXIC, $+.32
+I62K5  EXIC, $+.32
         EXIC, $+.32
-L162K6  B,   L162ITE+.32           ! -> the ENABLED landing half
-        B,   L162ITE+.32
+I62K6  B,   I62ITE+.32           ! -> the ENABLED landing half
+        B,   I62ITE+.32
 !
 ! ---- the subject-instruction branch pairs --------------------------
-L162B1  BXVZ, $+.32
-        BD,  L16221
-L162B2  BXVZ, L16224
-        B,   L16225
-L162B3  BE,  L16226                ! the "BE" pair, executed at 023502.00
-        B,   L16227
-L162B4  BD,  L16231                ! the "BD" pair, executed at 023514.40
-        B,   L16232
-L162B5  BB,  $X0, L16234
-        B,   L16235
-L162B6  BB,  $X0+.01, L16238
-        B,   L16239
-L162B7  BD,  L16246
+I62B1  BXVZ, $+.32
+        BD,  I6221
+I62B2  BXVZ, I6224
+        B,   I6225
+I62B3  BE,  I6226                ! the "BE" pair, executed at 023502.00
+        B,   I6227
+I62B4  BD,  I6231                ! the "BD" pair, executed at 023514.40
+        B,   I6232
+I62B5  BB,  $X0, I6234
+        B,   I6235
+I62B6  BB,  $X0+.01, I6238
+        B,   I6239
+I62B7  BD,  I6246
         CNOP                       ! odd half-word: prints 0.30 00
-L162B10 BXVZ, $+.32
-        BD,  L16274
-L162B11 BXVZ, L16277
-        B,   L16278
-L162B12 BE,  L16279
-        B,   L16280
-L162B13 BD,  L16284
-        B,   L16285
-L162B14 BB,  $X0, L16287
-        B,   L16288
-L162B15 BB,  $X0+.01, L16291
-        B,   L16292
-L162B16 BD,  L16299
+I62B10 BXVZ, $+.32
+        BD,  I6274
+I62B11 BXVZ, I6277
+        B,   I6278
+I62B12 BE,  I6279
+        B,   I6280
+I62B13 BD,  I6284
+        B,   I6285
+I62B14 BB,  $X0, I6287
+        B,   I6288
+I62B15 BB,  $X0+.01, I6291
+        B,   I6292
+I62B16 BD,  I6299
         CNOP                       ! odd half-word: prints 0.30 00
 !
-! ---- 162INT, "DR%BU,64,8@,64  -INTRPT TABLE.", 024220.00 -----------
+! ---- I62INT, "DR%BU,64,8@,64  -INTRPT TABLE.", 024220.00 -----------
 !      64 words reserved, printed "100.00" = the SIZE.  No machine
 !      word exists to transcribe; SLC across it.  024220 + 0o100 =
 !      024320, which is the next printed address.
         SLC, (8)24320.0
 !
 ! ---- the landing word ----------------------------------------------
-L162ITE BD,  $                     ! -ALL INTERRUPTS ENTER HERE.
+I62ITE BD,  $                     ! -ALL INTERRUPTS ENTER HERE.
         B,   $
-L162EXT XW,  0, 0, 0
+I62EXT XW,  0, 0, 0
 !
 ! ---- the subject instructions, "-KEEP / -IN / -ORDER" --------------
         CNOP                       ! aligned after the XW: no word
-L162EX  LX,  $X1, L1000            ! -IN
+I62EX  LX,  $X1, I000            ! -IN
         NOP                        ! -ORDER
-L162PSI LX,  $X0, 0                ! -PSEUDO IC.
-L162BR1 BD,  0                     ! listing: "$BD,0"
-L162SUB XW,  0, 0, 0               ! -SUBJ INST.
-L162BR2 BD,  0                     ! listing: "$BD,0"; 024325.40 is skipped
-L162XW1 XW,  0, 64, L162INT        ! the $IA setting: 64 words at 162INT
-L162EXV L(BU), L1000               ! -VFL FULL WD.
-L162EXF L(U), L1000                ! -FLT PT.
-        L(U), L1000
-L162EXM Z,   $X1                   ! -MISC.
-        END, L162ITE
+I62PSI LX,  $X0, 0                ! -PSEUDO IC.
+I62BR1 BD,  0                     ! listing: "$BD,0"
+I62SUB XW,  0, 0, 0               ! -SUBJ INST.
+I62BR2 BD,  0                     ! listing: "$BD,0"; 024325.40 is skipped
+I62XW1 XW,  0, 64, I62INT        ! the $IA setting: 64 words at I62INT
+I62EXV L(BU), I000               ! -VFL FULL WD.
+I62EXF L(U), I000                ! -FLT PT.
+        L(U), I000
+I62EXM Z,   $X1                   ! -MISC.
+        END, I62ITE

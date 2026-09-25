@@ -13,19 +13,19 @@
 ! performs ONE VFL load through it, and then asks four questions in
 ! turn, each with its own error exit:
 !
-!   KV $X2 vs 148K25   did the load fetch the right OPERAND?  ($X2 is
+!   KV $X2 vs I48K25   did the load fetch the right OPERAND?  ($X2 is
 !                      loaded from $R, the accumulator's right word,
 !                      where the 64-bit VFL load put it.)
-!   KV $X1 vs 148K28   did progressive indexing modify the index
+!   KV $X1 vs I48K28   did progressive indexing modify the index
 !                      VALUE correctly?
 !   KC $X1 vs BIT17    did it modify the index COUNT correctly?
 !   SR/LX then BZXVZ   did it REFILL correctly?
 !
 ! THE TWO TESTS SHARE THEIR EXPECTED VALUES, WHICH IS THE ELEGANT PART.
-! 148XW6 starts the value at 148K25's address (011352) and V+ICR adds
-! one word, giving 011353.  148XW7 starts it at 148K27's address
+! I48XW6 starts the value at I48K25's address (011352) and V+ICR adds
+! one word, giving 011353.  I48XW7 starts it at I48K27's address
 ! (011354) and V-I subtracts one word, giving 011353 again.  So a
-! single constant -- 148K28, whose value field is 011353 -- is the
+! single constant -- I48K28, whose value field is 011353 -- is the
 ! expected result for both directions, and the same KV checks both.
 !
 ! BIT17's count field is zero, so the KC check asserts the count was

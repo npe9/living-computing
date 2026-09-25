@@ -2677,7 +2677,7 @@ function ActionValue#(IndexOutcome)
 
       // DF'S MASK-DEPENDENT HALF -- see dfSuppresses.  This is the arm
       // routine 1260 TEST 8C case 4 actually exercises: its offending
-      // fetch is "LV,$X3,160AD3" with DF's mask bit stored one, and
+      // fetch is "LV,$X3,I60AD3" with DF's mask bit stored one, and
       // its error text if the value arrives anyway is "-FETCHED ABOVE
       // UB WITH MASK 1 AND SYSTEM ENABLED."  Suppressing the whole
       // case means the index register keeps its old value, no

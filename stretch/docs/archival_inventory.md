@@ -797,14 +797,14 @@ with a target:
 | **1258** | "the Interval Timer and Time Clock" |
 
 **ROUTINE 1260'S LAYOUT, pp.41-45 read first-hand 2026-09-22.**
-`docs/NEXT.md` had carried "SSIP's `160S1`/`160SX1` save/restore
+`docs/NEXT.md` had carried "SSIP's `I60S1`/`I60SX1` save/restore
 harness, reported at `ax5b` pp.41-44" as 1260's prerequisite. Those
 pages hold nothing of the kind. What they actually contain, in order:
 
 | pages | what is there |
 |---|---|
-| pp.41-44 | **the per-indicator turn-on blocks**, 16071 through 16086 -- one per I-Box indicator (`TS`, `CPUS`, `EKJ`, `UNRJ`, `CBJ`, `EPGK`, `UK`, `EE`, `EOP`, `CS`, `RESRVD`, `OP`, `AD`, `USA`, `EXE`, `DS`). Sixteen blocks, but not sixteen tests -- see the triage below. |
-| p.45 | **the indicator-walk driver**, 16087/16088 -- **transcribed** as `strap/programs/ax5b_16087_walk.strap`, six rows bit-exact via `strap/verify_ax5b_16087_listing.py`: `SIC,160SX1` / `B,160S1`, `TI,1,BIT0%$X1,$IND` *"SET ONE OF 20-47"*, `TI,1,BIT0%$X1,$MASK` *"SET MASK BIT OF TEST IND BIT"*, `BE,$+.32` *"ENABLE AND AWAIT INTERRUPT"*, then `BD,160B13%$X6` -- an indexed dispatch into the per-indicator error table `160B13`, whose entries read *"FAILED TO INTERRUPT ON IND MK / IN 1 MILLISEC."*, then IK, IJ, EK, TS, CPUS, EKJ, UNRJ, CBJ, EPGK, UK, EE, EOP, CS. |
+| pp.41-44 | **the per-indicator turn-on blocks**, I6071 through I6086 -- one per I-Box indicator (`TS`, `CPUS`, `EKJ`, `UNRJ`, `CBJ`, `EPGK`, `UK`, `EE`, `EOP`, `CS`, `RESRVD`, `OP`, `AD`, `USA`, `EXE`, `DS`). Sixteen blocks, but not sixteen tests -- see the triage below. |
+| p.45 | **the indicator-walk driver**, I6087/I6088 -- **transcribed** as `strap/programs/ax5b_16087_walk.strap`, six rows bit-exact via `strap/verify_ax5b_16087_listing.py`: `SIC,I60SX1` / `B,I60S1`, `TI,1,BIT0%$X1,$IND` *"SET ONE OF 20-47"*, `TI,1,BIT0%$X1,$MASK` *"SET MASK BIT OF TEST IND BIT"*, `BE,$+.32` *"ENABLE AND AWAIT INTERRUPT"*, then `BD,I60B13%$X6` -- an indexed dispatch into the per-indicator error table `I60B13`, whose entries read *"FAILED TO INTERRUPT ON IND MK / IN 1 MILLISEC."*, then IK, IJ, EK, TS, CPUS, EKJ, UNRJ, CBJ, EPGK, UK, EE, EOP, CS. |
 
 **ROUTINE 1258 AND 1260 TESTs 1-4 -- pp.4-44 mapped 2026-09-24.**
 Only TWO banners exist in that whole span: *"----1258---CHK TIME CLOCK
@@ -813,8 +813,8 @@ INTERRUPT."* (p.8). Entry labels and headers:
 
 | label | octal | PDF p. | header |
 |---|---|---|---|
-| `1581` | 014012.00 | 6 | *"-TEST 1, CHECK TIME CLOCK STEPPING."* |
-| `1587` | 014034.00 | 7 | *"-TEST 2"* (the interval timer) |
+| `I581` | 014012.00 | 6 | *"-TEST 1, CHECK TIME CLOCK STEPPING."* |
+| `I587` | 014034.00 | 7 | *"-TEST 2"* (the interval timer) |
 | `1601` | 014070.00 | 9 | TEST 1A |
 | `1607` | 014167.00 | 12 | TEST 1B |
 | `16011` | 014253.40 | 14 | TEST 1C |
@@ -826,8 +826,8 @@ INTERRUPT."* (p.8). Entry labels and headers:
 **TEST 5's HEAD is at `16061`/`16064`/`16065`/`16066`, pp.37-44**,
 which closes a loose end the pp.45-64 map below had to flag. `16066`
 (015360.00, p.40) is a 20-entry dispatch *"-TURN ON MK."* … *"-TURN ON
-DS."* feeding the per-indicator turn-on blocks `16071` (016007.00,
-*"-TS"*) through `16086` (021365.00, *"-DS"*) already recorded here at
+DS."* feeding the per-indicator turn-on blocks `I6071` (016007.00,
+*"-TS"*) through `I6086` (021365.00, *"-DS"*) already recorded here at
 pp.41-44. **So pp.37-60 is TEST 5 end to end**, and pp.45-60 is its
 tail.
 
@@ -849,21 +849,21 @@ three 48-ENTRY ERROR-MESSAGE TABLES**, each entry three half-words
 
 | block | octal | PDF pp. | what it is |
 |---|---|---|---|
-| `16087`/`16088` | 021376.40–021402.00 | 45 | the walk driver, header *"-TURN ON BIT 20-47."*: `SIC,160SX1` / `B,160S1` / `TI,1,BIT0($X1),$IND` *"-SET ONE OF 20-47"* / `TI,1,BIT0($X1),$MASK` / `BE,$+.32` *"-ENABLE AND AWAIT INTERRUPT"* / `BD,160B13($X6)` |
-| `160B13` | 021402.40–021512.00 | 45–48 | table: *"-FAILED TO INTERRUPT ON IND &lt;name&gt; / -IN 1 MILLISEC."* |
-| `16090` | 021512.40–021513.40 | 48 | **the three-way dispatch -- the only interesting code in pp.46-60**: `BD,160B14($X6)` *"-HI,BEFORE,INTRPTS ENTER HERE."* / `BD,16093` *"-OK, AT INTRPTS ENTER HERE."* / `BD,160B15($X6)` *"-LO,AFTER,INTRPTS ENTER HERE."* |
-| `160B14` | 021514.00–021623.40 | 48–51 | table: *"-INTERRUPT TAKEN ON IND &lt;name&gt; / -RECVD HIGHER PRIORITY."* |
-| `160B15` | 021624.00–021733.40 | 51–54 | table: same, *"-RECVD LOWER PRIORITY."* |
-| `16093`/`C`/`D`/`A`/`B` | 021734.00–021743.40 | 55 | the post-interrupt scan, including a **self-modified branch-on-indicator word** `16093A XW,0,0,0 -BIND` planted by `SVA` |
+| `I6087`/`I6088` | 021376.40–021402.00 | 45 | the walk driver, header *"-TURN ON BIT 20-47."*: `SIC,I60SX1` / `B,I60S1` / `TI,1,BIT0($X1),$IND` *"-SET ONE OF 20-47"* / `TI,1,BIT0($X1),$MASK` / `BE,$+.32` *"-ENABLE AND AWAIT INTERRUPT"* / `BD,I60B13($X6)` |
+| `I60B13` | 021402.40–021512.00 | 45–48 | table: *"-FAILED TO INTERRUPT ON IND &lt;name&gt; / -IN 1 MILLISEC."* |
+| `I6090` | 021512.40–021513.40 | 48 | **the three-way dispatch -- the only interesting code in pp.46-60**: `BD,I60B14($X6)` *"-HI,BEFORE,INTRPTS ENTER HERE."* / `BD,I6093` *"-OK, AT INTRPTS ENTER HERE."* / `BD,I60B15($X6)` *"-LO,AFTER,INTRPTS ENTER HERE."* |
+| `I60B14` | 021514.00–021623.40 | 48–51 | table: *"-INTERRUPT TAKEN ON IND &lt;name&gt; / -RECVD HIGHER PRIORITY."* |
+| `I60B15` | 021624.00–021733.40 | 51–54 | table: same, *"-RECVD LOWER PRIORITY."* |
+| `I6093`/`C`/`D`/`A`/`B` | 021734.00–021743.40 | 55 | the post-interrupt scan, including a **self-modified branch-on-indicator word** `I6093A XW,0,0,0 -BIND` planted by `SVA` |
 | `16094` | 021744.00–022053.40 | 55–59 | table: *"-AFTR INTRPT, OR IND NOT ON, IND &lt;name&gt; / -FOUND ON."* |
 | `16095` | 022054.00–022061.40 | 59–60 | loop advance; TEST 5 ends, continuity BIT6 at 022061.00 |
-| `16096`–`16098`… | 022062.00–022214.40 | 61–64 | **TEST 6 -- real code**, header *"-TEST 6 CHKS THAT FREE INSTRUCTION / -IS IN FACT FREE, AND THAT I-BOX / -INDS SET ONLY CORRECT INDS."*; continuity BIT7 at 022214.00 |
+| `I6096`–`I6098`… | 022062.00–022214.40 | 61–64 | **TEST 6 -- real code**, header *"-TEST 6 CHKS THAT FREE INSTRUCTION / -IS IN FACT FREE, AND THAT I-BOX / -INDS SET ONLY CORRECT INDS."*; continuity BIT7 at 022214.00 |
 
 Two caveats kept with the table. (i) pp.49, 50, 56, 57, 58 were
 established **by arithmetic** from both read endpoints -- 48 x 3
 half-words spans exactly those pages -- not read page by page. (ii)
 **pp.45-60 is TEST 5's TAIL, not TEST 5**: `16095`'s `CB+,$X1,16063`
-branches to a loop head earlier than p.45, and `16087`'s own comment
+branches to a loop head earlier than p.45, and `I6087`'s own comment
 says "BIT 20-47" while the p.8 write-up says TEST 5 covers bits 0-47.
 
 **AND THE TWO PRIORITY MECHANISMS MUST BE KEPT APART, which is the
@@ -895,9 +895,9 @@ pp.46-86 for BOUND/MONITOR and reading the hits:
 
 | page | sub-test |
 |---|---|
-| p.65 | *"TEST 7 CHKS BOUNDARY CONTROL."* / *"CHK UPPER BOUNDARY DATA."* -- driver at 16099/160100, per-bit error table `160B17` |
+| p.65 | *"TEST 7 CHKS BOUNDARY CONTROL."* / *"CHK UPPER BOUNDARY DATA."* -- driver at I6099/I60100, per-bit error table `I60B17` |
 | p.67 | tail of the upper-boundary error table (BIT10–BIT17) |
-| p.68 | *"CHK LOWER BOUNDARY DATA."* (driver 160102/160103) and *"CHK BOUNDARY CONTROL BIT."* |
+| p.68 | *"CHK LOWER BOUNDARY DATA."* (driver I60102/I60103) and *"CHK BOUNDARY CONTROL BIT."* |
 | pp.69–70 | the lower-boundary error table, bits 32–49 |
 | p.71 | *"FETCH FROM X-1 TO CHK UB COMP."*, *"FROM X-3 TO CHK LB COMP."* |
 
@@ -908,9 +908,9 @@ cases" meant. The guess was wrong in range (65-71, not 66-79) and in
 kind (mostly data, not interrupts).
 
 **p.68's two sub-tests, read first-hand.** The lower-boundary driver
-is 160102/160103 at 022264.40-022274.00 and mirrors the upper one
+is I60102/I60103 at 022264.40-022274.00 and mirrors the upper one
 exactly: eighteen iterations, `SV,$X3,$LB` into word 3 bits 32-49,
-four NOPs, read back, `KV`, and on mismatch `B,160B18($X2)` into a
+four NOPs, read back, `KV`, and on mismatch `B,I60B18($X2)` into a
 per-bit table whose entries pp.69-70 print as *"LOWER BOUNDARY DATA
 FAILURE, BIT 32"* upward. Then the control-bit test at
 022274.40-022306.40 sets word 3 bit 57 from `BIT57` and checks it
@@ -955,17 +955,17 @@ which is the clearest page. Each block repeats one shape per
 instruction class:
 
 ```
-LVI,$X1,<err>   SVA,$X1,162ITE     point the interrupt table entry
-LVI,$X1,162SUB  SVA,$X1,162PSI     set the PSEUDO-IC to the subject
-LX,$X1,162EXF   SX,$X1,162SUB      plant the subject instruction
+LVI,$X1,<err>   SVA,$X1,I62ITE     point the interrupt table entry
+LVI,$X1,I62SUB  SVA,$X1,I62PSI     set the PSEUDO-IC to the subject
+LX,$X1,I62EXF   SX,$X1,I62SUB      plant the subject instruction
 Z,$IND  Z,$MASK  Z,$L  Z,$R        clear indicators, mask, accumulator
-LV,$X2,162PSI                      remember the pseudo-IC
-EXIC,162PSI                        <- the instruction under test
+LV,$X2,I62PSI                      remember the pseudo-IC
+EXIC,I62PSI                        <- the instruction under test
 BD,<next>
 <err>  SIC,SEN / B,SERS   "-INT WHEN EXIC TO / -A FLT PT INSTRUCT."
 <next> LX,$X1,$L
        SIC,SEN / BXVZ,SERS "-SUBJ INST WAS FLT PT / -AND WAS NOT EXECUTED."
-       V+I,$X2,0.32  KV,$X2,162PSI
+       V+I,$X2,0.32  KV,$X2,I62PSI
        SIC,SEN / BZXE,SERS "-PSEUDO IC NOT STEPPED .32 CORRECTLY
                             / -WHEN SUBJ INST WAS IMMED IX."
 ```
@@ -1005,11 +1005,11 @@ because the page carries HANDWRITTEN annotations on exactly the rows
 that matter. At 600 dpi they are a reader's explanation, not a
 correction:
 
-* `1682 XW,0,0,0` prints `0.00 00 000000.00 00`, and its second
+* `I682 XW,0,0,0` prints `0.00 00 000000.00 00`, and its second
   half-word is boxed in pen with "LVI" written in the comment column.
   That is a note that the slot is OVERWRITTEN at run time -- the block
-  does `SX,$X1,1682` twice, first with `168K1`'s word (`Z,$X2` + NOP)
-  and then with `168K2`'s (`LVI,$X2,(8)777777.40` + NOP) -- so what
+  does `SX,$X1,I682` twice, first with `I68K1`'s word (`Z,$X2` + NOP)
+  and then with `I68K2`'s (`LVI,$X2,(8)777777.40` + NOP) -- so what
   executes there is not what the listing prints.
 * `LX,$X2,$X2` at 024343.00 is circled. It reads X2 from its own word,
   which changes nothing but SETS THE INDEX RESULT INDICATORS from X2's
@@ -1020,7 +1020,7 @@ So the printed machine code is the assembler's own output and is
 trustworthy; the marks explain the self-modification. **Case 1A is
 transcribed and runs** --
 `strap/programs/ax5b_1681_if_close_to_ds.strap`, ten rows bit-exact
-via `strap/verify_ax5b_1681_listing.py`, with `168K1`/`168K2`
+via `strap/verify_ax5b_1681_listing.py`, with `I68K1`/`I68K2`
 transcribed from p.111 at their printed addresses rather than
 manufactured. Cases 1B and 1C use `EX,$X3` and `EX,$R` and are blocked
 on `EX`, deferred in `NEXT.md` section 5.
@@ -1041,7 +1041,7 @@ section.
 **The sixteen blocks triaged** (read from pp.41-44, not inferred):
 
 * **16072-16081** (`CPUS`, `EKJ`, `UNRJ`, `CBJ`, `EPGK`, `UK`, `EE`,
-  `EOP`, `CS`, `RESRVD`) are three lines each -- `B,16093` to the next
+  `EOP`, `CS`, `RESRVD`) are three lines each -- `B,I6093` to the next
   test, a `CNOP` commented *"CANT TURN ON"*, and `DR%BU,64,8,64`.
   Error-report placeholders for indicators a program cannot provoke on
   its own. Ten of the sixteen, and nothing to transcribe in any of
@@ -1049,7 +1049,7 @@ section.
 * **16084** (`USA`) turns on its indicator with `LVE`; **16085**
   (`EXE`) with `EX`. Both instructions are deferred in `NEXT.md` §5,
   so both blocks are blocked on an implementation, not on a harness.
-* **16071** (`TS`) is **transcribed** -- 016007.00-016012.40,
+* **I6071** (`TS`) is **transcribed** -- 016007.00-016012.40,
   `strap/programs/ax5b_16071_ts.strap`, eight rows checked by
   `strap/verify_ax5b_16071_listing.py`. It is an INTERVAL TIMER test:
   Reference Manual p.44, "4. Time Signal (TS). The interval timer has
@@ -1067,14 +1067,14 @@ section.
   **disabled** -- word 1 is permanently protected (Ref. Manual p.31)
   and p.45 suppresses such a store "while the interruption system was
   enabled" -- which is not shown in its eight rows but follows from
-  those two pages. Note the symmetry with 16086, which uses the SAME
+  those two pages. Note the symmetry with I6086, which uses the SAME
   instruction on the SAME word as its DS provocation, enabled,
   expecting suppression.
-* **16082** (`OP`) and **16083** (`AD`) are **transcribed** --
+* **I6082** (`OP`) and **I6083** (`AD`) are **transcribed** --
   contiguous at 017225.00-017234.40,
   `strap/programs/ax5b_16082_op_ad.strap`, fifteen rows checked by
   `strap/verify_ax5b_16082_16083_listing.py`. They exist for one row
-  pair: `BOP,16088` prints `21400.47 C2` and `BAD,16088` prints
+  pair: `BOP,I6088` prints `21400.47 C2` and `BAD,I6088` prints
   `21400.50 42` -- the same target through indicator 15 and indicator
   16. The 6-bit indicator number sits at bits 19-24 while the listing
   prints bits 18-23 as octal and 24-31 as hex, so the number
@@ -1082,15 +1082,15 @@ section.
   the octal pair at `.47` untouched and shows up only in the hex
   byte; a check reading one field would miss it. Both rows also carry
   bit 18 of their target set, making these the **third and fourth
-  witnesses that 16088 is at 021400.40** -- and the first from a page
+  witnesses that I6088 is at 021400.40** -- and the first from a page
   other than 43-45. (Provenance: the witness is the printed code read
-  off pp.41-42 at 600 dpi, not the passing rows -- `L16088`'s
+  off pp.41-42 at 600 dpi, not the passing rows -- `I6088`'s
   021400.40 is a `SYN` input to the check, chosen so the rows match.
   What the rows add is that this assembler places bit 18 where the
   listing places it.)
 
 **THE `BIT` TABLE, found and read first-hand on PDF p.114.** Three
-pages of this routine name a `BIT<n>` symbol -- 16071 uses `BIT18`
+pages of this routine name a `BIT<n>` symbol -- I6071 uses `BIT18`
 (p.41, printed 024544.00) and the indicator-walk driver uses
 `BIT0%$X1` (p.45, first operand printed 24522) -- which made
 `BIT<n>` = 024522 + n a reasonable guess. It is no longer a guess.
@@ -1158,19 +1158,19 @@ moves exactly one word and ignores both the immediate-count bit and
 convention. Recorded in `TRANSMIT_CODES`, `strap_asm.py`'s format
 list, `strap/README.md` and `docs/NEXT.md`.
 
-**A free corroboration between the two transcriptions.** `160K7` is
-023050.00 (from 16082's `LX,$X4,160K7`, p.41) and `160K16` is
-023061.00 (from 16086's `LX,$X4,160K16`, p.43). Those are 9768 and
-9777, nine words apart for nine in the index, so `160K<n>` is a
+**A free corroboration between the two transcriptions.** `I60K7` is
+023050.00 (from I6082's `LX,$X4,I60K7`, p.41) and `I60K16` is
+023061.00 (from I6086's `LX,$X4,I60K16`, p.43). Those are 9768 and
+9777, nine words apart for nine in the index, so `I60K<n>` is a
 regular table at **023041 + n words**. Two externals read from two
 different pages agree under one rule, which neither page states.
-Observed alongside it, not concluded: `SIC,160SX1` on p.45 prints
-`23041.00 80`, so 160SX1 occupies exactly that implied base word.
-Whether the K table starts at a `160K0` that is the same location, or
+Observed alongside it, not concluded: `SIC,I60SX1` on p.45 prints
+`23041.00 80`, so I60SX1 occupies exactly that implied base word.
+Whether the K table starts at a `I60K0` that is the same location, or
 this is coincidence, is not settled by anything read so far.
-* **16086** (`DS`) is transcribed; see below.
+* **I6086** (`DS`) is transcribed; see below.
 
-**`160S1` IS TRANSCRIBED** (`strap/programs/ax5b_160s1_clr_inds.strap`,
+**`I60S1` IS TRANSCRIBED** (`strap/programs/ax5b_160s1_clr_inds.strap`,
 81 rows) **and it is an INDICATOR-CLEARING SUBROUTINE at 022741.00 on
 PDF pp.83-84**, not a save/restore harness — read first-hand
 2026-09-23. Its own comment reads *"SUBROUTINE TO CLR INDS 0-19, AND
@@ -1179,17 +1179,17 @@ with `TI,1,11.0,$X1` and checks it went off, reporting per indicator:
 *"UNABLE TO CLEAR MK."*, *"…CLR IK OR ABOVE IND."*, then IJ, EK, TS,
 CPUS. About forty rows; every instruction in it is implemented.
 
-`160S1`/`160SX1` are **call sites** on p.45 (`SIC` stores the return
-link at `160SX1`, `B` enters `160S1`). Both are **located** from those
-rows' own printed address fields: `SIC,160SX1` prints `23041.00 80`
-so 160SX1 = **023041.00**, and `B,160S1` prints `22741.10 00` so
-160S1 = **022741.00** (on PDF p.82-83 by the address scan). Nothing
+`I60S1`/`I60SX1` are **call sites** on p.45 (`SIC` stores the return
+link at `I60SX1`, `B` enters `I60S1`). Both are **located** from those
+rows' own printed address fields: `SIC,I60SX1` prints `23041.00 80`
+so I60SX1 = **023041.00**, and `B,I60S1` prints `22741.10 00` so
+I60S1 = **022741.00** (on PDF p.82-83 by the address scan). Nothing
 transcribed has needed the subroutine's body. Note that 023041.00 is
-also the base the `160K<n>` constant table is numbered from -- see
-below; whether 160SX1 is literally `160K0`'s word or merely adjacent
+also the base the `I60K<n>` constant table is numbered from -- see
+below; whether I60SX1 is literally `I60K0`'s word or merely adjacent
 is not settled by anything read.
 
-**16086, the DS block, is transcribed** --
+**I6086, the DS block, is transcribed** --
 `strap/programs/ax5b_16086_ds.strap`, nineteen half-words checked
 bit-exactly by `strap/verify_ax5b_16086_listing.py` against the
 printed machine code at octal 021365.00-021376.00. It is the deck's
@@ -1197,7 +1197,7 @@ own test of storage protection and its error message states the rule
 this project had only from the Reference Manual: *"SV TO 1.0 FAILS TO
 SET DS WHEN ENABLED."* -- word 1 (one of p.31's permanently protected
 locations), the DS indicator, and the enable gate. It polls DS only
-after `16086A BD,$+.32` disables the system, independently confirming
+after `I6086A BD,$+.32` disables the system, independently confirming
 the "a program cannot poll DS while enabled" rule. Four encodings no
 listing in this project had checked: `BDS`, `BADZ` (the trailing-Z
 "and zero the indicator" grammar, until now only inferred from
@@ -1205,14 +1205,14 @@ C22-6531 Appendix A's footnote), `SVA` into `$IA`, and `DD(BU,32,8)`
 printed as 11 octal digits.
 
 **p.45's address column, re-read at 600 dpi.** A 200 dpi render gave
-`021400.00` for the row labelled 16088 and the page then looked a
+`021400.00` for the row labelled I6088 and the page then looked a
 half-word short. At 600 dpi the six rows print 021376.40, 021377.00,
 **021400.40**, 021401.40, 021402.00 — with 021377.40 between the
 second and third. So both `TI` instructions are FULL WORDS at ODD
 half-words (021377.40 and 021400.40), each straddling a word boundary
 per Reference Manual p.39; the apparent short arithmetic was a full
 word read as a half. The transcribed block agrees independently:
-`B,16088` prints `21400.50 00`, and bit 18 — the top bit of that
+`B,I6088` prints `21400.50 00`, and bit 18 — the top bit of that
 octal pair — is one. Two witnesses, one printed and one encoded.
 (Handwritten reader's marks sit beside 021377.00 and 021377.40; the
 printed text under them is intact.)
@@ -1246,12 +1246,12 @@ register, branches on DF or IF, or touches protected storage.
 **~~The DF and IF indicators have no deck oracle in this document.~~
 FALSE, corrected 2026-09-24 — and the sentence was wrong in the one
 document where it was easiest to check.** Routine 1260 **TEST 8C**,
-PDF pp.76-83 (labels 160127-160146, octal 022546.00-022732.40), is a
+PDF pp.76-83 (labels I60127-I60146, octal 022546.00-022732.40), is a
 dedicated test of exactly those two indicators. Verified first-hand at
 400 dpi; its title row reads
 
 ```
-160127  LVI,$X1,160AD1  -TEST 8C CHECKS DF + IF UNDER 4 CONDS,  23063.03 01  022546.00
+I60127  LVI,$X1,I60AD1  -TEST 8C CHECKS DF + IF UNDER 4 CONDS,  23063.03 01  022546.00
                         -1. DISABL MASK 0 FETCH OK IND NO INT
                         -2. DIAABL MASK 1 FETCH OK NO IND NO INT
                         -3. ENABLE MASK 0 FETCH OK IND ON NO INT
@@ -1268,14 +1268,14 @@ forwarding test — but the conclusion it drew about the whole document
 did not follow from that and was never re-checked.
 
 **Two more blocks in the same span that this file does not record:**
-* **TEST 8B, PDF p.75** (160123-160Z1, 022513.00-022545.40): DS with
+* **TEST 8B, PDF p.75** (I60123-I60Z1, 022513.00-022545.40): DS with
   the system disabled and enabled, *plus store suppression* --
   "-SX ABOVE UB WAS NOT NOPED, DATA WAS STORED WHEN ENABLED."  A
-  second and richer DS oracle beyond the transcribed 16086 block.
-* **TEST 7, PDF pp.71-74** (160105-160122): polls DF with
+  second and richer DS oracle beyond the transcribed I6086 block.
+* **TEST 7, PDF pp.71-74** (I60105-I60122): polls DF with
   `BDFZ`/`BZDFZ` throughout, on the boundary-compare path.
 
-**And the 16071-16086 gap has an explanation, so it is not read as
+**And the I6071-I6086 gap has an explanation, so it is not read as
 absence again.** The sixteen per-indicator turn-on blocks run TS(4) to
 DS(19) and stop. That is not because DF(20) and IF(21) go untested; it
 is because they get their own dedicated TEST 8C.
@@ -1453,7 +1453,7 @@ reverse index (source -> transcription/implementation).
 | `jb_ax2a_ibox-2.pdf` (203pp) | I-Box 2 diagnostic | Source | surveyed (archival pass); SVA/SIC blockers |
 | `jb_ax3a_ibox-3.pdf` (~200pp) | I-Box 3 diagnostic | Source | surveyed; SVA (~50pp section), SIC |
 | `jb_ax4b_ibox-4.pdf` (~200pp) | I-Box 4 diagnostic | Source | RUN: `ibox4_cb_count_branch`, `ibox4_cbr_refill`; bit-exact vs `verify_ibox4_listing.py` (pp.155/159); section 138 rejected ($R), the pp.58-62 KV/$R pages sourced the Appendix-A system symbols |
-| `jb_ax5b_ibox-5.pdf` (116pp) | I-Box 5 diagnostic | Source | routine index transcribed (p.2); 1260's pp.41-45 read first-hand; **every transcribable block of 1260's pp.41-44 transcribed** -- 16071, 16082, 16083, 16086 (`ax5b_16071_ts.strap`, `ax5b_16082_op_ad.strap`, `ax5b_16086_ds.strap`); interrupt/timer/boundary/EX -- the largest unmodeled-hardware concentration |
+| `jb_ax5b_ibox-5.pdf` (116pp) | I-Box 5 diagnostic | Source | routine index transcribed (p.2); 1260's pp.41-45 read first-hand; **every transcribable block of 1260's pp.41-44 transcribed** -- I6071, I6082, I6083, I6086 (`ax5b_16071_ts.strap`, `ax5b_16082_op_ad.strap`, `ax5b_16086_ds.strap`); interrupt/timer/boundary/EX -- the largest unmodeled-hardware concentration |
 | `jb_af1c_floating-point.pdf` (282pp) | **Floating-point (PAU) diagnostic**, SMFF-1C, JB AF1C, Apr 15 1961, SSIP-controlled | Source | IN PROGRESS -- its routine F200 (LOAD TEST) drove out and verified the assembler's FP sign-modifier loads (LN/LA/LNA), bit-exact vs its printed code (`../strap/verify_fp_signmods.py`), and exposed a real look-ahead store-close-to-fetch gap (see plan). Running a full block still needs branch-on-bit (`BB`/`BB1`/`BZB`, decoded not executed) and the SSIP framework; blocks using divide/double wait for stage 4e. |
 | `ja_bb6b_worst_pat_test.pdf` (20pp) | Worst-pattern memory test | Source | NOT YET -- runnable against `StretchMemory.bsv` (the interleaved units); a memory-model codesign target |
 | `ja_bm6a_unique_adr_test.pdf` (11pp) | Unique-address memory test | Source | NOT YET -- memory-model target |

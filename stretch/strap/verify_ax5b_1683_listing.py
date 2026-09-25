@@ -49,22 +49,22 @@ prog = assemble(open("programs/ax5b_1683_df_close_to_ds.strap").read())
 # Rows marked (ext) name a symbol defined outside the transcribed range
 # and given by SYN from the listing's own print for it.
 ROWS = [
-    ('024363.40', '24411.22 00', 'L1683 Z,L168K3        (ext) "-TEST 2A,DF CLOSE TO DS IN EXT MEM."'),
-    ('024364.00', '24503.02 10', 'LX,$X1,L1000          (ext) the index word of ones'),
+    ('024363.40', '24411.22 00', 'I683 Z,I68K3        (ext) "-TEST 2A,DF CLOSE TO DS IN EXT MEM."'),
+    ('024364.00', '24503.02 10', 'LX,$X1,I000          (ext) the index word of ones'),
     ('024364.40', '22.22 00',    'Z,$X2                 word 18'),
-    ('024365.00', '24411.03 10', 'SX,$X1,L168K3         (ext) store...'),
-    ('024365.40', '24411.04 10', 'LX,$X2,L168K3         (ext) ...and load straight back'),
+    ('024365.00', '24411.03 10', 'SX,$X1,I68K3         (ext) store...'),
+    ('024365.40', '24411.04 10', 'LX,$X2,I68K3         (ext) ...and load straight back'),
     ('024366.00', '1310.00 80',  'SIC,SEN               (ext)'),
     ('024366.40', '1304.31 42',  'BXVZ,SERS             (ext) "LOADED OLD DATA FROM EXT MEM."'),
     ('024367.00', '24.22 00',    'Z,$X4                 word 20, index storage'),
-    ('024367.40', '24503.02 10', 'LX,$X1,L1000          (ext)'),
+    ('024367.40', '24503.02 10', 'LX,$X1,I000          (ext)'),
     ('024370.00', '22.22 00',    'Z,$X2'),
     ('024370.40', '24.03 10',    'SX,$X1,$X4'),
     ('024371.00', '24.04 10',    'LX,$X2,$X4'),
     ('024371.40', '1310.00 80',  'SIC,SEN               (ext)'),
     ('024372.00', '1304.31 42',  'BXVZ,SERS             (ext) "LOADED OLD DATA FROM IX STG."'),
     ('024372.40', '11.22 00',    'Z,$R                  word 9, internal memory'),
-    ('024373.00', '24503.02 10', 'LX,$X1,L1000          (ext)'),
+    ('024373.00', '24503.02 10', 'LX,$X1,I000          (ext)'),
     ('024373.40', '22.22 00',    'Z,$X2                 vestigial -- see the header'),
     ('024374.00', '11.03 10',    'SX,$X1,$R'),
     ('024374.40', '11.02 10',    'LX,$X1,$R             $X1 as printed, not $X2'),
@@ -72,6 +72,6 @@ ROWS = [
     ('024375.40', '1304.31 42',  'BXVZ,SERS             (ext) "LOADED OLD DATA FROM INT MEM."'),
 ]
 
-SYMBOLS = {'L1683': '024363.40'}
+SYMBOLS = {'I683': '024363.40'}
 
 finish(check_rows(prog, ROWS, SYMBOLS, label='1268 T2 '))

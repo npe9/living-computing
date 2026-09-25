@@ -1,8 +1,8 @@
-! jb_ax5b "I-Box 5", routine 1260's 160S1 -- THE TAIL, PDF p.85,
+! jb_ax5b "I-Box 5", routine 1260's I60S1 -- THE TAIL, PDF p.85,
 ! octal 023021.40-023041.00, 26 half-words.  THE HEAD of the same
 ! subroutine, 022741.00-023021.00 (PDF pp.83-84), is already
 ! transcribed in programs/ax5b_160s1_clr_inds.strap; this file does
-! NOT repeat it.  Together the two cover 160S1 whole.
+! NOT repeat it.  Together the two cover I60S1 whole.
 !
 ! KEPT APART DELIBERATELY, and the reason is not the one this file
 ! first gave.  It was drafted under an instruction to leave the working
@@ -19,23 +19,23 @@
 ! would have paid for.  `_tail` says what it is.
 !
 ! WHY THE LAST TWO ROWS MATTER MORE THAN THE OTHER TWENTY-FOUR.
-! 160S1 is the subroutine every 1260/1262 test block calls as
-! "SIC,160SX1 / B,160S1" before it starts.  What nobody had read was
+! I60S1 is the subroutine every 1260/1262 test block calls as
+! "SIC,I60SX1 / B,I60S1" before it starts.  What nobody had read was
 ! how it RETURNS:
 !
-!     023040.40         LX,$X1,160DMP       23301.02 10
-!     023041.00  160SX1 $BD,0               0.04 00
+!     023040.40         LX,$X1,I60DMP       23301.02 10
+!     023041.00  I60SX1 $BD,0               0.04 00
 !
 ! The return is a BRANCH DISABLED whose address field the caller's SIC
 ! plants.  Reference Manual printed p.41 (PDF p.44), "Store
 ! Instruction Counter If (SIC)": it "causes the instruction counter
 ! contents to be stored in bits 0-18 of the half-word specified by
 ! bits 0-18 of the effective storage address.  OTHER BITS OF THE
-! HALF-WORD ARE NOT DISTURBED" -- so "SIC,160SX1" fills in the address
+! HALF-WORD ARE NOT DISTURBED" -- so "SIC,I60SX1" fills in the address
 ! and leaves the BD standing.  Reference Manual printed p.40 (PDF
 ! p.43): "Branch Disabled (BD).
 ! This operation disables the interruption mechanism, and then
-! performs the same operation as BRANCH."  So 160S1 RETURNS WITH THE
+! performs the same operation as BRANCH."  So I60S1 RETURNS WITH THE
 ! INTERRUPTION SYSTEM DISABLED, and it contains no BE anywhere -- see
 ! the head file's forty-five rows and the twenty-six below.  Every
 ! caller resumes disabled.
@@ -43,10 +43,10 @@
 ! THAT SETTLES THE 1262 TEST 3B PUZZLE, and the answer is not that the
 ! DD is inert.  TEST 3B (PDF p.108) runs, straight-line and with
 ! nothing between the rows:
-!     024152.40 SIC,160SX1 / 024153.00 B,160S1   <- returns DISABLED
+!     024152.40 SIC,I60SX1 / 024153.00 B,I60S1   <- returns DISABLED
 !     024155.00 Z,$X1
 !     024155.40 %8@DD%BU,32,8@,3740  "-ILLEGAL OP."
-!     024156.00 EXIC,162PSI
+!     024156.00 EXIC,I62PSI
 ! and the OK path out of the EXIC is an INTERRUPTION.  Ref. Manual
 ! printed p.50 (PDF p.53): "at the completion, termination, or
 ! suppression of an execution operation, interruption is always
@@ -54,7 +54,7 @@
 ! following an execution operation WITH THE INTERRUPTION SYSTEM
 ! DISABLED, it is caused only by the actuated indicator of highest
 ! priority whose mask bit is one."  Disabled is exactly the state
-! 160S1 leaves, and the interruption still happens.
+! I60S1 leaves, and the interruption still happens.
 !
 ! AND THE DD IS LOAD-BEARING, not decoration.  p.48: an interruption
 ! "develops the number of the leftmost actuated indicator whose mask
@@ -70,7 +70,7 @@
 ! can be programmed into the correction routine."
 !
 ! The rows below are the other half of that argument: the BOPZ rung at
-! 023021.40 and the BADZ rung at 023024.40 are 160S1 CLEARING
+! 023021.40 and the BADZ rung at 023024.40 are I60S1 CLEARING
 ! indicators 15 and 16, so both are provably off when the block
 ! reaches its DD.
 !
@@ -102,11 +102,11 @@
 ! The 32 bits are identical -- both are the row's printed "0.04 00",
 ! measured, not assumed -- but what STRAP's "$" prefix on an operation
 ! MEANS is not established by any page read here; it appears only on
-! rows that are data-in-the-instruction-stream (160SX1 here, 162BR1
-! and 162BR2 on PDF p.109) and is recorded as an open question, not
+! rows that are data-in-the-instruction-stream (I60SX1 here, I62BR1
+! and I62BR2 on PDF p.109) and is recorded as an open question, not
 ! translated away silently.
 !
-! ENCODING ONLY.  Running it needs 160DMP, SERS and the whole of the
+! ENCODING ONLY.  Running it needs I60DMP, SERS and the whole of the
 ! head; the point of the block is what it proves about the enable
 ! state, and that is settled by the printed code.
 !
@@ -115,7 +115,7 @@
 ! address field come out right by construction, so those rows prove
 ! only that every OTHER field lands where the listing puts it.
 
-L160DMP SYN, (8)23301.0            ! 1260's index save word, p.83/p.85
+I60DMP SYN, (8)23301.0            ! 1260's index save word, p.83/p.85
 SEN     SYN, (8)1310.0             ! the SIC error-entry link
 SERS    SYN, (8)1304.0             ! the error-report routine
 BIT19   SYN, (8)24545.0            ! the DS bit constant, from this row
@@ -157,6 +157,6 @@ BIT19   SYN, (8)24545.0            ! the DS bit constant, from this row
         BZXL, SERS
 !
 ! ---- restore, and return DISABLED ---------------------------------
-        LX,  $X1, L160DMP
-L160SX1 BD,  0                     ! listing: "$BD,0"; SIC plants the address
-        END, L160SX1
+        LX,  $X1, I60DMP
+I60SX1 BD,  0                     ! listing: "$BD,0"; SIC plants the address
+        END, I60SX1

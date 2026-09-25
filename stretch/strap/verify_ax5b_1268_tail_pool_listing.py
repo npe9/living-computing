@@ -197,13 +197,13 @@ FROM THE LISTING.
 
     loc        source       printed      pair     b18  decoded
     024376.00  B,$+1.0      24377.10 00  001000    0   024377.00
-    024376.40  BD,1683      24363.44 00  100100    1   024363.40
+    024376.40  BD,I683      24363.44 00  100100    1   024363.40
     024377.40  B,SSW        1301.10 00   001000    0   001301.00
     024400.00  BD,$+.32     24400.44 00  100100    1   024400.40
     024403.40  BZXE,SERS    1304.32 C0   011010    0   001304.00
     024404.00  BD,I74       24412.04 00  000100    0   024412.00
     024334.40  B,IDF1       1443.10 00   001000    0   001443.00
-    024335.40  BD,1681      24337.04 00  000100    0   024337.00
+    024335.40  BD,I681      24337.04 00  000100    0   024337.00
     024335.00  Z,IC268      24405.22 00  010010    0   024405.00
 
     The last row is not a branch, but STORE ZERO goes through the
@@ -222,8 +222,8 @@ FROM THE LISTING.
     injection 6 discriminates its bit 30 but not its address field.
 
     READ BACK AGAINST THE PAGE'S OWN LABEL COLUMN.  p.111 prints
-    1683's row at 024363.40 -- an ODD half-word -- and that row's
-    bit 18 is 1.  p.110 prints 1681's row at 024337.00 -- an EVEN
+    I683's row at 024363.40 -- an ODD half-word -- and that row's
+    bit 18 is 1.  p.110 prints I681's row at 024337.00 -- an EVEN
     half-word -- and that row's bit 18 is 0.  024412.00 is routine
     1274's first row on PDF p.112 and is that file's own SLC address.
     The two self-relative rows carry the same information without any
@@ -268,7 +268,7 @@ FROM THE LISTING.
       024400.40  LX,$X13,IC268   24405.32 10   0|1101|0   J=13, LX
       024401.40  SX,$X13,IC268   24405.33 10   0|1101|1   J=13, SX
       024402.00  LX,$X13,IC268   24405.32 10   identical to the first
-      024333.00  LX,$X1,168ID    24336.02 10   0|0001|0   J=1,  LX
+      024333.00  LX,$X1,I68ID    24336.02 10   0|0001|0   J=1,  LX
       024333.40  SX,$X1,DPET13   1437.03 10    0|0001|1   J=1,  SX
 
     The 32/33 contrast on two rows naming the SAME symbol isolates
@@ -347,9 +347,9 @@ of the assembler's own size accounting from that single anchor:
     024376.0 + 14 half-words          = 024404.40
     CNOP rounds up (one NOP emitted)  = 024405.00   IC268
     + one full word                   = 024406.00   ICK268
-    + one full word                   = 024407.00   168K1
-    + two half-words                  = 024410.00   168K2
-    + two half-words                  = 024411.00   168K3
+    + one full word                   = 024407.00   I68K1
+    + two half-words                  = 024410.00   I68K2
+    + two half-words                  = 024411.00   I68K3
 
 Each is then checked against TWO INDEPENDENT PRINTED COLUMNS:
 
@@ -370,13 +370,13 @@ INPUTS.  This file converts them to witnessed addresses.
 
 ANCHORS, not witnesses, and not asserted: L1268T (this file's own
 name for the tail's first row -- the listing's LABEL COLUMN IS EMPTY
-for all fourteen tail rows) and L168 at 024333.00 (a real printed
+for all fourteen tail rows) and I68 at 024333.00 (a real printed
 label, but placed by this file's second SLC; asserting it would check
 the SLC against the number this transcription gave the SLC).
 
-NOT WITNESSED, named so it is not mistaken for one: L168ID at
+NOT WITNESSED, named so it is not mistaken for one: I68ID at
 024336.00.  SYN'd -- deliberately from the LOCATION column, NOT from
-"LX,$X1,168ID"'s machine code, which would make the 024333.00 row a
+"LX,$X1,I68ID"'s machine code, which would make the 024333.00 row a
 tautology.  Taken from the location column, that row's printed
 "24336" becomes a real cross-check of one printed column against the
 other.
@@ -418,7 +418,7 @@ OF ITS BRANCHES, one in each of this file's two ranges.
   full-word XW at 024405.00.  CHECKED as a row below.
 
   between 024335.40 and 024336.00, PDF p.110: the CNOP row prints
-  NEITHER A LOCATION NOR MACHINE CODE.  "BD,1681" sits at 024335.40,
+  NEITHER A LOCATION NOR MACHINE CODE.  "BD,I681" sits at 024335.40,
   the second half of word 024335, so the counter is already on the
   word boundary 024336.00 and CNOP has nothing to fill.  There is no
   row to check; the silence is the observation.
@@ -456,11 +456,11 @@ transcript that cuts at an SLC.
 WHERE THE LISTING PRINTS A LOCATION AND NO MACHINE CODE, NO WORD IS
 FABRICATED.  p.110's row at 024336.00 reads, in full:
 
-    168ID   %IQSZ¤DD%BU,64,8¤,1268   Z             024336.00
+    I68ID   %IQSZ¤DD%BU,64,8¤,1268   Z             024336.00
 
 -- a label, a print macro this assembler does not implement, and an
 EMPTY machine-code column.  The entry block therefore stops at
-024335.40 with the CNOP, L168ID is SYN'd from the printed LOCATION
+024335.40 with the CNOP, I68ID is SYN'd from the printed LOCATION
 column, and nothing is placed at 024336.00.  check_absent() below
 asserts that word 024336 is ABSENT from the assembled image, so the
 claim is checked rather than promised.
@@ -650,11 +650,11 @@ therefore measured nothing.
      count before the run and both reverted afterwards.)
      OBSERVED: 16 failures, and ALL FIVE SYMBOL ASSERTIONS ARE AMONG
      THEM --
-       LIC268  at 024405.00: assembled bit 672128, listing bit 672064
-       LICK268 at 024406.00: assembled bit 672192, listing bit 672128
-       L168K1  at 024407.00: assembled bit 672256, listing bit 672192
-       L168K2  at 024410.00: assembled bit 672320, listing bit 672256
-       L168K3  at 024411.00: assembled bit 672384, listing bit 672320
+       IC268  at 024405.00: assembled bit 672128, listing bit 672064
+       ICK268 at 024406.00: assembled bit 672192, listing bit 672128
+       I68K1  at 024407.00: assembled bit 672256, listing bit 672192
+       I68K2  at 024410.00: assembled bit 672320, listing bit 672256
+       I68K3  at 024411.00: assembled bit 672384, listing bit 672320
      -- each exactly 64 bits, one full word, too high.  Eleven rows
      fail with them, including the CROSS-PAGE one:
        024335.00  '024405.22 00' -> '024406.22 00'   (p.110's Z,IC268)
@@ -721,7 +721,7 @@ TAIL_ROWS = [
     ('024376.00', '24377.10 00',
      'B,$+1.0               self-relative: pair 10, bit 18 -> 024377.00'),
     ('024376.40', '24363.44 00',
-     'BD,1683               (ext) pair 44, bit 18 = 1 -> 024363.40'),
+     'BD,I683               (ext) pair 44, bit 18 = 1 -> 024363.40'),
     ('024377.00', '1311.40 80',
      'SIC,SEN0+.32          (ext) pair 40 = a BIT offset of 32'),
     ('024377.40', '1301.10 00',
@@ -755,20 +755,20 @@ TAIL_ROWS = [
     ('024406.00', '600000.00 00 000000.00 00',
      'ICK268 XW,%8*600000.00,0,0   bits 0 AND 1: TWO sub-tests'),
     ('024407.00', '22.22 00',
-     '168K1 Z,$X2           the OLD instruction tests 1A/1B/1C plant'),
+     'I68K1 Z,$X2           the OLD instruction tests 1A/1B/1C plant'),
     ('024407.40', '0.30 00',
-     'NOP                   168K1"s right half'),
+     'NOP                   I68K1"s right half'),
     ('024410.00', '777777.45 01',
-     '168K2 LVI,$X2,%8*777777.40   the NEW one; pair 45, bit 18 = 1'),
+     'I68K2 LVI,$X2,%8*777777.40   the NEW one; pair 45, bit 18 = 1'),
     ('024410.40', '0.30 00',
-     'NOP                   168K2"s right half'),
+     'NOP                   I68K2"s right half'),
     ('024411.00', '0.00 00 000000.00 00',
-     '168K3 XW,0,0,0        test 2A"s scratch word'),
+     'I68K3 XW,0,0,0        test 2A"s scratch word'),
 ]
 
 ENTRY_ROWS = [
     ('024333.00', '24336.02 10',
-     'L168 LX,$X1,168ID     (ext) "-UPDATE IDENT."  24336 vs the'
+     'I68 LX,$X1,I68ID     (ext) "-UPDATE IDENT."  24336 vs the'
      ' printed location column'),
     ('024333.40', '1437.03 10',
      'SX,$X1,DPET13         (ext) pair 03 vs the LX row"s 02: bit 23'),
@@ -779,7 +779,7 @@ ENTRY_ROWS = [
     ('024335.00', '24405.22 00',
      'Z,IC268               p.110 corroborates p.111"s pool address'),
     ('024335.40', '24337.04 00',
-     'BD,1681               (ext) bit 18 = 0 -> 024337.00'),
+     'BD,I681               (ext) bit 18 = 0 -> 024337.00'),
     # The CNOP that follows prints NEITHER a location NOR machine
     # code, so there is no row for it.  See check_absent().
 ]
@@ -789,11 +789,11 @@ ENTRY_ROWS = [
 # These five are the witnesses this file adds; all three existing 1268
 # files currently take them as SYN'd inputs.
 SYMBOLS = {
-    'LIC268':  '024405.00',
-    'LICK268': '024406.00',
-    'L168K1':  '024407.00',
-    'L168K2':  '024410.00',
-    'L168K3':  '024411.00',
+    'IC268':  '024405.00',
+    'ICK268': '024406.00',
+    'I68K1':  '024407.00',
+    'I68K2':  '024410.00',
+    'I68K3':  '024411.00',
 }
 
 

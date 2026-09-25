@@ -7,11 +7,11 @@
 ! The upper-boundary half is ax5b_16099_ub_data.strap (p.65).  This is
 ! the rest of TEST 7: the other register, and the control bit.
 !
-! THE LOWER-BOUNDARY LOOP (160102/160103) MIRRORS THE UPPER ONE
+! THE LOWER-BOUNDARY LOOP (I60102/I60103) MIRRORS THE UPPER ONE
 ! exactly -- eighteen iterations, because the lower boundary is word 3
 ! bits 32-49 -- with three differences worth naming: it stores through
 ! $LB rather than $UB, it indexes its error table with $X2 rather than
-! $X3, and that table is 160B18 at 022313.40, whose entries pp.69-70
+! $X3, and that table is I60B18 at 022313.40, whose entries pp.69-70
 ! print as "LOWER BOUNDARY DATA FAILURE, BIT 32" upward.
 !
 ! THE CONTROL-BIT TEST is the interesting half.  Word 3 bit 57 is the
@@ -20,13 +20,13 @@
 ! it from BIT57, reads word 3 back, moves the refill field with
 ! "SR,$X1,$X1", and compares against BIT11 -- bit 57 sits at refill
 ! position 57-46 = 11.  Then it clears word 3 with "Z,$UB" and
-! compares against 100Z, the zero index word.  Two error messages:
+! compares against I00Z, the zero index word.  Two error messages:
 ! "-UNABLE TO SET BNDRY CNTRL TO 1." and "...TO 0."
 !
 ! A FOURTH CONFIRMATION OF THE BIT TABLE.  This page names BIT57 and
 ! BIT11; they print as 24613 and 24535, and 024522 + 57 = 024613,
 ! 024522 + 11 = 024535.  The rule read off p.114 holds at 0, 11, 17,
-! 18 and 57.  100Z prints as 24502, matching p.114's "ZERO INDX WD."
+! 18 and 57.  I00Z prints as 24502, matching p.114's "ZERO INDX WD."
 !
 ! WHY IT RUNS DISABLED: word 3 is permanently protected (p.31), so an
 ! enabled store into it raises DS and is suppressed.  Disabled is the
@@ -34,29 +34,29 @@
 !
 ! SUBSTITUTIONS: three, the same shape as the p.65 block.
 !   1. Numeric labels prefixed "L".
-!   2. 160B18's eighteen entries are "B,$" hangs at the deck's own
+!   2. I60B18's eighteen entries are "B,$" hangs at the deck's own
 !      three-half-word spacing, so a failure on bit N halts at
-!      160B18 + N*1.32 and the address NAMES THE BIT.  The deck's real
-!      entries end "BD,160104" -- it REPORTS AND CONTINUES, testing all
+!      I60B18 + N*1.32 and the address NAMES THE BIT.  The deck's real
+!      entries end "BD,I60104" -- it REPORTS AND CONTINUES, testing all
 !      eighteen; these hangs stop at the first.  SERS is a hang too.
 !   3. A "BEW,$" exit at 022307.00, where the listing continues with
 !      "B,$+1.0".
-! BIT0..BIT17, BIT57 and 100Z are derived from p.114's stated rule
+! BIT0..BIT17, BIT57 and I00Z are derived from p.114's stated rule
 ! rather than transcribed row by row.
 
 BIT0    SYN, (8)24522.0
 BIT11   SYN, (8)24535.0
 BIT57   SYN, (8)24613.0
-L100Z   SYN, (8)24502.0
-L160B18 SYN, (8)22313.40
+I00Z   SYN, (8)24502.0
+I60B18 SYN, (8)22313.40
 SEN     SYN, (8)1310.0
 SERS    SYN, (8)1304.0
 
         SLC, (8)22264.40
-L160102 LVI, $X1, 0.0              ! -CHK LOWER BOUNDARY DATA.
+I60102 LVI, $X1, 0.0              ! -CHK LOWER BOUNDARY DATA.
         LCI, $X1, 18
         LVI, $X2, 0.0
-L160103 Z,   $MASK
+I60103 Z,   $MASK
         LV,  $X3, BIT0($X1)
         SV,  $X3, $LB              !  word 3 bits 32-49
         NOP
@@ -66,9 +66,9 @@ L160103 Z,   $MASK
         LV,  $X3, $LB
         KV,  $X3, BIT0($X1)
         BXE, $+1.0
-        B,   L160B18($X2)          ! -DATA ERROR.
-L160104 V+I, $X2, 1.32
-        CB+, $X1, L160103
+        B,   I60B18($X2)          ! -DATA ERROR.
+I60104 V+I, $X2, 1.32
+        CB+, $X1, I60103
 !
         LX,  $X1, BIT57            ! -CHK BOUNDARY CONTROL BIT.
         SX,  $X1, $UB
@@ -89,7 +89,7 @@ L160104 V+I, $X2, 1.32
         NOP
         LX,  $X1, $UB
         SR,  $X1, $X1
-        KV,  $X1, L100Z
+        KV,  $X1, I00Z
         SIC, SEN
         BZXE, SERS                 ! -UNABLE TO SET BNDRY CNTRL TO 0.
 !
@@ -139,7 +139,7 @@ L16     B, $                       ! LOWER BOUNDARY DATA FAILURE, BIT 48
 L17     B, $                       ! LOWER BOUNDARY DATA FAILURE, BIT 49
 !
         SLC, (8)24502.0
-Z100    DD(BU,64), 0               ! 100Z, "ZERO INDX WD."
+Z100    DD(BU,64), 0               ! I00Z, "ZERO INDX WD."
         SLC, (8)24522.0
 B0      DD(BU,64), 9223372036854775808  ! BIT0
 B1      DD(BU,64), 4611686018427387904  ! BIT1
@@ -161,4 +161,4 @@ B16     DD(BU,64), 140737488355328  ! BIT16
 B17     DD(BU,64), 70368744177664  ! BIT17
         SLC, (8)24613.0
 B57     DD(BU,64), 64  ! BIT57
-        END, L160102
+        END, I60102

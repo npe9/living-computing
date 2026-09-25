@@ -13,8 +13,8 @@ already in the repo and already green: programs/ax5b_160105_compare.
 strap covers 022346.40-022401.00, every row, and
 verify_ax5b_160105_listing.py prints ALL TESTS PASSED for it,
 including the two rows the order quoted as evidence the block was
-untouched (022371.40 "16010A BD,$+.32  -ALL INTRPTS EXCEPT AD ENTER
-HERE." and 022372.00 "160107 BD,$+.32  -AD INTRPTS ENTER HERE.").  A
+untouched (022371.40 "I6010A BD,$+.32  -ALL INTRPTS EXCEPT AD ENTER
+HERE." and 022372.00 "I60107 BD,$+.32  -AD INTRPTS ENTER HERE.").  A
 second file on the same octal range would be duplicated coverage, so
 this one takes the UNCOVERED remainder instead -- which is where the
 COMPARISON's verdict is actually checked and where every error message
@@ -22,12 +22,12 @@ lives.  p.74 (022461.00-022512.40) remains; see THE CUT POINT below.
 
 THE HEADER, read at 600 dpi, on p.71 at 022346.40-022351.00:
 
-    160105 LX,$X1,160XW1   -TEST THE COMPARE CKTS, SETUP
-           LX,$X2,160K12   -INTERRUPT TAFLE. UB HAS X, LB HAS
-           SX,$X2,160IT($X1) -X-2. TETCH FROM X+1 TO CHK YB COMP,
+    I60105 LX,$X1,I60XW1   -TEST THE COMPARE CKTS, SETUP
+           LX,$X2,I60K12   -INTERRUPT TAFLE. UB HAS X, LB HAS
+           SX,$X2,I60IT($X1) -X-2. TETCH FROM X+1 TO CHK YB COMP,
            CB+,$X1,$-.32   -FROM X-3 TO CHK LB COMP, AND FROM
            LVI,$X1,INT     -X-1 TO CHECK WITHIN. RANGE OF X IS
-           LX,$X2,160XW3   -FROM 000040 THRU 777777 OCTAL.
+           LX,$X2,I60XW3   -FROM 000040 THRU 777777 OCTAL.
 
 ALL THREE GARBLES ARE DECK TYPOS, NOT SCAN DAMAGE, and each was
 measured against a correct instance of the same letter on the same or
@@ -81,7 +81,7 @@ on p.71 plants LB = L, UB = L+2 with the boundary control bit ONE
 itself, expecting a signal.  The first half of THIS block fetches from
 UB-1 under the same control bit and demands NO signal:
 
-  022410.40  BZDFZ,160111      branch on DF OFF -- the OK path
+  022410.40  BZDFZ,I60111      branch on DF OFF -- the OK path
   022411.00  SIC,SEN    -FETCH FROM UB-1, BC 1,
   022411.40  B,SERS     -CAUSES DF TO BE SET.
 
@@ -109,7 +109,7 @@ verify_ax5b_160105_listing.py at 022367.40, this one at 022407.00.
 THE LOWER EDGE, still BC 1, is the second half:
 
   022422.00  LX,$X13,0($X2)  -FETCH FROM LB-1, BC IS 1.
-  022431.00  160114 BDFZ,160115   branch on DF ON -- the OK path
+  022431.00  I60114 BDFZ,I60115   branch on DF ON -- the OK path
   022431.40  LX,$X15,3.0  -LB COMP FAILED. FETCH FROM LB-1
   022432.00  SIC,SEN      -FAILS TO SET DF. IX 15 CONTAINS
   022432.40  B,SERS       -LOCN 3.0 AT TIME OF FITCH.
@@ -123,7 +123,7 @@ and not after p.72.  Every TRANSMIT IMMEDIATE on p.72 moves BOUND1
 BOUND0 (bit 57 clear) instead and fetches from between the bounds:
 
   022444.40  LX,$X13,0($X2)  -FETCH FRM LB+1, UB-1, BC IS 0.
-  022453.40  160119 BDFZ,160120   branch on DF ON -- the OK path
+  022453.40  I60119 BDFZ,I60120   branch on DF ON -- the OK path
   022454.00  LX,$X15,3.0  -BETWEEN UB AND LB COMP FAILED. FETCH
   022454.40  SIC,SEN      -BETWEEN THE TWO FAILS TO SET DF. IX 15
   022455.00  B,SERS       -CONTAINS LOCN 3.0 AT TIME OF FETCH.
@@ -169,13 +169,13 @@ own work area on PDF p.86 -- located on a 100 dpi survey render, then
 RE-READ at 600 dpi with the label column in frame before anything
 below was written:
 
-  023067.00  160XW3  XW,%8(0)101.0,0,0   "101.00 00 000000.00 00"
+  023067.00  I60XW3  XW,%8(0)101.0,0,0   "101.00 00 000000.00 00"
 
 so X2's value at entry to the sweep is word 0o101 = 65.  Each outer
 pass sets LB := X2 (p.71, 022362.00), then X2 += 2 words and UB := X2
 (022363.40), so the first X = UB = 0o103 -- NOT 0o40.  The sweep's
-teardown on p.74 is "160214 LV,$X2,$X2 / BXVZ,160122 / V-I,$X2,2.0 /
-BD,160106" and X2 arrives there holding UB+1 = LB+3, so subtracting 2
+teardown on p.74 is "I60214 LV,$X2,$X2 / BXVZ,I60122 / V-I,$X2,2.0 /
+BD,I60106" and X2 arrives there holding UB+1 = LB+3, so subtracting 2
 leaves LB+1: the lower bound walks UP by one word per pass, and the
 loop ends when LB+3 overflows the 24-bit value field to zero, i.e.
 when LB = 0o777775 and X = UB = 0o777777.  THE UPPER ENDPOINT IN THE
@@ -201,7 +201,7 @@ the p.74 addresses in it are 022475.40 for the "V+I,$X2,2.0" and
 022477.00 for the fetch, read off the page but not machine-checked.
 
 CONJECTURE, flagged as such: "000040" looks like a comment left behind
-by an earlier value of 160XW3, since 0o36 would make X start at
+by an earlier value of I60XW3, since 0o36 would make X start at
 exactly 0o40.  The listing carries no revision history, so this is a
 guess about how the discrepancy arose, not a finding.
 
@@ -209,13 +209,13 @@ Two further clauses of protViolates the block does NOT reach, stated
 so the "agrees" above is not read wider than it is: the AD exemption
 (p.32, "an address which actuates indicator AD ... is not compared")
 is EXERCISED but not CHECKED here -- the deck routes AD interrupts to
-160107 and non-AD to 16010A and prints "-CAUSES AD INTERRUPT." as an
+I60107 and non-AD to I6010A and prints "-CAUSES AD INTERRUPT." as an
 error, so it expects DF and not AD; and the straddling rule is not
 touched at all, every fetch being a whole aligned word.
 
 ONE ROW LOOKS LIKE A BUG IN IBM'S OWN DIAGNOSTIC.  At 022452.40 the
-deck writes "SV,$X14,160AD3" where both parallel blocks write $X13
-(022430.00 "SV,$X13,160AD2" and 022460.40 "SV,$X13,160AD3"), and the
+deck writes "SV,$X14,I60AD3" where both parallel blocks write $X13
+(022430.00 "SV,$X13,I60AD2" and 022460.40 "SV,$X13,I60AD3"), and the
 PRINTED MACHINE CODE AGREES WITH THE PRINTED SOURCE: 23064.35 30
 against 23063.73 30 and 23064.33 30, an index field of 14 where the
 others have 13.  Transcribed as printed; this check passes on the
@@ -227,13 +227,13 @@ program's SYN block came from the very row that names it (bit 18 read
 out of that row's printed octal pair), so those rows verify only the
 opcode and modifier bits.  The rows that actually check ADDRESS
 placement are the twelve naming labels defined INSIDE the transcribed
-range: 160210 (022403.40), 16011A (022404.40), 160111 (022410.40,
-022412.00, 022433.40), 160112 (022414.00), 160114 (022415.00,
-022423.40), 160113 (022425.00), 160116 (022430.40, 022456.00), 160115
-(022431.00), 160117 (022436.40), 160119 (022437.40, 022446.00),
-160118 (022447.40), 160120 (022453.40).  Two of those cross the page
-break -- 022430.40 "B,160116" prints 22436.50 00 and 022431.00
-"BDFZ,160115" prints 22435.52 46, both resolving onto p.73 -- which is
+range: I60210 (022403.40), I6011A (022404.40), I60111 (022410.40,
+022412.00, 022433.40), I60112 (022414.00), I60114 (022415.00,
+022423.40), I60113 (022425.00), I60116 (022430.40, 022456.00), I60115
+(022431.00), I60117 (022436.40), I60119 (022437.40, 022446.00),
+I60118 (022447.40), I60120 (022453.40).  Two of those cross the page
+break -- 022430.40 "B,I60116" prints 22436.50 00 and 022431.00
+"BDFZ,I60115" prints 22435.52 46, both resolving onto p.73 -- which is
 the listing's own evidence that pp.72 and 73 are one block.
 
 The SYN addresses are nevertheless CORROBORATED, independently of the
@@ -243,14 +243,14 @@ column in frame (the project has a recorded case of a 200 dpi render
 printing 021400.00 where 600 dpi printed 021400.40, so the
 distinction is not pedantry):
 
-  023063.00  160AD1  NOP    "0.30 00"
-  023063.40  160AD2  NOP    "0.30 00"
-  023064.00  160AD3  NOP    "0.30 00"
+  023063.00  I60AD1  NOP    "0.30 00"
+  023063.40  I60AD2  NOP    "0.30 00"
+  023064.00  I60AD3  NOP    "0.30 00"
   023302.00  BOUND0  XW,0,0,0
   023303.00  BOUND1  XW,0,0,0
 
 That is a second, independent witness for the five data symbols; the
-branch-target SYNs (160107, 16010A, 160121, 160122) and the SSIP entry
+branch-target SYNs (I60107, I6010A, I60121, I60122) and the SSIP entry
 points (SEN, SERS, SEN0, SSW) are not corroborated here and remain
 pure inputs.
 
@@ -264,64 +264,64 @@ transcribed range (a real address check); the rest are SYN inputs and
 verify only that the bit this file wrote back is the bit the page
 printed.
 
-  022402.00  SV,$X13,160AD1   23063.33 30  33 -> 0 -> 023063.00 = 160AD1
-  022403.40  LVI,$X13,160210  22412.73 01  73 -> 1 -> 022412.40 = 160210 (int)
-  022404.00  SVA,$X13,160107  22372.33 D0  33 -> 0 -> 022372.00 = 160107
-  022404.40  LVI,$X3,16011A   22407.47 01  47 -> 1 -> 022407.40 = 16011A (int)
-  022405.00  SVA,$X3,16010A   22371.47 D0  47 -> 1 -> 022371.40 = 16010A
+  022402.00  SV,$X13,I60AD1   23063.33 30  33 -> 0 -> 023063.00 = I60AD1
+  022403.40  LVI,$X13,I60210  22412.73 01  73 -> 1 -> 022412.40 = I60210 (int)
+  022404.00  SVA,$X13,I60107  22372.33 D0  33 -> 0 -> 022372.00 = I60107
+  022404.40  LVI,$X3,I6011A   22407.47 01  47 -> 1 -> 022407.40 = I6011A (int)
+  022405.00  SVA,$X3,I6010A   22371.47 D0  47 -> 1 -> 022371.40 = I6010A
   022406.40  BE,$+.32         22407.00 00  00 -> 0 -> 022407.00
   022407.40  BD,$+.32         22410.04 00  04 -> 0 -> 022410.00
-  022410.40  BZDFZ,160111     22414.12 44  12 -> 0 -> 022414.00 = 160111 (int)
+  022410.40  BZDFZ,I60111     22414.12 44  12 -> 0 -> 022414.00 = I60111 (int)
   022411.40  B,SERS           1304.10 00   10 -> 0 -> 001304.00 = SERS
-  022412.00  B,160111         22414.10 00  10 -> 0 -> 022414.00 = 160111 (int)
+  022412.00  B,I60111         22414.10 00  10 -> 0 -> 022414.00 = I60111 (int)
   022413.00  B,SERS           1304.10 00   10 -> 0 -> 001304.00 = SERS
-  022414.00  LVI,$X13,160112  22424.33 01  33 -> 0 -> 022424.00 = 160112 (int)
-  022414.40  SVA,$X13,160107  22372.33 D0  33 -> 0 -> 022372.00 = 160107
-  022415.00  LVI,$X3,160114   22431.07 01  07 -> 0 -> 022431.00 = 160114 (int)
-  022415.40  SVA,$X3,16010A   22371.47 D0  47 -> 1 -> 022371.40 = 16010A
+  022414.00  LVI,$X13,I60112  22424.33 01  33 -> 0 -> 022424.00 = I60112 (int)
+  022414.40  SVA,$X13,I60107  22372.33 D0  33 -> 0 -> 022372.00 = I60107
+  022415.00  LVI,$X3,I60114   22431.07 01  07 -> 0 -> 022431.00 = I60114 (int)
+  022415.40  SVA,$X3,I6010A   22371.47 D0  47 -> 1 -> 022371.40 = I6010A
   022416.00  BDFZ,$+.32       22416.52 46  52 -> 1 -> 022416.40
   022421.40  BE,$+.32         22422.00 00  00 -> 0 -> 022422.00
   022422.40  BD,$+.32         22423.04 00  04 -> 0 -> 022423.00
-  022423.40  BD,160114        22431.04 00  04 -> 0 -> 022431.00 = 160114 (int)
-  022424.40  LV,$X13,160AD2   23063.72 30  72 -> 1 -> 023063.40 = 160AD2
-  022425.00  BXVZ,160113      22427.71 42  71 -> 1 -> 022427.40 = 160113 (int)
+  022423.40  BD,I60114        22431.04 00  04 -> 0 -> 022431.00 = I60114 (int)
+  022424.40  LV,$X13,I60AD2   23063.72 30  72 -> 1 -> 023063.40 = I60AD2
+  022425.00  BXVZ,I60113      22427.71 42  71 -> 1 -> 022427.40 = I60113 (int)
   022426.40  B,SERS           1304.10 00   10 -> 0 -> 001304.00 = SERS
-  022427.00  B,160122         22506.50 00  50 -> 1 -> 022506.40 = 160122
+  022427.00  B,I60122         22506.50 00  50 -> 1 -> 022506.40 = I60122
   022427.40  V+I,$X13,(8)777777.40  777777.73 05  73 -> 1 -> the
              operand's OWN .40: this immediate is a 19-bit value field
              (bits 0-18 of a bit address), so its top bit is the same
              half-word select, not a separate convention
-  022430.00  SV,$X13,160AD2   23063.73 30  73 -> 1 -> 023063.40 = 160AD2
-  022430.40  B,160116         22436.50 00  50 -> 1 -> 022436.40 = 160116 (int)
-  022431.00  BDFZ,160115      22435.52 46  52 -> 1 -> 022435.40 = 160115 (int)
+  022430.00  SV,$X13,I60AD2   23063.73 30  73 -> 1 -> 023063.40 = I60AD2
+  022430.40  B,I60116         22436.50 00  50 -> 1 -> 022436.40 = I60116 (int)
+  022431.00  BDFZ,I60115      22435.52 46  52 -> 1 -> 022435.40 = I60115 (int)
   022432.40  B,SERS           1304.10 00   10 -> 0 -> 001304.00 = SERS
   022433.00  B,$+1.0          22434.10 00  10 -> 0 -> 022434.00
-  022433.40  BD,160111        22414.04 00  04 -> 0 -> 022414.00 = 160111 (int)
+  022433.40  BD,I60111        22414.04 00  04 -> 0 -> 022414.00 = I60111 (int)
   022434.40  B,SSW            1301.10 00   10 -> 0 -> 001301.00 = SSW
-  022435.00  BD,160122        22506.44 00  44 -> 1 -> 022506.40 = 160122
-  022436.00  SV,$X13,160AD2   23063.73 30  73 -> 1 -> 023063.40 = 160AD2
-  022436.40  LVI,$X13,160117  22446.73 01  73 -> 1 -> 022446.40 = 160117 (int)
-  022437.00  SVA,$X13,160107  22372.33 D0  33 -> 0 -> 022372.00 = 160107
-  022437.40  LVI,$X3,160119   22453.47 01  47 -> 1 -> 022453.40 = 160119 (int)
-  022440.00  SVA,$X3,16010A   22371.47 D0  47 -> 1 -> 022371.40 = 16010A
+  022435.00  BD,I60122        22506.44 00  44 -> 1 -> 022506.40 = I60122
+  022436.00  SV,$X13,I60AD2   23063.73 30  73 -> 1 -> 023063.40 = I60AD2
+  022436.40  LVI,$X13,I60117  22446.73 01  73 -> 1 -> 022446.40 = I60117 (int)
+  022437.00  SVA,$X13,I60107  22372.33 D0  33 -> 0 -> 022372.00 = I60107
+  022437.40  LVI,$X3,I60119   22453.47 01  47 -> 1 -> 022453.40 = I60119 (int)
+  022440.00  SVA,$X3,I6010A   22371.47 D0  47 -> 1 -> 022371.40 = I6010A
   022440.40  BDFZ,$+.32       22441.12 46  12 -> 0 -> 022441.00
   022444.00  BE,$+.32         22444.40 00  40 -> 1 -> 022444.40
   022445.00  BD,$+.32         22445.44 00  44 -> 1 -> 022445.40
-  022446.00  BD,160119        22453.44 00  44 -> 1 -> 022453.40 = 160119 (int)
-  022447.00  LV,$X13,160AD3   23064.32 30  32 -> 0 -> 023064.00 = 160AD3
-  022447.40  BXVZ,160118      22452.31 42  31 -> 0 -> 022452.00 = 160118 (int)
+  022446.00  BD,I60119        22453.44 00  44 -> 1 -> 022453.40 = I60119 (int)
+  022447.00  LV,$X13,I60AD3   23064.32 30  32 -> 0 -> 023064.00 = I60AD3
+  022447.40  BXVZ,I60118      22452.31 42  31 -> 0 -> 022452.00 = I60118 (int)
   022451.00  B,SERS           1304.10 00   10 -> 0 -> 001304.00 = SERS
-  022451.40  B,160122         22506.50 00  50 -> 1 -> 022506.40 = 160122
+  022451.40  B,I60122         22506.50 00  50 -> 1 -> 022506.40 = I60122
   022452.00  V+I,$X13,(8)777777.40  777777.73 05  73 -> 1 -> as 022427.40
-  022452.40  SV,$X14,160AD3   23064.35 30  35 -> 0 -> 023064.00 = 160AD3
-  022453.00  B,160121         22461.10 00  10 -> 0 -> 022461.00 = 160121
-  022453.40  BDFZ,160120      22460.12 46  12 -> 0 -> 022460.00 = 160120 (int)
+  022452.40  SV,$X14,I60AD3   23064.35 30  35 -> 0 -> 023064.00 = I60AD3
+  022453.00  B,I60121         22461.10 00  10 -> 0 -> 022461.00 = I60121
+  022453.40  BDFZ,I60120      22460.12 46  12 -> 0 -> 022460.00 = I60120 (int)
   022455.00  B,SERS           1304.10 00   10 -> 0 -> 001304.00 = SERS
   022455.40  B,$+1.0          22456.50 00  50 -> 1 -> 022456.40
-  022456.00  BD,160116        22436.44 00  44 -> 1 -> 022436.40 = 160116 (int)
+  022456.00  BD,I60116        22436.44 00  44 -> 1 -> 022436.40 = I60116 (int)
   022457.00  B,SSW            1301.10 00   10 -> 0 -> 001301.00 = SSW
-  022457.40  B,160122         22506.50 00  50 -> 1 -> 022506.40 = 160122
-  022460.40  SV,$X13,160AD3   23064.33 30  33 -> 0 -> 023064.00 = 160AD3
+  022457.40  B,I60122         22506.50 00  50 -> 1 -> 022506.40 = I60122
+  022460.40  SV,$X13,I60AD3   23064.33 30  33 -> 0 -> 023064.00 = I60AD3
 
 Fifty-five rows, which is every row of the block except the eleven
 bit-address rows treated next and the twenty-six whose operand is an
@@ -407,14 +407,14 @@ MEASURED NULLS, with the arithmetic reason:
       address and a count, not a data description.
 
 THE CUT POINT.  Stopped at 022460.40, the last row of PDF p.73.  What
-remains of TEST 7 is PDF p.74, 022461.00-022512.40: label 160121
+remains of TEST 7 is PDF p.74, 022461.00-022512.40: label I60121
 (fetch between the bounds with BC 1, the BC-1 mirror of p.73's BC-0
-case), 16012A/160211/160212/16021B/160213 (the UB+1 fetches with BC 0,
+case), I6012A/I60211/I60212/I6021B/I60213 (the UB+1 fetches with BC 0,
 "-FETCH FROM UB+1, BC 0, CAUSES DF TO BE SET." at 022501.00 and
 "... CAUSES AD INTERRUPT, TESTING DONE" at 022503.00), the sweep
-teardown 160214 at 022504.40, and the 160122 exit with the continuity
-update "LX,$X13,1C260 / V+,$X13,BIT10 / SX,$X13,1C260" ending at
-022512.40.  That page needs two SYNs this one does not (1C260 at
+teardown I60214 at 022504.40, and the I60122 exit with the continuity
+update "LX,$X13,IC260 / V+,$X13,BIT10 / SX,$X13,IC260" ending at
+022512.40.  That page needs two SYNs this one does not (IC260 at
 022737.00 and BIT10 at 024534.00) and is otherwise the same shapes
 again, so it is a clean next piece rather than a loose end.
 """
@@ -426,19 +426,19 @@ prog = assemble(open("programs/ax5b_160_test7_compare.strap").read())
 ROWS = [
     # ---- PDF p.72, 022401.40-022435.00 -------------------------------
     ('022401.40', '35.22 00',
-     'L160110 Z,$X13          "-CLR INT 1."'),
+     'I60110 Z,$X13          "-CLR INT 1."'),
     ('022402.00', '23063.33 30',
-     'SV,$X13,L160AD1        (ext) clear the first-interrupt flag'),
+     'SV,$X13,I60AD1        (ext) clear the first-interrupt flag'),
     ('022402.40', '23303.00 80 000003.02 A0',
      'TI,1,BOUND1,3.0         FULL WORD at an odd half-word: BC = 1'),
     ('022403.40', '22412.73 01',
-     'LVI,$X13,L160210        INTERNAL label -- real address check'),
+     'LVI,$X13,I60210        INTERNAL label -- real address check'),
     ('022404.00', '22372.33 D0',
-     'SVA,$X13,L160107       (ext) plant the AD handler'),
+     'SVA,$X13,I60107       (ext) plant the AD handler'),
     ('022404.40', '22407.47 01',
-     'LVI,$X3,L16011A         INTERNAL label -- real address check'),
+     'LVI,$X3,I6011A         INTERNAL label -- real address check'),
     ('022405.00', '22371.47 D0',
-     'SVA,$X3,L16010A        (ext) plant the non-AD handler'),
+     'SVA,$X3,I6010A        (ext) plant the non-AD handler'),
     ('022405.40', '1.05 0D',
      'V-I,$X2,1.0             X2 := UB-1'),
     ('022406.00', '2.03 70',
@@ -448,31 +448,31 @@ ROWS = [
     ('022407.00', '0.32 12',
      'LX,$X13,0($X2)         "-FETCH FROM UB-1, BC IS 1." INSIDE'),
     ('022407.40', '22410.04 00',
-     'L16011A BD,$+.32        the non-AD interrupt lands here'),
+     'I6011A BD,$+.32        the non-AD interrupt lands here'),
     ('022410.00', '2.03 30',
      'SV,$X1,$IA             "-RESTORE SSIP INT."'),
     ('022410.40', '22414.12 44',
-     'BZDFZ,L160111           DF OFF is the OK path -- HALF-OPEN'),
+     'BZDFZ,I60111           DF OFF is the OK path -- HALF-OPEN'),
     ('022411.00', '1310.00 80',
      'SIC,SEN                (ext) "-FETCH FROM UB-1, BC 1,"'),
     ('022411.40', '1304.10 00',
      'B,SERS                 (ext) "-CAUSES DF TO BE SET."'),
     ('022412.00', '22414.10 00',
-     'B,L160111               INTERNAL label -- real address check'),
+     'B,I60111               INTERNAL label -- real address check'),
     ('022412.40', '1310.00 80',
-     'L160210 SIC,SEN        (ext) "-FETCH FROM UB-1, BC 1,"'),
+     'I60210 SIC,SEN        (ext) "-FETCH FROM UB-1, BC 1,"'),
     ('022413.00', '1304.10 00',
      'B,SERS                 (ext) "-CAUSES AD INTERRUPT."'),
     ('022413.40', '2.03 30',
      'SV,$X1,$IA             "-RESTORE SSIP INT."'),
     ('022414.00', '22424.33 01',
-     'L160111 LVI,$X13,L160112  INTERNAL label -- real address check'),
+     'I60111 LVI,$X13,I60112  INTERNAL label -- real address check'),
     ('022414.40', '22372.33 D0',
-     'SVA,$X13,L160107       (ext)'),
+     'SVA,$X13,I60107       (ext)'),
     ('022415.00', '22431.07 01',
-     'LVI,$X3,L160114         INTERNAL label -- real address check'),
+     'LVI,$X3,I60114         INTERNAL label -- real address check'),
     ('022415.40', '22371.47 D0',
-     'SVA,$X3,L16010A        (ext)'),
+     'SVA,$X3,I6010A        (ext)'),
     ('022416.00', '22416.52 46',
      'BDFZ,$+.32              clear DF before the next fetch'),
     ('022416.40', '14.22 00',
@@ -494,13 +494,13 @@ ROWS = [
     ('022423.00', '2.03 30',
      'SV,$X1,$IA'),
     ('022423.40', '22431.04 00',
-     'BD,L160114              INTERNAL label -- real address check'),
+     'BD,I60114              INTERNAL label -- real address check'),
     ('022424.00', '2.03 30',
-     'L160112 SV,$X1,$IA      the AD landing for the LB-1 fetch'),
+     'I60112 SV,$X1,$IA      the AD landing for the LB-1 fetch'),
     ('022424.40', '23063.72 30',
-     'LV,$X13,L160AD2        (ext) "-DID WE INTRPT LAST TIME THRU."'),
+     'LV,$X13,I60AD2        (ext) "-DID WE INTRPT LAST TIME THRU."'),
     ('022425.00', '22427.71 42',
-     'BXVZ,L160113            INTERNAL label -- real address check'),
+     'BXVZ,I60113            INTERNAL label -- real address check'),
     ('022425.40', '3.36 10',
      'LX,$X15,3.0             save the boundary word for the message'),
     ('022426.00', '1310.00 80',
@@ -508,15 +508,15 @@ ROWS = [
     ('022426.40', '1304.10 00',
      'B,SERS                 (ext) "-LB,IX 15 CONTAINS CONTENTS OF"'),
     ('022427.00', '22506.50 00',
-     'B,L160122              (ext) "-LOCN 3.0 AT TIME OF FETCH."'),
+     'B,I60122              (ext) "-LOCN 3.0 AT TIME OF FETCH."'),
     ('022427.40', '777777.73 05',
-     'L160113 V+I,$X13,(8)777777.40'),
+     'I60113 V+I,$X13,(8)777777.40'),
     ('022430.00', '23063.73 30',
-     'SV,$X13,L160AD2        (ext) "-AD INTERRUPT ONCE ON FETCH"'),
+     'SV,$X13,I60AD2        (ext) "-AD INTERRUPT ONCE ON FETCH"'),
     ('022430.40', '22436.50 00',
-     'B,L160116               INTERNAL, ACROSS THE PAGE BREAK  "-BELOW LB."'),
+     'B,I60116               INTERNAL, ACROSS THE PAGE BREAK  "-BELOW LB."'),
     ('022431.00', '22435.52 46',
-     'L160114 BDFZ,L160115    INTERNAL, ACROSS THE PAGE BREAK; DF ON is OK'),
+     'I60114 BDFZ,I60115    INTERNAL, ACROSS THE PAGE BREAK; DF ON is OK'),
     ('022431.40', '3.36 10',
      'LX,$X15,3.0            "-LB COMP FAILED. FETCH FROM LB-1"'),
     ('022432.00', '1310.00 80',
@@ -526,26 +526,26 @@ ROWS = [
     ('022433.00', '22434.10 00',
      'B,$+1.0'),
     ('022433.40', '22414.04 00',
-     'BD,L160111              INTERNAL label -- round again'),
+     'BD,I60111              INTERNAL label -- round again'),
     ('022434.00', '1311.40 80',
      'SIC,SEN0+.32           (ext) BIT address: 0o40 = bit 32'),
     ('022434.40', '1301.10 00',
      'B,SSW                  (ext) "-TO SSIP"  (no period here)'),
     ('022435.00', '22506.44 00',
-     'BD,L160122             (ext)'),
+     'BD,I60122             (ext)'),
     # ---- PDF p.73, 022435.40-022460.40 -------------------------------
     ('022435.40', '35.22 00',
-     'L160115 Z,$X13         "-CLR INT 2."'),
+     'I60115 Z,$X13         "-CLR INT 2."'),
     ('022436.00', '23063.73 30',
-     'SV,$X13,L160AD2        (ext)'),
+     'SV,$X13,I60AD2        (ext)'),
     ('022436.40', '22446.73 01',
-     'L160116 LVI,$X13,L160117  INTERNAL label -- real address check'),
+     'I60116 LVI,$X13,I60117  INTERNAL label -- real address check'),
     ('022437.00', '22372.33 D0',
-     'SVA,$X13,L160107       (ext)'),
+     'SVA,$X13,I60107       (ext)'),
     ('022437.40', '22453.47 01',
-     'LVI,$X3,L160119         INTERNAL label -- real address check'),
+     'LVI,$X3,I60119         INTERNAL label -- real address check'),
     ('022440.00', '22371.47 D0',
-     'SVA,$X3,L16010A        (ext)'),
+     'SVA,$X3,I6010A        (ext)'),
     ('022440.40', '22441.12 46',
      'BDFZ,$+.32'),
     ('022441.00', '14.22 00',
@@ -567,13 +567,13 @@ ROWS = [
     ('022445.40', '2.03 30',
      'SV,$X1,$IA'),
     ('022446.00', '22453.44 00',
-     'BD,L160119              INTERNAL label -- real address check'),
+     'BD,I60119              INTERNAL label -- real address check'),
     ('022446.40', '2.03 30',
-     'L160117 SV,$X1,$IA      the AD landing for the between fetch'),
+     'I60117 SV,$X1,$IA      the AD landing for the between fetch'),
     ('022447.00', '23064.32 30',
-     'LV,$X13,L160AD3        (ext) "-DID WE INTRPT LAST TIME THRU."'),
+     'LV,$X13,I60AD3        (ext) "-DID WE INTRPT LAST TIME THRU."'),
     ('022447.40', '22452.31 42',
-     'BXVZ,L160118            INTERNAL label -- real address check'),
+     'BXVZ,I60118            INTERNAL label -- real address check'),
     ('022450.00', '3.36 10',
      'LX,$X15,3.0'),
     ('022450.40', '1310.00 80',
@@ -581,15 +581,15 @@ ROWS = [
     ('022451.00', '1304.10 00',
      'B,SERS                 (ext) "-UB AND LB, IX 15 CONTAINS CONTENTS OF"'),
     ('022451.40', '22506.50 00',
-     'B,L160122              (ext) "-LOCN 3.0 AT TIME OF FETCH."'),
+     'B,I60122              (ext) "-LOCN 3.0 AT TIME OF FETCH."'),
     ('022452.00', '777777.73 05',
-     'L160118 V+I,$X13,(8)777777.40'),
+     'I60118 V+I,$X13,(8)777777.40'),
     ('022452.40', '23064.35 30',
-     'SV,$X14,L160AD3        (ext) $X14, NOT $X13 -- see the docstring'),
+     'SV,$X14,I60AD3        (ext) $X14, NOT $X13 -- see the docstring'),
     ('022453.00', '22461.10 00',
-     'B,L160121              (ext, PDF p.74) "-BETWEEN UB AND LB."'),
+     'B,I60121              (ext, PDF p.74) "-BETWEEN UB AND LB."'),
     ('022453.40', '22460.12 46',
-     'L160119 BDFZ,L160120    DF ON is the OK path -- BC 0, INSIDE'),
+     'I60119 BDFZ,I60120    DF ON is the OK path -- BC 0, INSIDE'),
     ('022454.00', '3.36 10',
      'LX,$X15,3.0            "-BETWEEN UB AND LB COMP FAILED. FETCH"'),
     ('022454.40', '1310.00 80',
@@ -599,25 +599,25 @@ ROWS = [
     ('022455.40', '22456.50 00',
      'B,$+1.0'),
     ('022456.00', '22436.44 00',
-     'BD,L160116              INTERNAL label -- round again'),
+     'BD,I60116              INTERNAL label -- round again'),
     ('022456.40', '1311.40 80',
      'SIC,SEN0+.32           (ext) BIT address: 0o40 = bit 32'),
     ('022457.00', '1301.10 00',
      'B,SSW                  (ext) "-TO SSIP."'),
     ('022457.40', '22506.50 00',
-     'B,L160122              (ext) "-TERMINATE."'),
+     'B,I60122              (ext) "-TERMINATE."'),
     ('022460.00', '35.22 00',
-     'L160120 Z,$X13         "-CLR INT 3."'),
+     'I60120 Z,$X13         "-CLR INT 3."'),
     ('022460.40', '23064.33 30',
-     'SV,$X13,L160AD3        (ext)'),
+     'SV,$X13,I60AD3        (ext)'),
 ]
 
-SYMBOLS = {'L160110': '022401.40', 'L16011A': '022407.40',
-           'L160210': '022412.40', 'L160111': '022414.00',
-           'L160112': '022424.00', 'L160113': '022427.40',
-           'L160114': '022431.00', 'L160115': '022435.40',
-           'L160116': '022436.40', 'L160117': '022446.40',
-           'L160118': '022452.00', 'L160119': '022453.40',
-           'L160120': '022460.00'}
+SYMBOLS = {'I60110': '022401.40', 'I6011A': '022407.40',
+           'I60210': '022412.40', 'I60111': '022414.00',
+           'I60112': '022424.00', 'I60113': '022427.40',
+           'I60114': '022431.00', 'I60115': '022435.40',
+           'I60116': '022436.40', 'I60117': '022446.40',
+           'I60118': '022452.00', 'I60119': '022453.40',
+           'I60120': '022460.00'}
 
 finish(check_rows(prog, ROWS, SYMBOLS, label='1260 T7 cmp '))

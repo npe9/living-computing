@@ -10,7 +10,7 @@ and said to FIND THE DRIVER BEFORE TRANSCRIBING.  Found 2026-09-23 by
 scanning pp.46-86 for BOUND/MONITOR and reading the hits:
 
     p.65   "TEST 7 CHKS BOUNDARY CONTROL." / "CHK UPPER BOUNDARY
-           DATA."   <- this block, the driver at 16099/160100
+           DATA."   <- this block, the driver at I6099/I60100
     p.67   "CHK LOWER BOUNDARY DATA." and "CHK BOUNDARY CONTROL BIT."
     p.71   "FETCH FROM X-1 TO CHK UB COMP." and "FROM X-3 TO CHK LB
            COMP."   <- the COMPARISON tests, which are the positive
@@ -23,7 +23,7 @@ kind.
 THE BLOCK is eighteen iterations -- the upper boundary is word 3 bits
 0-17, exactly eighteen bits.  Each writes BIT<n> into $UB, waits four
 NOPs, reads back, compares with KV, and on mismatch branches into the
-per-bit error table 160B17 indexed by $X3, which steps by 1.32
+per-bit error table I60B17 indexed by $X3, which steps by 1.32
 because each entry is three half-words.
 
 PROVEN DISCRIMINATING (encoding).  Observed failure sets:
@@ -47,10 +47,10 @@ from listing_oracle import check_rows, finish
 prog = assemble(open("programs/ax5b_16099_ub_data.strap").read())
 
 ROWS = [
-    ('022215.00', '0.03 01',     'L16099 LVI,$X1,0.0    "-TEST 7 CHKS BOUNDARY CONTROL."'),
+    ('022215.00', '0.03 01',     'I6099 LVI,$X1,0.0    "-TEST 7 CHKS BOUNDARY CONTROL."'),
     ('022215.40', '22.03 02',    'LCI,$X1,18            "-CHK UPPER BOUNDARY DATA." -- 18 bits'),
     ('022216.00', '0.07 01',     'LVI,$X3,0.0           the error-table index'),
-    ('022216.40', '14.22 00',    'L160100 Z,$MASK       word 12'),
+    ('022216.40', '14.22 00',    'I60100 Z,$MASK       word 12'),
     ('022217.00', '24522.04 31', 'LV,$X2,BIT0($X1)      (ext) the word with only bit X1 set'),
     ('022217.40', '3.05 30',     'SV,$X2,$UB            word 3, the upper boundary'),
     ('022220.00', '0.30 00',     'NOP'),
@@ -60,11 +60,11 @@ ROWS = [
     ('022222.00', '3.04 30',     'LV,$X2,$UB            read it back'),
     ('022222.40', '24522.04 91', 'KV,$X2,BIT0($X1)      (ext) compare'),
     ('022223.00', '22224.32 C2', 'BXE,$+1.0             equal -> skip the error branch'),
-    ('022223.40', '22231.50 03', 'B,L160B17($X3)        (ext) "-DATA ERROR."'),
-    ('022224.00', '1.47 05',     'L160101 V+I,$X3,1.32  next entry: three half-words'),
-    ('022224.40', '22216.43 48', 'CB+,$X1,L160100       count and loop'),
+    ('022223.40', '22231.50 03', 'B,I60B17($X3)        (ext) "-DATA ERROR."'),
+    ('022224.00', '1.47 05',     'I60101 V+I,$X3,1.32  next entry: three half-words'),
+    ('022224.40', '22216.43 48', 'CB+,$X1,I60100       count and loop'),
 ]
 
-SYMBOLS = {'L16099': '022215.00', 'L160100': '022216.40', 'L160101': '022224.00'}
+SYMBOLS = {'I6099': '022215.00', 'I60100': '022216.40', 'I60101': '022224.00'}
 
 finish(check_rows(prog, ROWS, SYMBOLS, label='1260 T7 '))

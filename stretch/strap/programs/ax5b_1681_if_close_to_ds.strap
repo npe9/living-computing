@@ -13,13 +13,13 @@
 ! this is the INSTRUCTION side.
 !
 ! HOW IT WORKS, and it is the neatest block in the routine.  The deck
-! stores a whole word over location 1682, twice, and then FALLS INTO
-! 1682 and executes whatever is there:
+! stores a whole word over location I682, twice, and then FALLS INTO
+! I682 and executes whatever is there:
 !
-!   LX,$X1,168K1 / SX,$X1,1682    plant  [Z,$X2 | NOP]
+!   LX,$X1,I68K1 / SX,$X1,I682    plant  [Z,$X2 | NOP]
 !   NOP / NOP
-!   LX,$X1,168K2 / SX,$X1,1682    plant  [LVI,$X2,(8)777777.40 | NOP]
-!   1682 XW,0,0,0                 ...the slot, executed as planted
+!   LX,$X1,I68K2 / SX,$X1,I682    plant  [LVI,$X2,(8)777777.40 | NOP]
+!   I682 XW,0,0,0                 ...the slot, executed as planted
 !   LX,$X2,$X2                    re-read X2 to SET THE INDICATORS
 !   SIC,SEN / BXVZ,SERS           "EXECUTED OLD INSTRUCTION FROM EXT."
 !
@@ -58,24 +58,24 @@
 !   2. SERS is a "B,$" HANG at its own printed address 001304.00; the
 !      real error-report routine is not transcribed.
 !   3. A "BEW,$" exit at 024344.40, where the listing continues into
-!      test 1B ("LX,$X1,168K1  -TEST 1B, IF CLOSE TO DS IN IX STG.").
+!      test 1B ("LX,$X1,I68K1  -TEST 1B, IF CLOSE TO DS IN IX STG.").
 !      1B and 1C need EX, deferred in docs/NEXT.md section 5.
-! 168K1 and 168K2 are transcribed from p.111 at their printed
+! I68K1 and I68K2 are transcribed from p.111 at their printed
 ! addresses, not manufactured.
 
-L168K1  SYN, (8)24407.0            ! [Z,$X2 | NOP]      (p.111)
-L168K2  SYN, (8)24410.0            ! [LVI,$X2,.. | NOP] (p.111)
+I68K1  SYN, (8)24407.0            ! [Z,$X2 | NOP]      (p.111)
+I68K2  SYN, (8)24410.0            ! [LVI,$X2,.. | NOP] (p.111)
 SEN     SYN, (8)1310.0
 SERS    SYN, (8)1304.0
 
         SLC, (8)24337.0
-L1681   LX,  $X1, L168K1           ! -TEST 1A,IF CLOSE TO DS IN EXT MEM.
-        SX,  $X1, L1682            !  plant the OLD instruction
+I681   LX,  $X1, I68K1           ! -TEST 1A,IF CLOSE TO DS IN EXT MEM.
+        SX,  $X1, I682            !  plant the OLD instruction
         NOP
         NOP
-        LX,  $X1, L168K2
-        SX,  $X1, L1682            !  plant the NEW one over it
-L1682   XW,  0, 0, 0               !  the slot -- executed as planted
+        LX,  $X1, I68K2
+        SX,  $X1, I682            !  plant the NEW one over it
+I682   XW,  0, 0, 0               !  the slot -- executed as planted
         LX,  $X2, $X2              !  re-read X2 to set the indicators
         SIC, SEN
         BXVZ, SERS                 ! -EXECUTED OLD INSTRUCTION FROM EXT.
@@ -86,10 +86,10 @@ PASS    BEW, $
 !
 ! ---- the routine's constants, transcribed from p.111 ----------------
         SLC, (8)24407.0
-K1      Z,   $X2                   ! 168K1: the OLD instruction
+K1      Z,   $X2                   ! I68K1: the OLD instruction
         NOP
         SLC, (8)24410.0
-K2      LVI, $X2, (8)777777.40     ! 168K2: the NEW one
+K2      LVI, $X2, (8)777777.40     ! I68K2: the NEW one
         NOP
 !
         SLC, (8)1310.0
@@ -97,4 +97,4 @@ SENW    DD(BU,64), 0               ! SIC's target
 ! ---- substitution 2: SERS is a hang ---------------------------------
         SLC, (8)1304.0
 SERSH   B, $
-        END, L1681
+        END, I681

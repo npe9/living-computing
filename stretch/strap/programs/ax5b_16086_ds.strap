@@ -23,7 +23,7 @@
 !     the interrupt-enable bit into this model in the first place.
 !
 ! AND IT POLLS DS WITH THE SYSTEM OFF.  The BDS that reads the
-! indicator comes after "16086A BD,$+.32", not before it.  That is the
+! indicator comes after "I6086A BD,$+.32", not before it.  That is the
 ! trap this project paid for and wrote into docs/NEXT.md -- "a program
 ! cannot poll DS while enabled", because DS is permanently masked and
 ! the mechanism turns it off before the next instruction runs.  The
@@ -40,7 +40,7 @@
 !                      protected locations.  The block is headed "-DS"
 !                      and its error names this instruction as "SV TO
 !                      1.0", so this is the provocation.
-!   SV,$X4,1.32        the deck says "TURN ON $AD ON".  16083, the AD
+!   SV,$X4,1.32        the deck says "TURN ON $AD ON".  I6083, the AD
 !                      block on p.41, opens with the same instruction
 !                      under the comment "-AD".
 !   LX / SX            LX and SX move a WHOLE 64-bit word, and that is
@@ -55,13 +55,13 @@
 !                      arithmetic names LX and SX as the pair: "the
 !                      two exceptions use only 18 bits of the
 !                      effective address because they require
-!                      full-word operands".  So "LX,$X4,16086 /
-!                      SX,$X4,16085B+15.0" copies the whole word at
+!                      full-word operands".  So "LX,$X4,I6086 /
+!                      SX,$X4,I6085B+15.0" copies the whole word at
 !                      021365 -- this block's own SV,$X4,1.00
 !                      half-word together with the 3740 datum beside
-!                      it -- into 16085B word 15, and 160K16's word
-!                      into 16085B word 16.
-!   16085B word N      p.48: the interruption table is "48 successive
+!                      it -- into I6085B word 15, and I60K16's word
+!                      into I6085B word 16.
+!   I6085B word N      p.48: the interruption table is "48 successive
 !                      full-word locations" and the developed
 !                      indicator number is added to the interruption
 !                      address, so word N is indicator N -- 15 is OP
@@ -69,27 +69,27 @@
 !                      interrupt_pg0.strap pins on this model.
 !   LV,$X4,$IA / SVA,$X5,$IA / SVA,$X4,$IA
 !                      save the interruption address register, point
-!                      it at 16085B, restore it afterwards.  Word 2 is
+!                      it at I6085B, restore it afterwards.  Word 2 is
 !                      $IA (Ref. Manual p.48 and opcodes.py).
-!   BE,16086A / 16086A BD,$+.32
+!   BE,I6086A / I6086A BD,$+.32
 !                      enable, then disable.  p.40: both act
 !                      unconditionally and before the branch.
-!   BDS,16086B         branch on DS.  It is AFTER the BD, never
+!   BDS,I6086B         branch on DS.  It is AFTER the BD, never
 !                      before -- the deck reads the indicator with the
 !                      system off.
 !   BADZ,$+.32         branch on AD and zero it (the trailing-Z
 !                      grammar, C22-6531 Appendix A footnote 2), then
-!                      B,16088.
+!                      B,I6088.
 !
 ! NOT TRACED, and left as questions rather than guesses:
 !   * WHY the block plants its own protected store into interrupt
-!     table entry 15 (OP) and 160K16 into entry 16 (AD).  The DD
+!     table entry 15 (OP) and I60K16 into entry 16 (AD).  The DD
 !     commented "ILLEGAL OP, FP 31." sits in the same word as that
 !     store, so the copied entry is {store, illegal op} -- which
 !     reads like OP's routine being made to provoke something in
-!     turn, but nothing on these two pages says so.  16082 (OP) and
-!     16083 (AD) on pp.41-42 are where that would be settled.
-!   * WHAT 160K16 contains.  Only its address, 023061.00, is printed
+!     turn, but nothing on these two pages says so.  I6082 (OP) and
+!     I6083 (AD) on pp.41-42 are where that would be settled.
+!   * WHAT I60K16 contains.  Only its address, 023061.00, is printed
 !     here.
 !   * WHETHER the DD is ever executed on the taken path, or is only
 !     data for the copy above.  Reaching it would require falling
@@ -99,8 +99,8 @@
 ! ibox1_ensu.strap: IBM's own assembler printing nineteen half-words,
 ! checked field for field against what this project's assembler
 ! produces.  It is NOT run on the model -- the block is a fragment of
-! routine 1260 and needs 16085B's NOP table (built by 16085A), the
-! SEN/SERS error harness and 160K16 before it could execute.
+! routine 1260 and needs I6085B's NOP table (built by I6085A), the
+! SEN/SERS error harness and I60K16 before it could execute.
 ! storage_protection.strap remains the behavioural test and remains
 ! hand-written; what changes is that its rule now has a deck behind it.
 !
@@ -116,9 +116,9 @@
 ! Nothing else is changed: operands, order, addresses and the DD's
 ! value are the page's own text.
 !
-! A BYPRODUCT WORTH RECORDING.  "B,16088" prints as "21400.50 00",
+! A BYPRODUCT WORTH RECORDING.  "B,I6088" prints as "21400.50 00",
 ! and bit 18 is the top bit of that octal pair (listing_oracle.py), so
-! it is ONE and 16088 sits at 021400.40.  A 200 dpi render of p.45 had
+! it is ONE and I6088 sits at 021400.40.  A 200 dpi render of p.45 had
 ! given 021400.00 for that row, which made the page look a half-word
 ! short; re-read at 600 dpi the column prints 021400.40, agreeing with
 ! the encoding.  Two witnesses, one printed and one encoded, and with
@@ -128,7 +128,7 @@
 ! "BE,$+.32  -ENABLE AND AWAIT INTERRUPT" after them lands at
 ! 021401.40 with its own printed target 021402.00.
 !
-! NOTE, because the check cannot say it: L16088's 021400.40 is a SYN
+! NOTE, because the check cannot say it: I6088's 021400.40 is a SYN
 ! above, an INPUT to verify_ax5b_16086_listing.py.  That row passing
 ! is not evidence for the address; the two readings above are.  What
 ! the row adds is that this assembler places bit 18 where the listing
@@ -137,36 +137,36 @@
 ! External symbols, given by SYN at the addresses this same listing
 ! prints for them.  Rows naming one check the opcode and modifier bits
 ! only; their address came from the same print.
-L16085B SYN, (8)21261.0            ! the all-NOP interrupt table (p.43)
-L160K16 SYN, (8)23061.0            ! a constant in the 160K block
+I6085B SYN, (8)21261.0            ! the all-NOP interrupt table (p.43)
+I60K16 SYN, (8)23061.0            ! a constant in the I60K block
 SEN     SYN, (8)1310.0             ! the SIC error-entry link
 SERS    SYN, (8)1304.0             ! the error-report routine
-L16093  SYN, (8)21734.0            ! the "next test" exit
-L16088  SYN, (8)21400.40           ! the per-indicator interrupt walk;
+I6093  SYN, (8)21734.0            ! the "next test" exit
+I6088  SYN, (8)21400.40           ! the per-indicator interrupt walk;
                                    !   .40, see the header
 
         SLC, (8)21365.0
         CNOP                       ! already word-aligned: emits nothing
-L16086  SV,  $X4, 1.00             ! -DS          store into protected
+I6086  SV,  $X4, 1.00             ! -DS          store into protected
                                    !              word 1
         DD(BU,32,8), (8)3740       ! -ILLEGAL OP, FP 31.
         SV,  $X4, 1.32             ! -TURN ON $AD ON
-        LX,  $X4, L16086           !              this block's own first
+        LX,  $X4, I6086           !              this block's own first
                                    !              half-word, as data
-        SX,  $X4, L16085B+15.0     !              into table word 15 (OP)
-        LX,  $X4, L160K16
-        SX,  $X4, L16085B+16.0     !              into table word 16 (AD)
+        SX,  $X4, I6085B+15.0     !              into table word 15 (OP)
+        LX,  $X4, I60K16
+        SX,  $X4, I6085B+16.0     !              into table word 16 (AD)
         LV,  $X4, $IA              !              save the interruption
                                    !              address register
-        LVI, $X5, L16085B
+        LVI, $X5, I6085B
         SVA, $X5, $IA              !              point it at the NOP table
-        BE,  L16086A               !              enable
-L16086A BD,  $+.32                 !              disable, so DS can be read
+        BE,  I6086A               !              enable
+I6086A BD,  $+.32                 !              disable, so DS can be read
         SVA, $X4, $IA              !              restore the saved address
-        BDS, L16086B               !              DS set -> pass
+        BDS, I6086B               !              DS set -> pass
         SIC, SEN
         B,   SERS                  ! -SV TO 1.0 FAILS TO SET
-        B,   L16093                ! -DS WHEN ENABLED.
-L16086B BADZ, $+.32                !              clear AD on the way out
-        B,   L16088
-        END, L16086
+        B,   I6093                ! -DS WHEN ENABLED.
+I6086B BADZ, $+.32                !              clear AD on the way out
+        B,   I6088
+        END, I6086

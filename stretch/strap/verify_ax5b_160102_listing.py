@@ -9,13 +9,13 @@ is the rest of TEST 7: the other register, and the control bit.
 
 THE LOWER LOOP MIRRORS THE UPPER with three differences: it stores
 through $LB (word 3 bits 32-49), indexes its error table with $X2, and
-that table is 160B18 at 022313.40 -- whose entries pp.69-70 print as
+that table is I60B18 at 022313.40 -- whose entries pp.69-70 print as
 "LOWER BOUNDARY DATA FAILURE, BIT 32" upward.
 
 THE CONTROL-BIT TEST sets word 3 bit 57 from BIT57, reads word 3 back,
 moves the refill field with "SR,$X1,$X1" and compares against BIT11 --
 bit 57 sits at refill position 57-46 = 11 -- then clears word 3 with
-"Z,$UB" and compares against 100Z.
+"Z,$UB" and compares against I00Z.
 
 A FOURTH CONFIRMATION OF THE BIT TABLE: BIT57 prints 24613 and BIT11
 prints 24535; 024522 + 57 = 024613 and 024522 + 11 = 024535.  The rule
@@ -60,10 +60,10 @@ from listing_oracle import check_rows, finish
 prog = assemble(open("programs/ax5b_160102_lb_ctl.strap").read())
 
 ROWS = [
-    ('022264.40', '0.03 01',     'L160102 LVI,$X1,0.0   "-CHK LOWER BOUNDARY DATA."'),
+    ('022264.40', '0.03 01',     'I60102 LVI,$X1,0.0   "-CHK LOWER BOUNDARY DATA."'),
     ('022265.00', '22.03 02',    'LCI,$X1,18            eighteen bits, 32-49'),
     ('022265.40', '0.05 01',     'LVI,$X2,0.0           the error-table index'),
-    ('022266.00', '14.22 00',    'L160103 Z,$MASK'),
+    ('022266.00', '14.22 00',    'I60103 Z,$MASK'),
     ('022266.40', '24522.06 31', 'LV,$X3,BIT0($X1)      (ext)'),
     ('022267.00', '3.47 30',     'SV,$X3,$LB            word 3 bits 32-49'),
     ('022267.40', '0.30 00',     'NOP'),
@@ -73,9 +73,9 @@ ROWS = [
     ('022271.40', '3.46 30',     'LV,$X3,$LB            read back'),
     ('022272.00', '24522.06 91', 'KV,$X3,BIT0($X1)      (ext)'),
     ('022272.40', '22273.72 C2', 'BXE,$+1.0'),
-    ('022273.00', '22313.50 02', 'B,L160B18($X2)        (ext) "-DATA ERROR."'),
-    ('022273.40', '1.45 05',     'L160104 V+I,$X2,1.32'),
-    ('022274.00', '22266.03 48', 'CB+,$X1,L160103'),
+    ('022273.00', '22313.50 02', 'B,I60B18($X2)        (ext) "-DATA ERROR."'),
+    ('022273.40', '1.45 05',     'I60104 V+I,$X2,1.32'),
+    ('022274.00', '22266.03 48', 'CB+,$X1,I60103'),
     ('022274.40', '24613.02 10', 'LX,$X1,BIT57          (ext) "-CHK BOUNDARY CONTROL BIT."'),
     ('022275.00', '3.03 10',     'SX,$X1,$UB'),
     ('022275.40', '0.30 00',     'NOP'),
@@ -94,11 +94,11 @@ ROWS = [
     ('022304.00', '0.30 00',     'NOP'),
     ('022304.40', '3.02 10',     'LX,$X1,$UB'),
     ('022305.00', '21.03 70',    'SR,$X1,$X1'),
-    ('022305.40', '24502.02 90', 'KV,$X1,L100Z          (ext) the zero index word'),
+    ('022305.40', '24502.02 90', 'KV,$X1,I00Z          (ext) the zero index word'),
     ('022306.00', '1310.00 80',  'SIC,SEN               (ext)'),
     ('022306.40', '1304.32 C0',  'BZXE,SERS             (ext) "-UNABLE TO SET BNDRY CNTRL TO 0."'),
 ]
 
-SYMBOLS = {'L160102': '022264.40', 'L160103': '022266.00', 'L160104': '022273.40'}
+SYMBOLS = {'I60102': '022264.40', 'I60103': '022266.00', 'I60104': '022273.40'}
 
 finish(check_rows(prog, ROWS, SYMBOLS, label='1260 T7b '))

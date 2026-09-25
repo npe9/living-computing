@@ -372,7 +372,7 @@
 !     "LV"          verify_ibox1_cpi_chain_listing.py;
 !                   verify_ax5b_160102_listing.py "LV,$X3,BIT0($X1)".
 !     A LABEL in XW's REFILL field -- verify_ax5b_160k_listing.py's
-!                   "L160XW1 XW,0,64,L160IT".  024474.00's "I74K4
+!                   "I60XW1 XW,0,64,I60IT".  024474.00's "I74K4
 !                   XW,0,0,I74K1" -> "0.00 00 000000.51 39" (bits
 !                   46-63 = 0o24471 = I74K1's WORD address) is a
 !                   SECOND, independent witness for strap_asm's ">> 6"

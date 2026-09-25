@@ -11,7 +11,7 @@
 ! DATA FAILURE, BIT 9'.  That guess came from a scouting pass's
 ! inference, not from a page.  FIND THE DRIVER BEFORE TRANSCRIBING."
 !
-! The driver is here, at 16099/160100 on p.65, and what it drives is
+! The driver is here, at I6099/I60100 on p.65, and what it drives is
 ! NOT an interrupt test.  It is a DATA-PATH test of the boundary
 ! register.  Mapped 2026-09-23 by scanning pp.46-86 for BOUND/MONITOR
 ! and then reading the hits:
@@ -31,18 +31,18 @@
 ! word 3 bits 0-17, which is exactly eighteen bits:
 !
 !     LCI,$X1,18            the loop count
-!     160100 Z,$MASK        clear the mask each time round
+!     I60100 Z,$MASK        clear the mask each time round
 !     LV,$X2,BIT0(X1)       take the word whose only set bit is bit X1
 !     SV,$X2,$UB            write it into the upper boundary
 !     NOP NOP NOP NOP       four, to let the write land
 !     LV,$X2,$UB            read it back
 !     KV,$X2,BIT0(X1)       compare against what went in
 !     BXE,$+1.0             equal -> skip the error branch
-!     B,160B17(X3)          "-DATA ERROR." -- into the per-bit table
-!     160101 V+I,$X3,1.32   step to the next error entry (3 half-words)
-!     CB+,$X1,160100        count and loop
+!     B,I60B17(X3)          "-DATA ERROR." -- into the per-bit table
+!     I60101 V+I,$X3,1.32   step to the next error entry (3 half-words)
+!     CB+,$X1,I60100        count and loop
 !
-! and 160B17's entries are "UPPER BOUNDARY DATA FAILURE, BIT 0." up to
+! and I60B17's entries are "UPPER BOUNDARY DATA FAILURE, BIT 0." up to
 ! BIT 17, three half-words each -- which is why X3 advances by 1.32.
 !
 ! THE FOUR NOPs ARE THE DECK'S, not padding added here.  They sit
@@ -56,13 +56,13 @@
 ! Injecting
 !     addrUpperBoundary: boundaryReg <= (v & ~(64'b1 << 46));
 ! -- IBM bit 17, the top of the upper boundary field -- halts the
-! program at 022263.00, which is 160B17's EIGHTEENTH entry, "UPPER
+! program at 022263.00, which is I60B17's EIGHTEENTH entry, "UPPER
 ! BOUNDARY DATA FAILURE, BIT 17".  Clean, it halts at PASS.  A 1961
 ! diagnostic identifying which bit of a 2026 model's register failed.
 !
 ! THE TABLE'S SIZE IS LOAD-BEARING, and this was got wrong first.  The
-! branch is "B,160B17($X3)" -- INDEXED -- so a failure on bit N lands
-! at 160B17 + N*1.32.  A first version of this transcription collapsed
+! branch is "B,I60B17($X3)" -- INDEXED -- so a failure on bit N lands
+! at I60B17 + N*1.32.  A first version of this transcription collapsed
 ! the eighteen-entry table into ONE hang; the bit-17 injection then
 ! branched past its end into untouched storage, which decodes as BE,0
 ! (docs/NEXT.md's trap list) and ran the counter to 0.  The deck steps
@@ -77,7 +77,7 @@
 !
 ! SUBSTITUTIONS: three.
 !   1. Numeric labels prefixed "L" (16099, 160100, 160101, 160B17).
-!   2. 160B17, the per-bit error table, is a "B,$" HANG at its printed
+!   2. I60B17, the per-bit error table, is a "B,$" HANG at its printed
 !      address 022231.40 -- so a failure halts there and the PC names
 !      it.  The real table's eighteen entries are not transcribed.
 !   3. A "BEW,$" exit at 022225.00, where the listing continues with
@@ -88,13 +88,13 @@
 ! row -- stated so the derivation is visible.
 
 BIT0    SYN, (8)24522.0
-L160B17 SYN, (8)22231.40
+I60B17 SYN, (8)22231.40
 
         SLC, (8)22215.0
-L16099  LVI, $X1, 0.0              ! -TEST 7 CHKS BOUNDARY CONTROL.
+I6099  LVI, $X1, 0.0              ! -TEST 7 CHKS BOUNDARY CONTROL.
         LCI, $X1, 18               ! -CHK UPPER BOUNDARY DATA.
         LVI, $X3, 0.0
-L160100 Z,   $MASK
+I60100 Z,   $MASK
         LV,  $X2, BIT0($X1)
         SV,  $X2, $UB              !  write bit X1 into the upper boundary
         NOP
@@ -104,18 +104,18 @@ L160100 Z,   $MASK
         LV,  $X2, $UB              !  read it back
         KV,  $X2, BIT0($X1)
         BXE, $+1.0                 !  equal -> skip
-        B,   L160B17($X3)          ! -DATA ERROR.
-L160101 V+I, $X3, 1.32
-        CB+, $X1, L160100
+        B,   I60B17($X3)          ! -DATA ERROR.
+I60101 V+I, $X3, 1.32
+        CB+, $X1, I60100
 !
 ! ---- substitution 3: the exit ---------------------------------------
         SLC, (8)22225.0
 PASS    BEW, $
 !
 ! ---- substitution 2: the error table, EIGHTEEN entries -------------
-! The deck's 160B17 has one three-half-word entry per bit, which is
+! The deck's I60B17 has one three-half-word entry per bit, which is
 ! why the driver steps $X3 by 1.32.  A single hang is NOT enough: the
-! branch is INDEXED, so a failure on bit N lands at 160B17 + N*1.32.
+! branch is INDEXED, so a failure on bit N lands at I60B17 + N*1.32.
 ! Measured the hard way -- with one hang, an injected bit-17 fault
 ! branched into untouched storage, which decodes as BE,0 (see
 ! docs/NEXT.md's trap list) and ran the counter to 0.  With all
@@ -178,4 +178,4 @@ B14     DD(BU,64), 562949953421312  ! BIT14
 B15     DD(BU,64), 281474976710656  ! BIT15
 B16     DD(BU,64), 140737488355328  ! BIT16
 B17     DD(BU,64), 70368744177664  ! BIT17
-        END, L16099
+        END, I6099

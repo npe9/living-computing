@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
 """verify_ax5b_160s1_tail_listing.py -- jb_ax5b "I-Box 5",
-routine 1260's 160S1, THE TAIL (programs/ax5b_160s1_tail.strap)
+routine 1260's I60S1, THE TAIL (programs/ax5b_160s1_tail.strap)
 against the listing's printed machine code, PDF p.85, octal
 023021.40-023041.00.  27 printed rows, 32 half-words.
 
 THE HEAD of the same subroutine, 022741.00-023021.00 (PDF pp.83-84),
 is checked by verify_ax5b_160s1_listing.py and is NOT repeated here.
-Together the two cover 160S1 whole.  They are separate files only
+Together the two cover I60S1 whole.  They are separate files only
 because the head is committed and this work had to leave the tree's
 diff empty apart from new files.
 
@@ -15,12 +15,12 @@ numbers; the "12 11 10 9" down the left margin is fanfold
 carriage-tape line numbering.  Every verify_ax5b_*.py here says
 "PDF p.NN" for that reason.
 
-WHY THE LAST TWO ROWS MATTER.  160S1 is the subroutine every 1260 and
-1262 test block calls as "SIC,160SX1 / B,160S1".  Its RETURN had never
+WHY THE LAST TWO ROWS MATTER.  I60S1 is the subroutine every 1260 and
+1262 test block calls as "SIC,I60SX1 / B,I60S1".  Its RETURN had never
 been read:
 
-    023040.40         LX,$X1,160DMP       23301.02 10
-    023041.00  160SX1 $BD,0               0.04 00
+    023040.40         LX,$X1,I60DMP       23301.02 10
+    023041.00  I60SX1 $BD,0               0.04 00
 
 a BRANCH DISABLED whose address field the caller's SIC plants.
 Reference Manual printed p.41 (PDF p.44), "Store Instruction Counter
@@ -29,11 +29,11 @@ bits 0-18 of the half-word specified by bits 0-18 of the effective
 storage address.  OTHER BITS OF THE HALF-WORD ARE NOT DISTURBED."
 Reference Manual printed p.40 (PDF p.43): "Branch Disabled (BD).  This
 operation disables the interruption mechanism, and then performs the
-same operation as BRANCH."  So 160S1 RETURNS DISABLED, and neither
+same operation as BRANCH."  So I60S1 RETURNS DISABLED, and neither
 half of the subroutine contains a BE.
 
 THAT RESOLVES 1262 TEST 3B (PDF p.108), whose straight-line path is
-"SIC,160SX1 / B,160S1 ... Z,$X1 / DD 3740 'ILLEGAL OP' / EXIC,162PSI"
+"SIC,I60SX1 / B,I60S1 ... Z,$X1 / DD 3740 'ILLEGAL OP' / EXIC,I62PSI"
 with an INTERRUPTION as the OK path out of the EXIC.  Ref. Manual
 printed p.50 (PDF p.53): "at the completion, termination, or
 suppression of an execution operation, interruption is always
@@ -41,7 +41,7 @@ permitted", with the PROGRAMMING NOTE "When interruption occurs
 following an execution operation with the interruption system
 DISABLED, it is caused only by the actuated indicator of highest
 priority whose mask bit is one."  The block is disabled from the
-moment 160S1 returns, and the interruption happens anyway.
+moment I60S1 returns, and the interruption happens anyway.
 
 AND THE DD IS LOAD-BEARING.  p.48: the interruption "develops the
 number of the leftmost actuated indicator whose mask bit is one.
@@ -55,14 +55,14 @@ consumed and AD survives.  p.50: "Examination for other actuated
 indicators can be programmed into the correction routine."
 
 The rows below are the other half of that argument: the BOPZ rung at
-023021.40 and the BADZ rung at 023024.40 are 160S1 CLEARING indicators
+023021.40 and the BADZ rung at 023024.40 are I60S1 CLEARING indicators
 15 and 16, so both are provably off when a caller reaches its DD.
 
 ONE ROW IS NOT LIKE THE OTHER FOURTEEN.  023037.00 is "KV,$X1,BIT19",
 a DIRECT index compare against a stored constant, where all fourteen
 other rungs in the subroutine use the IMMEDIATE form KVI: DS is
 indicator 19 and its bit sits below the 19-bit immediate field.  It is
-160S1's only KV, and the only row in this repo that separates KV
+I60S1's only KV, and the only row in this repo that separates KV
 (DIR_INDEX_CODES 0b01001) from KVI (IMM_INDEX_CODES 0b0100).
 
 ERROR TEXT, verbatim from the page at 400 dpi:
@@ -74,14 +74,14 @@ ERROR TEXT, verbatim from the page at 400 dpi:
     023035.00  "-UNABLE TO CLR EXE OR ABOVE IND."
     023040.00  "-UNABLE TO CLR DS OR ABOVE IND."
 
-WITNESS TIERING.  Every SYN in the program file -- L160DMP, SEN, SERS,
+WITNESS TIERING.  Every SYN in the program file -- I60DMP, SEN, SERS,
 BIT19 -- is an INPUT to this check, not a witness: a SYN makes the
 address field come out right by construction, so a row naming one
 proves only that every OTHER field lands where the listing puts it.
 The genuine address evidence is:
 
   * the FIVE self-relative "$+.32" rows, which no SYN touches, and
-  * L160SX1 at 023041.00, which is not the first label after the SLC
+  * I60SX1 at 023041.00, which is not the first label after the SLC
     (023021.40 is) but the last, so its address falls out of the
     cumulative sizing of the 25 half-words before it -- including the
     five TI rows that are FULL words at ODD half-words.
@@ -104,8 +104,8 @@ TOP bit of the two octal digits) and read back against the page:
              where the page prints the next TI.
   023037.00  KV,$X1,BIT19 -> 24545.02 90.  Pair 02 = 000010, bit 18 =
              0 -> 024545.00 (external; the SYN is an input).
-  023040.40  LX,$X1,160DMP -> 23301.02 10.  Pair 02, bit 18 = 0 ->
-             023301.00, which is where pp.83/85 print 160DMP.
+  023040.40  LX,$X1,I60DMP -> 23301.02 10.  Pair 02, bit 18 = 0 ->
+             023301.00, which is where pp.83/85 print I60DMP.
   023041.00  BD,0         -> 0.04 00.  Pair 04 = 000100, bit 18 = 0,
              address 0 -- the empty address field the caller's SIC
              fills in, bits 0-18, "other bits of the half-word are not
@@ -119,7 +119,7 @@ A2 is $X1 = word 17 = 0o21 and prints as a 19-bit half-word address.
 Nothing in this block varies them, so they are not evidence of field
 width here -- they are evidence that a FULL word at an ODD half-word
 is deposited straddling two words (Ref. Manual p.39), which is what
-puts L160SX1 at 023041.00 rather than 023037.00.
+puts I60SX1 at 023041.00 rather than 023037.00.
 
 SUBSTITUTIONS: three, all in the program file's header.  The third is
 load-bearing and is recorded rather than smoothed away: the listing
@@ -127,8 +127,8 @@ prints the return row as "$BD,0" and the transcription writes "BD,0".
 The 32 bits are IDENTICAL -- both produce the printed "0.04 00",
 measured below, not assumed -- but what STRAP's "$" prefix on an
 operation means is not established by any page read for this work.  It
-appears only on data-in-the-instruction-stream rows (160SX1 here;
-162BR1 and 162BR2 on PDF p.109) and is left as an open question.
+appears only on data-in-the-instruction-stream rows (I60SX1 here;
+I62BR1 and I62BR2 on PDF p.109) and is left as an open question.
 
 PROVEN DISCRIMINATING.  Observed failure sets, not predicted; each
 injection was made with __pycache__ removed on BOTH sides of the run
@@ -224,15 +224,15 @@ ROWS = [
      'BZXL,SERS             (ext)'),
     # ---- restore, and return DISABLED -------------------------------
     ('023040.40', '23301.02 10',
-     'LX,$X1,L160DMP        (ext) restore the caller\'s $X1'),
+     'LX,$X1,I60DMP        (ext) restore the caller\'s $X1'),
     ('023041.00', '0.04 00',
-     'L160SX1 BD,0          listing "$BD,0": THE RETURN, DISABLED'),
+     'I60SX1 BD,0          listing "$BD,0": THE RETURN, DISABLED'),
 ]
 
 # The one label defined inside the transcribed range.  It IS evidence:
-# 023021.40 is where the SLC puts the counter, and L160SX1 is the LAST
+# 023021.40 is where the SLC puts the counter, and I60SX1 is the LAST
 # label, so its address is the cumulative sizing of all 25 half-words
 # before it -- five of which are full words at odd half-words.
-SYMBOLS = {'L160SX1': '023041.00'}
+SYMBOLS = {'I60SX1': '023041.00'}
 
 finish(check_rows(prog, ROWS, SYMBOLS, label='1260 S1 tail '))

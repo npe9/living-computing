@@ -6,7 +6,7 @@ code, PDF pp.5-6.  46 rows in three contiguous blocks:
 
     014002.00-014004.40   routine 158's preamble          (6 half-words)
     014006.00-014011.00   routine 1258's constant pool    (4 FULL words)
-    014012.00-014033.40   TEST 1 itself, entry 1581      (36 half-words)
+    014012.00-014033.40   TEST 1 itself, entry I581      (36 half-words)
 
 WHERE IT IS.  Routine 1258 is the FIRST listing block of the deck, PDF
 pp.5-7, right after the prose write-up -- not in the tail where its
@@ -76,7 +76,7 @@ word 18 -- which is why those four rows assemble to 22/23/24/25 octal.
 
 THE DECK'S THREE ASSERTIONS, each with its own printed error text:
 
-  1. IT STEPS WITHIN ONE MILLISECOND (1581/1582, 014012.00-014021.40).
+  1. IT STEPS WITHIN ONE MILLISECOND (I581/I582, 014012.00-014021.40).
      Snapshot the clock, then spin a 256-count CB re-reading word 1 and
      asking whether the low half still equals the snapshot.  BZXE
      branches out while XE is OFF -- while they DIFFER -- and the
@@ -86,15 +86,15 @@ THE DECK'S THREE ASSERTIONS, each with its own printed error text:
      One millisecond is the deck's statement of the rate; the manual's
      1,024 steps per second is one step per 0.9766 ms.
 
-  2. THE LOW HALF WENT UP BY EXACTLY ONE (1583/1584).  V+I,$X2,1.0 adds
-     one to the saved old low half, and 1584's KV,$X2,$X4 compares it
+  2. THE LOW HALF WENT UP BY EXACTLY ONE (I583/I584).  V+I,$X2,1.0 adds
+     one to the saved old low half, and I584's KV,$X2,$X4 compares it
      against the new low half.  Failure:
          "-BITS 46-63 ARE NOT CORRECT AFTER"
          "-TIME CLOCK STEPPED."
      Those ARE the refill field's bit numbers, printed by the deck.
 
      THE COMMENT-TO-BLOCK ASSIGNMENT DOES NOT REST ON PIXEL POSITIONS.
-     1584 compares $X2 against $X4 and 1585 compares $X3 against $X5, in
+     I584 compares $X2 against $X4 and I585 compares $X3 against $X5, in
      the CODE column; the manual independently defines refill as 46-63
      and count as 28-45; SR wrote $X2/$X4 and SC wrote $X3/$X5.  The
      register numbers pin which message belongs to which block, the way
@@ -102,7 +102,7 @@ THE DECK'S THREE ASSERTIONS, each with its own printed error text:
      the Reference Manual's definitions then corroborate each other
      rather than either one carrying the claim alone.
 
-  3. THE HIGH HALF IS RIGHT (1585).  KV,$X3,$X5.  Failure:
+  3. THE HIGH HALF IS RIGHT (I585).  KV,$X3,$X5.  Failure:
          "-BITS 28-45 ARE NOT CORRECT AFTER"
          "-TIME CLOCK STEPPED."
      Again the deck names the count field's own bit numbers, over the SC
@@ -127,8 +127,8 @@ in the printed encoding -- "1.07 00" against "1.07 05" -- and the
 IMM_INDEX_CODES["C+I"] injection below measures exactly that one row, so
 this is a bit-level claim about the page and not an inference about
 intent.  V+I would have propagated the carry; what the deck MEANT is
-not recoverable from the print.  1585 is reached on both paths out of
-1584 (BXE,1585 when the low half checks out, fall-through into the
+not recoverable from the print.  I585 is reached on both paths out of
+I584 (BXE,I585 when the low half checks out, fall-through into the
 SIC / B,SERS report otherwise), so nothing conditionally skips it.
 
 NOTHING IN THIS RANGE STORES INTO WORD 1.  TEST 2 sets the interval
@@ -137,11 +137,11 @@ disabled; TEST 1 only READS (LX,$X0,1.0, twice).  That is forced by
 p.35: the clock's setting "cannot be altered under program control".
 
 THIRTEEN ROWS ARE REAL ADDRESS CHECKS -- their targets are labels
-defined inside this transcript: Z->LIC258 and BD->L1581 from the
+defined inside this transcript: Z->IC258 and BD->I581 from the
 preamble (which is why the preamble is here: they reach across all
-three blocks), BZXE->L1583, CB->L1582, B->L1586, BZXVZ->L1584,
-BXE->L1585, BXE->L1586, B,$+1.0, BD->L1581, BD,$+.32, LX->LIC258 and
-SX->LIC258.  Every one was checked by reading bit 18 out of the printed
+three blocks), BZXE->I583, CB->I582, B->I586, BZXVZ->I584,
+BXE->I585, BXE->I586, B,$+1.0, BD->I581, BD,$+.32, LX->IC258 and
+SX->IC258.  Every one was checked by reading bit 18 out of the printed
 octal pair against the page's own label column, and every one agrees.
 EXACTLY ONE of them carries bit 18 set: BD,$+.32 at 014032.00 prints
 "14032.44 00", octal pair 44 = 100100, whose top bit makes the target
@@ -151,18 +151,18 @@ this transcript's whole witness for "bit 18 is the top bit of the octal
 pair", and the enc_branch_or_misc injection below isolates it.
 
 THE SYN LIST IS FOUR SHORTER THAN TEST 2'S, which is the payoff for
-carrying the preamble and the constant pool: IC258, ICK258, 158K1 and
-158K2 are DEFINED here, so the rows TEST 2 could only mark "(ext)" --
+carrying the preamble and the constant pool: IC258, ICK258, I58K1 and
+I58K2 are DEFINED here, so the rows TEST 2 could only mark "(ext)" --
 Z,IC258 at 014004.00, LX,$X13,IC258 at 014032.40 and SX,$X13,IC258 at
 014033.40 -- are real address checks in this file.
 
 AND IT RETIRES FOUR OF TEST 2'S INPUT CAVEATS, which is the more useful
-direction.  ax5b_1258_test2.strap SYNs LIC258 (8)14006.0, LICK258
-(8)14007.0, L158K1 (8)14010.0 and L158K2 (8)14011.0 as unwitnessed
+direction.  ax5b_1258_test2.strap SYNs IC258 (8)14006.0, ICK258
+(8)14007.0, I58K1 (8)14010.0 and I58K2 (8)14011.0 as unwitnessed
 inputs, read out of the very rows that name them.  This file defines all
 four from their own printed constant-pool rows at exactly those
 addresses, so TEST 2's four addresses now have transcribed rows behind
-them -- including L158K1 and L158K2, the constants TEST 2's reload
+them -- including I58K1 and I58K2, the constants TEST 2's reload
 assertion and its bits-19-23 assertion rest on.
 
 SIC'S PRINTED OCTAL PAIR IS NOT A BIT-18 SELECT, and two rows here would
@@ -173,11 +173,11 @@ half-word), so its pair is a bit offset WITHIN the word: "1306.40 80" at
 SENO+.32.  Same printed column, different meaning; neither is a branch
 target and neither is among the thirteen in-range address checks.
 
-EVERY SYN IS AN INPUT TO THIS CHECK, NOT A WITNESS.  L1581D, DPET13,
+EVERY SYN IS AN INPUT TO THIS CHECK, NOT A WITNESS.  I58ID, DPET13,
 RET, IDF1, BIT0, SEN, SENO, SERS and SSW were each derived by reading
 bit 18 out of the octal pair of the very row that names them, so those
 rows can only re-derive what was put in.  The same caveat
-verify_ax5b_16082_16083_listing.py makes about L16088 and
+verify_ax5b_16082_16083_listing.py makes about I6088 and
 verify_ax5b_1258_test2_listing.py makes about its thirteen.
 
 BIT0 IS SETTLED BY THE CONSTANT POOL, not by analogy.  014033.00 prints
@@ -246,7 +246,7 @@ shift-6 and the shift-5 path alike.  The four below do bite:
       entire subject.  Neither injection moves any octal pair.
 
   MISC_CODES["Z"] 0b100 -> 0b000
-      014004.00 Z,LIC258    '014006.02 00' for '014006.22 00'
+      014004.00 Z,IC258    '014006.02 00' for '014006.22 00'
       014013.00 Z,$X2       '000022.02 00' for '000022.22 00'
       014013.40 Z,$X4       '000024.02 00' for '000024.22 00'
       014014.00 Z,$X3       '000023.02 00' for '000023.22 00'
@@ -267,7 +267,7 @@ shift-6 and the shift-5 path alike.  The four below do bite:
       ONE row out of eleven branch/misc rows, and it is the only one
       whose target is not word-aligned -- the isolation of the bit-18
       claim, exactly as verify_ax5b_1258_test2_listing.py's CB injection
-      isolated L1587A there.
+      isolated I587A there.
 """
 from strap_asm import assemble
 from listing_oracle import check_rows, finish
@@ -281,7 +281,7 @@ prog = assemble(open("programs/ax5b_1258_test1.strap").read())
 ROWS = [
     # --- BLOCK A: routine 158's preamble, PDF p.5 -------------------
     ('014002.00', '14005.02 10',
-     'L158 LX,$X1,L1581D     (ext) "-UPDATE IDENT."; the %IQSZ word'),
+     'I58 LX,$X1,I58ID     (ext) "-UPDATE IDENT."; the %IQSZ word'),
     ('014002.40', '1437.03 10',
      'SX,$X1,DPET13          (ext)'),
     ('014003.00', '1306.40 80',
@@ -289,25 +289,25 @@ ROWS = [
     ('014003.40', '1443.10 00',
      'B,IDF1                 (ext)'),
     ('014004.00', '14006.22 00',
-     'Z,LIC258               clear the continuity word, defined in BLOCK B'),
+     'Z,IC258               clear the continuity word, defined in BLOCK B'),
     ('014004.40', '14012.04 00',
-     'BD,L1581               into TEST 1 with the system disabled'),
+     'BD,I581               into TEST 1 with the system disabled'),
     # the CNOP line follows here and prints NO location and NO machine
     # code: 014005.00 is already a word boundary.  Then the cut.
 
     # --- BLOCK B: routine 1258's constant pool, PDF p.5 -------------
     ('014006.00', '0.00 00 000000.00 00',
-     'LIC258 XW,0,0,0        "-CONTINUITY REG 1258."'),
+     'IC258 XW,0,0,0        "-CONTINUITY REG 1258."'),
     ('014007.00', '600000.00 00 000000.00 00',
-     'LICK258 XW,(8)600000.00,0,0   bits 0 AND 1: both tests done'),
+     'ICK258 XW,(8)600000.00,0,0   bits 0 AND 1: both tests done'),
     ('014010.00', '777777.40 00 000000.00 00',
-     'L158K1 XW,(8)777777.40,0,0    all ones 0-18; TEST 2 uses it'),
+     'I58K1 XW,(8)777777.40,0,0    all ones 0-18; TEST 2 uses it'),
     ('014011.00', '1.77 00 000000.00 00',
-     'L158K2 XW,(8)1.77,0,0         bit 17 + bits 18-23; TEST 2 uses it'),
+     'I58K2 XW,(8)1.77,0,0         bit 17 + bits 18-23; TEST 2 uses it'),
 
     # --- BLOCK C: TEST 1 itself, the whole of PDF p.6 ---------------
     ('014012.00', '400.03 02',
-     'L1581 LCI,$X1,256      "-TEST 1, CHECK TIME CLOCK STEPPING."'),
+     'I581 LCI,$X1,256      "-TEST 1, CHECK TIME CLOCK STEPPING."'),
     ('014012.40', '1.00 10',
      'LX,$X0,1.0             word 1 AS ONE INDEX WORD'),
     ('014013.00', '22.22 00',
@@ -323,49 +323,49 @@ ROWS = [
     ('014015.40', '23.01 50',
      'SC,$X0,$X3             OLD bits 28-45 -> X3 value field'),
     ('014016.00', '1.00 10',
-     'L1582 LX,$X0,1.0       re-read the clock'),
+     'I582 LX,$X0,1.0       re-read the clock'),
     ('014016.40', '24.01 70',
      'SR,$X0,$X4             NEW bits 46-63 -> X4 value field'),
     ('014017.00', '22.10 90',
      'KV,$X4,$X2             new low half against old low half'),
     ('014017.40', '14022.32 C0',
-     'BZXE,L1583             "-IT STEPPED."  XE (53) OFF = they differ'),
+     'BZXE,I583             "-IT STEPPED."  XE (53) OFF = they differ'),
     ('014020.00', '14016.02 48',
-     'CB,$X1,L1582           ...256 tries'),
+     'CB,$X1,I582           ...256 tries'),
     ('014020.40', '1310.00 80',
      'SIC,SEN                (ext)'),
     ('014021.00', '1304.10 00',
      'B,SERS                 (ext) "-TIME CLOCK FAILS TO STEP IN 1 MSEC."'),
     ('014021.40', '14030.10 00',
-     'B,L1586                give up on TEST 1'),
+     'B,I586                give up on TEST 1'),
     ('014022.00', '25.01 50',
-     'L1583 SC,$X0,$X5       NEW bits 28-45 -> X5 value field'),
+     'I583 SC,$X0,$X5       NEW bits 28-45 -> X5 value field'),
     ('014022.40', '1.05 05',
      'V+I,$X2,1.0            old low half + 1'),
     ('014023.00', '14024.31 40',
-     'BZXVZ,L1584            XVZ (50) OFF = nonzero: no carry'),
+     'BZXVZ,I584            XVZ (50) OFF = nonzero: no carry'),
     ('014023.40', '1.07 00',
      'C+I,$X3,1.0            the carry -- into bits 28-45; see the header'),
     ('014024.00', '24.04 90',
-     'L1584 KV,$X2,$X4       old low + 1 against new low'),
+     'I584 KV,$X2,$X4       old low + 1 against new low'),
     ('014024.40', '14026.32 C2',
-     'BXE,L1585              XE (53) ON = correct'),
+     'BXE,I585              XE (53) ON = correct'),
     ('014025.00', '1310.00 80',
      'SIC,SEN                (ext) "-BITS 46-63 ARE NOT CORRECT AFTER"'),
     ('014025.40', '1304.10 00',
      'B,SERS                 (ext) "-TIME CLOCK STEPPED."'),
     ('014026.00', '25.06 90',
-     'L1585 KV,$X3,$X5       old high against new high'),
+     'I585 KV,$X3,$X5       old high against new high'),
     ('014026.40', '14030.32 C2',
-     'BXE,L1586'),
+     'BXE,I586'),
     ('014027.00', '1310.00 80',
      'SIC,SEN                (ext) "-BITS 28-45 ARE NOT CORRECT AFTER"'),
     ('014027.40', '1304.10 00',
      'B,SERS                 (ext) "-TIME CLOCK STEPPED."'),
     ('014030.00', '14031.10 00',
-     'L1586 B,$+1.0'),
+     'I586 B,$+1.0'),
     ('014030.40', '14012.04 00',
-     'BD,L1581               loop back to the head of TEST 1'),
+     'BD,I581               loop back to the head of TEST 1'),
     ('014031.00', '1311.40 80',
      'SIC,SENO+.32           (ext)'),
     ('014031.40', '1301.10 00',
@@ -373,18 +373,18 @@ ROWS = [
     ('014032.00', '14032.44 00',
      'BD,$+.32               THE ONE BIT-18-SET ROW: pair 44 -> 014032.40'),
     ('014032.40', '14006.32 10',
-     'LX,$X13,LIC258         "-UPDATE CONTINUITY CHECK."'),
+     'LX,$X13,IC258         "-UPDATE CONTINUITY CHECK."'),
     ('014033.00', '24522.32 B0',
      'V+,$X13,BIT0           (ext) test 1 done = bit 0'),
     ('014033.40', '14006.33 10',
-     'SX,$X13,LIC258'),
+     'SX,$X13,IC258'),
 ]
 
-SYMBOLS = {'L158':   '014002.00', 'LIC258': '014006.00',
-           'LICK258': '014007.00', 'L158K1': '014010.00',
-           'L158K2': '014011.00', 'L1581':  '014012.00',
-           'L1582':  '014016.00', 'L1583':  '014022.00',
-           'L1584':  '014024.00', 'L1585':  '014026.00',
-           'L1586':  '014030.00'}
+SYMBOLS = {'I58':   '014002.00', 'IC258': '014006.00',
+           'ICK258': '014007.00', 'I58K1': '014010.00',
+           'I58K2': '014011.00', 'I581':  '014012.00',
+           'I582':  '014016.00', 'I583':  '014022.00',
+           'I584':  '014024.00', 'I585':  '014026.00',
+           'I586':  '014030.00'}
 
 finish(check_rows(prog, ROWS, SYMBOLS, label='1258 T1 '))

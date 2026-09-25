@@ -18,8 +18,8 @@ RISC convention, and a plausible implementation -- is exactly what
 this catches.
 
 The three XW forms below all matched the listing on the first attempt,
-including the negative value (100VO prints 777777.77 80, sign bit set)
-and the count-only word (100CO prints 0.00 0F 777760.00 00).
+including the negative value (I00VO prints 777777.77 80, sign bit set)
+and the count-only word (I00CO prints 0.00 0F 777760.00 00).
 """
 from strap_asm import assemble
 from listing_oracle import check_rows, finish

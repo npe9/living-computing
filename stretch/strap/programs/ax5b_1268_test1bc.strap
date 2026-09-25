@@ -54,14 +54,14 @@
 ! memories is NOT asserted here; it is the deck's word.
 !
 ! HOW 1B AND 1C WORK, and why they need EX where 1A did not.  Test 1A
-! plants a word over the location 1682 and FALLS INTO it -- which
+! plants a word over the location I682 and FALLS INTO it -- which
 ! only works for a location in the instruction stream, i.e. main
 ! (external) memory.  Index storage and word 9 are not in the
 ! instruction stream, so 1B and 1C reach them with EXECUTE instead:
 !
-!   LX,$X1,168K1 / SX,$X1,$X3     plant [Z,$X2 | NOP] into word 19
+!   LX,$X1,I68K1 / SX,$X1,$X3     plant [Z,$X2 | NOP] into word 19
 !   NOP / NOP / NOP
-!   LX,$X1,168K2 / SX,$X1,$X3     plant [LVI,$X2,(8)777777.40 | NOP]
+!   LX,$X1,I68K2 / SX,$X1,$X3     plant [LVI,$X2,(8)777777.40 | NOP]
 !   EX,$X3                        execute what is in word 19 NOW
 !   LX,$X2,$X2                    re-read X2 to set the indicators
 !   SIC,SEN / BXVZ,SERS           "-EXECUTED OLD INST FROM IX STG."
@@ -94,7 +94,7 @@
 ! shape most 160/162 blocks use.
 !
 ! NO LABEL IS DEFINED IN THIS RANGE.  The listing's label column is
-! empty for all 30 rows: 1681 is at 024337.00 (above), 1683 at
+! empty for all 30 rows: I681 is at 024337.00 (above), I683 at
 ! 024363.40 (below), and everything between is unlabelled.  So every
 ! address in this block is either self-relative or external, and the
 ! witness tiering in verify_ax5b_1268_test1bc_listing.py has no
@@ -111,7 +111,7 @@
 !
 ! SUBSTITUTIONS, four, all named:
 !   1. Numeric labels are prefixed "L" (L1681, L168K1, L168K2,
-!      LIC268).  The listing writes them bare.
+!      IC268).  The listing writes them bare.
 !   2. ENT1B is this file's own name for the first row.  The listing
 !      prints NO label there; STRAP's END needs one.
 !   3. SERS is a "B,$" HANG at its own printed address 001304.00, and
@@ -120,7 +120,7 @@
 !   4. A "BEW,$" exit at 024363.40, where the listing continues into
 !      routine 1268's test 2A -- already transcribed as
 !      ax5b_1683_df_close_to_ds.strap.
-! 168K1 and 168K2 are placed from PDF p.111 at their printed
+! I68K1 and I68K2 are placed from PDF p.111 at their printed
 ! addresses, not manufactured; they are the same two words test 1A
 ! plants, and they are re-placed here only so the block could be run.
 ! Everything else is verbatim.
@@ -145,10 +145,10 @@
 ! corroborates the reading ax5b_1683_df_close_to_ds.strap arrived at.
 
 ! ---- externals: INPUTS to the check, never witnesses ---------------
-L168K1  SYN, (8)24407.0     ! p.111 label column: 168K1  [Z,$X2 | NOP]
-L168K2  SYN, (8)24410.0     ! p.111 label column: 168K2  [LVI.. | NOP]
-L1681   SYN, (8)24337.0     ! p.110 label column: 1681, the loop head
-LIC268  SYN, (8)24405.0     ! p.111 label column: IC268, continuity reg
+I68K1  SYN, (8)24407.0     ! p.111 label column: I68K1  [Z,$X2 | NOP]
+I68K2  SYN, (8)24410.0     ! p.111 label column: I68K2  [LVI.. | NOP]
+I681   SYN, (8)24337.0     ! p.110 label column: I681, the loop head
+IC268  SYN, (8)24405.0     ! p.111 label column: IC268, continuity reg
 BIT0    SYN, (8)24522.0     ! shared pool; NOT printed on pp.110-111
 SEN     SYN, (8)1310.0      ! SSIP's, per p.116's SYN table
 SEN0    SYN, (8)1311.0      ! SSIP's
@@ -158,12 +158,12 @@ SSW     SYN, (8)1301.0      ! SSIP's
         SLC, (8)24344.40
 !
 ! ---- TEST 1B: store into INDEX STORAGE, then EXECUTE it ------------
-ENT1B   LX,  $X1, L168K1           ! -TEST 1B, IF CLOSE TO DS IN IX STG.
+ENT1B   LX,  $X1, I68K1           ! -TEST 1B, IF CLOSE TO DS IN IX STG.
         SX,  $X1, $X3              !  plant the OLD instruction in word 19
         NOP
         NOP
         NOP
-        LX,  $X1, L168K2
+        LX,  $X1, I68K2
         SX,  $X1, $X3              !  plant the NEW one over it
         EX,  $X3                   !  execute what is in word 19 NOW
         LX,  $X2, $X2              !  re-read X2 to set the indicators
@@ -171,12 +171,12 @@ ENT1B   LX,  $X1, L168K1           ! -TEST 1B, IF CLOSE TO DS IN IX STG.
         BXVZ, SERS                 ! -EXECUTED OLD INST FROM IX STG.
 !
 ! ---- TEST 1C: store into INTERNAL MEMORY (word 9), then EXECUTE ----
-        LX,  $X1, L168K1           ! -TEST 1C, IF CLOSE TO DS IN INT MEM.
+        LX,  $X1, I68K1           ! -TEST 1C, IF CLOSE TO DS IN INT MEM.
         SX,  $X1, $R               !  plant the OLD instruction in word 9
         NOP
         NOP
         NOP
-        LX,  $X1, L168K2
+        LX,  $X1, I68K2
         SX,  $X1, $R               !  plant the NEW one over it
         EX,  $R                    !  execute what is in word 9 NOW
         LX,  $X2, $X2              !  re-read X2 to set the indicators
@@ -185,15 +185,15 @@ ENT1B   LX,  $X1, L168K1           ! -TEST 1B, IF CLOSE TO DS IN IX STG.
 !
 ! ---- loop once, return to SSIP -------------------------------------
         B,   $+1.0                 !  skip the BD: -> 024360.40
-        BD,  L1681                 !  the loop back to 1681
+        BD,  I681                 !  the loop back to I681
         SIC, SEN0+.32
         B,   SSW                   ! -TO SSIP.
         BD,  $+.32
 !
 ! ---- the routine's continuity register, test 1's bit ---------------
-        LX,  $X13, LIC268          ! -UPDATE CONTINUITY CHECK.
+        LX,  $X13, IC268          ! -UPDATE CONTINUITY CHECK.
         V+,  $X13, BIT0            !  test 1 done = bit 0
-        SX,  $X13, LIC268
+        SX,  $X13, IC268
 !
 ! ---- substitution 4: the exit --------------------------------------
         SLC, (8)24363.40
@@ -201,10 +201,10 @@ PASS    BEW, $
 !
 ! ---- substitution: the two planted words, from p.111 ---------------
         SLC, (8)24407.0
-K1      Z,   $X2                   ! 168K1: the OLD instruction
+K1      Z,   $X2                   ! I68K1: the OLD instruction
         NOP
         SLC, (8)24410.0
-K2      LVI, $X2, (8)777777.40     ! 168K2: the NEW one
+K2      LVI, $X2, (8)777777.40     ! I68K2: the NEW one
         NOP
 !
 ! ---- substitution: the continuity register's own word --------------

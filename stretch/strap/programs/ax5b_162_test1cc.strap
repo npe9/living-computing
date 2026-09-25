@@ -1,7 +1,7 @@
 ! jb_ax5b "I-Box 5", routine 1262 ("TEST EX AND EXIC"), TEST 1CC --
 ! "-TEST 1CC, CHK EX OF BRANCH AND EXE." -- the BE/BD/BB half, PDF
 ! pp.93-94, octal 023474.40-023545.40.  81 SOURCE ROWS over 83
-! half-words -- the two BB rows are full words -- entry label 16225.
+! half-words -- the two BB rows are full words -- entry label I6225.
 ! PDF p.87 prints the routine title as "----1262---TEST EX AND EXIC."
 ! and says of this test: "-TEST 1 CHECKS THE EXECUTION OF / -ALL
 ! CLASSES OF INSTRUCTIONS / -AND THAT ILLEGAL EXECUTES WILL / -SET THE
@@ -15,14 +15,14 @@
 !
 ! WHERE THIS WAS CUT, AND WHY.  TEST 1CC runs 023460.40-023545.40, 105
 ! half-words over PDF pp.92-94 -- too long for one file.  The cut is at
-! 023474.40, the label 16225, whose comment column reads "-DO BE AND
-! BD."; PDF p.92's "BD,16225" at 023473.00 is the branch that enters
+! 023474.40, the label I6225, whose comment column reads "-DO BE AND
+! BD."; PDF p.92's "BD,I6225" at 023473.00 is the branch that enters
 ! it, so the cut is on a real seam and not mid-stanza.  What is left
 ! behind on p.92 (023460.40-023474.00) is 1CC's FIRST subject class,
 ! EX of a BIND (branch-on-indicator) instruction, with its own four
-! error entries 16221/16222/.../16224.  What is taken is the second,
+! error entries I6221/16222/.../I6224.  What is taken is the second,
 ! third and fourth: BE, BD and BB.  The right-hand end, 023545.40, is
-! the label 16240 -- the test's own exit, and the target of five
+! the label I6240 -- the test's own exit, and the target of five
 ! branches inside the transcribed range; the rows after it on p.94
 ! ("BD,16218 / SIC,SENO+.32 / B,SSW -TO SSIP. / BD,$+.32" and the
 ! IC262 continuity update) are 1262's shared exit tail, not 1CC.
@@ -43,21 +43,21 @@
 ! SUBJECT anywhere in 1CC (the CB+ rows here are the table-fill loop's
 ! own instructions, not subjects), so the counting-and-refilling
 ! suppression is stated by the manual and left unwitnessed by this
-! block.  FOURTEEN error entries, not twelve -- 16238 and
-! 16239 are easy to miss because their subject (162B6) is the one whose
+! block.  FOURTEEN error entries, not twelve -- I6238 and
+! I6239 are easy to miss because their subject (I62B6) is the one whose
 ! branch condition is NOT met, so they read like near-duplicates of
-! 16237.  Verbatim, in listing order:
+! I6237.  Verbatim, in listing order:
 !
 !   023502.40  -NO INT TAKEN WHEN BE
 !              -INSTR EXECUTED, BRANCH NOT EXECUTED.
 !   023504.00  -NO INT TAKEN WHEN BE INSTR
-!   (16226)    -EXECUTED,BRANCH EXECUTED.
+!   (I6226)    -EXECUTED,BRANCH EXECUTED.
 !   023507.00  -SYSTEM ENABLED AFTER EX OF
-!   (16228)    -A BE INSTRUCTION.
+!   (I6228)    -A BE INSTRUCTION.
 !   023515.00  -NO INT TAKEN WHEN BD INSTR
-!   (16230)    -EXECUTED, BRANCH NOT EXECUTED.
+!   (I6230)    -EXECUTED, BRANCH NOT EXECUTED.
 !   023516.40  -NO INT TAKEN WHEN BD INSTR
-!   (16231)    -EXECUTED, BRANCH EXECUTED.
+!   (I6231)    -EXECUTED, BRANCH EXECUTED.
 !   023521.00  -SYSTEM DISABLED AFTER EX OF
 !              -A BD INSTRUCTION.
 !   023525.40  -BB BIT 0 FAILS, UNABLE TO EX SAME.
@@ -67,30 +67,30 @@
 !   023533.40  -NO INT WHEN EX BB,COND
 !              -FOR BRANCH MET, BRANCH NOT TAKEN.
 !   023535.00  -NO INT WHEN EX BB, COND FOR
-!   (16234)    -BRANCH MET, BRANCH TAKEN.
+!   (I6234)    -BRANCH MET, BRANCH TAKEN.
 !   023536.40  -NO INT WHEN EX BB, COND FOR BRANCH
-!   (16235)    -MET, NO BRANCH, CONTROL GIVEN TO NEXT
+!   (I6235)    -MET, NO BRANCH, CONTROL GIVEN TO NEXT
 !              -INSTRUCT FOLLOWING BRANCH.
 !   023541.40  -INT TAKEN WHEN EX BB, COND FOR
-!   (16237)    -BRANCH NOT MET, NO BRANCH.
+!   (I6237)    -BRANCH NOT MET, NO BRANCH.
 !   023543.00  -NO INT TAKEN WHEN EX BB, COND FOR
-!   (16238)    -BRANCH NOT MET, BRANCH TAKEN.
+!   (I6238)    -BRANCH NOT MET, BRANCH TAKEN.
 !   023544.40  -NO INT TAKEN WHEN EX BB,COND FOR
-!   (16239)    -BRANCH NOT MET, NO BRANCH, CONTROL
+!   (I6239)    -BRANCH NOT MET, NO BRANCH, CONTROL
 !              -GIVEN TO INSTR AFTER BB.
 !
-! The punctuation is transcribed, not tidied: 16226 prints
+! The punctuation is transcribed, not tidied: I6226 prints
 ! "-EXECUTED,BRANCH EXECUTED." with no space after the comma while
-! 16231 prints "-EXECUTED, BRANCH EXECUTED." with one; 023533.40 and
-! 16239 print "BB,COND" while 16234/16235/16237/16238 print "BB, COND".
+! I6231 prints "-EXECUTED, BRANCH EXECUTED." with one; 023533.40 and
+! I6239 print "BB,COND" while I6234/I6235/I6237/I6238 print "BB, COND".
 ! "-BB BIT 0 FAILS" has no comma after BB, "-BB,BIT 1 IS 0" has one.
 !
-! 16237 IS THE ONE WITH NO LEADING "NO", and that inversion is the
-! whole point of the entry.  16237's address is planted into the
-! interrupt landing before "EX,162B6" runs, so 16237 is reached ONLY
-! by an interruption.  162B6's subject is a branch whose condition is
+! I6237 IS THE ONE WITH NO LEADING "NO", and that inversion is the
+! whole point of the entry.  I6237's address is planted into the
+! interrupt landing before "EX,I62B6" runs, so I6237 is reached ONLY
+! by an interruption.  I62B6's subject is a branch whose condition is
 ! NOT met, so no successful branch occurred, so EXE must NOT come on,
-! so no interruption must occur.  Arriving at 16237 at all IS the
+! so no interruption must occur.  Arriving at I6237 at all IS the
 ! failure, and the message says so: "-INT TAKEN WHEN EX BB, COND FOR /
 ! -BRANCH NOT MET, NO BRANCH."  Every other entry in the block is
 ! reached by falling through or by a wrongly-taken branch, so every
@@ -100,50 +100,50 @@
 ! for 1262, read at 600 dpi in its own LABEL column, gives the three
 ! pieces:
 !
-!   162K1  BD,162ITE        24320.04 00     024172.00
-!          BD,162ITE        24320.04 00     024172.40
-!   162K6  B,162ITE+.32     24320.50 00     024177.00
-!          B,162ITE+.32     24320.50 00     024177.40
-!   162INT DR%BU,64,8@,64   -INTRPT TABLE.  024220.00
-!   162ITE BD,$             24320.04 00     024320.00
+!   I62K1  BD,I62ITE        24320.04 00     024172.00
+!          BD,I62ITE        24320.04 00     024172.40
+!   I62K6  B,I62ITE+.32     24320.50 00     024177.00
+!          B,I62ITE+.32     24320.50 00     024177.40
+!   I62INT DR%BU,64,8@,64   -INTRPT TABLE.  024220.00
+!   I62ITE BD,$             24320.04 00     024320.00
 !          B,$              24320.50 00     024320.40
-!   162XW1 XW,0,64,162INT   0.00 00 002000.50 90   024326.00
+!   I62XW1 XW,0,64,I62INT   0.00 00 002000.50 90   024326.00
 !
-! 162XW1's three fields, decoded against the XW rows on PDF pp.113-114
+! I62XW1's three fields, decoded against the XW rows on PDF pp.113-114
 ! rather than assumed from the operand order: VALUE 0 (the whole first
 ! half-word prints 0.00 00), COUNT 64 (the one set bit in "002000" is
 ! bit 39, and the count field is bits 28-45 -- p.114's "BIT28 XW,0,
-! 131072,0" prints 0.00 08, putting 2**17 at bit 28), REFILL 162INT
-! (bits 46-63 read 10384 = 0o24220; p.113's "174K4 XW,0,0,174K1" reads
+! 131072,0" prints 0.00 08, putting 2**17 at bit 28), REFILL I62INT
+! (bits 46-63 read 10384 = 0o24220; p.113's "I74K4 XW,0,0,I74K1" reads
 ! 10553 = 0o24471 in the same field).  So the loop's address walk
-! starts from a value of ZERO and is stepped by CB+; the 162INT base
+! starts from a value of ZERO and is stepped by CB+; the I62INT base
 ! comes from the SX instruction's own address field, and the refill
 ! field is never used here because CB+ has refill = 0.
 !
-! 162K1 and 162K6 are each a FULL WORD holding the same half-word
-! branch twice, and 162ITE is a full word holding two self-loops -- a
+! I62K1 and I62K6 are each a FULL WORD holding the same half-word
+! branch twice, and I62ITE is a full word holding two self-loops -- a
 ! "BD,$" at 024320.00 and a "B,$" at 024320.40.  So the four-row stanza
 !
-!       LX,$X1,162XW1  /  LX,$X2,162Kn  /  SX,$X2,162INT%$X1@
+!       LX,$X1,I62XW1  /  LX,$X2,I62Kn  /  SX,$X2,I62INT%$X1@
 !                      /  CB+,$X1,$-.32
 !
 ! is a LOOP that writes one constant into all 64 words of the
-! interrupt table -- it is not a single write to 162ITE.  The table
-! entry then branches to one HALF of the 162ITE pair, and which half
+! interrupt table -- it is not a single write to I62ITE.  The table
+! entry then branches to one HALF of the I62ITE pair, and which half
 ! it lands on is what the choice of constant decides:
 !
-!   162K6 = B,162ITE+.32   -> lands on 024320.40, and "B" leaves the
+!   I62K6 = B,I62ITE+.32   -> lands on 024320.40, and "B" leaves the
 !                             interruption system as it found it
-!   162K1 = BD,162ITE      -> lands on 024320.00, and "BD" enters the
+!   I62K1 = BD,I62ITE      -> lands on 024320.00, and "BD" enters the
 !                             landing with the system DISABLED
 !
 ! The test then plants its handler address in the matching half with
-! "SVA,$X1,162ITE+.32" or "SVA,$X1,162ITE" -- SVA overwrites only the
+! "SVA,$X1,I62ITE+.32" or "SVA,$X1,I62ITE" -- SVA overwrites only the
 ! address part, so the landing keeps its own B or BD.  The pairing
-! holds across the whole block without exception: 16225's loop loads
-! 162K6 and every SVA up to 023520.00 says "162ITE+.32"; 16233's loop
-! reloads 162K1 and both SVAs after it (023532.40, 023540.00) say
-! "162ITE".  WHICH VECTOR FIRES is therefore how 1CC reads out whether
+! holds across the whole block without exception: I6225's loop loads
+! I62K6 and every SVA up to 023520.00 says "I62ITE+.32"; I6233's loop
+! reloads I62K1 and both SVAs after it (023532.40, 023540.00) say
+! "I62ITE".  WHICH VECTOR FIRES is therefore how 1CC reads out whether
 ! a suppressed BE/BD left the enable state alone.
 !
 ! AND THAT EXPLAINS THE "-ILLEGAL OP." ROW, which programs/ax5b_162_
@@ -155,25 +155,25 @@
 ! it does not.  Both uses here read out exactly that, in opposite
 ! directions, and the neighbouring error text is the proof:
 !
-!   16227 (BE case).  The subject was "BE,16226" -- BRANCH ENABLED, a
+!   I6227 (BE case).  The subject was "BE,I6226" -- BRANCH ENABLED, a
 !   successful branch, so EXE must fire and the ENABLING must be
 !   suppressed, leaving the system DISABLED.  The probe must therefore
 !   NOT interrupt, and the correct path is to fall past it to
-!   "BD,16229".  An interruption goes to the planted 16228: "-SYSTEM
+!   "BD,I6229".  An interruption goes to the planted I6228: "-SYSTEM
 !   ENABLED AFTER EX OF / -A BE INSTRUCTION."
 !
-!   16232 (BD case).  "BE,$+.32" at 023514.00 enables the system for
-!   real first; the subject was "BD,16231" -- BRANCH DISABLED, again a
+!   I6232 (BD case).  "BE,$+.32" at 023514.00 enables the system for
+!   real first; the subject was "BD,I6231" -- BRANCH DISABLED, again a
 !   successful branch, so the DISABLING must be suppressed and the
 !   system must still be ENABLED.  The probe must therefore INTERRUPT,
-!   to the planted 16233.  Falling past it is the failure: "-SYSTEM
+!   to the planted I6233.  Falling past it is the failure: "-SYSTEM
 !   DISABLED AFTER EX OF / -A BD INSTRUCTION."
 !
 ! ONE ROW IS STILL NOT EXPLAINED BY THESE PAGES.  023510.00's
-! "LX,$X1,162XW1" carries the comment "-SETUP B,162ITE+.32 INT TABLE",
-! but the stanza has no store loop: the very next row, "LVI,$X1,16232",
-! overwrites the value 162XW1 just supplied, and the table still holds
-! whatever 16225's loop put there -- which is indeed B,162ITE+.32, so
+! "LX,$X1,I62XW1" carries the comment "-SETUP B,I62ITE+.32 INT TABLE",
+! but the stanza has no store loop: the very next row, "LVI,$X1,I6232",
+! overwrites the value I62XW1 just supplied, and the table still holds
+! whatever I6225's loop put there -- which is indeed B,I62ITE+.32, so
 ! the COMMENT is true of the machine state while the LX that carries it
 ! does no work.  Stated rather than rationalised, in the manner of
 ! ax5b_16082_op_ad.strap's "NOT TRACED" block.  The ENCODING of the row
@@ -186,21 +186,21 @@
 ! proves a plain BB branches on that 1 bit and 023527.00's
 ! "BB,$X0+.01,$+1.32" proves it does not branch on the 0 bit beside it.
 ! If either fails the deck reports "UNABLE TO EX SAME" and branches to
-! 16240, because a BB that does not work cannot be used as an EX
+! I6240, because a BB that does not work cannot be used as an EX
 ! subject.  Those same two bit addresses are what the EX subjects test:
-! PDF p.109 gives "162B5 BB,$X0,16234" at 024204.00 (condition MET) and
-! "162B6 BB,$X0+.01,16238" at 024205.40 (condition NOT met).
+! PDF p.109 gives "I62B5 BB,$X0,I6234" at 024204.00 (condition MET) and
+! "I62B6 BB,$X0+.01,I6238" at 024205.40 (condition NOT met).
 !
-! WHY 162B6 SITS AT A .40 HALF-WORD, self-checked and not assumed:
-! "EX,162B6" at 023540.40 prints "24205.52 00", and octal pair 52 =
+! WHY I62B6 SITS AT A .40 HALF-WORD, self-checked and not assumed:
+! "EX,I62B6" at 023540.40 prints "24205.52 00", and octal pair 52 =
 ! 101010 has BIT 18 = 1, so the subject half-word is 024205.40.  PDF
-! p.109 agrees: 162B5's "BB,$X0,16234" is a FULL WORD occupying
-! 024204.00-024204.40, its "B,16235" takes 024205.00, and 162B6 starts
+! p.109 agrees: I62B5's "BB,$X0,I6234" is a FULL WORD occupying
+! 024204.00-024204.40, its "B,I6235" takes 024205.00, and I62B6 starts
 ! at 024205.40.  Every other EX in 1CC prints pair 12 (bit 18 = 0).
 !
 ! ENCODING ONLY, and it could not be otherwise: a run needs the 64-word
-! interrupt table, the 162B* subject constants, SSIP's SEN/SERS
-! reporting, 160S1's body, and an EX the model actually EXECUTES.  EX
+! interrupt table, the I62B* subject constants, SSIP's SEN/SERS
+! reporting, I60S1's body, and an EX the model actually EXECUTES.  EX
 ! is in MISC_CODES, so the ASSEMBLER encodes it; that is the whole
 ! distinction.
 !
@@ -224,14 +224,14 @@
 !      ax5b_162_exic_classes.strap and ax5b_162_test3a.strap already do
 !      for 1262.  BIT0, SEN and SERS need none.
 !   2. The listing's "%...@" pair is this assembler's "(...)":
-!      "162INT%$X1@" is written "L162INT($X1)" and
+!      "I62INT%$X1@" is written "I62INT($X1)" and
 !      "%8@DD%BU,32,8@,3740" is written "DD(BU,32,8), (8)3740".
 !   3. The DD's datum keeps its "(8)" for the reason ax5b_162_test3a.
 !      strap measured: this assembler's default radix is DECIMAL, so a
 !      bare 3740 assembles as 00000007234.  The "(8)" is load-bearing.
 !   4. Octal in SYN addresses is written "(8)".  Bit offsets inside
 !      SOURCE fields are NOT converted -- "$+2.32", "$+1.32", "$-.32",
-!      "$+2.0", "$+1.0", "162ITE+.32", "$X0+.01" are copied verbatim,
+!      "$+2.0", "$+1.0", "I62ITE+.32", "$X0+.01" are copied verbatim,
 !      because STRAP source bit offsets are decimal (32 bits = half a
 !      word) even though the listing's LOCATION column prints bit
 !      offsets in octal (".40" = 32).  ax5b_162_test3a.strap's
@@ -240,93 +240,93 @@
 !
 ! EXTERNALS, SYN'd at the addresses this same listing prints.  THESE
 ! ARE INPUTS TO THE CHECK, NOT WITNESSES -- the same caveat
-! verify_ax5b_16082_16083_listing.py makes about L16088.  A SYN row
+! verify_ax5b_16082_16083_listing.py makes about I6088.  A SYN row
 ! MAKES the address field come out right, so the rows naming one prove
 ! only that every OTHER field lands where the listing puts it.  The
 ! block's genuine address evidence is elsewhere and there is a great
-! deal of it: FIFTEEN labels defined inside the range (L16226 through
-! L16240), sixteen rows whose operand is one of them, and EIGHT
-! self-relative rows.  L16225 is NOT evidence -- the SLC above sets the
-! counter to 023474.40 and L16225 is the first label after it, so
+! deal of it: FIFTEEN labels defined inside the range (I6226 through
+! I6240), sixteen rows whose operand is one of them, and EIGHT
+! self-relative rows.  I6225 is NOT evidence -- the SLC above sets the
+! counter to 023474.40 and I6225 is the first label after it, so
 ! checking it checks the SLC against the number this transcription fed
 ! the SLC.  It is asserted anyway, as the block's anchor.
 
-L160SX1 SYN, (8)23041.0            ! 1260's SIC return link
-L160S1  SYN, (8)22741.0            ! 1260's "CLR INDS 0-19" subroutine
+I60SX1 SYN, (8)23041.0            ! 1260's SIC return link
+I60S1  SYN, (8)22741.0            ! 1260's "CLR INDS 0-19" subroutine
 SEN     SYN, (8)1310.0             ! the SIC error-entry link
 SERS    SYN, (8)1304.0             ! the error-report routine
-L162INT SYN, (8)24220.0            ! the 64-word interrupt table, PDF p.109
-L162ITE SYN, (8)24320.0            ! "-ALL INTERRUPTS ENTER HERE.", p.109
-L162K1  SYN, (8)24172.0            ! the word "BD,162ITE", twice, p.109
-L162K6  SYN, (8)24177.0            ! the word "B,162ITE+.32", twice, p.109
-L162XW1 SYN, (8)24326.0            ! "XW,0,64,162INT" -- the fill loop's IW
-L162B3  SYN, (8)24202.0            ! "BE,16226 / B,16227"   subject, p.109
-L162B4  SYN, (8)24203.0            ! "BD,16231 / B,16232"   subject, p.109
-L162B5  SYN, (8)24204.0            ! "BB,$X0,16234 / B,16235"       p.109
-L162B6  SYN, (8)24205.40           ! "BB,$X0+.01,16238 / B,16239"   p.109
+I62INT SYN, (8)24220.0            ! the 64-word interrupt table, PDF p.109
+I62ITE SYN, (8)24320.0            ! "-ALL INTERRUPTS ENTER HERE.", p.109
+I62K1  SYN, (8)24172.0            ! the word "BD,I62ITE", twice, p.109
+I62K6  SYN, (8)24177.0            ! the word "B,I62ITE+.32", twice, p.109
+I62XW1 SYN, (8)24326.0            ! "XW,0,64,I62INT" -- the fill loop's IW
+I62B3  SYN, (8)24202.0            ! "BE,I6226 / B,I6227"   subject, p.109
+I62B4  SYN, (8)24203.0            ! "BD,I6231 / B,I6232"   subject, p.109
+I62B5  SYN, (8)24204.0            ! "BB,$X0,I6234 / B,I6235"       p.109
+I62B6  SYN, (8)24205.40           ! "BB,$X0+.01,I6238 / B,I6239"   p.109
 BIT0    SYN, (8)24522.0            ! the word with bit 0 set, PDF p.114
         SLC, (8)23474.40
 !
-! ---- BE: fill all 64 table entries with "B,162ITE+.32" -------------
-L16225  LX,  $X1, L162XW1          ! -DO BE AND BD.  value 0, count 64
-        LX,  $X2, L162K6           ! the word "B,162ITE+.32" twice
-        SX,  $X2, L162INT($X1)     ! store it into one table entry
+! ---- BE: fill all 64 table entries with "B,I62ITE+.32" -------------
+I6225  LX,  $X1, I62XW1          ! -DO BE AND BD.  value 0, count 64
+        LX,  $X2, I62K6           ! the word "B,I62ITE+.32" twice
+        SX,  $X2, I62INT($X1)     ! store it into one table entry
         CB+, $X1, $-.32            ! ...and round again, 64 times
         BD,  $+.32
 !
-        LVI, $X1, L16227           ! the handler for the BE case
-        SVA, $X1, L162ITE+.32      ! planted in the half 162K6 lands on
-        SIC, L160SX1
-        BD,  L160S1                !   clear indicators 0-19
+        LVI, $X1, I6227           ! the handler for the BE case
+        SVA, $X1, I62ITE+.32      ! planted in the half I62K6 lands on
+        SIC, I60SX1
+        BD,  I60S1                !   clear indicators 0-19
         Z,   $IND
         Z,   $MASK
-        EX,  L162B3                ! THE TEST: EX of "BE,16226"
+        EX,  I62B3                ! THE TEST: EX of "BE,I6226"
         SIC, SEN                   ! -NO INT TAKEN WHEN BE
         B,   SERS                  ! -INSTR EXECUTED, BRANCH NOT EXECUTED.
-        BD,  L16227                ! resume after SERS reports
+        BD,  I6227                ! resume after SERS reports
 !
-L16226  SIC, SEN                   ! -NO INT TAKEN WHEN BE INSTR
+I6226  SIC, SEN                   ! -NO INT TAKEN WHEN BE INSTR
         B,   SERS                  ! -EXECUTED,BRANCH EXECUTED.
 !
-! ---- 16227: was the ENABLING suppressed?  probe with an illegal op --
-L16227  LVI, $X1, L16228
-        SVA, $X1, L162ITE+.32      ! the probe's handler
+! ---- I6227: was the ENABLING suppressed?  probe with an illegal op --
+I6227  LVI, $X1, I6228
+        SVA, $X1, I62ITE+.32      ! the probe's handler
         DD(BU,32,8), (8)3740       ! -ILLEGAL OP CODE.  (see header)
-        BD,  L16229                ! no interrupt: system still disabled
+        BD,  I6229                ! no interrupt: system still disabled
 !
-L16228  SIC, SEN                   ! -SYSTEM ENABLED AFTER EX OF
+I6228  SIC, SEN                   ! -SYSTEM ENABLED AFTER EX OF
         BD,  SERS                  ! -A BE INSTRUCTION.
 !
-! ---- BD: the table is still "B,162ITE+.32" (see header on this LX) --
-L16229  LX,  $X1, L162XW1          ! -SETUP B,162ITE+.32 INT TABLE
-        LVI, $X1, L16232           ! the handler for the BD case
-        SVA, $X1, L162ITE+.32
-        SIC, L160SX1
-        B,   L160S1                !   clear indicators 0-19
+! ---- BD: the table is still "B,I62ITE+.32" (see header on this LX) --
+I6229  LX,  $X1, I62XW1          ! -SETUP B,I62ITE+.32 INT TABLE
+        LVI, $X1, I6232           ! the handler for the BD case
+        SVA, $X1, I62ITE+.32
+        SIC, I60SX1
+        B,   I60S1                !   clear indicators 0-19
         Z,   $IND
         Z,   $MASK
         Z,   3.0                   ! clear the boundary register
         BE,  $+.32                 ! ENABLE for real, so the suppressed
-        EX,  L162B4                !   disabling has something to undo
-        ! THE TEST: EX of "BD,16231"
-L16230  SIC, SEN                   ! -NO INT TAKEN WHEN BD INSTR
+        EX,  I62B4                !   disabling has something to undo
+        ! THE TEST: EX of "BD,I6231"
+I6230  SIC, SEN                   ! -NO INT TAKEN WHEN BD INSTR
         B,   SERS                  ! -EXECUTED, BRANCH NOT EXECUTED.
-        B,   L16232                ! resume after SERS reports
+        B,   I6232                ! resume after SERS reports
 !
-L16231  SIC, SEN                   ! -NO INT TAKEN WHEN BD INSTR
+I6231  SIC, SEN                   ! -NO INT TAKEN WHEN BD INSTR
         B,   SERS                  ! -EXECUTED, BRANCH EXECUTED.
 !
-! ---- 16232: was the DISABLING suppressed?  same probe, other way ----
-L16232  LVI, $X1, L16233
-        SVA, $X1, L162ITE+.32      ! the probe's handler
+! ---- I6232: was the DISABLING suppressed?  same probe, other way ----
+I6232  LVI, $X1, I6233
+        SVA, $X1, I62ITE+.32      ! the probe's handler
         DD(BU,32,8), (8)3740       ! -ILLEGAL OP CODE.  (see header)
         SIC, SEN                   ! -SYSTEM DISABLED AFTER EX OF
         BD,  SERS                  ! -A BD INSTRUCTION.
 !
-! ---- BB: refill all 64 entries with "BD,162ITE" ---------------------
-L16233  LX,  $X1, L162XW1          ! -DO BB, SETUP BD INT TBL.
-        LX,  $X2, L162K1           ! the word "BD,162ITE" twice
-        SX,  $X2, L162INT($X1)
+! ---- BB: refill all 64 entries with "BD,I62ITE" ---------------------
+I6233  LX,  $X1, I62XW1          ! -DO BB, SETUP BD INT TBL.
+        LX,  $X2, I62K1           ! the word "BD,I62ITE" twice
+        SX,  $X2, I62INT($X1)
         CB+, $X1, $-.32            ! 64 times again
 !
 ! ---- pre-flight: does a PLAIN BB work at all? -----------------------
@@ -334,47 +334,47 @@ L16233  LX,  $X1, L162XW1          ! -DO BB, SETUP BD INT TBL.
         BB,  $X0, $+2.32           ! bit 0 is 1 -> must branch
         SIC, SEN                   ! -BB BIT 0 FAILS, UNABLE TO EX SAME.
         B,   SERS                  ! -TERM THIS TEST.
-        B,   L16240
+        B,   I6240
 !
         BB,  $X0+.01, $+1.32       ! bit 1 is 0 -> must NOT branch
         BD,  $+2.0                 ! the good path
         SIC, SEN                   ! -BB,BIT 1 IS 0, FAILS, UNABLE
         B,   SERS                  ! -TO EXECUTE SAME, TERM THIS TEST.
-        B,   L16240
+        B,   I6240
 !
 ! ---- EX of a BB whose branch condition IS met -----------------------
-        LVI, $X1, L16236
-        SVA, $X1, L162ITE          ! now the BD half of the landing
-        EX,  L162B5                ! THE TEST: EX of "BB,$X0,16234"
+        LVI, $X1, I6236
+        SVA, $X1, I62ITE          ! now the BD half of the landing
+        EX,  I62B5                ! THE TEST: EX of "BB,$X0,I6234"
         SIC, SEN                   ! -NO INT WHEN EX BB,COND
         B,   SERS                  ! -FOR BRANCH MET, BRANCH NOT TAKEN.
-        B,   L16236
+        B,   I6236
 !
-L16234  SIC, SEN                   ! -NO INT WHEN EX BB, COND FOR
+I6234  SIC, SEN                   ! -NO INT WHEN EX BB, COND FOR
         B,   SERS                  ! -BRANCH MET, BRANCH TAKEN.
-        B,   L16236
+        B,   I6236
 !
-L16235  SIC, SEN                   ! -NO INT WHEN EX BB, COND FOR BRANCH
+I6235  SIC, SEN                   ! -NO INT WHEN EX BB, COND FOR BRANCH
         B,   SERS                  ! -MET, NO BRANCH, CONTROL GIVEN TO NEXT
                                    ! -INSTRUCT FOLLOWING BRANCH.
 !
 ! ---- EX of a BB whose branch condition is NOT met -------------------
-L16236  LVI, $X1, L16237
-        SVA, $X1, L162ITE
-        EX,  L162B6                ! THE TEST: EX of "BB,$X0+.01,16238"
-        B,   L16240                ! the ONLY correct outcome: fall on
+I6236  LVI, $X1, I6237
+        SVA, $X1, I62ITE
+        EX,  I62B6                ! THE TEST: EX of "BB,$X0+.01,I6238"
+        B,   I6240                ! the ONLY correct outcome: fall on
 !
-L16237  SIC, SEN                   ! -INT TAKEN WHEN EX BB, COND FOR
+I6237  SIC, SEN                   ! -INT TAKEN WHEN EX BB, COND FOR
         B,   SERS                  ! -BRANCH NOT MET, NO BRANCH.
-        B,   L16240
+        B,   I6240
 !
-L16238  SIC, SEN                   ! -NO INT TAKEN WHEN EX BB, COND FOR
+I6238  SIC, SEN                   ! -NO INT TAKEN WHEN EX BB, COND FOR
         B,   SERS                  ! -BRANCH NOT MET, BRANCH TAKEN.
-        B,   L16240
+        B,   I6240
 !
-L16239  SIC, SEN                   ! -NO INT TAKEN WHEN EX BB,COND FOR
+I6239  SIC, SEN                   ! -NO INT TAKEN WHEN EX BB,COND FOR
         B,   SERS                  ! -BRANCH NOT MET, NO BRANCH, CONTROL
                                    ! -GIVEN TO INSTR AFTER BB.
 !
-L16240  B,   $+1.0                 ! 1CC's exit; the tail is on PDF p.94
-        END, L16225
+I6240  B,   $+1.0                 ! 1CC's exit; the tail is on PDF p.94
+        END, I6225

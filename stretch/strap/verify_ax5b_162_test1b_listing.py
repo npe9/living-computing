@@ -2,7 +2,7 @@
 """verify_ax5b_162_test1b_listing.py -- jb_ax5b "I-Box 5", routine 1262
 ("TEST EX AND EXIC"), TEST 1B (programs/ax5b_162_test1b.strap) against
 the listing's printed machine code, PDF pp.90-91, octal
-023373.40-023442.00.  76 rows, entry label 16212.
+023373.40-023442.00.  76 rows, entry label I6212.
 
 THIS IS THE ACCEPTANCE TEST FOR EX.  Its twin TEST 2B
 (verify_ax5b_162_exic_listing.py) brought EXIC into this suite; every
@@ -33,10 +33,10 @@ alone in the other four.
 
 WHY ONLY TWO.  2B's third rule is "EXIC to this class must not
 interrupt", reached by planting a handler address in the interrupt
-entry 162ITE.  1B plants an address in 162ITE too, but in all five
-classes it is the row IMMEDIATELY AFTER the EX -- 023377.00 -> 16213 at
-023377.40, 023406.40 -> 16214 at 023407.00, 023415.00 -> 16215 at
-023415.40, 023423.40 -> 16216 at 023424.00, 023432.40 -> 16217 at
+entry I62ITE.  1B plants an address in I62ITE too, but in all five
+classes it is the row IMMEDIATELY AFTER the EX -- 023377.00 -> I6213 at
+023377.40, 023406.40 -> I6214 at 023407.00, 023415.00 -> I6215 at
+023415.40, 023423.40 -> I6216 at 023424.00, 023432.40 -> I6217 at
 023433.00.  An interruption and an ordinary fall-through land in the
 same place, so no separate "-INT WHEN EX TO" message is possible.  Each
 of those five is a bit-18 decode confirmed against the page's own label
@@ -63,7 +63,7 @@ error: "BZXVZ,$+2.0 / BZXCZ,$+1.32" both land on the check-(b) row
 error entry when the index value or count came out non-zero.  In MISC
 it is the jump TO the error.  The polarity is TEST 2B's argument
 transferred: MISC does no "Z,$X1" of its own and its subject
-(162EXM = "Z,$X1", PDF p.109) is meant to zero the value, so there a
+(I62EXM = "Z,$X1", PDF p.109) is meant to zero the value, so there a
 non-zero value is the failure.
 
 THE Z,$R / Z,$L ORDER INVERTS between the two accumulator classes, and
@@ -79,24 +79,24 @@ pseudo-op was needed.  PDF p.109's constants area is full of CNOPs;
 pp.90-91 have none.
 
 THE SUBJECT CONSTANTS ARE DEFINED ON PDF pp.109-110, whose label column
-was read at 600 dpi for this file and confirms eight SYNs: 162ITE
-"BD,$  -ALL INTERRUPTS ENTER HERE." 024320.00; 162EXT "XW,0,0,0"
-024321.00; 162EX "LX,$X1,100O" 024322.00; 162XW1 "XW,0,64,162INT"
-024326.00; 162EXV "L%BU@,100O  -VFL FULL WD." 024327.00; 162EXF
-"L%U@,100O  -FLT PT." 024330.00; 162EXM "Z,$X1  -MISC." 024331.00; and
-on p.110's top line 162EXI "LVI,$X1,%8@777777.40  -IMMED IX."
-024332.00.  "100O" is a symbol, not one thousand -- it is the
+was read at 600 dpi for this file and confirms eight SYNs: I62ITE
+"BD,$  -ALL INTERRUPTS ENTER HERE." 024320.00; I62EXT "XW,0,0,0"
+024321.00; I62EX "LX,$X1,I00O" 024322.00; I62XW1 "XW,0,64,I62INT"
+024326.00; I62EXV "L%BU@,I00O  -VFL FULL WD." 024327.00; I62EXF
+"L%U@,I00O  -FLT PT." 024330.00; I62EXM "Z,$X1  -MISC." 024331.00; and
+on p.110's top line I62EXI "LVI,$X1,%8@777777.40  -IMMED IX."
+024332.00.  "I00O" is a symbol, not one thousand -- it is the
 constant-pool name programs/ax5b_160_test8b.strap's header already
 places at 024503.00, the address those three rows actually print.
 
 BUT THE SYN'd ROWS ARE STILL NOT THE WITNESS -- the caveat
-verify_ax5b_16082_16083_listing.py makes about L16088.  Every SYN in
+verify_ax5b_16082_16083_listing.py makes about I6088.  Every SYN in
 the program file is an INPUT: it makes the address field come out right
 by construction, so those rows prove only that this assembler places
 every OTHER field where the listing places it.  Three tiers, and none
 of them converts an input into a witness:
 
-  * 162ITE/162EXT/162EX/162XW1/162EXV/162EXF/162EXM/162EXI -- confirmed
+  * I62ITE/I62EXT/I62EX/I62XW1/I62EXV/I62EXF/I62EXM/I62EXI -- confirmed
     by a separately read page's own label column (pp.109-110, above).
   * SEN 001310.00, SERS 001304.00, SEN0 001311.00, SSW 001301.00,
     BIT1 024523.00 -- rest on other verify/program files in this repo
@@ -117,26 +117,26 @@ of them converts an input into a witness:
     lumped in with the rest.
 
 THE FIVE ADDRESS WITNESSES are the labels DEFINED inside the
-transcribed range, L16213 through L16217, each one decoded out of the
+transcribed range, I6213 through I6217, each one decoded out of the
 printed octal pair by BIT 18 and matched against the page's own label
 column.  That is a far richer set than TEST 3A's two.
 
-  023374.00  "LVI,$X2,16213" -> 23377.45 01.  Pair 45 = 100101, bit 18
-             = 1, so .40: 023377.40 -- where p.90 prints 16213.
-  023404.40  "LVI,$X2,16214" -> 23407.05 01.  Pair 05 = 000101, bit 18
-             = 0, so .00: 023407.00 -- where p.90 prints 16214.
-  023413.00  "LVI,$X1,16215" -> 23415.43 01.  Pair 43 = 100011, bit 18
-             = 1, so .40: 023415.40 -- where p.90 prints 16215.
-  023420.40  "LVI,$X1,16216" -> 23424.03 01.  Pair 03 = 000011, bit 18
-             = 0, so .00: 023424.00 -- where p.91 prints 16216.
-  023427.40  "LVI,$X1,16217" -> 23433.03 01.  Pair 03 = 000011, bit 18
-             = 0, so .00: 023433.00 -- where p.91 prints 16217.
+  023374.00  "LVI,$X2,I6213" -> 23377.45 01.  Pair 45 = 100101, bit 18
+             = 1, so .40: 023377.40 -- where p.90 prints I6213.
+  023404.40  "LVI,$X2,I6214" -> 23407.05 01.  Pair 05 = 000101, bit 18
+             = 0, so .00: 023407.00 -- where p.90 prints I6214.
+  023413.00  "LVI,$X1,I6215" -> 23415.43 01.  Pair 43 = 100011, bit 18
+             = 1, so .40: 023415.40 -- where p.90 prints I6215.
+  023420.40  "LVI,$X1,I6216" -> 23424.03 01.  Pair 03 = 000011, bit 18
+             = 0, so .00: 023424.00 -- where p.91 prints I6216.
+  023427.40  "LVI,$X1,I6217" -> 23433.03 01.  Pair 03 = 000011, bit 18
+             = 0, so .00: 023433.00 -- where p.91 prints I6217.
 
-L16212 is deliberately NOT a sixth.  The program's SLC sets the counter
-to 023373.40 and L16212 is the first label after it, so asserting it
+I6212 is deliberately NOT a sixth.  The program's SLC sets the counter
+to 023373.40 and I6212 is the first label after it, so asserting it
 checks the SLC against the number this transcription handed the SLC.
 It is asserted below as the block's anchor; it is not evidence.  Nor is
-"BD,16212" at 023437.00 an independent address witness: its own
+"BD,I6212" at 023437.00 an independent address witness: its own
 LOCATION is one (it is right only if all 69 preceding rows were sized
 right), but its TARGET traces straight back to that same SLC.  Its
 decode is recorded anyway because it is the only backward branch here:
@@ -148,12 +148,12 @@ witnesses:
 
   023400.00  "BZXVZ,$+2.0"  -> 23402.31 40.  Pair 31 = 011001, bit 18
              = 0 -> 023402.00, and 023400.00 + 2 words = 023402.00,
-             the "LV,$X1,162EXT" row.
+             the "LV,$X1,I62EXT" row.
   023400.40  "BZXCZ,$+1.32" -> 23402.30 40.  Pair 30 = 011000, bit 18
              = 0 -> 023402.00.  The same target as the row above it:
              both skips land on the check-(b) row.
   023407.40  "BZXVZ,$+2.0"  -> 23411.71 40.  Pair 71 = 111001, bit 18
-             = 1 -> 023411.40, the IMMED IX "KV,$X2,162EXT" row.  Note
+             = 1 -> 023411.40, the IMMED IX "KV,$X2,I62EXT" row.  Note
              the pair differs from 023400.00's 31 ONLY in bit 18: the
              indicator number is identical, the half-word select is
              not.
@@ -191,23 +191,23 @@ prog = assemble(open("programs/ax5b_162_test1b.strap").read())
 ROWS = [
     # ---- DIR IX, PDF p.90 -------------------------------------------
     ('023373.40', '21.22 00',
-     'L16212 Z,$X1          "-TEST 1B, CHK EX OF EACH TYPE OF"'),
+     'I6212 Z,$X1          "-TEST 1B, CHK EX OF EACH TYPE OF"'),
     ('023374.00', '23377.45 01',
-     'LVI,$X2,L16213        "-INSTRUCTION, DIR IX."; bit 18 -> 023377.40'),
+     'LVI,$X2,I6213        "-INSTRUCTION, DIR IX."; bit 18 -> 023377.40'),
     ('023374.40', '24320.05 D0',
-     'SVA,$X2,L162ITE       (ext) plant the post-EX row as the handler'),
+     'SVA,$X2,I62ITE       (ext) plant the post-EX row as the handler'),
     ('023375.00', '24326.04 10',
-     'LX,$X2,L162XW1        (ext) p.109: XW,0,64,162INT'),
+     'LX,$X2,I62XW1        (ext) p.109: XW,0,64,I62INT'),
     ('023375.40', '2.05 70',
      'SR,$X2,$IA            the Interruption Address register'),
     ('023376.00', '24322.04 10',
-     'LX,$X2,L162EX         (ext) the DIR IX subject, p.109'),
+     'LX,$X2,I62EX         (ext) the DIR IX subject, p.109'),
     ('023376.40', '24321.05 10',
-     'SX,$X2,L162EXT        (ext) into the subject slot'),
+     'SX,$X2,I62EXT        (ext) into the subject slot'),
     ('023377.00', '24321.12 00',
-     'EX,L162EXT            (ext) THE INSTRUCTION UNDER TEST'),
+     'EX,I62EXT            (ext) THE INSTRUCTION UNDER TEST'),
     ('023377.40', '21.02 10',
-     'L16213 LX,$X1,$X1     (a) did the subject take effect?'),
+     'I6213 LX,$X1,$X1     (a) did the subject take effect?'),
     ('023400.00', '23402.31 40',
      'BZXVZ,$+2.0           self-relative: +2 words -> 023402.00'),
     ('023400.40', '23402.30 40',
@@ -217,9 +217,9 @@ ROWS = [
     ('023401.40', '1304.10 00',
      'B,SERS                (ext) "-UNABLE TO EX DIR IX INST."'),
     ('023402.00', '24321.02 30',
-     'LV,$X1,L162EXT        (ext) (b) is the subject word intact?'),
+     'LV,$X1,I62EXT        (ext) (b) is the subject word intact?'),
     ('023402.40', '24322.02 90',
-     'KV,$X1,L162EX         (ext) compare against the master copy'),
+     'KV,$X1,I62EX         (ext) compare against the master copy'),
     ('023403.00', '1310.00 80',
      'SIC,SEN               (ext)'),
     ('023403.40', '1304.32 C0',
@@ -228,17 +228,17 @@ ROWS = [
     ('023404.00', '21.22 00',
      'Z,$X1                 "-IMMED IX."'),
     ('023404.40', '23407.05 01',
-     'LVI,$X2,L16214        bit 18 -> 023407.00'),
+     'LVI,$X2,I6214        bit 18 -> 023407.00'),
     ('023405.00', '24320.05 D0',
-     'SVA,$X2,L162ITE       (ext)'),
+     'SVA,$X2,I62ITE       (ext)'),
     ('023405.40', '24332.04 10',
-     'LX,$X2,L162EXI        (ext) the IMMED IX subject, PDF p.110'),
+     'LX,$X2,I62EXI        (ext) the IMMED IX subject, PDF p.110'),
     ('023406.00', '24321.05 10',
-     'SX,$X2,L162EXT        (ext)'),
+     'SX,$X2,I62EXT        (ext)'),
     ('023406.40', '24321.12 00',
-     'EX,L162EXT            (ext)'),
+     'EX,I62EXT            (ext)'),
     ('023407.00', '21.02 10',
-     'L16214 LX,$X1,$X1'),
+     'I6214 LX,$X1,$X1'),
     ('023407.40', '23411.71 40',
      'BZXVZ,$+2.0           bit 18 = 1 here -> 023411.40'),
     ('023410.00', '23411.70 40',
@@ -248,84 +248,84 @@ ROWS = [
     ('023411.00', '1304.10 00',
      'B,SERS                (ext) "-UNABLE TO EX IMMED IX INSTR."'),
     ('023411.40', '24321.04 90',
-     'KV,$X2,L162EXT        (ext) $X2 still holds the master copy'),
+     'KV,$X2,I62EXT        (ext) $X2 still holds the master copy'),
     ('023412.00', '1310.00 80',
      'SIC,SEN               (ext)'),
     ('023412.40', '1304.32 C0',
      'BZXE,SERS             (ext) "-EX DESTROYED SUBJ INST."'),
     # ---- MISC -------------------------------------------------------
     ('023413.00', '23415.43 01',
-     'LVI,$X1,L16215        "-MISC."; bit 18 -> 023415.40'),
+     'LVI,$X1,I6215        "-MISC."; bit 18 -> 023415.40'),
     ('023413.40', '24320.03 D0',
-     'SVA,$X1,L162ITE       (ext)'),
+     'SVA,$X1,I62ITE       (ext)'),
     ('023414.00', '24331.04 10',
-     'LX,$X2,L162EXM        (ext) the subject is itself "Z,$X1", p.109'),
+     'LX,$X2,I62EXM        (ext) the subject is itself "Z,$X1", p.109'),
     ('023414.40', '24321.05 10',
-     'SX,$X2,L162EXT        (ext)'),
+     'SX,$X2,I62EXT        (ext)'),
     ('023415.00', '24321.12 00',
-     'EX,L162EXT            (ext)'),
+     'EX,I62EXT            (ext)'),
     ('023415.40', '21.02 10',
-     'L16215 LX,$X1,$X1'),
+     'I6215 LX,$X1,$X1'),
     ('023416.00', '1310.00 80',
      'SIC,SEN               (ext)'),
     ('023416.40', '1304.31 40',
      'BZXVZ,SERS            (ext) "-UNABLE TO EX MISC INSTR."; polarity'),
     ('023417.00', '24321.04 90',
-     'KV,$X2,L162EXT        (ext)'),
+     'KV,$X2,I62EXT        (ext)'),
     ('023417.40', '1310.00 80',
      'SIC,SEN               (ext)'),
     ('023420.00', '1304.32 C0',
      'BZXE,SERS             (ext) "-EX DESTROYED SUBJ INSTR."  (INSTR.)'),
     # ---- FLT PT, PDF p.91 -------------------------------------------
     ('023420.40', '23424.03 01',
-     'LVI,$X1,L16216        "-FLT PT" (no period); bit 18 -> 023424.00'),
+     'LVI,$X1,I6216        "-FLT PT" (no period); bit 18 -> 023424.00'),
     ('023421.00', '24320.03 D0',
-     'SVA,$X1,L162ITE       (ext)'),
+     'SVA,$X1,I62ITE       (ext)'),
     ('023421.40', '24330.04 10',
-     'LX,$X2,L162EXF        (ext) "L%U@,100O", p.109'),
+     'LX,$X2,I62EXF        (ext) "L%U@,I00O", p.109'),
     ('023422.00', '24321.05 10',
-     'SX,$X2,L162EXT        (ext)'),
+     'SX,$X2,I62EXT        (ext)'),
     ('023422.40', '11.22 00',
      'Z,$R                  $R FIRST in this class -- see the docstring'),
     ('023423.00', '10.22 00',
      'Z,$L'),
     ('023423.40', '24321.12 00',
-     'EX,L162EXT            (ext)'),
+     'EX,I62EXT            (ext)'),
     ('023424.00', '10.00 80 000000.20 50',
-     'L16216 L(BU),$L       FULL WORD: read $L back, 64 bits BU'),
+     'I6216 L(BU),$L       FULL WORD: read $L back, 64 bits BU'),
     ('023425.00', '1310.00 80',
      'SIC,SEN               (ext)'),
     ('023425.40', '1304.34 C2',
      'BRZ,SERS              (ext) "-UNABLE TO EX FP INST."'),
     ('023426.00', '24321.04 90',
-     'KV,$X2,L162EXT        (ext)'),
+     'KV,$X2,I62EXT        (ext)'),
     ('023426.40', '1310.00 80',
      'SIC,SEN               (ext)'),
     ('023427.00', '1304.32 C0',
      'BZXE,SERS             (ext) "-EX DESTROYED SUBJ INST."'),
     # ---- FULL WD VFL ------------------------------------------------
     ('023427.40', '23433.03 01',
-     'LVI,$X1,L16217        "-FULL WD."; bit 18 -> 023433.00'),
+     'LVI,$X1,I6217        "-FULL WD."; bit 18 -> 023433.00'),
     ('023430.00', '24320.03 D0',
-     'SVA,$X1,L162ITE       (ext)'),
+     'SVA,$X1,I62ITE       (ext)'),
     ('023430.40', '24327.04 10',
-     'LX,$X2,L162EXV        (ext) "L%BU@,100O", p.109'),
+     'LX,$X2,I62EXV        (ext) "L%BU@,I00O", p.109'),
     ('023431.00', '24321.05 10',
-     'SX,$X2,L162EXT        (ext)'),
+     'SX,$X2,I62EXT        (ext)'),
     ('023431.40', '10.22 00',
      'Z,$L                  $L FIRST here -- the inverse of FLT PT'),
     ('023432.00', '11.22 00',
      'Z,$R'),
     ('023432.40', '24321.12 00',
-     'EX,L162EXT            (ext)'),
+     'EX,I62EXT            (ext)'),
     ('023433.00', '11.00 80 000000.20 50',
-     'L16217 L(BU),$R       FULL WORD: read $R back, 64 bits BU'),
+     'I6217 L(BU),$R       FULL WORD: read $R back, 64 bits BU'),
     ('023434.00', '1310.00 80',
      'SIC,SEN               (ext)'),
     ('023434.40', '1304.34 C2',
      'BRZ,SERS              (ext) "-UNABLE TO EX FULL WD VFL INST."'),
     ('023435.00', '24321.04 90',
-     'KV,$X2,L162EXT        (ext)'),
+     'KV,$X2,I62EXT        (ext)'),
     ('023435.40', '1310.00 80',
      'SIC,SEN               (ext)'),
     ('023436.00', '1304.32 C0',
@@ -334,7 +334,7 @@ ROWS = [
     ('023436.40', '23437.50 00',
      'B,$+1.0               self-relative: +1 word -> 023437.40'),
     ('023437.00', '23373.44 00',
-     'BD,L16212             the loop back; bit 18 -> 023373.40'),
+     'BD,I6212             the loop back; bit 18 -> 023373.40'),
     ('023437.40', '1311.40 80',
      'SIC,SEN0+.32          (ext) SEN0 + 32 bits -> 001311.40'),
     ('023440.00', '1301.10 00',
@@ -351,9 +351,9 @@ ROWS = [
 
 # Only the labels DEFINED inside the transcribed range belong here; a
 # SYN'd external would be checking this file against itself.  Of these
-# six, five are evidence -- see the docstring on L16212.
-SYMBOLS = {'L16212': '023373.40', 'L16213': '023377.40',
-           'L16214': '023407.00', 'L16215': '023415.40',
-           'L16216': '023424.00', 'L16217': '023433.00'}
+# six, five are evidence -- see the docstring on I6212.
+SYMBOLS = {'I6212': '023373.40', 'I6213': '023377.40',
+           'I6214': '023407.00', 'I6215': '023415.40',
+           'I6216': '023424.00', 'I6217': '023433.00'}
 
 finish(check_rows(prog, ROWS, SYMBOLS, label='1262 1B '))

@@ -32,7 +32,7 @@
 ! directions.
 !
 ! AND A DECK TESTS EXACTLY THIS RULE.  jb_ax5b routine 1260's block
-! 16086 (pp.43-44, transcribed as ax5b_16086_ds.strap and checked
+! I6086 (pp.43-44, transcribed as ax5b_16086_ds.strap and checked
 ! bit-exactly) stores into WORD 1 and reports, if DS stays off:
 !
 !     "SV TO 1.0 FAILS TO SET DS WHEN ENABLED."
@@ -40,10 +40,10 @@
 ! Word 1 rather than the word 3 this program picked -- between them
 ! the pair p.31 names -- the DS indicator, and the "when enabled"
 ! gate, all three in the deck's own words.  It also reads DS only
-! AFTER "16086A BD,$+.32" disables the system, which is the same
+! AFTER "I6086A BD,$+.32" disables the system, which is the same
 ! reason this program observes the violation through the interruption
 ! routine instead of polling.  That transcription is ENCODING-only
-! (the block needs 16085B's NOP table and the SEN/SERS harness to
+! (the block needs I6085B's NOP table and the SEN/SERS harness to
 ! run), so this program is still the behavioural test and still
 ! hand-written -- but the rule it asserts is no longer only my
 ! reading of the manual.

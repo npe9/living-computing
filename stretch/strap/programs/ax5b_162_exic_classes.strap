@@ -15,7 +15,7 @@
 ! Every verify_ax5b_*.py here already says "PDF p.NN" for that reason.
 !
 ! WHAT TEST 2B DOES, from the header at 023705.00 on PDF p.99:
-! "16260 LVI,$X1,162INT  -TEST 2B, CHK EXIC OF NON BRANCH / -CLASS
+! "16260 LVI,$X1,I62INT  -TEST 2B, CHK EXIC OF NON BRANCH / -CLASS
 ! INSTRUCTIONS, DIR IX."  It sweeps five instruction classes -- DIR IX,
 ! IMMED IX, MISC, FLT PT, FULL WD VFL -- and for each one checks three
 ! rules, each with its own error entry:
@@ -25,8 +25,8 @@
 !   (c) the PSEUDO-IC must be stepped by the
 !       subject's LENGTH                           ("-PSEUDO IC NOT STEPPED")
 !
-! This block holds the MISC class's error entries (16265/16266), the
-! whole FLT PT class (16267/16268), and the FULL WD VFL setup whose own
+! This block holds the MISC class's error entries (I6265/I6266), the
+! whole FLT PT class (I6267/I6268), and the FULL WD VFL setup whose own
 ! error entries continue on PDF p.102.
 !
 ! THE PSEUDO-IC RULE IS LITERAL, NOT FOLKLORE.  p.101 only ever shows
@@ -53,9 +53,9 @@
 ! (BXVZ).  p.99's DIR IX and IMMED IX blocks do "Z,$X1" and use BXVZ.
 !
 ! ENCODING ONLY, and it could not be otherwise yet.  Rule (a) works by
-! planting a handler address into the interrupt-table entry 162ITE and
-! awaiting an interruption, so a run needs the 64-word table, 160S1,
-! and the 162EX* subject constants -- and EXIC is not EXECUTED by this
+! planting a handler address into the interrupt-table entry I62ITE and
+! awaiting an interruption, so a run needs the 64-word table, I60S1,
+! and the I62EX* subject constants -- and EXIC is not EXECUTED by this
 ! model at all.  It is in MISC_CODES, so the ASSEMBLER encodes it;
 ! that is the whole distinction.
 !
@@ -65,77 +65,77 @@
         SLC, (8)23742.40
 !
 ! ---- MISC class: the error entries for rules (a), (b), (c) -------
-L16265  SIC, SEN                   ! -INT WHEN EXIC TO
+I6265  SIC, SEN                   ! -INT WHEN EXIC TO
         B,   SERS                  ! -A MISC INSTRUCT.
-L16266  LX,  $X1, $X1
+I6266  LX,  $X1, $X1
         SIC, SEN                   ! -SUBJ INST WAS MISC
         BZXVZ, SERS                ! -AND WAS NOT EXECUTED.
         V+I, $X2, 0.32
-        KV,  $X2, L162PSI
+        KV,  $X2, I62PSI
         SIC, SEN                   ! -PSEUDO IC NOT STEPPED .32 CORRECTLY
         BZXE, SERS                 ! -WHEN SUBJ INST WAS IMMED IX.  (stale)
 !
 ! ---- FLT PT class: the setup ------------------------------------
-        LVI, $X1, L16267           ! -FLT PT.
-        SVA, $X1, L162ITE          ! plant the handler in the table entry
-        LVI, $X1, L162SUB
-        SVA, $X1, L162PSI          ! point the pseudo-IC at the subject
-        LX,  $X1, L162EXF          ! the floating-point subject instruction
-        SX,  $X1, L162SUB
+        LVI, $X1, I6267           ! -FLT PT.
+        SVA, $X1, I62ITE          ! plant the handler in the table entry
+        LVI, $X1, I62SUB
+        SVA, $X1, I62PSI          ! point the pseudo-IC at the subject
+        LX,  $X1, I62EXF          ! the floating-point subject instruction
+        SX,  $X1, I62SUB
         Z,   $IND
         Z,   $MASK
-        LV,  $X2, L162PSI          ! the pseudo-IC BEFORE the EXIC
+        LV,  $X2, I62PSI          ! the pseudo-IC BEFORE the EXIC
         Z,   $L
         Z,   $R
-        EXIC, L162PSI
-        BD,  L16268
+        EXIC, I62PSI
+        BD,  I6268
 !
 ! ---- FLT PT class: its three error entries ----------------------
-L16267  SIC, SEN                   ! -INT WHEN EXIC TO
+I6267  SIC, SEN                   ! -INT WHEN EXIC TO
         B,   SERS                  ! -A FLT PT INSTRUCT.
-L16268  LX,  $X1, $L
+I6268  LX,  $X1, $L
         SIC, SEN                   ! -SUBJ INST WAS FLT PT
         BXVZ, SERS                 ! -AND WAS NOT EXECUTED.
         V+I, $X2, 0.32
-        KV,  $X2, L162PSI
+        KV,  $X2, I62PSI
         SIC, SEN                   ! -PSEUDO IC NOT STEPPED .32 CORRECTLY
         BZXE, SERS                 ! -WHEN SUBJ INST WAS IMMED IX.  (stale)
 !
 ! ---- FULL WD VFL class: the setup, error entries on PDF p.102 ---
 !   Note it clears $R but NOT $L -- a full-word VFL subject writes the
 !   right half only, and the missing "Z,$L" is the deck saying so.
-        LVI, $X1, L16269           ! -FULL WD VFL.
-        SVA, $X1, L162ITE
-        LVI, $X1, L162SUB
-        SVA, $X1, L162PSI
-        LX,  $X1, L162EXV          ! the VFL subject instruction
-        SX,  $X1, L162SUB
+        LVI, $X1, I6269           ! -FULL WD VFL.
+        SVA, $X1, I62ITE
+        LVI, $X1, I62SUB
+        SVA, $X1, I62PSI
+        LX,  $X1, I62EXV          ! the VFL subject instruction
+        SX,  $X1, I62SUB
         Z,   $IND
         Z,   $MASK
-        LV,  $X2, L162PSI
+        LV,  $X2, I62PSI
         Z,   $R
-        EXIC, L162PSI
-        BD,  L16270
+        EXIC, I62PSI
+        BD,  I6270
 !
 ! ---- externals, SYN'd at the addresses this same listing prints --
 !   THESE ARE INPUTS TO THE CHECK, NOT WITNESSES, the same caveat
-!   verify_ax5b_16082_16083_listing.py makes about L16088.  No label
+!   verify_ax5b_16082_16083_listing.py makes about I6088.  No label
 !   row defining any 162* symbol appears on PDF p.101; each address
 !   comes from an OPERAND field.  (CORROBORATED ELSEWHERE, 2026-09-24:
 !   PDF p.109's constants area DOES define them in its label column --
-!   "162INT DR%BU,64,8@,64  -INTRPT TABLE." among them.  That does not
+!   "I62INT DR%BU,64,8@,64  -INTRPT TABLE." among them.  That does not
 !   make them witnesses here, but it does mean the addresses are not
 !   just numbers chosen to fit.)  What the rows prove is that this
 !   assembler places every other field where the listing places it.
-!   Genuinely witnessed by the page's own label column: L16267 at
-!   023755.40 and L16268 at 023756.40.
+!   Genuinely witnessed by the page's own label column: I6267 at
+!   023755.40 and I6268 at 023756.40.
 SEN     SYN, (8)1310.0             ! the SIC error-entry link
 SERS    SYN, (8)1304.0             ! the error-report routine
-L162ITE SYN, (8)24320.0            ! the interrupt-table entry 1262 plants
-L162PSI SYN, (8)24323.0            ! the pseudo-IC word
-L162SUB SYN, (8)24324.0            ! the subject-instruction slot
-L162EXV SYN, (8)24327.0            ! the VFL subject
-L162EXF SYN, (8)24330.0            ! the floating-point subject
-L16269  SYN, (8)23770.0            ! FULL WD VFL rule (a), PDF p.102
-L16270  SYN, (8)23771.0            ! FULL WD VFL rule (b), PDF p.102
-        END, L16265
+I62ITE SYN, (8)24320.0            ! the interrupt-table entry 1262 plants
+I62PSI SYN, (8)24323.0            ! the pseudo-IC word
+I62SUB SYN, (8)24324.0            ! the subject-instruction slot
+I62EXV SYN, (8)24327.0            ! the VFL subject
+I62EXF SYN, (8)24330.0            ! the floating-point subject
+I6269  SYN, (8)23770.0            ! FULL WD VFL rule (a), PDF p.102
+I6270  SYN, (8)23771.0            ! FULL WD VFL rule (b), PDF p.102
+        END, I6265

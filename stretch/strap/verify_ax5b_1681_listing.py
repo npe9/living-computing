@@ -8,8 +8,8 @@ WHAT 1268 IS: see verify_ax5b_1683_listing.py.  docs/NEXT.md called it
 the deck test of the DF and IF INDICATORS; it is not.  Test 2 is the
 store-to-LOAD side; this is the store-to-INSTRUCTION-FETCH side.
 
-THE BLOCK plants a whole word over location 1682 twice and then FALLS
-INTO 1682 and executes what is there -- first [Z,$X2 | NOP], then
+THE BLOCK plants a whole word over location I682 twice and then FALLS
+INTO I682 and executes what is there -- first [Z,$X2 | NOP], then
 [LVI,$X2,(8)777777.40 | NOP].  "LX,$X2,$X2" re-reads X2 without
 changing it, purely so the index result indicators describe X2 (Ref.
 Manual p.23), and the following BXVZ tests them: value zero means the
@@ -48,7 +48,7 @@ planted instruction round-trips through it):
   packIndexWord zeroes `spare` (IBM 26-27) -- the EXISTING
   index-spare-bits-zeroed mutant
       PASSES, and provably must.  The planted words are
-      168K1 = 0x0004920000001800 and 168K2 = 0xffffe50100001800;
+      I68K1 = 0x0004920000001800 and I68K2 = 0xffffe50100001800;
       both have sign, flag AND SPARE zero already, so a mutant that
       only disturbs bits 26-27 cannot change what is planted.  This
       block therefore does NOT help that mutant, which the campaign
@@ -67,22 +67,22 @@ from listing_oracle import check_rows, finish
 prog = assemble(open("programs/ax5b_1681_if_close_to_ds.strap").read())
 
 # Rows marked (ext) name a symbol given by SYN from the listing's own
-# print.  The two SX rows name L1682, defined INSIDE the range, and are
+# print.  The two SX rows name I682, defined INSIDE the range, and are
 # real address checks.
 ROWS = [
-    ('024337.00', '24407.02 10', 'L1681 LX,$X1,L168K1   (ext) "-TEST 1A,IF CLOSE TO DS IN EXT MEM."'),
-    ('024337.40', '24342.03 10', 'SX,$X1,L1682          plant the OLD instruction'),
+    ('024337.00', '24407.02 10', 'I681 LX,$X1,I68K1   (ext) "-TEST 1A,IF CLOSE TO DS IN EXT MEM."'),
+    ('024337.40', '24342.03 10', 'SX,$X1,I682          plant the OLD instruction'),
     ('024340.00', '0.30 00',     'NOP'),
     ('024340.40', '0.30 00',     'NOP'),
-    ('024341.00', '24410.02 10', 'LX,$X1,L168K2         (ext)'),
-    ('024341.40', '24342.03 10', 'SX,$X1,L1682          plant the NEW one over it'),
+    ('024341.00', '24410.02 10', 'LX,$X1,I68K2         (ext)'),
+    ('024341.40', '24342.03 10', 'SX,$X1,I682          plant the NEW one over it'),
     ('024342.00', '0.00 00 000000.00 00',
-                                 'L1682 XW,0,0,0        the slot -- executed as planted'),
+                                 'I682 XW,0,0,0        the slot -- executed as planted'),
     ('024343.00', '22.04 10',    'LX,$X2,$X2            re-read to set the indicators'),
     ('024343.40', '1310.00 80',  'SIC,SEN               (ext)'),
     ('024344.00', '1304.31 42',  'BXVZ,SERS             (ext) "EXECUTED OLD INSTRUCTION FROM EXT."'),
 ]
 
-SYMBOLS = {'L1681': '024337.00', 'L1682': '024342.00'}
+SYMBOLS = {'I681': '024337.00', 'I682': '024342.00'}
 
 finish(check_rows(prog, ROWS, SYMBOLS, label='1268 T1A '))

@@ -10,10 +10,10 @@ pp.5-7, right after the prose write-up -- not in the tail where its
 number would put it.  These listing pages carry no printed page
 numbers, so every citation here is a PDF page.
 
-WHERE THE CUT IS.  Test 1 (1581-1586, 014012.00-014033.40) is the TIME
+WHERE THE CUT IS.  Test 1 (I581-I586, 014012.00-014033.40) is the TIME
 CLOCK half and fills PDF p.6, closing with its own three-row
 continuity block at 014033.40.  Test 2 opens the next page at
-014034.00 with label 1587.  Nothing straddles the boundary and no
+014034.00 with label I587.  Nothing straddles the boundary and no
 symbol defined in Test 1 is referenced here.  Test 1 is not
 transcribed: this model has no time clock at all, so it is further
 from being runnable than the timer.
@@ -23,7 +23,7 @@ both of them "-CONTAINS ITS NEW VALUE, 0-18.": one after 014042.00 and
 one after 014047.00.  So the block is ~50 source lines and 48
 machine-code rows, and every one of the 48 is a half-word instruction
 -- no XW, VF or DD, so no full-word row shape occurs here.  The
-routine's full-word constants (IC258, ICK258, 158K1, 158K2) all sit on
+routine's full-word constants (IC258, ICK258, I58K1, I58K2) all sit on
 PDF p.5, outside the range, and enter as SYN.
 
 THIS IS THE INTERVAL TIMER'S CONTRACT, IN THE DECK'S OWN WORDS.
@@ -32,29 +32,29 @@ loads the timer with one, spins, and asks whether TS came on -- a
 witness that the countdown EXISTS.  This block is four separate
 assertions about how it behaves, each carrying its own error text:
 
-  1. THE RATE, 1587/1587A/1587B.  Timer := BIT18 (the value one), then
+  1. THE RATE, I587/I587A/I587B.  Timer := BIT18 (the value one), then
      a 256-count spin watching for word 1 to stop equalling 1.0.
      Failure: "-INTERVAL TIMER FAILS TO STEP IN" / "-ONE MILLISEC,
      TERMINATE TEST 2."  One millisecond is the deck's own statement
      of the rate; Reference Manual printed p.34 gives 1,024 (2^10)
      steps per second, one step per 0.9766 ms.
 
-  2. THE DECREMENT BY EXACTLY ONE, 1588.  KV against 100Z, whose row
-     on PDF p.114 reads "100Z XW,0,0,0,0  -ZERO INDX WD." and prints
+  2. THE DECREMENT BY EXACTLY ONE, I588.  KV against I00Z, whose row
+     on PDF p.114 reads "I00Z XW,0,0,0,0  -ZERO INDX WD." and prints
      "0.00 00 000000.00 00" -- the constant's VALUE is printed, not
      inferred from its name.  Failure: "-INTERVAL TIMER FAILS TO STEP"
      / "-FROM 000000.4 TO 000000.0. IX 1" / "-CONTAINS ITS NEW VALUE,
      0-18."
 
-  3. THE RELOAD RULE, 1589/15810.  Timer := zero, spin until it
-     changes, then compare against 158K1, whose row on PDF p.5 prints
+  3. THE RELOAD RULE, I589/I5810.  Timer := zero, spin until it
+     changes, then compare against I58K1, whose row on PDF p.5 prints
      "777777.40 00 000000.00 00" -- bits 0-17 all ones and octal pair
      40 = 100000, so bit 18 too: ALL ONES IN BITS 0-18, nothing else.
      Failure: "-INTERVAL TIMER FAILS TO STEP" / "-FROM 000000.0 TO
      777777.40. IX 2" / "-CONTAINS ITS NEW VALUE, 0-18."  That is the
      1 -> 0 -> all-ones reload, printed, from the deck.
 
-  4. THE BITS-19-23 CLEARING, 15811/15812.  Timer := 158K2, whose p.5
+  4. THE BITS-19-23 CLEARING, I5811/I5812.  Timer := I58K2, whose p.5
      row prints "1.77 00 000000.00 00" -- bit 17 set AND bits 18-23
      all ones, and bits 19-23 lie OUTSIDE the timer's 0-18 field.
      After the step the expected value is BIT17, "1.00 00 000000.00
@@ -62,8 +62,8 @@ assertions about how it behaves, each carrying its own error text:
      "-FROM 000001.77 TO 000001.00. IX 3" / "-CONTAINS ITS NEW VALUE,
      0-23."
 
-     THE FIELD WIDTH IN THAT LAST LINE IS THE FINDING.  Blocks 1588
-     and 15810 both say "0-18."  This one says "0-23."  The deck
+     THE FIELD WIDTH IN THAT LAST LINE IS THE FINDING.  Blocks I588
+     and I5810 both say "0-18."  This one says "0-23."  The deck
      widens its own message exactly where it is testing the five bits
      the timer field does not cover, and the value it expects has them
      CLEAR.  Reference Manual printed p.34's programming note -- bits
@@ -86,9 +86,9 @@ is NONZERO, and BXE at 014054.00 branches to the exit while the value
 IS the expected one.
 
 THIRTEEN ROWS ARE REAL ADDRESS CHECKS.  Their targets are labels
-defined inside the transcribed range: BZXE->L1588, CB->L1587A,
-B->L15813, BZXVZ->L15810, CB->L1589, B->L1587B (twice), BZXE->L15812,
-CB->L15811, BXE->L15813, B,$+1.0, BD->L1587, BD,$+.32.  Every one was
+defined inside the transcribed range: BZXE->I588, CB->I587A,
+B->I5813, BZXVZ->I5810, CB->I589, B->I587B (twice), BZXE->I5812,
+CB->I5811, BXE->I5813, B,$+1.0, BD->I587, BD,$+.32.  Every one was
 checked by reading bit 18 out of the printed octal pair against the
 page's own label column, and every one agrees; ax5b_16071_ts.strap,
 by contrast, has exactly one such row.  Rows marked (ext) name a
@@ -96,11 +96,11 @@ symbol given by SYN from the same print and check only the opcode and
 modifier bits.
 
 EVERY SYN IS AN INPUT TO THIS CHECK, NOT A WITNESS.  BIT18, BIT17,
-BIT1, L100Z, L158K1, L158K2, LIC258, LICK258, SEN, SENO, SERS, SSW and
-L160 were each derived by reading bit 18 out of the octal pair of the
+BIT1, I00Z, I58K1, I58K2, IC258, ICK258, SEN, SENO, SERS, SSW and
+I60 were each derived by reading bit 18 out of the octal pair of the
 very row that names them, so those rows can only re-derive what was
 put in.  The same caveat verify_ax5b_16082_16083_listing.py makes
-about L16088.
+about I6088.
 
 THE BIT TABLE GAINS THREE CONFIRMATIONS of 024522 + n, each read off
 an encoding here and then matched against the table as PDF p.114
@@ -109,7 +109,7 @@ prints it: BIT1 -> 024523 ("200000.00 00 ..."), BIT17 -> 024543
 
 SENO's SPELLING IS NOT RESOLVABLE from the page: this printer draws
 letter O and digit 0 with the same glyph (compare the O of SENO with
-the zeros of 100LC in the same column on PDF p.114), and this
+the zeros of I00LC in the same column on PDF p.114), and this
 repository already spells it SENO, SEN0 and LSEN0 in different files.
 p.114 prints the symbol's own row, "SENO SYN,SENO" -> "1311.00+
 +00000000", which fixes the ADDRESS at 001311.00 and settles nothing
@@ -159,8 +159,8 @@ __pycache__ cleared on both sides of each injection:
   enc_count_branch drops bit 18 of its target (addr19 & ~1)
       014036.40 CB  '014035.02 48' for '014035.42 48'         (1 row)
       ONLY ONE OF THE THREE CB ROWS FAILS, and that is the interesting
-      part.  L1587A is at 014035.40, so its target has bit 18 set and
-      the dropped bit shows; L1589 (014044.00) and L15811 (014051.00)
+      part.  I587A is at 014035.40, so its target has bit 18 set and
+      the dropped bit shows; I589 (014044.00) and I5811 (014051.00)
       are word-aligned, so the same fault is invisible in those two
       rows.  A count-and-branch also does not go through
       enc_branch_or_misc, so an injection there would fail nothing
@@ -201,81 +201,81 @@ prog = assemble(open("programs/ax5b_1258_test2.strap").read())
 # real address checks.
 ROWS = [
     ('014034.00', '24544.00 10',
-     'L1587 LX,$X0,BIT18     (ext) "-TEST 2"; bit 18 = the value one'),
+     'I587 LX,$X0,BIT18     (ext) "-TEST 2"; bit 18 = the value one'),
     ('014034.40', '1.01 30',
      'SV,$X0,1.0             into word 1, the interval timer'),
     ('014035.00', '400.03 02',
      'LCI,$X1,256            256 = octal 400, an 18-bit count'),
     ('014035.40', '1.00 90',
-     'L1587A KV,$X0,1.0      has the timer moved?'),
+     'I587A KV,$X0,1.0      has the timer moved?'),
     ('014036.00', '14040.72 C0',
-     'BZXE,L1588             XE (53) OFF = the values differ: it stepped'),
+     'BZXE,I588             XE (53) OFF = the values differ: it stepped'),
     ('014036.40', '14035.42 48',
-     'CB,$X1,L1587A          ...256 tries'),
+     'CB,$X1,I587A          ...256 tries'),
     ('014037.00', '1310.00 80',
-     'L1587B SIC,SEN         (ext) "-INTERVAL TIMER FAILS TO STEP IN"'),
+     'I587B SIC,SEN         (ext) "-INTERVAL TIMER FAILS TO STEP IN"'),
     ('014037.40', '1304.10 00',
      'B,SERS                 (ext) "-ONE MILLISEC, TERMINATE TEST 2."'),
     ('014040.00', '14055.50 00',
-     'B,L15813               give up on TEST 2'),
+     'B,I5813               give up on TEST 2'),
     ('014040.40', '1.02 10',
-     'L1588 LX,$X1,1.0       read the stepped timer'),
+     'I588 LX,$X1,1.0       read the stepped timer'),
     ('014041.00', '24502.02 90',
-     'KV,$X1,L100Z           (ext) the new value must be ZERO'),
+     'KV,$X1,I00Z           (ext) the new value must be ZERO'),
     ('014041.40', '1310.00 80',
      'SIC,SEN                (ext) "-INTERVAL TIMER FAILS TO STEP"'),
     ('014042.00', '1304.32 C0',
      'BZXE,SERS              (ext) "-FROM 000000.4 TO 000000.0. IX 1"'),
     ('014042.40', '24502.00 10',
-     'LX,$X0,L100Z           (ext) [a comment-only source line,'
+     'LX,$X0,I00Z           (ext) [a comment-only source line,'
      ' "-CONTAINS ITS NEW VALUE, 0-18.", sits above this row]'),
     ('014043.00', '1.01 30',
      'SV,$X0,1.0             timer := zero'),
     ('014043.40', '400.11 02',
      'LCI,$X4,256'),
     ('014044.00', '1.04 10',
-     'L1589 LX,$X2,1.0'),
+     'I589 LX,$X2,1.0'),
     ('014044.40', '14046.31 40',
-     'BZXVZ,L15810           XVZ (50) OFF = nonzero: it reloaded'),
+     'BZXVZ,I5810           XVZ (50) OFF = nonzero: it reloaded'),
     ('014045.00', '14044.10 48',
-     'CB,$X4,L1589'),
+     'CB,$X4,I589'),
     ('014045.40', '14037.10 00',
-     'B,L1587B               never reloaded: the timing error'),
+     'B,I587B               never reloaded: the timing error'),
     ('014046.00', '14010.04 90',
-     'L15810 KV,$X2,L158K1   (ext) ...and it must be ALL ONES 0-18'),
+     'I5810 KV,$X2,I58K1   (ext) ...and it must be ALL ONES 0-18'),
     ('014046.40', '1310.00 80',
      'SIC,SEN                (ext) "-INTERVAL TIMER FAILS TO STEP"'),
     ('014047.00', '1304.32 C0',
      'BZXE,SERS              (ext) "-FROM 000000.0 TO 777777.40. IX 2"'),
     ('014047.40', '14011.00 10',
-     'LX,$X0,L158K2          (ext) bit 17 plus bits 18-23; a second'
+     'LX,$X0,I58K2          (ext) bit 17 plus bits 18-23; a second'
      ' comment-only line, "-CONTAINS ITS NEW VALUE, 0-18.", sits above'),
     ('014050.00', '1.01 30',
      'SV,$X0,1.0'),
     ('014050.40', '400.07 02',
      'LCI,$X3,256'),
     ('014051.00', '1.00 90',
-     'L15811 KV,$X0,1.0'),
+     'I5811 KV,$X0,1.0'),
     ('014051.40', '14053.32 C0',
-     'BZXE,L15812'),
+     'BZXE,I5812'),
     ('014052.00', '14051.06 48',
-     'CB,$X3,L15811'),
+     'CB,$X3,I5811'),
     ('014052.40', '14037.10 00',
-     'B,L1587B'),
+     'B,I587B'),
     ('014053.00', '1.06 10',
-     'L15812 LX,$X3,1.0'),
+     'I5812 LX,$X3,1.0'),
     ('014053.40', '24543.06 90',
      'KV,$X3,BIT17           (ext) bit 17 ALONE: 19-23 must be clear'),
     ('014054.00', '14055.72 C2',
-     'BXE,L15813             "-INTERVAL TIMER FAILS TO STEP"'),
+     'BXE,I5813             "-INTERVAL TIMER FAILS TO STEP"'),
     ('014054.40', '1310.00 80',
      'SIC,SEN                (ext) "-FROM 000001.77 TO 000001.00. IX 3"'),
     ('014055.00', '1304.10 00',
      'B,SERS                 (ext) "-CONTAINS ITS NEW VALUE, 0-23."'),
     ('014055.40', '14056.50 00',
-     'L15813 B,$+1.0'),
+     'I5813 B,$+1.0'),
     ('014056.00', '14034.04 00',
-     'BD,L1587               loop back to the head of TEST 2'),
+     'BD,I587               loop back to the head of TEST 2'),
     ('014056.40', '1311.40 80',
      'SIC,SENO+.32           (ext)'),
     ('014057.00', '1301.10 00',
@@ -283,27 +283,27 @@ ROWS = [
     ('014057.40', '14060.04 00',
      'BD,$+.32'),
     ('014060.00', '14006.32 10',
-     'LX,$X13,LIC258         (ext) "-UPDATE CONTINUITY CHECK."'),
+     'LX,$X13,IC258         (ext) "-UPDATE CONTINUITY CHECK."'),
     ('014060.40', '24523.32 B0',
      'V+,$X13,BIT1           (ext) test 2 done = bit 1'),
     ('014061.00', '14006.33 10',
-     'SX,$X13,LIC258         (ext)'),
+     'SX,$X13,IC258         (ext)'),
     ('014061.40', '14006.32 10',
-     'LX,$X13,LIC258         (ext) "-UPDATE CONTINUITY CHECK."'),
+     'LX,$X13,IC258         (ext) "-UPDATE CONTINUITY CHECK."'),
     ('014062.00', '14007.32 90',
-     'KV,$X13,LICK258        (ext) against the expected word'),
+     'KV,$X13,ICK258        (ext) against the expected word'),
     ('014062.40', '1310.00 80',
      'SIC,SEN                (ext)'),
     ('014063.00', '1304.32 C0',
      'BZXE,SERS              (ext) "-CONTINUITY ERROR."'),
     ('014063.40', '14064.10 00',
-     'B,L160                 (ext) on to routine 160'),
+     'B,I60                 (ext) on to routine 160'),
 ]
 
-SYMBOLS = {'L1587':  '014034.00', 'L1587A': '014035.40',
-           'L1587B': '014037.00', 'L1588':  '014040.40',
-           'L1589':  '014044.00', 'L15810': '014046.00',
-           'L15811': '014051.00', 'L15812': '014053.00',
-           'L15813': '014055.40'}
+SYMBOLS = {'I587':  '014034.00', 'I587A': '014035.40',
+           'I587B': '014037.00', 'I588':  '014040.40',
+           'I589':  '014044.00', 'I5810': '014046.00',
+           'I5811': '014051.00', 'I5812': '014053.00',
+           'I5813': '014055.40'}
 
 finish(check_rows(prog, ROWS, SYMBOLS, label='1258 T2 '))

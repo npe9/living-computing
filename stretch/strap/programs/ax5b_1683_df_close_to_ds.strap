@@ -35,7 +35,7 @@
 ! paths, and "close to DS" means temporally close to a DATA STORE:
 ! 1268 is a LOOK-AHEAD STORE-TO-FETCH / STORE-TO-LOAD FORWARDING test.
 ! Nothing in it writes a mask, sets a boundary register, branches on
-! DF or IF, or touches protected storage -- 168K3 is ordinary storage
+! DF or IF, or touches protected storage -- I68K3 is ordinary storage
 ! at 024411.00.
 !
 ! docs/archival_inventory.md contained BOTH readings, twenty lines
@@ -57,7 +57,7 @@
 ! the deck's "all 3 memories" does not mean three distinct paths
 ! here:
 !
-!     168K3   external memory   (a scratch word at 024411.00)
+!     I68K3   external memory   (a scratch word at 024411.00)
 !     $X4     index storage     (word 20)
 !     $R      internal memory   (word 9, the accumulator's right half)
 !
@@ -113,26 +113,26 @@
 !      SERS is not transcribed.
 !   3. A "BEW,$" exit is placed at 024376.00, where the listing's own
 !      "B,$+1.0" continues into the rest of the routine.
-! Everything else -- including L1000's all-ones index word at
-! 024503.00 and L168K3's zero word at 024411.00 -- is at the address
+! Everything else -- including I000's all-ones index word at
+! 024503.00 and I68K3's zero word at 024411.00 -- is at the address
 ! the listing prints for it.
 
-L1000   SYN, (8)24503.0            ! "INDX WD. OF ONES." (p.114)
-L168K3  SYN, (8)24411.0            ! the external-memory scratch word
+I000   SYN, (8)24503.0            ! "INDX WD. OF ONES." (p.114)
+I68K3  SYN, (8)24411.0            ! the external-memory scratch word
 SEN     SYN, (8)1310.0             ! the SIC error-entry link
 SERS    SYN, (8)1304.0             ! error routine -- a hang here
 
         SLC, (8)24363.40
-L1683   Z,   L168K3                ! -TEST 2A,DF CLOSE TO DS IN EXT MEM.
-        LX,  $X1, L1000
+I683   Z,   I68K3                ! -TEST 2A,DF CLOSE TO DS IN EXT MEM.
+        LX,  $X1, I000
         Z,   $X2
-        SX,  $X1, L168K3           !  store...
-        LX,  $X2, L168K3           !  ...and load it straight back
+        SX,  $X1, I68K3           !  store...
+        LX,  $X2, I68K3           !  ...and load it straight back
         SIC, SEN
         BXVZ, SERS                 ! -LOADED OLD DATA FROM EXT MEM.
 !
         Z,   $X4                   !  index storage
-        LX,  $X1, L1000
+        LX,  $X1, I000
         Z,   $X2
         SX,  $X1, $X4
         LX,  $X2, $X4
@@ -140,7 +140,7 @@ L1683   Z,   L168K3                ! -TEST 2A,DF CLOSE TO DS IN EXT MEM.
         BXVZ, SERS                 ! -LOADED OLD DATA FROM IX STG.
 !
         Z,   $R                    !  internal memory
-        LX,  $X1, L1000
+        LX,  $X1, I000
         Z,   $X2
         SX,  $X1, $R
         LX,  $X1, $R               !  $X1, as printed -- see the header
@@ -153,7 +153,7 @@ PASS    BEW, $
 !
 ! ---- the block's own constants, at their printed addresses ----------
         SLC, (8)24411.0
-K3      XW, 0, 0, 0                ! 168K3
+K3      XW, 0, 0, 0                ! I68K3
         SLC, (8)24503.0
 ONES    DD(BU,64), (8)1777777777777777777777   ! "INDX WD. OF ONES."
         SLC, (8)1310.0
@@ -162,4 +162,4 @@ SENW    DD(BU,64), 0               ! SIC's target
 ! ---- substitution 2: SERS is a hang ---------------------------------
         SLC, (8)1304.0
 SERSH   B, $
-        END, L1683
+        END, I683

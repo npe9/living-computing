@@ -16,7 +16,7 @@
 ! because a grep alone would mislead:
 !   * 024405.00 / 024407.00 / 024410.00 / 024411.00 appear in those
 !     files' DOCSTRINGS and in their SYN blocks, as INPUTS
-!     (L168K1, L168K2, L168K3, LIC268).
+!     (I68K1, I68K2, I68K3, IC268).
 !   * 024405.00 / 024407.00 / 024410.00 appear in
 !     programs/ax5b_1268_test1bc.strap as PLACED SUBSTITUTIONS --
 !     labels CREG, K1, K2, written there solely "so the block could
@@ -38,7 +38,7 @@
 ! report "-CONTINUITY ERROR." if it differs, then fall through into
 ! routine 1274.  The pool that follows holds the continuity register
 ! IC268, its expected value ICK268, and the three planted words
-! 168K1/168K2/168K3 that tests 1A/1B/1C and 2A use.
+! I68K1/I68K2/I68K3 that tests 1A/1B/1C and 2A use.
 !
 ! ICK268 PRINTS 600000 OCTAL IN BITS 0-17.  Read off its own row at
 ! 024406.00, which prints "600000.00 00 000000.00 00".  600000 octal
@@ -140,17 +140,17 @@
 !
 !     loc        source        printed     pair    b18  -> target
 !     024376.00  B,$+1.0       24377.10 00  001000  0   024377.00
-!     024376.40  BD,1683       24363.44 00  100100  1   024363.40
+!     024376.40  BD,I683       24363.44 00  100100  1   024363.40
 !     024377.40  B,SSW         1301.10 00   001000  0   001301.00
 !     024400.00  BD,$+.32      24400.44 00  100100  1   024400.40
 !     024403.40  BZXE,SERS     1304.32 C0   011010  0   001304.00
 !     024404.00  BD,I74        24412.04 00  000100  0   024412.00
 !     024334.40  B,IDF1        1443.10 00   001000  0   001443.00
-!     024335.40  BD,1681       24337.04 00  000100  0   024337.00
+!     024335.40  BD,I681       24337.04 00  000100  0   024337.00
 !
 !     Read back against the page's own label column: p.111 prints
-!     1683's row at 024363.40 -- an ODD half-word, and its pair's bit
-!     18 is 1.  p.110 prints 1681's row at 024337.00 -- an EVEN
+!     I683's row at 024363.40 -- an ODD half-word, and its pair's bit
+!     18 is 1.  p.110 prints I681's row at 024337.00 -- an EVEN
 !     half-word, and its pair's bit 18 is 0.  024412.00 is routine
 !     1274's first row (PDF p.112, its own SLC address).  The
 !     self-relative pair carries the same information: "B,$+1.0" at
@@ -185,7 +185,7 @@
 !       024400.40  LX,$X13,IC268   24405.32 10   0|1101|0  J=13, LX
 !       024401.40  SX,$X13,IC268   24405.33 10   0|1101|1  J=13, SX
 !       024402.00  LX,$X13,IC268   24405.32 10   same as the first
-!       024333.00  LX,$X1,168ID    24336.02 10   0|0001|0  J=1,  LX
+!       024333.00  LX,$X1,I68ID    24336.02 10   0|0001|0  J=1,  LX
 !       024333.40  SX,$X1,DPET13   1437.03 10    0|0001|1  J=1,  SX
 !     The 32/33 contrast on two rows naming the SAME symbol isolates
 !     bit 23 exactly; DIR_INDEX_CODES["LX"]=0b00001 and ["SX"]=
@@ -250,11 +250,11 @@
 ! assembler's own size accounting from that single anchor:
 !
 !     024376.0 + 14 half-words          = 024404.40
-!     CNOP rounds up (one NOP emitted)  = 024405.00   LIC268
-!     + one full word                   = 024406.00   LICK268
-!     + one full word                   = 024407.00   L168K1
-!     + two half-words                  = 024410.00   L168K2
-!     + two half-words                  = 024411.00   L168K3
+!     CNOP rounds up (one NOP emitted)  = 024405.00   IC268
+!     + one full word                   = 024406.00   ICK268
+!     + one full word                   = 024407.00   I68K1
+!     + two half-words                  = 024410.00   I68K2
+!     + two half-words                  = 024411.00   I68K3
 !
 ! and each is then checked against TWO independent printed columns:
 ! the LOCATION column on the right of p.111 (the SYMBOLS assertions
@@ -269,13 +269,13 @@
 !
 ! ANCHORS, not witnesses: L1268T (this file's own name for the tail's
 ! first row -- the listing's label column is EMPTY for all fourteen
-! tail rows) and L168 at 024333.00 (a real printed label, but placed
+! tail rows) and I68 at 024333.00 (a real printed label, but placed
 ! by this file's second SLC).  Neither is asserted.
 !
-! NOT WITNESSED, and named so it is not mistaken for one: L168ID at
+! NOT WITNESSED, and named so it is not mistaken for one: I68ID at
 ! 024336.00.  The listing prints a LOCATION for that row and NO
 ! MACHINE CODE (see below), so it is SYN'd, from the LOCATION column
-! -- deliberately not from "LX,$X1,168ID"'s machine code, which would
+! -- deliberately not from "LX,$X1,I68ID"'s machine code, which would
 ! make the 024333.00 row a tautology.  Taken that way, the 24336 in
 ! that row's machine code is a real cross-check of one printed column
 ! against the other.
@@ -313,7 +313,7 @@
 !   a NOP before the full-word XW at 024405.00.
 !
 !   between 024335.40 and 024336.00 (p.110): the CNOP row prints
-!   NEITHER A LOCATION NOR MACHINE CODE.  The preceding "BD,1681"
+!   NEITHER A LOCATION NOR MACHINE CODE.  The preceding "BD,I681"
 !   sits at 024335.40, the second half of word 024335, so the counter
 !   is already on the word boundary 024336.00 and CNOP has nothing to
 !   fill.
@@ -352,11 +352,11 @@
 ! WHERE THE LISTING PRINTS A LOCATION AND NO MACHINE CODE, NO WORD IS
 ! FABRICATED.  p.110's row at 024336.00 reads, in full:
 !
-!     168ID   %IQSZ¤DD%BU,64,8¤,1268   Z            024336.00
+!     I68ID   %IQSZ¤DD%BU,64,8¤,1268   Z            024336.00
 !
 ! -- a label, a print macro whose expansion this assembler does not
 ! implement, and an empty machine-code column.  This file therefore
-! stops the entry block at 024335.40 with the CNOP, SYNs L168ID from
+! stops the entry block at 024335.40 with the CNOP, SYNs I68ID from
 ! the printed LOCATION column, and places nothing at 024336.00.  The
 ! verify script asserts that word 024336 is ABSENT from the assembled
 ! image, so the "no fabrication" claim is checked rather than
@@ -385,7 +385,7 @@
 ! A repo-wide rename to those spellings is in progress SEPARATELY.
 ! THIS FILE FOLLOWS THE EXISTING 1268 FILES' CURRENT HOUSE STYLE and
 ! starts no third convention: "L"-prefixed symbol names in the
-! assembler source (L1681, L1683, L168K1, LIC268, ...), bare
+! assembler source (I681, I683, I68K1, IC268, ...), bare
 ! digit-leading spellings in the comments and in the verify script's
 ! note column, exactly as ax5b_1681_if_close_to_ds.strap,
 ! ax5b_1268_test1bc.strap and ax5b_1683_df_close_to_ds.strap do.
@@ -398,7 +398,7 @@
 !
 ! ====================================================================
 ! SUBSTITUTIONS, five, all named:
-!   1. Numeric labels are prefixed "L" (L1681, L1683, L168K1, ...),
+!   1. Numeric labels are prefixed "L" (I681, I683, I68K1, ...),
 !      because this assembler's symbol pattern is [A-Za-z][A-Za-z0-9]*
 !      and reads a leading digit as an address.  The listing writes
 !      them bare (and, per the typography measurement, with a letter).
@@ -409,7 +409,7 @@
 !      real error-report, switch-scan and ident-print routines are
 !      SSIP's and are not transcribed.  RET, SEN, SEN0 and DPET13
 !      get one all-zero word each, as SIC's and SX's targets.
-!   4. L168 falls straight through into the 1681 block, which is
+!   4. I68 falls straight through into the I681 block, which is
 !      transcribed in ax5b_1681_if_close_to_ds.strap; a "BEW,$" exit
 !      is placed at 024337.00 so this file terminates on its own.
 !      Likewise the tail runs into routine 1274 at 024412.00, where a
@@ -439,9 +439,9 @@ SEN0    SYN, (8)1311.0      ! p.116 SYN table
 DPET13  SYN, (8)1437.0      ! p.116 SYN table -- the ident cell
 IDF1    SYN, (8)1443.0      ! p.116 SYN table -- "print ID" entry
 ! Deck labels outside both transcribed ranges.
-L1681   SYN, (8)24337.0     ! p.110 label column: 1681, the loop head
-L1683   SYN, (8)24363.40    ! p.111 label column: 1683, test 2's head
-L168ID  SYN, (8)24336.0     ! p.110 LOCATION column; no machine code
+I681   SYN, (8)24337.0     ! p.110 label column: I681, the loop head
+I683   SYN, (8)24363.40    ! p.111 label column: I683, test 2's head
+I68ID  SYN, (8)24336.0     ! p.110 LOCATION column; no machine code
 I74     SYN, (8)24412.0     ! p.112: routine 1274's first row
 BIT1    SYN, (8)24523.0     ! from V+,$X13,BIT1 = 24523.32 B0; the
                             ! same value ax5b_1258_test2.strap read
@@ -456,19 +456,19 @@ BIT1    SYN, (8)24523.0     ! from V+,$X13,BIT1 = 24523.32 B0; the
 !
 ! ---- loop once, return to SSIP -------------------------------------
 L1268T  B,   $+1.0                 !  skip the BD: -> 024377.00
-        BD,  L1683                 !  the loop back to 1683
+        BD,  I683                 !  the loop back to I683
         SIC, SEN0+.32
         B,   SSW                   ! -TO SSIP      (no period, p.111)
         BD,  $+.32
 !
 ! ---- the routine's continuity register, test 2's bit ---------------
-        LX,  $X13, LIC268          ! -UPDATE CONTINUITY CHECK.
+        LX,  $X13, IC268          ! -UPDATE CONTINUITY CHECK.
         V+,  $X13, BIT1            !  test 2 done = bit 1
-        SX,  $X13, LIC268
+        SX,  $X13, IC268
 !
 ! ---- the continuity CHECK ------------------------------------------
-        LX,  $X13, LIC268
-        KV,  $X13, LICK268         !  against the expected word
+        LX,  $X13, IC268
+        KV,  $X13, ICK268         !  against the expected word
         SIC, SEN
         BZXE, SERS                 ! -CONTINUITY ERROR.
 !
@@ -477,33 +477,33 @@ L1268T  B,   $+1.0                 !  skip the BD: -> 024377.00
 !
 ! ---- the constant pool ---------------------------------------------
         CNOP
-LIC268  XW,  0,0,0                 ! -CONTINUITY REG 1268.
-LICK268 XW,  (8)600000.00,0,0      !  bits 0 AND 1: both tests done
+IC268  XW,  0,0,0                 ! -CONTINUITY REG 1268.
+ICK268 XW,  (8)600000.00,0,0      !  bits 0 AND 1: both tests done
 !
-L168K1  Z,   $X2                   !  the OLD instruction
+I68K1  Z,   $X2                   !  the OLD instruction
         NOP
-L168K2  LVI, $X2, (8)777777.40     !  the NEW one
+I68K2  LVI, $X2, (8)777777.40     !  the NEW one
         NOP
-L168K3  XW,  0,0,0                 !  test 2A's scratch word
+I68K3  XW,  0,0,0                 !  test 2A's scratch word
 
 ! ====================================================================
 ! BLOCK B -- routine 1268's ENTRY, PDF p.110, 024333.00-024335.40.
 ! Stops at the CNOP.  024336.00, the ident word, prints a LOCATION
-! and NO MACHINE CODE and is NOT transcribed; L168ID is SYN'd above
+! and NO MACHINE CODE and is NOT transcribed; I68ID is SYN'd above
 ! from that printed location.
 ! ====================================================================
         SLC, (8)24333.0
-L168    LX,  $X1, L168ID           ! -UPDATE IDENT.
+I68    LX,  $X1, I68ID           ! -UPDATE IDENT.
         SX,  $X1, DPET13
         SIC, RET
         B,   IDF1                  ! -PRINT IDENT.
-        Z,   LIC268                !  clear the continuity register
-        BD,  L1681
+        Z,   IC268                !  clear the continuity register
+        BD,  I681
         CNOP                       !  prints NO location, NO code
 !
 ! ---- substitution 4: the two exits ---------------------------------
         SLC, (8)24337.0
-PASS1   BEW, $                     !  where 1681's block begins
+PASS1   BEW, $                     !  where I681's block begins
         SLC, (8)24412.0
 PASS2   BEW, $                     !  where routine 1274 begins
 !
@@ -529,4 +529,4 @@ BIT1W   XW,  (8)200000.00,0,0      ! quoted from p.114 in
                                    ! ax5b_1258_test2.strap; placed so
                                    ! the block could be run, NOT
                                    ! transcribed and NOT checked
-        END, L168
+        END, I68

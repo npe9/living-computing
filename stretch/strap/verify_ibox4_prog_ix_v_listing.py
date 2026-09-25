@@ -9,10 +9,10 @@ injection, and this block uses three of them -- KC, SR and V-I -- in a
 straight line with no SVA, so it runs as it stands where most of
 IBOX-4 does not.
 
-The two tests share their expected values.  148XW6 starts the index
-value at 148K25's address (011352) and V+ICR adds one word; 148XW7
-starts it at 148K27's address (011354) and V-I subtracts one.  Both
-land on 011353, which is 148K28's value field, so one constant checks
+The two tests share their expected values.  I48XW6 starts the index
+value at I48K25's address (011352) and V+ICR adds one word; I48XW7
+starts it at I48K27's address (011354) and V-I subtracts one.  Both
+land on 011353, which is I48K28's value field, so one constant checks
 both directions.
 """
 from strap_asm import assemble

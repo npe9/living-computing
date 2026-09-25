@@ -9,8 +9,8 @@
 ! self-contained".  They are both.  024162.40 "B,$+1.0" begins the
 ! standard routine-exit sequence this deck uses everywhere (the same
 ! five rows stand at 024357.40-024361.40 on PDF p.110, ending routine
-! 1681), and it runs without a gap through the continuity bridge to
-! the continuity register itself, "1C262 XW,0,0,0 -CONTINUITY REG" at
+! I681), and it runs without a gap through the continuity bridge to
+! the continuity register itself, "IC262 XW,0,0,0 -CONTINUITY REG" at
 ! 024171.00.  That XW is the last printed row on p.108; p.109 opens a
 ! new block with "CNOP / -CONSTANTS FOR 1262." at 024172.00.  So the
 ! cut is where the page ends AND where the routine ends, and the 14
@@ -32,13 +32,13 @@
 ! where that "15." is the TAIL of the left column's sentence and not a
 ! list number.  TEST 3A,
 ! immediately above, put the PSEUDO-IC below 15; TEST 3B leaves the
-! pseudo-IC legal (162PSI, 024323.00) and puts the SUBJECT INSTRUCTION
-! below 32 instead.  "LVI,$X1,$X0 / SVA,$X1,162PSI" is the whole idea:
+! pseudo-IC legal (I62PSI, 024323.00) and puts the SUBJECT INSTRUCTION
+! below 32 instead.  "LVI,$X1,$X0 / SVA,$X1,I62PSI" is the whole idea:
 ! $X0 is index register 0, WORD 16, so its half-word address is 32 --
 ! the LVI takes that address as a value and the SVA plants it in
-! 162PSI's address field, aiming the pseudo-IC at word 16.  Then
-! "LX,$X0,162EXI" loads the subject instruction itself into $X0, and
-! "EXIC,162PSI" tries to execute it from there.  Its three error
+! I62PSI's address field, aiming the pseudo-IC at word 16.  Then
+! "LX,$X0,I62EXI" loads the subject instruction itself into $X0, and
+! "EXIC,I62PSI" tries to execute it from there.  Its three error
 ! messages ARE the contract, and all three are printed on p.108,
 ! read at 600 dpi:
 !
@@ -46,12 +46,12 @@
 !       at 024156.40-024157.00, reached by FALLING THROUGH the EXIC,
 !       so the error is that no interruption occurred.
 !   (b) "-AD NOT SET WHEN SUBJ INST OF / -EXIC LESS THAN 32."
-!       at 024160.00-024160.40, reached from 162104, the handler this
+!       at 024160.00-024160.40, reached from I62104, the handler this
 !       test plants in the interrupt entry, when "BADZ,$+1.32" finds
 !       AD off.
 !   (c) "-SUBJ INST OF EXIC NOT NOPED / -WHEN IT IS LESS THAN 32."
 !       at 024161.40-024162.00.  "Z,$X1" zeroes index register 1
-!       before the EXIC and the subject at 162EXI is
+!       before the EXIC and the subject at I62EXI is
 !       "LVI,$X1,%8@777777.40" (024332.00, PDF p.110, read here), so
 !       "LX,$X1,$X1 / BZXVZ,SERS" -- report the error unless the index
 !       VALUE is zero -- is literally "the subject never ran".
@@ -74,9 +74,9 @@
 !
 ! ONE ROW IS NOT EXPLAINED BY THESE PAGES, and TEST 3A's forward
 ! reference to it is CONFIRMED here first-hand.  At 024155.40, between
-! "Z,$X1" and "EXIC,162PSI", stands "%8@DD%BU,32,8@,3740
+! "Z,$X1" and "EXIC,I62PSI", stands "%8@DD%BU,32,8@,3740
 ! -ILLEGAL OP." printing 00000003740 -- byte for byte the same word
-! TEST 3A carries at 024144.40, and the same word routine 1260's 160K7
+! TEST 3A carries at 024144.40, and the same word routine 1260's I60K7
 ! prints at 023050.00 under "-ILLEGAL OP, NO. 31."
 ! (programs/ax5b_160k_constants.strap).  ax5b_162_test3a.strap said
 ! TEST 3B "repeats the identical Z,$X1 / DD / EXIC triple at
@@ -105,16 +105,16 @@
 ! between "Z,$X1" and the EXIC.  The OK path out of the EXIC is an
 ! INTERRUPT -- that is what makes 024156.40's fall-through error
 ! "-NO INTERRUPT WHEN SUBJ INST OF / -EXIC LESS THAN 32." and what the
-! SVA at 024154.40 plants L162104 for.  So the system must be ENABLED
+! SVA at 024154.40 plants I62104 for.  So the system must be ENABLED
 ! when 024156.00 runs.  If it is also enabled one half-word earlier,
-! the DD interrupts FIRST, vectors to the same L162104 (024157.40),
+! the DD interrupts FIRST, vectors to the same I62104 (024157.40),
 ! and arrives with OP set and AD clear -- so the BADZ there would fall
 ! through to "-AD NOT SET WHEN SUBJ INST OF / -EXIC LESS THAN 32.",
 ! and the EXIC under test would never execute at all.  The block
 ! cannot pass under that reading, and the deck presumably passed.
 !
 ! AND THE ANSWER IS A FOURTH THING, none of the three candidates this
-! file first listed.  **160S1 RETURNS DISABLED, THE BLOCK STAYS
+! file first listed.  **I60S1 RETURNS DISABLED, THE BLOCK STAYS
 ! DISABLED, THE DD IS EXECUTED AND DOES ACTUATE OP -- AND THE EXIC
 ! INTERRUPTS ANYWAY.**  The word is not a probe here.  It is a
 ! higher-priority DECOY, and its job is to keep AD alive for the BADZ
@@ -122,8 +122,8 @@
 !
 ! Three primary-source steps, each read first-hand at 300 dpi:
 !
-!   1. 160S1 NEVER ENABLES.  Its return, PDF p.85 at 023041.00, is
-!      "160SX1 $BD,0" printing "0.04 00" -- a BRANCH DISABLED whose
+!   1. I60S1 NEVER ENABLES.  Its return, PDF p.85 at 023041.00, is
+!      "I60SX1 $BD,0" printing "0.04 00" -- a BRANCH DISABLED whose
 !      address the caller's SIC plants.  Printed p.41: SIC "causes the
 !      instruction counter contents to be stored in bits 0-18 of the
 !      half-word specified by bits 0-18 of the effective storage
@@ -131,7 +131,7 @@
 !      the SIC fills the address and leaves the BD standing.  Printed
 !      p.40: "Branch Disabled (BD).  This operation disables the
 !      interruption mechanism, and then performs the same operation as
-!      BRANCH."  There is no BE anywhere in 160S1.  TEST 3B is disabled
+!      BRANCH."  There is no BE anywhere in I60S1.  TEST 3B is disabled
 !      from 024153.00 onward.
 !
 !   2. AN EXECUTION OPERATION INTERRUPTS EVEN WHILE DISABLED.  Printed
@@ -175,15 +175,15 @@
 ! comes after it.
 !
 ! THE DECK EXERCISES THE p.50 RULE INDEPENDENTLY, which is what raises
-! this above a manual-only reading: block 16225 on PDF p.93 is called
+! this above a manual-only reading: block I6225 on PDF p.93 is called
 ! with BD, never enables, and yet FALLING THROUGH its EX is the error
 ! "-NO INT TAKEN WHEN BE INSTR EXECUTED, / -BRANCH NOT EXECUTED."  The
 ! OK path there is an interruption taken while provably disabled.
 !
 ! A NOTE ON HOW THIS WAS FOUND, because the process is repeatable.  The
 ! earlier draft of this block listed three candidate resolutions and
-! named the two pages that would decide it -- 160S1 (pp.83-85) and
-! 162ITE (p.109).  Naming the pages worked; listing the candidates did
+! named the two pages that would decide it -- I60S1 (pp.83-85) and
+! I62ITE (p.109).  Naming the pages worked; listing the candidates did
 ! not, and the answer was none of the three.  **Candidates are a way of
 ! showing the question is tractable, not a menu the answer comes from.**
 ! Reading the named pages is what settled it.
@@ -199,7 +199,7 @@
 ! five, thirteen, eight, twelve and thirty-three verify files each.
 ! What TEST 3B adds:
 !   - a THIRD independent listing witness for EXIC (TEST 2B's
-!     "EXIC,162PSI", TEST 3A's "EXIC,$R", and this one), and the
+!     "EXIC,I62PSI", TEST 3A's "EXIC,$R", and this one), and the
 !     only one of the three whose failure mode is the SUBJECT's
 !     address rather than the pseudo-IC's;
 !   - the first row anywhere in this repo with an INDEX REGISTER in an
@@ -214,7 +214,7 @@
 !     One block now discriminates the two unconditional-branch codes.
 !
 ! ENCODING ONLY, and it could not be otherwise: a run needs the
-! 64-word interrupt table, SSIP's SEN/SERS reporting, 160S1's body,
+! 64-word interrupt table, SSIP's SEN/SERS reporting, I60S1's body,
 ! and an EXIC the model actually EXECUTES.  EXIC is in MISC_CODES, so
 ! the ASSEMBLER encodes it; that is the whole distinction.
 !
@@ -233,7 +233,7 @@
 ! 1268 -- one continuity register per routine, named for its routine
 ! number.  (The neighbouring O-vs-0 question DOES yield to
 ! measurement, and goes the other way: at 024163.40 the glyph after
-! SEN is 44 px, matching the digit 0 of "BD,162100" on this page,
+! SEN is 44 px, matching the digit 0 of "BD,I62100" on this page,
 ! 44-45 px, against 50-51 px for the letter O of "-NO INTERRUPT WHEN
 ! SUBJ INST OF".  So SEN0, with the digit -- which is how
 ! ax5b_160_test8b.strap spells it and not how
@@ -245,67 +245,67 @@
 !
 ! EXTERNALS, SYN'd at the addresses this listing prints.  THESE ARE
 ! INPUTS TO THE CHECK, NOT WITNESSES -- the same caveat
-! verify_ax5b_16082_16083_listing.py makes about L16088.  A SYN row
+! verify_ax5b_16082_16083_listing.py makes about I6088.  A SYN row
 ! MAKES the address field come out right, so the rows naming one prove
 ! only that every OTHER field lands where the listing puts it.
 ! Corroboration exists for most of them and none of it converts an
-! input into a witness: 162ITE (024320.00), 162PSI (024323.00),
-! 162EXI (024332.00) and L168 (024333.00) were each read at 600 dpi
+! input into a witness: I62ITE (024320.00), I62PSI (024323.00),
+! I62EXI (024332.00) and I68 (024333.00) were each read at 600 dpi
 ! out of the LABEL COLUMN of PDF pp.109-110 for this transcription;
 ! SEN0 (001311.00) and SSW (001301.00) are corroborated by the
 ! identical exit sequence printed at 024360.40-024361.00 on p.110, and
 ! also appear in ax5b_160_test8b.strap; BIT8 = 024532.00 is the bit
 ! table's base 024522 plus 8, matching 8b's LBIT11 = 024535.00;
-! L162100 = 024136.00 is TEST 3A's entry label; SEN, SERS, 160SX1 and
-! 160S1 rest on other verify files in this repo.
+! I62100 = 024136.00 is TEST 3A's entry label; SEN, SERS, I60SX1 and
+! I60S1 rest on other verify files in this repo.
 !
 ! THE BLOCK'S GENUINE ADDRESS WITNESSES are THREE, and TEST 3B is a
 ! better-anchored block than TEST 3A for a reason worth naming: its
-! FIRST ROW CARRIES NO LABEL.  TEST 3A had to disclaim L162100,
-! because the SLC set the counter and L162100 was the very next label,
+! FIRST ROW CARRIES NO LABEL.  TEST 3A had to disclaim I62100,
+! because the SLC set the counter and I62100 was the very next label,
 ! so checking it checked the SLC against the number handed to the SLC.
-! Here the first label, L162104, is TWELVE half-words downstream of
+! Here the first label, I62104, is TWELVE half-words downstream of
 ! the SLC -- it lands right only if all twelve preceding rows are
 ! sized right.  The three:
-!   - L162104 at 024157.40, reached by the LVI at 024154.00;
-!   - LIC262 at 024171.00, thirty-one half-words downstream, and
+!   - I62104 at 024157.40, reached by the LVI at 024154.00;
+!   - IC262 at 024171.00, thirty-one half-words downstream, and
 !     actually tested by the two rows that name it (024165.00 and
 !     024166.00);
 !   - the self-relative rows 024157.40 "$+1.32", 024162.40 "$+1.0" and
 !     024164.40 "$+.32", which depend on no symbol at all.
-! LIC262's own CONTENT witnesses nothing -- XW,0,0,0 assembles to all
+! IC262's own CONTENT witnesses nothing -- XW,0,0,0 assembles to all
 ! zeros under any field layout -- so only its ADDRESS counts.
 
-L160SX1 SYN, (8)23041.0            ! 1260's SIC return link (also p.41)
-L160S1  SYN, (8)22741.0            ! 1260's "CLR INDS 0-19" subroutine
+I60SX1 SYN, (8)23041.0            ! 1260's SIC return link (also p.41)
+I60S1  SYN, (8)22741.0            ! 1260's "CLR INDS 0-19" subroutine
 SEN     SYN, (8)1310.0             ! the SIC error-entry link
 SEN0    SYN, (8)1311.0             ! the no-error SIC entry (p.110 too)
 SERS    SYN, (8)1304.0             ! the error-report routine
 SSW     SYN, (8)1301.0             ! SSIP's sense-switch entry (p.110)
 BIT8    SYN, (8)24532.0            ! bit table 024522 + 8
-L162100 SYN, (8)24136.0            ! TEST 3A's entry, PDF p.107
-L162ITE SYN, (8)24320.0            ! "-ALL INTERRUPTS ENTER HERE", p.109
-L162PSI SYN, (8)24323.0            ! the pseudo-IC word, PDF p.109
-L162EXI SYN, (8)24332.0            ! the IMMED IX subject, PDF p.110
-L168    SYN, (8)24333.0            ! routine 168's entry, PDF p.110
+I62100 SYN, (8)24136.0            ! TEST 3A's entry, PDF p.107
+I62ITE SYN, (8)24320.0            ! "-ALL INTERRUPTS ENTER HERE", p.109
+I62PSI SYN, (8)24323.0            ! the pseudo-IC word, PDF p.109
+I62EXI SYN, (8)24332.0            ! the IMMED IX subject, PDF p.110
+I68    SYN, (8)24333.0            ! routine 168's entry, PDF p.110
         SLC, (8)24151.40
 !
 ! ---- aim the pseudo-IC at $X0, which is word 16, so below 32 -------
         LVI, $X1, $X0              ! -TEST 3B, SUBJ INSTR OF EXITC LESS
-        SVA, $X1, L162PSI          ! -THAN 32.
-        SIC, L160SX1               ! -CLR INDS 0-19
-        B,   L160S1
-        LX,  $X0, L162EXI          ! the subject instruction, into word 16
-        LVI, $X1, L162104
-        SVA, $X1, L162ITE          ! plant the handler in the entry
+        SVA, $X1, I62PSI          ! -THAN 32.
+        SIC, I60SX1               ! -CLR INDS 0-19
+        B,   I60S1
+        LX,  $X0, I62EXI          ! the subject instruction, into word 16
+        LVI, $X1, I62104
+        SVA, $X1, I62ITE          ! plant the handler in the entry
         Z,   $X1                   ! so a subject that ran shows up
         DD(BU,32,8), (8)3740       ! -ILLEGAL OP.  (see header)
-        EXIC, L162PSI
+        EXIC, I62PSI
         SIC, SEN                   ! -NO INTERRUPT WHEN SUBJ INST OF
         BD,  SERS                  ! -EXIC LESS THAN 32.
 !
-! ---- 162104: where the interruption lands; rules (b) and (c) -------
-L162104 BADZ, $+1.32               ! AD on -> skip the error, clearing it
+! ---- I62104: where the interruption lands; rules (b) and (c) -------
+I62104 BADZ, $+1.32               ! AD on -> skip the error, clearing it
         SIC, SEN                   ! -AD NOT SET WHEN SUBJ INST OF
         B,   SERS                  ! -EXIC LESS THAN 32.   (B, not BD)
         LX,  $X1, $X1
@@ -314,17 +314,17 @@ L162104 BADZ, $+1.32               ! AD on -> skip the error, clearing it
 !
 ! ---- routine 1262's exit, then the continuity bridge ---------------
         B,   $+1.0                 ! computed target 024163.40, bit 18 = 1
-        BD,  L162100               ! the restart link: TEST 3A's entry
+        BD,  I62100               ! the restart link: TEST 3A's entry
         SIC, SEN0+.32
         B,   SSW                   ! -TO SSIP.
         BD,  $+.32
-        LX,  $X13, LIC262          ! -UPDATE CONTINUITY.
+        LX,  $X13, IC262          ! -UPDATE CONTINUITY.
         V+,  $X13, BIT8            ! routine 1262 done = bit 8
-        SX,  $X13, LIC262
+        SX,  $X13, IC262
         KVI, $X13, (8)777000.0     ! compare the whole continuity mask
         SIC, SEN
         BZXE, SERS                 ! -CONTINUITY ERROR.
-        BD,  L168                  ! on to routine 168, PDF p.110
+        BD,  I68                  ! on to routine 168, PDF p.110
         CNOP
-LIC262  XW, 0, 0, 0                ! -CONTINUITY REG
+IC262  XW, 0, 0, 0                ! -CONTINUITY REG
         END, (8)24151.40

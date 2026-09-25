@@ -81,18 +81,18 @@ prog = assemble(open("programs/ax5b_16071_ts.strap").read())
 # modifier bits rather than address placement.  The CB names "$" and is
 # the one real address check.
 ROWS = [
-    ('016007.00', '24544.10 10', 'L16071 LX,$X4,BIT18  (ext) "-TS", the value one'),
+    ('016007.00', '24544.10 10', 'I6071 LX,$X4,BIT18  (ext) "-TS", the value one'),
     ('016007.40', '1.11 30',     'SV,$X4,1.0           into word 1, the interval timer'),
     ('016010.00', '1000.11 02',  'LCI,$X4,512          512 = octal 1000, an 18-bit count'),
     ('016010.40', '16010.50 48', 'CB,$X4,$             count and branch to itself'),
-    ('016011.00', '21400.42 42', 'BTS,L16088           (ext) indicator 4'),
+    ('016011.00', '21400.42 42', 'BTS,I6088           (ext) indicator 4'),
     ('016011.40', '1310.00 80',  'SIC,SEN              (ext) "UNABLE TO TURN TS ON."'),
     ('016012.00', '1304.10 00',  'B,SERS               (ext)'),
-    ('016012.40', '21734.10 00', 'B,L16093             (ext)'),
+    ('016012.40', '21734.10 00', 'B,I6093             (ext)'),
 ]
 
 SYMBOLS = {
-    'L16071': '016007.00',
+    'I6071': '016007.00',
 }
 
 finish(check_rows(prog, ROWS, SYMBOLS, label='1260 TS '))

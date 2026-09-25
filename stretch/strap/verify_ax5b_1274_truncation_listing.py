@@ -275,7 +275,7 @@ that looked like firsts on inspection:
     "LV"          -- verify_ibox1_cpi_chain_listing.py, and
         verify_ax5b_160102_listing.py's "LV,$X3,BIT0($X1)".
     A LABEL IN XW'S REFILL FIELD -- verify_ax5b_160k_listing.py's
-        "L160XW1 XW,0,64,L160IT" and "L160XW4 XW,0,63,L160IT".
+        "I60XW1 XW,0,64,I60IT" and "I60XW4 XW,0,63,I60IT".
         024474.00's "I74K4 XW,0,0,I74K1" -> "0.00 00 000000.51 39" is
         a SECOND, independent listing witness for strap_asm's ">> 6"
         bit-address-to-word-address conversion there (bits 46-63 =

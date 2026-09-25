@@ -1,4 +1,4 @@
-! jb_ax5b "I-Box 5", routine 1260's 160S1 -- "SUBROUTINE TO CLR INDS
+! jb_ax5b "I-Box 5", routine 1260's I60S1 -- "SUBROUTINE TO CLR INDS
 ! 0-19, AND CHK THAT THEY ARE CLRD."  PDF pp.83-84 (printed pp.80-81),
 ! octal 022741.00-023021.00, transcribed VERBATIM at the listing's own
 ! addresses and checked bit-exactly by verify_ax5b_160s1_listing.py.
@@ -6,14 +6,14 @@
 ! THIS FILE IS THE HEAD ONLY, 022741.00-023021.00 (PDF pp.83-84).  The
 ! TAIL, 023021.40-023041.00 on p.85, is programs/ax5b_160s1_tail.strap
 ! -- and it holds the row that matters most in the whole subroutine:
-! the RETURN, "160SX1 $BD,0" at 023041.00.  160S1 returns via a BRANCH
-! DISABLED, so every block that calls "SIC,160SX1 / B,160S1" runs
+! the RETURN, "I60SX1 $BD,0" at 023041.00.  I60S1 returns via a BRANCH
+! DISABLED, so every block that calls "SIC,I60SX1 / B,I60S1" runs
 ! DISABLED afterwards unless it enables for itself.  That fact settled
 ! an open question about routine 1262's TEST 3A/3B; see
 ! programs/ax5b_162_test3b.strap.  Read the two files together.
 
 ! THIS IS THE ROUTINE docs/NEXT.md MYTHOLOGISED.  The file opened with
-! "Prerequisite: SSIP's 160S1/160SX1 save/restore harness, reported at
+! "Prerequisite: SSIP's I60S1/I60SX1 save/restore harness, reported at
 ! ax5b pp.41-44.  Nothing from 1260 can run without it."  Every clause
 ! of that was wrong:
 !   * it is not SSIP's -- it is local to routine 1260;
@@ -47,7 +47,7 @@
 ! BIT26 is ",2", BIT27 is ",1", printing bits 25, 26 and 27
 ! respectively.  Fixed; see strap_asm.py's XW arm.
 !
-! ENCODING ONLY.  Running it needs 160DMP (023301.00) and the SERS
+! ENCODING ONLY.  Running it needs I60DMP (023301.00) and the SERS
 ! error routine, neither transcribed -- and the point of having it is
 ! the p.71 block, which needs more besides.
 !
@@ -55,11 +55,11 @@
 ! Every external is given by SYN at the address this block's own rows
 ! print for it.
 
-L160DMP SYN, (8)23301.0
+I60DMP SYN, (8)23301.0
 SEN     SYN, (8)1310.0
 SERS    SYN, (8)1304.0
         SLC, (8)22741.0
-L160S1  SX,  $X1, L160DMP        ! -SUBROUTINE TO CLR INDS 0-19,
+I60S1  SX,  $X1, I60DMP        ! -SUBROUTINE TO CLR INDS 0-19,
         BMKZ, $+.32              ! -AND CHK THAT THEY ARE CLRD.
         TI,  1, 11.0, $X1
         KVI, $X1, (8)400000.0
@@ -141,4 +141,4 @@ L160S1  SX,  $X1, L160DMP        ! -SUBROUTINE TO CLR INDS 0-19,
         KVI, $X1, (8)10.0
         SIC, SEN
         BZXL, SERS
-        END, L160S1
+        END, I60S1

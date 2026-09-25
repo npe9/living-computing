@@ -43,20 +43,20 @@ index value, so NONZERO is the error (BZXVZ); FLT PT and VFL clear
 $L/$R and expect a nonzero result, so ZERO is the error (BXVZ).
 
 THE 162* SYMBOLS ARE INPUTS, NOT WITNESSES -- the same caveat
-verify_ax5b_16082_16083_listing.py makes about L16088.  No label row
+verify_ax5b_16082_16083_listing.py makes about I6088.  No label row
 defining any of them appears on PDF p.101; every address comes from an
 OPERAND field.
 
 BUT THEY ARE CORROBORATED ON ANOTHER PAGE, found 2026-09-24 while
 transcribing TEST 3A and verified first-hand at 300 dpi.  PDF p.109
 carries 1262's constants area and DOES define them in its LABEL
-column -- "162INT DR%BU,64,8@,64  -INTRPT TABLE." among them, the same
-64-word shape routine 1260 writes as "160IT DR%BU,64,8@,64".  That
+column -- "I62INT DR%BU,64,8@,64  -INTRPT TABLE." among them, the same
+64-word shape routine 1260 writes as "I60IT DR%BU,64,8@,64".  That
 does not turn an input into a witness for THESE rows, which still make
 their addresses come out right by construction; what it does is remove
 the worry that a SYN was merely a number chosen to fit.  Two
 independent readings of two different pages agree.  Genuinely witnessed by the page's own label column:
-L16267 at 023755.40 and L16268 at 023756.40, each confirmed by bit 18
+I6267 at 023755.40 and I6268 at 023756.40, each confirmed by bit 18
 of the row that names it (23755.43 -> .40, 23756.44 -> .40).
 
 PROVEN DISCRIMINATING.  Observed failure sets:
@@ -78,11 +78,11 @@ prog = assemble(open("programs/ax5b_162_exic_classes.strap").read())
 
 ROWS = [
     ('023742.40', '1310.00 80',
-     'L16265 SIC,SEN         (ext) "-INT WHEN EXIC TO"'),
+     'I6265 SIC,SEN         (ext) "-INT WHEN EXIC TO"'),
     ('023743.00', '1304.10 00',
      'B,SERS                (ext) "-A MISC INSTRUCT."'),
     ('023743.40', '21.02 10',
-     'L16266 LX,$X1,$X1'),
+     'I6266 LX,$X1,$X1'),
     ('023744.00', '1310.00 80',
      'SIC,SEN               (ext) "-SUBJ INST WAS MISC"'),
     ('023744.40', '1304.31 40',
@@ -90,43 +90,43 @@ ROWS = [
     ('023745.00', '0.45 05',
      'V+I,$X2,0.32'),
     ('023745.40', '24323.04 90',
-     'KV,$X2,L162PSI       (ext) the pseudo-IC after'),
+     'KV,$X2,I62PSI       (ext) the pseudo-IC after'),
     ('023746.00', '1310.00 80',
      'SIC,SEN               (ext) "-PSEUDO IC NOT STEPPED .32"'),
     ('023746.40', '1304.32 C0',
      'BZXE,SERS             (ext) message is STALE, see header'),
     ('023747.00', '23755.43 01',
-     'LVI,$X1,L16267       "-FLT PT."'),
+     'LVI,$X1,I6267       "-FLT PT."'),
     ('023747.40', '24320.03 D0',
-     'SVA,$X1,L162ITE      (ext) plant the handler'),
+     'SVA,$X1,I62ITE      (ext) plant the handler'),
     ('023750.00', '24324.03 01',
-     'LVI,$X1,L162SUB      (ext)'),
+     'LVI,$X1,I62SUB      (ext)'),
     ('023750.40', '24323.03 D0',
-     'SVA,$X1,L162PSI      (ext) aim the pseudo-IC'),
+     'SVA,$X1,I62PSI      (ext) aim the pseudo-IC'),
     ('023751.00', '24330.02 10',
-     'LX,$X1,L162EXF       (ext) the FLT PT subject'),
+     'LX,$X1,I62EXF       (ext) the FLT PT subject'),
     ('023751.40', '24324.03 10',
-     'SX,$X1,L162SUB       (ext)'),
+     'SX,$X1,I62SUB       (ext)'),
     ('023752.00', '13.22 00',
      'Z,$IND'),
     ('023752.40', '14.22 00',
      'Z,$MASK'),
     ('023753.00', '24323.04 30',
-     'LV,$X2,L162PSI       (ext) pseudo-IC BEFORE the EXIC'),
+     'LV,$X2,I62PSI       (ext) pseudo-IC BEFORE the EXIC'),
     ('023753.40', '10.22 00',
      'Z,$L'),
     ('023754.00', '11.22 00',
      'Z,$R'),
     ('023754.40', '24323.16 00',
-     'EXIC,L162PSI         (ext)'),
+     'EXIC,I62PSI         (ext)'),
     ('023755.00', '23756.44 00',
-     'BD,L16268'),
+     'BD,I6268'),
     ('023755.40', '1310.00 80',
-     'L16267 SIC,SEN        (ext) "-INT WHEN EXIC TO"'),
+     'I6267 SIC,SEN        (ext) "-INT WHEN EXIC TO"'),
     ('023756.00', '1304.10 00',
      'B,SERS                (ext) "-A FLT PT INSTRUCT."'),
     ('023756.40', '10.02 10',
-     'L16268 LX,$X1,$L'),
+     'I6268 LX,$X1,$L'),
     ('023757.00', '1310.00 80',
      'SIC,SEN               (ext) "-SUBJ INST WAS FLT PT"'),
     ('023757.40', '1304.31 42',
@@ -134,36 +134,36 @@ ROWS = [
     ('023760.00', '0.45 05',
      'V+I,$X2,0.32'),
     ('023760.40', '24323.04 90',
-     'KV,$X2,L162PSI       (ext)'),
+     'KV,$X2,I62PSI       (ext)'),
     ('023761.00', '1310.00 80',
      'SIC,SEN               (ext) "-PSEUDO IC NOT STEPPED .32"'),
     ('023761.40', '1304.32 C0',
      'BZXE,SERS             (ext) message is STALE'),
     ('023762.00', '23770.03 01',
-     'LVI,$X1,L16269       (ext) "-FULL WD VFL."'),
+     'LVI,$X1,I6269       (ext) "-FULL WD VFL."'),
     ('023762.40', '24320.03 D0',
-     'SVA,$X1,L162ITE      (ext)'),
+     'SVA,$X1,I62ITE      (ext)'),
     ('023763.00', '24324.03 01',
-     'LVI,$X1,L162SUB      (ext)'),
+     'LVI,$X1,I62SUB      (ext)'),
     ('023763.40', '24323.03 D0',
-     'SVA,$X1,L162PSI      (ext)'),
+     'SVA,$X1,I62PSI      (ext)'),
     ('023764.00', '24327.02 10',
-     'LX,$X1,L162EXV       (ext) the VFL subject'),
+     'LX,$X1,I62EXV       (ext) the VFL subject'),
     ('023764.40', '24324.03 10',
-     'SX,$X1,L162SUB       (ext)'),
+     'SX,$X1,I62SUB       (ext)'),
     ('023765.00', '13.22 00',
      'Z,$IND'),
     ('023765.40', '14.22 00',
      'Z,$MASK'),
     ('023766.00', '24323.04 30',
-     'LV,$X2,L162PSI       (ext)'),
+     'LV,$X2,I62PSI       (ext)'),
     ('023766.40', '11.22 00',
      'Z,$R                    no Z,$L: a VFL full word writes $R'),
     ('023767.00', '24323.16 00',
-     'EXIC,L162PSI         (ext)'),
+     'EXIC,I62PSI         (ext)'),
     ('023767.40', '23771.04 00',
-     'BD,L16270            (ext) PDF p.102'),]
+     'BD,I6270            (ext) PDF p.102'),]
 
-SYMBOLS = {'L16267': '023755.40', 'L16268': '023756.40'}
+SYMBOLS = {'I6267': '023755.40', 'I6268': '023756.40'}
 
 finish(check_rows(prog, ROWS, SYMBOLS, label='1262 2B '))

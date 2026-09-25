@@ -14,7 +14,7 @@ is taken -- the negative half of the same contract.
 
 TEST 8C's own title, PDF p.76 at 022546.00, verbatim:
 
-  160127 LVI,$X1,160AD1  -TEST 8C CHECKS DF + IF UNDER 4 CONDS,
+  I60127 LVI,$X1,I60AD1  -TEST 8C CHECKS DF + IF UNDER 4 CONDS,
                          -1. DISABL MASK 0 FETCH OK IND NO INT
                          -2. DIAABL MASK 1 FETCH OK NO IND NO INT
                          -3. ENABLE MASK 0 FETCH OK IND ON NO INT
@@ -76,35 +76,35 @@ WHAT IS AND IS NOT CHECKED HERE.  A SYN IS AN INPUT TO THE CHECK, NOT
 A WITNESS.  Every SYN in the program was derived by reading bit 18 out
 of the octal pair of the row that names it, so those rows re-verify
 only the opcode and modifier bits; they are marked "(ext)" below.  The
-rows that really check address placement are the ones naming L160127
-.. L160136, which are defined INSIDE the transcribed range.  Twelve
+rows that really check address placement are the ones naming I60127
+.. I60136, which are defined INSIDE the transcribed range.  Twelve
 such references resolve to in-range labels, and each was read off bit
 18 against the page's own label column:
 
-  case 1  LVI,$X5,L160128  022554.00 -> 22560.53, pair 53, bit18=1
-                                     -> 022560.40 = label 160128
-          LVI,$X2,L160129  022564.00 -> 22571.05, pair 05, bit18=0
-                                     -> 022571.00 = label 160129
-          LVI,$X2,L160130  022565.00 -> 22573.05, pair 05, bit18=0
-                                     -> 022573.00 = label 160130
-          BZIFZ,L160131    022571.00 -> 22574.12, pair 12, bit18=0
-                                     -> 022574.00 = label 160131
-          BD,L160131       022572.40 -> 22574.04, pair 04, bit18=0
-                                     -> 022574.00 = label 160131
-          BD,L160127       022577.00 -> 22546.04, pair 04, bit18=0
-                                     -> 022546.00 = label 160127
-  case 2  LVI,$X5,L160133  022611.40 -> 22616.13, pair 13, bit18=0
-                                     -> 022616.00 = label 160133
-          LVI,$X2,L160134  022621.40 -> 22627.05, pair 05, bit18=0
-                                     -> 022627.00 = label 160134
-          LVI,$X2,L160135  022623.40 -> 22631.05, pair 05, bit18=0
-                                     -> 022631.00 = label 160135
-          BZIFZ,L160136    022627.00 -> 22632.12, pair 12, bit18=0
-                                     -> 022632.00 = label 160136
-          BD,L160136       022630.40 -> 22632.04, pair 04, bit18=0
-                                     -> 022632.00 = label 160136
-          BD,L160132       022635.00 -> 22602.44, pair 44, bit18=1
-                                     -> 022602.40 = label 160132
+  case 1  LVI,$X5,I60128  022554.00 -> 22560.53, pair 53, bit18=1
+                                     -> 022560.40 = label I60128
+          LVI,$X2,I60129  022564.00 -> 22571.05, pair 05, bit18=0
+                                     -> 022571.00 = label I60129
+          LVI,$X2,I60130  022565.00 -> 22573.05, pair 05, bit18=0
+                                     -> 022573.00 = label I60130
+          BZIFZ,I60131    022571.00 -> 22574.12, pair 12, bit18=0
+                                     -> 022574.00 = label I60131
+          BD,I60131       022572.40 -> 22574.04, pair 04, bit18=0
+                                     -> 022574.00 = label I60131
+          BD,I60127       022577.00 -> 22546.04, pair 04, bit18=0
+                                     -> 022546.00 = label I60127
+  case 2  LVI,$X5,I60133  022611.40 -> 22616.13, pair 13, bit18=0
+                                     -> 022616.00 = label I60133
+          LVI,$X2,I60134  022621.40 -> 22627.05, pair 05, bit18=0
+                                     -> 022627.00 = label I60134
+          LVI,$X2,I60135  022623.40 -> 22631.05, pair 05, bit18=0
+                                     -> 022631.00 = label I60135
+          BZIFZ,I60136    022627.00 -> 22632.12, pair 12, bit18=0
+                                     -> 022632.00 = label I60136
+          BD,I60136       022630.40 -> 22632.04, pair 04, bit18=0
+                                     -> 022632.00 = label I60136
+          BD,I60132       022635.00 -> 22602.44, pair 44, bit18=1
+                                     -> 022602.40 = label I60132
 
 PROVEN DISCRIMINATING.  Observed failure sets -- measured, not
 predicted:
@@ -143,21 +143,21 @@ prog = assemble(open("programs/ax5b_160_test8c_disabled.strap").read())
 ROWS = [
     # ---- CASE 1: disabled, mask 0 (PDF pp.76-77) ----
     ('022546.00', '23063.03 01',
-     'L160127 LVI,$X1,L160AD1   (ext) "-TEST 8C CHECKS DF + IF UNDER 4 CONDS,"'),
+     'I60127 LVI,$X1,I60AD1   (ext) "-TEST 8C CHECKS DF + IF UNDER 4 CONDS,"'),
     ('022546.40', '24613.04 10',
      'LX,$X2,LBIT57          (ext)'),
     ('022547.00', '3.05 10',
      'SX,$X2,3.0             boundary control word'),
     ('022547.40', '23064.22 00',
-     'Z,L160AD3              (ext)'),
+     'Z,I60AD3              (ext)'),
     ('022550.00', '22550.44 00',
      'BD,$+.32                DISABLE the interruption system'),
     ('022550.40', '14.22 00',
      'Z,$MASK                 mask 0 for this case'),
     ('022551.00', '23041.00 80',
-     'SIC,L160SX1            (ext)'),
+     'SIC,I60SX1            (ext)'),
     ('022551.40', '22741.10 00',
-     'B,L160S1               (ext) SSIP save/restore'),
+     'B,I60S1               (ext) SSIP save/restore'),
     ('022552.00', '13.22 00',
      'Z,$IND'),
     ('022552.40', '777777.47 01',
@@ -165,17 +165,17 @@ ROWS = [
     ('022553.00', '1353.11 01',
      'LVI,$X4,LINT           (ext)'),
     ('022553.40', '23201.11 03',
-     'LRI,$X4,L160IT         (ext) the 64-word table'),
+     'LRI,$X4,I60IT         (ext) the 64-word table'),
     ('022554.00', '22560.53 01',
-     'LVI,$X5,L160128'),
+     'LVI,$X5,I60128'),
     ('022554.40', '22372.13 D0',
-     'SVA,$X5,L160107        (ext) plant the handler'),
+     'SVA,$X5,I60107        (ext) plant the handler'),
     ('022555.00', '3.03 30',
      'SV,$X1,$UB              upper boundary'),
     ('022555.40', '2.11 70',
      'SR,$X4,$IA'),
     ('022556.00', '23064.06 30',
-     'LV,$X3,L160AD3         (ext) THE FETCH ABOVE UB'),
+     'LV,$X3,I60AD3         (ext) THE FETCH ABOVE UB'),
     ('022556.40', '22560.12 44',
      'BZDFZ,$+1.32            DF must be OFF (indicator 20)'),
     ('022557.00', '1310.00 80',
@@ -185,7 +185,7 @@ ROWS = [
     ('022560.00', '22561.44 00',
      'BD,$+1.32'),
     ('022560.40', '1310.00 80',
-     'L160128 SIC,SEN        (ext) "-ENTER HERE FROM INT."'),
+     'I60128 SIC,SEN        (ext) "-ENTER HERE FROM INT."'),
     ('022561.00', '1304.10 00',
      'B,SERS                 (ext) "-INT ON DF, DISABLED MASK 0, FETCH"'),
     ('022561.40', '2.11 30',
@@ -199,13 +199,13 @@ ROWS = [
     ('022563.40', '1304.10 00',
      'B,SERS                 (ext) "-MASK 0, SYSTEM DISABLED."'),
     ('022564.00', '22571.05 01',
-     'LVI,$X2,L160129'),
+     'LVI,$X2,I60129'),
     ('022564.40', '3.45 30',
-     'SV,$X2,$LB              lower boundary := L160129'),
+     'SV,$X2,$LB              lower boundary := I60129'),
     ('022565.00', '22573.05 01',
-     'LVI,$X2,L160130'),
+     'LVI,$X2,I60130'),
     ('022565.40', '22372.05 D0',
-     'SVA,$X2,L160107        (ext)'),
+     'SVA,$X2,I60107        (ext)'),
     ('022566.00', '2.11 70',
      'SR,$X4,$IA'),
     ('022566.40', '777777.05 01',
@@ -219,19 +219,19 @@ ROWS = [
     ('022570.40', '0.30 00',
      'NOP'),
     ('022571.00', '22574.12 C4',
-     'L160129 BZIFZ,L160131   IF must be OFF (indicator 21)'),
+     'I60129 BZIFZ,I60131   IF must be OFF (indicator 21)'),
     ('022571.40', '1310.00 80',
      'SIC,SEN                (ext) "-INSTRUCT FETCH BELOW LB SETS"'),
     ('022572.00', '1304.10 00',
      'B,SERS                 (ext) "-IF, NO INT, MASK 0, DISABLED."'),
     ('022572.40', '22574.04 00',
-     'BD,L160131'),
+     'BD,I60131'),
     ('022573.00', '1310.00 80',
-     'L160130 SIC,SEN        (ext) "-INSTRUCT FETCH BELOW LB CAUSES"'),
+     'I60130 SIC,SEN        (ext) "-INSTRUCT FETCH BELOW LB CAUSES"'),
     ('022573.40', '1304.10 00',
      'B,SERS                 (ext) "-INT, MASK 0, DISABLED."'),
     ('022574.00', '2.11 30',
-     'L160131 SV,$X4,$IA'),
+     'I60131 SV,$X4,$IA'),
     ('022574.40', '22.04 10',
      'LX,$X2,$X2'),
     ('022575.00', '22576.71 42',
@@ -243,7 +243,7 @@ ROWS = [
     ('022576.40', '22577.50 00',
      'B,$+1.0'),
     ('022577.00', '22546.04 00',
-     "BD,L160127              loop back to case 1's head"),
+     "BD,I60127              loop back to case 1's head"),
     ('022577.40', '1311.40 80',
      'SIC,LSEN0+.32          (ext)'),
     ('022600.00', '1301.10 00',
@@ -251,22 +251,22 @@ ROWS = [
     ('022600.40', '22601.04 00',
      'BD,$+.32                the page prints "BD,$+.32." -- period not encoded'),
     ('022601.00', '22737.32 10',
-     'LX,$X13,LIC260         (ext) "-UPDATE CONTINUITY CHECK."'),
+     'LX,$X13,IC260         (ext) "-UPDATE CONTINUITY CHECK."'),
     ('022601.40', '24536.32 B0',
      'V+,$X13,LBIT12         (ext) case 1 done = bit 12'),
     ('022602.00', '22737.33 10',
-     'SX,$X13,LIC260         (ext)'),
+     'SX,$X13,IC260         (ext)'),
     # ---- CASE 2: disabled, mask 1 (PDF p.78) ----
     ('022602.40', '22603.04 00',
-     'L160132 BD,$+.32        "-TEST 8C, CASE 2."'),
+     'I60132 BD,$+.32        "-TEST 8C, CASE 2."'),
     ('022603.00', '23063.03 01',
-     'LVI,$X1,L160AD1        (ext)'),
+     'LVI,$X1,I60AD1        (ext)'),
     ('022603.40', '24613.04 10',
      'LX,$X2,LBIT57          (ext)'),
     ('022604.00', '3.05 10',
      'SX,$X2,3.0'),
     ('022604.40', '23064.22 00',
-     'Z,L160AD3              (ext)'),
+     'Z,I60AD3              (ext)'),
     ('022605.00', '22605.44 00',
      'BD,$+.32                DISABLE'),
     ('022605.40', '24546.04 10',
@@ -274,9 +274,9 @@ ROWS = [
     ('022606.00', '14.05 10',
      'SX,$X2,$MASK            MASK 1 for the DF half'),
     ('022606.40', '23041.00 80',
-     'SIC,L160SX1            (ext)'),
+     'SIC,I60SX1            (ext)'),
     ('022607.00', '22741.10 00',
-     'B,L160S1               (ext)'),
+     'B,I60S1               (ext)'),
     ('022607.40', '13.22 00',
      'Z,$IND'),
     ('022610.00', '777777.47 01',
@@ -284,17 +284,17 @@ ROWS = [
     ('022610.40', '1353.11 01',
      'LVI,$X4,LINT           (ext)'),
     ('022611.00', '23201.11 03',
-     'LRI,$X4,L160IT         (ext)'),
+     'LRI,$X4,I60IT         (ext)'),
     ('022611.40', '22616.13 01',
-     'LVI,$X5,L160133'),
+     'LVI,$X5,I60133'),
     ('022612.00', '22372.13 D0',
-     'SVA,$X5,L160107        (ext)'),
+     'SVA,$X5,I60107        (ext)'),
     ('022612.40', '3.03 30',
      'SV,$X1,$UB'),
     ('022613.00', '2.11 70',
      'SR,$X4,$IA'),
     ('022613.40', '23064.06 30',
-     'LV,$X3,L160AD3         (ext) THE FETCH ABOVE UB'),
+     'LV,$X3,I60AD3         (ext) THE FETCH ABOVE UB'),
     ('022614.00', '22615.52 44',
      'BZDFZ,$+1.32            DF must be OFF even with mask 1'),
     ('022614.40', '1310.00 80',
@@ -304,7 +304,7 @@ ROWS = [
     ('022615.40', '22617.04 00',
      'BD,$+1.32'),
     ('022616.00', '1310.00 80',
-     'L160133 SIC,SEN        (ext) "-FETCH ABOVE UB, DISABLED, MASK 1, CAUSES"'),
+     'I60133 SIC,SEN        (ext) "-FETCH ABOVE UB, DISABLED, MASK 1, CAUSES"'),
     ('022616.40', '1304.10 00',
      'B,SERS                 (ext) "-INTERRUPT."'),
     ('022617.00', '2.11 30',
@@ -318,17 +318,17 @@ ROWS = [
     ('022621.00', '1304.10 00',
      'B,SERS                 (ext) "-MASK 1, SYSTEM DISABLED."'),
     ('022621.40', '22627.05 01',
-     'LVI,$X2,L160134'),
+     'LVI,$X2,I60134'),
     ('022622.00', '3.45 30',
-     'SV,$X2,$LB              lower boundary := L160134'),
+     'SV,$X2,$LB              lower boundary := I60134'),
     ('022622.40', '24547.04 10',
      "LX,$X2,LBIT21          (ext) IF's mask bit"),
     ('022623.00', '14.05 10',
      'SX,$X2,$MASK            MASK 1 for the IF half'),
     ('022623.40', '22631.05 01',
-     'LVI,$X2,L160135'),
+     'LVI,$X2,I60135'),
     ('022624.00', '22372.05 D0',
-     'SVA,$X2,L160107        (ext)'),
+     'SVA,$X2,I60107        (ext)'),
     ('022624.40', '2.11 70',
      'SR,$X4,$IA'),
     ('022625.00', '777777.05 01',
@@ -340,19 +340,19 @@ ROWS = [
     ('022626.40', '0.30 00',
      'NOP'),
     ('022627.00', '22632.12 C4',
-     'L160134 BZIFZ,L160136   IF must be OFF even with mask 1'),
+     'I60134 BZIFZ,I60136   IF must be OFF even with mask 1'),
     ('022627.40', '1310.00 80',
      'SIC,SEN                (ext) "-INSTRUCT FETCH BELOW LB SETS"'),
     ('022630.00', '1304.10 00',
      'B,SERS                 (ext) "-IF, NO INT, MASK 1, DISABLED."'),
     ('022630.40', '22632.04 00',
-     'BD,L160136'),
+     'BD,I60136'),
     ('022631.00', '1310.00 80',
-     'L160135 SIC,SEN        (ext) "-INSTRUCT FETCH BELOW LB CAUSES"'),
+     'I60135 SIC,SEN        (ext) "-INSTRUCT FETCH BELOW LB CAUSES"'),
     ('022631.40', '1304.10 00',
      'B,SERS                 (ext) "-INT, MASK 1, DISABLED."'),
     ('022632.00', '2.11 30',
-     'L160136 SV,$X4,$IA'),
+     'I60136 SV,$X4,$IA'),
     ('022632.40', '22.04 10',
      'LX,$X2,$X2'),
     ('022633.00', '22634.71 42',
@@ -364,7 +364,7 @@ ROWS = [
     ('022634.40', '22635.50 00',
      'B,$+1.0'),
     ('022635.00', '22602.44 00',
-     "BD,L160132              loop back to case 2's head"),
+     "BD,I60132              loop back to case 2's head"),
     ('022635.40', '1311.40 80',
      'SIC,LSEN0+.32          (ext)'),
     ('022636.00', '1301.10 00',
@@ -372,10 +372,10 @@ ROWS = [
     ('022636.40', '22637.04 00',
      'BD,$+.32'),]
 
-SYMBOLS = {'L160127': '022546.00', 'L160128': '022560.40',
-           'L160129': '022571.00', 'L160130': '022573.00',
-           'L160131': '022574.00', 'L160132': '022602.40',
-           'L160133': '022616.00', 'L160134': '022627.00',
-           'L160135': '022631.00', 'L160136': '022632.00'}
+SYMBOLS = {'I60127': '022546.00', 'I60128': '022560.40',
+           'I60129': '022571.00', 'I60130': '022573.00',
+           'I60131': '022574.00', 'I60132': '022602.40',
+           'I60133': '022616.00', 'I60134': '022627.00',
+           'I60135': '022631.00', 'I60136': '022632.00'}
 
 finish(check_rows(prog, ROWS, SYMBOLS, label='1260 8C-D '))

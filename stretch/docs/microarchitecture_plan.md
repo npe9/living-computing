@@ -89,8 +89,8 @@ in parentheses); **open** = no stage assigned yet.
 | EX/EXIC (with LA drains, table 6; Ref. Manual pp.49-50: subject instruction may not change the interruption state or the IC -- EXE indicator; pseudo-IC stepped after fetch, before execution), LVE, RNX, LVS, swap/backward transmit | Ref. Manual pp.26-30 (LVE: indirect addressing, 1 ms limit -> USA; RNX: rename via X0's refill; LVS: sum of the value fields selected by address bits 0-15; T/SWAP: count rules, backward stepping); Perf. Char. table 6 | open, specified |
 | Interrupt system: indicators, mask, left-most-one, the "free instruction" | Ref. Manual pp.43-50 (indicator list with mask/class per indicator, definitions, mask register: bits 0-19 always 1, 20-47 settable, 48-63 always 0; interruption address register; the single interruption instruction fetched from IA + leftmost indicator number, IC not stepped, executed before a second interruption); Blosk pp.16-17; Buchholz ch.10 | open, specified |
 | Address Invalid (AD): effective word address beyond installed core -> AD + no-op | Ref. Manual p.20 | partial: floating-point operand addresses (StretchExecute Fp arm); other classes open |
-| Storage protection: two address boundary registers (word 3: UB bits 0-17, LB 32-49, control bit 57), alarm on an effective address inside OR outside the region (control-bit selectable), storing in protected areas suppressed, indicators DS (store)/DF (fetch)/IF (instruction fetch), gated by the interrupt system + mask | Ref. Manual p.15 "Address Monitoring", **pp.31-32 in full**, indicator defs pp.44-45, Appendix C (word 3 layout) | executed for STORE-type references: the permanently protected words 1-3, the boundary-register area with either control-bit polarity, gated on the enable bit, address-invalid addresses exempt (StretchExecute `protViolates`; `strap/programs/storage_protection.strap`, `storage_protection_boundary.strap`). THE CONTROL-BIT POLARITY DID NOT NEED APPENDIX C: p.31 states it outright -- control bit zero signals INSIDE the area, one signals OUTSIDE. Still open: DF, IF, whole-operation termination, the straddling rule. DECK WITNESS 2026-09-22: `jb_ax5b` routine 1260's block 16086 (`strap/programs/ax5b_16086_ds.strap`, encoding checked bit-exactly) stores into word 1 and reports *"SV TO 1.0 FAILS TO SET DS WHEN ENABLED."* -- word 1, DS and the enable gate in IBM's own words, and it polls DS only after disabling |
-| Interval timer and time clock | Ref. Manual p.15 "Clocks" (interval timer measures a short interval, settable, sets an indicator (Time Signal, TS) when the period ends, can cause an interrupt; time clock runs continuously, not programmer-alterable, for logging/time-of-day); word 1 = timer bits 0-18 + clock 28-63 (Appendix C); **RATE SOURCED 2026-09-24, Ref. Manual printed p.34 (PDF 37), read first-hand**: "The oscillator operates at 1,024 (2^10) cycles per second, or a pulse about every millisecond... Whenever it goes from one to zero, it turns on the time signal indicator... The next oscillator pulse then sets the timer to all ones unless the program in the meantime has changed its contents. The timer does not stop after reaching zero." p.35 adds that the 36-bit time clock in bits 28-63 counts UP on the SAME oscillator, "the two clocks are updated consecutively in the same time interval". At 0.3 us/model clock that is one tick every ~3255 clocks. THE RELOAD RULE IS LOAD-BEARING -- faithful to p.34 no existing test ever sees TS; a naive wrap-at-zero would fire TS (always masked on, and leftmost-wins) every ~3255 clocks in every enabled program. See docs/NEXT.md item 5 | specified, rate now sourced; DECK ORACLE IN PLACE 2026-09-22, before any implementation: `jb_ax5b` routine 1260 block 16071 (`strap/programs/ax5b_16071_ts.strap`, encoding checked bit-exactly) loads the timer with ONE via `SV,$X4,1.0`, spins 512 times on `CB,$X4,$`, and tests `BTS`. Ref. Manual p.44 read first-hand: "4. Time Signal (TS). The interval timer has become zero." The card's footnote (a) -- the timer is "read-only except for store-value/count/refill/address" -- is why the deck writes it with SV |
+| Storage protection: two address boundary registers (word 3: UB bits 0-17, LB 32-49, control bit 57), alarm on an effective address inside OR outside the region (control-bit selectable), storing in protected areas suppressed, indicators DS (store)/DF (fetch)/IF (instruction fetch), gated by the interrupt system + mask | Ref. Manual p.15 "Address Monitoring", **pp.31-32 in full**, indicator defs pp.44-45, Appendix C (word 3 layout) | executed for STORE-type references: the permanently protected words 1-3, the boundary-register area with either control-bit polarity, gated on the enable bit, address-invalid addresses exempt (StretchExecute `protViolates`; `strap/programs/storage_protection.strap`, `storage_protection_boundary.strap`). THE CONTROL-BIT POLARITY DID NOT NEED APPENDIX C: p.31 states it outright -- control bit zero signals INSIDE the area, one signals OUTSIDE. Still open: DF, IF, whole-operation termination, the straddling rule. DECK WITNESS 2026-09-22: `jb_ax5b` routine 1260's block I6086 (`strap/programs/ax5b_16086_ds.strap`, encoding checked bit-exactly) stores into word 1 and reports *"SV TO 1.0 FAILS TO SET DS WHEN ENABLED."* -- word 1, DS and the enable gate in IBM's own words, and it polls DS only after disabling |
+| Interval timer and time clock | Ref. Manual p.15 "Clocks" (interval timer measures a short interval, settable, sets an indicator (Time Signal, TS) when the period ends, can cause an interrupt; time clock runs continuously, not programmer-alterable, for logging/time-of-day); word 1 = timer bits 0-18 + clock 28-63 (Appendix C); **RATE SOURCED 2026-09-24, Ref. Manual printed p.34 (PDF 37), read first-hand**: "The oscillator operates at 1,024 (2^10) cycles per second, or a pulse about every millisecond... Whenever it goes from one to zero, it turns on the time signal indicator... The next oscillator pulse then sets the timer to all ones unless the program in the meantime has changed its contents. The timer does not stop after reaching zero." p.35 adds that the 36-bit time clock in bits 28-63 counts UP on the SAME oscillator, "the two clocks are updated consecutively in the same time interval". At 0.3 us/model clock that is one tick every ~3255 clocks. THE RELOAD RULE IS LOAD-BEARING -- faithful to p.34 no existing test ever sees TS; a naive wrap-at-zero would fire TS (always masked on, and leftmost-wins) every ~3255 clocks in every enabled program. See docs/NEXT.md item 5 | specified, rate now sourced; DECK ORACLE IN PLACE 2026-09-22, before any implementation: `jb_ax5b` routine 1260 block I6071 (`strap/programs/ax5b_16071_ts.strap`, encoding checked bit-exactly) loads the timer with ONE via `SV,$X4,1.0`, spins 512 times on `CB,$X4,$`, and tests `BTS`. Ref. Manual p.44 read first-hand: "4. Time Signal (TS). The interval timer has become zero." The card's footnote (a) -- the timer is "read-only except for store-value/count/refill/address" -- is why the deck writes it with SV |
 | ECC/parity: check cycles, correction, indicators, I-checker conflicts | Blosk p.15; Perf. Char. p.3-19 | partial (check cycle only) |
 | Exchange as a bus requester with real overlap; disk synchronizer | Buchholz ch.16 | open (I/O is a synchronous FSM today) |
 | Maintenance console: start/stop, display/store, single step, repeat mode, index-storage test | Blosk p.6 | open |
@@ -3563,10 +3563,10 @@ hand vectors alone. "Enables" notes the dependency chain.
 
    Its shape, per test:
 
-     LX,$X1,148XW6                     load the progressive control word
+     LX,$X1,I48XW6                     load the progressive control word
      L(V+ICR)(BU,64,8), 1.0($X1)       a VFL load with progressive index
-     LX,$X2,$R  /  KV,$X2,148K25       did it fetch the right operand
-     KV,$X1,148K28                     did it modify the value correctly
+     LX,$X2,$R  /  KV,$X2,I48K25       did it fetch the right operand
+     KV,$X1,I48K28                     did it modify the value correctly
      KC,$X1,BIT17                      did it modify the COUNT correctly
      SR,$X1,$X1  /  LX,$X1,$X1         did it refill correctly
                                        (checked with BZXVZ)
@@ -3576,13 +3576,13 @@ hand vectors alone. "Enables" notes the dependency chain.
    CONSTANTS ALREADY READ OFF pp.153-154, so the transcription does not
    need the page hunt again:
 
-     148K25  011352  XW,(8)123456.70          123456.70 00 000000.00 00
-     148K26  011353  XW,(8)765432.10          765432.10 00 000000.00 00
-     148K27  011354  XW,(8)123456.70          123456.70 00 000000.00 00
-     148K28  011355  XW,148K26,1,0            11353.00 00 000020.00 00
-     148XW6  011366  XW,148K25,1,148K28       11352.00 00 000020.22 ED
-     148XW7  011367  XW,148K27,1,0            11354.00 00 000020.00 00
-     148DMP  011373  XW,0,0,0                 0.00 00 000000.00 00
+     I48K25  011352  XW,(8)123456.70          123456.70 00 000000.00 00
+     I48K26  011353  XW,(8)765432.10          765432.10 00 000000.00 00
+     I48K27  011354  XW,(8)123456.70          123456.70 00 000000.00 00
+     I48K28  011355  XW,I48K26,1,0            11353.00 00 000020.00 00
+     I48XW6  011366  XW,I48K25,1,I48K28       11352.00 00 000020.22 ED
+     I48XW7  011367  XW,I48K27,1,0            11354.00 00 000020.00 00
+     I48DMP  011373  XW,0,0,0                 0.00 00 000000.00 00
 
    STILL TO FIND: BIT17 at 013075, which the KC check compares against
    -- a different constant block from the 148-series, and the only
@@ -5060,8 +5060,8 @@ hand vectors alone. "Enables" notes the dependency chain.
    and every row of a tape the project had never touched matched the
    listing on the first attempt -- including three XW forms this
    assembler had never been asked for: a zero index word, a NEGATIVE
-   value (100VO prints 777777.77 80, sign bit set) and a count-only
-   word (100CO prints 0.00 0F 777760.00 00).
+   value (I00VO prints 777777.77 80, sign bit set) and a count-only
+   word (I00CO prints 0.00 0F 777760.00 00).
 
    It cleared the bar before being written. Nothing in the suite
    touches $X0 AT ALL, and only one program anywhere uses BXCZ or BXVZ.

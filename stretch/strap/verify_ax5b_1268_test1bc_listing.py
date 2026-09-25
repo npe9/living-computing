@@ -49,8 +49,8 @@ that file is edited here.
 THE HEADINGS AND ERROR MESSAGES IN THIS RANGE, verbatim with their
 octal locations, kept exactly as printed.  Three spelling contrasts
 with the neighbouring blocks, ALL re-measured here from
-full-resolution crops rather than inherited from the committed 1681
-and 1683 files: test 1A says "INSTRUCTION" where 1B and 1C say
+full-resolution crops rather than inherited from the committed I681
+and I683 files: test 1A says "INSTRUCTION" where 1B and 1C say
 "INST"; 1A prints "-TEST 1A,IF" with NO space after the comma where
 1B and 1C print one (p.110 rows 2060-2200 against rows 2990-3090 and
 4050-4150); and "-TO SSIP." here carries a period where 024377.40's
@@ -65,14 +65,14 @@ on p.111 does not (p.110 rows 4620-4740 against p.111 rows
   024362.00  -UPDATE CONTINUITY CHECK.
 
 WHAT 1B AND 1C DO, and why they need EX where 1A did not.  Test 1A
-plants a word over location 1682 and FALLS INTO it, which only works
+plants a word over location I682 and FALLS INTO it, which only works
 for a location in the instruction stream.  Index storage and word 9
 are not in the instruction stream, so 1B and 1C reach them with
 EXECUTE:
 
-  LX,$X1,168K1 / SX,$X1,$X3   plant [Z,$X2 | NOP] into word 19
+  LX,$X1,I68K1 / SX,$X1,$X3   plant [Z,$X2 | NOP] into word 19
   NOP / NOP / NOP
-  LX,$X1,168K2 / SX,$X1,$X3   plant [LVI,$X2,(8)777777.40 | NOP]
+  LX,$X1,I68K2 / SX,$X1,$X3   plant [LVI,$X2,(8)777777.40 | NOP]
   EX,$X3                      execute what is in word 19 NOW
   LX,$X2,$X2                  re-read X2 to set the indicators
   SIC,SEN / BXVZ,SERS         "-EXECUTED OLD INST FROM IX STG."
@@ -167,7 +167,7 @@ OTHER field where the listing puts it.
          024357.40  B,$+1.0   and  024361.40  BD,$+.32
        These are the location counter's own witnesses.  There is no
        third: the listing's LABEL COLUMN IS EMPTY FOR ALL 30 ROWS
-       (1681 is at 024337.00 above, 1683 at 024363.40 below), so this
+       (I681 is at 024337.00 above, I683 at 024363.40 below), so this
        block defines no symbol, and there is not even an
        "anchor placed by the SLC" to argue about.  ENT1B in the
        program file is this file's own name for the first row and is
@@ -177,12 +177,12 @@ OTHER field where the listing puts it.
        Still inputs, but the page prints the definition, and all four
        were read from FULL-RESOLUTION crops at 500 dpi (p.111 rows
        3880-4620, p.110 rows 2060-2200), not from a reduced view:
-         168K1  024407.00  (p.111 label column, beside "Z,$X2")
-         168K2  024410.00  (p.111, beside "LVI,$X2,%8@777777.40")
-         1681   024337.00  (p.110, beside "LX,$X1,168K1")
+         I68K1  024407.00  (p.111 label column, beside "Z,$X2")
+         I68K2  024410.00  (p.111, beside "LVI,$X2,%8@777777.40")
+         I681   024337.00  (p.110, beside "LX,$X1,I68K1")
          IC268  024405.00  (p.111, beside "XW,0,0,0  -CONTINUITY
                             REG 1268.")
-       The same p.111 crop also prints ICK268 at 024406.00 and 168K3
+       The same p.111 crop also prints ICK268 at 024406.00 and I68K3
        at 024411.00, neither of which this block references.
 
   (iii) ASSUMED, no printed row on pp.110-111 -- five:
@@ -202,13 +202,13 @@ printed pair and read back against the page's own label column:
   024361.40  BD,$+.32       -> 24362.04 00.  Pair 04 = 000100, bit 18
                              = 0 -> 024362.00.  And 024361.40 + 32
                              bits = 024362.00, the next row.  Agrees.
-  024344.40  LX,$X1,168K1   -> 24407.02 10.  Pair 02 = 000010, bit 18
+  024344.40  LX,$X1,I68K1   -> 24407.02 10.  Pair 02 = 000010, bit 18
   024352.00  (same row text)   = 0 -> 024407.00.  p.111's label column
-                             prints 168K1 at 024407.00.  Agrees.
-  024347.00  LX,$X1,168K2   -> 24410.02 10.  Bit 18 = 0 -> 024410.00.
-  024354.40  (same row text)   p.111 prints 168K2 at 024410.00.
-  024360.00  BD,1681        -> 24337.04 00.  Pair 04 = 000100, bit 18
-                             = 0 -> 024337.00.  p.110 prints 1681 at
+                             prints I68K1 at 024407.00.  Agrees.
+  024347.00  LX,$X1,I68K2   -> 24410.02 10.  Bit 18 = 0 -> 024410.00.
+  024354.40  (same row text)   p.111 prints I68K2 at 024410.00.
+  024360.00  BD,I681        -> 24337.04 00.  Pair 04 = 000100, bit 18
+                             = 0 -> 024337.00.  p.110 prints I681 at
                              024337.00.  Agrees.
   024362.00  LX,$X13,IC268  -> 24405.32 10.  Pair 32 = 011010, bit 18
                              = 0 -> 024405.00.  p.111 prints IC268 at
@@ -274,8 +274,8 @@ corroboration only; they are not transcribed here.
 
 The same p.111 crop also settles this block's LOWER boundary from the
 page rather than from another verify file: 024376.40 prints
-"BD,1683 -> 24363.44 00", pair 44 = 100100, bit 18 = 1 -> 024363.40 --
-exactly where p.111's label column prints 1683, and exactly the row
+"BD,I683 -> 24363.44 00", pair 44 = 100100, bit 18 = 1 -> 024363.40 --
+exactly where p.111's label column prints I683, and exactly the row
 after this file's last.  Nothing overlaps.
 
 NO MNEMONIC HERE IS A FIRST FOR THIS REPO, and each claim was knocked
@@ -381,19 +381,19 @@ where routine 1268's test 2A begins at 024363.40 (already covered by
 verify_ax5b_1683_listing.py).  Two holes are left in routine 1268:
 
   024376.00-024411.00, PDF p.111 -- THE HIGHER-VALUE ONE.  It is the
-  tail of test 2 (B,$+1.0 / BD,1683 / SIC,SEN0+.32 / B,SSW / BD,$+.32),
+  tail of test 2 (B,$+1.0 / BD,I683 / SIC,SEN0+.32 / B,SSW / BD,$+.32),
   the second continuity update (LX,$X13,IC268 / V+,$X13,BIT1 /
   SX,$X13,IC268), the continuity CHECK (LX,$X13,IC268 /
   KV,$X13,ICK268 / SIC,SEN / BZXE,SERS "-CONTINUITY ERROR."), "BD,174",
   a CNOP, and then the routine's whole CONSTANT POOL: IC268 at
-  024405.00, ICK268 at 024406.00, 168K1 at 024407.00, 168K2 at
-  024410.00, 168K3 at 024411.00.  Transcribing it would upgrade five
+  024405.00, ICK268 at 024406.00, I68K1 at 024407.00, I68K2 at
+  024410.00, I68K3 at 024411.00.  Transcribing it would upgrade five
   addresses that verify_ax5b_1681_listing.py, verify_ax5b_1683_listing
   .py and this file all currently take as SYN'd inputs into witnessed
   rows.
   024333.00-024336.00, PDF p.110 -- the routine's entry (168 LX,$X1,
-  1681D / SX,$X1,DPET13 / SIC,RET / B,IDF1 / Z,IC268 / BD,1681), a
-  CNOP, and the ident row "1681D %IQSZ@DD%BU,64,8@,1268  Z" at
+  I68ID / SX,$X1,DPET13 / SIC,RET / B,IDF1 / Z,IC268 / BD,I681), a
+  CNOP, and the ident row "I68ID %IQSZ@DD%BU,64,8@,1268  Z" at
   024336.00, which the listing prints with a LOCATION AND NO MACHINE
   CODE.
 """
@@ -407,14 +407,14 @@ prog = assemble(open("programs/ax5b_1268_test1bc.strap").read())
 ROWS = [
     # ---- TEST 1B: store into INDEX STORAGE, then EXECUTE it --------
     ('024344.40', '24407.02 10',
-     'LX,$X1,168K1          (ext) "-TEST 1B, IF CLOSE TO DS IN IX STG."'),
+     'LX,$X1,I68K1          (ext) "-TEST 1B, IF CLOSE TO DS IN IX STG."'),
     ('024345.00', '23.03 10',
      'SX,$X1,$X3            plant the OLD instruction in word 19'),
     ('024345.40', '0.30 00',   'NOP'),
     ('024346.00', '0.30 00',   'NOP'),
     ('024346.40', '0.30 00',   'NOP'),
     ('024347.00', '24410.02 10',
-     'LX,$X1,168K2          (ext) p.111 label column: 024410.00'),
+     'LX,$X1,I68K2          (ext) p.111 label column: 024410.00'),
     ('024347.40', '23.03 10',
      'SX,$X1,$X3            plant the NEW one over it'),
     ('024350.00', '23.12 00',
@@ -427,14 +427,14 @@ ROWS = [
      'BXVZ,SERS             (ext) "-EXECUTED OLD INST FROM IX STG."'),
     # ---- TEST 1C: store into INTERNAL MEMORY (word 9), then EXECUTE
     ('024352.00', '24407.02 10',
-     'LX,$X1,168K1          (ext) "-TEST 1C, IF CLOSE TO DS IN INT MEM."'),
+     'LX,$X1,I68K1          (ext) "-TEST 1C, IF CLOSE TO DS IN INT MEM."'),
     ('024352.40', '11.03 10',
      'SX,$X1,$R             plant the OLD instruction in word 9'),
     ('024353.00', '0.30 00',   'NOP'),
     ('024353.40', '0.30 00',   'NOP'),
     ('024354.00', '0.30 00',   'NOP'),
     ('024354.40', '24410.02 10',
-     'LX,$X1,168K2          (ext)'),
+     'LX,$X1,I68K2          (ext)'),
     ('024355.00', '11.03 10',
      'SX,$X1,$R             plant the NEW one over it'),
     ('024355.40', '11.12 00',
@@ -449,7 +449,7 @@ ROWS = [
     ('024357.40', '24360.50 00',
      'B,$+1.0               self-relative: pair 50, bit 18 -> 024360.40'),
     ('024360.00', '24337.04 00',
-     'BD,1681               (ext) bit 18 = 0 -> 024337.00, p.110'),
+     'BD,I681               (ext) bit 18 = 0 -> 024337.00, p.110'),
     ('024360.40', '1311.40 80',
      'SIC,SEN0+.32          (ext) pair 40 = a BIT offset of 32'),
     ('024361.00', '1301.10 00',

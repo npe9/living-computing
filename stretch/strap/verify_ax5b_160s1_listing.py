@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 """verify_ax5b_160s1_listing.py -- jb_ax5b "I-Box 5", routine 1260's
-160S1 (programs/ax5b_160s1_clr_inds.strap) against the listing's
+I60S1 (programs/ax5b_160s1_clr_inds.strap) against the listing's
 printed machine code, PDF pp.83-84, octal 022741.00-023021.00.
 
 THE ROUTINE docs/NEXT.md MYTHOLOGISED.  The file opened with
-"Prerequisite: SSIP's 160S1/160SX1 save/restore harness, reported at
+"Prerequisite: SSIP's I60S1/I60SX1 save/restore harness, reported at
 ax5b pp.41-44.  Nothing from 1260 can run without it."  Every clause
 was wrong: it is local to routine 1260, not SSIP's; it CLEARS
 INDICATORS 0-19 rather than saving and restoring anything; it is at
@@ -44,7 +44,7 @@ prog = assemble(open("programs/ax5b_160s1_clr_inds.strap").read())
 
 ROWS = [
     ('022741.00', '23301.03 10',
-     'L160S1 SX,$X1,L160DMP (ext) "-SUBROUTINE TO CLR INDS 0-19,"'),
+     'I60S1 SX,$X1,I60DMP (ext) "-SUBROUTINE TO CLR INDS 0-19,"'),
     ('022741.40', '22742.00 46',
      'BMKZ,$+.32            "-AND CHK THAT THEY ARE CLRD."'),
     ('022742.00', '13.00 80 000021.02 A0',
@@ -207,6 +207,6 @@ ROWS = [
      'BZXL,SERS             (ext) "-UNABLE TO CLR IND NO. 14 OR ABOVE IND."'),
 ]
 
-SYMBOLS = {'L160S1': '022741.00'}
+SYMBOLS = {'I60S1': '022741.00'}
 
 finish(check_rows(prog, ROWS, SYMBOLS, label='1260 S1 '))

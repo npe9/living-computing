@@ -28,7 +28,7 @@
 !
 ! THE ORACLE IS jb_ax5b ROUTINE 1260 TEST 8C, CASE 4, transcribed as
 ! ax5b_160_test8c.strap ("ENABLE MASK 1 NO FETCH IND ON INTRPT").  Its
-! offending fetch is LV,$X3,160AD3 with DF's mask bit stored ONE, and
+! offending fetch is LV,$X3,I60AD3 with DF's mask bit stored ONE, and
 ! its error text if the value arrives anyway is "-FETCHED ABOVE UB WITH
 ! MASK 1 AND SYSTEM ENABLED."  Case 3 is the same code with the mask at
 ! ZERO and errors the other way -- "-UNABLE TO FETCH ABOVE UB WITH MASK
@@ -37,14 +37,14 @@
 ! ("-UNABLE TO FETCH ABOVE UB WITH MASK 1, SYSTEM DISABLED.").  Those
 ! three conditions are blocks A, B and C below, in that order.
 !
-! 8C CANNOT BE RUN HERE (it needs SSIP's 160S1/160SX1 harness and the
-! 64-word interrupt table at 160IT), so this is the hand-written stand-
+! 8C CANNOT BE RUN HERE (it needs SSIP's I60S1/I60SX1 harness and the
+! 64-word interrupt table at I60IT), so this is the hand-written stand-
 ! in for it, written to the shape 8C's own code takes.
 !
 ! WHAT 8C'S PROBE IS, AND WHY IT IS COPIED EXACTLY.  The deck does NOT
 ! ask whether the result indicators were set.  It preloads X3 with a
 ! NONZERO value (LVI,$X3,(8)777777.40), zeroes the protected word
-! (Z,160AD3), runs the fetch, and then asks for the index VALUE with
+! (Z,I60AD3), runs the fetch, and then asks for the index VALUE with
 ! LX,$X3,$X3 + BXVZ / BZXVZ.  A model that "suppressed" by writing zero
 ! to the destination would pass an indicator check and fail that one.
 ! So every block below preloads its destination with a value DIFFERENT

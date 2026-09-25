@@ -11,7 +11,7 @@
 !
 ! THE TEST'S OWN TITLE, PDF p.76 at 022546.00, verbatim:
 !
-!   160127 LVI,$X1,160AD1  -TEST 8C CHECKS DF + IF UNDER 4 CONDS,
+!   I60127 LVI,$X1,I60AD1  -TEST 8C CHECKS DF + IF UNDER 4 CONDS,
 !                          -1. DISABL MASK 0 FETCH OK IND NO INT
 !                          -2. DIAABL MASK 1 FETCH OK NO IND NO INT
 !                          -3. ENABLE MASK 0 FETCH OK IND ON NO INT
@@ -63,8 +63,8 @@
 ! 022605.00, and every recovery branch in the block is a BD as well.
 !
 ! THE OFFENDING FETCHES are arranged as in cases 3 and 4.  For DF,
-! "LV,$X3,160AD3" reads a word above UB (UB was just set from X1 =
-! 160AD1).  For IF, "SV,$X2,$LB" sets the LOWER boundary to the label
+! "LV,$X3,I60AD3" reads a word above UB (UB was just set from X1 =
+! I60AD1).  For IF, "SV,$X2,$LB" sets the LOWER boundary to the label
 ! that follows, so the half-words just before it are fetched from a
 ! protected area as control falls through.  The did-it-execute probe is
 ! "LX,$X2,0": it loads X2 from word zero, and LX,$X2,$X2 plus a
@@ -96,8 +96,8 @@
 ! BIT14/BIT20/BIT21/BIT57 the same way; case 1's continuity word is
 ! bit 12, case 3's is bit 14.
 !
-! ENCODING ONLY.  Running it needs SSIP's 160S1/160SX1 harness, the
-! 64-word interrupt table at 160IT, and IF -- which this model does not
+! ENCODING ONLY.  Running it needs SSIP's I60S1/I60SX1 harness, the
+! 64-word interrupt table at I60IT, and IF -- which this model does not
 ! implement at all.
 !
 ! Transcription standard: bit-exact against the printed machine code,
@@ -106,28 +106,28 @@
         SLC, (8)22546.00
 !
 ! ---- CASE 1: disabled, mask 0 -- neither indicator may set (PDF p.76)
-L160127 LVI, $X1, L160AD1           ! -TEST 8C CHECKS DF + IF UNDER 4 CONDS,
+I60127 LVI, $X1, I60AD1           ! -TEST 8C CHECKS DF + IF UNDER 4 CONDS,
         LX,  $X2, LBIT57            ! -1. DISABL MASK 0 FETCH OK IND NO INT
         SX,  $X2, 3.0               ! -2. DIAABL MASK 1 FETCH OK NO IND NO INT
-        Z,   L160AD3                ! -3. ENABLE MASK 0 FETCH OK IND ON NO INT
+        Z,   I60AD3                ! -3. ENABLE MASK 0 FETCH OK IND ON NO INT
         BD,  $+.32                  ! -4. ENABLE MASK 1 NO FETCH IND ON INTRPT
         Z,   $MASK                  ! mask 0 for this case
-        SIC, L160SX1
-        B,   L160S1
+        SIC, I60SX1
+        B,   I60S1
         Z,   $IND
         LVI, $X3, (8)777777.40
         LVI, $X4, LINT
-        LRI, $X4, L160IT
-        LVI, $X5, L160128
-        SVA, $X5, L160107
+        LRI, $X4, I60IT
+        LVI, $X5, I60128
+        SVA, $X5, I60107
         SV,  $X1, $UB
         SR,  $X4, $IA
-        LV,  $X3, L160AD3           ! the fetch ABOVE UB
+        LV,  $X3, I60AD3           ! the fetch ABOVE UB
         BZDFZ, $+1.32               ! DF must be OFF
         SIC, SEN                    ! -FETCH ABOVE UB, DISABLED, MASK 0,
         B,   SERS                   ! -CAUSES DF TO BE SET, NO INT.
         BD,  $+1.32
-L160128 SIC, SEN                    ! -ENTER HERE FROM INT.
+I60128 SIC, SEN                    ! -ENTER HERE FROM INT.
         B,   SERS                   ! -INT ON DF, DISABLED MASK 0, FETCH
                                     ! -ABOVE UB.   (comment-only line)
         SV,  $X4, $IA
@@ -135,29 +135,29 @@ L160128 SIC, SEN                    ! -ENTER HERE FROM INT.
         BXVZ, $+1.32                ! the fetch must have LANDED
         SIC, SEN                    ! -UNABLE TO FETCH ABOVE UB WITH
         B,   SERS                   ! -MASK 0, SYSTEM DISABLED.
-        LVI, $X2, L160129
-        SV,  $X2, $LB               ! lower boundary := L160129
-        LVI, $X2, L160130
-        SVA, $X2, L160107
+        LVI, $X2, I60129
+        SV,  $X2, $LB               ! lower boundary := I60129
+        LVI, $X2, I60130
+        SVA, $X2, I60107
         SR,  $X4, $IA
         LVI, $X2, (8)777777.0
         SV,  $X2, $UB
         CNOP                        ! emits a NOP here: 022567.40 is odd
         LX,  $X2, 0                 ! fetched BELOW LB
         NOP
-L160129 BZIFZ, L160131              ! IF must be OFF
+I60129 BZIFZ, I60131              ! IF must be OFF
         SIC, SEN                    ! -INSTRUCT FETCH BELOW LB SETS
         B,   SERS                   ! -IF, NO INT, MASK 0, DISABLED.
-        BD,  L160131
-L160130 SIC, SEN                    ! -INSTRUCT FETCH BELOW LB CAUSES
+        BD,  I60131
+I60130 SIC, SEN                    ! -INSTRUCT FETCH BELOW LB CAUSES
         B,   SERS                   ! -INT, MASK 0, DISABLED.
-L160131 SV,  $X4, $IA
+I60131 SV,  $X4, $IA
         LX,  $X2, $X2
         BXVZ, $+1.32                ! disabled: the fetch PROCEEDS
         SIC, SEN                    ! -INSTRUCT FETCHED BELOW LB, DISABLED,
         B,   SERS                   ! -MASK 0, WAS NOPED.
         B,   $+1.0
-        BD,  L160127
+        BD,  I60127
         SIC, LSEN0+.32
         B,   LSSW
         BD,  $+.32                  ! the page prints "BD,$+.32." -- the
@@ -165,67 +165,67 @@ L160131 SV,  $X4, $IA
                                     !   22601.04 00 is plain $+.32
 !
 ! ---- the continuity bridge on PDF p.77 (case 1 done = bit 12) ----
-        LX,  $X13, LIC260           ! -UPDATE CONTINUITY CHECK.
+        LX,  $X13, IC260           ! -UPDATE CONTINUITY CHECK.
         V+,  $X13, LBIT12
-        SX,  $X13, LIC260
+        SX,  $X13, IC260
 !
 ! ---- CASE 2: disabled, mask 1 -- same verdict, mask made no
 !      difference (PDF p.78)
-L160132 BD,  $+.32                  ! -TEST 8C, CASE 2.
-        LVI, $X1, L160AD1
+I60132 BD,  $+.32                  ! -TEST 8C, CASE 2.
+        LVI, $X1, I60AD1
         LX,  $X2, LBIT57
         SX,  $X2, 3.0
-        Z,   L160AD3
+        Z,   I60AD3
         BD,  $+.32
         LX,  $X2, LBIT20            ! DF's mask bit
         SX,  $X2, $MASK             !   ... set to ONE
-        SIC, L160SX1
-        B,   L160S1
+        SIC, I60SX1
+        B,   I60S1
         Z,   $IND
         LVI, $X3, (8)777777.40
         LVI, $X4, LINT
-        LRI, $X4, L160IT
-        LVI, $X5, L160133
-        SVA, $X5, L160107
+        LRI, $X4, I60IT
+        LVI, $X5, I60133
+        SVA, $X5, I60107
         SV,  $X1, $UB
         SR,  $X4, $IA
-        LV,  $X3, L160AD3           ! the fetch ABOVE UB
+        LV,  $X3, I60AD3           ! the fetch ABOVE UB
         BZDFZ, $+1.32               ! DF must be OFF, mask 1 or not
         SIC, SEN                    ! -FETCH ABOVE UB, DISABLED, MASK 1,
         B,   SERS                   ! -CAUSES DF TO BE SET, NO INT.
         BD,  $+1.32
-L160133 SIC, SEN                    ! -FETCH ABOVE UB, DISABLED, MASK 1, CAUSES
+I60133 SIC, SEN                    ! -FETCH ABOVE UB, DISABLED, MASK 1, CAUSES
         B,   SERS                   ! -INTERRUPT.
         SV,  $X4, $IA
         LX,  $X3, $X3
         BXVZ, $+1.32                ! disabled: the fetch LANDS even at mask 1
         SIC, SEN                    ! -UNABLE TO FETCH ABOVE UB WITH
         B,   SERS                   ! -MASK 1, SYSTEM DISABLED.
-        LVI, $X2, L160134
-        SV,  $X2, $LB               ! lower boundary := L160134
+        LVI, $X2, I60134
+        SV,  $X2, $LB               ! lower boundary := I60134
         LX,  $X2, LBIT21            ! IF's mask bit
         SX,  $X2, $MASK             !   ... set to ONE
-        LVI, $X2, L160135
-        SVA, $X2, L160107
+        LVI, $X2, I60135
+        SVA, $X2, I60107
         SR,  $X4, $IA
         LVI, $X2, (8)777777.0
         SV,  $X2, $UB
         CNOP                        ! emits NOTHING here: 022626.00 is even
         LX,  $X2, 0                 ! fetched BELOW LB
         NOP
-L160134 BZIFZ, L160136              ! IF must be OFF
+I60134 BZIFZ, I60136              ! IF must be OFF
         SIC, SEN                    ! -INSTRUCT FETCH BELOW LB SETS
         B,   SERS                   ! -IF, NO INT, MASK 1, DISABLED.
-        BD,  L160136
-L160135 SIC, SEN                    ! -INSTRUCT FETCH BELOW LB CAUSES
+        BD,  I60136
+I60135 SIC, SEN                    ! -INSTRUCT FETCH BELOW LB CAUSES
         B,   SERS                   ! -INT, MASK 1, DISABLED.
-L160136 SV,  $X4, $IA
+I60136 SV,  $X4, $IA
         LX,  $X2, $X2
         BXVZ, $+1.32                ! disabled: the fetch PROCEEDS
         SIC, SEN                    ! -INSTRUCT FETCHED BELOW LB, DISABLED,
         B,   SERS                   ! -MASK 1, WAS NOPED.
         B,   $+1.0
-        BD,  L160132
+        BD,  I60132
         SIC, LSEN0+.32
         B,   LSSW                   ! -TO SSIP.
         BD,  $+.32
@@ -234,25 +234,25 @@ L160136 SV,  $X4, $IA
 !      give.  A SYN IS AN INPUT TO THE CHECK, NOT A WITNESS: the rows
 !      naming these symbols were used to derive the SYN value, so those
 !      rows re-test only the opcode and modifier bits.  The rows that
-!      really check address placement are the ones naming L160127 ..
-!      L160136, which are defined INSIDE the transcribed range.  Same
-!      caveat verify_ax5b_16082_16083_listing.py makes about L16088.
+!      really check address placement are the ones naming I60127 ..
+!      I60136, which are defined INSIDE the transcribed range.  Same
+!      caveat verify_ax5b_16082_16083_listing.py makes about I6088.
 !      Each SYN was read off bit 18 of the octal pair of the row that
 !      names it, so each is itself a checkable claim.
-L160AD1 SYN, (8)23063.0             ! from LVI,$X1,160AD1 = 23063.03 01
-L160AD3 SYN, (8)23064.0             ! from Z,160AD3       = 23064.22 00
-L160107 SYN, (8)22372.0             ! from SVA,$X5,160107 = 22372.13 D0
-L160S1  SYN, (8)22741.0             ! SSIP save/restore
-L160SX1 SYN, (8)23041.0
-L160IT  SYN, (8)23201.0             ! the 64-word interrupt table
+I60AD1 SYN, (8)23063.0             ! from LVI,$X1,I60AD1 = 23063.03 01
+I60AD3 SYN, (8)23064.0             ! from Z,I60AD3       = 23064.22 00
+I60107 SYN, (8)22372.0             ! from SVA,$X5,I60107 = 22372.13 D0
+I60S1  SYN, (8)22741.0             ! SSIP save/restore
+I60SX1 SYN, (8)23041.0
+I60IT  SYN, (8)23201.0             ! the 64-word interrupt table
 LINT    SYN, (8)1353.0
 SEN     SYN, (8)1310.0
 LSEN0   SYN, (8)1311.0              ! the deck spells it SEN0
 SERS    SYN, (8)1304.0
 LSSW    SYN, (8)1301.0              ! the deck spells it SSW
-LIC260  SYN, (8)22737.0             ! the continuity word
+IC260  SYN, (8)22737.0             ! the continuity word
 LBIT12  SYN, (8)24536.0             ! 024522 + 12 = case 1's continuity bit
 LBIT20  SYN, (8)24546.0             ! 024522 + 20 = DF's bit
 LBIT21  SYN, (8)24547.0             ! 024522 + 21 = IF's bit
 LBIT57  SYN, (8)24613.0             ! 024522 + 57 = the boundary control bit
-        END, L160127
+        END, I60127

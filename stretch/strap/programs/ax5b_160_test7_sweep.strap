@@ -1,6 +1,6 @@
 ! jb_ax5b "I-Box 5", routine 1260 TEST 7's LAST BLOCK -- the between-
 ! bounds check under boundary control 1, the two UB+1 checks under
-! boundary control 0, the SWEEP TEARDOWN, and the 160122 exit.
+! boundary control 0, the SWEEP TEARDOWN, and the I60122 exit.
 ! PDF p.74, octal 022461.00-022512.40, 50 rows / 52 half-words,
 ! transcribed VERBATIM at the listing's own addresses and checked
 ! bit-exactly by verify_ax5b_160_test7_sweep_listing.py.  (This deck's
@@ -24,18 +24,18 @@
 ! address (no signal) and BC 0 with an inside address (signal).  This
 ! page adds the two cases that complete the truth table:
 !
-!   160121 (022461.00-022470.00)  BC 1, comparand INSIDE  -> NO signal
+!   I60121 (022461.00-022470.00)  BC 1, comparand INSIDE  -> NO signal
 !       022463.00  TI,1,BOUND1,3.0    the control bit is ONE
 !       022465.00  LX,$X13,0($X2)   -FETCH FRM LB+1, UB-1, BC IS 1.
-!       022466.40  BZDFZ,160212     branch on DF OFF -- the OK path
+!       022466.40  BZDFZ,I60212     branch on DF OFF -- the OK path
 !       022467.00  SIC,SEN          -FETCH BETWEEN UB AND LB,
 !       022467.40  B,SERS           -BC 1, CAUSES DF TO SET.
 !
-!   160212 (022472.40-022502.00)  BC 0, comparand OUTSIDE -> NO signal
+!   I60212 (022472.40-022502.00)  BC 0, comparand OUTSIDE -> NO signal
 !       022474.40  TI,1,BOUND0,3.0    the control bit flips to ZERO
 !       022475.40  V+I,$X2,2.0        X2 := LB+3 = UB+1
 !       022477.00  LX,$X13,0($X2)     the UB+1 fetch (no comment row)
-!       022500.40  BZDFZ,160214     branch on DF OFF -- the OK path
+!       022500.40  BZDFZ,I60214     branch on DF OFF -- the OK path
 !       022501.00  SIC,SEN          -FETCH FROM UB+1, BC 0, CAUSES
 !       022501.40  B,SERS           -DF TO BE SET.
 !
@@ -49,10 +49,10 @@
 !
 ! THE SWEEP TEARDOWN, and it is the reason the loop ever stops:
 !
-!       022504.40  160214 LV,$X2,$X2   -DONE ALL COMPS.
-!       022505.00  BXVZ,160122         -YES
+!       022504.40  I60214 LV,$X2,$X2   -DONE ALL COMPS.
+!       022505.00  BXVZ,I60122         -YES
 !       022505.40  V-I,$X2,2.0         -NO
-!       022506.00  BD,160106
+!       022506.00  BD,I60106
 !
 ! LV,$X2,$X2 loads X2's value field from X2's OWN storage word (index
 ! registers X1-X15 are storage locations 17-31; $X2 = word 0o22, and
@@ -138,72 +138,72 @@
 ! standing HOUSE CONVENTION and not by measurement; the same caveat
 ! the pp.72-73 file records for the 160xxx labels applies here.
 !
-! 160121 AND 160122 ARE *DEFINED* HERE, not SYN'd.  pp.72-73 had to
-! assume both (L160121 SYN,(8)22461.0 and L160122 SYN,(8)22506.40);
+! I60121 AND I60122 ARE *DEFINED* HERE, not SYN'd.  pp.72-73 had to
+! assume both (I60121 SYN,(8)22461.0 and I60122 SYN,(8)22506.40);
 ! this file's rows 1 and 42 put real labels at those two addresses, so
 ! the adjacent file's two assumptions are now witnessed.
 
-L160105 SYN, (8)22346.40
-L160106 SYN, (8)22356.0
-L160107 SYN, (8)22372.0
-L16010A SYN, (8)22371.40
+I60105 SYN, (8)22346.40
+I60106 SYN, (8)22356.0
+I60107 SYN, (8)22372.0
+I6010A SYN, (8)22371.40
 BOUND0  SYN, (8)23302.0
 BOUND1  SYN, (8)23303.0
 SEN     SYN, (8)1310.0
 SERS    SYN, (8)1304.0
 SEN0    SYN, (8)1311.0
 SSW     SYN, (8)1301.0
-LIC260  SYN, (8)22737.0
+IC260  SYN, (8)22737.0
 LBIT10  SYN, (8)24534.0
         SLC, (8)22461.0
-L160121 LVI, $X13, L160211
-        SVA, $X13, L160107
-        LVI, $X3, L16012A
-        SVA, $X3, L16010A
+I60121 LVI, $X13, I60211
+        SVA, $X13, I60107
+        LVI, $X3, I6012A
+        SVA, $X3, I6010A
         TI,  1, BOUND1, 3.0
         SR,  $X1, $IA            ! -RESTORE MY INT.
         BE,  $+.32
         LX,  $X13, 0($X2)        ! -FETCH FRM LB+1, UB-1, BC IS 1.
         BD,  $+.32
-L16012A SV,  $X1, $IA            ! -RESTORE INT.
-        BZDFZ, L160212
+I6012A SV,  $X1, $IA            ! -RESTORE INT.
+        BZDFZ, I60212
         SIC, SEN                 ! -FETCH BETWEEN UB AND LB,
         B,   SERS                ! -BC 1, CAUSES DF TO SET.
-        B,   L160212
-L160211 SV,  $X1, $IA            ! -RESTORE INT.
+        B,   I60212
+I60211 SV,  $X1, $IA            ! -RESTORE INT.
         SIC, SEN                 ! -FETCH BETWEEN UB AND LB, BC 1,
         B,   SERS                ! -CAUSES AD INTERRUPT, TESTING DONE.
-        B,   L160122
-L160212 LVI, $X13, L160213
-        SVA, $X13, L160107
-        LVI, $X3, L16021B
-        SVA, $X3, L16010A
+        B,   I60122
+I60212 LVI, $X13, I60213
+        SVA, $X13, I60107
+        LVI, $X3, I6021B
+        SVA, $X3, I6010A
         TI,  1, BOUND0, 3.0
         V+I, $X2, 2.0
         SR,  $X1, $IA            ! -RESTORE MY INT.
         BE,  $+.32
         LX,  $X13, 0($X2)
         BD,  $+.32
-L16021B SV,  $X1, $IA            ! -RESTORE INT.
-        BZDFZ, L160214
+I6021B SV,  $X1, $IA            ! -RESTORE INT.
+        BZDFZ, I60214
         SIC, SEN                 ! -FETCH FROM UB+1, BC 0, CAUSES
         B,   SERS                ! -DF TO BE SET.
-        BD,  L160214
-L160213 SV,  $X1, $IA            ! -RESTORE INT.
+        BD,  I60214
+I60213 SV,  $X1, $IA            ! -RESTORE INT.
         SIC, SEN                 ! -FETCH FROM UB+1, BC 0, CAUSES AD
         B,   SERS                ! -INTERRUPT, TESTING DONE
-        B,   L160122
-L160214 LV,  $X2, $X2            ! -DONE ALL COMPS.
-        BXVZ, L160122            ! -YES
+        B,   I60122
+I60214 LV,  $X2, $X2            ! -DONE ALL COMPS.
+        BXVZ, I60122            ! -YES
         V-I, $X2, 2.0            ! -NO
-        BD,  L160106
-L160122 Z,   3.0                 ! -CLR BOUNDS REG.
+        BD,  I60106
+I60122 Z,   3.0                 ! -CLR BOUNDS REG.
         B,   $+1.0
-        BD,  L160105
+        BD,  I60105
         SIC, SEN0+.32
         B,   SSW                 ! -TO SSIP.
         BD,  $+.32
-        LX,  $X13, LIC260        ! -UPDATE CONTINUITY CHECK.
+        LX,  $X13, IC260        ! -UPDATE CONTINUITY CHECK.
         V+,  $X13, LBIT10
-        SX,  $X13, LIC260
-        END, L160121
+        SX,  $X13, IC260
+        END, I60121

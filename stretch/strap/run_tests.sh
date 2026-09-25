@@ -340,7 +340,7 @@ run "IF: the instruction-fetch address alarm (p.32 classes 1 and 2)" ./run_progr
 # executed", class 2 "the branch address of all successful branch
 # operations", class 3 the EX/EXIC subject -- moot until EX exists.
 # Its deck oracle is routine 1260 TEST 8C, transcribed beside this
-# (encoding only: running it needs SSIP's 160S1/160SX1 harness).
+# (encoding only: running it needs SSIP's I60S1/I60SX1 harness).
 #
 # WHERE CLASS 1 GOES, and two obvious sites that are both wrong.  NOT
 # at fetchReq: the instruction buffers prefetch speculatively and p.32
@@ -871,7 +871,7 @@ run "I-Box 5 routine 1260's DS block, bit-exact (jb_ax5b pp.43-44)" python3 veri
 # interruption mechanism were both implemented from the Reference
 # Manual and tested only by hand-written programs -- the weaker of
 # this project's two standards, stated as such in their own headers.
-# Block 16086 is IBM's own test of the same rule, and its error
+# Block I6086 is IBM's own test of the same rule, and its error
 # message spells it out in eight words:
 #
 #     "SV TO 1.0 FAILS TO SET DS WHEN ENABLED."
@@ -884,7 +884,7 @@ run "I-Box 5 routine 1260's DS block, bit-exact (jb_ax5b pp.43-44)" python3 veri
 # that put the enable bit into this model at all.
 #
 # AND IT DISABLES BEFORE IT POLLS.  The BDS that reads the indicator
-# comes AFTER "16086A BD,$+.32", never before.  That is the "a program
+# comes AFTER "I6086A BD,$+.32", never before.  That is the "a program
 # cannot poll DS while enabled" trap in docs/NEXT.md -- paid for here
 # by a rewrite of storage_protection.strap -- confirmed independently
 # by the deck's own instruction order.
@@ -898,10 +898,10 @@ run "I-Box 5 routine 1260's DS block, bit-exact (jb_ax5b pp.43-44)" python3 veri
 # right on the first assembly.
 #
 # AND A RESOLUTION LESSON.  A 200 dpi render of p.45 put the row
-# labelled 16088 at 021400.00, and the page then looked a half-word
+# labelled I6088 at 021400.00, and the page then looked a half-word
 # short.  Re-read at 600 dpi it prints 021400.40.  The encoding here
-# says the same independently -- "B,16088" prints "21400.50 00" and
-# bit 18 is the top bit of that octal pair -- but note that L16088's
+# says the same independently -- "B,I6088" prints "21400.50 00" and
+# bit 18 is the top bit of that octal pair -- but note that I6088's
 # .40 is a SYN, an INPUT to the check, so the PASS is not the witness;
 # the two readings are.  What the row adds is that this assembler puts
 # bit 18 where the listing puts it, which the third injection below
@@ -914,9 +914,9 @@ run "I-Box 5 routine 1260's DS block, bit-exact (jb_ax5b pp.43-44)" python3 veri
 # full word read as a half, at a resolution too low to see it.
 #
 # WHAT THIS IS NOT.  An ENCODING oracle, like the ENSU block above.
-# The 16086 fragment cannot run: it needs 16085B's all-NOP interrupt
-# table (built by 16085A), the SEN/SERS error harness and the constant
-# 160K16.  storage_protection.strap remains the behavioural test and
+# The I6086 fragment cannot run: it needs I6085B's all-NOP interrupt
+# table (built by I6085A), the SEN/SERS error harness and the constant
+# I60K16.  storage_protection.strap remains the behavioural test and
 # remains hand-written; what changed is that its rule now has a deck
 # behind it.  Four injections, each with its own named failure set,
 # are recorded in verify_ax5b_16086_listing.py's header.
@@ -927,7 +927,7 @@ run "I-Box 5 routine 1260's indicator walk + TRANSMIT IMMEDIATE (jb_ax5b p.45)" 
 # have.  Six half-words -- set one indicator bit in word 11, set its
 # mask bit in word 12, "BE,$+.32  -ENABLE AND AWAIT INTERRUPT", and a
 # BD that is reached only if the machine did NOT interrupt, dispatching
-# into the per-indicator error table 160B13 indexed by X6.  It is the
+# into the per-indicator error table I60B13 indexed by X6.  It is the
 # deck's own version of what interrupt_pg0.strap does hand-written from
 # Reference Manual p.48.
 #
@@ -958,15 +958,15 @@ run "I-Box 5 routine 1260's indicator walk + TRANSMIT IMMEDIATE (jb_ax5b p.45)" 
 # 200 dpi under an ink smudge.  With 06 the row decomposes cleanly:
 # bit 18 set so the target is 021402.40, code 001 = BD, literal 000000,
 # index 0110 = $X6, and 021402.40 is exactly where the page prints the
-# label 160B13.  Dropping the index field in enc_branch_or_misc fails
+# label I60B13.  Dropping the index field in enc_branch_or_misc fails
 # this row and only this row.
 #
 # THREE SYMBOLS LOCATED, each from its own row's printed address field:
-# 160SX1 = 023041.00, 160S1 = 022741.00, 160B13 = 021402.40.
-# docs/NEXT.md had carried 160S1/160SX1 as "not located" ever since the
+# I60SX1 = 023041.00, I60S1 = 022741.00, I60B13 = 021402.40.
+# docs/NEXT.md had carried I60S1/I60SX1 as "not located" ever since the
 # claim that they were a prerequisite was disproved.  And BIT0 =
 # 024522.00 for the third independent time (p.114's table prints it,
-# 16071's BIT18 implies it, this row's A1 field states it).
+# I6071's BIT18 implies it, this row's A1 field states it).
 #
 # THE HAZARD THIS CREATES, stated because the assembler can now emit
 # Transmit at all: StretchExecute.bsv's Transmit arm moves exactly ONE
@@ -978,7 +978,7 @@ run "I-Box 5 routine 1260's indicator walk + TRANSMIT IMMEDIATE (jb_ax5b p.45)" 
 run "I-Box 5 routine 1260's TS block, bit-exact (jb_ax5b p.41)" python3 verify_ax5b_16071_listing.py
 # THE INTERVAL TIMER GETS A SECOND DECK ORACLE, eight rows long.
 # Reference Manual p.44: "4. Time Signal (TS).  The interval timer has
-# become zero."  16071 loads the timer with the value ONE, spins 512
+# become zero."  I6071 loads the timer with the value ONE, spins 512
 # times on a COUNT AND BRANCH to itself, then asks BTS whether TS came
 # on; failing that it reports "UNABLE TO TURN TS ON."
 #
@@ -997,7 +997,7 @@ run "I-Box 5 routine 1260's TS block, bit-exact (jb_ax5b p.41)" python3 verify_a
 # is permanently protected (p.31) and p.45 raises DS and suppresses
 # the store when such a reference happens "while the interruption
 # system was enabled".  Entailed by two manual pages, not transcribed
-# from this one.  Note the symmetry with 16086, which uses the SAME
+# from this one.  Note the symmetry with I6086, which uses the SAME
 # instruction on the SAME word as its DS provocation, enabled,
 # expecting suppression -- the two blocks are storage_protection.
 # strap's two directions, written by IBM.
@@ -1029,11 +1029,11 @@ run "I-Box 5 routine 1260's TS block, bit-exact (jb_ax5b p.41)" python3 verify_a
 
 run "I-Box 5 routine 1260's OP and AD blocks, bit-exact (jb_ax5b pp.41-42)" python3 verify_ax5b_16082_16083_listing.py
 # TWO MORE BLOCKS FROM THE SAME ROUTINE, and they exist for one row
-# pair.  16082 and 16083 are contiguous (017225.00-017234.40) and both
+# pair.  I6082 and I6083 are contiguous (017225.00-017234.40) and both
 # branch to the SAME target through DIFFERENT indicator numbers:
 #
-#     BOP,16088   21400.47 C2      indicator 15
-#     BAD,16088   21400.50 42      indicator 16
+#     BOP,I6088   21400.47 C2      indicator 15
+#     BAD,I6088   21400.50 42      indicator 16
 #
 # WHY THAT PAIR IS WORTH A FILE.  enc_branch_ind puts the 6-bit
 # indicator number at bits 19-24, and the listing prints bits 18-23 as
@@ -1042,13 +1042,13 @@ run "I-Box 5 routine 1260's OP and AD blocks, bit-exact (jb_ax5b pp.41-42)" pyth
 # the same address and adjacent numbers differ in BOTH fields at once.
 # The injection proves the point: moving OP from 15 to 14 leaves the
 # octal pair at .47 untouched and shows up ONLY in the hex byte, which
-# a check reading one field would have missed.  The 16086 block's
+# a check reading one field would have missed.  The I6086 block's
 # BDS/BADZ (19 and 16) never exercised a number whose top bit differs.
 #
-# A THIRD AND FOURTH WITNESS FOR 16088 AT 021400.40, and this time from
+# A THIRD AND FOURTH WITNESS FOR I6088 AT 021400.40, and this time from
 # pp.41-42 rather than pp.43-45.  Both rows carry bit 18 of the target
 # set.  The address a 200 dpi render got wrong is now agreed on by two
-# pages and three encodings -- but note the provenance: L16088's .40 is
+# pages and three encodings -- but note the provenance: I6088's .40 is
 # a SYN, an INPUT to the check, so the PASS is not the witness.  The
 # witness is the printed code, ".47" = 100111 and ".50" = 101000, read
 # at 600 dpi.  The rows add that the assembler places bit 18 where the
@@ -1062,8 +1062,8 @@ run "I-Box 5 routine 1260's OP and AD blocks, bit-exact (jb_ax5b pp.41-42)" pyth
 # on an odd half-word.
 #
 # WHAT THIS IS NOT.  An ENCODING oracle again.  Neither block can run:
-# both fall through into the SEN/SERS error harness and 16093, none of
-# it transcribed, and 160K7's contents are not printed on these pages.
+# both fall through into the SEN/SERS error harness and I6093, none of
+# it transcribed, and I60K7's contents are not printed on these pages.
 # The block's SHAPE -- store a word over a zeroed full-word slot, two
 # NOPs, then fall straight INTO the slot -- reads like self-modifying
 # code planting an invalid operation code, which is what "-OP" and
@@ -1100,12 +1100,12 @@ run "The interruption mechanism (fire, one instruction, return)" ./run_program.s
 #
 # AND THE DECK AGREES, checked because a scouting pass suggested it
 # might not.  jb_ax5b PDF p.86 declares the interruption table
-# "160IT  DR%BU,64,8@,64" at 023201.00 with the next symbol 160DMP at
+# "I60IT  DR%BU,64,8@,64" at 023201.00 with the next symbol I60DMP at
 # 023301.00 -- a gap of octal 100, exactly 64 WORDS, holding the 48
 # maskable indicators with room over.  The three consecutive HALF-words
-# at 16090 (p.48, "HI,BEFORE / OK, AT / LO,AFTER ... INTRPTS ENTER
+# at I6090 (p.48, "HI,BEFORE / OK, AT / LO,AFTER ... INTRPTS ENTER
 # HERE") that looked like half-word slots are a TEMPLATE copied into
-# those word slots -- p.86 has "160K6  BD,16090" as a single half-word
+# those word slots -- p.86 has "I60K6  BD,I6090" as a single half-word
 # at 023047.00.  See docs/NEXT.md for the full reasoning.
 #
 # Ten injections; every address reproducible with
@@ -3202,8 +3202,8 @@ run "IBOX-4 routine 1246 TEST 2A/2B: the forward-backward and direct-immediate m
 # arm sets OP -- "RNX, LVE: out of scope".
 #
 # AND THE DECK'S OWN AUTHORS KNEW THE ZERO BOUNDARY WAS OPEN.  PDF p.98
-# ships the sweep as "144XW3 XW,1.0,31,0" -- 1 to 37 octal -- and puts
-# a SPARE TRIPLE beside it, "144XWC XW,0.0,32,0" pointing at the
+# ships the sweep as "I44XW3 XW,1.0,31,0" -- 1 to 37 octal -- and puts
+# a SPARE TRIPLE beside it, "I44XWC XW,0.0,32,0" pointing at the
 # "ADDRESS IS 0." entries of both error tables, under the comment "-IF
 # 0 BECOMES ILLEGAL FOR RNX, USE THE / -FOLLOWING THREE INDEX WORDS TO
 # REPLACE / -THOSE DIRECTLY ABOVE."  Reference Manual printed p.27 says
@@ -3708,7 +3708,7 @@ run "I-Box 5 routine 1260 TEST 7 ON THE MODEL (all 18 boundary bits)" ./run_prog
 # and reading the hits gives the real layout:
 #
 #   p.65  "TEST 7 CHKS BOUNDARY CONTROL." / "CHK UPPER BOUNDARY DATA."
-#         <- this block, driver at 16099/160100
+#         <- this block, driver at I6099/I60100
 #   p.67  "CHK LOWER BOUNDARY DATA." and "CHK BOUNDARY CONTROL BIT."
 #   p.71  "FETCH FROM X-1 TO CHK UB COMP." / "FROM X-3 TO CHK LB COMP."
 #         <- the COMPARISON tests, i.e. the positive address-monitoring
@@ -3720,7 +3720,7 @@ run "I-Box 5 routine 1260 TEST 7 ON THE MODEL (all 18 boundary bits)" ./run_prog
 # THE BLOCK is eighteen iterations, because the upper boundary is word
 # 3 bits 0-17 -- exactly eighteen bits.  Write BIT<n> into $UB, four
 # NOPs (the deck's own spacing), read back, KV, and on mismatch branch
-# into the per-bit error table 160B17 INDEXED by $X3, which steps by
+# into the per-bit error table I60B17 INDEXED by $X3, which steps by
 # 1.32 because each entry is three half-words.
 #
 # IT CATCHES A BOUNDARY FAULT AND NAMES THE BIT.  StretchStorage.bsv
@@ -3747,7 +3747,7 @@ run "I-Box 5 routine 1260 TEST 7b ON THE MODEL (18 LB bits + control bit)" ./run
 # THE REST OF TEST 7, from p.68 -- the other register and the control
 # bit.  The upper half is the section above.  The lower loop mirrors it
 # with three differences: it stores through $LB (word 3 bits 32-49),
-# indexes its error table with $X2, and that table is 160B18 at
+# indexes its error table with $X2, and that table is I60B18 at
 # 022313.40, whose entries pp.69-70 print as "LOWER BOUNDARY DATA
 # FAILURE, BIT 32" upward.
 #
@@ -3756,7 +3756,7 @@ run "I-Box 5 routine 1260 TEST 7b ON THE MODEL (18 LB bits + control bit)" ./run
 # address monitoring signal").  The deck sets it from BIT57, reads word
 # 3 back, moves the refill field with "SR,$X1,$X1", and compares
 # against BIT11 -- because bit 57 sits at refill position 57-46 = 11.
-# Then "Z,$UB" clears it and it compares against 100Z.
+# Then "Z,$UB" clears it and it compares against I00Z.
 #
 # IT LOCALISES A FAULT TO THE BIT, both halves, addresses computed
 # BEFORE the runs and both hit:
@@ -3885,14 +3885,14 @@ run "I-Box 5 routine 1260 TEST 6: the free instruction and the I-Box indicators 
 # one, and the two groups without them show they are not structurally
 # required.
 #
-# The transcriber cut ELEVEN SOURCE LINES EARLIER than asked, at 16096
-# rather than 16098, and gave the reason: cut at 16098 the block
+# The transcriber cut ELEVEN SOURCE LINES EARLIER than asked, at I6096
+# rather than I6098, and gave the reason: cut at I6098 the block
 # contains NO label reference that is not a SYN -- zero genuine internal
 # address witnesses.  Extending back buys two real ones, a forward
 # reference 18 half-words long and a backward one 175 half-words long.
 
 run "I-Box 5 routine 1260 TEST 8B: DS disabled/enabled + store suppression (jb_ax5b PDF p.75)" python3 verify_ax5b_160_test8b_listing.py
-# A SECOND, RICHER DS ORACLE than the transcribed 16086 block, and the
+# A SECOND, RICHER DS ORACLE than the transcribed I6086 block, and the
 # acceptance test for the half of DS this suite calls suppression.
 # 52 rows.  Header: "-TEST 8B CHKS DS WITH SYSTEMS / -DISABLED, AND
 # ENABLED."  Its three error messages are the contract:
@@ -3901,7 +3901,7 @@ run "I-Box 5 routine 1260 TEST 8B: DS disabled/enabled + store suppression (jb_a
 #   "-SX ABOVE UB WAS NOT NOPED, DATA / -WAS STORED WHEN ENABLED."
 #
 # THE LAST ONE IS THE POINT.  The enabled half stores above the upper
-# boundary and then does "L(BU),160AD1" + "BRZ,$+1.32", demanding the
+# boundary and then does "L(BU),I60AD1" + "BRZ,$+1.32", demanding the
 # target still read ZERO.  IBM's own suite requires the store to be
 # NOPED, not merely flagged -- which is the observable Figure 11 (p.43)
 # calls Class S.  See docs/NEXT.md 5a.
@@ -3978,7 +3978,7 @@ run "I-Box 5 routine 1260 TEST 8C cases 1-2: the DISABLED controls (jb_ax5b PDF 
 # been corrected once.
 #
 # TEST 8C's own title, PDF p.76 at 022546.00:
-#   160127 LVI,$X1,160AD1  -TEST 8C CHECKS DF + IF UNDER 4 CONDS,
+#   I60127 LVI,$X1,I60AD1  -TEST 8C CHECKS DF + IF UNDER 4 CONDS,
 #                          -1. DISABL MASK 0 FETCH OK IND NO INT
 #                          -2. DIAABL MASK 1 FETCH OK NO IND NO INT
 #                          -3. ENABLE MASK 0 FETCH OK IND ON NO INT
@@ -4006,8 +4006,8 @@ run "I-Box 5 routine 1260 TEST 8C cases 1-2: the DISABLED controls (jb_ax5b PDF 
 # statement that DF is indicator 20 and IF is 21 -- numbering this
 # project had taken from the manual.
 #
-# ENCODING ONLY: running it needs SSIP's 160S1/160SX1, the 64-word
-# table at 160IT, and IF, which this model does not implement at all.
+# ENCODING ONLY: running it needs SSIP's I60S1/I60SX1, the 64-word
+# table at I60IT, and IF, which this model does not implement at all.
 # This is IF's acceptance test, waiting for IF.
 #
 # Three injections, and the third was PREDICTED WRONG, which is kept
@@ -4053,12 +4053,12 @@ run "I-Box 5 routine 1262 TEST 1CC: EX of a branch, and EXE (jb_ax5b PDF pp.93-9
 # EX OF / -A BD INSTRUCTION.").
 #
 # THE INTERRUPT VECTOR IS A 64-ENTRY TABLE FILL, not a single write.
-# 162K1 = "BD,162ITE" and 162K6 = "B,162ITE+.32" are each a full word
-# holding the same half-word branch twice; 162ITE is a full word of two
+# I62K1 = "BD,I62ITE" and I62K6 = "B,I62ITE+.32" are each a full word
+# holding the same half-word branch twice; I62ITE is a full word of two
 # self-loops, "BD,$" at .00 and "B,$" at .40.  A loop fills all 64
 # table words with one or the other, so WHICH HALF an interruption
-# lands on is what the constant chooses: 162K6 leaves the system as it
-# found it, 162K1 lands with it disabled.  SVA then plants the handler
+# lands on is what the constant chooses: I62K6 leaves the system as it
+# found it, I62K1 lands with it disabled.  SVA then plants the handler
 # address in the matching half, rewriting only the address part so the
 # landing keeps its own B or BD.
 #
@@ -4088,9 +4088,9 @@ run "I-Box 5 routine 1262 TEST 3B: EXIC subject below 32 (jb_ax5b PDF p.108)" py
 # item 15 of a numbered list and loses the paragraph it belongs to.
 #
 # THREE ADDRESS WITNESSES, NONE ADJACENT TO THE SLC -- better anchored
-# than 3A, because TEST 3B's first row carries no label.  L162104
-# (024157.40) is twelve half-words downstream and LIC262 (024171.00)
-# thirty-one, and LIC262's CONTENT is all zeros so only its address
+# than 3A, because TEST 3B's first row carries no label.  I62104
+# (024157.40) is twelve half-words downstream and IC262 (024171.00)
+# thirty-one, and IC262's CONTENT is all zeros so only its address
 # witnesses anything; the file says so rather than counting the row.
 #
 # Seven injections, observed.  The last is the only one outside
@@ -4135,7 +4135,7 @@ run "I-Box 5 routine 1262 TEST 3B: EXIC subject below 32 (jb_ax5b PDF p.108)" py
 #
 # A SECOND, INDEPENDENT WITNESS FOR EXIC's ENCODING, and the first
 # with a SYSTEM-SYMBOL operand: "EXIC,$R" at 024145.00.  TEST 2B only
-# ever writes "EXIC,162PSI".
+# ever writes "EXIC,I62PSI".
 #
 # MANUAL AND DECK DISAGREE AT THE BOUNDARY, recorded not resolved:
 # p.50 says "between 0 and 15", all three deck messages say "LESS THAN
@@ -4144,7 +4144,7 @@ run "I-Box 5 routine 1262 TEST 3B: EXIC subject below 32 (jb_ax5b PDF p.108)" py
 #
 # AN UNEXPLAINED ROW, recorded the way ax5b_16082_op_ad.strap records
 # what it could not trace.  024144.40 holds "%8@DD%BU,32,8@,3740
-# -ILLEGAL OP." -- the same word routine 1260's 160K7 prints -- sitting
+# -ILLEGAL OP." -- the same word routine 1260's I60K7 prints -- sitting
 # in the STRAIGHT-LINE instruction path between "Z,$X1" and "EXIC,$R".
 # It is systematic, not a slip: TEST 3B repeats the identical
 # Z,$X1/DD/EXIC triple.  Nothing on those pages explains it.  The
@@ -4164,7 +4164,7 @@ run "I-Box 5 routine 1262 TEST 1B: EX of each class (jb_ax5b PDF pp.90-91)" pyth
 #
 # WHY 1B HAS TWO CHECKS PER CLASS WHERE 2B HAS THREE, measured off the
 # bit-18 decodes rather than assumed: in all five classes the address
-# planted into 162ITE is the row IMMEDIATELY AFTER the EX, so an
+# planted into I62ITE is the row IMMEDIATELY AFTER the EX, so an
 # interruption and an ordinary fall-through land in the same place and
 # no separate "-INT WHEN EX TO" message is possible.  2B's EXIC blocks
 # plant a distinct handler and so can distinguish the two.
@@ -4179,7 +4179,7 @@ run "I-Box 5 routine 1262 TEST 1B: EX of each class (jb_ax5b PDF pp.90-91)" pyth
 # both orders assemble to the same two encodings -- so the check passes
 # either way and only the comment records which the deck wrote.  And
 # BZXVZ plays opposite roles: a skip OVER the error in DIR IX and
-# IMMED IX, the jump TO it in MISC (whose subject instruction 162EXM
+# IMMED IX, the jump TO it in MISC (whose subject instruction I62EXM
 # IS "Z,$X1", so the index value it tests is zeroed by the subject).
 #
 # NO CNOP IN THIS RANGE, AND THAT IS A FINDING.  Both full-word L(BU)
@@ -4235,8 +4235,8 @@ run "I-Box 5 routine 1262 TEST 2B, EXIC by class (jb_ax5b PDF p.101)" python3 ve
 # printed numbers are in the front write-up, which is scanned 2-up.
 #
 # Encoding only.  Rule (a) works by planting a handler into interrupt
-# table entry 162ITE and awaiting an interruption, so a RUN needs the
-# 64-word table, 160S1 and the 162EX* subject constants -- and EXIC is
+# table entry I62ITE and awaiting an interruption, so a RUN needs the
+# 64-word table, I60S1 and the I62EX* subject constants -- and EXIC is
 # not EXECUTED by this model at all.  It is in MISC_CODES, so the
 # ASSEMBLER encodes it; that is the whole distinction.
 #
@@ -4250,35 +4250,35 @@ run "I-Box 5 routine 1260's constants + interrupt table (jb_ax5b p.86)" python3 
 # THE HARNESS THE p.71 COMPARISON DRIVER NEEDS, and it settles three
 # things earlier transcriptions here had to leave open or infer.
 #
-# 160K7 IS THE ILLEGAL OP.  ax5b_16082_op_ad.strap SYN'd it from p.41
-# and listed under "NOT TRACED": "WHAT 160K7 CONTAINS.  Only its
+# I60K7 IS THE ILLEGAL OP.  ax5b_16082_op_ad.strap SYN'd it from p.41
+# and listed under "NOT TRACED": "WHAT I60K7 CONTAINS.  Only its
 # address, 023050.00, is printed here.  The block's SHAPE ... reads
 # like self-modifying code planting an invalid operation code ...
 # Nothing on these pages says so."  p.86 says so:
-#     160K7  %8@DD%BU,32,8@,3740   -ILLEGAL OP, NO. 31.
+#     I60K7  %8@DD%BU,32,8@,3740   -ILLEGAL OP, NO. 31.
 #
-# 160K16 IS "BD,16086A", confirming ax5b_16086_ds.strap's external.
+# I60K16 IS "BD,I6086A", confirming ax5b_16086_ds.strap's external.
 #
 # THE INTERRUPT TABLE IS 64 WORDS, STATED RATHER THAN REASONED.
-# "160IT DR%BU,64,8@,64" sits at 023201.00 and 160DMP at 023301.00,
+# "I60IT DR%BU,64,8@,64" sits at 023201.00 and I60DMP at 023301.00,
 # 0o100 words later.  This suite's "The interruption mechanism"
-# section had REASONED the units were "64 full words, from 160IT at
-# 023201.00 to 160DMP at 023301.00" -- the DR row states the 64.
+# section had REASONED the units were "64 full words, from I60IT at
+# 023201.00 to I60DMP at 023301.00" -- the DR row states the 64.
 #
-# And 160K12 is the table's DEFAULT ENTRY, "BD,16010A" twice: every
+# And I60K12 is the table's DEFAULT ENTRY, "BD,I6010A" twice: every
 # interruption disables and branches to what p.71 labels "-ALL INTRPTS
-# EXCEPT AD ENTER HERE."  160XW1 -- "XW,0,64,160IT", count 64, refill
+# EXCEPT AD ENTER HERE."  I60XW1 -- "XW,0,64,I60IT", count 64, refill
 # the table -- is what the comparison driver's CB+ loop walks to copy
 # that entry into all 64 slots.
 #
 # IT ALSO EXPOSED THE THIRD ASSEMBLER GAP THIS ROUTINE HAS FOUND.
-# "C+I,$X1,160DMP" at 023044.00 prints "23301.03 00" -- the label's
+# "C+I,$X1,I60DMP" at 023044.00 prints "23301.03 00" -- the label's
 # WORD address in bits 0-17 -- and count-type immediates evaluated a
 # label to a BIT address, which wrapped.  They now use eval_addr_field
 # with shift 6, exactly as XW's refill field already did, so a label
 # scales >>6 and a bare integer counts words ("LCI,$X1,18" unchanged).
 # The first two: TRANSMIT/SWAP not encodable at all (found by p.45's
-# TI) and XW's fourth operand masked to one bit (found by 160S1's
+# TI) and XW's fourth operand masked to one bit (found by I60S1's
 # single XW row).  Each was one row using a feature nothing else did.
 #
 # Injections, observed: count-immediates back to eval_expr (023044.00,
@@ -4289,12 +4289,12 @@ run "I-Box 5 routine 1258 TEST 1: time clock steps (jb_ax5b PDF pp.5-6)" python3
 # THE BLOCK TEST 2 SITS ON.  46 rows in three contiguous pieces, each
 # with its own SLC: routine 158's preamble (014002.00-014004.40),
 # routine 1258's CONSTANT POOL (014006.00-014011.00, four full words),
-# and TEST 1 proper from entry 1581 (014012.00-014033.40, 36 half-words,
+# and TEST 1 proper from entry I581 (014012.00-014033.40, 36 half-words,
 # the whole of PDF p.6).
 #
 # IT RETIRES FOUR OF TEST 2'S INPUT CAVEATS, which is the point of
-# transcribing backwards into the preamble.  TEST 2 had to SYN LIC258,
-# LICK258, L158K1 and L158K2 as unwitnessed inputs; this file DEFINES
+# transcribing backwards into the preamble.  TEST 2 had to SYN IC258,
+# ICK258, I58K1 and I58K2 as unwitnessed inputs; this file DEFINES
 # all four from their own printed constant-pool rows at exactly those
 # addresses -- including the two constants TEST 2's reload and
 # bits-19-23 assertions rest on.  It also settles a glyph question TEST
@@ -4338,7 +4338,7 @@ run "I-Box 5 routine 1258 TEST 1: time clock steps (jb_ax5b PDF pp.5-6)" python3
 # Reference Manual printed p.25: "ADD IMMEDIATE TO COUNT (C+I): Bits
 # 0-17 ... are added to the COUNT field, bits 28-45" -- while 014026.00's
 # KV compares bits 0-24, the VALUE field, which is where SC put the old
-# high half.  So block 1585 would report a spurious "-BITS 28-45 ARE NOT
+# high half.  So block I585 would report a spurious "-BITS 28-45 ARE NOT
 # CORRECT" on the one entry in 2^18 where the low half wraps, and V+I
 # would have propagated the carry.  C+I and V+I differ by one letter in
 # source and one nibble in print ("1.07 00" against "1.07 05") -- the
@@ -4376,12 +4376,12 @@ run "I-Box 5 routine 1258 TEST 1: time clock steps (jb_ax5b PDF pp.5-6)" python3
 # between decks, not a reading error.
 
 run "I-Box 5 routine 1258 TEST 2: the interval timer (jb_ax5b PDF p.7)" python3 verify_ax5b_1258_test2_listing.py
-# THE REAL INTERVAL-TIMER ORACLE.  The already-transcribed 16071 block
+# THE REAL INTERVAL-TIMER ORACLE.  The already-transcribed I6071 block
 # is 8 rows and witnesses only "TS comes on"; this is 48 rows and
 # witnesses the tick RATE ("-INTERVAL TIMER FAILS TO STEP IN / -ONE
 # MILLISEC"), the DECREMENT BY ONE ("-...FROM 000000.4 TO 000000.0"),
 # the RELOAD TO ALL ONES ("-...FROM 000000.0 TO 777777.40", with
-# constant 158K1 printing 777777.40 00 -- ones in bits 0-18), and the
+# constant I58K1 printing 777777.40 00 -- ones in bits 0-18), and the
 # bits-19-23 clearing ("-...FROM 000001.77 TO 000001.00").
 #
 # Routine 1258 sits on PDF pp.5-7 -- the FIRST listing pages, right
@@ -4390,13 +4390,13 @@ run "I-Box 5 routine 1258 TEST 2: the interval timer (jb_ax5b PDF p.7)" python3 
 # model has no time clock at all, so it is further from running.
 #
 # THE DECK WIDENS ITS OWN MESSAGE WHERE IT WIDENS ITS OWN TEST.  Blocks
-# 1588 and 15810 say "IX n CONTAINS ITS NEW VALUE, 0-18."; block 15812
-# -- the one whose constant 158K2 carries bits 19-23 -- says "0-23."
+# I588 and I5810 say "IX n CONTAINS ITS NEW VALUE, 0-18."; block I5812
+# -- the one whose constant I58K2 carries bits 19-23 -- says "0-23."
 # That is Reference Manual printed p.34's programming note stated by
 # the deck as the SCOPE OF ITS OWN COMPARISON, not merely implied.
 #
 # THIRTEEN bit-18 branch-target self-checks against the page's own
-# label column, against 16071's one.  That is the concrete sense in
+# label column, against I6071's one.  That is the concrete sense in
 # which it is the better oracle.  The BIT table rule 024522+n holds
 # three more times here (BIT1, BIT17, BIT18), each read off an encoding
 # and then matched against p.114's own printing.
@@ -4414,20 +4414,20 @@ run "I-Box 5 routine 1258 TEST 2: the interval timer (jb_ax5b PDF p.7)" python3 
 #      octal/hex boundary looks like from either side)
 #   IMM_INDEX_COUNT_OPS loses LCI -> 3 rows
 #   enc_count_branch target & ~1 -> 1 of the 3 CB rows.  Only
-#     "CB,$X1,L1587A" has a .40 target; the other two are word-aligned,
+#     "CB,$X1,I587A" has a .40 target; the other two are word-aligned,
 #     so the same fault is invisible there.
 
-run "I-Box 5 routine 1260's 160S1, bit-exact (jb_ax5b pp.83-84)" python3 verify_ax5b_160s1_listing.py
-run "I-Box 5 routine 1260's 160S1 TAIL, incl. the return (jb_ax5b PDF p.85)" python3 verify_ax5b_160s1_tail_listing.py
+run "I-Box 5 routine 1260's I60S1, bit-exact (jb_ax5b pp.83-84)" python3 verify_ax5b_160s1_listing.py
+run "I-Box 5 routine 1260's I60S1 TAIL, incl. the return (jb_ax5b PDF p.85)" python3 verify_ax5b_160s1_tail_listing.py
 # TWENTY-SIX ROWS, AND THE LAST TWO ARE WHY.  The section above stops at
 # 023021.00; this one runs 023021.40-023041.00 and reaches the RETURN,
 # which nobody had read:
 #
-#     023040.40         LX,$X1,160DMP     23301.02 10
-#     023041.00  160SX1 $BD,0             0.04 00
+#     023040.40         LX,$X1,I60DMP     23301.02 10
+#     023041.00  I60SX1 $BD,0             0.04 00
 #
-# 160S1 RETURNS VIA A BRANCH DISABLED.  Every 1260/1262 block that opens
-# "SIC,160SX1 / B,160S1" therefore runs DISABLED afterwards unless it
+# I60S1 RETURNS VIA A BRANCH DISABLED.  Every 1260/1262 block that opens
+# "SIC,I60SX1 / B,I60S1" therefore runs DISABLED afterwards unless it
 # enables for itself, and no BE exists anywhere in either half.  The
 # caller's SIC supplies only the address: Reference Manual printed p.41,
 # "the instruction counter contents [are] stored in bits 0-18 of the
@@ -4541,20 +4541,20 @@ run "I-Box 5 routine 1274: TRUNCATION OF ADDRESSES, 99 rows (jb_ax5b PDF pp.112-
 # WHAT AN INTERRUPT LANDING ACTUALLY LOOKS LIKE, 54 rows, the whole of
 # p.109, 024172.00-024331.00.
 #
-#     024320.00  162ITE  BD,$   "-ALL INTERRUPTS ENTER HERE."  24320.04 00
+#     024320.00  I62ITE  BD,$   "-ALL INTERRUPTS ENTER HERE."  24320.04 00
 #     024320.40          B,$                                   24320.50 00
 #
 # ONE FULL WORD HOLDING TWO SELF-LOOPS, and the routine picks which one
 # an interruption lands on by which CONSTANT it fills the table with:
-# 162K1 is "BD,162ITE" (pair 04 -> bit 18 = 0 -> the BD half) and 162K6
-# is "B,162ITE+.32" (pair 50 -> bit 18 = 1 -> the B half).  Each is a
+# I62K1 is "BD,I62ITE" (pair 04 -> bit 18 = 0 -> the BD half) and I62K6
+# is "B,I62ITE+.32" (pair 50 -> bit 18 = 1 -> the B half).  Each is a
 # full word holding the same half-word twice, so one SX writes it into a
 # table entry and a loop fills all 64.
 #
 # THE RULE IS TRANSPARENCY, NOT ENABLE-STATE, and the file says so
 # because the obvious generalisation is wrong: it is NOT "enabled tests
-# use the B half".  Block 16225 is disabled throughout and also uses
-# 162ITE+.32.  The B half is used where the landing must not CHANGE the
+# use the B half".  Block I6225 is disabled throughout and also uses
+# I62ITE+.32.  The B half is used where the landing must not CHANGE the
 # enable state because the block is about to measure it; the BD half
 # where disabling costs nothing.  3A and 3B both plant into the BD half.
 #
@@ -4575,10 +4575,10 @@ run "I-Box 5 routine 1274: TRUNCATION OF ADDRESSES, 99 rows (jb_ax5b PDF pp.112-
 #       SLC re-anchors.
 #
 # THREE MEASURED NULLS, each with its arithmetic, recorded so nobody
-# repeats them.  162INT at 024220.00 prints "100.00" -- a DR RESERVE
+# repeats them.  I62INT at 024220.00 prints "100.00" -- a DR RESERVE
 # SIZE, 0o100 = 64 words, not a machine word; no row is asserted and no
 # word fabricated (SLC across, SYN the label).  The check that it is a
-# size: 024220 + 0o100 = 024320, which is where 162ITE is printed.  (The
+# size: 024220 + 0o100 = 024320, which is where I62ITE is printed.  (The
 # manual calls the table "48 successive full-word locations"; the deck
 # reserves 64.)  024325.40 is a gap before a word-aligned XW and the
 # listing prints nothing there.  And the four CNOPs are a free four-way
@@ -4586,14 +4586,14 @@ run "I-Box 5 routine 1274: TRUNCATION OF ADDRESSES, 99 rows (jb_ax5b PDF pp.112-
 # aligned print nothing and get no address column.
 #
 # ONE CONJECTURE, flagged in the file and not promoted: that the table
-# still holds 162K1 when 3B runs.  pp.94-107 were not swept.  The
-# internal argument is that if it held 162K6, 3B's SVA would plant into
+# still holds I62K1 when 3B runs.  pp.94-107 were not swept.  The
+# internal argument is that if it held I62K6, 3B's SVA would plant into
 # a half nothing reaches and the landing would be the untouched "B,$"
 # self-loop, so the block could not pass.  That is an argument, not a
 # page.
 
 # THE ROUTINE THIS PLAN MYTHOLOGISED.  docs/NEXT.md opened with
-# "Prerequisite: SSIP's 160S1/160SX1 save/restore harness, reported at
+# "Prerequisite: SSIP's I60S1/I60SX1 save/restore harness, reported at
 # ax5b pp.41-44.  Nothing from 1260 can run without it."  Every clause
 # was wrong.  It is local to routine 1260, not SSIP's.  It CLEARS
 # INDICATORS 0-19 rather than saving or restoring anything.  It is at
@@ -4637,16 +4637,16 @@ run "I-Box 5 routine 1260 TEST 7: the boundary sweep and its exit (jb_ax5b PDF p
 # 022461.00-022512.40.  The next label, 022513.00, is TEST 8B's head.
 #
 # IT UPGRADES TWO OF THE NEIGHBOURING FILE'S ASSUMPTIONS.  pp.72-73 had
-# to SYN L160121 and L160122; this page DEFINES both at exactly those
+# to SYN I60121 and I60122; this page DEFINES both at exactly those
 # addresses, so two inputs become witnessed rows from the other side.
 #
 # AND IT ANSWERS THE WRAPAROUND QUESTION pp.72-73 raised, in three
 # parts -- the middle one being the real find.  **The wrap is the
 # loop's TERMINATION CONDITION, not a curiosity.**  Traced across all
-# three files: LB rises one word per pass and X2 at 160214 holds LB+3.
+# three files: LB rises one word per pass and X2 at I60214 holds LB+3.
 # On the last pass LB = 0o777775, so X2 before the V+I is 2^24-128
 # bits; +128 carries out of bit 0, the carry is ignored, magnitude goes
-# to zero, XVZ sets, and "BXVZ,160122" at 022505.00 takes the exit.
+# to zero, XVZ sets, and "BXVZ,I60122" at 022505.00 takes the exit.
 # That is the ONLY way this loop ends -- and "LV,$X2,$X2" at 022504.40
 # exists purely to re-derive XVZ, since every row between the V+I and
 # it touches X13 rather than X2.  It also confirms p.71's header
@@ -4709,13 +4709,13 @@ run "I-Box 5 routine 1260 TEST 7: the boundary sweep and its exit (jb_ax5b PDF p
 # tested it instead of confirming it.  TEST 7's header says "RANGE OF X
 # IS FROM 000040 THRU 777777 OCTAL", and 0o40 = 32 looked like the deck
 # respecting the never-signal set for locations 0 and 4-31.  It is not.
-# The sweep's seed is 160XW3 at 023067.00 (PDF p.86), printing
+# The sweep's seed is I60XW3 at 023067.00 (PDF p.86), printing
 # "101.00 00" -- so X2 enters holding word 0o101 = 65 and the FIRST X
 # is UB = 0o103, not 0o40.  The header's upper endpoint is exact; its
 # lower endpoint is not what the code does.  **The deck neither
 # confirms nor refutes the carve-out.**  Best guess for the header,
 # flagged as conjecture in the file: a comment left behind by an
-# earlier value of 160XW3.
+# earlier value of I60XW3.
 #
 # ALL THREE HEADER GARBLES ARE DECK TYPOS, NOT SCAN DAMAGE, and the
 # method for telling them apart is worth keeping: compare the suspect
@@ -4752,7 +4752,7 @@ run "I-Box 5 routine 1260 TEST 7: the boundary sweep and its exit (jb_ax5b PDF p
 # here.
 #
 # ONE ROW TRANSCRIBED AS PRINTED AND NOT EXPLAINED: 022452.40 writes
-# "SV,$X14,160AD3" where both parallel blocks write $X13, and the
+# "SV,$X14,I60AD3" where both parallel blocks write $X13, and the
 # printed machine code AGREES with the printed source (index field 14
 # against 13).  Whether the shipped deck's first-interrupt flag for the
 # between-bounds case is ever set is not decidable from these pages.
@@ -4768,11 +4768,11 @@ run "I-Box 5 routine 1260 TEST 7: the boundary sweep and its exit (jb_ax5b PDF p
 #
 # Upper bound X, lower bound X-2, three fetches -- above, below,
 # inside -- swept across the range.  It builds the interruption table
-# in a CB+ loop, points entry 16 at 160107, calls SSIP's save/restore
-# through "SIC,160SX1 / B,160S1", clears 160AD1/160AD3, sets the
+# in a CB+ loop, points entry 16 at I60107, calls SSIP's save/restore
+# through "SIC,I60SX1 / B,I60S1", clears I60AD1/I60AD3, sets the
 # bounds, ENABLES with "BE,$+.32", fetches, and lands at one of the
-# deck's two labelled entries: 160107 "-AD INTRPTS ENTER HERE." and
-# 16010A "-ALL INTRPTS EXCEPT AD ENTER HERE."
+# deck's two labelled entries: I60107 "-AD INTRPTS ENTER HERE." and
+# I6010A "-ALL INTRPTS EXCEPT AD ENTER HERE."
 #
 # AND IT USES TRANSMIT IMMEDIATE.  "TI,1,BOUND1,3.0" moves one word
 # into word 3 -- the boundary register itself -- a FULL WORD at an ODD
@@ -4782,8 +4782,8 @@ run "I-Box 5 routine 1260 TEST 7: the boundary sweep and its exit (jb_ax5b PDF p
 # from, and it encodes right on the first try.
 #
 # ENCODING ONLY, for a specific reason rather than a general one: it
-# needs 160S1's body (SSIP save/restore at 022741.00, still not
-# transcribed), the interruption table 160IT at 023201.00, and
+# needs I60S1's body (SSIP save/restore at 022741.00, still not
+# transcribed), the interruption table I60IT at 023201.00, and
 # BOUND0/BOUND1 at 023302/023303.  That is the harness item 1 has
 # always needed -- and this is the first block where the need is real
 # rather than assumed.  Fifty-two rows, right on the first assembly.
@@ -4796,8 +4796,8 @@ run "I-Box 5 routine 1268 test 1A, bit-exact (jb_ax5b p.110)" python3 verify_ax5
 run "I-Box 5 routine 1268 test 1A, ON THE MODEL (self-modifying execution)" ./run_program.sh programs/ax5b_1681_if_close_to_ds.strap StretchAx5b1681Tb \
     "PC=20937"         # 024344.40, where the listing continues into test 1B
 # THE INSTRUCTION-FETCH HALF of routine 1268, and the neatest block in
-# it.  The deck plants a whole word over location 1682 TWICE and then
-# FALLS INTO 1682 and executes what is there -- first [Z,$X2 | NOP],
+# it.  The deck plants a whole word over location I682 TWICE and then
+# FALLS INTO I682 and executes what is there -- first [Z,$X2 | NOP],
 # then [LVI,$X2,(8)777777.40 | NOP].  "LX,$X2,$X2" re-reads X2 without
 # changing it, purely so the index result indicators describe X2 (Ref.
 # Manual p.23); the following BXVZ tests them, and value-zero means the
@@ -4821,8 +4821,8 @@ run "I-Box 5 routine 1268 test 1A, ON THE MODEL (self-modifying execution)" ./ru
 #
 # AND A MUTANT IT PROVABLY CANNOT HELP, computed rather than guessed.
 # The existing index-spare-bits-zeroed mutant zeroes IBM bits 26-27.
-# The planted words are 168K1 = 0x0004920000001800 and
-# 168K2 = 0xffffe50100001800; sign, flag AND SPARE are already zero in
+# The planted words are I68K1 = 0x0004920000001800 and
+# I68K2 = 0xffffe50100001800; sign, flag AND SPARE are already zero in
 # both, so that mutant cannot change what is planted and this block
 # passes under it.  It stays the campaign's slowest near-miss, caught
 # 23 minutes away by "IBOX-3 SVA into a floating-point instruction".
@@ -4979,7 +4979,7 @@ run "I-Box 5 routine 1268 test 2, ON THE MODEL (the deck's own logic)" ./run_pro
 # PATHS; "close to DS" is close to a Data Store.  1268 is a look-ahead
 # store-to-fetch / store-to-load forwarding test.  Nothing in it writes
 # a mask, sets a boundary register, branches on DF or IF, or touches
-# protected storage -- 168K3 is ordinary storage at 024411.00.
+# protected storage -- I68K3 is ordinary storage at 024411.00.
 #
 # docs/archival_inventory.md contained BOTH readings, twenty lines
 # apart; the "Look-Ahead store-to-fetch/store-to-load forwarding" one
@@ -4989,7 +4989,7 @@ run "I-Box 5 routine 1268 test 2, ON THE MODEL (the deck's own logic)" ./run_pro
 # WHAT THE BLOCK DOES, three times: zero a destination, load X1 with an
 # index word of ones, STORE it, immediately LOAD it back, and branch to
 # the error routine if what came back is zero.  The destinations are
-# 168K3 (external), $X4 (index storage) and $R (internal).
+# I68K3 (external), $X4 (index storage) and $R (internal).
 #
 # TWO STANDARDS, AND THEY ARE NOT EQUAL.  The ENCODING check is
 # discriminating: Z's misc code, the misc literal, and XVZ's indicator

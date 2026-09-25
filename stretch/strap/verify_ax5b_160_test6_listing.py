@@ -12,11 +12,11 @@ carriage-tape line numbering, and the only printed numbers are in the
 front write-up, which is scanned 2-up.  Every verify_ax5b_*.py here
 says "PDF p.NN" for that reason.
 
-WHERE THIS CUTS, AND WHY.  The block was asked for from 16098
+WHERE THIS CUTS, AND WHY.  The block was asked for from I6098
 (022073.00).  It is cut eleven source lines earlier, at TEST 6's own
-header row 16096 (022062.00), because that is what gives this check
-two GENUINE internal address witnesses instead of none: "BD,16098" at
-022071.40 and "BD,16096" at 022211.40.  Cut at 022073.00 the block
+header row I6096 (022062.00), because that is what gives this check
+two GENUINE internal address witnesses instead of none: "BD,I6098" at
+022071.40 and "BD,I6096" at 022211.40.  Cut at 022073.00 the block
 holds no label reference that is not a SYN.  The prologue costs four
 more externals and two address expressions, all of which this
 assembler already handles.
@@ -50,7 +50,7 @@ of the last three operations; the index result indicators are not set
 in these operations" is the mirror image for KV/KVI.  Printed p.42
 (PDF p.45): "The indicator register has address 11.  Bit positions
 0-19 may be read, but not loaded ... Bit positions 20-63 may either be
-read or loaded", so "Z,$IND" and "TI,1,100O,$IND" reach 20-63 only --
+read or loaded", so "Z,$IND" and "TI,1,I00O,$IND" reach 20-63 only --
 all this test needs.
 
 THE INDICATOR NUMBERS come from Figure 11, the Indicator List, printed
@@ -68,21 +68,21 @@ After SR, value-field bit b holds indicator 46+b, so the individual
 indicators are XCZ (8)100000, XVLZ (8)40000, XVZ (8)20000, XVGZ
 (8)10000, XL (8)4000, XE (8)2000, XH (8)1000, and "46-63 all on" is
 (8)777777.  With the deck's own operands -- PDF p.114 read at 600 dpi
-gives 100Z "XW,0,0,0,0  -ZERO INDX WD." 024502.00, 100O
+gives I00Z "XW,0,0,0,0  -ZERO INDX WD." 024502.00, I00O
 "DD(BU,64,8),1777777777777777777777  -INDX WD. OF ONES." 024503.00,
 BIT16 "XW,(8)2.00,0,0" 024542.00, BIT17 "XW,(8)1.00,0,0" 024543.00;
-verify_ax5b_160k_listing.py gives 160K9 "XW,-1.0,0,0", 160K10
-"XW,1.0,1,0", 160K11 "XW,-3.0,63,0"; verify_ibox2_load_index_listing
+verify_ax5b_160k_listing.py gives I60K9 "XW,-1.0,0,0", I60K10
+"XW,1.0,1,0", I60K11 "XW,-3.0,63,0"; verify_ibox2_load_index_listing
 .py gives BIT30 "XW,0,32768,0" -- every one of the thirteen falls out:
 
-  140000 = XCZ+XVLZ      160K9  (count 0, value -1)
-  120000 = XCZ+XVZ       100Z   (count 0, value 0)
-   40000 = XVLZ          160K11 (count 63, value -3)
+  140000 = XCZ+XVLZ      I60K9  (count 0, value -1)
+  120000 = XCZ+XVZ       I00Z   (count 0, value 0)
+   40000 = XVLZ          I60K11 (count 63, value -3)
    20000 = XVZ           BIT30  (count 32768, value 0)
-   10000 = XVGZ          160K10 (count 1, value +1)
-  617777 = ~(XCZ,XVLZ,XVZ)   from all-ones, then 160K10
+   10000 = XVGZ          I60K10 (count 1, value +1)
+  617777 = ~(XCZ,XVLZ,XVZ)   from all-ones, then I60K10
   627777 = ~(XCZ,XVLZ,XVGZ)  from all-ones, then BIT30
-  647777 = ~(XCZ,XVZ,XVGZ)   from all-ones, then 160K11
+  647777 = ~(XCZ,XVZ,XVGZ)   from all-ones, then I60K11
     4000 = XL            KV 1.0 against 2.0
     2000 = XE            KV 1.0 against 1.0
     1000 = XH            KV 2.0 against 1.0
@@ -114,7 +114,7 @@ bit 30 = 1, and every BZXE is "1304.32 C0", hex C0 = 11000000 with bit
 30 = 0.  Same indicator in both: bits 19-24 = 110101 = 53 = XE.
 
 THE ERROR IDIOM HAS TWO SHAPES, ONE POLARITY.  The prologue and the
-first group branch OVER an unconditional error pair ("BD,16098",
+first group branch OVER an unconditional error pair ("BD,I6098",
 "BXE,$+1.32", each followed by "SIC,SEN / B,SERS"); every later group
 folds the test into the SIC-prefixed branch ("SIC,SEN / BZXE,SERS").
 
@@ -181,23 +181,23 @@ here rather than written into the message.
 WITNESS TIERING.  EVERY SYN IS AN INPUT TO THIS CHECK, NOT A WITNESS:
 each external's address was read out of the very row that names it, so
 those rows verify only opcode and modifier bits.  That covers
-L160SX1, L160S1, L160XW1, L16082A, L160IT, L160K8, L160K9, L160K10,
-L160K11, L100Z, L100O, BIT7, BIT16, BIT17, BIT25, BIT30, BIT38, SEN,
-SERS, LSEN0, SSW and LIC260 -- 22 symbols, every one an assumption.
+I60SX1, I60S1, I60XW1, I6082A, I60IT, I60K8, I60K9, I60K10,
+I60K11, I00Z, I00O, BIT7, BIT16, BIT17, BIT25, BIT30, BIT38, SEN,
+SERS, LSEN0, SSW and IC260 -- 22 symbols, every one an assumption.
 
 Genuinely witnessed addresses, three tiers:
 
   TIER 1, internal labels the location counter had to reach.
-    L16098 = 022073.00.  Eighteen half-words of prologue separate it
-      from the SLC, and "BD,16098" at 022071.40 prints "22073.04 00".
+    I6098 = 022073.00.  Eighteen half-words of prologue separate it
+      from the SLC, and "BD,I6098" at 022071.40 prints "22073.04 00".
       Confirmed against p.61's own label column.
-    L16097 = 022072.00.  Same tier by construction (sixteen half-words
+    I6097 = 022072.00.  Same tier by construction (sixteen half-words
       past the SLC); nothing in the block references it, so it is
       counter evidence only.  Asserted below anyway.
-    L16096 = 022062.00 is NOT a third: the SLC sets the counter to
-      022062.0 and L16096 is the first label after it, so checking it
+    I6096 = 022062.00 is NOT a third: the SLC sets the counter to
+      022062.0 and I6096 is the first label after it, so checking it
       checks the SLC against the number this transcription fed the
-      SLC.  It is the block's anchor, not evidence.  What "BD,L16096"
+      SLC.  It is the block's anchor, not evidence.  What "BD,I6096"
       at 022211.40 does witness is the REFERENCE -- that a backward
       label reference 175 half-words long lands in bits 0-18 with the
       right bit 18.
@@ -211,10 +211,10 @@ Genuinely witnessed addresses, three tiers:
       022211.00  B,$+1.0
       022213.00  BD,$+.32
 
-  TIER 3, cross-deck corroboration that promotes nothing.  L16082A is
+  TIER 3, cross-deck corroboration that promotes nothing.  I6082A is
     a SYN here, but 017227.00 is a label defined INSIDE
     verify_ax5b_16082_16083_listing.py's transcribed range, and
-    022064.40's "LX,$X2,16082A-1.0" prints 17226 -- that address minus
+    022064.40's "LX,$X2,I6082A-1.0" prints 17226 -- that address minus
     one word.  Two decks, one number.
 
 BIT-18 SELF-CHECKS, each decoded out of the printed octal pair (the
@@ -227,14 +227,14 @@ branch address"):
              -> 022065.00, and 022065.40 - 32 bits = 022065.00.
   022070.00  BE,$+.32       22070.40 00  pair 40 = 100000, bit18 = 1
              -> 022070.40 = this row + 32 bits.
-  022071.40  BD,L16098      22073.04 00  pair 04 = 000100, bit18 = 0
-             -> 022073.00, where p.61's label column prints 16098.
+  022071.40  BD,I6098      22073.04 00  pair 04 = 000100, bit18 = 0
+             -> 022073.00, where p.61's label column prints I6098.
   022077.00  BXE,$+1.32     22100.72 C2  pair 72 = 111010, bit18 = 1
              -> 022100.40 = this row + 64 + 32 bits.
   022211.00  B,$+1.0        22212.10 00  pair 10 = 001000, bit18 = 0
              -> 022212.00 = this row + 64 bits.
-  022211.40  BD,L16096      22062.04 00  pair 04 = 000100, bit18 = 0
-             -> 022062.00, where p.61's label column prints 16096.
+  022211.40  BD,I6096      22062.04 00  pair 04 = 000100, bit18 = 0
+             -> 022062.00, where p.61's label column prints I6096.
   022213.00  BD,$+.32       22213.44 00  pair 44 = 100100, bit18 = 1
              -> 022213.40 = this row + 32 bits.
 
@@ -245,9 +245,9 @@ p.24's programming note: "The LOAD INDEX and STORE INDEX operations
 involve transmission of full words"), so their 19-bit field's bit 18
 is a low-order bit forced to zero, not a half-word selector:
 
-  022064.40  LX,$X2,L16082A-1.0  17226.04 10  pair 04, bit18 = 0, and
+  022064.40  LX,$X2,I6082A-1.0  17226.04 10  pair 04, bit18 = 0, and
              017227.00 - 1.0 = 017226.00, a WORD address.
-  022067.00  SX,$X1,L160IT+39.0  23250.03 10  pair 03, bit18 = 0, and
+  022067.00  SX,$X1,I60IT+39.0  23250.03 10  pair 03, bit18 = 0, and
              023201 + 39 = 023250, again a word address.  (The 03
              against the 04 above is bits 19-22 = the index field: X1
              = 0001 with bit 23 = 1 for SX, X2 = 0010 with bit 23 = 0
@@ -336,12 +336,12 @@ NOTHING HERE IS A FIRST for this assembler, and the nearest relative
 should be named: verify_ax5b_160102_listing.py already witnesses the
 identical "SR,$X1,$X1 / KV" refill-into-value idiom at 022300.00 and
 022305.00, with the same "21.03 70".  SIC/B/BD/BE/NOP/LX/SX/Z/TI/KVI/
-KV/CB+/V+ all have listing witnesses here; BXE is in 16099 and 160102,
-BZXE in 1258 TEST 2, 160102 and TEST 3A.  What TEST 6 adds is scale
+KV/CB+/V+ all have listing witnesses here; BXE is in I6099 and I60102,
+BZXE in 1258 TEST 2, I60102 and TEST 3A.  What TEST 6 adds is scale
 and repetition in one straight line -- 23 full-word TRANSMIT
 IMMEDIATEs, 27 NOPs, 18 SICs, 16 LXs, 16 SRs, 15 KVI immediates, 15
 branch-on-XE rows, 9 Z,$IND and 6 KVs -- plus the two long internal BD
-references and a second, independent witness for L16082A's address.
+references and a second, independent witness for I6082A's address.
 """
 from strap_asm import assemble
 from listing_oracle import check_rows, finish, loc_bits
@@ -349,27 +349,27 @@ from listing_oracle import check_rows, finish, loc_bits
 prog = assemble(open("programs/ax5b_160_test6.strap").read())
 
 ROWS = [
-    # ---- 16096: build the interruption table (PDF p.61) ------------
+    # ---- I6096: build the interruption table (PDF p.61) ------------
     ('022062.00', '23041.00 80',
-     'L16096 SIC,L160SX1    (ext) "-TEST 6 CHKS THAT FREE INSTRUCTION"'),
+     'I6096 SIC,I60SX1    (ext) "-TEST 6 CHKS THAT FREE INSTRUCTION"'),
     ('022062.40', '22741.10 00',
-     'B,L160S1              (ext) "-IS IN FACT FREE, AND THAT I-BOX"'),
+     'B,I60S1              (ext) "-IS IN FACT FREE, AND THAT I-BOX"'),
     ('022063.00', '24570.00 80 000014.02 A0',
      'TI,1,BIT38,$MASK      (ext) FULL WORD  "-INDS SET ONLY CORRECT INDS."'),
     ('022064.00', '23065.02 10',
-     'LX,$X1,L160XW1        (ext) count 64, refill 160IT'),
+     'LX,$X1,I60XW1        (ext) count 64, refill I60IT'),
     ('022064.40', '17226.04 10',
-     'LX,$X2,L16082A-1.0    (ext) "-2 NOPS"; 017227.00 - 1.0'),
+     'LX,$X2,I6082A-1.0    (ext) "-2 NOPS"; 017227.00 - 1.0'),
     ('022065.00', '23201.05 11',
-     'SX,$X2,L160IT($X1)    (ext) index-modified store into the table'),
+     'SX,$X2,I60IT($X1)    (ext) index-modified store into the table'),
     ('022065.40', '22065.03 48',
      'CB+,$X1,$-.32          self-relative: back one half-word'),
     ('022066.00', '2.03 70',
      'SR,$X1,$IA             the Interruption Address register'),
     ('022066.40', '23051.02 10',
-     'LX,$X1,L160K8         (ext) 160K8 is "BD,16097"'),
+     'LX,$X1,I60K8         (ext) I60K8 is "BD,I6097"'),
     ('022067.00', '23250.03 10',
-     'SX,$X1,L160IT+39.0    (ext) table entry 39; 023201 + 39 = 023250'),
+     'SX,$X1,I60IT+39.0    (ext) table entry 39; 023201 + 39 = 023250'),
     ('022067.40', '13.22 00',
      'Z,$IND'),
     ('022070.00', '22070.40 00',
@@ -379,17 +379,17 @@ ROWS = [
     ('022071.00', '0.30 00',
      'NOP'),
     ('022071.40', '22073.04 00',
-     'BD,L16098              INTERNAL label -- a real address check'),
+     'BD,I6098              INTERNAL label -- a real address check'),
     ('022072.00', '1310.00 80',
-     'L16097 SIC,SEN        (ext)'),
+     'I6097 SIC,SEN        (ext)'),
     ('022072.40', '1304.10 00',
      'B,SERS                (ext) "-FULL CONTROL GIVEN TO FREE INST."'),
 
-    # ---- 16098: XCZ and XVLZ ---------------------------------------
+    # ---- I6098: XCZ and XVLZ ---------------------------------------
     ('022073.00', '13.22 00',
-     'L16098 Z,$IND          "-XCZ AND XVLZ"'),
+     'I6098 Z,$IND          "-XCZ AND XVLZ"'),
     ('022073.40', '23052.00 10',
-     'LX,$X0,L160K9         (ext) XW,-1.0,0,0: count 0, value -1'),
+     'LX,$X0,I60K9         (ext) XW,-1.0,0,0: count 0, value -1'),
     ('022074.00', '13.00 80 000021.02 A0',
      'TI,1,$IND,$X1          FULL WORD: word 11 -> index word 1'),
     ('022075.00', '21.03 70',
@@ -411,7 +411,7 @@ ROWS = [
     ('022100.40', '13.22 00',
      'Z,$IND                 "-XCZ AND XVZ"'),
     ('022101.00', '24502.00 10',
-     'LX,$X0,L100Z          (ext) p.114 "-ZERO INDX WD."'),
+     'LX,$X0,I00Z          (ext) p.114 "-ZERO INDX WD."'),
     ('022101.40', '13.00 80 000021.02 A0',
      'TI,1,$IND,$X1          FULL WORD'),
     ('022102.40', '21.03 70',
@@ -425,9 +425,9 @@ ROWS = [
 
     # ---- clear XCZ, XVLZ, XVZ ---------------------------------------
     ('022104.40', '24503.00 80 000013.02 A0',
-     'TI,1,L100O,$IND       (ext) FULL WORD  "-CLR XCZ AND XVLZ, XVZ."'),
+     'TI,1,I00O,$IND       (ext) FULL WORD  "-CLR XCZ AND XVLZ, XVZ."'),
     ('022105.40', '23053.00 10',
-     'LX,$X0,L160K10        (ext) XW,1.0,1,0'),
+     'LX,$X0,I60K10        (ext) XW,1.0,1,0'),
     ('022106.00', '13.00 80 000021.02 A0',
      'TI,1,$IND,$X1          FULL WORD'),
     ('022107.00', '21.03 70',
@@ -443,7 +443,7 @@ ROWS = [
     ('022111.00', '13.22 00',
      'Z,$IND                 "-XVLZ"'),
     ('022111.40', '23054.00 10',
-     'LX,$X0,L160K11        (ext) XW,-3.0,63,0: count 63, value -3'),
+     'LX,$X0,I60K11        (ext) XW,-3.0,63,0: count 63, value -3'),
     ('022112.00', '13.00 80 000021.02 A0',
      'TI,1,$IND,$X1          FULL WORD'),
     ('022113.00', '21.03 70',
@@ -483,7 +483,7 @@ ROWS = [
     ('022123.00', '13.22 00',
      'Z,$IND                 "-XVGV" -- the deck\'s own spelling'),
     ('022123.40', '23053.00 10',
-     'LX,$X0,L160K10        (ext) count 1, value +1'),
+     'LX,$X0,I60K10        (ext) count 1, value +1'),
     ('022124.00', '13.00 80 000021.02 A0',
      'TI,1,$IND,$X1          FULL WORD'),
     ('022125.00', '21.03 70',
@@ -499,11 +499,11 @@ ROWS = [
     ('022127.40', '1304.32 C0',
      'BZXE,SERS             (ext) "-XVGZ NOT SET CORRECTLY."'),
 
-    # ---- clear, with 160K10 again -----------------------------------
+    # ---- clear, with I60K10 again -----------------------------------
     ('022130.00', '24503.00 80 000013.02 A0',
-     'TI,1,L100O,$IND       (ext) FULL WORD  "-CLR XVLZ AND XVZ."'),
+     'TI,1,I00O,$IND       (ext) FULL WORD  "-CLR XVLZ AND XVZ."'),
     ('022131.00', '23053.00 10',
-     'LX,$X0,L160K10        (ext)'),
+     'LX,$X0,I60K10        (ext)'),
     ('022131.40', '13.00 80 000021.02 A0',
      'TI,1,$IND,$X1          FULL WORD'),
     ('022132.40', '21.03 70',
@@ -521,7 +521,7 @@ ROWS = [
 
     # ---- clear, with BIT30 ------------------------------------------
     ('022135.40', '24503.00 80 000013.02 A0',
-     'TI,1,L100O,$IND       (ext) FULL WORD  "-CLR XVLZ AND XVGZ."'),
+     'TI,1,I00O,$IND       (ext) FULL WORD  "-CLR XVLZ AND XVGZ."'),
     ('022136.40', '24560.00 10',
      'LX,$X0,BIT30          (ext)'),
     ('022137.00', '13.00 80 000021.02 A0',
@@ -539,11 +539,11 @@ ROWS = [
     ('022142.40', '1304.32 C0',
      'BZXE,SERS             (ext) "-XVLZ AND XVGZ NOT CLRD OK."'),
 
-    # ---- clear, with 160K11 -----------------------------------------
+    # ---- clear, with I60K11 -----------------------------------------
     ('022143.00', '24503.00 80 000013.02 A0',
-     'TI,1,L100O,$IND       (ext) FULL WORD  "-CLR XVZ AND XVGZ"'),
+     'TI,1,I00O,$IND       (ext) FULL WORD  "-CLR XVZ AND XVGZ"'),
     ('022144.00', '23054.00 10',
-     'LX,$X0,L160K11        (ext)'),
+     'LX,$X0,I60K11        (ext)'),
     ('022144.40', '13.00 80 000021.02 A0',
      'TI,1,$IND,$X1          FULL WORD'),
     ('022145.40', '21.03 70',
@@ -625,7 +625,7 @@ ROWS = [
 
     # ---- clear XL and XE (PDF p.64) ---------------------------------
     ('022170.40', '24503.00 80 000013.02 A0',
-     'TI,1,L100O,$IND       (ext) FULL WORD  "-CLR XL AND XE."'),
+     'TI,1,I00O,$IND       (ext) FULL WORD  "-CLR XL AND XE."'),
     ('022171.40', '24543.04 90',
      'KV,$X2,BIT17          (ext) leaves XH on, XL and XE off'),
     ('022172.00', '13.00 80 000023.02 A0',
@@ -645,7 +645,7 @@ ROWS = [
 
     # ---- clear XL and XH --------------------------------------------
     ('022176.00', '24503.00 80 000013.02 A0',
-     'TI,1,L100O,$IND       (ext) FULL WORD  "-CLR XL AND XH."'),
+     'TI,1,I00O,$IND       (ext) FULL WORD  "-CLR XL AND XH."'),
     ('022177.00', '24543.02 90',
      'KV,$X1,BIT17          (ext) leaves XE on'),
     ('022177.40', '13.00 80 000023.02 A0',
@@ -665,7 +665,7 @@ ROWS = [
 
     # ---- clear XE and XH --------------------------------------------
     ('022203.40', '24503.00 80 000013.02 A0',
-     'TI,1,L100O,$IND       (ext) FULL WORD  "-CLR XE AND XH."'),
+     'TI,1,I00O,$IND       (ext) FULL WORD  "-CLR XE AND XH."'),
     ('022204.40', '24542.02 90',
      'KV,$X1,BIT16          (ext) 1.0 against 2.0 -> XL on'),
     ('022205.00', '13.00 80 000023.02 A0',
@@ -687,7 +687,7 @@ ROWS = [
     ('022211.00', '22212.10 00',
      'B,$+1.0                self-relative: +64 bits -> 022212.00'),
     ('022211.40', '22062.04 00',
-     'BD,L16096              INTERNAL label 175 half-words back'),
+     'BD,I6096              INTERNAL label 175 half-words back'),
     ('022212.00', '1311.40 80',
      'SIC,LSEN0+.32         (ext)'),
     ('022212.40', '1301.10 00',
@@ -695,11 +695,11 @@ ROWS = [
     ('022213.00', '22213.44 00',
      'BD,$+.32               bit 18 -> 022213.40'),
     ('022213.40', '22737.32 10',
-     'LX,$X13,LIC260        (ext) "-UPDATE CONTINUITY CHECK."'),
+     'LX,$X13,IC260        (ext) "-UPDATE CONTINUITY CHECK."'),
     ('022214.00', '24531.32 B0',
      'V+,$X13,BIT7          (ext) TEST 6 done = bit 7'),
     ('022214.40', '22737.33 10',
-     'SX,$X13,LIC260        (ext)'),
+     'SX,$X13,IC260        (ext)'),
 ]
 
 # The block must TILE 022062.00-022214.40 with no gap and no overlap.
@@ -717,9 +717,9 @@ print(f"TILING OK: {len(ROWS)} rows, "
       f"022062.00-022214.40")
 
 # Only labels DEFINED inside the transcribed range belong here.  Of the
-# three, L16098 and L16097 are evidence and L16096 is the anchor the
+# three, I6098 and I6097 are evidence and I6096 is the anchor the
 # SLC put there -- see the docstring.
-SYMBOLS = {'L16096': '022062.00', 'L16097': '022072.00',
-           'L16098': '022073.00'}
+SYMBOLS = {'I6096': '022062.00', 'I6097': '022072.00',
+           'I6098': '022073.00'}
 
 finish(check_rows(prog, ROWS, SYMBOLS, label='1260 T6 '))

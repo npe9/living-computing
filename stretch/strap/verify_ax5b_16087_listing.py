@@ -9,7 +9,7 @@ half-words: set one indicator bit in word 11, set its mask bit in word
 12, enable, and await the interruption -- the deck's own version of
 what programs/interrupt_pg0.strap does hand-written from Reference
 Manual p.48.  Reached only if no interruption occurs, the final BD
-dispatches into the per-indicator error table 160B13 indexed by X6
+dispatches into the per-indicator error table I60B13 indexed by X6
 ("FAILED TO INTERRUPT ON IND MK / IN 1 MILLISEC.", then IK, IJ, EK,
 TS, ...).
 
@@ -25,11 +25,11 @@ A 600 DPI CORRECTION.  The last row is "21402.44 06", not "...00":
 the low digit was lost at 200 dpi under an ink smudge.  With 06 it
 decomposes cleanly -- bit 18 set so the target is 021402.40, code 001
 = BD, literal 000000, index 0110 = $X6 -- and 021402.40 is where the
-page prints the label 160B13.
+page prints the label I60B13.
 
 THREE SYMBOLS THIS BLOCK LOCATES, each from its own row's address
-field: 160SX1 = 023041.00, 160S1 = 022741.00, 160B13 = 021402.40.
-docs/NEXT.md had carried 160S1/160SX1 as "not located".
+field: I60SX1 = 023041.00, I60S1 = 022741.00, I60B13 = 021402.40.
+docs/NEXT.md had carried I60S1/I60SX1 as "not located".
 
 PROVEN DISCRIMINATING.  Observed failure sets, transcribed from the
 runs -- both TI rows fail together for every encoder fault, because
@@ -67,19 +67,19 @@ prog = assemble(open("programs/ax5b_16087_walk.strap").read())
 # they check the opcode and modifier bits rather than address
 # placement.  "BE,$+.32" is self-relative and is a real address check.
 ROWS = [
-    ('021376.40', '23041.00 80', 'L16087 SIC,L160SX1    (ext) "-TURN ON BIT 20-47."'),
-    ('021377.00', '22741.10 00', 'B,L160S1              (ext)'),
+    ('021376.40', '23041.00 80', 'I6087 SIC,I60SX1    (ext) "-TURN ON BIT 20-47."'),
+    ('021377.00', '22741.10 00', 'B,I60S1              (ext)'),
     ('021377.40', '24522.00 81 000013.02 A0',
                                  'TI,1,BIT0($X1),$IND   "-SET ONE OF 20-47", full word at an ODD half-word'),
     ('021400.40', '24522.00 81 000014.02 A0',
-                                 'L16088 TI,1,BIT0($X1),$MASK   "-SET MASK BIT OF TEST IND BIT"'),
+                                 'I6088 TI,1,BIT0($X1),$MASK   "-SET MASK BIT OF TEST IND BIT"'),
     ('021401.40', '21402.00 00', 'BE,$+.32              "-ENABLE AND AWAIT INTERRUPT"'),
-    ('021402.00', '21402.44 06', 'BD,L160B13($X6)       (ext) index $X6; 06 read at 600 dpi'),
+    ('021402.00', '21402.44 06', 'BD,I60B13($X6)       (ext) index $X6; 06 read at 600 dpi'),
 ]
 
 SYMBOLS = {
-    'L16087': '021376.40',
-    'L16088': '021400.40',
+    'I6087': '021376.40',
+    'I6088': '021400.40',
 }
 
 finish(check_rows(prog, ROWS, SYMBOLS, label='1260 walk '))

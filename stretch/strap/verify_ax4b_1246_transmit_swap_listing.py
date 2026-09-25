@@ -311,7 +311,7 @@ WITNESS TIERING.  EVERY SYN IS AN INPUT, NOT A WITNESS.
       I46 006736.00, I461 006742.00, I4626 007372.40, IC246 007422.00.
   They are asserted below because a wrong one would silently mis-place
   a whole block, not because they are evidence.  The same caveat
-  verify_ibox4_rnx_nop_listing.py makes about L14412.
+  verify_ibox4_rnx_nop_listing.py makes about I4412.
 
   GENUINE WITNESSES -- defined inside the transcribed range at
   addresses the location counter computes, and named by rows whose
@@ -474,7 +474,7 @@ is.  No check below depends on any of these.
   4. The claim that the OTHER decks' labels in this repo are also
      letter-I is an INFERENCE, not sixteen measurements.  "I4412" on
      PDF p.90 was measured; the rest (the labels earlier files spell
-     L144D1, L144XW1, L146) follow from C22-6531's rule that a
+     I44D1, I44XW1, I46) follow from C22-6531's rule that a
      symbol's first character must be alphabetic.  The inference is
      near-airtight but it is an inference, and no file other than
      this one has been changed.

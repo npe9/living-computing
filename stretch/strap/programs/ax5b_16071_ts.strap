@@ -62,7 +62,7 @@
 !   and the NEXT pulse sets the timer to all ones.  See docs/NEXT.md
 !   item 5.
 !
-!   A SYMMETRY WORTH NOTING.  16086 (ax5b_16086_ds.strap) uses
+!   A SYMMETRY WORTH NOTING.  I6086 (ax5b_16086_ds.strap) uses
 !   "SV,$X4,1.00" as its DS PROVOCATION, enabled, expecting the store
 !   to be suppressed.  This block uses the same instruction on the
 !   same word as a legitimate timer load, disabled, expecting it to
@@ -73,9 +73,9 @@
 !   CB,$X4,$           ...counted down by a COUNT AND BRANCH that
 !                      branches to ITSELF.  That is the wait: 512
 !                      iterations for the timer to reach zero.
-!   BTS,16088          Time Signal on?  Then on to the indicator walk
-!                      at 16088.  Otherwise SIC,SEN / B,SERS reports
-!                      "UNABLE TO TURN TS ON." and B,16093 moves to
+!   BTS,I6088          Time Signal on?  Then on to the indicator walk
+!                      at I6088.  Otherwise SIC,SEN / B,SERS reports
+!                      "UNABLE TO TURN TS ON." and B,I6093 moves to
 !                      the next test.
 !
 ! WHY IT IS WORTH TRANSCRIBING.  docs/NEXT.md §5 defers "the interval
@@ -94,8 +94,8 @@
 !     of the range fail in the same field, which is what a straddling
 !     field looks like from either side.
 !
-!     This is also a FIFTH witness that 16088 is at 021400.40: ".42"
-!     is 100010, bit 18 set.  As in the other two blocks, L16088's
+!     This is also a FIFTH witness that I6088 is at 021400.40: ".42"
+!     is 100010, bit 18 set.  As in the other two blocks, I6088's
 !     .40 is a SYN below -- an INPUT to the check -- so the passing
 !     row is not the witness; the printed code read at 600 dpi is.
 !   * LCI "1000.11 02" -- 512 decimal is octal 1000, printed in the
@@ -115,12 +115,12 @@
 ! good guess.  p.114 then prints the table itself and the guess is
 ! right -- including BIT0 = 024522.00, which the eventual TI
 ! transcription of p.45 will need.  The same thing happened with
-! 160K7/160K16 and 023041 + n, which is still only the arithmetic;
+! I60K7/I60K16 and 023041 + n, which is still only the arithmetic;
 ! see docs/archival_inventory.md for both.
 !
 ! WHAT THIS IS AND IS NOT.  An ENCODING oracle, like the other two
 ! blocks from this routine.  It is NOT run on the model: the block
-! falls through into the SEN/SERS error harness and 16093, none of it
+! falls through into the SEN/SERS error harness and I6093, none of it
 ! transcribed, and this model's interval timer does not tick (NEXT.md
 ! §5).  Running it is exactly what implementing the timer would make
 ! possible, which is the reason to have the oracle first.
@@ -136,16 +136,16 @@
 BIT18   SYN, (8)24544.0            ! the constant whose bit 18 is one
 SEN     SYN, (8)1310.0             ! the SIC error-entry link
 SERS    SYN, (8)1304.0             ! the error-report routine
-L16093  SYN, (8)21734.0            ! the "next test" exit
-L16088  SYN, (8)21400.40           ! the per-indicator interrupt walk
+I6093  SYN, (8)21734.0            ! the "next test" exit
+I6088  SYN, (8)21400.40           ! the per-indicator interrupt walk
 
         SLC, (8)16007.0
-L16071  LX,  $X4, BIT18            ! -TS          the value one
+I6071  LX,  $X4, BIT18            ! -TS          the value one
         SV,  $X4, 1.0              !              into the interval timer
         LCI, $X4, 512              !              a count of 512...
         CB,  $X4, $                !              ...spun down on itself
-        BTS, L16088                !              Time Signal on?
+        BTS, I6088                !              Time Signal on?
         SIC, SEN                   ! -UNABLE TO TURN TS ON.
         B,   SERS
-        B,   L16093
-        END, L16071
+        B,   I6093
+        END, I6071

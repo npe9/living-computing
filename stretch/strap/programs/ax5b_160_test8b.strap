@@ -1,5 +1,5 @@
 ! jb_ax5b "I-Box 5", routine 1260 TEST 8B -- "CHKS DS WITH SYSTEMS
-! DISABLED, AND ENABLED" -- labels 160123 through 160Z1, PDF p.75,
+! DISABLED, AND ENABLED" -- labels I60123 through I60Z1, PDF p.75,
 ! octal 022513.00-022545.40.  One unbroken run of 52 rows (54 half-
 ! words: two of the rows are full-word VFL loads).  This deck's
 ! listing pages carry NO printed page numbers; cite by PDF page.
@@ -7,7 +7,7 @@
 ! THIS IS THE RICHER DS ORACLE.  programs/ax5b_16086_ds.strap already
 ! held IBM's DS test for "SV TO 1.0 FAILS TO SET DS WHEN ENABLED",
 ! nineteen half-words of it.  TEST 8B covers the same indicator in
-! BOTH system states and adds the thing 16086 never touches: whether
+! BOTH system states and adds the thing I6086 never touches: whether
 ! the offending store was SUPPRESSED.  Its three error messages are
 ! the contract, transcribed verbatim from p.75:
 !
@@ -26,10 +26,10 @@
 !
 ! THE THIRD MESSAGE IS THE ACCEPTANCE TEST FOR OPERATION TERMINATION.
 ! The block's second half runs ENABLED (BE at 022534.00) with the
-! mask bit for DS left at zero, stores X2 -- loaded from 100O, the
-! "INDX WD. OF ONES" constant at 024503 -- into 160AD1, which sits
+! mask bit for DS left at zero, stores X2 -- loaded from I00O, the
+! "INDX WD. OF ONES" constant at 024503 -- into I60AD1, which sits
 ! above the upper boundary the LVI/SV pair just planted, and then
-! reads 160AD1 back with L(BU) and demands a ZERO result.  If the
+! reads I60AD1 back with L(BU) and demands a ZERO result.  If the
 ! machine let the store land, the word is nonzero, BRZ does not
 ! branch, and the deck prints "SX ABOVE UB WAS NOT NOPED, DATA WAS
 ! STORED WHEN ENABLED."  That is IBM saying, in its own regression
@@ -38,7 +38,7 @@
 !
 ! HOW THE TWO HALVES DIFFER.  The first half (022515.40-022531.40) is
 ! the DISABLED case: BIT57 (the boundary-control bit) into X1, SX to
-! word 3.0 arms boundary control, then "SX,$X1,160AD1" stores out of
+! word 3.0 arms boundary control, then "SX,$X1,I60AD1" stores out of
 ! bounds with the system disabled.  BDSZ at 022517.00 branches if DS
 ! is already on (and zeroes it) -- its target 022517.40 is also its
 ! own fall-through, so that row is a pure CLEAR, a branch written for
@@ -46,7 +46,7 @@
 ! that the offending SX did NOT set it: disabled, the indicator does
 ! not actuate at all.  The second half enables the system and re-runs
 ! the same violation, this time checking the interrupt (the handler
-! planted at 160107 vectors to 160126) AND the store suppression.
+! planted at I60107 vectors to I60126) AND the store suppression.
 !
 ! THE POLARITY ABOVE IS A CORRECTION TO THIS FILE, and the reason it
 ! took a second pass is worth recording.  B<IND> branches when the
@@ -110,17 +110,17 @@
 ! 24535.32 B0 and 24613.02 10 / 24613.04 10.  Every constants-listing
 ! address behind that was read at 600 dpi, not off the 200 dpi survey
 ! render that found them -- p.114 for BIT0 -> 024522.00, BIT10 ->
-! 024534.00 (so BIT11 -> 024535.00) and 100O -> 024503.00, p.115 for
+! 024534.00 (so BIT11 -> 024535.00) and I00O -> 024503.00, p.115 for
 ! BIT57 -> 024613.00, BIT62 -> 024620.00 and BIT63 -> 024621.00.  With
 ! both ends of the table read at full resolution the rule is bracketed
 ! rather than inferred.  (ax5b_16086_ds.strap's own header records why
 ! the resolution is worth stating: 200 dpi once printed 021400.00
 ! where 600 dpi printed 021400.40.)
 !
-! 100O IS A LETTER O, NOT A ZERO, and the glyphs were measured rather
-! than eyeballed.  On PDF p.114 the common-constants block runs 100LC,
-! 100Z, 100O, 100VO, 100CO; at 600 dpi a digit zero is 42-47 px wide
-! in that font and a letter O is 49-54, and the last glyph of 100O
+! I00O IS A LETTER O, NOT A ZERO, and the glyphs were measured rather
+! than eyeballed.  On PDF p.114 the common-constants block runs I00LC,
+! I00Z, I00O, I00VO, I00CO; at 600 dpi a digit zero is 42-47 px wide
+! in that font and a letter O is 49-54, and the last glyph of I00O
 ! measures 51 against 42/42 for the two zeros before it.  Its own
 ! definition line reads "-INDX WD. OF ONES."  The operand on p.75
 ! measures the same way (42, 43, 49) -- though at 49 px that one sits
@@ -141,102 +141,102 @@
 ! alignment-dependent, and every row is a plain half-word or the two
 ! full-word VFL loads.
 !
-! ENCODING ONLY.  Running it needs SSIP's 160S1/160SX1 harness and the
-! 64-word interrupt table at 160IT.
+! ENCODING ONLY.  Running it needs SSIP's I60S1/I60SX1 harness and the
+! 64-word interrupt table at I60IT.
 !
 ! Transcription standard: bit-exact against the printed machine code,
 ! verify_ax5b_160_test8b_listing.py.
 
         SLC, (8)22513.0
 !
-! ---- the shared setup: plant the BD at 160107 for tests 8B, 8C, 8D
-L160123 LX,  $X1, L160XW1          ! -SETUP BD, 160107 INTERRUPT TABLE
-        LX,  $X2, L160K17          ! -FOR TESTS 8B, 8C, 8D
-        SX,  $X2, L160IT($X1)      ! index-modified store into the table
+! ---- the shared setup: plant the BD at I60107 for tests 8B, 8C, 8D
+I60123 LX,  $X1, I60XW1          ! -SETUP BD, I60107 INTERRUPT TABLE
+        LX,  $X2, I60K17          ! -FOR TESTS 8B, 8C, 8D
+        SX,  $X2, I60IT($X1)      ! index-modified store into the table
         CB+, $X1, $-.32            ! count up, loop back one half-word
         Z,   $MASK
 !
 ! ---- FIRST HALF: system DISABLED -- the indicator sets, no interrupt
-L160125 BD,  $+.32                 ! -TEST 8B CHKS DS WITH SYSTEMS
+I60125 BD,  $+.32                 ! -TEST 8B CHKS DS WITH SYSTEMS
         LX,  $X1, LBIT57           ! -DISABLED, AND ENABLED.
         SX,  $X1, 3.0              ! boundary control on
         BDSZ, $+.32                ! clear a stale DS
-        SX,  $X1, L160AD1          ! THE STORE OUT OF BOUNDS
+        SX,  $X1, I60AD1          ! THE STORE OUT OF BOUNDS
         BZDSZ, $+1.32              ! DS must be ON
         SIC, SEN                   ! -SX OUT OF BOUNDS SETS DS WHEN
         B,   SERS                  ! -SYSTEM DISABLED.
 !
 ! ---- arm the interrupt path and clear the indicator register
         LVI, $X1, LINT
-        LRI, $X1, L160IT
+        LRI, $X1, I60IT
         LX,  $X2, LBIT57
         SX,  $X2, 3.0
-        LVI, $X2, L160126
-        SVA, $X2, L160107          ! plant the handler
-        LVI, $X2, L160K11
-        SV,  $X2, $UB              ! upper boundary := 160K11
-        SIC, L160SX1
-        BD,  L160S1                ! SSIP save/restore
+        LVI, $X2, I60126
+        SVA, $X2, I60107          ! plant the handler
+        LVI, $X2, I60K11
+        SV,  $X2, $UB              ! upper boundary := I60K11
+        SIC, I60SX1
+        BD,  I60S1                ! SSIP save/restore
         Z,   $IND
         L(BU), $IND                ! read word 11 back ...
         BRZ, $+2.0                 !   ... and demand it is zero
         SIC, SEN                   ! -UNABLE TO CLR IND REGS MUST
         B,   SERS                  ! -TERMINATE THIS TEST.
-        B,   L160Z1
+        B,   I60Z1
 !
 ! ---- SECOND HALF: system ENABLED -- interrupt AND store suppression
         SR,  $X1, $IA
         Z,   $IND
-        Z,   L160AD1               ! the target starts at zero
-        LX,  $X2, L100O            ! the all-ones index word
+        Z,   I60AD1               ! the target starts at zero
+        LX,  $X2, I00O            ! the all-ones index word
         BE,  $+.32                 ! enable
-        SX,  $X2, L160AD1          ! THE STORE ABOVE UB, ENABLED
+        SX,  $X2, I60AD1          ! THE STORE ABOVE UB, ENABLED
         BD,  $+.32
         SV,  $X1, $IA
         SIC, SEN                   ! -NO INTERRUPT OCCURED ON AN
         B,   SERS                  ! -SX ABOVE UB.
-L160126 L(BU), L160AD1             ! the interrupt lands here
+I60126 L(BU), I60AD1             ! the interrupt lands here
         BRZ, $+1.32                ! the store must NOT have landed
         SIC, SEN                   ! -SX ABOVE UB WAS NOT NOPED, DATA
         B,   SERS                  ! -WAS STORED WHEN ENABLED.
         SV,  $X1, $IA
 !
 ! ---- exit
-L160Z1  B,   $+1.0
-        BD,  L160123               ! loop back to the head
+I60Z1  B,   $+1.0
+        BD,  I60123               ! loop back to the head
         SIC, LSEN0+.32
         B,   LSSW                  ! -TO SSIP.
         BD,  $+.32
 !
 ! ---- the continuity bridge (test 8B done = bit 11)
-        LX,  $X13, LIC260          ! -UPDATE CONTINUITY CHECK.
+        LX,  $X13, IC260          ! -UPDATE CONTINUITY CHECK.
         V+,  $X13, LBIT11
-        SX,  $X13, LIC260
+        SX,  $X13, IC260
 !
 ! ---- externals, SYN'd at the addresses this listing's own encodings
 !      give.  INPUTS to the check, not witnesses -- the same caveat
-!      verify_ax5b_16082_16083_listing.py makes about L16088.  Each
+!      verify_ax5b_16082_16083_listing.py makes about I6088.  Each
 !      was derived by reading bit 18 out of the octal pair of the row
 !      that names it, so each is itself a checkable claim, but a row
 !      whose operand is one of these verifies only the opcode and
 !      modifier bits.  The rows that really check address placement
-!      are the ones naming L160123, L160126 and L160Z1, which are
+!      are the ones naming I60123, I60126 and I60Z1, which are
 !      defined INSIDE the transcribed range.
-L160XW1 SYN, (8)23065.0            ! from LX,$X1,160XW1  = 23065.02 10
-L160K17 SYN, (8)23062.0            ! from LX,$X2,160K17  = 23062.04 10
-L160K11 SYN, (8)23054.0            ! from LVI,$X2,160K11 = 23054.05 01
-L160AD1 SYN, (8)23063.0            ! from Z,160AD1       = 23063.22 00
-L160107 SYN, (8)22372.0            ! from SVA,$X2,160107 = 22372.05 D0
-L160S1  SYN, (8)22741.0            ! SSIP save/restore
-L160SX1 SYN, (8)23041.0
-L160IT  SYN, (8)23201.0            ! the 64-word interrupt table
+I60XW1 SYN, (8)23065.0            ! from LX,$X1,I60XW1  = 23065.02 10
+I60K17 SYN, (8)23062.0            ! from LX,$X2,I60K17  = 23062.04 10
+I60K11 SYN, (8)23054.0            ! from LVI,$X2,I60K11 = 23054.05 01
+I60AD1 SYN, (8)23063.0            ! from Z,I60AD1       = 23063.22 00
+I60107 SYN, (8)22372.0            ! from SVA,$X2,I60107 = 22372.05 D0
+I60S1  SYN, (8)22741.0            ! SSIP save/restore
+I60SX1 SYN, (8)23041.0
+I60IT  SYN, (8)23201.0            ! the 64-word interrupt table
 LINT    SYN, (8)1353.0
 SEN     SYN, (8)1310.0
 LSEN0   SYN, (8)1311.0
 SERS    SYN, (8)1304.0
 LSSW    SYN, (8)1301.0
-LIC260  SYN, (8)22737.0            ! the continuity word
-L100O   SYN, (8)24503.0            ! p.114's "INDX WD. OF ONES"
+IC260  SYN, (8)22737.0            ! the continuity word
+I00O   SYN, (8)24503.0            ! p.114's "INDX WD. OF ONES"
 LBIT11  SYN, (8)24535.0            ! 024522 + 11
 LBIT57  SYN, (8)24613.0            ! 024522 + 57 = the boundary control bit
-        END, L160123
+        END, I60123

@@ -9,7 +9,7 @@ printed page numbers -- cite by PDF page.)
 THE RICHER DS ORACLE.  verify_ax5b_16086_listing.py already checked
 IBM's DS test for "SV TO 1.0 FAILS TO SET DS WHEN ENABLED", nineteen
 half-words of it.  TEST 8B checks the same indicator with the system
-DISABLED and ENABLED, and adds what 16086 never touches: whether the
+DISABLED and ENABLED, and adds what I6086 never touches: whether the
 offending store was SUPPRESSED.  Its error messages, transcribed
 verbatim:
 
@@ -27,14 +27,14 @@ verbatim:
 
 and the block's own header, at 022515.40-022516.00:
 
-  160125 BD,$+.32   -TEST 8B CHKS DS WITH SYSTEMS
+  I60125 BD,$+.32   -TEST 8B CHKS DS WITH SYSTEMS
          LX,$X1,BIT57  -DISABLED, AND ENABLED.
 
 ("OCCURED", one R, and "SYSTEMS" plural, are the deck's own spellings.)
 
 THE THIRD MESSAGE IS THE ACCEPTANCE TEST FOR OPERATION TERMINATION.
-The enabled half stores the all-ones index word into 160AD1, which is
-above the upper boundary planted at 022525.00, then reads 160AD1 back
+The enabled half stores the all-ones index word into I60AD1, which is
+above the upper boundary planted at 022525.00, then reads I60AD1 back
 with L(BU) at 022537.00 and demands Result Zero.  If the machine let
 the store land, BRZ does not branch and the deck prints "SX ABOVE UB
 WAS NOT NOPED, DATA WAS STORED WHEN ENABLED."  That is IBM's own
@@ -92,7 +92,7 @@ endpoints.  024522 + n gives BIT11 -> 024535 and BIT57 -> 024613, and
 the printed rows are 24535.32 B0 and 24613.02 10 / 24613.04 10.  All
 four of the constants-listing addresses behind that sentence were
 re-read at 600 dpi (PDF p.114 for BIT0 -> 024522.00, BIT10 ->
-024534.00 so BIT11 -> 024535.00, and 100O -> 024503.00; p.115 for
+024534.00 so BIT11 -> 024535.00, and I00O -> 024503.00; p.115 for
 BIT57 -> 024613.00, BIT62 -> 024620.00 and BIT63 -> 024621.00), NOT
 from the 200 dpi survey render that located them.  The distinction is
 not pedantry: verify_ax5b_16086_listing.py records a 200 dpi render
@@ -100,9 +100,9 @@ printing 021400.00 where 600 dpi printed 021400.40, which is what once
 made a page look a half-word short.  With both ends read at full
 resolution the 024522 + n rule is now bracketed rather than inferred.
 
-100O IS A LETTER O, NOT A ZERO.  The p.114 common-constants block runs
-100LC, 100Z, 100O, 100VO, 100CO; measured at 600 dpi, a digit zero in
-that font is 42-47 px wide and a letter O is 49-54, and 100O's last
+I00O IS A LETTER O, NOT A ZERO.  The p.114 common-constants block runs
+I00LC, I00Z, I00O, I00VO, I00CO; measured at 600 dpi, a digit zero in
+that font is 42-47 px wide and a letter O is 49-54, and I00O's last
 glyph is 51 against 42/42 for the two zeros before it.  Its defining
 line says "-INDX WD. OF ONES."  The operand at 022533.40 measures 42,
 43, 49 the same way.  This mattered: it is the value the suppressed
@@ -129,8 +129,8 @@ A SYN IS AN INPUT TO THIS CHECK, NOT A WITNESS.  Every symbol in the
 program's SYN block was derived from the very row that names it, by
 reading bit 18 out of that row's octal pair, so those rows verify only
 the opcode and modifier bits.  The rows that actually check address
-placement are the ones naming L160123 (022542.40, "22513.04 00"),
-L160126 (022523.40, "22537.05 01") and L160Z1 (022531.40, "22542.10
+placement are the ones naming I60123 (022542.40, "22513.04 00"),
+I60126 (022523.40, "22537.05 01") and I60Z1 (022531.40, "22542.10
 00") -- all three defined INSIDE the transcribed range, and all three
 cross-checked against the page's own label column before being written
 down.
@@ -143,12 +143,12 @@ back against the label column on p.75:
   022517.00  BDSZ,$+.32      22517.51 C6  pair 51 -> bit18=1 -> 022517.40
   022520.00  BZDSZ,$+1.32    22521.51 C4  pair 51 -> bit18=1 -> 022521.40
   022530.00  BRZ,$+2.0       22532.34 C2  pair 34 -> bit18=0 -> 022532.00
-  022531.40  B,L160Z1        22542.10 00  pair 10 -> bit18=0 -> 022542.00 = L160Z1
+  022531.40  B,I60Z1        22542.10 00  pair 10 -> bit18=0 -> 022542.00 = I60Z1
   022534.00  BE,$+.32        22534.40 00  pair 40 -> bit18=1 -> 022534.40
   022535.00  BD,$+.32        22535.44 00  pair 44 -> bit18=1 -> 022535.40
   022540.00  BRZ,$+1.32      22541.74 C2  pair 74 -> bit18=1 -> 022541.40
   022542.00  B,$+1.0         22543.10 00  pair 10 -> bit18=0 -> 022543.00
-  022542.40  BD,L160123      22513.04 00  pair 04 -> bit18=0 -> 022513.00 = L160123
+  022542.40  BD,I60123      22513.04 00  pair 04 -> bit18=0 -> 022513.00 = I60123
   022544.00  BD,$+.32        22544.44 00  pair 44 -> bit18=1 -> 022544.40
 
 PROVEN DISCRIMINATING.  Observed failure sets, each measured with
@@ -192,17 +192,17 @@ prog = assemble(open("programs/ax5b_160_test8b.strap").read())
 
 ROWS = [
     ('022513.00', '23065.02 10',
-     'L160123 LX,$X1,L160XW1 (ext) "-SETUP BD, 160107 INTERRUPT TABLE"'),
+     'I60123 LX,$X1,I60XW1 (ext) "-SETUP BD, I60107 INTERRUPT TABLE"'),
     ('022513.40', '23062.04 10',
-     'LX,$X2,L160K17         (ext) "-FOR TESTS 8B, 8C, 8D"'),
+     'LX,$X2,I60K17         (ext) "-FOR TESTS 8B, 8C, 8D"'),
     ('022514.00', '23201.05 11',
-     'SX,$X2,L160IT($X1)     (ext) index-modified store into the table'),
+     'SX,$X2,I60IT($X1)     (ext) index-modified store into the table'),
     ('022514.40', '22514.03 48',
      'CB+,$X1,$-.32           count up, loop back one half-word'),
     ('022515.00', '14.22 00',
      'Z,$MASK                 mask register (word 12)'),
     ('022515.40', '22516.04 00',
-     'L160125 BD,$+.32        "-TEST 8B CHKS DS WITH SYSTEMS"'),
+     'I60125 BD,$+.32        "-TEST 8B CHKS DS WITH SYSTEMS"'),
     ('022516.00', '24613.02 10',
      'LX,$X1,LBIT57          (ext) "-DISABLED, AND ENABLED."'),
     ('022516.40', '3.03 10',
@@ -210,7 +210,7 @@ ROWS = [
     ('022517.00', '22517.51 C6',
      'BDSZ,$+.32              branch on DS and zero it'),
     ('022517.40', '23063.03 10',
-     'SX,$X1,L160AD1         (ext) THE STORE OUT OF BOUNDS, DISABLED'),
+     'SX,$X1,I60AD1         (ext) THE STORE OUT OF BOUNDS, DISABLED'),
     ('022520.00', '22521.51 C4',
      'BZDSZ,$+1.32            disabled: DS must be OFF -- see BRANCH POLARITY'),
     ('022520.40', '1310.00 80',
@@ -220,23 +220,23 @@ ROWS = [
     ('022521.40', '1353.03 01',
      'LVI,$X1,LINT           (ext)'),
     ('022522.00', '23201.03 03',
-     'LRI,$X1,L160IT         (ext) the 64-word table'),
+     'LRI,$X1,I60IT         (ext) the 64-word table'),
     ('022522.40', '24613.04 10',
      'LX,$X2,LBIT57          (ext)'),
     ('022523.00', '3.05 10',
      'SX,$X2,3.0'),
     ('022523.40', '22537.05 01',
-     'LVI,$X2,L160126         INTERNAL label -- the real address check'),
+     'LVI,$X2,I60126         INTERNAL label -- the real address check'),
     ('022524.00', '22372.05 D0',
-     'SVA,$X2,L160107        (ext) plant the handler'),
+     'SVA,$X2,I60107        (ext) plant the handler'),
     ('022524.40', '23054.05 01',
-     'LVI,$X2,L160K11        (ext)'),
+     'LVI,$X2,I60K11        (ext)'),
     ('022525.00', '3.05 30',
-     'SV,$X2,$UB              upper boundary := 160K11'),
+     'SV,$X2,$UB              upper boundary := I60K11'),
     ('022525.40', '23041.00 80',
-     'SIC,L160SX1            (ext)'),
+     'SIC,I60SX1            (ext)'),
     ('022526.00', '22741.04 00',
-     'BD,L160S1              (ext) SSIP save/restore'),
+     'BD,I60S1              (ext) SSIP save/restore'),
     ('022526.40', '13.22 00',
      'Z,$IND'),
     ('022527.00', '13.00 80 000000.20 50',
@@ -248,19 +248,19 @@ ROWS = [
     ('022531.00', '1304.10 00',
      'B,SERS                 (ext) "-TERMINATE THIS TEST."'),
     ('022531.40', '22542.10 00',
-     'B,L160Z1                INTERNAL label -- the real address check'),
+     'B,I60Z1                INTERNAL label -- the real address check'),
     ('022532.00', '2.03 70',
      'SR,$X1,$IA'),
     ('022532.40', '13.22 00',
      'Z,$IND'),
     ('022533.00', '23063.22 00',
-     'Z,L160AD1              (ext) the target starts at zero'),
+     'Z,I60AD1              (ext) the target starts at zero'),
     ('022533.40', '24503.04 10',
-     'LX,$X2,L100O           (ext) p.114\'s "INDX WD. OF ONES"'),
+     'LX,$X2,I00O           (ext) p.114\'s "INDX WD. OF ONES"'),
     ('022534.00', '22534.40 00',
      'BE,$+.32                enable'),
     ('022534.40', '23063.05 10',
-     'SX,$X2,L160AD1         (ext) THE STORE ABOVE UB, ENABLED'),
+     'SX,$X2,I60AD1         (ext) THE STORE ABOVE UB, ENABLED'),
     ('022535.00', '22535.44 00',
      'BD,$+.32'),
     ('022535.40', '2.03 30',
@@ -270,7 +270,7 @@ ROWS = [
     ('022536.40', '1304.10 00',
      'B,SERS                 (ext) "-SX ABOVE UB."'),
     ('022537.00', '23063.00 80 000000.20 50',
-     'L160126 L(BU),L160AD1  (ext) FULL WORD: the suppression probe'),
+     'I60126 L(BU),I60AD1  (ext) FULL WORD: the suppression probe'),
     ('022540.00', '22541.74 C2',
      'BRZ,$+1.32              the store must NOT have landed'),
     ('022540.40', '1310.00 80',
@@ -280,9 +280,9 @@ ROWS = [
     ('022541.40', '2.03 30',
      'SV,$X1,$IA'),
     ('022542.00', '22543.10 00',
-     'L160Z1 B,$+1.0'),
+     'I60Z1 B,$+1.0'),
     ('022542.40', '22513.04 00',
-     'BD,L160123              INTERNAL label -- the real address check'),
+     'BD,I60123              INTERNAL label -- the real address check'),
     ('022543.00', '1311.40 80',
      'SIC,LSEN0+.32          (ext)'),
     ('022543.40', '1301.10 00',
@@ -290,13 +290,13 @@ ROWS = [
     ('022544.00', '22544.44 00',
      'BD,$+.32'),
     ('022544.40', '22737.32 10',
-     'LX,$X13,LIC260         (ext) "-UPDATE CONTINUITY CHECK."'),
+     'LX,$X13,IC260         (ext) "-UPDATE CONTINUITY CHECK."'),
     ('022545.00', '24535.32 B0',
      'V+,$X13,LBIT11         (ext) test 8B done = bit 11'),
     ('022545.40', '22737.33 10',
-     'SX,$X13,LIC260        (ext)'),]
+     'SX,$X13,IC260        (ext)'),]
 
-SYMBOLS = {'L160123': '022513.00', 'L160125': '022515.40',
-           'L160126': '022537.00', 'L160Z1': '022542.00'}
+SYMBOLS = {'I60123': '022513.00', 'I60125': '022515.40',
+           'I60126': '022537.00', 'I60Z1': '022542.00'}
 
 finish(check_rows(prog, ROWS, SYMBOLS, label='1260 8B '))

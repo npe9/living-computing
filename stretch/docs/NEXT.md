@@ -41,7 +41,7 @@ inputs made visible.
 
 All three are implemented, injected, and in the mutation table. The
 boundary registers have both standards. Storage protection's **rule**
-now has a deck behind it (`ax5b` 16086 says word 1, DS and "when
+now has a deck behind it (`ax5b` I6086 says word 1, DS and "when
 enabled" in its own error message) but its **behaviour** test is still
 hand-written, and the interruption mechanism is still
 **manual-derived only** — which is what the rest of item 1 is for.
@@ -57,21 +57,21 @@ address monitoring."* That is everything built 2026-09-19 to -21, in
 one deck routine.
 
 **The prerequisite this file recorded never existed.** It said
-"SSIP's `160S1`/`160SX1` save/restore harness, reported at `ax5b`
-pp.41–44". Those pages are 1260's per-indicator blocks, 16071 (`TS`)
-through 16086 (`DS`). All four transcribable ones were done without
+"SSIP's `I60S1`/`I60SX1` save/restore harness, reported at `ax5b`
+pp.41–44". Those pages are 1260's per-indicator blocks, I6071 (`TS`)
+through I6086 (`DS`). All four transcribable ones were done without
 any harness — and then the driver itself (p.45) was done too. Third
 entry in this file's own "distrust a blocker recorded here" trap.
-`160S1` = 022741.00 and `160SX1` = 023041.00, read off the driver's
+`I60S1` = 022741.00 and `I60SX1` = 023041.00, read off the driver's
 own printed address fields; nothing has needed either. The
 page-by-page record is in `archival_inventory.md` §"I-Box 5".
 
-**16086, the DS block, is done** — `programs/ax5b_16086_ds.strap`,
+**I6086, the DS block, is done** — `programs/ax5b_16086_ds.strap`,
 bit-exact via `verify_ax5b_16086_listing.py`, record in
 `run_tests.sh` §"I-Box 5 routine 1260's DS block". It is an ENCODING
 oracle; storage protection's behavioural test stays hand-written.
 
-**So are 16082 (`OP`), 16083 (`AD`) and 16071 (`TS`)** —
+**So are I6082 (`OP`), I6083 (`AD`) and I6071 (`TS`)** —
 `ax5b_16082_op_ad.strap` and `ax5b_16071_ts.strap`, records in
 `run_tests.sh`. **That is every transcribable block on pp.41–44.**
 What remains there is out of reach for a stated reason: 16072–16081
@@ -79,14 +79,14 @@ are three-line `B`/`CNOP`/`DR` stubs for indicators a program cannot
 provoke, 16084 needs `LVE` and 16085 needs `EX`, both deferred in
 item 5.
 
-**16071 changes item 5's timer entry.** It is a second, eight-row deck
+**I6071 changes item 5's timer entry.** It is a second, eight-row deck
 oracle for the interval timer — Reference Manual p.44, *"Time Signal
 (TS). The interval timer has become zero."* — and it is in place
 *before* the timer is implemented, which is the order item 2 asks for.
 Routine 1258 is no longer the only oracle, and is no longer the
 cheapest.
 
-**The indicator walk at 16087/16088 (p.45) is done** —
+**The indicator walk at I6087/I6088 (p.45) is done** —
 `programs/ax5b_16087_walk.strap`, and it brought **TRANSMIT/SWAP into
 the assembler** (all eight mnemonics, from pocket card X22-6533; only
 `TI` has a listing witness). Record in `run_tests.sh` §"…indicator
@@ -112,9 +112,9 @@ the hits gives the real layout:
 
 | page | sub-test |
 |---|---|
-| p.65 | *"TEST 7 CHKS BOUNDARY CONTROL."* / *"CHK UPPER BOUNDARY DATA."* — driver at 16099/160100 |
+| p.65 | *"TEST 7 CHKS BOUNDARY CONTROL."* / *"CHK UPPER BOUNDARY DATA."* — driver at I6099/I60100 |
 | p.67 | tail of the upper-boundary error table (BIT10–BIT17) |
-| p.68 | *"CHK LOWER BOUNDARY DATA."* (driver 160102/160103) and *"CHK BOUNDARY CONTROL BIT."* |
+| p.68 | *"CHK LOWER BOUNDARY DATA."* (driver I60102/I60103) and *"CHK BOUNDARY CONTROL BIT."* |
 | pp.69–70 | the lower-boundary error table, bits 32–49 |
 | **p.71** | *"FETCH FROM X-1 TO CHK UB COMP."*, *"FROM X-3 TO CHK LB COMP."* |
 
@@ -143,20 +143,20 @@ FROM X-3 TO CHK LB COMP, AND FROM X-1 TO CHECK WITHIN RANGE"*). It is
 also the first use of `TI` outside the page it was derived from.
 
 **ENCODING ONLY, and this is where the harness finally matters.** It
-cannot run without `160S1`'s body (SSIP's save/restore at 022741.00),
-the interruption table `160IT` at 023201.00, and `BOUND0`/`BOUND1` at
+cannot run without `I60S1`'s body (SSIP's save/restore at 022741.00),
+the interruption table `I60IT` at 023201.00, and `BOUND0`/`BOUND1` at
 023302/023303. Every earlier block in this routine was transcribed
 *without* a harness, which is why the file's original "prerequisite"
 claim was wrong. This one needs it for real.
 
-**`160S1` IS TRANSCRIBED** — `programs/ax5b_160s1_clr_inds.strap`,
+**`I60S1` IS TRANSCRIBED** — `programs/ax5b_160s1_clr_inds.strap`,
 pp.83-84, 81 rows bit-exact — **and it is not what this file has ever
 called it.** PDF p.83, 022741.00. The original claim was "SSIP's
-`160S1`/`160SX1` save/restore harness"; the correction after that said
+`I60S1`/`I60SX1` save/restore harness"; the correction after that said
 they were "call sites… still not located". Both were wrong about what
 it *is*. Its own comment:
 
-> `160S1  SX,$X1,160DMP   -SUBROUTINE TO CLR INDS 0-19,`
+> `I60S1  SX,$X1,I60DMP   -SUBROUTINE TO CLR INDS 0-19,`
 > `       BMKZ,$+.32      -AND CHK THAT THEY ARE CLRD.`
 
 It is a **clear-indicators-0-19 subroutine local to routine 1260** —
@@ -166,18 +166,18 @@ off, with a per-indicator message: *"UNABLE TO CLEAR MK."*, *"…CLR IK
 OR ABOVE IND."*, then IJ, EK, TS, CPUS. Roughly forty rows, every
 instruction already implemented, and it needs no harness of its own.
 
-So the comparison block's real dependencies are `160S1` (now
-transcribed), the interruption table `160IT` at 023201.00, and
+So the comparison block's real dependencies are `I60S1` (now
+transcribed), the interruption table `I60IT` at 023201.00, and
 `BOUND0`/`BOUND1` — none of them the mythical SSIP harness.
 
-**And transcribing it found an assembler bug.** `160S1`'s one `XW`
+**And transcribing it found an assembler bug.** `I60S1`'s one `XW`
 row was the single mismatch in 45: `XW`'s fourth operand is **three
 bits** (IBM 25-27, the index flag plus two spare) and `strap_asm.py`
 masked it to one, so `,4` and `,2` encoded as zero and `,1` set the
 flag instead of the second spare. p.114's own table settles it —
 `BIT25` is `XW,0,0,0,4`, `BIT26` `,2`, `BIT27` `,1`. Fixed.
 
-**Next on item 1**: the interruption table `160IT` at 023201.00 and
+**Next on item 1**: the interruption table `I60IT` at 023201.00 and
 `BOUND0`/`BOUND1` at 023302/023303, after which the p.71 comparison
 block can run.
 
@@ -271,11 +271,11 @@ arm. Deliberately a separate commit.
 ### CORRECTION, 2026-09-24: THERE *IS* A DECK ORACLE, AND IT IS IN A DOCUMENT THIS PROJECT HAD ALREADY READ
 
 **`jb_ax5b` routine 1260 TEST 8C, PDF pp.76-83, octal
-022546.00-022732.40, labels 160127-160146.** Verified first-hand at
+022546.00-022732.40, labels I60127-I60146.** Verified first-hand at
 400 dpi. Its own title row:
 
 ```
-160127  LVI,$X1,160AD1  -TEST 8C CHECKS DF + IF UNDER 4 CONDS,  23063.03 01  022546.00
+I60127  LVI,$X1,I60AD1  -TEST 8C CHECKS DF + IF UNDER 4 CONDS,  23063.03 01  022546.00
                         -1. DISABL MASK 0 FETCH OK IND NO INT
                         -2. DIAABL MASK 1 FETCH OK NO IND NO INT
                         -3. ENABLE MASK 0 FETCH OK IND ON NO INT
@@ -305,11 +305,11 @@ still right — 1268 *is* a forwarding test — but it drew a false GLOBAL
 conclusion from a true local one, and nothing re-checked it.
 
 **Reported alongside it, same sweep, also unrecorded here:**
-* **TEST 8B, PDF p.75** (160123-160Z1, 022513.00-022545.40) — a
+* **TEST 8B, PDF p.75** (I60123-I60Z1, 022513.00-022545.40) — a
   second, richer DS oracle covering enabled/disabled *and* store
   suppression: *"-SX ABOVE UB WAS NOT NOPED, DATA WAS STORED WHEN
   ENABLED."*
-* **TEST 7, PDF pp.71-74** (160105-160122) polls DF with `BDFZ`/`BZDFZ`
+* **TEST 7, PDF pp.71-74** (I60105-I60122) polls DF with `BDFZ`/`BZDFZ`
   throughout — a second DF oracle, on the boundary-compare path.
 * **p.32's BRANCH clause is still manual-only.** Every IF case in
   TEST 8C is straight-line fall-through into a below-LB region; none
@@ -545,7 +545,7 @@ round trip**, since it plants an arbitrary instruction through
   same bracket appears on `ax5b` PDF pp.45, 71, 72, 74 and 80.
 
   **Three qualifications, all load-bearing.** (1) Both blocks are
-  ENCODING-ONLY and unrun — they need `160S1`'s body and the `160IT`
+  ENCODING-ONLY and unrun — they need `I60S1`'s body and the `I60IT`
   table — so the honest statement is "the deck would catch a late
   interruption", not "this model fails today". (2) The verdict is
   instruction-class dependent, and this repo already has measured
@@ -783,24 +783,24 @@ proceeds."* The deck builds a chain of **2049** for this.
 |---|---|---|---|---|
 | head | 87 | 023304.00-023307.00 | `162` | prints ID, `BD,1621` |
 | TEST 1A | 88-89 | 023310.00-023373.00 | `1621` | EX must not relinquish control; seven memory combinations |
-| TEST 1B | 90-91 | 023373.40-023442.00 | `16212` | EX of each non-branch class, **two** checks per class |
+| TEST 1B | 90-91 | 023373.40-023442.00 | `I6212` | EX of each non-branch class, **two** checks per class |
 | TEST 1C | 92-94 | 023442.40-023551.00 | `16218` | 1CA enable-after-EX, 1CB address monitor, 1CC EX of branch + EXE |
 | TEST 1D | 95 | 023551.40-023576.00 | `16241` | EXE and USA indicators |
 | TEST 2A | 96-98 | 023576.40-023704.40 | `16247` | EXIC must not relinquish control |
 | TEST 2B | 99-102 | 023705.00-024000.00 | `16260` | EXIC of each class, **three** rules per class |
 | TEST 2C | 103-105 | 024000.40-024107.40 | `16271` | 2CA/2CB/2CC, the EXIC twins of 1C |
 | TEST 2D | 106 | 024110.00-024135.40 | `16294` | EXE and USA for EXIC |
-| TEST 3A | 107-108 | 024136.00-024151.00 | `162100` | pseudo-IC less than 15 |
+| TEST 3A | 107-108 | 024136.00-024151.00 | `I62100` | pseudo-IC less than 15 |
 | TEST 3B | 108 | 024151.40-024162.00 | — | subject instruction less than 32 |
-| constants | 109 + p.110 top | 024172.00-024332.00 | `162K1`..`162EXI` | incl. the 64-word `162INT` table at 024220.00 |
+| constants | 109 + p.110 top | 024172.00-024332.00 | `I62K1`..`I62EXI` | incl. the 64-word `I62INT` table at 024220.00 |
 
 Continuity bits corroborate the partition: 1A=BIT0 ... 2D=BIT7, TEST
 3=BIT8, and the exit mask `%8@777000.0` is exactly nine ones. Nine
 sub-tests, nine bits.
 
 **TWO EXTENT CORRECTIONS.** 1262 does **not** end at p.109 — its last
-row, `162EXI LVI,$X1,%8@777777.40`, is at 024332.00 on the **top line
-of PDF p.110**, above routine 1268's header. And `162EXI` is
+row, `I62EXI LVI,$X1,%8@777777.40`, is at 024332.00 on the **top line
+of PDF p.110**, above routine 1268's header. And `I62EXI` is
 *referenced* on pp.90, 92, 103 and 107 while being *defined* past
 where anyone would look.
 
@@ -811,11 +811,11 @@ There is no EX-with-EXIC combination test in test 3; the nearest thing
 is TEST 1A's two-level EX-of-EX. Do not go hunting for tests that are
 not there.
 
-### FIRST TRANSCRIPTION TARGET: TEST 3A, `162100`, 024136.00-024151.00, 23 rows
+### FIRST TRANSCRIPTION TARGET: TEST 3A, `I62100`, 024136.00-024151.00, 23 rows
 
 Chosen over the smaller head of `1621` (13 rows) for reasons that are
 about evidence, not size: it is a **whole sub-test** entered by one
-`BD,162100`; both its error messages are **inline in its own comment
+`BD,I62100`; both its error messages are **inline in its own comment
 column** rather than an index into a shared table, so a failure names
 itself; it encodes **EXIC**, the harder arm; and its three messages
 *are* the suppression contract — no interrupt on the illegal
@@ -823,14 +823,14 @@ pseudo-IC, AD set, the instruction NOPed — which is exactly p.50's
 "cannot occupy locations addressed between 0 and 15".
 
 **AND IT AVOIDS AN ASSEMBLER PREREQUISITE.** TEST 1A and 1D use
-progressive-indexing notation `%$X1@` (`SX,$X2,162INT%$X1@`) that
+progressive-indexing notation `%$X1@` (`SX,$X2,I62INT%$X1@`) that
 appears in **no** existing `strap/programs/*.strap`, so they would
 carry an assembler change as well. 3A uses none of it, and its one
 exotic row (`%8@DD%BU,32,8@,3740 -ILLEGAL OP.`) is *already*
-transcribed and bit-exact-verified here as `160K7` in
+transcribed and bit-exact-verified here as `I60K7` in
 `ax5b_160k_constants.strap`.
 
-**Not candidates:** TEST 1D and 2D depend on `16084A`/`16084B`, which
+**Not candidates:** TEST 1D and 2D depend on `I6084A`/`I6084B`, which
 belong to routine 1260 — and 16084 is itself one of the blocks blocked
 on EX.
 
@@ -930,8 +930,8 @@ outrank DS and every PG indicator in the leftmost-wins scan. Every
 enabled program would take a TS interruption it never took before.
 
 **And the reload rule has a deck witness**: routine 1258 block
-1589/15810, *"-INTERVAL TIMER FAILS TO STEP FROM 000000.0 TO
-777777.40"*, with `158K1 = 777777.40` — all ones in bits 0-18.
+I589/I5810, *"-INTERVAL TIMER FAILS TO STEP FROM 000000.0 TO
+777777.40"*, with `I58K1 = 777777.40` — all ones in bits 0-18.
 
 **p.34 ALSO STATES A RULE `ax5b_16071_ts.strap` CURRENTLY INFERS.**
 That program's header says the disabled-execution requirement "is
@@ -959,7 +959,7 @@ SEE THAT IT STEPS CORRECTLY WITHIN THE CORRECT INTERVAL OF TIME. TEST
 2 CHECKS THAT THE INTERVAL TIMER STEPS WITHIN THE ALLOTTED AMOUNT OF
 TIME, AND THAT EACH POSITION CAN HOLD BOTH A ONE AND A ZERO."*
 
-**It is a far better timer oracle than 16071**, which only witnesses
+**It is a far better timer oracle than I6071**, which only witnesses
 "TS comes on". 1258 witnesses the tick RATE (twice, "1 MSEC"), the
 RELOAD to all ones, the bits-19-23 clearing from p.34's programming
 note, the decrement by exactly one, and the whole TIME CLOCK with its
@@ -1087,7 +1087,7 @@ choice.
 
 `NEXT.md` and `archival_inventory.md` both carried an open item to find
 them, on the strength of routine 1260's own setup comment at PDF p.75:
-*"-SETUP BD, 160107 INTERRUPT TABLE / -FOR TESTS 8B, 8C, 8D"*. **TEST
+*"-SETUP BD, I60107 INTERRUPT TABLE / -FOR TESTS 8B, 8C, 8D"*. **TEST
 8's lettering runs 8B, 8C and stops.** There is no 8A and no 8D.
 
 The decisive argument is not a page-by-page search — it is the deck's
@@ -1152,7 +1152,7 @@ CHECK TO DETERMINE THAT THE CORRECT INDICATORS AD, DS, DF, IF ARE
 TURNED ON AND THAT CORRECT TERMINATIONS AND SUPPRESSIONS OCCUR..."*.
 
 The p.88 "8D" sighting is **stale boilerplate**, confirmed at 400 dpi:
-it is the same five-line interrupt-table-fill idiom as 1260's `160123`,
+it is the same five-line interrupt-table-fill idiom as 1260's `I60123`,
 sitting in routine 1262 with the comment carried over unedited, and
 1262's own write-up numbers its tests 1/2/3 with suffixes 1A…3B.
 
@@ -1161,7 +1161,7 @@ that does not exist is itself the finding** — and note "8A" is absent
 even from that comment. Conjecture, flagged and NOT to be promoted:
 TEST 8's four indicators are AD, DS, DF, IF; 8B is DS and 8C is DF+IF;
 AD gets no lettered sub-test because TEST 7 already gives it a
-dedicated interrupt entry (`160107`, p.71) and the `16082`/`16083`
+dedicated interrupt entry (`I60107`, p.71) and the `I6082`/`I6083`
 blocks (pp.41-42) already turn it on.
 
 ### THE ACTUATION-PRIORITY RULE HAS NO DECK ORACLE — implement it from the manual or not at all
@@ -1187,7 +1187,7 @@ the negative trustworthy:
   TEST 7's own header (p.71): *"RANGE OF X IS FROM 000040 THRU 777777
   OCTAL."* Valid but protected → a single cause by construction.
 * **Every invalid-address test uses addresses that are invalid but not
-  protected** — 1262 TEST 3A and 3B, 1260's `16082`/`16083`.
+  protected** — 1262 TEST 3A and 3B, 1260's `I6082`/`I6083`.
 * **1262's `16219`/`16272` "CHK ADR MONITOR"** put an EX/EXIC *subject*
   above UB — example (d) minus the invalid half. They check that the
   interrupt happened and the instruction was NOPed, never "and AD
@@ -1211,7 +1211,7 @@ plainly that its oracle is p.51 and nothing else — the same standing
 that DF was wrongly given once already (see § 2's CORRECTION).
 
 **One near-miss, re-verified first-hand rather than taken on trust**,
-because it deliberately involves both DS and AD: 1260's `16086` block
+because it deliberately involves both DS and AD: 1260's `I6086` block
 at p.44 turns AD on with its own `SV,$X4,1.32` as part of the DS setup,
 then at 021375.40 does `BADZ,$+.32` whose target 021376.00 **is its own
 fall-through** — so both paths converge unconditionally and the only
@@ -1366,14 +1366,14 @@ here because *how* it closed is reusable.
 probe, which is what it is in TEST 1CC. Three primary-source steps,
 each verified first-hand at 300 dpi:
 
-1. **The block runs DISABLED.** 1260's `160S1` clear-indicators
-   subroutine returns via `160SX1 $BD,0` at 023041.00 (PDF p.85) —
+1. **The block runs DISABLED.** 1260's `I60S1` clear-indicators
+   subroutine returns via `I60SX1 $BD,0` at 023041.00 (PDF p.85) —
    a BRANCH DISABLED whose address the caller's `SIC` plants. Printed
    p.41: `SIC` stores the instruction counter into bits 0-18 and
    *"Other bits of the half-word are not disturbed"*. Printed p.40:
    *"Branch Disabled (BD). This operation disables the interruption
    mechanism, and then performs the same operation as BRANCH."* No
-   `BE` exists anywhere in `160S1`.
+   `BE` exists anywhere in `I60S1`.
 2. **An execution operation interrupts anyway.** Printed p.50, verbatim:
    *"Second, at the completion, termination, or suppression of an
    execution operation, interruption is always permitted."* Its
@@ -1391,7 +1391,7 @@ each verified first-hand at 300 dpi:
 OP is 15, AD is 16. Without the word, the interruption would consume AD
 and the `BADZ` would find it off — a spurious *"-AD NOT SET..."*. With
 it, OP outranks AD, OP is consumed, and AD survives to be tested. The
-deck exercises the p.50 rule independently at block `16225` (p.93),
+deck exercises the p.50 rule independently at block `I6225` (p.93),
 which is called with `BD`, never enables, and whose OK path is an
 interruption taken while provably disabled.
 
@@ -1457,7 +1457,7 @@ blocks; routine 1250 (`CB`/`CBR`); `ja_ax1a`'s refill blocks;
 `jb_ax2a`/`jb_ax3a`/`jb_ax5b` have no refill *operation* at all.
 Every refill XW exercised in the corpus decodes to a high address or
 an index register 16-31. The one low-address refill XW that exists —
-`142XW4`, refill field 9 = `$R`, in routine 1242 — is **defined and
+`I42XW4`, refill field 9 = `$R`, in routine 1242 — is **defined and
 never referenced**, so it witnesses nothing.
 
 If this is ever to be closed it needs a source outside the five I-Box
@@ -1481,15 +1481,15 @@ Found 2026-09-24 and verified first-hand at 300 dpi, `jb_ax4b` PDF
 p.98, routine 1244's constants:
 
 ```
-144XW1  XW,144B1,0,0
-144XW2  XW,144B2,0,0
-144XW3  XW,1.0,31,0
+I44XW1  XW,I44B1,0,0
+I44XW2  XW,I44B2,0,0
+I44XW3  XW,1.0,31,0
                         -IF 0 BECOMES ILLEGAL FOR RNX, USE THE
                         -FOLLOWING THREE INDEX WORDS TO REPLACE
                         -THOSE DIRECTLY ABOVE.
-144XWA  XW,144B1A,0,0
-144XWB  XW,144B2A,0,0
-144XWC  XW,0.0,32,0
+I44XWA  XW,I44B1A,0,0
+I44XWB  XW,I44B2A,0,0
+I44XWC  XW,0.0,32,0
 ```
 
 As shipped the sweep starts at `1.0` with count 31 — 1 to 37 octal,
@@ -1522,9 +1522,9 @@ only a case with no deck witness.
   accumulator, which a ZM-setting multiply leaves at zero). Only FP
   paths were checked.
 * The **fill loop** that copies `jb_ax5b`'s three-instruction template
-  at `16090` into the word-spaced table slots has not been traced. The
-  table's *units* are settled — 64 full words, from `160IT` at
-  023201.00 to `160DMP` at 023301.00 — with the reasoning in
+  at `I6090` into the word-spaced table slots has not been traced. The
+  table's *units* are settled — 64 full words, from `I60IT` at
+  023201.00 to `I60DMP` at 023301.00 — with the reasoning in
   `run_tests.sh` §"The interruption mechanism".
 
 Two conventions that are not questions and cost a session each when
@@ -1556,7 +1556,7 @@ printed page numbers.
   valuable and write down.
 * **"THAT IS NOT TRANSCRIBED YET" IS A CLAIM, AND IT NEEDS A GREP.**
   Twice in one session I handed out work whose premise was that a block
-  was untranscribed, and twice it already was. `160S1` — the brief said
+  was untranscribed, and twice it already was. `I60S1` — the brief said
   it was missing; its HEAD had been committed for days
   (`ax5b_160s1_clr_inds.strap`, pp.83-84) and only the tail was open.
   TEST 7's comparison test at PDF p.71 — the brief named it as the
@@ -1654,7 +1654,7 @@ printed page numbers.
   row. Found by trying the obvious injection and watching it survive.
 * **A substitution can discard the thing that makes a test useful.**
   Routine 1260's boundary driver branches into an EIGHTEEN-entry
-  error table, `B,160B17($X3)`, indexed — so the halt address names
+  error table, `B,I60B17($X3)`, indexed — so the halt address names
   which bit failed. A first transcription collapsed it to one hang;
   an injected bit-17 fault then branched past its end into untouched
   storage, decoded `BE,0` and ran to 0. Still "caught", but unable to
@@ -1709,7 +1709,7 @@ printed page numbers.
   conclusion standing). The other three: "64 call
   sites need refactoring" (43 wrote constants that could never trip the
   rule), "the control-bit polarity needs Appendix C" (p.31 states it
-  outright), and "1260 needs SSIP's `160S1` harness, reported at
+  outright), and "1260 needs SSIP's `I60S1` harness, reported at
   pp.41–44" (pp.41–44 are the per-indicator blocks, one of which was
   transcribed the same morning with no harness at all). Re-derive an
   obstacle before accepting it.
