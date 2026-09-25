@@ -438,6 +438,59 @@ run "IF: the instruction-fetch address alarm (p.32 classes 1 and 2)" ./run_progr
 # words 1-3 -- the boundary registers themselves -- whose contents
 # would then execute.  The model does not raise AD there either.
 
+run "Clause 1's DS survives a protected branch target (p.52)" ./run_program.sh programs/df_bb_if_ds.strap StretchDfBbIfDsTb \
+    "PC=4186"          # 004055.00; hand-written from the manual, no deck oracle
+# THE OBSERVABLE THE SECTION BELOW FIXED AND COULD NOT WITNESS.  Its
+# block E runs IF's mask at ZERO deliberately, because a mask of one
+# re-routes the injection that witnesses its own headline finding.  So
+# the interaction needed its own program, and NO MODEL CHANGE -- the
+# fix was already right, it just had no test.
+#
+# THE CASE: a MODIFYING BB whose data word is protected AND whose
+# branch target is protected AND with IF's mask bit at one.  Under the
+# old `ifSuppress = wouldBranch && ...`, ifSuppress fired, the whole
+# bit-change block was skipped, and CLAUSE 1's DS ACTUATION WAS LOST.
+# Reading ifSuppress off `takeBranch` restores it, because takeBranch
+# is already false when the instruction was never allowed to test the
+# bit.  DS is the ONLY observable difference -- ifSignal and the branch
+# commit stay gated on takeBranch and do not move.
+#
+# WHY "SUPPRESSED" AND "DS IS ACTUATED" ARE COMPATIBLE AT ALL, which is
+# the sentence the whole program rests on.  Printed p.52: "the
+# suppression of an instruction must necessarily exclude the following
+# operations: 1.  The actuation of those indicators, associated with
+# the instruction, of Class S, and indicators DF and IF when their mask
+# bits are zero."  And DS is Class S by name on the same page.  A
+# suppression may not eat a Class-S actuation -- least of all via a
+# SECOND suppression.
+#
+# Six injections, every halt OBSERVED, each anchored on a WHOLE LINE
+# rather than a token, because the bare token `takeBranch` occurs four
+# times in the arm and a token-level sed would have built a different
+# mutant than the row claims.  The headline row halts at 004017.00.
+#
+# AND INJECTION 6 IS WHY THIS PROJECT CHECKS DESTINATION VALUES.
+# Making the suppressed write happen anyway passed EVERY indicator and
+# marker check in the program and was caught only by the closing
+# "BZB, PROT.0, $" -- the value check.  A model that "suppresses" by
+# writing the wrong thing is invisible to indicators.
+#
+# TWO NON-VACUITY ARGUMENTS, because a clean run cannot distinguish
+# "correct" from "cannot fail".  Block A is not vacuous and injection 1
+# proves it: for ifSuppress to become true under that mutation, both
+# maskedOn(ind_IF) and ifViolates(TGTIN) must have been true, so the
+# halt is direct evidence that "BB1,12.21" really set IF's mask bit and
+# that TGTIN really was inside the area.  "BB,8.0,$" is not vacuous and
+# injections 2 and 3 prove it.  By contrast "BB,7.0,$" genuinely CANNOT
+# fire here -- DF's mask is zero throughout -- and is labelled
+# belt-and-braces rather than coverage.
+#
+# ONE CORRECTION TO THE SECTION BELOW'S HEADER, recorded here because
+# that file was not edited: it says p.52's clause-3 sentence "wraps
+# into the first two lines of printed p.53".  It does not -- it wraps
+# from the bottom of p.52's LEFT column to the top of p.52's RIGHT
+# column.  Printed p.53 is a different section.
+
 run "DF class 1's FIFTH site: read-only BRANCH ON BIT (p.52)" ./run_program.sh programs/df_bb_readonly.strap StretchDfBbRoTb \
     "PC=4313"          # 004154.40; hand-written from the manual, no deck oracle
 # THE SITE THE PREVIOUS COMMIT DISCOVERED WAS MISSING.  Printed p.52
@@ -3158,6 +3211,62 @@ run "IBOX-4 refill address gate (jb_ax4b, encoding)" python3 verify_ibox4_refill
 run "IBOX-4 routine 1244: RNX's refill-address NOP gate (jb_ax4b PDF pp.90-98)" python3 verify_ibox4_rnx_nop_listing.py
 run "IBOX-4 routine 1246: TRANSMIT and SWAP (jb_ax4b PDF pp.99-100, 112-113)" python3 verify_ax4b_1246_transmit_swap_listing.py
 run "IBOX-4 routine 1246 TEST 2A/2B: the forward-backward and direct-immediate modifiers (jb_ax4b PDF pp.109-111)" python3 verify_ax4b_1246_modifiers_listing.py
+run "IBOX-4 routine 1246 TEST 1B/1C/1D/1G: the memory pairings (jb_ax4b PDF pp.101-106)" python3 verify_ax4b_1246_memories_listing.py
+# 176 ROWS, FOUR OF THE EIGHT REMAINING SUB-TESTS, and the CUT IS
+# PRINCIPLED RATHER THAN FATIGUE.  The nine TEST 1 sub-tests are a 3x3
+# of sending x receiving memory -- {EXT I46D4, IX $X4, INT $L} against
+# {EXT I46D2, IX $X3, INT $R}.  1A (already done) is EXT->EXT.  These
+# four are the only cells where an operand KIND first enters; the four
+# left are cross-products of kinds already witnessed.  All eight pages
+# were read first-hand so that is a measurement, not a guess.  Left:
+# 1E 007102.00, 1F 007132.00, 1H 007212.00, 1I 007242.00.
+#
+# THE VERDICT ON "1B-1I ARE MORE ROWS, NOT MORE KINDS": HALF RIGHT, and
+# the honest answer is that the 1A transcriber was very nearly right.
+# Right about mnemonics -- not one of the seventeen is new, each
+# appears in 3 to 138 other verify files -- and right about shape, same
+# 44-row order, same six error pairs, same branch offsets.  Wrong only
+# in that the operand KIND changes: A1 and A2 take REGISTER addresses
+# ($L word 0o10, $R word 0o11, $X3 0o23, $X4 0o24) instead of memory
+# constants.  And that is new to ROUTINE 1246, not to the repo -- grep
+# found registers in TRANSMIT address fields already in
+# verify_ax5b_160_test6 and verify_ax5b_16087.
+#
+# COMPLETENESS IS PROVED INDEPENDENTLY OF THE RUN, which matters
+# because check_rows only checks rows it is handed: each sub-test spans
+# 24 words = 48 half-word slots, minus 4 two-slot instructions (two T,
+# two L(BU)) = 44 rows.  Four sub-tests, 176.
+#
+# THE SIBLINGS' MEASURED NULL SURVIVES, with 3x the transmit rows and
+# two operand kinds they lack.  All sixteen T rows across pp.101-108
+# print 02 for bits 50-55, so bit 50 = 0, and the only three A2
+# operands in all of TEST 1 are I46D2 (word-aligned), $X3 and $R --
+# word addresses, so bit 50 CANNOT be 1.  By arithmetic, not by glyph.
+#
+# Nine injections.  The signature one is strap_asm's index base
+# (16+n)*64 -> (17+n)*64: 19 rows, every $X-in-address row in all four
+# blocks, and the $R/$L rows untouched -- NEITHER SIBLING CAN PRODUCE
+# IT.  Two more separate $R from $L by moving one and not the other.
+#
+# AND ONE OF THE TWO NULLS IS THE METHOD CATCHING ITSELF.  Injection
+# N-B was the author's FIRST attempt at N-4: enc_branch_on_bit and
+# enc_transmit have TEXTUALLY IDENTICAL A1 clauses, so the patch landed
+# on the wrong encoder, no BRANCH ON BIT row exists in range, and the
+# run came back green.  That is exactly the false null the
+# confirm-it-applied discipline exists to catch, recorded rather than
+# quietly dropped.
+#
+# TWO DECK TYPOS inside the range, both clean wrong characters rather
+# than ragged correct ones: 006777.00's "-IX STG DROPS ALL BITS," ends
+# in a COMMA (bowl plus a descending tail identical to the commas on
+# the same line, where the neighbouring periods are bare bowls), and
+# 007052.00's heading carries a STRAY COMMA after "TO".  Two more on
+# pages not transcribed are recorded so nobody re-discovers them.
+#
+# A CORRECTION TO THE BRIEF THAT COMMISSIONED IT: TEST 1A is the FIRST
+# of the nine, at 006742.00 on p.100, not the ninth.  They run 1A..1I
+# in address order across pp.100-108.
+
 # 119 ROWS, BOTH SUB-TESTS, NO CUT -- 007272.00-007372.00, contiguous
 # under one SLC across three pages.  It also turns the sibling
 # section's arithmetic endpoint into a measurement: 007372.00 is the
@@ -4584,6 +4693,70 @@ run "I-Box 5 routine 1260's I60S1 TAIL, incl. the return (jb_ax5b PDF p.85)" pyt
 
 run "I-Box 5 routine 1262's interrupt entry and constant pool (jb_ax5b PDF p.109)" python3 verify_ax5b_162_int_entry_listing.py
 run "I-Box 5 routine 1274: TRUNCATION OF ADDRESSES, 99 rows (jb_ax5b PDF pp.112-114)" python3 verify_ax5b_1274_truncation_listing.py
+run "I-Box 5's BIT TABLE, the SYN table and END (jb_ax5b PDF pp.114-116)" python3 verify_ax5b_bit_table_listing.py
+# THE TABLE THE WHOLE PROJECT RESTED ON AND NO FILE CHECKED.  Dozens of
+# transcriptions SYN into "BIT<n> = 024522 + n" as an INPUT; until now
+# not one verify script had a ROWS entry on it.  81 rows + 82 symbol
+# assertions + 1 END assertion, one contiguous SLC from 024501.00,
+# sealed below by routine 1274's printed I74PSI at 024500.00 and above
+# by END's printed 024622.00.
+#
+# THE RULE HOLDS FOR ALL 64, checked row by row off the LOCATION column
+# rather than at the endpoints: p.114 runs BIT0 024522.00 to BIT35
+# 024565.00 (0o43 = 35, 36 unbroken rows), p.115 BIT36 024566.00 to
+# BIT63 024621.00, and across the page break 0o24621-0o24522 = 0o77 =
+# 63.  No gap, no repeat, no off-by-one.
+#
+# BUT THE BLOCK IS **NOT** 64 XWs, and that is the find.  BIT24 is a
+# raw "(8)DD(BU),0 000 000 010 ..." -- because IBM bit 24 is the index
+# word's VALUE SIGN, and STRAP's XW,VALUE,COUNT,REFILL,FLAG has no
+# operand that sets the sign ALONE: the sign only arrives via a
+# negative VALUE, which also writes magnitude bits.  A word with bit 24
+# and nothing else is UNREACHABLE through XW, so the deck drops to a
+# data definition for exactly that one row.  The control is five rows
+# earlier: I00VO is "XW,(8)-777777.77,0,0" -> sign set, but with all 24
+# magnitude bits alongside.  So the ADDRESS sequence is unbroken while
+# the SOURCE FORM has an exception at one row -- which is precisely why
+# the brief said to check all 64 and not the endpoints.
+#
+# The bit is carried by a different FIELD in five bands: BIT0-23 VALUE,
+# BIT24 the sign, BIT25-27 the 3-bit flag, BIT28-45 COUNT, BIT46-63
+# REFILL.  Ten injections pin them apart -- "sign << 39" moves I00VO
+# ALONE and leaves BIT24 unmoved, proving BIT24 is not an XW negative
+# value; "dds_length_bits 64 -> 32" moves BIT24 ALONE, proving it is a
+# DD with no length modifier.
+#
+# ONE REPO FIRST that survived grep: "DD(BU)" with NO length/padding
+# modifier.  Every other DD in the repo writes DD(BU,64,8) or
+# DD(BU,32,8), so dds_length_bits' "if length_expr is None: return 64"
+# default had never been exercised.
+#
+# TWO NULLS WITH THEIR ARITHMETIC, and the pair is instructive: two
+# DIFFERENT lines in dds_length_bits both read "return 64", and only
+# one of them fires here.  Patching the other changes nothing.  That
+# pair is exactly why a patch must be confirmed APPLIED rather than
+# inferred from a green run.
+#
+# AND ONE INJECTION IS DELIBERATELY WEAK, labelled as such: shifting
+# the SLC by 64 fails 139 of 164 rows identically.  It distinguishes
+# almost nothing -- compare the one-row injections above -- and is kept
+# to show what a non-discriminating injection looks like next to real
+# ones.
+#
+# SENO / SEN0 IS SETTLED, and the decisive argument uses no glyph at
+# all.  p.114 prints "SENO SYN,SEN0" -> "1311.00+", and p.116 DEFINES
+# "SEN0 SYN,(8)1311.0" = that same value.  A symbol cannot be SYN'd to
+# itself, so the two spellings MUST differ whatever the widths say: it
+# is an ALIAS, letter-O SENO defined as digit-zero SEN0.
+# ax5b_1258_test2.strap's "SENO SYN,SENO" self-SYN was wrong.
+#
+# THE TRANSCRIBER OVERRODE THIS SECTION'S BRIEF ON ONE SPELLING, with
+# evidence, and was right: I00O, not I000.  The row's own comment is
+# "-INDX WD. OF ONES." against I00Z's "-ZERO INDX WD." -- O for Ones, Z
+# for Zero -- and the trailing glyph measures 51 px against 43 and 42
+# for the two zeros in the same token.  The four files still spelling
+# it I000 have been unified, with assembled output proved unchanged.
+
 # THE WHOLE ROUTINE, uncut: 99 rows carrying printed machine code,
 # 024412.00-024500.00.  Banner: "----I274---TRUNCATION OF ADDRESSES. /
 # -THIS PROGRAM CHECKS THOSE INSTRUCTIONS WHICH / -USE ONLY PART OF

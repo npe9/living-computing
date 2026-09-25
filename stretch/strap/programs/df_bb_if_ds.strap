@@ -1,0 +1,331 @@
+! CLAUSE 1's DS SURVIVES A PROTECTED BRANCH TARGET: the one
+! consequence of the "suppressed without a test" correction that
+! df_bb_readonly.strap names in its header and cannot witness.
+!
+! THE CASE.  A MODIFYING BRANCH ON BIT (bits 60-61 not both zero)
+! whose addressed bit lies in a protected word, whose BRANCH TARGET
+! also lies in the protected area, and with IF's MASK BIT ONE.  The
+! bit says branch.  Printed p.52 (PDF 55 -- PDF page = printed page +
+! 3) makes this one instruction answer to two different sentences at
+! once, and the model must not let one eat the other.
+!
+! THE PRIMARY SOURCE, read first-hand off the page image at 200 dpi.
+! Printed p.52, left column, under "Execution Suppressed" -- and note
+! for the next reader that the sentence does NOT wrap onto printed
+! p.53, as df_bb_readonly.strap's header says: it wraps to the TOP OF
+! THE RIGHT-HAND COLUMN OF p.52 itself, where clause 3 ends "...zero.
+! Indicator DF is actuated but does not cause suppression of the
+! instruction."
+!
+!   "Another example is that, since a protected effective bit address
+!   in BRANCH ON BIT could result in the destruction of information,
+!   alert DS or DF may occur if:
+!     1. The addressed bit is not specified to remain unconditionally
+!        unchanged; that is, bits 60 and 61 of the instruction are not
+!        both zero.  The instruction is suppressed without a test of
+!        the addressed bit, and indicator DS is actuated."
+!
+! AND THE SENTENCE THAT MAKES "SUPPRESSED" AND "DS IS ACTUATED"
+! COMPATIBLE, same page, same column, higher up -- the list of what
+! "the suppression of an instruction must necessarily exclude":
+!
+!   "1. The actuation of those indicators, associated with the
+!    instruction, of Class S, and indicators DF and IF when their mask
+!    bits are zero."
+!
+! DS IS CLASS S.  The paragraph above that list says so by name:
+! execution is suppressed on an alert which "2. Indicates that
+! completion of the execution might destroy information (IJ, EXE, DS,
+! DF, IF, or XF)", and then "The indicators actuated in these cases
+! are of Class S (Figure 11)."  So suppression is not allowed to take
+! the DS actuation with it, whatever else it takes.  That is the
+! assertion this program makes, and it is the whole program.
+!
+! WHY THE THREE CONDITIONS TOGETHER.  In the model's BitBranch arm the
+! bit change -- and clause 1's `setBit(ind, ind_DS, 1)` inside it --
+! is gated by `ifSuppress`, p.32's class-2 suppression of a branch
+! into a protected area: "If the branch address of a successful branch
+! operation is such that control would pass into a protected area, the
+! entire branch operation, including any counting, bit changing, or
+! index alteration, is suppressed.  The address boundaries are ignored
+! if the mask bit is zero" (printed p.32, left column, read
+! first-hand).  Computed from `wouldBranch` -- the tested bit -- that
+! gate fires here and the DS actuation vanishes with the bit change.
+! Computed from `takeBranch` -- `wouldBranch && !noTest`, the machine
+! having been ALLOWED to look at the bit -- it does not, because p.52
+! already suppressed this instruction "without a test of the addressed
+! bit" and there is no successful branch for p.32's class 2 to
+! monitor.  p.32 says the same thing in the general case: "If an
+! address which is associated with an operation is not actually used,
+! it will not be monitored by the contents of the boundary registers.
+! For example, the store instruction counter address prefixed to a
+! branch operation is not monitored unless the branch is successful."
+!
+! WHY IT NEEDED ITS OWN PROGRAM.  df_bb_readonly.strap's block E is
+! this case with IF's mask bit at ZERO, deliberately: a mask of one
+! re-routes its `takeBranch -> wouldBranch` injection away from the
+! `BB, $IF, $` row that witnesses its own finding.  Adding a block
+! there would also move its PASS and invalidate the eight halt
+! addresses recorded in its header.  ds_terminates_branch.strap runs
+! the same instruction with an UNPROTECTED target; if_branch_alarm's
+! block 6 runs a modifying BB into a protected target with the mask at
+! one, but its DATA word is word 7, which p.31 says never signals --
+! so in that block `takeBranch` and `wouldBranch` are equal and
+! nothing discriminates.  No program in the suite sets all three.
+!
+! THE OBSERVABLE IS THE DESTINATION'S VALUE, NOT AN INDICATOR READ --
+! df_fetch_suppress.strap's design choice, borrowed.  DS is
+! "permanently masked on" (p.32), so its actuation MUST produce an
+! interruption; entry 19 of the table is routed to a routine that
+! marks word 6, and the program checks the MARKER.  A model that
+! "actuated" DS without interrupting, or that set the neighbouring
+! indicator, fails a marker check where it could pass an indicator
+! check.
+!
+! THE MARKERS ARE WORDS 6, 7 AND 8 -- DS, DF and IF.  p.31: "References
+! to locations 0 and 4 through 31, inclusive, never cause an address
+! monitoring signal", so no marker store can itself signal.  IF has an
+! entry because with its mask bit ONE the `takeBranch -> wouldBranch`
+! injection at the ifSignal call really does interrupt, and without an
+! entry it would run off into unloaded storage instead of halting at a
+! check.
+!
+! THE SET-UP PLANTS ITS BIT WHILE DISABLED, p.32: "When the
+! interruption system is disabled, address monitoring is
+! ineffective... the DS, DF and IF indicators cannot be turned on when
+! the system is disabled."  That is what lets the program put a one
+! into a word it is about to protect.
+!
+! THE NOPS ARE NOT PADDING.  Each block reports by INTERRUPTING, and
+! this model takes an interruption at a quiescent boundary rather than
+! at p.48's instruction boundary; the NOPs are the slack.
+!
+! THE THREE BLOCKS ARE AN ATTRIBUTION TRIANGLE.  A alone would leave
+! open which of the two extra conditions did the work, so B repeats it
+! with the mask at zero and C repeats it with the target outside the
+! area, and both must still actuate DS.  Only A's configuration can
+! lose it.
+!
+! WEAKER STANDARD: hand-written from the manual, like the DF and DS
+! programs beside it.  jb_ax5b routine 1260 TEST 8C is the deck oracle
+! for DF and IF under the enable and mask bits, but none of its four
+! cases uses BRANCH ON BIT as the offending reference, so p.52's
+! clauses have no deck test in this corpus.
+!
+! SIX INJECTIONS, EACH OBSERVED (not predicted).  Each was applied to
+! a pristine StretchExecute.bsv by a helper that ABORTS unless the old
+! text occurs exactly once and PRINTS THE DIFF before building,
+! because a substitution that silently fails to match prints ALL TESTS
+! PASSED, which reads exactly like an honest "this does not
+! discriminate".  Each anchor is a WHOLE LINE: the bare token
+! `takeBranch` occurs four times in the arm and a token substitution
+! would build a different mutant than the row claims.  The clean run's
+! PASS is at half-word 4186 (004055.00).  Reproduce any row with
+! `python3 line_addresses.py programs/df_bb_if_ds.strap`.
+!
+!   ifSuppress computed from            -> 4126  004017.00
+!     `wouldBranch` instead of               BZB, 6.0, $ (A)
+!     `takeBranch` (THE HEADLINE)            -- the bit-change block was
+!                                               skipped, so clause 1's
+!                                               DS actuation went with
+!                                               it and DS's routine
+!                                               never ran
+!   `takeBranch` -> `wouldBranch` at    -> 4130  004021.00
+!     the ifSignal call                      BB, 8.0, $ (A)
+!                                            -- the instruction signalled
+!                                               IF from a branch it was
+!                                               never allowed to decide,
+!                                               and with the mask ONE
+!                                               that INTERRUPTS.  Not
+!                                               reachable in
+!                                               df_bb_readonly, whose
+!                                               mask is zero: there the
+!                                               same mutation only sets
+!                                               a quiet indicator.
+!   `takeBranch` -> `wouldBranch` at    -> 4130  004021.00
+!     the `next = tgt` line                  BB, 8.0, $ (A)
+!                                            -- SAME HALT AS THE ROW
+!                                               ABOVE, and the reason is
+!                                               worth knowing: the branch
+!                                               IS taken, so execute()'s
+!                                               shared commit point sees
+!                                               `next != fallthrough`,
+!                                               signals IF, finds the
+!                                               mask at one and undoes
+!                                               the branch itself.  So
+!                                               the mutant never reaches
+!                                               TGTIN -- df_bb_readonly,
+!                                               at mask zero, is what
+!                                               observes the arrival.
+!   `storeViolates` dropped from        -> 4126  004017.00
+!     noTest                                 BZB, 6.0, $ (A)
+!                                            -- takeBranch becomes true,
+!                                               so ifSuppress fires for
+!                                               real and eats the DS
+!   ind_DS -> ind_DF at clause 1's      -> 4126  004017.00
+!     setBit (the 19/20 swap)                BZB, 6.0, $ (A)
+!                                            -- DF's mask is zero here,
+!                                               so nothing interrupted
+!                                               and word 6 stayed clear
+!   the bit change no longer            -> 4183  004053.40
+!     suppressed: `if (storeViolates)        BZB, PROT.0, $
+!     ... else writeWord` turned into        -- DS still actuated, so
+!     `if (storeViolates) ...;` then            every marker check
+!     an unconditional writeWord                passed; the DESTINATION'S
+!                                               VALUE is what caught it
+!
+! THAT LAST ROW IS WHY THE VALUE CHECK IS THERE -- df_fetch_suppress's
+! design choice.  A model that "suppressed" by writing anyway passes
+! every indicator and marker check in this program and is caught only
+! by reading the word back.
+!
+! WHAT IS NOT DISCRIMINATING, SAID RATHER THAN LEFT TO BE FOUND.
+! Dropping `!ifSuppress` from the bit-change gate cannot be caught by
+! this program: in the clean model ifSuppress is FALSE in every block
+! here, so the mutation changes nothing.  if_branch_alarm.strap's
+! block 6 is what holds that gate.
+!
+! AND WHICH CHECKS NO ROW REACHES.  Blocks B and C are controls and no
+! row halts in them: every mutation that breaks the DS actuation breaks
+! it in A first, and A comes first.  Their evidence is in the CLEAN
+! run -- they show DS is actuated in both neighbouring configurations,
+! so A's pass cannot be an accident of the mask bit or of the target's
+! protection alone.  The `BB, 7.0, $` and `BB, $DF, $` rows in A are
+! belt-and-braces for the same reason: the 19/20 swap is caught one row
+! earlier, at the marker, because DF's mask is zero and a DF actuation
+! cannot interrupt.
+!
+! Instructions: BD, BE, LVI, SV, BB, BB1, BBZ, BZB, B, NOP, BEW -- all
+! implemented.
+
+        SLC, (8)4000.0
+START   BD,  $+.32                   ! disable: monitoring is ineffective
+        BB1, PROT.0, $+1.0           ! plant bit 0 of PROT while the store
+                                     !   can still land
+        BZB, PROT.0, $               ! hang if it did not land
+        LVI, $X13, TBL
+        SV,  $X13, $IA
+        LVI, $X13, PROT
+        SV,  $X13, $LB               ! lower boundary := PROT
+        LVI, $X13, ABOVE
+        SV,  $X13, $UB               ! upper boundary := ABOVE
+        BBZ, 3.57, $+1.0             ! control bit := 0: signal INSIDE
+        BB1, 12.21, $+1.0            ! IF's mask bit := ONE
+        BE,  $+.32                   ! enable: monitoring is now effective
+!
+! ---- A. protected word, protected target, IF's mask ONE ----------
+!   p.52 clause 1: "The instruction is suppressed without a test of
+!   the addressed bit, and indicator DS is actuated."  PROT.0 is ONE,
+!   so an unsuppressed BBZ would branch to TGTIN and clear the bit;
+!   TGTIN is inside the area and IF's mask is one, so p.32's class-2
+!   suppression is armed as well.  It must not be reached, because
+!   there was no successful branch to monitor -- and it must not take
+!   the DS actuation with it, because p.52's exclusion list keeps
+!   Class S indicators out of a suppression.
+        BBZ, $IF,  $+1.0             ! start from IF off
+        BBZ, $DF,  $+1.0             ! start from DF off
+        BBZ, PROT.0, TGTIN           ! the subject instruction
+        NOP
+        NOP
+        NOP
+        NOP
+        NOP
+        NOP
+        NOP
+        NOP
+        BZB, 6.0,  $                 ! hang if DS's routine did not run:
+                                     !   clause 1's actuation, lost if
+                                     !   ifSuppress reads the tested bit
+        BBZ, 6.0,  $+1.0
+        BB,  8.0,  $                 ! hang if IF's routine ran: p.32
+                                     !   monitors the branch address of
+                                     !   SUCCESSFUL branches only
+        BB,  $IF,  $                 ! hang if IF's indicator is on at all
+        BB,  $DF,  $                 ! hang if a MODIFYING BB lit DF:
+                                     !   clause 1 names DS
+        BB,  7.0,  $                 ! hang if DF's routine ran
+!
+! ---- B. the same, with IF's mask ZERO ----------------------------
+!   The control that attributes A's behaviour to the MASK rather than
+!   to the protected target.  p.32: "The address boundaries are
+!   ignored if the mask bit is zero", so class 2 cannot suppress
+!   anything here and DS must be actuated for the plainest reason.
+!   This is df_bb_readonly.strap's block E, repeated so this program
+!   stands on its own.
+        BBZ, 12.21, $+1.0            ! IF's mask bit := ZERO
+        BBZ, $IF,  $+1.0
+        BBZ, PROT.0, TGTIN
+        NOP
+        NOP
+        NOP
+        NOP
+        NOP
+        NOP
+        NOP
+        NOP
+        BZB, 6.0,  $                 ! hang if DS's routine did not run
+        BBZ, 6.0,  $+1.0
+        BB,  8.0,  $                 ! hang if IF's routine ran
+        BB,  $IF,  $                 ! hang if IF's indicator is on
+!
+! ---- C. mask ONE again, but the TARGET is outside the area -------
+!   The control that attributes A's behaviour to the protected TARGET
+!   rather than to the mask.  Same instruction, same protected data
+!   word, same mask bit; OUTTGT is above the upper boundary, so
+!   ifViolates is false and the DS actuation can only be lost by a
+!   model that gates it on something else entirely.
+        BB1, 12.21, $+1.0            ! IF's mask bit := ONE again
+        BBZ, $IF,  $+1.0
+        BBZ, PROT.0, OUTTGT
+        NOP
+        NOP
+        NOP
+        NOP
+        NOP
+        NOP
+        NOP
+        NOP
+        BZB, 6.0,  $                 ! hang if DS's routine did not run
+        BBZ, 6.0,  $+1.0
+        BB,  8.0,  $                 ! hang if IF's routine ran
+        BB,  $IF,  $                 ! hang if IF's indicator is on
+!
+! ---- and the bit change was suppressed in all three --------------
+!   Read it back with the system DISABLED, so this check cannot itself
+!   signal.  Any block whose BBZ had completed would have cleared it.
+        BD,  $+.32
+        BZB, PROT.0, $               ! hang if the bit was cleared
+        B,   PASS
+PASS    BEW, $
+!
+! ---- the monitored area ------------------------------------------
+!   The area is the HALF-OPEN interval [PROT, ABOVE) -- p.31: "all
+!   words in subsequent locations up to, but not including, the
+!   address in the upper boundary register."
+        SLC, (8)4300.0
+PROT    DD(BU,64,8), 0               ! == the lower boundary
+        SLC, (8)4301.0
+TGTIN   BEW, $                       ! blocks A and B's target: must NOT
+                                     !   arrive
+        SLC, (8)4302.0
+ABOVE   DD(BU,64,8), 0               ! == the upper boundary, first word out
+        SLC, (8)4360.0
+OUTTGT  BEW, $                       ! block C's target: outside the area,
+                                     !   and must still NOT arrive
+!
+! ---- the interruption table --------------------------------------
+!   Entry N is at TBL + N words (p.48).  DS is 19, DF is 20, IF is 21.
+!   All three exist even though only one fires per block: a missing
+!   entry runs off into unloaded storage instead of failing at a check.
+!   p.32: "When an interruption occurs, the resulting interruption
+!   address is not monitored for instruction fetch", which is why the
+!   table needs no special placement.
+        SLC, (8)4500.0
+TBL     DD, 0
+        SLC, (8)4523.0
+DSRTN   BB1, 6.0, $+1.0              ! entry 19 = DS  (0o4500 + 0o23)
+        SLC, (8)4524.0
+DFRTN   BB1, 7.0, $+1.0              ! entry 20 = DF  (0o4500 + 0o24)
+        SLC, (8)4525.0
+IFRTN   BB1, 8.0, $+1.0              ! entry 21 = IF  (0o4500 + 0o25)
+        END, START

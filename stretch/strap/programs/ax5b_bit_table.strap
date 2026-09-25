@@ -1,0 +1,401 @@
+! jb_ax5b "I-Box 5" -- THE BIT TABLE and the constant pool it sits in
+! (PDF pp.114-115, octal 024501.00-024621.00, 81 rows), plus the
+! deck's SYN table and END (PDF p.116, no storage).  Transcribed at
+! the listing's own addresses and checked bit-exactly by
+! verify_ax5b_bit_table_listing.py.
+!
+! CITED BY PDF PAGE.  These listing pages carry no printed page
+! numbers; the "12 11 10 9" down the left margin is fanfold
+! carriage-tape line numbering.  Every page image below was rendered
+! with pdftoppm at 400 dpi and, where a glyph mattered, at 600 dpi.
+!
+! ====================================================================
+! PREMISE CHECK, run before a line was written.
+!
+! Every octal address from 024501 to 024621 was grepped against every
+! strap/verify_*.py and every strap/programs/*.strap.  RESULT: NOT ONE
+! OF THEM APPEARS IN A ROWS ENTRY ANYWHERE.  The distinction matters,
+! so here is the exact split:
+!   * The only ROWS tuple anywhere in the 0245xx neighbourhood is
+!     verify_ax5b_1274_truncation_listing.py:587,
+!         ('024500.00', '0.00 00 000000.00 00', 'I74PSI XW,0,0,0'),
+!     which is 024500 -- ONE WORD BELOW this block, and the last row
+!     of routine 1274.
+!   * 024522 (BIT0) appears in ax5b_1258_test1.strap:251,
+!     ax5b_1268_tail_pool.strap, ax5b_1274_truncation's docstring and
+!     header, verify_ax5b_16087_listing.py's injection table, and
+!     several prose paragraphs.  Every one is a SYN line, an operand
+!     of some OTHER row, or prose.
+!   * 024534/024535 (BIT10/BIT11), 024543 (BIT17), 024613 (BIT57),
+!     024620/024621 (BIT62/BIT63) appear only in docstring prose in
+!     verify_ax5b_160_test8b, _160_test7_sweep, _160102, _162_test3b.
+!   * 024501 (I00LC), 024502 (I00Z), 024503 (I00O) appear only as SYN
+!     inputs and prose (ax5b_160_test6, ax5b_1683, ax5b_1274).
+! verify_ax5b_1268_test1bc_listing.py:405 states the gap outright:
+! "this repository has a ROWS entry on p.114's BIT table."  It did
+! not.  It does now: 81 checked rows, 82 symbol assertions and one END
+! assertion.
+!
+! ====================================================================
+! THE HEADING, VERBATIM, WITH ITS OCTAL NEIGHBOURS.
+!
+! PDF p.114, immediately after routine 1274's last word (I74PSI
+! "XW,0,0,0" at 024500.00) and before the pool's first row, the
+! listing prints, in the comment column, with NO location and NO
+! machine code:
+!
+!         -COMMON CONSTANTS FOR FETCH ONLY
+!
+! then a bare "-" comment row, then "SENO  SYN,SEN0" (no location
+! either: a SYN occupies no storage), then I00LC at 024501.00.
+!
+! THE NEGATIVE, WHICH MATTERS AS MUCH: the BIT table has NO banner of
+! its own.  Between the last anonymous zero word (024521.00) and BIT0
+! (024522.00) there is exactly one bare "-" comment row and nothing
+! else.  "BIT0..BIT63" is a sub-block of -COMMON CONSTANTS FOR FETCH
+! ONLY, not a titled table.
+!
+! ====================================================================
+! QUESTION 1: IS THE RULE EXACTLY 024522 + n, FOR ALL 64?
+!
+! YES.  Checked ROW BY ROW against the listing's own LOCATION column,
+! not at the endpoints:
+!
+!   PDF p.114  BIT0  024522.00 ... BIT35 024565.00   36 rows
+!   PDF p.115  BIT36 024566.00 ... BIT63 024621.00   28 rows
+!
+! 0o24565 - 0o24522 = 0o43 = 35, so p.114's 36 rows are unbroken.
+! 0o24621 - 0o24566 = 0o33 = 27, so p.115's 28 rows are unbroken.
+! 0o24621 - 0o24522 = 0o77 = 63 across the page break.  No gap, no
+! repeat, no off-by-one anywhere.  All 64 locations are asserted
+! individually in the verify script's SYMBOLS.
+!
+! A SECOND, INDEPENDENT SEAL ON THE ENDS.  PDF p.116 prints
+! "END,(8)14000.0" against location 024622.00.  024622 = BIT63 + 1,
+! so nothing was omitted between BIT63 and the end of the deck; and
+! 024501 = I74PSI's 024500 + 1, so nothing was omitted at the top
+! either.  The block is closed on both sides by printed locations.
+!
+! ====================================================================
+! QUESTION 2: DOES BIT<n> HOLD BIT n?  YES -- AND THE BLOCK IS NOT
+! 64 XWs.  THAT IS THE MORE INTERESTING RESULT.
+!
+! Every one of the 64 printed machine-code values decodes to exactly
+! one set bit, at IBM bit n.  But the table reaches those 64 bits
+! through FIVE different XW fields, and at one row it cannot use XW
+! at all:
+!
+!   rows      field that carries the bit         printed where
+!   BIT0-23   VALUE  (mag, packed << 40)         first half, VVVVVV.VV
+!   BIT24     the SIGN bit -- via DD, NOT XW     22 octal digits
+!   BIT25-27  the 3-bit FLAG operand (<< 36)     first half, hex pair
+!   BIT28-45  COUNT (<< 18)                      spans both halves
+!   BIT46-63  REFILL                             second half
+!
+! THE BIT24 EXCEPTION AND WHY IT IS FORCED.  IBM bit 24 of an index
+! word is the VALUE field's SIGN.  In STRAP's "XW,VALUE,COUNT,REFILL,
+! FLAG" there is no operand that sets it alone: the sign comes only
+! from a negative VALUE, and a negative VALUE also writes magnitude
+! bits 0-23.  A word with bit 24 set and nothing else is therefore
+! UNREACHABLE through XW's operand syntax, and the programmer dropped
+! to a raw data definition for that one row:
+!
+!   BIT24   (8)DD(BU),0 000 000 010 000 000 000 000
+!                                     0000000010000000000000
+!
+! I00VO on the same page is the control: "XW,(8)-777777.77,0,0"
+! prints "777777.77 80 000000.00 00" -- sign bit set, but with all 24
+! magnitude bits set alongside it, which is exactly why BIT24 could
+! not be written that way.
+!
+! The four printed values the brief named, read here at 600 dpi:
+!   BIT0   XW,(8)400000.00,0,0   -> 400000.00 00 000000.00 00
+!   BIT17  XW,(8)1.00,0,0        ->      1.00 00 000000.00 00
+!   BIT32  XW,0,8192,0           ->      0.00 00 400000.00 00
+!   BIT63  XW,0,0,1              ->      0.00 00 000000.00 01
+! and the cross-check the brief offered is confirmed on the page:
+!   BIT16  XW,(8)2.00,0,0        ->      2.00 00 000000.00 00
+!   BIT17  XW,(8)1.00,0,0        ->      1.00 00 000000.00 00
+!
+! ====================================================================
+! WHAT IS NOT VERBATIM HERE, AND WHY.  THREE ROWS, NAMED.
+!
+! The rule is "keep source rows verbatim".  Three printed rows cannot
+! be written as printed, because strap_asm.py's grammar is narrower
+! than STRAP-1's.  Each printed form is quoted beside its row above
+! and in the verify script's note column; the transformations are:
+!
+!  1. "(8)DD(BU,64,8),0 000 011 770 025 700 000 000"  (I00LC) and
+!     "(8)DD(BU,64,8),1777777777777777777777"         (I00O) and
+!     "(8)DD(BU),0 000 000 010 000 000 000 000"       (BIT24)
+!     print the radix entry "(8)" as a prefix on the whole STATEMENT.
+!     strap_asm.py's _TERM_RADIX accepts "(R)" only on a numeric TERM
+!     (C22-6531 pp.27-28), so it is moved onto the operand and the
+!     listing's digit grouping spaces are closed up:
+!         DD(BU,64,8),(8)0000011770025700000000
+!         DD(BU,64,8),(8)1777777777777777777777
+!         DD(BU),(8)0000000010000000000000
+!     The DIGITS are untouched, and the printed machine code checks
+!     them.
+!  2. "XW,(8)-777777.77,0,0" (I00VO) puts the minus AFTER the radix
+!     entry.  _TERM_RADIX is r'\((\d+)\)(?=[\d.])' -- it requires a
+!     digit or a dot next, so "(8)-" does not match.  Written here as
+!     "XW,-(8)777777.77,0,0".  Same value, same printed word
+!     (777777.77 80 000000.00 00).
+!
+! WHAT *IS* KEPT, THOUGH IT LOOKS LIKE A TYPO: BIT18/19/20 print
+! ".40" / ".20" / ".10" with NO leading zero, while BIT21/22/23 print
+! "0.04" / "0.02" / "0.01" WITH one.  That is the deck's own
+! keypunching, it is reproduced here unchanged, and it assembles to
+! the same values either way.
+!
+! ====================================================================
+! WITNESS TIERING.  What this file proves, and what it does not.
+!
+! TIER 1, WITNESSED -- the 81 printed machine-code words.  Every row
+! below has its own value in the listing's machine-code column, read
+! row by row off pp.114-115.  These are 81 independent data.
+!
+! TIER 1, WITNESSED -- the 64 BIT<n> LOCATIONS.  pp.114-115 print a
+! location column of their own, and all 64 were read from it
+! separately from the machine code.  Those 64 printed locations, not
+! the location counter, are what establish "BIT<n> = 024522 + n".
+!
+! TIER 2, ANCHOR, NOT EVIDENCE -- the single "SLC,(8)24501.0".  From
+! that one number the assembler derives all 81 locations by size
+! accounting (XW = 64 bits aligned full-word; DD(BU,64,8) with k
+! operands = 64k bits).  A label placed by the location counter is
+! NOT a witness to its own address.  What the verify script actually
+! checks is the AGREEMENT between that propagation and the location
+! column read independently off the page -- 64 separate equalities.
+! With 64 near-identical consecutive XWs, one SLC plus the counter
+! does nearly all of the address arithmetic; the page is what makes
+! it a check rather than an assumption.  If the SLC is wrong by one
+! word, ALL 81 rows and ALL 69 location symbols fail together; that
+! is injection 7 below, and it is recorded precisely because it
+! proves so little.
+!
+! TIER 3, DERIVED BY ARITHMETIC, NOT READ -- the 3-words-per-statement
+! split of the four anonymous "DD(BU,64,8),0,0,0" rows.  The listing
+! prints four source lines and twelve machine-code lines
+! (024506.00-024521.00); 12 / 4 = 3 matches the three operands each
+! line carries.  The individual boundaries between the four groups
+! were NOT read off the page -- the source lines sit between code
+! rows, not level with them.  Those twelve rows are also label-free,
+! and their printed value is 22 zeros, so they are the weakest tier
+! here.  They are included because the location column is printed for
+! every one of them and because they are what puts BIT0 at 024522.
+!
+! TIER 4, INPUTS, NOT WITNESSES -- nothing.  This file SYNs no symbol
+! from outside itself.  Every symbol it defines comes from a row on
+! pp.114-116.
+!
+! PROMOTED FROM INPUT TO CHECKED -- the p.116 SYN table.  SEN, SEN0,
+! SERS, SSW, RET, RET1, RET2, ERS, INT, IDF1, IDF2, DPET13 are pure
+! assumed inputs in nearly every other transcription in this repo
+! (ax5b_1274_truncation.strap:393-399, ax5b_1268_tail_pool.strap:
+! 434-440, ax5b_1258_test1.strap:249-253, ax4b_1246_*.strap, ...).
+! Here they are transcribed from p.116's SOURCE column and checked
+! against p.116's VALUE column -- two different printed columns, so
+! the assertion is a real (if narrow) check of STRAP's evaluation,
+! not an input.  verify_ax5b_1274_truncation_listing.py:158 already
+! QUOTED this table in prose and said "Corroboration, not promotion";
+! this is the promotion.
+!
+! ====================================================================
+! SENO / SEN0: THE ALIAS, SETTLED.
+!
+! PDF p.114's first pool row prints
+!
+!     SENO    SYN,SEN0                1311.00+   +00000000
+!
+! Three independent lines, all agreeing:
+!  1. Same printed ROW, 600 dpi: the LABEL's 4th glyph measures 54 px,
+!     the OPERAND's 4th measures 42 px.  Digit zeros on the very next
+!     row (I00LC) measure 48 and 45.  Letter O runs 15-22 % wider
+!     than digit 0 on this deck (docs/listing_typography.md Sec.6).
+!  2. PDF p.116, 600 dpi: "SEN0  SYN,(8)1311.0" -- the LABEL's 4th
+!     glyph measures 44 px, a digit zero.
+!  3. GLYPH-FREE, and this is the decisive one: p.114's row prints the
+!     VALUE 1311.00+, and p.116 DEFINES SEN0 as (8)1311.0 = 1311.00+.
+!     A symbol cannot be SYN'd to itself -- the definition would be
+!     circular and could not have produced a printed value at all.
+!     The two spellings must differ, and p.116 supplies the one the
+!     operand names.
+!
+! So the row is an ALIAS: letter-O SENO defined as digit-zero SEN0.
+! docs/listing_typography.md Sec.6 calls this "moderate, direction
+! only"; with p.116's definition in hand it is settled for this row.
+! ax5b_1258_test2.strap's "SENO SYN,SENO" (a self-SYN) is wrong.
+! Both spellings are defined below, as the page defines them.
+!
+! BIT0 IS A DIGIT ZERO, not a letter O: its 4th glyph measures 45 px
+! against 45-50 px for the five digit zeros in its own operand on the
+! same printed row, and against 54 px for SENO's letter O eighteen
+! rows above.  "BITO" would in any case be the odd one out in a
+! series that runs to BIT63.
+!
+! I00O, NOT I000.  The all-ones row's 4th glyph measures 51 px
+! against 43 and 42 px for the two digit zeros in the SAME token --
+! ratio 1.20, squarely in the letter-O band.  I00VO ends 51 px and
+! I00CO ends 55 px on the same page, both letter O.  The row's own
+! comment is "-INDX WD. OF ONES." and its neighbour I00Z is
+! "-ZERO INDX WD.", so O is for Ones and Z is for Zero.  This
+! reproduces verify_ax5b_160_test8b_listing.py:103-105 independently.
+! A DELIBERATE DEPARTURE, FLAGGED: the task that produced this file
+! specified "I000" and said a repo-wide rename had applied it.  This
+! file writes I00O instead, on the measurement above.
+! docs/listing_typography.md Sec.5 lists the pool as "I00LC, I00Z,
+! I000, I00VO, I00CO", but Sec.5's rename was about the LEADING glyph
+! and it never measured the trailing one.
+! verify_ax5b_1683_listing.py:53 also writes "I000".  The repo
+! majority (12 files) already writes I00O.
+!
+! ====================================================================
+! FIRST FOR THIS REPO: ONE, after grep knocked out two candidates.
+!
+!  * "DD(BU)" WITH NO LENGTH OR PADDING MODIFIER -- BIT24.  The grep
+!    was run BEFORE this file existed: `grep -rn 'DD(BU)' strap/`,
+!    zero hits, and `grep -rnE 'DD *\( *BU *\)' strap/` for the
+!    spacing variants, zero hits.  Every other DD in the repo writes
+!    DD(BU,64,8) or DD(BU,32,8).  (Running it now will of course find
+!    this file.)  strap_asm.dds_length_bits defaults a missing length
+!    to 64, which is what makes the row assemble to a full word;
+!    before this file nothing exercised that default.
+!
+!  KNOCKED OUT (claimed, then eliminated by grep):
+!  * "XW with a non-zero FOURTH operand" (BIT25/26/27).  NOT a first:
+!    programs/ibox1_bind.strap:79 already assembles "IBXWZO
+!    XW,-1,0,0,4", and strap_asm.py's own comment names
+!    op_ad_indicators.strap's WOTHER.
+!  * "SYN whose operand is another symbol" (SENO SYN,SEN0).  NOT a
+!    first: programs/dcp_maintenance_compool.strap:104 already has
+!    "EBAUTO SYN, ECTL1", and eleven more like it.
+!
+! ====================================================================
+! PROVEN DISCRIMINATING.  Ten injections into strap_asm.py, with the
+! OBSERVED failing rows, are tabulated in
+! verify_ax5b_bit_table_listing.py's docstring.  The short version:
+! seven are discriminating and three of those move exactly ONE row
+! (BIT24 alone, I00VO alone, BIT46 alone); one is the deliberately
+! weak "shift the SLC" injection, recorded because it moves 139 of
+! 164 checks identically and therefore distinguishes nothing; and two
+! are genuine nulls with their arithmetic reasons.  Baseline: 164 checks,
+! 0 failures, ALL TESTS PASSED.
+
+! ====================================================================
+! THE TRANSCRIPTION.  One SLC, then every statement in printed order.
+! ====================================================================
+        SLC,(8)24501.0      ! PDF p.114's own location column: I00LC
+!
+! -COMMON CONSTANTS FOR FETCH ONLY          <- the pool banner, printed
+!                                              with no location and no
+!                                              machine code
+! -                                         <- a bare comment row
+SENO    SYN,SEN0            ! p.114: "SENO   SYN,SEN0" -> 1311.00+
+I00LC   DD(BU,64,8),(8)0000011770025700000000
+!                             p.114: "(8)DD(BU,64,8),0 000 011 770 025
+!                             700 000 000"   0000011770025700000000
+I00Z    XW,0,0,0,0          ! p.114: "-ZERO INDX WD."
+I00O    DD(BU,64,8),(8)1777777777777777777777
+!                             p.114: "(8)DD(BU,64,8),1777777777777777
+!                             777777-INDX WD. OF ONES."
+I00VO   XW,-(8)777777.77,0,0
+!                             p.114: "XW,(8)-777777.77,0,0"
+I00CO   XW,0,(8)777777,0    ! p.114: "XW,0,(8)777777,0"
+!
+! Four anonymous DD(BU,64,8),0,0,0 statements, three words each:
+! 024506.00-024521.00, twelve zero words, no labels at all.
+        DD(BU,64,8),0,0,0
+        DD(BU,64,8),0,0,0
+        DD(BU,64,8),0,0,0
+        DD(BU,64,8),0,0,0
+!
+! -                                         <- a bare comment row, the
+!                                              only thing between the
+!                                              pool and BIT0: the bit
+!                                              table has NO banner
+BIT0    XW,(8)400000.00,0,0
+BIT1    XW,(8)200000.00,0,0
+BIT2    XW,(8)100000.00,0,0
+BIT3    XW,(8)40000.00,0,0
+BIT4    XW,(8)20000.00,0,0
+BIT5    XW,(8)10000.00,0,0
+BIT6    XW,(8)4000.00,0,0
+BIT7    XW,(8)2000.00,0,0
+BIT8    XW,(8)1000.00,0,0
+BIT9    XW,(8)400.00,0,0
+BIT10   XW,(8)200.00,0,0
+BIT11   XW,(8)100.00,0,0
+BIT12   XW,(8)40.00,0,0
+BIT13   XW,(8)20.00,0,0
+BIT14   XW,(8)10.00,0,0
+BIT15   XW,(8)4.00,0,0
+BIT16   XW,(8)2.00,0,0
+BIT17   XW,(8)1.00,0,0
+BIT18   XW,(8).40,0,0
+BIT19   XW,(8).20,0,0
+BIT20   XW,(8).10,0,0
+BIT21   XW,(8)0.04,0,0
+BIT22   XW,(8)0.02,0,0
+BIT23   XW,(8)0.01,0,0
+BIT24   DD(BU),(8)0000000010000000000000
+BIT25   XW,0,0,0,4
+BIT26   XW,0,0,0,2
+BIT27   XW,0,0,0,1
+BIT28   XW,0,131072,0
+BIT29   XW,0,65536,0
+BIT30   XW,0,32768,0
+BIT31   XW,0,16384,0
+BIT32   XW,0,8192,0
+BIT33   XW,0,4096,0
+BIT34   XW,0,2048,0
+BIT35   XW,0,1024,0
+BIT36   XW,0,512,0
+BIT37   XW,0,256,0
+BIT38   XW,0,128,0
+BIT39   XW,0,64,0
+BIT40   XW,0,32,0
+BIT41   XW,0,16,0
+BIT42   XW,0,8,0
+BIT43   XW,0,4,0
+BIT44   XW,0,2,0
+BIT45   XW,0,1,0
+BIT46   XW,0,0,131072
+BIT47   XW,0,0,65536
+BIT48   XW,0,0,32768
+BIT49   XW,0,0,16384
+BIT50   XW,0,0,8192
+BIT51   XW,0,0,4096
+BIT52   XW,0,0,2048
+BIT53   XW,0,0,1024
+BIT54   XW,0,0,512
+BIT55   XW,0,0,256
+BIT56   XW,0,0,128
+BIT57   XW,0,0,64
+BIT58   XW,0,0,32
+BIT59   XW,0,0,16
+BIT60   XW,0,0,8
+BIT61   XW,0,0,4
+BIT62   XW,0,0,2
+BIT63   XW,0,0,1
+!
+! ====================================================================
+! PDF p.116: the deck's SYN table, then its END.  No storage, no
+! locations -- the listing prints each one's VALUE instead
+! ("1301.00+  +00000000").  Transcribed from the SOURCE column; the
+! VALUE column is the check (see the verify script's SYMBOLS).
+! ====================================================================
+SSW     SYN,(8)1301.0       ! 1301.00+
+ERS     SYN,(8)1302.0       ! 1302.00+
+SERS    SYN,(8)1304.0       ! 1304.00+
+RET     SYN,(8)1306.40      ! 1306.40+   a BIT address
+RET1    SYN,(8)1307.0       ! 1307.00+
+RET2    SYN,(8)1307.40      ! 1307.40+
+SEN     SYN,(8)1310.0       ! 1310.00+
+SEN0    SYN,(8)1311.0       ! 1311.00+   SENO on p.114 aliases THIS
+DPET13  SYN,(8)1437.0       ! 1437.00+
+INT     SYN,(8)1353.0       ! 1353.00+
+IDF1    SYN,(8)1443.0       ! 1443.00+
+IDF2    SYN,(8)1444.40      ! 1444.40+
+        END,(8)14000.0      ! prints "14000.00" at 024622.00

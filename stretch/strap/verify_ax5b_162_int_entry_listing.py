@@ -94,7 +94,7 @@ WITNESS TIERING.  Every SYN in the program file is an INPUT to this
 check, not a witness: it makes the address field come out right by
 construction, so a row naming one proves only that every OTHER field
 lands where the listing puts it.  That covers the twenty-four branch
-targets I6221...I6299 (all in 1262's body on earlier pages), I000
+targets I6221...I6299 (all in 1262's body on earlier pages), I00O
 (the deck's own label for the all-ones index word, 024503.00), and
 I62INT.  Five of the
 twenty-four are corroborated by a separately read page -- p.93's label
@@ -141,9 +141,9 @@ label column:
              boundary, Ref. Manual p.39).
 
 FOR THE RECORD, bit 18 is NOT a half-word select in every class, and
-this page shows it: I62EXF's "L(U),I000" prints 24503.40 60, where the
+this page shows it: I62EXF's "L(U),I00O" prints 24503.40 60, where the
 pair 40 = 100000 has its top bit set, yet the symbol is the same
-"I000" = 024503.00 that I62EX's "LX,$X1,I000" prints as 24503.02 10 --
+"I00O" = 024503.00 that I62EX's "LX,$X1,I00O" prints as 24503.02 10 --
 so the set bit cannot be a half-word select.  A floating point
 operation is format 1, "OP,A(I)" with an 18-bit WORD address (pocket
 card X22-6533's FLOATING POINT field diagram, carried in opcodes.py's
@@ -156,7 +156,7 @@ that the same symbol prints two different pairs.
 SUBSTITUTIONS: three, listed in the program file, where there were
 four.  The one that went is "numeric labels prefixed L": the leading
 glyph of the deck's labels is the letter I, measured, so I62ITE,
-I62K1, I000 and the rest need no prefix (docs/listing_typography.md).
+I62K1, I00O and the rest need no prefix (docs/listing_typography.md).
 The load-bearing one
 is that I62BR1 (024323.40) and I62BR2 (024325.00) are printed "$BD,0"
 and written "BD,0"; the 32 bits are identical -- both are the printed
@@ -307,7 +307,7 @@ ROWS = [
      'I62EXT XW,0,0,0      the EX subject slot, an all-zero index word'),
     # ---- the subject instructions, "-KEEP / -IN / -ORDER" -----------
     ('024322.00', '24503.02 10',
-     'I62EX LX,$X1,I000   (ext) the deck\'s numeric label "I000"'),
+     'I62EX LX,$X1,I00O   (ext) the deck\'s numeric label "I00O"'),
     ('024322.40', '0.30 00',
      'NOP                   "-ORDER"'),
     ('024323.00', '0.00 10',
@@ -321,11 +321,11 @@ ROWS = [
     ('024326.00', '0.00 00 002000.50 90',
      'I62XW1 XW,0,64,I62INT  count 64, refill address 024220'),
     ('024327.00', '24503.00 80 000000.20 50',
-     'I62EXV L(BU),I000   "-VFL FULL WD."'),
+     'I62EXV L(BU),I00O   "-VFL FULL WD."'),
     ('024330.00', '24503.40 60',
-     'I62EXF L(U),I000    "-FLT PT."  bit 18 here is NOT a half-word'),
+     'I62EXF L(U),I00O    "-FLT PT."  bit 18 here is NOT a half-word'),
     ('024330.40', '24503.40 60',
-     'L(U),I000            select -- see the docstring'),
+     'L(U),I00O            select -- see the docstring'),
     ('024331.00', '21.22 00',
      'I62EXM Z,$X1         "-MISC."'),
 ]

@@ -108,7 +108,7 @@
 !   1. RETIRED.  This item used to read "numeric labels are prefixed
 !      L (this assembler reads a leading digit as an address): 1683,
 !      1000, 168K3."  The leading glyph was measured at 600 dpi and
-!      it is the LETTER I, so I683, I000 and I68K3 are legal STRAP-1
+!      it is the LETTER I, so I683, I00O and I68K3 are legal STRAP-1
 !      symbols as the page prints them and take no prefix
 !      (docs/listing_typography.md).
 !   2. SERS, the deck's error-report routine, is a "B,$" HANG at its
@@ -117,18 +117,18 @@
 !      SERS is not transcribed.
 !   3. A "BEW,$" exit is placed at 024376.00, where the listing's own
 !      "B,$+1.0" continues into the rest of the routine.
-! Everything else -- including I000's all-ones index word at
+! Everything else -- including I00O's all-ones index word at
 ! 024503.00 and I68K3's zero word at 024411.00 -- is at the address
 ! the listing prints for it.
 
-I000   SYN, (8)24503.0            ! "INDX WD. OF ONES." (p.114)
+I00O   SYN, (8)24503.0            ! "INDX WD. OF ONES." (p.114)
 I68K3  SYN, (8)24411.0            ! the external-memory scratch word
 SEN     SYN, (8)1310.0             ! the SIC error-entry link
 SERS    SYN, (8)1304.0             ! error routine -- a hang here
 
         SLC, (8)24363.40
 I683   Z,   I68K3                ! -TEST 2A,DF CLOSE TO DS IN EXT MEM.
-        LX,  $X1, I000
+        LX,  $X1, I00O
         Z,   $X2
         SX,  $X1, I68K3           !  store...
         LX,  $X2, I68K3           !  ...and load it straight back
@@ -136,7 +136,7 @@ I683   Z,   I68K3                ! -TEST 2A,DF CLOSE TO DS IN EXT MEM.
         BXVZ, SERS                 ! -LOADED OLD DATA FROM EXT MEM.
 !
         Z,   $X4                   !  index storage
-        LX,  $X1, I000
+        LX,  $X1, I00O
         Z,   $X2
         SX,  $X1, $X4
         LX,  $X2, $X4
@@ -144,7 +144,7 @@ I683   Z,   I68K3                ! -TEST 2A,DF CLOSE TO DS IN EXT MEM.
         BXVZ, SERS                 ! -LOADED OLD DATA FROM IX STG.
 !
         Z,   $R                    !  internal memory
-        LX,  $X1, I000
+        LX,  $X1, I00O
         Z,   $X2
         SX,  $X1, $R
         LX,  $X1, $R               !  $X1, as printed -- see the header

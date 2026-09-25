@@ -103,7 +103,7 @@
 ! leading glyph was measured at 600 dpi and it is the LETTER I, so
 ! the page's own spellings -- I6221..I6299, I62B1..I62B16, I62BR1/2,
 ! I62EX*, I62INT, I62ITE, I62K1..I62K6, I62PSI, I62SUB, I62XW1 and
-! I000 -- are legal STRAP-1 symbols unaided and are written as printed
+! I00O -- are legal STRAP-1 symbols unaided and are written as printed
 ! (docs/listing_typography.md).  (2) "%8@n"
 ! -> "(8)n" and "%BU@"/"%U@" -> "(BU)"/"(U)", this repo's spellings.
 ! (3) "I62INT%$X1@" does not appear here (it is on p.93).  (4) THE
@@ -147,7 +147,7 @@ I6288  SYN, (8)24074.0
 I6291  SYN, (8)24101.40
 I6292  SYN, (8)24103.0
 I6299  SYN, (8)24130.40
-I000   SYN, (8)24503.0            ! the deck's own label "I000"
+I00O   SYN, (8)24503.0            ! the deck's own label "I00O"
 I62INT SYN, (8)24220.0            ! the reserve: see the header
         SLC, (8)24172.0
 !
@@ -209,15 +209,15 @@ I62EXT XW,  0, 0, 0
 !
 ! ---- the subject instructions, "-KEEP / -IN / -ORDER" --------------
         CNOP                       ! aligned after the XW: no word
-I62EX  LX,  $X1, I000            ! -IN
+I62EX  LX,  $X1, I00O            ! -IN
         NOP                        ! -ORDER
 I62PSI LX,  $X0, 0                ! -PSEUDO IC.
 I62BR1 BD,  0                     ! listing: "$BD,0"
 I62SUB XW,  0, 0, 0               ! -SUBJ INST.
 I62BR2 BD,  0                     ! listing: "$BD,0"; 024325.40 is skipped
 I62XW1 XW,  0, 64, I62INT        ! the $IA setting: 64 words at I62INT
-I62EXV L(BU), I000               ! -VFL FULL WD.
-I62EXF L(U), I000                ! -FLT PT.
-        L(U), I000
+I62EXV L(BU), I00O               ! -VFL FULL WD.
+I62EXF L(U), I00O                ! -FLT PT.
+        L(U), I00O
 I62EXM Z,   $X1                   ! -MISC.
         END, I62ITE

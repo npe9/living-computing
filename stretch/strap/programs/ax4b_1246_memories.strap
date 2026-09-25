@@ -1,0 +1,475 @@
+! ax4b_1246_memories.strap -- jb_ax4b "I-BOX 4", routine 1246 "TEST
+! TRANSMIT AND SWAP", the MEMORY-PAIRING sub-tests of TEST 1 ("THE
+! NINE POSSIBILITIES OF ADDRESS COMBINATIONS").  Four of the eight
+! sub-tests the two sibling files leave untranscribed:
+!
+!   PDF p.101  006772.00-007021.40  TEST 1B, EXT MEM TO IX STG   44 rows
+!   PDF p.102  007022.00-007051.40  TEST 1C, EXT MEM TO INT MEM  44 rows
+!   PDF p.103  007052.00-007101.40  TEST 1D, IX STG TO EXT MEM   44 rows
+!   PDF p.106  007162.00-007211.40  TEST 1G, INT MEM TO EXT MEM  44 rows
+!
+! 176 printed rows, all transcribed VERBATIM from the page at 400 dpi
+! and checked against the machine code the listing prints beside each
+! source line by verify_ax4b_1246_memories_listing.py.
+!
+! WHY THESE FOUR AND NOT ALL EIGHT.  The nine sub-tests are a 3x3 of
+! SENDING x RECEIVING memory.  Reading off the eight pages:
+!
+!         receiving ->   EXT (I46D2)   IX ($X3)      INT ($R)
+!   sending EXT (I46D4)  1A p.100      1B p.101      1C p.102
+!   sending IX  ($X4)    1D p.103      1E p.104      1F p.105
+!   sending INT ($L)     1G p.106      1H p.107      1I p.108
+!
+! 1A is already transcribed (verify_ax4b_1246_transmit_swap_listing.py).
+! WITHIN ROUTINE 1246 -- the scope matters, and the grep paragraph
+! below says why -- a new operand kind first appears in exactly four
+! places: 1B is the routine's first index register in TRANSMIT's A2
+! half-word field, 1C its first internal-memory register in either
+! field, 1D its first index register in TRANSMIT's A1 24-bit BIT
+! field, 1G its first internal-memory register in A1.  Repo-wide none
+! of that is a first; jb_ax5b's routine 160 got there with TI.
+! 1E (007102.00, p.104), 1F (007132.00, p.105), 1H (007212.00,
+! p.107) and 1I (007242.00, p.108) are cross-products of operand kinds
+! all four of which are already witnessed here; they add rows, not
+! kinds, and are left untranscribed on purpose, with their octal
+! addresses recorded so a later pass can pick them up.
+!
+! ---------------------------------------------------------------------
+! WHAT 1B-1I ADD OVER 1A -- the verdict, stated in the deck's own terms.
+!
+! NOT ONE NEW MNEMONIC.  Every operation in these four sub-tests --
+! Z, LX, SX, T, L(BU), BZRZ, SIC, B, KV, KC, BXE, SR, KVI, BXF, BRZ,
+! BD, V+ -- already has a row in TEST 1A, which the sibling
+! transcribed.  The 1A transcriber's note that 1B "is a near-clone of
+! 1A with $X3 for I46D2 and adds rows, not kinds" is RIGHT about
+! mnemonics and about the shape of the block: the 44 rows are in the
+! same order, with the same branch targets relative to the block, and
+! the same six error pairs.
+!
+! IT IS WRONG THAT NOTHING IS NEW.  The substitution changes the KIND
+! of the operand, not only its value.  In 1A, both of TRANSMIT's
+! address fields name external-memory constants.  Here A1 and A2 take
+! REGISTER addresses -- words 0o10 ($L), 0o11 ($R), 0o23 ($X3), 0o24
+! ($X4) -- and so do eleven DirIndex rows per page ("Z,$X3", "Z,$R",
+! "Z,$L", "SX,$X1,$X4", "SX,$X1,$L", "LX,$X2,$X3", "LX,$X2,$R",
+! "L(BU),$X3", "L(BU),$R").  Those rows are a REAL check, not a SYN-fed
+! one: $R and $L come from opcodes.SYSTEM_SYMBOLS, which this repo
+! entered from C22-6531 Appendix A (printed p.56) as word 9 ("Right
+! Half of Accumulator") and word 8 ("Left Half of Accumulator"), and
+! $X0..$X15 from Reference Manual printed p.23 (PDF p.26, footer
+! "Operand Designation  23"), read first-hand for this file: "the
+! corresponding index word X1-X15 will be used in the operation.
+! These words are in storage locations 17-31.  When the field J is 0,
+! storage location 16 is used in the operation.  This location is
+! named X0."  IBM's own assembler printed 000023 for $X3 and 000011
+! for $R; this transcription checks the repo's table against that.
+!
+! AND NOTHING HERE IS A REPO FIRST -- grep over every other
+! verify_*.py and programs/*.strap knocked out three claims an earlier
+! draft made, and the eliminations are recorded because they are worth
+! more than the claims were:
+!   - no MNEMONIC is a first; all seventeen appear in between 3 and
+!     138 other verify_*.py files.
+!   - $R and $L already have listing rows behind SYSTEM_SYMBOLS:
+!     verify_ax5b_1683_listing.py "Z,$R" -> 11.22 00 at 024372.40,
+!     verify_fp_arith_f204c_listing.py "Z,$L" -> 10.22 00 at
+!     012617.00, verify_ax5b_162_test1b_listing.py "L(BU),$R" and
+!     "L(BU),$L".
+!   - registers in TRANSMIT's address fields are not new either:
+!     verify_ax5b_160_test6_listing.py prints "TI,1,$IND,$X1" and
+!     verify_ax5b_16087_listing.py "TI,1,BIT0($X1),$IND".
+! What survives is narrow: these are the first PLAIN T rows (direct
+! count, bit 56 = 0) with a register in either address field -- every
+! earlier register-address transmit in the repo is a TI -- and $R/$L
+! have not been in a TRANSMIT address field before.  So the operand
+! kind is new to ROUTINE 1246, not to the repository, which makes the
+! 1A transcriber's verdict very nearly right rather than wrong.
+!
+! ---------------------------------------------------------------------
+! EVERY HEADING AND ERROR MESSAGE IN RANGE, VERBATIM, with the octal
+! location of the SIC that reports it.  Each error is the two-half-word
+! pair "SIC,SEN" then "B,SERS", with the printed comment beside it.
+!
+!   PDF p.101, TEST 1B (label I462, 006772.00):
+!     heading   -TEST 1B,EXT MEM TO IX STG.
+!     006776.40 -TRANSMIT 1 WD EXT MEM TO
+!               -IX STG DROPS ALL BITS,
+!     007001.40 -ABOVE TYPE TRANSMIT LOSES SOME
+!               -OF BITS 0-24.
+!     007003.40 -ABOVE TYPE TRANSMIT LOSES SOME
+!               -OF BITS 28-45.
+!     007006.00 -ABOVE TYPE TRANSMIT LOSES SOME
+!               -OF BITS 46 TO 63.
+!     007010.00 -ABOVE TYPE TRANSMIT LOSES
+!               -BIT 25.
+!     007015.00 -ABOVE TYPE TRANSMIT PICKS
+!               -UP SOME BITS 0-63.
+!     I4611 at 007011.00 carries -CHECK FOR SPURIOUS BITS.
+!     007017.40 -TO SSIP.   007020.40 -UPDATE CONTINUITY CHECK.
+!
+!   PDF p.102, TEST 1C (label I463, 007022.00):
+!     heading   -TEST 1C, EXT MEM TO INT MEM.
+!     007026.40 -TRANSMIT 1 WD EXT MEM TO
+!               -INT MEM DROPS ALL BITS.
+!     007031.40 / 007033.40 / 007036.00 / 007040.00 / 007045.00 carry
+!     the same five "ABOVE TYPE TRANSMIT" pairs, word for word, as
+!     TEST 1B above.  I4612 at 007041.00 carries -CHECK FOR SPURIOUS
+!     BITS.   007047.40 -TO SSIP.   007050.40 -UPDATE CONTINUITY CHECK.
+!
+!   PDF p.103, TEST 1D (label I464, 007052.00):
+!     heading   -TEST 1D, IX STG TO, EXT MEM.
+!     007056.40 -TRANSMIT 1 WD IX CORE STG TO
+!               -EXT MEM DROPS ALL BITS.
+!     007061.40 / 007063.40 / 007066.00 / 007070.00 / 007075.00 the
+!     same five pairs.  I4613 at 007071.00 -CHECK FOR SPURIOUS BITS.
+!     007077.40 -TO SSIP.   007100.40 -UPDATE CONTINUITY CHECK.
+!
+!   PDF p.106, TEST 1G (label I467, 007162.00):
+!     heading   -TEST 1G, INT MEM TO EXT MEM.
+!     007166.40 -TRANSMIT 1 WD INT MEM TO
+!               -EXT MEM DROPS ALL BITS.
+!     007171.40 / 007173.40 / 007176.00 / 007200.00 / 007205.00 the
+!     same five pairs.  I4616 at 007201.00 -CHECK FOR SPURIOUS BITS.
+!     007207.40 -TO SSIP.   007210.40 -UPDATE CONTINUITY CHECK.
+!
+! TWO DECK TYPOS, both settled by comparing the suspect glyph with a
+! correct instance of the SAME character, and both a clean wrong
+! character rather than a ragged correct one -- so TYPO, not damage:
+!
+!   1. PDF p.101, 006777.00, "-IX STG DROPS ALL BITS,"  -- the line
+!      ends with a COMMA where its eight siblings end with a PERIOD.
+!      At 400 dpi the mark has the period's round bowl AND a tail that
+!      descends below the baseline, exactly like the commas in
+!      "-TEST 1B,EXT MEM..." on the same page; the period two lines
+!      below it, "-OF BITS 0-24.", is a bare round bowl with no tail,
+!      and PDF p.102's "-INT MEM DROPS ALL BITS." -- the same sentence
+!      one sub-test later -- is a bare bowl too.  DECK TYPO, a clean
+!      WRONG character.
+!
+!   2. PDF p.103, 007052.00, "-TEST 1D, IX STG TO, EXT MEM."  -- a
+!      stray COMMA after "TO".  The glyph is identical in shape and
+!      weight to the legitimate comma after "1D" eight characters
+!      earlier on the SAME line, and the line's final period is a bare
+!      bowl.  Every other heading in TEST 1 reads "<FROM> TO <TO>."
+!      with no comma there.  DECK TYPO, a clean WRONG character.
+!
+! Two more typographic facts found on pages this file does NOT
+! transcribe, recorded so they are not re-discovered:
+!   - PDF p.104's heading prints "-TEST 1E,IX STG TO IX STGZ."  The
+!     trailing Z is a clean, fully-formed Z, identical in weight to
+!     the Z's of "BZRZ" and "Z,$X3" on the same page, with no ragged
+!     stroke anywhere -- DECK TYPO (a struck-over character), not scan
+!     damage.
+!   - PDF p.108, 007270.40, prints "-UPDATE CONTINUITY." where pp.101
+!     through 107 all print "-UPDATE CONTINUITY CHECK."  There is no
+!     ghost of a dropped word after the period; it is a real textual
+!     variation in the deck, not damage.
+!
+! ---------------------------------------------------------------------
+! BRANCH POLARITY.  B<IND> branches when the indicator is ON, BZ<IND>
+! when it is OFF.  BOTH error shapes exist in these decks; THESE rows
+! are uniformly "the BRANCH is the OK path, the FALL-THROUGH is the
+! error pair".  "BZRZ,$+2.0" at 006776.00 skips over the SIC/B pair
+! when Result Zero is OFF -- the all-ones word did arrive -- and falls
+! into "-TRANSMIT 1 WD EXT MEM TO -IX STG DROPS ALL BITS," when it is
+! ON.  "BRZ,$+1.32" at 007014.40 is the mirror image: OK when Result
+! Zero is ON, error when it is off.  The three BXE and one BXF in each
+! sub-test are the same shape.  Nothing here requires an indicator to
+! be SET; the requirement is always the branch.
+!
+! ---------------------------------------------------------------------
+! SUBSTITUTIONS, three, all mechanical, none touching a bit.  The
+! printed source is quoted verbatim in the trailing comment wherever
+! the spelling here differs:
+!   "%8@"    -> "(8)"      (the listing's radix-prefix glyph)
+!   "L%BU@"  -> "L(BU)"    (the listing's modifier-parenthesis glyph)
+!   T's J field "$X1" -> "1".  Reference Manual printed p.30: "the
+!   field J, bits 51-54, specifies an index register".  The printed J
+!   field IS 1 in every T row here, so the substitution is CHECKED by
+!   the oracle, not assumed.
+! No location in this range prints a location without machine code, so
+! nothing is SLC'd across and no word is invented.
+!
+! ---------------------------------------------------------------------
+! EXTERNAL SYMBOLS are given by SYN at the addresses these very rows
+! print for them, so a row naming one checks its opcode and modifier
+! bits ONLY.  The symbols DEFINED INSIDE this transcription (I462,
+! I4611, I463, I4612, I464, I4613, I467, I4616) fall out of the
+! location counter and ARE real address checks.
+!
+! BIT1..BIT3 and BIT6 complete a sequence the two siblings had only
+! the ends of.  BIT0 013054.00 is TEST 1A's continuity bit; BIT9,
+! BIT10, BIT11 at 013065/013066/013067 are TEST 2A, 2B, 2C's.  These
+! four pages supply BIT1 013055.00 (1B), BIT2 013056.00 (1C), BIT3
+! 013057.00 (1D) and BIT6 013062.00 (1G), and pp.104/105/107/108 print
+! BIT4 013060, BIT5 013061, BIT7 013063, BIT8 013064 for 1E/1F/1H/1I.
+! Twelve consecutive words, one per sub-test, in heading order --
+! which corroborates the sub-test ordering independently of the
+! headings, and matches ICK246 = (8)777700.00, the expected continuity
+! value the sibling transcribed at 007423.00: as an 18-bit field that
+! is bits 0-11 set, exactly TWELVE bits, nine for TEST 1 and three for
+! TEST 2.  The deck's own constant says TEST 1 has nine sub-tests.
+! ---------------------------------------------------------------------
+
+SEN     SYN, (8)1310.0              ! SSIP's error-note link
+SENO    SYN, (8)1311.0              ! SSIP's other-note link
+SERS    SYN, (8)1304.0              ! SSIP's error-report entry
+SSW     SYN, (8)1301.0              ! SSIP's sense-switch entry
+I00O    SYN, (8)13035.0             ! common constant: all ones
+BIT1    SYN, (8)13055.0             ! common constant: bit 1 only
+BIT2    SYN, (8)13056.0             ! common constant: bit 2 only
+BIT3    SYN, (8)13057.0             ! common constant: bit 3 only
+BIT6    SYN, (8)13062.0             ! common constant: bit 6 only
+BIT45   SYN, (8)13131.0             ! common constant: bit 45 only = count 1
+
+! ---------------------------------------------------------------------
+! PDF pp.101-103, 006772.00-007101.40.  TEST 1B, TEST 1C and TEST 1D,
+! 132 printed rows, contiguous behind ONE SLC.
+! ---------------------------------------------------------------------
+        SLC, (8)6772.0
+
+! -TEST 1B,EXT MEM TO IX STG.       (PDF p.101)
+I462    Z,   $X3
+        LX,  $X1, I00O
+        SX,  $X1, I46D4
+        LX,  $X1, BIT45             ! count field = 1 (RefMan p.30)
+        T,   1, I46D4, $X3          ! listing "T,$X1,I46D4,$X3"
+        L(BU), $X3
+        BZRZ, $+2.0                 ! OK path: the word arrived non-zero
+        SIC, SEN                    ! -TRANSMIT 1 WD EXT MEM TO
+        B,   SERS                   ! -IX STG DROPS ALL BITS,
+        B,   I4611
+
+        LX,  $X2, $X3
+        KV,  $X2, I00O
+        BXE, $+1.32
+        SIC, SEN                    ! -ABOVE TYPE TRANSMIT LOSES SOME
+        B,   SERS                   ! -OF BITS 0-24.
+
+        KC,  $X2, I00O
+        BXE, $+1.32
+        SIC, SEN                    ! -ABOVE TYPE TRANSMIT LOSES SOME
+        B,   SERS                   ! -OF BITS 28-45.
+
+        SR,  $X2, $X2
+        KVI, $X2, (8)777777.0       ! listing "KVI,$X2,%8@777777.0"
+        BXE, $+1.32
+        SIC, SEN                    ! -ABOVE TYPE TRANSMIT LOSES SOME
+        B,   SERS                   ! -OF BITS 46 TO 63.
+
+        LX,  $X2, $X2
+        BXF, $+1.32
+        SIC, SEN                    ! -ABOVE TYPE TRANSMIT LOSES
+        B,   SERS                   ! -BIT 25.
+
+I4611   Z,   $X3                    ! -CHECK FOR SPURIOUS BITS.
+        Z,   I46D4
+        LX,  $X1, BIT45
+        T,   1, I46D4, $X3          ! listing "T,$X1,I46D4,$X3"
+        L(BU), $X3
+        BRZ, $+1.32                 ! OK path: nothing was picked up
+        SIC, SEN                    ! -ABOVE TYPE TRANSMIT PICKS
+        B,   SERS                   ! -UP SOME BITS 0-63.
+
+        B,   $+1.0
+        BD,  I462
+        SIC, SENO+.32
+        B,   SSW                    ! -TO SSIP.
+        BD,  $+.32
+
+        LX,  $X13, IC246            ! -UPDATE CONTINUITY CHECK.
+        V+,  $X13, BIT1             ! TEST 1B"s continuity bit
+        SX,  $X13, IC246
+
+! -TEST 1C, EXT MEM TO INT MEM.     (PDF p.102)
+I463    Z,   $R
+        LX,  $X1, I00O
+        SX,  $X1, I46D4
+        LX,  $X1, BIT45
+        T,   1, I46D4, $R           ! listing "T,$X1,I46D4,$R"
+        L(BU), $R
+        BZRZ, $+2.0                 ! OK path: the word arrived non-zero
+        SIC, SEN                    ! -TRANSMIT 1 WD EXT MEM TO
+        B,   SERS                   ! -INT MEM DROPS ALL BITS.
+        B,   I4612
+
+        LX,  $X2, $R
+        KV,  $X2, I00O
+        BXE, $+1.32
+        SIC, SEN                    ! -ABOVE TYPE TRANSMIT LOSES SOME
+        B,   SERS                   ! -OF BITS 0-24.
+
+        KC,  $X2, I00O
+        BXE, $+1.32
+        SIC, SEN                    ! -ABOVE TYPE TRANSMIT LOSES SOME
+        B,   SERS                   ! -OF BITS 28-45.
+
+        SR,  $X2, $X2
+        KVI, $X2, (8)777777.0       ! listing "KVI,$X2,%8@777777.0"
+        BXE, $+1.32
+        SIC, SEN                    ! -ABOVE TYPE TRANSMIT LOSES SOME
+        B,   SERS                   ! -OF BITS 46 TO 63.
+
+        LX,  $X2, $X2
+        BXF, $+1.32
+        SIC, SEN                    ! -ABOVE TYPE TRANSMIT LOSES
+        B,   SERS                   ! -BIT 25.
+
+I4612   Z,   $R                     ! -CHECK FOR SPURIOUS BITS.
+        Z,   I46D4
+        LX,  $X1, BIT45
+        T,   1, I46D4, $R           ! listing "T,$X1,I46D4,$R"
+        L(BU), $R
+        BRZ, $+1.32                 ! OK path: nothing was picked up
+        SIC, SEN                    ! -ABOVE TYPE TRANSMIT PICKS
+        B,   SERS                   ! -UP SOME BITS 0-63.
+
+        B,   $+1.0
+        BD,  I463
+        SIC, SENO+.32
+        B,   SSW                    ! -TO SSIP.
+        BD,  $+.32
+
+        LX,  $X13, IC246            ! -UPDATE CONTINUITY CHECK.
+        V+,  $X13, BIT2             ! TEST 1C"s continuity bit
+        SX,  $X13, IC246
+
+! -TEST 1D, IX STG TO, EXT MEM.     (PDF p.103; the comma after TO is
+!                                    the deck's own typo, see header)
+I464    Z,   I46D2
+        LX,  $X1, I00O
+        SX,  $X1, $X4
+        LX,  $X1, BIT45
+        T,   1, $X4, I46D2          ! listing "T,$X1,$X4,I46D2"
+        L(BU), I46D2
+        BZRZ, $+2.0                 ! OK path: the word arrived non-zero
+        SIC, SEN                    ! -TRANSMIT 1 WD IX CORE STG TO
+        B,   SERS                   ! -EXT MEM DROPS ALL BITS.
+        B,   I4613
+
+        LX,  $X2, I46D2
+        KV,  $X2, I00O
+        BXE, $+1.32
+        SIC, SEN                    ! -ABOVE TYPE TRANSMIT LOSES SOME
+        B,   SERS                   ! -OF BITS 0-24.
+
+        KC,  $X2, I00O
+        BXE, $+1.32
+        SIC, SEN                    ! -ABOVE TYPE TRANSMIT LOSES SOME
+        B,   SERS                   ! -OF BITS 28-45.
+
+        SR,  $X2, $X2
+        KVI, $X2, (8)777777.0       ! listing "KVI,$X2,%8@777777.0"
+        BXE, $+1.32
+        SIC, SEN                    ! -ABOVE TYPE TRANSMIT LOSES SOME
+        B,   SERS                   ! -OF BITS 46 TO 63.
+
+        LX,  $X2, $X2
+        BXF, $+1.32
+        SIC, SEN                    ! -ABOVE TYPE TRANSMIT LOSES
+        B,   SERS                   ! -BIT 25.
+
+I4613   Z,   I46D2                  ! -CHECK FOR SPURIOUS BITS.
+        Z,   $X4
+        LX,  $X1, BIT45
+        T,   1, $X4, I46D2          ! listing "T,$X1,$X4,I46D2"
+        L(BU), I46D2
+        BRZ, $+1.32                 ! OK path: nothing was picked up
+        SIC, SEN                    ! -ABOVE TYPE TRANSMIT PICKS
+        B,   SERS                   ! -UP SOME BITS 0-63.
+
+        B,   $+1.0
+        BD,  I464
+        SIC, SENO+.32
+        B,   SSW                    ! -TO SSIP.
+        BD,  $+.32
+
+        LX,  $X13, IC246            ! -UPDATE CONTINUITY CHECK.
+        V+,  $X13, BIT3             ! TEST 1D"s continuity bit
+        SX,  $X13, IC246
+
+! ---------------------------------------------------------------------
+! PDF p.106, 007162.00-007211.40.  TEST 1G, 44 printed rows, its own
+! SLC.  TEST 1E (007102.00-007131.40, PDF p.104) and TEST 1F
+! (007132.00-007161.40, PDF p.105) lie between this block and the one
+! above and are NOT transcribed -- see the header for why.
+! ---------------------------------------------------------------------
+        SLC, (8)7162.0
+
+! -TEST 1G, INT MEM TO EXT MEM.     (PDF p.106)
+I467    Z,   I46D2
+        LX,  $X1, I00O
+        SX,  $X1, $L
+        LX,  $X1, BIT45
+        T,   1, $L, I46D2           ! listing "T,$X1,$L,I46D2"
+        L(BU), I46D2
+        BZRZ, $+2.0                 ! OK path: the word arrived non-zero
+        SIC, SEN                    ! -TRANSMIT 1 WD INT MEM TO
+        B,   SERS                   ! -EXT MEM DROPS ALL BITS.
+        B,   I4616
+
+        LX,  $X2, I46D2
+        KV,  $X2, I00O
+        BXE, $+1.32
+        SIC, SEN                    ! -ABOVE TYPE TRANSMIT LOSES SOME
+        B,   SERS                   ! -OF BITS 0-24.
+
+        KC,  $X2, I00O
+        BXE, $+1.32
+        SIC, SEN                    ! -ABOVE TYPE TRANSMIT LOSES SOME
+        B,   SERS                   ! -OF BITS 28-45.
+
+        SR,  $X2, $X2
+        KVI, $X2, (8)777777.0       ! listing "KVI,$X2,%8@777777.0"
+        BXE, $+1.32
+        SIC, SEN                    ! -ABOVE TYPE TRANSMIT LOSES SOME
+        B,   SERS                   ! -OF BITS 46 TO 63.
+
+        LX,  $X2, $X2
+        BXF, $+1.32
+        SIC, SEN                    ! -ABOVE TYPE TRANSMIT LOSES
+        B,   SERS                   ! -BIT 25.
+
+I4616   Z,   I46D2                  ! -CHECK FOR SPURIOUS BITS.
+        Z,   $L
+        LX,  $X1, BIT45
+        T,   1, $L, I46D2           ! listing "T,$X1,$L,I46D2"
+        L(BU), I46D2
+        BRZ, $+1.32                 ! OK path: nothing was picked up
+        SIC, SEN                    ! -ABOVE TYPE TRANSMIT PICKS
+        B,   SERS                   ! -UP SOME BITS 0-63.
+
+        B,   $+1.0
+        BD,  I467
+        SIC, SENO+.32
+        B,   SSW                    ! -TO SSIP.
+        BD,  $+.32
+
+        LX,  $X13, IC246            ! -UPDATE CONTINUITY CHECK.
+        V+,  $X13, BIT6             ! TEST 1G"s continuity bit
+        SX,  $X13, IC246
+
+! ---------------------------------------------------------------------
+! INPUT, NOT A WITNESS.  The routine's constant block, PDF pp.112-113,
+! 007422.00-007434.00.  Re-laid here so that the symbols it defines are
+! LOCATION-COUNTER values under one SLC rather than SYN inputs, exactly
+! as programs/ax4b_1246_modifiers.strap does.  Not one of these rows is
+! asserted by this file's verify script; they are asserted by
+! verify_ax4b_1246_transmit_swap_listing.py.
+! ---------------------------------------------------------------------
+        SLC, (8)7422.0
+IC246   XW,  0, 0, 0
+ICK246  XW,  (8)777700.00, 0, 0
+
+I46D1   XW,  0, 0, 0
+I46D2   XW,  0, 0, 0
+I46D3   XW,  0, 0, 0
+I46D4   XW,  0, 0, 0
+I46D5   XW,  0, 0, 0
+I46D6   XW,  0, 0, 0
+
+I46XW1  XW,  (8)777777.77, 0, 0     ! value = all 24 address bits
+I46XW2  XW,  0, (8)777777, 0        ! count = all 18 bits, 28-45
+I46XW3  XW,  0, 0, (8)777777        ! refill = all 18 bits, 46-63
+
+        END, I462
