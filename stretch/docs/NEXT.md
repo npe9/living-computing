@@ -512,33 +512,38 @@ with a fresh `LX` before testing them, so the oracle is silent too.
 This is the same open question § 6 already records; it now has a second
 instance.
 
-**REMAINING ON THIS ITEM, in order:**
+**REMAINING ON THIS ITEM — REWRITTEN 2026-09-25, because the first two
+entries were DONE and this file still listed them as open.**
 
-1. **IF CLASS 1 — "the location of each instruction to be executed".**
-   This is the half TEST 8C actually tests, so it is the one with a
-   deck acceptance test waiting. What it needs, read out of the model
-   2026-09-24:
-   * The signal belongs at **dispatch**, not at `fetchReq`: the
-     instruction buffers prefetch speculatively and p.32 monitors only
-     instructions *to be executed*, so a prefetched-but-never-executed
-     word must not raise it.
-   * `rl_prepare` is that point — but setting the indicator there
-     directly makes a second writer of `indicators` in a rule that
-     already calls `execute()`, which is the documented G0004 shape.
-     Compute it **inside `execute()` from `pc`** instead; every
-     dispatch path (I-box direct, E-box via a look-ahead level, the
-     side-effect-free probe) passes the instruction's own `pc`.
-   * p.32's exemption then has to be threaded: "with the exception of
-     the single instructions at the effective interruption address
-     which are executed when an interruption occurs." `rl_prepare`
-     knows this as `isValid(intPC)`; `execute()` does not. One `Bool`
-     through `ebox.exec`/`ebox.start` and the `held` tuple.
-   * p.50 adds a second exemption for `EX`: "An effective address of
-     EXECUTE that is below 32.00 ... is not monitored ... indicator IF
-     cannot be actuated by these addresses." Moot until `EX` exists.
+~~1. IF CLASS 1~~ — **DONE**, commit `5fbb8b0`. `execute()` carries
+`if (!atIntAddr) ind = ifSignal(st, pc[18:1], ind);` and
+`programs/if_branch_alarm.strap` + `StretchIfBrTb` is wired into the
+suite. Everything the old entry prescribed was followed: the signal
+sits at dispatch rather than `fetchReq`, it is computed inside
+`execute()` from `pc` to avoid the G0004 second-writer shape, and
+p.32's interruption-address exemption is threaded as one `Bool`.
 
-2. **The mask-dependent half of DF, DS and IF** — TEST 8C case 4 is
-   the oracle for DF/IF, TEST 8B for DS.
+~~2. The mask-dependent half of DF, DS and IF~~ — **DONE for DF and
+IF, and WRONG ABOUT DS.** IF's landed with class 2; DF's landed in
+`9b49f3a` (the four class-1 sites), `939605f` (the fifth site and the
+six refill sites). **DS has no mask-dependent half to implement**:
+printed p.32 says *"Since this indicator is permanently masked on,
+storing in core storage is always suppressed, and the operation is
+always terminated"*, and mask bits 0-19 are permanently one. The
+model's own comment above `protViolates` has said so all along. This
+entry asked for something that cannot exist.
+
+**HOW BOTH ENTRIES WENT STALE IS THE SAME SHAPE THIS FILE KEEPS
+RECORDING.** Neither was miscounted or mis-implemented — the work was
+done, committed, and wired in, and nobody re-read the list that said it
+was pending. A plan item is a claim about the CURRENT STATE, and a
+claim about state decays silently: nothing fails, nothing warns, and
+the next reader is handed work that is already finished or impossible.
+This is the fourth instance in two days, after "DF has no deck oracle
+anywhere", "class 1 is complete", and two agent briefs asserting a
+block was untranscribed. **Before handing out an item from this list,
+check it against the code and the suite — the same way you would grep
+before claiming a block is untranscribed.**
 
 3. **p.32's branch-SUPPRESSION clause still has no deck test anywhere
    in this corpus** — "the entire branch operation, including any
