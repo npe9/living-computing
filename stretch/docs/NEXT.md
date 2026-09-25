@@ -589,10 +589,68 @@ round trip**, since it plants an arbitrary instruction through
 
 ## 3. Smaller open pieces inside what is built
 
-* **Interruption timing.** p.48 permits an interruption at an
-  *instruction* boundary; this model takes it at a *quiescent* one
-  (look-ahead empty, E-box idle). Later, never earlier. Stated in
-  `StretchCore.bsv`, `run_tests.sh` and `bsv/README.md`.
+* **Interruption timing. MEASURED AND MOSTLY CLOSED, 2026-09-25.**
+  This bullet's claim was tested rather than believed, and it was
+  right about the *conclusion* and wrong about the *mechanism*.
+
+  **The mechanism it names does not apply.** It says a `BD` clears a
+  pending interruption because the I-box races past the provoking
+  instruction. It does not race: `iboxHazard`'s `BranchOrMisc` arm is
+  `h = (x.code != 3'b110)`, so every unconditional branch — `BD`
+  included — drains the look-ahead before it executes (Perf. Char.
+  p.3-18, *"BD … empty the LA completely"*). **The real cause was one
+  term**: `armInterrupt` waited for `ebusy == 0`, the CHARGED TIME of
+  the instruction just removed from a look-ahead level — not a
+  structural busy, and not something `rl_prepare` waits for. So every
+  I-box instruction that fitted inside the E-box's charged budget ran
+  first, `BD` among them.
+
+  **How late, measured.** `programs/int_timing_bracket.strap`: a VFL
+  `ST` whose store is suppressed (DS, indicator 19, permanently
+  masked), bracketed `BE` / `ST` / `BD`, with N `NOP`s of slack before
+  the `BD`. Observed halts, before the fix: N=0 → 004110.40 (`CHK`,
+  no interruption), N=1 → 004111.00, N=2 → 004111.40, **N=3 → PASS**,
+  N=4 → PASS. **Three instructions of lateness where p.48 allows zero
+  and the deck leaves one.**
+
+  **Fixed, by deleting one term from one predicate** in
+  `StretchCore.bsv`: `armInterrupt` no longer waits for `ebusy`. The
+  bracket program then passes at N=0, halting at 004113.00 (`PASS`).
+
+  **There is a SECOND line in the change, and NOTHING TESTS IT.**
+  `rl_interrupt` now ends with `ebusy <= eb;`, as every other arm
+  does. It is necessary — before the fix `rl_interrupt` could not fire
+  while `ebusy != 0`, so it never had to decrement it; now it can, and
+  without the line the E-box's charged clock would freeze for one
+  cycle. But no injection removes it and no test could see it if it
+  were wrong: the three `CYCLES<=` benchmarks never enable the
+  interruption system, and the tests that do interrupt check halt
+  addresses, not cycles. Stated here rather than left to be found.
+
+  **The other candidate was measured and ruled out.** `interruptDue()`
+  is latched — an every-clock rule publishing its answer one clock
+  after the indicator is written — and its own comment says that clock
+  is one "which no program can observe". Restoring the latch with the
+  `ebusy` term already gone, the bracket program still passes. So the
+  latch is not what the deck's bracket would have caught, the comment
+  stands, and `StretchStorage.bsv` is left alone.
+
+  **What is still open, and it is the harder half.** An I-box-class
+  instruction the I-box has already run AHEAD of a pending level is
+  committed and cannot be taken back, so an indicator set by a level
+  is still not reported before an I-box instruction that overtook it.
+  `iboxHazard` keeps that narrow — unconditional branches, branches on
+  non-index indicators and stores to E-box registers all drain first —
+  but does not close it. Closing it needs the look-ahead to be able to
+  unwind, which is the `recover` path generalised from wrong-way
+  branches to interruptions.
+
+  **`run_tests.sh` is STALE on this** (two places: the
+  `df_data_fetch_alarm` note near "THE NOPS AFTER EACH STORE ARE NOT
+  PADDING", and the `interrupt_pg0` note "NOT IMPLEMENTED, stated in
+  StretchCore"), and the bracket program is **not yet in the suite**.
+  Its run line is
+  `run "…" ./run_program.sh programs/int_timing_bracket.strap StretchIntTimingTb "PC=4246"`.
 
   **THE DISCRIMINATOR EXISTS AND IS ALREADY IN `strap/programs/`** —
   found 2026-09-24 after an 839-page sweep that expected it elsewhere.

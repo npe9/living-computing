@@ -263,24 +263,63 @@ module mkStretchCore(StretchCore);
   // rather than this file.
   Maybe#(Tuple2#(Bit#(6), WordAddr)) intDue = st.interruptDue();
 
-  // WHEN IT FIRES, AND THE SIMPLIFICATION THAT IS.  p.48: "Interruption
-  // is permitted after the execution of an instruction is completed,
-  // terminated, or suppressed and before execution of the next
-  // instruction" -- an INSTRUCTION boundary.  This model fires it at a
-  // QUIESCENT boundary instead: look-ahead empty, E-box idle, no
-  // instruction's time budget still running.  On the real machine an
-  // interruption drains the look-ahead, so the two coincide whenever
-  // the levels are empty; where they differ, this one is LATER, never
-  // earlier, and an instruction already loaded into a level will
-  // complete before the interruption is taken.  Stated here, in
-  // run_tests.sh and in bsv/README.md rather than left to be
-  // discovered, and the test's instruction stream is written so the
-  // two conditions coincide -- otherwise the test would be evidence
-  // only about the weaker rule.
+  // WHEN IT FIRES.  p.48 says it twice, and the second is the sharper
+  // one.  "Interruption Action": "Interruption is permitted after the
+  // execution of an instruction is completed, terminated, or suppressed
+  // and before execution of the next instruction" -- an INSTRUCTION
+  // boundary.  "Mask Register", same page: "occurrence of the
+  // corresponding condition will cause program interruption AT THE END
+  // OF THE OPERATION DURING WHICH THE INDICATOR IS TURNED ON."  So the
+  // interruption belongs to the operation that set the indicator, and
+  // must precede the next one.
+  //
+  // THIS USED TO FIRE LATER, AND THE LATENESS WAS MEASURED.  The
+  // condition was the same list plus `ebusy == 0`.  That is the
+  // CHARGED TIME of the instruction just removed from a look-ahead
+  // level -- the E-box's cycle budget, not a structural busy -- and
+  // rl_prepare does NOT wait for it (it gates on `ibusy`, and a
+  // retirement hands it no `ibusy`).  So every I-box instruction that
+  // fitted inside the budget ran before the interruption could be
+  // taken.  `la.count() == 0 && !ebox.busy()` is the structural
+  // condition and it is kept; a retired instruction is functionally
+  // complete, which is what p.48 asks about.
+  //
+  // MEASURED, on programs/int_timing_bracket.strap -- a VFL ST whose
+  // store is suppressed, bracketed BE / ST / BD the way jb_ax5b routine
+  // 1260 brackets every provoked interruption.  With the old condition
+  // the interruption needed THREE instructions of slack before the BD
+  // to be taken at all, where p.48 allows zero and the deck leaves one;
+  // with fewer, the BD disabled the system first and the pending
+  // interruption evaporated (StretchStorage's intDueCalc returns
+  // Invalid the moment irqEn goes false).  The halt addresses, and the
+  // injection that puts `ebusy == 0` back and returns the program to
+  // 004110.40, are in that program's own header and in docs/NEXT.md
+  // item 3.
+  //
+  // THE OTHER CANDIDATE WAS RULED OUT BY MEASUREMENT, not by argument.
+  // interruptDue() is latched a clock behind the indicator write, and
+  // that looked like a second cause; with `ebusy` already dropped, the
+  // bracket program passes with the latch in place.  StretchStorage is
+  // therefore untouched and its "no program can observe it" note on the
+  // latch still stands.
+  //
+  // WHAT IS STILL NOT MODELLED.  An I-box-class instruction that the
+  // I-box has already run AHEAD of a pending level is committed and
+  // cannot be taken back, so an indicator set by a level is still not
+  // reported before an I-box instruction that overtook it.  The
+  // iboxHazard test keeps that case narrow -- every unconditional
+  // branch, every branch on a non-index indicator, and every store to
+  // an E-box register drains the levels first (Perf. Char. p.3-18:
+  // "BD ... empty the LA completely") -- but it is not empty, and
+  // closing it needs the look-ahead to be able to unwind.  Stated here,
+  // in bsv/README.md and in docs/NEXT.md item 3.  (run_tests.sh's two
+  // notes on interruption timing -- in the df_data_fetch_alarm section
+  // and the interrupt_pg0 one -- still describe the OLD behaviour and
+  // are stale.)
   Bool armInterrupt = !armRecover && !isValid(ioPending) && !isValid(pendingIdxWrite)
                       && !resumeReady && !headReady
                       && !isValid(intPC)          // one instruction, then done
-                      && la.count() == 0 && !ebox.busy() && ebusy == 0 && ibusy == 0
+                      && la.count() == 0 && !ebox.busy() && ibusy == 0
                       && isValid(intDue);
   Bool armPrepare  = !armRecover && !isValid(ioPending) && !isValid(pendingIdxWrite)
                      && !resumeReady && !headReady && !armInterrupt;
@@ -532,6 +571,20 @@ module mkStretchCore(StretchCore);
     // Nothing to do here -- IF is not implemented at all (see
     // StretchExecute's protViolates) -- but when it is, this is the
     // fetch that must be exempt.
+
+    // The charged time of the instruction just removed from a level
+    // keeps draining across this clock, exactly as it does in every
+    // other arm: taking the interruption early (see armInterrupt above)
+    // must not also stop the clock the E-box was charged.  Before that
+    // change this rule could not fire while `ebusy != 0`, so it never
+    // had to decrement it.
+    //
+    // NOTHING IN THE SUITE TESTS THIS LINE, and that is said here
+    // rather than left to be discovered.  No injection removes it, and
+    // none could be caught: the three CYCLES<= benchmarks never enable
+    // the interruption system, and every test that does interrupt
+    // checks a halt address rather than a clock count.
+    ebusy <= eb;
   endrule
 
   rule rl_prepare (tick && armPrepare);

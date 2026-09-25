@@ -735,10 +735,18 @@ run "DF: the data-fetch address alarm, p.32 class 1" ./run_program.sh programs/d
 # because nothing it could write for mask-one would pass for the right
 # reason.
 #
-# THE NOPS AFTER EACH STORE ARE NOT PADDING.  A DS violation is
-# reported by INTERRUPTING, and this model takes an interruption at a
-# QUIESCENT boundary rather than the instruction boundary p.48 names --
-# later, never earlier, as StretchCore.bsv states.  A VFL ST bails out
+# THE NOPS AFTER EACH STORE ARE NOT PADDING -- OR THEY WERE NOT WHEN
+# THIS WAS WRITTEN.  A DS violation is reported by INTERRUPTING, and
+# this model USED TO take an interruption at a QUIESCENT boundary
+# rather than the instruction boundary p.48 names.
+#
+# THAT DIVERGENCE WAS MEASURED AND FIXED 2026-09-25 (see the
+# "Interruption timing" section and docs/NEXT.md item 3), so the slack
+# these NOPs buy is expected to be unnecessary now.  IT HAS NOT BEEN
+# RE-MEASURED HERE: the sweep was run on programs/int_timing_bracket.strap,
+# not on this file, so the paragraph below is true of the old model and
+# is expected-false rather than known-false of the new one.  Left in
+# place deliberately rather than deleted on an analogy.  A VFL ST bails out
 # once for its read-modify-write read, so it holds the E-box a call
 # longer than the BB-style stores the two storage_protection programs
 # use.  Measured: with one instruction of slack the check halted with DS
@@ -1321,11 +1329,12 @@ run "The interruption mechanism (fire, one instruction, return)" ./run_program.s
 # and UNMASKED beside a masked PG2, so ignoring the mask takes the
 # wrong -- further left -- indicator and clears it.
 #
-# NOT IMPLEMENTED, stated in StretchCore: the interruption is taken at a
-# QUIESCENT boundary (look-ahead empty, E-box idle) rather than p.48's
-# instruction boundary; on the real machine an interruption drains the
-# look-ahead, so the two coincide when the levels are empty and this one
-# is otherwise LATER, never earlier.  An E-box-class interruption
+# IMPLEMENTED 2026-09-25, where this used to read "NOT IMPLEMENTED".
+# The interruption was taken at a QUIESCENT boundary (look-ahead empty,
+# E-box idle) rather than p.48's instruction boundary -- LATER, never
+# earlier.  Measured at THREE instructions of lateness where p.48 allows
+# zero, and fixed by dropping one term from armInterrupt; see the
+# "Interruption timing" section for the sweep.  An E-box-class interruption
 # instruction fails loud rather than stepping the counter.
 #
 # LEFTMOST PRIORITY IS BLOCK 4, and it was added because blocks 1-3
@@ -2023,7 +2032,10 @@ run "I-box timing: CB loop" ./run_program.sh programs/ibox_timing_cb.strap Stret
     "CYCLES<=300"
 
 # -- 1c. Look-ahead timing microbenchmark: four full-word VFL loads,
-# E-box-bound with fetch-ahead (~115 clocks, measured 120) vs ~172
+# E-box-bound with fetch-ahead (~115 clocks; the note here said
+# "measured 120" and the figure is 113 -- re-measured 2026-09-25 and
+# stale INDEPENDENTLY of the interruption-timing change, since the
+# PRE-fix model also gives 113) vs ~172
 # executed serially; the bound of 140 fails if the overlap is lost
 # (as it was when the E-box busy wait preempted preparation).
 run "Look-ahead timing: four loads" ./run_program.sh programs/la_timing_loads.strap StretchTimingLaTb \
@@ -3211,6 +3223,70 @@ run "IBOX-4 refill address gate (jb_ax4b, encoding)" python3 verify_ibox4_refill
 run "IBOX-4 routine 1244: RNX's refill-address NOP gate (jb_ax4b PDF pp.90-98)" python3 verify_ibox4_rnx_nop_listing.py
 run "IBOX-4 routine 1246: TRANSMIT and SWAP (jb_ax4b PDF pp.99-100, 112-113)" python3 verify_ax4b_1246_transmit_swap_listing.py
 run "IBOX-4 routine 1246 TEST 2A/2B: the forward-backward and direct-immediate modifiers (jb_ax4b PDF pp.109-111)" python3 verify_ax4b_1246_modifiers_listing.py
+run "Interruption timing: the deck's BE / one instruction / BD bracket" ./run_program.sh programs/int_timing_bracket.strap StretchIntTimingTb \
+    "PC=4246"          # 004113.00; hand-written to routine 1260's shape
+# THE DECK HAS BEEN CARRYING THE DISCRIMINATOR ALL ALONG.  Routine 1260
+# brackets every provoked interruption between an enable and a disable
+# ONE INSTRUCTION APART -- ax5b_160105_compare.strap, "BE,$+.32 /
+# LX,$X13,0($X2) / BD,$+.32" -- and printed p.48 allows ZERO
+# instructions of lateness.  This model allowed THREE.
+#
+# Measured, not argued.  Sweeping N filler instructions before the BD
+# against the PRE-FIX model: N=0,1,2 all halt at the "we did not
+# interrupt" check; N=3 and N=4 pass.  Post-fix N=0 passes.
+#
+# AND THE PLAN'S STATED MECHANISM WAS WRONG, which changed the cost.
+# docs/NEXT.md attributed the loss to the I-box racing past the
+# provoking instruction and executing the BD.  It does not race:
+# StretchIBox's iboxHazard drains the look-ahead before EVERY
+# unconditional branch, BD included, citing Perf. Char. p.3-18 ("BD ...
+# empty the LA completely").  The real cause was one term in
+# armInterrupt -- "ebusy == 0", the CHARGED TIME of the instruction just
+# retired from a look-ahead level, not a structural busy.  rl_prepare
+# never waited for it, so every I-box instruction that fitted inside the
+# budget ran first, the BD among them.  The plan's story implied
+# restructuring the look-ahead; the fix is deleting a predicate term.
+#
+# A SHARPER PRIMARY SOURCE THAN THE ONE THIS PROJECT HAD BEEN CITING.
+# Everyone quotes p.48's "Interruption Action" paragraph.  The SAME PAGE
+# under "Mask Register" pins it harder: "If the bit of the mask is 1 and
+# the interruption system enabled, occurrence of the corresponding
+# condition will cause program interruption AT THE END OF THE OPERATION
+# DURING WHICH THE INDICATOR IS TURNED ON."  That ties the interruption
+# to the operation that SET the indicator, which is exactly the clause
+# the old behaviour violated.
+#
+# THE PROVOKER IS DELIBERATELY E-BOX CLASS, and that is why this test
+# exists rather than interrupt_pg0.strap catching it years ago: an
+# I-box-class provoker is charged an `ibusy` budget that rl_prepare
+# already honours, so it lands at the instruction boundary anyway.  A
+# BB1-style bracket would have measured nothing.
+#
+# ONE INJECTION SENT A CHANGE BACK, which is the discipline worth
+# copying.  The author also made interruptDue() combinational in
+# StretchStorage.bsv, suspecting the latch was a second cause.
+# Injection 3 -- relatch it ALONE, with ebusy already dropped -- PASSES.
+# So the latch is not what the deck's bracket would catch, and
+# StretchStorage.bsv went back to pristine on measured evidence rather
+# than staying changed on plausibility.
+#
+# TIMING INVARIANCE MEASURED, not assumed: the three CYCLES benchmarks
+# give 113 and 807 before the fix and 291/113/807 after -- identical.
+#
+# ONE LINE OF THE FIX IS UNTESTED AND CANNOT BE TESTED BY THIS SUITE,
+# stated here rather than left to be discovered: "ebusy <= eb;" in
+# rl_interrupt has no injection that could catch it, because the three
+# CYCLES benchmarks never enable interrupts and every interrupting test
+# checks a halt address rather than a clock count.
+#
+# AND THE HARDER HALF IS UNTOUCHED.  An I-box-class instruction that the
+# I-box has already run AHEAD of a pending level is committed and cannot
+# be taken back, so an indicator set by a level is still not reported
+# before an I-box instruction that overtook it.  iboxHazard keeps that
+# narrow but does not close it; closing it needs the `recover` path
+# generalised from wrong-way branches to interruptions.  Recorded in
+# docs/NEXT.md item 3 as a write-up, not attempted.
+
 run "IBOX-4 routine 1246 TEST 1B/1C/1D/1G: the memory pairings (jb_ax4b PDF pp.101-106)" python3 verify_ax4b_1246_memories_listing.py
 # 176 ROWS, FOUR OF THE EIGHT REMAINING SUB-TESTS, and the CUT IS
 # PRINCIPLED RATHER THAN FATIGUE.  The nine TEST 1 sub-tests are a 3x3

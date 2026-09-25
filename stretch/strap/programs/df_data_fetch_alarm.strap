@@ -171,6 +171,27 @@ START   BD,  $+.32                   ! disable: words 2 and 3 are protected
 ! is generous rather than tuned -- a stream that only just works would
 ! be a test of the timing, which is not what this file is about.
 !
+! SUPERSEDED 2026-09-25, AND THE NOPS ARE NOW GENUINE PADDING.  The
+! deviation the paragraph above describes is fixed, by deleting one
+! term: StretchCore's armInterrupt no longer waits for `ebusy`, the
+! CHARGED TIME of the instruction just removed from a look-ahead level
+! -- which is not a structural busy and which rl_prepare never waited
+! for, so every I-box instruction that fitted inside the budget ran
+! first.  programs/int_timing_bracket.strap is the program that measured the
+! lateness (three instructions, where Reference Manual p.48 allows zero
+! and jb_ax5b routine 1260's own bracket leaves one) and the one that
+! now pins the fix.  The NOPs below are left exactly as they were --
+! removing them would change what this file is evidence about, and the
+! paragraph above is kept so the correction is visible.
+!
+! WHAT WAS NOT RE-MEASURED, said plainly: whether THESE NOPs are still
+! load-bearing.  The eight are still here, so this program passing says
+! nothing either way; the sweep that measured the lateness was run on
+! int_timing_bracket.strap, which is the same VFL ST -> DS shape but
+! not this file.  "One instruction of slack is not enough" is expected
+! to be false of the model now, by that analogy and not by measurement
+! here.
+!
 ! ---- 3. a store inside the area is DS, not DF --------------------
         ST(BU,64,8), WLOW
         NOP

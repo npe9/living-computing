@@ -340,16 +340,35 @@ it recognizes independent of what the datapath implements.
 
 Interrupts (SINCE SUPERSEDED: the interruption mechanism itself is
 implemented -- `StretchStorage`'s `intDueCalc` decides whether one is
-due and where it goes, `StretchCore`'s `rl_interrupt` takes it. What is
-still missing is the *timing* of it: p.48 permits an interruption
-"after the execution of an instruction is completed, terminated, or
-suppressed and before execution of the next instruction", an
-INSTRUCTION boundary, and this model takes it at a QUIESCENT boundary
-instead -- look-ahead empty, E-box idle, no time budget running. On the
-real machine an interruption drains the look-ahead so the two coincide
-when the levels are empty; where they differ this one is LATER, never
-earlier. Also not modeled: an interruption instruction that is E-box
-class, which fails loud rather than silently stepping the counter),
+due and where it goes, `StretchCore`'s `rl_interrupt` takes it.
+SUPERSEDED AGAIN, 2026-09-25: the *timing* was wrong and is now
+measured. This paragraph used to say the interruption is taken at a
+QUIESCENT boundary rather than p.48's INSTRUCTION boundary, "LATER,
+never earlier". How much later was never measured; it is now.
+`programs/int_timing_bracket.strap` is a VFL `ST` whose store is
+suppressed, bracketed `BE` / `ST` / `BD` the way `jb_ax5b` routine 1260
+brackets every provoked interruption. It needed THREE instructions of
+slack before the `BD` for the interruption to be taken at all -- p.48
+allows zero and the deck leaves one -- and with fewer the `BD` disabled
+the system first and the pending interruption evaporated, because
+`intDueCalc` returns Invalid the moment `irqEn` goes false. **The cause
+was one term**: `armInterrupt` waited for `ebusy == 0`, which is the
+CHARGED TIME of the instruction just removed from a look-ahead level,
+not a structural busy -- and `rl_prepare` does not wait for it, so
+every I-box instruction that fitted inside the budget ran first. The
+term is gone; `la.count() == 0 && !ebox.busy()` is the structural
+condition and stays. `interruptDue()`'s own one clock of latching delay
+is NOT the cause and was measured not to be: with `ebusy` dropped the
+bracket program passes with the latch in place, so `StretchStorage` is
+untouched. Still not modelled: an I-box-class instruction the I-box has
+already run AHEAD of a pending level is committed and cannot be taken
+back, so an indicator set by a level is still not reported before an
+I-box instruction that overtook it -- `iboxHazard` keeps that narrow
+(every unconditional branch, every branch on a non-index indicator and
+every store to an E-box register drains the levels first) but does not
+close it, and closing it needs the look-ahead to be able to unwind.
+Also not modeled: an interruption instruction that is E-box class,
+which fails loud rather than silently stepping the counter),
 memory protection enforcement (addresses described as
 "permanently protected" are documented but not enforced against
 writes from user code beyond a few no-op cases -- SINCE SUPERSEDED:

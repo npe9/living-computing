@@ -1,0 +1,186 @@
+! INTERRUPTION TIMING: the deck's BE / one instruction / BD bracket.
+!
+! WHAT THIS MEASURES.  Reference Manual printed p.48 gives the rule in
+! two places, and the second is the sharper one.
+!
+!   "Interruption Action": "If the interruption system is enabled and
+!   an indicator and its corresponding mask bit are both on,
+!   interruption will follow as early as possible but never during the
+!   execution of an instruction.  Interruption is permitted after the
+!   execution of an instruction is completed, terminated, or suppressed
+!   and before execution of the next instruction."
+!
+!   "Mask Register", same page: "If the bit of the mask is 1 and the
+!   interruption system enabled, occurrence of the corresponding
+!   condition will cause program interruption AT THE END OF THE
+!   OPERATION DURING WHICH THE INDICATOR IS TURNED ON."
+!
+! So the interruption belongs to the operation that set the indicator.
+! It must be taken before the NEXT instruction executes -- and the next
+! instruction here is BRANCH DISABLED, printed p.40: "This operation
+! disables the interruption mechanism, and then performs the same
+! operation as BRANCH."  Once it has run, the enable bit is zero and
+! the interruption can never be taken: p.48 requires "the mask bit to
+! be 1, the indicator bit to be 1, and the mechanism to be enabled".
+!
+! WHY THE BRACKET IS THE DECK'S SHAPE.  jb_ax5b routine 1260 brackets
+! every provoked interruption between an enable and a disable ONE
+! INSTRUCTION apart; programs/ax5b_160105_compare.strap, transcribed
+! from PDF p.71, has it verbatim:
+!
+!       BE,  $+.32
+!       LX,  $X13, 0($X2)        ! -FETCH FROM UB, BC IS 1.
+!       BD,  $+.32
+!
+! and lands either at I60107 ("-AD INTRPTS ENTER HERE.") or, if no
+! interruption was taken, in the fall-through path.  The same bracket
+! appears on ax5b PDF pp.45, 71, 72, 74 and 80.  That block is
+! ENCODING-ONLY and cannot run yet (it needs I60S1's body and the
+! I60IT table), so this program is the same shape hand-written with a
+! provocation the model already implements.
+!
+! WEAKER STANDARD: hand-written from Reference Manual pp.40 and 48,
+! to the shape of a deck block that is transcribed but not yet
+! runnable.  It is not a transcription.
+!
+! THE PROVOCATION IS DELIBERATELY E-BOX CLASS.  isEboxClass in
+! StretchIBox.bsv is VflInt / Connective / Fp and nothing else, so an
+! I-box-class provoker (BB1 on a program indicator, as
+! interrupt_pg0.strap uses) is charged an `ibusy` budget that
+! rl_prepare honours, which gives StretchStorage's intDueCalc time to
+! latch and the interruption lands at the instruction boundary anyway.
+! Such a bracket would pass under both timings and measure NOTHING.
+! A VFL ST retires out of a look-ahead level instead: rl_au_remove
+! charges `ebusy`, which rl_prepare does NOT check, so the next
+! instruction commits while the interruption is still being decided.
+! The provocation and the DS plumbing are the ones
+! programs/df_data_fetch_alarm.strap already uses -- the boundary
+! registers with control bit zero ("signal INSIDE") and a VFL ST to a
+! word in range, whose store is suppressed and whose DS is indicator
+! 19, permanently masked to one (p.48: mask bits for indicators 0-19
+! "are permanently set to 1"), so no mask setup is needed.
+!
+! HOW TO READ THE RESULT.  Under p.48's timing the DS routine at
+! TBL+19 runs between the ST and the BD, sets MARK, falls through, and
+! the program reaches PASS at 004113.00.  Under the QUIESCENT timing
+! this model had until 2026-09-25 the BD commits first, the enable bit
+! goes to zero, the pending interruption evaporates, MARK stays clear
+! and the program hangs at CHK, 004110.40.  The difference is a halt
+! address, not an argument.
+!
+! WHAT IT MEASURED, AND THE FIX IT PINS.  Written against the old
+! model and swept with N NOPs of slack between the ST and the BD.
+! OBSERVED halts, none predicted:
+!
+!     N=0   004110.40  CHK    -- no interruption
+!     N=1   004111.00  CHK    -- no interruption
+!     N=2   004111.40  CHK    -- no interruption
+!     N=3   004114.40  PASS
+!     N=4   004115.00  PASS
+!
+! THREE instructions of lateness, where p.48 allows zero and the deck
+! leaves one.  The cause was one term in StretchCore's armInterrupt:
+! `ebusy == 0`.  That is the CHARGED TIME of the instruction just
+! removed from a look-ahead level -- the E-box's cycle budget, not a
+! structural busy -- and rl_prepare does not wait for it, so every
+! I-box instruction that fitted inside the budget ran first, the BD
+! among them.  The term is gone; `la.count() == 0 && !ebox.busy()`
+! remains and is the structural condition.
+!
+! THE INJECTIONS, each OBSERVED, each anchored on a whole line:
+!
+!     put `ebusy == 0` back in armInterrupt      -> 004110.40  CHK
+!     put `ebusy == 0` back AND relatch
+!       interruptDue() (the model as it was)     -> 004110.40  CHK
+!     relatch interruptDue() ALONE               -> PASSES
+!     rl_interrupt does not turn the chosen
+!       indicator off (p.48)                     -> never halts;
+!                                                   step cap at the BD,
+!                                                   004110.00 -- DS stays
+!                                                   on and interrupts
+!                                                   for ever
+!
+! WHAT THE TABLE DOES NOT REACH.  No injection above halts at
+! 004111.40, the "BB, $DS, $" check: INJ-D was aimed at it and instead
+! produced an endless interruption loop that never gets past the BD.
+! So that check is a GUARD, not witnessed evidence -- it would catch a
+! MARK set without the indicator being cleared, but nothing here has
+! made it fail.  The witnessed check is CHK at 004110.40.
+!
+! AND ONE LINE OF THE FIX IS UNTESTED.  Besides dropping `ebusy == 0`,
+! StretchCore's rl_interrupt now ends with `ebusy <= eb;` so the
+! E-box's charged clock keeps draining.  No injection removes it and no
+! test could see it if it were wrong: the CYCLES<= benchmarks never
+! enable the interruption system, and the interrupting tests check halt
+! addresses, not clock counts.
+!
+! THE THIRD ROW IS WHY StretchStorage IS UNTOUCHED.  interruptDue() is
+! latched a clock behind the indicator write, and that looked like a
+! second cause; measured, with `ebusy` already dropped this program
+! passes with the latch in place.  So the latch is NOT what the deck's
+! bracket would have caught, and interruptDue()'s own note -- that its
+! clock of delay is one "which no program can observe" -- still stands
+! as far as this program can tell.
+
+        SLC, (8)4100.0
+!
+! ---- set up, with the system disabled ------------------------------
+! Words 2 and 3 are permanently protected (p.31), so the interruption
+! address and the boundary registers can only be written while
+! disabled -- what SIP16 does before its own protected writes.
+START   BD,  $+.32                   ! disable
+        LVI, $X13, TBL
+        SV,  $X13, $IA               ! interruption address := TBL
+        LVI, $X13, WLOW
+        SV,  $X13, $LB               ! lower boundary := WLOW
+        LVI, $X13, WABOVE
+        SV,  $X13, $UB               ! upper boundary := WABOVE
+        BBZ, 3.57, $+1.0             ! boundary control bit := 0: the area
+                                     !   INSIDE the bounds is protected
+        BB,  MARK, $                 ! hang if MARK is already set -- it must
+                                     !   not be, or CHK below cannot fail
+        BB,  6.0,  $                 ! hang if the spare witness word is set
+!
+! ---- the bracket: enable, provoke, disable -------------------------
+! Nothing between the ST and the BD.  This is the whole test.
+        BE,  $+.32                   ! enable
+        ST(BU,64,8), WLOW            ! store into the protected area: the
+                                     !   store is suppressed and DS (19)
+                                     !   is turned on.  p.48: the
+                                     !   interruption belongs to THIS
+                                     !   operation.
+        BD,  $+.32                   ! disable.  Anything still pending
+                                     !   here is lost for good.
+!
+CHK     BZB, MARK, $                 ! hang if DS's routine never ran --
+                                     !   the interruption was taken later
+                                     !   than p.48 permits
+        BB,  $DS,  $                 ! hang if DS is STILL ON.  p.48 turns
+                                     !   the chosen indicator off before the
+                                     !   address is formed, so this is what
+                                     !   separates "the interruption ran" from
+                                     !   "MARK was set some other way"
+        B,   PASS
+PASS    BEW, $
+!
+! ---- the interruption table ----------------------------------------
+! Only entry 19 is populated; a landing anywhere else runs into
+! untouched storage and the run ends at the step cap.
+        SLC, (8)4400.0
+TBL     DD, 0                        ! entry N is TBL+N words
+        SLC, (8)4423.0
+DSRTN   BB1, MARK, $+1.0             ! DS = indicator 19.  ONE instruction,
+                                     !   I-box class, and it does not
+                                     !   branch, so the instruction counter
+                                     !   stands (p.48)
+!
+! ---- data ----------------------------------------------------------
+! MARK sits BELOW the lower boundary, so the routine's own store is
+! not itself monitored.
+        SLC, (8)4300.0
+MARK    DD, 0                        ! the routine's only side effect
+        SLC, (8)4301.0
+WLOW    DD, 0                        ! lower boundary, and the ST's target
+        SLC, (8)4302.0
+WABOVE  DD, 0                        ! upper boundary
+        END, START
