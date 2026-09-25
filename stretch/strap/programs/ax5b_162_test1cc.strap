@@ -204,6 +204,17 @@
 ! is in MISC_CODES, so the ASSEMBLER encodes it; that is the whole
 ! distinction.
 !
+! STILL ENCODING ONLY AS OF 2026-09-25, and the reason has changed.
+! The model now EXECUTES EX, including this block's whole contract --
+! the EXE indicator, the suppressed branch, the suppressed enabling in
+! BRANCH ENABLED and disabling in BRANCH DISABLED, and control
+! returning after the EXECUTE rather than after the subject.  What
+! still keeps this file off the runnable list is everything ELSE in
+! the first sentence: the interrupt table, SSIP, and I60S1.  The
+! behavioural counterpart, written from the manual against this
+! block's own clauses, is programs/ex_exe.strap, and this file is
+! cited in its header as the deck oracle.
+!
 ! WHAT IS NEW HERE FOR THIS ASSEMBLER, checked by grep and not
 ! asserted: nothing in the mnemonic list is a first.  BE is already
 ! witnessed by verify_ax1a_bew_listing.py and four jb_ax5b files, CB+

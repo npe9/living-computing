@@ -136,7 +136,15 @@ function Bool iboxHazard(StretchStorage st, Bool guessPending, DecodedInstr d, V
       end
       else if (x.code == 3'b000 || x.code == 3'b001)                         // R / RCZ
         h = levelHolds(lv, zeroExtend(st.readIndex(x.idx).refill));
-      else h = True;                                                         // EX/EXIC
+      // EX/EXIC: drain the levels first, unconditionally.  For EXIC
+      // that is the "anything not listed" default; for EX, which IS
+      // implemented, it is a real requirement -- the subject
+      // instruction is not known until its word has been fetched, so no
+      // hazard test on the EX itself could cover what the subject reads
+      // or writes.  Draining is the only answer available before the
+      // fetch, and it is also what the real machine does for anything
+      // that disturbs the look-ahead.
+      else h = True;
     end
     tagged Sic .x: begin
       BitAddr ea = effAddr24(st, x.addr, x.idx);

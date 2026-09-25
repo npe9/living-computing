@@ -338,7 +338,10 @@ run "IF: the instruction-fetch address alarm (p.32 classes 1 and 2)" ./run_progr
 # BOTH IMPLEMENTED HALVES OF IF, AND THE MASK-DEPENDENT SUPPRESSION.  p.32 lists three classes for
 # Instruction Fetch: class 1 "the location of each instruction to be
 # executed", class 2 "the branch address of all successful branch
-# operations", class 3 the EX/EXIC subject -- moot until EX exists.
+# operations", class 3 the EX/EXIC subject.  NO LONGER MOOT: EX is
+# implemented as of 2026-09-25 and the subject's location IS monitored
+# -- see the four "EX:" sections below and programs/ex_monitor.strap.
+# EXIC's half stays moot until EXIC is implemented.
 # Its deck oracle is routine 1260 TEST 8C, transcribed beside this
 # (encoding only: running it needs SSIP's I60S1/I60SX1 harness).
 #
@@ -3223,6 +3226,120 @@ run "IBOX-4 refill address gate (jb_ax4b, encoding)" python3 verify_ibox4_refill
 run "IBOX-4 routine 1244: RNX's refill-address NOP gate (jb_ax4b PDF pp.90-98)" python3 verify_ibox4_rnx_nop_listing.py
 run "IBOX-4 routine 1246: TRANSMIT and SWAP (jb_ax4b PDF pp.99-100, 112-113)" python3 verify_ax4b_1246_transmit_swap_listing.py
 run "IBOX-4 routine 1246 TEST 2A/2B: the forward-backward and direct-immediate modifiers (jb_ax4b PDF pp.109-111)" python3 verify_ax4b_1246_modifiers_listing.py
+run "EX: the subject is fetched and executed, control returns after the EXECUTE" ./run_program.sh programs/ex_subject.strap StretchExSubjTb \
+    "PC=5144" "RESA:2755=0x29cbb829c" "RESB:2756=0xfac688fac" \
+    "MARKC:2754=0" "MARKD:2757=0x8000000000000000"
+# **EX IS IMPLEMENTED.**  The largest unimplemented instruction with a
+# READ oracle, and the one four transcription targets were waiting on.
+# Printed p.50: "Bits 0-18 of the effective address form the address of
+# the location of a subject instruction that is fetched and executed.
+# Subject instructions of EXECUTE may occupy any addressable location."
+#
+# THE STRUCTURE IS A SWAP, NOT A NESTED CALL, and that choice is what
+# made it fit.  The EX arm bails with `needsRead` = the word holding
+# the subject and touches nothing else; mkEBox.resume() then recognises
+# the held instruction as an EXECUTE, decodes the fetched word, and
+# replaces held.di with the SUBJECT while keeping held.pc and held.len
+# -- the EXECUTE's.  Everything follows from that: `fallthrough` is the
+# half-word after the EXECUTE, a subject needing an operand bails
+# normally because it IS the held instruction by then, and a subject
+# that is itself an EXECUTE bails again and the swap repeats, one level
+# per clock.
+#
+# RECURSION WAS REJECTED FOR A CONCRETE REASON: BSV inlines functions,
+# so a second execute() call in resume() is a second instantiation of
+# the whole datapath and a second st.writeWord writer in one rule --
+# the G0004 shape StretchStorage.bsv documents.  resume() has exactly
+# ONE execute() call site.
+#
+# AND StretchCore.bsv NEEDED NO CHANGE AT ALL, which is the good news
+# about the swap.  commitNext and rl_exec_resume's `taken` read pc/len
+# back out of ebox.pending(), so keeping the EXECUTE's pc/len inside
+# HeldOp makes printed p.49's rule fall out with zero edits to the
+# instruction unit: "it is never stepped during the execution of any
+# subject instruction even if the subject instruction is again one of
+# the execution instructions."  The only other file touched is
+# StretchIBox.bsv, COMMENT-ONLY.
+#
+# TWO DETAILS THE PLAN'S PROPOSAL DID NOT FORESEE, both real and both
+# from the deck: a FULL-LENGTH SUBJECT AT AN ODD HALF-WORD straddles
+# two storage words and needs a second read before it can be decoded
+# (1262 TEST 1CC's own I62B6 is exactly that shape); and the CLASS-1
+# ALARM OF AN INTERMEDIATE LEVEL must be carried forward, because that
+# level's indicator word was thrown away when it bailed.
+#
+# Fifteen injections across the four programs, every halt OBSERVED,
+# NONE survived.  Each was applied by a substitution that exits with
+# ABORT unless its anchor occurs exactly once, printing the diff first.
+
+run "EX: the EXE indicator, and the whole subject operation suppressed" ./run_program.sh programs/ex_exe.strap StretchExExeTb \
+    "PC=5684" "RESD:3074=0x80000" "MARKE:3075=0x555555555"
+# THE EXE RULE IS NOT "THE BRANCH IS CANCELLED" -- IT IS "THE OPERATION
+# IS SUPPRESSED", and that distinction forced the shape of the code.
+# Printed p.49: "The execution exception indicator (EXE) is turned on
+# by any branch operation of a subject instruction in which the
+# condition for a successful branch is met.  When indicator EXE is
+# actuated, the branch and all associated operations are not performed.
+# The suppressed actions include the disabling in BRANCH DISABLED, the
+# enabling in BRANCH ENABLED or BRANCH ENABLED AND WAIT, the counting
+# and refilling in COUNT, BRANCH AND REFILL, and so on."  Printed p.45
+# item 18 says it from the other side: "The subject operation was
+# suppressed."
+#
+# SO IT COULD NOT BE DECIDED AT execute()'s COMMIT POINT, where the IF
+# branch-suppression clause already lives.  By the time `next !=
+# fallthrough` is known, st.setIrqEnabled (the BE/BD/BEW arm) and
+# st.writeWord (SIC, BRANCH ON BIT) are Actions ALREADY TAKEN.  Hence
+# five per-arm decisions instead of one central one.  The single
+# reordering this forced is moving the BE/BD/BEW enable change BELOW
+# evalBranch in the unconditional arm -- safe, because that evalBranch
+# reads the instruction and the index registers only, never the enable
+# bit.  Injection I9 is the one that proves it matters: hoisting the
+# enable change back above the guard leaves the machine ENABLED after a
+# subject BE, and the program catches it via DF.
+
+run "EX: the EXE rule over a BRANCH ON INDICATOR subject, including its clear" ./run_program.sh programs/ex_exe_bind.strap StretchExBindTb \
+    "PC=7697"
+# THIS PROGRAM EXISTS TO PIN AN INFERENCE SO A LATER DECK ROW CAN
+# CONTRADICT IT VISIBLY.  p.49's list of suppressed actions ends "and
+# so on" and does NOT name a branch-on-indicator's trailing-Z CLEAR.
+# Reading p.45 item 18's "the subject operation was suppressed" to
+# cover it is an INFERENCE, and it is labelled as one in the model.
+#
+# THERE IS NO DECK WITNESS: 1262 TEST 1CC's branch-on-indicator subject
+# class is on PDF p.92 and the transcription begins at I6225 on p.93.
+# Injection I15 is the only one in the whole set that separates "the
+# branch was suppressed" from "the OPERATION was suppressed" -- it
+# suppresses the branch but merges o.ind, so the clear lands, and the
+# program halts.  If p.92 is ever transcribed and disagrees, this is
+# the test that will fail rather than a comment nobody reads.
+
+run "EX: the subject location's address alarm, and p.50's below-32 carve-out" ./run_program.sh programs/ex_monitor.strap StretchExMonTb \
+    "PC=6705" "MARKP:3392=0" "MARKB:3393=0" "MARKC:3394=0" "MARKD:3395=0"
+# THE SUBJECT'S OWN LOCATION IS ADDRESS-MONITORED, and the authority is
+# a contrast rather than a single sentence.  Printed p.32 class 1 is
+# "the location of each instruction to be executed" -- and a subject IS
+# executed.  Printed p.51 item (d) corroborates: "If the address of the
+# location of the subject instruction of EXECUTE or EXECUTE INDIRECT
+# AND COUNT is both protected and invalid, indicator IF will be
+# actuated" -- against item (c), where a BRANCH target that is both
+# raises AD only, "because an instruction has not been fetched."
+#
+# AND ifViolates' `a >= 32` GUARD IS A DIFFERENT RULE THAT HAPPENS TO
+# AGREE NUMERICALLY -- checked rather than assumed, and the call site
+# says so.  That guard is justified by p.45 on AD ("Branching to an
+# address below 32 also actuates the indicator") plus p.32's "an
+# address which actuates AD cannot actuate any of the address alarm
+# indicators": for a BRANCH below 32 the machine raises AD INSTEAD of
+# IF.  For an EXECUTE below 32 it raises NEITHER, because p.50 says the
+# subject may occupy any addressable location, so there is no invalid
+# address to report.  The two coincide today only because this model
+# does not raise AD for a low branch either.  A later AD implementation
+# must not reach for this guard.
+#
+# THE CARRIED ALARM IS OR-ED ACROSS LEVELS, NOT OVERWRITTEN, and
+# injection I4 is the one that catches the difference.
+
 run "Interruption timing: the deck's BE / one instruction / BD bracket" ./run_program.sh programs/int_timing_bracket.strap StretchIntTimingTb \
     "PC=4246"          # 004113.00; hand-written to routine 1260's shape
 # THE DECK HAS BEEN CARRYING THE DISCRIMINATOR ALL ALONG.  Routine 1260

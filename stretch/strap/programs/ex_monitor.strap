@@ -1,0 +1,235 @@
+! EX: ADDRESS MONITORING OF THE SUBJECT INSTRUCTION'S LOCATION, and
+! the BELOW-32 carve-out that switches it off.
+!
+! THE TWO RULES, Reference Manual 22-6530-2, read first-hand at 300 dpi
+! (PDF page = printed page + 3):
+!
+!   printed p.32, address monitoring class 1: "The location of each
+!   instruction to be executed with the exception of the single
+!   instructions at the effective interruption address which are
+!   executed when an interruption occurs."  A subject instruction IS
+!   executed, so its location is monitored -- and the indicator for an
+!   instruction location is IF, indicator 21.
+!
+!   printed p.50, EXECUTE: "An effective address of EXECUTE that is
+!   below 32.00 (including addresses between 1.00 and 3.32) is not
+!   monitored by the address monitoring mechanism; that is, indicator
+!   IF cannot be actuated by these addresses."
+!
+!   printed p.50 again, and this is why the first rule holds even for a
+!   machine that has been disabled: "In general, when the interruption
+!   system is disabled, interruption cannot occur and address
+!   monitoring is suspended.  In order that control may remain entirely
+!   with the main program during an execution operation, two special
+!   exceptions are made.  First, address monitoring is always in force
+!   during (1) EXECUTE and (2) EXECUTE INDIRECT AND COUNT, except for
+!   the address of the location of the first level pseudo-instruction
+!   counter.  Second, at the completion, termination, or suppression of
+!   an execution operation, interruption is always permitted."
+!
+!   printed p.51 corroborates that the SUBJECT LOCATION is an IF
+!   address and not an AD one, in the one place the manual compares
+!   them: "c. An effective branch address that is both invalid and
+!   protected will cause only the actuation of indicator AD.  Indicator
+!   IF will remain unchanged because an instruction has not been
+!   fetched.  d. If the address of the location of the subject
+!   instruction of EXECUTE or EXECUTE INDIRECT AND COUNT is both
+!   protected and invalid, indicator IF will be actuated.  Indicator AD
+!   will not be actuated as a result of this invalid address unless the
+!   IF mask bit is zero."  A subject instruction IS fetched, which is
+!   what flips the precedence.  The AD half of that pair is not
+!   implemented -- this model raises AD for neither -- and docs/NEXT.md
+!   section 5a already records it as an open rule.
+!
+! NEITHER OF THOSE TWO "SPECIAL EXCEPTIONS" IS IMPLEMENTED, and this
+! file does not pretend otherwise: it runs ENABLED throughout, so
+! p.32's ordinary enable gate is satisfied and the question of what a
+! DISABLED execution operation monitors never arises.  The gap is
+! recorded in StretchExecute.bsv and in docs/NEXT.md; a program for it
+! would need the model to carry an "execution operation in progress"
+! state through protViolates and through the interruption test, which
+! is its own piece of work.
+!
+! THE BLOCKS:
+!
+!   A  POSITIVE CONTROL.  A subject instruction whose LOCATION is
+!      inside the monitored area, at a word above 32.  IF must come on.
+!      Without this block, block B passes for the trivial reason that
+!      nothing signals IF for a subject location at all.
+!   B  THE CARVE-OUT.  The same shape with the subject instruction
+!      planted in WORD 1 -- p.31's permanently protected area, "1.00 and
+!      3.32" in p.50's own words.  IF must stay OFF, and the subject
+!      must still execute: p.50 says "subject instructions of EXECUTE
+!      may occupy any addressable location", which is exactly what
+!      separates EX from EXIC ("addresses 32.00 and greater").
+!   C  THE PROGRAMMING NOTE, printed p.50: "The instruction EXECUTE
+!      also executes instructions conveniently from the registers.
+!      This facilitates table look-up, diagnostic, and other
+!      routines."  The subject here is held in index register 10, word
+!      26 -- below 32, and reached through the ordinary special-storage
+!      routing rather than core.
+!   D  TWO LEVELS, with only the FIRST subject location monitored.  The
+!      alarm from an intermediate level has to be carried forward, and
+!      this is the only block that can tell carrying from overwriting.
+!
+! WHY WORD 1 AND NOT WORD 2 OR 3.  All three are p.31's permanently
+! protected words and all three make protViolates signal, so any of
+! them would drive block B.  Word 3 holds the boundary registers this
+! file needs; word 2 is the interruption address, and clobbering it
+! would make any interruption that did fire land somewhere arbitrary.
+! Word 1 is the interval timer and clock, which this model never steps
+! (StretchStorage.bsv: a plain register, written only by writeWord), so
+! it is a free 64 bits that is nevertheless permanently protected.
+!
+! THE PLANTING IS DONE WHILE DISABLED, for the reason
+! programs/df_bb_readonly.strap gives: p.32, "when the interruption
+! system is disabled, address monitoring is ineffective", which is what
+! lets a program store into a word it could not store into afterwards.
+!
+! IF'S MASK BIT IS ZERO (the reset value) throughout, so IF sets its
+! indicator and interrupts nothing and suppresses nothing -- printed
+! p.45 item 21: "If the mask bit was zero, the instruction was executed
+! normally."  That is what makes IF readable with a plain BRANCH ON BIT
+! here instead of an interrupt handler.  Of the three address alarms,
+! DS is the one whose mask bit cannot be zero -- it is indicator 19 and
+! p.48 makes mask bits 0-19 permanently one -- so an actuated DS always
+! interrupts.  That is why no block below stores into the monitored
+! area while enabled: every subject here writes to a marker word
+! OUTSIDE it, and only the subject's own LOCATION is inside.
+!
+! THREE INJECTIONS, EACH OBSERVED (not predicted).  Each was applied to
+! a pristine snapshot of bsv/StretchExecute.bsv by an exact-substring
+! substitution that aborts unless the anchor occurs exactly once, and
+! the resulting unified diff was printed before the run -- because a
+! `sed` that silently fails to match prints ALL TESTS PASSED, which
+! reads exactly like an honest "this does not discriminate".  Reproduce
+! any row with `python3 line_addresses.py programs/ex_monitor.strap`.
+!
+!   the ifViolates term dropped from the   -> 6677  006412.40
+!     carried alarm, so no subject               BZB, $IF, $   (A)
+!     location signals class 1 at all            -- IF never came on
+!   ifViolates -> protViolates, dropping   -> 6684  006416.00
+!     p.50's below-32 carve-out                  BB, $IF, $    (B)
+!                                                -- IF came on for a
+!                                                   subject at word 1
+!   the carried alarm OVERWRITTEN rather   -> 6698  006425.00
+!     than OR-ed at each level                   BZB, $IF, $   (D)
+!                                                -- the first level's
+!                                                   alarm was forgotten
+!
+! Every one halted, none survived, and the clean run's PASS is at
+! half-word 6705 (006430.40).
+!
+! WHICH CHECKS NO ROW REACHES, said rather than left to be found.  The
+! second injection halts in block B, so block C's own "BB,$IF,$" at
+! 6691 is never the halt: the register case is covered for EXECUTION
+! (MARKC) but its IF check is belt-and-braces behind B's.  And no
+! injection here drives the MARKP/MARKB/MARKC/MARKD memory checks on
+! their own -- they fail as a consequence of halting early, which is
+! why the PC is the row that names the finding.
+!
+! Instructions used: BD, BE, LVI, LX, SX, SV, BB, BBZ, BZB, Z, EX, B,
+! BEW -- all implemented.
+
+IT      SYN, 1.0                   ! word 1: interval timer / clock
+!
+        SLC, (8)6400.0
+START   BD,  $+.32                 ! disabled: the set-up plants a word
+                                   !   into the permanently protected area
+        LX,  $X9,  SUBW            ! the half-word "Z,MARKB" in a word
+        SX,  $X9,  IT              ! ... planted in word 1
+        LX,  $X10, SUBW2           ! the half-word "Z,MARKC" in a register
+        LVI, $X13, PROT
+        SV,  $X13, $LB             ! lower boundary := PROT
+        LVI, $X13, ABOVE
+        SV,  $X13, $UB             ! upper boundary := ABOVE
+        BBZ, 3.57, $+1.0           ! boundary control := 0, signal INSIDE
+        BB1, MARKP.0, $+1.0        ! plant a one in each marker, so that
+        BB1, MARKB.0, $+1.0        !   "it went to zero" means the subject
+        BB1, MARKC.0, $+1.0        !   really stored
+        BB1, MARKD.0, $+1.0
+        BE,  $+.32                 ! ENABLE: monitoring is effective now
+!
+! ---- A. subject inside the monitored area, above 32: IF ----------
+        Z,   $IND                  ! start from IF off
+        EX,  SUBJP                 ! SUBJP lives inside [PROT, ABOVE)
+        BZB, $IF,  $               ! hang if IF did not come on
+        BZB, MARKP.0, A1           ! ... and the subject still executed:
+        B,   $                     !     p.45 item 21, mask zero, "the
+                                   !     instruction was executed normally"
+!
+! ---- B. subject at word 1: the carve-out, IF must stay off -------
+A1      Z,   $IND                  ! clear IF (indicator 21 is settable)
+        EX,  IT                    ! THE TEST: a subject below 32.00
+        BB,  $IF,  $               ! hang if IF came on
+        BZB, MARKB.0, B1           ! ... and it still executed: "subject
+        B,   $                     !     instructions of EXECUTE may occupy
+                                   !     any addressable location"
+!
+! ---- C. subject held in an index register (p.50's programming note)
+B1      Z,   $IND
+        EX,  $X10                  ! word 26: below 32, and not core at all
+        BB,  $IF,  $               ! hang if IF came on
+        BZB, MARKC.0, C1
+        B,   $                     ! hang: the register subject did not run
+!
+! ---- D. two levels, and only the FIRST one is monitored ----------
+!   "EX,SUBJ2A" where SUBJ2A is itself "EX,SUBJ2B".  SUBJ2A lives
+!   INSIDE the monitored area; SUBJ2B lives outside it.  Printed p.50
+!   says monitoring is in force "during EXECUTE" without qualifying
+!   which level, and p.32 class 1 covers the location of every
+!   instruction to be executed, so the first level's alarm has to
+!   survive to the end of the chain.  It cannot survive by itself: an
+!   EXECUTE that bails for its subject word has its indicator word
+!   thrown away (StretchExecute.bsv's execute() tail), so the E-box
+!   carries the alarm forward from level to level instead.  This block
+!   is what catches a model that OVERWRITES that carried flag at each
+!   level rather than accumulating it -- a mistake no single-level
+!   block can see.
+C1      Z,   $IND
+        EX,  SUBJ2A
+        BZB, $IF,  $               ! hang if the FIRST level's location
+                                   !   was forgotten
+        BZB, MARKD.0, D1
+        B,   $                     ! hang: the chain did not finish
+D1      BD,  $+.32                 ! disable before halting
+        B,   PASS
+PASS    BEW, $
+!
+! ---- the subject held in core, above 32 and inside the area ------
+        SLC, (8)6701.0
+SUBJP   Z,   MARKP                 ! its LOCATION is monitored; MARKP, the
+                                   !   word it stores into, is not -- a
+                                   !   store into the area would actuate
+                                   !   DS, whose mask bit is always one
+!
+!   Block D's first level, also inside the area.  Its own subject is
+!   SUBJ2B, which is outside it.
+        SLC, (8)6703.0
+SUBJ2A  EX,  SUBJ2B
+!
+! ---- the subject words that get planted below 32 -----------------
+        SLC, (8)6600.0
+SUBW    Z,   MARKB                 ! copied into word 1 by the set-up
+        SLC, (8)6601.0
+SUBW2   Z,   MARKC                 ! loaded into index register 10
+        SLC, (8)6602.0
+SUBJ2B  Z,   MARKD                 ! block D's second level, OUTSIDE the
+                                   !   monitored area
+!
+! ---- data, all of it OUTSIDE the monitored area ------------------
+        SLC, (8)6500.0
+MARKP   DD(BU,64,8), 0
+        SLC, (8)6501.0
+MARKB   DD(BU,64,8), 0
+        SLC, (8)6502.0
+MARKC   DD(BU,64,8), 0
+        SLC, (8)6503.0
+MARKD   DD(BU,64,8), 0
+!
+! ---- the monitored area, [PROT, ABOVE) ---------------------------
+        SLC, (8)6700.0
+PROT    DD(BU,64,8), 0             ! == the lower boundary
+        SLC, (8)6704.0
+ABOVE   DD(BU,64,8), 0             ! == the upper boundary, first word out
+        END, START

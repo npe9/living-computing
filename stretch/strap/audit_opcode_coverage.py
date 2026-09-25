@@ -75,14 +75,12 @@ UNIMPLEMENTED = {
 # Those two properties coincided until a TRANSCRIPTION used an
 # instruction the model cannot execute.
 #
-# THE CATEGORY HAS NOW BEEN FORCED THREE TIMES, by three unrelated
-# transcriptions, which is why it is a category and not a special case:
+# THE CATEGORY HAS BEEN FORCED THREE TIMES, by three unrelated
+# transcriptions, which is why it is a category and not a special case.
+# TWO of the three are still here:
 #
 #   EXIC  programs/ax5b_162_exic_classes.strap -- jb_ax5b routine 1262
 #         TEST 2B, 43 rows.  Also ax5b_162_test3a/3b.
-#   EX    programs/ax5b_162_test1cc.strap -- routine 1262 TEST 1CC, 81
-#         rows.  More EX rows than the rest of the repo together; the
-#         block is the specification for the EXE indicator.
 #   RNX   programs/ibox4_rnx_nop.strap -- jb_ax4b routine 1244, the
 #         refill-address NOP gate.  The FIRST listing witness for RNX
 #         anywhere in this repo; before it, the name appeared only in
@@ -94,14 +92,29 @@ UNIMPLEMENTED = {
 # none is implemented, and listing them here says so rather than
 # letting their absence from UNIMPLEMENTED imply otherwise.
 #
+# EX LEFT THIS SET ON 2026-09-25, and the direction of that move is the
+# one this category was built to make visible.  EX used to be here for
+# programs/ax5b_162_test1cc.strap -- routine 1262 TEST 1CC, 81 rows,
+# more EX rows than the rest of the repo together -- which pinned its
+# ENCODING and nothing else.  The model now EXECUTES it
+# (StretchExecute.bsv's EX arm, mkEBox's subject swap, the EXE
+# suppression in the five branch arms), driven by programs/
+# ex_subject.strap, ex_exe.strap and ex_monitor.strap, so it belongs in
+# no category on this page at all: not UNIMPLEMENTED, because it is
+# implemented; not UNEXERCISED, because three programs run it; not
+# ENCODING_ONLY, because that name means "used for its encoding only",
+# and leaving it here would make the ratchet say something false.
+# EXIC is untouched and still reaches setOpInvalid.
+#
 # EXPECT THIS SET TO KEEP GROWING, and do not read growth as progress.
 # A name moving from UNIMPLEMENTED to ENCODING_ONLY means a listing now
 # pins its ENCODING.  It says nothing whatever about execution, and the
-# two are separately earned.  docs/NEXT.md item 4a is the open work for
-# EX/EXIC; RNX is recorded there as out of scope.
+# two are separately earned -- which is exactly why a name leaving the
+# set, as EX just did, is the move that means something.  docs/NEXT.md
+# item 4a is the open work for EXIC; RNX is recorded there as out of
+# scope.
 ENCODING_ONLY = {
     "EXIC",
-    "EX",
     "RNX",
 }
 # IMPLEMENTED BUT UNEXERCISED -- the model has real arms for these and

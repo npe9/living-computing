@@ -71,10 +71,12 @@ This targets **ISA-level correctness for a documented subset**, not a
 cycle-accurate replica of the real machine (which pipelined and
 looked ahead — its most famous engineering feature; see "Not modeled"
 below) and not the complete instruction set (which includes decimal
-arithmetic, radix conversion, `EX`/`EXIC`, most I/O control, and an
+arithmetic, radix conversion, `EXIC`, most I/O control, and an
 interrupt system, several of them large enough to be their own
 projects). Floating point is no longer on that list -- all 29 FP
-operation codes execute; see "Executed" below.
+operation codes execute; see "Executed" below. Neither is `EX`, which
+executes as of 2026-09-25; `EXIC`, which shares its machinery, does
+not.
 
 ### Executed
 
@@ -205,14 +207,40 @@ operation codes execute; see "Executed" below.
   "INSTRUCTIONS"). Verified against purpose-written programs (no
   worked example in the manual happens to cover this) — see
   `../strap/README.md`.
+- **`EX` (EXECUTE)** — Reference Manual printed pp.49-50. "Bits 0-18
+  of the effective address form the address of the location of a
+  subject instruction that is fetched and executed." The subject may
+  be of any type and any length and may live anywhere addressable,
+  including in an index register (p.50's own programming note); it may
+  itself be an `EX`, to any depth ("the procedure is carried to
+  succeeding levels"); and the instruction counter steps past the
+  `EX`, never past the subject. A subject branch whose condition is
+  met actuates **EXE** (indicator 18) and the whole subject operation
+  is suppressed — the branch, `BD`'s disabling, `BE`/`BEW`'s enabling,
+  `CBR`'s counting and refilling, `SIC`'s store and `BB`'s bit change.
+  The subject's own location is address-monitored (p.32 class 1) with
+  p.50's carve-out for effective addresses below 32.00.
+  **Not implemented, each stated where it belongs**: `USA`, the
+  one-millisecond timeout that is the real machine's only way out of
+  an `EX` chain that closes on itself (p.45 item 17); p.50's two
+  special exceptions, that monitoring stays in force and interruption
+  stays permitted *while the system is disabled*; and p.52-53's
+  separate rule for a Class S alert arising during a subject
+  instruction. `EXIC`, which shares all of the machinery above, is
+  still Operation Code Invalid — see the list below.
+  Driven by `strap/programs/ex_subject.strap`, `ex_exe.strap`,
+  `ex_exe_bind.strap` and `ex_monitor.strap` — fifteen injections
+  between them, each observed; the deck oracles are jb_ax5b routine
+  1262 TEST 1A/1B/1CC, transcribed for their encoding as
+  `ax5b_162_test1b.strap` and `ax5b_162_test1cc.strap`.
 
 ### Decoded but not executed (sets indicator 15, OP, and no-ops —
 ### matches real-machine behavior for a suppressed instruction)
 
 Decimal-mode VFL (`c=1`), radix conversion, floating-point arithmetic
 beyond L/ST, Input-Output's `LOC` and most of `CTL` (see above),
-`EX`/`EXIC`, Transmit backward/`SWAP`/multi-word/direct-count. (SIC,
-Store Instruction Counter If, and Bit Branching both moved to
+`EXIC`, Transmit backward/`SWAP`/multi-word/direct-count. (SIC,
+Store Instruction Counter If, Bit Branching and `EX` have all moved to
 "Executed" — see there.)
 
 **The Transmit entry was two-thirds FALSE until 2026-09-22**, and is

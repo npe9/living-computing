@@ -25,7 +25,7 @@ to the folklore.** That means:
   pocket card, Buchholz, Blosk, the CE manuals and the diagnostics
   describe the machine as doing -- the whole instruction set including
   what is unimplemented today (floating-point arithmetic, decimal VFL,
-  radix conversion, EX/EXIC, LVE/SVA/RNX/LVS, bit branching, swap and
+  radix conversion, EXIC, LVE/SVA/RNX/LVS, bit branching, swap and
   backward transmit, all I/O and channel functions), the interrupt
   system with its mask and left-most-one priority, boundary
   protection, the interval timer and time clock, the maintenance
@@ -86,7 +86,8 @@ in parentheses); **open** = no stage assigned yet.
 | Floating-point arithmetic (all ops), timing per table 2 and CE figs 3.8.x | Ref. Manual pp.78-94; CE 3.3.x/3.8.x | partial (4c): single-precision L/LWF/+/+MG/M+/M+MG/ST/K/KMG/KR/KMGR/*/E+/E+I/SHF; divide, double precision, root (SRT), LFT, *+, F+ open. K compare VERIFIED against jb_af1c F202A1-6/A15-20 (all of AL/AE/AH, normal + XFN/XFP ranges). jb_af1c F202G (KR Compare-for-Range, p.45) RUNS and passes (`fp_compare_f202g.strap`, `verify_fp_compare_g_listing.py`): `Z,$IND` clears indicators (b1a6ad0), `BB1,$AH` sets the gate (63721f1), and KR was fixed to p.91 -- it sets AE to "accumulator low" and leaves AL and AH unchanged (the range path had wrongly set AH := acc>=opnd). Discriminating on KR's AE via G15. (F202G's own operands do not distinguish the AH-leave-vs-set aspect -- its AH-preset sub-tests all have cmp>=0 -- but p.91 mandates leaving AH.) |
 | Decimal VFL, radix conversion, VFL multiply/divide | Ref. Manual; CE 3.11.x | open |
 | Branch on Bit (BB/BB1/BBN/BBZ/BZB/BZB1/BZBN/BZBZ): test one bit anywhere in storage, take the branch if it matches instruction bit 62, then set the bit per bits 60-61 whether or not the branch was taken | Ref. Manual p.41; X22-6533 pocket card "BRANCH ON BIT" | executed, including a BB that changes an INDICATOR-register bit (word 11, positions 20-63, p.41 -- folded into `ind` rather than the no-op writeWord(11)) (StretchExecute BitBranch arm; `strap/programs/bb_branch_on_bit.strap`, `bb_indicator.strap`, `verify_bb_encoding.py`, `verify_bb_listing.py`) |
-| EX/EXIC (with LA drains, table 6; Ref. Manual pp.49-50: subject instruction may not change the interruption state or the IC -- EXE indicator; pseudo-IC stepped after fetch, before execution), LVE, RNX, LVS, swap/backward transmit | Ref. Manual pp.26-30 (LVE: indirect addressing, 1 ms limit -> USA; RNX: rename via X0's refill; LVS: sum of the value fields selected by address bits 0-15; T/SWAP: count rules, backward stepping); Perf. Char. table 6 | open, specified |
+| **EX** (with LA drains, table 6; Ref. Manual pp.49-50: subject instruction may not change the interruption state or the IC -- EXE indicator) | Ref. Manual pp.49-50; Perf. Char. table 6 | **executed, 2026-09-25** (StretchExecute's EX arm + mkEBox's subject swap + the EXE suppression in the five branch arms; `strap/programs/ex_subject.strap`, `ex_exe.strap`, `ex_exe_bind.strap`, `ex_monitor.strap`). NOT done: USA's 1 ms timeout, and p.50's two "special exceptions" that hold while the system is DISABLED -- see docs/NEXT.md item 4a |
+| EXIC (pseudo-IC stepped after fetch, before execution, by the subject's length; pseudo-IC not in 0-15; subject at 32.00 and above), LVE, RNX, LVS, swap/backward transmit | Ref. Manual pp.26-30, p.50 (LVE: indirect addressing, 1 ms limit -> USA; RNX: rename via X0's refill; LVS: sum of the value fields selected by address bits 0-15; T/SWAP: count rules, backward stepping); Perf. Char. table 6 | open, specified -- EXIC reuses all of EX's machinery and adds only the pseudo-IC and its two address restrictions |
 | Interrupt system: indicators, mask, left-most-one, the "free instruction" | Ref. Manual pp.43-50 (indicator list with mask/class per indicator, definitions, mask register: bits 0-19 always 1, 20-47 settable, 48-63 always 0; interruption address register; the single interruption instruction fetched from IA + leftmost indicator number, IC not stepped, executed before a second interruption); Blosk pp.16-17; Buchholz ch.10 | open, specified |
 | Address Invalid (AD): effective word address beyond installed core -> AD + no-op | Ref. Manual p.20 | partial: floating-point operand addresses (StretchExecute Fp arm); other classes open |
 | Storage protection: two address boundary registers (word 3: UB bits 0-17, LB 32-49, control bit 57), alarm on an effective address inside OR outside the region (control-bit selectable), storing in protected areas suppressed, indicators DS (store)/DF (fetch)/IF (instruction fetch), gated by the interrupt system + mask | Ref. Manual p.15 "Address Monitoring", **pp.31-32 in full**, indicator defs pp.44-45, Appendix C (word 3 layout) | executed for STORE-type references: the permanently protected words 1-3, the boundary-register area with either control-bit polarity, gated on the enable bit, address-invalid addresses exempt (StretchExecute `protViolates`; `strap/programs/storage_protection.strap`, `storage_protection_boundary.strap`). THE CONTROL-BIT POLARITY DID NOT NEED APPENDIX C: p.31 states it outright -- control bit zero signals INSIDE the area, one signals OUTSIDE. Still open: DF, IF, whole-operation termination, the straddling rule. DECK WITNESS 2026-09-22: `jb_ax5b` routine 1260's block I6086 (`strap/programs/ax5b_16086_ds.strap`, encoding checked bit-exactly) stores into word 1 and reports *"SV TO 1.0 FAILS TO SET DS WHEN ENABLED."* -- word 1, DS and the enable gate in IBM's own words, and it polls DS only after disabling |
@@ -3742,6 +3743,8 @@ hand vectors alone. "Enables" notes the dependency chain.
      I/O          11/11   out of scope
      direct index  2/16   LVE, RNX -- unimplemented
      misc          4/ 5   EX, EXIC unimplemented; R and RCZ IMPLEMENTED
+                          (EX has since been implemented, 2026-09-25;
+                           this screen's numbers are as of its own run)
      BB            3/ 8   SCREEN ARTIFACT, see below
 
    TWO SYSTEMATIC FLAWS THE INDEX RUN NEVER EXPOSED, both worth
@@ -5512,13 +5515,14 @@ hand vectors alone. "Enables" notes the dependency chain.
    and finally `divide` (multi-cycle; the combinational form blows up
    elaboration — needs the serial/parallel E-box of item 5).
 3. **The interrupt system** — the biggest single documented feature
-   still absent, and a prerequisite for EX/EXIC, storage protection,
+   still absent, and a prerequisite for EXIC, storage protection,
    the timer, and any diagnostic that traps. Indicators → mask →
    left-most-one priority → the single "free" interruption instruction
    at IA+indicator#, IC not stepped; enable/disable via BE/BD. Ref.
    Manual pp.43-50, Blosk pp.16-17, Buchholz ch.10.
-4. **Remaining instruction gaps** (mostly self-contained): EX/EXIC
-   (needs item 3's interrupt-state rules), LVE/SVA/RNX/LVS, swap and
+4. **Remaining instruction gaps** (mostly self-contained): EXIC
+   (needs item 3's interrupt-state rules; `EX` itself is done as of
+   2026-09-25), LVE/SVA/RNX/LVS, swap and
    backward Transmit + crossing-field VFL stores (needs a multi-cycle
    store), decimal VFL and radix conversion. Also finish Address
    Invalid for all operand classes (only FP today).

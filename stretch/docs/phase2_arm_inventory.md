@@ -142,7 +142,8 @@ branch target). No Phase 2 work needed for this arm at all.
 | Z (Store Zero) | 0 | 1 (`st.writeWord(..., 0)`) | no | **NONE** (grepped for standalone `Z` opcode usage, zero matches) -- no Phase 2 work needed, pure write |
 | R (Refill, unconditional) -- **CONVERTED, `15ca6fa`** | 1 (inlined, no half-select) | 0 | no | **NONE** |
 | RCZ (Refill on Count Zero) -- **CONVERTED, `15ca6fa`** | 0-1 (conditional on `x.count==0`) | 0 | no | **NONE** |
-| EX/EXIC | 0 (OP-invalid, out of scope) | 0 | n/a | n/a |
+| EXIC | 0 (OP-invalid, out of scope) | 0 | n/a | n/a |
+| EX -- **IMPLEMENTED 2026-09-25** | 1 (the SUBJECT-INSTRUCTION fetch, 2 when a full-length subject straddles two storage words), plus whatever the subject itself needs | 0 in the arm; whatever the subject does | yes -- it uses the ordinary bail/resume path, and `mkEBox.resume` swaps the held instruction for the decoded subject | `strap/programs/ex_subject.strap`, `ex_exe.strap`, `ex_exe_bind.strap`, `ex_monitor.strap` |
 
 ## Transmit (`tagged Transmit`)
 

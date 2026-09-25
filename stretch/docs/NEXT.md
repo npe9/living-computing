@@ -585,7 +585,10 @@ something the project had no direct test for: the `LX`/`SX` **index-word
 round trip**, since it plants an arbitrary instruction through
 `packIndexWord` and executes it.
 
-**Left on 1268**: cases 1B and 1C, blocked on `EX` (item 5).
+**Left on 1268**: cases 1B and 1C. They were blocked on `EX`; `EX`
+is implemented as of 2026-09-25 (item 4a), and their ENCODING is
+already transcribed as `programs/ax5b_1268_test1bc.strap`, so what is
+left is a runnable slice, not a missing instruction.
 
 ## 3. Smaller open pieces inside what is built
 
@@ -835,12 +838,73 @@ injection address a new test records should come from it, and it
 reproduces the ones already recorded — which is what makes them
 checkable rather than folklore.
 
-## 4a. `EX`/`EXIC` — the oracle is read; implement from it
+## 4a. `EX` IS BUILT (2026-09-25); `EXIC` IS THE WORK THAT REMAINS
 
-**The highest-leverage unimplemented instruction**, because four
-already-located transcription targets wait on it: `jb_ax5b` routine
-1268 cases 1B/1C (`EX,$X3`, `EX,$R`) and routine 1260 blocks 16084
-(`LVE`) / 16085 (`EX`).
+**`EX` executes.** The arm is in `StretchExecute.bsv` (the
+`BranchOrMisc` misc code `010`), the subject swap is in `mkEBox`'s
+`resume()`, and the EXE suppression is in the five branch arms.
+Driven by `strap/programs/ex_subject.strap` (subject with an operand
+of its own, two-level `EX`, the subject word left intact, a
+full-length subject straddling two storage words), `ex_exe.strap` (the
+EXE rule over BB / unconditional / CB / SIC / BE / BD),
+`ex_exe_bind.strap` (the EXE rule over BRANCH ON INDICATOR, including
+the trailing-Z CLEAR) and `ex_monitor.strap` (p.32 class 1 on the
+subject's location, p.50's below-32 carve-out, the subject held in a
+register, and the two-level accumulation of the alarm). **Fifteen
+injections, every one observed and every one caught**; each program's
+header carries its own table with the halt address and the source row.
+`EX` has left `audit_opcode_coverage.py`'s `ENCODING_ONLY` set.
+
+**WHAT `EXIC` CAN REUSE, and it is most of the mechanism.** The
+`ExSubject` context (`under` for the EXE rule, `ifSig` for the carried
+class-1 alarm), `exSubjectAddr`, the `HeldOp` struct, `mkEBox`'s
+subject swap including the straddling second read, and every one of
+the five arms' EXE suppressions are all written in terms of "this
+instruction is a subject", not "this instruction is the subject of an
+EX". `EXIC` needs: its own `exSubjectAddr` case (one indirection more
+— p.50, "bits 0-18 of the full-word addressed by bits 0-17 of the
+effective address are used as a pseudo-instruction counter"), a
+pseudo-IC **step** between fetch and execution sized by the subject's
+length, and its two address restrictions (pseudo-IC not in 0-15, the
+subject at 32.00 and greater). It still reaches `setOpInvalid` and
+nothing about it was disturbed.
+
+**WHAT `EX` DELIBERATELY DOES NOT DO**, each a bounded negative rather
+than a guess:
+* **`USA`** (p.45 item 17), the one-millisecond timeout — "the
+  operation is terminated wherever it may be and the program
+  proceeds... this indicator is the only means of breaking out of a
+  loop that occurs as a result of a programming error in the use of
+  execution operations or indirect addressing." An `EX` chain that
+  closes on itself spins one clock per level in this model until the
+  harness's step cap. `StretchCore` does keep a clock counter, so the
+  missing piece is not a clock but a *number*: how many of this model's
+  clocks a millisecond is, which needs a documented cycle time and a
+  documented count (the deck builds a chain of **2049**, which is a
+  number about the machine, not about this model). Timing claims here
+  need a documented number behind them (AGENTS.md), so this is left
+  undone rather than approximated.
+* **p.50's two special exceptions.** "Address monitoring is always in
+  force during (1) EXECUTE and (2) EXECUTE INDIRECT AND COUNT" and "at
+  the completion, termination, or suppression of an execution
+  operation, interruption is always permitted" — both of which
+  override the *disabled* state. `protViolates` gates on
+  `st.irqEnabled()` at some thirty call sites and `interruptDue` gates
+  on the same bit, so honouring either needs an "execution operation
+  in progress" state threaded through `StretchStorage`. That is its
+  own piece of work, and it is what the deck's 1CA/1CB/2CA/2CB test.
+* **The EXE suppression of BRANCH ON INDICATOR's indicator CLEAR** is
+  an inference from p.49's "and so on" plus p.45 item 18's "the
+  subject operation was suppressed", with **no deck witness**: 1262
+  TEST 1CC's branch-on-indicator subject class is on PDF p.92, outside
+  the transcribed range. Flagged in the arm itself.
+* **A Class S alert arising during a subject instruction** (p.52's
+  "may not cause full suppression of the instruction", p.53 item 2b).
+  None of it is implemented.
+
+**Still waiting on `EXIC`**: `jb_ax5b` routine 1268 cases 1B/1C
+(`EX,$X3`, `EX,$R` — these two want `EX` and are now unblocked) and
+routine 1260 blocks 16084 (`LVE`) / 16085 (`EX`).
 
 ### THE OPERATION SPEC, READ FIRST-HAND 2026-09-24 — printed p.50 (PDF 53)
 
@@ -995,14 +1059,21 @@ for instructions that need an operand word:
 * `resume()` collects the word into `prefetch` and **re-runs
   `execute()` with the same held instruction**.
 
-*Proposed* (not yet built): `EX`'s arm returns `needsRead` = the
-subject's address, exactly like any operand fetch. Then `resume()`,
-seeing the held instruction is `EX`/`EXIC`, **decodes the fetched word
-and installs the SUBJECT as the held instruction** — `execute(... ,
-decode(v), emptyPrefetch, 0)` instead of re-running the `EX`. The
-subject's own `needsRead` then works normally, because it is now the
-held instruction. No recursion, no second `execute()` instantiation,
-and the cycle it costs is one the bail-out already pays.
+**BUILT, 2026-09-25, exactly as proposed here.** `EX`'s arm returns
+`needsRead` = the word holding the subject, exactly like any operand
+fetch. Then `resume()`, seeing the held instruction is an `EX`
+(`exSubjectAddr` returns Valid), **decodes the fetched word and
+installs the SUBJECT as the held instruction** — `execute(...,
+decode(hw0, hw1), emptyPrefetch, 0)` instead of re-running the `EX`.
+The subject's own `needsRead` then works normally, because it is now
+the held instruction. No recursion, no second `execute()`
+instantiation, and the cycle it costs is one the bail-out already
+pays. Two details the proposal did not foresee: a full-length subject
+beginning at an odd half-word straddles two storage words and needs a
+second read before it can be decoded at all (1262 TEST 1CC's own
+`I62B6` is that shape), and the class-1 address alarm for an
+intermediate level's subject location has to be carried forward
+because a bailing call's indicator word is discarded.
 
 Two consequences that fall out of that shape and match the sources:
 * the instruction counter advances past the **`EX`**, because

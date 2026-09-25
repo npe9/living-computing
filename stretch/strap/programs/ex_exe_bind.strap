@@ -1,0 +1,121 @@
+! EX: the EXE rule applied to a BRANCH ON INDICATOR subject, including
+! the clause the manual states and no deck in this corpus witnesses.
+!
+! THE RULE, Reference Manual 22-6530-2 printed p.49 (PDF 52 -- PDF page
+! = printed page + 3), read first-hand at 300 dpi:
+!
+!   "The execution exception indicator (EXE) is turned on by any branch
+!   operation of a subject instruction in which the condition for a
+!   successful branch is met.  When indicator EXE is actuated, the
+!   branch and all associated operations are not performed.  The
+!   suppressed actions include the disabling in BRANCH DISABLED, the
+!   enabling in BRANCH ENABLED or BRANCH ENABLED AND WAIT, the counting
+!   and refilling in COUNT, BRANCH AND REFILL, and so on."
+!
+! and printed p.45, indicator 18: "An instruction was executed under
+! control of the EXECUTE or the EXECUTE INDIRECT AND COUNT operations
+! that attempted to change the contents of the instruction counter.
+! THE SUBJECT OPERATION WAS SUPPRESSED."
+!
+! THE CLAUSE WITH NO DECK WITNESS, and it is block B's second check.
+! BRANCH ON INDICATOR's trailing-Z forms CLEAR the indicator they
+! branch on.  That clear is not in the manual's list -- the list ends
+! "and so on" -- so whether EXE suppresses it is an INFERENCE from
+! p.45's "the subject operation was suppressed".  jb_ax5b routine 1262
+! TEST 1CC's first subject class IS an EX of a branch-on-indicator
+! ("EX of a BIND instruction, with its own four error entries
+! I6221/16222/.../I6224", in programs/ax5b_162_test1cc.strap's own
+! header), but that stanza is on PDF p.92 and the transcription begins
+! at I6225 on p.93, so the deck's answer is not in this repo.  The
+! model suppresses the clear; this file pins that decision so that a
+! later transcription of p.92 can contradict it visibly rather than
+! silently.  StretchExecute.bsv's BranchInd arm carries the same note.
+!
+! WHY AN INDEX INDICATOR AND NOT AN ARITHMETIC ONE.  XVZ (indicator 50,
+! "index value zero") is set by an ordinary LX from its loaded value,
+! which gives a one-instruction way to drive the branch condition both
+! ways.  It is also outside the look-ahead's branch-guess path
+! (StretchIBox's indexIndicator), so the MAIN-program rows here do not
+! load a speculative branch level -- a simplification for the reader,
+! not a requirement: a subject instruction never enters the look-ahead
+! whatever its kind.
+!
+! THE BLOCKS:
+!   A  the branch condition is NOT met.  No EXE, and nothing is
+!      suppressed.
+!   B  the same subject word with the condition MET.  EXE on, the
+!      branch not performed (WRONGN is never reached), and the
+!      indicator clear not performed either.
+!
+! RUNS DISABLED THROUGHOUT: EXE's mask bit is permanently one (p.48,
+! mask bits 0-19), so an EXE actuated while enabled would interrupt,
+! and this file has nothing to say about interruption.
+!
+! TWO INJECTIONS, EACH OBSERVED (not predicted).  Each was applied to a
+! pristine snapshot of bsv/StretchExecute.bsv by an exact-substring
+! substitution that aborts unless the anchor occurs exactly once, and
+! the resulting unified diff was printed before the run -- because a
+! `sed` that silently fails to match prints ALL TESTS PASSED, which
+! reads exactly like an honest "this does not discriminate".  Reproduce
+! either row with `python3 line_addresses.py programs/ex_exe_bind.strap`.
+!
+!   the BranchInd arm's EXE guard removed  -> 7809  007500.40
+!     (`if (False)`), so the subject             WRONGN B, $
+!     branch is performed
+!   the branch still suppressed but        -> 7694  007407.00
+!     `o.ind` merged instead of dropped         BZB, $XVZ, $  (B)
+!     (`setBit(o.ind, ind_EXE, 1)`), so         -- XVZ was cleared, so the
+!     the trailing-Z CLEAR lands                   subject's "associated
+!                                                  operation" ran
+!
+! THE SECOND ROW IS THE WHOLE REASON THIS FILE IS SEPARATE.  It is the
+! only injection in the EX set that distinguishes "the branch was
+! suppressed" from "the subject operation was suppressed", which is the
+! difference between p.49's sentence and p.45 item 18's.
+!
+! Every one halted, none survived, and the clean run's PASS is at
+! half-word 7697 (007410.40).
+!
+! WHICH CHECK NO ROW REACHES: block A's "BB,$EXE,$" (EXE must be OFF
+! when the condition is not met).  Neither injection can turn EXE on
+! for an unmet condition, because `ex.under && o.taken` and
+! `setBit(o.ind, ...)` both hang off the same `o.taken`.  It is kept as
+! the other direction of the clause, and as the reason block A has to
+! come first at all: EXE is indicator 18 and nothing in this model can
+! clear it.
+!
+! Instructions used: BD, Z, LX, BB, BZB, EX, BXVZZ, B, BEW -- all
+! implemented.
+
+        SLC, (8)7400.0
+START   BD,  $+.32                 ! disabled: see the header
+        Z,   $IND                  ! XVZ (50) is settable; EXE (18) is not,
+                                   !   and is off at reset
+!
+! ---- A. the branch condition is NOT met ---------------------------
+        LX,  $X1, ONEW             ! value non-zero -> XVZ off
+        BB,  $XVZ, $               ! hang if XVZ came on anyway
+        EX,  SUBJN                 ! subject "BXVZZ,WRONGN"
+        BB,  $EXE, $               ! hang if EXE came on
+!
+! ---- B. the same subject word, condition MET ----------------------
+        LX,  $X1, ZEROW            ! value zero -> XVZ on
+        BZB, $XVZ, $               ! hang if XVZ did not come on
+        EX,  SUBJN                 ! THE TEST: the condition is met now
+        BZB, $EXE, $               ! hang if EXE did not come on
+        BZB, $XVZ, $               ! hang if the CLEAR was performed --
+                                   !   the clause with no deck witness
+        B,   PASS
+PASS    BEW, $
+!
+! ---- the subject, with its "the branch was performed" trap --------
+        SLC, (8)7500.0
+SUBJN   BXVZZ, WRONGN              ! branch on XVZ, and clear XVZ
+WRONGN  B,   $
+!
+! ---- data ---------------------------------------------------------
+        SLC, (8)7600.0
+ZEROW   XW,  0, 0, 0               ! value zero
+        SLC, (8)7601.0
+ONEW    XW,  ZEROW, 0, 0           ! value = ZEROW's bit address, non-zero
+        END, START

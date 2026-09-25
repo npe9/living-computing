@@ -1,0 +1,302 @@
+! EX: THE EXECUTION EXCEPTION INDICATOR (EXE), and what a subject
+! instruction's successful branch is NOT allowed to do.
+!
+! THE RULE, Reference Manual 22-6530-2 printed p.49 (PDF 52 -- PDF page
+! = printed page + 3), read first-hand at 300 dpi:
+!
+!   "In either of the execution instructions, the subject instruction
+!   may be of any type and is performed according to the normal rules
+!   for an operation of its type.  However, in order that the main
+!   program may have full control at all times, the subject instruction
+!   is not allowed to change the state of the interruption system or
+!   replace the contents of the instruction counter.  The execution
+!   exception indicator (EXE) is turned on by any branch operation of a
+!   subject instruction in which the condition for a successful branch
+!   is met.  When indicator EXE is actuated, the branch and all
+!   associated operations are not performed.  The suppressed actions
+!   include the disabling in BRANCH DISABLED, the enabling in BRANCH
+!   ENABLED or BRANCH ENABLED AND WAIT, the counting and refilling in
+!   COUNT, BRANCH AND REFILL, and so on."
+!
+! and printed p.45, indicator 18, which is what settles HOW MUCH "all
+! associated operations" is:
+!
+!   "18. Execute Exception (EXE).  An instruction was executed under
+!   control of the EXECUTE or the EXECUTE INDIRECT AND COUNT operations
+!   that attempted to change the contents of the instruction counter.
+!   THE SUBJECT OPERATION WAS SUPPRESSED."
+!
+! THE DECK ORACLE is jb_ax5b routine 1262 TEST 1CC, "-TEST 1CC, CHK EX
+! OF BRANCH AND EXE.", transcribed for its ENCODING as
+! programs/ax5b_162_test1cc.strap.  That block cannot be run here (it
+! needs SSIP, 1260's subroutines and a 64-word interrupt table), and it
+! reads EXE out by INTERRUPTING; this file reads it out by branching on
+! the indicator bit directly.  1CC's own header records which clauses
+! of the paragraph above it leaves UNWITNESSED -- no COUNT, BRANCH AND
+! REFILL and no BRANCH ENABLED AND WAIT appears as an EX subject
+! anywhere in it -- and blocks D and F below are written for two of
+! them.
+!
+! THE BLOCKS, in the order the EXE indicator forces.  EXE is indicator
+! 18, inside the permanently-read-only 0-19 range, so "Z,$IND" cannot
+! clear it and neither can a BRANCH ON BIT (the bit-change path is
+! gated on bit >= 20).  Every "EXE must be OFF" check therefore has to
+! come before anything that turns it on, and block A is that check.
+!
+!   A  a subject branch whose condition is NOT met.  No EXE, nothing
+!      suppressed: the subject's own bit change still happens.  This is
+!      1CC's "EX,I62B6" case, whose only correct outcome is to fall on
+!      past the EX.
+!   B  a subject branch whose condition IS met.  EXE on, no branch, and
+!      the BIT CHANGE suppressed -- p.45's "the subject operation was
+!      suppressed".  1CC's "EX,I62B5".
+!   C  a subject UNCONDITIONAL branch.  Always successful, so always
+!      EXE.  The witness is WRONGC never being reached.
+!   D  a subject COUNT AND BRANCH.  The clause the manual names by name
+!      and 1CC does not reach: "the counting and refilling in COUNT,
+!      BRANCH AND REFILL".  X7 must come out of the EX bit-for-bit as
+!      it went in -- no count, no value step.
+!   E  a subject STORE INSTRUCTION COUNTER IF.  p.41: the store happens
+!      "if and only if the associated branching is successful", so a
+!      suppressed branch must leave the target word alone.  p.52's own
+!      worked example is a SIC under EXECUTE.
+!   F  a subject BRANCH ENABLED while the machine is DISABLED.  "the
+!      enabling in BRANCH ENABLED ... is suppressed", so the machine
+!      must still be disabled afterwards.
+!   G  a subject BRANCH DISABLED while the machine is ENABLED, the
+!      mirror of F, and the only block that needs the interruption
+!      system running.
+!
+! HOW THE ENABLE STATE IS READ OUT, in F and G, without an interrupt
+! handler chain: p.32's address monitoring is itself gated on the
+! enable bit -- "when the interruption system is disabled, address
+! monitoring is ineffective".  So a READ-ONLY BRANCH ON BIT against a
+! protected word sets DF when the machine is enabled and sets nothing
+! when it is disabled, and DF's mask bit is zero (the reset value) so
+! it signals without suppressing anything (printed p.52 clause 3:
+! "Indicator DF is actuated but does not cause suppression of the
+! instruction").  programs/df_bb_readonly.strap is what establishes
+! that probe; this file only uses it.
+!
+! WHY THERE IS AN INTERRUPT TABLE AT ALL.  EXE's mask bit is one and
+! cannot be anything else (mask bits 0-19 are permanently one, p.48),
+! so the moment block G enables the system a set EXE interrupts.  The
+! table's entries are NOPs: StretchCore runs the one instruction at the
+! effective interruption address and, on a fall-through, leaves the
+! instruction counter where it was -- p.48 -- so a NOP entry turns the
+! interruption off, clears the indicator that caused it, and resumes.
+! That is also how EXE gets cleared before G's own EX sets it again.
+!
+! WHAT IS NOT WITNESSED HERE, said rather than left to be found:
+!   * BRANCH ON INDICATOR as a subject at all: that is
+!     programs/ex_exe_bind.strap, which is a separate file because it
+!     needs an indicator it can drive both ways and because the CLEAR
+!     clause it pins is an INFERENCE with no deck witness.
+!   * BRANCH ENABLED AND WAIT as a subject: WAIT is not implemented at
+!     all in this model, so an EX of BEW would test the enable half
+!     only, which block F already covers.
+!   * A Class S alert arising DURING a subject instruction.  Printed
+!     p.52-53 gives that its own rule ("may not cause full suppression
+!     of the instruction", and p.53 item 2b), and none of it is
+!     implemented.
+!   * ONE CORNER OF BLOCK E'S CLAUSE, labelled rather than guessed.  A
+!     suppressed SIC drops its inner branch's indicator word, which for
+!     a COUNT, BRANCH AND REFILL inner branch would have carried a DF
+!     signal from its refill address.  p.52 item 1 says a suppression
+!     must NOT exclude "indicators DF and IF when their mask bits are
+!     zero"; p.45 item 18 says the subject operation was suppressed.
+!     No deck witnesses it and no program here reaches the combination
+!     (SIC + a CBR inner branch + a protected refill + under EX).  The
+!     arm carries the same note.
+!
+! SEVEN INJECTIONS, EACH OBSERVED (not predicted).  Each was applied to
+! a pristine snapshot of bsv/StretchExecute.bsv by an exact-substring
+! substitution that aborts unless the anchor occurs exactly once, and
+! the resulting unified diff was printed before the run -- because a
+! `sed` that silently fails to match prints ALL TESTS PASSED, which
+! reads exactly like an honest "this does not discriminate".  Reproduce
+! any row with `python3 line_addresses.py programs/ex_exe.strap`.
+!
+!   BB: `takeBranch` no longer excludes    -> 5894  005603.00
+!     `exeHit`, so the subject branches         WRONGB B, $
+!   BB: the EXE indicator never actuated   -> 5652  005412.00
+!     (`if (False)` at the setBit)              BZB, $EXE, $  (B)
+!   BB: the bit change no longer gated on  -> 5654  005413.00
+!     `!exeHit`                                 BZB, $X6, $   (B)
+!                                               -- the subject BBZ cleared
+!                                                  bit 0 after all
+!   CB: the EXE guard removed from the     -> 5899  005605.40
+!     CountBranch arm                           WRONGD B, $
+!                                               -- and RESD never written
+!   BE/BD: the enable change hoisted back  -> 5665  005420.40
+!     ABOVE the EXE guard, where it used        BB, $DF, $    (F)
+!     to be                                     -- DF came on, so the
+!                                                  machine was ENABLED
+!                                                  after a subject BE
+!   SIC: the EXE guard removed from the    -> MARKE = 0x2c3a00555555555
+!     Sic arm                                   (the instruction counter
+!                                               WAS stored), and halted at
+!                                               5902 005607.00 WRONGE B,$
+!   the UNCONDITIONAL-branch arm's EXE     -> 5897  005604.40
+!     guard removed                             WRONGC B, $
+!
+! Every one halted or failed a memory check, none survived, and the
+! clean run's PASS is at half-word 5684 (005432.00).
+!
+! WHICH CHECKS NO ROW REACHES, said rather than left to be found.
+! Block A's "BB,$EXE,$" (EXE must be OFF) is never the halt: no
+! injection here makes EXE come on for a branch whose condition is not
+! met, and the arm computes `exeHit` from the same pair the branch
+! condition uses, so such a bug would have to be a different shape.
+! Block G's "BZB,$DF,$" is likewise never the halt -- the BE/BD
+! injection is caught six rows earlier, in block F.  Both are kept
+! because they are the OTHER direction of their clause.
+!
+! Instructions used: BD, BE, LVI, LX, SX, SV, BB, BB1, BBZ, BZB, Z, EX,
+! B, NOP, BEW -- all implemented.
+
+        SLC, (8)5400.0
+START   BD,  $+.32                 ! disabled; blocks A-F stay that way
+!
+! ---- set-up, all of it while DISABLED -----------------------------
+!   The boundary registers are words 1-3, which p.31 calls permanently
+!   protected, so writing them at all needs the system disabled -- the
+!   reason df_bb_readonly.strap gives for the same sequence.
+        LVI, $X13, TBL
+        SV,  $X13, $IA             ! the interruption address, p.48
+        LVI, $X13, PROT
+        SV,  $X13, $LB             ! lower boundary := PROT
+        LVI, $X13, ABOVE
+        SV,  $X13, $UB             ! upper boundary := ABOVE
+        BBZ, 3.57, $+1.0           ! boundary control := 0, signal INSIDE
+        LX,  $X6, BITW             ! X6 := bit 0 one, every other bit zero
+        LX,  $X7, XWC              ! X7 := value 0, count 2, refill 0
+!
+! ---- A. subject branch condition NOT met: no EXE ------------------
+!   "BB1,$X6+.01,WRONGA" -- bit 1 of X6 is ZERO, so the branch
+!   condition is not met and the instruction is not suppressed at all;
+!   its bit change still happens.
+        EX,  SUBJA
+        BB,  $EXE, $               ! hang if EXE came on
+        BB,  $X6+.01, A1           ! bit 1 must now be ONE
+        B,   $                     ! hang: the subject did not execute
+A1      BBZ, $X6+.01, $+1.0        ! put bit 1 back to zero
+!
+! ---- B. subject branch condition MET: EXE, no branch, no bit change
+!   "BBZ,$X6,WRONGB" -- bit 0 of X6 is ONE, so the condition IS met.
+        EX,  SUBJB
+        BZB, $EXE, $               ! hang if EXE did NOT come on
+        BZB, $X6,  $               ! hang if bit 0 was cleared: the bit
+                                   !   change is an "associated operation"
+!
+! ---- C. subject UNCONDITIONAL branch ------------------------------
+        EX,  SUBJC                 ! subject "B,WRONGC"
+        B,   D0                    ! reached only because the branch was
+                                   !   not performed
+!
+! ---- D. subject COUNT AND BRANCH: no counting, no refilling -------
+!   X7's count is 2, so "CB+,$X7,WRONGD" would step it to 1, add 64 to
+!   the value and branch.  Under EXE none of that happens, so X7 comes
+!   back out identical to the XWC it was loaded from.
+D0      EX,  SUBJD
+        SX,  $X7, RESD             ! checked against XWC by the testbench
+!
+! ---- E. subject SIC: the instruction counter is not stored --------
+        EX,  SUBJE                 ! subject "SIC,MARKE / B,WRONGE"
+                                   !   MARKE is checked unchanged by the
+                                   !   testbench
+!
+! ---- F. subject BRANCH ENABLED while DISABLED ---------------------
+        Z,   $IND                  ! clears DF (bit 20); EXE (18) survives
+        EX,  SUBJF                 ! subject "BE,WRONGF"
+        BB,  PROT.0, $+1.0         ! the enable probe: read-only BB on a
+                                   !   protected word
+        BB,  $DF,  $               ! hang if DF came on -- that would mean
+                                   !   the machine was ENABLED, i.e. the
+                                   !   subject's enabling was not suppressed
+!
+! ---- G. subject BRANCH DISABLED while ENABLED ---------------------
+        BE,  $+.32                 ! ENABLE for real.  EXE is on from B-F,
+                                   !   so this interrupts at once; entry 18
+                                   !   is a NOP, which clears EXE and
+                                   !   resumes here (see the header)
+        NOP
+        NOP
+        NOP
+        NOP
+        Z,   $IND                  ! clear DF again
+        EX,  SUBJG                 ! subject "BD,WRONGG"
+        NOP                        ! slack: this model takes an
+        NOP                        !   interruption at a quiescent
+        NOP                        !   boundary, not p.48's instruction
+        NOP                        !   boundary -- df_bb_readonly's note
+        BB,  PROT.0, $+1.0         ! the enable probe again
+        BZB, $DF,  $               ! hang if DF is OFF -- that would mean
+                                   !   the machine was DISABLED, i.e. the
+                                   !   subject's disabling was not suppressed
+        BD,  $+.32                 ! disable before halting
+        B,   PASS
+PASS    BEW, $
+!
+! ---- the subjects -------------------------------------------------
+!   One to a word, so that each subject's address is obvious and the
+!   "WRONG" trap after it is the half-word the subject would have
+!   branched to if EXE had failed to suppress the branch.
+        SLC, (8)5600.0
+SUBJA   BB1, $X6+.01, WRONGA       ! full word
+        SLC, (8)5601.0
+WRONGA  B,   $
+        SLC, (8)5602.0
+SUBJB   BBZ, $X6, WRONGB           ! full word
+        SLC, (8)5603.0
+WRONGB  B,   $
+        SLC, (8)5604.0
+SUBJC   B,   WRONGC
+WRONGC  B,   $
+        SLC, (8)5605.0
+SUBJD   CB+, $X7, WRONGD
+WRONGD  B,   $
+        SLC, (8)5606.0
+SUBJE   SIC, MARKE                 ! full word: SIC + its embedded branch
+        B,   WRONGE
+        SLC, (8)5607.0
+WRONGE  B,   $
+        SLC, (8)5610.0
+SUBJF   BE,  WRONGF
+WRONGF  B,   $
+        SLC, (8)5611.0
+SUBJG   BD,  WRONGG
+WRONGG  B,   $
+!
+! ---- the interruption table (p.48: entry N is at TBL + N words) ---
+!   Every entry a NOP, so any interruption that does fire turns its own
+!   indicator off and hands control straight back.  The table is sized
+!   to cover indicator 21 (IF); nothing above that can be actuated by
+!   anything in this file.
+        SLC, (8)5700.0
+TBL     NOP
+        SLC, (8)5722.0
+EXERTN  NOP                        ! entry 18 = EXE (0o5700 + 0o22)
+        SLC, (8)5723.0
+DSRTN   NOP                        ! entry 19 = DS
+        SLC, (8)5724.0
+DFRTN   NOP                        ! entry 20 = DF
+        SLC, (8)5725.0
+IFRTN   NOP                        ! entry 21 = IF
+!
+! ---- data ---------------------------------------------------------
+        SLC, (8)6000.0
+BITW    DD(BU,64,8), 9223372036854775808   ! 2**63: IBM bit 0 only
+        SLC, (8)6001.0
+XWC     XW,  0, 2, 0               ! value 0, count 2, refill 0
+        SLC, (8)6002.0
+RESD    DD(BU,64,8), 0
+        SLC, (8)6003.0
+MARKE   DD(BU,64,8), (8)252525252525
+!
+! ---- the monitored area, [PROT, ABOVE) ----------------------------
+        SLC, (8)6100.0
+PROT    DD(BU,64,8), 0             ! == the lower boundary
+        SLC, (8)6101.0
+ABOVE   DD(BU,64,8), 0             ! == the upper boundary, first word out
+        END, START

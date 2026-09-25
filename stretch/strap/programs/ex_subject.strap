@@ -1,0 +1,180 @@
+! EX (EXECUTE): the subject instruction is fetched and executed, and
+! CONTROL COMES BACK TO THE INSTRUCTION AFTER THE EXECUTE.
+!
+! THE RULE, Reference Manual 22-6530-2 printed p.50 (PDF 53 -- PDF page
+! = printed page + 3), read first-hand at 300 dpi:
+!
+!   "Execute (EX).  Bits 0-18 of the effective address form the address
+!   of the location of a subject instruction that is fetched and
+!   executed.  Subject instructions of EXECUTE may occupy any
+!   addressable location."
+!
+! and printed p.49, which is where the control rule is stated:
+!
+!   "When an execution operation is initiated in the main program, the
+!   instruction counter is stepped in normal fashion as in all
+!   operations of the main program.  However, it is never stepped
+!   during the execution of any subject instruction even if the subject
+!   instruction is again one of the execution instructions."
+!
+!   "If an execution operation specifies an execution instruction as
+!   its subject instruction, the subject instruction of the second-
+!   level execution operation is obtained.  If this, in turn, is still
+!   another execution instruction, the procedure is carried to
+!   succeeding levels until an instruction that is not an execution
+!   instruction is obtained."
+!
+! WHAT EACH BLOCK IS FOR, and the deck row each one answers to.  The
+! deck oracle is jb_ax5b routine 1262 TEST 1A ("EX MUST NOT RELINQUISH
+! CONTROL") and TEST 1B ("CHK EX OF EACH TYPE OF INSTRUCTION"), which
+! are transcribed for their ENCODING as programs/ax5b_162_test1b.strap
+! and cannot be run (they need SSIP, the 64-word interrupt table and
+! 1260's subroutines).  This file is the behavioural counterpart, hand-
+! written from the manual, and says so.
+!
+!   A  EX of a subject that needs AN OPERAND OF ITS OWN.  "LX,$X1,SRCA"
+!      bails for a second storage read after the subject-instruction
+!      fetch has already bailed for a first, which is the structural
+!      case a one-level implementation gets wrong.  TEST 1B's DIR IX
+!      class ("I62EX = LX,$X1,I00O") is exactly this shape.
+!   B  TWO-LEVEL EX, p.49's "carried to succeeding levels".  TEST 1A
+!      exercises it; this is the smallest form of it.
+!   C  THE SUBJECT WORD IS NOT DISTURBED.  TEST 1B's second check per
+!      class -- "-EX DESTROYED SUBJ INST." -- compares the subject slot
+!      against a master copy.  With no master copy to hand, this block
+!      does the equivalent by EXECUTING THE SAME SUBJECT WORD TWICE:
+!      if the first EX damaged it, the second cannot work.
+!   D  A FULL-LENGTH SUBJECT AT AN ODD HALF-WORD, which straddles two
+!      storage words and so takes two reads before it can even be
+!      decoded.  Not invented here: 1262 TEST 1CC's own subject I62B6
+!      is "BB,$X0+.01,I6238", a full word, at 024205.40, and the
+!      "EX,I62B6" that names it prints octal pair 52 -- bit 18 = 1.
+!
+! EVERY SUBJECT IS FOLLOWED BY A "B,$" IN THE CONSTANTS AREA, and those
+! rows are the instrument, not padding.  If the model returned control
+! to the half-word after the SUBJECT instead of the half-word after the
+! EXECUTE, the program would halt on one of WRONGA/WRONGB/WRONGB2/
+! WRONGC/WRONGD instead of at PASS, and the PC check names which.  That
+! failure is 1262 TEST 1CC's I6235 error text in miniature: "-NO INT
+! WHEN EX BB, COND FOR BRANCH MET, NO BRANCH, CONTROL GIVEN TO NEXT
+! INSTRUCT FOLLOWING BRANCH."
+!
+! RUNS DISABLED THROUGHOUT.  Nothing here is about the interruption
+! system or address monitoring; programs/ex_monitor.strap is.  Running
+! disabled keeps protViolates (p.32's enable gate) out of the way so
+! that a failure here can only be about the execution operation.
+!
+! THREE INJECTIONS, EACH OBSERVED (not predicted).  Each was applied to
+! a pristine snapshot of bsv/StretchExecute.bsv by an exact-substring
+! substitution that aborts unless the anchor occurs exactly once, and
+! the resulting unified diff was printed before the run -- because a
+! `sed` that silently fails to match prints ALL TESTS PASSED, which
+! reads exactly like an honest "this does not discriminate".  Reproduce
+! any row with `python3 line_addresses.py programs/ex_subject.strap`.
+!
+!   the subject installed under its OWN    -> 5377  005200.40
+!     pc and len (`rpc = sa; rlen = slen`        WRONGA B, $
+!     in mkEBox's resume)                        -- EXECUTE relinquished
+!                                                   control; RESA, RESB
+!                                                   and MARKD also wrong
+!   the straddling subject's SECOND read   -> 5142  005013.00
+!     dropped (`if (False)` in place of          B, $ (D)
+!     `slen == Full && sa[0] == 1 &&             -- MARKD still zero: the
+!     cnt < 2`)                                     full word was decoded
+!                                                   from one storage word
+!                                                   and half of it was junk
+!   the subject given the subject-FETCH    -> step cap (30000) reached
+!     word as its prefetch (`rpf = pf;            without halting; PC left
+!     rcnt = 1` instead of an empty slot)         at 5125 005002.40
+!                                                 EX, SUBJB
+!                                                 -- RESA and RESB came out
+!                                                    as the SUBJECT WORDS
+!                                                    themselves, and the
+!                                                    two-level EX in block B
+!                                                    never terminated
+!
+! Every one halted or failed a memory check, none survived, and the
+! clean run's PASS is at half-word 5144 (005014.00).
+!
+! Instructions used: BD, Z, EX, LX, SX, BB1, BZB, B, BEW -- all
+! implemented.  EX is the one this file exists for.
+
+        SLC, (8)5000.0
+START   BD,  $+.32                 ! disabled: see the header
+!
+! ---- A. EX of a subject that fetches an operand of its own --------
+        Z,   $X1                   ! so a failure cannot pass by accident
+        EX,  SUBJA                 ! subject "LX,$X1,SRCA"
+        SX,  $X1, RESA             ! reached only if control came back here
+!
+! ---- B. two-level EX: EX of an EX ---------------------------------
+        Z,   $X2
+        EX,  SUBJB                 ! subject "EX,SUBJB2"; ITS subject is
+        SX,  $X2, RESB             !   "LX,$X2,SRCB"
+!
+! ---- C. the same subject word, executed twice ---------------------
+        BB1, MARKC.0, $+1.0        ! plant bit 0 of MARKC
+        EX,  SUBJC                 ! subject "Z,MARKC" -- the store clears
+        BZB, MARKC.0, C1           !   the whole word, so bit 0 going to
+        B,   $                     !   zero says the store happened
+C1      BB1, MARKC.0, $+1.0        ! plant bit 0 again
+        EX,  SUBJC                 ! the SAME word, a second time
+        BZB, MARKC.0, C2
+        B,   $                     ! hang: the first EX damaged the subject
+!
+! ---- D. a full-length subject that straddles two storage words ----
+!   The subject is "BB1,MARKD.0,WRONGD": branch if bit 0 is ONE, and
+!   set bit 0 to one either way.  MARKD's bit 0 starts at ZERO, so the
+!   branch condition is NOT met -- no branch, and (printed p.49) no EXE,
+!   because EXE is turned on only "by any branch operation of a subject
+!   instruction in which the condition for a successful branch is met".
+!   The bit change is therefore an ordinary unsuppressed one, and it is
+!   what says the straddling subject was decoded correctly at all: a
+!   model that took the second half-word from the wrong storage word
+!   would decode some other instruction entirely.
+C2      EX,  SUBJD
+        BB,  MARKD.0, D1           ! bit 0 must now be ONE
+        B,   $                     ! hang: the straddling subject did not
+                                   !   execute, or executed as something else
+D1      B,   PASS
+PASS    BEW, $
+!
+! ---- the subjects, each with its "control did not come back" trap --
+!   Laid out by hand rather than left to the assembler: block D needs a
+!   FULL-WORD subject at a .40 half-word, so SUBJD is preceded by one
+!   half-word instruction that puts it there.
+        SLC, (8)5200.0
+SUBJA   LX,  $X1, SRCA
+WRONGA  B,   $                     ! control returned after the SUBJECT
+        SLC, (8)5201.0
+SUBJB   EX,  SUBJB2
+WRONGB  B,   $
+        SLC, (8)5202.0
+SUBJB2  LX,  $X2, SRCB
+WRONGB2 B,   $
+        SLC, (8)5203.0
+SUBJC   Z,   MARKC
+WRONGC  B,   $
+!
+!   Block D's subject.  A half-word filler first, so the full word that
+!   follows begins at .40 and its two half-words live in two different
+!   storage words -- the I62B6 shape.
+        SLC, (8)5204.0
+FILLD   B,   $                     ! never executed; it is here for its LENGTH
+SUBJD   BB1, MARKD.0, WRONGD       ! full word, beginning at 5204.40
+WRONGD  B,   $
+!
+! ---- data --------------------------------------------------------
+        SLC, (8)5300.0
+SRCA    DD(BU,64,8), (8)123456701234
+        SLC, (8)5301.0
+SRCB    DD(BU,64,8), (8)765432107654
+        SLC, (8)5302.0
+MARKC   DD(BU,64,8), 0             ! bit 0 is planted by the program
+        SLC, (8)5303.0
+RESA    DD(BU,64,8), 0
+        SLC, (8)5304.0
+RESB    DD(BU,64,8), 0
+        SLC, (8)5305.0
+MARKD   DD(BU,64,8), 0             ! bit 0 starts at ZERO: see block D
+        END, START

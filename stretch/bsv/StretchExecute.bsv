@@ -13,11 +13,26 @@
 // can honour -- Ref. Manual pp.30-31).
 //
 // Every decoded format/opcode NOT yet implemented -- decimal
-// arithmetic, radix conversion, interrupts, EX/EXIC, RNX/LVE/SVA, LVS,
+// arithmetic, radix conversion, interrupts, EXIC, RNX/LVE/SVA, LVS,
 // Transmit backward/swap/multi-word/direct-count -- sets indicator 15
 // (OP, Operation Code Invalid) and otherwise acts as a no-op, and for
 // Transmit that was only TRUE OF `backward` until 2026-09-22: see the
-// Transmit arm and StretchTypes' Transmit comment.  Matching the documented
+// Transmit arm and StretchTypes' Transmit comment.
+//
+// EX (EXECUTE) LEFT THAT LIST on 2026-09-25 and EXIC did not.  The two
+// share the subject-fetch machinery below (the `ExSubject` context, the
+// EX arm's bail-out, mkEBox's subject swap, the EXE suppression in the
+// five branch arms); what EXIC adds on top is its pseudo-instruction
+// counter -- Ref. Manual printed p.50: "Bits 0-18 of the full-word
+// addressed by bits 0-17 of the effective address are used as a
+// pseudo-instruction counter... After the subject instruction has been
+// fetched but prior to its execution, the pseudo-instruction counter is
+// stepped" -- plus its two address restrictions (pseudo-IC not in 0-15,
+// subject at 32.00 and above).  None of that is built; EXIC still
+// reaches setOpInvalid, deliberately, so that the counter is not
+// half-stepped by a partial implementation.
+//
+// Matching the documented
 // real-machine behavior for an invalid/suppressed instruction
 // (Reference Card, indicator class "S": "execution of instruction is
 // suppressed"). See bsv/README.md "Scope" for the full accounting and
@@ -468,6 +483,77 @@ function WordAddr effAddr18(StretchStorage st, WordAddr raw, Bit#(4) idx);
     return ea[23:6];                   // only the applicable part
   end
 endfunction
+
+// ---------------------------------------------------------------------
+// EXECUTION OPERATIONS (Reference Manual printed pp.49-50, PDF 52-53),
+// read first-hand at 300 dpi.  The machinery is in three pieces and
+// this is the first of them:
+//
+//   1. `exSubjectAddr` here -- WHERE the subject instruction lives.
+//   2. execute()'s EX arm -- asks the E-box to fetch that word and
+//      does nothing else.
+//   3. mkEBox.resume() -- decodes the fetched word and installs the
+//      SUBJECT as the held instruction, keeping the EX's own pc/len.
+//
+// p.50, EXECUTE: "Bits 0-18 of the effective address form the address
+// of the location of a subject instruction that is fetched and
+// executed.  Subject instructions of EXECUTE may occupy any addressable
+// location."  BITS 0-18 IS A HALF-WORD ADDRESS, which is why this uses
+// effAddr19 and not the effAddr24/baWord pair the Z and R arms beside
+// EX use -- those two address a WORD and throw bit 18 away.  The deck
+// settles it rather than the type: routine 1262 TEST 1CC's "EX,I62B6"
+// prints machine code 24205.52, and octal pair 52 = 101010 has bit 18 =
+// 1, so that subject sits at half-word 024205.40 (the reading is worked
+// out in strap/programs/ax5b_162_test1cc.strap's header).
+//
+// Returns Invalid for anything that is not an EXECUTE, which is how
+// mkEBox tells "an operand word arrived" from "a subject instruction
+// arrived": an EX is the only instruction whose bail-out read is a
+// fetch of something to be DECODED rather than something to be USED.
+// EXIC is deliberately NOT recognised here -- it still reaches
+// setOpInvalid in the arm below and never bails, so it can never be the
+// held instruction.
+// ---------------------------------------------------------------------
+function Maybe#(HWordAddr) exSubjectAddr(StretchStorage st, DecodedInstr d);
+  case (d) matches
+    tagged BranchOrMisc .bm:
+      return (bm.misc && bm.code == 3'b010)
+               ? tagged Valid effAddr19(st, bm.addr, bm.idx)
+               : tagged Invalid;
+    default: return tagged Invalid;
+  endcase
+endfunction
+
+// WHAT execute() NEEDS TO KNOW when the instruction it is running is
+// the SUBJECT of an execution operation rather than an instruction of
+// the main program.  Two facts, and both of them are about rules the
+// subject's own arm cannot see for itself:
+//
+// `under` -- p.49: "the subject instruction is not allowed to change
+//   the state of the interruption system or replace the contents of the
+//   instruction counter.  The execution exception indicator (EXE) is
+//   turned on by any branch operation of a subject instruction in which
+//   the condition for a successful branch is met.  When indicator EXE
+//   is actuated, the branch and all associated operations are not
+//   performed."  p.45 item 18 says how much is "all": "The subject
+//   operation was suppressed."  So every arm that can branch asks this
+//   flag and, when its condition is met, sets EXE and does NOTHING
+//   ELSE -- not the branch, not BD's disabling, not CBR's counting and
+//   refilling, not SIC's store, not BRANCH ON BIT's bit change.
+//
+// `ifSig` -- the accumulated p.32 class-1 alarm for the SUBJECT
+//   LOCATIONS of the chain, computed by mkEBox because only the E-box
+//   sees every level.  It has to be carried rather than recomputed
+//   here: execute()'s indicator word is DISCARDED on every call that
+//   bails for a read (see the function's tail), and every level of a
+//   multi-level EX is exactly such a call, so an intermediate level's
+//   alarm would otherwise be lost.
+typedef struct {
+  Bool under;
+  Bool ifSig;
+} ExSubject deriving (Bits, Eq, FShow);
+
+ExSubject notSubject = ExSubject { under: False, ifSig: False };
 
 // readHW/readHWWithWord/writeHW (the internal-read variants of this
 // section) were removed once every caller had migrated to the
@@ -3304,9 +3390,24 @@ endfunction
 
 function ActionValue#(ExecResult)
     execute(StretchStorage st, StretchIO io, HWordAddr pc, InstrLen len, DecodedInstr di,
-            Vector#(2, Word64) prefetch, Bit#(2) prefetchCount, Bool atIntAddr) =
+            Vector#(2, Word64) prefetch, Bit#(2) prefetchCount, Bool atIntAddr,
+            ExSubject ex) =
   actionvalue
     Maybe#(WordAddr) needsRead = tagged Invalid;
+    // WHEN `ex.under` IS TRUE, `pc` AND `len` ARE THE EXECUTE'S, NOT
+    // THE SUBJECT'S, and that is the whole of p.49's instruction-counter
+    // rule: "When an execution operation is initiated in the main
+    // program, the instruction counter is stepped in normal fashion as
+    // in all operations of the main program.  However, it is never
+    // stepped during the execution of any subject instruction even if
+    // the subject instruction is again one of the execution
+    // instructions."  mkEBox installs the subject under the EX's own
+    // pc/len, so `fallthrough` is the half-word after the EXECUTE at
+    // every level of the chain, and StretchCore's commitNext -- which
+    // reads pc/len back out of the E-box -- steps past the EXECUTE and
+    // nothing else.  p.52 item 3 of what a suppression must exclude
+    // ("the stepping of the instruction counter") is the same rule seen
+    // from the other side.
     HWordAddr fallthrough = pc + ((len == Full) ? 2 : 1);
     HWordAddr next = fallthrough;
     Word64 ind = st.readIndicators();
@@ -3334,6 +3435,34 @@ function ActionValue#(ExecResult)
     // read -- that call's `ind` is discarded and the resuming call
     // reaches this line again with the same `pc`.
     if (!atIntAddr) ind = ifSignal(st, pc[18:1], ind);
+
+    // THE SAME CLASS 1, FOR A SUBJECT INSTRUCTION'S OWN LOCATION.
+    // `pc` above is the EXECUTE's location, deliberately (see
+    // `fallthrough`); the subject's location is a different address and
+    // p.32 class 1 -- "the location of each instruction to be executed"
+    // -- covers it too, because a subject instruction IS executed.
+    // mkEBox evaluates it, one level at a time, and hands the answer
+    // in; the reason it is not evaluated here is in ExSubject's comment.
+    //
+    // AND THE BELOW-32 CARVE-OUT IS WHY `ifViolates` IS THE RIGHT
+    // PREDICATE FOR IT, which is not the same as it being the same
+    // rule.  p.50 on EXECUTE: "An effective address of EXECUTE that is
+    // below 32.00 (including addresses between 1.00 and 3.32) is not
+    // monitored by the address monitoring mechanism; that is, indicator
+    // IF cannot be actuated by these addresses."  ifViolates' own
+    // `a >= 32` guard exists for a DIFFERENT reason -- p.45 on AD,
+    // "branching to an address below 32 also actuates the indicator",
+    // plus p.32's "an address which actuates AD cannot actuate any of
+    // the address alarm indicators" -- so for a BRANCH below 32 the
+    // machine raises AD instead of IF.  For an EXECUTE below 32 it
+    // raises NEITHER: p.50 says the subject "may occupy any addressable
+    // location", so there is no invalid address to report.  The two
+    // rules happen to agree on the numeric test and disagree on what
+    // else happens, and the model gets both right today only because
+    // it does not raise AD for a branch below 32 either (ifViolates'
+    // own note says so).  Stated so that a later AD implementation does
+    // not reach for this call site.
+    if (ex.ifSig) ind = setBit(ind, ind_IF, 1);
 
     // INDEX-REGISTER WRITES ARE DEFERRED TO ONE CALL, EXACTLY LIKE
     // INDICATORS ABOVE, for every format EXCEPT VflInt's progressive
@@ -3417,16 +3546,43 @@ function ActionValue#(ExecResult)
         BranchOutcome o = evalBranch(st, di, ind, prefetch, prefetchCount, 0);
         needsRead = o.needsRead;
         if (o.needsRead matches tagged Invalid) begin
-          ind = o.ind; doIdxWrite = o.doIdxWrite;
-          idxWriteReg = o.idxWriteReg; idxWriteVal = o.idxWriteVal;
-          if (o.taken) next = o.relative ? (fallthrough + o.target) : o.target;
+          // EXE, p.49, and this arm is the one the manual NAMES: "the
+          // suppressed actions include... the counting and refilling in
+          // COUNT, BRANCH AND REFILL".  So `doIdxWrite` -- which is
+          // exactly the count and the refill -- is not taken either,
+          // and neither is `o.ind`, which carries the index result
+          // indicators of a count that p.45 item 18 says never
+          // happened ("The subject operation was suppressed").
+          if (ex.under && o.taken)
+            ind = setBit(ind, ind_EXE, 1);
+          else begin
+            ind = o.ind; doIdxWrite = o.doIdxWrite;
+            idxWriteReg = o.idxWriteReg; idxWriteVal = o.idxWriteVal;
+            if (o.taken) next = o.relative ? (fallthrough + o.target) : o.target;
+          end
         end
       end
 
       tagged BranchInd .*: begin
         BranchOutcome o = evalBranch(st, di, ind, prefetch, prefetchCount, 0);
-        ind = o.ind;
-        if (o.taken) next = o.relative ? (fallthrough + o.target) : o.target;
+        // EXE, p.49.  `o.ind` is dropped here, not merged, and that
+        // decision is an INFERENCE, flagged rather than smoothed: it
+        // carries BRANCH ON INDICATOR's own `clear` (the BZ forms), and
+        // the manual's list of suppressed actions -- BD's disabling,
+        // BE/BEW's enabling, CBR's counting and refilling -- ends "and
+        // so on" without naming the clear.  p.45 item 18's "The subject
+        // operation was suppressed" is what tips it, since the clear is
+        // part of the operation.  NO DECK WITNESS: routine 1262 TEST
+        // 1CC's first subject class IS an EX of a branch-on-indicator,
+        // but it sits on PDF p.92, which the transcription
+        // (strap/programs/ax5b_162_test1cc.strap) cuts away at I6225 --
+        // its header says so in as many words.
+        if (ex.under && o.taken)
+          ind = setBit(ind, ind_EXE, 1);
+        else begin
+          ind = o.ind;
+          if (o.taken) next = o.relative ? (fallthrough + o.target) : o.target;
+        end
       end
 
       // -----------------------------------------------------------
@@ -3453,13 +3609,32 @@ function ActionValue#(ExecResult)
           // The mechanism exists now -- StretchCore's rl_interrupt --
           // and BEW's WAIT is still unimplemented, which is a
           // different claim.  See docs/NEXT.md item 3.)
-          case (bm.code)
-            3'b000, 3'b100: st.setIrqEnabled(True);   // BE, BEW
-            3'b001:         st.setIrqEnabled(False);  // BD
-            default:        noAction;
-          endcase
+          //
+          // AND THE ENABLE CHANGE MOVED *BELOW* evalBranch on
+          // 2026-09-25, which is a real reordering and not tidying.
+          // p.49 on EXE: "the subject instruction is not allowed to
+          // change the state of the interruption system... The
+          // suppressed actions include the disabling in BRANCH
+          // DISABLED, the enabling in BRANCH ENABLED or BRANCH ENABLED
+          // AND WAIT."  st.setIrqEnabled is an Action and cannot be
+          // taken back later in the same call, so the EXE decision has
+          // to be made before it -- which means evalBranch has to run
+          // first.  Safe: evalBranch's BranchOrMisc arm reads the
+          // instruction and the index registers only, never the enable
+          // bit, so moving it ahead cannot change what it returns.
+          // Routine 1262 TEST 1CC's I6227 and I6232 probes are the
+          // deck's own test of exactly this pair of suppressions.
           BranchOutcome o = evalBranch(st, di, ind, prefetch, prefetchCount, 0);
-          if (o.taken) next = o.relative ? (fallthrough + o.target) : o.target;
+          if (ex.under && o.taken)
+            ind = setBit(ind, ind_EXE, 1);
+          else begin
+            case (bm.code)
+              3'b000, 3'b100: st.setIrqEnabled(True);   // BE, BEW
+              3'b001:         st.setIrqEnabled(False);  // BD
+              default:        noAction;
+            endcase
+            if (o.taken) next = o.relative ? (fallthrough + o.target) : o.target;
+          end
         end else begin
           case (bm.code)
             3'b100: begin // Z (Store Zero)
@@ -3605,7 +3780,54 @@ function ActionValue#(ExecResult)
                 end
               end
             end
-            default: ind = setOpInvalid(ind); // EX, EXIC: out of scope
+            3'b010: begin // EX (EXECUTE), Reference Manual printed p.50
+              // "Bits 0-18 of the effective address form the address of
+              // the location of a subject instruction that is fetched
+              // and executed."
+              //
+              // THIS ARM ONLY ASKS FOR THE FETCH.  It sets needsRead
+              // and touches nothing else, so the E-box's ordinary
+              // operand bail-out carries it: mkEBox issues the read,
+              // holds this EX, and on the next clock decodes the word
+              // and installs the SUBJECT as the held instruction under
+              // this EX's own pc and len.  execute() is a pure function
+              // that BSV inlines, so it cannot call itself and a second
+              // instantiation would be a second writer of storage in
+              // one rule (the G0004 shape StretchStorage's comments
+              // describe); the bail/resume path costs one clock that
+              // any operand fetch already costs and needs neither.
+              //
+              // `exSubjectAddr` above computes the same address and is
+              // what mkEBox uses -- one function, two callers, so the
+              // half-word-address reading cannot drift between them.
+              //
+              // THE TWO CALLS SEE THE SAME INDEX REGISTER, and that is
+              // a CONSEQUENCE OF THE DRAIN rather than a coincidence.
+              // StretchIBox's iboxHazard returns True for this arm, so
+              // an EX is not dispatched until every look-ahead level
+              // has retired; StretchCore's rl_prepare then blocks on
+              // ebox.busyFor(OwnerIbox) while the EX is held, so no new
+              // level can load; pendingIdxWrite is necessarily Invalid
+              // at dispatch (rl_idx_write outranks rl_prepare), so
+              // progressive indexing's second step cannot interleave;
+              // and rl_recover's restoreIndex is reachable only from
+              // rl_au_remove, which needs a level. No rule that writes
+              // an index register can fire between the two calls.
+              //
+              // NO INDICATOR IS SET HERE, and none could be: a call
+              // that bails has its `ind` discarded (see this function's
+              // tail).  The subject's own location is monitored on the
+              // call that finally runs the subject, through
+              // ExSubject.ifSig.
+              //
+              // Reached exactly once per EXECUTE, with prefetchCount 0:
+              // mkEBox replaces the held instruction before this arm
+              // could see a collected word, so there is no
+              // "prefetchCount >= 1" branch to write.
+              let sa = validValue(exSubjectAddr(st, di));
+              needsRead = tagged Valid sa[18:1];
+            end
+            default: ind = setOpInvalid(ind); // EXIC: out of scope
           endcase
         end
       end
@@ -3642,6 +3864,34 @@ function ActionValue#(ExecResult)
         BranchOutcome o = evalBranch(st, inner, ind, prefetch, prefetchCount, 0);
         if (o.needsRead matches tagged Valid .*) begin
           needsRead = o.needsRead;
+        end else if (ex.under && o.taken) begin
+          // AND A CORNER THIS DELIBERATELY DOES NOT DECIDE, labelled
+          // rather than guessed -- the same shape, and the same
+          // argument, as the one the R/RCZ arm leaves open.  Dropping
+          // `o.ind` here also drops a DF signal a COUNT, BRANCH AND
+          // REFILL inner branch may have raised on its refill address
+          // (p.32 class 3).  p.52 item 1 argues the other way: a
+          // suppression "must necessarily exclude... the actuation of
+          // those indicators, associated with the instruction, of
+          // Class S, and indicators DF and IF WHEN THEIR MASK BITS ARE
+          // ZERO".  p.45 item 18's "the subject operation was
+          // suppressed" argues this way.  No deck this project has
+          // read witnesses it and no program in the suite reaches the
+          // combination (it needs SIC + a CBR inner branch + a
+          // protected refill + running under EX), so this takes the
+          // same uniform shape as every other suppression site.
+          //
+          // EXE, p.49, DECIDED HERE AND NOT AT THE COMMIT POINT, and
+          // the placement is the point: SIC stores "if and only if the
+          // associated branching is successful", and reading the target
+          // half-word to modify it is the next thing this arm would do.
+          // p.45 item 18 says the subject operation "was suppressed",
+          // so the read for a store that never happens must not be
+          // issued at all -- hence before the `needsRead` below rather
+          // than after it.  (BRANCH ON BIT is the opposite case and its
+          // arm says so: there the condition cannot be known until the
+          // bit word has been read, so its EXE test comes after.)
+          ind = setBit(ind, ind_EXE, 1);
         end else begin
           BitAddr ea = effAddr24(st, s.addr, s.idx);
           HWordAddr ha = ea[23:5];
@@ -4043,7 +4293,36 @@ function ActionValue#(ExecResult)
           // with that meaning) and the machine was allowed to look
           // (`takeBranch`).  Everything downstream of the test hangs
           // off the second.
-          Bool takeBranch = wouldBranch && !noTest;
+          // A THIRD NAME, and it is p.49's: EXE.  "The execution
+          // exception indicator (EXE) is turned on by any branch
+          // operation of a subject instruction in which the condition
+          // for a successful branch is met.  When indicator EXE is
+          // actuated, the branch and all associated operations are not
+          // performed."  The condition is `wouldBranch && !noTest` --
+          // the machine looked AND the bit said branch -- so `exeHit`
+          // hangs off the same pair `takeBranch` did, and `takeBranch`
+          // now excludes it so that every existing consumer (the IF
+          // signal, the IF suppression, `next`) is suppressed without
+          // restating the rule five times.  The bit change is gated
+          // separately below because it does not hang off takeBranch.
+          //
+          // DECIDED AFTER THE READ, deliberately, and the SIC arm says
+          // the same thing from the other side: a BRANCH ON BIT's
+          // condition cannot be known until its bit word has arrived,
+          // so the operand read is issued before EXE can be decided.
+          // That is the one read an EXE-suppressed subject still makes,
+          // and p.52's own account of a suppressed subject allows it
+          // -- "an alert of Class S during... the execution of a
+          // subject instruction of EXECUTE... may not cause full
+          // suppression of the instruction."
+          //
+          // THIS IS THE ARM ROUTINE 1262 TEST 1CC ACTUALLY DRIVES:
+          // "EX,I62B5" (condition met -> EXE, no branch) and
+          // "EX,I62B6" (condition not met -> no EXE, nothing suppressed,
+          // control to the instruction after the EX).
+          Bool exeHit = ex.under && wouldBranch && !noTest;
+          if (exeHit) ind = setBit(ind, ind_EXE, 1);
+          Bool takeBranch = wouldBranch && !noTest && !exeHit;
           // IF, p.32's BIT CHANGING -- the third of the three things a
           // protected branch target suppresses, and the one
           // execute()'s shared commit point cannot reach: "the entire
@@ -4066,7 +4345,14 @@ function ActionValue#(ExecResult)
           // NOT gated on noTest, and the omission is the point: clause
           // 1's DS actuation is inside this block, and storeViolates --
           // noTest's own first term -- already stops the write.
-          if (changes && !ifSuppress) begin
+          // `!exeHit` is the EXE half of "all associated operations are
+          // not performed": the bit change does NOT hang off
+          // takeBranch (a BB1 sets its bit whether or not it branches),
+          // so suppressing it needs its own term.  A subject BB whose
+          // condition is NOT met is not suppressed at all and still
+          // changes its bit, which is why this is `exeHit` and not
+          // `ex.under`.
+          if (changes && !ifSuppress && !exeHit) begin
             Bit#(1) nb = case (mod)
                            2'b01: 1'b0;      // set to zero
                            2'b10: ~tested;   // invert (negate)
@@ -4188,6 +4474,17 @@ typedef enum { OwnerIbox, OwnerLA } ExecOwner deriving (Bits, Eq, FShow);
 // collected the word and re-run it, possibly bailing again for a
 // second word. `exec` is the bare one-shot datapath, kept for the
 // preparation arm's side-effect-free operand-address probe.
+// The held instruction, as a named struct rather than a tuple: EXECUTE
+// added a fifth field (the execution-operation context) and a Tuple5 of
+// unlabelled positions was already the wrong shape at four.
+typedef struct {
+  HWordAddr    pc;         // THE EXECUTE'S pc while a subject is held
+  InstrLen     len;        // ... and the EXECUTE'S length
+  DecodedInstr di;         // the instruction actually being run
+  Bool         atIntAddr;  // p.32's interruption-address exemption
+  ExSubject    ex;         // notSubject unless `di` is a subject instruction
+} HeldOp deriving (Bits, Eq, FShow);
+
 interface EBox;
   method ActionValue#(ExecResult)
     exec(HWordAddr pc, InstrLen len, DecodedInstr di,
@@ -4211,7 +4508,14 @@ module mkEBox #(StretchStorage st, StretchIO io) (EBox);
   // The flag rides in `held` with the instruction: resume() re-runs
   // execute() for the SAME instruction, so it must answer p.32's
   // interruption-address exemption the same way both times.
-  Reg#(Maybe#(Tuple4#(HWordAddr, InstrLen, DecodedInstr, Bool))) held <- mkReg(tagged Invalid);
+  //
+  // "THE SAME INSTRUCTION" IS NO LONGER ALWAYS TRUE, and EXECUTE is
+  // why.  When the held instruction is an EX, the word that arrives is
+  // not an operand but a SUBJECT INSTRUCTION, and resume() REPLACES
+  // `di` with it -- keeping `pc` and `len`, which stay the EXECUTE's so
+  // that the instruction counter steps past the EXECUTE and nothing
+  // else (p.49; execute()'s `fallthrough` comment has the sentence).
+  Reg#(Maybe#(HeldOp)) held <- mkReg(tagged Invalid);
   Reg#(Vector#(2, Word64)) prefetch      <- mkReg(replicate(0));
   Reg#(Bit#(2))            prefetchCount <- mkReg(0);
   Reg#(ExecOwner)          owner         <- mkReg(OwnerIbox);
@@ -4222,17 +4526,27 @@ module mkEBox #(StretchStorage st, StretchIO io) (EBox);
   method ActionValue#(ExecResult)
       exec(HWordAddr pc, InstrLen len, DecodedInstr di,
            Vector#(2, Word64) pf, Bit#(2) cnt, Bool atIntAddr);
-    let r <- execute(st, io, pc, len, di, pf, cnt, atIntAddr);
+    // The preparation arm's side-effect-free operand-address probe.
+    // Never an execution operation: StretchIBox's fetchesOperand (which
+    // is what gates this call) answers False for BranchOrMisc, so an EX
+    // is dispatched through start() like every other I-box instruction.
+    let r <- execute(st, io, pc, len, di, pf, cnt, atIntAddr, notSubject);
     return r;
   endmethod
 
   method ActionValue#(Maybe#(ExecDone))
       start(HWordAddr pc, InstrLen len, DecodedInstr di,
             Vector#(2, Word64) pf, Bit#(2) cnt, ExecOwner o, Bool atIntAddr);
-    let r <- execute(st, io, pc, len, di, pf, cnt, atIntAddr);
+    // A freshly dispatched instruction is never itself a subject: the
+    // instruction unit only ever hands over instructions of the main
+    // program.  An EX dispatched here bails immediately for its subject
+    // word and becomes the held instruction; resume() takes it from
+    // there.
+    let r <- execute(st, io, pc, len, di, pf, cnt, atIntAddr, notSubject);
     if (tpl_4(r) matches tagged Valid .a) begin
       st.readWordReq(a);
-      held <= tagged Valid tuple4(pc, len, di, atIntAddr);
+      held <= tagged Valid HeldOp{pc: pc, len: len, di: di,
+                                  atIntAddr: atIntAddr, ex: notSubject};
       prefetch <= pf;
       prefetchCount <= cnt;
       owner <= o;
@@ -4246,24 +4560,112 @@ module mkEBox #(StretchStorage st, StretchIO io) (EBox);
   method Bool canResume() = isValid(held) && st.responseReady();
   method Tuple3#(HWordAddr, InstrLen, DecodedInstr) pending();
     let h = validValue(held);
-    return tuple3(tpl_1(h), tpl_2(h), tpl_3(h));
+    // `pc` and `len` are the EXECUTE's while a subject is held, which
+    // is exactly what StretchCore's commitNext must see (p.49).  `di`
+    // is the instruction actually in flight, which is what the timing
+    // budget should be charged against.
+    return tuple3(h.pc, h.len, h.di);
   endmethod
 
   method ActionValue#(Maybe#(ExecDone)) resume();
-    let ep = validValue(held);
+    let h = validValue(held);
     Word64 v <- st.readWordResp();
     Vector#(2, Word64) pf = prefetch;
     pf[prefetchCount] = v;
     Bit#(2) cnt = prefetchCount + 1;
-    let r <- execute(st, io, tpl_1(ep), tpl_2(ep), tpl_3(ep), pf, cnt, tpl_4(ep));
-    if (tpl_4(r) matches tagged Valid .a) begin
-      st.readWordReq(a);
+
+    // By default the arrived word is an OPERAND: re-run the same held
+    // instruction with one more prefetch slot filled.  This is what
+    // every instruction but EXECUTE does.
+    DecodedInstr       rdi  = h.di;
+    ExSubject          rex  = h.ex;
+    Vector#(2, Word64) rpf  = pf;
+    Bit#(2)            rcnt = cnt;
+    // AND THESE TWO ARE NEVER REASSIGNED, which is the point of naming
+    // them.  Even when `rdi` below becomes the subject instruction,
+    // `rpc`/`rlen` stay the EXECUTE's -- printed p.49: the instruction
+    // counter "is never stepped during the execution of any subject
+    // instruction even if the subject instruction is again one of the
+    // execution instructions."  Assigning the subject's own location
+    // here is the one-line bug that makes EXECUTE relinquish control,
+    // which is what routine 1262 TEST 1A is named for; the model
+    // programs' "WRONG" traps exist to catch exactly that.
+    HWordAddr          rpc  = h.pc;
+    InstrLen           rlen = h.len;
+    Bool               needMore = False;   // a straddling subject's second word
+    WordAddr           moreAddr = 0;
+
+    // THE SUBJECT SWAP, Reference Manual printed p.49: "If an execution
+    // operation specifies an execution instruction as its subject
+    // instruction, the subject instruction of the second-level
+    // execution operation is obtained.  If this, in turn, is still
+    // another execution instruction, the procedure is carried to
+    // succeeding levels until an instruction that is not an execution
+    // instruction is obtained."  That is a loop, not a recursion, and
+    // this is the loop: the held instruction is replaced, one level per
+    // clock, until it is not an EXECUTE.  Depth is therefore unbounded
+    // in the model, and so is the time -- USA (p.45 indicator 17, "a
+    // LOAD VALUE EFFECTIVE, EXECUTE, or EXECUTE INDIRECT AND COUNT
+    // operation has been in progress for longer than one millisecond")
+    // is NOT implemented, so an EX chain that closes on itself spins
+    // here until the harness's step cap rather than being terminated.
+    // Stated rather than left to be discovered.
+    if (exSubjectAddr(st, h.di) matches tagged Valid .sa) begin
+      // hw0 ALWAYS COMES FROM SLOT 0, never from the word that just
+      // arrived: on the second visit below, `v` is the subject's SECOND
+      // half-word and pf[0] is still the first.
+      HalfWord32 hw0 = (sa[0] == 0) ? pf[0][63:32] : pf[0][31:0];
+      InstrLen slen = instrLen(hw0);
+      if (slen == Full && sa[0] == 1 && cnt < 2) begin
+        // A FULL-LENGTH SUBJECT STARTING IN A RIGHT HALF-WORD straddles
+        // two storage words, so it needs a second read.  Not a corner
+        // case invented here: routine 1262 TEST 1CC's I62B6 is
+        // "BB,$X0+.01,I6238", a full word, at 024205.40 -- and the EX
+        // that names it prints octal pair 52, bit 18 = 1.
+        needMore = True;
+        moreAddr = sa[18:1] + 1;
+      end else begin
+        Maybe#(HalfWord32) hw1 =
+          (slen == Half) ? tagged Invalid
+                         : tagged Valid ((sa[0] == 0) ? pf[0][31:0] : pf[1][63:32]);
+        rdi  = decode(hw0, hw1);
+        // p.32 class 1 for THIS level's subject location, OR-ed into
+        // whatever earlier levels found -- never overwritten, because an
+        // intermediate EXECUTE's own subject location is monitored just
+        // as much as the last one's and its indicator word was thrown
+        // away when it bailed.  ifViolates carries p.50's below-32
+        // carve-out; execute()'s own comment says why that is the right
+        // predicate and not the same rule.
+        rex  = ExSubject { under: True,
+                           ifSig: h.ex.ifSig || ifViolates(st, sa[18:1]) };
+        // The subject starts with an EMPTY prefetch: the words collected
+        // so far were the subject-instruction fetch, not its operand.
+        rpf  = replicate(0);
+        rcnt = 0;
+      end
+    end
+
+    if (needMore) begin
+      st.readWordReq(moreAddr);
       prefetch <= pf;
       prefetchCount <= cnt;
       return tagged Invalid;
     end else begin
-      held <= tagged Invalid;
-      return tagged Valid doneOf(r);
+      let r <- execute(st, io, rpc, rlen, rdi, rpf, rcnt, h.atIntAddr, rex);
+      if (tpl_4(r) matches tagged Valid .a) begin
+        st.readWordReq(a);
+        // Rewritten rather than left alone: on a subject swap `rdi` and
+        // `rex` are new, and on an ordinary operand arrival they are
+        // exactly what was already there.
+        held <= tagged Valid HeldOp{pc: rpc, len: rlen, di: rdi,
+                                    atIntAddr: h.atIntAddr, ex: rex};
+        prefetch <= rpf;
+        prefetchCount <= rcnt;
+        return tagged Invalid;
+      end else begin
+        held <= tagged Invalid;
+        return tagged Valid doneOf(r);
+      end
     end
   endmethod
 endmodule

@@ -340,13 +340,17 @@ independently structural blocker: **`SVA`** (also NOT executed, per
 README) used as a self-modifying-code mechanism to patch operand/
 address fields into scratch instruction templates before falling
 through to execute them. And I-Box 5's routine 1262 (`EX`/`EXIC`) is a
-*different kind* of gap from either: `EX`/`EXIC` isn't even given its
-own decode tag (falls through to the generic `Unimplemented` no-op),
-so an EX'd subject instruction doesn't merely fail to branch
-afterward -- it never executes at all. Any actual run attempt on one
-of these five needs SIC (and, for 3/4/5, SVA; for 5's routine 1262,
-`EX`/`EXIC`) working first, or a narrow slice chosen specifically to
-avoid all of it -- the per-program notes below flag which slices do.
+*different kind* of gap from either: an EX'd subject instruction did
+not merely fail to branch afterward -- it never executed at all.
+**Half of that is closed as of 2026-09-25: `EX` executes** (the model
+fetches the subject, runs it, actuates EXE on a successful subject
+branch and steps the instruction counter past the EXECUTE only); see
+`bsv/README.md`'s "Executed" entry and `docs/NEXT.md` item 4a. `EXIC`
+does not, and still reaches Operation Code Invalid. Any actual run
+attempt on one of these five needs SIC (and, for 3/4/5, SVA; for 5's
+routine 1262, `EXIC` as well as `EX`) working first, or a narrow slice
+chosen specifically to avoid all of it -- the per-program notes below
+flag which slices do.
 
 **Verification**: the "SIC is one packed instruction" claim above was
 checked two ways, not trusted from subagent reports (which described
@@ -418,7 +422,8 @@ INTERNAL MEMORY" (p.43), stores into the indicator register
 (SR,$X1,$IND+.32) -- the word-11-store gap noted above -- so that is
 where the span stops. The shared blocker this section describes is
 therefore lifted for every block whose only other needs are already
-in scope; `SVA` (I-Box 3/4/5) and `EX`/`EXIC` (I-Box 5) remain.
+in scope; `SVA` (I-Box 3/4/5) and `EXIC` (I-Box 5) remain. `EX` was on
+that list until 2026-09-25 and is not any more.
 
 ### I-Box 1 (`ja_ax1a_ibox-1.pdf`, 60 pages)
 
@@ -995,8 +1000,14 @@ contents of the instruction counter. The subject operation was
 suppressed.*"
 
 **Unblocking value**: `EX` is what 1268 cases 1B/1C need (`EX,$X3`,
-`EX,$R`) and what 1260 blocks 16084/16085 need. Four already-located
-transcription targets wait on it.
+`EX,$R`) and what 1260 blocks 16084/16085 need. **`EX` is implemented
+as of 2026-09-25**, so 1268 1B/1C are unblocked on that count; 16084
+still wants `LVE` and 16085 is an `EX` block whose surrounding 1260
+machinery is the remaining question. The behavioural coverage lives in
+`strap/programs/ex_subject.strap`, `ex_exe.strap` and
+`ex_monitor.strap`; 1262 TEST 1B and TEST 1CC remain ENCODING
+transcriptions, because running them needs SSIP and the 64-word
+interrupt table, not because `EX` is missing.
 
 **ROUTINE 1268 TEST 1 -- transcribable, and what the pen marks mean.**
 Test 2 is transcribed (see below). Test 1, the store-to-INSTRUCTION-
@@ -1022,8 +1033,9 @@ transcribed and runs** --
 `strap/programs/ax5b_1681_if_close_to_ds.strap`, ten rows bit-exact
 via `strap/verify_ax5b_1681_listing.py`, with `I68K1`/`I68K2`
 transcribed from p.111 at their printed addresses rather than
-manufactured. Cases 1B and 1C use `EX,$X3` and `EX,$R` and are blocked
-on `EX`, deferred in `NEXT.md` section 5.
+manufactured. Cases 1B and 1C use `EX,$X3` and `EX,$R`; they were
+blocked on `EX` until 2026-09-25 and are not any more (`NEXT.md`
+item 4a).
 
 **What running it buys, and what it provably cannot.** `LX`/`SX` move
 a whole 64-bit word, so the block plants an arbitrary INSTRUCTION

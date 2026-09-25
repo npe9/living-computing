@@ -65,6 +65,11 @@
 !   3. A "BEW,$" exit at 024344.40, where the listing continues into
 !      test 1B ("LX,$X1,I68K1  -TEST 1B, IF CLOSE TO DS IN IX STG.").
 !      1B and 1C need EX, deferred in docs/NEXT.md section 5.
+!      UPDATED 2026-09-25: 1B and 1C are transcribed for their
+!      encoding as programs/ax5b_1268_test1bc.strap, and EX is no
+!      longer deferred -- the model executes it (docs/NEXT.md item
+!      4a).  This file's own exit is unchanged; the sentence is kept
+!      because it is what the next file's header quotes.
 ! I68K1 and I68K2 are transcribed from p.111 at their printed
 ! addresses, not manufactured.
 
