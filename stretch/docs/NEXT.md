@@ -1632,6 +1632,20 @@ printed page numbers.
   Note this is worse than an ordinary silent failure, because the
   failure mode produces output that fits a category we consider
   valuable and write down.
+* **AND THE AUTHOR OF THAT RULE THEN BROKE IT, which is the part worth
+  keeping.** Two commits after writing "before handing out an item,
+  check it against the code", I briefed an agent to transcribe routine
+  1262 TEST 1B. The block was already committed, green, and wired into
+  the suite as `verify_ax5b_162_test1b_listing.py` — **and I had listed
+  that exact file in the brief**, under a hedge I invented out of
+  nothing: "a DIFFERENT block despite the name — check what it covers."
+  It checked. It was the same block, the same 76 rows, the same octal
+  range. Sixth instance in three days. The failure was not ignorance —
+  the file was in my hand — it was writing a hedge instead of running
+  `grep`. **A hedge is not a check. If you find yourself writing "check
+  whether X", check it before you send the message.** (The agent
+  stopped and reported rather than building a duplicate, which is the
+  behaviour the brief asked for and got.)
 * **"THAT IS NOT TRANSCRIBED YET" IS A CLAIM, AND IT NEEDS A GREP.**
   Twice in one session I handed out work whose premise was that a block
   was untranscribed, and twice it already was. `I60S1` — the brief said
@@ -1660,6 +1674,21 @@ printed page numbers.
   stopped once it had told me something. Cheap tell: a 2-up scan shows
   TWO printed page numbers, and both were visible in the render I was
   reading from. **Look at the whole render before concluding from it.**
+* **BRANCH POLARITY IS A PER-CHECK PROPERTY, NOT A PER-BLOCK ONE, and
+  this file has been telling agents otherwise.** Every recent brief
+  said "both error shapes exist in these decks — determine which shape
+  YOUR rows use", which invites reading one row and applying the answer
+  to a whole block. `verify_ax5b_162_test1b_listing.py` is a standing
+  counterexample that was already in the repo: **both shapes coexist
+  inside one 76-row block, and `BZXVZ` plays opposite roles within it.**
+  In the DIR IX and IMMED IX classes, `BZXVZ,$+2.0` SKIPS the
+  `SIC,SEN`/`B,SERS` pair — branch is the OK path. In FLT PT and FULL
+  WD VFL, and in the "did EX destroy the subject" check of all five
+  classes, `SIC,SEN` comes FIRST and the branch goes TO `SERS` — branch
+  is the error path. The original transcriber recorded this in that
+  file's docstring ("BZXVZ PLAYS TWO OPPOSITE ROLES"); the
+  generalisation never made it out of the file. **Decide polarity per
+  check, from the rows around that check.**
 * **PROSE IS NOT EXECUTABLE, so an inverted gloss can sit in a
   committed, fully-passing file indefinitely.**
   `programs/ax5b_160_test8b.strap` said a protection violation with the
