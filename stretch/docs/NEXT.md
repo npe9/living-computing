@@ -1122,6 +1122,26 @@ all spoken for reports "it is not there." The same mechanism
 independently confirms routine 1258: `ICK258` = `(8)600000.00` = bits 0
 and 1 = exactly two tests, which is what the routine has.
 
+**REFINEMENT, 2026-09-25 — the constant counts CONTINUITY-BIT UPDATES,
+not "sub-tests", and the two only coincide sometimes.** Routine 1268
+makes the distinction visible: `ICK268` also prints `600000` = two bits,
+but 1268 has SIX lettered sub-tests (1A/1B/1C, 2A/2B/2C). It performs
+exactly TWO `V+,$X13,BITn` updates — BIT0 at 024362.40 and BIT1 at
+024401.00, both now transcribed and checked — because 1A/1B/1C are one
+test swept across three memories sharing bit 0, and 2A/2B/2C are the
+other sharing bit 1. Its banner says so in words: *"-THIS TEST IS
+COMPOSED OF TWO ROUTINES"*.
+
+**The TEST 8A/8D conclusion is unaffected**, and it is worth being
+precise about why rather than just asserting it: that argument did not
+rest on "bits = sub-tests" as a general rule. All sixteen of routine
+1260's bits were individually located and matched to a named sub-test,
+so the enumeration is closed by the *list*, not by the arithmetic. Had
+even one bit been unaccounted for, 1268 shows what the alternative
+reading would have been. **State the rule as "one bit per continuity
+update" and check what the updates actually are; do not read a bit
+count as a test count.**
+
 Corroborating closures, each checked separately: the octal is
 **contiguous across the TEST 7 / TEST 8B seam** (022512.40 → 022513.00,
 both pages in one 400 dpi crop, no gap for an 8A); routine 1260 **ends
@@ -1219,6 +1239,39 @@ under EXECUTE: *"An effective address of EXECUTE that is below 32.00
 (including addresses between 1.00 and 3.32) is not monitored by the
 address monitoring mechanism; that is, indicator IF cannot be actuated
 by these addresses."*
+
+### THE BIT-18 EXCLUSION HAS FOUR OPERAND CLASSES, NOT TWO
+
+This project states its bit-18 rule in many files as: the top bit of the
+printed octal pair is the half-word select, EXCEPT for bit-address
+operands (`SIC`, TRANSMIT's A1) where it is a bit offset. That is right
+as far as it goes and **it misses a third category with a different
+reason**, sourced 2026-09-25:
+
+* **Branch targets** — bit 18 IS the half-word select. Printed p.39:
+  *"The address field, bits 0-18, represents the branch address."*
+* **`LX` and `SX`** — EXCLUDED, and **not for `SIC`'s reason**. Printed
+  p.23: *"In the majority of these operations, 19 bits of the effective
+  address are used in order to permit addressing of half-words. **The
+  two exceptions use only 18 bits of the effective address because they
+  require full-word operands.**"* Confirmed by printed p.24 on `SX`:
+  *"stored in the full-word memory location specified by bits 0-17 of
+  the effective address."* So their pair carries bit 18 = 0 structurally
+  — not because it means something else, but because the field is
+  narrower.
+* **`V+` and `KV`** — bit 18 IS the half-word select; these are *not*
+  the two exceptions. Printed p.24 on `KV`: *"the half-word addressed by
+  bits 0-18 of the effective address"*.
+* **`SIC` and TRANSMIT's A1** — EXCLUDED because the operand is a 24-bit
+  BIT address, so the pair is a bit offset within the word. Printed
+  p.41.
+
+**And the `SIC` case is UNDECIDABLE FROM THE DIGITS, which was measured
+rather than argued.** An injection that re-reads `enc_sic`'s operand as
+a 19-bit half-word address fails ZERO rows in routine 1268, because
+every `SIC` offset there is 0 or 32 — and 32 bits is exactly one
+half-word, so the two readings produce numerically identical six bits.
+The manual settles it; no amount of staring at the print can.
 
 ### A free cross-check, and one difference
 

@@ -1,0 +1,532 @@
+! jb_ax5b "I-Box 5", routine 1268 -- the ROUTINE'S TAIL AND CONSTANT
+! POOL (PDF p.111, octal 024376.00-024411.00, 21 rows) and the
+! ROUTINE'S ENTRY (PDF p.110, octal 024333.00-024335.40, 6 rows plus
+! one silent CNOP and one location-only ident row).  Transcribed
+! VERBATIM at the listing's own addresses and checked bit-exactly by
+! verify_ax5b_1268_tail_pool_listing.py.
+!
+! ====================================================================
+! PREMISE CHECK FIRST.  Routine 1268 runs 024333.00-024411.00 over
+! PDF pp.110-111.  Three committed files cover parts of it:
+!   verify_ax5b_1681_listing.py         024337.00-024344.00 (test 1A)
+!   verify_ax5b_1268_test1bc_listing.py 024344.40-024363.00 (1B/1C)
+!   verify_ax5b_1683_listing.py         024363.40-024375.40 (test 2)
+! NOT ONE of the addresses transcribed here appears in ANY of their
+! ROWS lists.  Where they do appear is worth naming precisely,
+! because a grep alone would mislead:
+!   * 024405.00 / 024407.00 / 024410.00 / 024411.00 appear in those
+!     files' DOCSTRINGS and in their SYN blocks, as INPUTS
+!     (L168K1, L168K2, L168K3, LIC268).
+!   * 024405.00 / 024407.00 / 024410.00 appear in
+!     programs/ax5b_1268_test1bc.strap as PLACED SUBSTITUTIONS --
+!     labels CREG, K1, K2, written there solely "so the block could
+!     be run", after that file's own SLCs.  They are not in its ROWS
+!     and nothing checks them.
+!   * 024376.00 appears in programs/ax5b_1683_df_close_to_ds.strap
+!     only as the address of that file's substituted "BEW,$" exit.
+!   * 024404.00 and 024411.00 appear in ax5b_1274_truncation's prose.
+!   * 024333.00-024336.00 appear only in prose in
+!     verify_ax5b_162_test3b_listing.py and ax5b_1268_test1bc.strap.
+! Both ranges below are new ROWS coverage.
+!
+! ====================================================================
+! WHAT THE TAIL DOES, AND THE ONE RESULT WORTH THE ROW COUNT.
+!
+! The tail is the deck's standard routine epilogue: loop once, return
+! to SSIP, update the continuity register with TEST 2's bit, then
+! COMPARE the continuity register against its expected constant and
+! report "-CONTINUITY ERROR." if it differs, then fall through into
+! routine 1274.  The pool that follows holds the continuity register
+! IC268, its expected value ICK268, and the three planted words
+! 168K1/168K2/168K3 that tests 1A/1B/1C and 2A use.
+!
+! ICK268 PRINTS 600000 OCTAL IN BITS 0-17.  Read off its own row at
+! 024406.00, which prints "600000.00 00 000000.00 00".  600000 octal
+! = 110 000 000 000 000 000 binary = BITS 0 AND 1 SET, and nothing
+! else in the whole 64-bit word.  THE ROUTINE THEREFORE CLAIMS
+! EXACTLY TWO SUB-TESTS.
+!
+! That is NOT a discrepancy with the six sub-tests the deck names
+! (1A, 1B, 1C, 2A, 2B, 2C), and this file does not report it as one.
+! The continuity register counts "V+" UPDATES, not sub-tests, and
+! routine 1268 performs exactly two of them, both now transcribed:
+!     024362.40  V+,$X13,BIT0   24522.32 B0   (verify_..._test1bc)
+!     024401.00  V+,$X13,BIT1   24523.32 B0   (this file)
+! The routine's own banner on p.110 says the same thing in words:
+! "-THIS TEST IS COMPOSED OF TWO ROUTINES".  1A/1B/1C are the three
+! memories TEST 1 sweeps and they share bit 0; 2A/2B/2C are the three
+! memories TEST 2 sweeps and they share bit 1.  So this block closes
+! a loop across three rows: the two bit numbers the routine sets, and
+! the constant it then checks them against, all agree.
+!
+! The comparison against 1260 and 1258 that the project has drawn
+! twice before holds and is sharpened.  ICK260 = 777774 = bits 0-15 =
+! sixteen, and routine 1260 genuinely has sixteen NUMBERED sub-tests.
+! ICK258 = 600000 = two, for a routine with two tests each having
+! sub-parts -- structurally the same shape as 1268.  The constant
+! counts continuity BITS, and bits map to tests, not to sub-tests.
+!
+! ====================================================================
+! BRANCH POLARITY IN THESE ROWS: THE MINORITY SHAPE.  "SIC,SEN"
+! comes FIRST and the conditional branch goes TO "SERS":
+!     024403.00  SIC,SEN        1310.00 80
+!     024403.40  BZXE,SERS      1304.32 C0   -CONTINUITY ERROR.
+! Read out of the printed bits, not out of prose.  Reference Manual
+! printed p.40 (PDF p.43), BRANCH ON INDICATOR: "This operation
+! causes the specified indicator to be tested.  If its value matches
+! that of bit 30 of the instruction, bits 0-18 of the effective
+! address replace the instruction counter contents."  Hex C0 =
+! 11000000, so bit 30 = 0: the branch is taken when XE is OFF.  The
+! preceding "KV,$X13,ICK268" sets XE on EQUAL, so XE OFF means the
+! continuity register did NOT match -- and the branch target is the
+! error reporter, with the message naming the anomaly.  The
+! indicator number is bits 19-24 = 110101 = 53 = XE.  Contrast
+! BXVZ,SERS elsewhere in this routine, hex 42 = 01000010, bit 30 = 1.
+! Both shapes appear in this deck; THIS block uses the SIC-first,
+! branch-to-SERS shape, the same as routine 1274 and as 1268's own
+! 1B/1C rows.
+! Reference Manual printed p.41 (PDF p.44), STORE INSTRUCTION COUNTER
+! IF: "This instruction may always be prefixed to one of the
+! half-word branching instructions.  It is executed if and only if
+! the associated branching is successful."
+!
+! ====================================================================
+! HEADINGS, ANNOTATIONS AND ERROR MESSAGES, VERBATIM, WITH OCTAL
+! LOCATIONS.  Exactly ONE of these is an error message.
+!
+!   ERROR MESSAGE (printed beside the branch that reports it):
+!     024403.40  -CONTINUITY ERROR.
+!
+!   ANNOTATIONS (not error messages -- they label the rows they sit
+!   beside and no branch reports them):
+!     024377.40  -TO SSIP
+!     024400.40  -UPDATE CONTINUITY CHECK.
+!     024405.00  -CONTINUITY REG 1268.
+!     024333.00  -UPDATE IDENT.
+!     024334.40  -PRINT IDENT.
+!
+!   "-TO SSIP" AT 024377.40 CARRIES NO PERIOD.  Re-measured here from
+!   the p.111 crop at 500 dpi rather than inherited: the comment ends
+!   with the P of SSIP and the next ink on that row is 3000 px away
+!   in the machine-code column.  024361.00's "-TO SSIP." on p.110,
+!   the identical row one loop earlier, DOES carry one.  This
+!   independently corroborates the contrast
+!   verify_ax5b_1268_test1bc_listing.py flagged from the other side.
+!
+!   THE ROUTINE'S BANNER is on p.110 above 024333.00 and is quoted in
+!   full, with its measured dash counts, in
+!   programs/ax5b_1268_test1bc.strap.  It is not re-quoted here and
+!   nothing in that file is edited.
+!
+! ====================================================================
+! BIT-18 SELF-CHECKS.  Print format: bits 0-17 as 6 octal digits, ".",
+! bits 18-23 as 2 OCTAL digits, then bits 24-31 as 2 HEX digits.  Bit
+! 18 is the TOP bit of the octal pair.  THREE classes of operand
+! appear in these rows and only ONE of them puts a half-word select
+! there.  Which class an operand is in comes from the Reference
+! Manual, not from the listing.
+!
+! (a) BRANCH TARGETS -- bit 18 IS the half-word select.  CHECKED.
+!     Reference Manual printed p.39 (PDF p.42): "The address field,
+!     bits 0-18, represents the branch address.  Unconditional
+!     branching is specified by bits 19-27, where bits 19-21, the OP
+!     field, select the particular operation.  Bits 28-31 name the
+!     index register used for address modification."  And on the
+!     instruction counter, same page: "When the nineteenth bit is a
+!     one, the full word taken from storage will start at bit 32 of
+!     the addressed location ...  When the nineteenth bit is a zero,
+!     the full word will start at bit 0" -- the nineteenth bit is
+!     bit 18.
+!
+!     loc        source        printed     pair    b18  -> target
+!     024376.00  B,$+1.0       24377.10 00  001000  0   024377.00
+!     024376.40  BD,1683       24363.44 00  100100  1   024363.40
+!     024377.40  B,SSW         1301.10 00   001000  0   001301.00
+!     024400.00  BD,$+.32      24400.44 00  100100  1   024400.40
+!     024403.40  BZXE,SERS     1304.32 C0   011010  0   001304.00
+!     024404.00  BD,I74        24412.04 00  000100  0   024412.00
+!     024334.40  B,IDF1        1443.10 00   001000  0   001443.00
+!     024335.40  BD,1681       24337.04 00  000100  0   024337.00
+!
+!     Read back against the page's own label column: p.111 prints
+!     1683's row at 024363.40 -- an ODD half-word, and its pair's bit
+!     18 is 1.  p.110 prints 1681's row at 024337.00 -- an EVEN
+!     half-word, and its pair's bit 18 is 0.  024412.00 is routine
+!     1274's first row (PDF p.112, its own SLC address).  The
+!     self-relative pair carries the same information: "B,$+1.0" at
+!     024376.00 targets 024377.00 with bit 18 = 0, while the SAME
+!     source text at 024357.40 in the 1B/1C block targets 024360.40
+!     and prints bit 18 = 1.  Bits 19-23 are constant per mnemonic
+!     (01000 for B, 00100 for BD), so bit 18 is the ONLY bit that
+!     moves with the target's half-word parity.  That is what makes
+!     this a check rather than a restatement.
+!
+! (b) LX AND SX -- bit 18 is NOT a half-word select.  EXCLUDED, with
+!     the manual's reason.  Reference Manual printed p.23 (PDF p.26),
+!     "Direct Index Arithmetic": the format's tick marks read ADDRESS
+!     0, J 19, OP. 23, I 28, 31, and the text says "In the majority
+!     of these operations, 19 bits of the effective address are used
+!     in order to permit addressing of half-words.  THE TWO
+!     EXCEPTIONS USE ONLY 18 BITS OF THE EFFECTIVE ADDRESS BECAUSE
+!     THEY REQUIRE FULL-WORD OPERANDS."  Printed p.23: "Load Index
+!     (LX).  The index word specified by J is replaced by the
+!     full-word specified by bits 0-17 of the effective address."
+!     Printed p.24 (PDF p.27): "Store Index (SX).  The index word
+!     specified by J is stored in the full-word memory location
+!     specified by bits 0-17 of the effective address."  And the
+!     programming note that closes the section: "The LOAD INDEX and
+!     STORE INDEX operations involve transmission of full words.  In
+!     all other operations the effective operand address refers to a
+!     half-word."  LX and SX ARE the two exceptions.  Their bit 18 is
+!     a low-order address bit forced to zero.
+!
+!     What their pairs DO carry, checked instead: bit 18 = 0, bits
+!     19-22 = J, bit 23 = the top bit of the 5-bit op code.
+!       024400.40  LX,$X13,IC268   24405.32 10   0|1101|0  J=13, LX
+!       024401.40  SX,$X13,IC268   24405.33 10   0|1101|1  J=13, SX
+!       024402.00  LX,$X13,IC268   24405.32 10   same as the first
+!       024333.00  LX,$X1,168ID    24336.02 10   0|0001|0  J=1,  LX
+!       024333.40  SX,$X1,DPET13   1437.03 10    0|0001|1  J=1,  SX
+!     The 32/33 contrast on two rows naming the SAME symbol isolates
+!     bit 23 exactly; DIR_INDEX_CODES["LX"]=0b00001 and ["SX"]=
+!     0b10001 differ in that bit alone.  This corroborates the note
+!     verify_ax5b_1268_test1bc_listing.py makes about pair 33 vs 32.
+!     The J placement is falsified by the digits themselves: if J sat
+!     at bits 18-21, $X13 = 1101 would make the pair start with 1 and
+!     print 64-77 octal, not 32.
+!
+! (c) V+ AND KV -- bit 18 IS a half-word select, and it reads 0.
+!     CHECKED.  These are NOT the two exceptions.  Reference Manual
+!     printed p.24 (PDF p.27): "Add to Value (V+).  The address part,
+!     bits 0-24, of the half-word addressed by bits 0-18 of the
+!     effective address is added to the address part, bits 0-24, of
+!     the index word specified by J."  And: "Compare Value (KV).  The
+!     address part, bits 0-24, of the half-word addressed by bits
+!     0-18 of the effective address is compared with the address
+!     part, bits 0-24, of the index word specified by J."
+!       024401.00  V+,$X13,BIT1    24523.32 B0   b18=0 -> 024523.00
+!       024402.40  KV,$X13,ICK268  24406.32 90   b18=0 -> 024406.00
+!     Read back: p.111's label column prints ICK268 at 024406.00, an
+!     EVEN half-word, and bit 18 is 0.  BIT1's own row is on p.114
+!     and is NOT on either of these pages -- see THE BIT TABLE below.
+!
+! (d) SIC -- EXCLUDED, and this is the trap the print format sets.
+!     Reference Manual printed p.41 (PDF p.44), "Storage of
+!     Instruction Counter": "Bits 0-23 constitute the storage
+!     address.  Bits 24-27, together with the half-word branch
+!     instruction operation code, specify the full-word operation.
+!     Bits 28-31 name the index register used for storage address
+!     modification.  Bits 32-63 specify the half-word branch
+!     instruction used."  The diagram's tick marks read ADDRESS 0 ..
+!     18 .. 24, 1000, 28 I, 32.  So SIC's operand is a 24-BIT BIT
+!     ADDRESS and bits 18-23 are a BIT OFFSET WITHIN THE WORD, not a
+!     half-word select.
+!       024377.00  SIC,SEN0+.32   1311.40 80
+!       024403.00  SIC,SEN        1310.00 80
+!       024334.00  SIC,RET        1306.40 80
+!     THE DIGITS CANNOT TELL THE TWO READINGS APART, because 32 bits
+!     is also exactly one half-word: pair 40 octal = 32 decimal, and
+!     a "bit 18 = 1" reading would also say ".40".  THE ARITHMETIC
+!     SETTLES IT.  The source of the first row writes "+.32" -- a
+!     count of 32 BITS -- and the pair is 40 octal = 32 decimal, the
+!     whole 6-bit field carrying the number.  Under a half-word
+!     reading only bit 18 would be used and bits 19-23 would have to
+!     mean something else; the manual gives them nothing else to
+!     mean, because it assigns bits 0-23 entire to the address and
+!     starts the next field at 24.  The 1306.40 of "SIC,RET" is the
+!     same field doing the same job with no "+.32" written at all:
+!     RET is itself the bit address 001306.40 (PDF p.116's SYN table
+!     prints "RET SYN,%8@1306.40").
+!
+! ====================================================================
+! WITNESS TIERING.  Every SYN below is an INPUT, never a witness: its
+! value was read off a printed column and handed to the assembler, so
+! a row naming it can only give that number back.  A label placed by
+! an SLC is an ANCHOR, not evidence, for the same reason.
+!
+! GENUINELY WITNESSED -- ALL FIVE POOL ADDRESSES.  There is ONE SLC
+! for the whole tail, at 024376.0, and the block runs unbroken to
+! 024411.00.  Every pool label's value therefore falls out of the
+! assembler's own size accounting from that single anchor:
+!
+!     024376.0 + 14 half-words          = 024404.40
+!     CNOP rounds up (one NOP emitted)  = 024405.00   LIC268
+!     + one full word                   = 024406.00   LICK268
+!     + one full word                   = 024407.00   L168K1
+!     + two half-words                  = 024410.00   L168K2
+!     + two half-words                  = 024411.00   L168K3
+!
+! and each is then checked against TWO independent printed columns:
+! the LOCATION column on the right of p.111 (the SYMBOLS assertions
+! in the verify file), and, for IC268 and ICK268, the MACHINE-CODE
+! column of rows that name them (24405 on four rows, 24406 on one).
+! A sixth, cross-PAGE check falls out of the entry block: p.110's
+! "Z,IC268" at 024335.00 prints "24405.22 00", so a DIFFERENT PAGE's
+! machine code corroborates the address this file derived on p.111.
+!
+! This converts five addresses that all three existing 1268 files
+! take as SYN'd inputs into witnessed ones.
+!
+! ANCHORS, not witnesses: L1268T (this file's own name for the tail's
+! first row -- the listing's label column is EMPTY for all fourteen
+! tail rows) and L168 at 024333.00 (a real printed label, but placed
+! by this file's second SLC).  Neither is asserted.
+!
+! NOT WITNESSED, and named so it is not mistaken for one: L168ID at
+! 024336.00.  The listing prints a LOCATION for that row and NO
+! MACHINE CODE (see below), so it is SYN'd, from the LOCATION column
+! -- deliberately not from "LX,$X1,168ID"'s machine code, which would
+! make the 024333.00 row a tautology.  Taken that way, the 24336 in
+! that row's machine code is a real cross-check of one printed column
+! against the other.
+!
+! ====================================================================
+! THE BIT TABLE, stated precisely rather than claimed.  The rule is
+! BIT<n> = the word at octal 024522 + n.  "V+,$X13,BIT1" at
+! 024401.00 prints "24523.32 B0", i.e. the assembler resolved BIT1 to
+! word 024523 = 024522 + 1.
+!
+! THIS FILE DOES NOT WITNESS THE TABLE.  BIT1 is SYN'd here, and the
+! value of the SYN comes from this very row's machine code, so the
+! check re-derives its own input.  What the row IS: a SECOND,
+! INDEPENDENT INSTANCE of a value already recorded once in this
+! repository -- programs/ax5b_1258_test2.strap line 162 carries
+! "BIT1  SYN, (8)24523.0   ! from V+,$X13,BIT1  = 24523.32 B0",
+! read off ROUTINE 1258 on PDF p.5.  Different routine, different
+! page, same number.  That is corroboration, not a new witness.
+!
+! What WOULD witness the table is p.114's own label column, where
+! BIT0..BIT35 are defined.  Grepped: NO verify_*.py in this
+! repository has a ROWS entry on p.114's BIT table.  It is quoted in
+! prose in ax5b_162_test1cc.strap ("BIT0 XW,%8@400000.00,0,0" at
+! 024522.00), in ax5b_1258_test2.strap ("BIT1 XW,(8)200000.00,0,0")
+! and in ax5b_1274_truncation.strap, and SYN'd in several files, but
+! never checked.  It remains an open transcription target.
+!
+! ====================================================================
+! CNOP, KEPT VERBATIM AND NEVER HAND-EXPANDED -- AND THE PAGE SHOWS
+! BOTH OF ITS BRANCHES, one in each of this file's two ranges.
+!
+!   024404.40 (p.111): the CNOP row prints machine code "0.30 00" and
+!   the location 024404.40.  The preceding "BD,174" sits at
+!   024404.00, so the counter is mid-word and CNOP fills the gap with
+!   a NOP before the full-word XW at 024405.00.
+!
+!   between 024335.40 and 024336.00 (p.110): the CNOP row prints
+!   NEITHER A LOCATION NOR MACHINE CODE.  The preceding "BD,1681"
+!   sits at 024335.40, the second half of word 024335, so the counter
+!   is already on the word boundary 024336.00 and CNOP has nothing to
+!   fill.
+!
+! WHICH OF THE TWO IS LOAD-BEARING WAS MEASURED, and the measurement
+! corrected what this header first said.
+!
+!   THE 024404.40 CNOP IS LOAD-BEARING.  Deleting the "CNOP" line
+!   below makes 024404.40 assemble as an all-zero half-word,
+!   "000000.00 00" against the page's "000000.30 00" -- one observed
+!   failure and nothing else.  The automatic gap filler does NOT
+!   cover it: assemble() records a rounding gap only when the
+!   statement that forced the rounding is an INSTRUCTION, and
+!   strap_asm.py excludes XW from that test ("is_instruction =
+!   stmt.op.upper() not in ('DD', 'VF', 'XW', 'END', 'SYN', 'SLC')").
+!   The full-word XW at 024405.00 still ALIGNS the counter, which is
+!   why the five pool addresses do not move -- but nothing fills the
+!   half-word it skipped.  So this file WITNESSES CNOP's NOP
+!   emission.  It does NOT witness CNOP's round-up, because XW's own
+!   alignment would do that anyway.
+!
+!   THE p.110 CNOP IS NOT LOAD-BEARING.  Deleting it leaves ALL TESTS
+!   PASSED.  Arithmetic reason, recorded rather than discarded: the
+!   counter is already on a word boundary when it is reached, so
+!   there is no gap to fill, and an SLC follows it, so nothing
+!   downstream depends on where it left the counter.  The page's
+!   silence is the evidence there; this file only fails to
+!   contradict it.
+!
+! verify_ax5b_160_test8c_disabled_listing.py is the file that
+! witnesses both CNOP branches from assembled output, and
+! programs/ax5b_1258_test1.strap records the same caveat about a
+! transcript that cuts at an SLC.
+!
+! ====================================================================
+! WHERE THE LISTING PRINTS A LOCATION AND NO MACHINE CODE, NO WORD IS
+! FABRICATED.  p.110's row at 024336.00 reads, in full:
+!
+!     168ID   %IQSZ¤DD%BU,64,8¤,1268   Z            024336.00
+!
+! -- a label, a print macro whose expansion this assembler does not
+! implement, and an empty machine-code column.  This file therefore
+! stops the entry block at 024335.40 with the CNOP, SYNs L168ID from
+! the printed LOCATION column, and places nothing at 024336.00.  The
+! verify script asserts that word 024336 is ABSENT from the assembled
+! image, so the "no fabrication" claim is checked rather than
+! promised.  ax5b_1258_test1.strap and ax5b_1274_truncation.strap
+! exclude the corresponding ident rows for the same reason; §7 of
+! docs/listing_typography.md notes that had one been transcribed the
+! digit-1 reading WOULD have become a real encoding error.
+!
+! ====================================================================
+! FIRSTS FOR THIS REPO: NONE.  Every mnemonic in both ranges was
+! grepped against every other programs/*.strap and verify_*.py before
+! any claim was made, and every candidate was knocked out:
+!   KV     27 .strap / 23 verify files      V+   26 / 23
+!   BZXE   17 / 16                          CNOP 35 / 21
+!   XW     58 / 43                          LVI  44 / 23
+!   BD    117 / 76                          SIC 155 / 137
+!   B, LX, SX, NOP, Z: ubiquitous.
+! Nothing here is a first, and nothing is reported as one.
+!
+! ====================================================================
+! GLYPHS.  docs/listing_typography.md settles by measurement that the
+! leading glyph of these labels is the LETTER I (letter I 10-18 px at
+! 600 dpi, digit 1 never below 24 px and 99% at 30+, with a flag and
+! a base serif), so the page's true spellings are I68, I681, I683,
+! I68ID, I68K1-3, IC268, ICK268, I74 and the banner "----I268---".
+! A repo-wide rename to those spellings is in progress SEPARATELY.
+! THIS FILE FOLLOWS THE EXISTING 1268 FILES' CURRENT HOUSE STYLE and
+! starts no third convention: "L"-prefixed symbol names in the
+! assembler source (L1681, L1683, L168K1, LIC268, ...), bare
+! digit-leading spellings in the comments and in the verify script's
+! note column, exactly as ax5b_1681_if_close_to_ds.strap,
+! ax5b_1268_test1bc.strap and ax5b_1683_df_close_to_ds.strap do.
+! ONE EXCEPTION, taken to AVOID a third convention rather than to
+! start one: routine 1274's entry label at 024412.00 is written I74,
+! because programs/ax5b_1274_truncation.strap already defines exactly
+! that symbol at exactly that address ("SLC, (8)24412.0 / I74 LX,
+! $X1,I74ID").  Writing L174 would invent a spelling no file uses.
+! No new glyph measurement was made in this session.
+!
+! ====================================================================
+! SUBSTITUTIONS, five, all named:
+!   1. Numeric labels are prefixed "L" (L1681, L1683, L168K1, ...),
+!      because this assembler's symbol pattern is [A-Za-z][A-Za-z0-9]*
+!      and reads a leading digit as an address.  The listing writes
+!      them bare (and, per the typography measurement, with a letter).
+!   2. L1268T is this file's own name for the tail's first row.  The
+!      listing prints NO label there; STRAP's END needs one.
+!   3. SERS and SSW are "B,$" HANGS at their own printed addresses
+!      001304.00 and 001301.00, and IDF1 likewise at 001443.00; the
+!      real error-report, switch-scan and ident-print routines are
+!      SSIP's and are not transcribed.  RET, SEN, SEN0 and DPET13
+!      get one all-zero word each, as SIC's and SX's targets.
+!   4. L168 falls straight through into the 1681 block, which is
+!      transcribed in ax5b_1681_if_close_to_ds.strap; a "BEW,$" exit
+!      is placed at 024337.00 so this file terminates on its own.
+!      Likewise the tail runs into routine 1274 at 024412.00, where a
+!      second "BEW,$" stands in for ax5b_1274_truncation.strap.
+!   5. BIT1W at 024523.00 is a PLACED word, quoted from p.114 via
+!      ax5b_1258_test2.strap's transcription of it, so the block
+!      could be run.  It is NOT transcribed from pp.110-111 (p.114
+!      is a different page and is not read here) and it is NOT in
+!      the verify script's ROWS.  Nothing checks it.
+! Everything else is verbatim.
+!
+! NOT RUN.  This session was instructed not to invoke run_program.sh,
+! run_tests.sh, bsc or mutation_score.py, so this file is an ENCODING
+! oracle only and is NOT wired into run_tests.sh.  Nothing in this
+! header claims anything about what the model does at run time.
+
+! ---- externals: INPUTS to the check, never witnesses ---------------
+! SSIP's entry points are from PDF p.116, this deck's own SYN table,
+! which prints "SSW SYN,%8@1301.0 / SERS SYN,%8@1304.0 / RET
+! SYN,%8@1306.40 / SEN SYN,%8@1310.0 / SEN0 SYN,%8@1311.0 / DPET13
+! SYN,%8@1437.0 / IDF1 SYN,%8@1443.0".  Still inputs here.
+SSW     SYN, (8)1301.0      ! p.116 SYN table
+SERS    SYN, (8)1304.0      ! p.116 SYN table
+RET     SYN, (8)1306.40     ! p.116 SYN table -- a BIT address
+SEN     SYN, (8)1310.0      ! p.116 SYN table
+SEN0    SYN, (8)1311.0      ! p.116 SYN table
+DPET13  SYN, (8)1437.0      ! p.116 SYN table -- the ident cell
+IDF1    SYN, (8)1443.0      ! p.116 SYN table -- "print ID" entry
+! Deck labels outside both transcribed ranges.
+L1681   SYN, (8)24337.0     ! p.110 label column: 1681, the loop head
+L1683   SYN, (8)24363.40    ! p.111 label column: 1683, test 2's head
+L168ID  SYN, (8)24336.0     ! p.110 LOCATION column; no machine code
+I74     SYN, (8)24412.0     ! p.112: routine 1274's first row
+BIT1    SYN, (8)24523.0     ! from V+,$X13,BIT1 = 24523.32 B0; the
+                            ! same value ax5b_1258_test2.strap read
+                            ! off routine 1258 on PDF p.5
+
+! ====================================================================
+! BLOCK A -- routine 1268's TAIL and CONSTANT POOL, PDF p.111,
+! 024376.00-024411.00.  ONE SLC for the whole block: every pool
+! address below is DERIVED from it, not placed.
+! ====================================================================
+        SLC, (8)24376.0
+!
+! ---- loop once, return to SSIP -------------------------------------
+L1268T  B,   $+1.0                 !  skip the BD: -> 024377.00
+        BD,  L1683                 !  the loop back to 1683
+        SIC, SEN0+.32
+        B,   SSW                   ! -TO SSIP      (no period, p.111)
+        BD,  $+.32
+!
+! ---- the routine's continuity register, test 2's bit ---------------
+        LX,  $X13, LIC268          ! -UPDATE CONTINUITY CHECK.
+        V+,  $X13, BIT1            !  test 2 done = bit 1
+        SX,  $X13, LIC268
+!
+! ---- the continuity CHECK ------------------------------------------
+        LX,  $X13, LIC268
+        KV,  $X13, LICK268         !  against the expected word
+        SIC, SEN
+        BZXE, SERS                 ! -CONTINUITY ERROR.
+!
+! ---- fall through into routine 1274 --------------------------------
+        BD,  I74
+!
+! ---- the constant pool ---------------------------------------------
+        CNOP
+LIC268  XW,  0,0,0                 ! -CONTINUITY REG 1268.
+LICK268 XW,  (8)600000.00,0,0      !  bits 0 AND 1: both tests done
+!
+L168K1  Z,   $X2                   !  the OLD instruction
+        NOP
+L168K2  LVI, $X2, (8)777777.40     !  the NEW one
+        NOP
+L168K3  XW,  0,0,0                 !  test 2A's scratch word
+
+! ====================================================================
+! BLOCK B -- routine 1268's ENTRY, PDF p.110, 024333.00-024335.40.
+! Stops at the CNOP.  024336.00, the ident word, prints a LOCATION
+! and NO MACHINE CODE and is NOT transcribed; L168ID is SYN'd above
+! from that printed location.
+! ====================================================================
+        SLC, (8)24333.0
+L168    LX,  $X1, L168ID           ! -UPDATE IDENT.
+        SX,  $X1, DPET13
+        SIC, RET
+        B,   IDF1                  ! -PRINT IDENT.
+        Z,   LIC268                !  clear the continuity register
+        BD,  L1681
+        CNOP                       !  prints NO location, NO code
+!
+! ---- substitution 4: the two exits ---------------------------------
+        SLC, (8)24337.0
+PASS1   BEW, $                     !  where 1681's block begins
+        SLC, (8)24412.0
+PASS2   BEW, $                     !  where routine 1274 begins
+!
+! ---- substitution 3: SSIP stands in as hangs and scratch words -----
+        SLC, (8)1301.0
+SSWH    B, $
+        SLC, (8)1304.0
+SERSH   B, $
+        SLC, (8)1306.0
+RETW    DD(BU,64), 0               ! SIC,RET's target
+        SLC, (8)1310.0
+SENW    DD(BU,64), 0               ! SIC,SEN's target
+        SLC, (8)1311.0
+SEN0W   DD(BU,64), 0               ! SIC,SEN0+.32's target
+        SLC, (8)1437.0
+DPETW   DD(BU,64), 0               ! SX,$X1,DPET13's target
+        SLC, (8)1443.0
+IDF1H   B, $
+!
+! ---- substitution: the BIT table word this block names -------------
+        SLC, (8)24523.0
+BIT1W   XW,  (8)200000.00,0,0      ! quoted from p.114 in
+                                   ! ax5b_1258_test2.strap; placed so
+                                   ! the block could be run, NOT
+                                   ! transcribed and NOT checked
+        END, L168

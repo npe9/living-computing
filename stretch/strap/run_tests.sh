@@ -4834,6 +4834,79 @@ run "I-Box 5 routine 1268 test 1A, ON THE MODEL (self-modifying execution)" ./ru
 
 run "I-Box 5 routine 1268 test 2, bit-exact (jb_ax5b p.111)" python3 verify_ax5b_1683_listing.py
 run "I-Box 5 routine 1268 TEST 1B/1C: IF close to DS via EXECUTE (jb_ax5b PDF pp.110-111)" python3 verify_ax5b_1268_test1bc_listing.py
+run "I-Box 5 routine 1268's entry, tail and CONSTANT POOL (jb_ax5b PDF pp.110-111)" python3 verify_ax5b_1268_tail_pool_listing.py
+# SMALL AND WORTH MORE THAN ITS ROW COUNT.  27 rows in two blocks --
+# 024376.00-024411.00 and 024333.00-024335.40 -- and with them ROUTINE
+# 1268 IS NOW CONTIGUOUSLY CHECKED from 024333.00 to 024411.00 across
+# five files that abut exactly.
+#
+# IT CONVERTS FIVE ASSUMPTIONS INTO WITNESSES, in three other files at
+# once.  IC268 024405.00, ICK268 024406.00, 168K1 024407.00, 168K2
+# 024410.00 and 168K3 024411.00 were SYN'd inputs in every 1268 file;
+# one SLC at 024376.0 running unbroken to 024411.00 now checks each
+# against TWO independent printed columns -- the page's location column
+# and the machine-code column of the rows that name them.  A sixth,
+# CROSS-PAGE check falls out of the entry block: p.110's "Z,IC268" at
+# 024335.00 prints "24405.22 00".
+#
+# AND IT CORRECTS A GENERALISATION THIS PROJECT MADE THREE WEEKS' WORTH
+# OF ARGUMENT ON.  ICK268 prints 600000 octal = bits 0 and 1 = TWO --
+# yet routine 1268 has SIX lettered sub-tests (1A/1B/1C, 2A/2B/2C).
+# There is no contradiction: the continuity constant counts
+# `V+,$X13,BITn` UPDATES, and 1268 performs exactly two, because
+# 1A/1B/1C are one test swept across three memories sharing bit 0 and
+# 2A/2B/2C are the other sharing bit 1.  The banner says it outright:
+# "-THIS TEST IS COMPOSED OF TWO ROUTINES."  Both update rows are now
+# transcribed -- BIT0 at 024362.40 in the section above, BIT1 at
+# 024401.00 here -- so three rows close the loop.
+#
+# THE TEST 8A/8D ARGUMENT SURVIVES, and docs/NEXT.md 5b now says why
+# precisely: it never rested on "bits = sub-tests" as a rule.  All
+# sixteen of routine 1260's bits were individually located and matched
+# to a NAMED sub-test, so that enumeration is closed by the list, not
+# by the arithmetic.  1268 is what the alternative reading would have
+# looked like had one bit been unaccounted for.
+#
+# THE BIT-18 EXCLUSION TURNS OUT TO HAVE FOUR OPERAND CLASSES, NOT TWO,
+# and the new one has a DIFFERENT REASON from the familiar bit-address
+# case.  Printed p.23: "In the majority of these operations, 19 bits of
+# the effective address are used in order to permit addressing of
+# half-words.  THE TWO EXCEPTIONS USE ONLY 18 BITS OF THE EFFECTIVE
+# ADDRESS BECAUSE THEY REQUIRE FULL-WORD OPERANDS."  Those two are LX
+# and SX -- so their pair carries bit 18 = 0 structurally, because the
+# field is NARROWER, not because the bit means something else.  V+ and
+# KV are NOT the exceptions (printed p.24 on KV: "the half-word
+# addressed by bits 0-18"), so they are checked normally.
+#
+# AND THE SIC CASE IS UNDECIDABLE FROM THE DIGITS -- measured, not
+# argued.  Injection 9 re-reads enc_sic's operand as a 19-bit half-word
+# address and fails ZERO rows, because every SIC offset in this block
+# is 0 or 32 and 32 bits IS one half-word, so both readings produce
+# numerically identical six bits.  Injection 10 (+1 on the address)
+# fails all three SIC rows, showing only that the field is live.  The
+# manual settles the reading; the print cannot.
+#
+# Eleven injections, every failure set observed, every patch confirmed
+# applied before running.  Notable ones: bit 18 cleared in
+# enc_branch_or_misc fails EXACTLY the two odd-half-word targets and
+# leaves the six even ones silent; two extra half-words spliced into
+# the tail fails 16 rows INCLUDING ALL FIVE SYMBOL ASSERTIONS, each one
+# full word high, which is the check that the pool addresses are really
+# computed rather than asserted.
+#
+# A CNOP CORRECTION THE TRANSCRIBER MADE AGAINST THEIR OWN FIRST DRAFT,
+# by measuring: the 024404.40 CNOP IS load-bearing here.  Deleting it
+# leaves an all-zero half-word, because assemble() records a rounding
+# gap only for an INSTRUCTION and strap_asm excludes XW.  So this file
+# witnesses CNOP's NOP EMISSION though not its round-up -- XW's own
+# alignment does that.  The p.110 CNOP is a genuine null.
+#
+# ONE ROW IS DELIBERATELY ABSENT AND THE ABSENCE IS ASSERTED: 024336.00,
+# the ident word, prints a location and NO machine code.  Rather than
+# fabricate a word the file SLCs across it, SYNs the label from the
+# LOCATION column, and then asserts that word 024336 is absent from the
+# assembled image.
+
 # THE GAP BETWEEN THE TWO SECTIONS AROUND IT.  30 rows,
 # 024344.40-024363.00 -- exactly where ax5b_1681_if_close_to_ds.strap
 # says it stopped ("a BEW,$ exit at 024344.40, where the listing
