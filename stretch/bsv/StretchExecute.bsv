@@ -3183,10 +3183,18 @@ function ActionValue#(ExecResult)
           // suppressed one still changes the bit.  B (010), BR (011)
           // and NOP (110) leave it alone.
           //
-          // Nothing else of the interrupt system exists: there is no
-          // interruption mechanism, and BE/BD/BEW remain identical AS
-          // BRANCHES.  The bit is here because storage protection is
-          // gated on it (p.45), which is what makes it observable.
+          // AND THAT IS p.52's RULE, not just a convenience.  Its
+          // list of what survives a suppressed instruction ends with
+          // "the changing of the state of the interruption system
+          // which occurred as specification of BRANCH ENABLED, BRANCH
+          // DISABLED, or BRANCH ENABLED AND WAIT."  Acting before the
+          // branch is what makes that true here.
+          //
+          // (This comment used to end "there is no interruption
+          // mechanism, and BE/BD/BEW remain identical AS BRANCHES."
+          // The mechanism exists now -- StretchCore's rl_interrupt --
+          // and BEW's WAIT is still unimplemented, which is a
+          // different claim.  See docs/NEXT.md item 3.)
           case (bm.code)
             3'b000, 3'b100: st.setIrqEnabled(True);   // BE, BEW
             3'b001:         st.setIrqEnabled(False);  // BD
@@ -3645,9 +3653,28 @@ function ActionValue#(ExecResult)
           // the single authority on which addresses signal.
           Bool changes = (mod != 2'b00);
           Bool storeViolates = changes && protViolates(st, bw);
-          if (tested == bb.modAbc[0] && !storeViolates)
-            next = effAddr19(st, bb.addr2, {3'b0, bb.idx}); // K: X1 only
-          if (changes) begin
+          HWordAddr tgt = effAddr19(st, bb.addr2, {3'b0, bb.idx}); // K: X1 only
+          Bool wouldBranch = (tested == bb.modAbc[0]);
+          // IF, p.32's BIT CHANGING -- the third of the three things a
+          // protected branch target suppresses, and the one
+          // execute()'s shared commit point cannot reach: "the entire
+          // branch operation, including any counting, bit changing, or
+          // index alteration, is suppressed."  BRANCH ON BIT issues its
+          // st.writeWord HERE, before that point, so the decision has
+          // to be made here too -- the same reason `storeViolates`
+          // above sits in this arm rather than at the commit.
+          //
+          // AND THE INDICATOR IS SET HERE FOR THE SAME REASON.  The
+          // commit point signals IF on `next != fallthrough`; suppress
+          // the branch and that test is false, so it would never fire.
+          // Setting it here keeps "the indicator sets whatever the mask
+          // says" true (p.45, and TEST 8C case 3's own error text).
+          Bool ifSuppress = wouldBranch && maskedOn(st, ind_IF)
+                            && ifViolates(st, tgt[18:1]);
+          if (wouldBranch) ind = ifSignal(st, tgt[18:1], ind);
+          if (wouldBranch && !storeViolates && !ifSuppress)
+            next = tgt;
+          if (changes && !ifSuppress) begin
             Bit#(1) nb = case (mod)
                            2'b01: 1'b0;      // set to zero
                            2'b10: ~tested;   // invert (negate)

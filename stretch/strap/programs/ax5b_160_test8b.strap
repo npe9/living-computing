@@ -40,12 +40,61 @@
 ! the DISABLED case: BIT57 (the boundary-control bit) into X1, SX to
 ! word 3.0 arms boundary control, then "SX,$X1,160AD1" stores out of
 ! bounds with the system disabled.  BDSZ at 022517.00 branches if DS
-! is already on (and zeroes it), and BZDSZ at 022520.00 demands that
-! the offending SX DID set it -- disabled, the indicator still sets,
-! there is just no interruption.  The second half enables the system
-! and re-runs the same violation, this time checking the interrupt
-! (the handler planted at 160107 vectors to 160126) AND the store
-! suppression.
+! is already on (and zeroes it) -- its target 022517.40 is also its
+! own fall-through, so that row is a pure CLEAR, a branch written for
+! its side effect and going nowhere.  BZDSZ at 022520.00 then demands
+! that the offending SX did NOT set it: disabled, the indicator does
+! not actuate at all.  The second half enables the system and re-runs
+! the same violation, this time checking the interrupt (the handler
+! planted at 160107 vectors to 160126) AND the store suppression.
+!
+! THE POLARITY ABOVE IS A CORRECTION TO THIS FILE, and the reason it
+! took a second pass is worth recording.  B<IND> branches when the
+! indicator is ON; BZ<IND> branches when it is OFF.  That is one bit of
+! the printed word -- enc_branch_ind puts branchOn at bit 30, inside
+! the hex byte, 0xC6 against 0xC4 -- and classify_branch_indicator
+! assigns it by prefix.  Read the other way round, every OK path in 8B
+! and 8C becomes an error path and the whole block inverts.  The first
+! draft of this file said "disabled, the indicator still sets, there is
+! just no interruption", which is the opposite of what the deck asks.
+!
+! THE ERROR TEXT WAS THE TELL, and it is the same tell 8C_disabled
+! already argues from: "-SX OUT OF BOUNDS SETS DS WHEN / -SYSTEM
+! DISABLED." is a COMPLAINT.  It names the anomaly, not the
+! requirement.  A message can only be read as a specification if you
+! already know which path reaches it, and here the branch is the OK
+! path and the fall-through is the SIC,SEN / B,SERS pair.
+!
+! BUT THE ARGUMENT DOES NOT HAVE TO REST ON READING A MESSAGE, and it
+! should not, because reading a message is the same KIND of inference
+! that produced the error.  A PRINTED ENCODING says it outright: this
+! half is the disabled case because 022515.40 is "BD,$+.32" printing
+! "22516.04 00" -- BRANCH DISABLED, two rows before the out-of-bounds
+! store at 022517.40.  The second half re-enables with "BE,$+.32" at
+! 022534.00 printing "22534.40 00".  Those two rows are in this file's
+! bit-18 table already; they were sitting there while the prose above
+! them said the opposite.  Prefer an encoding to a reading whenever
+! one is available.
+!
+! HOW FAR THE CLAIM REACHES, stated exactly.  "Disabled means the
+! protection indicator does not actuate at all" is witnessed BY THE
+! DECKS for all three address alarms: DS here, and DF and IF by
+! ax5b_160_test8c_disabled.strap's "BZDFZ ... DF must be OFF" and
+! "BZIFZ ... IF must be OFF".  The REFERENCE MANUAL quote the model
+! cites for it -- printed p.45, a store attempted "while the
+! interruption system was enabled" -- is DS-SPECIFIC.  So DS has both
+! a manual source and a deck source; DF and IF have a deck source and
+! inherit the gating by symmetry with it.  protViolates gates all
+! three on st.irqEnabled(), which is right, but say which support each
+! one actually has rather than letting one quote cover three.
+!
+! NOTHING CAUGHT IT BECAUSE PROSE IS NOT EXECUTABLE.  The rows are
+! bit-exact against the printed code and always were; the verifier
+! checks encodings, not glosses.  The model was right too --
+! StretchExecute.bsv's protViolates ends `st.irqEnabled() &&
+! installed(a) && signalled` -- so this was a claim in a comment
+! contradicting both the sibling transcription and the code it
+! describes, sitting in a committed file that passed every check.
 !
 ! NOTE THE INDICATOR-REGISTER CLEARING SEQUENCE at 022526.40-022531.40:
 ! "Z,$IND" then "L(BU),$IND" then "BRZ,$+2.0".  The deck does not

@@ -1,0 +1,320 @@
+! jb_ax5b "I-Box 5", routine 1258 "CHK TIME CLOCK AND INTERVAL TIMER",
+! TEST 1 -- the TIME CLOCK half.  PDF pp.5-6, three contiguous blocks:
+! the 158 preamble at 014002.00-014004.40 plus its CNOP, the routine's
+! four XW constants at 014006.00-014011.00, and TEST 1 proper at
+! 014012.00-014033.40 (entry label 1581), 36 unbroken half-word rows
+! filling the whole of PDF p.6.  Transcribed VERBATIM at the listing's
+! own addresses and checked bit-exactly by
+! verify_ax5b_1258_test1_listing.py.
+!
+! WHERE IT IS.  Routine 1258 does NOT sit in the tail of the deck where
+! its number would put it: it is the FIRST listing block, PDF pp.5-7,
+! immediately after the prose write-up.  These listing pages carry no
+! printed page numbers, so everything here cites PDF pages.
+!
+! WHAT IT IS.  The deck's own write-up, PDF p.5, printed above the code:
+!
+!   ----1258---CHK TIME CLOCK AND INTERVAL TIMER.
+!       -THIS TEST IS COMPOSED OF TWO ROUTINES
+!       -WHICH CHECK THE FOLLOWING FUNCTIONS.
+!       -TEST 1 IS A CURSORY CHECK OF
+!       -THE TIME CLOCK TO SEE THAT
+!       -IT STEPS CORRECTLY WITHIN
+!       -THE CORRECT INTERVAL OF TIME.
+!       -TEST 2 CHECKS THAT THE INTERVAL
+!       -TIMER STEPS WITHIN THE
+!       -ALLOTTED AMOUNT OF TIME, AND
+!       -THAT EACH POSITION CAN HOLD
+!       -BOTH A ONE AND A ZERO.
+!
+! TEST 2 (014034.00-014063.40, PDF p.7) is already transcribed as
+! programs/ax5b_1258_test2.strap.  This file is its other half, and the
+! two together are the whole of routine 1258.
+!
+! WHY IT MATTERS.  This model has no time clock at all -- not a stub,
+! not a register: nothing.  This block is the acceptance test for
+! building one, written by the people who had one.
+!
+! -------------------------------------------------------------------
+! WHERE THE ONE CUT IS, AND WHY IT IS FORCED
+! -------------------------------------------------------------------
+! 014005.00 is NOT transcribed.  Its source line, read at 600 dpi, is
+!
+!       1581D   %IQSZ*DD%BU,64,8*,1258      Z
+!
+! where % is this printer's "(" and * stands here for the closing
+! glyph it draws for ")" -- fixed by the same page's
+! "XW,%8*777777.40,0,0", which is the "(8)" radix prefix this assembler
+! already accepts.  So the line reads
+! "(IQSZ)DD(BU,64,8),1258   Z": a call of the SSIP/DCP print-formatting
+! macro %IQSZ, the routine's IDENT word.  docs/archival_inventory.md
+! already records %IQSZ/%IQS* as macros with no counterpart in this
+! model, and notes that every routine's ident line carries one.
+!
+! THE LISTING PRINTS NO MACHINE CODE FOR IT.  The location column says
+! 014005.00; the machine-code column is blank.  So there is nothing to
+! check there, and writing "DD(BU,64,8),1258" instead would assert a row
+! shape the page does not print and deposit a word the page does not
+! show.  The cut is therefore a SLC from 014004.40 to 014006.00, and the
+! ident word enters as a SYN, L1581D, because 014002.00's LX names it.
+!
+! Everything else in 014002.00-014033.40 is transcribed, unbroken.
+!
+! -------------------------------------------------------------------
+! WHAT THE TEST DOES, AND WHY IT IS SHAPED THIS WAY
+! -------------------------------------------------------------------
+! Reference Manual printed p.35 (PDF 38), read first-hand:
+!
+!   "This clock consists of a number 36 bits long which is continually
+!    stepped up by pulses originating from the same 1024 cycle per
+!    second oscillator which controls the updating of the interval
+!    timer.  The two clocks are updated consecutively in the same time
+!    interval.  The leftmost 26 bits of the time clock measure time in
+!    seconds.  A full cycle is about 777 days."
+!
+!   "The value of the clock occupies bits 28-63 of location 1.  Each
+!    time the oscillator delivers a pulse it is read out, incremented by
+!    one, USING THE INDEX ADDER, and returned to core storage."
+!
+!   "Its setting, however, cannot be altered under program control.  Any
+!    attempt to store into the right half of location 1 is suppressed,
+!    and indicator AD, address invalid, is turned on."
+!
+! Bits 28-63 of a word are exactly the COUNT field (28-45) and the
+! REFILL field (46-63) of an INDEX WORD.  That is the whole trick of
+! this block: word 1 is read as ONE index word with LX, and the 36-bit
+! clock comes back split across two index fields that half-word
+! instructions can reach separately --
+!
+!   SR (STORE REFILL, Ref. Manual p.24): "The refill field, bits 46-63,
+!   of the index word specified by J replaces bits 0-17 of the half word
+!   specified by bits 0-18 of the effective address.  Bits 18-24 of the
+!   half word are set to zero."
+!
+!   SC (STORE COUNT, p.24): the same sentence with "count field, bits
+!   28-45".
+!
+! So SR moves the clock's LOW 18 bits and SC its HIGH 18 bits, each into
+! the VALUE position of some other index word, where KV (COMPARE VALUE,
+! p.24: "bits 0-24 ... compared with ... bits 0-24 of the index word
+! specified by J") can compare them.  The four scratch words are $X2
+! (old low), $X3 (old high), $X4 (new low), $X5 (new high) -- and
+! "Z,$X2" zeroes them by addressing index register 2 as storage word 18,
+! which is why those rows assemble to 22/23/24/25 octal.
+!
+! THE THREE ASSERTIONS, each with its own error text, quoted from p.6:
+!
+!   1. IT STEPS AT ALL, within one millisecond (1581/1582).  Snapshot
+!      the clock, then spin a 256-count CB re-reading word 1 and asking
+!      whether the low half still equals the snapshot.  BZXE branches
+!      out when XE is OFF -- when they DIFFER -- and the comment on that
+!      row is the deck's own "-IT STEPPED."  Fall out of the 256 tries
+!      and the report is
+!          "-TIME CLOCK FAILS TO STEP IN 1 MSEC."
+!      One millisecond is the deck's statement of the rate; the manual's
+!      1,024 steps per second is one step per 0.9766 ms.
+!
+!   2. THE LOW HALF WENT UP BY EXACTLY ONE (1583/1584).  V+I,$X2,1.0
+!      adds one to the saved old low half and 1584's KV,$X2,$X4 compares
+!      it against the new low half.  Failure:
+!          "-BITS 46-63 ARE NOT CORRECT AFTER"
+!          "-TIME CLOCK STEPPED."
+!      Those bit numbers ARE the refill field's, printed by the deck.
+!      AND THE ASSIGNMENT OF MESSAGE TO BLOCK DOES NOT REST ON READING
+!      PIXEL POSITIONS: 1584 compares $X2 against $X4 and 1585 compares
+!      $X3 against $X5 in the CODE column, SR wrote $X2/$X4 and SC wrote
+!      $X3/$X5, and the manual independently calls refill 46-63 and
+!      count 28-45.  Deck text and manual corroborate each other; the
+!      same corroboration TEST 2 gets from its "IX 1"/"IX 2"/"IX 3".
+!
+!   3. THE HIGH HALF IS RIGHT, CARRY INCLUDED (1585).  KV,$X3,$X5
+!      compares the saved old high half against the new one.  Failure:
+!          "-BITS 28-45 ARE NOT CORRECT AFTER"
+!          "-TIME CLOCK STEPPED."
+!      Again the deck names the count field's own bit numbers over the
+!      SC rows at 014015.40/014022.00.
+!
+! THE CARRY PATH DOES NOT REACH THE FIELD THAT IS COMPARED, and this is
+! a finding, not a guess.  BZXVZ at 014023.00 branches past the carry
+! step while XVZ is OFF, i.e. while the incremented low half is NONZERO;
+! only a wrap (old low = 2**18-1) falls through to 014023.40's
+! C+I,$X3,1.0.  But Reference Manual printed p.25 defines that
+! instruction as
+!
+!   "ADD IMMEDIATE TO COUNT (C+I): Bits 0-17 of the address part of the
+!    instruction are added to the COUNT field, BITS 28-45, of the index
+!    word specified by J."
+!
+! -- while 014026.00's KV compares bits 0-24, the VALUE field, which is
+! where SC put the old high half.  The carry lands in a field the
+! comparison never reads.  The block therefore reports a spurious
+! "-BITS 28-45 ARE NOT CORRECT" on the one pass in 2**18 where the low
+! half wraps (about once every 256 seconds of clock time, and only if
+! the test is entered exactly then).  C+I and V+I differ by one letter
+! in the source and one nibble in the printed encoding -- 1.07 00 versus
+! 1.07 05, which the verifier's own injection demonstrates -- and V+I
+! would have propagated the carry.  What the deck INTENDED is not
+! recoverable from the page; that the encoding does what p.25 says it
+! does is.  1585 is reached on both paths out of 1584 (BXE,1585 when the
+! low half checks out, fall-through into the SIC/B,SERS report
+! otherwise), so nothing conditionally skips the affected block.
+!
+! NOTHING HERE STORES INTO WORD 1.  Unlike TEST 2, which sets the
+! interval timer with SV,$X0,1.0 and so needs the interruption system
+! disabled, TEST 1 only ever READS the clock (LX,$X0,1.0, twice).  That
+! is forced: p.35 says the clock's setting "cannot be altered under
+! program control", and a store into the right half of location 1 is
+! suppressed with indicator AD turned on.  A cursory check is all the
+! deck CAN do.
+!
+! THE CONTINUITY BLOCK IS UPDATE-ONLY.  TEST 1 closes with three rows --
+! LX,$X13,IC258 / V+,$X13,BIT0 / SX,$X13,IC258 -- and no compare.  TEST 2
+! does the same update with BIT1 and then verifies the word against
+! ICK258.  ICK258's own row on PDF p.5 prints "600000.00 00 000000.00
+! 00": bits 0 AND 1 set, which is "test 1 done" plus "test 2 done", read
+! off the constant pool rather than inferred.  That also settles the
+! symbol this file's 014033.00 names: the printer draws letter O and
+! digit 0 with the same glyph, but the encoding is 24522 -- one below
+! TEST 2's BIT1 at 24523 -- and ICK258 shows bit 0 is the bit TEST 1
+! sets.  BIT0, with a digit.
+!
+! THE BIT TABLE GAINS ITS BASE.  BIT1 -> 024523, BIT17 -> 024543 and
+! BIT18 -> 024544 were read off TEST 2.  This row reads 024522 for BIT0,
+! which is the 024522 + n rule's own origin.
+!
+! CNOP, at 014004.40's successor.  The listing prints NEITHER a location
+! NOR machine code for the CNOP line: 014004.40 is the second half of
+! word 014004, so the counter is already at the word boundary 014005.00
+! and CNOP has nothing to fill.  It is kept as CNOP and never
+! hand-expanded.  Because the transcript cuts at the very next row, the
+! SLC that follows re-establishes the counter, so NO ROW IN THIS FILE
+! WOULD MOVE if CNOP misbehaved -- the silence is witnessed by the page,
+! not by this check.  verify_ax5b_160_test8c_disabled_listing.py is the
+! file that witnesses both CNOP branches from assembled output.
+!
+! ENCODING ONLY.  Running this needs SSIP's harness (SEN/SERS/SSW/RET/
+! IDF1), the %IQSZ print macro, and a time clock that ticks.  The model
+! has none of the three.
+!
+! SUBSTITUTIONS: one, the deck's systematic one.  Labels that begin with
+! a digit (158, 1581, 1581D, 158K1, ...) get an "L" prefix, because this
+! assembler reads a leading digit as an address.  IC258/ICK258 get it
+! too, spelled LIC258/LICK258 to match ax5b_1258_test2.strap: this
+! printer's letter-I and digit-1 are the same glyph, so the prefix is
+! applied uniformly and the choice is moot.  Nothing else is changed.
+
+! ---------------------------------------------------------------------
+! External symbols, SYN'd at the addresses THIS listing's own printed
+! encodings give.  EVERY SYN HERE IS AN INPUT TO THE CHECK, NOT A
+! WITNESS: the address was read out of the very row that names the
+! symbol, so that row can only re-derive what was put in.  The real
+! address checks are the thirteen rows whose targets are labels defined
+! INSIDE this transcript.
+!
+! Each address was obtained by reading bit 18 out of the octal pair of
+! the naming row, so each is itself a checkable claim.
+!
+! The SYN list is SHORTER than TEST 2's by four, and that is the reason
+! this file carries the preamble and the constant pool: IC258, ICK258,
+! 158K1 and 158K2 are DEFINED here, so 014004.00's Z, 014032.40's LX and
+! 014033.40's SX are real address checks instead of TEST 2's "(ext)".
+! It works the other way round too, and that is the more useful
+! direction: ax5b_1258_test2.strap SYNs LIC258, LICK258, L158K1 and
+! L158K2 as unwitnessed inputs, and this file defines all four from
+! their own printed constant-pool rows at exactly those addresses --
+! including the two constants TEST 2's reload and bits-19-23 assertions
+! rest on.
+L1581D  SYN, (8)14005.0     ! from LX,$X1,1581D     = 14005.02 10
+DPET13  SYN, (8)1437.0      ! from SX,$X1,DPET13    = 1437.03 10
+RET     SYN, (8)1306.40     ! from SIC,RET          = 1306.40 80
+IDF1    SYN, (8)1443.0      ! from B,IDF1           = 1443.10 00
+BIT0    SYN, (8)24522.0     ! from V+,$X13,BIT0     = 24522.32 B0
+SEN     SYN, (8)1310.0      ! the SIC error-entry link
+SENO    SYN, (8)1311.0      ! from SIC,SENO+.32     = 1311.40 80
+SERS    SYN, (8)1304.0      ! the error-report routine
+SSW     SYN, (8)1301.0      ! the SSIP return
+!
+! SENO's and DPET13's spellings are not resolvable from the page: this
+! printer's letter O and digit 0 are one glyph, and so are letter I and
+! digit 1.  Both are SYNs, so nothing in this check or any injection
+! depends on either spelling.  SENO follows ax5b_1258_test2.strap;
+! DPET13 follows the spelling docs/microarchitecture_plan.md already
+! carries for the same SSIP symbol in the PAU deck.
+
+! ---------------------------------------------------------------------
+! BLOCK A -- routine 158's preamble, PDF p.5, 014002.00-014004.40.
+! ---------------------------------------------------------------------
+        SLC, (8)14002.0
+L158    LX,  $X1, L1581D            ! -UPDATE IDENT.
+        SX,  $X1, DPET13
+        SIC, RET
+        B,   IDF1
+        Z,   LIC258                 !             clear the continuity word
+        BD,  L1581                  !             ...and enter TEST 1 disabled
+        CNOP                        !             already word-aligned: emits nothing
+!
+! ---- the cut: 014005.00, "%IQSZ*DD%BU,64,8*,1258  Z", the ident-word
+!      print macro.  Location printed, machine code NOT printed.  See
+!      the header.
+
+! ---------------------------------------------------------------------
+! BLOCK B -- routine 1258's constant pool, PDF p.5, 014006.00-014011.00.
+! Four full words, each printing as two groups.
+! ---------------------------------------------------------------------
+        SLC, (8)14006.0
+LIC258  XW,  0,0,0                  ! -CONTINUITY REG 1258.
+LICK258 XW,  (8)600000.00,0,0       !             bits 0 and 1: both tests done
+L158K1  XW,  (8)777777.40,0,0       !             all ones in bits 0-18 (TEST 2)
+L158K2  XW,  (8)1.77,0,0            !             bit 17 plus bits 18-23 (TEST 2)
+
+! ---------------------------------------------------------------------
+! BLOCK C -- TEST 1 itself, the whole of PDF p.6, 014012.00-014033.40.
+! ---------------------------------------------------------------------
+        SLC, (8)14012.0
+!
+! ---- snapshot the clock and split it -------------------------------
+L1581   LCI, $X1, 256               ! -TEST 1, CHECK TIME CLOCK STEPPING.
+        LX,  $X0, 1.0               !             word 1 AS ONE INDEX WORD
+        Z,   $X2                    !             word 18
+        Z,   $X4                    !             word 20
+        Z,   $X3                    !             word 19
+        Z,   $X5                    !             word 21
+        SR,  $X0, $X2               !             old bits 46-63 -> X2's value
+        SC,  $X0, $X3               !             old bits 28-45 -> X3's value
+!
+! ---- does it step within one millisecond? --------------------------
+L1582   LX,  $X0, 1.0               !             re-read the clock
+        SR,  $X0, $X4               !             new bits 46-63 -> X4's value
+        KV,  $X4, $X2               !             new low half vs old low half
+        BZXE, L1583                 ! -IT STEPPED.      XE off = they differ
+        CB,  $X1, L1582             !             ...256 tries
+        SIC, SEN
+        B,   SERS                   ! -TIME CLOCK FAILS TO STEP IN 1 MSEC.
+        B,   L1586                  !             give up on TEST 1
+!
+! ---- old + 1 = new, with a carry between the halves ----------------
+L1583   SC,  $X0, $X5               !             new bits 28-45 -> X5's value
+        V+I, $X2, 1.0               !             old low half + 1
+        BZXVZ, L1584                !             XVZ off = nonzero: no carry
+        C+I, $X3, 1.0               !             the carry -- see the header
+L1584   KV,  $X2, $X4               !             old low + 1 vs new low
+        BXE, L1585
+        SIC, SEN                    ! -BITS 46-63 ARE NOT CORRECT AFTER
+        B,   SERS                   ! -TIME CLOCK STEPPED.
+!
+L1585   KV,  $X3, $X5               !             old high vs new high
+        BXE, L1586
+        SIC, SEN                    ! -BITS 28-45 ARE NOT CORRECT AFTER
+        B,   SERS                   ! -TIME CLOCK STEPPED.
+!
+! ---- the exit, and the continuity update ---------------------------
+L1586   B,   $+1.0
+        BD,  L1581
+        SIC, SENO+.32
+        B,   SSW                    ! -TO SSIP.
+        BD,  $+.32
+!
+        LX,  $X13, LIC258           ! -UPDATE CONTINUITY CHECK.
+        V+,  $X13, BIT0             !             test 1 done = bit 0
+        SX,  $X13, LIC258
+        END, L158

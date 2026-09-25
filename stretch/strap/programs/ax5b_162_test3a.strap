@@ -61,6 +61,17 @@
 ! ENCODING of the row is settled either way, and that is what this
 ! file checks.
 !
+! SINCE THIS FILE WAS WRITTEN, TEST 1CC (pp.93-94) SETTLED WHAT THE
+! WORD IS: an enable-state probe.  An operation-code-invalid word
+! actuates OP, indicator 15, and mask bits 0-19 are permanently one, so
+! executing one interrupts iff the interruption system is enabled --
+! and 1CC uses it twice in opposite polarities with error text that
+! pins both directions.  It did NOT settle what the word is doing
+! HERE; ax5b_162_test3b.strap works through why the probe reading and
+! this block's required control flow contradict each other, and names
+! the two untranscribed pages that would decide it.  Read that note
+! before treating the row as explained.
+!
 ! NOTHING HERE IS A FIRST for this assembler, and saying so is the
 ! point.  EXIC is already witnessed by TEST 2B (programs/ax5b_162_
 ! exic_classes.strap), BADZ's trailing-Z clear bit by 16086B and

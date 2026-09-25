@@ -66,8 +66,6 @@ UNIMPLEMENTED = {
     "CV", "DCV", "LCV", "LTRCV",          # radix conversion
     "KE", "KF", "KFE", "KFR",             # compare variants
     "M+1", "LTRS",                        # add-one-to-memory, load transit and set
-    "EX",                                 # execute
-    "RNX",                                # rename
     "LOC", "LOCSEOP",                     # locate
 }
 # UNIMPLEMENTED IN THE MODEL BUT EXERCISED FOR ITS ENCODING.  This
@@ -77,15 +75,34 @@ UNIMPLEMENTED = {
 # Those two properties coincided until a TRANSCRIPTION used an
 # instruction the model cannot execute.
 #
-# programs/ax5b_162_exic_classes.strap is jb_ax5b routine 1262 TEST 2B,
-# 43 rows bit-exact against the listing.  It is an ENCODING oracle: the
-# assembler emits EXIC (it is in MISC_CODES), the model decodes it to
-# Operation Code Invalid, and the program is never run.  So EXIC is
-# used, and must leave KNOWN_GAP or the ratchet fails -- but it is not
-# implemented, and listing it here says so rather than letting its
-# absence from UNIMPLEMENTED imply otherwise.
+# THE CATEGORY HAS NOW BEEN FORCED THREE TIMES, by three unrelated
+# transcriptions, which is why it is a category and not a special case:
+#
+#   EXIC  programs/ax5b_162_exic_classes.strap -- jb_ax5b routine 1262
+#         TEST 2B, 43 rows.  Also ax5b_162_test3a/3b.
+#   EX    programs/ax5b_162_test1cc.strap -- routine 1262 TEST 1CC, 81
+#         rows.  More EX rows than the rest of the repo together; the
+#         block is the specification for the EXE indicator.
+#   RNX   programs/ibox4_rnx_nop.strap -- jb_ax4b routine 1244, the
+#         refill-address NOP gate.  The FIRST listing witness for RNX
+#         anywhere in this repo; before it, the name appeared only in
+#         opcodes.py's table, this audit, and two comments.
+#
+# In each case the assembler emits the operation, the model decodes it
+# and then sets Operation Code Invalid, and the program is never run.
+# So each is USED and must leave KNOWN_GAP or the ratchet fails -- but
+# none is implemented, and listing them here says so rather than
+# letting their absence from UNIMPLEMENTED imply otherwise.
+#
+# EXPECT THIS SET TO KEEP GROWING, and do not read growth as progress.
+# A name moving from UNIMPLEMENTED to ENCODING_ONLY means a listing now
+# pins its ENCODING.  It says nothing whatever about execution, and the
+# two are separately earned.  docs/NEXT.md item 4a is the open work for
+# EX/EXIC; RNX is recorded there as out of scope.
 ENCODING_ONLY = {
     "EXIC",
+    "EX",
+    "RNX",
 }
 # IMPLEMENTED BUT UNEXERCISED -- the model has real arms for these and
 # nothing drives them.  This is the actionable list: each is a test

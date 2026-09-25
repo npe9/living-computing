@@ -1009,7 +1009,175 @@ choice.
   actuated. Indicator AD will not be actuated ... **unless the IF mask
   bit is zero**."*
 
+## 5b. TWO SEARCHES CLOSED, 2026-09-24 — both negative, both useful
+
+### TEST 8A AND TEST 8D DO NOT EXIST, and the deck says so in a constant
+
+`NEXT.md` and `archival_inventory.md` both carried an open item to find
+them, on the strength of routine 1260's own setup comment at PDF p.75:
+*"-SETUP BD, 160107 INTERRUPT TABLE / -FOR TESTS 8B, 8C, 8D"*. **TEST
+8's lettering runs 8B, 8C and stops.** There is no 8A and no 8D.
+
+The decisive argument is not a page-by-page search — it is the deck's
+**expected continuity constant**, read first-hand at 400 dpi on PDF
+p.83:
+
+    IC260  XW,0,0,0                  -CONTINUITY REG 1260.   022737.00
+    ICK260 XW,(8)777774.00,0,0                               022740.00
+
+Every sub-test of 1260 ends `LX,$X13,IC260 / V+,$X13,BIT<n> /
+SX,$X13,IC260`, and at the end the routine does `KV,$X13,ICK260` and
+reports *"-CONTINUITY ERROR."* on mismatch. **777774 octal as an 18-bit
+field is `111111111111111100` — bits 0-15 set, bits 16-17 clear — so
+the deck itself states that routine 1260 has EXACTLY SIXTEEN
+sub-tests**, and all sixteen are named:
+
+| bit | sub-test | | bit | sub-test |
+|---|---|---|---|---|
+| BIT0 | TEST 1A (p.11) | | BIT8 | TEST 7 part 1 (p.65) |
+| BIT1 | TEST 1B (p.13) | | BIT9 | TEST 7 part 2 (p.68) |
+| BIT2 | TEST 1C (p.21) | | BIT10 | TEST 7 part 3 (p.74) |
+| BIT3 | TEST 2 (p.23) | | BIT11 | TEST 8B (p.75) |
+| BIT4 | TEST 3 (p.25) | | BIT12 | TEST 8C case 1 (p.77) |
+| BIT5 | TEST 4 (p.36) | | BIT13 | TEST 8C case 2 (p.79) |
+| BIT6 | TEST 5 (p.60) | | BIT14 | TEST 8C case 3 (p.81) |
+| BIT7 | TEST 6 (p.64) | | BIT15 | TEST 8C case 4 (p.83) |
+
+No bit is left over, so there is no room for an 8A or an 8D. **This is
+a better kind of closure than an exhaustive read**: a search can only
+ever report "I did not find it", but a full enumeration whose slots are
+all spoken for reports "it is not there." The same mechanism
+independently confirms routine 1258: `ICK258` = `(8)600000.00` = bits 0
+and 1 = exactly two tests, which is what the routine has.
+
+Corroborating closures, each checked separately: the octal is
+**contiguous across the TEST 7 / TEST 8B seam** (022512.40 → 022513.00,
+both pages in one 400 dpi crop, no gap for an 8A); routine 1260 **ends
+immediately after 8C case 4** with `BD,162` at 022736.40 → 023304.00,
+routine 1262's entry; and the p.8 write-up **never letters TEST 8 at
+all**, describing it in one unlettered paragraph as *"AN ELEMENTARY
+CHECK TO DETERMINE THAT THE CORRECT INDICATORS AD, DS, DF, IF ARE
+TURNED ON AND THAT CORRECT TERMINATIONS AND SUPPRESSIONS OCCUR..."*.
+
+The p.88 "8D" sighting is **stale boilerplate**, confirmed at 400 dpi:
+it is the same five-line interrupt-table-fill idiom as 1260's `160123`,
+sitting in routine 1262 with the comment carried over unedited, and
+1262's own write-up numbers its tests 1/2/3 with suffixes 1A…3B.
+
+**Leave the p.75 comment as it stands. A setup comment naming a test
+that does not exist is itself the finding** — and note "8A" is absent
+even from that comment. Conjecture, flagged and NOT to be promoted:
+TEST 8's four indicators are AD, DS, DF, IF; 8B is DS and 8C is DF+IF;
+AD gets no lettered sub-test because TEST 7 already gives it a
+dedicated interrupt entry (`160107`, p.71) and the `16082`/`16083`
+blocks (pp.41-42) already turn it on.
+
+### THE ACTUATION-PRIORITY RULE HAS NO DECK ORACLE — implement it from the manual or not at all
+
+Reference Manual printed p.51 (PDF 54), verified verbatim: *"In a few
+cases, the general description of indicators shows that a single cause
+should actuate two indicators. However, in the event of such an alert,
+only the indicator of higher priority is actuated. The order of
+priorities ... is the same as the order shown on the indicator list
+except that **IF has priority over AD**."* Its four worked examples:
+(a) ADD TO MEMORY → DS only, DF unchanged; (b) SWAP → **both** DS and
+DF, "because each of the two attempted transmissions causes different
+alerts"; (c) branch address invalid *and* protected → AD only, IF
+unchanged; (d) EX/EXIC subject address protected *and* invalid → IF
+actuated, AD not, "unless the IF mask bit is zero".
+
+**Searched and not found:** `jb_ax5b` pp.4-116 in full, plus `jb_ax4b`'s
+routine inventory and routine 1246. Nothing anywhere arranges a double
+alert. The reason is structural, not accidental, and that is what makes
+the negative trustworthy:
+
+* **Every protection test bounds its addresses to the valid range.**
+  TEST 7's own header (p.71): *"RANGE OF X IS FROM 000040 THRU 777777
+  OCTAL."* Valid but protected → a single cause by construction.
+* **Every invalid-address test uses addresses that are invalid but not
+  protected** — 1262 TEST 3A and 3B, 1260's `16082`/`16083`.
+* **1262's `16219`/`16272` "CHK ADR MONITOR"** put an EX/EXIC *subject*
+  above UB — example (d) minus the invalid half. They check that the
+  interrupt happened and the instruction was NOPed, never "and AD
+  stayed off".
+* **The signature that would make a witness never appears**: an
+  operation followed by TWO indicator branches, one asserting A on and
+  one asserting B still off. Supporting detail: across pp.4-44 no
+  `BZ<IND>` form for AD/DS/DF/IF/OP/USA/EXE occurs at all — only
+  `BOP`, `BAD`, `BUSA`, `BEXE`, `BDS`, `BADZ`, every one branch-on-ON.
+* **`jb_ax4b` cannot hold the SWAP witness.** Routine 1246's banner
+  (PDF p.99) is *"TEST TRANSMIT AND SWAP"* with nine memory pairings
+  and three modifier bits — no protection, bounds or indicator clause —
+  and the deck's own loading procedure (printed p.1) says *"Disable
+  Interrupt and Time Clock"*.
+
+**So this is a Reference-Manual-only claim.** That does not forbid
+implementing it, but it changes what implementing it means: there would
+be no deck to check it against, and the project's bar (§ The bar) is
+deck-verified behaviour. If it is implemented, the code must say
+plainly that its oracle is p.51 and nothing else — the same standing
+that DF was wrongly given once already (see § 2's CORRECTION).
+
+**One near-miss, re-verified first-hand rather than taken on trust**,
+because it deliberately involves both DS and AD: 1260's `16086` block
+at p.44 turns AD on with its own `SV,$X4,1.32` as part of the DS setup,
+then at 021375.40 does `BADZ,$+.32` whose target 021376.00 **is its own
+fall-through** — so both paths converge unconditionally and the only
+effect is CLEARING AD. Two causes, two indicators, no arbitration. Not
+a witness. (The same "branch that goes nowhere, written for its
+clearing side effect" idiom appears at 8B's 022517.00.)
+
+### A free cross-check, and one difference
+
+Reading the indicator names off routine 1260's four 48-entry error
+tables gives all 48 in order, matching `bsv/StretchTypes.bsv` exactly.
+**One difference: the deck NAMES indicator 14 `RESRVD`, where
+`StretchTypes.bsv` leaves 14 unnamed.** Harmless, and worth a comment
+there if anyone is in the file.
+
 ## 6. Open questions — record, do not guess
+
+**What is the `-ILLEGAL OP.` word doing in routine 1262's TEST 3A and
+3B?** NEW as of 2026-09-24, and it is a *sharper* open question than
+the one it replaces, which is the point of recording it.
+
+What the word IS is now settled, by TEST 1CC (PDF pp.93-94). It is an
+**enable-state probe**: an operation-code-invalid word actuates OP,
+indicator 15, and mask bits 0-19 are permanently one
+(`StretchTypes.bsv` gives `ind_OP = 15`), so executing one interrupts
+**iff the interruption system is enabled**. 1CC uses the identical word
+twice in opposite polarities and its error text pins both directions —
+*"-SYSTEM ENABLED AFTER EX OF / -A BE INSTRUCTION."* where it must not
+interrupt, *"-SYSTEM DISABLED AFTER EX OF / -A BD INSTRUCTION."* where
+it must. That is a deck oracle, not a guess.
+
+**But the probe reading contradicts TEST 3B**, and the contradiction is
+the finding. In 3B (p.108) the word sits at 024155.40, between `Z,$X1`
+and the `EXIC` under test at 024156.00. The OK path out of that EXIC is
+an INTERRUPT — that is what makes 024156.40's fall-through the error
+*"-NO INTERRUPT WHEN SUBJ INST OF / -EXIC LESS THAN 32."* and what the
+`SVA` at 024154.40 plants `L162104` for. So the system must be ENABLED
+at 024156.00. If it is also enabled one half-word earlier, the probe
+interrupts FIRST, vectors to that same `L162104` (024157.40), and
+arrives with OP set and AD clear — so the `BADZ` there falls through to
+*"-AD NOT SET..."* and the EXIC under test never runs. The block could
+not pass, and it presumably did.
+
+Candidates, none checked: (a) the call into 1260's `160S1`
+clear-indicators subroutine at 024152.40-024153.00 returns DISABLED and
+something re-enables before the EXIC; (b) `162ITE`'s landing half is a
+`BD`, so a first interrupt disables and the probe is a deliberate
+ARMING step rather than a probe; (c) the word is somehow not executed,
+which would need a rule about data words in the instruction stream that
+no page states. **Named next step, so this does not rot into a vague
+item: transcribe `160S1` (022741.00-023041.00, PDF pp.83-85) and
+`162ITE` (024320.00, p.109).** Neither is transcribed; more inference
+from the rows already read will not settle it.
+
+Recorded in `programs/ax5b_162_test3b.strap` at length and
+cross-referenced from `ax5b_162_test3a.strap`, which previously carried
+the row as simply unexplained.
+
 
 **Does `refillLegal` apply to refills other than `R`/`RCZ`?** STILL
 OPEN — but as of 2026-09-24 it is open *with affirmative evidence
@@ -1071,8 +1239,34 @@ decodes Operation Code Invalid in this model — but whoever implements
 `RNX` owes those two clauses, and routine 1244's four-part header
 (with its two indexed error tables) is a complete test plan for it.
 
+**AND THE DECK'S OWN AUTHORS KNEW THE ZERO BOUNDARY WAS OPEN.**
+Found 2026-09-24 and verified first-hand at 300 dpi, `jb_ax4b` PDF
+p.98, routine 1244's constants:
+
+```
+144XW1  XW,144B1,0,0
+144XW2  XW,144B2,0,0
+144XW3  XW,1.0,31,0
+                        -IF 0 BECOMES ILLEGAL FOR RNX, USE THE
+                        -FOLLOWING THREE INDEX WORDS TO REPLACE
+                        -THOSE DIRECTLY ABOVE.
+144XWA  XW,144B1A,0,0
+144XWB  XW,144B2A,0,0
+144XWC  XW,0.0,32,0
+```
+
+As shipped the sweep starts at `1.0` with count 31 — 1 to 37 octal,
+matching the routine header. A **spare triple sits beside it** starting
+at `0.0` with count 32 and pointing at the "ADDRESS IS 0." entries of
+both error tables, which exist and are otherwise unreachable. So the
+people who wrote the test in 1961 did not know whether 0 was illegal
+for `RNX` either, and shipped the patch rather than pick a side.
+
+That is the best possible answer to "manual says 0-31, deck walks
+1-31": **neither is wrong, and the gap is a hedge, not an error.**
+
 **~~One boundary discrepancy to settle if `RNX` is implemented~~ —
-RESOLVED 2026-09-24, and the manual was self-consistent all along.**
+the manual was self-consistent all along.**
 p.27 says `RNX` no-ops for locations 0-31; the deck sweeps 1-37 octal
 (1-31). Printed **p.34**'s left column, read first-hand, is the same
 rule split by address class: item **8** is *"Neither the old nor the
@@ -1109,6 +1303,34 @@ printed page numbers.
   counter, so growing code silently overruns its own constants.
 * Compute octal addresses with a helper. Every one written by eye in
   this project has been wrong.
+* **A 2-UP SCAN MEANS "WHAT IS ON PDF PAGE N" HAS TWO ANSWERS**, and
+  finding one of them looks exactly like finding the answer. A report
+  cited "`jb_ax4b`'s routine index at PDF p.2". I rendered p.2, saw
+  PURPOSE / PROGRAM INTRODUCTION / OPERATING PROCEDURE, and wrote a
+  correction into `docs/archival_inventory.md` saying there is no index
+  there. **The left half was printed p.1; the right half was printed
+  p.2, §4 PROGRAM PHILOSOPHY, and it lists all eleven routines.** The
+  original citation was right and my correction was wrong. Note the
+  failure was not a wrong page number — I rendered the correct page and
+  stopped once it had told me something. Cheap tell: a 2-up scan shows
+  TWO printed page numbers, and both were visible in the render I was
+  reading from. **Look at the whole render before concluding from it.**
+* **PROSE IS NOT EXECUTABLE, so an inverted gloss can sit in a
+  committed, fully-passing file indefinitely.**
+  `programs/ax5b_160_test8b.strap` said a protection violation with the
+  interruption system DISABLED "still sets the indicator, there is just
+  no interruption". The opposite is true. `B<IND>` branches when the
+  indicator is ON and `BZ<IND>` branches when it is OFF, so in these
+  decks **the branch is the OK path and the fall-through is the
+  `SIC,SEN`/`B,SERS` error pair** — and an error message names the
+  ANOMALY, not the requirement. `-SX OUT OF BOUNDS SETS DS WHEN /
+  -SYSTEM DISABLED.` is a complaint. Nothing caught it because the rows
+  were bit-exact and always had been; the verifier checks encodings, not
+  glosses. Worse, the wrong claim contradicted both the sibling file
+  (`ax5b_160_test8c_disabled.strap`) and the code it described
+  (`protViolates` ends `st.irqEnabled() && installed(a) && signalled`).
+  **When a file's prose makes a behavioural claim, check it against the
+  model and against its siblings — nothing else will.**
 * **Never edit a file while a suite or campaign is reading it** —
   worst of all `run_tests.sh`, which `sh` reads by BYTE OFFSET as it
   goes, so editing a comment anywhere above the live line shifts every

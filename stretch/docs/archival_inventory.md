@@ -588,14 +588,49 @@ clause, unlike 1238's "NOPING IF RF IS FROM 1 TO 15" and 1244's
 "NO OPPED WHEN... IN THE RANGE OF 1 TO 37 OCTAL". See `docs/NEXT.md`
 item 6.
 
-**A CITATION CORRECTION WORTH KEEPING, because it nearly went into
-this file.** This came to me as "the routine index at PDF p.2". There
-is no routine index there: PDF p.2 is PURPOSE / PROGRAM INTRODUCTION /
-OPERATING PROCEDURE, p.3 is a writeup-addendum cover and p.4 opens the
-listing. Like `jb_ax5b`, this deck carries its routine descriptions as
-BANNER LINES inside the listing itself, not in a front-matter index.
-The substance was right and the citation was not; checking cost one
-render. Concrete gaps: `RNX` (dedicated section 144),
+**A CITATION CORRECTION, AND THEN A CORRECTION TO THE CORRECTION --
+the second one is the instructive half.** This came to me as "the
+routine index at PDF p.2". I rendered p.2, found PURPOSE / PROGRAM
+INTRODUCTION / OPERATING PROCEDURE, and wrote here that there is no
+routine index there. **That was wrong, and re-rendered first-hand at
+200 dpi it is plainly wrong.** PDF p.2 is a **2-UP SCAN**: two printed
+pages side by side on one PDF page. Its LEFT half is printed p.1 --
+the PURPOSE / INTRODUCTION / OPERATING PROCEDURE I saw, including
+loading step "4) Disable Interrupt and Time Clock". Its RIGHT half is
+printed p.2, **section 4, PROGRAM PHILOSOPHY**, and that section does
+exactly what the original citation said: "Below are listed all of the
+routines that are part of this program, and a brief description of
+what each tests", followed by all eleven --
+
+    1232  Checks KVNI.
+    1234  Checks V + from three memories (Internal, External, and
+          Index Memories), V+I, V-I, and the index adder for all eight
+          possibilities for each bit position.
+    1236  Checks C+I and C-I.
+    1238  Checks R and RCZ from all three memories where legal.
+    1240  Checks V+C, V+IC, and V-IC.  All three memories are used
+          where applicable.
+    1242  Checks V+CR, V+ICR, and V-ICR, using all three memories
+          where applicable.
+    1244  Checks RNX.
+    1246  Checks Transmit and Swap using all nine memory combinations
+          and testing all modifier bits.
+    1248  Checks index modification for all classes of instructions.
+    1250  Checks CB, CB+ CB-, and CBR.
+    1256  Checks LVE and LVS.
+
+**THE TRAP HAS A NAME: in a 2-up scan, "what is on PDF page N" has TWO
+answers, and finding one of them looks exactly like finding the
+answer.** I did not look at the right half. The failure was not
+sloppiness about the page number -- I rendered the correct page -- it
+was stopping once the page had told me something. Cheap tell: a 2-up
+scan shows TWO printed page numbers, and printed p.1 and p.2 were both
+visible in the render I was reading from.
+
+What survives of the original correction: this deck also carries
+routine descriptions as BANNER LINES inside the listing (1246's is at
+PDF p.99), so both are true and the banners are the richer source.
+p.3 is a writeup-addendum cover and p.4 opens the listing, as stated. Concrete gaps: `RNX` (dedicated section 144),
 `SVA` (section 148's *entire* index-modification test relies on SVA
 to record what address each instruction computed -- another
 structural, not just topical, SVA dependency), Transmit backward and
@@ -738,6 +773,88 @@ pages hold nothing of the kind. What they actually contain, in order:
 |---|---|
 | pp.41-44 | **the per-indicator turn-on blocks**, 16071 through 16086 -- one per I-Box indicator (`TS`, `CPUS`, `EKJ`, `UNRJ`, `CBJ`, `EPGK`, `UK`, `EE`, `EOP`, `CS`, `RESRVD`, `OP`, `AD`, `USA`, `EXE`, `DS`). Sixteen blocks, but not sixteen tests -- see the triage below. |
 | p.45 | **the indicator-walk driver**, 16087/16088 -- **transcribed** as `strap/programs/ax5b_16087_walk.strap`, six rows bit-exact via `strap/verify_ax5b_16087_listing.py`: `SIC,160SX1` / `B,160S1`, `TI,1,BIT0%$X1,$IND` *"SET ONE OF 20-47"*, `TI,1,BIT0%$X1,$MASK` *"SET MASK BIT OF TEST IND BIT"*, `BE,$+.32` *"ENABLE AND AWAIT INTERRUPT"*, then `BD,160B13%$X6` -- an indexed dispatch into the per-indicator error table `160B13`, whose entries read *"FAILED TO INTERRUPT ON IND MK / IN 1 MILLISEC."*, then IK, IJ, EK, TS, CPUS, EKJ, UNRJ, CBJ, EPGK, UK, EE, EOP, CS. |
+
+**ROUTINE 1258 AND 1260 TESTs 1-4 -- pp.4-44 mapped 2026-09-24.**
+Only TWO banners exist in that whole span: *"----1258---CHK TIME CLOCK
+AND INTERVAL TIMER."* (p.5) and *"----1260---CHECK MASK, INDICATOR, AND
+INTERRUPT."* (p.8). Entry labels and headers:
+
+| label | octal | PDF p. | header |
+|---|---|---|---|
+| `1581` | 014012.00 | 6 | *"-TEST 1, CHECK TIME CLOCK STEPPING."* |
+| `1587` | 014034.00 | 7 | *"-TEST 2"* (the interval timer) |
+| `1601` | 014070.00 | 9 | TEST 1A |
+| `1607` | 014167.00 | 12 | TEST 1B |
+| `16011` | 014253.40 | 14 | TEST 1C |
+| `16041` | 014556.00 | 22 | *"-TEST 2, CHK DATA IN IA."* |
+| `16033` | 014626.00 | 24 | *"-TEST 3, CHECK THE ABILITY TO / -INTERRUPT."* |
+| `16044` | 014710.00 | 26 | *"-TEST 4, CHK IND REG BITS 20-63, / -CHK 20-24."* |
+| `16061` | 015236.00 | 37 | *"-TEST 5, CHK INT, BIT BY BIT."* |
+
+**TEST 5's HEAD is at `16061`/`16064`/`16065`/`16066`, pp.37-44**,
+which closes a loose end the pp.45-64 map below had to flag. `16066`
+(015360.00, p.40) is a 20-entry dispatch *"-TURN ON MK."* … *"-TURN ON
+DS."* feeding the per-indicator turn-on blocks `16071` (016007.00,
+*"-TS"*) through `16086` (021365.00, *"-DS"*) already recorded here at
+pp.41-44. **So pp.37-60 is TEST 5 end to end**, and pp.45-60 is its
+tail.
+
+An oddity worth keeping, because it looks like a chain member and is
+not. p.9 at 014075.00-014077.40 holds an ADDITIONAL `IC260` update:
+`LX,$X13,IC260` / `V+,$X13,BIT0` / `V+,$X13,BIT1` / `V+,$X13,BIT2` /
+`SX,$X13,IC260` / `BD,16041`. It is the **abort path** for *"-BIT 24 OF
+MASK REG STUCK ON 1, UNABLE / -TO TEST ANY FURTHER BITS."* — credit
+TESTs 1A/1B/1C at once and jump to TEST 2. It independently confirms
+BIT0/1/2 = TEST 1A/1B/1C, `IC260` = 022737.00, and the `024522 + n`
+BIT-table rule a third time.
+
+**ROUTINE 1260'S pp.45-64 -- mapped 2026-09-24, and the earlier note
+was right about the TEXT and wrong about the KIND.** This span had
+been characterised as "three kinds of test". It is not. **pp.46-59 are
+three 48-ENTRY ERROR-MESSAGE TABLES**, each entry three half-words
+(`SIC,SEN` / `BD,SERS` / `BD,<resume>`), 48 entries = 144 half-words =
+110 octal words per table. The only code in the span is at its seams:
+
+| block | octal | PDF pp. | what it is |
+|---|---|---|---|
+| `16087`/`16088` | 021376.40–021402.00 | 45 | the walk driver, header *"-TURN ON BIT 20-47."*: `SIC,160SX1` / `B,160S1` / `TI,1,BIT0($X1),$IND` *"-SET ONE OF 20-47"* / `TI,1,BIT0($X1),$MASK` / `BE,$+.32` *"-ENABLE AND AWAIT INTERRUPT"* / `BD,160B13($X6)` |
+| `160B13` | 021402.40–021512.00 | 45–48 | table: *"-FAILED TO INTERRUPT ON IND &lt;name&gt; / -IN 1 MILLISEC."* |
+| `16090` | 021512.40–021513.40 | 48 | **the three-way dispatch -- the only interesting code in pp.46-60**: `BD,160B14($X6)` *"-HI,BEFORE,INTRPTS ENTER HERE."* / `BD,16093` *"-OK, AT INTRPTS ENTER HERE."* / `BD,160B15($X6)` *"-LO,AFTER,INTRPTS ENTER HERE."* |
+| `160B14` | 021514.00–021623.40 | 48–51 | table: *"-INTERRUPT TAKEN ON IND &lt;name&gt; / -RECVD HIGHER PRIORITY."* |
+| `160B15` | 021624.00–021733.40 | 51–54 | table: same, *"-RECVD LOWER PRIORITY."* |
+| `16093`/`C`/`D`/`A`/`B` | 021734.00–021743.40 | 55 | the post-interrupt scan, including a **self-modified branch-on-indicator word** `16093A XW,0,0,0 -BIND` planted by `SVA` |
+| `16094` | 021744.00–022053.40 | 55–59 | table: *"-AFTR INTRPT, OR IND NOT ON, IND &lt;name&gt; / -FOUND ON."* |
+| `16095` | 022054.00–022061.40 | 59–60 | loop advance; TEST 5 ends, continuity BIT6 at 022061.00 |
+| `16096`–`16098`… | 022062.00–022214.40 | 61–64 | **TEST 6 -- real code**, header *"-TEST 6 CHKS THAT FREE INSTRUCTION / -IS IN FACT FREE, AND THAT I-BOX / -INDS SET ONLY CORRECT INDS."*; continuity BIT7 at 022214.00 |
+
+Two caveats kept with the table. (i) pp.49, 50, 56, 57, 58 were
+established **by arithmetic** from both read endpoints -- 48 x 3
+half-words spans exactly those pages -- not read page by page. (ii)
+**pp.45-60 is TEST 5's TAIL, not TEST 5**: `16095`'s `CB+,$X1,16063`
+branches to a loop head earlier than p.45, and `16087`'s own comment
+says "BIT 20-47" while the p.8 write-up says TEST 5 covers bits 0-47.
+
+**AND THE TWO PRIORITY MECHANISMS MUST BE KEPT APART, which is the
+reason this table earns its place.** *Interruption selection*
+(Reference Manual printed p.48: of several actuated, unmasked
+indicators, the leftmost wins) decides which interrupt ENTRY is taken
+-- and that is what pp.48-54 test. *Actuation priority* (printed p.51:
+one cause that could set two indicator BITS turns on only the
+higher-priority one) is a different thing entirely, and **nothing in
+this span touches it.** The tell is in the driver: `TI,1,BIT0($X1),$IND`
+transmits exactly ONE bit, so with one indicator on, "RECVD HIGHER
+PRIORITY" can only mean the interrupt landed at a table slot BEFORE
+the expected one. These are per-bit tests of the interrupt vectoring,
+and they cannot bear on actuation arbitration at all. An earlier note
+calling pp.49-54 "the priority tests" invited exactly that conflation.
+
+A free cross-check fell out of reading the four tables' indicator
+names in order: MK IK IJ EK TS CPUS EKJ UNRJ CBJ EPGK UK EE EOP CS
+**RESRVD** OP AD USA EXE DS DF IF LC PF ZD IR LS PSH XPFP XPO XPH XPL
+XPU ZM RU TF UF VF XF BTR DTR PG0…PG6 -- 48 names, matching
+`bsv/StretchTypes.bsv` exactly (`ind_MK`=0 … 41-47 PG0-PG6). One
+difference: the deck NAMES indicator 14 `RESRVD`; `StretchTypes.bsv`
+leaves 14 unnamed.
 
 **ROUTINE 1260'S BOUNDARY TESTS -- located 2026-09-23**, correcting a
 guess `NEXT.md` had carried since the scouting pass. It claimed

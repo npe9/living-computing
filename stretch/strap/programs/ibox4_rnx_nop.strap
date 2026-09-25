@@ -1,0 +1,362 @@
+! jb_ax4b "IBOX-4", routine 1244 ("RENAME CHECK"), TEST 4 -- the
+! driver at labels 14412-14422, PDF pp.90-91, octal
+! 006470.00-006523.40, plus the two data words that close the routine
+! (006524.00-006525.00) and the "-CONSTANTS FOR 1244." block on PDF
+! p.98 (006726.00-006735.00).  56 half-words of code, 10 full words of
+! data.
+!
+! CITED BY PDF PAGE, AND THAT IS A CORRECTION.  The brief for this
+! transcription said jb_ax4b's listing carries printed page numbers and
+! asked for the printed-to-PDF offset.  It does not.  Page 90 was
+! rendered at 300 dpi and its top strip, bottom strip, left edge and
+! right edge were all read: there is no folio anywhere on the sheet,
+! and the front write-up carries none either.  What settles which pages
+! to read is content, and it agrees at offset ZERO with every number
+! the repo already uses for this deck:
+!     PDF p.85   the 1244 header, "----1244---RENAME CHECK."
+!     PDF p.90   this block, "-TEST 4." and labels 14412-14422
+!     PDF p.93   error table 1, entries 11 through 21
+!     PDF p.190  I00Z at 013034.00 and I00VO at 013036.00, which
+!                programs/ibox4_refill_nop.strap already cites as
+!                "common constants (p.190)"
+! So "p.NN" for jb_ax4b means the PDF's own page, exactly as it already
+! did in verify_ibox4_listing.py and the ibox4_cb*/refill programs.
+! The offset is 0 because there is nothing to offset FROM.
+!
+! WHY THIS BLOCK MATTERS.  Routine 1244's header (PDF p.85) lists four
+! things the test checks.  Item 4, verbatim:
+!
+!     -4. CHECK THAT THE INSTRUCTION IS
+!         -NO OPPED WHEN EITHER THE
+!         -OLD OR THE NEW REFILL FIELD
+!         -OF IX REG 0 LIES IN THE
+!         -RANGE OF 1 TO 37 OCTAL.
+!
+! That is a SECOND refill-address no-op rule, and its range is NOT the
+! one routine 1238 establishes for R/RCZ.  1238's header says "NOPING
+! IF RF IS FROM 1 TO 15" and its test 2 pins that boundary from both
+! sides (programs/ibox4_refill_nop.strap: word 0 DOES refill, words
+! 1-15 do not).  1244 says 1 to 37 OCTAL -- 1 to 31 decimal -- for RNX.
+! Two instructions, two ranges, in the same deck.  Whatever the rule
+! for one is, it is not automatically the rule for the other, and this
+! block is the affirmative evidence that says so.
+!
+! The Reference Manual agrees that RNX's range is the wider one, and
+! disagrees with the deck about the bottom end.  22-6530-2, printed
+! p.27 (PDF p.30 -- the footer reads "Operand Designation  27", and the
+! +3 offset is the one ax5b_162_test3a.strap already records for this
+! manual), section "Rename (RNX)", read first-hand at 150 dpi:
+!
+!     "The index word in the index register specified by the field J is
+!     stored in the location addressed by the refill field of X0.  The
+!     refill field of X0 is then replaced by bits 0-17 of the effective
+!     address.  The remaining bits of X0 remain unchanged.  Next, the
+!     index word specified by J is replaced by the word in core storage
+!     addressed by the new refill field of X0.  When either the old or
+!     the new name of the index refers to one of the locations 0-31,
+!     the instruction is executed as no-operation and indicator AD is
+!     set."
+!
+! Manual: 0-31.  Deck header: 1 to 37 octal.  And that same paragraph
+! is why TEST 4 comes in two halves: the OLD name is index 0's refill
+! field, which 14414-14416 sets with the patched "LRI,$X0,0.0"; the NEW
+! name is "bits 0-17 of the effective address", which 14417-14419
+! supplies through the patched "RNX,$X1,14418".  One error table each,
+! and the tables' own words -- "IX 0 INITIAL REFILL ADDRESS" and
+! "EFFECTIVE ADDRESS" -- are the manual's two names.
+!
+! THE SAME PAGE SETTLES THE FIELD BOUNDARY the RNX rows below depend
+! on.  Immediately above that paragraph the manual prints RENAME's
+! format, and its tick marks read: ADDRESS 0, J 19, OP. 23, I 28, 31.
+! So the direct-index operation code is bits 23-27 -- five bits
+! straddling the printed octal pair and the printed hex byte -- which
+! is exactly how the two RNX rows and their LX neighbour decompose.
+! Not inferred from two samples; printed in the manual.
+!
+! AND THE DECK KNOWS.  PDF p.98's constants block is the tell, and it
+! is the best thing on these pages:
+!
+!     144XW1  XW,144B1,0,0        6530.00 00 000000.00 00   006730.00
+!     144XW2  XW,144B2,0,0        6630.00 00 000000.00 00   006731.00
+!     144XW3  XW,1.0,31,0            1.00 00 000760.00 00   006732.00
+!             -IF 0 BECOMES ILLEGAL FOR RNX, USE THE
+!             -FOLLOWING THREE INDEX WORDS TO REPLACE
+!             -THOSE DIRECTLY ABOVE.
+!     144XWA  XW,144B1A,0,0       6526.00 00 000000.00 00   006733.00
+!     144XWB  XW,144B2A,0,0       6626.00 00 000000.00 00   006734.00
+!     144XWC  XW,0.0,32,0            0.00 00 001000.00 00   006735.00
+!
+! As shipped the loop starts at address 1.0 with a count of 31 and
+! walks 1 through 37 octal, matching the routine header.  A spare set
+! sits beside it, starting at 0.0 with a count of 32 and pointing at
+! the "ADDRESS IS 0." entries of both error tables, ready to be swapped
+! in "IF 0 BECOMES ILLEGAL FOR RNX" -- i.e. if the machine turns out to
+! behave the way the Reference Manual's "0-31" says.  The boundary at
+! zero was an OPEN question to the people who wrote this test, and they
+! left the patch in the deck rather than pick a side.  Both index-word
+! triples are transcribed below; only the first is the one the driver
+! loads.
+!
+! BOTH ERROR TABLES ARE PRINTED ON THESE PAGES and their text is the
+! contract.  Read first-hand at 100 dpi on PDF pp.92-94 (table 1) and
+! pp.95-97 (table 2):
+!
+!     -ERROR BRANCH TABLE 1.
+!     -YOU CAME TO THIS ERROR TABLE FROM 14416
+!   144B1A  SIC,SEN   -RNX FAILS TO NOP WHEN IX 0 INITIAL REFILL
+!           B,SERS    -ADDRESS IS 0.
+!           V+I,$X10,1.0
+!           B,14417
+!   144B1   ... -ADDRESS IS 1. ... through -ADDRESS IS 31.
+!
+!     -ERROR BRANCH TABLE 2.
+!     -YOU CAME TO THIS ERROR TABLE FROM 14419
+!   144B2A  SIC,SEN   -RNX FAILS TO NOP WHEN EFFECTIVE
+!           B,SERS    -ADDRESS IS 0.
+!           V+I,$X10,1.0
+!           B,14420
+!   144B2   ... -ADDRESS IS 1. ... through -ADDRESS IS 31.
+!
+! Each table is 32 entries of 2 words: table 1 at 006526.00-006625.40,
+! table 2 at 006626.00-006725.40.  Note the shape of an entry -- it
+! reports, bumps $X10 (the error counter) and BRANCHES BACK INTO THE
+! LOOP, at 14417 for table 1 and 14420 for table 2.  A failure does not
+! stop the test; it is counted and the walk continues.
+!
+! THE TABLES ARE STUBBED HERE, not transcribed.  Sixty-four entries of
+! four identical half-words apiece would add nothing this file does not
+! already check, so each table gets eight bare "BEW, $" halts at its
+! own address -- enough to define 144B1A/144B1 and 144B2A/144B2 for the
+! index words above, and to stop a wrong branch instead of letting it
+! run on.  This is what programs/ibox4_refill_nop.strap does with
+! 1238's table at 005674.00.  Entries 2 through 31 of each table are
+! NOT transcribed and are NOT checked.
+!
+! HOW TEST 4 WORKS, row by row, because it is self-modifying in two
+! different ways at once.
+!
+!   14412 SETUP.  $X15 <- 144XW1 (value -> error table 1), $X14 <-
+!   144XW2 (value -> error table 2), $X12 <- 144XW3 (value 1.0, count
+!   31).  $X11 <- count 10.  $X10 <- 0, the error counter.
+!
+!   14413 THE FOUR SVAs.  "Store Value in Address" writes an index
+!   register's VALUE into the ADDRESS FIELD of an instruction further
+!   down, and all four targets are in this block:
+!       SVA,$X15,14416   the "$B,0" that jumps into error table 1
+!       SVA,$X14,14419   the "$B,0" that jumps into error table 2
+!       SVA,$X12,14415   the "LRI,$X0,0.0" that sets the OLD refill
+!       SVA,$X12,14418   the "RNX,$X1,14418" -- ITS OWN ADDRESS FIELD
+!   So each pass round the loop the two error-table branches are aimed
+!   at the entry for the address being tried, and the address being
+!   tried is planted twice: once as index 0's refill field, once as
+!   RNX's effective address.  The same trick 1238's test 2H uses for
+!   its two patched fields, here with four.
+!
+!   14414 FIRST HALF -- THE OLD REFILL.  Zero $X1, give it a count of
+!   777777 octal, clear 144D1, load the all-ones index word I00VO into
+!   $X2 and store it at 144D2.  "LRI,$X0,0.0" (address field patched)
+!   puts the trial address into index 0's REFILL field.  Then
+!   "RNX,$X1,144D2": rename index 1 from 144D2.  If RNX no-ops as it
+!   should, $X1 is untouched; "LX,$X1,$X1 / BXVZ,$+1.0" skips the error
+!   when the index VALUE is zero, and "$B,0" reports when it is not.
+!   The trailing "BXCZ,14416" is the loop's own guard.
+!
+!   14417 SECOND HALF -- THE NEW REFILL.  The same preparation, but
+!   "LRI,$X0,144D2" gives index 0 a LEGAL old refill and the patched
+!   "RNX,$X1,14418" supplies the trial address as the EFFECTIVE
+!   address, i.e. the NEW name.  "LX,$X1,144D2 / BXVZ,14419" reports
+!   through table 2 if the rename happened.
+!
+!   14420-14421 THE WALK.  "LX,$X10,$X10 / BZXVZ,14421" tests the error
+!   counter and, when it is non-zero, skips straight on to the next
+!   address ("-TO NEXT ADDRESS" is the listing's own comment on that
+!   row).  Otherwise "C-I,$X11,1 / BXCZ,$+1.0 / BD,14414" repeats the
+!   pass ten times at the same address ("-NO ERROR, CONTINUE.").  Then
+!   $X12 counts the 31 addresses down, bumping its value by 1.0 and
+!   both table pointers by 2.0 -- two words, exactly one table entry --
+!   before branching back to 14413 to re-aim all four SVAs.
+!
+!   14422 THE EXIT.  "B,$+1.0 / BD,14412" is the deck's re-entry hook,
+!   then "SIC,SENO+.32 / B,SSW" hands off to SSIP and the continuity
+!   register IC244 is updated and checked against ICK244.
+!
+! THE ENCODING ORACLE, AND RNX'S FIRST LISTING WITNESS.  RNX has never
+! been witnessed by a printed listing in this repo: no verify_*.py
+! contains an RNX row.  The name does appear four other places, and
+! none of them is a transcribed instruction -- opcodes.py's table
+! entry, audit_opcode_coverage.py's coverage list, a COMMENT in
+! programs/ibox4_refill_nop.strap noting that ja_ax1a's constants print
+! "$RNX" as a patchable constant WORD (a datum, never transcribed), and
+! a COMMENT in programs/problem_2_2_method3.strap recording that bsv
+! does not implement it.  These two rows are the first,
+!     006477.40  RNX,$X1,144D2   6727.03 F0
+!     006505.00  RNX,$X1,14418   6505.03 F0
+! and they pin the 5-bit direct-index code: bit 23 plus bits 24-27 read
+! 1 1111 = 0b11111, exactly DIR_INDEX_CODES["RNX"].  (The brief said
+! RNX was in MISC_CODES; it is not -- it is in DIR_INDEX_CODES, the
+! same table as LX/SX/SVA, and the encoding above is why.)
+!
+! ENCODING ONLY, and RNX is the reason it could not be otherwise.
+! bsv/StretchDecode.bsv does define dixop_RNX = 5'b11111 and
+! StretchTypes.bsv names it, so the word DECODES; but
+! StretchExecute.bsv:2693 falls through to "default: ind =
+! setOpInvalid(ind); // RNX, LVE: out of scope", so the model executes
+! it as Operation Code Invalid.  StretchSmoke.bsv even uses RNX as its
+! deliberate "structurally-valid opcode" that sets OP.  There is
+! nothing to run here; what a listing can settle is the BIT PATTERN,
+! and that is what verify_ibox4_rnx_nop_listing.py settles.
+!
+! SUBSTITUTIONS: three, all mechanical.
+!   1. Digit-leading labels take an "L" prefix -- L14412..L14422,
+!      L144B1, L144B1A, L144B2, L144B2A, L144D1, L144D2, L144XW1..3,
+!      L144XWA..C, L146 -- the convention ax5b_162_test3a.strap and
+!      ax5b_162_exic_classes.strap already use.
+!   2. The listing's "$B,0" at 14416 and 14419 is written "B, 0".  The
+!      dollar prefix is the deck's mark for an opcode assembled as a
+!      patchable word (ja_ax1a's "$L%BU" and "$RNX"; 1238's I3825 does
+!      the same thing at 005537.00).  It changes no bit: the printed
+!      code is 0.10 00, a plain B to address 0.
+!   3. The octal marker "%8@" is written "(8)": "%8@777777" ->
+!      "(8)777777", "%8@740000.00" -> "(8)740000.0".  Load-bearing, not
+!      decoration -- the listing's default radix is decimal (see
+!      "LCI,$X11,10", which prints 12.27 02, i.e. ten in bits 0-17) and
+!      so is this assembler's, so an unmarked 777777 would assemble as
+!      decimal.  The same point ax5b_162_test3a.strap makes about
+!      "(8)3740".
+!
+! EXTERNALS, SYN'd at the addresses this same listing prints.  THESE
+! ARE INPUTS TO THE CHECK, NOT WITNESSES -- the caveat
+! verify_ax5b_16082_16083_listing.py makes about L16088.  A SYN row
+! MAKES the address field come out right, so a row naming one proves
+! only that every OTHER field lands where the listing puts it.  Two of
+! the seven have a second, independently read page behind them (I00VO
+! from PDF p.190's own label column, BIT3 from PDF p.191's); that is
+! corroboration, and corroboration still does not turn an input into a
+! witness.  The rest rest on other verify files in this repo.
+!
+! Transcription standard: bit-exact against the printed machine code,
+! verify_ibox4_rnx_nop_listing.py.
+
+SEN     SYN, (8)1310.0        ! the SIC error-entry link
+SENO    SYN, (8)1311.0        ! PDF p.190's own label column: "SENO"
+SERS    SYN, (8)1304.0        ! the error-report routine
+SSW     SYN, (8)1301.0        ! the SSIP return
+I00VO   SYN, (8)13036.0       ! indx wd. of ones, PDF p.190
+BIT3    SYN, (8)13057.0       ! XW,%8@40000.00,0,0 -- PDF p.191
+L146    SYN, (8)6736.0        ! the next routine; address from this operand
+
+! -- TEST 4, the driver.  PDF p.90, 006470.00-006521.40. -------------
+        SLC, (8)6470.0
+L14412  LX,  $X15, L144XW1            ! -SETUP
+        LX,  $X14, L144XW2
+        LX,  $X12, L144XW3
+L14413  SVA, $X15, L14416             ! aim error table 1's branch
+        SVA, $X14, L14419             ! aim error table 2's branch
+        SVA, $X12, L14415             ! plant the trial OLD refill
+        SVA, $X12, L14418             ! plant the trial EFFECTIVE address
+        LCI, $X11, 10                 ! decimal ten -- prints 12.27 02
+        Z,   $X10                     ! the error counter
+
+L14414  Z,   $X1                      ! -START TEST.
+        LCI, $X1, (8)777777
+        Z,   L144D1
+        LX,  $X2, I00VO
+        SX,  $X2, L144D2
+L14415  LRI, $X0, 0.0                 ! address field patched by 14413
+        RNX, $X1, L144D2              ! old refill in range -> must no-op
+        LX,  $X1, $X1
+        BXVZ, $+1.0
+L14416  B,   0                        ! listing "$B,0" -BRANCH TO ERROR TABLE 1.
+        BXCZ, L14416
+
+L14417  Z,   $X1
+        LCI, $X1, (8)777777
+        Z,   L144D1
+        LX,  $X2, I00VO
+        SX,  $X2, L144D2
+        LRI, $X0, L144D2              ! a LEGAL old refill this time
+L14418  RNX, $X1, L14418              ! its own address field, patched
+        LX,  $X1, L144D2
+        BXVZ, L14419
+        BXCZ, L14420
+L14419  B,   0                        ! listing "$B,0" -BRANCH TO ERROR TABLE 2.
+
+L14420  LX,  $X10, $X10
+        BZXVZ, L14421                 ! -TO NEXT ADDRESS
+
+        C-I, $X11, 1                  ! -NO ERROR, CONTINUE.
+        BXCZ, $+1.0
+        BD,  L14414
+
+L14421  C-I, $X12, 1
+        BXCZ, L14422
+        V+I, $X12, 1.0                ! next trial address
+        V+I, $X14, 2.0                ! next table 2 entry (two words)
+        V+I, $X15, 2.0                ! next table 1 entry
+        B,   L14413
+
+L14422  B,   $+1.0
+        BD,  L14412
+        SIC, SENO+.32
+        B,   SSW                      ! -TO SSIP
+        BD,  $+.32
+
+        LX,  $X13, IC244              ! -UPDATE CONTINUITY CHECK.
+        V+,  $X13, BIT3
+        SX,  $X13, IC244
+
+        LX,  $X13, IC244              ! -UPDATE CONTINUITY CHECK.
+        KV,  $X13, ICK244
+! -- PDF p.91, 006522.00-006525.00 -----------------------------------
+        SIC, SEN
+        BZXE, SERS                    ! -CONTINUITY ERROR.
+        B,   L146
+        CNOP                          ! prints 0.30 00 at 006523.40
+IC244   XW, 0, 0, 0                   ! -CONTINUITY REG 1244.
+ICK244  XW, (8)740000.0, 0, 0
+
+! -- ERROR BRANCH TABLE 1, STUBBED.  32 entries of 2 words, 006526.00
+! -- through 006625.40; only the first two are given, as bare halts at
+! -- their own addresses, so a wrong branch stops instead of running
+! -- on.  Their text is quoted in the header.  L144B1A is an ANCHOR,
+! -- not evidence: the SLC below puts the counter there, from the
+! -- address column of PDF p.92, so 144XWA printing 6526.00 checks this
+! -- transcription against its own SLC -- the same status L14412 has.
+! -- L144B1 is one step better only in that four stub half-words have
+! -- to be sized right for it to land.
+        SLC, (8)6526.0
+L144B1A BEW, $                        ! -ADDRESS IS 0.
+        BEW, $
+        BEW, $
+        BEW, $
+L144B1  BEW, $                        ! -ADDRESS IS 1.
+        BEW, $
+        BEW, $
+        BEW, $
+
+! -- ERROR BRANCH TABLE 2, STUBBED the same way.  32 entries of 2
+! -- words, 006626.00 through 006725.40.
+        SLC, (8)6626.0
+L144B2A BEW, $                        ! -ADDRESS IS 0.
+        BEW, $
+        BEW, $
+        BEW, $
+L144B2  BEW, $                        ! -ADDRESS IS 1.
+        BEW, $
+        BEW, $
+        BEW, $
+
+! -- "-CONSTANTS FOR 1244.", PDF p.98, 006726.00-006735.00 -----------
+        SLC, (8)6726.0
+L144D1  XW, 0, 0, 0
+L144D2  XW, 0, 0, 0
+L144XW1 XW, L144B1,  0, 0             ! -> error table 1, entry "1"
+L144XW2 XW, L144B2,  0, 0             ! -> error table 2, entry "1"
+L144XW3 XW, 1.0, 31, 0                ! start at 1.0, walk 31 addresses
+!       -IF 0 BECOMES ILLEGAL FOR RNX, USE THE
+!       -FOLLOWING THREE INDEX WORDS TO REPLACE
+!       -THOSE DIRECTLY ABOVE.
+L144XWA XW, L144B1A, 0, 0             ! -> error table 1, entry "0"
+L144XWB XW, L144B2A, 0, 0             ! -> error table 2, entry "0"
+L144XWC XW, 0.0, 32, 0                ! start at 0.0, walk 32 addresses
+        END, L14412

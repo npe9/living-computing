@@ -334,7 +334,7 @@ run "DS terminates the whole operation: a suppressed BB does not branch" ./run_p
 # effect is a BRANCH, which a PC check can see.
 
 run "IF: the instruction-fetch address alarm (p.32 classes 1 and 2)" ./run_program.sh programs/if_branch_alarm.strap StretchIfBrTb \
-    "PC=4278"          # 004133.00; hand-written, not a listing fact
+    "PC=4307"          # 004153.40; hand-written, not a listing fact
 # BOTH IMPLEMENTED HALVES OF IF, AND THE MASK-DEPENDENT SUPPRESSION.  p.32 lists three classes for
 # Instruction Fetch: class 1 "the location of each instruction to be
 # executed", class 2 "the branch address of all successful branch
@@ -2950,6 +2950,43 @@ run "IBOX-4 R from external memory (two sequential reads)" ./run_program.sh prog
     "SEN:712=0"
 
 run "IBOX-4 refill address gate (jb_ax4b, encoding)" python3 verify_ibox4_refill_nop_listing.py
+run "IBOX-4 routine 1244: RNX's refill-address NOP gate (jb_ax4b PDF pp.90-98)" python3 verify_ibox4_rnx_nop_listing.py
+# A SECOND REFILL-ADDRESS NO-OP RULE, over a DIFFERENT range from the
+# 1-15 rule the block above establishes for R/RCZ -- and the affirmative
+# evidence this project uses against closing the refillLegal question
+# by symmetry.  Routine 1244's header: "-4. CHECK THAT THE INSTRUCTION
+# IS / -NO OPPED WHEN EITHER THE / -OLD OR THE NEW REFILL FIELD / -OF
+# IX REG 0 LIES IN THE / -RANGE OF 1 TO 37 OCTAL."
+#
+# THE FIRST LISTING WITNESS FOR **RNX** IN THIS REPO.  No verify_*.py
+# contained an RNX row before; the name appeared only in opcodes.py's
+# table, the coverage audit, and two comments.  (It is in
+# DIR_INDEX_CODES, not MISC_CODES.)  Encoding only: StretchDecode
+# defines dixop_RNX so the word decodes, but StretchExecute's default
+# arm sets OP -- "RNX, LVE: out of scope".
+#
+# AND THE DECK'S OWN AUTHORS KNEW THE ZERO BOUNDARY WAS OPEN.  PDF p.98
+# ships the sweep as "144XW3 XW,1.0,31,0" -- 1 to 37 octal -- and puts
+# a SPARE TRIPLE beside it, "144XWC XW,0.0,32,0" pointing at the
+# "ADDRESS IS 0." entries of both error tables, under the comment "-IF
+# 0 BECOMES ILLEGAL FOR RNX, USE THE / -FOLLOWING THREE INDEX WORDS TO
+# REPLACE / -THOSE DIRECTLY ABOVE."  Reference Manual printed p.27 says
+# locations 0-31; the deck walks 1-31 and carries the patch.  Neither is
+# wrong: the gap is a HEDGE, not an error.  Verified first-hand.
+#
+# Five injections, observed.  The two RNX ones are the point: they move
+# only the two RNX rows, and they move them in the TWO DIFFERENT
+# printed columns -- top bit of the 5-bit field lands in the octal
+# pair, bottom bit in the hex byte.  A check reading one column would
+# miss one of them.
+#
+# ONE INJECTION THIS BLOCK DOES NOT CATCH, recorded rather than swept
+# up: dropping "LRI" from IMM_INDEX_COUNT_OPS leaves every row
+# unchanged.  The reason is arithmetic -- both LRI operands here are
+# word-aligned, and for a word-aligned operand (bits>>6)<<1 and bits>>5
+# are the same number.  So those rows witness LRI's opcode and J field
+# and say nothing about which field layout is right.
+
 # Routine 1238 test 2 cases 2G and 2H -- the REFILL ADDRESS GATE, and
 # the reason they are ONE program.  The routine header states the rule
 # as "NOPING IF RF IS FROM 1 TO 15", and the obvious way to write that
@@ -3685,7 +3722,105 @@ run "I-Box 5 routine 1260 TEST 8C cases 1-2: the DISABLED controls (jb_ax5b PDF 
 #                                     half-word and shifts four labels
 #                                     and every row after it.
 
+run "I-Box 5 routine 1262 TEST 1CC: EX of a branch, and EXE (jb_ax5b PDF pp.93-94)" python3 verify_ax5b_162_test1cc_listing.py
+# THE SPECIFICATION FOR THE **EXE** INDICATOR, as executable checks.
+# Reference Manual printed p.49: "The execution exception indicator
+# (EXE) is turned on by any branch operation of a subject instruction
+# in which the condition for a successful branch is met.  When
+# indicator EXE is actuated, the branch and all associated operations
+# are not performed.  The suppressed actions include the disabling in
+# BRANCH DISABLED, the enabling in BRANCH ENABLED or BRANCH ENABLED
+# AND WAIT, the counting and refilling in COUNT, BRANCH AND REFILL."
+# 81 rows, FOURTEEN error entries.
+#
+# BUT ONLY THREE OF THAT PARAGRAPH'S CLAUSES ARE WITNESSED HERE -- BE,
+# BD and BB.  There is no COUNT-BRANCH-AND-REFILL subject and no BEW
+# subject anywhere in 1CC, so the counting-and-refilling suppression
+# is stated by the manual and left UNWITNESSED by the deck.  Worth
+# knowing before implementing it.
+#
+# AND IT RETIRES AN OPEN QUESTION FROM TEST 3A.  That block records an
+# unexplained "-ILLEGAL OP." data word standing in the straight-line
+# instruction path.  1CC shows what it is: a PROBE FOR THE ENABLE
+# STATE.  An invalid operation code sets OP, which is permanently
+# masked on, so executing one interrupts IF AND ONLY IF the
+# interruption system is enabled.  1CC uses the same word twice in
+# OPPOSITE polarities and the neighbouring error text proves the
+# reading -- after EX of a BE whose enabling must have been suppressed
+# the probe must NOT interrupt ("-SYSTEM ENABLED AFTER EX OF / -A BE
+# INSTRUCTION."), and after a real BE followed by EX of a BD whose
+# disabling must have been suppressed it MUST ("-SYSTEM DISABLED AFTER
+# EX OF / -A BD INSTRUCTION.").
+#
+# THE INTERRUPT VECTOR IS A 64-ENTRY TABLE FILL, not a single write.
+# 162K1 = "BD,162ITE" and 162K6 = "B,162ITE+.32" are each a full word
+# holding the same half-word branch twice; 162ITE is a full word of two
+# self-loops, "BD,$" at .00 and "B,$" at .40.  A loop fills all 64
+# table words with one or the other, so WHICH HALF an interruption
+# lands on is what the constant chooses: 162K6 leaves the system as it
+# found it, 162K1 lands with it disabled.  SVA then plants the handler
+# address in the matching half, rewriting only the address part so the
+# landing keeps its own B or BD.
+#
+# Five injections, observed, chosen to move DIFFERENT printed columns:
+#   UNCOND_BRANCH_CODES["BE"]  -> 1 row, octal pair only
+#   BB_CODES["BB"]             -> 2 rows, hex byte only
+#   MISC_CODES["EX"]           -> 4 rows (more EX than the rest of the
+#                                 repo together)
+#   CB_CODES["CB+"]            -> 2 rows, hex byte
+#   DIR_INDEX_CODES["SX"]      -> 2 rows, hex byte
+# The two BB rows also exercise BOTH of listing_oracle.word_at()'s
+# full-word paths: one is an odd half-word whose instruction straddles
+# two words, the other is not.
+
 run "I-Box 5 routine 1262 TEST 3A: EXIC's illegal pseudo-IC (jb_ax5b PDF pp.107-108)" python3 verify_ax5b_162_test3a_listing.py
+run "I-Box 5 routine 1262 TEST 3B: EXIC subject below 32 (jb_ax5b PDF p.108)" python3 verify_ax5b_162_test3b_listing.py
+# THE SECOND HALF OF ONE REFERENCE MANUAL PARAGRAPH.  TEST 3A checks the
+# pseudo-IC rule; 3B checks the sentence right after it, printed p.50:
+# "Subject instructions of EXECUTE INDIRECT AND COUNT may occupy any
+# available locations with addresses 32.00 and greater."  32 rows,
+# 024151.40-024171.00, three error entries, all on PDF p.108.
+#
+# AND A TYPOGRAPHIC TRAP IN THE SOURCE PDF worth knowing before anyone
+# reads that page: the right column of PDF p.53 OPENS with "15.  Subject
+# instructions of ..." where the "15." is the TAIL of the left column's
+# last sentence, not a list number.  A skimming reader mis-parses it as
+# item 15 of a numbered list and loses the paragraph it belongs to.
+#
+# THREE ADDRESS WITNESSES, NONE ADJACENT TO THE SLC -- better anchored
+# than 3A, because TEST 3B's first row carries no label.  L162104
+# (024157.40) is twelve half-words downstream and LIC262 (024171.00)
+# thirty-one, and LIC262's CONTENT is all zeros so only its address
+# witnesses anything; the file says so rather than counting the row.
+#
+# Seven injections, observed.  The last is the only one outside
+# opcodes.py and the only one that tests the block's headline claim:
+#   strap_asm.eval_system_symbol index base (16+n)*64 -> (17+n)*64
+#       -> 3 rows.  The FIRST $X1 of "LX,$X1,$X1" does NOT move -- it is
+#          a J field (reg_context=True), not an address.
+#   INDICATOR_BITS["XE"] 53 -> 52
+#       -> 1 row, OCTAL PAIR UNCHANGED at 32, only the hex byte moves.
+#          Independently reproduces 3A's AD 16->17 lesson.
+#   UNCOND_BRANCH_CODES["NOP"] -> 1 row (024170.40) -- proves the gap
+#          filler really is a NOP and really lands at .40.
+#
+# FIRSTS: the first row in the repo with an index register in an
+# IMMEDIATE-INDEX VALUE field ("LVI,$X1,$X0" -> "20.03 01", pinning $X0
+# at word 16 -- every other $X0 in a verify file is a J field), and the
+# first computed self-relative target with BIT 18 SET ("B,$+1.0").
+#
+# TWO GLYPH CALLS SETTLED BY MEASUREMENT, not by eye, and both recorded
+# in the file.  "EXITC" in the heading: monospace pitch fitted on a
+# four-N line gives 60.1 px/cell at 600 dpi, and the heading measures 34
+# cells against 33 for "...OF EXIC LESS", with two vertical strokes
+# where "-EXIC LESS" has one.  FIVE letters is established; I-vs-T in
+# the fourth is NOT separable, and "EXITC" is the recorded reading.
+# Separately: letter O measures 50-51 px on this page and digit 0 44-45,
+# and the glyph after SEN is 44 -- so it is SEN0, digit zero.
+# verify_ax5b_1258_test2_listing.py's "SENO" is probably wrong; it is
+# SYN'd in both files, so no encoding depends on it and neither file was
+# changed to chase it.
+
 # THE FIRST TRANSCRIPTION TARGET FOR EX/EXIC, chosen because it is a
 # whole sub-test entered by one BD, its error messages are INLINE in
 # its own comment column rather than an index into a shared table (so
@@ -3720,6 +3855,47 @@ run "I-Box 5 routine 1262 TEST 3A: EXIC's illegal pseudo-IC (jb_ax5b PDF pp.107-
 # in the bit landing at 24 (1 row); enc_branch_ind dropping the clear
 # bit, the field nothing else in the block exercises (1 row); BD's code
 # (2 rows); LVI's code (3 rows).
+
+run "I-Box 5 routine 1262 TEST 1B: EX of each class (jb_ax5b PDF pp.90-91)" python3 verify_ax5b_162_test1b_listing.py
+# THE FIRST LISTING WITNESS FOR **EX** IN THIS SUITE.  MISC_CODES["EX"]
+# appears in no other program here; the only prior mention anywhere is
+# ax5b_1681_if_close_to_ds.strap's header, "1B and 1C need EX,
+# deferred" -- this is that block.  76 rows, five instruction classes.
+#
+# WHY 1B HAS TWO CHECKS PER CLASS WHERE 2B HAS THREE, measured off the
+# bit-18 decodes rather than assumed: in all five classes the address
+# planted into 162ITE is the row IMMEDIATELY AFTER the EX, so an
+# interruption and an ordinary fall-through land in the same place and
+# no separate "-INT WHEN EX TO" message is possible.  2B's EXIC blocks
+# plant a distinct handler and so can distinguish the two.
+#
+# THE DECK'S OWN SUFFIXES ARE INCONSISTENT AND THAT IS PRESERVED:
+# "INST." vs "INSTR.", "DESTROYED" vs "DESTROYS", "-FLT PT" with no
+# period where its siblings have one, "-TO SSIP" with no period where
+# the identical row on p.110 prints "-TO SSIP.".
+#
+# TWO NON-NORMALISATIONS A TIDY-UP WOULD BREAK SILENTLY.  The Z,$R /
+# Z,$L order INVERTS between the FLT PT and FULL WD VFL classes, and
+# both orders assemble to the same two encodings -- so the check passes
+# either way and only the comment records which the deck wrote.  And
+# BZXVZ plays opposite roles: a skip OVER the error in DIR IX and
+# IMMED IX, the jump TO it in MISC (whose subject instruction 162EXM
+# IS "Z,$X1", so the index value it tests is zeroed by the subject).
+#
+# NO CNOP IN THIS RANGE, AND THAT IS A FINDING.  Both full-word L(BU)
+# rows land word-aligned by ordinary flow, so the deck needed no
+# alignment pseudo-op -- even though p.109's constants area is full of
+# them.  Stated so nobody inserts one.
+#
+# Four injections, observed:
+#   MISC_CODES["EX"] 0b010 -> 0b110      -> 5 rows (one per class)
+#   DIR_INDEX_CODES["SR"] one bit        -> 1 row  (SR appears once)
+#   INDICATOR_BITS["XCZ"] 48 -> 49       -> 2 rows
+#   INDICATOR_BITS["RZ"] 57 -> 14        -> 2 rows
+# RZ was moved to 14 rather than a neighbour because every single-bit
+# neighbour of 57 is ALREADY another indicator's number, so a
+# neighbour perturbation is a table collision rather than a clean
+# fault; 14 is the only number in 0-63 the table does not hold.
 
 run "I-Box 5 routine 1262 TEST 2B, EXIC by class (jb_ax5b PDF p.101)" python3 verify_ax5b_162_exic_listing.py
 # ROUTINE 1262 IS THE DECK ORACLE FOR EX/EXIC, the highest-leverage
@@ -3808,6 +3984,96 @@ run "I-Box 5 routine 1260's constants + interrupt table (jb_ax5b p.86)" python3 
 # Injections, observed: count-immediates back to eval_expr (023044.00,
 # the row that found it); C+I's immediate-index code (023044.00); BD's
 # branch code (all ten BD rows).
+
+run "I-Box 5 routine 1258 TEST 1: time clock steps (jb_ax5b PDF pp.5-6)" python3 verify_ax5b_1258_test1_listing.py
+# THE BLOCK TEST 2 SITS ON.  46 rows in three contiguous pieces, each
+# with its own SLC: routine 158's preamble (014002.00-014004.40),
+# routine 1258's CONSTANT POOL (014006.00-014011.00, four full words),
+# and TEST 1 proper from entry 1581 (014012.00-014033.40, 36 half-words,
+# the whole of PDF p.6).
+#
+# IT RETIRES FOUR OF TEST 2'S INPUT CAVEATS, which is the point of
+# transcribing backwards into the preamble.  TEST 2 had to SYN LIC258,
+# LICK258, L158K1 and L158K2 as unwitnessed inputs; this file DEFINES
+# all four from their own printed constant-pool rows at exactly those
+# addresses -- including the two constants TEST 2's reload and
+# bits-19-23 assertions rest on.  It also settles a glyph question TEST
+# 2 left open WITHOUT measuring a glyph: ICK258 prints 600000 octal =
+# bits 0 and 1 set = "test 1 done" + "test 2 done", which makes
+# 014033.00's "24522.32 B0" BIT0 with a digit zero, one word below TEST
+# 2's BIT1 at 024523.  An encoding decided a typography call.
+#
+# THE ONE CUT IS FORCED, and the reason is a positive finding about the
+# listing.  014005.00's source row is the %IQSZ ident macro -- read at
+# 600 dpi as "(IQSZ)DD(BU,64,8),1258   Z", with this printer's "(" and
+# ")" drawn as % and a currency glyph, fixed by the same page's
+# "XW,(8)777777.40,0,0".  The listing prints a LOCATION for it and NO
+# MACHINE CODE AT ALL.  Substituting DD(BU,64,8),1258 would assert a row
+# shape the page does not print and deposit a fabricated word, so the
+# program SLCs across it and takes the ident word as a SYN.
+#
+# CNOP IS KEPT VERBATIM and its silence here is witnessed by the PAGE,
+# not by this check -- stated in the file so nobody reads more into it.
+# 014004.40 is already the second half of word 014004, so the counter
+# stands at 014005.00 and the listing prints neither location nor code
+# for the CNOP line.  But the next row re-establishes the counter with
+# SLC,(8)14006.0, so NO row here would move if CNOP misbehaved.
+# verify_ax5b_160_test8c_disabled_listing.py is the file that witnesses
+# both CNOP branches from assembled output.
+#
+# WHAT THE BLOCK IS, for the model: word 1's clock bits 28-63 are
+# exactly the COUNT (28-45) and REFILL (46-63) fields of an index word,
+# so "LX,$X0,1.0" reads the whole 36-bit clock as ONE index word and
+# SR/SC split it.  Reference Manual printed p.24, read first-hand: SR
+# and SC each "replace bits 0-17 of the half word specified by bits 0-18
+# of the effective address.  Bits 18-24 ... are set to zero."  "Z,$X2"
+# zeroes index register 2 AS STORAGE WORD 18, which is why those rows
+# assemble to 22/23/24/25 octal.  Unlike TEST 2, TEST 1 only READS word
+# 1, so it needs no BD for the AD-on-store rule.
+#
+# A DEFECT IN THE DECK, flagged as an observation and not as intent: the
+# carry path does not reach the field that is compared.  BZXVZ at
+# 014023.00 skips the carry step while the incremented low half is
+# nonzero; only a wrap falls through to 014023.40's "C+I,$X3,1.0".
+# Reference Manual printed p.25: "ADD IMMEDIATE TO COUNT (C+I): Bits
+# 0-17 ... are added to the COUNT field, bits 28-45" -- while 014026.00's
+# KV compares bits 0-24, the VALUE field, which is where SC put the old
+# high half.  So block 1585 would report a spurious "-BITS 28-45 ARE NOT
+# CORRECT" on the one entry in 2^18 where the low half wraps, and V+I
+# would have propagated the carry.  C+I and V+I differ by one letter in
+# source and one nibble in print ("1.07 00" against "1.07 05") -- the
+# C+I injection below measures exactly that pair.  Intent is not
+# recoverable from the page, so no claim is made about it.
+#
+# Five injections, observed.  The SR/SC pair is the designed one: refill
+# and count are ONE BIT APART in the 5-bit direct-index code and that
+# bit lands inside the printed HEX BYTE (no octal pair moves), while the
+# misc Z code sits at bits 19-21, above the octal/hex boundary (only the
+# octal pair moves).  Two injections, two different printed fields.
+#   DIR_INDEX_CODES["SR"] -> SC's code   2 rows
+#   DIR_INDEX_CODES["SC"] -> SR's code   2 rows
+#   MISC_CODES["Z"] 0b100 -> 0b000       5 rows, spanning two blocks
+#   IMM_INDEX_CODES["C+I"] -> V+I's      1 row
+#   enc_branch_or_misc drops bit 18      1 row -- and EXACTLY one row in
+#       the whole transcript carries bit 18 (014032.00 "BD,$+.32" ->
+#       "14032.44 00", pair 0o44 = 100100).  The two SIC rows also show a
+#       set top bit in that column, but SIC's operand is a 24-bit BIT
+#       address, so its pair is a bit offset within the word, not a
+#       half-word select.  Noted so the column is not misread.
+#
+# TWO OF TEST 2'S INJECTIONS WERE MEASURED HERE AND FAIL ZERO ROWS,
+# recorded so nobody repeats the experiment: "enc_count_branch & ~1" is
+# null (the single CB row targets word-aligned 014016.00), and dropping
+# C+I from IMM_INDEX_COUNT_OPS is null ("1.0" yields imm19 = 2 on the
+# shift-6 and shift-5 paths alike).
+#
+# ONE DECK-TO-DECK DIFFERENCE, checked specifically because it looked
+# like a glyph call: this page shows "RET", with NO trailing glyph after
+# the T, where fp_arith_f205a.strap and fp_arith_f206a.strap record the
+# identical "SIC,RET1 / B,IDF1" idiom in the identical prologue slot.
+# Those FP prologues are outside their transcribed ranges, so no printed
+# address exists to compare against.  Treat it as a real difference
+# between decks, not a reading error.
 
 run "I-Box 5 routine 1258 TEST 2: the interval timer (jb_ax5b PDF p.7)" python3 verify_ax5b_1258_test2_listing.py
 # THE REAL INTERVAL-TIMER ORACLE.  The already-transcribed 16071 block

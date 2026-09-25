@@ -118,6 +118,20 @@ OUT2    BZB, $IF,  $                 ! hang if nothing lit IF
 BACK    BZB, $IF,  $                 ! arrived -- and IF must be on
         BBZ, $IF,  $+1.0
 !
+!   AND THE SAME FOR A BRANCH ON BIT, which takes a DIFFERENT path.
+!   The plain B above is suppressed (or not) at execute()'s shared
+!   commit point; BRANCH ON BIT decides inside its own arm, because it
+!   must also gate its bit change.  Those are two separate mask tests
+!   in two places, and the injection that drops the arm's one SURVIVED
+!   until this block existed.
+        BB1, 7.2,  $+1.0             ! set a carve-out bit to one
+        BB,  7.2,  INOK2             ! BB branches on it, no change;
+                                     !   mask 0, so control MUST arrive
+        B,   $                       ! hang: wrongly suppressed
+BACK2   BZB, $IF,  $                 ! arrived -- IF on from the target
+        BBZ, $IF,  $+1.0
+        BBZ, 7.2,  $+1.0             ! tidy the marker bit
+!
 ! ---- 5. MASK ONE: the branch itself is SUPPRESSED ---------------
 !   p.32: "If the branch address of a successful branch operation is
 !   such that control would pass into a protected area, the entire
@@ -149,6 +163,40 @@ BACK    BZB, $IF,  $                 ! arrived -- and IF must be on
         NOP
         BZB, 7.0,  $                 ! hang if IF's routine did not run
         BBZ, 7.0,  $+1.0
+!
+! ---- 6. MASK ONE: the BIT CHANGE is suppressed too --------------
+!   p.32's clause names three things a protected branch target kills:
+!   "any counting, BIT CHANGING, or index alteration".  A BRANCH ON
+!   BIT that both branches and changes a bit must lose both.
+!
+!   MARKER IS WORD 7's BIT 1, not a word in the area: the bit whose
+!   change must be suppressed has to be one this program can read back
+!   afterwards, and reading a word inside the monitored area would
+!   raise DF as well and muddy the check.  Word 7 is in p.31's 0-31
+!   carve-out, so it never signals either way.
+!   AND IT HAS TO BE A BBZ, NOT A BB1.  The instruction must BOTH
+!   branch and change the bit, and BB1 branches only when the bit is
+!   already ONE -- in which case setting it to one changes nothing
+!   observable.  Written that way first, the block halted below with
+!   the bit set: `wouldBranch` was false, so suppression correctly did
+!   not apply and the change went through.  The model was right and
+!   the test could not set up its own case.  BBZ branches when the bit
+!   is one and CLEARS it, so both effects are visible.
+        BB1, 7.1,  $+1.0             ! marker bit := 1
+        BBZ, 7.1,  WRONG2            ! would clear 7.1 AND branch into
+                                     !   the area; BOTH must be suppressed
+        NOP
+        NOP
+        NOP
+        NOP
+        NOP
+        NOP
+        NOP
+        NOP
+        BZB, 7.1,  $                 ! hang if the BIT CHANGE survived
+                                     !   (the bit was cleared)
+        BZB, 7.0,  $                 ! and IF's routine ran again
+        BBZ, 7.0,  $+1.0
         B,   PASS
 PASS    BEW, $
 !
@@ -160,8 +208,10 @@ FALLIN  B,   OUT2                    ! executed from INSIDE the area
         SLC, (8)4301.0
 INOK    B,   BACK                    ! mask-0 target: control MUST arrive
         SLC, (8)4302.0
+INOK2   B,   BACK2                   ! mask-0 BB target: must also arrive
+        SLC, (8)4303.0
 WRONG2  BEW, $                       ! mask-1 target: must NOT arrive
-        SLC, (8)4303.0               ! EXPLICIT: without it ABOVE lands at
+        SLC, (8)4304.0               ! EXPLICIT: without it ABOVE lands at
                                      !   004300.40 -- the SECOND HALF of
                                      !   FALLIN's own word, because DD does
                                      !   not align after a half-word B.  UB

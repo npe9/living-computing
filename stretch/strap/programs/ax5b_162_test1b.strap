@@ -1,0 +1,254 @@
+! jb_ax5b "I-Box 5", routine 1262 ("TEST EX AND EXIC"), TEST 1B --
+! "-TEST 1B, CHK EX OF EACH TYPE OF / -INSTRUCTION, DIR IX." -- entry
+! label 16212, PDF pp.90-91, octal 023373.40-023442.00.  76 rows.
+!
+! THIS IS THE ACCEPTANCE TEST FOR **EX**, and EX is the first thing in
+! it that no file in this repo has ever witnessed.  Its twin TEST 2B
+! (programs/ax5b_162_exic_classes.strap) brought in EXIC; every other
+! mnemonic on these two pages -- SR, BZXCZ, BRZ, L(BU), BZXE, BZXVZ,
+! SVA, KV, LV, V+ -- is already witnessed elsewhere in strap/verify_*.
+! EX is the one new bit pattern, and it appears five times.  Checked
+! rather than assumed: no strap/*.py and no other programs/*.strap
+! holds a bare "EX," operand.  The only other mention anywhere is
+! ax5b_1681_if_close_to_ds.strap's header line, "1B and 1C need EX,
+! deferred in docs/NEXT.md section 5" -- the gap this file closes.
+!
+! CITED BY PDF PAGE, and that is not a slip.  jb_ax5b's LISTING pages
+! carry no printed page numbers at all -- the "12 11 10 9" down the
+! left margin is fanfold carriage-tape line numbering, and the only
+! printed numbers are in the front write-up, which is scanned 2-up.
+! Every verify_ax5b_*.py here already says "PDF p.NN" for that reason.
+!
+! WHAT TEST 1B DOES.  It sweeps the same five instruction classes TEST
+! 2B sweeps -- DIR IX, IMMED IX, MISC, FLT PT, FULL WD VFL -- in the
+! same order, and for each one asks TWO questions, not three:
+!
+!   (a) did the subject instruction TAKE EFFECT?
+!   (b) did EX leave the SUBJECT WORD intact?
+!
+! and (b) is checked by comparing the slot 162EXT against the master
+! copy the class was loaded from -- LV/KV in the DIR IX block, KV alone
+! in the other four.
+!
+! WHY ONLY TWO CHECKS, when 2B has three.  2B's extra rule is "EXIC to
+! this class must not interrupt", and it works by planting a handler
+! address into the interrupt-table entry 162ITE and reaching it only on
+! an interruption.  1B plants an address into 162ITE too -- but look at
+! WHICH address.  In every one of the five classes the planted label is
+! the row IMMEDIATELY AFTER the EX:
+!
+!     EX at 023377.00  ->  16213 at 023377.40
+!     EX at 023406.40  ->  16214 at 023407.00
+!     EX at 023415.00  ->  16215 at 023415.40
+!     EX at 023423.40  ->  16216 at 023424.00
+!     EX at 023432.40  ->  16217 at 023433.00
+!
+! An interruption and an ordinary fall-through therefore land in the
+! same place, so there is nothing for a separate "-INT WHEN EX TO"
+! message to say.  That is the structural difference between 1B and 2B,
+! and it is measured off the bit-18 decodes below, not assumed.
+!
+! THE REPORTED ERROR TEXT IS INCONSISTENT AND THAT IS PRESERVED.  Read
+! first-hand off the comment column at 600 dpi, exactly as printed:
+!
+!   DIR IX    "-UNABLE TO EX DIR IX INST."      "-EX DESTROYED SUBJ INST."
+!   IMMED IX  "-UNABLE TO EX IMMED IX INSTR."   "-EX DESTROYED SUBJ INST."
+!   MISC      "-UNABLE TO EX MISC INSTR."       "-EX DESTROYED SUBJ INSTR."
+!   FLT PT    "-UNABLE TO EX FP INST."          "-EX DESTROYED SUBJ INST."
+!   FULL WD   "-UNABLE TO EX FULL WD VFL INST." "-EX DESTROYS SUBJ INST."
+!
+! "INST." against "INSTR.", and "DESTROYED" against "DESTROYS", within
+! one block of one routine.  Not normalised.  The class headers vary
+! the same way: "-IMMED IX.", "-MISC." and "-FULL WD." carry a period
+! and "-FLT PT" does not; "-TO SSIP" here has no period where the same
+! row on PDF p.110 prints "-TO SSIP.".
+!
+! BZXVZ PLAYS TWO OPPOSITE ROLES HERE and must not be tidied.  In DIR
+! IX and IMMED IX it is a SKIP: "BZXVZ,$+2.0 / BZXCZ,$+1.32" both land
+! on the check-(b) row (023402.00 and 023411.40 respectively, decoded
+! below), jumping OVER the two-row error entry when the index value or
+! the index count came out non-zero.  In MISC it is the jump TO the
+! error, "BZXVZ,SERS".  The polarity is the exic twin's argument,
+! transferred: MISC does no "Z,$X1" of its own and its subject
+! (162EXM = "Z,$X1", PDF p.109) is expected to ZERO the value, so for
+! MISC a non-zero value is the failure; the other classes zero $X1
+! first and expect the subject to make it non-zero.
+!
+! THE Z,$R / Z,$L ORDER INVERTS BETWEEN THE TWO ACCUMULATOR CLASSES and
+! that is what the page prints.  FLT PT clears $R then $L (023422.40 =
+! "11.22 00", 023423.00 = "10.22 00"); FULL WD VFL clears $L then $R
+! (023431.40 = "10.22 00", 023432.00 = "11.22 00").  The encodings pass
+! either way round, which is exactly why the order is called out: a
+! tidy-up here would silently stop being bit-exact to the page.
+!
+! THE DIR IX BLOCK CHECKS (b) DIFFERENTLY FROM THE OTHER FOUR, and this
+! file does not explain why.  DIR IX does "LV,$X1,162EXT / KV,$X1,
+! 162EX" -- pull the value out of the slot into index 1, then compare
+! index 1 against the master.  The other four do "KV,$X2,162EXT" alone,
+! comparing the still-loaded $X2 straight against the slot.  Stated
+! rather than rationalised, in the manner of ax5b_16082_op_ad.strap's
+! "NOT TRACED" block; the ENCODING of both shapes is settled either
+! way, and that is what is checked.
+!
+! NO CNOP IN THIS RANGE, and the absence is deliberate.  Both full-word
+! L(BU) rows fall on word boundaries by ordinary flow -- 023424.00 and
+! 023433.00 -- so the deck needed no alignment pseudo-op here.  PDF
+! p.109's constants area is full of CNOPs; these pages have none.  Do
+! not add one.
+!
+! THE SUBJECT INSTRUCTIONS ARE DEFINED ON PDF pp.109-110, read here at
+! 600 dpi, and their label column confirms eight of this file's SYNs:
+!     162ITE  BD,$             -ALL INTERRUPTS ENTER HERE.   024320.00
+!     162EXT  XW,0,0,0                                       024321.00
+!     162EX   LX,$X1,100O      -KEEP -IN -ORDER              024322.00
+!     162XW1  XW,0,64,162INT                                 024326.00
+!     162EXV  L%BU@,100O       -VFL FULL WD.                 024327.00
+!     162EXF  L%U@,100O        -FLT PT.                      024330.00
+!     162EXM  Z,$X1            -MISC.                        024331.00
+!     162EXI  LVI,$X1,%8@777777.40  -IMMED IX.  (p.110)      024332.00
+! The operand "100O" is a symbol, not the number one thousand: it is
+! the constant-pool name ax5b_160_test8b.strap's header already places
+! at 024503.00, which is the address 162EX/162EXV/162EXF actually
+! print.  162EXF's "L%U@" is the floating-point spelling and 162EXV's
+! "L%BU@" the VFL one, matching the two "L%BU@" rows transcribed below.
+!
+! ENCODING ONLY, and it could not be otherwise: a run needs the 64-word
+! interrupt table, SSIP's SEN/SERS/SSW reporting, the whole 162* con-
+! stants area -- and an EX the model actually EXECUTES.  EX is in
+! MISC_CODES, so the ASSEMBLER encodes it; that is the whole
+! distinction, and it is the distinction this file exists to close.
+!
+! SUBSTITUTIONS: numeric labels take an "L" prefix (L16212 ... L16217,
+! L162ITE and friends), as ax5b_162_exic_classes.strap already does for
+! 1262.  "L%BU@" is written "L(BU)", the spelling
+! programs/ax5b_160_test8b.strap uses for the identical row shape.
+!
+! ONE GLYPH CAVEAT THAT CHANGES NO BIT.  The fourth character of SEN0
+! reads as a letter O on this printer, here and on PDF p.110, so the
+! symbol may really be "SENO"; ax5b_160_test8b.strap measured it at 54
+! px on PDF p.114 and kept the digit spelling anyway.  Kept as SEN0 for
+! the same reason -- it is a SYN taken from the row that names it.
+!
+! EXTERNALS, SYN'd at the addresses this same listing prints.  THESE
+! ARE INPUTS TO THE CHECK, NOT WITNESSES -- the same caveat
+! verify_ax5b_16082_16083_listing.py makes about L16088.  A SYN row
+! MAKES the address field come out right, so a row naming one proves
+! only that every OTHER field lands where the listing puts it.  See the
+! verify file for which of them have a second, independent source and
+! which (IC262) have none.
+!
+! Transcription standard: bit-exact against the printed machine code,
+! verify_ax5b_162_test1b_listing.py.
+
+        SLC, (8)23373.40
+!
+! ---- DIR IX: set the trap, plant the subject, EX it ---------------
+L16212  Z,   $X1                   ! -TEST 1B, CHK EX OF EACH TYPE OF
+        LVI, $X2, L16213           ! -INSTRUCTION, DIR IX.
+        SVA, $X2, L162ITE          ! the "handler" is the row after the EX
+        LX,  $X2, L162XW1          ! the index word whose refill is 162INT
+        SR,  $X2, $IA              ! point the Interruption Address there
+        LX,  $X2, L162EX           ! the DIR IX subject instruction
+        SX,  $X2, L162EXT          ! into the subject slot
+        EX,  L162EXT
+L16213  LX,  $X1, $X1              ! (a) did the subject take effect?
+        BZXVZ, $+2.0               !   value non-zero -> skip the error
+        BZXCZ, $+1.32              !   count non-zero -> skip the error
+        SIC, SEN
+        B,   SERS                  ! -UNABLE TO EX DIR IX INST.
+        LV,  $X1, L162EXT          ! (b) is the subject word still intact?
+        KV,  $X1, L162EX           !   compare against the master copy
+        SIC, SEN
+        BZXE, SERS                 ! -EX DESTROYED SUBJ INST.
+!
+! ---- IMMED IX ----------------------------------------------------
+        Z,   $X1                   ! -IMMED IX.
+        LVI, $X2, L16214
+        SVA, $X2, L162ITE
+        LX,  $X2, L162EXI          ! "LVI,$X1,%8@777777.40", PDF p.110
+        SX,  $X2, L162EXT
+        EX,  L162EXT
+L16214  LX,  $X1, $X1
+        BZXVZ, $+2.0
+        BZXCZ, $+1.32
+        SIC, SEN
+        B,   SERS                  ! -UNABLE TO EX IMMED IX INSTR.
+        KV,  $X2, L162EXT          ! $X2 still holds the master copy
+        SIC, SEN
+        BZXE, SERS                 ! -EX DESTROYED SUBJ INST.
+!
+! ---- MISC: no Z,$X1 first, so the polarity flips -----------------
+        LVI, $X1, L16215           ! -MISC.
+        SVA, $X1, L162ITE
+        LX,  $X2, L162EXM          ! the subject is itself "Z,$X1"
+        SX,  $X2, L162EXT
+        EX,  L162EXT
+L16215  LX,  $X1, $X1
+        SIC, SEN
+        BZXVZ, SERS                ! -UNABLE TO EX MISC INSTR.
+        KV,  $X2, L162EXT
+        SIC, SEN
+        BZXE, SERS                 ! -EX DESTROYED SUBJ INSTR.
+!
+! ---- FLT PT: clears $R then $L, and reads $L back ----------------
+        LVI, $X1, L16216           ! -FLT PT   (no period on the page)
+        SVA, $X1, L162ITE
+        LX,  $X2, L162EXF          ! "L%U@,100O", PDF p.109
+        SX,  $X2, L162EXT
+        Z,   $R                    ! $R first here -- see the header
+        Z,   $L
+        EX,  L162EXT
+L16216  L(BU), $L                  ! FULL WORD: read $L back, 64 bits BU
+        SIC, SEN
+        BRZ, SERS                  ! -UNABLE TO EX FP INST.
+        KV,  $X2, L162EXT
+        SIC, SEN
+        BZXE, SERS                 ! -EX DESTROYED SUBJ INST.
+!
+! ---- FULL WD VFL: clears $L then $R, and reads $R back -----------
+        LVI, $X1, L16217           ! -FULL WD.
+        SVA, $X1, L162ITE
+        LX,  $X2, L162EXV          ! "L%BU@,100O", PDF p.109
+        SX,  $X2, L162EXT
+        Z,   $L                    ! $L first here -- the inverse order
+        Z,   $R
+        EX,  L162EXT
+L16217  L(BU), $R                  ! FULL WORD: read $R back, 64 bits BU
+        SIC, SEN
+        BRZ, SERS                  ! -UNABLE TO EX FULL WD VFL INST.
+        KV,  $X2, L162EXT
+        SIC, SEN
+        BZXE, SERS                 ! -EX DESTROYS SUBJ INST.
+!
+! ---- the exit: back to 16212 once, then out to SSIP --------------
+        B,   $+1.0
+        BD,  L16212
+        SIC, SEN0+.32
+        B,   SSW                   ! -TO SSIP   (no period on the page)
+        BD,  $+.32
+!
+! ---- the routine's continuity word -------------------------------
+        LX,  $X13, IC262           ! -UPDATE CONTINUITY CHECK.
+        V+,  $X13, BIT1
+        SX,  $X13, IC262
+!
+! ---- externals, SYN'd at the addresses this same listing prints --
+!   INPUTS, NOT WITNESSES.  Eight are confirmed first-hand by the label
+!   column of PDF pp.109-110 (see the header); SEN/SERS/SEN0/SSW/BIT1
+!   rest on other verify files in this repo; IC262 rests on nothing but
+!   the operand field on these two pages.
+SEN     SYN, (8)1310.0             ! the SIC error-entry link
+SERS    SYN, (8)1304.0             ! the error-report routine
+SEN0    SYN, (8)1311.0             ! may really be "SENO" -- see below
+SSW     SYN, (8)1301.0             ! the SSIP return
+L162ITE SYN, (8)24320.0            ! the interrupt-table entry, p.109
+L162EXT SYN, (8)24321.0            ! the subject-instruction slot, p.109
+L162EX  SYN, (8)24322.0            ! the DIR IX subject, p.109
+L162XW1 SYN, (8)24326.0            ! the index word for $IA, p.109
+L162EXV SYN, (8)24327.0            ! the VFL full-word subject, p.109
+L162EXF SYN, (8)24330.0            ! the floating-point subject, p.109
+L162EXM SYN, (8)24331.0            ! the MISC subject, p.109
+L162EXI SYN, (8)24332.0            ! the IMMED IX subject, PDF p.110
+IC262   SYN, (8)24171.0            ! 1262's continuity word
+BIT1    SYN, (8)24523.0            ! 024522 + 1
+        END, L16212

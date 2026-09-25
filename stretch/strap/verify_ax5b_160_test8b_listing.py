@@ -45,6 +45,36 @@ FOUR ENCODINGS NO LISTING IN THIS PROJECT HAD CHECKED BEFORE:
 
   * BDSZ   "22517.51 C6"  branch on DS (19) and zero it
   * BZDSZ  "22521.51 C4"  branch on ZERO DS and zero it
+
+BRANCH POLARITY, AND A CORRECTION TO THIS FILE'S FIRST DRAFT.  The two
+codes above differ in ONE printed bit and the whole reading of the
+block turns on it.  strap_asm.py's enc_branch_ind lays the word out as
+addr19(19) | indnum(6) | 0b1000(4) | clear(1) | branchOn(1) | idx(1),
+so branchOn is bit 30 and lands in the printed HEX BYTE: 0xC6 =
+11000110 has it set, 0xC4 = 11000100 does not.  classify_branch_indicator
+assigns branchOn=1 to the "B" prefix and branchOn=0 to "BZ".  So
+B<IND> branches when the indicator is ON and BZ<IND> branches when it
+is OFF; a trailing Z clears it either way (bit 29, set in both words
+here).
+
+WHICH MEANS THE BRANCH IS THE OK PATH AND THE FALL-THROUGH IS THE
+ERROR, throughout 8B and 8C.  BZDSZ at 022520.00 jumps over the
+SIC,SEN / B,SERS pair at 022520.40-022521.00 when DS is OFF.  So this
+deck's position is that a protection violation with the interruption
+system DISABLED does not actuate the indicator at all -- and the error
+text names the anomaly rather than the requirement, which is the only
+way "-SX OUT OF BOUNDS SETS DS WHEN / -SYSTEM DISABLED." parses as a
+complaint.  ax5b_160_test8c_disabled.strap states the same rule
+independently ("disabled means: no suppression, no indicator, no
+interrupt, whatever the mask says"), and the model already agrees:
+StretchExecute.bsv's protViolates ends `st.irqEnabled() && installed(a)
+&& signalled`.
+
+This file's first draft glossed 022520.00 as "disabled: DS must still
+be ON" and said so at length in ax5b_160_test8b.strap.  That was
+backwards.  The transcription was never in question -- the rows are
+bit-exact against the printed code, which is why nothing caught it.
+Prose is not executable; only the encodings are checked.
   * BRZ    "22532.34 C2"  branch on Result Zero -- indicator 57
   * L(BU)  "13.00 80 000000.20 50"  a full-word VFL load with the
     default (BU,64,8) data description, reading word 11 back as one
@@ -182,7 +212,7 @@ ROWS = [
     ('022517.40', '23063.03 10',
      'SX,$X1,L160AD1         (ext) THE STORE OUT OF BOUNDS, DISABLED'),
     ('022520.00', '22521.51 C4',
-     'BZDSZ,$+1.32            disabled: DS must still be ON'),
+     'BZDSZ,$+1.32            disabled: DS must be OFF -- see BRANCH POLARITY'),
     ('022520.40', '1310.00 80',
      'SIC,SEN                (ext) "-SX OUT OF BOUNDS SETS DS WHEN"'),
     ('022521.00', '1304.10 00',
