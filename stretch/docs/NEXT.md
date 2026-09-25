@@ -961,7 +961,16 @@ Decimal VFL (`c=1`) and radix conversion; `RNX`/`LVE`/`LVS`;
 Transmit backward/`SWAP`/
 multi-word; I/O chaining and multiple-block; `LOC` and the
 unimplemented `CTL` function codes; channel status reaching the CPU
-indicators; 19-bit address truncation (routine 1274).
+indicators; `LOC` and the unimplemented `CTL` function codes.
+
+~~19-bit address truncation (routine 1274)~~ — **REMOVED 2026-09-25.
+It was never a model gap.** `StretchTypes` types `WordAddr`/`HWordAddr`
+as exactly `Bit#(18)`/`Bit#(19)`, so five of routine 1274's seven
+subjects truncate by construction. The sixth, 024455.00, discriminates
+on SCALING rather than width, and the model is already correct there —
+it sends Transmit's A2 through `effAddr19`. What was actually deferred
+was TRANSCRIBING the routine, and that is done:
+`verify_ax5b_1274_truncation_listing.py`, 99 rows, in the suite.
 
 ### THE INTERVAL TIMER — the rate is SOURCED, and 1258 is located
 
