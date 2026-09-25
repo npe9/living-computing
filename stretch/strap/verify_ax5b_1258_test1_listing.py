@@ -17,7 +17,10 @@ PDF p.5.  TEST 2 (014034.00-014063.40, PDF p.7) is
 verify_ax5b_1258_test2_listing.py; the two together are all of 1258.
 
 THE ONE CUT, AND WHY IT IS FORCED.  014005.00 is not transcribed.  Its
-source line reads "1581D  %IQSZ*DD%BU,64,8*,1258   Z" -- % is this
+source line reads "I58ID  %IQSZ*DD%BU,64,8*,I258   Z" (corrected
+2026-09-24 from a digits reading, "1581D ... ,1258"; the label's first
+and fourth characters and the operand's lead are all the LETTER I,
+measured at 600 dpi -- see docs/listing_typography.md) -- % is this
 printer's "(" and * stands for its ")" glyph, fixed by the same page's
 "XW,%8*777777.40,0,0" being the "(8)" radix prefix this assembler
 already accepts -- so the line is a call of the SSIP/DCP

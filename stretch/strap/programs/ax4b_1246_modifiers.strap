@@ -1,0 +1,487 @@
+! jb_ax4b "I-BOX 4", routine 1246 ("TEST TRANSMIT AND SWAP") --
+! TEST 2A, "-TEST FORWARD-BACKWARD MODIFIER," (PDF pp.109-110, octal
+! 007272.00-007343.00) and TEST 2B, "-TEST DIRECT-INNEDIATE MODIFIER."
+! (PDF p.111, 007343.40-007372.00).  119 printed rows, CONTIGUOUS --
+! one SLC covers all three pages.  Transcribed VERBATIM at the
+! listing's own addresses and checked bit-exactly by
+! verify_ax4b_1246_modifiers_listing.py.
+!
+! THIS FILE IS THE SIBLING OF programs/ax4b_1246_transmit_swap.strap,
+! which holds the SAME routine's preamble (PDF p.99), TEST 1A (p.100),
+! TEST 2C (p.112) and the constant block (pp.112-113).  Not one of its
+! asserted rows is repeated here.  Its conventions -- letter-I labels,
+! "(8)" for the listing's "%8@", "L(BU)" for "L%BU@", the J field
+! written as a bare number, SLC across an un-encodable row -- are this
+! file's conventions too, and where this file can add an independent
+! measurement behind one of them it does, below.
+!
+! CITED BY PDF PAGE ONLY.  jb_ax4b's LISTING sheets carry no printed
+! folio.  Reference Manual 22-6530-2 is cited by PRINTED page and its
+! PDF offset is +3 (printed p.30 is PDF p.33, footer "30  IBM 7030");
+! C22-6531's offset is +1.
+!
+! ---------------------------------------------------------------------
+! THE HEADINGS, PDF pp.109 and 111, read first-hand at 600 dpi,
+! VERBATIM:
+!
+!         -TEST 2. CHECK MODIFIER BITS.
+!
+!         -TEST 2A.
+! I4620   -TEST FORWARD-BACKWARD MODIFIER,      007272.00
+!         -START WITH FOWARD OPERATION.         007272.40
+! I4621   -DO A BACKWARD OPERATION.             007314.40
+!
+!         -TEST 2B.
+! I4623   -TEST DIRECT-INNEDIATE MODIFIER.      007343.40
+!
+! "FOWARD" and "INNEDIATE" are the page's own spellings.  Both were
+! adjudicated typo-vs-damage by measurement, not by eye -- see GARBLES
+! below.  Note the heading of TEST 2A ends in a COMMA, not a period,
+! and TEST 2B's ends in a period; both are as printed.
+!
+! ---------------------------------------------------------------------
+! WHY THIS BLOCK MATTERS: BITS 55 AND 56.
+!
+! Reference Manual 22-6530-2, printed p.30 (PDF p.33, footer
+! "30  IBM 7030"), "Data Transmission", read first-hand for this file
+! and not taken from the sibling's quotation:
+!
+!     "Bits 55-57 of the data transmission instructions are used as
+!      modifiers.  The choice between unidirectional and bidirectional
+!      transmission is specified by modifier bit 57.  A zero specifies
+!      unidirectional transmission; a one specifies bidirectional
+!      transmission.  The choice between an immediate or a direct count
+!      is specified by modifier bit 56.  A zero specifies a direct
+!      count; a one specifies an immediate count.  The choice between
+!      forward and backward transmission is specified by modifier bit
+!      55.  A zero specifies forward transmission; a one specifies
+!      backward transmission."
+!
+!     "In forward transmission, the sending and receiving addresses of
+!      each successive word transmitted are obtained by incrementing
+!      the previous addresses by one. ...  In backward transmission,
+!      the sending and receiving addresses of each successive word
+!      transmitted are obtained by decrementing the previous addresses
+!      by one.  The starting addresses specified in the instruction are
+!      therefore the addresses of the last word in each of the two
+!      storage areas."
+!
+!     "In direct count operations, the field J, bits 51-54, specifies
+!      an index register.  The count field, bits 28-45, of the index
+!      word in this register is used as a full word count."
+!
+!     "In immediate count operations, the full word count is specified
+!      by instruction bits 51-54.  A zero count field indicates the
+!      maximum count of 16 full words."
+!
+!     "The number of full words specified by the count is transmitted
+!      from the area which starts at the location addressed by bits
+!      0-17 of the left effective address to the area which starts at
+!      the location specified by bits 0-17 of the right effective
+!      address."                                        (Transmit (T))
+!
+! The sibling file pins bit 57 with a matched T/SWAP pair and records
+! that bits 55 and 56 are witnessed at ZERO only in its range.  This
+! block breaks that: BIT 55 IS WITNESSED SET, by one row, and it comes
+! as a MATCHED PAIR across two pages --
+!
+!   007277.00  T,$X2,I46D5,I46D2   7430.00 80 007425.04 20   (p.109)
+!   007321.40  TB,$X2,I46D5,I46D2  7430.00 80 007425.05 20   (p.110)
+!
+! Same A1, same A2, same J, same hex byte; ONE OCTAL DIGIT differs,
+! 04 -> 05, and that is IBM bit 55.  Both rows were re-read at 600 dpi
+! for this file.  The octal pair spans bits 50-55, so bit 55 is its
+! BOTTOM bit; 04 = 000100 and 05 = 000101, J (bits 51-54) = 0010 = 2
+! in both.  This pair is the twin of the sibling's bit-57 pair but in
+! the OTHER printed column -- the sibling's moves a hex digit, this one
+! moves an octal digit -- so between the two files all three modifier
+! bits of the banner are now pinned by a matched pair.
+!
+! BIT 56 IS ALSO WITNESSED SET here, at 007346.40:
+!
+!   007346.40  TI,1,I46D4,I46D1    7427.00 80 007424.02 A0   (p.111)
+!   007360.00  T,$X2,I46D4,I46D1   7427.00 80 007424.04 20   (p.111)
+!
+! but these two are NOT a matched pair and this file does not call them
+! one: the J field differs as well (1 against 2), so both printed
+! columns move.  Bit 56 SET was ALREADY witnessed in this repository by
+! the ax5b TI rows (021377.40 and 021400.40 in
+! verify_ax5b_16087_listing.py, 022365.40 in
+! verify_ax5b_160105_listing.py, 022742.00 and its siblings in
+! verify_ax5b_160s1_listing.py) -- every one of them prints hex A0.
+! This TI is the first in the ax4b deck, and corroboration, not a
+! first for the repo.
+!
+! AND THE MANUAL EXPLAINS THE DECK'S OWN J SPELLING.  The page writes
+! the field BOTH WAYS within three pages: "T,$X2,..." and "TB,$X2,..."
+! on pp.109-110, but "TI,1,..." on p.111.  That is not inconsistency --
+! for T and TB the count is DIRECT, so bits 51-54 name an index
+! register and "$X2" is the natural spelling; for TI the count is
+! IMMEDIATE, so bits 51-54 ARE the count and a bare "1" is the natural
+! spelling.  The printed octal pairs confirm it: 04 -> J = 2 for the
+! T/TB rows, 02 -> 1 for the TI row.  This is first-hand evidence that
+! the sibling file's "$X1" -> "1" substitution is what IBM's assembler
+! did with the field, not a convention this project invented.
+!
+! ---------------------------------------------------------------------
+! WHAT THE TWO SUB-TESTS ACTUALLY CHECK.
+!
+! BRANCH POLARITY, and this deck states it itself.  B<IND> branches
+! when the indicator is ON, BZ<IND> when it is OFF, so the BRANCH is
+! the OK path and the FALL-THROUGH is the "SIC,SEN / B,SERS" error
+! pair whose printed comment names the ANOMALY.  PDF p.110, 007336.00,
+! prints the comment "-OK" beside "BZXVZ,I4622" -- the deck labelling
+! the branch as the good path in its own hand.  Nothing here is
+! inherited convention.
+!
+! TEST 2A, I4620 (forward half).  I46D1/D2/D3 are zeroed; the three
+! index-word constants I46XW1/XW2/XW3 are loaded into $X1/$X2/$X3 and
+! stored into I46D4/D5/D6; $X2 is reloaded from BIT44, whose set bit is
+! bit 44 of the count field, i.e. a direct count of TWO words.  Then
+!
+!       T,$X2,I46D5,I46D2
+!
+! moves two words FORWARD from I46D5 (007430) to I46D2 (007425) --
+! sending I46D5,I46D6 into I46D2,I46D3.  The five probes that follow
+! each name what a BACKWARD machine would have done instead:
+!   L(BU),I46D1 + BRZ    I46D1 must still be zero.  A backward
+!                        transmission would have stepped the receiving
+!                        address DOWN into it.  Error: "-RECEIVING
+!                        ADDRESS GOING BACKWARD ON A FORWARD OPERATION."
+!   LX,$X1,I46D2 + BZXCZ I46D2 must now hold I46XW2, whose count field
+!                        is all ones, so Index Count Zero must be OFF.
+!                        Error: "-RECEIVING LOCATION DOES NOT GET FIRST
+!                        WORD FROM SENDING LOCN."
+!   LX,$X1,I46D3 + BXVZ  I46D3 must now hold I46XW3, whose VALUE field
+!                        is zero, so Index Value Zero must be ON.
+!                        Error: "-SENDING ADDRESS GOING BACKWARD ON A
+!                        FORWARD OPERATION."
+!             + BXCZ     and I46XW3's COUNT field is zero too, so Index
+!                        Count Zero must be ON.  Error: "-SENDING
+!                        ADDRESS NOT STEPPED ON A FORWARD OPERATION."
+!   SR,$X1,$X2 / LX,$X2,$X2 / BZXVZ,I4621   the refill field of the
+!                        word just loaded is stored into index
+!                        register 2's own location (word 18, octal 22)
+!                        and reloaded, so the SECOND received word is
+!                        examined through the refill path.  Error:
+!                        "-NO WORD GOES TO SECOND RECEIVING LOCATION ON
+!                        A FORWARD OPERATION."
+!   The exact field each of the last three probes is reading is
+!   CONJECTURE from the index-word layout; what is NOT conjecture is
+!   the printed indicator mnemonic, the printed error text and the
+!   branch polarity.  The assembled rows check only the encoding.
+!
+! TEST 2A, I4621 (backward half).  Identical setup, then
+!
+!       TB,$X2,I46D5,I46D2
+!
+! and every error message INVERTS: "-RECEIVING ADDRESS GOING FORWARD ON
+! A BACKWARD OPERATION.", "-SENDING ADDRESS GOING FORWARD ON A BACKWARD
+! OPERATION.", "-SENDING ADDRESS NOT STEPPED ON A BACKWARD OPERATION.",
+! "-NO WORD GOES TO SECOND RECEIVING LOCATION ON A BACKWARD OPERATION."
+! The read-back also moves, from I46D1 to I46D3, because a backward
+! transmission starting at I46D2 walks DOWN and must not reach I46D3.
+!
+! TEST 2B, I4623 (immediate half).  I46D4 and I46D5 are both set to the
+! all-ones constant I00O; $X1 is loaded from BIT44, a DIRECT count of
+! TWO; then
+!
+!       TI,1,I46D4,I46D1
+!
+! whose IMMEDIATE count is 1.  Only I46D1 may be written.  I46D2 is
+! read back and must still be zero: if the machine had taken the direct
+! count of two out of $X1 it would have moved I46D5 into I46D2 as well.
+! Error: "-TRANSMIT IMMEDIATE USES A DIRECT COUNT."  The mirror at
+! I4624 sets a DIRECT count of one (BIT45) in $X2 and issues
+! "T,$X2,I46D4,I46D1", whose J field is 2 -- so a machine that read the
+! count immediately would move TWO words.  Error: "-TRANSMIT DIRECT
+! USES AN IMMEDIATE COUNT."  That the same four bits mean two different
+! things under bit 56 is exactly what the sub-test is built to catch,
+! and the Reference Manual's two count paragraphs, quoted above, are
+! why it works.
+!
+! ---------------------------------------------------------------------
+! GARBLES: TYPO OR SCAN DAMAGE?  Both were settled by measuring the
+! suspect glyph against a correct instance on the SAME or an adjacent
+! line at 600 dpi.  Damage leaves a ragged CORRECT letter; a typo
+! prints a clean WRONG one.
+!
+!   "INNEDIATE" (PDF p.111, 007343.40) -- DECK TYPO.
+!   On that one printed line the two N's of "INNEDIATE" measure 45 and
+!   44 px and the M of "MODIFIER" seven glyphs later measures 49 px.
+!   Width alone would be weak; the SHAPE is not.  Both N's carry a
+!   single diagonal between two full-height verticals, unbroken, with
+!   no stray ink where an M's second diagonal would be; the M carries
+!   two diagonals meeting in a V that stops mid-height.  Every stroke
+!   of all three glyphs is solid.  A damaged M does not grow a clean
+!   single diagonal.  The author typed N twice.
+!
+!   "FOWARD" (PDF p.109, 007272.40) -- DECK TYPO, a DROPPED LETTER.
+!   Measured by PITCH rather than by shape, because a missing character
+!   has no glyph to inspect.  On the line above, "-TEST FORWARD-
+!   BACKWARD MODIFIER,", FORWARD occupies seven cells starting at x =
+!   4523, 4580, 4640, 4703, 4761, 4823, 4881 -- 402 px for 7 cells,
+!   57.4 px each.  On the line below, FOWARD occupies six cells at
+!   4883, 4938, 5003, 5061, 5123, 5186 -- 346 px for 6 cells, 57.7 px
+!   each.  Identical pitch, one fewer cell, and no gap anywhere in the
+!   run.  Scan damage degrades a glyph in place; it does not delete a
+!   character and close the 57-px hole behind it.  The R was never
+!   typed.
+!
+! ---------------------------------------------------------------------
+! GLYPHS, measured at 600 dpi on THESE pages -- an independent second
+! data point for the letter-I reading the sibling file established on
+! PDF p.99, and the question is under active investigation:
+!
+!   "B,I4621"   PDF p.109, 007302.40.  Segments as B(43) ,(25) I(12)
+!               4(48) 6(43) 2(40) 1(31).  LETTER I AND DIGIT 1 IN ONE
+!               PRINTED ROW, one ink, one pass: the third glyph is a
+!               bare stroke 12 px wide, the seventh is a flagged 1 of
+!               31 px.  The sibling file measured letter I at 9-13 px
+!               and digit 1 at 31-34 px on p.99; this row lands at 12
+!               and 31 on a different page.
+!   "LX,$X1,I00O"  PDF p.111, 007344.40.  $X1's 1 measures 34 px, the
+!               leading I of I00O measures 11 px -- again both in one
+!               row.  The trailing glyph measures 48 px against 41 and
+!               42 for the two zeros before it, so I00O is
+!               letter-I, digit-0, digit-0, LETTER O, confirming on a
+!               second page what the sibling read on p.99.
+!   "Z,I46D1"   PDF p.111, 007343.40.  Z(42) ,(24) I(12) 4(45) 6(41)
+!               D(45) 1(34).  A third same-row I-versus-1 pair.
+!   Note the absolute widths on these pages run 1-3 px under the
+!   sibling's p.99 figures across the board (its letter O 49-51, digit
+!   0 42-45; here 48 and 41-42).  The CONTRAST is what carries the
+!   reading, and it is 3-4x, not marginal.
+!
+!   C22-6531 printed p.10 (PDF p.11, footer "10") is why a digit is not
+!   even admissible: "A symbol is any sequence of six or fewer
+!   alphabetic and numeric characters conforming to the following
+!   conditions:  1. It contains only alphameric characters.  2. Its
+!   first character is specifically alphabetic."
+!
+! ---------------------------------------------------------------------
+! SUBSTITUTIONS, three, all mechanical, none touching a bit:
+!
+!   1. "L%BU@" -> "L(BU)".  The listing's bracket convention around a
+!      data description.  Nine rows.
+!   2. The J field, written "$X2" on pp.109-110, is written "2" here.
+!      Reference Manual printed p.30, quoted above: "the field J, bits
+!      51-54, specifies an index register."  The printed J field IS 2
+!      -- decoded out of the second half-word's octal pair, 04 =
+!      000100, bits 51-54 = 0010 -- so the substitution is CHECKED by
+!      the oracle, not assumed.  The p.111 TI row already prints a bare
+!      "1" and needs no substitution at all.
+!   3. Nothing else.  There is no un-encodable row in this range: every
+!      one of the 119 printed rows carries machine code, so no SLC
+!      steps over anything and no word is invented.
+!
+! ---------------------------------------------------------------------
+! WHY THE CONSTANT BLOCK IS HERE BUT ASSERTED NOWHERE.
+!
+! I46D1-I46D6, I46XW1-I46XW3 and IC246 live at 007422.00-007434.00, in
+! the sibling file's range, and the sibling asserts their printed rows.
+! Giving them by SYN here would make every T/TB/TI operand address an
+! INPUT to this check.  Instead the block is laid down again from its
+! own SLC, as unasserted source, so the location counter computes those
+! ten symbols and the printed A1/A2 fields of the four transmit rows
+! become a REAL check of them: get the SLC or the block's order wrong
+! and "7430.00 80 007425.05 20" stops matching.  No row of it is
+! asserted in verify_ax4b_1246_modifiers_listing.py -- that would
+! duplicate the sibling.  The nine rows below are input, and they are
+! copied from the sibling's own transcription of PDF pp.112-113.
+!
+! ---------------------------------------------------------------------
+! EXTERNAL SYMBOLS given by SYN at the addresses these very rows print
+! for them.  A row naming one checks its opcode and modifier bits ONLY.
+! ---------------------------------------------------------------------
+
+SEN     SYN, (8)1310.0              ! SSIP's error-note link
+SENO    SYN, (8)1311.0              ! SSIP's other-note link
+SERS    SYN, (8)1304.0              ! SSIP's error-report entry
+SSW     SYN, (8)1301.0              ! SSIP's sense-switch entry
+I00O    SYN, (8)13035.0             ! common constant: all ones
+BIT9    SYN, (8)13065.0             ! common constant: bit 9 only
+BIT10   SYN, (8)13066.0             ! common constant: bit 10 only
+BIT44   SYN, (8)13130.0             ! common constant: bit 44 only = count 2
+BIT45   SYN, (8)13131.0             ! common constant: bit 45 only = count 1
+
+! BIT9, BIT10, BIT11 are three CONSECUTIVE words, 013065.00/013066.00/
+! 013067.00, and they are the continuity bits this deck sets for TEST
+! 2A, TEST 2B and TEST 2C in that order -- BIT11 is the one the sibling
+! file already SYNs for TEST 2C.  The numbering corroborates the
+! sub-test ordering independently of the headings.  BIT44 and BIT45 sit
+! one word apart the same way, 013130.00 and 013131.00, and the sibling
+! already SYNs BIT45.  (A DIFFERENT BIT44 exists in this repo at
+! 017402.00, a local constant of the I-Box 2 deck; it is not this one
+! and is not cross-cited.)
+
+! ---------------------------------------------------------------------
+! PDF pp.109-111, 007272.00-007372.00.  TEST 2A and TEST 2B, 119
+! printed rows, contiguous behind ONE SLC.
+! ---------------------------------------------------------------------
+        SLC, (8)7272.0
+
+! -TEST 2. CHECK MODIFIER BITS.
+! -TEST 2A.
+I4620   Z,   I46D1                  ! -TEST FORWARD-BACKWARD MODIFIER,
+        Z,   I46D2                  ! -START WITH FOWARD OPERATION.
+        Z,   I46D3
+        LX,  $X1, I46XW1
+        LX,  $X2, I46XW2
+        LX,  $X3, I46XW3
+        SX,  $X1, I46D4
+        SX,  $X2, I46D5
+        SX,  $X3, I46D6
+        LX,  $X2, BIT44             ! direct count = 2 words
+        T,   2, I46D5, I46D2        ! listing "T,$X2,I46D5,I46D2"
+        L(BU), I46D1
+        BRZ, $+2.0                  ! OK path: I46D1 untouched
+        SIC, SEN                    ! -RECEIVING ADDRESS GOING BACKWARD
+        B,   SERS                   ! -ON A FORWARD OPERATION.
+        B,   I4621
+
+        LX,  $X1, I46D2
+        BZXCZ, $+2.0                ! OK path: the count field arrived
+        SIC, SEN                    ! -RECEIVING LOCATION DOES NOT GET
+        B,   SERS                   ! -FIRST WORD FROM SENDING LOCN.
+        B,   I4621
+
+        LX,  $X1, I46D3
+        BXVZ, $+2.0                 ! OK path: value field is zero
+        SIC, SEN                    ! -SENDING ADDRESS GOING BACKWARD
+        B,   SERS                   ! -ON A FORWARD OPERATION.
+        B,   I4621
+        BXCZ, $+2.0                 ! OK path: count field is zero
+        SIC, SEN                    ! -SENDING ADDRESS NOT STEPPED ON
+        B,   SERS                   ! -A FORWARD OPERATION.
+        B,   I4621
+        SR,  $X1, $X2
+        LX,  $X2, $X2
+        BZXVZ, I4621                ! OK path
+
+        SIC, SEN                    ! -NO WORD GOES TO SECOND RECEIVING
+        B,   SERS                   ! -LOCATION ON A FORWARD OPERATION.
+
+! PDF p.110
+I4621   Z,   I46D1                  ! -DO A BACKWARD OPERATION.
+        Z,   I46D2
+        Z,   I46D3
+        LX,  $X1, I46XW1
+        LX,  $X2, I46XW2
+        LX,  $X3, I46XW3
+        SX,  $X1, I46D4
+        SX,  $X2, I46D5
+        SX,  $X3, I46D6
+        LX,  $X2, BIT44             ! direct count = 2 words
+        TB,  2, I46D5, I46D2        ! listing "TB,$X2,I46D5,I46D2"
+        L(BU), I46D3
+        BRZ, $+2.0                  ! OK path: I46D3 untouched
+        SIC, SEN                    ! -RECEIVING ADDRESS GOING FORWARD
+        B,   SERS                   ! -ON A BACKWARD OPERATION.
+        B,   I4622
+
+        LX,  $X1, I46D2
+        BZXCZ, $+2.0
+        SIC, SEN                    ! -RECEIVING LOCATION DOES NOT GET
+        B,   SERS                   ! -FIRST WORD FROM SENDING LOCN.
+        B,   I4622
+
+        LX,  $X1, I46D1
+        SR,  $X1, $X2
+        LX,  $X2, $X2
+        BXVZ, $+2.0
+        SIC, SEN                    ! -SENDING ADDRESS GOING FORWARD ON
+        B,   SERS                   ! -A BACKWARD OPERATION.
+        B,   I4622
+
+        LX,  $X1, I46D1
+        BXCZ, $+2.0
+        SIC, SEN                    ! -SENDING ADDRESS NOT STEPPED ON
+        B,   SERS                   ! -A BACKWARD OPERATION.
+        B,   I4622
+
+        BZXVZ, I4622                ! -OK
+        SIC, SEN                    ! -NO WORD GOES TO SECOND RECEIVING
+        B,   SERS                   ! -LOCATION ON A BACKWARD OPERATION.
+
+I4622   B,   $+1.0
+        BD,  I4620
+        SIC, SENO+.32
+        B,   SSW                    ! -TO SSIP.
+        BD,  $+.32
+
+        LX,  $X13, IC246            ! -UPDATE CONTINUITY.
+        V+,  $X13, BIT9             ! TEST 2A"s continuity bit
+        SX,  $X13, IC246
+
+! PDF p.111
+! -TEST 2B.
+I4623   Z,   I46D1                  ! -TEST DIRECT-INNEDIATE MODIFIER.
+        Z,   I46D2
+        LX,  $X1, I00O
+        SX,  $X1, I46D4
+        SX,  $X1, I46D5
+        LX,  $X1, BIT44             ! DIRECT count = 2, deliberately
+        TI,  1, I46D4, I46D1        ! IMMEDIATE count = 1
+        L(BU), I46D2
+        BRZ, $+2.0                  ! OK path: only one word moved
+        SIC, SEN                    ! -TRANSMIT IMMEDIATE USES
+        B,   SERS                   ! -A DIRECT COUNT.
+        B,   I4624
+
+        L(BU), I46D1
+        BZRZ, I4624                 ! OK path: I46D1 did receive
+        SIC, SEN                    ! -RECEIVING LOCATION DOES NOT GET
+        B,   SERS                   ! -FIRST WORD FROM SENDING LOCN.
+
+I4624   Z,   I46D1
+        Z,   I46D2
+        LX,  $X1, I00O
+        SX,  $X1, I46D4
+        SX,  $X1, I46D5
+        LX,  $X2, BIT45             ! DIRECT count = 1
+        T,   2, I46D4, I46D1        ! listing "T,$X2,I46D4,I46D1"
+        L(BU), I46D2
+        BRZ, $+2.0                  ! OK path: only one word moved
+        SIC, SEN                    ! -TRANSMIT DIRECT USES
+        B,   SERS                   ! -AN IMMEDIATE COUNT.
+        B,   I4625
+
+        L(BU), I46D1
+        BZRZ, I4625                 ! OK path: I46D1 did receive
+        SIC, SEN                    ! -RECEIVING LOCATION DOES NOT GET
+        B,   SERS                   ! -FIRST WORD FROM SENDING LOCN.
+
+I4625   B,   $+1.0
+        BD,  I4623
+        SIC, SENO+.32
+        B,   SSW                    ! -TO SSIP.
+        BD,  $+.32
+
+        LX,  $X13, IC246            ! -UPDATE CONTINUITY.
+        V+,  $X13, BIT10            ! TEST 2B"s continuity bit
+        SX,  $X13, IC246
+
+! ---------------------------------------------------------------------
+! INPUT, NOT A WITNESS.  The routine's constant block, PDF pp.112-113,
+! 007422.00-007434.00.  Re-laid here so that the ten symbols it defines
+! are LOCATION-COUNTER values rather than SYN inputs -- see the header.
+! Not one of these rows is asserted by this file's verify script; they
+! are asserted by verify_ax4b_1246_transmit_swap_listing.py.
+! ---------------------------------------------------------------------
+        SLC, (8)7422.0
+IC246   XW,  0, 0, 0
+ICK246  XW,  (8)777700.00, 0, 0
+
+I46D1   XW,  0, 0, 0
+I46D2   XW,  0, 0, 0
+I46D3   XW,  0, 0, 0
+I46D4   XW,  0, 0, 0
+I46D5   XW,  0, 0, 0
+I46D6   XW,  0, 0, 0
+
+I46XW1  XW,  (8)777777.77, 0, 0     ! value = all 24 address bits
+I46XW2  XW,  0, (8)777777, 0        ! count = all 18 bits, 28-45
+I46XW3  XW,  0, 0, (8)777777        ! refill = all 18 bits, 46-63
+
+        END, I4620

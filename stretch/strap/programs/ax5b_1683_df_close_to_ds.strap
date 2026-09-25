@@ -10,7 +10,18 @@
 ! designing them.  Read first-hand 2026-09-22, it is nothing of the
 ! kind.  The routine's own header (PDF p.110):
 !
-!     ----1268----IF AND DF CLOSE TO DS.
+!     ----1268---IF AND DF CLOSE TO DS.
+!
+! (CORRECTED 2026-09-24: this line read "----1268----" with FOUR
+! trailing dashes.  The dash band was measured numerically at 500 dpi
+! rather than eyeballed -- in p.110's dash rows the ink forms runs of
+! 44 and 148 px before "1268" and 48 and 96 px after, against a ~48 px
+! character pitch fixed by the "1268" stems, giving FOUR dashes before
+! and THREE after.  Every other banner transcribed in this directory --
+! 1238, 1244, 1246, 1250, 1258, 1262 -- is 4-and-3, so this file was
+! the sole outlier.  Nothing depends on it; banners carry no machine
+! code.  Recorded because a dash count is exactly the kind of detail
+! that gets copied forward unchecked.)
 !     -TEST 1 CHECKS IF CLOSE TO DS IN ALL 3 MEMORIES.
 !     -TEST 2 CHECKS DF CLOSE TO DS IN ALL 3 MEMORIES.
 !

@@ -1228,6 +1228,81 @@ tables gives all 48 in order, matching `bsv/StretchTypes.bsv` exactly.
 `StretchTypes.bsv` leaves 14 unnamed.** Harmless, and worth a comment
 there if anyone is in the file.
 
+## 5c. LISTING TYPOGRAPHY — the leading glyph is the LETTER I, and the repo spells it wrong
+
+Full evidence in **`docs/listing_typography.md`**. Settled 2026-09-24 by
+measurement, very high confidence; nothing here is a judgement call.
+
+**The primary-source rule**, `C22-6531` printed p.10, verified
+first-hand: *"A symbol is any sequence of six or fewer alphabetic and
+numeric characters conforming to the following conditions: 1. It
+contains only alphameric characters. **2. Its first character is
+specifically alphabetic.**"* So `160123`, `1581` and `14412` were never
+legal STRAP-1 symbols.
+
+**The measurement.** 11,826 glyphs in `jb_ax5b`'s pure-digit columns and
+4,066 in `jb_ax4b`'s give the floor for "digit": narrowest printed digit
+24 px, 99% at 30 px or wider. Letter I runs **10-18 px**. The
+populations do not overlap, and the shapes differ too — this chain's
+digit 1 has an upper-left flag and a full-width base serif, the letter
+has neither. 15 mixed rows carry both glyphs; 197 name-field tokens were
+sampled across both decks and **not one label begins with a digit**.
+
+**The scheme, confirmed:** letter `I` + the routine's last two digits
+for body labels (`I60`, `I74`, `I46`, `I58`, `I44`), and `IC`/`ICK` +
+the last three for continuity registers (`IC260`, `ICK258`). The repo
+already reads `IC260` with a letter I and `14412` with a digit — the
+same convention, spelled two ways.
+
+**Two independent signs the `L` prefix was a workaround, not a reading.**
+`strap_asm.py` enforces alphabetic-first (which is *why* `L` was
+invented) but does not enforce the six-character limit — and **82 of 195
+distinct `L1…` symbols are seven characters**, over that limit. Every
+corrected form fits: `L160107`(7) → `I60107`(6). And the repo spells the
+same symbol both ways in different files: `L100Z`/`L1000` against
+`I00Z`/`I000`.
+
+**NO CHECK ANYWHERE IS WRONG — only spelling**, and that was verified
+rather than assumed. `listing_oracle.py`'s row tuples carry the disputed
+names in a `note` field that is interpolated into the PASS line and
+never parsed. `check_rows(symbols=…)` does assert, but the name is only
+a key that must exist, so a consistent rename is identical and a
+half-way one fails loudly with `KeyError`. Nearly all the disputed
+symbols are `SYN`'d externals whose bits come from a printed octal
+address. **Zero `.bsv` files carry an affected spelling.**
+
+**The one place it would have reached emitted bits** is the ident row
+(`I58ID %IQSZ…,I258` at 014005.00) — whose operand is the routine
+number. That row prints no machine code and is deliberately not
+transcribed, so the cut that was forced for an unrelated reason is what
+kept the error harmless. Corrected in place, along with the banner
+(`----I258---`).
+
+**THE MASS RENAME IS DEFERRED AND IS ITS OWN COMMIT.** 47 files, plus 21
+program and 21 verify **filenames**. It is cosmetic, it is large, and it
+must be all-or-nothing per symbol. Do it mechanically, run the suite,
+and do nothing else in that commit.
+
+**How the two measuring agents diverged is worth keeping**, because
+neither was careless. One measured pp.112-114 and found the glyphs
+separable; the other measured pp.71-73 and reported they were not. Same
+deck, opposite conclusions. The second was checking a real claim — that
+a label's lead and the `I` of `INT` on the same row are the same glyph —
+and it is true, *because both are letter I*. What they never measured is
+the third discriminating glyph on that same row: the comment's own `1`,
+at 36 px with flag and serif. The row reads `-CLR INT 1.` **They
+measured carefully and stopped one glyph early.** A comparison that
+finds two things equal proves nothing until you know what the third
+thing looks like.
+
+**Separately settled: letter O and digit 0 ARE distinguishable**, 15-22%
+apart, which contradicts `ax5b_1258_test2.strap`'s header ("This
+printer's letter O and digit 0 are the same glyph"). p.114's pool row is
+an **alias**, `SENO SYN,SEN0` — letter-O name, digit-zero value — not
+the meaningless self-`SYN` that file describes. Confidence moderate:
+it rests on a ratio rather than a gulf. But a symbol cannot be `SYN`'d
+to itself, so the two spellings must differ whatever the widths say.
+
 ## 6. Open questions — record, do not guess
 
 **What is the `-ILLEGAL OP.` word doing in routine 1262's TEST 3A and
@@ -1412,6 +1487,20 @@ printed page numbers.
   counter, so growing code silently overruns its own constants.
 * Compute octal addresses with a helper. Every one written by eye in
   this project has been wrong.
+* **AN INJECTION THAT NEVER APPLIED LOOKS EXACTLY LIKE AN INJECTION
+  THAT PROVED NOTHING — and this project's whole discrimination
+  argument rests on injections.** An agent's `sed` pattern did not
+  match `opcodes.py`'s spacing. Nothing was patched. The verify script
+  then printed `ALL TESTS PASSED`, which reads as "this check does not
+  discriminate on that field" — a *result*, and a publishable one,
+  since this project deliberately records measured nulls. The two
+  outcomes are indistinguishable from the output alone. **Confirm the
+  patch LANDED before running: print the patched lines, or diff, and
+  look.** A measured null is only a result if the thing being measured
+  actually changed; otherwise it is a broken instrument reporting zero.
+  Note this is worse than an ordinary silent failure, because the
+  failure mode produces output that fits a category we consider
+  valuable and write down.
 * **"THAT IS NOT TRANSCRIBED YET" IS A CLAIM, AND IT NEEDS A GREP.**
   Twice in one session I handed out work whose premise was that a block
   was untranscribed, and twice it already was. `160S1` — the brief said

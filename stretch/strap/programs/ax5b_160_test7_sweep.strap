@@ -1,0 +1,209 @@
+! jb_ax5b "I-Box 5", routine 1260 TEST 7's LAST BLOCK -- the between-
+! bounds check under boundary control 1, the two UB+1 checks under
+! boundary control 0, the SWEEP TEARDOWN, and the 160122 exit.
+! PDF p.74, octal 022461.00-022512.40, 50 rows / 52 half-words,
+! transcribed VERBATIM at the listing's own addresses and checked
+! bit-exactly by verify_ax5b_160_test7_sweep_listing.py.  (This deck's
+! listing pages carry NO printed page numbers; cite PDF pages only.)
+!
+! WHERE IT SITS.  Three files now cover TEST 7 end to end and none of
+! them overlaps:
+!
+!   ax5b_160105_compare.strap        p.71   022346.40-022401.00  driver
+!   ax5b_160_test7_compare.strap     pp.72-73 022401.40-022460.40 verdict
+!   ax5b_160_test7_sweep.strap       p.74   022461.00-022512.40  THIS
+!
+! The premise was checked before a line was written: grepping every
+! strap/verify_*.py for 022461 through 022512 found the range's
+! addresses only in verify_ax5b_160_test7_compare_listing.py's PROSE
+! (its "THE CUT POINT" paragraph and its 0-31 carve-out analysis) and
+! in its SYN/bit-18 lines, never in a ROWS entry.  The range was
+! genuinely untranscribed.
+!
+! WHAT IT ADDS TO THE ORACLE.  pp.72-73 witnessed BC 1 with an inside
+! address (no signal) and BC 0 with an inside address (signal).  This
+! page adds the two cases that complete the truth table:
+!
+!   160121 (022461.00-022470.00)  BC 1, comparand INSIDE  -> NO signal
+!       022463.00  TI,1,BOUND1,3.0    the control bit is ONE
+!       022465.00  LX,$X13,0($X2)   -FETCH FRM LB+1, UB-1, BC IS 1.
+!       022466.40  BZDFZ,160212     branch on DF OFF -- the OK path
+!       022467.00  SIC,SEN          -FETCH BETWEEN UB AND LB,
+!       022467.40  B,SERS           -BC 1, CAUSES DF TO SET.
+!
+!   160212 (022472.40-022502.00)  BC 0, comparand OUTSIDE -> NO signal
+!       022474.40  TI,1,BOUND0,3.0    the control bit flips to ZERO
+!       022475.40  V+I,$X2,2.0        X2 := LB+3 = UB+1
+!       022477.00  LX,$X13,0($X2)     the UB+1 fetch (no comment row)
+!       022500.40  BZDFZ,160214     branch on DF OFF -- the OK path
+!       022501.00  SIC,SEN          -FETCH FROM UB+1, BC 0, CAUSES
+!       022501.40  B,SERS           -DF TO BE SET.
+!
+! With p.71's "UB signals under BC 1" and p.73's "LB+1 signals under
+! BC 0", all four cells of (inside/outside) x (BC 0/BC 1) are now
+! witnessed by rows this project has transcribed.  Reference Manual
+! C22-6530-2 printed p.31: "When the boundary control bit is zero, a
+! signal is obtained for a comparand inside the specified area.  When
+! the boundary control bit is one, a signal is obtained for a
+! comparand outside the specified area."
+!
+! THE SWEEP TEARDOWN, and it is the reason the loop ever stops:
+!
+!       022504.40  160214 LV,$X2,$X2   -DONE ALL COMPS.
+!       022505.00  BXVZ,160122         -YES
+!       022505.40  V-I,$X2,2.0         -NO
+!       022506.00  BD,160106
+!
+! LV,$X2,$X2 loads X2's value field from X2's OWN storage word (index
+! registers X1-X15 are storage locations 17-31; $X2 = word 0o22, and
+! the printed code "22.04 30" has exactly 0o22 in its address field).
+! It changes nothing.  Its whole purpose is to SET THE INDEX RESULT
+! INDICATORS, because the rows between the last V+I and here loaded
+! and stored X13, not X2.  Reference Manual printed p.23: "Load Value
+! (LV).  The value field, bits 0-24, of the index word specified by J
+! is replaced by bits 0-24 of the half-word specified by bits 0-18 of
+! the effective address", and "The index result indicators are set in
+! all cases in which the index flag indicator is set, except the index
+! comparison operations."  Then BXVZ tests it -- printed p.23 again:
+! "Index Value Zero (XVZ).  This indicator is set to one when the
+! value field is zero."
+!
+! BRANCH POLARITY, determined from THIS page's own rows and not
+! assumed: B<IND> branches when the indicator is ON, BZ<IND> when it
+! is OFF, a trailing Z clears it.  The two check triples here are
+! 022466.40/022467.00/022467.40 and 022500.40/022501.00/022501.40, and
+! in both the BRANCH is the OK path while the FALL-THROUGH is the
+! SIC,SEN / B,SERS error pair.  So the error text names the ANOMALY:
+! "-BC 1, CAUSES DF TO SET." is printed on the path taken when DF WAS
+! set and should not have been.  (Routine 1274 elsewhere in this deck
+! has the opposite shape, SIC,SEN first and a branch TO SERS.  This
+! block is not that shape.)
+!
+! THE ERROR MESSAGES AND HEADINGS, verbatim with their octal
+! locations, read at 600 dpi:
+!
+!   022464.00  -RESTORE MY INT.
+!   022465.00  -FETCH FRM LB+1, UB-1, BC IS 1.
+!   022466.00  -RESTORE INT.
+!   022467.00  -FETCH BETWEEN UB AND LB,
+!   022467.40  -BC 1, CAUSES DF TO SET.
+!   022470.40  -RESTORE INT.
+!   022471.00  -FETCH BETWEEN UB AND LB, BC 1,
+!   022471.40  -CAUSES AD INTERRUPT, TESTING DONE.
+!   022476.00  -RESTORE MY INT.
+!   022500.00  -RESTORE INT.
+!   022501.00  -FETCH FROM UB+1, BC 0, CAUSES
+!   022501.40  -DF TO BE SET.
+!   022502.40  -RESTORE INT.
+!   022503.00  -FETCH FROM UB+1, BC 0, CAUSES AD
+!   022503.40  -INTERRUPT, TESTING DONE
+!   022504.40  -DONE ALL COMPS.
+!   022505.00  -YES
+!   022505.40  -NO
+!   022506.40  -CLR BOUNDS REG.
+!   022510.40  -TO SSIP.
+!   022511.40  -UPDATE CONTINUITY CHECK.
+!
+! THREE DECK QUIRKS IN THAT LIST, all measured, none scan damage:
+!   * "FRM" for FROM at 022465.00, the same garble pp.72-73 records at
+!     022444.40 on the mirror-image row.
+!   * "-BC 1, CAUSES DF TO SET." at 022467.40 against "-DF TO BE SET."
+!     at 022501.40: the deck says "TO SET" in one message and "TO BE
+!     SET" in its twin.
+!   * "-INTERRUPT, TESTING DONE" at 022503.40 has NO terminating
+!     period, where its twin "-CAUSES AD INTERRUPT, TESTING DONE." at
+!     022471.40 has one.  Checked at 8x on the 600 dpi render: the
+!     character cell after the E is empty.
+!
+! EVERY PRINTED LOCATION IN RANGE CARRIES MACHINE CODE.  There is no
+! row here with a location and a blank code column, so no SLC gap and
+! no SYN stand-in is needed anywhere inside 022461.00-022512.40.
+!
+! ENCODING ONLY, same reason as the other two files: the block cannot
+! run without SSIP's save/restore at 001301/001304/001310/001311 and
+! BOUND0/BOUND1 at 023302/023303.
+!
+! SUBSTITUTIONS, and the SYN-naming rule stated so the split does not
+! read as accidental.  Numeric labels are prefixed "L" exactly as
+! ax5b_160105_compare.strap and ax5b_160_test7_compare.strap do
+! (L160121, L16012A, L160211, L160212, L16021B, L160213, L160214,
+! L160122, plus the externals L160105, L160106, L160107, L16010A).
+! "0%$X2(0)" is written "0($X2)", as in both adjacent files.  For the
+! two symbols this page needs that the adjacent file does not, the
+! spelling is the one every OTHER file in the repo already uses --
+! LIC260 (ax5b_160_test6, _test8b, _test8c all write it that way) and
+! LBIT10 (ax5b_160_test8b writes LBIT11 / LBIT57).  SEN, SERS, SEN0
+! and SSW keep the adjacent file's unprefixed spelling.  The leading
+! glyph of IC260 is a bare vertical stroke, letter-I by this project's
+! standing HOUSE CONVENTION and not by measurement; the same caveat
+! the pp.72-73 file records for the 160xxx labels applies here.
+!
+! 160121 AND 160122 ARE *DEFINED* HERE, not SYN'd.  pp.72-73 had to
+! assume both (L160121 SYN,(8)22461.0 and L160122 SYN,(8)22506.40);
+! this file's rows 1 and 42 put real labels at those two addresses, so
+! the adjacent file's two assumptions are now witnessed.
+
+L160105 SYN, (8)22346.40
+L160106 SYN, (8)22356.0
+L160107 SYN, (8)22372.0
+L16010A SYN, (8)22371.40
+BOUND0  SYN, (8)23302.0
+BOUND1  SYN, (8)23303.0
+SEN     SYN, (8)1310.0
+SERS    SYN, (8)1304.0
+SEN0    SYN, (8)1311.0
+SSW     SYN, (8)1301.0
+LIC260  SYN, (8)22737.0
+LBIT10  SYN, (8)24534.0
+        SLC, (8)22461.0
+L160121 LVI, $X13, L160211
+        SVA, $X13, L160107
+        LVI, $X3, L16012A
+        SVA, $X3, L16010A
+        TI,  1, BOUND1, 3.0
+        SR,  $X1, $IA            ! -RESTORE MY INT.
+        BE,  $+.32
+        LX,  $X13, 0($X2)        ! -FETCH FRM LB+1, UB-1, BC IS 1.
+        BD,  $+.32
+L16012A SV,  $X1, $IA            ! -RESTORE INT.
+        BZDFZ, L160212
+        SIC, SEN                 ! -FETCH BETWEEN UB AND LB,
+        B,   SERS                ! -BC 1, CAUSES DF TO SET.
+        B,   L160212
+L160211 SV,  $X1, $IA            ! -RESTORE INT.
+        SIC, SEN                 ! -FETCH BETWEEN UB AND LB, BC 1,
+        B,   SERS                ! -CAUSES AD INTERRUPT, TESTING DONE.
+        B,   L160122
+L160212 LVI, $X13, L160213
+        SVA, $X13, L160107
+        LVI, $X3, L16021B
+        SVA, $X3, L16010A
+        TI,  1, BOUND0, 3.0
+        V+I, $X2, 2.0
+        SR,  $X1, $IA            ! -RESTORE MY INT.
+        BE,  $+.32
+        LX,  $X13, 0($X2)
+        BD,  $+.32
+L16021B SV,  $X1, $IA            ! -RESTORE INT.
+        BZDFZ, L160214
+        SIC, SEN                 ! -FETCH FROM UB+1, BC 0, CAUSES
+        B,   SERS                ! -DF TO BE SET.
+        BD,  L160214
+L160213 SV,  $X1, $IA            ! -RESTORE INT.
+        SIC, SEN                 ! -FETCH FROM UB+1, BC 0, CAUSES AD
+        B,   SERS                ! -INTERRUPT, TESTING DONE
+        B,   L160122
+L160214 LV,  $X2, $X2            ! -DONE ALL COMPS.
+        BXVZ, L160122            ! -YES
+        V-I, $X2, 2.0            ! -NO
+        BD,  L160106
+L160122 Z,   3.0                 ! -CLR BOUNDS REG.
+        B,   $+1.0
+        BD,  L160105
+        SIC, SEN0+.32
+        B,   SSW                 ! -TO SSIP.
+        BD,  $+.32
+        LX,  $X13, LIC260        ! -UPDATE CONTINUITY CHECK.
+        V+,  $X13, LBIT10
+        SX,  $X13, LIC260
+        END, L160121

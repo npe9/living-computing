@@ -1,0 +1,221 @@
+! jb_ax5b "I-Box 5", routine 1268, TEST 1B and TEST 1C -- the deck's
+! own test that an INSTRUCTION FETCHED CLOSE TO A STORE fetches the
+! NEW instruction, run against INDEX STORAGE (1B) and against
+! INTERNAL MEMORY (1C).  PDF pp.110-111, octal 024344.40-024363.00,
+! 30 half-word rows, transcribed VERBATIM at the listing's own
+! addresses and checked bit-exactly by
+! verify_ax5b_1268_test1bc_listing.py.
+!
+! THIS BLOCK CLOSES A DOCUMENTED DEFERRAL.  The committed
+! ax5b_1681_if_close_to_ds.strap stops with "A 'BEW,$' exit at
+! 024344.40, where the listing continues into test 1B ... 1B and 1C
+! need EX, deferred in docs/NEXT.md section 5."  024344.40 is exactly
+! where this file starts.  EX is in the assembler (opcodes.py
+! MISC_CODES "EX": 0b010) and already appears in three other
+! transcriptions, so the deferral was only ever an encoding deferral
+! and it is now closed on the encoding side.
+!
+! THE ROUTINE'S BANNER, verbatim, PDF p.110.  It prints between
+! 024332.40 and 024333.00 and carries NO location of its own:
+!
+!     ----1268---IF AND DF CLOSE TO DS.
+!
+!               -THIS TEST IS COMPOSED OF TWO ROUTINES
+!               -WHICH CHECK THE BELOW FUNCTIONS.
+!
+!                   -TEST 1 CHECKS IF CLOSE TO DS
+!                    -IN ALL 3 MEMORIES.
+!
+!                   -TEST 2 CHECKS DF CLOSE TO DS
+!                    -IN ALL 3 MEMORIES.
+!
+! The dash counts were MEASURED, not eyeballed: at 500 dpi the ink in
+! the banner's dash band (full-res rows 422-432, page columns
+! 1514-2058) forms two groups, 1514+44 / 1560+148 and 1911+48 /
+! 1962+96, against a 48-pixel character pitch -- 194 px of ink before
+! "1268" is FOUR dashes, 147 px after is THREE.  That is the same
+! "----NNNN---" the other banners in this deck use (1244, 1246, 1250,
+! 1258, 1262).  NOTE: the committed ax5b_1683_df_close_to_ds.strap
+! quotes this banner as "----1268----IF AND DF CLOSE TO DS." with
+! FOUR trailing dashes; by this measurement that is one dash too
+! many.  Recorded, not corrected -- that file is not touched here.
+!
+! "IN ALL 3 MEMORIES" is the listing's own vocabulary and this file
+! does not go past it.  The three are named by the three headings:
+! EXT MEM (test 1A, already transcribed), IX STG and INT MEM (1B and
+! 1C, here).  What the printed ADDRESS fields settle, and all they
+! settle, is where each store lands: 1B stores to "$X3", which the
+! assembler resolves to index register 3 = word 19 = octal 23, and
+! the listing prints "23.03 10"; 1C stores to "$R", word 9 = octal
+! 11 (opcodes.py SYSTEM_SYMBOLS "R": (9, 0) -- the right half of the
+! accumulator; no page is cited for that here, the table is), and the
+! listing prints
+! "11.03 10".  Whether those two words live in physically distinct
+! memories is NOT asserted here; it is the deck's word.
+!
+! HOW 1B AND 1C WORK, and why they need EX where 1A did not.  Test 1A
+! plants a word over the location 1682 and FALLS INTO it -- which
+! only works for a location in the instruction stream, i.e. main
+! (external) memory.  Index storage and word 9 are not in the
+! instruction stream, so 1B and 1C reach them with EXECUTE instead:
+!
+!   LX,$X1,168K1 / SX,$X1,$X3     plant [Z,$X2 | NOP] into word 19
+!   NOP / NOP / NOP
+!   LX,$X1,168K2 / SX,$X1,$X3     plant [LVI,$X2,(8)777777.40 | NOP]
+!   EX,$X3                        execute what is in word 19 NOW
+!   LX,$X2,$X2                    re-read X2 to set the indicators
+!   SIC,SEN / BXVZ,SERS           "-EXECUTED OLD INST FROM IX STG."
+!
+! Reference Manual printed p.49 (PDF p.52), "Execution Instructions":
+! "One instruction, EXECUTE, directly specifies the location of a
+! second instruction, the subject instruction, which is executed."
+! So EX,$X3 fetches and executes the left half-word of word 19 --
+! whatever the second SX has just put there.  If the fetch saw the
+! second store, the LVI runs and X2 becomes 777777.40; if it got the
+! stale first store, the Z runs and X2 is zero.
+!
+! WHY THE RE-READ.  Reference Manual printed p.43 (PDF p.46), Figure
+! 11 Indicator List, row 50: "XVZ ... Index Value Zero", class T,C,
+! braced with 48/49/51 under "Reset by index arithmetic ops. other
+! than comparisons".  "LX,$X2,$X2" reads X2 from its own word,
+! changing nothing, purely so that index-arithmetic reset fires and
+! the value indicators describe X2 -- which is what the following
+! BXVZ tests.  Test 1A does the identical thing for the identical
+! reason.
+!
+! BRANCH POLARITY: BRANCH-TAKEN IS THE ERROR PATH.  These rows use
+! the MINORITY shape of the two in this deck -- "SIC,SEN" first, then
+! "BXVZ,SERS", with nothing branching to an OK label.  B<IND>
+! branches when the indicator is ON, so BXVZ branches when Index
+! Value Zero is on, i.e. when X2 came out ZERO, i.e. when the STALE
+! "Z,$X2" ran.  Branch taken -> SERS -> the message.  The message
+! therefore names what went wrong, and the straight-line fall-through
+! is the pass.  Same shape as routine 1274, not the "branch to OK"
+! shape most 160/162 blocks use.
+!
+! NO LABEL IS DEFINED IN THIS RANGE.  The listing's label column is
+! empty for all 30 rows: 1681 is at 024337.00 (above), 1683 at
+! 024363.40 (below), and everything between is unlabelled.  So every
+! address in this block is either self-relative or external, and the
+! witness tiering in verify_ax5b_1268_test1bc_listing.py has no
+! "label placed by the SLC" to argue about.
+!
+! GLYPHS.  "IC268" is spelled with a LETTER I and "SEN0" with a DIGIT
+! zero.  Both are HOUSE STYLE, not a measurement made here: IC244,
+! IC246, IC258, IC260, IC262 and IC274 appear with the letter across
+! programs/ and verify_*.py, and ax5b_1274_truncation.strap records a
+! pixel measurement of the "SIC,SEN0+.32" row ("has digit 0 at 45
+! px") for the digit.  Likewise "1B"/"1C"/"1268" are written with
+! digits, as every other file in this repo writes them.  No new
+! convention is started here.
+!
+! SUBSTITUTIONS, four, all named:
+!   1. Numeric labels are prefixed "L" (L1681, L168K1, L168K2,
+!      LIC268).  The listing writes them bare.
+!   2. ENT1B is this file's own name for the first row.  The listing
+!      prints NO label there; STRAP's END needs one.
+!   3. SERS is a "B,$" HANG at its own printed address 001304.00, and
+!      SSW likewise at 001301.00; the real error-report and
+!      switch-scan routines are SSIP's and are not transcribed.
+!   4. A "BEW,$" exit at 024363.40, where the listing continues into
+!      routine 1268's test 2A -- already transcribed as
+!      ax5b_1683_df_close_to_ds.strap.
+! 168K1 and 168K2 are placed from PDF p.111 at their printed
+! addresses, not manufactured; they are the same two words test 1A
+! plants, and they are re-placed here only so the block could be run.
+! Everything else is verbatim.
+!
+! NOT RUN.  This session was instructed not to invoke run_program.sh,
+! run_tests.sh, bsc or mutation_score.py, so this file is an ENCODING
+! oracle only and is NOT wired into run_tests.sh.  The substitution
+! blocks above exist so a follow-up can wire it in; they are
+! UNVERIFIED as an execution.  Nothing in this header claims anything
+! about what the model does at run time.
+!
+! THIS BLOCK DOES NOT BEAR ON THE ADDRESS-ALARM INDICATORS.  "DF" and
+! "DS" in the routine's title are the Data Fetch and Data Store
+! PATHS, not indicators 20 and 19.  Nothing in these 30 rows writes
+! storage location 3 (the boundary registers), touches the mask,
+! names a protected address, or branches on DF/DS/IF; the only
+! indicator branch is BXVZ, indicator 50.  Reference Manual printed
+! p.32 (PDF p.35): "The three address alarm indicators, DS, DF, and
+! IF, are permanent.  Once turned on, they remain on until they cause
+! an interruption or are turned off by program control."  That is a
+! different mechanism from anything here, and this block independently
+! corroborates the reading ax5b_1683_df_close_to_ds.strap arrived at.
+
+! ---- externals: INPUTS to the check, never witnesses ---------------
+L168K1  SYN, (8)24407.0     ! p.111 label column: 168K1  [Z,$X2 | NOP]
+L168K2  SYN, (8)24410.0     ! p.111 label column: 168K2  [LVI.. | NOP]
+L1681   SYN, (8)24337.0     ! p.110 label column: 1681, the loop head
+LIC268  SYN, (8)24405.0     ! p.111 label column: IC268, continuity reg
+BIT0    SYN, (8)24522.0     ! shared pool; NOT printed on pp.110-111
+SEN     SYN, (8)1310.0      ! SSIP's, per p.116's SYN table
+SEN0    SYN, (8)1311.0      ! SSIP's
+SERS    SYN, (8)1304.0      ! SSIP's
+SSW     SYN, (8)1301.0      ! SSIP's
+
+        SLC, (8)24344.40
+!
+! ---- TEST 1B: store into INDEX STORAGE, then EXECUTE it ------------
+ENT1B   LX,  $X1, L168K1           ! -TEST 1B, IF CLOSE TO DS IN IX STG.
+        SX,  $X1, $X3              !  plant the OLD instruction in word 19
+        NOP
+        NOP
+        NOP
+        LX,  $X1, L168K2
+        SX,  $X1, $X3              !  plant the NEW one over it
+        EX,  $X3                   !  execute what is in word 19 NOW
+        LX,  $X2, $X2              !  re-read X2 to set the indicators
+        SIC, SEN
+        BXVZ, SERS                 ! -EXECUTED OLD INST FROM IX STG.
+!
+! ---- TEST 1C: store into INTERNAL MEMORY (word 9), then EXECUTE ----
+        LX,  $X1, L168K1           ! -TEST 1C, IF CLOSE TO DS IN INT MEM.
+        SX,  $X1, $R               !  plant the OLD instruction in word 9
+        NOP
+        NOP
+        NOP
+        LX,  $X1, L168K2
+        SX,  $X1, $R               !  plant the NEW one over it
+        EX,  $R                    !  execute what is in word 9 NOW
+        LX,  $X2, $X2              !  re-read X2 to set the indicators
+        SIC, SEN
+        BXVZ, SERS                 ! -EXECUTED OLD INST FROM INT MEM.
+!
+! ---- loop once, return to SSIP -------------------------------------
+        B,   $+1.0                 !  skip the BD: -> 024360.40
+        BD,  L1681                 !  the loop back to 1681
+        SIC, SEN0+.32
+        B,   SSW                   ! -TO SSIP.
+        BD,  $+.32
+!
+! ---- the routine's continuity register, test 1's bit ---------------
+        LX,  $X13, LIC268          ! -UPDATE CONTINUITY CHECK.
+        V+,  $X13, BIT0            !  test 1 done = bit 0
+        SX,  $X13, LIC268
+!
+! ---- substitution 4: the exit --------------------------------------
+        SLC, (8)24363.40
+PASS    BEW, $
+!
+! ---- substitution: the two planted words, from p.111 ---------------
+        SLC, (8)24407.0
+K1      Z,   $X2                   ! 168K1: the OLD instruction
+        NOP
+        SLC, (8)24410.0
+K2      LVI, $X2, (8)777777.40     ! 168K2: the NEW one
+        NOP
+!
+! ---- substitution: the continuity register's own word --------------
+        SLC, (8)24405.0
+CREG    XW,  0, 0, 0               ! -CONTINUITY REG 1268.
+!
+        SLC, (8)1310.0
+SENW    DD(BU,64), 0               ! SIC's target
+! ---- substitution 3: SERS and SSW are hangs ------------------------
+        SLC, (8)1301.0
+SSWH    B, $
+        SLC, (8)1304.0
+SERSH   B, $
+        END, ENT1B

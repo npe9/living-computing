@@ -3043,6 +3043,92 @@ run "IBOX-4 R from external memory (two sequential reads)" ./run_program.sh prog
 run "IBOX-4 refill address gate (jb_ax4b, encoding)" python3 verify_ibox4_refill_nop_listing.py
 run "IBOX-4 routine 1244: RNX's refill-address NOP gate (jb_ax4b PDF pp.90-98)" python3 verify_ibox4_rnx_nop_listing.py
 run "IBOX-4 routine 1246: TRANSMIT and SWAP (jb_ax4b PDF pp.99-100, 112-113)" python3 verify_ax4b_1246_transmit_swap_listing.py
+run "IBOX-4 routine 1246 TEST 2A/2B: the forward-backward and direct-immediate modifiers (jb_ax4b PDF pp.109-111)" python3 verify_ax4b_1246_modifiers_listing.py
+# 119 ROWS, BOTH SUB-TESTS, NO CUT -- 007272.00-007372.00, contiguous
+# under one SLC across three pages.  It also turns the sibling
+# section's arithmetic endpoint into a measurement: 007372.00 is the
+# printed location of p.111's last row.
+#
+# **BIT 55 IS NOW WITNESSED SET, and as a clean MATCHED PAIR** -- the
+# thing the section above could not supply:
+#
+#   007277.00  T, $X2,I46D5,I46D2   7430.00 80 007425.04 20   (p.109)
+#   007321.40  TB,$X2,I46D5,I46D2   7430.00 80 007425.05 20   (p.110)
+#
+# Same A1, same A2, same J, same hex byte.  ONE OCTAL DIGIT, 04 -> 05,
+# and that is bit 55.  Structural twin of the sibling's T/SWAP bit-57
+# pair -- but it moves the OCTAL column where that one moves the HEX
+# column.  Between the two files all three of the banner's modifier
+# bits are now pinned by a matched pair.  Reference Manual printed
+# p.30, re-read first-hand here rather than quoted from the sibling:
+# "The choice between forward and backward transmission is specified
+# by modifier bit 55.  A zero specifies forward transmission; a one
+# specifies backward transmission."
+#
+# `TB` is this block's only genuine repo first, and the row sits at an
+# ODD half-word so it straddles a word boundary as well.  TBI, SWAPI,
+# SWAPB and SWAPBI remain card-only with zero listing rows anywhere.
+#
+# BIT 56 IS WITNESSED SET BUT IS NEITHER A FIRST NOR A MATCHED PAIR,
+# and the file says so rather than claiming the stronger result: the
+# TI/T comparison on p.111 differs in J as well, so both columns move,
+# and grep found every existing TI row in the repo already printing A0.
+# First in the ax4b deck; corroboration for the project.
+#
+# A PRIMARY-SOURCE QUOTE THAT RETIRES A SUBSTITUTION THIS PROJECT HAD
+# BEEN MAKING ON CONVENTION.  Printed p.30: "In immediate count
+# operations, the full word count is specified by instruction bits
+# 51-54."  That is why the deck spells the J field BOTH WAYS within
+# three pages -- "T,$X2,..." and "TB,$X2,..." on pp.109-110 (direct, so
+# 51-54 name an index register) against "TI,1,..." on p.111
+# (immediate, so 51-54 ARE the count) -- and the printed octal pairs
+# agree (04 -> J=2, 02 -> 1).  So the sibling file's $X1 -> 1
+# substitution is what IBM's own assembler did, not a convention this
+# project invented.  It also explains TEST 2B's design: load a DIRECT
+# count of 2 then issue TI with immediate count 1, error "-TRANSMIT
+# IMMEDIATE USES / -A DIRECT COUNT."; load a direct count of 1 then
+# issue T with J=2, error "-TRANSMIT DIRECT USES / -AN IMMEDIATE
+# COUNT."
+#
+# THE DECK LABELS THE BRANCH AS THE GOOD PATH IN ITS OWN HAND.  At
+# 007336.00, "BZXVZ,I4622" carries the comment "-OK" -- the only one in
+# either 1246 file.  First-hand evidence for this project's
+# branch-polarity rule rather than inherited convention.  (An inference
+# from one two-character comment, and flagged as such; no check rests
+# on it.)
+#
+# Seven injections, observed.  Two pairs are designed to SEPARATE
+# adjacent modifier bits on a single row: TI (0,1,0)->(0,0,0) moves the
+# hex byte only while (0,1,0)->(1,1,0) moves the octal pair only, which
+# splits bits 56 and 55 on row 007346.40; TB (1,0,0)->(0,0,0) and
+# ->(1,0,1) do the same for bits 55 and 57.  One result was not what a
+# guess would say: INDICATOR_BITS["XCZ"] 48->49 moves the TOP bit of
+# the hex byte (40->C0), colliding with XVLZ.
+#
+# THE SIBLING'S MEASURED NULL IS CONFIRMED, NOT BROKEN.  Masking
+# enc_transmit's A2 to clear bit 50 still changes nothing: every A2
+# here is I46D1 or I46D2, both word-aligned.  Across both 1246 files
+# there are now EIGHT transmit rows and all eight are A2-word-aligned,
+# so the null is a stronger statement than either file could make
+# alone.
+#
+# TWO GARBLES, BOTH DECK TYPOS, and "FOWARD" is the harder call because
+# a DROPPED LETTER HAS NO GLYPH TO INSPECT.  Settled by PITCH: on the
+# line above, FORWARD occupies seven cells spanning 402 px = 57.4
+# px/cell; FOWARD occupies six cells spanning 346 px = 57.7 px/cell.
+# Identical pitch, one fewer cell, and no gap anywhere.  Damage
+# degrades a glyph in place; it does not delete a character and close
+# the 57-px hole behind it.  "INNEDIATE" is settled by shape: both N's
+# carry a single unbroken diagonal between full-height verticals with
+# no stray ink where an M's second diagonal would be.
+#
+# CONSTANT-BLOCK HANDLING WORTH COPYING: rather than SYN the I46D*
+# constants -- which would make every transmit operand an INPUT -- the
+# program re-lays that block from its own SLC as UNASSERTED source, so
+# the location counter computes the addresses and the printed A1/A2
+# fields genuinely check them.  No row of it is asserted, so nothing
+# duplicates the sibling section.
+
 # THE FIRST LISTING WITNESS FOR PLAIN **T** AND FOR **SWAP** IN THIS
 # REPO.  Before this block, opcodes.TRANSMIT_CODES said so itself --
 # "WITNESSED: only TI ... The other seven are from the card alone and
@@ -4545,6 +4631,60 @@ run "I-Box 5 routine 1274: TRUNCATION OF ADDRESSES, 99 rows (jb_ax5b PDF pp.112-
 
 run "I-Box 5 routine 1260 TEST 7: the COMPARISON driver (jb_ax5b p.71)" python3 verify_ax5b_160105_listing.py
 run "I-Box 5 routine 1260 TEST 7: where the COMPARISON is checked (jb_ax5b PDF pp.72-73)" python3 verify_ax5b_160_test7_compare_listing.py
+run "I-Box 5 routine 1260 TEST 7: the boundary sweep and its exit (jb_ax5b PDF p.74)" python3 verify_ax5b_160_test7_sweep_listing.py
+# TEST 7 IS NOW COVERED END TO END by three non-overlapping files:
+# p.71 (setup), pp.72-73 (the checks), and this, p.74, 50 rows,
+# 022461.00-022512.40.  The next label, 022513.00, is TEST 8B's head.
+#
+# IT UPGRADES TWO OF THE NEIGHBOURING FILE'S ASSUMPTIONS.  pp.72-73 had
+# to SYN L160121 and L160122; this page DEFINES both at exactly those
+# addresses, so two inputs become witnessed rows from the other side.
+#
+# AND IT ANSWERS THE WRAPAROUND QUESTION pp.72-73 raised, in three
+# parts -- the middle one being the real find.  **The wrap is the
+# loop's TERMINATION CONDITION, not a curiosity.**  Traced across all
+# three files: LB rises one word per pass and X2 at 160214 holds LB+3.
+# On the last pass LB = 0o777775, so X2 before the V+I is 2^24-128
+# bits; +128 carries out of bit 0, the carry is ignored, magnitude goes
+# to zero, XVZ sets, and "BXVZ,160122" at 022505.00 takes the exit.
+# That is the ONLY way this loop ends -- and "LV,$X2,$X2" at 022504.40
+# exists purely to re-derive XVZ, since every row between the V+I and
+# it touches X13 rather than X2.  It also confirms p.71's header
+# exactly: the final X = UB = 0o777777.
+#
+# IT ALSO CORRECTS A CITATION, one page off, in a way worth noting
+# because the slip PROPAGATED.  Printed p.21 does NOT contain "this
+# overflow bit ... is ignored" -- that sentence is on printed p.20,
+# under Address Modification, and governs adding an index to an
+# instruction address.  The rule for the V+I that produces the zero
+# here is printed p.24's "The overflow which may occur in index
+# arithmetic is ignored."  bsv/StretchExecute.bsv's address-modification
+# comment cites p.21 for the p.20 sentence -- cosmetic there, since it
+# is the right rule for the right step -- but pp.72-73's docstring
+# reused that citation for a DIFFERENT step, where it is the wrong
+# rule.  A one-page slip in a comment became a wrong citation two files
+# later.
+#
+# THIRD PART, and the honest one: the wrap still DECIDES NOTHING about
+# the 0-31 carve-out.  The fetch at 022477.00 reads word 0 on that
+# pass, word 0 never signals under either control-bit setting, and the
+# deck expects no signal anyway.  Both readings agree, so the row
+# discriminates nothing.
+#
+# Fourteen injections, eleven with observed failures and THREE MEASURED
+# NULLS with their arithmetic (DS 19->18 moves nothing because only
+# BZDFZ/BXVZ appear; BU's default byte size because there is no VFL
+# row; LCI because only LVI/V+I/V-I are used).
+#
+# THE FOUR ADDRESS-MASK INJECTIONS TURN THE BIT-18 TABLE FROM ASSERTED
+# INTO WITNESSED, and they partition exactly: thirteen rows carry a
+# half-word select with bit 18 set, and those thirteen are precisely
+# the union of the four disjoint failing sets.  A FOURTEENTH row prints
+# a pair with its top bit set -- 022510.00's "1311.40 80" -- and the
+# masks leave it untouched, because that 40 is octal 40 = bit 32, a bit
+# offset rather than a half-word select.  The exclusion rule this
+# project states everywhere is here MEASURED rather than argued.
+
 # THE CONTINUATION OF THE SECTION ABOVE, 92 rows, 022401.40-022460.40,
 # picking up exactly where p.71's file stops at 022401.00.  p.71 is the
 # SETUP and carries no error messages at all; pp.72-73 are where the
@@ -4693,6 +4833,65 @@ run "I-Box 5 routine 1268 test 1A, ON THE MODEL (self-modifying execution)" ./ru
 # already too gentle for this model.  Regression guard, not oracle.
 
 run "I-Box 5 routine 1268 test 2, bit-exact (jb_ax5b p.111)" python3 verify_ax5b_1683_listing.py
+run "I-Box 5 routine 1268 TEST 1B/1C: IF close to DS via EXECUTE (jb_ax5b PDF pp.110-111)" python3 verify_ax5b_1268_test1bc_listing.py
+# THE GAP BETWEEN THE TWO SECTIONS AROUND IT.  30 rows,
+# 024344.40-024363.00 -- exactly where ax5b_1681_if_close_to_ds.strap
+# says it stopped ("a BEW,$ exit at 024344.40, where the listing
+# continues into test 1B ... 1B and 1C need EX").
+#
+# WHY 1B AND 1C NEED EXECUTE, which is what the deferral was about.
+# Test 1A plants a word over a location and FALLS INTO IT -- only
+# possible for a location in the instruction stream.  Index storage
+# (word 19) and word 9 are not, so 1B and 1C reach them with EX:
+# plant [Z,$X2|NOP], three NOPs, plant [LVI,$X2,(8)777777.40|NOP] over
+# it, then "EX,$X3" (resp. "EX,$R") and "LX,$X2,$X2" to set the
+# indicators.  (That reading of WHY is an inference from the rows'
+# shape and is flagged as conjecture in the file; EX's semantics are
+# sourced, printed p.49.)
+#
+# BRANCH POLARITY IS THE MINORITY SHAPE HERE, and the file proves it
+# from the ENCODING rather than from prose.  No branch to an OK label
+# exists in the 30 rows; both bodies end "SIC,SEN" then "BXVZ,SERS",
+# so branch-taken IS the error path.  Both BXVZ rows print
+# "1304.31 42": enc_branch_ind puts branchOn at bit 30, and hex 42 =
+# 0100_0010 over bits 24-31 gives bit 30 = 1 (branch when ON) and bit
+# 29 (clear) = 0.  A BZXVZ would print 40.
+#
+# IT DOES NOT BEAR ON protViolates, and the near-miss is recorded so
+# nobody re-finds it and gets excited.  "DF CLOSE TO DS" names the
+# data-fetch and data-store PATHS; "close" is about TIME.  Nothing in
+# range writes location 3, touches the mask, or branches on DS/DF/IF.
+# Printed p.32 does say an EX subject's location is IF-monitored "when
+# this location is in main storage" -- but 1B's and 1C's subjects are
+# word 19 and word 9, which are not.  The overlap is vocabulary, not
+# mechanism.
+#
+# THE LABEL COLUMN IS EMPTY FOR ALL 30 ROWS, so SYMBOLS is literally
+# empty -- there is not even an SLC-placed anchor to argue about, and
+# the only genuinely witnessed addresses are two self-relative rows.
+# Said plainly rather than padded.
+#
+# Seven injections, observed, and TWO OF THE AGENT'S OWN PREDICTIONS
+# WERE WRONG and are named in the file: LX 00001->00010 was predicted
+# to move both printed columns and moves only the hex byte, and EX
+# 010->101 was predicted to print 25 and prints 26.  The reason the
+# columns split is arithmetic, not luck: a direct-index code is 5 bits
+# at 23-27 so only its top bit is in the octal pair, a misc code is 3
+# bits at 19-21 so it is wholly inside the pair, and an indicator
+# number straddles at 19-24.
+#
+# ONE MEASURED NULL with its reason: forcing enc_branch_ind's `clear`
+# bit to zero moves nothing, because neither BXVZ carries a trailing Z
+# so the bit is already zero in both rows.  That field is this block's
+# one blind spot and it is arithmetic, not luck.
+#
+# THE SIC ROWS ARE EXCLUDED FROM THE BIT-18 TABLE, and this block has
+# the cleanest statement of why: SIC's operand is a 24-bit BIT address,
+# so "SIC,SEN0+.32" printing "1311.40 80" has 40 = octal 40 = 32 bits,
+# which is the "+.32" in the source.  THE TRAP IS THAT 32 BITS IS ALSO
+# ONE HALF-WORD, so the digits look identical under the wrong reading.
+# The arithmetic settles it, not the digits.
+
 run "I-Box 5 routine 1268 test 2, ON THE MODEL (the deck's own logic)" ./run_program.sh programs/ax5b_1683_df_close_to_ds.strap StretchAx5b1683Tb \
     "PC=20988"         # 024376.00, where the listing continues
 # DOCS/NEXT.md ITEM 2 WAS BUILT ON A MISREADING, corrected here.  It

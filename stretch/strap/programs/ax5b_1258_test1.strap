@@ -14,7 +14,7 @@
 !
 ! WHAT IT IS.  The deck's own write-up, PDF p.5, printed above the code:
 !
-!   ----1258---CHK TIME CLOCK AND INTERVAL TIMER.
+!   ----I258---CHK TIME CLOCK AND INTERVAL TIMER.   (see below on I vs 1)
 !       -THIS TEST IS COMPOSED OF TWO ROUTINES
 !       -WHICH CHECK THE FOLLOWING FUNCTIONS.
 !       -TEST 1 IS A CURSORY CHECK OF
@@ -40,7 +40,27 @@
 ! -------------------------------------------------------------------
 ! 014005.00 is NOT transcribed.  Its source line, read at 600 dpi, is
 !
-!       1581D   %IQSZ*DD%BU,64,8*,1258      Z
+!       I58ID   %IQSZ*DD%BU,64,8*,I258      Z
+!
+! CORRECTED 2026-09-24.  This line was transcribed as
+! "1581D ... ,1258", with digits.  Re-measured at 600 dpi, the label's
+! FIRST and FOURTH characters are both the letter I (12 and 17 px
+! against a 30-42 px band for this chain's digit 1, which carries an
+! upper-left flag and a base serif that the bare stroke does not), and
+! the operand is I258.  Cross-checked against the identical ident rows
+! for the sibling routines, which read "I46ID ... ,I246" and
+! "I74ID ... ,I274".  The banner above is "----I258---" for the same
+! reason.  Full evidence and the repo-wide scope in
+! docs/listing_typography.md.
+!
+! NOTHING THIS FILE CHECKS IS AFFECTED, and that is worth saying
+! precisely rather than reassuringly: this row prints NO machine code
+! and is deliberately not transcribed, so no bit moves.  But it is the
+! ONE row in the file where the glyph reading would have reached
+! emitted bits had it been checked -- the operand is the routine
+! number, and a digit reading would have deposited the wrong word.
+! The cut that was forced for an unrelated reason is what kept the
+! error harmless.
 !
 ! where % is this printer's "(" and * stands here for the closing
 ! glyph it draws for ")" -- fixed by the same page's
