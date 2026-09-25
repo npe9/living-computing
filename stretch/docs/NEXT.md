@@ -1434,6 +1434,64 @@ the meaningless self-`SYN` that file describes. Confidence moderate:
 it rests on a ratio rather than a gulf. But a symbol cannot be `SYN`'d
 to itself, so the two spellings must differ whatever the widths say.
 
+## 5d. `EXIC`'s THREE RULES, and a latent assembler gap
+
+### What routine 1262 TEST 2B actually checks — the oracle `EXIC` will be built against
+
+Transcribed 2026-09-25 end to end (`ax5b_162_test2b_head_tail.strap`
+for the two ends, `ax5b_162_exic_classes.strap` for the middle).
+Entry `I6260`, 023705.00-024000.00, five non-branch classes, **three
+rules each**:
+
+* **(a) the `EXIC` must not interrupt** — the class's error label is
+  planted in `I62ITE` via `SVA`, so an interruption lands on
+  `SIC,SEN`/`B,SERS`.
+* **(b) the subject must have executed** — reload the register the
+  subject writes, then `SIC,SEN` + `B{Z}XVZ,SERS`.
+* **(c) the pseudo-instruction counter must be stepped BY THE
+  SUBJECT'S LENGTH** — `KV,$X2,I62PSI` + `SIC,SEN` + `BZXE,SERS`.
+
+**The difference from TEST 1B's two rules is STRUCTURAL, not
+additive.** Plain `EX` has no pseudo-IC at all, so (c) cannot exist for
+it. 1B sweeps the same five classes with (a) and (b) only. Anyone
+implementing `EXIC` after `EX` is adding a counter, not a third check.
+
+**AND THE DECK MAKES THE MANUAL'S "once / twice" EXECUTABLE.** Printed
+p.50: *"If the subject instruction is half-length, the
+pseudo-instruction counter is stepped once; if full-length, twice."*
+The four half-length classes check `V+I,$X2,0.32`; the FULL WD VFL
+class, whose subject is the full-word `L(BU),I00O`, checks
+`V+I,$X2,1.0` at 023772.40 against *"-PSEUDO IC NOT STEPPED 1.0
+CORRECTLY / -WHEN SUBJ INST WAS VFL FULL WD."* Printed codes `0.45 05`
+against `1.05 05`. That is the rule as a runnable test, not a
+paraphrase.
+
+**Two idioms for rule (c), and DIR IX is the odd one out**: it checks
+the pseudo-IC ABSOLUTELY (`LVI,$X1,I62SUB+.32` / `KV,$X1,I62PSI`, no
+before-snapshot), while the other four check it RELATIVELY (`LV,$X2`
+before, `V+I,$X2,<step>` after, `KV,$X2`). Both are transcribed.
+
+### A LATENT GAP IN `strap_asm.py`, measured inert — RECORDED, NOT FIXED
+
+**The assembler does not enforce printed p.23's 18-bit rule for `LX`
+and `SX`.** Verified first-hand: `LX,$X1,LBL+.32` assembles to octal
+pair 42, i.e. **bit 18 = 1**, which no 7030 `LX` can mean — p.23 says
+*"The two exceptions use only 18 bits of the effective address because
+they require full-word operands."*
+
+**It bites nothing today, and that is a measurement rather than a
+hope:** a sweep of every `ROWS` tuple in every `verify_*.py` parses
+**453 `LX`/`SX` rows and finds ZERO with bit 18 set.** Every operand in
+the corpus is word-aligned.
+
+**Deliberately NOT fixed, and the reason is rule 4.** The manual states
+what the HARDWARE ignores; it does not state what STRAP-1's assembler
+emitted when handed a half-word offset on an `LX`. Truncating, erroring
+and emitting-as-written are all defensible, no listing row exercises
+the case, and picking one would be inventing a fact about the
+assembler. If a deck row ever turns up with a non-word-aligned `LX`
+operand, that row decides it.
+
 ## 6. Open questions — record, do not guess
 
 **What is the `-ILLEGAL OP.` word doing in routine 1262's TEST 3A and
@@ -1618,6 +1676,18 @@ printed page numbers.
   counter, so growing code silently overruns its own constants.
 * Compute octal addresses with a helper. Every one written by eye in
   this project has been wrong.
+* **A MEASURED NULL IS STRONGER WITH A LIVENESS PROOF, and it costs one
+  extra run.** Recording "0 rows moved, and here is the arithmetic
+  reason" is this project's standard, and it is still one inference away
+  from "the instrument works". The sharper form, first used 2026-09-25:
+  patch the encoder, show the patched build moves a CONSTRUCTED case
+  that the real data does not contain, then report that the real data
+  moved nothing. For the `LX`/`SX` bit-18 mask that reads: under the
+  patch `LX,$X1,I62SUB+.32` goes `024324.42` to `024324.02`, so the
+  encoder demonstrably moved by exactly bit 18 — and no row in the block
+  sees it, because every operand is word-aligned. **That distinguishes
+  "my data cannot reach this" from "my patch did nothing" with
+  evidence rather than with reasoning.**
 * **AN INJECTION THAT NEVER APPLIED LOOKS EXACTLY LIKE AN INJECTION
   THAT PROVED NOTHING — and this project's whole discrimination
   argument rests on injections.** An agent's `sed` pattern did not

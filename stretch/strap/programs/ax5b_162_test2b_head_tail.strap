@@ -1,0 +1,335 @@
+! jb_ax5b "I-Box 5", routine 1262 ("TEST EX AND EXIC"), TEST 2B --
+! "CHK EXIC OF NON BRANCH CLASS INSTRUCTIONS".  THE TWO ENDS OF TEST 2B
+! AROUND THE MIDDLE THAT IS ALREADY TRANSCRIBED.
+!
+!   023742.40-023767.40 (PDF p.101) is programs/ax5b_162_exic_classes.strap
+!                                   / verify_ax5b_162_exic_listing.py.
+!   THIS FILE is the two ends around it:
+!       HEAD  023705.00-023742.00, PDF p.99 whole + the 5 rows that spill
+!             onto PDF p.100.  59 half-words.
+!       TAIL  023770.00-024000.00, PDF p.102.  17 half-words.
+!   76 rows here + 43 rows there = 119, and 023705.00 through 024000.00
+!   inclusive is 119 half-words.  TEST 2B and routine 1262's TEST 2B exit
+!   are now transcribed end to end with nothing left behind.
+!
+!   THE TWO FILES DO NOT OVERLAP, checked on the ASSEMBLED IMAGE and not
+!   on the row lists: the second SLC moves the location counter and
+!   deposits nothing.  Assembling this program writes 39 words; of the
+!   words between the segments only 023742 exists, because this file's
+!   last head row 023742.00 "BD,I6266" is that word's LEFT half.  Its
+!   right half 023742.40 -- the sibling's first row -- assembles here as
+!   00000000, and words 023743-023767 are absent from the image.
+!
+! CITED BY PDF PAGE.  jb_ax5b's LISTING pages carry no printed page
+! numbers -- the "12 11 10 9" down the left margin is fanfold
+! carriage-tape line numbering, and the only printed numbers are in the
+! front write-up, which is scanned 2-up.  Every verify_ax5b_*.py here
+! already says "PDF p.NN" for that reason.
+!
+! ------------------------------------------------------------------
+! WHAT TEST 2B IS, ESTABLISHED FROM THESE PAGES AND NOT FROM A BLOCK MAP
+! ------------------------------------------------------------------
+! Entry label I6260 at 023705.00, PDF p.99, first printed row of the
+! block; last row 024000.00 on PDF p.102.  Its own header comment:
+!
+!   023705.00  I6260 LVI,$X1,I62INT  "-TEST 2B, CHK EXIC OF NON BRANCH"
+!   023705.40        SV,$X1,$IA      "-CLASS INSTRUCTIONS, DIR IX."
+!
+! FIVE classes, in this printed order, each announced by a one-word
+! comment on the first row of its setup and each identified beyond doubt
+! by the "LX,$X1,<subject>" row that loads the subject instruction:
+!
+!   class        setup at    subject     subject's content (PDF p.109,
+!                                        verify_ax5b_162_int_entry_listing)
+!   DIR IX       023705.00   I62EX  024322.00  LX,$X1,I00O
+!   IMMED IX     023722.40   I62EXI 024332.00  LVI,$X1,%8@777777.40
+!   MISC         023735.00   I62EXM 024331.00  Z,$X1
+!   FLT PT       023747.00   I62EXF 024330.00  L(U),I00O
+!   FULL WD VFL  023762.00   I62EXV 024327.00  L(BU),I00O   <- FULL LENGTH
+!
+! THREE RULES PER CLASS, each with its own error entry.  This is the
+! point of the block and it is literal, not inferred:
+!
+!   (a) EXIC to that class must NOT interrupt.
+!       The setup plants the class's own error label into the interrupt
+!       table entry I62ITE ("LVI,$X1,I626n / SVA,$X1,I62ITE"), zeroes
+!       $IND and $MASK, and issues "EXIC,I62PSI".  If an interruption
+!       happens, control lands on I626n = "SIC,SEN / B,SERS" with
+!       "-INT WHEN EXIC TO / -A <class> INSTR."  If it does not, the
+!       straight-line "BD,I626n+1" skips past the error entry.
+!   (b) The subject instruction must have EXECUTED.
+!       "LX,$X1,<reg>" reloads the register the subject was supposed to
+!       change, then "SIC,SEN / B{Z}XVZ,SERS" with
+!       "-SUBJ INST WAS <class> / -AND WAS NOT EXECUTED."
+!   (c) The PSEUDO-INSTRUCTION COUNTER must have been STEPPED by the
+!       SUBJECT'S LENGTH.  "KV,$X2,I62PSI / SIC,SEN / BZXE,SERS" with
+!       "-PSEUDO IC NOT STEPPED <n> CORRECTLY / -WHEN SUBJ INST WAS
+!       <class>."
+!
+! RULE (c) IS THE WHOLE DIFFERENCE FROM TEST 1B.  TEST 1B
+! (verify_ax5b_162_test1b_listing.py) sweeps the same five classes for
+! plain EX with only (a) and (b).  Plain EX has no pseudo-instruction
+! counter to step.  Reference Manual printed p.50 (PDF p.53; PDF page =
+! printed page + 3), read at 400 dpi for this file:
+!
+!   EXECUTE (EX): "Bits 0-18 of the effective address form the address
+!   of the location of a subject instruction that is fetched and
+!   executed."
+!
+!   EXECUTE INDIRECT AND COUNT (EXIC): "Bits 0-18 of the full-word
+!   addressed by bits 0-17 of the effective address are used as a
+!   pseudo-instruction counter.  The contents of the pseudo-instruction
+!   counter address the location of a subject instruction that is
+!   fetched and executed.  After the subject instruction has been
+!   fetched but prior to its execution, the pseudo-instruction counter
+!   is stepped.  If the subject instruction is half-length, the
+!   pseudo-instruction counter is stepped once; if full-length, twice."
+!
+! So the third rule exists BECAUSE EXIC has a pseudo-IC; it is not an
+! extra check bolted onto the same shape.  And the deck makes the
+! manual's "once / twice" executable: the four half-length classes check
+! .32 (one half-word), and the FULL WD VFL class -- whose subject
+! I62EXV is the full-word "L(BU),I00O" -- checks 1.0 (one full word):
+!
+!   023733.00  V+I,$X2,0.32   "-PSEUDO IC NOT STEPPED .32 CORRECTLY"
+!   023772.40  V+I,$X2,1.0    "-PSEUDO IC NOT STEPPED 1.0 CORRECTLY"
+!
+! TWO IDIOMS FOR RULE (c), AND THE DECK USES BOTH.  DIR IX, the first
+! class, checks the pseudo-IC ABSOLUTELY -- it never saves the "before"
+! value, and instead builds the expected "after" value from the label:
+!
+!   023720.40  LVI,$X1,I62SUB+.32     24324.43 01
+!   023721.00  KV,$X1,I62PSI          24323.02 90
+!
+! The other four check it RELATIVELY -- "LV,$X2,I62PSI" copies the
+! pseudo-IC into $X2 BEFORE the EXIC, "V+I,$X2,<step>" adds the expected
+! step AFTER it, and "KV,$X2,I62PSI" compares.  Both idioms are printed
+! in this file's rows, which is why both are transcribed verbatim.
+!
+! THE HALF-WORD DIFFERENCE, RECORDED BECAUSE IT IS EASY TO "TIDY" AWAY.
+! Each class's setup zeroes exactly the registers its subject writes:
+! DIR IX and IMMED IX do "Z,$X1"; MISC does NOT (its subject IS "Z,$X1",
+! so a nonzero value afterwards is the failure, and p.101 accordingly
+! uses BZXVZ there); FLT PT does "Z,$L / Z,$R"; FULL WD VFL does "Z,$R"
+! only.  Do not normalise.
+!
+! ------------------------------------------------------------------
+! EVERY ERROR MESSAGE AND HEADING IN THIS FILE'S RANGE, VERBATIM
+! ------------------------------------------------------------------
+!   023705.00  "-TEST 2B, CHK EXIC OF NON BRANCH"
+!   023705.40  "-CLASS INSTRUCTIONS, DIR IX."
+!   023716.00  "-INT WHEN EXIC TO"
+!   023716.40  "-A DIR IX INSTR."
+!   023717.40  "-DIR IX WAS SUBJ INST."
+!   023720.00  "-SUBJ INST OF EXIC NOT EXECUTED."
+!   023721.40  "-PSEUDO IC NOT STEPPED .32 CORRECTLY"
+!   023722.00  "-WHEN SUBJ INST WAS DIR IX."
+!   023722.40  "-IMMED IX."
+!   023730.40  "-INT WHEN EXIC TO"
+!   023731.00  "-AN IMMED IX INST."
+!   023732.00  "-SUBJ INST WAS IMMED IX,"
+!   023732.40  "-AND WAS NOT EXECUTED."
+!   023734.00  "-PSEUDO IC NOT STEPPED .32 CORRECTLY"
+!   023734.40  "-WHEN SUBJ INST WAS IMMED IX."
+!   023735.00  "-MISC"
+!   023770.00  "-INT WHEN EXIC TO A"
+!   023770.40  "-FULL WD VFL INSTR."
+!   023771.40  "-SUBJ INST WAS FLT PT"
+!   023772.00  "-AND WAS NOT EXECUTED."
+!   023773.40  "-PSEUDO IC NOT STEPPED 1.0 CORRECTLY"
+!   023774.00  "-WHEN SUBJ INST WAS VFL FULL WD."
+!   023776.00  "-TO SSIP."
+!   023777.00  "-UPDATE CONTINUITY CHECK."
+!
+! TYPO vs SCAN DAMAGE: NEITHER.  NOT ONE GARBLED GLYPH IN 76 ROWS.  Read
+! at 600 dpi, every character above is a clean, well-inked print; no
+! letter is ragged (damage) and none is a clean wrong letter in a word
+! whose other instances are right (typo).  What the block DOES have is
+! three CLEAN-PRINT DECK-AUTHORING inconsistencies, which are a
+! different thing and are recorded, not corrected:
+!
+!   1. 023771.40 "-SUBJ INST WAS FLT PT" stands in the FULL WD VFL
+!      class.  Its own pseudo-IC message two rows later was updated
+!      ("-WHEN SUBJ INST WAS VFL FULL WD.") and this one was not.  The
+!      clone-and-edit runs the other way on p.101, where the MISC and
+!      FLT PT pseudo-IC messages still say "IMMED IX".
+!   2. 023735.00 "-MISC" has NO trailing period, where every sibling
+!      class heading has one ("-IMMED IX.", "-FLT PT.", "-FULL WD VFL.").
+!      Checked on a tight 600 dpi crop of that one row: the C of MISC is
+!      the last ink in the comment column, nothing follows it.  The
+!      period on this chain is not a faint mark that could be lost -- it
+!      segments as a ~29 px blob at 600 dpi.
+!   3. 023732.00 "-SUBJ INST WAS IMMED IX," ends in a COMMA, where the
+!      matching MISC and FLT PT rows on p.101 end in nothing and the DIR
+!      IX row ends in a period.  Settled by the DESCENDER: the glyph
+!      hangs below the baseline, and "-AN IMMED IX INST." one row above
+!      ends in a period that does not.
+!
+! ------------------------------------------------------------------
+! THE EXIT IS NOT THE SAME EXIT verify_ax5b_162_test3b_listing.py HAS
+! ------------------------------------------------------------------
+! 023774.40-024000.00 is the same five-row exit shape plus a continuity
+! bridge, but THREE FIELDS DIFFER from the copy at 024162.40-024166.00:
+!
+!   here 023775.00  BD,I6260        there 024163.00  BD,I62100
+!   here 023777.40  V+,$X13,BIT5    there 024165.40  V+,$X13,BIT8
+!   here 023777.00  "-UPDATE CONTINUITY CHECK."
+!                                   there 024165.00  "-UPDATE CONTINUITY."
+!
+! BIT5 vs BIT8 is the continuity mask bit for THIS test rather than for
+! the routine; BD,I6260 is the restart link back to TEST 2B's own entry
+! rather than to TEST 3A's.  Do not merge the two.
+!
+! ------------------------------------------------------------------
+! ENCODING ONLY, and it could not be otherwise.  Rule (a) works by
+! planting a handler address into the interrupt-table entry and awaiting
+! an interruption, so a run needs the 64-word table, I60S1/I60SX1, and
+! the I62EX* subject constants -- and EXIC is not EXECUTED by this model
+! at all.  It is in MISC_CODES, so the ASSEMBLER encodes it; that is the
+! whole distinction.
+!
+! Transcription standard: bit-exact against the printed machine code,
+! verify_ax5b_162_test2b_head_tail_listing.py.
+
+! ==================================================================
+! HEAD -- PDF p.99 whole, plus its five-row spill onto PDF p.100.
+! ==================================================================
+        SLC, (8)23705.00
+!
+! ---- TEST 2B entry; DIR IX class: the setup ----------------------
+I6260  LVI, $X1, I62INT          ! -TEST 2B, CHK EXIC OF NON BRANCH
+        SV,  $X1, $IA             ! -CLASS INSTRUCTIONS, DIR IX.
+        LVI, $X1, I6261           ! this class's rule-(a) error entry
+        SVA, $X1, I62ITE          ! plant it in the interrupt-table entry
+        LVI, $X1, I6262           ! this class's rule-(b) error entry
+        SVA, $X1, I62BR1
+        SVA, $X1, I62BR2
+        LVI, $X1, I62SUB
+        SVA, $X1, I62PSI          ! aim the pseudo-IC at the subject slot
+        LX,  $X1, I62EX           ! the DIR IX subject instruction
+        SX,  $X1, I62SUB
+        SIC, I60SX1
+        B,   I60S1                ! 1260's clear-indicators subroutine
+        Z,   $IND
+        Z,   $MASK
+        Z,   $X1                  ! the subject will make it nonzero
+        EXIC, I62PSI
+        BD,  I6262                ! no interrupt: skip the rule-(a) entry
+!
+! ---- DIR IX class: rule (a) --------------------------------------
+I6261  SIC, SEN                   ! -INT WHEN EXIC TO
+        B,   SERS                  ! -A DIR IX INSTR.
+!
+! ---- DIR IX class: rules (b) and (c) -----------------------------
+I6262  LX,  $X1, $X1
+        SIC, SEN                   ! -DIR IX WAS SUBJ INST.
+        BXVZ, SERS                 ! -SUBJ INST OF EXIC NOT EXECUTED.
+        LVI, $X1, I62SUB+.32       ! the ABSOLUTE idiom: expected after
+        KV,  $X1, I62PSI
+        SIC, SEN                   ! -PSEUDO IC NOT STEPPED .32 CORRECTLY
+        BZXE, SERS                 ! -WHEN SUBJ INST WAS DIR IX.
+!
+! ---- IMMED IX class: the setup -----------------------------------
+        LVI, $X1, I6263           ! -IMMED IX.
+        SVA, $X1, I62ITE
+        LVI, $X1, I62SUB
+        SVA, $X1, I62PSI
+        LX,  $X1, I62EXI          ! the IMMED IX subject instruction
+        SX,  $X1, I62SUB
+        Z,   $IND
+        Z,   $MASK
+        Z,   $X1
+        LV,  $X2, I62PSI          ! the RELATIVE idiom: pseudo-IC BEFORE
+        EXIC, I62PSI
+        BD,  I6264
+!
+! ---- IMMED IX class: rule (a) ------------------------------------
+I6263  SIC, SEN                   ! -INT WHEN EXIC TO
+        B,   SERS                  ! -AN IMMED IX INST.
+!
+! ---- IMMED IX class: rules (b) and (c) ---------------------------
+I6264  LX,  $X1, $X1
+        SIC, SEN                   ! -SUBJ INST WAS IMMED IX,
+        BXVZ, SERS                 ! -AND WAS NOT EXECUTED.
+        V+I, $X2, 0.32             ! one half-word: the subject is half-length
+        KV,  $X2, I62PSI
+        SIC, SEN                   ! -PSEUDO IC NOT STEPPED .32 CORRECTLY
+        BZXE, SERS                 ! -WHEN SUBJ INST WAS IMMED IX.
+!
+! ---- MISC class: the setup; its error entries are on PDF p.101 ---
+!   Note it does NOT do "Z,$X1": the MISC subject IS "Z,$X1", so a
+!   nonzero index value afterwards is the failure, which is why p.101's
+!   rule-(b) row is BZXVZ and not BXVZ.
+        LVI, $X1, I6265           ! -MISC        (no trailing period, sic)
+        SVA, $X1, I62ITE
+        LVI, $X1, I62SUB
+        SVA, $X1, I62PSI
+        LX,  $X1, I62EXM          ! the MISC subject instruction
+        SX,  $X1, I62SUB
+! ---- PDF p.100 begins here; it prints these five rows and nothing else
+        Z,   $IND
+        Z,   $MASK
+        LV,  $X2, I62PSI
+        EXIC, I62PSI
+        BD,  I6266
+
+! ==================================================================
+! TAIL -- PDF p.102.  The FULL WD VFL class's three error entries and
+! routine 1262's TEST 2B exit.  023742.40-023767.40 in between is
+! programs/ax5b_162_exic_classes.strap.
+! ==================================================================
+        SLC, (8)23770.00
+!
+! ---- FULL WD VFL class: rule (a) ---------------------------------
+I6269  SIC, SEN                   ! -INT WHEN EXIC TO A
+        B,   SERS                  ! -FULL WD VFL INSTR.
+!
+! ---- FULL WD VFL class: rules (b) and (c) ------------------------
+!   The subject I62EXV is "L(BU),I00O", a FULL-LENGTH instruction, so
+!   the pseudo-IC must step TWICE -- 1.0, not .32.  This row is the
+!   whole reason p.101 alone cannot settle the stepping rule.
+I6270  LX,  $X1, $R
+        SIC, SEN                   ! -SUBJ INST WAS FLT PT   (stale, sic)
+        BXVZ, SERS                 ! -AND WAS NOT EXECUTED.
+        V+I, $X2, 1.0              ! one FULL WORD
+        KV,  $X2, I62PSI
+        SIC, SEN                   ! -PSEUDO IC NOT STEPPED 1.0 CORRECTLY
+        BZXE, SERS                 ! -WHEN SUBJ INST WAS VFL FULL WD.
+!
+! ---- routine 1262's TEST 2B exit ---------------------------------
+        B,   $+1.0                 ! computed target 023775.40; BIT 18 SET
+        BD,  I6260                 ! the restart link: TEST 2B's own entry
+        SIC, SEN0+.32
+        B,   SSW                   ! -TO SSIP.
+        BD,  $+.32
+!
+! ---- the continuity bridge ---------------------------------------
+        LX,  $X13, IC262          ! -UPDATE CONTINUITY CHECK.
+        V+,  $X13, BIT5           ! TEST 2B done = bit 5
+        SX,  $X13, IC262
+!
+! ---- externals, SYN'd at the addresses this same deck prints -----
+!   THESE ARE INPUTS TO THE CHECK, NOT WITNESSES.  No label row
+!   defining any of them appears on PDF pp.99/100/102; every address
+!   below comes from an OPERAND field or from another page.  See the
+!   verify script's docstring for the tiering.
+SEN     SYN, (8)1310.0             ! the SIC error-entry link
+SERS    SYN, (8)1304.0             ! the error-report routine
+SEN0    SYN, (8)1311.0             ! measured on PDF p.102: the DIGIT zero
+SSW     SYN, (8)1301.0             ! -TO SSIP.
+I60S1  SYN, (8)22741.0            ! 1260's clear-indicators subroutine
+I60SX1 SYN, (8)23041.0            ! its SIC return link
+I62INT SYN, (8)24220.0            ! the 64-word interrupt table
+I62ITE SYN, (8)24320.0            ! the interrupt-table entry 1262 plants
+I62EX  SYN, (8)24322.0            ! the DIR IX subject
+I62PSI SYN, (8)24323.0            ! the pseudo-IC word
+I62BR1 SYN, (8)24323.40           ! the RIGHT half of I62PSI's word
+I62SUB SYN, (8)24324.0            ! the subject-instruction slot
+I62BR2 SYN, (8)24325.0
+I62EXM SYN, (8)24331.0            ! the MISC subject
+I62EXI SYN, (8)24332.0            ! the IMMED IX subject
+IC262  SYN, (8)24171.0            ! 1262's continuity register
+BIT5   SYN, (8)24527.0            ! the BIT table's bit 5 word
+I6265  SYN, (8)23742.40           ! MISC rule (a), PDF p.101
+I6266  SYN, (8)23743.40           ! MISC rule (b), PDF p.101
+        END, I6260

@@ -4421,6 +4421,77 @@ run "I-Box 5 routine 1262 TEST 1B: EX of each class (jb_ax5b PDF pp.90-91)" pyth
 # fault; 14 is the only number in 0-63 the table does not hold.
 
 run "I-Box 5 routine 1262 TEST 2B, EXIC by class (jb_ax5b PDF p.101)" python3 verify_ax5b_162_exic_listing.py
+run "I-Box 5 routine 1262 TEST 2B: the two ends around it (jb_ax5b PDF pp.99-100, 102)" python3 verify_ax5b_162_test2b_head_tail_listing.py
+# THE SECTION ABOVE IS THE MIDDLE OF THIS TEST; these are its ends.
+# 76 rows, 023705.00-023742.00 and 023770.00-024000.00.  76 + the
+# sibling's 43 = 119, and 023705.00 through 024000.00 inclusive IS 119
+# half-words -- so TEST 2B is now covered end to end with no hole.  The
+# overlap was checked on the ASSEMBLED IMAGE rather than the row lists:
+# of the words between the two segments only 023742 exists, as the left
+# half of this file's last head row.
+#
+# WHAT THE "THREE RULES PER CLASS" ACTUALLY ARE, established from the
+# pages rather than from a block map: (a) the EXIC must NOT INTERRUPT;
+# (b) the subject must have EXECUTED; (c) the PSEUDO-INSTRUCTION
+# COUNTER must be stepped BY THE SUBJECT'S LENGTH.
+#
+# AND THE DIFFERENCE FROM TEST 1B's TWO RULES IS STRUCTURAL, NOT
+# ADDITIVE.  Plain EX has no pseudo-IC at all, so rule (c) CANNOT exist
+# for it -- 1B sweeps the same five classes with (a) and (b) only.
+# Whoever implements EXIC after EX is adding a counter, not a check.
+#
+# THE DECK MAKES THE MANUAL'S "ONCE / TWICE" EXECUTABLE.  Printed p.50:
+# "If the subject instruction is half-length, the pseudo-instruction
+# counter is stepped once; if full-length, twice."  The four
+# half-length classes check "V+I,$X2,0.32"; the FULL WD VFL class,
+# whose subject is the full-word "L(BU),I00O", checks "V+I,$X2,1.0" at
+# 023772.40 against "-PSEUDO IC NOT STEPPED 1.0 CORRECTLY / -WHEN SUBJ
+# INST WAS VFL FULL WD."  Printed codes 0.45 05 against 1.05 05.
+#
+# TWO IDIOMS FOR RULE (c), and DIR IX is the odd one out: it checks the
+# pseudo-IC ABSOLUTELY, with no before-snapshot and no $X2, while the
+# other four take a before-snapshot and add.  Both are here.
+#
+# THE STAR BIT-18 DECODE, because it is the cleanest in the repo:
+# I62PSI and I62BR1 are the TWO HALVES OF THE SAME WORD 024323,
+# distinguished by nothing but bit 18.  "SVA,$X1,I62BR1" prints
+# 24323.43 D0 (pair 43, bit 18 = 1) against "SVA,$X1,I62PSI" printing
+# 24323.03 D0 -- same word, same J, same op byte, one bit.
+#
+# BRANCH POLARITY SETTLED BY ARITHMETIC, and BOTH SHAPES ARE HERE:
+# BXVZ,SERS prints 1304.31 42, and hex 42 gives branchOn = 1, so it
+# branches when XVZ is ON; BZXE,SERS prints 1304.32 C0, branchOn = 0.
+# That is the right way round -- rule (b) errors when the reloaded
+# index value IS zero (the subject never ran), rule (c) errors when the
+# KV came out UNEQUAL.  Note the trailing Z of "BXVZ" is part of the
+# INDICATOR NAME XVZ, not a clear: the clear bit is 0 in both bytes.
+#
+# NOT ONE GARBLED GLYPH IN 76 ROWS -- no ragged letter, no clean wrong
+# letter.  What the block has instead is three clean-print DECK
+# AUTHORING inconsistencies, recorded not corrected: 023771.40 says
+# "-SUBJ INST WAS FLT PT" while standing in the FULL WD VFL class (its
+# own rule-(c) message two rows later WAS updated, so clone-and-edit
+# ran one way here and the other way on p.101); "-MISC" alone lacks a
+# trailing period; and 023732.00 ends in a COMMA, settled by the
+# descender against the period one row above.
+#
+# Six injections.  The sixth is a MEASURED NULL WITH A LIVENESS PROOF,
+# a sharper form than this project's usual null -- see docs/NEXT.md's
+# traps.  Masking bit 18 off for LX/SX moved ZERO of the 11 LX/SX rows;
+# under the SAME patch a constructed "LX,$X1,I62SUB+.32" moves
+# 024324.42 -> 024324.02.  So the encoder demonstrably moved by exactly
+# bit 18 and the data simply cannot reach it.
+#
+# THAT NULL EXPOSED A LATENT ASSEMBLER GAP, recorded in docs/NEXT.md
+# 5d and deliberately NOT fixed: strap_asm.py does not enforce printed
+# p.23's 18-bit rule for LX/SX, so "LX,$X1,<label at a .40>" encodes
+# bit 18 = 1, which no 7030 LX can mean.  A sweep of every ROWS tuple
+# in every verify file parses 453 LX/SX rows and finds ZERO with bit 18
+# set, so it bites nothing.  Not fixed because the manual says what the
+# HARDWARE ignores, not what STRAP-1 EMITTED -- truncating, erroring
+# and emitting-as-written are all defensible and no listing row decides
+# it.
+
 # ROUTINE 1262 IS THE DECK ORACLE FOR EX/EXIC, the highest-leverage
 # unimplemented instruction in this model -- routine 1268 cases 1B/1C
 # and routine 1260 blocks 16084/16085 all wait on it.  43 half-words,
