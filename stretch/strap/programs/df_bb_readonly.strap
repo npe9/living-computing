@@ -1,0 +1,294 @@
+! DF'S FIFTH CLASS-1 SITE: a READ-ONLY BRANCH ON BIT against a
+! protected word.  The four DF programs beside this one cover p.32's
+! class 1 "effective address of all fetch-type operations with a direct
+! address" for the four instruction FORMATS; this is the site the
+! manual gives BRANCH ON BIT by name, and until now the model raised
+! neither DS nor DF for it.
+!
+! THE RULE, Reference Manual printed p.52 (PDF 55 -- PDF page =
+! printed page + 3), read first-hand at 300 dpi.  The sentence wraps
+! into the first two lines of printed p.53, which is where clause 3
+! ends ("...zero.  Indicator DF is actuated but does not cause
+! suppression of the instruction."):
+!
+!   "Another example is that, since a protected effective bit address
+!   in BRANCH ON BIT could result in the destruction of information,
+!   alert DS or DF may occur if:
+!     1. The addressed bit is not specified to remain unconditionally
+!        unchanged; that is, bits 60 and 61 of the instruction are not
+!        both zero.  The instruction is suppressed without a test of
+!        the addressed bit, and indicator DS is actuated.
+!     2. The addressed bit is specified to remain unconditionally
+!        unchanged, and the DF mask bit is one.  The instruction is
+!        suppressed without a test of the addressed bit, and indicator
+!        DF is actuated.
+!     3. The addressed bit is specified to remain unconditionally
+!        unchanged, and the DF mask bit is zero.  Indicator DF is
+!        actuated but does not cause suppression of the instruction."
+!
+! BITS 60 AND 61 ARE THE ASSEMBLER'S MNEMONIC SUFFIX.  StretchDecode
+! takes modAbc from w[3:1] and IBM bit n is BSV bit 63-n, so IBM 60-61
+! are the two bit-change bits and IBM 62 is the branch condition.  Zero
+! for both means "leave the bit alone", which is BB and BZB; BB1, BBZ
+! and BBN (and their BZ forms) are the modifying ones.  So clause 1 is
+! exactly the instructions ds_terminates_branch.strap already covers
+! and clauses 2 and 3 are the ones nothing covered.
+!
+! THE SECOND FINDING, and it is a CORRECTION rather than new coverage.
+! Clauses 1 and 2 both say the instruction is "suppressed WITHOUT A
+! TEST OF THE ADDRESSED BIT".  The model suppressed clause 1's branch
+! and its bit change, but it still computed the branch condition from
+! the tested bit and still signalled IF from the branch target of an
+! instruction p.52 says was never decided.  The same page forbids that
+! in so many words for the AD case: "an invalid effective bit address
+! in BRANCH ON BIT causes the actuation of indicator AD and the
+! suppression of the instruction, since no bit can be tested to
+! complete its execution.  Indicator IF cannot be actuated."  Block E
+! below is the one that witnesses it, and it is the only block whose
+! subject is an instruction the model already handled.
+!
+! WHAT SUPPRESSION LEAVES BEHIND, p.52 again, item 3 of the list of
+! what "the suppression of an instruction must necessarily exclude":
+! "The stepping of the instruction counter."  Blocks C and E rely on
+! it -- control reaches the check after the suppressed instruction, it
+! does not stall or repeat.  Item 1 of the same list, "the actuation of
+! those indicators, associated with the instruction, of Class S, and
+! indicators DF and IF when their mask bits are zero", is why the
+! indicator is asserted ON in every block that also asserts
+! suppression.
+!
+! WEAKER STANDARD: hand-written from the manual.  jb_ax5b routine 1260
+! TEST 8C is the deck oracle for DF and IF under the enable and mask
+! bits (transcribed as ax5b_160_test8c.strap), but every case in it is
+! a FETCH or an instruction fetch; none of the four uses BRANCH ON BIT
+! as the offending reference, so p.52's three clauses have no deck test
+! in this corpus.  Said here rather than left to be assumed.
+!
+! THE SET-UP PLANTS ITS BIT WHILE DISABLED, for the reason
+! ds_terminates_branch.strap gives: p.32, "when the interruption system
+! is disabled, address monitoring is ineffective... the DS, DF and IF
+! indicators cannot be turned on when the system is disabled."  That is
+! what lets the program put a one into a word it is about to protect.
+!
+! THE NOPS ARE NOT PADDING.  Blocks C and E report by INTERRUPTING, and
+! this model takes an interruption at a quiescent boundary rather than
+! at the instruction boundary p.48 names; the NOPs are the slack.  The
+! markers are words 6 (DS) and 7 (DF), both inside p.31's 0-31
+! carve-out, so a marker store can never itself signal.
+!
+! EIGHT INJECTIONS, EACH OBSERVED (not predicted).  Each was applied to
+! a pristine snapshot of StretchExecute.bsv by an exact-string
+! substitution that aborts unless the old text occurs exactly once, and
+! the resulting diff was printed before the run -- because a `sed` that
+! silently fails to match prints ALL TESTS PASSED, which reads exactly
+! like an honest "this does not discriminate".  Reproduce any row with
+! `python3 line_addresses.py programs/df_bb_readonly.strap`.
+!
+!   the dfSignal call removed from the    -> 4266  004125.00
+!     arm (clause 3's indicator)               BZB, 7.0, $ (C)
+!                                              -- no indicator, so no
+!                                                 interruption, so DF's
+!                                                 routine never ran:
+!                                                 p.52 item 1 violated
+!   the dfSuppresses term dropped from    -> 4591  004367.40
+!     noTest (clause 2's suppression)          BEW, $ at WRONG
+!                                              -- the branch was taken
+!   dfSuppresses -> protViolates in       -> 4278  004133.00
+!     noTest (the MASK gate dropped)           B, $ (D)
+!                                              -- suppressed at mask 0,
+!                                                 which is why block D
+!                                                 exists at all
+!   the mask gate ADDED to the dfSignal   -> 4279  004133.40
+!     call, which collapses clause 3 into      BZB, $DF, $ (D)
+!     clause 2 (`!changes && maskedOn(st,      -- the mutation clause 3
+!     ind_DF)`)                                   exists to forbid, and
+!                                                 the ONLY one block D's
+!                                                 indicator check sees
+!   the `!changes` gate dropped from the  -> 4303  004147.40
+!     dfSignal call (DF for a modifying        BB, $DF, $ (E)
+!     BB as well)
+!   dfSignal -> a direct ind_DS setBit    -> 4266  004125.00
+!     at the new site (the 19/20 swap)         BZB, 7.0, $ (C)
+!                                              -- DS ran DS's routine
+!                                                 and marked word 6, so
+!                                                 word 7 stayed clear
+!   takeBranch -> wouldBranch at the      -> 4305  004150.40
+!     ifSignal call (finding 2)                BB, $IF, $ (E)
+!   takeBranch -> wouldBranch at the      -> 4591  004367.40
+!     `next = tgt` line                        BEW, $ at WRONG
+!
+! Every one halted, none survived, and the clean run's PASS is at
+! half-word 4313 (004154.40).
+!
+! WHICH CHECKS ARE NOT REACHED BY ANY ROW, said rather than left to be
+! found.  Block D's `BB, 6.0, $` is belt-and-braces: the DF/DS swap is
+! caught six rows earlier at 4266, in block C, because DS is
+! permanently masked on and runs DS's routine instead of DF's.  And the
+! last row halts in block C, so block E's own BRANCH suppression -- the
+! DS half, which predates this change -- is not separately observed
+! here; ds_terminates_branch.strap is what holds that.
+!
+! ONE CONSEQUENCE OF THE SAME CORRECTION THAT NOTHING HERE OBSERVES.
+! `ifSuppress` gates the BIT CHANGE as well as the branch, and it was
+! computed from `wouldBranch`.  So for a MODIFYING BB whose data word
+! and whose branch target are both protected, with IF's mask bit ONE,
+! the old arm set ifSuppress, skipped the whole bit-change block, and
+! thereby lost clause 1's DS actuation altogether; reading ifSuppress
+! off `takeBranch` restores it.  It is the same root cause as the IF
+! finding above -- the arm conflated "the bit said branch" with "the
+! machine was allowed to look" -- and it is an improvement, but block E
+! runs IF's mask at ZERO on purpose (a mask of one would re-route the
+! `takeBranch -> wouldBranch` injection away from `BB, $IF, $` and
+! weaken the row that witnesses the finding), so a separate block would
+! be needed to witness it.  Untested, and stated as such.
+!
+! Instructions: BD, BE, LVI, SV, BB, BB1, BBZ, BZB, B, NOP, BEW -- all
+! implemented.
+
+        SLC, (8)4100.0
+START   BD,  $+.32                   ! disable: monitoring is ineffective
+        BB1, PROT.0, $+1.0           ! plant bit 0 of PROT while the store
+                                     !   can still land
+        BZB, PROT.0, $               ! hang if it did not land
+        LVI, $X13, TBL
+        SV,  $X13, $IA
+        LVI, $X13, PROT
+        SV,  $X13, $LB               ! lower boundary := PROT
+        LVI, $X13, ABOVE
+        SV,  $X13, $UB               ! upper boundary := ABOVE
+        BBZ, 3.57, $+1.0             ! control bit := 0: signal INSIDE
+!
+! ---- A. DISABLED: a read-only BB on a protected word is clean ----
+!   p.32's enable gate, which protViolates already carried and which
+!   this block therefore does not newly witness -- recorded as a
+!   control rather than discovered as a surviving injection.  It also
+!   proves the branch is taken in the ordinary case, so the "must
+!   branch" checks below are comparisons against a known-good one.
+        BB1, 12.20, $+1.0            ! DF's mask bit := ONE
+        BB,  PROT.0, OKA             ! read-only, protected -- but DISABLED
+        B,   $                       ! hang: nothing may be suppressed
+OKA     BB,  $DF,  $                 ! hang if DF lit while disabled
+        BE,  $+.32                   ! ENABLE: monitoring is now effective
+!
+! ---- B. ENABLED, MASK ONE, UNPROTECTED: still nothing ------------
+!   The mask bit alone must not suppress anything; the address has to
+!   signal too.  Word 7 is in p.31's 0-31 carve-out and can never be
+!   monitored, so this is the read-only BB that must behave exactly as
+!   it always did.
+        BB1, 7.2,  $+1.0             ! a carve-out bit, set to one
+        BB,  7.2,  OKB               ! read-only, unmonitored word
+        B,   $                       ! hang: wrongly suppressed
+OKB     BB,  $DF,  $                 ! hang if an unmonitored BB lit DF
+        BBZ, 7.2,  $+1.0             ! tidy the marker bit
+!
+! ---- C. ENABLED, MASK ONE: clause 2, SUPPRESSED ------------------
+!   "The addressed bit is specified to remain unconditionally
+!   unchanged, and the DF mask bit is one.  The instruction is
+!   suppressed without a test of the addressed bit, and indicator DF is
+!   actuated."  PROT.0 is ONE, so an unsuppressed BB would branch to
+!   WRONG; the branch not being taken is the whole witness, which is
+!   why WRONG is a halt and not a marker store.
+        BBZ, $DF,  $+1.0             ! start from DF off
+        BB,  PROT.0, WRONG           ! read-only, protected, mask 1
+        NOP
+        NOP
+        NOP
+        NOP
+        NOP
+        NOP
+        NOP
+        NOP
+        BZB, 7.0,  $                 ! hang if DF's routine did not run
+        BBZ, 7.0,  $+1.0
+        BB,  6.0,  $                 ! hang if DS's routine ran: clause 2
+                                     !   names DF, and DS is the neighbour
+                                     !   at 19 that a swapped constant
+                                     !   would light
+!
+! ---- D. ENABLED, MASK ZERO: clause 3, NOT suppressed -------------
+!   "...and the DF mask bit is zero.  Indicator DF is actuated but does
+!   not cause suppression of the instruction."  This is the half that
+!   makes the mask gate discriminating: without it, dropping
+!   dfSuppresses' mask term in favour of a bare protViolates changes
+!   nothing this program can see.
+        BBZ, 12.20, $+1.0            ! DF's mask bit := ZERO
+        BBZ, $DF,  $+1.0             ! start from DF off
+        BB,  PROT.0, OKD             ! read-only, protected, mask 0
+        B,   $                       ! hang: clause 3 forbids suppression
+OKD     BZB, $DF,  $                 ! hang if the reference did not light DF
+        BB,  $IF,  $                 ! hang if it lit the NEIGHBOUR: DF is
+                                     !   20 and IF is 21, and without this
+                                     !   a swapped constant is
+                                     !   indistinguishable from removal
+        BB,  6.0,  $                 ! hang if DS's routine ran: clause 3
+                                     !   names DF only
+        BBZ, $DF,  $+1.0
+!
+! ---- E. ENABLED: clause 1, and "WITHOUT A TEST" ------------------
+!   "The addressed bit is not specified to remain unconditionally
+!   unchanged... The instruction is suppressed without a test of the
+!   addressed bit, and indicator DS is actuated."  BBZ branches on a
+!   one and clears the bit, and PROT.0 is one, so every part of this
+!   instruction is live: the branch, the bit change, and -- because the
+!   TARGET is inside the protected area too -- an IF signal from
+!   p.32's class 2.
+!
+!   ALL THREE MUST GO.  ds_terminates_branch.strap already holds the
+!   branch and the bit change; the IF is the new one, and it is the
+!   only observable difference "without a test of the addressed bit"
+!   has for an instruction the model already suppressed.  IF's mask bit
+!   is ZERO here (the reset value), so IF would set its indicator
+!   without interrupting -- which is precisely why a stale one would go
+!   unnoticed without this check.
+        BBZ, $IF,  $+1.0             ! start from IF off
+        BBZ, PROT.0, TGTIN           ! modifying, protected word AND
+                                     !   protected target: DS only
+        NOP
+        NOP
+        NOP
+        NOP
+        NOP
+        NOP
+        NOP
+        NOP
+        BZB, 6.0,  $                 ! hang if DS's routine did not run
+        BBZ, 6.0,  $+1.0
+        BB,  $DF,  $                 ! hang if a MODIFYING BB lit DF:
+                                     !   p.52 clause 1 actuates DS, and
+                                     !   an ungated dfSignal call would
+                                     !   light DF here as well
+        BB,  $IF,  $                 ! hang if a suppressed instruction
+                                     !   signalled IF from a branch it was
+                                     !   never allowed to decide
+        BB,  7.0,  $                 ! hang if DF's routine ran
+!
+!   ... and the bit change was suppressed too.  Read it back with the
+!   system DISABLED, so this check cannot itself signal.
+        BD,  $+.32
+        BZB, PROT.0, $               ! hang if the bit was cleared
+        B,   PASS
+PASS    BEW, $
+!
+! ---- the monitored area ------------------------------------------
+!   The area is the HALF-OPEN interval [PROT, ABOVE) (p.31), so PROT
+!   and TGTIN are protected and ABOVE is the first word outside it.
+        SLC, (8)4300.0
+PROT    DD(BU,64,8), 0               ! == the lower boundary
+        SLC, (8)4301.0
+TGTIN   BEW, $                       ! block E's target: must NOT arrive
+        SLC, (8)4302.0
+ABOVE   DD(BU,64,8), 0               ! == the upper boundary, first word out
+        SLC, (8)4367.40
+WRONG   BEW, $                       ! block C's target: must NOT arrive
+!
+! ---- the interruption table --------------------------------------
+!   Entry N is at TBL + N words (p.48).  DS is 19 and DF is 20.  Both
+!   entries exist even though only one fires per block: a missing entry
+!   runs off into unloaded storage instead of failing at a check.
+        SLC, (8)4500.0
+TBL     DD, 0
+        SLC, (8)4523.0
+DSRTN   BB1, 6.0, $+1.0              ! entry 19 = DS
+        SLC, (8)4524.0
+DFRTN   BB1, 7.0, $+1.0              ! entry 20 = DF (0o4500 + 0o24)
+        END, START

@@ -438,6 +438,120 @@ run "IF: the instruction-fetch address alarm (p.32 classes 1 and 2)" ./run_progr
 # words 1-3 -- the boundary registers themselves -- whose contents
 # would then execute.  The model does not raise AD there either.
 
+run "DF class 1's FIFTH site: read-only BRANCH ON BIT (p.52)" ./run_program.sh programs/df_bb_readonly.strap StretchDfBbRoTb \
+    "PC=4313"          # 004154.40; hand-written from the manual, no deck oracle
+# THE SITE THE PREVIOUS COMMIT DISCOVERED WAS MISSING.  Printed p.52
+# gives BRANCH ON BIT three clauses, and the model had none of them:
+#   1. bits 60 and 61 NOT both zero -> "The instruction is suppressed
+#      without a test of the addressed bit, and indicator DS is
+#      actuated."   (storeViolates existed; see the finding below)
+#   2. both zero and the DF mask bit ONE -> suppressed, DF actuated.
+#   3. both zero and the DF mask bit ZERO -> "Indicator DF is actuated
+#      but does not cause suppression of the instruction."
+# Clause 3 is why this was a gap in the INDICATOR and not only in the
+# suppression: a read-only BB on a protected word raised NOTHING.
+#
+# THE ENCODING IS CHECKED AGAINST THE DECODER, NOT INFERRED.
+# StretchDecode takes modAbc = w[3:1], and IBM bit n is BSV bit 63-n,
+# so modAbc[2:1] IS IBM bits 60-61 and modAbc[0] is IBM 62, the branch
+# condition.  p.52's "not both zero" is literally the arm's existing
+# `changes`, read from the other side.
+#
+# AND IT FOUND A SECOND BUG, which is why the brief asked whether
+# clause 1 already matched.  IT DID NOT.  The model suppressed clause
+# 1's branch and bit change but still COMPUTED THE BRANCH CONDITION
+# FROM THE TESTED BIT, and then signalled IF from the branch target of
+# an instruction p.52 says was never decided -- the same page's AD
+# sentence forbids exactly that shape ("suppressed ... since no bit can
+# be tested to complete its execution.  Indicator IF cannot be
+# actuated.").  Fixed by splitting `wouldBranch` (the bit said branch)
+# from `takeBranch = wouldBranch && !noTest` (the machine was allowed
+# to look), and reading everything downstream off takeBranch.
+# MEASURED, not argued: reverting that one call halts at 004150.40.
+#
+# Eight injections, every halt address OBSERVED, none survived.  They
+# were applied by a helper that ASSERTS THE OLD TEXT OCCURS EXACTLY
+# ONCE and PRINTS THE DIFF before running -- no sed, because a silent
+# no-match is indistinguishable from a measured null.
+#
+# THE REGRESSION THAT NEARLY HAPPENED AND DID NOT, worth keeping: the
+# mask register resets to 0xFFFFF000_00000000, so DF's mask bit 20 is
+# ZERO by default.  ds_terminates_branch.strap block 1 is a read-only
+# BB on a protected word with the system enabled -- it now takes clause
+# 3, sets DF, and still branches.  Had the reset been mask-one it would
+# have been suppressed and hung.
+#
+# ONE OBSERVABLE OF THE SAME ROOT CAUSE IS STILL UNTESTED and is said
+# so rather than left to be found: `ifSuppress` also gates the bit
+# change, so a modifying BB with a protected data word AND a protected
+# target AND IF's mask at one used to lose clause 1's DS actuation
+# entirely.  Reading ifSuppress off takeBranch restores it, but block E
+# runs IF's mask at ZERO deliberately (a mask of one would re-route the
+# injection that witnesses the finding above), so this needs its own
+# block.
+
+run "DF SUPPRESSED on a refill address: R, RCZ, CBR, V+CR, V+ICR, V-ICR (p.32 class 3)" ./run_program.sh programs/df_refill_suppress.strap StretchDfRfSuppTb \
+    "PC=4443"          # 004255.40; hand-written to TEST 8C's shape, not a transcription
+# THE OTHER HALF OF THE PREVIOUS COMMIT'S "plain gap with no excuse".
+# Six of the eleven class-3 refill sites now suppress: CBR/CBRZ, V+CR,
+# V+ICR, V-ICR, and R/RCZ on both their index-register and
+# external-memory paths.
+#
+# THE FIVE PROGRESSIVE-INDEXING SITES ARE UNTOUCHED, and the line
+# between them got a STRUCTURAL confirmation nobody expected.  Printed
+# p.53's "An alert of Class S during progressive indexing suppresses
+# only the indexing portion of the operation" is not merely a different
+# rule -- it is item 3 under "EXECUTION TERMINATED", on the facing
+# column from "Execution Suppressed".  Terminate, not suppress.  The
+# two mechanisms are separated by the manual's own headings.
+#
+# AND printed p.52 TURNS OUT TO BE A BETTER SOURCE THAN p.45 FOR THE
+# HARD HALF.  p.45 leaves open whether a suppressed count-branch-refill
+# still BRANCHES.  p.52 works this exact case by name: if a STORE
+# INSTRUCTION COUNTER IF COUNT, BRANCH AND REFILL runs as an EXECUTE
+# subject with the refill address protected, "the entire subject
+# instruction is still suppressed but only indicator DF is actuated ...
+# Indicator DF is actuated since THE TEST FOR THE REFILLING IS
+# INDEPENDENT OF THE TEST FOR A SUCCESSFUL BRANCH."  It does not
+# branch -- and it endorses the shape the model already had, with
+# doRefill computed from the count alone and never from `take`.
+#
+# ONE SITE NEEDED MORE THAN A ONE-LINE GATE.  In evalBranch the test
+# had to move BEFORE the prefetch bail-out: inserting it beside the
+# dfSignal call would still have ISSUED the refill read and landed the
+# word in prefetch[slot] before skipping the arm.  That is a
+# control-flow reshape of a function SIC shares, which is why four
+# extra regressions were run (StretchIboxSicTb, StretchIboxSpanTb,
+# StretchIboxCbrTb, StretchMaskTb) on top of the fourteen expected.
+#
+# NINE INJECTIONS, NONE SURVIVED -- AND A TENTH THAT DID, recorded as a
+# bounded gap in the TEST rather than dressed up.  Making the evalBranch
+# suppression fire only on the second pass (so the read is issued, then
+# the arm skipped) yields ALL TESTS PASSED.  The bound is stateable: a
+# refill read writes no storage, sets no indicator, and the model
+# exposes no cycle or read count to the program, so the only trace is
+# the prefetch slot -- and its one consumer, SIC, requests its read
+# only `if (o.taken ...)`, which a suppressed CBRZ never is.  The
+# ordering is justified by p.45's "the fetch did not take place", not
+# by a test.
+#
+# THE INERTNESS SWEEP CAUGHT AN IDIOM THE PREVIOUS ONE WOULD HAVE
+# MISSED.  mask_register_fields.strap sets DF's mask bit in the OCTAL
+# spelling "BB1,(8)14.24" (word octal 14 = 12, bit octal 24 = 20),
+# which none of $MASK / BIT20 / 12.20 / LBIT20 matches.  Inert anyway
+# -- it never enables the system and issues no refill -- but the sweep
+# only found it because it looked for the value, not the spelling.
+#
+# ONE OPEN QUESTION LEFT IN THE CODE RATHER THAN DECIDED BY INVENTION:
+# on R/RCZ's external-memory path, if the OPERAND word is also
+# protected, the suppressed arm no longer reaches the DS signal it used
+# to set.  p.52 item 1 argues DS should still actuate; p.32's "if an
+# address ... is not actually used, it will not be monitored" argues it
+# should not.  No deck witnesses it and the inertness sweep shows no
+# program in the suite reaches the combination.  The uniform
+# "deliberately nothing at all" shape was taken to match the reviewed
+# class-1 sites, and it is reversible in one line.
+
 run "DF SUPPRESSED: the mask-dependent half (p.32/p.45 class 1)" ./run_program.sh programs/df_fetch_suppress.strap StretchDfSuppTb \
     "PC=4387"          # 004221.40; hand-written to TEST 8C's shape, not a transcription
 # THE HALF THAT WAS MISSING.  dfSignal has always turned the indicator

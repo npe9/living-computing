@@ -1,0 +1,443 @@
+! DF'S MASK-DEPENDENT HALF AT p.32'S CLASS 3 -- the refill does not
+! happen and the whole operation is SUPPRESSED.  The companion to
+! df_refill_alarm.strap and df_refill_index_alarm.strap, which run the
+! mask-ZERO case for the same six sites and scoped this one out because
+! the model had no suppression at those sites at all.
+!
+! THE CATEGORY, Reference Manual printed p.32 (PDF 35), read first-hand
+! at 300 dpi.  "Address monitoring for Data Fetch includes: ... 3. The
+! refill address used in index refill operations and the operations
+! REFILL and REFILL ON COUNT ZERO."  That is its own numbered class,
+! beside class 1's "effective address of all fetch-type operations with
+! a direct address" -- so the mask rule three paragraphs earlier on the
+! same page reaches it directly: "If the DF mask bit is one, the data
+! fetch is suppressed and the operation terminated.  If the DF mask bit
+! is zero, the operation proceeds normally."
+!
+! WHAT "THE OPERATION" MEANS, printed p.45 (PDF 48), indicator 20: "If
+! the corresponding mask bit was one, the fetch did not take place, and
+! THE ENTIRE OPERATION WAS SUPPRESSED.  If the mask bit was zero, the
+! operation was completed normally."  Not merely the fetch.
+!
+! AND THE MANUAL WORKS THIS EXACT CASE, printed p.52 (PDF 55), read
+! first-hand at 300 dpi.  It is better authority than either sentence
+! above, because it is the only place that says what a suppressed
+! count-branch-refill does about its BRANCH:
+!
+!   "Since an instruction is fully interpreted before it can be
+!   suppressed, more than one alert of Class S can be caused by the
+!   instruction.  For example, if a STORE INSTRUCTION COUNTER IF COUNT,
+!   BRANCH AND REFILL is executed as the subject instruction of
+!   EXECUTE, it is possible for (1) the condition for branching to be
+!   met, (2) the effective SIC address to be invalid, (3) the effective
+!   branch address and the refill address to be protected, and (4) the
+!   count to reach zero. ...  When, however, in this example, the
+!   condition for branching is not met, the entire subject instruction
+!   is still suppressed but only indicator DF is actuated (the DF mask
+!   bit is assumed to be one).  Indicator DF is actuated since THE TEST
+!   FOR THE REFILLING IS INDEPENDENT OF THE TEST FOR A SUCCESSFUL
+!   BRANCH."
+!
+! Block C1 below is that sentence turned into a check: a CBRZ whose
+! count reaches zero would BOTH refill AND branch, and with the mask at
+! one it must do neither.  (CBRZ and not CBR, and the choice is forced:
+! p.41's count-branch family branches on count NOT zero unless the
+! branch-on-zero bit is set, and the refill fires when the count DOES
+! reach zero, so plain CBR can never branch and refill on the same
+! execution.  CBRZ is the only spelling in which the two coincide,
+! which is exactly the coincidence p.52 describes.)
+!
+! THE SIX SITES, AND THE FIVE THIS DELIBERATELY DOES NOT TOUCH.
+! StretchExecute.bsv has eleven class-3 refill reads.  Six are covered
+! here -- CBR/CBRZ in evalBranch, V+CR in dirIndexOp, V+ICR and V-ICR
+! in immIndexOp, and R/RCZ on both of their paths (the index-register
+! one and the external-memory one that takes two sequential reads).
+! The other five are the refills PROGRESSIVE INDEXING issues from the
+! VFL and connective formats, and they are a DIFFERENT MECHANISM, not a
+! missing line.  Printed p.53 (PDF 56), read first-hand, gives them
+! their own rule, and it is the third entry under EXECUTION TERMINATED
+! rather than under EXECUTION SUPPRESSED: "An alert of Class S during
+! progressive indexing suppresses only the indexing portion of the
+! operation."  Terminate, not suppress; separate work.
+!
+! WHAT SUPPRESSION LEAVES BEHIND (printed p.52): "the suppression of an
+! instruction must necessarily exclude the following operations: 1. The
+! actuation of those indicators, associated with the instruction, of
+! Class S, and indicators DF and IF when their mask bits are zero. ...
+! 3. The stepping of the instruction counter."  Item 1 is why every
+! block below still expects DF to have been actuated; item 3 is why
+! control reaches the check after the suppressed instruction at all.
+!
+! EVERY CHECK OBSERVES THE DESTINATION'S VALUE, never the operation's
+! own result indicators -- the probe shape df_fetch_suppress.strap
+! copied from routine 1260 TEST 8C, and it is load-bearing here for the
+! same reason: a model that "suppressed" by writing zero, or by writing
+! the un-refilled arithmetic result, would pass an indicator check and
+! fail this one.  Concretely, each index register is loaded from a
+! control word whose VALUE is PREVAL and whose REFILL field names
+! RFSRC, whose value is a different constant.  Every operation below is
+! arranged to leave the value field alone (CBRZ with no increment, V+CR
+! against a zero operand, V+ICR/V-ICR with a zero immediate), so
+! afterwards the register holds
+!
+!     RFSRC's value   the refill happened
+!     PREVAL          the whole operation was suppressed
+!
+! and KV against RFCOPY or PRECOPY tells those two apart.  On the
+! external-memory path the destination is not a register at all but the
+! storage word R rewrites, so that block reads the word back with LX
+! first; it does not inherit the register probe.
+!
+! V+CR'S OPERAND SITS OUTSIDE THE AREA ON PURPOSE.  V+CR monitors two
+! addresses -- the operand half-word (class 1, already suppressing
+! before this change) and the refill source (class 3, the new one).
+! ZEROW is below the lower boundary so the class-1 gate cannot fire and
+! the block names one address.
+!
+! THE NOPS AFTER EACH MASK-ONE OPERATION ARE NOT PADDING, the same
+! reason df_fetch_suppress.strap gives: DF is masked ON in block C, so
+! the violation is reported by INTERRUPTING, and this model takes an
+! interruption at a QUIESCENT boundary rather than at the instruction
+! boundary p.48 names.  The marker is word 7, which is in p.31's 0-31
+! carve-out and so can never itself signal.
+!
+! STANDARD: MANUAL-DERIVED, hand-written.  Routine 1260 TEST 8C is the
+! deck oracle for DF's mask bit, but its offending fetch is an LV --
+! p.32 class 1 -- and no listing this project has read exercises a
+! protected REFILL address with the mask at one.  p.52's worked example
+! is the nearest primary source and it is prose, not code.
+!
+! EXPECTED STDERR ON A GREEN RUN -- read it, per
+! df_refill_index_alarm.strap's note.  OBSERVED: nothing.  All six
+! sites are I-Box class (half-word index arithmetic, count-branch, and
+! the REFILL misc format), so none reaches the side-effect-free E-box
+! probe that makes df_fetch_suppress.strap print "executed at
+! preparation (classification mismatch)".
+!
+! NINE INJECTIONS, EACH OBSERVED (not predicted), AND ONE THAT SURVIVED
+! AND IS RECORDED AS A GAP.  Reproduce any row with
+! `python3 line_addresses.py programs/df_refill_suppress.strap`.
+!
+!   CBRZ suppression removed         -> 004161.00  CBRZ, $X1, $  (C1)
+!                                         -- it branched to itself
+!   suppressed CBRZ still BRANCHES   -> 004161.00  CBRZ, $X1, $  (C1)
+!     (the index write suppressed,          -- p.52's own claim, and the
+!      the branch not)                         only check that reaches it
+!   V+CR suppression removed         -> 004200.40  BZB, $XE, $   (C2)
+!   V+ICR suppression removed        -> 004211.00  BZB, $XE, $   (C3)
+!   V-ICR suppression removed        -> 004221.40  BZB, $XE, $   (C4)
+!   R/RCZ index-register path,       -> 004232.00  BZB, $XE, $   (C5)
+!     suppression removed                   -- C6 (RCZ) shares that code
+!                                              site with C5 (R), so C5 is
+!                                              always the address reported
+!                                              and C6 never appears in this
+!                                              table.  It is a second
+!                                              witness on the same arm, not
+!                                              a seventh site; nothing here
+!                                              distinguishes R from RCZ
+!   R/RCZ external-memory path,      -> 004254.00  BZB, $XE, $   (C7)
+!     suppression removed                 -- the STORAGE word was rewritten
+!   the MASK gate dropped from       -> 004114.40  B, $          (B1)
+!     dfSuppresses (suppress                -- the mask-ZERO case, which is
+!     whenever protViolates fires)             why block B exists at all;
+!                                              a suppressed CBRZ cannot branch
+!   dfSignal skipped when            -> 004165.40  BZB, 7.0, $   (C1)
+!     suppressing (p.52 item 1)           -- no indicator, so no interruption,
+!                                            so the routine never ran
+!
+! THE ONE THAT SURVIVED, and it is a real gap in this program rather
+! than a fault in the model.  Injection: at the evalBranch site, make
+! the suppression test read `... && (prefetchCount >= slot + 1)`, so it
+! fires only on the SECOND pass -- i.e. after the refill read has
+! already been issued and its word landed in prefetch[slot].  The
+! operation is still suppressed, the index register is still untouched,
+! the branch still does not happen, DF is still set.  OBSERVED: ALL
+! TESTS PASSED.
+!
+! It cannot be caught from a STRAP program in this model, and the
+! bound is stateable: a refill read has no architecturally visible
+! effect -- it writes no storage, sets no indicator, and this model
+! exposes no cycle or read count to the program -- so the only trace of
+! the wasted read would be the prefetch SLOT it consumes, and the one
+! consumer of evalBranch's slot accounting is SIC, which requests its
+! own read only `if (o.taken ...)` and a suppressed CBRZ is never taken.
+! The ordering in StretchExecute.bsv is therefore justified by printed
+! p.45's "the fetch did not take place" and not by this test, and the
+! call site says so.
+!
+! Instructions: BD, BE, LVI, SV, LX, SX, KV, CBRZ, V+CR, V+ICR, V-ICR,
+! R, RCZ, BB, BB1, BBZ, BZB, B, NOP, BEW -- all implemented.
+
+        SLC, (8)4100.0
+START   BD,  $+.32                   ! disable: words 3 and 12 come next
+        LVI, $X13, TBL
+        SV,  $X13, $IA
+        LVI, $X13, RFSRC
+        SV,  $X13, $LB               ! lower boundary := RFSRC
+        LVI, $X13, ABOVE
+        SV,  $X13, $UB               ! upper boundary := ABOVE
+        BBZ, 3.57, $+1.0             ! control bit := 0: signal INSIDE
+!
+! ---- A. DISABLED, MASK ONE: the refill proceeds anyway ------------
+!   TEST 8C case 2's shape.  p.32: "When the interruption system is
+!   disabled, address monitoring is ineffective... the DS, DF and IF
+!   indicators cannot be turned on when the system is disabled."  So
+!   the mask bit is irrelevant here, and this block is carried by the
+!   pre-existing enable gate inside protViolates, which dfSuppresses
+!   shares.  It adds no discrimination for the new code -- recorded
+!   here rather than discovered as a surviving injection.
+        BB1, 12.20, $+1.0            ! DF's mask bit := ONE
+        LX,  $X5,  KC0               ! value PREVAL, count 0, refill RFSRC
+        R,   $X5
+        BB,  $DF,  $                 ! hang if DF lit while disabled
+        KV,  $X5,  RFCOPY
+        BZB, $XE,  $                 ! hang if the refill did NOT happen
+!
+! ---- B. ENABLED, MASK ZERO: DF sets, the refill LANDS -------------
+!   The half df_refill_alarm.strap and df_refill_index_alarm.strap
+!   already test.  Repeated here at all six sites because IT IS WHAT
+!   MAKES THE MASK GATE DISCRIMINATING: without a mask-zero case beside
+!   each mask-one case, dropping `maskedOn(st, ind_DF)` from
+!   dfSuppresses changes nothing this program can see.
+        BBZ, 12.20, $+1.0            ! DF's mask bit := ZERO
+        BBZ, $DF,  $+1.0             ! start from DF off
+        BE,  $+.32                   ! ENABLE
+!
+! ---- B1. CBRZ: it branches AND refills ---------------------------
+        LX,   $X1, KC1               ! count 1 -> 0
+        CBRZ, $X1, BT1               ! branches (count reached zero) and
+                                     !   refills from RFSRC
+        B,    $                      ! hang if it did NOT branch
+BT1     BZB,  $DF, $                 ! hang if the refill address missed DF
+        BB,   $IF, $                 ! hang if it lit the NEIGHBOUR: DF is
+                                     !   20 and IF is 21, and without this
+                                     !   the injection that swaps them is
+                                     !   indistinguishable from removal
+        BBZ,  $DF, $+1.0
+        KV,   $X1, RFCOPY
+        BZB,  $XE, $                 ! hang if the refill did not land
+!
+! ---- B2. V+CR ----------------------------------------------------
+        LX,   $X2, KC1
+        V+CR, $X2, ZEROW             ! operand OUTSIDE the area: adds zero,
+                                     !   count 1 -> 0, refills from RFSRC
+        BZB,  $DF, $
+        BBZ,  $DF, $+1.0
+        KV,   $X2, RFCOPY
+        BZB,  $XE, $
+!
+! ---- B3. V+ICR ---------------------------------------------------
+        LX,    $X3, KC1
+        V+ICR, $X3, 0                ! reads NO operand: the refill source
+                                     !   is the only address it uses
+        BZB,   $DF, $
+        BBZ,   $DF, $+1.0
+        KV,    $X3, RFCOPY
+        BZB,   $XE, $
+!
+! ---- B4. V-ICR ---------------------------------------------------
+        LX,    $X4, KC1
+        V-ICR, $X4, 0
+        BZB,   $DF, $
+        BBZ,   $DF, $+1.0
+        KV,    $X4, RFCOPY
+        BZB,   $XE, $
+!
+! ---- B5. R, refilling an INDEX REGISTER --------------------------
+        LX,  $X5,  KC0
+        R,   $X5
+        BZB, $DF,  $
+        BBZ, $DF,  $+1.0
+        KV,  $X5,  RFCOPY
+        BZB, $XE,  $
+!
+! ---- B6. RCZ, the other operation p.32 class 3 names -------------
+!   Same code site as R above (the arm gates on "R, or RCZ whose count
+!   is zero"), so this is a second witness rather than a seventh site.
+        LX,  $X6,  KC0               ! count 0, so RCZ acts
+        RCZ, $X6
+        BZB, $DF,  $
+        BBZ, $DF,  $+1.0
+        KV,  $X6,  RFCOPY
+        BZB, $XE,  $
+!
+! ---- B7. R whose operand word is in EXTERNAL MEMORY --------------
+!   Two sequential reads: the index word at the effective address, then
+!   the word its refill field names.  EXIDX is OUTSIDE the area, so
+!   only the second read can signal, and the DESTINATION is EXIDX
+!   itself -- R writes the refill word back there.
+        LX,  $X7,  KC0
+        SX,  $X7,  EXIDX             ! plant the index word outside the area
+        R,   EXIDX
+        NOP
+        NOP
+        BZB, $DF,  $
+        BBZ, $DF,  $+1.0
+        LX,  $X7,  EXIDX             ! read the DESTINATION back
+        KV,  $X7,  RFCOPY
+        BZB, $XE,  $                 ! hang if the refill did not land
+!
+! ---- C. ENABLED, MASK ONE: the whole operation is SUPPRESSED ------
+!   The indicator still sets -- p.52 item 1 -- and then INTERRUPTS,
+!   because the mask bit is one.  rl_interrupt turns the causing
+!   indicator off on its way into the routine (p.48), so after each
+!   block DF reads OFF and the witness is the routine's own marker,
+!   word 7.
+        BBZ, $DF,  $+1.0             ! clear DF before arming its mask
+        BB1, 12.20, $+1.0            ! DF's mask bit := ONE
+!
+! ---- C1. CBRZ: NEITHER refill NOR branch -- p.52's worked case ----
+        LX,   $X1, KC1               ! the PRELOAD, which must survive
+        CBRZ, $X1, $                 ! SUPPRESSED.  The target is this
+                                     !   instruction itself, so a branch
+                                     !   that is not suppressed hangs HERE
+                                     !   -- which is the half p.45 alone
+                                     !   does not reach and p.52 does
+        NOP
+        NOP
+        NOP
+        NOP
+        NOP
+        NOP
+        NOP
+        NOP
+        BZB,  7.0, $                 ! hang if DF's routine did not run
+        BBZ,  7.0, $+1.0
+        KV,   $X1, PRECOPY
+        BZB,  $XE, $                 ! hang if the refill landed after all
+!
+! ---- C2. V+CR ----------------------------------------------------
+        LX,   $X2, KC1
+        V+CR, $X2, ZEROW             ! SUPPRESSED by the REFILL address;
+                                     !   the operand at ZEROW is outside
+                                     !   the area, so the class-1 gate one
+                                     !   level out cannot be what fired
+        NOP
+        NOP
+        NOP
+        NOP
+        NOP
+        NOP
+        NOP
+        NOP
+        BZB,  7.0, $
+        BBZ,  7.0, $+1.0
+        KV,   $X2, PRECOPY
+        BZB,  $XE, $
+!
+! ---- C3. V+ICR ---------------------------------------------------
+        LX,    $X3, KC1
+        V+ICR, $X3, 0                ! SUPPRESSED
+        NOP
+        NOP
+        NOP
+        NOP
+        NOP
+        NOP
+        NOP
+        NOP
+        BZB,   7.0, $
+        BBZ,   7.0, $+1.0
+        KV,    $X3, PRECOPY
+        BZB,   $XE, $
+!
+! ---- C4. V-ICR ---------------------------------------------------
+        LX,    $X4, KC1
+        V-ICR, $X4, 0                ! SUPPRESSED
+        NOP
+        NOP
+        NOP
+        NOP
+        NOP
+        NOP
+        NOP
+        NOP
+        BZB,   7.0, $
+        BBZ,   7.0, $+1.0
+        KV,    $X4, PRECOPY
+        BZB,   $XE, $
+!
+! ---- C5. R, index-register path ----------------------------------
+        LX,  $X5,  KC0
+        R,   $X5                     ! SUPPRESSED
+        NOP
+        NOP
+        NOP
+        NOP
+        NOP
+        NOP
+        NOP
+        NOP
+        BZB, 7.0,  $
+        BBZ, 7.0,  $+1.0
+        KV,  $X5,  PRECOPY
+        BZB, $XE,  $
+!
+! ---- C6. RCZ, index-register path --------------------------------
+        LX,  $X6,  KC0
+        RCZ, $X6                     ! SUPPRESSED
+        NOP
+        NOP
+        NOP
+        NOP
+        NOP
+        NOP
+        NOP
+        NOP
+        BZB, 7.0,  $
+        BBZ, 7.0,  $+1.0
+        KV,  $X6,  PRECOPY
+        BZB, $XE,  $
+!
+! ---- C7. R, external-memory path ---------------------------------
+!   The destination is the STORAGE WORD at EXIDX, not a register, so
+!   the probe reads it back rather than comparing an index value that
+!   the operation never touches.
+        LX,  $X7,  KC0
+        SX,  $X7,  EXIDX             ! re-plant it: B7 above overwrote it
+        R,   EXIDX                   ! SUPPRESSED
+        NOP
+        NOP
+        NOP
+        NOP
+        NOP
+        NOP
+        NOP
+        NOP
+        BZB, 7.0,  $
+        BBZ, 7.0,  $+1.0
+        LX,  $X7,  EXIDX             ! read the DESTINATION back
+        KV,  $X7,  PRECOPY
+        BZB, $XE,  $                 ! hang if EXIDX was rewritten
+        B,   PASS
+PASS    BEW, $
+!
+! ---- constants, all OUTSIDE the monitored area -------------------
+        SLC, (8)4260.0
+KC1     XW, (8)252525.00, 1, RFSRC   ! value PREVAL, count 1: the refill fires
+KC0     XW, (8)252525.00, 0, RFSRC   ! value PREVAL, count 0: for R and RCZ
+PRECOPY XW, (8)252525.00, 0, 0       ! the value a SUPPRESSED operation leaves
+RFCOPY  XW, (8)123456.76, 0, 0       ! the value a refill that LANDED leaves
+ZEROW   DD(BU,64,8), 0               ! V+CR's operand half-word: adds zero
+EXIDX   NOP                          ! scratch: an index word is planted here
+        NOP
+!
+! ---- the monitored area ------------------------------------------
+!   The area is the HALF-OPEN interval [RFSRC, ABOVE) (p.31), so RFSRC
+!   is protected and ABOVE is the first word outside it.
+        SLC, (8)4300.0
+RFSRC   XW, (8)123456.76, (8)543210, (8)123456   ! == the lower boundary
+ABOVE   DD(BU,64,8), 0               ! == the upper boundary, first word out
+!
+! ---- the interruption table --------------------------------------
+!   Entry N is at TBL + N words (p.48).  DF is indicator 20, so entry
+!   20 is TBL + 0o24.  The DS entry is kept for the same reason
+!   df_refill_alarm.strap keeps it: DS is permanently masked on, and a
+!   stray store would otherwise run off into unloaded storage.
+        SLC, (8)4500.0
+TBL     DD, 0
+        SLC, (8)4523.0
+DSRTN   BB1, 6.0, $+1.0              ! entry 19 = DS
+        SLC, (8)4524.0
+DFRTN   BB1, 7.0, $+1.0              ! entry 20 = DF (0o4500 + 0o24)
+        END, START

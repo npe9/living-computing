@@ -129,7 +129,53 @@ function BranchOutcome evalBranch(StretchStorage st, DecodedInstr d, Word64 ind0
       // Prefetch/bail-out shape, inlining maybeRefill's own
       // condition (doRefill && x1.count==0) rather than calling it.
       Bool doRefill = (cb.refill == 1) && (x1.count == 0);
-      if (doRefill && prefetchCount < slot + 1) begin
+      // DF'S MASK-DEPENDENT HALF for p.32's CLASS 3 -- see dfSuppresses.
+      // ASKED HERE, BEFORE THE BAIL-OUT, and not beside the dfSignal
+      // call inside it: that is the whole content of the placement.
+      // Tested later, the refill read would already have been ISSUED
+      // and its word landed in prefetch[slot] before the arm was
+      // skipped, and printed p.45 for indicator 20 says "the fetch did
+      // not take place".  Nothing downstream could see the difference,
+      // so the wasted read would be silent -- the one shape this
+      // project's own rule about green tests is aimed at.
+      Bool refillSupp = doRefill && dfSuppresses(st, zeroExtend(x1.refill));
+      if (refillSupp) begin
+        // THE WHOLE COUNT-BRANCH-REFILL IS SUPPRESSED: no index write,
+        // no index result indicators, and NO BRANCH.  printed p.52
+        // names this instruction outright, which is better authority
+        // than p.45's general "the entire operation was suppressed"
+        // because it settles the BRANCH half rather than leaving it to
+        // inference: "if a STORE INSTRUCTION COUNTER IF COUNT, BRANCH
+        // AND REFILL is executed as the subject instruction of EXECUTE,
+        // it is possible for (1) the condition for branching to be met,
+        // (2) the effective SIC address to be invalid, (3) the effective
+        // branch address and the refill address to be protected, and
+        // (4) the count to reach zero... When, however, in this example,
+        // the condition for branching is not met, THE ENTIRE SUBJECT
+        // INSTRUCTION IS STILL SUPPRESSED but only indicator DF is
+        // actuated (the DF mask bit is assumed to be one).  Indicator DF
+        // is actuated since THE TEST FOR THE REFILLING IS INDEPENDENT OF
+        // THE TEST FOR A SUCCESSFUL BRANCH."
+        //
+        // That last clause is also the manual's own endorsement of the
+        // shape already here: `doRefill` is computed from the count
+        // alone and never from `take`.
+        //
+        // o.ind IS BUILT FROM ind0, not from o.ind.  The placement
+        // hazard the note below records -- the signal must come AFTER
+        // `o.ind = setIndexResultIndicatorsF(ind0, x1)`, which assigns
+        // from ind0 and would discard it -- simply does not arise on
+        // this path, because suppression never calls that function.
+        //
+        // o.readsUsed stays at its initialiser 0: nothing was read, and
+        // SIC places its own read in the slot AFTER it.
+        //
+        // o.taken stays False, so a SIC prefix's store is suppressed as
+        // a CONSEQUENCE rather than by a second test -- which is the
+        // other half of p.52's example, where the branch not being
+        // taken is exactly why the SIC address is never encountered.
+        o.ind = dfSignal(st, zeroExtend(x1.refill), ind0);
+      end else if (doRefill && prefetchCount < slot + 1) begin
         o.needsRead = tagged Valid zeroExtend(x1.refill);
       end else begin
         IndexWord x2 = doRefill ? unpackIndexWord(prefetch[slot[0]]) : x1;
@@ -319,8 +365,10 @@ endfunction
 // operation TERMINATION for DS (p.32 terminates the whole operation;
 // this suppresses only the store, so a BB whose write is suppressed
 // still branches).  DF's MASK-DEPENDENT half is now IMPLEMENTED for
-// p.32's class 1 -- see dfSuppresses below, which carries the scope
-// statement and names the two class-3 halves that are still open.
+// p.32's class 1 AND for the six class-3 refill sites that are not
+// progressive indexing -- see dfSuppresses below, which carries the
+// scope statement and says which five are left and why p.53 makes
+// them a different mechanism rather than an oversight.
 // p.32's class 3 for DF, "the refill address used in
 // index refill operations and the operations REFILL and REFILL ON
 // COUNT ZERO" -- DONE.  All eleven refill reads in this file signal:
@@ -330,18 +378,22 @@ endfunction
 // its own suppression gate, because a refill that is computed and
 // then skipped reads nothing and p.32 monitors addresses "actually
 // used".  Class 2 is moot and class 3's INDICATOR is complete.
+// ITS TWO HALVES ARE NOT AT THE SAME PLACE, and "class 3 is DONE"
+// above means the INDICATOR only: the SUPPRESSION is asked at six of
+// those eleven -- CBR/CBRZ, V+CR, V+ICR, V-ICR and R/RCZ on both
+// paths -- and deliberately not at the five progressive-indexing ones,
+// which p.53 puts under TERMINATION instead.  dfSuppresses carries the
+// list and the sentences.
 //
-// CLASS 1 IS NOT COMPLETE, and the earlier wording here that said it
-// was is corrected rather than deleted, because that claim is exactly
-// the kind this project has watched propagate.  Class 1 has FIVE
-// sites, not four: the four instruction formats listed above, and
-// p.52's read-only BRANCH ON BIT, which this model has never had.
-// That fifth one is missing BOTH halves -- p.52 says the indicator is
-// actuated even with the mask at zero ("Indicator DF is actuated but
-// does not cause suppression of the instruction"), and a read-only BB
-// here raises nothing at all.  The sentence is quoted in full on
-// dfSuppresses.  Of the four that exist, all four signal and all four
-// suppress.
+// CLASS 1 HAS FIVE SITES, not four, and the earlier wording here that
+// called it complete at four is corrected rather than deleted, because
+// that claim is exactly the kind this project has watched propagate.
+// The five are the four instruction formats listed above and p.52's
+// read-only BRANCH ON BIT.  ALL FIVE NOW SIGNAL AND ALL FIVE
+// SUPPRESS.  The fifth lives in the BitBranch arm rather than here,
+// because p.52's rule for it is stated per-clause on the instruction's
+// own bits 60-61 and its suppression has to sit beside the branch
+// decision; the sentence is quoted in full there.
 // And the straddling rule ("an instruction or data
 // field which straddles a boundary always gives an address monitoring
 // signal", p.31) for STORES: dfSignal's callers ask about both words
@@ -610,48 +662,57 @@ function Word64 dfSignal(StretchStorage st, WordAddr a, Word64 ind) =
 // a fresh LX before testing them, precisely so its answer does not
 // depend on what a suppressed operation left behind.
 //
-// WHERE THIS IS ASKED: at p.32's CLASS 1 only -- "the effective
-// address of all fetch-type operations with a direct address" -- i.e.
-// the same four opcode-gated sites dfSignal's own note lists.  CLASS 3,
-// the refill addresses, does NOT suppress here, and the two halves of
-// that gap are different:
+// WHERE THIS IS ASKED: at p.32's CLASS 1 -- "the effective address of
+// all fetch-type operations with a direct address", i.e. the same four
+// opcode-gated sites dfSignal's own note lists -- AND AT SIX OF THE
+// ELEVEN CLASS-3 REFILL SITES.  The split inside class 3 is not a
+// convenience, it is two different mechanisms, and it holds:
 //
-//  * The PROGRESSIVE-INDEXING refills (VFL and connective format) are
-//    covered by p.53's third route into termination: "An alert of
-//    Class S during progressive indexing suppresses only the indexing
-//    portion of the operation."  That is a DIFFERENT mechanism from
-//    this one -- terminate, not suppress -- and it is unimplemented.
-//  * The refills of R, RCZ, CBR, V+CR, V+ICR and V-ICR are NOT
-//    progressive indexing; p.32 class 3 names "index refill operations
-//    and the operations REFILL and REFILL ON COUNT ZERO" as its own
-//    category, so p.45's "the entire operation was suppressed" applies
-//    to them with no excuse.  That is a plain unimplemented gap, not a
-//    scope decision, and it is stated here rather than left to be
-//    found.
+//  * SUPPRESSED HERE: the refills of R, RCZ, CBR, V+CR, V+ICR and
+//    V-ICR.  These are NOT progressive indexing.  printed p.32's class
+//    3 names "the refill address used in index refill operations and
+//    the operations REFILL and REFILL ON COUNT ZERO" as its own
+//    category, so printed p.45 item 20's "the fetch did not take
+//    place, and the entire operation was suppressed" reaches them
+//    directly.  And printed p.52 settles the one part p.45 leaves to
+//    inference -- whether a suppressed count-branch-refill still
+//    BRANCHES -- by working the case: a protected refill address with
+//    the DF mask one on a STORE INSTRUCTION COUNTER IF COUNT, BRANCH
+//    AND REFILL leaves "the entire subject instruction... still
+//    suppressed but only indicator DF... actuated", "since the test
+//    for the refilling is independent of the test for a successful
+//    branch."  Quoted in full at the evalBranch site.
+//  * NOT SUPPRESSED HERE, and deliberately so: the five
+//    PROGRESSIVE-INDEXING refills in the VFL and connective formats.
+//    printed p.53 gives them their own rule, and it is the third entry
+//    under EXECUTION TERMINATED, not under EXECUTION SUPPRESSED: "An
+//    alert of Class S during progressive indexing suppresses only the
+//    indexing portion of the operation."  That is a DIFFERENT
+//    mechanism from this one -- terminate, not suppress -- it needs a
+//    partial-effect path the model does not have, and it is separate
+//    work.  A scope decision, not an oversight.
 //
-// A FIFTH CLASS-1 SITE THE MODEL DOES NOT HAVE AT ALL, found while
-// reading p.52 for this change and recorded because "class 1 is
-// complete" elsewhere in this file is thereby too strong.  p.52 on
-// BRANCH ON BIT: "since a protected effective bit address in BRANCH ON
-// BIT could result in the destruction of information, alert DS or DF
-// may occur if: 1. The addressed bit is not specified to remain
-// unconditionally unchanged; that is, bits 60 and 61 of the
-// instruction are not both zero.  The instruction is suppressed
-// without a test of the addressed bit, and indicator DS is actuated.
-// 2. The addressed bit is specified to remain unconditionally
-// unchanged, and the DF mask bit is one.  The instruction is
-// suppressed without a test of the addressed bit, and indicator DF is
-// actuated.  3. The addressed bit is specified to remain
-// unconditionally unchanged, and the DF mask bit is zero.  Indicator
-// DF is actuated but does not cause suppression of the instruction."
-// The BitBranch arm below computes `storeViolates = changes &&
-// protViolates(...)` and never calls dfSignal, so a read-only BB on a
-// protected word currently raises NEITHER indicator.  Clause 3 is the
-// part that matters for the accounting: with the mask at ZERO the
-// indicator still actuates, so this is a missing class-1 site for the
-// INDICATOR and not only for the suppression.  Not built here: its
-// suppression would have to interact with the branch commit point one
-// arm over, and it deserves its own program.
+// WHAT SUPPRESSION MEANS AT EACH OF THE SIX, since "the entire
+// operation" names different state at each: for R, RCZ, CBR, V+CR,
+// V+ICR and V-ICR the index register keeps its old value and no index
+// result indicators are set; for CBR the branch does not happen
+// either, and a SIC prefixed to it therefore stores nothing; for R and
+// RCZ on the external-memory path the destination is the storage word
+// at the effective address, which is not rewritten.  The DF indicator
+// is set at every one of them first -- p.52 item 1 -- and `next` is
+// left alone at every one of them, so the instruction counter still
+// steps (p.52 item 3).
+//
+// THE FIFTH CLASS-1 SITE IS THE BitBranch ARM, not a call from here,
+// and it is IMPLEMENTED.  p.52 gives BRANCH ON BIT a rule of its own
+// in three clauses -- quoted in full at the arm -- because the
+// read-only case (instruction bits 60 and 61 both zero) is a FETCH
+// while the modifying case is DS's store.  The arm calls dfSignal and
+// dfSuppresses exactly as the four sites above do, on the bit word;
+// what it adds is p.52's "the instruction is suppressed without a test
+// of the addressed bit", which has to sit beside the branch decision
+// and so cannot live in a predicate here.  Tested by
+// programs/df_bb_readonly.strap.
 function Bool dfSuppresses(StretchStorage st, WordAddr a) =
   maskedOn(st, ind_DF) && protViolates(st, a);
 
@@ -2808,7 +2869,18 @@ function ActionValue#(IndexOutcome)
             // half-word operand was already asked about above, through
             // dixFetchType, and this is the refill source.
             if (needsRefill) ind = dfSignal(st, zeroExtend(x1.refill), ind);
-            if (needsRefill && prefetchCount < 2) begin
+            // DF'S MASK-DEPENDENT HALF for class 3 -- see dfSuppresses,
+            // and evalBranch's note for why the test precedes the
+            // bail-out.  NESTED INSIDE THE CLASS-1 GATE ABOVE AND ABOUT
+            // A DIFFERENT ADDRESS: `dfSupp` already asked about the
+            // operand half-word at `ea`, and reaching here means that
+            // one did not suppress.  This asks about the refill source,
+            // the second monitored address of the same instruction, and
+            // when it fires the index register keeps its old value and
+            // no index result indicators are set.
+            if (needsRefill && dfSuppresses(st, zeroExtend(x1.refill))) begin
+              // suppressed: deliberately nothing at all
+            end else if (needsRefill && prefetchCount < 2) begin
               needsRead = tagged Valid zeroExtend(x1.refill);
             end else begin
               IndexWord x2 = needsRefill ? unpackIndexWord(prefetch[1]) : x1;
@@ -2990,7 +3062,14 @@ function ActionValue#(IndexOutcome)
             // V+CR above this refill address is the only storage
             // address the instruction uses at all.
             ind = dfSignal(st, zeroExtend(x1.refill), ind);
-            if (prefetchCount >= 1) begin
+            // DF'S MASK-DEPENDENT HALF -- see dfSuppresses, and
+            // evalBranch's note for why the test precedes the bail-out.
+            // There is no class-1 gate above this one to nest inside,
+            // for the same reason the signal's own note gives: the
+            // refill source is the ONLY storage address V+ICR uses.
+            if (dfSuppresses(st, zeroExtend(x1.refill))) begin
+              // suppressed: deliberately nothing at all
+            end else if (prefetchCount >= 1) begin
               idxWriteReg = ii.j; doIdxWrite = True;
               idxWriteVal = unpackIndexWord(prefetch[0]);
               ind = setIndexResultIndicatorsF(ind, x1);
@@ -3010,7 +3089,10 @@ function ActionValue#(IndexOutcome)
           if (ii.code == 4'b1111 && x1.count == 0) begin
             // DF, p.32 class 3 -- same as V+ICR above.
             ind = dfSignal(st, zeroExtend(x1.refill), ind);
-            if (prefetchCount >= 1) begin
+            // DF's mask-dependent half -- same as V+ICR above.
+            if (dfSuppresses(st, zeroExtend(x1.refill))) begin
+              // suppressed: deliberately nothing at all
+            end else if (prefetchCount >= 1) begin
               idxWriteReg = ii.j; doIdxWrite = True;
               idxWriteVal = unpackIndexWord(prefetch[0]);
               ind = setIndexResultIndicatorsF(ind, x1);
@@ -3442,7 +3524,21 @@ function ActionValue#(ExecResult)
                   // or that refillLegal suppresses, reads nothing, and
                   // p.32 monitors "storage addresses actually used".
                   ind = dfSignal(st, zeroExtend(x.refill), ind);
-                  if (prefetchCount >= 1) begin
+                  // DF'S MASK-DEPENDENT HALF -- see dfSuppresses, and
+                  // evalBranch's note for why the test precedes the
+                  // bail-out.  R and RCZ are the two operations printed
+                  // p.32's class 3 NAMES, so p.45 item 20's "the fetch
+                  // did not take place, and the entire operation was
+                  // suppressed" applies to them with nothing else in
+                  // between: the whole operation here IS the refill, so
+                  // suppressing it leaves the index register untouched.
+                  // INSIDE both existing gates, unchanged: a refill
+                  // that refillLegal or RCZ's count already suppresses
+                  // reads nothing, so there is nothing for the mask to
+                  // suppress either.
+                  if (dfSuppresses(st, zeroExtend(x.refill))) begin
+                    // suppressed: deliberately nothing at all
+                  end else if (prefetchCount >= 1) begin
                     idxWriteReg = j; doIdxWrite = True;
                     idxWriteVal = unpackIndexWord(prefetch[0]);
                   end else
@@ -3473,7 +3569,34 @@ function ActionValue#(ExecResult)
                     // and the protViolates call below is where it is
                     // answered.
                     ind = dfSignal(st, zeroExtend(x.refill), ind);
-                    if (prefetchCount >= 2)
+                    // DF's mask-dependent half -- see the sibling gate
+                    // above.  The DESTINATION on this path is the
+                    // storage word `rw`, not an index register, so
+                    // suppression here means that word is NOT rewritten
+                    // and keeps whatever it held.
+                    //
+                    // AND A CORNER THIS DELIBERATELY DOES NOT DECIDE,
+                    // labelled rather than guessed.  If `rw` is ALSO
+                    // protected, the arm below would have set DS, and
+                    // skipping it drops that.  p.52 item 1 argues the
+                    // other way -- a suppression "must necessarily
+                    // exclude... the actuation of those indicators,
+                    // associated with the instruction, of Class S" --
+                    // and p.52's own worked example actuates four
+                    // indicators on one suppressed instruction.  But
+                    // p.32 opens "if an address which is associated
+                    // with an operation is NOT ACTUALLY USED, it will
+                    // not be monitored", and a suppressed R stores
+                    // nowhere.  Neither reading is witnessed by any
+                    // deck this project has read, and no program in the
+                    // suite reaches the combination (it needs enabled +
+                    // DF mask one + `rw` protected + refill protected),
+                    // so this takes the same uniform shape as every
+                    // other suppression site rather than inventing a
+                    // rule.  Stated here, and in docs/NEXT.md.
+                    if (dfSuppresses(st, zeroExtend(x.refill))) begin
+                      // suppressed: deliberately nothing at all
+                    end else if (prefetchCount >= 2)
                       if (protViolates(st, rw)) ind = setBit(ind, ind_DS, 1);
                       else st.writeWord(rw, prefetch[1]);
                     else
@@ -3847,8 +3970,80 @@ function ActionValue#(ExecResult)
           // the single authority on which addresses signal.
           Bool changes = (mod != 2'b00);
           Bool storeViolates = changes && protViolates(st, bw);
+          // DF'S FIFTH CLASS-1 SITE, and the one the other four could
+          // not reach.  Printed p.52 (PDF 55), read at 300 dpi; the
+          // sentence wraps into the first two lines of p.53, which is
+          // where clause 3 ends.  "Another example is that, since a
+          // protected effective bit address in BRANCH ON BIT could
+          // result in the destruction of information, alert DS or DF
+          // may occur if: 1. The addressed bit is not specified to
+          // remain unconditionally unchanged; that is, bits 60 and 61
+          // of the instruction are not both zero.  The instruction is
+          // suppressed without a test of the addressed bit, and
+          // indicator DS is actuated.  2. The addressed bit is
+          // specified to remain unconditionally unchanged, and the DF
+          // mask bit is one.  The instruction is suppressed without a
+          // test of the addressed bit, and indicator DF is actuated.
+          // 3. The addressed bit is specified to remain unconditionally
+          // unchanged, and the DF mask bit is zero.  Indicator DF is
+          // actuated but does not cause suppression of the
+          // instruction."
+          //
+          // `changes` IS LITERALLY p.52'S TEST.  StretchDecode takes
+          // modAbc from w[3:1] and IBM bit n is BSV bit 63-n, so
+          // modAbc[2:1] is IBM bits 60-61 and modAbc[0] is IBM 62, the
+          // branch condition.  "bits 60 and 61 are not both zero" is
+          // therefore `changes` and "specified to remain
+          // unconditionally unchanged" is `!changes` -- the same term
+          // DS already uses, read from the other side.  A read-only BB
+          // is not a store-type operation, which is why DS must NOT
+          // fire for it; p.52 is the manual saying, for this
+          // instruction by name, that it is a fetch-type one instead.
+          //
+          // SO CLAUSE 3 IS ONE LINE AND CLAUSE 2 IS A TERM.  dfSignal
+          // is the indicator and reads no mask bit -- that is the whole
+          // of clause 3, and it is what a read-only BB against a
+          // protected word raised NOTHING of before this.  dfSuppresses
+          // is the mask, and that is clause 2.  Both are the shared
+          // helpers the other four class-1 sites call, asked about the
+          // same address, so this site cannot drift away from them.
+          if (!changes) ind = dfSignal(st, bw, ind);
+          // "SUPPRESSED WITHOUT A TEST OF THE ADDRESSED BIT", which
+          // p.52 says of clause 1 as well as clause 2 -- so this gate
+          // carries storeViolates too, and that half is a CORRECTION,
+          // not new coverage.  The arm already refused the branch and
+          // the bit change when storeViolates fired, but it still
+          // computed the branch condition from the tested bit and
+          // still signalled IF from the target of a branch p.52 says
+          // was never decided.  The same page rules exactly that out
+          // in the AD case, in so many words: "an invalid effective
+          // bit address in BRANCH ON BIT causes the actuation of
+          // indicator AD and the suppression of the instruction, since
+          // no bit can be tested to complete its execution.  INDICATOR
+          // IF CANNOT BE ACTUATED."  No test, no successful branch; no
+          // successful branch, nothing for p.32's class 2 to monitor.
+          //
+          // WHAT IS DELIBERATELY NOT GATED ON IT: clause 1's own DS
+          // actuation, which stays inside the bit-change block below,
+          // and the instruction counter -- `next` keeps the
+          // fall-through execute() computed on entry, which is p.52
+          // item 3, "the stepping of the instruction counter".
+          //
+          // A MODEL ARTIFACT, stated rather than left to be found: the
+          // suppressed instruction has still READ its bit word, because
+          // this arm only runs once the prefetch has arrived.  Nothing
+          // architectural depends on it -- the read has no side effect
+          // and DF is the alarm for it -- but a cycle-accurate version
+          // of this would have to decide before the fetch, not after.
+          Bool noTest = storeViolates || (!changes && dfSuppresses(st, bw));
           HWordAddr tgt = effAddr19(st, bb.addr2, {3'b0, bb.idx}); // K: X1 only
           Bool wouldBranch = (tested == bb.modAbc[0]);
+          // TWO NAMES, because p.52 distinguishes two things: the bit
+          // says branch (`wouldBranch`, which the comments below name
+          // with that meaning) and the machine was allowed to look
+          // (`takeBranch`).  Everything downstream of the test hangs
+          // off the second.
+          Bool takeBranch = wouldBranch && !noTest;
           // IF, p.32's BIT CHANGING -- the third of the three things a
           // protected branch target suppresses, and the one
           // execute()'s shared commit point cannot reach: "the entire
@@ -3863,11 +4058,14 @@ function ActionValue#(ExecResult)
           // the branch and that test is false, so it would never fire.
           // Setting it here keeps "the indicator sets whatever the mask
           // says" true (p.45, and TEST 8C case 3's own error text).
-          Bool ifSuppress = wouldBranch && maskedOn(st, ind_IF)
+          Bool ifSuppress = takeBranch && maskedOn(st, ind_IF)
                             && ifViolates(st, tgt[18:1]);
-          if (wouldBranch) ind = ifSignal(st, tgt[18:1], ind);
-          if (wouldBranch && !storeViolates && !ifSuppress)
+          if (takeBranch) ind = ifSignal(st, tgt[18:1], ind);
+          if (takeBranch && !ifSuppress)
             next = tgt;
+          // NOT gated on noTest, and the omission is the point: clause
+          // 1's DS actuation is inside this block, and storeViolates --
+          // noTest's own first term -- already stops the write.
           if (changes && !ifSuppress) begin
             Bit#(1) nb = case (mod)
                            2'b01: 1'b0;      // set to zero

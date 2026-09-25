@@ -390,6 +390,70 @@ VALUE rather than the operation's result indicators** — a model that
 "suppressed" by writing zero would pass an indicator check and fail
 this one.
 
+### CLOSED 2026-09-25 — the fifth site is built, and it exposed a second bug
+
+All three of printed p.52's `BRANCH ON BIT` clauses are implemented in
+the `BitBranch` arm, tested by `programs/df_bb_readonly.strap` +
+`StretchDfBbRoTb`, eight injections, none survived. **The encoding was
+checked against the decoder rather than inferred**: `StretchDecode`
+takes `modAbc = w[3:1]` and IBM bit *n* is BSV bit 63−*n*, so
+`modAbc[2:1]` **is** IBM bits 60-61 — p.52's "not both zero" is
+literally the arm's existing `changes`, read from the other side.
+
+**AND CLAUSE 1 DID NOT ALREADY MATCH, which is the second finding.**
+The model suppressed clause 1's branch and bit change but still
+*computed the branch condition from the tested bit*, then signalled IF
+from the branch target of an instruction p.52 says was never decided —
+forbidden by the same page's AD sentence (*"suppressed … since no bit
+can be tested to complete its execution. **Indicator IF cannot be
+actuated.**"*). Fixed by splitting `wouldBranch` from `takeBranch =
+wouldBranch && !noTest`. Measured, not argued.
+
+**STILL UNTESTED, and recorded rather than left to be rediscovered:**
+`ifSuppress` also gates the bit change, so a modifying `BB` with a
+protected data word AND a protected target AND IF's mask at one used to
+lose clause 1's DS actuation entirely. The fix restores it, but the
+test block runs IF's mask at zero deliberately (a mask of one re-routes
+the injection that witnesses the finding above), so this wants its own
+block.
+
+### CLOSED 2026-09-25 — the refill suppression gap
+
+Six of the eleven class-3 sites now suppress: `CBR`/`CBRZ`, `V+CR`,
+`V+ICR`, `V-ICR`, and `R`/`RCZ` on both paths.
+`programs/df_refill_suppress.strap` + `StretchDfRfSuppTb`, nine
+injections, none survived.
+
+**The scope line got a structural confirmation.** Printed p.53's
+progressive-indexing sentence is not merely a different rule — it is
+item 3 under **"Execution Terminated"**, on the facing column from
+"Execution Suppressed". The two mechanisms are separated by the
+manual's own headings, so the five progressive-indexing sites stay out
+of scope on the page's authority rather than on judgement.
+
+**And printed p.52 is a better source than p.45 for the hard half.**
+p.45 leaves open whether a suppressed count-branch-refill still
+branches; p.52 works the case by name and says it does not, *"since the
+test for the refilling is independent of the test for a successful
+branch"* — endorsing the shape the model already had.
+
+**ONE INJECTION SURVIVED and the gap is bounded rather than waved at:**
+making `evalBranch`'s suppression fire only on the second pass (read
+issued, then arm skipped) still passes. A refill read writes no
+storage, sets no indicator, and the model exposes no cycle or read
+count to a STRAP program, so the only trace is the prefetch slot — and
+its one consumer, `SIC`, requests its read only `if (o.taken …)`, which
+a suppressed `CBRZ` never is. The ordering rests on p.45's wording, not
+on a test.
+
+**ONE OPEN QUESTION LEFT IN THE CODE rather than decided by
+invention:** on `R`/`RCZ`'s external-memory path, if the OPERAND word
+is also protected, the suppressed arm no longer reaches the `DS` signal
+it used to set. p.52 item 1 argues DS should still actuate; p.32's *"if
+an address … is not actually used, it will not be monitored"* argues it
+should not. No deck witnesses it, no program in the suite reaches the
+combination, and it is reversible in one line.
+
 ### CORRECTION, 2026-09-24: "DF class 1 is complete" WAS FALSE, and was false before that change
 
 **Class 1 has FIVE sites, not four.** The fifth is read-only BRANCH ON
