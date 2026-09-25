@@ -315,15 +315,13 @@ endfunction
 // area, and they share this one function rather than repeating the
 // rule.
 //
-// STILL NOT IMPLEMENTED, and each is its own piece of work.  IF, the
-// instruction-fetch alarm, entirely.  The MASK-DEPENDENT half of DF --
-// dfSignal below turns the indicator on, which p.32 says happens
-// whatever the mask bit is, but "if the DF mask bit is one, the data
-// fetch is suppressed and the operation terminated" needs a
-// termination mechanism this model does not have.  Full operation
-// TERMINATION for DS likewise (p.32 terminates the whole operation;
+// STILL NOT IMPLEMENTED, and each is its own piece of work.  Full
+// operation TERMINATION for DS (p.32 terminates the whole operation;
 // this suppresses only the store, so a BB whose write is suppressed
-// still branches).  p.32's class 3 for DF, "the refill address used in
+// still branches).  DF's MASK-DEPENDENT half is now IMPLEMENTED for
+// p.32's class 1 -- see dfSuppresses below, which carries the scope
+// statement and names the two class-3 halves that are still open.
+// p.32's class 3 for DF, "the refill address used in
 // index refill operations and the operations REFILL and REFILL ON
 // COUNT ZERO" -- DONE.  All eleven refill reads in this file signal:
 // R and RCZ on both their paths, CBR, V+CR, V+ICR, V-ICR, and the
@@ -331,8 +329,20 @@ endfunction
 // their shared trailing block, ST/M+/CM inline).  Each sits INSIDE
 // its own suppression gate, because a refill that is computed and
 // then skipped reads nothing and p.32 monitors addresses "actually
-// used".  So class 1 and class 3 are complete and class 2 is moot;
-// what remains of DF is the MASK-DEPENDENT half, above.  And the straddling rule ("an instruction or data
+// used".  Class 2 is moot and class 3's INDICATOR is complete.
+//
+// CLASS 1 IS NOT COMPLETE, and the earlier wording here that said it
+// was is corrected rather than deleted, because that claim is exactly
+// the kind this project has watched propagate.  Class 1 has FIVE
+// sites, not four: the four instruction formats listed above, and
+// p.52's read-only BRANCH ON BIT, which this model has never had.
+// That fifth one is missing BOTH halves -- p.52 says the indicator is
+// actuated even with the mask at zero ("Indicator DF is actuated but
+// does not cause suppression of the instruction"), and a read-only BB
+// here raises nothing at all.  The sentence is quoted in full on
+// dfSuppresses.  Of the four that exist, all four signal and all four
+// suppress.
+// And the straddling rule ("an instruction or data
 // field which straddles a boundary always gives an address monitoring
 // signal", p.31) for STORES: dfSignal's callers ask about both words
 // of a crossing field, the store sites still compare one word each.
@@ -504,6 +514,20 @@ endfunction
 
 function Word64 setOpInvalid(Word64 ind) = setBit(ind, ind_OP, 1);
 
+// IS AN ADDRESS ALARM MASKED FOR INTERRUPTION?  p.32: with the mask
+// bit ONE "the operation is terminated and an interruption occurs";
+// with it ZERO "the indicator is set, but the operation proceeds".
+// IBM bit n is BSV bit 63-n, and the mask's bits 0-19 are permanently
+// one (StretchStorage forces them), which is exactly why DS needs no
+// mask test anywhere -- it is always masked on.
+//
+// MOVED ABOVE dfSignal (it used to sit below ifSignal) so the three
+// functions that read it -- dfSuppresses here, and IF's mask gate at
+// execute()'s commit point -- can all name it, and so the file reads
+// generic-helper / DF pair / IF pair.  No change of meaning.
+function Bool maskedOn(StretchStorage st, Bit#(6) n) =
+  st.readMask()[63 - n] == 1;
+
 // DF, THE DATA-FETCH ADDRESS ALARM (indicator 20).  Same comparand as
 // DS: p.32 separates the two by the KIND of reference, not by the
 // address, so this shares protViolates rather than restating its
@@ -519,11 +543,9 @@ function Word64 setOpInvalid(Word64 ind) = setBit(ind, ind_OP, 1);
 //
 // WHY THIS READS NO MASK BIT.  The indicator is turned on either way
 // -- the mask decides only what happens NEXT -- so setting it is
-// mask-independent.  Suppression and termination are the
-// mask-dependent half and are NOT implemented; see the "STILL NOT
-// IMPLEMENTED" note on protViolates, and the scope statement in
-// programs/df_data_fetch_alarm.strap, which tests the mask-zero case
-// only for exactly that reason.
+// mask-independent, and p.52's list of what a suppression must NOT
+// exclude names "indicators DF and IF when their mask bits are zero"
+// outright.  The mask-dependent half is dfSuppresses below.
 //
 // WHERE IT IS CALLED, and why not at the single read.  Every operand
 // word this file reads leaves through one st.readWordReq in mkEBox,
@@ -534,6 +556,104 @@ function Word64 setOpInvalid(Word64 ind) = setBit(ind, ind_OP, 1);
 // operation, one per instruction format.
 function Word64 dfSignal(StretchStorage st, WordAddr a, Word64 ind) =
   protViolates(st, a) ? setBit(ind, ind_DF, 1) : ind;
+
+// DF'S MASK-DEPENDENT HALF: the fetch does not happen and the whole
+// operation is SUPPRESSED.  Same comparand as dfSignal, one extra
+// term -- the mask bit -- so the two are always asked about the same
+// address, which is what keeps "indicator on, operation suppressed"
+// from drifting into "indicator on, operation half done".
+//
+// p.32: "If the DF mask bit is one, the data fetch is suppressed and
+// the operation terminated.  If the DF mask bit is zero, the operation
+// proceeds normally."  p.45 item 20 says it again, from the indicator
+// side and without the loose word: "If the corresponding mask bit was
+// one, the fetch did not take place, and THE ENTIRE OPERATION WAS
+// SUPPRESSED.  If the mask bit was zero, the operation was completed
+// normally."
+//
+// SUPPRESSED, NOT TERMINATED, and the difference is not pedantry.
+// p.32 is the storage-protection chapter using "terminated" loosely;
+// the INSTRUCTION SEQUENCING chapter defines the three words, and
+// Figure 11 (printed p.43, the Indicator List) gives DF class
+// "P,S*,C" with the footnote "*Class S when mask is one; otherwise
+// Class C" -- S is suppressed, C is completed.  p.51: "the execution
+// of the instruction in progress is either carried through to
+// completion or entirely suppressed... When neither is possible,
+// however, execution of the instruction is terminated", and p.52-53
+// give termination exactly three ways in, none of which is a plain
+// masked-on DF.  So mask-zero DF is Class C (what dfSignal alone
+// already models) and mask-one DF is Class S.
+//
+// WHAT SUPPRESSION STILL LEAVES BEHIND, p.52, which reads as an
+// exhaustive list: "the suppression of an instruction must necessarily
+// exclude the following operations: 1. The actuation of those
+// indicators, associated with the instruction, of Class S, and
+// indicators DF and IF when their mask bits are zero.  2. The
+// actuation of indicators that were caused by conditions unrelated to
+// the instruction in execution.  3. The stepping of the instruction
+// counter.  4. The changing of the state of the interruption system
+// which occurred as specification of BRANCH ENABLED, BRANCH DISABLED,
+// or BRANCH ENABLED AND WAIT."
+//
+// Item 1 is why the call sites below signal DF and THEN suppress,
+// never the other way round.  Item 3 is free here: none of the four
+// sites touches `next`, so the fall-through address execute() computed
+// on entry survives untouched and the instruction counter steps.
+// Items 2 and 4 name nothing these four arms do.
+//
+// AND THE REST IS AN INFERENCE, labelled as such.  The list is framed
+// as everything that survives, so by closure the result indicators,
+// the progressive-index update and a direct-index load's index-result
+// indicators are all suppressed, and that is what the call sites do.
+// The manual never says so in those words.  The deck cannot settle it
+// either: routine 1260 TEST 8C case 4 re-actuates the indicators with
+// a fresh LX before testing them, precisely so its answer does not
+// depend on what a suppressed operation left behind.
+//
+// WHERE THIS IS ASKED: at p.32's CLASS 1 only -- "the effective
+// address of all fetch-type operations with a direct address" -- i.e.
+// the same four opcode-gated sites dfSignal's own note lists.  CLASS 3,
+// the refill addresses, does NOT suppress here, and the two halves of
+// that gap are different:
+//
+//  * The PROGRESSIVE-INDEXING refills (VFL and connective format) are
+//    covered by p.53's third route into termination: "An alert of
+//    Class S during progressive indexing suppresses only the indexing
+//    portion of the operation."  That is a DIFFERENT mechanism from
+//    this one -- terminate, not suppress -- and it is unimplemented.
+//  * The refills of R, RCZ, CBR, V+CR, V+ICR and V-ICR are NOT
+//    progressive indexing; p.32 class 3 names "index refill operations
+//    and the operations REFILL and REFILL ON COUNT ZERO" as its own
+//    category, so p.45's "the entire operation was suppressed" applies
+//    to them with no excuse.  That is a plain unimplemented gap, not a
+//    scope decision, and it is stated here rather than left to be
+//    found.
+//
+// A FIFTH CLASS-1 SITE THE MODEL DOES NOT HAVE AT ALL, found while
+// reading p.52 for this change and recorded because "class 1 is
+// complete" elsewhere in this file is thereby too strong.  p.52 on
+// BRANCH ON BIT: "since a protected effective bit address in BRANCH ON
+// BIT could result in the destruction of information, alert DS or DF
+// may occur if: 1. The addressed bit is not specified to remain
+// unconditionally unchanged; that is, bits 60 and 61 of the
+// instruction are not both zero.  The instruction is suppressed
+// without a test of the addressed bit, and indicator DS is actuated.
+// 2. The addressed bit is specified to remain unconditionally
+// unchanged, and the DF mask bit is one.  The instruction is
+// suppressed without a test of the addressed bit, and indicator DF is
+// actuated.  3. The addressed bit is specified to remain
+// unconditionally unchanged, and the DF mask bit is zero.  Indicator
+// DF is actuated but does not cause suppression of the instruction."
+// The BitBranch arm below computes `storeViolates = changes &&
+// protViolates(...)` and never calls dfSignal, so a read-only BB on a
+// protected word currently raises NEITHER indicator.  Clause 3 is the
+// part that matters for the accounting: with the mask at ZERO the
+// indicator still actuates, so this is a missing class-1 site for the
+// INDICATOR and not only for the suppression.  Not built here: its
+// suppression would have to interact with the branch commit point one
+// arm over, and it deserves its own program.
+function Bool dfSuppresses(StretchStorage st, WordAddr a) =
+  maskedOn(st, ind_DF) && protViolates(st, a);
 
 // IF, THE INSTRUCTION-FETCH ADDRESS ALARM (indicator 21), and so far
 // only p.32's CLASS 2: "Address monitoring for Instruction Fetch
@@ -574,15 +694,6 @@ function Bool ifViolates(StretchStorage st, WordAddr a) =
 
 function Word64 ifSignal(StretchStorage st, WordAddr a, Word64 ind) =
   ifViolates(st, a) ? setBit(ind, ind_IF, 1) : ind;
-
-// IS AN ADDRESS ALARM MASKED FOR INTERRUPTION?  p.32: with the mask
-// bit ONE "the operation is terminated and an interruption occurs";
-// with it ZERO "the indicator is set, but the operation proceeds".
-// IBM bit n is BSV bit 63-n, and the mask's bits 0-19 are permanently
-// one (StretchStorage forces them), which is exactly why DS needs no
-// mask test anywhere -- it is always masked on.
-function Bool maskedOn(StretchStorage st, Bit#(6) n) =
-  st.readMask()[63 - n] == 1;
 
 function Word64 setResultIndicatorsF(Word64 ind, SM128 v);
   Bool z = (v.mag == 0);
@@ -1960,11 +2071,39 @@ function ActionValue#(VflOutcome)
         Bool vflFetchType = (vi.code == 6'b000101)    // L
                          || (vi.code == 6'b000001)    // + , -
                          || (vi.code == 6'b010001);   // K
+        Bool dfSupp = False;
         if (vflFetchType && !immediate) begin
           ind = dfSignal(st, baWord(ea), ind);
-          if (fieldCrosses(ea, len_)) ind = dfSignal(st, baWord(ea) + 1, ind);
+          dfSupp = dfSuppresses(st, baWord(ea));
+          if (fieldCrosses(ea, len_)) begin
+            ind = dfSignal(st, baWord(ea) + 1, ind);
+            dfSupp = dfSupp || dfSuppresses(st, baWord(ea) + 1);
+          end
         end
 
+        // DF'S MASK-DEPENDENT HALF, p.45 item 20: "If the
+        // corresponding mask bit was one, the fetch did not take
+        // place, and the entire operation was suppressed."  ENTIRE,
+        // so the guard goes round the opcode dispatch AND round the
+        // shared progressive-index block below it, not just round the
+        // read: no readWordReq is issued, no accumulator write, no
+        // result indicators, no progressive update and no class-3
+        // refill signal, because none of those addresses is then
+        // "actually used" (p.32).  `next` is untouched, which is
+        // p.52's item 3 -- the instruction counter still steps.
+        //
+        // WHICH RULE THIS IS, since two of them reach this arm.  The
+        // alert here arises on the operand FETCH, so it is p.32 class
+        // 1 and Figure 11's Class S -- full suppression.  It is NOT
+        // p.53's "an alert of Class S during progressive indexing
+        // suppresses only the indexing portion", which is a different
+        // (and unimplemented) rule for an alert raised on the REFILL
+        // address further down.  A progressive L whose data address is
+        // protected loses its indexing too, because the whole
+        // operation goes, not because of that sentence.
+        if (dfSupp) begin
+          // suppressed: deliberately nothing at all
+        end else begin
         case (vi.code)
           6'b000101: begin // L (Load) -- first arm converted to the
             // prefetch/bail-out staging (docs/phase2_arm_inventory.md).
@@ -2237,6 +2376,11 @@ function ActionValue#(VflOutcome)
             end
           end
         end
+        end  // DF suppression (mask 1): the whole arm, dispatch and
+             // progressive-index block alike, is skipped.  Written as
+             // a bare `end` rather than by re-indenting 350 lines --
+             // the same shape the floating-point arm's `end // AD
+             // guard` already uses below.
       end
     return VflOutcome{needsRead: needsRead, vflPending: vflPending, ind: ind};
   endactionvalue
@@ -2308,11 +2452,25 @@ function ActionValue#(VflOutcome)
         // result "is not placed anywhere" (p.76) and C's goes to the
         // accumulator, so both are fetch-type; CM writes the field
         // back and is not.
+        Bool dfSupp = False;
         if (cn.suffix != conn_CM && !immediate) begin
           ind = dfSignal(st, baWord(ea), ind);
-          if (fieldCrosses(ea, len_)) ind = dfSignal(st, baWord(ea) + 1, ind);
+          dfSupp = dfSuppresses(st, baWord(ea));
+          if (fieldCrosses(ea, len_)) begin
+            ind = dfSignal(st, baWord(ea) + 1, ind);
+            dfSupp = dfSupp || dfSuppresses(st, baWord(ea) + 1);
+          end
         end
 
+        // DF'S MASK-DEPENDENT HALF -- see dfSuppresses, and vflIntOp's
+        // identical guard, for the sourcing.  connectiveOp carries its
+        // OWN copy of the trailing progressive-index block, so this
+        // needs its own guard for exactly the reason the class-3 work
+        // needed its own signal here: a check on vflIntOp's says
+        // nothing about this one.
+        if (dfSupp) begin
+          // suppressed: deliberately nothing at all
+        end else begin
         if (cn.suffix == conn_CM && fieldCrosses(ea, len_)) begin
           // CM writing a crossing field: same single-word-write
           // limitation as VflInt's ST/M+ (writeField's precondition).
@@ -2443,6 +2601,7 @@ function ActionValue#(VflOutcome)
             end
           end
         end
+        end  // DF suppression (mask 1) -- see vflIntOp's matching end
       end
     return VflOutcome{needsRead: needsRead, vflPending: vflPending, ind: ind};
   endactionvalue
@@ -2510,8 +2669,24 @@ function ActionValue#(IndexOutcome)
                        || (di_.code == dixop_V_PLUS)
                        || (di_.code == dixop_V_PLUS_C)
                        || (di_.code == dixop_V_PLUS_CR);
-      if (dixFetchType) ind = dfSignal(st, ea[18:1], ind);
+      Bool dfSupp = False;
+      if (dixFetchType) begin
+        ind = dfSignal(st, ea[18:1], ind);
+        dfSupp = dfSuppresses(st, ea[18:1]);
+      end
 
+      // DF'S MASK-DEPENDENT HALF -- see dfSuppresses.  This is the arm
+      // routine 1260 TEST 8C case 4 actually exercises: its offending
+      // fetch is "LV,$X3,160AD3" with DF's mask bit stored one, and
+      // its error text if the value arrives anyway is "-FETCHED ABOVE
+      // UB WITH MASK 1 AND SYSTEM ENABLED."  Suppressing the whole
+      // case means the index register keeps its old value, no
+      // index-result indicators are set, and V+CR's refill (class 3,
+      // below) is never reached -- the deck's own probe is the index
+      // VALUE, not the indicators, which is why it can ask that.
+      if (dfSupp) begin
+        // suppressed: deliberately nothing at all
+      end else begin
       case (di_.code)
         dixop_LX: begin // LX -- prefetch/bail-out shape (same as
           // VflInt L/K/+ above). Half-word reads never cross a word
@@ -2692,6 +2867,7 @@ function ActionValue#(IndexOutcome)
         end
         default: ind = setOpInvalid(ind); // RNX, LVE: out of scope
       endcase
+      end  // DF suppression (mask 1) -- see vflIntOp's matching end
     return IndexOutcome{needsRead: needsRead, doIdxWrite: doIdxWrite,
                         idxWriteReg: idxWriteReg, idxWriteVal: idxWriteVal,
                         ind: ind};
@@ -3533,9 +3709,27 @@ function ActionValue#(ExecResult)
         // fetches an operand word; the store class (ST/SRT/SRD/SLO/
         // SHF/E+I) reads none, which is why it was lifted out into
         // fpStoreClass in the first place.
-        if (known && !isStoreClass) ind = dfSignal(st, ea, ind);
+        Bool dfSupp = False;
+        if (known && !isStoreClass) begin
+          ind = dfSignal(st, ea, ind);
+          dfSupp = dfSuppresses(st, ea);
+        end
 
-        if (!known)
+        // DF'S MASK-DEPENDENT HALF -- see dfSuppresses.  Only the
+        // arithmetic class can reach it (the store class fetches
+        // nothing, and an unknown code has already been decided), so
+        // this rides on the same `known && !isStoreClass` the signal
+        // does.  Suppressed means: no readWordReq for the operand, no
+        // fpArithClass call, so the accumulator, the result
+        // indicators, MOP and the exponent-range indicators are all
+        // left as they were.  The AD guard outside stays outside: an
+        // address which actuates AD "cannot actuate any of the address
+        // alarm indicators" (p.32), so an uninstalled address never
+        // gets this far.
+        if (dfSupp) begin
+          // suppressed: deliberately nothing at all
+        end
+        else if (!known)
           ind = setOpInvalid(ind);   // every floating-point operation is now implemented
         else if (isStoreClass) begin
           ind <- fpStoreClass(st, c, fp.absSign, fp.invSign, ea, acc, accL, accS,

@@ -1,0 +1,342 @@
+! DF'S MASK-DEPENDENT HALF -- the fetch does not happen and the whole
+! operation is SUPPRESSED.  The companion to df_data_fetch_alarm.strap,
+! which runs the mask-ZERO case and scoped this one out because the
+! model had no suppression at all.
+!
+! THE RULE, Reference Manual printed p.32 (PDF 35), verbatim: "When an
+! address alarm is caused by a data address used in a fetch-type
+! operation, indicator DF is turned on.  If the DF mask bit is one, the
+! data fetch is suppressed and the operation terminated.  If the DF
+! mask bit is zero, the operation proceeds normally."
+!
+! AND SAID AGAIN, better, on printed p.45 (PDF 48), indicator 20: "Data
+! Fetch (DF).  A computer operation has attempted to fetch data from a
+! location in the protected area of storage while the interruption
+! system was enabled.  If the corresponding mask bit was one, the fetch
+! did not take place, and THE ENTIRE OPERATION WAS SUPPRESSED.  If the
+! mask bit was zero, the operation was completed normally."
+!
+! SUPPRESSED, NOT TERMINATED.  p.32 is the storage-protection chapter
+! using "terminated" loosely.  Figure 11, the Indicator List on printed
+! p.43, gives DF the class "P,S*,C" with the footnote "*Class S when
+! mask is one; otherwise Class C" -- S is suppressed, C is completed --
+! and p.51 separates the words outright: "the execution of the
+! instruction in progress is either carried through to completion or
+! entirely suppressed... When neither is possible, however, execution
+! of the instruction is terminated."  p.52-53 give termination three
+! ways in and a plain masked-on DF is none of them.
+!
+! THE ORACLE IS jb_ax5b ROUTINE 1260 TEST 8C, CASE 4, transcribed as
+! ax5b_160_test8c.strap ("ENABLE MASK 1 NO FETCH IND ON INTRPT").  Its
+! offending fetch is LV,$X3,160AD3 with DF's mask bit stored ONE, and
+! its error text if the value arrives anyway is "-FETCHED ABOVE UB WITH
+! MASK 1 AND SYSTEM ENABLED."  Case 3 is the same code with the mask at
+! ZERO and errors the other way -- "-UNABLE TO FETCH ABOVE UB WITH MASK
+! 0, SYSTEM ENABLED." -- and case 2 is enabled's mirror: mask ONE but
+! the system DISABLED, where the deck demands the fetch proceed anyway
+! ("-UNABLE TO FETCH ABOVE UB WITH MASK 1, SYSTEM DISABLED.").  Those
+! three conditions are blocks A, B and C below, in that order.
+!
+! 8C CANNOT BE RUN HERE (it needs SSIP's 160S1/160SX1 harness and the
+! 64-word interrupt table at 160IT), so this is the hand-written stand-
+! in for it, written to the shape 8C's own code takes.
+!
+! WHAT 8C'S PROBE IS, AND WHY IT IS COPIED EXACTLY.  The deck does NOT
+! ask whether the result indicators were set.  It preloads X3 with a
+! NONZERO value (LVI,$X3,(8)777777.40), zeroes the protected word
+! (Z,160AD3), runs the fetch, and then asks for the index VALUE with
+! LX,$X3,$X3 + BXVZ / BZXVZ.  A model that "suppressed" by writing zero
+! to the destination would pass an indicator check and fail that one.
+! So every block below preloads its destination with a value DIFFERENT
+! from the protected operand and asks what the destination holds
+! afterwards, never what the operation's own indicators say.
+!
+! p.32'S CLASS 1 ONLY, which is a scope statement.  "Address monitoring
+! for Data Fetch includes: 1. The effective address of all fetch-type
+! operations with a direct address" -- the four instruction formats
+! this model signals at, and the four blocks below.  CLASS 3, the
+! refill addresses, sets the indicator but does NOT suppress, and the
+! two halves of that gap are different: the progressive-indexing
+! refills fall under p.53's "an alert of Class S during progressive
+! indexing suppresses only the indexing portion of the operation",
+! which is a different (terminating) mechanism; the refills of R, RCZ,
+! CBR, V+CR, V+ICR and V-ICR are not progressive indexing at all and
+! are a plain unimplemented gap.  dfSuppresses in StretchExecute.bsv
+! carries the same statement.
+!
+! TWO MORE THINGS THIS PROGRAM DOES NOT COVER, said rather than left
+! to be found:
+!   * A CROSSING FIELD whose SECOND word alone is protected.  The
+!     model asks dfSuppresses about both words, but no block here
+!     arranges a field that straddles the lower boundary.  The
+!     existing class-1 tests do not cover it either.
+!   * p.52's read-only BRANCH ON BIT, which is a fifth class-1 site
+!     the model has never had at all: "The addressed bit is specified
+!     to remain unconditionally unchanged, and the DF mask bit is one.
+!     The instruction is suppressed without a test of the addressed
+!     bit, and indicator DF is actuated."  Quoted in full on
+!     dfSuppresses; not built, and not tested here.
+!
+! WHAT SUPPRESSION LEAVES BEHIND (p.52): "the suppression of an
+! instruction must necessarily exclude the following operations: ...
+! 3. The stepping of the instruction counter."  Every block below
+! relies on it -- control reaches the check after the suppressed
+! instruction, it does not stall or repeat.
+!
+! THE NOPS AFTER EACH MASK-ONE FETCH ARE NOT PADDING, same reason
+! df_data_fetch_alarm.strap and if_branch_alarm.strap give: DF is
+! masked ON in block C, so the violation is reported by INTERRUPTING,
+! and this model takes an interruption at a QUIESCENT boundary rather
+! than at the instruction boundary p.48 names.  The marker is word 7,
+! which is in p.31's 0-31 carve-out and so can never itself signal.
+!
+! EXPECTED NOISE, and a real interaction worth knowing about.  This
+! program makes StretchCore print "E-box instruction at 4327 / 4349 /
+! 4370 executed at preparation (classification mismatch)", once for
+! each of blocks C2, C3 and C4.  It is not a defect and it is not
+! spurious -- it is exactly what run_tests.sh already records for
+! ad_indicator.strap's AD guard.  The core probes an operand-fetching
+! E-box instruction by running execute() with no operand and expecting
+! it to bail out with the address it wants; a SUPPRESSED operation
+! reads nothing, so the instruction completes during what was meant to
+! be a side-effect-free probe.  The core detects exactly that, says so,
+! and commits the probe as the execution -- which is why DF is set, the
+! accumulator is untouched and the instruction counter still steps
+! (p.52 item 3).  The classification cannot know in advance, because
+! suppression depends on the effective address and the mask.  Block C1
+! is silent because direct index arithmetic is I-box class and never
+! reaches that probe.
+!
+! SEVEN INJECTIONS, EACH OBSERVED (not predicted).  Reproduce any row
+! with `python3 line_addresses.py programs/df_fetch_suppress.strap`.
+!
+!   suppression removed, VFL site        -> 004173.40  BZB, $AE, $ (C2)
+!   suppression removed, connective site -> 004206.40  BZB, $AE, $ (C3)
+!   suppression removed, dir-index site  -> 004161.00  BZXE, $     (C1)
+!   suppression removed, floating point  -> 004220.00  BZB, $AE, $ (C4)
+!   the MASK gate dropped from            -> 004122.40  BZXE, $    (B1)
+!     dfSuppresses (suppress whenever          -- the mask-ZERO case,
+!     protViolates fires)                         which is why block B
+!                                                 exists at all
+!   the ENABLE gate dropped from          -> 004112.00  BZXE, $    (A)
+!     dfSuppresses (protViolates ->            -- the disabled control,
+!     installed alone)                            which therefore does
+!                                                 discriminate, against
+!                                                 expectation
+!   dfSignal skipped when suppressing     -> 004170.40  BZB, 7.0, $ (C2)
+!     (p.52 item 1 violated)                   -- no indicator, so no
+!                                                 interruption, so the
+!                                                 routine never ran
+!
+! Every one halted at its own block, and no injection survived.
+!
+! Instructions: BD, BE, LVI, SV, LV, KVI, L(BU), K(BU), C0011(BU),
+! L(U), K(U), BB, BB1, BBZ, BZB, B, BEW -- all implemented.
+
+        SLC, (8)4100.0
+START   BD,  $+.32                   ! disable: words 3 and 12 come next
+        LVI, $X13, TBL
+        SV,  $X13, $IA
+        LVI, $X13, WLOW
+        SV,  $X13, $LB               ! lower boundary := WLOW
+        LVI, $X13, WABOVE
+        SV,  $X13, $UB               ! upper boundary := WABOVE
+        BBZ, 3.57, $+1.0             ! control bit := 0: signal INSIDE
+!
+!   Plant the direct-index operand inside the area while the system is
+!   still disabled, so the store itself cannot raise DS.  SV writes the
+!   index VALUE into the top 24 bits of the half-word and LV reads it
+!   back from there, so the two agree by construction and the program
+!   never has to hand-compute a DD's bit layout.
+        LVI, $X12, (8)5252
+        SV,  $X12, WLOW
+!
+! ---- A. DISABLED, MASK ONE: the fetch proceeds anyway -------------
+!   8C case 2, and it is NOT redundant with case 1.  Disabled, the deck
+!   asserts the mask bit is IRRELEVANT: it sets the mask to one and
+!   still demands the fetch land.  p.32: "When the interruption system
+!   is disabled, address monitoring is ineffective... As a result, the
+!   DS, DF and IF indicators cannot be turned on when the system is
+!   disabled."
+!
+!   THIS BLOCK IS CARRIED BY THE PRE-EXISTING ENABLE GATE inside
+!   protViolates, which dfSuppresses shares, so it adds no
+!   discrimination for the new code.  Recorded here rather than
+!   discovered as a surviving injection.
+        BB1, 12.20, $+1.0            ! DF's mask bit := ONE
+        LVI, $X14, (8)7777           ! a value that is NOT the operand
+        BBZ, $XE,  $+1.0             ! clear XE: a check that cannot
+                                     !   fail is not a check
+        LV,  $X14, WLOW              ! protected word -- but DISABLED
+        BB,  $DF,  $                 ! hang if DF lit while disabled
+        KVI, $X14, (8)5252
+        BZXE, $                      ! hang if the operand did NOT arrive
+!
+! ---- B. ENABLED, MASK ZERO: DF sets and the operation PROCEEDS ----
+!   8C case 3.  This is the half df_data_fetch_alarm.strap already
+!   tests for the indicator, repeated here at all four sites because
+!   IT IS WHAT MAKES THE MASK GATE DISCRIMINATING: without a mask-zero
+!   case beside each mask-one case, dropping `maskedOn(st, ind_DF)`
+!   from dfSuppresses changes nothing this program can see.
+        BBZ, 12.20, $+1.0            ! DF's mask bit := ZERO
+        BBZ, $DF,  $+1.0             ! start from DF off
+        BE,  $+.32                   ! ENABLE
+!
+! ---- B1. direct index arithmetic ---------------------------------
+        LVI, $X14, (8)7777
+        BBZ, $XE,  $+1.0
+        LV,  $X14, WLOW
+        BZB, $DF,  $                 ! hang if the fetch did not light DF
+        BB,  $IF,  $                 ! hang if it lit the NEIGHBOUR: DF is
+                                     !   20 and IF is 21, and without this
+                                     !   the injection that swaps them is
+                                     !   indistinguishable from removal
+        BBZ, $DF,  $+1.0
+        KVI, $X14, (8)5252
+        BZXE, $                      ! hang if the fetch was suppressed
+                                     !   with the mask at ZERO
+!
+! ---- B2. VFL-format fetch (L) ------------------------------------
+        L(BU,64,8), PAT2W            ! accumulator := a value that is
+                                     !   NOT what WHIGH holds
+        BBZ, $AE,  $+1.0
+        L(BU,64,8), WHIGH            ! protected, mask 0 -> proceeds
+        BZB, $DF,  $
+        BBZ, $DF,  $+1.0
+        K(BU,64,8), PATW             ! PATW holds exactly what WHIGH does
+        BZB, $AE,  $                 ! hang if the operand never arrived
+!
+! ---- B3. a connective whose result reaches the accumulator -------
+!   C0011 is f(m,a) = m (Reference Manual Figure 20; applyConnective's
+!   own bits are notM&notA / notM&a / m&notA / m&a), so CONNECT copies
+!   the storage field into the accumulator field and the accumulator is
+!   a direct witness of whether the fetch landed.  CT would not be --
+!   its result "is not placed anywhere" (p.76) -- which is why
+!   df_data_fetch_alarm.strap's CT line cannot be reused here.
+        L(BU,64,8), PAT2W
+        BBZ, $AE,  $+1.0
+        C0011(BU,64), WHIGH          ! protected, mask 0 -> proceeds
+        BZB, $DF,  $
+        BBZ, $DF,  $+1.0
+        K(BU,64,8), PATW
+        BZB, $AE,  $
+!
+! ---- B4. the floating-point operand fetch ------------------------
+!   L(U) is the UNNORMALIZED floating-point load, so the accumulator
+!   receives the operand unchanged and K(U) against the same bits gives
+!   AE -- the pattern bb_indicator.strap already relies on.
+        L(U), PAT2W
+        BBZ, $AE,  $+1.0
+        L(U), WHIGH                  ! protected, mask 0 -> proceeds
+        BZB, $DF,  $
+        BBZ, $DF,  $+1.0
+        K(U), PATW
+        BZB, $AE,  $
+!
+! ---- C. ENABLED, MASK ONE: the whole operation is SUPPRESSED ------
+!   8C case 4.  The indicator still sets -- p.52 item 1 excludes from
+!   suppression "the actuation of those indicators, associated with the
+!   instruction, of Class S" -- and then INTERRUPTS, because the mask
+!   bit is one.  rl_interrupt turns the causing indicator off on its
+!   way into the routine (p.48), so after each block below DF reads
+!   OFF and the witness is the routine's own marker, word 7.
+        BBZ, $DF,  $+1.0             ! clear DF before arming its mask
+        BB1, 12.20, $+1.0            ! DF's mask bit := ONE
+!
+! ---- C1. direct index arithmetic ---------------------------------
+        LVI, $X14, (8)7777           ! the PRELOAD, which must survive
+        BBZ, $XE,  $+1.0
+        LV,  $X14, WLOW              ! protected, mask 1 -> SUPPRESSED
+        NOP
+        NOP
+        NOP
+        NOP
+        NOP
+        NOP
+        NOP
+        NOP
+        BZB, 7.0,  $                 ! hang if DF's routine did not run
+        BBZ, 7.0,  $+1.0
+        KVI, $X14, (8)7777
+        BZXE, $                      ! hang if the fetch landed after all
+!
+! ---- C2. VFL-format fetch (L) ------------------------------------
+        L(BU,64,8), PAT2W            ! the PRELOAD
+        BBZ, $AE,  $+1.0
+        L(BU,64,8), WHIGH            ! protected, mask 1 -> SUPPRESSED
+        NOP
+        NOP
+        NOP
+        NOP
+        NOP
+        NOP
+        NOP
+        NOP
+        BZB, 7.0,  $
+        BBZ, 7.0,  $+1.0
+        K(BU,64,8), PAT2W            ! the accumulator must still hold it
+        BZB, $AE,  $
+!
+! ---- C3. the connective ------------------------------------------
+        L(BU,64,8), PAT2W
+        BBZ, $AE,  $+1.0
+        C0011(BU,64), WHIGH          ! protected, mask 1 -> SUPPRESSED
+        NOP
+        NOP
+        NOP
+        NOP
+        NOP
+        NOP
+        NOP
+        NOP
+        BZB, 7.0,  $
+        BBZ, 7.0,  $+1.0
+        K(BU,64,8), PAT2W
+        BZB, $AE,  $
+!
+! ---- C4. the floating-point operand fetch ------------------------
+        L(U), PAT2W
+        BBZ, $AE,  $+1.0
+        L(U), WHIGH                  ! protected, mask 1 -> SUPPRESSED
+        NOP
+        NOP
+        NOP
+        NOP
+        NOP
+        NOP
+        NOP
+        NOP
+        BZB, 7.0,  $
+        BBZ, 7.0,  $+1.0
+        K(U), PAT2W
+        BZB, $AE,  $
+        B,   PASS
+PASS    BEW, $
+!
+! ---- the monitored area and its neighbours -----------------------
+!   The area is the HALF-OPEN interval [WLOW, WABOVE) (p.31), so WLOW
+!   and WHIGH are protected and WABOVE is the first word outside it.
+!   PATW and PAT2W sit BELOW the lower boundary and are never
+!   monitored; PATW holds exactly what WHIGH holds, PAT2W something
+!   else, and every block reads the accumulator against one of the two.
+        SLC, (8)4276.0
+PATW    DD(BU,64,8), (8)0000125252525252525240
+PAT2W   DD(BU,64,8), (8)0000125252525212525240
+        SLC, (8)4300.0
+WLOW    DD(BU,64,8), 0               ! == the lower boundary; the SV
+                                     !   above plants the operand here
+WHIGH   DD(BU,64,8), (8)0000125252525252525240   ! inside the area
+WABOVE  DD(BU,64,8), 0               ! == the upper boundary: OUTSIDE
+!
+! ---- the interruption table --------------------------------------
+!   Entry N is at TBL + N words (p.48).  DF is indicator 20, so entry
+!   20 is TBL + 0o24.  The DS entry is kept for the same reason
+!   if_branch_alarm.strap keeps it: DS is permanently masked on, and a
+!   stray store would otherwise run off into unloaded storage.
+        SLC, (8)4500.0
+TBL     DD, 0
+        SLC, (8)4523.0
+DSRTN   BB1, 6.0, $+1.0              ! entry 19 = DS
+        SLC, (8)4524.0
+DFRTN   BB1, 7.0, $+1.0              ! entry 20 = DF (0o4500 + 0o24)
+        END, START

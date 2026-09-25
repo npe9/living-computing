@@ -438,6 +438,97 @@ run "IF: the instruction-fetch address alarm (p.32 classes 1 and 2)" ./run_progr
 # words 1-3 -- the boundary registers themselves -- whose contents
 # would then execute.  The model does not raise AD there either.
 
+run "DF SUPPRESSED: the mask-dependent half (p.32/p.45 class 1)" ./run_program.sh programs/df_fetch_suppress.strap StretchDfSuppTb \
+    "PC=4387"          # 004221.40; hand-written to TEST 8C's shape, not a transcription
+# THE HALF THAT WAS MISSING.  dfSignal has always turned the indicator
+# ON -- printed p.32 says that happens whatever the mask bit is -- but
+# "if the DF mask bit is one, the data fetch is suppressed and the
+# operation terminated" needed a mechanism this model did not have.
+# Now it does: dfSuppresses(st, a) = maskedOn(st, ind_DF) &&
+# protViolates(st, a), asked at the four class-1 dfSignal sites, and
+# when it fires THE WHOLE ARM IS SKIPPED -- no read, no result, no
+# result indicators, no progressive-index update, no class-3 refill.
+#
+# "THE WHOLE ARM" IS SOURCED, not assumed.  printed p.32 says only
+# "the data fetch is suppressed"; printed p.45's entry for indicator
+# 20 is the one that settles it: "If the corresponding mask bit was
+# one, the fetch did not take place, and THE ENTIRE OPERATION WAS
+# SUPPRESSED.  If the mask bit was zero, the operation was completed
+# normally."  And `next` is deliberately untouched, because printed
+# p.52's list of what a suppression must NOT exclude ends with "3. The
+# stepping of the instruction counter."
+#
+# EVERY CHECK OBSERVES THE DESTINATION'S VALUE, never the operation's
+# own result indicators -- 8C's own probe shape.  Preload the
+# destination with a distinctive value, put a DIFFERENT value in the
+# protected word, then ask what the destination holds.  A model that
+# "suppressed" by writing zero would pass an indicator check and fail
+# this one.
+#
+# Three blocks matching TEST 8C's own four conditions: A disabled +
+# mask 1 (fetch proceeds, DF off), B enabled + mask 0 at all four
+# sites (DF sets, operation proceeds), C enabled + mask 1 at all four
+# sites (DF sets, operation suppressed, interruption marks word 7).
+#
+# Seven injections, seven distinct observed halt addresses, none
+# survived.  One went AGAINST EXPECTATION and is the reason block A is
+# not decoration: dropping the ENABLE gate from the suppression was
+# expected to add nothing, since protViolates already carries an
+# irqEnabled() gate for dfSignal.  It discriminates -- the suppression
+# then fires while DISABLED, and A's value check catches it at
+# 004112.00.
+#
+# THE "classification mismatch" LINES ARE EXPECTED, not a defect, and
+# they are the same accepted path ad_indicator.strap's AD guard
+# already documents: the core probes an operand-fetching E-box
+# instruction by running execute() with no operand and expecting a
+# bail-out, and a SUPPRESSED operation reads nothing, so it completes
+# during the probe.  The core detects that, says so, and commits the
+# probe as the execution.  DF is set, the accumulator is untouched,
+# the IC steps.
+#
+# INERTNESS PROVEN, NOT ASSUMED.  The change can only bite where DF's
+# mask bit 20 is ONE.  Swept both idioms -- the wholesale $MASK write
+# and the bit-20 setters.  Of the $MASK writers that actually run,
+# both do "Z,$MASK"; of the bit-20 setters, only ax5b_160_test8c*
+# (encoding-only, never executed) and this program set it to one.
+#
+# AND IT CARRIES A CORRECTION TO THIS PROJECT'S OWN ACCOUNTING.  "DF
+# class 1 is complete" was FALSE, and was false before this change.
+# **Class 1 has FIVE sites, not four.**  printed p.52 gives the fifth
+# for BRANCH ON BIT: "since a protected effective bit address in
+# BRANCH ON BIT could result in the destruction of information, alert
+# DS or DF may occur if: ... 2. The addressed bit is specified to
+# remain unconditionally unchanged, and the DF mask bit is one.  The
+# instruction is suppressed without a test of the addressed bit, and
+# indicator DF is actuated.  3. The addressed bit is specified to
+# remain unconditionally unchanged, and the DF mask bit is zero.
+# Indicator DF is actuated but does not cause suppression of the
+# instruction."  Verified first-hand at 300 dpi.
+#
+# The BitBranch arm computes storeViolates = changes && protViolates()
+# and never calls dfSignal, so **a READ-ONLY BB (bits 60 and 61 both
+# zero) on a protected word raises NEITHER indicator today.**  Clause
+# 3 makes that a gap in the INDICATOR, not only in the suppression.
+# Not built here: it is a fifth site whose suppression would have to
+# interact with the branch commit point one arm over, and it deserves
+# its own program.  See docs/NEXT.md item 2.
+#
+# TWO FURTHER GAPS, kept distinct because they are different kinds.
+# Progressive-indexing refills are SCOPED OUT: printed p.53 says "An
+# alert of Class S during progressive indexing suppresses only the
+# indexing portion of the operation" -- a different mechanism,
+# terminate rather than suppress.  R/RCZ/CBR/V+CR/V+ICR/V-ICR refills
+# are a PLAIN GAP with no excuse: p.32 class 3 names them as their own
+# category and p.45's "entire operation" applies to them too.
+#
+# ONE THING LABELLED AN INFERENCE IN THE CODE, because the deck cannot
+# settle it: that suppression also kills the result indicators, the
+# progressive update and the index-result indicators.  p.52's list
+# reads exhaustive, so it follows by closure -- but the manual never
+# says it, and 8C case 4 re-actuates the indicators with a fresh LX
+# before testing them, so no deck row decides it either way.
+
 run "DF: the data-fetch address alarm, p.32 class 1" ./run_program.sh programs/df_data_fetch_alarm.strap StretchDfTb \
     "PC=4306"          # 004151.00; hand-written, not a listing fact
 # THE THIRD ADDRESS ALARM, and the first subsystem this project has

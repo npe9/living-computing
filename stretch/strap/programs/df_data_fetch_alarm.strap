@@ -1,5 +1,24 @@
 ! DF -- the DATA FETCH address alarm (indicator 20), mask-zero case.
 !
+! SUPERSEDED AGAIN, and this time by an implementation: THE
+! MASK-DEPENDENT HALF IS NOW BUILT for p.32's class 1, and
+! programs/df_fetch_suppress.strap tests it at all four sites in all
+! three of 8C's conditions (disabled/mask 1, enabled/mask 0,
+! enabled/mask 1).  Three claims below are therefore FALSE as written
+! and are left in place only so the correction is visible: "this model
+! has no termination mechanism at all", "a mask-one case here would
+! complete the operation and then interrupt", and "nothing here could
+! pass for the right reason".  What remains true is this program's own
+! scope -- it runs the mask-ZERO case -- and the reason it is still
+! worth running: the INDICATOR half, which is mask-independent, and the
+! DS/DF split at the read-modify-write stores.
+!
+! Also corrected since: p.32's "terminated" is the storage-protection
+! chapter speaking loosely.  Figure 11 (printed p.43) gives DF class
+! "P,S*,C" with "*Class S when mask is one; otherwise Class C", so
+! mask-one DF is SUPPRESSED, not terminated.  See dfSuppresses in
+! StretchExecute.bsv.
+!
 !
 ! SUPERSEDED 2026-09-24, AND THE CORRECTION MATTERS MORE THAN THE
 ! PROGRAM.  The "weaker standard" note above rests on the claim that no

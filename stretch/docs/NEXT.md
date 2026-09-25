@@ -376,6 +376,78 @@ Deliberately the half WITHOUT the strong oracle, because it is the
 half that is self-contained: it needs no new plumbing, whereas class 1
 needs the interruption-address exemption threaded (below).
 
+**DF'S MASK-DEPENDENT HALF IS IMPLEMENTED** — 2026-09-24,
+`dfSuppresses(st, a) = maskedOn(st, ind_DF) && protViolates(st, a)`, at
+the four class-1 `dfSignal` sites; when it fires the whole arm is
+skipped and `next` is left alone so the IC still steps. Sourced from
+printed p.32 (the rule), printed p.45 indicator 20 (*"the fetch did not
+take place, and **the entire operation was suppressed**"*, which is what
+licenses skipping the arm rather than only the fetch) and printed p.52
+item 3 (the IC still steps). Tested by
+`programs/df_fetch_suppress.strap` + `StretchDfSuppTb`, seven
+injections, none survived. **Every check observes the DESTINATION'S
+VALUE rather than the operation's result indicators** — a model that
+"suppressed" by writing zero would pass an indicator check and fail
+this one.
+
+### CORRECTION, 2026-09-24: "DF class 1 is complete" WAS FALSE, and was false before that change
+
+**Class 1 has FIVE sites, not four.** The fifth is read-only BRANCH ON
+BIT, and printed p.52 gives it explicitly — verified first-hand at 300
+dpi:
+
+> *"since a protected effective bit address in BRANCH ON BIT could
+> result in the destruction of information, alert DS or DF may occur
+> if: 1. The addressed bit is not specified to remain unconditionally
+> unchanged; that is, bits 60 and 61 of the instruction are not both
+> zero. The instruction is suppressed without a test of the addressed
+> bit, and indicator DS is actuated. 2. The addressed bit is specified
+> to remain unconditionally unchanged, and the DF mask bit is one. The
+> instruction is suppressed without a test of the addressed bit, and
+> indicator DF is actuated. **3. The addressed bit is specified to
+> remain unconditionally unchanged, and the DF mask bit is zero.
+> Indicator DF is actuated but does not cause suppression of the
+> instruction.**"*
+
+The BitBranch arm computes `storeViolates = changes && protViolates(st,
+bw)` and never calls `dfSignal`. So **a read-only `BB` (bits 60 and 61
+both zero) against a protected word raises NEITHER indicator today** —
+and clause 3 makes that a gap in the INDICATOR, not merely in the
+suppression. It is its own piece of work: the fifth site's suppression
+has to interact with the branch commit point one arm over, so it wants
+its own program rather than a line added to an existing one.
+
+**Note the shape of this error, because it is one this project has now
+made twice.** The completeness claim was written when four sites were
+found and all four were handled; nothing was miscounted, the fifth was
+simply never looked for, and the claim was phrased as though the search
+had been exhaustive. That is the same shape as the DF-has-no-oracle
+claim § 2's earlier CORRECTION retracts. **"All N sites are done" is a
+claim about a SEARCH, not about the code, and it needs the search
+stated.**
+
+**TWO FURTHER DF GAPS, deliberately kept distinct because they are
+different kinds of thing:**
+
+* **Progressive-indexing refills are SCOPED OUT, not missing.** Printed
+  p.53: *"An alert of Class S during progressive indexing suppresses
+  only the indexing portion of the operation."* That is a different
+  mechanism — terminate, not suppress — and implementing it is separate
+  work.
+* **`R`, `RCZ`, `CBR`, `V+CR`, `V+ICR`, `V-ICR` refills are a plain
+  gap with no excuse.** Printed p.32 class 3 names them as their own
+  category, so p.45's "entire operation was suppressed" applies to them
+  directly.
+
+**AND ONE THING LABELLED AN INFERENCE IN THE CODE ITSELF**, because no
+deck can settle it: that suppression also kills the result indicators,
+the progressive update and the index-result indicators. p.52's list is
+framed as everything that survives, so it follows by closure — but the
+manual never says it, and TEST 8C case 4 re-actuates the indicators
+with a fresh `LX` before testing them, so the oracle is silent too.
+This is the same open question § 6 already records; it now has a second
+instance.
+
 **REMAINING ON THIS ITEM, in order:**
 
 1. **IF CLASS 1 — "the location of each instruction to be executed".**
