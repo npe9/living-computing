@@ -1,0 +1,423 @@
+! EXIC (EXECUTE INDIRECT AND COUNT): the subject is reached through a
+! PSEUDO-INSTRUCTION COUNTER, and THE COUNTER IS STEPPED BY THE
+! SUBJECT'S LENGTH between the fetch and the execution.
+!
+! THE RULE, Reference Manual 22-6530-2 printed p.50 (PDF 53 -- PDF page
+! = printed page + 3), read first-hand at 300 dpi for this program:
+!
+!   "Execute Indirect and Count (EXIC).  Bits 0-18 of the full-word
+!   addressed by bits 0-17 of the effective address are used as a
+!   pseudo-instruction counter.  The contents of the pseudo-instruction
+!   counter address the location of a subject instruction that is
+!   fetched and executed.  After the subject instruction has been
+!   fetched but prior to its execution, the pseudo-instruction counter
+!   is stepped.  If the subject instruction is half-length, the
+!   pseudo-instruction counter is stepped once; if full-length, twice.
+!   When EXECUTE INDIRECT AND COUNT is a subject instruction in a
+!   multi-leveled execution operation, each pseudo-instruction counter
+!   involved is appropriately stepped between the fetching and
+!   executing of its corresponding subject instruction."
+!
+! and printed p.49, the control rule EXIC shares with EX:
+!
+!   "When an execution operation is initiated in the main program, the
+!   instruction counter is stepped in normal fashion as in all
+!   operations of the main program.  However, it is never stepped
+!   during the execution of any subject instruction even if the subject
+!   instruction is again one of the execution instructions."
+!
+! THE DECK ORACLE IS jb_ax5b ROUTINE 1262 TEST 2B, 023705.00-024000.00,
+! transcribed for its ENCODING as programs/ax5b_162_test2b_head_tail.
+! strap and ax5b_162_exic_classes.strap (it cannot be run: it needs
+! SSIP, the 64-word interrupt table and routine 1260's subroutines).
+! It sweeps five instruction classes with THREE rules each -- the EXIC
+! must not interrupt; the subject must have executed; and the pseudo-IC
+! must have been stepped by the subject's length -- and it makes the
+! manual's "once / twice" executable: its four half-length classes
+! check "V+I,$X2,0.32" and its FULL WD VFL class checks "V+I,$X2,1.0".
+! THIS FILE USES THE DECK'S OWN IDIOM FOR RULE (c), LV / V+I / KV /
+! BZXE, so that a step of the wrong size halts on the row that names it.
+!
+! THE PSEUDO-INSTRUCTION COUNTERS HERE ARE BUILT BY THE ASSEMBLER, not
+! planted at run time as the deck plants them, and that is deliberate.
+! Each is a WORD MADE OF TWO BRANCH TEMPLATES ("PSICA B,SUBJA" followed
+! by "BEW,SUBJA"), never executed, whose bits 0-18 are the subject's
+! half-word address BY CONSTRUCTION -- so the counter's starting value
+! needs no set-up instructions that could themselves be wrong, and its
+! bits 19-63 carry a rich non-zero pattern (an index field, two opcodes
+! and a second address) that the step MUST NOT DISTURB.  The manual
+! gives bits 0-18 to the counter and says nothing about the rest; the
+! deck's own I62PSI is written "LX,$X0,0", an index word whose count
+! and refill fields live down there.  A model that wrote the whole word
+! would pass every check made of bits 0-18 and fail the memory checks
+! on PSICA/PSICB/PSICC.
+!
+! WHAT EACH BLOCK IS FOR:
+!
+!   A  A HALF-LENGTH subject WITH AN OPERAND OF ITS OWN.  Three reads
+!      before anything happens -- the pseudo-IC, the subject word, the
+!      subject's operand -- where EX needs two.  Stepped ONCE.  This is
+!      TEST 2B's DIR IX class.
+!   B  A FULL-LENGTH subject, word-aligned.  Stepped TWICE.  TEST 2B's
+!      FULL WD VFL class, and the only one of its five that checks
+!      "V+I,$X2,1.0".
+!   C  A FULL-LENGTH subject at an ODD HALF-WORD, which straddles two
+!      storage words and cannot be decoded -- and therefore cannot have
+!      its LENGTH read -- until a second word has been fetched.  Also
+!      stepped twice.  B and C differ only in the fetch path, so
+!      neither alone tests the interaction with the step.
+!   D  TWO LEVELS, and the two counters step by DIFFERENT AMOUNTS.  The
+!      outer EXIC's subject is an EXIC, which is HALF-length, so the
+!      outer counter steps .32; the inner EXIC's subject is FULL, so the
+!      inner counter steps 1.0.  This is p.50's "each pseudo-instruction
+!      counter involved is appropriately stepped".  A model that sized
+!      every step by the FINAL instruction's length gets the outer one
+!      wrong; a model that always stepped .32 gets the inner one wrong.
+!   E  BITS 0-17, NOT 0-18.  "EXIC,PSICE+.32" must do exactly what
+!      "EXIC,PSICE" does, because the manual addresses the counter with
+!      bits 0-17 of the effective address -- one bit narrower than EX's
+!      bits 0-18.  This is the only block that separates the arm's
+!      baWord(effAddr24(...)) from EX's effAddr19.
+!      IT PINS THE HARDWARE RULE AND NOT THE ASSEMBLER'S.  STRAP emits
+!      bit 18 = 1 here; whether STRAP-1 did, or diagnosed it, is a
+!      separate and still-open question (docs/NEXT.md 5d records the
+!      same latent gap for LX/SX and deliberately leaves it open).  What
+!      this block asserts is only what p.50 states: the MACHINE ignores
+!      that bit.
+!   F  WHY IT IS CALLED A COUNTER.  Three EXICs through ONE pseudo-IC
+!      run three DIFFERENT subjects in sequence -- half, full (and
+!      straddling), half -- because each one leaves the counter on the
+!      next.  p.50's own programming note: "execution operations in a
+!      subroutine may execute parameter-specifying subject instructions
+!      whose locations follow that of the branch to the subroutine."
+!      A step that is off by one in either direction runs the wrong
+!      instruction, not merely the right one with a wrong counter.
+!   G  THE PSEUDO-IC IN AN INDEX REGISTER.  p.50: "Pseudo-instruction
+!      counters may occupy any of the index registers as well as main
+!      core storage locations."  Word 21 is $X5, and the step is an
+!      ordinary write to it.
+!
+! EVERY SUBJECT OUTSIDE BLOCK F IS FOLLOWED BY A "B,$", and those rows
+! are the instrument, not padding: if the model returned control to the
+! half-word after the SUBJECT rather than after the EXIC, the program
+! would halt on one of them.  That is routine 1262 TEST 2A's whole
+! subject -- "EXIC MUST NOT RELINQUISH CONTROL".
+!
+! RUNS DISABLED THROUGHOUT.  Nothing here is about the interruption
+! system or address monitoring; programs/exic_addr.strap is, and it
+! carries p.32's Data Store rule for the EXIC's own effective address.
+! Running disabled keeps protViolates (p.32's enable gate) out of the
+! way, so a failure here can only be about the execution operation.
+! The closing "BAD,$" is TEST 2B's rule (a) in the form this model can
+! state it: nothing in this program may raise an address alarm.
+!
+! TEN INJECTIONS MOVE THIS PROGRAM, EACH HALT OBSERVED (not predicted).
+! Every one was applied to a pristine snapshot of bsv/StretchExecute.bsv
+! by an exact-substring substitution that ABORTS unless its anchor occurs
+! exactly once, and printed its unified diff before the run -- because a
+! `sed` that silently fails to match prints ALL TESTS PASSED, which reads
+! exactly like an honest "this does not discriminate".  After each run
+! the patch was REVERSED and the file compared byte-for-byte with the
+! snapshot.  Reproduce any row with
+! `python3 line_addresses.py programs/exic_subject.strap`.
+!
+!   step size always ONE                   -> 6159  006007.40
+!     (`HWordAddr step = 1;`)                    BZXE, $       (B)
+!   step size always TWO                   -> 6151  006003.40
+!     (`HWordAddr step = 2;`)                    BZXE, $       (A)
+!   the step CLOBBERS bits 19-63           -> 6151  006003.40
+!     (`{ c.sa + step, 45'b0 }`)                 BZXE, $       (A)
+!   no step at all (the writeWord           -> 6151  006003.40
+!     replaced by noAction)                      BZXE, $       (A)
+!   the subject installed under its OWN    -> 6401  006200.40
+!     pc and len (`rpc = c.sa; rlen =            WRONGA B, $
+!     slen;` before the step's defer)            -- control relinquished
+!   bit 18 of the effective address        -> 6186  006025.00
+!     allowed to reach the counter's             BZXE, $       (E)
+!     WORD address
+!   the straddling subject's second read   -> 6164  006012.00
+!     dropped (`if (False)` in place of          B, $          (C)
+!     the EXIC straddle test)
+!   the COUNTER WORD executed instead of   -> 6151  006003.40
+!     read (`sa: {pw, 1'b0}`)                    BZXE, $       (A)
+!   the subject not marked `under`         -> 6449  006230.40
+!     (`under: False` in shape 2's rex)          WRONGI B, $
+!                                                -- the branch was not
+!                                                   suppressed
+!   a level whose subject is ITSELF an     -> 6176  006020.00
+!     execution operation does not step          BZXE, $       (D)
+!     its counter -- a plausible                 -- and PSICD2, the INNER
+!     misreading of "between the fetching           counter, stepped
+!     and executing of its corresponding            correctly, which is
+!     subject instruction"                          what makes the row
+!                                                   name the OUTER one
+!
+! BLOCK D IS PROVEN BY THAT LAST ROW AND BY NOTHING ELSE, which is why
+! it was built: every other injection that touches the step halts in
+! block A or block B, upstream of D.  D is the only block in either
+! program whose subject is an execution operation, and therefore the
+! only one that separates "each counter stepped by ITS OWN subject's
+! length" from "every counter stepped by the final instruction's".
+!
+! WHICH CHECK NO ROW REACHES, said rather than left to be found.  Block
+! H's SUBJH memory check -- "the counter word was executed, so the word
+! holding the subject was zeroed" -- is belt-and-braces behind block A:
+! the same injection makes block A's counter check fail three rows in,
+! and that is where the program halts.  Block H's independent value is
+! that it states the contract (1262 TEST 2A's "-INST AT PSIC WAS
+! EXECUTED.") and would name it if blocks A-G were removed.
+!
+! SIX FURTHER INJECTIONS LEAVE THIS PROGRAM GREEN, and that is correct
+! rather than a gap: the counter's low-address guard, the subject's
+! low-address guard and the Data Store rule are exercised by
+! programs/exic_addr.strap, which halts on each.
+!
+! Instructions used: BD, Z, LV, V+I, KV, LVI, LX, SX, EXIC, BZXE, BB,
+! BAD, B, BEW, L(BU) -- all implemented.
+
+        SLC, (8)6000.0
+START   BD,  $+.32                 ! disabled: see the header
+!
+! ---- A. a HALF-LENGTH subject with an operand of its own ----------
+        Z,   $X1
+        LV,  $X2, PSICA            ! the counter BEFORE
+        EXIC, PSICA                ! subject "LX,$X1,SRCA", half-length
+        SX,  $X1, RESA             ! reached only if control came back HERE
+        V+I, $X2, 0.32             ! p.50: half-length -> stepped ONCE
+        KV,  $X2, PSICA
+        BZXE, $                    ! hang: the counter is not BEFORE + .32
+!
+! ---- B. a FULL-LENGTH subject, word-aligned ----------------------
+        Z,   $R
+        LV,  $X2, PSICB
+        EXIC, PSICB                ! subject "L(BU,64,8),SRCB", full word
+        LX,  $X3, $R
+        SX,  $X3, RESB
+        V+I, $X2, 1.0              ! p.50: full-length -> stepped TWICE
+        KV,  $X2, PSICB
+        BZXE, $                    ! hang: the counter is not BEFORE + 1.0
+!
+! ---- C. a FULL-LENGTH subject that straddles two storage words ----
+!   "BB1,MARKC.0,WRONGC": branch if bit 0 is ONE, and set bit 0 to one
+!   either way.  MARKC's bit 0 starts at ZERO, so the branch condition
+!   is NOT met -- no branch and (p.49) no EXE, because EXE is turned on
+!   only "by any branch operation of a subject instruction in which the
+!   condition for a successful branch is met".  The bit change is
+!   therefore an ordinary unsuppressed one, and it is what says the
+!   straddling subject was decoded at all: a model that took the second
+!   half-word from the wrong storage word would decode something else.
+        LV,  $X2, PSICC
+        EXIC, PSICC
+        BB,  MARKC.0, C1           ! bit 0 must now be ONE
+        B,   $                     ! hang: the straddling subject did not run
+C1      V+I, $X2, 1.0              ! ... and it was still FULL-length
+        KV,  $X2, PSICC
+        BZXE, $                    ! hang: the counter is not BEFORE + 1.0
+!
+! ---- D. two levels, two counters, two DIFFERENT step sizes --------
+        Z,   $R
+        LV,  $X2, PSICD1           ! the OUTER counter
+        LV,  $X3, PSICD2           ! the INNER counter
+        EXIC, PSICD1               ! subject "EXIC,PSICD2" -- HALF-length
+        LX,  $X4, $R               ! ... whose subject is a FULL word
+        SX,  $X4, RESD
+        V+I, $X2, 0.32             ! the outer subject was an EXIC: HALF
+        KV,  $X2, PSICD1
+        BZXE, $                    ! hang: outer counter stepped wrongly
+        V+I, $X3, 1.0              ! the inner subject was a VFL full word
+        KV,  $X3, PSICD2
+        BZXE, $                    ! hang: inner counter stepped wrongly
+!
+! ---- E. bits 0-17 of the effective address, not bits 0-18 ---------
+        Z,   $X6
+        LV,  $X2, PSICE
+        EXIC, PSICE+.32            ! bit 18 SET, and the machine ignores it
+        SX,  $X6, RESE
+        V+I, $X2, 0.32
+        KV,  $X2, PSICE
+        BZXE, $                    ! hang: bit 18 reached the counter's address
+!
+! ---- F. three EXICs through ONE counter, in sequence --------------
+        Z,   $X7
+        Z,   $X8
+        Z,   $R
+        EXIC, PSICF                ! -> SUBJF1 "LX,$X7,SRCA", half
+        EXIC, PSICF                ! -> SUBJF2 "L(BU,64,8),SRCB", full,
+                                   !    and it straddles (it begins at .40)
+        EXIC, PSICF                ! -> SUBJF3 "LX,$X8,SRCC", half
+        SX,  $X7, RESF1
+        LX,  $X9, $R
+        SX,  $X9, RESF2
+        SX,  $X8, RESF3
+!
+! ---- G. the pseudo-instruction counter IN AN INDEX REGISTER -------
+        Z,   $X11
+        LVI, $X5, SUBJG            ! $X5's value field addresses SUBJG
+        EXIC, $X5                  ! word 21 IS the counter
+        SX,  $X11, RESG
+        LVI, $X12, SUBJG+.32       ! where the step must have left it
+        KV,  $X12, $X5
+        BZXE, $                    ! hang: the register counter did not step
+!
+!
+! ---- H. THE COUNTER WORD IS DATA, AND IS NEVER EXECUTED -----------
+!   PSICH is itself a REAL INSTRUCTION -- "Z,SUBJH", a store-zero whose
+!   address field IS the subject's location, so its bits 0-18 are the
+!   counter and its opcode is live.  The deck's own counter is the same
+!   shape: PDF p.109 prints "I62PSI LX,$X0,0  -PSEUDO IC." at 024323.00,
+!   a real LOAD INDEX, and routine 1262 TEST 2A zeroes $X0 before the
+!   EXIC and checks it after under "-INST AT PSIC WAS EXECUTED."  A
+!   model that DECODED the word at the counter's address instead of
+!   using its bits 0-18 as an address would run "Z,SUBJH" here and zero
+!   the word holding the subject -- which the SUBJH memory check sees
+!   directly, and which leaves RESH at zero besides.  (TEST 2B has no
+!   such check anywhere; it is TEST 2A that carries this contract.)
+        Z,   $X10
+        LV,  $X2, PSICH
+        EXIC, PSICH
+        SX,  $X10, RESH            ! the SUBJECT ran, not the counter word
+        V+I, $X2, 0.32
+        KV,  $X2, PSICH
+        BZXE, $                    ! hang: the counter stepped wrongly
+!
+! ---- I. the EXE rule reaches an EXIC's subject too, AND THE COUNTER
+!         IS STEPPED ANYWAY ---------------------------------------
+!   Printed p.49: "The execution exception indicator (EXE) is turned on
+!   by any branch operation of a subject instruction in which the
+!   condition for a successful branch is met.  When indicator EXE is
+!   actuated, the branch and all associated operations are not
+!   performed."  The subject here is an unconditional branch, so the
+!   condition is met by definition.  This is the one place an EXIC uses
+!   the ExSubject context it builds for itself rather than machinery EX
+!   already exercises.
+!   AND THE COUNTER STEPS EVEN SO, which is a consequence of p.50's
+!   own wording rather than a choice: the step happens "after the
+!   subject instruction has been FETCHED but prior to its EXECUTION",
+!   and an EXE suppression happens during execution.
+        BB,  $EXE, $               ! EXE must be OFF to start with
+        LV,  $X2, PSICI
+        EXIC, PSICI                ! subject "B,WRONGI", condition MET
+        BZB, $EXE, $               ! hang: EXE did not come on
+        V+I, $X2, 0.32
+        KV,  $X2, PSICI
+        BZXE, $                    ! hang: the counter did not step
+        BEXEZ, $+.32               ! clear EXE before the closing BEW
+!
+        BAD, $                     ! hang: something raised an address alarm
+        B,   PASS
+PASS    BEW, $
+!
+! ---- the subjects, each with its "control did not come back" trap --
+        SLC, (8)6200.0
+SUBJA   LX,  $X1, SRCA
+WRONGA  B,   $                     ! control returned after the SUBJECT
+!
+        SLC, (8)6202.0
+SUBJB   L(BU,64,8), SRCB           ! a full word at a .00 half-word
+WRONGB  B,   $
+!
+!   Block C's subject: a half-word filler first, so the full word that
+!   follows begins at .40 and its two half-words live in two different
+!   storage words.
+        SLC, (8)6204.0
+FILLC   B,   $                     ! never executed; here for its LENGTH
+SUBJC   BB1, MARKC.0, WRONGC       ! full word, beginning at 6204.40
+WRONGC  B,   $
+!
+!   Block D's two levels.
+        SLC, (8)6210.0
+SUBJD1  EXIC, PSICD2               ! HALF-length: the outer counter steps .32
+WRONGD1 B,   $
+        SLC, (8)6211.0
+SUBJD2  L(BU,64,8), SRCD           ! FULL: the inner counter steps 1.0
+WRONGD2 B,   $
+!
+        SLC, (8)6214.0
+SUBJE   LX,  $X6, SRCB
+WRONGE  B,   $
+!
+!   Block F's three subjects, CONTIGUOUS and with no traps between
+!   them: the counter walks from one to the next, which is the point.
+!   SUBJF2 is a full word beginning at .40, so it straddles as well.
+        SLC, (8)6220.0
+SUBJF1  LX,  $X7, SRCA             ! half  -> counter += .32
+SUBJF2  L(BU,64,8), SRCB           ! full  -> counter += 1.0  (straddles)
+SUBJF3  LX,  $X8, SRCC             ! half  -> counter += .32
+WRONGF  B,   $
+!
+        SLC, (8)6224.0
+SUBJG   LX,  $X11, SRCC
+WRONGG  B,   $
+!
+!   Block H's subject, word-aligned so that "Z,SUBJH" -- the counter
+!   word itself -- addresses exactly this word.
+        SLC, (8)6226.0
+SUBJH   LX,  $X10, SRCD
+WRONGH  B,   $
+!
+        SLC, (8)6230.0
+SUBJI   B,   WRONGI                ! an unconditional branch: EXE suppresses it
+WRONGI  B,   $                     ! ... so control must NEVER come here
+!
+! ---- the pseudo-instruction counters ------------------------------
+!   Two branch templates per word, never executed.  Bits 0-18 of the
+!   LEFT half-word are the counter; everything else is the pattern the
+!   step must leave alone.
+        SLC, (8)6300.0
+PSICA   B,   SUBJA
+        B,   $                     ! I62BR1: control must never come HERE
+        SLC, (8)6301.0
+PSICB   B,   SUBJB
+        B,   $                     ! I62BR1: control must never come HERE
+        SLC, (8)6302.0
+PSICC   B,   SUBJC
+        B,   $                     ! I62BR1: control must never come HERE
+        SLC, (8)6303.0
+PSICD1  B,   SUBJD1
+        B,   $                     ! I62BR1: control must never come HERE
+        SLC, (8)6304.0
+PSICD2  B,   SUBJD2
+        B,   $                     ! I62BR1: control must never come HERE
+        SLC, (8)6305.0
+PSICE   B,   SUBJE
+        B,   $                     ! I62BR1: control must never come HERE
+        SLC, (8)6306.0
+PSICF   B,   SUBJF1
+        B,   $                     ! I62BR1: control must never come HERE
+        SLC, (8)6307.0
+PSICH   Z,   SUBJH                 ! a LIVE instruction: see block H
+        B,   $                     ! I62BR1: control must never come HERE
+        SLC, (8)6310.0
+PSICI   B,   SUBJI
+        B,   $                     ! I62BR1: control must never come HERE
+!
+! ---- data ---------------------------------------------------------
+        SLC, (8)6400.0
+SRCA    DD(BU,64,8), (8)123456701234
+        SLC, (8)6401.0
+SRCB    DD(BU,64,8), (8)765432107654
+        SLC, (8)6402.0
+SRCC    DD(BU,64,8), (8)246713570246
+        SLC, (8)6403.0
+SRCD    DD(BU,64,8), (8)135724670135
+        SLC, (8)6404.0
+MARKC   DD(BU,64,8), 0             ! bit 0 starts at ZERO: see block C
+        SLC, (8)6405.0
+RESA    DD(BU,64,8), 0
+        SLC, (8)6406.0
+RESB    DD(BU,64,8), 0
+        SLC, (8)6407.0
+RESD    DD(BU,64,8), 0
+        SLC, (8)6410.0
+RESE    DD(BU,64,8), 0
+        SLC, (8)6411.0
+RESF1   DD(BU,64,8), 0
+        SLC, (8)6412.0
+RESF2   DD(BU,64,8), 0
+        SLC, (8)6413.0
+RESF3   DD(BU,64,8), 0
+        SLC, (8)6414.0
+RESG    DD(BU,64,8), 0
+        SLC, (8)6415.0
+RESH    DD(BU,64,8), 0
+        END, START

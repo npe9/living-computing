@@ -136,14 +136,18 @@ function Bool iboxHazard(StretchStorage st, Bool guessPending, DecodedInstr d, V
       end
       else if (x.code == 3'b000 || x.code == 3'b001)                         // R / RCZ
         h = levelHolds(lv, zeroExtend(st.readIndex(x.idx).refill));
-      // EX/EXIC: drain the levels first, unconditionally.  For EXIC
-      // that is the "anything not listed" default; for EX, which IS
-      // implemented, it is a real requirement -- the subject
-      // instruction is not known until its word has been fetched, so no
-      // hazard test on the EX itself could cover what the subject reads
-      // or writes.  Draining is the only answer available before the
-      // fetch, and it is also what the real machine does for anything
-      // that disturbs the look-ahead.
+      // EX/EXIC: drain the levels first, unconditionally.  BOTH ARE
+      // IMPLEMENTED (EX 2026-09-25, EXIC 2026-09-29) and for both this
+      // is a real requirement rather than the "anything not listed"
+      // default it used to be for EXIC -- the subject instruction is
+      // not known until its word has been fetched, so no hazard test on
+      // the EXECUTE itself could cover what the subject reads or
+      // writes.  EXIC is one indirection worse still: not even the
+      // subject's ADDRESS is known until the pseudo-instruction counter
+      // has been read, and the counter word is then WRITTEN.  Draining
+      // is the only answer available before the fetch, and it is also
+      // what the real machine does for anything that disturbs the
+      // look-ahead.
       else h = True;
     end
     tagged Sic .x: begin

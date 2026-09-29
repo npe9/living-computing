@@ -3226,6 +3226,64 @@ run "IBOX-4 refill address gate (jb_ax4b, encoding)" python3 verify_ibox4_refill
 run "IBOX-4 routine 1244: RNX's refill-address NOP gate (jb_ax4b PDF pp.90-98)" python3 verify_ibox4_rnx_nop_listing.py
 run "IBOX-4 routine 1246: TRANSMIT and SWAP (jb_ax4b PDF pp.99-100, 112-113)" python3 verify_ax4b_1246_transmit_swap_listing.py
 run "IBOX-4 routine 1246 TEST 2A/2B: the forward-backward and direct-immediate modifiers (jb_ax4b PDF pp.109-111)" python3 verify_ax4b_1246_modifiers_listing.py
+run "EXIC: the pseudo-instruction counter, and the step sized by the subject's length" ./run_program.sh programs/exic_subject.strap StretchExicSubjTb \
+    "PC=6223" \
+    "PSICA:3264=0x320280003302800" "PSICB:3265=0x320c80003306800" \
+    "PSICC:3266=0x32168000330a800" "PSICD1:3267=0x32228000330e800" \
+    "PSICD2:3268=0x322880003312800" "PSICE:3269=0x323280003316800" \
+    "PSICF:3270=0x32488000331a800" "PSICH:3271=0x325b2000331e800" \
+    "PSICI:3272=0x326280003322800" \
+    "RESA:3333=0x29cbb829c" "RESB:3334=0xfac688fac" "RESD:3335=0x2ef53705d" \
+    "RESE:3336=0xfac688fac" "RESF1:3337=0x29cbb829c" "RESF2:3338=0xfac688fac" \
+    "RESF3:3339=0x5372ef0a6" "RESG:3340=0x5372ef0a6" "RESH:3341=0x2ef53705d" \
+    "MARKC:3332=0x8000000000000000" "SUBJH:3222=0x340d4100325a800" \
+    "PSICG:21=0x325200000000000"
+# **EXIC IS IMPLEMENTED**, and StretchCore.bsv needed no change -- the
+# same result EX got, for the same reason: HeldOp carries the
+# EXECUTE's own pc/len across the subject swap.
+#
+# THE STEP IS THE WHOLE INSTRUCTION.  Printed p.50: "After the subject
+# instruction has been fetched but prior to its execution, the
+# pseudo-instruction counter is stepped.  If the subject instruction is
+# half-length, the pseudo-instruction counter is stepped once; if
+# full-length, twice."  Both lengths are covered, using TEST 2B's own
+# LV / V+I / KV / BZXE idiom.
+#
+# AND A SENTENCE docs/NEXT.md 4a NEVER QUOTED, which is its own rule:
+# "When EXECUTE INDIRECT AND COUNT is a subject instruction in a
+# multi-leveled execution operation, EACH pseudo-instruction counter
+# involved is appropriately stepped between the fetching and executing
+# of its corresponding subject instruction."  Block D is the only block
+# in either program whose subject is itself an execution operation, so
+# it is the ONLY one that separates "each counter stepped by its own
+# subject's length" from "every counter stepped by the final
+# instruction's".  Injection I16 exists because a review flagged D as
+# unproven: under it the inner counter steps correctly and the outer
+# does not, which is why the failing row names the outer one.
+#
+# THE COUNTER WORD IS DATA AND IS NEVER EXECUTED -- the contract
+# routine 1262 TEST 2A checks with "-INST AT PSIC WAS EXECUTED."  Block
+# H makes it falsifiable here: PSICH is itself a live instruction,
+# "Z,SUBJH", whose execution would zero the word holding the subject.
+# Injection I14 runs the counter word instead of reading it.
+#
+# TWO ESTIMATES FROM THE EX IMPLEMENTATION WERE WRONG, and were
+# verified rather than trusted.  (1) exSubjectAddr CANNOT be reused at
+# all, not even with another case: it answers "where is the subject"
+# from the INSTRUCTION, while EXIC's subject address is a function of a
+# word that must be FETCHED FIRST.  resume() went from three shapes to
+# five.  (2) The step is a STORAGE WRITE, so it costs its own clock --
+# a module method may be called once per rule and a subject may itself
+# write storage.  The E-box writes the step, installs the subject and
+# sets a sticky subjReady, and canResume() honours that flag in place
+# of the read handshake.  Nothing observes the extra clock, verified
+# rather than asserted: `held` stays Valid so ebox.busy() blocks
+# armInterrupt and armRemove, resumeReady blocks armPrepare, and
+# rl_prepare no-ops on busyFor(OwnerIbox) -- exactly the state during a
+# read.  check_schedule.py still passes all ten core rules.
+#
+# Sixteen injections, every halt OBSERVED, none survived.
+
 run "EX: the subject is fetched and executed, control returns after the EXECUTE" ./run_program.sh programs/ex_subject.strap StretchExSubjTb \
     "PC=5144" "RESA:2755=0x29cbb829c" "RESB:2756=0xfac688fac" \
     "MARKC:2754=0" "MARKD:2757=0x8000000000000000"
@@ -3271,6 +3329,55 @@ run "EX: the subject is fetched and executed, control returns after the EXECUTE"
 # Fifteen injections across the four programs, every halt OBSERVED,
 # NONE survived.  Each was applied by a substitution that exits with
 # ABORT unless its anchor occurs exactly once, printing the diff first.
+
+run "EXIC: the two address restrictions, and the Data Store alarm on its own effective address" ./run_program.sh programs/exic_addr.strap StretchExicAddrTb \
+    "PC=7223" \
+    "RESA:3842=0x390080003901000" "RESA2:3843=0x29cbb829c" "RESC:3844=0x29cbb829c" \
+    "PSICA_X0:16=0x390200000000000" "X15:31=0x3c0421000000000" \
+    "PSICB:3713=0x7c8000007d000" "PSICC:3714=0x8280000081000" \
+    "PSICD:3777=0x390880003909000" "DSMARK:6=0x8000000000000000"
+# EXIC's TWO ADDRESS RESTRICTIONS, which EX does not have -- printed
+# p.50: "Pseudo-instruction counters may occupy any of the index
+# registers as well as main core storage locations but cannot occupy
+# locations addressed between 0 and 15" and "Subject instructions of
+# EXECUTE INDIRECT AND COUNT may occupy any available locations with
+# addresses 32.00 and greater."  Contrast EX: "Subject instructions of
+# EXECUTE may occupy any addressable location."
+#
+# AND A THIRD RULE NOBODY HAD QUOTED, found by reading the page rather
+# than treating the p.50 paragraph as the whole contract.  Printed
+# p.32's Data Store list, item 5, verified first-hand: **"The effective
+# address of EXECUTE INDIRECT AND COUNT."**  It is in the DATA STORE
+# list, not Data Fetch -- which is exactly right, because the counter
+# gets WRITTEN when it is stepped.  So DS applies, and with it p.32's
+# store-type rule: "Since this indicator is permanently masked on,
+# storing in core storage is always suppressed, and THE OPERATION IS
+# ALWAYS TERMINATED."
+#
+# INJECTION I12 IS A FINDING, NOT A NULL, and it is why the
+# termination sits BEFORE the read.  The plausible "set DS and carry
+# on" reading makes DS **vanish entirely**: a call that bails has its
+# whole indicator word discarded by execute()'s tail, so DS never
+# reaches the register AND the counter is stepped inside the protected
+# area.  Independent evidence for the ordering.
+#
+# THE COUNTER'S BOUNDARY IS THE ONE OPEN QUESTION, flagged rather than
+# smoothed.  p.50 says "between 0 and 15"; routine 1262 TEST 3A's three
+# messages all say "LESS THAN 15".  NO DECK ROW DISCRIMINATES -- the
+# deck's counter is word 9, illegal under either reading.  The manual
+# was taken (pw < 16), backed structurally: 0-15 are the special
+# registers and 16-31 the index registers, which the same sentence
+# EXPRESSLY ALLOWS.  Block A2 pins word 16 as legal and block A pins
+# word 15 as illegal, so a deck row with a counter at word 15 would
+# visibly contradict block A.  The R/RCZ precedent -- where the obvious
+# "refill < 16" was wrong because 0 refills -- is why this is flagged.
+#
+# ONE RULE IS NOT IMPLEMENTED AND IS NOW REACHABLE where it was merely
+# hypothetical for EX: printed p.51 item (d), "If the address of the
+# location of the subject instruction ... is both protected and
+# invalid, indicator IF will be actuated.  Indicator AD will not be
+# actuated ... unless the IF mask bit is zero."  For EXIC "invalid" now
+# means something (below 32.00).  This arm raises AD and never IF.
 
 run "EX: the EXE indicator, and the whole subject operation suppressed" ./run_program.sh programs/ex_exe.strap StretchExExeTb \
     "PC=5684" "RESD:3074=0x80000" "MARKE:3075=0x555555555"

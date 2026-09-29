@@ -1,0 +1,277 @@
+! EXIC (EXECUTE INDIRECT AND COUNT): ITS TWO ADDRESS RESTRICTIONS, and
+! the DATA STORE alarm on its own effective address.
+!
+! THREE RULES, all read first-hand at 300 dpi for this program.
+!
+! 1. THE PSEUDO-INSTRUCTION COUNTER MAY NOT LIVE BELOW 16.  Reference
+!    Manual 22-6530-2 printed p.50 (PDF 53): "Pseudo-instruction
+!    counters may occupy any of the index registers as well as main core
+!    storage locations but cannot occupy locations addressed between 0
+!    and 15."
+!
+!    THAT SENTENCE FINISHES AT THE TOP OF THE NEXT COLUMN, and the page
+!    sets a trap for a skimming eye: the right column of PDF p.53 OPENS
+!    with "15.  Subject instructions of EXECUTE INDIRECT AND COUNT may
+!    occupy any available locations with addresses 32.00 and greater."
+!    The "15." is the TAIL of the left column's sentence, not a list
+!    number, and the two halves are DIFFERENT rules with DIFFERENT
+!    boundaries.  Verified here by reading the page, not the text layer.
+!
+! 2. THE SUBJECT INSTRUCTION MUST LIE AT 32.00 OR ABOVE -- the other
+!    half of that same sentence, and the one EX does NOT share: the
+!    paragraph above it says "Subject instructions of EXECUTE may occupy
+!    any addressable location."
+!
+! 3. THE EXIC'S OWN EFFECTIVE ADDRESS IS A DATA STORE ADDRESS.  Printed
+!    p.32 (PDF 35) names this instruction to say so: "Address monitoring
+!    for Data Store includes: ... 5. The effective address of EXECUTE
+!    INDIRECT AND COUNT."  It is NOT in the Data Fetch list, and the
+!    same page says why -- "A fetch-type operation is one in which the
+!    contents of an addressed storage location are read out for use but
+!    are not subject to change" -- and a pseudo-IC is read out AND
+!    changed.  The consequence is stated twice: p.32, "Since this
+!    indicator is permanently masked on, storing in core storage is
+!    always suppressed, and the operation is always terminated"; p.45
+!    item 19, "The operation was suppressed."
+!
+! WHAT (1) AND (2) DO WHEN VIOLATED comes from printed p.45 item 16 and
+! from the deck, which agree: "Address Invalid (AD).  The location of
+! the instruction next due for execution is at an address not provided
+! in the computer system, or the location specified by the effective
+! operand address of the instruction just attempted is either not
+! provided in the computer system or INVALID FOR THE SPECIFIED
+! OPERATION.  The affected instruction is executed as a NO OPERATION."
+! jb_ax5b routine 1262 TEST 3A (pseudo-IC below 15) and TEST 3B
+! (subject below 32) each carry three error messages saying exactly
+! that: no interrupt, AD set, the instruction NOPed.  Both are
+! transcribed for their ENCODING as programs/ax5b_162_test3a.strap and
+! ax5b_162_test3b.strap and cannot be run (SSIP, the interrupt table
+! and routine 1260's subroutines).  THIS FILE IS THEIR BEHAVIOURAL
+! COUNTERPART for the two parts this model has: AD set, and the
+! instruction no-opped.  The third, "no interrupt" -- p.50's "at the
+! completion, termination, or suppression of an execution operation,
+! interruption is always permitted", which overrides the DISABLED state
+! -- is NOT implemented and is recorded as such in docs/NEXT.md.
+!
+! BOTH BOUNDARIES ARE PINNED FROM BOTH SIDES, which is the point of
+! blocks A2 and C: a model that wrote "< 32" for the counter would pass
+! A and fail A2, and one that wrote "< 16" for the subject would pass C
+! and fail B.
+!
+!   A   counter at WORD 15, the highest illegal one      -> AD, no-op
+!   A2  counter at WORD 16 ($X0), the lowest legal one   -> runs
+!   B   subject at WORD 31 ($X15), the highest illegal   -> AD, no-op
+!   C   subject at WORD 32 (32.00), the lowest legal     -> runs
+!   D   counter inside the protected area, enabled       -> DS, and the
+!       whole operation suppressed
+!
+! THE MANUAL AND THE DECK DISAGREE ABOUT BOUNDARY (1) AND THIS PROGRAM
+! FOLLOWS THE MANUAL.  1262 TEST 3A's three messages all say "LESS THAN
+! 15"; p.50 says "between 0 and 15".  No deck row discriminates -- its
+! counter is word 9, illegal under either reading -- so block A uses
+! word 15 and asserts it is ILLEGAL, which is the manual's reading and
+! the only one the machine's storage map supports: 0-15 are the special
+! registers and 16-31 are the index registers, which the same sentence
+! expressly ALLOWS.  If a deck row ever turns up with a counter at word
+! 15, this block is the one it contradicts.  Recorded in docs/NEXT.md.
+!
+! ELEVEN INJECTIONS MOVE THIS PROGRAM -- the eight halts below, four of
+! them sharing one row -- EACH HALT OBSERVED (not predicted).  Every one was applied to a pristine snapshot of
+! bsv/StretchExecute.bsv by an exact-substring substitution that ABORTS
+! unless its anchor occurs exactly once, and printed its unified diff
+! before the run -- because a `sed` that silently fails to match prints
+! ALL TESTS PASSED, which reads exactly like an honest "this does not
+! discriminate".  After each run the patch was REVERSED and the file
+! compared byte-for-byte with the snapshot.  Reproduce any row with
+! `python3 line_addresses.py programs/exic_addr.strap`.
+!
+!   the counter's low-address guard        -> 7174  007003.00
+!     removed (`if (False)`)                     B, $          (A)
+!                                                -- AD was not set
+!   the counter's guard WIDENED to         -> 7182  007007.00
+!     `pw < 17`, so word 16 is illegal          BAD, $         (A2)
+!                                                -- AD set where p.50
+!                                                   allows a counter
+!   the subject's low-address guard        -> 7190  007013.00
+!     removed (`if (False)`)                     B, $          (B)
+!                                                -- AD was not set
+!   the subject's guard WIDENED to         -> 7198  007017.00
+!     `< 33`, so 32.00 is illegal               BAD, $         (C)
+!   the Data Store check removed           -> 7215  007027.40
+!     (`else if (False)`)                        BZB, 6.0, $   (D)
+!                                                -- no DS, and the
+!                                                   subject ran
+!   DS SET BUT NOT TERMINATED -- the        -> 7215  007027.40
+!     "set the indicator and carry on"           BZB, 6.0, $   (D)
+!     reading, rejected on p.32's "the
+!     operation is always terminated"
+!                                                AND THE INDICATOR
+!                                                VANISHED TOO: a call
+!                                                that bails has its
+!                                                whole indicator word
+!                                                discarded (execute()'s
+!                                                tail), so DS never
+!                                                reached the register
+!                                                and the counter was
+!                                                stepped inside the
+!                                                protected area.  That
+!                                                is a second reason the
+!                                                termination belongs
+!                                                BEFORE the read.
+!   step size always TWO / the step        -> 7202  007021.00
+!     clobbering bits 19-63 / no step /          BZXE, $       (C)
+!     the counter word executed
+!   the subject installed under its OWN    -> 7297  007100.40
+!     pc and len                                 WRONGA B, $
+!
+! FIVE FURTHER INJECTIONS LEAVE THIS PROGRAM GREEN and belong to
+! programs/exic_subject.strap: the "always ONE" step (this file has no
+! full-length subject), bit 18 of the effective address (no operand here
+! has it set), the straddle read, the `under` flag, and the step skipped
+! when the subject is itself an execution operation (no subject here is
+! one).  Sixteen injections were run across the pair; every one moved at
+! least one of the two programs and none survived.
+!
+! Instructions used: BD, BE, Z, LX, SX, LV, LVI, SV, KV, V+I, EXIC,
+! BAD, BADZ, BZXE, BB1, BBZ, BZB, B, BEW -- all implemented.
+
+        SLC, (8)7000.0
+START   BD,  $+.32                 ! disabled: blocks A-C are not about
+                                   !   address monitoring
+!
+! ---- A. the counter at WORD 15 -- the highest illegal location ----
+        Z,   $X1
+        LX,  $X2, PSICA            ! a well-formed counter, aimed at SUBJA
+        SX,  $X2, 15.0             ! ... planted in word 15
+        EXIC, 15.0                 ! THE TEST
+        BADZ, A1                   ! AD must be SET (and is cleared here)
+        B,   $                     ! hang: AD was not set
+A1      KV,  $X1, ZEROW
+        BZXE, $                    ! hang: the subject RAN
+        LX,  $X3, 15.0
+        SX,  $X3, RESA             ! word 15 must be UNCHANGED: not stepped
+!
+! ---- A2. the counter at WORD 16 -- the lowest LEGAL location ------
+!   p.50: "Pseudo-instruction counters may occupy any of the index
+!   registers as well as main core storage locations."  $X0 is word 16.
+        Z,   $X1
+        LVI, $X0, SUBJA            ! index register 0's value addresses SUBJA
+        EXIC, $X0                  ! THE CONTRAST: one word higher, legal
+        BAD, $                     ! hang: AD must NOT be set
+        SX,  $X1, RESA2            ! the subject DID run
+!
+! ---- B. the subject at WORD 31 -- the highest illegal location ----
+!   "$X15" is index register 15, word 31, half-word address 62.  The
+!   counter itself (PSICB) is perfectly legal; only what it points at
+!   is not.  That is jb_ax5b TEST 3B's shape exactly: "leaves the
+!   pseudo-IC legal and puts the SUBJECT INSTRUCTION below 32".
+        Z,   $X1
+        LX,  $X4, SUBJW            ! the WORD holding "LVI,$X1,(8)777"
+        SX,  $X4, $X15             ! ... planted in index register 15
+        LV,  $X5, PSICB            ! the counter BEFORE
+        EXIC, PSICB
+        BADZ, B1                   ! AD must be SET
+        B,   $                     ! hang: AD was not set
+B1      KV,  $X1, ZEROW
+        BZXE, $                    ! hang: the subject RAN
+        KV,  $X5, PSICB
+        BZXE, $                    ! hang: the counter was STEPPED anyway --
+                                   !   p.50 steps it "after the subject
+                                   !   instruction has been fetched", and
+                                   !   no subject was fetched
+!
+! ---- C. the subject at WORD 32 -- the lowest LEGAL location -------
+        Z,   $X6
+        LV,  $X5, PSICC
+        EXIC, PSICC                ! THE CONTRAST: 32.00 exactly
+        BAD, $                     ! hang: AD must NOT be set
+        SX,  $X6, RESC             ! the subject DID run
+        V+I, $X5, 0.32
+        KV,  $X5, PSICC
+        BZXE, $                    ! hang: ... and the counter stepped once
+!
+! ---- D. the counter inside the PROTECTED AREA: DS, and suppressed --
+!   The set-up runs DISABLED, exactly as programs/storage_protection.
+!   strap and jb_ax5b's SIP16 do it: word 2 ($IA) and word 3 (the
+!   boundary registers) are themselves protected once the system is
+!   enabled.
+        LVI, $X13, TBL
+        SV,  $X13, $IA             ! the interruption table origin
+        LVI, $X13, PROT
+        SV,  $X13, $LB             ! lower boundary := PROT
+        LVI, $X13, ABOVE
+        SV,  $X13, $UB             ! upper boundary := ABOVE
+        BBZ, 3.57, $+1.0           ! boundary control := 0, signal INSIDE
+        Z,   $X7
+        LV,  $X5, PSICD            ! the counter BEFORE
+        BE,  $+.32                 ! ENABLE: monitoring is effective now
+        EXIC, PSICD                ! PSICD lives inside [PROT, ABOVE)
+        BZB, 6.0, $                ! hang if DS's routine did not run
+        BD,  $+.32                 ! disable again before the checks
+        KV,  $X7, ZEROW
+        BZXE, $                    ! hang: the subject RAN
+        KV,  $X5, PSICD
+        BZXE, $                    ! hang: the counter was STEPPED -- p.32's
+                                   !   "storing ... is always suppressed"
+!
+        B,   PASS
+PASS    BEW, $
+!
+! ---- the subjects -------------------------------------------------
+        SLC, (8)7100.0
+SUBJA   LX,  $X1, SRC              ! a non-zero mark: "the subject ran"
+WRONGA  B,   $                     ! control returned after the SUBJECT
+        SLC, (8)7101.0
+SUBJW   LX,  $X1, SRC              ! the same half-word, as a WORD to copy
+                                   !   into index register 15 (block B)
+        SLC, (8)7102.0
+SUBJD   LX,  $X7, SRC              ! block D's subject, OUTSIDE the
+WRONGD  B,   $                     !   protected area
+!
+!   Block C's subject lives at 32.00 -- the lowest location p.50 allows
+!   a subject of EXIC to occupy, and the whole point of the block.
+        SLC, (8)40.0
+SUBJC   LX,  $X6, SRC
+WRONGC  B,   $
+!
+! ---- the pseudo-instruction counters ------------------------------
+!   Two branch templates per word, never executed; bits 0-18 of the
+!   LEFT half-word are the counter, by construction.
+        SLC, (8)7200.0
+PSICA   B,   SUBJA
+        BEW, SUBJA
+        SLC, (8)7201.0
+PSICB   B,   $X15                  ! -> half-word 62, word 31: ILLEGAL
+        BEW, $X15
+        SLC, (8)7202.0
+PSICC   B,   SUBJC                 ! -> half-word 64, word 32: legal
+        BEW, SUBJC
+!
+! ---- the protected area -------------------------------------------
+        SLC, (8)7300.0
+PROT    DD(BU,64,8), 0             ! the lower boundary, inclusive
+        SLC, (8)7301.0
+PSICD   B,   SUBJD                 ! block D's counter, INSIDE the area
+        BEW, SUBJD
+        SLC, (8)7310.0
+ABOVE   DD(BU,64,8), 0             ! the upper boundary, exclusive
+!
+! ---- data and results ---------------------------------------------
+        SLC, (8)7400.0
+ZEROW   DD(BU,64,8), 0             ! a zero to compare index values against
+        SLC, (8)7401.0
+SRC     DD(BU,64,8), (8)123456701234
+        SLC, (8)7402.0
+RESA    DD(BU,64,8), 0
+        SLC, (8)7403.0
+RESA2   DD(BU,64,8), 0
+        SLC, (8)7404.0
+RESC    DD(BU,64,8), 0
+!
+! ---- the interruption table ---------------------------------------
+        SLC, (8)7500.0
+TBL     DD(BU,64,8), 0             ! entry N is at TBL + N words
+        SLC, (8)7523.0
+DSRTN   BB1, 6.0, $+1.0            ! entry 19 = DS: record the violation in
+                                   !   a word that can never signal
+        END, START

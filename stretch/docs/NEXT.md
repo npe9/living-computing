@@ -838,7 +838,7 @@ injection address a new test records should come from it, and it
 reproduces the ones already recorded — which is what makes them
 checkable rather than folklore.
 
-## 4a. `EX` IS BUILT (2026-09-25); `EXIC` IS THE WORK THAT REMAINS
+## 4a. BOTH EXECUTION OPERATIONS ARE BUILT — `EX` 2026-09-25, `EXIC` 2026-09-29
 
 **`EX` executes.** The arm is in `StretchExecute.bsv` (the
 `BranchOrMisc` misc code `010`), the subject swap is in `mkEBox`'s
@@ -855,19 +855,57 @@ injections, every one observed and every one caught**; each program's
 header carries its own table with the halt address and the source row.
 `EX` has left `audit_opcode_coverage.py`'s `ENCODING_ONLY` set.
 
-**WHAT `EXIC` CAN REUSE, and it is most of the mechanism.** The
-`ExSubject` context (`under` for the EXE rule, `ifSig` for the carried
-class-1 alarm), `exSubjectAddr`, the `HeldOp` struct, `mkEBox`'s
-subject swap including the straddling second read, and every one of
-the five arms' EXE suppressions are all written in terms of "this
-instruction is a subject", not "this instruction is the subject of an
-EX". `EXIC` needs: its own `exSubjectAddr` case (one indirection more
-— p.50, "bits 0-18 of the full-word addressed by bits 0-17 of the
-effective address are used as a pseudo-instruction counter"), a
-pseudo-IC **step** between fetch and execution sized by the subject's
-length, and its two address restrictions (pseudo-IC not in 0-15, the
-subject at 32.00 and greater). It still reaches `setOpInvalid` and
-nothing about it was disturbed.
+**`EXIC` EXECUTES TOO (2026-09-29).** Its arm is the misc code `011`
+beside `EX`'s `010`; `exicPsicAddr` is its address function; `ExicCtx`
+and `HeldOp.exic` carry the level's state; `mkEBox.resume()` grew from
+three shapes to five; and `subjReady` gives the step its own clock.
+Driven by `strap/programs/exic_subject.strap` and `exic_addr.strap`,
+sixteen injections, every halt observed, none survived. `EXIC` has
+left `audit_opcode_coverage.py`'s `ENCODING_ONLY` set, which is now
+`RNX` alone.
+
+**THE ESTIMATE THIS ITEM USED TO CARRY WAS WRONG IN TWO WAYS, and both
+are worth keeping**, because they are the shape of "reuse" estimates
+in general. It said `EXIC` needed "its own `exSubjectAddr` case (one
+indirection more), a pseudo-IC step between fetch and execution sized
+by the subject's length, and its two address restrictions".
+
+* **`exSubjectAddr` CANNOT BE REUSED AT ALL, not even with another
+  case.** That function answers "where is the subject" from the
+  INSTRUCTION. `EXIC`'s subject address is not a function of the
+  instruction: it is a function of a word that must be fetched first.
+  So `EXIC` has a separate `exicPsicAddr` returning the COUNTER's word
+  address, `HeldOp` carries a new `Maybe#(ExicCtx)` whose Valid-ness
+  is the invariant "`di` is an EXIC whose counter has been read", and
+  `resume()` dispatches on that before anything else.
+* **THE STEP IS A STORAGE WRITE, AND THAT COSTS A CLOCK.** A module
+  method may be called once per rule, and a subject instruction may
+  itself write storage, so the step and the subject cannot share a
+  clock — which is, conveniently, exactly what p.50 describes ("after
+  the subject instruction has been fetched but prior to its
+  execution"). `mkEBox` writes the step, installs the subject and sets
+  `subjReady`; `canResume()` honours that flag IN PLACE OF the read
+  handshake, so the next `rl_exec_resume` runs the subject with no
+  read outstanding. Nothing else can observe the extra clock: `held`
+  stays Valid, so `ebox.busy()` blocks the interruption and look-ahead
+  arms and `canResume()` blocks `rl_prepare`, exactly as during a
+  read. **`StretchCore.bsv` still needed no change**; the only other
+  file touched was `StretchIBox.bsv`, comment-only, as for `EX`.
+
+**AND A THIRD RULE THIS ITEM NEVER MENTIONED**, found by reading
+printed p.32 for this work rather than taking the p.50 paragraph as
+the whole contract: *"Address monitoring for Data Store includes: ...
+5. The effective address of EXECUTE INDIRECT AND COUNT."* The counter
+is read AND written, so it is a store-type address, and p.32's
+store-type rule is *"storing in core storage is always suppressed, and
+the operation is always terminated"* (p.45 item 19: "The operation was
+suppressed"). The arm therefore raises **DS** and terminates BEFORE
+the counter is read. The same page also settles a question `EX` had to
+argue around: *"Address monitoring for Instruction Fetch includes: ...
+3. The location of the subject instruction of the EXECUTE and EXECUTE
+INDIRECT AND COUNT operations WHEN THIS LOCATION IS IN MAIN
+STORAGE"* — so for `EXIC` `ifViolates`' `a >= 32` guard is p.32's own
+wording, not a different rule that agrees numerically.
 
 **WHAT `EX` DELIBERATELY DOES NOT DO**, each a bounded negative rather
 than a guess:
@@ -902,9 +940,33 @@ than a guess:
   "may not cause full suppression of the instruction", p.53 item 2b).
   None of it is implemented.
 
-**Still waiting on `EXIC`**: `jb_ax5b` routine 1268 cases 1B/1C
-(`EX,$X3`, `EX,$R` — these two want `EX` and are now unblocked) and
-routine 1260 blocks 16084 (`LVE`) / 16085 (`EX`).
+**Unblocked now that both execute**: `jb_ax5b` routine 1268 cases
+1B/1C (`EX,$X3`, `EX,$R`) and routine 1260 blocks 16084 (`LVE`) /
+16085 (`EX`).
+
+**WHAT `EXIC` DELIBERATELY DOES NOT DO**, beyond the four `EX`
+negatives above, which it inherits unchanged:
+* **printed p.51 item (d)** — "If the address of the location of the
+  subject instruction of EXECUTE or EXECUTE INDIRECT AND COUNT is both
+  protected and invalid, indicator IF will be actuated. Indicator AD
+  will not be actuated as a result of this invalid address unless the
+  IF mask bit is zero." For `EXIC` "invalid" now has a meaning it does
+  not have for `EX` (below 32.00), so the corner is REACHABLE here
+  where it was hypothetical there. The arm raises AD and never IF.
+* **THE COUNTER'S 0-15 BOUNDARY IS THE MANUAL'S, AND THE DECK SAYS
+  SOMETHING ELSE.** p.50: "cannot occupy locations addressed between 0
+  and 15". Routine 1262 TEST 3A's three error messages: "LESS THAN
+  15". No row discriminates — the deck's counter is word 9, illegal
+  under either reading. The model takes `pw < 16`, which is the
+  manual's reading and the only one the storage map supports (0-15 are
+  the special registers; 16-31 are the index registers, which the same
+  sentence expressly ALLOWS, and `exic_addr.strap` block A2 pins word
+  16 as legal). A deck row with a counter at word 15 would decide it.
+* **p.32's suppression is worded "storing in CORE STORAGE is always
+  suppressed"** while p.50 expressly lets a counter live in an index
+  register. The model applies the boundary test uniformly; nothing
+  read for this work says what the boundary registers do to a
+  register-resident counter, and no deck row reaches it.
 
 ### THE OPERATION SPEC, READ FIRST-HAND 2026-09-24 — printed p.50 (PDF 53)
 
@@ -1565,7 +1627,12 @@ to itself, so the two spellings must differ whatever the widths say.
 
 ## 5d. `EXIC`'s THREE RULES, and a latent assembler gap
 
-### What routine 1262 TEST 2B actually checks — the oracle `EXIC` will be built against
+**BUILT AGAINST THIS, 2026-09-29.** `programs/exic_subject.strap` uses
+TEST 2B's own idiom for rule (c) — `LV` / `V+I` / `KV` / `BZXE` —
+and covers BOTH step sizes, so the "once / twice" sentence below is
+executable in this model now and not only in the deck. See item 4a.
+
+### What routine 1262 TEST 2B actually checks — the oracle `EXIC` was built against
 
 Transcribed 2026-09-25 end to end (`ax5b_162_test2b_head_tail.strap`
 for the two ends, `ax5b_162_exic_classes.strap` for the middle).

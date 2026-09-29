@@ -77,10 +77,8 @@ UNIMPLEMENTED = {
 #
 # THE CATEGORY HAS BEEN FORCED THREE TIMES, by three unrelated
 # transcriptions, which is why it is a category and not a special case.
-# TWO of the three are still here:
+# ONE of the three is still here:
 #
-#   EXIC  programs/ax5b_162_exic_classes.strap -- jb_ax5b routine 1262
-#         TEST 2B, 43 rows.  Also ax5b_162_test3a/3b.
 #   RNX   programs/ibox4_rnx_nop.strap -- jb_ax4b routine 1244, the
 #         refill-address NOP gate.  The FIRST listing witness for RNX
 #         anywhere in this repo; before it, the name appeared only in
@@ -92,29 +90,31 @@ UNIMPLEMENTED = {
 # none is implemented, and listing them here says so rather than
 # letting their absence from UNIMPLEMENTED imply otherwise.
 #
-# EX LEFT THIS SET ON 2026-09-25, and the direction of that move is the
-# one this category was built to make visible.  EX used to be here for
-# programs/ax5b_162_test1cc.strap -- routine 1262 TEST 1CC, 81 rows,
-# more EX rows than the rest of the repo together -- which pinned its
-# ENCODING and nothing else.  The model now EXECUTES it
-# (StretchExecute.bsv's EX arm, mkEBox's subject swap, the EXE
-# suppression in the five branch arms), driven by programs/
-# ex_subject.strap, ex_exe.strap and ex_monitor.strap, so it belongs in
+# EX LEFT THIS SET ON 2026-09-25 AND EXIC LEFT IT ON 2026-09-29, and
+# the direction of those moves is the one this category was built to
+# make visible.  EX used to be here for programs/ax5b_162_test1cc.strap
+# -- routine 1262 TEST 1CC, 81 rows, more EX rows than the rest of the
+# repo together -- which pinned its ENCODING and nothing else.  EXIC
+# used to be here for programs/ax5b_162_exic_classes.strap (routine
+# 1262 TEST 2B, 43 rows) and ax5b_162_test3a/3b, for the same reason.
+# The model now EXECUTES both: EX through StretchExecute.bsv's EX arm,
+# mkEBox's subject swap and the EXE suppression in the five branch
+# arms, driven by ex_subject/ex_exe/ex_exe_bind/ex_monitor.strap; EXIC
+# through its own arm (two bail-outs, one per indirection), mkEBox's
+# pseudo-instruction-counter step and the two address restrictions,
+# driven by exic_subject.strap and exic_addr.strap.  So each belongs in
 # no category on this page at all: not UNIMPLEMENTED, because it is
-# implemented; not UNEXERCISED, because three programs run it; not
+# implemented; not UNEXERCISED, because programs run it; not
 # ENCODING_ONLY, because that name means "used for its encoding only",
-# and leaving it here would make the ratchet say something false.
-# EXIC is untouched and still reaches setOpInvalid.
+# and leaving either here would make the ratchet say something false.
 #
 # EXPECT THIS SET TO KEEP GROWING, and do not read growth as progress.
 # A name moving from UNIMPLEMENTED to ENCODING_ONLY means a listing now
 # pins its ENCODING.  It says nothing whatever about execution, and the
 # two are separately earned -- which is exactly why a name leaving the
-# set, as EX just did, is the move that means something.  docs/NEXT.md
-# item 4a is the open work for EXIC; RNX is recorded there as out of
-# scope.
+# set, as EX and EXIC have now both done, is the move that means
+# something.  RNX is recorded in docs/NEXT.md as out of scope.
 ENCODING_ONLY = {
-    "EXIC",
     "RNX",
 }
 # IMPLEMENTED BUT UNEXERCISED -- the model has real arms for these and

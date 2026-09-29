@@ -71,12 +71,12 @@ This targets **ISA-level correctness for a documented subset**, not a
 cycle-accurate replica of the real machine (which pipelined and
 looked ahead — its most famous engineering feature; see "Not modeled"
 below) and not the complete instruction set (which includes decimal
-arithmetic, radix conversion, `EXIC`, most I/O control, and an
+arithmetic, radix conversion, most I/O control, and an
 interrupt system, several of them large enough to be their own
 projects). Floating point is no longer on that list -- all 29 FP
-operation codes execute; see "Executed" below. Neither is `EX`, which
-executes as of 2026-09-25; `EXIC`, which shares its machinery, does
-not.
+operation codes execute; see "Executed" below. Neither are the two
+execution operations: `EX` executes as of 2026-09-25 and `EXIC` as of
+2026-09-29.
 
 ### Executed
 
@@ -226,22 +226,58 @@ not.
   special exceptions, that monitoring stays in force and interruption
   stays permitted *while the system is disabled*; and p.52-53's
   separate rule for a Class S alert arising during a subject
-  instruction. `EXIC`, which shares all of the machinery above, is
-  still Operation Code Invalid — see the list below.
+  instruction.
   Driven by `strap/programs/ex_subject.strap`, `ex_exe.strap`,
   `ex_exe_bind.strap` and `ex_monitor.strap` — fifteen injections
   between them, each observed; the deck oracles are jb_ax5b routine
   1262 TEST 1A/1B/1CC, transcribed for their encoding as
   `ax5b_162_test1b.strap` and `ax5b_162_test1cc.strap`.
+- **`EXIC` (EXECUTE INDIRECT AND COUNT)** — Reference Manual printed
+  p.50, and it shares `EX`'s subject machinery but adds three rules of
+  its own. "Bits 0-18 of the full-word addressed by **bits 0-17** of
+  the effective address are used as a pseudo-instruction counter" —
+  one bit narrower than `EX`'s operand, so the arm uses
+  `baWord(effAddr24(...))` and not `effAddr19`. "After the subject
+  instruction has been fetched but prior to its execution, the
+  pseudo-instruction counter is stepped. If the subject instruction is
+  half-length, the pseudo-instruction counter is stepped once; if
+  full-length, twice" — bits 0-18 only; bits 19-63 of the counter word
+  come back unchanged. And two address restrictions, which `EX` does
+  not have: the counter "cannot occupy locations addressed between 0
+  and 15" and the subject must lie at "32.00 and greater"; violating
+  either actuates **AD** and the instruction is executed as a no
+  operation (p.45 item 16). The counter's own location is a **Data
+  Store** address (p.32, "Address monitoring for Data Store includes:
+  ... 5. The effective address of EXECUTE INDIRECT AND COUNT"), so a
+  protected counter actuates **DS** and the whole operation is
+  suppressed before anything is fetched.
+  **THE STEP COSTS ITS OWN CLOCK**, and that is forced rather than
+  chosen: it is a storage write, so is much of what a subject does,
+  and a module method may be called once per rule. `mkEBox` therefore
+  writes the step, installs the subject and sets `subjReady`, which
+  `canResume()` honours in place of the read handshake; nothing else
+  in the machine can observe the extra clock, because `held` stays
+  Valid throughout.
+  **Not implemented**: the same four bounded negatives `EX` records
+  (`USA`; p.50's two special exceptions; a Class S alert during a
+  subject), plus p.51 item (d) — a subject location that is both
+  protected and invalid actuates IF rather than AD.
+  Driven by `strap/programs/exic_subject.strap` (the three rules of
+  routine 1262 TEST 2B, both step sizes, the straddling subject, two
+  levels with two different step sizes, the counter in an index
+  register, and the counter word read as data) and `exic_addr.strap`
+  (both address boundaries from both sides, and the Data Store rule) —
+  sixteen injections, each observed; the deck oracles are jb_ax5b
+  routine 1262 TEST 2A/2B/3A/3B, transcribed for their encoding.
 
 ### Decoded but not executed (sets indicator 15, OP, and no-ops —
 ### matches real-machine behavior for a suppressed instruction)
 
 Decimal-mode VFL (`c=1`), radix conversion, floating-point arithmetic
 beyond L/ST, Input-Output's `LOC` and most of `CTL` (see above),
-`EXIC`, Transmit backward/`SWAP`/multi-word/direct-count. (SIC,
-Store Instruction Counter If, Bit Branching and `EX` have all moved to
-"Executed" — see there.)
+Transmit backward/`SWAP`/multi-word/direct-count. (SIC, Store
+Instruction Counter If, Bit Branching, `EX` and `EXIC` have all moved
+to "Executed" — see there.)
 
 **The Transmit entry was two-thirds FALSE until 2026-09-22**, and is
 worth keeping as an example of how that happens. Only `backward` set

@@ -510,15 +510,44 @@ endfunction
 // mkEBox tells "an operand word arrived" from "a subject instruction
 // arrived": an EX is the only instruction whose bail-out read is a
 // fetch of something to be DECODED rather than something to be USED.
-// EXIC is deliberately NOT recognised here -- it still reaches
-// setOpInvalid in the arm below and never bails, so it can never be the
-// held instruction.
+// EXIC IS DELIBERATELY NOT RECOGNISED HERE and never will be -- see
+// exicPsicAddr below, which is a different function for a reason that
+// is not stylistic: EXIC's subject address is not a function of the
+// instruction at all.  It is a function of a WORD THAT MUST BE FETCHED
+// FIRST, so no `exSubjectAddr` case could compute it.
 // ---------------------------------------------------------------------
 function Maybe#(HWordAddr) exSubjectAddr(StretchStorage st, DecodedInstr d);
   case (d) matches
     tagged BranchOrMisc .bm:
       return (bm.misc && bm.code == 3'b010)
                ? tagged Valid effAddr19(st, bm.addr, bm.idx)
+               : tagged Invalid;
+    default: return tagged Invalid;
+  endcase
+endfunction
+
+// EXECUTE INDIRECT AND COUNT -- WHERE THE PSEUDO-INSTRUCTION COUNTER
+// LIVES.  Reference Manual printed p.50 (PDF 53), read first-hand at
+// 300 dpi: "Bits 0-18 of the full-word addressed by BITS 0-17 of the
+// effective address are used as a pseudo-instruction counter."
+//
+// BITS 0-17 IS A WORD ADDRESS -- ONE BIT NARROWER THAN EX'S -- so this
+// is the Z / R / RCZ idiom (effAddr24 then baWord) and NOT effAddr19.
+// Bit 18 of the effective address is thrown away, exactly as it is by
+// the three arms beside this one.  The difference is the manual's own:
+// EX says "bits 0-18 of the effective address" (a half-word: a subject
+// instruction can begin in either half of a word), EXIC says "bits 0-17"
+// (a full word: a pseudo-instruction counter cannot).
+//
+// Returns Invalid for anything that is not an EXIC.  In mkEBox it does
+// double duty as the test "is the held instruction an EXIC that has not
+// yet read its pseudo-IC", which is exactly the state HeldOp.exic being
+// Invalid records; see the invariant stated there.
+function Maybe#(WordAddr) exicPsicAddr(StretchStorage st, DecodedInstr d);
+  case (d) matches
+    tagged BranchOrMisc .bm:
+      return (bm.misc && bm.code == 3'b011)
+               ? tagged Valid baWord(effAddr24(st, {bm.addr, 5'b0}, bm.idx))
                : tagged Invalid;
     default: return tagged Invalid;
   endcase
@@ -554,6 +583,34 @@ typedef struct {
 } ExSubject deriving (Bits, Eq, FShow);
 
 ExSubject notSubject = ExSubject { under: False, ifSig: False };
+
+// WHAT AN EXIC IN FLIGHT HAS TO REMEMBER, and every field is here
+// because mkEBox cannot recompute it later.
+//
+// `psAddr` -- where the pseudo-instruction counter lives.  Recomputing
+//   it from the instruction would mean calling exicPsicAddr a third
+//   time, three clocks after the first; the EX arm's note explains why
+//   no index-register write can intervene today, but carrying the
+//   answer makes the step independent of that argument.
+// `psWord` -- the pseudo-IC word AS READ.  The step is a
+//   READ-MODIFY-WRITE of bits 0-18 only: p.50 says "bits 0-18 ... are
+//   used as a pseudo-instruction counter", so bits 19-63 (an index
+//   word's sign, flag, count and refill fields, if that is what the
+//   program keeps there) must come back unchanged.
+// `sa` -- bits 0-18 of psWord: the subject instruction's HALF-WORD
+//   location, and the value the step increments.
+// `haveW0` / `w0` -- a full-length subject beginning in a right
+//   half-word straddles two storage words and needs a second read
+//   (the shape EX met first, 1262 TEST 1CC's I62B6).  The first word
+//   is kept HERE rather than in `prefetch`, because `prefetch` still
+//   holds the pseudo-IC word that the EXIC arm re-reads on every call.
+typedef struct {
+  WordAddr  psAddr;
+  Word64    psWord;
+  HWordAddr sa;
+  Bool      haveW0;
+  Word64    w0;
+} ExicCtx deriving (Bits, Eq, FShow);
 
 // readHW/readHWWithWord/writeHW (the internal-read variants of this
 // section) were removed once every caller had migrated to the
@@ -3827,7 +3884,137 @@ function ActionValue#(ExecResult)
               let sa = validValue(exSubjectAddr(st, di));
               needsRead = tagged Valid sa[18:1];
             end
-            default: ind = setOpInvalid(ind); // EXIC: out of scope
+            3'b011: begin // EXIC (EXECUTE INDIRECT AND COUNT), p.50
+              // "Bits 0-18 of the full-word addressed by bits 0-17 of
+              // the effective address are used as a pseudo-instruction
+              // counter.  The contents of the pseudo-instruction
+              // counter address the location of a subject instruction
+              // that is fetched and executed."
+              //
+              // TWO BAIL-OUTS, ONE PER INDIRECTION, and that is the
+              // whole of what this arm does.  EX has one (fetch the
+              // subject); EXIC has two (fetch the pseudo-IC, then fetch
+              // the subject it names).  Everything that happens BETWEEN
+              // them -- the address checks aside -- is mkEBox's, because
+              // it needs state this pure function does not have.
+              //
+              //   prefetchCount 0  the pseudo-IC has not been read
+              //   prefetchCount 1  prefetch[0] IS the pseudo-IC word
+              //
+              // Reached at most twice per EXIC: mkEBox replaces the held
+              // instruction with the SUBJECT before a third call could
+              // happen, so there is no "prefetchCount >= 2" branch.
+              WordAddr pw = validValue(exicPsicAddr(st, di));
+              if (prefetchCount == 0) begin
+                if (pw < 16)
+                  // p.50: "Pseudo-instruction counters may occupy any
+                  // of the index registers as well as main core storage
+                  // locations but cannot occupy locations addressed
+                  // between 0 and 15."  (That sentence finishes at the
+                  // TOP OF THE RIGHT COLUMN of PDF p.53, where the "15."
+                  // looks like a list number and is not.)  p.45 item 16
+                  // says what an address "invalid for the specified
+                  // operation" does: "Address Invalid (AD) ... The
+                  // affected instruction is executed as a NO
+                  // OPERATION."  So: AD, and nothing else at all -- no
+                  // fetch, no step.  That is routine 1262 TEST 3A's
+                  // three error messages exactly ("-NO INTERRUPT...",
+                  // "-AD NOT SET...", "-INSTRUCT NOT NOPED...").
+                  //
+                  // THE BOUNDARY IS THE MANUAL'S, NOT THE DECK'S, and
+                  // the two do not agree.  1262 TEST 3A's messages all
+                  // say "LESS THAN 15"; the manual says "between 0 and
+                  // 15".  No row discriminates -- the deck's pseudo-IC
+                  // is word 9, illegal under either reading -- so this
+                  // takes the manual (AGENTS.md rule 4) and the reading
+                  // "0 through 15 inclusive", which is also the only
+                  // one the machine's own storage map supports: 0-15 are
+                  // the special registers and 16-31 are the index
+                  // registers, which the same sentence expressly
+                  // ALLOWS.  Recorded in docs/NEXT.md; a deck row with
+                  // a pseudo-IC at word 15 would decide it.
+                  ind = setBit(ind, ind_AD, 1);
+                else if (protViolates(st, pw))
+                  // THE EXIC'S EFFECTIVE ADDRESS IS A DATA STORE
+                  // ADDRESS, and printed p.32 (PDF 35) names this
+                  // instruction to say so.  "Address monitoring for
+                  // Data Store includes: ... 5. The effective address
+                  // of EXECUTE INDIRECT AND COUNT."  It is NOT in the
+                  // Data Fetch list, and the same page says why: "A
+                  // fetch-type operation is one in which the contents
+                  // of an addressed storage location are read out for
+                  // use but are not subject to change" -- and a
+                  // pseudo-IC is read out AND changed.
+                  //
+                  // SO THE WHOLE OPERATION IS TERMINATED, not just the
+                  // store, and that is stated twice.  p.32: "When an
+                  // address alarm is caused by a data address used in a
+                  // store-type operation, indicator DS is turned on.
+                  // Since this indicator is permanently masked on,
+                  // storing in core storage is always suppressed, and
+                  // the operation is always terminated."  p.45 item 19:
+                  // "The operation was suppressed."  Terminating HERE,
+                  // before the pseudo-IC is even read, is what
+                  // "suppressed" means; the alternative -- set DS, skip
+                  // the store, run the subject anyway -- would execute
+                  // a subject with an unstepped pseudo-IC, which is
+                  // precisely the state rule (c) of 1262 TEST 2B exists
+                  // to catch.
+                  //
+                  // THE TEST IS UNGUARDED, exactly as the Z arm's is:
+                  // protViolates carries p.32's own enable gate and its
+                  // 1-3 carve-out, and no `>= 32` guard belongs here
+                  // (that guard is an INSTRUCTION-fetch rule; see
+                  // ifViolates).  ONE CORNER IS UNWITNESSED AND SAID
+                  // RATHER THAN SMOOTHED: p.32 spells the suppression
+                  // "storing in CORE STORAGE is always suppressed",
+                  // while p.50 expressly lets a pseudo-IC live in an
+                  // index register.  The boundary test is applied
+                  // uniformly here; no source read for this work says
+                  // what the boundary registers do to a register-
+                  // resident pseudo-IC, and no deck row reaches it.
+                  ind = setBit(ind, ind_DS, 1);
+                else
+                  needsRead = tagged Valid pw;
+              end else begin
+                // The pseudo-IC has arrived.  Bits 0-18 of it are the
+                // subject's half-word location (IBM bit 0 = BSV 63).
+                HWordAddr sa = prefetch[0][63:45];
+                if (sa[18:1] < 32)
+                  // p.50, the sentence that finishes at the top of the
+                  // right column: "Subject instructions of EXECUTE
+                  // INDIRECT AND COUNT may occupy any available
+                  // locations with addresses 32.00 and greater."  A
+                  // DIFFERENT RULE FROM THE ONE ABOVE and a different
+                  // boundary -- 1262 TEST 3A puts the pseudo-IC below
+                  // 15, TEST 3B leaves it legal and puts the SUBJECT
+                  // below 32 -- and both are p.45 item 16's "invalid
+                  // for the specified operation ... executed as a NO
+                  // OPERATION".  Note what is NOT done: the pseudo-IC
+                  // is not stepped, because the step happens "after the
+                  // subject instruction has been fetched" and no
+                  // subject is fetched.
+                  //
+                  // AND THIS IS WHY EX'S OWN CONTRAST HOLDS.  EX's
+                  // subject "may occupy any addressable location"
+                  // (same page), so a low subject is legal there and
+                  // illegal here.  The two arms must not share a guard.
+                  //
+                  // NOT IMPLEMENTED, and bounded rather than guessed:
+                  // printed p.51 item (d), "If the address of the
+                  // location of the subject instruction of EXECUTE or
+                  // EXECUTE INDIRECT AND COUNT is both protected and
+                  // invalid, indicator IF will be actuated.  Indicator
+                  // AD will not be actuated as a result of this invalid
+                  // address unless the IF mask bit is zero."  EX left
+                  // the same corner open; this arm raises AD and never
+                  // IF.
+                  ind = setBit(ind, ind_AD, 1);
+                else
+                  needsRead = tagged Valid sa[18:1];
+              end
+            end
+            default: ind = setOpInvalid(ind);
           endcase
         end
       end
@@ -4483,6 +4670,13 @@ typedef struct {
   DecodedInstr di;         // the instruction actually being run
   Bool         atIntAddr;  // p.32's interruption-address exemption
   ExSubject    ex;         // notSubject unless `di` is a subject instruction
+  // THE INVARIANT, and resume() orders its dispatch on it: `exic` is
+  // Valid IF AND ONLY IF `di` is an EXIC whose pseudo-instruction
+  // counter has already been read.  It is cleared the moment the
+  // subject replaces `di`, so a second-level EXIC starts with its own
+  // Invalid and builds its own, and an EX that is the subject of an
+  // EXIC is an ordinary EX with `exic` Invalid.
+  Maybe#(ExicCtx) exic;
 } HeldOp deriving (Bits, Eq, FShow);
 
 interface EBox;
@@ -4496,6 +4690,7 @@ interface EBox;
   method Bool busy();                 // holding an instruction that waits on a read
   method Bool busyFor(ExecOwner o);   // ... dispatched by o
   method Bool canResume();            // busy and the read has answered
+                                      // (or an EXIC subject is ready to run)
   method Tuple3#(HWordAddr, InstrLen, DecodedInstr) pending();   // the held instruction
   method ActionValue#(Maybe#(ExecDone)) resume();
 endinterface
@@ -4519,6 +4714,25 @@ module mkEBox #(StretchStorage st, StretchIO io) (EBox);
   Reg#(Vector#(2, Word64)) prefetch      <- mkReg(replicate(0));
   Reg#(Bit#(2))            prefetchCount <- mkReg(0);
   Reg#(ExecOwner)          owner         <- mkReg(OwnerIbox);
+
+  // THE ONE CLOCK EXECUTE INDIRECT AND COUNT COSTS THAT EXECUTE DOES
+  // NOT, and it is forced by the machine model rather than chosen.
+  // Printed p.50: "After the subject instruction has been fetched but
+  // PRIOR TO ITS EXECUTION, the pseudo-instruction counter is stepped."
+  // The step is a storage write; so is much of what a subject
+  // instruction does; and an interface method may be called only ONCE
+  // per rule, so the two cannot share a clock.  When resume() writes
+  // the step it therefore installs the subject and stops, setting this
+  // flag; canResume() then lets the instruction unit call resume()
+  // again with no read outstanding, and that call runs the subject.
+  //
+  // THE FLAG IS STICKY, DELIBERATELY: if rl_exec_resume loses the next
+  // clock to rl_recover or rl_io, the subject is still there to be run.
+  // Nothing else in the machine can observe the extra clock -- `held`
+  // stays Valid throughout, so ebox.busy() blocks the interruption arm
+  // and the look-ahead arm, and canResume() blocks rl_prepare, exactly
+  // as they are blocked while a read is outstanding.
+  Reg#(Bool)               subjReady     <- mkReg(False);
 
   function ExecDone doneOf(ExecResult r) =
     ExecDone { next: tpl_1(r), idxWrite: tpl_2(r), ioStart: tpl_3(r) };
@@ -4546,7 +4760,8 @@ module mkEBox #(StretchStorage st, StretchIO io) (EBox);
     if (tpl_4(r) matches tagged Valid .a) begin
       st.readWordReq(a);
       held <= tagged Valid HeldOp{pc: pc, len: len, di: di,
-                                  atIntAddr: atIntAddr, ex: notSubject};
+                                  atIntAddr: atIntAddr, ex: notSubject,
+                                  exic: tagged Invalid};
       prefetch <= pf;
       prefetchCount <= cnt;
       owner <= o;
@@ -4557,7 +4772,11 @@ module mkEBox #(StretchStorage st, StretchIO io) (EBox);
 
   method Bool busy() = isValid(held);
   method Bool busyFor(ExecOwner o) = isValid(held) && owner == o;
-  method Bool canResume() = isValid(held) && st.responseReady();
+  // `subjReady` is the EXIC step's own clock: see its declaration.  It
+  // is an alternative to the read handshake, not an addition to it --
+  // when it is set there is no outstanding read, because the subject
+  // word was consumed on the clock the step was written.
+  method Bool canResume() = isValid(held) && (subjReady || st.responseReady());
   method Tuple3#(HWordAddr, InstrLen, DecodedInstr) pending();
     let h = validValue(held);
     // `pc` and `len` are the EXECUTE's while a subject is held, which
@@ -4567,88 +4786,214 @@ module mkEBox #(StretchStorage st, StretchIO io) (EBox);
     return tuple3(h.pc, h.len, h.di);
   endmethod
 
+  // RESUME HAS FIVE SHAPES NOW, and they are ordered on HeldOp's
+  // invariant (`exic` Valid iff `di` is a mid-flight EXIC):
+  //
+  //   1. `subjReady`        -- no word to collect; an EXIC's subject
+  //                            was installed and its pseudo-IC stepped
+  //                            on the previous clock.  Run it.
+  //   2. `h.exic` Valid     -- the word is an EXIC's SUBJECT.  Decode
+  //                            it, STEP THE PSEUDO-IC, install, defer.
+  //   3. an EXECUTE held    -- the word is an EX's SUBJECT (the swap
+  //                            EX brought in).
+  //   4. an EXIC held with  -- the word is the PSEUDO-IC itself; hand
+  //      no context yet        it back to the arm in prefetch[0].
+  //   5. anything else      -- the word is an ORDINARY OPERAND.
+  //
+  // ONE execute() CALL SITE, unchanged and non-negotiable: BSV inlines
+  // functions, so a second call is a second instantiation of the whole
+  // datapath and a second st.writeWord writer in one rule.  For the
+  // same reason the step's write and execute()'s own writes are put in
+  // the two arms of ONE if/else below, where bsc can see they are
+  // exclusive, rather than left to be proved so by analysis.
   method ActionValue#(Maybe#(ExecDone)) resume();
     let h = validValue(held);
-    Word64 v <- st.readWordResp();
-    Vector#(2, Word64) pf = prefetch;
-    pf[prefetchCount] = v;
-    Bit#(2) cnt = prefetchCount + 1;
 
     // By default the arrived word is an OPERAND: re-run the same held
     // instruction with one more prefetch slot filled.  This is what
-    // every instruction but EXECUTE does.
+    // every instruction but an execution operation does.
     DecodedInstr       rdi  = h.di;
     ExSubject          rex  = h.ex;
-    Vector#(2, Word64) rpf  = pf;
-    Bit#(2)            rcnt = cnt;
+    Maybe#(ExicCtx)    rexic = h.exic;
+    Vector#(2, Word64) rpf  = prefetch;
+    Bit#(2)            rcnt = prefetchCount;
     // AND THESE TWO ARE NEVER REASSIGNED, which is the point of naming
     // them.  Even when `rdi` below becomes the subject instruction,
     // `rpc`/`rlen` stay the EXECUTE's -- printed p.49: the instruction
     // counter "is never stepped during the execution of any subject
     // instruction even if the subject instruction is again one of the
     // execution instructions."  Assigning the subject's own location
-    // here is the one-line bug that makes EXECUTE relinquish control,
-    // which is what routine 1262 TEST 1A is named for; the model
-    // programs' "WRONG" traps exist to catch exactly that.
+    // here is the one-line bug that makes an execution operation
+    // relinquish control, which is what routine 1262 TEST 1A (EX) and
+    // TEST 2A (EXIC) are named for; the model programs' "WRONG" traps
+    // exist to catch exactly that.
     HWordAddr          rpc  = h.pc;
     InstrLen           rlen = h.len;
-    Bool               needMore = False;   // a straddling subject's second word
+    // `defer` = hold for another clock instead of running execute();
+    // `more` = ... because a further word has been asked for.
+    Bool               defer    = False;
+    Bool               more     = False;
     WordAddr           moreAddr = 0;
+    // The pseudo-IC step, as data rather than as an Action -- see the
+    // header note on the single writeWord site.
+    Maybe#(Tuple2#(WordAddr, Word64)) stepWrite = tagged Invalid;
 
-    // THE SUBJECT SWAP, Reference Manual printed p.49: "If an execution
-    // operation specifies an execution instruction as its subject
-    // instruction, the subject instruction of the second-level
-    // execution operation is obtained.  If this, in turn, is still
-    // another execution instruction, the procedure is carried to
-    // succeeding levels until an instruction that is not an execution
-    // instruction is obtained."  That is a loop, not a recursion, and
-    // this is the loop: the held instruction is replaced, one level per
-    // clock, until it is not an EXECUTE.  Depth is therefore unbounded
-    // in the model, and so is the time -- USA (p.45 indicator 17, "a
-    // LOAD VALUE EFFECTIVE, EXECUTE, or EXECUTE INDIRECT AND COUNT
-    // operation has been in progress for longer than one millisecond")
-    // is NOT implemented, so an EX chain that closes on itself spins
-    // here until the harness's step cap rather than being terminated.
-    // Stated rather than left to be discovered.
-    if (exSubjectAddr(st, h.di) matches tagged Valid .sa) begin
-      // hw0 ALWAYS COMES FROM SLOT 0, never from the word that just
-      // arrived: on the second visit below, `v` is the subject's SECOND
-      // half-word and pf[0] is still the first.
-      HalfWord32 hw0 = (sa[0] == 0) ? pf[0][63:32] : pf[0][31:0];
-      InstrLen slen = instrLen(hw0);
-      if (slen == Full && sa[0] == 1 && cnt < 2) begin
-        // A FULL-LENGTH SUBJECT STARTING IN A RIGHT HALF-WORD straddles
-        // two storage words, so it needs a second read.  Not a corner
-        // case invented here: routine 1262 TEST 1CC's I62B6 is
-        // "BB,$X0+.01,I6238", a full word, at 024205.40 -- and the EX
-        // that names it prints octal pair 52, bit 18 = 1.
-        needMore = True;
-        moreAddr = sa[18:1] + 1;
-      end else begin
-        Maybe#(HalfWord32) hw1 =
-          (slen == Half) ? tagged Invalid
-                         : tagged Valid ((sa[0] == 0) ? pf[0][31:0] : pf[1][63:32]);
-        rdi  = decode(hw0, hw1);
-        // p.32 class 1 for THIS level's subject location, OR-ed into
-        // whatever earlier levels found -- never overwritten, because an
-        // intermediate EXECUTE's own subject location is monitored just
-        // as much as the last one's and its indicator word was thrown
-        // away when it bailed.  ifViolates carries p.50's below-32
-        // carve-out; execute()'s own comment says why that is the right
-        // predicate and not the same rule.
-        rex  = ExSubject { under: True,
-                           ifSig: h.ex.ifSig || ifViolates(st, sa[18:1]) };
-        // The subject starts with an EMPTY prefetch: the words collected
-        // so far were the subject-instruction fetch, not its operand.
-        rpf  = replicate(0);
-        rcnt = 0;
+    if (subjReady) begin
+      // SHAPE 1.  Nothing arrived and nothing is outstanding: `held`
+      // already IS the subject, with an empty prefetch, and the step
+      // was written last clock.  Fall straight through to execute().
+      subjReady <= False;
+    end else begin
+      Word64 v <- st.readWordResp();
+      Vector#(2, Word64) pf = prefetch;
+      pf[prefetchCount] = v;
+      Bit#(2) cnt = prefetchCount + 1;
+      rpf = pf;
+      rcnt = cnt;
+
+      if (h.exic matches tagged Valid .c) begin
+        // SHAPE 2.  THE SUBJECT OF AN EXECUTE INDIRECT AND COUNT has
+        // arrived (or, when c.haveW0, its second storage word).  `v` is
+        // used directly and `pf` is ignored: prefetch[0] still holds the
+        // pseudo-IC word, which the EXIC arm reads on every call.
+        Word64     w0  = c.haveW0 ? c.w0 : v;
+        HalfWord32 hw0 = (c.sa[0] == 0) ? w0[63:32] : w0[31:0];
+        InstrLen   slen = instrLen(hw0);
+        if (slen == Full && c.sa[0] == 1 && !c.haveW0) begin
+          // A FULL-LENGTH SUBJECT STARTING IN A RIGHT HALF-WORD
+          // straddles two storage words and needs a second read before
+          // it can be decoded at all -- and therefore before its LENGTH
+          // can size the step.  (EX met this first; 1262 TEST 1CC's
+          // I62B6 is the shape.)
+          defer = True; more = True; moreAddr = c.sa[18:1] + 1;
+          rexic = tagged Valid ExicCtx{ psAddr: c.psAddr, psWord: c.psWord,
+                                        sa: c.sa, haveW0: True, w0: v };
+        end else begin
+          Maybe#(HalfWord32) hw1 =
+            (slen == Half) ? tagged Invalid
+                           : tagged Valid ((c.sa[0] == 0) ? w0[31:0] : v[63:32]);
+          rdi = decode(hw0, hw1);
+          // p.32 class 1 for the subject's location, OR-ed into what
+          // earlier levels found -- identical to EX's, and for EXIC the
+          // `a >= 32` guard inside ifViolates is p.32's OWN wording
+          // rather than a different rule that agrees numerically:
+          // "Address monitoring for Instruction Fetch includes: ... 3.
+          // The location of the subject instruction of the EXECUTE and
+          // EXECUTE INDIRECT AND COUNT operations WHEN THIS LOCATION IS
+          // IN MAIN STORAGE."  Addresses 0-31 are the special and index
+          // registers, not main storage.  (For EXIC the guard is in any
+          // case unreachable: the arm has already raised AD and
+          // no-opped anything below 32.  EX needs a different argument
+          // for the same guard and its arm gives one.)
+          rex = ExSubject { under: True,
+                            ifSig: h.ex.ifSig || ifViolates(st, c.sa[18:1]) };
+          // The subject starts with an EMPTY prefetch: the words
+          // collected so far were the pseudo-IC and the subject-
+          // instruction fetch, not the subject's operand.
+          rpf = replicate(0);
+          rcnt = 0;
+          // The level is over: a second-level EXIC builds its own
+          // context from its own arm (HeldOp's invariant).
+          rexic = tagged Invalid;
+
+          // THE STEP.  Printed p.50, read first-hand at 300 dpi: "After
+          // the subject instruction has been fetched but prior to its
+          // execution, the pseudo-instruction counter is stepped.  If
+          // the subject instruction is half-length, the pseudo-
+          // instruction counter is stepped ONCE; if full-length,
+          // TWICE."  One step is one HALF-WORD, i.e. +1 in bits 0-18 --
+          // which is +32 in an index word's 24-bit value field, because
+          // bit 18 carries weight 2^5 there.  That is why routine 1262
+          // TEST 2B's four half-length classes check the stepped
+          // counter with "V+I,$X2,0.32" and its FULL WD VFL class
+          // checks it with "V+I,$X2,1.0".
+          //
+          // BITS 19-63 ARE PRESERVED, which is why psWord is carried:
+          // the manual gives bits 0-18 to the counter and says nothing
+          // about the rest, and the deck's own pseudo-IC I62PSI is
+          // written "LX,$X0,0" -- an INDEX WORD, whose count and refill
+          // fields live down there.
+          //
+          // p.50 again, on levels: "When EXECUTE INDIRECT AND COUNT is
+          // a subject instruction in a multi-leveled execution
+          // operation, EACH pseudo-instruction counter involved is
+          // appropriately stepped between the fetching and executing of
+          // its corresponding subject instruction."  That falls out:
+          // each level runs this branch once, with its own ctx.
+          HWordAddr step = (slen == Half) ? 1 : 2;
+          stepWrite = tagged Valid tuple2(c.psAddr,
+                                          { c.sa + step, c.psWord[44:0] });
+          defer = True;          // ... and the write costs this clock
+          subjReady <= True;     // ... so the subject runs on the next
+        end
+      end else if (exSubjectAddr(st, h.di) matches tagged Valid .sa) begin
+        // SHAPE 3.  THE EX SUBJECT SWAP, Reference Manual printed p.49:
+        // "If an execution operation specifies an execution instruction
+        // as its subject instruction, the subject instruction of the
+        // second-level execution operation is obtained.  If this, in
+        // turn, is still another execution instruction, the procedure is
+        // carried to succeeding levels until an instruction that is not
+        // an execution instruction is obtained."  That is a loop, not a
+        // recursion, and this is the loop: the held instruction is
+        // replaced, one level per clock, until it is not an EXECUTE.
+        // Depth is therefore unbounded in the model, and so is the time
+        // -- USA (p.45 indicator 17, "a LOAD VALUE EFFECTIVE, EXECUTE,
+        // or EXECUTE INDIRECT AND COUNT operation has been in progress
+        // for longer than one millisecond") is NOT implemented, so an
+        // execution chain that closes on itself spins here until the
+        // harness's step cap rather than being terminated.  Stated
+        // rather than left to be discovered.
+        //
+        // hw0 ALWAYS COMES FROM SLOT 0, never from the word that just
+        // arrived: on the second visit below, `v` is the subject's SECOND
+        // half-word and pf[0] is still the first.
+        HalfWord32 hw0 = (sa[0] == 0) ? pf[0][63:32] : pf[0][31:0];
+        InstrLen slen = instrLen(hw0);
+        if (slen == Full && sa[0] == 1 && cnt < 2) begin
+          // A FULL-LENGTH SUBJECT STARTING IN A RIGHT HALF-WORD straddles
+          // two storage words, so it needs a second read.  Not a corner
+          // case invented here: routine 1262 TEST 1CC's I62B6 is
+          // "BB,$X0+.01,I6238", a full word, at 024205.40 -- and the EX
+          // that names it prints octal pair 52, bit 18 = 1.
+          defer = True; more = True; moreAddr = sa[18:1] + 1;
+        end else begin
+          Maybe#(HalfWord32) hw1 =
+            (slen == Half) ? tagged Invalid
+                           : tagged Valid ((sa[0] == 0) ? pf[0][31:0] : pf[1][63:32]);
+          rdi  = decode(hw0, hw1);
+          // p.32 class 1 for THIS level's subject location, OR-ed into
+          // whatever earlier levels found -- never overwritten, because an
+          // intermediate EXECUTE's own subject location is monitored just
+          // as much as the last one's and its indicator word was thrown
+          // away when it bailed.  ifViolates carries p.50's below-32
+          // carve-out; execute()'s own comment says why that is the right
+          // predicate and not the same rule.
+          rex  = ExSubject { under: True,
+                             ifSig: h.ex.ifSig || ifViolates(st, sa[18:1]) };
+          // The subject starts with an EMPTY prefetch: the words collected
+          // so far were the subject-instruction fetch, not its operand.
+          rpf  = replicate(0);
+          rcnt = 0;
+        end
+      end else if (exicPsicAddr(st, h.di) matches tagged Valid .pw) begin
+        // SHAPE 4.  THE PSEUDO-INSTRUCTION COUNTER has arrived, for an
+        // EXIC that has not got one yet (HeldOp's invariant).  Record
+        // what the step will need, and let the EXIC arm re-run with the
+        // word in prefetch[0]: it checks "32.00 and greater" and asks
+        // for the subject fetch, or raises AD and finishes.
+        rexic = tagged Valid ExicCtx{ psAddr: pw, psWord: v, sa: v[63:45],
+                                      haveW0: False, w0: 0 };
       end
+      // SHAPE 5 -- an ordinary operand -- is the defaults, untouched.
     end
 
-    if (needMore) begin
-      st.readWordReq(moreAddr);
-      prefetch <= pf;
-      prefetchCount <= cnt;
+    if (defer) begin
+      if (stepWrite matches tagged Valid .t) st.writeWord(tpl_1(t), tpl_2(t));
+      if (more) st.readWordReq(moreAddr);
+      held <= tagged Valid HeldOp{pc: rpc, len: rlen, di: rdi,
+                                  atIntAddr: h.atIntAddr, ex: rex, exic: rexic};
+      prefetch <= rpf;
+      prefetchCount <= rcnt;
       return tagged Invalid;
     end else begin
       let r <- execute(st, io, rpc, rlen, rdi, rpf, rcnt, h.atIntAddr, rex);
@@ -4658,7 +5003,8 @@ module mkEBox #(StretchStorage st, StretchIO io) (EBox);
         // `rex` are new, and on an ordinary operand arrival they are
         // exactly what was already there.
         held <= tagged Valid HeldOp{pc: rpc, len: rlen, di: rdi,
-                                    atIntAddr: h.atIntAddr, ex: rex};
+                                    atIntAddr: h.atIntAddr, ex: rex,
+                                    exic: rexic};
         prefetch <= rpf;
         prefetchCount <= rcnt;
         return tagged Invalid;
