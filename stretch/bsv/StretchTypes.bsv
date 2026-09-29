@@ -255,6 +255,16 @@ typedef struct {
 } IoXfer deriving (Bits, Eq, FShow);
 
 // ---------------------------------------------------------------------
+// SOURCING UPGRADE, 2026-09-29: these numbers no longer rest on the
+// Reference Card alone.  C22-6531 (STRAP-1), Appendix A "STRAP-1
+// MNEMONICS", printed p.56, tabulates the system symbols directly as
+// `$ <name> <type> <description> <word> <bit>` -- e.g. `$ AD 2 Address
+// Invalid 11 16`, `$ DS 2 Data Store 11 19`, `$ DF 2 Data Fetch 11 20`,
+// `$ RZ 2 Result Zero 11 57`, `$ XE 2 Index Equal 11 53`.  Word 11 is
+// the indicator register, so the last column IS the indicator number.
+// Two independent documents now agree, and the assembler's own manual
+// is the better of the two for a project whose assembler emits them.
+//
 // Indicators (IBM 7030 Reference Card, "INDICATOR LIST", 64 named
 // bits). Only a subset is meaningfully driven by this implementation's
 // execute stage; the rest are modeled as plain storage so BI (Branch on

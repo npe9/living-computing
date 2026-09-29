@@ -1,0 +1,495 @@
+! ax5b_162_test1a.strap -- jb_ax5b "I-Box 5", routine 1262's HEAD and
+! TEST 1A, transcribed verbatim from docs/jb_ax5b_ibox-5.pdf PDF pp.87,
+! 88 and 89 (this deck's listing pages carry NO printed page numbers;
+! the "12 11 10 9" down the left margin is fanfold carriage-tape line
+! numbering, so every citation here is a PDF page).
+!
+! Head  I62   023304.00-023306.40   (PDF p.87)   6 rows
+! TEST 1A  I621  023310.00-023373.00  (PDF pp.88-89)  103 rows
+!
+! 023307.00 -- the routine's IDENT word -- is deliberately NOT
+! transcribed: the page prints a LOCATION for it and NO machine code.
+! An SLC steps across it and I62ID enters as a SYN.  Its printed source
+! text, kept here and nowhere else, is
+!
+!       I62ID  %IQSZ¤DD%BU,64,8¤,I262   Z
+!
+! (the two "¤" are the listing's lozenge; the same row for routines
+! 1246, 1258 and 1274 is discussed in docs/listing_typography.md §7).
+!
+! ------------------------------------------------------------------
+! THE ROUTINE BANNER, verbatim, PDF p.87 top:
+!
+!       ----I262---TEST EX AND EXIC.
+!
+! measured at 600 dpi on that row: the four leading dashes are 54, 54,
+! 58, 56 px; the glyph after them is a 12 px bare stroke; the digits
+! beside it are 2 = 42 and 6 = 47; and the I of EXIC on the SAME
+! PRINTED ROW is 16 px.  Letter I, digits 2 and 6 -- no inference, one
+! row.  (docs/listing_typography.md §2: letter I 9-18 px, digit 1
+! 30-42 px, no overlap on ~16 000 measured glyphs.)
+!
+! THE HEADER BLOCK, verbatim, PDF p.87, with its own indentation:
+!
+!           -THIS TEST IS COMPOSED OF THREE BASIC
+!           -TESTS WHICH CHECK THE ABOVE TWO
+!           -INSTRUCTIONS AS FOLLOWS.
+!
+!               -TEST 1 CHECKS THE EXECUTION OF
+!                -ALL CLASSES OF INSTRUCTIONS
+!                -AND THAT ILLEGAL EXECUTES WILL
+!                -SET THE CORRECT INDICATORS.
+!
+!               -TEST 2 CHECKS THE OPERATION OF
+!                -THE EXIC INSTRUCTION. ILLEGAL
+!                -COMBINATIONS ARE USED TO CHECK
+!                -THAT THE CORRECT INDICATORS
+!                -ARE SET.
+!
+!               -TEST 3 CHECKS THE ILLEGAL COMBINATIONS
+!                -OF EX AND EXIC.
+!
+! "TEST 1" HERE IS A DIGIT, measured: 34 px on the "-TEST 1 CHECKS"
+! row against 42-48 px for every letter beside it, and the banner's
+! letter I two lines above is 12.  34 sits inside the digit-1 band
+! (30-42) and nowhere near the letter-I band (9-18).
+!
+! AND THE HEADER IS WRONG TWICE, not once.  Its TEST 3 line promises
+! "THE ILLEGAL COMBINATIONS OF EX AND EXIC" where 3A and 3B are both
+! EXIC-ALONE address-range checks (verify_ax5b_162_test3a_listing.py,
+! verify_ax5b_162_test3b_listing.py).  Its TEST 1 lines promise "ALL
+! CLASSES OF INSTRUCTIONS" and "ILLEGAL EXECUTES ... SET THE CORRECT
+! INDICATORS" -- which is TEST 1B and TEST 1CC.  NEITHER of TEST 1A's
+! two subjects appears in the header at all: that EX must not
+! relinquish control, and the seven memory combinations.  The header
+! under-describes TEST 1 and mis-describes TEST 3; read it as a
+! table of contents somebody stopped updating.
+!
+! ------------------------------------------------------------------
+! WHAT TEST 1A ACTUALLY DOES, in the deck's own words.
+!
+! Two blocks, not one.
+!
+! (a) 023312.40-023316.00, "-CHECK THAT EX WILL NOT RELINQUISH
+!     -CONTROL."  LVI/SVA plant I622 (023314.00) in the interrupt
+!     landing, "EX,I623" runs the subject at 023315.00, and control
+!     must come back to 023314.00 = "BD,I624".  If EX instead gave
+!     control away, the subject would fall through to 023315.40 and
+!     report "-EXECUTE RELINQUISHES CONTROL TO / -SUBJECT
+!     INSTRUCTION."  An interruption lands on I622 too, so the two
+!     benign outcomes coincide and only relinquishment is reportable.
+!     The subject is "LX,$X0,$" -- a load whose operand is its own
+!     location, i.e. a harmless instruction that must not branch.
+!
+! (b) 023316.40-023367.00, "-CHECK SEVEN POSSIBILITIES OF
+!     -EXECUTES IN 3 MEMORIES."  Seven stanzas, each headed by its own
+!     comment.  The THREE MEMORIES are MAIN core storage, INDEX (IX)
+!     storage and the INTERNAL registers; on the 7030 all three share
+!     one address space (Reference Manual printed p.111's Special
+!     Storage Assignment; $L = word 8, $R = word 9, $Xn = word 16+n).
+!     The seven, in printed order, with the location of each header:
+!
+!       1  023316.40  -MAIN TO MAIN.             EX in main  -> LX in main
+!       2  023324.00  -MAIN TO IX.               EX in main  -> LX in $X3
+!       3  023331.40  -MAIN TO INTERNAL.         EX in main  -> LX in $R
+!       4  023337.00  -MAIN TO IX TO MAIN.       EX -> EX in $X2 -> LX in main
+!       5  023345.00  -MAIN TO INTERNAL TO MAIN. EX -> EX in $R  -> LX in main
+!       6  023353.40  -MAIN TO IX TO IX.         EX -> EX in $X2 -> LX in $X3
+!       7  023361.00  -MAIN TO INT TO INT.       EX -> EX in $R  -> LX in $L
+!
+!     Three one-level cases (one per memory) and four two-level
+!     chains.  Nine two-level chains exist; the deck takes four.
+!
+! THE DOUBLED K-WORD IS THE MECHANISM, and cases 4-7 are unreadable
+! without it.  PDF p.109 (read for verify_ax5b_162_int_entry_listing.py
+! and asserted there) defines I62K2, I62K3 and I62K4 as FULL WORDS each
+! holding the SAME HALF-WORD TWICE:
+!
+!       024173.00  I62K2  EX,I62EXT    24321.12 00
+!       024173.40         EX,I62EXT    24321.12 00
+!       024174.00  I62K3  EX,$X3          23.12 00
+!       024174.40         EX,$X3          23.12 00
+!       024175.00  I62K4  EX,$L           10.12 00
+!       024175.40         EX,$L           10.12 00
+!
+! "LX,$X2,I62K2" loads all 64 bits into word 18; "EX,$X2" then prints
+! octal pair 12, bit 18 = 0, so it fetches HALF-WORD 0 of word 18.  The
+! doubling is what makes the constant work whichever half the EX
+! selects -- and it is why one index or accumulator register can hold a
+! whole "second level" of the execution chain.  I62K1 (024172.00) is
+! the same shape for a different purpose: "BD,I62ITE" twice, the word
+! the table-fill loop scatters over all 64 interrupt entries.
+!
+! THE SUBJECT LX IS ALWAYS THE SAME ONE: I62EX at 024322.00 is
+! "LX,$X1,I00O" (PDF p.109).  Every stanza zeroes $X1 with "Z,$X1"
+! first, so a successful execution leaves $X1 holding I00O's value and
+! count.  The check is then "LX,$X1,$X1" -- reload $X1 from its own
+! word so that the index indicators are set from it -- followed by
+!
+!       BZXVZ,$+2.0    branch if the index VALUE is NOT zero
+!       BZXCZ,$+1.32   branch if the index COUNT is NOT zero
+!
+! Both land on the FIRST ROW OF THE NEXT STANZA, skipping the two-row
+! error entry.  POLARITY, SETTLED FROM THE PRINTED HEX AND NOT FROM
+! THE MNEMONIC: strap_asm.enc_branch_ind puts branchOn at bit 30, so
+! hex 42 is branch-on-ON and hex 40 is branch-on-OFF -- and every one
+! of the fourteen branch rows here prints 40.  XVZ/XCZ off means the
+! value/count came out non-zero, i.e. the LX ran.  The error entry is
+! therefore the FALL-THROUGH, in all seven cases, with no exception:
+! this block is uniform where TEST 1B's is not (verify_ax5b_162_
+! test1b_listing.py has BZXVZ skipping the error in two classes and
+! jumping TO it in a third).
+!
+! ------------------------------------------------------------------
+! THE PRIMARY SOURCES, read first-hand at 300 dpi from
+! docs/22-6530-2_7030RefMan.pdf (PDF page = printed page + 3).
+!
+! Printed p.49 (footer "Instruction Sequencing 49"), which is what
+! block (a) checks:
+!
+!   "Since it is often desirable to permit one program to execute the
+!   instructions of a second program without losing control to the
+!   second program, a fourth type of instruction sequencing is
+!   provided, which lends control.  This is furnished by means of the
+!   two execution instructions."
+!
+!   "If an execution operation specifies an execution instruction as
+!   its subject instruction, the subject instruction of the second-
+!   level execution operation is obtained.  If this, in turn, is still
+!   another execution instruction, the procedure is carried to
+!   succeeding levels until an instruction that is not an execution
+!   instruction is obtained."
+!
+!   "When an execution operation is initiated in the main program, the
+!   instruction counter is stepped in normal fashion as in all
+!   operations of the main program.  However, it is never stepped
+!   during the execution of any subject instruction even if the subject
+!   instruction is again one of the execution instructions."
+!
+! Printed p.50 (footer "50  IBM 7030"), which is what block (b)
+! checks -- and the three sentences are the whole of TEST 1A's case:
+!
+!   "Execute (EX).  Bits 0-18 of the effective address form the address
+!   of the location of a subject instruction that is fetched and
+!   executed.  Subject instructions of EXECUTE may occupy any
+!   addressable location.  An effective address of EXECUTE that is
+!   below 32.00 (including addresses between 1.00 and 3.32) is not
+!   monitored by the address monitoring mechanism; that is, indicator
+!   IF cannot be actuated by these addresses."
+!
+!   PROGRAMMING NOTES: "The instruction EXECUTE also executes
+!   instructions conveniently from the registers.  This facilitates
+!   table look-up, diagnostic, and other routines."
+!
+! AND THE SAME PAGE DRAWS THE LINE THIS BLOCK IS ABOUT.  Rule 15:
+! "Subject instructions of EXECUTE INDIRECT AND COUNT may occupy any
+! available locations with addresses 32.00 and greater."  And, of
+! EXIC's pseudo-instruction counters: "Pseudo-instruction counters may
+! occupy any of the index registers as well as main core storage
+! locations but cannot occupy locations addressed between 0 and [31]."
+! EX may live anywhere; EXIC may not.  TEST 1A is EX's half of that
+! distinction, exercised seven ways.
+!
+! ------------------------------------------------------------------
+! WOULD THE MODEL SATISFY THIS?  A paper reading of bsv/StretchExecute.
+! bsv and bsv/StretchStorage.bsv as of e954152, NOT a run -- nothing
+! here was executed, and this block cannot be: it needs SSIP, the
+! 64-word interrupt table and 1260's subroutines.
+!
+!   Block (a), relinquish control.  SATISFIED BY CONSTRUCTION.  mkEBox
+!   holds the EXECUTE's own `pc` and `len` across the subject swap
+!   ("keeping pc and len, which stay the EXECUTE's so that the
+!   instruction counter steps past the EXECUTE and nothing else"), and
+!   programs/ex_subject.strap's first injection -- installing the
+!   subject under its own pc and len -- is observed to halt on WRONGA
+!   at 005200.40.  That injection IS this block's error path.
+!
+!   Cases 1-3, one level into each of the three memories.  SATISFIED.
+!   exSubjectAddr() computes effAddr19 and mkEBox issues a plain
+!   st.readWordReq(a); StretchStorage keeps addresses 0-31 as
+!   registers in the SAME word-addressed space ("a program reaches the
+!   accumulator or an index register by loading/storing address 8, 9,
+!   or 16+j, exactly as it reaches any other word"), so EX,$X3 and
+!   EX,$R read words 19 and 9 with no special case.  AND THE ADDRESS-
+!   MONITORING SIDE COMES OUT RIGHT BY COINCIDENCE, NOT BY
+!   IMPLEMENTATION -- said this way because StretchExecute.bsv says it
+!   itself, and taking its `ifViolates` call for an implementation of
+!   p.50 would be exactly the inference this repo's rule 4 forbids.
+!   resume() computes ifSig from ifViolates(), and that function's own
+!   comment reads: its `a >= 32` guard "exists for a DIFFERENT reason
+!   -- p.45 on AD ... The two rules happen to agree on the numeric
+!   test and disagree on what else happens, and the model gets both
+!   right today only because it does not raise AD for a branch below
+!   32 either."  So for cases 2, 3, 6 and 7 the OBSERVABLE is right
+!   (no IF, no AD, exactly as p.50 requires) while neither rule is
+!   actually implemented.  A later AD implementation would break it.
+!
+!   Cases 4-5, a second level in a register, last level in main.
+!   SATISFIED.  resume()'s "one level per clock until it is not an
+!   EXECUTE" loop is exactly p.49's rule, and ex_subject.strap block B
+!   is the two-level case with an observed injection behind it.
+!
+!   Cases 6-7, BOTH levels in registers.  WOULD BE SATISFIED BY
+!   CONSTRUCTION -- the level loop and the unified 0-31 address space
+!   compose with no code between them -- BUT NOTHING IN THE REPO
+!   DEMONSTRATES THE COMBINATION.  ex_subject.strap block B puts both
+!   of its levels in main storage; verify_ax5b_1268_test1bc_listing.py
+!   has "EX,$X3"/"EX,$R" but only one level deep.  Stated as a gap and
+!   not as a pass: the next behavioural test for EX is block B with
+!   its SUBJB moved into $X2 and its SUBJB2 into $L.
+!
+!   AND ONE THING A PAPER READING CANNOT SETTLE: cases 2, 3, 6 and 7
+!   do "SX,$X1,$X3" (or $R/$L) and then "EX,$X3" a few instructions
+!   later.  Whether mkEBox's subject fetch sees the just-stored value
+!   depends on StretchStorage's store-queue/read ordering, which the
+!   file says holds "without the look-ahead's LAAR forwarding" for
+!   core storage; a special address is written on the spot.  It looks
+!   right; it is not checked here, and it cannot be without a run.
+!
+! ------------------------------------------------------------------
+! TWO GARBLES ON THESE PAGES.  Both are DECK TYPOS, not scan damage,
+! and both were decided by comparing the suspect glyph against a
+! correct instance of the same letter on the same or an adjacent row.
+!
+! 1. 023304.00's comment prints "-UPDATE INDENT."  Every other routine
+!    in these decks prints "-UPDATE IDENT." (ax4b p.99's "LX,$X1,I46ID
+!    -UPDATE IDENT."), and the label it names is I62ID -- ID for
+!    ident.  PITCH settles that a letter was ADDED, not that one was
+!    smeared: seven separated glyphs, I N D E N T and the period, over
+!    351 px = 58.5 px/cell, against "UPDATE" on the same row at
+!    366 px / 6 cells = 61 px/cell.  Six letters, not five.  And the
+!    intruding N is 45 px with two clean diagonals, indistinguishable
+!    from the second N (47 px) three cells later.  Scan damage leaves a
+!    ragged CORRECT letter; this is a clean WRONG one.  DECK TYPO.
+!
+! 2. 023310.40's comment prints "-SETUP 8D INT TBL, AND INT ADR."  The
+!    constant that row loads is I62K1, and PDF p.109's own label column
+!    reads "I62K1  BD,I62ITE" -- so the intent is "BD".  The
+!    corroboration is intra-deck and does not depend on glyph shape at
+!    all: TEST 1CC's I6233 stanza carries the SIBLING COMMENT "-DO BB,
+!    SETUP BD INT TBL." with a clean B, loading the same I62K1
+!    (quoted in verify_ax5b_162_int_entry_listing.py, from PDF p.93).
+!    The glyph measurement is the second leg: the suspect is 40 px and
+!    resolves at 6x magnification into TWO CLOSED BOWLS with no left
+!    stem, while the B of "TBL" nine cells later on the SAME ROW is
+!    44 px with a straight left stem and two right lobes.  A clean,
+!    correctly formed digit 8 where B was meant.  DECK TYPO.
+!
+! ONE MORE INCONSISTENCY, transcribed and not tidied: the seven BZXVZ
+! rows do not spell their operand the same way.  The three on PDF p.88
+! print "$+2.00" and the four on PDF p.89 print "$+2.0" -- twelve
+! separated glyphs against eleven, counted at 600 dpi on each of the
+! seven rows.  Both parse to 128 bits (strap_asm.tokenize_expr reads
+! ".00" and ".0" alike as bit offset 0), so nothing moves; the rows
+! below keep what the page prints.  The error text is inconsistent the
+! same way: "FAILS,LX" with no space after the comma at 023323.00,
+! "-MAIN, FAILS," at 023344.40 against "-MAIN FAILS," at 023353.00,
+! "INTERNAL" in the headers at 023331.40 and 023345.00 against "INT"
+! at 023361.00, and "-TO SSIP" with no period at 023371.00 where
+! PDF p.110's identical row prints "-TO SSIP.".  Each of those three
+! commas was confirmed under its own 6x crop.
+!
+! THE EIGHT ERROR ENTRIES -- SIXTEEN PRINTED COMMENT LINES --
+! verbatim, with the location of the
+! SIC,SEN row that heads each pair:
+!
+!   023315.40  -EXECUTE RELINQUISHES CONTROL TO
+!              -SUBJECT INSTRUCTION.
+!   023323.00  -EX IN MAIN TO LX IN MAIN FAILS,LX
+!              -NOT EXECUTED.
+!   023330.40  -EX IN MAIN TO LX IN IX STG FAILS,
+!              -LX NOT EXECUTED.
+!   023336.00  -EX IN MAIN TO LX IN INT FAILS,
+!              -LX NOT EXECUTED.
+!   023344.00  -EX IN MAIN TO EX IN IX TO LX IN
+!              -MAIN, FAILS, LX NOT EXECUTED.
+!   023352.40  -EX IN MAIN TO EX IN INT TO LX IN
+!              -MAIN FAILS, LX NOT EXECUTED.
+!   023360.00  -EX IN MAIN TO EX IN IX TO LX IN IX
+!              -FAILS, LX NOT EXECUTED.
+!   023366.40  -EX IN MAIN TO EX IN INT TO LX IN
+!              -INT FAILS, LX NOT EXECUTED.
+!
+! (Seven error pairs for seven memory combinations, plus the
+! relinquish-control pair: eight pairs, sixteen printed comment lines.
+! The header comments -- "-TEST 1A, CHK EX CNTRL.", "-SETUP 8D INT
+! TBL, AND INT ADR.", "-CHECK THAT EX WILL NOT RELINQUISH", "-CONTROL.",
+! "-CHECK SEVEN POSSIBILITIES OF", "-EXECUTES IN 3 MEMORIES.", the seven
+! "-MAIN TO ..." lines, "-TO SSIP" and "-UPDATE CONTINUITY CHECK." are
+! carried on their own rows below.)
+!
+! ------------------------------------------------------------------
+! EXTERNALS ARE INPUTS, NOT WITNESSES.  Every SYN below makes an
+! address field come out right by construction, so a row naming one
+! proves only that this assembler puts every OTHER field where the
+! listing puts it.  The tiering is in verify_ax5b_162_test1a_listing.py.
+! I62 and I621 are SLC ANCHORS, not evidence.
+
+        SLC, (8)23304.0
+!
+! ---- the routine head, PDF p.87 ----------------------------------
+I62     LX,  $X1, I62ID           ! -UPDATE INDENT.   [sic: see header]
+        SX,  $X1, DPET13
+        SIC, RET
+        B,   IDF1                 ! -PRINT ID.
+        Z,   IC262                !             clear the continuity word
+        BD,  I621                 !             ...and enter TEST 1A disabled
+!
+! ---- the cut: 023307.00, "%IQSZ¤DD%BU,64,8¤,I262   Z", the ident-word
+!      print macro.  Location printed, machine code NOT printed.  No
+!      CNOP is printed above it either -- 023307.00 is already word
+!      aligned -- so nothing is invented here.
+
+        SLC, (8)23310.0
+!
+! ---- fill all 64 interrupt-table words with "BD,I62ITE" -----------
+I621    LX,  $X1, I62XW1          ! -TEST 1A, CHK EX CNTRL.
+        LX,  $X2, I62K1           ! -SETUP 8D INT TBL, AND INT ADR.  [sic]
+        SX,  $X2, I62INT($X1)     !             index-modified store
+        CB+, $X1, $-.32           !             count and loop back one half-word
+        SR,  $X1, $IA             !             the Interruption Address register
+!
+! ---- (a) EX must not relinquish control --------------------------
+        LVI, $X1, I622            ! -CHECK THAT EX WILL NOT RELINQUISH
+        SVA, $X1, I62ITE          ! -CONTROL.
+        EX,  I623                 !             the subject is a word away
+I622    BD,  I624                 !             the correct return lands HERE
+        CNOP                      !             .40: emits a filler NOP
+I623    LX,  $X0, $               !             the subject: harmless, no branch
+        SIC, SEN                  ! -EXECUTE RELINQUISHES CONTROL TO
+        B,   SERS                 ! -SUBJECT INSTRUCTION.
+!
+! ---- 1. MAIN TO MAIN ---------------------------------------------
+I624    LX,  $X1, I62EX           ! -CHECK SEVEN POSSIBILITIES OF
+        SX,  $X1, I62EXT          ! -EXECUTES IN 3 MEMORIES.
+        Z,   $X1                  ! -MAIN TO MAIN.
+        LVI, $X2, I625
+        SVA, $X2, I62ITE
+        EX,  I62EXT               !             THE INSTRUCTION UNDER TEST
+I625    LX,  $X1, $X1             !             set the index indicators from $X1
+        BZXVZ, $+2.00             !             value non-zero: skip the error
+        BZXCZ, $+1.32             !             count non-zero: skip the error
+        SIC, SEN                  ! -EX IN MAIN TO LX IN MAIN FAILS,LX
+        B,   SERS                 ! -NOT EXECUTED.
+!
+! ---- 2. MAIN TO IX -----------------------------------------------
+        LX,  $X1, I62EX           ! -MAIN TO IX.
+        SX,  $X1, $X3             !             the subject now lives in word 19
+        Z,   $X1
+        LVI, $X2, I626
+        SVA, $X2, I62ITE
+        EX,  $X3
+I626    LX,  $X1, $X1
+        BZXVZ, $+2.00
+        BZXCZ, $+1.32
+        SIC, SEN                  ! -EX IN MAIN TO LX IN IX STG FAILS,
+        B,   SERS                 ! -LX NOT EXECUTED.
+!
+! ---- 3. MAIN TO INTERNAL -----------------------------------------
+        LX,  $X1, I62EX           ! -MAIN TO INTERNAL.
+        SX,  $X1, $R              !             ...and now in word 9
+        Z,   $X1
+        LVI, $X2, I627
+        SVA, $X2, I62ITE
+        EX,  $R
+I627    LX,  $X1, $X1
+        BZXVZ, $+2.00
+        BZXCZ, $+1.32
+        SIC, SEN                  ! -EX IN MAIN TO LX IN INT FAILS,
+        B,   SERS                 ! -LX NOT EXECUTED.
+!
+! ---- 4. MAIN TO IX TO MAIN, PDF p.89 -----------------------------
+        LX,  $X1, I62EX           ! -MAIN TO IX TO MAIN.
+        SX,  $X1, I62EXT          !             the LX goes to main
+        LX,  $X2, I62K2           !             "EX,I62EXT" twice, into word 18
+        LVI, $X3, I628
+        SVA, $X3, I62ITE
+        Z,   $X1
+        EX,  $X2                  !             EX in main -> EX in IX -> LX in main
+I628    LX,  $X1, $X1
+        BZXVZ, $+2.0
+        BZXCZ, $+1.32
+        SIC, SEN                  ! -EX IN MAIN TO EX IN IX TO LX IN
+        B,   SERS                 ! -MAIN, FAILS, LX NOT EXECUTED.
+!
+! ---- 5. MAIN TO INTERNAL TO MAIN ---------------------------------
+        LX,  $X1, I62EX           ! -MAIN TO INTERNAL TO MAIN.
+        SX,  $X1, I62EXT
+        LX,  $X2, I62K2
+        SX,  $X2, $R              !             the second level goes to word 9
+        LVI, $X3, I629
+        SVA, $X3, I62ITE
+        Z,   $X1
+        EX,  $R
+I629    LX,  $X1, $X1
+        BZXVZ, $+2.0
+        BZXCZ, $+1.32
+        SIC, SEN                  ! -EX IN MAIN TO EX IN INT TO LX IN
+        B,   SERS                 ! -MAIN FAILS, LX NOT EXECUTED.
+!
+! ---- 6. MAIN TO IX TO IX -----------------------------------------
+        LX,  $X2, I62K3           ! -MAIN TO IX TO IX.   "EX,$X3" twice
+        LX,  $X3, I62EX           !             ...and the LX into word 19
+        LVI, $X1, I6210
+        SVA, $X1, I62ITE
+        Z,   $X1
+        EX,  $X2                  !             both levels in index storage
+I6210   LX,  $X1, $X1
+        BZXVZ, $+2.0
+        BZXCZ, $+1.32
+        SIC, SEN                  ! -EX IN MAIN TO EX IN IX TO LX IN IX
+        B,   SERS                 ! -FAILS, LX NOT EXECUTED.
+!
+! ---- 7. MAIN TO INT TO INT ---------------------------------------
+        LX,  $X1, I62K4           ! -MAIN TO INT TO INT.   "EX,$L" twice
+        SX,  $X1, $R              !             the second level into word 9
+        LX,  $X1, I62EX
+        SX,  $X1, $L              !             ...and the LX into word 8
+        LVI, $X1, I6211
+        SVA, $X1, I62ITE
+        Z,   $X1
+        EX,  $R                   !             both levels in internal registers
+I6211   LX,  $X1, $X1
+        BZXVZ, $+2.0
+        BZXCZ, $+1.32
+        SIC, SEN                  ! -EX IN MAIN TO EX IN INT TO LX IN
+        B,   SERS                 ! -INT FAILS, LX NOT EXECUTED.
+!
+! ---- exit and continuity -----------------------------------------
+        B,   $+1.0
+        BD,  I621                 !             the loop back to the block head
+        SIC, SEN0+.32
+        B,   SSW                  ! -TO SSIP     (no period; p.110 has one)
+        BD,  $+.32
+        LX,  $X13, IC262          ! -UPDATE CONTINUITY CHECK.
+        V+,  $X13, BIT0
+        SX,  $X13, IC262
+!
+! ---- externals, SYN'd at the addresses this same deck prints ------
+!      Spellings and values are taken from the sibling files rather
+!      than invented: verify_ax5b_162_test1b_listing.py /
+!      ax5b_162_test1b.strap (SEN, SERS, SEN0, SSW, I62ITE, I62EXT,
+!      I62EX, I62XW1, IC262), ax5b_162_int_entry.strap (I62K1, I62INT,
+!      BIT0, and the p.109 label column that gives I62K2/K3/K4), and
+!      ax5b_1258_test1.strap / ax4b_1246_transmit_swap.strap (DPET13,
+!      RET, IDF1).  Every one matched; no divergence was found.
+SEN     SYN, (8)1310.0             ! the SIC error-entry link
+SEN0    SYN, (8)1311.0             ! the no-error SIC entry -- see the glyph note
+SERS    SYN, (8)1304.0             ! the error-report routine
+SSW     SYN, (8)1301.0             ! the SSIP return
+RET     SYN, (8)1306.40            ! SSIP's return link -- a BIT address
+DPET13  SYN, (8)1437.0             ! the ident-storage cell
+IDF1    SYN, (8)1443.0             ! SSIP's "print ID" entry
+IC262   SYN, (8)24171.0            ! 1262's continuity word
+I62ID   SYN, (8)23307.0            ! the ident word, PDF p.87 -- not transcribed
+I62K1   SYN, (8)24172.0            ! "BD,I62ITE" twice, PDF p.109
+I62K2   SYN, (8)24173.0            ! "EX,I62EXT" twice, PDF p.109
+I62K3   SYN, (8)24174.0            ! "EX,$X3" twice, PDF p.109
+I62K4   SYN, (8)24175.0            ! "EX,$L" twice, PDF p.109
+I62INT  SYN, (8)24220.0            ! the 64-word interrupt table, PDF p.109
+I62ITE  SYN, (8)24320.0            ! "-ALL INTERRUPTS ENTER HERE.", PDF p.109
+I62EXT  SYN, (8)24321.0            ! the subject-instruction slot, PDF p.109
+I62EX   SYN, (8)24322.0            ! "LX,$X1,I00O" -- the subject, PDF p.109
+I62XW1  SYN, (8)24326.0            ! "XW,0,64,I62INT" -- the fill loop's IW
+BIT0    SYN, (8)24522.0            ! the word with bit 0 set, PDF p.114
+        END, I621

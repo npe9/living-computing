@@ -404,3 +404,47 @@ that is sufficient on its own to conclude the label and the operand are
 different spellings, independent of how STRAP-1 resolved external `SYN`
 operands.  What stays at moderate confidence is only *which* spelling is
 which — that rests on the 54-vs-42 px width measurement.
+
+
+---
+
+## 10. A GLYPH TRAP THIS DOCUMENT DID NOT COVER: rule lines forge serifs
+
+Added 2026-09-29, after it produced a wrong reading that reached a
+committed research note.
+
+**The listing draws dashed rule lines across some comment rows.** Where
+one crosses a glyph, it adds a horizontal stroke at cap height — and a
+`1` with a rule through its top reads convincingly as a serifed letter
+`I`.
+
+The case: routine 1262's TEST 1C header at 023442.40, PDF p.92. It was
+recorded as printing `-TEST IC, CHK MISC CNTRLS OF EX.` and the reading
+was generalised to *"the comment column prints 1C as IC throughout"*.
+**Measured at 600 dpi, the deck prints `1C`.** The apparent top bar is
+the row's dashed rule at y376-380, spanning **x2755-2814 — 59 px where
+the glyph itself spans 24.**
+
+**What settles it without needing the rule's span**, and the check to
+reuse: this printer's letter `I` is a **bare stroke with no serifs at
+either end** — the `I` of `MISC` nine cells along the same row is 13 px
+and plainly barefoot. The disputed glyph has a **bottom serif**, which
+no letter `I` on this chain has, and which the digit `1` of `1CA` on
+the very next row also has. A rule line can forge a top bar; it cannot
+forge a foot.
+
+**The rule, stated for reuse: any glyph verdict taken on a row this
+listing RULES THROUGH is suspect until the rule's own x-span is
+measured against the glyph's — and check the BOTTOM of the glyph,
+which no horizontal rule can touch.**
+
+Consequence worth recording: with this corrected, the comment column
+and the label column **agree** about digit-versus-letter on the same
+page — `1C`/`1CA`/`1CB` in the comments beside `I6218`/`I6219`/`I6220`
+in the labels — where before they appeared to disagree. An apparent
+disagreement between two columns of one listing is itself a signal that
+one of the readings is wrong.
+
+**Not yet checked:** PDF p.103's `ICB` at TEST 2CB, recorded in
+`docs/execution_operations.md` §3.5. The same artefact is the likely
+explanation and is explicitly NOT asserted.

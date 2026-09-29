@@ -4438,6 +4438,73 @@ run "I-Box 5 routine 1260 TEST 8C cases 1-2: the DISABLED controls (jb_ax5b PDF 
 #                                     half-word and shifts four labels
 #                                     and every row after it.
 
+run "I-Box 5 routine 1262 TEST 1CA/1CB: the two disabled-state exceptions (jb_ax5b PDF p.92)" python3 verify_ax5b_162_test1cab_listing.py
+# **THE ORACLE, WRITTEN BEFORE THE IMPLEMENTATION**, the way
+# ax5b_16071_ts.strap was.  27 rows, 023442.40-023460.00, abutting the
+# TEST 1B section with nothing between.  These two blocks are the deck
+# test for printed p.50's two exceptions that OVERRIDE THE DISABLED
+# STATE -- 1CA for "interruption is always permitted at the completion
+# of an execution operation", 1CB for "address monitoring is always in
+# force during EX and EXIC".  Neither is implemented yet; see
+# docs/execution_operations.md.
+#
+# THE "-ILLEGAL OP CODE." WORD PLAYS A **THIRD** ROLE HERE, and this
+# project has now seen the same 00000003740 word do three different
+# jobs.  In TEST 1CC it is an ENABLE-STATE PROBE, used twice in
+# opposite polarities.  In TEST 3A/3B it is a HIGHER-PRIORITY DECOY
+# that protects AD from being consumed by the interruption.  Here it is
+# a **PRE-CHARGE**: it actuates OP in passing while the system is
+# disabled, so that the EX's completion boundary has something to
+# deliver.  Three prongs, in order of strength: the deck's own error
+# text says so ("-NO INT TAKEN ON EX / -WHEN OP SET." asserts OP was
+# ALREADY set); the interrupt vector is planted AFTER the illegal word,
+# so if it could interrupt where it stands the block would break rather
+# than report; and nothing between it and the EX clears OP.
+#
+# AND THE EX's SUBJECT IS SETTLED FROM THE PRINT, not from the shape of
+# the neighbouring block.  023447.00 prints "23446.52 00" -- pair 52 =
+# 101010, bit 18 = 1 -> 023446.40, which is the SVA, not the illegal
+# word three half-words back.  Better than "a subject chosen to do
+# nothing": the subject is provably IDEMPOTENT, because nothing between
+# 023446.00 and 023447.00 touches $X1, so re-executing the SVA stores
+# the same address into the same word.
+#
+# THE BLOCK IS DISABLED, on three independent grounds from its own
+# rows, and the third is the cleanest: both SVAs name I62ITE with NO
+# "+.32", so the landing is 024320.00, which p.109 prints as "BD,$".
+# 1CB is therefore entered STILL DISABLED and needs no BD of its own --
+# and it has none.
+#
+# THE MASK ASYMMETRY IS THE POINT, and it corrects a reading in the
+# research note.  1CA does "Z,$IND" and NO mask setup; 1CB must run
+# "TI,1,I00O,$MASK".  The reason is printed p.48: mask bits 0-19 are
+# permanently one, and **OP is indicator 15 while IF is 21**.  I00O is
+# the ALL-ONES word, so that TI turns on every settable bit 20-47, not
+# "the relevant one".
+#
+# THE STAR IS A MATCHED BIT-18 PAIR INSIDE 28 HALF-WORDS: the two EX
+# rows print pair 52 (bit 18 = 1) and pair 12 (bit 18 = 0).  And
+# injection 2 makes it falsifiable -- masking bit 18 off every branch
+# and misc address moves EXACTLY ONE row, 023447.00, while 023455.00
+# sits there as the control.  Note 023455.00's pair reads identically
+# whether the field is 19 bits or 18; 023447.00's does not.
+#
+# Five injections plus a MEASURED NULL WITH A LIVENESS PROOF under the
+# same patched build: indexing enc_dir_index moves nothing here (no
+# parenthesised index in 27 rows), while a constructed
+# "SX,$X2,I00O($X1)" moves 024503.05 11 -> 12 and its unindexed twin
+# does not.
+#
+# ONE REPO FIRST after grep knocked the rest down: "EX,$-.32" is the
+# first SELF-RELATIVE EX and the first BACKWARD one -- every other EX
+# operand anywhere in the corpus is a label or a register.
+#
+# NO DECK TYPO AND NO SCAN DAMAGE in 27 rows.  The one candidate was in
+# the READING, not the deck: see docs/listing_typography.md 10 on rule
+# lines forging serifs.  "CNTRLS" got the pitch test and is an
+# abbreviation, not a dropped letter -- six consecutive cells at 60.6
+# px with no blank.
+
 run "I-Box 5 routine 1262 TEST 1CC: EX of a branch, and EXE (jb_ax5b PDF pp.93-94)" python3 verify_ax5b_162_test1cc_listing.py
 # THE SPECIFICATION FOR THE **EXE** INDICATOR, as executable checks.
 # Reference Manual printed p.49: "The execution exception indicator
@@ -4572,6 +4639,80 @@ run "I-Box 5 routine 1262 TEST 3B: EXIC subject below 32 (jb_ax5b PDF p.108)" py
 # bit, the field nothing else in the block exercises (1 row); BD's code
 # (2 rows); LVI's code (3 rows).
 
+run "I-Box 5 routine 1262 head and TEST 1A: EX across three memories (jb_ax5b PDF pp.87-89)" python3 verify_ax5b_162_test1a_listing.py
+# 109 ROWS, the routine head plus all of TEST 1A, 023304.00-023373.00,
+# abutting the section below at 023373.40.
+#
+# "THE SEVEN MEMORY COMBINATIONS" IN THE DECK'S OWN WORDS, at
+# 023316.40: "-CHECK SEVEN POSSIBILITIES OF / -EXECUTES IN 3 MEMORIES."
+# The three memories -- MAIN core, INDEX storage and the INTERNAL
+# registers -- share one address space on this machine.  Three
+# one-level cases, one per memory, then FOUR of the nine possible
+# two-level chains: MAIN->MAIN, MAIN->IX, MAIN->INTERNAL, then
+# MAIN->IX->MAIN, MAIN->INTERNAL->MAIN, MAIN->IX->IX, MAIN->INT->INT.
+#
+# AND CASES 4-7 ARE UNREADABLE WITHOUT THE DOUBLED K-WORD.  PDF p.109
+# makes I62K2/K3/K4 full WORDS holding the SAME HALF-WORD TWICE --
+# 024173.00 and 024173.40 both print "24321.12 00".  So "LX,$X2,I62K2"
+# loads all 64 bits into word 18 and "EX,$X2" works whichever half its
+# bit 18 selects.  The doubling is what lets ONE register hold a whole
+# intermediate level.
+#
+# TEST 1A IS TWO BLOCKS, NOT ONE.  Before the seven comes
+# 023312.40-023316.00, "-CHECK THAT EX WILL NOT RELINQUISH / -CONTROL."
+# -- and that block's error path is exactly the failure mode
+# ex_subject.strap's first injection produces (the subject installed
+# under its OWN pc/len, halting on WRONGA).  The deck and the model
+# test the same thing from opposite sides.
+#
+# WOULD THE MODEL'S EX SATISFY ALL SEVEN?  Read on paper, nothing run:
+# cases 1-5 yes, and cases 6-7 yes BY CONSTRUCTION -- but **nothing in
+# the repo demonstrates two levels BOTH in registers.**  ex_subject's
+# two-level block keeps both in main storage and 1268 1B/1C is one
+# level deep.  Named as the next behavioural test rather than assumed.
+#
+# AND THE ADDRESS-MONITORING ANSWER IS RIGHT BY COINCIDENCE, which the
+# transcriber corrected in their own draft rather than leaving.  For
+# cases 2/3/6/7 the observable is correct -- no IF, no AD, as p.50
+# requires -- while NEITHER rule is implemented: ifViolates' `a >= 32`
+# guard exists for p.45's AD reason, and the two agree only because
+# this model does not raise AD for a low branch either.  A later AD
+# implementation would break it.
+#
+# THE ROUTINE HEADER IS WRONG TWICE, not once.  Already known: it calls
+# TEST 3 "THE ILLEGAL COMBINATIONS OF EX AND EXIC" where 3A and 3B are
+# both EXIC-alone address-range checks.  NEW: its TEST 1 lines describe
+# 1B and 1CC and omit BOTH of 1A's subjects.  It under-describes TEST 1
+# as well as mis-describing TEST 3.
+#
+# TWO DECK TYPOS, and the second is settled WITHOUT a glyph argument.
+# 023304.00 prints "-UPDATE INDENT." where every other routine prints
+# "-UPDATE IDENT." -- pitch shows a letter was ADDED (seven glyphs at
+# 58.5 px/cell against "UPDATE" at 61), and the intruding N is clean.
+# 023310.40 prints "-SETUP 8D INT TBL, AND INT ADR." for BD, and the
+# decisive evidence is INTRA-DECK: TEST 1CC's sibling stanza prints
+# "-DO BB, SETUP BD INT TBL." with a clean B while loading the SAME
+# I62K1 constant.  Glyph measurement is only the second leg (two closed
+# bowls, no left stem, against the B of "TBL" nine cells later on the
+# same row).
+#
+# Five injections, observed, and TWO PREDICTED VALUES WERE WRONG AND
+# WERE CORRECTED TO THE OBSERVED ONES before the docstring was written:
+# the CNOP row prints "000000.34 00" (not .32), and 49 is NOT a free
+# indicator number -- a script over INDICATOR_BITS reports 14 is the
+# ONLY value in 0-63 the table does not hold, since 48's neighbours are
+# XVLZ=49 and XVZ=50.
+#
+# THE STRONGEST SINGLE CROSS-CHECK IS ALSO THE CNOP WITNESS:
+# "EX,I623" at 023313.40 prints "23315.12 00", pair 12, bit 18 = 0 ->
+# 023315.00.  023314.40 is an odd half-word, so the CNOP there MUST
+# emit its filler NOP; had it emitted nothing, I623 would sit at
+# 023314.40 and this pair would read 52.  It reads 12.
+#
+# All eight EX rows print pair 12, bit 18 = 0 throughout -- stated
+# plainly rather than dressed up, and contrast 1CC's "EX,I62B6" at
+# 24205.52 where it is 1.
+
 run "I-Box 5 routine 1262 TEST 1B: EX of each class (jb_ax5b PDF pp.90-91)" python3 verify_ax5b_162_test1b_listing.py
 # THE FIRST LISTING WITNESS FOR **EX** IN THIS SUITE.  MISC_CODES["EX"]
 # appears in no other program here; the only prior mention anywhere is
@@ -4612,6 +4753,87 @@ run "I-Box 5 routine 1262 TEST 1B: EX of each class (jb_ax5b PDF pp.90-91)" pyth
 # neighbour of 57 is ALREADY another indicator's number, so a
 # neighbour perturbation is a table collision rather than a clean
 # fault; 14 is the only number in 0-63 the table does not hold.
+
+run "I-Box 5 routine 1262 TEST 2A: EXIC must not relinquish control (jb_ax5b PDF pp.96-98)" python3 verify_ax5b_162_test2a_listing.py
+# 137 ROWS, THE WHOLE BLOCK, 023576.40-023704.40 end to end.  Closure
+# is arithmetic: (0o23704 - 0o23576) x 2 + 1 = 141 half-words, four of
+# which are full-word VFL loads, so the pages print 137 rows.
+#
+# "MUST NOT RELINQUISH CONTROL" MEANS **FOUR** PLACES CONTROL MUST NOT
+# GO, and the block map's six words undercount it.  The deck plants a
+# trap at each and checks none fired:
+#   0. the INTERRUPTION address       (SVA,$X1,I62ITE)
+#   1. the half-word AFTER the PSEUDO-IC -- trap at I62BR1 = 024323.40,
+#      which is the RIGHT HALF of the very word 024323.00 that holds
+#      the pseudo-IC
+#   2. the half-word AFTER the SUBJECT -- trap at I62BR2 = 024325.00
+#   3. **INTO the pseudo-IC word ITSELF**
+#
+# VIOLATION 3 IS THE ONE NOBODY WOULD HAVE GUESSED, and it is a real
+# contract on EXIC: p.109 prints I62PSI at 024323.00 as a REAL
+# INSTRUCTION, "LX,$X0,0".  The deck zeroes $X0 before and checks it
+# after -- "-INST AT PSIC WAS EXECUTED."  **The pseudo-IC word must be
+# read as DATA and never executed.**  TEST 2B contains no such check.
+#
+# Trap 2's placement is arithmetic, shown rather than asserted: I62SUB
+# is 024324.00 and the subject I62EXV is "L(BU),I00O", printed with a
+# two-word machine code, so it is FULL length and occupies 024324.00
+# AND 024324.40 -- making the next instruction location 024325.00,
+# exactly where I62BR2 sits.  A half-length subject would have put the
+# trap at 024324.40.
+#
+# "SEVEN MEMORY COMBINATIONS" HAS AN ANALOGUE AND IT IS **TWO**, and
+# the deck says so in its own header: "CHECK THAT EXIC WILL NOT /
+# RELINQUISH CONTROL,AND THE TWO / POSSIBLE MEMORY COMBINATIONS."  Only
+# the PSEUDO-IC moves -- the EXIC is in the main program both times
+# (it is the instruction under test) and the subject is in main storage
+# both times (p.50 requires subjects at 32.00+).  The whole difference
+# is "EXIC,I62PSI" against "LX,$X2,I62PSI / EXIC,$X2".
+#
+# AND ITS STEPPING CHECK IS STRICTLY WEAKER THAN 2B's, IN THE OPPOSITE
+# POLARITY -- worth knowing before reading one out of the other.  2B
+# demands the pseudo-IC stepped by EXACTLY the subject's length
+# (V+I,$X2,<step> / KV / BZXE).  2A is "KVI,$X1,I62SUB / BXE" against
+# "-PSEUDO IC UNCHANGED BY EXIC.", which errors only when it is still
+# EQUAL to where it started: **2A merely demands that it CHANGED.**
+#
+# THREE PASSES, NOT THREE TESTS, and pass 0 is the odd one: it plants
+# everything and runs one EXIC but CHECKS NOTHING ELSE -- it never
+# zeroes $X0/$R/$L/$IND/$MASK, so it structurally cannot check
+# execution or stepping.  Passes 1 and 2 are the same shape row for
+# row; saying so IS the verdict, and the seven small differences are
+# all transcribed rather than normalised.
+#
+# A FIFTH BIT-18 EXCLUSION CLASS, with its own citation.  Printed p.50:
+# EXIC's pseudo-IC is "the full-word addressed by BITS 0-17 of the
+# effective address" -- so EXIC's operand is an 18-bit WORD address and
+# its rows are NOT bit-18 witnesses.  Note this DIFFERS from EX, whose
+# operand is a 19-bit half-word address with bit 18 live (TEST 1CC
+# prints "EX,I62B6" as 24205.52).  Proven by a measured null WITH a
+# liveness check: forcing bit 18 off for EXIC moved none of the three
+# EXIC rows (both targets word-aligned), while a constructed
+# "EXIC,I62BR1" moved 024323.56 -> 024323.16 under the same patch.
+#
+# TWELVE TIER-1 ADDRESS WITNESSES against the sibling 2B file's four,
+# six at ".40" and six at ".00" -- and the same source tokens produce
+# both, which is what shows bit 18 is COMPUTED and not copied.  The
+# cleanest pair crosses the two files: "B,$+1.0" prints bit 18 = 0 here
+# and 1 in 2B; "BD,$+.32" prints 1 here and 0 there.
+#
+# FOUR POLARITIES OF TWO INDICATORS IN ONE BLOCK -- BRZ and BZRZ, BXE
+# and BZXE -- each right for its own check, all settled from the
+# printed hex rather than from prose.  Bit 29 is zero in all twelve, so
+# nothing clears.
+#
+# ZERO SCAN DAMAGE IN 137 ROWS.  One DECK TYPO, settled by measuring
+# the same word on the parallel line: 023624.00 prints "PSIC ON MAIN"
+# where 023606.40 prints "IN MAIN" -- an 11 px bare stroke there
+# against a 44 px round glyph here, clean and fully inked, where damage
+# would leave a ragged I.  And one authoring quirk settled by PITCH
+# rather than forced into the typo/damage binary: "CONTROL,AND" has no
+# space after the comma, and cell measurement (50.0 px/cell, word gaps
+# at 99-101 px) shows the cells are ADJACENT -- nothing was dropped,
+# the deck printed no space.
 
 run "I-Box 5 routine 1262 TEST 2B, EXIC by class (jb_ax5b PDF p.101)" python3 verify_ax5b_162_exic_listing.py
 run "I-Box 5 routine 1262 TEST 2B: the two ends around it (jb_ax5b PDF pp.99-100, 102)" python3 verify_ax5b_162_test2b_head_tail_listing.py

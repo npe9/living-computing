@@ -1,0 +1,585 @@
+! jb_ax5b "I-Box 5", routine 1262 ("TEST EX AND EXIC"), TEST 2A --
+! "CHECK THAT EXIC WILL NOT RELINQUISH CONTROL, AND THE TWO POSSIBLE
+! MEMORY COMBINATIONS".  Entry I6247 at 023576.40, last row 023704.40.
+! PDF pp.96, 97, 98 of docs/jb_ax5b_ibox-5.pdf, transcribed WHOLE.
+!
+! CITED BY PDF PAGE.  jb_ax5b's LISTING pages carry no printed page
+! numbers -- the "12 11 10 9" down the left margin is fanfold
+! carriage-tape line numbering, and the only printed numbers are in the
+! front write-up, which is scanned 2-up.  Every verify_ax5b_*.py here
+! already says "PDF p.NN" for that reason.
+!
+! EXTENT, ESTABLISHED FIRST-HAND AT 500 dpi AND NOT FROM THE BLOCK MAP.
+! PDF p.95's last three rows are 023575.00 "LX,$X13,IC262" /
+! 023575.40 "V+,$X13,BIT3" / 023576.00 "SX,$X13,IC262" -- TEST 1D's
+! continuity bridge.  The very next printed row, the first on PDF p.96,
+! is 023576.40 with I6247 in the name field.  PDF p.98's last printed
+! row is 023704.40 "SX,$X13,IC262"; everything below it on that page is
+! blank fanfold rule.  So the block is exactly pp.96-98 and exactly
+! 023576.40-023704.40.
+!
+! CLOSURE ARITHMETIC.  023576.40 through 023704.40 inclusive is
+! (0o23704 - 0o23576) * 2 + 1 = 70 * 2 + 1 = 141 half-words.  FOUR rows
+! are full-word VFL loads (023630.00, 023641.40, 023663.40, 023675.00),
+! each one printed row occupying two half-words, so the page prints
+! 141 - 4 = 137 rows.  This file has 137 ROWS entries and no SLC but the
+! first.  Nothing is left behind and nothing is doubled.
+!
+! ------------------------------------------------------------------
+! WHAT "MUST NOT RELINQUISH CONTROL" ACTUALLY MEANS
+! ------------------------------------------------------------------
+! The block map's phrase is second-hand.  Read off these three pages,
+! the deck's own claim is narrower and sharper: AFTER AN "EXIC" THE
+! INSTRUCTION COUNTER MUST GO ON IN THE MAIN PROGRAM, AT THE HALF-WORD
+! FOLLOWING THE "EXIC" ITSELF.  Control must not be handed to any of
+! the three OTHER places the EXIC touched.  The deck does not argue
+! this -- it PLANTS A TRAP AT EACH OF THE THREE and checks none fired.
+!
+!   (1) NOT to the half-word after the pseudo-instruction counter.
+!       "SVA,$X1,I62BR1" writes the error label into the "$BD,0" that
+!       PDF p.109 prints at 024323.40 -- the RIGHT half of the very
+!       word 024323.00 that holds the pseudo-IC.  If the machine ran on
+!       from the pseudo-IC word, that BD fires.
+!         023610.00  I6249  "-EXIC RELINQUISHES CONTROL TO INSTRUCT"
+!         023610.40         "-FOLLOWING PSEUDO IC."
+!
+!   (2) NOT to the half-word after the SUBJECT instruction.
+!       "SVA,$X1,I62BR2" writes the error label into the "$BD,0" at
+!       024325.00.  THE ARITHMETIC, SHOWN rather than asserted: the
+!       subject slot I62SUB is 024324.00; the subject planted in it is
+!       I62EXV, which PDF p.109 prints as "L(BU),I00O" with the
+!       TWO-WORD machine code "24503.00 80 000000.20 50", i.e. FULL
+!       LENGTH; a full-length instruction at 024324.00 occupies
+!       024324.00 AND 024324.40; so the next instruction location is
+!       024324.40 + 32 bits = 024325.00, which is exactly where p.109
+!       prints I62BR2.  Had the subject been half-length the trap
+!       would have had to sit at 024324.40 instead.  If the machine ran
+!       on from the subject, that BD fires.
+!         023611.40  I6250  "-EXIC RELINQUISHES CONTROL TO INSTRUCT"
+!         023612.00         "-FOLLOWING INSTRUCT ADDRESSED BY PSIC."
+!
+!   (3) NOT INTO the pseudo-IC word itself.  This one has no planted
+!       trap because it needs none: PDF p.109 prints I62PSI at
+!       024323.00 as "LX,$X0,0", a REAL INSTRUCTION whose address field
+!       the SVA then fills in.  Used as the manual says -- as data --
+!       it is a pseudo-instruction counter; EXECUTED, it would load
+!       word I62SUB into $X0.  So the deck zeroes $X0 before the EXIC
+!       and reads it back after:
+!         023614.40  Z,$X0
+!         023641.40  L(BU),$X0
+!         023643.00  BZRZ,SERS   "-INST AT PSIC WAS EXECUTED."
+!       THREE control-flow violations, not two.  This is the one the
+!       block map's phrase does not hint at.
+!
+! And the fourth thing "control" means here, checked first of all:
+!   (0) NOT to the interruption address.  "SVA,$X1,I62ITE" plants the
+!       error label in the interrupt-table entry, $IND and $MASK are
+!       zeroed, and an interruption would land on
+!         023606.40  I6248  "-INT ON EXIC TO PSIC IN MAIN TO"
+!         023607.00         "-VFL LOAD IN MAIN."
+!
+! THE PRIMARY SOURCE SAYS EXACTLY THIS, and it is the sentence the
+! block map is compressing.  Reference Manual 22-6530-2, PRINTED p.49
+! (PDF p.52; PDF page = printed page + 3), read first-hand at 400 dpi
+! for this file:
+!
+!   "In either of the execution instructions, the subject instruction
+!   may be of any type and is performed according to the normal rules
+!   for an operation of its type.  HOWEVER, IN ORDER THAT THE MAIN
+!   PROGRAM MAY HAVE FULL CONTROL AT ALL TIMES, THE SUBJECT
+!   INSTRUCTION IS NOT ALLOWED TO CHANGE THE STATE OF THE INTERRUPTION
+!   SYSTEM OR REPLACE THE CONTENTS OF THE INSTRUCTION COUNTER."
+!
+! Same printed page, on the pseudo-IC and on the counter:
+!
+!   "...EXECUTE INDIRECT AND COUNT, specifies a location which imitates
+!   the instruction counter, a pseudo-instruction counter.  The
+!   pseudo-instruction counter addresses the location of a single
+!   subject instruction, which is fetched and executed.  After the
+!   subject instruction has been fetched, but prior to its execution,
+!   the pseudo-instruction counter is stepped."
+!
+!   "When an execution operation is initiated in the main program, the
+!   instruction counter is stepped in normal fashion as in all
+!   operations of the main program.  However, it is never stepped
+!   during the execution of any subject instruction even if the subject
+!   instruction is again one of the execution instructions."
+!
+! Reference Manual PRINTED p.50 (PDF p.53), read first-hand at 400 dpi:
+!
+!   "Execute Indirect and Count (EXIC).  Bits 0-18 of the full-word
+!   addressed by BITS 0-17 of the effective address are used as a
+!   pseudo-instruction counter."
+!
+!   "Any actuated indicator whose mask bit is on may cause interruption
+!   at the completion, termination, or suppression of an execution
+!   operation."
+!
+! C22-6531 "STRAP-1", APPENDIX A, PRINTED p.56 (PDF p.57), read
+! first-hand at 400 dpi.  Every system symbol this block names is in
+! its "Word No. / Bit Address" columns, so no register address here is
+! taken from the assembler's own table on trust:
+!   $ IA 1 Interruption Address 2 0-17   | $ IND 1 Indicators 11 0-63
+!   $ MASK 1 Mask 12 21-49               | $ L 1 Left Half of Acc 8 0-63
+!   $ R 1 Right Half of Acc 9 0-63       | $ X0 1 Index Zero 16 0-63
+!   $ X2 1 Index Two 18 0-63             | $ X13 1 Index Thirteen 29
+!   $ X14 1 Index Fourteen 30 0-63       | $ X15 1 Index Fifteen 31
+!   $ RZ 2 Result Zero 11 57             | $ XE 2 Index Equal 11 53
+! Decimal 2, 11, 12, 8, 9, 16, 18, 30, 31 are octal 2, 13, 14, 10, 11,
+! 20, 22, 36, 37 -- exactly the address fields this block prints.
+!
+! Reference Manual PRINTED p.23 (PDF p.26), read first-hand at 400 dpi,
+! for the index-word fields the verification body walks and for the
+! 18-bit exception:
+!
+!   "In the majority of these operations, 19 bits of the effective
+!   address are used in order to permit addressing of half-words.  THE
+!   TWO EXCEPTIONS USE ONLY 18 BITS OF THE EFFECTIVE ADDRESS BECAUSE
+!   THEY REQUIRE FULL-WORD OPERANDS."
+!
+!   "Index Equal (XE).  This indicator is set to one when the field in
+!   the index specified by J is equal to the comparand.  It is set to
+!   zero when the index field is lower or higher than the comparand."
+!
+! ------------------------------------------------------------------
+! THE BLOCK'S STRUCTURE, AND THE "TWO MEMORY COMBINATIONS"
+! ------------------------------------------------------------------
+! TEST 1A is described as "EX must not relinquish control; SEVEN memory
+! combinations".  TEST 2A announces its own analogue in its header, in
+! so many words:
+!
+!   023576.40  I6247  LVI,$X1,I62INT  "-TEST 2A, CHECK THAT EXIC WILL NOT"
+!   023577.00         SVA,$X1,$IA     "-RELINQUISH CONTROL,AND THE TWO"
+!   023577.40         LVI,$X1,I6248   "-POSSIBLE MEMORY COMBINATIONS."
+!
+! TWO, not seven, and the deck names them itself:
+!
+!   023612.40  "-TEST MEMORY COMBOS."  "-EXIC IN MAIN."
+!   023613.40                          "-PSIC IN MAIN."   "-SUBJ IN MAIN."
+!   023645.40                          "-EXIC IN MAIN."
+!   023646.00                          "-PSIC IN IX STG." "-SUBJ IN MAIN."
+!
+! ONLY THE PSEUDO-IC MOVES.  The EXIC is in the main program both times
+! (it is the instruction being tested), and the subject is in main
+! storage both times (p.50: subject instructions of EXIC "may occupy any
+! available locations with addresses 32.00 and greater", which rules
+! index storage out).  The pseudo-IC is the one participant that can sit
+! in either, so there are exactly two combinations.  The second is made
+! by "LX,$X2,I62PSI" at 023654.00 -- copy the pseudo-IC word into index
+! register 2 -- and then "EXIC,$X2" at 023656.40 instead of
+! "EXIC,I62PSI".  THAT IS THE WHOLE DIFFERENCE IN THE INSTRUCTION.
+!
+! SO THE BLOCK IS THREE PASSES, NOT THREE TESTS:
+!
+!   PASS 0   023576.40-023612.00   the bare relinquish test.  PSIC in
+!            main.  Plants the interrupt entry and both traps, runs
+!            one EXIC, and checks NOTHING ELSE -- it never zeroes $X0,
+!            $R, $L, $IND or $MASK, so it CANNOT check execution or
+!            stepping.  Three error entries (I6248/I6249/I6250) and no
+!            verification body at all.
+!   PASS 1   023612.40-023645.00   "-TEST MEMORY COMBOS." -- the SAME
+!            memory configuration as pass 0, re-run with the full
+!            verification body.  Error entries I6252/I6253/I6254, body
+!            at I6255.
+!   PASS 2   023645.40-023704.40   PSIC in index storage.  Error
+!            entries I6256/I6257/I6258, body at I6259, then routine
+!            1262's TEST 2A exit and continuity bridge.
+!
+! PASSES 1 AND 2 ARE THE SAME SHAPE, ROW FOR ROW, and saying so plainly
+! is a deliverable in itself: after the first two the block does not
+! introduce a new idea, it re-runs one.  The differences are seven, all
+! small, and all of them transcribed rather than normalised:
+!   a. the pseudo-IC operand: "EXIC,I62PSI" vs "EXIC,$X2";
+!   b. pass 2 carries the extra "LX,$X2,I62PSI" (023654.00);
+!   c. the stepping check reads "LX,$X1,I62PSI" (023643.40) in pass 1
+!      and "LX,$X1,$X2" (023677.00) in pass 2 -- same question, asked
+!      of whichever copy the EXIC was told to use;
+!   d. the clear-indicators call is "BD,I60S1" (023620.40) in pass 1
+!      and "B,I60S1" (023653.40) in pass 2;
+!   e. the SC pair and the SR pair are in OPPOSITE ORDER (below);
+!   f. pass 1 has the "-TEST MEMORY COMBOS." heading line, pass 2 has
+!      no heading and its three class comments sit one row higher;
+!   g. pass 1's error text says "ON MAIN" where every sibling says
+!      "IN MAIN" -- a DECK TYPO, measured below.
+!
+! THE VERIFICATION BODY (I6255, I6259), SIX CHECKS IN ORDER:
+!   1. "L(BU),$R / SIC,SEN / BRZ,SERS"    "-EXIC SUBJ INST NOT EXECUTED."
+!      $R was zeroed; the subject "L(BU),I00O" must have made it
+!      nonzero.  BRZ -- error when Result Zero is ON.
+!   2. "LX,$X14,I62EXV / LX,$X15,I62SUB / KV / BZXE,SERS"
+!                                         "-BITS 0-24 OF SUBJ INST CHNGD."
+!   3. "SC,$Xn,$Xn / SC,$Xm,$Xm / KV / BZXE"
+!                                         "-BITS 28-45 OF SUBJ INST CHNGD."
+!   4. "SR,$Xn,$Xn / SR,$Xm,$Xm / KV / BZXE"
+!                                         "-BITS 46-63 OF SUBJ INST CHNGD."
+!   5. "L(BU),$X0 / SIC,SEN / BZRZ,SERS"  "-INST AT PSIC WAS EXECUTED."
+!   6. "LX,$X1,<psic> / KVI,$X1,I62SUB / BXE,SERS"
+!                                         "-PSEUDO IC UNCHANGED BY EXIC."
+!
+! CHECKS 2-4 ARE ONE IDEA IN THREE ROWS: the master subject I62EXV and
+! the working copy in I62SUB are both loaded AS INDEX WORDS, and the
+! three comparisons walk the three index fields -- VALUE 0-24, COUNT
+! 28-45, REFILL 46-63 (Reference Manual printed p.23's index-word
+! layout; bits 25-27 are unused, which is why the deck's three messages
+! cover 0-24, 28-45 and 46-63 and nothing in between).  "KV" compares
+! only the value field, so "SC,$X15,$X15" -- store index 15's COUNT into
+! the word at location $X15, which IS index 15 -- moves the count field
+! into the value field so that the same KV can see it.  Same trick with
+! SR for the refill.  THE DECK COMPARES A 64-BIT INSTRUCTION WORD WITH
+! AN INSTRUCTION THAT ONLY COMPARES 25 BITS, THREE TIMES.
+!
+! THE ONE THING TEST 2A CHECKS THAT ITS TWIN 2B DOES NOT, AND THE ONE
+! IT CHECKS MORE WEAKLY -- this is what the EXIC implementation wants:
+!   * 2A checks that the pseudo-IC word was NOT EXECUTED (check 5).
+!     TEST 2B has no such row anywhere.
+!   * 2A's stepping check (check 6) is STRICTLY WEAKER THAN 2B's and
+!     the opposite polarity.  2B does "V+I,$X2,0.32 / KV,$X2,I62PSI /
+!     BZXE" -- the pseudo-IC must have stepped by EXACTLY the subject's
+!     length.  2A does "KVI,$X1,I62SUB / BXE" -- error when the
+!     pseudo-IC is still EQUAL to where it started.  2A only demands
+!     that it CHANGED.  Do not read 2B's contract out of 2A's rows.
+!
+! ------------------------------------------------------------------
+! EVERY ERROR MESSAGE AND HEADING IN THE RANGE, VERBATIM, IN ADDRESS
+! ORDER, WITH ITS OCTAL LOCATION
+! ------------------------------------------------------------------
+!   023576.40  "-TEST 2A, CHECK THAT EXIC WILL NOT"
+!   023577.00  "-RELINQUISH CONTROL,AND THE TWO"
+!   023577.40  "-POSSIBLE MEMORY COMBINATIONS."
+!   023606.00  "-PSIC IS PSEUDO IC."
+!   023606.40  "-INT ON EXIC TO PSIC IN MAIN TO"
+!   023607.00  "-VFL LOAD IN MAIN."
+!   023610.00  "-EXIC RELINQUISHES CONTROL TO INSTRUCT"
+!   023610.40  "-FOLLOWING PSEUDO IC."
+!   023611.40  "-EXIC RELINQUISHES CONTROL TO INSTRUCT"
+!   023612.00  "-FOLLOWING INSTRUCT ADDRESSED BY PSIC."
+!   023612.40  "-TEST MEMORY COMBOS."
+!   023613.00  "-EXIC IN MAIN."
+!   023613.40  "-PSIC IN MAIN."
+!   023614.00  "-SUBJ IN MAIN."
+!   023624.00  "-INT ON EXIC TO PSIC ON MAIN TO"          <- DECK TYPO
+!   023624.40  "-VFL LOAD IN MAIN."
+!   023625.40  "-EXIC RELINQUISHES CONTROL TO INSTRUCT"
+!   023626.00  "-FOLLOWING PSEUDO IC."
+!   023627.00  "-EXIC RELINQUISHES CONTROL TO INSTRUCT"
+!   023627.40  "-FOLLOWING INSTRUCT ADDRESSED BY PSIC."
+!   023631.40  "-EXIC SUBJ INST NOT EXECUTED."
+!   023634.00  "-BITS 0-24 OF SUBJ INST CHNGD."
+!   023636.40  "-BITS 28-45 OF SUBJ INST CHNGD."
+!   023641.00  "-BITS 46-63 OF SUBJ INST CHNGD."
+!   023643.00  "-INST AT PSIC WAS EXECUTED."
+!   023645.00  "-PSEUDO IC UNCHANGED BY EXIC."
+!   023645.40  "-EXIC IN MAIN."
+!   023646.00  "-PSIC IN IX STG."
+!   023646.40  "-SUBJ IN MAIN."
+!   023657.40  "-INT ON EXIC TO PSIC IN IX STG"
+!   023660.00  "-TO VFL LOAD IN MAIN."
+!   023661.00  "-EXIC RELINQUISHES CONTROL TO INSTRUCT"
+!   023661.40  "-FOLLOWING PSEUDO IC."
+!   023662.40  "-EXIC RELINQUISHES CONTROL TO INSTRUCT"
+!   023663.00  "-FOLLOWING INSTRUCT ADDRESSED BY PSIC."
+!   023665.00  "-EXIC SUBJ INST NOT EXECUTED."
+!   023667.40  "-BITS 0-24 OF SUBJ INST CHNGD."
+!   023672.00  "-BITS 28-45 OF SUBJ INST CHNGD."
+!   023674.40  "-BITS 46-63 OF SUBJ INST CHNGD."
+!   023676.40  "-INST AT PSIC WAS EXECUTED."
+!   023700.40  "-PSEUDO IC UNCHANGED BY EXIC."
+!   023702.40  "-TO SSIP."
+!   023703.40  "-UPDATE CONTINUITY CHECK."
+!
+! ------------------------------------------------------------------
+! DECK TYPO vs SCAN DAMAGE -- ONE TYPO, TWO NON-EVENTS, ZERO DAMAGE
+! ------------------------------------------------------------------
+! 1. 023624.00 "-INT ON EXIC TO PSIC ON MAIN TO" -- DECK TYPO, and the
+!    control is the SAME WORD ON A PARALLEL LINE.  023606.40 prints the
+!    identical message with "IN MAIN".  Measured at 500 dpi by
+!    segmenting glyph bounding boxes from pixel-column ink profiles:
+!      023606.40, the glyph before "N MAIN":  11 px bare stroke = I.
+!                 letter O on the SAME row ("ON EXIC", "TO", "TO"):
+!                 44, 44, 44 px.
+!      023624.00, the glyph in the SAME word position:  44 px round.
+!                 letter O on the SAME row ("ON EXIC" 42, "TO" 45).
+!    44 against 44/42/45 on its own line and against 11 on the parallel
+!    line.  It is a CLEAN, fully-formed, correctly-inked letter O in a
+!    place where the word is "IN" -- a clean wrong letter, which is a
+!    typo.  Damage would have left a RAGGED I; nothing here is ragged,
+!    and no other glyph on that row or its neighbours is degraded.
+!    TRANSCRIBED AS PRINTED.
+!
+! 2. 023577.00 "-RELINQUISH CONTROL,AND THE TWO" has NO SPACE after the
+!    comma.  Settled by PITCH, not by eye, because a missing space and a
+!    dropped character look alike.  Cell pitch measured on the same row
+!    from the well-formed word "CONTROL": starts at 2605, 2654, 2704,
+!    2755, 2807, 2854, 2905 px -- 49, 50, 51, 52, 47, 51, mean 50.0 px
+!    per cell.  A word gap on the same row measures 101 px (H of
+!    RELINQUISH at 2504 -> C of CONTROL at 2605), 100 px (D of AND 3108
+!    -> T of THE 3208) and 99 px (E of THE 3309 -> T of TWO 3408), i.e.
+!    exactly TWO cells.  The comma's cell begins at 2955 (L at 2905 plus
+!    one 50 px cell) and the A of AND begins at 3006 -- 51 px, ONE cell.
+!    So the comma and the A are adjacent cells: no space was dropped by
+!    the scan, the deck printed none.  AN AUTHORING QUIRK, NOT A GARBLE;
+!    not forced into the typo/damage binary.
+!
+! 3. 023657.40 "-INT ON EXIC TO PSIC IN IX STG" ends without a period
+!    and its sentence's "TO" is carried to the next line
+!    ("-TO VFL LOAD IN MAIN.").  Checked on the ink profile: after the
+!    G at x 3443 (w 40) there is no ink at all before the machine-code
+!    column at x 4202.  That is NOT a dropped period -- the parallel row
+!    023606.40 likewise ends "IN MAIN TO" with no period, because in
+!    both cases the sentence continues on the next line.  Non-event.
+!
+! 4. "INSTRUCT" for "instruction" and "CHNGD." for "changed" are the
+!    deck's own abbreviations, printed identically four times and four
+!    times respectively.  Not drops.
+!
+! NOTHING IN 137 ROWS IS SCAN-DAMAGED.  Every character on pp.96-98 is
+! a clean, well-inked print; no letter is ragged and no stroke is
+! broken.  Said plainly rather than manufactured into a finding.
+!
+! THE LABEL GLYPH, RE-MEASURED ON THIS BLOCK'S OWN PAGE rather than
+! inherited from docs/listing_typography.md.  Row 023576.40 at 500 dpi:
+!   name field "I6247":   I 10 px | 6 39 | 2 36 | 4 42 | 7 ...
+!   operand "LVI,$X1,I62INT" on the SAME ROW:
+!     L 37 | V 30 | I 10 | , 25 | $ 36 | X 38 | 1 31 | , 23 |
+!     I 11 | 6 37 | 2 34 | I 12 | N 38 | T ...
+! Three letter-I glyphs (10, 11, 12 px) and one digit 1 (31 px) on one
+! printed row.  The populations do not touch.  The labels are I6247,
+! I6248, ..., I6259 and the externals are I62INT, I62PSI, IC262.
+!
+! ------------------------------------------------------------------
+! A FULL-WORD INSTRUCTION AT AN ODD HALF-WORD, TWICE, AND NO CNOP
+! ------------------------------------------------------------------
+! 023641.40 "L(BU),$X0" and 023663.40 "L(BU),$R" each START on a .40 and
+! STRADDLE into the next word: the listing's own next printed addresses
+! are 023642.40 and 023664.40, two half-words on.  The other two
+! full-word rows (023630.00, 023675.00) are word-aligned.  THE LISTING
+! PRINTS NO CNOP ANYWHERE IN THE BLOCK and the printed address column
+! proves there is no gap, so none is written here.
+! CHECKED, not assumed: assembling "SLC,(8)23641.00 / B,SERS /
+! L(BU),$X0 / SIC,SEN / BD,SERS" puts the VFL load's two halves at
+! 023641.40 and 023642.00 and the SIC at 023642.40, matching the page.
+! AND IT IS NOT A REPO FIRST: a sweep of every ROWS tuple in every
+! verify_*.py here finds 656 full-word rows, 216 of them at a .40.
+!
+! ------------------------------------------------------------------
+! ENCODING ONLY, and it could not be otherwise.  Every one of the six
+! checks needs machinery this model does not have: the 64-word
+! interrupt table I62INT, 1260's clear-indicators subroutine I60S1, the
+! subject constants on PDF p.109, and EXIC itself, which this model
+! does not EXECUTE.  EXIC is in MISC_CODES, so the ASSEMBLER encodes
+! it; that is the whole distinction.
+!
+! Transcription standard: bit-exact against the printed machine code,
+! verify_ax5b_162_test2a_listing.py.
+
+        SLC, (8)23576.40
+
+! ==================================================================
+! PASS 0 -- PDF p.96.  The bare relinquish test.  No verification body.
+! ==================================================================
+I6247  LVI, $X1, I62INT           ! -TEST 2A, CHECK THAT EXIC WILL NOT
+        SVA, $X1, $IA             ! -RELINQUISH CONTROL,AND THE TWO
+        LVI, $X1, I6248           ! -POSSIBLE MEMORY COMBINATIONS.
+        SVA, $X1, I62ITE          ! plant the no-interrupt error entry
+        SIC, I60SX1
+        B,   I60S1                 ! 1260's clear-indicators subroutine
+        LVI, $X1, I62SUB
+        SVA, $X1, I62PSI          ! aim the pseudo-IC at the subject slot
+        LVI, $X1, I6249
+        SVA, $X1, I62BR1          ! trap 1: the half-word AFTER the PSIC
+        LVI, $X1, I6250
+        SVA, $X1, I62BR2          ! trap 2: the half-word AFTER the SUBJ
+        LX,  $X1, I62EXV          ! the subject: full-word "L(BU),I00O"
+        SX,  $X1, I62SUB
+        EXIC, I62PSI
+        BD,  I6251                 ! -PSIC IS PSEUDO IC.
+!
+! ---- pass 0, the interruption trap -------------------------------
+I6248  SIC, SEN                   ! -INT ON EXIC TO PSIC IN MAIN TO
+        BD,  SERS                  ! -VFL LOAD IN MAIN.
+        BD,  I6251
+!
+! ---- pass 0, trap 1: control after the pseudo-IC ------------------
+I6249  SIC, SEN                   ! -EXIC RELINQUISHES CONTROL TO INSTRUCT
+        BD,  SERS                  ! -FOLLOWING PSEUDO IC.
+        BD,  I6251
+!
+! ---- pass 0, trap 2: control after the subject --------------------
+!   No "BD,I6251" here: this entry falls straight through into I6251.
+I6250  SIC, SEN                   ! -EXIC RELINQUISHES CONTROL TO INSTRUCT
+        BD,  SERS                  ! -FOLLOWING INSTRUCT ADDRESSED BY PSIC.
+
+! ==================================================================
+! PASS 1 -- PDF pp.96-97.  Same memory configuration, full body.
+! ==================================================================
+I6251  LVI, $X1, I6252            ! -TEST MEMORY COMBOS.
+        SVA, $X1, I62ITE          ! -EXIC IN MAIN.
+        LVI, $X1, I62SUB          ! -PSIC IN MAIN.
+        SVA, $X1, I62PSI          ! -SUBJ IN MAIN.
+        Z,   $X0                   ! check 5's witness: PSIC not executed
+        LVI, $X1, I6253
+        SVA, $X1, I62BR1
+        LX,  $X1, I62EXV
+        SX,  $X1, I62SUB
+        LVI, $X1, I6254
+        SVA, $X1, I62BR2
+        SIC, I60SX1
+        BD,  I60S1                 ! BD here; pass 2 uses B.  Not a typo.
+        Z,   $IND
+        Z,   $MASK
+        Z,   $R                    ! check 1's witness: subject executed
+        Z,   $L
+        EXIC, I62PSI
+        BD,  I6255
+!
+! ---- pass 1, the interruption trap --------------------------------
+I6252  SIC, SEN                   ! -INT ON EXIC TO PSIC ON MAIN TO
+        BD,  SERS                  ! -VFL LOAD IN MAIN.
+        BD,  I6255
+!
+! ---- pass 1, trap 1 -----------------------------------------------
+I6253  SIC, SEN                   ! -EXIC RELINQUISHES CONTROL TO INSTRUCT
+        BD,  SERS                  ! -FOLLOWING PSEUDO IC.
+        BD,  I6255
+!
+! ---- pass 1, trap 2 (PDF p.97 begins) -----------------------------
+I6254  SIC, SEN                   ! -EXIC RELINQUISHES CONTROL TO INSTRUCT
+        BD,  SERS                  ! -FOLLOWING INSTRUCT ADDRESSED BY PSIC.
+!
+! ---- pass 1, the verification body --------------------------------
+I6255  L(BU), $R                  ! FULL WORD, word-aligned here
+        SIC, SEN
+        BRZ, SERS                  ! -EXIC SUBJ INST NOT EXECUTED.
+!
+        LX,  $X14, I62EXV          ! the master subject
+        LX,  $X15, I62SUB          ! the working copy
+        KV,  $X14, $X15            ! VALUE fields, bits 0-24
+        SIC, SEN
+        BZXE, SERS                 ! -BITS 0-24 OF SUBJ INST CHNGD.
+!
+        SC,  $X15, $X15            ! COUNT -> VALUE so KV can see it
+        SC,  $X14, $X14            ! X15 FIRST here; pass 2 reverses it
+        KV,  $X14, $X15
+        SIC, SEN
+        BZXE, SERS                 ! -BITS 28-45 OF SUBJ INST CHNGD.
+!
+        SR,  $X15, $X15            ! REFILL -> VALUE
+        SR,  $X14, $X14            ! X15 FIRST here; pass 2 reverses it
+        KV,  $X14, $X15
+        SIC, SEN
+        BZXE, SERS                 ! -BITS 46-63 OF SUBJ INST CHNGD.
+!
+        L(BU), $X0                 ! FULL WORD STRADDLING 023641.40/642.00
+        SIC, SEN
+        BZRZ, SERS                 ! -INST AT PSIC WAS EXECUTED.
+!
+        LX,  $X1, I62PSI           ! the pseudo-IC word itself
+        KVI, $X1, I62SUB           ! still where it started?
+        SIC, SEN
+        BXE, SERS                  ! -PSEUDO IC UNCHANGED BY EXIC.
+
+! ==================================================================
+! PASS 2 -- PDF pp.97-98.  PSIC in index storage.
+! ==================================================================
+!   No "-TEST MEMORY COMBOS." heading: the three class comments start
+!   one row higher than pass 1's.
+        LVI, $X1, I6256           ! -EXIC IN MAIN.
+        SVA, $X1, I62ITE          ! -PSIC IN IX STG.
+        LVI, $X1, I62SUB          ! -SUBJ IN MAIN.
+        SVA, $X1, I62PSI
+        Z,   $X0
+        LVI, $X1, I6257
+        SVA, $X1, I62BR1
+        LX,  $X1, I62EXV
+        SX,  $X1, I62SUB
+        LVI, $X1, I6258
+        SVA, $X1, I62BR2
+        SIC, I60SX1
+        B,   I60S1                 ! B here; pass 1 uses BD.  Not a typo.
+        LX,  $X2, I62PSI           ! THE COMBINATION: PSIC into index 2
+        Z,   $IND
+        Z,   $MASK
+        Z,   $R
+        Z,   $L
+        EXIC, $X2                  ! ...and the EXIC points at index 2
+        BD,  I6259
+!
+! ---- pass 2, the interruption trap --------------------------------
+I6256  SIC, SEN                   ! -INT ON EXIC TO PSIC IN IX STG
+        BD,  SERS                  ! -TO VFL LOAD IN MAIN.
+        BD,  I6259
+!
+! ---- pass 2, trap 1 (PDF p.98 begins) -----------------------------
+I6257  SIC, SEN                   ! -EXIC RELINQUISHES CONTROL TO INSTRUCT
+        BD,  SERS                  ! -FOLLOWING PSEUDO IC.
+        BD,  I6259
+!
+! ---- pass 2, trap 2 -----------------------------------------------
+I6258  SIC, SEN                   ! -EXIC RELINQUISHES CONTROL TO INSTRUCT
+        BD,  SERS                  ! -FOLLOWING INSTRUCT ADDRESSED BY PSIC.
+!
+! ---- pass 2, the verification body --------------------------------
+I6259  L(BU), $R                  ! FULL WORD STRADDLING 023663.40/664.00
+        SIC, SEN
+        BRZ, SERS                  ! -EXIC SUBJ INST NOT EXECUTED.
+!
+        LX,  $X14, I62EXV
+        LX,  $X15, I62SUB
+        KV,  $X14, $X15
+        SIC, SEN
+        BZXE, SERS                 ! -BITS 0-24 OF SUBJ INST CHNGD.
+!
+        SC,  $X14, $X14            ! X14 FIRST here -- pass 1 has X15
+        SC,  $X15, $X15
+        KV,  $X14, $X15
+        SIC, SEN
+        BZXE, SERS                 ! -BITS 28-45 OF SUBJ INST CHNGD.
+!
+        SR,  $X14, $X14            ! X14 FIRST here -- pass 1 has X15
+        SR,  $X15, $X15
+        KV,  $X14, $X15
+        SIC, SEN
+        BZXE, SERS                 ! -BITS 46-63 OF SUBJ INST CHNGD.
+!
+        L(BU), $X0                 ! FULL WORD, word-aligned here
+        SIC, SEN
+        BZRZ, SERS                 ! -INST AT PSIC WAS EXECUTED.
+!
+        LX,  $X1, $X2              ! the pseudo-IC IN INDEX STORAGE
+        KVI, $X1, I62SUB
+        SIC, SEN
+        BXE, SERS                  ! -PSEUDO IC UNCHANGED BY EXIC.
+!
+! ---- routine 1262's TEST 2A exit ---------------------------------
+        B,   $+1.0                 ! computed target 023702.00; bit 18 = 0
+        BD,  I6247                 ! the restart link: TEST 2A's own entry
+        SIC, SEN0+.32
+        B,   SSW                   ! -TO SSIP.
+        BD,  $+.32                 ! computed target 023703.40; BIT 18 = 1
+!
+! ---- the continuity bridge ---------------------------------------
+        LX,  $X13, IC262          ! -UPDATE CONTINUITY CHECK.
+        V+,  $X13, BIT4           ! TEST 2A done = bit 4
+        SX,  $X13, IC262
+
+! ---- externals, SYN'd at the addresses this same deck prints -----
+!   THESE ARE INPUTS TO THE CHECK, NOT WITNESSES.  No label row
+!   defining any of them appears on PDF pp.96/97/98; every address below
+!   comes from an OPERAND field or from another page of the same deck.
+!   See the verify script's docstring for the tiering.
+SEN     SYN, (8)1310.0             ! the SIC error-entry link
+SERS    SYN, (8)1304.0             ! the error-report routine
+SEN0    SYN, (8)1311.0             ! the DIGIT zero -- see the verify file
+SSW     SYN, (8)1301.0             ! -TO SSIP.
+I60S1  SYN, (8)22741.0            ! 1260's clear-indicators subroutine
+I60SX1 SYN, (8)23041.0            ! its SIC return link
+I62INT SYN, (8)24220.0            ! the 64-word interrupt table
+I62ITE SYN, (8)24320.0            ! the interrupt-table entry 1262 plants
+I62PSI SYN, (8)24323.0            ! the pseudo-IC word, "LX,$X0,0"
+I62BR1 SYN, (8)24323.40           ! trap 1, the RIGHT half of I62PSI's word
+I62SUB SYN, (8)24324.0            ! the subject-instruction slot
+I62BR2 SYN, (8)24325.0            ! trap 2, after the FULL-WORD subject
+I62EXV SYN, (8)24327.0            ! the subject, "L(BU),I00O"
+IC262  SYN, (8)24171.0            ! 1262's continuity register
+BIT4   SYN, (8)24526.0            ! the BIT table's bit 4 word
+        END, I6247

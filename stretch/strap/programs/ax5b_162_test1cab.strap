@@ -1,0 +1,352 @@
+! jb_ax5b "I-Box 5", routine 1262 ("TEST EX AND EXIC"), TEST 1C's
+! header row and its first two blocks, TEST 1CA and TEST 1CB --
+! PDF p.92, octal 023442.40-023460.00.  27 SOURCE ROWS over 28
+! half-words (the TI at 023454.00 is a full word), entry label I6218,
+! second entry label I6219.  Checked bit-exact against the listing's
+! printed machine code by verify_ax5b_162_test1cab_listing.py.
+!
+! CITED BY PDF PAGE.  jb_ax5b's LISTING pages carry no printed page
+! numbers -- the "12 11 10 9" down the left margin is fanfold
+! carriage-tape line numbering, and the only printed numbers are in the
+! front write-up, which is scanned 2-up.  Every verify_ax5b_*.py here
+! already says "PDF p.NN" for that reason.
+!
+! WHERE THIS SITS.  It is a gap between two files that were already
+! here: verify_ax5b_162_test1b_listing.py ends at 023442.00
+! ("SX,$X13,IC262", 1B's continuity update) and
+! verify_ax5b_162_test1cc_listing.py begins at 023474.40 (I6225).
+! 023442.40 is the very next half-word after 1B's last row, so the two
+! ranges abut with nothing between them.  Left behind on the far side:
+! 1CC's first subject class, 023460.40-023474.00.  No other verify file
+! in this repo covers any address in 023442.40-023460.00; the only
+! overlap a plain octal scan reports is verify_pau_chkssr_listing.py,
+! which is a DIFFERENT DECK (jb_af1c, the PAU gates routine) that
+! happens to load at the same octal addresses -- its rows are square
+! roots, not EX.
+!
+! WHAT THESE TWO BLOCKS ARE.  They are the executable form of Reference
+! Manual printed p.50 (PDF p.53), read first-hand at 400 dpi, the
+! paragraph that continues from p.49's "In general, when the
+! interruption system is dis-":
+!
+!   "abled, interruption cannot occur and address monitoring is
+!   suspended.  In order that control may remain entirely with the main
+!   program during an execution operation, two special exceptions are
+!   made.  First, address monitoring is always in force during (1)
+!   EXECUTE and (2) EXECUTE INDIRECT AND COUNT, except for the address
+!   of the location of the FIRST LEVEL pseudo-instruction counter.
+!   Second, at the completion, termination, or suppression of an
+!   execution operation, interruption is always permitted."
+!
+! and its Programming Note directly below, which bounds exception 2:
+!
+!   "When interruption occurs following an execution operation with the
+!   interruption system disabled, it is caused only by the actuated
+!   indicator of highest priority whose mask bit is one.  Further
+!   interruptions cannot occur until either the system is enabled or
+!   another execution operation is completed, terminated, or
+!   suppressed.  Examination for other actuated indicators can be
+!   programmed into the correction routine.
+!
+!   Any actuated indicator whose mask bit is on may cause interruption
+!   at the completion, termination, or suppression of an execution
+!   operation."
+!
+! 1CA tests the SECOND exception alone; 1CB tests the FIRST with the
+! second as its delivery mechanism.  The deck names them itself:
+! "-TEST 1CA, ENABLE AFTER EX." and "-TEST 1CB, CHK ADR MONITOR."
+!
+! THE BLOCK IS DISABLED, on three independent grounds, all from rows in
+! this file:
+!   (i)   023442.40 is "BD,$+.32" -- BRANCH DISABLED -- and it is the
+!         first instruction of TEST 1C.
+!   (ii)  no BE appears anywhere in 023442.40-023460.00.  (The next BE
+!         on the page is at 023514.00, deep inside 1CC.)
+!   (iii) both SVAs name "I62ITE" and NOT "I62ITE+.32".  PDF p.109
+!         prints I62ITE as a full word holding "BD,$" at 024320.00 and
+!         "B,$" at 024320.40 (verify_ax5b_162_int_entry_listing.py),
+!         so a landing in the .00 half DISABLES on arrival.  1CB is
+!         therefore entered still disabled and needs no BD of its own,
+!         and it has none.
+! Corroborating but not needed: "BD,I60S1" at 023443.40 calls 1260's
+! clear-indicators subroutine, whose return is "$BD,0" at 023041.00
+! (ax5b_160s1_clr_inds.strap's header, from PDF p.85), so the call
+! cannot leave the system enabled either.
+!
+! HOW 1CA WORKS, AND WHAT THE "-ILLEGAL OP CODE." WORD ACTUALLY DOES.
+! The word at 023445.40 is not an operand and is not the EX's subject.
+! It sits IN THE STRAIGHT-LINE INSTRUCTION STREAM, between "SV,$X1,$IA"
+! and "LVI,$X1,I6219", and is executed on the way past.  Reference
+! Manual printed p.45 (PDF p.48), item 15, read first-hand:
+! "Operation Code Invalid (OP).  The instruction just attempted used an
+! operation code or combination of modifiers which is not defined.  An
+! instruction with invalid operation code is executed as NO OPERATION."
+! Indicator OP is 15, and printed p.48 (PDF p.51) says of the mask
+! word: "Not all of the 64 mask bits can be set by program control.
+! Those corresponding to indicators 0-19 are permanently set to 1."
+! So OP is actuated and masked-on -- but the system is DISABLED, so
+! nothing interrupts there.
+!
+! The word's ROLE HERE IS A PRE-CHARGE: it arms OP in advance so that
+! the EX's completion boundary has something to deliver.  That is a
+! THIRD role for the same 00000003740 word in this deck.  In 1CC
+! (023506.00 and 023520.40) it is an ENABLE-STATE PROBE, used in
+! opposite directions on the two sides of the same test; in TEST 3A/3B
+! (024146.00, 024162.40) it is a HIGHER-PRIORITY DECOY that must not
+! win against AD.  Here it is neither: nothing measures the enable
+! state and nothing competes with OP.
+!
+! Three things make the pre-charge reading the deck's own, not an
+! inference from usage:
+!   * the error text says so.  "-NO INT TAKEN ON EX / -WHEN OP SET."
+!     asserts that OP was already SET when the EX ran.
+!   * the vector is planted AFTER the illegal word, not before.
+!     "LVI,$X1,I6219 / SVA,$X1,I62ITE" are at 023446.00 and 023446.40,
+!     downstream of 023445.40.  If the illegal word could interrupt
+!     where it stands, control would go to whatever TEST 1B last left
+!     in the landing word (I6217, at 023433.00) and the block would
+!     break rather than report.
+!   * nothing between 023445.40 and 023447.00 clears OP.  "Z,$IND" is
+!     at 023444.00, UPSTREAM of the illegal word; the two rows after it
+!     are an LVI and an SVA.
+!
+! THE SUBJECT OF "EX,$-.32" IS THE SVA, AND THE PRINT SETTLES IT.
+! 023447.00 prints "23446.52 00"; the octal pair 52 is 101010, so bit
+! 18 -- the top bit of the pair, and the half-word select of a 19-bit
+! effective address -- is ONE, giving 023446.40.  That is
+! "SVA,$X1,I62ITE", not the illegal word (which is three half-words
+! back, i.e. "$-1.32").  The subject is IDEMPOTENT, provably so: $X1
+! still holds I6219 because nothing between 023446.00 and 023447.00
+! touches it, so re-executing the SVA stores the same address into the
+! same landing word.  The subject is chosen to do nothing so that the
+! only thing under test is the boundary: at the COMPLETION of the
+! execution operation, the already-actuated OP must cause an
+! interruption although the system is disabled.  The interruption lands
+! at I62ITE (024320.00, "BD,$" with its address rewritten), which
+! branches to I6219 -- the start of 1CB.  So 1CA's PASS PATH IS THE
+! ENTRY TO 1CB, and falling through instead reports
+! "-NO INT TAKEN ON EX WHEN OP SET."
+!
+! HOW 1CB WORKS.  "LX,$X1,BIT57 / SX,$X1,3.0" puts the boundary-control
+! bit into word 3; "LVI,$X1,I62EX / SV,$X1,$UB" sets the upper boundary
+! to 024322.00.  The subject, I62EXI, is at 024332.00 -- ABOVE the
+! upper boundary, i.e. in the protected area.  "Z,$X1" clears the index
+! register the subject would write.  "TI,1,I00O,$MASK" transmits the
+! all-ones index word into the mask, i.e. turns ON EVERY SETTABLE MASK
+! BIT (20-47); it is needed here and not in 1CA because IF is indicator
+! 21, outside the permanently-masked 0-19 range that OP sits in.  Then
+! "EX,I62EXI" -- an EX whose subject lies in the protected area, with
+! the system disabled.
+!
+! Required behaviour, and the deck checks both halves: p.50 exception 1
+! keeps address monitoring in force, so IF is actuated; printed p.45
+! item 21 then suppresses the subject -- "Instruction Fetch (IF).  An
+! attempt has been made to fetch an instruction from, or branch to, a
+! location in the protected area of storage while the interruption
+! system was enabled.  If the corresponding mask bit was one, the fetch
+! or branch did not take place and the entire operation was
+! suppressed."; and p.50 exception 2 permits the interruption, which
+! lands at I6220.  I6220's "LX,$X1,$X1 / BZXVZ,SERS" then checks that
+! the suppressed subject did NOT write $X1.  Falling straight through
+! the EX instead reports "-NO INT TAKEN WHEN EX INST ABOVE UB."
+!
+! (Note that p.45 item 21 says "while the interruption system was
+! ENABLED".  That is exactly why p.50's exception 1 has to exist, and
+! why 1CB is a test of it: without the exception the whole rule is
+! inert here.)
+!
+! EVERY HEADING AND ERROR MESSAGE, VERBATIM, WITH ITS LOCATION.  Read
+! off the comment column at 500-600 dpi; punctuation transcribed, not
+! tidied.
+!
+!   023442.40  -TEST 1C, CHK MISC CNTRLS OF EX.
+!   023443.00  -TEST 1CA, ENABLE AFTER EX.
+!   023445.40  -ILLEGAL OP CODE.
+!   023447.40  -NO INT TAKEN ON EX
+!   023450.00  -WHEN OP SET.
+!   023450.40  -TEST 1CB, CHK ADR MONITOR.
+!   023455.40  -NO INT TAKEN WHEN EX INST
+!   023456.00  -ABOVE UB.
+!   023457.00  -INSTRUCTION EXECUTED ABOVE UB WAS
+!   023457.40  -NOT NOPED.
+!   023460.00  -CLR BNDS REG.
+!
+! THREE error messages (each printed over two rows), five headings, one
+! inline data word.
+!
+! NO DECK TYPO AND NO SCAN DAMAGE IN THIS RANGE -- and one reading has
+! to be corrected to say so.  docs/execution_operations.md sec.3.1
+! records the header comment as "-TEST IC," and says "the listing's
+! comment column prints 1C as IC throughout".  Measured at 600 dpi it
+! does not.  The glyph after "TEST " on the 023442.40 row and the glyph
+! after "TEST " on the 023443.00 row are the SAME character:
+!
+!   row 023442.40   flag y381-387 x2766-2789 (LEFT of the stem only)
+!                   stem x2781-2789
+!                   foot y429-438 x2766-2801 (both sides)
+!   row 023443.00   flag y475-486 x2768-2790
+!                   stem x2781-2789
+!                   foot y529-538 x2766-2803
+!
+! i.e. an asymmetric upper-LEFT flag plus a symmetric bottom serif --
+! the printer's DIGIT 1, identical in both rows, and identical to the 1
+! of "1CB" at 023450.40.  What looks like a letter I's top bar on the
+! 023442.40 row is the DASHED RULE LINE that the listing prints across
+! that row at y376-380 (it spans x2755-2814, wider than the glyph).
+! The printer's letter I is a different glyph entirely: a BARE 13 px
+! stroke with no serifs at all, as in the I of "MISC" on the same line
+! (x3317, width 13) and as docs/listing_typography.md measured for the
+! label column.  So the header really prints "-TEST 1C," with a digit
+! -- and the comment column and the label column then AGREE about
+! digit-versus-letter on the same page ("1C"/"1CA"/"1CB" against
+! "I6218"/"I6219"/"I6220") instead of disagreeing.  THE METHOD
+! GENERALISES, and docs/listing_typography.md does not cover it: any
+! glyph verdict taken on a row this listing rules THROUGH is suspect
+! until the rule's own x-span is measured against the glyph's.  Here
+! the rule spans 59 px where the glyph spans 24.  (Whether the note's
+! "ICB" at TEST 2CB on PDF p.103 is the same artefact was not checked;
+! that page was not rendered for this file.)
+!
+! "CNTRLS" IS AN ABBREVIATION, NOT A DROPPED LETTER, by pitch.  The row
+! is set on a fixed pitch of 60.6 px at 600 dpi (C of "CHK" x2999 to C
+! of "MISC" x3423 is 7 cells, 60.6/cell; C of "MISC" to C of "CNTRLS"
+! is 2 cells, 58/cell).  "CNTRLS" runs C x3539 ... S x3842 = 303 px =
+! exactly 5 cells for 6 characters, so the six letters occupy six
+! CONSECUTIVE cells with no blank between them.  A dropped O would have
+! left a ~60 px hole and there is none.  The same holds for the deck's
+! other abbreviations here (ADR, BNDS, CHK, INST, INDS), which are
+! ordinary for this author.
+!
+! ONE MORE CORRECTION TO docs/execution_operations.md, and this one is
+! the note's own transcription rather than a deck defect.  Sec.3.3
+! prints 023454.00 as "TI,1,1000,$MASK".  It is "TI,1,I00O,$MASK".  The
+! machine code settles it on its own -- the first printed group is
+! "24503.00 80", a 24-bit BIT address in word 0o24503, which is the
+! constant PDF p.114 labels I00O ("-INDX WD. OF ONES.") and which five
+! other files in this directory already SYN at (8)24503.0; a literal
+! 1000 would be a decimal bit address in word 15.  The glyphs agree,
+! measured at 600 dpi on this very row: leading stroke 13 px (the bare
+! letter I), then two 45 px digit zeros, then a 50 px letter O, against
+! a 33 px digit 1 in the same row's ",1," count field.  That matches
+! the calibration verify_ax4b_1246_transmit_swap_listing.py already
+! established (letter O 49 px, digit 0 42-45 px).  The correction
+! matters for more than spelling: an all-ones word into $MASK turns on
+! EVERY settable mask bit, not "the relevant" one, which is what makes
+! 1CB's asymmetry with 1CA legible (see above).
+!
+! ROW COUNT.  docs/execution_operations.md sec.3.6 says 1CA is "eleven
+! rows".  It is TWELVE over 023442.40-023450.00 inclusive; the note's
+! sec.3.2 table has eleven because the "I6218 BD,$+.32" header row is
+! quoted separately in sec.3.1.  1CB is fifteen rows over sixteen
+! half-words (the TI is a full word).  Twenty-seven rows in all.
+!
+! WHAT IS NEW HERE FOR THIS ASSEMBLER, checked by grep and knocked down
+! before being claimed.  Only ONE first survives: "EX,$-.32" at
+! 023447.00 is the repo's first SELF-RELATIVE EX, and its first
+! BACKWARD one.  Grepping every verify_*.py and every programs/*.strap
+! for an EX operand finds EX,I62B3-B6 and EX,I62EXT (label operands),
+! EX,$X3, EX,$R and EX,$L (register operands) and nothing with "$+" or
+! "$-".  Everything else was checked and is NOT a first: EX itself is
+! witnessed by verify_ax5b_162_test1b_listing.py (five rows) and
+! verify_ax5b_162_test1cc_listing.py (four); TI by nine files including
+! the same "TI,1,<word>,$MASK" shape at verify_ax5b_16087_listing.py
+! 021400.40 and verify_ax5b_160_test6_listing.py 022063.00; BZXVZ by
+! ten files; SVA/LVI/LX/SX/SV/Z/SIC/BD/B throughout; the
+! "DD(BU,32,8),(8)3740" word by ax5b_160k_constants.strap and
+! ax5b_162_test3a.strap.  What the block ADDS, short of a first, is a
+! MATCHED BIT-18 PAIR ON EX: 023447.00 has bit 18 = 1 and 023455.00 has
+! bit 18 = 0, in twenty-eight half-words, so an implementation that
+! dropped bit 18 for EX passes one and fails the other.  That is
+! measured below, not argued.
+!
+! SUBSTITUTIONS: spelling only, none semantic.
+!   1. The listing's "%...@" pair is this assembler's "(...)", and
+!      "%8@DD%BU,32,8@,3740" is written "DD(BU,32,8), (8)3740".  The
+!      "(8)" is load-bearing and not decoration: this assembler's
+!      default radix is DECIMAL, so a bare 3740 assembles to
+!      00000007234 (measured by ax5b_162_test3a.strap's header) where
+!      the listing prints 00000003740.
+!   2. Leading-glyph spellings follow docs/listing_typography.md's
+!      measured result, so the labels are I6218, I6219, I6220, and the
+!      externals I60SX1, I60S1, I62INT, I62ITE, I62EX, I62EXI, I00O.
+!      SEN, SERS and BIT57 need nothing.
+!
+! EXTERNALS, SYN'd at the addresses other pages of this same listing
+! print.  THESE ARE INPUTS TO THE CHECK, NOT WITNESSES -- the caveat
+! verify_ax5b_16082_16083_listing.py makes about I6088.  A SYN row
+! MAKES the address field come out right, so a row naming one proves
+! only that every OTHER field lands where the listing puts it.  I6218
+! is not evidence either: the SLC below is fed 023442.40 by this same
+! transcription and I6218 is the first label after it, so checking it
+! checks the SLC against its own input.  It is asserted as the block's
+! anchor.  The genuine address evidence is I6219 and I6220, each the
+! cumulative sizing of every half-word before it and each independently
+! named by an LVI whose printed octal pair carries bit 18.
+!
+! THREE THINGS NEITHER THIS FILE NOR ITS CHECKER CAN SEE:
+!   * I62EXI = 024332.00 comes from docs/NEXT.md's read of PDF p.110
+!     and was NOT re-verified at any dpi here;
+!     verify_ax5b_162_int_entry_listing.py stops at 024331.00, one
+!     half-word short.  1CB's whole premise is that the subject lies
+!     ABOVE the upper boundary 024322.00, and I62EXI is the only thing
+!     establishing it -- but 023455.00's printed "24332.12 00" agrees
+!     with the SYN by construction, so the row cannot catch a wrong
+!     SYN.  It is at least self-consistent: p.109's label column puts
+!     I62EXM at 024331.00, so 024332.00 is the next free word.
+!   * WHAT THE 64-WORD INTERRUPT TABLE HOLDS WHEN 1CA RUNS IS NOT
+!     READ.  1CA has no fill loop and neither does TEST 1B before it,
+!     yet "SVA,$X1,I62ITE" with no "+.32" only works if the table
+!     still holds I62K1 ("BD,I62ITE").  The last fill this repo has
+!     actually read is 1CC's I6233 loop at 023522.00, which is AFTER
+!     this block.  ONE CONJECTURE, FLAGGED AS ONE.
+!   * WHAT WORD 3 HOLDS WHEN 1CA RUNS IS NOT READ EITHER.  1CA sets no
+!     boundaries; 1CB's trailing "Z,3.0" is the first clear in the
+!     range.  Irrelevant to the encoding oracle, but it matters to
+!     whoever runs 1CA on the model: under exception 1 a stale
+!     boundary would put the EX's own subject fetch under address
+!     monitoring while disabled, and 1CA could interrupt for the wrong
+!     reason and still look like a pass.
+
+I60SX1 SYN, (8)23041.0            ! 1260's SIC return link, PDF p.41
+I60S1  SYN, (8)22741.0            ! 1260's "CLR INDS 0-19" subroutine
+SEN     SYN, (8)1310.0             ! the SIC error-entry link
+SERS    SYN, (8)1304.0             ! the error-report routine
+I62INT SYN, (8)24220.0            ! the 64-word interrupt table, PDF p.109
+I62ITE SYN, (8)24320.0            ! "-ALL INTERRUPTS ENTER HERE.", p.109
+I62EX  SYN, (8)24322.0            ! "LX,$X1,I00O" -- 1CB's upper bound
+I62EXI SYN, (8)24332.0            ! the IMMED IX subject, PDF p.110
+I00O    SYN, (8)24503.0            ! p.114 "-INDX WD. OF ONES."
+BIT57   SYN, (8)24613.0            ! the boundary-control bit, p.114
+        SLC, (8)23442.40
+!
+! ---- TEST 1C header row, then TEST 1CA ---------------------------
+I6218  BD,  $+.32                 ! -TEST 1C, CHK MISC CNTRLS OF EX.
+        SIC, I60SX1               ! -TEST 1CA, ENABLE AFTER EX.
+        BD,  I60S1                !   clear indicators 0-19; returns DISABLED
+        Z,   $IND
+        LVI, $X1, I62INT
+        SV,  $X1, $IA              !   point $IA at the 64-word table
+        DD(BU,32,8), (8)3740       ! -ILLEGAL OP CODE.  actuates OP in passing
+        LVI, $X1, I6219
+        SVA, $X1, I62ITE          !   plant 1CB's entry in the landing word
+        EX,  $-.32                 ! THE TEST: subject is the SVA above
+        SIC, SEN                   ! -NO INT TAKEN ON EX
+        BD,  SERS                  ! -WHEN OP SET.
+!
+! ---- TEST 1CB ----------------------------------------------------
+I6219  LX,  $X1, BIT57            ! -TEST 1CB, CHK ADR MONITOR.
+        SX,  $X1, 3.0              !   boundary control bit on
+        LVI, $X1, I62EX
+        SV,  $X1, $UB              !   upper boundary := 024322.00
+        LVI, $X1, I6220
+        SVA, $X1, I62ITE
+        Z,   $X1                   !   so a subject that ran shows up
+        TI,1,I00O,$MASK            !   FULL WORD: all settable mask bits on
+        EX,  I62EXI               ! THE TEST: subject at 024332.00, above UB
+        SIC, SEN                   ! -NO INT TAKEN WHEN EX INST
+        B,   SERS                  ! -ABOVE UB.
+I6220  LX,  $X1, $X1
+        SIC, SEN                   ! -INSTRUCTION EXECUTED ABOVE UB WAS
+        BZXVZ, SERS                ! -NOT NOPED.
+        Z,   3.0                   ! -CLR BNDS REG.
+        END, I6218

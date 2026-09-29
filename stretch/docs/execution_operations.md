@@ -1,4 +1,24 @@
-# Execution operations: `USA`'s number, p.50's two exceptions, and the deck that tests them
+# Execution operations
+
+> **CORRECTED 2026-09-29, by the transcription this note commissioned.**
+> Three readings in here were wrong and are fixed in place:
+> 1. **The header prints `1C`, not `IC`.** What read as a letter-I top
+>    bar is the row's own DASHED RULE LINE — 59 px where the glyph
+>    spans 24. The deck's letter `I` is a bare stroke with no serifs;
+>    this glyph has a bottom serif, which no rule can forge. See
+>    `listing_typography.md` §10.
+> 2. **`TI,1,1000,$MASK` is `TI,1,I00O,$MASK`**, and it does not "turn
+>    on the relevant mask bit" — `I00O` is the all-ones word, so it
+>    turns on EVERY settable bit, 20-47. That asymmetry is the point:
+>    1CA needs no mask setup because OP is indicator 15, inside the
+>    permanently-masked 0-19 range, while 1CB must set the mask because
+>    IF is 21, outside it.
+> 3. **1CA is 12 rows, not 11** — §3.2's table omitted the
+>    `I6218 BD,$+.32` header row that §3.1 quotes separately.
+>
+> Everything else in §3 bore out against the pages, including the 1CA
+> mechanism. Transcription: `verify_ax5b_162_test1cab_listing.py`.
+: `USA`'s number, p.50's two exceptions, and the deck that tests them
 
 Research note, 2026-09-29.  Read-only: nothing in `bsv/` or `strap/` was
 changed to produce it.  It settles the three things the `EX`
@@ -441,7 +461,7 @@ PDF p.92, first row of TEST 1C:
 
 | label | source | comment | machine code | address |
 |---|---|---|---|---|
-| `16218` | `BD,$+.32` | `-TEST IC, CHK MISC CNTRLS OF EX.` | `23443.04 00` | `023442.40` |
+| `16218` | `BD,$+.32` | `-TEST 1C, CHK MISC CNTRLS OF EX.` | `23443.04 00` | `023442.40` |
 
 `BD` = BRANCH DISABLED.  **TEST 1C opens by disabling the interruption
 system**, and the only subroutine it calls before the `EX` is `I60S1`,
@@ -516,7 +536,7 @@ is entered still disabled.
 | | `LVI,$X1,16220` | | `23456.43 01` | `023452.40` |
 | | `SVA,$X1,I62ITE` | | `24320.03 D0` | `023453.00` |
 | | `Z,$X1` | | `21.22 00` | `023453.40` |
-| | `TI,1,1000,$MASK` | | `24503.00 80  000014.02 A0` | `023454.00` |
+| | `TI,1,I00O,$MASK` | | `24503.00 80  000014.02 A0` | `023454.00` |
 | | `EX,I62EXI` | | `24332.12 00` | `023455.00` |
 | | `SIC,SEN` | `-NO INT TAKEN WHEN EX INST` | `1310.00 80` | `023455.40` |
 | | `B,SERS` | `-ABOVE UB.` | `1304.10 00` | `023456.00` |
@@ -528,7 +548,7 @@ is entered still disabled.
 `BIT57` into word 3 sets the boundary-register control bit;
 `SV,$X1,$UB` sets the upper boundary to `I62EX` (`024322`).  `I62EXI` is
 at `024332.00` — **above the upper boundary, i.e. protected**.  `Z,$X1`
-clears the index register the subject would write; `TI,1,1000,$MASK`
+clears the index register the subject would write; `TI,1,I00O,$MASK`
 turns on the relevant mask bit.  Then `EX,I62EXI` — an `EX` whose
 subject lies in the protected area, **with the system disabled**.
 
@@ -603,7 +623,7 @@ Identical in shape, at `024000.40`–`024016.40`:
 | | `EXIC,I62PSI` | | `24323.16 00` | `024006.40` |
 | | `SIC,SEN` | `-NO INT TAKEN ON EXIC` | `1310.00 80` | `024007.00` |
 | | `BD,SERS` | `-WHEN OP WAS SET.` | `1304.04 00` | `024007.40` |
-| `16272` | `LVI,$X1,I62SUB` | `-TEST ICB, CHK ADR MONITOR.` | `24324.03 01` | `024010.00` |
+| `16272` | `LVI,$X1,I62SUB` | `-TEST 1CB, CHK ADR MONITOR.` | `24324.03 01` | `024010.00` |
 | | `SVA,$X1,I62PSI` | | `24323.03 D0` | `024010.40` |
 | | `LX,$X1,BIT57` | | `24613.02 10` | `024011.00` |
 | | `SX,$X1,3.0` | | `3.03 10` | `024011.40` |
@@ -612,7 +632,7 @@ Identical in shape, at `024000.40`–`024016.40`:
 | | `LVI,$X1,16273` | | `24017.03 01` | `024013.00` |
 | | `SVA,$X1,I62ITE` | | `24320.03 D0` | `024013.40` |
 | | `Z,$X1` | | `21.22 00` | `024014.00` |
-| | `TI,1,1000,$MASK` | | `24503.00 80  000014.02 A0` | `024014.40` |
+| | `TI,1,I00O,$MASK` | | `24503.00 80  000014.02 A0` | `024014.40` |
 | | `EXIC,I62PSI` | | `24323.16 00` | `024015.40` |
 | | `SIC,SEN` | `-NO INT TAKEN WHEN` | `1310.00 80` | `024016.00` |
 | | `B,SERS` | `-EXIC INSTRUCT ABOVE UB.` | `1304.10 00` | `024016.40` |
