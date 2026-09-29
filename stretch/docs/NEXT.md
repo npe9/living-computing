@@ -1621,6 +1621,93 @@ the case, and picking one would be inventing a fact about the
 assembler. If a deck row ever turns up with a non-word-aligned `LX`
 operand, that row decides it.
 
+## 5e. `USA`, and why the obvious implementation would fail the deck
+
+Full working in **`docs/execution_operations.md`**, 2026-09-29.
+
+**THE NUMBER EXISTS.** *IBM 7030 Performance Characteristics Vol. 1*,
+printed p.3-2, verified first-hand: *"The times are listed (table 2) in
+terms of the basic machine cycles, which is presently **0.3
+microsecond**."* So **1 ms = 3333⅓ model clocks**, and the figure
+`StretchTiming.bsv` and `microarchitecture_plan.md` already assert now
+has a page behind it, which AGENTS.md requires.
+
+**AND THE OBVIOUS IMPLEMENTATION WOULD FAIL THE DECK — this is the
+finding, not the number.** The model chains one `EX` level per clock
+and charges the whole `EX` once at dispatch. A literal "fire `USA` at
+3333 clocks" timer therefore reaches **2049 clocks on the deck's
+2049-level chain — under threshold. `USA` never fires and TEST 1D
+fails.** *The number alone is insufficient: it has to be SPENT at the
+documented rate.* Two shapes work and they agree — charge Table 6's
+per-level recipe in `resume()` (~20 clocks/level) against 3333, or
+count levels against `1000 µs ÷ per-level µs`.
+
+**Bounded negative:** there is **no single documented per-`EX`-level
+charge.** Table 6 (printed p.3-12) gives `EX` as six additive terms,
+two of which are "always begins/ends with Look-ahead drain" — not
+scalars. Only a bound survives: **~110–160 `EX` levels per ms.** Do not
+quote p.45's *"several hundred indirect addressing cycles"* for `EX` —
+Table 4 shows that parenthetical is about **`LVE`** (4.8/3.6/3.0 µs per
+level → 208/278/333 per ms, which is exactly "several hundred").
+
+**A RULE-4 GAP FOUND EN ROUTE, and it is the same change.**
+`StretchTiming.bsv`'s misc arm reads
+`case (x.code) 3'b100: 3; 3'b001: 8; default: 14; endcase  // Z / RCZ / R`.
+**`EX` is misc `3'b010`, so it falls into `default: 14` — a value
+sourced for `R`.** Verified first-hand. `EX`'s timing currently
+inherits another instruction's number with no source of its own.
+
+### The disabled-state exceptions — sized, and cheaper than feared
+
+* **Exception 1 ("address monitoring is always in force during EX and
+  EXIC") is ONE TERM IN ONE FUNCTION, not thirty edits.**
+  `protViolates` ends `st.irqEnabled() && installed(a) && signalled`;
+  making it `(st.irqEnabled() || st.execOpInProgress())` changes all
+  ~30 call sites with zero textual churn — and that is the right
+  granularity, because "always in force" covers DS, DF **and** IF,
+  exactly the set `protViolates` gates. **~20-30 lines.**
+* **Exception 2 ("interruption is always permitted at the completion,
+  termination or suppression of an execution operation") is the
+  expensive half, ~40-60 lines**, because `intDueCalc` returns Invalid
+  whenever `!irqEn`. Needs a second *ungated* latched output, a
+  one-shot `execBoundary` **register** (not a wire — `intDueCalc` is a
+  clock behind), and a term in `armInterrupt`. p.50's Programming Note
+  bounds it to one interruption per boundary, which clearing in
+  `rl_interrupt` gives free. **The E-box interface does NOT need
+  reshaping.**
+* It rides the 2026-09-25 interruption-timing edge rather than needing
+  a new one — and note that fix's untested `ebusy <= eb;` line would
+  gain a second caller and still be untested.
+
+### And it is DECK-VERIFIED work, not manual-only — five blocks, none transcribed
+
+| block | PDF | octal | entry | tests |
+|---|---|---|---|---|
+| TEST 1CA | 92 | 023442.40-023450.00 | `I6218` | exception 2 only |
+| TEST 1CB | 92 | 023450.40-023460.00 | `I6219` | exception 1, delivered by exception 2 |
+| TEST 1D | 95 | 023551.40-023576.00 | `I6241` | **`USA` on 2049 AND exception 2** |
+| TEST 2CA | 103 | 024000.40-024007.40 | `I6271` | exception 2 for `EXIC` |
+| TEST 2CB | 103 | 024010.00-024020.00 | `I6272` | exception 1 for `EXIC`, incl. the pseudo-IC carve-out |
+
+*"-2049 SUCCESSIVE EXECUTES FAIL TO SET / -USA AND FAIL TO CAUSE
+INTERRUPT."* — TEST 1D's own words.
+
+**TEST 1D REQUIRES THE TIMEOUT AND EXCEPTION 2 JOINTLY**: `Z,$MASK`
+clears the settable mask, `USA` (17) is permanently masked, the system
+is disabled, and the only pass path is an interruption. Neither piece
+can be validated by 1D alone, so they are one change.
+
+**TEST 1CA is the cheapest to transcribe and run** — 11 rows, one
+inline data word, one message, needs nothing from `EXIC` — and should
+be written BEFORE the implementation, the way `ax5b_16071_ts.strap`
+was. Its mechanism is worth knowing: the `-ILLEGAL OP CODE.` word at
+023445.40 is in the STRAIGHT-LINE stream, not the `EX`'s subject; it
+actuates OP while disabled, nothing interrupts, the vector is planted,
+and then `EX,$-.32` executes a **harmless** subject — so the
+interruption must occur *at the EX's completion* although disabled.
+2CA is built identically, which is what shows the harmless subject is
+design rather than an off-by-one.
+
 ## 6. Open questions — record, do not guess
 
 **What is the `-ILLEGAL OP.` word doing in routine 1262's TEST 3A and
