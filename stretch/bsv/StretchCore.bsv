@@ -147,6 +147,13 @@ module mkStretchCore(StretchCore);
   // two reads are on opposite sides of the transfer and a single
   // transfer never needs both.
   Reg#(Bool) ioTapeReqIssued <- mkReg(False);
+  // Set while a CHAINED control word is being fetched from core
+  // storage.  Figure 36 (RefMan printed p.109) says that when the
+  // count reaches zero with the chain flag on and the block has not
+  // ended, the exchange refills the control word and continues; the
+  // refill is a core-storage READ, so like every other read in this
+  // rule it needs a request/wait/collect staging flag of its own.
+  Reg#(Bool) ioRefillIssued <- mkReg(False);
 
   // (An instruction waiting on an operand read is held by the E-box
   // itself -- ebox.busy/busyFor/canResume/pending/resume, step 5c --
@@ -398,7 +405,29 @@ module mkStretchCore(StretchCore);
     DeviceKind kind = kindOf(x.ch);
     Bit#(6) capacity = (kind == DevTape)
       ? fromInteger(valueOf(TapeWords)) : fromInteger(valueOf(DeviceWords));
-    if (x.devIdx >= capacity) begin
+    if (ioRefillIssued) begin
+      // A CHAINED CONTROL WORD IS IN FLIGHT.  This arm is first in the
+      // rule on purpose: the End Exception test below looks at devIdx
+      // against the device's capacity, and devIdx has already been
+      // advanced past the word that exhausted the old count, so that
+      // test would fire spuriously while the refill is still pending.
+      if (!st.responseReady()) begin
+        noAction;
+      end else begin
+        Word64 ncwW <- st.readWordResp();
+        ControlWord n = unpackControlWord(ncwW);
+        ioRefillIssued <= False;
+        ioDev.writeChanCW(x.ch, n);
+        // p.123: "If the count field in the control word is zero
+        // initially, it is interpreted as 2**18."  remaining is
+        // Bit#(19) for exactly this.
+        ioPending <= tagged Valid IoXfer {
+          ch: x.ch, isWrite: x.isWrite,
+          memAddr: n.dataAddr, devIdx: x.devIdx,
+          remaining: (n.count == 0) ? 19'h40000 : zeroExtend(n.count),
+          suppressEop: x.suppressEop, skip: (n.skip == 1) };
+      end
+    end else if (x.devIdx >= capacity) begin
       // "the unit runs out of material" (p.121): End Exception, not
       // Unit Check -- the block ends early; whatever was already
       // moved stays moved, and the control word reflects exactly
@@ -485,7 +514,35 @@ module mkStretchCore(StretchCore);
       ControlWord cw = ioDev.readChanCW(x.ch);
       cw.dataAddr = x.memAddr + 1;
       cw.count = truncate(rem1);
-      if (rem1 == 0) begin
+      if (rem1 == 0 && cw.chain == 1) begin
+        // FIGURE 36, printed p.109, row (multiple 0, chain 1, count
+        // zero, end of block NO): "Chain and continue".  This model
+        // has no record structure yet, so it never reports end of
+        // block -- which is exactly the row IPL needs, and is why
+        // chaining can be built before records (docs/NEXT.md 5k).
+        // The row it gets wrong is (0,0,0,No), "Disconnect, then end
+        // op.", where a real end of block would give "End operation":
+        // a difference in whether a disconnect signal is sent, not in
+        // whether the transfer completes.
+        //
+        // This is THE IPL BLOCKER.  RefMan printed p.126's fixed
+        // control word is chain 1, count 1, refill 4: it reads one
+        // word off the tape into location 4, and "since the fixed
+        // control word is then exhausted, its refill address causes
+        // the next control word to be fetched from location 4" --
+        // which is the word just read, MCP's own CW(CR).  With chain
+        // ignored the machine read that one word and stopped.
+        st.readWordReq(zeroExtend(cw.refill));
+        ioRefillIssued <= True;
+        ioDev.writeChanCW(x.ch, cw);
+        // ioPending stays valid so the refill arm above resumes; its
+        // remaining/memAddr are placeholders, overwritten from the
+        // new control word when it arrives.
+        ioPending <= tagged Valid IoXfer {
+          ch: x.ch, isWrite: x.isWrite, memAddr: x.memAddr + 1,
+          devIdx: x.devIdx + 1, remaining: 0,
+          suppressEop: x.suppressEop, skip: x.skip };
+      end else if (rem1 == 0) begin
         if (!x.suppressEop) cw.eop = 1;
         ioDev.writeChanCW(x.ch, cw);
         ioPending <= tagged Invalid;
