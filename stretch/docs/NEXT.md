@@ -2380,6 +2380,52 @@ lines of Verilog"* — i.e. the multi-cycle E-box / idiomatic-Bluespec
 rewrite of AGENTS.md plan §1c. **§5g reached the same conclusion from
 timing and §9 now reaches it from area. The number is 4.3×.**
 
+**TWO AGENTS REACHED THIS INDEPENDENTLY, from different evidence.**
+The synthesis study got there from yosys cell counts on the full
+102,173-line `mkStretchCore.v` (459 s CPU, 11.1 GB peak RSS, main
+storage blackboxed, `share` removed by hand and disclosed); the P&R
+study got there from nextpnr's own refusal. They agree on the verdict
+and on the cause, which is worth more than either alone.
+
+**AND THE SYNTHESIS SIDE SAYS WHERE THE LOGIC IS.** Subtracting the
+separately measured `mkStretchStorage` (13,427 LUT4) and
+`mkStretchIO` (8,102) from the whole-core total leaves **~191,000
+LUT4 for E-box + instruction unit + look-ahead + decode**. The
+**17,634 `CCU2C` = 70,536 bits of adder** — far more addition than any
+one instruction performs, which is the signature of *every
+instruction arm computing its own result in parallel while a mux
+picks one*. That is `StretchExecute.bsv`'s 5,019-line combinational
+`execute()`, described in cell counts.
+
+Two things that are NOT the problem, and both were suspected:
+**multipliers** (36 `MULT18X18D` fits even a 45F's 72 — the floating
+point unit is not what is big) and **block RAM** (the axis the whole
+note was organised around).
+
+### THE CHEAPEST USEFUL NEXT STEP, 2-3 DAYS
+
+**Make the per-module numbers measurable.** `mkEBox` cannot be
+synthesised on its own today because it takes interface arguments, so
+bsc refuses separate code generation; add a wrapper, trim the 129
+test ports behind a board top level, and wire `bsc -verilog` +
+`synth_ecp5` (~10 min CPU) into the loop. That converts "4.3× too
+big" from a verdict into **a per-module budget the rewrite can be
+steered against, and a utilisation regression metric this project
+does not have today.** Do this before starting the rewrite, not
+during it.
+
+Revised effort, with the dominant item changed: logic reduction via
+the idiomatic rewrite, 212,567 → under ~80,000 LUT4, **20-40 days,
+highly uncertain**; first light 27-53 days, against the 3-7 days the
+note originally carried.
+
+**THE REAL OPEN QUESTION IS WHETHER THE REWRITE BUYS 4.3×.** The
+argument that it does is structural — time-multiplexing N parallel
+instruction arms onto one datapath is an N-fold saving on the shared
+parts, and it is what the real 7030 E-box did — but **it is reasoning,
+not a measurement**, and nothing here has measured it. The wrapper
+above is what would turn it into one.
+
 Two self-corrections inside that correction, both recorded: CCU2C is
 not perfectly invariant across LUT mapping (41,060 → 40,936, 0.3%),
 and the failing cell name (`st_xreg_8`'s write mux) is an

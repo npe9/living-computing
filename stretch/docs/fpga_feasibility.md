@@ -19,7 +19,7 @@ measured too, but as stepping stones and as bounds, not as the goal.
 | `yosys` | 0.51 (git c4b5190) | `/opt/homebrew/bin/yosys` |
 | `ecppack` | Project Trellis 1.4_9 (`prjtrellis`) | `/opt/homebrew/bin/ecppack` |
 | `verilator` | 5.052 | `/opt/homebrew/bin/verilator` |
-| `nextpnr-ecp5` | **non-functional, unrecoverable** — §2.6 | `/usr/local/bin/nextpnr-ecp5` |
+| `nextpnr-ecp5` | **WORKS — see §9.0. The "unrecoverable" verdict below is RETRACTED**: §2.6 searched with `find / -maxdepth 4` and the four working arm64 builds sit at depth 6. All of §9's place-and-route used one of them. | `~/src/ulx3s-experiments/bluespec-ulx3s/toolchain/nextpnr-build/nextpnr-ecp5` |
 
 A caveat on all wall-clock figures below: the machine was running at a
 load average of 100–200 on 16 cores throughout (other work, not this).
@@ -513,6 +513,19 @@ it a silent assumption.
 
 ### 3.2 The SDRAM driver: not Flute. There is a better one, and it is for this board.
 
+> **CORRECTION, and it is the useful kind.** The sweep below is of the
+> **upstream** `bluespec/Flute` on GitHub, and for that repository it
+> is correct and exhaustive. It is also beside the point: the user
+> said they had a Flute with an SDRAM driver, and they do —
+> `~/src/ulx3s-experiments/flute-ulx3s/src/Sdram_Controller.bsv`, 434
+> lines, a local fork, read first-hand and written up in
+> `docs/sdram_local.md`. **A confident negative about something the
+> user says they have is evidence the search is aimed wrong**, not
+> evidence they are mistaken; this one was aimed at the wrong
+> repository, as §2.6's nextpnr negative was aimed at the wrong depth.
+> The paragraph is left standing because what it proves about upstream
+> is still true and still worth knowing.
+
 **`bluespec/Flute` has no SDRAM driver, and this was checked
 exhaustively rather than by looking in the likely place.** The
 repository's complete file list was fetched
@@ -947,9 +960,12 @@ pursued, not a claim that it is met.
   bsc will not give it its own module (§1.2) and a wrapper would be a
   model change. This is the largest single hole in §2.
 - **Whether the design places and routes, and its maximum clock.**
-  `nextpnr-ecp5` is unrecoverable here (§2.6). The 3.333 MHz target
-  makes closure *plausible* — plausible is not measured. This is the
-  number most worth getting next, and the cheapest way to get it is
+  **ANSWERED IN §9, AND THE ANSWER IS NO: nothing places.** The
+  one-unit core is at 826% `TRELLIS_COMB` on a 45F and 433% on an
+  85F, so Fmax does not exist to be measured and the 3.333 MHz target
+  is moot until the logic gap closes. `nextpnr-ecp5` was never
+  unrecoverable (§9.0). What follows was the plan when this was still
+  open, and the cheapest way to get it was
   `oss-cad-suite`, which ships a prebuilt darwin-arm64
   `nextpnr-ecp5` with chipdbs.
 - **Why the one-unit MBCU measures more LUT4 than the two-unit one**
