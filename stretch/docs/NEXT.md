@@ -2563,10 +2563,30 @@ specified by a source already read; none of it is blocked on research.
 
 ### Model work — nothing boots until all five exist
 
+**ORDER CORRECTED 2026-10-16.** This list first put tape records
+first, reasoning that "End of Block" is a COLUMN in Figure 36 so
+chaining could not be written without them. `docs/tape_unit_contract.md`
+§2.2 gives a different order — **5, 8, 6, 7 (IPL works), then 1, 2,
+then 3, 4** — and it is right, for a reason worth keeping:
+
+> For IPL the fixed word is `count = 1, chain = 1`, and after one word
+> the count is zero **mid-record**. Figure 36's row for
+> (multiple 0, chain 1, count zero, end-of-block **No**) is **"Chain
+> and continue"** — exactly what IPL needs. A model that simply never
+> reports end-of-block therefore gets the IPL hand-over right. What it
+> gets wrong is the *second* control word's completion: (0,0,0,No)
+> gives "Disconnect, then end op." where a real end-of-block would
+> give "End operation" — a difference in whether a disconnect signal
+> is sent, not in whether the bootstrap loads.
+
+So records are **not** a prerequisite for milestone A; they are a
+prerequisite for honesty about block termination, and for the whole
+CONTROL table. Numbering below is kept as-is for cross-reference with
+the contract; **do them in the order 5, 8, 6, 7, 1, 2, 3, 4.**
+
 1. **Tape blocks (records).** ~50-70 lines, replacing the flat
-   `Vector` with a byte-record store. **This is first because "End of
-   Block" is a COLUMN in Figure 36** and the model has no concept of
-   one, so item 2 cannot be written without it. It also unlocks the
+   `Vector` with a byte image plus a record table (`RecDesc = {start,
+   length}`, a tape mark being a one-byte record). It unlocks the
    whole remaining CONTROL table at once — SPACE BLOCK, SPACE FILE,
    BACKSPACE FILE, WRITE TAPE MARK — which `StretchIO.bsv` currently
    declines for exactly this reason.
