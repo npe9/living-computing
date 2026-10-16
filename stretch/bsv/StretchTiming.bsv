@@ -64,11 +64,43 @@ function Bit#(16) eboxClocks(DecodedInstr d);
   case (d) matches
     tagged Fp .*: return 3;          // preparation; E-box cycles added below
     tagged VflInt .v: begin
+      // Table 3's SAU byte count is .6(x/y), and Perf. Char. Vol. 1
+      // printed p.3-10 (PDF 28) defines x and y -- NEITHER is the
+      // declared field:
+      //   x   Field length in unsigned operations - field length minus
+      //       the byte size in signed operations
+      //   y   8 in binary operations and byte size in decimal operations
+      // So the SAU runs 8 bits wide in binary mode whatever byte size
+      // the instruction declares, and a signed operation does not pay
+      // for its sign byte.  effLength/effByteSize give the DECLARED
+      // field, which is what readField/writeField need and what timing
+      // must not use -- hence the local x and y rather than a change
+      // to those two functions.  Measured against Vol. 2 printed p.110
+      // (M+, no forwarding, direct addressing, offset 0, instruction at
+      // full word address, NO INDEXING / EXTERNL OPERAND): over its 24
+      // rows this takes mean |error| from 4.02 to 0.28 us and worst-case
+      // from 33.60 to 1.20, changing 10 rows and leaving 14 identical.
+      // The deck suite cannot see it: every one of the 1,106 field specs
+      // in strap/programs is (BU,n,8), where both corrections are the
+      // identity.  The evidence is the Vol. 2 table, not a passing run.
       Bit#(7) len_ = effLength(v.a.length);
       Bit#(4) bsz  = effByteSize(v.a.bs);
-      Bit#(8) bytes = (zeroExtend(len_) + zeroExtend(bsz) - 1) / zeroExtend(bsz);
+      Bit#(8) x = (v.m.unsign == 1 || len_ <= zeroExtend(bsz))
+                    ? zeroExtend(len_)
+                    : zeroExtend(len_) - zeroExtend(bsz);
+      Bit#(8) y = (v.m.decimal == 1) ? zeroExtend(bsz) : 8;
+      Bit#(8) bytes = (x + y - 1) / y;
       return 8 + 2 * zeroExtend(bytes);
     end
+    // NOT GIVEN THE SAME TREATMENT, deliberately.  The connectives have
+    // no VflMod -- no sign and no radix bit -- so p.3-10's x and y have
+    // no referent here, and p.3-10 belongs to Table 3, "EQUATIONS FOR
+    // SAU INSTRUCTIONS", whose instruction list (ST, L, M+, K, KI, KF,
+    // KR, KRI, KE, LTRS, LCV, ...) does not include them.  Vol. 2 has
+    // no connective page either: its 66 instruction headers are all VFL
+    // arithmetic.  So the declared byte size stays here until a source
+    // says otherwise -- unsourced, and recorded as such in
+    // docs/NEXT.md 5g rather than fixed by analogy.
     tagged Connective .c: begin
       Bit#(7) len_ = effLength(c.a.length);
       Bit#(4) bsz  = effByteSize(c.a.bs);
