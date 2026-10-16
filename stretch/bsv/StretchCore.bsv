@@ -12,6 +12,11 @@ import Vector::*;
 import StretchTypes::*;
 import StretchStorage::*;
 import StretchIO::*;
+import StretchTapeSource::*;  // TapeWords/TapeIndex and the TapeSource
+                              // interface the tape transfer now goes
+                              // through; imported names are not
+                              // re-exported by StretchIO, so this is
+                              // needed even though StretchIO uses them
 import StretchDecode::*;
 import StretchExecute::*;
 import StretchIBox::*;       // mkInstrBuffers, classification, iboxHazard
@@ -134,6 +139,14 @@ module mkStretchCore(StretchCore);
   // in StretchCore.bsv, same reasoning as fetchPending living here
   // rather than folded into pcReg.
   Reg#(Bool) ioReadIssued <- mkReg(False);
+  // The same staging flag, for the DEVICE side of an RD-direction tape
+  // transfer.  ioReadIssued stages the MEMORY read a W-direction
+  // transfer needs; this one stages the TAPE read an RD-direction
+  // transfer needs, now that a tape source is allowed to take time
+  // (StretchTapeSource.bsv).  Two flags rather than one because the
+  // two reads are on opposite sides of the transfer and a single
+  // transfer never needs both.
+  Reg#(Bool) ioTapeReqIssued <- mkReg(False);
 
   // (An instruction waiting on an operand read is held by the E-box
   // itself -- ebox.busy/busyFor/canResume/pending/resume, step 5c --
@@ -413,17 +426,39 @@ module mkStretchCore(StretchCore);
     end else if (x.isWrite && !st.responseReady()) begin
       // W-direction: the memory read is in flight; wait for it.
       noAction;
+    end else if (kind == DevTape && !x.isWrite && !x.skip
+                 && !ioTapeReqIssued) begin
+      // RD-direction tape, first visit to this word: ask the tape
+      // source for it and wait.  As with the W-direction memory read
+      // above, ioPending/x are left untouched, so the next call's `x`
+      // still names this same word.
+      //
+      // Under SKIP no request is issued at all: p.107's flag
+      // suppresses the core-storage write, and with nothing to store
+      // there is nothing to fetch -- the position still advances
+      // below, which is the part the manual does require.
+      ioDev.tapeReadReq(truncate(x.devIdx));
+      ioTapeReqIssued <= True;
+    end else if (kind == DevTape && !x.isWrite && !x.skip
+                 && !ioDev.tapeRespReady()) begin
+      // RD-direction tape: the device read is in flight; wait for it.
+      // A register-backed source makes this one clock.  An SD-backed
+      // one will make it many, and the point of the arm is that
+      // nothing above here has to care.
+      noAction;
     end else begin
-      // Either RD-direction (always one call, ioReadIssued unused
-      // and stays False) or W-direction with the read response now
-      // ready to collect.
+      // Either RD-direction (tape response now ready to collect, or a
+      // reader/printer, which are still combinational) or W-direction
+      // with the memory read response now ready to collect.
       if (kind == DevTape) begin
         TapeIndex ti = truncate(x.devIdx); // safe: confirmed < TapeWords above
         if (x.isWrite) begin
           Word64 v <- st.readWordResp();
           ioDev.writeTapeWord(ti, v);
-        end else if (!x.skip)
-          st.writeWord(x.memAddr, ioDev.readTapeWord(ti));
+        end else if (!x.skip) begin
+          Word64 tv <- ioDev.tapeReadResp();
+          st.writeWord(x.memAddr, tv);
+        end
         // Tape position PERSISTS across instructions (StretchIO.bsv
         // "TAPE POSITION"), unlike the reader/printer's devIdx which
         // is always instruction-local -- so unlike the reader/printer
@@ -445,6 +480,7 @@ module mkStretchCore(StretchCore);
       // word had been transferred, but core storage is left
       // untouched for this word.
       ioReadIssued <= False;
+      ioTapeReqIssued <= False;
       Bit#(19) rem1 = x.remaining - 1;
       ControlWord cw = ioDev.readChanCW(x.ch);
       cw.dataAddr = x.memAddr + 1;

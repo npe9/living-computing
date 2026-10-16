@@ -200,18 +200,19 @@ package StretchIO;
 
 import StretchTypes::*;
 import Vector::*;
+import StretchTapeSource::*;  // TapeSource, mkTapeSourceVector, and the
+                              // TapeWords/TapeIndex/TapePos typedefs,
+                              // which moved there with the interface
 
 typedef 32 DeviceWords;
 typedef Bit#(TLog#(DeviceWords)) DeviceIndex;
 
-// Deliberately smaller than DeviceWords -- see "TapeWords IS
-// DELIBERATELY SMALL" above.
-typedef 16 TapeWords;
-typedef Bit#(TLog#(TapeWords)) TapeIndex;
-// One bit wider than TapeIndex, room for "one past the end" (== 16)
-// once the tape is fully drained -- same idiom as IoXfer.devIdx vs.
-// StretchIO.DeviceIndex; see "TAPE POSITION" above.
-typedef Bit#(TAdd#(TLog#(TapeWords), 1)) TapePos;
+// TapeWords / TapeIndex / TapePos are no longer defined here: they
+// moved to StretchTapeSource.bsv along with the TapeSource interface,
+// so that an implementation of that interface -- an SD-backed one, say
+// -- need not import this module in order to be one.  They are
+// re-exported by the import above, so users of StretchIO see them
+// unchanged.
 
 WordAddr chanReader  = 32;
 WordAddr chanPrinter = 33;
@@ -254,8 +255,34 @@ interface StretchIO;
   // transfers AND the testbench's pre-load/post-run-check calls (see
   // strap/gen_tape_tb.py) -- there's no read-only/write-only split to
   // preserve the way there is for readerWord/writePrinterWord.
+  // THESE TWO ARE NO LONGER SYMMETRIC, and the asymmetry is the whole
+  // change.  Before, one pair served both the FSM's runtime transfers
+  // and the testbench's pre-load/post-run checks, because a tape read
+  // was a combinational value method and could be called from either.
+  // Now:
+  //   readTapeWord  -- TESTBENCH ONLY (strap/gen_tb.py,
+  //     strap/gen_tape_tb.py).  The FSM reads through tapeReadReq/
+  //     tapeRespReady/tapeReadResp below; a value method cannot
+  //     express a wait, which is exactly why it had to go.
+  //   writeTapeWord -- STILL BOTH: the FSM's W-direction path and the
+  //     testbench's pre-load.  Writes are posted rather than
+  //     acknowledged, so they did not need the same treatment -- and
+  //     that is itself a simplification an SD-backed source will have
+  //     to revisit (StretchTapeSource.bsv's header says so).
   method Word64 readTapeWord(TapeIndex i);
   method Action writeTapeWord(TapeIndex i, Word64 v);
+
+  // THE RUNTIME TAPE PATH.  A tape source may take any number of
+  // clocks to produce a word -- a register-backed one takes one, an
+  // SD-backed one takes many and a variable many -- so the transfer
+  // FSM requests, waits, and collects, exactly as it already does
+  // against core storage (StretchStorage's readWordReq /
+  // responseReady / readWordResp).  The old combinational
+  // readTapeWord(i) could not express a wait and so could not be
+  // backed by anything but registers.
+  method Action tapeReadReq(TapeIndex i);
+  method Bool tapeRespReady();
+  method ActionValue#(Word64) tapeReadResp();
 
   // Tape's persistent position -- see "TAPE POSITION" above.
   // StretchExecute's IoOp case reads this to seed a new transfer's
@@ -277,7 +304,7 @@ endinterface
 module mkStretchIO(StretchIO);
   Vector#(DeviceWords, Reg#(Word64)) readerImg  <- replicateM(mkReg(0));
   Vector#(DeviceWords, Reg#(Word64)) printerImg <- replicateM(mkReg(0));
-  Vector#(TapeWords, Reg#(Word64))   tapeImg    <- replicateM(mkReg(0));
+  TapeSource                         tape       <- mkTapeSourceVector;
   Reg#(TapePos) tapePosReg <- mkReg(0);
 
   // unitReady is fixed at 1 (installed) for all three simulated
@@ -308,9 +335,18 @@ module mkStretchIO(StretchIO);
     printerImg[i] <= v;
   endmethod
 
-  method Word64 readTapeWord(TapeIndex i) = tapeImg[i];
+  method Word64 readTapeWord(TapeIndex i) = tape.peek(i);
   method Action writeTapeWord(TapeIndex i, Word64 v);
-    tapeImg[i] <= v;
+    tape.write(i, v);
+  endmethod
+
+  method Action tapeReadReq(TapeIndex i);
+    tape.readReq(i);
+  endmethod
+  method Bool tapeRespReady() = tape.respReady();
+  method ActionValue#(Word64) tapeReadResp();
+    let v <- tape.readResp();
+    return v;
   endmethod
 
   method TapePos tapePos() = tapePosReg;
