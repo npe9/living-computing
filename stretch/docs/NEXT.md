@@ -2756,6 +2756,37 @@ channel/control/unit hierarchy, and without all 445 pages of MCP.
   14,104, inside a single 16,384-word unit, and §5j shows unit count
   barely moves the FPGA numbers anyway.
 
+## 5l. THE BOOT PLAN — `docs/boot_plan.md`
+
+Written 2026-10-16 in answer to "get MCP and all other extant code
+booting". Two things in it are not obvious from §5h-§5k:
+
+**THE FIRST MILESTONE NEEDS NO TRANSCRIPTION.** A ten-line program
+written by hand, assembled here, wrapped as a tape image, IPL'd from
+a file in Bluesim and from the SD card on the board. Prove the path
+before investing in content; transcribing MCP first and *then*
+finding the IPL path broken is the expensive mistake available.
+
+**THE DIAGNOSTIC CONTROL PROGRAM OUTRANKS MCP AS THE FIRST REAL
+TARGET.** `ka_ua1_diagnostic_ctl_pgm.pdf` pp.19-152 is the master
+harness: it IPLs, reads a schedule, loads and checksums each test off
+a master tape, and via `J1`/`J2` **builds that tape from individual
+decks**. It is the harness for the **243 programs already
+transcribed** — nothing else makes the existing corpus run as a
+system. Machine-code column verified by render. ~75 days whole, but
+sliceable, and no disk is known to be required.
+
+**And the cheapest high-value action in the whole plan is two pages**:
+the STRETCH MAINTENANCE COMPOOL at PDF pp.129-130, 65 `SYN` entries,
+which `archival_inventory.md` calls the Rosetta stone resolving
+symbols referenced by *every other* deck in `docs/diag/`. Until it
+exists every other listing's symbols dangle. Do it regardless of what
+else happens.
+
+Two assumptions in the plan are flagged there as unchecked: that DCP
+needs no disk (nothing has looked), and how much disk MCP's bootstrap
+really needs (`$IPLD`, printed pp.15-36, 3 of 22 pages sampled).
+
 ## 6. Open questions — record, do not guess
 
 **What is the `-ILLEGAL OP.` word doing in routine 1262's TEST 3A and
