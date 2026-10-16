@@ -1,0 +1,523 @@
+! jb_ax5b "I-Box 5", routine 1262 ("TEST EX AND EXIC"), TEST 1D --
+! PDF p.95, octal 023551.40-023576.00.  42 SOURCE ROWS over 42
+! half-words (no full-word row: the DD(BU,32,8) at 023570.00 is a
+! 32-bit datum, i.e. one half-word).  Entry label I6241; five more
+! labels, I6242 I6243 I6244 I6245 I6246, all defined inside the range.
+! Checked bit-exact against the listing's printed machine code by
+! verify_ax5b_162_test1d_listing.py.
+!
+! CITED BY PDF PAGE.  jb_ax5b's LISTING pages carry no printed page
+! numbers -- the "12 11 10 9" down the left margin is fanfold
+! carriage-tape line numbering, and the only printed numbers are in
+! the front write-up, which is scanned 2-up.  Every verify_ax5b_*.py
+! here already says "PDF p.NN" for that reason.
+!
+! WHERE THIS SITS.  verify_ax5b_162_test1cc_listing.py ends TEST 1CC
+! at 023545.40 and verify_ax5b_162_test2a_listing.py opens TEST 2A at
+! 023576.40, the first row on PDF p.96.  This range stops exactly one
+! half-word short of 2A's first row and starts six half-words after
+! 1CC's last.  A programmatic sweep of every ROWS tuple in every
+! verify_*.py in this directory finds NO file with any octal location
+! inside 023551.40-023576.00 -- not even the jb_af1c PAU decks that
+! collide with 1262 elsewhere by loading at the same octal addresses.
+! TEST 1D is a genuine gap and the whole of it is on one page.
+!
+! WHAT TEST 1D DOES, AND IT IS NOT ONE TEST BUT TWO.  The deck's own
+! heading is "-TEST 1D, CHK EXE AND USA INDS."  The first half (I6241
+! through I6244) is the USA oracle; the second (I6245 through I6246)
+! is the EXE oracle.  They share one entry and one exit.
+!
+! HALF ONE -- HOW THE 2049-LEVEL EXECUTE CHAIN IS BUILT.  Nothing in
+! the deck states "2049" except the error text; the number is BUILT by
+! the first nine rows and can be read off the printed machine code:
+!
+!   023551.40  LX,$X1,USAWD             the loop count, from 023076.00
+!   023552.00  LX,$X2,I62K4             the TEMPLATE WORD.  PDF p.109
+!                                       prints "I62K4  EX,$L" at
+!                                       024175.00 -- a FULL WORD
+!                                       holding TWO "EX" half-words
+!                                       (ax5b_162_test1a.strap's header
+!                                       records it: 'I62K4  EX,$L' with
+!                                       "EX,$L twice').
+!   023552.40  LVI,$X3,I6084A+.32       $X3 := the SECOND half-word of
+!                                       the chain, 017245.40
+!   023553.00  I6242 SX,$X2,I6084A($X1) store the template word
+!   023553.40  SVA,$X3,I6084A($X1)      point the FIRST EX at $X3
+!   023554.00  V+I,$X3,(8)0.40          advance one half-word
+!   023554.40  SVA,$X3,I6084A+.32($X1)  point the SECOND EX at $X3
+!   023555.00  V+I,$X3,(8)0.40          advance one half-word
+!   023555.40  CB+,$X1,I6242            count up, loop
+!
+! Each pass writes ONE WORD = TWO "EX" half-words, each one aimed at
+! the half-word after it.  Then 023556.00/023556.40 ("LVI,$X1,I6243 /
+! SVA,$X1,I6084B") patch the LAST link of the chain to point at I6243,
+! the row immediately after the "EX,I6084A" that starts it.
+!
+! WHY 2049, DERIVED FROM THE PRINT RATHER THAN CONJECTURED.
+! docs/execution_operations.md sec.4 records "Why 2049" as unsettled
+! ("presumably 2048+1", flagged as conjecture).  The two printed
+! machine-code fields settle it:
+!
+!     023552.40  "LVI,$X3,I6084A+.32" -> 17245.47 01   I6084A = 017245.00
+!     023556.40  "SVA,$X1,I6084B"     -> 21245.03 D0   I6084B = 021245.00
+!
+!   021245 - 017245 = 0o2000 = 1024 WORDS = 2048 HALF-WORDS, so
+!   017245.00 through 021245.00 INCLUSIVE is 2049 HALF-WORDS.  The
+!   loop fills the 2048 of them below I6084B, two per pass; I6084B
+!   itself is a pre-existing word of the deck (it has its own name)
+!   whose address field the patch rewrites.  2049 successive EXECUTEs
+!   is exactly the length of the chain the block constructs, and the
+!   error text names that number twice.
+!   CAVEAT, and it is the same one ax5b_162_test1cab.strap records for
+!   I62EXI: both addresses are SYN'd in this file FROM THIS PRINT, so
+!   the rows agree with them by construction and cannot catch a wrong
+!   reading.  The derivation is from the page, not from the checker.
+!
+! HALF ONE -- WHAT IT REQUIRES OF THE MACHINE.  Before the "EX":
+!   023557.00/023557.40  LVI,$X1,I62INT / SV,$X1,$IA   -- point $IA at
+!       the 64-word interruption table.
+!   023560.00/023560.40  SIC,I60SX1 / B,I60S1  -- call 1260's
+!       "CLR INDS 0-19" subroutine.  NOTE "B", not "BD": TEST 1D calls
+!       it with a PLAIN BRANCH, where TEST 1C (023443.40) and TEST 2CA
+!       (024001.40) both use "BD".  The system still ends up DISABLED,
+!       because I60S1 returns via "$BD,0" at 023041.00
+!       (ax5b_160s1_clr_inds.strap's header, from PDF p.85), but the
+!       difference is in the print and is transcribed, not tidied.
+!   023561.00/023561.40  Z,$IND / Z,$MASK -- clear every indicator AND
+!       EVERY SETTABLE MASK BIT.  This is the sharpest row in the
+!       block: with the settable mask zero, NOTHING outside the
+!       permanently-masked 0-19 range can interrupt.  Reference Manual
+!       printed p.48: "Not all of the 64 mask bits can be set by
+!       program control.  Those corresponding to indicators 0-19 are
+!       permanently set to 1."  USA is indicator 17.  So the ONLY
+!       indicator that can deliver the pass is USA itself.
+!       (Contrast TEST 1CB, which must do "TI,1,I00O,$MASK" because IF
+!       is indicator 21, outside the permanent range.)
+!   023562.00/023562.40  LVI,$X1,I6245 / SVA,$X1,I62ITE -- plant the
+!       PASS landing.  No "+.32", so the landing is 024320.00, which
+!       PDF p.109 prints as "BD,$" -- half two of TEST 1D is entered
+!       still disabled.
+!   023563.00  EX,I6084A -- fire the chain.
+!
+! THE THREE OUTCOMES, AND ONLY ONE OF THEM PASSES:
+!   * USA fires, the operation is terminated, and the interruption is
+!     taken at the completion of the execution operation -> I62ITE ->
+!     I6245.  THE PASS.  This needs p.50's SECOND special exception,
+!     because the system is disabled.
+!   * USA fires but no interruption follows -> control proceeds at
+!     I6243, "BUSA,I6244" branches (hex C2, bit 30 = 1, branch on USA
+!     ON) and 023565.40/023566.00 report "-2049 SUCCESSIVE EXECUTES
+!     FAIL TO COUSE INT BUT DO SET USA."
+!   * USA never fires -> the chain runs to its end, the patched last
+!     link executes I6243's own "BUSA,I6244" as its subject, the
+!     branch is not taken, control returns to I6243, the branch is not
+!     taken again, and 023564.00/023564.40 report "-2049 SUCCESSIVE
+!     EXECUTES FAIL TO SET USA AND FAIL TO CAUSE INTERRUPT."
+!   So TEST 1D is a SECOND deck witness for p.50 exception 2, on top
+!   of TEST 1CA's, and the only one in the deck for USA.
+!   Reference Manual printed p.45 item 17, on what USA must do: "The
+!   operation is terminated wherever it may be and the program
+!   proceeds. ... If interruption occurs, it takes place after
+!   execution of the causing instruction has been terminated."
+!
+! HALF TWO -- THE EXE TEST, 023566.40 onward.  I6245 re-plants the
+! landing at I6246, then "BD,$+.32" falls into the inline illegal-op
+! word at 023570.00 (OP actuated in passing, the same 00000003740 this
+! deck uses in TEST 1CA and TEST 2CA), then "EX,I62B7" executes a
+! BRANCH as its subject.  Reference Manual printed p.45 item 18 names
+! the indicator EXE ("Execute Exception"); 023571.00's "BEXEZ,$+1.32"
+! (hex 46: bit 30 = 1 branch-on-EXE-ON, bit 29 = 1 ZERO IT) jumps the
+! error pair when EXE came on.  Falling through reports "-EX OF A BD
+! FAILS TO SET EXE IND."  I did NOT read I62B7 itself; the error text
+! is what says the subject is a BD.
+!
+! THE EXIT, 023572.40-023576.00, is this deck's standard tail:
+! "B,$+1.0" skips the restart "BD,I6241", then SIC,SEN0+.32 / B,SSW
+! "-TO SSIP", and the three continuity rows
+! "LX,$X13,IC262 / V+,$X13,BIT3 / SX,$X13,IC262" that
+! verify_ax5b_162_test2a_listing.py's header already quotes as p.95's
+! last three printed rows.
+!
+! EVERY HEADING AND ERROR MESSAGE, VERBATIM, WITH ITS LOCATION.  Read
+! off the comment column at 600 dpi; punctuation measured, not tidied
+! (see the two typo verdicts below).
+!
+!   023551.40  -TEST 1D, CHK EXE AND USA INDS.
+!   023564.00  -2049 SUCCESSIVE EXECUTES FAIL TO SET
+!   023564.40  -USA AND FAIL TO CAUSE INTERRUPT.
+!   023565.40  -2049 SUCCESSIVE EXECUTES FAIL TO COUSE
+!   023566.00  -INT BUT DO SET USA.
+!   023570.00  -ILLEGAL OP CODE,
+!   023571.40  -EX OF A BD FAILS
+!   023572.00  -TO SET EXE IND.
+!   023574.00  -TO SSIP
+!   023575.00  -UPDATE CONTINUITY CHECK.
+!
+! One heading, THREE error messages (each printed over two rows), one
+! inline-data comment, one exit comment, one continuity comment.  Rows
+! 023564.00, 023565.40, 023571.40 and 023574.00 end with NO
+! punctuation; that was measured, not assumed.
+!
+! GARBLE 1: "COUSE" at 023565.40 IS A DECK TYPO, NOT SCAN DAMAGE.
+! Five letters stand where "CAUSE" needs five, so this is a
+! SUBSTITUTION and pitch is not the test -- SHAPE is.  WIDTH IS NOT A
+! DISCRIMINATOR HERE, and saying so matters because the obvious
+! measurement misleads: the "A" of "CAUSE" two rows up is w51 and the
+! disputed glyph is w52.  Measured at 600 dpi:
+!   the disputed glyph    x4472-4523 y2870-2909 -- a CLOSED OVAL:
+!                         continuous outline, no apex, no crossbar
+!   "A" of "CAUSE" at 023564.40, TWO ROWS UP, x3446-3496 w51 -- a
+!                         POINTED APEX with a crossbar and two open
+!                         legs, in the SAME WORD spelled correctly
+!   "O" of "TO", SAME ROW x4292-4342 w51 -- the same closed oval as
+!                         the disputed glyph
+!   "A" of "FAIL", SAME ROW x3998-4034 w37 -- the same pointed A,
+!                         inked heavily enough to half-fill its
+!                         counter, which is why it is 14 px narrower
+!                         than the other As.  THAT is what a
+!                         struck-and-degraded CORRECT letter looks
+!                         like, and the disputed glyph looks nothing
+!                         like it.
+! A clean, correctly formed letter O where an A belongs, with the
+! correct spelling of the very same word two rows above on the same
+! page: that is the deck's own keypunch, not the scanner's.  Damage
+! would have left a RAGGED A; this is a CLEAN WRONG LETTER.
+!
+! GARBLE 2: "-ILLEGAL OP CODE," at 023570.00 IS ALSO A DECK TYPO -- a
+! COMMA where this deck's other two copies of the identical comment
+! print a PERIOD.  SHAPE FIRST, because the bounding box alone is
+! ambiguous: this chain's COMMA is a rounded blob with a NOTCH bitten
+! out of its LOWER LEFT and a tail descending from that notch past
+! the baseline; its PERIOD is a plain round blob with neither.  The
+! glyph at 023570.00 has the notch and the tail.  Per-scanline column
+! extent at 600 dpi (row 30's cap height is y3462 and its baseline
+! y3524 -- measured on an UNCLIPPED window; a window starting at
+! y3480 clips every letter top on the row and gives a cap height 18
+! px too low, which is how an earlier pass mis-stated this):
+!     y3479-3484  3, 3, 4, 8, 12, 13 px   a point, and NO GAP
+!     y3485-3500  17 rising to 25 px      the swell
+!     y3501-3502  27 px                   widest
+!     y3503-3516  25 falling to 17 px
+!     y3517-3523  16,16,17,16,15,15,15    the notch/tail
+!     y3524-3526  11, 8, 7 px at x3345-3351 -- the TAIL, pinned to
+!                 the LEFT edge, 2 px BELOW the baseline
+! against the known COMMA of "-TEST 1D," on this page's row 1 (cap
+! y387, baseline y450, x2866-2893 = w28):
+!     y409-412    1, 2, 11, 14 px         the same point
+!     y420-432    26-28 px                widest
+!     y440        16 px                   THE NOTCH
+!     y441-444    18, 19, 20, 20 px       the tail
+!     y451-452    6, 4 px                 2 px below the baseline
+! Same width (27 against 28), same bottom (baseline+2), same
+! point-swell-notch-tail profile, and the ink grows MONOTONICALLY
+! from a 3 px point with no gap, so it is ONE mark, not a period with
+! a speck above it.  The only difference is that it starts 17 px
+! below cap height where the comma starts 22, and is 4 px taller --
+! strike variation.  The two PERIODS of the same comment:
+!     p.92  023445.40  x3371-3401 w31, y1005-1037 -- ROUND, no notch,
+!           no tail, 20 px below cap height
+!     p.103 024003.00  x3384-3416 w33, y910-940 -- the same round
+!           period, also 20 px below cap height
+! A period on this chain is 31-33 px wide and 31-36 px tall with no
+! notch; this mark is 27 x 48 with one.  DECK TYPO.
+!
+! GARBLE 3 IS NOT A GARBLE: the mark after "-UPDATE CONTINUITY CHECK."
+! at 023575.00 IS A SCAN SPECK.  At 400 dpi the row looks like it ends
+! "CHECK. ."  At 600 dpi the second mark is x3942-3955, 14x15 px, and
+! it FLOATS at y4713-4727 -- 5 px above the baseline the real period
+! sits on.  The row's period is x3816-3845, 30x39 px, bottom at the
+! baseline y4732.  A 14x15 px mark floating off the baseline is not
+! this printer's period (nor its comma, 28x44); it is dirt, and the
+! same row's leading blank cell carries another 4 px fleck at
+! x2352-2355.  NOT TRANSCRIBED.
+!
+! NO DROPPED OR ADDED LETTER ANYWHERE IN THE RANGE.  "CNTRLS" does not
+! occur here; the abbreviations that do -- CHK, INDS, INT, ADR, IND --
+! are the same author's ordinary ones and each occupies consecutive
+! pitch cells.  The row-1 heading is set on 60.1 px/cell at 600 dpi
+! (hyphen x2370, final period x4187, 30 cells: 60.57/cell) and every
+! glyph lands on its cell.
+!
+! BIT-18 SELF-CHECKS, decoded from the printed octal pair and matched
+! against the page's own label column.  The print format is bits 0-17
+! as six octal digits, ".", bits 18-23 as two octal digits, then bits
+! 24-31 as two hex digits -- so BIT 18 IS THE TOP BIT OF THE OCTAL
+! PAIR.  FIVE classes with FOUR different reasons:
+!
+!  (a) HALF-WORD SELECT, DECODABLE.  Branch targets, MISC addresses,
+!      the 19-bit DirIndex and ImmIndex address fields, and V+/KV.
+!      Reference Manual printed p.23 (PDF p.26), read first-hand here
+!      (footer "Operand Designation  23"): "In the majority of these
+!      operations, 19 bits of the effective address are used in order
+!      to permit addressing of half-words."
+!        023556.00  LVI,$X1,I6243 -> 23563.43 01.  Pair 43 = 100011,
+!                   bit 18 = 1 -> 023563.40, which is where p.95
+!                   prints I6243.  IN-RANGE, so this is EVIDENCE.
+!        023562.00  LVI,$X1,I6245 -> 23566.43 01.  Bit 18 = 1 ->
+!                   023566.40 = I6245.  IN-RANGE, evidence.
+!        023563.40  BUSA,I6244    -> 23565.50 C2.  Pair 50 = 101000,
+!                   bit 18 = 1 -> 023565.40 = I6244.  IN-RANGE,
+!                   evidence, and on an INDICATOR branch, which is a
+!                   different encoder from the two LVIs above.
+!        023566.40  LVI,$X1,I6246 -> 23571.03 01.  Pair 03, bit 18 = 0
+!                   -> 023571.00 = I6246.  IN-RANGE: THE CONTROL.  The
+!                   block therefore carries a MATCHED SET -- three
+!                   in-range labels with bit 18 = 1 and one with bit
+!                   18 = 0, through three different encoders.
+!        023555.40  CB+,$X1,I6242 -> 23553.03 48.  Bit 18 = 0 ->
+!                   023553.00 = I6242.  IN-RANGE, a fourth encoder.
+!        023553.40 / 023554.40  SVA,$X3,I6084A($X1) -> 17245.07 D1 and
+!                   SVA,$X3,I6084A+.32($X1) -> 17245.47 D1.  The SAME
+!                   external label with bit 18 = 0 and bit 18 = 1, so
+!                   the "+.32" is checked even though the label is a
+!                   SYN.  Pair 07 vs 47 differ in bit 18 alone.
+!        023552.40  LVI,$X3,I6084A+.32 -> 17245.47 01.  Same.
+!        023554.00 / 023555.00  V+I,$X3,(8)0.40 -> 0.47 05.  The
+!                   IMMEDIATE is 19 bits of a bit address too, so
+!                   0.40 octal = 32 bits = half-word 1 = bits 0-17
+!                   zero with BIT 18 SET.  That is why both rows print
+!                   "0.47" and not "0.03".
+!        023573.00  BD,I6241 -> 23551.44 00.  Bit 18 = 1 -> 023551.40.
+!                   I6241 is the SLC ANCHOR, so this row checks the
+!                   SLC against its own input; it is NOT evidence.
+!        self-relative rows, all decodable: 023565.00 B,$+1.32 ->
+!                   23566.50 (bit 18 = 1, 023566.40); 023567.40
+!                   BD,$+.32 -> 23570.04 (bit 18 = 0); 023571.00
+!                   BEXEZ,$+1.32 -> 23572.51 (bit 18 = 1); 023572.40
+!                   B,$+1.0 -> 23573.50 (bit 18 = 1); 023574.40
+!                   BD,$+.32 -> 23575.04 (bit 18 = 0).
+!        externals in this class whose address comes from a SYN and so
+!        check only the other fields: 023557.00 LVI I62INT, 023557.40
+!        SV $IA, 023560.40 B I60S1, 023561.00/023561.40 Z, 023562.40 /
+!        023567.00 SVA I62ITE, 023556.40 SVA I6084B, 023563.00 EX
+!        I6084A, 023570.40 EX I62B7, 023574.00 B SSW, 023575.40 V+
+!        BIT3.
+!  (b) LX and SX are EXCLUDED, and NOT for the reason (c)/(d)/(e) are.
+!      Reference Manual printed p.23 (PDF p.26), read first-hand here:
+!      "The two exceptions use only 18 bits of the effective address
+!      because they require full-word operands", and the LX paragraph
+!      on the same page: "The index word specified by J is replaced by
+!      the full-word specified by bits 0-17 of the effective address."
+!      Five rows: 023551.40 LX USAWD (02 10), 023552.00 LX I62K4
+!      (04 10), 023553.00 SX I6084A($X1) (05 11), 023575.00 LX IC262
+!      (32 10), 023576.00 SX IC262 (33 10).  In these the octal pair
+!      is J plus the code's top bit; bit 18 is simply not part of the
+!      address.
+!  (c) SIC is EXCLUDED because its operand is a 24-bit BIT address in
+!      bits 0-23, so the octal pair is a BIT OFFSET inside the word,
+!      not a half-word select.  Five rows: 023560.00, 023564.00,
+!      023565.40, 023571.40 and 023573.40.  The last is the one that
+!      makes the point -- "SIC,SEN0+.32" prints "1311.40 80" and the
+!      pair 40 is BIT 32 OF WORD 0o1311, not "bit 18 set".
+!  (d) TRANSMIT's A1 would be excluded for the same reason as (c).
+!      NO TRANSMIT OCCURS IN THIS RANGE; the class is listed because
+!      TEST 2CB has one (ax5b_162_test2cab.strap) and the frame is
+!      shared.
+!  (e) EXIC is EXCLUDED because printed p.50 (PDF p.53) makes its
+!      operand an 18-bit WORD address.  Read first-hand here, the
+!      whole opening sentence of "Execute Indirect and Count (EXIC)":
+!      "Bits 0-18 of the full-word addressed by BITS 0-17 of the
+!      effective address are used as a pseudo-instruction counter."
+!      Contrast "Execute (EX)" three paragraphs earlier on the same
+!      page: "BITS 0-18 of the effective address form the address of
+!      the location of a subject instruction that is fetched and
+!      executed."  EX is a 19-bit HALF-WORD address with bit 18 live;
+!      EXIC is an 18-bit WORD address and bit 18 is not part of it.
+!      NO EXIC OCCURS IN THIS RANGE either; both of this deck's EXICs
+!      are in TEST 2C.
+!      WHAT THIS BLOCK CANNOT SHOW ABOUT EX: both EX rows here
+!      (023563.00 and 023570.40) print pair 12, bit 18 = 0, so TEST 1D
+!      does NOT witness EX's 19-bit operand.  TEST 1CA does --
+!      "EX,$-.32" at 023447.00 prints 23446.52, bit 18 = 1
+!      (ax5b_162_test1cab.strap).  Said rather than left implied.
+!
+! BRANCH POLARITY, DECIDED PER CHECK, NOT PER BLOCK, AND SETTLED FROM
+! THE PRINTED HEX.  enc_branch_ind lays out addr19(0-18),
+! indnum(19-24), the literal 1000(25-28), clear(29), branchOn(30),
+! idx(31), so hex bit 30 is the polarity and hex bit 29 is the
+! "...Z" reset suffix.  Two indicator branches here, and they are NOT
+! the same shape as TEST 1CB's:
+!   023563.40  BUSA,I6244 -> 23565.50 C2.  Hex C2 = 1100 0010 over
+!              bits 24-31: indnum = bits 19-24 = 010001 = 17 = USA;
+!              bit 29 = 0 (do NOT reset); bit 30 = 1 -> BRANCH ON USA
+!              ON.  Right: I6243 is where control arrives when the
+!              chain ended WITHOUT an interruption, and the two error
+!              reports have to be told apart by whether USA came on.
+!              Leaving USA set (no "Z") is what lets the SERS report
+!              see it.
+!   023571.00  BEXEZ,$+1.32 -> 23572.51 46.  Hex 46 = 0100 0110:
+!              indnum = 010010 = 18 = EXE; bit 29 = 1 -> AND ZERO IT;
+!              bit 30 = 1 -> BRANCH ON EXE ON.  Taking the branch is
+!              the PASS and it clears EXE on the way out.
+!   For contrast, the sibling file's TEST 2CB has "BZXVZ,SERS" ->
+!   1304.31 40, bit 30 = 0, branch-on-OFF, bit 29 = 0.  Both
+!   polarities and both reset settings occur across the two
+!   transcriptions, and injections 3 and 4 in the verify file move
+!   them in OPPOSITE directions, which is what makes the two bits
+!   independently measured rather than jointly assumed.
+!
+! WITNESS TIERING.  EVERY "SYN" BELOW IS AN INPUT, NOT A WITNESS --
+! the caveat verify_ax5b_16082_16083_listing.py makes about I6088.  A
+! SYN makes the address field come out right by construction, so a row
+! naming one proves only that every OTHER field lands where the
+! listing puts it.  I6241 is NOT evidence either: the SLC is fed
+! 023551.40 by this same transcription and I6241 is the first label
+! after it, so checking it checks the SLC against its own input.  It
+! is asserted as the block's anchor.
+!   THE GENUINE ADDRESS EVIDENCE is I6242, I6243, I6244, I6245 and
+!   I6246 -- each the cumulative sizing of every half-word before it,
+!   each named by a row whose printed octal pair carries bit 18, and
+!   between them covering four different encoders (CB+, LVI,
+!   indicator-branch, LVI) and both values of bit 18.  Plus the nine
+!   self-relative rows, which are arithmetic on the SLC rather than on
+!   a SYN.
+!   TIERS BELOW THAT, AND NEITHER PROMOTES AN EXTERNAL: I62INT,
+!   I62ITE, I62K4 and IC262 are confirmed by separately read pages'
+!   own label columns (PDF pp.109/110/114 and
+!   verify_ax5b_162_test3b_listing.py for IC262 = 024171.00), and
+!   BIT3 = 024525.00 by verify_ax5b_bit_table_listing.py's read of
+!   p.114; SEN, SERS, SEN0, SSW, I60SX1 and I60S1 rest on other files
+!   in this directory.  USAWD, I6084A, I6084B and I62B7 rest on
+!   NOTHING BUT THIS PAGE'S OWN MACHINE-CODE COLUMN and are new to
+!   this repo -- see "WHAT THIS FILE CANNOT SEE".
+!
+! SUBSTITUTIONS: spelling only, none semantic.
+!   1. The listing's "%...@" pair is this assembler's "(...)", so
+!      "%8@DD%BU,32,8@,3740" is written "DD(BU,32,8), (8)3740",
+!      "I6084A%$X1@" is "I6084A($X1)" and "%8@0.40" is "(8)0.40".
+!      The "(8)" is load-bearing: this assembler's default radix is
+!      DECIMAL, so a bare 3740 assembles to 00000007234.
+!   2. Leading-glyph spellings follow docs/listing_typography.md's
+!      measured result (letter I, never digit 1, in a name field), so
+!      the labels are I6241-I6246 and the externals I62K4, I6084A,
+!      I6084B, I62INT, I62ITE, I62B7, I60SX1, I60S1, IC262.  USAWD,
+!      SEN, SERS, SEN0, SSW and BIT3 need nothing.  "SEN0" ends in the
+!      DIGIT: measured here on 023573.40 at 600 dpi, the glyph after
+!      "SEN" is 44 px wide, against 50-51 px for this chain's letter O
+!      and 44-45 px for its digit 0 -- the calibration
+!      verify_ax5b_162_test3b_listing.py established on p.108.  Kept
+!      spelled SEN0 to match the other routine-1262 files.
+!   3. No CNOP occurs on this page, and every printed location carries
+!      machine code, so no row is "location printed, no word": nothing
+!      here is SLC'd across or left to a SYN for want of a datum.
+!
+! WHAT IS NEW HERE FOR THIS ASSEMBLER, knocked down by grep before
+! being claimed.  TWO firsts survive:
+!   * "SVA,$X3,I6084A($X1)" at 023553.40 (and its twin at 023554.40)
+!     is the repo's FIRST INDEX-MODIFIED SVA.  Grepping every
+!     verify_*.py and every programs/*.strap for an SVA with a
+!     parenthesised index finds none -- every other SVA in the repo
+!     takes a bare label, with or without "+.32".
+!   * "BUSA,I6244" at 023563.40 is the repo's FIRST BRANCH ON USA
+!     WITHOUT THE RESET SUFFIX.  The only other branches on indicator
+!     17 here are "BUSAZ,$+.32" (ax5b_160s1_tail.strap 023027.40 and
+!     ssip_sip17_reset.strap 001602.40), both with the "Z".  So this
+!     is the first row in the repo that prints hex bit 29 = 0 on
+!     indicator 17, and TEST 1D is the first block to hold a
+!     clear=0/clear=1 PAIR on indicator branches (BUSA and BEXEZ).
+!   NOT FIRSTS, each checked: index-modified SX (ax5b_160_test6.strap
+!   023624.40 "SX,$X2,I60IT($X1)"); V+I (five files, e.g.
+!   verify_ibox4_refill_nop_listing.py); CB+ (eight files); BEXEZ
+!   (ax5b_160s1_tail.strap, ssip_sip17_reset.strap, exic_subject.strap);
+!   EX (test1b, test1cc, test1cab); "B,$+1.32" (verify_pau_srte30_
+!   listing.py 023672.00, a different deck); "B,$+1.0" (test1cc
+!   023546.00, test3b 024162.40); an octal "(8)..." immediate on an
+!   immediate-index op (test3b's "KVI,$X13,(8)777000.0",
+!   test8c_disabled's "LVI,$X3,(8)777777.40"); the DD(BU,32,8),(8)3740
+!   word (ax5b_160k_constants.strap, ax5b_162_test3a.strap,
+!   ax5b_162_test1cab.strap).
+!
+! WHAT THIS FILE CANNOT SEE, recorded rather than left:
+!   * USAWD, I6084A, I6084B and I62B7 are read ONLY from this page's
+!     machine-code column.  None of them appears anywhere else in this
+!     repo, and I did not render the pages that define them.  Their
+!     rows agree with the SYNs BY CONSTRUCTION, so the checker cannot
+!     catch a misread.  The 2049 derivation above rests on two of
+!     them.  I6084A/I6084B are at 017245/021245, far below routine
+!     1262's own area, i.e. in a scratch region; I62B7 = 024207.00
+!     sits just past the I62B3-I62B6 run (024202-024205.40) that
+!     verify_ax5b_162_test1cc_listing.py records from p.109, which is
+!     corroboration of the NAME, not of the address.
+!   * I DID NOT READ I62B7's CONTENTS.  Half two's whole premise is
+!     that the subject at 024207.00 is a BRANCH DISABLED; the only
+!     thing asserting that here is the deck's own error text, "-EX OF
+!     A BD FAILS TO SET EXE IND."
+!   * I DID NOT READ USAWD's VALUE, so the loop count is not
+!     independently confirmed; 2049 is derived from the two chain
+!     endpoints, not from the counter.
+!   * WHAT THE 64-WORD INTERRUPT TABLE HOLDS WHEN 1D RUNS IS NOT READ.
+!     "SVA,$X1,I62ITE" with no "+.32" only works if the table entry
+!     still holds I62K1 ("BD,I62ITE"); TEST 1CC's I6233 fill loop at
+!     023522.00 is the last fill this repo has actually read, and it
+!     is upstream of here, so the conjecture is in better shape than
+!     it is for 1CA -- but it is still a conjecture, flagged as one.
+!   * NOTHING HERE TESTS THE MODEL.  This file is an ENCODING oracle;
+!     whether the model fires USA on a 2049-level chain is a separate
+!     question and is what docs/execution_operations.md sec.1.5 is
+!     about.
+
+USAWD   SYN, (8)23076.0            ! the loop count word; p.95 only
+I62K4  SYN, (8)24175.0            ! "EX,$L" twice -- the chain template
+I6084A SYN, (8)17245.0            ! first half-word of the EX chain
+I6084B SYN, (8)21245.0            ! last half-word, 2048 half-words on
+I62INT SYN, (8)24220.0            ! the 64-word interrupt table, p.109
+I62ITE SYN, (8)24320.0            ! "-ALL INTERRUPTS ENTER HERE.", p.109
+I62B7  SYN, (8)24207.0            ! half two's subject; contents unread
+I60SX1 SYN, (8)23041.0            ! 1260's SIC return link
+I60S1  SYN, (8)22741.0            ! 1260's "CLR INDS 0-19" subroutine
+SEN     SYN, (8)1310.0             ! the SIC error-entry link
+SERS    SYN, (8)1304.0             ! the error-report routine
+SEN0    SYN, (8)1311.0             ! the SSIP entry link; digit zero
+SSW     SYN, (8)1301.0             ! the SSIP return
+IC262   SYN, (8)24171.0            ! 1262's continuity word
+BIT3    SYN, (8)24525.0            ! the continuity bit, PDF p.114
+        SLC, (8)23551.40
+!
+! ---- TEST 1D, half one: build and fire a 2049-level EX chain -------
+I6241  LX,  $X1, USAWD            ! -TEST 1D, CHK EXE AND USA INDS.
+        LX,  $X2, I62K4            !   the template word: "EX,$L" twice
+        LVI, $X3, I6084A+.32       !   $X3 := the chain's second link
+I6242  SX,  $X2, I6084A($X1)      !   plant one word = two EXs
+        SVA, $X3, I6084A($X1)      !   aim the first at the next link
+        V+I, $X3, (8)0.40          !   advance one half-word
+        SVA, $X3, I6084A+.32($X1)  !   aim the second at the next link
+        V+I, $X3, (8)0.40
+        CB+, $X1, I6242
+        LVI, $X1, I6243
+        SVA, $X1, I6084B           !   patch the chain's last link
+        LVI, $X1, I62INT
+        SV,  $X1, $IA
+        SIC, I60SX1
+        B,   I60S1                 !   NOTE "B", not "BD" (see header)
+        Z,   $IND
+        Z,   $MASK                 !   only indicators 0-19 can interrupt
+        LVI, $X1, I6245
+        SVA, $X1, I62ITE           !   plant the PASS landing
+        EX,  I6084A               ! THE TEST: 2049 successive EXECUTEs
+I6243  BUSA, I6244                 !   hex C2: branch on USA ON, no reset
+        SIC, SEN                   ! -2049 SUCCESSIVE EXECUTES FAIL TO SET
+        BD,  SERS                  ! -USA AND FAIL TO CAUSE INTERRUPT.
+        B,   $+1.32
+I6244  SIC, SEN                   ! -2049 SUCCESSIVE EXECUTES FAIL TO COUSE
+        B,   SERS                  ! -INT BUT DO SET USA.
+!
+! ---- TEST 1D, half two: EXE on an executed branch ------------------
+I6245  LVI, $X1, I6246
+        SVA, $X1, I62ITE
+        BD,  $+.32
+        DD(BU,32,8), (8)3740       ! -ILLEGAL OP CODE,   actuates OP
+        EX,  I62B7                !   subject is a BD (per the error text)
+I6246  BEXEZ, $+1.32               !   hex 46: branch on EXE ON, and zero
+        SIC, SEN                   ! -EX OF A BD FAILS
+        B,   SERS                  ! -TO SET EXE IND.
+!
+! ---- the exit and the continuity bridge ---------------------------
+        B,   $+1.0
+        BD,  I6241
+        SIC, SEN0+.32
+        B,   SSW                   ! -TO SSIP
+        BD,  $+.32
+        LX,  $X13, IC262          ! -UPDATE CONTINUITY CHECK.
+        V+,  $X13, BIT3
+        SX,  $X13, IC262
+        END, I6241

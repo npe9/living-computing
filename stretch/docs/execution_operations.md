@@ -17,7 +17,23 @@
 >    `I6218 BD,$+.32` header row that §3.1 quotes separately.
 >
 > Everything else in §3 bore out against the pages, including the 1CA
-> mechanism. Transcription: `verify_ax5b_162_test1cab_listing.py`.
+> mechanism.
+>
+> **FURTHER CORRECTIONS 2026-10-16, from the TEST 1D / 2CA / 2CB
+> transcription:**
+> 4. **§4's "why 2049" is no longer conjecture — it is derived from two
+>    printed fields.** `LVI,$X3,I6084A+.32` prints `17245.47 01` giving
+>    I6084A = 017245.00, and `SVA,$X1,I6084B` prints `21245.03 D0`
+>    giving I6084B = 021245.00. The difference is 0o2000 = 1024 words =
+>    2048 half-words, and **017245.00 through 021245.00 inclusive is
+>    2049 half-words.** 2049 is the chain's length, not 2048+1 as a
+>    round number. (Both addresses are SYN'd from this same print, so
+>    the rows agree by construction and the checker cannot catch a
+>    misread — the caveat is recorded in the transcription.)
+> 5. **§3.5's `ICB` at TEST 2CB is a LETTER I and a DECK TYPO** — not
+>    the rule-line artefact that explained p.92. See
+>    `listing_typography.md` §10, which this reverses.
+> 6. §3.3's `TI,1,I000,$MASK` is `TI,1,I00O,$MASK` here too. Transcription: `verify_ax5b_162_test1cab_listing.py`.
 : `USA`'s number, p.50's two exceptions, and the deck that tests them
 
 Research note, 2026-09-29.  Read-only: nothing in `bsv/` or `strap/` was

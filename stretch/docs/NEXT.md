@@ -1775,6 +1775,325 @@ interruption must occur *at the EX's completion* although disabled.
 2CA is built identically, which is what shows the harmless subject is
 design rather than an off-by-one.
 
+## 5f. A MEASURED OFF-BY-ONE IN THE MEMORY MODEL — the cycle is 2.4 µs, not 2.1
+
+Found 2026-10-16 while sizing the SDRAM back end, and verified
+first-hand in `bsv/StretchMemory.bsv`'s `mkMemoryUnit`:
+
+```
+      busy    <= fromInteger(memCycleClocks);   // = 7, on the REQUEST clock
+    end else begin
+      if (busy != 0) busy <= busy - 1;          // only when NO new request
+```
+
+`memCycleClocks = 7` is commented *"2.1 us at 0.3 us per clock"*, and
+7 × 0.3 = 2.1 is right. **But the decrement sits in the `else` arm**,
+so it never runs on the request clock itself. Trace it: the request at
+clock 0 sets `busy` to 7; clocks 1-7 decrement it to 0; `free()` first
+reads true at **clock 8**. The unit's period is **8 clocks = 2.4 µs**,
+a 14% overstatement of the real machine's core cycle.
+
+**It is a discrepancy against the file's own header**, not against a
+reading of the manual, so nothing needs re-sourcing. Buchholz §14.1 and
+Perf. Char. agree on 2.1 µs and `memCycleClocks = 7` encodes that
+correctly; only the decrement placement is wrong.
+
+**NOT FIXED HERE, deliberately.** Changing it shifts every `CYCLES<=`
+bound in the suite and would land in the middle of other work. It also
+wants deciding alongside `memReadClocks`, where the same analysis found
+the read deadline is **1,200 ns rather than 1,500** (`dataOut <= Valid
+raw` at `readDue == 1` presents what was written by the end of the
+previous clock). Do both at once, re-measure the six benchmarks, and
+say in the commit what moved.
+
+**It matters more than 14% suggests**, because the user's goal is cycle
+accuracy: a systematic +1 on every memory access is exactly the kind of
+error the Performance Characteristics comparison (§ docs/timing_oracle.md,
+in progress) exists to catch — and a reminder that the timing model's
+*constants* being sourced does not make its *mechanics* right.
+
+## 5g. THE TIMING ORACLE HAS BEEN RUN, AND THE VERDICT IS *REBUILD* — `docs/timing_oracle.md`
+
+Finished 2026-10-16. The question §5f left open — whether cycle
+accuracy is a correction or a rewrite — now has an answer sourced to
+Performance Characteristics Vol. 2's measured per-instruction times.
+**The per-instruction scalar is the wrong shape.** Five independent
+legs, the second being the one that settles it:
+
+1. **The measured spread exceeds what the model charges.** Transmit
+   runs 14.47-312.88 µs (21.6×) against a flat 4.20. `LVS`
+   6.48-31.78 against 3.00. `BAL` 7.20-19.78 against 3.60.
+2. **`CBR`'s error changes sign inside one instruction**: 7.20 model
+   vs 11.14 measured taken, 6.60 vs 4.52 untaken. A constant can be
+   wrong; **a constant whose error inverts within one instruction is
+   the wrong shape.**
+3. **IBM's own page titles are the schema.** Vol. 2 indexes time by
+   opcode, operand location, indexing, forwarding, word-boundary
+   crossing, field spec, data case, alignment, and surrounding
+   stream — nine variables. `iboxCycles(DecodedInstr, Bool taken)`
+   sees three.
+4. **Vol. 1 §3's tables carry unevaluated symbolic terms** — `LAAR`,
+   `LAdr`, `LAMT` — and the model drops every one, keeping only the
+   scalar part. Printed p.3-10's Table 4 is explicit: `SV,SC,SR` is
+   "4.2 µsec + dec + LAAR" where `LV,LC,LR` is "4.2 µsec + dec".
+   Same scalar, different term. The model gives both `default: 8`.
+5. **`EX`/`EXIC` get a constant where IBM gives a six-term recipe**,
+   and `StretchTiming.bsv:49` sends both into `default: 14`, a value
+   sourced for `R`.
+
+Of 33 tabled deltas, **29 have the model too fast.**
+
+### THE SIX `CYCLES<=` BOUNDS DO NOT CONSTRAIN THIS, and that is the finding to act on
+
+They are one-sided upper bounds, and they were self-calibrated against
+the model's own stage-2b output. **A model that got arbitrarily faster
+would pass all six.** Any future timing work needs two-sided bounds
+taken from Vol. 2, not from the model.
+
+### ONE BOUNDED CORRECTION IS DONE — and the survey found one wrong variable where the page shows TWO
+
+**APPLIED 2026-10-16 in `bsv/StretchTiming.bsv`'s `eboxClocks`.** It
+computed the SAU byte count as `ceil(effLength(length) /
+effByteSize(bs))`. That is Table 3's `x/y` — the right shape — **with
+both variables read wrong.**
+
+Verified first-hand at Vol. 1 **printed p.3-10 (PDF p.28**; the survey
+cites 3-8, which is the Table 3 continuation, not the variable list):
+
+> `x`   Field length in unsigned operations - field length minus the
+>       byte size in signed operations
+> `y`   8 in binary operations and byte size in decimal operations
+
+So `y` is the SAU's *effective* byte width — **8 in binary mode
+whatever the instruction declares** — and `x` **drops the sign byte in
+signed operations**, which the survey missed. Both facts are already
+decoded: `VflMod { unsign, invert, decimal }` sits in the payload
+(`StretchTypes.bsv:412-416`), so this needed no new decode.
+
+**THE MEASURED COLUMN WAS RE-READ FIRST-HAND, and the survey's numbers
+all stand.** Vol. 2 **printed p.110 = PDF p.117**, header *"VFL
+INSTRUCTION M+ / NO FORWARDING / DIRECT ADDRESSING / OFFSET 0 /
+INSTRUCTION AT FULL WORD ADDRESS"*, column **NO INDEXING / EXTERNL
+OPERAND**. The page carries **24 rows, not the 9 the survey tabled**.
+One scare resolved the survey's way: `(D,64,4)` is **15.01**, and the
+15.00 in the adjacent cell is the *indexed* column — the OCR runs the
+label and the first number together (`10,64,4115.01`), so this is a
+row where text extraction cannot be trusted and the render settles it.
+
+| field spec | model before | corrected | measured | before | after |
+|---|---|---|---|---|---|
+| `(BU,1,8)` | 6.60 | 6.60 | 6.63 | −0.03 | −0.03 |
+| `(BU,8,8)` | 6.60 | 6.60 | 6.63 | −0.03 | −0.03 |
+| `(BU,16,8)` | 7.20 | 7.20 | 6.93 | +0.27 | +0.27 |
+| `(BU,32,8)` | 8.40 | 8.40 | 7.84 | +0.56 | +0.56 |
+| `(BU,48,8)` | 9.60 | 9.60 | 9.02 | +0.58 | +0.58 |
+| `(BU,64,8)` | 10.80 | 10.80 | 9.61 | +1.19 | +1.19 |
+| `(B,1,1)` | 6.60 | 6.60 | 6.63 | −0.03 | −0.03 |
+| `(B,8,1)` | 10.80 | **6.60** | 6.93 | +3.87 | **−0.33** |
+| `(B,16,1)` | 15.60 | **7.20** | 7.23 | +8.37 | **−0.03** |
+| `(B,32,1)` | 25.20 | **8.40** | 8.42 | +16.78 | **−0.02** |
+| `(B,48,1)` | 34.80 | **9.60** | 9.61 | +25.19 | **−0.01** |
+| `(B,64,1)` | 44.40 | **10.80** | 10.80 | +33.60 | **0.00** |
+| `(DU,4,4)` | 6.60 | 6.60 | 6.63 | −0.03 | −0.03 |
+| `(DU,8,4)` | 7.20 | 7.20 | 6.93 | +0.27 | +0.27 |
+| `(DU,16,4)` | 8.40 | 8.40 | 7.84 | +0.56 | +0.56 |
+| `(DU,32,4)` | 10.80 | 10.80 | 10.21 | +0.59 | +0.59 |
+| `(DU,48,4)` | 13.20 | 13.20 | 12.60 | +0.60 | +0.60 |
+| `(DU,64,4)` | 15.60 | 15.60 | 14.40 | +1.20 | +1.20 |
+| `(D,4,4)` | 6.60 | 6.60 | 6.63 | −0.03 | −0.03 |
+| `(D,8,4)` | 7.20 | **6.60** | 6.93 | +0.27 | **−0.33** |
+| `(D,16,4)` | 8.40 | **7.80** | 7.84 | +0.56 | **−0.04** |
+| `(D,32,4)` | 10.80 | **10.20** | 10.21 | +0.59 | **−0.01** |
+| `(D,48,4)` | 13.20 | **12.60** | 12.60 | +0.60 | **0.00** |
+| `(D,64,4)` | 15.60 | **15.00** | 15.01 | +0.59 | **−0.01** |
+
+**Mean |error| 4.02 → 0.28 µs; worst case 33.60 → 1.20.** Ten rows
+change, **every one of the ten improves**, and the other fourteen come
+out byte-identical. A fix that moves only what was broken, and moves
+all of it the right way, is the shape a correct fix has — and the ten
+that moved are exactly the signed rows and the decimal rows, which is
+what p.3-10 predicts and not something a fitted constant would give.
+
+Two details the arithmetic forced, both recorded rather than tuned:
+
+- **A signed field narrower than its own byte size** would underflow
+  `x`. The code falls back to the full length when `len <= bs`, which
+  is also what `(B,1,1)`'s measured 6.63 wants.
+- The residual is no longer a bias but a **band, −0.33 to +1.20**,
+  and the +0.6-to-+1.2 end is all long unsigned fields. That is the
+  next VFL question, and it is small enough to wait for the rebuild.
+
+**THE SUITE CANNOT SEE THIS FIX, and that had to be checked rather
+than hoped.** Every one of the **1,106** VFL and connective field
+specs in `strap/programs/` is `(BU,n,8)` — 1,042 of them `(BU,64,8)` —
+unsigned and byte size 8, where both corrections are the identity. So
+the budget that gates dispatch does not move for any deck, no
+`CYCLES<=` bound shifts, and **a passing suite is not evidence for
+this change.** The evidence is the Vol. 2 table above. The same
+caveat governs §5f's memory off-by-one: both pending timing fixes make
+the model faster, all six bounds are one-sided, and a green run would
+say nothing about either.
+
+**THE CONNECTIVE ARM WAS LEFT ALONE, on purpose.** `eboxClocks`'s
+`Connective` case has the identical `ceil(effLength/effByteSize)`, but
+`ConnInstr` carries **no `VflMod`** — no sign bit, no radix bit — so
+p.3-10's `x` and `y` have no referent, and p.3-10 belongs to Table 3,
+*"EQUATIONS FOR SAU INSTRUCTIONS"*, whose list (ST, L, M+, K, KI, KF,
+KR, KRI, KE, LTRS, LCV …) does not include the connectives. **Vol. 2
+has no connective page**: all 66 of its instruction headers are VFL
+arithmetic. Fixing it by analogy would be exactly the inference rule 4
+forbids, so the declared byte size stays and the gap is recorded here.
+
+**A THIRD IGNORED VARIABLE, found on the same page.** Every VFL page
+carries a second data case headed **"INVERT SIGN OF INSTRUCTION"** —
+27 occurrences across Vol. 2 — and it is not small: `(BU,48,8)` runs
+**13.20 against 9.02**, +4.18 µs for the same field spec. That is
+`VflMod.invert`, the one bit of the three the model decodes and no
+part of timing consults. Table 3's comment column is the source
+(*"Unlike signs AB > CD, add .6(x/y + 1)"* for `M+`), but the measured
+deltas do not match that expression as read — +0.60 where it predicts
++1.20 on `(BU,8,8)` — so this is **recorded as an open question, not
+a formula.** It belongs to the rebuild.
+
+Two more corrections in the same bucket, deliberately **not** folded
+into this commit so the attribution stays clean, and not yet
+arithmetic-checked: `DirIndex default: 8` lumps `SV/SC/SR` (measured
+7.81) with `LV/LC/LR` (5.42) and `V+/KV` (5.27), where Vol. 1 printed
+p.3-10's Table 4 gives `SV,SC,SR` as *"4.2 µsec + dec + LAAR"* against
+`LV,LC,LR` at *"4.2 µsec + dec"* — same scalar, one extra term; and
+`V+CR`/`V±ICR` charge refill unconditionally.
+
+### WHAT THE REAL END-TO-END ORACLE IS
+
+Vol. 1 §4's measured whole-program times cross-referenced to Vol. 2's
+STRAP listings — **GERB2 matrix inversion, 20×20, 0.14 s** (source at
+Vol. 2 printed pp.3-7) is the highest-value target, with MXM16, PRIMC
+and the Monte Carlo behind it. Vol. 1 Table 10 is *not* it: that is
+the Execution Frequency Chart for weather programs whose source is not
+in Vol. 2.
+
+**Rule 3 cannot be applied to these listings.** They are OCR'd STRAP
+source with **no machine-code column**, so there is nothing to
+transcribe and check with `listing_oracle.py`. This is the weakest
+verification posture of any oracle this project uses, and the fact
+needs saying in whatever commit leans on it.
+
+### SEQUENCING — THIS IS PHASE 2, AND IT IS THE SAME WORK AS THE REWRITE
+
+The user's order is **MCP first, then cycle accuracy**, so nothing
+here redirects the Exchange/disk/interval-timer work. What matters is
+that this survey reached `docs/resuscitation_roadmap.md`'s conclusion
+independently and from different evidence: **the idiomatic-Bluespec
+multi-cycle-box rewrite and cycle accuracy are one job, not two.**
+Legs 3 and 4 are both statements that the timing function needs
+machine state the scalar table cannot see — LAAR busy, forwarding
+hits, LA level occupancy — which is exactly what the box rewrite
+builds. Vol. 2 should become **the acceptance test for that rebuild**,
+not a table copied into `StretchTiming.bsv`.
+
+The gating unknown, recorded and not guessed: whether the CE manuals
+give `LAAR`/`LAdr`/`LAMT` as functions of machine state, or only as
+names. If they do not, cycle accuracy is bounded by what Vol. 2
+measures and no better.
+
+## 5h. MCP BOOTS FROM TAPE, NOT DISK — the MCP critical path is reordered
+
+Established 2026-10-16 by the disk study (`docs/disk_subsystem.md`,
+1,449 lines) and **verified first-hand before being acted on**, because
+it contradicts what this session had been saying out loud.
+
+`C22-6678-1` **printed p.29 = PDF p.29** (footer *"Operating With MCP
+29"*), under INITIALIZING THE SYSTEM:
+
+> "Basically, the initialization program reads the MCP portion of the
+> master system tape into core storage and **writes a copy of the
+> entire tape on the disk in the PROSA area**."
+
+The figure on the same page draws it: *Master System Tape* →
+*Initialization Program* → *MCP in Core Storage*, with a second arrow
+**into** *Entire System on Disk Storage*. The procedure agrees —
+*"3. Press IPL key. 4. Press Signal key on the adapter unit for the
+channel on which the **master system tape** is mounted"* — and so does
+Input: *"The current MCP master system tape is file protected and
+mounted on any tape unit dialed to zero."*
+
+**So the disk is a write target at IPL, not the boot source.** Both
+halves of the earlier claim were wrong in different ways: MCP *does*
+require a disk (p.6's minimum config, and the disk is absent from the
+same page's list of what the system can survive without), but it never
+boots from one. p.32's "Disk IPL" is a **card deck** that reloads from
+PROSA *after* a tape IPL has already succeeded, and its failure path
+says twice that "the system must be reinitialized by a tape IPL".
+
+**WHAT THIS CHANGES.** The MCP gate is the **tape IPL path** —
+Exchange + a 729-class tape unit + the channel-signal IPL mechanism
+(RefMan p.126) + the interrupt system — and the disk is the cheap part:
+~100–170 code lines for the boot-sufficient subset against the
+Exchange's 1,150–1,950 (`docs/exchange_and_io.md` §6.2). Sequencing
+work by "the disk is the hard gate" would have put two orders of
+magnitude of effort in the wrong place.
+
+The hardware IPL mechanism is also **structurally incapable** of
+targeting a disk, by three independent routes: it needs a channel
+signal from a unit *"accommodated by the exchange"*; it stores a fixed
+control word *"in the control word location for the channel"*, which
+p.161 says the disk does not have; and that word's chain flag and
+refill are fields p.158 says the disk discards.
+
+### THE EXCHANGE HAS AN ENCODING ORACLE BUT NOT A RUNNABLE ONE
+
+`docs/bx0_exchange_decks.md` (977 lines) settles the BX-0 question
+three ways rather than one. **Not** a runnable deck oracle: printed
+p.2 says BX-0 is *"exclusively a manually operated test, since it is
+independent of the CPU"* — there is no instruction stream to execute.
+**But yes** a bit-exact encoding oracle for the control word, with the
+three machine-code groups decoded and checked mechanically rather than
+by eye (flag byte octal-additive, multiple `20` / chain `40`, 4
+samples; count group = **count × 16 + 2·chain**, 14/14; refill = low
+byte of target address, hex, 9/9), plus the primary-source STRAP
+control-word mnemonic table from printed p.14. That feeds `strap/`
+with no model needed.
+
+**THE MOST ACTIONABLE THING IN EITHER REPORT** is a list of documents
+this project does not have and should go looking for, now named:
+`docs/7030_SystemTestPrograms_Aug61.pdf` — in the repo, never mined —
+carries the acceptance-test PROGRAM LIST, and the CPU-side Exchange
+diagnostics on it are **`JA EE3`** (BX/TAPE), **`JA NE4`**
+(Printer/BX), **`JA ES1D`** (I/O single channel), **`JA CE1`/`CE2`**
+(tape) and **`JA NE5`/`NE6`** (reader/punch). None is in `docs/`.
+Those are the `jb_ax5b`-class decks for the CPU↔Exchange instruction
+interface — the oracle the tape IPL path actually needs. For the disk,
+Perf. Char. Vol. 1 pp.5-5 and 5-8 name three more: *"High-Speed
+Exchange"*, *"Disk"*, and the **SEVA Disk Routine** (*"will exercise
+all possible disk operations"*). Acquiring any of these outranks more
+analysis of what is already here.
+
+### THREE SMALLER THINGS WORTH NOT LOSING
+
+- **Exchange channels start at 32, and now that is sourced.**
+  `C22-6678-1` p.32's dump-device table names *"CH 32, UN0 / CH 33 /
+  CH 34"* on a real MCP machine. `bsv/StretchIO.bsv` already picks
+  32/33/34 and the choice had rested on nothing.
+- **The disk's 18 MiB is a structural dependency, not a line count.**
+  2,097,152 words × 72 bits ≈ 18 MiB per unit — 21× the entire core
+  store, which this project models as registers. It is not a Bluespec
+  `Vector` and not on-chip BRAM on any ULX3S part, so it needs a
+  file-backed/BDPI or sparse hash-of-arcs representation. `StretchIO.bsv`
+  met the small version of this and solved it by pre-loading fixed
+  `Vector`s *because* bsc's `$fopen`/`$fgetc` are Actions; that does not
+  scale here. This is the piece that touches `docs/fpga_feasibility.md`.
+- **The MCP source listing is still unread**, so the boot-sufficient
+  disk subset above is manual-derived, not observed.
+  `MCP_Mar63_001-249.pdf` + `MCP_Mar63_250-445.pdf` (451 pages, no text
+  layer) are in `docs/` and are the authority on what MCP's driver
+  actually issues. Grepping those renders for `$CCW`/`$LOC` against the
+  disk IOD would turn inference into finding.
+
+Two conflicts are recorded unresolved rather than averaged: the disk's
+full-stroke seek is **265 ms** at printed p.157 and **180 ms** in
+p.158's table, and p.158 prints "Words per file 2,097,512" where every
+other figure gives 2,097,152 (transposed digits).
+
 ## 6. Open questions — record, do not guess
 
 **What is the `-ILLEGAL OP.` word doing in routine 1262's TEST 3A and
@@ -1971,6 +2290,36 @@ printed page numbers.
   sees it, because every operand is word-aligned. **That distinguishes
   "my data cannot reach this" from "my patch did nothing" with
   evidence rather than with reasoning.**
+* **A CONFIDENT NEGATIVE ABOUT SOMETHING THE USER SAID THEY HAVE IS
+  EVIDENCE THAT YOU ARE LOOKING IN THE WRONG PLACE.** An agent was told
+  the plan was to use "the Flute SDRAM driver". It fetched upstream
+  Flute's complete 1,922-path file listing, matched every path against
+  `sdram|dram|phy|ddr`, found only false positives, and concluded *"the
+  authorized plan names a component that does not exist."* The method
+  was sound and the subject was wrong: the driver is at
+  `~/src/ulx3s-experiments/flute-ulx3s/src/Sdram_Controller.bsv`, 434
+  lines, with a testbench and seven build directories. The same agent
+  also declared `nextpnr-ecp5` "unrecoverable" from one dead binary in
+  `/usr/local`, while four working builds sat in a sibling project.
+  **When a search contradicts what the user told you they have, the
+  prior should be that the search is aimed wrong — they know their own
+  machine.** `find ~/src -name '*dram*'` costs three seconds. Hedge the
+  negative, or widen the search, before writing "does not exist".
+* **NEVER READ A FILE A BACKGROUND JOB IS STILL WRITING — a partial
+  file answers your question wrongly and silently.** An agent OCR'd a
+  297-page CE manual in the background, grepped the output while the
+  job was still running, found nothing, and reported *"I OCR'd all 297
+  pages and grepped it"* along with a "could not determine". **The file
+  held 87 pages at the time.** Re-run against the complete file, the
+  same grep found the whole answer — a verbatim four-step CPU-side IPL
+  sequence the report had declared absent. The agent caught and
+  reported this itself, which is the only reason it was caught at all.
+  **A grep over a file that is still being written is not a measurement,
+  and "I found nothing" is only evidence if the search space was
+  complete.** Check the job finished — compare the page count you
+  expected against the page count you got — before concluding from an
+  absence. Note this is the same shape as the stale `__pycache__` trap:
+  a tool reporting confidently on input that was not what you thought.
 * **AN INJECTION THAT NEVER APPLIED LOOKS EXACTLY LIKE AN INJECTION
   THAT PROVED NOTHING — and this project's whole discrimination
   argument rests on injections.** An agent's `sed` pattern did not
@@ -2257,3 +2606,25 @@ printed page numbers.
   belonged to the newcomer. A section here is `run` line + `PC` line +
   comment block; anchor on the whole of it, or on the blank line
   before the NEXT `run`.
+* **"I copied the deliverable to the scratchpad" is a claim, and it
+  needs an `ls`.** The disk study's hand-back said it had copied
+  `disk_subsystem.md` to `scratchpad/out_disk/`. The directory existed
+  and was **empty**; the file was only in the agent's worktree, which
+  is deleted when the worktree is cleaned up. The report was otherwise
+  excellent and entirely accurate about the documents — which is the
+  point: an agent that is reliable about the thing it studied can
+  still be wrong about what it did with the result, because the two
+  claims are verified by different means and only the first one got
+  checked. **Verify the artefact exists at the path before acting on
+  the report, and copy from the worktree if it does not.**
+* **A number quoted by an agent is unverified until a render shows
+  it, and OCR is not a render.** The VFL correction rested on ten
+  measured times from Perf. Char. Vol. 2 p.110. Re-reading the page
+  confirmed every one — but only after a scare: `pdftotext` put
+  `(D,64,4)` at 15.00 in one extraction and 15.01 in another, because
+  the row's OCR runs the label into the first number
+  (`10,64,4115.01`) and the column alignment is invented. Had the
+  "correction" been published, it would have corrected a right answer
+  to a wrong one. **Where a table's columns matter, the text layer
+  decides nothing**; and the same page then yielded 24 rows where the
+  agent had tabled 9, so re-reading was worth it twice over.

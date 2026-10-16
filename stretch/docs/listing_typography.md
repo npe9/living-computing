@@ -445,6 +445,36 @@ in the labels — where before they appeared to disagree. An apparent
 disagreement between two columns of one listing is itself a signal that
 one of the readings is wrong.
 
-**Not yet checked:** PDF p.103's `ICB` at TEST 2CB, recorded in
-`docs/execution_operations.md` §3.5. The same artefact is the likely
-explanation and is explicitly NOT asserted.
+### AND THE FIRST GUESS ABOUT WHERE ELSE IT APPLIED WAS WRONG
+
+This section originally ended: *"Not yet checked: PDF p.103's `ICB` at
+TEST 2CB. The same artefact is the likely explanation and is explicitly
+NOT asserted."* It was checked on 2026-10-16 and **the likely
+explanation is wrong. p.103 really does print a letter I.**
+
+The row **is** ruled through, so the warning above applies — but **the
+rule misses the glyph by six pixels**: rule at y1971-1976, y1977 blank,
+glyph y1978-2045. And the glyph is a bare stroke, 17 px wide, that
+*tapers* at top and bottom (3,5,6,7,8,9 px entering; 6,6,4 px leaving)
+rather than carrying a flag and a foot. Against the calibration on that
+same page — the digit `2` of `-TEST 2C,` and `-TEST 2CA,` both measure
+**41 px**, the letter `I` of `MONITOR` on the **same row** measures 13 —
+17 px sits in the letter-I population and nowhere near the digit one.
+Re-measured on p.92 for contrast: that `1` has an upper-left flag AND a
+**37 px base serif**, bbox 37 wide.
+
+**It happened TWICE on p.103 and not at all on p.92**: 024020.40's
+`-TEST ICC, CHK EXIC OF BRANCH AND EXE.` carries the same bare stroke
+at 21 px. **That is what rules it a DECK TYPO rather than damage or an
+artefact** — a duplicated card would have reproduced p.92's digit, so
+this is a keypunch that went wrong the same way twice.
+
+**The lesson is about the correction, not the glyph.** Having found one
+rule-line artefact, the natural move was to assume the next
+digit-read-as-letter had the same cause. It did not. **A newly-named
+trap is a hypothesis about other cases, not a finding about them** —
+and the measurement that distinguishes them is cheap. Note the two
+verdicts stay separate in the transcription: *the glyph is a letter I*
+is measured; *`2CB` is what belongs there* is an inference from the
+comment being character-for-character p.92's and the label column
+reading `I6272` between `I6271` and `I6273`.

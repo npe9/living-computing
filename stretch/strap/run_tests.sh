@@ -4861,6 +4861,115 @@ run "I-Box 5 routine 1262 TEST 1B: EX of each class (jb_ax5b PDF pp.90-91)" pyth
 # neighbour perturbation is a table collision rather than a clean
 # fault; 14 is the only number in 0-63 the table does not hold.
 
+run "I-Box 5 routine 1262 TEST 1D: USA on a 2049-level chain, and EXE (jb_ax5b PDF p.95)" python3 verify_ax5b_162_test1d_listing.py
+# **THE ORACLE FOR THE USA TIMEOUT**, and the only one in the corpus.
+# 42 rows, 023551.40-023576.00.
+#
+# IT BUILDS THE CHAIN AT RUN TIME.  "LX,$X2,I62K4" loads p.109's
+# "I62K4 EX,$L" -- a FULL WORD holding two EX half-words -- as a
+# template; the loop stores that word, then two SVAs write $X3 into the
+# two address fields with "V+I,$X3,(8)0.40" between them, so each pass
+# lays down TWO EXECUTEs each aimed at the half-word after it.
+#
+# AND "WHY 2049" IS NOW DERIVED FROM THE PRINT, where
+# docs/execution_operations.md 4 had it as conjecture ("presumably
+# 2048+1").  Two printed fields settle it: "LVI,$X3,I6084A+.32" ->
+# 17245.47 01 gives I6084A = 017245.00, and "SVA,$X1,I6084B" ->
+# 21245.03 D0 gives I6084B = 021245.00.  The difference is 0o2000 =
+# 1024 words = 2048 half-words, and 017245.00 THROUGH 021245.00
+# INCLUSIVE IS 2049 HALF-WORDS.  2049 is the chain's length.
+#
+# THREE OUTCOMES, ONE PASS PATH, which is what makes it an oracle for
+# TWO rules at once: USA fires and the interruption is taken at the
+# completion of the execution operation WHILE DISABLED -> the only
+# pass; USA fires without an interruption -> "-2049 SUCCESSIVE EXECUTES
+# FAIL TO COUSE / -INT BUT DO SET USA."; USA never fires -> "-...FAIL
+# TO SET USA AND FAIL TO CAUSE INTERRUPT."  So 1D is the only deck
+# witness for USA and a SECOND witness for printed p.50's exception 2.
+#
+# Note "Z,$IND / Z,$MASK" clears every SETTABLE mask bit, so nothing
+# outside the permanently-masked 0-19 range can interrupt -- and USA is
+# 17.  Contrast 1CB, which must do "TI,1,I00O,$MASK" because IF is 21.
+#
+# "COUSE" IS A DECK TYPO, AND WIDTH IS NOT WHAT SETTLES IT -- the file
+# says so explicitly.  The A of "CAUSE" two rows up measures 51 px and
+# the disputed glyph 52.  SHAPE settles it: the disputed glyph is a
+# closed oval with a continuous outline, no apex and no crossbar, like
+# the O of "TO" on the same row; the correct A two rows above has a
+# pointed apex, a crossbar and two open legs.  (The A of "FAIL" on the
+# same row measures only 37 px because it is inked heavily enough to
+# half-fill its counter -- which is what a DEGRADED CORRECT letter
+# looks like, as against a clean wrong one.)
+#
+# AND "-ILLEGAL OP CODE," ENDS IN A COMMA, not a period -- a verdict
+# the transcriber had to revisit after catching their own clipped
+# segmentation window.  This chain's comma is a rounded blob with a
+# notch bitten out of its lower left and a tail descending past the
+# baseline; its period has neither.  Both are present and measured.
+#
+# A SCAN SPECK WAS CORRECTLY NOT TRANSCRIBED: 400 dpi reads
+# "CHECK. ." at 023575.00; at 600 dpi the real period is 30x39 sitting
+# on the baseline and the second mark is 14x15 FLOATING five px clear
+# of it, two pitch cells right.  Too small for this printer's period
+# and the wrong shape for its comma.
+#
+# Eleven injections across this file and the 2CA/2CB one, all observed.
+# **Injection 1 turns the 1CA/1CB file's documented NULL into a HIT**:
+# that file had to prove liveness with a CONSTRUCTED case because it
+# contains no parenthesised index; TEST 1D has three, and the same
+# patch moves all three.  No constructed case was needed anywhere here.
+# Injections 3 and 4 separate bit 30 from bit 29 BY DIRECTION -- under
+# 3 this file's rows LOSE hex bit 30 while 2CB's GAINS it; under 4
+# BUSA gains bit 29 while BEXEZ loses it, in one patch.
+#
+# THREE REPO FIRSTS, each grepped first: the first INDEX-MODIFIED SVA
+# ("SVA,$X3,I6084A($X1)" -- every other SVA anywhere takes a bare
+# label), the first branch on USA WITHOUT the reset suffix (making this
+# the first block to hold a clear=0/clear=1 pair on indicator
+# branches), and the first label-minus-word-offset in an
+# immediate-index field.
+
+run "I-Box 5 routine 1262 TEST 2CA/2CB: the disabled-state exceptions for EXIC (jb_ax5b PDF p.103)" python3 verify_ax5b_162_test2cab_listing.py
+# THE EXIC TWINS of TEST 1CA/1CB, 31 rows, 024000.40-024020.00,
+# abutting TEST 2B's last row at 024000.00.  One file because the two
+# ranges abut, share the TEST 2C header and the same disabled state,
+# and **2CA's pass path IS 2CB's entry** (interrupt -> I62ITE ->
+# I6272).
+#
+# **AND IT REVERSES A GUESS THIS PROJECT RECORDED.**
+# docs/listing_typography.md 10 found that a dashed rule line crossing
+# a digit "1" forges a letter-I top bar, and noted p.103's `ICB` as
+# "not yet checked -- the same artefact is the LIKELY explanation."
+# Measured: **the rule misses the glyph by six pixels** (rule
+# y1971-1976, y1977 blank, glyph y1978-2045), and the glyph is a
+# 17 px BARE STROKE that TAPERS at both ends rather than carrying a
+# flag and a foot.  On the same page the digit 2 of "-TEST 2C," and
+# "-TEST 2CA," both measure 41 px and the letter I of "MONITOR" ON THE
+# SAME ROW measures 13.  **p.103 really does print a letter I.**
+#
+# IT HAPPENED TWICE ON p.103 AND NOT AT ALL ON p.92 -- 024020.40 prints
+# "-TEST ICC, ..." with the same bare stroke -- which is what makes it
+# a DECK TYPO rather than damage: a duplicated card would have
+# reproduced p.92's digit, so this is a keypunch that went wrong the
+# same way twice.  The two verdicts are kept apart in the file: that
+# the GLYPH is a letter I is measured; that "2CB" is what BELONGS there
+# is an inference from the comment being character-for-character
+# p.92's and the label column reading I6272 between I6271 and I6273.
+#
+# TWO HONEST NEGATIVES the bit-18 frame forced out, stated rather than
+# padded: **no row in this range has bit 18 set at all**, so this block
+# cannot witness the rule and inherits it from TEST 1D.  And **the EXIC
+# exclusion is CONSISTENT here, not WITNESSED** -- both EXIC rows print
+# pair 16 with bit 18 = 0, and an assembler wrongly treating the
+# operand as a 19-bit half-word address would print exactly the same,
+# because I62PSI is word-aligned.  It rests on printed p.50, which is
+# what rule 4 is for.
+#
+# Every null in this file's injection table carries a liveness proof
+# FROM THE SAME RUN -- the same confirmed patched line moved rows in
+# the TEST 1D file.  Injections 5 and 6 separate EX from EXIC: 5 moves
+# 1D only, 6 moves this file only.
+
 run "I-Box 5 routine 1262 TEST 2A: EXIC must not relinquish control (jb_ax5b PDF pp.96-98)" python3 verify_ax5b_162_test2a_listing.py
 # 137 ROWS, THE WHOLE BLOCK, 023576.40-023704.40 end to end.  Closure
 # is arithmetic: (0o23704 - 0o23576) x 2 + 1 = 141 half-words, four of
