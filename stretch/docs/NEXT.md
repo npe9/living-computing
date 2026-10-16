@@ -2094,6 +2094,460 @@ full-stroke seek is **265 ms** at printed p.157 and **180 ms** in
 p.158's table, and p.158 prints "Words per file 2,097,512" where every
 other figure gives 2,097,152 (transposed digits).
 
+## 5i. THE TAPE PATH — and the MCP listing turns out to be rule-3 checkable
+
+Three studies, 2026-10-16: `docs/tape_unit_contract.md` (825 lines),
+`docs/tape_data_path.md` (1,049), `docs/mcp_tape_manufacture.md` (736).
+
+### THE GATING FACT, verified first-hand
+
+**MCP's listing carries a printed BINARY OUTPUT column**, so
+`AGENTS.md` rule 3 applies to it unmodified. Rendered and read
+directly at `MCP_Mar63_001-249.pdf` PDF p.10 (its own header says
+`PAGE NUMBER 3`): the column header is
+`LINE  LOCATION  BINARY OUTPUT  NAME  STATEMENT  LOCATION` and the
+rows print `000053.40 80 / 023000.22 80` — character-for-character
+what `listing_oracle.fmt_half()` already emits. Coverage is ~80%
+listing-wide, ~90-100% on pure code, absent on control-card pages.
+
+This was the one fact separating "tedious but tractable" from "not
+worth attempting", and it came out the right way. **Note the PDF→
+printed offset is NOT constant** — vol 1 duplicates pp.1-2 and has
+three blanks, vol 2 runs +249 at PDF 60 and +250 at PDF 160 — so every
+citation must be checked against the page's own printed PAGE NUMBER.
+
+### TWO PROJECTS, TWO ORDERS OF MAGNITUDE APART
+
+| | size | at this repo's demonstrated rate |
+|---|---|---|
+| **MCP's IPL bootstrap**, printed pp.2-14 | ~550 lines, ~350 rule-3 rows, 369 words of object code | **~4 days** |
+| **All of MCP**, pp.1-445 | ~23,700 lines, ~19,000 rows | **~198 days ≈ 6.5 months** |
+
+Rate basis: 5,100 rule-3 rows and 15,984 `.strap` lines over 53 days
+(2026-08-24 → 2026-10-16) = 96 rows/day, from git history. The 198-day
+figure assumes linearity and **that is flagged as unlikely**: the
+corpus is 242 *independent* programs, while MCP is one 97-section
+program with `TAIL`-scoped symbols crossing sections, so partial
+transcriptions will not assemble standalone.
+
+**So the bootstrap is the target**, and it is ~1.3× the largest
+program already in the corpus. The same page proves it: PDF p.10 is
+literally `*** FIND IPL CHANNEL NUMBER ***`, `*** IO TEST ***` and
+`-SPACE OVER TAPE MARK`.
+
+### THE BOOTSTRAP MAY NOT BOOT FROM TAPE ALONE — unresolved, do not assume
+
+Printed p.14 is **42 chained `CW(CDSC)` control words, 512 words
+each = 19,968 words into `X BUFER`**, each commented "FETCH ONE PROSA
+RECORD" — and p.1 defines `PROSA` as `IOD,DISK,CDIDEX`. Printed p.2
+allocates *both* a "SLOT FOR TAPE CW" and a "SLOT FOR DISK CW". That
+is a disk read inside the IPL bootstrap, which sits awkwardly with
+§5h's finding that MCP boots from tape. **Both readings are from
+primary sources and neither is being retired.** Settling it needs
+`$IPLD`, printed pp.15-36 — 22 pages, of which 3 were sampled. **This
+is the highest-value remaining read in the whole MCP effort.**
+
+### `ka_ul1` IS THE FIND, and it settles layer 0
+
+"LOAD AND TAPE WRITE UTILITY, KA UL1, 13 Oct 1961" — a card loader
+that, with console switch 37 set, **writes an IPL tape**, listing and
+printed machine code included. Four things no manual states:
+
+- **The whole IPL tape is written by ONE `W` against one control
+  word — no tape mark, no label.** A bootable 7030 tape has no
+  mandatory preamble. This is what makes manufacturing one tractable.
+- It issues **`LOCATE` unconditionally, even for drive 0**.
+- **`UNLOAD` assembles to right effective address `000137`** — octal
+  137 verbatim. Independent confirmation against IBM's own assembler
+  that `strap_asm.py` is right not to apply the `>>6` word-address
+  conversion to `CTL`'s second field.
+- Every operation is the **SEOP** form, completion polled by `CCW` +
+  `BB` on **control-word bit 24**.
+
+`C28-6379-0_MCP_Loader.pdf` is **not** the boot path — it is the job
+loader plus the FORTRAN BSS processor, and `archival_inventory.md` §4
+already recorded it read in full. My brief asserted otherwise; the
+brief was wrong.
+
+### TWO CORRECTNESS BLOCKERS, both ABOVE the data source
+
+Neither is fixed by `StretchTapeSource.bsv`, and both are nearer the
+critical path than the media question:
+
+1. **The FSM ignores `chain`.** The IPL control word chains, and
+   Figure 36's `multiple 0 / chain 1 / count zero / not end of block`
+   row is literally "Chain and continue". With chain ignored, **IPL
+   reads one word and stops.**
+2. **Nothing ever writes control-word bit 24, the SEOP status bit** —
+   and both `ka_ul1`'s driver and MCP's own bootstrap poll it
+   (`BB,X IPL BS+.24 ... -IO OPERATION COMPLETED`, visible on PDF
+   p.10). **The real driver idiom would hang on this model.**
+
+**A CONFLICT IN THE IPL CONTROL WORD, recorded rather than averaged,
+and MCP's half of it is now verified first-hand.** Rendered at
+`MCP_Mar63_001-249.pdf` PDF p.9, its own header `PAGE NUMBER 2`, under
+`MCP INITIALIZATION BOOTSTRAP`, line 17 prints the control word's
+binary output in full:
+
+```
+15*  000040.00                                    SLC,(8)40.0
+17*  000040.00  000041.00+ 000 000560 000001      CW(CR),X IPL BS,X BS END-X IPL BS,1
+                                                 -IPL CW FOR READING IN IPL BOOTSTRAP
+                                                 -RECORD FROM SOURCE TAPE
+                                                 -ONE IN REFILL FIELD IDENTIFIES IPLCW
+24*  000041.00  000043.44 00     X IPL BS  BD,X BEGIN   -DISABLE AND START IPL
+25*  000041.40  000000.00+       VF,0                   -SLOT FOR TAPE CW
+26*  000042.00  000000.00+ ...   XW,0                   -SLOT FOR DISK CW
+```
+
+So data address `000041.00`, **count `0o560` = 368**, **refill = 1** —
+not the `count=1, refill=4` the Exchange-side study read off RefMan
+p.126.
+
+**RESOLVED 2026-10-16, and both studies were right about different
+words.** RefMan printed p.126 (PDF 129, footer "126 IBM 7030") read
+first-hand. The fixed control word the *hardware* plants is:
+
+> Data word address = 4 · Chain flag = 1 · Multiple flag = 0 ·
+> Skip flag = 0 · **Count = 1** · **Refill address = 4**
+
+and step 3 says what that buys:
+
+> "The first word read from the unit is stored in the special core
+> storage location referred to by means of address 4. Since the fixed
+> control word is then exhausted, its refill address causes the next
+> control word to be fetched from location 4. **Location 4 at this
+> time should contain another control word** specifying the address at
+> which the word immediately following should be stored, and the
+> number of words to be read from the unit. Reading then proceeds
+> normally."
+
+**So it is a two-stage bootstrap and the two words are both real.**
+The hardware's word reads exactly ONE word off the tape; that word is
+MCP's own `CW(CR)` with count `0o560` = 368 and refill 1; chaining is
+the mechanism that hands over from the first to the second. Nothing
+needs retiring, and **chaining is not optional for IPL** — it is the
+whole hinge, which is why §5i lists it as blocker 1.
+
+Three more things the page settles, all verified on it:
+
+- **"The first instruction of a program loaded by means of the initial
+  program loading technique must be BRANCH DISABLED."** MCP's line 24
+  is `X IPL BS  BD,X BEGIN  -DISABLE AND START IPL`. Primary source
+  and primary artefact agreeing on a detail neither needed from the
+  other.
+- **"A program can be loaded by the initial loading technique only
+  from a unit having the selection address 0"** — which is what
+  `C22-6678-1` p.29's "dialed to zero" means, and it is why the
+  one-unit-per-channel simplification survives IPL.
+- **EOP and EE are NOT turned on at the completion of IPL**, and the
+  first channel signal does not set the CS status bit. A model that
+  raises them would break the bootstrap.
+
+And on the signal key, the apparent contradiction with RefMan p.136's
+"There is no signal key on the tape units" also dissolves here:
+p.126 says loading "is started by a channel upon the depression of the
+SIGNAL or START key on **any unit accommodated by that channel
+address**" — the key belongs to the channel's units collectively, and
+on a 729 the equivalent is the not-ready→ready transition `ja_uc1a`
+tells the operator to perform.
+
+Note also lines 25-26: the bootstrap reserves a **"SLOT FOR TAPE CW"
+and a "SLOT FOR DISK CW"** adjacently, which is the same tape/disk
+ambiguity as the p.14 PROSA reads above, showing up in the first
+twenty-six lines of the program.
+
+Also from the manual, and it corrects `C22-6678-1` p.29's wording:
+RefMan printed p.136 says flatly **"There is no signal key on the tape
+units"** — a channel signal from a 729 comes from not-ready→ready or
+REWIND completion, which is exactly what `ja_uc1a`'s loading procedure
+tells the operator to do ("Make Tape Unit Not Ready then Ready").
+
+### THE MEDIA QUESTION IS THE EASY HALF, and it is measured
+
+microSD, 1-bit SD bus, raw LBA. Synthesised on this machine with
+yosys 0.51 `synth_ecp5`: the whole SD tape path is **788 LUT4, 720 FF,
+112 CCU2C, 2 DP16KD**, and deleting `tapeImg`'s sixteen 64-bit
+registers gives most of it back — net **≈ −237 LUT4, −304 FF,
++112 CCU2C**, or +0.27% of the ~41,070 CCU2C that actually decides the
+part. The baseline reproduced `fpga_feasibility.md` §2.4 exactly,
+which is what makes the delta comparable.
+
+- **`bsc`'s file primitives are NOT a blocker**, and the answer was in
+  the user's own tree: `~/src/alto-bluespec/src/Disk.bsv:18-23` reads
+  a Diablo 31 pack through *value*-typed `import "BDPI"`. The tape
+  analogue was written, built and **run** — six streaming words out of
+  a real host file. `StretchIO.bsv`'s header claim that `$fopen`/
+  `$fgetc` being Actions forced pre-loaded `Vector`s should be amended.
+- **The split into two packages is forced at synthesis, not codegen**:
+  `bsc -verilog` emits a `.v` for a BDPI module quite happily, then
+  `yosys: ERROR: Can't resolve function name '\$imported_host_tape_read_word'`.
+- **Pinout verified, not recalled**, from `ulx3s_v20.lpf` and
+  `/opt/homebrew/share/trellis/.../iodb.json`: `sd_clk` H2 (`PCLKT6_0`),
+  `sd_cmd` J1, `sd_d[0..3]` J3/H1/K1/K2, LVCMOS33, **all on bank 6**.
+  **No card-detect and no write-protect** — both pads are commented
+  "not connected" — and the SD lines are **shared with the ESP32**.
+- **Clock domain is the one real constraint.** A 512-byte sector
+  refills in ~0.98 ms at 25 MHz but **~7.37 ms at a 3.3333 MHz core
+  clock**, against 8.19 ms of buffered play: 11% margin versus 8×.
+  **Put the reader in the 25 MHz domain** with SyncFIFOs.
+- **The tape byte rate this session used was ~2× too high.** This
+  repo's own `docs/exchange_and_io.md:1112` quotes RefMan p.130: a 729
+  IV at 556 bpi has a 170 µs average word period = **21.25 µs/byte =
+  47 kB/s**, not the ~10⁵ B/s I asserted.
+
+### WHAT WAS ACTUALLY CHANGED IN THE MODEL
+
+`bsv/StretchTapeSource.bsv` (new) and the `StretchIO`/`StretchCore`
+wiring. The tape read was a **combinational, random-access,
+always-ready value method** — `readTapeWord(TapeIndex i) = tapeImg[i]`
+— which no magnetic tape has ever resembled and which no external
+source can implement. It is now request/ready/response, spelled the
+same way `StretchStorage` spells it, whose header had already written
+down this exact lesson for core storage: *"callers must NOT assume any
+fixed latency, which is exactly the assumption the previous BRAM
+version baked in."* The tape was the last device still making it.
+
+`readTapeWord` survives as the testbench's window only;
+`writeTapeWord` is still both paths, because writes are posted rather
+than acknowledged — itself a simplification a card will force open.
+
+`bsv/sd_reference/` holds the measured SD design, **not compiled by
+`build.sh`**, with a README on the three things to take from it when
+the boundary moves: the 24-bit word address (the in-tree `TapeIndex`
+is four bits), `atEnd` in the response, and the `Server`/`mkConnection`
+idiom that matches the local SDRAM driver. Two independent designs
+converged on request/response, which is better evidence than either.
+
+**UNRESOLVED AND NOT PAPERED OVER:** `capacity = maxBound` on the SD
+leg makes `io_tape.strap`'s End Exception path unreachable on
+hardware. The image's true word count needs a home — header sector,
+build parameter, or the drive keeping its own limit. Neither the
+agent nor I picked one.
+
+## 5j. PLACE AND ROUTE RAN — and the part is decided by carry, not by storage
+
+`docs/fpga_feasibility.md` gained §9 (~1,250 lines) on 2026-10-16, with
+every script, log, RTLIL checkpoint and nextpnr report beside it. The
+headline is a correction to §2.2.1 of the same document.
+
+**SUPERSEDED THE SAME DAY, and the answer is a measured negative.**
+Both whole-core runs finished ~20 minutes after the first hand-back
+and both were routed. There is no one-unit 45F Fmax **because the
+one-unit core does not place on a 45F** — and it fails on
+combinational logic, not on anything the note had been watching:
+
+```
+ONE-UNIT mkStretchCore on LFE5U-45F (nextpnr)
+  TRELLIS_IO       10 /   245     4%
+  DP16KD           64 /   108    59%   <- exactly as predicted
+  MULT18X18D       36 /    72    50%
+  TRELLIS_FF    15505 / 43848    35%
+  TRELLIS_COMB 362285 / 43848   826%   <- FAILS
+  ERROR: no BELs remaining to implement cell type 'TRELLIS_COMB'
+```
+
+| configuration | COMB | DP16KD | MULT | |
+|---|---|---|---|---|
+| six-unit, 85F | **448%** | 184% | 23% | fails |
+| one-unit, 45F | **826%** | 59% | 50% | fails |
+| one-unit, 85F | **433%** | 30% | 23% | fails |
+
+**NO CONFIGURATION FITS ANY ULX3S, AND THE BINDING CONSTRAINT IS
+COMBINATIONAL LOGIC, NOT BLOCK RAM.** Everything §2.2 and §2.2.1 said
+would fit does fit — block RAM, multipliers, flip-flops, IO are all
+comfortable. The note's entire device discussion was organised around
+block RAM, which turns out to be the easy axis. Whole-core LUT4 is
+**283,931** (six-unit) / **271,449** (one-unit).
+
+The CCU2C calibration that produced the earlier estimate is vindicated
+and superseded: it predicted 365,803 COMB against an actual 375,223,
+within 2.6%. **The verdict also survives the `-noabc9` caveat** —
+granting abc9 its largest observed advantage (2.6×) still leaves
+~186,000 COMB against the 85F's 83,640, i.e. 2.2× over. For `share`
+to rescue it, it would have to remove more than half of all
+combinational logic, and it has failed to terminate three times.
+
+**THIS IS NOW THE MEASURED ARGUMENT FOR THE REWRITE.** Nothing in the
+roadmap's effort table addresses a 4.3× logic overrun; items 2-9 are
+about getting a design onto a board, and none of them makes the design
+fit. The obvious candidate does not scale either — moving
+`StretchIO`'s register images into a DP16KD targets 8,102 LUT4, about
+**3% of 271,449**, and eliminating all three register files outright
+does not approach 4×. What it points at is §6's own sentence, *"a
+byte-serial datapath is small; a 5,019-line combinational one is 100k
+lines of Verilog"* — i.e. the multi-cycle E-box / idiomatic-Bluespec
+rewrite of AGENTS.md plan §1c. **§5g reached the same conclusion from
+timing and §9 now reaches it from area. The number is 4.3×.**
+
+Two self-corrections inside that correction, both recorded: CCU2C is
+not perfectly invariant across LUT mapping (41,060 → 40,936, 0.3%),
+and the failing cell name (`st_xreg_8`'s write mux) is an
+illustration rather than evidence — at 433% nextpnr would fail on
+something.
+
+**The 91.57 MHz figure below is the MEMORY SUBSYSTEM and must not be
+quoted as the core's.**
+
+### What was measured
+
+| | result |
+|---|---|
+| **CCU2C**, six-unit core | **41,060** |
+| **CCU2C**, one-unit core | **41,070** — ten cells apart |
+| MULT18X18D | **36**, measured twice on independent elaborations |
+| whole-core DP16KD | 384, identical to `mkStretchStorage` alone |
+| whole-core TRELLIS_FF | 12,449 (28% of a 45F) |
+| `mkMBCU` 1 unit on 45F | **91.57 MHz**, 59.3% DP16KD |
+| `mkStretchIO` on 45F | 98.83 / 106.51 MHz (seeds 1/3) |
+| six-unit storage on 85F | nextpnr **refuses to place** |
+
+**THE CARRY LOGIC IS ENTIRELY CPU AND NONE OF IT IS MEMORY.** Dropping
+from six memory units to one removes 320 block RAMs and ~1,179
+flip-flops and moves the carry count by ten cells in forty-one
+thousand. At a measured 2.15 TRELLIS_COMB per CCU2C (calibrated on a
+purpose-built adder netlist), that is **≈82,100 COMB for carry alone —
+1.87× the 45F's 43,848 and 98% of the 85F's 83,640.**
+
+So **the one-unit build does not fit a 45F either**, and not for the
+reason anyone was watching. §2.2.1's "a 45F could run the whole
+transcribed corpus with storage entirely in block RAM" is correct
+*about block RAM* — 64 of 108 DP16KD — and wrong about the part. **It
+is the arithmetic that picks the device.**
+
+Two more device exclusions now have independent grounds: **MULT18X18D
+= 36 excludes the 12F/25F** (28 available), a third reason after block
+RAM and LUTs; and §2.2's six-unit arithmetic is now **a router result,
+not a calculation** — nextpnr says `Unable to place cell
+'core.mbcu_units_2_ram_memory...', no BELs remaining for DP16KD`.
+Also settled, a §7 open question: `--12k` exposes 24,288 LUT4 and 56
+DP16KD, i.e. the 25F's numbers.
+
+### THE ONE THING THAT COULD OVERTURN IT
+
+The capacity verdict is taken **with yosys's `share` pass dropped**,
+and `share` is precisely the pass that shares arithmetic. It was
+probed directly from a post-coarse RTLIL checkpoint and **did not
+terminate** in a 25-minute cap. The log root-causes it: `share`
+enumerates activation patterns per arithmetic cell against every
+`MUX_st_xreg_N$write$SEL` signal — quadratic in exactly the
+register-file index muxes §1.2 already named as this design's size
+problem. **What `share` does to 2,291 `$alu` cells is the open
+question on which the device choice turns.**
+
+### A BLOCKER §3.5 IMPLIED BUT NEVER QUANTIFIED
+
+**`mkStretchCore` cannot be handed to nextpnr at all**: 3,894 port
+bits against ~197 IO on CABGA381. Every whole-core P&R number will
+need the non-pruning harness §9 builds (shift-register-driven inputs,
+registered outputs, pipelined XOR fold), validated at +0.8% / +0.2%
+LUT4 on two modules.
+
+### AND A SELF-CORRECTION WORTH KEEPING
+
+The study first concluded "use `-noabc9` for this model" from the MBCU
+anomaly, **then tested it and was wrong.** A four-cell controlled
+experiment shows abc9 is usually much better (2.6× on `mkStretchIO`),
+and the `-noabc9` `mkStretchIO` netlist **failed to place on a 45F on
+all three seeds** at 47% nominal utilisation where the abc9 netlist
+routed at 98.83 MHz. The one-unit MBCU is an outlier, not a rule.
+Separately, the MBCU anomaly is abc9's LUT mapper and **not** the
+`unitOf`/`indexOf` edit: staged `stat` is monotonic at every stage
+until `map_luts`, and `-noabc9` restores monotonicity.
+
+### THE MACHINE WAS NEVER QUIET, AND IT WAS NEVER THIS PROJECT
+
+Load ran 90-299 all session. **Verified first-hand: 446
+`qemu-system-x86_64` processes**, belonging to
+`~/src/inferno64-branches/parallelgc`. Agent and build jobs run at
+**nice 5** against QEMU's **nice 0**, and `renice -n 0` exits 0 while
+silently doing nothing (non-root cannot lower nice on macOS).
+Effective throughput was 4-25% of one core — `bsc` spent 2m16s of CPU
+over 19 minutes of wall clock. **Every "the machine is busy, I will
+queue this" decision in this session was pacing around someone else's
+VMs**, and the queued full suite never ran at all. Two sibling agents
+were caught live in genuine tool pathologies (`SHARE` at 1h33m, `ABC9`
+with a 50-minute-frozen log), so the starvation is real but it is not
+the whole story.
+
+**§2.6's "nextpnr is unrecoverable" is retracted in §9.0**, and the
+cause is now known: that search used `find / -maxdepth 4` and the four
+working arm64 builds sit at depth 6.
+
+## 5k. THE MCP CRITICAL PATH, IN DEPENDENCY ORDER
+
+Synthesised 2026-10-16 from §5h, §5i and §5j. Everything below is
+specified by a source already read; none of it is blocked on research.
+**The order is forced by dependencies, not preference.**
+
+### Model work — nothing boots until all five exist
+
+1. **Tape blocks (records).** ~50-70 lines, replacing the flat
+   `Vector` with a byte-record store. **This is first because "End of
+   Block" is a COLUMN in Figure 36** and the model has no concept of
+   one, so item 2 cannot be written without it. It also unlocks the
+   whole remaining CONTROL table at once — SPACE BLOCK, SPACE FILE,
+   BACKSPACE FILE, WRITE TAPE MARK — which `StretchIO.bsv` currently
+   declines for exactly this reason.
+2. **Chaining, per Figure 36.** The complete 16-row table is already
+   transcribed in `docs/exchange_and_io.md` §3.3 with its supporting
+   rules, so this is implementation, not research. **Without it IPL
+   reads one word and stops** (§5i, resolved against RefMan p.126).
+3. **The SEOP status bit, control-word bit 24.** Nothing writes it
+   today. Both `ka_ul1`'s driver and MCP's own bootstrap poll it with
+   `CCW` + `BB`; **the real driver idiom hangs without it.**
+4. **The IPL mechanism itself.** `StretchIO.bsv:288` says verbatim
+   that there is none. RefMan p.126 specifies it completely: plant
+   the fixed control word (addr 4, chain 1, count 1, refill 4) in the
+   signalling channel's control-word location, READ, let the refill
+   chain to location 4, then send the initial-start signal; the CPU
+   executes the instruction at that control word's data word address
+   **without placing it in the instruction counter**. Note EOP, EE and
+   CS must NOT be set on completion.
+5. **`SPFL`, `LOC`, and `UNLOAD` as distinct from `REWIND`.**
+   `StretchExecute.bsv:3372,:3376` has the first two unimplemented and
+   the third conflated. MCP's bootstrap uses `SPFL(SEOP)` on its
+   third page.
+
+### Artifact work — can proceed in parallel with the above
+
+6. **Transcribe MCP's IPL bootstrap**, printed pp.2-14, ~350 rule-3
+   rows, **~4 days** at this repo's measured rate. The listing has a
+   BINARY OUTPUT column (§5i), so `listing_oracle.py` applies and
+   every row is checked. ~1.3× the largest program already in the
+   corpus. **Do items 1-5 first or in parallel** — a transcription
+   that cannot be run is not verified in the way this project means.
+7. **Assemble and wrap as a tape image.** `ka_ul1` settles the
+   format: one `W`, no tape mark, no label, no preamble. The first
+   word of the image is MCP's own control word.
+8. **`mkTapeSourceFile`** behind the existing `TapeSource` interface.
+   Value-typed `import "BDPI"` is proven to work — built and run, see
+   `bsv/sd_reference/`. Amend `StretchIO.bsv`'s header, which still
+   claims `$fopen`/`$fgetc` being Actions forces pre-loaded `Vector`s.
+9. **`mkTapeSourceSD`** for the board. Measured at ≈ −237 LUT4,
+   −304 FF, +112 CCU2C net. Put the reader in the 25 MHz domain, not
+   the core clock (11% margin versus 8×).
+
+### The one thing that could reorder all of it
+
+**MCP's bootstrap reads ~20,000 words off the DISK on its last page**
+(§5i): 42 chained `CW(CDSC)` control words, 512 words each, each
+commented "FETCH ONE PROSA RECORD". If the bootstrap genuinely needs
+a populated disk, then a tape image alone will not boot it and the
+disk model (~100-170 lines, §5h) joins the critical path.
+**Settling this needs `$IPLD`, printed pp.15-36 — 22 pages, of which
+3 have been sampled. It is the highest-value read remaining**, and it
+is cheap compared with acting on either answer.
+
+### What is NOT on the critical path, despite looking like it
+
+- **The disk**, for boot purposes — MCP writes it at IPL, does not
+  read from it (§5h), subject to the caveat above.
+- **Cycle accuracy** — the user's order is MCP first (§5g).
+- **Six memory units.** Every transcribed deck row sits below word
+  14,104, inside a single 16,384-word unit, and §5j shows unit count
+  barely moves the FPGA numbers anyway.
+
 ## 6. Open questions — record, do not guess
 
 **What is the `-ILLEGAL OP.` word doing in routine 1262's TEST 3A and
@@ -2628,3 +3082,59 @@ printed page numbers.
   to a wrong one. **Where a table's columns matter, the text layer
   decides nothing**; and the same page then yielded 24 rows where the
   agent had tabled 9, so re-reading was worth it twice over.
+* **A build that has started code generation has not passed.** This
+  session reported "it compiles through `StretchCore` cleanly" on the
+  strength of seeing `code generation for mkStretchCore starts` with
+  only the known benign `G0024` warnings. The build then failed:
+  `(G0005) The assertion 'fire_when_enabled' failed`. Two things hid
+  it. The shell exit code was **0**, because `run_tape_test.sh`'s
+  `set -e` could not help when the failing `bsc` was the first of two
+  commands in a pipeline whose tail succeeded. And the grep was for
+  `Error|BUILD_RC`, run against a log that had not finished being
+  written — the same "do not report on a file a background job is
+  still writing" trap, turned on the session's own build. **Wait for
+  the process to exit, then grep; and never read progress output as a
+  result.**
+* **A load average is not evidence about your own work.** Hours of
+  this session were spent queueing suites behind a load threshold,
+  renicing, and apologising for a saturated machine. The machine held
+  **446 `qemu-system-x86_64` processes** from an unrelated project in
+  `~/src`, agent jobs run at **nice 5** against their **nice 0**, and
+  `renice -n 0` exits 0 while silently doing nothing for a non-root
+  user on macOS. The queued full suite never ran. **Before pacing work
+  around load, find out whose load it is** — one `pgrep -c` would have
+  done it, and would have changed the plan for the whole session.
+* **A FIFO inside a device module can silently disable the rule that
+  calls it, and bsc will not warn.** Giving `mkTapeSourceVector` a
+  plain `mkFIFOF` response queue compiled clean, linked clean, ran,
+  and **exited 0 with thirty-five failed checks all reading zero**.
+  `build/mkStretchCore.sched` named the cause in one line:
+
+      Rule: rl_io
+      Predicate: ioDev_tape_respQ.i_notFull &&
+                 ioDev_tape_respQ.i_notEmpty && ...
+
+  **bsc lifts a called method's implicit condition into the CALLING
+  RULE's predicate, and it does so UNGUARDED — not per if/else arm.**
+  `enq`'s `notFull` and `deq`'s `notEmpty` were both ANDed into
+  `rl_io`, so on an empty queue the rule could never fire **for any
+  device**: one FIFO in the tape turned off the whole I/O path. The
+  reader and printer, which never touch the tape, failed too.
+  `RWire`/`PulseWire` are `always_ready`, have no implicit condition,
+  and leave the predicate clean — **which is the actual reason
+  `StretchStorage` drives its operand channel with wires rather than a
+  FIFO.** That reason is worth more than the idiom, and this file now
+  says so where the next person will look.
+  **The general rule: after adding any module whose methods have
+  implicit conditions, read the caller's `Predicate:` line in the
+  `.sched` dump.** It is generated on every build and it is the only
+  place this shows up before the test does.
+* **`(* fire_when_enabled *)` failing is YOUR assertion failing, not a
+  design that cannot schedule.** G0005 on the first version of this
+  same module sent the work down two dead ends — `mkLFIFOF` (G0033, a
+  real combinational cycle) and `mkFIFOF` (the silent disable above) —
+  before the original design came back unchanged except for deleting
+  the two attributes. Three builds at ~40 minutes each under load.
+  **A 20-line testbench with one rule in the same if/else shape as the
+  caller reproduces every one of these scheduling errors in seconds.**
+  Write the repro before the second attempt, not after the third.
