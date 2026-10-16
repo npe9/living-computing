@@ -2135,17 +2135,52 @@ program already in the corpus. The same page proves it: PDF p.10 is
 literally `*** FIND IPL CHANNEL NUMBER ***`, `*** IO TEST ***` and
 `-SPACE OVER TAPE MARK`.
 
-### THE BOOTSTRAP MAY NOT BOOT FROM TAPE ALONE — unresolved, do not assume
+### RESOLVED: THE BOOTSTRAP *LOADS* FROM TAPE ALONE, AND *RUNS* INTO THE DISK
 
-Printed p.14 is **42 chained `CW(CDSC)` control words, 512 words
-each = 19,968 words into `X BUFER`**, each commented "FETCH ONE PROSA
-RECORD" — and p.1 defines `PROSA` as `IOD,DISK,CDIDEX`. Printed p.2
-allocates *both* a "SLOT FOR TAPE CW" and a "SLOT FOR DISK CW". That
-is a disk read inside the IPL bootstrap, which sits awkwardly with
-§5h's finding that MCP boots from tape. **Both readings are from
-primary sources and neither is being retired.** Settling it needs
-`$IPLD`, printed pp.15-36 — 22 pages, of which 3 were sampled. **This
-is the highest-value remaining read in the whole MCP effort.**
+Settled 2026-10-16 by reading MCP printed pp.12, 13 and 14 directly,
+which is what §5i previously called "the highest-value read
+remaining". The answer splits the milestone in two and **does not
+invalidate the critical path below.**
+
+**Printed p.14 is titled `PROSA CWS` and it is a DATA TABLE, not a
+read the bootstrap performs to load itself.** 42 chained
+`CW(CDSC),n +X BUFER,513,$+1.0` entries labelled `X PROSA`, and the
+page's last line is the one that settles it:
+
+```
+43*  000621.00+  +00000000  NULL  X BS END  SYN,$  - END OF THE MCP IPL BS ROUTINE
+```
+
+`X BS END` is the symbol p.2's IPL control word measures its own count
+against — `CW(CR),X IPL BS,X BS END-X IPL BS,1`, which is the printed
+`0o560` = 368. So **the PROSA control words are carried inside the
+368-word bootstrap image**, loaded from tape along with everything
+else. p.13 confirms the shape, being "BOOTSTRAP DEFINITIONS" and "IPL
+BOOTSTRAP PARAMETERS": `X IPL K SYN, 1.0 + X BS END - X IPLBS  - SIZE
+OF BOOTSTRAP`, and `X BUFER SYN, X IN END+ 2000.0` placing the PROSA
+target at octal 011406 = word 4,870, far outside the bootstrap itself.
+
+**But the bootstrap does use them.** p.12's message block includes
+`PROSA ARC COUNT INCORRECT` alongside `IO CONFIGURATION DEFINED
+INCORRECTLY` and `IO TABLES CAN NOT BE FORMED` — the bootstrap
+validates PROSA arc counts, so it reaches the disk while running.
+
+**THE MILESTONES, AND THE SPLIT IS THE USEFUL PART:**
+
+| | needs | disk? |
+|---|---|---|
+| **A. The machine IPLs from tape and begins executing MCP's bootstrap** | items 1-5 below | **no** |
+| **B. The bootstrap runs to completion** | A + the disk model (~100-170 lines, §5h) | yes |
+
+Milestone A is a real, demonstrable result — a 7030 recreation
+executing IBM's own system software from a tape image — and it is
+reachable without touching the disk. The disk joins at B, earlier
+than "after MCP boots" but still the cheap part. **Nothing in the
+ordering below changes.**
+
+Pages 3-10 are the bootstrap's code and have not been read line by
+line here; pp.11-14 are messages, definitions and the CW table. The
+claim above rests on p.2, p.12, p.13, p.14 and RefMan p.126.
 
 ### `ka_ul1` IS THE FIND, and it settles layer 0
 
@@ -2574,16 +2609,25 @@ specified by a source already read; none of it is blocked on research.
    −304 FF, +112 CCU2C net. Put the reader in the 25 MHz domain, not
    the core clock (11% margin versus 8×).
 
-### The one thing that could reorder all of it
+### RESOLVED — it does not reorder anything, and it names the first milestone
 
-**MCP's bootstrap reads ~20,000 words off the DISK on its last page**
-(§5i): 42 chained `CW(CDSC)` control words, 512 words each, each
-commented "FETCH ONE PROSA RECORD". If the bootstrap genuinely needs
-a populated disk, then a tape image alone will not boot it and the
-disk model (~100-170 lines, §5h) joins the critical path.
-**Settling this needs `$IPLD`, printed pp.15-36 — 22 pages, of which
-3 have been sampled. It is the highest-value read remaining**, and it
-is cheap compared with acting on either answer.
+The open question was whether MCP's bootstrap needs a populated disk.
+**It does not need one to LOAD; it does need one to FINISH** (§5i,
+settled from printed pp.12-14). So:
+
+- **Milestone A — the machine IPLs from tape and starts executing
+  MCP's bootstrap.** Items 1-5 and 6-8 above. **No disk.** This is a
+  real result on its own: a 7030 recreation running IBM's own system
+  software off a tape image.
+- **Milestone B — the bootstrap runs to completion.** Adds the disk
+  model, ~100-170 lines for the boot-sufficient subset (§5h). The
+  bootstrap carries a 42-entry `PROSA CWS` table and can report
+  `PROSA ARC COUNT INCORRECT`, so it reaches the disk while running.
+
+**Aim at A.** It is the smallest thing that would let the user say
+they booted real IBM systems software on their recreation, and it is
+reachable without the disk, without the Exchange's full
+channel/control/unit hierarchy, and without all 445 pages of MCP.
 
 ### What is NOT on the critical path, despite looking like it
 
