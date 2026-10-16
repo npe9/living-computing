@@ -126,6 +126,11 @@ module mkStretchCore(StretchCore);
 
   // Stage 2b timing registers (the budgets: StretchTiming.bsv).
   Reg#(Bit#(32)) clk      <- mkReg(0);   // clocks since reset
+  // The 1,024-per-second oscillator's divider: Bresenham on the exact
+  // rational 78125/24 clocks per tick (StretchTiming.bsv's
+  // oscPulseNumer/oscPulseDenom, where the derivation and the choice of
+  // an exact rational over a rounded integer period are written out).
+  Reg#(Bit#(17)) oscAcc   <- mkReg(0);
   Reg#(Bit#(32)) startClk <- mkReg(0);   // dispatch clock of the current instruction
   Reg#(Bit#(16)) ibusy    <- mkReg(0);   // clocks the next preparation must still wait
 
@@ -347,6 +352,24 @@ module mkStretchCore(StretchCore);
   (* fire_when_enabled *)
   rule rl_clock (tick);
     clk <= clk + 1;
+    // ---- THE OSCILLATOR PULSE ----
+    // Reference Manual printed p.34: "The timer runs whenever the
+    // machine is operating, which includes also the execution of BRANCH
+    // ENABLED AND WAIT."  `tick` IS this model's "the machine is
+    // operating" signal -- the harness raises it once per step() and
+    // never while it is loading the program image or reading results --
+    // so the pulse is generated here rather than by a free-running rule
+    // inside StretchStorage, which would count the timer down through
+    // gen_tb.py's loader (one clock per word, thousands of them) and
+    // hand the first instruction a timer that was already stale.  BEW
+    // does not stop the clock in this model (it is a self-branch the
+    // harness keeps ticking), so p.34's named case needs nothing extra.
+    Bit#(17) acc = oscAcc + fromInteger(oscPulseNumer);
+    if (acc >= fromInteger(oscPulseDenom)) begin
+      acc = acc - fromInteger(oscPulseDenom);
+      st.oscillatorPulse();
+    end
+    oscAcc <= acc;
   endrule
 
   // ---- Look-ahead: collect arrived operands, issue one fetch ----

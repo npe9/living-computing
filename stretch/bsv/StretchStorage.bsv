@@ -175,6 +175,15 @@ interface StretchStorage;
   // late rather than early.
   method Maybe#(Tuple2#(Bit#(6), WordAddr)) interruptDue();
 
+  // ONE PULSE OF THE 1,024-PER-SECOND OSCILLATOR (Ref. Manual printed
+  // p.34).  Called from StretchCore's rl_clock, which owns the divider
+  // and only runs while the machine is operating; what a pulse DOES to
+  // location 1 is oscillatorStep in this file.  It lives here because
+  // the two counters and the indicator register it touches are this
+  // module's registers -- the same reason interruptDue() is computed
+  // here rather than in the core.
+  method Action oscillatorPulse();
+
   method IndexWord readIndex(Bit#(4) j);
   method Action writeIndex(Bit#(4) j, IndexWord v);
   // All sixteen index words at once: the instruction unit snapshots
@@ -243,7 +252,31 @@ module mkStretchStorage(StretchStorage);
   function Bool isSpecialAddr(WordAddr a) = (a < 32);
 
   // Named CPU registers backing addresses 0-31.
-  Reg#(Word64) intervalTimerAndClock <- mkReg(0); // addr 1: bits 0-18 timer, 28-63 clock
+  // addr 1: bits 0-18 the interval timer, 28-63 the time clock.
+  // ConfigReg, and written by exactly one rule (oscillatorStep below):
+  // the oscillator steps it independently of whatever instruction is
+  // executing, so writeWord can no longer assign it directly.  A plain
+  // Reg read from a new reader would also join the G0095 path the
+  // mkConfigReg choices in this file exist to break.
+  Reg#(Word64) intervalTimerAndClock <- mkConfigReg(0);
+  RWire#(Bit#(28)) timerW <- mkRWire;   // word 1 IBM bits 0-27 stored this clock
+  RWire#(Word64)   indW   <- mkRWire;   // setIndicatorBits' value this clock
+  // THE OSCILLATOR PULSE IS A PulseWireOR, AND THAT IS NOT A STYLE CHOICE.
+  // oscillatorPulse() is part of this interface, so at mkStretchCore's
+  // synthesized boundary it is also an EXPORTED method (`mem_oscillatorPulse`)
+  // that bsc must assume the harness might call in the same clock as
+  // StretchCore's rl_clock calls it.  With a plain mkPulseWire those are two
+  // `wset`s on one wire, bsc makes them conflict, the exported method wins the
+  // urgency contest -- and rl_clock's `fire_when_enabled` then fails outright:
+  //   Error (G0005): The assertion `fire_when_enabled' failed for rule
+  //   `RL_rl_clock' because it is blocked by rule mem_oscillatorPulse
+  // which is the SILENT-TICK-DROP hazard check_schedule.py exists to catch,
+  // reported for once by the compiler.  mkPulseWireOR makes several senders in
+  // one clock legal (they OR), the conflict disappears, and rl_clock keeps its
+  // assertion.  The same clock pulsed twice is still one pulse, which is the
+  // right answer anyway: there is one oscillator.
+  PulseWire oscPulse <- mkPulseWireOR; // the oscillator fired this clock
+  PulseWire tsFired  <- mkPulseWire;   // ... and the timer went 1 -> 0
   Reg#(Word64) interruptionAddress   <- mkConfigReg(0); // addr 2 (ConfigReg: intDueCalc)
   Reg#(Word64) boundaryReg           <- mkReg(0); // addr 3
   // See the interruptDue() comment in the interface above.
@@ -313,6 +346,129 @@ module mkStretchStorage(StretchStorage);
     intDueReg <= (irqEn && found)
                  ? tagged Valid tuple2(n, iar + zeroExtend(n))
                  : tagged Invalid;
+  endrule
+
+  // ---- WORD 1: THE INTERVAL TIMER AND THE TIME CLOCK ----------------
+  //
+  // This rule is the ONE writer of intervalTimerAndClock.
+  //
+  // Reference Manual printed p.34 (PDF 37), INTERVAL TIMER, read
+  // first-hand: "The value of the interval timer reading is stored in
+  // core storage and occupies bit positions 0 through 18 of location 1.
+  // It is continually stepped down by pulses originating from a stable
+  // oscillator.  Each time the oscillator delivers a pulse, the value of
+  // the timer is read out, decremented by one, and returned to core
+  // storage."  And: "Whenever it goes from one to zero, it turns on the
+  // time signal indicator in the indicator register.  The next
+  // oscillator pulse then sets the timer to all ones unless the program
+  // in the meantime has changed its contents.  The timer does not stop
+  // after reaching zero."
+  //
+  // Printed p.35 (PDF 38), TIME CLOCK: "a number 36 bits long which is
+  // continually stepped up by pulses originating from the same 1024
+  // cycle per second oscillator which controls the updating of the
+  // interval timer.  The two clocks are updated consecutively in the
+  // same time interval."  "The value of the clock occupies bits 28-63 of
+  // location 1."  "When the clock reaches its maximum reading of all
+  // ones, the next oscillator pulse sets it to all zeros.  No indication
+  // is given when the clock recycles to zero."
+  //
+  // ONE PULSE, ONE RULE, because the manual describes one oscillator and
+  // "the two clocks are updated consecutively in the same time
+  // interval" -- a single event, not two that could be separated.  The
+  // divider that decides when a pulse happens is StretchTiming.bsv's
+  // oscPulseNumer/oscPulseDenom, driven from StretchCore's rl_clock.
+  //
+  // THE RELOAD NEEDS NO SPECIAL CASE, and that is worth saying because
+  // it looks as though it must.  p.34 describes the step off zero as a
+  // RELOAD -- "sets the timer to all ones" -- but 0 - 1 modulo 2^19 IS
+  // all ones, so a plain modular decrement realizes the printed rule
+  // exactly, INCLUDING its "unless the program in the meantime has
+  // changed its contents" clause, since a program change simply leaves a
+  // different value for the pulse to decrement.  The deck agrees bit for
+  // bit: jb_ax5b routine 1258 TEST 2 block I589/I5810 sets the timer to
+  // zero and expects I58K1, printed "777777.40 00" -- all ones in bits
+  // 0-18 and nothing else (verify_ax5b_1258_test2_listing.py).  The same
+  // holds for p.35's clock recycle, all ones -> all zeros, which is a
+  // plain modular increment.
+  //
+  // TS FIRES ON THE EDGE, NOT ON THE VALUE.  "Whenever it goes FROM ONE
+  // TO ZERO" -- the test is on the value BEFORE the step, and the
+  // difference is not academic.  A rule that fired when the NEW value is
+  // zero would also fire on the reload step, every 2^19 ticks turning
+  // into every tick; and because this model forces mask bits 0-19 to one
+  // (see `mask` above) TS is permanently masked on and outranks DS and
+  // every PG indicator in intDueCalc's leftmost-wins scan, so every
+  // enabled program would take a TS interruption it never took before.
+  // docs/NEXT.md 5 predicted exactly that failure.
+  // programs/interval_timer_steps.strap block 3a is the check that tells
+  // the two rules apart, and it is one instruction long.
+  //
+  // BITS 19-27 ARE CLEARED BY THE STEP.  p.34's programming note: bit
+  // positions 19 through 27 "are unused and appear between the interval
+  // timer and the time clock", and bits 19-24 set into location 1 by a
+  // STORE VALUE "remain there until the first time the interval timer is
+  // stepped down".  Deck witness: 1258 TEST 2 block I5811/I5812 sets the
+  // timer to I58K2 ("1.77 00": bits 0-18 = 3, bits 19-23 = 11111),
+  // expects BIT17 ("1.00 00": the value 2 with 19-23 clear) after the
+  // step, and widens its own printed error text from "0-18." to "0-23."
+  // exactly there to say that those five bits are in scope.
+  //
+  // A PROGRAM STORE IN THE SAME CLOCK IS APPLIED FIRST, AND THEN
+  // STEPPED.  Both cannot be "the" value of location 1 for this clock,
+  // and the manual arbitrates no such race -- on real hardware there is
+  // none, the oscillator being asynchronous to everything the CPU does.
+  // Store-then-step is chosen because it is what p.34's "unless the
+  // program in the meantime has changed its contents" describes: the
+  // program's value is the one the next pulse acts on.  No test can
+  // observe the choice (it needs a store landing in the same 0.3 us as a
+  // pulse, one clock in 3255, and the difference is one tick); it is
+  // pinned here so that it is a decision and not an accident of the
+  // order two statements happen to be written in.
+  (* fire_when_enabled, no_implicit_conditions *)
+  rule oscillatorStep;
+    Word64 w1 = intervalTimerAndClock;
+    if (timerW.wget matches tagged Valid .lh)
+      w1 = {lh, w1[35:0]};   // p.35: the right half is not program-writable
+    if (oscPulse) begin
+      Bit#(19) t = w1[63:45];   // IBM 0-18,  the interval timer
+      Bit#(36) c = w1[35:0];    // IBM 28-63, the time clock
+      if (t == 1) tsFired.send();
+      w1 = { t - 1,        // down one, modulo 2^19: p.34's reload, exactly
+             9'b0,         // IBM 19-27, cleared by the step (programming note)
+             c + 1 };      // up one, modulo 2^36: p.35, and nothing is raised
+    end
+    intervalTimerAndClock <= w1;
+  endrule
+
+  // THE ONE WRITER OF `indicators`.  setIndicatorBits used to assign the
+  // register directly.  The interval timer's TIME SIGNAL will make the
+  // oscillator a SECOND, non-exclusive writer -- a pulse is independent
+  // of whatever instruction is executing -- and a plain Reg cannot take
+  // two writes in one clock.  The funnel is the shape this file already
+  // uses for core-storage writes (`storeW` and memCtl below): the method
+  // sets a wire, one rule commits.  Callers are unaffected, including
+  // the standing rule that an instruction must call setIndicatorBits at
+  // most once per clock -- two calls are now a double wset, which bsc
+  // rejects exactly as it rejected the double register write.
+  (* fire_when_enabled, no_implicit_conditions *)
+  rule commitIndicators;
+    Word64 ind = fromMaybe(indicators, indW.wget);
+    // TIME SIGNAL IS INDICATOR 4.  Reference Manual printed p.44,
+    // "Attention Request": "4. Time Signal (TS).  The interval timer
+    // has become zero."  IBM bit n is index 63-n everywhere in this
+    // model.
+    //
+    // IT IS OR-ED ON TOP of whatever the executing instruction wrote,
+    // which decides one corner: an instruction that CLEARS TS in the
+    // same clock as a pulse that sets it leaves TS on.  That is the
+    // faithful answer -- the pulse genuinely happened, and p.48 has the
+    // interruption mechanism turn an indicator off before the routine
+    // runs, not before the condition recurs -- and it is also the only
+    // answer a single committing rule can give.
+    Bit#(6) tsIndex = 63 - ind_TS;
+    if (tsFired) ind[tsIndex] = 1;
+    indicators <= ind;
   endrule
 
   // The one rule that moves requests to the bus and responses back.
@@ -477,9 +633,19 @@ module mkStretchStorage(StretchStorage);
   method Action writeWord(WordAddr a, Word64 v);
     case (a)
       addrZero: noAction; // writes to Zero are discarded (permanently protected)
-      addrIntervalTimer: intervalTimerAndClock <= v; // simplification: full word writable; real HW
-                                      // splits timer(read/write except store-type ops)
-                                      // vs clock(read-only) -- see README "Scope".
+      // Word 1's LEFT half only.  Reference Manual printed p.35: of the
+      // time clock, "its setting, however, cannot be altered under
+      // program control.  Any attempt to store into the right half of
+      // location 1 is suppressed, and indicator AD, address invalid, is
+      // turned on."  The suppression is modelled here (bits 28-63 are
+      // simply not taken from v); raising AD for the attempt is not, and
+      // neither is p.34's restriction of the LEFT half to SV/SC/SR/SVA
+      // while disabled -- that one is enforced on the EXECUTE side, by
+      // protViolates' DS check.  See bsv/README.md "Scope".
+      //
+      // IT IS A WIRE AND NOT AN ASSIGNMENT because the oscillator steps
+      // the same register; oscillatorStep is its one writer.
+      addrIntervalTimer: timerW.wset(v[63:36]);
       addrInterruptAddr: interruptionAddress <= v;   // permanently protected on real HW; not enforced
       addrUpperBoundary: boundaryReg <= v;           // permanently protected on real HW; not enforced
       addrMaintenanceBits: maintenanceBits <= v;
@@ -529,12 +695,16 @@ module mkStretchStorage(StretchStorage);
   method Word64 readBoundaries() = boundaryReg;
   method Word64 readMask() = mask;
   method Maybe#(Tuple2#(Bit#(6), WordAddr)) interruptDue() = intDueReg;
+  method Action oscillatorPulse();
+    oscPulse.send();
+  endmethod
+
   method Action setIrqEnabled(Bool e);
     irqEn <= e;
   endmethod
 
   method Action setIndicatorBits(Word64 v);
-    indicators <= v;
+    indW.wset(v);   // committed by commitIndicators; see there
   endmethod
 
   method IndexWord readIndex(Bit#(4) j);

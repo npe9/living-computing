@@ -1165,6 +1165,35 @@ was TRANSCRIBING the routine, and that is done:
 
 ### THE INTERVAL TIMER — the rate is SOURCED, and 1258 is located
 
+**DONE 2026-10-16. The timer and the time clock step.** Everything
+below is the research that made it cheap; it is kept because every
+hazard it predicted was real. What landed:
+`bsv/StretchTiming.bsv`'s `oscPulseNumer`/`oscPulseDenom` divide the
+0.3 µs model clock by the **exact rational 78125/24** rather than
+rounding 3255.2083 (Bresenham: 24 ticks are exactly 78125 clocks, 19
+intervals of 3255 and 5 of 3256, no long-run drift);
+`StretchCore.bsv`'s `rl_clock` carries the accumulator and pulses
+`st.oscillatorPulse()`, gated on `tick` exactly as the hazard note
+below demands; `StretchStorage.bsv`'s `oscillatorStep` is the ONE
+writer of `intervalTimerAndClock` and does the countdown, the unused
+bits 19-27, the time clock's count-up and TS's 1→0 edge, with
+`commitIndicators` the ONE writer of `indicators` — the `storeW`
+funnel shape this note predicted. The reload needed no special case:
+0 − 1 modulo 2¹⁹ *is* all ones, so the faithful rule and the plain
+modular decrement coincide, and the "naive wrap every 3255 clocks"
+disaster below never had a way in.
+`strap/programs/interval_timer_steps.strap` checks the six
+behaviours, and the one-instruction `BTS` before its block 4 is what
+separates "TS on the 1→0 edge" from "TS when the new value is zero"
+(injection: halts at F3T). The six `CYCLES<=` benchmarks are
+unchanged to the clock, including the 4003-cycle I-Box 1 span, which
+is the only one longer than a tick. One thing this note did NOT
+predict: `oscillatorPulse` is part of the `StretchStorage` interface
+and therefore also an exported `mem_` method at `mkStretchCore`'s
+boundary, so a plain `mkPulseWire` made it conflict with `rl_clock`
+and broke that rule's `fire_when_enabled` (G0005). `mkPulseWireOR`
+fixes it; see the comment on `oscPulse`.
+
 **`microarchitecture_plan.md` A.7/A.10 say the step rate "remains to
 source". It is Reference Manual printed p.34 (PDF 37)**, read
 first-hand 2026-09-24:
@@ -2436,6 +2465,75 @@ Two things that are NOT the problem, and both were suspected:
 **multipliers** (36 `MULT18X18D` fits even a 45F's 72 — the floating
 point unit is not what is big) and **block RAM** (the axis the whole
 note was organised around).
+
+### AND A SECOND, HARDER NUMBER: 844 LUT LEVELS — IT WOULD NOT MAKE 3.333 MHz EITHER
+
+Measured 2026-10-16 with `depth_census.py`, a P&R-free logic-depth
+census written by the `ulx3s-experiments` Flute session and shared
+across (`~/src/ulx3s-experiments/flute-ulx3s/scripts/depth_census.py`).
+**It is the only structural timing signal available to this project**,
+because the design does not place and so nextpnr will never report a
+critical path for it. Run on the routed-but-unplaceable one-unit
+netlist `core1h.json` (436 MB): 36 s, 2.5 GB RSS. Full output kept at
+`docs/depth_census_core1h.txt`.
+
+```
+endpoint pins: 55958
+deepest endpoint groups (max depth, #bits, register.port):
+  844.6  x64    core.st_indicators.DI
+  839.8  x64    core.st_accLeft.DI
+  839.7  x64    core.st_indicators.CE
+  837.7  x64    core.st_remainder.DI
+  447.0  x64    core.st_zerosOnesCounts.DI
+  374.8  x1024  core.st_xreg.DI
+  372.5  x64    core.st_accRight.DI
+  ...
+  368.9  x64    core.st_intervalTimerAndClock.DI
+```
+
+**The deepest path runs through a DIVIDE and lands on the indicator
+register** — the trace is `core.dvs__h524305_LUT4_Z_40_...` through
+hundreds of LUT4/L6MUX21/PFUMX levels into `core.st_indicators`. One
+combinational `execute()` performs a division and updates the
+indicators in a single clock. And it is not one stray path:
+**~3.2% of the 55,958 endpoints sit at depth ≥349**, about 1,790 of
+them, which is a population.
+
+**WHAT IT MEANS, with the arithmetic shown.** §9's own calibration
+measured pure 64-bit carry chains closing at **143.45 MHz on a 45F**;
+a 64-bit chain is ~16 CCU2C levels, so **0.436 ns per level on
+dedicated carry routing — the FASTEST path type the ECP5 has.** At
+that optimistic rate:
+
+| depth | delay | implied Fmax |
+|---|---|---|
+| 844 levels | 367.7 ns | **2.72 MHz** |
+| 365 levels (the 3.2% population) | 159.0 ns | 6.29 MHz |
+
+**The 0.3 µs machine cycle is 3.333 MHz = 300 ns. So the design does
+not make its own target clock, by an optimistic bound, even before
+considering that it does not fit.** General soft logic is slower than
+dedicated carry — `depth_census.py`'s own header says ECP5 routing is
+70-80% of path delay — so the true figure is worse; at a rough
+1.0 ns/level it is ~1.2 MHz.
+
+**THIS RETIRES §3's STANDING ASSUMPTION.** That section said "the
+3.333 MHz target makes closure *plausible* — plausible is not
+measured." It is now measured and it is not plausible. The low target
+clock was the one thing that made the area problem look survivable;
+it does not survive a 844-level combinational path.
+
+**AND IT IS A SHARPER ARGUMENT FOR THE REWRITE THAN AREA WAS.** The
+area finding (4.3× over) left open whether the idiomatic rewrite buys
+enough, and §9 was honest that this was structural reasoning rather
+than measurement. Depth is different: a multi-cycle box *by
+construction* puts registers between the stages that are currently one
+combinational cone, and the register names at the top of the census —
+`st_indicators`, `st_accLeft`, `st_remainder`, `st_accRight`,
+`st_xreg` — are exactly the E-box state the rewrite would stage.
+**The census is also the regression metric that was missing**: it runs
+in 36 s against a JSON, needs no P&R, and can be run per-commit while
+the rewrite proceeds.
 
 ### THE CHEAPEST USEFUL NEXT STEP, 2-3 DAYS
 

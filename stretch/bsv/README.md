@@ -447,7 +447,24 @@ class 2 (LOAD VALUE EFFECTIVE) is moot since LVE decodes Operation Code
 Invalid here.  IF entirely, the
 MASK-DEPENDENT half of DF and DS, and the straddling rule are still
 not modeled, see `StretchExecute.bsv`'s `protViolates` and `dfSignal`), the interval
-timer/clock actually ticking, and — the machine's defining engineering
+timer/clock actually ticking (SINCE SUPERSEDED: both counters in word 1
+now step. One oscillator at 1,024 pulses per second — Ref. Manual
+printed p.34, and p.35 for "the same 1024 cycle per second oscillator"
+— divides the 0.3 µs model clock by the exact rational 78125/24
+(`StretchTiming.bsv`'s `oscPulseNumer`/`oscPulseDenom`, Bresenham, so
+24 ticks are exactly 78125 clocks and the long-run rate does not
+drift); each pulse steps the interval timer down one modulo 2¹⁹,
+clears the unused bits 19-27, steps the time clock up one modulo 2³⁶,
+and turns TS on when the timer goes *from one to zero*
+(`StretchStorage.bsv`'s `oscillatorStep`). A store into word 1 can no
+longer reach the clock half — p.35, "any attempt to store into the
+right half of location 1 is suppressed" — though the AD indicator that
+attempt should raise is still not modelled, and neither is p.34's
+"cannot be read if indicator DF is masked on". `indicators` and
+`intervalTimerAndClock` each gained a single committing rule fed by a
+wire, since the oscillator writes both independently of whatever
+instruction is executing. Checked by
+`strap/programs/interval_timer_steps.strap`.), and — the machine's defining engineering
 feature — **instruction lookahead and pipelining**. (Since superseded:
 the look-ahead and the instruction unit now exist as rules in
 `StretchCore.bsv`, and `step()` advances one clock, not one

@@ -29,6 +29,50 @@ import StretchVFL::*;      // effLength/effByteSize for the VFL time budget
 // the look-ahead (stage 3) E-box time is not overlapped with the
 // next preparation -- a documented stage-2 simplification.
 
+// ---- THE 1,024-PER-SECOND OSCILLATOR, as a clock divider -------------
+//
+// Reference Manual printed p.34 (PDF 37), "Interval Timer", read
+// first-hand (the page has no text layer): "The oscillator operates at
+// 1,024 (2^10) cycles per second, or a pulse about every
+// millisecond."  Printed p.35 says the time clock is stepped by "the
+// same 1024 cycle per second oscillator which controls the updating of
+// the interval timer", so there is ONE divider here and not two.
+//
+// One model clock is 0.3 us -- IBM 7030 Performance Characteristics
+// Vol. 1, printed p.3-2: "the basic machine cycles, which is presently
+// 0.3 microsecond" -- the same figure every budget above is
+// denominated in.
+//
+// THE RATIO IS NOT AN INTEGER, AND THE EXACT RATIONAL IS CHEAP:
+//
+//     (1/1024) s / 0.3 us = 976.5625 us / 0.3 us
+//                         = 9765625/3000 = 78125/24
+//                         = 3255.2083... model clocks per tick
+//
+// Rounding that to 3255 would run the timer about 64 ppm fast, and the
+// error accumulates without bound -- which matters, because a
+// cycle-accurate replica is a stated goal (AGENTS.md, "Current
+// direction") and a wrong rounding here becomes a drift nobody later
+// can attribute.  So the divider is a Bresenham accumulator on the
+// exact rational instead: add oscPulseNumer every clock and emit a
+// pulse, subtracting oscPulseDenom, whenever the accumulator reaches
+// it.  That gives EXACTLY 24 pulses per 78125 clocks -- nineteen
+// intervals of 3255 clocks and five of 3256 -- with zero long-run
+// drift and at most one clock of jitter on any single interval.
+//
+// AND THE JITTER IS THE HONEST PART, not a compromise.  p.34 calls the
+// source "a stable oscillator": a free-running crystal with no stated
+// relationship to the CPU's 0.3 us cycle, and nothing in either manual
+// makes a pulse synchronous with a machine cycle.  A fixed integer
+// period would be the model artifact; a period that is 3255 clocks
+// most of the time and 3256 sometimes is what an asynchronous
+// 1,024 Hz source looks like when it is sampled by a 3.33 MHz clock.
+//
+// 78124 + 24 = 78148 < 2^17, so the accumulator (StretchCore's
+// `oscAcc`) is seventeen bits and cannot overflow.
+Integer oscPulseNumer = 24;      // ticks        -- exactly, per p.34/p.35
+Integer oscPulseDenom = 78125;   // model clocks -- and Perf. Char. p.3-2
+
 function Bit#(16) iboxCycles(DecodedInstr d, Bool taken);
   case (d) matches
     tagged DirIndex .x: return case (x.code)

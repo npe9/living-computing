@@ -1205,6 +1205,66 @@ run "I-Box 5 routine 1260's TS block, bit-exact (jb_ax5b p.41)" python3 verify_a
 # its own encoder.  The header now carries what the injections
 # actually did, with the wrong predictions beside them.
 
+run "The interval timer and the time clock step (Ref. Man. printed pp.34-35)" ./run_program.sh programs/interval_timer_steps.strap StretchIntervalTimerTb \
+    "timer_decrement:2628=0x400000000000" \
+    "timer_reload:2629=0xffffe00000000000" \
+    "timer_unused_bits_cleared:2630=0x400000000000" \
+    "PC=5179" \
+    "CYCLES<=19000"
+# THE FIRST RUNNABLE TEST OF THE OSCILLATOR, and it makes the deck
+# oracle above executable rather than merely transcribed.  Both
+# counters live in word 1 and are driven by ONE 1,024 c/s source
+# (printed p.34, p.35, both read first-hand and quoted in the
+# program's header): the interval timer in bits 0-18 steps DOWN, the
+# time clock in bits 28-63 steps UP, bits 19-27 are unused and are
+# cleared by the first step-down.
+#
+# THE RELOAD NEEDS NO SPECIAL CASE, which is the finding.  p.34
+# describes the step off zero as a reload -- "sets the timer to all
+# ones" -- but 0 - 1 mod 2**19 IS all ones, so a plain modular
+# decrement realises the printed rule exactly, including the "unless
+# the program in the meantime has changed its contents" clause.  The
+# deck agrees bit-for-bit (1258 TEST 2, 0 -> 777777.40).  NEXT.md's
+# feared "a naive wrap fires TS every 3255 clocks" never had a way in;
+# the only thing that can go wrong is testing the NEW value instead of
+# the old, which injection I3 catches.
+#
+# THE TICK RATE IS AN EXACT RATIONAL AND IS NOT ROUNDED.
+# (1/1024)s / 0.3us = 78125/24, so 24 ticks are exactly 78,125 model
+# clocks: 19 intervals of 3255 and 5 of 3256, no long-run drift.
+# Rounding to 3255 would run ~64 ppm fast with unbounded accumulated
+# error -- invisible now, unattributable during cycle-accuracy work.
+# The +-1 jitter is the honest part, not a compromise: p.34 calls the
+# source "a stable oscillator" with no stated relation to the 0.3 us
+# machine cycle, so a fixed integer period would be the artefact.
+#
+# SIX BLOCKS, each failing to its own self-branch so the halt PC names
+# the failure: steps down by one; the reload; bits 19-23 cleared; a
+# BTS asserting TS is STILL OFF (the discriminator for the edge, since
+# block 4 cannot tell old==1 from new==0); TS fires on 1->0; the clock
+# steps UP by one; and a store into word 1 that must not reach the
+# clock.  That last block exists because injection I8 would otherwise
+# have been a null -- a clobbered clock just restarts from zero and
+# still steps by one.
+#
+# THE HALT IDIOM IS "B,$", NOT THE HOUSE "BEW,$", and that is
+# deliberate: BEW enables the system, TS is on by then, mask bits 0-19
+# are permanently one, so a BEW would take a TS interruption into a
+# table this program does not have.  Do not "fix" it.
+#
+# EIGHT INJECTIONS, ALL OBSERVED, NO NULLS; all six CYCLES<= benches
+# are unchanged, including StretchIboxSpanTb at 4003 clocks, the only
+# one long enough to cross a pulse.  A scan of all 194 run_program.sh
+# benches found exactly two that reference storage word 1 --
+# ex_monitor.strap and ibox4_prog_ix_v.strap -- and both pass.
+#
+# UNTESTED, and said here rather than left to be discovered: bit 24 of
+# the timer field (STRAP's word.bit notation stops at 23, so this
+# tests 19-23, the same five the deck tests); the AD indicator for a
+# store into word 1's right half (the suppression is modelled, the
+# alarm is not); and TS OR-ed over a same-clock clear, which has no
+# deck witness.
+
 run "I-Box 5 routine 1260's OP and AD blocks, bit-exact (jb_ax5b pp.41-42)" python3 verify_ax5b_16082_16083_listing.py
 # TWO MORE BLOCKS FROM THE SAME ROUTINE, and they exist for one row
 # pair.  I6082 and I6083 are contiguous (017225.00-017234.40) and both

@@ -1069,7 +1069,18 @@ section.
   512 times on a `CB` to itself, and asks `BTS` whether TS came on.
   That makes it a second deck oracle for the timer, eight rows against
   routine 1258's whole routine, and it is in place BEFORE the timer is
-  implemented. It also gives `BTS` (indicator 4) and an `LCI` count
+  implemented. **SINCE SUPERSEDED (2026-10-16): the timer and the time
+  clock now step** — one 1,024-per-second oscillator dividing the
+  0.3 µs model clock by the exact rational 78125/24
+  (`bsv/StretchTiming.bsv`), the countdown, the reload, the unused
+  bits 19-27 and TS on the 1→0 edge in `bsv/StretchStorage.bsv`'s
+  `oscillatorStep`, checked by
+  `strap/programs/interval_timer_steps.strap`, which makes every
+  assertion 1258 TEST 2 and this block make (the ones that do not need
+  the SIC/SERS error harness). What still blocks RUNNING I6071 and
+  1258 themselves is unchanged: both fall through into the SIC/SERS
+  reporting harness and the `%IQSZ` print macros, none of which is
+  transcribed. It also gives `BTS` (indicator 4) and an `LCI` count
   field -- the field `strap/README.md`'s Gotchas item 16 records as
   having once been encoded wrongly. The pocket card's footnote (a) on
   the interval-timer row (`microarchitecture_plan.md` A.10) explains

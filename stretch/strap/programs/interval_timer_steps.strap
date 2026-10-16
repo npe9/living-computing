@@ -1,0 +1,400 @@
+! THE INTERVAL TIMER AND THE TIME CLOCK ACTUALLY STEP.
+!
+! Hand-written to the shape of jb_ax5b routine 1258 (whose two halves
+! are transcribed as encoding oracles in programs/ax5b_1258_test1.strap
+! and programs/ax5b_1258_test2.strap), NOT a transcription.  Every
+! assertion below is one the deck also makes; the deck's own blocks
+! cannot be run yet because each ends in the SIC/SERS error harness and
+! the %IQSZ print macros, none of which this model has.  What is
+! transcribed is the CONTRACT, not the code.
+!
+! ---------------------------------------------------------------------
+! THE PRIMARY SOURCE.  Reference Manual printed p.34 (PDF 37), read
+! first-hand at 200 dpi (the page has no text layer), "Interval Timer":
+!
+!   "The value of the interval timer reading is stored in core storage
+!    and occupies bit positions 0 through 18 of location 1.  It is
+!    continually stepped down by pulses originating from a stable
+!    oscillator.  Each time the oscillator delivers a pulse, the value
+!    of the timer is read out, decremented by one, and returned to core
+!    storage.  The oscillator operates at 1,024 (2^10) cycles per
+!    second, or a pulse about every millisecond.  Bits 0-8 show time in
+!    seconds.  A full cycle is about 8 1/2 minutes."
+!
+!   "The timer runs whenever the machine is operating, which includes
+!    also the execution of BRANCH ENABLED AND WAIT.  Whenever it goes
+!    from one to zero, it turns on the time signal indicator in the
+!    indicator register.  The next oscillator pulse then sets the timer
+!    to all ones unless the program in the meantime has changed its
+!    contents.  The timer does not stop after reaching zero."
+!
+!   "The only store-type operations that may store in the left half of
+!    location 1, and hence may be used to set the interval timer, are
+!    STORE VALUE, STORE COUNT, STORE REFILL, and STORE VALUE IN
+!    ADDRESS, and these operations can be performed only when the
+!    interruption system is disabled."
+!
+!   PROGRAMMING NOTE, same page: "Core storage provides valid and
+!    usable storage locations for each bit position of location 1,
+!    including bit positions 19 through 27 which are unused and appear
+!    between the interval timer and the time clock. ... Specifically,
+!    when STORE VALUE is used to reset the interval timer and bits 19
+!    through 24 of the value placed in the interval timer contain any
+!    one-bits, these bits are set into the corresponding bit positions
+!    of location 1, and remain there until THE FIRST TIME THE INTERVAL
+!    TIMER IS STEPPED DOWN."
+!
+! and printed p.35 (PDF 38), "Time Clock":
+!
+!   "This clock consists of a number 36 bits long which is continually
+!    stepped up by pulses originating from the same 1024 cycle per
+!    second oscillator which controls the updating of the interval
+!    timer.  The two clocks are updated consecutively in the same time
+!    interval.  The leftmost 26 bits of the time clock measure time in
+!    seconds.  A full cycle is about 777 days."
+!
+!   "The value of the clock occupies bits 28-63 of location 1.  Each
+!    time the oscillator delivers a pulse it is read out, incremented
+!    by one, using the index adder, and returned to core storage."
+!
+! TIME CLOCK versus INTERVAL TIMER, since the deck's own title ("CHK
+! TIME CLOCK AND INTERVAL TIMER") names both and conflating them is the
+! kind of error this project exists to catch:
+!
+!   interval timer  bits 0-18 of word 1   19 bits   counts DOWN
+!                   settable (SV/SC/SR/SVA, disabled only)
+!                   raises TS on the 1 -> 0 transition
+!                   full cycle 2^19 ticks = about 8 1/2 minutes
+!   time clock      bits 28-63 of word 1  36 bits   counts UP
+!                   NOT settable at all ("cannot be altered under
+!                   program control" -- p.35)
+!                   raises NOTHING ("no indication is given when the
+!                   clock recycles to zero" -- p.35)
+!                   full cycle 2^36 ticks = about 777 days
+!
+!   One oscillator, two counters, opposite directions, one word.
+!
+! ---------------------------------------------------------------------
+! THE RACE THIS PROGRAM DOES NOT HAVE, and why it is built the way it
+! is.  The obvious shape -- set the timer, SNAPSHOT word 1, spin until
+! it differs from the snapshot -- is wrong here, because a pulse can
+! land between the SV and the snapshot and the snapshot then holds a
+! value the test did not choose.  Every block below instead spins until
+! word 1 differs from THE CONSTANT IT WAS SET TO, and asserts that the
+! first differing value is the stepped one.  A pulse landing before the
+! first read is then harmless: the loop simply exits one iteration
+! earlier with the same value.  The only assumption left is that one
+! loop iteration is much shorter than one tick (about 62 clocks against
+! 3255), so two steps can never be missed.
+!
+! WHY KV AND NOT A FULL-WORD COMPARE.  Reference Manual printed p.24:
+! "COMPARE VALUE (KV): The address part, bits 0-24, of the half-word
+! addressed by bits 0-18 of the effective address is compared with the
+! address part, bits 0-24, of the index word specified by J."  Bits
+! 0-24 are the interval timer (0-18) plus the unused bits (19-24) and
+! EXCLUDE the time clock at 28-63 -- which is running, and would make
+! any full-word compare of word 1 unequal every time.  This is why the
+! deck reads word 1 as an index word and compares with KV, and why
+! TEST 1 uses SR/SC to get at the clock: the fields of an index word
+! are exactly the fields of location 1.
+!
+! WHY THE HALT IDIOM IS "B, $" AND NOT THE HOUSE "BEW, $".  BRANCH
+! ENABLED AND WAIT enables the interruption system.  By the time this
+! program finishes, TS is ON (block 4 put it there), and the model
+! forces mask bits 0-19 to one, so TS is permanently masked on --
+! enabling at the end would take a TS interruption into an interruption
+! table this program does not have.  Every halt here is therefore an
+! unconditional self-branch, which halts the model the same way (the
+! core halts on "the instruction branched to its own address"), and
+! WHICH self-branch is reached is the test's main observable: the
+! PC= check in run_tests.sh pins the passing one, and each failure has
+! its own address.
+!
+! WORST-CASE LENGTH, against gen_tb.py's 30000-step cap.  A PASSING run
+! leaves each spin on the first pulse after it started, so it costs one
+! tick per spin: five spins, about 5 x 3256 = 16300 clocks, plus the
+! straight-line rows.  (MEASURED: see the run line in run_tests.sh.)
+! The counts are sized so that the spins cannot time out BEFORE a tick
+! arrives -- the cheapest iteration here is block 4's two instructions,
+! about 28 clocks, so 300 of them span 8400 -- and so that a FAILING
+! run, which halts at the first block that fails, cannot reach the cap
+! either: the worst case is four passing spins (13000) plus block 5's
+! 150 iterations of ~78 clocks (11700), about 25000.
+!
+! WHAT THIS DOES AND DOES NOT SAY ABOUT THE RATE.  Nothing a program
+! can do inside the model measures 0.3 us, so the exact figure -- 3255
+! clocks per tick or 3256 -- rests on the arithmetic in
+! StretchTiming.bsv (78125 model clocks = 24 ticks, exactly) and not on
+! anything here.  But the HALT CYCLE COUNT is a rate bracket all the
+! same, and a fairly tight one: every spin leaves on the first pulse
+! after it started, so a passing run costs almost exactly five ticks.
+! MEASURED: 16575 clocks, against 5 x 3256 = 16280 plus the
+! straight-line rows.  Halve the divider and the five spins no longer
+! fit under gen_tb.py's 30000-step cap (5 x 6510 = 32550 -- ARITHMETIC,
+! not measured; it is the only unmeasured claim in this header).
+! Multiplying the rate by 780 IS measured -- injection 7 below -- and
+! the spins then exit after 414 clocks with the wrong value in R1.  So the CYCLES<= bound and the step cap
+! together bracket the rate to within about a factor of two.  What is
+! tested exactly is everything downstream of the pulse: direction,
+! amount, the reload, the unused bits, TS's edge, and the clock.
+
+! ---------------------------------------------------------------------
+! PROVEN DISCRIMINATING.  Eight injections, each one WHOLE LINE of
+! bsv/StretchStorage.bsv or bsv/StretchTiming.bsv, each applied by a
+! script that aborts unless the anchor line is unique AND unless
+! exactly one line changed, and each reverted the same way with its own
+! one-line diff printed.  These are the OBSERVED results, not the
+! predicted ones.  The clean run is: all three word checks PASS,
+! cycles 16575, halt PC 5179 (label PASS).
+!
+!  # | the line changed                     | OBSERVED
+! ---+--------------------------------------+-----------------------------
+!  1 | if (oscPulse) -> if (False)          | halt F1 (5180); all three
+!    |   the pulse does nothing             |   word checks read 0.  4 fail.
+!  2 | t - 1 -> t + 1                       | halt PASS; R1 = 4, R2 = 1,
+!    |   the timer counts UP                |   R3 = 4 (all <<45).  3 fail.
+!    |                                      |   TS still fires: the edge
+!    |                                      |   test reads the OLD value,
+!    |                                      |   which is still 1.  So the
+!    |                                      |   DIRECTION is caught by the
+!    |                                      |   values, not by the halt.
+!  3 | if (t == 1) -> if (t == 0)           | halt F3T (5183) at 9852
+!    |   TS on the WRONG EDGE               |   clocks.  1 fail.  THE ONE
+!    |                                      |   docs/NEXT.md 5 predicted
+!    |                                      |   would wreck the suite.
+!  4 | 9'b0 -> w1[44:36]                    | halt PASS; EXACTLY ONE check
+!    |   unused bits 19-27 survive the step |   fails, R3 = 0x5f0000000000
+!    |                                      |   -- timer still 2, bits
+!    |                                      |   19-23 still 11111.
+!  5 | c + 1 -> c                           | halt F5 (5185) at 25554
+!    |   the time clock is frozen           |   clocks.  2 fail (the spin
+!    |                                      |   runs to its 150-iteration
+!    |                                      |   bound; the CYCLES bound
+!    |                                      |   catches that too).
+!  6 | c + 1 -> c + 2                       | halt F6 (5186).  1 fail.
+!    |   the clock steps by two             |
+!  7 | oscPulseDenom 78125 -> 100           | halt F3T (5183) at 414
+!    |   the oscillator 780x too fast       |   clocks.  4 fail.  So the
+!    |                                      |   RATE is bracketed from
+!    |                                      |   above by this program, and
+!    |                                      |   from below by the 30000
+!    |                                      |   step cap.
+!  8 | {lh, w1[35:0]} -> {lh, 36'b0}        | halt F7 (5187).  1 fail.
+!    |   a store into word 1 reaches the    |   Block 6 exists for this
+!    |   time clock (p.35 suppression gone) |   one and nothing else
+!    |                                      |   catches it.
+!
+! ONE INJECTION WAS DROPPED, deliberately and for cost: "if (tsFired)
+! ind[tsIndex] = 1" -> "if (False)", i.e. the pulse happens but never
+! reaches the indicator register.  Its observable is halt F4, which
+! injection 1 already produces by a different route, and each injection
+! costs a full mkStretchCore recompile.  Recorded here rather than left
+! unmentioned.
+!
+! NO NULLS.  Every injection above moved something.  Injection 8 WOULD
+! have been a null before block 6 was written: with only blocks 1-5 the
+! store that clobbers the clock happens in blocks 1-4, and block 5's
+! snapshot-then-spin is taken afterwards, so a clobbered clock simply
+! restarts from zero and still steps by one.
+! ---------------------------------------------------------------------
+
+        SLC, (8)5000.0
+
+START   BD,  $+.32                  ! disable.  p.34: SV into the left half
+                                    ! of word 1 "can be performed only when
+                                    ! the interruption system is disabled";
+                                    ! enabled it raises DS and is suppressed.
+                                    ! (Reset state is already disabled; this
+                                    ! says so on purpose, as routine 1260
+                                    ! does before every provoked store.)
+
+! ---- 1.  IT STEPS, AND IT STEPS DOWN BY EXACTLY ONE ----------------
+! Deck witness: 1258 TEST 2 blocks I587/I587A/I587B ("-INTERVAL TIMER
+! FAILS TO STEP IN / -ONE MILLISEC") and I588 ("-INTERVAL TIMER FAILS
+! TO STEP / -FROM 000000.4 TO 000000.0").
+        LX,  $X1, K3                ! value 3 in bits 0-18
+        SV,  $X1, 1.0               ! interval timer := 3
+        LCI, $X5, 200
+L1      LX,  $X4, 1.0               ! word 1 as ONE index word
+        KV,  $X4, K3                ! bits 0-24 only: the clock is 28-63
+        BZXE, D1                    ! XE off => they differ => it stepped
+        CB,  $X5, L1
+        B,   F1                     ! never stepped
+D1      SV,  $X4, R1.0              ! bits 0-24 of the first stepped value
+                                    ! expected 2: down by one, no wrap
+
+! ---- 2.  THE RELOAD: 0 -> ALL ONES ---------------------------------
+! Deck witness: 1258 TEST 2 block I589/I5810, "-INTERVAL TIMER FAILS TO
+! STEP / -FROM 000000.0 TO 777777.40", against I58K1 = all ones in bits
+! 0-18 and nothing else.
+!
+! p.34 says this as a RELOAD -- "the next oscillator pulse then sets
+! the timer to all ones" -- and the model implements it as a plain
+! decrement modulo 2^19, which produces the same bits: 0 - 1 = all
+! ones.  The two descriptions coincide, including the "unless the
+! program in the meantime has changed its contents" clause, because a
+! program change is just a different value to decrement.  Stated here
+! because the coincidence is the whole reason the faithful rule is
+! cheap; see StretchStorage.bsv for the version of this note that
+! matters to the implementation.
+        LX,  $X1, K0
+        SV,  $X1, 1.0               ! interval timer := 0
+        LCI, $X5, 200
+L2      LX,  $X4, 1.0
+        KV,  $X4, K0
+        BZXE, D2
+        CB,  $X5, L2
+        B,   F2                     ! did not step off zero
+D2      SV,  $X4, R2.0              ! expected 777777.40: all ones, 0-18
+
+! ---- 3.  THE UNUSED BITS 19-23 ARE CLEARED BY THE FIRST STEP -------
+! Deck witness: 1258 TEST 2 block I5811/I5812, timer := I58K2
+! ("1.77 00": bit 17 set AND bits 18-23 all ones), expecting BIT17
+! ("1.00 00") after the step, and widening its own error text from
+! "0-18." to "0-23." exactly here.  K3F below IS I58K2's printed value.
+!
+! p.34's programming note covers bits 19 THROUGH 24; XW's value field
+! is reached as "word.bit" and that notation stops at bit 23, so this
+! block tests 19-23, the same five the deck tests.  Bit 24 is left
+! untested -- see the header of verify_ax5b_1258_test2_listing.py.
+        LX,  $X1, K3F               ! bits 0-18 = 3, bits 19-23 = 11111
+        SV,  $X1, 1.0
+        LCI, $X5, 200
+L3      LX,  $X4, 1.0
+        KV,  $X4, K3F
+        BZXE, D3
+        CB,  $X5, L3
+        B,   F3
+D3      SV,  $X4, R3.0              ! expected 2 with 19-23 CLEAR, i.e.
+                                    ! bit 17 alone -- the deck's BIT17
+
+! ---- 3a.  TS IS STILL OFF -------------------------------------------
+! THE DISCRIMINATOR FOR THE RELOAD RULE'S POLARITY, and the reason this
+! one instruction is here rather than in block 4.  p.34 fires TS on the
+! 1 -> 0 TRANSITION: "whenever it goes from one to zero".  The obvious
+! wrong implementation tests the NEW value instead -- "decrement; if now
+! zero, set TS" -- and block 4 cannot tell the two apart, because
+! stepping 1 -> 0 satisfies both.  Block 2 can: it stepped 0 -> all
+! ones, where the wrong rule (reading the OLD value as zero, or the new
+! value after a 1->0 that never happened) fires and the right one does
+! not.  Nothing in blocks 1-3 passes through one, so TS must be off.
+!
+! This matters more than it looks.  docs/NEXT.md 5 records that the
+! model forces mask bits 0-19 to one, so TS is ALWAYS masked on and
+! outranks DS and every PG indicator in the leftmost-wins scan: a timer
+! that sets TS on the wrong edge would wrap every 3255 clocks and give
+! every enabled program a TS interruption it never took before.
+        BTS, F3T                    ! TS on already => wrong edge
+
+! ---- 4.  TS FIRES ON THE 1 -> 0 TRANSITION --------------------------
+! Deck witness: jb_ax5b routine 1260's I6071 block
+! (programs/ax5b_16071_ts.strap), which is this block almost
+! instruction for instruction -- "LX,$X4,BIT18 / SV,$X4,1.0 /
+! LCI,$X4,512 / CB,$X4,$ / BTS,I6088", error text "UNABLE TO TURN TS
+! ON."  That block's header says it is NOT run on the model because
+! "this model's interval timer does not tick"; this block is the
+! runnable statement of the same assertion.
+        LX,  $X1, K1                ! the value ONE
+        SV,  $X1, 1.0               ! interval timer := 1
+        LCI, $X5, 300
+L4      BTS, D4                     ! time signal on?
+        CB,  $X5, L4
+        B,   F4                     ! "UNABLE TO TURN TS ON."
+
+! ---- 5.  THE TIME CLOCK STEPS UP BY EXACTLY ONE ---------------------
+! Deck witness: 1258 TEST 1 blocks I581/I582 ("-TIME CLOCK FAILS TO
+! STEP IN 1 MSEC.") and I583/I584 ("-BITS 46-63 ARE NOT CORRECT AFTER
+! / -TIME CLOCK STEPPED.").  Same instructions, same registers' roles.
+!
+! Reference Manual printed p.24: "STORE REFILL (SR): The refill field,
+! bits 46-63, of the index word specified by J replaces bits 0-17 of
+! the half word specified by bits 0-18 of the effective address.  Bits
+! 18-24 of the half word are set to zero."  Bits 46-63 of word 1 are
+! the time clock's LOW 18 bits, so SR moves them where KV (bits 0-24)
+! can see them, with 18-24 cleared so the compare is exact.
+!
+! "$X2" as an ADDRESS is storage word 18 -- index register 2 -- which
+! is how the deck gets a scratch index word to SR into.  Reference
+! Card, SPECIAL STORAGE ASSIGNMENT: index registers are words 16-31.
+!
+! THE CARRY IS NOT TESTED, and that is the deck's own limitation, not
+! an oversight here: V+I adds into bits 0-17 modulo 2^18, so on the one
+! tick in 2^18 where the clock's low half wraps, old+1 is zero while
+! the new low half is also zero -- the compare still holds -- but the
+! carry into bits 28-45 is never checked.  1258 TEST 1 has the sharper
+! version of this defect: it propagates the carry with C+I into the
+! COUNT field while its KV reads the VALUE field, so the carry lands
+! where the comparison cannot see it.  See
+! verify_ax5b_1258_test1_listing.py's "THE CARRY PATH DOES NOT REACH
+! THE FIELD THAT IS COMPARED."
+D4      LX,  $X0, 1.0
+        SR,  $X0, $X2               ! clock bits 46-63 -> X2's value, 0-17
+        LCI, $X5, 150
+L5      LX,  $X0, 1.0
+        SR,  $X0, $X3               ! the current low half
+        KV,  $X3, $X2
+        BZXE, D5                    ! differ => the clock stepped
+        CB,  $X5, L5
+        B,   F5                     ! "-TIME CLOCK FAILS TO STEP IN 1 MSEC."
+D5      V+I, $X2, 1.0               ! old + 1 ...
+        KV,  $X2, $X3               ! ... must be the new value: UP by one
+        BZXE, F6                    ! stepped, but not up by exactly one
+
+! ---- 6.  A STORE INTO WORD 1 DOES NOT DISTURB THE TIME CLOCK -------
+! Reference Manual printed p.35: of the time clock, "its setting,
+! however, cannot be altered under program control.  Any attempt to
+! store into the right half of location 1 is suppressed, and indicator
+! AD, address invalid, is turned on."  SV writes bits 0-24 -- the
+! timer and the unused bits -- and bits 28-63 must come through
+! untouched.  This is the block that would catch a writeWord which
+! took the whole word from the instruction: the clock would be reset
+! to whatever the index word's count and refill fields hold (zero),
+! which no number of pulses between the two reads can explain.
+!
+! THE AD INDICATOR IS NOT TESTED, because it is not implemented: the
+! suppression is modelled, the alarm is not.  See StretchStorage.bsv's
+! writeWord and bsv/README.md "Scope".
+!
+! The compare accepts TWO answers -- unchanged, or up by exactly one --
+! because a pulse may legitimately land between the two reads.  It
+! rejects everything else.
+        LX,  $X0, 1.0
+        SR,  $X0, $X2               ! the clock's low half before
+        LX,  $X1, K3
+        SV,  $X1, 1.0               ! a store into word 1's LEFT half
+        LX,  $X0, 1.0
+        SR,  $X0, $X3               ! ... and after
+        KV,  $X3, $X2
+        BXE, PASS                   ! unchanged
+        V+I, $X2, 1.0
+        KV,  $X2, $X3
+        BXE, PASS                   ! or one pulse landed between them
+        B,   F7                     ! the store reached the time clock
+
+PASS    B,   $
+
+! ---- the failure halts, each at its own address ---------------------
+F1      B,   $                      ! the interval timer never stepped
+F2      B,   $                      ! it did not step off zero (no reload)
+F3      B,   $                      ! bits 19-23 did not clear
+F3T     B,   $                      ! TS fired on the wrong edge
+F4      B,   $                      ! TS never came on
+F5      B,   $                      ! the time clock never stepped
+F6      B,   $                      ! the time clock did not step UP by one
+F7      B,   $                      ! a store into word 1 reached the clock
+
+! ---- constants and results ------------------------------------------
+! The K constants are the values the timer is SET to and the values the
+! spins compare against; their bit patterns are the deck's own.
+        SLC, (8)5100.0
+K0      XW,  0, 0, 0                ! all of bits 0-24 zero
+K1      XW,  (8).40, 0, 0           ! bit 18 alone = the value ONE
+                                    ! (this is the deck's BIT18, p.114)
+K3      XW,  (8)1.40, 0, 0          ! bits 17 and 18 = the value THREE
+K3F     XW,  (8)1.77, 0, 0          ! the deck's I58K2: bits 0-18 = 3 and
+                                    ! bits 19-23 = 11111
+R1      DD,  0                      ! first stepped value, block 1
+R2      DD,  0                      ! first stepped value, block 2
+R3      DD,  0                      ! first stepped value, block 3
+
+        END, START
