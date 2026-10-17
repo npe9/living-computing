@@ -68,7 +68,9 @@ UNIMPLEMENTED = {
     "LTRS",                               # load transit and set
     # M+1 moved to ENCODING_ONLY on 2026-10-17: still unimplemented,
     # but MCP's bootstrap uses it, so it is no longer UNUSED.
-    "LOC", "LOCSEOP",                     # locate
+    "LOC",                                # locate, base form
+    # LOCSEOP moved to ENCODING_ONLY on 2026-10-17: still
+    # unimplemented, but MCP's ERROR ROUTINE uses it.
 }
 # UNIMPLEMENTED IN THE MODEL BUT EXERCISED FOR ITS ENCODING.  This
 # category exists because EXIC forced it, and the distinction it draws
@@ -130,8 +132,29 @@ UNIMPLEMENTED = {
 # two are separately earned -- which is exactly why a name leaving the
 # set, as EX and EXIC have now both done, is the move that means
 # something.  RNX is recorded in docs/NEXT.md as out of scope.
+#
+#   LOCSEOP ARRIVED 2026-10-17, from MCP printed p.5 line 36, and it
+#         arrived for a reason worth reading twice.  The ERROR
+#         ROUTINE does not know which channel the console is on, so
+#         it walks all 32 channels of the basic exchange asking each
+#         one what it is: a deliberately invalid CTL to see which
+#         answer at all, then LOC(SEOP) to see which are TAPE, then
+#         GONG to find the console.  So LOCATE is not an exotic
+#         instruction MCP happens to touch -- it is how the operating
+#         system identifies a device, and the model sets Operation
+#         Code Invalid on it (StretchExecute.bsv:3376, explicit).
+#         docs/NEXT.md item 5 already had LOC on its list; this is
+#         the listing witness that was missing.
+#
+#         NOTE WHAT THIS AUDIT CANNOT SEE.  SPFL and GONG are not
+#         opcodes -- they assemble to CTLSEOP with control codes 077
+#         and 177 -- so a CONTROL FUNCTION the model rejects does not
+#         show up here at all.  The bootstrap already uses both.  The
+#         gap is real and this page is the wrong instrument for it;
+#         docs/mcp_tape_manufacture.md carries that table.
 ENCODING_ONLY = {
     "RNX",
+    "LOCSEOP",
 }
 # IMPLEMENTED BUT UNEXERCISED -- the model has real arms for these and
 # nothing drives them.  This is the actionable list: each is a test

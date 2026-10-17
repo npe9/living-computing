@@ -47,8 +47,29 @@
 ! (4) LINE 27's "(A*)DD(BU,32,8),C911*" IS A ZERO OF THE SAME WIDTH.
 !     C28-6129 printed p.16: "(A*)" is the A entry mode -- IBM BCD --
 !     with "*" as the end-of-statement character, so the datum is the
-!     four characters C911.  strap_asm has no BCD table yet (that is
-!     Appendix C, printed pp.47-53).  THE LISTING PRINTS NO MACHINE
+!     four characters C911.  strap_asm has no BCD table yet.
+!
+!     CORRECTED 2026-10-17: this used to say the table was "Appendix
+!     C, printed pp.47-53".  Printed pp.47-53 IS Appendix C, but
+!     Appendix C is "SYMBOLIC DESCRIPTIONS AND MNEMONICS FOR IBM
+!     7030" and carries no character table on any of its seven pages
+!     -- nor does any other page of C28-6129.  THE TABLES ARE IN THE
+!     REFERENCE MANUAL, printed p.166 = PDF 169, on a page headed
+!     "Character Codes": four grids captioned 49, 89, 48 and 120
+!     Character Set, printing NO numbers at all -- columns are
+!     labelled BITS 0-1-2-3 and rows BITS 4-5-6-7, so a code is
+!     (column << 4) | row.  The 48-character grid is the A mode's,
+!     and it gives the canonical IBM BCD values (A = 0o61 at column
+!     0011 row 0001, J = 0o41, S = 0o22, 0 = 0o12).
+!
+!     ALSO CORRECTED: the "*" is not part of the mode name.  C28-6129
+!     printed p.16 calls it the END-OF-STATEMENT CHARACTER, says it
+!     "may be any legal card code character except ), ' (8-4),
+!     ; (11-0), and blank", and that it "is not compiled".  So (A*)
+!     is mode A terminated by *, and the listing's (IQSX) elsewhere
+!     is mode IQS terminated by X.
+!
+!     THE LISTING PRINTS NO MACHINE
 !     CODE FOR THIS ROW, and its own comment calls it a "SLOT FOR
 !     DATE OF SOURCE TAPE", i.e. a placeholder patched at run time.
 !     DD(BU,32,8),0 occupies the identical 32 bits, so every later

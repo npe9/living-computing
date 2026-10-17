@@ -535,8 +535,9 @@ Model work it requires, from reading `bsv/StretchIO.bsv` and
 | `REL` / `REL(SEOP)` | implemented (`:3379`) |
 | `RD` / `W` on channel 34 | implemented, with a `gen_tape_tb.py` driver and `run_tape_test.sh` already in the suite |
 | `SIC`, `BEKJZ`/`BUNRJZ`/`BCBJZ` indicator branches | implemented (used by the existing corpus) |
+| **`GONG` (SOUND GONG, console control code 177)** | **assembles** (2026-10-17, checked bit-exact against MCP printed p.5 line 45); **the model rejects the control code.** RefMan printed p.150 gives the IBM 7152 console's whole CONTROL table as 016, 017, 116 and 177 |
 | **`SPFL` (SPACE FILE)** | **assembles** (2026-10-17, `strap_asm.py`'s `IO_FUNCTION_OPS`, checked bit-exact against MCP printed p.3 line 35); **the model still rejects it** — falls to the `default:` arm at `StretchExecute.bsv:3372` and sets Operation Invalid |
-| **`LOC`** | **not implemented** — `StretchExecute.bsv:3376`, explicit |
+| **`LOC`** | **not implemented** — `StretchExecute.bsv:3376`, explicit. **And it is not a corner case:** MCP's ERROR ROUTINE (printed p.5 line 36) uses `LOC(SEOP)` to ask each channel of the basic exchange whether it is a tape, as part of hunting for a console. `LOCSEOP` moved into `audit_opcode_coverage.py`'s `ENCODING_ONLY` on 2026-10-17 |
 | **`UNLOAD` distinct from `REWIND`** | conflated; `18'o136, 18'o137` share one arm |
 | **Tape marks / records** | **absent** — `tapeImg` is a flat `Vector#(TapeWords, Reg#(Word64))`, `TapeWords = 16`, no record or file-mark structure |
 | **An IPL mechanism at all** | **absent** — `StretchIO.bsv:288` says so in as many words: "matching the p.126 'initial power-on' reset description closely enough for a simulated system with **no IPL**" |

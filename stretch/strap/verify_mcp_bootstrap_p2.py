@@ -82,8 +82,12 @@ ROWS = [
 ]
 
 # NOT CHECKED, and it cannot be: line 27's (A*)DD(BU,32,8),C911* is
-# an IBM BCD message and strap_asm has no BCD table (C28-6129
-# Appendix C).  The listing prints NO machine code for that row and
+# an IBM BCD message and strap_asm has no BCD table.  (That table is
+# NOT in C28-6129's Appendix C, which this comment used to claim and
+# which is an instruction-mnemonic appendix; it is Reference Manual
+# printed p.166's "Character Codes", the 48 Character Set grid.  See
+# programs/mcp_bootstrap_p2.strap's substitution (4).)
+# The listing prints NO machine code for that row and
 # its own comment calls it a "SLOT FOR DATE OF SOURCE TAPE", so there
 # is nothing to compare against even if the table existed.  What the
 # substitution must preserve is its WIDTH, and the rows after it --

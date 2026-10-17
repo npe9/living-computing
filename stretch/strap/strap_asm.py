@@ -258,8 +258,18 @@ IO_BASE_OPS = {'RD', 'W', 'CTL', 'LOC', 'REL', 'CCW'}
 # Block").  An encoding guessed by matching two documents' prose is
 # what rule 4 forbids, and a wrong one here would assemble silently.
 IO_FUNCTION_OPS = {
-    'SPFL': 0o77,   # Space File; Reference Manual p.132
+    'SPFL': 0o77,    # Space File, IBM 729 IV; Reference Manual p.132
+    'GONG': 0o177,   # Sound Gong, IBM 7152 Operator's Console; RefMan p.150
 }
+
+# A NOTE ON 0o177, because the collision is real and deliberate.  The
+# 729 IV's table gives 177 as "Backspace File" and the console's gives
+# it as "Sound Gong" -- the same octal on two devices.  Control codes
+# are per-device by design (the tape also redefines 016, 057 and 157),
+# and which table applies is decided by the channel operand at run
+# time, not by the mnemonic.  So the assembler encodes the code the
+# mnemonic names and the DEVICE decides what it means, which is
+# exactly what the hardware does.
 
 
 class AssemblerError(Exception):
@@ -729,12 +739,53 @@ def classify_connective(op):
     (suffix_name, conn:int) or None. Tries CM/CT before C so "CM0101"
     doesn't match the shorter "C" prefix first.
     """
+    if op in CONNECTIVE_ALIASES:
+        return CONNECTIVE_ALIASES[op]
     for name in ('CM', 'CT', 'C'):
         if op.startswith(name) and len(op) == len(name) + 4:
             digits = op[len(name):]
             if all(ch in '01' for ch in digits):
                 return name, int(digits, 2)
     return None
+
+
+# A CONNECTIVE WITH A NAME OF ITS OWN.
+#
+# X22-6533 page 4 lists "LF  Load Field" under VARIABLE FIELD LENGTH,
+# and page 2's INTEGER ARITHMETIC opcode table does not have it -- so
+# it looks like a missing instruction.  It is not: it is the
+# connective C0011, which this assembler has always encoded.
+#
+# HOW THAT WAS ESTABLISHED, and the method matters more than the
+# answer.  MCP printed p.5 line 12 prints
+#
+#     000136.00   000551.00 80   025300.46 70   LF(BU,21,3),X ERR AD,1
+#
+# Split by the integer-arithmetic format the word gives LENGTH 21 and
+# BS 3, matching the written (BU,21,3), and OFFSET 1 matching the
+# written ,1 -- and then modifier bits 0, 0, 1 with operation 100111.
+# Both of those are wrong: BU sets the first modifier bit to 1 and the
+# third to 0, and 100111 is no integer operation on the card.  THE
+# FIELD BOUNDARIES WERE RIGHT AND THE FIELD MEANINGS WERE WRONG.
+# Reference Manual printed p.168's "Complete Operation and Modifier
+# List" puts connectives in a box of their own, ccccxx111iiii, with no
+# Classes and no Modifiers footer, because bits 51-54 are the
+# connective function.  Bits 51-59 of MCP's word are 001100111, which
+# is the pocket card's C ("Connect", xxxx00111) with xxxx = 0011, and
+# assembling C0011 with the same operands reproduces the word exactly.
+#
+# The semantics agree too: the pocket card's CONNECTIVES table gives
+# function 3 the result bits 0 0 1 1 for operand combinations m a =
+# 00, 01, 10, 11, printed symbolically as "m" -- the memory operand
+# replaces the accumulator field.  That is Load Field, and C sends the
+# result to the accumulator.
+#
+# SF ("Store Field") IS DELIBERATELY ABSENT.  It is presumably the CM
+# analogue of the same function, but no assembled SF has been found in
+# this corpus, so its connective number would be a guess.
+CONNECTIVE_ALIASES = {
+    'LF': ('C', 0b0011),
+}
 
 
 def strip_fp_sign(op):

@@ -1,0 +1,214 @@
+! mcp_bootstrap_p5_p6.strap -- MCP's IPL BOOTSTRAP, printed pages 5
+! and 6: the ERROR ROUTINE.  docs/MCP_Mar63_001-249.pdf PDF pp.12-13,
+! headers "PAGE NUMBER 5" and "PAGE NUMBER 6".  docs/boot_plan.md M3.
+!
+! TWO PAGES IN ONE FILE, and the reason is evidence, not convenience.
+! The two are MUTUALLY RECURSIVE: p.5 branches to X 1B ERR and X 1D
+! ERR, which p.6 defines, and p.6 branches to X 1A ERR and X6 ERR,
+! which p.5 defines.  Split into two files each would have to SYN the
+! other's labels from the very rows being checked, and a SYN is an
+! input to a check rather than a witness -- it makes its own address
+! come out right by construction.  Transcribed together, all fourteen
+! labels are placed by the assembler from the instruction stream and
+! every one of the fifty-three machine-code rows is a real check.
+!
+! They are also one routine and one page's worth of material: p.6 is
+! twelve lines long and carries nine rows.  p.5 ends at 000166.40
+! with a full word, and p.6 begins at 000167.40.
+!
+! WHAT THE ROUTINE DOES.  Every error path on printed pp.2-4 ends in
+! "B,X ERROR", and this is where they land.
+!
+!   Lines 5-11 look the error up.  X ERR AD holds the address of the
+!   instruction that failed (p.13 line 37 calls it "LOCATION OF ERROR
+!   +1.0"); X ERR IN is an index word over the error table X ERR DD,
+!   and the KV / BXE / CB+ loop compares the code against each table
+!   entry until it matches or the count runs out -- and if it runs
+!   out, "BD,$" halts with the comment "-IPL CONTAMINATED".
+!
+!   Lines 12-18 build the console message.  LF breaks the 21-bit
+!   address into seven 3-bit bytes, then two M+MG's add the octal
+!   digits into an IQS character string, and SVA plants the result in
+!   X MSG CW, the control word for the message.
+!
+!   Lines 19-54 hunt for a console to print it on.  S YCOCH is the
+!   console's channel number; if it is absent the routine walks all
+!   32 channels of the basic exchange from (8)20.0, issuing a
+!   deliberately invalid CTL to find out which channels answer
+!   ("-ILLEGAL IO CONTROL CODE"), a LOC to find out which are tape,
+!   and GONG to find out which is the console -- then W's the message
+!   and rings the gong.  X 5 ERR / CBH loops back for the next
+!   channel.
+!
+!   Line 56 and p.6 are the exit: TI displays the error address in
+!   the CE console's indicator lights, and p.6 releases the channel's
+!   status bits and goes back round.
+!
+! ---------------------------------------------------------------
+! SUBSTITUTIONS, the same three as pp.3-4
+! ---------------------------------------------------------------
+! (1) BLANKS INSIDE SYMBOL NAMES ARE DROPPED.  These two pages are the
+!     strongest demonstration of the rule so far -- the SAME symbol is
+!     printed four different ways within eight rows: "X 1D ERR" (p.5
+!     line 25), "X1DERR" (line 31), "X 1D ERR" again (line 34), and
+!     "X1D ERR" as p.6 line 12's NAME.  Likewise X6 ERR / X6ERR /
+!     X 6 ERR, and X 1B ERR / X1B ERR.  C22-6531 printed p.10 allows
+!     six alphameric characters; every one of these is X1DERR, X6ERR,
+!     X1BERR once the blanks come out.
+!
+! (2) INDEX REGISTERS ARE WRITTEN "$X<n>" WHERE THE LISTING WRITES
+!     "$<n>", except for T/TI, whose J operand this assembler takes as
+!     a bare integer.
+!
+! (3) "$R" IN LINE 56's "TI,1,X ERR AD,$R" IS KEPT AS IS -- it is a
+!     system symbol this assembler already knows.
+!
+! ---------------------------------------------------------------
+! TWO MNEMONICS THAT LOOKED NEW AND ONE THAT WAS
+! ---------------------------------------------------------------
+! LF ("Load Field", line 12) IS NOT A NEW INSTRUCTION.  It is the
+! connective C0011, which this assembler has always encoded.  X22-6533
+! page 4 lists LF under VARIABLE FIELD LENGTH and page 2's INTEGER
+! ARITHMETIC opcode table does not have it, so it looked missing --
+! but decoding the word first (docs/NEXT.md 6d) shows bits 51-59 =
+! 001100111, which is the card's C ("Connect", xxxx00111) with
+! xxxx = 0011.  Reference Manual printed p.168 puts connectives in a
+! box of their own, ccccxx111iiii, with no Classes and no Modifiers
+! footer, because bits 51-54 are the connective function and not abc
+! -- which is exactly why the decoded "modifiers" contradicted the
+! written (BU).  Connective 3's truth table on the card is 0 0 1 1 for
+! m a = 00, 01, 10, 11, printed symbolically as "m": the memory
+! operand replaces the accumulator field.  That is Load Field.
+!
+! GONG ("Sound Gong", line 45) IS NEW and went in for this page, to
+! the same two-source standard as SPFL: Reference Manual printed p.150
+! gives the IBM 7152 Operator's Console's whole CONTROL table as four
+! codes -- 016, 017, 116 and "177 Sound Gong.  This function causes a
+! clearly audible gong to sound a single stroke" -- and this listing
+! prints 000177 in the code field with .15 = CTLSEOP.  Note that the
+! 729 IV's table gives 177 as Backspace File: same octal, different
+! device, which is what a per-device control table means.
+!
+! ---------------------------------------------------------------
+! EXTERNALS.  EVERY SYN IS AN INPUT, NOT A WITNESS.  Each is from the
+! page that DEFINES it:
+!   X ERR AD  printed p.13 line 37  "X ERR AD  VF,0"                 000551.00
+!   X ERR IN  printed p.8  line 32  "X ERR IN  XW,X ERR DD,..."      000245.00
+!   X MS CW1  printed p.8  line 34  "X MS CW1  CW,X ZEROS,3,..."     000246.00
+!   X MSG CW  printed p.8  line 35  "X MSG CW  CW,0,10,0"            000247.00
+!   X ERR CW  printed p.8  line 37  "X ERR CW  CW,0 - SLOT FOR COPIED CW" 000253.00
+!   S YCOCH   printed p.37 line 25  "S YCOCH  VF,22.4"               002156.00
+!
+! S YCOCH IS IN A DIFFERENT DECK, and that is worth saying out loud:
+! printed p.37 is headed "THE COMMUNICATION REGION FOR MCP", its
+! banner reads PUNID 11C11IPL and its cards are the 13000xxx series,
+! where these pages read PUNID 11E11BSP and 11000xxx.  So the
+! bootstrap references a symbol defined in a separately assembled
+! deck -- the first cross-deck reference this corpus has needed, and
+! part of what TAIL exists to make work (docs/NEXT.md 5x).  Its own
+! row corroborates the address: the binary is 000026.04+, octal 26 =
+! 22 decimal, matching the written VF,22.4, and the next row is
+! "S YPRCH  VF,22.4  -THE CHANNEL NUMBER OF THE PRINTER", which is
+! what makes the CO and PR in the two names legible rather than
+! guessed.
+XERRAD  SYN, (8)551.0
+XERRIN  SYN, (8)245.0
+XMSGCW  SYN, (8)247.0
+XMSCW1  SYN, (8)246.0
+XERRCW  SYN, (8)253.0
+SYCOCH  SYN, (8)2156.0
+
+        SLC, (8)133.0      ! printed p.5 line 5; p.4 ends at 000132.40
+                            ! with a half word
+
+! ---- printed p.5: find the error code in the table ----------------
+XERROR  LX, $X2, XERRIN     ! p5 line 5   -INITIALIZE WITH BASE AND
+                             !              SIZE OF X ERR DD TABLE
+        LV, $X1, XERRAD     ! p5 line 7   -GET BIASED ERROR ADDRESS
+XERRSH  KV, $X1, 0.0($X2)   ! p5 line 8   -TEST AGAINST TABLE CODE
+        BXE, X1ERR          ! p5 line 9   -IF CODES ARE EQUAL
+        CB+, $X2, XERRSH    ! p5 line 10  -TO TEST NEXT CODE
+        BD, $               ! p5 line 11  -IPL CONTAMINATED
+
+! ---- build the message --------------------------------------------
+X1ERR   LF(BU,21,3), XERRAD, 1   ! p5 line 12  -BREAK ADDRESS INTO
+                                  !              EIGHT BIT BYTES
+        LV, $X2, .32($X2)        ! p5 line 14  -GET ADDRESS OF MESSAGE
+        M+MG(BU,48,8), .8+.8($X2), 8  ! p5 line 15 -SKIPPING OVER
+                                       ! CONTROL CODES, FORM FULL WORD
+                                       ! PORTION IN IQS
+        M+MG(BU,8,8), .8+.48+.8($X2)  ! p5 line 17 -FORM HALF WORD
+                                       !              PORTION
+        SVA, $X2, XMSGCW         ! p5 line 18  -INITIALIZE CW
+
+! ---- find a console to print it on --------------------------------
+        LV, $X1, SYCOCH     ! p5 line 19  -GET CONSOLE CHANNEL SLOT
+                             !              CONTENT
+        BZXVZ, X2AERR       ! p5 line 20  -IF CHANNEL NUMBER PRESENT
+        LVI, $X1, (8)20.0   ! p5 line 21  -NO* ENTER FIRST CHANNEL OF
+                             !              BASIC EXCHANGE
+        LCI, $X1, 32.       ! p5 line 23  -GET MAXIMUM SIZE OF BASIC
+                             !              EXCHANGE
+X1AERR  SIC, X1DERR         ! p5 line 25
+        B, X1BERR           ! p5 line 26  -TO CLEAR OUT OLD CHANNEL
+                             !              STATUS BITS
+        CTL(SEOP), 0.0($X1), 0.0  ! p5 line 28 -ILLEGAL IO CONTROL CODE
+                                   ! -- deliberately invalid, to find
+                                   ! out which channels answer at all
+        BEKJ, X6ERR         ! p5 line 29  -EXHAUSTED ALL CHANNELS OR
+                             !              EXCHANGE ERROR
+        SIC, X1DERR         ! p5 line 31
+        BCBJZ, X1BERR       ! p5 line 32  -BUSY
+        BUNRJZ, X5ERR       ! p5 line 33  -CONTROL UNIT OR UNIT NOT
+                             !              READY
+        SIC, X1DERR         ! p5 line 34
+        B, X1BERR           ! p5 line 35  - TO RELEASE STATUS BIT
+X1EERR  LOC(SEOP), 0.0($X1), 0.0  ! p5 line 36 -TEST IF TAPE CHANNEL
+        BEKJ, X6ERR         ! p5 line 37  -EXHAUSTED ALL CHANNELS OR
+                             !              EXCHANGE ERROR
+X2ERR   CCW, 0.0($X1), XERRCW     ! p5 line 39  -GET CW
+        BEKJ, X6ERR         ! p5 line 40
+        BB, XERRCW+.24, X2ERR     ! p5 line 41  -TEST SEOP BIT
+        BZB, XERRCW+.19, X5ERR    ! p5 line 42  -TEST IF TAPE UNIT
+        SIC, X1DERR         ! p5 line 43
+        B, X1BERR           ! p5 line 44  -NON TAPE *RELEASE STATUS BIT
+X2AERR  GONG(SEOP), 0.0($X1)      ! p5 line 45  - ISSUE CONSOLE COMMAND
+        BEKJ, X6ERR         ! p5 line 46
+        BUNRJZ, X5ERR       ! p5 line 47  -REFERENCED UNIT NOT READY
+X3ERR   CCW, 0.0($X1), XERRCW     ! p5 line 48  -GET GONG CW
+        BEKJ, X6ERR         ! p5 line 49  -IF EXCHANGE ERROR
+        BB, XERRCW+.24, X3ERR     ! p5 line 50  -TEST SEOP BIT
+        BB, XERRCW+.19, X5ERR     ! p5 line 51  -IF CONSOLE * NO EPGK
+X4ERR   W(SEOP), 0.0($X1), XMSCW1 ! p5 line 52  -CONSOLE
+        B, X6ERR            ! p5 line 53
+X5ERR   CBH, $X1, X1AERR    ! p5 line 54  -NOT DONE TESTING
+X6ERR   TI, 1, XERRAD, $R   ! p5 line 56  -DISPLAY ERROR ADDRESS IN
+                             !              CE CONSOLE
+
+! ---- printed p.6: release the channel and go round ----------------
+        BD, $               ! p6 line 1   -LOOP
+X7ERR   SIC, X1DERR         ! p6 line 3
+        B, X1BERR           ! p6 line 4   - TO RELEASE STATUS BIT
+        B, X1AERR           ! p6 line 5   -TO LOCATE AGAIN
+X1BERR  REL(SEOP), 0.0($X1) ! p6 line 7   -CLEAR OUT OLD STATUS BITS
+        BEKJ, X6ERR         ! p6 line 8
+X1CERR  CCW, 0.0($X1), XERRCW     ! p6 line 9
+        BEKJ, X6ERR         ! p6 line 10
+        BB, XERRCW+.24, X1CERR    ! p6 line 11  -IF RELEASED
+X1DERR  B, 0.0              ! p6 line 12  -YES*BACK
+        END, XERROR
+
+! ---------------------------------------------------------------
+! THE LOCATION-COLUMN ASTERISK (docs/listing_typography.md 12) appears
+! once on p.6, at line 9's 000173.00.  As on pp.2-5 it cannot move a
+! bit: that row is in the checked set below and matches the listing's
+! own BINARY OUTPUT character for character.
+!
+! AND A SMALL FIND IN p.6's BANNER: its header carries a trailing
+! "LOCATION 000167" field -- the location its first row sits at.  The
+! field is NOT printed on every page: rendered side by side, printed
+! pp.3, 4, 5 and 7 leave it blank while p.6 shows 000167 and p.8
+! shows 000230.  So it is usable for finding a symbol's page by its
+! octal address, but only as a coarse bisection, because the page you
+! land on may be one of the blank ones.  What decides whether it
+! prints was not established.

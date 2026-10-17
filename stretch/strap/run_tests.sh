@@ -1366,6 +1366,43 @@ run "MCP's IPL bootstrap, printed p.4, bit-exact (MCP_Mar63 PDF p.11)" python3 v
 # "SIC,XERRAD" and line 8 writes "SIC,X ERR AD", and both print the
 # identical 000551.00 80.  Two spellings, one symbol.
 
+run "MCP's IPL bootstrap, printed pp.5-6, bit-exact (MCP_Mar63 PDF pp.12-13)" python3 verify_mcp_bootstrap_p5_p6.py
+# THE ERROR ROUTINE -- where every "B,X ERROR" on printed pp.2-4
+# lands.  It looks the failing address up in a table, builds a console
+# message out of it with LF and two M+MG's, then HUNTS FOR A CONSOLE:
+# if the communication region has no console channel it walks all 32
+# channels of the basic exchange, issuing a deliberately invalid CTL
+# to see which answer, a LOC to see which are tape, and a GONG to find
+# the console.  Then it writes the message and rings the gong.
+#
+# TWO PAGES IN ONE FILE, FOR AN EVIDENCE REASON, not convenience.
+# p.5 branches to X 1B ERR and X 1D ERR, which p.6 defines; p.6
+# branches to X 1A ERR and X6 ERR, which p.5 defines.  Transcribed
+# separately each file would have to SYN the other's labels from the
+# very rows under test, and a SYN is an input to a check rather than a
+# witness.  Together: fourteen labels placed from the instruction
+# stream and all FIFTY-THREE machine-code rows checked.
+#
+# GONG IS NEW; LF ONLY LOOKED NEW, and the asymmetry is the lesson.
+#   GONG went in to SPFL's two-source standard -- RefMan printed p.150
+#   gives the IBM 7152 console's whole CONTROL table as 016, 017, 116
+#   and "177 Sound Gong", and the listing prints 000177 with .15 =
+#   CTLSEOP.  (177 is Backspace File on the 729 IV: same octal,
+#   different device, which is what a per-device table means.)
+#   LF is the connective C0011, which this assembler has always had.
+#   It is absent from X22-6533 page 2's opcode table, so it looked
+#   like a missing instruction -- but decoding the word first showed
+#   bits 51-59 = 001100111, the card's C with xxxx = 0011, and RefMan
+#   printed p.168 puts connectives in a box with no Modifiers footer
+#   because bits 51-54 ARE the connective.  The tell was that the
+#   decoded "modifier" bits contradicted the written (BU).
+#   BEFORE IMPLEMENTING A MNEMONIC, DECODE ONE OF ITS ASSEMBLED WORDS.
+#
+# AND THE FIRST CROSS-DECK REFERENCE in this corpus: S YCOCH, the
+# console's channel number, is defined on printed p.37 under PUNID
+# 11C11IPL, where these pages are 11E11BSP.  Separate assemblies,
+# which is what TAIL exists to make work.
+
 run "The STRETCH MAINTENANCE COMPOOL, 65 symbols (ka_ua1 PDF pp.129-130)" python3 verify_dcp_compool.py
 # THE ROSETTA STONE, and the first piece of the Diagnostic Control
 # Program transcribed.  docs/archival_inventory.md: "the single

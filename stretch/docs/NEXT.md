@@ -2706,7 +2706,8 @@ the contract; **do them in the order 5, 8, 6, 7, 1, 2, 3, 4.**
 5. **`SPFL`, `LOC`, and `UNLOAD` as distinct from `REWIND`.**
    `StretchExecute.bsv:3372,:3376` has the first two unimplemented and
    the third conflated. MCP's bootstrap uses `SPFL(SEOP)` on its
-   third page.
+   third page — **and `LOC(SEOP)` on its fifth, to ask each channel
+   whether it is a tape** (§6f). Both now have listing witnesses.
 
    **HALF DONE, 2026-10-17: `SPFL` ASSEMBLES.** `strap_asm.py` gained
    `IO_FUNCTION_OPS`, the first of C28-6129 Appendix B's twenty I-O
@@ -3505,11 +3506,72 @@ holds, M3's transcription can skip them.
 ### WHAT IMPLEMENTING THEM WOULD ACTUALLY COST
 
 Four character-set tables — BCD, IQS 8-bit, ECS 120, card code
-12-bit. The TOC puts **Appendix C at printed pp.47-53**, seven pages,
-which is almost certainly where they are. That is a bounded
-transcription job, not a design problem, and it is the right shape
-for a separate piece of work rather than something to improvise
-during a bootstrap transcription.
+12-bit.
+
+**CORRECTED 2026-10-17, and the guess here was wrong twice over.**
+This paragraph used to say the TOC puts Appendix C at printed
+pp.47-53, "which is almost certainly where they are". Printed
+pp.47-53 *is* Appendix C, but Appendix C is **"SYMBOLIC DESCRIPTIONS
+AND MNEMONICS FOR IBM 7030"** — an instruction-mnemonic appendix with
+**no character table on any of its seven pages**. Nor is there one
+anywhere else in C28-6129: Appendix A is STRAP-II mnemonics (printed
+43-45), B the pseudo-operations (46), D the error messages (54-55),
+and E exists only in the bound-in Technical Newsletter N28-1081,
+whose twenty pages are errata. The hedge "almost certainly" was
+carrying a page range that had been read only from a table of
+contents.
+
+**THE TABLES ARE IN THE REFERENCE MANUAL, printed p.166 = PDF 169**,
+on a page headed **"Character Codes"**, read first-hand at 150 dpi.
+Four grids, captioned below each: *49 Character Set*, *89 Character
+Set*, *48 Character Set*, *120 Character Set*. **The manual prints no
+numbers at all** — columns are labelled `BITS 0-1-2-3` (0000…0111)
+and rows `BITS 4-5-6-7` (0000…1111), so a code is
+`(column << 4) | row` and any octal is the reader's own.
+
+Spot-checked against canonical IBM BCD in the 48-character grid:
+`A` at column 0011 row 0001 = 0o61, `J` at 0010/0001 = 0o41, `S` at
+0001/0010 = 0o22, `0` at 0000/1010 = 0o12. All four canonical.
+
+**AND THE TRAILING `*` IS NOT PART OF THE MODE NAME.** C28-6129
+printed p.16 says it outright:
+
+> "The second character in the entry mode field is known as the
+> end-of-statement character. Its presence instructs STRAP to perform
+> the desired conversion until this character is reached in the
+> message. The end-of-statement character may be any legal card code
+> character except `)`, `'` (8-4), `;` (11-0), and blank. **This
+> character is not compiled.**"
+
+So `(A*)`, `(CC*)` and `(IQS*)` are modes A, CC and IQS each
+terminated by `*`, and **`(IQSX)` is mode IQS terminated by `X`** —
+nothing is missing from it. The implementation trap that follows:
+an `(IQSX)` message cannot contain a literal `X`, and an `(A*)`
+message cannot contain a literal `*`.
+
+Two more from the same page: `(N)` is not an entry mode at all but
+the floating-point *normalized* use mode; and byte size 12 is legal
+**only in a `DD`** — "in a DD statement, the byte size of converted
+characters may range from one through 12 … However, the byte size in
+a 7030 statement may range from 1 through 8 because the byte size
+field is restricted to 3 bits" — which is what makes MCP's
+`(CC*)DD(BU,,12)` legal. C28-6129 printed p.24 says there are "only
+two entry modes" of this kind, A and IQS; **the newsletter corrects
+that to three**, adding CC.
+
+**STILL MISSING: the 12-bit card code `(CC*)` uses.** C28-6129 p.16
+names it — "converted to 12-bit bytes, where each byte reflects the
+multiple punch actually read" — and tabulates it nowhere, and all
+four Reference Manual grids are 8-bit. The twelve bits *are* the card
+rows (12, 11, 0, 1-9), so what is wanted is a documented bit order,
+not a lookup table. Unchecked candidates: `C22-6729`, `C22-6531`,
+`C22-6678-1`.
+
+**AND A PAGE-OFFSET CORRECTION FOR C28-6129**: its body is printed =
+PDF − 4 (PDF 16 → printed 12, PDF 28 → printed 24) but its
+appendices are printed = PDF − 3 (PDF 49 → printed 46, PDF 56 →
+printed 53). A leaf is dropped somewhere in printed 25-42. The
+Reference Manual is a consistent +3.
 
 ## 5x. `TAIL` IS SUFFIX MANGLING, NOT SCOPING — and probably inert for one program
 
@@ -4023,6 +4085,187 @@ PDF page in that range rather than by sampling. The LOCATION column
 restarts at a new origin at printed pp.63 (`000000`), 105 (`000014`)
 and 111 (`215050`), which is how a symbol's page can be found by
 bisection on its octal address.
+
+---
+
+## 6f. MCP's PAGES 5 AND 6 — the ERROR ROUTINE, 53 of 53, first attempt
+
+**2026-10-17.** `strap/programs/mcp_bootstrap_p5_p6.strap` and
+`strap/verify_mcp_bootstrap_p5_p6.py`, in the suite: fourteen labels
+and **all fifty-three machine-code rows**, matched on the first run
+of the draft.
+
+**TWO PAGES IN ONE FILE, AND THE REASON IS EVIDENCE.** They are
+mutually recursive — p.5 branches to `X 1B ERR` and `X 1D ERR`, which
+p.6 defines, and p.6 branches to `X 1A ERR` and `X6 ERR`, which p.5
+defines. Transcribed separately, each file would have to `SYN` the
+other's labels **from the very rows being checked**, and a `SYN` is
+an input to a check rather than a witness. Together, every label is
+placed by the assembler from the instruction stream. p.6 is only
+twelve lines long; p.5 ends at `000166.40` and p.6 begins at
+`000167.40`.
+
+**WHAT THE ROUTINE DOES.** Every `B,X ERROR` on printed pp.2–4 lands
+here. It looks the failing address up in `X ERR DD` with a
+`KV`/`BXE`/`CB+` loop (and halts on `BD,$` — "IPL CONTAMINATED" — if
+the table runs out), builds a console message with `LF` and two
+`M+MG`s, and then **hunts for a console**: if the communication
+region holds no console channel, it walks all 32 channels of the
+basic exchange from `(8)20.0`, issuing a **deliberately invalid
+`CTL`** ("ILLEGAL IO CONTROL CODE") to find out which channels answer
+at all, a `LOC` to find out which are tape, and a `GONG` to find the
+console. Then it writes the message and rings the gong. `TI` puts
+the error address in the CE console's lights.
+
+**ONE NEW MNEMONIC, ONE THAT ONLY LOOKED NEW.** `GONG` went in to
+`SPFL`'s two-source standard (§6e, and `exchange_and_io.md` now has
+the console's table). `LF` is `C0011` and needed nothing — §6d.
+
+**THE BLANKS RULE, DEMONSTRATED FOUR WAYS IN EIGHT ROWS.** The same
+symbol is printed `X 1D ERR` (p.5 line 25), `X1DERR` (line 31),
+`X 1D ERR` (line 34) and `X1D ERR` (p.6 line 12's NAME). Likewise
+`X6 ERR` / `X6ERR` / `X 6 ERR`, and `X 1B ERR` / `X1B ERR`. Page 4
+had already proved it with two spellings assembling identically;
+these pages make it unmistakable.
+
+**A SMALL FIND IN THE PAGE HEADERS.** p.6's banner carries a trailing
+`LOCATION 000167` field — the location of its first row. It is **not
+printed on every page**: rendered side by side, printed pp.3, 4, 5
+and 7 leave it blank while p.6 shows `000167` and p.8 shows `000230`.
+Usable for coarse bisection to find a symbol's page by octal address,
+but the page you land on may be a blank one. What decides whether it
+prints was not established.
+
+### And the coverage ratchet fired: `LOCSEOP` is now encoded
+
+`audit_opcode_coverage.py` failed the first run with
+`FAIL: LOCSEOP now used -- remove from KNOWN_GAP`, which is the
+audit doing exactly what it is for. `LOCSEOP` moved from
+`UNIMPLEMENTED` to `ENCODING_ONLY`, the same round trip `M+1` made
+on 2026-10-17 and `EX`/`EXIC` made before it.
+
+**It matters more than a bookkeeping move.** The ERROR ROUTINE does
+not know which channel the console is on, so it asks every channel
+what it is: an invalid `CTL` to see which answer at all, then
+`LOC(SEOP)` to see which are **tape**, then `GONG` to find the
+console. So LOCATE is not an exotic instruction MCP happens to touch
+— **it is how the operating system identifies a device** — and
+`StretchExecute.bsv:3376` sets Operation Code Invalid on it,
+explicitly. Item 5 above has had `LOC` on its list all along; this is
+the listing witness it was missing.
+
+**AND NOTE WHAT THAT AUDIT CANNOT SEE.** `SPFL` and `GONG` are not
+opcodes — they assemble to `CTLSEOP` with control codes 077 and 177 —
+so a CONTROL FUNCTION the model rejects never reaches
+`audit_opcode_coverage.py` at all. The bootstrap already uses both.
+The gap is real and that page is the wrong instrument for it;
+`mcp_tape_manufacture.md` carries the control-function table.
+
+**Next: printed pp.7 and 8, together**, and the reason is the same
+one that joined pp.5 and 6.
+
+I had written here that p.7 would be the page where C28-6129
+Appendix C's character tables stop being optional. **Rendering it
+shows that is wrong, and the correction is worth keeping.** A
+delegated page sweep had characterised printed pp.6–12 collectively
+as "`VF`, `DD(BU,…)`, `(IQS*)DD(BU,…)`, `SYN`, `CNOP`, `XW`, `CW`,
+`DR`, `LR`" — accurate for the range and misleading for the page.
+Printed p.7 is **fifty-five rows of nothing but `VF`**: it is
+`X ERR DD`, the error table itself, a flat array of pairs
+
+```
+ 2* 000176.00  000055.40+  X ERR DD  VF,X ERR 00+1.0
+ 3* 000176.40  000254.00+            VF,X MSG 00  -EKJ ON CCW OF IPL CW
+ 4* 000177.00  000060.40+            VF,X ERR 01+1.0
+ 5* 000177.40  000260.00+            VF,X MSG 01  -EKJ DETECTED IN IO TEST ROUTINE
+```
+
+— the address `X ERR AD` will hold, paired with the message to print
+for it. (`+1.0` because `SIC` and its branch are one 64-bit
+instruction, so the instruction after the pair is one word on.) **A
+page characterised at the range level is not a page read.**
+
+**p.7 needs p.8** because the table names error sites that p.3 and
+p.4 label differently: `X ERR 06 + 1.0` resolves to `000106.00`, so
+`X ERR 06` is `000105.00` — which printed p.4 line 6 labels
+`X9 A 1`. The equivalence is on printed p.8, whose line 38 heads a
+block "`-ERROR CODE ADDRESS EQIVALENCIES`" (the listing's own
+spelling). So the two pages are one unit, exactly as pp.5 and 6
+were.
+
+**AND RENDERING p.8 REORDERS THE WORK AGAIN.** p.8 carries the rest
+of the table (`X ERR 18`–`29`), the definitions `X ERR IN`,
+`X MS CW1`, `X MSG CW`, `X LR`, `X ERR CW`, and then the
+equivalences block:
+
+```
+39* 000057.40+   X ERR 01  SYN,X7 1
+41* 000105.00+   X ERR 06  SYN,X9 A 1
+42* 000630.00+   X ERR 11  SYN,X10 5
+47* 001613.00+   X ERR 28  SYN,X323A
+```
+
+Nine of them, and only the first two name labels inside the pages
+transcribed so far — `X7 1` is p.3 line 17 and `X9 A 1` is p.4 line
+6, both at the printed addresses. The rest (`X IO AA`, `X10 5`,
+`X13 5`, `X22 3`, `X23 4`, `X32 2`, `X323A`) live past the
+bootstrap. **And every `VF` on both pages references an `X MSG nn`,
+which is a label on the message text of printed pp.9–12.**
+
+So the dependency runs the other way from how it looked:
+
+> **character tables → printed pp.9–12 (the messages) → printed
+> pp.7–8 (the table that points at them).**
+
+### But rendering p.9 changes what "character tables" has to mean
+
+**THE LISTING DOES NOT PRINT THE ASSEMBLED BYTES OF AN `(IQS*)DD`
+ROW.** Printed p.9's BINARY OUTPUT column is blank on every message
+line. A message is six rows and only three of them print anything:
+
+```
+ 6* 000254.00+  +00000000  NULL   X MSG 00  SYN,$
+ 7* 000254.00              375              DD(BU,8),(2)1111 1101  -CONTROL CODE * CARRIAGE RETURN
+ 8* 000254.10              002              DD(BU,8),(2)00000010   -RED$
+ 9* 000254.20                               (IQS*)DD(BU,64,8),000000.0*  -SLOT FOR ERROR ADDRESS
+10* 000255.20                               (IQS*)DD(BU,64,8), EKJ ON CCW OF IPL CW*
+11* 000257.70              376              DD(BU,8),(2)1111 1110  -CONTROL CODE * END OF MESSAGE
+```
+
+**So rule 3 cannot check a single character code**, and no
+transcription of these pages ever will. What it CAN check, and
+checks tightly, is the LOCATION COUNTER — eight bits per character,
+terminator not compiled:
+
+* line 9 → line 10 is `000255.20 − 000254.20` = 64 bits = 8
+  characters, and `000000.0` is eight characters.
+* line 10 → line 11 is `000257.70 − 000255.20` = 168 bits = 21
+  characters, and `" EKJ ON CCW OF IPL CW"` is twenty-one, counting
+  the leading blank and not the `*`.
+
+That is a real and fairly sharp check — it catches a dropped or
+doubled character anywhere in thirty messages — but it is a check on
+**counting**, not on the code table. The table itself rests on
+Reference Manual printed p.166 alone, and **the transcription must
+say so in as many words**, the way `mcp_bootstrap_p2.strap`'s
+substitution (4) already does for one row.
+
+A smaller thing the same rows need: `listing_oracle.render` has
+print shapes for a 22-octal-digit word and an 11-digit half-word but
+not for an **8-bit `DD`, which prints as three octal digits**
+(`375`, `002`, `376`). Three lines of work, and the control-code
+rows are a third of the checkable output on these pages.
+
+Doing pp.7–8 first would mean SYN-ing thirty message labels out of
+the rows being checked, which is the mistake pp.5-6 were merged to
+avoid. **Printed pp.9–12 are the next unit**, and C28-6129 Appendix
+C is on the critical path after all — just one step further out than
+this note first said.
+
+Two smaller things p.8 shows that the assembler has not met:
+`DR(BU,64),(3)` (Data Reservation with an array dimension, §5w's
+list) and a control-word operand written `X MSG CW(.25)1`, a
+bit-field designation inside a `CW` field.
 
 ---
 
