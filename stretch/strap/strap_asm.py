@@ -977,6 +977,21 @@ def enc_sic(addr24, idx):
 # resolves to, i.e. produce wrong addresses that still assemble.  It
 # stays an error until it is implemented, which is the whole point of
 # keeping this list to things that genuinely emit nothing.
+# C28-6129 printed p.14's table of CW's eight secondary pseudo
+# operations, transcribed verbatim.  Columns are Chain Bit, Multiple
+# Bit, Skip Flag -- the order the same page gives for control-word
+# bits 25-27.
+CW_SECONDARY = {
+    'CR':    (0, 0, 0),   # "Count Within Record"
+    'CCR':   (1, 0, 0),   # "Chain Counts Within Record"
+    'CD':    (0, 1, 0),   # "Count Disregarding Record"
+    'CDSC':  (1, 1, 0),   # "Count Disregarding Record, Skip and Chain"
+    'SCR':   (0, 0, 1),   # "Skip, Count Within Record"
+    'SCCR':  (1, 0, 1),   # "Skip, Chain Counts Within Record"
+    'SCD':   (0, 1, 1),   # "Skip, Count, Disregarding Record"
+    'SCDSC': (1, 1, 1),   # "Skip, Count, Disregarding Record, Skip and Chain"
+}
+
 LISTING_CONTROL = frozenset([
     'PUNFUL',   # punch the full deck
     'PUNORG',   # punch origin
@@ -997,6 +1012,11 @@ def statement_size(stmt):
         return HALF, HALF
     if op == 'XW':
         return FULL, FULL
+    if op == 'CW':
+        return FULL, FULL  # C28-6129 printed p.14: "The location
+                            # counter is first rounded up to a full
+                            # word address unless it is already at a
+                            # full word address.
     if op == 'END':
         return 0, 0
     if op == 'SYN':
@@ -1281,7 +1301,7 @@ def assemble(source, origin_bits=DEFAULT_ORIGIN_BITS):
         # data pseudo-op (e.g. VF's "LC stands at bit 25" rounding
         # after a bit-precise DD, C22-6531 p.18) is dead space no
         # program counter ever visits, and is left as-is.
-        is_instruction = (stmt.op.upper() not in ('DD', 'VF', 'XW', 'END', 'SYN', 'SLC')
+        is_instruction = (stmt.op.upper() not in ('DD', 'VF', 'XW', 'CW', 'END', 'SYN', 'SLC')
                           and stmt.op.upper() not in LISTING_CONTROL)
         if loc != old_loc and is_instruction:
             gaps.append((old_loc, loc - old_loc))
@@ -1373,6 +1393,91 @@ def emit_statement(stmt, symtab, image):
         sign = 1 if val < 0 else 0
         mag = abs(val) & 0xFFFFFF
         image.deposit_half(loc // 32, (mag << 8) | (sign << 7))
+        return
+
+    if op == 'CW':
+        # CW(OP), ADDRESS, COUNT, CHAIN ADDRESS -- STRAP-II's I/O
+        # control word pseudo-operation.  C28-6129 printed p.14 (PDF
+        # 18; this document runs printed + 4), section 8, read
+        # first-hand:
+        #
+        #   "The pseudo operation CW is similar in function to XW.  CW
+        #    creates a full word in storage, but in the format of an
+        #    i/o control word... The quantity represented by the symbol
+        #    ADDRESS is compiled in the first 18 bits of the full word
+        #    created.  COUNT is compiled in bits 28-45 and CHAIN
+        #    ADDRESS is compiled in 46-63."
+        #
+        #   "In a control word the flag bits (bits 25-27) are the chain
+        #    flag, the multiple flag and the skip flag, IN THAT ORDER."
+        #
+        # The same page tabulates all eight secondary mnemonics with
+        # their three bits -- CW_SECONDARY below is that table verbatim.
+        #
+        # ADDRESS IS A WORD ADDRESS, not a bit address, so a label
+        # operand needs the same >> 6 conversion XW's REFILL needs and
+        # for the same reason (see the long note under XW).  Getting
+        # this wrong is silent: the control word assembles and the
+        # transfer reads from word 0.
+        #
+        # VERIFIED against two independently printed control words in
+        # MCP's listing, character for character:
+        #   printed p.2   CW(CR),X IPL BS,X BS END-X IPL BS,1
+        #                 -> 000041.00+ 000 000560 000001
+        #   printed p.14  CW(CDSC),0 +X BUFER,513,$+1.0
+        #                 -> 011406.00+ 110 001001 000553
+        # The listing prints the three flag bits as three separate
+        # digits, chain/multiple/skip -- NOT as an octal field, which
+        # is what made this look undecodable before the manual was
+        # read.
+        # stmt.mods is the parsed parenthesised modifier list, so
+        # CW(CR) arrives as ['CR'].
+        mods = stmt.mods or []
+        secondary = (mods[0] if len(mods) == 1 else '').strip().upper()
+        if secondary not in CW_SECONDARY:
+            raise AssemblerError(
+                f"CW needs one of {sorted(CW_SECONDARY)} as its "
+                f"secondary operation, got {secondary!r}", stmt.lineno)
+        chain, multiple, skip = CW_SECONDARY[secondary]
+        if not stmt.fields or not stmt.fields[0].strip():
+            raise AssemblerError("CW needs an ADDRESS field", stmt.lineno)
+        # AN INTEGER AND A BIT ADDRESS ARE NOT THE SAME THING HERE,
+        # and conflating them is a silent wrong answer.  C22-6531
+        # printed p.12 (PDF 13), "A18 Full-Word Address":
+        #
+        #   "Note: An INTEGER in an 18-bit field counts full words or
+        #    unit address, control operation, CONTROL WORD ADDRESS,
+        #    and so on, in right I-O address."
+        #
+        # -- i.e. a bare integer is already in word units and goes in
+        # as written, while a bit-address expression must be converted
+        # (>> 6).  MCP uses both in the same field within twelve
+        # pages: printed p.2 writes the chain address as the integer
+        # `1` and prints 000001, while p.14 writes it as `$+1.0`, a
+        # bit address, and prints 000553.  Shifting both gives 000000
+        # for the first and no error.
+        def _is_bit_address(text):
+            # A bit address carries a dot (word.bit) or a symbol that
+            # resolves to one; a bare integer, with or without a radix
+            # prefix like (8), carries neither.
+            body = re.sub(r'\(\s*\d+\s*\)', '', text)
+            return ('.' in body) or bool(re.search(r'[A-Za-z$]', body))
+
+        def _word_field(text):
+            v = eval_expr(text, symtab, loc, lineno=stmt.lineno)
+            return (v >> 6) if _is_bit_address(text) else v
+
+        addr = _word_field(stmt.fields[0])
+        count = eval_expr(stmt.fields[1], symtab, loc, lineno=stmt.lineno) \
+            if len(stmt.fields) > 1 and stmt.fields[1].strip() else 0
+        chain_addr = _word_field(stmt.fields[2]) \
+            if len(stmt.fields) > 2 and stmt.fields[2].strip() else 0
+        word = (((addr & 0x3FFFF) << 46)
+                | ((chain & 1) << 38) | ((multiple & 1) << 37)
+                | ((skip & 1) << 36)
+                | ((count & 0x3FFFF) << 18)
+                | (chain_addr & 0x3FFFF))
+        image.deposit_full(loc, word)
         return
 
     if op == 'XW':

@@ -3381,18 +3381,71 @@ it to the list.
 ### WHAT M3 STILL WAITS ON — now a short, specific list
 
 1. **`TAIL` scoping.** Real symbol-table work.
-2. **`CW(CR)` / `CW(CDSC)`.** Deliberately not guessed. The printed
-   forms are `000041.00+ 000 000560 000001` (p.2, `CR`) and
-   `011406.00+ 110 001001 000553` (p.14, `CDSC`); the three-octal-digit
-   flags field differs between them and **nine bits cannot be mapped
-   onto the chain/multiple/skip positions without contradicting
-   Figure 35**. That needs `C28-6129`, not inference — and a wrong
-   control-word encoding boots nothing and explains nothing.
+2. ~~`CW(CR)` / `CW(CDSC)`~~ **DONE — see §5v.**
 3. **The `(A*)` / `(CC*)` / `(IQS*)` DD prefixes.**
 
 `XW` and `VF` turned out to be implemented already, and §5t removed
 the spaced-symbol worry. The gap is smaller than
 `mcp_tape_manufacture.md` §4 estimated.
+
+## 5v. `CW` IS IMPLEMENTED — the manual had it, and the flags were never an octal field
+
+2026-10-17. §5u listed `CW(CR)`/`CW(CDSC)` as needing `C28-6129` and
+declared it blocked. `C28-6129` is in `docs/`. Reading it took
+minutes and settled everything.
+
+**C28-6129 printed p.14 (PDF 18; this document runs printed + 4),
+section 8:**
+
+> `CW(OP), ADDRESS, COUNT, CHAIN ADDRESS`
+> "The quantity represented by the symbol ADDRESS is compiled in the
+> first 18 bits of the full word created. COUNT is compiled in bits
+> 28-45 and CHAIN ADDRESS is compiled in 46-63."
+> "In a control word the flag bits (bits 25-27) are the chain flag,
+> the multiple flag and the skip flag, **in that order**."
+
+plus a table of all eight secondary mnemonics with their three bits,
+now `CW_SECONDARY` in `strap_asm.py` verbatim: `CR` `CCR` `CD`
+`CDSC` `SCR` `SCCR` `SCD` `SCDSC`.
+
+**THE FLAGS FIELD WAS NEVER AN OCTAL FIELD.** §5u could not map
+`110` onto chain/multiple/skip because it read those three characters
+as a nine-bit octal number. They are **three one-bit digits, one per
+flag.** `110` is chain 1, multiple 1, skip 0 — exactly `CDSC` in the
+manual's table. The thing that looked undecodable was a format
+assumption, not a gap in the sources.
+
+### AND A SILENT WRONG ANSWER THAT ONE ORACLE WOULD HAVE MISSED
+
+The first implementation shifted the chain address `>> 6`
+unconditionally, the way `XW`'s refill does. `CDSC` matched; `CR`
+produced `000000` where the listing prints `000001`, with no error.
+
+C22-6531 printed p.12 — **a page this project had already rendered,
+for the A18 truncation rules** — states the rule:
+
+> "Note: An **integer** in an 18-bit field counts full words or unit
+> address, control operation, **control word address**, and so on."
+
+So a bare integer is already in word units and goes in as written,
+while a bit-address expression must be converted. **MCP uses both
+forms for the same field within twelve pages**: `1` on printed p.2,
+`$+1.0` on printed p.14. `_is_bit_address` in `strap_asm.py` now
+decides per operand.
+
+**Having two printed control words is what caught it.** Either one
+alone passes under the wrong rule. That is the second time today a
+wrong answer passed one oracle and failed another, and both times the
+pair existed only because the listing prints its own expected result
+beside the source.
+
+Regression: **246 of 246 programs assemble, 186 of 186 oracles pass.**
+
+### M3's REMAINING GAPS
+
+1. **`TAIL` scoping** — the only one needing design rather than
+   transcription from a manual.
+2. **The `(A*)` / `(CC*)` / `(IQS*)` DD prefixes.**
 
 ## 6. Open questions — record, do not guess
 
