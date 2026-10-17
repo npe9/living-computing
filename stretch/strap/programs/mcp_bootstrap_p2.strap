@@ -93,7 +93,26 @@ XLOOP   Z,   2.0($X15)     ! line 30  -CLEAR LOWER REGESTERS (sic)
         CBR+, $X15, XLOOP  ! line 31
         L(BU), XWSR+.32    ! line 32  -DONE CLEAR C AND D REGISTERS
 XCLIND  BMKZ, $+.32        ! line 33
-        M+I(BU,6), XCLIND+.19   ! line 34 -CLEAR NON MASKABLE INDIC AND
+        M+1(BU,6), XCLIND+.19   ! line 34 -CLEAR NON MASKABLE INDIC AND
+                            ! "M+1", DIGIT ONE, NOT "M+I".  Read at 600
+                            ! dpi: the glyph has a digit's angled top
+                            ! flag and matches the 1 in "$+1.0" two rows
+                            ! below, while the I in "IND" on this very
+                            ! row carries top and bottom serifs.  This
+                            ! is docs/listing_typography.md's letter-I
+                            ! vs digit-1 trap in the REVERSE direction
+                            ! from how it is usually hit.
+                            !
+                            ! And the semantics confirm the glyph: M+1
+                            ! adds ONE to the 6-bit field at
+                            ! X CL IND+.19, which is the mask-bit number
+                            ! inside the BMKZ at 000046.40 -- the
+                            ! instruction steps that number through the
+                            ! non-maskable indicators, exactly what the
+                            ! comment says.  M+I would have made the
+                            ! operand an immediate datum instead of an
+                            ! address, which is why the first attempt
+                            ! put 0o63 at bit 18 of the address field.
         CB,  $X15, XCLIND  ! line 35
 XCLSTO  Z,   0.0($X15)     ! line 36  -CLEAR ONE WORD
         BADZ, $+1.0        ! line 37  -IF DONE CLEARING STORAGE

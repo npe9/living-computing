@@ -57,8 +57,16 @@ ROWS = [
      "line 32  L(BU),XW SR+.32  -DONE CLEAR C AND D REGISTERS"),
     ("000046.40", "000047.00 46",
      "line 33  X CL IND  BMKZ,$+.32"),
+    # STILL FAILING, BUT BY TWO BITS NOW RATHER THAN A WHOLE FIELD.
+    # The mnemonic is M+1 -- DIGIT ONE -- not M+I; see the program's
+    # comment for the 600 dpi glyph reading.  With M+1 the first
+    # half-word matches exactly and the second differs only in its
+    # low byte, B0 assembled against 80 printed: two bits inside the
+    # opcode/modifier area.  Left failing on purpose; see docs/NEXT.md
+    # 5y for why this script stays out of run_tests.sh until it is
+    # understood.
     ("000047.00", "000046.63 80 006000.22 80",
-     "line 34  M+I(BU,6),X CL IND+.19  -CLEAR NON MASKABLE INDIC"),
+     "line 34  M+1(BU,6),X CL IND+.19  -CLEAR NON MASKABLE INDIC"),
     ("000050.00", "000046.76 48",
      "line 35  CB,$15,X CL IND"),
     ("000050.40", "000000.22 0F",

@@ -3596,26 +3596,36 @@ full-word `L(BU)`.
 
 ### THE ONE FAILURE, AND IT IS NOT A TYPO
 
+**RESOLVED TO TWO BITS, and the cause was a glyph.** The mnemonic is
+**`M+1` — digit one — not `M+I`.** Read at 600 dpi: the character has
+a digit's angled top flag and matches the `1` in `$+1.0` two rows
+below, while the `I` in `IND` **on the same row** carries top and
+bottom serifs. This is `docs/listing_typography.md`'s letter-I versus
+digit-1 trap **in the reverse direction** from how this project
+usually hits it — the corpus is full of labels misread as starting
+with `1`; here a digit was misread as `I`.
+
+**The semantics confirm the glyph.** `M+1` adds ONE to the 6-bit
+field at `X CL IND+.19`, which is the mask-bit number inside the
+`BMKZ` at 000046.40 — self-modifying code that steps that number
+through the non-maskable indicators, exactly what the row's own
+comment says. `M+I` would have made the operand an immediate datum,
+and `encode_vfl_immediate` duly left-justified it per RefMan p.56
+(`(2483 & 0x3F) << 18` = `0o630000`), which is why the first attempt
+put the bit part at position 18 and lost the word part. **The
+assembler was right; the reading was wrong.**
+
 ```
-line 34  M+I(BU,6),X CL IND+.19
-  assembled  630000.00 80  406000.20 90
+line 34  M+1(BU,6),X CL IND+.19
+  assembled  000046.63 80  006000.22 B0
   listing    000046.63 80  006000.22 80
 ```
 
-`X CL IND+.19` is `XCLIND` + 19 bits = bit 2483 = word `0o46`, bit
-`0o63` — which is exactly the listing's `000046.63`, so **the operand
-is transcribed right.** Feeding the assembler a bare literal
-`(8)46.63` produces the same wrong word, so this is **not** a
-transcription error: the bit part `0o63` lands at bit position 18 of
-the 24-bit field and the word part disappears.
-
-**So either `M+I` takes an operand form this file guessed wrong, or
-`strap_asm.py` mis-places the VFL immediate address field.** Both are
-worth knowing and neither will be guessed at. It is self-modifying
-code — the instruction increments a mask-bit number inside the `BMKZ`
-at 000046.40, stepping through the non-maskable indicators — so
-getting it right matters for running the bootstrap, not just for the
-transcription.
+**What remains is two bits** — `B0` against `80` in the low byte of
+the second half-word, inside the opcode/modifier area. The address,
+the field spec, the offset and the whole first half-word are exact.
+That is a modifier or opcode-variant question, not a structural one,
+and it is the single open item on this page.
 
 **`verify_mcp_bootstrap_p2.py` IS DELIBERATELY NOT IN
 `run_tests.sh`** and deliberately still fails. A known-failing check
