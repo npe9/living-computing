@@ -3443,8 +3443,8 @@ Regression: **246 of 246 programs assemble, 186 of 186 oracles pass.**
 
 ### M3's REMAINING GAPS
 
-1. **`TAIL` scoping** — the only one needing design rather than
-   transcription from a manual.
+1. **`TAIL`** — **specified now, see §5x, and it is suffix mangling
+   rather than scoping. Likely inert for a single-program assembly.**
 2. **The `(A*)` / `(CC*)` / `(IQS*)` DD prefixes** — **specified now,
    see §5w, and probably not a blocker for the bootstrap at all.**
 
@@ -3499,6 +3499,67 @@ which is almost certainly where they are. That is a bounded
 transcription job, not a design problem, and it is the right shape
 for a separate piece of work rather than something to improvise
 during a bootstrap transcription.
+
+## 5x. `TAIL` IS SUFFIX MANGLING, NOT SCOPING — and probably inert for one program
+
+C28-6129 printed p.37 (PDF 41), read 2026-10-17. This was the last
+item on M3's gap list and the one called "the only one needing design
+rather than transcription". **That description was wrong**, and it
+came from a summary rather than the page.
+
+> **TAIL, ANYSYMBOL**
+> "Difficulty with multiply-defined symbols can arise when two
+> programs, written by different people at different locations, are
+> assembled together. By appending a unique programmer symbol **as a
+> tail to every symbol** in his program, a programmer can be assured
+> that each of his symbols will be uniquely defined, regardless of
+> what other programs are assembled with his program."
+>
+> "The pseudo operation TAIL **appends the symbol that appears in its
+> address field as a tail to every symbol in the statements that
+> follow** the tail statement until another tail statement, or an
+> untail statement, is given."
+
+So it is **name mangling for cross-program link safety**, not lexical
+scoping. `TAIL, (n)DOG` assigns a tail at level *n*; STRAP-II permits
+**ten levels**, and 256 distinct tail symbols per program. MCP's
+`TAIL,(2)G` sets tail `G` at level 2.
+
+### THE CONSEQUENCE THAT MATTERS FOR M3
+
+**If every symbol in a block gets the same suffix, a single-program
+assembly is unchanged.** Definitions and references are mangled
+alike, so `XIPLBS` becomes `XIPLBSG` everywhere and the object code
+is bit-identical. Tailing only has an observable effect when
+**separately-written programs are assembled together** — which is
+exactly the problem the manual says it exists to solve.
+
+MCP's `TAIL,(2)G` is on printed p.2 **line 10**, before any code
+(`SLC,(8)40.0` is line 15), so the whole bootstrap sits inside one
+tail block.
+
+**THE CONDITION TO CHECK BEFORE RELYING ON THIS**, and it is the only
+way it can bite: a reference *inside* the tailed block to a symbol
+defined *outside* it would be mangled while its definition was not,
+and would fail to resolve. For a self-contained bootstrap assembled
+alone there is nothing outside. **Verify that pp.3-13 define every
+symbol they use** before treating `TAIL` as inert.
+
+### SO THE REMAINING WORK IS SMALLER THAN THE LIST SAID
+
+Implementing `TAIL` properly is a name-mangling pass — append active
+tails to the name field and to every symbol token in operand
+expressions — and it is only *needed* for multi-program assembly,
+which this project does not yet do. **It is not a prerequisite for
+transcribing MCP's bootstrap.** When it is implemented, note that
+none of the 246 existing programs use `TAIL`, so mangling only when a
+tail is active cannot disturb them.
+
+**THE PATTERN, THREE FOR THREE TODAY.** `CW`, the DD entry-mode
+prefixes, and now `TAIL` were each recorded as blocked on a document
+that was already in `docs/`. Each took minutes to settle and each
+turned out smaller than its summary. **"This needs document X" is
+only true once document X has been opened.**
 
 ## 6. Open questions — record, do not guess
 
