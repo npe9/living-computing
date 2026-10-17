@@ -668,9 +668,38 @@ Codes 224 and up "except for the SKIP TO RESTORE code, cause the
 following byte to be interpreted as another carriage control byte",
 and 224–239 "suppress post-spacing if printing is suppressed".
 
-I did not transcribe the card punch's (p.142) or the console's
-(pp.149–156) `CTL` tables; they are in the same chapter at those pages
-and follow the same pattern. The MCP Reference's Appendix B (printed
+**IBM 7152 Operator's Console** (Reference Manual printed p.150, read
+at 300 dpi; the console's section runs printed pp.149–156). Four
+codes, and that is the whole CONTROL-instruction table:
+
+| Octal | Function |
+|---|---|
+| 016 | Reserved Light Off |
+| 017 | Reserved Light On |
+| 116 | Check Light On — "These functions are standard" |
+| 177 | **Sound Gong.** "This function causes a clearly audible gong to sound a single stroke." |
+
+**The console redefines nothing; it OMITS two of the five standard
+codes.** 057 and 157, the ECC-mode pair, do not appear in its table at
+all — unlike the 729 IV, which takes 016, 057 and 157 and gives them
+tape meanings. And 177 collides across devices with the tape's 177
+Backspace File: same octal, different unit, which is the whole point
+of a per-device table.
+
+This is the second independent source for STRAP's `GONG` mnemonic
+(X22-6533 page 4 lists it under INPUT-OUTPUT; C28-6129 Appendix B
+calls it "Sound Gong"), and it agrees with MCP printed p.5 line 45,
+which prints `000177` in the control-code field of a `GONG(SEOP)`.
+
+Two details about SOUND GONG that a timing model needs, both printed
+p.151: the end-of-operation indication "is given immediately upon the
+initiation of the operation, even though the striking of the gong
+takes place some time later", and back-to-back SOUND GONGs ring "at
+its maximum rate of approximately once per second". A thirty-third
+pluggable-exit output jack (printed p.152) "furnishes a momentary
+current whenever the gong is sounded".
+
+*Not transcribed:* the card punch's table (printed p.142). The MCP Reference's Appendix B (printed
 pp.43–46) independently lists the I/O operations MCP itself issues, and
 is a useful cross-check: Read, Write, Copy Control Word, Release, Locate
 Arc, Feed Card, Tape Indicator Off, Erase Long Gap, Space Record,

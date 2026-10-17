@@ -742,7 +742,22 @@ Stating these as claims with their searches attached, per `AGENTS.md`.
 **Appendix B, printed p.46 / PDF 49**, read 2026-10-17. Twenty of
 STRAP-II's fifty-three pseudo-operations name a device control
 function rather than generating data: each is a CONTROL instruction
-whose code the assembler supplies. MCP writes them — `SPFL(SEOP)` on
+whose code the assembler supplies.
+
+**X22-6533 PAGE 4 IS THE STRONGER STATEMENT OF THE SAME THING**, and
+it was found later. Its "STRAP MNEMONIC OPERATION CODES" panel lists
+the whole family under **INPUT-OUTPUT — Strap Format: OP1(OP2), C(I1),
+A(I2)**, beside `RD`, `W`, `CTL`, `LOC`, `REL` and `CCW`: `BS(SEOP)*`
+Backspace, `CRDRUN` Card Run-Out, `ECC`, `ERG` Erase Gap, `EVEN`,
+`GONG` Sound Gong, `HD`, `KLN`, `LD`, `NOECC`, `ODDECC`, `ODDNEC`,
+`REW` Rewind, `RLF`, `RLN`, `SP` Space, `SPFL` Space File, `TILF`,
+`UNLOAD`, `WEF` Write End of File — with the footnote "*SEOP
+(suppress end of operation) may be used as a secondary operation code
+with all I-O codes except CCW". So they take the I-O operand form,
+which is exactly how `strap_asm.py` implements them, and `(SEOP)` on
+one is licensed by the card rather than by analogy. The card still
+gives no numeric codes; those come from the Reference Manual's
+per-device tables. MCP writes them — `SPFL(SEOP)` on
 printed p.3, `GONG(SEOP)` on printed p.5 — in exactly the place a
 `CTL` would go, with the control-code operand absent.
 
@@ -759,7 +774,7 @@ witness.
 | Appendix B | its name | candidate code | evidence |
 |---|---|---|---|
 | **`SPFL`** | Space File | **077** | **IMPLEMENTED.** Two independent witnesses: MCP p.3 line 35 prints `000077` in the code field with `.15` = CTLSEOP in bits 50–55, and RefMan p.132 gives "077 Space File". |
-| `GONG` | Sound Gong | 177 | MCP p.5 line 45 prints `000177.15` — a listing witness, but the console's control-code table has not been read here, so the name is unmatched. |
+| **`GONG`** | Sound Gong | **177** | **READY, same standard as `SPFL`.** RefMan printed p.150's IBM 7152 Operator's Console table gives "177 *Sound Gong*. This function causes a clearly audible gong to sound a single stroke", read at 300 dpi; MCP p.5 line 45 prints `000177.15`. Goes in with printed p.5. |
 | `SP` | Space | 076? | p.132 says "Space **Block**" — not a verbatim match. |
 | `BS` | Backspace | 176? | p.132 says "Backspace **Block**" — not a verbatim match. |
 | `WEF` | Write End-of-File | 117? | p.132 says "Write Tape **Mark**". |

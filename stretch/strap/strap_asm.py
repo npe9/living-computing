@@ -1623,6 +1623,38 @@ def emit_statement(stmt, symtab, image):
         image.deposit_half(loc // 32, enc_dir_index(addr19, j, DIR_INDEX_CODES[op], idx))
         return
 
+    if op == 'LVS':
+        # LOAD VALUE WITH SUM -- the one instruction whose address
+        # field is not an address.  Reference Manual printed p.28
+        # ("Multiple Indexing"): bits 0-15 of the address part select
+        # which of X0-X15 take part, bit n for Xn, and bits 16-18 are
+        # ignored.  The destination is J; there is no I field.
+        #
+        # THE MANUAL'S OWN PROSE SAYS "Bits 16-19 ... are ignored",
+        # which cannot be right: bit 19 is the high bit of J in the
+        # same page's format diagram and in X22-6533's IMMEDIATE INDEX
+        # ARITHMETIC row, both of which end ADDRESS at 18.  Figure and
+        # pocket card agree against the sentence, so 16-18 is what is
+        # implemented and the discrepancy is recorded here rather than
+        # smoothed over.
+        #
+        # IBM bit n of a 19-bit field has weight 2^(18-n), so the
+        # assembled field is the mask shifted left three.  MCP's two
+        # instances both decode under exactly this rule:
+        #   p.4  line 23  LVS,$1,$12,$14      -> 64 + 16     = 80
+        #   p.15 line 17  LVS,$9,$12,$11,$14  -> 128 + 64 + 16 = 208
+        if len(stmt.fields) < 2:
+            raise AssemblerError(
+                "LVS takes a destination index and at least one "
+                "participating index", stmt.lineno)
+        j = eval_reg(stmt.fields[0], symtab, stmt.lineno)
+        mask19 = 0
+        for field in stmt.fields[1:]:
+            n = eval_reg(field, symtab, stmt.lineno)
+            mask19 |= 1 << (18 - n)
+        image.deposit_half(loc // 32, enc_imm_index(mask19, j, IMM_INDEX_CODES['LVS']))
+        return
+
     if op in IMM_INDEX_CODES:
         if len(stmt.fields) != 2:
             raise AssemblerError(f"{op} takes J and immediate fields", stmt.lineno)

@@ -1,0 +1,124 @@
+! mcp_bootstrap_p4.strap -- MCP's IPL BOOTSTRAP, printed page 4.
+! docs/MCP_Mar63_001-249.pdf PDF p.11, header "PAGE NUMBER 4".
+! Continues programs/mcp_bootstrap_p3.strap: p.3 ends at 000103.40
+! with a half word, p.4 begins at 000104.00.  docs/boot_plan.md M3.
+!
+! WHAT THIS PAGE IS: FETCH PROSA, the banner on line 2, and it is the
+! page where the bootstrap stops being about the tape and starts being
+! about the program it is loading.
+!
+!   Lines 5-18 read one PROSA record -- `RD(SEOP),0.0($15),X PROSA`
+!   against the chained control-word table on printed p.14 -- and run
+!   it through p.3's IO TEST status loop, branching back into p.3's
+!   `X7 1` on failure and forward to `X DONE` on success.
+!
+!   Lines 19-28 take the record apart.  Four `LX`/`SC` pairs pull the
+!   dictionary, index, IPL and MCP-size words out of X BUFER, each
+!   `SC` storing the loaded index word's COUNT back into itself, then
+!   `LVS,$1,$12,$14` sums two of the counts to get "WORDS PRECEEDING
+!   MCP" and `T,$11,X BUFER($1),X BS END` transmits the MCP IPL down
+!   to X BS END -- i.e. the bootstrap copies the next stage over
+!   itself, which is why p.3's SPACE OVER TAPE MARK had to run first.
+!
+!   Lines 29-33 release the disk, test for Unit Not Ready, spin a
+!   `LCI`/`CB` delay loop, and branch to `X 10` on printed p.15, which
+!   is MCP INITIALIZATION proper.  Lines 34-41 are the end-of-file
+!   path: `CM1111(BU,1),$0 +.25` sets a bit and the page returns to
+!   p.3's IO TEST.
+!
+! ---------------------------------------------------------------
+! SUBSTITUTIONS, the same three as p.3
+! ---------------------------------------------------------------
+! (1) BLANKS INSIDE SYMBOL NAMES ARE DROPPED.  X9 A, X9 A 1, X9 A CCW,
+!     X9 A 3, X9 A 3A, X9 A 4, X9 A 5, X ERR 07..10, X DONE, X BUFER,
+!     X PROSA, X BS END, X ERR AD, X ERROR, X IPL BS, X ERR 12, X 10 --
+!     all six characters or fewer once the blanks come out.  THE PAGE
+!     PROVES THE RULE ITSELF: line 6 writes `SIC,XERRAD` and line 8
+!     writes `SIC,X ERR AD`, and both print the identical
+!     `000551.00 80`.  Two spellings, one symbol, in IBM's own output.
+!
+! (2) INDEX REGISTERS ARE WRITTEN `$X<n>` WHERE THE LISTING WRITES
+!     `$<n>` -- except for `T`, whose J operand this assembler takes as
+!     a bare integer (see programs/ax4b_1246_modifiers.strap, which
+!     writes `T, 2, ...` for a listing's `T,$X2,...`).
+!
+! (3) `$0` IN `REL(SEOP),0.0($0)` AND `CM1111(BU,1),$0 +.25` IS
+!     WRITTEN `$X0`.  Index register zero is the 7030's "no indexing"
+!     encoding, and the listing's own machine code says so: line 29
+!     prints 80 in the first half-word's index nibble where line 38's
+!     `($15)` prints 8F.
+!
+! ---------------------------------------------------------------
+! EXTERNALS.  EVERY SYN IS AN INPUT, NOT A WITNESS.  Each is taken
+! from the page that DEFINES it:
+!   X IPL BS  printed p.2  line 24  "X IPL BS  BD,X BEGIN"      000041.00
+!   X ERROR   printed p.5  line 5   "X ERROR  LX,$2,X ERR IN"   000133.00
+!   X7 1      printed p.3  line 17  "X7 1  SIC,X ERR AD"        000057.40
+!   X7 3      printed p.3  line 28  "X7 3  BRZ,0.0"             000066.40
+!   X ERR AD  printed p.13 line 37  "X ERR AD  VF,0"            000551.00
+!   X BUFER   printed p.13 line 38  "X BUFER SYN,X IN END+2000.0" 011406.00
+!   X PROSA   printed p.14 line 4   "X PROSA  CW(CDSC),0 +X BUFER,513,$+1.0" 000552.00
+!   X BS END  printed p.14 line 43  "X BS END SYN,$"            000621.00
+!   X 10      printed p.15 line 17  "X10  LVS,$9,$12,$11,$14"   000622.00
+!   X ERR 12  printed p.15 line 30  "X ERR 12  SIC,X ERR AD"    000631.00
+! X BS END is independently corroborated: p.2's IPL control word
+! prints a count of 0o560, and 0o621 - 0o41 = 0o560.
+XIPLBS  SYN, (8)41.0
+XERROR  SYN, (8)133.0
+X71     SYN, (8)57.40
+X73     SYN, (8)66.40
+XERRAD  SYN, (8)551.0
+XPROSA  SYN, (8)552.0
+XBSEND  SYN, (8)621.0
+X10     SYN, (8)622.0
+XERR12  SYN, (8)631.0
+XBUFER  SYN, (8)11406.0
+
+        SLC, (8)104.0      ! line 5's location; p.3 ends at 000103.40
+                            ! with a half word
+
+! ---- FETCH PROSA --------------------------------------------------
+X9A     RD(SEOP), 0.0($X15), XPROSA   ! line 5   -FETCH PROSA
+X9A1    SIC, XERRAD             ! line 6   -- the listing writes
+                                 ! "SIC,XERRAD" here and "SIC,X ERR AD"
+                                 ! two rows down; see substitution (1)
+        BEKJZ, XERROR           ! line 7   - EXCHANGE ERROR
+XERR07  SIC, XERRAD             ! line 8
+        BUNRJZ, XERROR          ! line 9   -IF UNIT NOT READY REJECT
+XERR08  SIC, XERRAD             ! line 10
+        BCBJZ, XERROR           ! line 11  -IF CHANNEL BUSY REJECT
+X9ACCW  CCW, 0($X15), XIPLBS    ! line 12
+XERR09  SIC, XERRAD             ! line 13
+        BEKJZ, XERROR           ! line 14  -IF EXCHANGE ERROR FOR CCW
+        BB, XIPLBS+.24, X9ACCW  ! line 15  -TRY AGAIN IF BUSY
+        CT0011(BU,5), XIPLBS+.19 ! line 16
+X9A3    BZRZ, XDONE             ! line 17  -SUCCESSFUL
+X9A3A   B, X9A4                 ! line 18  -RETURN AFTER IO TEST
+
+! ---- take the record apart ----------------------------------------
+X9A4    LX, $X12, XBUFER+1.0    ! line 19  - GET DICTIONARY
+        SC, $X12, $X12          ! line 20
+        LX, $X14, XBUFER+3.0    ! line 21  -GET INDEX
+        SC, $X14, $X14          ! line 22
+        LVS, $X1, $X12, $X14    ! line 23  -WORDS PRECEEDING MCP
+        LX, $X11, XBUFER+5.0    ! line 24  - GET IPL
+        SC, $X11, $X11          ! line 25
+        LX, $X10, XBUFER+7.0    ! line 26  -GET MCP SIZE
+        SC, $X10, $X10          ! line 27
+X9A5    T, 11, XBUFER($X1), XBSEND  ! line 28 -MOVE MCP IPL
+        REL(SEOP), 0.0($X0)     ! line 29  -RELEASE DISK
+        BUNRJ, XERR12           ! line 30
+        LCI, 0, (8)377777.0     ! line 31
+        CB, 0, $                ! line 32
+        B, X10                  ! line 33  -TO MCPIPL
+
+! ---- end of the PROSA file ----------------------------------------
+XDONE   BB, XIPLBS+.21, XDONE+2.0   ! line 34
+XERR10  SIC, XERRAD             ! line 35
+        B, XERROR               ! line 36  -OTHER STATUS BITS ON
+        CM1111(BU,1), $X0 +.25  ! line 37  -END OF PROSA FILE
+        REL(SEOP), 0.0($X15)    ! line 38  - CLEAR STATUS BITS
+        SIC, X73                ! line 39
+        B, X71                  ! line 40  - IO TEST
+        B, X9A3A                ! line 41
+        END, X9A

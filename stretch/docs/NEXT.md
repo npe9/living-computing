@@ -3831,6 +3831,201 @@ in the checked set, so transcription proceeds past it.
 
 ---
 
+## 6c. MCP's PAGE 4, AND `LVS`'s ADDRESS FIELD IS NOT AN ADDRESS
+
+**2026-10-17.** `strap/programs/mcp_bootstrap_p4.strap` and
+`strap/verify_mcp_bootstrap_p4.py`, in the suite: twelve symbols and
+**all thirty-seven machine-code rows**. Printed p.4 is FETCH PROSA —
+it reads one PROSA record against printed p.14's chained control-word
+table, runs it through p.3's IO TEST loop, takes the record apart
+with four `LX`/`SC` pairs, sums two of the counts with `LVS`, and
+`T`s the MCP IPL down to `X BS END`. **The bootstrap copies the next
+stage over itself**, which is why p.3's SPACE OVER TAPE MARK has to
+run first. Then it releases the disk and branches to `X 10` on
+printed p.15, MCP INITIALIZATION proper.
+
+**TEN EXTERNALS, EVERY ONE FROM THE PAGE THAT DEFINES IT** — pp.2, 3,
+5, 13, 14 and 15. A `SYN` taken from the row that *uses* a symbol
+makes that row prove nothing, and this page references ten.
+
+**THE PAGE PROVES THE BLANKS RULE IN IBM's OWN OUTPUT.** Line 6
+writes `SIC,XERRAD`; line 8 writes `SIC,X ERR AD`. Both print
+`000551.00 80`. Two spellings, one symbol — which until now was an
+inference from C22-6531 p.10's six-character limit.
+
+### `LVS` — the one instruction whose address field is a bit mask
+
+**Reference Manual printed p.28 = PDF 31**, section "Multiple
+Indexing", read at 300 dpi:
+
+> "In multiple indexing, bits 0-15 of the address part of the
+> instruction are used to indicate which index registers participate
+> in the operation. When bit position n contains a one, the register
+> Xn participates. When bit position n contains a zero, the register
+> Xn does not participate. Bits 16-19 of the address part of the
+> instruction are ignored."
+
+> "The index field J contains the address of the index to which the
+> operation LOAD VALUE WITH SUM applies. **No address modification is
+> available for this operation**" — i.e. there is no `I` field, which
+> is why this format's OP runs out to bit 31.
+
+> "The address parts, bits 0-24, of the index registers which
+> participate are added and replace bits 0-24 of the index word
+> specified by J… If bits 0-15 of the address part of the instruction
+> are all zero, the value field of the index register specified by J
+> is cleared."
+
+**THE MANUAL CONTRADICTS ITS OWN FIGURE.** The prose says bits
+**16-19** are ignored. Bit 19 is the high bit of `J` in the diagram
+printed four inches below it on the same page (`ADDRESS | J | OP.`,
+boundaries 0, 19, 23, 31) and in X22-6533's IMMEDIATE INDEX
+ARITHMETIC row. Diagram and pocket card agree against the sentence,
+so **16-18** is implemented and the discrepancy is recorded in
+`verify_lvs_encoding.py` rather than smoothed over. Both MCP rows
+leave 16-18 zero, so nothing here turns on it.
+
+**TWO ROWS PIN IT, NOT ONE**, and that is why
+`verify_lvs_encoding.py` exists separately from the page verifiers:
+
+```
+printed p.4  line 23   000050.03 0B   LVS,$1,$12,$14       bits 12,14      -> 80
+printed p.15 line 17   000150.23 0B   LVS,$9,$12,$11,$14   bits 11,12,14   -> 208
+```
+
+IBM bit *n* of a 19-bit field weighs 2^(18−n), so the assembled field
+is the mask shifted left three. One row would pin the mask only at
+the bits it happens to set; two with different sets pin position
+against register number in five places, with `J` carrying the written
+destination in both.
+
+**AND THE ZERO/C CONFLATION, A NEW GLYPH TRAP FOR THIS SCAN.** The
+byte is `0B` in both rows, and at 900 dpi it reads `CB` — this
+listing prints digit zero with a visible gap at the right, so a
+leading `0` looks like a `C`. The same p.4 row prints `000050.C3`
+where the octal field *cannot* contain a C. **The arithmetic settles
+it without the glyph**: with `CB` the operation field would be
+`111001011`, which is no operation on the pocket card at all.
+Together with p.3 line 10's `B0`-read-as-`80`, that is two reading
+errors in two pages caught by decoding the opcode first.
+
+**Also corrected:** `resuscitation_roadmap.md` listed `LVS` as "OCR
+only — not image-verified". It now has two image-verified witnesses.
+
+**Next: printed p.5**, the ERROR ROUTINE (`LF`, `M+MG`, `SVA`,
+`BZXVZ`, `GONG(SEOP)`, `TI`, and a `CTL(SEOP),0.0($1),0.0` whose
+comment calls it an "ILLEGAL IO CONTROL CODE" on purpose).
+
+---
+
+## 6d. `LF` IS A CONNECTIVE, AND THE ASSEMBLER ALREADY HAD IT
+
+**2026-10-17.** Printed p.5 of MCP, the ERROR ROUTINE, opens its
+address-breakup with
+
+```
+12* 000136.00   000551.00 80   025300.46 70   X1 ERR   LF(BU,21,3),X ERR AD,1
+```
+
+and `LF` is on X22-6533 page 4's VARIABLE FIELD LENGTH mnemonic list
+("`LF  Load Field`") but **not** in page 2's INTEGER ARITHMETIC
+opcode table. So it looked like a missing instruction.
+
+**Decoding the word first, as `6b` says to, is what found it.** Split
+by the integer-arithmetic format the word gives LENGTH 21 and BS 3,
+matching the written `(BU,21,3)`, OFFSET 1 matching the written `,1`
+— and then modifier bits `0, 0, 1` with operation `100111`. That is
+wrong twice over: `BU` sets the first modifier bit to 1 and the third
+to 0, and `100111` is no integer operation on the card. **The field
+boundaries were right and the field MEANINGS were wrong.**
+
+The Reference Manual's "Complete Operation and Modifier List",
+printed p.168, splits the VFL instructions into three boxes —
+INTEGER ARITHMETIC `ssbxxxxx1 iiii`, RADIX CONVERSION
+`ssbxxxxx1iiii`, and **CONNECTIVE OPERATIONS `ccccxx111iiii`**. The
+connective box has **no Classes and no Modifiers footer**, because
+bits 51-54 are `cccc`, the connective function. Bits 51-59 of MCP's
+word are `001100111`, which is the pocket card's `C` ("Connect",
+`xxxx00111`) with `xxxx = 0011`.
+
+**So `LF` is `C0011`, and `C0011` has been in this assembler all
+along.** Assembled and compared:
+
+```
+C0011(BU,21,3), X ERR AD, 1   ->   000551.00 80 025300.46 70
+MCP printed p.5 line 12       ->   000551.00 80 025300.46 70
+```
+
+And the semantics agree: the pocket card's CONNECTIVES table gives
+function 3 the result bits `0 0 1 1` for operand combinations
+`m a` = 00, 01, 10, 11, whose symbolic representation it prints as
+**`m`** — the memory operand replaces the accumulator field, which is
+what Load Field means. `C` sends the result to the accumulator.
+
+**THIS IS THE "NEEDS DOCUMENT X" LESSON IN A NEW SHAPE.** Not a
+document already in `docs/` this time, but an *instruction already in
+the assembler under a different name*. The corollary to add: **before
+implementing a mnemonic, decode one of its assembled words and look
+for the bit pattern among the operations already encoded.**
+
+`SF` (Store Field) is presumably the `CM` analogue and is
+**deliberately not implemented** — no assembled `SF` has been found,
+so its `cccc` would be a guess.
+
+**Mode `P` remains unresolved.** Pocket card page 4 says the VFL
+`dds` mode is "(B, BU, D, DU, P)", but RefMan printed p.56 spends all
+three modifier bits on signed/unsigned, same/inverted sign and
+decimal/binary, leaving no bit for a fifth mode, and
+`7030_Opcode_List.pdf` lists every VFL operation under `(B)`, `(BU)`,
+`(D)`, `(DU)` only. Recorded, not guessed.
+
+**`docs/7030_Opcode_List.pdf` deserves more use** than it has had: 99
+pages of *assembled words* for every operation in every mode, i.e. a
+second encoding oracle independent of the diagnostic decks. It
+settled this question in one page.
+
+---
+
+## 6e. PRINTED p.5's FIVE EXTERNALS, AND THE PDF OFFSET IS +7 FOR 113 PAGES
+
+**2026-10-17**, found by a delegated sweep and reported with page
+citations, for the printed p.5 transcription that comes next:
+
+| symbol | defined at | printed page | the defining row |
+|---|---|---|---|
+| `X ERR IN` | `000245.00` | p.8 line 32 | `XW,X ERR DD,X E DD K+1.0,0` |
+| `X MS CW1` | `000246.00` | p.8 line 34 | `CW,X ZEROS,3,X MSG CW(.25)1` |
+| `X MSG CW` | `000247.00` | p.8 line 35 | `CW,0,10,0` |
+| `X ERR CW` | `000253.00` | p.8 line 37 | `CW,0  - SLOT FOR COPIED CW` |
+| `S YCOCH`  | `002156.00` | **p.37** line 25 | `VF,22.4  -THE CHANNEL NUMBER OF THE CONSOLE` |
+
+Each was cross-checked against its own printed binary: `X ERR IN`'s
+`000176` is `X ERR DD`'s location on p.7; `X MS CW1`'s `000247` is
+`X MSG CW`'s; `X MSG CW`'s `000012` is octal for the `10` it writes;
+`S YCOCH`'s `000026.04+` is octal 26 = 22 decimal, and the next row
+is `S YPRCH VF,22.4 -THE CHANNEL NUMBER OF THE PRINTER`, which is
+what makes the CO/PR in the two names legible rather than inferred.
+
+**`S YCOCH` IS IN A DIFFERENT DECK.** Printed p.37 is headed "`*****
+THE COMMUNICATION REGION FOR MCP *****`", its banner reads `PUNID
+11C11IPL` and its cards are the `13000xxx` series, where the
+bootstrap pages read `PUNID 11E11BSP` and `11000xxx`. So printed p.5
+references a symbol defined in a *separately assembled* deck — the
+first cross-deck reference this project has had to resolve, and
+something `TAIL,(2)G` (docs/NEXT.md 5x) exists to make work. Anything
+citing `S YCOCH` must say which deck it is from.
+
+**AND A PAGE-OFFSET RESULT WORTH KEEPING**, since the offsets differ
+per document and this one was known only for pp.2-15: the MCP
+listing's **+7 holds unbroken from printed p.1 (PDF 8) to printed
+p.113 (PDF 120)**, established by reading the header band of every
+PDF page in that range rather than by sampling. The LOCATION column
+restarts at a new origin at printed pp.63 (`000000`), 105 (`000014`)
+and 111 (`215050`), which is how a symbol's page can be found by
+bisection on its octal address.
+
+---
+
 ## 6. Open questions — record, do not guess
 
 **What is the `-ILLEGAL OP.` word doing in routine 1262's TEST 3A and

@@ -1327,6 +1327,45 @@ run "MCP's IPL bootstrap, printed p.3, bit-exact (MCP_Mar63 PDF p.10)" python3 v
 # 23-27, so bits 24-27 are 1011 and the nibble has to be B.  Decode
 # the opcode field first, then look at the glyph.
 
+run "LVS's participation mask, both rows MCP prints (RefMan p.28)" python3 verify_lvs_encoding.py
+# THE ONE 7030 INSTRUCTION WHOSE ADDRESS FIELD IS NOT AN ADDRESS.
+# Reference Manual printed p.28, "Multiple Indexing": bits 0-15 of
+# the address part say which of X0-X15 take part, bit n for Xn; J is
+# the destination; there is no I field.
+#
+# TWO ROWS, NOT ONE, and that is the point of a separate file.  MCP
+# printed p.4 line 23 sets bits 12 and 14; printed p.15 line 17 sets
+# 11, 12 and 14.  One row pins a mask only at the bits it happens to
+# set; two with different sets pin position against register number
+# in five places at once.
+#
+# THE MANUAL CONTRADICTS ITS OWN FIGURE about where the address part
+# ends -- the prose says bits 16-19 are ignored, the diagram on the
+# same page and X22-6533 both end ADDRESS at 18 and start J at 19.
+# The figures win and the discrepancy is recorded in
+# verify_lvs_encoding.py; both MCP rows leave 16-18 zero either way.
+
+run "MCP's IPL bootstrap, printed p.4, bit-exact (MCP_Mar63 PDF p.11)" python3 verify_mcp_bootstrap_p4.py
+# FETCH PROSA -- the page where the bootstrap stops being about the
+# tape and starts being about the program it is loading.  It reads one
+# PROSA record against printed p.14's chained control-word table, runs
+# it through p.3's IO TEST status loop, takes the record apart with
+# four LX/SC pairs, sums two of the counts with LVS, and TRANSMITs the
+# MCP IPL down to X BS END -- the bootstrap copying the next stage
+# over itself, which is why p.3's SPACE OVER TAPE MARK had to run
+# first.  Then it releases the disk and branches to X 10 on printed
+# p.15, MCP INITIALIZATION proper.
+#
+# TWELVE SYMBOLS AND ALL THIRTY-SEVEN MACHINE-CODE ROWS.  Ten
+# externals are SYN'd, every one of them from the page that DEFINES
+# it rather than from this page's own bytes: pp.2, 3, 5, 13, 14 and
+# 15.  A SYN taken from the row that uses it makes that row prove
+# nothing.
+#
+# THE PAGE PROVES THE BLANKS RULE IN IBM's OWN OUTPUT: line 6 writes
+# "SIC,XERRAD" and line 8 writes "SIC,X ERR AD", and both print the
+# identical 000551.00 80.  Two spellings, one symbol.
+
 run "The STRETCH MAINTENANCE COMPOOL, 65 symbols (ka_ua1 PDF pp.129-130)" python3 verify_dcp_compool.py
 # THE ROSETTA STONE, and the first piece of the Diagnostic Control
 # Program transcribed.  docs/archival_inventory.md: "the single

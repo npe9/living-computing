@@ -136,9 +136,24 @@ IMM_INDEX_CODES = {
     "KVI":    0b0100,
     "KVNI":   0b1100,
     "KCI":    0b1010,
-    # 0b1011 = LVS ("Load Value with Sum", format 12's own variable-in-
-    # -number-field format -- StretchExecute.bsv leaves it unimplemented
-    # and this assembler does not encode it either; see README).
+    # LVS shares this format's bit layout but NOT its operand shape:
+    # its ADDRESS field is a participation mask, not an immediate
+    # value, so strap_asm.py gives it its own branch in emit_statement
+    # and never reaches the generic immediate path.  Reference Manual
+    # printed p.28 (PDF 31), "Multiple Indexing":
+    #
+    #   "In multiple indexing, bits 0-15 of the address part of the
+    #    instruction are used to indicate which index registers
+    #    participate in the operation.  When bit position n contains a
+    #    one, the register Xn participates.  When bit position n
+    #    contains a zero, the register Xn does not participate."
+    #
+    # and, for the destination, "The index field J contains the
+    # address of the index to which the operation LOAD VALUE WITH SUM
+    # applies.  No address modification is available for this
+    # operation" -- i.e. there is no I field, which is why this
+    # format's OP runs out to bit 31.
+    "LVS":    0b1011,
 }
 
 # Immediate index ops whose operand is "bits 0-17 of the address part"

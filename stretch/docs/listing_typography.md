@@ -556,3 +556,41 @@ either. **Recorded as open.**
 column, and all three of p.3's instances are in that page's checked
 set and match the listing's own BINARY OUTPUT character for
 character. Whatever it means, it does not change an assembled bit.
+
+---
+
+## 13. DIGIT ZERO READ AS `C` — the MCP scan's own glyph trap
+
+Section 6 measured letter O against digit 0 on the `ax4b`/`ax5b`
+decks and found a 15–22 % width ratio. **The MCP scan has a different
+and sharper confusion, and it is with `C`.**
+
+`docs/MCP_Mar63_001-249.pdf` renders digit zero with a visible gap at
+the right of the ring — ink the drum did not lay down, or the scan
+did not keep — so a zero at the start of a two-character group reads
+as a `C`. It is not subtle at 200 dpi and it does not go away at
+900: printed p.4 line 23's binary output reads
+
+```
+000050.C3 0B        (what the eye gives)
+000050.03 0B        (what it is)
+```
+
+Both the `C3` and the `CB` on that one row are wrong readings of a
+leading zero. **The octal field settles the first without any
+argument** — an octal digit cannot be `C` — and that is the tell to
+reach for: this listing's own column types rule out most of the
+confusions it creates.
+
+**The second one is settled by arithmetic, not by looking.** With
+`CB`, the instruction's nine-bit operation field (bits 23–31) would
+be `111001011`, which appears nowhere on X22-6533. With `0B` it is
+`100001011` = `LVS`, which is what the statement column says. See
+`strap/verify_lvs_encoding.py`.
+
+**The rule, which now has three instances behind it** — `B0` read as
+`80` on MCP p.2 line 34, again on p.3 line 10, and `0B` read as `CB`
+on p.4 line 23: **decode the operation field before trusting the
+glyph.** Re-rendering at a higher resolution (§11) is the second
+move, not the first. The opcode tells you what the byte must be; the
+render only confirms it.

@@ -310,8 +310,8 @@ Scanning those four listings for the instructions this model refuses:
 | `ST(DU,…)` decimal VFL | **7** | 4 read from the image at PDF p.33 | not implemented |
 | `SWAP` with a **direct** count (`$X2`) | **2** | 1 read from the image at PDF p.5 | not implemented |
 | `T`/`TI` with counts > 1 | among 23 `T`/`TI` | `TI,2` read at PDF p.12; `TI,9` at PDF p.33 | only immediate-count-of-one |
-| `M+1` | 1 | OCR only (PDF p.23) — not image-verified | not implemented |
-| `LVS` | 1 | OCR only (PDF p.20) — not image-verified | not implemented |
+| `M+1` | 1 | OCR only (PDF p.23) — not image-verified | **implemented 2026-10-17** (`StretchExecute.bsv`, sharing `M+`'s arm; MCP printed p.2 line 34 is the bit-exact witness) |
+| `LVS` | 1 | OCR only (PDF p.20) — not image-verified | **assembles 2026-10-17**; the model does not execute it. Two image-verified witnesses now exist, MCP printed p.4 line 23 and printed p.15 line 17, and RefMan printed p.28 specifies the mask |
 | `CW(CDSC)` chained control words | 7 | OCR (PDF p.35); `CCW`/`BB` poll read at PDF p.33 | chaining decoded, ignored |
 | `LOC` | **0** | — | not implemented |
 | `CV`, `DCV`, `LTRCV`, `KE`, `KF`, `KFE`, `KFR`, `LTRS`, `PF`, `RNX` | **0** | — | not implemented |
