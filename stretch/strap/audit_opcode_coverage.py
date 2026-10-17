@@ -65,7 +65,9 @@ OP_TABLES = ["BB_CODES", "CB_CODES", "DIR_INDEX_CODES", "FP_CODES",
 UNIMPLEMENTED = {
     "CV", "DCV", "LCV", "LTRCV",          # radix conversion
     "KE", "KF", "KFE", "KFR",             # compare variants
-    "M+1", "LTRS",                        # add-one-to-memory, load transit and set
+    "LTRS",                               # load transit and set
+    # M+1 moved to ENCODING_ONLY on 2026-10-17: still unimplemented,
+    # but MCP's bootstrap uses it, so it is no longer UNUSED.
     "LOC", "LOCSEOP",                     # locate
 }
 # UNIMPLEMENTED IN THE MODEL BUT EXERCISED FOR ITS ENCODING.  This
@@ -77,12 +79,30 @@ UNIMPLEMENTED = {
 #
 # THE CATEGORY HAS BEEN FORCED THREE TIMES, by three unrelated
 # transcriptions, which is why it is a category and not a special case.
-# ONE of the three is still here:
+# THE CATEGORY HAS NOW BEEN FORCED A FOURTH TIME, by MCP itself.
+# TWO of the four are here:
 #
 #   RNX   programs/ibox4_rnx_nop.strap -- jb_ax4b routine 1244, the
 #         refill-address NOP gate.  The FIRST listing witness for RNX
 #         anywhere in this repo; before it, the name appeared only in
 #         opcodes.py's table, this audit, and two comments.
+#
+#   M+1   programs/mcp_bootstrap_p2.strap -- MCP's IPL bootstrap,
+#         printed p.2 line 34, "M+1(BU,6),X CL IND+.19  -CLEAR NON
+#         MASKABLE INDIC".  X22-6533 gives it as "Add One to Memory,
+#         abc101011" and the row is bit-exact against the listing.
+#         It arrived here on 2026-10-17 and it is NOT bookkeeping:
+#         docs/boot_plan.md M3 wants to RUN this bootstrap, and this
+#         is the first hard evidence that transcribing it is not
+#         sufficient.  The instruction is self-modifying -- it steps
+#         a mask-bit number inside the BMKZ two half-words earlier --
+#         so the model will set Operation Code Invalid on the fourth
+#         instruction of IBM's operating system.
+#
+#         Implementing it is a sixth VFL integer arm beside L, ST, +,
+#         M+ and K, and "add one" is the narrowest of them.  Recorded
+#         in docs/NEXT.md as the first named model gap that MCP
+#         itself has produced.
 #
 # In each case the assembler emits the operation, the model decodes it
 # and then sets Operation Code Invalid, and the program is never run.
@@ -116,6 +136,7 @@ UNIMPLEMENTED = {
 # something.  RNX is recorded in docs/NEXT.md as out of scope.
 ENCODING_ONLY = {
     "RNX",
+    "M+1",   # MCP's bootstrap, printed p.2 line 34 -- see above
 }
 # IMPLEMENTED BUT UNEXERCISED -- the model has real arms for these and
 # nothing drives them.  This is the actionable list: each is a test

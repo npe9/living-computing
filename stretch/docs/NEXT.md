@@ -3672,6 +3672,43 @@ no integer-arithmetic or radix-conversion entry on that card ends in
 `000` — they all end in `1`. **Decode the opcode field and look it
 up before re-rendering anything.**
 
+## 6a. MCP's BOOTSTRAP USES AN INSTRUCTION THE MODEL CANNOT EXECUTE
+
+Caught 2026-10-17 by the opcode coverage audit, on the first full
+suite run after MCP's p.2 landed:
+
+```
+FAIL: M+1 now used -- remove from KNOWN_GAP.
+```
+
+**This is not bookkeeping.** `M+1` sits in the audit's
+`UNIMPLEMENTED` set, whose header says *"the model reaches
+`setOpInvalid` for these… Only five VFL integer arms exist (L, ST,
++, M+, K)"*. MCP's printed p.2 line 34 is
+`M+1(BU,6),X CL IND+.19  -CLEAR NON MASKABLE INDIC`, bit-exact
+against the listing and **the fourth instruction of IBM's operating
+system**.
+
+**So the model would set Operation Code Invalid four instructions
+into the bootstrap.** `boot_plan.md` M3 wants to *run* this thing,
+and this is the first hard evidence that transcribing it is not
+sufficient — exactly the distinction the audit's `ENCODING_ONLY`
+category was built to keep visible, now forced a fourth time and for
+the first time by MCP rather than a diagnostic deck.
+
+**The fix is a sixth VFL integer arm**, beside `L`, `ST`, `+`, `M+`
+and `K`. "Add one to memory" is the narrowest of them, and the
+instruction is self-modifying — it steps a mask-bit number inside the
+`BMKZ` two half-words earlier — so it is also directly on the
+bootstrap's critical path rather than incidental.
+
+**AND EXPECT MORE.** Page 2 is one of thirteen. Every page
+transcribed from here will re-run this audit, and each one may name
+another arm. That is the audit working: a transcription that cannot
+run is worth having and worth knowing about, and the category
+distinguishes "pinned its encoding" from "the machine can execute
+it" precisely so growth here is never mistaken for progress.
+
 ## 6. Open questions — record, do not guess
 
 **What is the `-ILLEGAL OP.` word doing in routine 1262's TEST 3A and
