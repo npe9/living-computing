@@ -127,7 +127,7 @@ which is the right one (see `NEXT.md` §5k's correction):
 | | item | where | status |
 |---|---|---|---|
 | 5 | **chaining** | `StretchCore.bsv` | **done** 2026-10-16, untested as a feature |
-| 8 | **SEOP status bit 24** | `StretchIO.bsv` | ~10-20 lines |
+| 8 | **SEOP status bit 24** | `StretchIO.bsv` | **BLOCKED — see `NEXT.md` §5o.** p.121 sources "set at issue" and says nothing about clearing; the contract's "cleared at completion" is an inference, and the model hangs on the wrong reading |
 | 6 | **the IPL mechanism** | both | ~60-120 lines |
 | 7 | **channel signal** (not-ready→ready) | `StretchIO.bsv` | ~20-30 lines |
 | — | a chaining **test** | `gen_tape_tb.py` | `pack_cw` already takes `chain`/`refill` |

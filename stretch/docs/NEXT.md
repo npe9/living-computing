@@ -2926,6 +2926,99 @@ control word, and every Figure 36 row other than
 (multiple 0, chain 1, count zero, end-of-block No) — the model cannot
 reach the end-of-block rows at all until records exist.
 
+## 5o. THE SEOP BIT — half of `tape_unit_contract.md`'s rule 31 is an INFERENCE, and the model would hang either way
+
+Found 2026-10-16 while starting `boot_plan.md` M1's cheapest item.
+**Do not implement rule 31 as written.**
+
+`docs/tape_unit_contract.md` §2.2 item 8 says: *"The SEOP status bit
+must be set at issue and cleared at completion (rule 31)."* The first
+half is quoted; the second is not.
+
+**WHAT THE MANUAL ACTUALLY SAYS**, Reference Manual p.121, via this
+repo's own extract in `docs/exchange_and_io.md` §3.11:
+
+> "At the time an SEOP instruction is given, the SEOP bit in the
+> control word is set to one. **As the result of this, the EOP bit in
+> the control word (and therefore in the indicator register) is not
+> turned on** unless it is accompanied by unit check or end exception."
+
+That is the bit's whole stated purpose: **it suppresses EOP.** There
+is no sentence anywhere in §3.11 about the exchange clearing it when
+the operation finishes. The field table confirms the bit itself —
+bit 24, `w[39]`, "Status: Suppress End of Operation (SEOP)" — so the
+model's `ControlWord.seop` is in the right place; it is the dynamics
+that are unsourced.
+
+**WHY IT CANNOT BE GUESSED.** Both real drivers poll it. MCP's own
+bootstrap, on the page rendered for §5i:
+
+```
+42*  000074.00  ...  X8 1  CCW,0($15),X IPL BS      -GET STATUS BITS
+45*  000076.00  ...        BB,X IPL BS+.24,X 8 1    -IF SEOP OFF
+```
+
+and `ka_ul1`'s tape-write routine does the same. If the bit is set at
+issue and never cleared, a loop that spins while it is 1 never
+terminates. If it is cleared and a loop spins while it is 0, the same.
+**The model hangs on one reading and works on the other, and nothing
+read so far distinguishes them.**
+
+Note MCP's own comment is `-IF SEOP OFF`, which reads as though OFF is
+the interesting state — consistent with "set at issue, cleared at
+completion" — but a comment is not an encoding, and this project has
+been wrong about a branch polarity from a comment before (see
+`ax5b_160_test8b` in §2).
+
+**CHECK 1 IS DONE, AND IT IS A CONFIRMED NEGATIVE.** Reference Manual
+printed p.121 (PDF 124) was rendered and read whole, both columns.
+`exchange_and_io.md` §3.11's extract is **faithful** — it dropped
+nothing. The SEOP section covers: the bit being set at issue; EOP
+being suppressed unless accompanied by unit check or end exception;
+exceptional conditions (EPGK, UK, EE) not being suppressed; a channel
+signal during an SEOP not turning on EOP; and RELEASE SEOP. **No
+sentence on the page says the exchange clears the bit at completion.**
+
+Two things the whole page did yield:
+
+- **The only clearing-adjacent language on the page is about RELEASE
+  SEOP**, not about completion: *"If the addressed unit is executing
+  an instruction at the time RELEASE SEOP is given, the SEOP bit is
+  **temporarily** set in the control word."* "Temporarily" implies
+  something clears it, and the page never says what. It is a hint,
+  not a rule, and it is about a different instruction.
+- **The model's REL arm is corroborated**: *"RELEASE SEOP can be used
+  to turn off EPGK, UK, EE, CS as well as any previously set EOP bits
+  in the control word"*, which is exactly what MCP's
+  `REL(SEOP),0.0($15)  -CLEAR EE AND EOP STATUS BIT` is doing.
+  `StretchExecute.bsv:3381` already clears epgk/uk/ee/cs on REL.
+  **But it also clears `seop`, and p.121 says REL SEOP *sets* it
+  temporarily** — a second, smaller discrepancy, recorded here and
+  not acted on.
+
+**THE REMAINING CHECKS, cheapest first:**
+1. **Transcribe MCP's p.3 polling loop and run it.** It is ~8 rows,
+   it is rule-3 checkable, and a loop that terminates under one
+   reading and hangs under the other is the oracle. This is the
+   strongest option and it is cheap.
+2. Check `ka_ul1`'s loop the same way, as a second witness on a
+   different printer and a different author.
+
+**Until one of those is done, `boot_plan.md` M1 item 8 is blocked**,
+and it is the item the plan calls cheapest. Recorded rather than
+implemented, because an unsourced guess here does not fail loudly —
+it hangs, and a hang in an IPL path is exactly the failure that is
+hardest to attribute later.
+
+**AND A NOTE ON THE CONTRACT ITSELF.** `tape_unit_contract.md` is
+excellent and this does not change that; its 38 rules are mostly
+quoted and cited. But it was written by an agent, this project
+committed it today, and rule 31 blends a quotation and an inference
+into one sentence without marking the seam. **When a derived document
+states a rule, the citation needs to cover the whole rule, not its
+first clause.** Worth a pass over the other 37 before they are built
+on.
+
 ## 6. Open questions — record, do not guess
 
 **What is the `-ILLEGAL OP.` word doing in routine 1262's TEST 3A and
