@@ -3634,6 +3634,44 @@ blocked on a document already sitting in `docs/`.
 was held out while it failed, and the holding-out is what kept line
 34 visible long enough to be solved.
 
+## 5z. A CROP HELPER FOR THE REMAINING MCP PAGES
+
+`strap/mcp_crop.sh`, 2026-10-17. Printed p.2 was transcribed by
+working out the page geometry by hand, twice, and the second time
+produced a misread hex byte that took three commits to run down.
+Twelve pages remain in the bootstrap alone.
+
+```
+./mcp_crop.sh PRINTED_PAGE  loc|code|stmt  1|2|3  [DPI]
+```
+
+**It encodes three things learned the expensive way:**
+
+- **900 dpi for the `code` column, 600 for the others.** The default
+  switches on the column. `listing_typography.md` §11: the trailing
+  hex byte read as `80` at 200 dpi **and at 600** where the page
+  prints `B0`. The octal columns have no letters and do not need it.
+- **PDF page = printed + 7 for the bootstrap**, applied
+  automatically — and the script prints `CONFIRM the page's own
+  'PAGE NUMBER' header matches`, because the offset is **not**
+  constant across this listing (vol. 1 duplicates pp.1-2 and carries
+  three blanks).
+- **The column x-offsets are stated at 600 dpi and scaled**, with a
+  comment saying so. The first version wrote 900-dpi numbers and
+  scaled them as if they were 600-dpi, which silently rendered the
+  *statement* column when asked for the *code* column — a wrong
+  answer that looks like a right one, since both are columns of text.
+
+### THE CHEAP CHECK THAT WOULD HAVE CAUGHT THE BYTE
+
+Worth repeating here because it generalises past this page: **a
+misread byte in the opcode position is an opcode that does not
+exist.** `X22-6533_7030_PocketCard.pdf` is in `docs/` and tabulates
+every operation code. The misread `80` decoded to `100101000`, and
+no integer-arithmetic or radix-conversion entry on that card ends in
+`000` — they all end in `1`. **Decode the opcode field and look it
+up before re-rendering anything.**
+
 ## 6. Open questions — record, do not guess
 
 **What is the `-ILLEGAL OP.` word doing in routine 1262's TEST 3A and
