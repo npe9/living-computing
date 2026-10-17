@@ -3296,10 +3296,10 @@ BDPI function whose result type is **not** Action may be called in a
 value context from inside a rule. The idiom is the user's own, from
 `~/src/alto-bluespec/src/Disk.bsv:18-23`.
 
-**NOT YET IN `run_tests.sh`.** The full suite was reading that file
-when this landed, and `sh` reads a script by byte offset — editing it
-mid-run is the hazard `AGENTS.md` names explicitly. The run line is
-written and goes in once the suite reports.
+**IN `run_tests.sh` as of 2026-10-17** (395 -> 396), added only after
+the full suite finished reading the file — `sh` reads a script by
+byte offset and editing it mid-run is the hazard `AGENTS.md` names
+explicitly.
 
 ## 5t. MCP's SPACED SYMBOL NAMES ARE BLANKS STRAP IGNORES — M3 needs no assembler change for them
 
@@ -3343,6 +3343,56 @@ code will not match.
 from `mcp_tape_manufacture.md` §4 stand — `TAIL` with multi-level
 scoping, `CW(CR)`/`CW(CDSC)`, `XW`/`VF`, the `(A*)`/`(CC*)`/`(IQS*)`
 DD prefixes — and those are real. This one is not among them.
+
+## 5u. FULL SUITE GREEN AT 395/395, AND ONE M3 ASSEMBLER GAP CLOSED
+
+**2026-10-17: 395 of 395 sections, 0 `FAIL` lines, 0 bsc errors,
+"All regression tests passed."** This is the first full-suite run
+since 2026-10-16's and it validates everything between: the
+request/response tape source, chaining and its test, the SEOP status
+bit, the IPL mechanism, the 24-bit widening, the interval timer and
+time clock, the COMPOOL, and `mktape.py`.
+
+Section count checked against `grep -c '^run '`, not taken from the
+summary line — this file's own trap about a splice that silently
+removed 3,266 lines and still reported 40 sections passing.
+
+### STRAP-II LISTING CONTROL, parsed and discarded
+
+`strap_asm.py` gains `LISTING_CONTROL`: `PUNFUL`, `PUNORG`, `PUNID`,
+`PRNS`, `PRNID`, `RESEQ`, `SEM`. These control the printout and the
+punched cards — no storage, no symbol, no location-counter movement —
+so discarding them cannot change an assembled bit. **MCP's printed
+p.2 opens with five of them before its first instruction**, so its
+pages would not parse at all without this.
+
+Regression: **246 of 246 programs still assemble, and 186 of 186
+listing oracles still pass.** The oracles are the real check, since
+they compare assembled bits against IBM's own printed machine code.
+
+**`TAIL` IS DELIBERATELY NOT IN THE SET.** MCP uses `TAIL,(2)G` and
+it is multi-level symbol scoping, not listing control. Discarding it
+would change which definition a symbol resolves to — **wrong
+addresses that still assemble cleanly**, which is the exact failure
+this project's method exists to catch. It stays an error until
+implemented, and the source says so where someone would otherwise add
+it to the list.
+
+### WHAT M3 STILL WAITS ON — now a short, specific list
+
+1. **`TAIL` scoping.** Real symbol-table work.
+2. **`CW(CR)` / `CW(CDSC)`.** Deliberately not guessed. The printed
+   forms are `000041.00+ 000 000560 000001` (p.2, `CR`) and
+   `011406.00+ 110 001001 000553` (p.14, `CDSC`); the three-octal-digit
+   flags field differs between them and **nine bits cannot be mapped
+   onto the chain/multiple/skip positions without contradicting
+   Figure 35**. That needs `C28-6129`, not inference — and a wrong
+   control-word encoding boots nothing and explains nothing.
+3. **The `(A*)` / `(CC*)` / `(IQS*)` DD prefixes.**
+
+`XW` and `VF` turned out to be implemented already, and §5t removed
+the spaced-symbol worry. The gap is smaller than
+`mcp_tape_manufacture.md` §4 estimated.
 
 ## 6. Open questions — record, do not guess
 

@@ -961,6 +961,33 @@ def enc_sic(addr24, idx):
     return ((addr24 & 0xFFFFFF) << 8) | (0b1000 << 4) | (idx & 0xF)
 
 
+# STRAP-II LISTING AND PUNCH CONTROL -- parsed and discarded.
+#
+# These control the PRINTOUT and the punched-card output, not the
+# object program: they emit no storage, define no symbol and move no
+# location counter, so ignoring them cannot change a single assembled
+# bit.  MCP's listing opens with six of them before its first
+# instruction (printed p.2 lines 3-9: PUNFUL, PUNORG, PUNID, RESEQ,
+# PRNS) and its pages would not parse at all without them.
+#
+# WHAT IS DELIBERATELY NOT IN THIS SET: `TAIL`.  MCP uses `TAIL,(2)G`
+# and that one is NOT inert -- docs/mcp_tape_manufacture.md 4 records
+# it as "multi-level scoping, this needs real symbol-table scoping".
+# Discarding it would silently change which definition a symbol
+# resolves to, i.e. produce wrong addresses that still assemble.  It
+# stays an error until it is implemented, which is the whole point of
+# keeping this list to things that genuinely emit nothing.
+LISTING_CONTROL = frozenset([
+    'PUNFUL',   # punch the full deck
+    'PUNORG',   # punch origin
+    'PUNID',    # punch identification in the card ID columns
+    'PRNS',     # print suppression
+    'PRNID',    # print identification
+    'RESEQ',    # resequence the card numbers
+    'SEM',      # listing semantic/eject control
+])
+
+
 def statement_size(stmt):
     """Returns (alignment_bits, size_bits). alignment 0 = no rounding."""
     op = stmt.op.upper()
@@ -976,6 +1003,8 @@ def statement_size(stmt):
         return 0, 0  # defines a symbol by value, occupies no storage (C22-6531 p.31)
     if op == 'SLC':
         return 0, 0  # moves the location counter, occupies no storage (C22-6531 p.32)
+    if op in LISTING_CONTROL:
+        return 0, 0  # see LISTING_CONTROL -- no storage, no alignment
     if op == 'CNOP':
         return FULL, 0  # align to a full word; the gap filler emits the NOP
     if op in ('CF', 'RF', 'DDI', 'CW', 'EXT'):
@@ -1252,7 +1281,8 @@ def assemble(source, origin_bits=DEFAULT_ORIGIN_BITS):
         # data pseudo-op (e.g. VF's "LC stands at bit 25" rounding
         # after a bit-precise DD, C22-6531 p.18) is dead space no
         # program counter ever visits, and is left as-is.
-        is_instruction = stmt.op.upper() not in ('DD', 'VF', 'XW', 'END', 'SYN', 'SLC')
+        is_instruction = (stmt.op.upper() not in ('DD', 'VF', 'XW', 'END', 'SYN', 'SLC')
+                          and stmt.op.upper() not in LISTING_CONTROL)
         if loc != old_loc and is_instruction:
             gaps.append((old_loc, loc - old_loc))
         stmt.addr = loc
@@ -1301,6 +1331,9 @@ def assemble(source, origin_bits=DEFAULT_ORIGIN_BITS):
 def emit_statement(stmt, symtab, image):
     op = stmt.op.upper()
     loc = stmt.addr
+
+    if op in LISTING_CONTROL:
+        return  # printout/punch control only -- see LISTING_CONTROL
 
     if op == 'SYN':
         # No storage element -- the symbol's value was already resolved

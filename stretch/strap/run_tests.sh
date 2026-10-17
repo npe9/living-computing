@@ -1153,6 +1153,30 @@ run "I-Box 5 routine 1260's indicator walk + TRANSMIT IMMEDIATE (jb_ax5b p.45)" 
 # failing loud.  Every count in this block is 1.  Recorded in
 # TRANSMIT_CODES, in strap_asm.py's format list and in strap/README.md.
 
+run "INITIAL PROGRAM LOAD from a host file, 19 words (boot_plan.md M0+M1)" ./run_ipl_file_test.sh StretchIplFileTb
+# THE SIXTEEN-WORD CEILING, LIFTED.  The IPL test above boots a
+# four-word image out of mkTapeSourceVector and proves the SEQUENCE.
+# It cannot prove the SCALE: a path that silently truncated at
+# sixteen words would pass it unchanged.  This one mounts a 19-word
+# image from a real file through mkTapeSourceFile (BDPI) and checks
+# MARKER, the last word -- so a truncating path fails there AND
+# NOWHERE ELSE, with the program still running and both stores still
+# landing.
+#
+# AND THE SCALE IS WHY IT MATTERS.  MCP's IPL bootstrap is 369 words
+# (printed p.2: count 0o560 = 368 plus the control word).  Sixteen is
+# not within a factor of twenty of that, so boot_plan.md M3 was
+# unattemptable until this existed.
+#
+# IT BUILDS WITH -D HOST_TAPE AND ITS OWN -bdir, and both are load
+# bearing.  import "BDPI" has no Verilog back end -- bsc emits VPI
+# wrappers and yosys then cannot resolve the symbol -- so the package
+# must never reach a bitstream hierarchy, which is why StretchIO
+# selects it behind `ifdef rather than a parameter.  And the two
+# builds differ only by that -D while bsc's .bo files record nothing
+# about it: a StretchIO.bo built the other way is silently wrong and
+# the symptom is a tape that reads zeros, not a compile error.
+
 run "INITIAL PROGRAM LOAD: the machine boots from a tape image (Ref. Man. printed p.126)" ./run_ipl_test.sh StretchIplTb
 # THE MACHINE LOADS ITSELF.  docs/boot_plan.md M1's exit test, and it
 # transcribes nothing: programs/ipl_boot.strap is three instructions
