@@ -1,0 +1,59 @@
+! ipl_boot.strap -- the smallest program that proves the machine can
+! be loaded from a tape image and started, with NOTHING transcribed.
+!
+! THIS IS docs/boot_plan.md's M1 EXIT TEST.  Reference Manual printed
+! p.126 (PDF 129), read first-hand, specifies the whole sequence:
+!
+!   1. "The exchange automatically stores in the control word location
+!      for the channel responsible for the channel signal a fixed
+!      control word with the following contents: Data word address = 4,
+!      Chain flag = 1, Multiple flag = 0, Skip flag = 0, Count = 1,
+!      Refill address = 4."
+!   3. "The first word read from the unit is stored in the special core
+!      storage location referred to by means of address 4.  Since the
+!      fixed control word is then exhausted, its refill address causes
+!      the next control word to be fetched from location 4.  Location 4
+!      at this time should contain another control word specifying the
+!      address at which the word immediately following should be
+!      stored, and the number of words to be read from the unit."
+!   5. "The computer, upon receipt of the initial-start signal, fetches
+!      and executes the instruction in the location specified by the
+!      data word address field of the control word in core storage
+!      location 4."
+!
+! So: strap/mktape.py puts a control word in front of this program,
+! the hardware reads that ONE word, chains to it, and it reads the
+! rest.  Nothing here is pre-loaded into core by the harness -- see
+! gen_ipl_tb.py.  If the tape path does not work, core storage stays
+! zero and every check below reads 0.
+!
+! THE FIRST INSTRUCTION IS "BD" BECAUSE THE MANUAL REQUIRES IT.
+! p.126: "the first instruction of a program loaded by means of the
+! initial program loading technique must be BRANCH DISABLED.  This
+! instruction replaces the contents of the instruction counter and
+! insures that the system does not return to the enabled state."
+! MCP's own bootstrap obeys the same rule -- printed p.2 line 24 is
+! "X IPL BS  BD,X BEGIN  -DISABLE AND START IPL" -- so this program is
+! shaped like the real one even though it is three instructions long.
+!
+! THE HALT IS "B,$" AND NOT THE HOUSE "BEW,$": BEW would enable the
+! interruption system, which the BD above has just deliberately
+! disabled, and p.126's whole point is that IPL leaves it disabled.
+! Same reasoning as interval_timer_steps.strap's halt.
+!
+! IT MUST FIT IN SIXTEEN WORDS.  StretchIO's TapeWords is 16 and the
+! control word mktape.py prepends takes one of them, so the program
+! has fifteen.  Widening that is docs/boot_plan.md M0 step 2 and is
+! NOT needed to reach this milestone -- which is why this milestone
+! comes first.
+
+        SLC, (8)100.0      ! load somewhere clear of the low-core
+                            ! special assignments (p.111) -- in
+                            ! particular clear of word 4, which the
+                            ! IPL control word itself occupies
+IPLBS   BD,  GO            ! p.126: the first instruction MUST be this
+GO      LVI, $X1, 1234     ! prove the loaded code actually executed
+        SX,  $X1, RESULT   ! ... and left a value behind
+HALT    B,   $             ! halt, still disabled
+RESULT  DD(BU,64), 0
+        END, IPLBS

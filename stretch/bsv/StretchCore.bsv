@@ -62,6 +62,9 @@ interface StretchCore;
   method Bool   halted();    // the last clock's instruction branched to itself
   method HWordAddr getPC();
   method Action setPC(HWordAddr a);
+  // Press INITIAL PROGRAM LOAD and let a unit raise a channel signal:
+  // Reference Manual printed p.126.  See the method body.
+  method Action iplStart();
   interface StretchStorage mem;  // direct access for test setup/inspection
   interface StretchIO io;        // simulated device access for test
                                   // setup/inspection -- see StretchIO.bsv
@@ -159,6 +162,15 @@ module mkStretchCore(StretchCore);
   // refill is a core-storage READ, so like every other read in this
   // rule it needs a request/wait/collect staging flag of its own.
   Reg#(Bool) ioRefillIssued <- mkReg(False);
+
+  // ---- INITIAL PROGRAM LOAD (Reference Manual printed p.126) -------
+  // iplActive is set by iplStart() and cleared when the load
+  // completes.  iplEntry holds the data word address of the REFILLED
+  // control word -- the one the tape's first word becomes -- captured
+  // at the refill rather than read back at the end, because by then
+  // the exchange's copy has walked its dataAddr past the program.
+  Reg#(Bool)     iplActive <- mkReg(False);
+  Reg#(WordAddr) iplEntry  <- mkReg(0);
 
   // (An instruction waiting on an operand read is held by the E-box
   // itself -- ebox.busy/busyFor/canResume/pending/resume, step 5c --
@@ -440,6 +452,12 @@ module mkStretchCore(StretchCore);
         Word64 ncwW <- st.readWordResp();
         ControlWord n = unpackControlWord(ncwW);
         ioRefillIssued <= False;
+        // p.126: "Location 4 at this time should contain another
+        // control word specifying the address at which the word
+        // immediately following should be stored."  That address is
+        // also where the CPU starts, so capture it now, before the
+        // transfer walks it forward.
+        if (iplActive) iplEntry <= n.dataAddr;
         ioDev.writeChanCW(x.ch, n);
         // p.123: "If the count field in the control word is zero
         // initially, it is interpreted as 2**18."  remaining is
@@ -586,6 +604,29 @@ module mkStretchCore(StretchCore);
         cw.seop = 0;
         ioDev.writeChanCW(x.ch, cw);
         ioPending <= tagged Invalid;
+        // ---- the initial-start signal, p.126 steps 4 and 5 --------
+        // "the exchange sends an initial start signal to the
+        // computer... The computer, upon receipt of the initial-start
+        // signal, fetches and executes the instruction in the location
+        // specified by the data word address field of the control word
+        // in core storage location 4."
+        //
+        // A DOCUMENTED DEPARTURE.  p.126 continues: "The address of
+        // this instruction, however, is NOT placed in the instruction
+        // counter."  This sets the PC to it anyway.  The difference is
+        // unobservable for any legal IPL program, because the same
+        // page requires that "the first instruction of a program
+        // loaded by means of the initial program loading technique
+        // must be BRANCH DISABLED" -- a BD replaces the instruction
+        // counter itself, so what the PC held beforehand cannot
+        // matter.  MCP's bootstrap obeys this: printed p.2 line 24 is
+        // "X IPL BS  BD,X BEGIN  -DISABLE AND START IPL".  Modelling
+        // the true rule needs the EX subject-swap in mkEBox.resume()
+        // and buys nothing until a program breaks the requirement.
+        if (iplActive) begin
+          pcReg     <= {iplEntry, 1'b0};
+          iplActive <= False;
+        end
       end else begin
         ioDev.writeChanCW(x.ch, cw);
         ioPending <= tagged Valid IoXfer {
@@ -871,6 +912,34 @@ module mkStretchCore(StretchCore);
     pcReg <= a;
     restartSeq <= restartSeq + 1;
     haltedReg <= False;
+  endmethod
+
+  // p.126: "The exchange automatically stores in the control word
+  // location for the channel responsible for the channel signal a
+  // fixed control word with the following contents: Data word address
+  // = 4, Chain flag = 1, Multiple flag = 0, Skip flag = 0, Count = 1,
+  // Refill address = 4", and then "initiates a READ for the indicated
+  // channel, using the fixed control word".
+  //
+  // THE CHANNEL SIGNAL IS NOT SEPARATELY MODELLED.  StretchIO has one
+  // tape unit on its own channel with no not-ready/ready transition
+  // to raise one, and p.126 says loading works "only from a unit
+  // having the selection address 0" -- which is what that unit is.
+  // So this method is the key press and the signal together.  Item 7
+  // of docs/NEXT.md 5k remains open for the multi-unit case.
+  //
+  // suppressEop is True because p.126 says "The EOP as well as the EE
+  // indications, however, are not turned on upon the completion of
+  // the operation."
+  method Action iplStart();
+    ControlWord fixed = ControlWord {
+      dataAddr: 4, unitReady: 1, epgk: 0, uk: 0, ee: 0, eop: 0, cs: 0,
+      seop: 0, chain: 1, multiple: 0, skip: 0, count: 1, refill: 4 };
+    ioDev.writeChanCW(chanTape, fixed);
+    ioPending <= tagged Valid IoXfer {
+      ch: chanTape, isWrite: False, memAddr: 4, devIdx: 0,
+      remaining: 1, suppressEop: True, skip: False };
+    iplActive <= True;
   endmethod
 
   interface mem = st;

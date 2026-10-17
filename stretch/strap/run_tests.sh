@@ -1153,6 +1153,40 @@ run "I-Box 5 routine 1260's indicator walk + TRANSMIT IMMEDIATE (jb_ax5b p.45)" 
 # failing loud.  Every count in this block is 1.  Recorded in
 # TRANSMIT_CODES, in strap_asm.py's format list and in strap/README.md.
 
+run "INITIAL PROGRAM LOAD: the machine boots from a tape image (Ref. Man. printed p.126)" ./run_ipl_test.sh StretchIplTb
+# THE MACHINE LOADS ITSELF.  docs/boot_plan.md M1's exit test, and it
+# transcribes nothing: programs/ipl_boot.strap is three instructions
+# written here, assembled here, wrapped by mktape.py's own
+# pack_control_word, and read off the simulated tape by the hardware
+# sequence Reference Manual printed p.126 specifies.
+#
+# NOTHING IS PRE-LOADED INTO CORE STORAGE.  gen_tb.generate(ipl=True)
+# suppresses the program-word load rule entirely, so core starts at
+# zero and the tape has to fill it.  Pre-loading would make every
+# check below pass even if the IPL read moved nothing -- which is the
+# whole reason the flag exists.
+#
+# THE SEQUENCE, all of it already built: iplStart() plants p.126's
+# fixed control word (data address 4, chain 1, count 1, refill 4) and
+# reads ONE word; the count exhausts; CHAINING refills from location
+# 4, which now holds the word just read off the tape; that word is a
+# control word naming where the program goes and how long it is; the
+# rest loads under it; and the CPU starts at its data word address.
+# Chaining was built two days earlier for exactly this and needed no
+# change.
+#
+# THREE CHECKS THAT SEPARATE FAILURE MODES.  ipl_program_executed is
+# end-to-end -- it can only pass if the tape was read, the chain
+# refilled, the words landed, and the CPU started in the right place.
+# The two loaded-word checks distinguish "the program ran from
+# somewhere" from "the program was loaded where p.126 says".  The PC
+# check confirms it reached its own halt.  237 clocks, measured.
+#
+# "BD" IS THE FIRST INSTRUCTION BECAUSE p.126 REQUIRES IT: "the first
+# instruction of a program loaded by means of the initial program
+# loading technique must be BRANCH DISABLED."  MCP's own bootstrap
+# obeys the same rule at its printed p.2 line 24.
+
 run "mktape.py builds an IPL tape image (Ref. Man. printed p.126)" python3 verify_mktape.py
 # THE TAPE IMAGE FORMAT, AND IT NEEDED NO TRANSCRIPTION TO SETTLE.
 # Two primary sources fix it between them.  ka_ul1 ("LOAD AND TAPE

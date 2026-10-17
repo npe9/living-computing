@@ -3080,6 +3080,63 @@ states a rule, the citation needs to cover the whole rule, not its
 first clause.** Worth a pass over the other 37 before they are built
 on.
 
+## 5p. THE MACHINE BOOTS FROM A TAPE IMAGE — `boot_plan.md` M1 reached
+
+2026-10-17. `strap/programs/ipl_boot.strap` + `gen_ipl_tb.py` +
+`run_ipl_test.sh`, in `run_tests.sh` (394 -> 395 run lines).
+
+```
+PASS ipl_program_executed   = 0x9a400000000000
+PASS ipl_loaded_entry_word  = 0x102400009a4301
+PASS ipl_loaded_second_word = 0x10831000106800
+PASS cycles = 237 (bound 300)
+PASS PC (half-word address) = 131
+```
+
+**NOTHING WAS TRANSCRIBED TO GET HERE**, which was the whole argument
+for this milestone order. Three instructions written by hand,
+assembled by this repo, wrapped by `mktape.py`'s own
+`pack_control_word`, and read off the simulated tape by the sequence
+RefMan printed p.126 specifies. **Core storage starts at zero** —
+`gen_tb.generate(ipl=True)` suppresses the program-word load rule
+entirely, so pre-loading cannot be hiding a broken read.
+
+**CHAINING NEEDED NO CHANGE, and that is the finding.** `iplStart()`
+plants the fixed control word (data address 4, chain 1, count 1,
+refill 4) and reads ONE word; the count exhausts; the chaining built
+on 2026-10-16 refills from location 4, which now holds the word just
+read off the tape; that word is a control word naming where the
+program goes and how long it is; the rest loads under it. The
+hand-off that reads like a special mechanism in p.126 **is** chaining,
+which is why the manual can describe IPL in five short steps.
+
+**THE FAILING RUN WAS WORTH MORE THAN THE PASSING ONE.**
+`ipl_program_executed` first came back `0x9a400000000000` against an
+expected `1234` — and that was the test's error, not the model's.
+`0x9a400000000000 >> 40 = 39488 = 1234 x 32`: STRAP's bare operand in
+`LVI,$X1,1234` is a **half-word address**, and an index word's value
+field (IBM bits 0-23) holds a **bit** address. Every other check
+passed on that run, including both loaded-word checks and the halt
+PC, which is what identified the IPL path as already working. The
+three checks were built to separate exactly those failure modes and
+they did.
+
+### WHAT M1 DOES *NOT* YET HAVE
+
+- **The tape is still the 16-word `Vector`.** The image here is four
+  words. A file- or SD-backed source is `boot_plan.md` M0 steps 1 and
+  4, and the 24-bit address widening is step 2. **None of it was
+  needed to prove the path**, which is why it comes after.
+- **The channel signal is folded into `iplStart()`**, honest for one
+  unit at selection address 0 (p.126 allows loading only from such a
+  unit) and open for the multi-unit case.
+- **The PC departure stands**: p.126 says the entry address is *not*
+  placed in the instruction counter and this model puts it there.
+  Unobservable while the first instruction is `BD`, which the same
+  page requires.
+- **237 clocks is recorded, not validated.** No source gives an IPL
+  duration; the bound is a regression guard, not a timing claim.
+
 ## 6. Open questions — record, do not guess
 
 **What is the `-ILLEGAL OP.` word doing in routine 1262's TEST 3A and

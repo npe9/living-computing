@@ -19,7 +19,7 @@ from strap_asm import assemble, AssemblerError
 
 def generate(module_name, prog, checks, step_cap=30000, reader_image=None,
              printer_checks=None, tape_image=None, tape_checks=None,
-             pc_check=None, cycle_bound=None):
+             pc_check=None, cycle_bound=None, ipl=False):
     """checks: list of (label:str, word_addr_expr:str, expected:int).
 
     reader_image: optional list of ints -- words to pre-load into the
@@ -80,15 +80,24 @@ def generate(module_name, prog, checks, step_cap=30000, reader_image=None,
     lines.append("    endaction;")
     lines.append("")
 
+    # INITIAL PROGRAM LOAD: the tape puts the program in core, so the
+    # harness must NOT.  Pre-loading it would make the test pass even
+    # if the IPL read moved nothing -- the whole point is that core
+    # storage starts empty and the tape fills it.
+    words = [] if ipl else words
     n_load = len(words)
-    lines.append(f"  rule load (phase < {n_load} && core.mem.writeReady());")
-    lines.append("    case (phase)")
-    for i, (addr, val) in enumerate(words):
-        lines.append(f"      {i}: core.mem.writeWord({addr}, 64'h{val:016x});")
-    lines.append("    endcase")
-    lines.append("    phase <= phase + 1;")
-    lines.append("  endrule")
-    lines.append("")
+    # With ipl=True there is nothing to load, and an empty `case` is a
+    # bsc error (P0075, "Case statement with no clauses"), so the rule
+    # is omitted rather than emitted empty.
+    if n_load:
+        lines.append(f"  rule load (phase < {n_load} && core.mem.writeReady());")
+        lines.append("    case (phase)")
+        for i, (addr, val) in enumerate(words):
+            lines.append(f"      {i}: core.mem.writeWord({addr}, 64'h{val:016x});")
+        lines.append("    endcase")
+        lines.append("    phase <= phase + 1;")
+        lines.append("  endrule")
+        lines.append("")
 
     n_reader = len(reader_image)
     reader_load_phase = n_load
@@ -116,7 +125,13 @@ def generate(module_name, prog, checks, step_cap=30000, reader_image=None,
 
     run_phase = tape_load_phase + n_tape
     lines.append(f"  rule setStart (phase == {run_phase});")
-    lines.append(f"    core.setPC({prog.end_pc});")
+    if ipl:
+        # Reference Manual printed p.126.  No setPC: the entry point
+        # comes from the control word the tape's first word becomes,
+        # which is the thing under test.
+        lines.append("    core.iplStart();")
+    else:
+        lines.append(f"    core.setPC({prog.end_pc});")
     lines.append(f"    phase <= {run_phase + 1};")
     lines.append("  endrule")
     lines.append("")
