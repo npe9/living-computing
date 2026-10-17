@@ -176,8 +176,12 @@ Transcribe in this order, each useful alone:
 1. **The STRETCH MAINTENANCE COMPOOL**, PDF pp.129-130, 65 `SYN`
    entries. `archival_inventory.md` calls it "the Rosetta stone that
    resolves symbols referenced by *every other* 7030 diagnostic deck"
-   — without it every other listing's symbols dangle. **Two pages.
-   Do this first regardless of everything else in this plan.**
+   — without it every other listing's symbols dangle. Two pages.
+   **UNBLOCKED, 2026-10-16: see `NEXT.md` §5m.** The operator prints
+   as `&` at 600 dpi but is addition — 11 of 11 rows check out against
+   their own printed addresses, including one row where the glyph is
+   absent entirely. Transcribe as `+` with the print recorded as a
+   substitution, the way the corpus already handles `%8@n`.
 2. **Panel Dump** (`H7`, pp.125-129) — dumps LC, index/boundary/
    channel registers, both accumulator halves, indicator/mask/
    remainder/factor/transit. A near-complete state dump is a debugging

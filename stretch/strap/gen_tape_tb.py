@@ -79,7 +79,11 @@ def main():
     src_addr = word_addr(prog, "SRC")
     dest_ee = word_addr(prog, "DEST_EE")
     ctlw = {n: word_addr(prog, f"CTLW{n}") for n in range(1, 10)}
-    ccw = {c: word_addr(prog, f"CCW{c}") for c in "ABCDEFGHIJKLMNOP"}
+    ccw = {c: word_addr(prog, f"CCW{c}") for c in "ABCDEFGHIJKLMNOPQ"}
+    ctlwA = word_addr(prog, "CTLWA")
+    ctlwB = word_addr(prog, "CTLWB")
+    chblk1 = word_addr(prog, "CHBLK1")
+    chblk2 = word_addr(prog, "CHBLK2")
     block5 = word_addr(prog, "BLOCK5")
     block6 = word_addr(prog, "BLOCK6")
     block7 = word_addr(prog, "BLOCK7")
@@ -95,6 +99,15 @@ def main():
     prog.words[ctlw[7]] = pack_cw(dataAddr=block5, count=1)
     prog.words[ctlw[8]] = pack_cw(dataAddr=block6, count=1)
     prog.words[ctlw[9]] = pack_cw(dataAddr=block7, count=20)
+    # CHAINING, in the shape initial program loading uses (Reference
+    # Manual printed p.126: the fixed control word is chain 1, count 1,
+    # refill 4).  CTLWA takes one word and then refills from CTLWB,
+    # which takes three more into a different block.  refill is a WORD
+    # address of the next control word -- p.126 "its refill address
+    # causes the next control word to be fetched from location 4".
+    prog.words[ctlwA] = pack_cw(dataAddr=chblk1, count=1,
+                                chain=1, refill=ctlwB)
+    prog.words[ctlwB] = pack_cw(dataAddr=chblk2, count=3)
 
     # Expected control-word values, derived by walking the exact same
     # position transitions io_tape.strap's header comment describes.
@@ -162,6 +175,14 @@ def main():
     # 15: End Exception under SEOP.  Same shape as exp_ccwJ -- 16 of 20
     # words transferred, count shows the 4 never moved -- but eop 0.
     exp_ccwP = pack_cw(dataAddr=block7 + 16, unitReady=1, ee=1, eop=0, count=4)
+    # 16: CHAINING.  After the refill the exchange's copy of the
+    # control word is CTLWB's, walked to completion: dataAddr past the
+    # last word it placed, count 0, and chain 0 because CTLWB does not
+    # chain.  eop stays 0 under SEOP.  A model that ignored the chain
+    # flag would leave CTLWA's own exhausted word here instead
+    # (dataAddr chblk1+1, chain 1), so this check is independently
+    # discriminating from the CHBLK2 content checks below.
+    exp_ccwQ = pack_cw(dataAddr=chblk2 + 3, unitReady=1, eop=0, count=0)
 
     checks = [
         ("BLOCK1_0", str(block1), TAPE_IMAGE[0]),
@@ -201,6 +222,16 @@ def main():
         ("CCWN_after_RDSEOP_2", str(ccw["N"]), exp_ccwN),
         ("CCWO_backspace_SEOP_success", str(ccw["O"]), exp_ccwO),
         ("CCWP_end_exception_SEOP", str(ccw["P"]), exp_ccwP),
+        # CHAINING, the discriminator.  Tape was rewound to the load
+        # point, so CTLWA's single word is tape word 0 and CTLWB's
+        # three are words 1-3.  If the chain flag were ignored the
+        # transfer would stop after CHBLK1 and all three CHBLK2 checks
+        # would read 0 while CHBLK1 still passed.
+        ("CHAIN_blk1_one_word", str(chblk1), TAPE_IMAGE[0]),
+        ("CHAIN_blk2_0_after_refill", str(chblk2), TAPE_IMAGE[1]),
+        ("CHAIN_blk2_1_after_refill", str(chblk2 + 1), TAPE_IMAGE[2]),
+        ("CHAIN_blk2_2_after_refill", str(chblk2 + 2), TAPE_IMAGE[3]),
+        ("CCWQ_after_chained_RD", str(ccw["Q"]), exp_ccwQ),
         # DEST_EE spot checks: first 8 words are the tape's original
         # content (never overwritten); words 8-9 are what the W step
         # wrote (999, 888) -- persisting through two REWINDs proves

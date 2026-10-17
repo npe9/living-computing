@@ -2787,6 +2787,113 @@ Two assumptions in the plan are flagged there as unchecked: that DCP
 needs no disk (nothing has looked), and how much disk MCP's bootstrap
 really needs (`$IPLD`, printed pp.15-36, 3 of 22 pages sampled).
 
+## 5m. THE COMPOOL'S `&` IS ADDITION — settled by arithmetic, 11 rows out of 11
+
+Raised and resolved 2026-10-16 while starting the two-page STRETCH
+MAINTENANCE COMPOOL (`ka_ua1_diagnostic_ctl_pgm.pdf` PDF pp.129-130),
+which `docs/boot_plan.md` makes the cheapest high-value action in the
+plan.
+
+**THE PROBLEM.** The page header is `@STRETCH MAINTENANCE COMPOOL,
+NOVEMBER 20, 1961` and the rows run
+`EBMAIN  SYN,ECTL1&.01 ... 4006.01&`. Rendered at **600 dpi, cropped
+to one column**, the operator glyph is unmistakably an ampersand form
+— closed lower loop, diagonal — and **not** a `+`, even though the
+MCP listing prints an ordinary `+` in the structurally identical
+place (`000041.00+ 000 000560 000001`). Transcribing it wrong would
+corrupt 65 definitions that `archival_inventory.md` says *every other
+deck in `docs/diag/`* depends on.
+
+**THE RESOLUTION IS ARITHMETIC, NOT GLYPH-READING.** Every row on the
+page is its own check, because the listing prints both the expression
+and the resulting address. Taking the operator as addition, the
+offset as a DECIMAL bit count and the address column as OCTAL:
+
+| symbol | expression | predicted | printed |
+|---|---|---|---|
+| `EBMAIN` | `ECTL1 + .1` | `.01` | `.01` |
+| `EBBLNK` | `ECTL1 + .46` | `.56` | `.56` |
+| `ETAPCM` | `ECTL2 + .12` | `.14` | `.14` |
+| `EB16CH` | `ECTL2 + .61` | `.75` | `.75` |
+| **`MNTCTL`** | **`ECTL2 + .62`** | **`.76`** | **`.76`** |
+| `EBDRSP` | `ECTL3 + .17` | `.21` | `.21` |
+| `EDPLOC` | `ECTL3 + .32` | `.40` | `.40` |
+| `EQRDR2` | `EQAV1 + .16` | `.20` | `.20` |
+| `EQRDR4` | `EQAV1 + .48` | `.60` | `.60` |
+| `EQTAP8` | `EQAV7 + .48` | `.60` | `.60` |
+
+**11 of 11**, and the decisive one is `MNTCTL`: its row prints
+`SYN, ECTL2.62` with **no operator glyph at all**, and the arithmetic
+still comes out. A row where the character is simply absent and the
+sum still holds is independent evidence that the character is an
+operator and that the operator is addition — evidence that does not
+depend on reading the glyph.
+
+**WHAT TO WRITE.** `+`, with the print recorded as a substitution in
+the transcription's header, exactly the way `%8@n` -> `(8)n` and
+`$BD,0` -> `BD,0` are already handled. The glyph is consistent with
+the 12-zone punch, which prints `&` on BCDIC chains and `+` on EBCDIC
+ones — **that remains a hypothesis about WHY and nothing rests on
+it.** What the transcription rests on is the eleven-row check.
+
+**A NOTE ON METHOD.** The first instinct here was to settle a
+character by looking at it harder, and 600 dpi made it *more*
+confident and *less* useful — the glyph really is an ampersand. The
+page turned out to carry its own oracle: an expression and its
+evaluated address on every line. **When a listing prints both an
+expression and its result, the arithmetic outranks the typography.**
+
+### STILL OPEN, and smaller
+
+The `&` in the address column (`4006.00&`) and the binary column
+(`&00000000`) sits where MCP prints a `+` sign. Nothing in this
+project reads those columns for the COMPOOL, since a `SYN` emits no
+code, so it does not block the transcription — but it is unexplained
+and should not be silently normalised if a later listing needs it.
+
+## 5n. CHAINING IS NOW TESTED — 39/39, and the test caught my error not the model's
+
+`io_tape.strap` gains a sixteenth block and `gen_tape_tb.py` five
+checks, 34 -> 39. Chaining went in earlier today with the commit
+message saying plainly that the suite never took the new branch; it
+does now.
+
+**THE SHAPE IS IPL's, deliberately.** RefMan printed p.126's fixed
+control word is chain 1, count 1, refill 4 — it reads exactly one
+word and refills from the address in its refill field. `CTLWA` is
+count 1, chain 1, refill -> `CTLWB`; `CTLWB` is count 3 into a
+different block. After a REWIND to the load point, tape word 0 lands
+in `CHBLK1` and words 1-3 in `CHBLK2`.
+
+**THE DISCRIMINATOR EARNED ITS KEEP.** The block was designed so that
+a model ignoring the chain flag stops after one word: `CHBLK1` passes
+and all three `CHBLK2` checks read zero. On the first run **`CHBLK1`
+failed too**, which the design says means something different — the
+transfer never happened at all — so the next step was to decode
+rather than to touch the model.
+
+`CCWQ` came back as `CTLWA` unmodified except `ee = 1`: End
+Exception, "the unit runs out of material". **The REWIND had not
+happened.** `io_tape.strap` writes CTL codes in DECIMAL with the
+octal in the comment — `CTL, 0($1), 94  !REWIND (octal 136)` — and
+the new block had been written `136`, a different and unimplemented
+code. The tape was still at position 16 from the End Exception step
+above, so the read took an immediate EE and moved nothing. **The
+model was right and the test was wrong**, and the only reason that
+was obvious in one step is that the checks were built to tell the two
+failures apart.
+
+`CCWQ` is independently discriminating from the content checks: a
+model ignoring the chain flag would leave `CTLWA`'s own exhausted
+word in the exchange's copy (dataAddr `CHBLK1`+1, chain 1), where the
+passing value is `CTLWB` walked to completion (dataAddr `CHBLK2`+3,
+count 0, chain 0).
+
+**Still not covered**: p.123's "count zero means 2**18" on a refilled
+control word, and every Figure 36 row other than
+(multiple 0, chain 1, count zero, end-of-block No) — the model cannot
+reach the end-of-block rows at all until records exist.
+
 ## 6. Open questions — record, do not guess
 
 **What is the `-ILLEGAL OP.` word doing in routine 1262's TEST 3A and
