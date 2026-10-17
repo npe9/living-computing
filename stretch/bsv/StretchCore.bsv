@@ -459,6 +459,7 @@ module mkStretchCore(StretchCore);
       ControlWord cw = ioDev.readChanCW(x.ch);
       cw.ee = 1;
       if (!x.suppressEop) cw.eop = 1;
+      cw.seop = 0;   // completion: see rl_io's other terminal arm
       ioDev.writeChanCW(x.ch, cw);
       ioPending <= tagged Invalid;
     end else if (!st.writeReady()) begin
@@ -567,6 +568,22 @@ module mkStretchCore(StretchCore);
           suppressEop: x.suppressEop, skip: x.skip };
       end else if (rem1 == 0) begin
         if (!x.suppressEop) cw.eop = 1;
+        // THE SEOP STATUS BIT IS CLEARED AT COMPLETION, and this half
+        // of the rule is NOT a quotation.  Reference Manual p.121 was
+        // read whole: it says the bit is set when an SEOP instruction
+        // is given, and says nothing about clearing it.  What settles
+        // it is that IBM's own code cannot work otherwise.  MCP's
+        // bootstrap, printed p.3 line 45, prints
+        //     000076.00  000041.30 80  000074.34 02
+        //                              BB,X IPL BS+.24,X 8 1
+        // which this assembler reproduces bit-for-bit, so the
+        // instruction is BB -- branch when the bit is ONE
+        // (strap/opcodes.py BB_CODES) -- and its target is the CCW two
+        // rows above.  The loop therefore spins while bit 24 is set.
+        // Without a clear it never terminates.  ka_ul1's tape-write
+        // routine is a second, independent witness.  Usage-based
+        // evidence, recorded as such in docs/NEXT.md 5o.
+        cw.seop = 0;
         ioDev.writeChanCW(x.ch, cw);
         ioPending <= tagged Invalid;
       end else begin

@@ -2996,15 +2996,76 @@ Two things the whole page did yield:
   temporarily** — a second, smaller discrepancy, recorded here and
   not acted on.
 
-**THE REMAINING CHECKS, cheapest first:**
-1. **Transcribe MCP's p.3 polling loop and run it.** It is ~8 rows,
-   it is rule-3 checkable, and a loop that terminates under one
-   reading and hangs under the other is the oracle. This is the
-   strongest option and it is cheap.
-2. Check `ka_ul1`'s loop the same way, as a second witness on a
-   different printer and a different author.
+**RESOLVED, 2026-10-16: THE BIT IS CLEARED AT COMPLETION**, on the
+strongest evidence available short of a manual sentence — and the
+decisive step was a rule-3 check, not a reading.
 
-**Until one of those is done, `boot_plan.md` M1 item 8 is blocked**,
+MCP printed p.3 line 45 prints
+
+```
+45*  000076.00  000041.30 80  000074.34 02   BB,X IPL BS+.24,X 8 1
+```
+
+and this repo's assembler, given `BB, XIPLBS+.24, X81` with
+`XIPLBS = (8)41.0` and `X81 = (8)74.0`, emits
+
+```
+first half-word  000041.30 80      second half-word  000074.34 02
+```
+
+**character-for-character identical.** So the instruction is `BB`,
+not one of its seven siblings, and `strap/opcodes.py`'s `BB_CODES`
+has `BB: (0b00, 1)` — **branch when the bit is ONE**. `X 8 1` is the
+`CCW` two rows above it. Therefore MCP's bootstrap **spins while bit
+24 is set and falls through when it clears.**
+
+So the exchange clears the SEOP bit at completion, or IBM's own
+bootstrap never leaves this loop. `ka_ul1`'s tape-write routine is an
+independent second witness on a different printer by a different
+author, and p.121's *"the SEOP bit is **temporarily** set"* for
+RELEASE SEOP is consistent with something clearing it.
+
+**THE EVIDENCE IS STILL USAGE-BASED AND THAT IS SAID PLAINLY.** No
+sentence in the manual states the clearing rule; p.121 was read whole
+and does not contain one. What makes this different from the
+inference rule 4 forbids is that the *instruction's* meaning is not
+being guessed — it is bit-exact against the print — and two
+independent IBM programs are structurally unable to work without the
+behaviour. That is weaker than a quotation and much stronger than a
+plausible reading, and the implementation should carry exactly that
+caveat.
+
+**IMPLEMENTED 2026-10-16**, set at issue in `StretchExecute.bsv`'s
+RD/W arm and cleared at both of `rl_io`'s terminal paths. io_tape is
+39/39, identical to baseline — as predicted, since every `CCW` in
+that program is read *after* completion and so sees 0 under both the
+old behaviour (never set) and the new (set, then cleared).
+
+**AND IT IS UNOBSERVABLE BY ANY PROGRAM THIS MODEL CAN RUN, which is
+the part worth knowing.** `StretchCore.bsv`'s arm conditions are all
+`!isValid(ioPending)` — `armIdx`, `armResume`, `armRemove`,
+`armInterrupt`, `armPrepare`, every one of them — so **no instruction
+executes while a transfer is pending.** Transfers are synchronous
+from the program's point of view. A driver polling bit 24 therefore
+reads it *after* completion, every time, and finds 0 on the first
+iteration.
+
+Three consequences, none of them reasons not to have done it:
+
+- **MCP's polling loop will terminate, but it will not spin.** The
+  model does not reproduce the wait, only its exit. That is the right
+  outcome for booting and the wrong one for timing.
+- **The bit cannot be given a test in this model.** Unlike chaining,
+  which was untested only until someone wrote the test, this is
+  untestable by construction until I/O overlaps execution. Recorded
+  as a different category of gap.
+- **It is a stage-3 look-ahead item.** `StretchIO.bsv`'s header
+  already calls synchronous whole-block transfer a documented
+  simplification; this is the first place where that simplification
+  has a *visible* consequence for real IBM software rather than only
+  for cycle counts.
+
+**THE REMAINING CHECKS, if it ever matters again:****Until one of those is done, `boot_plan.md` M1 item 8 is blocked**,
 and it is the item the plan calls cheapest. Recorded rather than
 implemented, because an unsourced guess here does not fail loudly —
 it hangs, and a hang in an IPL path is exactly the failure that is

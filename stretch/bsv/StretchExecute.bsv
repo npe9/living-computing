@@ -3411,6 +3411,18 @@ function ActionValue#(IoOutcome)
               // (docs/phase2_arm_inventory.md), the last remaining
               // execute() case arm.
               ControlWord cw0 = unpackControlWord(prefetch[0]);
+              // p.121: "At the time an SEOP instruction is given, the
+              // SEOP bit in the control word is set to one.  As the
+              // result of this, the EOP bit in the control word (and
+              // therefore in the indicator register) is not turned on
+              // unless it is accompanied by unit check or end
+              // exception."  The suppression itself was already
+              // modelled through IoXfer.suppressEop; this makes the
+              // BIT observable, which is what every real driver polls.
+              // StretchCore's transfer FSM clears it on completion --
+              // see docs/NEXT.md 5o for why that half is sourced the
+              // way it is.
+              cw0.seop = seop ? 1 : 0;
               io.writeChanCW(chAddr, cw0); // exchange adopts the
                                             // requested control word
                                             // (p.106: "the exchange
