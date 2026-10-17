@@ -1153,6 +1153,33 @@ run "I-Box 5 routine 1260's indicator walk + TRANSMIT IMMEDIATE (jb_ax5b p.45)" 
 # failing loud.  Every count in this block is 1.  Recorded in
 # TRANSMIT_CODES, in strap_asm.py's format list and in strap/README.md.
 
+run "mktape.py builds an IPL tape image (Ref. Man. printed p.126)" python3 verify_mktape.py
+# THE TAPE IMAGE FORMAT, AND IT NEEDED NO TRANSCRIPTION TO SETTLE.
+# Two primary sources fix it between them.  ka_ul1 ("LOAD AND TAPE
+# WRITE UTILITY", 13 Oct 1961) writes an IPL tape with ONE W against
+# one control word -- no tape mark, no label, no header record, so a
+# bootable 7030 tape is just its words.  Reference Manual printed
+# p.126 fixes what the first of those words is: the exchange plants a
+# FIXED control word (data address 4, chain 1, count 1, refill 4),
+# reads ONE word into location 4, and refills FROM location 4 -- so
+# the tape's first word IS a control word, and it immediately becomes
+# the active one.
+#
+# MCP'S OWN BOOTSTRAP IS THIS SHAPE, which is the corroboration:
+# printed p.2 assembles CW(CR),X IPL BS,X BS END-X IPL BS,1 at octal
+# 40 -- dataAddr 000041.00, count 0o560 = 368, refill 1 -- with
+# "X IPL BS  BD,X BEGIN" immediately after it, matching p.126's "the
+# first instruction ... must be BRANCH DISABLED".
+#
+# WHAT THIS CHECKS AND WHAT IT DOES NOT.  It round-trips the image
+# through the byte-for-byte reader bsv/sd_reference/host_tape.c uses
+# (big-endian, byte 0 = IBM bits 0-7) and compares every word against
+# the assembly, plus five properties of the control word.  It does
+# NOT run the model: the IPL mechanism that would consume this does
+# not exist yet (docs/boot_plan.md M1).  Settling and testing the
+# format first, before the hardware that reads it, is the whole point
+# of that milestone order.
+
 run "The STRETCH MAINTENANCE COMPOOL, 65 symbols (ka_ua1 PDF pp.129-130)" python3 verify_dcp_compool.py
 # THE ROSETTA STONE, and the first piece of the Diagnostic Control
 # Program transcribed.  docs/archival_inventory.md: "the single
