@@ -1238,6 +1238,36 @@ run "mktape.py builds an IPL tape image (Ref. Man. printed p.126)" python3 verif
 # format first, before the hardware that reads it, is the whole point
 # of that milestone order.
 
+run "M+1, Add One to Memory -- the sixth VFL integer arm" ./run_program.sh programs/vfl_m_plus_one.strap StretchMPlusOneTb \
+    "f6_two_increments_at_w63_58:134=576460752303423493" \
+    "f64_whole_word:135=1001" \
+    "f4_at_bit_offset_8:136=4503599627370496" \
+    "fcarry_255_plus_1_carries:137=72057594037927936"
+# MCP PRODUCED THIS GAP AND THE AUDIT CAUGHT IT.  M+1 is the FOURTH
+# instruction of IBM's operating system (printed p.2 line 34), and
+# until 2026-10-17 the model set Operation Code Invalid on it -- so
+# boot_plan.md M3 could have transcribed the whole bootstrap and
+# never run a line.  audit_opcode_coverage.py failed the suite the
+# first time a program used the mnemonic, which is what that ratchet
+# is for.
+#
+# NOT A DECK TEST, and the program says so.  MCP's rows pin M+1's
+# ENCODING bit-exactly; they cannot pin its EXECUTION, because
+# running the bootstrap is the goal rather than a tool.  This is a
+# hand-written behavioural test against X22-6533's "M+1  Add One to
+# Memory  abc101011" and is weaker than a deck oracle.
+#
+# THE EXPECTATIONS ARE DERIVED, NOT OBSERVED, and the first draft got
+# three of four wrong against a CORRECT model by assuming VFL fields
+# are right-justified in the word.  They are not: a field at bit
+# address A length L occupies IBM bits A..A+L-1, w[63-A : 64-A-L], so
+# the increment lands at w[64-A-L].  The program header carries the
+# derivation for all four.
+#
+# The signed case is deliberately NOT tested: MCP uses (BU,6) and no
+# source here states the signed interpretation, so writing a test
+# would mean inventing its expectation.
+
 run "MCP's IPL bootstrap, printed p.2, bit-exact (MCP_Mar63 PDF p.9)" python3 verify_mcp_bootstrap_p2.py
 # THE FIRST PAGE OF IBM's OPERATING SYSTEM IN THIS CORPUS, and the
 # first rule-3 check against MCP rather than a diagnostic deck.  All

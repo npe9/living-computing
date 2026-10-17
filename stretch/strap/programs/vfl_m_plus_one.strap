@@ -1,0 +1,76 @@
+! vfl_m_plus_one.strap -- M+1, Add One to Memory, the sixth VFL
+! integer arm.
+!
+! WHY IT EXISTS, AND WHY IT IS NOT A DECK TEST.  MCP's IPL bootstrap
+! uses M+1 as its FOURTH instruction (printed p.2 line 34,
+! "M+1(BU,6),X CL IND+.19  -CLEAR NON MASKABLE INDIC"), and until
+! 2026-10-17 the model set Operation Code Invalid on it -- see
+! docs/NEXT.md 6a, where the opcode coverage audit caught it.  The
+! bootstrap's own rows pin M+1's ENCODING bit-exactly
+! (verify_mcp_bootstrap_p2.py) but cannot pin its EXECUTION, because
+! running the bootstrap is the whole point of boot_plan.md M3 and is
+! not possible yet.  So this is a hand-written behavioural test
+! against the operation's documented meaning, and it is weaker than a
+! deck oracle.  Said plainly rather than left to be assumed.
+!
+! THE SOURCE FOR THE SEMANTICS is X22-6533
+! (docs/X22-6533_7030_PocketCard.pdf), which lists
+!     M+   Add to Memory       abc001001
+!     M+1  Add One to Memory   abc101011
+! adjacently.  M+1 is M+ with the addend replaced by one; everything
+! else -- addressing, field handling, refill, DF class 3, the DS
+! protection check -- is identical, which is why they share an arm.
+!
+! WHAT IS CHECKED.  Four fields of different widths and offsets.  The
+! widths matter: "one" must mean one unit of the FIELD, not one bit
+! and not one word, and a narrow field at a non-zero offset is where
+! a wrong shift would show.
+!
+! A VFL FIELD IS NOT RIGHT-JUSTIFIED IN THE WORD, and the first
+! version of this file assumed it was.  A field at bit address A with
+! length L occupies IBM bits A..A+L-1, i.e. w[63-A : 64-A-L] counting
+! from the MSB, so adding one adds 1 at w[64-A-L].  Three of the four
+! checks were written expecting the increment at the low end of the
+! word and all three failed -- against a model that was doing exactly
+! the right thing.  Every expectation below is now DERIVED from that
+! rule rather than copied from what the model produced:
+!
+!   F6     (BU,6)  at .0, twice -> field w[63:58], 0+2 -> 2<<58
+!                                   = 0x800000000000005 (low 5 intact)
+!   F64    (BU,64) at .0        -> the whole word, 1000+1 = 1001
+!   F4     (BU,4)  at .8        -> field w[55:52], 0+1 = 1<<52
+!   FCARRY (BU,16) on a 16-bit datum -> 255+1 = 256 IN the field
+!
+! THE CARRY CASE HAD TO BE REBUILT TOO.  It was DD(BU,64),255 read as
+! a 16-bit field at offset 0, which reads w[63:48] -- zero, because
+! the 255 sits in the low bits outside the field.  It tested nothing.
+! DD(BU,16),255 puts 255 where a 16-bit field at that address can see
+! it, so 255+1 genuinely carries out of the low byte.
+!
+! WHAT IS NOT CHECKED, and is the honest gap: the SIGNED case.  M+1
+! on a signed field would exercise fieldToSM's sign-byte strip and
+! smAdd's sign handling, and MCP's use is (BU,6) -- unsigned.  A
+! signed test would be guessing at an interpretation no source here
+! states, so it is left undone rather than written to pass.
+
+        SLC, (8)200.0
+START   LVI, $X1, 0
+
+! ---- a 6-bit unsigned field, the width MCP's bootstrap uses -------
+        M+1(BU,6), F6
+        M+1(BU,6), F6            ! twice: 5 -> 7
+! ---- a full word -------------------------------------------------
+        M+1(BU,64), F64
+! ---- a narrow field at a non-zero bit offset ---------------------
+        M+1(BU,4), F4+.8
+! ---- carry out of the low byte: 255 + 1 in a 16-bit field --------
+        M+1(BU,16), FCARRY
+        BEW, $
+        CNOP
+
+F6      DD(BU,64), 5
+F64     DD(BU,64), 1000
+F4      DD(BU,64), 0
+FCARRY  DD(BU,16), 255     ! a 16-BIT datum, so a 16-bit field at this
+                            ! address actually sees the 255 -- see header
+        END, START

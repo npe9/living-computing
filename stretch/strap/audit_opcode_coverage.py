@@ -80,29 +80,25 @@ UNIMPLEMENTED = {
 # THE CATEGORY HAS BEEN FORCED THREE TIMES, by three unrelated
 # transcriptions, which is why it is a category and not a special case.
 # THE CATEGORY HAS NOW BEEN FORCED A FOURTH TIME, by MCP itself.
-# TWO of the four are here:
+# ONE of the four is still here:
 #
 #   RNX   programs/ibox4_rnx_nop.strap -- jb_ax4b routine 1244, the
 #         refill-address NOP gate.  The FIRST listing witness for RNX
 #         anywhere in this repo; before it, the name appeared only in
 #         opcodes.py's table, this audit, and two comments.
 #
-#   M+1   programs/mcp_bootstrap_p2.strap -- MCP's IPL bootstrap,
-#         printed p.2 line 34, "M+1(BU,6),X CL IND+.19  -CLEAR NON
-#         MASKABLE INDIC".  X22-6533 gives it as "Add One to Memory,
-#         abc101011" and the row is bit-exact against the listing.
-#         It arrived here on 2026-10-17 and it is NOT bookkeeping:
-#         docs/boot_plan.md M3 wants to RUN this bootstrap, and this
-#         is the first hard evidence that transcribing it is not
-#         sufficient.  The instruction is self-modifying -- it steps
-#         a mask-bit number inside the BMKZ two half-words earlier --
-#         so the model will set Operation Code Invalid on the fourth
-#         instruction of IBM's operating system.
-#
-#         Implementing it is a sixth VFL integer arm beside L, ST, +,
-#         M+ and K, and "add one" is the narrowest of them.  Recorded
-#         in docs/NEXT.md as the first named model gap that MCP
-#         itself has produced.
+#   M+1 ARRIVED AND LEFT ON THE SAME DAY, 2026-10-17, and the round
+#         trip is the clearest illustration of what this category is
+#         for.  MCP's bootstrap (programs/mcp_bootstrap_p2.strap,
+#         printed p.2 line 34) pinned its ENCODING bit-exactly, which
+#         moved it here out of UNIMPLEMENTED.  That made visible what
+#         had been invisible: the model set Operation Code Invalid on
+#         the FOURTH instruction of IBM's operating system, so
+#         docs/boot_plan.md M3 could transcribe the bootstrap and
+#         still never run it.  A sixth VFL integer arm beside L, ST,
+#         +, M+ and K closed it, driven by
+#         programs/vfl_m_plus_one.strap, and M+1 now belongs in no
+#         category on this page -- like EX and EXIC before it.
 #
 # In each case the assembler emits the operation, the model decodes it
 # and then sets Operation Code Invalid, and the program is never run.
@@ -136,7 +132,6 @@ UNIMPLEMENTED = {
 # something.  RNX is recorded in docs/NEXT.md as out of scope.
 ENCODING_ONLY = {
     "RNX",
-    "M+1",   # MCP's bootstrap, printed p.2 line 34 -- see above
 }
 # IMPLEMENTED BUT UNEXERCISED -- the model has real arms for these and
 # nothing drives them.  This is the actionable list: each is a test

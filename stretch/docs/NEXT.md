@@ -3696,11 +3696,55 @@ sufficient — exactly the distinction the audit's `ENCODING_ONLY`
 category was built to keep visible, now forced a fourth time and for
 the first time by MCP rather than a diagnostic deck.
 
-**The fix is a sixth VFL integer arm**, beside `L`, `ST`, `+`, `M+`
-and `K`. "Add one to memory" is the narrowest of them, and the
-instruction is self-modifying — it steps a mask-bit number inside the
-`BMKZ` two half-words earlier — so it is also directly on the
-bootstrap's critical path rather than incidental.
+**FIXED THE SAME DAY.** `M+1` is now a sixth VFL integer arm beside
+`L`, `ST`, `+`, `M+` and `K`. It **shares `M+`'s arm** rather than
+cloning fifty lines: X22-6533 lists them adjacently (`M+ Add to
+Memory abc001001`, `M+1 Add One to Memory abc101011`) and the
+difference is only the addend — addressing, field handling, refill,
+the DF class-3 signal and the DS protection check are identical, and
+`M+`'s arm is already deck-verified. "One" is one unit of the field:
+`fieldToSM` right-justifies the field in `mag`, so the addend is
+`SM128{sign:0, mag:1}` with no offset shift, `offSh` existing only to
+align the accumulator that `M+1` does not have.
+
+`M+1` has therefore **left every category on the audit page**, the
+way `EX` and `EXIC` did — arriving and leaving on the same day, which
+makes the round trip the clearest illustration of what
+`ENCODING_ONLY` is for. Pinning the encoding is what made the
+execution gap visible.
+
+### THE TEST IS BEHAVIOURAL, NOT A DECK ORACLE, AND IT CAUGHT ME
+
+`programs/vfl_m_plus_one.strap`. MCP's rows pin `M+1`'s encoding
+bit-exactly; they cannot pin its execution, because running the
+bootstrap is the goal rather than a tool available now. So this is
+hand-written against the pocket card's wording and is weaker than a
+deck check — stated in the program header rather than left to be
+assumed.
+
+**Three of its four expectations were wrong on the first run, against
+a model that was correct.** I had written them as though a VFL field
+were right-justified in the word. It is not: **a field at bit address
+A with length L occupies IBM bits A..A+L−1, `w[63-A : 64-A-L]`, so
+the increment lands at `w[64-A-L]`.** Re-derived from that rule, all
+four matched the model exactly.
+
+**And the carry case was testing nothing.** `DD(BU,64),255` read as a
+16-bit field at offset 0 reads `w[63:48]` — zero, because the 255
+sits in the low bits *outside* the field. It incremented 0 to 1 and
+passed for the wrong reason. Rebuilt as `DD(BU,16),255` so the field
+actually contains the 255 and the carry out of the low byte is real.
+
+That is the second test in two days that would have passed while
+checking nothing — the other being the IPL harness, where
+pre-loading core would have made every check pass against a dead
+tape. Both were found by asking what a *broken* implementation would
+produce.
+
+**The signed case is deliberately untested.** `M+1` on a signed field
+exercises the sign-byte strip and `smAdd`'s sign handling; MCP uses
+`(BU,6)` and no source here states the signed interpretation.
+Writing that test would mean inventing its expected value.
 
 **AND EXPECT MORE.** Page 2 is one of thirteen. Every page
 transcribed from here will re-run this audit, and each one may name

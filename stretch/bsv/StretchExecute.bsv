@@ -2424,10 +2424,33 @@ function ActionValue#(VflOutcome)
               ind = setResultIndicatorsF(ind, sum);
             end
           end
-          6'b001001: begin // M+ (Add to Memory) -- prefetch/bail-out
-            // shape, inlining readFieldWithHi/writeFieldWithHi's
-            // own logic rather than calling them: guaranteed
-            // non-crossing (checked just above), exactly 1 read.
+          6'b001001, 6'b101011: begin // M+ (Add to Memory) and M+1
+            // (Add One to Memory) -- prefetch/bail-out shape,
+            // inlining readFieldWithHi/writeFieldWithHi's own logic
+            // rather than calling them: guaranteed non-crossing
+            // (checked just above), exactly 1 read.
+            //
+            // M+1 SHARES THIS ARM BECAUSE IT IS M+ WITH ONE OPERAND
+            // REPLACED.  X22-6533 (docs/X22-6533_7030_PocketCard.pdf)
+            // gives "M+  Add to Memory  abc001001" and "M+1  Add One
+            // to Memory  abc101011" adjacently; the difference is the
+            // addend, not the addressing, the field handling, the
+            // refill path, the DF class-3 signal or the protection
+            // check.  Duplicating fifty lines to change one term
+            // would have been the larger risk.
+            //
+            // "ONE" IS ONE UNIT OF THE FIELD.  fieldToSM returns the
+            // field right-justified in `mag` (unsigned: mag = raw;
+            // signed: mag = raw >> byteSize, sign byte stripped), so
+            // the addend is SM128{sign:0, mag:1} and takes no offset
+            // shift -- offSh exists to align the ACCUMULATOR, and M+1
+            // has no accumulator operand.
+            //
+            // ARRIVED VIA MCP.  programs/mcp_bootstrap_p2.strap line
+            // 34 is the fourth instruction of IBM's operating system
+            // and the model used to set Operation Code Invalid on it
+            // (docs/NEXT.md 6a).
+            Bool addOne = (vi.code == 6'b101011);
             if (immediate || fieldCrosses(ea, len_)) begin
               ind = setOpInvalid(ind);
               vflOk = False;
@@ -2435,7 +2458,9 @@ function ActionValue#(VflOutcome)
               WordAddr w0 = baWord(ea);
               Bit#(6) off = baBit(ea);
               SM128 acc = readAcc(st);
-              SM128 accSh = SM128 { sign: acc.sign, mag: acc.mag >> offSh };
+              SM128 accSh = addOne
+                ? SM128 { sign: 0, mag: 1 }                       // M+1
+                : SM128 { sign: acc.sign, mag: acc.mag >> offSh }; // M+
               if (!vflNeedsRefill) begin
                 if (prefetchCount >= 1) begin
                   Bit#(64) raw = extractFieldBits(prefetch[0], 0, off, len_);
