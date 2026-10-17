@@ -3179,6 +3179,75 @@ Two notes for whoever adds the next source:
 The reader and printer are untouched: still fixed-size `Vector`s in
 `StretchIO`, still truncating `devIdx` to `DeviceIndex` unchanged.
 
+## 5r. `ka_ul1`'s TAPE WRITE ROUTINE CORROBORATES THREE COMMITTED THINGS
+
+Read 2026-10-17: `docs/ka_ul1_load_and_tape_write_util.pdf` PDF p.17,
+headed `@@@TAPE WRITE`, 29 rows with printed machine code. This is
+IBM's own program for writing an IPL tape, and it independently
+confirms three things this project had committed on weaker evidence.
+
+**1. `mktape.py`'s LAYOUT IS IBM's.** The routine does, in order:
+
+```
+ST%BU,END                @TAPE WRITE CW.
+LV,$X3,END
+ST%BU,0%$X3              @IPL CW.
+L%BU,32,B5,32
+ST%BU,1.0%$X3            @IPL BD.
+...
+W%SEOP,0%$X1,END         @WRITE IPL TAPE.
+```
+
+`LV,$X3,END` loads the *value field* of the control word just stored
+at `END` — i.e. its data word address — so `$X3` points at the buffer
+the `W` will transmit. Into that buffer it puts the **IPL control
+word at offset 0** and the **IPL `BD` at offset 1.0, one word later.**
+
+That is exactly `strap/mktape.py`: word 0 of the image is a control
+word, word 1 is the program, and the program starts with `BD`.
+Derived here from RefMan p.126 and MCP's p.2; now confirmed against
+the utility that actually wrote these tapes.
+
+**2. ONE `W`, NO PREAMBLE.** `W%SEOP,0%$X1,END` writes the whole
+thing against one control word. No tape mark, no label, no header
+record — which is what `ka_ul1` was cited for in `boot_plan.md` and
+is now visible in the code rather than taken from a summary.
+
+**3. A THIRD WITNESS FOR THE SEOP POLL, and it is bit-exact.** The
+routine polls three times, after the `LOC`, the `W` and the `UNLOAD`:
+
+```
+CCW,0%$X1,LDRCCW              0.00 81 000164.21 00   at 000565.40
+BB,LDRCCW&.24,$-1.0      164.30 80 000565.74 02   at 000566.40
+```
+
+`$-1.0` is one word back — the `CCW`. So: copy the control word,
+branch on bit 24 back to the copy, repeat. This assembler, given
+`BB, LDRCCW+.24, $-1.0` with `LDRCCW = (8)164.0` at `(8)566.40`,
+emits **`000164.30 80` and `000565.74 02`** — character for
+character.
+
+§5o settled the clearing rule on MCP's single loop plus p.121's
+"temporarily". This is a second program, by a different author, on a
+different printer, using the same idiom three times in twenty rows.
+**The bit must clear at completion or none of these loops terminate.**
+
+**4. AND `UNLOAD` IS OCTAL 137 VERBATIM.** `UNLOAD%SEOP,0%$X1`
+prints `000137.15 00` — right effective address `000137`. Confirms
+`strap_asm.py` is right not to apply the `>>6` word-address
+conversion to `CTL`'s second field, which `archival_inventory.md`
+already recorded from this file and which is now re-read directly.
+
+### NOT TRANSCRIBED YET, and why
+
+The 29 rows use VFL and connective forms this corpus has little of —
+`L%BU,6,6,MNREG&.12,45`, `&%BU`, `-I%BU`, `&I%BU`, `ST%BU`,
+`LOC%SEOP`, `W%SEOP`, `UNLOAD%SEOP` — and the control word is
+*computed* at run time from `LIC`/`MIC` rather than assembled. That
+is a real transcription with real syntax risk, and it is
+`boot_plan.md` M2 rather than a side errand. What is recorded here is
+only what was read first-hand and checked.
+
 ## 6. Open questions — record, do not guess
 
 **What is the `-ILLEGAL OP.` word doing in routine 1262's TEST 3A and
