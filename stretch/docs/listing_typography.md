@@ -478,3 +478,33 @@ verdicts stay separate in the transcription: *the glyph is a letter I*
 is measured; *`2CB` is what belongs there* is an inference from the
 comment being character-for-character p.92's and the label column
 reading `I6272` between `I6271` and `I6273`.
+
+## 11. HEX `B` READ AS `8`, AND 600 dpi WAS NOT ENOUGH
+
+Found 2026-10-17 on MCP's printed p.2 (`MCP_Mar63_001-249.pdf` PDF
+p.9), line 34, the trailing byte of a full-word VFL instruction.
+
+The listing prints `006000.22 B0`. **It was read as `80` at 200 dpi
+and again at 600 dpi**, and only at **900 dpi** does the glyph resolve:
+a `B` has a flat left stem with two bowls hanging off it, while an `8`
+is two closed loops with no straight edge. At lower resolutions the
+stem and the left side of the upper bowl merge into a loop.
+
+**THIS SECTION'S EARLIER RULE WAS NOT ENOUGH.** §2 says render at 600
+dpi, not 200, and crop to one column — both were done here and both
+gave the wrong character. The hex column is harder than the octal
+columns because `B` and `8` are the only pair in `0-9A-F` that differ
+mainly in one vertical stroke, and that stroke is the first thing a
+worn drum printer loses.
+
+**THE RULE:** in the two-hex-digit byte at the end of a half-word,
+`B` and `8` need 900 dpi. The octal columns do not — they have no
+letters.
+
+**AND THE CHECK THAT CATCHES IT WITHOUT RE-RENDERING:** a wrong byte
+here is a wrong *operation code*, and the operation codes are
+tabulated on the pocket card `X22-6533_7030_PocketCard.pdf`, which is
+in `docs/`. `80` decoded to a nine-bit operation field of `100101000`,
+and **no entry on that card ends in `000`** — every integer-arithmetic
+and radix-conversion code ends in `1`. An opcode that is not on the
+card is a misread byte until proven otherwise.

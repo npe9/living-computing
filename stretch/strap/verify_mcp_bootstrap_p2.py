@@ -57,15 +57,17 @@ ROWS = [
      "line 32  L(BU),XW SR+.32  -DONE CLEAR C AND D REGISTERS"),
     ("000046.40", "000047.00 46",
      "line 33  X CL IND  BMKZ,$+.32"),
-    # STILL FAILING, BUT BY TWO BITS NOW RATHER THAN A WHOLE FIELD.
-    # The mnemonic is M+1 -- DIGIT ONE -- not M+I; see the program's
-    # comment for the 600 dpi glyph reading.  With M+1 the first
-    # half-word matches exactly and the second differs only in its
-    # low byte, B0 assembled against 80 printed: two bits inside the
-    # opcode/modifier area.  Left failing on purpose; see docs/NEXT.md
-    # 5y for why this script stays out of run_tests.sh until it is
-    # understood.
-    ("000047.00", "000046.63 80 006000.22 80",
+    # THE TRAILING BYTE IS B0, NOT 80, and that one glyph was the
+    # whole of this row's trouble.  Read at 900 dpi the character has
+    # a flat left stem with two bowls -- a B -- where 200 dpi AND
+    # 600 dpi both gave an 8.  With B0 the row matches exactly.
+    #
+    # X22-6533 (the pocket card, in docs/ and cited by opcodes.py)
+    # gives "M+1  Add One to Memory  abc101011", and BU sets a=1
+    # (data unsigned), b=0 (same sign), c=0 (binary), so the nine-bit
+    # operation field is 100101011 -- which is what the assembler
+    # emits and what the page prints.
+    ("000047.00", "000046.63 80 006000.22 B0",
      "line 34  M+1(BU,6),X CL IND+.19  -CLEAR NON MASKABLE INDIC"),
     ("000050.00", "000046.76 48",
      "line 35  CB,$15,X CL IND"),

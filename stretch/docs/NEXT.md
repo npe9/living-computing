@@ -3596,75 +3596,43 @@ full-word `L(BU)`.
 
 ### THE ONE FAILURE, AND IT IS NOT A TYPO
 
-**RESOLVED TO TWO BITS, and the cause was a glyph.** The mnemonic is
-**`M+1` — digit one — not `M+I`.** Read at 600 dpi: the character has
+**RESOLVED — THE PAGE IS 16/16 AND THE CAUSE WAS TWO GLYPHS.**
+
+**First: `M+1`, digit one, not `M+I`.** At 600 dpi the character has
 a digit's angled top flag and matches the `1` in `$+1.0` two rows
-below, while the `I` in `IND` **on the same row** carries top and
-bottom serifs. This is `docs/listing_typography.md`'s letter-I versus
-digit-1 trap **in the reverse direction** from how this project
-usually hits it — the corpus is full of labels misread as starting
-with `1`; here a digit was misread as `I`.
+below, while the `I` in `IND` *on the same row* carries serifs. This
+is `listing_typography.md`'s letter-I/digit-1 trap **in reverse** —
+that file exists because this corpus kept misreading leading `I` as
+`1`. Read as `M+I` the operand becomes an immediate datum, and
+`encode_vfl_immediate` correctly left-justifies it per RefMan p.56
+(`(2483 & 0x3F) << 18` = `0o630000`), which is exactly the wrong word
+the first attempt produced. **The assembler was right; the reading
+was wrong.**
 
-**The semantics confirm the glyph.** `M+1` adds ONE to the 6-bit
-field at `X CL IND+.19`, which is the mask-bit number inside the
-`BMKZ` at 000046.40 — self-modifying code that steps that number
-through the non-maskable indicators, exactly what the row's own
-comment says. `M+I` would have made the operand an immediate datum,
-and `encode_vfl_immediate` duly left-justified it per RefMan p.56
-(`(2483 & 0x3F) << 18` = `0o630000`), which is why the first attempt
-put the bit part at position 18 and lost the word part. **The
-assembler was right; the reading was wrong.**
+**Second: the trailing byte is `B0`, not `80`.** It read as `80` at
+200 dpi **and at 600 dpi**; only at **900 dpi** does the flat left
+stem of the `B` separate from the bowls. With `B0` the row matches
+exactly and the page is complete. Written up as
+`docs/listing_typography.md` §11, because §2's "render at 600 dpi"
+rule was followed here and was not sufficient.
 
-```
-line 34  M+1(BU,6),X CL IND+.19
-  assembled  000046.63 80  006000.22 B0
-  listing    000046.63 80  006000.22 80
-```
+**THE POCKET CARD WOULD HAVE CAUGHT IT WITHOUT RE-RENDERING, and it
+was in `docs/` the whole time.** `X22-6533_7030_PocketCard.pdf` — the
+very card `opcodes.py` cites — tabulates every operation code, and
+gives **`M+1  Add One to Memory  abc101011`** together with the
+modifier rule (`a=1` data unsigned, `b=0` same sign, `c=0` binary),
+so `BU` yields the nine-bit field `100101011`. The misread `80`
+decoded to `100101000`, and **no code on that card ends in `000`** —
+every integer and radix entry ends in `1`. An opcode absent from the
+card is a misread byte until proven otherwise.
 
-**What remains is THREE OPCODE BITS, and everything else on the
-instruction is exact.** Decoding the second half-word against
-`enc_vfl_full`'s layout
-(`addr24|1000|i1|p|length|bs|offset|a|b|c|code|i2`):
+That is the **fourth** time in two days a question was recorded as
+blocked on a document already sitting in `docs/`.
 
-| field | listing | assembled as `M+1` |
-|---|---|---|
-| p (addressing mode) | 0, direct | 0, direct |
-| length | **6** | 6 |
-| byte size | 0 | 0 |
-| offset | 0 | 0 |
-| a, b, c | 1, 0, 0 | 1, 0, 0 |
-| **code** | **`101000`** | `101011` |
-
-The decode is trustworthy because the **passing** row two lines
-earlier checks it: line 32's `L(BU)` yields code `000101`, which is
-`L` in `VFL_INT_CODES` exactly.
-
-**AND `M+1 = 101011` IS INDEPENDENTLY VERIFIED** — `programs/
-fp_arith_f206b.strap` uses `M+1` and passes its own listing oracle.
-So the table is not simply wrong about `M+1`.
-
-**`101000` IS NOT A VFL INTEGER CODE AT ALL.** All 24 entries in
-`VFL_INT_CODES` have bit 0 set; `101000` does not. So line 34 is
-either an operation this corpus has never catalogued, or the
-mnemonic is still misread despite the glyph.
-
-**WHERE THAT LEAVES IT, honestly:** the glyph reading (`M+1`, digit
-one) and the semantics (add one to the mask-bit field, which is what
-the comment says) both point one way, and the opcode bits point
-another. **Three independent facts, two against one, and no way to
-settle it without a VFL operation-code table from a primary source.**
-`docs/7030_Opcode_List.pdf` is 99 pages with no text layer and is the
-obvious place to look next; `VFL_INT_CODES` currently cites the X22-6533
-reference card via `StretchDecode.bsv` rather than a page of its own.
-
-This is the single open item on the page, and it is now specific
-enough to hand to someone: **what VFL integer operation has code
-`101000`?**
-
-**`verify_mcp_bootstrap_p2.py` IS DELIBERATELY NOT IN
-`run_tests.sh`** and deliberately still fails. A known-failing check
-outside the suite is visible; a check quietly weakened to pass is
-not. It goes in when line 34 is understood.
+**`verify_mcp_bootstrap_p2.py` IS NOW IN `run_tests.sh`** (396 ->
+397), which it earned by passing rather than by being weakened. It
+was held out while it failed, and the holding-out is what kept line
+34 visible long enough to be solved.
 
 ## 6. Open questions — record, do not guess
 

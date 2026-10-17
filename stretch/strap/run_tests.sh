@@ -1238,6 +1238,31 @@ run "mktape.py builds an IPL tape image (Ref. Man. printed p.126)" python3 verif
 # format first, before the hardware that reads it, is the whole point
 # of that milestone order.
 
+run "MCP's IPL bootstrap, printed p.2, bit-exact (MCP_Mar63 PDF p.9)" python3 verify_mcp_bootstrap_p2.py
+# THE FIRST PAGE OF IBM's OPERATING SYSTEM IN THIS CORPUS, and the
+# first rule-3 check against MCP rather than a diagnostic deck.  All
+# six symbols the page defines land at its printed LOCATION column
+# and all sixteen machine-code rows match character for character,
+# including the IPL control word RefMan p.126 refills from location 4.
+#
+# GETTING HERE COST FOUR CORRECTIONS, three of them to this project
+# rather than to the transcription:
+#   - listing_oracle could not print an index or control word (the
+#     four-group vvvvvv.vv+ fff cccccc rrrrrr form).
+#   - CW's COUNT field needed C22-6531 p.12's integer-vs-bit-address
+#     rule, which had been applied only to the two address fields.
+#     The count came out eight times too large.
+#   - "M+1" is a DIGIT ONE, not "M+I".  Read as M+I the operand
+#     becomes an immediate and encode_vfl_immediate left-justifies it
+#     per RefMan p.56, which is why the first attempt put the bit
+#     part at position 18 and lost the word part.
+#   - And the trailing byte is B0, not 80.  At 200 dpi AND at 600 dpi
+#     that glyph read as an 8; at 900 dpi it is unmistakably a B.
+#     X22-6533 settles the instruction independently: "M+1  Add One
+#     to Memory  abc101011", and BU gives a=1 b=0 c=0.
+#
+# docs/listing_typography.md 11 now carries the B/8 case.
+
 run "The STRETCH MAINTENANCE COMPOOL, 65 symbols (ka_ua1 PDF pp.129-130)" python3 verify_dcp_compool.py
 # THE ROSETTA STONE, and the first piece of the Diagnostic Control
 # Program transcribed.  docs/archival_inventory.md: "the single
