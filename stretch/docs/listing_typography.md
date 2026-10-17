@@ -508,3 +508,51 @@ in `docs/`. `80` decoded to a nine-bit operation field of `100101000`,
 and **no entry on that card ends in `000`** — every integer-arithmetic
 and radix-conversion code ends in `1`. An opcode that is not on the
 card is a misread byte until proven otherwise.
+
+---
+
+## 12. AN UNEXPLAINED MARKER IN MCP's LOCATION COLUMN
+
+Transcribing MCP printed p.3 (2026-10-17) turned up a character that
+is neither data nor typography: **an asterisk printed after the
+LOCATION value, in its own fixed column, on a minority of rows.**
+
+**Where it was seen, first hand:**
+
+| printed page | lines | the rows |
+|---|---|---|
+| 2 | 5 | `000051.34 *` — `(CC*)DD(BU,,12),` … `11E11BSP*` |
+| 3 | 5, 28, 50 | `M+1(BU,19),X1 CCW`; `BRZ,0.0`; `REL(SEOP),0.0($15)` |
+| 4 | 20, 38 | `SC,$12,$12`; `REL(SEOP),0.0($15)` |
+| 5 | 26, 46 | `B,X 1B ERR`; `BEKJ,X 6 ERR` |
+| 13 | 6, 20 | two `(IQS*)DD(BU,64,8)` message rows |
+
+A delegated sweep of printed pp.6–12 reported the same mark on p.6
+line 9 and "at a regular ~11–12-line pitch" on pp.7–9. That part is
+second-hand and was not re-read here.
+
+**What it is not.** It is not the asterisk every LINE number carries.
+It is **not a gap marker**: the obvious reading — that it flags a
+location the assembler skipped to — dies on p.3 line 28, which looked
+like it followed a half-word gap at 200 dpi and does not at 600
+(line 27 sits at `000065.40`, not `000065.00`, and its full word ends
+exactly where line 28 begins). None of the eleven instances follows a
+gap. It does not track the card-identification column, and it is not
+"the second statement punched on one card" — p.3 lines 7 and 8 share
+card 11000047 and neither carries it. The marked statements have no
+operation, operand form, index register or alignment in common: a
+VFL instruction, two branches, two `REL`s, a `SC`, and four `DD`s.
+
+**The one pattern that survives contact with the data** is that the
+line-pitch between consecutive marks grows with the number of lines
+on the page — p.13 (38 lines) 14, p.4 (41) 18, p.5 (56) 20, p.3 (52)
+22–23 — which is what a mark at a fixed PHYSICAL distance down the
+form would do. But a fixed physical position would put p.3's first
+mark and p.5's first mark at the same height, and they are at rows 5
+and 26 of similarly dense pages, so that is not the whole story
+either. **Recorded as open.**
+
+**Why it is safe to transcribe past it.** It sits in the LOCATION
+column, and all three of p.3's instances are in that page's checked
+set and match the listing's own BINARY OUTPUT character for
+character. Whatever it means, it does not change an assembled bit.

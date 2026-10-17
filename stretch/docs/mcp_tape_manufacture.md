@@ -535,7 +535,7 @@ Model work it requires, from reading `bsv/StretchIO.bsv` and
 | `REL` / `REL(SEOP)` | implemented (`:3379`) |
 | `RD` / `W` on channel 34 | implemented, with a `gen_tape_tb.py` driver and `run_tape_test.sh` already in the suite |
 | `SIC`, `BEKJZ`/`BUNRJZ`/`BCBJZ` indicator branches | implemented (used by the existing corpus) |
-| **`SPFL` (SPACE FILE)** | **not implemented** — falls to the `default:` arm at `StretchExecute.bsv:3372` and sets Operation Invalid |
+| **`SPFL` (SPACE FILE)** | **assembles** (2026-10-17, `strap_asm.py`'s `IO_FUNCTION_OPS`, checked bit-exact against MCP printed p.3 line 35); **the model still rejects it** — falls to the `default:` arm at `StretchExecute.bsv:3372` and sets Operation Invalid |
 | **`LOC`** | **not implemented** — `StretchExecute.bsv:3376`, explicit |
 | **`UNLOAD` distinct from `REWIND`** | conflated; `18'o136, 18'o137` share one arm |
 | **Tape marks / records** | **absent** — `tapeImg` is a flat `Vector#(TapeWords, Reg#(Word64))`, `TapeWords = 16`, no record or file-mark structure |
@@ -734,3 +734,85 @@ Stating these as claims with their searches attached, per `AGENTS.md`.
   sampling and the ~15% bias it introduced are stated and corrected in
   §4.2 rather than left for a reader to find. The OCR corroboration
   failed and is reported as failed rather than quietly dropped.
+
+---
+
+## C28-6129's I-O FUNCTION PSEUDO-OPERATIONS, and why only one is implemented
+
+**Appendix B, printed p.46 / PDF 49**, read 2026-10-17. Twenty of
+STRAP-II's fifty-three pseudo-operations name a device control
+function rather than generating data: each is a CONTROL instruction
+whose code the assembler supplies. MCP writes them — `SPFL(SEOP)` on
+printed p.3, `GONG(SEOP)` on printed p.5 — in exactly the place a
+`CTL` would go, with the control-code operand absent.
+
+The obvious move is to pair each Appendix B NAME with a NAME in the
+Reference Manual's device control-code tables (p.132 for the 729 IV,
+p.139 for the 7503, p.145 for the 1403-2, transcribed in
+`exchange_and_io.md`) and call the correspondence an encoding. **That
+is inference from two documents' prose, which AGENTS.md rule 4
+forbids**, and an assembler that guesses it wrong assembles silently.
+So the table below records the state of the evidence, and
+`strap_asm.py` implements only the row that has a second, independent
+witness.
+
+| Appendix B | its name | candidate code | evidence |
+|---|---|---|---|
+| **`SPFL`** | Space File | **077** | **IMPLEMENTED.** Two independent witnesses: MCP p.3 line 35 prints `000077` in the code field with `.15` = CTLSEOP in bits 50–55, and RefMan p.132 gives "077 Space File". |
+| `GONG` | Sound Gong | 177 | MCP p.5 line 45 prints `000177.15` — a listing witness, but the console's control-code table has not been read here, so the name is unmatched. |
+| `SP` | Space | 076? | p.132 says "Space **Block**" — not a verbatim match. |
+| `BS` | Backspace | 176? | p.132 says "Backspace **Block**" — not a verbatim match. |
+| `WEF` | Write End-of-File | 117? | p.132 says "Write Tape **Mark**". |
+| `REW` | Rewind | 136? | verbatim match, no listing witness yet. |
+| `UNLOAD` | Unload | 137? | p.132 says "Rewind **and** Unload". |
+| `HD` / `LD` | High / Low Density | 036 / 037? | verbatim match, no listing witness yet. |
+| `ERG` | Erase Gap | 056? | p.132 says "Erase **Long** Gap". |
+| `ODDECC` / `ODDNEC` / `NOECC` / `EVEN` | parity and ECC modes | 057 / 157 / 156 / 156? | `NOECC` "No ECC, Even Parity" and `EVEN` "Even Parity No ECC" are the same function under two names, which no code table explains. |
+| `TILF` | Tape Indicator Light Off | 016? | p.132's 016 is "Remove End of Tape Condition (tape-indicator-on light off)" — a parenthesis, not a name. |
+| `RLF` / `RLN` | Reserved Light Off / On | 016 / 017? | the standard pair; collides with `TILF` on tape, which the device-dependent redefinition would explain but does not document. |
+| `KLN` | Check Light On | 116? | verbatim match, no listing witness yet. |
+| `SKIP` | Skip Paper | ? | printer; no code found. |
+| `CRDRUN` | Card Run-Out | ? | reader; p.139 says the 7503 has "no reader-specific functions". |
+
+**The rule this encodes:** a mnemonic goes in when a listing prints
+its machine code, or when two documents agree verbatim. Nineteen of
+these have neither yet.
+
+---
+
+## A STANDOFF ON MCP PRINTED p.3 LINE 6
+
+The page prints, for `X1 CCW  CCW,15.32,X IPL BS`:
+
+```
+ 6* 000053.40   000017.40 30   000041.21 00   X1 CCW  CCW,15.32,X IPL BS
+```
+
+Bits 24–27 come out `0011` where X22-6533's INPUT-OUTPUT OPERATIONS
+format puts the literal `1000`. Everything else in the word is
+exactly what `strap_asm.py` emits: the channel address `000017.40` =
+992 = 31 << 5 (channel 31, one below the basic exchange's first
+channel, which printed p.5 line 21 enters as `(8)20.0` = 32 << 5),
+and a textbook second half-word — `000041` is `X IPL BS` as a word
+address, and `.21` = `010001` is the unused bit 50, `OP` = `1000` =
+CCW, then the literal `10000`'s first bit.
+
+**The glyph was ruled out rather than assumed.** This very page
+caught the opposite error four rows later: line 10's trailing byte
+reads `80` at 900 dpi and is `B0`, which the opcode arithmetic
+settles outright (`LVE` is `11011` at bits 23–27, so bits 24–27 are
+`1011`). Line 6's byte was re-rendered at 1800 dpi in one crop
+beside line 7's `80`: the `3` is open on the left and the `8` closed,
+same render, adjacent rows.
+
+**What is distinctive about the row** is that it is the only I-O
+instruction found so far whose channel operand is written as a plain
+literal rather than an indexed `0($15)` or `0.0($1)`. Every indexed
+one prints `8` in that nibble — p.3 lines 23, 35, 42, 50; p.4 line 5;
+p.5 lines 28, 36, 39, 45, 48, 52; and p.6 lines 7 and 9, the last two
+from a delegated sweep of printed pp.6–12 that found **no unindexed
+I-O instruction at all** in that range. So the sample that would
+decide "systematic" against "one-off" is still of size one.
+
+The row is left out of `verify_mcp_bootstrap_p3.py`'s checked set and
+named there, rather than bent to fit.

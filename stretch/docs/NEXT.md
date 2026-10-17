@@ -2708,6 +2708,17 @@ the contract; **do them in the order 5, 8, 6, 7, 1, 2, 3, 4.**
    the third conflated. MCP's bootstrap uses `SPFL(SEOP)` on its
    third page.
 
+   **HALF DONE, 2026-10-17: `SPFL` ASSEMBLES.** `strap_asm.py` gained
+   `IO_FUNCTION_OPS`, the first of C28-6129 Appendix B's twenty I-O
+   function pseudo-operations, checked bit-exact against printed p.3
+   line 35 (`000000.00 8F 000077.15 00`). The MODEL still rejects
+   control code 077 and that is what remains of this item. **Only
+   `SPFL` went in** — the other nineteen would be a name matched to a
+   name in a different document's table, which is rule 4 inference;
+   `mcp_tape_manufacture.md` now carries the whole family with its
+   evidence, row by row, so the next one to go in has its case
+   already written down.
+
 ### Artifact work — can proceed in parallel with the above
 
 6. **Transcribe MCP's IPL bootstrap**, printed pp.2-14, ~350 rule-3
@@ -3752,6 +3763,73 @@ another arm. That is the audit working: a transcription that cannot
 run is worth having and worth knowing about, and the category
 distinguishes "pinned its encoding" from "the machine can execute
 it" precisely so growth here is never mistaken for progress.
+
+## 6b. MCP's PAGE 3 IS TRANSCRIBED — 38 of 39 rows, and the tape layout is settled
+
+**2026-10-17.** `strap/programs/mcp_bootstrap_p3.strap` and
+`strap/verify_mcp_bootstrap_p3.py`, in the suite. Printed p.3 picks
+up exactly where p.2 stops — p.2's last instruction is a half word at
+`000052.00`, p.3's first is at `000052.40` — and all eighteen symbols
+it defines land at its own printed LOCATION column.
+
+**WHAT THE PAGE SETTLES, and it is not a detail.** Lines 32-52 are
+headed SPACE OVER TAPE MARK and open with `SPFL(SEOP),0.0($15)`.
+**The bootstrap record is followed by a tape mark**, and the
+bootstrap spaces past it before touching anything else. `mktape.py`
+writes no tape mark today; `boot_plan.md`'s image format has to grow
+one, and the model has to be able to space over it.
+
+The other two banners: FIND IPL CHANNEL NUMBER walks the channels
+with `M+1(BU,19)` on the 19-bit field at the head of a `CCW`
+instruction — the channel number sits at IBM bits 12-18 of a 24-bit
+address (RefMan p.111), so bit 18 is its units digit and adding one
+at the bottom of a 19-bit field **is** "ADVANCE CHANNEL" — starting
+at `15.32` = 992 = 31 << 5, one below the basic exchange's first
+channel. IO TEST is the status loop every I-O operation on the page
+returns to: `SIC` / three indicator branches / `CCW` / `BB` on bit 24
+(SEOP) / `CT0011` / `BRZ`.
+
+**TWO ASSEMBLER ADDITIONS, both forced by the page:**
+
+* **`SPFL`** — see item 5 above and `mcp_tape_manufacture.md`.
+* **`REL` with no second operand.** RefMan p.111: RELEASE's second
+  effective address is "not used; ignored". MCP writes it that way
+  three times on pp.3-4 and the listing prints `000000` in the field.
+  Requiring the operand would have made the historical source
+  unassemblable.
+
+**THE B/8 TRAP, A THIRD TIME, AND THE RULE THAT BEAT IT.** Line 10's
+trailing byte reads `80` at 900 dpi and is `B0`. It was not caught by
+looking harder: it was caught because `LVE`'s operation code is
+`11011` at bits 23-27 (X22-6533 DIRECT INDEX ARITHMETIC), which
+forces bits 24-27 to `1011`, so the nibble **had** to be `B` before
+anyone looked. **Decode the opcode field, then look at the glyph** —
+`listing_typography.md` 11 already said to re-render, and this says
+what to re-render *for*.
+
+**THE ONE ROW LEFT UNCHECKED** is line 6, `CCW,15.32,X IPL BS`: bits
+24-27 print `0011` where X22-6533's INPUT-OUTPUT OPERATIONS format
+puts the literal `1000`. The glyph was ruled out at 1800 dpi against
+line 7's `80` in the same crop. It is the only I-O instruction found
+so far whose channel operand is a plain literal rather than an
+indexed `0($15)`; a sweep of printed pp.6-12 found **no other
+unindexed I-O instruction at all**, so the deciding sample is still
+of size one. `mcp_tape_manufacture.md` carries the full evidence.
+
+**AND AN UNEXPLAINED LISTING MARKER**, now in
+`listing_typography.md` 12: an asterisk printed after the LOCATION
+value on a minority of rows, on every MCP page looked at. Eleven
+first-hand instances, no shared property among the statements, and
+the one surviving pattern — the line-pitch between marks grows with
+the page's line count, as a mark at a fixed physical height on the
+form would — does not survive comparing two pages of similar
+density. It cannot move a bit, and all three of p.3's instances are
+in the checked set, so transcription proceeds past it.
+
+**Next: printed p.4**, FETCH PROSA (`RD(SEOP)`, the same status loop,
+`T` to move the MCP IPL, `LVS`, `CM1111`), already rendered.
+
+---
 
 ## 6. Open questions — record, do not guess
 

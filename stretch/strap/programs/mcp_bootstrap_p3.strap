@@ -1,0 +1,190 @@
+! mcp_bootstrap_p3.strap -- MCP's IPL BOOTSTRAP, printed page 3.
+! docs/MCP_Mar63_001-249.pdf PDF p.10, header "PAGE NUMBER 3".
+! Continues programs/mcp_bootstrap_p2.strap exactly: p.2's last
+! instruction is at 000052.00 and is a half word, and p.3's first is at
+! 000052.40.  docs/boot_plan.md M3.
+!
+! WHAT THIS PAGE IS.  Three banners divide it.
+!
+!   FIND IPL CHANNEL NUMBER (lines 1-11).  The bootstrap does not know
+!   which channel it was loaded from, so it walks the channels: M+1
+!   adds one to the 19-bit field at the head of X1 CCW -- the channel
+!   address field, whose seven-bit channel number sits at IBM bits
+!   12-18 of a 24-bit address (Reference Manual p.111), so bit 18 is
+!   the channel's units digit and adding one at the bottom of a 19-bit
+!   field is exactly "ADVANCE CHANNEL".  Each pass copies that
+!   channel's control word to X IPL BS and tests bit 63 of it, the
+!   refill field's low bit: p.2's own comment on the IPL control word
+!   says "ONE IN REFILL FIELD IDENTIFIES IPLCW".  The walk starts at
+!   15.32 = 992 = 31 << 5, i.e. channel 31, one below the first
+!   channel of the basic exchange (printed p.5 line 21 enters that one
+!   as "(8)20.0", 1024 = 32 << 5).
+!
+!   IO TEST (lines 13-30).  The status loop every I-O operation in
+!   this program returns to: SIC plants a return address, three
+!   branch-on-indicator tests take the three rejection cases (exchange
+!   check, unit not ready, channel busy), then CCW fetches the
+!   channel's control word and BB tests bit 24 -- SEOP, "the operation
+!   completed".  CT0011 then tests the status bits at X IPL BS+.19
+!   without storing a result (Connect for Test), and BRZ branches on
+!   the result being zero: no status bits on, success.
+!
+!   SPACE OVER TAPE MARK (lines 32-52).  SPFL(SEOP) spaces the tape
+!   forward past a tape mark, the same status loop runs, and
+!   REL(SEOP) clears the EE and EOP status bits the spacing set.  THIS
+!   IS THE LINE THAT FIXES THE TAPE LAYOUT: the bootstrap record is
+!   followed by a tape mark, and the next thing follows that.
+!
+! ---------------------------------------------------------------
+! SUBSTITUTIONS
+! ---------------------------------------------------------------
+! (1) BLANKS INSIDE SYMBOL NAMES ARE DROPPED, as on p.2.  C22-6531
+!     printed p.10 allows "six or fewer alphabetic and numeric
+!     characters" and requires "only alphameric characters", and every
+!     name on this page is six or fewer once the blanks come out:
+!     X1, X1 CCW, X ERR 00, X7 1, X ERR 02..05, X7 1 CCW, X7 3, X8,
+!     X8 1, X8 2, X ER 05A..05E.  Note that the listing drops a letter
+!     from "X ERR" to "X ER" exactly when the number grows a third
+!     character -- X ERR 05 but X ER 05A -- which is the six-character
+!     limit being obeyed in IBM's own hand.
+!
+! (2) INDEX REGISTER 15 IS WRITTEN "$X15" WHERE THE LISTING WRITES A
+!     BARE "15" (line 10, "LVE,15,X1 CCW") or "$15" (lines 23, 35, 42,
+!     50).  Both reach the same four bits; p.2 made the same
+!     substitution for "CB+,15,X CLSTO".
+!
+! (3) LETTER O VERSUS DIGIT 0 IN "XER05E".  Line 46's operand is
+!     printed without blanks, as one word, and its third-from-last
+!     glyph is the one the printer renders alike for letter O and
+!     digit zero.  It is a reference to line 48's label, printed
+!     "X ER 05E", and that label sits in the run X ERR 00, 02, 03, 04,
+!     05, then X ER 05A, 05B, 05C, 05D, 05E -- a numbering, so the
+!     glyph is a digit.  Whichever it is, the two must agree, and they
+!     do here.
+!
+! ---------------------------------------------------------------
+! THE ONE ROW THAT DOES NOT CHECK -- line 6, and read the note
+! ---------------------------------------------------------------
+! The listing prints, for "X1 CCW  CCW,15.32,X IPL BS":
+!
+!     000053.40   000017.40 30   000041.21 00
+!
+! Everything in that except two bits is confirmed.  The 24-bit channel
+! address is 000017.40 = 992 = 31 << 5, which is the channel the walk
+! starts from.  The second half-word is a textbook COPY CONTROL WORD:
+! 000041 is X IPL BS as a word address, and .21 = 010001 is bits 50-55
+! -- the unused bit 50, then OP = 1000 = CCW, then the first bit of
+! the literal 10000.  But bits 24-27 print as 0011 where X22-6533's
+! INPUT-OUTPUT OPERATIONS format requires the literal 1000, and this
+! assembler emits 80 where the page prints 30.
+!
+! THE GLYPH IS NOT THE EXPLANATION, and that was checked rather than
+! assumed, because this very page caught the opposite error one row
+! further on: line 10's trailing byte reads 80 at 900 dpi and is B0,
+! which the opcode arithmetic settles outright (LVE is 11011, so bits
+! 24-27 must be 1011).  Line 6's byte was rendered at 1800 dpi beside
+! line 7's 80 in a single crop: the 3 is open on the left and the 8
+! closed, in the same render, on adjacent rows.  It is a 3.
+!
+! WHAT IS DISTINCTIVE about line 6 is that it is the only I-O
+! instruction in this corpus whose channel operand is written as a
+! plain literal rather than as an indexed "0($15)" or "0.0($1)" -- and
+! every indexed one prints 8 in that nibble (lines 23, 35, 42 and 50
+! here; printed p.4 line 5; printed p.5 lines 28, 36, 39, 45, 48, 52).
+! So this row is left OUT of the checked set, named in
+! verify_mcp_bootstrap_p3.py, rather than quietly bent to fit.
+
+! ---------------------------------------------------------------
+! EXTERNALS.  EVERY SYN IS AN INPUT TO THE CHECK, NOT A WITNESS -- a
+! SYN makes its own address come out right by construction.  All three
+! are taken from the page that DEFINES them, not from this page's own
+! printed machine code, which would make the rows that reference them
+! prove nothing:
+!   X IPL BS  printed p.2 line 24, "X IPL BS  BD,X BEGIN", 000041.00
+!   X ERROR   printed p.5 line 5, "X ERROR  LX,$2,X ERR IN", 000133.00
+!   X ERR AD  printed p.13 line 37, "X ERR AD  VF,0", 000551.00
+XIPLBS  SYN, (8)41.0
+XERROR  SYN, (8)133.0
+XERRAD  SYN, (8)551.0
+
+        SLC, (8)52.40      ! line 5's location; p.2 ends at 000052.00
+                            ! with a half word
+
+! ---- FIND IPL CHANNEL NUMBER --------------------------------------
+X1      M+1(BU,19), X1CCW       ! line 5   - ADVANCE CHANNEL
+X1CCW   CCW, 15.32, XIPLBS      ! line 6   -- see the note above; this
+                                 ! row is NOT in the checked set
+XERR00  SIC, XERRAD             ! line 7
+        BEKJZ, XERROR           ! line 8   -IF EXCHANGE ERROR
+        BZB, XIPLBS+.63, X1     ! line 9   -IS IT IPL CHANNEL
+        LVE, $X15, X1CCW        ! line 10  - OBTAIN NUMBER OF IPL CHANNEL
+        B, X8                   ! line 11  -TO SPACE OVER TAPE MARK
+
+! ---- IO TEST ------------------------------------------------------
+X71     SIC, XERRAD             ! line 17
+        BEKJZ, XERROR           ! line 18  -IF EXCHANGE ERROR
+XERR02  SIC, XERRAD             ! line 19
+        BUNRJZ, XERROR          ! line 20  -UNIT NOT READY REJECT
+XERR03  SIC, XERRAD             ! line 21
+        BCBJZ, XERROR           ! line 22  -IF CHANNEL BUSY REJECT
+X71CCW  CCW, 0($X15), XIPLBS    ! line 23
+XERR04  SIC, XERRAD             ! line 24
+        BEKJZ, XERROR           ! line 25  -IF EXCHANGE ERROR FOR CCW
+        BB, XIPLBS+.24, X71CCW  ! line 26  -IO OPERATION COMPLETED
+        CT0011(BU,5), XIPLBS+.19 ! line 27 -- CT, Connect for Test:
+                                 ! the result goes nowhere and only the
+                                 ! indicators are set (X22-6533
+                                 ! CONNECTIVES, xxxx10111), which is
+                                 ! why the next row can branch on it.
+X73     BRZ, 0.0                ! line 28  -SUCCESSFUL
+XERR05  SIC, XERRAD             ! line 29
+        B, XERROR               ! line 30  -IO STATUS BIT ON
+
+! ---- SPACE OVER TAPE MARK -----------------------------------------
+X8      SPFL(SEOP), 0.0($X15)   ! line 35  -SPACE OVER TAPE MARK
+XER05A  SIC, XERRAD             ! line 36
+        BEKJZ, XERROR           ! line 37  -IF EXCHANGE ERROR
+XER05B  SIC, XERRAD             ! line 38
+        BUNRJZ, XERROR          ! line 39  -IF UNIT NOT READY REJECT
+XER05C  SIC, XERRAD             ! line 40
+        BCBJZ, XERROR           ! line 41  -IF CHANNEL BUSY REJECT
+X81     CCW, 0($X15), XIPLBS    ! line 42  -GET STATUS BITS
+XER05D  SIC, XERRAD             ! line 43
+        BEKJZ, XERROR           ! line 44  -IF EXCHANGE ERROR
+        BB, XIPLBS+.24, X81     ! line 45  -IF SEOP OFF
+        BZBZ, XIPLBS+.21, XER05E ! line 46 -OFF * IF EE ON
+        BZB, XIPLBS+.19, X82    ! line 47  -YES*TEST FOR UK
+XER05E  SIC, XERRAD             ! line 48
+        B, XERROR               ! line 49  -ERROR IN SPACING
+X82     REL(SEOP), 0.0($X15)    ! line 50  -CLEAR EE AND EOP STATUS BIT
+        SIC, X73                ! line 51
+        B, X71                  ! line 52  - TO IO TEST
+        END, X1
+
+! ---------------------------------------------------------------
+! AN UNEXPLAINED MARKER IN THE LOCATION COLUMN, recorded because it
+! will recur on the eleven pages still to transcribe.
+!
+! Three rows on this page print an asterisk AFTER the location:
+!   line  5  000052.40 *   X1      M+1(BU,19),X1 CCW
+!   line 28  000066.40 *   X7 3    BRZ,0.0
+!   line 50  000102.00 *   X8 2    REL(SEOP),0.0($15)
+! and it is not confined to this page -- printed p.2 line 5
+! (000051.34 *), p.4 lines 20 and 38, p.5 lines 26 and 46, p.13 lines
+! 6 and 20 all carry it, roughly two or three per page.
+!
+! WHAT IT IS NOT.  It is not the asterisk every LINE number carries.
+! It is not a gap marker: at 200 dpi line 27 appeared to sit at
+! 000065.00, which would have left a half word unused before line 28,
+! but the location column at 600 dpi reads 000065.40 and line 27's
+! full word ends exactly where line 28 begins.  None of the eight
+! instances follows a gap.  It does not track the card-identification
+! column either -- line 5's card is 11000045, between line 4's 44 and
+! line 6's 46 -- nor "second statement punched on one card", which
+! lines 7 and 8 are without carrying it.  The eight instances have no
+! operation, operand form, index register or alignment in common.
+!
+! WHAT IT CANNOT BE.  It cannot change the assembled bits, because it
+! sits in the LOCATION column and all three of this page's instances
+! are in the checked set below and match the listing's own BINARY
+! OUTPUT.  So it is listing metadata of some kind; which kind is open.

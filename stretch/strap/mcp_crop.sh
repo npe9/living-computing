@@ -37,7 +37,10 @@ PAGE=$((PRINTED + 7))
 # were 600-dpi is how the first version of this script landed on the
 # statement column when asked for the code column.
 case "$COL" in
-  loc)  X=400;  W=1900 ;;   # LINE + LOCATION
+  # The LINE and LOCATION columns together run to about x=2750 at
+  # 600 dpi; W=1900 cut the location octal off mid-digit on the
+  # first page this helper was used on.
+  loc)  X=400;  W=2400 ;;   # LINE + LOCATION
   code) X=2800; W=2000 ;;   # BINARY OUTPUT
   stmt) X=4950; W=2900 ;;   # NAME + STATEMENT + comment
   *) echo "COLUMN must be loc|code|stmt" >&2; exit 1 ;;

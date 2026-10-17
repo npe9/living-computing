@@ -1293,6 +1293,40 @@ run "MCP's IPL bootstrap, printed p.2, bit-exact (MCP_Mar63 PDF p.9)" python3 ve
 #
 # docs/listing_typography.md 11 now carries the B/8 case.
 
+run "MCP's IPL bootstrap, printed p.3, bit-exact (MCP_Mar63 PDF p.10)" python3 verify_mcp_bootstrap_p3.py
+# FIND IPL CHANNEL NUMBER, IO TEST, SPACE OVER TAPE MARK -- the page
+# that continues p.2 (p.2 ends at 000052.00 with a half word, p.3
+# begins at 000052.40) and the page that settles the tape layout:
+# the bootstrap record is followed by a TAPE MARK, because line 35
+# spaces over one before reading anything else.
+#
+# EIGHTEEN SYMBOLS AND THIRTY-EIGHT OF THIRTY-NINE MACHINE-CODE ROWS.
+# The thirty-ninth, line 6, is a standoff and is named rather than
+# bent: the page prints 0011 in bits 24-27 where X22-6533's
+# INPUT-OUTPUT OPERATIONS format puts the literal 1000.  The channel
+# address and the whole second half-word match this assembler
+# exactly, and the byte was re-rendered at 1800 dpi beside line 7's
+# 80 to rule out the glyph -- it is a 3.  Line 6 is the only I-O
+# instruction in the corpus whose channel operand is a plain literal
+# rather than an indexed 0($15); every indexed one prints 8.
+#
+# TWO THINGS THE PROJECT GAINED, both needed before this would run:
+#   - SPFL, the first of C28-6129 Appendix B's I-O FUNCTION
+#     pseudo-operations.  It is CONTROL with the code supplied: the
+#     page prints 000077 in the code field and .15 = CTLSEOP in bits
+#     50-55, and Reference Manual p.132 gives "077 Space File".  Only
+#     SPFL is implemented -- for the other nineteen the evidence
+#     would be a name resembling a name in another document's table,
+#     which rule 4 forbids and which would assemble silently if wrong.
+#   - REL with no second operand, which RefMan p.111 licenses
+#     ("not used; ignored") and MCP writes three times on pp.3-4.
+#
+# AND THE B/8 TRAP IN REVERSE, for the third time in this corpus:
+# line 10's trailing byte reads 80 at 900 dpi and is B0.  THE
+# ARITHMETIC CAUGHT IT BEFORE THE EYE DID -- LVE is 11011 at bits
+# 23-27, so bits 24-27 are 1011 and the nibble has to be B.  Decode
+# the opcode field first, then look at the glyph.
+
 run "The STRETCH MAINTENANCE COMPOOL, 65 symbols (ka_ua1 PDF pp.129-130)" python3 verify_dcp_compool.py
 # THE ROSETTA STONE, and the first piece of the Diagnostic Control
 # Program transcribed.  docs/archival_inventory.md: "the single

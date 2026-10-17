@@ -1,6 +1,12 @@
 # Bluesim/bsc build artifacts (see stretch/bsv/README.md "Toolchain")
 build/
 simbuild/
+# bsc writes one Bluesim output directory per build variant, and the
+# variants are named: simbuild-hosttape is the one the host-file tape
+# source uses.  Ten of its generated files were committed by accident
+# before this line existed, and a single rebuild churns 95,000 lines
+# of generated C++.
+simbuild-*/
 *.bo
 *.ba
 *_sim

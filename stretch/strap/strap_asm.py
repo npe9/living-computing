@@ -232,6 +232,35 @@ from opcodes import (
 # emit_statement's IO_OP branch).
 IO_BASE_OPS = {'RD', 'W', 'CTL', 'LOC', 'REL', 'CCW'}
 
+# STRAP-II's I-O FUNCTION PSEUDO-OPERATIONS -- a named CONTROL code.
+#
+# C28-6129 Appendix B (printed p.46, PDF 49) lists, among the 53
+# STRAP-II pseudo-operations, a family that names a device control
+# function: BS Backspace, CRDRUN Card Run-Out, ERG Erase Gap, EVEN
+# Even Parity No ECC, GONG Sound Gong, HD High Density, KLN Check
+# Light On, LD Low Density, NOECC, ODDECC, ODDNEC, REW Rewind, RLF
+# Reserved Light Off, RLN Reserved Light On, SKIP Skip Paper, SP
+# Space, SPFL Space File, TILF Tape Indicator Light Off, UNLOAD
+# Unload, WEF Write End-of-File.  Each takes the channel operand a
+# CONTROL instruction takes and supplies the control code itself, so
+# "SPFL(SEOP),0.0($15)" is "CTL(SEOP),0.0($15),<Space File>".
+#
+# ONLY SPFL IS HERE, and the reason is AGENTS.md rule 4.  Two
+# independent sources fix its code: MCP's own listing (printed p.3
+# line 35 prints 000077 in the second address field, with .15 =
+# 001101 in bits 50-55, which is CTLSEOP), and the Reference Manual's
+# IBM 729 IV control-code table (p.132, transcribed in
+# docs/exchange_and_io.md) which gives "077 Space File (forward past
+# a tape mark; EE and EOP given)".  For every other member of the
+# family the only evidence would be that Appendix B's NAME resembles
+# a NAME in the p.132 table -- and some do not even match verbatim
+# ("Backspace" against "Backspace Block", "Space" against "Space
+# Block").  An encoding guessed by matching two documents' prose is
+# what rule 4 forbids, and a wrong one here would assemble silently.
+IO_FUNCTION_OPS = {
+    'SPFL': 0o77,   # Space File; Reference Manual p.132
+}
+
 
 class AssemblerError(Exception):
     def __init__(self, msg, lineno=None):
@@ -1065,7 +1094,7 @@ def statement_size(stmt):
         # half-word -- jb_ax5b p.45 places two of them at 021377.40 and
         # 021400.40, each straddling a word boundary (Ref. Manual p.39).
         return HALF, FULL
-    if op in IO_BASE_OPS or op in IO_OP:
+    if op in IO_BASE_OPS or op in IO_OP or op in IO_FUNCTION_OPS:
         return HALF, FULL
     kind, *_ = classify_vfl_or_fp(stmt)
     if kind == 'VFL' or kind == 'CONN':  # both are full-word (p.75 "Format")
@@ -1702,7 +1731,7 @@ def emit_statement(stmt, symtab, image):
                                                   mod2, cond1, idx1))
         return
 
-    if op in IO_BASE_OPS or op in IO_OP:
+    if op in IO_BASE_OPS or op in IO_OP or op in IO_FUNCTION_OPS:
         # "OP1(OP2), C(I1), A(I2)" (X22-6533 pocket card "INPUT-OUTPUT
         # OPERATIONS"): OP2, if present, must be SEOP; C is the channel
         # address, A is the second effective address -- a control-word
@@ -1733,17 +1762,43 @@ def emit_statement(stmt, symtab, image):
         # once CTL had a real behavior (tape CONTROL functions) to
         # test the conversion against.
         seop_mod = bool(stmt.mods) and stmt.mods[0].strip().upper() == 'SEOP'
+        # An I-O FUNCTION pseudo-operation names its own control code,
+        # so it IS a CONTROL whose second field this assembler supplies
+        # and the source never writes.  Rewriting it here rather than
+        # in a branch of its own keeps one code path for the whole
+        # family: the channel operand, the (SEOP) modifier and the
+        # "raw code, no unit conversion" rule below are the same ones
+        # CTL already has, and a second path would have to repeat all
+        # three.
+        fields = stmt.fields
+        if op in IO_FUNCTION_OPS:
+            if len(fields) != 1:
+                raise AssemblerError(
+                    f"{op} names its own control code and takes only the "
+                    f"channel field", stmt.lineno)
+            fields = [fields[0], str(IO_FUNCTION_OPS[op])]
+            op = 'CTL'
+        # RELEASE's second effective address is "not used; ignored"
+        # (Reference Manual p.111, quoted in docs/exchange_and_io.md),
+        # so it is the one I-O mnemonic a program may write with a
+        # channel and nothing else -- MCP does, three times on printed
+        # pp.3-4 ("REL(SEOP),0.0($15)"), and the listing prints 000000
+        # in the field.  Supplying the zero here is what the real
+        # assembler must have done; requiring the operand would make
+        # the historical source unassemblable.
+        if op == 'REL' and len(fields) == 1:
+            fields = [fields[0], '0']
         lookup = (op + 'SEOP') if (seop_mod and op in IO_BASE_OPS) else op
         if lookup not in IO_OP:
             raise AssemblerError(
                 f"unrecognized I-O mnemonic/modifier combination "
                 f"{stmt.op!r}{stmt.mods!r}", stmt.lineno)
-        if len(stmt.fields) != 2:
+        if len(fields) != 2:
             raise AssemblerError(f"{op} takes channel and address fields", stmt.lineno)
-        base1, paren1 = split_field_trailing_paren(stmt.fields[0])
+        base1, paren1 = split_field_trailing_paren(fields[0])
         chan_bits = eval_expr(base1, symtab, loc, lineno=stmt.lineno)
         i1 = eval_reg(paren1, symtab, stmt.lineno)
-        base2, paren2 = split_field_trailing_paren(stmt.fields[1])
+        base2, paren2 = split_field_trailing_paren(fields[1])
         addr2_bits = eval_expr(base2, symtab, loc, lineno=stmt.lineno) if base2.strip() else 0
         i2 = eval_reg(paren2, symtab, stmt.lineno)
         addr24 = chan_bits & 0xFFFFFF
