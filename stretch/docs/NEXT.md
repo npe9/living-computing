@@ -3445,7 +3445,60 @@ Regression: **246 of 246 programs assemble, 186 of 186 oracles pass.**
 
 1. **`TAIL` scoping** — the only one needing design rather than
    transcription from a manual.
-2. **The `(A*)` / `(CC*)` / `(IQS*)` DD prefixes.**
+2. **The `(A*)` / `(CC*)` / `(IQS*)` DD prefixes** — **specified now,
+   see §5w, and probably not a blocker for the bootstrap at all.**
+
+## 5w. THE DD ENTRY-MODE PREFIXES ARE FULLY SPECIFIED, and probably not an M3 blocker
+
+C28-6129 printed p.16 (PDF 20), read 2026-10-17.
+
+**THE `*` IS A DELIMITER DECLARATION, which is the part that made the
+syntax look strange:**
+
+> "**The second character in the entry mode field is known as the
+> end-of-statement character.** Its presence instructs STRAP to
+> perform the desired conversion until this character is reached in
+> the message. The end-of-statement character may be any legal card
+> code character except `)`, `'` (8-4), `;` (11-0), and blank. **This
+> character is not compiled.** Blanks that appear in the message are
+> retained, and converted and stored correctly."
+
+So `(A*)` is "A entry mode, message ends at `*`", and MCP's
+`(A*)DD(BU,32,8),C911*` is the four-character message `C911`. The
+manual's own example is `(AQ)DD(BU, 60, 6), DONT PANIC Q`.
+
+**ALL FOUR MODES, from the same page:**
+
+| mode | character set | converted to |
+|---|---|---|
+| `A` | standard IBM **BCD** | 6-bit IBM tape BCD; byte size 8 adds two leading zeros |
+| `IQS` | 7030 console typewriter / Inquiry Station | **8-bit** binary equivalents |
+| `P` | **ECS 120**, the 120-member extended set | 8-bit equivalents |
+| `CC` | IBM **card code** | **12-bit** bytes, "each byte reflects the multiple punch actually read in the appropriate card column" |
+
+That last one explains MCP's `(CC*)DD(BU,,12)` — byte size **12**,
+which is card code exactly, and which p.16 says is legal here even
+though "the byte size in a 7030 statement may range from 1 through 8
+because the byte size field is restricted to 3 bits".
+
+### WHY THIS PROBABLY DOES NOT BLOCK THE BOOTSTRAP
+
+MCP's printed p.2 uses them exactly twice, on **lines 4 and 5**, and
+`SLC,(8)40.0` — which sets where the bootstrap assembles — is on
+**line 15**. So both uses sit *before* the location counter is
+positioned, under `PUNFUL`/`PUNORG`/`PUNID`: they are the punched-card
+header and identification images, not the IPL image the tape carries.
+**Worth confirming against pp.3-13 before relying on it**, but if it
+holds, M3's transcription can skip them.
+
+### WHAT IMPLEMENTING THEM WOULD ACTUALLY COST
+
+Four character-set tables — BCD, IQS 8-bit, ECS 120, card code
+12-bit. The TOC puts **Appendix C at printed pp.47-53**, seven pages,
+which is almost certainly where they are. That is a bounded
+transcription job, not a design problem, and it is the right shape
+for a separate piece of work rather than something to improvise
+during a bootstrap transcription.
 
 ## 6. Open questions — record, do not guess
 
