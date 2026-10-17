@@ -3621,11 +3621,45 @@ line 34  M+1(BU,6),X CL IND+.19
   listing    000046.63 80  006000.22 80
 ```
 
-**What remains is two bits** — `B0` against `80` in the low byte of
-the second half-word, inside the opcode/modifier area. The address,
-the field spec, the offset and the whole first half-word are exact.
-That is a modifier or opcode-variant question, not a structural one,
-and it is the single open item on this page.
+**What remains is THREE OPCODE BITS, and everything else on the
+instruction is exact.** Decoding the second half-word against
+`enc_vfl_full`'s layout
+(`addr24|1000|i1|p|length|bs|offset|a|b|c|code|i2`):
+
+| field | listing | assembled as `M+1` |
+|---|---|---|
+| p (addressing mode) | 0, direct | 0, direct |
+| length | **6** | 6 |
+| byte size | 0 | 0 |
+| offset | 0 | 0 |
+| a, b, c | 1, 0, 0 | 1, 0, 0 |
+| **code** | **`101000`** | `101011` |
+
+The decode is trustworthy because the **passing** row two lines
+earlier checks it: line 32's `L(BU)` yields code `000101`, which is
+`L` in `VFL_INT_CODES` exactly.
+
+**AND `M+1 = 101011` IS INDEPENDENTLY VERIFIED** — `programs/
+fp_arith_f206b.strap` uses `M+1` and passes its own listing oracle.
+So the table is not simply wrong about `M+1`.
+
+**`101000` IS NOT A VFL INTEGER CODE AT ALL.** All 24 entries in
+`VFL_INT_CODES` have bit 0 set; `101000` does not. So line 34 is
+either an operation this corpus has never catalogued, or the
+mnemonic is still misread despite the glyph.
+
+**WHERE THAT LEAVES IT, honestly:** the glyph reading (`M+1`, digit
+one) and the semantics (add one to the mask-bit field, which is what
+the comment says) both point one way, and the opcode bits point
+another. **Three independent facts, two against one, and no way to
+settle it without a VFL operation-code table from a primary source.**
+`docs/7030_Opcode_List.pdf` is 99 pages with no text layer and is the
+obvious place to look next; `VFL_INT_CODES` currently cites the X22-6533
+reference card via `StretchDecode.bsv` rather than a page of its own.
+
+This is the single open item on the page, and it is now specific
+enough to hand to someone: **what VFL integer operation has code
+`101000`?**
 
 **`verify_mcp_bootstrap_p2.py` IS DELIBERATELY NOT IN
 `run_tests.sh`** and deliberately still fails. A known-failing check
