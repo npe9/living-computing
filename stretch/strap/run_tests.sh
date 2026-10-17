@@ -1153,6 +1153,33 @@ run "I-Box 5 routine 1260's indicator walk + TRANSMIT IMMEDIATE (jb_ax5b p.45)" 
 # failing loud.  Every count in this block is 1.  Recorded in
 # TRANSMIT_CODES, in strap_asm.py's format list and in strap/README.md.
 
+run "The STRETCH MAINTENANCE COMPOOL, 65 symbols (ka_ua1 PDF pp.129-130)" python3 verify_dcp_compool.py
+# THE ROSETTA STONE, and the first piece of the Diagnostic Control
+# Program transcribed.  docs/archival_inventory.md: "the single
+# highest-leverage page in the whole find... resolves symbols
+# referenced by EVERY OTHER 7030 diagnostic deck in bitsavers' diag/
+# directory... without it, every other listing's symbols are
+# dangling."  51 entries on PDF p.129, 14 on p.130.
+#
+# NOT A rule-3 CHECK, and the file says so.  A SYN emits no code, so
+# there is no machine-code column to compare.  What the page does
+# print on every row is the RESOLVED ADDRESS, so the oracle is the
+# assembler's symbol table against that column: 55 genuine checks and
+# 10 circular, the circular ones being rows with no offset of their
+# own whose base this transcription back-computed.
+#
+# THE OPERATOR PRINTS AS "&" AND IT IS ADDITION, settled by arithmetic
+# rather than by looking at the glyph -- which at 600 dpi is
+# unmistakably an ampersand and unmistakably not a plus.  41 of 41
+# offset rows resolve correctly under "addition, decimal offset, octal
+# address", and the decisive row is MNTCTL, which prints NO operator
+# glyph at all and still sums.  p.130 confirms the convention
+# independently: its address column runs 7 -> 10 with no 8 or 9.
+#
+# "ETAP7" IS AS PRINTED -- IBM's own typo between EQTAP6 and EQTAP8,
+# confirmed at 600 dpi off a rule line.  Third deck typo this corpus
+# preserves, beside "PSEDUO" and "COUSE".
+
 run "I-Box 5 routine 1260's TS block, bit-exact (jb_ax5b p.41)" python3 verify_ax5b_16071_listing.py
 # THE INTERVAL TIMER GETS A SECOND DECK ORACLE, eight rows long.
 # Reference Manual p.44: "4. Time Signal (TS).  The interval timer has

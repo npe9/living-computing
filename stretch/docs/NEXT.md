@@ -2843,6 +2843,38 @@ page turned out to carry its own oracle: an expression and its
 evaluated address on every line. **When a listing prints both an
 expression and its result, the arithmetic outranks the typography.**
 
+### TRANSCRIBED, 2026-10-16 — 65 symbols, 55 genuine checks, 0 failures
+
+`strap/programs/dcp_compool.strap` + `strap/verify_dcp_compool.py`,
+wired into `run_tests.sh` (392 -> 393 run lines). 51 entries from PDF
+p.129 and 14 from p.130.
+
+**It is not a rule-3 check and the files say so.** A `SYN` emits no
+code, so there is no machine-code column to compare. What the page
+*does* print on every row is the resolved address, so the oracle is
+the assembler's symbol table against that column. Of 65 symbols, **55
+are genuine** and **10 are circular by construction** — the rows with
+no offset of their own, whose base symbols (`ECTL1-4`, `EQAV1-7`,
+`EDCP1`, `ACA`) are defined elsewhere in the DCP and were
+back-computed here from the printed results. The circular ones are
+reported separately by the verifier rather than counted as passes.
+
+**p.130 confirmed the convention independently.** Its address column
+runs `0.00& 1.00& ... 7.00& 10.00& 11.00& ... 15.00&` — **octal,
+skipping 8 and 9** — against decimal offsets `ACA+8.0 ... ACA+13.0`.
+A second page, a different table, same decimal-offset/octal-address
+rule.
+
+**AND A SELF-CAUGHT OVERCLAIM.** The first draft of the verifier
+computed p.130's addresses from `ACA` plus the offsets and wrote them
+as though the listing printed them. It had never been read. The
+column was then rendered and read, the values were right, and the
+comment now says they were read — but **the check cost two minutes
+and the assertion would otherwise have been exactly the kind this
+file's traps list is full of.** Deriving a value and printing it in
+the column labelled "what the listing says" is the same error as
+quoting an agent's number without a render.
+
 ### STILL OPEN, and smaller
 
 The `&` in the address column (`4006.00&`) and the binary column

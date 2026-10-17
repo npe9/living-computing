@@ -1,0 +1,155 @@
+! dcp_compool.strap -- the STRETCH MAINTENANCE COMPOOL, transcribed
+! from ka_ua1_diagnostic_ctl_pgm.pdf PDF pp.129-130.  Page header, as
+! printed: "@STRETCH MAINTENANCE COMPOOL, NOVEMBER 20, 1961".
+!
+! WHY THIS FILE EXISTS FIRST.  docs/archival_inventory.md calls these
+! two pages "the single highest-leverage page in the whole find: the
+! Rosetta stone that resolves symbols referenced by EVERY OTHER 7030
+! diagnostic deck in bitsavers' diag/ directory, not just this one...
+! without it, every other listing's symbols are dangling."  65 SYN
+! entries, 51 on p.129 and 14 on p.130.
+!
+! CITED BY PDF PAGE.  This listing's pages carry no printed folios.
+!
+! ---------------------------------------------------------------
+! THE OPERATOR PRINTS AS "&" AND IT IS ADDITION.  SUBSTITUTION 1.
+! ---------------------------------------------------------------
+! Every expression below prints in the listing as e.g.
+! "SYN,ECTL1&.01", and at 600 dpi cropped to one column the glyph is
+! unmistakably an ampersand -- closed lower loop, diagonal -- NOT a
+! plus.  The MCP listing prints an ordinary "+" in the structurally
+! identical place, so this is not simply how this project renders "+".
+!
+! IT WAS SETTLED BY ARITHMETIC, NOT BY LOOKING HARDER.  The page
+! prints each expression AND its resolved address, so every row is its
+! own oracle.  Reading the operator as addition, the offset as a
+! DECIMAL bit count and the address column as OCTAL, 41 of the 41 rows
+! that carry an offset come out exactly right (verify_dcp_compool.py).
+!
+! THE DECISIVE ROW IS MNTCTL.  It prints "SYN, ECTL2.62" -- with NO
+! operator glyph at all -- and resolves to 4007.76, which is
+! ECTL2 + 62 bits (0o76 = 62).  A row where the character is absent
+! and the sum still holds is evidence about the operator that does not
+! depend on reading the character.
+!
+! A HYPOTHESIS ABOUT *WHY*, AND NOTHING RESTS ON IT: the 12-zone punch
+! prints "&" on BCDIC chains and "+" on EBCDIC ones, so a deck punched
+! with "+" can print "&" on a different printer.  Recorded as a
+! hypothesis.  The transcription rests on the 41-row check.
+!
+! SUBSTITUTION 2: the address column prints "4006.00&" and the binary
+! column "&00000000", where MCP prints "+".  Nothing here reads those
+! columns -- a SYN emits no code -- so they are not transcribed, and
+! they are NOT silently normalised either.  Recorded as unexplained in
+! docs/NEXT.md 5m.
+!
+! ---------------------------------------------------------------
+! "ETAP7" IS THE SYMBOL AS PRINTED, AND IT IS IBM'S OWN TYPO
+! ---------------------------------------------------------------
+! Between EQTAP6 and EQTAP8 the listing defines ETAP7, five characters
+! where its neighbours have six.  Confirmed at 600 dpi: the symbol is
+! not on a rule line and the Q is simply absent.  Kept as printed --
+! any deck referring to it must spell it the same way -- and flagged
+! here beside "PSEDUO" (ax5b_162_test3a) and "COUSE" (162_test1d) as a
+! third deck typo this corpus preserves rather than corrects.
+!
+! ---------------------------------------------------------------
+! THE BASE SYMBOLS ARE DERIVED, AND THEY ARE INPUTS TO THE CHECK
+! ---------------------------------------------------------------
+! ECTL1-4, EQAV1-7 and EDCP1 are defined ELSEWHERE in the DCP, not on
+! these two pages.  Their values below are back-computed from the
+! printed addresses of the rows that use them, so for the twelve rows
+! that carry no offset the address check is CIRCULAR BY CONSTRUCTION
+! and proves nothing.  The 41 rows that carry an offset are genuine:
+! they test the offset, the decimal-to-octal convention, and the
+! operator reading.  This is the same rule the deck transcriptions
+! state as "EVERY SYN IS AN INPUT TO THE CHECK, NOT A WITNESS".
+!
+! The rule-line trap (docs/listing_typography.md 10) is live on this
+! page: a rule crossing a glyph can forge a bottom bar and turn F into
+! E.  The prefix is settled by the rows that sit OFF the rules --
+! EBAUTO, EMACH, ETAPDM, EDPLOC, EBHARV all begin with a clean E.
+
+! ---- bases, DERIVED from the printed results (see header) ----------
+ECTL1   SYN, (8)4006.0
+ECTL2   SYN, (8)4007.0
+ECTL3   SYN, (8)4010.0
+ECTL4   SYN, (8)4011.0
+EQAV1   SYN, (8)4012.0
+EQAV2   SYN, (8)4013.0
+EQAV3   SYN, (8)4014.0
+EQAV4   SYN, (8)4015.0
+EQAV5   SYN, (8)4016.0
+EQAV6   SYN, (8)4017.0
+EQAV7   SYN, (8)4020.0
+EDCP1   SYN, (8)4000.0
+
+! ---- PDF p.129: 51 entries ----------------------------------------
+EBAUTO  SYN, ECTL1
+EBMAIN  SYN, ECTL1+.01
+EBSURV  SYN, ECTL1+.02
+EBDCP   SYN, ECTL1+.03
+EBMCON  SYN, ECTL1+.04
+EBBLNK  SYN, ECTL1+.46
+EMACH   SYN, ECTL2
+ETAPCM  SYN, ECTL2+.12
+ETAPDM  SYN, ECTL2+.19
+ETAPCS  SYN, ECTL2+.28
+ETAPDS  SYN, ECTL2+.35
+ETAPCO  SYN, ECTL2+.44
+ETAPDO  SYN, ECTL2+.51
+EB16CH  SYN, ECTL2+.61
+MNTCTL  SYN, ECTL2+.62      ! listing: "SYN, ECTL2.62" -- NO operator
+                            ! glyph printed; @MAINT CONSL CONTROL
+EBDRSP  SYN, ECTL3+.17
+EDPLOC  SYN, ECTL3+.32
+EBAEC   SYN, ECTL4+.01
+EBHARV  SYN, ECTL4+.02
+EBK1    SYN, ECTL4+.03
+EBK2    SYN, ECTL4+.04
+EBK3    SYN, ECTL4+.05
+EQRDR1  SYN, EQAV1
+EQRDR2  SYN, EQAV1+.16
+EQRDR3  SYN, EQAV1+.32
+EQRDR4  SYN, EQAV1+.48
+EQPUN1  SYN, EQAV2
+EQPUN2  SYN, EQAV2+.16
+EQPUN3  SYN, EQAV2+.32
+EQPUN4  SYN, EQAV2+.48
+EQTYP1  SYN, EQAV3
+EQTYP2  SYN, EQAV3+.16
+EQTYP3  SYN, EQAV3+.32
+EQTYP4  SYN, EQAV3+.48
+EQPTR1  SYN, EQAV4
+EQPTR2  SYN, EQAV4+.16
+EQPTR3  SYN, EQAV4+.32
+EQPTR4  SYN, EQAV4+.48
+EQDIS1  SYN, EQAV5
+EQDIS2  SYN, EQAV5+.16
+EQDIS3  SYN, EQAV5+.32
+EQDIS4  SYN, EQAV5+.48
+EQTAP1  SYN, EQAV6
+EQTAP2  SYN, EQAV6+.16
+EQTAP3  SYN, EQAV6+.32
+EQTAP4  SYN, EQAV6+.48
+EQTAP5  SYN, EQAV7
+EQTAP6  SYN, EQAV7+.16
+ETAP7   SYN, EQAV7+.32      ! AS PRINTED -- see header, IBM's typo
+EQTAP8  SYN, EQAV7+.48
+EQMEM   SYN, EDCP1+21.0     ! a WORD offset, not a bit offset
+
+! ---- PDF p.130: 14 entries, a separate table -----------------------
+ACA     SYN, 0
+ACB     SYN, ACA+1.0
+ACC     SYN, ACA+2.0
+ACD     SYN, ACA+3.0
+ACE     SYN, ACA+4.0
+ACF     SYN, ACA+5.0
+ACG     SYN, ACA+6.0
+ACH     SYN, ACA+7.0
+ADA     SYN, ACA+8.0
+ADB     SYN, ACA+9.0
+ADC     SYN, ACA+10.0
+ADD     SYN, ACA+11.0
+AIDNTA  SYN, ACA+12.0
+AIDNTB  SYN, ACA+13.0
