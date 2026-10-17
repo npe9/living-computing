@@ -3301,6 +3301,49 @@ when this landed, and `sh` reads a script by byte offset — editing it
 mid-run is the hazard `AGENTS.md` names explicitly. The run line is
 written and goes in once the suite reports.
 
+## 5t. MCP's SPACED SYMBOL NAMES ARE BLANKS STRAP IGNORES — M3 needs no assembler change for them
+
+Checked 2026-10-17, before starting M3's transcription, because it
+looked like the biggest blocker and turned out not to be one.
+
+**THE WORRY.** MCP's listing prints names with embedded blanks —
+`X IPL BS`, `X BS END`, `XW SR`, `X CL IND`, `X S ROOF` — and a
+symbol containing a space is not something `strap_asm.py` accepts.
+If those were real, M3 would be blocked on assembler work before a
+single row could be transcribed.
+
+**THE EVIDENCE IS ARITHMETIC, not a quotation.** C22-6531 printed
+p.10 (PDF 11; this document's offset is printed + 1):
+
+> "A symbol is any sequence of **six or fewer** alphabetic and
+> numeric characters conforming to the following conditions:
+> 1. It contains only alphameric characters.
+> 2. Its first character is specifically alphabetic."
+
+Fifteen spaced names taken from MCP's pp.2-3 and p.14, with blanks
+removed: `XIPLBS` `XBSEND` `XBEGIN` `XWSR` `XCLIND` `XCLSTO`
+`XVERFY` `XSROOF` `XLOOP` `XIPLK` `XERRAD` `XERROR` `XWIND`
+`XBUFER` `XPROSA`.
+
+**All fifteen are legal. Eight are exactly six characters — the
+maximum.** As printed, every one of the fifteen exceeds six and would
+be illegal. A name space used right up to its limit, with the
+overflow all being blanks, is not a coincidence.
+
+**So STRAP ignores embedded blanks in symbols, and the transcription
+writes `XIPLBS`.** Recorded as an INFERENCE: p.10 states the length
+and character rules and does **not** say blanks are ignored. What
+makes it safe to act on is that the alternative — spaces being
+significant — contradicts the stated six-character rule fifteen times
+out of fifteen, and that `listing_oracle.py` will catch it anyway,
+since a wrong symbol gives a wrong address and the printed machine
+code will not match.
+
+**M3 IS THEREFORE NOT BLOCKED ON THIS.** The remaining STRAP-II gaps
+from `mcp_tape_manufacture.md` §4 stand — `TAIL` with multi-level
+scoping, `CW(CR)`/`CW(CDSC)`, `XW`/`VF`, the `(A*)`/`(CC*)`/`(IQS*)`
+DD prefixes — and those are real. This one is not among them.
+
 ## 6. Open questions — record, do not guess
 
 **What is the `-ILLEGAL OP.` word doing in routine 1262's TEST 3A and
