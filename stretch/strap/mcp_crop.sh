@@ -23,7 +23,11 @@
 
 set -e
 PRINTED="$1"; COL="${2:-code}"; BAND="${3:-1}"
-PDF=../docs/MCP_Mar63_001-249.pdf
+# Resolve the PDF against THIS SCRIPT's location, not the caller's
+# working directory -- the first version used a bare ../docs/... and
+# failed the moment it was run from the repository root.
+HERE="$(cd "$(dirname "$0")" && pwd)"
+PDF="$HERE/../docs/MCP_Mar63_001-249.pdf"
 PAGE=$((PRINTED + 7))
 
 # COLUMN BANDS, EXPRESSED AT 600 dpi AND SCALED BELOW.  Calibrated
