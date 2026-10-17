@@ -3561,6 +3561,67 @@ that was already in `docs/`. Each took minutes to settle and each
 turned out smaller than its summary. **"This needs document X" is
 only true once document X has been opened.**
 
+## 5y. MCP's PAGE 2 IS TRANSCRIBED — 15 of 16 rows bit-exact, and the 16th is a real find
+
+2026-10-17, `boot_plan.md` M3's first page.
+`strap/programs/mcp_bootstrap_p2.strap` +
+`strap/verify_mcp_bootstrap_p2.py`. **The first page of IBM's
+operating system in this corpus.**
+
+**All six symbols the page defines land exactly where its LOCATION
+column prints them** — `XIPLBS` 000041.00, `XVERFY` 000043.00,
+`XBEGIN` 000043.40, `XLOOP` 000044.40, `XCLIND` 000046.40, `XCLSTO`
+000050.40 — and **fifteen of the sixteen rows carrying machine code
+match character for character**, including the IPL control word, the
+`BD` the hardware starts at, the `XW` disk-control-word slot, and the
+full-word `L(BU)`.
+
+### THE ORACLE EARNED ITS KEEP TWICE BEFORE THE REAL FIND
+
+- **`listing_oracle.render()` could not print an index or control
+  word.** The listing uses four groups — `vvvvvv.vv+ fff cccccc
+  rrrrrr` — where `render` saw four tokens and emitted two
+  half-words. Now handled, and **one renderer serves both `XW` and
+  `CW`**: `CW`'s ADDRESS is only 18 bits with the status bits zero
+  beneath it, but an 18-bit address in bits 0-17 *is* `addr << 6`
+  read as 24 bits, so printing bits 0-23 as word.bit gives the
+  address and `.00` either way.
+- **`CW`'s COUNT field needed the integer-vs-bit-address rule too**,
+  which §5v applied only to the two address fields. p.2 writes
+  `X BS END-X IPL BS`, a difference of two bit addresses needing
+  conversion; p.14 writes the plain integer `513`. The count came
+  out **eight times too large** — `0o56000` against `0o560` — and
+  nothing else moved. **Third field, same rule, caught only because
+  MCP writes it both ways.**
+
+### THE ONE FAILURE, AND IT IS NOT A TYPO
+
+```
+line 34  M+I(BU,6),X CL IND+.19
+  assembled  630000.00 80  406000.20 90
+  listing    000046.63 80  006000.22 80
+```
+
+`X CL IND+.19` is `XCLIND` + 19 bits = bit 2483 = word `0o46`, bit
+`0o63` — which is exactly the listing's `000046.63`, so **the operand
+is transcribed right.** Feeding the assembler a bare literal
+`(8)46.63` produces the same wrong word, so this is **not** a
+transcription error: the bit part `0o63` lands at bit position 18 of
+the 24-bit field and the word part disappears.
+
+**So either `M+I` takes an operand form this file guessed wrong, or
+`strap_asm.py` mis-places the VFL immediate address field.** Both are
+worth knowing and neither will be guessed at. It is self-modifying
+code — the instruction increments a mask-bit number inside the `BMKZ`
+at 000046.40, stepping through the non-maskable indicators — so
+getting it right matters for running the bootstrap, not just for the
+transcription.
+
+**`verify_mcp_bootstrap_p2.py` IS DELIBERATELY NOT IN
+`run_tests.sh`** and deliberately still fails. A known-failing check
+outside the suite is visible; a check quietly weakened to pass is
+not. It goes in when line 34 is understood.
+
 ## 6. Open questions — record, do not guess
 
 **What is the `-ILLEGAL OP.` word doing in routine 1262's TEST 3A and

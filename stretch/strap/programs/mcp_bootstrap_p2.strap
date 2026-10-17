@@ -1,0 +1,102 @@
+! mcp_bootstrap_p2.strap -- MCP's IPL BOOTSTRAP, printed page 2.
+! docs/MCP_Mar63_001-249.pdf PDF p.9, header "PAGE NUMBER 2", banner
+! "MCP INIALIZATION BOOTSTRAP" (IBM's own spelling, kept).
+!
+! THE FIRST PAGE OF IBM's OPERATING SYSTEM IN THIS CORPUS.
+! docs/boot_plan.md M3.  Sixteen rows carry printed machine code and
+! every one of them is checked by verify_mcp_bootstrap_p2.py --
+! AGENTS.md rule 3, against the listing's own BINARY OUTPUT column.
+!
+! WHAT THIS PAGE IS.  Lines 15-39 are the first fragment of the
+! routine the IPL hardware loads: it plants the IPL control word,
+! clears the lower registers and the indicators, then sizes core
+! storage by clearing it until an address-invalid interruption says
+! where the top is.  Reference Manual printed p.126's sequence --
+! which strap/programs/ipl_boot.strap already exercises end to end --
+! is what puts it in memory and starts it at X IPL BS.
+!
+! ---------------------------------------------------------------
+! SUBSTITUTIONS, all four of them
+! ---------------------------------------------------------------
+! (1) BLANKS INSIDE SYMBOL NAMES ARE DROPPED.  The listing prints
+!     "X IPL BS", "X BS END", "XW SR", "X CL IND", "X S ROOF".
+!     C22-6531 printed p.10 limits a symbol to "six or fewer
+!     alphabetic and numeric characters" and requires it to contain
+!     "only alphameric characters", and every one of these is exactly
+!     six or fewer once the blanks come out -- see docs/NEXT.md 5t,
+!     where fifteen of them are checked.  So XIPLBS, XBSEND, XWSR,
+!     XCLIND, XSROOF.
+!
+! (2) THE LISTING-CONTROL PSEUDO-OPS OF LINES 3-9 ARE OMITTED, not
+!     translated: PUNFUL, PUNORG, PUNID, RESEQ, PRNS.  strap_asm.py
+!     accepts them (LISTING_CONTROL) and they emit nothing, so their
+!     presence or absence cannot move a bit.  They are left out
+!     because this file is the bootstrap, not the deck that punched
+!     it.
+!
+! (3) LINE 10's "TAIL,(2)G" IS OMITTED.  C28-6129 printed p.37: TAIL
+!     "appends the symbol that appears in its address field as a tail
+!     to every symbol in the statements that follow".  It is suffix
+!     mangling for assembling separate programs together, and with
+!     one tail covering the whole program every definition and every
+!     reference is mangled alike -- so a standalone assembly is
+!     bit-identical with or without it (docs/NEXT.md 5x).  strap_asm
+!     does not implement it and deliberately refuses it rather than
+!     ignoring it silently; omitting it here is the honest form.
+!
+! (4) LINE 27's "(A*)DD(BU,32,8),C911*" IS A ZERO OF THE SAME WIDTH.
+!     C28-6129 printed p.16: "(A*)" is the A entry mode -- IBM BCD --
+!     with "*" as the end-of-statement character, so the datum is the
+!     four characters C911.  strap_asm has no BCD table yet (that is
+!     Appendix C, printed pp.47-53).  THE LISTING PRINTS NO MACHINE
+!     CODE FOR THIS ROW, and its own comment calls it a "SLOT FOR
+!     DATE OF SOURCE TAPE", i.e. a placeholder patched at run time.
+!     DD(BU,32,8),0 occupies the identical 32 bits, so every later
+!     address still lands where the listing says -- which the sixteen
+!     checked rows prove, since X BEGIN at 000043.40 follows it.
+!     NOTHING IS CHECKED ABOUT ITS CONTENT and nothing may be.
+!
+! ---------------------------------------------------------------
+! EXTERNALS -- SYN'd at the addresses other pages print for them.
+! EVERY SYN IS AN INPUT TO THE CHECK, NOT A WITNESS: a SYN makes its
+! own address come out right by construction, so these rows prove
+! only that every OTHER field lands where the listing puts it.
+! XW SR and X S ROOF are defined on printed p.13 ("BOOTSTRAP
+! DEFINITIONS"); X BS END on printed p.14, the last line of the
+! PROSA control-word table, as "- END OF THE MCP IPL BS ROUTINE".
+XWSR    SYN, (8)547.0      ! p.13: "X WS R  XW,0.0,29,XW IND"
+XSROOF  SYN, (8)546.0      ! p.13: "X S ROOF  XW,0  -TEMP STORE FOR SIZE"
+XBSEND  SYN, (8)621.0      ! p.14: "X BS END  SYN,$"
+
+        SLC, (8)40.0       ! line 15
+
+! ---- the IPL control word the hardware refills from location 4 ----
+! Reference Manual printed p.126: the fixed control word reads ONE
+! word into location 4, "its refill address causes the next control
+! word to be fetched from location 4", and THIS is that word.  Count
+! is the whole bootstrap, X BS END - X IPL BS = 0o560 = 368 words.
+! "ONE IN REFILL FIELD IDENTIFIES IPLCW" -- printed p.3 finds which
+! channel IPL'd by scanning for that bit.
+        CW(CR), XIPLBS, XBSEND-XIPLBS, 1       ! line 17
+
+! ---- the bootstrap proper -----------------------------------------
+XIPLBS  BD,  XBEGIN        ! line 24  -DISABLE AND START IPL.  p.126
+                            ! requires the first instruction loaded by
+                            ! IPL to be BRANCH DISABLED.
+        VF,  0             ! line 25  -SLOT FOR TAPE CW
+        XW,  0             ! line 26  -SLOT FOR DISK CW
+XVERFY  DD(BU,32,8), 0     ! line 27  -SLOT FOR DATE OF SOURCE TAPE
+                            ! IN A-8.  See substitution (4).
+XBEGIN  LX,  $X15, XWSR    ! line 28  - INITIALIZE TO CLEAR LOWER REGISTERS
+        Z,   0.0           ! line 29
+XLOOP   Z,   2.0($X15)     ! line 30  -CLEAR LOWER REGESTERS (sic)
+        CBR+, $X15, XLOOP  ! line 31
+        L(BU), XWSR+.32    ! line 32  -DONE CLEAR C AND D REGISTERS
+XCLIND  BMKZ, $+.32        ! line 33
+        M+I(BU,6), XCLIND+.19   ! line 34 -CLEAR NON MASKABLE INDIC AND
+        CB,  $X15, XCLIND  ! line 35
+XCLSTO  Z,   0.0($X15)     ! line 36  -CLEAR ONE WORD
+        BADZ, $+1.0        ! line 37  -IF DONE CLEARING STORAGE
+        CB+, $X15, XCLSTO  ! line 38  -ADVANCE AND RETURN
+        SV,  $X15, XSROOF  ! line 39  -TEMPORARILY SAVE 7030 SIZE
+        END, XIPLBS

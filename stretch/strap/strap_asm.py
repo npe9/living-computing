@@ -1468,7 +1468,16 @@ def emit_statement(stmt, symtab, image):
             return (v >> 6) if _is_bit_address(text) else v
 
         addr = _word_field(stmt.fields[0])
-        count = eval_expr(stmt.fields[1], symtab, loc, lineno=stmt.lineno) \
+        # COUNT TAKES THE SAME RULE, which the first version missed.
+        # C22-6531 p.12's note covers any 18-bit field, and the count
+        # field is bits 28-45.  MCP writes it both ways within twelve
+        # pages, exactly as it does the chain address: printed p.2 has
+        # `X BS END-X IPL BS`, a difference of two BIT addresses that
+        # must be converted (0o56000 bits -> 0o560 words), while
+        # printed p.14 has the plain integer `513`, already a word
+        # count.  Caught by the p.2 oracle: the count came out eight
+        # times too large and nothing else moved.
+        count = _word_field(stmt.fields[1]) \
             if len(stmt.fields) > 1 and stmt.fields[1].strip() else 0
         chain_addr = _word_field(stmt.fields[2]) \
             if len(stmt.fields) > 2 and stmt.fields[2].strip() else 0

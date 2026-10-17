@@ -72,9 +72,35 @@ def render(prog, octal_loc, printed):
         # DD(BU,32,8): the listing prints a 32-bit datum as its own
         # half-word, 11 octal digits (jb_ax5b p.43's "00000003740").
         return f"{half:011o}"
+    if len(toks) == 4 and toks[0][-1] in "+-":
+        # AN INDEX WORD OR A CONTROL WORD, which the listing prints in
+        # four groups rather than as two half-words:
+        #     vvvvvv.vv+ fff cccccc rrrrrr
+        # bits 0-23 as word.bit, the sign bit 24 as + or -, the three
+        # flag bits 25-27 as three separate digits, the 18-bit count
+        # (28-45) and the 18-bit refill/chain address (46-63).
+        #
+        # ONE RENDERER SERVES BOTH, which is not obvious.  XW's first
+        # group is a 24-bit value field; CW's ADDRESS is only 18 bits
+        # (0-17) with the status bits 18-24 zero beneath it.  But an
+        # 18-bit address sitting in bits 0-17 IS addr << 6 read as 24
+        # bits, so printing bits 0-23 as word.bit gives the address in
+        # the word position and .00 in the bit position either way.
+        # Verified against MCP printed p.2's CW (000041.00+ 000 000560
+        # 000001) and p.14's CW(CDSC) (011406.00+ 110 001001 000553).
+        w = word_at(prog, bits)
+        val = (w >> 40) & 0xFFFFFF          # bits 0-23
+        sign = (w >> 39) & 1                 # bit 24
+        f = (w >> 36) & 0x7                  # bits 25-27
+        count = (w >> 18) & 0x3FFFF          # bits 28-45
+        refill = w & 0x3FFFF                 # bits 46-63
+        return (f"{val >> 6:06o}.{val & 0x3F:02o}{'-' if sign else '+'} "
+                f"{(f >> 2) & 1}{(f >> 1) & 1}{f & 1} "
+                f"{count:06o} {refill:06o}")
+
     if len(toks) == 4:
-        # A full-word instruction or XW, read across the word boundary
-        # if it is at an odd half-word.
+        # A full-word instruction, read across the word boundary if it
+        # is at an odd half-word.
         w = word_at(prog, bits)
         return f"{fmt_half(w >> 32)} {fmt_half(w & 0xFFFFFFFF)}"
     return fmt_half(half)
