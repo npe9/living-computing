@@ -438,8 +438,14 @@ module mkStretchCore(StretchCore);
     // be made, not a single shared constant.
     let x = validValue(ioPending);
     DeviceKind kind = kindOf(x.ch);
-    Bit#(6) capacity = (kind == DevTape)
-      ? fromInteger(valueOf(TapeWords)) : fromInteger(valueOf(DeviceWords));
+    // THE TAPE'S CAPACITY NOW COMES FROM THE SOURCE, not from a
+    // typedef: a file- or SD-backed source holds a reel, and the End
+    // Exception test ("the unit runs out of material", p.121) has to
+    // ask it rather than assume the 16-word register image.  The
+    // reader and printer are still fixed-size Vectors in StretchIO.
+    Bit#(25) capacity = (kind == DevTape)
+      ? zeroExtend(ioDev.tapeCapacity())
+      : fromInteger(valueOf(DeviceWords));
     if (ioRefillIssued) begin
       // A CHAINED CONTROL WORD IS IN FLIGHT.  This arm is first in the
       // rule on purpose: the End Exception test below looks at devIdx

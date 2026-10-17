@@ -3441,7 +3441,7 @@ function ActionValue#(IoOutcome)
                 // either). Tape instead continues from wherever the
                 // last transfer or CTL REWIND/BACKSPACE BLOCK left
                 // it -- see StretchIO.bsv "TAPE POSITION".
-                devIdx: tapeCh ? zeroExtend(io.tapePos()) : 0,
+                devIdx: tapeCh ? io.tapePos() : 0,
                 remaining: rem0, suppressEop: seop,
                 // SKIP (p.107) only has meaning on READ -- "on writing,
                 // the flag is meaningless and is ignored" -- so it's

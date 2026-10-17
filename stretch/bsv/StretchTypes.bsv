@@ -235,14 +235,20 @@ typedef struct {
   WordAddr ch;        // channel address (StretchIO.chanReader/chanPrinter)
   Bool isWrite;        // False = RD (device -> memory), True = W (memory -> device)
   WordAddr memAddr;    // next core-storage word address to move
-  Bit#(6)  devIdx;      // next device-image word index to move, ONE BIT
-                          // WIDER than StretchIO.DeviceIndex (TLog#(32)=5)
-                          // deliberately: DeviceWords==32 exactly fills a
-                          // 5-bit index, leaving no representable value
-                          // for "one past the end" to detect device
-                          // exhaustion against -- see StretchCore.bsv's
-                          // ioPending FSM, which truncates this back to
-                          // DeviceIndex only after confirming it's < 32
+  Bit#(25) devIdx;      // next device-image word index to move, ONE BIT
+                          // WIDER than the widest device index, so that
+                          // "one past the end" is representable and
+                          // device exhaustion is detectable -- see
+                          // StretchCore.bsv's ioPending FSM, which
+                          // truncates this back to DeviceIndex or
+                          // TapeIndex only after a capacity check.
+                          //
+                          // WIDENED 6 -> 25 on 2026-10-17 with
+                          // StretchTapeSource's TapeIndex (24 bits):
+                          // six bits covered DeviceWords==32 and the
+                          // old 16-word tape, and nothing else.  The
+                          // reader and printer are unaffected -- their
+                          // truncate to DeviceIndex is unchanged.
   Bit#(19) remaining;   // words still to transfer, counting this one
                           // (Bit#(19) to represent the p.107 "count field
                           // zero means 2^18" case without overflow)

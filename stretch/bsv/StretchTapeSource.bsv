@@ -71,12 +71,26 @@ import Vector::*;
 // in StretchIO.bsv so that an implementation of this interface does
 // not have to import the module it plugs into.
 typedef 16 TapeWords;
-typedef Bit#(TLog#(TapeWords)) TapeIndex;
+
+// THE INDEX WIDTH IS DECOUPLED FROM THE IMAGE SIZE, 2026-10-17.
+// TapeIndex used to be TLog#(TapeWords) -- four bits, because the
+// register-backed image is sixteen words.  That tied every caller to
+// one implementation's size: a file- or SD-backed source holds a reel.
+//
+// TapeWords CANNOT SIMPLY BE RAISED, which is worth saying because it
+// is the obvious move.  strap/programs/io_tape.strap reaches End
+// Exception by running a 20-word transfer off the end of a 16-word
+// tape, and gen_tape_tb.py's CCWJ/CCWP expectations encode "16 of 20
+// words transferred".  Sixteen is load-bearing for that test, so the
+// Vector source keeps it and the TYPE widens instead.
+typedef Bit#(24) TapeIndex;
 
 // One bit wider than TapeIndex, room for "one past the end" (== 16)
 // once the tape is fully drained -- the same idiom as IoXfer.devIdx
 // against StretchIO.DeviceIndex.  See StretchIO.bsv's "TAPE POSITION".
-typedef Bit#(TAdd#(TLog#(TapeWords), 1)) TapePos;
+typedef Bit#(25) TapePos;   // one wider than TapeIndex: room for
+                            // "one past the end", the same idiom as
+                            // IoXfer.devIdx against DeviceIndex
 
 interface TapeSource;
   // The runtime read path.  Request, then poll respReady, then
@@ -94,6 +108,14 @@ interface TapeSource;
 
   // Testbench only; see the header.  Not reachable from the ISA.
   method Word64 peek(TapeIndex i);
+
+  // How many words this source actually holds.  The transfer FSM
+  // tests devIdx against it to raise End Exception -- "the unit runs
+  // out of material" (RefMan p.121) -- so it has to come from the
+  // implementation rather than from a typedef.  Before this existed
+  // StretchCore read valueOf(TapeWords) directly, which silently
+  // assumed the register-backed source.
+  method TapeIndex capacity();
 endinterface
 
 // The register-backed source: the behaviour StretchIO.bsv had, with
@@ -144,7 +166,16 @@ module mkTapeSourceVector(TapeSource);
   Reg#(Maybe#(Word64)) resp[2] <- mkCReg(2, tagged Invalid);
 
   method Action readReq(TapeIndex i);
-    resp[1] <= tagged Valid img[i];
+    // The caller gates on capacity(), so i is in range; the truncate
+    // is how a 24-bit address indexes a 16-word Vector, and the guard
+    // makes an out-of-range request read zero rather than alias some
+    // other word if that contract is ever broken.
+    // `truncate` inside a Vector index gives bsc no target width
+    // (T0035, "Bit vector of unknown size"), so the narrow index is a
+    // named, explicitly typed binding.
+    Bit#(TLog#(TapeWords)) idx = truncate(i);
+    Bool inRange = (i < fromInteger(valueOf(TapeWords)));
+    resp[1] <= tagged Valid (inRange ? img[idx] : 64'd0);
   endmethod
 
   method Bool respReady() = isValid(resp[0]);
@@ -156,10 +187,16 @@ module mkTapeSourceVector(TapeSource);
   endmethod
 
   method Action write(TapeIndex i, Word64 v);
-    img[i] <= v;
+    Bit#(TLog#(TapeWords)) idx = truncate(i);
+    if (i < fromInteger(valueOf(TapeWords))) img[idx] <= v;
   endmethod
 
-  method Word64 peek(TapeIndex i) = img[i];
+  method Word64 peek(TapeIndex i);
+    Bit#(TLog#(TapeWords)) idx = truncate(i);
+    return (i < fromInteger(valueOf(TapeWords))) ? img[idx] : 64'd0;
+  endmethod
+
+  method TapeIndex capacity() = fromInteger(valueOf(TapeWords));
 endmodule
 
 endpackage

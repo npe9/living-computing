@@ -288,6 +288,11 @@ interface StretchIO;
   // StretchExecute's IoOp case reads this to seed a new transfer's
   // devIdx; StretchCore's ioPending FSM writes it back after every
   // word moved; the CTL REWIND/BACKSPACE BLOCK cases write it directly.
+  // How many words the tape source holds -- forwarded so the transfer
+  // FSM's End Exception test asks the SOURCE rather than assuming the
+  // register-backed one's size.  See StretchTapeSource.bsv.
+  method TapeIndex tapeCapacity();
+
   method TapePos tapePos();
   method Action setTapePos(TapePos p);
 
@@ -348,6 +353,8 @@ module mkStretchIO(StretchIO);
     let v <- tape.readResp();
     return v;
   endmethod
+
+  method TapeIndex tapeCapacity() = tape.capacity();
 
   method TapePos tapePos() = tapePosReg;
   method Action setTapePos(TapePos p);

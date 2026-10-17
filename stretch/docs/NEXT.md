@@ -3123,10 +3123,10 @@ they did.
 
 ### WHAT M1 DOES *NOT* YET HAVE
 
-- **The tape is still the 16-word `Vector`.** The image here is four
-  words. A file- or SD-backed source is `boot_plan.md` M0 steps 1 and
-  4, and the 24-bit address widening is step 2. **None of it was
-  needed to prove the path**, which is why it comes after.
+- **The tape image is still the 16-word `Vector`**, though the
+  *interface* is no longer limited to it — see §5q. A file- or
+  SD-backed source is `boot_plan.md` M0 steps 1 and 4. **Neither was
+  needed to prove the path**, which is why they come after.
 - **The channel signal is folded into `iplStart()`**, honest for one
   unit at selection address 0 (p.126 allows loading only from such a
   unit) and open for the multi-unit case.
@@ -3136,6 +3136,48 @@ they did.
   page requires.
 - **237 clocks is recorded, not validated.** No source gives an IPL
   duration; the bound is a regression guard, not a timing claim.
+
+## 5q. THE TAPE INDEX IS 24 BITS, AND CAPACITY COMES FROM THE SOURCE
+
+2026-10-17, `boot_plan.md` M0 step 2. io_tape 39/39 and the IPL boot
+5/5 at the same 237 clocks, so this is behaviour-preserving.
+
+**THE OBVIOUS MOVE DOES NOT WORK, and that is why this is shaped the
+way it is.** Raising `TapeWords` from 16 would widen the derived
+index for free — and it would break
+`strap/programs/io_tape.strap`, which reaches End Exception by
+running a 20-word transfer off the end of a 16-word tape.
+`gen_tape_tb.py`'s `CCWJ`/`CCWP` expectations literally encode "16 of
+20 words transferred". **Sixteen is load-bearing for that test.**
+
+So the image size and the address width were decoupled instead:
+
+| | before | after |
+|---|---|---|
+| `TapeIndex` | `TLog#(TapeWords)` = 4 bits | **`Bit#(24)`**, 16.7M words |
+| `TapePos` | 5 bits | **`Bit#(25)`** |
+| `IoXfer.devIdx` | `Bit#(6)` | **`Bit#(25)`** |
+| tape capacity | `valueOf(TapeWords)` in `StretchCore` | **`ioDev.tapeCapacity()`** |
+
+**The capacity change is the one that matters.** The End Exception
+test — *"the unit runs out of material"*, RefMan p.121 — was reading
+a typedef, which silently assumed the register-backed implementation.
+A file- or SD-backed source holds a reel and has to be able to say
+so. `mkTapeSourceVector` reports 16 and nothing observable moves.
+
+Two notes for whoever adds the next source:
+
+- **`truncate(i)` inside a `Vector` index is a bsc type error**
+  (T0035, "Bit vector of unknown size"): indexing accepts any width
+  so there is nothing to infer from. The narrow index has to be a
+  named, explicitly typed binding. Cost one build to learn.
+- **`readReq`/`write`/`peek` guard the range and return zero past the
+  end.** The caller gates on `capacity()`, so this is unreachable —
+  but a 24-bit address into a 16-entry `Vector` aliases silently if
+  that contract is ever broken, and a zero is much easier to notice.
+
+The reader and printer are untouched: still fixed-size `Vector`s in
+`StretchIO`, still truncating `devIdx` to `DeviceIndex` unchanged.
 
 ## 6. Open questions — record, do not guess
 
