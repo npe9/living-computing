@@ -3248,6 +3248,59 @@ is a real transcription with real syntax risk, and it is
 `boot_plan.md` M2 rather than a side errand. What is recorded here is
 only what was read first-hand and checked.
 
+## 5s. THE TAPE COMES OFF A FILE NOW — 19 words, past the 16-word ceiling
+
+2026-10-17, `boot_plan.md` M0 step 1. `bsv/StretchTapeSourceFile.bsv`
++ `bsv/host_tape.c`, selected in `StretchIO.bsv` behind
+`` `ifdef HOST_TAPE ``.
+
+```
+host_tape: mounted /tmp/stretch_ipl_big.tape, 19 words
+PASS ipl_file_program_executed    PASS ipl_file_second_store
+PASS ipl_file_loaded_entry_word   PASS ipl_file_past_16_words = 0x1fffff
+PASS cycles = 285 (bound 1200)    PASS PC = 133
+```
+
+**WHY A SECOND BOOT PROGRAM.** `ipl_boot.strap` is four words and
+proves the *sequence*; it cannot prove the *scale*, because a path
+that silently truncated at sixteen words would pass it unchanged.
+`ipl_boot_big.strap` assembles to a 19-word image with `MARKER` as
+its last word, so **a truncating path fails on `MARKER` and nowhere
+else** — the program would still run, both stores would still land,
+the entry word would still match. That one check is the ceiling.
+
+**AND THE SCALE IS THE POINT.** MCP's IPL bootstrap is 369 words
+(printed p.2's control word: count `0o560` = 368, plus the control
+word). Sixteen is not within a factor of twenty of it, so M3 was
+unattemptable until this existed. It is now.
+
+### TWO DECISIONS THAT WOULD HAVE BITTEN
+
+- **`` `ifdef `` rather than a module parameter.** `import "BDPI"`
+  has no Verilog back end. bsc *will* emit a `.v` for a module using
+  one — as VPI wrappers — and yosys then fails with
+  `Can't resolve function name '\$imported_host_tape_read_word'`.
+  A runtime or parameter choice cannot keep the BDPI package off a
+  bitstream path; guarding the *import* can.
+- **A separate `-bdir`, and this is the quiet one.** The two builds
+  differ only by a `-D`, and bsc's `.bo` files carry no record of it.
+  A `StretchIO.bo` built without `HOST_TAPE` is silently wrong for a
+  build with it, and the symptom is **a tape that reads zeros, not a
+  compile error.** `run_ipl_file_test.sh` uses
+  `build-hosttape`/`simbuild-hosttape` for exactly that reason.
+
+**AN OBSOLETE NOTE RETIRED.** `StretchIO.bsv`'s header has said since
+it was written that bsc's `$fopen`/`$fgetc` are Actions and so force
+pre-loaded `Vector`s. True of those primitives, irrelevant here: a
+BDPI function whose result type is **not** Action may be called in a
+value context from inside a rule. The idiom is the user's own, from
+`~/src/alto-bluespec/src/Disk.bsv:18-23`.
+
+**NOT YET IN `run_tests.sh`.** The full suite was reading that file
+when this landed, and `sh` reads a script by byte offset — editing it
+mid-run is the hazard `AGENTS.md` names explicitly. The run line is
+written and goes in once the suite reports.
+
 ## 6. Open questions — record, do not guess
 
 **What is the `-ILLEGAL OP.` word doing in routine 1262's TEST 3A and

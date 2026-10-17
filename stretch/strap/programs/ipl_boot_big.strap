@@ -1,0 +1,42 @@
+! ipl_boot_big.strap -- the same IPL path as ipl_boot.strap, but with
+! an image too big for the sixteen-word register tape.
+!
+! WHY A SECOND, LARGER PROGRAM.  ipl_boot.strap is four words
+! including its control word, so it fits mkTapeSourceVector and proves
+! the SEQUENCE.  It cannot prove the SIZE: a path that silently
+! truncated at sixteen words would pass it.  This one assembles to
+! more than sixteen words, so it can only load from a source that
+! holds more than sixteen -- which is the whole point of
+! mkTapeSourceFile (docs/boot_plan.md M0 step 1).
+!
+! AND THE SIZE IS NOT ARBITRARY.  MCP's IPL bootstrap is 369 words:
+! printed p.2's control word reads count 0o560 = 368 plus the control
+! word itself.  Sixteen is not within a factor of twenty of that, so
+! until a tape can hold a real image, boot_plan.md M3 cannot be
+! attempted at all.  This program is the smallest thing that
+! distinguishes "the sequence works" from "the sequence works at
+! scale".
+!
+! Same shape as ipl_boot.strap otherwise: first instruction BD because
+! Reference Manual printed p.126 requires it, halt with B,$ rather
+! than BEW,$ so the interruption system stays disabled as IPL left it.
+!
+! THE TAIL IS DATA, NOT PADDING-FOR-ITS-OWN-SAKE.  The last word is
+! checked, so a load that dropped the end of the image -- exactly what
+! a sixteen-word ceiling would do -- fails on MARKER rather than
+! passing quietly.
+
+        SLC, (8)100.0
+IPLBS   BD,  GO
+GO      LVI, $X1, 1234
+        SX,  $X1, RESULT
+        LVI, $X2, 4321
+        SX,  $X2, RESULT2
+HALT    B,   $
+RESULT  DD(BU,64), 0
+RESULT2 DD(BU,64), 0
+! ---- ballast past the sixteen-word line -------------------------
+        DD(BU,64), 1,2,3,4,5,6,7,8
+        DD(BU,64), 9,10,11,12
+MARKER  DD(BU,64), (8)7777777
+        END, IPLBS

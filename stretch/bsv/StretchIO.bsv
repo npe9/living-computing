@@ -200,6 +200,10 @@ package StretchIO;
 
 import StretchTypes::*;
 import Vector::*;
+`ifdef HOST_TAPE
+import StretchTapeSourceFile::*;   // Bluesim-only; see the selection
+                                    // below for why this is `ifdef'd
+`endif
 import StretchTapeSource::*;  // TapeSource, mkTapeSourceVector, and the
                               // TapeWords/TapeIndex/TapePos typedefs,
                               // which moved there with the interface
@@ -309,7 +313,25 @@ endinterface
 module mkStretchIO(StretchIO);
   Vector#(DeviceWords, Reg#(Word64)) readerImg  <- replicateM(mkReg(0));
   Vector#(DeviceWords, Reg#(Word64)) printerImg <- replicateM(mkReg(0));
+  // WHICH TAPE SOURCE, chosen at compile time.  `ifdef rather than a
+  // module parameter because the file-backed source uses
+  // `import "BDPI"`, which has no Verilog back end: bsc emits a .v
+  // for it as VPI wrappers and yosys then fails with
+  //   ERROR: Can't resolve function name '\$imported_host_tape_read_word'
+  // So the BDPI package must not even be IMPORTED on a path that a
+  // bitstream elaborates, which a runtime or parameter choice cannot
+  // guarantee and this can.
+  //
+  // Build with -D HOST_TAPE and link bsv/host_tape.c to mount a real
+  // image from $STRETCH_TAPE; without it the model keeps the
+  // sixteen-word register image every existing test uses.  USE A
+  // SEPARATE -bdir FOR THE TWO: they differ only by a -D, and a .bo
+  // built one way is silently wrong for the other.
+`ifdef HOST_TAPE
+  TapeSource                         tape       <- mkTapeSourceFile;
+`else
   TapeSource                         tape       <- mkTapeSourceVector;
+`endif
   Reg#(TapePos) tapePosReg <- mkReg(0);
 
   // unitReady is fixed at 1 (installed) for all three simulated
