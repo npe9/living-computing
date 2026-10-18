@@ -259,6 +259,77 @@ question, not an M3 one.
 sampled — which is now the actual next thing, because `X 10` is its
 first instruction.
 
+### M3+ — pp.15-18 ARE TRANSCRIBED, 2026-10-18, and they name the gate
+
+Four pages, 118 printed rows, every one bit-exact against the
+listing: `decks/mcp_bootstrap_p15.strap` through `p18`.
+
+| printed page | what it does |
+|---|---|
+| 15 | MCP INITIALIZATION: move the communication region, patch the machine's own size into it, **LOCATE the disk to arc zero** |
+| 16 | **WRITE PROSA ON DISK** and fetch from the MCPS tape; rewind and unload the tape when PROSA is refreshed |
+| 17 | **PROCESS IOCD CARDS SETTING UP CST AND LST** — MCP reads its own configuration off punched cards |
+| 18 | the unit-status half of the same, up to eight units per channel |
+
+**THE GATE IS NOW NAMED, AND IT IS THE DISK AFTER ALL — but one page
+later than the old guess said.** M3's note above is still right that
+the disk was never reached *by the bootstrap*. Printed p.15 line 26
+is the first disk instruction MCP executes.
+
+**SAY PRECISELY WHAT IS AND IS NOT MEASURED HERE.** The boot test
+still loads only the bootstrap image, printed pp.2-14 — `mcp_image.py`
+deliberately excludes pp.15+, because the bootstrap is the tape record
+and MCP proper is what the bootstrap *loads* — so the run still halts
+at PC 0 exactly as the table above describes, and **nothing in this
+repo has yet executed a single row of pp.15-18.** What is measured is
+the transcription: 118 rows, bit-exact. What is read off the code
+rather than run is everything below.
+
+What the model will do when those rows do run is not a guess either,
+but it is an inspection and not a measurement: `StretchExecute.bsv`'s
+`3'b011` arm is one line, `ind = setOpInvalid(ind)`, with the comment
+"LOC: not implemented". So the predicted next stop is a LOCATE — a
+better place to stop than PC 0, because the next thing to build stops
+being a guess.
+
+What pp.15-16 ask of a disk, read off the transcriptions rather than
+off the manual (`docs/disk_subsystem.md` §5.4's caveat 1 is
+discharged there):
+
+```
+  p.15 line 26   LOC(SEOP),0.0,0.0            -POSITION TO ARC ZERO
+  p.16 line 13   W(SEOP),0.0,X PRO WR         -WRITE PROSA
+  p.16 line 22   CCW,0.0,X IPL BS+1.0         -ATTEMPT TO GET CW
+```
+
+and `CCW` is **MCP's write-completion poll**, not a convenience: it
+reissues the `CCW` while channel-busy keeps refusing it, and the one
+that finally succeeds is where the arc count comes from.
+
+**AND p.17 ANSWERS "WHICH DEVICES".** MCP does not know its own
+configuration. It reads one IOCD card per unit, converts the channel
+number out of Hollerith, looks a two-letter equipment code up in
+`X EQP T`, and fills in the channel and unit status tables. So the
+set of devices the model must present is whatever the IOCD deck says
+— which makes `strap/cards.py` and the 7503 reader part of booting
+MCP, not just part of running diagnostic decks.
+
+**Two operations moved from UNIMPLEMENTED to ENCODING_ONLY** in the
+opcode ratchet because of p.17, and the pair is worth reading: `KF`
+is the compare that decides whether a card IS an IOCD card, and
+`LCV` is the radix conversion that turns its Hollerith channel digits
+into a channel number. The two operations the model cannot execute
+are the two standing between MCP and knowing what devices it has.
+
+**The order this sets for M3+**, in the order MCP will hit them:
+
+1. `LOC` on a disk channel, the arc register, `RD`/`W` streaming
+   arcs, the short-write tail zero-fill, and `CCW` — the nine-item
+   minimum of `disk_subsystem.md` §5.4.
+2. `KF` and `LCV` in the model, driven by p.17's own rows.
+3. An IOCD card deck for the reader, which `strap/cards.py` can
+   already punch, once the format is read out of a primary source.
+
 ### M4 — the Diagnostic Control Program  ·  ~75 days, in slices
 
 Transcribe in this order, each useful alone:
