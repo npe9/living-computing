@@ -1116,6 +1116,66 @@ Three caveats on that claim, stated so nobody is surprised:
 3. **"To boot" presupposes the tape unit and the Exchange work.** The real
    gate on MCP is the tape IPL path, not the disk.
 
+#### CAVEAT 1 IS NOW DISCHARGED, AND IT CHANGES THE MINIMUM
+
+*Added 2026-10-18.* Caveat 1 below says the minimum "is derived from
+the manuals, not from MCP's source", and names the decisive check: a
+look at what MCP's disk routines actually issue. **That check has now
+been done for the initialization path**, because MCP printed pp.15–16
+have been transcribed bit-exactly (`decks/mcp_bootstrap_p15.strap`,
+`decks/mcp_bootstrap_p16.strap`). What they issue is:
+
+| MCP row | statement | comment on the row |
+|---|---|---|
+| p.15 line 26 | `LOC(SEOP),0.0,0.0` | `-POSITION TO ARC ZERO` |
+| p.16 line 13 | `W(SEOP),0.0,X PRO WR` | `-WRITE PROSA` |
+| p.16 line 22 | `CCW,0.0,X IPL BS+1.0` | `-ATTEMPT TO GET CW` |
+
+**`CCW` MOVES INTO THE MINIMUM, and not as an afterthought — it is
+MCP's completion poll.** §3.6 reads, from printed p.161, that `CCW`
+"is not executed when a disk storage is reading or writing, and the
+channel-busy indicator will be turned on". MCP uses exactly that:
+
+```
+  line 21   LC,$7,0.0            -DONE * SET UP FOR TEST OF WRITE
+  line 22   X11 CCW  CCW,0.0,X IPL BS+1.0    -ATTEMPT TO GET CW
+  line 23-24  SIC,X ERR AD / BEKJZ,X ERROR   -IF EKJ
+  line 25-26  SIC,X ERR AD / CBZ,$7,X ERROR  -IF WRITE NOT SUCCESSFUL
+  line 27   BCBJZ,X11 CCW                    -IF WRITE DONE
+```
+
+The `BCBJZ` retries the `CCW` for as long as channel-busy keeps coming
+back, and `CBZ,$7` bounds the retries. **A `CCW` that refuses with CBJ
+is how MCP learns the write is still running, and a `CCW` that
+succeeds is how it learns the write finished** — and line 28 then takes
+the arc count out of it. The same shape appears one block earlier for
+the LOCATE: lines 13–20 reissue the `W` while CBJ is on, which is MCP
+waiting for p.15's seek.
+
+Two consequences for the model:
+
+1. **Implement `CCW` with the disk's own refusal rule.** It is item 9
+   of what was an eight-item list. Returning a control word built from
+   the live data-word-address and count fields is not optional
+   decoration; the arc count MCP accumulates into the communication
+   region comes from it.
+2. **A zero-latency disk is still correct, and it is worth saying why.**
+   If `W` completes within its own instruction, CBJ is never on, every
+   `BCBJZ` falls through on the first try and the loops run once. The
+   retry structure is tolerant of a disk that is infinitely fast; what
+   it is NOT tolerant of is a `CCW` that fails for some other reason,
+   or one that returns a count MCP cannot use.
+
+What the check did **not** find, and the exclusions that therefore
+still stand: no `CTL` on the disk path, no chaining, no `REL`, no
+dependence on automatic access elimination, no second disk unit. The
+`UNRJ` and `EKJ` tests are present on every one of those three rows,
+so those two indicators must exist and must be *off* on a healthy
+model — which they are by construction.
+
+The caveat's own wording is kept below unchanged, because it names the
+check that was right to ask for.
+
 #### To run MCP well
 
 Add: `CCW`, the full indicator set with its documented causes, the global
@@ -1434,7 +1494,9 @@ could not find, not something I declined to look up.
 - **The boot-MCP minimum is ~100–170 code lines** — a 2²¹-word store, an
   arc cursor, sequential read/write with tail zero-fill, EOP, UNRJ, and
   `CTL`→EPGK. Build it early; it is cheap and it unblocks nothing else by
-  being deferred.
+  being deferred. **Plus `CCW`**: §5.4's new subsection discharges
+  caveat 1 against MCP's own transcribed source, and `CCW` turns out to
+  be MCP's write-completion poll, not a convenience.
 - **A faithful model is ~600–1,000 code lines**, above
   `exchange_and_io.md`'s 400–700, with the indicator table, the dual
   access mechanism, AAE and the global interlock accounting for the
