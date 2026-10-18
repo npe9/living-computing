@@ -70,6 +70,17 @@ import sys
 from strap_asm import assemble, AssemblerError
 
 
+# THE STANDARD TAPE MARK.  Reference Manual printed p.132's IBM 729 IV
+# control-code table: "117 Write Tape Mark (writes the standard tape
+# mark 0001111)" and "077 Space File (forward past a tape mark; EE and
+# EOP given)".  A mark is a one-character record holding 0001111; this
+# model has no records, so it is a word with that character in byte 0 --
+# IBM bits 0-7, the leftmost -- and nothing after it.  The same constant
+# is bsv/StretchTypes.bsv's tapeMarkWord, which says at length why a
+# sentinel rather than a side table.
+TAPE_MARK = 0x0F00000000000000
+
+
 def pack_control_word(data_addr, count, refill, chain=0):
     """Figure 35's layout, the same field order as
     StretchTypes.bsv's packControlWord and gen_tape_tb.py's pack_cw.
@@ -93,6 +104,10 @@ def main():
     ap.add_argument("--refill", type=int, default=1,
                     help="refill field of the IPL control word "
                          "(default 1, as MCP's own bootstrap uses)")
+    ap.add_argument("--tape-mark", action="store_true",
+                    help="write a TAPE MARK after the image, as MCP's "
+                         "bootstrap expects (printed p.3 spaces over one "
+                         "before reading anything else)")
     ap.add_argument("--cw-in-image", action="store_true",
                     help="the program's FIRST WORD already is the IPL "
                          "control word; write the image verbatim and "
@@ -148,10 +163,26 @@ def main():
                   file=sys.stderr)
             sys.exit(1)
         body = [prog.words.get(a, 0) for a in range(lo, hi + 1)]
+        # THE COLLISION IS DETECTED, NOT ASSUMED.  A tape mark is a
+        # reserved word value, so a program word equal to it would be
+        # read as a mark.  Refusing here means the day an image
+        # collides, this says so -- rather than the tape quietly
+        # growing a mark in the middle of a program.
+        for i, w in enumerate(body):
+            if w == TAPE_MARK:
+                print(f"error: word {lo + i} (0o{lo + i:o}) of the image "
+                      f"equals the tape mark 0x{TAPE_MARK:016X}; this "
+                      f"format cannot represent it as data", file=sys.stderr)
+                sys.exit(1)
+        if args.tape_mark:
+            body.append(TAPE_MARK)
         with open(args.out, "wb") as f:
             for w in body:
                 f.write(struct.pack(">Q", w & 0xFFFFFFFFFFFFFFFF))
         print(f"{args.out}: {len(body)} words ({8 * len(body)} bytes)")
+        if args.tape_mark:
+            print(f"  word {len(body) - 1}  TAPE MARK "
+                  f"0x{TAPE_MARK:016X}")
         print(f"  word 0   the program's OWN control word, from "
               f"{lo} (0o{lo:o})")
         print(f"  words 1+ program image {lo + 1}..{hi} "

@@ -304,8 +304,8 @@ Scanning those four listings for the instructions this model refuses:
 
 | instruction | occurrences in the four benchmarks | evidence | model status |
 |---|---|---|---|
-| `LVE` | **7** | 5 read from the page image at PDF p.12 | not implemented |
-| `SVA` | **8** | 2 read from the image at PDF p.12 | partially (indicator fold only) |
+| `LVE` | **7** | 5 read from the page image at PDF p.12 | **implemented 2026-10-17** (one level; a chain sets OP). RefMan printed p.29, driven by `strap/programs/lve_indirect.strap` and witnessed by MCP printed p.3 line 10 |
+| `SVA` | **8** | 2 read from the image at PDF p.12 | **implemented** — this row said "partially (indicator fold only)" and was stale; `StretchExecute`'s `dixop_SVA` arm does the address replacement in full, width from `svaReplaceAddr` |
 | `LCV` (radix conversion) | **6** | 3 read from the image at PDF p.33 | not implemented |
 | `ST(DU,…)` decimal VFL | **7** | 4 read from the image at PDF p.33 | not implemented |
 | `SWAP` with a **direct** count (`$X2`) | **2** | 1 read from the image at PDF p.5 | not implemented |

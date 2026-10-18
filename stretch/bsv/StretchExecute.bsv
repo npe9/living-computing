@@ -2889,9 +2889,10 @@ function ActionValue#(IndexOutcome)
       // SX/SV/SC/SR and SVA write it back, so their read belongs to a
       // store and signals DS at the write.  A half-word never crosses
       // a word boundary, so one address is the whole question here.
-      // (LVE, p.32's class 2, decodes Operation Code Invalid in this
-      // model's default arm below, so its per-level monitoring is
-      // moot rather than missing.)
+      // (LVE, p.32's class 2, now has an arm of its own below.  Its
+      // per-level DF monitoring is still not modelled: the arm reads
+      // ONE half-word, because it implements one level of indirection
+      // and refuses a chain outright.)
       Bool dixFetchType = (di_.code == dixop_LX) || (di_.code == dixop_LV)
                        || (di_.code == dixop_LC) || (di_.code == dixop_LR)
                        || (di_.code == dixop_KV) || (di_.code == dixop_KC)
@@ -3073,6 +3074,102 @@ function ActionValue#(IndexOutcome)
             Bit#(32) h = (ea[0] == 0) ? prefetch[0][63:32] : prefetch[0][31:0];
             Cmp3 c = (x.count == h[31:14]) ? CmpEqual : (x.count < h[31:14]) ? CmpLow : CmpHigh;
             ind = setIndexCmpIndicatorsF(ind, x, c);
+          end else
+            needsRead = tagged Valid ea[18:1];
+        end
+        dixop_LVE: begin // LVE (Load Value Effective) -- INDIRECT
+          // ADDRESSING.  Reference Manual printed p.29, read
+          // first-hand:
+          //
+          //   "Even though the instruction class of the final
+          //    instruction is determined in order to obtain the
+          //    proper effective address, the instruction operation is
+          //    not executed. ... The index register in which the
+          //    final effective address is to be stored is specified
+          //    by the index field J of the original LOAD VALUE
+          //    EFFECTIVE instruction.  The fields J of all subsequent
+          //    instructions encountered in the operation are
+          //    ignored."
+          //
+          // and printed p.21 for how the address part becomes a
+          // 24-bit effective address: "the address part of the
+          // instruction, extended with the necessary low-order zeros,
+          // is the effective address."
+          //
+          // MCP's BOOTSTRAP IS WHAT MADE THIS NECESSARY, and it uses
+          // exactly one level.  Printed p.3's FIND IPL CHANNEL walks
+          // the channels by adding one to the channel field of its
+          // own CCW instruction and then does
+          //
+          //     LVE,15,X1 CCW   - OBTAIN NUMBER OF IPL CHANNEL
+          //
+          // -- read the CCW it has been modifying, compute THAT
+          // instruction's effective address, and keep it.  Every
+          // later "0($15)" on pp.3-6 then addresses the channel the
+          // IPL came in on.  Measured before this arm existed: the
+          // model no-opped the LVE, $15 kept the index word printed
+          // p.2's core-sizing loop left in it, SPFL went to channel
+          // zero, and the bootstrap stored X ER 05B's address in
+          // X ERR AD and printed "UNRJ IN SPACING OVER EOF".
+          //
+          // THE ADDRESS WIDTH IS NOT GUESSED.  It is the same six-way
+          // rule StretchDecode's svaReplaceAddr already applies, from
+          // jb_ax3a printed p.140: bits 24-27 = 1000 means a 24-bit
+          // bit address; bits 26-27 = 10 means floating point, 18
+          // bits, a word address; everything else is 19 bits, a half
+          // word address.  Writing it as the three-way test below
+          // rather than calling svaReplaceAddr keeps the two in the
+          // same shape without pretending one is derived from the
+          // other -- SVA replaces a field, this one extracts it.
+          if (prefetchCount >= 1) begin
+            Bit#(32) h = (ea[0] == 0) ? prefetch[0][63:32] : prefetch[0][31:0];
+            Bit#(5) hcode = h[8:4];
+            Bool targetIsLve = (instrLen(h) != Full) && (hcode == dixop_LVE);
+            if (targetIsLve)
+              // A CHAIN IS A LOOP, AND THIS E-BOX CANNOT RUN ONE.
+              // p.29 is explicit that LVE "extends the indirect
+              // addressing to another level" and "is always
+              // executed", terminating after one millisecond with
+              // indicator USA if the chain never ends.  That is an
+              // iteration with a time bound, and this model executes
+              // one instruction per step with no inner loop, so a
+              // chained LVE is refused out loud rather than silently
+              // truncated to one level.  It needs the multi-cycle
+              // E-box docs/microarchitecture_plan.md already calls
+              // for; MCP uses one level and no deck in this corpus
+              // uses more.
+              ind = setOpInvalid(ind);
+            else begin
+              BitAddr a = (instrLen(h) == Full) ? h[31:8]
+                        : (h[5:4] == 2'b10)     ? {h[31:14], 6'b0}
+                        :                         {h[31:13], 5'b0};
+              BitAddr fea = effAddr24(st, a, h[3:0]);
+              idxWriteReg = di_.j; doIdxWrite = True;
+              // The VALUE field only, like LV: p.29 says the final
+              // effective address "is placed in the index register",
+              // and names only the index flag and index result
+              // indicators as the other things that change.
+              //
+              // THE SIGN IS ZERO, AND THAT IS A BOUNDED ASSUMPTION
+              // rather than a reading.  p.21 says the effective
+              // address "always has 24 numeric bits and a sign", so
+              // in principle a signed value belongs here -- but the
+              // same page says "the effective address sign is not
+              // used in storage addressing", and "a negative
+              // effective address is not considered to be invalid;
+              // its magnitude is used".  effAddr24 above is written
+              // to that rule and returns a 24-bit magnitude with no
+              // sign to pass on, so this arm has none to store.  The
+              // difference is observable only for an LVE whose
+              // computed address is negative; nothing in this corpus
+              // does that, and LV beside it takes its sign from the
+              // loaded half-word because it is loading a VALUE, not
+              // an address.
+              idxWriteVal = IndexWord{addr:fea, sign:0, flag:x.flag,
+                                              spare:x.spare,
+                                              count:x.count, refill:x.refill};
+              ind = setIndexResultIndicatorsF(ind, idxWriteVal);
+            end
           end else
             needsRead = tagged Valid ea[18:1];
         end
@@ -3384,7 +3481,42 @@ function ActionValue#(IoOutcome)
                   end
                   io.writeChanCW(chAddr, cw);
                 end
-                default: ind = setOpInvalid(ind); // SPACE BLOCK/FILE,
+                18'o77: begin // SPACE FILE (p.132): "forward past a
+                  // tape mark; EE and EOP given".
+                  //
+                  // THIS IS A TRANSFER, NOT A JUMP, and that is the
+                  // substantive difference from REWIND and BACKSPACE
+                  // BLOCK above.  Those two know where to go and set
+                  // the position outright.  SPACE FILE has to LOOK --
+                  // a real 729 moves the tape until it reads a mark,
+                  // and a file- or SD-backed source cannot be searched
+                  // combinationally anyway.  So it starts the same
+                  // IoXfer machinery RD and W use, with untilMark set,
+                  // and StretchCore's rl_io walks the tape one word per
+                  // cycle exactly as a READ does.
+                  //
+                  // THE CONTROL WORD IS THE CHANNEL'S OWN.  Unlike
+                  // RD/W, CONTROL's right effective address is a
+                  // function code and not a control-word address
+                  // (p.111), so there is nothing to fetch: the
+                  // in-flight status goes in the control word already
+                  // in the exchange.  SEOP is set at issue for the
+                  // same reason RD/W set it -- MCP's printed p.3 line
+                  // 45 spins on bit 24 until the operation completes.
+                  ControlWord cw = io.readChanCW(chAddr);
+                  cw.seop = 1;
+                  io.writeChanCW(chAddr, cw);
+                  ioStart = tagged Valid IoXfer {
+                    ch: chAddr, isWrite: False,
+                    memAddr: 0,              // nothing is stored
+                    devIdx: io.tapePos(),
+                    // No count bounds a SPACE FILE; the mark does, or
+                    // the end of the reel does (the capacity arm in
+                    // rl_io, which also gives End Exception).
+                    remaining: 19'h40000,
+                    suppressEop: seop, skip: False, untilMark: True };
+                end
+                default: ind = setOpInvalid(ind); // SPACE BLOCK,
                                                      // WRITE TAPE MARK,
                                                      // BACKSPACE FILE,
                                                      // density/ECC/
@@ -3467,7 +3599,7 @@ function ActionValue#(IoOutcome)
                 // last transfer or CTL REWIND/BACKSPACE BLOCK left
                 // it -- see StretchIO.bsv "TAPE POSITION".
                 devIdx: tapeCh ? io.tapePos() : 0,
-                remaining: rem0, suppressEop: seop,
+                remaining: rem0, suppressEop: seop, untilMark: False,
                 // SKIP (p.107) only has meaning on READ -- "on writing,
                 // the flag is meaningless and is ignored" -- so it's
                 // only threaded through when this is an RD; a WRITE
@@ -3741,6 +3873,52 @@ function ActionValue#(ExecResult)
                 // setIndicatorBits), keeping IBM bits 0-19 = BSV 63:44.
                 // This is the diagnostic's `Z,$IND` reset before a test.
                 ind = ind & 64'hFFFFF00000000000;
+              else if (!installed(zw))
+                // ADDRESS INVALID, Reference Manual printed p.21 --
+                // NOT p.20, which this file and
+                // docs/microarchitecture_plan.md both cited:
+                //
+                //   "When an effective word address is obtained which
+                //    does not correspond to a core storage location
+                //    that is physically available in a particular
+                //    installation, indicator AD, address invalid, is
+                //    turned on.  An instruction with an invalid data
+                //    address is executed as a NO OPERATION
+                //    instruction.  A branch instruction with an
+                //    invalid address is also executed as a NO
+                //    OPERATION.  A negative effective address is not
+                //    considered to be invalid; its magnitude is used."
+                //
+                // MCP's BOOTSTRAP IS WHAT FOUND THIS MISSING, and it
+                // needs it to do something no diagnostic deck in this
+                // corpus does: SIZE CORE STORAGE BY RUNNING OFF THE
+                // END OF IT.  Printed p.2 lines 36-39 are
+                //
+                //     X CLSTO  Z,0.0($15)      -CLEAR ONE WORD
+                //              BADZ,$+1.0      -IF DONE CLEARING STORAGE
+                //              CB+,$15,X CLSTO -ADVANCE AND RETURN
+                //              SV,15,X S ROOF  -TEMPORARILY SAVE 7030 SIZE
+                //
+                // -- a loop with NO TERMINATING COUNT.  The only thing
+                // that ends it is AD coming on, which BADZ then tests
+                // and clears; X S ROOF is where the machine's size
+                // comes from.  Without this guard the model ran the
+                // loop past 98,304 words, wrapped the 24-bit address
+                // field, and began clearing from the bottom again --
+                // measured, twelve million steps in, with index 15's
+                // value back at word 6.
+                //
+                // ONLY THE Z ARM IS GUARDED HERE.  The rule is
+                // general and the floating-point arm already applies
+                // it; every other class is still open and
+                // docs/microarchitecture_plan.md records that.  A
+                // blanket guard would have to decide, for each class,
+                // which "addresses" are data addresses and which are
+                // not -- the FP arm's own SHF and E+I exclusions are
+                // that question answered once -- and inventing those
+                // answers without a witness is what AGENTS.md rule 4
+                // forbids.
+                ind = setBit(ind, ind_AD, 1);
               else
                 if (protViolates(st, zw)) ind = setBit(ind, ind_DS, 1);
                 else st.writeWord(zw, 0);

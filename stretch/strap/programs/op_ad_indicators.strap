@@ -48,9 +48,18 @@ START   LX, $X1, WSEED               ! a perfectly ordinary index load
         BB, $AD, $                   ! hang up if AD on
 !
 ! ---- OP: a decoded-but-unexecuted operation ------------------------
-! LVE is out of scope in this model (StretchExecute's dixop default),
+! RNX is out of scope in this model (StretchExecute's dixop default),
 ! so it must set OP and change nothing.
-        LVE, $X1, WOTHER             ! out of scope -> OP, and a no-op
+!
+! THIS USED TO BE LVE, and the swap is worth recording because the
+! test failing was the right outcome.  LVE was implemented on
+! 2026-10-17 for MCP's bootstrap (printed p.3 line 10), so it stopped
+! setting OP and this program hung at the BZB below -- a test whose
+! PREMISE had been "LVE is unimplemented" rather than "OP works".
+! RNX is the same instruction class reaching the same default arm, so
+! the shape of the check is unchanged; what changed is which
+! instruction happens to be out of scope.  Expect to swap it again.
+        RNX, $X1, WOTHER             ! out of scope -> OP, and a no-op
         BZB, $OP, $                  ! hang up if OP off
         BB, $AD, $                   ! hang up if AD on -- OP must not imply AD
 ! and the suppressed instruction must not have touched the index:

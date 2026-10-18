@@ -97,13 +97,24 @@ execution operations: `EX` executes as of 2026-09-25 and `EXIC` as of
   indicators per p.24 (loads from the loaded word, stores from the
   unchanged one; `KV`/`KC` set the comparison indicators instead) —
   the load/store ops only gained this when I-Box 1's SIC-B,ZIND group
-  tested them, see `strap/README.md` "Gotchas" item 17. Not implemented: `RNX`, `LVE`, `SVA` -- `LVE`
-  specifically was investigated for `../strap/`'s Problem 2.2 Method 3
-  and left unimplemented: p.20 describes it only as enabling "indirect
-  addressing" ("the effective address is used to obtain a second level
-  effective address"), and this session could not find a page giving
-  its exact bit-level behavior distinctly from `LV`'s -- see
-  `strap/README.md`'s Method 3 writeup.
+  tested them, see `strap/README.md` "Gotchas" item 17. Not implemented: `RNX`.
+  `SVA` is implemented.  **`LVE` WAS IMPLEMENTED 2026-10-17** and the
+  reason it had been open is worth keeping: this note used to say
+  "p.20 describes it only as enabling indirect addressing... and this
+  session could not find a page giving its exact bit-level behavior
+  distinctly from `LV`'s".  **The page is printed p.29**, nine pages
+  on, and it gives the behaviour in full -- which instruction's
+  effective address is taken, that the target's operation is not
+  executed, that the target's own `J` is ignored, where the result
+  goes, and the one-millisecond/`USA` bound on a chain.  The earlier
+  search stopped at the overview.  MCP's bootstrap (printed p.3 line
+  10, `LVE,15,X1 CCW`) is what forced the question again, and
+  `strap/programs/lve_indirect.strap` now exercises all three address
+  widths plus the target's index field, the target's ignored `J`, and
+  the chain refusal.  A CHAIN IS STILL NOT IMPLEMENTED: p.29 makes it
+  an iteration with a time bound and this E-box runs one instruction
+  per step, so a target that is itself an `LVE` sets `OP` rather than
+  being silently truncated to one level.
 - **Connectives** — all sixteen logical functions (`C`/`CM`/`CT`,
   Figure 20, p.75-77), with the same direct/immediate/progressive
   addressing as VFL arithmetic above. **Scope**: byte size is assumed

@@ -3064,7 +3064,7 @@ Predicate: tick.whas && recover[19]
 Blocking rules: mem_setIndicatorBits
  
 Rule: rl_io
-Predicate: tick.whas && (! recover[19]) && ioPending[83]
+Predicate: tick.whas && (! recover[19]) && ioPending[84]
 Blocking rules: io_tapeReadResp,
 		mem_writeWord,
 		mem_laResp,
@@ -3076,12 +3076,12 @@ Blocking rules: io_tapeReadResp,
  
 Rule: rl_idx_write
 Predicate: tick.whas &&
-	   (! recover[19]) && (! ioPending[83]) && pendingIdxWrite[68]
+	   (! recover[19]) && (! ioPending[84]) && pendingIdxWrite[68]
 Blocking rules: (none)
  
 Rule: rl_exec_resume
 Predicate: tick.whas &&
-	   (! recover[19]) && (! ioPending[83]) && (! pendingIdxWrite[68]) &&
+	   (! recover[19]) && (! ioPending[84]) && (! pendingIdxWrite[68]) &&
 	   ebox_held[254] &&
 	   (ebox_subjReady || st_chSpecial_0[18] || st_chResp_0[64])
 Blocking rules: mem_setIndicatorBits,
@@ -3095,7 +3095,7 @@ Blocking rules: mem_setIndicatorBits,
  
 Rule: rl_au_remove
 Predicate: tick.whas &&
-	   (! recover[19]) && (! ioPending[83]) && (! pendingIdxWrite[68]) &&
+	   (! recover[19]) && (! ioPending[84]) && (! pendingIdxWrite[68]) &&
 	   ((! ebox_held[254]) ||
 	    ((! ebox_subjReady) &&
 	     (! st_chSpecial_0[18]) && (! st_chResp_0[64]))) &&
@@ -3119,7 +3119,7 @@ Blocking rules: mem_setIndicatorBits,
  
 Rule: rl_interrupt
 Predicate: tick.whas &&
-	   (! recover[19]) && (! ioPending[83]) && (! pendingIdxWrite[68]) &&
+	   (! recover[19]) && (! ioPending[84]) && (! pendingIdxWrite[68]) &&
 	   (! intPC[19]) &&
 	   (la_laCount == 3'd0) &&
 	   (! ebox_held[254]) &&
@@ -3129,7 +3129,7 @@ Blocking rules: mem_setIndicatorBits
  
 Rule: rl_prepare
 Predicate: tick.whas &&
-	   (! recover[19]) && (! ioPending[83]) && (! pendingIdxWrite[68]) &&
+	   (! recover[19]) && (! ioPending[84]) && (! pendingIdxWrite[68]) &&
 	   ((! ebox_held[254]) ||
 	    ((! ebox_subjReady) &&
 	     (! st_chSpecial_0[18]) && (! st_chResp_0[64]))) &&

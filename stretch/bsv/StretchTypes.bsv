@@ -258,7 +258,47 @@ typedef struct {
                           // each cycle but do NOT write core storage --
                           // meaningless on WRITE (manual: ignored), so
                           // execute() only ever sets this True for RD
+  Bool untilMark;        // SPACE FILE (control code 077): run the
+                          // transfer until a TAPE MARK is read rather
+                          // than until `remaining` runs out, store
+                          // nothing, and finish with End Exception.
+                          // See tapeMarkWord below and StretchCore's
+                          // rl_io.
 } IoXfer deriving (Bits, Eq, FShow);
+
+// ---------------------------------------------------------------------
+// THE TAPE MARK, and the one design decision behind it.
+//
+// Reference Manual printed p.132 gives the IBM 729 IV control code
+// "117 Write Tape Mark (writes the standard tape mark 0001111)", and
+// "077 Space File (forward past a tape mark; EE and EOP given)".  So a
+// tape mark is a ONE-CHARACTER RECORD holding the seven-bit character
+// 0001111.
+//
+// THIS MODEL HAS NO RECORDS.  StretchTapeSource is a flat sequence of
+// 64-bit words with a position, which is the whole reason chaining
+// could be built before record structure (docs/NEXT.md 5k).  So a mark
+// has to be a WORD, and the question is which word.
+//
+// IT IS THE MANUAL'S OWN CHARACTER IN BYTE 0 AND ZEROS AFTER IT.  Byte
+// 0 of a tape word is IBM bits 0-7, the leftmost, so the one-character
+// record 0001111 lands at 0x0F and the rest of the word is the nothing
+// that follows it.  That is a derivation from p.132 rather than an
+// invented sentinel, which matters because a sentinel is exactly what
+// it still is: A WORD OF DATA EQUAL TO THIS VALUE WOULD BE READ AS A
+// MARK.
+//
+// WHY NOT A SIDE TABLE, which cannot collide: because the marks have
+// to travel in the same byte stream as the words.  mkTapeSourceFile
+// reads $STRETCH_TAPE and mkTapeSourceSD will read one raw region of a
+// card; neither has anywhere to put a second file.  A header format
+// would work and is the fallback if a collision ever turns up.
+//
+// THE COLLISION IS DETECTED, NOT ASSUMED.  strap/mktape.py refuses to
+// write an image that contains this word as data, so the day an image
+// does, the tool says so instead of the tape quietly growing a mark in
+// the middle of a program.
+Word64 tapeMarkWord = 64'h0F00000000000000;
 
 // ---------------------------------------------------------------------
 // SOURCING UPGRADE, 2026-09-29: these numbers no longer rest on the

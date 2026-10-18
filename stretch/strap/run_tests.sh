@@ -1153,6 +1153,42 @@ run "I-Box 5 routine 1260's indicator walk + TRANSMIT IMMEDIATE (jb_ax5b p.45)" 
 # failing loud.  Every count in this block is 1.  Recorded in
 # TRANSMIT_CODES, in strap_asm.py's format list and in strap/README.md.
 
+run "MCP'S OWN BOOTSTRAP RUNS (boot_plan.md M3)" ./run_mcp_boot.sh StretchMcpBootTb
+# IBM's operating system, executing on this model, off a tape built
+# from the thirteen transcribed pages.  It runs end to end and hands
+# off to printed p.15's MCP INITIALIZATION, which is not transcribed.
+#
+# WHAT EACH CHECK IS FOR is in gen_mcp_boot_tb.py; the two that carry
+# the claim are:
+#   mcp_end_of_prosa_bit_X0 -- printed p.4 line 37's
+#     "CM1111(BU,1),$0 +.25 -END OF PROSA FILE" sets word 16 bit 25,
+#     and NOTHING EARLIER IN ALL THIRTEEN PAGES WRITES IT.  That bit
+#     is the difference between finishing and stopping somewhere
+#     quiet.
+#   mcp_x_err_ad = 0 -- every error site does "SIC,X ERR AD" first
+#     and the instruction counter is never zero inside the bootstrap,
+#     so zero means NO ERROR SITE EVER RAN.
+# and mcp_x_s_roof says MCP MEASURED THE MACHINE: printed p.2's
+# sizing loop found 98,304 words, which is StretchMemory's
+# InstalledWords, six units.
+#
+# THREE MODEL GAPS HAD TO CLOSE FIRST, and the order they surfaced in
+# is the argument for running before fixing.  None was top of the
+# predicted list:
+#   1. ADDRESS INVALID ON A STORE PAST INSTALLED CORE.  printed p.2's
+#      clearing loop has NO TERMINATING COUNT -- AD is the only thing
+#      that ends it.  The model raised AD for floating-point operands
+#      and nowhere else, so the loop wrapped the 24-bit address field
+#      and started again from the bottom.  RefMan printed p.21.
+#   2. LVE, printed p.3 line 10, without which $15 never gets the
+#      channel number and SPFL goes to channel zero.
+#   3. SPACE FILE, control code 077, and a tape mark for it to find.
+#
+# IT HALTS AT PC 0 AND THAT IS THE HAND-OFF, not a failure: printed
+# p.4's "B,X 10" goes to 000622.00, one word past X BS END, so the
+# machine runs into the zeros above the image.  When printed p.15 is
+# transcribed, that becomes a real entry point.
+
 run "INITIAL PROGRAM LOAD from a host file, 19 words (boot_plan.md M0+M1)" ./run_ipl_file_test.sh StretchIplFileTb
 # THE SIXTEEN-WORD CEILING, LIFTED.  The IPL test above boots a
 # four-word image out of mkTapeSourceVector and proves the SEQUENCE.
@@ -2061,6 +2097,34 @@ run "BB branch-if-off variants (BZB1, BZBN, BZBZ)" ./run_program.sh programs/bb_
 # programs/op_ad_indicators.strap below, so KNOWN_GAP is empty and the
 # ratchet holds at "every indicator the model writes is named by some
 # program".  That is a floor, not a ceiling: see the caveat above.
+
+run "LVE, Load Value Effective -- indirect addressing, three address widths" ./run_program.sh programs/lve_indirect.strap StretchLveTb \
+    "lve_full_and_half:1294=0x0143400001434000" \
+    "lve_fp_and_indexed:1295=0x0143400001c34000" \
+    "lve_target_j_ignored:1296=0x0143400000000000" \
+    "PC=2594"
+# MCP's bootstrap pinned LVE's ENCODING (printed p.3 line 10 assembles
+# bit-for-bit); this pins its EXECUTION, and the two are separately
+# earned.  Reference Manual printed p.29: the effective address names a
+# HALF WORD, that half word is decoded far enough to work out ITS
+# effective address, and THAT goes into the index register named by the
+# original instruction's J.  The target's operation is not executed and
+# the target's own J is ignored.
+#
+# ALL THREE WIDTHS GIVE THE SAME ANSWER, which is the design of the
+# test.  The target's address field is 24, 19 or 18 bits wide by class,
+# and p.21 extends the short ones "with the necessary low-order zeros",
+# so three targets of three classes pointing at ONE datum must all
+# produce that datum's bit address.  A width bug is off by 32x or 64x,
+# not by a little.  The widths are StretchDecode's svaReplaceAddr --
+# jb_ax3a printed p.140's six-case table -- exercised here in the LVE
+# direction rather than the SVA one.
+#
+# A CHAIN IS REFUSED OUT LOUD.  p.29 makes a chained LVE an iteration
+# with a one-millisecond bound and indicator USA; this E-box runs one
+# instruction per step with no inner loop, so a target that is itself
+# an LVE sets OP rather than being silently truncated to one level.
+# The program checks that too.
 
 run "OP and AD indicators (both polarities)" ./run_program.sh programs/op_ad_indicators.strap StretchOpAdIndTb \
     "PC=2462"          # 002317.00; hand-written, not a listing fact

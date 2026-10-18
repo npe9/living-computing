@@ -4566,6 +4566,122 @@ program's placement.
 
 ---
 
+## 6k. MCP's BOOTSTRAP RUNS — and the three gaps it found were not the three predicted
+
+**2026-10-18.** IBM's operating system executes end to end on this
+model. `strap/mcp_image.py` merges the thirteen transcribed pages,
+`mktape.py --cw-in-image --tape-mark` writes the tape, and
+`run_mcp_boot.sh` boots it through `iplStart()`. In the suite.
+
+### The method mattered more than any of the fixes
+
+The plan was A: build one image; B: **run it and let the model say
+what is missing**; C: fix what B finds, in that order. The
+alternative — read the listing, list what looks unimplemented, build
+that — would have produced this list: `SPFL`, tape marks, `LOC`,
+`GONG`, the disk.
+
+**What the model actually reported, in order, was:**
+
+1. **Address Invalid was never raised on a store past installed
+   core.** Printed p.2's core-sizing loop is
+   `Z,0.0($15)` / `BADZ,$+1.0` / `CB+,$15,X CLSTO` — **no terminating
+   count.** AD is the only thing that ends it. The model had AD for
+   floating-point operands and nowhere else, so after twelve million
+   steps index 15 had wrapped the 24-bit address field and was
+   clearing from word 6 again.
+
+   MCP needs the model to do something **no diagnostic deck in this
+   corpus does: size core storage by running off the end of it.** 243
+   transcribed programs and not one of them asks that question.
+
+2. **`LVE`.** See §6l.
+
+3. **`SPFL` and a tape mark.**
+
+**`LOC` and `GONG` were never reached** — both are only in the ERROR
+ROUTINE, and the bootstrap never errs. **The disk was never reached**
+either: `FETCH PROSA` reads from the TAPE, takes End Exception at the
+end of the reel, and printed p.4's `X DONE` handles that as END OF
+PROSA FILE. Three of the five predicted blockers were off the path
+entirely.
+
+### The two checks that carry the claim
+
+A program that stops quietly looks exactly like a program that
+finishes. So:
+
+* **Printed p.4 line 37**, `CM1111(BU,1),$0 +.25  -END OF PROSA
+  FILE`, sets word 16 bit 25 — index register X0's flag bit — and
+  **nothing earlier in all thirteen pages writes it.** It is on the
+  late path, after FETCH PROSA and after `X DONE` has seen End
+  Exception.
+* **`X ERR AD` is zero.** Every error site on pp.3-6 does
+  `SIC,X ERR AD` before branching to `X ERROR`, and the instruction
+  counter is never zero inside the bootstrap. Zero means no error
+  site ever ran.
+
+And the indicator register holds `XCZ`, `XVZ`, `RZ` — **neither OP
+nor AD.** The model refused nothing and addressed nothing it does not
+have.
+
+### MCP measured the machine
+
+Printed p.2's sizing loop stored **word 98,304** in `X S ROOF`, which
+is `StretchMemory`'s `InstalledWords`, six units — a typical Stretch,
+which is what the user asked for at the start. IBM's own code
+measured this simulated machine and got the right answer.
+
+---
+
+## 6l. `LVE` — the page was nine pages on, and already cited in the same file
+
+`bsv/README.md` carried, for months, the reason `LVE` was
+unimplemented:
+
+> "p.20 describes it only as enabling 'indirect addressing' ... and
+> this session could not find a page giving its exact bit-level
+> behavior distinctly from `LV`'s"
+
+**The page is printed p.29.** It gives the whole thing: which
+instruction's effective address is taken, that the target's operation
+is *not* executed, that the target's own `J` is ignored, where the
+result goes, and the one-millisecond/`USA` bound on a chain.
+
+**And `StretchExecute`'s own `SVA` arm already cited printed p.29**,
+for "Address Insertion" — the section immediately below LVE's on the
+same page. The source was not merely in `docs/`; it was quoted a few
+hundred lines away in the same file, for the neighbouring
+instruction.
+
+This is the project's recurring lesson in its sharpest form yet.
+*"This needs document X" is only true once document X has been
+opened* — and the corollary now is: **when a feature's neighbour is
+implemented, read the citation its neighbour already carries.**
+
+**The address-width rule came free.** LVE and SVA need the identical
+six-case table — jb_ax3a printed p.140's — in opposite directions,
+and `StretchDecode.svaReplaceAddr` already had it, deck-verified and
+swept over all 2^14 half-words. `strap/programs/lve_indirect.strap`
+exercises it in the LVE direction by pointing targets of three
+different classes (24-, 19- and 18-bit address fields) at **one**
+datum: all three must produce that datum's bit address, because
+p.21 extends the short fields "with the necessary low-order zeros".
+A width bug is off by 32× or 64×, not by a little.
+
+**A chain is refused out loud.** p.29 makes a chained LVE an
+iteration with a time bound; this E-box runs one instruction per step
+with no inner loop, so a target that is itself an `LVE` sets OP
+rather than being silently truncated to one level.
+
+**And a test can encode the absence of a feature as its premise.**
+`op_ad_indicators.strap` demonstrated "Operation Code Invalid works"
+by issuing `LVE` — so implementing LVE broke it, correctly. It now
+uses `RNX`, with a note that it will need swapping again every time
+the model gains an arm.
+
+---
+
 ## 6. Open questions — record, do not guess
 
 **What is the `-ILLEGAL OP.` word doing in routine 1262's TEST 3A and

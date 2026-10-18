@@ -1,0 +1,101 @@
+=== Generated schedule for mkStretchMcpBootTb ===
+
+Rule schedule
+-------------
+Rule: setStart
+Predicate: phase == 32'd0
+Blocking rules: (none)
+ 
+Rule: run
+Predicate: (phase == 32'd1) && (! core.halted) && (stepCount < 32'd12000000)
+Blocking rules: (none)
+ 
+Rule: afterRun
+Predicate: (phase == 32'd1) && (core.halted || (stepCount == 32'd12000000))
+Blocking rules: (none)
+ 
+Rule: checkReq0
+Predicate: phase == 32'd2
+Blocking rules: (none)
+ 
+Rule: checkResp0
+Predicate: (phase == 32'd3) && core.mem_responseReady
+Blocking rules: (none)
+ 
+Rule: checkReq1
+Predicate: phase == 32'd4
+Blocking rules: (none)
+ 
+Rule: checkResp1
+Predicate: (phase == 32'd5) && core.mem_responseReady
+Blocking rules: (none)
+ 
+Rule: checkReq2
+Predicate: phase == 32'd6
+Blocking rules: (none)
+ 
+Rule: checkResp2
+Predicate: (phase == 32'd7) && core.mem_responseReady
+Blocking rules: (none)
+ 
+Rule: checkReq3
+Predicate: phase == 32'd8
+Blocking rules: (none)
+ 
+Rule: checkResp3
+Predicate: (phase == 32'd9) && core.mem_responseReady
+Blocking rules: (none)
+ 
+Rule: checkReq4
+Predicate: phase == 32'd10
+Blocking rules: (none)
+ 
+Rule: checkResp4
+Predicate: (phase == 32'd11) && core.mem_responseReady
+Blocking rules: (none)
+ 
+Rule: checkReq5
+Predicate: phase == 32'd12
+Blocking rules: (none)
+ 
+Rule: checkResp5
+Predicate: (phase == 32'd13) && core.mem_responseReady
+Blocking rules: (none)
+ 
+Rule: checkReq6
+Predicate: phase == 32'd14
+Blocking rules: (none)
+ 
+Rule: checkResp6
+Predicate: (phase == 32'd15) && core.mem_responseReady
+Blocking rules: (none)
+ 
+Rule: pccheck
+Predicate: phase == 32'd16
+Blocking rules: (none)
+ 
+Rule: finish
+Predicate: phase == 32'd17
+Blocking rules: (none)
+ 
+Logical execution order: run,
+			 afterRun,
+			 checkReq0,
+			 checkResp0,
+			 checkReq1,
+			 checkResp1,
+			 checkReq2,
+			 checkResp2,
+			 checkReq3,
+			 checkResp3,
+			 checkReq4,
+			 checkResp4,
+			 checkReq5,
+			 checkResp5,
+			 checkReq6,
+			 checkResp6,
+			 pccheck,
+			 setStart,
+			 finish
+
+==================================================

@@ -1,0 +1,96 @@
+! lve_indirect.strap -- LVE, Load Value Effective: indirect addressing.
+!
+! WHY THIS EXISTS.  MCP's bootstrap pins LVE's ENCODING -- printed p.3
+! line 10 assembles bit-for-bit -- and nothing pinned its EXECUTION.
+! The two are separately earned, which is the whole point of
+! audit_opcode_coverage.py's ENCODING_ONLY category; this is the
+! program that moves LVE out of it.
+!
+! WHAT LVE DOES.  Reference Manual printed p.29, read first-hand:
+! the effective address names a HALF WORD, that half word is decoded
+! far enough to work out ITS effective address, and THAT is what goes
+! into the index register named by the original instruction's J field.
+! The target's own operation is not executed and its own J is ignored.
+!
+! ---------------------------------------------------------------
+! THE SHAPE OF THE TEST, and why all three answers are the same
+! ---------------------------------------------------------------
+! The address field of the target is 24, 19 or 18 bits wide depending
+! on the target's instruction class, and the manual (printed p.21)
+! says the short ones are "extended with the necessary low-order
+! zeros".  So for a target that addresses word W:
+!
+!   full word (24 bits)   field = W*64   effective = W*64
+!   half word (19 bits)   field = W*2    effective = field << 5 = W*64
+!   floating point (18)   field = W      effective = field << 6 = W*64
+!
+! ALL THREE COME OUT THE SAME NUMBER, which is exactly what makes this
+! a test of the width logic rather than of one case: point three
+! targets of three different classes at ONE datum and every LVE must
+! produce that datum's bit address.  Get a width wrong and the answer
+! is off by a factor of 32 or 64, not by a little.
+!
+! The widths themselves are not invented here.  They are the rule
+! StretchDecode's svaReplaceAddr already applies, from jb_ax3a printed
+! p.140's own six-case table, and this program is the first thing to
+! exercise it in the LVE direction rather than the SVA one.
+
+        SLC, (8)2400.0
+
+! ---- a full-word target: 24-bit address ----------------------------
+START   LVE, $X1, T24
+        SV,  $X1, R24
+
+! ---- a half-word branch target: 19-bit address ---------------------
+        LVE, $X1, T19
+        SV,  $X1, R19
+
+! ---- a floating-point target: 18-bit address -----------------------
+        LVE, $X1, T18
+        SV,  $X1, R18
+
+! ---- the target's OWN index field is honoured ----------------------
+! p.29: the final effective address is produced "according to the
+! rules which apply to that instruction", and address modification is
+! one of those rules.  TIDX names $X3, so the answer must be the
+! datum's address PLUS $X3's value.
+        LX,  $X3, XOFF
+        LVE, $X1, TIDX
+        SV,  $X1, RIDX
+
+! ---- the target's OWN J field is IGNORED ---------------------------
+! TJ is a direct-index instruction naming $X7.  p.29: "The fields J of
+! all subsequent instructions encountered in the operation are
+! ignored."  So $X7 must be untouched and the answer must land in $X1.
+        LVE, $X1, TJ
+        SV,  $X1, RJ
+        SV,  $X7, RJ7
+
+! ---- a CHAIN is refused out loud -----------------------------------
+! p.29 makes a chained LVE an iteration with a one-millisecond bound
+! and indicator USA.  This E-box runs one instruction per step with no
+! inner loop, so StretchExecute refuses rather than silently
+! truncating to one level -- see its own comment.  OP must come on.
+        LVE, $X1, TLVE
+        BZB, $OP, $                ! hang up if OP is off
+        B,   PASS
+
+! ---- the targets ---------------------------------------------------
+! All four of the first group address DATUM and differ only in class.
+T24     L(BU,8), DATUM             ! VFL: full word, 24-bit address
+T19     B,   DATUM                 ! unconditional branch: 19 bits
+T18     L(N), DATUM                ! floating point: 18 bits
+TIDX    L(BU,8), DATUM($X3)        ! full word, modified by $X3
+TJ      LV,  $X7, DATUM            ! direct index: 19 bits, J = 7
+TLVE    LVE, $X7, DATUM            ! itself an LVE: a chain
+
+XOFF    XW,  (8)1000.0, 0, 0, 0    ! the index value TIDX adds
+DATUM   DD(BU,64,8), 0
+R24     VF,  0
+R19     VF,  0
+R18     VF,  0
+RIDX    VF,  0
+RJ      VF,  0
+RJ7     VF,  0
+PASS    BEW, $
+        END, START

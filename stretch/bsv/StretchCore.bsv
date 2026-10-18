@@ -472,7 +472,8 @@ module mkStretchCore(StretchCore);
           ch: x.ch, isWrite: x.isWrite,
           memAddr: n.dataAddr, devIdx: x.devIdx,
           remaining: (n.count == 0) ? 19'h40000 : zeroExtend(n.count),
-          suppressEop: x.suppressEop, skip: (n.skip == 1) };
+          suppressEop: x.suppressEop, skip: (n.skip == 1),
+          untilMark: x.untilMark };
       end
     end else if (x.devIdx >= capacity) begin
       // "the unit runs out of material" (p.121): End Exception, not
@@ -527,6 +528,12 @@ module mkStretchCore(StretchCore);
       // Either RD-direction (tape response now ready to collect, or a
       // reader/printer, which are still combinational) or W-direction
       // with the memory read response now ready to collect.
+      // Set by the tape branch below when the word it just
+      // collected IS a tape mark.  A LOCAL, not a register: a
+      // register written here would not be readable until the next
+      // clock, and the termination test twenty lines down has to see
+      // it in THIS rule firing.
+      Bool markJustRead = False;
       if (kind == DevTape) begin
         TapeIndex ti = truncate(x.devIdx); // safe: confirmed < TapeWords above
         if (x.isWrite) begin
@@ -534,7 +541,14 @@ module mkStretchCore(StretchCore);
           ioDev.writeTapeWord(ti, v);
         end else if (!x.skip) begin
           Word64 tv <- ioDev.tapeReadResp();
-          st.writeWord(x.memAddr, tv);
+          // A SPACE FILE READS AND DISCARDS.  It has to read -- that
+          // is how it sees the mark -- but it is a CONTROL operation
+          // and moves nothing into core.  SKIP suppresses the store
+          // without issuing the read at all; this suppresses the
+          // store while still issuing it, which is a different thing
+          // and is why it is not spelled as SKIP.
+          if (!x.untilMark) st.writeWord(x.memAddr, tv);
+          markJustRead = (tv == tapeMarkWord);
         end
         // Tape position PERSISTS across instructions (StretchIO.bsv
         // "TAPE POSITION"), unlike the reader/printer's devIdx which
@@ -560,9 +574,37 @@ module mkStretchCore(StretchCore);
       ioTapeReqIssued <= False;
       Bit#(19) rem1 = x.remaining - 1;
       ControlWord cw = ioDev.readChanCW(x.ch);
-      cw.dataAddr = x.memAddr + 1;
-      cw.count = truncate(rem1);
-      if (rem1 == 0 && cw.chain == 1) begin
+      // A SPACE FILE moves no data, so it leaves the control word's
+      // data address and count alone; RD and W walk both forward.
+      if (!x.untilMark) begin
+        cw.dataAddr = x.memAddr + 1;
+        cw.count = truncate(rem1);
+      end
+      if (x.untilMark && markJustRead) begin
+        // SPACE FILE, p.132: "forward past a tape mark; EE and EOP
+        // given".  The position is already one past the mark -- the
+        // setTapePos above advances every cycle -- so all that is
+        // left is the status the bootstrap tests.  MCP printed p.3
+        // lines 45-47 wait for SEOP to clear, REQUIRE EE, and require
+        // EPGK clear, then REL(SEOP) to clear EE and EOP again.
+        //
+        // EE ON A NORMAL COMPLETION is p.132's wording and MCP's own
+        // control flow agreeing: "EE and EOP given" attaches End
+        // Exception to the FUNCTION, and printed p.3 line 46's
+        // BZBZ,X IPL BS+.21 branches to "ERROR IN SPACING" when EE is
+        // ZERO.  MCP would not require an error condition to proceed.
+        cw.ee = 1;
+        if (!x.suppressEop) cw.eop = 1;
+        cw.seop = 0;
+        ioDev.writeChanCW(x.ch, cw);
+        ioPending <= tagged Invalid;
+      end else if (x.untilMark) begin
+        // Not a mark: keep going, and do NOT let the count run out.
+        ioPending <= tagged Valid IoXfer {
+          ch: x.ch, isWrite: x.isWrite, memAddr: x.memAddr,
+          devIdx: x.devIdx + 1, remaining: 19'h40000,
+          suppressEop: x.suppressEop, skip: x.skip, untilMark: True };
+      end else if (rem1 == 0 && cw.chain == 1) begin
         // FIGURE 36, printed p.109, row (multiple 0, chain 1, count
         // zero, end of block NO): "Chain and continue".  This model
         // has no record structure yet, so it never reports end of
@@ -589,7 +631,8 @@ module mkStretchCore(StretchCore);
         ioPending <= tagged Valid IoXfer {
           ch: x.ch, isWrite: x.isWrite, memAddr: x.memAddr + 1,
           devIdx: x.devIdx + 1, remaining: 0,
-          suppressEop: x.suppressEop, skip: x.skip };
+          suppressEop: x.suppressEop, skip: x.skip,
+          untilMark: x.untilMark };
       end else if (rem1 == 0) begin
         if (!x.suppressEop) cw.eop = 1;
         // THE SEOP STATUS BIT IS CLEARED AT COMPLETION, and this half
@@ -638,7 +681,8 @@ module mkStretchCore(StretchCore);
         ioPending <= tagged Valid IoXfer {
           ch: x.ch, isWrite: x.isWrite, memAddr: x.memAddr + 1,
           devIdx: x.devIdx + 1, remaining: rem1,
-          suppressEop: x.suppressEop, skip: x.skip };
+          suppressEop: x.suppressEop, skip: x.skip,
+          untilMark: x.untilMark };
       end
     end
     ebusy <= eb;
@@ -944,7 +988,7 @@ module mkStretchCore(StretchCore);
     ioDev.writeChanCW(chanTape, fixed);
     ioPending <= tagged Valid IoXfer {
       ch: chanTape, isWrite: False, memAddr: 4, devIdx: 0,
-      remaining: 1, suppressEop: True, skip: False };
+      remaining: 1, suppressEop: True, skip: False, untilMark: False };
     iplActive <= True;
   endmethod
 

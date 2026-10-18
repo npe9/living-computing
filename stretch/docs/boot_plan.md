@@ -194,21 +194,70 @@ plan was written:
 * **The size question is answered by a row**: `X IPL K` = 369 words
   including the control word, `X BS END - X IPL BS` = 368 without.
 
-**WHAT NOW BLOCKS RUNNING IT** — the image assembles and cannot
-execute. In the order the bootstrap hits them:
+### M3 IS DONE: IT RUNS, 2026-10-18
 
-1. **`SPFL`** (printed p.3 line 35) — control code 077, the model
-   rejects it. Without it the bootstrap cannot pass the tape mark.
-2. **Tape marks and records at all** — `TapeSource` is a flat word
-   array with no mark structure.
-3. **`LOC`** (printed p.5 line 36) — `StretchExecute.bsv:3376`, and
-   §6f shows it is how the operating system identifies a device.
-4. **`GONG`** (printed p.5 line 45) — control code 177.
-5. **The disk**, for `FETCH PROSA` to finish.
+**MCP's bootstrap executes end to end on the model**, off a tape
+built by `mcp_image.py` + `mktape.py --cw-in-image --tape-mark` from
+the thirteen transcribed pages, and hands off to printed p.15's MCP
+INITIALIZATION. In the suite as "MCP'S OWN BOOTSTRAP RUNS".
 
-Items 1-4 are small and each now has a listing witness. **`$IPLD`,
-printed pp.15-36, is still unread** — 22 pages, 3 sampled — and still
-the cheap way to bound how much disk is really needed.
+| printed page | what it does | the evidence |
+|---|---|---|
+| 2 | clears the registers, **sizes core by faulting** | `X S ROOF` = word 98,304 = `InstalledWords` |
+| 3 | finds the IPL channel by walking them | `X1 CCW`'s channel field 31 → **34** |
+| 3 | `LVE` keeps the channel number | `$X15` = 1088 |
+| 3 | IO TEST status loop | no error site ever ran |
+| 3 | **spaces over the tape mark** | reaches FETCH PROSA |
+| 4 | fetches PROSA, hits end of file, sets the marker | **word 16 bit 25** |
+| 4 | moves the MCP IPL, branches to `X 10` | PC halts at 0 |
+
+**The two checks that carry the claim.** Printed p.4 line 37's
+`CM1111(BU,1),$0 +.25  -END OF PROSA FILE` sets word 16 bit 25, and
+**nothing earlier in all thirteen pages writes it** — that bit is the
+difference between finishing and stopping somewhere quiet. And
+`X ERR AD` is **zero**: every error site does `SIC,X ERR AD` before
+branching, and the instruction counter is never zero inside the
+bootstrap, so zero means no error site ever ran. The indicator
+register holds `XCZ`, `XVZ`, `RZ` and **neither OP nor AD** — the
+model refused nothing.
+
+**It halts at PC 0 and that is the hand-off, not a failure.**
+Printed p.4's `B,X 10` goes to `000622.00`, one word past `X BS END`,
+so the machine runs into the zeros above the image; a zero half-word
+is `BE,0`, which branches to zero, and at zero it branches to itself.
+
+### What had to close first, and why the order is the lesson
+
+**None of the three was top of the predicted list.** The list was
+`SPFL`, tape marks, `LOC`, `GONG`, the disk. What the model actually
+reported, in order:
+
+1. **Address Invalid on a store past installed core.** Printed p.2's
+   clearing loop has **no terminating count** — AD is the only thing
+   that ends it. The model raised AD for floating-point operands and
+   nowhere else, so after twelve million steps the index had wrapped
+   the 24-bit address field and was clearing from word 6 again.
+   RefMan printed **p.21** (this repo cited p.20 in two places).
+2. **`LVE`** (printed p.3 line 10). `bsv/README.md` had said it was
+   left unimplemented because no page gave its behaviour distinctly
+   from `LV`'s. **The page is printed p.29** — and `StretchExecute`'s
+   own `SVA` arm already cited p.29 for the section immediately
+   below it.
+3. **`SPFL`** (printed p.3 line 35) and a tape mark for it to find.
+
+**`LOC` and `GONG` were never reached**, because both are only in the
+ERROR ROUTINE and the bootstrap never errs. They remain open and are
+tracked in `NEXT.md` item 5 — but they are not on this path, and
+building them first would have been work done for a guess.
+
+**The disk was never reached either.** `FETCH PROSA` reads from the
+TAPE, gets End Exception at the end of the reel, and printed p.4's
+`X DONE` handles that as END OF PROSA FILE. So the disk is an M4
+question, not an M3 one.
+
+**Still open for M3+**: `$IPLD`, printed pp.15-36 — 22 pages, 3
+sampled — which is now the actual next thing, because `X 10` is its
+first instruction.
 
 ### M4 — the Diagnostic Control Program  ·  ~75 days, in slices
 
