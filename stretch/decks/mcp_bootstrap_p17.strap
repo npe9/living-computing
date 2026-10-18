@@ -1,0 +1,167 @@
+! mcp_bootstrap_p17.strap -- MCP INITIALIZATION, printed page 17:
+! "PROCESS IOCD CARDS SETTING UP CST AND LST".
+! docs/MCP_Mar63_001-249.pdf PDF p.24, header "PAGE NUMBER 17".
+! docs/boot_plan.md M3.
+!
+! Contiguous with printed p.16: that page ends at 000654.40 and this
+! one starts at 000655.00.
+!
+! ---------------------------------------------------------------
+! THIS IS WHERE MCP LEARNS WHAT MACHINE IT IS ON
+! ---------------------------------------------------------------
+! An IOCD card describes one I/O unit: its channel, in Hollerith
+! tens and units digits, and a two-letter equipment code.  MCP reads
+! the deck, converts each channel number from Hollerith to binary,
+! looks the equipment code up in X EQP T, and fills in the CST
+! (channel status table) and the UST (unit status table).  Before
+! that it presets every CST entry to "channel not available, not
+! assigned" and propagates the preset through 64 words with one T.
+!
+! SO THE CONFIGURATION IS DATA, NOT CODE, and it arrives on CARDS.
+! That is the direct answer to "which devices does the model have to
+! present": whatever the IOCD deck says, which is why
+! docs/card_reader_7503_7614.md and strap/cards.py matter for
+! booting MCP and not only for running diagnostic decks.
+!
+!   lines  5-8   clear a 1000-word working area at X BUFER and point
+!                $4 at X IN END, the end of the assembled image.
+!   lines 12-16  hunt for the first IOCD: BB on bit 1.44 of each
+!                14-word group, CB+ to step, and if the search is
+!                fruitless, SIC X ERR AD and branch to X ERROR with
+!                "-NO IOCD DETECTED".
+!   lines 17-25  set up the CST/UST bases ($5, $15, $14) and preset
+!                all 64 CST entries to not-available / not-assigned.
+!   lines 26-36  per card: CT0111 advances to the card-type field,
+!                L(V+I) loads the column holding the IOCD, KF
+!                compares it against X IOCD and BZAE skips a card
+!                that is not one; then two CT0011s and an LCV
+!                convert the Hollerith channel digits to binary and
+!                "+(BU,4)" forms the channel number.
+!   lines 37-44  track the highest channel seen (KC/BZXL/LC), index
+!                into the CST, and turn the available flag on.
+!   lines 46-54  take the second letter of the Hollerith equipment
+!                code, search X EQP T for it, and store the matching
+!                four-bit equipment code into the CST entry.
+!
+! ---------------------------------------------------------------
+! EXTERNALS
+! ---------------------------------------------------------------
+!   X BUFER   printed p.13 line 38  "SYN,X IN END+2000.0"  011406.00
+!   X IN END  printed p.98 line 36  "X IN END SYN,$"       005466.00
+!   X ERR AD  printed p.13 line 37  "X ERR AD  VF,0"       000551.00
+!   X ERROR   printed p.5  line 5   "X ERROR LX,$2,..."    000133.00
+!
+! >>> X IOCD, X EQP T AND X19 ARE READ OFF THIS PAGE'S OWN OUTPUT.
+! Same caveat as printed pp.15 and 16's S MCP, S ROOF, X PRO WR and
+! S DK MCP: the pages that define them have not been transcribed.
+!
+!   X IOCD   = 001747.60.  Line 30's "KF(BU,48),X IOCD" prints a BIT
+!              address, word 0o1747 bit 0o60 = 48, so the datum sits
+!              in the second half of its word -- not a word-aligned
+!              symbol, and written here as (8)1747.60 for that reason.
+!   X EQP T  = 001752.00, from line 47's LVI immediate.
+!   X19      = 000756.40, RECOVERED FROM THE INDICATOR ENCODING.
+!              Line 31 prints "000756.76 C0".  Reading bits 19-24 as
+!              the indicator number gives 111101 = 61 = AE, which is
+!              what BZAE names; bit 18, the low bit of the 19-bit
+!              branch address, is 1, so the target is the SECOND
+!              half-word of word 0o756.  Line 52's "BZAE,X 13 5"
+!              checks the method: it prints 000706.76 C0 and X13 5 is
+!              at 000706.40, which this deck places from its own
+!              instruction stream.
+!
+! ---------------------------------------------------------------
+! ONE GLYPH CORRECTION, AND WHAT CAUGHT IT
+! ---------------------------------------------------------------
+! Line 42, "V+,$3,$5", prints 000025.06 **B0**.  It was transcribed
+! as 80 at 200 dpi AND AGAIN at 900 dpi -- in a column where almost
+! every neighbour really is 80, which is exactly the condition that
+! makes the eye supply the expected glyph.  What caught it was the
+! assembler disagreeing, and 1800 dpi then settled it: the B has two
+! bowls and a flat stem, unmistakable beside the 84 on the row
+! below.  Third instance of the 8/B hazard docs/listing_typography.md
+! item 11 describes, and the first where a HIGHER-RESOLUTION render
+! was already in hand and still read wrong.
+XBUFER  SYN, (8)11406.0
+XINEND  SYN, (8)5466.0
+XERRAD  SYN, (8)551.0
+XERROR  SYN, (8)133.0
+XIOCD   SYN, (8)1747.60   ! read off line 30
+XEQPT   SYN, (8)1752.0    ! read off line 47
+X19     SYN, (8)756.40    ! recovered from line 31 -- see above
+
+        SLC, (8)655.0
+
+! ---- clear the working area ---------------------------------------
+X13     LCI, $1, 1000.0              ! line 5  -SIZE OF WORKING AREA
+        Z, XBUFER                    ! line 6  -CLEAR FIRST WORD
+        T, 1, XBUFER, XBUFER+1.0     ! line 7  -CLEAR 1000 WORDS
+                                     !   listing "T,$1,X BUFER,X BUFER+1.0"
+        LVI, $4, XINEND              ! line 8  -END OF ASSEMBLED AND
+                                     !   MOVE MCP IPL (lines 9-11 note
+                                     !   the region is <= fourteen words
+                                     !   of the region containing the
+                                     !   IOCD cards)
+
+! ---- find the first IOCD card -------------------------------------
+        LCI, $4, 14                  ! line 12 -TEST 14 WORDS FOR
+                                     !          FIRST IOCD
+X13AA   BB, 1.44($4), X13AA1         ! line 13 -IF ZONE BIT OF IOCD
+        CB+, $4, X13AA               ! line 14 -IF SEARCH FRUITLESS
+XER16C  SIC, XERRAD                  ! line 15
+        B, XERROR                    ! line 16 -NO IOCD DETECTED
+
+! ---- preset the CST -----------------------------------------------
+X13AA1  LV, $13, $4                  ! line 17
+        LVI, $5, XBUFER              ! line 18
+        LV, $15, $5                  ! line 19
+        V+I, $15, 64.0               ! line 20 -BASE OF AREA WITH UST
+        LV, $14, $15                 ! line 21 -SAVE BASE OF UST AREA
+        LCI, $1, 63.0                ! line 22 -PRESET 64 WORDS
+X13A    CM1111(BU,1), .25($5)        ! line 23 -CHANNEL NOT AVAILABLE
+                                     !          BIT TO ON
+        CM1111(BU,1), .29($5)        ! line 24 -NOT ASSIGNED BIT ON
+                                     !          IN CST
+        T, 1, 0.0($5), 1.0($5)       ! line 25 -ALL CST ENTRIES TO
+                                     !          NOT AVAILABLE
+
+! ---- convert one card's channel number ----------------------------
+X131    CT0111(V+I)(BU,8), 1.44($4)  ! line 26 -ADVANCE TO NEXT FIELD
+                                     ! line 27  * CARD TYPE TO 1.44
+X131A   L(V+I)(BU,48), .48+.2($4)    ! line 28 -ENTER COLUMN
+                                     ! line 29  CONTAINING IOCD TO 2.30
+        KF(BU,48), XIOCD             ! line 30
+        BZAE, X19                    ! line 31 -NOT AN IOCD CARD
+X132    CT0011(V+I)(BU,7), .12($4)   ! line 32 -TEST TENS POSITION OF
+                                     ! line 33  CHANNEL TO 2.42
+        LCV(DU,8,4), $LZC+.3, 46     ! line 34 -CONVERT TO OCTAL NUMBER
+X132AA  CT0011(V+I)(BU,16), .22($4)  ! line 35 -TEST UNITS POSITION
+                                     !          * TO 2.52
+        +(BU,4), $LZC+.3, 46         ! line 36 -FORM CHANNEL NUMBER
+
+! ---- highest channel, and the CST entry ---------------------------
+        LV, $3, $R                   ! line 37 -CURRENT CHANNEL NUMBER
+                                     !          FROM IOCD
+        KC, $3, $3                   ! line 38
+        BZXL, X132A                  ! line 39 -IF HIGEST CHANNEL YET
+                                     ! line 40  ENCOUNTERED
+        LC, $3, $3                   ! line 41 -SAVE NEW HIGEST CHANNEL
+X132A   V+, $3, $5                   ! line 42 -ENTRY IN CST
+X133    BB, .12($4), X134            ! line 43 -IS CHANNEL AVAILABLE
+        CM0000(BU,1), .25($3)        ! line 44 -YES * CHANNEL
+                                     ! line 45  AVAILABLE FLAG TO ON
+
+! ---- equipment code lookup ----------------------------------------
+X134    L(V+I)(BU,12), .24($4)       ! line 46 -SECOND LETTER OF
+                                     !          HOLLERITH EQUIPMENT
+        LVI, $1, XEQPT               ! line 47 -BASE OF EQUIPMENT TABLE
+        LCI, $1, 10.0                ! line 48 -SIZE OF TABLE +1
+X135    SIC, XERRAD                  ! line 49
+        CBZ, $1, XERROR              ! line 50 -WRONG EQUIPMENT CODE
+        KF(V+I)(BU,24), .29($1)      ! line 51 -MATCH * ADVANCE TO
+                                     !          NEXT SLOT
+        BZAE, X135                   ! line 52
+X136    L(BU,4), -.5($1)             ! line 53 -ENTER EQUPMENT CODE
+                                     !          FROM TABLE
+        ST(BU,4), .52($3)            ! line 54 -INSERT IN CST ENTRY
+        END, X13

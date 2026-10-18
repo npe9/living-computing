@@ -31,6 +31,16 @@ too.
 WHAT THE IMAGE IS.  `SLC,(8)40.0` through `X BS END` at `000621.00`:
 369 words, of which the IPL reads 368.  Both numbers are the
 listing's own and both are asserted below.
+
+PRINTED pp.15 ONWARD ARE DELIBERATELY NOT HERE.  `decks/` now holds
+transcriptions of pp.15, 16 and 17 as well, and they belong to the
+SAME STRAP assembly -- but not to this image.  The bootstrap is the
+tape record, X IPL BS through X BS END, and printed p.14's last
+instruction branches OUT of it to p.15's `X 10` at 000622.00.  MCP
+proper is loaded by the bootstrap, not with it.  Adding a later page
+to PAGES would make the image longer than the control word on
+printed p.2 counts, and the assertion at the end of this file is
+what would catch that.
 """
 import os
 import re

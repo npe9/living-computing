@@ -1,0 +1,128 @@
+! mcp_bootstrap_p15.strap -- MCP INITIALIZATION, printed page 15.
+! docs/MCP_Mar63_001-249.pdf PDF p.22, header "PAGE NUMBER 15".
+! docs/boot_plan.md M3.
+!
+! THIS IS WHERE THE BOOTSTRAP HANDS OFF.  Printed p.14's last
+! instruction is "B,X 10", and X 10 is line 17 of THIS page, at
+! 000622.00.  Every other MCP page transcribed so far is bootstrap;
+! this is the first page of MCP proper.
+!
+! ---------------------------------------------------------------
+! THE PAGE IS TWO THINGS AND ONLY THE SECOND ASSEMBLES
+! ---------------------------------------------------------------
+! Lines 1-6 are punch control -- PUNFUL, two (CC*)DD card images
+! (the "HED,REP,11C11IPL,LOAD,," header card and an 11C11IPL
+! trailer), PUNORG, "PUNID,11C11IPL" and RESEQ.  They change what
+! STRAP punches, not what it assembles, which is why printed
+! pp.3-15 and pp.16+ are ONE assembly punching TWO decks (see
+! mcp_bootstrap_p13.strap's header).  The two card images DO move
+! the location counter -- the listing prints 000621.00 for line 2
+! and 000631.34 for line 3 -- and line 7, "SLC,X BS END", puts it
+! straight back to 000621.00, so the card images are overlaid by
+! the code that follows and nothing of them survives.  This deck
+! starts at the SLC for that reason.
+!
+! Line 14's CNOP is a no-op here: 000621.00 is already a word
+! boundary.  It is transcribed as the listing prints it.
+!
+! ---------------------------------------------------------------
+! WHAT MCP INITIALIZATION DOES, lines 15-26
+! ---------------------------------------------------------------
+! "MOVE COMMUNICATION REGION TO IPL AREA AND POSITION DISK".  The
+! bootstrap has left the whole MCP image in a buffer at X BUFER;
+! initialization computes how far into that buffer the communication
+! region sits ($9), copies the region down to S MCP, patches the
+! machine's own size into it, copies MCP itself into storage at the
+! address LVE fetched into $8, and then LOCATEs the disk to arc zero.
+!
+! Lines 15-16 are two BE instructions used as DATA, not as branches.
+! "X IN  BE,X IN END-X IN" assembles an address field of 004645 and
+! the comment calls it "SIZE OF IPL FOR UPDATE PROGRAM"; "X UPDAT
+! BE,0" is "NUMBER OF PROSA ARCS", a slot something later fills.
+! The opcode byte prints 00 for both, which is BE's own code -- a
+! word of data that would branch if it were ever executed.
+!
+! ---------------------------------------------------------------
+! AND THE PAGE ENDS AT THE DISK
+! ---------------------------------------------------------------
+! Line 26 is "LOC(SEOP),0.0,0.0  -POSITION TO ARC ZERO" and lines
+! 28-33 are the "DISK IO TEST": three SIC/branch pairs testing
+! exchange error (EKJ), unit not ready (UNRJ) and channel busy
+! (CBJ).  So transcribing this page does NOT make the boot run
+! further on today's model -- it converts "halts at PC 0, one word
+! past X BS END" into "stops at a LOCATE, wanting a 7612/353".
+! That is the point of reading it: this is the page that says
+! exactly which device has to answer next, and what it is asked.
+!
+! ---------------------------------------------------------------
+! EXTERNALS, and how each value is justified
+! ---------------------------------------------------------------
+!   X IN END  printed p.98 line 36  "X IN END SYN,$"       005466.00
+!             -- and line 15 of this page corroborates it: 0o621 +
+!                0o4645 = 0o5466.
+!   X BUFER   printed p.13 line 38  "SYN,X IN END+2000.0"  011406.00
+!             -- printed verbatim in lines 19, 20, 21 and 24 here.
+!   X S ROOF  printed p.13 line 26  "X S ROOF  XW,0"       000546.00
+!   X ERR AD  printed p.13 line 37  "X ERR AD  VF,0"       000551.00
+!   X ERROR   printed p.5  line 5   "X ERROR LX,$2,X ERR IN" 000133.00
+!
+! >>> S MCP AND S ROOF ARE READ OFF THIS PAGE'S OWN BINARY OUTPUT,
+! >>> NOT OFF A DEFINITION.  They are communication-region symbols
+! and the page that defines them has not been transcribed.  Line
+! 21's second half-word prints 002150.00 20, whose address field is
+! S MCP; line 23 prints 002162.01 70, whose address field is S ROOF
+! (bit 23 is what distinguishes SR from LR -- line 22's LR prints
+! the same opcode byte 70 with bit 23 clear).  So:
+!       S MCP  = 002150.00,  S ROOF = 002162.00
+! That is a value taken from a listing's own output, which is the
+! weakest kind of evidence this project accepts, and it is recorded
+! as such: when the communication-region page is transcribed, these
+! two SYNs must be checked against it, and a disagreement is a real
+! finding, not a typo.
+!
+! ---------------------------------------------------------------
+! THE INDICATOR NUMBERS CHECK, three ways
+! ---------------------------------------------------------------
+! Lines 29, 31 and 33 print 000133.03 46, 000133.03 C6 and
+! 000133.04 46.  Reading the indicator field as bits 19-24 gives
+! 000110 = 6, 000111 = 7 and 001000 = 8, which are EKJ, UNRJ and
+! CBJ in opcodes.py's INDICATOR_BITS -- the three the comments name
+! ("IF EXCHANGE ERROR", "IF DISK NOT READY", "IF DISK BUSY").  The
+! branch address is the same 000133.00 in all three, which is
+! X ERROR, known independently from printed p.5.  Three independent
+! agreements on one row group.
+XINEND  SYN, (8)5466.0
+XBUFER  SYN, (8)11406.0
+XSROOF  SYN, (8)546.0
+XERRAD  SYN, (8)551.0
+XERROR  SYN, (8)133.0
+SMCP    SYN, (8)2150.0     ! read off line 21's binary output
+SROOF   SYN, (8)2162.0     ! read off line 23's binary output
+
+        SLC, (8)621.0      ! line 7  "SLC,X BS END"
+        CNOP               ! line 14 -- already on a word boundary
+
+! ---- MCP INITIALIZATION -------------------------------------------
+XIN     BE, XINEND-XIN              ! line 15 -SIZE OF IPL FOR UPDATE
+XUPDAT  BE, 0                       ! line 16 -NUMBER OF PROSA ARCS
+X10     LVS, $9, $12, $11, $14      ! line 17 -COMPUTE NUMBER OF WORDS
+                                    !          PRECEEDING MCP
+        LVE, $8, XBUFER($9)         ! line 19 - GET (MCP)
+X101    LC, $0, XBUFER+.32($9)      ! line 20 -GET SIZE OF COMM REGION
+        T,   0, XBUFER($9), SMCP    ! line 21 -MOVE COMM REGION
+                                    !   listing "T,$0,X BUFER($9),S MCP"
+        LR, $0, XSROOF              ! line 22
+        SR, $0, SROOF               ! line 23 -PLACE 7030 SIZE IN COMM
+        T,  10, XBUFER($9), 0.0($8) ! line 24 -PLACE MCP IN STORAGE
+                                    !   listing "T,$10,X BUFER($9),0.0($8)"
+        LV, 7, 0.0                  ! line 25 -INITIALIZE FIRST TIME
+X104    LOC(SEOP), 0.0, 0.0         ! line 26 -POSITION TO ARC ZERO
+
+! ---- DISK IO TEST, line 27's comment ------------------------------
+X105    SIC, XERRAD                 ! line 28
+        BEKJZ, XERROR               ! line 29 -IF EXCHANGE ERROR
+XERR12  SIC, XERRAD                 ! line 30
+        BUNRJZ, XERROR              ! line 31 -IF DISK NOT READY
+XERR13  SIC, XERRAD                 ! line 32
+        BCBJZ, XERROR               ! line 33 -IF DISK BUSY
+        END, XIN

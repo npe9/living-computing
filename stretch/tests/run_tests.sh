@@ -1534,6 +1534,66 @@ run "MCP's IPL bootstrap, printed p.14, bit-exact (MCP_Mar63 PDF p.21)" python3 
 # Verified at 600 dpi.  It compiles to nothing and it is the proof
 # that these rows were keyed by hand rather than generated.
 
+run "MCP INITIALIZATION, printed p.15, bit-exact (MCP_Mar63 PDF p.22)" python3 verify_mcp_bootstrap_p15.py
+# THE PAGE THE BOOTSTRAP BRANCHES TO.  printed p.14's last
+# instruction is "B,X 10"; X 10 is line 17 of this page, at
+# 000622.00.  Seventeen rows, all seventeen first attempt.
+#
+# It does NOT make the boot run further, and that is worth being
+# plain about: the page ends in "LOC(SEOP),0.0,0.0 -POSITION TO ARC
+# ZERO" and a three-test disk check (EKJ, UNRJ, CBJ).  Transcribing
+# it turns "halts at PC 0, one word past X BS END" into "stops at a
+# LOCATE, wanting a 7612/353".  What it buys is the knowledge of
+# exactly which device answers next and what it is asked.
+#
+# THE INDICATOR ENCODING CHECKS ITSELF THREE WAYS.  Lines 29, 31 and
+# 33 print 000133.03 46, 000133.03 C6 and 000133.04 46; reading bits
+# 19-24 as the indicator number gives 6, 7 and 8 -- EKJ, UNRJ, CBJ --
+# which is exactly what the row comments say, and the branch address
+# in all three is X ERROR = 000133.00, known from printed p.5.
+#
+# TWO SYMBOLS ARE WEAKER EVIDENCE THAN THE REST and the deck says so:
+# S MCP and S ROOF are communication-region symbols read off this
+# page's own binary output, because the page defining them has not
+# been transcribed.
+
+run "MCP INITIALIZATION, printed p.16, bit-exact (MCP_Mar63 PDF p.23)" python3 verify_mcp_bootstrap_p16.py
+# "WRITE PROSA ON DISK AND FETCH FROM MCPS TAPE" -- thirty-one rows,
+# every one with binary output, all thirty-one first attempt.
+#
+# Line 11's comment is the one to read: "-ASSEMBLED CW".  The control
+# word the write uses is BUILT AT RUN TIME -- SX stores a computed
+# length into X PRO WR and the W names X PRO WR as its control word.
+# A disk model has to answer a control word the program wrote, not
+# one the assembler laid down.
+#
+# FOUR EXTERNALS COME FROM PAGES READ MONTHS APART and all four are
+# branch targets, so a wrong value would print a wrong address: X9 A
+# and X9 A 3A from printed p.4, X7 1 and X7 3 from printed p.3.
+
+run "MCP INITIALIZATION, printed p.17, bit-exact (MCP_Mar63 PDF p.24)" python3 verify_mcp_bootstrap_p17.py
+# "PROCESS IOCD CARDS SETTING UP CST AND LST" -- forty-two rows, and
+# THIS IS WHERE MCP LEARNS WHAT MACHINE IT IS ON.  It does not know
+# its own configuration; it reads one IOCD card per unit, converts
+# the channel number out of Hollerith with two CT0011s and an LCV,
+# looks the two-letter equipment code up in X EQP T, and fills in the
+# channel and unit status tables.  So "which devices must the model
+# present" is answered by the IOCD deck, not by the model -- which is
+# what makes strap/cards.py part of booting MCP and not only part of
+# running diagnostics.
+#
+# The densest VFL of any MCP page so far: three connectives in their
+# indexed progressive form, two CM1111 and a CM0000 against single
+# bits, an LCV with a (DU,8,4) radix conversion, and a load with a
+# NEGATIVE offset whose address field prints 777777.73.
+#
+# ONE GLYPH CORRECTION, AND THE 8/B HAZARD'S THIRD OUTING.  Line 42,
+# "V+,$3,$5", prints 000025.06 B0.  It read as 80 at 200 dpi AND
+# AGAIN at 900 dpi, in a column where nearly every neighbour really
+# is 80.  THE ASSEMBLER DISAGREEING IS WHAT CAUGHT IT; 1800 dpi then
+# settled it.  First time a higher-resolution render was already in
+# hand and the eye still supplied the expected glyph.
+
 run "MCP's error table, printed pp.7-8 (MCP_Mar63 PDF pp.14-15)" python3 verify_mcp_bootstrap_p7_p8.py
 # X ERR DD -- THE LAST TWO PAGES OF THE BOOTSTRAP TO BE TRANSCRIBED,
 # and the index to all the rest: seventy-eight VF half words, one pair

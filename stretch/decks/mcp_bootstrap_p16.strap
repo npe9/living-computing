@@ -1,0 +1,121 @@
+! mcp_bootstrap_p16.strap -- MCP INITIALIZATION, printed page 16:
+! "WRITE PROSA ON DISK AND FETCH FROM MCPS TAPE".
+! docs/MCP_Mar63_001-249.pdf PDF p.23, header "PAGE NUMBER 16".
+! docs/boot_plan.md M3.
+!
+! CONTIGUOUS WITH printed p.15: that page's last instruction is at
+! 000632.40 and this one's first is at 000633.00.  The file name
+! keeps the "mcp_bootstrap_" prefix the other thirteen pages use,
+! but pp.15 onward are MCP proper, not the bootstrap -- see
+! mcp_bootstrap_p15.strap's header for where the handover is.
+!
+! ---------------------------------------------------------------
+! WHAT THE PAGE DOES
+! ---------------------------------------------------------------
+! PROSA is the resident supervisor area MCP keeps on the disk.  The
+! bootstrap has just read a copy of it into core; this page writes
+! it back out to the disk arcs it LOCATEd to on p.15, checks the
+! write, counts the arcs, and -- when everything has been refreshed
+! -- rewinds and unloads the MCPS tape and goes back to the IO test.
+!
+!   lines  5-11  work out how many words to write.  "LV,$6,X IPL BS"
+!                loads the first-word address of the last read, which
+!                the comment warns is "BIASED BY UR BIT"; "V-I,$6,
+!                X BUFER" subtracts the buffer base to leave a length;
+!                "SX,$6,X PRO WR" stores the result into the control
+!                word the write will use.  The comment on that row is
+!                "-ASSEMBLED CW": the control word is BUILT AT RUN
+!                TIME, not assembled as a constant.
+!   lines 12-20  W(SEOP) the PROSA area to the disk and test it --
+!                EKJ (exchange error), UNRJ (unit not ready), CBZ on
+!                $7 (locate not successful), and BCBJZ back to
+!                X11 1 if the locate is still going.
+!   lines 21-27  CCW,0.0,X IPL BS+1.0 "ATTEMPT TO GET CW", then the
+!                same four tests again for the write itself.
+!   lines 28-30  accumulate the arc count: "SX,$6,$R" takes the
+!                number of arcs just written out of the R register,
+!                "M+(BU,9),S DK MCP+9,18+9" adds it into a 9-bit
+!                field of the communication region, and "BB,$0+.25,
+!                X11 3" branches out when PROSA has been refreshed.
+!   lines 31-33  otherwise go round again: SIC the return into
+!                X9 A 3A and branch to X9 A, printed p.4's "FETCH
+!                PROSA", or back to X11.
+!   lines 35-37  X11 3: "CTL(SEOP),0.0($15),(8)137" rewinds and
+!                unloads the MCPS tape -- the channel is in $15,
+!                where the bootstrap's IPL-channel search left it,
+!                and (8)137 is the control code -- then SIC X7 3 and
+!                branch to X7 1, printed p.3's IO TEST.
+!
+! ---------------------------------------------------------------
+! EXTERNALS, and how each value is justified
+! ---------------------------------------------------------------
+!   X IPL BS  printed p.2  line 24  "X IPL BS  BD,X BEGIN"  000041.00
+!   X BUFER   printed p.13 line 38  "SYN,X IN END+2000.0"   011406.00
+!   X ERR AD  printed p.13 line 37  "X ERR AD  VF,0"        000551.00
+!   X ERROR   printed p.5  line 5   "X ERROR LX,$2,X ERR IN" 000133.00
+!   X7 1      printed p.3  line 17  "X7 1  SIC,X ERR AD"    000057.40
+!   X7 3      printed p.3  line 28  "X7 3  BRZ,0.0"         000066.40
+!   X9 A      printed p.4  line 5   "X9 A  RD(SEOP),..."    000104.00
+!   X9 A 3A   printed p.4  line 18  "X9 A 3A  B,X9 A 4"     000114.40
+!
+! >>> X PRO WR AND S DK MCP ARE READ OFF THIS PAGE'S OWN OUTPUT.
+! Neither defining page has been transcribed.  X PRO WR = 001746.00
+! appears twice here and agrees with itself -- line 11's SX stores to
+! it and line 13's W names it as the control word -- which is a
+! consistency check and not an independent one.  S DK MCP = 002157.00
+! comes from line 29 alone, where "S DK MCP+9" prints a bit address
+! of 002157.11 and 0o11 is 9.  Same caveat as printed p.15's S MCP
+! and S ROOF: when the pages that define these are transcribed, these
+! SYNs must be checked against them, and a disagreement is a finding.
+XIPLBS  SYN, (8)41.0
+XBUFER  SYN, (8)11406.0
+XERRAD  SYN, (8)551.0
+XERROR  SYN, (8)133.0
+X71     SYN, (8)57.40
+X73     SYN, (8)66.40
+X9A     SYN, (8)104.0
+X9A3A   SYN, (8)114.40
+XPROWR  SYN, (8)1746.0      ! read off lines 11 and 13
+SDKMCP  SYN, (8)2157.0      ! read off line 29
+
+        SLC, (8)633.0
+
+! ---- WRITE PROSA ON DISK AND FETCH FROM MCPS TAPE -----------------
+X11     LV, $6, XIPLBS       ! line 5  -GET FWA OF LAST READ
+                             !           (BIASED BY UR BIT)
+        V-I, $6, XBUFER      ! line 6  -COMPUTE NUMBER OF PROSA WORDS
+                             ! line 7  -TO BE WRITTEN
+        LC, $6, $6           ! line 8
+        BXCZ, X113           ! line 9   listing "BXCZ,X 11 3"
+        LVI, $6, XBUFER      ! line 10
+        SX, $6, XPROWR       ! line 11 -ASSEMBLED CW
+        LC, $7, 0.0          ! line 12 -SET UP FOR TEST OF LOCATE
+X111    W(SEOP), 0.0, XPROWR ! line 13 -WRITE PROSA
+XERR14  SIC, XERRAD          ! line 14
+        BEKJZ, XERROR        ! line 15 -IF EKJ
+XERR15  SIC, XERRAD          ! line 16
+        BUNRJZ, XERROR       ! line 17 -IF UNRJ
+XERR16  SIC, XERRAD          ! line 18
+        CBZ, $7, XERROR      ! line 19 -IF LOCATE NOT SUCCESSFUL
+        BCBJZ, X111          ! line 20 -IF LOCATE DONE
+        LC, $7, 0.0          ! line 21 -DONE * SET UP FOR TEST OF WRITE
+X11CCW  CCW, 0.0, XIPLBS+1.0 ! line 22 -ATTEMPT TO GET CW
+XER16A  SIC, XERRAD          ! line 23
+        BEKJZ, XERROR        ! line 24 -IF EKJ
+XER16B  SIC, XERRAD          ! line 25
+        CBZ, $7, XERROR      ! line 26 -IF WRITE NOT SUCCESSFUL
+        BCBJZ, X11CCW        ! line 27 -IF WRITE DONE
+X112    SX, $6, $R           ! line 28 -ENTER NUMBER OF ARCS JUST
+                             !           WRITTEN
+        M+(BU,9), SDKMCP+9, 18+9  ! line 29 -ACCUMULATE NUMBER OF ARCS
+        BB, $0+.25, X113     ! line 30 -PROSA REFRESHED YES* OUT
+        SIC, X9A3A           ! line 31
+        B, X9A               ! line 32 -TO FETCH PROSA
+        B, X11               ! line 33
+
+! ---- REWIND AND UNLOAD MCPS TAPE WHEN DONE, line 34's comment -----
+X113    CTL(SEOP), 0.0($15), (8)137  ! line 35 -REWIND AND UNLOAD
+                                     !           MCPS TAPE
+        SIC, X73             ! line 36
+        B, X71               ! line 37 -IO TEST
+        END, X11
