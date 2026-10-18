@@ -1,0 +1,129 @@
+! transmit_multiword.strap -- TRANSMIT moving more than one word.
+! Reference Manual printed p.30 (PDF p.33), "Data Transmission",
+! which is the whole specification in one page.
+!
+! WHY THIS DECK EXISTS.  StretchExecute's Transmit arm used to execute
+! exactly ONE shape -- a one-word IMMEDIATE-count forward transmit --
+! and set Operation Code Invalid on every other, "conservative by
+! construction" in its own comment.  MCP printed p.4 line 28 is
+!
+!     X9 A 5   T,11,X BUFER($X1),X BS END      -MOVE MCP IPL
+!
+! an eleven-word DIRECT-count transmit, so MCP's IPL was never moved.
+! The gap was invisible for weeks because the boot test read the
+! indicator register AFTER an interrupt had reset it; giving the model
+! a disk removed the spurious interrupt and the OP bit appeared.
+! docs/NEXT.md "THE NEXT MCP BLOCKER IS TRANSMIT" has the story.
+!
+! WHAT EACH STEP PINS, all five from printed p.30:
+!
+!   1. A DIRECT COUNT.  "In direct count operations, the field J, bits
+!      51-54, specifies an index register.  The count field, bits
+!      28-45, of the index word in this register is used as a full
+!      word count."  Step 1 loads index 2 with a count of four and
+!      moves four words.  THIS IS MCP'S OWN SHAPE.
+!
+!   2. AN IMMEDIATE COUNT.  "In immediate count operations, the full
+!      word count is specified by instruction bits 51-54."  Step 2
+!      moves three words with TI.
+!
+!   3. A DIRECT COUNT OF ONE, which the old arm refused even though it
+!      would have executed it correctly -- its own comment says so.
+!
+!   4. ASCENDING, ONE WORD AT A TIME.  "In forward transmission, the
+!      sending and receiving addresses of each successive word
+!      transmitted are obtained by incrementing the previous addresses
+!      by one", and the programming note: "if the receiving area
+!      overlaps the lower end of the sending area, forward
+!      transmission must be used."  Step 4 shifts a block DOWN by one,
+!      which only comes out right if the words move in ascending
+!      order -- a descending implementation smears the last word over
+!      the block, and a snapshot-then-store implementation would need
+!      four words of hidden state this machine does not have.
+!
+!   5. AN IMMEDIATE COUNT OF ZERO IS SIXTEEN.  "A zero count field
+!      indicates the maximum count of 16 full words."  A model reading
+!      zero as zero moves nothing; one reading it as 2^18 runs off the
+!      end of this program.
+!
+! NOT TESTED HERE, deliberately: backward transmission and SWAP, which
+! still set Operation Code Invalid.  MCP needs neither, and their
+! ENCODINGS are already pinned by the jb_ax4b routine 1246
+! transcriptions (decks/ax4b_1246_transmit_swap.strap).
+
+START   LVI, $X1, 0        !no displacement; the index is here so step
+                            !1 has the same (addr)(index) shape MCP's
+                            !own transmit does
+        LCI, $X2, 4        !index 2's COUNT field = 4 -- a direct count
+        T,   2, SRCA($X1), DSTA    !step 1: four words, direct count
+        TI,  3, SRCB, DSTB         !step 2: three words, immediate
+        LCI, $X3, 1
+        T,   3, SRCC, DSTC         !step 3: ONE word, direct count
+        LCI, $X4, 4
+        T,   4, OVL1, OVL0         !step 4: shift the block down by one
+        TI,  0, SRCE, DSTE         !step 5: zero means SIXTEEN
+        BEW, $
+        NOP, 0             !pad to a word boundary: the run above is an
+                            !odd number of half-words and DD applies no
+                            !automatic alignment
+
+SRCA    DD(BU,64), (16)A000000000000001
+        DD(BU,64), (16)A000000000000002
+        DD(BU,64), (16)A000000000000003
+        DD(BU,64), (16)A000000000000004
+DSTA    DD(BU,64), (16)FFFFFFFFFFFFFFFF
+        DD(BU,64), (16)FFFFFFFFFFFFFFFF
+        DD(BU,64), (16)FFFFFFFFFFFFFFFF
+        DD(BU,64), (16)FFFFFFFFFFFFFFFF
+
+SRCB    DD(BU,64), (16)B000000000000001
+        DD(BU,64), (16)B000000000000002
+        DD(BU,64), (16)B000000000000003
+DSTB    DD(BU,64), (16)FFFFFFFFFFFFFFFF
+        DD(BU,64), (16)FFFFFFFFFFFFFFFF
+        DD(BU,64), (16)FFFFFFFFFFFFFFFF
+
+SRCC    DD(BU,64), (16)C000000000000001
+DSTC    DD(BU,64), (16)FFFFFFFFFFFFFFFF
+
+! OVL0..OVL4: five words.  Step 4 moves four of them, from OVL1 into
+! OVL0, so afterwards OVL0-OVL3 hold D1-D4 and OVL4 is untouched.
+OVL0    DD(BU,64), (16)D000000000000000
+OVL1    DD(BU,64), (16)D000000000000001
+        DD(BU,64), (16)D000000000000002
+        DD(BU,64), (16)D000000000000003
+        DD(BU,64), (16)D000000000000004
+
+SRCE    DD(BU,64), (16)E000000000000001
+        DD(BU,64), (16)E000000000000002
+        DD(BU,64), (16)E000000000000003
+        DD(BU,64), (16)E000000000000004
+        DD(BU,64), (16)E000000000000005
+        DD(BU,64), (16)E000000000000006
+        DD(BU,64), (16)E000000000000007
+        DD(BU,64), (16)E000000000000008
+        DD(BU,64), (16)E000000000000009
+        DD(BU,64), (16)E00000000000000A
+        DD(BU,64), (16)E00000000000000B
+        DD(BU,64), (16)E00000000000000C
+        DD(BU,64), (16)E00000000000000D
+        DD(BU,64), (16)E00000000000000E
+        DD(BU,64), (16)E00000000000000F
+        DD(BU,64), (16)E000000000000010
+DSTE    DD(BU,64), (16)FFFFFFFFFFFFFFFF
+        DD(BU,64), (16)FFFFFFFFFFFFFFFF
+        DD(BU,64), (16)FFFFFFFFFFFFFFFF
+        DD(BU,64), (16)FFFFFFFFFFFFFFFF
+        DD(BU,64), (16)FFFFFFFFFFFFFFFF
+        DD(BU,64), (16)FFFFFFFFFFFFFFFF
+        DD(BU,64), (16)FFFFFFFFFFFFFFFF
+        DD(BU,64), (16)FFFFFFFFFFFFFFFF
+        DD(BU,64), (16)FFFFFFFFFFFFFFFF
+        DD(BU,64), (16)FFFFFFFFFFFFFFFF
+        DD(BU,64), (16)FFFFFFFFFFFFFFFF
+        DD(BU,64), (16)FFFFFFFFFFFFFFFF
+        DD(BU,64), (16)FFFFFFFFFFFFFFFF
+        DD(BU,64), (16)FFFFFFFFFFFFFFFF
+        DD(BU,64), (16)FFFFFFFFFFFFFFFF
+DSTEND  DD(BU,64), (16)FFFFFFFFFFFFFFFF
+        END, START

@@ -1156,6 +1156,51 @@ run "I-Box 5 routine 1260's indicator walk + TRANSMIT IMMEDIATE (jb_ax5b p.45)" 
 # failing loud.  Every count in this block is 1.  Recorded in
 # TRANSMIT_CODES, in strap_asm.py's format list and in strap/README.md.
 
+run "MULTI-WORD TRANSMIT (RefMan printed p.30)" ./run_program.sh ../decks/transmit_multiword.strap StretchXmitTb \
+    "A0:44=0xA000000000000001" "A1:45=0xA000000000000002" \
+    "A2:46=0xA000000000000003" "A3:47=0xA000000000000004" \
+    "B0:51=0xB000000000000001" "B1:52=0xB000000000000002" \
+    "B2:53=0xB000000000000003" "C0:55=0xC000000000000001" \
+    "OVL0:56=0xD000000000000001" "OVL1:57=0xD000000000000002" \
+    "OVL2:58=0xD000000000000003" "OVL3:59=0xD000000000000004" \
+    "OVL4:60=0xD000000000000004" \
+    "E0:77=0xE000000000000001" "E15:92=0xE000000000000010"
+# THE ARM USED TO EXECUTE EXACTLY ONE SHAPE -- a one-word IMMEDIATE-
+# count forward transmit -- and set Operation Code Invalid on every
+# other, "conservative by construction" in its own comment.  MCP
+# printed p.4 line 28 is an eleven-word DIRECT-count transmit, so
+# MCP's IPL was never moved; see the MCP boot section below for how
+# that stayed invisible for weeks.
+#
+# Five rules, all from Reference Manual printed p.30:
+#   * a DIRECT count, read from the named index register's count
+#     field -- MCP's own shape;
+#   * an IMMEDIATE count;
+#   * a direct count of ONE, which the old arm refused even though it
+#     would have executed it correctly;
+#   * ASCENDING, ONE WORD AT A TIME -- the deck shifts a block DOWN by
+#     one word, which a descending implementation smears and a
+#     snapshot-then-store implementation could not do without four
+#     words of hidden state;
+#   * an IMMEDIATE count of ZERO IS SIXTEEN ("a zero count field
+#     indicates the maximum count of 16 full words").
+#
+# NOTHING IS WRITTEN BACK, which is what made this cheap.  Same page:
+# "The count field in the index register is not changed as a result
+# of the operation, and the index result indicators are not
+# affected."  So rl_xmit is rl_io's shape with the device taken out
+# and no index write-back at all.
+#
+# rl_xmit's ADDRESS-INVALID CHECK IS LOAD-BEARING.  p.30 on a direct
+# count of zero: it "is interpreted as 2^18... such a count is never
+# valid.  It is not detected, however, until the data transmission
+# actually encounters an invalid or protected address."  2^18 words
+# is the whole 18-bit address space, so the first version of the rule
+# -- without the check -- wrapped and zeroed every word of core when
+# MCP ran it.  Backward transmission and SWAP still set OP and are
+# deliberately not tested here; their encodings are pinned by the
+# jb_ax4b routine 1246 transcriptions.
+
 run "MCP'S OWN BOOTSTRAP RUNS (boot_plan.md M3)" ./run_mcp_boot.sh StretchMcpBootTb
 # THE EXPECTED VALUES CHANGED ON 2026-10-18 WHEN THE DISK LANDED, and
 # the change is the useful part.  This section asserts the indicator
@@ -1173,11 +1218,27 @@ run "MCP'S OWN BOOTSTRAP RUNS (boot_plan.md M3)" ./run_mcp_boot.sh StretchMcpBoo
 #
 # Channel 0 now holds the disk, the RELEASE succeeds, MCP runs the
 # path it was written to run -- and the OP bit that had been there
-# all along became visible.  OP IS SET BY printed p.4 line 28,
-# "T,11,X BUFER($X1),X BS END  -MOVE MCP IPL": this model executes
-# only a one-word immediate-count TRANSMIT.  **MCP's IPL is never
-# moved**, and that is the next blocker on this path -- docs/NEXT.md
-# "THE NEXT MCP BLOCKER IS TRANSMIT".
+# all along became visible.  TWO instructions on that path were
+# refused, not one, and the first attribution named only the first:
+#
+#   p.4 line 28, "T,$11,X BUFER($X1),X BS END  -MOVE MCP IPL", an
+#   eleven-word direct-count TRANSMIT.  BUILT the same day --
+#   decks/transmit_multiword.strap -- so it no longer sets OP.
+#
+#   p.4 line 23, "LVS,$X1,$X12,$X14  -WORDS PRECEEDING MCP".  STILL
+#   REFUSED: StretchExecute's immediate-index arm ends
+#   `default: setOpInvalid // LVS: out of scope`.  That is what OP
+#   means here now, and docs/NEXT.md has it as the next blocker.
+#
+# AND AD IS THE TRANSMIT NOW RUNNING.  Line 24 takes the count out of
+# the PROSA record's dictionary and THIS TAPE HAS NO PROSA -- 369
+# bootstrap words and a mark, nothing else -- so the count field is
+# zero, which RefMan printed p.30 says means 2^18 and "is never
+# valid... not detected until the data transmission actually
+# encounters an invalid or protected address".  The transmit walks up
+# out of installed core and stops with AD, which is the manual's own
+# answer.  AD here is the tape being short, not the model being
+# wrong.
 #
 # The run now stops at 000124.40, printed p.4 line 32's "CB,0,$" --
 # MCP's delay loop after RELEASE DISK.  The harness halts on "an
@@ -2077,8 +2138,24 @@ run "Opcode coverage audit (ratchet)" python3 audit_opcode_coverage.py
 # the four I/O Suppress-End-Of-Op forms.
 
 run "TRANSMIT: what is honoured, and what is refused out loud" ./run_program.sh ../decks/transmit_scope.strap StretchTransmitScopeTb \
-    "PC=4248" "DST1:2177=0x9249249249249249" "DST2:2178=0" "DST3:2179=0" \
-    "DST4:2180=0" "DST5:2181=0" "DST6:2182=0" "SRC:2176=0x9249249249249249"
+    "PC=4246" "SRC:2176=0x9249249249249249" \
+    "DST1:2240=0x9249249249249249" "DST2:2248=0" \
+    "DST3a:2256=0x9249249249249249" "DST3b:2257=0x9249249249249249" \
+    "DST4a:2304=0x9249249249249249" "DST4z:2319=0x9249249249249249" \
+    "DST5:2368=0x9249249249249249" "DST6:2376=0"
+# THREE OF THE SIX BLOCKS FLIPPED ON 2026-10-18, from "refused" to
+# "happens", because multi-word and direct-count TRANSMIT are built.
+# DST3, DST4 and DST5 used to be asserted ZERO and are now asserted to
+# have RECEIVED -- DST3 both of its two words, DST4 its first and its
+# SIXTEENTH (p.30: "a zero count field indicates the maximum count of
+# 16 full words"), DST5 by the direct-count path with index 1's count
+# loaded first.  decks/transmit_multiword.strap is the deck that pins
+# the new behaviour in detail; this one keeps its original job, the
+# SCOPE, one block per rule.
+#
+# DST2 AND DST6 ARE STILL ZERO, and that is what the file is for now:
+# SWAP in either direction and BACKWARD transmission are still refused
+# out loud.
     # 004114.00; hand-written from Ref. Manual pp.30-31 and the card
 # A CLAIM IN bsv/README.md THAT WAS TWO-THIRDS FALSE, found 2026-09-22.
 # Its "decoded but not executed (sets indicator 15, OP, and no-ops)"
@@ -2122,6 +2199,16 @@ run "TRANSMIT: what is honoured, and what is refused out loud" ./run_program.sh 
 #   j == 1 relaxed to j <= 1        -> 004106.40  (TI,0 = SIXTEEN)
 #   immediate modifier ignored      -> 004110.40  (T,1 direct count)
 #   backward check removed          -> 004112.40  (TBI moved a word)
+#
+# THREE OF THOSE FIVE NO LONGER DESCRIBE A LIVE RULE, 2026-10-18, and
+# saying so is better than quietly deleting them: the count check, the
+# "j == 1" test and the immediate-modifier test were the machinery of
+# a refusal that no longer exists.  What guards those three blocks now
+# is the opposite assertion -- the destination words must have
+# RECEIVED, and for block 4 the sixteenth of them -- plus
+# decks/transmit_multiword.strap's fifteen checks.  The two injections
+# that still bite, SWAP and backward, are the two blocks still
+# asserting a refusal.
 #
 # THE SURVIVOR THAT TAUGHT THE MOST.  Block 6 was first written TB --
 # backward with a DIRECT count -- and removing the backward check
@@ -6972,7 +7059,7 @@ run "THE DISK: LOCATE, arcs, the zero-filled tail, and flags discarded" ./run_di
 
 # -- cleanup: generated .bsv testbenches and Bluesim build products are
 # not meant to be committed (see .gitignore) --
-rm -f "$BSV_DIR"/StretchProblem*Tb.bsv "$BSV_DIR"/StretchFigure*Tb.bsv "$BSV_DIR"/StretchXwRefillTb.bsv "$BSV_DIR"/StretchIoReaderPrinterTb.bsv "$BSV_DIR"/StretchIoTapeTb.bsv "$BSV_DIR"/StretchIoDiskTb.bsv "$BSV_DIR"/StretchIboxWenTb.bsv "$BSV_DIR"/StretchIboxCbTb.bsv "$BSV_DIR"/StretchIboxCbrTb.bsv
+rm -f "$BSV_DIR"/StretchProblem*Tb.bsv "$BSV_DIR"/StretchFigure*Tb.bsv "$BSV_DIR"/StretchXwRefillTb.bsv "$BSV_DIR"/StretchIoReaderPrinterTb.bsv "$BSV_DIR"/StretchIoTapeTb.bsv "$BSV_DIR"/StretchIoDiskTb.bsv "$BSV_DIR"/StretchXmitTb.bsv "$BSV_DIR"/StretchIboxWenTb.bsv "$BSV_DIR"/StretchIboxCbTb.bsv "$BSV_DIR"/StretchIboxCbrTb.bsv
 rm -f "$BSV_DIR"/*_sim "$BSV_DIR"/*_sim.so
 rm -rf "$BSV_DIR"/build "$BSV_DIR"/simbuild
 

@@ -97,12 +97,19 @@ encodable made two long-standing `bsv/README.md` claims testable for
 the first time — and two-thirds of one was false. The decoder
 discarded bit 57, so a forward `SWAP` executed as a one-word Transmit;
 and the count was never read, so a multi-word Transmit moved one word.
-Both silent. The decoder now captures bit 57 and the arm honours only
-an immediate count of one (Ref. Manual pp.30-31: immediate 0 means
-*sixteen*; a direct count lives in a register this arm never reads, so
-all of them are refused). Guard:
-`decks/transmit_scope.strap`, six blocks, five injections, one per
-rule. Record in `run_tests.sh` §"TRANSMIT: what is honoured…".
+Both silent. The decoder now captures bit 57, and **as of 2026-10-18
+the arm honours any FORWARD count, immediate or direct** -- Reference
+Manual printed p.30, with immediate 0 meaning *sixteen* and a direct
+count read from the named index register's count field. It used to
+honour only an immediate count of one, refusing every direct count
+because the register went unread; MCP's printed p.4 line 28 is an
+eleven-word direct-count transmit, so that refusal was stopping IBM's
+operating system from moving itself into storage. SWAP and backward
+are still refused. Guards: `decks/transmit_scope.strap` (six blocks,
+one per rule -- three of them flipped from refusal to execution) and
+`decks/transmit_multiword.strap` (fifteen checks on p.30's five
+rules). Record in `run_tests.sh` §"TRANSMIT: what is honoured…" and
+§"MULTI-WORD TRANSMIT".
 
 **The boundary driver is found, and the guess it replaces was wrong
 in range AND in kind.** This file said pp.66–79 held "the positive
@@ -4882,6 +4889,78 @@ forgotten: Reference Manual **PDF page = printed page + 3**, and
 `ja_ua1_ssip` is cited by **PDF page** because its listing carries no
 printed page numbers.
 
+## THE NEXT MCP BLOCKER IS **LVS** -- TRANSMIT was built the same day
+
+> **CORRECTION, 2026-10-18, same day.** This section was written
+> saying OP came from the TRANSMIT on printed p.4 line 28. That was
+> true and INCOMPLETE: **two** instructions on that path are refused,
+> and fixing the first left the bit standing.
+>
+> `TRANSMIT` is now built -- multi-word, forward, immediate or direct
+> count, `decks/transmit_multiword.strap`, fifteen checks -- and MCP's
+> boot still reports OP. The remaining source is **printed p.4 line
+> 23**:
+>
+>     X9 A 4 ... LVS,$X1,$X12,$X14      -WORDS PRECEEDING MCP
+>
+> `StretchExecute`'s immediate-index arm still ends
+> `default: ind = setOpInvalid(ind); // LVS: out of scope`, and a
+> four-line scratch deck reproduces it on its own. The ASSEMBLER
+> gained LVS earlier (the participation mask, shifted left three);
+> the MODEL never did.
+>
+> **It matters more than it looks.** `$X1` is the index the TRANSMIT
+> two rows later uses to find MCP inside the buffer -- "WORDS
+> PRECEEDING MCP" -- so even with TRANSMIT built, the move would copy
+> from the wrong place. Reference Manual printed p.28, "Multiple
+> Indexing", is the source, and the ENCODING is already pinned:
+> `tests/verify_lvs_encoding.py` is in the suite.
+>
+> **THE SPECIFICATION, READ FIRST-HAND** -- printed p.28 (PDF p.31),
+> "Multiple Indexing" and "Load Value with Sum (LVS)", both complete
+> on that one page:
+>
+> > "In multiple indexing, bits 0-15 of the address part of the
+> > instruction are used to indicate which index registers
+> > participate in the operation. When bit position n contains a one,
+> > the register Xn participates. When bit position n contains a
+> > zero, the register Xn does not participate. **Bits 16-19 of the
+> > address part of the instruction are ignored.**"
+>
+> > "The index field J contains the address of the index to which the
+> > operation LOAD VALUE WITH SUM applies. **No address modification
+> > is available for this operation.**"
+>
+> > "The address parts, bits 0-24, of the index registers which
+> > participate are added and replace bits 0-24 of the index word
+> > specified by J. The addition is algebraic, taking into account
+> > the sign, bit 24, of all quantities. **Bits 25-63 of the index
+> > word specified by J remain unchanged.** If bits 0-15 of the
+> > address part of the instruction are all zero, the value field of
+> > the index register specified by J is cleared."
+>
+> > "The index flag and index result indicators are set according to
+> > the new contents of the index register specified by J."
+>
+> So the whole operation is: take the mask from the instruction's own
+> address bits 0-15, sign-magnitude-add the value-plus-sign of every
+> participating Xn, write bits 0-24 of index J and **leave 25-63
+> alone**, and fold the index result indicators -- which
+> `setIndexResultIndicatorsF` and `smAdd` already do for every other
+> index operation. No indexing of the instruction itself, no count,
+> no refill.
+>
+> **ONE THING TO WATCH:** the prose says bits **16-19** are ignored
+> and the figure on the same page draws ADDRESS as bits 0-18 with J
+> at 19-22. The two disagree about bit 19 and this repo has already
+> recorded the conflict once. The assembler resolves it by shifting
+> the mask left three, and `tests/verify_lvs_encoding.py` is what
+> says that reproduces real listings -- so follow the assembler, not
+> either reading of the page, and say so in the code.
+>
+> The rest of this section is kept as written, because the TRANSMIT
+> half of it is the record of what was built.
+
 ## THE NEXT MCP BLOCKER IS TRANSMIT, found 2026-10-18
 
 **MCP's IPL is never moved.** Printed p.4 line 28 is
@@ -4974,6 +5053,23 @@ existing refusal should stay for both, with the OP it already sets.
 **It is on the critical path and the disk is not.** The disk is
 built; MCP LOCATEs and WRITEs it. What MCP cannot do is move itself
 into storage.
+
+**BUILT, 2026-10-18.** `XmitXfer` in `StretchTypes.bsv`, the count
+read in `StretchExecute`'s Transmit arm, and `rl_xmit` in
+`StretchCore.bsv` -- rl_io's shape with the device taken out.
+`decks/transmit_multiword.strap` pins all five of p.30's rules
+including "a zero count field indicates the maximum count of 16 full
+words" and the ascending per-word order (a block shifted DOWN by one,
+which only survives if the words move in order).
+
+**AND THE ADDRESS-INVALID CHECK IN rl_xmit IS LOAD-BEARING, which is
+worth knowing before anyone simplifies it away.** MCP's own transmit
+takes its count from a PROSA dictionary, and the test tape has no
+PROSA on it, so the count field is zero -- which p.30 says means 2^18
+and "is never valid". 2^18 words is the WHOLE 18-bit address space:
+the first version of `rl_xmit`, without the check, wrapped and zeroed
+every word of core. With it, the transmit stops at the top of
+installed storage with AD, exactly as p.30 describes.
 
 ## Traps this project has paid for
 

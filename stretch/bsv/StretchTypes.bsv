@@ -282,6 +282,29 @@ typedef struct {
                           // data and must not show in the count.
 } IoXfer deriving (Bits, Eq, FShow);
 
+// A started-but-not-yet-drained MULTI-WORD TRANSMIT, threaded out of
+// execute() exactly the way IoXfer is and serviced by StretchCore's
+// rl_xmit, which is rl_io's shape applied to a memory-to-memory copy.
+//
+// WHY IT IS A SEPARATE STRUCT AND NOT AN IoXfer WITH A FLAG: a
+// transmit has no channel, no control word, no device cursor and no
+// status bits.  It has two storage addresses and a count.  Sharing
+// IoXfer would mean five dead fields and a device dispatch that never
+// matches anything.
+//
+// WHAT THE MANUAL SAVES US, Reference Manual printed p.30: "The count
+// field in the index register is not changed as a result of the
+// operation, and the index result indicators are not affected."  So
+// there is no write-back to the index register and no indicator fold
+// -- the count is read once at issue and lives here until it runs
+// out.  `remaining` is Bit#(19) for the same reason IoXfer's is:
+// p.30's direct count of zero "is interpreted as 2^18".
+typedef struct {
+  WordAddr  src;        // next sending word  (p.30: "incrementing the
+  WordAddr  dst;        // next receiving word  previous addresses by one")
+  Bit#(19)  remaining;  // full words still to move, counting this one
+} XmitXfer deriving (Bits, Eq, FShow);
+
 // ---------------------------------------------------------------------
 // THE TAPE MARK, and the one design decision behind it.
 //

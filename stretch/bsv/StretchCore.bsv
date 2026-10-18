@@ -11,6 +11,8 @@ package StretchCore;
 import Vector::*;
 import StretchTypes::*;
 import StretchStorage::*;
+import StretchMemory::*;   // installed(): the address-invalid bound,
+                            // which rl_xmit needs per word
 import StretchIO::*;
 import StretchDiskSource::*;  // DiskIndex / ArcAddr / arcWords, for the
                                // disk arms of rl_io
@@ -95,6 +97,14 @@ module mkStretchCore(StretchCore);
   Reg#(HWordAddr) pcReg <- mkReg(0);
   Reg#(Maybe#(Tuple2#(Bit#(4), IndexWord))) pendingIdxWrite <- mkReg(tagged Invalid);
   Reg#(Maybe#(IoXfer)) ioPending <- mkReg(tagged Invalid);
+  // A MULTI-WORD TRANSMIT still to drain, the memory-to-memory
+  // sibling of ioPending.  Reference Manual printed p.30 and
+  // StretchTypes.bsv's XmitXfer; serviced by rl_xmit below.
+  Reg#(Maybe#(XmitXfer)) xmitPending <- mkReg(tagged Invalid);
+  // rl_xmit's own read-staging flag, the same shape as ioReadIssued:
+  // the sending word is a memory READ that takes a clock to come
+  // back, so the rule has to remember that it already asked.
+  Reg#(Bool) xmitReadIssued <- mkReg(False);
 
   // ---- The interruption mechanism (Ref. Manual p.48) ----
   // Valid while THE ONE instruction at the effective interruption
@@ -239,6 +249,7 @@ module mkStretchCore(StretchCore);
         commitNext(pc, len, o.next);
         pendingIdxWrite <= o.idxWrite;
         ioPending <= o.ioStart;
+        xmitPending <= o.xmitStart;
         Bool taken = (o.next != pc + ((len == Full) ? 2 : 1));
         ibusy <= budgetClocks(di, taken);   // completed in the dispatch clock
         return o.next == pc;
@@ -288,14 +299,23 @@ module mkStretchCore(StretchCore);
 
   Bool armRecover  = isValid(recover);
   Bool armIo       = !armRecover && isValid(ioPending);
-  Bool armIdx      = !armRecover && !isValid(ioPending) && isValid(pendingIdxWrite);
+  // A MULTI-WORD TRANSMIT BLOCKS THE SAME ARMS AN I/O TRANSFER DOES,
+  // and for the same reason: it owns the storage write port for as
+  // many clocks as it has words left, so nothing else may execute
+  // while it drains.  It is ordered AFTER rl_io in this chain because
+  // the two cannot coexist -- a transmit is started by an instruction
+  // and an instruction cannot start while a transfer is draining --
+  // but the ordering is written down rather than assumed.
+  Bool armXmit     = !armRecover && !isValid(ioPending) && isValid(xmitPending);
+  Bool busyXfer    = isValid(ioPending) || isValid(xmitPending);
+  Bool armIdx      = !armRecover && !busyXfer && isValid(pendingIdxWrite);
   Bool resumeReady = ebox.canResume();
-  Bool armResume   = !armRecover && !isValid(ioPending) && !isValid(pendingIdxWrite) && resumeReady;
+  Bool armResume   = !armRecover && !busyXfer && !isValid(pendingIdxWrite) && resumeReady;
   // (A branch level has no operand and is removed as soon as it is the
   // head with the E-box free, i.e. once every earlier level has retired.)
   Bool headReady   = la.count() != 0 && ebusy == 0 && !ebox.busyFor(OwnerLA)
                      && (!isValid(la.headLevel().da) || isValid(la.headLevel().data));
-  Bool armRemove   = !armRecover && !isValid(ioPending) && !isValid(pendingIdxWrite)
+  Bool armRemove   = !armRecover && !busyXfer && !isValid(pendingIdxWrite)
                      && !resumeReady && headReady;
 
   // ---- THE INTERRUPTION MECHANISM (Ref. Manual p.48) ----
@@ -361,12 +381,12 @@ module mkStretchCore(StretchCore);
   // notes on interruption timing -- in the df_data_fetch_alarm section
   // and the interrupt_pg0 one -- still describe the OLD behaviour and
   // are stale.)
-  Bool armInterrupt = !armRecover && !isValid(ioPending) && !isValid(pendingIdxWrite)
+  Bool armInterrupt = !armRecover && !busyXfer && !isValid(pendingIdxWrite)
                       && !resumeReady && !headReady
                       && !isValid(intPC)          // one instruction, then done
                       && la.count() == 0 && !ebox.busy() && ibusy == 0
                       && isValid(intDue);
-  Bool armPrepare  = !armRecover && !isValid(ioPending) && !isValid(pendingIdxWrite)
+  Bool armPrepare  = !armRecover && !busyXfer && !isValid(pendingIdxWrite)
                      && !resumeReady && !headReady && !armInterrupt;
 
   (* fire_when_enabled *)
@@ -808,6 +828,83 @@ module mkStretchCore(StretchCore);
     haltedReg <= False;
   endrule
 
+  rule rl_xmit (tick && armXmit);
+    // Service one word of an in-flight multi-word TRANSMIT.  This is
+    // rl_io's shape with the device taken out: a storage read, then a
+    // storage write of what came back, one word per clock, because
+    // this model writes storage once per rule.
+    //
+    // THE SPEC IS Reference Manual printed p.30 and the whole of it
+    // fits in this rule.  "In forward transmission, the sending and
+    // receiving addresses of each successive word transmitted are
+    // obtained by incrementing the previous addresses by one."  There
+    // is no count to write back and no indicator to fold -- same
+    // page: "The count field in the index register is not changed as
+    // a result of the operation, and the index result indicators are
+    // not affected."  The first word was moved by the Transmit arm in
+    // StretchExecute; this drains the rest.
+    //
+    // PROTECTION IS CHECKED PER WORD, which is the one place this
+    // rule does more than copy.  p.30 says an invalid or protected
+    // address is "not detected... until the data transmission
+    // actually encounters" it, so a transmit that walks into a
+    // protected word must stop THERE, with the words before it moved
+    // -- not be refused up front.  protViolates is the same test the
+    // single-word arm uses; DS terminates the operation (p.32,
+    // "storing in core storage is always suppressed, AND THE
+    // OPERATION IS ALWAYS TERMINATED").
+    //
+    // ADDRESS INVALID IS CHECKED PER WORD TOO, and it is not optional
+    // -- it is the only thing that bounds a runaway transmit.  p.30,
+    // on a direct count field of zero: "A count field of zero is
+    // interpreted as 2^18.  Since this many words cannot be
+    // transmitted without encountering an invalid address, such a
+    // count is never valid.  IT IS NOT DETECTED, HOWEVER, UNTIL THE
+    // DATA TRANSMISSION ACTUALLY ENCOUNTERS AN INVALID OR PROTECTED
+    // ADDRESS."  So the manual's own answer to "what stops a 2^18
+    // transmit" is this check, and a model without it does not merely
+    // miss an indicator: 2^18 words is the WHOLE 18-bit address
+    // space, so the copy wraps and zeroes every word of core.  That
+    // is exactly what happened the first time this rule ran against
+    // MCP, whose tape carries no PROSA, so the dictionary it reads
+    // the count out of is zeros.
+    //
+    // `installed` is StretchMemory's bound, the same one the Z arm
+    // uses for AD (RefMan printed p.21: "an effective word address...
+    // which does not correspond to a core storage location that is
+    // physically available").  Both ends are tested: a transmit can
+    // run off the top reading as easily as writing.
+    let x = validValue(xmitPending);
+    if (!st.writeReady()) begin
+      // The store queue is full: wait for the memory bus, the same
+      // way rl_io does.
+      noAction;
+    end else if (!xmitReadIssued) begin
+      st.readWordReq(x.src);
+      xmitReadIssued <= True;
+    end else if (!st.responseReady()) begin
+      noAction;
+    end else begin
+      Word64 v <- st.readWordResp();
+      xmitReadIssued <= False;
+      if (!installed(x.src) || !installed(x.dst)) begin
+        st.setIndicatorBits(setBit(st.readIndicators(), ind_AD, 1));
+        xmitPending <= tagged Invalid;
+      end else if (protViolates(st, x.dst)) begin
+        st.setIndicatorBits(setBit(st.readIndicators(), ind_DS, 1));
+        xmitPending <= tagged Invalid;
+      end else begin
+        st.writeWord(x.dst, v);
+        if (x.remaining == 1) xmitPending <= tagged Invalid;
+        else
+          xmitPending <= tagged Valid XmitXfer {
+            src: x.src + 1, dst: x.dst + 1, remaining: x.remaining - 1 };
+      end
+    end
+    ebusy <= eb;
+    haltedReg <= False;
+  endrule
+
   rule rl_idx_write (tick && armIdx);
     // Part 2 of a progressive-indexing instruction: nothing was
     // fetched this call, and PC already advanced on part 1.
@@ -834,6 +931,7 @@ module mkStretchCore(StretchCore);
     if (r matches tagged Valid .o) begin
       pendingIdxWrite <= o.idxWrite;
       ioPending <= o.ioStart;
+      xmitPending <= o.xmitStart;
       if (fromLA) begin
         // A look-ahead level's instruction finished: retire it.
         ebn = eboxClocks(di);
@@ -877,6 +975,7 @@ module mkStretchCore(StretchCore);
     end else if (r matches tagged Valid .o) begin
       pendingIdxWrite <= o.idxWrite;
       ioPending <= o.ioStart;
+      xmitPending <= o.xmitStart;
       ebn = eboxClocks(h.di);
       la.retireHead();
     end
@@ -987,7 +1086,12 @@ module mkStretchCore(StretchCore);
         if (fetchesOperand(di)) begin
           // Side-effect-free probe: execute() with no operand bails
           // out with the address of the operand it needs.
-          let {next, vflPending, ioStart, needsRead} <-
+          // The fifth member is a multi-word TRANSMIT, which this
+          // probe can never produce: a transmit is only started once
+          // its first operand word has arrived, and this call passes
+          // none.  Bound and ignored so the pattern still matches the
+          // tuple's shape.
+          let {next, vflPending, ioStart, needsRead, probeXmit} <-
             ebox.exec(pc, len, di, replicate(0), 0, isValid(intPC));
           if (needsRead matches tagged Valid .a) da = tagged Valid a;
           else begin

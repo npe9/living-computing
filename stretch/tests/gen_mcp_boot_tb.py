@@ -150,21 +150,38 @@ def main():
         # reset.  Three result indicators and a clean OP bit, all of
         # it meaningless.
         #
-        # OP IS SET BY printed p.4 line 28, "T,11,X BUFER($X1),
-        # X BS END  -MOVE MCP IPL".  StretchExecute's Transmit arm
-        # executes exactly one shape -- a one-word IMMEDIATE-count
-        # forward transmit -- and sets Operation Code Invalid on every
-        # other, "conservative by construction" in its own words.  An
-        # eleven-word transmit is every other.  LOCALISED BY BISECTION
-        # on the step cap and then reproduced in four lines, so this
-        # is measured, not inferred.
+        # TWO INSTRUCTIONS ON THIS PATH ARE REFUSED, not one, and the
+        # first attribution here named only the first of them.  Both
+        # were localised by bisecting the step cap and then reproduced
+        # standalone, so both are measured:
         #
-        # SO MCP'S IPL IS NEVER MOVED, and that is the next real
-        # blocker on this path -- docs/NEXT.md has it.  It is recorded
-        # here as a KNOWN failure the expected value includes, not as
-        # a success.
+        #   printed p.4 line 23, "LVS,$X1,$X12,$X14  -WORDS PRECEEDING
+        #   MCP".  StretchExecute's immediate-index arm still carries
+        #   `default: ind = setOpInvalid(ind); // LVS: out of scope`.
+        #   **STILL REFUSED**, and it is what OP means here.
+        #
+        #   printed p.4 line 28, "T,$11,X BUFER($X1),X BS END  -MOVE
+        #   MCP IPL", an eleven-word direct-count TRANSMIT.  **BUILT
+        #   2026-10-18**; it no longer sets OP.
+        #
+        # AND AD IS THE TRANSMIT NOW RUNNING, which is the useful
+        # detail.  Line 24 loads index 11 from the PROSA record's
+        # dictionary and THIS TAPE HAS NO PROSA ON IT -- mktape.py
+        # writes the 369-word bootstrap and a tape mark, nothing more
+        # -- so the dictionary is zeros and the count field is zero.
+        # Reference Manual printed p.30: "A count field of zero is
+        # interpreted as 2^18... such a count is never valid.  It is
+        # not detected, however, until the data transmission actually
+        # encounters an invalid or protected address."  The transmit
+        # therefore walks up out of installed core and stops with
+        # Address Invalid, exactly as the manual describes.  AD here
+        # is the tape being short, not the model being wrong.
+        #
+        # `mcp_x_err_ad` still reads zero on the line below: AD is an
+        # indicator, X ERR AD is MCP's own variable, and no error site
+        # ran.
         ("mcp_indicators_word11", str(IND_WORD),
-         _ind("RZ") | _ind("XVZ") | _ind("XF") | _ind("OP")),
+         _ind("RZ") | _ind("XVZ") | _ind("XF") | _ind("AD") | _ind("OP")),
 
         # Printed p.2 line 39, "SV,15,X S ROOF -TEMPORARILY SAVE 7030
         # SIZE".  The value field holds 6291456 bits = word 98304,

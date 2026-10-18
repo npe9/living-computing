@@ -6846,9 +6846,15 @@ TR00.722. Perf. Char. = 7030 Performance Characteristics vol.1 (Mar 61).
   words (count from index J bits 28-45, 0 meaning 2^18; or immediate,
   bits 51-54, 0 meaning 16) from the left effective address to the right.
   Modifier bits 55-57: 57 = bidirectional (swap), 56 = immediate count,
-  55 = backward (addresses decrement). Modeled today: forward, non-swap,
-  IMMEDIATE COUNT OF ONE only -- everything else sets OP and no-ops
-  (`decks/transmit_scope.strap`). Until 2026-09-22 bit 57 was
+  55 = backward (addresses decrement). Modeled today, since
+  2026-10-18: **forward, non-swap, ANY count, immediate or direct** --
+  the first word in the execute arm and the rest in `StretchCore`'s
+  `rl_xmit`, one per clock, with protection and installed-address
+  checked per word (p.30: an invalid or protected address "is not
+  detected... until the data transmission actually encounters" it).
+  SWAP and backward still set OP and no-op
+  (`decks/transmit_scope.strap`, `decks/transmit_multiword.strap`).
+  Until 2026-09-22 bit 57 was
   DISCARDED by the decoder, so a forward SWAP executed as a one-word
   Transmit and the count was never read at all; both were silent, and
   unreachable from STRAP until the assembler could encode Transmit.

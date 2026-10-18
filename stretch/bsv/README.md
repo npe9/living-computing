@@ -226,6 +226,23 @@ execution operations: `EX` executes as of 2026-09-25 and `EXIC` as of
   p.5 line 36). Verified against purpose-written programs (no worked
   example in the manual happens to cover this) — see
   `../strap/README.md`.
+- **`TRANSMIT`, multi-word, forward** — Reference Manual printed
+  p.30, "Data Transmission". Any count, immediate (instruction bits
+  51-54, **zero meaning sixteen**) or direct (the count field, bits
+  28-45, of the index register named by J, **zero meaning 2¹⁸**, and
+  **J = 0 is X0, not "no index"**). The first word moves in the
+  execute arm and the rest in `StretchCore.bsv`'s `rl_xmit`, one per
+  clock — `rl_io`'s shape with the device taken out. **Nothing is
+  written back**: same page, "the count field in the index register
+  is not changed as a result of the operation, and the index result
+  indicators are not affected", which is what made it cheap.
+  Protection and installed-address are checked **per word**, because
+  p.30 says an invalid or protected address "is not detected…until
+  the data transmission actually encounters" it — and because without
+  the latter a direct count of zero wraps the address space and zeroes
+  core, which is what it did the first time MCP ran it. Driven by
+  `../decks/transmit_multiword.strap`. **Backward and `SWAP` still set
+  OP**, deliberately.
 - **`EX` (EXECUTE)** — Reference Manual printed pp.49-50. "Bits 0-18
   of the effective address form the address of the location of a
   subject instruction that is fetched and executed." The subject may
@@ -295,7 +312,8 @@ execution operations: `EX` executes as of 2026-09-25 and `EXIC` as of
 Decimal-mode VFL (`c=1`), radix conversion, floating-point arithmetic
 beyond L/ST, Input-Output's `LOC` **on an Exchange channel** (the
 disk form is executed — see above) and most of `CTL`,
-Transmit backward/`SWAP`/multi-word/direct-count. (SIC, Store
+Transmit **backward** and `SWAP` — **multi-word and direct-count
+Transmit are now executed**, see below — and `LVS`. (SIC, Store
 Instruction Counter If, Bit Branching, `EX` and `EXIC` have all moved
 to "Executed" — see there.)
 
@@ -315,7 +333,11 @@ project's assembler could not encode Transmit at all until
 `TRANSMIT_CODES` landed the same day. A claim no test can break is a
 claim nothing checks, which is `docs/NEXT.md`'s own corollary applied
 to prose. The guard is now `decks/transmit_scope.strap`, six
-blocks and five injections, one per rule.
+blocks and five injections, one per rule — **three of whose blocks
+flipped on 2026-10-18 from asserting a refusal to asserting that the
+operation happens**, when multi-word and direct-count Transmit were
+built. SWAP and backward are the two still refused, and they are the
+two whose injections still bite.
 
 Per the "decode completely, execute partially" principle: every format
 in Figure 6 has a `DecodedInstr` constructor and is field-extracted

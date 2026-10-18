@@ -18,33 +18,49 @@
 ! was fixed: "SWAPI,1,SRC,DST" left SRC alone and copied it into DST
 ! (0x9249249249249249) with OP clear.
 !
-! WHAT THE MANUAL SAYS THE COUNT IS.  Reference Manual pp.30-31: the
-! count is index J's bits 28-45, 0 meaning 2^18; or, with the
+! WHAT THE MANUAL SAYS THE COUNT IS.  Reference Manual printed p.30:
+! the count is index J's bits 28-45, 0 meaning 2^18; or, with the
 ! immediate modifier (bit 56), instruction bits 51-54, where **0 MEANS
-! SIXTEEN**.  So the only count this arm can honour is immediate-and-
-! -one; TI,0 is a sixteen-word transmit and must be refused, which is
-! the case a "j == 0 means no words" reading would get wrong.
+! SIXTEEN**.
 !
-! A DIRECT COUNT IS REFUSED WHOLESALE, and that is deliberately
+! ---------------------------------------------------------------
+! THE SCOPE CHANGED ON 2026-10-18 AND SO DID THIS PROGRAM
+! ---------------------------------------------------------------
+! Three of the six blocks below used to assert a REFUSAL and now
+! assert that the operation HAPPENS.  MULTI-WORD AND DIRECT-COUNT
+! TRANSMIT ARE BUILT: printed p.4 line 28 of MCP's bootstrap is an
+! eleven-word direct-count transmit -- "MOVE MCP IPL" -- so the
+! conservative refusal was stopping IBM's operating system from
+! moving itself into storage.  decks/transmit_multiword.strap is the
+! deck that pins the new behaviour in detail, against all five of
+! p.30's rules; this one keeps its original job, which is the SCOPE:
+! one block per rule, hanging at the first that is wrong.
+!
+! WHAT IS STILL REFUSED, and those blocks are unchanged: SWAP in
+! either direction, and BACKWARD transmission.  MCP needs neither.
+!
+! THE OLD TEXT IS KEPT BELOW because the history is the point of the
+! file -- a claim in bsv/README.md that was two-thirds false, found by
+! writing this program.  What changed is which third.
+!
+! A DIRECT COUNT USED TO BE REFUSED WHOLESALE, "deliberately
 ! conservative: the count register is never read here, so the arm
 ! cannot know whether a direct count is one.  It therefore refuses a
-! direct count of one that it would have executed correctly, rather
-! than executing a direct count of n as one word.  Stated in the
-! execute arm.
+! direct count of one that it would have executed correctly."  The arm
+! now reads the register, so block 5 loads it first.
 !
-! THE CASE THAT KEEPS THIS HONEST is the first one.  If the fix were
-! "OP on everything", block 1 would fail: TI with an immediate count
-! of one must STILL STORE, and that is the shape jb_ax5b p.45 actually
-! uses (ax5b_16087_walk.strap).
+! THE CASE THAT KEEPS THIS HONEST is still the first one.  If the fix
+! were "OP on everything", block 1 would fail: TI with an immediate
+! count of one must STILL STORE, and that is the shape jb_ax5b p.45
+! actually uses (ax5b_16087_walk.strap).
 !
 ! EACH BLOCK ISOLATES ONE RULE, and that is not decorative: the
 ! program hangs at the FIRST failing block, so an injection breaking
-! several is only ever observed at the earliest.  The four injections
-! recorded in run_tests.sh therefore target one block each.
+! several is only ever observed at the earliest.
 !
-! WEAKER STANDARD: hand-written from Reference Manual pp.30-31 and the
-! pocket card's TRANSMIT box.  No listing prints a SWAP or a
-! multi-word Transmit anywhere this project has read.
+! WEAKER STANDARD: hand-written from Reference Manual printed p.30 and
+! the pocket card's TRANSMIT box.  No listing prints a SWAP or a
+! backward Transmit anywhere this project has read.
 
         SLC, (8)4100.0
 !
@@ -57,30 +73,38 @@ START   TI,    1, SRC, DST1
         BZOP,  $                     ! hang if OP did NOT come on
         BOPZ,  $+.32                 ! clear OP for the next case
 !
-! ---- 3. TI, immediate count 2: refused, multi-word ----------------
+! ---- 3. TI, immediate count 2: HONOURED, TWO words move -----------
+! This block used to assert a refusal.  Both words are checked, so a
+! model that moved one word and called it done fails here.
         TI,    2, SRC, DST3
-        BZOP,  $
-        BOPZ,  $+.32
+        BOP,   $
 !
-! ---- 4. TI, immediate count 0 = SIXTEEN (pp.30-31): refused -------
-! The case a "0 means none" reading gets wrong.
+! ---- 4. TI, immediate count 0 = SIXTEEN: HONOURED -----------------
+! p.30: "A zero count field indicates the maximum count of 16 full
+! words."  The first and SIXTEENTH destination words are both checked,
+! so a model reading zero as zero (moves nothing) and one reading it
+! as one both fail.
         TI,    0, SRC, DST4
-        BZOP,  $
-        BOPZ,  $+.32
+        BOP,   $
 !
-! ---- 5. T, DIRECT count: refused, the count register is unread ----
+! ---- 5. T, DIRECT count: HONOURED, the count register is read -----
+! The arm now reads index 1's count field.  Loading it first is the
+! whole difference from the old block, which could not have been
+! written at all while the register went unread.
+        LCI,   $X1, 1
         T,     1, SRC, DST5
-        BZOP,  $
-        BOPZ,  $+.32
+        BOP,   $
 !
-! ---- 6. TBI, backward: refused.  This check already existed, and is
-!         here so that removing it fails a test ---------------------
-! IT MUST BE TBI, NOT TB, and that was found by the injection rather
-! than by thinking.  TB is backward with a DIRECT count, so the count
-! rule refuses it too -- removing the backward check changed nothing
-! and the whole block still passed.  TBI is backward with an
-! immediate count of one, so oneWordForward is TRUE and the backward
-! check is the ONLY thing that can refuse it.
+! ---- 6. TBI, backward: REFUSED.  Unchanged ------------------------
+! IT MUST BE TBI, NOT TB, and that was found by an injection rather
+! than by thinking.  TB is backward with a DIRECT count; while direct
+! counts were refused wholesale, removing the backward check changed
+! nothing and the block still passed.  TBI is backward with an
+! immediate count, so only the backward check can refuse it.  The
+! reasoning survives the scope change for a different reason now: a
+! direct count no longer refuses anything, so TB would move words
+! backward and the block would catch it -- but TBI is still the
+! sharper probe and is kept.
         TBI,   1, SRC, DST6
         BZOP,  $
         BOPZ,  $+.32
@@ -88,18 +112,53 @@ START   TI,    1, SRC, DST1
 PASS    BEW, $
 !
 ! ---- data ---------------------------------------------------------
+! SIXTEEN source words, because block 4 moves sixteen.  Every
+! destination area is far enough from the others that no block's
+! transmit can reach into another's -- block 4's sixteen words are
+! the reason that matters.
         SLC, (8)4200.0
 SRC     DD(BU,64,8), (8)1111111111111111111111
-        SLC, (8)4201.0
+        DD(BU,64,8), (8)1111111111111111111111
+        DD(BU,64,8), (8)1111111111111111111111
+        DD(BU,64,8), (8)1111111111111111111111
+        DD(BU,64,8), (8)1111111111111111111111
+        DD(BU,64,8), (8)1111111111111111111111
+        DD(BU,64,8), (8)1111111111111111111111
+        DD(BU,64,8), (8)1111111111111111111111
+        DD(BU,64,8), (8)1111111111111111111111
+        DD(BU,64,8), (8)1111111111111111111111
+        DD(BU,64,8), (8)1111111111111111111111
+        DD(BU,64,8), (8)1111111111111111111111
+        DD(BU,64,8), (8)1111111111111111111111
+        DD(BU,64,8), (8)1111111111111111111111
+        DD(BU,64,8), (8)1111111111111111111111
+        DD(BU,64,8), (8)1111111111111111111111
+        SLC, (8)4300.0
 DST1    DD(BU,64,8), 0               ! must RECEIVE src
-        SLC, (8)4202.0
-DST2    DD(BU,64,8), 0               ! must stay zero
-        SLC, (8)4203.0
-DST3    DD(BU,64,8), 0
-        SLC, (8)4204.0
-DST4    DD(BU,64,8), 0
-        SLC, (8)4205.0
-DST5    DD(BU,64,8), 0
-        SLC, (8)4206.0
-DST6    DD(BU,64,8), 0
+        SLC, (8)4310.0
+DST2    DD(BU,64,8), 0               ! must stay zero: SWAPI is refused
+        SLC, (8)4320.0
+DST3    DD(BU,64,8), 0               ! two words, both must receive
+        DD(BU,64,8), 0
+        SLC, (8)4400.0
+DST4    DD(BU,64,8), 0               ! sixteen words; first and last checked
+        DD(BU,64,8), 0
+        DD(BU,64,8), 0
+        DD(BU,64,8), 0
+        DD(BU,64,8), 0
+        DD(BU,64,8), 0
+        DD(BU,64,8), 0
+        DD(BU,64,8), 0
+        DD(BU,64,8), 0
+        DD(BU,64,8), 0
+        DD(BU,64,8), 0
+        DD(BU,64,8), 0
+        DD(BU,64,8), 0
+        DD(BU,64,8), 0
+        DD(BU,64,8), 0
+DST4END DD(BU,64,8), 0
+        SLC, (8)4500.0
+DST5    DD(BU,64,8), 0               ! direct count of one
+        SLC, (8)4510.0
+DST6    DD(BU,64,8), 0               ! must stay zero: TBI is refused
         END, START

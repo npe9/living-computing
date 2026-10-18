@@ -347,13 +347,25 @@ are the two standing between MCP and knowing what devices it has.
 1. ~~`LOC` on a disk channel, the arc register, `RD`/`W` streaming
    arcs, the short-write tail zero-fill, and `CCW`~~ — **BUILT the
    same day**, `disk_subsystem.md` §9a, nineteen checks.
-2. **A MULTI-WORD `TRANSMIT`**, which building the disk is what
-   revealed: printed p.4 line 28's `T,11,X BUFER($X1),X BS END`
-   is refused, so **MCP's IPL is never moved**. Now the top of this
-   list. `docs/NEXT.md` "THE NEXT MCP BLOCKER IS TRANSMIT".
-3. `KF` and `LCV` in the model, driven by p.17's own rows.
-4. An IOCD card deck for the reader, which `strap/cards.py` can
+2. ~~A MULTI-WORD `TRANSMIT`~~ — **BUILT the same day**,
+   `decks/transmit_multiword.strap`, fifteen checks.
+3. **`LVS`, which is what OP actually means now.** Fixing TRANSMIT
+   left the bit standing, and the remaining source is printed p.4
+   line 23, `LVS,$X1,$X12,$X14 -WORDS PRECEEDING MCP`: the ASSEMBLER
+   gained LVS, the MODEL never did. `$X1` is the index the TRANSMIT
+   two rows later uses to find MCP inside the buffer, so the two
+   belong together. Reference Manual printed p.28, "Multiple
+   Indexing". `docs/NEXT.md` has it.
+4. `KF` and `LCV` in the model, driven by p.17's own rows.
+5. An IOCD card deck for the reader, which `strap/cards.py` can
    already punch, once the format is read out of a primary source.
+6. **A tape with PROSA on it.** `mktape.py` writes the 369-word
+   bootstrap and a tape mark, nothing more, so MCP reads its PROSA
+   dictionary out of empty tape and the TRANSMIT's count comes back
+   zero — which printed p.30 calls "never valid" and which now stops
+   at the top of installed core with Address Invalid. The model is
+   doing the right thing with a short tape; the tape is what is
+   short.
 
 ### M4 — the Diagnostic Control Program  ·  ~75 days, in slices
 

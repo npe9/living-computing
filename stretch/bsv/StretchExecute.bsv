@@ -2164,8 +2164,13 @@ endfunction
 // BSV needs the typedef before its first use, which is the only reason
 // the signature used to spell the Tuple4 out longhand and the call
 // sites read it through tpl_1..tpl_4.
-typedef Tuple4#(HWordAddr, Maybe#(Tuple2#(Bit#(4), IndexWord)),
-                Maybe#(IoXfer), Maybe#(WordAddr)) ExecResult;
+//
+// A FIFTH MEMBER WAS APPENDED RATHER THAN INSERTED, 2026-10-18: the
+// multi-word TRANSMIT's transfer goes LAST so that needsRead stays
+// tpl_4 and every existing call site reads unchanged.
+typedef Tuple5#(HWordAddr, Maybe#(Tuple2#(Bit#(4), IndexWord)),
+                Maybe#(IoXfer), Maybe#(WordAddr),
+                Maybe#(XmitXfer)) ExecResult;
 
 // ---------------------------------------------------------------------
 // VFL INTEGER ARITHMETIC (binary mode only; decimal is out of scope,
@@ -3786,6 +3791,9 @@ function ActionValue#(ExecResult)
     // for a WRITE, io.writePrinterWord) once per invocation -- see the
     // IoOp case below.
     Maybe#(IoXfer) ioStart = tagged Invalid;
+    // The same shape for a multi-word TRANSMIT: the first word is
+    // moved by the arm itself and the rest by StretchCore's rl_xmit.
+    Maybe#(XmitXfer) xmitStart = tagged Invalid;
 
     case (di) matches
 
@@ -4443,8 +4451,41 @@ function ActionValue#(ExecResult)
         // 2026-09-22 with "SWAPI,1,SRC,DST", which left SRC alone and
         // copied it into DST with OP clear. Unreachable from STRAP
         // until strap_asm gained TRANSMIT_CODES the same day.
-        Bool oneWordForward = (t.immCount == 1 && t.j == 4'd1);
-        if (t.backward == 1 || t.swap == 1 || !oneWordForward)
+        // MULTI-WORD TRANSMIT, 2026-10-18.  The paragraph above is
+        // kept because it is the history, but it is no longer what
+        // this arm does: a FORWARD, UNIDIRECTIONAL transmit of any
+        // count now executes, immediate or direct.
+        //
+        // THE COUNT, Reference Manual printed p.30, read whole:
+        //
+        //   immediate (bit 56 = 1): "the full word count is specified
+        //   by instruction bits 51-54.  A zero count field indicates
+        //   the maximum count of 16 full words."
+        //
+        //   direct (bit 56 = 0): "the field J, bits 51-54, specifies
+        //   an index register.  The count field, bits 28-45, of the
+        //   index word in this register is used as a full word count.
+        //   A count field of zero is interpreted as 2^18... such a
+        //   count is never valid.  It is not detected, however, until
+        //   the data transmission actually encounters an invalid or
+        //   protected address."  And: "A zero J field refers to
+        //   location 16, X0" -- so J = 0 is a real register here, not
+        //   "no index".
+        //
+        // NOTHING IS WRITTEN BACK.  Same page: "The count field in
+        // the index register is not changed as a result of the
+        // operation, and the index result indicators are not
+        // affected."  So this arm reads the count and forgets the
+        // register, which is why there is no idxWrite here.
+        //
+        // BACKWARD AND SWAP STILL SET OP.  MCP needs neither, SWAP's
+        // two-way interchange is a different datapath, and a refusal
+        // that is documented beats a half-built interchange.
+        Bit#(19) xmitCount = (t.immCount == 1)
+          ? ((t.j == 0) ? 19'd16 : zeroExtend(t.j))
+          : ((st.readIndex(t.j).count == 0)
+               ? 19'h40000 : zeroExtend(st.readIndex(t.j).count));
+        if (t.backward == 1 || t.swap == 1)
           ind = setOpInvalid(ind);
         else begin
           // Prefetch/bail-out shape: reads srcBase, writes the SAME
@@ -4453,10 +4494,22 @@ function ActionValue#(ExecResult)
           // shape as ST/M+/CM above.
           WordAddr srcBase = baWord(effAddr24(st, t.addr1, t.i1));
           WordAddr dstBase = (effAddr19(st, t.addr2, t.i2))[18:1];
-          if (prefetchCount >= 1)
+          if (prefetchCount >= 1) begin
             if (protViolates(st, dstBase)) ind = setBit(ind, ind_DS, 1);
-            else st.writeWord(dstBase, prefetch[0]);
-          else
+            else begin
+              st.writeWord(dstBase, prefetch[0]);
+              // THE FIRST WORD IS MOVED HERE AND THE REST BY rl_xmit,
+              // one per clock, because this model writes storage once
+              // per rule.  p.30: "the sending and receiving addresses
+              // of each successive word transmitted are obtained by
+              // incrementing the previous addresses by one", so the
+              // continuation starts one past each.
+              if (xmitCount > 1)
+                xmitStart = tagged Valid XmitXfer {
+                  src: srcBase + 1, dst: dstBase + 1,
+                  remaining: xmitCount - 1 };
+            end
+          end else
             needsRead = tagged Valid srcBase;
         end
       end
@@ -4905,14 +4958,15 @@ function ActionValue#(ExecResult)
       end
       if (doIdxWrite) st.writeIndex(idxWriteReg, idxWriteVal);
       st.setIndicatorBits(ind);
-      return tuple4(next, vflPending, ioStart, tagged Invalid);
+      return tuple5(next, vflPending, ioStart, tagged Invalid, xmitStart);
     end else begin
       // Bailed out partway through: the arm that set `needsRead` did
       // so before touching any of these, so returning the function-
       // ENTRY values here (not whatever partial computation produced)
       // is correct by construction -- see this function's own header
       // comment.
-      return tuple4(pc, tagged Invalid, tagged Invalid, needsRead);
+      return tuple5(pc, tagged Invalid, tagged Invalid, needsRead,
+                    tagged Invalid);
     end
   endactionvalue;
 
@@ -4935,6 +4989,7 @@ typedef struct {
   HWordAddr next;                              // next instruction address
   Maybe#(Tuple2#(Bit#(4), IndexWord)) idxWrite; // progressive indexing's part 2
   Maybe#(IoXfer) ioStart;                      // an RD/W transfer to service
+  Maybe#(XmitXfer) xmitStart;                  // a multi-word TRANSMIT
 } ExecDone deriving (Bits, Eq, FShow);
 
 // Who dispatched the operation the E-box is holding: the instruction
@@ -5026,7 +5081,8 @@ module mkEBox #(StretchStorage st, StretchIO io) (EBox);
   Reg#(Bool)               subjReady     <- mkReg(False);
 
   function ExecDone doneOf(ExecResult r) =
-    ExecDone { next: tpl_1(r), idxWrite: tpl_2(r), ioStart: tpl_3(r) };
+    ExecDone { next: tpl_1(r), idxWrite: tpl_2(r), ioStart: tpl_3(r),
+               xmitStart: tpl_5(r) };
 
   method ActionValue#(ExecResult)
       exec(HWordAddr pc, InstrLen len, DecodedInstr di,
