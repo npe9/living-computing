@@ -894,9 +894,15 @@ def classify_connective(op):
 # replaces the accumulator field.  That is Load Field, and C sends the
 # result to the accumulator.
 #
-# SF ("Store Field") IS DELIBERATELY ABSENT.  It is presumably the CM
-# analogue of the same function, but no assembled SF has been found in
-# this corpus, so its connective number would be a guess.
+# SF ("Store Field") IS DELIBERATELY ABSENT FROM THIS ASSEMBLER --
+# but NOT from the manual, which corrects what this comment used to
+# say.  C22-6531 Appendix A's "ALPHABETIC LIST OF OPERATIONS",
+# printed p.57, lists "V  SF  Store Field" directly under "V  LF  Load
+# Field", both with a blank footnote column.  What the table does not
+# give is either one's connective number, so SF's would still be a
+# guess, and that is why it is still not here.  LF's number was
+# recovered from an assembled word (MCP printed p.5 line 12, above);
+# no assembled SF has been found in this corpus.
 CONNECTIVE_ALIASES = {
     'LF': ('C', 0b0011),
 }
@@ -1075,6 +1081,32 @@ def classify_vfl_or_fp(stmt):
     conn = classify_connective(base_op)
     if conn is not None:
         return 'CONN', base_op, invert, immediate, p_progressive, dds_mods, conn
+
+    # A CONNECTIVE TAKES THE IMMEDIATE SUFFIX TOO, and the manual says
+    # so in as many words.  C22-6531 Appendix A, printed p.58,
+    # footnote 10 -- the footnote C, CM and CT carry -- ends "This
+    # operation code is also subject to Footnote 3", and footnote 3 is
+    # "This operation code may be suffixed by the letter 'I' to invoke
+    # immediate addressing."  The suffix strip below only ever tried
+    # VFL_INT_CODES, so a suffixed connective raised a KeyError at
+    # emit time.
+    #
+    # WITNESSED by MCP printed p.18 line 34, "LFI(BU,18),8.0".  LF is
+    # the connective C0011 (CONNECTIVE_ALIASES, established from MCP
+    # printed p.5 line 12).
+    #
+    # ONE HONEST GAP: the footnote COLUMN beside LF in that appendix's
+    # own table (printed p.57, "ALPHABETIC LIST OF OPERATIONS") is
+    # BLANK, where C, CM and CT all carry footnote 10.  Read strictly,
+    # the table does not say LF takes the suffix.  But the table is
+    # incomplete about LF in a second way -- it lists it as a plain
+    # type-V operation with no hint that it is a connective at all --
+    # so the blank is weak evidence against.
+    if base_op.endswith('I'):
+        conn = classify_connective(base_op[:-1])
+        if conn is not None:
+            return ('CONN', base_op[:-1], invert, True,
+                    p_progressive, dds_mods, conn)
 
     # The "I"-immediate suffix (Appendix A footnote 4: a VFL op may be
     # suffixed I/N/NI for Immediate/Negative/Negative-Immediate
@@ -2102,9 +2134,39 @@ def emit_statement(stmt, symtab, image):
         if not stmt.fields or not stmt.fields[0].strip():
             raise AssemblerError(f"{op} needs an address field", stmt.lineno)
         base, paren = split_field_trailing_paren(stmt.fields[0])
-        raw_val = eval_expr(base, symtab, loc, lineno=stmt.lineno)
-        addr24 = (encode_vfl_immediate(raw_val, length_field, stmt.lineno) if immediate
-                  else raw_val & 0xFFFFFF)
+        if immediate:
+            # THE OPERAND FIELD'S UNIT IS NOT ONE BIT.  Reference
+            # Manual p.56: a VFL-immediate operand is "the leftmost
+            # bits of the effective address", so the operand occupies
+            # A24's TOP `length` bits and one unit of the operand is
+            # 2**(24-length) in A24 terms.  C22-6531 p.11 then says a
+            # bit-address term is converted to the field's units while
+            # a plain integer "adds into the low-order position of the
+            # field" -- so both forms have to be evaluated in operand
+            # units and packed by encode_vfl_immediate, not evaluated
+            # as a raw bit count.
+            #
+            # Both readings of MCP printed p.18 line 34 agree on this.
+            # "LFI(BU,18),8.0" prints an address field of 000010.00 =
+            # 512, whose top 18 bits are 512>>6 = 8 -- and 8 is what
+            # the code means: line 35 subtracts the units remaining
+            # from it and line 37 stores the difference in FOUR bits,
+            # which 512 would not fit.  Evaluating "8.0" as 512 and
+            # packing that gives 32768, i.e. 002000.00, and the page
+            # says otherwise.
+            #
+            # C22-6578 Problem 2.2 Method 2's "LI(BU,7), 127" is
+            # unchanged by this: a plain integer passes through
+            # eval_addr_field untouched and still packs to 127<<17.
+            actual_len = 64 if length_field == 0 else length_field
+            if actual_len <= 24:
+                raw_val = eval_addr_field(base, symtab, loc, 24 - actual_len,
+                                          lineno=stmt.lineno)
+            else:
+                raw_val = eval_expr(base, symtab, loc, lineno=stmt.lineno)
+            addr24 = encode_vfl_immediate(raw_val, length_field, stmt.lineno)
+        else:
+            addr24 = eval_expr(base, symtab, loc, lineno=stmt.lineno) & 0xFFFFFF
         i1 = eval_reg(paren, symtab, stmt.lineno)
 
         offset, i2 = 0, 0
@@ -2132,9 +2194,39 @@ def emit_statement(stmt, symtab, image):
         if not stmt.fields or not stmt.fields[0].strip():
             raise AssemblerError(f"{op} needs an address field", stmt.lineno)
         base, paren = split_field_trailing_paren(stmt.fields[0])
-        raw_val = eval_expr(base, symtab, loc, lineno=stmt.lineno)
-        addr24 = (encode_vfl_immediate(raw_val, length_field, stmt.lineno) if immediate
-                  else raw_val & 0xFFFFFF)
+        if immediate:
+            # THE OPERAND FIELD'S UNIT IS NOT ONE BIT.  Reference
+            # Manual p.56: a VFL-immediate operand is "the leftmost
+            # bits of the effective address", so the operand occupies
+            # A24's TOP `length` bits and one unit of the operand is
+            # 2**(24-length) in A24 terms.  C22-6531 p.11 then says a
+            # bit-address term is converted to the field's units while
+            # a plain integer "adds into the low-order position of the
+            # field" -- so both forms have to be evaluated in operand
+            # units and packed by encode_vfl_immediate, not evaluated
+            # as a raw bit count.
+            #
+            # Both readings of MCP printed p.18 line 34 agree on this.
+            # "LFI(BU,18),8.0" prints an address field of 000010.00 =
+            # 512, whose top 18 bits are 512>>6 = 8 -- and 8 is what
+            # the code means: line 35 subtracts the units remaining
+            # from it and line 37 stores the difference in FOUR bits,
+            # which 512 would not fit.  Evaluating "8.0" as 512 and
+            # packing that gives 32768, i.e. 002000.00, and the page
+            # says otherwise.
+            #
+            # C22-6578 Problem 2.2 Method 2's "LI(BU,7), 127" is
+            # unchanged by this: a plain integer passes through
+            # eval_addr_field untouched and still packs to 127<<17.
+            actual_len = 64 if length_field == 0 else length_field
+            if actual_len <= 24:
+                raw_val = eval_addr_field(base, symtab, loc, 24 - actual_len,
+                                          lineno=stmt.lineno)
+            else:
+                raw_val = eval_expr(base, symtab, loc, lineno=stmt.lineno)
+            addr24 = encode_vfl_immediate(raw_val, length_field, stmt.lineno)
+        else:
+            addr24 = eval_expr(base, symtab, loc, lineno=stmt.lineno) & 0xFFFFFF
         i1 = eval_reg(paren, symtab, stmt.lineno)
 
         offset, i2 = 0, 0

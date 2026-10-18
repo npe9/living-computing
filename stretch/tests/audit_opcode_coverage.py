@@ -63,8 +63,10 @@ OP_TABLES = ["BB_CODES", "CB_CODES", "DIR_INDEX_CODES", "FP_CODES",
 # VFL integer arms exist (L, ST, +, M+, K), which accounts for the ten
 # compare/convert codes here.
 UNIMPLEMENTED = {
-    "CV", "DCV", "LCV", "LTRCV",          # radix conversion
-    "KE", "KF", "KFE", "KFR",             # compare variants
+    "CV", "DCV", "LTRCV",                 # radix conversion
+    # LCV moved to ENCODING_ONLY on 2026-10-18 (MCP printed p.17).
+    "KE", "KFE", "KFR",                   # compare variants
+    # KF moved to ENCODING_ONLY on 2026-10-18 (MCP printed p.17).
     "LTRS",                               # load transit and set
     # M+1 moved to ENCODING_ONLY on 2026-10-17: still unimplemented,
     # but MCP's bootstrap uses it, so it is no longer UNUSED.
@@ -152,9 +154,22 @@ UNIMPLEMENTED = {
 #         show up here at all.  The bootstrap already uses both.  The
 #         gap is real and this page is the wrong instrument for it;
 #         docs/mcp_tape_manufacture.md carries that table.
+#   KF AND LCV ARRIVED TOGETHER ON 2026-10-18, from MCP printed p.17,
+#         "PROCESS IOCD CARDS SETTING UP CST AND LST" -- the page
+#         where MCP reads its own machine configuration off punched
+#         cards.  Line 30 is "KF(BU,48),X IOCD", the compare that
+#         decides whether a card IS an IOCD card, and line 34 is
+#         "LCV(DU,8,4),$LZC+.3,46", the radix conversion that turns
+#         the Hollerith channel digits into a binary channel number.
+#         So the two operations the model cannot execute are the two
+#         that stand between MCP and knowing what devices it has.
+#         Both were in UNIMPLEMENTED until this transcription used
+#         them; neither is implemented now.
 ENCODING_ONLY = {
     "RNX",
     "LOCSEOP",
+    "KF",
+    "LCV",
 }
 # IMPLEMENTED BUT UNEXERCISED -- the model has real arms for these and
 # nothing drives them.  This is the actionable list: each is a test

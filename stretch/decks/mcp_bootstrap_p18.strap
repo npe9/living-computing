@@ -1,0 +1,124 @@
+! mcp_bootstrap_p18.strap -- MCP INITIALIZATION, printed page 18:
+! the UNIT STATUS TABLE half of the IOCD processing printed p.17
+! begins.  docs/MCP_Mar63_001-249.pdf PDF p.25, header "PAGE NUMBER
+! 18".  docs/boot_plan.md M3.
+!
+! Contiguous with printed p.17: that page's last instruction is a
+! full word at 000712.00 and this one starts at 000713.00.
+!
+! ---------------------------------------------------------------
+! WHAT THE PAGE DOES
+! ---------------------------------------------------------------
+! p.17 left the channel's CST entry built.  This page fills in the
+! UST -- up to eight units per channel -- and then goes back for the
+! next card.
+!
+!   lines  2-9   a tape equipment type takes the X18 path; otherwise
+!                set the UST entry counter to 8, SV the unit status
+!                table address into the CST, turn the meaningless
+!                "not assigned" bit off and the MULTI bit on.
+!   lines 13-24  per unit: CT0011 tests the unit-available field, BRZ
+!                finishes a multi-unit IOCD when the field is null,
+!                and two BBs route to X15 1 / X15 2, which set the
+!                unit available, unit not assigned, tape disposition
+!                and select status bits.  An IOCD punched wrong falls
+!                through to SIC X ERR AD and X ERROR.
+!   lines 28-38  X16 counts the units with CB+; eight of them means
+!                the CST unit count goes to 8, fewer means KCI/BXE
+!                and an "LFI(BU,18),8.0" / "-(BU,18),$15+.28" pair
+!                computes how many there actually were, stored into
+!                the CST entry with ST(BU,4).
+!   lines 42-45  X 17 clears the CST address in the SCT entry, steps
+!                $13 on by fifteen words to the next card, and
+!                branches back to printed p.17's X13 1.
+!
+! ---------------------------------------------------------------
+! LFI IS A CONNECTIVE WITH THE IMMEDIATE SUFFIX, AND IT IS NEW
+! ---------------------------------------------------------------
+! Line 34 is the first "LFI" in this corpus and the assembler did not
+! know it.  LF is the connective C0011 (strap_asm.py's
+! CONNECTIVE_ALIASES, established from MCP printed p.5 line 12), and
+! C22-6531 Appendix A printed p.58 footnote 10 says the connective
+! mnemonics are "also subject to Footnote 3", which is the "I" suffix
+! for immediate addressing.  The assembler stripped that suffix for
+! VFL_INT_CODES operations only, so LFI fell through to a KeyError.
+!
+! THE CONFIRMATION IS 63 OF 64 BITS.  Assembled as plain LF the word
+! comes out 000010.00 80 022000.06 70 against the listing's
+! 000010.00 80 422000.06 70 -- one field different, and that field is
+! P (bits 32-34), 4 for immediate and 0 for direct.
+!
+! The honest caveat is recorded in strap_asm.py: the footnote column
+! beside LF in the appendix's own table (printed p.57) is BLANK.
+!
+! ---------------------------------------------------------------
+! EXTERNALS
+! ---------------------------------------------------------------
+!   X ERR AD  printed p.13 line 37  "X ERR AD  VF,0"       000551.00
+!             -- line 19 of this page spells it XERRAD, with no
+!                blanks, where every other page writes "X ERR AD".
+!                Same symbol; STRAP drops blanks in names.
+!   X ERROR   printed p.5  line 5                          000133.00
+!   X13 1     printed p.17 line 26  "X13 1  CT0111(V+I)..." 000670.40
+!             -- placed by mcp_bootstrap_p17.strap from its own
+!                instruction stream, so line 45 is a real check.
+!
+! >>> X18 IS READ OFF LINE 2's SECOND HALF-WORD, 000740.74, whose
+! branch-address field is 000740.40 -- the first half-word after this
+! page's last instruction, i.e. printed p.19's first label.  Same
+! caveat as pp.15-17's forward references.
+XERRAD  SYN, (8)551.0
+XERROR  SYN, (8)133.0
+X131    SYN, (8)670.40
+X18     SYN, (8)740.40    ! read off line 2
+
+        SLC, (8)713.0
+
+! ---- tape equipment type, and the UST base ------------------------
+        BZB, -.1($1), X18            ! line 2  -TAPE EQUIPMENT TYPE
+                                     ! line 3   ENTRY
+X141    LCI, $15, 8.0                ! line 4  -UST ENTRY COUNTER
+        SV, $15, 0.0($3)             ! line 5  -INSERT UNIT STATUS
+                                     ! line 6   TABLE ADDRESS IN CST
+        CM0000(BU,1), .29($3)        ! line 7  -TURN OFF MEANINGLESS
+                                     ! line 8   ASSIGN BIT IN CST
+        CM1111(BU,1), .27($3)        ! line 9  -YES * MULTI BIT TO ON
+                                     !           IN CST
+
+! ---- one unit at a time -------------------------------------------
+X15     CT0011(V+I)(BU,12), .12($4)  ! line 13 -TEST UNIT AVAILABLE
+                                     !           FIELD
+        BRZ, X161                    ! line 14 -IF NULL THEN DONE
+                                     ! line 15  WITH MULTI-UNIT IOCD
+        BB, 0.0-.10($4), X152        ! line 16 -UNIT AVAILABLE
+        BB, 0.0-.12($4), X151        ! line 17 -IF UNIT NOT AVAILABLE
+                                     ! line 18  SET IT NOT AVAILABLE BIT
+XERR18  SIC, XERRAD                  ! line 19
+        B, XERROR                    ! line 20 -IOCD PUNCHED INCORRECTLY
+X151    CM1111(BU,1), .28($15)       ! line 21 -UNIT AVAILABLE BIT ON
+X152    CM1111(BU,1), .29($15)       ! line 22 -UNIT NOT ASSIGNED BIT ON
+        CM1111(BU,1), .27($15)       ! line 23 -TAPE DISPOSITION BIT ON
+        CM1111(BU,1), .39($15)       ! line 24 -SELECT STATUS ON
+
+! ---- count the units ----------------------------------------------
+X16     CB+, $15, X15                ! line 28 -IF PROCESSED EIGHT
+                                     ! line 29  UNITS *ADVANCE UST ENTRY
+        CM1111(BU,1), .59($3)        ! line 30 -UNIT COUNT IN CST TO 8
+        B, X171                      ! line 31 -TO SET UP FOR NEXT CARD
+X161    KCI, $15, 8.0                ! line 32
+        BXE, X17                     ! line 33 -NO UNITS AT ALL ON
+                                     !           MULTI CHANNEL
+        LFI(BU,18), 8.0              ! line 34
+        -(BU,18), $15+.28            ! line 35 -COMPUTE THE NUMBER OF
+                                     ! line 36  UNITS IN UST
+        ST(BU,4), .59($3)            ! line 37 -INSERT NUMBER OF UNITS
+        B, X171                      ! line 38 -TO SET UP FOR NEXT CARD
+
+! ---- next card ----------------------------------------------------
+X17     CM0000(BU,17), 0.0($3)       ! line 42 -CLEAR CST ADDRESS IN
+                                     !           SCT ENTRY
+X171    V+I, $13, 15.0               ! line 43
+        LV, $4, $13                  ! line 44 -ENTER ADDRESS OF NEXT
+                                     !           CARD
+        B, X131                      ! line 45 -PROCESS NEXT CARD
+        END, (8)713.0

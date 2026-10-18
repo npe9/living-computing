@@ -1594,6 +1594,38 @@ run "MCP INITIALIZATION, printed p.17, bit-exact (MCP_Mar63 PDF p.24)" python3 v
 # settled it.  First time a higher-resolution render was already in
 # hand and the eye still supplied the expected glyph.
 
+run "MCP INITIALIZATION, printed p.18, bit-exact (MCP_Mar63 PDF p.25)" python3 verify_mcp_bootstrap_p18.py
+# The UNIT STATUS TABLE half of printed p.17's IOCD processing:
+# twenty-eight rows, up to eight units per channel.
+#
+# THE PAGE FOUND AN ASSEMBLER GAP, which is why it is worth a section
+# of its own rather than a line in the previous one.  Line 34 is
+# "LFI(BU,18),8.0", the first LFI in this corpus.  LF is the
+# connective C0011; C22-6531 Appendix A printed p.58 FOOTNOTE 10 --
+# the one C, CM and CT carry -- ends "This operation code is also
+# subject to Footnote 3", and footnote 3 is the "I" suffix for
+# immediate addressing.  strap_asm.py stripped that suffix only for
+# VFL_INT_CODES, so LFI raised a KeyError.
+#
+# AND THE FIX WAS NOT THE OBVIOUS ONE.  Stripping the suffix alone
+# still gave the wrong word, because a VFL-immediate operand written
+# as a BIT ADDRESS was being evaluated as a raw bit count.  Reference
+# Manual p.56 says the operand is the LEFTMOST `length` bits of the
+# effective address, so one unit of the operand is 2**(24-length) in
+# A24 -- "8.0" means 8, packs to 8<<6 = 512, and prints 000010.00,
+# which is what the page prints.  Evaluated as 512 it would pack to
+# 32768 and print 002000.00.  The page settles it twice over: line 35
+# subtracts the units remaining from that value and line 37 stores
+# the difference in FOUR bits, which 512 would not fit.
+#
+# C22-6578 Problem 2.2 Method 2's "LI(BU,7), 127" is unchanged --
+# a plain integer passes through eval_addr_field untouched -- and
+# both Problem 2.2 sections and the VFL-format DF section were
+# re-run against the change before it landed.
+#
+# docs/c22_6531_appendix_a.md records the appendix, its page offset
+# and the one place it is incomplete.
+
 run "MCP's error table, printed pp.7-8 (MCP_Mar63 PDF pp.14-15)" python3 verify_mcp_bootstrap_p7_p8.py
 # X ERR DD -- THE LAST TWO PAGES OF THE BOOTSTRAP TO BE TRANSCRIBED,
 # and the index to all the rest: seventy-eight VF half words, one pair
