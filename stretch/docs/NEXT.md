@@ -2720,6 +2720,30 @@ the contract; **do them in the order 5, 8, 6, 7, 1, 2, 3, 4.**
    evidence, row by row, so the next one to go in has its case
    already written down.
 
+   **`SPFL` LANDED IN THE MODEL on 2026-10-18** (control code 077 as
+   an `untilMark` transfer) and **`LOC` IS NOW HALF BUILT**, which is
+   the part of this item that needs restating rather than ticking.
+
+   LOCATE IS TWO OPERATIONS WEARING ONE MNEMONIC. C22-6531 Appendix A
+   printed p.57 lists it once — "E LOC Locate (same as Select Unit)"
+   — and the Reference Manual describes it twice, in two chapters:
+
+   * **On a disk channel it is a SEEK.** Printed p.160: "the right
+     effective address… specifies the arc address". **Built**, with
+     the arc address register, the arc-addressed READ and WRITE, the
+     short write's zero-filled tail, and the control word's flags and
+     refill discarded (printed p.158). Driven by `decks/io_disk.strap`
+     — eighteen checks, none through a peek method. See
+     `docs/disk_subsystem.md` §9a.
+   * **On an Exchange channel it is SELECT UNIT.** Still Operation
+     Code Invalid, because this model has one unit per channel and no
+     selection hierarchy to navigate. **This is the form MCP's ERROR
+     ROUTINE uses** (printed p.5 line 36, §6f), so the half that is
+     left is exactly the half this item was opened for.
+
+   So the item stays open, with its scope now one half of one
+   mnemonic plus `UNLOAD`-vs-`REWIND`.
+
 ### Artifact work — can proceed in parallel with the above
 
 6. **Transcribe MCP's IPL bootstrap**, printed pp.2-14, ~350 rule-3
@@ -4857,6 +4881,54 @@ Two conventions that are not questions and cost a session each when
 forgotten: Reference Manual **PDF page = printed page + 3**, and
 `ja_ua1_ssip` is cited by **PDF page** because its listing carries no
 printed page numbers.
+
+## THE NEXT MCP BLOCKER IS TRANSMIT, found 2026-10-18
+
+**MCP's IPL is never moved.** Printed p.4 line 28 is
+
+    X9 A 5   T,11,X BUFER($X1),X BS END      -MOVE MCP IPL
+
+and `StretchExecute.bsv`'s Transmit arm executes exactly one shape --
+a ONE-WORD IMMEDIATE-count forward transmit -- and sets Operation
+Code Invalid on every other, "conservative by construction" in its
+own comment. An eleven-word transmit is every other. So the
+instruction that copies MCP proper into place is refused, every time,
+and has been since the bootstrap first ran.
+
+**HOW IT STAYED INVISIBLE, which is the part worth keeping.** The
+"MCP'S OWN BOOTSTRAP RUNS" section asserted the indicator register
+exactly, as a ratchet, and it read `0xA040` -- three ordinary result
+indicators and a clean OP bit. That value was an ARTIFACT:
+
+1. Printed p.4 line 29 is `REL(SEOP),0.0($X0)` -- RELEASE **DISK**,
+   channel zero. With no disk installed the model rejected it with
+   Unit Not Ready.
+2. Line 30's `BUNRJ,X ERR 12` then branched to printed p.15's
+   `X ERR 12`, which is OUTSIDE the loaded image.
+3. The machine ran into zeros. A zero half-word is BRANCH ENABLED,
+   which enables the interrupt system with UNRJ pending.
+4. The interrupt was taken and **reset the indicator register**.
+
+So the test was measuring the register after an interrupt had wiped
+it. Giving channel 0 a disk removed step 1, and the first thing that
+appeared was the OP bit that had been there all along.
+
+**Localised by bisecting the step cap** (no OP at 3.5M steps with the
+PC at 000051.40, OP at 4M) **and then reproduced in four lines**, so
+this is measured. The scratch deck was `T,11,SRC($X1),DST`; it sets
+OP on its own.
+
+**What building it means.** A multi-word TRANSMIT moves N words and
+this model writes one word per rule, so it needs a small FSM of the
+`ioPending` shape -- the machinery `rl_io` already has, applied to a
+memory-to-memory copy. The direct-count form (`J` naming an index
+register whose count field holds N) is what MCP uses, and the arm
+currently never reads that register. Pocket card X22-6533's TRANSMIT
+heading and Reference Manual printed p.59 are the sources.
+
+**It is on the critical path and the disk is not.** The disk is
+built; MCP LOCATEs and WRITEs it. What MCP cannot do is move itself
+into storage.
 
 ## Traps this project has paid for
 

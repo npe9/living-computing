@@ -89,7 +89,20 @@ START   LVI, $1, 32      !X1 = reader channel 32: LVI puts it in value bits 0-18
                                 !REL, which unconditionally sets it)
         CCW, 0($2), CCWF       !copy the printer's control word
 
-        RD, 0, CTLW1       !unit-not-ready test: channel 0, no device there
+        RD, 992, CTLW1     !unit-not-ready test: an UNINSTALLED channel.
+                            !992 = 31 << 5, i.e. channel 31 sitting in
+                            !bits 12-18 of the 24-bit channel-address
+                            !field (Reference Manual p.111) -- the same
+                            !derivation the LVI,$1,32 above uses, written
+                            !out as a literal because no index is needed.
+                            !
+                            !THIS USED TO SAY "channel 0, no device
+                            !there" AND CHANNEL 0 NOW HAS ONE: it is the
+                            !disk (StretchIO.bsv chanDisk, read off MCP
+                            !printed pp.15-16's own assembled code).  Any
+                            !unattached channel serves this test; the
+                            !particular number never mattered, and 31 is
+                            !the top of the basic exchange's range.
         BEW, $
         NOP, 0             !pad to a word boundary: DD applies no automatic
                             !alignment (unlike instructions), and the run of

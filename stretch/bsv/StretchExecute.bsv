@@ -66,6 +66,8 @@ import StretchTypes::*;
 import StretchStorage::*;
 import StretchMemory::*;  // installed(): the address-invalid bound
 import StretchIO::*;
+import StretchDiskSource::*;   // DiskIndex / ArcAddr / arcWords, for
+                                // the disk arms of the IoOp case
 import StretchVFL::*;
 import StretchALU::*;
 import StretchDecode::*; // decodeHalfWord, for SIC's embedded branch
@@ -3428,6 +3430,7 @@ function ActionValue#(IoOutcome)
       Bool readerCh  = (kind == DevReader);
       Bool printerCh = (kind == DevPrinter);
       Bool tapeCh    = (kind == DevTape);
+      Bool diskCh    = (kind == DevDisk);
 
       if (kind == DevNone) begin
         // Unit Not Ready Reject (p.112): none of this model's
@@ -3514,7 +3517,8 @@ function ActionValue#(IoOutcome)
                     // the end of the reel does (the capacity arm in
                     // rl_io, which also gives End Exception).
                     remaining: 19'h40000,
-                    suppressEop: seop, skip: False, untilMark: True };
+                    suppressEop: seop, skip: False, untilMark: True,
+                    zeroFill: False };
                 end
                 default: ind = setOpInvalid(ind); // SPACE BLOCK,
                                                      // WRITE TAPE MARK,
@@ -3530,9 +3534,44 @@ function ActionValue#(IoOutcome)
               endcase
             end
           end
-          3'b011: ind = setOpInvalid(ind); // LOC: not implemented --
-                                             // see StretchIO.bsv
-                                             // "INSTRUCTIONS".
+          3'b011: begin // LOC (Locate)
+            if (!diskCh) begin
+              // ON THE EXCHANGE, LOCATE IS SELECT UNIT (C22-6531
+              // Appendix A printed p.57 lists them as one operation:
+              // "E LOC Locate (same as Select Unit)"), and this model
+              // does not implement it.  MCP's ERROR ROUTINE uses it to
+              // ask each channel what kind of device it is (printed
+              // p.5 line 36); see tests/audit_opcode_coverage.py's
+              // LOCSEOP note.  Unchanged by the disk work.
+              ind = setOpInvalid(ind);
+            end else begin
+              // ON A DISK, LOCATE IS A SEEK, and it is the whole of
+              // disk addressing.  Reference Manual printed p.160:
+              // "The right effective address, bit positions 32
+              // through 49, of the instruction specifies the arc
+              // address.  Positions 32-37 must be 0 bits while
+              // positions 38-49 specify the arc address."
+              //
+              // effA2 is the 18-bit word address formed from EA bits
+              // 32-49, so bits 38-49 -- the arc -- are its low twelve
+              // and bits 32-37 are its high six.
+              //
+              // "MUST BE 0" IS NOT ENFORCED, and that is a documented
+              // non-enforcement rather than an oversight.  The manual
+              // states the requirement and NOWHERE states the
+              // consequence of violating it; inventing an indicator
+              // here would be putting words in its mouth.  This is the
+              // same stance the arm above takes on Address Invalid for
+              // an out-of-range control-word address.
+              io.setArcAddr(truncate(effA2));
+              // "the operation is completed" -> EOP, unless SEOP.
+              // printed p.160 gives LOCATE the ordinary EOP/SEOP
+              // treatment (§3.7 of docs/disk_subsystem.md).
+              ControlWord cw = io.readChanCW(chAddr);
+              if (!seop) cw.eop = 1;
+              io.writeChanCW(chAddr, cw);
+            end
+          end
           3'b101: begin // REL (Release)
             ControlWord cw = io.readChanCW(chAddr);
             cw.epgk = 0; cw.uk = 0; cw.ee = 0; cw.cs = 0; cw.seop = 0;
@@ -3549,8 +3588,8 @@ function ActionValue#(IoOutcome)
             else st.writeWord(effA2, packControlWord(io.readChanCW(chAddr)));
           3'b000, 3'b001: begin // RD, W
             Bool wrongUnit = (base == 3'b000)
-              ? (!readerCh && !tapeCh)   // RD valid on reader or tape
-              : (!printerCh && !tapeCh); // W valid on printer or tape
+              ? (!readerCh && !tapeCh && !diskCh)   // RD: reader, tape, disk
+              : (!printerCh && !tapeCh && !diskCh); // W:  printer, tape, disk
             if (wrongUnit) begin
               // Exchange Program Check (p.113): "an instruction is
               // received that the selected unit is not designed to
@@ -3580,6 +3619,26 @@ function ActionValue#(IoOutcome)
               // see docs/NEXT.md 5o for why that half is sourced the
               // way it is.
               cw0.seop = seop ? 1 : 0;
+              // THE DISK DISCARDS THREE QUARTERS OF THE CONTROL WORD,
+              // and it has to be done HERE, before the exchange adopts
+              // it, because rl_io reads chain and skip back out of the
+              // adopted word.  Reference Manual printed p.158: "No use
+              // is made of control word flag bits or refill field and
+              // they are discarded after checking the control word
+              // error correction and check bits.  Only the data word
+              // address field and word count field of the control word
+              // are retained and used by the disk synchronizer."
+              //
+              // Zeroing them rather than ignoring them makes the
+              // discard OBSERVABLE: a COPY CONTROL WORD after a disk
+              // transfer shows what the synchronizer actually kept,
+              // which is what printed p.161 says it returns ("the data
+              // word address and word count fields... placed in a
+              // full-word format").
+              if (diskCh) begin
+                cw0.chain = 0; cw0.multiple = 0; cw0.skip = 0;
+                cw0.refill = 0;
+              end
               io.writeChanCW(chAddr, cw0); // exchange adopts the
                                             // requested control word
                                             // (p.106: "the exchange
@@ -3602,10 +3661,21 @@ function ActionValue#(IoOutcome)
                 // the same card twice (StretchIO.bsv "CARD FEED").
                 // The printer has no position because this model has
                 // no record structure for a printed line.
+                // THE DISK'S CURSOR IS AN ARC, NOT A WORD.  Printed
+                // p.161: "Associated with each disk is an arc address
+                // register.  As successive arcs are used, this
+                // register is increased by one for each arc."  A
+                // transfer therefore starts at the FIRST WORD OF THE
+                // ARC the register names -- arc * 512 -- and not
+                // wherever the previous transfer stopped, which is the
+                // tape's rule and not this one.
                 devIdx: tapeCh   ? io.tapePos()
                       : readerCh ? zeroExtend(io.readerPos())
+                      : diskCh   ? (zeroExtend(io.arcAddr())
+                                    * fromInteger(arcWords))
                       : 0,
                 remaining: rem0, suppressEop: seop, untilMark: False,
+                zeroFill: False,
                 // SKIP (p.107) only has meaning on READ -- "on writing,
                 // the flag is meaningless and is ignored" -- so it's
                 // only threaded through when this is an RD; a WRITE

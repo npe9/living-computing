@@ -24,12 +24,21 @@
 // after issuing an operation still behave correctly, just without the
 // wait actually taking wall-clock time.
 //
-// DEVICES: three simulated devices, fixed at elaboration time, each
+// DEVICES: four simulated devices, fixed at elaboration time, each
 // covering only as much of the External Units chapter as this
 // implementation has actually read and modeled:
 //   channel 32 (chanReader):  a read-only card-reader stand-in.
 //   channel 33 (chanPrinter): a write-only printer stand-in.
 //   channel 34 (chanTape):    a read/write tape-drive stand-in.
+//   channel  0 (chanDisk):    an IBM 7612 synchronizer and 353 disk
+//                             storage -- NOT on the Exchange at all
+//                             (Reference Manual printed p.157;
+//                             docs/disk_subsystem.md §1), with its
+//                             own arc-addressed geometry, its own
+//                             LOCATE, and three quarters of the
+//                             control word discarded.  See chanDisk
+//                             below for why the number is 0 and what
+//                             that cost.
 // Reader and printer are backed by a fixed-size Vector of words
 // (DeviceWords) that the testbench pre-loads (reader) or inspects
 // after the run (printer) -- see tests/gen_tb.py. The tape is backed
@@ -234,6 +243,9 @@ import StretchTapeSourceFile::*;   // Bluesim-only; see the selection
 import StretchTapeSource::*;  // TapeSource, mkTapeSourceVector, and the
                               // TapeWords/TapeIndex/TapePos typedefs,
                               // which moved there with the interface
+import StretchDiskSource::*;  // DiskSource, mkDiskSourceSmall, and the
+                              // DiskIndex/ArcAddr/arcWords typedefs
+import RegFile::*;
 
 typedef 32 DeviceWords;
 typedef Bit#(TLog#(DeviceWords)) DeviceIndex;
@@ -252,16 +264,42 @@ WordAddr chanReader  = 32;
 WordAddr chanPrinter = 33;
 WordAddr chanTape    = 34;
 
+// THE DISK IS AT CHANNEL 0, AND THAT NUMBER IS NOT AN INVENTION LIKE
+// THE THREE ABOVE.  MCP's own initialization addresses it there:
+// printed p.15 line 26 is "LOC(SEOP),0.0,0.0 -POSITION TO ARC ZERO"
+// and printed p.16 lines 13 and 22 are "W(SEOP),0.0,X PRO WR" and
+// "CCW,0.0,X IPL BS+1.0", all with a left effective address of zero,
+// whose bits 12-18 are the channel number (p.111).  Both pages are
+// transcribed bit-exactly in decks/, so the zero is read off IBM's
+// own assembled machine code, not chosen here.
+//
+// WHAT THAT COST: decks/io_reader_printer.strap's Unit-Not-Ready test
+// used to address "channel 0, no device there".  Channel 0 now has a
+// device, so that test moved to channel 31 (written as the literal
+// 992 = 31 << 5).  An unattached channel is what the test needs; the
+// particular number never mattered.
+//
+// WHAT IT DOES NOT SETTLE: which channel a real 7030's disk lived on
+// in general.  The channel-address field is seven bits (0-127) and
+// has to cover both the Exchange's channels and the disk
+// synchronizer's (docs/disk_subsystem.md §3.2), and no document in
+// this corpus says where the boundary is.  MCP's configuration is
+// read off IOCD cards at run time (printed p.17), so the real answer
+// is "whatever the deck says".  Zero is what MCP's own initialization
+// assumes before it has read any cards.
+WordAddr chanDisk    = 0;
+
 // Which (if any) of this model's devices a channel address names. See
 // "DEVICE GENERALIZATION" above -- this is what every future device
 // should extend instead of adding another hardcoded predicate.
-typedef enum { DevNone, DevReader, DevPrinter, DevTape }
+typedef enum { DevNone, DevReader, DevPrinter, DevTape, DevDisk }
   DeviceKind deriving (Bits, Eq, FShow);
 
 function DeviceKind kindOf(WordAddr ch) =
   (ch == chanReader)  ? DevReader  :
   (ch == chanPrinter) ? DevPrinter :
-  (ch == chanTape)    ? DevTape    : DevNone;
+  (ch == chanTape)    ? DevTape    :
+  (ch == chanDisk)    ? DevDisk    : DevNone;
 
 interface StretchIO;
   // Whether a channel address names one of this model's devices, and
@@ -334,6 +372,36 @@ interface StretchIO;
   method DevicePos readerPos();
   method Action setReaderPos(DevicePos p);
 
+  // ---------------------------------------------------------------
+  // THE DISK (IBM 7612 synchronizer + 353 storage), chanDisk.
+  // docs/disk_subsystem.md.  Three things make it unlike the three
+  // Exchange devices above, and all three are in the manual:
+  //
+  //   * ITS CURSOR IS AN ARC, NOT A WORD.  Reference Manual printed
+  //     p.161: "Associated with each disk is an arc address register.
+  //     As successive arcs are used, this register is increased by
+  //     one for each arc."  LOCATE sets it; READ and WRITE consume
+  //     arcs from it.  A transfer therefore starts at
+  //     arcAddr * arcWords, not at a position the last transfer left.
+  //   * IT IS NOT ON THE EXCHANGE (printed p.157, and
+  //     docs/disk_subsystem.md §1), so none of the Exchange's
+  //     chaining, multiple or skip machinery applies: printed p.158,
+  //     "No use is made of control word flag bits or refill field".
+  //   * A SHORT WRITE ZERO-FILLS THE REST OF ITS ARC.  Printed p.160:
+  //     "The data written need not be a multiple of the number of
+  //     words contained in an arc.  In this case, however, the
+  //     remainder of the last arc will be automatically filled with
+  //     zeros."  That is StretchCore's rl_io, not this file.
+  // ---------------------------------------------------------------
+  method Action diskReadReq(DiskIndex i);
+  method Bool diskRespReady();
+  method ActionValue#(Word64) diskReadResp();
+  method Action writeDiskWord(DiskIndex i, Word64 v);
+  method Word64 peekDiskWord(DiskIndex i);   // testbench only
+  method DiskIndex diskCapacity();
+  method ArcAddr arcAddr();
+  method Action setArcAddr(ArcAddr a);
+
   // Per-channel control word (Figure 35): what COPY CONTROL WORD reads
   // back, and what a RD/W/REL/CTL updates. This is the EXCHANGE's own
   // copy -- distinct from the control word an instruction reads out of
@@ -368,6 +436,16 @@ module mkStretchIO(StretchIO);
 `endif
   Reg#(TapePos) tapePosReg <- mkReg(0);
   Reg#(DevicePos) readerPosReg <- mkReg(0);
+  // The disk.  Only the small source exists so far; a host-file or
+  // SD-backed one goes here behind the same `ifdef shape the tape
+  // uses, for the same reason (an `import "BDPI"` has no Verilog back
+  // end, so it must not be in a hierarchy a bitstream elaborates).
+  DiskSource    disk       <- mkDiskSourceSmall;
+  // The arc address register, printed p.161.  Zero at power-on: the
+  // manual does not say, and MCP LOCATEs before its first transfer
+  // anyway (printed p.15 line 26), so nothing observable depends on
+  // the choice -- but something had to be chosen and this says so.
+  Reg#(ArcAddr) arcReg     <- mkReg(0);
 
   // unitReady is fixed at 1 (installed) for all three simulated
   // devices; there is no not-ready/busy state to model without real
@@ -382,6 +460,7 @@ module mkStretchIO(StretchIO);
   Reg#(ControlWord) readerCW  <- mkReg(cwReset);
   Reg#(ControlWord) printerCW <- mkReg(cwReset);
   Reg#(ControlWord) tapeCW    <- mkReg(cwReset);
+  Reg#(ControlWord) diskCW    <- mkReg(cwReset);
 
   method Bool isReader(WordAddr ch) = (kindOf(ch) == DevReader);
   method Bool isPrinter(WordAddr ch) = (kindOf(ch) == DevPrinter);
@@ -423,11 +502,30 @@ module mkStretchIO(StretchIO);
     tapePosReg <= p;
   endmethod
 
+  method Action diskReadReq(DiskIndex i);
+    disk.readReq(i);
+  endmethod
+  method Bool diskRespReady() = disk.respReady();
+  method ActionValue#(Word64) diskReadResp();
+    let v <- disk.readResp();
+    return v;
+  endmethod
+  method Action writeDiskWord(DiskIndex i, Word64 v);
+    disk.write(i, v);
+  endmethod
+  method Word64 peekDiskWord(DiskIndex i) = disk.peek(i);
+  method DiskIndex diskCapacity() = disk.capacity();
+  method ArcAddr arcAddr() = arcReg;
+  method Action setArcAddr(ArcAddr a);
+    arcReg <= a;
+  endmethod
+
   method ControlWord readChanCW(WordAddr ch);
     case (kindOf(ch))
       DevReader:  return readerCW;
       DevPrinter: return printerCW;
       DevTape:    return tapeCW;
+      DevDisk:    return diskCW;
       default:    return printerCW; // fallback for any uninstalled
                                      // channel; callers gate real use
                                      // with isReader/isPrinter/isTape
@@ -439,6 +537,7 @@ module mkStretchIO(StretchIO);
       DevReader:  readerCW  <= cw;
       DevPrinter: printerCW <= cw;
       DevTape:    tapeCW    <= cw;
+      DevDisk:    diskCW    <= cw;
       default:    noAction;
     endcase
   endmethod

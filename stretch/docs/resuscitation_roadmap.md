@@ -634,8 +634,8 @@ Three columns, because no two delivered machines were alike:
 | **7553 / 7615** | Card Punch, 250 cards/min, + control | not required | 1 | ✘ |
 | **1403-2 / 7616** | Printer, 600 lpm, + control | not required (off-line via 1401) | 1 | ✘ (stub) |
 | **7152 / 7623** | Operator's Console + control | 1 | 1 | ✘ |
-| **7612** | Disk Synchronizer | 1, *"with at least one disk unit"* | 1 | ✘ |
-| **353** or **7303** | Disk Storage (type number disputed, §4.4) | ≥1 | 1 | ✘ |
+| **7612** | Disk Synchronizer | 1, *"with at least one disk unit"* | 1 | **✔ (boot minimum, 2026-10-18)** |
+| **353** or **7303** | Disk Storage (type number disputed, §4.4) | ≥1 | 1 | **✔ (two arcs, no timing)** |
 | **IBM 1401** | *off-line* satellite: card→tape, tape→print, tape→punch | **required by MCP** | — | ✘ |
 
 MCP's minimum is stated outright —
@@ -772,6 +772,28 @@ names only the 7612 and "the storage unit". Not resolvable from
 
 **The disk is therefore not a documentation gap. It is a work item**,
 and MCP requires it (§6).
+
+> **BUILT, 2026-10-18 — the boot minimum, not a faithful 353.**
+> `bsv/StretchDiskSource.bsv` plus the arc address register, an
+> arc-addressed `LOCATE`, `RD`/`W` streaming arcs, the short write's
+> zero-filled tail, `CCW`, and the control word's flags and refill
+> discarded. Nineteen checks in `decks/io_disk.strap`, in the suite.
+> `docs/disk_subsystem.md` §9a is the record.
+>
+> **What is NOT built is the whole of §4.4's timing** — the
+> three-point seek, the rotational distribution, 8 µs per word,
+> automatic access elimination, the dual access mechanism — and the
+> backing store is two arcs rather than 2²¹ words. A functionally
+> correct program cannot see the difference; a cycle-accurate one is
+> nothing but the difference. The ticks above mean layer 3's
+> *functional* row, not layer 4's.
+>
+> **And building it moved the critical path somewhere else.** With a
+> disk at channel 0, MCP's bootstrap stopped taking a spurious
+> error exit — and an `OP` indicator appeared that an interrupt had
+> been wiping. Printed p.4 line 28's eleven-word `TRANSMIT` is
+> refused by the model, so **MCP's IPL is never moved**. The disk was
+> never the gate; `TRANSMIT` is. `docs/NEXT.md` has it.
 
 ### 4.5 Sizing layer 3
 

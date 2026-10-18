@@ -226,6 +226,27 @@ Printed p.4's `B,X 10` goes to `000622.00`, one word past `X BS END`,
 so the machine runs into the zeros above the image; a zero half-word
 is `BE,0`, which branches to zero, and at zero it branches to itself.
 
+> **CORRECTION, 2026-10-18 — THE TWO CHECKS DID NOT CARRY WHAT THEY
+> SEEMED TO.** The run above never reached `B,X 10` at all. Printed
+> p.4 line 29 is `REL(SEOP),0.0($X0)` — RELEASE **DISK**, channel
+> zero — and with no disk installed the model rejected it with Unit
+> Not Ready; line 30 branched to `X ERR 12`, on printed p.15 and
+> outside the image; the machine ran into zeros there instead. Worse,
+> a zero half-word is BRANCH ENABLED, which enabled the interrupt
+> system with UNRJ pending, and **the interrupt reset the indicator
+> register** — so `mcp_indicators_word11 = 0xA040`, the value this
+> section read as "the model refused nothing", was measuring the
+> register after a wipe. Giving channel 0 a disk removed the
+> rejection, and the first thing that appeared was an **OP** bit that
+> had been set all along by printed p.4 line 28's eleven-word
+> `TRANSMIT`. See `docs/NEXT.md` "THE NEXT MCP BLOCKER IS TRANSMIT".
+>
+> What survives unchanged: `X ERR AD` = 0, `X S ROOF` = 98,304 words,
+> the channel walk reaching 34, `$X15` = 1088, and the load itself.
+> MCP still sizes the machine, finds its channel, spaces the tape
+> mark and reads PROSA to end of file. What it does **not** do is
+> move itself into storage.
+
 ### What had to close first, and why the order is the lesson
 
 **None of the three was top of the predicted list.** The list was
@@ -323,11 +344,15 @@ are the two standing between MCP and knowing what devices it has.
 
 **The order this sets for M3+**, in the order MCP will hit them:
 
-1. `LOC` on a disk channel, the arc register, `RD`/`W` streaming
-   arcs, the short-write tail zero-fill, and `CCW` — the nine-item
-   minimum of `disk_subsystem.md` §5.4.
-2. `KF` and `LCV` in the model, driven by p.17's own rows.
-3. An IOCD card deck for the reader, which `strap/cards.py` can
+1. ~~`LOC` on a disk channel, the arc register, `RD`/`W` streaming
+   arcs, the short-write tail zero-fill, and `CCW`~~ — **BUILT the
+   same day**, `disk_subsystem.md` §9a, nineteen checks.
+2. **A MULTI-WORD `TRANSMIT`**, which building the disk is what
+   revealed: printed p.4 line 28's `T,11,X BUFER($X1),X BS END`
+   is refused, so **MCP's IPL is never moved**. Now the top of this
+   list. `docs/NEXT.md` "THE NEXT MCP BLOCKER IS TRANSMIT".
+3. `KF` and `LCV` in the model, driven by p.17's own rows.
+4. An IOCD card deck for the reader, which `strap/cards.py` can
    already punch, once the format is read out of a primary source.
 
 ### M4 — the Diagnostic Control Program  ·  ~75 days, in slices

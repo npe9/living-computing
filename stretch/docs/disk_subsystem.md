@@ -1484,6 +1484,62 @@ could not find, not something I declined to look up.
 
 ---
 
+## 9a. BUILT, 2026-10-18 — the boot-MCP minimum, nine items of nine
+
+The model has a disk. `bsv/StretchDiskSource.bsv` holds the platter
+(the same shape `StretchTapeSource.bsv` gives the reel: request,
+poll, collect, with a small RegFile-backed source of two arcs to test
+against), `StretchIO.bsv` carries the arc address register and the
+channel, `StretchExecute.bsv` has the LOCATE and the RD/W arms, and
+`StretchCore.bsv`'s `rl_io` streams the words and fills the tail.
+
+Driven by `decks/io_disk.strap` + `tests/gen_disk_tb.py`, thirteen
+checks, in the suite as "THE DISK: LOCATE, arcs, the zero-filled
+tail, and flags discarded". **None of the thirteen goes through a
+peek method** — every one is a core word the program read back off
+the platter, or a control word a `CCW` left behind — because a peek
+would only check that the model wrote what the model wrote.
+
+What is pinned, against §5.4's list:
+
+| # | Behaviour | Where |
+|---|---|---|
+| 1 | a zero-initialised backing store per unit | `mkDiskSourceSmall` |
+| 2 | `LOC` setting the arc address register | `ioOpExec`'s `3'b011` arm |
+| 3 | `W` streaming from the arc register's first word | `IoXfer.devIdx = arc * 512` |
+| 4 | zero-fill of the tail of the last arc | `IoXfer.zeroFill`, a second phase |
+| 5 | `RD`, the mirror of 3 | `rl_io`'s `DevDisk` arm |
+| 6 | `EOP` on completion, `SEOP` suppressing it | shared with the Exchange |
+| 7 | `UNRJ` when nothing is at the channel | `kindOf` → `DevNone` |
+| 8 | the control word read as DWA + count **only** | zeroed at adoption |
+| 9 | `CCW` (§5.4's new subsection) | shared with the Exchange |
+
+**THE SHARPEST CHECK IS ITEM 8**, and it is worth naming because it is
+the one that could not be written before the Exchange worked.
+`io_disk.strap`'s first control word is patched with CHAIN, MULTIPLE,
+SKIP and a refill pointing at the next control word. **On the
+Exchange that word chains** — Figure 36's "Chain and continue" row,
+which this model implements and which initial program loading depends
+on. On the disk it must transfer once and come back with all four
+fields zero. Same control word, two different machines, one test.
+
+**NOT BUILT, and none of it is needed to boot**: `CTL` → EPGK, the
+indicator table beyond UNRJ, the one-transfer-at-a-time interlock and
+`CBJ`, the arc-boundary and end-of-volume checks, the per-arc
+zero-fill on `REL`, and **all of the timing** — the three-point seek,
+the rotational distribution, 8 µs per word, automatic access
+elimination, the dual access mechanism. §4 has the numbers when
+cycle accuracy arrives.
+
+**And the backing store is still the structural dependency §10 names.**
+The source that exists is two arcs, 1,024 words. A real unit is 16
+MiB, which is a host file in simulation and the SD card on the
+ULX3S; the interface is shaped so that neither needs anything above
+it to change, exactly as `StretchTapeSourceFile.bsv` did for the
+tape.
+
+---
+
 ## 10. Summary for the build plan
 
 - **The disk can be modelled from what is here.** pp.157–162 is a complete

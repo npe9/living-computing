@@ -70,9 +70,25 @@ UNIMPLEMENTED = {
     "LTRS",                               # load transit and set
     # M+1 moved to ENCODING_ONLY on 2026-10-17: still unimplemented,
     # but MCP's bootstrap uses it, so it is no longer UNUSED.
-    "LOC",                                # locate, base form
-    # LOCSEOP moved to ENCODING_ONLY on 2026-10-17: still
-    # unimplemented, but MCP's ERROR ROUTINE uses it.
+    #
+    # LOC AND LOCSEOP LEFT EVERY CATEGORY ON THIS PAGE, 2026-10-18,
+    # and the way they left is the thing to read.  LOC was in this set
+    # (unimplemented) and LOCSEOP was in ENCODING_ONLY (encoded by a
+    # transcription, not executable).  The disk gave both of them a
+    # real arm: on a disk channel LOCATE is a SEEK -- Reference Manual
+    # printed p.160, "the right effective address... specifies the arc
+    # address" -- and decks/io_disk.strap executes it.
+    #
+    # THE NUANCE THIS PAGE CANNOT EXPRESS, written down rather than
+    # lost: LOC is only HALF implemented.  On an EXCHANGE channel it
+    # is SELECT UNIT (C22-6531 Appendix A printed p.57 lists them as
+    # one operation) and still sets Operation Code Invalid, because
+    # this model has one unit per channel and no selection hierarchy.
+    # MCP's ERROR ROUTINE uses that form (printed p.5 line 36) and
+    # would still be refused.  A mnemonic is the unit this audit
+    # counts in, and "implemented for one device kind" is finer than a
+    # mnemonic -- so the honest record is here, in the file that
+    # stopped tracking it.
 }
 # UNIMPLEMENTED IN THE MODEL BUT EXERCISED FOR ITS ENCODING.  This
 # category exists because EXIC forced it, and the distinction it draws
@@ -167,7 +183,8 @@ UNIMPLEMENTED = {
 #         them; neither is implemented now.
 ENCODING_ONLY = {
     "RNX",
-    "LOCSEOP",
+    # LOCSEOP left on 2026-10-18 with LOC -- see the note in
+    # UNIMPLEMENTED above.
     "KF",
     "LCV",
 }

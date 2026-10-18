@@ -1,0 +1,170 @@
+! io_disk.strap -- exercises the simulated IBM 7612 disk synchronizer
+! and its 353 storage (StretchIO.bsv chanDisk = 0,
+! StretchDiskSource.bsv).  docs/disk_subsystem.md.
+!
+! WHY CHANNEL 0.  MCP's own initialization addresses the disk there:
+! printed p.15 line 26 is "LOC(SEOP),0.0,0.0 -POSITION TO ARC ZERO"
+! and printed p.16 line 13 is "W(SEOP),0.0,X PRO WR -WRITE PROSA",
+! both with a left effective address of zero.  Both pages are
+! transcribed bit-exactly in this directory, so the channel number is
+! read off IBM's assembled code rather than chosen.  See StretchIO.bsv
+! for what that cost io_reader_printer.strap's unit-not-ready test.
+!
+! WHAT EACH STEP PROVES -- and every one of the four is a rule from
+! the Reference Manual's disk chapter, not a generic I/O rule:
+!
+!   1. LOCATE SETS AN ARC, AND READ/WRITE START AT ITS FIRST WORD.
+!      Printed p.161: "Associated with each disk is an arc address
+!      register."  Step 1 LOCATEs arc 0 and writes three words; step 4
+!      LOCATEs arc 0 again and reads them back.  A model that treated
+!      the disk like a tape -- carrying a word position forward -- would
+!      read back the wrong words.
+!
+!   2. A SHORT WRITE ZERO-FILLS THE REST OF ITS ARC.  Printed p.160:
+!      "The data written need not be a multiple of the number of words
+!      contained in an arc.  In this case, however, the remainder of
+!      the last arc will be automatically filled with zeros."  Step 4
+!      reads FIVE words where only three were written; words 4 and 5
+!      must come back zero.  The disk source starts zeroed, so this
+!      check is weaker than it looks on a virgin disk -- which is why
+!      step 3 writes to arc 1 FIRST, and step 5 reads two words past
+!      the end of ITS data too.
+!
+!   3. THE ARC REGISTER ADVANCES BY ITSELF.  Printed p.161: "As
+!      successive arcs are used, this register is increased by one for
+!      each arc... Whenever successive arcs are to be read or written,
+!      only the initial arc need be specified."  Step 3 issues a WRITE
+!      with NO intervening LOCATE and its data must land in arc 1,
+!      which step 5 proves by LOCATEing arc 1 explicitly to read it.
+!
+!   4. THE CONTROL WORD KEEPS ONLY TWO FIELDS.  Printed p.158: "No use
+!      is made of control word flag bits or refill field and they are
+!      discarded... Only the data word address field and word count
+!      field of the control word are retained."  CTLW1 below is
+!      deliberately patched by tests/gen_disk_tb.py with the CHAIN,
+!      MULTIPLE and SKIP flags set and a nonzero REFILL, and CCWA must
+!      come back with all four of them ZERO -- and with the transfer
+!      having happened exactly once, not chained.  On the Exchange that
+!      same control word would chain.
+!
+! CONTROL WORDS: zero-initialized placeholders patched by
+! tests/gen_disk_tb.py, the same mechanism io_tape.strap uses, because
+! this assembler's DD cannot resolve a label to a numeric address.
+!
+! ARC ADDRESSES are written as plain integers, NOT through the
+! word-address >> 6 conversion RD/W/CCW's second field gets: LOCATE's
+! right effective address is an arc address (p.160), and strap_asm.py's
+! IO_OP branch skips the conversion for CTL and LOC for exactly this
+! reason.
+
+START   LVI, $1, 0         !X1 = disk channel 0.  LVI puts 0 in the value
+                            !field, so the channel field is 0 << 5 = 0 --
+                            !the same derivation io_tape.strap uses for 34.
+
+!   0. PRE-FILL ARC 0 WITH A PATTERN, so that step 4's zero-fill check
+!      discriminates.  A virgin disk reads back zeros anyway, so
+!      "words 4 and 5 are zero" proves nothing on one.  Five words of
+!      a distinct pattern here means that after step 1 overwrites only
+!      the first three, words 4 and 5 come back zero ONLY IF the short
+!      write's fill really ran.
+        LOC(SEOP), 0($1), 0
+        W,   0($1), CTLW0      !5 words from SRC0 -> arc 0 words 0-4
+
+!   1-2. LOCATE arc 0, write three words, and read the control word back.
+        LOC(SEOP), 0($1), 0    !seek to arc 0
+        W,   0($1), CTLW1      !3 words from SRC1 -> arc 0 words 0-2;
+                                !the remaining 509 words of arc 0 are
+                                !zero-filled by the hardware
+        CCW, 0($1), CCWA       !expect dataAddr=SRC1+3, count=0, eop=1,
+                                !and chain/multiple/skip/refill ZEROED
+
+!   3. No LOCATE: the arc register advanced to 1 when arc 0 completed.
+        W,   0($1), CTLW2      !2 words from SRC2 -> arc 1 words 0-1
+        CCW, 0($1), CCWB
+
+!   4. Back to arc 0 and read five words: three data, two zero-fill.
+        LOC(SEOP), 0($1), 0
+        RD,  0($1), CTLW3      !5 words -> DEST1
+        CCW, 0($1), CCWC
+
+!   5. Arc 1, four words: two data, two zero-fill.  This is the step
+!      that makes step 3's claim stick -- the data is only here if the
+!      register really did advance.
+        LOC(SEOP), 0($1), 1
+        RD,  0($1), CTLW4      !4 words -> DEST2
+        CCW, 0($1), CCWD
+
+!   6-7. THE SEOP RULE HAS A COPY IN THE LOCATE ARM TOO, and
+!      io_tape.strap's lesson -- "one rule, six copies, and a test of
+!      one says nothing about the others" -- applies here unchanged.
+!      Step 6 leaves the control word with eop = 0 (an RD(SEOP) whose
+!      control word came out of memory with eop clear) and then
+!      LOCATEs with SEOP: eop must STAY 0.  Step 7 LOCATEs without it
+!      and eop must come on, with nothing else in the word moving.
+        RD(SEOP), 0($1), CTLW5 !1 word -> DEST3, EOP suppressed
+        LOC(SEOP), 0($1), 0
+        CCW, 0($1), CCWE       !expect eop = 0
+        LOC, 0($1), 1          !plain LOCATE
+        CCW, 0($1), CCWF       !expect eop = 1, everything else identical
+
+!   8. END EXCEPTION: "the unit runs out of material" (printed p.121).
+!      The small source is two arcs, so arc 2 does not exist.  The
+!      READ must transfer NOTHING, leave DEST4's all-ones alone, and
+!      come back with EE and EOP on and the count exactly as issued.
+!      decks/io_tape.strap step 10 is the same test for the reel, and
+!      it is here for the same reason: the arm had no witness.
+        LOC(SEOP), 0($1), 2    !an arc past the end of this disk
+        RD,  0($1), CTLW6      !3 words -> DEST4, none of which arrive
+        CCW, 0($1), CCWG       !expect ee=1, eop=1, count unchanged
+
+        BEW, $
+                            !NO PADDING NOP HERE, deliberately, and the
+                            !arithmetic is worth writing down because
+                            !io_reader_printer.strap and io_tape.strap
+                            !both need one: the run above is
+                            !1 + 2*21 + 1 = 44 half-words, which is
+                            !even, so the first DD already lands on a
+                            !word boundary.  A NOP would MIS-align it.
+
+CTLW1   DD(BU,64), 0        !patched: dataAddr=SRC1, count=3, and
+                             !chain/multiple/skip/refill set -- see step 4
+CTLW2   DD(BU,64), 0        !patched: dataAddr=SRC2, count=2
+CTLW3   DD(BU,64), 0        !patched: dataAddr=DEST1, count=5
+CTLW4   DD(BU,64), 0        !patched: dataAddr=DEST2, count=4
+CTLW5   DD(BU,64), 0        !patched: dataAddr=DEST3, count=1
+CTLW6   DD(BU,64), 0        !patched: dataAddr=DEST4, count=3
+CTLW0   DD(BU,64), 0        !patched: dataAddr=SRC0, count=5
+
+CCWA    DD(BU,64), 0
+CCWB    DD(BU,64), 0
+CCWC    DD(BU,64), 0
+CCWD    DD(BU,64), 0
+CCWE    DD(BU,64), 0
+CCWF    DD(BU,64), 0
+CCWG    DD(BU,64), 0
+
+SRC0    DD(BU,64), (16)BAD00001
+        DD(BU,64), (16)BAD00002
+        DD(BU,64), (16)BAD00003
+        DD(BU,64), (16)BAD00004
+        DD(BU,64), (16)BAD00005
+SRC1    DD(BU,64), (16)D15C0001
+        DD(BU,64), (16)D15C0002
+        DD(BU,64), (16)D15C0003
+SRC2    DD(BU,64), (16)D15C1001
+        DD(BU,64), (16)D15C1002
+
+DEST1   DD(BU,64), (16)FFFFFFFFFFFFFFFF
+        DD(BU,64), (16)FFFFFFFFFFFFFFFF
+        DD(BU,64), (16)FFFFFFFFFFFFFFFF
+        DD(BU,64), (16)FFFFFFFFFFFFFFFF
+        DD(BU,64), (16)FFFFFFFFFFFFFFFF
+DEST2   DD(BU,64), (16)FFFFFFFFFFFFFFFF
+        DD(BU,64), (16)FFFFFFFFFFFFFFFF
+        DD(BU,64), (16)FFFFFFFFFFFFFFFF
+        DD(BU,64), (16)FFFFFFFFFFFFFFFF
+DEST3   DD(BU,64), (16)FFFFFFFFFFFFFFFF
+DEST4   DD(BU,64), (16)FFFFFFFFFFFFFFFF
+        DD(BU,64), (16)FFFFFFFFFFFFFFFF
+        DD(BU,64), (16)FFFFFFFFFFFFFFFF
+        END, START

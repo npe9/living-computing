@@ -264,6 +264,22 @@ typedef struct {
                           // nothing, and finish with End Exception.
                           // See tapeMarkWord below and StretchCore's
                           // rl_io.
+  Bool zeroFill;         // THE TAIL OF A SHORT DISK WRITE.  Reference
+                          // Manual printed p.160: "The data written
+                          // need not be a multiple of the number of
+                          // words contained in an arc.  In this case,
+                          // however, the remainder of the last arc
+                          // will be automatically filled with zeros."
+                          //
+                          // It is a SECOND PHASE of the same transfer
+                          // rather than a loop inside the first,
+                          // because one word per rule is this model's
+                          // rule everywhere and the fill is up to 511
+                          // words.  During it the device cursor still
+                          // advances, nothing is read from core, and
+                          // the control word is left exactly as the
+                          // data phase left it -- the fill is not
+                          // data and must not show in the count.
 } IoXfer deriving (Bits, Eq, FShow);
 
 // ---------------------------------------------------------------------

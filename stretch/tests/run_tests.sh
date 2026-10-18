@@ -1157,6 +1157,33 @@ run "I-Box 5 routine 1260's indicator walk + TRANSMIT IMMEDIATE (jb_ax5b p.45)" 
 # TRANSMIT_CODES, in strap_asm.py's format list and in strap/README.md.
 
 run "MCP'S OWN BOOTSTRAP RUNS (boot_plan.md M3)" ./run_mcp_boot.sh StretchMcpBootTb
+# THE EXPECTED VALUES CHANGED ON 2026-10-18 WHEN THE DISK LANDED, and
+# the change is the useful part.  This section asserts the indicator
+# register EXACTLY, as a ratchet.  It used to read 0xA040 -- three
+# result indicators with OP clear -- and that was an ARTIFACT:
+#
+#   printed p.4 line 29 is "REL(SEOP),0.0($X0)  -RELEASE DISK",
+#   channel ZERO.  With nothing installed there the model rejected it
+#   with Unit Not Ready; line 30 branched to X ERR 12, which is on
+#   printed p.15 and OUTSIDE the loaded image; the machine ran into
+#   zeros; a zero half-word is BRANCH ENABLED, which enabled the
+#   interrupt system with UNRJ pending; and the interrupt RESET THE
+#   INDICATOR REGISTER.  The test was measuring the register after
+#   the wipe.
+#
+# Channel 0 now holds the disk, the RELEASE succeeds, MCP runs the
+# path it was written to run -- and the OP bit that had been there
+# all along became visible.  OP IS SET BY printed p.4 line 28,
+# "T,11,X BUFER($X1),X BS END  -MOVE MCP IPL": this model executes
+# only a one-word immediate-count TRANSMIT.  **MCP's IPL is never
+# moved**, and that is the next blocker on this path -- docs/NEXT.md
+# "THE NEXT MCP BLOCKER IS TRANSMIT".
+#
+# The run now stops at 000124.40, printed p.4 line 32's "CB,0,$" --
+# MCP's delay loop after RELEASE DISK.  The harness halts on "an
+# instruction branched to its own address", which is the BEW,$ idiom
+# it was built for and is also exactly this loop.  A HARNESS LIMIT,
+# not a model one.
 # IBM's operating system, executing on this model, off a tape built
 # from the thirteen transcribed pages.  It runs end to end and hands
 # off to printed p.15's MCP INITIALIZATION, which is not transcribed.
@@ -6905,9 +6932,47 @@ run "Input-Output (reader/printer)" ./run_io_test.sh StretchIoReaderPrinterTb
 # 0x1660...  Without CCWL, a CTL that ignored SEOP would be invisible.
 run "Input-Output (tape)" ./run_tape_test.sh StretchIoTapeTb
 
+# -- THE DISK (IBM 7612 synchronizer + 353 storage), channel 0 --------
+# docs/disk_subsystem.md.  Thirteen checks, none of them through a
+# peek method: every one is either a core word the program read BACK
+# off the platter or a control word a COPY CONTROL WORD left behind.
+# A peek would check that the model wrote what the model wrote.
+#
+# THE FOUR RULES IT PINS, each from the disk chapter and not from the
+# Exchange's:
+#
+#   LOCATE SETS AN ARC and READ/WRITE start at that arc's FIRST word
+#   (printed p.161).  A model that carried a word position forward the
+#   way the tape does would read back the wrong words.
+#
+#   A SHORT WRITE ZERO-FILLS THE REST OF ITS ARC (printed p.160: "the
+#   remainder of the last arc will be automatically filled with
+#   zeros").  The destination buffers are pre-filled with all ones in
+#   the deck, so "fill" and "never transferred" are distinguishable.
+#
+#   THE ARC REGISTER ADVANCES BY ITSELF (printed p.161: "As successive
+#   arcs are used, this register is increased by one for each arc").
+#   Step 3's WRITE names no arc and its data has to land in arc 1.
+#
+#   THE CONTROL WORD KEEPS ONLY TWO FIELDS (printed p.158: "No use is
+#   made of control word flag bits or refill field").  CTLW1 is
+#   patched with CHAIN, MULTIPLE, SKIP and a refill pointing at CTLW2.
+#   ON THE EXCHANGE THAT WORD WOULD CHAIN -- Figure 36's "Chain and
+#   continue" row, which this model implements and IPL depends on --
+#   and on the disk it must transfer once and come back with all four
+#   fields zero.  That is the sharpest check in the file: the same
+#   control word, two different machines.
+#
+# CHANNEL 0 IS NOT AN INVENTION.  MCP printed p.15 line 26 and p.16
+# lines 13 and 22 all address the disk with a left effective address
+# of zero, and both pages are transcribed bit-exactly in decks/.  The
+# cost was io_reader_printer.strap's unit-not-ready test, which used
+# to mean "channel 0, nothing there" and now says channel 31.
+run "THE DISK: LOCATE, arcs, the zero-filled tail, and flags discarded" ./run_disk_test.sh StretchIoDiskTb
+
 # -- cleanup: generated .bsv testbenches and Bluesim build products are
 # not meant to be committed (see .gitignore) --
-rm -f "$BSV_DIR"/StretchProblem*Tb.bsv "$BSV_DIR"/StretchFigure*Tb.bsv "$BSV_DIR"/StretchXwRefillTb.bsv "$BSV_DIR"/StretchIoReaderPrinterTb.bsv "$BSV_DIR"/StretchIoTapeTb.bsv "$BSV_DIR"/StretchIboxWenTb.bsv "$BSV_DIR"/StretchIboxCbTb.bsv "$BSV_DIR"/StretchIboxCbrTb.bsv
+rm -f "$BSV_DIR"/StretchProblem*Tb.bsv "$BSV_DIR"/StretchFigure*Tb.bsv "$BSV_DIR"/StretchXwRefillTb.bsv "$BSV_DIR"/StretchIoReaderPrinterTb.bsv "$BSV_DIR"/StretchIoTapeTb.bsv "$BSV_DIR"/StretchIoDiskTb.bsv "$BSV_DIR"/StretchIboxWenTb.bsv "$BSV_DIR"/StretchIboxCbTb.bsv "$BSV_DIR"/StretchIboxCbrTb.bsv
 rm -f "$BSV_DIR"/*_sim "$BSV_DIR"/*_sim.so
 rm -rf "$BSV_DIR"/build "$BSV_DIR"/simbuild
 

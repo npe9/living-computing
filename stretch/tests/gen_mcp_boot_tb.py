@@ -45,6 +45,14 @@ import sys
 
 from gen_tb import generate
 from mcp_image import build
+from opcodes import INDICATOR_BITS
+
+
+def _ind(name):
+    """Weight of an indicator in the 64-bit word: IBM bit n is 1 << (63-n).
+    Same helper gen_io_tb.py has; named the same so a reader who has
+    seen one recognises the other."""
+    return 1 << (63 - INDICATOR_BITS[name])
 
 # Resolved against this file's own location: mktape.py lives in
 # ../strap/ and this generator is run from tests/, but a bare name
@@ -96,7 +104,23 @@ def main():
         # ALL THIRTEEN PAGES WRITES IT.  So this bit is the difference
         # between "the bootstrap got to the end of its own work" and
         # "it stopped somewhere quiet".
-        ("mcp_end_of_prosa_bit_X0", "16", 1 << (63 - 25)),
+        # >>> AND IT NOW CARRIES A COUNT TOO, WHICH IS THE DISK <<<
+        # Word 16 is index register X0 and holds TWO things at the
+        # end of the run: bit 25, the flag above, and 131,070 in its
+        # count field (bits 28-45).  That count is printed p.4 lines
+        # 31-32, "LCI,0,(8)377777.0" then "CB,0,$" -- MCP's DELAY LOOP
+        # after RELEASE DISK, loaded with 0o377777 = 131,071 and
+        # decremented once.
+        #
+        # BEFORE THE DISK EXISTED THIS RUN NEVER GOT HERE.  Printed
+        # p.4 line 29 is "REL(SEOP),0.0($X0) -RELEASE DISK", channel
+        # ZERO, and with nothing installed there the model rejected it
+        # with Unit Not Ready; line 30's "BUNRJ,X ERR 12" then branched
+        # out of the image entirely.  Channel 0 now holds the disk
+        # (StretchIO.bsv chanDisk, read off printed pp.15-16's own
+        # assembled code), the RELEASE succeeds, and MCP runs the
+        # path it was written to run.
+        ("mcp_end_of_prosa_bit_X0", "16", (1 << (63 - 25)) | (131070 << 18)),
 
         # >>> THE ONE THAT SAYS IT NEVER STUMBLED <<<
         # X ERR AD, printed p.13 line 37, "-LOCATION OF ERROR +1.0".
@@ -106,14 +130,41 @@ def main():
         # SITE EVER RAN.
         ("mcp_x_err_ad", str(sym("XERRAD")), 0),
 
-        # The indicator register, word 11.  0xA040 is XCZ, XVZ and RZ
-        # -- three ordinary result indicators -- and what matters is
-        # what is ABSENT: bit 15 OP (Operation Code Invalid) and bit
-        # 16 AD (Address Invalid) are both clear, so the model refused
-        # nothing and addressed nothing it does not have.  An exact
-        # match is deliberate: this is a ratchet, and a new indicator
-        # appearing here should be looked at rather than tolerated.
-        ("mcp_indicators_word11", str(IND_WORD), 0xA040),
+        # The indicator register, word 11: RZ, XVZ, XF and **OP**.
+        #
+        # THIS USED TO READ 0xA040 -- RZ, XVZ, XCZ, with OP CLEAR --
+        # AND THAT WAS AN ARTIFACT.  The value is exact on purpose,
+        # as a ratchet, and the ratchet did its job: adding the disk
+        # changed it, and chasing why found a gap that had been there
+        # all along.
+        #
+        # WHAT THE OLD VALUE WAS HIDING.  Without a disk at channel 0,
+        # printed p.4 line 29's RELEASE DISK was rejected with Unit
+        # Not Ready, line 30 branched to X ERR 12 -- which is on
+        # printed p.15, OUTSIDE the loaded image -- and the machine
+        # ran into zeros.  A zero half-word is BRANCH ENABLED, which
+        # enables the interrupt system with UNRJ pending; the
+        # interrupt was taken and it RESET THE INDICATOR REGISTER.
+        # Everything the bootstrap had set was wiped, including OP,
+        # and what the test measured was the register AFTER that
+        # reset.  Three result indicators and a clean OP bit, all of
+        # it meaningless.
+        #
+        # OP IS SET BY printed p.4 line 28, "T,11,X BUFER($X1),
+        # X BS END  -MOVE MCP IPL".  StretchExecute's Transmit arm
+        # executes exactly one shape -- a one-word IMMEDIATE-count
+        # forward transmit -- and sets Operation Code Invalid on every
+        # other, "conservative by construction" in its own words.  An
+        # eleven-word transmit is every other.  LOCALISED BY BISECTION
+        # on the step cap and then reproduced in four lines, so this
+        # is measured, not inferred.
+        #
+        # SO MCP'S IPL IS NEVER MOVED, and that is the next real
+        # blocker on this path -- docs/NEXT.md has it.  It is recorded
+        # here as a KNOWN failure the expected value includes, not as
+        # a success.
+        ("mcp_indicators_word11", str(IND_WORD),
+         _ind("RZ") | _ind("XVZ") | _ind("XF") | _ind("OP")),
 
         # Printed p.2 line 39, "SV,15,X S ROOF -TEMPORARILY SAVE 7030
         # SIZE".  The value field holds 6291456 bits = word 98304,
@@ -147,16 +198,22 @@ def main():
     ]
 
     print(generate(module_name, prog, checks,
-                   # IT HALTS AT ZERO, AND THAT IS THE HAND-OFF.
-                   # Printed p.4 line 33 is "B,X 10 -TO MCPIPL", and
-                   # X 10 is 000622.00 -- ONE WORD PAST X BS END, on
-                   # printed p.15, which is not transcribed.  So the
-                   # machine runs into the zeros above the image; a
-                   # zero half-word is BE,0, which branches to zero,
-                   # and at zero it branches to itself and halts.
-                   # When printed p.15 is transcribed this becomes a
-                   # real entry point and this number changes.
-                   pc_check=0,
+                   # IT STOPS IN MCP'S OWN DELAY LOOP.
+                   # 169 is half-word 169 = 000124.40, which is
+                   # printed p.4 line 32's "CB,0,$" -- count and
+                   # branch to ITSELF, the wait MCP does after
+                   # RELEASE DISK.  The harness stops on "an
+                   # instruction branched to its own address", which
+                   # is the BEW,$ idiom it was built for and is also
+                   # exactly this loop, so the run ends after one
+                   # decrement.  THAT IS A HARNESS LIMIT, NOT A MODEL
+                   # ONE, and it is why the count in word 16 is
+                   # 131,070 rather than 0.
+                   #
+                   # IT USED TO BE 0, by a different route: see the
+                   # indicator check above for why that route was an
+                   # artifact of there being no disk.
+                   pc_check=169,
                    step_cap=12000000,
                    ipl=True))
 

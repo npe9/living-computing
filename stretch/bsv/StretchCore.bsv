@@ -12,6 +12,8 @@ import Vector::*;
 import StretchTypes::*;
 import StretchStorage::*;
 import StretchIO::*;
+import StretchDiskSource::*;  // DiskIndex / ArcAddr / arcWords, for the
+                               // disk arms of rl_io
 import StretchTapeSource::*;  // TapeWords/TapeIndex and the TapeSource
                               // interface the tape transfer now goes
                               // through; imported names are not
@@ -155,6 +157,12 @@ module mkStretchCore(StretchCore);
   // two reads are on opposite sides of the transfer and a single
   // transfer never needs both.
   Reg#(Bool) ioTapeReqIssued <- mkReg(False);
+  // The disk's equivalent of ioTapeReqIssued: a platter read is a
+  // request and a later response, so the rule has to remember that it
+  // already asked.  Separate from the tape's because a transfer is
+  // one device at a time and sharing the flag would couple two
+  // devices that have nothing to do with each other.
+  Reg#(Bool) ioDiskReqIssued <- mkReg(False);
   // Set while a CHAINED control word is being fetched from core
   // storage.  Figure 36 (RefMan printed p.109) says that when the
   // count reaches zero with the chain flag on and the block has not
@@ -445,6 +453,12 @@ module mkStretchCore(StretchCore);
     // reader and printer are still fixed-size Vectors in StretchIO.
     Bit#(25) capacity = (kind == DevTape)
       ? zeroExtend(ioDev.tapeCapacity())
+      // THE DISK'S CAPACITY COMES FROM ITS SOURCE TOO, and for the
+      // same reason the tape's does: a 353 is 2^21 words (Reference
+      // Manual printed p.157) and the small source in
+      // StretchDiskSource.bsv is two arcs.  Running off the end is
+      // End Exception, exactly as running off the end of a reel is.
+      : (kind == DevDisk) ? zeroExtend(ioDev.diskCapacity())
       : fromInteger(valueOf(DeviceWords));
     if (ioRefillIssued) begin
       // A CHAINED CONTROL WORD IS IN FLIGHT.  This arm is first in the
@@ -473,7 +487,7 @@ module mkStretchCore(StretchCore);
           memAddr: n.dataAddr, devIdx: x.devIdx,
           remaining: (n.count == 0) ? 19'h40000 : zeroExtend(n.count),
           suppressEop: x.suppressEop, skip: (n.skip == 1),
-          untilMark: x.untilMark };
+          untilMark: x.untilMark, zeroFill: x.zeroFill };
       end
     end else if (x.devIdx >= capacity) begin
       // "the unit runs out of material" (p.121): End Exception, not
@@ -481,6 +495,24 @@ module mkStretchCore(StretchCore);
       // moved stays moved, and the control word reflects exactly
       // that (dataAddr/count as of the last word actually
       // transferred, since this cycle transfers nothing).
+      //
+      // THE ARC ADDRESS REGISTER IS DELIBERATELY NOT TOUCHED HERE,
+      // and this is a judgment rather than a quotation.  Reference
+      // Manual printed p.161 says where the register is left after a
+      // RELEASE ("at the address of the last arc used unless
+      // transmission of that arc has been completed") and says
+      // NOTHING about where it is left when a transfer runs off the
+      // end of the volume -- which on a real 353 means an arc address
+      // beyond 4095, a state the manual does not describe because the
+      // twelve-bit field cannot hold one.  Leaving the register alone
+      // is the behaviour that makes a following LOCATE the only way
+      // to continue, which is what a program would have to do anyway.
+      // What would settle it: a disk diagnostic deck, and
+      // docs/disk_subsystem.md §6 records that none exists.
+      //
+      // ioDiskReqIssued needs no clearing on this path.  The arm sits
+      // ABOVE the request arms, so the flag is False whenever a word
+      // begins, and a word that reaches here has not been requested.
       ControlWord cw = ioDev.readChanCW(x.ch);
       cw.ee = 1;
       if (!x.suppressEop) cw.eop = 1;
@@ -493,7 +525,7 @@ module mkStretchCore(StretchCore);
       // store; the W-direction path is also held so the two
       // directions keep the same per-word pacing).
       noAction;
-    end else if (x.isWrite && !ioReadIssued) begin
+    end else if (x.isWrite && !x.zeroFill && !ioReadIssued) begin
       // W-direction (memory->device), first visit to this word:
       // issue the read request and wait. ioPending/x are left
       // untouched (same devIdx/memAddr/remaining next call), so the
@@ -501,8 +533,22 @@ module mkStretchCore(StretchCore);
       // response is ready.
       st.readWordReq(x.memAddr);
       ioReadIssued <= True;
-    end else if (x.isWrite && !st.responseReady()) begin
+    end else if (x.isWrite && !x.zeroFill && !st.responseReady()) begin
       // W-direction: the memory read is in flight; wait for it.
+      noAction;
+    end else if (kind == DevDisk && !x.isWrite && !ioDiskReqIssued) begin
+      // RD-direction disk, first visit to this word.  Same two-arm
+      // request/wait shape as the tape below, and for the same
+      // reason: a real platter is not combinational and an SD-backed
+      // source will be many clocks.
+      //
+      // NO SKIP ARM HERE.  Printed p.158: the disk "makes no use of
+      // control word flag bits", and StretchExecute zeroes skip in
+      // the control word the synchronizer adopts, so x.skip is always
+      // False on a disk transfer.
+      ioDev.diskReadReq(truncate(x.devIdx));
+      ioDiskReqIssued <= True;
+    end else if (kind == DevDisk && !x.isWrite && !ioDev.diskRespReady()) begin
       noAction;
     end else if (kind == DevTape && !x.isWrite && !x.skip
                  && !ioTapeReqIssued) begin
@@ -534,7 +580,26 @@ module mkStretchCore(StretchCore);
       // clock, and the termination test twenty lines down has to see
       // it in THIS rule firing.
       Bool markJustRead = False;
-      if (kind == DevTape) begin
+      if (kind == DevDisk) begin
+        DiskIndex di = truncate(x.devIdx); // safe: checked against
+                                            // diskCapacity above
+        if (x.isWrite) begin
+          if (x.zeroFill) begin
+            // THE TAIL OF A SHORT WRITE, printed p.160.  No core read
+            // was issued for this word (the two W-direction arms
+            // above skip themselves when zeroFill is set), so there
+            // is no response to collect and nothing to collect it
+            // from -- this phase writes zeros and advances, full stop.
+            ioDev.writeDiskWord(di, 64'd0);
+          end else begin
+            Word64 v <- st.readWordResp();
+            ioDev.writeDiskWord(di, v);
+          end
+        end else begin
+          Word64 dv <- ioDev.diskReadResp();
+          st.writeWord(x.memAddr, dv);
+        end
+      end else if (kind == DevTape) begin
         TapeIndex ti = truncate(x.devIdx); // safe: confirmed < TapeWords above
         if (x.isWrite) begin
           Word64 v <- st.readWordResp();
@@ -579,11 +644,22 @@ module mkStretchCore(StretchCore);
       // untouched for this word.
       ioReadIssued <= False;
       ioTapeReqIssued <= False;
+      ioDiskReqIssued <= False;
       Bit#(19) rem1 = x.remaining - 1;
+      // ONE PAST THE WORD JUST MOVED, and its offset inside its arc.
+      // Both are needed twice below -- to decide whether a short disk
+      // WRITE still owes its arc a zero-filled tail (printed p.160)
+      // and to park the arc address register where printed p.161 says
+      // successive arcs leave it.
+      Bit#(25) nxtIdx = x.devIdx + 1;
+      Bit#(9)  arcOff = nxtIdx[8:0];
       ControlWord cw = ioDev.readChanCW(x.ch);
       // A SPACE FILE moves no data, so it leaves the control word's
       // data address and count alone; RD and W walk both forward.
-      if (!x.untilMark) begin
+      // SO DOES A ZERO FILL: the fill is not data, and a count that
+      // included it would tell the program it had written more than
+      // it asked to.
+      if (!x.untilMark && !x.zeroFill) begin
         cw.dataAddr = x.memAddr + 1;
         cw.count = truncate(rem1);
       end
@@ -610,7 +686,29 @@ module mkStretchCore(StretchCore);
         ioPending <= tagged Valid IoXfer {
           ch: x.ch, isWrite: x.isWrite, memAddr: x.memAddr,
           devIdx: x.devIdx + 1, remaining: 19'h40000,
-          suppressEop: x.suppressEop, skip: x.skip, untilMark: True };
+          suppressEop: x.suppressEop, skip: x.skip, untilMark: True,
+          zeroFill: False };
+      end else if (rem1 == 0 && kind == DevDisk && x.isWrite
+                   && !x.zeroFill && arcOff != 0) begin
+        // THE SHORT WRITE OWES ITS ARC A TAIL.  Reference Manual
+        // printed p.160: "The data written need not be a multiple of
+        // the number of words contained in an arc.  In this case,
+        // however, the remainder of the last arc will be
+        // automatically filled with zeros."
+        //
+        // The data phase is over -- its control word is written out
+        // here, unchanged from here on -- and the transfer continues
+        // in fill mode for the (512 - arcOff) words left in the arc.
+        // Nothing is read from core during it and the control word is
+        // not touched again, so a COPY CONTROL WORD afterwards shows
+        // the data the program asked for and not the fill.
+        ioDev.writeChanCW(x.ch, cw);
+        ioPending <= tagged Valid IoXfer {
+          ch: x.ch, isWrite: True, memAddr: x.memAddr,
+          devIdx: nxtIdx,
+          remaining: 19'd512 - zeroExtend(arcOff),
+          suppressEop: x.suppressEop, skip: False,
+          untilMark: False, zeroFill: True };
       end else if (rem1 == 0 && cw.chain == 1) begin
         // FIGURE 36, printed p.109, row (multiple 0, chain 1, count
         // zero, end of block NO): "Chain and continue".  This model
@@ -639,9 +737,23 @@ module mkStretchCore(StretchCore);
           ch: x.ch, isWrite: x.isWrite, memAddr: x.memAddr + 1,
           devIdx: x.devIdx + 1, remaining: 0,
           suppressEop: x.suppressEop, skip: x.skip,
-          untilMark: x.untilMark };
+          untilMark: x.untilMark, zeroFill: x.zeroFill };
       end else if (rem1 == 0) begin
         if (!x.suppressEop) cw.eop = 1;
+        // THE ARC ADDRESS REGISTER, printed p.161: "Associated with
+        // each disk is an arc address register.  As successive arcs
+        // are used, this register is increased by one for each arc."
+        // Parking it at nxtIdx >> 9 gives both halves of that in one
+        // expression: an arc that was completed leaves the register
+        // on the NEXT arc, and an arc only partly used leaves it on
+        // ITSELF -- which is also what p.161's RELEASE rule describes
+        // ("left at the address of the last arc used unless
+        // transmission of that arc has been completed").  After a
+        // zero-filled WRITE the index is arc-aligned by construction,
+        // so a short write still advances a whole arc, which is what
+        // "the remainder of the last arc will be automatically filled"
+        // means for the arc after it.
+        if (kind == DevDisk) ioDev.setArcAddr(truncate(nxtIdx >> 9));
         // THE SEOP STATUS BIT IS CLEARED AT COMPLETION, and this half
         // of the rule is NOT a quotation.  Reference Manual p.121 was
         // read whole: it says the bit is set when an SEOP instruction
@@ -689,7 +801,7 @@ module mkStretchCore(StretchCore);
           ch: x.ch, isWrite: x.isWrite, memAddr: x.memAddr + 1,
           devIdx: x.devIdx + 1, remaining: rem1,
           suppressEop: x.suppressEop, skip: x.skip,
-          untilMark: x.untilMark };
+          untilMark: x.untilMark, zeroFill: x.zeroFill };
       end
     end
     ebusy <= eb;
@@ -995,7 +1107,8 @@ module mkStretchCore(StretchCore);
     ioDev.writeChanCW(chanTape, fixed);
     ioPending <= tagged Valid IoXfer {
       ch: chanTape, isWrite: False, memAddr: 4, devIdx: 0,
-      remaining: 1, suppressEop: True, skip: False, untilMark: False };
+      remaining: 1, suppressEop: True, skip: False, untilMark: False,
+      zeroFill: False };
     iplActive <= True;
   endmethod
 

@@ -50,7 +50,8 @@ pulled from bitsavers.org):
 | `StretchVFL.bsv` | Variable-field-length bit extract/insert. |
 | `StretchALU.bsv` | Sign-and-magnitude arithmetic primitives. |
 | `StretchExecute.bsv` | The execute datapath for the in-scope opcode subset (`execute`), and `mkEBox`, the E-box as a request/busy/result box: `start` runs an instruction and, if it needs an operand word, issues the read and holds the instruction (`busy`, `busyFor(owner)`, `canResume`) until the core's resume arm calls `resume`; `exec` is the bare one-shot datapath for the preparation arm's operand-address probe. |
-| `StretchIO.bsv` | Simulated Input-Output subsystem (three fixed devices — card reader, printer, tape — standing in for the real Exchange and external units); see its own file header for the full scope statement. |
+| `StretchIO.bsv` | Simulated Input-Output subsystem (four fixed devices — card reader, printer, tape, disk — standing in for the real Exchange, the IBM 7612 disk synchronizer, and the external units); see its own file header for the full scope statement. |
+| `StretchDiskSource.bsv` | The 353 platter behind an interface, the way `StretchTapeSource.bsv` holds the 729's reel: `DiskIndex`/`ArcAddr`/`arcWords`, and a small RegFile-backed source of two arcs to test against. A unit is 2²¹ words, so the real thing is a host file or an SD card, not registers. |
 | `StretchIBox.bsv` | The instruction unit's stage module `mkInstrBuffers` (1Y/2Y buffers + IC controls: `advance` once per clock, `lookup` for preparation) and, as functions, the instruction classification (E-box class, fetches an operand, stores where, progressive) and the I-box-ahead-of-look-ahead hazard test. |
 | `StretchLookAhead.bsv` | The four-level look-ahead as a stage module `mkLookAhead`: `collect` every clock (operand arrivals, one fetch issue), the levels/head/tail/count for the decision arms, and their three mutations `retireHead`/`load`/`cancelAll`. |
 | `check_schedule.py` | Run by `build.sh` on bsc's `-show-schedule` output: fails if any core rule is blocked by another core rule (only exported harness methods may block one) — the assertion `fire_when_enabled` cannot make at the synthesized boundary, see "Toolchain" item 10. |
@@ -212,11 +213,18 @@ execution operations: `EX` executes as of 2026-09-25 and `EXIC` as of
   BACKSPACE BLOCK, p.132); every other tape function code (SPACE
   BLOCK/FILE, WRITE TAPE MARK, BACKSPACE FILE, density/ECC/parity/
   light functions) and `CTL` on the reader/printer still fall through
-  to Operation Code Invalid, as does `LOC` entirely (this model's
-  one-tape-unit-per-channel simplification has no unit-selection
-  hierarchy for LOC to navigate — see `StretchIO.bsv`
-  "INSTRUCTIONS"). Verified against purpose-written programs (no
-  worked example in the manual happens to cover this) — see
+  to Operation Code Invalid. **`LOC` now splits in two.** On a disk
+  channel it is a SEEK and is implemented: Reference Manual printed
+  p.160, "the right effective address… specifies the arc address",
+  and it sets the arc address register the disk's READ and WRITE then
+  consume arcs from. On an Exchange channel it is SELECT UNIT
+  (C22-6531 Appendix A printed p.57 lists them as one operation:
+  "E LOC Locate (same as Select Unit)") and still sets Operation Code
+  Invalid — this model's one-unit-per-channel simplification has no
+  unit-selection hierarchy for it to navigate, and MCP's ERROR
+  ROUTINE is the only thing in the corpus that uses that form (printed
+  p.5 line 36). Verified against purpose-written programs (no worked
+  example in the manual happens to cover this) — see
   `../strap/README.md`.
 - **`EX` (EXECUTE)** — Reference Manual printed pp.49-50. "Bits 0-18
   of the effective address form the address of the location of a
@@ -285,7 +293,8 @@ execution operations: `EX` executes as of 2026-09-25 and `EXIC` as of
 ### matches real-machine behavior for a suppressed instruction)
 
 Decimal-mode VFL (`c=1`), radix conversion, floating-point arithmetic
-beyond L/ST, Input-Output's `LOC` and most of `CTL` (see above),
+beyond L/ST, Input-Output's `LOC` **on an Exchange channel** (the
+disk form is executed — see above) and most of `CTL`,
 Transmit backward/`SWAP`/multi-word/direct-count. (SIC, Store
 Instruction Counter If, Bit Branching, `EX` and `EXIC` have all moved
 to "Executed" — see there.)
@@ -486,11 +495,16 @@ genuine, load-bearing scope cut: Stretch's fame rests on its
 microarchitecture as much as its ISA, and that is future work, not
 something this session attempted. I/O channels and the exchange ARE
 now simulated (see "Executed" above and `StretchIO.bsv`), but only
-enough of them to run RD/W/CCW/REL/CTL against three fixed devices
-(the last of which -- tape -- only supports two of its real CTL
-function codes) with no real device timing, no LOC, and no
-CPU-indicator-register or Channel-Address-register propagation of I/O
-status.
+enough of them to run RD/W/CCW/REL/CTL against four fixed devices
+(the tape supports two of its real CTL function codes; the disk is
+not on the Exchange at all and has its own arc-addressed LOCATE) with
+no real device timing -- **and for the disk, "no timing" is a bigger
+departure than it is for the others**: printed pp.161-162 give a
+three-point seek model, a rotational distribution and 8 µs per word,
+all of which a functionally-correct program cannot see but a
+cycle-accurate one must have (docs/disk_subsystem.md §4). There is
+also still no CPU-indicator-register or Channel-Address-register
+propagation of I/O status.
 
 ## Toolchain
 
