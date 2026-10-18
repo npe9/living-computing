@@ -1403,6 +1403,142 @@ run "MCP's IPL bootstrap, printed pp.5-6, bit-exact (MCP_Mar63 PDF pp.12-13)" py
 # 11C11IPL, where these pages are 11E11BSP.  Separate assemblies,
 # which is what TAIL exists to make work.
 
+run "MCP's error messages, printed pp.9-12 (MCP_Mar63 PDF pp.16-19)" python3 verify_mcp_bootstrap_p9_p12.py
+# THE AREA CONTAINING ERROR MESSAGES -- thirty-one message blocks,
+# thirty-six labels, one hundred and ten printed rows.  Four pages in
+# one file because the page breaks fall INSIDE messages: X MS 05B's
+# control code is the last row of p.9 and its text the second row of
+# p.10.
+#
+# >>> WHAT A PASS HERE DOES NOT MEAN <<<
+# The listing prints NOTHING in the BINARY OUTPUT column for an
+# (IQS*)DD row.  No character code is checked and none can be from
+# this listing; strap/charsets.py's IQS table rests on Reference
+# Manual printed p.166 alone, and says so at length.
+#
+# WHAT IT DOES MEAN is the COUNTING, checked thirty-one times.  A
+# converted DD steps the location counter eight bits per character
+# with the end-of-statement character not compiled, so the next
+# printed location states exactly how long the message is.  That is
+# what fixes the trailing blanks -- " EKJ ON CCW OF IPL CW" has none,
+# " CBJ DETECTED IN IO TEST ROUTINE " has one -- which no amount of
+# staring at a drum printer would settle.  Injecting ONE extra
+# character into the first message moves X MSG 01 from 000260.00 to
+# 000261.00 and the check fails, so it is not vacuous.
+#
+# FOUR THINGS THE ASSEMBLER LEARNED HERE, each forced by a row:
+#   - ENTRY MODES.  "(IQS*)DD(BU,64,8), TEXT*" is a prefix in front of
+#     the op, its datum is NOT split on commas (MCP writes commas
+#     inside one), and blanks in it are characters.  C28-6129 printed
+#     p.16: the last character of the prefix is the programmer's
+#     END-OF-STATEMENT CHARACTER and "is not compiled" -- so (IQSX)
+#     is mode IQS terminated by X, not a fifth mode.
+#   - charsets.py, the 48 and 89 Character Sets off Reference Manual
+#     printed p.166, read twice independently and agreeing.
+#   - Blanks inside a radix literal are GROUPING: the control codes
+#     are written "(2)1111 1101".
+#   - CNOP pads to the next HALF word with zeros before laying down a
+#     NOP.  Printed p.9 line 39's code ends at 000307.20 and line
+#     40's NOP prints at 000307.40, which is the only filling that
+#     puts the NOP in the second half word.
+#
+# And listing_oracle gained the 8-bit DD print shape, three octal
+# digits, which is a third of the checkable output on these pages.
+
+run "MCP's IPL bootstrap, printed p.13, bit-exact (MCP_Mar63 PDF p.20)" python3 verify_mcp_bootstrap_p13.py
+# THE PAGE THAT DEFINES WHAT THE OTHERS HAVE BEEN SYN-ING.  X S ROOF
+# and XW SR were SYN'd from here by printed p.2's transcription -- the
+# first MCP page this project read -- and X ERR AD by pp.3-6's.  Here
+# the assembler places them from the instruction stream instead, which
+# is the whole difference between an input to a check and a witness.
+#
+# X IPL K SETTLES THE TWO-NUMBER QUESTION.  printed p.2's IPL control
+# word counts 0o560 = 368 words, X BS END - X IPL BS, the record the
+# tape holds.  X IPL K is "1.0 + X BS END - X IPLBS" and comes out
+# 000561.00 = 369, one more, including its own control word.  Both
+# are right; mcp_tape_manufacture.md 2.1 flagged the reconciliation as
+# unsourced and this row is the listing's own arithmetic doing it.
+#
+# AND THE XW COUNT FIELD IS IN WORDS -- a bug this page caught.  Line
+# 35 writes the count as a bare integer, "XW,0.0,29,XW IND", and the
+# listing prints 000035.  Line 36 writes the same kind of number in
+# word.bit form, "XW,X IPLK+33.0,20.0", and the listing prints 000024.
+# The assembler shifted NEITHER, so line 36 came out 0002400, sixty-
+# four times too large.  C22-6531 printed p.12's rule had been applied
+# to XW's REFILL and to CW's COUNT and not to XW's own COUNT.  THIRD
+# INSTANCE OF THE SAME BUG CLASS; no existing program writes a dotted
+# XW count, which is why nothing caught it before.
+
+run "MCP's IPL bootstrap, printed p.14, bit-exact (MCP_Mar63 PDF p.21)" python3 verify_mcp_bootstrap_p14.py
+# PROSA CWS -- the bootstrap's LAST page, and thirty-nine chained
+# control words checked in the four-group form the listing prints
+# them in.  Each fetches one PROSA record of 513 words into X BUFER,
+# 512 words further along than the one before, chaining by refilling
+# from $+1.0.  The thirty-eight chained ones are CW(CDSC) -- C28-6129
+# printed p.14's "Count Disregarding Record, Skip and Chain", flags
+# 110 -- and the thirty-ninth is CW(CR), flags 000, which is what
+# stops the channel.
+#
+# THE COUNT AND THE ADDRESS CHECK EACH OTHER, thirty-nine times.  The
+# statements write ",513," and the listing prints 001001 octal = 513;
+# the addresses step 0o1000 words at a time against operands written
+# 0, 512., 1024., so the decimal-to-octal conversion is confirmed
+# independently on every row.
+#
+# X BS END IS WHAT printed p.2's IPL CONTROL WORD COUNTS TO.  p.2's
+# CW(CR) counts X BS END - X IPL BS = 0o621 - 0o41 = 0o560 = 368
+# words, and until now p.2's transcription SYN'd X BS END from this
+# page.  Here the assembler places it.
+#
+# AND A TYPO THAT IS IBM's.  Line 22's comment reads "-FETCH ONE
+# PROSA REXORD" -- X, not C -- where thirty-eight others say RECORD.
+# Verified at 600 dpi.  It compiles to nothing and it is the proof
+# that these rows were keyed by hand rather than generated.
+
+run "MCP's error table, printed pp.7-8 (MCP_Mar63 PDF pp.14-15)" python3 verify_mcp_bootstrap_p7_p8.py
+# X ERR DD -- THE LAST TWO PAGES OF THE BOOTSTRAP TO BE TRANSCRIBED,
+# and the index to all the rest: seventy-eight VF half words, one pair
+# per error code, holding the address of the site that failed and the
+# address of the message to print for it.  printed p.5's
+# "X ERR SH KV,$1,0.0($2)" is the loop that scans it.
+#
+# THE TABLE CHECKS ITS OWN LENGTH.  printed p.8 line 31 is
+# "X E DD K SYN,$-X ERR DD -SIZE OF ERROR TABLE" and the listing
+# prints 000047.00+ -- thirty-nine words, which is what seventy-eight
+# half words occupy and what thirty-nine distinct error codes need.
+# The table's extent was never assumed.
+#
+# AND THE TWO TRANSCRIPTIONS CROSS-CHECK.  The thirty-nine message
+# labels are SYN'd here but PLACED by mcp_bootstrap_p9_p12.strap and
+# _p13.strap from their own instruction streams, and the verifier
+# asserts the two agree before checking a single row.  IT EARNED ITS
+# KEEP IMMEDIATELY: the first run failed on X MSG 25, because the
+# generator that wrote these SYNs had converted the bit part of
+# 000513.30 out of octal.  Three statements -- the page's printed VF,
+# the SYN, and the other program's placement -- now have to coincide.
+#
+# THREE THINGS THE TABLE SAYS ABOUT MCP:
+#   - EIGHT ENTRIES SHARE FIVE MESSAGES.  000432.00 appears four
+#     times under four different descriptive comments.  Several
+#     distinct failures deliberately print the same text.
+#   - THE TABLE IS NOT IN ERROR-CODE ORDER (the code-10 pair sits
+#     between 05E and 06), which rules out indexing by code and fits
+#     X ERR IN being a SEARCH word scanned by p.5's KV loop.
+#   - X ERR 20 AND X ERR 21 ARE "BD,$", NOT "SIC,X ERR AD".  Their
+#     messages are "NO CONSOLE DEFINED" and "NO CONSOLE AVAILABLE":
+#     with no console there is nothing to print to, so there is
+#     nothing to store an address for.  They just halt.
+#
+# WHAT THE ASSEMBLER LEARNED HERE: DR (Data Reservation, which emits
+# nothing and whose width is checked by what follows it), and that a
+# BARE "CW" with no secondary is legal and means all three flags zero
+# -- printed p.8 writes it twice and both print 000.
+# AND ONE SUBSTITUTION: line 34's "X MSG CW(.25)1" is a BIT
+# DESIGNATION, set bit 25, which is the chain flag; written CW(CCR)
+# here, which C28-6129 printed p.14 defines as the same three bits.
+# Inventing the general semantics of bit designations from one row is
+# what rule 4 forbids; the checked row proves the substitution.
+
 run "The STRETCH MAINTENANCE COMPOOL, 65 symbols (ka_ua1 PDF pp.129-130)" python3 verify_dcp_compool.py
 # THE ROSETTA STONE, and the first piece of the Diagnostic Control
 # Program transcribed.  docs/archival_inventory.md: "the single

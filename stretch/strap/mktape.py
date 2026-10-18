@@ -93,6 +93,10 @@ def main():
     ap.add_argument("--refill", type=int, default=1,
                     help="refill field of the IPL control word "
                          "(default 1, as MCP's own bootstrap uses)")
+    ap.add_argument("--cw-in-image", action="store_true",
+                    help="the program's FIRST WORD already is the IPL "
+                         "control word; write the image verbatim and "
+                         "synthesise nothing")
     args = ap.parse_args()
 
     with open(args.program) as f:
@@ -124,6 +128,36 @@ def main():
     # The image is contiguous from `start`: a tape is read sequentially
     # into consecutive words, so a gap in the assembly becomes a zero
     # word rather than a skipped address.
+    if args.cw_in_image:
+        # A HISTORICAL PROGRAM BRINGS ITS OWN CONTROL WORD, and it is
+        # not the same word this file would synthesise.  MCP's printed
+        # p.2 line 17 assembles
+        #
+        #     000040.00   000041.00+ 000 000560 000001
+        #
+        # and the printed value's IBM bit 18 -- inside the "000041.00"
+        # group -- is ZERO, i.e. the UNIT READY status bit is clear,
+        # where pack_control_word below sets it.  RefMan printed p.123
+        # says the exchange ignores a fetched control word's status
+        # bits, so the two behave alike; but the tape should carry the
+        # word the assembler produced, not a reconstruction of it.
+        # With --cw-in-image the image is written out verbatim from
+        # its own first word, which IS the control word.
+        if args.start is not None:
+            print("error: --cw-in-image and --start are exclusive",
+                  file=sys.stderr)
+            sys.exit(1)
+        body = [prog.words.get(a, 0) for a in range(lo, hi + 1)]
+        with open(args.out, "wb") as f:
+            for w in body:
+                f.write(struct.pack(">Q", w & 0xFFFFFFFFFFFFFFFF))
+        print(f"{args.out}: {len(body)} words ({8 * len(body)} bytes)")
+        print(f"  word 0   the program's OWN control word, from "
+              f"{lo} (0o{lo:o})")
+        print(f"  words 1+ program image {lo + 1}..{hi} "
+              f"(0o{lo + 1:o}..0o{hi:o})")
+        return
+
     count = hi - start + 1
     body = [prog.words.get(a, 0) for a in range(start, hi + 1)]
     cw = pack_control_word(start, count, args.refill)

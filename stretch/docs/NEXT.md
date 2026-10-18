@@ -4068,14 +4068,42 @@ Each was cross-checked against its own printed binary: `X ERR IN`'s
 is `S YPRCH VF,22.4 -THE CHANNEL NUMBER OF THE PRINTER`, which is
 what makes the CO/PR in the two names legible rather than inferred.
 
-**`S YCOCH` IS IN A DIFFERENT DECK.** Printed p.37 is headed "`*****
-THE COMMUNICATION REGION FOR MCP *****`", its banner reads `PUNID
-11C11IPL` and its cards are the `13000xxx` series, where the
-bootstrap pages read `PUNID 11E11BSP` and `11000xxx`. So printed p.5
-references a symbol defined in a *separately assembled* deck — the
-first cross-deck reference this project has had to resolve, and
-something `TAIL,(2)G` (docs/NEXT.md 5x) exists to make work. Anything
-citing `S YCOCH` must say which deck it is from.
+**`S YCOCH` LOOKED LIKE A DIFFERENT DECK AND IS NOT — corrected
+2026-10-17.** Printed p.37 is headed "`***** THE COMMUNICATION REGION
+FOR MCP *****`", its banner reads `PUNID 11C11IPL` and its cards are
+the `13000xxx` series, where the bootstrap pages read `PUNID
+11E11BSP` and `11000xxx`. This was written up here, and in
+`mcp_bootstrap_p5_p6.strap`, as "the first cross-deck reference this
+project has had to resolve", with a nod to `TAIL`.
+
+**Printed p.15 line 5 settles it the other way**, read first-hand at
+600 dpi:
+
+```
+ 5*                      PUNID,11C11IPL
+ 6*                      RESEQ
+ 7* 000621.00            SLC,X BS END
+```
+
+`PUNID` and `RESEQ` change the identification and sequence **punched
+into the cards**; neither ends an assembly. So printed pp.3-15 and
+pp.16 onward are **one STRAP assembly punching two decks** — which is
+exactly why line 7 can `SLC` to a symbol defined on printed p.14, and
+why p.5 can name one defined on p.37. **Nothing here needs `TAIL`.**
+
+The same structure explains printed p.13's `X BUFER SYN,X IN END+
+2000.0`: `X IN END` is defined on **printed p.98 line 36**, `SYN,$`
+at `005466.00`, eighty-five pages later and still the same assembly.
+And `2000.0` is **decimal** — `0o11406` − `0o5466` = 4870 − 2870 =
+2000 exactly, where an octal reading would need `0o3720`.
+Corroborated independently by printed p.15 line 15, `X IN
+BE,X IN END-X IN` at `000621.00` with address field `004645`:
+`0o621 + 0o4645 = 0o5466`.
+
+**The general rule this turned up, which the oracle needs:** on a
+`SYN` row the LOCATION column prints the **resolved symbol value**,
+not the assembly location counter. That is why `X BUFER` prints
+`011406.00+` on a page whose counter is running `000526`-`000551`.
 
 **AND A PAGE-OFFSET RESULT WORTH KEEPING**, since the offsets differ
 per document and this one was known only for pp.2-15: the MCP
@@ -4269,6 +4297,275 @@ bit-field designation inside a `CW` field.
 
 ---
 
+## 6g. MCP's PAGES 9-12 — the error messages, and a check that is honest about its limits
+
+**2026-10-17.** `strap/programs/mcp_bootstrap_p9_p12.strap` and
+`strap/verify_mcp_bootstrap_p9_p12.py`, in the suite: **thirty-one
+message blocks, thirty-six labels, one hundred and ten printed
+rows.** Four pages in one file because the page breaks fall *inside*
+messages — `X MS 05B`'s control code is the last row of p.9 and its
+text the second row of p.10, and `X MSG 10` and `X MSG 17` are split
+the same way.
+
+### What a pass means, and what it does not
+
+**THE LISTING PRINTS NOTHING IN THE BINARY OUTPUT COLUMN FOR AN
+`(IQS*)DD` ROW.** So no character code is checked here and none can
+be from this listing. `strap/charsets.py`'s IQS table rests on
+Reference Manual printed p.166 alone.
+
+**What is checked is the counting, thirty-one times.** A converted
+`DD` steps the location counter eight bits per character with the
+end-of-statement character not compiled, so the next printed location
+is an exact statement about the message's length. Every text was
+read off the page and then its length compared with the listing's own
+address delta; all thirty-one agreed, as did the eight-character
+width of all thirty-one address slots.
+
+**That is what fixes the trailing blanks**, and nothing else would:
+`" EKJ ON CCW OF IPL CW"` has none and `" CBJ DETECTED IN IO TEST
+ROUTINE "` has one. A drum printer's output cannot be stared at hard
+enough to settle that; the page's own arithmetic settles it.
+
+**And the check is not vacuous**: injecting one extra character into
+the first message moves `X MSG 01` from `000260.00` to `000261.00`
+and the verifier fails. That was run.
+
+### Four things the assembler learned, each forced by a row
+
+* **Entry modes.** `(IQS*)DD(BU,64,8), TEXT*` is a parenthesised
+  prefix *in front of* the op — nothing else in the grammar starts a
+  statement with `(`. Its datum is **not split on commas** (MCP
+  writes commas inside one, printed p.2 line 4) and blanks in it are
+  characters, eight bits each. C28-6129 printed p.16: the last
+  character of the prefix is the programmer's **end-of-statement
+  character** and "is not compiled", so `(IQSX)` is mode IQS
+  terminated by `X`, not a fifth mode.
+* **`strap/charsets.py`** — the 48 and 89 Character Sets off
+  Reference Manual printed p.166, transcribed twice independently
+  (once delegated at 600 dpi, once here from the cell positions) and
+  agreeing on all 49 entries of the 48 set and sixteen spot checks of
+  the 89 set.
+* **Blanks inside a radix literal are grouping**, not separators. The
+  control codes are written `(2)1111 1101` and print as `375`.
+* **`CNOP` pads to the next HALF word with zeros before laying down a
+  NOP.** Printed p.9 line 39's eight-bit code ends at `000307.20` and
+  line 40's NOP prints at `000307.40` — the only filling that puts
+  the NOP in the *second* half word. The zero fill itself is not
+  printed anywhere, so it is an inference from the NOP's position and
+  is labelled as one in the code.
+
+`listing_oracle.render` also gained the **8-bit `DD` print shape**,
+three octal digits, which is a third of the checkable output on these
+pages.
+
+### Two things the pages say about MCP itself
+
+* **Five messages carry more than one label.** `X MSG 15`, `X MSG
+  16`, `X MS 16A` and `X MS 16B` are four names for one text, and
+  `X MSG 20`/`X MS 21A` and `X MSG 21`/`X MSG 23` are pairs. The
+  listing is saying that several distinct failures print the same
+  thing.
+* **`X MSG 25` is deliberately not word-aligned**, at `000513.30`.
+  Everywhere else the deck writes end-of-message code, `CNOP`, then
+  the next `SYN`; printed p.12 lines 42-44 write the `SYN` *before*
+  the `CNOP`, so the label points at the trailing edge of the
+  previous message. Writing it the usual way would have put it at
+  `000514.00`.
+
+**Next: printed p.13**, which carries `X MSG 27`, `28` and `29` at
+its top and then BOOTSTRAP DEFINITIONS — and after that pp.7-8, the
+error table, which can finally cite these thirty-six labels from the
+pages that define them.
+
+---
+
+## 6h. MCP's PAGE 13 — the page the whole transcription has been SYN-ing
+
+**2026-10-17.** `strap/programs/mcp_bootstrap_p13.strap` and
+`strap/verify_mcp_bootstrap_p13.py`, in the suite: eight symbols and
+fourteen printed rows, all matching.
+
+**This is the page printed p.2 borrowed from on the first day.**
+`X S ROOF` and `XW SR` were `SYN`'d out of it by
+`mcp_bootstrap_p2.strap`, and `X ERR AD` by pp.3 through 6. Here the
+assembler places all three from the instruction stream, which is the
+whole difference between an input to a check and a witness.
+
+### `X IPL K` settles the two-number question, with the page's own arithmetic
+
+`mcp_tape_manufacture.md` §2.1 flagged a reconciliation it could not
+source: printed p.2's IPL control word counts `0o560` = **368**
+words, and some other reasoning wanted **369**. Printed p.13 line 27
+is
+
+```
+27* 000561.00+   -00000000   BU,40 ,10   X IPL K  SYN, 1.0 + X BS END - X IPLBS   - SIZE OF BOOTSTRAP
+```
+
+`0o561` = 369. So **both numbers are right and they mean different
+things**: `X BS END - X IPL BS` is the record the tape holds, and
+`X IPL K` is that plus one, the bootstrap *including its own control
+word*. A verification has to say which it is counting, and now it
+can cite a row rather than an inference.
+
+### And a third instance of one bug class
+
+**The `XW` COUNT field is in WORDS.** Line 35 writes the count as a
+bare integer — `XW,0.0,29,XW IND` — and the listing prints `000035`.
+Line 36 writes the same kind of number in `word.bit` form —
+`XW,X IPLK+33.0,20.0` — and the listing prints `000024`. The
+assembler shifted **neither**, so line 36 came out `0002400`, sixty-
+four times too large.
+
+C22-6531 printed p.12's rule (an integer in a word-counted field is
+already in words; a bit address scales `>>6`) had been applied to
+`XW`'s REFILL and to `CW`'s COUNT and **not to `XW`'s own COUNT**.
+**No program in the corpus writes a dotted `XW` count**, which is
+exactly why nothing caught it: the gap was invisible until a
+historical listing wrote the field the other legal way. Same shape as
+the `CW` count bug earlier the same day.
+
+### Left for later
+
+Line 38, `X BUFER SYN,X IN END+ 2000.0`, is **deliberately not
+transcribed**. Its value is printed (`011406.00`) but `X IN END` is
+defined on some other page, and `SYN`-ing it from this row's own
+printed value would make the row prove nothing —
+`mcp_bootstrap_p4.strap` already cites `X BUFER` at `011406.00` from
+here. What is missing is the page that defines `X IN END`.
+
+**Remaining for M3: printed p.14** (the forty-two chained PROSA
+control words and `X BS END`), then **pp.7-8**, the error table,
+which can now cite all thirty-nine message labels from the pages that
+define them.
+
+---
+
+## 6i. MCP's PAGE 14 — the bootstrap's last page, and the symbol p.2 borrowed on day one
+
+**2026-10-17.** `strap/programs/mcp_bootstrap_p14.strap` and
+`strap/verify_mcp_bootstrap_p14.py`, in the suite: **thirty-nine
+chained control words, every one checked** in the four-group form the
+listing prints, plus `X PROSA` and `X BS END`.
+
+Each control word fetches one PROSA record of 513 words into
+`X BUFER`, 512 words further along than the one before, chaining by
+refilling from `$+1.0`. **Thirty-eight are `CW(CDSC)`** — C28-6129
+printed p.14's "Count Disregarding Record, Skip and Chain", flags
+`110` — **and the thirty-ninth is `CW(CR)`**, flags `000`, which is
+what stops the channel.
+
+**The count and the address check each other, thirty-nine times.**
+The statements write `,513,` and the listing prints `001001` octal =
+513; the last writes `,512,` and prints `001000`. The addresses step
+`0o1000` words at a time — `011406`, `012406`, `013406` — against
+operands written `0`, `512.`, `1024.`, so the decimal-to-octal
+conversion is independently confirmed on every row.
+
+**`X BS END` is what printed p.2's IPL control word counts to.**
+p.2's `CW(CR)` counts `X BS END − X IPL BS` = `0o621 − 0o41` =
+`0o560` = 368 words, and p.2's transcription has been `SYN`-ing
+`X BS END` from here since the first day. Now the assembler places
+it, and p.13's `X IPL K` counts one more. **All three numbers come
+from rows rather than reasoning.**
+
+### A typo that is IBM's, and what it proves
+
+Line 22's comment reads **`-FETCH ONE PROSA REXORD`** — X, not C —
+where thirty-eight others say RECORD. Verified at 600 dpi. It
+compiles to nothing, and it is the proof that these thirty-nine
+near-identical rows were **keyed by hand rather than generated**. A
+page that looks formula-clean is worth one spot check for exactly
+this reason: if it had been generated, a single transcription error
+in my reading would have been indistinguishable from the pattern.
+
+(Line 4 also writes `CW(CDSC),0` with no trailing period where every
+other row writes `512.`, `1024.` and so on. Zero needs no units, so
+the two spellings agree.)
+
+---
+
+## 6j. MCP's PAGES 7 AND 8 — the error table, and the bootstrap is transcribed
+
+**2026-10-17.** `strap/programs/mcp_bootstrap_p7_p8.strap` and
+`strap/verify_mcp_bootstrap_p7_p8.py`, in the suite: **seventy-eight
+`VF` half words and seven symbols, ninety checks.**
+
+**ALL THIRTEEN PAGES OF MCP's IPL BOOTSTRAP ARE NOW TRANSCRIBED** —
+printed pp.2 through 14, `docs/boot_plan.md` M3's transcription step.
+
+`X ERR DD` is the index to everything else: one word per error code,
+the first half holding the address of the site that failed and the
+second the address of the message to print for it. Printed p.5's
+`X ERR SH  KV,$1,0.0($2)` is the loop that scans it.
+
+**The table checks its own length.** Printed p.8 line 31 defines
+`X E DD K SYN,$-X ERR DD  -SIZE OF ERROR TABLE` and the listing
+prints `000047.00+` — thirty-nine words, which is exactly what
+seventy-eight half words occupy and exactly the number of distinct
+error codes (00–29 plus 05A–05E, 16A–16C and 21A). The table's
+extent was never assumed.
+
+### The cross-check earned its keep on its first run
+
+The thirty-nine message labels this page names are `SYN`'d here but
+**placed** by `mcp_bootstrap_p9_p12.strap` and `_p13.strap` from
+their own instruction streams. The verifier asserts the two agree
+before checking a single row — and the first run failed:
+
+```
+FAIL MCP pp.7-8 XMSG25: this page SYNs bit 21204, pp.9-13 place it at bit 21208
+```
+
+The generator that wrote those `SYN`s had converted the **bit** part
+of `000513.30` out of octal. Every other label ends `.00`, so one
+symbol in thirty-nine was wrong and the page's own rows would still
+have passed — the `VF` for `X MSG 25` would have been checked against
+a value this file had itself invented. **Three statements now have to
+coincide**: the page's printed `VF`, the `SYN`, and the other
+program's placement.
+
+### Three things the table says about MCP
+
+* **Eight entries share five messages.** `000432.00` appears four
+  times — `X MSG 15`, `X MSG 16`, `X MS 16A`, `X MS 16B` — under four
+  different descriptive comments, and `000464.00` and `000501.00`
+  twice each. The message block is otherwise strictly sequential, so
+  three described messages have **no storage of their own**: several
+  distinct failures deliberately print the same text.
+* **The table is not in error-code order.** The code-10 pair sits
+  between 05E and 06 and everything else is sequential. That rules
+  out indexing by code and fits `X ERR IN` being a **search** word —
+  `XW,X ERR DD,X E DD K+1.0,0` — scanned by p.5's `KV` loop rather
+  than subscripted.
+* **`X ERR 20` and `X ERR 21` are `BD,$`, not `SIC,X ERR AD`.** Every
+  other error site stores its instruction counter so the routine can
+  print where it failed; these two branch-disabled to themselves and
+  halt. Their messages are "NO CONSOLE DEFINED" and "NO CONSOLE
+  AVAILABLE" — **with no console there is nothing to print to, so
+  there is nothing to store an address for.** The two corroborate
+  each other.
+
+### What the assembler learned, and one substitution
+
+* **`DR`**, Data Reservation. It emits nothing — that is what a
+  reservation is — and its width is checked by what follows: printed
+  p.8's `X LR DR(BU,64),(3)` puts `X ERR CW` three words later.
+* **A bare `CW` with no secondary is legal** and means all three
+  flags zero, the same bits `CR` sets. Printed p.8 writes it twice
+  and both print `000`. The assembler used to demand one of the eight
+  secondaries, which would have made those historical rows
+  unassemblable.
+* **Line 34's `X MSG CW(.25)1` is a BIT DESIGNATION** — set bit 25,
+  which is a control word's chain flag — and is written `CW(CCR)`
+  here. C28-6129 printed p.14 defines `CCR` as chain 1, multiple 0,
+  skip 0, the same three bits, and the checked row proves the
+  substitution. Inventing the general semantics of bit designations
+  from one row is what rule 4 forbids.
+
+---
+
 ## 6. Open questions — record, do not guess
 
 **What is the `-ILLEGAL OP.` word doing in routine 1262's TEST 3A and
@@ -4447,6 +4744,16 @@ printed page numbers.
 
 ## Traps this project has paid for
 
+* **DO NOT EDIT `strap_asm.py` WHILE A SUITE IS RUNNING.** The rule
+  everyone remembers is "never edit `run_tests.sh` while a suite is
+  reading it" — `sh` reads the script by byte offset. The rule that
+  bit on 2026-10-17 is the other half: `run_tests.sh` invokes
+  `python3` *per section*, so a mid-run edit to a module leaves the
+  sections before it tested against the old code and the sections
+  after it against the new. The run does not fail; it produces a
+  **verdict about no single version of the assembler.** The only
+  honest response is to discard it and re-run, which is what was
+  done. A suite's result is only as atomic as the tree it read.
 * A bare `*` or `L` assembles as **VFL**, not floating point. Write
   `*(N)`, `L(N)`.
 * Give any data section an explicit `SLC`: `DD` emits at the location

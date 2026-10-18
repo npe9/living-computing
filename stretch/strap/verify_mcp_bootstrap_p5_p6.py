@@ -84,8 +84,12 @@ ROWS = [
      "p.5 line 17  M+MG(BU,8,8),.8+.48+.8($2)  -FORM HALF WORD PORTION"),
     ("000141.40", "000247.05 D0",
      "p.5 line 18  SVA,$2,XMSG CW  -INITIALIZE CW"),
-    # S YCOCH is defined in a DIFFERENT DECK -- printed p.37, PUNID
-    # 11C11IPL, against these pages' 11E11BSP.
+    # S YCOCH is defined eighty-five printed pages away, on p.37,
+    # under a different PUNID -- but it is the SAME ASSEMBLY, not a
+    # different deck.  Printed p.15 line 5 is the statement
+    # "PUNID,11C11IPL", which changes what is punched into the cards
+    # and does not end the assembly.  The first version of this
+    # comment said "a DIFFERENT DECK"; see the program file.
     ("000142.00", "002156.02 30",
      "p.5 line 19  LV,$1,S YCOCH  -GET CONSOLE CHANNEL SLOT CONTENT"),
     ("000142.40", "000157.31 40",

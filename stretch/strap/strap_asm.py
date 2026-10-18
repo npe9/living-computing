@@ -219,6 +219,7 @@ than fixed -- see README.md "Next steps".
 import re
 import sys
 
+from charsets import ENTRY_MODES
 from opcodes import (
     VFL_INT_CODES, VFL_INT_MINUS_BASE, FP_CODES, DIR_INDEX_CODES,
     IMM_INDEX_CODES, UNCOND_BRANCH_CODES, MISC_CODES, INDICATOR_BITS,
@@ -653,7 +654,61 @@ def split_field_trailing_paren(field):
 
 
 def parse_statement_text(text, lineno=None):
+    """Returns (op, mods, fields, entry).
+
+    `entry` is the ENTRY MODE PREFIX, the parenthesised group STRAP
+    allows IN FRONT of a DD -- "(IQS*)DD(BU,64,8), MESSAGE*".  It is
+    returned raw, terminator and all, because the terminator is the
+    programmer's choice and not part of the mode name (C28-6129
+    printed p.16; see charsets.py).  Nothing else in this assembler's
+    grammar starts a statement with "(", so the test is unambiguous.
+
+    WITH AN ENTRY MODE, THE DATUM IS NOT SPLIT ON COMMAS.  A converted
+    message is one datum of raw text, and MCP writes commas inside one
+    -- printed p.2 line 4's "(CC*)DD(BU,,12),B  HED,REP,11E11BSP,LOAD,,
+    *" is a single card-code string.  Blanks are not stripped either:
+    they are characters, they occupy eight bits each, and the location
+    counter in the listing is what checks that they were counted.
+    """
     text = text.strip()
+    entry = None
+    if text.startswith('('):
+        depth, j = 0, 0
+        for j, c in enumerate(text):
+            if c == '(':
+                depth += 1
+            elif c == ')':
+                depth -= 1
+                if depth == 0:
+                    break
+        after = text[j + 1:]
+        if after[:1].isalpha():
+            entry, text = text[1:j], after
+    if entry is not None:
+        # op(mods),<raw datum up to and excluding the terminator>
+        k, depth = 0, 0
+        while k < len(text):
+            c = text[k]
+            if depth == 0 and c == ',':
+                break
+            if c == '(':
+                depth += 1
+            elif c == ')':
+                depth -= 1
+            k += 1
+        head, datum = text[:k], text[k + 1:] if k < len(text) else ''
+        op, mods, _, _ = parse_statement_text(head, lineno)
+        term = entry[-1:]
+        if not term:
+            raise AssemblerError(
+                f"entry mode {entry!r} has no end-of-statement character "
+                f"(C28-6129 printed p.16)", lineno)
+        cut = datum.rfind(term)
+        if cut < 0:
+            raise AssemblerError(
+                f"entry-mode datum is not terminated by {term!r}: {datum!r}",
+                lineno)
+        return op, mods, [datum[:cut]], entry
     i, depth = 0, 0
     while i < len(text):
         c = text[i]
@@ -685,13 +740,14 @@ def parse_statement_text(text, lineno=None):
         fields = [f.strip() for f in split_top_level(rest[1:], ',')]
     elif rest.strip():
         raise AssemblerError(f"unexpected trailing text {rest!r}", lineno)
-    return op, mods, fields
+    return op, mods, fields, None
 
 
 class Statement:
-    def __init__(self, lineno, name, op, mods, fields, raw):
+    def __init__(self, lineno, name, op, mods, fields, raw, entry=None):
         self.lineno, self.name, self.op, self.mods, self.fields, self.raw = \
             lineno, name, op, mods, fields, raw
+        self.entry = entry   # entry-mode prefix, raw; see parse_statement_text
         self.addr = None  # filled in by pass 1: bit-count location
 
 
@@ -710,8 +766,9 @@ def iter_statements(source):
             sub = sub.strip()
             if not sub:
                 continue
-            op, mods, fields = parse_statement_text(sub, lineno)
-            yield Statement(lineno, name if first else None, op, mods, fields, sub)
+            op, mods, fields, entry = parse_statement_text(sub, lineno)
+            yield Statement(lineno, name if first else None, op, mods, fields,
+                            sub, entry)
             first = False
 
 
@@ -728,6 +785,63 @@ def parse_dds(mod_text, lineno=None):
     length = parts[1].strip() if len(parts) > 1 and parts[1].strip() else None
     bs = parts[2].strip() if len(parts) > 2 and parts[2].strip() else None
     return mode, length, bs
+
+
+def dr_count(stmt):
+    """DR's dimension, written in parentheses: "DR(BU,64),(3)".
+    C28-6129 Appendix B calls DR a Data Reservation and MCP writes it
+    with the count parenthesised; a bare count is accepted too."""
+    if len(stmt.fields) != 1:
+        raise AssemblerError("DR takes one dimension field", stmt.lineno)
+    f = stmt.fields[0].strip()
+    if f.startswith('(') and f.endswith(')'):
+        f = f[1:-1]
+    n = eval_expr(f, {}, 0, lineno=stmt.lineno)
+    if n < 1:
+        raise AssemblerError(f"DR dimension {n} is not positive", stmt.lineno)
+    return n
+
+
+def entry_mode_name(stmt):
+    """The mode letters of an entry-mode prefix, terminator removed.
+    C28-6129 printed p.16: the last character of the field is the
+    END-OF-STATEMENT CHARACTER and is the programmer's choice, so
+    "(IQS*)" and "(IQSX)" are the SAME mode with different
+    terminators."""
+    return stmt.entry[:-1].strip().upper()
+
+
+def entry_byte_size(stmt):
+    """The per-character width of a converted DD, from the dds's third
+    element.  C28-6129 printed p.16: "in a DD statement, the byte size
+    of converted characters may range from one through 12 ... However,
+    the byte size in a 7030 statement may range from 1 through 8
+    because the byte size field is restricted to 3 bits" -- which is
+    what makes MCP's "(CC*)DD(BU,,12)" legal."""
+    if not stmt.mods or not stmt.mods[0].strip():
+        raise AssemblerError("a converted DD needs a data description "
+                             "with a byte size", stmt.lineno)
+    _, _, bs_expr = parse_dds(stmt.mods[0], stmt.lineno)
+    if bs_expr is None:
+        raise AssemblerError("a converted DD needs an explicit byte size "
+                             "(the third element of the dds)", stmt.lineno)
+    bs = eval_expr(bs_expr, {}, 0, lineno=stmt.lineno)
+    if not 1 <= bs <= 12:
+        raise AssemblerError(f"byte size {bs} is outside C28-6129 printed "
+                             f"p.16's range of one through twelve", stmt.lineno)
+    return bs
+
+
+def entry_table(stmt):
+    name = entry_mode_name(stmt)
+    if name not in ENTRY_MODES:
+        raise AssemblerError(
+            f"entry mode {name!r} is not implemented.  Reference Manual "
+            f"printed p.166 gives A (the 48 Character Set) and IQS (the "
+            f"89 Character Set); CC's 12-bit card code is tabulated in no "
+            f"document read so far, and P (ECS 120) is untranscribed -- "
+            f"see strap/charsets.py", stmt.lineno)
+    return ENTRY_MODES[name]
 
 
 def classify_connective(op):
@@ -1087,7 +1201,27 @@ def statement_size(stmt):
     """Returns (alignment_bits, size_bits). alignment 0 = no rounding."""
     op = stmt.op.upper()
     if op == 'DD':
+        if stmt.entry is not None:
+            # A CONVERTED DD.  Its size is the character count times
+            # the BYTE SIZE, and the declared field length plays no
+            # part -- MCP's printed p.9 writes DD(BU,64,8) for an
+            # eight-character datum (64 bits) and for a twenty-one
+            # character one (168 bits) in consecutive rows, so 64
+            # cannot be bounding either.  The end-of-statement
+            # character is already stripped by parse_statement_text
+            # and "is not compiled" (C28-6129 printed p.16).
+            return 0, len(stmt.fields[0]) * entry_byte_size(stmt)
         return 0, dds_length_bits(stmt.mods, stmt.lineno) * max(1, len(stmt.fields))
+    if op == 'DR':
+        # DATA RESERVATION.  "DR(dds),(n)" sets aside n items of the
+        # dds's field length and initialises none of them -- C28-6129
+        # Appendix B's roster, and MCP printed p.8 line 36's
+        # "X LR  DR(BU,64),(3)", whose three 64-bit words put X ERR CW
+        # at 000253.00 exactly three words after X LR's 000250.00.
+        # The listing prints 000003.00 in the BINARY OUTPUT column for
+        # that row, which is the reservation's SIZE and not its
+        # contents; there are no contents.
+        return 0, dds_length_bits(stmt.mods, stmt.lineno) * dr_count(stmt)
     if op == 'VF':
         return HALF, HALF
     if op == 'XW':
@@ -1409,6 +1543,29 @@ def assemble(source, origin_bits=DEFAULT_ORIGIN_BITS):
     # Pass 2: evaluate + emit.
     image = Image()
     for gap_start, gap_size in gaps:
+        # A CNOP's gap need not start on a half-word boundary, because
+        # the statement before it need not have ended on one.  MCP's
+        # printed p.9 is the witness: line 39's eight-bit control code
+        # sits at 000307.10 and ends at 000307.20, and line 40's CNOP
+        # prints its NOP at 000307.40 -- so the counter was first
+        # rounded up to the next HALF-WORD, bits 000307.20 to .40
+        # going out as zeros, and only then was a whole half-word of
+        # NOP laid down to reach the full word at 000310.00.
+        #
+        # THE ZERO FILL IS NOT PRINTED ANYWHERE, so it is an inference
+        # from the NOP's position, not a transcription: what the page
+        # pins is that the NOP is in the SECOND half-word and not the
+        # first.  Leaving the leading bits zero is the only filling
+        # that puts it there.
+        pad = (-gap_start) % HALF
+        if pad:
+            if pad > gap_size:
+                raise AssemblerError(
+                    f"alignment gap at bit {gap_start} is {gap_size} bits, "
+                    f"too short even to reach the next half-word", None)
+            image.deposit(gap_start, pad, 0)
+            gap_start += pad
+            gap_size -= pad
         if gap_size % HALF != 0:
             raise AssemblerError(
                 f"alignment gap at bit {gap_start} is {gap_size} bits, not a "
@@ -1459,11 +1616,31 @@ def emit_statement(stmt, symtab, image):
         return  # any NOP it implies was emitted by assemble()'s gap filler
 
     if op == 'DD':
+        if stmt.entry is not None:
+            bs = entry_byte_size(stmt)
+            table = entry_table(stmt)
+            pos = loc
+            for ch in stmt.fields[0]:
+                if ch not in table:
+                    raise AssemblerError(
+                        f"character {ch!r} is not in the {stmt.entry!r} "
+                        f"character set (Reference Manual printed p.166)",
+                        stmt.lineno)
+                image.deposit(pos, bs, table[ch])
+                pos += bs
+            return
         length = dds_length_bits(stmt.mods, stmt.lineno)
         pos = loc
         for f in stmt.fields:
             image.deposit(pos, length, parse_dd_literal(f, stmt.lineno))
             pos += length
+        return
+
+    if op == 'DR':
+        # NOTHING IS EMITTED, and that is the point of a reservation:
+        # the location counter moves and the storage is left as the
+        # loader found it.  The width is what the following rows'
+        # addresses check.
         return
 
     if op == 'VF':
@@ -1514,6 +1691,14 @@ def emit_statement(stmt, symtab, image):
         # CW(CR) arrives as ['CR'].
         mods = stmt.mods or []
         secondary = (mods[0] if len(mods) == 1 else '').strip().upper()
+        # A BARE "CW" WITH NO SECONDARY IS LEGAL and means all three
+        # flags zero -- the same bits CR sets.  MCP printed p.8 writes
+        # it twice, "X MSG CW  CW,0,10,0" and "X ERR CW  CW,0", and
+        # both print 000 in the flag group.  Before this the assembler
+        # demanded one of the eight secondaries, which would have made
+        # those two historical rows unassemblable.
+        if not secondary and not mods:
+            secondary = 'CR'
         if secondary not in CW_SECONDARY:
             raise AssemblerError(
                 f"CW needs one of {sorted(CW_SECONDARY)} as its "
@@ -1595,7 +1780,20 @@ def emit_statement(stmt, symtab, image):
         val = eval_expr(stmt.fields[0], symtab, loc, lineno=stmt.lineno)
         sign = 1 if val < 0 else 0
         mag = abs(val) & 0xFFFFFF
-        count = eval_expr(stmt.fields[1], symtab, loc, lineno=stmt.lineno) & 0x3FFFF \
+        # COUNT is an 18-bit field of WORDS, and it takes exactly the
+        # same "integer counts words, word.bit address scales >>6"
+        # rule the REFILL field below does and that CW's count already
+        # does (C22-6531 printed p.12).  I-Box 4 p.192's "BIT59
+        # XW,0,0,16" and MCP printed p.13 line 35's "XW SR XW,0.0,29,
+        # XW IND" both write a bare integer and get it unchanged; MCP
+        # printed p.13 line 36's "XW IND XW,X IPLK+33.0,20.0" writes
+        # the SAME NUMBER in word.bit form and the listing prints
+        # count 000024, i.e. twenty -- not twenty words' worth of
+        # bits.  Without the conversion that row came out 0002400,
+        # sixty-four times too large, in the same shape as the CW
+        # count bug of 2026-10-17.
+        count = eval_addr_field(stmt.fields[1], symtab, loc, 6,
+                                lineno=stmt.lineno) & 0x3FFFF \
             if len(stmt.fields) >= 2 and stmt.fields[1].strip() else 0
         # REFILL is an 18-bit WORD-address field: a label's bit count
         # scales >>6, a bare integer counts words (I-Box 4 p.192's
@@ -2004,13 +2202,17 @@ def emit_statement(stmt, symtab, image):
     raise AssemblerError(f"unhandled mnemonic {stmt.op!r}", stmt.lineno)
 
 
-_DD_RADIX_LITERAL = re.compile(r'^\((\d+)\)([0-9A-Za-z]+)$')
+# BLANKS INSIDE A RADIX LITERAL ARE GROUPING, not separators.  MCP's
+# printed p.9 writes its console control codes as "(2)1111 1101" and
+# "(2) 1111 1110" -- binary in nibbles, sometimes with a blank after
+# the radix too -- and both print as a single 8-bit datum (375, 376).
+_DD_RADIX_LITERAL = re.compile(r'^\((\d+)\)\s*([0-9A-Za-z][0-9A-Za-z\s]*)$')
 
 def parse_dd_literal(field, lineno=None):
     field = field.strip()
     m = _DD_RADIX_LITERAL.match(field)
     if m:
-        radix, digits = int(m.group(1)), m.group(2)
+        radix, digits = int(m.group(1)), "".join(m.group(2).split())
         return int(digits, radix)
     try:
         return int(field, 10)

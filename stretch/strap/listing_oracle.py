@@ -68,6 +68,17 @@ def render(prog, octal_loc, printed):
         return f"{mag >> 6:06o}.{mag & 0x3F:02o}{'-' if sign else '+'}"
     if len(toks) == 1 and len(toks[0]) == 22:
         return f"{word:022o}"
+    if (len(toks) == 1 and len(toks[0]) == 3
+            and all(c in "01234567" for c in toks[0])):
+        # AN 8-BIT DD, printed as three octal digits.  MCP's printed
+        # p.9 writes the control codes around every console message
+        # this way -- "DD(BU,8),(2)1111 1101" prints 375.
+        #
+        # This one cannot use `half`: an 8-bit datum sits at an
+        # arbitrary bit offset (p.9 puts them at 000254.00 and
+        # 000254.10), so the byte is cut out of the word by hand.
+        off = bits % 64
+        return f"{(word >> (64 - off - 8)) & 0xFF:03o}"
     if len(toks) == 1 and len(toks[0]) == 11:
         # DD(BU,32,8): the listing prints a 32-bit datum as its own
         # half-word, 11 octal digits (jb_ax5b p.43's "00000003740").

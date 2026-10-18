@@ -1,0 +1,260 @@
+! mcp_bootstrap_p7_p8.strap -- MCP's IPL BOOTSTRAP, printed pages 7
+! and 8: X ERR DD, the error table, and the definitions that go with
+! it.  docs/MCP_Mar63_001-249.pdf PDF pp.14-15, headers "PAGE NUMBER
+! 7" and "PAGE NUMBER 8".  docs/boot_plan.md M3.
+!
+! THE LAST TWO PAGES OF THE BOOTSTRAP TO BE TRANSCRIBED, and they are
+! the index to everything else: thirty-nine words, one per error code,
+! each a pair of VF half words holding the address of the site that
+! failed and the address of the message to print for it.  printed p.5
+! line 8's "X ERR SH  KV,$1,0.0($2)" is the loop that scans it.
+!
+! THE TABLE CHECKS ITS OWN LENGTH.  Printed p.8 line 31 defines
+! "X E DD K  SYN,$-X ERR DD  -SIZE OF ERROR TABLE" and the listing
+! prints its value as 000047.00+ -- thirty-nine words, which is
+! exactly what the seventy-eight VF half words below occupy, and
+! exactly the number of distinct error codes (00 through 29, plus
+! 05A-05E, 16A-16C and 21A).  Nothing had to be assumed about where
+! the table ends.
+!
+! ---------------------------------------------------------------
+! THREE THINGS THE TABLE SAYS ABOUT MCP
+! ---------------------------------------------------------------
+! (1) EIGHT ENTRIES SHARE FIVE MESSAGES.  000432.00 appears four
+!     times -- X MSG 15, X MSG 16, X MS 16A and X MS 16B -- and
+!     000464.00 and 000501.00 twice each, although the listing writes
+!     a different descriptive comment beside each.  The message block
+!     on printed pp.9-13 is otherwise strictly sequential, so three
+!     of the described messages have no storage of their own: several
+!     distinct failures deliberately print the same text.
+!
+! (2) THE TABLE IS NOT IN ERROR-CODE ORDER.  The code-10 pair sits
+!     between 05E and 06, and everything else is sequential.  That
+!     rules out indexing by code and fits X ERR IN being a SEARCH
+!     word -- "XW,X ERR DD,X E DD K+1.0,0" -- scanned by p.5's KV
+!     loop rather than subscripted.
+!
+! (3) X ERR 20 AND X ERR 21 ARE NOT "SIC,X ERR AD" ROWS.  Every other
+!     error site stores its instruction counter into X ERR AD so the
+!     routine can print where it failed; these two are "BD,$",
+!     branch-disabled-to-self, and simply halt.  Their messages are
+!     "NO CONSOLE DEFINED" and "NO CONSOLE AVAILABLE" -- with no
+!     console there is nothing to print to, so there is nothing to
+!     store an address for.  The two corroborate each other, and
+!     their printed binaries are each their own location plus .04.
+!
+! ---------------------------------------------------------------
+! TWO SUBSTITUTIONS
+! ---------------------------------------------------------------
+! (a) LINE 34's "CW,X ZEROS,3,X MSG CW(.25)1" IS WRITTEN "CW(CCR),
+!     X ZEROS,3,X MSG CW".  The "(.25)1" is a bit designation -- set
+!     bit 25 of the generated word to one -- and bit 25 is the CHAIN
+!     flag of a control word (the listing prints flags 25-27 as three
+!     separate digits, and this row prints 100).  This assembler does
+!     not implement bit designations, and inventing their general
+!     semantics from one row is what AGENTS.md rule 4 forbids.
+!     C28-6129 printed p.14's CCR, "Chain Counts Within Record", is
+!     chain 1 multiple 0 skip 0 -- THE SAME THREE BITS -- so the two
+!     spellings assemble to the identical word, which the checked row
+!     proves.
+!
+! (b) LINE 35 IS "CW,0,10,0", NOT "CW,0,10,C".  The scan renders a
+!     leading digit zero with a gap on the right, so it reads as a C
+!     (docs/listing_typography.md 13).  The arithmetic settles it: the
+!     row's refill field prints 000000.
+!
+! A BARE "CW" WITH NO SECONDARY, as lines 35 and 37 write, means all
+! three flags zero -- the same bits CR sets -- and both rows print
+! 000 in the flag group.  strap_asm used to demand one of the eight
+! secondaries, which would have made these two rows unassemblable.
+!
+! ---------------------------------------------------------------
+! EXTERNALS.  EVERY SYN IS AN INPUT, NOT A WITNESS, so each is taken
+! from the page that DEFINES it and none from this page's own values.
+! The thirty-nine error sites come from printed pp.3, 4 and 15-32 --
+! sixteen of them already transcribed in this repository, the rest
+! read off their defining rows, all but two "SIC,X ERR AD" printing
+! 000551.00 80.  The thirty-nine message labels are taken from
+! programs/mcp_bootstrap_p9_p12.strap and _p13.strap, which place
+! them from the instruction stream; the verifier asserts that those
+! two programs and these SYNs agree, so the two transcriptions cannot
+! silently diverge.
+! ---- THE ERROR SITES, each from the page that defines it ----
+! All but two are "SIC,X ERR AD" rows printing 000551.00 80.
+! X ERR 20 and X ERR 21 are "BD,$" -- see the header.
+XER05A  SYN, (8)000071.00
+XER05B  SYN, (8)000072.00
+XER05C  SYN, (8)000073.00
+XER05D  SYN, (8)000075.00
+XER05E  SYN, (8)000101.00
+XER16A  SYN, (8)000644.40
+XER16B  SYN, (8)000645.40
+XER16C  SYN, (8)000661.40
+XER21A  SYN, (8)001156.40
+XERR00  SYN, (8)000054.40
+XERR01  SYN, (8)000057.40
+XERR02  SYN, (8)000060.40
+XERR03  SYN, (8)000061.40
+XERR04  SYN, (8)000063.40
+XERR05  SYN, (8)000067.00
+XERR06  SYN, (8)000105.00
+XERR07  SYN, (8)000106.00
+XERR08  SYN, (8)000107.00
+XERR09  SYN, (8)000111.00
+XERR10  SYN, (8)000126.40
+XERR11  SYN, (8)000630.00
+XERR12  SYN, (8)000631.00
+XERR13  SYN, (8)000632.00
+XERR14  SYN, (8)000637.40
+XERR15  SYN, (8)000640.40
+XERR16  SYN, (8)000641.40
+XERR17  SYN, (8)000706.40
+XERR18  SYN, (8)000722.40
+XERR19  SYN, (8)000757.40
+XERR20  SYN, (8)001005.40
+XERR21  SYN, (8)001007.00
+XERR22  SYN, (8)001440.40
+XERR23  SYN, (8)001452.00
+XERR24  SYN, (8)001470.40
+XERR25  SYN, (8)001504.40
+XERR26  SYN, (8)001517.40
+XERR27  SYN, (8)001604.40
+XERR28  SYN, (8)001613.00
+XERR29  SYN, (8)001646.40
+
+! ---- THE MESSAGES, from printed pp.9-13 ----
+XMS05A  SYN, (8)000315.00
+XMS05B  SYN, (8)000322.00
+XMS05C  SYN, (8)000327.00
+XMS05D  SYN, (8)000334.00
+XMS05E  SYN, (8)000342.00
+XMS16A  SYN, (8)000432.00
+XMS16B  SYN, (8)000432.00
+XMS16C  SYN, (8)000440.00
+XMS21A  SYN, (8)000464.00
+XMSG00  SYN, (8)000254.00
+XMSG01  SYN, (8)000260.00
+XMSG02  SYN, (8)000266.00
+XMSG03  SYN, (8)000274.00
+XMSG04  SYN, (8)000302.00
+XMSG05  SYN, (8)000310.00
+XMSG06  SYN, (8)000347.00
+XMSG07  SYN, (8)000354.00
+XMSG08  SYN, (8)000361.00
+XMSG09  SYN, (8)000366.00
+XMSG10  SYN, (8)000374.00
+XMSG11  SYN, (8)000403.00
+XMSG12  SYN, (8)000410.00
+XMSG13  SYN, (8)000415.00
+XMSG14  SYN, (8)000424.00
+XMSG15  SYN, (8)000432.00
+XMSG16  SYN, (8)000432.00
+XMSG17  SYN, (8)000444.00
+XMSG18  SYN, (8)000451.00
+XMSG19  SYN, (8)000460.00
+XMSG20  SYN, (8)000464.00
+XMSG21  SYN, (8)000501.00
+XMSG22  SYN, (8)000473.00
+XMSG23  SYN, (8)000501.00
+XMSG24  SYN, (8)000506.00
+XMSG25  SYN, (8)000513.30
+XMSG26  SYN, (8)000521.00
+XMSG27  SYN, (8)000526.00
+XMSG28  SYN, (8)000533.00
+XMSG29  SYN, (8)000540.00
+
+XZEROS  SYN, (8)1037.00   ! printed p.21 line 28, "X ZEROS DR(BU),(3)"
+
+        SLC, (8)176.0      ! printed p.7 line 2; p.6 ends at 000175.40
+                            ! with a half-word branch and a CNOP
+
+! ---- X ERR DD, the table ------------------------------------------
+XERRDD  VF, XERR00+1.0    ! p.7 line  2
+        VF, XMSG00        ! p.7 line  3  -EKJ ON CCW OF IPL CW
+        VF, XERR01+1.0    ! p.7 line  4
+        VF, XMSG01        ! p.7 line  5  -EKJ DETECTED IN IO TEST ROUTINE
+        VF, XERR02+1.0    ! p.7 line  6
+        VF, XMSG02        ! p.7 line  7  -UNRJ DETECTED IN IO TEST ROUTINE
+        VF, XERR03+1.0    ! p.7 line  8
+        VF, XMSG03        ! p.7 line  9  -CBJ DETECTED IN IO TEST ROUTINE
+        VF, XERR04+1.0    ! p.7 line 10
+        VF, XMSG04        ! p.7 line 11  -EKJ ON CCW IN IO TEST ROUTINE
+        VF, XERR05+1.0    ! p.7 line 12
+        VF, XMSG05        ! p.7 line 13  -UNSUCCESSFUL COMPLETION
+        VF, XER05A+1.0    ! p.7 line 14
+        VF, XMS05A        ! p.7 line 15  -EKJ IN SPACING OVER EOF
+        VF, XER05B+1.0    ! p.7 line 16
+        VF, XMS05B        ! p.7 line 17  -UNRJ IN SPACING OVER EOF
+        VF, XER05C+1.0    ! p.7 line 18
+        VF, XMS05C        ! p.7 line 19  -CBJ IN SPACING OVER EOF
+        VF, XER05D+1.0    ! p.7 line 20
+        VF, XMS05D        ! p.7 line 21 *  -EKJ OF CCW IN TEST OF SPACE FILE
+        VF, XER05E+1.0    ! p.7 line 22
+        VF, XMS05E        ! p.7 line 23  -SPACE EOF OPERATION IN ERROR
+        VF, XERR10+1.0    ! p.7 line 24
+        VF, XMSG10        ! p.7 line 25  -UNSUCCESSFUL COMPLETION OF MCP
+        VF, XERR06+1.0    ! p.7 line 27
+        VF, XMSG06        ! p.7 line 28  -EKJ ON READ OF SOURCE TAPE
+        VF, XERR07+1.0    ! p.7 line 29
+        VF, XMSG07        ! p.7 line 30  -UNRJ ON READ OF SOURCE TAPE
+        VF, XERR08+1.0    ! p.7 line 31
+        VF, XMSG08        ! p.7 line 32  -CBJ ON READ OF SOURCE TAPE
+        VF, XERR09+1.0    ! p.7 line 33
+        VF, XMSG09        ! p.7 line 34  -EKJ ON CCW ON SOURCE TAPE
+        VF, XERR11+1.0    ! p.7 line 36
+        VF, XMSG11        ! p.7 line 37  -EKJ ON DISK OPERATION
+        VF, XERR12+1.0    ! p.7 line 38
+        VF, XMSG12        ! p.7 line 39  -UNRJ ON DIST OPERATION
+        VF, XERR13+1.0    ! p.7 line 40
+        VF, XMSG13        ! p.7 line 41  -CBJ ON DISK OPERATION
+        VF, XERR14+1.0    ! p.7 line 42
+        VF, XMSG14        ! p.7 line 43  -EKJ ON CCW ON DISK WRITE OPERATION
+        VF, XERR15+1.0    ! p.7 line 44
+        VF, XMSG15        ! p.7 line 45  -CBJ ON CCW ON DISK WRITE OPERATION
+        VF, XERR16+1.0    ! p.7 line 46 *
+        VF, XMSG16        ! p.7 line 47  -UNSUCCESSFUL COMPLETION OF DISK
+        VF, XER16A+1.0    ! p.7 line 49
+        VF, XMS16A        ! p.7 line 50  -EKJ OF CCW IN TEST OF DISK WRITE
+        VF, XER16B+1.0    ! p.7 line 51
+        VF, XMS16B        ! p.7 line 52  -WRITE DISK OPERATION IN ERROR
+        VF, XER16C+1.0    ! p.7 line 53
+        VF, XMS16C        ! p.7 line 54  -NO IOCC CARD DETECTED
+        VF, XERR17+1.0    ! p.7 line 55
+        VF, XMSG17        ! p.7 line 56  -WRONG EQUIPMENT CODE
+        VF, XERR18+1.0    ! p.8 line  1
+        VF, XMSG18        ! p.8 line  2  -IO CONFIGURATION DEFINED
+        VF, XERR19+1.0    ! p.8 line  4
+        VF, XMSG19        ! p.8 line  5  -INCORRECT CARD TYPE
+        VF, XERR20+1.0    ! p.8 line  6
+        VF, XMSG20        ! p.8 line  7  -NO CONSOLE DEFINED
+        VF, XERR21+1.0    ! p.8 line  8
+        VF, XMSG21        ! p.8 line  9  -NO CONSOLE AVAILABLE
+        VF, XER21A+1.0    ! p.8 line 10
+        VF, XMS21A        ! p.8 line 11  -EKJ OF CCW IN IO STATUS REPORT
+        VF, XERR22+1.0    ! p.8 line 13
+        VF, XMSG22        ! p.8 line 14  -INCORRECT CARD TYPE WITHIN IODS
+        VF, XERR23+1.0    ! p.8 line 15
+        VF, XMSG23        ! p.8 line 16 *  -IO REQUIREMENTS REJECTED
+        VF, XERR24+1.0    ! p.8 line 17
+        VF, XMSG24        ! p.8 line 18  -IO ASSIGNMENTS CANNOT BE MADE
+        VF, XERR25+1.0    ! p.8 line 19
+        VF, XMSG25        ! p.8 line 20  -IO TABLES CANNOT BE FORMED
+        VF, XERR26+1.0    ! p.8 line 21
+        VF, XMSG26        ! p.8 line 22  -PROSA ARC COUNT INCORRECT
+        VF, XERR27+1.0    ! p.8 line 23
+        VF, XMSG27        ! p.8 line 24  -MCP PARAMETER INPUT MISSING
+        VF, XERR28+1.0    ! p.8 line 25
+        VF, XMSG28        ! p.8 line 26  -IMPOSSIBLE OPERATING MODE
+        VF, XERR29+1.0    ! p.8 line 27
+        VF, XMSG29        ! p.8 line 28  -SPOOL INPUT ASSIGNMENTS NOT
+
+! ---- the definitions that go with it ------------------------------
+XEDDK   SYN, $-XERRDD      ! p.8 line 31  -SIZE OF ERROR TABLE
+XERRIN  XW, XERRDD, XEDDK+1.0, 0   ! p.8 line 32 -XW FOR INITIALIZING
+                                    !              ERROR SEARCH
+XMSCW1  CW(CCR), XZEROS, 3, XMSGCW ! p.8 line 34 -- see substitution (a)
+                                    !  -CW FOR LOWER CONSOLE REGISTERS
+XMSGCW  CW, 0, 10, 0       ! p.8 line 35  -CW FOR ERROR MSG
+XLR     DR(BU,64),(3)      ! p.8 line 36  -ZERO WORDS FOR CONSOLE LR
+XERRCW  CW, 0              ! p.8 line 37  - SLOT FOR COPIED CW
+        END, XERRDD

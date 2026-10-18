@@ -1,0 +1,338 @@
+! mcp_bootstrap_p9_p12.strap -- MCP's IPL BOOTSTRAP, printed pages 9
+! through 12: the AREA CONTAINING ERROR MESSAGES.
+! docs/MCP_Mar63_001-249.pdf PDF pp.16-19, headers "PAGE NUMBER 9"
+! through "PAGE NUMBER 12".  docs/boot_plan.md M3.
+!
+! FOUR PAGES IN ONE FILE because the area is one array and the page
+! breaks fall inside messages: X MS 05B's control code is the last
+! row of p.9 and its text is the second row of p.10, X MSG 10's is
+! split the same way across pp.10-11, and X MSG 17's across pp.11-12.
+! There is no honest place to cut.
+!
+! It stops at printed p.12's last row, the END OF MESSAGE code of
+! X MSG 26 at 000525.50, which IS a clean break: X MSG 27, 28 and 29
+! begin at the top of printed p.13 and belong with that page.
+!
+! ---------------------------------------------------------------
+! WHAT ONE MESSAGE IS
+! ---------------------------------------------------------------
+! Thirty-one blocks, all the same shape:
+!
+!   X MSG 00  SYN,$                      the label the error table points at
+!             DD(BU,8),(2)1111 1101      control code, carriage return
+!             DD(BU,8),(2)00000010       control code, "RED$" -- print in red
+!             (IQS*)DD(BU,64,8),000000.0*   eight characters, patched at
+!                                           run time with the failing address
+!             (IQS*)DD(BU,64,8), <text>*    the message itself
+!             DD(BU,8),(2)1111 1110      control code, end of message
+!             CNOP                       realign to a full word
+!
+! Four blocks drop the second control code (X MS 16C, and the
+! X MSG 21 / X MSG 23 pair) and five carry more than one label --
+! X MSG 15, X MSG 16, X MS 16A and X MS 16B are four names for one
+! message, which is the listing telling you that four different
+! failures print the same text.
+!
+! ---------------------------------------------------------------
+! >>> WHAT IS CHECKED HERE, AND WHAT CANNOT BE <<<
+! ---------------------------------------------------------------
+! THE LISTING PRINTS NOTHING IN THE BINARY OUTPUT COLUMN FOR AN
+! (IQS*)DD ROW.  Every message line on these four pages has an empty
+! BINARY OUTPUT; only the three DD(BU,8) control codes and the CNOP's
+! fill word print anything at all.  So AGENTS.md rule 3 cannot check
+! a single character code here, and no transcription of these pages
+! ever will.  The character table comes from Reference Manual printed
+! p.166 alone -- see strap/charsets.py, which says so at length.
+!
+! WHAT IS CHECKED IS THE COUNTING, and it is checked thirty-one
+! times.  A converted DD advances the location counter by eight bits
+! per character with the end-of-statement character not compiled, so
+! the next printed location is an exact statement about how many
+! characters the message has.  Every text below was read off the page
+! and then its length compared against the listing's own address
+! delta; all thirty-one agree, and so does the eight-character width
+! of all thirty-one address slots.  That is what fixes the trailing
+! blanks, which no amount of staring at a drum printer's output
+! would: " EKJ ON CCW OF IPL CW" has none and " CBJ DETECTED IN IO
+! TEST ROUTINE " has one, and the page's own arithmetic is what says
+! so.
+!
+! ---------------------------------------------------------------
+! SUBSTITUTIONS
+! ---------------------------------------------------------------
+! (1) BLANKS INSIDE SYMBOL NAMES ARE DROPPED, as throughout: X MSG 00
+!     is XMSG00, X MS 05A is XMS05A.  All six characters or fewer.
+!
+! (2) THE LABELS ARE WRITTEN AS THE LISTING WRITES THEM, "SYN,$",
+!     rather than as a name on the following statement.  They are not
+!     the same thing: X MSG 25 sits at 000513.30, which is where the
+!     preceding message's end-of-message code left the counter, and
+!     the CNOP then moves to 000514.00 before the next statement.  A
+!     name on the DD would have come out at 000514.00.
+!
+! (3) THE BINARY LITERALS KEEP THE LISTING'S NIBBLE GROUPING,
+!     "(2)1111 1101".  Blanks inside a radix literal are grouping,
+!     not separators; strap_asm was taught that for this page.
+
+        SLC, (8)254.0      ! printed p.9 line 6's location; printed
+                            ! p.8 ends at 000253.00 with a CW
+
+XMSG00  SYN, $   ! X MSG 00, listing 000254.00
+        DD(BU,8),(2)1111 1101      ! -CONTROL CODE * CARRIAGE RETURN
+        DD(BU,8),(2)00000010       ! -RED$
+        (IQS*)DD(BU,64,8),000000.0*   ! -SLOT FOR ERROR ADDRESS
+        (IQS*)DD(BU,64,8), EKJ ON CCW OF IPL CW*
+        DD(BU,8),(2)1111 1110      ! -CONTROL CODE * END OF MESSAGE
+        CNOP
+
+XMSG01  SYN, $   ! X MSG 01, listing 000260.00
+        DD(BU,8),(2)1111 1101      ! -CONTROL CODE * CARRIAGE RETURN
+        DD(BU,8),(2)00000010       ! -RED$
+        (IQS*)DD(BU,64,8),000000.0*   ! -SLOT FOR ERROR ADDRESS
+        (IQS*)DD(BU,64,8), EKJ DETECTED IN IO TEST ROUTINE *
+        DD(BU,8),(2)1111 1110      ! -CONTROL CODE * END OF MESSAGE
+        CNOP
+
+XMSG02  SYN, $   ! X MSG 02, listing 000266.00
+        DD(BU,8),(2)1111 1101      ! -CONTROL CODE * CARRIAGE RETURN
+        DD(BU,8),(2)00000010       ! -RED$
+        (IQS*)DD(BU,64,8),000000.0*   ! -SLOT FOR ERROR ADDRESS
+        (IQS*)DD(BU,64,8), UNRJ DETECTED IN IO TEST ROUTINE*
+        DD(BU,8),(2)1111 1110      ! -CONTROL CODE * END OF MESSAGE
+        CNOP
+
+XMSG03  SYN, $   ! X MSG 03, listing 000274.00
+        DD(BU,8),(2)1111 1101      ! -CONTROL CODE * CARRIAGE RETURN
+        DD(BU,8),(2)00000010       ! -RED$
+        (IQS*)DD(BU,64,8),000000.0*   ! -SLOT FOR ERROR ADDRESS
+        (IQS*)DD(BU,64,8), CBJ DETECTED IN IO TEST ROUTINE *
+        DD(BU,8),(2)1111 1110      ! -CONTROL CODE * END OF MESSAGE
+        CNOP
+
+XMSG04  SYN, $   ! X MSG 04, listing 000302.00
+        DD(BU,8),(2)1111 1101      ! -CONTROL CODE * CARRIAGE RETURN
+        DD(BU,8),(2)00000010       ! -RED$
+        (IQS*)DD(BU,64,8),000000.0*   ! -SLOT FOR ERROR ADDRESS
+        (IQS*)DD(BU,64,8), EKJ ON CCW IN IO TEST ROUTINE *
+        DD(BU,8),(2)1111 1110      ! -CONTROL CODE * END OF MESSAGE
+        CNOP
+
+XMSG05  SYN, $   ! X MSG 05, listing 000310.00
+        DD(BU,8),(2)1111 1101      ! -CONTROL CODE * CARRIAGE RETURN
+        DD(BU,8),(2)00000010       ! -RED$
+        (IQS*)DD(BU,64,8),000000.0*   ! -SLOT FOR ERROR ADDRESS
+        (IQS*)DD(BU,64,8), UNSUCCESSFUL COMPLETION *
+        DD(BU,8),(2)1111 1110      ! -CONTROL CODE * END OF MESSAGE
+        CNOP
+
+XMS05A  SYN, $   ! X MS 05A, listing 000315.00
+        DD(BU,8),(2)1111 1101      ! -CONTROL CODE * CARRIAGE RETURN
+        DD(BU,8),(2)00000010       ! -RED$
+        (IQS*)DD(BU,64,8),000000.0*   ! -SLOT FOR ERROR ADDRESS
+        (IQS*)DD(BU,64,8), EKJ IN SPACING OVER EOF*
+        DD(BU,8),(2)1111 1110      ! -CONTROL CODE * END OF MESSAGE
+        CNOP
+
+XMS05B  SYN, $   ! X MS 05B, listing 000322.00
+        DD(BU,8),(2)1111 1101      ! -CONTROL CODE * CARRIAGE RETURN
+        DD(BU,8),(2)00000010       ! -RED$
+        (IQS*)DD(BU,64,8),000000.0*   ! -SLOT FOR ERROR ADDRESS
+        (IQS*)DD(BU,64,8), UNRJ IN SPACING OVER EOF*
+        DD(BU,8),(2)1111 1110      ! -CONTROL CODE * END OF MESSAGE
+        CNOP
+
+XMS05C  SYN, $   ! X MS 05C, listing 000327.00
+        DD(BU,8),(2)1111 1101      ! -CONTROL CODE * CARRIAGE RETURN
+        DD(BU,8),(2)00000010       ! -RED$
+        (IQS*)DD(BU,64,8),000000.0*   ! -SLOT FOR ERROR ADDRESS
+        (IQS*)DD(BU,64,8), CBJ IN SPACING OVER EOF*
+        DD(BU,8),(2)1111 1110      ! -CONTROL CODE * END OF MESSAGE
+        CNOP
+
+XMS05D  SYN, $   ! X MS 05D, listing 000334.00
+        DD(BU,8),(2)1111 1101      ! -CONTROL CODE * CARRIAGE RETURN
+        DD(BU,8),(2)00000010       ! -RED$
+        (IQS*)DD(BU,64,8),000000.0*   ! -SLOT FOR ERROR ADDRESS
+        (IQS*)DD(BU,64,8), EKJ OF CCW IN TEST OF SPACE FILE*
+        DD(BU,8),(2)1111 1110      ! -CONTROL CODE * END OF MESSAGE
+        CNOP
+
+XMS05E  SYN, $   ! X MS 05E, listing 000342.00
+        DD(BU,8),(2)1111 1101      ! -CONTROL CODE * CARRIAGE RETURN
+        DD(BU,8),(2)00000010       ! -RED$
+        (IQS*)DD(BU,64,8),000000.0*   ! -SLOT FOR ERROR ADDRESS
+        (IQS*)DD(BU,64,8), SPACE EOF OPERATION IN ERROR*
+        DD(BU,8),(2)1111 1110      ! -CONTROL CODE * END OF MESSAGE
+        CNOP
+
+XMSG06  SYN, $   ! X MSG 06, listing 000347.00
+        DD(BU,8),(2)1111 1101      ! -CONTROL CODE * CARRIAGE RETURN
+        DD(BU,8),(2)00000010       ! -RED$
+        (IQS*)DD(BU,64,8),000000.0*   ! -SLOT FOR ERROR ADDRESS
+        (IQS*)DD(BU,64,8), EKJ ON READ OF SOURCE TAPE *
+        DD(BU,8),(2)1111 1110      ! -CONTROL CODE * END OF MESSAGE
+        CNOP
+
+XMSG07  SYN, $   ! X MSG 07, listing 000354.00
+        DD(BU,8),(2)1111 1101      ! -CONTROL CODE * CARRIAGE RETURN
+        DD(BU,8),(2)00000010       ! -RED$
+        (IQS*)DD(BU,64,8),000000.0*   ! -SLOT FOR ERROR ADDRESS
+        (IQS*)DD(BU,64,8), UNRJ ON READ OF SOURCE TAPE *
+        DD(BU,8),(2)1111 1110      ! -CONTROL CODE * END OF MESSAGE
+        CNOP
+
+XMSG08  SYN, $   ! X MSG 08, listing 000361.00
+        DD(BU,8),(2)1111 1101      ! -CONTROL CODE * CARRIAGE RETURN
+        DD(BU,8),(2)00000010       ! -RED$
+        (IQS*)DD(BU,64,8),000000.0*   ! -SLOT FOR ERROR ADDRESS
+        (IQS*)DD(BU,64,8), CBJ ON READ OF SOURCE TAPE *
+        DD(BU,8),(2)1111 1110      ! -CONTROL CODE * END OF MESSAGE
+        CNOP
+
+XMSG09  SYN, $   ! X MSG 09, listing 000366.00
+        DD(BU,8),(2)1111 1101      ! -CONTROL CODE * CARRIAGE RETURN
+        DD(BU,8),(2)00000010       ! -RED$
+        (IQS*)DD(BU,64,8),000000.0*   ! -SLOT FOR ERROR ADDRESS
+        (IQS*)DD(BU,64,8), EKJ ON CCW ON SOURCE TAPE CHANNEL *
+        DD(BU,8),(2)1111 1110      ! -CONTROL CODE * END OF MESSAGE
+        CNOP
+
+XMSG10  SYN, $   ! X MSG 10, listing 000374.00
+        DD(BU,8),(2)1111 1101      ! -CONTROL CODE * CARRIAGE RETURN
+        DD(BU,8),(2)00000010       ! -RED$
+        (IQS*)DD(BU,64,8),000000.0*   ! -SLOT FOR ERROR ADDRESS
+        (IQS*)DD(BU,64,8), UNSUCCESSFUL COMPLETION OF MCP IPL READ*
+        DD(BU,8),(2)1111 1110      ! -CONTROL CODE * END OF MESSAGE
+        CNOP
+
+XMSG11  SYN, $   ! X MSG 11, listing 000403.00
+        DD(BU,8),(2)1111 1101      ! -CONTROL CODE * CARRIAGE RETURN
+        DD(BU,8),(2)00000010       ! -RED$
+        (IQS*)DD(BU,64,8),000000.0*   ! -SLOT FOR ERROR ADDRESS
+        (IQS*)DD(BU,64,8), EKJ ON DISK OPERATION *
+        DD(BU,8),(2)1111 1110      ! -CONTROL CODE * END OF MESSAGE
+        CNOP
+
+XMSG12  SYN, $   ! X MSG 12, listing 000410.00
+        DD(BU,8),(2)1111 1101      ! -CONTROL CODE * CARRIAGE RETURN
+        DD(BU,8),(2)00000010       ! -RED$
+        (IQS*)DD(BU,64,8),000000.0*   ! -SLOT FOR ERROR ADDRESS
+        (IQS*)DD(BU,64,8), UNRJ ON DISK OPERATION *
+        DD(BU,8),(2)1111 1110      ! -CONTROL CODE * END OF MESSAGE
+        CNOP
+
+XMSG13  SYN, $   ! X MSG 13, listing 000415.00
+        DD(BU,8),(2)1111 1101      ! -CONTROL CODE * CARRIAGE RETURN
+        DD(BU,8),(2)00000010       ! -RED$
+        (IQS*)DD(BU,64,8),000000.0*   ! -SLOT FOR ERROR ADDRESS
+        (IQS*)DD(BU,64,8), UNSUCCESSFUL COMPLETION OF LOCATE TO DISK*
+        DD(BU,8),(2)1111 1110      ! -CONTROL CODE * END OF MESSAGE
+        CNOP
+
+XMSG14  SYN, $   ! X MSG 14, listing 000424.00
+        DD(BU,8),(2)1111 1101      ! -CONTROL CODE * CARRIAGE RETURN
+        DD(BU,8),(2)00000010       ! -RED$
+        (IQS*)DD(BU,64,8),000000.0*   ! -SLOT FOR ERROR ADDRESS
+        (IQS*)DD(BU,64,8), EKJ ON CCW ON DISK OPERATION *
+        DD(BU,8),(2)1111 1110      ! -CONTROL CODE * END OF MESSAGE
+        CNOP
+
+XMSG15  SYN, $   ! X MSG 15, listing 000432.00
+XMSG16  SYN, $   ! X MSG 16
+XMS16A  SYN, $   ! X MS 16A
+XMS16B  SYN, $   ! X MS 16B
+        DD(BU,8),(2)1111 1101      ! -CONTROL CODE * CARRIAGE RETURN
+        DD(BU,8),(2)00000010       ! -RED$
+        (IQS*)DD(BU,64,8),000000.0*   ! -SLOT FOR ERROR ADDRESS
+        (IQS*)DD(BU,64,8), WRITE DISK OPERATION IN ERROR*
+        DD(BU,8),(2)1111 1110      ! -CONTROL CODE * END OF MESSAGE
+        CNOP
+
+XMS16C  SYN, $   ! X MS 16C, listing 000440.00
+        DD(BU,8),(2)1111 1101      ! -CONTROL CODE * CARRIAGE RETURN
+        (IQS*)DD(BU,64,8),000000.0*   ! -SLOT FOR ERROR ADDRESS
+        (IQS*)DD(BU,64,8), NO IOCD CARD DETECTED*
+        DD(BU,8),(2)1111 1110      ! -CONTROL CODE * END OF MESSAGE
+        CNOP
+
+XMSG17  SYN, $   ! X MSG 17, listing 000444.00
+        DD(BU,8),(2)1111 1101      ! -CONTROL CODE * CARRIAGE RETURN
+        DD(BU,8),(2)00000010       ! -RED$
+        (IQS*)DD(BU,64,8),000000.0*   ! -SLOT FOR ERROR ADDRESS
+        (IQS*)DD(BU,64,8), WRONG EQUIPMENT CODE *
+        DD(BU,8),(2)1111 1110      ! -CONTROL CODE * END OF MESSAGE
+        CNOP
+
+XMSG18  SYN, $   ! X MSG 18, listing 000451.00
+        DD(BU,8),(2)1111 1101      ! -CONTROL CODE * CARRIAGE RETURN
+        DD(BU,8),(2)00000010       ! -RED$
+        (IQS*)DD(BU,64,8),000000.0*   ! -SLOT FOR ERROR ADDRESS
+        (IQS*)DD(BU,64,8), IO CONFIGURATION DEFINED INCORRECTLY *
+        DD(BU,8),(2)1111 1110      ! -CONTROL CODE * END OF MESSAGE
+        CNOP
+
+XMSG19  SYN, $   ! X MSG 19, listing 000460.00
+        DD(BU,8),(2)1111 1101      ! -CONTROL CODE * CARRIAGE RETURN
+        DD(BU,8),(2)00000010       ! -RED$
+        (IQS*)DD(BU,64,8),000000.0*   ! -SLOT FOR ERROR ADDRESS
+        (IQS*)DD(BU,64,8), INCORRECT CARD TYPE *
+        DD(BU,8),(2)1111 1110      ! -CONTROL CODE * END OF MESSAGE
+        CNOP
+
+XMSG20  SYN, $   ! X MSG 20, listing 000464.00
+XMS21A  SYN, $   ! X MS 21A
+        DD(BU,8),(2)1111 1101      ! -CONTROL CODE * CARRIAGE RETURN
+        DD(BU,8),(2)00000010       ! -RED$
+        (IQS*)DD(BU,64,8),000000.0*   ! -SLOT FOR ERROR ADDRESS
+        (IQS*)DD(BU,64,8), EKJ OF CCW IN IO STATUS REPORT ROUTINE*
+        DD(BU,8),(2)1111 1110      ! -CONTROL CODE * END OF MESSAGE
+        CNOP
+
+XMSG22  SYN, $   ! X MSG 22, listing 000473.00
+        DD(BU,8),(2)1111 1101      ! -CONTROL CODE * CARRIAGE RETURN
+        DD(BU,8),(2)00000010       ! -RED$
+        (IQS*)DD(BU,64,8),000000.0*   ! -SLOT FOR ERROR ADDRESS
+        (IQS*)DD(BU,64,8), INCORRECT CARD TYPE WITHIN IODS *
+        DD(BU,8),(2)1111 1110      ! -CONTROL CODE * END OF MESSAGE
+        CNOP
+
+XMSG21  SYN, $   ! X MSG 21, listing 000501.00
+XMSG23  SYN, $   ! X MSG 23
+        DD(BU,8),(2)1111 1101      ! -CONTROL CODE * CARRIAGE RETURN
+        (IQS*)DD(BU,64,8),000000.0*   ! -SLOT FOR ERROR ADDRESS
+        (IQS*)DD(BU,64,8), IO REQUIREMENTS REJECTED *
+        DD(BU,8),(2)1111 1110      ! -CONTROL CODE * END OF MESSAGE
+        CNOP
+
+XMSG24  SYN, $   ! X MSG 24, listing 000506.00
+        DD(BU,8),(2)1111 1101      ! -CONTROL CODE * CARRIAGE RETURN
+        DD(BU,8),(2)00000010       ! -RED$
+        (IQS*)DD(BU,64,8),000000.0*   ! -SLOT FOR ERROR ADDRESS
+        (IQS*)DD(BU,64,8), IO ASSIGNMENTS CAN NOT BE MADE *
+        DD(BU,8),(2)1111 1110      ! -CONTROL CODE * END OF MESSAGE
+
+! THE ONE BLOCK WHERE THE LABEL COMES BEFORE THE CNOP.  Everywhere
+! else the deck writes the end-of-message code, then CNOP, then the
+! next message's SYN -- so the label lands on a full word.  Printed
+! p.12 lines 42-44 write it the other way round for X MSG 25: the
+! code at 000513.20, the SYN at 000513.30, and only then the CNOP at
+! 000513.40.  So X MSG 25 is NOT word-aligned; it points at the
+! trailing edge of the previous message.  Writing the CNOP first
+! would have put it at 000514.00 and the listing says 000513.30.
+XMSG25  SYN, $   ! X MSG 25, listing 000513.30
+        CNOP
+        DD(BU,8),(2)1111 1101      ! -CONTROL CODE * CARRIAGE RETURN
+        DD(BU,8),(2)00000010       ! -RED$
+        (IQS*)DD(BU,64,8),000000.0*   ! -SLOT FOR ERROR ADDRESS
+        (IQS*)DD(BU,64,8), IO TABLES CAN NOT BE FORMED *
+        DD(BU,8),(2)1111 1110      ! -CONTROL CODE * END OF MESSAGE
+        CNOP
+
+XMSG26  SYN, $   ! X MSG 26, listing 000521.00
+        DD(BU,8),(2)1111 1101      ! -CONTROL CODE * CARRIAGE RETURN
+        DD(BU,8),(2)00000010       ! -RED$
+        (IQS*)DD(BU,64,8),000000.0*   ! -SLOT FOR ERROR ADDRESS
+        (IQS*)DD(BU,64,8), PROSA ARC COUNT INCORRECT *
+        DD(BU,8),(2)1111 1110      ! -CONTROL CODE * END OF MESSAGE
+        CNOP
+        END, XMSG00

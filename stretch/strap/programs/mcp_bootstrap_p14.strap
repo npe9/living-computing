@@ -1,0 +1,99 @@
+! mcp_bootstrap_p14.strap -- MCP's IPL BOOTSTRAP, printed page 14:
+! PROSA CWS, the bootstrap's last page.
+! docs/MCP_Mar63_001-249.pdf PDF p.21, header "PAGE NUMBER 14".
+! docs/boot_plan.md M3.
+!
+! THIRTY-NINE CHAINED CONTROL WORDS AND THE SYMBOL THAT ENDS THE
+! BOOTSTRAP.  Each fetches one PROSA record of 513 words into
+! X BUFER, 512 words further along than the one before, and chains to
+! the next by refilling from $+1.0.  The addresses run X BUFER,
+! X BUFER + 512., ... up to X BUFER + 19456., which is 38 x 512.
+!
+! WHY THIRTY-EIGHT OF THEM ARE CW(CDSC) AND THE LAST IS CW(CR).
+! C28-6129 printed p.14: CDSC is "Count Disregarding Record, Skip and
+! Chain" -- chain 1, multiple 1 -- and CR is "Count Within Record",
+! all three flags zero.  So the first thirty-eight keep the channel
+! going and the thirty-ninth stops it.  The listing prints the flags
+! as three separate digits, 110 against 000, and the counts differ
+! too: 513 for the chained ones and 512 for the last.
+!
+! THE COUNT IS 513, NOT 512, FOR A REASON WORTH NOTING.  A chained
+! control word that counts one more word than it advances reads a
+! record of 513 and leaves the channel positioned one word on, which
+! is how the deck walks a 512-word stride through a buffer with a
+! one-word header per record.  The last one counts 512 because there
+! is nothing after it to position for.  Flagged as a reading of the
+! numbers, not something the listing states.
+!
+! X BS END IS WHAT PRINTED p.2's IPL CONTROL WORD COUNTS TO.  Line 43
+! is "X BS END SYN,$ - END OF THE MCP IPL BS ROUTINE" at 000621.00,
+! and p.2's CW(CR) counts X BS END - X IPL BS = 0o621 - 0o41 = 0o560
+! = 368 words.  printed p.13's X IPL K counts one more.  This file
+! and programs/mcp_bootstrap_p2.strap now define and use that symbol
+! respectively, where before p.2 SYN'd it.
+!
+! ---------------------------------------------------------------
+! A TYPOGRAPHICAL FINDING, recorded because it is the listing's own
+! ---------------------------------------------------------------
+! Line 22's comment reads "-FETCH ONE PROSA REXORD" -- X, not C.
+! Verified at 600 dpi.  Thirty-eight rows say RECORD and that one
+! says REXORD; it is IBM's typo, not a misread, and it is the proof
+! that these rows were keyed by hand rather than generated.  It
+! changes no bit: the comment field is not compiled.
+!
+! Line 4's operand is written "CW(CDSC),0" with NO trailing period
+! where every other row writes "512.", "1024." and so on.  Zero needs
+! no units, so the two spellings agree.
+!
+! ---------------------------------------------------------------
+! EXTERNALS
+! ---------------------------------------------------------------
+!   X BUFER  printed p.13 line 38  "X BUFER SYN,X IN END+ 2000.0",
+!            which resolves through printed p.98 line 36's
+!            "X IN END SYN,$" at 005466.00 to 011406.00.
+XBUFER  SYN, (8)11406.0
+
+        SLC, (8)552.0      ! printed p.14 line 4's location; p.13 ends
+                            ! at 000551.00 with a VF
+
+XPROSA  CW(CDSC), 0+XBUFER,513,$+1.0          ! line  4  -FETCH ONE PROSA RECORD
+        CW(CDSC), 512.+XBUFER,513,$+1.0       ! line  5  -FETCH ONE PROSA RECORD
+        CW(CDSC), 1024.+XBUFER,513,$+1.0      ! line  6  -FETCH ONE PROSA RECORD
+        CW(CDSC), 1536.+XBUFER,513,$+1.0      ! line  7  -FETCH ONE PROSA RECORD
+        CW(CDSC), 2048.+XBUFER,513,$+1.0      ! line  8  -FETCH ONE PROSA RECORD
+        CW(CDSC), 2560.+XBUFER,513,$+1.0      ! line  9  -FETCH ONE PROSA RECORD
+        CW(CDSC), 3072.+XBUFER,513,$+1.0      ! line 10  -FETCH ONE PROSA RECORD
+        CW(CDSC), 3584.+XBUFER,513,$+1.0      ! line 11  -FETCH ONE PROSA RECORD
+        CW(CDSC), 4096.+XBUFER,513,$+1.0      ! line 12  -FETCH ONE PROSA RECORD
+        CW(CDSC), 4608.+XBUFER,513,$+1.0      ! line 13  -FETCH ONE PROSA RECORD
+        CW(CDSC), 5120.+XBUFER,513,$+1.0      ! line 14  -FETCH ONE PROSA RECORD
+        CW(CDSC), 5632.+XBUFER,513,$+1.0      ! line 15  -FETCH ONE PROSA RECORD
+        CW(CDSC), 6144.+XBUFER,513,$+1.0      ! line 16  -FETCH ONE PROSA RECORD
+        CW(CDSC), 6656.+XBUFER,513,$+1.0      ! line 17  -FETCH ONE PROSA RECORD
+        CW(CDSC), 7168.+XBUFER,513,$+1.0      ! line 18  -FETCH ONE PROSA RECORD
+        CW(CDSC), 7680.+XBUFER,513,$+1.0      ! line 19  -FETCH ONE PROSA RECORD
+        CW(CDSC), 8192.+XBUFER,513,$+1.0      ! line 20  -FETCH ONE PROSA RECORD
+        CW(CDSC), 8704.+XBUFER,513,$+1.0      ! line 21  -FETCH ONE PROSA RECORD
+        CW(CDSC), 9216.+XBUFER,513,$+1.0      ! line 22  -FETCH ONE PROSA REXORD
+        CW(CDSC), 9728.+XBUFER,513,$+1.0      ! line 23  -FETCH ONE PROSA RECORD
+        CW(CDSC), 10240.+XBUFER,513,$+1.0     ! line 24  -FETCH ONE PROSA RECORD
+        CW(CDSC), 10752.+XBUFER,513,$+1.0     ! line 25  -FETCH ONE PROSA RECORD
+        CW(CDSC), 11264.+XBUFER,513,$+1.0     ! line 26  -FETCH ONE PROSA RECORD
+        CW(CDSC), 11776.+XBUFER,513,$+1.0     ! line 27  -FETCH ONE PROSA RECORD
+        CW(CDSC), 12288.+XBUFER,513,$+1.0     ! line 28  -FETCH ONE PROSA RECORD
+        CW(CDSC), 12800.+XBUFER,513,$+1.0     ! line 29  -FETCH ONE PROSA RECORD
+        CW(CDSC), 13312.+XBUFER,513,$+1.0     ! line 30  -FETCH ONE PROSA RECORD
+        CW(CDSC), 13824.+XBUFER,513,$+1.0     ! line 31  -FETCH ONE PROSA RECORD
+        CW(CDSC), 14336.+XBUFER,513,$+1.0     ! line 32  -FETCH ONE PROSA RECORD
+        CW(CDSC), 14848.+XBUFER,513,$+1.0     ! line 33  -FETCH ONE PROSA RECORD
+        CW(CDSC), 15360.+XBUFER,513,$+1.0     ! line 34  -FETCH ONE PROSA RECORD
+        CW(CDSC), 15872.+XBUFER,513,$+1.0     ! line 35  -FETCH ONE PROSA RECORD
+        CW(CDSC), 16384.+XBUFER,513,$+1.0     ! line 36  -FETCH ONE PROSA RECORD
+        CW(CDSC), 16896.+XBUFER,513,$+1.0     ! line 37  -FETCH ONE PROSA RECORD
+        CW(CDSC), 17408.+XBUFER,513,$+1.0     ! line 38  -FETCH ONE PROSA RECORD
+        CW(CDSC), 17920.+XBUFER,513,$+1.0     ! line 39  -FETCH ONE PROSA RECORD
+        CW(CDSC), 18432.+XBUFER,513,$+1.0     ! line 40  -FETCH ONE PROSA RECORD
+        CW(CDSC), 18944.+XBUFER,513,$+1.0     ! line 41  -FETCH ONE PROSA RECORD
+        CW(CR), 19456.+XBUFER,512,$+1.0     ! line 42  -FETCH ONE PROSA RECORD AND STO
+XBSEND  SYN, $    ! line 43  - END OF THE MCP IPL BS ROUTINE
+        END, XPROSA

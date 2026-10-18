@@ -99,18 +99,31 @@
 !   X ERR CW  printed p.8  line 37  "X ERR CW  CW,0 - SLOT FOR COPIED CW" 000253.00
 !   S YCOCH   printed p.37 line 25  "S YCOCH  VF,22.4"               002156.00
 !
-! S YCOCH IS IN A DIFFERENT DECK, and that is worth saying out loud:
-! printed p.37 is headed "THE COMMUNICATION REGION FOR MCP", its
-! banner reads PUNID 11C11IPL and its cards are the 13000xxx series,
-! where these pages read PUNID 11E11BSP and 11000xxx.  So the
-! bootstrap references a symbol defined in a separately assembled
-! deck -- the first cross-deck reference this corpus has needed, and
-! part of what TAIL exists to make work (docs/NEXT.md 5x).  Its own
-! row corroborates the address: the binary is 000026.04+, octal 26 =
-! 22 decimal, matching the written VF,22.4, and the next row is
-! "S YPRCH  VF,22.4  -THE CHANNEL NUMBER OF THE PRINTER", which is
-! what makes the CO and PR in the two names legible rather than
-! guessed.
+! S YCOCH IS FAR AWAY BUT IT IS THE SAME ASSEMBLY, and the first
+! version of this note got that wrong.  Printed p.37 is headed "THE
+! COMMUNICATION REGION FOR MCP", its banner reads PUNID 11C11IPL and
+! its cards are the 13000xxx series, where these pages read PUNID
+! 11E11BSP and 11000xxx -- which looked like two separately assembled
+! decks and was written up here as "the first cross-deck reference
+! this corpus has needed".
+!
+! IT IS NOT.  Printed p.15 line 5 is the statement
+!
+!     PUNID,11C11IPL
+!
+! followed by RESEQ and then SLC,X BS END -- read first-hand at 600
+! dpi.  PUNID and RESEQ change the identification and sequence
+! PUNCHED INTO THE CARDS; they do not end an assembly.  So printed
+! pp.3-15 and pp.16 onward are ONE STRAP assembly punching two decks,
+! which is exactly why "SLC,X BS END" on p.15 can name a symbol
+! defined on p.14 and why this page can name one defined on p.37.
+! Nothing here needs TAIL.
+!
+! Its own row corroborates the address: the binary is 000026.04+,
+! octal 26 = 22 decimal, matching the written VF,22.4, and the next
+! row is "S YPRCH  VF,22.4  -THE CHANNEL NUMBER OF THE PRINTER",
+! which is what makes the CO and PR in the two names legible rather
+! than guessed.
 XERRAD  SYN, (8)551.0
 XERRIN  SYN, (8)245.0
 XMSGCW  SYN, (8)247.0

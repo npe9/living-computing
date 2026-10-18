@@ -190,7 +190,20 @@ count field is **368**. The arithmetic reconciles exactly if the 369
 counts octal 40 through 620 inclusive — the whole bootstrap
 *including its own IPL control word* — while the 368 counts only what
 the IPL reads in, at octal 41 through 620. Flagged as my own
-reconciliation: I did not find a line that states it. The practical
+reconciliation: I did not find a line that states it.
+
+> **SOURCED 2026-10-17, and the reconciliation was right.** Printed
+> p.13 line 27 states it outright:
+>
+> ```
+> 27* 000561.00+  -00000000  BU,40 ,10  X IPL K  SYN, 1.0 + X BS END - X IPLBS  - SIZE OF BOOTSTRAP
+> ```
+>
+> `0o561` = 369, which is `X BS END − X IPL BS` **plus one**, and the
+> listing calls it SIZE OF BOOTSTRAP. So both numbers are the
+> listing's own: 368 is the tape record, 369 is the bootstrap
+> including its control word. Transcribed and checked in
+> `strap/verify_mcp_bootstrap_p13.py`. The practical
 consequence for a transcriber is that **both numbers are correct and
 a verification must say which it is checking** — an image assembled
 from `SLC,(8)40.0` to `X BS END` is 369 words long; the tape record

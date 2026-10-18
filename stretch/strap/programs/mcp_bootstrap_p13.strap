@@ -1,0 +1,114 @@
+! mcp_bootstrap_p13.strap -- MCP's IPL BOOTSTRAP, printed page 13.
+! docs/MCP_Mar63_001-249.pdf PDF p.20, header "PAGE NUMBER 13".
+! docs/boot_plan.md M3.
+!
+! TWO HALVES.  Lines 1-21 finish the error-message area that
+! programs/mcp_bootstrap_p9_p12.strap begins -- X MSG 27, 28 and 29,
+! the last three of the thirty-four.  Lines 22-38 are headed
+! BOOTSTRAP DEFINITIONS and IPL BOOTSTRAP PARAMETERS, and they are
+! the symbols the rest of the bootstrap has been SYN-ing all along:
+! X S ROOF and XW SR were SYN'd here by printed p.2's transcription
+! on the very first MCP page this project read, and X ERR AD by
+! pp.3-6's.  This is the page that defines them.
+!
+! p.12 ends at 000525.50 with an eight-bit control code; p.13 begins
+! with a CNOP that carries the counter to 000526.00.
+!
+! ---------------------------------------------------------------
+! WHAT THE DEFINITIONS SAY
+! ---------------------------------------------------------------
+! X IPL K is "SIZE OF BOOTSTRAP", 1.0 + X BS END - X IPLBS, and it
+! comes out 000561.00 -- 369 words.  THAT IS THE OTHER OF THE TWO
+! NUMBERS docs/mcp_tape_manufacture.md 2.1 reconciles: the IPL
+! control word on printed p.2 counts 0o560 = 368 words, X BS END -
+! X IPL BS, which is what the tape record holds; X IPL K counts one
+! more, the control word itself.  Both are right and a verification
+! has to say which it means.  The listing settles it with its own
+! arithmetic, which is what this row is.
+!
+! X EE EOP is "EOF STATUS BITS", SYN(BU,5),(2)00110 -- a five-bit
+! datum, not an address, which is why its printed LOCATION column
+! reads 000000.00+ and its value 6.
+!
+! XW SR and XW IND are the two index words printed p.2's clearing
+! loop runs on: "XW,0.0,29,XW IND" clears twenty-nine lower
+! registers and refills from XW IND, which then clears twenty more
+! starting at X IPLK+33.0.  p.2's "LX,$15,XW SR" is the LX that
+! loads the first of them.
+!
+! ---------------------------------------------------------------
+! THE XW COUNT FIELD IS IN WORDS, and this page is what proved it.
+! ---------------------------------------------------------------
+! Line 35 writes its count as a bare integer, "XW,0.0,29,XW IND",
+! and the listing prints 000035 -- twenty-nine.  Line 36 writes THE
+! SAME KIND OF NUMBER in word.bit form, "XW,X IPLK+33.0,20.0", and
+! the listing prints 000024 -- twenty.  Before this page the
+! assembler shifted neither, so line 36 came out 0002400, sixty-four
+! times too large.  C22-6531 printed p.12's rule -- an integer in a
+! word-counted field is already in words, a bit address scales >>6 --
+! had been applied to XW's REFILL and to CW's COUNT and not to XW's
+! own COUNT.  Third instance of the same bug class.
+!
+! ---------------------------------------------------------------
+! EXTERNALS
+! ---------------------------------------------------------------
+!   X IPLBS   printed p.2  line 24  "X IPL BS  BD,X BEGIN"   000041.00
+!   X BS END  printed p.14 line 43  "X BS END SYN,$"         000621.00
+!   X IN END  printed p.98 line 36  "X IN END SYN,$"         005466.00
+!
+! X IN END IS EIGHTY-FIVE PRINTED PAGES AWAY AND STILL THE SAME
+! ASSEMBLY.  Printed p.15 line 5 is the statement "PUNID,11C11IPL",
+! which changes what is punched into the CARDS and does not end the
+! assembly, so pp.3-15 and pp.16 onward are one STRAP run punching
+! two decks.  Its value is corroborated twice over: printed p.98
+! line 36 defines it SYN,$ at 005466.00, and printed p.15 line 15's
+! "X IN  BE,X IN END-X IN" at 000621.00 assembles an address field of
+! 004645, and 0o621 + 0o4645 = 0o5466.
+!
+! AND "2000.0" IS DECIMAL.  0o11406 - 0o5466 = 4870 - 2870 = 2000
+! exactly; an octal reading would need the difference to be 0o3720,
+! which it is not.
+XIPLBS  SYN, (8)41.0
+XBSEND  SYN, (8)621.0
+XINEND  SYN, (8)5466.0
+
+        SLC, (8)526.0      ! printed p.13's CNOP lands here; p.12 ends
+                            ! at 000525.50 with an eight-bit code
+
+! ---- the last three error messages --------------------------------
+XMSG27  SYN, $   ! X MSG 27, listing 000526.00
+        DD(BU,8),(2)1111 1101      ! -CONTROL CODE * CARRIAGE RETURN
+        DD(BU,8),(2)00000010       ! -RED$
+        (IQS*)DD(BU,64,8),000000.0*   ! -SLOT FOR ERROR ADDRESS
+        (IQS*)DD(BU,64,8), MCP PARAMETER INPUT MISSING *
+        DD(BU,8),(2)1111 1110      ! -CONTROL CODE * END OF MESSAGE
+        CNOP
+
+XMSG28  SYN, $   ! X MSG 28, listing 000533.00
+        DD(BU,8),(2)1111 1101      ! -CONTROL CODE * CARRIAGE RETURN
+        DD(BU,8),(2)00000010       ! -RED$
+        (IQS*)DD(BU,64,8),000000.0*   ! -SLOT FOR ERROR ADDRESS
+        (IQS*)DD(BU,64,8), IMPOSSIBLE OPERATING MODE*
+        DD(BU,8),(2)1111 1110      ! -CONTROL CODE * END OF MESSAGE
+        CNOP
+
+XMSG29  SYN, $   ! X MSG 29, listing 000540.00
+        DD(BU,8),(2)1111 1101      ! -CONTROL CODE * CARRIAGE RETURN
+        DD(BU,8),(2)00000010       ! -RED$
+        (IQS*)DD(BU,64,8),000000.0*   ! -SLOT FOR ERROR ADDRESS
+        (IQS*)DD(BU,64,8), SPOOL INPUT ASSIGNMENTS NOT MADE *
+        DD(BU,8),(2)1111 1110      ! -CONTROL CODE * END OF MESSAGE
+
+! ---- BOOTSTRAP DEFINITIONS ----------------------------------------
+XSROOF  XW, 0              ! line 26  -TEMP STORE FOR SIZE OF 7030
+XIPLK   SYN, 1.0 + XBSEND - XIPLBS   ! line 27  - SIZE OF BOOTSTRAP
+XEEEOP  SYN(BU,5), (2)00110          ! line 28  - EOF STATUS BITS
+
+! ---- IPL BOOTSTRAP PARAMETERS -------------------------------------
+        CNOP                                  ! line 34
+XWSR    XW, 0.0, 29, XWIND  ! line 35  -XW FOR CLEARING LR AND TW
+XWIND   XW, XIPLK+33.0, 20.0 ! line 36 -XW FOR CLEARING NON MASKABLE
+                              !           INDIC AND ...
+XERRAD  VF, 0              ! line 37  -LOCATION OF ERROR +1.0
+XBUFER  SYN, XINEND + 2000.0 ! line 38 - SLOTS LEFT FOR IOCD + IODS
+        END, XMSG27

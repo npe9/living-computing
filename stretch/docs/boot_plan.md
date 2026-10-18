@@ -157,17 +157,58 @@ the model can then produce its own boot media the way the real machine
 did. It needs `LOC`, `W`, `UNLOAD` distinct from `REWIND`, and the
 SEOP poll from M1.
 
-### M3 — MCP's bootstrap  ·  ~4 days transcription + the disk
+### M3 — MCP's bootstrap  ·  TRANSCRIPTION DONE 2026-10-17
 
-Printed pp.2-14, ~350 rule-3 rows, ~1.3× the largest program already
-in the corpus. The IPL control word is on p.2 and verified. **It loads
-from tape alone** (§5i), so M1 is sufficient to *start* it. To let it
-*finish* add the disk: ~100-170 lines for the boot-sufficient subset,
-since the bootstrap carries a 42-entry `PROSA CWS` table and can
-report `PROSA ARC COUNT INCORRECT`.
+**ALL THIRTEEN PAGES ARE TRANSCRIBED AND IN THE SUITE** — printed
+pp.2 through 14, roughly 495 checks across seven verifiers:
 
-**Before starting, read `$IPLD`, printed pp.15-36** — 22 pages, 3
-sampled. It is cheap and it bounds how much disk is really needed.
+| printed pages | what | checks |
+|---|---|---|
+| 2 | clear registers, size core by faulting | 22 |
+| 3 | find IPL channel, IO TEST, **space over tape mark** | 56 |
+| 4 | FETCH PROSA, move the MCP IPL over the bootstrap | 49 |
+| 5-6 | the ERROR ROUTINE, hunting for a console | 68 |
+| 7-8 | `X ERR DD`, the error table, and its definitions | 90 |
+| 9-12 | the error messages | 146 |
+| 13 | three more messages, BOOTSTRAP DEFINITIONS | 23 |
+| 14 | PROSA CWS — 39 chained control words | 41 |
+
+One row of the 495 is a documented standoff (printed p.3 line 6's
+`CCW,15.32,X IPL BS` prints `0011` where X22-6533 requires `1000`),
+and the thirty-one `(IQS*)DD` message rows check their LENGTH only
+because the listing prints no bytes for them.
+
+**WHAT THE TRANSCRIPTION ITSELF SETTLED**, none of it known when this
+plan was written:
+
+* **The tape has a tape mark on it.** Printed p.3's SPACE OVER TAPE
+  MARK means the bootstrap record is followed by one and the
+  bootstrap spaces past it before reading anything else.
+  `mktape.py` writes none and the model cannot space over one.
+* **The bootstrap copies the next stage over itself** (printed p.4's
+  `T,$11,X BUFER($1),X BS END`), which is why the tape mark has to be
+  passed first.
+* **39 chained PROSA control words, not 42**, each fetching 513 words
+  512 words further along; the last is the only `CW(CR)` and is what
+  stops the channel.
+* **The size question is answered by a row**: `X IPL K` = 369 words
+  including the control word, `X BS END - X IPL BS` = 368 without.
+
+**WHAT NOW BLOCKS RUNNING IT** — the image assembles and cannot
+execute. In the order the bootstrap hits them:
+
+1. **`SPFL`** (printed p.3 line 35) — control code 077, the model
+   rejects it. Without it the bootstrap cannot pass the tape mark.
+2. **Tape marks and records at all** — `TapeSource` is a flat word
+   array with no mark structure.
+3. **`LOC`** (printed p.5 line 36) — `StretchExecute.bsv:3376`, and
+   §6f shows it is how the operating system identifies a device.
+4. **`GONG`** (printed p.5 line 45) — control code 177.
+5. **The disk**, for `FETCH PROSA` to finish.
+
+Items 1-4 are small and each now has a listing witness. **`$IPLD`,
+printed pp.15-36, is still unread** — 22 pages, 3 sampled — and still
+the cheap way to bound how much disk is really needed.
 
 ### M4 — the Diagnostic Control Program  ·  ~75 days, in slices
 
