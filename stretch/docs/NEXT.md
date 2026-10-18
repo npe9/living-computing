@@ -4918,13 +4918,58 @@ PC at 000051.40, OP at 4M) **and then reproduced in four lines**, so
 this is measured. The scratch deck was `T,11,SRC($X1),DST`; it sets
 OP on its own.
 
-**What building it means.** A multi-word TRANSMIT moves N words and
-this model writes one word per rule, so it needs a small FSM of the
-`ioPending` shape -- the machinery `rl_io` already has, applied to a
-memory-to-memory copy. The direct-count form (`J` naming an index
-register whose count field holds N) is what MCP uses, and the arm
-currently never reads that register. Pocket card X22-6533's TRANSMIT
-heading and Reference Manual printed p.59 are the sources.
+**THE SPECIFICATION, READ FIRST-HAND.** Reference Manual **printed
+p.30** (PDF p.33), "Data Transmission" -- one page, complete, and it
+makes the job smaller than it looks. Verbatim:
+
+> "Up to 2^18 - 1 (262,143) full words may be transmitted in one
+> operation."
+
+> "Bits 55-57 of the data transmission instructions are used as
+> modifiers... modifier bit 57. A zero specifies unidirectional
+> transmission; a one specifies bidirectional... modifier bit 56. A
+> zero specifies a direct count; a one specifies an immediate count...
+> modifier bit 55. A zero specifies forward transmission; a one
+> specifies backward transmission."
+
+> "In direct count operations, the field J, bits 51-54, specifies an
+> index register. The count field, bits 28-45, of the index word in
+> this register is used as a full word count. A count field of zero
+> is interpreted as 2^18. Since this many words cannot be transmitted
+> without encountering an invalid address, such a count is never
+> valid. It is not detected, however, until the data transmission
+> actually encounters an invalid or protected address."
+
+> **"The count field in the index register is not changed as a result
+> of the operation, and the index result indicators are not affected.
+> A zero J field refers to location 16, X0."**
+
+> "In forward transmission, the sending and receiving addresses of
+> each successive word transmitted are obtained by incrementing the
+> previous addresses by one. The starting addresses specified in the
+> instruction are therefore the addresses of the first word in each
+> of the two storage areas."
+
+> "Only 18 bits of each effective address are used."
+
+**THAT BOLD PARAGRAPH IS THE WHOLE SAVING.** A multi-word TRANSMIT
+does **not** count the index register down and does **not** touch the
+index result indicators, so the FSM needs no write-back path and no
+indicator fold -- it reads the count once and walks two addresses.
+And `J = 0` is X0, not "no index": a direct count really does read
+word 16.
+
+**What building it means.** The model writes one word per rule, so it
+needs a small FSM of the `ioPending` shape -- the machinery `rl_io`
+already has, applied to a memory-to-memory copy: read the source
+word, write it to the destination, increment both, decrement a local
+remaining. `StretchExecute`'s Transmit arm currently never reads the
+index register at all, which is why every direct count sets OP.
+
+**Scope to leave out, deliberately:** backward transmission and SWAP.
+MCP's p.4 line 28 is forward unidirectional with a direct count, and
+the two-source interchange SWAP needs is a different shape. The arm's
+existing refusal should stay for both, with the OP it already sets.
 
 **It is on the critical path and the disk is not.** The disk is
 built; MCP LOCATEs and WRITEs it. What MCP cannot do is move itself
