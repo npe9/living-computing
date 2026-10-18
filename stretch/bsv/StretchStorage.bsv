@@ -401,7 +401,7 @@ module mkStretchStorage(StretchStorage);
   // every PG indicator in intDueCalc's leftmost-wins scan, so every
   // enabled program would take a TS interruption it never took before.
   // docs/NEXT.md 5 predicted exactly that failure.
-  // programs/interval_timer_steps.strap block 3a is the check that tells
+  // decks/interval_timer_steps.strap block 3a is the check that tells
   // the two rules apart, and it is one instruction long.
   //
   // BITS 19-27 ARE CLEARED BY THE STEP.  p.34's programming note: bit

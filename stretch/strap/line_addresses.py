@@ -29,7 +29,7 @@ prints that same place as 3.71.  Mixing the two is an easy way to write
 down an address that is off by eight, and this tool exists partly to
 stop that being done by hand.
 
-Usage:  python3 line_addresses.py programs/some_program.strap
+Usage:  python3 line_addresses.py decks/some_program.strap
 Output: one row per instruction --
     hw=4239  004107.40  BB,  WLOW, $   ! hang if on -- must be suppressed
 """

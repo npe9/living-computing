@@ -377,7 +377,7 @@ All six I/O instructions are full-word, two-half-word instructions
   through 49 are used." (p.111)
 
   *This confirms the derivation already recorded in
-  `strap/programs/io_reader_printer.strap`*: the channel number sits
+  `decks/io_reader_printer.strap`*: the channel number sits
   five bit positions up inside the 24-bit address field, so a literal
   channel 32 is written 32 << 5 = 1024.
 

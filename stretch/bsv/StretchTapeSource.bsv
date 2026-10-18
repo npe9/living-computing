@@ -53,7 +53,7 @@
 // Vector or from a card.
 //
 // `peek` IS NOT PART OF THE MACHINE.  It is the testbench's direct
-// window on the image (strap/gen_tb.py and strap/gen_tape_tb.py
+// window on the image (tests/gen_tb.py and tests/gen_tape_tb.py
 // pre-load the tape and check it afterwards through
 // StretchIO's readTapeWord/writeTapeWord, which forward to `peek` and
 // `write`).  Nothing in StretchExecute or the transfer FSM may call
@@ -64,7 +64,7 @@ package StretchTapeSource;
 import StretchTypes::*;
 import Vector::*;
 
-// Sixteen words, as before.  Deliberately small: strap/programs/
+// Sixteen words, as before.  Deliberately small: decks/
 // io_tape.strap's End Exception check depends on a transfer being able
 // to run off the end of the image, which a realistically sized tape
 // would make tedious to provoke.  The typedef lives here rather than
@@ -78,7 +78,7 @@ typedef 16 TapeWords;
 // one implementation's size: a file- or SD-backed source holds a reel.
 //
 // TapeWords CANNOT SIMPLY BE RAISED, which is worth saying because it
-// is the obvious move.  strap/programs/io_tape.strap reaches End
+// is the obvious move.  decks/io_tape.strap reaches End
 // Exception by running a 20-word transfer off the end of a 16-word
 // tape, and gen_tape_tb.py's CCWJ/CCWP expectations encode "16 of 20
 // words transferred".  Sixteen is load-bearing for that test, so the

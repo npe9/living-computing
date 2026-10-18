@@ -597,7 +597,7 @@ genuinely mixed, and the one large positive delta there is the
 six bounds. They cannot catch the error that is actually there.
 
 **They were calibrated against the model's own output, not against
-IBM.** `strap/run_tests.sh` says so: "bound is deliberately tight at
+IBM.** `tests/run_tests.sh` says so: "bound is deliberately tight at
 300" after "Measured 291 at stage 2b"; "Bounds carry ~10-25% slack;
 they catch timing regressions and tighten as later stages add overlap".
 

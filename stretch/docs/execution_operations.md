@@ -62,7 +62,7 @@ addition, quoted in §1.2 — and that addition is a behavioural fact for
 **(b) `I60S1` returns DISABLED, and that was already known in this
 repo.**  §3 needed "is the machine disabled when TEST 1C runs its `EX`?"
 answered.  It is, and not by inference:
-`strap/programs/ax5b_160s1_clr_inds.strap`'s header records the tail row
+`decks/ax5b_160s1_clr_inds.strap`'s header records the tail row
 first-hand — *"the RETURN, `I60SX1 $BD,0` at 023041.00.  I60S1 returns
 via a BRANCH DISABLED, so every block that calls `SIC,I60SX1 / B,I60S1`
 runs DISABLED afterwards unless it enables for itself."*
@@ -353,7 +353,7 @@ Note `EX` already carries its own, different carve-out — p.50's *"An
 effective address of EXECUTE that is below 32.00 … is not monitored by
 the address monitoring mechanism; that is, indicator IF cannot be
 actuated by these addresses"* — implemented as `ifViolates`' `a >= 32`
-guard and tested by `strap/programs/ex_monitor.strap`.  The two are
+guard and tested by `decks/ex_monitor.strap`.  The two are
 different rules with different comparands and neither subsumes the
 other, but they compose at the same call: a first-level `EXIC`
 pseudo-IC below 32.00 is exempt twice over.
@@ -768,4 +768,4 @@ and `I62ITE`/`I62INT`, which `ax5b_162_test1cc.strap` already stands up.
 | TEST 1C header, 1CA, 1CB | `jb_ax5b_ibox-5.pdf` | — | 92 |
 | TEST 1D | `jb_ax5b_ibox-5.pdf` | — | 95 |
 | TEST 2C header, 2CA, 2CB | `jb_ax5b_ibox-5.pdf` | — | 103 |
-| `I60S1` returns via `BD` | `strap/programs/ax5b_160s1_clr_inds.strap` header (from `jb_ax5b` PDF p.85) | — | 85 |
+| `I60S1` returns via `BD` | `decks/ax5b_160s1_clr_inds.strap` header (from `jb_ax5b` PDF p.85) | — | 85 |

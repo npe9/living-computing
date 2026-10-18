@@ -46,7 +46,7 @@ finding about the hardware model, not a hypothetical one.
 | `strap_asm.py` | Tokenizer, expression evaluator, two-pass assembler. Also a CLI: `python3 strap_asm.py program.strap` dumps the symbol table and memory image. |
 | `gen_tb.py` | Generates a runnable Bluespec testbench (loader + run-until-halt + checks) from an assembled program. |
 | `run_program.sh` | `strap_asm.py` → `gen_tb.py` → `bsc` → Bluesim in one step. |
-| `programs/` | Assembled test programs (see below). |
+| `decks/` | Assembled test programs (see below). |
 | `run_tests.sh` | The whole regression suite in one step (pure-Python assembler tests first, then every program below on the model). |
 | `test_syn.py`, `test_slc.py` | Pure-Python tests of the `SYN` and `SLC` pseudo-ops against `assemble()` directly. |
 | `listing_oracle.py` | Compares assembled words against the machine code a historical listing prints beside each source line (the print format is decoded in its docstring). |
@@ -68,7 +68,7 @@ Or run one program directly:
 
 ```
 cd stretch/strap
-./run_program.sh programs/problem_2_1.strap StretchProblem21Tb \
+./run_program.sh decks/problem_2_1.strap StretchProblem21Tb \
     "DOG_rotated:32=0x6e5d4c3b2a19087f"
 ```
 
@@ -857,7 +857,7 @@ Branch on Bit (the eight mnemonics `BB`/`BB1`/`BBN`/`BBZ` and
 milestone: assembled as the full-word format of X22-6533's "BRANCH ON
 BIT" row / Reference Manual p.41, executed on both sides, and checked
 field-by-field by `verify_bb_encoding.py` and end-to-end by
-`programs/bb_branch_on_bit.strap`. A printed-listing cross-check
+`decks/bb_branch_on_bit.strap`. A printed-listing cross-check
 against a real `BB` line (jb_af1c uses it for sign tests) is still
 outstanding — see that program's header.
 

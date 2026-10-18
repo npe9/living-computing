@@ -127,7 +127,7 @@ function BranchOutcome evalBranch(StretchStorage st, DecodedInstr d, Word64 ind0
       // and bit 17 is 64 (a word). An earlier version added 1/2/-2
       // raw bits (recorded in bsv/README.md as an unconfirmed
       // reading); I-Box 1's CBR+/CBR-/CBRH/CBRZ+/CBRZ-/CBRZH groups
-      // (strap/programs/ibox1_p46_p51_span.strap) hang at their
+      // (decks/ibox1_p46_p51_span.strap) hang at their
       // value tests under that mapping and pass under this one.
       Int#(25) delta = case (cb.v)
                           2'b01: 32;
@@ -504,7 +504,7 @@ endfunction
 // settles it rather than the type: routine 1262 TEST 1CC's "EX,I62B6"
 // prints machine code 24205.52, and octal pair 52 = 101010 has bit 18 =
 // 1, so that subject sits at half-word 024205.40 (the reading is worked
-// out in strap/programs/ax5b_162_test1cc.strap's header).
+// out in decks/ax5b_162_test1cc.strap's header).
 //
 // Returns Invalid for anything that is not an EXECUTE, which is how
 // mkEBox tells "an operand word arrived" from "a subject instruction
@@ -855,7 +855,7 @@ function Word64 dfSignal(StretchStorage st, WordAddr a, Word64 ind) =
 // what it adds is p.52's "the instruction is suppressed without a test
 // of the addressed bit", which has to sit beside the branch decision
 // and so cannot live in a predicate here.  Tested by
-// programs/df_bb_readonly.strap.
+// decks/df_bb_readonly.strap.
 function Bool dfSuppresses(StretchStorage st, WordAddr a) =
   maskedOn(st, ind_DF) && protViolates(st, a);
 
@@ -931,7 +931,7 @@ endfunction
 // two operations; the index result indicators are not set in these
 // operations") and p.25 for KVI, KVNI and KCI in the same words.  This
 // helper used to set only XL/XE/XH, so all five compares left XF stale.
-// NOW PINNED by strap/programs/cmp_sets_index_flag.strap -- it was not
+// NOW PINNED by decks/cmp_sets_index_flag.strap -- it was not
 // when the fix landed, and mutation_score.py's cmp-leaves-flag survived
 // the whole suite until that program was written.
 function Word64 setIndexCmpIndicatorsF(Word64 ind, IndexWord x, Cmp3 c);
@@ -1810,7 +1810,7 @@ function ActionValue#(Word64) fpArithClass(StretchStorage st, Bit#(7) c,
           // the input gate, not a result; and when AH is off the
           // comparison indicators are left unchanged (the
           // fall-through of this `else if`). Verified against
-          // jb_af1c F202G11-18 (programs/fp_compare_f202g.strap).
+          // jb_af1c F202G11-18 (decks/fp_compare_f202g.strap).
           ind = setBit(ind, ind_AE, pack(cmp < 0));
         end
       end
@@ -2446,7 +2446,7 @@ function ActionValue#(VflOutcome)
             // shift -- offSh exists to align the ACCUMULATOR, and M+1
             // has no accumulator operand.
             //
-            // ARRIVED VIA MCP.  programs/mcp_bootstrap_p2.strap line
+            // ARRIVED VIA MCP.  decks/mcp_bootstrap_p2.strap line
             // 34 is the fourth instruction of IBM's operating system
             // and the model used to set Operation Code Invalid on it
             // (docs/NEXT.md 6a).
@@ -3246,7 +3246,7 @@ function ActionValue#(IndexOutcome)
       // Count/refill operations (LCI/LRI/C+I/C-I/KCI) use "bits 0-17
       // of the address part" -- the field's TOP 18 bits. An earlier
       // version used the raw 19-bit field for values and its LOW 18
-      // bits for counts; caught by strap/verify_ibox1_listing.py,
+      // bits for counts; caught by tests/verify_ibox1_listing.py,
       // where I-Box 1's "LCI,$X1,4" prints as 4.03 02 (count 4 in
       // bits 0-17), then confirmed against p.25.
       Bit#(24) immVal24 = {ii.imm, 5'b0};
@@ -3807,7 +3807,7 @@ function ActionValue#(ExecResult)
         // part of the operation.  NO DECK WITNESS: routine 1262 TEST
         // 1CC's first subject class IS an EX of a branch-on-indicator,
         // but it sits on PDF p.92, which the transcription
-        // (strap/programs/ax5b_162_test1cc.strap) cuts away at I6225 --
+        // (decks/ax5b_162_test1cc.strap) cuts away at I6225 --
         // its header says so in as many words.
         if (ex.under && o.taken)
           ind = setBit(ind, ind_EXE, 1);

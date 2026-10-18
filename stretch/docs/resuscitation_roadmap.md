@@ -72,8 +72,8 @@ The unit is measured from the repository, not asserted:
 | **active days** (days with ≥1 commit) | **28** | `git log --format=%ad --date=short -- stretch \| sort \| uniq -c` |
 | commits per active day | **13.4** | 376 / 28 |
 | Bluespec source | **10,412 lines** | `wc -l bsv/*.bsv` |
-| transcription verifiers | **182** | `ls strap/verify_*.py \| wc -l` |
-| runnable STRAP programs | **240** | `ls strap/programs \| wc -l` |
+| transcription verifiers | **182** | `ls tests/verify_*.py \| wc -l` |
+| runnable STRAP programs | **240** | `ls decks \| wc -l` |
 
 So **one "project-day" ≈ 13 commits**, and **the whole project to date
 = 28 project-days**. Landmark features, measured the same way, give the
@@ -165,9 +165,9 @@ wants it.
 
 ### 1.3 The evidence base — and a correction to how it is usually quoted
 
-240 STRAP programs (`strap/programs/`, all `.strap`), 182
+240 STRAP programs (`decks/`, all `.strap`), 182
 `verify_*.py`, 389 `run` invocations across 57 numbered sections of
-`strap/run_tests.sh` (6,143 lines), and six `CYCLES<=N` timing bounds
+`tests/run_tests.sh` (6,143 lines), and six `CYCLES<=N` timing bounds
 (lines 2035, 2046, 2055, 2070, 5900, 6033). A full run is ~207 s
 (`AGENTS.md`, item 1).
 
@@ -183,7 +183,7 @@ oracle in the project for *encodings*, and no evidence at all about
 
 **Execution evidence comes only from `run_tests.sh`'s 389 `run`
 lines**, driving `gen_tb.py`-generated Bluesim testbenches with a
-30,000-step default cap (`strap/gen_tb.py` line 20). That is still a
+30,000-step default cap (`tests/gen_tb.py` line 20). That is still a
 large and genuine regression oracle, but it is roughly half the size
 the usual "182 verifiers" framing implies, and the distinction matters
 for every milestone below. Concretely: `verify_ssip_sip17_listing.py`
@@ -196,7 +196,7 @@ of SSIP or the DCP has ever executed on this model.
 
 ### 2.1 The real denominator, and why the ratchet undercounts
 
-`strap/audit_opcode_coverage.py` reports today:
+`tests/audit_opcode_coverage.py` reports today:
 
 ```
 mnemonics STRAP can emit      : 116
@@ -207,7 +207,7 @@ unused                        : 12
 ```
 
 **That 116 is not the instruction set.** The script's own header says
-so (`strap/audit_opcode_coverage.py` lines 30–33: *"it screens what the
+so (`tests/audit_opcode_coverage.py` lines 30–33: *"it screens what the
 ASSEMBLER can emit — an operation neither the assembler nor any program
 knows about is invisible to it"*). Three whole classes of gap are
 invisible to it because they are not separate mnemonics:
@@ -304,7 +304,7 @@ Scanning those four listings for the instructions this model refuses:
 
 | instruction | occurrences in the four benchmarks | evidence | model status |
 |---|---|---|---|
-| `LVE` | **7** | 5 read from the page image at PDF p.12 | **implemented 2026-10-17** (one level; a chain sets OP). RefMan printed p.29, driven by `strap/programs/lve_indirect.strap` and witnessed by MCP printed p.3 line 10 |
+| `LVE` | **7** | 5 read from the page image at PDF p.12 | **implemented 2026-10-17** (one level; a chain sets OP). RefMan printed p.29, driven by `decks/lve_indirect.strap` and witnessed by MCP printed p.3 line 10 |
 | `SVA` | **8** | 2 read from the image at PDF p.12 | **implemented** — this row said "partially (indicator fold only)" and was stale; `StretchExecute`'s `dixop_SVA` arm does the address replacement in full, width from `svaReplaceAddr` |
 | `LCV` (radix conversion) | **6** | 3 read from the image at PDF p.33 | not implemented |
 | `ST(DU,…)` decimal VFL | **7** | 4 read from the image at PDF p.33 | not implemented |
@@ -476,7 +476,7 @@ these pseudo-ops: `DD`, `VF`, `XW`, `END`, `SYN`, `SLC`, `CNOP`,
 benchmark listings additionally use `DR`, `DRZ`, `DDL`, `CW` (control
 word, with flag sets like `CDSC`/`CD`/`CCR`), `SEM`, `ENTER`, `PUNID`
 and `PRINID`. **Adding those is days**, and `CW` in particular would
-retire the hack `strap/gen_io_tb.py` exists for (patching packed
+retire the hack `tests/gen_io_tb.py` exists for (patching packed
 control words into the image after assembly because `DD` cannot
 resolve a label — `gen_io_tb.py` lines 4–8).
 
@@ -1267,7 +1267,7 @@ sized SSIP from its `END,%8@100.` operand as ~1,434 words. That is
 wrong: the operand names the *entry* convention, and SSIP's own
 `SLC` is octal **1300**, so it is **795 words** — about half. It is
 still not a shortcut to A3, for a different reason: **nothing of SSIP
-has ever executed on this model.** `strap/verify_ssip_sip17_listing.py`
+has ever executed on this model.** `tests/verify_ssip_sip17_listing.py`
 imports only `strap_asm` and `listing_oracle` and never touches
 Bluesim (§1.3). And SSIP is *not standalone* either — its own writeup
 (PDF p.4 = printed p.6) says *"The present SSIP (PUNFUL card loaded)
@@ -1489,7 +1489,7 @@ The entire operator surface today is four methods on
 `halted()` (`:734`), `getPC()` (`:736`), `setPC()` (`:737`) — plus two
 back-door interfaces for the testbench (`:60–62`). A program is loaded
 by generated BSV calling `core.mem.writeWord` once per phase
-(`strap/gen_tb.py:87`), and a run stops because an instruction
+(`tests/gen_tb.py:87`), and a run stops because an instruction
 branched to itself (`bsv/StretchCore.bsv:504`, `done = (o.next ==
 pc)`). **There is no HALT instruction and no stop switch.**
 
@@ -1618,7 +1618,7 @@ Four of these programs' full source listings are in Vol.2 (§2.2). So
 there is an end-to-end oracle: **assemble IBM's own benchmark, run it,
 and compare the model's clock count at halt against IBM's measured
 milliseconds.** The suite's `CYCLES<=N` mechanism
-(`strap/run_tests.sh` lines 2020–2075) already does precisely this
+(`tests/run_tests.sh` lines 2020–2075) already does precisely this
 shape of check against synthetic microbenchmarks; this replaces the
 synthetic target with a historical measured one.
 
@@ -1632,7 +1632,7 @@ would let the five collapsed interlock counters be separated
 correctly. `microarchitecture_plan.md` does not currently cite it.
 
 **(d) The existing `CYCLES<=N` bounds.** Six of them
-(`strap/run_tests.sh` lines 2035, 2046, 2055, 2070, 5900, 6033). These
+(`tests/run_tests.sh` lines 2035, 2046, 2055, 2070, 5900, 6033). These
 are **regression guards, not accuracy evidence** — the file's own
 comment says *"Bounds carry ~10-25% slack; they catch timing
 regressions and tighten as later stages add overlap."* They prevent

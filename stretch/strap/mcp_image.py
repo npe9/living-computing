@@ -32,23 +32,39 @@ WHAT THE IMAGE IS.  `SLC,(8)40.0` through `X BS END` at `000621.00`:
 369 words, of which the IPL reads 368.  Both numbers are the
 listing's own and both are asserted below.
 """
+import os
 import re
 import sys
 
 from strap_asm import assemble, iter_statements
 
+# RESOLVED AGAINST THIS FILE, NOT THE CALLER'S WORKING DIRECTORY.
+# strap/mcp_crop.sh had the same bug on 2026-10-17 -- a bare relative
+# path that worked from one directory and failed from the next -- and
+# this one would have broken the moment the decks moved out of
+# decks/, which they did.
+
+
+_DECKS = os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                     os.pardir, "decks")
+
+
+def DECK(name):
+    """A deck, by name, under stretch/decks/."""
+    return os.path.join(_DECKS, name)
+
 # In address order, which is also the order the merged source needs:
 # each file carries its own SLC, but keeping them in order means the
 # merged listing reads like the program.
 PAGES = [
-    ("programs/mcp_bootstrap_p2.strap",     "printed p.2"),
-    ("programs/mcp_bootstrap_p3.strap",     "printed p.3"),
-    ("programs/mcp_bootstrap_p4.strap",     "printed p.4"),
-    ("programs/mcp_bootstrap_p5_p6.strap",  "printed pp.5-6"),
-    ("programs/mcp_bootstrap_p7_p8.strap",  "printed pp.7-8"),
-    ("programs/mcp_bootstrap_p9_p12.strap", "printed pp.9-12"),
-    ("programs/mcp_bootstrap_p13.strap",    "printed p.13"),
-    ("programs/mcp_bootstrap_p14.strap",    "printed p.14"),
+    (DECK("mcp_bootstrap_p2.strap"), "printed p.2"),
+    (DECK("mcp_bootstrap_p3.strap"), "printed p.3"),
+    (DECK("mcp_bootstrap_p4.strap"), "printed p.4"),
+    (DECK("mcp_bootstrap_p5_p6.strap"), "printed pp.5-6"),
+    (DECK("mcp_bootstrap_p7_p8.strap"), "printed pp.7-8"),
+    (DECK("mcp_bootstrap_p9_p12.strap"), "printed pp.9-12"),
+    (DECK("mcp_bootstrap_p13.strap"), "printed p.13"),
+    (DECK("mcp_bootstrap_p14.strap"), "printed p.14"),
 ]
 
 _STANDIN = re.compile(r'^\(8\)[0-7]+(\.[0-7]+)?$')

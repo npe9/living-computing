@@ -203,7 +203,7 @@ reconciliation: I did not find a line that states it.
 > listing calls it SIZE OF BOOTSTRAP. So both numbers are the
 > listing's own: 368 is the tape record, 369 is the bootstrap
 > including its control word. Transcribed and checked in
-> `strap/verify_mcp_bootstrap_p13.py`. The practical
+> `tests/verify_mcp_bootstrap_p13.py`. The practical
 consequence for a transcriber is that **both numbers are correct and
 a verification must say which it is checking** — an image assembled
 from `SLC,(8)40.0` to `X BS END` is 369 words long; the tape record
@@ -431,7 +431,7 @@ transcription volume does.
 | Measure | Value | Source |
 |---|---|---|
 | Calendar span | 2026-08-24 → 2026-10-16 = **53 days** | `git log` first and last commit dates |
-| Transcribed programs | **242** `.strap` files | `ls strap/programs/*.strap` |
+| Transcribed programs | **242** `.strap` files | `ls decks/*.strap` |
 | Code lines (non-comment, non-blank) | **15,984** | `grep -vcE '^\s*(!\|$)'` summed |
 | Rule-3 verified machine-code rows | **5,100** | octal-location row literals across the 181 `verify_*_listing.py` |
 | Mean program size | **66 code lines** | 15,984 / 242 |
@@ -610,7 +610,7 @@ Recommended as a *prerequisite* to Rank 1, not an alternative to it.
 ### Rank 4 — Load core directly, which is what the model does today
 
 Keeps working. It is the correct way to run everything in
-`strap/programs/`. It simply does not answer "we booted from tape",
+`decks/`. It simply does not answer "we booted from tape",
 and the gap between it and Rank 1 is now measured (five model
 additions, ~4 days of transcription) rather than unknown. Its real
 role is as the fallback for *MCP* even after the bootstrap boots: if

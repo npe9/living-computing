@@ -85,13 +85,13 @@ in parentheses); **open** = no stage assigned yet.
 | Serial and parallel arithmetic units, A/B and C/D registers | Buchholz §14.4 | planned (4) |
 | Floating-point arithmetic (all ops), timing per table 2 and CE figs 3.8.x | Ref. Manual pp.78-94; CE 3.3.x/3.8.x | partial (4c): single-precision L/LWF/+/+MG/M+/M+MG/ST/K/KMG/KR/KMGR/*/E+/E+I/SHF; divide, double precision, root (SRT), LFT, *+, F+ open. K compare VERIFIED against jb_af1c F202A1-6/A15-20 (all of AL/AE/AH, normal + XFN/XFP ranges). jb_af1c F202G (KR Compare-for-Range, p.45) RUNS and passes (`fp_compare_f202g.strap`, `verify_fp_compare_g_listing.py`): `Z,$IND` clears indicators (b1a6ad0), `BB1,$AH` sets the gate (63721f1), and KR was fixed to p.91 -- it sets AE to "accumulator low" and leaves AL and AH unchanged (the range path had wrongly set AH := acc>=opnd). Discriminating on KR's AE via G15. (F202G's own operands do not distinguish the AH-leave-vs-set aspect -- its AH-preset sub-tests all have cmp>=0 -- but p.91 mandates leaving AH.) |
 | Decimal VFL, radix conversion, VFL multiply/divide | Ref. Manual; CE 3.11.x | open |
-| Branch on Bit (BB/BB1/BBN/BBZ/BZB/BZB1/BZBN/BZBZ): test one bit anywhere in storage, take the branch if it matches instruction bit 62, then set the bit per bits 60-61 whether or not the branch was taken | Ref. Manual p.41; X22-6533 pocket card "BRANCH ON BIT" | executed, including a BB that changes an INDICATOR-register bit (word 11, positions 20-63, p.41 -- folded into `ind` rather than the no-op writeWord(11)) (StretchExecute BitBranch arm; `strap/programs/bb_branch_on_bit.strap`, `bb_indicator.strap`, `verify_bb_encoding.py`, `verify_bb_listing.py`) |
-| **EX** (with LA drains, table 6; Ref. Manual pp.49-50: subject instruction may not change the interruption state or the IC -- EXE indicator) | Ref. Manual pp.49-50; Perf. Char. table 6 | **executed, 2026-09-25** (StretchExecute's EX arm + mkEBox's subject swap + the EXE suppression in the five branch arms; `strap/programs/ex_subject.strap`, `ex_exe.strap`, `ex_exe_bind.strap`, `ex_monitor.strap`). NOT done: USA's 1 ms timeout, and p.50's two "special exceptions" that hold while the system is DISABLED -- see docs/NEXT.md item 4a |
+| Branch on Bit (BB/BB1/BBN/BBZ/BZB/BZB1/BZBN/BZBZ): test one bit anywhere in storage, take the branch if it matches instruction bit 62, then set the bit per bits 60-61 whether or not the branch was taken | Ref. Manual p.41; X22-6533 pocket card "BRANCH ON BIT" | executed, including a BB that changes an INDICATOR-register bit (word 11, positions 20-63, p.41 -- folded into `ind` rather than the no-op writeWord(11)) (StretchExecute BitBranch arm; `decks/bb_branch_on_bit.strap`, `bb_indicator.strap`, `verify_bb_encoding.py`, `verify_bb_listing.py`) |
+| **EX** (with LA drains, table 6; Ref. Manual pp.49-50: subject instruction may not change the interruption state or the IC -- EXE indicator) | Ref. Manual pp.49-50; Perf. Char. table 6 | **executed, 2026-09-25** (StretchExecute's EX arm + mkEBox's subject swap + the EXE suppression in the five branch arms; `decks/ex_subject.strap`, `ex_exe.strap`, `ex_exe_bind.strap`, `ex_monitor.strap`). NOT done: USA's 1 ms timeout, and p.50's two "special exceptions" that hold while the system is DISABLED -- see docs/NEXT.md item 4a |
 | EXIC (pseudo-IC stepped after fetch, before execution, by the subject's length; pseudo-IC not in 0-15; subject at 32.00 and above), LVE, RNX, LVS, swap/backward transmit | Ref. Manual pp.26-30, p.50 (LVE: indirect addressing, 1 ms limit -> USA; RNX: rename via X0's refill; LVS: sum of the value fields selected by address bits 0-15; T/SWAP: count rules, backward stepping); Perf. Char. table 6 | open, specified -- EXIC reuses all of EX's machinery and adds only the pseudo-IC and its two address restrictions |
 | Interrupt system: indicators, mask, left-most-one, the "free instruction" | Ref. Manual pp.43-50 (indicator list with mask/class per indicator, definitions, mask register: bits 0-19 always 1, 20-47 settable, 48-63 always 0; interruption address register; the single interruption instruction fetched from IA + leftmost indicator number, IC not stepped, executed before a second interruption); Blosk pp.16-17; Buchholz ch.10 | open, specified |
 | Address Invalid (AD): effective word address beyond installed core -> AD + no-op | Ref. Manual p.20 | partial: floating-point operand addresses (StretchExecute Fp arm); other classes open |
-| Storage protection: two address boundary registers (word 3: UB bits 0-17, LB 32-49, control bit 57), alarm on an effective address inside OR outside the region (control-bit selectable), storing in protected areas suppressed, indicators DS (store)/DF (fetch)/IF (instruction fetch), gated by the interrupt system + mask | Ref. Manual p.15 "Address Monitoring", **pp.31-32 in full**, indicator defs pp.44-45, Appendix C (word 3 layout) | executed for STORE-type references: the permanently protected words 1-3, the boundary-register area with either control-bit polarity, gated on the enable bit, address-invalid addresses exempt (StretchExecute `protViolates`; `strap/programs/storage_protection.strap`, `storage_protection_boundary.strap`). THE CONTROL-BIT POLARITY DID NOT NEED APPENDIX C: p.31 states it outright -- control bit zero signals INSIDE the area, one signals OUTSIDE. Still open: DF, IF, whole-operation termination, the straddling rule. DECK WITNESS 2026-09-22: `jb_ax5b` routine 1260's block I6086 (`strap/programs/ax5b_16086_ds.strap`, encoding checked bit-exactly) stores into word 1 and reports *"SV TO 1.0 FAILS TO SET DS WHEN ENABLED."* -- word 1, DS and the enable gate in IBM's own words, and it polls DS only after disabling |
-| Interval timer and time clock | Ref. Manual p.15 "Clocks" (interval timer measures a short interval, settable, sets an indicator (Time Signal, TS) when the period ends, can cause an interrupt; time clock runs continuously, not programmer-alterable, for logging/time-of-day); word 1 = timer bits 0-18 + clock 28-63 (Appendix C); **RATE SOURCED 2026-09-24, Ref. Manual printed p.34 (PDF 37), read first-hand**: "The oscillator operates at 1,024 (2^10) cycles per second, or a pulse about every millisecond... Whenever it goes from one to zero, it turns on the time signal indicator... The next oscillator pulse then sets the timer to all ones unless the program in the meantime has changed its contents. The timer does not stop after reaching zero." p.35 adds that the 36-bit time clock in bits 28-63 counts UP on the SAME oscillator, "the two clocks are updated consecutively in the same time interval". At 0.3 us/model clock that is one tick every 78125/24 = 3255.2083... clocks -- NOT an integer, and **IMPLEMENTED 2026-10-16 as the exact rational** rather than a rounding (Bresenham in `StretchCore.bsv`'s `rl_clock` against `StretchTiming.bsv`'s `oscPulseNumer`/`oscPulseDenom`: 19 intervals of 3255 clocks and 5 of 3256 per 24 ticks, zero long-run drift). The reload rule below needed no special case -- 0 - 1 modulo 2^19 IS all ones -- and the predicted TS disaster never had a way in. THE RELOAD RULE IS LOAD-BEARING -- faithful to p.34 no existing test ever sees TS; a naive wrap-at-zero would fire TS (always masked on, and leftmost-wins) every ~3255 clocks in every enabled program. See docs/NEXT.md item 5 | **DONE 2026-10-16** (both counters step; `strap/programs/interval_timer_steps.strap`, eight injections, six CYCLES<= benchmarks unchanged); DECK ORACLE IN PLACE 2026-09-22, before any implementation: `jb_ax5b` routine 1260 block I6071 (`strap/programs/ax5b_16071_ts.strap`, encoding checked bit-exactly) loads the timer with ONE via `SV,$X4,1.0`, spins 512 times on `CB,$X4,$`, and tests `BTS`. Ref. Manual p.44 read first-hand: "4. Time Signal (TS). The interval timer has become zero." The card's footnote (a) -- the timer is "read-only except for store-value/count/refill/address" -- is why the deck writes it with SV |
+| Storage protection: two address boundary registers (word 3: UB bits 0-17, LB 32-49, control bit 57), alarm on an effective address inside OR outside the region (control-bit selectable), storing in protected areas suppressed, indicators DS (store)/DF (fetch)/IF (instruction fetch), gated by the interrupt system + mask | Ref. Manual p.15 "Address Monitoring", **pp.31-32 in full**, indicator defs pp.44-45, Appendix C (word 3 layout) | executed for STORE-type references: the permanently protected words 1-3, the boundary-register area with either control-bit polarity, gated on the enable bit, address-invalid addresses exempt (StretchExecute `protViolates`; `decks/storage_protection.strap`, `storage_protection_boundary.strap`). THE CONTROL-BIT POLARITY DID NOT NEED APPENDIX C: p.31 states it outright -- control bit zero signals INSIDE the area, one signals OUTSIDE. Still open: DF, IF, whole-operation termination, the straddling rule. DECK WITNESS 2026-09-22: `jb_ax5b` routine 1260's block I6086 (`decks/ax5b_16086_ds.strap`, encoding checked bit-exactly) stores into word 1 and reports *"SV TO 1.0 FAILS TO SET DS WHEN ENABLED."* -- word 1, DS and the enable gate in IBM's own words, and it polls DS only after disabling |
+| Interval timer and time clock | Ref. Manual p.15 "Clocks" (interval timer measures a short interval, settable, sets an indicator (Time Signal, TS) when the period ends, can cause an interrupt; time clock runs continuously, not programmer-alterable, for logging/time-of-day); word 1 = timer bits 0-18 + clock 28-63 (Appendix C); **RATE SOURCED 2026-09-24, Ref. Manual printed p.34 (PDF 37), read first-hand**: "The oscillator operates at 1,024 (2^10) cycles per second, or a pulse about every millisecond... Whenever it goes from one to zero, it turns on the time signal indicator... The next oscillator pulse then sets the timer to all ones unless the program in the meantime has changed its contents. The timer does not stop after reaching zero." p.35 adds that the 36-bit time clock in bits 28-63 counts UP on the SAME oscillator, "the two clocks are updated consecutively in the same time interval". At 0.3 us/model clock that is one tick every 78125/24 = 3255.2083... clocks -- NOT an integer, and **IMPLEMENTED 2026-10-16 as the exact rational** rather than a rounding (Bresenham in `StretchCore.bsv`'s `rl_clock` against `StretchTiming.bsv`'s `oscPulseNumer`/`oscPulseDenom`: 19 intervals of 3255 clocks and 5 of 3256 per 24 ticks, zero long-run drift). The reload rule below needed no special case -- 0 - 1 modulo 2^19 IS all ones -- and the predicted TS disaster never had a way in. THE RELOAD RULE IS LOAD-BEARING -- faithful to p.34 no existing test ever sees TS; a naive wrap-at-zero would fire TS (always masked on, and leftmost-wins) every ~3255 clocks in every enabled program. See docs/NEXT.md item 5 | **DONE 2026-10-16** (both counters step; `decks/interval_timer_steps.strap`, eight injections, six CYCLES<= benchmarks unchanged); DECK ORACLE IN PLACE 2026-09-22, before any implementation: `jb_ax5b` routine 1260 block I6071 (`decks/ax5b_16071_ts.strap`, encoding checked bit-exactly) loads the timer with ONE via `SV,$X4,1.0`, spins 512 times on `CB,$X4,$`, and tests `BTS`. Ref. Manual p.44 read first-hand: "4. Time Signal (TS). The interval timer has become zero." The card's footnote (a) -- the timer is "read-only except for store-value/count/refill/address" -- is why the deck writes it with SV |
 | ECC/parity: check cycles, correction, indicators, I-checker conflicts | Blosk p.15; Perf. Char. p.3-19 | partial (check cycle only) |
 | Exchange as a bus requester with real overlap; disk synchronizer | Buchholz ch.16 | open (I/O is a synchronous FSM today) |
 | Maintenance console: start/stop, display/store, single step, repeat mode, index-storage test | Blosk p.6 | open |
@@ -811,7 +811,7 @@ hand vectors alone. "Enables" notes the dependency chain.
    mbcu.canAccept requires the target unit free, so a read cannot
    overtake the store inside its memory unit either.
    A25 CANNOT GUARD EITHER FIX ON ITS OWN, which is why
-   programs/store_then_execute.strap was added beside it. A25 patches
+   decks/store_then_execute.strap was added beside it. A25 patches
    effective-address bits 12-17, which the shift ignores by
    definition, so the stale and the modified instruction are BOTH
    no-op shifts: the row proves the machine does not hang, not that
@@ -3760,7 +3760,7 @@ hand vectors alone. "Enables" notes the dependency chain.
    (b) HAND-WRITTEN BSV TESTBENCHES ARE NOT STRAP PROGRAMS. BZB1,
        BZBN and BZBZ read as zero while StretchBBTb and its siblings
        drive them through fifteen suite entries. A screen over
-       programs/ cannot see them at all.
+       decks/ cannot see them at all.
 
    AND THE REAL LESSON: THE INDEX-ARITHMETIC LIST WAS UNUSUAL. Index
    arithmetic is essentially fully implemented, so "zero occurrences"
@@ -3918,7 +3918,7 @@ hand vectors alone. "Enables" notes the dependency chain.
    value by COMPARING it and branching on the COMPARISON indicators,
    never on the operation's own RESULT indicators. jb_ax4b routine
    1236, a whole routine titled "Checks C+I and C-I", is C+I then KC
-   then BXE throughout. So programs/index_result_indicators.strap is
+   then BXE throughout. So decks/index_result_indicators.strap is
    hand-written -- manual-derived, not deck-derived, which is the
    weaker of the two standards in this suite, and it says so in its own
    header. Each of the four halts on its own failure line under its own
@@ -3926,7 +3926,7 @@ hand vectors alone. "Enables" notes the dependency chain.
 
    XF IS NOW PINNED, by the block that paragraph named. ja_ax1a
    pp.24-25's "BRANCH ON I BOX INDICATORS" is transcribed whole as
-   programs/ibox1_bind.strap -- all five groups, XF, XCZ, XVLZ, XVZ and
+   decks/ibox1_bind.strap -- all five groups, XF, XCZ, XVLZ, XVZ and
    XVGZ, which is every indicator an index load sets,
    004023.00-004061.40, 70 checks (14 label addresses against the
    addresses the page prints beside them, 56 rows of machine code), all
@@ -3956,7 +3956,7 @@ hand vectors alone. "Enables" notes the dependency chain.
    turned on by the right load and turned off by the trailing Z, and
    nothing whatever about the conditions being discriminating.
 
-   THAT WAS AN OPEN COVERAGE HOLE, and programs/index_indicators_off.strap
+   THAT WAS AN OPEN COVERAGE HOLE, and decks/index_indicators_off.strap
    now closes it. Nothing in the suite pinned the OFF-state of XF, XCZ,
    XVLZ, XVZ or XVGZ. index_result_indicators.strap does not close it -- every
    check in it is Z,$IND then the operation then a branch-IF-ON, so the
@@ -3971,7 +3971,7 @@ hand vectors alone. "Enables" notes the dependency chain.
    FIFTH GROUP of the same routine -- XVGZ, IBIN29-IBIN34, off a third
    seed word IBXWZ2 XW,1,1,0,0 -- and is now transcribed, the same
    ON-only shape. The second, IBIN35 onward, is a DIFFERENT MECHANISM
-   and is now transcribed whole as programs/ibox1_bind_ind.strap
+   and is now transcribed whole as decks/ibox1_bind_ind.strap
    (IBIN35-IBIN55, pp.25-26, 55 checks): three blocks -- XL, XE, XH --
    ending where "COMPARE VALUE %KV%" begins. Each does LX to zero, LV
    of a single bit, then SV,$X1,$IND+.32 storing straight into the
@@ -4030,7 +4030,7 @@ hand vectors alone. "Enables" notes the dependency chain.
    index_result_indicators.strap, so this program is its control.
 
    THAT HOLE PROMPTED A SEARCH FOR THE SAME SHAPE ELSEWHERE, and
-   strap/audit_indicator_coverage.py is it: which indicators does the
+   tests/audit_indicator_coverage.py is it: which indicators does the
    model WRITE that no program ever NAMES? Static, one second, wired
    into the suite as a RATCHET so a new indicator write with nothing
    looking at it fails rather than landing silently.
@@ -4071,7 +4071,7 @@ hand vectors alone. "Enables" notes the dependency chain.
    if it were wrong" -- XF was mentioned by several and pinned by none
    until ibox1_bind.strap. A hit means look closer, not covered.
 
-   BOTH ARE NOW PINNED by programs/op_ad_indicators.strap, so KNOWN_GAP
+   BOTH ARE NOW PINNED by decks/op_ad_indicators.strap, so KNOWN_GAP
    is empty and the ratchet holds at "every indicator the model writes
    (35) is named by at least one program". Hand-written from the manual
    and from the README's own claim -- the weaker standard -- because no
@@ -4108,7 +4108,7 @@ hand vectors alone. "Enables" notes the dependency chain.
    documented in run_tests.sh as expected on this path.
 
    AD's SECOND TRIGGER needed a SECOND PROGRAM, and the reason is worth
-   keeping. programs/ad_sic_indicator.strap covers SIC storing below
+   keeping. decks/ad_sic_indicator.strap covers SIC storing below
    19-bit address 16.0 -- Reference Manual p.42, "the instruction
    counter may be stored in any available location with 19-bit address
    16.0 or above", below which AD is set and NOTHING IS STORED. It
@@ -4153,7 +4153,7 @@ hand vectors alone. "Enables" notes the dependency chain.
    half-tested pair looks fully tested.
 
    THE SAME AUDIT ONE LEVEL UP found a real model bug.
-   strap/audit_opcode_coverage.py asks which OPERATIONS STRAP can emit
+   tests/audit_opcode_coverage.py asks which OPERATIONS STRAP can emit
    that no program uses -- 22 of 116 -- and the first run turned up BR.
 
    BR IS "BRANCH RELATIVE", NOT A SPELLING OF B. bsv/README.md listed
@@ -4176,7 +4176,7 @@ hand vectors alone. "Enables" notes the dependency chain.
      twice over.
 
    NOT IMPLEMENTED, DELIBERATELY. BR now sets OP and does not branch,
-   pinned by programs/br_unimplemented.strap. The base is almost
+   pinned by decks/br_unimplemented.strap. The base is almost
    certainly the stepped instruction counter -- p.39: "after an
    instruction is fetched, but before its execution, the instruction
    counter contents are stepped in ordinary fashion... prior to any
@@ -4206,7 +4206,7 @@ hand vectors alone. "Enables" notes the dependency chain.
    which accounts for the ten compare/convert codes. The rest were the
    actionable list, and it has shrunk twice since.
 
-   BZB1/BZBN/BZBZ are now driven by programs/bb_branch_if_off.strap.
+   BZB1/BZBN/BZBZ are now driven by decks/bb_branch_if_off.strap.
    bb_branch_on_bit and bb_indicator drive the branch-IF-ON half of the
    family; the branch-IF-OFF forms that also CHANGE the bit had no
    coverage at all. The rule the block really pins is p.41's "WHETHER
@@ -4237,7 +4237,7 @@ hand vectors alone. "Enables" notes the dependency chain.
    MUTATION SCORING IS WHAT THE AUDITS CANNOT DO, and it changed the
    picture immediately. Both audits ask "is anything completely
    untouched" and both now say no; neither asks "would any program
-   NOTICE if the model were wrong". strap/mutation_score.py applies
+   NOTICE if the model were wrong". tests/mutation_score.py applies
    single-point mutations that some primary source contradicts, runs
    the suite against each with the new FAIL_FAST=1, and reports
    survivors. First campaign: 5/8 scored (2 skipped on stale patterns,
@@ -4349,7 +4349,7 @@ hand vectors alone. "Enables" notes the dependency chain.
    out once per arm -- L/LWF, LFT, DL/DLWF, D+, F+, +, M+, /, R/, D/,
    E+ and more. What witnessed it before: ONE copy, the plan doc's own
    note that "never clearing ZM halts D5's ZM row at 017331.00".
-   programs/fp_zm_cleared.strap now covers TEN in a single program,
+   decks/fp_zm_cleared.strap now covers TEN in a single program,
    since the copies are uniform, each case setting ZM with a zero-
    product multiply, confirming it is on, running the operation, and
    requiring it off. One mutation per arm, each halting at its own
@@ -4446,7 +4446,7 @@ hand vectors alone. "Enables" notes the dependency chain.
    PROPERTY OF A RULE AND SAY NOTHING ABOUT ANOTHER, and an input that
    happens to agree under both readings hides the difference. Same
    family as the flag/count confound and the positive-index sign test.
-   programs/index_negative_modifier.strap reaches effAddr24 through
+   decks/index_negative_modifier.strap reaches effAddr24 through
    Branch-on-Bit, with a decoy word on the far side that must stay
    zero; the mutation halts at 003302.40.
 
@@ -4459,7 +4459,7 @@ hand vectors alone. "Enables" notes the dependency chain.
    about its own coverage check out.
 
    TWO NEW SURVIVORS, both ZM, and both now closed by
-   programs/fp_zm_terms.strap. fpMul sets ZM as
+   decks/fp_zm_terms.strap. fpMul sets ZM as
    "normalized && zero && (e > -1024)" (p.99), and F214D6 -- the first
    and only test of ZM anywhere in the transcribed diagnostic -- pins
    the indicator's EXISTENCE, not its two qualifying terms.
@@ -4515,7 +4515,7 @@ hand vectors alone. "Enables" notes the dependency chain.
    this was never caught by a test -- found by a code review against
    the Appendix A field table."
 
-   programs/mask_register_fields.strap closes it. p.45 and the Appendix
+   decks/mask_register_fields.strap closes it. p.45 and the Appendix
    A field table: mask bits 0-19 permanently one, 20-47 settable, 48-63
    permanently zero. BIT 16 IS THE WHOLE POINT -- the old code forced
    only 0-15, so only an attempt to clear bit 16 that must fail
@@ -6032,7 +6032,7 @@ synchronous I/O FSM is a stage-1 compatibility path).
 
 ## 5. Oracles and how each stage is verified
 
-1. **Architectural**: `strap/run_tests.sh` -- 20 blocks, ~600 listing
+1. **Architectural**: `tests/run_tests.sh` -- 20 blocks, ~600 listing
    rows, seven verbatim diagnostic programs with the deck's own pass/
    fail mechanisms. Green before every commit, as now.
 2. **Discriminating checks for the microarchitecture**: programs whose
@@ -6484,7 +6484,7 @@ own module), so this is naturally satisfied.
   is no address to compare against). Conservative and free -- every
   measured cycle count in the suite is unchanged, since no benchmark
   fetches those words in a hazardous position. Test:
-  `programs/ebox_register_close_to_fetch.strap`.
+  `decks/ebox_register_close_to_fetch.strap`.
 - **Stage 3a -- done** (2026-09-03; full 21-block suite green, Problem
   2.1 113 -> 92 clocks, pp.43-51 span 4006 -> 3985, the CB loop
   unchanged at 291 since it holds no E-box work): the look-ahead of §6b, seven
@@ -6848,7 +6848,7 @@ TR00.722. Perf. Char. = 7030 Performance Characteristics vol.1 (Mar 61).
   Modifier bits 55-57: 57 = bidirectional (swap), 56 = immediate count,
   55 = backward (addresses decrement). Modeled today: forward, non-swap,
   IMMEDIATE COUNT OF ONE only -- everything else sets OP and no-ops
-  (`strap/programs/transmit_scope.strap`). Until 2026-09-22 bit 57 was
+  (`decks/transmit_scope.strap`). Until 2026-09-22 bit 57 was
   DISCARDED by the decoder, so a forward SWAP executed as a one-word
   Transmit and the count was never read at all; both were silent, and
   unreachable from STRAP until the assembler could encode Transmit.
@@ -7100,7 +7100,7 @@ forced.) The interval timer and time clock are BOTH in word 1 (a
 19-bit down-counter in 0-18 and a 36-bit up-counter in 28-63); the
 boundary control bit is bit 57 -- its inside/outside polarity is the
 one storage-protection detail still to source. The timer/clock STEP
-RATE is not on the card. It is **Reference Manual printed p.34**: "the oscillator operates at 1,024 (2^10) cycles per second", with p.35 adding that the time clock is stepped by "the same 1024 cycle per second oscillator". **IMPLEMENTED 2026-10-16**: `bsv/StretchTiming.bsv`'s `oscPulseNumer`/`oscPulseDenom` divide the 0.3 us model clock by the EXACT RATIONAL 78125/24 (= 3255.2083... clocks per tick) with a Bresenham accumulator, so 24 ticks are exactly 78125 clocks and the rate does not drift; the stepping itself is `bsv/StretchStorage.bsv`'s `oscillatorStep`, checked by `strap/programs/interval_timer_steps.strap`.
+RATE is not on the card. It is **Reference Manual printed p.34**: "the oscillator operates at 1,024 (2^10) cycles per second", with p.35 adding that the time clock is stepped by "the same 1024 cycle per second oscillator". **IMPLEMENTED 2026-10-16**: `bsv/StretchTiming.bsv`'s `oscPulseNumer`/`oscPulseDenom` divide the 0.3 us model clock by the EXACT RATIONAL 78125/24 (= 3255.2083... clocks per tick) with a Bresenham accumulator, so 24 ticks are exactly 78125 clocks and the rate does not drift; the stepping itself is `bsv/StretchStorage.bsv`'s `oscillatorStep`, checked by `decks/interval_timer_steps.strap`.
 
 **Indicator list** (No. / mnemonic / mask / class): mask 1 = permanently
 masked (0-19), m = program-settable (20-47), 0 = permanently unmasked

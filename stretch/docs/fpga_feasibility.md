@@ -237,7 +237,7 @@ block RAM is the 45F; the 85F holds two units.**
 
 The one-unit configuration is not a toy: **every word the transcribed
 diagnostic corpus touches is inside one 16,384-word unit.** Parsing
-every listing row across all 186 `stretch/strap/verify_*.py` files
+every listing row across all 186 `stretch/tests/verify_*.py` files
 (5,375 `"<octal>.<octal>"` literals) gives word addresses from
 **0o100 = 64 to 0o33270 = 14,008**, all below 16,384. (A separate
 parse restricted to the leading address column of `ROWS`-style tuples
@@ -716,7 +716,7 @@ There is no `.lpf`, no board top-level, no PLL, and no
 has three targets (`sim`, `run`, `clean`), all Bluesim. The whole FPGA
 flow is new work.
 
-How the model is driven today (`strap/gen_tb.py`): a phase counter and
+How the model is driven today (`tests/gen_tb.py`): a phase counter and
 
 1. `rule load` calls `core.mem.writeWord(addr, 64'h…)` **once per
    phase**, one program word per clock, for every word of the image;
@@ -988,7 +988,7 @@ pursued, not a claim that it is met.
 - **Whether the 389-section suite is runnable over a serial link in
   acceptable time.** Needs image sizes, per-section clock counts (the
   model reports them) and a protocol throughput figure. Not computed.
-  `strap/run_tests.sh` was not run, per the task's instruction.
+  `tests/run_tests.sh` was not run, per the task's instruction.
 - **Power**, and whether an 85F at this utilisation fits the board's
   USB budget. Not investigated.
 - **How much of §2.3/§2.4's logic is the 129 test ports.** Measuring
@@ -2367,7 +2367,7 @@ made (identical to §8's record):
 ```
 
 Revert verification is in §9.8.1. No other repository file was
-modified, nothing was committed, and `strap/run_tests.sh` was not run.
+modified, nothing was committed, and `tests/run_tests.sh` was not run.
 All build products — generated Verilog, yosys logs, RTLIL
 checkpoints, nextpnr reports and bitstream configs — are in
 `<scratch>/out_pnr/`, outside the repository.
@@ -2448,7 +2448,7 @@ $ git status --porcelain
   so no number below should be treated as a ship-grade margin.
 - **Power**, unchanged from §7, and not investigated.
 - **Whether the 389-section suite is runnable over a serial link in
-  acceptable time**, unchanged from §7. `strap/run_tests.sh` was not
+  acceptable time**, unchanged from §7. `tests/run_tests.sh` was not
   run, per instruction.
 - **Anything about MCP**, unchanged from §7.
 

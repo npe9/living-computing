@@ -82,7 +82,7 @@ function WordAddr addrIndex(Bit#(4) j) = zeroExtend(j) + addrIndexBase;
 //
 // Externally confirmed against IBM's own assembler output: the I-Box 4
 // listing (docs/jb_ax4b_ibox-4.pdf pp.155/159) prints its XW index
-// words, and strap/verify_ibox4_listing.py matches this packing to
+// words, and tests/verify_ibox4_listing.py matches this packing to
 // them bit for bit (count=4 -> bit 43 set; refill = a word address in
 // 46-63, e.g. IBRA10's own 011610). See strap/README.md "Gotchas" 15.
 // ---------------------------------------------------------------------

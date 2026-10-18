@@ -37,7 +37,7 @@ execute partially, document the rest" ethos of the Bluespec model):
   never defines a symbol. Needed for real historical listings, whose
   routines sit at fixed addresses far above this assembler's default
   origin (I-Box 1's WEN/WEN2/VEN at octal 5454-5461, see
-  programs/ibox1_wen_ven_original_addresses.strap).
+  decks/ibox1_wen_ven_original_addresses.strap).
 
   "(R)" radix literals are accepted in ANY expression, not only inside
   DD: "(8)37777", "IBR9+(8).04", "VF,(8)777777.70" -- both halves of a

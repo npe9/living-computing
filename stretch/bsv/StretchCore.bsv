@@ -31,7 +31,7 @@ interface StretchCore;
   // halt idiom, C22-6531 p.14 -- "$" is the location counter, so this
   // targets the instruction itself) and stays so until setPC. Runners
   // that assemble and load real STRAP programs poll it to stop instead
-  // of using a fixed step count -- see stretch/strap/gen_tb.py, whose
+  // of using a fixed step count -- see stretch/tests/gen_tb.py, whose
   // run rule is `(!core.halted()) core.step(); stepCount++`, so the
   // step count at halt is the program's clock count on this model.
   //
@@ -321,7 +321,7 @@ module mkStretchCore(StretchCore);
   // condition and it is kept; a retired instruction is functionally
   // complete, which is what p.48 asks about.
   //
-  // MEASURED, on programs/int_timing_bracket.strap -- a VFL ST whose
+  // MEASURED, on decks/int_timing_bracket.strap -- a VFL ST whose
   // store is suppressed, bracketed BE / ST / BD the way jb_ax5b routine
   // 1260 brackets every provoked interruption.  With the old condition
   // the interruption needed THREE instructions of slack before the BD

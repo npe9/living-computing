@@ -55,7 +55,7 @@ pulled from bitsavers.org):
 | `StretchLookAhead.bsv` | The four-level look-ahead as a stage module `mkLookAhead`: `collect` every clock (operand arrivals, one fetch issue), the levels/head/tail/count for the decision arms, and their three mutations `retireHead`/`load`/`cancelAll`. |
 | `check_schedule.py` | Run by `build.sh` on bsc's `-show-schedule` output: fails if any core rule is blocked by another core rule (only exported harness methods may block one) — the assertion `fire_when_enabled` cannot make at the synthesized boundary, see "Toolchain" item 10. |
 | `StretchTiming.bsv` | The per-instruction time-budget tables (`iboxCycles`, `eboxClocks`, `budgetClocks`) from IBM's Performance Characteristics, as pure functions. |
-| `StretchCore.bsv` | The synthesized core (`(* synthesize *)`, one compilation unit): instantiates the stages above and the E-box and orchestrates them with per-clock RULES (`rl_la_fetch` = `la.collect()`, `rl_ic_controls` = `ibuf.advance(...)`, then one of six mutually-exclusive decision arms — see the file's rules section) plus the preparation logic and the branch-guess snapshot/recovery state. `step()` is a clock enable: one call advances the core one clock; `halted()` reports that an instruction branched to its own address (the `BEW, $` idiom), which STRAP-program runners (`../strap/gen_tb.py`) poll to stop on rather than a fixed step count. A progressive-indexing VFL instruction takes two clocks (see "Toolchain" item 7); an RD/W input-output instruction takes as many clocks as the block has words, one word drained per clock, device-kind-dependent capacity (see `StretchIO.bsv`). |
+| `StretchCore.bsv` | The synthesized core (`(* synthesize *)`, one compilation unit): instantiates the stages above and the E-box and orchestrates them with per-clock RULES (`rl_la_fetch` = `la.collect()`, `rl_ic_controls` = `ibuf.advance(...)`, then one of six mutually-exclusive decision arms — see the file's rules section) plus the preparation logic and the branch-guess snapshot/recovery state. `step()` is a clock enable: one call advances the core one clock; `halted()` reports that an instruction branched to its own address (the `BEW, $` idiom), which STRAP-program runners (`../tests/gen_tb.py`) poll to stop on rather than a fixed step count. A progressive-indexing VFL instruction takes two clocks (see "Toolchain" item 7); an RD/W input-output instruction takes as many clocks as the block has words, one word drained per clock, device-kind-dependent capacity (see `StretchIO.bsv`). |
 | `StretchSmoke.bsv` | Hand-assembled smoke test (predates the STRAP assembler; kept as a decoder/executor regression test independent of it). |
 
 ## Bit-numbering convention
@@ -109,7 +109,7 @@ execution operations: `EX` executes as of 2026-09-25 and `EXIC` as of
   goes, and the one-millisecond/`USA` bound on a chain.  The earlier
   search stopped at the overview.  MCP's bootstrap (printed p.3 line
   10, `LVE,15,X1 CCW`) is what forced the question again, and
-  `strap/programs/lve_indirect.strap` now exercises all three address
+  `decks/lve_indirect.strap` now exercises all three address
   widths plus the target's index field, the target's ignored `J`, and
   the chain refusal.  A CHAIN IS STILL NOT IMPLEMENTED: p.29 makes it
   an iteration with a time bound and this E-box runs one instruction
@@ -131,7 +131,7 @@ execution operations: `EX` executes as of 2026-09-25 and `EXIC` as of
   place the 19-bit address part in bits 0-18 of the 25-bit value field
   (value = field << 5), count/refill operations take "bits 0-17 of the
   address part" (the field's top 18 bits). An earlier version used the
-  raw field for both; found by `strap/verify_ibox1_listing.py` (I-Box
+  raw field for both; found by `tests/verify_ibox1_listing.py` (I-Box
   1's `LCI,$X1,4` prints as `4.03 02`), see `strap/README.md` "Gotchas"
   item 16.
 - **SIC (Store Instruction Counter If)** — Reference Manual pp.41-42: a
@@ -146,7 +146,7 @@ execution operations: `EX` executes as of 2026-09-25 and `EXIC` as of
   either half-word boundary (the listings do). Verified by running
   I-Box 1's SIC-CB/SIC-CBZ test groups verbatim with their own
   self-modifying pass/fail chain intact —
-  `strap/programs/ibox1_sic_cb_cbz.strap`.
+  `decks/ibox1_sic_cb_cbz.strap`.
 - **Branch on Bit (BB family)** — Reference Manual p.41: a full word
   that tests one bit anywhere in storage at the effective bit address.
   If the bit matches instruction bit 62 (1 for `BB*`, 0 for `BZB*`)
@@ -159,7 +159,7 @@ execution operations: `EX` executes as of 2026-09-25 and `EXIC` as of
   locations (which per p.41 stay unchanged under any write attempt)
   are not modeled — the special registers 0-31 are Reg-backed and no
   test branches on a bit within one. Verified by a self-checking chain
-  (`strap/programs/bb_branch_on_bit.strap`) whose only path to its PASS
+  (`decks/bb_branch_on_bit.strap`) whose only path to its PASS
   halt requires correct condition testing plus correct modification on
   both a taken and a not-taken branch, and by `verify_bb_encoding.py`
   (encoding field-by-field vs the decoder's bit positions).
@@ -174,9 +174,9 @@ execution operations: `EX` executes as of 2026-09-25 and `EXIC` as of
   *stepped* counter (p.39 steps it before execution), so the address
   field is a displacement in half-words. It previously executed as an
   absolute branch identical to `B` — found by
-  `strap/audit_opcode_coverage.py`, then left explicitly unimplemented
+  `tests/audit_opcode_coverage.py`, then left explicitly unimplemented
   until p.40 was located rather than guessed at, and now pinned by
-  `strap/programs/br_relative.strap`. *Known limit*: p.40 says
+  `decks/br_relative.strap`. *Known limit*: p.40 says
   **absolute value**, and an effective address can only go negative via
   index modification; `effAddr19` returns an unsigned result with no
   sign beside it, so an index-modified `BR` that goes negative uses the
@@ -238,7 +238,7 @@ execution operations: `EX` executes as of 2026-09-25 and `EXIC` as of
   stays permitted *while the system is disabled*; and p.52-53's
   separate rule for a Class S alert arising during a subject
   instruction.
-  Driven by `strap/programs/ex_subject.strap`, `ex_exe.strap`,
+  Driven by `decks/ex_subject.strap`, `ex_exe.strap`,
   `ex_exe_bind.strap` and `ex_monitor.strap` — fifteen injections
   between them, each observed; the deck oracles are jb_ax5b routine
   1262 TEST 1A/1B/1CC, transcribed for their encoding as
@@ -273,7 +273,7 @@ execution operations: `EX` executes as of 2026-09-25 and `EXIC` as of
   (`USA`; p.50's two special exceptions; a Class S alert during a
   subject), plus p.51 item (d) — a subject location that is both
   protected and invalid actuates IF rather than AD.
-  Driven by `strap/programs/exic_subject.strap` (the three rules of
+  Driven by `decks/exic_subject.strap` (the three rules of
   routine 1262 TEST 2B, both step sizes, the straddling subject, two
   levels with two different step sizes, the counter in an index
   register, and the counter word read as data) and `exic_addr.strap`
@@ -305,7 +305,7 @@ It could stay false because **nothing could express it**: this
 project's assembler could not encode Transmit at all until
 `TRANSMIT_CODES` landed the same day. A claim no test can break is a
 claim nothing checks, which is `docs/NEXT.md`'s own corollary applied
-to prose. The guard is now `strap/programs/transmit_scope.strap`, six
+to prose. The guard is now `decks/transmit_scope.strap`, six
 blocks and five injections, one per rule.
 
 Per the "decode completely, execute partially" principle: every format
@@ -330,7 +330,7 @@ it recognizes independent of what the datapath implements.
   half-word (32 bits) and a word (64 bits) of bit address. The earlier
   best-effort reading (+1/+2/−2 raw bits, recorded here as
   unconfirmed) was wrong by a factor of 32; I-Box 1's CBR+/CBR−/CBRH/
-  CBRZ+/CBRZ−/CBRZH groups (`strap/programs/ibox1_p43_p51_span.strap`)
+  CBRZ+/CBRZ−/CBRZH groups (`decks/ibox1_p43_p51_span.strap`)
   hang at their first value test under it and pass under the table's
   units. See `strap/README.md` "Gotchas" item 18.
 - **Immediate index arithmetic semantics** (`LVI`, `V+I`, etc.) were
@@ -360,7 +360,7 @@ it recognizes independent of what the datapath implements.
   targeting word 11 are still no-ops.
 
   Driven out by ja_ax1a p.25's IBIN35 block
-  (`strap/programs/ibox1_bind_ind.strap`), which sets XL by hand --
+  (`decks/ibox1_bind_ind.strap`), which sets XL by hand --
   `LX` to zero, `LV` of a word with value bit 20 set, then
   `SV,$X1,$IND+.32`, landing 32+20 = 52 = XL -- because no index
   operation touches XL. Before the change the block hung at IBIN36
@@ -394,7 +394,7 @@ it recognizes independent of what the datapath implements.
   record's stored field happens to cross a word boundary — found by
   assembling and running that exact test program with an unlucky data
   alignment before choosing a luckier one; see
-  `../strap/programs/figure7_progressive_indexing.strap`'s padding
+  `../decks/figure7_progressive_indexing.strap`'s padding
   comment for the concrete walkthrough.
 - **Address-space window**: `MemWords` (StretchStorage.bsv) is now
   the full 262,144-word address space the 18-bit `WordAddr` type
@@ -420,7 +420,7 @@ SUPERSEDED AGAIN, 2026-09-25: the *timing* was wrong and is now
 measured. This paragraph used to say the interruption is taken at a
 QUIESCENT boundary rather than p.48's INSTRUCTION boundary, "LATER,
 never earlier". How much later was never measured; it is now.
-`programs/int_timing_bracket.strap` is a VFL `ST` whose store is
+`decks/int_timing_bracket.strap` is a VFL `ST` whose store is
 suppressed, bracketed `BE` / `ST` / `BD` the way `jb_ax5b` routine 1260
 brackets every provoked interruption. It needed THREE instructions of
 slack before the `BD` for the interruption to be taken at all -- p.48
@@ -475,7 +475,7 @@ attempt should raise is still not modelled, and neither is p.34's
 `intervalTimerAndClock` each gained a single committing rule fed by a
 wire, since the oscillator writes both independently of whatever
 instruction is executing. Checked by
-`strap/programs/interval_timer_steps.strap`.), and — the machine's defining engineering
+`decks/interval_timer_steps.strap`.), and — the machine's defining engineering
 feature — **instruction lookahead and pipelining**. (Since superseded:
 the look-ahead and the instruction unit now exist as rules in
 `StretchCore.bsv`, and `step()` advances one clock, not one
@@ -646,7 +646,7 @@ isn't repeated:
    One wrinkle: at exactly 2^18 the bound no longer fits in a
    `Bit#(18)` literal (`bsc` T0051), so `memInRange` compares one bit
    wider than `WordAddr`. First program to actually run above word
-   256: `strap/programs/ibox1_wen_ven_original_addresses.strap`
+   256: `decks/ibox1_wen_ven_original_addresses.strap`
    (I-Box 1's WEN2/WEN/VEN at their listed octal 5454–5461, constants
    at 6102–6103), verified discriminating by putting 256 back and
    watching all five of its checks fail.
@@ -784,7 +784,7 @@ of these).
    the C++ compile ~12%, and running the simulation is free. The core
    `.cxx` has grown from the 5.9 MB recorded above to **8.8 MB**, which
    is why that once-per-tree link is now 24s rather than ~10s. This is
-   also the whole cost model of `strap/mutation_score.py`: every mutant
+   also the whole cost model of `tests/mutation_score.py`: every mutant
    edits the model, so every mutant pays a full core re-elaboration
    before its first test runs -- a ~2.5 minute floor.
    **CORRECTION**: this said "which is why 32 mutants cost ninety
@@ -838,7 +838,7 @@ of these).
 4. Open question, not yet resolved either way: does a branch
    instruction immediately following a progressive-indexing
    instruction (e.g. `BZXCZ` right after `ST(V+ICR)`, as in
-   `strap/programs/figure7_progressive_indexing.strap`) read the
+   `decks/figure7_progressive_indexing.strap`) read the
    index register's pre-refill or post-refill state on real 7030
    hardware? With this model's two-cycle `pendingIdxWrite` design, the
    index write (including any refill) completes on its own `step()`
@@ -848,7 +848,7 @@ of these).
    two parts," not with cycle-by-cycle interleaving semantics) is
    unverified. Not exercised by any test yet — `figure7_progressive_
    indexing.strap`'s own `BZXCZ` exits the loop on the same cycle a
-   refill would occur, and `strap/programs/xw_refill.strap` (see
+   refill would occur, and `decks/xw_refill.strap` (see
    `strap/README.md` "Gotchas" item 7) has no branch after its
    refilling instruction — so this is a real gap, not a guess dressed
    up as a finding.

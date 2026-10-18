@@ -215,7 +215,7 @@ module mkStretchTb(Empty);
   // Keeping that same ~8-slack-instruction margin here (at this
   // program's ~2.75 average steps/instruction) gives roughly 44 + 8*3
   // = 68; rounded up a little for comfort, not the essentially-
-  // unbounded 2000 strap/gen_tb.py uses for real STRAP programs (this
+  // unbounded 2000 tests/gen_tb.py uses for real STRAP programs (this
   // hand-written test has a small, known instruction count, so a
   // tighter budget is a better regression signal than a large one).
   // With stage-1 memory timing the step count per instruction is no

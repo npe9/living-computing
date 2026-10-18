@@ -16,7 +16,7 @@ are the only blockers allowed.
 The .sched file is written only by a bsc invocation that actually
 elaborates mkStretchCore (an up-to-date .ba is not re-elaborated), so
 EVERY script that compiles a testbench passes -show-schedule
-(build.sh and the strap/run_*.sh runners); then the schedule exists
+(build.sh and the tests/run_*.sh runners); then the schedule exists
 whenever the core file does, whichever script built it first.
 
 Usage: check_schedule.py build/mkStretchCore.sched

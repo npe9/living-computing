@@ -37,7 +37,7 @@ endinterface
 
 // ---------------------------------------------------------------
 // mkTapeSourceVector -- exactly today's StretchIO storage, behind the
-// new interface. Keeps strap/run_tests.sh green: gen_tape_tb.py still
+// new interface. Keeps tests/run_tests.sh green: gen_tape_tb.py still
 // pre-loads and post-checks, and io_tape.strap still reaches End
 // Exception by running off the end.
 // ---------------------------------------------------------------

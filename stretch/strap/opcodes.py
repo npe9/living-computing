@@ -286,7 +286,7 @@ BB_CODES = {
 #
 # WITNESSED: only TI.  jb_ax5b p.45 prints "TI,1,BIT0%$X1,$IND" as
 # "24522.00 81 000013.02 A0", and the layout above reproduces both
-# half-words exactly (programs/ax5b_16087_walk.strap).  The other
+# half-words exactly (decks/ax5b_16087_walk.strap).  The other
 # seven are from the card alone and have no listing row in this
 # project yet -- stated here for the same reason the CB_CODES comment
 # states its provenance.

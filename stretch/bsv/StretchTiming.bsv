@@ -125,7 +125,7 @@ function Bit#(16) eboxClocks(DecodedInstr d);
       // rows this takes mean |error| from 4.02 to 0.28 us and worst-case
       // from 33.60 to 1.20, changing 10 rows and leaving 14 identical.
       // The deck suite cannot see it: every one of the 1,106 field specs
-      // in strap/programs is (BU,n,8), where both corrections are the
+      // in decks is (BU,n,8), where both corrections are the
       // identity.  The evidence is the Vol. 2 table, not a passing run.
       Bit#(7) len_ = effLength(v.a.length);
       Bit#(4) bsz  = effByteSize(v.a.bs);

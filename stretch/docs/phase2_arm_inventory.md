@@ -60,7 +60,7 @@ implements against.
   all known upfront (can pipeline: issue all N requests across N
   cycles, collect responses starting one cycle behind).
 - **Coverage**: which STRAP program(s) exercise this arm, established
-  by grepping `strap/programs/*.strap` and `strap/opcodes.py` for the
+  by grepping `decks/*.strap` and `strap/opcodes.py` for the
   arm's mnemonic(s) -- NOT assumed. "NONE" means grepped and confirmed
   absent; "not yet disambiguated" means the mnemonic search was
   inconclusive (usually because the same mnemonic string is used by
@@ -143,7 +143,7 @@ branch target). No Phase 2 work needed for this arm at all.
 | R (Refill, unconditional) -- **CONVERTED, `15ca6fa`** | 1 (inlined, no half-select) | 0 | no | **NONE** |
 | RCZ (Refill on Count Zero) -- **CONVERTED, `15ca6fa`** | 0-1 (conditional on `x.count==0`) | 0 | no | **NONE** |
 | EXIC | 0 (OP-invalid, out of scope) | 0 | n/a | n/a |
-| EX -- **IMPLEMENTED 2026-09-25** | 1 (the SUBJECT-INSTRUCTION fetch, 2 when a full-length subject straddles two storage words), plus whatever the subject itself needs | 0 in the arm; whatever the subject does | yes -- it uses the ordinary bail/resume path, and `mkEBox.resume` swaps the held instruction for the decoded subject | `strap/programs/ex_subject.strap`, `ex_exe.strap`, `ex_exe_bind.strap`, `ex_monitor.strap` |
+| EX -- **IMPLEMENTED 2026-09-25** | 1 (the SUBJECT-INSTRUCTION fetch, 2 when a full-length subject straddles two storage words), plus whatever the subject itself needs | 0 in the arm; whatever the subject does | yes -- it uses the ordinary bail/resume path, and `mkEBox.resume` swaps the held instruction for the decoded subject | `decks/ex_subject.strap`, `ex_exe.strap`, `ex_exe_bind.strap`, `ex_monitor.strap` |
 
 ## Transmit (`tagged Transmit`)
 
@@ -269,7 +269,7 @@ needed).
    fixing `StretchSmoke.bsv`'s hand-written, hardcoded step counts
    (`stepCount < 24` -> `< 70`, RNX's single `core.step()` call -> 2),
    which had baked in the old "1 instruction = 1 step() call"
-   assumption -- `strap/gen_tb.py`'s generated testbenches needed no
+   assumption -- `tests/gen_tb.py`'s generated testbenches needed no
    changes, since they already loop on `step()` until it returns
    `True` rather than counting raw calls.
 4. DONE (`cc0a690`): `StretchCore.step()`'s `ioPending` W-direction
@@ -363,7 +363,7 @@ needed).
      had 3 such call sites at one point this session (`run`,
      `stepRnx1`, `stepRnx2`) and its generated `mkStretchTb.cxx` was
      27.8MB, ~4x every OTHER generated testbench's 6.76MB (which each
-     have exactly 1 call site, via `strap/gen_tb.py`'s single
+     have exactly 1 call site, via `tests/gen_tb.py`'s single
      loop-until-halted `run` rule). Merged back to 2 call sites
      (`e104dc4`), dropping to 22.1MB. As `execute()` keeps growing with
      each arm converted, each inlined copy grows too -- keep any
@@ -446,7 +446,7 @@ needed).
    bound 2^18 itself is not a valid `Bit#(18)` literal, bsc T0051);
    nothing else changed. Smoke test elaborates+builds in ~40s wall
    clock; full regression suite unchanged. Proven load-bearing by
-   `strap/programs/ibox1_wen_ven_original_addresses.strap`, which
+   `decks/ibox1_wen_ven_original_addresses.strap`, which
    fails 5/5 with 256 restored.
 
 Each step builds and passes the full regression suite before moving to

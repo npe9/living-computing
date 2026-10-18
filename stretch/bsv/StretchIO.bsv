@@ -32,7 +32,7 @@
 //   channel 34 (chanTape):    a read/write tape-drive stand-in.
 // Reader and printer are backed by a fixed-size Vector of words
 // (DeviceWords) that the testbench pre-loads (reader) or inspects
-// after the run (printer) -- see strap/gen_tb.py. The tape is backed
+// after the run (printer) -- see tests/gen_tb.py. The tape is backed
 // by its own, deliberately SMALLER Vector (TapeWords -- see below) and
 // additionally carries a position register that PERSISTS across
 // instructions, unlike the reader/printer's devIdx which always
@@ -96,7 +96,7 @@
 // so the machine read the same card forever -- which makes it a
 // 32-word read-only buffer, not a card reader.
 //
-// MEASURED, not reasoned about.  strap/programs/card_reader.strap
+// MEASURED, not reasoned about.  decks/card_reader.strap
 // reads two cards and checks them separately, precisely because a
 // reader that returned the same card twice would pass a one-card
 // test; before this, card 2 came back bit-for-bit as card 1.
@@ -139,7 +139,7 @@
 // the first device where "the unit runs out of material" is meant to
 // be something a test program can actually reach with an ordinary
 // count, not just a theoretical code path -- see
-// strap/programs/io_tape.strap's End Exception check.
+// decks/io_tape.strap's End Exception check.
 //
 // CONTROL FUNCTIONS: the External Units chapter's CONTROL instruction
 // format (p.111: "a selection address (LOCATE), control information
@@ -273,8 +273,8 @@ interface StretchIO;
   method Bool isPrinter(WordAddr ch);
   method Bool isTape(WordAddr ch);
 
-  // Device image access for the testbench only (see strap/gen_tb.py,
-  // strap/gen_tape_tb.py) -- not part of the 7030 ISA. StretchExecute.bsv
+  // Device image access for the testbench only (see tests/gen_tb.py,
+  // tests/gen_tape_tb.py) -- not part of the 7030 ISA. StretchExecute.bsv
   // never calls these.
   method Action loadReaderWord(DeviceIndex i, Word64 v);
   method Word64 readPrinterWord(DeviceIndex i);
@@ -287,15 +287,15 @@ interface StretchIO;
   // Tape is bidirectional, unlike the read-only reader and write-only
   // printer, so one pair of methods serves both the FSM's runtime
   // transfers AND the testbench's pre-load/post-run-check calls (see
-  // strap/gen_tape_tb.py) -- there's no read-only/write-only split to
+  // tests/gen_tape_tb.py) -- there's no read-only/write-only split to
   // preserve the way there is for readerWord/writePrinterWord.
   // THESE TWO ARE NO LONGER SYMMETRIC, and the asymmetry is the whole
   // change.  Before, one pair served both the FSM's runtime transfers
   // and the testbench's pre-load/post-run checks, because a tape read
   // was a combinational value method and could be called from either.
   // Now:
-  //   readTapeWord  -- TESTBENCH ONLY (strap/gen_tb.py,
-  //     strap/gen_tape_tb.py).  The FSM reads through tapeReadReq/
+  //   readTapeWord  -- TESTBENCH ONLY (tests/gen_tb.py,
+  //     tests/gen_tape_tb.py).  The FSM reads through tapeReadReq/
   //     tapeRespReady/tapeReadResp below; a value method cannot
   //     express a wait, which is exactly why it had to go.
   //   writeTapeWord -- STILL BOTH: the FSM's W-direction path and the

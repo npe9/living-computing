@@ -372,12 +372,12 @@ Quoted, not applied (this note changed no existing file):
   `io.readTapeWord(i)` combinationally and instead enqueues a
   `TapeRequest` and waits for the response. §6.2 is about what that
   wait means.
-- `strap/gen_tape_tb.py`: unchanged in intent — it still pre-loads and
+- `tests/gen_tape_tb.py`: unchanged in intent — it still pre-loads and
   post-checks a 16-word tape, but through `mkTapeSourceVector`'s own
   loader methods rather than through `core.io`. This is the point of
-  keeping `mkTapeSourceVector`: `strap/run_tests.sh` is the project's
+  keeping `mkTapeSourceVector`: `tests/run_tests.sh` is the project's
   correctness oracle (AGENTS.md "How work is verified here"), and
-  `strap/programs/io_tape.strap` reaches End Exception by running off
+  `decks/io_tape.strap` reaches End Exception by running off
   the end of a 16-word tape. That test must keep passing unchanged,
   and with `mkTapeSourceVector` it does.
 
@@ -1017,7 +1017,7 @@ them, not assumptions):
    `StretchIO.bsv:83-88` makes "a count that would run the transfer
    past a device's capacity ends the block early with End Exception
    (EE) + End of Operation (EOP)" an implemented path, and
-   `strap/programs/io_tape.strap` tests it. §4.2 says `TapeWords`
+   `decks/io_tape.strap` tests it. §4.2 says `TapeWords`
    becomes "the drive's idea of where end-of-tape is, which is now
    `src.capacity`" — but `mkTapeSourceSD` returns `maxBound`, because
    a raw LBA has no end marker, so on hardware the model's one "unit

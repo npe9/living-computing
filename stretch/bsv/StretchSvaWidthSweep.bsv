@@ -4,7 +4,7 @@
 //
 // Named "...Sweep" and not "...Tb" on purpose: .gitignore drops
 // bsv/Stretch*Tb.bsv, which is how generated testbenches from
-// strap/gen_tb.py stay out of the tree.  Hand-written ones have to sit
+// tests/gen_tb.py stay out of the tree.  Hand-written ones have to sit
 // outside that pattern -- StretchSmoke.bsv is the other.
 //
 // jb_ax3a p.140 closes routine 1222's SVA data-bit series by writing

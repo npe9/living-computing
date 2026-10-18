@@ -217,7 +217,7 @@ banners is **not settled here**.  It does not affect the verdict in §4.
 
 ## 6. Letter O vs digit 0 — a separate, weaker result
 
-Raised because `strap/programs/ax5b_1258_test2.strap` states, in its header:
+Raised because `decks/ax5b_1258_test2.strap` states, in its header:
 
 > This printer's letter O and digit 0 are the same glyph
 
@@ -311,8 +311,8 @@ And it would fix two things that are currently wrong on their own terms:
 These are worth flagging separately because no mechanical `L…` → `I…` rename
 would fix them:
 
-* `strap/programs/ax5b_1258_test1.strap` (line 43) and
-  `strap/verify_ax5b_1258_test1_listing.py` (line 20) quote the ident row as
+* `decks/ax5b_1258_test1.strap` (line 43) and
+  `tests/verify_ax5b_1258_test1_listing.py` (line 20) quote the ident row as
   `1581D  %IQSZ*DD%BU,64,8*,1258   Z`.  Measured, it is
   **`I58ID  %IQSZ¤DD%BU,64,8¤,I258   Z`** — the label's *fourth* character is
   also a letter I (17 px), not a digit 1, and the operand is `I258`, not `1258`.
@@ -333,7 +333,7 @@ call, and dozens of committed, passing files use these names.
 
 `docs/archival_inventory.md`, `docs/NEXT.md`
 
-`strap/programs/`: `ax5b_1258_test1.strap`, `ax5b_1258_test2.strap`,
+`decks/`: `ax5b_1258_test1.strap`, `ax5b_1258_test2.strap`,
 `ax5b_160_test8b.strap`, `ax5b_160_test8c.strap`,
 `ax5b_160_test8c_disabled.strap`, `ax5b_160102_lb_ctl.strap`,
 `ax5b_160105_compare.strap`, `ax5b_16071_ts.strap`, `ax5b_16082_op_ad.strap`,
@@ -366,12 +366,12 @@ call, and dozens of committed, passing files use these names.
 
 ### Filenames
 
-21 `strap/programs/ax5b_1*.strap` and 21 matching `strap/verify_ax5b_1*_listing.py`
+21 `decks/ax5b_1*.strap` and 21 matching `tests/verify_ax5b_1*_listing.py`
 encode the routine or block number in the filename (`ax5b_160s1_clr_inds.strap`,
 `ax5b_16087_walk.strap`, `ax5b_1258_test1.strap`, `verify_ax5b_160s1_listing.py`,
 …).  A correction would touch these only if the owner wants filenames to match.
 
-### `strap/run_tests.sh`
+### `tests/run_tests.sh`
 
 Carries the spellings in **five comment lines** (813, 960, 3791, 3997, 4117) —
 `L16088`, `L162104`, `LICK258`, `L158K1`, `L158K2`, `L1587A`.  No executable
@@ -586,7 +586,7 @@ confusions it creates.
 `CB`, the instruction's nine-bit operation field (bits 23–31) would
 be `111001011`, which appears nowhere on X22-6533. With `0B` it is
 `100001011` = `LVS`, which is what the statement column says. See
-`strap/verify_lvs_encoding.py`.
+`tests/verify_lvs_encoding.py`.
 
 **The rule, which now has three instances behind it** — `B0` read as
 `80` on MCP p.2 line 34, again on p.3 line 10, and `0B` read as `CB`

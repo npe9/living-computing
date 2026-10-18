@@ -6,7 +6,7 @@ survey.
 
 **This file is the plan, not the record.** The record of *how* each
 piece was built lives in `docs/microarchitecture_plan.md`, in the
-section comments of `strap/run_tests.sh`, and in commit messages.
+section comments of `tests/run_tests.sh`, and in commit messages.
 When an item here is finished it shrinks to a pointer; it does not
 accumulate.
 
@@ -66,7 +66,7 @@ entry in this file's own "distrust a blocker recorded here" trap.
 own printed address fields; nothing has needed either. The
 page-by-page record is in `archival_inventory.md` §"I-Box 5".
 
-**I6086, the DS block, is done** — `programs/ax5b_16086_ds.strap`,
+**I6086, the DS block, is done** — `decks/ax5b_16086_ds.strap`,
 bit-exact via `verify_ax5b_16086_listing.py`, record in
 `run_tests.sh` §"I-Box 5 routine 1260's DS block". It is an ENCODING
 oracle; storage protection's behavioural test stays hand-written.
@@ -87,7 +87,7 @@ Routine 1258 is no longer the only oracle, and is no longer the
 cheapest.
 
 **The indicator walk at I6087/I6088 (p.45) is done** —
-`programs/ax5b_16087_walk.strap`, and it brought **TRANSMIT/SWAP into
+`decks/ax5b_16087_walk.strap`, and it brought **TRANSMIT/SWAP into
 the assembler** (all eight mnemonics, from pocket card X22-6533; only
 `TI` has a listing witness). Record in `run_tests.sh` §"…indicator
 walk + TRANSMIT IMMEDIATE".
@@ -101,7 +101,7 @@ Both silent. The decoder now captures bit 57 and the arm honours only
 an immediate count of one (Ref. Manual pp.30-31: immediate 0 means
 *sixteen*; a direct count lives in a register this arm never reads, so
 all of them are refused). Guard:
-`programs/transmit_scope.strap`, six blocks, five injections, one per
+`decks/transmit_scope.strap`, six blocks, five injections, one per
 rule. Record in `run_tests.sh` §"TRANSMIT: what is honoured…".
 
 **The boundary driver is found, and the guess it replaces was wrong
@@ -122,20 +122,20 @@ pp.65–70 test whether the **registers hold their bits**; **p.71** tests
 whether the **comparison fires**, and p.71 is what "positive
 boundary-interrupt cases" actually means.
 
-**p.65 is transcribed and runs** — `programs/ax5b_16099_ub_data.strap`,
+**p.65 is transcribed and runs** — `decks/ax5b_16099_ub_data.strap`,
 sixteen rows bit-exact, and it **catches a boundary fault and names
 the bit**: dropping IBM bit 17 from `boundaryReg` halts it at
 022263.00, the error table's eighteenth entry. Record in
 `run_tests.sh` §"…TEST 7".
 
 **p.68 is transcribed and runs too** —
-`programs/ax5b_160102_lb_ctl.strap`: the lower-boundary loop and the
+`decks/ax5b_160102_lb_ctl.strap`: the lower-boundary loop and the
 control-bit test, 37 rows bit-exact, and it localises a fault to the
 bit (drop IBM 49 → the table's "BIT 49" entry; drop IBM 57 → `SERS`
 with *"UNABLE TO SET BNDRY CNTRL TO 1."*).
 
 **p.71, the comparisons, is transcribed** —
-`programs/ax5b_160105_compare.strap`, 52 rows bit-exact on first
+`decks/ax5b_160105_compare.strap`, 52 rows bit-exact on first
 assembly. This is the block the item always wanted: it sets bounds,
 **enables**, fetches outside them and expects an address-monitoring
 interruption (*"UB HAS X, LB HAS X-2. FETCH FROM X+1 TO CHK UB COMP,
@@ -149,7 +149,7 @@ the interruption table `I60IT` at 023201.00, and `BOUND0`/`BOUND1` at
 *without* a harness, which is why the file's original "prerequisite"
 claim was wrong. This one needs it for real.
 
-**`I60S1` IS TRANSCRIBED** — `programs/ax5b_160s1_clr_inds.strap`,
+**`I60S1` IS TRANSCRIBED** — `decks/ax5b_160s1_clr_inds.strap`,
 pp.83-84, 81 rows bit-exact — **and it is not what this file has ever
 called it.** PDF p.83, 022741.00. The original claim was "SSIP's
 `I60S1`/`I60SX1` save/restore harness"; the correction after that said
@@ -345,7 +345,7 @@ conclusion from a true local one, and nothing re-checked it.
   system is disabled", which agrees.
 
 **TEST 8C CASES 3 AND 4 ARE NOW TRANSCRIBED** —
-`programs/ax5b_160_test8c.strap` +
+`decks/ax5b_160_test8c.strap` +
 `verify_ax5b_160_test8c_listing.py`, PDF pp.80-83, octal
 022640.40-022733.40, **119 rows bit-exact**, one unbroken half-word
 run (the continuity bridge on p.81 closes the gap between the cases).
@@ -371,7 +371,7 @@ taken from the manual.
 
 **IF CLASS 2 IS IMPLEMENTED** — "the branch address of all successful
 branch operations", `ifSignal` in `StretchExecute.bsv` at execute()'s
-single commit point, tested by `programs/if_branch_alarm.strap`.
+single commit point, tested by `decks/if_branch_alarm.strap`.
 Deliberately the half WITHOUT the strong oracle, because it is the
 half that is self-contained: it needs no new plumbing, whereas class 1
 needs the interruption-address exemption threaded (below).
@@ -384,7 +384,7 @@ printed p.32 (the rule), printed p.45 indicator 20 (*"the fetch did not
 take place, and **the entire operation was suppressed**"*, which is what
 licenses skipping the arm rather than only the fetch) and printed p.52
 item 3 (the IC still steps). Tested by
-`programs/df_fetch_suppress.strap` + `StretchDfSuppTb`, seven
+`decks/df_fetch_suppress.strap` + `StretchDfSuppTb`, seven
 injections, none survived. **Every check observes the DESTINATION'S
 VALUE rather than the operation's result indicators** — a model that
 "suppressed" by writing zero would pass an indicator check and fail
@@ -393,7 +393,7 @@ this one.
 ### CLOSED 2026-09-25 — the fifth site is built, and it exposed a second bug
 
 All three of printed p.52's `BRANCH ON BIT` clauses are implemented in
-the `BitBranch` arm, tested by `programs/df_bb_readonly.strap` +
+the `BitBranch` arm, tested by `decks/df_bb_readonly.strap` +
 `StretchDfBbRoTb`, eight injections, none survived. **The encoding was
 checked against the decoder rather than inferred**: `StretchDecode`
 takes `modAbc = w[3:1]` and IBM bit *n* is BSV bit 63−*n*, so
@@ -421,7 +421,7 @@ block.
 
 Six of the eleven class-3 sites now suppress: `CBR`/`CBRZ`, `V+CR`,
 `V+ICR`, `V-ICR`, and `R`/`RCZ` on both paths.
-`programs/df_refill_suppress.strap` + `StretchDfRfSuppTb`, nine
+`decks/df_refill_suppress.strap` + `StretchDfRfSuppTb`, nine
 injections, none survived.
 
 **The scope line got a structural confirmation.** Printed p.53's
@@ -517,7 +517,7 @@ entries were DONE and this file still listed them as open.**
 
 ~~1. IF CLASS 1~~ — **DONE**, commit `5fbb8b0`. `execute()` carries
 `if (!atIntAddr) ind = ifSignal(st, pc[18:1], ind);` and
-`programs/if_branch_alarm.strap` + `StretchIfBrTb` is wired into the
+`decks/if_branch_alarm.strap` + `StretchIfBrTb` is wired into the
 suite. Everything the old entry prescribed was followed: the signal
 sits at dispatch rather than `fetchReq`, it is computed inside
 `execute()` from `pc` to avoid the G0004 second-writer shape, and
@@ -587,7 +587,7 @@ round trip**, since it plants an arbitrary instruction through
 
 **Left on 1268**: cases 1B and 1C. They were blocked on `EX`; `EX`
 is implemented as of 2026-09-25 (item 4a), and their ENCODING is
-already transcribed as `programs/ax5b_1268_test1bc.strap`, so what is
+already transcribed as `decks/ax5b_1268_test1bc.strap`, so what is
 left is a runnable slice, not a missing instruction.
 
 ## 3. Smaller open pieces inside what is built
@@ -608,7 +608,7 @@ left is a runnable slice, not a missing instruction.
   I-box instruction that fitted inside the E-box's charged budget ran
   first, `BD` among them.
 
-  **How late, measured.** `programs/int_timing_bracket.strap`: a VFL
+  **How late, measured.** `decks/int_timing_bracket.strap`: a VFL
   `ST` whose store is suppressed (DS, indicator 19, permanently
   masked), bracketed `BE` / `ST` / `BD`, with N `NOP`s of slack before
   the `BD`. Observed halts, before the fix: N=0 → 004110.40 (`CHK`,
@@ -653,9 +653,9 @@ left is a runnable slice, not a missing instruction.
   PADDING", and the `interrupt_pg0` note "NOT IMPLEMENTED, stated in
   StretchCore"), and the bracket program is **not yet in the suite**.
   Its run line is
-  `run "…" ./run_program.sh programs/int_timing_bracket.strap StretchIntTimingTb "PC=4246"`.
+  `run "…" ./run_program.sh decks/int_timing_bracket.strap StretchIntTimingTb "PC=4246"`.
 
-  **THE DISCRIMINATOR EXISTS AND IS ALREADY IN `strap/programs/`** —
+  **THE DISCRIMINATOR EXISTS AND IS ALREADY IN `decks/`** —
   found 2026-09-24 after an 839-page sweep that expected it elsewhere.
   Routine 1260 brackets every provoked interruption between an enable
   and a disable **one instruction apart**, and in this model
@@ -744,7 +744,7 @@ left is a runnable slice, not a missing instruction.
 
 ## 4. Standing practice, after every batch
 
-`python3 strap/mutation_score.py --jobs 12` — each mutant gets its own
+`python3 tests/mutation_score.py --jobs 12` — each mutant gets its own
 APFS-cloned tree, so the real model is never mutated; 53 minutes
 rather than 233. It refuses to run on a dirty tree or a non-green
 baseline. What remains after parallelising is the serial baseline plus
@@ -826,13 +826,13 @@ used that line as their pattern and `apply()` did
 Now: `mutation_score.py` refuses a pattern that does not match exactly
 once, the two mutants carry their preceding line to disambiguate them,
 `zm-double-*` target the second copy, and
-`programs/fp_zm_terms_double.strap` is the witness. 36 mutants.
+`decks/fp_zm_terms_double.strap` is the witness. 36 mutants.
 
 **So: a mutation score is evidence about the sites the table names,
 and nothing else.** Before trusting one, check the table can still
 reach every site it claims — that check is now automatic.
 
-`python3 strap/line_addresses.py programs/X.strap` prints every
+`python3 strap/line_addresses.py decks/X.strap` prints every
 instruction line's address in the listings' octal convention. Every
 injection address a new test records should come from it, and it
 reproduces the ones already recorded — which is what makes them
@@ -843,7 +843,7 @@ checkable rather than folklore.
 **`EX` executes.** The arm is in `StretchExecute.bsv` (the
 `BranchOrMisc` misc code `010`), the subject swap is in `mkEBox`'s
 `resume()`, and the EXE suppression is in the five branch arms.
-Driven by `strap/programs/ex_subject.strap` (subject with an operand
+Driven by `decks/ex_subject.strap` (subject with an operand
 of its own, two-level `EX`, the subject word left intact, a
 full-length subject straddling two storage words), `ex_exe.strap` (the
 EXE rule over BB / unconditional / CB / SIC / BE / BD),
@@ -859,7 +859,7 @@ header carries its own table with the halt address and the source row.
 beside `EX`'s `010`; `exicPsicAddr` is its address function; `ExicCtx`
 and `HeldOp.exic` carry the level's state; `mkEBox.resume()` grew from
 three shapes to five; and `subjReady` gives the step its own clock.
-Driven by `strap/programs/exic_subject.strap` and `exic_addr.strap`,
+Driven by `decks/exic_subject.strap` and `exic_addr.strap`,
 sixteen injections, every halt observed, none survived. `EXIC` has
 left `audit_opcode_coverage.py`'s `ENCODING_ONLY` set, which is now
 `RNX` alone.
@@ -1077,7 +1077,7 @@ pseudo-IC, AD set, the instruction NOPed — which is exactly p.50's
 
 **AND IT AVOIDS AN ASSEMBLER PREREQUISITE.** TEST 1A and 1D use
 progressive-indexing notation `%$X1@` (`SX,$X2,I62INT%$X1@`) that
-appears in **no** existing `strap/programs/*.strap`, so they would
+appears in **no** existing `decks/*.strap`, so they would
 carry an assembler change as well. 3A uses none of it, and its one
 exotic row (`%8@DD%BU,32,8@,3740 -ILLEGAL OP.`) is *already*
 transcribed and bit-exact-verified here as `I60K7` in
@@ -1182,7 +1182,7 @@ funnel shape this note predicted. The reload needed no special case:
 0 − 1 modulo 2¹⁹ *is* all ones, so the faithful rule and the plain
 modular decrement coincide, and the "naive wrap every 3255 clocks"
 disaster below never had a way in.
-`strap/programs/interval_timer_steps.strap` checks the six
+`decks/interval_timer_steps.strap` checks the six
 behaviours, and the one-instruction `BTS` before its block 4 is what
 separates "TS on the 1→0 edge" from "TS when the new value is zero"
 (injection: halts at F3T). The six `CYCLES<=` benchmarks are
@@ -1656,7 +1656,7 @@ to itself, so the two spellings must differ whatever the widths say.
 
 ## 5d. `EXIC`'s THREE RULES, and a latent assembler gap
 
-**BUILT AGAINST THIS, 2026-09-29.** `programs/exic_subject.strap` uses
+**BUILT AGAINST THIS, 2026-09-29.** `decks/exic_subject.strap` uses
 TEST 2B's own idiom for rule (c) — `LV` / `V+I` / `KV` / `BZXE` —
 and covers BOTH step sizes, so the "once / twice" sentence below is
 executable in this model now and not only in the deck. See item 4a.
@@ -1954,7 +1954,7 @@ Two details the arithmetic forced, both recorded rather than tuned:
 
 **THE SUITE CANNOT SEE THIS FIX, and that had to be checked rather
 than hoped.** Every one of the **1,106** VFL and connective field
-specs in `strap/programs/` is `(BU,n,8)` — 1,042 of them `(BU,64,8)` —
+specs in `decks/` is `(BU,n,8)` — 1,042 of them `(BU,64,8)` —
 unsigned and byte size 8, where both corrections are the identity. So
 the budget that gates dispatch does not move for any deck, no
 `CYCLES<=` bound shifts, and **a passing suite is not evidence for
@@ -2857,7 +2857,7 @@ expression and its result, the arithmetic outranks the typography.**
 
 ### TRANSCRIBED, 2026-10-16 — 65 symbols, 55 genuine checks, 0 failures
 
-`strap/programs/dcp_compool.strap` + `strap/verify_dcp_compool.py`,
+`decks/dcp_compool.strap` + `tests/verify_dcp_compool.py`,
 wired into `run_tests.sh` (392 -> 393 run lines). 51 entries from PDF
 p.129 and 14 from p.130.
 
@@ -3094,7 +3094,7 @@ on.
 
 ## 5p. THE MACHINE BOOTS FROM A TAPE IMAGE — `boot_plan.md` M1 reached
 
-2026-10-17. `strap/programs/ipl_boot.strap` + `gen_ipl_tb.py` +
+2026-10-17. `decks/ipl_boot.strap` + `gen_ipl_tb.py` +
 `run_ipl_test.sh`, in `run_tests.sh` (394 -> 395 run lines).
 
 ```
@@ -3157,7 +3157,7 @@ they did.
 **THE OBVIOUS MOVE DOES NOT WORK, and that is why this is shaped the
 way it is.** Raising `TapeWords` from 16 would widen the derived
 index for free — and it would break
-`strap/programs/io_tape.strap`, which reaches End Exception by
+`decks/io_tape.strap`, which reaches End Exception by
 running a 20-word transfer off the end of a 16-word tape.
 `gen_tape_tb.py`'s `CCWJ`/`CCWP` expectations literally encode "16 of
 20 words transferred". **Sixteen is load-bearing for that test.**
@@ -3637,8 +3637,8 @@ only true once document X has been opened.**
 ## 5y. MCP's PAGE 2 IS TRANSCRIBED — 15 of 16 rows bit-exact, and the 16th is a real find
 
 2026-10-17, `boot_plan.md` M3's first page.
-`strap/programs/mcp_bootstrap_p2.strap` +
-`strap/verify_mcp_bootstrap_p2.py`. **The first page of IBM's
+`decks/mcp_bootstrap_p2.strap` +
+`tests/verify_mcp_bootstrap_p2.py`. **The first page of IBM's
 operating system in this corpus.**
 
 **All six symbols the page defines land exactly where its LOCATION
@@ -3788,7 +3788,7 @@ execution gap visible.
 
 ### THE TEST IS BEHAVIOURAL, NOT A DECK ORACLE, AND IT CAUGHT ME
 
-`programs/vfl_m_plus_one.strap`. MCP's rows pin `M+1`'s encoding
+`decks/vfl_m_plus_one.strap`. MCP's rows pin `M+1`'s encoding
 bit-exactly; they cannot pin its execution, because running the
 bootstrap is the goal rather than a tool available now. So this is
 hand-written against the pocket card's wording and is weaker than a
@@ -3828,8 +3828,8 @@ it" precisely so growth here is never mistaken for progress.
 
 ## 6b. MCP's PAGE 3 IS TRANSCRIBED — 38 of 39 rows, and the tape layout is settled
 
-**2026-10-17.** `strap/programs/mcp_bootstrap_p3.strap` and
-`strap/verify_mcp_bootstrap_p3.py`, in the suite. Printed p.3 picks
+**2026-10-17.** `decks/mcp_bootstrap_p3.strap` and
+`tests/verify_mcp_bootstrap_p3.py`, in the suite. Printed p.3 picks
 up exactly where p.2 stops — p.2's last instruction is a half word at
 `000052.00`, p.3's first is at `000052.40` — and all eighteen symbols
 it defines land at its own printed LOCATION column.
@@ -3895,8 +3895,8 @@ in the checked set, so transcription proceeds past it.
 
 ## 6c. MCP's PAGE 4, AND `LVS`'s ADDRESS FIELD IS NOT AN ADDRESS
 
-**2026-10-17.** `strap/programs/mcp_bootstrap_p4.strap` and
-`strap/verify_mcp_bootstrap_p4.py`, in the suite: twelve symbols and
+**2026-10-17.** `decks/mcp_bootstrap_p4.strap` and
+`tests/verify_mcp_bootstrap_p4.py`, in the suite: twelve symbols and
 **all thirty-seven machine-code rows**. Printed p.4 is FETCH PROSA —
 it reads one PROSA record against printed p.14's chained control-word
 table, runs it through p.3's IO TEST loop, takes the record apart
@@ -4118,8 +4118,8 @@ bisection on its octal address.
 
 ## 6f. MCP's PAGES 5 AND 6 — the ERROR ROUTINE, 53 of 53, first attempt
 
-**2026-10-17.** `strap/programs/mcp_bootstrap_p5_p6.strap` and
-`strap/verify_mcp_bootstrap_p5_p6.py`, in the suite: fourteen labels
+**2026-10-17.** `decks/mcp_bootstrap_p5_p6.strap` and
+`tests/verify_mcp_bootstrap_p5_p6.py`, in the suite: fourteen labels
 and **all fifty-three machine-code rows**, matched on the first run
 of the draft.
 
@@ -4299,8 +4299,8 @@ bit-field designation inside a `CW` field.
 
 ## 6g. MCP's PAGES 9-12 — the error messages, and a check that is honest about its limits
 
-**2026-10-17.** `strap/programs/mcp_bootstrap_p9_p12.strap` and
-`strap/verify_mcp_bootstrap_p9_p12.py`, in the suite: **thirty-one
+**2026-10-17.** `decks/mcp_bootstrap_p9_p12.strap` and
+`tests/verify_mcp_bootstrap_p9_p12.py`, in the suite: **thirty-one
 message blocks, thirty-six labels, one hundred and ten printed
 rows.** Four pages in one file because the page breaks fall *inside*
 messages — `X MS 05B`'s control code is the last row of p.9 and its
@@ -4382,8 +4382,8 @@ pages that define them.
 
 ## 6h. MCP's PAGE 13 — the page the whole transcription has been SYN-ing
 
-**2026-10-17.** `strap/programs/mcp_bootstrap_p13.strap` and
-`strap/verify_mcp_bootstrap_p13.py`, in the suite: eight symbols and
+**2026-10-17.** `decks/mcp_bootstrap_p13.strap` and
+`tests/verify_mcp_bootstrap_p13.py`, in the suite: eight symbols and
 fourteen printed rows, all matching.
 
 **This is the page printed p.2 borrowed from on the first day.**
@@ -4444,8 +4444,8 @@ define them.
 
 ## 6i. MCP's PAGE 14 — the bootstrap's last page, and the symbol p.2 borrowed on day one
 
-**2026-10-17.** `strap/programs/mcp_bootstrap_p14.strap` and
-`strap/verify_mcp_bootstrap_p14.py`, in the suite: **thirty-nine
+**2026-10-17.** `decks/mcp_bootstrap_p14.strap` and
+`tests/verify_mcp_bootstrap_p14.py`, in the suite: **thirty-nine
 chained control words, every one checked** in the four-group form the
 listing prints, plus `X PROSA` and `X BS END`.
 
@@ -4488,8 +4488,8 @@ the two spellings agree.)
 
 ## 6j. MCP's PAGES 7 AND 8 — the error table, and the bootstrap is transcribed
 
-**2026-10-17.** `strap/programs/mcp_bootstrap_p7_p8.strap` and
-`strap/verify_mcp_bootstrap_p7_p8.py`, in the suite: **seventy-eight
+**2026-10-17.** `decks/mcp_bootstrap_p7_p8.strap` and
+`tests/verify_mcp_bootstrap_p7_p8.py`, in the suite: **seventy-eight
 `VF` half words and seven symbols, ninety checks.**
 
 **ALL THIRTEEN PAGES OF MCP's IPL BOOTSTRAP ARE NOW TRANSCRIBED** —
@@ -4662,7 +4662,7 @@ implemented, read the citation its neighbour already carries.**
 **The address-width rule came free.** LVE and SVA need the identical
 six-case table — jb_ax3a printed p.140's — in opposite directions,
 and `StretchDecode.svaReplaceAddr` already had it, deck-verified and
-swept over all 2^14 half-words. `strap/programs/lve_indirect.strap`
+swept over all 2^14 half-words. `decks/lve_indirect.strap`
 exercises it in the LVE direction by pointing targets of three
 different classes (24-, 19- and 18-bit address fields) at **one**
 datum: all three must produce that datum's bit address, because
@@ -4737,7 +4737,7 @@ was in conflict — what the word does depends on whether an execution
 operation follows it. The instinct to treat the contradiction as "one
 of these must be wrong" would have thrown away a correct reading.
 
-Recorded in `programs/ax5b_162_test3b.strap` at length and
+Recorded in `decks/ax5b_162_test3b.strap` at length and
 cross-referenced from `ax5b_162_test3a.strap`, where the row is now
 marked LOAD-BEARING: it looks removable and is not.
 
@@ -4870,6 +4870,29 @@ printed page numbers.
   **verdict about no single version of the assembler.** The only
   honest response is to discard it and re-run, which is what was
   done. A suite's result is only as atomic as the tree it read.
+* **A CWD-RELATIVE PATH IS A TIME BOMB, AND THE TREE MOVED TWICE.**
+  `strap/mcp_crop.sh` resolved `docs/` against the working directory
+  (2026-10-17); on 2026-10-18 the reorganisation into
+  `strap/`+`decks/`+`tests/` broke `strap/mcp_image.py`,
+  `tests/verify_mktape.py`, and both coverage audits the same way.
+  Three of those four were found only by running every moved script;
+  the audits were the instructive one, because a path failure there
+  does not look like a path failure — `audit_opcode_coverage.py`
+  globbed a directory that no longer existed, found zero decks, and
+  reported **every operation in the machine** as "newly unused". A
+  coverage audit that reads nothing reports total failure of coverage,
+  which is indistinguishable from a real regression until you look at
+  the glob. Resolve against `__file__` in anything that is not invoked
+  from a known directory, and after any move, *run everything*, not
+  the suite only: `run_tests.sh` covers 409 sections but not the tools
+  beside it.
+* **`run_tests.sh` does not `cd` to its own directory** — it computes
+  `TESTS_DIR` and exports `PYTHONPATH` from it, but the verifiers open
+  `../decks/NAME.strap`, so it works only when run from `tests/`.
+  Adding `cd "$TESTS_DIR"` near the top is a one-line fix and is
+  *deliberately not done yet*: the only safe moment to edit that file
+  is when no suite is reading it, and it should be followed by a full
+  re-run to prove the harness still finds everything.
 * A bare `*` or `L` assembles as **VFL**, not floating point. Write
   `*(N)`, `L(N)`.
 * Give any data section an explicit `SLC`: `DD` emits at the location
@@ -4991,7 +5014,7 @@ printed page numbers.
   check, from the rows around that check.**
 * **PROSE IS NOT EXECUTABLE, so an inverted gloss can sit in a
   committed, fully-passing file indefinitely.**
-  `programs/ax5b_160_test8b.strap` said a protection violation with the
+  `decks/ax5b_160_test8b.strap` said a protection violation with the
   interruption system DISABLED "still sets the indicator, there is just
   no interruption". The opposite is true. `B<IND>` branches when the
   indicator is ON and `BZ<IND>` branches when it is OFF, so in these

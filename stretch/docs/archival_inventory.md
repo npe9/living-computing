@@ -142,7 +142,7 @@ exists to avoid.
 **Update, same day**: a simulated Input-Output subsystem now exists
 (`bsv/StretchIO.bsv`) -- `RD`/`W`/`CCW`/`REL` against two fixed devices
 (a card reader, a printer), verified end to end
-(`strap/programs/io_reader_printer.strap`). This does NOT yet unblock
+(`decks/io_reader_printer.strap`). This does NOT yet unblock
 DCP-scale transcription, though, for two separate reasons: (1) the DCP
 needs `CTL`/`LOC` (tape rewind/backspace/selection codes) and chaining/
 multiple-block operation, none of which this first I/O milestone
@@ -157,7 +157,7 @@ more concrete list of prerequisites than before, not a near-term
 milestone.
 
 **Update, second day**: a tape drive now exists too
-(`strap/programs/io_tape.strap`, `bsv/StretchIO.bsv` channel 34), with
+(`decks/io_tape.strap`, `bsv/StretchIO.bsv` channel 34), with
 real position persistence across instructions and two of `CTL`'s tape
 function codes -- REWIND and BACKSPACE BLOCK (octal 136/176,
 Reference Manual p.132), read from the External Units chapter this
@@ -178,7 +178,7 @@ and `MemWords` is the full 18-bit space, so the DCP's octal
 004000-016500 footprint fits with room to spare; the assembler also
 has `SLC` now, so a listing can be placed at its own addresses rather
 than re-based. First program run at real historical addresses:
-`strap/programs/ibox1_wen_ven_original_addresses.strap`. Reason (1)
+`decks/ibox1_wen_ven_original_addresses.strap`. Reason (1)
 (CTL/LOC codes, chaining) still stands for the DCP as a whole.
 
 **Update, third day**: reason (2) is now investigated, not untouched.
@@ -404,10 +404,10 @@ finding stood on solid ground, not a guess.
 **Update: SIC is now implemented** (Reference Manual pp.41-42 semantics,
 `bsv/README.md` "Executed"), and the first diagnostic block has been
 run VERBATIM with its own SIC-driven pass/fail chain intact -- I-Box
-1's SIC-CB / SIC-CBZ groups (p.50, `strap/programs/ibox1_sic_cb_cbz.
+1's SIC-CB / SIC-CBZ groups (p.50, `decks/ibox1_sic_cb_cbz.
 strap`), the deck's own "HANG UP OR BECOME BD,<next>" self-modifying
 mechanism included -- and then the whole of pp.50-51 from 5412.00 to
-5461.40 as one span (`strap/programs/ibox1_p43_p51_span.strap`: SIC-CB,
+5461.40 as one span (`decks/ibox1_p43_p51_span.strap`: SIC-CB,
 SIC-CBZ, SIC-B,ZIND, SIC-B,IND, WEN2/WEN/VEN, five groups flowing into
 each other), which also exposed that the model's direct index ops
 never set the index indicators (fixed). Then extended back to 5247.00
@@ -456,10 +456,10 @@ the first candidates were re-based at the assembler's default origin.
 space and `SLC` is implemented, and the WEN block below has since
 been re-run at its listed addresses (octal 5454-5461) with its
 assembled words matched bit-for-bit against the listing's own printed
-machine code (`strap/verify_ibox1_listing.py`).
+machine code (`tests/verify_ibox1_listing.py`).
 
 **`WEN`/`WEN2`/`VEN` (p.51) transcribed and run -- DONE**, as
-`strap/programs/ibox1_wen_ven_indicators.strap`
+`decks/ibox1_wen_ven_indicators.strap`
 (`StretchIboxWenTb`, wired into `run_tests.sh`). Loads a VFL
 binary-unsigned all-ones word (`WEN2`/`VEN`) and an all-zeros word
 (`WEN`), each followed by a Branch-on-Indicator checking `RGZ`/`RZ`
@@ -476,7 +476,7 @@ path (via `LVI`, an `ImmIndex` op that -- per
 `StretchExecute.bsv`'s `ImmIndex` arm -- doesn't itself touch
 `RGZ`/`RZ`, so marker writes never disturb a still-pending check),
 checked externally by the testbench exactly like every other program
-in `strap/programs/`.
+in `decks/`.
 
 Verified non-vacuous twice, the second time after advisor review
 caught that the first version wasn't actually discriminating: checking
@@ -520,7 +520,7 @@ scenario advisor warned to check for before transcribing. `WEN`/
 **CORRECTED 2026-09-24: the reasoning above is right about five of
 routine 1274's seven subjects and WRONG about a sixth, and the routine
 has now been transcribed whole** --
-`strap/programs/ax5b_1274_truncation.strap`, 99 rows,
+`decks/ax5b_1274_truncation.strap`, 99 rows,
 024412.00-024500.00, PDF pp.112-114, bit-exact and wired into the
 suite. (It also runs three pages earlier and ends two pages earlier
 than this file's page span implied.)
@@ -725,7 +725,7 @@ the intended bit pattern by direct extraction before writing any test.
 Transcribed the plain `CB` block (routine 150's `IBR1`-`IBR9`, the
 safest slice: v=00, no dependency on the model's own documented-
 uncertain "add half"/"add one" unit mapping, `bsv/README.md`:146) as
-`strap/programs/ibox4_cb_count_branch.strap`, all 5 assertions pass.
+`decks/ibox4_cb_count_branch.strap`, all 5 assertions pass.
 Deliberately did NOT reproduce the source's own pass/fail-signaling
 mechanism (a self-modifying-code idiom: storing X1's packed IndexWord
 over a NOP placeholder and depending on its VALUE field lining up with
@@ -744,7 +744,7 @@ DONE.** Exercises a code path nothing else in the suite touches:
 `unpackIndexWord(prefetch[0])`) -- distinct from `xw_refill.strap`'s
 refill, which goes through `V+ICR`/progressive-indexing instead, a
 different arm entirely. Transcribed as
-`strap/programs/ibox4_cbr_refill.strap`: three `CBR` calls on one
+`decks/ibox4_cbr_refill.strap`: three `CBR` calls on one
 index register (count 3->2->1->0), the first two branching without
 refilling, the third not branching but refilling from a distinct XW
 literal -- matching the source's own comments exactly ("COUNT 3 TO
@@ -809,7 +809,7 @@ pages hold nothing of the kind. What they actually contain, in order:
 | pages | what is there |
 |---|---|
 | pp.41-44 | **the per-indicator turn-on blocks**, I6071 through I6086 -- one per I-Box indicator (`TS`, `CPUS`, `EKJ`, `UNRJ`, `CBJ`, `EPGK`, `UK`, `EE`, `EOP`, `CS`, `RESRVD`, `OP`, `AD`, `USA`, `EXE`, `DS`). Sixteen blocks, but not sixteen tests -- see the triage below. |
-| p.45 | **the indicator-walk driver**, I6087/I6088 -- **transcribed** as `strap/programs/ax5b_16087_walk.strap`, six rows bit-exact via `strap/verify_ax5b_16087_listing.py`: `SIC,I60SX1` / `B,I60S1`, `TI,1,BIT0%$X1,$IND` *"SET ONE OF 20-47"*, `TI,1,BIT0%$X1,$MASK` *"SET MASK BIT OF TEST IND BIT"*, `BE,$+.32` *"ENABLE AND AWAIT INTERRUPT"*, then `BD,I60B13%$X6` -- an indexed dispatch into the per-indicator error table `I60B13`, whose entries read *"FAILED TO INTERRUPT ON IND MK / IN 1 MILLISEC."*, then IK, IJ, EK, TS, CPUS, EKJ, UNRJ, CBJ, EPGK, UK, EE, EOP, CS. |
+| p.45 | **the indicator-walk driver**, I6087/I6088 -- **transcribed** as `decks/ax5b_16087_walk.strap`, six rows bit-exact via `tests/verify_ax5b_16087_listing.py`: `SIC,I60SX1` / `B,I60S1`, `TI,1,BIT0%$X1,$IND` *"SET ONE OF 20-47"*, `TI,1,BIT0%$X1,$MASK` *"SET MASK BIT OF TEST IND BIT"*, `BE,$+.32` *"ENABLE AND AWAIT INTERRUPT"*, then `BD,I60B13%$X6` -- an indexed dispatch into the per-indicator error table `I60B13`, whose entries read *"FAILED TO INTERRUPT ON IND MK / IN 1 MILLISEC."*, then IK, IJ, EK, TS, CPUS, EKJ, UNRJ, CBJ, EPGK, UK, EE, EOP, CS. |
 
 **ROUTINE 1258 AND 1260 TESTs 1-4 -- pp.4-44 mapped 2026-09-24.**
 Only TWO banners exist in that whole span: *"----1258---CHK TIME CLOCK
@@ -927,7 +927,7 @@ reads back (*"UNABLE TO SET BNDRY CNTRL TO 1."*), then clears it with
 rule read off p.114 holds at bit 57 as well as at 0, 17 and 18.
 
 **p.65 is transcribed and runs**
-(`strap/programs/ax5b_16099_ub_data.strap`): eighteen iterations,
+(`decks/ax5b_16099_ub_data.strap`): eighteen iterations,
 because the upper boundary is word 3 bits 0-17. It catches a dropped
 boundary bit and **names it** -- injecting
 `boundaryReg <= (v & ~(64'b1 << 46))` halts at 022263.00, the table's
@@ -1004,7 +1004,7 @@ suppressed.*"
 as of 2026-09-25**, so 1268 1B/1C are unblocked on that count; 16084
 still wants `LVE` and 16085 is an `EX` block whose surrounding 1260
 machinery is the remaining question. The behavioural coverage lives in
-`strap/programs/ex_subject.strap`, `ex_exe.strap` and
+`decks/ex_subject.strap`, `ex_exe.strap` and
 `ex_monitor.strap`; 1262 TEST 1B and TEST 1CC remain ENCODING
 transcriptions, because running them needs SSIP and the 64-word
 interrupt table, not because `EX` is missing.
@@ -1030,8 +1030,8 @@ correction:
 So the printed machine code is the assembler's own output and is
 trustworthy; the marks explain the self-modification. **Case 1A is
 transcribed and runs** --
-`strap/programs/ax5b_1681_if_close_to_ds.strap`, ten rows bit-exact
-via `strap/verify_ax5b_1681_listing.py`, with `I68K1`/`I68K2`
+`decks/ax5b_1681_if_close_to_ds.strap`, ten rows bit-exact
+via `tests/verify_ax5b_1681_listing.py`, with `I68K1`/`I68K2`
 transcribed from p.111 at their printed addresses rather than
 manufactured. Cases 1B and 1C use `EX,$X3` and `EX,$R`; they were
 blocked on `EX` until 2026-09-25 and are not any more (`NEXT.md`
@@ -1062,8 +1062,8 @@ section.
   (`EXE`) with `EX`. Both instructions are deferred in `NEXT.md` §5,
   so both blocks are blocked on an implementation, not on a harness.
 * **I6071** (`TS`) is **transcribed** -- 016007.00-016012.40,
-  `strap/programs/ax5b_16071_ts.strap`, eight rows checked by
-  `strap/verify_ax5b_16071_listing.py`. It is an INTERVAL TIMER test:
+  `decks/ax5b_16071_ts.strap`, eight rows checked by
+  `tests/verify_ax5b_16071_listing.py`. It is an INTERVAL TIMER test:
   Reference Manual p.44, "4. Time Signal (TS). The interval timer has
   become zero." The block loads the timer with the value one, spins
   512 times on a `CB` to itself, and asks `BTS` whether TS came on.
@@ -1075,7 +1075,7 @@ section.
   (`bsv/StretchTiming.bsv`), the countdown, the reload, the unused
   bits 19-27 and TS on the 1→0 edge in `bsv/StretchStorage.bsv`'s
   `oscillatorStep`, checked by
-  `strap/programs/interval_timer_steps.strap`, which makes every
+  `decks/interval_timer_steps.strap`, which makes every
   assertion 1258 TEST 2 and this block make (the ones that do not need
   the SIC/SERS error harness). What still blocks RUNNING I6071 and
   1258 themselves is unchanged: both fall through into the SIC/SERS
@@ -1095,8 +1095,8 @@ section.
   expecting suppression.
 * **I6082** (`OP`) and **I6083** (`AD`) are **transcribed** --
   contiguous at 017225.00-017234.40,
-  `strap/programs/ax5b_16082_op_ad.strap`, fifteen rows checked by
-  `strap/verify_ax5b_16082_16083_listing.py`. They exist for one row
+  `decks/ax5b_16082_op_ad.strap`, fifteen rows checked by
+  `tests/verify_ax5b_16082_16083_listing.py`. They exist for one row
   pair: `BOP,I6088` prints `21400.47 C2` and `BAD,I6088` prints
   `21400.50 42` -- the same target through indicator 15 and indicator
   16. The 6-bit indicator number sits at bits 19-24 while the listing
@@ -1193,7 +1193,7 @@ Whether the K table starts at a `I60K0` that is the same location, or
 this is coincidence, is not settled by anything read so far.
 * **I6086** (`DS`) is transcribed; see below.
 
-**`I60S1` IS TRANSCRIBED** (`strap/programs/ax5b_160s1_clr_inds.strap`,
+**`I60S1` IS TRANSCRIBED** (`decks/ax5b_160s1_clr_inds.strap`,
 81 rows) **and it is an INDICATOR-CLEARING SUBROUTINE at 022741.00 on
 PDF pp.83-84**, not a save/restore harness — read first-hand
 2026-09-23. Its own comment reads *"SUBROUTINE TO CLR INDS 0-19, AND
@@ -1213,8 +1213,8 @@ below; whether I60SX1 is literally `I60K0`'s word or merely adjacent
 is not settled by anything read.
 
 **I6086, the DS block, is transcribed** --
-`strap/programs/ax5b_16086_ds.strap`, nineteen half-words checked
-bit-exactly by `strap/verify_ax5b_16086_listing.py` against the
+`decks/ax5b_16086_ds.strap`, nineteen half-words checked
+bit-exactly by `tests/verify_ax5b_16086_listing.py` against the
 printed machine code at octal 021365.00-021376.00. It is the deck's
 own test of storage protection and its error message states the rule
 this project had only from the Reference Manual: *"SV TO 1.0 FAILS TO
@@ -1323,7 +1323,7 @@ pp.110-112) is the cheapest routine in the whole document to reason
 about (~3 pages, 6 sub-cases, no interrupt/timer entanglement) -- this
 reading is the correct one, see the correction above, and its TEST 2
 is now transcribed AND run
-(`strap/programs/ax5b_1683_df_close_to_ds.strap`); the feature is in
+(`decks/ax5b_1683_df_close_to_ds.strap`); the feature is in
 fact modelled, so the deck is an oracle for existing behaviour rather
 than a target for new work; and routine 1274 (address-truncation
 checks for `LX/SX/Refill/StoreZero/Transmit`, pp.112-116) looked like
@@ -1337,9 +1337,9 @@ reasoning and for what got transcribed instead.
 
 1. ~~**Transcribe the STRETCH MAINTENANCE COMPOOL** (DCP manual, PDF
    pp. 129-130) -- the shared symbol table every other diagnostic deck
-   depends on.~~ **DONE.** `strap/programs/dcp_maintenance_compool.strap`,
+   depends on.~~ **DONE.** `decks/dcp_maintenance_compool.strap`,
    verified against the manual's own printed address column
-   (`strap/verify_dcp_maintenance_compool.py`, wired into
+   (`tests/verify_dcp_maintenance_compool.py`, wired into
    `run_tests.sh`). 65 entries total (51 on p.129, 14 more --
    `ACA`..`AIDNTB` -- continuing onto p.130; the original "51 entries"
    count here only covered p.129). Getting a real oracle for this
@@ -1381,7 +1381,7 @@ reasoning and for what got transcribed instead.
    than any single missing instruction class. **Update**: I-Box 1's
    `WEN`/`WEN2`/`VEN` (smallest self-contained runnable fragment, ~9
    instructions) has since been transcribed and run --
-   `strap/programs/ibox1_wen_ven_indicators.strap`, all 5 assertions
+   `decks/ibox1_wen_ven_indicators.strap`, all 5 assertions
    pass (grown from 3 to 5 after advisor review found the original
    version couldn't discriminate a swapped-indicator bug), see I-Box
    1's own entry above. I-Box 5's routine 1274 (address-truncation
@@ -1393,19 +1393,19 @@ reasoning and for what got transcribed instead.
    (Refill/RCZ) was rejected -- every check depends on a `$R` system
    symbol this assembler doesn't recognize and can't safely infer the
    meaning of; section 150 (the CB/CBR family) was transcribed and run
-   instead -- `strap/programs/ibox4_cb_count_branch.strap` (plain
-   `CB`) and `strap/programs/ibox4_cbr_refill.strap` (`CBR`'s own
+   instead -- `decks/ibox4_cb_count_branch.strap` (plain
+   `CB`) and `decks/ibox4_cbr_refill.strap` (`CBR`'s own
    refill mechanism), all 10 assertions across both pass, after adding
    the missing `CB[R][Z][H|+|-]` mnemonic table (`opcodes.py`'s
    `CB_CODES`) over an encoder/decoder that already implemented the
    full field space. See I-Box 4's own entry above for both.
    **Update**: both pages' printed machine-code columns have now been
    transcribed too and every assembled half-word matched against them
-   (`strap/verify_ibox4_listing.py`, 137 checks) -- the CB/CB+/CBR/
+   (`tests/verify_ibox4_listing.py`, 137 checks) -- the CB/CB+/CBR/
    CBR+ encodings, LX/SX, and the XW index-word layout are thereby
    validated against IBM's assembler itself, not just the pocket card
    and the model's self-consistency. Same for I-Box 1's WEN block
-   (`strap/verify_ibox1_listing.py`). See `strap/README.md` "Gotchas"
+   (`tests/verify_ibox1_listing.py`). See `strap/README.md` "Gotchas"
    item 15 for the print format; use it on any future transcription.
    Biggest concrete instruction-level gaps confirmed with real test
    coverage behind them: `SVA` (structural self-modifying-code
@@ -1463,7 +1463,7 @@ A full inventory of every surviving piece of 7030 software (source
 listings) and software documentation found on bitsavers, downloaded
 into `docs/`, with cross-references to the implementation that models
 or runs it. "Source" = an actual instruction-level listing; "Doc" =
-prose/reference. Each transcribed program in `../strap/programs/` cites
+prose/reference. Each transcribed program in `../decks/` cites
 its source PDF and page in its own header comment; this table is the
 reverse index (source -> transcription/implementation).
 
@@ -1477,11 +1477,11 @@ reverse index (source -> transcription/implementation).
 | `jb_ax3a_ibox-3.pdf` (~200pp) | I-Box 3 diagnostic | Source | surveyed; SVA (~50pp section), SIC |
 | `jb_ax4b_ibox-4.pdf` (~200pp) | I-Box 4 diagnostic | Source | RUN: `ibox4_cb_count_branch`, `ibox4_cbr_refill`; bit-exact vs `verify_ibox4_listing.py` (pp.155/159); section 138 rejected ($R), the pp.58-62 KV/$R pages sourced the Appendix-A system symbols |
 | `jb_ax5b_ibox-5.pdf` (116pp) | I-Box 5 diagnostic | Source | routine index transcribed (p.2); 1260's pp.41-45 read first-hand; **every transcribable block of 1260's pp.41-44 transcribed** -- I6071, I6082, I6083, I6086 (`ax5b_16071_ts.strap`, `ax5b_16082_op_ad.strap`, `ax5b_16086_ds.strap`); interrupt/timer/boundary/EX -- the largest unmodeled-hardware concentration |
-| `jb_af1c_floating-point.pdf` (282pp) | **Floating-point (PAU) diagnostic**, SMFF-1C, JB AF1C, Apr 15 1961, SSIP-controlled | Source | IN PROGRESS -- its routine F200 (LOAD TEST) drove out and verified the assembler's FP sign-modifier loads (LN/LA/LNA), bit-exact vs its printed code (`../strap/verify_fp_signmods.py`), and exposed a real look-ahead store-close-to-fetch gap (see plan). Running a full block still needs branch-on-bit (`BB`/`BB1`/`BZB`, decoded not executed) and the SSIP framework; blocks using divide/double wait for stage 4e. |
+| `jb_af1c_floating-point.pdf` (282pp) | **Floating-point (PAU) diagnostic**, SMFF-1C, JB AF1C, Apr 15 1961, SSIP-controlled | Source | IN PROGRESS -- its routine F200 (LOAD TEST) drove out and verified the assembler's FP sign-modifier loads (LN/LA/LNA), bit-exact vs its printed code (`../tests/verify_fp_signmods.py`), and exposed a real look-ahead store-close-to-fetch gap (see plan). Running a full block still needs branch-on-bit (`BB`/`BB1`/`BZB`, decoded not executed) and the SSIP framework; blocks using divide/double wait for stage 4e. |
 | `ja_bb6b_worst_pat_test.pdf` (20pp) | Worst-pattern memory test | Source | NOT YET -- runnable against `StretchMemory.bsv` (the interleaved units); a memory-model codesign target |
 | `ja_bm6a_unique_adr_test.pdf` (11pp) | Unique-address memory test | Source | NOT YET -- memory-model target |
 | `ja_bp6a_memory_patterns_test.pdf` (6pp) | Memory-patterns test | Source | NOT YET -- smallest memory test, good first memory codesign target |
-| `ja_ua1_ssip.pdf` (52pp; **pp.7-52 an unbroken STRAP listing**) | SSIP (System Test Program supervisor), JA UA1, "SSIP CBD 2-9-61" | Source | RUN (partial): `ssip_sip17_reset` (SIP16/SIP17, PDF pp.17-18, bit-exact vs `../strap/verify_ssip_sip17_listing.py`), which named the five instruction-exception indicators and settled that slot 14 is not one. CORRECTED 2026-09-19: this row previously described the file as framework prose only. It is not. pp.1-6 are the writeup and the Maintenance Tape Control Card; p.7 opens with the source line "PRINID, SSIP CBD 2-9-61 JA UA1" and p.52 closes with `END,%8@100.` at 002732.71. The listing is 1-up fanfold with NO printed page numbers, so it is cited by PDF page, unlike every other tape here. It also explains the SIC/BEW pass-fail idiom the transcriptions reproduce externally. |
+| `ja_ua1_ssip.pdf` (52pp; **pp.7-52 an unbroken STRAP listing**) | SSIP (System Test Program supervisor), JA UA1, "SSIP CBD 2-9-61" | Source | RUN (partial): `ssip_sip17_reset` (SIP16/SIP17, PDF pp.17-18, bit-exact vs `../tests/verify_ssip_sip17_listing.py`), which named the five instruction-exception indicators and settled that slot 14 is not one. CORRECTED 2026-09-19: this row previously described the file as framework prose only. It is not. pp.1-6 are the writeup and the Maintenance Tape Control Card; p.7 opens with the source line "PRINID, SSIP CBD 2-9-61 JA UA1" and p.52 closes with `END,%8@100.` at 002732.71. The listing is 1-up fanfold with NO printed page numbers, so it is cited by PDF page, unlike every other tape here. It also explains the SIC/BEW pass-fail idiom the transcriptions reproduce externally. |
 | `ja_uc1a_maintenance_tape.pdf` | Maintenance-tape builder | Source | needs full tape/channel I/O |
 | `ka_ua1_diagnostic_ctl_pgm.pdf` (154pp) | Diagnostic Control Program (DCP), control section F1, pp.19-152 an unbroken STRAP listing | Source | RUN (partial): `dcp_maintenance_compool` (SYN symbol table pp.129-130, verified vs the printed address column); Memory Compare/Panel Dump need CTL/LOC + H-routines + print macros |
 | `ka_ex1_bx-0.pdf`, `ka_ex1b_bx-0.pdf` | BX-0 (exchange/box) test | Source | needs the exchange as a real bus requester |
@@ -1529,7 +1529,7 @@ transcription.
    H-routines are in): the largest self-contained DCP slices.
 4. **MCP fragments** (once interrupts + exchange exist): the OS source.
 
-Cross-reference discipline (per this survey): every `../strap/programs/
+Cross-reference discipline (per this survey): every `../decks/
 *.strap` transcription names its source file and page range in its
 header; `../bsv/*.bsv` cite the Reference Manual / pocket card page for
 each encoding and semantic; `microarchitecture_plan.md` Appendix A
