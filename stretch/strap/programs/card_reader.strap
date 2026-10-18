@@ -1,0 +1,51 @@
+! card_reader.strap -- read a PUNCHED CARD off the IBM 7503.
+!
+! A card is 80 columns of 12 punch rows: 960 bits, which is fifteen
+! 64-bit words exactly with no padding.  docs/exchange_and_io.md, from
+! A22-6552-1's unit list: "7503 reader + 7614 control (1000 cpm; a
+! card is a 960-bit block = 15 words)".
+!
+! THE DECK IS ASCII AND THE MACHINE SEES PUNCHES.  strap/cards.py
+! turns a line of text into those 960 bits -- the way SIMH's card
+! reader does -- and gen_card_reader_tb.py loads them into StretchIO's
+! reader before this program runs.  NOTHING HERE KNOWS THAT.  This is
+! an ordinary RD against channel 32, and what arrives in CARD1 is the
+! punch pattern a real 7503 would have presented to the Exchange.
+!
+! TWO CARDS, because a reader that returned the same card twice would
+! pass a one-card test.  StretchIO's DeviceWords is 32, so two cards
+! (30 words) is also as many as the stand-in holds -- which is itself
+! worth recording as the next limit to lift.
+!
+! THE CONTROL WORDS ARE WORD-ALIGNED ON PURPOSE.  An I-O instruction's
+! right effective address is a WORD address (RefMan p.111), so a
+! control word that happens to land on a half-word boundary is read
+! from the word below it.  The first draft of this program put CTLW1
+! at 000406.40 and the RD read word 406.  CNOP is what fixes it.
+
+        SLC, (8)400.0
+
+START   LVI, $1, 32          ! X1 = the card reader, channel 32.  LVI
+                              ! puts it in value bits 0-18, and the
+                              ! channel number is at IBM bits 12-18 of
+                              ! the 24-bit field, so 32 means 32<<5.
+
+! ---- read the first card ------------------------------------------
+        RD,  0($1), CTLW1
+        CCW, 0($1), STATUS   ! the status the transfer left behind
+
+! ---- and the second, which must NOT be the first again ------------
+        RD,  0($1), CTLW2
+        CCW, 0($1), STATUS2
+
+        B, PASS
+
+        CNOP                 ! everything below is a full word
+CTLW1   XW,  0               ! patched by the generator: CARD1, count 15
+CTLW2   XW,  0               ! patched by the generator: CARD2, count 15
+STATUS  XW,  0
+STATUS2 XW,  0
+CARD1   DR(BU,64), (15)      ! one card
+CARD2   DR(BU,64), (15)      ! the next
+PASS    BEW, $
+        END, START

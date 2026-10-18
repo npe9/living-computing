@@ -46,38 +46,77 @@ specific in the first place because it belongs to the CARD and the
 keypunch, not to the computer.
 
 ---------------------------------------------------------------------
->>> TWO THINGS HERE ARE ASSUMPTIONS, AND BOTH ARE CHECKABLE <<<
+THE LAYOUT IS SOURCED: R23-9702, the 7503/7614 CE manual
 ---------------------------------------------------------------------
-1. THE BIT ORDER WITHIN A COLUMN.  This packs the twelve rows in
-   reading order down the card -- 12, 11, 0, 1, 2, 3, 4, 5, 6, 7, 8,
-   9 -- with the 12 row as the most significant bit of the 12-bit
-   byte.  That is the natural choice and the one IBM's own numbering
-   suggests, and it is NOT sourced.
+Both of the things this file had to assume are now read off
+`docs/R23-9702_7503_Card_Rdr_7614_Rdr_Ctl_CE_1961.pdf`, the Customer
+Engineering manual for this exact pair of units, **Figure 4.3-1,
+"Data Bit Relation -- Card to Data Word", printed p.21**, all 72
+filled cells read at 600 dpi.  Both assumptions held.
 
-2. THE COLUMN ORDER WITHIN THE 960 BITS.  This packs column 1 into
-   the first twelve bits of the first word, column 2 into the next
-   twelve, and so on to column 80 in the last twelve bits of the
-   fifteenth word, with no padding (80 x 12 = 960 = 15 x 64 exactly).
-   Also not sourced.
+1. BIT ORDER WITHIN A COLUMN: 12, 11, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 --
+   straight down the card, the 12 row FIRST and genuinely the most
+   significant, because the figure's DATA WORD band runs word bit 0
+   to 63 left to right.  No zone/digit split, no reordering.
 
-Both are answered by `docs/R23-9702_7503_Card_Rdr_7614_Rdr_Ctl_CE_1961
-.pdf`, the Customer Engineering manual for this exact pair of units,
-which is in this repository and whose Figure 4.5-1 ("Communication
-Lines", printed p.28) `docs/exchange_and_io.md` 3.13 already cites for
-the channel interface.  CHANGE THE TWO CONSTANTS BELOW WHEN IT IS
-READ; everything else in this file is independent of them.
+2. COLUMN ORDER: column 1 first, columns ascending.  A COLUMN
+   STRADDLES A BYTE BOUNDARY, at one and a half bytes each: column 1
+   is byte 1 plus the top half of byte 2, column 2 is the bottom half
+   of byte 2 plus byte 3, so two columns are three bytes and six
+   columns are nine.  Packing the twelve-bit columns end to end, as
+   below, produces exactly that.  The figure fills only columns 1-6,
+   but printed p.37 and p.64 independently pin byte 118 as the first
+   byte of card column 79, which makes the mapping uniform across all
+   eighty.
 
-Note also that a real 7503 reads a card ROW BY ROW, not column by
-column -- eighty punches at a time, twelve times -- so somewhere in
-the 7614 there is a transposition.  Where that happens does not change
-what the Exchange sees, which is what this file produces, but it does
-change what an FPGA model of the 7614 has to do.
+THE INTERFACE MOVES EIGHT-BIT BYTES, NOT TWELVE-BIT ONES, and that is
+worth keeping straight.  Printed p.19: "A block of data (the data in
+one punched card) is transferred to the exchange in 120 eight-bit
+bytes with an associated parity bit for each data byte", over eight
+parallel lines plus a ninth for parity.  The twelve-bit column is
+STRAP's unit -- C28-6129's `(CC*)` entry mode -- not the channel's.
+120 x 8 = 960 = 15 x 64 either way.
+
+>>> AND "15 WORDS" IS NON-ECC MODE ONLY <<<  Printed p.64: in ECC
+mode "six consecutive card columns define one data word ... The ECC
+card contains a maximum of 13 data words in card columns 1 to 78.
+Columns 79 and 80 are not used."  Thirteen words, not fifteen, and
+two columns thrown away.  This file punches the non-ECC layout; an
+ECC deck is a different shape and is not implemented.
+
+---------------------------------------------------------------------
+AND THE MANUAL SAYS WHY THERE IS NO CARD CODE IN IT
+---------------------------------------------------------------------
+Printed p.21: "The data punched in the IBM card used with the 7030
+System is in a binary form.  Each card punch position is a possible
+data bit, with a punched hole representing the data bit."
+
+**The 7503/7614 does no character translation at all.**  There is no
+card-code table anywhere in its 86 pages, by design, and that is the
+answer to why C28-6129 names `(CC*)` and tabulates nothing: the
+punch-to-character mapping is a property of the KEYPUNCH and the
+convention, never of the 7030.  So deriving it from the 48 Character
+Set grid above is not a workaround -- it is the only place a 7030
+document could put it.
+
+A REAL 7503 READS ROW BY ROW AND TRANSMITS COLUMN BY COLUMN.  Printed
+p.21, verbatim: "Although the card is read in rows (starting from the
+9 row through the 12 row), the data are transmitted in column to the
+exchange."  The transposition is not logic -- printed p.36: "the
+buffer is an 80 x 12 matrix", loaded eighty bits per row pulse and
+read out through a twelve-way column ring crossed with a ten-way zone
+ring, with the row drivers deliberately scrambled across the core
+planes ("The apparent indiscriminate assignment of the row drivers to
+the core planes results from an expedient core array wiring format").
+That changes nothing about what the Exchange sees, which is what this
+file produces; it is most of what an FPGA model of the 7614 has to
+contain.
 """
 import sys
 
 from charsets import A as BCD_48
 
-# See "TWO THINGS HERE ARE ASSUMPTIONS" above.
+# R23-9702 printed p.21, Figure 4.3-1; see the docstring.
 ROW_ORDER = (12, 11, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9)
 COLUMNS = 80
 WORDS_PER_CARD = COLUMNS * 12 // 64        # 15, exactly, no padding

@@ -3593,12 +3593,18 @@ function ActionValue#(IoOutcome)
               ioStart = tagged Valid IoXfer {
                 ch: chAddr, isWrite: (base == 3'b001),
                 memAddr: cw0.dataAddr,
-                // Reader/printer always restart at device index 0
-                // (StretchIO.bsv has no persistent position for
-                // either). Tape instead continues from wherever the
-                // last transfer or CTL REWIND/BACKSPACE BLOCK left
-                // it -- see StretchIO.bsv "TAPE POSITION".
-                devIdx: tapeCh ? io.tapePos() : 0,
+                // THE TAPE AND THE READER BOTH CONTINUE; THE
+                // PRINTER RESTARTS.  A tape's head stays where the
+                // last operation left it (StretchIO.bsv "TAPE
+                // POSITION") and a card reader FEEDS -- the 7503
+                // pulls the next card from the hopper, so two
+                // successive READs must return successive cards, not
+                // the same card twice (StretchIO.bsv "CARD FEED").
+                // The printer has no position because this model has
+                // no record structure for a printed line.
+                devIdx: tapeCh   ? io.tapePos()
+                      : readerCh ? zeroExtend(io.readerPos())
+                      : 0,
                 remaining: rem0, suppressEop: seop, untilMark: False,
                 // SKIP (p.107) only has meaning on READ -- "on writing,
                 // the flag is meaningless and is ignored" -- so it's

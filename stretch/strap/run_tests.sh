@@ -6727,6 +6727,40 @@ run "XW refill" ./run_program.sh programs/xw_refill.strap StretchXwRefillTb \
 # StretchIO.bsv). Not a Reference Manual worked example -- this
 # project's first purpose-written program for a feature the manual
 # doesn't happen to walk through an instance of.
+run "PUNCHED CARDS: an ASCII deck read on the IBM 7503" ./run_card_test.sh StretchCardTb
+# SIMH-STYLE IN, PUNCHES OUT.  strap/cards.py turns a line of text into
+# the 960 bits a real card presents -- 80 columns of 12 punch rows,
+# fifteen 64-bit words exactly -- and programs/card_reader.strap does
+# two ordinary RDs against channel 32 and knows nothing about any of
+# it.  Every expectation is computed from the deck text, so a pass
+# means the words the machine read ARE the words that line punches to.
+#
+# THE LAYOUT IS SOURCED, not assumed.  R23-9702, the 7503/7614 CE
+# manual, Figure 4.3-1 "Data Bit Relation -- Card to Data Word",
+# printed p.21, all 72 filled cells read at 600 dpi: the twelve rows
+# run 12, 11, 0, 1-9 with the 12 row most significant, column 1 first,
+# and A COLUMN STRADDLES A BYTE BOUNDARY at one and a half bytes each.
+# Packing twelve-bit columns end to end produces exactly that.
+#
+# THE PUNCH PATTERNS ARE DERIVED, and the manual says why they have to
+# be.  Printed p.21: "The data punched in the IBM card used with the
+# 7030 System is in a binary form.  Each card punch position is a
+# possible data bit, with a punched hole representing the data bit."
+# The 7503/7614 does NO character translation -- there is no card-code
+# table in its 86 pages, by design -- so the punch-to-character map is
+# a property of the keypunch, never of the 7030.  cards.py derives it
+# from the 48 Character Set grid on RefMan printed p.166, whose four
+# columns ARE the four zone punches and whose sixteen rows ARE the
+# digit punches, and the result reproduces the standard IBM card code
+# at twenty-two spot checks.
+#
+# TWO CARDS, BECAUSE ONE WOULD HAVE PASSED.  Before this, every RD
+# restarted the reader at device index 0 and card 2 came back
+# bit-for-bit as card 1 -- a 32-word buffer, not a card reader.  A
+# 7503 FEEDS.  StretchIO.bsv "CARD FEED"; io_reader_printer.strap
+# passed throughout, because its second reader RD is SKIP-flagged and
+# never reached a check.
+
 run "Input-Output (reader/printer)" ./run_io_test.sh StretchIoReaderPrinterTb
 
 # -- 7. Simulated tape drive (StretchIO.bsv, channel 34): RD/W/CCW plus

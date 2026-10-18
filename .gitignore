@@ -7,6 +7,11 @@ simbuild/
 # before this line existed, and a single rebuild churns 95,000 lines
 # of generated C++.
 simbuild-*/
+# ...and the matching -bdir.  run_ipl_file_test.sh and run_mcp_boot.sh
+# keep a SEPARATE build directory because the two builds differ only
+# by -D HOST_TAPE and bsc's .bo files carry no record of that.  Two
+# .sched files reached a commit before this line existed.
+build-*/
 *.bo
 *.ba
 *_sim

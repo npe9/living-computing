@@ -563,8 +563,15 @@ module mkStretchCore(StretchCore);
         if (x.isWrite) begin
           Word64 v <- st.readWordResp();
           ioDev.writePrinterWord(di, v);
-        end else if (!x.skip)
-          st.writeWord(x.memAddr, ioDev.readerWord(di));
+        end else begin
+          if (!x.skip)
+            st.writeWord(x.memAddr, ioDev.readerWord(di));
+          // THE CARD FEEDS whether or not the word was stored: SKIP
+          // suppresses the core-storage write, not the device's own
+          // motion, which is exactly the rule the tape branch above
+          // already follows.  StretchIO.bsv "CARD FEED".
+          ioDev.setReaderPos(truncate(x.devIdx + 1));
+        end
       end
       // else: SKIP flag set on a READ (p.107) -- the device cursor
       // and memory address still advance below exactly as if the

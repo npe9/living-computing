@@ -87,9 +87,36 @@
 // material" (p.121) -- this is implemented, not just documented, since
 // it costs nothing extra given the FSM already tracks a device index.
 //
-// TAPE POSITION: unlike the reader and printer, where every RD/W
-// starts over at device index 0 (StretchExecute.bsv's IoOp case always
-// sets `devIdx: 0` for those two), a real tape's read/write head stays
+// CARD FEED, added 2026-10-18, and it is the same argument as TAPE
+// POSITION below applied to the one other device it is true of.
+//
+// A CARD READER FEEDS.  The 7503 pulls a card from the hopper, reads
+// it, and stacks it; the next READ gets the NEXT card.  Until this
+// register existed every RD restarted the reader at device index 0,
+// so the machine read the same card forever -- which makes it a
+// 32-word read-only buffer, not a card reader.
+//
+// MEASURED, not reasoned about.  strap/programs/card_reader.strap
+// reads two cards and checks them separately, precisely because a
+// reader that returned the same card twice would pass a one-card
+// test; before this, card 2 came back bit-for-bit as card 1.
+//
+// THE PRINTER IS DELIBERATELY NOT GIVEN ONE.  A 1403-2 does advance
+// its paper, but a line is a RECORD preceded by a carriage control
+// field (docs/exchange_and_io.md 3.6) and this model has no record
+// structure for the printer at all -- giving it a bare position
+// would model line advance without modelling what a line IS.  The
+// reader needs no record structure for the feed to be right, because
+// a card IS its fixed 15 words.
+//
+// Hopper-empty is the End Exception the FSM already raises when
+// devIdx reaches capacity, which is also what the real unit does:
+// R23-9702 printed p.28's Figure 4.5-1 puts hopper-empty and
+// stacker-full on the single End Exception line.
+//
+// TAPE POSITION: unlike the printer, where every W starts over at
+// device index 0 (StretchExecute.bsv's IoOp case sets `devIdx: 0`
+// for it), a real tape's read/write head stays
 // wherever the last operation left it -- "operation of Tape under
 // Computer Control" (p.133) describes reading, writing, spacing, and
 // backspacing as all acting relative to the tape's current position,
@@ -210,6 +237,9 @@ import StretchTapeSource::*;  // TapeSource, mkTapeSourceVector, and the
 
 typedef 32 DeviceWords;
 typedef Bit#(TLog#(DeviceWords)) DeviceIndex;
+// One bit wider, room for "one past the end", the same idiom TapePos
+// uses against TapeIndex -- see "CARD FEED".
+typedef Bit#(TAdd#(TLog#(DeviceWords), 1)) DevicePos;
 
 // TapeWords / TapeIndex / TapePos are no longer defined here: they
 // moved to StretchTapeSource.bsv along with the TapeSource interface,
@@ -300,6 +330,10 @@ interface StretchIO;
   method TapePos tapePos();
   method Action setTapePos(TapePos p);
 
+  // THE CARD READER FEEDS.  See "CARD FEED" below.
+  method DevicePos readerPos();
+  method Action setReaderPos(DevicePos p);
+
   // Per-channel control word (Figure 35): what COPY CONTROL WORD reads
   // back, and what a RD/W/REL/CTL updates. This is the EXCHANGE's own
   // copy -- distinct from the control word an instruction reads out of
@@ -333,6 +367,7 @@ module mkStretchIO(StretchIO);
   TapeSource                         tape       <- mkTapeSourceVector;
 `endif
   Reg#(TapePos) tapePosReg <- mkReg(0);
+  Reg#(DevicePos) readerPosReg <- mkReg(0);
 
   // unitReady is fixed at 1 (installed) for all three simulated
   // devices; there is no not-ready/busy state to model without real
@@ -377,6 +412,11 @@ module mkStretchIO(StretchIO);
   endmethod
 
   method TapeIndex tapeCapacity() = tape.capacity();
+
+  method DevicePos readerPos() = readerPosReg;
+  method Action setReaderPos(DevicePos p);
+    readerPosReg <= p;
+  endmethod
 
   method TapePos tapePos() = tapePosReg;
   method Action setTapePos(TapePos p);

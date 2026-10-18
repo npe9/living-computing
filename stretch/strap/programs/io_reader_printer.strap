@@ -1,3 +1,14 @@
+! THE READER FEEDS NOW, 2026-10-18, AND THIS TEST DOES NOT NOTICE.
+! Until then every RD restarted the card reader at device index 0, so
+! the machine read the same card forever; StretchIO.bsv's "CARD FEED"
+! says why that is wrong and what replaced it.  This program still
+! passes unchanged, and the reason is worth knowing rather than being
+! glad about: its SECOND read of the reader is the SKIP-flagged one,
+! which by design leaves core storage untouched, so where the reader
+! was positioned never reached a check.  THE OLD BEHAVIOUR WAS NEVER
+! TESTED HERE.  programs/card_reader.strap is the program that does
+! test it, by reading two different cards and checking both.
+!
 ! io_reader_printer.strap -- exercises the simulated Input-Output
 ! subsystem (StretchIO.bsv) end to end against StretchExecute.bsv's
 ! new IoOp case: RD (read from the simulated card reader), W (write to
