@@ -19,6 +19,7 @@ from strap_asm import assemble, AssemblerError
 
 def generate(module_name, prog, checks, step_cap=30000, reader_image=None,
              printer_checks=None, tape_image=None, tape_checks=None,
+             console_checks=None,
              pc_check=None, cycle_bound=None, ipl=False):
     """checks: list of (label:str, word_addr_expr:str, expected:int).
 
@@ -27,6 +28,10 @@ def generate(module_name, prog, checks, step_cap=30000, reader_image=None,
     runs, via core.io.loadReaderWord, one write per phase exactly like
     the program-word loader below (see StretchIO.bsv's file header for
     why this reuses that pattern instead of real file I/O).
+
+    console_checks: optional list of (label:str, device_index:int,
+    expected:int) -- the same against core.io.readConsoleWord, for what
+    a program WROTE TO THE OPERATOR'S CONSOLE (StretchIO.chanConsole).
 
     printer_checks: optional list of (label:str, device_index:int,
     expected:int) -- checked the same way as `checks` but against
@@ -48,6 +53,7 @@ def generate(module_name, prog, checks, step_cap=30000, reader_image=None,
     words = sorted(prog.words.items())
     reader_image = reader_image or []
     printer_checks = printer_checks or []
+    console_checks = console_checks or []
     tape_image = tape_image or []
     tape_checks = tape_checks or []
     if prog.end_pc is None:
@@ -180,7 +186,18 @@ def generate(module_name, prog, checks, step_cap=30000, reader_image=None,
         lines.append("  endrule")
         lines.append("")
 
-    tcheck_phase0 = pcheck_phase0 + len(printer_checks)
+    # CONSOLE CHECKS -- what MCP printed.  Same shape as the printer's
+    # above, against core.io.readConsoleWord, because the console's
+    # paper is a device image and not a word of storage.
+    ccheck_phase0 = pcheck_phase0 + len(printer_checks)
+    for i, (label, dev_idx, expected) in enumerate(console_checks):
+        lines.append(f"  rule ccheck{i} (phase == {ccheck_phase0 + i});")
+        lines.append(f'    check("{label}", core.io.readConsoleWord({dev_idx}), 64\'h{expected & ((1<<64)-1):016x});')
+        lines.append(f"    phase <= {ccheck_phase0 + i + 1};")
+        lines.append("  endrule")
+        lines.append("")
+
+    tcheck_phase0 = ccheck_phase0 + len(console_checks)
     for i, (label, tape_idx, expected) in enumerate(tape_checks):
         lines.append(f"  rule tcheck{i} (phase == {tcheck_phase0 + i});")
         lines.append(f'    check("{label}", core.io.readTapeWord({tape_idx}), 64\'h{expected & ((1<<64)-1):016x});')

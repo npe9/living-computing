@@ -3499,6 +3499,35 @@ function ActionValue#(IoOutcome)
       Bool printerCh = (kind == DevPrinter);
       Bool tapeCh    = (kind == DevTape);
       Bool diskCh    = (kind == DevDisk);
+      Bool consoleCh = (kind == DevConsole);
+      // "AN INSTRUCTION IS RECEIVED THAT THE SELECTED UNIT IS NOT
+      // DESIGNED TO PERFORM" -- Reference Manual printed p.113's own
+      // words for Exchange Program Check, and the shape every arm
+      // below uses for a control function the addressed unit does not
+      // have.  EPGK IS NOT OP: Operation Code Invalid is about the
+      // instruction's OPCODE, and a CONTROL whose FUNCTION code the
+      // unit does not implement has a perfectly valid opcode.  This
+      // model used to conflate them, which mattered the moment MCP's
+      // ERROR ROUTINE started running: printed p.5 line 28 issues
+      // "CTL(SEOP),0.0($X1),0.0  -ILLEGAL IO CONTROL CODE"
+      // DELIBERATELY, to find out which channels answer at all, and
+      // then tests CBJ and UNRJ.  A machine that answers OP tells it
+      // nothing.
+      function Action programCheck();
+        action
+          ControlWord cw = io.readChanCW(chAddr);
+          cw.epgk = 1;
+          if (!seop) cw.eop = 1;
+          io.writeChanCW(chAddr, cw);
+        endaction
+      endfunction
+      function Action acceptControl();
+        action
+          ControlWord cw = io.readChanCW(chAddr);
+          if (!seop) cw.eop = 1;
+          io.writeChanCW(chAddr, cw);
+        endaction
+      endfunction
 
       if (kind == DevNone) begin
         // Unit Not Ready Reject (p.112): none of this model's
@@ -3514,13 +3543,35 @@ function ActionValue#(IoOutcome)
         // -- a documented gap, not a silent one.
         WordAddr effA2 = effAddr18(st, io_.addr2, io_.i2);
         case (base)
-          3'b010: begin // CTL (Control) -- only implemented against
-                         // the tape channel (StretchIO.bsv "CONTROL
-                         // FUNCTIONS"); reader/printer CTL and every
-                         // tape function code this model doesn't
-                         // implement fall through to OP-invalid.
-            if (!tapeCh) begin
-              ind = setOpInvalid(ind);
+          3'b010: begin // CTL (Control)
+            if (consoleCh) begin
+              // THE OPERATOR'S CONSOLE HAS FOUR CONTROL FUNCTIONS and
+              // Reference Manual printed p.150 lists all of them:
+              //   016  Reserved Light Off
+              //   017  Reserved Light On
+              //   116  Check Light On
+              //   177  "Sound Gong.  This function causes a clearly
+              //        audible gong to sound a single stroke."
+              // None of the four has an observable effect in a model
+              // with no lights and no gong, so all four are ACCEPTED
+              // and nothing else happens.  THE ACCEPTANCE IS THE
+              // POINT: MCP's ERROR ROUTINE identifies the console by
+              // issuing GONG and checking that EPGK did NOT come on
+              // (printed p.5 lines 45-51, "IF CONSOLE * NO EPGK"), so
+              // "this unit performs 177" IS the console's signature.
+              //
+              // 177 ON A 729 IV IS BACKSPACE FILE -- same octal,
+              // different device -- which is what a per-device
+              // control table means and why this arm dispatches on
+              // the unit before the code.
+              case (effA2)
+                18'o16, 18'o17, 18'o116, 18'o177: acceptControl();
+                default: programCheck();
+              endcase
+            end else if (!tapeCh) begin
+              // An installed unit with no control function this model
+              // knows.  p.113's EPGK, not OP -- see programCheck.
+              programCheck();
             end else begin
               // p.111: CONTROL's right effective address carries a
               // raw function code, NOT a core-storage word address
@@ -3588,7 +3639,7 @@ function ActionValue#(IoOutcome)
                     suppressEop: seop, skip: False, untilMark: True,
                     zeroFill: False };
                 end
-                default: ind = setOpInvalid(ind); // SPACE BLOCK,
+                default: programCheck();          // SPACE BLOCK,
                                                      // WRITE TAPE MARK,
                                                      // BACKSPACE FILE,
                                                      // density/ECC/
@@ -3604,14 +3655,27 @@ function ActionValue#(IoOutcome)
           end
           3'b011: begin // LOC (Locate)
             if (!diskCh) begin
-              // ON THE EXCHANGE, LOCATE IS SELECT UNIT (C22-6531
-              // Appendix A printed p.57 lists them as one operation:
-              // "E LOC Locate (same as Select Unit)"), and this model
-              // does not implement it.  MCP's ERROR ROUTINE uses it to
-              // ask each channel what kind of device it is (printed
-              // p.5 line 36); see tests/audit_opcode_coverage.py's
-              // LOCSEOP note.  Unchanged by the disk work.
-              ind = setOpInvalid(ind);
+              // ON THE EXCHANGE, LOCATE IS SELECT UNIT -- C22-6531
+              // Appendix A printed p.57 lists them as one operation,
+              // "E LOC Locate (same as Select Unit)".
+              //
+              // IT SELECTS ONE UNIT OF A CONTROL THAT HAS SEVERAL,
+              // and in this model only the tape has several (the 7613
+              // carries up to eight 729 IVs, one active at a time).
+              // So a tape channel ACCEPTS it and every other unit
+              // program-checks, which is precisely the test MCP's
+              // ERROR ROUTINE makes: printed p.5 line 36 is
+              // "LOC(SEOP),0.0($X1),0.0  -TEST IF TAPE CHANNEL" and
+              // line 42 branches on EPGK being clear with the comment
+              // "-TEST IF TAPE UNIT".  **The absence of a program
+              // check is how MCP recognises a tape.**
+              //
+              // WHICH unit gets selected is not modelled, because
+              // this model has one unit per channel; the right
+              // effective address is ignored here rather than
+              // decoded.  Named as a gap in bsv/README.md.
+              if (tapeCh) acceptControl();
+              else programCheck();
             end else begin
               // ON A DISK, LOCATE IS A SEEK, and it is the whole of
               // disk addressing.  Reference Manual printed p.160:
@@ -3655,9 +3719,24 @@ function ActionValue#(IoOutcome)
             if (protViolates(st, effA2)) ind = setBit(ind, ind_DS, 1);
             else st.writeWord(effA2, packControlWord(io.readChanCW(chAddr)));
           3'b000, 3'b001: begin // RD, W
+            // THE CONSOLE IS WRITE-ONLY HERE, AND THAT IS A KNOWN
+            // DEVIATION rather than a modelling choice.  Reference
+            // Manual printed p.150: "A READ instruction received by
+            // the console with the keyboard not enabled is
+            // automatically terminated when the three words scanned
+            // from the switches have been sent to the exchange" --
+            // the console switches are three words and a READ returns
+            // them, which is how MCP's IPL takes the time and date
+            // the operator sets in binary keys 0-23 and 32-55
+            // (C22-6678-1 printed p.29).  Nothing on the path that
+            // runs today reads them, so the three-word switch image
+            // is not built and a READ here program-checks instead.
+            // When the IPL needs the switches this is the line to
+            // change, and the capacity in StretchCore's rl_io is 3.
             Bool wrongUnit = (base == 3'b000)
               ? (!readerCh && !tapeCh && !diskCh)   // RD: reader, tape, disk
-              : (!printerCh && !tapeCh && !diskCh); // W:  printer, tape, disk
+              : (!printerCh && !tapeCh && !diskCh
+                 && !consoleCh);                    // W: + the console
             if (wrongUnit) begin
               // Exchange Program Check (p.113): "an instruction is
               // received that the selected unit is not designed to
@@ -3737,10 +3816,18 @@ function ActionValue#(IoOutcome)
                 // ARC the register names -- arc * 512 -- and not
                 // wherever the previous transfer stopped, which is the
                 // tape's rule and not this one.
-                devIdx: tapeCh   ? io.tapePos()
-                      : readerCh ? zeroExtend(io.readerPos())
-                      : diskCh   ? (zeroExtend(io.arcAddr())
-                                    * fromInteger(arcWords))
+                // THE CONSOLE PRINTER KEEPS ITS PLACE, like the
+                // card reader and unlike the printer stand-in: a
+                // console does not go back to the top of the page for
+                // every message, and MCP's error routine writes one
+                // message as a CHAIN of control words (printed p.8's
+                // X MS CW1 then X MSG CW), so consecutive writes that
+                // restarted would print on top of each other.
+                devIdx: tapeCh    ? io.tapePos()
+                      : readerCh  ? zeroExtend(io.readerPos())
+                      : consoleCh ? zeroExtend(io.consolePos())
+                      : diskCh    ? (zeroExtend(io.arcAddr())
+                                     * fromInteger(arcWords))
                       : 0,
                 remaining: rem0, suppressEop: seop, untilMark: False,
                 zeroFill: False,

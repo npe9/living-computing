@@ -271,8 +271,37 @@ def main():
         # console), so a machine with no console makes MCP walk the
         # whole exchange and be refused.  AD is the same walk reaching
         # channels with nothing at them.
+        # XCZ IS GONE AND THAT IS THE HEADLINE.  It was set because
+        # the channel walk EXHAUSTED its count of 32 without finding
+        # a console: printed p.5 line 54's "CBH,$X1,X1AERR  -NOT DONE
+        # TESTING" counted down to zero.  Now the walk STOPS at
+        # channel 35, so the count is still positive -- which is the
+        # arithmetic evidence that **MCP found the console**, beside
+        # the message it then printed.
+        #
+        # OP IS M+MG, and it is now isolated rather than guessed:
+        # printed p.5 lines 15 and 17 are "M+MG(BU,48,8)" and
+        # "M+MG(BU,8,8)", the two adds that fill the error address
+        # into the message, and a four-line scratch deck reproduces
+        # the OP on either of them alone.  The model's VFL arm
+        # implements L, ST, +, M+, K and M+1; **the MG forms are not
+        # among them**, which is why the printed message still says
+        # "000000.0".  tests/audit_opcode_coverage.py cannot see this
+        # -- M+MG is used by a deck and is not in its UNIMPLEMENTED
+        # set, so the ratchet is satisfied by an operation that sets
+        # Operation Code Invalid every time it runs.
+        #
+        # AD is READ, not measured: printed p.15 line 20 takes the
+        # communication region's size out of the PROSA record with
+        # "LC,$0,X BUFER+.32($9)" and line 21 transmits that many
+        # words.  The size comes from strap/prosa.py, which chooses
+        # the dictionary and leaves everything else as filler, so the
+        # count is arbitrary and the transmit runs until it leaves
+        # installed core -- the same shape as the AD this test used to
+        # report before the dictionary existed at all.  A fixture
+        # artifact; it goes away when the record is real.
         ("mcp_indicators_word11", str(IND_WORD),
-         _ind("RGZ") | _ind("XE") | _ind("XVGZ") | _ind("XCZ")
+         _ind("RGZ") | _ind("XE") | _ind("XVGZ")
          | _ind("AD") | _ind("OP")),
 
         # >>> THE MOVE ITSELF, AND IT IS THE POINT OF THE FIXTURE <<<
@@ -340,7 +369,58 @@ def main():
          prog.words[sym("XBSEND") - 1]),
     ]
 
-    print(generate(module_name, prog, checks,
+    # ===============================================================
+    # >>> WHAT MCP PRINTED ON THE OPERATOR'S CONSOLE <<<
+    # ===============================================================
+    # Decoded with strap/charsets.py's IQS table (Reference Manual
+    # printed p.166), 0o375 being the CARRIAGE RETURN control code and
+    # 0o376 END OF MESSAGE -- both named by the message decks
+    # themselves (decks/mcp_bootstrap_p9_p12.strap and p13):
+    #
+    #     <CR>000000.0 NO IOCD CARD DETECTED<EOM>
+    #
+    # MCP walked the basic exchange from channel 32 (printed p.5 line
+    # 21, "ENTER FIRST CHANNEL OF BASIC EXCHANGE"), rejected the card
+    # reader and the printer because GONG program-checks on them,
+    # rejected the tape because LOCATE does NOT (printed p.5 line 42,
+    # "-TEST IF TAPE UNIT"), found the console at 35 because GONG
+    # there does not program-check (line 51, "-IF CONSOLE * NO EPGK"),
+    # and wrote the message with "W(SEOP),0.0($X1),X MS CW1".
+    #
+    # WORDS 0-2 ARE ZERO AND THAT IS THE MESSAGE'S OWN HEADER:
+    # printed p.8 line 34 is "X MS CW1  CW,X ZEROS,3,..." -- three
+    # words from X ZEROS -- chained to printed p.8 line 35's
+    # "X MSG CW  CW,0,10,0", whose data address printed p.5 line 18
+    # fills in with SVA.
+    #
+    # TWO THINGS IN THIS OUTPUT ARE NOT RIGHT YET, and they are
+    # asserted as they are rather than quietly trimmed:
+    #
+    #   THE ERROR ADDRESS SLOT IS STILL "000000.0".  That string is
+    #   the message's own placeholder -- the decks write
+    #   "(IQS*)DD(BU,64,8),000000.0*  -SLOT FOR ERROR ADDRESS" -- and
+    #   printed p.5 lines 12-17 are supposed to fill it, breaking
+    #   X ERR AD into eight-bit bytes with LF and adding them in with
+    #   two M+MG. X ERR AD is 000662.40 and the slot prints zeros, so
+    #   something in that four-instruction sequence is not doing what
+    #   the listing means. OPEN, and the first thing to chase next.
+    #
+    #   THE WRITE RUNS PAST THE END-OF-MESSAGE CODE.  The control
+    #   word counts ten words and the message is four, so words 7-12
+    #   are whatever follows in the message table -- here the start of
+    #   "WRONG EQUIPMENT CODE". A real 7152 presumably stops at 0o376;
+    #   Reference Manual printed p.150 says the console has control
+    #   functions "initiated during WRITE instructions" but does not
+    #   list them, so the model prints all ten and this is a gap with
+    #   no source yet rather than a behaviour invented to fit.
+    console_checks = [
+        ("console_msg_w3", 3, 0xfd60606060606074),  # <CR>000000.
+        ("console_msg_w4", 4, 0x60004749003d4931),  # 0 NO IOC
+        ("console_msg_w5", 5, 0x3300312d4f330033),  # D CARD D
+        ("console_msg_w6", 6, 0x35533531533533fe),  # ETECTED<EOM>
+    ]
+
+    print(generate(module_name, prog, checks, console_checks=console_checks,
                    # >>> IT STOPS WHERE IBM TOLD IT TO <<<
                    # 239 is half-word 239 = 000167.40, and that is
                    # **printed p.6 line 1, "BD,$  -LOOP"** -- the last

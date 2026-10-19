@@ -681,7 +681,17 @@ module mkStretchCore(StretchCore);
         DeviceIndex di = truncate(x.devIdx); // safe: confirmed < DeviceWords above
         if (x.isWrite) begin
           Word64 v <- st.readWordResp();
-          ioDev.writePrinterWord(di, v);
+          // THE CONSOLE PRINTER AND THE PRINTER STAND-IN DIFFER IN
+          // ONE THING: the console keeps its place across
+          // instructions (StretchIO.bsv's consolePos), because a
+          // console does not restart at the top of the page for each
+          // message and MCP writes one message as a chain of control
+          // words.
+          if (kind == DevConsole) begin
+            ioDev.writeConsoleWord(di, v);
+            ioDev.setConsolePos(truncate(x.devIdx + 1));
+          end else
+            ioDev.writePrinterWord(di, v);
         end else begin
           if (!x.skip)
             st.writeWord(x.memAddr, ioDev.readerWord(di));

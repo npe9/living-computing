@@ -289,17 +289,34 @@ WordAddr chanTape    = 34;
 // assumes before it has read any cards.
 WordAddr chanDisk    = 0;
 
+// THE OPERATOR'S CONSOLE, IBM 7152 + 7623.  Reference Manual printed
+// p.150 is its whole specification and it is one page: four CONTROL
+// function codes, a WRITE that prints, a READ that returns "the three
+// words scanned from the console switches", and a byte weight of zero
+// with a word weight of 3.
+//
+// WHY 35 AND WHY THAT IS NOT ARBITRARY.  MCP's ERROR ROUTINE walks
+// the basic exchange looking for the console, and printed p.5 line 21
+// says where it starts: "LVI,$X1,(8)20.0  -NO* ENTER FIRST CHANNEL OF
+// BASIC EXCHANGE", which is channel 32, and line 23 gives it 32
+// channels to try.  So the console has to be at 32 or above for MCP
+// to find it at all, and 35 is the first free one after the reader,
+// the printer and the tape.
+WordAddr chanConsole = 35;
+
 // Which (if any) of this model's devices a channel address names. See
 // "DEVICE GENERALIZATION" above -- this is what every future device
 // should extend instead of adding another hardcoded predicate.
-typedef enum { DevNone, DevReader, DevPrinter, DevTape, DevDisk }
+typedef enum { DevNone, DevReader, DevPrinter, DevTape, DevDisk,
+               DevConsole }
   DeviceKind deriving (Bits, Eq, FShow);
 
 function DeviceKind kindOf(WordAddr ch) =
   (ch == chanReader)  ? DevReader  :
   (ch == chanPrinter) ? DevPrinter :
   (ch == chanTape)    ? DevTape    :
-  (ch == chanDisk)    ? DevDisk    : DevNone;
+  (ch == chanDisk)    ? DevDisk    :
+  (ch == chanConsole) ? DevConsole : DevNone;
 
 interface StretchIO;
   // Whether a channel address names one of this model's devices, and
@@ -402,6 +419,22 @@ interface StretchIO;
   method ArcAddr arcAddr();
   method Action setArcAddr(ArcAddr a);
 
+  // ---------------------------------------------------------------
+  // THE CONSOLE, chanConsole.  Reference Manual printed p.150.
+  //
+  // A WRITE prints, and like the card reader -- and unlike the
+  // printer stand-in -- it has a POSITION that persists across
+  // instructions, because a console printer does not restart at the
+  // top of the page for every message.  MCP's error routine writes
+  // its message as a chain of control words (printed p.8's X MS CW1
+  // and X MSG CW), so two WRITEs in a row have to land consecutively
+  // or the message comes out on top of itself.
+  // ---------------------------------------------------------------
+  method Action writeConsoleWord(DeviceIndex i, Word64 v);
+  method Word64 readConsoleWord(DeviceIndex i);   // testbench only
+  method DevicePos consolePos();
+  method Action setConsolePos(DevicePos p);
+
   // Per-channel control word (Figure 35): what COPY CONTROL WORD reads
   // back, and what a RD/W/REL/CTL updates. This is the EXCHANGE's own
   // copy -- distinct from the control word an instruction reads out of
@@ -446,6 +479,9 @@ module mkStretchIO(StretchIO);
   // anyway (printed p.15 line 26), so nothing observable depends on
   // the choice -- but something had to be chosen and this says so.
   Reg#(ArcAddr) arcReg     <- mkReg(0);
+  // The console printer's paper, and where the next character goes.
+  Vector#(DeviceWords, Reg#(Word64)) consoleImg <- replicateM(mkReg(0));
+  Reg#(DevicePos) consolePosReg <- mkReg(0);
 
   // unitReady is fixed at 1 (installed) for all three simulated
   // devices; there is no not-ready/busy state to model without real
@@ -461,6 +497,7 @@ module mkStretchIO(StretchIO);
   Reg#(ControlWord) printerCW <- mkReg(cwReset);
   Reg#(ControlWord) tapeCW    <- mkReg(cwReset);
   Reg#(ControlWord) diskCW    <- mkReg(cwReset);
+  Reg#(ControlWord) consoleCW <- mkReg(cwReset);
 
   method Bool isReader(WordAddr ch) = (kindOf(ch) == DevReader);
   method Bool isPrinter(WordAddr ch) = (kindOf(ch) == DevPrinter);
@@ -520,12 +557,22 @@ module mkStretchIO(StretchIO);
     arcReg <= a;
   endmethod
 
+  method Action writeConsoleWord(DeviceIndex i, Word64 v);
+    consoleImg[i] <= v;
+  endmethod
+  method Word64 readConsoleWord(DeviceIndex i) = consoleImg[i];
+  method DevicePos consolePos() = consolePosReg;
+  method Action setConsolePos(DevicePos p);
+    consolePosReg <= p;
+  endmethod
+
   method ControlWord readChanCW(WordAddr ch);
     case (kindOf(ch))
       DevReader:  return readerCW;
       DevPrinter: return printerCW;
       DevTape:    return tapeCW;
       DevDisk:    return diskCW;
+      DevConsole: return consoleCW;
       default:    return printerCW; // fallback for any uninstalled
                                      // channel; callers gate real use
                                      // with isReader/isPrinter/isTape
@@ -538,6 +585,7 @@ module mkStretchIO(StretchIO);
       DevPrinter: printerCW <= cw;
       DevTape:    tapeCW    <= cw;
       DevDisk:    diskCW    <= cw;
+      DevConsole: consoleCW <= cw;
       default:    noAction;
     endcase
   endmethod

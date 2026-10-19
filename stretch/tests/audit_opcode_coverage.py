@@ -202,6 +202,34 @@ ENCODING_ONLY = {
 #   RDSEOP/CTLSEOP -> ../decks/io_tape.strap, steps 10-11
 # The "reference, not discrimination" caveat still applies: this says
 # nothing is untouched, not that anything is well tested.
+# ---------------------------------------------------------------------
+# A BLIND SPOT THIS AUDIT HAS, FOUND 2026-10-19 AND NOT YET CLOSED
+# ---------------------------------------------------------------------
+# **M+MG IS USED BY A DECK, IS NOT IN UNIMPLEMENTED, AND SETS
+# OPERATION CODE INVALID EVERY TIME IT RUNS.**  The ratchet is
+# satisfied and the operation does not work.
+#
+# decks/mcp_bootstrap_p5_p6.strap lines 15 and 17 are
+# "M+MG(BU,48,8)" and "M+MG(BU,8,8)" -- the two adds that fill MCP's
+# error address into its console message -- and a four-line scratch
+# reproduces the OP on either alone.  StretchExecute's VFL arm
+# implements six codes (L, ST, +, M+, K, M+1); the MG forms, "+MG"
+# and "M+MG", are not among them and fall to the default.
+#
+# WHY THE AUDIT CANNOT SEE IT.  This file compares two sets: what the
+# assembler can EMIT and what some deck USES.  Neither says anything
+# about what the model EXECUTES.  UNIMPLEMENTED is a hand-kept list,
+# and an operation that is used by a deck never has to appear on it.
+# The ENCODING_ONLY category exists for exactly this case and is also
+# hand-kept, so it only catches the ones somebody noticed.
+#
+# WHAT WOULD CLOSE IT: a check that every operation a deck emits is
+# executed WITHOUT setting OP, which means running something rather
+# than reading source -- a different instrument from this one.  The
+# MCP boot section is the first place a real program exposed it, and
+# it did so only because that section asserts the indicator register
+# EXACTLY.  Recorded here rather than in a commit message because the
+# next person to trust this PASS should see it.
 UNEXERCISED = set()
 KNOWN_GAP = UNIMPLEMENTED | UNEXERCISED
 
