@@ -452,35 +452,42 @@ def main():
     #   second M+MG, which does NOT fit the same story -- it targets
     #   byte 8, the "." of a normal two-code message.
     #
-    #   WHAT IT ACTUALLY SAYS, as of 2026-10-19:
+    #   WHAT IT SAYS, as of 2026-10-19, AND EVERY DIGIT IS DOUBLED:
     #
-    #       w3 = 0xfd6021e06061a08f
-    #       w4 = 0x88004749003d4931
+    #       w3 = 0xfd606060606c6c78   <CR> 0 | 0 0 0 <+12> <+12> <.+4>
+    #       w4 = 0x68004749003d4931   <+8> _ N O _ I O C
     #
-    #   TWO THINGS ARE VISIBLY WRONG and they are separable.  Byte 7
-    #   of w3 was the "." (0x74) and it MOVED, so the 48-bit field
-    #   landed at bits 16-63 rather than 8-55 -- a placement question
-    #   about what X2 points at after p.5 line 14's "LV,$X2,.32($X2)"
-    #   and what "SKIPPING OVER CONTROL CODES" is skipping.  And the
-    #   bytes added are far larger than 7, so the accumulator did not
-    #   hold seven small numbers.  That is the LF question, and it
-    #   has a source.  Line 12 is "LF(BU,21,3)" with BYTE SIZE 3 and
-    #   its own comment is "-BREAK ADDRESS INTO EIGHT BIT BYTES", and
-    #   Reference Manual printed p.75, under "Byte Size", says the
-    #   connectives do exactly that: "If the byte size of the storage
-    #   operand is less than eight, each byte is converted into an
-    #   eight-bit byte before processing by the addition of high-order
-    #   zeros... Consequently, the result bytes always have a byte
-    #   size of eight."  Seven 3-bit storage bytes become seven 8-bit
-    #   accumulator bytes.  **The model's accumulator is a flat bit
-    #   vector and does no such thing**, which is why the bytes added
-    #   are the raw 21-bit address smeared across the field.
+    #   Bytes 2-7 and the first byte of w4 received 0, 0, 0, 12, 12,
+    #   4 and 8.  The address is octal 0006624 -- digits 0, 0, 0, 6,
+    #   6, 2, 4 -- so every one of them is exactly twice what it
+    #   should be.  That is what a one-bit misalignment does to a
+    #   field of small byte values, and it is attributable: printed
+    #   p.5 line 12's "LF(BU,21,3),X ERR AD,1" carries OFFSET 1 while
+    #   lines 15 and 17 consume the result at offsets 8 and 0, which
+    #   want the seven result bytes byte-aligned.
     #
-    #   TWO FAULTS, ONE RUN, and only one of them is the model's.
-    #   docs/NEXT.md carries both, plus the one thing that still does
-    #   not add up: LF's offset is 1, and seven eight-bit bytes with
-    #   their right end at bit 1 do not line up with the offsets of 8
-    #   and 0 that the two M+MG use.
+    #   THE OBVIOUS FIX IS WRONG AND THE SUITE PROVED IT.  Rounding
+    #   the connective offset down to a byte makes this message come
+    #   out perfect -- 0, 0, 0, 6, 6, 2, 4, measured -- and p.75 and
+    #   p.57 can both be read to support it.  It was built that way
+    #   and **fifty-six sections failed**: all of jb_af1c and the PAU
+    #   gates, because the floating-point diagnostic checks every
+    #   result with "CT0110(BU,60),ROS,4", a connective at offset 4.
+    #   The offset is bits.  What is left is a question about MCP's
+    #   four instructions, not about the model; docs/NEXT.md carries
+    #   it.
+    #
+    #   THE BYTES ARE EIGHT BITS WIDE AT ALL only because of printed
+    #   p.75's other rule.  Line 12's own comment is "-BREAK ADDRESS
+    #   INTO EIGHT BIT BYTES", and p.75 says "If the byte size of the
+    #   storage operand is less than eight, each byte is converted
+    #   into an eight-bit byte before processing by the addition of
+    #   high-order zeros... Consequently, the result bytes always
+    #   have a byte size of eight."  The model's connectives ignored
+    #   byte size entirely and worked on a flat bit field, so these
+    #   two words used to hold the raw 21-bit address smeared across
+    #   the slot (w3 came out 0xfd6021e06061a08f).  Built, with
+    #   injections, in decks/connective_byte_size.strap.
     #
     #   THE WRITE RUNS PAST THE END-OF-MESSAGE CODE.  The control
     #   word counts ten words and the message is four, so words 7-12
@@ -490,19 +497,17 @@ def main():
     #   functions "initiated during WRITE instructions" but does not
     #   list them, so the model prints all ten and this is a gap with
     #   no source yet rather than a behaviour invented to fit.
-    # WORDS 3 AND 4 ARE DELIBERATELY NOT CHECKED, and the reason is
-    # the standard the rest of this file is held to.  Every exact
-    # value here is attributable -- "AD is the tape being short",
-    # "OP was M+MG" -- and the current contents of those two words are
-    # not: they are the output of a bug whose cause is named above but
-    # not yet settled.  Freezing them would mean that fixing LF
-    # changes the expectation again with nothing to say the new value
-    # is right.  The DERIVED target is in the comment above; make it a
-    # check when it can be computed rather than copied.
-    #
-    # Words 5 and 6 are the message's literal text, which is correct
-    # and has been since the console was built, so they stay.
+    # WORDS 3 AND 4 ARE CHECKED AGAIN, because they are attributable
+    # again.  They were dropped for one commit while the address came
+    # out as noise; every exact value in this file has to be a
+    # statement about something, and the output of an unexplained bug
+    # is not one.  Now every byte is accounted for: the seven octal
+    # digits of X ERR AD, each exactly doubled by LF's offset of 1,
+    # landing one byte late because X MS 16C has no RED control code.
+    # Both of those are explained above and neither is the model's.
     console_checks = [
+        ("console_msg_w3", 3, 0xfd606060606c6c78),  # <CR>0 000 +12+12 .+4
+        ("console_msg_w4", 4, 0x68004749003d4931),  # +8 NO IOC
         ("console_msg_w5", 5, 0x3300312d4f330033),  # D CARD D
         ("console_msg_w6", 6, 0x35533531533533fe),  # ETECTED<EOM>
     ]

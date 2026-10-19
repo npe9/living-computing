@@ -4935,9 +4935,156 @@ for `M+`. Corrected.
 suite can reach it, because the VFL path of `strap_asm.py` has no
 spelling for the negative sign modifier at all -- see the next item.
 
-## TWO OPEN ITEMS LEFT BY `M+MG`, both with a named source to read
+## THE CONNECTIVES LEARN BYTE SIZE -- and a good inference gets killed, 2026-10-19
 
-### (a) The VFL negative sign modifier has no spelling
+**HALF CLOSED.** The connectives now do printed p.75's byte-size
+expansion, which is what `LF(BU,21,3)` needs and what the model never
+had. The console message receives seven octal digits where it used
+to receive a smear -- but each one is exactly DOUBLED, and the
+obvious fix for that turned out to be refuted by fifty-six sections
+of IBM's own floating-point diagnostic. See below; the remaining
+fault is in the reading of MCP's four instructions, not in the
+model.
+
+It took two things, both on Reference Manual printed p.75.
+
+### The connectives are not a flat bit field
+
+> "The connective operations process data in eight-bit bytes. In
+> these operations, the byte size specified in the instruction
+> designates the number of bits used to represent each character or
+> symbol in the storage field. **If the byte size of the storage
+> operand is less than eight, each byte is converted into an
+> eight-bit byte before processing by the addition of high-order
+> zeros.** The accumulator operand is assumed to have a byte size of
+> eight. ... **Consequently, the result bytes always have a byte size
+> of eight.**"
+
+and, facing it:
+
+> "In contrast to the integer arithmetic operations, the accumulator
+> operand has a definite length; it is composed of as many bytes as
+> there are in the addressed storage field."
+
+So `LF(BU,21,3)` is seven bytes and **fifty-six** bits of accumulator,
+not twenty-one -- which is exactly what MCP's own comment on that line
+says: `-BREAK ADDRESS INTO EIGHT BIT BYTES`. The error routine
+spreads seven octal digits into seven character positions so that two
+`M+MG` can add them into an IQS string without carrying between
+digits. `CONNECT TO MEMORY` contracts back the same way, dropping the
+high-order bits of each result byte.
+
+`StretchVFL`'s `connExpand`/`connContract` and
+`decks/connective_byte_size.strap` (six checks, two injections).
+
+**BYTE SIZE EIGHT IS BIT-IDENTICAL TO WHAT CAME BEFORE**, and that is
+not a hope -- the deck's T5 asserts it and the `bsEff` injection
+leaves T5 passing while four other checks fail. Every connective test
+already in the suite uses byte size 8 and none of them moved.
+
+### The offset is BITS -- a hypothesis the suite killed
+
+This is the part worth reading, because the inference was good and it
+was still wrong.
+
+The connective offset was built as a **byte** offset, rounded down,
+on three strands that all pointed the same way:
+
+1. **p.75 admits it**: "Any offset may be specified and *the field is
+   processed in eight-bit bytes starting with the offset*."
+2. **p.57 states the exact analogue for decimal**, as a property of
+   the machine rather than of the programmer: "the offset is limited
+   to these digit positions and hence to a multiple of four by
+   ignoring the two low-order bits of the offset specified by the
+   effective address of the second half-word." Sixteen eight-bit
+   bytes, three low-order bits.
+3. **IBM's own code only works that way.** MCP's `LF` carries offset
+   **1**; the two `M+MG` that consume its result carry 8 and 0, which
+   want the seven bytes byte-aligned. Measured on the bootstrap,
+   both ways:
+
+   | offset | digits the console receives |
+   |---|---|
+   | taken literally | 0, 0, 0, **12, 12, 4, 8** -- every digit doubled |
+   | rounded down | 0, 0, 0, 6, 6, 2, 4 -- the address |
+
+**FIFTY-SIX SECTIONS FAILED.** All of `jb_af1c` and the PAU gates,
+because the floating-point diagnostic checks every single result with
+`CT0110(BU,60),ROS,4` -- a connective at **offset 4** -- and that
+comparison needs the four bits honoured. IBM's own diagnostic
+outranks a three-strand reading of the manual, and it says the offset
+is bits.
+
+The model, the deck's T6 and `run_tests.sh` all now carry the
+refutation rather than the hypothesis, so that nobody rebuilds it.
+T6 asserts the doubling and its injection is the rounding -- the
+plausible wrong answer kept as the injection, which is the right
+place for it.
+
+### So MCP's console address is doubled, and that is the open question
+
+Not the model's. The four instructions are printed p.5 lines 12-17:
+
+```
+X1 ERR  LF(BU,21,3),X ERR AD,1        -BREAK ADDRESS INTO EIGHT BIT BYTES
+        LV,$2,.32($2)                 -GET ADDRESS OF MESSAGE
+        M+MG(BU,48,8),.8+.8($2),8     -SKIPPING OVER CONTROL CODES
+        M+MG(BU,8,8),.8+.48+.8($2)    -FORM HALF WORD PORTION
+```
+
+Seven eight-bit result bytes with their right end at bit 1 sit at
+accumulator bits 1-56; the offsets 8 and 0 want them at 0-55. One bit
+out, every digit doubled. Something in the reading of those four
+rows is still wrong, and the offset is no longer a candidate.
+
+Worth checking next, cheapest first:
+
+* **The second `M+MG`'s target.** `.8+.48+.8` is 64 bits, which in a
+  normal two-control-code message is byte 8 -- the `.` of the slot
+  `000000.0`, not its last digit at byte 9. So that instruction looks
+  one byte early in the layout where the first one looks right. Two
+  readings, each making one instruction right, is the shape of a
+  misreading.
+* **`X ERR AD`'s own width.** The 21 bits LF reads are assumed here
+  to be value-word bits 0-20, i.e. the half-word address times four.
+  If `SIC` stores something else, the digits move.
+* **`LF` may not be a plain `CONNECT`.** Figure 20 makes connective 3
+  the memory bit, so `C0011` is a copy -- but the model reaches this
+  through `classify_connective`, and the listing's own
+  `025300.46 70` should be decoded field by field once more against
+  p.75's format diagram rather than against the integer one.
+* **Or MCP is simply wrong here, for the second time in this
+  routine.** It is the ERROR routine -- the least-exercised path in
+  any system -- and it already contains one defect this project has
+  confirmed from the listing, the `X MS 16C` message whose missing
+  `RED` code puts the digits a byte late. A doubled address in a
+  message nobody read carefully is the same kind of defect. **This
+  is a hypothesis of last resort and must not be reached for
+  early**: the first three bullets are cheaper and one of them being
+  right would be much more useful. But it is on the list, because
+  "IBM's code is correct" is an assumption, not evidence, and this
+  file has already recorded one place it failed.
+
+### And the message is still one byte out -- faithfully
+
+`X MS 16C` has only a carriage return where every other message in
+the table has `CR` then `RED` (printed p.11 lines 44-48; the slot
+starts at `000440.10`, byte ONE). MCP's error routine skips two
+control codes unconditionally (printed p.5 line 15's address field is
+`000000.20`). So this one message gets its digits a byte late, over
+the ".". **A real 7030 running this tape would have printed it the
+same way**, and `tests/gen_mcp_boot_tb.py` now checks for exactly
+that, every byte accounted for.
+
+The detail below is kept because it is the part worth re-reading: the
+reasoning that looked like two model bugs and turned out to be one
+model bug, one reading error, and one bug of IBM's.
+
+---
+
+## ONE OPEN ITEM LEFT BY `M+MG`
+
+### The VFL negative sign modifier has no spelling
 
 C22-6531 Appendix A footnote 4 says a VFL operation "may be suffixed
 by the letter N" for the negative sign modifier, so `M+MGN` and `M-N`
@@ -4950,6 +5097,21 @@ The N suffix cannot simply be added the way `I` was: `LN` is a real FP
 operation, so a blanket "strip a trailing N" rule would capture it.
 Any implementation wants the footnote read in full first, and a
 listing row to check against.
+
+The model's side is already built and already right (printed p.57's
+"Sign Control" table, under TO-MEMORY OPERATION), and the comment at
+`M+`/`M+MG` says it is inert until a spelling exists.
+
+---
+
+## HOW THE CONSOLE ADDRESS WAS WORKED OUT -- the record, 2026-10-19
+
+Kept because the reasoning is the useful part. Three faults were
+visible in one run and the first two attributions were wrong: what
+looked like two model bugs was one model bug (the byte expansion),
+one reading error of mine (the field placement), and one bug of
+IBM's (`X MS 16C`'s missing RED code). The sections below are as
+they were written while it was still open; the resolution is above.
 
 ### (b) `LF`'s BYTE SIZE -- does a connective expand bytes?
 
@@ -5085,6 +5247,14 @@ would land at... also a whole number of words away. The delta does
 not discriminate here. The *printed row* does.
 
 ### What the fixed message should say, and the offset that does not add up
+
+> **SUPERSEDED.** The target value below (`w3 = 0xfd60606066666274`)
+> assumes the tidy layout -- slot at bytes 1-6 -- and that is the
+> reading this section itself goes on to disprove. The checked value
+> is `w3 = 0xfd60606060666676`, digits at bytes 2-7, in
+> `tests/gen_mcp_boot_tb.py`. Do not re-derive from the number
+> below; the offset question is answered at the top of this file.
+
 
 `tests/gen_mcp_boot_tb.py` carries the derived target. X ERR AD is
 869 = `000662.40`, so LF's 21 bits are 3476 = octal `0006624`, and

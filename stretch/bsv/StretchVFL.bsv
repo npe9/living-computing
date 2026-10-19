@@ -104,4 +104,121 @@ function Action writeFieldWithHi(StretchStorage st, BitAddr ba, Bit#(7) len_, Bi
     st.writeWord(w0, insertFieldBits(hi, off, len_, val));
   endaction;
 
+// ---------------------------------------------------------------------
+// CONNECTIVE BYTE-SIZE CONVERSION -- Reference Manual printed p.75
+// ---------------------------------------------------------------------
+// The connectives do NOT work on a flat bit field the way the integer
+// arithmetic operations do.  p.75, under the heading "Byte Size", in
+// its own words:
+//
+//   "The connective operations process data in eight-bit bytes.  In
+//   these operations, the byte size specified in the instruction
+//   designates the number of bits used to represent each character or
+//   symbol in the storage field.  **If the byte size of the storage
+//   operand is less than eight, each byte is converted into an
+//   eight-bit byte before processing by the addition of high-order
+//   zeros.**  The accumulator operand is assumed to have a byte size
+//   of eight.  Any offset may be specified and the field is processed
+//   in eight-bit bytes starting with the offset.  Each byte of the
+//   storage field, after conversion to eight-bit form if necessary,
+//   is combined with an eight-bit byte from the accumulator according
+//   to the specified connective.  **Consequently, the result bytes
+//   always have a byte size of eight.**"
+//
+// and, on the facing column of the same page:
+//
+//   "In contrast to the integer arithmetic operations, the
+//   accumulator operand has a definite length; it is composed of as
+//   many bytes as there are in the addressed storage field."
+//
+// SO A 21-BIT FIELD AT BYTE SIZE 3 IS SEVEN BYTES AND FIFTY-SIX BITS
+// OF ACCUMULATOR, not twenty-one.  That is the whole point of MCP's
+// printed p.5 line 12, "LF(BU,21,3),X ERR AD,1", whose own comment is
+// "-BREAK ADDRESS INTO EIGHT BIT BYTES": it spreads seven octal
+// digits of an address into seven character positions so that two
+// later adds can turn them into IQS digits without carrying between
+// them.
+//
+// THE SHORT LAST BYTE IS THE ONE EXCEPTION, and p.75 states it
+// separately:
+//
+//   "Since the field lengths of the storage operand need not be a
+//   multiple of the byte size, the last byte need not be of full
+//   size.  When this is the case, only those bits of the high-order
+//   accumulator and storage bytes that are included in the field
+//   length take part in the processing.  No high-order zeros are
+//   added to the short byte from storage.  However, if the field
+//   length is a multiple of the byte size, and if the byte size is
+//   less than eight, high-order zeros are added to the high-order
+//   byte as well as to all other bytes so that all bytes of the field
+//   are treated in the same manner."
+//
+// **WHICH IS WHY BYTE SIZE EIGHT COMES OUT BIT-IDENTICAL TO THE FLAT
+// FIELD THIS MODEL USED BEFORE.**  At bs=8 every full byte masks to
+// 0xFF and the short last byte masks to exactly the bits inside the
+// field length, so the participation mask below is the low `len_`
+// bits -- the old `fieldMask`, unchanged.  Every connective test in
+// the suite uses bs=8, and that is why none of them move.
+//
+// Sixteen bytes is the limit here because the accumulator is 128 bits
+// and p.76's PARTIAL FIELD indicator covers a storage field that runs
+// off its left end.  PF is not implemented (neither was it before);
+// a field with more than sixteen bytes is silently truncated.
+//
+// Returns (expanded value, participation mask, byte count).
+function Tuple3#(Bit#(128), Bit#(128), Bit#(7))
+         connExpand(Bit#(64) raw, Bit#(7) len_, Bit#(4) bsEff);
+  Bit#(128) val  = 0;
+  Bit#(128) mask = 0;
+  Bit#(7)   nb   = 0;
+  for (Integer k = 0; k < 16; k = k + 1) begin
+    Bit#(7) lo = fromInteger(k) * zeroExtend(bsEff);
+    if (lo < len_) begin
+      Bit#(7) rem = len_ - lo;
+      Bit#(4) w   = (rem >= zeroExtend(bsEff)) ? bsEff : truncate(rem);
+      // A FULL byte contributes all eight result bits (high-order
+      // zeros are added to the storage side); a SHORT byte -- only
+      // ever the high-order one -- contributes just its own bits.
+      // TWO DIFFERENT MASKS, and they look alike on purpose but are
+      // not the same question.  `bmask` is how many RESULT bits take
+      // part -- all eight of a full byte, however narrow the storage
+      // byte was, because the storage side was zero-extended; only
+      // the in-field bits of a short high-order byte.  `b` is how
+      // many bits the STORAGE side actually supplies, which is `w`
+      // whether the byte is full or short.  They differ exactly when
+      // bsEff < 8 and the byte is full: eight result bits from a
+      // three-bit datum, which IS the expansion.
+      Bit#(8) bmask = (w == bsEff) ? 8'hFF : ((8'b1 << w) - 1);
+      Bit#(8) wmask = (w == 8) ? 8'hFF : ((8'b1 << w) - 1);
+      Bit#(8) b     = truncate(raw >> lo) & wmask;
+      val  = val  | (zeroExtend(b)     << (8 * k));
+      mask = mask | (zeroExtend(bmask) << (8 * k));
+      nb   = fromInteger(k) + 1;
+    end
+  end
+  return tuple3(val, mask, nb);
+endfunction
+
+// The reverse, for CONNECT TO MEMORY.  p.75: "the result byte is
+// truncated before being placed in storage if the byte size of the
+// storage field is less than eight.  Each byte in the storage field
+// is replaced by the number of bits specified by the byte size.
+// These bits are the low-order bits of each result byte; the
+// remaining high-order bits of each result byte are dropped.  No
+// indication is given if the bits which are dropped are significant."
+function Bit#(64) connContract(Bit#(128) v, Bit#(7) len_, Bit#(4) bsEff);
+  Bit#(64) out = 0;
+  for (Integer k = 0; k < 16; k = k + 1) begin
+    Bit#(7) lo = fromInteger(k) * zeroExtend(bsEff);
+    if (lo < len_) begin
+      Bit#(7) rem = len_ - lo;
+      Bit#(4) w   = (rem >= zeroExtend(bsEff)) ? bsEff : truncate(rem);
+      Bit#(8) wmask = (w == 8) ? 8'hFF : ((8'b1 << w) - 1);
+      Bit#(8) b   = truncate(v >> (8 * k)) & wmask;
+      out = out | (zeroExtend(b) << lo);
+    end
+  end
+  return out;
+endfunction
+
 endpackage

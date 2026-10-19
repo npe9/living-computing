@@ -118,15 +118,26 @@ execution operations: `EX` executes as of 2026-09-25 and `EXIC` as of
   being silently truncated to one level.
 - **Connectives** — all sixteen logical functions (`C`/`CM`/`CT`,
   Figure 20, p.75-77), with the same direct/immediate/progressive
-  addressing as VFL arithmetic above. **Scope**: byte size is assumed
-  to be 8 (the manual's own recommended usage — "a byte size of eight
-  should be specified" to avoid padding); the `BS`<8 high-order-zero
-  padding p.75 "Byte Size" describes is not implemented. Partial Field
-  (`PF`) and the left-zeros/all-ones counts at word 7 (also described
-  in that section) are not implemented either, consistent with `PF`
-  not being implemented for VFL arithmetic. Verified against C22-6578
-  Problem 2.2 Method 3's own `CT0110` (byte-equality test via XOR) —
-  see `strap/README.md`.
+  addressing as VFL arithmetic above, **and p.75's byte-size
+  expansion as of 2026-10-19**: a storage byte narrower than eight
+  bits is zero-extended to eight before the connective is applied, so
+  a 21-bit field at byte size 3 is seven bytes and 56 bits of
+  accumulator, and `CM` contracts each result byte back on the way
+  out. Byte size 8 is bit-identical to the flat field this arm used
+  before, which is why the existing connective tests do not move; see
+  `StretchVFL`'s `connExpand` for the quotations and
+  `decks/connective_byte_size.strap` for the six checks and their
+  injections. The accumulator OFFSET is in **bits**, and the
+  connective arm's own `offSh` comment records why: it was built as a
+  rounded-down byte offset on three strands of manual reading, and
+  fifty-six sections of `jb_af1c` killed it, because the
+  floating-point diagnostic checks every result with
+  `CT0110(BU,60),ROS,4`. **Still not implemented**: Partial Field (`PF`) and
+  the left-zeros/all-ones counts at word 7, consistent with `PF` not
+  being implemented for VFL arithmetic, so a field of more than
+  sixteen bytes is silently truncated rather than setting `PF`.
+  Verified against C22-6578 Problem 2.2 Method 3's own `CT0110`
+  (byte-equality test via XOR) — see `strap/README.md`.
 - **Immediate index arithmetic** — all pocket-card ops except `LVS`,
   with the field semantics of Reference Manual p.25: value operations
   place the 19-bit address part in bits 0-18 of the 25-bit value field

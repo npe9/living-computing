@@ -1549,6 +1549,60 @@ run "M+MG, Add Magnitude to Memory -- the seventh VFL integer arm" ./run_program
 # only I, and the written-minus "M-MG" is witnessed for the
 # floating-point operation alone.  docs/NEXT.md carries it.
 
+run "Connective byte size -- the expansion, p.75" ./run_program.sh ../decks/connective_byte_size.strap StretchConnBsTb \
+    "PC=2082" \
+    "conn_expand_21_3:1052=0x6060204" \
+    "conn_expand_offset8:1053=0x606020400" \
+    "conn_rest_of_acc_untouched:1054=0xff00000006060204" \
+    "conn_cm_contract:1055=3476" \
+    "conn_bs8_unchanged:1056=3476" \
+    "conn_offset_is_bits:1057=0xc0c0408"
+# THE CONNECTIVES ARE NOT A FLAT BIT FIELD, and this arm treated them
+# as one until 2026-10-19.  Reference Manual printed p.75, "Byte
+# Size": "If the byte size of the storage operand is less than eight,
+# each byte is converted into an eight-bit byte before processing by
+# the addition of high-order zeros...  Consequently, the result bytes
+# always have a byte size of eight", and "the accumulator operand has
+# a definite length; it is composed of as many bytes as there are in
+# the addressed storage field".  So a 21-bit field at byte size 3 is
+# seven bytes and FIFTY-SIX bits of accumulator, not twenty-one.
+# CONNECT TO MEMORY contracts back the same way, dropping the
+# high-order bits of each result byte.
+#
+# BYTE SIZE EIGHT IS BIT-IDENTICAL TO WHAT CAME BEFORE, which is why
+# the thirty-odd connective sections already in this suite do not
+# move: every full byte masks to 0xFF and a short high-order byte
+# masks to exactly the bits inside the field length, so the
+# participation mask is the old flat `fieldMask`.  The deck checks
+# that explicitly (T5), and the bsEff injection leaves T5 and T6
+# passing while the other four fail.
+#
+# T6 RECORDS A HYPOTHESIS THIS SUITE KILLED.  The connective offset
+# was built as a BYTE offset, rounded down, on three strands that all
+# pointed that way: p.75 ("the field is processed in eight-bit bytes
+# starting with the offset"), p.57's exact analogue for decimal ("a
+# multiple of four by ignoring the two low-order bits of the
+# offset"), and MCP's own "LF(BU,21,3),X ERR AD,1" carrying offset
+# ONE while the two M+MG that consume its result carry 8 and 0 --
+# which, measured on the bootstrap, is the difference between the
+# console printing the error address (0,0,0,6,6,2,4) and printing
+# every digit doubled (0,0,0,12,12,4,8).
+#
+# **FIFTY-SIX SECTIONS FAILED**: all of jb_af1c and the PAU gates,
+# because the floating-point diagnostic checks every single result
+# with "CT0110(BU,60),ROS,4" -- a connective at OFFSET 4 -- and that
+# comparison needs the four bits honoured.  IBM's own diagnostic
+# outranks a three-strand reading of the manual.  The offset is bits;
+# T6 asserts the doubling, and its injection is the rounding.
+#
+# So MCP's console address comes out doubled, and that is an open
+# question about those four instructions rather than about this one
+# line.  docs/NEXT.md carries both measurements.
+#
+# ARRIVED VIA MCP, like M+1 and M+MG before it, and it is the last of
+# the four instructions that build the error routine's console
+# message.  With it the bootstrap prints its own error address.
+
 run "MCP's IPL bootstrap, printed p.3, bit-exact (MCP_Mar63 PDF p.10)" python3 verify_mcp_bootstrap_p3.py
 # FIND IPL CHANNEL NUMBER, IO TEST, SPACE OVER TAPE MARK -- the page
 # that continues p.2 (p.2 ends at 000052.00 with a half word, p.3

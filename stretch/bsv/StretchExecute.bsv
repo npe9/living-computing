@@ -4,8 +4,9 @@
 // documented as in-scope in bsv/README.md: VFL binary integer L/ST/+/M+/K
 // (Reference Manual 22-6530-2 pp.~86-95) with both standard address
 // modification and progressive indexing (P in {1,2,3,5,6,7}, p.21),
-// the sixteen Connectives (C/CM/CT, p.75-77, byte-size-8 only -- see
-// that case's own scope note), direct and immediate index arithmetic
+// the sixteen Connectives (C/CM/CT, p.75-77, with p.75's byte-size
+// expansion as of 2026-10-19 -- see StretchVFL's connExpand), direct
+// and immediate index arithmetic
 // (pp.22-27), count-and-branch and branch-on-indicator (pp.~26-27,
 // pocket card X22-6533-1 "INDEX BRANCHING"/"INDICATOR BRANCHING"),
 // unconditional branching, Store Zero / Refill, and forward non-swap
@@ -972,10 +973,17 @@ endfunction
 // relying on the caller (readField/the accumulator-field mask) to have
 // already zeroed every bit outside the real field -- so bits beyond
 // the field's length don't need separate masking here.
-function Bit#(64) applyConnective(Bit#(4) conn, Bit#(64) m, Bit#(64) a);
-  Bit#(64) notM = ~m;
-  Bit#(64) notA = ~a;
-  Bit#(64) r = 0;
+//
+// WIDENED TO 128 BITS, 2026-10-19, because printed p.75's byte
+// expansion makes the operands wider than the storage field: a
+// 21-bit field at byte size 3 is seven EIGHT-bit bytes, 56 bits of
+// accumulator (StretchVFL's connExpand).  The caller masks both
+// operands with connExpand's participation mask, so this still needs
+// no masking of its own.
+function Bit#(128) applyConnective(Bit#(4) conn, Bit#(128) m, Bit#(128) a);
+  Bit#(128) notM = ~m;
+  Bit#(128) notA = ~a;
+  Bit#(128) r = 0;
   if (conn[3] == 1) r = r | (notM & notA);
   if (conn[2] == 1) r = r | (notM & a);
   if (conn[1] == 1) r = r | (m & notA);
@@ -2751,11 +2759,52 @@ function ActionValue#(VflOutcome)
         ind = setOpInvalid(ind);
       end else begin
         Bit#(7) len_ = effLength(cn.a.length);
+        // THE BYTE SIZE, WHICH THIS ARM USED TO IGNORE ENTIRELY.
+        // Reference Manual printed p.75 makes it the whole shape of a
+        // connective: a storage byte narrower than eight bits is
+        // zero-extended to eight before the connective is applied,
+        // and the accumulator operand is "composed of as many bytes
+        // as there are in the addressed storage field" -- eight bits
+        // each.  See StretchVFL's connExpand for the quotations and
+        // for why byte size eight comes out bit-identical to the flat
+        // field this arm used before.
+        Bit#(4) bsEff = effByteSize(cn.a.bs);
         IndexWord xIdx = st.readIndex(cn.a.i1);
         BitAddr ea = isProgressive ? xIdx.addr : effAddr24(st, cn.a.addr, cn.a.i1);
+        // THE OFFSET IS TAKEN LITERALLY, IN BITS, and that is a
+        // SETTLED QUESTION with a refutation behind it -- do not
+        // "fix" it by rounding to a byte boundary.
+        //
+        // The rounding is tempting and three strands seemed to
+        // support it.  p.75's own sentence admits it ("Any offset may
+        // be specified and the field is processed in eight-bit bytes
+        // STARTING WITH THE OFFSET"); p.57 states the exact
+        // structural analogue for decimal, as a property of the
+        // machine rather than of the programmer ("the offset is
+        // limited to these digit positions and hence to a multiple of
+        // four by ignoring the two low-order bits of the offset");
+        // and MCP's own error routine only prints a correct address
+        // under it -- printed p.5 line 12's "LF(BU,21,3),X ERR AD,1"
+        // carries offset ONE while lines 15 and 17 consume the result
+        // at offsets 8 and 0, which want the seven result bytes
+        // byte-aligned.  Measured on the bootstrap: literal, the
+        // console's seven digit slots receive 0, 0, 0, 12, 12, 4, 8,
+        // every digit exactly doubled; rounded, they receive
+        // 0, 0, 0, 6, 6, 2, 4, the address.
+        //
+        // **IT WAS BUILT THAT WAY AND THE FULL SUITE KILLED IT: 56
+        // SECTIONS, ALL OF jb_af1c AND THE PAU GATES.**  The
+        // floating-point diagnostic checks every result with
+        // "CT0110(BU,60),ROS,4" -- a connective at OFFSET 4 -- and
+        // the comparison only works if those four bits are honoured.
+        // IBM's own diagnostic is a far stronger oracle than a
+        // three-strand inference, and it says the offset is bits.
+        //
+        // So MCP's console address comes out doubled, and that is now
+        // an open question about MCP's four-instruction sequence
+        // rather than about this line.  docs/NEXT.md carries it with
+        // both measurements.
         Bit#(8) offSh = zeroExtend(cn.a.offset);
-        Bit#(8) len8 = zeroExtend(len_);
-        Bit#(64) fieldMask = (len_ == 64) ? '1 : ((1 << len8) - 1);
         Bool vflOk = True; // p.21/22: a suppressed VFL-format op skips
                             // the progressive increment too, same
                             // rule as VflInt.
@@ -2826,8 +2875,16 @@ function ActionValue#(VflOutcome)
             Word64 mHiWord = prefetch[0];
             Bit#(64) m = extractFieldBits(prefetch[0], 0, off, len_);
             SM128 acc = readAcc(st);
-            Bit#(64) a = truncate(acc.mag >> offSh) & fieldMask;
-            Bit#(64) result = applyConnective(cn.conn, m, a) & fieldMask;
+            // Byte-expanded, p.75 -- same three lines as the main
+            // C/CT/CM site below.  CM's result is then contracted
+            // back to the storage byte size before it is written and
+            // before Result Zero is judged ("In CONNECT TO MEMORY,
+            // the counts are made on the result field AFTER it is
+            // converted to the byte size of the storage operand").
+            match {.mVec, .maskVec, .*} = connExpand(m, len_, bsEff);
+            Bit#(128) aVec = (acc.mag >> offSh) & maskVec;
+            Bit#(128) rVec = applyConnective(cn.conn, mVec, aVec) & maskVec;
+            Bit#(64) result = connContract(rVec, len_, bsEff);
             writeFieldWithHi(st, ea, len_, result, mHiWord);
             ind = setConnectiveIndicatorsF(ind, True, result == 0);
             vflPending = tagged Valid tuple2(cn.a.i1, unpackIndexWord(prefetch[1]));
@@ -2873,18 +2930,31 @@ function ActionValue#(VflOutcome)
           end
           if (!isValid(needsRead)) begin
             SM128 acc = readAcc(st);
-            Bit#(64) a = truncate(acc.mag >> offSh) & fieldMask;
-            Bit#(64) result = applyConnective(cn.conn, m, a) & fieldMask;
-            Bool resultZero = (result == 0);
+            // p.75's byte expansion.  `maskVec` marks exactly which
+            // bits take part: every bit of every full byte, and only
+            // the in-field bits of a short high-order byte.  At byte
+            // size eight it is the low `len_` bits -- the old
+            // `fieldMask` -- so nothing here moves for the thirty-odd
+            // connective sections already in the suite.
+            match {.mVec, .maskVec, .*} = connExpand(m, len_, bsEff);
+            Bit#(128) aVec = (acc.mag >> offSh) & maskVec;
+            Bit#(128) rVec = applyConnective(cn.conn, mVec, aVec) & maskVec;
+            // CONNECT and CONNECT FOR TEST judge the result at byte
+            // size eight; CONNECT TO MEMORY judges it after the
+            // contraction (p.76, "Counts and Indicators").
+            Bit#(64) result = connContract(rVec, len_, bsEff);
+            Bool resultZero = (cn.suffix == conn_CM) ? (result == 0) : (rVec == 0);
 
             case (cn.suffix)
               conn_C: begin // C: result replaces the accumulator
                               // field; the rest of the accumulator is
                               // unchanged (p.76 "In CONNECT... The
                               // remainder of the accumulator remains
-                              // unchanged").
-                Bit#(128) fieldMask128 = zeroExtend(fieldMask) << offSh;
-                Bit#(128) resultSh = zeroExtend(result) << offSh;
+                              // unchanged").  The field is now the
+                              // EXPANDED one -- seven eight-bit bytes
+                              // for MCP's LF(BU,21,3), not 21 bits.
+                Bit#(128) fieldMask128 = maskVec << offSh;
+                Bit#(128) resultSh = rVec << offSh;
                 SM128 merged = SM128 { sign: acc.sign,
                                         mag: (acc.mag & ~fieldMask128) | resultSh };
                 writeAcc(st, merged);

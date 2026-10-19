@@ -1,0 +1,132 @@
+! THE CONNECTIVES' BYTE SIZE -- Reference Manual printed p.75, under
+! the heading "Byte Size", which this model ignored until 2026-10-19:
+!
+!   "The connective operations process data in eight-bit bytes.  In
+!   these operations, the byte size specified in the instruction
+!   designates the number of bits used to represent each character or
+!   symbol in the storage field.  IF THE BYTE SIZE OF THE STORAGE
+!   OPERAND IS LESS THAN EIGHT, EACH BYTE IS CONVERTED INTO AN
+!   EIGHT-BIT BYTE BEFORE PROCESSING BY THE ADDITION OF HIGH-ORDER
+!   ZEROS.  The accumulator operand is assumed to have a byte size of
+!   eight.  Any offset may be specified and the field is processed in
+!   eight-bit bytes starting with the offset. ...  CONSEQUENTLY, THE
+!   RESULT BYTES ALWAYS HAVE A BYTE SIZE OF EIGHT."
+!
+! and, for CONNECT TO MEMORY, the reverse:
+!
+!   "...the result byte is truncated before being placed in storage
+!   if the byte size of the storage field is less than eight.  Each
+!   byte in the storage field is replaced by the number of bits
+!   specified by the byte size.  These bits are the low-order bits of
+!   each result byte; the remaining high-order bits of each result
+!   byte are dropped."
+!
+! ARRIVED VIA MCP, which is also where the test data comes from.
+! Printed p.5 line 12 is "LF(BU,21,3),X ERR AD,1" with the comment
+! "-BREAK ADDRESS INTO EIGHT BIT BYTES": the error routine spreads the
+! seven octal digits of a 21-bit address into seven character
+! positions so that two later M+MG can add them into an IQS string
+! without carrying between the digits.  SRC below is 3476 = octal
+! 0006624, which is what X ERR AD holds when MCP's bootstrap stops on
+! this project's fixture tape -- half-word address 869, i.e. 000662.40.
+!
+! LF IS THE CONNECTIVE C0011.  Figure 20 on printed p.76 gives
+! connective 3 the symbolic function "m", the memory bit, so C0011 is
+! a plain load of the field; connective 5 is "a", the accumulator bit,
+! which is what CM0101 below needs to push the accumulator back out.
+!
+! WHAT EACH BLOCK ESTABLISHES
+!   T1  the expansion itself: seven 3-bit bytes become seven 8-bit
+!       bytes, so 21 bits of storage become 56 bits of accumulator.
+!   T2  the offset is applied to the EXPANDED field, not the 21-bit
+!       one -- the same bytes eight bits further left.
+!   T3  "In CONNECT ... the remainder of the accumulator remains
+!       unchanged" (p.76): the field is 56 bits, so bits 56-63 of a
+!       pre-loaded all-ones accumulator survive and bits 0-55 do not.
+!   T4  CONNECT TO MEMORY's contraction, the round trip: the expanded
+!       bytes go back out as 3-bit bytes and reproduce SRC exactly.
+!   T5  **BYTE SIZE EIGHT IS UNCHANGED**, which is the claim that
+!       every other connective test in this suite depends on.  The
+!       same 21 bits with the default byte size land as a flat 21-bit
+!       field, as they always did.  Note what this block does and
+!       does not reach: 21 at byte size 8 is 8+8+5, so it exercises
+!       the SHORT high-order byte.  The multiple-of-eight case --
+!       every byte masking to 0xFF, no short tail -- is covered by
+!       the thirty-odd connective sections already in the suite
+!       (C22-6578 Problem 2.2's CT0110, ax1a_bew, the whole of
+!       jb_af1c), not by this deck.
+!   T6  **THE OFFSET IS BITS, NOT BYTES.**  Offset 1 shifts the
+!       whole expanded field one bit left, so every byte's value
+!       doubles.  This block exists because the opposite was built
+!       first, on three strands that all pointed the same way -- p.75
+!       says "the field is processed in eight-bit bytes starting with
+!       the offset", p.57 states the exact analogue for decimal ("a
+!       multiple of four by ignoring the two low-order bits of the
+!       offset"), and MCP's own LF carries offset 1 while the two
+!       M+MG that consume its result carry 8 and 0.  **The full suite
+!       killed it: 56 sections, all of jb_af1c and the PAU gates,
+!       because the floating-point diagnostic checks every result
+!       with "CT0110(BU,60),ROS,4" -- a connective at OFFSET 4.**
+!       IBM's own diagnostic outranks the inference.  T6 is here so
+!       that nobody rebuilds it.
+
+! SIX INJECTIONS, MEASURED, one per block and each landing on its own
+! check alone:
+!   bsEff forced to 8 (the behaviour before this work): T1 = 3476,
+!     T2 = 0xd9400, T3 = 0xffffffffffe00d94, T4 = 0x60204 -- four
+!     failures, and T5 and T6 still pass, which is the proof that
+!     byte size eight is genuinely untouched.
+!   the offset rounded down to a byte: T6 = 0x6060204, and the other
+!     five unmoved.  That injection is the REFUTED hypothesis, kept
+!     as an injection precisely because it is the plausible wrong
+!     answer; the suite's own jb_af1c sections are what rule it out.
+
+        SLC, (8)2000.0
+
+START   L(BU,64,8), ZERO, 0          ! LOAD clears the whole accumulator
+        C0011(BU,21,3), SRC+.43, 0   ! seven 3-bit bytes -> seven 8-bit
+        ST(BU,64,8), T1, 0
+
+        L(BU,64,8), ZERO, 0
+        C0011(BU,21,3), SRC+.43, 8   ! same bytes, one byte further left
+        ST(BU,64,8), T2, 0
+
+        L(BU,64,8), ALL1, 0          ! accumulator bits 0-63 all ones
+        C0011(BU,21,3), SRC+.43, 0   ! replaces bits 0-55 only
+        ST(BU,64,8), T3, 0
+
+        L(BU,64,8), WIDE, 0          ! the expanded form, by hand
+        CM0101(BU,21,3), T4+.43, 0   ! result = a, contracted to 3 bits
+
+        L(BU,64,8), ZERO, 0
+        C0011(BU,21), SRC+.43, 0     ! byte size defaults to 8
+        ST(BU,64,8), T5, 0
+
+        L(BU,64,8), ZERO, 0
+        C0011(BU,21,3), SRC+.43, 1   ! offset is BITS: one bit left
+        ST(BU,64,8), T6, 0
+
+PASS    BEW, $
+
+! Data, word-aligned: BEW is a half word, so without this every 64-bit
+! field below would straddle two words and be refused.
+        SLC, (8)2030.0
+
+ZERO    DD(BU,64,8), 0
+ALL1    DD(BU,64,8), (8)1777777777777777777777
+! 3476 = octal 6624.  As seven three-bit bytes, low-order first:
+! 4, 2, 6, 6, 0, 0, 0.
+SRC     DD(BU,64,8), 3476
+! The same seven digits already in eight-bit bytes -- what T1 should
+! produce, used here as CM's input so block 4 tests the contraction on
+! its own rather than on block 1's output.
+WIDE    DD(BU,64,8), (8)0000000000000601401004
+
+T1      DD(BU,64,8), 0
+T2      DD(BU,64,8), 0
+T3      DD(BU,64,8), 0
+T4      DD(BU,64,8), 0
+T5      DD(BU,64,8), 0
+T6      DD(BU,64,8), 0
+
+        END, START
