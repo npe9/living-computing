@@ -1275,9 +1275,54 @@ run "MCP'S OWN BOOTSTRAP RUNS (boot_plan.md M3)" ./run_mcp_boot.sh StretchMcpBoo
 #   $X1 is the index the TRANSMIT five rows later uses to find MCP
 #   inside the buffer.
 #
-# WITH BOTH BUILT THERE IS NO OP BIT.  **The model refuses nothing
-# MCP's bootstrap executes**, and this time that is measured rather
-# than read off a register an interrupt had just cleared.
+# WITH BOTH BUILT THERE IS NO OP BIT in the bootstrap.  **The model
+# refuses nothing MCP's bootstrap executes**, and this time that is
+# measured rather than read off a register an interrupt had just
+# cleared.
+#
+# ===================================================================
+# AND SINCE 2026-10-19 THIS SECTION RUNS AN OPERATING SYSTEM
+# ===================================================================
+# Two changes took it from "the bootstrap finishes" to "MCP
+# initializes the machine and diagnoses it":
+#
+#   A PROSA RECORD ON THE TAPE (strap/prosa.py).  The bootstrap read
+#   its dictionary out of empty tape, so every size came back zero.
+#   The record's SHAPE is derived from printed p.4 lines 19-27 and
+#   its dictionary offsets are chosen; what it CARRIES is real --
+#   printed pp.15-18 assembled, eighty words, which land at
+#   000621.00 because printed p.15 line 7 is "SLC,X BS END" and that
+#   is exactly where the TRANSMIT delivers them.
+#
+#   A COUNT AND BRANCH TO ITS OWN ADDRESS IS NOT A HALT
+#   (StretchCore.bsv's isHalt).  printed p.4 line 32 is "CB,0,$", the
+#   131,071-iteration wait after RELEASE DISK, and `halted()` meant
+#   "branched to its own address" -- so the run used to end after ONE
+#   decrement with everything pp.15-18 do behind it.
+#
+# WHAT THE MACHINE NOW DOES, in order, all of it checked above:
+#   IPLs from tape; sizes core by faulting (98,304 words); finds the
+#   IPL channel; spaces the tape mark; fetches PROSA; reads the
+#   dictionary, computes the offset with LVS and MOVES ITSELF with
+#   TRANSMIT; LOCATEs the disk and WRITEs PROSA to it, polling with
+#   CCW; puts the size it measured into the communication region at
+#   S ROOF; hunts the buffer for an IOCD card; finds none and reports
+#   "-NO IOCD DETECTED"; enters the ERROR ROUTINE; walks all 32
+#   exchange channels looking for a console; finds none; leaves the
+#   failing address in the R register "-DISPLAY ERROR ADDRESS IN";
+#   and stops at printed p.6 line 1, **"BD,$  -LOOP"**, which is
+#   IBM's own halt.
+#
+# SO THE REMAINING OP AND AD ARE THE CONSOLE HUNT, not a surprise:
+# Exchange LOC and GONG are unimplemented (boot_plan.md M3++ A4
+# builds them with the console), and the walk addresses channels with
+# nothing at them.  A machine with no IOCD cards and no console is
+# exactly what this model is, and MCP said so.
+#
+# IT COSTS ABOUT THREE MINUTES, because MCP's delay loop is 131,071
+# iterations and they are now actually executed.  That is the price
+# of the section being about an operating system rather than about a
+# bootstrap.
 #
 # AND AD IS THE TRANSMIT NOW RUNNING.  Line 24 takes the count out of
 # the PROSA record's dictionary and THIS TAPE HAS NO PROSA -- 369

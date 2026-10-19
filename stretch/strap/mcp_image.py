@@ -101,15 +101,17 @@ def _classify(path):
     return places, standins, defines
 
 
-def merge(verbose=False):
+def merge(verbose=False, pages=None, end_at='XIPLBS'):
     """Build the merged source text and the provenance of every symbol.
 
     Returns (source, defined, external) where `defined` maps a symbol
     to the page that places or defines it and `external` maps a symbol
     with no definition anywhere to the page whose stand-in is kept.
     """
+    if pages is None:
+        pages = PAGES
     defined, standins = {}, {}
-    for path, label in PAGES:
+    for path, label in pages:
         places, s, d = _classify(path)
         for sym, val in list(places.items()) + list(d.items()):
             if sym in defined:
@@ -148,7 +150,7 @@ def merge(verbose=False):
                    # state here made a second build() in one process
                    # drop the stand-in the first had kept and then
                    # fail to resolve it.
-    for path, label in PAGES:
+    for path, label in pages:
         out.append(f"! ================ {label} "
                    f"({path.split('/')[-1]}) ================")
         emitted_external = set()
@@ -171,18 +173,48 @@ def merge(verbose=False):
                 continue
             out.append(raw)
         out.append("")
-    out.append("        END, XIPLBS")
+    out.append(f"        END, {end_at}")
     if verbose:
-        print(f"merged {len(PAGES)} pages, {checked} stand-ins checked "
+        print(f"merged {len(pages)} pages, {checked} stand-ins checked "
               f"against their definitions, {len(external)} symbols "
               f"external to the bootstrap")
     return "\n".join(out) + "\n", defined, external
 
 
 
-def build(verbose=False):
-    src, defined, external = merge(verbose)
+def build(verbose=False, pages=None, end_at='XIPLBS'):
+    src, defined, external = merge(verbose, pages, end_at)
     return assemble(src), src, defined, external
+
+
+# ---------------------------------------------------------------------
+# MCP PROPER, printed pp.15-18 -- a SECOND image, and not part of the
+# bootstrap.
+#
+# The bootstrap is the tape record the IPL mechanism loads, X IPL BS
+# through X BS END.  What printed pp.15 onward hold is what the
+# bootstrap LOADS: MCP's own initialization, which arrives in a PROSA
+# record and is moved into place by printed p.4 line 28's TRANSMIT.
+# So it is built separately and never merged into PAGES above -- the
+# assertion at the foot of this file would catch that, because the
+# image would stop matching printed p.2's control-word count.
+#
+# THEY ASSEMBLE CONTIGUOUSLY AND THAT IS NOT LUCK: printed p.15 line
+# 7 is "SLC,X BS END", so the first word lands at 000621.00, exactly
+# one past the bootstrap, and pp.16, 17 and 18 follow without a gap
+# or an overlap.  80 words, every one of them set.
+# ---------------------------------------------------------------------
+MCP_IPL_PAGES = [
+    (DECK("mcp_bootstrap_p15.strap"), "printed p.15"),
+    (DECK("mcp_bootstrap_p16.strap"), "printed p.16"),
+    (DECK("mcp_bootstrap_p17.strap"), "printed p.17"),
+    (DECK("mcp_bootstrap_p18.strap"), "printed p.18"),
+]
+
+
+def build_mcp_ipl(verbose=False):
+    """The printed pp.15-18 image: (prog, src, defined, external)."""
+    return build(verbose, MCP_IPL_PAGES, end_at='X10')
 
 
 if __name__ == '__main__':

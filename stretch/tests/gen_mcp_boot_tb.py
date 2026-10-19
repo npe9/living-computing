@@ -44,7 +44,7 @@ import subprocess
 import sys
 
 from gen_tb import generate
-from mcp_image import build
+from mcp_image import build, build_mcp_ipl
 from opcodes import INDICATOR_BITS
 import prosa
 import struct
@@ -75,6 +75,13 @@ def main():
     module_name = sys.argv[1]
 
     prog, src, defined, external = build()
+
+    # THE pp.15-18 IMAGE, for the checks that describe what MCP did
+    # after it moved itself.  Built here from the same decks
+    # strap/prosa.py puts on the tape, so a check cannot drift from
+    # the thing it describes.
+    ipl_prog, _, _, _ = build_mcp_ipl()
+    ipl_hw = lambda n: ipl_prog.symtab[n] // 32
 
     out = os.environ.get("STRETCH_TAPE")
     if not out:
@@ -142,15 +149,62 @@ def main():
         # (StretchIO.bsv chanDisk, read off printed pp.15-16's own
         # assembled code), the RELEASE succeeds, and MCP runs the
         # path it was written to run.
-        ("mcp_end_of_prosa_bit_X0", "16", (1 << (63 - 25)) | (131070 << 18)),
+        # Word 16 is index register X0: bit 25 is the flag above, and
+        # the count field is now ZERO rather than the 131,070 it held
+        # when the run stopped after one turn of the delay loop.
+        # **The loop ran to completion** -- printed p.4 line 31 loads
+        # 0o377777 = 131,071 and line 32's "CB,0,$" counts it down --
+        # which is what let everything below here happen at all.
+        # AND ITS REFILL FIELD NOW HOLDS THE MACHINE'S SIZE, which
+        # is printed p.15 line 22, "LR,$0,X S ROOF" -- load index 0's
+        # REFILL from the word printed p.2 line 39 saved the measured
+        # 7030 size into.  LR takes bits 0-17 of the addressed
+        # half-word, and X S ROOF holds 6,291,456 bits in its value
+        # field, whose top 18 bits are 98,304 -- the word count, and
+        # StretchMemory's InstalledWords.
+        ("mcp_end_of_prosa_bit_X0", "16", (1 << (63 - 25)) | 98304),
 
-        # >>> THE ONE THAT SAYS IT NEVER STUMBLED <<<
+        # >>> AND MCP PUT THE SIZE WHERE THE REST OF MCP LOOKS <<<
+        # Printed p.15 line 23 is "SR,$0,S ROOF  -PLACE 7030 SIZE IN
+        # COMM REGION", the row after the LR above.  S ROOF is a
+        # communication-region symbol at 002162.00, read off printed
+        # p.15's own binary output (the deck says so), and SR stores
+        # a refill into bits 0-17 of the addressed half-word -- so
+        # 98,304 lands back as 0x6000000000000000, the same shape it
+        # had in X S ROOF.
+        #
+        # THIS IS MCP USING A NUMBER IT MEASURED ITSELF.  Printed p.2
+        # sized core by running a clearing loop off the end of it and
+        # taking the Address Invalid; eleven pages later the answer is
+        # in the communication region for the supervisor to use.
+        ("mcp_size_in_comm_region", str(0o2162), 98304 << 46),
+
+        # >>> WHERE MCP STOPPED, AND IT STOPPED FOR A GOOD REASON <<<
         # X ERR AD, printed p.13 line 37, "-LOCATION OF ERROR +1.0".
-        # Every error site on pp.3-6 does "SIC,X ERR AD" before
-        # branching to X ERROR, and the instruction counter is never
-        # zero inside the bootstrap -- so zero here means NO ERROR
-        # SITE EVER RAN.
-        ("mcp_x_err_ad", str(sym("XERRAD")), 0),
+        # Every error site does "SIC,X ERR AD" before branching to
+        # X ERROR, so this half-word names the site.
+        #
+        # THIS USED TO BE ASSERTED ZERO -- "no error site ever ran" --
+        # and that was true only because the run stopped in MCP's
+        # delay loop before any of printed pp.15-18 executed.  Now it
+        # names **printed p.17's "-NO IOCD DETECTED"**, which is the
+        # correct diagnosis of this machine: p.17 hunts the buffer for
+        # an IOCD card, there are none, "CB+,$4,X13 A A" exhausts the
+        # search, and line 15's SIC and line 16's "B,X ERROR" report
+        # it.  **MCP ran its whole initialization and told us what is
+        # missing.**
+        #
+        # The stored value is a 19-bit half-word address in bits 0-18
+        # of the word, which is why this is written as a shift rather
+        # than as a number nobody could check.
+        # X ER 16C is printed p.17 line 15's "SIC,X ERR AD", and the
+        # value stored is the instruction counter ONE WORD past it --
+        # printed p.13 line 37 calls the datum "LOCATION OF ERROR
+        # +1.0", and one word is two half-words.  Derived from the
+        # assembled image rather than written as a number, so it moves
+        # if the page is ever re-transcribed.
+        ("mcp_x_err_ad", str(sym("XERRAD")),
+         ((ipl_hw("XER16C") + 2) & 0x7FFFF) << 45),
 
         # The indicator register, word 11: RZ, XVZ, XF and **OP**.
         #
@@ -205,8 +259,21 @@ def main():
         # `mcp_x_err_ad` still reads zero on the line below: AD is an
         # indicator, X ERR AD is MCP's own variable, and no error site
         # ran.
+        # The indicator register at the stop.  Five of the six are
+        # ordinary result indicators left by the last few index and
+        # VFL operations of the ERROR ROUTINE.  The sixth is **OP**,
+        # and it is attributable and expected: printed p.5's error
+        # routine does not know which channel the console is on, so it
+        # walks all 32 of them with a deliberately invalid CTL, then
+        # LOC(SEOP) to see which answer TAPE, then GONG to find the
+        # console.  **Exchange LOC and GONG are both unimplemented**
+        # (docs/boot_plan.md M3++ item A4 builds them with the
+        # console), so a machine with no console makes MCP walk the
+        # whole exchange and be refused.  AD is the same walk reaching
+        # channels with nothing at them.
         ("mcp_indicators_word11", str(IND_WORD),
-         _ind("RZ") | _ind("XVZ") | _ind("XF")),
+         _ind("RGZ") | _ind("XE") | _ind("XVGZ") | _ind("XCZ")
+         | _ind("AD") | _ind("OP")),
 
         # >>> THE MOVE ITSELF, AND IT IS THE POINT OF THE FIXTURE <<<
         # Printed p.4 line 28, "T,$11,X BUFER($X1),X BS END  -MOVE MCP
@@ -221,9 +288,21 @@ def main():
         #
         # X BS END is the first word past the bootstrap image, so
         # everything at and above it was ZERO before the move.
-        ("mcp_moved_first", str(sym("XBSEND")), prosa.body_word(prosa.MCP_AT)),
+        # >>> AND WHAT IT MOVES IS MCP <<<  The eighty words are
+        # printed pp.15-18 ASSEMBLED, and they are assembled at
+        # 000621.00 because printed p.15 line 7 is "SLC,X BS END" --
+        # the same address this TRANSMIT delivers them to.  So the
+        # check is the image word for word, from the same assembler
+        # the transcriptions are verified with.
+        ("mcp_moved_first", str(sym("XBSEND")), prosa.MCP_IPL_WORDS[0]),
         ("mcp_moved_last", str(sym("XBSEND") + prosa.IPL_WORDS - 1),
-         prosa.body_word(prosa.MCP_AT + prosa.IPL_WORDS - 1)),
+         prosa.MCP_IPL_WORDS[-1]),
+        # A word from the middle, so the check is not two endpoints
+        # and a hope: printed p.17's X13 A, the CM1111 that presets
+        # every CST entry to not-available.
+        ("mcp_moved_middle",
+         str(sym("XBSEND") + (prosa.IPL_WORDS // 2)),
+         prosa.MCP_IPL_WORDS[prosa.IPL_WORDS // 2]),
         # AND THE WORD AFTER THE LAST ONE IS STILL ZERO, which is what
         # pins the COUNT rather than merely the direction: a transmit
         # of seven would land a fixture word here.
@@ -262,23 +341,30 @@ def main():
     ]
 
     print(generate(module_name, prog, checks,
-                   # IT STOPS IN MCP'S OWN DELAY LOOP.
-                   # 169 is half-word 169 = 000124.40, which is
-                   # printed p.4 line 32's "CB,0,$" -- count and
-                   # branch to ITSELF, the wait MCP does after
-                   # RELEASE DISK.  The harness stops on "an
-                   # instruction branched to its own address", which
-                   # is the BEW,$ idiom it was built for and is also
-                   # exactly this loop, so the run ends after one
-                   # decrement.  THAT IS A HARNESS LIMIT, NOT A MODEL
-                   # ONE, and it is why the count in word 16 is
-                   # 131,070 rather than 0.
+                   # >>> IT STOPS WHERE IBM TOLD IT TO <<<
+                   # 239 is half-word 239 = 000167.40, and that is
+                   # **printed p.6 line 1, "BD,$  -LOOP"** -- the last
+                   # instruction of MCP's own ERROR ROUTINE, a BRANCH
+                   # DISABLED to its own address.  The row before it
+                   # is line 56, "TI,1,X ERR AD,$R  -DISPLAY ERROR
+                   # ADDRESS IN", which puts the failing address in
+                   # the R register for the operator to read off the
+                   # console lights.
                    #
-                   # IT USED TO BE 0, by a different route: see the
-                   # indicator check above for why that route was an
-                   # artifact of there being no disk.
-                   pc_check=169,
-                   step_cap=12000000,
+                   # So the machine is not stuck and it has not
+                   # wandered: it diagnosed a configuration with no
+                   # IOCD cards, tried to print the message, found no
+                   # console, left the address on display and stopped
+                   # the way the program says to stop.
+                   #
+                   # IT USED TO BE 169 -- printed p.4 line 32's
+                   # "CB,0,$", MCP's delay loop -- because `halted()`
+                   # meant "branched to its own address" and that loop
+                   # is one.  A COUNT AND BRANCH makes progress, so it
+                   # is no longer a halt (StretchCore.bsv's `isHalt`),
+                   # and everything pp.15-18 do was behind it.
+                   pc_check=239,
+                   step_cap=40000000,
                    ipl=True))
 
 

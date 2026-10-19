@@ -64,26 +64,38 @@ Four facts follow, and none of them is a guess:
    `SC` left that field alone.
 
 ---------------------------------------------------------------------
-WHAT IS CHOSEN -- every number below
+WHAT IS REAL -- the thing being moved
 ---------------------------------------------------------------------
-The four sizes and the body words are invented.  They are picked to
-be SMALL and DISTINGUISHABLE, not to resemble MCP:
+**THE WORDS MCP MOVES ARE MCP.**  Printed pp.15-18 are transcribed
+bit-exactly (`decks/mcp_bootstrap_p15.strap` through `p18`) and they
+ASSEMBLE CONTIGUOUSLY AT 000621.00, which is X BS END -- printed
+p.15 line 7 is `SLC,X BS END`.  Eighty words, every one of them set,
+no gap and no overlap across the four pages.
 
+That is also where printed p.4 line 28's TRANSMIT puts them.  So the
+record carries the real image at the offset the dictionary names, and
+the destination of the move is the address the code was assembled
+for.  `IPL_WORDS` below is therefore DERIVED -- it is the image's
+length -- and not chosen.
+
+---------------------------------------------------------------------
+WHAT IS CHOSEN -- the two offsets and the filler
+---------------------------------------------------------------------
   * the two "preceding" sizes are 3 and 5, so MCP starts at buffer
     word 8 and the sum is not a round number either side;
-  * the IPL size is 6, so the move is short enough to check word by
-    word and long enough that an off-by-one shows;
   * the MCP size is 12, which nothing in the transcribed pages reads
     back -- it goes into X10 and stays there;
-  * every body word CARRIES ITS OWN BUFFER OFFSET in its low bits,
-    so a check after the move does not have to trust this file's
-    arithmetic: it reads the offset out of the moved word and
-    compares it with the one MCP computed.
+  * the FILLER around the image -- every word that is not the
+    dictionary and not MCP -- carries ITS OWN BUFFER OFFSET in its
+    low bits.
 
-THAT LAST POINT IS THE WHOLE DESIGN.  A fixture that only proved the
-machine copied *something* would be worth little.  This one makes the
-destination say WHICH source words arrived, so if the derivation in
-section 1 is wrong the check fails with the actual offset in hand.
+THAT LAST POINT IS STILL THE WHOLE DESIGN, and it does more work now
+than when the body was filler end to end.  If the derivation in
+section 1 is wrong by even one word, the move lands FILLER at X BS
+END, and the check fails with `0x5A5A...0007` -- a value that says
+which offset MCP actually computed.  Landing plausible-looking code
+there instead would be a far worse failure, because it would look
+like a working machine executing the wrong thing.
 
 ---------------------------------------------------------------------
 WHEN TO DELETE THIS FILE
@@ -93,6 +105,7 @@ PROSA record.  At that point the dictionary stops being chosen and
 the sizes become facts, and any test that still imports this module
 is testing the fixture.
 """
+import mcp_image
 
 # The record's own geometry.  Printed p.14's control words read it in
 # 513-word chunks with a 512-word stride; this record is far shorter
@@ -104,14 +117,41 @@ DICT_AT = (1, 3, 5, 7)        # derived: see section 1
 # Chosen sizes, in words.
 WORDS_BEFORE_MCP_A = 3        # X12, "GET DICTIONARY"
 WORDS_BEFORE_MCP_B = 5        # X14, "GET INDEX"
-IPL_WORDS          = 6        # X11, "GET IPL"  -- the TRANSMIT's count
 MCP_SIZE_WORDS     = 12       # X10, "GET MCP SIZE"
 
 # Where MCP's own words start inside the record, which is what
 # LVS computes: the sum of the two "preceding" sizes.
 MCP_AT = WORDS_BEFORE_MCP_A + WORDS_BEFORE_MCP_B
 
-RECORD_WORDS = 24             # chosen: comfortably past MCP_AT+IPL_WORDS
+
+def mcp_ipl_image():
+    """Printed pp.15-18, assembled: (first_word_address, [words]).
+
+    Contiguous by construction -- printed p.15 line 7 is
+    `SLC,X BS END` -- and this asserts it rather than assuming it,
+    because a hole would silently become a zero word in the record
+    and a zero half-word is BRANCH ENABLED to location zero.
+    """
+    prog, _, _, _ = mcp_image.build_mcp_ipl()
+    lo, hi = min(prog.words), max(prog.words)
+    words = []
+    for a in range(lo, hi + 1):
+        if a not in prog.words:
+            raise SystemExit(
+                f"prosa.py: printed pp.15-18 have a HOLE at word "
+                f"{a:#o}; the image must be contiguous to be moved")
+        words.append(prog.words[a])
+    return lo, words
+
+
+MCP_IPL_AT, MCP_IPL_WORDS = mcp_ipl_image()
+IPL_WORDS = len(MCP_IPL_WORDS)   # X11, "GET IPL" -- the TRANSMIT's
+                                  # count.  DERIVED: the image's length.
+
+# A few words of filler past the image, so that a transmit which ran
+# one word long would copy something recognisable rather than falling
+# off the end of the record.
+RECORD_WORDS = MCP_AT + IPL_WORDS + 4
 
 # A body word carries its own offset.  0x5A5A is a pattern no part of
 # the bootstrap or the control words uses, so a stray one is obvious
@@ -143,13 +183,21 @@ def record():
              IPL_WORDS, MCP_SIZE_WORDS)
     for offset, n in zip(DICT_AT, sizes):
         words[offset] = index_word(count=n)
+    # MCP's own image, at the offset the dictionary names.
+    words[MCP_AT:MCP_AT + IPL_WORDS] = MCP_IPL_WORDS
     return words
 
 
 if __name__ == "__main__":
     ws = record()
     print(f"{len(ws)} words; MCP's own words start at buffer offset "
-          f"{MCP_AT}, and {IPL_WORDS} of them move to X BS END")
+          f"{MCP_AT}, and {IPL_WORDS} of them -- printed pp.15-18, "
+          f"assembled at {MCP_IPL_AT:#o} -- move to X BS END")
     for i, w in enumerate(ws):
-        kind = "DICTIONARY" if i in DICT_AT else ""
+        if i in DICT_AT:
+            kind = "DICTIONARY"
+        elif MCP_AT <= i < MCP_AT + IPL_WORDS:
+            kind = f"MCP {MCP_IPL_AT + i - MCP_AT:06o}"
+        else:
+            kind = ""
         print(f"  +{i:2d}  {w:016x}  {kind}")

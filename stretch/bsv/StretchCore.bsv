@@ -240,6 +240,40 @@ module mkStretchCore(StretchCore);
   // (no operand words yet). Either it completes in this clock,
   // committing exactly as execute() always did, or the E-box holds it
   // for its operand read and the resume arm finishes it.
+  // WHAT COUNTS AS A HALT, and why a self-branch is not always one.
+  //
+  // `halted()` exists for the `BEW, $` idiom -- BRANCH ENABLED AND
+  // WAIT to its own address -- which is how every program in this
+  // corpus says it is finished, and the harness polls it to stop
+  // stepping.  "Branched to its own address" is the test.
+  //
+  // A COUNT AND BRANCH TO ITS OWN ADDRESS IS A DELAY LOOP, NOT A
+  // HALT, and MCP printed p.4 line 32 is one:
+  //
+  //     LCI,0,(8)377777.0        (131,071 into index 0's count)
+  //     CB,0,$                   -- count down, branch to itself
+  //
+  // the wait after RELEASE DISK.  It branches to its own address
+  // 131,071 times and then falls through, so a machine stopped there
+  // has not finished: it has been interrupted mid-wait.  Before this
+  // test existed the MCP boot run ended after ONE decrement, with
+  // 131,070 still in the count, and everything printed pp.15-18 do
+  // was unreachable behind it.
+  //
+  // THE DISCRIMINATOR IS THE INSTRUCTION, NOT THE STATE.  A count
+  // branch makes progress by construction -- it writes the index
+  // register whether or not it branches -- so no other test is
+  // needed, and testing the count instead would make `halted` depend
+  // on a value the decision site does not have.
+  function Bool isHalt(DecodedInstr di, HWordAddr next, HWordAddr pc);
+    Bool selfBranch = (next == pc);
+    Bool counting = (case (di) matches
+                       tagged CountBranch .*: True;
+                       default: False;
+                     endcase);
+    return selfBranch && !counting;
+  endfunction
+
   function ActionValue#(Bool) startExecute(HWordAddr pc, InstrLen len, DecodedInstr di,
                                            Bool atIntAddr) =
     actionvalue
@@ -252,7 +286,7 @@ module mkStretchCore(StretchCore);
         xmitPending <= o.xmitStart;
         Bool taken = (o.next != pc + ((len == Full) ? 2 : 1));
         ibusy <= budgetClocks(di, taken);   // completed in the dispatch clock
-        return o.next == pc;
+        return isHalt(di, o.next, pc);
       end else
         return False;
     endactionvalue;
@@ -942,7 +976,7 @@ module mkStretchCore(StretchCore);
         Bit#(32) elapsed = clk - startClk;
         Bit#(16) budget = budgetClocks(di, taken);
         ibusy <= (elapsed >= zeroExtend(budget)) ? 0 : budget - truncate(elapsed);
-        done = (o.next == pc);
+        done = isHalt(di, o.next, pc);
       end
     end
     ebusy <= ebn;
