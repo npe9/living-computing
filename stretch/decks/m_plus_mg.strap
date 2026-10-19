@@ -1,0 +1,102 @@
+! ADD MAGNITUDE TO MEMORY, the VFL form (code abc101001; X22-6533
+! pocket card "INTEGER ARITHMETIC").  Reference Manual printed p.62
+! defines the whole operation in two sentences:
+!
+!   "The magnitude of the accumulator field as specified by the offset
+!   is algebraically added to the addressed operand.  A POSITIVE SIGN
+!   IS ASSUMED FOR THE ACCUMULATOR FIELD before the negative sign
+!   modifier is applied.  The actual accumulator sign is not used or
+!   changed by the operation.  IF THE SUM HAS THE SAME SIGN AS THE
+!   SIGN OF THE STORAGE OPERAND, IT REPLACES THAT OPERAND IN STORAGE.
+!   IF THE SUM IS OF OPPOSITE SIGN, ZERO BYTES REPLACE THE NUMERIC
+!   PART OF THE STORAGE FIELD.  In either case the sign byte, if any,
+!   of the storage operand is not changed."
+!
+! and Figure 13 on the same page, "Sign Condition Results", tabulates
+! it.  Two of its rows are transcribed below as T3 and T4.
+!
+! NOT TO BE CONFUSED WITH the FLOATING-POINT M+MG of Reference Manual
+! pp.88-89, which has its own opcode and its own deck
+! (decks/fp_arith_f206b.strap, from diagnostic jb_af1c routine F206B).
+! They share a mnemonic and nothing else.
+!
+! ARRIVED VIA MCP.  printed p.5 lines 15 and 17 of the March 1963
+! bootstrap are "M+MG(BU,48,8)" and "M+MG(BU,8,8)" -- the two adds
+! that fold a failing instruction address into the error routine's
+! console message -- and with the operation refused as Operation Code
+! Invalid the message printed its own placeholder, "000000.0".
+!
+! Each case leaves its result in the word it operated on, so the six
+! checks read the six targets.  offset is 0 throughout, so the
+! accumulator field is the whole accumulator.
+!
+!   T1  the MCP case: unsigned, same sign, a plain add.
+!   T2  the same sum with the ACCUMULATOR LOADED NEGATIVE.  "The
+!       actual accumulator sign is not used": T2 must equal T1.
+!   T3  Figure 13: storage 3-, accumulator 5+, sum +2 -- OPPOSITE --
+!       so zero bytes replace the numeric part and the sign byte
+!       stays: 0-.
+!   T4  Figure 13: storage 5-, accumulator 3+, sum -2 -- SAME -- so
+!       the sum is stored: 2-.
+!
+! TWO INJECTIONS, MEASURED, one per rule, run together because they
+! land on different checks:
+!   - accSh built with the real accumulator sign instead of a forced
+!     positive one: T2 = 95 (and T1, T3, T4 unmoved -- they load the
+!     accumulator with L(BU), so its sign is already 0).
+!   - magToMemory returning the sum unconditionally: T3 = 512, i.e.
+!     2+ instead of 0-, with the sign byte wrongly cleared too.
+! Neither injection disturbs the other's checks, so the two rules are
+! independently witnessed.
+!
+! THE NEGATIVE SIGN MODIFIER IS NOT EXERCISED HERE, and the reason is
+! that nothing can SPELL it -- the semantics are settled.  Reference
+! Manual printed p.57's "Sign Control" table says that in a to-memory
+! operation bit 52 inverts the ACCUMULATOR sign and leaves the storage
+! field's alone, and p.62 says it again for M+MG in particular, so the
+! model implements it.  But C22-6531 Appendix A footnote 4's N suffix
+! ("M+MGN") is not implemented in this assembler, and the
+! written-minus form "M-MG" is witnessed only for the FLOATING-POINT
+! operation (jb_af1c F206B, which prints M-MG at .52 A0 beside M+MG's
+! .42).  Assuming the VFL form shares that spelling is the inference
+! Rule 4 forbids.  docs/NEXT.md records the spelling as its own item.
+
+        SLC, (8)2000.0
+
+START   L(BU,64,8), ACC5, 0        ! accumulator := +5
+        M+MG(BU,64,8), T1, 0       ! 100 + 5 = 105
+
+        L(B,64,8), NEG5, 0         ! accumulator := -5 (sign byte set)
+        M+MG(BU,64,8), T2, 0       ! sign ignored: 100 + 5 = 105 again
+
+        L(BU,64,8), ACC5, 0        ! accumulator := +5
+        M+MG(B,64,8), T3, 0        ! 3- plus 5+ -> sum +2, opposite -> 0-
+
+        L(BU,64,8), ACC3, 0        ! accumulator := +3
+        M+MG(B,64,8), T4, 0        ! 5- plus 3+ -> sum -2, same -> 2-
+
+PASS    BEW, $
+
+! A SECOND SLC, because the data must be WORD-ALIGNED.  BEW is a
+! half-word instruction, so without this the location counter sits on
+! a .5 boundary, every 64-bit field below straddles two words, and
+! fieldCrosses rejects the lot as Operation Code Invalid -- which the
+! first run of this deck did.
+        SLC, (8)2020.0
+
+! Accumulator operands.
+ACC3    DD(BU,64,8), 3
+ACC5    DD(BU,64,8), 5
+! -5 as a signed binary field, byte size 8: magnitude 5 in bits 0-55,
+! sign in the leading position of the 8-bit sign byte -- (5<<8)|(1<<7).
+NEG5    DD(BU,64,8), (8)2600
+
+! Targets.  T1 and T2 are unsigned, so the whole field is magnitude.
+T1      DD(BU,64,8), 100
+T2      DD(BU,64,8), 100
+! 3-: magnitude 3 in bits 0-55, sign byte 0x80 -- (3<<8)|(1<<7).
+T3      DD(BU,64,8), (8)1600
+! 5-: (5<<8)|(1<<7).
+T4      DD(BU,64,8), (8)2600
+
+        END, START

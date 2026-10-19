@@ -67,6 +67,32 @@ function SM128 smAdd(SM128 a, SM128 b);
     return SM128 { sign: b.sign, mag: b.mag - a.mag };
 endfunction
 
+// ADD MAGNITUDE TO MEMORY's store rule, Reference Manual printed
+// p.62, which is two sentences and both of them are about SIGNS:
+//
+//   "If the sum has the same sign as the sign of the storage operand,
+//   it replaces that operand in storage.  If the sum is of opposite
+//   sign, zero bytes replace the numeric part of the storage field.
+//   In either case the sign byte, if any, of the storage operand is
+//   not changed."
+//
+// So the sign STORED is always the storage operand's own sign and
+// only the magnitude is in question.  Figure 13 on the same page
+// ("Sign Condition Results") tabulates every combination and this
+// reproduces its whole Add Magnitude to Memory block: storage 3-
+// plus accumulator 5+ stores 0-, storage 5- plus 3+ stores 2-.
+//
+// `mag` is false for plain ADD TO MEMORY, which stores the sum as it
+// comes, so one call site serves both.
+function SM128 magToMemory(Bool mag, SM128 sum, SM128 opnd);
+  // A zero sum is signless; treating it as "opposite" would still
+  // store zero, so the comparison is safe either way, but compare on
+  // the sign bits as the manual's table does.
+  return !mag ? sum
+              : SM128 { sign: opnd.sign,
+                        mag: (sum.sign == opnd.sign) ? sum.mag : 0 };
+endfunction
+
 // Three-way compare of two sign-magnitude values. Returns -1/0/+1 in a
 // signed 2-bit-ish encoding via Ordering-like tags.
 typedef enum { CmpLow, CmpEqual, CmpHigh } Cmp3 deriving (Bits, Eq, FShow);

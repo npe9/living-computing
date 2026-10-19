@@ -2431,7 +2431,7 @@ function ActionValue#(VflOutcome)
               ind = setResultIndicatorsF(ind, sum);
             end
           end
-          6'b001001, 6'b101011: begin // M+ (Add to Memory) and M+1
+          6'b001001, 6'b101011, 6'b101001: begin // M+, M+1, M+MG
             // (Add One to Memory) -- prefetch/bail-out shape,
             // inlining readFieldWithHi/writeFieldWithHi's own logic
             // rather than calling them: guaranteed non-crossing
@@ -2458,6 +2458,42 @@ function ActionValue#(VflOutcome)
             // and the model used to set Operation Code Invalid on it
             // (docs/NEXT.md 6a).
             Bool addOne = (vi.code == 6'b101011);
+            // ADD MAGNITUDE TO MEMORY, Reference Manual printed p.62,
+            // and the whole operation is two sentences there:
+            //
+            //   "The magnitude of the accumulator field as specified
+            //   by the offset is algebraically added to the addressed
+            //   operand.  **A positive sign is assumed for the
+            //   accumulator field** before the negative sign modifier
+            //   is applied.  The actual accumulator sign is not used
+            //   or changed by the operation.  **If the sum has the
+            //   same sign as the sign of the storage operand, it
+            //   replaces that operand in storage.  If the sum is of
+            //   opposite sign, ZERO BYTES replace the numeric part of
+            //   the storage field.**  In either case the sign byte,
+            //   if any, of the storage operand is not changed."
+            //
+            // Figure 13 on the same page, "Sign Condition Results",
+            // tabulates it for every combination and the two rules
+            // reproduce the whole "Add Magnitude to Memory" block:
+            // storage 3- with accumulator 5+ gives 0-, storage 5-
+            // with 3+ gives 2-, and every unsigned row is a plain
+            // magnitude sum with the storage sign kept.
+            //
+            // FOR MCP'S OWN USE IT IS SIMPLER THAN THAT.  printed
+            // p.5 lines 15 and 17 are "M+MG(BU,48,8)" and
+            // "M+MG(BU,8,8)" -- BINARY UNSIGNED -- and p.62 says
+            // "unsigned storage fields are considered positive", so
+            // both operands are positive, the sum agrees in sign, and
+            // the operation is a plain add.  The opposite-sign rule
+            // is still implemented because the manual states it and
+            // Figure 13 pins it.
+            //
+            // ARRIVED VIA MCP, like M+1 before it: the ERROR ROUTINE
+            // uses these two adds to write the failing address into
+            // its console message, and with the operation refused the
+            // message printed its own placeholder, "000000.0".
+            Bool magnitude = (vi.code == 6'b101001);
             if (immediate || fieldCrosses(ea, len_)) begin
               ind = setOpInvalid(ind);
               vflOk = False;
@@ -2467,16 +2503,71 @@ function ActionValue#(VflOutcome)
               SM128 acc = readAcc(st);
               SM128 accSh = addOne
                 ? SM128 { sign: 0, mag: 1 }                       // M+1
-                : SM128 { sign: acc.sign, mag: acc.mag >> offSh }; // M+
+                : magnitude
+                ? SM128 { sign: vi.m.invert, mag: acc.mag >> offSh } // M+MG
+                : SM128 { sign: acc.sign ^ vi.m.invert,            // M+
+                          mag: acc.mag >> offSh };
+              // WHERE THE NEGATIVE SIGN MODIFIER LANDS, and the
+              // manual answers it for the whole class rather than
+              // for one operation.  Reference Manual printed p.57,
+              // "Sign Control": "bit 52 designates whether the sign
+              // of the UNREPLACED operand is taken as-is or inverted
+              // ...  if the result is placed in the accumulator, bit
+              // 52 determines the use of the sign of the operand
+              // from storage; IF THE RESULT IS PLACED IN STORAGE,
+              // BIT 52 DETERMINES THE USE OF THE ACCUMULATOR SIGN."
+              // The table beneath it spells out all four cases under
+              // "TO-MEMORY OPERATION": 01 and 11 invert the
+              // ACCUMULATOR sign and leave the storage field's
+              // alone, while 10 and 11 (bit 51, the unsigned
+              // modifier) are what make the storage field unsigned.
+              //
+              // SO THE STORAGE OPERAND IS READ WITHOUT THE INVERT
+              // for every operation in this arm -- M+ as much as
+              // M+MG -- and the bit goes on the accumulator instead.
+              // p.62 says the same thing again for M+MG alone: "the
+              // accumulator sign is considered positive when the
+              // negative sign modifier is zero and negative when the
+              // modifier is one", on top of the assumed-positive
+              // rule, which is why M+MG's arm starts from 0 and M+'s
+              // from the real sign.
+              //
+              // NOTHING IN THE SUITE EXERCISES THIS, and it cannot:
+              // the VFL path of strap_asm.py has no spelling for the
+              // negative sign modifier at all (C22-6531 Appendix A
+              // footnote 4's N suffix is unimplemented, and the
+              // written-minus "M-"/"M-MG" forms are recognised only
+              // for the floating-point operations).  So the change
+              // is inert today and rests entirely on p.57.  It is
+              // still worth making: the previous code would have
+              // silently subtracted the wrong operand's sign the
+              // moment a spelling arrived.  docs/NEXT.md carries the
+              // spelling as its own item.
+              //
+              // M+1'S ADDEND IS LEFT ALONE.  p.57's table is about
+              // "the accumulator sign", and M+1's addend is the
+              // constant one rather than an accumulator field, so
+              // the modifier has nothing to act on there and its
+              // arm above still builds sign 0.  Its STORAGE operand
+              // does follow the rule below, because that half of the
+              // table is about the class -- "if the result is placed
+              // in storage" -- and M+1 is a to-memory operation.  If
+              // M+1's own definition says otherwise it will want
+              // separating; I have not read it.
+              Bit#(1) opndInvert = 0;
               if (!vflNeedsRefill) begin
                 if (prefetchCount >= 1) begin
                   Bit#(64) raw = extractFieldBits(prefetch[0], 0, off, len_);
-                  SM128 opnd = fieldToSM(raw, len_, bsz, vi.m.unsign, vi.m.invert);
+                  SM128 opnd = fieldToSM(raw, len_, bsz, vi.m.unsign, opndInvert);
                   SM128 sum = smAdd(opnd, accSh);
+                  SM128 stored = magToMemory(magnitude, sum, opnd);
                   if (protViolates(st, w0)) ind = setBit(ind, ind_DS, 1);
                   else st.writeWord(w0, insertFieldBits(prefetch[0], off, len_,
-                                                    smToField(sum, len_, bsz, vi.m.unsign)));
-                  ind = setResultIndicatorsF(ind, sum);
+                                                    smToField(stored, len_, bsz, vi.m.unsign)));
+                  // "set according to the FINAL RESULT STORED"
+                  // (p.62's Arithmetic Result line), which for M+MG
+                  // is not always the sum.
+                  ind = setResultIndicatorsF(ind, stored);
                   vflReadsUsed = 1;
                 end else
                   needsRead = tagged Valid w0;
@@ -2492,13 +2583,14 @@ function ActionValue#(VflOutcome)
                 ind = dfSignal(st, zeroExtend(vflPx1.refill), ind);
                 if (prefetchCount >= 2) begin
                   Bit#(64) raw = extractFieldBits(prefetch[0], 0, off, len_);
-                  SM128 opnd = fieldToSM(raw, len_, bsz, vi.m.unsign, vi.m.invert);
+                  SM128 opnd = fieldToSM(raw, len_, bsz, vi.m.unsign, opndInvert);
                   SM128 sum = smAdd(opnd, accSh);
+                  SM128 stored = magToMemory(magnitude, sum, opnd);
                   if (protViolates(st, w0)) ind = setBit(ind, ind_DS, 1);
                   else st.writeWord(w0, insertFieldBits(prefetch[0], off, len_,
-                                                    smToField(sum, len_, bsz, vi.m.unsign)));
+                                                    smToField(stored, len_, bsz, vi.m.unsign)));
                   vflPending = tagged Valid tuple2(vi.a.i1, unpackIndexWord(prefetch[1]));
-                  ind = setResultIndicatorsF(ind, sum);
+                  ind = setResultIndicatorsF(ind, stored);
                   ind = setIndexResultIndicatorsF(ind, vflPx1); // pre-refill state, p.21
                 end else if (prefetchCount == 1)
                   needsRead = tagged Valid zeroExtend(vflPx1.refill);

@@ -205,16 +205,20 @@ ENCODING_ONLY = {
 # ---------------------------------------------------------------------
 # A BLIND SPOT THIS AUDIT HAS, FOUND 2026-10-19 AND NOT YET CLOSED
 # ---------------------------------------------------------------------
-# **M+MG IS USED BY A DECK, IS NOT IN UNIMPLEMENTED, AND SETS
-# OPERATION CODE INVALID EVERY TIME IT RUNS.**  The ratchet is
-# satisfied and the operation does not work.
+# **M+MG WAS USED BY A DECK, WAS NOT IN UNIMPLEMENTED, AND SET
+# OPERATION CODE INVALID EVERY TIME IT RAN.**  The ratchet was
+# satisfied and the operation did not work.  M+MG itself is fixed
+# (2026-10-19, decks/m_plus_mg.strap, RefMan printed p.62), but the
+# blind spot that hid it is not, and "+MG" is still in it.
 #
 # decks/mcp_bootstrap_p5_p6.strap lines 15 and 17 are
 # "M+MG(BU,48,8)" and "M+MG(BU,8,8)" -- the two adds that fill MCP's
 # error address into its console message -- and a four-line scratch
-# reproduces the OP on either alone.  StretchExecute's VFL arm
-# implements six codes (L, ST, +, M+, K, M+1); the MG forms, "+MG"
-# and "M+MG", are not among them and fall to the default.
+# reproduced the OP on either alone.  StretchExecute's VFL arm then
+# implemented six codes (L, ST, +, M+, K, M+1); the MG forms, "+MG"
+# and "M+MG", were not among them and fell to the default.  M+MG is
+# now the seventh arm.  **"+MG" STILL FALLS TO THE DEFAULT** and this
+# audit still cannot see that, which is the point of the section.
 #
 # WHY THE AUDIT CANNOT SEE IT.  This file compares two sets: what the
 # assembler can EMIT and what some deck USES.  Neither says anything

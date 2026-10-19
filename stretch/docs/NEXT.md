@@ -4889,6 +4889,237 @@ forgotten: Reference Manual **PDF page = printed page + 3**, and
 `ja_ua1_ssip` is cited by **PDF page** because its listing carries no
 printed page numbers.
 
+## `M+MG` IS BUILT, AND `OP` IS OUT OF THE INDICATOR WORD AGAIN -- 2026-10-19
+
+ADD MAGNITUDE TO MEMORY, the VFL form (`abc101001`), is the seventh
+arm of `StretchExecute`'s VFL integer case. Reference Manual printed
+p.62 defines it in two sentences and Figure 13 on the same page
+tabulates every sign combination; `decks/m_plus_mg.strap` transcribes
+two of the table's rows and takes the other two cases from MCP's own
+unsigned use, with **two measured injections** that land on different
+checks (a real accumulator sign instead of a forced positive one puts
+95 in T2; storing the sum unconditionally puts 512 in T3).
+
+**NOT THE FLOATING-POINT `M+MG`** of printed pp.88-89, which has its
+own opcode and its own thirty-two-sub-test deck from `jb_af1c` routine
+F206B. Same mnemonic, different instruction, and the FP one has been
+built for a long time.
+
+### What found it
+
+The console. MCP's error routine prints its diagnosis on the
+operator's console and folds the failing instruction's address into
+the message with two `M+MG(BU)` adds (printed p.5 lines 15 and 17).
+With the operation refused, **the sentence came out right and the
+address came out as the message's own placeholder, "000000.0"** --
+a wrong number inside a correct diagnostic, which is exactly the
+failure an end-to-end boot test with no field-level check would pass.
+
+`tests/audit_opcode_coverage.py` could not see it and still cannot:
+it compares what the assembler can EMIT against what some deck USES,
+and says nothing about what the model EXECUTES. `+MG`, the
+to-accumulator form, is still in that blind spot.
+
+### One correction to an operation that already worked
+
+Printed p.57's "Sign Control" settles where the negative sign modifier
+(bit 52) lands, for the whole class rather than one operation: "if the
+result is placed in the accumulator, bit 52 determines the use of the
+sign of the operand from storage; **if the result is placed in
+storage, bit 52 determines the use of the accumulator sign**", with a
+four-row table under "TO-MEMORY OPERATION" spelling out all four
+combinations. The model had been applying it to the storage operand
+for `M+`. Corrected.
+
+**The correction is inert and the comment says so.** Nothing in the
+suite can reach it, because the VFL path of `strap_asm.py` has no
+spelling for the negative sign modifier at all -- see the next item.
+
+## TWO OPEN ITEMS LEFT BY `M+MG`, both with a named source to read
+
+### (a) The VFL negative sign modifier has no spelling
+
+C22-6531 Appendix A footnote 4 says a VFL operation "may be suffixed
+by the letter N" for the negative sign modifier, so `M+MGN` and `M-N`
+should assemble. `strap_asm.py` implements only the `I` suffix. The
+written-minus forms (`M-`, `M-MG`, `-MG`) are recognised, but **only
+on the floating-point path** -- they come from `jb_af1c`'s printed
+codes, and nothing witnesses the VFL spelling.
+
+The N suffix cannot simply be added the way `I` was: `LN` is a real FP
+operation, so a blanket "strip a trailing N" rule would capture it.
+Any implementation wants the footnote read in full first, and a
+listing row to check against.
+
+### (b) `LF`'s BYTE SIZE -- does a connective expand bytes?
+
+**This is the live one, and it is what stands between MCP and a
+correct error message.**
+
+Printed p.5 line 12 is `LF(BU,21,3), X ERR AD, 1` and its own comment
+is `-BREAK ADDRESS INTO EIGHT BIT BYTES`. The field is **21 bits with
+byte size 3** -- seven 3-bit bytes -- and the two `M+MG` that follow
+read **48 and 8 bits with byte size 8**, which is seven 8-bit bytes.
+Seven octal digits, seven IQS character positions, `nnnnnn.n`. For the
+arithmetic to work byte-wise without carries the digits must each sit
+in their own 8-bit byte (IQS "0" is 0x60, and 0x60+7 = 0x67 does not
+carry), so **the connective must expand three-bit storage bytes into
+eight-bit accumulator bytes**.
+
+The model's accumulator is a flat bit vector and does no such thing.
+
+Printed p.57 argues both ways for INTEGER operations -- "the entire
+contents of the accumulator are treated basically as a unit", but "in
+decimal operations, the accumulator is treated as 32 four-bit digit
+positions", which is itself a byte-size-dependent reinterpretation.
+`LF` is a **connective**, not an integer operation, so the deciding
+source is the connective section.
+
+**READ, 2026-10-19: printed p.75, under the heading "Byte Size", and
+it says exactly what MCP's comment says.**
+
+> "The connective operations process data in eight-bit bytes. In
+> these operations, the byte size specified in the instruction
+> designates the number of bits used to represent each character or
+> symbol in the storage field. **If the byte size of the storage
+> operand is less than eight, each byte is converted into an
+> eight-bit byte before processing by the addition of high-order
+> zeros.** The accumulator operand is assumed to have a byte size of
+> eight. Any offset may be specified and the field is processed in
+> eight-bit bytes starting with the offset. Each byte of the storage
+> field, after conversion to eight-bit form if necessary, is combined
+> with an eight-bit byte from the accumulator according to the
+> specified connective. **Consequently, the result bytes always have
+> a byte size of eight.** In CONNECT, these result bytes replace the
+> accumulator field which participated in the operation."
+
+and, on the facing column of p.75:
+
+> "In contrast to the integer arithmetic operations, the accumulator
+> operand has a definite length; it is composed of as many bytes as
+> there are in the addressed storage field."
+
+So `LF(BU,21,3)` is seven 3-bit storage bytes, each zero-extended to
+eight bits, written as seven 8-bit accumulator bytes -- 56 bits of
+accumulator from 21 bits of storage. That is the expansion, stated,
+and the model does not do it.
+
+The same page carries the reverse rule for CONNECT TO MEMORY (each
+result byte is truncated to the storage byte size, high-order bits
+dropped, "no indication is given if the bits which are dropped are
+significant"), the short-last-byte rule, and the PF (Partial Field)
+indicator for a storage field that runs off the left end of the
+accumulator. Figure 20 on printed p.76 confirms connective 3 is `m`,
+the memory bit -- so `LF` is a plain copy.
+
+**ONE THING STILL DOES NOT ADD UP, and it should be settled before
+building.** MCP writes `LF(BU,21,3), X ERR AD, 1` -- OFFSET 1. Seven
+eight-bit result bytes at a right end of bit 1 occupy accumulator bits
+1-56, but the two `M+MG` that consume them use offsets 8 and 0, which
+want the bytes byte-aligned at bits 0-55. One bit out. Either the
+offset means something here that p.56's "number of bits by which the
+right end of the accumulator operand is offset" does not cover (the
+decimal rule on p.57 ignores the low two bits of the offset; no such
+rule is stated for connectives), or the message's own layout absorbs
+it. The encoding is not in doubt -- all 53 machine-code rows of
+pp.5-6 matched bit-exactly -- so this is a reading question, not a
+transcription one. **Settle it by measuring: dump the console image
+and the message table words around `$X2` and see where the bytes
+actually want to go.**
+
+### And the apparent second fault is not the model's -- it is MCP's
+
+The first `M+MG`'s 48-bit field landed at bits 16-63 of the message
+word rather than 8-55: the "." at byte 7 moved and byte 1 did not.
+That looked like a placement bug. **It is not. Both halves were
+checked against the printed listing and the model is faithful.**
+
+* Printed p.5 line 15 is `M+MG(BU,48,8),.8+.8($2),8` and its binary
+  output is `000000.20 82  060004.22 90`. The address field
+  `000000.20` is **16 bits** -- two eight-bit control codes, which is
+  what "SKIPPING OVER CONTROL CODES" means. Line 17 is
+  `.8+.48+.8($2)` printing `000001.00`, i.e. 64 bits, byte 8.
+* Printed p.11 lines 44-48 are `X MS 16C`, and they are:
+
+  ```
+  44*  000440.00+  +00000000  NULL  X MS 16C  SYN,$
+  45*  000440.00        375    DD(BU,8),(2)1111 1101   -CONTROL CODE * CARRIAGE RETURN
+  46*  000440.10               (IQS*)DD(BU,64,8),000000.0*  -SLOT FOR ERROR ADDRESS
+  47*  000441.10               (IQS*)DD(BU,64,8), NO IOCD CARD DETECTED*
+  48*  000443.70        376    DD(BU,8),(2)1111 1110   -CONTROL CODE * END OF MESSAGE
+  ```
+
+  **There is no RED code.** The address slot starts at `000440.10`
+  -- bit 8, byte ONE -- where every other message in the table has
+  `CR` then `RED` and starts its slot at byte TWO (`X MSG 17`, four
+  lines further down, prints `000444.00`, `000444.10`, `000444.20`).
+
+So for this one message the error routine writes the address one byte
+late, over the "." and into the text. **A real 7030 running this tape
+would have printed it the same way**, and the deck had already
+transcribed the missing RED code correctly without anyone noticing
+what it meant.
+
+**BUT DO NOT CLOSE THIS AS "IBM'S BUG" YET**, because the second
+`M+MG` does not fit that story. In a normal two-control-code message
+the slot occupies bytes 2-9 as `0 0 0 0 0 0 . 0`, the first `M+MG`
+covers bytes 2-7 (the six digits, correct), and the second targets
+**byte 8 -- the "."**, not byte 9. So under the tidy reading the
+seventh digit overwrites the decimal point in *every* message, which
+makes the point decorative and the slot's trailing `0` dead. Under
+the `X MS 16C` layout it is the other way round: the second `M+MG`
+lands exactly on the last digit and the first is the one that is
+late.
+
+Two readings, each of which makes one of the two instructions right.
+That is the shape of a misreading, not of a bug. The template string
+`000000.0`, the two offsets `.8+.8` and `.8+.48+.8`, and the `LF`
+offset of 1 all have to be made to agree at once.
+**AND THE LENGTH CHECK COULD NOT HAVE CAUGHT IT EITHER WAY**, which
+is worth writing down because §6g advertises that check as the thing
+that fixes these pages. `X MS 16C` is 32 bytes without the RED code
+and `CNOP` adds nothing to an already-aligned entry, so the next
+label lands at `000444.00`; with a RED code it would be 33 bytes,
+`CNOP` would pad to the half word and lay a NOP, and the next label
+would land at... also a whole number of words away. The delta does
+not discriminate here. The *printed row* does.
+
+### What the fixed message should say, and the offset that does not add up
+
+`tests/gen_mcp_boot_tb.py` carries the derived target. X ERR AD is
+869 = `000662.40`, so LF's 21 bits are 3476 = octal `0006624`, and
+the seven digits are `0 0 0 6 6 2` then `4`. Written one byte late,
+as MCP writes them, that is bytes 2-7 of the message word and byte 8:
+
+    w3 = fd 60 | 60 60 60 66 66 62      <CR> 0 | 0 0 0 6 6 2
+    w4 = 64 ...                          4 ...
+
+i.e. `<CR>0000066 2 4...` on the console -- the leading `0` of the
+slot untouched, the "." overwritten. **Verify against that, not
+against the tidy `000662.4` the slot was drawn for.**
+
+**ONE THING STILL DOES NOT ADD UP.** `LF(BU,21,3), X ERR AD, 1` has
+OFFSET 1, confirmed by decoding its own printed second half-word
+(`025300.46 70` gives length 21, byte size 3, offset 1). Seven
+eight-bit result bytes with their right end at bit 1 sit at
+accumulator bits 1-56, but the two `M+MG` that consume them use
+offsets 8 and 0, which want the bytes at bits 0-55. One bit out, and
+one bit out halves every digit. Printed p.57 states exactly this kind
+of rounding for DECIMAL operations -- "the offset is limited to these
+digit positions and hence to a multiple of four by ignoring the two
+low-order bits of the offset" -- and an analogous rule for
+connectives (ignore the low three bits, offset to a multiple of
+eight) would make MCP's code work exactly as written. **No such rule
+is stated on p.75 or p.76.** Find it, or find why it is not needed,
+before implementing the expansion: two independent off-by-ones in
+four instructions is much more likely to be a misreading than two
+bugs.
+
+The two console words that currently hold the wrong bytes are
+**deliberately not checked**, because freezing the output of a bug
+that is not yet explained would mean the fix changes the expectation
+again with nothing to say the new value is right.
+
 ## MCP'S BOOTSTRAP IS NOW REFUSED NOTHING -- LVS and TRANSMIT both built
 
 > **CLOSED 2026-10-19.** `LVS` is built: `StretchExecute`'s

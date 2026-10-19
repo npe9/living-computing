@@ -279,17 +279,29 @@ def main():
         # arithmetic evidence that **MCP found the console**, beside
         # the message it then printed.
         #
-        # OP IS M+MG, and it is now isolated rather than guessed:
-        # printed p.5 lines 15 and 17 are "M+MG(BU,48,8)" and
-        # "M+MG(BU,8,8)", the two adds that fill the error address
-        # into the message, and a four-line scratch deck reproduces
-        # the OP on either of them alone.  The model's VFL arm
-        # implements L, ST, +, M+, K and M+1; **the MG forms are not
-        # among them**, which is why the printed message still says
-        # "000000.0".  tests/audit_opcode_coverage.py cannot see this
-        # -- M+MG is used by a deck and is not in its UNIMPLEMENTED
-        # set, so the ratchet is satisfied by an operation that sets
-        # Operation Code Invalid every time it runs.
+        # >>> OP IS GONE.  THE MODEL REFUSES NOTHING MCP EXECUTES. <<<
+        #
+        # It was M+MG, isolated rather than guessed: printed p.5 lines
+        # 15 and 17 are "M+MG(BU,48,8)" and "M+MG(BU,8,8)", the two
+        # adds that fill the error address into the console message,
+        # and a four-line scratch deck reproduced the OP on either of
+        # them alone.  The model's VFL arm implemented L, ST, +, M+, K
+        # and M+1; the MG forms were not among them.  M+MG is the
+        # seventh arm as of 2026-10-19 (Reference Manual printed p.62,
+        # decks/m_plus_mg.strap), and this bit going out is the whole
+        # evidence that the arm is reached by the real program.
+        #
+        # THE SENTENCE ABOVE HAS BEEN TRUE BEFORE AND WAS NOT.  Twice.
+        # Once because an interrupt had reset the register (see
+        # above), once because fixing the TRANSMIT left LVS standing.
+        # What makes it different this time is that the bit went out
+        # without the register being wiped and without any other bit
+        # moving: XE, XVGZ, RGZ and AD are all unchanged.
+        #
+        # "+MG", the to-accumulator form, is still unimplemented, and
+        # tests/audit_opcode_coverage.py still cannot see that -- it
+        # compares what the assembler EMITS against what a deck USES
+        # and says nothing about what the model EXECUTES.
         #
         # AD is READ, not measured: printed p.15 line 20 takes the
         # communication region's size out of the PROSA record with
@@ -302,7 +314,7 @@ def main():
         # artifact; it goes away when the record is real.
         ("mcp_indicators_word11", str(IND_WORD),
          _ind("RGZ") | _ind("XE") | _ind("XVGZ")
-         | _ind("AD") | _ind("OP")),
+         | _ind("AD")),
 
         # >>> THE MOVE ITSELF, AND IT IS THE POINT OF THE FIXTURE <<<
         # Printed p.4 line 28, "T,$11,X BUFER($X1),X BS END  -MOVE MCP
@@ -396,14 +408,79 @@ def main():
     # TWO THINGS IN THIS OUTPUT ARE NOT RIGHT YET, and they are
     # asserted as they are rather than quietly trimmed:
     #
-    #   THE ERROR ADDRESS SLOT IS STILL "000000.0".  That string is
-    #   the message's own placeholder -- the decks write
-    #   "(IQS*)DD(BU,64,8),000000.0*  -SLOT FOR ERROR ADDRESS" -- and
-    #   printed p.5 lines 12-17 are supposed to fill it, breaking
-    #   X ERR AD into eight-bit bytes with LF and adding them in with
-    #   two M+MG. X ERR AD is 000662.40 and the slot prints zeros, so
-    #   something in that four-instruction sequence is not doing what
-    #   the listing means. OPEN, and the first thing to chase next.
+    #   THE ERROR ADDRESS SLOT IS WRONG, AND IT IS NOW WRONG IN A
+    #   DIFFERENT WAY.  The slot's string is the message's own
+    #   placeholder -- the decks write "(IQS*)DD(BU,64,8),000000.0*
+    #   -SLOT FOR ERROR ADDRESS" -- and printed p.5 lines 12-17 fill
+    #   it, breaking X ERR AD into eight-bit bytes with LF and adding
+    #   the octal digits in with two M+MG.  Until M+MG existed the
+    #   slot printed the placeholder untouched; now the adds run and
+    #   deposit bytes that are not IQS digits at all.
+    #
+    #   WHAT THE DIGITS ARE, derived rather than guessed.  X ERR AD is
+    #   a 19-bit HALF-WORD address in value-word bits 0-18 -- the same
+    #   number `mcp_x_err_ad` above checks, written there as a shift
+    #   so it tracks a re-transcription.  LF reads bits 0-20, which is
+    #   that half-word address times four, and its seven octal digits
+    #   are the seven character slots.  For this image the address is
+    #   869 = 000662.40, so bits 0-20 are 3476 = octal 0006624 and the
+    #   digits are 0 0 0 6 6 2 then 4.
+    #
+    #   WHERE THEY GO IS NOT WHERE THE SLOT WAS DRAWN, and that is a
+    #   fact about MCP rather than about this model.  Console word 3
+    #   IS memory word 000440, the start of message X MS 16C (three
+    #   earlier words of the ten-word write occupy console words
+    #   0-2), and printed p.11 lines 44-48 show that entry has only
+    #   ONE control code:
+    #
+    #       000440.00  375   DD(BU,8),(2)1111 1101  -CARRIAGE RETURN
+    #       000440.10        (IQS*)DD(BU,64,8),000000.0*  -SLOT
+    #
+    #   -- no RED code, so its slot starts at BYTE 1.  Every other
+    #   message has CR then RED and starts its slot at byte 2, and
+    #   printed p.5 line 15's address field is 000000.20, sixteen
+    #   bits, byte 2 unconditionally ("SKIPPING OVER CONTROL CODES",
+    #   plural).  So the six digits land at bytes 2-7, over this
+    #   message's second through sixth zeros and its ".".  The model
+    #   put them exactly there.
+    #
+    #   (IQS digit n is 0x60+n, "." is 0x74, " " is 0x00.)  Compute
+    #   the expectation from ipl_hw("XER16C") the way mcp_x_err_ad
+    #   does if this is ever turned into a check, and check it against
+    #   where MCP writes rather than where the slot was drawn.
+    #   docs/NEXT.md works the whole layout through, including the
+    #   second M+MG, which does NOT fit the same story -- it targets
+    #   byte 8, the "." of a normal two-code message.
+    #
+    #   WHAT IT ACTUALLY SAYS, as of 2026-10-19:
+    #
+    #       w3 = 0xfd6021e06061a08f
+    #       w4 = 0x88004749003d4931
+    #
+    #   TWO THINGS ARE VISIBLY WRONG and they are separable.  Byte 7
+    #   of w3 was the "." (0x74) and it MOVED, so the 48-bit field
+    #   landed at bits 16-63 rather than 8-55 -- a placement question
+    #   about what X2 points at after p.5 line 14's "LV,$X2,.32($X2)"
+    #   and what "SKIPPING OVER CONTROL CODES" is skipping.  And the
+    #   bytes added are far larger than 7, so the accumulator did not
+    #   hold seven small numbers.  That is the LF question, and it
+    #   has a source.  Line 12 is "LF(BU,21,3)" with BYTE SIZE 3 and
+    #   its own comment is "-BREAK ADDRESS INTO EIGHT BIT BYTES", and
+    #   Reference Manual printed p.75, under "Byte Size", says the
+    #   connectives do exactly that: "If the byte size of the storage
+    #   operand is less than eight, each byte is converted into an
+    #   eight-bit byte before processing by the addition of high-order
+    #   zeros... Consequently, the result bytes always have a byte
+    #   size of eight."  Seven 3-bit storage bytes become seven 8-bit
+    #   accumulator bytes.  **The model's accumulator is a flat bit
+    #   vector and does no such thing**, which is why the bytes added
+    #   are the raw 21-bit address smeared across the field.
+    #
+    #   TWO FAULTS, ONE RUN, and only one of them is the model's.
+    #   docs/NEXT.md carries both, plus the one thing that still does
+    #   not add up: LF's offset is 1, and seven eight-bit bytes with
+    #   their right end at bit 1 do not line up with the offsets of 8
+    #   and 0 that the two M+MG use.
     #
     #   THE WRITE RUNS PAST THE END-OF-MESSAGE CODE.  The control
     #   word counts ten words and the message is four, so words 7-12
@@ -413,9 +490,19 @@ def main():
     #   functions "initiated during WRITE instructions" but does not
     #   list them, so the model prints all ten and this is a gap with
     #   no source yet rather than a behaviour invented to fit.
+    # WORDS 3 AND 4 ARE DELIBERATELY NOT CHECKED, and the reason is
+    # the standard the rest of this file is held to.  Every exact
+    # value here is attributable -- "AD is the tape being short",
+    # "OP was M+MG" -- and the current contents of those two words are
+    # not: they are the output of a bug whose cause is named above but
+    # not yet settled.  Freezing them would mean that fixing LF
+    # changes the expectation again with nothing to say the new value
+    # is right.  The DERIVED target is in the comment above; make it a
+    # check when it can be computed rather than copied.
+    #
+    # Words 5 and 6 are the message's literal text, which is correct
+    # and has been since the console was built, so they stay.
     console_checks = [
-        ("console_msg_w3", 3, 0xfd60606060606074),  # <CR>000000.
-        ("console_msg_w4", 4, 0x60004749003d4931),  # 0 NO IOC
         ("console_msg_w5", 5, 0x3300312d4f330033),  # D CARD D
         ("console_msg_w6", 6, 0x35533531533533fe),  # ETECTED<EOM>
     ]

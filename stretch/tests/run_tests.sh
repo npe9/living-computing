@@ -1514,6 +1514,41 @@ run "MCP's IPL bootstrap, printed p.2, bit-exact (MCP_Mar63 PDF p.9)" python3 ve
 #
 # docs/listing_typography.md 11 now carries the B/8 case.
 
+run "M+MG, Add Magnitude to Memory -- the seventh VFL integer arm" ./run_program.sh ../decks/m_plus_mg.strap StretchMPlusMgTb \
+    "PC=2064" \
+    "mg_t1:1043=105" \
+    "mg_t2_acc_sign_ignored:1044=105" \
+    "mg_t3_forced_zero:1045=0x80" \
+    "mg_t4_same_sign:1046=0x280"
+# MCP PRODUCED THIS GAP TOO, and it produced it VISIBLY.  The
+# bootstrap's error routine (printed p.5 lines 12-17) folds the
+# failing instruction's address into the message it prints on the
+# operator's console, and two M+MG(BU) adds are how it does it -- so
+# with the operation refused as Operation Code Invalid the console
+# printed the message's own placeholder, "000000.0", and the rest of
+# the sentence came out right.  A wrong ADDRESS in a correct
+# diagnostic is exactly the failure that an end-to-end boot test with
+# no field-level check would have passed.
+#
+# The whole operation is two sentences of Reference Manual printed
+# p.62 -- a positive accumulator sign is assumed, and a sum of
+# opposite sign to the storage operand stores zero bytes with the
+# sign byte untouched -- and Figure 13 on that page tabulates every
+# combination.  The deck transcribes two of its rows (3- plus 5+ ->
+# 0-, 5- plus 3+ -> 2-) and takes the other two cases from MCP's own
+# unsigned use.  Both rules have a measured injection; see the deck
+# header.
+#
+# NOT THE FLOATING-POINT M+MG of RefMan pp.88-89, which has its own
+# opcode and its own thirty-two-sub-test deck from jb_af1c routine
+# F206B (decks/fp_arith_f206b.strap).  Same mnemonic, different
+# instruction.
+#
+# THE NEGATIVE SIGN MODIFIER IS STILL UNREACHABLE from STRAP: C22-6531
+# Appendix A footnote 4 gives the N suffix, this assembler implements
+# only I, and the written-minus "M-MG" is witnessed for the
+# floating-point operation alone.  docs/NEXT.md carries it.
+
 run "MCP's IPL bootstrap, printed p.3, bit-exact (MCP_Mar63 PDF p.10)" python3 verify_mcp_bootstrap_p3.py
 # FIND IPL CHANNEL NUMBER, IO TEST, SPACE OVER TAPE MARK -- the page
 # that continues p.2 (p.2 ends at 000052.00 with a half word, p.3
