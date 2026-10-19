@@ -387,10 +387,31 @@ by a transcription, not executable. **They are the two operations
 standing between MCP and knowing what devices it has.** Worth doing
 with their whole families (B1, B2) in one pass.
 
-**A3. AN IOCD CARD DECK.** `strap/cards.py` can already punch ASCII
-into 7503 column images; what is missing is the IOCD card's own
-format, which must come from a primary source and not from p.17's
-usage. `C22-6678-1` is the likely place.
+**A3. IOCD CARD IMAGES ON THE SYSTEM TAPE.**
+~~An IOCD card deck for the reader.~~ **CORRECTED 2026-10-19 before
+anything was built on it** — see `docs/mcp_io_tables.md`. The IOCD
+cards are not read from a 7503 at initialization: `C22-6678-1`
+printed p.29's six-step operator procedure takes the master system
+TAPE plus console binary keys and mounts no deck, printed p.17
+SEARCHES `X BUFER` rather than issuing a card read, and printed p.13
+line 38 names that buffer "SLOTS LEFT FOR IOCD + IODS". They are card
+IMAGES placed on the tape when the system was built, which is what
+the off-line IBM 1401 is for.
+
+So A3 is about the tape's content. What is still missing is the IOCD
+card's own FORMAT, from a primary source rather than from p.17's
+usage; `C22-6678-1` printed p.40 ("Format of the Input Tape",
+"Updating the System") is the next place to look.
+
+**AND THE TABLES IT FILLS IN ARE ALREADY SPECIFIED.** `C22-6728-1`
+Appendix A, printed pp.261-268, gives the Channel and Unit Status
+Tables bit by bit, and it agrees with the transcription of printed
+pp.17-18 on every bit those pages touch — including three bits whose
+sense is NEGATIVE (1 means *not* available, *not* assigned) and
+including which of the two tables each bit lives in.
+`docs/mcp_io_tables.md` has the comparison. That is the
+specification an IOCD fixture is built against, and it is also an
+independent check on two pages of transcription.
 
 **A4. THE OPERATOR'S CONSOLE (7152 + 7623).** The largest remaining
 device and the one MCP's minimum configuration names that nothing
