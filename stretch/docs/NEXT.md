@@ -5037,22 +5037,51 @@ accumulator bits 1-56; the offsets 8 and 0 want them at 0-55. One bit
 out, every digit doubled. Something in the reading of those four
 rows is still wrong, and the offset is no longer a candidate.
 
+**TWO OF THE FOUR CANDIDATES ARE ALREADY DEAD**, eliminated by
+argument rather than by running anything, so do not spend a session
+on them:
+
+* **Not the field decode.** `LF`'s printed second half-word
+  `025300.46 70` decodes to length 21, byte size 3, offset 1 against
+  the connective format diagram on p.75 (identical to the integer
+  one: ADDRESS 0-23, `1000` 24-27, I 28-31, P 32-34, LENGTH 35-40,
+  BS 41-43, OFFSET 44-50, CONN 51-54, OP 55-59, I 60-63), and all
+  fifty-three machine-code rows of pp.5-6 already match bit-exactly.
+  The offset really is 1.
+* **Not `SIC`'s alignment in `X ERR AD`.** A different alignment
+  would change WHICH three-bit groups become digits, i.e. it would
+  print different digits. The fault is that every digit is exactly
+  **doubled**, which is a one-bit left shift of the whole 56-bit
+  result -- a placement fault, not a value fault.
+
+**AND THERE IS NO LISTING ORACLE TO FIND.** Every connective in the
+transcribed corpus uses byte size 8 except MCP's own `LF(BU,21,3)`
+and the one `CM0101(BU,21,3)` in this project's own deck -- checked
+by grepping all 258 decks. So the expansion rests on p.75 alone
+(verbatim, which is enough) and the offset question cannot be
+settled from `decks/`. If a listing oracle exists it is in a
+diagnostic page nobody has transcribed yet; `jb_ax5b` routine 1246
+("modifiers") is the first place to look.
+
 Worth checking next, cheapest first:
 
-* **The second `M+MG`'s target.** `.8+.48+.8` is 64 bits, which in a
-  normal two-control-code message is byte 8 -- the `.` of the slot
-  `000000.0`, not its last digit at byte 9. So that instruction looks
-  one byte early in the layout where the first one looks right. Two
-  readings, each making one instruction right, is the shape of a
-  misreading.
-* **`X ERR AD`'s own width.** The 21 bits LF reads are assumed here
-  to be value-word bits 0-20, i.e. the half-word address times four.
-  If `SIC` stores something else, the digits move.
-* **`LF` may not be a plain `CONNECT`.** Figure 20 makes connective 3
-  the memory bit, so `C0011` is a copy -- but the model reaches this
-  through `classify_connective`, and the listing's own
-  `025300.46 70` should be decoded field by field once more against
-  p.75's format diagram rather than against the integer one.
+* **The second `M+MG`'s target, which may be working as designed.**
+  `.8+.48+.8` is 64 bits, which in a normal two-control-code message
+  is byte 8 -- the `.` of the slot `000000.0`, not its last digit at
+  byte 9. Printed p.11 confirms the slot is exactly eight characters
+  (line 46 at `000440.10`, line 47 at `000441.10`, one word apart).
+  But note what that produces in the ordinary case: `X ERR AD` holds
+  "LOCATION OF ERROR +1.0", and for a WORD-aligned address the
+  seventh octal digit is 0, so `.` + 0 is still `.` and the console
+  prints `nnnnnn.0`. The seventh digit only damages the point when
+  the failing instruction sits at a half word. **IBM may simply have
+  accepted that**, in which case this instruction is not a fault at
+  all and the doubling is the only thing left to explain.
+* **The offsets are not a consistent family, and that is a clue.**
+  If everything were simply shifted one bit, `LF`'s 1 would pair
+  with `M+MG` offsets of 9 and 1. MCP has 1, 8 and 0 -- the two
+  `M+MG` are byte-aligned and only the `LF` is not. Whatever the
+  explanation is, it has to account for that asymmetry.
 * **Or MCP is simply wrong here, for the second time in this
   routine.** It is the ERROR routine -- the least-exercised path in
   any system -- and it already contains one defect this project has
