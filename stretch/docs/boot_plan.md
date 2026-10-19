@@ -349,23 +349,121 @@ are the two standing between MCP and knowing what devices it has.
    same day**, `disk_subsystem.md` §9a, nineteen checks.
 2. ~~A MULTI-WORD `TRANSMIT`~~ — **BUILT the same day**,
    `decks/transmit_multiword.strap`, fifteen checks.
-3. **`LVS`, which is what OP actually means now.** Fixing TRANSMIT
-   left the bit standing, and the remaining source is printed p.4
-   line 23, `LVS,$X1,$X12,$X14 -WORDS PRECEEDING MCP`: the ASSEMBLER
-   gained LVS, the MODEL never did. `$X1` is the index the TRANSMIT
-   two rows later uses to find MCP inside the buffer, so the two
-   belong together. Reference Manual printed p.28, "Multiple
-   Indexing". `docs/NEXT.md` has it.
-4. `KF` and `LCV` in the model, driven by p.17's own rows.
-5. An IOCD card deck for the reader, which `strap/cards.py` can
-   already punch, once the format is read out of a primary source.
-6. **A tape with PROSA on it.** `mktape.py` writes the 369-word
-   bootstrap and a tape mark, nothing more, so MCP reads its PROSA
-   dictionary out of empty tape and the TRANSMIT's count comes back
-   zero — which printed p.30 calls "never valid" and which now stops
-   at the top of installed core with Address Invalid. The model is
-   doing the right thing with a short tape; the tape is what is
-   short.
+3. ~~`LVS`, multiple indexing~~ — **BUILT 2026-10-19**,
+   `decks/lvs_multiple_indexing.strap`, five checks. With it, **the
+   bootstrap's indicator word has no `OP` bit: the model refuses
+   nothing MCP executes.**
+
+### M3++ — THE GATE IS NOW DATA, and this is the order from here
+
+*Written 2026-10-19, after the three items above closed in two days.*
+
+The bootstrap stops with `AD` and that indicator is the **tape**, not
+the model: `mktape.py` writes 369 bootstrap words and a mark, so MCP
+reads its PROSA dictionary out of empty tape, the `TRANSMIT`'s count
+comes back zero — "never valid", Reference Manual printed p.30 — and
+the transmit halts at the top of installed core. Everything below is
+ordered by what unblocks what.
+
+#### A. The critical path: make MCP run further
+
+**A1. A PROSA RECORD ON THE TAPE.** The gate. Printed p.4 lines
+19-27 give the dictionary's shape without any guessing — `LX,$X12,
+X BUFER+1.0`, `LX,$X14,X BUFER+3.0`, `LX,$X11,X BUFER+5.0`,
+`LX,$X10,X BUFER+7.0`, each followed by `SC,$Xn,$Xn` to bring the
+count field into the value so `LVS` can sum it. So the record is
+index words at odd offsets, carrying *sizes* in their count fields,
+and `X1 = LVS(X12, X14)` is "words preceding MCP".
+*Synthetic first, faithful later* — see the note below, because that
+choice is the one judgement call in this plan.
+**Unblocks: printed pp.15-18, which are transcribed and have never
+executed a single row.**
+
+**A2. `KF` AND `LCV` IN THE MODEL.** Printed p.17 line 30 is the
+compare that decides whether a card IS an IOCD card and line 34 is
+the radix conversion that turns its Hollerith channel digits into a
+channel number. Both are `ENCODING_ONLY` in the opcode ratchet: used
+by a transcription, not executable. **They are the two operations
+standing between MCP and knowing what devices it has.** Worth doing
+with their whole families (B1, B2) in one pass.
+
+**A3. AN IOCD CARD DECK.** `strap/cards.py` can already punch ASCII
+into 7503 column images; what is missing is the IOCD card's own
+format, which must come from a primary source and not from p.17's
+usage. `C22-6678-1` is the likely place.
+
+**A4. THE OPERATOR'S CONSOLE (7152 + 7623).** The largest remaining
+device and the one MCP's minimum configuration names that nothing
+answers. MCP's ERROR ROUTINE already walks the channels looking for
+it (printed p.5, `GONG`), so the model's refusal of `GONG` and of
+Exchange `LOC` are part of this item rather than separate ones.
+
+**A5. FOUR TAPES INSTEAD OF ONE.** `C22-6678-1` printed p.6's
+minimum is four 729 IVs. `StretchTapeSource` is already an interface
+with two implementations, so this is a vector of them and a channel
+map, not new mechanism.
+
+#### B. The ISA tail — not on MCP's path, cheap, closes the audit
+
+Seven mnemonics set Operation Code Invalid, in three clusters:
+
+**B1.** radix conversion — `CV`, `DCV`, `LCV`, `LTRCV`
+**B2.** compare variants — `KE`, `KF`, `KFE`, `KFR`
+**B3.** `LTRS`, `RNX`
+
+and four gaps below mnemonic granularity: `LOC` on an Exchange
+channel (SELECT UNIT), `TRANSMIT` backward and `SWAP`, decimal-mode
+VFL, and most `CTL` function codes.
+
+`LCV` is in B1 and `KF` is in B2, so A2 is a slice of both — which is
+the argument for doing each family whole rather than cherry-picking
+the two MCP needs.
+
+#### C. Hygiene
+
+**C1. `step()` → a `running` register.** Raised 2026-10-19: Bluespec
+has a clock, and `tick` is a clock *enable* whose only load-bearing
+job is keeping the core frozen while the harness loads storage one
+word per clock. A `Reg#(Bool)` with `start`/`stop` is the same gate,
+more idiomatic, and drops `EN_step`/`RDY_step` from the synthesised
+boundary. Touches one generator (`tests/gen_tb.py`) and therefore
+every testbench, plus the `CYCLES<=N` bounds, which would read the
+core's own `clk` instead of the harness's counter. **Its own commit,
+green either side.**
+
+#### D. Cycle accuracy — deliberately second, per the stated ordering
+
+**D1. Device timing.** None exists. `docs/disk_subsystem.md` §4 has
+the 353's three-point seek, its rotational distribution and 8 µs per
+word waiting to be imposed; the tape and reader have nothing.
+
+**D2. The interrupt hole.** An I-box-class instruction that has
+overtaken a pending look-ahead level is committed and cannot be taken
+back, so an indicator set by a level is still not reported before it.
+`iboxHazard` keeps it narrow; closing it needs the look-ahead to
+unwind.
+
+#### The one judgement call: synthetic PROSA
+
+A1 can be done two ways.
+
+*Faithful* means transcribing enough of the 451-page listing to
+assemble the real PROSA record — the honest answer, and the eventual
+one, but it is the whole of MCP rather than a step toward it.
+
+*Synthetic* means building a record whose **format** is read off the
+transcribed rows (which is real evidence) and whose **contents** are
+a labelled fixture: a dictionary with chosen sizes and a body of
+recognisable words. It makes pp.15-18 execute tomorrow, and it makes
+every later transcription worth doing because there is somewhere for
+it to run.
+
+**Recommendation: synthetic first**, in a file that says so in its
+first line, with the faithful record as the thing it is eventually
+replaced by. The risk is the usual one — a fixture quietly becoming
+evidence — and the mitigation is the one this repo already uses on
+`charsets.py` and `cards.py`: say at length, in the file, what is
+derived and what is chosen.
 
 ### M4 — the Diagnostic Control Program  ·  ~75 days, in slices
 
