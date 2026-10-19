@@ -46,6 +46,8 @@ import sys
 from gen_tb import generate
 from mcp_image import build
 from opcodes import INDICATOR_BITS
+import prosa
+import struct
 
 
 def _ind(name):
@@ -91,6 +93,26 @@ def main():
     if r.returncode != 0:
         print(r.stdout + r.stderr, file=sys.stderr)
         sys.exit(1)
+
+    # ---- AND A PROSA RECORD AFTER THE MARK ------------------------
+    # Printed p.3 SPACEs over the tape mark and printed p.4's FETCH
+    # PROSA then reads from where that left the tape, so everything
+    # appended here lands at X BUFER through printed p.14's control
+    # word chain.
+    #
+    # >>> THE RECORD IS A FIXTURE <<<  Its SHAPE is derived from
+    # printed p.4 lines 19-27; its CONTENTS are chosen.  strap/prosa.py
+    # says which is which at length, and the checks below are written
+    # so that a wrong derivation fails with the real offset in hand
+    # rather than passing on a coincidence.
+    #
+    # Appended here rather than by mktape.py because mktape.py is
+    # about the IPL tape -- a control word and an image -- and this is
+    # a second record that has nothing to do with initial program
+    # loading.
+    with open(out, "ab") as f:
+        for w in prosa.record():
+            f.write(struct.pack(">Q", w & 0xFFFFFFFFFFFFFFFF))
 
     sym = lambda n: prog.symtab[n] // 64
 
@@ -184,7 +206,29 @@ def main():
         # indicator, X ERR AD is MCP's own variable, and no error site
         # ran.
         ("mcp_indicators_word11", str(IND_WORD),
-         _ind("RZ") | _ind("XVZ") | _ind("XF") | _ind("AD")),
+         _ind("RZ") | _ind("XVZ") | _ind("XF")),
+
+        # >>> THE MOVE ITSELF, AND IT IS THE POINT OF THE FIXTURE <<<
+        # Printed p.4 line 28, "T,$11,X BUFER($X1),X BS END  -MOVE MCP
+        # IPL", with a real count for the first time.  What makes
+        # these checks worth more than "something was copied" is that
+        # every fixture word CARRIES ITS OWN BUFFER OFFSET in its low
+        # bits (strap/prosa.py), so the destination says WHICH source
+        # words arrived -- and MCP computed that offset itself, out of
+        # the dictionary, through SC and LVS.  If the derivation of
+        # the record's shape were wrong this fails with the actual
+        # offset in hand.
+        #
+        # X BS END is the first word past the bootstrap image, so
+        # everything at and above it was ZERO before the move.
+        ("mcp_moved_first", str(sym("XBSEND")), prosa.body_word(prosa.MCP_AT)),
+        ("mcp_moved_last", str(sym("XBSEND") + prosa.IPL_WORDS - 1),
+         prosa.body_word(prosa.MCP_AT + prosa.IPL_WORDS - 1)),
+        # AND THE WORD AFTER THE LAST ONE IS STILL ZERO, which is what
+        # pins the COUNT rather than merely the direction: a transmit
+        # of seven would land a fixture word here.
+        ("mcp_moved_one_past_is_untouched",
+         str(sym("XBSEND") + prosa.IPL_WORDS), 0),
 
         # Printed p.2 line 39, "SV,15,X S ROOF -TEMPORARILY SAVE 7030
         # SIZE".  The value field holds 6291456 bits = word 98304,
