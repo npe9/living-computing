@@ -88,12 +88,23 @@ for (`C22-6678-1` p.6 requires one; card-to-tape is its first listed
 job). A3 is therefore about the tape's content, not about the 7503.
 
 **WHAT WOULD OVERTURN THIS**: a page that describes the IOCD card's
-own format and says it is read at initialization. The MCP Reference's
-"Format of the Input Tape" (printed p.40) and "Updating the System"
-(p.40) have not been read, and the System Analysis Guide's IPL
-section has been sampled but not read for this question. Until one of
-them says otherwise, the three pieces of evidence above agree and
-nothing contradicts them.
+own format and says it is read at initialization.
+
+**PRINTED p.40 HAS NOW BEEN READ AND DOES NOT OVERTURN IT** — see
+`docs/mcp_tape_manufacture.md` §2.3b for what it does give, which is
+the whole punched MCP deck in order with its eight PUNIDs. Its item 4
+is "IOD cards", the problem-program card of p.8, and **IOCD is not in
+the list at all**. "Format of the Input Tape" on the same page is
+about the JOB stream, not the system tape.
+
+So the IOCD card's own format is **still not located**, and the
+places left to look are: the System Analysis Guide's IPL section
+(`C22-6728-1`, sampled but not read for this question), its §215
+UPDATE 30 writeup, and the bulletin `C22-6718` which p.40 cites and
+which is not in `docs/`. Recorded as open rather than guessed at —
+printed p.17's usage shows a 12-bit Hollerith field pair for the
+channel and a two-letter equipment code looked up in `X EQP T`, which
+is enough to *recognise* an IOCD card and not enough to *write* one.
 
 **NOTE ALSO** that the IOD card of `C22-6678-1` printed p.8 is a
 DIFFERENT card: it is a problem program's symbolic I/O definition —

@@ -283,6 +283,98 @@ true: tape carries the bootstrap and the system, disk is the working
 store the bootstrap stages into. Flagging the tension rather than
 resolving it.
 
+### 2.3a RESOLVED, 2026-10-19 — the tape carries everything; the disk is staging
+
+§2.3 above flags a tension and calls tracing `$IPLD` "the highest-value
+remaining read in the whole document". Printed pp.15-18 are now
+transcribed bit-exactly AND EXECUTED ON THE MODEL, and they settle it.
+
+**Printed p.16 is headed "WRITE PROSA ON DISK AND FETCH FROM MCPS
+TAPE".** MCP's initialization reads PROSA from the TAPE (printed p.4's
+FETCH PROSA, through printed p.14's 39 chained control words) and
+WRITES it to the disk (printed p.16 line 13's `W(SEOP),0.0,X PRO WR`,
+after printed p.15 line 26's `LOC(SEOP),0.0,0.0` seeks arc zero).
+The data flows tape → core → disk, not disk → core.
+
+`C22-6678-1` printed p.29 says the same thing in one sentence, and it
+is the sentence §2.3 was missing:
+
+> "Basically, the initialization program reads the MCP portion of the
+> master system tape into core storage and **writes a copy of the
+> entire tape on the disk in the PROSA area**."
+
+**So a tape image IS sufficient to boot this MCP.** The disk is the
+working store MCP populates, not a second thing that has to be
+manufactured. §2.3's "a disk image very likely has to be manufactured
+too" is withdrawn. (The model has a disk now anyway —
+`docs/disk_subsystem.md` §9a — and MCP LOCATEs and WRITEs it.)
+
+### 2.3b THE PUNCHED DECK, NAMED BY IBM, AND TWO OF ITS PUNIDs CONFIRMED
+
+`C22-6678-1` printed p.40, "Initial Preparation of the MCP Deck for
+Updating", lists what the MCP assembly tape punches, in order:
+
+| # | card | # | card |
+|---|---|---|---|
+| 1 | JOB | 11 | HED, MCP Mainleg Type Area |
+| 2 | TYPE | 12 | binary, **PUNID 11D11MCP** |
+| 3 | LIM | 13 | HED, MCP Loader Type Area |
+| 4 | IOD cards | 14 | binary, **PUNID 22LOADER** |
+| 5 | HED, MCP Bootstrap Type Area | 15 | HED, MCP Dump Type Area |
+| 6 | binary, **PUNID 11E11BSP** | 16 | binary, **PUNID 22$DUMP** |
+| 7 | HED, IPL Type Area | 17 | HED, MCP System Commands Type Area |
+| 8 | binary, **PUNID 11C11IPL** | 18 | binary, **PUNID 22SCOMD** |
+| 9 | HED, Restart Type Area | 19 | HED, MCP Job Control Type Area |
+| 10 | binary, **PUNID 33RESTRT** | 20 | binary, **PUNID 22$EOJ** |
+| | | 21 | BRANCH card |
+
+**TWO OF THOSE PUNIDs ARE PRINTED ON THE PAGES THIS PROJECT HAS
+TRANSCRIBED.** The MCP listing's own page headers read `PUNID
+11E11BSP` through printed p.15 and `PUNID 11C11IPL` from printed p.16
+on, and printed p.15 line 5 is the statement `PUNID,11C11IPL` that
+switches between them. So IBM's deck table and the listing agree on
+the names AND on where the boundary falls: **everything through
+printed p.15 is the Bootstrap deck and everything after is the IPL
+deck**, which is exactly what `decks/mcp_bootstrap_p13.strap`'s header
+deduced from the assembly's own behaviour ("pp.3-15 and pp.16 onward
+are one STRAP run punching two decks").
+
+**AND THE LISTING PUNCHES THE HED CARD ITSELF.** Printed p.15 lines
+2-3 are two `(CC*)DD(BU,,12)` card images, the first of which reads
+`B  HED,REP,11C11IPL,LOAD,,` — the class character "B" in column 1
+that printed p.40's own "Job boundaries" rule names, and the HED card
+p.40 lists as item 7, naming the deck p.40 lists as item 8. The
+transcription called those rows "punch control" from their position
+alone; this is what they are.
+
+**WHAT IT SAYS ABOUT WHAT IS LEFT.** The 451 listing pages hold eight
+type areas, not one. The bootstrap (pp.2-14) and the start of the IPL
+(pp.15-18) are transcribed; Restart, Mainleg, Loader, Dump, System
+Commands and Job Control are all still ahead, and the Mainleg is MCP
+proper.
+
+### 2.3c The input tape is a different tape, and its format is given
+
+Same page, "Format of the Input Tape" — this is the JOB stream the
+1401 writes, not the system tape:
+
+> "The input tape… is a labeled tape (the label is the first file).
+> The tape is multifile, with each file corresponding to a job and
+> with a **double tape mark** terminating the last job… **Each
+> record, except the last one, consists of 17 column binary card
+> images (160 characters each).**"
+
+**160 CHARACTERS PER CARD, NOT 120.** `strap/cards.py` builds the
+7503's own 120-byte, 960-bit column image (R23-9702 printed p.19:
+"120 eight-bit bytes"). A card on the INPUT TAPE is 160 characters —
+two per column — which is the 1401's column-binary convention, not
+the 7503's. Any future work that reads a job tape has to convert
+between them, and 17 of those images is 2,720 characters, a record
+size unrelated to PROSA's 513 words.
+
+Job boundaries: "a card with a B in column 1 and either a COMD or a
+JOB, in columns 10-13".
+
 ### 2.4 The two utility documents — what they actually are
 
 Both opened in full this session (18 and 21 pages, rendered at 150 dpi).
