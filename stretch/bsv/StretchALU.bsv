@@ -117,7 +117,28 @@ endfunction
 function SM128 fieldToSM(Bit#(64) raw, Bit#(7) len_, Bit#(4) byteSize,
                           Bit#(1) unsign, Bit#(1) invert);
   if (unsign == 1)
-    return SM128 { sign: 0, mag: zeroExtend(raw) };
+    // THE NEGATIVE SIGN MODIFIER APPLIES TO AN UNSIGNED FIELD TOO,
+    // and this branch used to drop it.  Reference Manual printed
+    // p.60, under ADD's MODIFIERS: "Negative Sign.  This modifier
+    // designates whether the sign of the storage operand is taken
+    // as-is or is inverted before the operation takes place.
+    // **UNSIGNED FIELDS ARE CONSIDERED POSITIVE BEFORE THIS MODIFIER
+    // IS APPLIED.**"  Positive first, then inverted -- so an
+    // unsigned operand with the modifier set is NEGATIVE.
+    //
+    // p.57's "Sign Control" table says it a second way, in the
+    // TO-ACCUMULATOR column: bits 51-52 = 10 is "Unsigned, use +"
+    // and 11 is "Unsigned, use -".  Both bits set is a real,
+    // named combination, and it was unreachable here.
+    //
+    // WHAT IT COST: every unsigned SUBTRACT was an ADD.  Found by
+    // decks/plus_mg.strap running Reference Manual printed p.61's
+    // own Figure 12, where "-MG(BU,64,8),Y,0" is supposed to compute
+    // x-y and computed x+y instead.  **MCP RELIES ON THIS** -- its
+    // printed p.18 line 35 is "-(BU,18),$15+.28  -COMPUTE THE NUMBER
+    // OF ...", an unsigned subtract whose answer would have been
+    // wrong the moment the bootstrap reached that page.
+    return SM128 { sign: invert, mag: zeroExtend(raw) };
   else begin
     Bit#(1) s = raw[byteSize - 1];
     Bit#(64) mag = raw >> byteSize;

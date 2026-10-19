@@ -56,6 +56,33 @@ VFL_INT_CODES = {
 # bsv/README.md "Executed"), not a distinct 6-bit code.
 VFL_INT_MINUS_BASE = "+"
 
+# THE WRITTEN-MINUS FORMS OF THE VFL OPERATIONS, each mapping to
+# (base operation, invert).  Only the ones a PRIMARY SOURCE spells
+# that way belong here; the rest are a to-do, not a licence.
+#
+# "-MG" IS WITNESSED BY THE REFERENCE MANUAL ITSELF, printed p.61,
+# Figure 12 "Program Example, Add to Magnitude" -- IBM's own three
+# statements for "given two 64-bit unsigned binary numbers x and y,
+# put the larger of the two in the accumulator":
+#
+#     L  (BU, 64, 8), X, 0
+#     -MG(BU, 64, 8), Y, 0        note 1: x-y if x >= y, 0 if x < y
+#     +  (BU, 64, 8), Y, 0        note 2: x   if x >= y, y if x < y
+#
+# That is a VFL data description, "(BU, 64, 8)", on a VFL operation,
+# so it settles the VFL spelling and not merely the floating-point
+# one.  (strip_fp_sign in strap_asm.py carries the FP forms, which
+# come from jb_af1c's printed codes -- a different family that
+# happens to share mnemonics.)
+#
+# "M-" AND "M-MG" ARE DELIBERATELY ABSENT.  Nothing in the corpus
+# spells either of them on a VFL operation.  C22-6531 Appendix A
+# footnote 4's "N" suffix is the documented general mechanism and is
+# also unimplemented; see docs/NEXT.md.
+VFL_INT_WRITTEN_MINUS = {
+    "-MG": "+MG",
+}
+
 # ---------------------------------------------------------------------
 # Floating point, 7-bit "code" field (StretchDecode.isValidFpCode).
 # Format 1: OP(dds), A18(I). Half-word.

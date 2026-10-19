@@ -2406,8 +2406,62 @@ function ActionValue#(VflOutcome)
               end
             end
           end
-          6'b000001: begin // + (Add; "-" is this opcode with invert=1)
+          6'b000001, 6'b100001: begin // + (Add) and +MG (Add to Magnitude)
+            // "-" is + with invert=1, and "-MG" is +MG with invert=1.
             // Same prefetch/bail-out shape as L above.
+            //
+            // ADD TO MAGNITUDE, Reference Manual printed p.60, and
+            // like its to-memory twin it is three sentences:
+            //
+            //   "The addressed operand is algebraically added to the
+            //   MAGNITUDE of the contents of the accumulator with
+            //   specified offset.  **The accumulator operand is
+            //   assumed positive for purposes of the addition
+            //   itself.**  If the result is positive, the sum is
+            //   placed into the accumulator.  **If the result is
+            //   negative, the ENTIRE ACCUMULATOR IS CLEARED TO
+            //   ZERO.**  In either case the content of the
+            //   accumulator sign byte register is not changed."
+            //
+            // Modifiers and indicators, printed p.61: "Unsigned;
+            // Negative Sign; Radix.  These modifiers operate as in
+            // ADD", and "Lost Carry (LC); Partial Field (PF); Data
+            // Flags (TF, UF, VF); To-Memory Operation (MOP);
+            // Arithmetic Result (RLZ, RZ, RGZ, RN) ... set as in
+            // ADD".  So unlike M+MG, the negative sign modifier here
+            // belongs to the STORAGE operand -- p.60 under ADD:
+            // "This modifier designates whether the sign of the
+            // storage operand is taken as-is or is inverted" -- and
+            // that is the half of printed p.57's table headed
+            // TO-ACCUMULATOR OPERATION.  fieldToSM already applies
+            // it, so nothing changes on that side.
+            //
+            // FIGURE 12 ON p.61 IS THE PROOF, and it is IBM's own
+            // worked example rather than my reading of the prose.
+            // "Given two 64-bit unsigned binary numbers x and y, put
+            // the larger of the two in the accumulator":
+            //
+            //     L  (BU, 64, 8), X, 0
+            //     -MG(BU, 64, 8), Y, 0     note 1
+            //     +  (BU, 64, 8), Y, 0     note 2
+            //
+            //   note 1: result is x-y if x >= y, 0 if x < y
+            //   note 2: result is x   if x >= y, y if x < y
+            //
+            // Note 1 is the whole operation: the accumulator's
+            // magnitude |x| plus the inverted storage operand -y,
+            // clamped to zero when that goes negative.  The deck
+            // decks/plus_mg.strap runs Figure 12 itself.
+            //
+            // "ENTIRE ACCUMULATOR" MEANS ENTIRE, including the bits
+            // below the offset, which is why this clears `mag`
+            // outright rather than masking a field.  p.60 says the
+            // same thing about ADD two paragraphs earlier: "all
+            // add-type operations operate upon the contents of the
+            // entire accumulator ... When this occurs, the whole
+            // contents of the accumulator may be changed, including
+            // the part below the offset."
+            Bool magnitude = (vi.code == 6'b100001);
             Bit#(64) raw = 0;
             if (immediate) begin
               raw = immediateOperand(vi.a.addr, len_);
@@ -2434,9 +2488,31 @@ function ActionValue#(VflOutcome)
               SM128 opnd = fieldToSM(raw, len_, bsz, vi.m.unsign, vi.m.invert);
               SM128 opndSh = SM128 { sign: opnd.sign, mag: opnd.mag << offSh };
               SM128 acc = readAcc(st);
-              SM128 sum = smAdd(acc, opndSh);
-              writeAcc(st, sum);
-              ind = setResultIndicatorsF(ind, sum);
+              // "assumed positive for purposes of the addition itself"
+              SM128 accUsed = magnitude ? SM128 { sign: 0, mag: acc.mag } : acc;
+              SM128 sum = smAdd(accUsed, opndSh);
+              // "If the result is positive, the sum is placed into
+              // the accumulator.  If the result is negative, the
+              // entire accumulator is cleared to zero.  In either
+              // case the content of the accumulator sign byte
+              // register is not changed."  The sign kept is the
+              // accumulator's own, both ways -- which also satisfies
+              // p.60's closing rule, "on any operation in which the
+              // result in the accumulator is all zero, the sign
+              // remains as it was before the operation began".
+              SM128 stored = magnitude
+                ? SM128 { sign: acc.sign,
+                          mag: (sum.sign == 0) ? sum.mag : 0 }
+                : sum;
+              writeAcc(st, stored);
+              // "set according to the contents of the ENTIRE
+              // accumulator when the operation is complete" (p.60,
+              // Arithmetic Result).  setResultIndicatorsF reports RZ
+              // for a zero magnitude whatever the sign, so a cleared
+              // accumulator with a negative sign byte reads RZ and
+              // not RN -- which is what "the sign remains as it was"
+              // requires.
+              ind = setResultIndicatorsF(ind, stored);
             end
           end
           6'b001001, 6'b101011, 6'b101001: begin // M+, M+1, M+MG

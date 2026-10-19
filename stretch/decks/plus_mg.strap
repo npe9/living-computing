@@ -1,0 +1,139 @@
+! ADD TO MAGNITUDE (+MG), the VFL form (code abc100001).  Reference
+! Manual printed p.60 defines it in three sentences:
+!
+!   "The addressed operand is algebraically added to the MAGNITUDE of
+!   the contents of the accumulator with specified offset.  THE
+!   ACCUMULATOR OPERAND IS ASSUMED POSITIVE FOR PURPOSES OF THE
+!   ADDITION ITSELF.  If the result is positive, the sum is placed
+!   into the accumulator.  IF THE RESULT IS NEGATIVE, THE ENTIRE
+!   ACCUMULATOR IS CLEARED TO ZERO.  In either case the content of
+!   the accumulator sign byte register is not changed."
+!
+! Modifiers and indicators, printed p.61: "Unsigned; Negative Sign;
+! Radix.  These modifiers operate as in ADD", and the indicators
+! likewise.  So the negative sign modifier belongs to the STORAGE
+! operand here -- p.60 under ADD, "whether the sign of the storage
+! operand is taken as-is or is inverted" -- which is the opposite end
+! from M+MG and is exactly printed p.57's split between TO-ACCUMULATOR
+! and TO-MEMORY operations.
+!
+! BLOCKS 1 AND 2 ARE IBM'S OWN PROGRAM, not my reading of the prose.
+! Figure 12 on printed p.61, "Program Example, Add to Magnitude" --
+! "given two 64-bit unsigned binary numbers x and y, put the larger of
+! the two in the accumulator":
+!
+!     L  (BU, 64, 8), X, 0
+!     -MG(BU, 64, 8), Y, 0        note 1: x-y if x >= y, 0 if x < y
+!     +  (BU, 64, 8), Y, 0        note 2: x   if x >= y, y if x < y
+!
+! Both branches are run, because note 1's two halves are the whole
+! operation: the ordinary sum in one and the forced zero in the other.
+!
+! THIS FIGURE ALSO SETTLED THE ASSEMBLER'S SPELLING.  "-MG" carries a
+! VFL data description on a VFL operation, so the written-minus form
+! is witnessed for VFL and not merely for the floating-point family
+! (jb_af1c's printed codes).  strap/opcodes.py's
+! VFL_INT_WRITTEN_MINUS cites this figure and holds "-MG" alone;
+! "M-" and "M-MG" stay out of it because nothing spells them.
+!
+! NOT THE FLOATING-POINT +MG of printed pp.66-72, which has its own
+! opcode and its own decks (fp_arith_f205a/b/cd, from jb_af1c routine
+! F205).  Same mnemonic, different instruction -- the same trap M+MG
+! sets.
+!
+! WHAT EACH BLOCK ESTABLISHES
+!   T1,T2  Figure 12 with x > y: the subtraction runs normally and
+!          the answer is x.
+!   T3,T4  Figure 12 with x < y: THE FORCED ZERO, and the answer is
+!          y.  This is the block that distinguishes +MG from a plain
+!          signed add -- without the clamp T3 holds -70 and T4 holds
+!          30, the SMALLER of the two, which is the figure's point
+!          exactly backwards.
+!   T5     "the content of the accumulator sign byte register is not
+!          changed", and "the accumulator operand is assumed
+!          positive": a negative accumulator of magnitude 5 plus 3
+!          gives magnitude 8 and KEEPS its negative sign.  A model
+!          that used the real accumulator sign would get 2 and a
+!          model that overwrote the sign would store 0x800.
+!   T6     "the ENTIRE accumulator is cleared", including the part
+!          below the offset.  The operation is eight bits wide at
+!          offset 8, so a model that cleared only the addressed field
+!          would leave the low byte standing.
+!   T7     the positive sibling of T6, which is what makes T6 mean
+!          something: the same operands without the sign leave the
+!          low byte alone and the sum lands above it.
+!
+! A VFL FIELD IS ADDRESSED BY ITS LEFTMOST BIT, which is why T6 and
+! T7 write "TWO+.56" and not "TWO": an eight-bit field at a word's
+! own address is that word's TOP byte, which here is zero, and the
+! first run of this deck duly reported that 255 plus nothing is 255.
+
+! THREE INJECTIONS, MEASURED, and they partition the seven checks:
+!   fieldToSM ignoring the negative sign modifier on an unsigned
+!     field (the bug this deck FOUND, not one I planted): T1 = 130,
+!     T2 = 160, T3 = 130, T4 = 230, T6 = 255, T7 = 255 -- every
+!     subtraction became an addition.
+!   the clamp removed, storing the sum whatever its sign: T3 = 70,
+!     T4 = 170, T6 = 257, with T1, T2 and T7 unmoved.
+!   the real accumulator sign used instead of a forced positive one:
+!     T5 = 0x280, alone.
+! The second and third were run together, since they land on
+! disjoint checks, and four checks failed with exactly those values.
+
+        SLC, (8)2000.0
+
+! -- Figure 12, x > y -------------------------------------------
+START   L(BU,64,8), X1, 0
+        -MG(BU,64,8), Y1, 0
+        ST(BU,64,8), T1, 0         ! x - y
+        +(BU,64,8), Y1, 0
+        ST(BU,64,8), T2, 0         ! the larger of the two
+
+! -- Figure 12, x < y: the forced zero --------------------------
+        L(BU,64,8), X2, 0
+        -MG(BU,64,8), Y2, 0
+        ST(BU,64,8), T3, 0         ! 0, not x - y
+        +(BU,64,8), Y2, 0
+        ST(BU,64,8), T4, 0         ! the larger of the two
+
+! -- the accumulator sign is used by neither end of the operation
+        L(B,64,8), NEG5, 0         ! accumulator := -5
+        +MG(BU,64,8), THREE, 0     ! |-5| + 3 = 8, sign byte untouched
+        ST(B,64,8), T5, 0
+
+! -- the clamp clears the WHOLE accumulator ---------------------
+        L(BU,64,8), BIG, 0         ! accumulator := 255
+        -MG(BU,8,8), TWO+.56, 8    ! 255 - 512 is negative: clear all
+        ST(BU,64,8), T6, 0
+
+! -- and the positive case leaves the low byte alone ------------
+        L(BU,64,8), BIG, 0         ! accumulator := 255
+        +MG(BU,8,8), TWO+.56, 8    ! 255 + 512 = 767
+        ST(BU,64,8), T7, 0
+
+PASS    BEW, $
+
+! Data, word-aligned: BEW is a half word, so without this every 64-bit
+! field below would straddle two words and be refused.
+        SLC, (8)2040.0
+
+X1      DD(BU,64,8), 100
+Y1      DD(BU,64,8), 30
+X2      DD(BU,64,8), 30
+Y2      DD(BU,64,8), 100
+THREE   DD(BU,64,8), 3
+TWO     DD(BU,64,8), 2
+BIG     DD(BU,64,8), 255
+! -5 as a signed binary field, byte size 8: magnitude 5 in bits 0-55,
+! sign in the leading position of the 8-bit sign byte -- (5<<8)|(1<<7).
+NEG5    DD(BU,64,8), (8)2600
+
+T1      DD(BU,64,8), 0
+T2      DD(BU,64,8), 0
+T3      DD(BU,64,8), 0
+T4      DD(BU,64,8), 0
+T5      DD(BU,64,8), 0
+T6      DD(BU,64,8), 0
+T7      DD(BU,64,8), 0
+
+        END, START

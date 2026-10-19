@@ -217,8 +217,15 @@ ENCODING_ONLY = {
 # reproduced the OP on either alone.  StretchExecute's VFL arm then
 # implemented six codes (L, ST, +, M+, K, M+1); the MG forms, "+MG"
 # and "M+MG", were not among them and fell to the default.  M+MG is
-# now the seventh arm.  **"+MG" STILL FALLS TO THE DEFAULT** and this
-# audit still cannot see that, which is the point of the section.
+# now the seventh arm, and "+MG" the eighth (2026-10-19,
+# decks/plus_mg.strap, RefMan printed p.60 and Figure 12 on p.61).
+#
+# **THE BLIND SPOT IS STILL OPEN EVEN THOUGH BOTH ARE BUILT.**  This
+# audit compares what the assembler can EMIT against what some deck
+# USES; it says nothing about what the model EXECUTES.  Nothing here
+# changed to let it see the next one.  What would close it is a check
+# that every operation a deck emits executes WITHOUT setting OP --
+# running something rather than reading source.
 #
 # WHY THE AUDIT CANNOT SEE IT.  This file compares two sets: what the
 # assembler can EMIT and what some deck USES.  Neither says anything

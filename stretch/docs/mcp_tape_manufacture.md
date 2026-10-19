@@ -146,6 +146,50 @@ Per the coordinator's reframing: above the hardware IPL we control
 both ends, so the authority is MCP's own code. What follows is what
 the code does, with the two utility documents as cross-checks.
 
+### 2.0 IBM STATES THE LAYOUT OUTRIGHT — found 2026-10-19
+
+Everything below this subsection was derived from MCP's own
+instruction stream, which was the right method and remains the
+authority for the bootstrap record. But the master tape's shape did
+not have to be inferred at all. `C22-6728` printed p.215 = PDF 215,
+"Master Update Program (UPDATE-30)", under the heading **Master
+Tape**:
+
+> "The master tape contains **two binary files in odd parity, high
+> density**. The first is **a single record containing the IPL
+> bootstrap program**. The second consists of **513-word records each
+> containing an image of an arc of PROSA on the disk**. Each change
+> affects an entire logical unit of PROSA called a type area."
+
+Four facts, none of them previously in this file:
+
+1. **Two FILES**, not one — so there is a tape mark between the
+   bootstrap record and PROSA, which is exactly what printed p.3's
+   SPACE OVER TAPE MARK block implies and what this file's §2.3
+   reasoned its way to. Independent confirmation.
+2. **Odd parity, high density.** A property of the physical tape the
+   model does not represent, but it is what a real 729 IV would be
+   set to, and `run_mcp_boot.sh`'s fixture should say so.
+3. **One record for the whole bootstrap.** The model's `mktape.py`
+   already writes exactly that: one 369-word record.
+4. **513-word records for PROSA, one per disk arc.** The model's
+   `arcWords` is **512**, so each tape record is an arc plus one
+   word. What that extra word is — a sequence number, an arc
+   address, a checksum — this page does not say, and `strap/prosa.py`
+   currently models none of it.
+
+**Fact 4 is a constraint on the PROSA fixture and it arrived after
+the fixture was built.** `strap/prosa.py` derives its shape from MCP
+printed p.4 lines 19-27, which is the right source for what the
+BOOTSTRAP reads out of the record; this page is the source for how
+the record sits on the TAPE. They are different questions and both
+answers are needed. Before `boot_plan.md` A1 goes any further,
+reconcile the two: a 513-word tape record whose payload is a
+512-word arc.
+
+The same section names the deck's IOD cards and the two PUNIDs; see
+`boot_plan.md` A3.
+
 ### 2.1 Layer 0 — the hardware IPL (fixed; another agent owns the detail)
 
 What MCP's own source *asserts* about layer 0, printed p.2 (PDF 9),

@@ -224,6 +224,7 @@ from opcodes import (
     VFL_INT_CODES, VFL_INT_MINUS_BASE, FP_CODES, DIR_INDEX_CODES,
     IMM_INDEX_CODES, UNCOND_BRANCH_CODES, MISC_CODES, INDICATOR_BITS,
     MODE_BITS, MODE_DEFAULT_BS, PROGRESSIVE_SECONDARY_OP, CONNECTIVE_SUFFIX,
+    VFL_INT_WRITTEN_MINUS,
     IO_OP, CB_CODES, IMM_INDEX_COUNT_OPS, SYSTEM_SYMBOLS, BB_CODES,
     TRANSMIT_CODES,
 )
@@ -1125,6 +1126,28 @@ def classify_vfl_or_fp(stmt):
         if mode in ('N', 'U'):
             return 'FP', base_op, invert, immediate, p_progressive, dds_mods, None
         if mode in MODE_BITS:
+            # THE WRITTEN-MINUS VFL FORMS, APPLIED HERE AND NOWHERE
+            # ELSE -- after the data description has already said
+            # this is a VFL operation.
+            #
+            # An earlier version of this did the rewrite at the top of
+            # the function, beside the bare "-", and that captured the
+            # FLOATING-POINT family too: "-MG(U,...)" is a real FP
+            # operation whose own handling lives in strip_fp_sign,
+            # and rewriting it here reached it first.  The suite said
+            # so immediately and precisely -- four sections, all of
+            # jb_af1c routine F205, two of them ENCODING checks,
+            # which is the assembler telling on itself.  Doing it
+            # inside the VFL branch is the whole fix: by this point
+            # the mode is B/BU/D/DU and the FP modes N and U have
+            # already returned.
+            #
+            # Reference Manual printed p.61, Figure 12 is the source
+            # for the spelling: "-MG(BU, 64, 8), Y, 0", a VFL data
+            # description on a VFL operation.  See opcodes.py's
+            # VFL_INT_WRITTEN_MINUS.
+            if base_op in VFL_INT_WRITTEN_MINUS:
+                base_op, invert = VFL_INT_WRITTEN_MINUS[base_op], 1
             return 'VFL', base_op, invert, immediate, p_progressive, dds_mods, None
         raise AssemblerError(f"unknown data-description mode {mode!r}", stmt.lineno)
 

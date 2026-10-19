@@ -1559,8 +1559,58 @@ pass, beyond the source listings and design reports surveyed above:
 | `1956_fallJCC.pdf`, `1959_fallJCC.pdf`, `LASL_Jun61Article.pdf`, `ADescriptionOfStretch`, `Bloch_EngrDesOfStretch` | Conference papers / LASL / overviews | Historical design context |
 | `X22-6533_7030_PocketCard.pdf` (4pp) | Reference card (PDF; `pcard-*.png` are the working images) | The special-storage/indicator/mnemonic tables (see plan Appendix A.9-A.10) |
 
-Beyond bitsavers, no other archive is known to hold 7030 software or
-documentation not represented here.
+**THAT SENTENCE USED TO READ "Beyond bitsavers, no other archive is
+known to hold 7030 software or documentation not represented here."
+IT IS FALSE, and was corrected 2026-10-19.** What IS true, and was
+re-verified by diffing the four bitsavers listings (`/`, `ce/`,
+`diag/`, `mcp/`) against `ls docs/*.pdf`, is narrower and worth
+stating exactly:
+
+**bitsavers' `pdf/ibm/7030/` tree is held completely -- 52 of 52,
+filename for filename.** There is no `bits/IBM/7030/`, and
+`bitsavers.org/magtape/` 404s (`pdf/ibm/magtape/` is a different
+thing and is NOT fully held).
+
+Known to exist elsewhere and NOT held:
+
+| Where | What | Why it matters |
+|---|---|---|
+| `bitsavers.org/pdf/ibm/7950/` | `Harvest_prelim_May57.pdf`, `Harvest_Nov1957.pdf`, `R22-9789_7950_HAP_III_Ref_Man_1962.pdf` | The 7950 Harvest is the Stretch attachment, and `ka_ua1`'s own header reads "DIAGNOSTIC CONTROL PROGRAM FOR 7030/7950 EDP SYSTEM" -- the harness being transcribed targets both machines |
+| `bitsavers.org/pdf/ibm/magtape/` | `A22-6589-1_magTapeReference_Jun62.pdf` | The 729-family tape reference. Tape device timing is the one area `docs/timing_oracle.md` has no source for at all |
+| Computer History Museum, catalog 102633187 | *IBM 7030 Master Control Program MCP Preliminary Reference Manual*, Nov 1961, 136pp | Predates every MCP document held (earliest is J22-6559, Dec 1960; C22-6678-1 is Jun 1964). **Catalogued, not digitised** at any guessable path; would need a CHM request |
+
+**AND THE LARGEST GAP IS ONE THIS REPO CAN NAME PRECISELY, because
+IBM's own index of it is sitting in `docs/`.**
+`7030_SystemTestPrograms_Aug61.pdf` is the acceptance-test schedule;
+its program list and write-ups enumerate the diagnostic universe, and
+**fourteen of those programs have no surviving listing in any archive
+surveyed.** Several are squarely on this project's path:
+
+* **JB AV1B / AV1C, VARIABLE FIELD LENGTH (`SMFV-1`)** -- the VFL
+  diagnostic. `bsv/StretchVFL.bsv` has no historical oracle at all,
+  where `StretchFP.bsv` has `jb_af1c`. This is the single most
+  valuable missing document for this project.
+* **KA AT1 "RAW SPEED 1"** and **KA BT1 "MEM TIMER"** -- programs that
+  MEASURE and PRINT instruction and memory times. A second timing
+  oracle independent of Performance Characteristics, which is exactly
+  what `docs/timing_oracle.md`'s rebuild verdict asks for.
+* **JA EE3 (Basic Exchange/tape with interrupts on)**, **JA CE1/CE2
+  (729-IV)**, **JA ES1 (operator's console)**, **JA NE4/NE5/NE6
+  (printer, reader, punch)** -- device-level oracles for everything
+  in `StretchIO.bsv` that currently has none.
+* **JA UD1A "TAPE LOAD"** -- builds the maintenance master tape and
+  defines its control-card format. Distinct from the held `ka_ul1`,
+  which is a card-deck loader.
+
+The maintenance tape holds up to 32 programs (switches 0-31); the
+Aug-1961 schedule populates only 0-15, so more decks existed than even
+this index names. A request to CHM naming exact IBM file numbers --
+**JB AV1C, KA AT1, KA BT1 first** -- is far likelier to succeed than a
+general ask.
+
+One roster was not checked: the DCP's own test-ID schedule inside
+`ka_ua1_diagnostic_ctl_pgm.pdf` is a second potential index of
+programs and may name more.
 
 
 ## Third-party Stretch software (non-IBM): documentation trail

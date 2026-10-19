@@ -400,8 +400,59 @@ the off-line IBM 1401 is for.
 
 So A3 is about the tape's content. What is still missing is the IOCD
 card's own FORMAT, from a primary source rather than from p.17's
-usage; `C22-6678-1` printed p.40 ("Format of the Input Tape",
-"Updating the System") is the next place to look.
+usage.
+
+**p.40 WAS READ, 2026-10-19, AND IT MOVED THE ITEM ALONG TWICE.**
+
+First, it NAMES THE CARD AND PLACES IT. Under "Initial Preparation
+of the MCP Deck for Updating", step A lists what the punched MCP
+assembly tape produces, in order:
+
+```
+ 1. JOB card              11. HED card MCP Mainleg Type Area
+ 2. TYPE card             12. Binary cards with PUNID 11D11MCP
+ 3. LIM card              13. HED card MCP Loader Type Area
+ 4. IOD cards             14. Binary cards with PUNID 22LOADER
+ 5. HED card MCP Bootstrap Type Area      ... (through 20)
+ 6. Binary cards with PUNID 11E11BSP      21. BRANCH card.
+ 7. HED card IPL Type Area
+ 8. Binary cards with PUNID 11C11IPL
+```
+
+The cards are **IOD** cards, they sit FOURTH — immediately before the
+bootstrap's own binary deck — and this page independently corroborates
+two PUNIDs the transcription already carries: `11E11BSP` is the
+header of the bootstrap listing pages, and `11C11IPL` is the operand
+of printed p.15 line 5's `PUNID,11C11IPL`, the statement that proves
+pp.3-15 and pp.16+ are one assembly.
+
+**The column format is still not in hand**, but the page says where
+it is: "For a complete writeup of the UPDATE 30 program, see page 215
+of the MCP Programming Systems Analysis Guide (C22-6728), or the
+bulletin published on the UPDATE 30 program (C22-6718)."
+**`C22-6728` IS IN `docs/`** — the standing lesson again — and
+printed p.215 = PDF 215 in the base revision. Read it; pp.216-217
+already show IOD cards being used by name ("the third IOD card (for
+the change tape, named CHT)", "a REEL card must be added behind the
+third IOD", "IOD and REEL cards for the new IPL tape ... named
+NWIPL"), so an IOD card carries at least a device name. C22-6718 is
+NOT in `docs/` and is not on bitsavers.
+
+**SECOND, AND LARGER: p.215 GIVES THE MASTER TAPE'S LAYOUT**, which
+is item A1's problem, not A3's:
+
+> "The master tape contains two binary files in odd parity, high
+> density. **The first is a single record containing the IPL
+> bootstrap program. The second consists of 513-word records each
+> containing an image of an arc of PROSA on the disk.** Each change
+> affects an entire logical unit of PROSA called a type area."
+
+That is a hard constraint on the PROSA fixture and it was guessed at
+before: **513 words**, against the model's `arcWords = 512`, so each
+tape record is an arc plus one word. `mktape.py` writes a 369-word
+bootstrap record and a tape mark and nothing else. See
+`docs/mcp_tape_manufacture.md` §2, which this page should be folded
+into before any more of the fixture is built.
 
 **AND THE TABLES IT FILLS IN ARE ALREADY SPECIFIED.** `C22-6728-1`
 Appendix A, printed pp.261-268, gives the Channel and Unit Status

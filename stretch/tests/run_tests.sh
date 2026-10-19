@@ -1549,6 +1549,51 @@ run "M+MG, Add Magnitude to Memory -- the seventh VFL integer arm" ./run_program
 # only I, and the written-minus "M-MG" is witnessed for the
 # floating-point operation alone.  docs/NEXT.md carries it.
 
+run "+MG, Add to Magnitude -- Reference Manual Figure 12" ./run_program.sh ../decks/plus_mg.strap StretchPlusMgTb \
+    "PC=2086" \
+    "pmg_fig12_x_minus_y:1064=70" \
+    "pmg_fig12_larger_is_x:1065=100" \
+    "pmg_fig12_forced_zero:1066=0" \
+    "pmg_fig12_larger_is_y:1067=100" \
+    "pmg_sign_byte_unchanged:1068=0x880" \
+    "pmg_clamp_clears_entire_acc:1069=0" \
+    "pmg_positive_keeps_low_byte:1070=767"
+# ADD TO MAGNITUDE, the VFL form (abc100001), the to-accumulator twin
+# of M+MG and the last operation the opcode audit still listed in its
+# own blind spot.  Reference Manual printed p.60 defines it in three
+# sentences -- the accumulator operand is assumed positive, a positive
+# result is stored, a NEGATIVE result clears the ENTIRE accumulator,
+# and the sign byte register is not changed either way.
+#
+# BLOCKS 1 AND 2 ARE IBM'S OWN PROGRAM.  Figure 12 on printed p.61,
+# "given two 64-bit unsigned binary numbers x and y, put the larger of
+# the two in the accumulator": L, then -MG, then +.  Both branches are
+# run, because the figure's note 1 ("x-y if x >= y, 0 if x < y") IS
+# the operation -- the ordinary sum in one branch and the forced zero
+# in the other.
+#
+# >>> AND FIGURE 12 FOUND A BUG THAT HAD NOTHING TO DO WITH +MG. <<<
+#
+# The figure would not run: "-MG(BU,64,8),Y,0" computed x PLUS y.
+# fieldToSM returned sign 0 for every unsigned field and dropped the
+# negative sign modifier entirely, so **every unsigned subtract in the
+# model was an addition**.  printed p.60 states the rule under ADD:
+# "Unsigned fields are considered positive BEFORE THIS MODIFIER IS
+# APPLIED", and p.57's Sign Control table lists "Unsigned, use -" as
+# bits 51-52 = 11, a named combination that was unreachable.
+#
+# MCP RELIES ON IT.  Printed p.18 line 35 is "-(BU,18),$15+.28
+# -COMPUTE THE NUMBER OF ...", an unsigned subtract whose answer would
+# have been wrong the moment the bootstrap reached that page -- which
+# it has not yet, so no existing test could have caught this.  Only
+# one deck in the corpus spells an unsigned written-minus at all.
+#
+# THE ASSEMBLER LEARNED "-MG" FROM THE SAME FIGURE.  It carries a VFL
+# data description on a VFL operation, which settles the written-minus
+# spelling for VFL rather than only for the floating-point family;
+# strap/opcodes.py's VFL_INT_WRITTEN_MINUS cites it and holds "-MG"
+# alone.  "M-" and "M-MG" stay out, because nothing spells them.
+
 run "Connective byte size -- the expansion, p.75" ./run_program.sh ../decks/connective_byte_size.strap StretchConnBsTb \
     "PC=2082" \
     "conn_expand_21_3:1052=0x6060204" \
