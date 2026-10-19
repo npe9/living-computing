@@ -1,0 +1,159 @@
+! COMPARE FIELD (KF), the VFL form (code abc110001).  Reference Manual
+! printed p.65:
+!
+!   "A field in the accumulator is algebraically compared with the
+!   addressed operand.  THIS ACCUMULATOR FIELD IS THE SAME LENGTH IN
+!   BYTES AS THE FIELD FROM STORAGE EXCLUSIVE OF THE SIGN BYTE, and
+!   its location is specified by the offset in the usual manner.  THE
+!   ACTUAL ACCUMULATOR SIGN IS NOT USED BY THE OPERATION.  A POSITIVE
+!   SIGN IS ASSUMED FOR THE ACCUMULATOR FIELD.  The sign of the
+!   storage field is used as modified by the sign modifiers.  The
+!   comparison result indicators are set to describe the accumulator
+!   field as compared with the storage field.  Neither operand is
+!   changed by the operation.  The arithmetic result indicators are
+!   not affected."
+!
+! and the programming note on the same page, which is the whole
+! difference from COMPARE:
+!
+!   "The field comparison operations are the only arithmetic
+!   operations that do not treat the entire accumulator contents as a
+!   single quantity.  Comparisons are made between fields of equal
+!   length in numeric bytes.  For this reason, NO INDICATION IS GIVEN
+!   in these operations IF THERE IS A ONE-BIT IN THE ACCUMULATOR TO
+!   THE LEFT OF THE FIELD which is being compared with the storage
+!   operand."
+!
+! So K takes everything left of the offset WITH ITS REAL SIGN; KF
+! takes a bounded field with a FORCED POSITIVE sign and ignores
+! whatever sits above it.  Blocks 4 and 5 are the two halves of that
+! sentence and are the reason this deck exists: under COMPARE's
+! reading they would report AH and AL respectively, and under COMPARE
+! FIELD's they both report AE.
+!
+! ARRIVED VIA MCP, printed p.17 line 30: "KF(BU,48),X IOCD" -- the
+! compare that decides whether a card image IS an IOCD card, and so
+! one of the two operations standing between MCP and knowing what
+! devices it has (docs/boot_plan.md A2).  The 48-bit unsigned shape
+! of blocks 1-5 is MCP's own.
+!
+! HOW EACH BLOCK REPORTS.  Z,$IND clears the indicator register
+! (bits 20-63), the operand is loaded, the KF runs, and the register
+! is then loaded and stored WHOLE.  Storing the register rather than
+! branching on one bit of it is deliberate: a stray data flag, a
+! second comparison bit or MOP left on all fail the check by making
+! the number different.
+!
+! WHICH MEANS EVERY BLOCK ALSO WITNESSES A CLAUSE I DID NOT SET OUT
+! TO TEST.  The expected values are not the bare comparison bit,
+! because the LOAD that sets each block's accumulator leaves its own
+! arithmetic result indicator standing, and p.65 says KF must not
+! disturb it: "The arithmetic result indicators are NOT AFFECTED."
+! The first run of this deck expected the bare bit and reported six
+! failures whose every extra bit turned out to be that clause being
+! honoured.  IBM bit values in a 64-bit word:
+!
+!     RLZ = 0x80   RZ = 0x40   RGZ = 0x20   RN = 0x10
+!     AL  = 0x08   AE = 0x04   AH = 0x02
+!
+! so 0x24 is "the LOAD said result-greater-than-zero and the KF said
+! accumulator-equal", and 0x94 is "the LOAD said negative and less
+! than zero, and the KF said equal anyway" -- which is block 5's
+! whole point stated twice over.
+!
+!   T1  equal, MCP's own shape.              RGZ+AE      = 0x24
+!   T2  accumulator field lower.             RGZ+AL      = 0x28
+!   T3  accumulator field higher.            RGZ+AH      = 0x22
+!   T4  **a one-bit above the field is ignored.**        = 0x24
+!       Same as T1 with accumulator bit 48 set.  K would say AH.
+!   T5  **the real accumulator sign is not used.**
+!       The accumulator is loaded NEGATIVE with the same magnitude,
+!       so the LOAD leaves RLZ and RN standing and the KF still
+!       reports equal.  K would say AL.      RLZ+RN+AE   = 0x94
+!   T6  a SIGNED storage field, so the accumulator field is the
+!       storage length MINUS the sign byte: (B,56,8) gives 48 bits
+!       against a 48-bit accumulator field.  Positive 100 against
+!       negative 100 is higher.              RGZ+AH      = 0x22
+
+! ONE INJECTION, MEASURED, and it lands on exactly the two blocks
+! written for it: KF routed through COMPARE's path instead of its own
+! (the whole accumulator, with its real sign) gives T4 = 0x22, the
+! bit above the field counted as making the accumulator higher, and
+! T5 = 0x98, RLZ+RN+AL, the negative accumulator counted as lower.
+! T1, T2, T3 and T6 do not move, because at offset 0 with no high
+! bits and a positive accumulator the two operations agree -- which
+! is also why nothing in the suite would have caught KF being wrong
+! in those four shapes.
+
+        SLC, (8)2000.0
+
+! -- 1. equal ---------------------------------------------------
+START   Z, $IND
+        L(BU,64,8), ACC1, 0
+        KF(BU,48), F1+.16, 0
+        L(BU,64,8), $IND, 0
+        ST(BU,64,8), T1, 0
+
+! -- 2. accumulator lower ---------------------------------------
+        Z, $IND
+        L(BU,64,8), ACC2, 0
+        KF(BU,48), F1+.16, 0
+        L(BU,64,8), $IND, 0
+        ST(BU,64,8), T2, 0
+
+! -- 3. accumulator higher --------------------------------------
+        Z, $IND
+        L(BU,64,8), ACC3, 0
+        KF(BU,48), F1+.16, 0
+        L(BU,64,8), $IND, 0
+        ST(BU,64,8), T3, 0
+
+! -- 4. a one-bit above the field is ignored --------------------
+        Z, $IND
+        L(BU,64,8), ACC4, 0
+        KF(BU,48), F1+.16, 0
+        L(BU,64,8), $IND, 0
+        ST(BU,64,8), T4, 0
+
+! -- 5. the real accumulator sign is not used -------------------
+        Z, $IND
+        L(B,56,8), NEG1+.8, 0
+        KF(BU,48), F1+.16, 0
+        L(BU,64,8), $IND, 0
+        ST(BU,64,8), T5, 0
+
+! -- 6. a signed storage field: length minus the sign byte ------
+        Z, $IND
+        L(BU,64,8), ACC6, 0
+        KF(B,56,8), FS+.8, 0
+        L(BU,64,8), $IND, 0
+        ST(BU,64,8), T6, 0
+
+PASS    BEW, $
+
+! Data, word-aligned: BEW is a half word, so without this every 64-bit
+! field below would straddle two words and be refused.
+        SLC, (8)2060.0
+
+! The 48-bit comparand, 0x123456789ABC, as the low 48 bits of a word.
+F1      DD(BU,64,8), (8)443212636115274
+ACC1    DD(BU,64,8), (8)443212636115274
+ACC2    DD(BU,64,8), (8)443212636115273
+ACC3    DD(BU,64,8), (8)443212636115275
+! The same value with accumulator bit 48 also set: KF must not see it.
+ACC4    DD(BU,64,8), (8)10443212636115274
+! -0x123456789ABC as a signed 56-bit field, byte size 8, sitting at
+! bits 8-63 of the word: (V<<8) | (1<<7).
+NEG1    DD(BU,64,8), (8)221505317046536200
+ACC6    DD(BU,64,8), 100
+! -100 as a signed 56-bit field at bits 8-63: (100<<8) | (1<<7).
+FS      DD(BU,64,8), (8)62200
+
+T1      DD(BU,64,8), 0
+T2      DD(BU,64,8), 0
+T3      DD(BU,64,8), 0
+T4      DD(BU,64,8), 0
+T5      DD(BU,64,8), 0
+T6      DD(BU,64,8), 0
+
+        END, START

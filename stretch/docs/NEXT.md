@@ -5111,6 +5111,32 @@ model bug, one reading error, and one bug of IBM's.
 
 ---
 
+## `K` AND A NONZERO OFFSET -- noticed while building `KF`, not chased
+
+Reference Manual printed p.65, COMPARE:
+
+> "The contents of the accumulator **left of the specified offset**
+> are algebraically compared with the addressed operand. **The bits
+> to the right of the offset do not participate in the comparison.**"
+
+The model does it the other way round: it shifts the OPERAND left by
+the offset and compares against the whole accumulator
+(`smCompare(acc, opndSh)`). The two agree whenever the accumulator's
+low `offset` bits are zero, and differ otherwise -- if the high parts
+are equal and the low bits are not, the manual says AE and the model
+says AH.
+
+**Not touched, deliberately.** `K` is exercised by several hundred
+listing-verified sections, every one of which passes, so either they
+all use offset 0 or they all have zero low bits; a change made blind
+could only be justified by a deck that fails first. Writing that deck
+is a half-hour and the fix is one line, but it wants its own commit
+and its own injection rather than riding along with `KF`.
+
+The same page also says "Neither the lost carry nor the partial field
+indicator can be turned on by a comparison operation" -- worth
+checking against the arm while you are there.
+
 ## ONE OPEN ITEM LEFT BY `M+MG`
 
 ### The VFL negative sign modifier has no spelling

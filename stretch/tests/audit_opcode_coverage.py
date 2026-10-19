@@ -180,12 +180,19 @@ UNIMPLEMENTED = {
 #         So the two operations the model cannot execute are the two
 #         that stand between MCP and knowing what devices it has.
 #         Both were in UNIMPLEMENTED until this transcription used
-#         them; neither is implemented now.
+#         them.
+#
+#         **KF IS BUILT, 2026-10-19** -- RefMan printed p.65,
+#         decks/compare_field.strap, six checks and one injection.
+#         LCV is not, and it is the harder of the two: MCP writes it
+#         "LCV(DU,8,4)", DECIMAL UNSIGNED, and the model sets OP on
+#         vi.m.decimal == 1 across the whole VFL case.  Building it
+#         means building decimal mode, not one arm.
 ENCODING_ONLY = {
     "RNX",
     # LOCSEOP left on 2026-10-18 with LOC -- see the note in
     # UNIMPLEMENTED above.
-    "KF",
+    # KF left on 2026-10-19: built, and driven by its own deck.
     "LCV",
 }
 # IMPLEMENTED BUT UNEXERCISED -- the model has real arms for these and

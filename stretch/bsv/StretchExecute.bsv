@@ -2683,8 +2683,45 @@ function ActionValue#(VflOutcome)
               end
             end
           end
-          6'b010001: begin // K (Compare) -> AL/AE/AH -- same
-            // prefetch/bail-out shape as L above.
+          6'b010001, 6'b110001: begin // K (Compare), KF (Compare Field)
+            // -> AL/AE/AH.  Same prefetch/bail-out shape as L above.
+            //
+            // COMPARE FIELD, Reference Manual printed p.65, verbatim:
+            //
+            //   "A field in the accumulator is algebraically compared
+            //   with the addressed operand.  **This accumulator field
+            //   is the same length in bytes as the field from storage
+            //   exclusive of the sign byte**, and its location is
+            //   specified by the offset in the usual manner.  **The
+            //   actual accumulator sign is not used by the operation.
+            //   A positive sign is assumed for the accumulator
+            //   field.**  The sign of the storage field is used as
+            //   modified by the sign modifiers.  The comparison
+            //   result indicators are set to describe the accumulator
+            //   field as compared with the storage field.  Neither
+            //   operand is changed by the operation.  The arithmetic
+            //   result indicators are not affected."
+            //
+            // AND THE PROGRAMMING NOTE ON THE SAME PAGE IS THE WHOLE
+            // DIFFERENCE FROM K: "The field comparison operations are
+            // the only arithmetic operations that do not treat the
+            // entire accumulator contents as a single quantity.
+            // Comparisons are made between fields of equal length in
+            // numeric bytes.  For this reason, **no indication is
+            // given in these operations if there is a one-bit in the
+            // accumulator to the left of the field** which is being
+            // compared with the storage operand."
+            //
+            // So K takes everything left of the offset with its real
+            // sign; KF takes a bounded field with a forced positive
+            // sign and ignores whatever is above it.
+            //
+            // ARRIVED VIA MCP, printed p.17 line 30: "KF(BU,48),
+            // X IOCD" -- the compare that decides whether a card
+            // image IS an IOCD card, and so the first of the two
+            // operations standing between MCP and knowing what
+            // devices it has (docs/boot_plan.md A2).
+            Bool fieldCmp = (vi.code == 6'b110001);
             Bit#(64) raw = 0;
             if (immediate) begin
               raw = immediateOperand(vi.a.addr, len_);
@@ -2709,9 +2746,33 @@ function ActionValue#(VflOutcome)
             end
             if (!isValid(needsRead)) begin
               SM128 opnd = fieldToSM(raw, len_, bsz, vi.m.unsign, vi.m.invert);
-              SM128 opndSh = SM128 { sign: opnd.sign, mag: opnd.mag << offSh };
               SM128 acc = readAcc(st);
-              Cmp3 c = smCompare(acc, opndSh);
+              Cmp3 c = CmpEqual;
+              if (fieldCmp) begin
+                // "the same length in bytes as the field from storage
+                // EXCLUSIVE OF THE SIGN BYTE" -- and fieldToSM has
+                // already stripped that byte off `opnd.mag`, so the
+                // two numeric parts are the same width by
+                // construction.  A length at or below the sign byte
+                // leaves no numeric part at all; comparing zero
+                // against zero is what that degenerates to and the
+                // guard keeps the subtraction from wrapping.
+                Bit#(7) numBits = (vi.m.unsign == 1) ? len_
+                                : ((len_ > zeroExtend(bsz)) ? (len_ - zeroExtend(bsz)) : 0);
+                // numBits is at most `len_`, and effLength caps that
+                // at 64, so a 128-bit mask never saturates and needs
+                // no guard.
+                Bit#(128) nmask = (128'b1 << numBits) - 1;
+                // "A positive sign is assumed for the accumulator
+                // field", and the mask is what implements "no
+                // indication is given ... if there is a one-bit in
+                // the accumulator to the left of the field".
+                SM128 accF = SM128 { sign: 0, mag: (acc.mag >> offSh) & nmask };
+                c = smCompare(accF, opnd);
+              end else begin
+                SM128 opndSh = SM128 { sign: opnd.sign, mag: opnd.mag << offSh };
+                c = smCompare(acc, opndSh);
+              end
               ind = setAccCmpIndicatorsF(ind, c);
             end
           end

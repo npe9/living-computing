@@ -1549,6 +1549,41 @@ run "M+MG, Add Magnitude to Memory -- the seventh VFL integer arm" ./run_program
 # only I, and the written-minus "M-MG" is witnessed for the
 # floating-point operation alone.  docs/NEXT.md carries it.
 
+run "KF, Compare Field -- the bounded accumulator operand, p.65" ./run_program.sh ../decks/compare_field.strap StretchKFTb \
+    "PC=2102" \
+    "kf_equal:1080=0x24" \
+    "kf_acc_lower:1081=0x28" \
+    "kf_acc_higher:1082=0x22" \
+    "kf_bit_above_field_ignored:1083=0x24" \
+    "kf_acc_sign_not_used:1084=0x94" \
+    "kf_signed_field_excludes_sign_byte:1085=0x22"
+# COMPARE FIELD, Reference Manual printed p.65.  K compares everything
+# left of the offset WITH ITS REAL SIGN; KF compares a field "the same
+# length in bytes as the field from storage exclusive of the sign
+# byte", assumes a POSITIVE sign for it, and -- the page says this
+# outright -- gives "no indication ... if there is a one-bit in the
+# accumulator to the left of the field".
+#
+# Blocks 4 and 5 are those two sentences and are why the deck exists;
+# the injection that routes KF through K's path moves those two checks
+# and no others.  The other four shapes agree between the two
+# operations, which is exactly why nothing already in this suite could
+# have caught KF being wrong.
+#
+# EVERY BLOCK ALSO WITNESSES "the arithmetic result indicators are not
+# affected", for free and by accident.  The deck stores the whole
+# indicator register, and the expected values are not the bare
+# comparison bit: each block's LOAD leaves its own RGZ (or RLZ+RN)
+# standing through the KF.  The first run expected bare bits and
+# reported six failures whose every extra bit was that clause being
+# honoured.
+#
+# ARRIVED VIA MCP, printed p.17 line 30, "KF(BU,48),X IOCD" -- the
+# compare that decides whether a card image IS an IOCD card.  One of
+# the two operations standing between MCP and knowing what devices it
+# has; LCV, the other, needs decimal mode and is still unbuilt
+# (docs/boot_plan.md A2).
+
 run "+MG, Add to Magnitude -- Reference Manual Figure 12" ./run_program.sh ../decks/plus_mg.strap StretchPlusMgTb \
     "PC=2086" \
     "pmg_fig12_x_minus_y:1064=70" \
