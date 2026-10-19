@@ -4889,6 +4889,34 @@ forgotten: Reference Manual **PDF page = printed page + 3**, and
 `ja_ua1_ssip` is cited by **PDF page** because its listing carries no
 printed page numbers.
 
+## MCP'S BOOTSTRAP IS NOW REFUSED NOTHING -- LVS and TRANSMIT both built
+
+> **CLOSED 2026-10-19.** `LVS` is built: `StretchExecute`'s
+> immediate-index arm has a `4'b1011` case, driven by
+> `decks/lvs_multiple_indexing.strap` (five checks, one per rule on
+> printed p.28). With it and the multi-word `TRANSMIT` of the day
+> before, **"MCP'S OWN BOOTSTRAP RUNS" reports no OP bit at all** --
+> the model refuses nothing MCP executes, which is the claim that
+> file made for weeks while actually measuring a register an
+> interrupt had just cleared.
+>
+> What remains in the indicator word is `RZ | XVZ | XF | AD`, all
+> four attributed in `tests/gen_mcp_boot_tb.py`, and the AD is the
+> **tape** being short rather than the model being wrong: no PROSA on
+> it means the TRANSMIT's count comes back zero, which printed p.30
+> calls "never valid", and the transmit stops at the top of installed
+> core exactly as that page describes.
+>
+> **So the next thing is not an instruction.** It is a tape with
+> PROSA on it -- `docs/boot_plan.md` M3+ item 6 -- because until MCP
+> has something real to move, every later page is being exercised
+> against zeros.
+>
+> The section below is kept as the record of how the two gaps were
+> found, which is the part worth re-reading: an exact indicator
+> assertion caught both, and the first attribution was wrong because
+> fixing one left the bit standing.
+
 ## THE NEXT MCP BLOCKER IS **LVS** -- TRANSMIT was built the same day
 
 > **CORRECTION, 2026-10-18, same day.** This section was written

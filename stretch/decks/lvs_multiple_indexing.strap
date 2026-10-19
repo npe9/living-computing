@@ -1,0 +1,105 @@
+! lvs_multiple_indexing.strap -- LOAD VALUE WITH SUM, the operation
+! whose address field is not an address.
+! Reference Manual printed p.28 (PDF p.31), "Multiple Indexing" and
+! "Load Value with Sum (LVS)", both complete on that one page.
+!
+! WHY THIS DECK EXISTS.  MCP printed p.4 line 23 is
+!
+!     LVS,$X1,$X12,$X14        -WORDS PRECEEDING MCP
+!
+! and $X1 is the index the TRANSMIT five rows later uses to find MCP
+! inside the buffer.  The ASSEMBLER has encoded LVS since the MCP
+! transcriptions needed it (tests/verify_lvs_encoding.py); the MODEL
+! set Operation Code Invalid on it until 2026-10-19, which is what the
+! boot's OP indicator meant after TRANSMIT was built.
+!
+! WHAT EACH STEP PINS, all five from printed p.28:
+!
+!   1. THE MASK IS A MASK.  "When bit position n contains a one, the
+!      register Xn participates."  Step 1 sums X12 and X14 -- MCP's
+!      own pairing -- and the result must be their sum, not either
+!      one and not the instruction's address field read as a number.
+!
+!   2. THE ADDITION IS ALGEBRAIC.  "taking into account the sign, bit
+!      24, of all quantities."  Step 2 sums a positive and a larger
+!      negative and must come back NEGATIVE with the difference.
+!
+!   3. BITS 25-63 OF J REMAIN UNCHANGED.  Step 3 loads a COUNT and a
+!      REFILL into the destination first and checks they survive.
+!      This is the half a careless implementation gets wrong by
+!      writing a whole index word.
+!
+!   4. AN EMPTY MASK CLEARS THE VALUE FIELD.  "If bits 0-15 of the
+!      address part of the instruction are all zero, the value field
+!      of the index register specified by J is cleared."  Written
+!      here as LVS,$X5,$X0 with X0 holding zero -- the assembler
+!      requires at least one participant, and X0's own value is the
+!      only way to express the empty sum through it.
+!
+!   5. ONE PARTICIPANT IS A COPY, which is the degenerate case that
+!      would also pass if the mask were being ignored entirely -- so
+!      it is here to be read together with step 1, not alone.
+!
+! THE UNITS, because a bare integer in an LVI is not the value.
+! Reference Manual printed p.25: a value operation's address part is
+! "bits 0-18 of the instruction... as bits 0-18 OF THE VALUE FIELD",
+! so THE VALUE IS THE WRITTEN FIELD TIMES THIRTY-TWO.  "LVI,$X12,100"
+! leaves X12's value at 3200, not 100.  The sums below are therefore
+! sums of multiples of 32, and the expected words in
+! tests/run_tests.sh are written as "field x 32" for exactly that
+! reason.  It does not weaken anything -- a sum is a sum in any unit
+! -- but a reader comparing the deck to the checks needs to know.
+!
+! EVERY RESULT IS STORED WITH SX, NOT SV, and that is the point of
+! step 3.  SX stores the WHOLE index word -- value, sign, flag,
+! count, refill -- so "bits 25-63 remain unchanged" is visible in the
+! same word as the value that did change.  SV would store only the
+! value and the check could not see the count at all.
+!
+! THE INDICATORS ARE NOT CHECKED HERE.  "The index flag and index
+! result indicators are set according to the new contents of the index
+! register specified by J" -- that is setIndexResultIndicatorsF, the
+! same helper every other index operation uses, and
+! decks/index_result_indicators.strap is where that rule is pinned.
+! Checking it again here would be checking the helper, not LVS.
+
+START   LVI,  $X12, 100
+        LVI,  $X14, 23
+        LVS,  $X1, $X12, $X14      !step 1: values 3200 + 736 = 3936
+
+        LVI,  $X2, 40
+        LVNI, $X3, 65              !X3 = -65
+        LVS,  $X4, $X2, $X3        !step 2: 1280 + (-2080) = -800,
+                                    !        so sign 1 and magnitude 800
+
+        LCI,  $X6, 7               !step 3: a count and a refill in the
+        LRI,  $X6, 9               !        destination, to survive
+        LVI,  $X7, 11
+        LVS,  $X6, $X7             !step 3: X6's value becomes 352 and
+                                    !        its count 7 / refill 9 stay
+
+        LVI,  $X5, 999             !step 4: something to clear
+        LVS,  $X5, $X0             !X0 is zero, so the sum is zero
+
+        LVI,  $X8, 77
+        LVS,  $X9, $X8             !step 5: one participant is a copy
+
+! Park each whole index word where the testbench can read it.
+        SX,   $X1, R1
+        SX,   $X4, R2
+        SX,   $X6, R3
+        SX,   $X5, R4
+        SX,   $X9, R5
+        BEW,  $
+                            !NO PADDING NOP: the run above is
+                            !3 + 3 + 4 + 2 + 2 + 5 + 1 = 20 half-words,
+                            !which is even, so the first DD already
+                            !lands on a word boundary and a NOP would
+                            !MIS-align it.
+
+R1      DD(BU,64), 0
+R2      DD(BU,64), 0
+R3      DD(BU,64), 0
+R4      DD(BU,64), 0
+R5      DD(BU,64), 0
+        END, START

@@ -1156,6 +1156,52 @@ run "I-Box 5 routine 1260's indicator walk + TRANSMIT IMMEDIATE (jb_ax5b p.45)" 
 # failing loud.  Every count in this block is 1.  Recorded in
 # TRANSMIT_CODES, in strap_asm.py's format list and in strap/README.md.
 
+run "LVS: multiple indexing (RefMan printed p.28)" ./run_program.sh ../decks/lvs_multiple_indexing.strap StretchLvsTb \
+    "R1_sum:42=0xf600000000000" "R2_algebraic:43=0x3208000000000" \
+    "R3_bits25to63_kept:44=0x16000001c0009" \
+    "R4_empty_mask_clears:45=0" "R5_single:46=0x9a00000000000"
+# THE OPERATION WHOSE ADDRESS FIELD IS NOT AN ADDRESS.  Reference
+# Manual printed p.28, "Multiple Indexing": "bits 0-15 of the address
+# part of the instruction are used to indicate which index registers
+# participate... When bit position n contains a one, the register Xn
+# participates."
+#
+# MCP printed p.4 line 23 is "LVS,$X1,$X12,$X14  -WORDS PRECEEDING
+# MCP", and $X1 is the index the TRANSMIT five rows later uses to find
+# MCP inside the buffer -- so this and the MULTI-WORD TRANSMIT section
+# above are one piece of work in two halves.  The ASSEMBLER has
+# encoded LVS since the MCP transcriptions needed it
+# (verify_lvs_encoding.py); the MODEL set Operation Code Invalid on it
+# until 2026-10-19.
+#
+# Five rules, all from p.28:
+#   * the mask is a MASK -- step 1 sums MCP's own X12/X14 pairing, so
+#     a model reading the address field as a number fails;
+#   * the addition is ALGEBRAIC, "taking into account the sign, bit
+#     24, of all quantities" -- step 2 sums a positive and a larger
+#     negative and must come back negative;
+#   * "BITS 25-63 OF THE INDEX WORD SPECIFIED BY J REMAIN UNCHANGED"
+#     -- step 3 puts a count and a refill in the destination first and
+#     every result is stored with SX, the WHOLE index word, so the
+#     surviving fields are visible beside the value that changed.
+#     This is the half a careless implementation loses by writing a
+#     whole index word;
+#   * an EMPTY MASK clears the value field;
+#   * one participant is a copy.
+#
+# THE UNITS ARE NOT THE OBVIOUS ONES and the deck's header says so: a
+# value operation's address part is "bits 0-18 ... as bits 0-18 OF THE
+# VALUE FIELD" (printed p.25), so "LVI,$X12,100" leaves the value at
+# 3200.  The expected words above are therefore sums of multiples of
+# 32.
+#
+# BITS 16-19 vs 16-18: p.28's prose says "Bits 16-19 ... are ignored"
+# and the SAME page's format diagram ends ADDRESS at 18, with bit 19
+# the high bit of J; X22-6533's IMMEDIATE INDEX ARITHMETIC row agrees
+# with the diagram.  Figure and pocket card beat the sentence, and
+# both the model and strap_asm.py record the discrepancy where they
+# implement it.
+
 run "MULTI-WORD TRANSMIT (RefMan printed p.30)" ./run_program.sh ../decks/transmit_multiword.strap StretchXmitTb \
     "A0:44=0xA000000000000001" "A1:45=0xA000000000000002" \
     "A2:46=0xA000000000000003" "A3:47=0xA000000000000004" \
@@ -1222,13 +1268,16 @@ run "MCP'S OWN BOOTSTRAP RUNS (boot_plan.md M3)" ./run_mcp_boot.sh StretchMcpBoo
 # refused, not one, and the first attribution named only the first:
 #
 #   p.4 line 28, "T,$11,X BUFER($X1),X BS END  -MOVE MCP IPL", an
-#   eleven-word direct-count TRANSMIT.  BUILT the same day --
-#   decks/transmit_multiword.strap -- so it no longer sets OP.
+#   eleven-word direct-count TRANSMIT.  Built 2026-10-18.
 #
-#   p.4 line 23, "LVS,$X1,$X12,$X14  -WORDS PRECEEDING MCP".  STILL
-#   REFUSED: StretchExecute's immediate-index arm ends
-#   `default: setOpInvalid // LVS: out of scope`.  That is what OP
-#   means here now, and docs/NEXT.md has it as the next blocker.
+#   p.4 line 23, "LVS,$X1,$X12,$X14  -WORDS PRECEEDING MCP",
+#   multiple indexing.  Built 2026-10-19.  The two belong together:
+#   $X1 is the index the TRANSMIT five rows later uses to find MCP
+#   inside the buffer.
+#
+# WITH BOTH BUILT THERE IS NO OP BIT.  **The model refuses nothing
+# MCP's bootstrap executes**, and this time that is measured rather
+# than read off a register an interrupt had just cleared.
 #
 # AND AD IS THE TRANSMIT NOW RUNNING.  Line 24 takes the count out of
 # the PROSA record's dictionary and THIS TAPE HAS NO PROSA -- 369
@@ -7059,7 +7108,7 @@ run "THE DISK: LOCATE, arcs, the zero-filled tail, and flags discarded" ./run_di
 
 # -- cleanup: generated .bsv testbenches and Bluesim build products are
 # not meant to be committed (see .gitignore) --
-rm -f "$BSV_DIR"/StretchProblem*Tb.bsv "$BSV_DIR"/StretchFigure*Tb.bsv "$BSV_DIR"/StretchXwRefillTb.bsv "$BSV_DIR"/StretchIoReaderPrinterTb.bsv "$BSV_DIR"/StretchIoTapeTb.bsv "$BSV_DIR"/StretchIoDiskTb.bsv "$BSV_DIR"/StretchXmitTb.bsv "$BSV_DIR"/StretchIboxWenTb.bsv "$BSV_DIR"/StretchIboxCbTb.bsv "$BSV_DIR"/StretchIboxCbrTb.bsv
+rm -f "$BSV_DIR"/StretchProblem*Tb.bsv "$BSV_DIR"/StretchFigure*Tb.bsv "$BSV_DIR"/StretchXwRefillTb.bsv "$BSV_DIR"/StretchIoReaderPrinterTb.bsv "$BSV_DIR"/StretchIoTapeTb.bsv "$BSV_DIR"/StretchIoDiskTb.bsv "$BSV_DIR"/StretchXmitTb.bsv "$BSV_DIR"/StretchLvsTb.bsv "$BSV_DIR"/StretchIboxWenTb.bsv "$BSV_DIR"/StretchIboxCbTb.bsv "$BSV_DIR"/StretchIboxCbrTb.bsv
 rm -f "$BSV_DIR"/*_sim "$BSV_DIR"/*_sim.so
 rm -rf "$BSV_DIR"/build "$BSV_DIR"/simbuild
 

@@ -3381,7 +3381,70 @@ function ActionValue#(IndexOutcome)
           Cmp3 c = (x.count==imm18) ? CmpEqual : (x.count<imm18) ? CmpLow : CmpHigh;
           ind = setIndexCmpIndicatorsF(ind, x, c);
         end
-        default: ind = setOpInvalid(ind); // LVS: out of scope
+        4'b1011: begin // LVS -- LOAD VALUE WITH SUM
+          // MULTIPLE INDEXING, Reference Manual printed p.28, and the
+          // whole operation is on that one page.  THE ADDRESS FIELD
+          // IS NOT AN ADDRESS:
+          //
+          //   "In multiple indexing, bits 0-15 of the address part of
+          //   the instruction are used to indicate which index
+          //   registers participate in the operation.  When bit
+          //   position n contains a one, the register Xn
+          //   participates."
+          //
+          //   "The address parts, bits 0-24, of the index registers
+          //   which participate are added and replace bits 0-24 of
+          //   the index word specified by J.  The addition is
+          //   algebraic, taking into account the sign, bit 24, of all
+          //   quantities.  **Bits 25-63 of the index word specified
+          //   by J remain unchanged.**"
+          //
+          //   "The index flag and index result indicators are set
+          //   according to the new contents of the index register
+          //   specified by J."
+          //
+          // BIT ORDER.  IBM bit n of a 19-bit field has weight
+          // 2^(18-n), so Xn's mask bit is ii.imm[18-n] -- the same
+          // rule strap_asm.py's LVS encoder uses in the other
+          // direction, and tests/verify_lvs_encoding.py is what says
+          // that reproduces MCP's two printed instances.
+          //
+          // WHICH BITS ARE IGNORED, and the page disagrees with
+          // itself.  The prose says "Bits 16-19 ... are ignored";
+          // bit 19 is the high bit of J in the SAME page's format
+          // diagram and in X22-6533's IMMEDIATE INDEX ARITHMETIC row.
+          // Figure and pocket card agree against the sentence, so the
+          // mask is bits 0-15 and 16-18 are ignored.  Reading only
+          // n < 16 below implements exactly that, and the assembler
+          // records the same discrepancy at its own LVS arm.
+          //
+          // "NO ADDRESS MODIFICATION IS AVAILABLE FOR THIS
+          // OPERATION" (same page), which is why nothing here indexes
+          // the instruction: there is no I field to apply.
+          //
+          // THE EMPTY MASK FALLS OUT RATHER THAN BEING SPECIAL-CASED.
+          // "If bits 0-15 of the address part of the instruction are
+          // all zero, the value field of the index register specified
+          // by J is cleared" -- and an empty sum is +0, which is what
+          // the accumulator starts at.
+          SM128 lvsAcc = SM128{sign: 0, mag: 0};
+          for (Integer n = 0; n < 16; n = n + 1)
+            if (ii.imm[18 - n] == 1) begin
+              IndexWord xn = st.readIndex(fromInteger(n));
+              lvsAcc = smAdd(lvsAcc,
+                             SM128{sign: xn.sign, mag: zeroExtend(xn.addr)});
+            end
+          idxWriteReg = ii.j; doIdxWrite = True;
+          idxWriteVal = IndexWord{addr: truncate(lvsAcc.mag),
+                                  sign: lvsAcc.sign,
+                                  flag: x.flag, spare: x.spare,
+                                  count: x.count, refill: x.refill};
+          ind = setIndexResultIndicatorsF(ind, idxWriteVal);
+        end
+        default: ind = setOpInvalid(ind); // no immediate-index code
+                                           // is left unimplemented;
+                                           // the arm is exhaustive and
+                                           // this catches a decode bug
       endcase
     return IndexOutcome{needsRead: needsRead, doIdxWrite: doIdxWrite,
                         idxWriteReg: idxWriteReg, idxWriteVal: idxWriteVal,

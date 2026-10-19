@@ -309,13 +309,29 @@ execution operations: `EX` executes as of 2026-09-25 and `EXIC` as of
 ### Decoded but not executed (sets indicator 15, OP, and no-ops —
 ### matches real-machine behavior for a suppressed instruction)
 
-Decimal-mode VFL (`c=1`), radix conversion, floating-point arithmetic
-beyond L/ST, Input-Output's `LOC` **on an Exchange channel** (the
-disk form is executed — see above) and most of `CTL`,
-Transmit **backward** and `SWAP` — **multi-word and direct-count
-Transmit are now executed**, see below — and `LVS`. (SIC, Store
-Instruction Counter If, Bit Branching, `EX` and `EXIC` have all moved
-to "Executed" — see there.)
+Decimal-mode VFL (`c=1`), radix conversion (`CV`, `DCV`, `LCV`,
+`LTRCV`), the compare variants `KE`/`KF`/`KFE`/`KFR`, `LTRS`, `RNX`,
+Input-Output's `LOC` **on an Exchange channel** (the disk form is
+executed — see above) and most of `CTL`, and Transmit **backward**
+and `SWAP`.
+
+**TWO STALE ENTRIES WERE REMOVED FROM THIS LIST, 2026-10-19,** and
+they are named rather than quietly deleted because a scope list
+nobody rechecks is how a model gets credited with gaps it does not
+have and absolved of ones it does:
+
+- *"floating-point arithmetic beyond L/ST"* — **wrong, and by a
+  wide margin.** `StretchFP.bsv` is 1,260 lines and **103 suite
+  sections run `jb_af1c` floating-point programs ON THE MODEL**:
+  add, add-to-fraction, add-to-exponent, multiply, multiply-and-add,
+  divide, double-precision load/store, the sign modifiers, the
+  magnitude compares, noisy mode, and the zero-multiply rules. The
+  sentence predates all of it.
+- *"and `LVS`"* — built 2026-10-19,
+  `decks/lvs_multiple_indexing.strap`.
+
+(SIC, Store Instruction Counter If, Bit Branching, `EX` and `EXIC`
+have all moved to "Executed" — see there.)
 
 **The Transmit entry was two-thirds FALSE until 2026-09-22**, and is
 worth keeping as an example of how that happens. Only `backward` set

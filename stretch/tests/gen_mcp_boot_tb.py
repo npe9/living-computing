@@ -150,19 +150,22 @@ def main():
         # reset.  Three result indicators and a clean OP bit, all of
         # it meaningless.
         #
-        # TWO INSTRUCTIONS ON THIS PATH ARE REFUSED, not one, and the
-        # first attribution here named only the first of them.  Both
-        # were localised by bisecting the step cap and then reproduced
-        # standalone, so both are measured:
+        # >>> NO OP BIT.  THE MODEL REFUSES NOTHING MCP EXECUTES. <<<
         #
-        #   printed p.4 line 23, "LVS,$X1,$X12,$X14  -WORDS PRECEEDING
-        #   MCP".  StretchExecute's immediate-index arm still carries
-        #   `default: ind = setOpInvalid(ind); // LVS: out of scope`.
-        #   **STILL REFUSED**, and it is what OP means here.
+        # That sentence was in this file before and was not true: it
+        # was reading the indicator register after an interrupt had
+        # reset it (see below).  It is true now, and it took closing
+        # TWO gaps that the wipe had been hiding, both localised by
+        # bisecting the step cap and then reproduced standalone:
         #
         #   printed p.4 line 28, "T,$11,X BUFER($X1),X BS END  -MOVE
-        #   MCP IPL", an eleven-word direct-count TRANSMIT.  **BUILT
-        #   2026-10-18**; it no longer sets OP.
+        #   MCP IPL", an eleven-word direct-count TRANSMIT.  Built
+        #   2026-10-18.
+        #
+        #   printed p.4 line 23, "LVS,$X1,$X12,$X14  -WORDS PRECEEDING
+        #   MCP", multiple indexing.  Built 2026-10-19.  The two
+        #   belong together: $X1 is the index the TRANSMIT five rows
+        #   later uses to find MCP inside the buffer.
         #
         # AND AD IS THE TRANSMIT NOW RUNNING, which is the useful
         # detail.  Line 24 loads index 11 from the PROSA record's
@@ -181,7 +184,7 @@ def main():
         # indicator, X ERR AD is MCP's own variable, and no error site
         # ran.
         ("mcp_indicators_word11", str(IND_WORD),
-         _ind("RZ") | _ind("XVZ") | _ind("XF") | _ind("AD") | _ind("OP")),
+         _ind("RZ") | _ind("XVZ") | _ind("XF") | _ind("AD")),
 
         # Printed p.2 line 39, "SV,15,X S ROOF -TEMPORARILY SAVE 7030
         # SIZE".  The value field holds 6291456 bits = word 98304,
