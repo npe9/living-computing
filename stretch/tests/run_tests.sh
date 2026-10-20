@@ -1585,6 +1585,53 @@ run "Figure 14 -- IBM's own sign-modifier example, and the N suffix" ./run_progr
 # Figure 12 on printed p.61, found that every unsigned subtract was
 # an addition.
 
+run "The connective counts at word 7 (pp.75-76)" ./run_program.sh ../decks/connective_counts.strap StretchConnCntTb \
+    "PC=2086" \
+    "cnt_punch_at_left:1079=0x2000" \
+    "cnt_punch_two_in:1080=0x20000002000" \
+    "cnt_punch_at_right:1081=0x60000002000" \
+    "cnt_no_punch:1082=0x70000000000" \
+    "cnt_four_punches:1083=0x8000" \
+    "cnt_cm_counts_contracted:1084=0x9000000c000"
+# Reference Manual printed p.75: "Two counts describing the result
+# field are available after a connective operation.  The seven-bit
+# all-ones counter, bits 44-50 of location 7 ... The seven-bit
+# left-zeros counter, bits 17-23 of location 7, contains a count of
+# [p.76] the number of zeros in the result field that are to the left
+# of the most significant one-bit."
+#
+# ARRIVED VIA MCP, and not obviously from the counters' names.
+# Printed p.17 lines 32-36 convert an IOCD card's channel number out
+# of Hollerith, and a Hollerith digit is one punch among several
+# rows -- so CONNECT FOR TEST over the column leaves THE DIGIT ITSELF
+# as the left-zeros count, which MCP reads back as "$LZC+.3".
+# Building LCV alone did not make that page run; this is the rest of
+# it.
+#
+# THE SPLIT IN p.76 IS WHAT THE DECK IS SHAPED AROUND: "In CONNECT
+# and CONNECT FOR TEST, the counts are made on the result field with
+# byte size eight.  In CONNECT TO MEMORY, the counts are made on the
+# result field after it is converted to the byte size of the storage
+# operand."  Blocks 1-5 are the first case and block 6 the second,
+# and the injection that forces a wrong result-field width moves the
+# five and not the sixth.
+#
+# ONE INFERENCE, LABELLED: the all-zero case, which the page does not
+# state.  With no one-bit there is nothing for the zeros to be to the
+# left of, so the count is the field width -- block 4.
+#
+# >>> THE SCHEDULING IS WHY THIS TOOK TEN ATTEMPTS, and the shape of
+# the answer is in StretchStorage: **writeWord does not write the
+# counter fields at all.**  Routing them through it makes every
+# connective a conflict, because a CONNECT TO MEMORY stores its
+# result through a DYNAMIC address in the same arm and bsc cannot see
+# that the address is not 7.  Nine arrangements of CRegs, ports and
+# call sites each moved the conflict rather than removing it; giving
+# each counter exactly ONE writer removed it.  The cost is a
+# documented simplification -- a program storing to word 7 leaves the
+# counts alone -- which is the same one this model already makes for
+# the indicator register at word 11. <<<
+
 run "LCV, Load Converted -- decimal to binary, pp.71-73" ./run_program.sh ../decks/load_converted.strap StretchLcvTb \
     "PC=2082" \
     "lcv_mcp_shape:1059=37" \

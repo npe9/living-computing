@@ -1868,8 +1868,7 @@ function ActionValue#(Word64) fpArithClass(StretchStorage st, Bit#(7) c,
           // multiplication, LOAD TRANSIT, division or connective
           // operations".  NOTHING IN F217 READS IT, nor PF which
           // is derived from it -- both are manual-only here.
-          Word64 zoc = st.readZerosOnesCounts();
-          st.writeWord(addrLeftZerosCount, { zoc[63:47], r.lzc, zoc[39:0] });
+          st.setLeftZerosCount(r.lzc);
           ind = setResultIndicatorsFp(ind, r.res);
           ind = setRangeIndicators(ind, fpRangeBits(r.res, r.generated, r.propagated));
           if (r.pf) ind = setBit(ind, ind_PF, 1);
@@ -1906,8 +1905,7 @@ function ActionValue#(Word64) fpArithClass(StretchStorage st, Bit#(7) c,
           // are what must survive, as everywhere else.  For / the
           // two happen to coincide.
           st.writeWord(addrAccSignByte, sbWith(accS, r.res.sign, sbFlags(accS)));
-          Word64 zoc = st.readZerosOnesCounts();
-          st.writeWord(addrLeftZerosCount, { zoc[63:47], r.lzc, zoc[39:0] });
+          st.setLeftZerosCount(r.lzc);
           ind = setResultIndicatorsFp(ind, r.res);
           ind = setRangeIndicators(ind, fpRangeBits(r.res, r.generated, r.propagated));
           if (r.pf) ind = setBit(ind, ind_PF, 1);
@@ -1947,8 +1945,7 @@ function ActionValue#(Word64) fpArithClass(StretchStorage st, Bit#(7) c,
           // accumulator sign in bit 60, flags 61-63 zero.
           st.writeWord(addrRemainder,
                        { r.rem.ef, r.rem.em, r.rem.es, r.rem.frac, r.rem.sign, 3'b0 });
-          Word64 zoc = st.readZerosOnesCounts();
-          st.writeWord(addrLeftZerosCount, { zoc[63:47], r.lzc, zoc[39:0] });
+          st.setLeftZerosCount(r.lzc);
           FpNum vind = r.res;
           vind.frac = (r.res.frac == 0 && r.q49 == 0) ? 0 : 48'b1;
           ind = setResultIndicatorsFp(ind, vind);
@@ -2200,6 +2197,23 @@ typedef struct {
   Maybe#(WordAddr) needsRead;
   Maybe#(Tuple2#(Bit#(4), IndexWord)) vflPending;
   Word64 ind;
+  // THE CONNECTIVE COUNTS, RETURNED RATHER THAN WRITTEN.  Word 7 is
+  // reachable two ways inside one rule -- writeWord's addr-7 case
+  // (how the floating-point division arms put the left-zeros count
+  // there, and where an ordinary store to word 7 lands) and the
+  // connective's own counters -- and bsc cannot order those through
+  // writeWord's address dispatch; it calls them a conflict in
+  // rl_au_remove however the register is split or its ports are
+  // assigned.  Handing the value back lets the caller do the single
+  // write AFTER connectiveOp has finished all of its own, which is
+  // unambiguous to the scheduler and is also what Reference Manual
+  // printed p.76 asks for: "The counts are set AT THE END of the
+  // connective operations, so their previous values may be used as
+  // operands in the operation."
+  //
+  // vflIntOp shares this type and always returns Invalid here; only
+  // the connectives set the counts.
+  Maybe#(Tuple2#(Bit#(7), Bit#(7))) connCounts;
 } VflOutcome;
 
 function ActionValue#(VflOutcome)
@@ -2208,6 +2222,7 @@ function ActionValue#(VflOutcome)
   actionvalue
     Maybe#(WordAddr) needsRead = tagged Invalid;
     Maybe#(Tuple2#(Bit#(4), IndexWord)) vflPending = tagged Invalid;
+    Maybe#(Tuple2#(Bit#(7), Bit#(7))) connCounts = tagged Invalid;
     Word64 ind = ind0;
 
       Bool isProgressive = (vi.a.p != 0 && vi.a.p != 4);
@@ -2984,7 +2999,8 @@ function ActionValue#(VflOutcome)
              // the same shape the floating-point arm's `end // AD
              // guard` already uses below.
       end
-    return VflOutcome{needsRead: needsRead, vflPending: vflPending, ind: ind};
+    return VflOutcome{needsRead: needsRead, vflPending: vflPending, ind: ind,
+                      connCounts: connCounts};
   endactionvalue
 endfunction
 
@@ -3010,6 +3026,7 @@ function ActionValue#(VflOutcome)
   actionvalue
     Maybe#(WordAddr) needsRead = tagged Invalid;
     Maybe#(Tuple2#(Bit#(4), IndexWord)) vflPending = tagged Invalid;
+    Maybe#(Tuple2#(Bit#(7), Bit#(7))) connCounts = tagged Invalid;
     Word64 ind = ind0;
 
       Bool isProgressive = (cn.a.p != 0 && cn.a.p != 4);
@@ -3211,6 +3228,7 @@ function ActionValue#(VflOutcome)
             Bit#(64) result = connContract(rVec, len_, bsEff);
             Bool resultZero = (cn.suffix == conn_CM) ? (result == 0) : (rVec == 0);
 
+
             case (cn.suffix)
               conn_C: begin // C: result replaces the accumulator
                               // field; the rest of the accumulator is
@@ -3234,6 +3252,27 @@ function ActionValue#(VflOutcome)
                                                  // as VflInt's own default arm above.
             endcase
 
+            // THE COUNTS, printed pp.75-76.  "In CONNECT and CONNECT
+            // FOR TEST, the counts are made on the result field with
+            // byte size eight.  In CONNECT TO MEMORY, the counts are
+            // made on the result field after it is converted to the
+            // byte size of the storage operand."
+            //
+            // SET AT THE END, which is both what printed p.76 says
+            // -- "the counts are set at the end of the connective
+            // operations, so their previous values may be used as
+            // operands in the operation" -- and what the schedule
+            // requires: setConnectiveCounts takes the counter CRegs'
+            // LATER port, so it has to follow any CONNECT TO MEMORY
+            // field store, which can reach word 7 through
+            // writeWord's port 0.
+            Bool    cntIsMem = (cn.suffix == conn_CM);
+            Bit#(128) cntRaw = cntIsMem ? zeroExtend(result) : rVec;
+            Bit#(8) cntWidth = cntIsMem ? zeroExtend(len_)
+                                        : topBitPlus1(maskVec);
+            Bit#(128) cntVal = cntRaw & ((128'b1 << cntWidth) - 1);
+            connCounts = tagged Valid tuple2(connLeftZeros(cntVal, cntWidth),
+                                             connAllOnes(cntVal));
             ind = setConnectiveIndicatorsF(ind, cn.suffix == conn_CM, resultZero);
           end
         end
@@ -3267,7 +3306,8 @@ function ActionValue#(VflOutcome)
         end
         end  // DF suppression (mask 1) -- see vflIntOp's matching end
       end
-    return VflOutcome{needsRead: needsRead, vflPending: vflPending, ind: ind};
+    return VflOutcome{needsRead: needsRead, vflPending: vflPending, ind: ind,
+                      connCounts: connCounts};
   endactionvalue
 endfunction
 
@@ -5133,6 +5173,12 @@ function ActionValue#(ExecResult)
         needsRead  = co.needsRead;
         vflPending = co.vflPending;
         ind        = co.ind;
+        // The counts, written HERE rather than inside connectiveOp --
+        // see VflOutcome's own comment.  After the function has done
+        // every write of its own, which is both what the scheduler
+        // needs and what printed p.76's "set at the end" says.
+        if (co.connCounts matches tagged Valid {.lzcv, .aocv})
+          st.setConnectiveCounts(lzcv, aocv);
       end
       tagged Fp .fp: begin
         // Floating point, single precision (StretchFP.bsv, Reference

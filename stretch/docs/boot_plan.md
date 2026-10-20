@@ -399,7 +399,13 @@ most of the work. **Decimal arithmetic is still unimplemented**, so
 B1/B2 are untouched; only the conversion is built, and only
 decimal-to-binary, which is the direction MCP uses.
 
-**A2a. WORD 7'S CONNECTIVE COUNTS — THE BLOCKER A2 UNCOVERED.**
+**A2a. WORD 7'S CONNECTIVE COUNTS — DONE, 2026-10-20, the day it was
+found.** `decks/connective_counts.strap` is in the suite. The
+account below is kept because the scheduling is the part worth
+re-reading, and `docs/NEXT.md` has the full list of what did not
+work.
+
+~~THE BLOCKER A2 UNCOVERED.~~
 Closing A2 did not make printed p.17 run. Lines 32-36 convert the
 channel number out of Hollerith by taking CONNECT FOR TEST's
 **left-zeros count** as the digit — `$LZC` is word 7 bit 17 — and the

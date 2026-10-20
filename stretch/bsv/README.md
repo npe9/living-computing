@@ -136,6 +136,16 @@ execution operations: `EX` executes as of 2026-09-25 and `EXIC` as of
   the left-zeros/all-ones counts at word 7, consistent with `PF` not
   being implemented for VFL arithmetic, so a field of more than
   sixteen bytes is silently truncated rather than setting `PF`.
+  **The left-zeros and all-ones counts ARE implemented** as of
+  2026-10-20 (printed pp.75-76, `decks/connective_counts.strap`):
+  both counters, over the byte-size-eight result field for `C`/`CT`
+  and over the contracted field for `CM`. One documented
+  simplification comes with them — `writeWord` does not write word
+  7's counter fields, so a program storing there leaves the counts
+  alone. That is what gives each counter a single writer, without
+  which a `CM` in the same arm makes the whole connective a
+  scheduling conflict; it is the same simplification this model
+  already makes for the indicator register at word 11.
   Verified against C22-6578 Problem 2.2 Method 3's own `CT0110`
   (byte-equality test via XOR) — see `strap/README.md`.
 - **Immediate index arithmetic** — all pocket-card ops except `LVS`,

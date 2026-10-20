@@ -1,27 +1,11 @@
-! >>> THIS DECK IS NOT IN THE SUITE YET, AND THAT IS DELIBERATE. <<<
-!
-! The counters it tests are NOT IMPLEMENTED.  The deck is committed
-! ahead of them because every expected value in it is derived from
-! the manual rather than from a run, so it is a specification that
-! happens to be executable -- and because the implementation attempt
-! that produced it failed for a reason worth recording rather than
-! rediscovering.  docs/NEXT.md has the whole account; the short
-! version is that word 7 acquires a SECOND writer in a rule that
-! already has one, and bsc cannot order them through writeWord's
-! address dispatch.  Three successive fixes each moved the conflict
-! rather than removing it, ending in a combinational cycle through
-! the look-ahead.  The real fix is to thread the write out of
-! execute() the way the indicator register already is, which is a
-! scheduling refactor and not a one-arm change.
-!
-! Wire it into tests/run_tests.sh when it passes:
-!   run "..." ./run_program.sh ../decks/connective_counts.strap StretchConnCntTb \
-!       "PC=2086" "cnt_punch_at_left:1079=0x2000" \
-!       "cnt_punch_two_in:1080=0x20000002000" \
-!       "cnt_punch_at_right:1081=0x60000002000" \
-!       "cnt_no_punch:1082=0x70000000000" \
-!       "cnt_four_punches:1083=0x8000" \
-!       "cnt_cm_counts_contracted:1084=0x9000000c000"
+! ONE INJECTION, MEASURED: the result-field width forced to 128
+! instead of the mask's own extent gives 0x790000002000, 0x7b...,
+! 0x7f..., 0 and 0x790000008000 for the five CONNECT FOR TEST blocks
+! -- every left-zeros count off by 128 minus the real width -- while
+! the CONNECT TO MEMORY block, whose width comes from the field
+! length rather than the mask, still passes.  Five move and one does
+! not, which is exactly the split between the two ways p.76 says the
+! count is taken.
 !
 ! ---------------------------------------------------------------
 !

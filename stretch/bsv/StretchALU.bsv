@@ -67,6 +67,52 @@ function SM128 smAdd(SM128 a, SM128 b);
     return SM128 { sign: b.sign, mag: b.mag - a.mag };
 endfunction
 
+// THE CONNECTIVE COUNTS, Reference Manual printed pp.75-76.
+//
+// p.75: "Two counts describing the result field are available after a
+// connective operation.  The seven-bit all-ones counter, bits 44-50
+// of location 7, contains a count of all ones in the result field.
+// The seven-bit left-zeros counter, bits 17-23 of location 7,
+// contains a count of" -- and p.76 finishes it -- "the number of
+// zeros in the result field that are to the left of the most
+// significant one-bit."
+//
+// p.76 on the field they are taken over: "Both counters operate
+// modulo 128.  Each count is on the final result field.  **In
+// CONNECT and CONNECT FOR TEST, the counts are made on the result
+// field with byte size eight.  In CONNECT TO MEMORY, the counts are
+// made on the result field after it is converted to the byte size of
+// the storage operand.**"
+//
+// ARRIVED VIA MCP, printed p.17 lines 32-36.  A Hollerith digit is
+// one punch among several rows, so CONNECT FOR TEST over the column
+// leaves THE DIGIT ITSELF as the left-zeros count, and MCP reads it
+// back as "$LZC+.3" to build a channel number.
+//
+// THE ALL-ZERO CASE IS AN INFERENCE, the one thing the page does not
+// state: with no one-bit there is nothing for the zeros to be to the
+// left of, so the count is the field width.
+
+// Index of the highest one-bit, plus one; zero if there is none.
+function Bit#(8) topBitPlus1(Bit#(128) v);
+  Bit#(8) hi = 0;
+  for (Integer i = 0; i < 128; i = i + 1)
+    if (v[i] == 1) hi = fromInteger(i) + 1;
+  return hi;
+endfunction
+
+function Bit#(7) connAllOnes(Bit#(128) v);
+  Bit#(8) n = 0;
+  for (Integer i = 0; i < 128; i = i + 1)
+    if (v[i] == 1) n = n + 1;
+  return truncate(n);          // "operate modulo 128"
+endfunction
+
+function Bit#(7) connLeftZeros(Bit#(128) v, Bit#(8) width);
+  Bit#(8) hi = topBitPlus1(v);
+  return truncate((hi == 0) ? width : (width - hi));
+endfunction
+
 // LOAD CONVERTED's decimal-to-binary conversion, Reference Manual
 // printed pp.71-73.
 //

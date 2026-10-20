@@ -213,6 +213,19 @@ interface StretchStorage;
   // count into IBM bits 17-23 and must not disturb the all-ones count
   // at 44-50, so the arm needs to read the word first.
   method Word64 readZerosOnesCounts();
+
+  // The two connective counts (Reference Manual printed pp.75-76).
+  // A method of its own rather than writeWord, because a CONNECT TO
+  // MEMORY writes its result field in the same arm through a dynamic
+  // address bsc cannot prove is not word 7.  Writes the counter
+  // fields and reads nothing.
+  method Action setConnectiveCounts(Bit#(7) lzc, Bit#(7) aoc);
+
+  // The left-zeros count alone, for the floating-point division
+  // arms (Reference Manual printed p.94).  A method rather than a
+  // writeWord to location 7, for the reason the counter registers'
+  // own comment gives.
+  method Action setLeftZerosCount(Bit#(7) lzc);
 endinterface
 
 // mkStretchStorage: the CPU's view of storage. Addresses 0-31 are
@@ -284,7 +297,43 @@ module mkStretchStorage(StretchStorage);
   Reg#(Word64) maintenanceBits       <- mkReg(0); // addr 4
   Reg#(Word64) channelAddress        <- mkReg(0); // addr 5
   Reg#(Word64) otherCpuBits          <- mkReg(0); // addr 6
-  Reg#(Word64) zerosOnesCounts       <- mkReg(0); // addr 7
+  // WORD 7 IS KEPT IN PIECES, AND ITS TWO COUNTERS HAVE EXACTLY ONE
+  // WRITER EACH.  That is the whole design, and it is forced.
+  //
+  // The counters are set by two things -- every connective sets both
+  // (Reference Manual printed pp.75-76) and the floating-point
+  // division arms set the left-zeros count (p.94) -- which live in
+  // different arms of execute()'s case and are therefore provably
+  // exclusive.  What is NOT provable is writeWord: a CONNECT TO
+  // MEMORY stores its result field through a DYNAMIC address in the
+  // same arm that sets the counts, and bsc cannot see that the
+  // address is not 7.  Routing the counters through writeWord at all
+  // makes every connective a scheduling conflict, and no assignment
+  // of CReg ports fixes it -- nine arrangements were tried and each
+  // moved the conflict rather than removing it.
+  //
+  // SO writeWord DOES NOT WRITE THE COUNTER FIELDS.  A program that
+  // stores to word 7 changes the other fifty bits and leaves the
+  // counts alone.  **This is a documented simplification, not the
+  // architecture** -- the manual makes location 7 an ordinary
+  // addressable word -- and it is the same one this model already
+  // makes for the indicator register, where writeWord(11) is a
+  // no-op and the write is folded in elsewhere.  Nothing in the
+  // corpus stores to word 7; MCP reads it (printed p.17's "$LZC+.3")
+  // and never writes it.
+  //
+  // IBM bit n is model bit 63-n: 0-16 is [63:47], the left-zeros
+  // count at 17-23 is [46:40], 24-43 is [39:20], the all-ones count
+  // at 44-50 is [19:13], and 51-63 is [12:0].
+  Reg#(Bit#(17)) zocHi  <- mkReg(0);   // IBM 0-16
+  Reg#(Bit#(7))  zocLzc <- mkReg(0);   // IBM 17-23, counters only
+  Reg#(Bit#(20)) zocMid <- mkReg(0);   // IBM 24-43
+  Reg#(Bit#(7))  zocAoc <- mkReg(0);   // IBM 44-50, counters only
+  Reg#(Bit#(13)) zocLo  <- mkReg(0);   // IBM 51-63
+
+  function Word64 composeWord7();
+    return { zocHi, zocLzc, zocMid, zocAoc, zocLo };
+  endfunction
   Reg#(Word64) accLeft               <- mkReg(0); // addr 8
   Reg#(Word64) accRight              <- mkReg(0); // addr 9
   Reg#(Word64) accSignByte           <- mkReg(0); // addr 10, IBM bits 0-7 (BSV 63:56) only
@@ -550,7 +599,7 @@ module mkStretchStorage(StretchStorage);
       addrMaintenanceBits: return maintenanceBits;
       addrChannelAddress: return channelAddress;
       addrOtherCpuBits: return otherCpuBits;
-      addrLeftZerosCount: return zerosOnesCounts;
+      addrLeftZerosCount: return composeWord7();
       addrAccLeft: return accLeft;
       addrAccRight: return accRight;
       addrAccSignByte: return accSignByte;
@@ -651,7 +700,13 @@ module mkStretchStorage(StretchStorage);
       addrMaintenanceBits: maintenanceBits <= v;
       addrChannelAddress: noAction; // read-only ("b" footnote)
       addrOtherCpuBits: otherCpuBits <= v;
-      addrLeftZerosCount: zerosOnesCounts <= v;
+      addrLeftZerosCount: begin
+                     // The counter fields are deliberately NOT
+                     // written here -- see the registers' comment.
+                     zocHi  <= v[63:47];
+                     zocMid <= v[39:20];
+                     zocLo  <= v[12:0];
+                   end
       addrAccLeft: accLeft <= v;
       addrAccRight: accRight <= v;
       addrAccSignByte: accSignByte <= {v[63:56], 56'b0};   // IBM bits 0-7: the sign byte
@@ -737,8 +792,19 @@ module mkStretchStorage(StretchStorage);
   endmethod
 
   method Word64 readZerosOnesCounts();
-    return zerosOnesCounts;
+    return composeWord7();
   endmethod
+
+  method Action setConnectiveCounts(Bit#(7) lzc, Bit#(7) aoc);
+    zocLzc <= lzc;
+    zocAoc <= aoc;
+  endmethod
+
+  method Action setLeftZerosCount(Bit#(7) lzc);
+    zocLzc <= lzc;
+  endmethod
+
+
 
 endmodule
 
