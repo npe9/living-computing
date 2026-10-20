@@ -1585,6 +1585,50 @@ run "Figure 14 -- IBM's own sign-modifier example, and the N suffix" ./run_progr
 # Figure 12 on printed p.61, found that every unsigned subtract was
 # an addition.
 
+run "The ADD family's 128-cell sign table (R23-9694 p.107)" ./run_add_family.sh
+# >>> THE LARGEST SINGLE ORACLE IN THIS SUITE: 128 CELLS OF IBM'S OWN
+# NUMBERS, ALL FOUR ADD OPERATIONS, EVERY SIGN AND MODIFIER. <<<
+#
+# R23-9694 (7030 CE Introductory Programming, Vol. 2) printed p.107
+# tabulates "the storage or accumulator field that is produced by all
+# possible combinations of operations, sign modifiers, operand signs,
+# and relative magnitudes of operands" -- ADD, ADD TO MAGNITUDE, ADD
+# TO MEMORY and ADD MAGNITUDE TO MEMORY, each plain / N / U / U&N,
+# against eight (memory, accumulator) sign pairs.
+#
+# Every operation in it was built in this repository on 2026-10-19,
+# and the table passed 128 for 128 on its first run.
+#
+# TWO INJECTIONS, MEASURED, and they partition the table cleanly:
+#   fieldToSM dropping the negative sign modifier on an unsigned
+#     field -- the bug Reference Manual Figure 12 caught with ONE
+#     cell -- fails 16: rows 3 and 7, the two TO-ACCUMULATOR "U,N"
+#     rows.  It cannot reach the to-memory ones, because for those
+#     the modifier belongs to the accumulator and never passes
+#     through fieldToSM at all.
+#   the p.57 to-memory rule removed (bit 52 inverting the ACCUMULATOR
+#     sign rather than the storage field's) fails 32: rows 9, 11, 13
+#     and 15, every to-memory N row and nothing else.
+# The two together are the page's own structure, recovered from the
+# model by breaking it in two places.
+#
+# THE SECOND INJECTION CLOSES A LOOP.  That p.57 rule was written
+# earlier the same day with a comment saying it was inert and could
+# not be exercised, because nothing could spell the modifier.  The N
+# suffix -- C22-6531 footnote 4, witnessed by Reference Manual Figure
+# 14 -- made "M+N" and "M+MGN" spellable, and this table now drives
+# them.  The table could not have been run a commit earlier.
+#
+# NOT CHECKED, and the page marks them so it is worth saying: the
+# eight "*" cells turn on LOST CARRY, and the underlined cells differ
+# from the corresponding floating-point operation.  Values only here;
+# the lost-carry cells are listed in the generator so the next person
+# need not re-read the page.
+#
+# The checks are generated from the transcribed table rather than
+# written on a command line -- 128 of them would be unreadable, and a
+# table is the right place for a table.  See gen_add_family_tb.py.
+
 run "K and a nonzero offset -- the low bits do not participate" ./run_program.sh ../decks/compare_offset.strap StretchKOffTb \
     "PC=2084" \
     "k_low_bits_do_not_participate:1070=0x24" \
