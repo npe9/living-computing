@@ -1,0 +1,136 @@
+! LOAD CONVERTED (LCV), the decimal-to-binary direction.  Reference
+! Manual printed p.72:
+!
+!   "The addressed storage field is converted as an integer from
+!   decimal to binary or from binary to decimal depending on the
+!   setting of the radix modifier.  THE ACCUMULATOR IS CLEARED AND
+!   THE CONVERTED FIELD IS PLACED INTO IT AT THE SPECIFIED OFFSET.
+!   The four low-order bits of the sign byte register are cleared.
+!   The sign bit in the sign byte register is set according to the
+!   sign of the data as affected by the sign modifiers."
+!
+! and, under Radix on the same page, the sentence that unblocked this
+! whole operation:
+!
+!   "Bit 53 of the instruction, the radix modifier, specifies the
+!   radix of the OPERAND TO BE CONVERTED, and hence also whether
+!   binary-to-decimal or decimal-to-binary conversion is to be
+!   performed.  If this bit is zero, the original field is binary; if
+!   this bit is one, the original field is decimal."
+!
+! THE MODEL USED TO REFUSE LCV OUTRIGHT, because the VFL arm sets
+! Operation Code Invalid on the decimal modifier across the board and
+! decimal arithmetic is unimplemented.  But for a radix conversion
+! that bit is not "do decimal arithmetic" -- printed p.71 says it
+! "describes the format of the ORIGINAL field and also determines the
+! type of conversion" -- so refusing it refused the operation's
+! normal case.  Decimal ARITHMETIC is still refused; only LCV is let
+! past.
+!
+! p.73's top adds the byte-size rule: the decimal field is converted
+! "to byte size four" BEFORE the conversion, so a byte wider than
+! four contributes its four low-order bits and a narrower one is
+! zero-extended.
+!
+! ARRIVED VIA MCP, printed p.17 line 34, "LCV(DU,8,4),$LZC+.3,46
+! -CONVERT TO OCTAL NUMBER": the conversion that turns an IOCD card's
+! Hollerith channel digits into a channel number.  It is the LAST of
+! the two operations standing between MCP and knowing what devices it
+! has; KF, the other, was built earlier the same day.  Blocks 1 and 2
+! are MCP's own shape, eight bits at byte size four -- two decimal
+! digits -- at offset 0 and at MCP's own offset of 46.
+!
+! ONLY DECIMAL-TO-BINARY IS BUILT.  The other direction wants
+! repeated division by ten and nothing in the corpus calls for it; a
+! binary source sets OP rather than being silently wrong.
+!
+!   T1  MCP's shape at offset 0: BCD 37 -> 37.
+!   T2  the same at MCP's own offset 46, so the value lands at
+!       accumulator bit 46 and reads back as 37 << 46.  A model that
+!       ignored the offset would put 37 here.
+!   T3  six digits: BCD 123456 -> 123456, which no two-digit case
+!       could distinguish from a byte-wise copy.
+!   T4  a SIGNED decimal field.  The sign byte is the RIGHTMOST byte
+!       and lives inside the field length (p.56), so (D,12,4) is two
+!       digits over a four-bit sign byte: 0x378 is 37 with the sign
+!       nibble's leading bit set.  The magnitude is 37 and the
+!       arithmetic result indicators say NEGATIVE.
+!   T5  the same field with the N modifier on an UNSIGNED read, which
+!       is the other way to reach a negative result -- "unsigned
+!       fields are considered positive before this modifier is
+!       applied" (p.60, via p.72's "these modifiers operate as in
+!       ADD").  LCVN is spelled with C22-6531 footnote 4's N suffix.
+!
+! THE INDICATOR BLOCKS RUN THEIR OWN LCV.  A store sets MOP and the
+! arithmetic result indicators, so reading the register after an ST
+! would be reading the ST.  Z,$IND then LCV then load the register is
+! the only ordering that reports the conversion alone -- and LCV
+! needs no clearing load before it, because it clears the accumulator
+! itself.
+!
+! Expected indicator word for a negative result: RLZ = 0x80 plus
+! RN = 0x10, and nothing else -- MOP off, PF off, the field being
+! well under fifteen digits.
+
+! TWO INJECTIONS, MEASURED, and they separate the conversion from the
+! placement:
+!   the conversion replaced by a raw copy of the digit bits fails
+!     FIVE value checks -- 55 for 37, 1193046 for 123456 -- and
+!     NEITHER indicator check, because a BCD field read as binary is
+!     still negative and still not fifteen digits long.
+!   the offset ignored fails T2 ALONE, and fails it to exactly T1's
+!     value, which is what makes running the same conversion at two
+!     offsets worth the four extra instructions.
+
+        SLC, (8)2000.0
+
+! -- 1. MCP's shape, offset 0 ------------------------------------
+START   LCV(DU,8,4), SRC37+.56, 0
+        ST(BU,64,8), T1, 0
+
+! -- 2. MCP's own offset ------------------------------------------
+        LCV(DU,8,4), SRC37+.56, 46
+        ST(BU,64,8), T2, 0
+
+! -- 3. six digits -------------------------------------------------
+        LCV(DU,24,4), SRC6+.40, 0
+        ST(BU,64,8), T3, 0
+
+! -- 4. a signed decimal field: magnitude, then the indicators -----
+        LCV(D,12,4), SRCN+.52, 0
+        ST(BU,64,8), T4, 0
+        Z, $IND
+        LCV(D,12,4), SRCN+.52, 0
+        L(BU,64,8), $IND, 0
+        ST(BU,64,8), T4IND, 0
+
+! -- 5. the N modifier on an unsigned read -------------------------
+        LCVN(DU,8,4), SRC37+.56, 0
+        ST(BU,64,8), T5, 0
+        Z, $IND
+        LCVN(DU,8,4), SRC37+.56, 0
+        L(BU,64,8), $IND, 0
+        ST(BU,64,8), T5IND, 0
+
+PASS    BEW, $
+
+! Data, word-aligned: BEW is a half word, so without this the 64-bit
+! fields below would straddle two words.
+        SLC, (8)2040.0
+
+! BCD 37 in the low byte.
+SRC37   DD(BU,64,8), (8)0000000000000000000067
+! BCD 123456 in the low 24 bits.
+SRC6    DD(BU,64,8), (8)0000000000000004432126
+! BCD 37 over a negative four-bit sign byte, in the low 12 bits.
+SRCN    DD(BU,64,8), (8)0000000000000000001570
+
+T1      DD(BU,64,8), 0
+T2      DD(BU,64,8), 0
+T3      DD(BU,64,8), 0
+T4      DD(BU,64,8), 0
+T4IND   DD(BU,64,8), 0
+T5      DD(BU,64,8), 0
+T5IND   DD(BU,64,8), 0
+
+        END, START

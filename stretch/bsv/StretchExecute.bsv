@@ -2211,7 +2211,25 @@ function ActionValue#(VflOutcome)
     Word64 ind = ind0;
 
       Bool isProgressive = (vi.a.p != 0 && vi.a.p != 4);
-      if (vi.m.decimal == 1)
+      // THE DECIMAL BIT DOES NOT MEAN THE SAME THING FOR A RADIX
+      // CONVERSION, and this guard used to refuse LCV because of it.
+      // Reference Manual printed p.71, "Radix Conversion Operations",
+      // under Format: "In this case, **bit 53, the radix modifier,
+      // describes the format of the ORIGINAL field** and also
+      // determines the type of conversion, binary to decimal or
+      // decimal to binary."  p.72 says it again: "If this bit is
+      // zero, the original field is binary; if this bit is one, the
+      // original field is decimal."
+      //
+      // So for LCV the bit is not "do decimal arithmetic" -- it is
+      // which way to convert, and a decimal-to-binary LOAD CONVERTED
+      // is the ONLY thing it can mean.  Refusing it was refusing the
+      // operation's normal case.
+      //
+      // Decimal ARITHMETIC is still unimplemented and still refused;
+      // only code 000011, LCV, is let past here.
+      Bool radixConv = (vi.code == 6'b000011);
+      if (vi.m.decimal == 1 && !radixConv)
         ind = setOpInvalid(ind);
       else if (isProgressive && vi.a.i1 == 0)
         ind = setOpInvalid(ind);
@@ -2804,6 +2822,87 @@ function ActionValue#(VflOutcome)
                 c = smCompare(accSh, opnd);
               end
               ind = setAccCmpIndicatorsF(ind, c);
+            end
+          end
+          6'b000011: begin // LCV (Load Converted)
+            // Reference Manual printed pp.71-73.  Same
+            // prefetch/bail-out shape as L above; the storage
+            // operand "is defined by the effective address, field
+            // length, and byte size in the same manner as in integer
+            // arithmetic" (p.72, Field Definition), immediate
+            // addressing included.
+            //
+            // ARRIVED VIA MCP, printed p.17 line 34:
+            // "LCV(DU,8,4),$LZC+.3,46  -CONVERT TO OCTAL NUMBER" --
+            // the radix conversion that turns an IOCD card's
+            // Hollerith channel digits into a channel number, and
+            // the LAST of the two operations standing between MCP
+            // and knowing what devices it has (docs/boot_plan.md
+            // A2).  Eight bits at byte size four is two decimal
+            // digits.
+            //
+            // ONLY DECIMAL-TO-BINARY IS BUILT.  p.72: "If this bit
+            // is zero, the original field is binary" -- which asks
+            // for the other direction, repeated division by ten, and
+            // nothing in the corpus calls for it.  The binary source
+            // sets OP below rather than being silently wrong.
+            Bit#(64) raw = 0;
+            if (immediate) begin
+              raw = immediateOperand(vi.a.addr, len_);
+            end else begin
+              WordAddr w0 = baWord(ea);
+              Bit#(6) off = baBit(ea);
+              if (!fieldCrosses(ea, len_)) begin
+                if (prefetchCount >= 1) begin
+                  raw = extractFieldBits(prefetch[0], 0, off, len_);
+                  vflReadsUsed = 1;
+                end else
+                  needsRead = tagged Valid w0;
+              end else begin
+                if (prefetchCount >= 2) begin
+                  raw = extractFieldBits(prefetch[0], prefetch[1], off, len_);
+                  vflReadsUsed = 2;
+                end else if (prefetchCount == 1)
+                  needsRead = tagged Valid (w0 + 1);
+                else
+                  needsRead = tagged Valid w0;
+              end
+            end
+            if (!isValid(needsRead)) begin
+              if (vi.m.decimal == 0) begin
+                // Binary to decimal: see the scope note above.
+                ind = setOpInvalid(ind);
+                vflOk = False;
+              end else begin
+                // A signed decimal field's sign byte is its RIGHTMOST
+                // byte and is inside `len_` (p.56), so shift it off
+                // and convert what remains.
+                Bit#(7) sbBits  = zeroExtend(bsz);
+                Bool    signed_ = (vi.m.unsign == 0);
+                Bit#(7) numBits = !signed_ ? len_
+                                : ((len_ > sbBits) ? (len_ - sbBits) : 0);
+                Bit#(64) digitsRaw = !signed_ ? raw : (raw >> bsz);
+                // "The sign bit in the sign byte register is set
+                // according to the sign of the data as affected by
+                // the sign modifiers" (p.72).  Unsigned fields are
+                // positive before the negative modifier is applied,
+                // as in ADD (p.60).
+                Bit#(1) rawSign = !signed_ ? 0 : raw[bsz - 1];
+                Bit#(1) sgn     = rawSign ^ vi.m.invert;
+                match {.cvVal, .cvDigits} = bcdToBinary(digitsRaw, numBits, bsz);
+                // "The accumulator is cleared and the converted field
+                // is placed into it at the specified offset."
+                SM128 conv = SM128 { sign: sgn, mag: cvVal << offSh };
+                writeAcc(st, conv);
+                // p.73: PF "is also actuated if the storage field
+                // exceeds 15 decimal digits ... Meaningless results
+                // are then obtained."
+                if (cvDigits > 15) ind = setBit(ind, ind_PF, 1);
+                // "To-Memory Operation (MOP) ... set as in ADD", and
+                // ADD turns it off (p.60).
+                ind = setBit(ind, ind_MOP, 0);
+                ind = setResultIndicatorsF(ind, conv);
+              end
             end
           end
           default: begin

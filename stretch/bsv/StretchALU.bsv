@@ -67,6 +67,70 @@ function SM128 smAdd(SM128 a, SM128 b);
     return SM128 { sign: b.sign, mag: b.mag - a.mag };
 endfunction
 
+// LOAD CONVERTED's decimal-to-binary conversion, Reference Manual
+// printed pp.71-73.
+//
+// p.72, "Load Converted (LCV)": "The addressed storage field is
+// converted as an integer from decimal to binary or from binary to
+// decimal depending on the setting of the radix modifier.  The
+// accumulator is cleared and the converted field is placed into it at
+// the specified offset."
+//
+// p.72 again, under Radix: "Bit 53 of the instruction, the radix
+// modifier, specifies the radix of the OPERAND TO BE CONVERTED ...
+// If this bit is zero, the original field is binary; if this bit is
+// one, the original field is decimal.  This modifier also specifies
+// the interpretation of the byte size field in the same manner as in
+// integer arithmetic operations."
+//
+// and p.73's top completes it: the decimal field is converted "to
+// byte size four" BEFORE the decimal-to-binary conversion -- so a
+// byte wider than four contributes its four low-order bits and a
+// narrower one is zero-extended, exactly as p.63 says of decimal
+// STORE.
+//
+// `numBits` is the NUMERIC part only: a signed decimal field carries
+// its sign byte as the rightmost byte and inside `len_` (p.56, "the
+// field length specifies the total length in bits of the storage
+// operand, INCLUDING THE SIGN BYTE when present"), so the caller
+// shifts it off and passes what remains.
+//
+// Returns the binary value and the DIGIT COUNT, which the caller
+// needs for Partial Field: p.73, "In a decimal-to-binary conversion,
+// this indicator is also actuated if the storage field exceeds 15
+// decimal digits (as could be specified using a byte size of less
+// than four).  Meaningless results are then obtained."  Fifteen
+// digits is under 2^50, so sixteen positions of accumulation cannot
+// overflow the 128-bit magnitude and the count is the only thing
+// standing between a caller and a meaningless answer.
+function Integer pow10i(Integer k);
+  Integer r = 1;
+  for (Integer i = 0; i < k; i = i + 1) r = r * 10;
+  return r;
+endfunction
+
+function Tuple2#(Bit#(128), Bit#(7))
+         bcdToBinary(Bit#(64) digitsRaw, Bit#(7) numBits, Bit#(4) bsEff);
+  Bit#(128) val = 0;
+  Bit#(7)   nd  = 0;
+  for (Integer k = 0; k < 16; k = k + 1) begin
+    Bit#(7) lo = fromInteger(k) * zeroExtend(bsEff);
+    if (lo < numBits) begin
+      Bit#(7) rem = numBits - lo;
+      Bit#(4) w   = (rem >= zeroExtend(bsEff)) ? bsEff : truncate(rem);
+      Bit#(8) wmask = (w >= 8) ? 8'hFF : ((8'b1 << w) - 1);
+      Bit#(8) byteVal = truncate(digitsRaw >> lo) & wmask;
+      // "converted to byte size four": the four low-order bits.  A
+      // byte narrower than four was already zeroed above it by
+      // wmask, so truncation serves both cases.
+      Bit#(4) digit = truncate(byteVal);
+      val = val + (zeroExtend(digit) * fromInteger(pow10i(k)));
+      nd  = fromInteger(k) + 1;
+    end
+  end
+  return tuple2(val, nd);
+endfunction
+
 // ADD MAGNITUDE TO MEMORY's store rule, Reference Manual printed
 // p.62, which is two sentences and both of them are about SIGNS:
 //

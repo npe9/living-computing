@@ -1585,6 +1585,54 @@ run "Figure 14 -- IBM's own sign-modifier example, and the N suffix" ./run_progr
 # Figure 12 on printed p.61, found that every unsigned subtract was
 # an addition.
 
+run "LCV, Load Converted -- decimal to binary, pp.71-73" ./run_program.sh ../decks/load_converted.strap StretchLcvTb \
+    "PC=2082" \
+    "lcv_mcp_shape:1059=37" \
+    "lcv_at_offset_46:1060=0x9400000000000" \
+    "lcv_six_digits:1061=123456" \
+    "lcv_signed_magnitude:1062=37" \
+    "lcv_signed_indicators:1063=0x90" \
+    "lcv_n_modifier_magnitude:1064=37" \
+    "lcv_n_modifier_indicators:1065=0x90"
+# >>> WITH THIS, BOTH OPERATIONS THAT STOOD BETWEEN MCP AND KNOWING
+# WHAT DEVICES IT IS RUNNING ON ARE BUILT.  docs/boot_plan.md A2 is
+# closed: KF on 2026-10-19, LCV today. <<<
+#
+# Reference Manual printed p.72: "The addressed storage field is
+# converted as an integer from decimal to binary or from binary to
+# decimal depending on the setting of the radix modifier.  THE
+# ACCUMULATOR IS CLEARED AND THE CONVERTED FIELD IS PLACED INTO IT AT
+# THE SPECIFIED OFFSET."
+#
+# THE MODEL REFUSED LCV OUTRIGHT, and the reason it did was a
+# misreading of one bit.  The VFL arm sets Operation Code Invalid on
+# the decimal modifier across the board, because decimal arithmetic
+# is unimplemented.  But printed p.71 says of the radix conversions:
+# "bit 53, the radix modifier, DESCRIBES THE FORMAT OF THE ORIGINAL
+# FIELD and also determines the type of conversion".  On LCV the bit
+# selects a DIRECTION, not decimal arithmetic -- so the guard was
+# refusing the operation's normal case.  The audit had this recorded
+# as "building it means building decimal mode, not one arm", which
+# was wrong and is corrected there.  Decimal ARITHMETIC is still
+# unimplemented and still refused.
+#
+# Blocks 1 and 2 are MCP's own shape, printed p.17 line 34's
+# "LCV(DU,8,4),$LZC+.3,46" -- two decimal digits -- run at offset 0
+# and at MCP's own offset of 46.
+#
+# TWO INJECTIONS, MEASURED, separating the conversion from the
+# placement.  A raw copy of the digit bits in place of the conversion
+# fails FIVE value checks (55 for 37, 1193046 for 123456) and NEITHER
+# indicator check, since a BCD field read as binary is still negative
+# and still short of fifteen digits.  Ignoring the offset fails T2
+# ALONE, and fails it to exactly T1's value -- which is what makes
+# running the same conversion at two offsets worth the extra
+# instructions.
+#
+# ONLY DECIMAL-TO-BINARY IS BUILT.  The other direction wants
+# repeated division by ten and nothing in the corpus calls for it; a
+# binary source sets OP rather than being silently wrong.
+
 run "C22-6578 Problem 1.6 -- three methods, IBM's own cross-check" ./run_program.sh ../decks/problem_1_6.strap StretchP16Tb \
     "PC=2066" \
     "p16_method1_bbn_lvs:1050=0x11800000000000" \

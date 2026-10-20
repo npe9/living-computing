@@ -182,18 +182,29 @@ UNIMPLEMENTED = {
 #         Both were in UNIMPLEMENTED until this transcription used
 #         them.
 #
-#         **KF IS BUILT, 2026-10-19** -- RefMan printed p.65,
-#         decks/compare_field.strap, six checks and one injection.
-#         LCV is not, and it is the harder of the two: MCP writes it
-#         "LCV(DU,8,4)", DECIMAL UNSIGNED, and the model sets OP on
-#         vi.m.decimal == 1 across the whole VFL case.  Building it
-#         means building decimal mode, not one arm.
+#         **BOTH ARE BUILT.**  KF on 2026-10-19 (RefMan printed
+#         p.65, decks/compare_field.strap) and LCV on 2026-10-20
+#         (printed pp.71-73, decks/load_converted.strap).
+#
+#         LCV looked like the harder of the two and was not.  The
+#         note here said "the model sets OP on vi.m.decimal == 1
+#         across the whole VFL case.  Building it means building
+#         decimal mode, not one arm."  That was wrong about what the
+#         bit means: printed p.71 says the radix modifier "describes
+#         the format of the ORIGINAL field and also determines the
+#         type of conversion", so on a radix conversion it selects a
+#         DIRECTION, not decimal arithmetic.  Letting code 000011
+#         past that one guard was most of the work.  Decimal
+#         arithmetic remains unimplemented and still refused.
 ENCODING_ONLY = {
     "RNX",
     # LOCSEOP left on 2026-10-18 with LOC -- see the note in
     # UNIMPLEMENTED above.
     # KF left on 2026-10-19: built, and driven by its own deck.
-    "LCV",
+    # LCV left on 2026-10-20: built (RefMan printed pp.71-73,
+    # decks/load_converted.strap).  With it, BOTH operations that
+    # stood between MCP and knowing what devices it has are
+    # implemented -- docs/boot_plan.md A2 is closed.
 }
 # IMPLEMENTED BUT UNEXERCISED -- the model has real arms for these and
 # nothing drives them.  This is the actionable list: each is a test

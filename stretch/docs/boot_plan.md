@@ -379,13 +379,25 @@ choice is the one judgement call in this plan.
 **Unblocks: printed pp.15-18, which are transcribed and have never
 executed a single row.**
 
-**A2. `KF` AND `LCV` IN THE MODEL.** Printed p.17 line 30 is the
-compare that decides whether a card IS an IOCD card and line 34 is
-the radix conversion that turns its Hollerith channel digits into a
-channel number. Both are `ENCODING_ONLY` in the opcode ratchet: used
-by a transcription, not executable. **They are the two operations
-standing between MCP and knowing what devices it has.** Worth doing
-with their whole families (B1, B2) in one pass.
+**A2. `KF` AND `LCV` IN THE MODEL — DONE, 2026-10-19/20.** Printed
+p.17 line 30 is the compare that decides whether a card IS an IOCD
+card and line 34 is the radix conversion that turns its Hollerith
+channel digits into a channel number. **They were the two operations
+standing between MCP and knowing what devices it has, and both are
+now built**: `KF` from printed p.65 (`decks/compare_field.strap`),
+`LCV` from printed pp.71-73 (`decks/load_converted.strap`). Neither
+is in `ENCODING_ONLY` any more.
+
+`LCV` looked like the harder of the two and was not, because this
+plan was wrong about what one bit meant. It said building `LCV`
+"means building decimal mode, not one arm", on the grounds that the
+VFL arm refuses the decimal modifier outright. But printed p.71 says
+the radix modifier "describes the format of the ORIGINAL field and
+also determines the type of conversion" — on a radix conversion it
+selects a DIRECTION. Letting code `000011` past that one guard was
+most of the work. **Decimal arithmetic is still unimplemented**, so
+B1/B2 are untouched; only the conversion is built, and only
+decimal-to-binary, which is the direction MCP uses.
 
 **A3. IOCD CARD IMAGES ON THE SYSTEM TAPE.**
 ~~An IOCD card deck for the reader.~~ **CORRECTED 2026-10-19 before
