@@ -5137,6 +5137,44 @@ The same page also says "Neither the lost carry nor the partial field
 indicator can be turned on by a comparison operation" -- worth
 checking against the arm while you are there.
 
+## TWO CORRECTIONS TO THINGS THIS SESSION ITSELF CLAIMED, 2026-10-19
+
+Both were caught by checking the repo rather than by a test, and both
+are the same failure: announcing that a document supplies something
+the project had already worked out.
+
+### `C22-6728` p.215's 513-word record was NOT a new constraint
+
+It was recorded here and in `boot_plan.md` as "a constraint on the
+PROSA fixture that arrived after the fixture was built", and as
+something `strap/prosa.py` "does not model".
+
+**`decks/mcp_bootstrap_p14.strap` derived 513-and-512 from MCP's own
+chained control words**, one-word header included, and
+`strap/prosa.py`'s header already cites that derivation and explains
+that the fixture is deliberately shorter than one chunk. What p.215
+genuinely adds is an independent second witness plus three facts the
+derivation could not give: two binary FILES (hence the tape mark
+printed p.3 only implied), odd parity and high density, and that each
+record is an image of a disk ARC — which ties the 513 to `arcWords =
+512`. Three sources, one number. `mcp_tape_manufacture.md` §2.0 has
+it in full.
+
+### `D*N` is not an assembler gap
+
+Reported as "the floating-point analogue of exactly what Figure 14
+settled for VFL", on the grounds that `strap/opcodes.py` has `D+`,
+`D+MG`, `D*` and `D/` but no `D*N`. It does not need one.
+`strip_fp_sign`'s suffix loop handles `N`/`A`/`NA` for anything in
+`FP_CODES`, and `D*N(N)` assembles today — verified, and it differs
+from `D*` by exactly the invert bit. `D*A`, `D+N`, `LN` and `SRTN`
+assemble too. **Nothing to build.**
+
+The general rule both of these want: **before recording that a
+document supplies something new, grep the repo for the number.** The
+PROSA derivation was in two files, one of them the very fixture being
+criticised.
+
 ## THE `N` SUFFIX IS BUILT -- the last item `M+MG` left open, 2026-10-19
 
 > **CLOSED.** C22-6531 Appendix A footnote 4 gives VFL operations the

@@ -161,31 +161,47 @@ Tape**:
 > containing an image of an arc of PROSA on the disk**. Each change
 > affects an entire logical unit of PROSA called a type area."
 
-Four facts, none of them previously in this file:
+**CORRECTION, SAME DAY, BEFORE ANYTHING WAS BUILT ON IT.** This
+subsection first said the 513-word record was "a constraint on the
+fixture that arrived after the fixture was built" and that
+`strap/prosa.py` "models none of it". **Both were wrong, and the
+repo's own files say so.**
 
-1. **Two FILES**, not one — so there is a tape mark between the
-   bootstrap record and PROSA, which is exactly what printed p.3's
-   SPACE OVER TAPE MARK block implies and what this file's §2.3
-   reasoned its way to. Independent confirmation.
-2. **Odd parity, high density.** A property of the physical tape the
-   model does not represent, but it is what a real 729 IV would be
-   set to, and `run_mcp_boot.sh`'s fixture should say so.
-3. **One record for the whole bootstrap.** The model's `mktape.py`
-   already writes exactly that: one 369-word record.
-4. **513-word records for PROSA, one per disk arc.** The model's
-   `arcWords` is **512**, so each tape record is an arc plus one
-   word. What that extra word is — a sequence number, an arc
-   address, a checksum — this page does not say, and `strap/prosa.py`
-   currently models none of it.
+`decks/mcp_bootstrap_p14.strap` derived the whole chunking from MCP's
+own control words months before this page was read, and explains it:
 
-**Fact 4 is a constraint on the PROSA fixture and it arrived after
-the fixture was built.** `strap/prosa.py` derives its shape from MCP
-printed p.4 lines 19-27, which is the right source for what the
-BOOTSTRAP reads out of the record; this page is the source for how
-the record sits on the TAPE. They are different questions and both
-answers are needed. Before `boot_plan.md` A1 goes any further,
-reconcile the two: a 513-word tape record whose payload is a
-512-word arc.
+> "THE COUNT IS 513, NOT 512, FOR A REASON WORTH NOTING. A chained
+> [control word] ... takes a record of 513 and leaves the channel
+> positioned one word on, which is how the deck walks a 512-word
+> stride through a buffer with a **one-word header per record**."
+
+and `strap/prosa.py`'s own header already reads "Printed p.14's
+control words read it in 513-word chunks with a 512-word stride; this
+record is far shorter than one chunk, so the read ends in End
+Exception at the end of the tape". The fixture is short *on purpose*.
+
+So what printed p.215 actually does is **CORROBORATE A DERIVATION
+FROM A SECOND DOCUMENT**, which is worth more than a new constraint
+and is a different claim. Stated properly, it adds three things the
+derivation could not give:
+
+1. **"Two binary FILES"** — so there is a tape mark between the
+   bootstrap record and PROSA. §2.3 reasoned its way to that from
+   printed p.3's SPACE OVER TAPE MARK block; this is independent
+   confirmation of an inference.
+2. **"Odd parity, high density"** — a physical property of the tape
+   that no amount of reading MCP's instruction stream would yield.
+   The model does not represent it; a real 729 IV would be set to it.
+3. **"an image of an ARC of PROSA on the disk"** — which ties the
+   513-word tape record to the DISK geometry. `arcWords` is 512 in
+   `bsv/StretchDiskSource.bsv`, so the record is one arc plus the
+   one-word header p.14's stride already implied. Three independent
+   sources agreeing on the same number.
+
+**The lesson is the file's own**: check what the repo already derived
+before announcing that a document supplies something new. The
+derivation was in two files, one of them the very fixture being
+criticised.
 
 The same section names the deck's IOD cards and the two PUNIDs; see
 `boot_plan.md` A3.

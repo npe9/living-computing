@@ -447,12 +447,23 @@ is item A1's problem, not A3's:
 > containing an image of an arc of PROSA on the disk.** Each change
 > affects an entire logical unit of PROSA called a type area."
 
-That is a hard constraint on the PROSA fixture and it was guessed at
-before: **513 words**, against the model's `arcWords = 512`, so each
-tape record is an arc plus one word. `mktape.py` writes a 369-word
-bootstrap record and a tape mark and nothing else. See
-`docs/mcp_tape_manufacture.md` §2, which this page should be folded
-into before any more of the fixture is built.
+**AND THAT IS NOT NEW, WHICH IS THE INTERESTING PART.** This
+paragraph first called it "a hard constraint on the PROSA fixture
+that was guessed at before". It was not guessed at:
+`decks/mcp_bootstrap_p14.strap` derived 513-and-512 from MCP's own
+chained control words, including the one-word header per record, and
+`strap/prosa.py` already says so in its header. The fixture is
+shorter than one chunk deliberately.
+
+So p.215 is an **independent second witness to a derivation**, plus
+three things the derivation could not give: that there are two binary
+FILES (hence the tape mark that printed p.3 only implied), that the
+tape is odd parity and high density, and that each record is an image
+of a disk ARC — which ties the 513 to `arcWords = 512` in
+`bsv/StretchDiskSource.bsv`. Three sources, one number.
+
+See `docs/mcp_tape_manufacture.md` §2.0, which carries the correction
+in full.
 
 **AND THE TABLES IT FILLS IN ARE ALREADY SPECIFIED.** `C22-6728-1`
 Appendix A, printed pp.261-268, gives the Channel and Unit Status
