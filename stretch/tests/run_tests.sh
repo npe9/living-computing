@@ -1585,6 +1585,42 @@ run "Figure 14 -- IBM's own sign-modifier example, and the N suffix" ./run_progr
 # Figure 12 on printed p.61, found that every unsigned subtract was
 # an addition.
 
+run "C22-6578 A4.8 integer-address and point identities" python3 verify_c22_6578_a4_addresses.py
+# C22-6578 Appendix A4.8 states, and this suite had never checked, how
+# a BARE INTEGER in an address field becomes a bit address: "the
+# integer address is treated as an integer of the subfield ... the
+# left margin of the subfield is placed in juxtaposition with the
+# leading bit of the address field", with a table giving the subfield
+# size per instruction class.  Nine worked equivalences on printed
+# pp.63-64, each "X is equivalent to Y", checked by assembling both
+# spellings and comparing the words.
+#
+# **IT WAS A CONFIRMED BUG, in the floating-point path.**
+# strap/README.md "Next steps" item 5 had this rule recorded as
+# implemented for VFL Immediate only and, everywhere else, as
+# "untested ... not yet a confirmed bug".  The appendix pins it:
+# "SRT(N), 215 is equivalent to SRT(N), 215.0", so a bare integer in
+# an FP address is a WORD count.  strap_asm.py called eval_expr,
+# which returns a pure BIT count, so it meant three words.  Two of
+# the seven pairs failed before the fix (SRT and E-); five already
+# passed, which is why nothing had noticed.
+#
+# THE BLAST RADIUS WAS MEASURED, NOT ASSUMED.  The fix also brings
+# the per-term half of C22-6531 p.11's rule to FP addresses, so
+# "SYM+5" becomes SYM plus five WORDS rather than five bits.  Every
+# one of the 271 decks was assembled and its image hashed before and
+# after: all 271 byte-identical, because every one writes dotted
+# addresses or bare labels there -- exactly as README item 5 had
+# predicted without being able to test it.
+#
+# TWO KNOWN GAPS, carried as a RATCHET rather than quietly dropped: a
+# TRAILING point on a symbolized INTEGER ("M." should be 5.0, "M.M"
+# should be 5.5).  Both live in the expression tokenizer that every
+# address in the corpus goes through, neither is used by any deck,
+# and neither has a witness beyond this appendix.  A pair that starts
+# passing is reported as news and fails the script, so the list
+# cannot rot.
+
 run "The ADD family's 128-cell sign table (R23-9694 p.107)" ./run_add_family.sh
 # >>> THE LARGEST SINGLE ORACLE IN THIS SUITE: 128 CELLS OF IBM'S OWN
 # NUMBERS, ALL FOUR ADD OPERATIONS, EVERY SIGN AND MODIFIER. <<<

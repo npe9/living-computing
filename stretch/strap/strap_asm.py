@@ -2344,8 +2344,35 @@ def emit_statement(stmt, symtab, image):
                       | ((mag & 0x3FF) << 7)
                       | ((1 if v < 0 else 0) << 6))
         else:
-            target_bits = eval_expr(base, symtab, loc, lineno=stmt.lineno)
-            addr18 = (target_bits >> 6) & 0x3FFFF
+            # C22-6578 Appendix A4.8.1, "Integer Addresses": "The bit
+            # address equivalent of an integer address is decided by
+            # the environment, which defines a subfield ... Then the
+            # left margin of the subfield is placed in juxtaposition
+            # with the leading bit of the address field", and its
+            # table gives FLOATING POINT a subfield of "at most 18
+            # bits" -- which is the whole FP address field, so a bare
+            # integer is a WORD count.  The page's own example:
+            #
+            #     SRT(N), 215   is equivalent to   SRT(N), 215.0
+            #
+            # This used to call eval_expr, which returns a pure BIT
+            # count, so "215" meant 215 bits (three words) and the two
+            # forms disagreed.  strap/README.md "Next steps" item 5
+            # recorded the general rule as implemented for VFL
+            # immediate only, and as "untested, not yet a confirmed
+            # bug" everywhere else.  It was a bug, and this is the
+            # case the appendix pins.
+            #
+            # eval_addr_field also applies the per-term half of
+            # C22-6531 p.11's rule -- symbols convert to the field's
+            # units, integers add into its low-order position -- so
+            # "SYM+5" is now SYM's word address plus five WORDS, not
+            # plus five bits.  Every FP deck in the corpus writes
+            # dotted addresses or bare labels, and all 271 assemble
+            # byte-identically across this change; checked, not
+            # assumed.
+            addr18 = eval_addr_field(base, symtab, loc, 6,
+                                     lineno=stmt.lineno) & 0x3FFFF
         image.deposit_half(loc // 32, enc_fp(addr18, unnorm, absSign, invSign, FP_CODES[fp_base], idx))
         return
 

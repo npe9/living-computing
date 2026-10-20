@@ -916,13 +916,26 @@ until one has.
    `classify_vfl_or_fp` today; `N`/`NI` fail loud (`AssemblerError`,
    unrecognized mnemonic) rather than being silently mis-handled, but
    no program has needed them yet either.
-5. The general "bare integer address → bit address via the implied
-   subfield" rule (C22-6578 p.13) is implemented only for VFL
-   Immediate addressing (`encode_vfl_immediate`) — see "Gotchas" item
-   10's note. A bare (non-"point") integer given as a normal address
-   field elsewhere is used as-is, unconverted. Untested (every program
-   here uses dotted notation or labels for non-immediate addresses),
-   not yet a confirmed bug.
+5. ~~The general "bare integer address → bit address via the implied
+   subfield" rule … Untested …, not yet a confirmed bug.~~ **Done,
+   2026-10-19, and it WAS a bug.** C22-6578 **Appendix A4.8.1**
+   (printed p.63) states the rule and gives the subfield size per
+   instruction class — floating point at most 18 bits, VFL at most
+   24, "most others" at most 19, VFL immediate at most the field
+   length, `E±I`/`SHF` 11 bits + sign, immediate index arithmetic at
+   most the index field's own size — with nine worked equivalences.
+   Five already passed; **the floating-point path failed**, because
+   it called `eval_expr` (a pure bit count) where the appendix says
+   "SRT(N), 215 is equivalent to SRT(N), 215.0", i.e. a bare integer
+   is a WORD count. Now `eval_addr_field` with the field's own unit.
+   Every one of the 271 decks assembles byte-identically across the
+   change — hashed before and after, not assumed — because they all
+   write dotted addresses or bare labels there, exactly as this item
+   predicted. `tests/verify_c22_6578_a4_addresses.py`.
+   **Still open, carried there as a ratchet**: a TRAILING point on a
+   symbolized integer (`M.` should be `5.0`, `M.M` should be `5.5`,
+   A4.8.2(c) printed p.64). Narrow, unused by any deck, and in the
+   expression tokenizer every address goes through.
 6. ~~`(radix)digits` literals (`parse_dd_literal`) outside `DD` — see
    "Gotchas" item 11.~~ Done: `(R)` prefixes now parse in any
    expression (item 15), needed by the I-Box 4 listing's own
