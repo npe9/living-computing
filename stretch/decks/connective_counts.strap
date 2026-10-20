@@ -1,0 +1,147 @@
+! >>> THIS DECK IS NOT IN THE SUITE YET, AND THAT IS DELIBERATE. <<<
+!
+! The counters it tests are NOT IMPLEMENTED.  The deck is committed
+! ahead of them because every expected value in it is derived from
+! the manual rather than from a run, so it is a specification that
+! happens to be executable -- and because the implementation attempt
+! that produced it failed for a reason worth recording rather than
+! rediscovering.  docs/NEXT.md has the whole account; the short
+! version is that word 7 acquires a SECOND writer in a rule that
+! already has one, and bsc cannot order them through writeWord's
+! address dispatch.  Three successive fixes each moved the conflict
+! rather than removing it, ending in a combinational cycle through
+! the look-ahead.  The real fix is to thread the write out of
+! execute() the way the indicator register already is, which is a
+! scheduling refactor and not a one-arm change.
+!
+! Wire it into tests/run_tests.sh when it passes:
+!   run "..." ./run_program.sh ../decks/connective_counts.strap StretchConnCntTb \
+!       "PC=2086" "cnt_punch_at_left:1079=0x2000" \
+!       "cnt_punch_two_in:1080=0x20000002000" \
+!       "cnt_punch_at_right:1081=0x60000002000" \
+!       "cnt_no_punch:1082=0x70000000000" \
+!       "cnt_four_punches:1083=0x8000" \
+!       "cnt_cm_counts_contracted:1084=0x9000000c000"
+!
+! ---------------------------------------------------------------
+!
+! THE CONNECTIVE COUNTS -- the left-zeros and all-ones counters at
+! word 7.  Reference Manual printed p.75, "Counts and Indicators":
+!
+!   "Two counts describing the result field are available after a
+!   connective operation.  The seven-bit all-ones counter, bits 44-50
+!   of location 7, contains a count of all ones in the result field.
+!   The seven-bit left-zeros counter, bits 17-23 of location 7,
+!   contains a count of [p.76:] the number of zeros in the result
+!   field that are to the left of the most significant one-bit."
+!
+! and p.76 on which field they are counted over:
+!
+!   "Both counters operate modulo 128.  Each count is on the final
+!   result field.  IN CONNECT AND CONNECT FOR TEST, THE COUNTS ARE
+!   MADE ON THE RESULT FIELD WITH BYTE SIZE EIGHT.  IN CONNECT TO
+!   MEMORY, THE COUNTS ARE MADE ON THE RESULT FIELD AFTER IT IS
+!   CONVERTED TO THE BYTE SIZE OF THE STORAGE OPERAND."
+!
+! ARRIVED VIA MCP, and the reason is worth stating because it is not
+! obvious from the counters' names.  Printed p.17 lines 32-36 convert
+! an IOCD card's channel number from Hollerith:
+!
+!     X132    CT0011(V+I)(BU,7), .12($4)   -TEST TENS POSITION OF
+!                                           CHANNEL
+!             LCV(DU,8,4), $LZC+.3, 46     -CONVERT TO OCTAL NUMBER
+!     X132AA  CT0011(V+I)(BU,16), .22($4)  -TEST UNITS POSITION
+!             +(BU,4), $LZC+.3, 46         -FORM CHANNEL NUMBER
+!
+! A HOLLERITH DIGIT IS ONE PUNCH AMONG SEVERAL ROWS, so CONNECT FOR
+! TEST over the column leaves THE DIGIT ITSELF as the left-zeros
+! count -- and the two reads of "$LZC+.3" are how MCP gets the tens
+! and units digits out.  Without these counters that sequence
+! converts nothing, which is why building LCV alone did not make
+! printed p.17 run.
+!
+! THE COUNTERS ARE DESIGNED TO BE USED AS INDEX VALUES, which p.76
+! says outright: "The position of the left-zeros counter in the first
+! half word of location 7 is such that it corresponds to that part of
+! an index value field which indexes the bit address of an
+! instruction.  The position of the all-ones counter in the second
+! half-word of location 7 is such that it facilitates indexing of
+! half-word addresses."
+!
+! HOW EACH BLOCK REPORTS.  The connective runs, then word 7 is loaded
+! whole and stored, so each check is the entire counter word: the
+! left-zeros count at IBM bits 17-23 and the all-ones count at 44-50,
+! with everything else required to be zero.  Storing the word rather
+! than one field is what makes a count landing in the wrong place a
+! failure instead of an invisible success.
+!
+!   T1  one punch at the left of a seven-bit field: 0 zeros to its
+!       left, 1 one-bit.
+!   T2  the punch two positions in: 2 and 1.  This is the shape
+!       MCP's Hollerith digits take.
+!   T3  the punch at the right end: 6 and 1.
+!   T4  NO PUNCH AT ALL: 7 and 0.  **The only part of this the page
+!       does not state** -- with no one-bit there is nothing for the
+!       zeros to be to the left of, so the count is the field width.
+!       Labelled as the inference it is, here and in StretchALU.
+!   T5  four punches: 0 zeros to the left of the leftmost, and an
+!       all-ones count of 4, which is the only block where the two
+!       counters disagree about how many bits matter.
+!   T6  CONNECT TO MEMORY, where the count is taken AFTER contraction
+!       to the storage byte size.  3476 in a 21-bit field is 9 zeros
+!       to the left of its top bit and 6 one-bits.  Counting the
+!       byte-expanded form instead -- 56 bits with the same six ones
+!       spread over seven bytes -- would give 44 and 6.
+
+        SLC, (8)2000.0
+
+! -- 1-5: CONNECT FOR TEST over a seven-bit column ---------------
+START   CT0011(BU,7), S1+.57, 0
+        L(BU,64,8), 7.0, 0
+        ST(BU,64,8), T1, 0
+
+        CT0011(BU,7), S2+.57, 0
+        L(BU,64,8), 7.0, 0
+        ST(BU,64,8), T2, 0
+
+        CT0011(BU,7), S3+.57, 0
+        L(BU,64,8), 7.0, 0
+        ST(BU,64,8), T3, 0
+
+        CT0011(BU,7), S4+.57, 0
+        L(BU,64,8), 7.0, 0
+        ST(BU,64,8), T4, 0
+
+        CT0011(BU,7), S5+.57, 0
+        L(BU,64,8), 7.0, 0
+        ST(BU,64,8), T5, 0
+
+! -- 6: CONNECT TO MEMORY counts the CONTRACTED field ------------
+        L(BU,64,8), WIDE, 0
+        CM0101(BU,21,3), DEST+.43, 0
+        L(BU,64,8), 7.0, 0
+        ST(BU,64,8), T6, 0
+
+PASS    BEW, $
+
+! Data, word-aligned: BEW is a half word, so without this the 64-bit
+! fields below would straddle two words.
+        SLC, (8)2060.0
+
+S1      DD(BU,64,8), (8)0000000000000000000100
+S2      DD(BU,64,8), (8)0000000000000000000020
+S3      DD(BU,64,8), (8)0000000000000000000001
+S4      DD(BU,64,8), 0
+S5      DD(BU,64,8), (8)0000000000000000000125
+! 3476 already in seven eight-bit bytes, the form CM contracts back.
+WIDE    DD(BU,64,8), (8)0000000000000601401004
+DEST    DD(BU,64,8), 0
+
+T1      DD(BU,64,8), 0
+T2      DD(BU,64,8), 0
+T3      DD(BU,64,8), 0
+T4      DD(BU,64,8), 0
+T5      DD(BU,64,8), 0
+T6      DD(BU,64,8), 0
+
+        END, START

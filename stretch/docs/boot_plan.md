@@ -399,6 +399,20 @@ most of the work. **Decimal arithmetic is still unimplemented**, so
 B1/B2 are untouched; only the conversion is built, and only
 decimal-to-binary, which is the direction MCP uses.
 
+**A2a. WORD 7'S CONNECTIVE COUNTS — THE BLOCKER A2 UNCOVERED.**
+Closing A2 did not make printed p.17 run. Lines 32-36 convert the
+channel number out of Hollerith by taking CONNECT FOR TEST's
+**left-zeros count** as the digit — `$LZC` is word 7 bit 17 — and the
+model does not implement the counters at all. The specification is
+settled (Reference Manual printed pp.75-76) and
+`decks/connective_counts.strap` is already written against it, but
+the implementation is a scheduling refactor of `execute()`'s result
+channel rather than an instruction: word 7 gains a second writer in a
+rule that already has one, and four successive fixes each moved the
+conflict rather than removing it. `docs/NEXT.md` has the full
+account and the route that should work. **Do this before A3**, which
+cannot be tested without it.
+
 **A3. IOCD CARD IMAGES ON THE SYSTEM TAPE.**
 ~~An IOCD card deck for the reader.~~ **CORRECTED 2026-10-19 before
 anything was built on it** — see `docs/mcp_io_tables.md`. The IOCD

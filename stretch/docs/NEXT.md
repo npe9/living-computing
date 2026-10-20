@@ -5137,6 +5137,113 @@ The same page also says "Neither the lost carry nor the partial field
 indicator can be turned on by a comparison operation" -- worth
 checking against the arm while you are there.
 
+## THE NEXT MCP BLOCKER IS WORD 7'S CONNECTIVE COUNTS — 2026-10-20
+
+`boot_plan.md` A2 is closed: `KF` and `LCV` are both built, so the two
+operations that stood between MCP and knowing what devices it has can
+execute. **Printed p.17 still cannot run, and the reason is a third
+thing nobody had named.**
+
+### What p.17 actually needs
+
+Lines 32-36 convert an IOCD card's channel number out of Hollerith:
+
+```
+X132    CT0011(V+I)(BU,7), .12($4)   -TEST TENS POSITION OF CHANNEL
+        LCV(DU,8,4), $LZC+.3, 46     -CONVERT TO OCTAL NUMBER
+X132AA  CT0011(V+I)(BU,16), .22($4)  -TEST UNITS POSITION
+        +(BU,4), $LZC+.3, 46         -FORM CHANNEL NUMBER
+```
+
+`$LZC` is word 7 bit 17 — **the left-zeros counter**. A Hollerith
+digit is one punch among several rows, so CONNECT FOR TEST over the
+column leaves *the digit itself* as that count, and the two reads of
+`$LZC+.3` are how MCP gets the tens and units out. `LCV` converts
+`tens*10`, `+(BU,4)` adds the units, and the channel number falls
+out.
+
+**The model does not implement the counters**, so that sequence
+converts nothing. Building `LCV` alone was never going to make p.17
+run.
+
+### The specification, which is settled
+
+Reference Manual printed p.75: "Two counts describing the result
+field are available after a connective operation. The seven-bit
+all-ones counter, **bits 44-50 of location 7**, contains a count of
+all ones in the result field. The seven-bit left-zeros counter,
+**bits 17-23 of location 7**, contains a count of [p.76] the number
+of zeros in the result field that are to the left of the most
+significant one-bit."
+
+p.76 fixes the field they are counted over: "Both counters operate
+modulo 128. Each count is on the final result field. **In CONNECT
+and CONNECT FOR TEST, the counts are made on the result field with
+byte size eight. In CONNECT TO MEMORY, the counts are made on the
+result field after it is converted to the byte size of the storage
+operand.** The high-order bits that are dropped from each result byte
+if the byte size is less than eight are ignored in developing the
+counts."
+
+and why they sit where they do: "The position of the left-zeros
+counter in the first half word of location 7 is such that it
+corresponds to that part of an index value field which indexes the
+bit address of an instruction. The position of the all-ones counter
+in the second half-word of location 7 is such that it facilitates
+indexing of half-word addresses." They are built to be used as index
+values, which is precisely what MCP does.
+
+Only one thing is unstated: the all-zero case. With no one-bit there
+is nothing for the zeros to be to the left of, so the count is the
+field width — an inference, labelled as one.
+
+### `decks/connective_counts.strap` IS ALREADY WRITTEN
+
+Six blocks, every expected value derived from the pages above rather
+than from a run, including the `CONNECT TO MEMORY` case where the
+count is taken *after* contraction (3476 in a 21-bit field is 9 and
+6; counting the byte-expanded form instead would give 44 and 6). The
+deck is committed, marked as ahead of the implementation, and carries
+its own `run_tests.sh` line ready to paste.
+
+### WHY THE OBVIOUS IMPLEMENTATION DOES NOT BUILD — read this first
+
+The arithmetic is twenty lines. **The scheduling is the job.** Word 7
+already has one writer inside `execute()` — the floating-point
+division arms, through `st.writeWord(addrLeftZerosCount, ...)` — and
+adding the connective makes two in a rule bsc cannot order, because
+`CONNECT TO MEMORY` also calls `writeFieldWithHi` with a **dynamic**
+address that might be word 7.
+
+Four attempts, each of which moved the conflict rather than removing
+it:
+
+1. A second `writeWord` in the connective arm —
+   `st_zerosOnesCounts.write` against itself.
+2. A `mkCReg` for word 7 with a dedicated `setConnectiveCounts`
+   method — port-0 write against port-1 read.
+3. Splitting word 7 into its five fields so the counters have their
+   own CRegs and the method reads nothing — port-0 write against
+   port-1 write, then, with the ports swapped to match the case-arm
+   order (`Connective` precedes `Fp` in `execute()`), port-0 read
+   against port-1 write.
+4. Reads moved to port 1 — a **combinational cycle** through the
+   look-ahead: `rl_prepare`'s condition came to depend on its own
+   firing.
+
+**The real fix is to thread the write out of `execute()`, the way the
+indicator register already is** — `ind` is a value passed in and
+returned, and word 11's write is folded into it rather than done
+inside the arm. `ExecResult` has only two construction sites and the
+file's own note says a member was appended rather than inserted "so
+that every existing call site reads unchanged", so a sixth member is
+the established move. The catch is that **both** writers have to go
+through it: the three floating-point sites as well, or the conflict
+simply reappears between the threaded write and theirs.
+
+Budget it as a scheduling refactor of `execute()`'s result channel,
+not as an instruction.
+
 ## TWO CORRECTIONS TO THINGS THIS SESSION ITSELF CLAIMED, 2026-10-19
 
 Both were caught by checking the repo rather than by a test, and both
