@@ -1,0 +1,73 @@
+! R23-9694 (7030 CE Introductory Programming, Vol. 2) printed p.51,
+! section 6.18.3 TRANSMIT, Example 3, transcribed at IBM's own
+! addresses.  The page's words:
+!
+!   "Example 3: Assume that location 500 contains a particular
+!   configuration which, for test purposes, the customer engineer
+!   wishes to store in location 501 through 600.  This result can be
+!   achieved by the following program steps:
+!
+!     Name     Instruction            Remarks
+!     PREP     LCI, $X7, 100.0        Place count of 100 in XR7.
+!     DO IT    T, $X7, 500.0, 501.0   500 to 501, 501 to 502, 502 to
+!                                     503, etc.
+!     NEXT     Continuation of program"
+!
+! THE OVERLAP IS THE WHOLE POINT, and it is what makes this a sharper
+! test than a plain block move.  Source and destination differ by one
+! word, so each word is WRITTEN BEFORE IT IS READ as the next source:
+! 500 goes to 501, then 501 -- now holding 500's configuration --
+! goes to 502, and so on.  One word is smeared across a hundred.
+!
+! A model that gathered all hundred source words before storing any,
+! or that copied from the high end down, would move the ORIGINAL
+! contents of 501-599 up by one instead and leave a quite different
+! memory.  The page states which it must be: the facing Example 2
+! says of a move that must NOT propagate, "backward transmission must
+! be used so that each location is used for sending before it is used
+! for receiving" -- so forward TRANSMIT is defined to do exactly the
+! propagation this deck checks.  (Example 2's TBI, Transmit Backward
+! Immediate, is not implemented; it is a feature request, not a test.)
+!
+! WHAT THIS IS THE FIRST OF.  The multi-word TRANSMIT with a DIRECT
+! count was built on 2026-10-18 from Reference Manual printed p.30
+! and MCP printed p.4 line 28, and driven by a deck written here and
+! by MCP itself.  This is its first exercise from an independent
+! source, and the first anywhere that depends on the copy ORDER
+! rather than only on the count and the endpoints.
+!
+! LCI, $X7, 100.0 puts a count of 100 in X7's count field; "T, $X7"
+! then takes that as a full-word count (printed p.30: "the field J
+! ... specifies an index register.  The count field, bits 28-45, of
+! the index word in this register is used as a full word count").
+!
+! WHAT IS CHECKED.  Location 500 keeps its configuration, 501 and 600
+! -- the two ends of the written range -- hold it too, 550 in the
+! middle holds it, and **601 does not**.  That last one is the fence:
+! a transmit that ran one word long would be invisible to every other
+! check.  601 reads 0xAAAA... because that is what the harness fills
+! unwritten core with, so the check is also a statement that nothing
+! wrote there at all.
+
+! ONE INJECTION, MEASURED: the transmit made to move one word fewer
+! (`remaining: xmitCount - 2`) leaves location 600 holding 0xAAAA...
+! and moves NOTHING else -- 500, 501, 550 and the 601 fence all still
+! pass.  That is precisely what the far-end check exists for, and it
+! is why checking only "some words were copied" would not have been
+! worth writing.
+
+        SLC, (8)2000.0
+
+PREP    LCI, $X7, 100.0          ! place count of 100 in XR7
+! This assembler takes T's J operand as a BARE INTEGER where the
+! listings write "$7" -- see decks/mcp_bootstrap_p5_p6.strap's
+! substitution note.  The page's "T, $X7" is therefore "T, 7" here,
+! and it is the only departure from the printed statements.
+DOIT    T, 7, 500.0, 501.0       ! 500 to 501, 501 to 502, 502 to 503
+NEXT    BEW, $                   ! "continuation of program"
+
+! Location 500's "particular configuration", at IBM's own address.
+        SLC, 500.0
+CONFIG  DD(BU,64,8), (8)0110642547423257157360
+
+        END, PREP

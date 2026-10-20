@@ -1585,6 +1585,70 @@ run "Figure 14 -- IBM's own sign-modifier example, and the N suffix" ./run_progr
 # Figure 12 on printed p.61, found that every unsigned subtract was
 # an addition.
 
+run "C22-6578 Problem 1.6 -- three methods, IBM's own cross-check" ./run_program.sh ../decks/problem_1_6.strap StretchP16Tb \
+    "PC=2066" \
+    "p16_method1_bbn_lvs:1050=0x11800000000000" \
+    "p16_comment_b_vplus:1051=0x11800000000000" \
+    "p16_comment_f_cm1100:1052=0x11800000000000"
+# "Subtract the value field $1 from that of $14 and put the result in
+# the value field of $14."  Method 1 flips the sign bit of $1's value
+# field and adds with LVS; comment (b) offers "V+, $14, 17.0" in
+# place of the LVS, and comment (f) offers "CM1100(BU, 1), 17.24" in
+# place of the BBN.  All three are here, so the page supplies its own
+# cross-check and a disagreement is the failure rather than a number
+# somebody has to believe.
+#
+# "17.24" IS NOT A DATA ADDRESS.  Index register n lives at word
+# 16+n, so word 17 IS $1, and bit 24 of an index word is the value
+# field's sign.  Method 1 reaches into the index register file
+# through ordinary storage addressing to flip one bit; method (f)
+# does the same with a one-bit CONNECT TO MEMORY.  That they agree
+# with each other and with V+ is a statement about the index
+# registers being addressable as storage at all.
+#
+# FIRST EXTERNAL EXERCISE OF LVS, which was built 2026-10-19 from
+# Reference Manual printed p.28 and until now driven only by a deck
+# written here beside it.  Comment (a) is the rule that deck was
+# built against -- "the index registers to be added together must all
+# be different from each other.  The J field, however, may refer to
+# any index register" -- and Method 1 is an instance of it, J = $14
+# while the summed registers are $1 and $14.
+#
+# The injection partitions the three by which uses LVS: with LVS
+# ignoring the summed signs, R1 and R3 read 130.0 and R2 still reads
+# 70.0.
+
+run "R23-9694 p.51 Ex.3 -- overlapping TRANSMIT, and the order is the point" ./run_program.sh ../decks/ce_vol2_transmit_fill.strap StretchCeXmitTb \
+    "PC=2051" \
+    "xmit_source_500_kept:500=0x123456789abcdef0" \
+    "xmit_first_501:501=0x123456789abcdef0" \
+    "xmit_middle_550:550=0x123456789abcdef0" \
+    "xmit_last_600:600=0x123456789abcdef0" \
+    "xmit_601_untouched:601=0xaaaaaaaaaaaaaaaa"
+# "Assume that location 500 contains a particular configuration
+# which, for test purposes, the customer engineer wishes to store in
+# location 501 through 600" -- LCI a count of 100, then "T, $X7,
+# 500.0, 501.0", with the remark "500 to 501, 501 to 502, 502 to 503,
+# etc."
+#
+# THE OVERLAP IS THE POINT.  Source and destination differ by one
+# word, so each word is written before it is read as the next source
+# and ONE word is smeared across a hundred.  A model that gathered
+# all hundred source words before storing any, or that copied from
+# the high end down, would move the original contents up by one
+# instead.  The facing Example 2 states which it must be: of a move
+# that must NOT propagate, "backward transmission must be used so
+# that each location is used for sending before it is used for
+# receiving".
+#
+# FIRST EXERCISE OF THE DIRECT-COUNT TRANSMIT FROM AN INDEPENDENT
+# SOURCE, and the first anywhere that depends on the copy ORDER
+# rather than only on the count and the endpoints.
+#
+# 601 IS A FENCE.  A transmit running one word long would be
+# invisible to every other check; the injection that runs one word
+# SHORT moves only the 600 check, which is what that one is for.
+
 run "IBM's own MULTIPLY/STORE ROOT/DIVIDE self-check (R23-9694 p.82)" ./run_program.sh ../decks/ce_vol2_sqrt_check.strap StretchSqrtChkTb \
     "PC=2056" \
     "sqrt_temp_holds_the_root:1041=0x4c000000000000"

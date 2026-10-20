@@ -1,0 +1,103 @@
+! C22-6578 PROBLEM 1.6, "SUBTRACTION OF VALUE FIELDS", printed p.9
+! (PDF 10), transcribed with IBM's own two alternatives beside it.
+!
+! The problem, in the page's words:
+!
+!   "Subtract the value field $1 from that of $14 and put the result
+!   in the value field of $14.  It is permissible to destroy $1 in
+!   the process."
+!
+!   "Method 1.  Change the sign bit of the value field of $1, then
+!   add value fields.
+!           BBN, 17.24, NEXT
+!     NEXT  LVS, $14, $1, $14"
+!
+! and two of its comments, each of which is a second method:
+!
+!   "(b) A 'V+, $14, 17.0' could also be used as an instruction at
+!   location NEXT."
+!
+!   "(f) A more efficient way is to use the connective instruction
+!   CM1100(BU, 1), 17.24 in place of the BBN instruction."
+!
+! SO THE PAGE SUPPLIES ITS OWN CROSS-CHECK, which is why all three
+! are here.  Three different instruction sequences must leave the
+! same value in $14, and any one of them being wrong shows up as a
+! disagreement rather than as a number somebody has to believe.
+!
+! "17.24" IS NOT A DATA ADDRESS.  Index register n lives at word 16+n
+! (StretchStorage's `addrIndexBase`), so word 17 IS $1, and bit 24 of
+! an index word is the value field's SIGN -- addr 0-23, sign 24, flag
+! 25, spare 26-27, count 28-45, refill 46-63.  Method 1 therefore
+! reaches into the index register file through ordinary storage
+! addressing to flip one bit, and Method (f) does the same with a
+! one-bit CONNECT TO MEMORY.  That the two agree with each other, and
+! with V+, is a statement about the index registers being addressable
+! as storage at all.
+!
+! "The conditional branch is being used unconditionally", comment (c)
+! -- BBN branches to the instruction that follows it either way, so
+! only the bit-inversion side effect matters.  Transcribed as printed
+! rather than simplified, because the point of the deck is what the
+! page says.
+!
+! WHAT THIS IS THE FIRST OF.  LVS was built on 2026-10-19 from
+! Reference Manual printed p.28 and driven only by a deck written
+! here alongside it.  This is its first exercise from an INDEPENDENT
+! source -- a 1961 IBM problem book that has never seen this model.
+! Comment (a) is the rule that deck was built against: "In the LVS
+! instruction the index registers to be added together must all be
+! different from each other.  The J field, however, may refer to any
+! index register" -- and Method 1 is an instance of exactly that, J =
+! $14 while the summed registers are $1 and $14.
+!
+! THE NUMBERS.  $14 starts at 100.0 and $1 at 30.0, both as ordinary
+! positive bit addresses (100 words = 6400 bits, 30 words = 1920).
+! The answer is 70.0 = 4480 bits, so each R word reads 0x11800000000000
+! -- 4480 in bits 0-23, sign 0, count and refill untouched at zero.
+
+! ONE INJECTION, MEASURED, and it partitions the three methods by
+! which of them uses LVS.  LVS made to ignore the summed registers'
+! SIGNS (`sign: 0` in its accumulation) gives R1 = R3 =
+! 0x20800000000000 -- 8320 bits = 130.0, which is 100 plus 30, the
+! sign flip rendered pointless -- while R2, the V+ method, still
+! reads 70.0.  Two checks move and one does not, exactly as the three
+! sequences differ.
+
+        SLC, (8)2000.0
+
+! -- Method 1: BBN flips the sign, LVS sums the value fields -----
+START   LX, $X14, XW14
+        LX, $X1, XW1
+        BBN, 17.24, N1
+N1      LVS, $X14, $X1, $X14
+        SX, $X14, R1
+
+! -- Comment (b): V+ in place of the LVS -------------------------
+        LX, $X14, XW14
+        LX, $X1, XW1
+        BBN, 17.24, N2
+N2      V+, $X14, 17.0
+        SX, $X14, R2
+
+! -- Comment (f): CM1100 in place of the BBN ---------------------
+        LX, $X14, XW14
+        LX, $X1, XW1
+        CM1100(BU,1), 17.24
+        LVS, $X14, $X1, $X14
+        SX, $X14, R3
+
+PASS    BEW, $
+
+! Data, word-aligned: BEW is a half word, so without this the index
+! words below would straddle two words.
+        SLC, (8)2030.0
+
+XW14    XW, 100.0, 0, 0
+XW1     XW, 30.0, 0, 0
+
+R1      DD(BU,64,8), 0
+R2      DD(BU,64,8), 0
+R3      DD(BU,64,8), 0
+
+        END, START
