@@ -1,0 +1,75 @@
+! R23-9694 (7030 CE Introductory Programming, Vol. 2) printed p.82,
+! the Programming Example under STORE ROOT, transcribed statement for
+! statement.  The page's own words:
+!
+!   "Assume a short routine is to check the operation of the
+!   instructions MULTIPLY, DIVIDE, and STORE ROOT.  One method is to
+!   multiply a number by itself to form the square of the number, then
+!   divide the square of the number by the original number and compare
+!   the result with the result of a STORE ROOT instruction.  Assume
+!   the original number, at location NUMBER, is positive and has an
+!   exponent well within the N range.  The program is:"
+!
+!     Name     Instruction        Remarks
+!     PREP     LCI, $X1, 200.0    Routine to be executed 200 times.
+!     START    L(N), NUMBER       Place number in accumulator.
+!              *(N), NUMBER       Square the number.
+!              SRT (N), TEMP      Store root of square in TEMP.
+!              /(N), NUMBER       Divide square by number.
+!     CHECK    K(U), TEMP         Compare root with quotient; should
+!                                 be equal.
+!              BZAE, ERROR        If not equal, branch to error routine.
+!     RETURN   CB, $X1, START     Repeat 199 times
+!     NEXT     First Instruction of next routine
+!
+! THIS IS A SELF-CHECKING PROGRAM, which is a different kind of oracle
+! from anything else in this suite.  No expected value had to be
+! derived or transcribed: IBM wrote the comparison and the error
+! branch, and the test is simply whether 200 iterations reach NEXT
+! rather than ERROR.  sqrt(x*x) and (x*x)/x must agree, 200 times
+! over, through MULTIPLY, STORE ROOT, DIVIDE and COMPARE.
+!
+! NUMBER IS 3.0, chosen to satisfy the page's two conditions --
+! positive, exponent well within the N range -- and so that every
+! intermediate is exact in the 48-bit fraction: 3, 9, sqrt(9) = 3,
+! 9/3 = 3.  An inexact choice would be testing the rounding rules
+! rather than the four instructions, and the page is not about
+! rounding.  Encoded by tests/fp_arith_expected.py's `enc`, the same
+! routine the FP decks use: Reference Manual pp.78-79, bit 0 EF, 1-10
+! EM, 11 ES, 12-59 fraction, 60 sign.  3.0 is fraction 0.75 with
+! exponent 2.
+!
+! WHAT EACH OUTCOME MEANS
+!   PC at NEXT   -- 200 iterations agreed.  The intended pass.
+!   PC at ERROR  -- some iteration disagreed; MULTIPLY, STORE ROOT,
+!                   DIVIDE or COMPARE is wrong.  IBM's own verdict.
+!   TEMP = 3.0   -- checked as well as the branch, because a STORE
+!                   ROOT that stored nothing at all would leave TEMP
+!                   holding its initial value and the comparison
+!                   would then be against whatever the quotient was.
+!                   Checking the branch alone would pass on a
+!                   coincidence; checking TEMP says the root was
+!                   actually computed and stored.
+
+        SLC, (8)2000.0
+
+PREP    LCI, $X1, 200.0       ! routine to be executed 200 times
+START   L(N), NUMBER          ! place number in accumulator
+        *(N), NUMBER          ! square the number
+        SRT(N), TEMP          ! store root of square in TEMP
+        /(N), NUMBER          ! divide square by number
+CHECK   K(U), TEMP            ! compare root with quotient; equal
+        BZAE, ERROR           ! if not equal, branch to error routine
+RETURN  CB, $X1, START        ! repeat 199 times
+NEXT    BEW, $                ! "first instruction of next routine"
+ERROR   BEW, $                ! IBM's error routine, as a halt
+
+! Data, word-aligned: BEW is a half word, so without this the 64-bit
+! fields below would straddle two words.
+        SLC, (8)2020.0
+
+! 3.0 -- fraction 0.75, exponent 2, positive.
+NUMBER  DD(BU,64,8), (8)0001140000000000000000
+TEMP    DD(BU,64,8), 0
+
+        END, PREP

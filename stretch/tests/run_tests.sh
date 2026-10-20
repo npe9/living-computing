@@ -1585,6 +1585,40 @@ run "Figure 14 -- IBM's own sign-modifier example, and the N suffix" ./run_progr
 # Figure 12 on printed p.61, found that every unsigned subtract was
 # an addition.
 
+run "IBM's own MULTIPLY/STORE ROOT/DIVIDE self-check (R23-9694 p.82)" ./run_program.sh ../decks/ce_vol2_sqrt_check.strap StretchSqrtChkTb \
+    "PC=2056" \
+    "sqrt_temp_holds_the_root:1041=0x4c000000000000"
+# R23-9694 printed p.82, the Programming Example under STORE ROOT:
+# "Assume a short routine is to check the operation of the
+# instructions MULTIPLY, DIVIDE, and STORE ROOT.  One method is to
+# multiply a number by itself to form the square of the number, then
+# divide the square of the number by the original number and compare
+# the result with the result of a STORE ROOT instruction."
+#
+# A SELF-CHECKING PROGRAM, which is a different kind of oracle from
+# anything else in this suite.  No expected value was derived or
+# transcribed: IBM wrote the comparison and the error branch, and the
+# test is whether 200 iterations reach NEXT rather than ERROR.
+#
+# PC 2056 is NEXT and 2057 is ERROR, one half-word apart, so the
+# check is simply which of IBM's two exits the machine took.
+#
+# TEMP IS CHECKED AS WELL AS THE BRANCH, deliberately.  A STORE ROOT
+# that stored nothing would leave TEMP at its initial value and the
+# comparison would be against whatever the quotient happened to be --
+# the branch alone could pass on a coincidence.  TEMP = 3.0 says the
+# root was actually computed and stored.
+#
+# THE INJECTION IS THE POINT.  STORE ROOT made to store the
+# accumulator instead of its root puts 9.0 in TEMP and halts at
+# ERROR: a 1961 diagnostic routine detecting, unmodified, the fault
+# it was written to detect.
+#
+# NUMBER is 3.0 -- positive with an exponent well within the N range,
+# as the page requires, and exact in the 48-bit fraction at every
+# step (3, 9, sqrt(9), 9/3), so the test is about the four
+# instructions and not about rounding.
+
 run "C22-6578 A4.8 integer-address and point identities" python3 verify_c22_6578_a4_addresses.py
 # C22-6578 Appendix A4.8 states, and this suite had never checked, how
 # a BARE INTEGER in an address field becomes a bit address: "the
