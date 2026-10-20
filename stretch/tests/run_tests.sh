@@ -1690,10 +1690,19 @@ run "The ADD family's 128-cell sign table (R23-9694 p.107)" ./run_add_family.sh
 # them.  The table could not have been run a commit earlier.
 #
 # NOT CHECKED, and the page marks them so it is worth saying: the
-# eight "*" cells turn on LOST CARRY, and the underlined cells differ
+# FOUR "*" cells turn on LOST CARRY, and the underlined cells differ
 # from the corresponding floating-point operation.  Values only here;
 # the lost-carry cells are listed in the generator so the next person
 # need not re-read the page.
+#
+# ("Four", not eight, and this comment said eight for one commit.
+# Settled by re-rendering the table body at 300 dpi: the stars fall
+# on ADD TO MEMORY, U columns 3 and 7, and ADD TO MEMORY, U,N columns
+# 1 and 5 -- 1-based as the page prints them.  The same render
+# confirmed all sixteen transcribed rows character by character and
+# showed that the UNDERLINES occur only in those same two unsigned
+# ADD TO MEMORY rows; the ADD, ADD TO MAGNITUDE and ADD MAGNITUDE TO
+# MEMORY blocks carry none.)
 #
 # The checks are generated from the transcribed table rather than
 # written on a command line -- 128 of them would be unreadable, and a

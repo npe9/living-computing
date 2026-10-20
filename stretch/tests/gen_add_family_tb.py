@@ -43,11 +43,18 @@ are deliberately absent from VFL_INT_WRITTEN_MINUS for want of a
 source.  The table could not have been run a commit earlier.
 
 WHAT IS NOT CHECKED, and the page marks them so it is worth saying:
-the eight cells carrying `*` turn on the LOST CARRY indicator, and the
+the FOUR cells carrying `*` turn on the LOST CARRY indicator, and the
 underlined cells "differ from those produced from a similar floating
 point operation".  This generator checks VALUES only.  The lost-carry
 cells are listed in LOST_CARRY below so that the next person can turn
 them into indicator checks without re-reading the page.
+
+THE TABLE WAS RE-READ AT 300 dpi before anything was built on it, and
+one claim changed: there are FOUR starred cells, not eight.  The same
+render confirmed all sixteen rows character by character, and showed
+that the underlines occur only in the two unsigned ADD TO MEMORY rows
+-- the ADD, ADD TO MAGNITUDE and ADD MAGNITUDE TO MEMORY blocks carry
+none.
 
 HOW A CELL IS ENCODED.  Each operand is a 16-bit signed field at byte
 size 8 -- an 8-bit magnitude over an 8-bit sign byte -- placed in the
