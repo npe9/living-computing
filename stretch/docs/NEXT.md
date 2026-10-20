@@ -5137,25 +5137,61 @@ The same page also says "Neither the lost carry nor the partial field
 indicator can be turned on by a comparison operation" -- worth
 checking against the arm while you are there.
 
-## ONE OPEN ITEM LEFT BY `M+MG`
+## THE `N` SUFFIX IS BUILT -- the last item `M+MG` left open, 2026-10-19
 
-### The VFL negative sign modifier has no spelling
+> **CLOSED.** C22-6531 Appendix A footnote 4 gives VFL operations the
+> suffixes **I** Immediate, **N** Negative, **NI** Negative Immediate,
+> and that footnote was already transcribed in
+> `docs/c22_6531_appendix_a.md` — the standing lesson once more.
+>
+> **The objection that blocked it was real and is now answered.** The
+> item said a blanket "strip a trailing N" rule would capture `LN`, a
+> real floating-point operation. That is true of a rule at the top of
+> `classify_vfl_or_fp`, and the `-MG` rewrite was written there first
+> and did exactly that, costing four sections of `jb_af1c`. The strip
+> now happens **inside the VFL branch**, after the data description
+> has already returned the floating-point modes `N` and `U`, so
+> `LN(U,...)` never reaches it and `LN(BU,...)` is a real VFL LOAD
+> with the negative sign modifier — which is what footnote 4 says it
+> is.
+>
+> **Witnessed in use**, not merely described: Reference Manual printed
+> p.64, Figure 14 writes `STN(B, 24, 8)` and `STN(BU, 16, 8)` — a VFL
+> data description on a VFL operation. `decks/fig14_sign_modifiers.strap`
+> runs the whole figure at IBM's own addresses and reproduces all four
+> of its notes, with one injection.
+>
+> The model side had been built and right since the `M+MG` work
+> (printed p.57's "Sign Control" table, TO-MEMORY column); it was
+> inert only because nothing could spell the modifier. It can now.
 
-C22-6531 Appendix A footnote 4 says a VFL operation "may be suffixed
-by the letter N" for the negative sign modifier, so `M+MGN` and `M-N`
-should assemble. `strap_asm.py` implements only the `I` suffix. The
-written-minus forms (`M-`, `M-MG`, `-MG`) are recognised, but **only
-on the floating-point path** -- they come from `jb_af1c`'s printed
-codes, and nothing witnesses the VFL spelling.
+## IBM'S WORKED EXAMPLES ARE AN UNDER-USED ORACLE -- two run, two finds
 
-The N suffix cannot simply be added the way `I` was: `LN` is a real FP
-operation, so a blanket "strip a trailing N" rule would capture it.
-Any implementation wants the footnote read in full first, and a
-listing row to check against.
+Not a diagnostic listing and not prose: a *Figure* in the Reference
+Manual that states a problem, gives the statements, and says what
+each one leaves behind. A diagnostic exercises the corners; a worked
+example exercises the path the manual expects a programmer to take,
+which is where a model's unexercised defaults live.
 
-The model's side is already built and already right (printed p.57's
-"Sign Control" table, under TO-MEMORY OPERATION), and the comment at
-`M+`/`M+MG` says it is inert until a spelling exists.
+Two have been run and both found something:
+
+* **Figure 12, printed p.61** ("put the larger of x and y in the
+  accumulator") would not run: `-MG(BU,64,8)` computed x PLUS y.
+  `fieldToSM` returned sign 0 for every unsigned field and dropped
+  the negative sign modifier, so **every unsigned subtract in the
+  model was an addition**. Nothing in 419 sections could have caught
+  it — only one deck in the corpus spells an unsigned written-minus,
+  on a page MCP has not reached.
+* **Figure 14, printed p.64** (A−B, |A−B|, −|A−B|, Ā−B) settled the
+  `N` suffix above, and caught its own transcriber: `L(BU,24,8)`
+  against a page printing `L (B, 24, 8)`.
+
+**Worth sweeping for the rest.** Known so far, unrun: Figure 13
+(p.62, "Sign Condition Results" — a truth table rather than a
+program, partly transcribed into `decks/m_plus_mg.strap`). The
+Reference Manual's other figures have not been enumerated, and
+**`C22-6578 Programming Examples` is 28 citations' worth of exactly
+this material** and is mined only for Problems 2.1, 2.2 and 4.5.
 
 ---
 

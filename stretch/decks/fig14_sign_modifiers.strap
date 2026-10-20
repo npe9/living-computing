@@ -1,0 +1,104 @@
+! FIGURE 14, "Sign Modifier Example" -- Reference Manual printed p.64,
+! transcribed statement for statement and run on the model.  The
+! figure's own problem statement, printed p.64:
+!
+!   "Figure 14 shows the use of the variable-field-length features and
+!   sign modifiers.  Let A and B be two binary numbers stored in
+!   consecutive positions in storage starting at location 1776.00.
+!   Each number contains sixteen numeric bits and a sign byte of eight
+!   bits.  Form A-B, |A-B|, -|A-B|, and A(bar)-B and store in
+!   consecutive memory positions starting at location 1774.40.  The
+!   notation A(bar) represents the unsigned quantity."
+!
+! and the figure itself, verbatim, including IBM's own addresses:
+!
+!     NAME    STATEMENT                      NOTES
+!             L  (B,  24, 8), 1776.0, 0
+!             -  (B,  24, 8), 1776.24, 0
+!             ST (B,  24, 8), 1774.40, 0       1
+!             L  (BU, 16, 8), 1774.40, 0
+!             ST (B,  24, 8), 1775.0, 0        2
+!             STN(B,  24, 8), 1775.24, 0       3
+!             STN(BU, 16, 8), 1775.48, 0       4
+!
+!     Notes:  1. Stores A-B
+!             2. Stores |A-B|
+!             3. Stores -|A-B|
+!             4. Stores A(bar)-B.  The same result would have been
+!                obtained if the negative sign modifier had not been
+!                used, except for the setting of the arithmetic result
+!                indicators.
+!
+! THE FIRST STATEMENT'S MODE MATTERS AND I GOT IT WRONG FIRST.  It
+! was typed "L(BU,24,8)" against a page that prints "L (B, 24, 8)",
+! and the run said so immediately: an UNSIGNED 24-bit load takes the
+! eight-bit SIGN BYTE as part of the magnitude, so the accumulator
+! held 76800 rather than 300 and note 1 stored 0x2A0C00 instead of
+! 0xC880.  The model was right and the transcription was wrong, which
+! is the direction a deck is supposed to fail in.
+!
+! WHY THIS DECK EXISTS, and it is two reasons.
+!
+! FIRST, IT SETTLES THE "N" SUFFIX.  C22-6531 Appendix A footnote 4 --
+! transcribed in docs/c22_6531_appendix_a.md -- says "This VFL
+! operation code may have the following suffixes: I Immediate, N
+! Negative, NI Negative Immediate", and docs/NEXT.md carried the
+! suffix as unimplementable because "a blanket strip-a-trailing-N rule
+! would capture LN, a real FP operation".  Figure 14 writes
+! "STN(B,24,8)" and "STN(BU,16,8)" -- a VFL data description on a VFL
+! operation -- so the spelling is witnessed in use and not merely
+! described.  The assembler now strips N and NI inside the VFL branch
+! of classify_vfl_or_fp, after the data description has already ruled
+! out the floating-point modes, which is what makes LN safe.
+!
+! SECOND, IT IS IBM'S OWN WORKED EXAMPLE WITH IBM'S OWN STATED
+! RESULTS, which is a different kind of oracle from a diagnostic
+! listing: a diagnostic exercises the corners, and a worked example
+! exercises the path the manual expects a programmer to take.  The
+! last one of these run on this model (Figure 12, printed p.61) found
+! that every unsigned subtract was an addition.
+!
+! THE HARNESS FILLS UNWRITTEN CORE WITH 0xAAAA..., which is why word
+! 1774's expected value carries forty bits of that pattern above the
+! twenty-four this program stores.  Word 1775 is written in full by
+! notes 2, 3 and 4 together and has none.
+!
+! A = +300 and B = +500, so A-B = -200 and |A-B| = 200.  Each number
+! is sixteen numeric bits and an eight-bit sign byte, so a positive
+! 300 is (300<<8)|0 and a negative 200 is (200<<8)|(1<<7).
+!
+! NOTE 4 IS THE DISCRIMINATING ONE.  printed p.63 under STORE: "If the
+! unsigned modifier is specified, the negative sign modifier has no
+! effect on the field stored.  However, the result indicators are set
+! according to the modified accumulator sign, whether it is stored or
+! not."  So the last STN must store a PLAIN 200 -- a model that let
+! the N reach an unsigned stored field would put something else there,
+! and that is exactly what the figure's note 4 is pointing out.
+
+! ONE INJECTION, MEASURED: the N suffix recognised but left inert
+! (stripped from the mnemonic without setting the modifier) gives
+! word 1775 = 0xc80000c80000c8 -- note 3's sign byte gone, note 1 and
+! note 4 unmoved.  Note 4 CANNOT be moved by an injection on N, and
+! that is the point of note 4: the figure says so itself ("the same
+! result would have been obtained if the negative sign modifier had
+! not been used"), so what it asserts is an ABSENCE.  What would
+! break it is the modifier reaching an unsigned stored field, which
+! is a different injection against smToField and is not run here.
+
+        SLC, (8)2000.0
+
+START   L(B,24,8), 1776.0, 0
+        -(B,24,8), 1776.24, 0
+        ST(B,24,8), 1774.40, 0       ! note 1: stores A-B
+        L(BU,16,8), 1774.40, 0
+        ST(B,24,8), 1775.0, 0        ! note 2: stores |A-B|
+        STN(B,24,8), 1775.24, 0      ! note 3: stores -|A-B|
+        STN(BU,16,8), 1775.48, 0     ! note 4: stores A(bar)-B
+
+PASS    BEW, $
+
+! A and B, at IBM's own location 1776.00: A in bits 0-23, B in bits
+! 24-47, each sixteen numeric bits over an eight-bit sign byte.
+        SLC, 1776.0
+AB      DD(BU,64,8), (8)4540000076400000000
+        END, START

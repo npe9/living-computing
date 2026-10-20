@@ -1126,6 +1126,41 @@ def classify_vfl_or_fp(stmt):
         if mode in ('N', 'U'):
             return 'FP', base_op, invert, immediate, p_progressive, dds_mods, None
         if mode in MODE_BITS:
+            # THE N AND NI SUFFIXES, C22-6531 Appendix A footnote 4,
+            # transcribed in docs/c22_6531_appendix_a.md: "This VFL
+            # operation code may have the following suffixes:
+            # **I** Immediate, **N** Negative, **NI** Negative
+            # Immediate."
+            #
+            # WITNESSED IN USE by Reference Manual printed p.64,
+            # Figure 14 "Sign Modifier Example", which writes
+            # "STN (B, 24, 8), 1775.24, 0" and "STN (BU, 16, 8),
+            # 1775.48, 0" -- a VFL data description on a VFL
+            # operation, so the suffix is settled for VFL and not
+            # merely described in the appendix.
+            #
+            # **AND THIS IS WHY IT LIVES IN THE VFL BRANCH.**
+            # docs/NEXT.md recorded the N suffix as unimplementable
+            # because "a blanket 'strip a trailing N' rule would
+            # capture LN, a real FP operation".  True of a rule at
+            # the top of this function -- and the -MG rewrite below
+            # was written there first and did exactly that, costing
+            # four sections of jb_af1c.  By this point the mode is
+            # B/BU/D/DU and the floating-point modes N and U have
+            # already returned, so "LN(U,...)" never reaches here and
+            # "LN(BU,...)" is a real VFL LOAD with the negative sign
+            # modifier, which is what footnote 4 says it is.
+            #
+            # The `not in VFL_INT_CODES` guard keeps a real mnemonic
+            # that happens to end in N from being stripped; none of
+            # the twenty-three VFL integer codes does today, and the
+            # guard is what keeps that from mattering if one ever
+            # does.
+            if base_op not in VFL_INT_CODES:
+                if base_op.endswith('NI') and base_op[:-2] in VFL_INT_CODES:
+                    base_op, invert, immediate = base_op[:-2], 1, True
+                elif base_op.endswith('N') and base_op[:-1] in VFL_INT_CODES:
+                    base_op, invert = base_op[:-1], 1
             # THE WRITTEN-MINUS VFL FORMS, APPLIED HERE AND NOWHERE
             # ELSE -- after the data description has already said
             # this is a VFL operation.

@@ -1549,6 +1549,42 @@ run "M+MG, Add Magnitude to Memory -- the seventh VFL integer arm" ./run_program
 # only I, and the written-minus "M-MG" is witnessed for the
 # floating-point operation alone.  docs/NEXT.md carries it.
 
+run "Figure 14 -- IBM's own sign-modifier example, and the N suffix" ./run_program.sh ../decks/fig14_sign_modifiers.strap StretchFig14Tb \
+    "PC=2062" \
+    "fig14_note1_a_minus_b:1774=0xaaaaaaaaaa00c880" \
+    "fig14_notes234:1775=0xc80000c88000c8"
+# Reference Manual printed p.64, Figure 14 "Sign Modifier Example",
+# transcribed statement for statement at IBM's own addresses: form
+# A-B, |A-B|, -|A-B| and A(bar)-B and store them consecutively.  All
+# four of the figure's notes are reproduced.
+#
+# IT SETTLES THE "N" SUFFIX, which docs/NEXT.md had carried as
+# unimplementable.  C22-6531 Appendix A footnote 4 -- transcribed in
+# docs/c22_6531_appendix_a.md -- gives VFL operations the suffixes
+# "I Immediate, N Negative, NI Negative Immediate", and the item said
+# a blanket strip-a-trailing-N rule would capture LN, a real FP
+# operation.  True of a rule at the top of classify_vfl_or_fp; the
+# strip now happens inside the VFL branch, after the data description
+# has already returned the floating-point modes N and U.  Figure 14's
+# "STN(B,24,8)" and "STN(BU,16,8)" are the usage witness: a VFL data
+# description on a VFL operation.
+#
+# THE DECK CAUGHT ITS OWN TRANSCRIBER FIRST.  Line 1 was typed
+# "L(BU,24,8)" against a page printing "L (B, 24, 8)"; an unsigned
+# 24-bit load takes the eight-bit sign byte as magnitude, so the
+# accumulator held 76800 instead of 300 and note 1 stored 0x2A0C00
+# instead of 0xC880.  The arithmetic identified it exactly.
+#
+# NOTE 4 ASSERTS AN ABSENCE and no injection on N can move it -- the
+# figure says "the same result would have been obtained if the
+# negative sign modifier had not been used".  printed p.63 is the
+# rule: "If the unsigned modifier is specified, the negative sign
+# modifier has no effect on the field stored."
+#
+# Second of IBM's worked examples run on this model.  The first,
+# Figure 12 on printed p.61, found that every unsigned subtract was
+# an addition.
+
 run "KF, Compare Field -- the bounded accumulator operand, p.65" ./run_program.sh ../decks/compare_field.strap StretchKFTb \
     "PC=2102" \
     "kf_equal:1080=0x24" \
