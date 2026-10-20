@@ -1,0 +1,109 @@
+! COMPARE (K) AND A NONZERO OFFSET -- Reference Manual printed p.65:
+!
+!   "The contents of the accumulator LEFT OF THE SPECIFIED OFFSET are
+!   algebraically compared with the addressed operand.  THE BITS TO
+!   THE RIGHT OF THE OFFSET DO NOT PARTICIPATE IN THE COMPARISON.
+!   The comparison result indicators are set to describe the
+!   accumulator field as compared with the storage field.  Neither
+!   operand is changed by the operation.  The arithmetic result
+!   indicators are not affected."
+!
+! The model shifted the OPERAND left by the offset and compared it
+! against the whole accumulator.  That is the same answer whenever the
+! accumulator's low `offset` bits are zero -- and a different one when
+! they are not, because those bits then break a tie that the manual
+! says they must not take part in.
+!
+! BLOCK 1 IS THE WHOLE POINT and the other three are there to show how
+! narrow the difference is.  The accumulator holds 0x101 and the
+! operand is an eight-bit 1 at offset 8, so the accumulator field is
+! 0x101 >> 8 = 1 and the comparison is 1 against 1: EQUAL.  Shifting
+! the operand instead compares 0x101 against 0x100 and reports the
+! accumulator HIGH, on the strength of a low byte the page excludes.
+!
+! Blocks 2, 3 and 4 are unchanged by the correction, which is why
+! several hundred listing-verified sections of this suite pass either
+! way: at offset 0, or when the high parts already differ, the two
+! readings agree.  The case was untested, not wrong.
+!
+! HOW EACH BLOCK REPORTS.  Z,$IND clears the indicator register, the
+! operand is loaded, the K runs, and the register is loaded and stored
+! whole.  Each block's LOAD leaves its own RGZ standing -- p.65 says
+! the arithmetic result indicators are not affected by a comparison --
+! so the expected values carry RGZ = 0x20 alongside the comparison
+! bit.  AL = 0x08, AE = 0x04, AH = 0x02.
+!
+!   T1  accumulator 0x101, operand 1, offset 8.      RGZ+AE = 0x24
+!       **The low byte must not break the tie.**
+!   T2  the same comparison at offset 0.             RGZ+AE = 0x24
+!   T3  accumulator 0x301 -- the high part really is higher.
+!                                                    RGZ+AH = 0x22
+!   T4  accumulator 0x0FF -- the high part is zero.  RGZ+AL = 0x28
+!
+! ALSO ON p.65 AND NOT TESTED HERE: "If the field length and offset
+! are such that high-order positions of the storage field compare with
+! positions to the left of the left end of the accumulator, the
+! accumulator field is extended by adding zeros to its left before the
+! comparison is made", and "Neither the lost carry nor the partial
+! field indicator can be turned on by a comparison operation".  The
+! first is automatic in a 128-bit magnitude; the second is an absence
+! this deck does not probe.
+
+! THE INJECTION IS THIS DECK'S OWN HISTORY, which is the strongest
+! form available: it was written to FAIL against the model as it
+! stood, and it did -- T1 = 0x22, the accumulator reported HIGH on
+! the strength of a low byte, with T2, T3 and T4 passing.  The fix
+! then turned T1 to 0x24 and moved nothing else.  Re-injecting means
+! restoring the old line in StretchExecute's K arm:
+!     SM128 opndSh = SM128 { sign: opnd.sign, mag: opnd.mag << offSh };
+!     c = smCompare(acc, opndSh);
+
+        SLC, (8)2000.0
+
+! -- 1. the low byte must not break the tie ---------------------
+START   Z, $IND
+        L(BU,64,8), A1, 0
+        K(BU,8), FONE+.56, 8
+        L(BU,64,8), $IND, 0
+        ST(BU,64,8), T1, 0
+
+! -- 2. the same comparison at offset 0 -------------------------
+        Z, $IND
+        L(BU,64,8), A2, 0
+        K(BU,8), FFIVE+.56, 0
+        L(BU,64,8), $IND, 0
+        ST(BU,64,8), T2, 0
+
+! -- 3. the high part really is higher --------------------------
+        Z, $IND
+        L(BU,64,8), A3, 0
+        K(BU,8), FONE+.56, 8
+        L(BU,64,8), $IND, 0
+        ST(BU,64,8), T3, 0
+
+! -- 4. the high part is zero -----------------------------------
+        Z, $IND
+        L(BU,64,8), A4, 0
+        K(BU,8), FONE+.56, 8
+        L(BU,64,8), $IND, 0
+        ST(BU,64,8), T4, 0
+
+PASS    BEW, $
+
+! Data, word-aligned: BEW is a half word, so without this every 64-bit
+! field below would straddle two words and be refused.
+        SLC, (8)2050.0
+
+FONE    DD(BU,64,8), 1
+FFIVE   DD(BU,64,8), 5
+A1      DD(BU,64,8), (8)401
+A2      DD(BU,64,8), 5
+A3      DD(BU,64,8), (8)1401
+A4      DD(BU,64,8), (8)377
+
+T1      DD(BU,64,8), 0
+T2      DD(BU,64,8), 0
+T3      DD(BU,64,8), 0
+T4      DD(BU,64,8), 0
+
+        END, START

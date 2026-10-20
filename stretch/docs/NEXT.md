@@ -5186,12 +5186,33 @@ Two have been run and both found something:
   `N` suffix above, and caught its own transcriber: `L(BU,24,8)`
   against a page printing `L (B, 24, 8)`.
 
-**Worth sweeping for the rest.** Known so far, unrun: Figure 13
-(p.62, "Sign Condition Results" — a truth table rather than a
-program, partly transcribed into `decks/m_plus_mg.strap`). The
-Reference Manual's other figures have not been enumerated, and
-**`C22-6578 Programming Examples` is 28 citations' worth of exactly
-this material** and is mined only for Problems 2.1, 2.2 and 4.5.
+**THE SWEEP HAS BEEN DONE, 2026-10-19** — all 175 pages of the
+Reference Manual, all 82 of `C22-6578`, all 135 of `R23-9694` (CE
+Introductory Programming Vol. 2), rendered and looked at, because
+none of the three has a list of illustrations. The census:
+
+* **The Reference Manual has 49 numbered figures, of which 13 are
+  programs**: 7, 8, 9, 10, 12, 14, 15, 17, 18, 19, 21, 28, 29, 31,
+  33. Figures 12 and 14 are done. Figure 13 (p.62) and Figure 30
+  (p.101) are tables, not programs. The other 34 are bit layouts,
+  truth tables, timing diagrams and photographs.
+* **`C22-6578` has 44 problems**, 1.1–1.9, 2.1–2.12, 3.1–3.10,
+  4.1–4.13, plus appendices A1–A8. Nearly all are runnable.
+* **`R23-9694` printed pp.35–134** carries worked blocks per
+  instruction; pp.5–34 have none, and the chapter says so.
+* **NEGATIVE, so nobody re-sweeps**: Reference Manual printed
+  pp.105–170 (the Exchange, External Units, Disk and Appendix
+  chapters) contain **zero** program examples, and `C22-6578`
+  appendices A1, A2, A3, A7 and A8 contain no runnable code.
+
+**AND A CORRECTION TO THIS FILE, which had recorded a feature
+request as coverage.** The sentence here used to end "mined only for
+Problems 2.1, 2.2 and 4.5". **4.5 was never mined.** There is no
+`problem_4_5` deck — only `problem_2_1` and the three `problem_2_2`
+methods exist. 4.5 appears solely in `resuscitation_roadmap.md` as
+*evidence* that word 7's left-zeros/all-ones counts are used, and it
+could not be a test today in any case: it is built on `$AOC`/`$LZC`,
+which are unimplemented.
 
 ---
 

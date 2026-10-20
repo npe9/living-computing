@@ -1585,6 +1585,36 @@ run "Figure 14 -- IBM's own sign-modifier example, and the N suffix" ./run_progr
 # Figure 12 on printed p.61, found that every unsigned subtract was
 # an addition.
 
+run "K and a nonzero offset -- the low bits do not participate" ./run_program.sh ../decks/compare_offset.strap StretchKOffTb \
+    "PC=2084" \
+    "k_low_bits_do_not_participate:1070=0x24" \
+    "k_offset_zero:1071=0x24" \
+    "k_high_part_higher:1072=0x22" \
+    "k_high_part_zero:1073=0x28"
+# Reference Manual printed p.65, COMPARE: "The contents of the
+# accumulator LEFT OF THE SPECIFIED OFFSET are algebraically compared
+# with the addressed operand.  THE BITS TO THE RIGHT OF THE OFFSET DO
+# NOT PARTICIPATE IN THE COMPARISON."
+#
+# The arm shifted the OPERAND left by the offset and compared it
+# against the whole accumulator instead.  Same answer whenever the
+# accumulator's low `offset` bits are zero; a different one when they
+# are not, because those bits then break a tie the page excludes them
+# from.  Accumulator 0x101 against an eight-bit 1 at offset 8: the
+# manual says equal, the old code said high.
+#
+# NOTHING IN THIS SUITE CAUGHT IT AND NOTHING COULD.  At offset 0, or
+# whenever the high parts already differ, the two readings agree --
+# and that covers every K in several hundred listing-verified
+# sections.  Blocks 2, 3 and 4 are here to show exactly that: they
+# pass both before and after.  The case was untested, not wrong.
+#
+# THE INJECTION IS THE DECK'S OWN HISTORY.  It was written to fail
+# against the model as it stood and did, with T1 = 0x22 and the other
+# three passing; the one-line fix turned T1 to 0x24 and moved nothing
+# else.  Found while building KF, recorded in docs/NEXT.md rather
+# than fixed blind, and then fixed with a deck that failed first.
+
 run "KF, Compare Field -- the bounded accumulator operand, p.65" ./run_program.sh ../decks/compare_field.strap StretchKFTb \
     "PC=2102" \
     "kf_equal:1080=0x24" \

@@ -2770,8 +2770,38 @@ function ActionValue#(VflOutcome)
                 SM128 accF = SM128 { sign: 0, mag: (acc.mag >> offSh) & nmask };
                 c = smCompare(accF, opnd);
               end else begin
-                SM128 opndSh = SM128 { sign: opnd.sign, mag: opnd.mag << offSh };
-                c = smCompare(acc, opndSh);
+                // COMPARE, p.65: "The contents of the accumulator
+                // **LEFT OF THE SPECIFIED OFFSET** are algebraically
+                // compared with the addressed operand.  **The bits to
+                // the right of the offset do not participate in the
+                // comparison.**"
+                //
+                // This arm used to shift the OPERAND left by the
+                // offset and compare it against the whole
+                // accumulator.  That gives the same answer whenever
+                // the accumulator's low `offset` bits are zero, and a
+                // different one when they are not: those bits then
+                // break a tie the page excludes them from.  Measured,
+                // accumulator 0x101 against an eight-bit 1 at offset
+                // 8 -- the manual says equal, the old code said the
+                // accumulator was high.
+                //
+                // NOTHING IN THE SUITE CAUGHT IT and nothing could:
+                // at offset 0, or whenever the high parts already
+                // differ, the two readings agree, and that covers
+                // every K in several hundred listing-verified
+                // sections.  decks/compare_offset.strap was written
+                // to FAIL first and did.
+                //
+                // The same page's other clause needs no code: "if
+                // the field length and offset are such that
+                // high-order positions of the storage field compare
+                // with positions to the left of the left end of the
+                // accumulator, the accumulator field is extended by
+                // adding zeros to its left" -- which a 128-bit
+                // magnitude does for free.
+                SM128 accSh = SM128 { sign: acc.sign, mag: acc.mag >> offSh };
+                c = smCompare(accSh, opnd);
               end
               ind = setAccCmpIndicatorsF(ind, c);
             end
