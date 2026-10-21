@@ -80,6 +80,18 @@ function Maybe#(WordAddr) storeTarget(StretchStorage st, DecodedInstr d);
     // because the Conn arm computes its own `ea` the same way.
     // C and CT are excluded: C writes the accumulator and CT writes
     // nothing, so neither is a store.
+    //
+    // THE REST OF THIS LIST WAS AUDITED WHEN THIS CASE WAS ADDED, and
+    // CM was the only gap.  The VflInt arm implements four storing
+    // operations and all four are above; the Fp arm's writes to the
+    // effective address are ST/SRD/SLO, SRT and M+/M+MG, and all six
+    // are above.  BB and SIC write storage and are deliberately
+    // absent because neither is isEboxClass -- iboxHazard drains the
+    // whole look-ahead before they run, which is stronger.
+    //
+    // THE INVARIANT: every isEboxClass instruction that writes
+    // general storage needs a case here, and only those.  SRD, CV and
+    // DCV are not implemented yet and will each need one.
     tagged Connective .c:
       if (c.suffix == conn_CM) begin
         Bool prog = (c.a.p != 0 && c.a.p != 4);

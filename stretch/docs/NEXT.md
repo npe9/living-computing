@@ -5220,6 +5220,35 @@ the same word.
 passes and is in the suite. All four modes (none/units/units8/disk)
 are green.
 
+**AND THE OBVIOUS FOLLOW-UP WAS AUDITED RATHER THAN ASSUMED: `CM`
+WAS THE ONLY GAP.** A missing case in a list invites the question
+"what else is missing?", so the list was checked against what the
+model actually implements:
+
+* **VFL** — the `VflInt` arm implements `L`, `ST`, `+`/`+MG`,
+  `M+`/`M+1`/`M+MG`, `K`/`KF` and `LCV`. Of those exactly four write
+  storage, and `storeTarget` lists exactly those four
+  (`001101`, `001001`, `101001`, `101011`). `SRD`, `LTRS`, `CV` and
+  `DCV` are not implemented at all, so a case for them would be dead
+  code today — but each will need one when it is built.
+* **Floating point** — the arm's writes to the effective address are
+  `ST`/`SRD`/`SLO`, `SRT`, and `M+`/`M+MG`, and `storeTarget` lists
+  all six.
+* **Connectives** — `CM` writes storage; `C` writes the accumulator
+  and `CT` writes nothing, so only `CM` belongs, and only `CM` is
+  added.
+* **`BB` and `SIC`** write storage and are deliberately absent,
+  because neither is `isEboxClass`: `iboxHazard` drains the whole
+  look-ahead before they run, which is strictly stronger than the
+  level-to-level interlock. The `Conn` arm's own comment already said
+  this about `BB`.
+
+**So the invariant to hold going forward is: every
+`isEboxClass` instruction that writes general storage needs a
+`storeTarget` case, and only those.** Worth checking whenever a new
+storing operation is implemented — `SRD` and `CV`/`DCV` are the next
+candidates.
+
 **THE SHAPE OF THE SEARCH IS WORTH KEEPING**, because the two dead
 theories were both *reasonable* and both took real evidence to kill,
 and the thing that finally located the fault was not a theory at all.
