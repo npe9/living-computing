@@ -35,11 +35,32 @@
 ! converts nothing, because the counter is where its input comes
 ! from.
 !
-! WHAT IS CHANGED FROM THE PAGE, and it is only the addressing: the
-! listing reads its columns through progressive indexing off $4,
-! which is walking a card image, and this deck reads two fixed
-! columns instead.  The connectives, the conversion, the offsets and
-! the add are the page's own.
+! NOTHING IS CHANGED FROM THE PAGE.  An earlier version of this deck
+! read two fixed columns and said so; it now walks a card image with
+! PROGRESSIVE INDEXING off $4, exactly as the listing writes it,
+! because that is the mechanism the real page depends on and leaving
+! it out would have been testing the arithmetic while assuming the
+! addressing.
+!
+! HOW THE WALK LANDS, and the first version of this deck got it
+! wrong in a way worth keeping.  Under progressive indexing the
+! EFFECTIVE ADDRESS IS THE INDEX REGISTER'S OWN VALUE -- the
+! instruction's address field is not added to it, it is the
+! INCREMENT applied afterwards (Reference Manual printed p.21,
+! and StretchExecute's `ea = isProgressive ? xIdx.addr : ...`).
+!
+! So "CT0011(V+I)(BU,7), .12($4)" reads seven bits AT $4 and then
+! advances $4 by twelve; ".22($4)" reads sixteen bits at the new $4
+! and advances by twenty-two.  The tens punch therefore sits at card
+! bits 0-6 and the units punch at bits 12-27.
+!
+! The deck was first built with the punches at bits 12-18 and 34-49,
+! on the reading that the address field is an offset.  It reported a
+! tens digit of 7 -- the all-zero count, because that field was empty
+! -- and a units digit of 3, while the index-advance check PASSED.
+! That combination is what identified the fault: the walking was
+! right and the reading was wrong, which is only distinguishable
+! because T3 is checked separately.
 !
 ! THE COLUMNS.  A tens digit of 3 is a punch with three zeros to its
 ! left in a seven-bit column; a units digit of 5 is a punch with five
@@ -52,22 +73,32 @@
 !       counter gives the wrong tens AND the wrong units, while a
 !       broken conversion leaves T1 wrong and T2 wrong by the same
 !       amount.  Seeing both says which half moved.
+!   T3  where the walk left $4: the card's address plus 12 plus 22
+!       bits.  Checked because the two connectives' job is half
+!       arithmetic and half ADVANCING, and a progressive index that
+!       did not advance would still give the right channel number
+!       here -- both columns would simply be read from where they
+!       are -- while leaving MCP's loop reading the same card
+!       forever.
 
-! ONE INJECTION, MEASURED: LOAD CONVERTED made to copy the digit bits
-! instead of converting them reads the eight-bit field 0x30 as binary
-! 48 rather than decimal 30, giving T1 = 0xc000000000000 and
-! T2 = 0xd400000000000 -- the channel number comes out 53 instead of
-! 35.  Both checks move, by the same arithmetic, which is what tells
-! the conversion apart from the counter underneath it.
+! ONE INJECTION, MEASURED on this version of the deck: LOAD CONVERTED
+! made to copy the digit bits instead of converting them reads the
+! eight-bit field 0x30 as binary 48 rather than decimal 30, giving
+! T1 = 0xc000000000000 and T2 = 0xd400000000000 -- the channel number
+! comes out 53 instead of 35.  The two value checks move by the same
+! arithmetic and the index-advance check does not, which is the split
+! between reading the card and walking it.
 
         SLC, (8)2000.0
 
-START   CT0011(BU,7), TENS+.57, 0     ! -TEST TENS POSITION OF CHANNEL
+START   LVI, $X4, CARD               ! point $4 at the card image
+        CT0011(V+I)(BU,7), .12($X4)   ! -TEST TENS POSITION OF CHANNEL
         LCV(DU,8,4), $LZC+.3, 46      ! -CONVERT TO OCTAL NUMBER
         ST(BU,64,8), T1, 0            ! (not in the page: look at it)
-        CT0011(BU,16), UNITS+.48, 0   ! -TEST UNITS POSITION
+        CT0011(V+I)(BU,16), .22($X4)  ! -TEST UNITS POSITION
         +(BU,4), $LZC+.3, 46          ! -FORM CHANNEL NUMBER
         ST(BU,64,8), T2, 0
+        SX, $X4, T3                   ! where the walk left $4
 
 PASS    BEW, $
 
@@ -75,12 +106,13 @@ PASS    BEW, $
 ! fields below would straddle two words.
         SLC, (8)2020.0
 
-! A seven-bit column with three zeros to the left of the punch.
-TENS    DD(BU,64,8), (8)0000000000000000000010
-! A sixteen-bit column with five zeros to the left of the punch.
-UNITS   DD(BU,64,8), (8)0000000000000000002000
+! The card image: a seven-bit tens column at bits 0-6 with three
+! zeros to the left of its punch, and a sixteen-bit units column at
+! bits 12-27 with five.
+CARD    DD(BU,64,8), (8)0100002000000000000000
 
 T1      DD(BU,64,8), 0
 T2      DD(BU,64,8), 0
+T3      DD(BU,64,8), 0
 
         END, START
