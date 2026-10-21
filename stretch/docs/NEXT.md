@@ -5128,20 +5128,51 @@ prints as `COCCO6`, the same digit zero as three `C`-shapes and two
 about a glyph announces which glyph is unstable, and that is visible
 without decoding anything.
 
-**WHAT IS NOT DONE: p.19 IS NOT IN THE RUNNING TESTBENCH.**
-`gen_mcp_p17_tb.py` assembles pp.17-18 only. Adding p.19 is the
-obvious next step and it has **one trap that must be handled in the
-same commit**: the generator plants `BEW,$` halts at `X19`, `XERROR`
-and `X18` via its `exits` dict, and `X18` is now p.19's *first
-instruction*. Leaving it in `exits` would silently overwrite
-`000740.40` with a halt and the page would appear to do nothing.
-`X19` has the same problem — it is p.19 line 23. Both must come out
-of `exits` when p.19 goes into `DECKS`, and the PC expectation
-changes with them: the IOCD loop's exit then runs into line 23's
-`KF(BU,36),XIOD,12`, fails it, and reaches `XERROR` — which is the
-correct behaviour for a deck with no IOD cards on it, and is only
-distinguishable from a real failure because `X ERR 19` does
-`SIC,X ERR AD` first and records *which* error site fired.
+### p.19 IS IN THE RUNNING TESTBENCH — three pages, one program
+
+Done the same day. The loop processes the card, runs out of IOCD
+cards, reaches `X 19`, fails its `IOD` compare, and p.19 line 25's
+`BZAEZ, X ERROR` fires: **PC 182 = 5824/32**, MCP's own error exit
+instead of a planted stop. Both `X18` and `X19` came out of `exits`
+in the same change, as they had to.
+
+**>>> AND THE MERGE HAD A BUG THAT ONLY THE PC COULD SEE. <<<**
+p.18's last instruction is a half word at `000740.00` and p.19's
+first is the *other half of that same word*, `000740.40`. The
+generator merged decks with `dict.update`, so p.19's word **replaced**
+p.18's and deleted line 45's `B, X131`. A zero half-word is `BE` to
+address zero — so the machine ran the entire card loop correctly,
+produced every expected table entry, and then branched to 0.
+
+**All three data checks passed. Only the PC said anything was
+wrong.** That is the argument for checking the PC separately from the
+values, and it is worth keeping because the failure mode is so quiet:
+a fixture bug that destroys one instruction of a transcribed page,
+*after* all the work the test measures has already been done
+correctly. The merge now ORs and asserts the contributions are
+disjoint, so two decks claiming the same bits fail loudly.
+
+**WHAT p.19 IS STILL NOT EXERCISED ON: lines 2-22, its whole
+disk/console body.** A `TP` card takes p.18's tape path and only
+p.19's lines 23-25 run. A `DK` or `CN` card would reach them — and
+p.19 line 4 is why that is not just a constant change:
+
+```
+X18 1   KCI,$1,6.0     -LOGICAL MULTI UNIT * DISK OR CONSOL
+        BZXH,X 18 4
+```
+
+**It tests the remaining COUNT of p.17's equipment search, not the
+equipment code.** p.17 line 48 sets that count to ten and the search
+spends one per entry examined, so the count *is* the matched entry's
+position in `X EQP T` — and `6.0` **partitions the table by
+position**. The equipment table's ORDER therefore decides which
+equipment is "logical multi unit", which is a real constraint on a
+structure whose own page nobody has transcribed. The fixture's six
+entries are invented, so a `DK` card's behaviour would be a fact
+about the fixture, not about MCP. **This is the first thing to settle
+before adding a disk mode**, and `C22-6728`'s index may have it —
+"I-O ASSIGNMENT TABLES 65", "I-O CONTROL TABLES 10".
 
 ## >>> A FABRICATED QUOTATION, FOUND AND CORRECTED, 2026-10-21 <<<
 

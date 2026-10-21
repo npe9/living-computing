@@ -80,7 +80,7 @@ from cards import column_bits, card_words, WORDS_PER_CARD
 
 DECKS = [os.path.join(os.path.dirname(os.path.abspath(__file__)),
                       os.pardir, "decks", "mcp_bootstrap_p%d.strap" % n)
-         for n in (17, 18)]
+         for n in (17, 18, 19)]
 DECK = DECKS[0]
 
 CARD_AT_WORD = 3          # the card sits three words into the buffer,
@@ -194,11 +194,31 @@ def main():
             print("error in %s: %s" % (d, e), file=sys.stderr)
             sys.exit(1)
     prog = progs[0]
-    S = dict(progs[0].symtab)
-    S.update(progs[1].symtab)
+    S = {}
+    for pr in progs:
+        S.update(pr.symtab)
+    # >>> THE PAGES SHARE A WORD AND THE MERGE MUST NOT CLOBBER IT.
+    # <<<  printed p.18's last instruction is a HALF word at
+    # 000740.00 and printed p.19's first is the OTHER HALF of that
+    # same word, 000740.40.  A plain dict update lets p.19's word
+    # replace p.18's, which deletes p.18 line 45's "B, X131" -- and a
+    # zero half-word is "BE" to address zero, so the machine runs the
+    # whole card loop correctly and then branches to 0.  Every data
+    # check still passed; only the PC said anything was wrong.
+    #
+    # Merging by OR is right here BECAUSE the contributions are
+    # disjoint -- each deck writes one half and leaves the other zero
+    # -- and that is ASSERTED rather than assumed, so two decks
+    # claiming the same bits fail loudly instead of combining into
+    # nonsense.
     words = {}
     for pr in progs:
-        words.update(pr.words)
+        for w, v in pr.words.items():
+            if w in words and (words[w] & v):
+                raise SystemExit(
+                    "decks overlap at word %o: %016x and %016x share bits"
+                    % (w, words[w], v))
+            words[w] = words.get(w, 0) | v
 
     # ---- the card, at X IN END ------------------------------------
     #
@@ -320,9 +340,21 @@ def main():
         # to X16 1.  So the two modes reach the two arms by two
         # different mechanisms, which is why both are run.
 
-    # ---- X IOCD, a 48-bit field that CROSSES a word boundary ------
+    # ---- X IOCD and X IOD, ADJACENT LITERALS ----------------------
+    #
+    # X IOCD is 48 bits at 001747.60 and X IOD is 36 bits at
+    # 001750.40 -- and 001747.60 plus 48 bits IS 001750.40, so the
+    # two card keywords sit end to end with nothing between them.
+    # Both addresses were recovered from instruction encodings on
+    # different pages (p.17 line 30 and p.19 line 23) before either
+    # literal had been seen, and they fit exactly.
+    #
+    # Four columns of "IOCD" and three of "IOD", punched through the
+    # same card code the card itself uses.
     put(words, S["XIOCD"], 48,
         int("".join("%03x" % column_bits(c) for c in "IOCD"), 16))
+    put(words, S["XIOD"], 36,
+        int("".join("%03x" % column_bits(c) for c in "IOD"), 16))
 
     # ---- X EQP T: ten 29-bit entries, 24-bit letter + 4-bit code --
     for i, (letter, code, nottape) in enumerate(EQP_ENTRIES):
@@ -358,13 +390,23 @@ def main():
     # which asks whether it is an IOD card instead.  Reaching this
     # halt means the IOCD cards were processed and initialization
     # moved on -- not a failure.
-    exits = {"X19":    S["X19"],        # "NOT AN IOCD CARD" -- loop exit
-             "XERROR": S["XERROR"],     # "NO IOCD DETECTED" / wrong code
-             "X18":    S["X18"]}        # tape equipment type -- p.19
+    # >>> ONLY X ERROR IS A HALT NOW, and the other two had to come
+    # out in the same change that added printed p.19 to DECKS. <<<
+    # X18 is p.19's FIRST INSTRUCTION (000740.40) and X19 is its line
+    # 23 (000756.40).  Planting "BEW,$" at either would overwrite a
+    # real row of a transcribed page with a stop, and the page would
+    # appear to do nothing while every check still passed for the
+    # wrong reason.
+    #
+    # X ERROR is still a halt because it is still on an untranscribed
+    # page -- printed p.5 line 5 -- and it is now the ONLY exit from
+    # the three pages, which is correct: p.19 line 25's "BZAEZ,X
+    # ERROR" is where a card that is neither IOCD nor IOD goes.
+    exits = {"XERROR": S["XERROR"]}     # printed p.5 -- still untranscribed
     for name, addr in exits.items():
         w, _ = divmod(addr, 64)
         words[w] = words.get(w, 0) | halt_at(addr)
-    end_of_page = S["X19"]
+    end_of_page = S["XERROR"]
 
     prog.words.clear()
     prog.words.update(words)

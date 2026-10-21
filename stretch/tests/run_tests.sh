@@ -1585,7 +1585,7 @@ run "Figure 14 -- IBM's own sign-modifier example, and the N suffix" ./run_progr
 # Figure 12 on printed p.61, found that every unsigned subtract was
 # an addition.
 
-run "THE REAL printed pp.17-18 execute -- IOCD cards into the CST" ./run_mcp_p17.sh
+run "THE REAL printed pp.17-19 execute -- IOCD cards into the CST" ./run_mcp_p17.sh
 # >>> decks/mcp_bootstrap_p17.strap IS CHECKED BIT-FOR-BIT AGAINST THE
 # LISTING AND HAD NEVER EXECUTED A ROW.  It does now. <<<
 #
@@ -1610,6 +1610,56 @@ run "THE REAL printed pp.17-18 execute -- IOCD cards into the CST" ./run_mcp_p17
 # from the increments WITHIN a card; this is the number that says the
 # card ends where a card ends.
 #
+# >>> PRINTED p.19 IS IN THE RUN NOW, so three transcribed pages
+# execute as one program and the exit is MCP's own X ERROR rather
+# than a planted stop. <<<  The loop processes the card, runs out of
+# IOCD cards, reaches X 19, fails its "IOD" compare, and p.19 line
+# 25's "BZAEZ,X ERROR" fires.  PC 182 = 5824/32.
+#
+# TWO HALTS HAD TO COME OUT IN THE SAME CHANGE.  X18 is p.19's FIRST
+# instruction and X19 is its line 23; a "BEW,$" at either would
+# overwrite a real row and the page would appear to do nothing while
+# every data check still passed.  X ERROR stays a halt because
+# printed p.5 is still untranscribed.
+#
+# >>> AND THE MERGE HAD A BUG THAT ONLY THE PC COULD SEE.  printed
+# p.18's last instruction is a HALF word at 000740.00 and p.19's
+# first is the OTHER HALF of that same word, 000740.40.  The
+# generator merged decks with dict.update, so p.19's word REPLACED
+# p.18's and deleted line 45's "B, X131".  A zero half-word is "BE"
+# to address zero, so the machine ran the entire card loop correctly,
+# produced every expected table entry, and then branched to 0.  ALL
+# THREE DATA CHECKS PASSED; only the PC said anything was wrong.
+# That is the argument for checking the PC separately from the
+# values, written down the day it paid.  The merge now ORs and
+# ASSERTS the contributions are disjoint, so a real overlap fails
+# loudly instead of combining into nonsense. <<<
+#
+# X IOD AND X IOCD ARE ADJACENT LITERALS, and the fixture now punches
+# both.  X IOCD is 48 bits at 001747.60, X IOD is 36 bits at
+# 001750.40, and 001747.60 plus 48 bits IS 001750.40.  Both addresses
+# came out of instruction encodings on different pages -- p.17 line
+# 30 and p.19 line 23 -- before either literal had been seen.
+#
+# WHAT p.19 DOES *NOT* GET EXERCISED BY THIS CARD: lines 2-22, its
+# whole disk/console body.  A TP card takes p.18's tape path and only
+# p.19's lines 23-25 run.  A DK or CN card would reach them -- and
+# p.19 line 4 is why that is not simply a matter of changing a
+# constant:
+#
+#     X18 1   KCI,$1,6.0     -LOGICAL MULTI UNIT * DISK OR CONSOL
+#             BZXH,X 18 4
+#
+# IT TESTS THE REMAINING COUNT OF p.17's EQUIPMENT SEARCH, not the
+# equipment code.  p.17 line 48 sets that count to ten and the search
+# spends one per entry examined, so the count IS the matched entry's
+# position in X EQP T, and "6.0" PARTITIONS THE TABLE BY POSITION.
+# The equipment table's ORDER therefore decides which equipment is
+# "logical multi unit", which is a real constraint on a structure
+# whose own page nobody has transcribed -- and the fixture's six
+# entries are invented, so a DK card's behaviour here would be a fact
+# about the fixture and not about MCP.  Recorded rather than guessed.
+
 # THE RUN EXITS AT X 19, which is the IOCD loop running out of cards
 # and not a failure -- the generator's header says so at the point
 # where the halt is planted.
