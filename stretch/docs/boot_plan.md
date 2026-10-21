@@ -465,10 +465,41 @@ and the equipment table's 29-bit entry layout is derived the same way
 
 **WHAT IS STILL INVENTED**, and must stay labelled: the card's
 CONTENTS, `X IOCD`'s 48-bit pattern, and `X EQP T`'s ten entries. All
-three live on untranscribed pages. What remains for A3 proper is
-placing them at their real addresses in the MCP image and letting the
-boot test run through, which is plumbing plus the same judgement call
-PROSA got — not more reading.
+three live on untranscribed pages.
+
+**AND THE PAGE ITSELF NOW EXECUTES, 2026-10-21.**
+`tests/run_mcp_p17.sh` runs `decks/mcp_bootstrap_p17.strap` — the
+bit-exact transcription, not a paraphrase — against a synthetic card
+built to the map above. It clears the working area with a 1000-word
+TRANSMIT, hunts for the card, identifies it, converts the channel
+number to 35, presets 64 CST entries, indexes to the right one,
+clears the not-available flag, looks up the equipment code and stores
+it. The entry for channel 35 comes out `0x400000600`: available, not
+assigned, equipment code 6.
+
+**The CST's one-word-per-channel indexing is derived too.** Line 37
+takes the channel out of `$R` — word 9, the accumulator's right half,
+where the conversion left it at offset 46, i.e. IBM bits 12-17 of
+that word. `LV` copies bits 0-24 into the value field, whose address
+part is bits 0-23, so the address comes out `channel << 6`: one word
+per channel, which is what makes line 22's "preset 64 entries" and
+line 20's `64.0` to the UST base consistent.
+
+**Two fixture traps worth knowing**, both found by running it:
+* **The harness's fill pattern is card-shaped.** Unwritten core is
+  `0xAAAA...` and bit 44 of that is SET, so `BB, 1.44($4)` finds a
+  card in uninitialised memory on its first test. The buffer has to
+  be explicitly zeroed — standing in for the rest of the assembled
+  system that would really be there.
+* **Channel-available is active-low.** Line 43's `BB` branches AWAY,
+  past line 44, when the card's bit is ONE; the row commented "-YES *
+  CHANNEL AVAILABLE FLAG TO ON" runs only when it is ZERO.
+
+**What is left of A3** is narrower than it was: getting this data to
+MCP the way the real system would — on the tape, as card images
+placed there when the system was built — rather than preloaded by a
+testbench. That needs more of MCP's loader than is transcribed, and
+it is a separate job from proving the page works, which is done.
 
 **p.40 WAS READ, 2026-10-19, AND IT MOVED THE ITEM ALONG TWICE.**
 

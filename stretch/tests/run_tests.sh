@@ -1585,6 +1585,54 @@ run "Figure 14 -- IBM's own sign-modifier example, and the N suffix" ./run_progr
 # Figure 12 on printed p.61, found that every unsigned subtract was
 # an addition.
 
+run "THE REAL printed p.17 executes -- IOCD cards into the CST" ./run_mcp_p17.sh
+# >>> decks/mcp_bootstrap_p17.strap IS CHECKED BIT-FOR-BIT AGAINST THE
+# LISTING AND HAD NEVER EXECUTED A ROW.  It does now. <<<
+#
+# "PROCESS IOCD CARDS SETTING UP CST AND LST" runs end to end against
+# a synthetic card: it clears the working area with a 1000-word
+# TRANSMIT, hunts for the card, identifies it against X IOCD,
+# converts its Hollerith channel number to 35, presets 64 channel
+# status table entries and indexes to the right one, clears the
+# not-available flag, looks up the equipment code and stores it.  The
+# entry for channel 35 comes out 0x400000600 -- available, not
+# assigned, equipment code 6 -- and its neighbour is still at the
+# preset.
+#
+# This is the page, not a paraphrase of it.  The neighbouring decks
+# transcribe p.17's rows by hand; this runs the transcription.
+#
+# A TESTBENCH OF ITS OWN, because gen_tb's ipl=True path preloads
+# NOTHING on purpose -- "core storage starts empty and the tape fills
+# it" -- and the cards, X IOCD and the equipment table live at
+# addresses the transcribed tape does not carry.  Preloading them
+# into the MCP boot test would weaken the one invariant that test
+# exists to protect.  There is no IPL here and nothing to undermine.
+#
+# DERIVED vs INVENTED, as always: the card's field map, the equipment
+# table's 29-bit entry layout, and the one-word-per-channel CST
+# indexing are DERIVED from the page's own instructions.  The card's
+# contents, X IOCD's pattern and the table's entries are INVENTED --
+# all three are on untranscribed pages.
+#
+# TWO THINGS THE RUN TAUGHT, both of them fixture bugs rather than
+# model bugs, and both worth keeping:
+#
+#   THE FILL PATTERN IS CARD-SHAPED.  gen_tb fills unwritten core
+#   with 0xAAAA..., whose bit 44 is SET -- so "BB, 1.44($4)" finds a
+#   card in uninitialised memory on its first test.  The page then
+#   walked noise and took its "NOT AN IOCD CARD" exit, which is the
+#   correct response.  The buffer is now explicitly zeroed, standing
+#   in for the rest of the assembled system that would really be
+#   there.
+#
+#   CHANNEL AVAILABLE IS ACTIVE-LOW.  Line 43's BB branches AWAY,
+#   past line 44, when the card's bit is ONE; line 44 -- the row
+#   commented "-YES * CHANNEL AVAILABLE FLAG TO ON" -- runs only when
+#   it is ZERO.  Setting it to one left the CST's not-available flag
+#   standing while every other check passed, which is how the sense
+#   was identified.
+
 run "MCP's whole per-card path, printed p.17, over a synthetic IOCD card" ./run_program.sh ../decks/mcp_p17_card.strap StretchP17CardTb \
     "PC=2087" \
     "p17_channel_number:1080=0x8c00000000000" \
