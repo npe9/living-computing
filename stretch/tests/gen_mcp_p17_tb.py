@@ -49,7 +49,14 @@ WHAT IS DERIVED AND WHAT IS INVENTED, the same split prosa.py makes:
   bit 108 is column 10 ROW 12, the zone row, and column 10 holds the
   "I".  The hunt finds a card by testing the zone punch of a letter.
 
-  INVENTED -- the card's CONTENTS, X IOCD's 48-bit pattern, and the
+  AND X IOCD'S PATTERN HAS NOW CROSSED THE LINE TOO.  It is no longer
+  a constant chosen to have its top bit set; it is the four
+  characters IOCD punched through C22-6678-1 printed p.56's Appendix
+  F and packed in printed p.138's bit order -- 0x801408840820 -- and
+  its top bit is set because "I" is 12-9, a 12-zone letter.  That is
+  what line 13's "-IF ZONE BIT OF IOCD" is testing.
+
+  INVENTED -- the card's remaining CONTENTS and the equipment
   table's ten entries.  All three live on pages nobody has
   transcribed; they are chosen here only to be consistent with each
   other.  Nothing this test reports is evidence about what a real
@@ -69,6 +76,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), os.p
 
 from gen_tb import generate
 from strap_asm import assemble, AssemblerError
+from cards import column_bits
 
 DECKS = [os.path.join(os.path.dirname(os.path.abspath(__file__)),
                       os.pardir, "decks", "mcp_bootstrap_p%d.strap" % n)
@@ -77,8 +85,20 @@ DECK = DECKS[0]
 
 CARD_AT_WORD = 3          # the card sits three words into the buffer,
                           # so the hunt has to step to find it
-IDENT  = 0x800000000ABC   # X IOCD's pattern; leading bit set, as the
-                          # hunt requires
+# >>> THE CARD'S KEYWORD, PUNCHED.  No longer invented. <<<  The
+# identifier field is columns 10-13 -- four columns, four characters --
+# and the statement keyword of this card is IOCD.  Appendix F of
+# C22-6678-1 (printed p.56) gives the punches, I = 12-9, O = 11-6,
+# C = 12-3, D = 12-4, and Reference Manual printed p.138 gives the bit
+# order within a column, row 12 first.  cards.py does both:
+#
+#   0x801 0x408 0x840 0x820  ->  0x801408840820
+#
+# AND ITS LEADING BIT IS SET BECAUSE "I" IS A 12-ZONE LETTER, which is
+# exactly what line 13's "BB, 1.44($4)" tests under the comment
+# "-IF ZONE BIT OF IOCD".  The old fixture had 0x800000000ABC, chosen
+# only so that bit would be set; the real value sets it for a reason.
+IDENT  = int("".join("%03x" % column_bits(c) for c in "IOCD"), 16)
 LETTER = 0xABC            # the card's equipment letter
 TENS   = 0x08             # 7-bit column, three zeros left of the punch
 UNITS  = 0x0400           # 16-bit column, five zeros left of the punch

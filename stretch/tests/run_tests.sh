@@ -7929,6 +7929,63 @@ run "XW refill" ./run_program.sh ../decks/xw_refill.strap StretchXwRefillTb \
 # StretchIO.bsv). Not a Reference Manual worked example -- this
 # project's first purpose-written program for a feature the manual
 # doesn't happen to walk through an instance of.
+run "The card code is PRINTED: C22-6678-1 Appendix F" python3 verify_c22_6678_appendix_f.py
+# >>> strap/cards.py ASSERTED THAT NO 7030 DOCUMENT GAVE THE CARD CODE
+# DIRECTLY.  C22-6678-1 printed p.56 = PDF p.56, "APPENDIX F.
+# CHARACTER CODES", gives it directly. <<<  Four columns -- Character,
+# IQS, BCD, Punches -- under the header "The following table lists the
+# octal codes, by character, for eight-bit IQS, six-bit BCD, and the
+# corresponding column binary punches."
+#
+# docs/NEXT.md had listed C22-6678-1 as one of three unchecked
+# candidates for exactly this and nobody had opened it, while a
+# derivation was built and defended at length.  That is the lesson
+# more than the table is.
+#
+# THE DERIVATION IS KEPT AND MEASURED rather than deleted.
+# cards.punches_from_grid() still builds the answer out of the 48
+# Character Set grid on Reference Manual printed p.166 -- its four
+# occupied columns ARE the four zone punches, its sixteen rows ARE the
+# digit punches -- and this checks how far that argument gets.  IT
+# GETS 48 OF 52 ROWS, AND THE FOUR IT MISSES ARE THE WHOLE POINT:
+#
+#     char   Appendix F   the grid derivation
+#     '      0-3-8        4-8            <- transposed
+#     ,      4-8          0-3-8          <- transposed
+#     ;      11-0         not in the grid at all
+#     :      NO PUNCHES   0-2-8
+#
+# The quote and the comma have each other's punches; the 7030 spends
+# 11-0 on a semicolon and gives the colon NO CARD CODE AT ALL -- an
+# IQS code of 165 and a blank Punches column.  Those are precisely the
+# slots where the conventional commercial code and the 7030's
+# 48-character set disagree, and the derivation was justified on the
+# grounds that the code "belongs to the CARD and the keypunch, not to
+# the computer" -- true of the letters and digits, false of exactly
+# the punctuation, which is the only place it could have mattered.
+# THE FOUR-CHARACTER GAP IS A RATCHET: it is spelled out as a literal
+# and compared whole, so moving a character into or out of it fails.
+#
+# AND THE COLON CAME OFF THE CARD-READER DECK because of this, which
+# is the finding reaching something: ../decks are punched through this
+# table, and a character the 7030 cannot punch should not be on one.
+#
+# THE LAST TWO CHECKS ARE WHY THE PAGE WAS OPENED.  p.17 line 30
+# compares 48 bits against X IOCD; the identifier field is columns
+# 10-13, four columns, four characters.  Appendix F's punches, packed
+# in the bit order Reference Manual printed p.138 prints (row 12
+# first), give 0x801408840820 -- and its LEADING bit is set because
+# "I" is 12-9, a 12-zone letter, which is exactly what line 13's
+# "BB, 1.44($4)" tests under the comment "-IF ZONE BIT OF IOCD".  The
+# MCP p.17 testbench now computes its identifier this way instead of
+# carrying an invented constant.
+#
+# TWO MEASURED INJECTIONS, both caught by name:
+#   1. Give "," the CONVENTIONAL code 0-3-8 -- i.e. assume exactly
+#      what the derivation assumed.  "',': [0, 3, 8] vs printed 4-8".
+#   2. Give ":" a code.  Two checks move: the punch comparison names
+#      it, and the blank-cell list drops from three entries to two.
+
 run "PUNCHED CARDS: an ASCII deck read on the IBM 7503" ./run_card_test.sh StretchCardTb
 # SIMH-STYLE IN, PUNCHES OUT.  strap/cards.py turns a line of text into
 # the 960 bits a real card presents -- 80 columns of 12 punch rows,
@@ -7944,17 +8001,17 @@ run "PUNCHED CARDS: an ASCII deck read on the IBM 7503" ./run_card_test.sh Stret
 # and A COLUMN STRADDLES A BYTE BOUNDARY at one and a half bytes each.
 # Packing twelve-bit columns end to end produces exactly that.
 #
-# THE PUNCH PATTERNS ARE DERIVED, and the manual says why they have to
-# be.  Printed p.21: "The data punched in the IBM card used with the
-# 7030 System is in a binary form.  Each card punch position is a
-# possible data bit, with a punched hole representing the data bit."
-# The 7503/7614 does NO character translation -- there is no card-code
-# table in its 86 pages, by design -- so the punch-to-character map is
-# a property of the keypunch, never of the 7030.  cards.py derives it
-# from the 48 Character Set grid on RefMan printed p.166, whose four
-# columns ARE the four zone punches and whose sixteen rows ARE the
-# digit punches, and the result reproduces the standard IBM card code
-# at twenty-two spot checks.
+# THE PUNCH PATTERNS ARE PRINTED, and this section used to say they
+# were not.  R23-9702 printed p.21 is still right about the HARDWARE:
+# "The data punched in the IBM card used with the 7030 System is in a
+# binary form.  Each card punch position is a possible data bit, with
+# a punched hole representing the data bit", and there is no card-code
+# table in its 86 pages, by design -- the mapping is not the READER's
+# business.  The conclusion drawn from that, that therefore no 7030
+# document could give the mapping, DOES NOT FOLLOW: it is the
+# software's business, and C22-6678-1 printed p.56 prints it.  See the
+# section below.  A unit manual's silence is evidence about that unit,
+# not about the corpus.
 #
 # TWO CARDS, BECAUSE ONE WOULD HAVE PASSED.  Before this, every RD
 # restarted the reader at device index 0 and card 2 came back

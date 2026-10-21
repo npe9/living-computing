@@ -3590,13 +3590,47 @@ field is restricted to 3 bits" — which is what makes MCP's
 two entry modes" of this kind, A and IQS; **the newsletter corrects
 that to three**, adding CC.
 
-**STILL MISSING: the 12-bit card code `(CC*)` uses.** C28-6129 p.16
-names it — "converted to 12-bit bytes, where each byte reflects the
-multiple punch actually read" — and tabulates it nowhere, and all
-four Reference Manual grids are 8-bit. The twelve bits *are* the card
-rows (12, 11, 0, 1-9), so what is wanted is a documented bit order,
-not a lookup table. Unchecked candidates: `C22-6729`, `C22-6531`,
-`C22-6678-1`.
+**~~STILL MISSING: the 12-bit card code `(CC*)` uses.~~ FOUND,
+2026-10-21, in the last of the three candidates this note listed.**
+`C22-6678-1` **printed p.56 = PDF p.56, "APPENDIX F. CHARACTER
+CODES"**, tabulates it directly: four columns, *Character | IQS | BCD
+| Punches*, with the header "The following table lists the octal
+codes, by character, for eight-bit IQS, six-bit BCD, and **the
+corresponding column binary punches**."
+
+The original note said what was wanted was "a documented bit order,
+not a lookup table", and both halves are now in hand from two
+different manuals — the bit order from Reference Manual printed p.138
+("Column 1, Row 12 / Column 1, Row 11 / Column 1, Row 0 / to / Column
+1, Row 9 / Column 2, Row 12"), the lookup table from Appendix F.
+Together they give the 12-bit value for any character.
+
+**AND THE DERIVATION IT REPLACED WAS WRONG IN THREE PLACES** — see
+`strap/cards.py` and `tests/verify_c22_6678_appendix_f.py`. The grid
+derivation agrees on 48 of 52 rows and misses exactly the punctuation
+where the 7030's 48-character set and the conventional commercial
+code disagree: `'` and `,` have each other's punches, `;` is 11-0 and
+was not in the grid at all, and `:` has an IQS code with a **blank**
+Punches column — no card representation. The derivation was justified
+on the grounds that the card code "belongs to the CARD and the
+keypunch, not to the computer", which was true of the letters and
+digits and false of exactly the characters where it mattered.
+
+**THE LESSON IS SHARPER THAN "NOBODY OPENED IT", because somebody
+did.** `C22-6678-1` is one of the most-cited documents in this
+project — `disk_subsystem.md` and `exchange_and_io.md` quote its
+printed pp.6, 8, 9, 29, 32, 40 and 43, and `boot_plan.md` items A3
+and A5 both rest on it. The file was opened repeatedly, over weeks,
+and **its last appendix was never turned to** while a note three
+thousand lines up this file listed it as an unchecked candidate for
+exactly the thing that appendix contains.
+
+So the rule is not "read the unread documents". It is **"a document
+you have cited is not a document you have read"** — and when a note
+says a fact is missing, the cheapest possible move is to check the
+back of the manuals already in hand, appendix by appendix, before
+deriving anything. Both searches that found something today found it
+in files `docs/` already had.
 
 **AND A PAGE-OFFSET CORRECTION FOR C28-6129**: its body is printed =
 PDF − 4 (PDF 16 → printed 12, PDF 28 → printed 24) but its

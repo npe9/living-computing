@@ -27,7 +27,14 @@ PROGRAM = "../decks/card_reader.strap"
 # twice would pass a one-card test.
 DECK = [
     "MCP BOOTSTRAP CARD DECK",
-    "ABCDEFGHIJKLMNOPQRSTUVWXYZ 0123456789 +-*/$,.():='",
+    # THE COLON IS NOT ON THIS CARD AND THAT IS A FINDING, not an
+    # omission.  C22-6678-1 printed p.56, Appendix F, prints ":" with
+    # an IQS code of 165 and a BLANK Punches column: it is in the
+    # character set and has no card representation.  The semicolon,
+    # which the 48-character grid this deck was first built from does
+    # not contain at all, is 11-0.  See
+    # tests/verify_c22_6678_appendix_f.py.
+    "ABCDEFGHIJKLMNOPQRSTUVWXYZ 0123456789 +-*/$,.();='",
 ]
 
 

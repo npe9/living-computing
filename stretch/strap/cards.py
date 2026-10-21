@@ -10,40 +10,44 @@ how a deck quietly stops being the deck you wrote.
     deck.txt  ->  mkcards.py  ->  15 words per card  ->  chanReader
 
 ---------------------------------------------------------------------
-THE PUNCH PATTERNS ARE DERIVED, NOT COPIED, AND THE DERIVATION CHECKS
+THE PUNCH PATTERNS ARE PRINTED, AND FINDING THAT OUT COST THREE OF
+THEM
 ---------------------------------------------------------------------
-C28-6129 printed p.16 names STRAP's `(CC*)` entry mode -- "converted
-to 12-bit bytes, where each byte reflects the multiple punch actually
-read" -- and tabulates the card code NOWHERE.  The Reference Manual's
-four character grids on printed p.166 are all 8-bit.  So there is no
-7030 document in this corpus that gives a punch combination directly.
+>>> C22-6678-1 printed p.56 = PDF p.56, "APPENDIX F. CHARACTER
+CODES", tabulates the card code DIRECTLY. <<<  Four columns --
+Character, IQS, BCD, Punches -- and the header says "The following
+table lists the octal codes, by character, for eight-bit IQS,
+six-bit BCD, and the corresponding column binary punches."  That is
+the source this table is now transcribed from.
 
-There does not need to be.  THE 48 CHARACTER SET GRID *IS* THE CARD'S
-OWN STRUCTURE.  Its four occupied columns are the four zone punches
-and its sixteen rows are the digit punches:
+THIS FILE PREVIOUSLY ASSERTED THAT NO SUCH TABLE EXISTED, which was
+wrong, and the way it was wrong is the useful part.  It derived the
+punches from the 48 Character Set grid on Reference Manual printed
+p.166, whose four occupied columns are the four zone punches and
+whose sixteen rows are the digit punches, and it justified doing so
+on the grounds that the code "was never 7030-specific in the first
+place because it belongs to the CARD and the keypunch, not to the
+computer."
 
-    grid column 0000  ->  no zone punch
-    grid column 0001  ->  the 0 punch
-    grid column 0010  ->  the 11 punch
-    grid column 0011  ->  the 12 punch
+THE DERIVATION AGREES WITH APPENDIX F ON 46 OF 49 CHARACTERS -- every
+letter, every digit, blank, and most of the specials -- AND THE THREE
+IT MISSES ARE EXACTLY WHERE THAT JUSTIFICATION FAILS:
 
-    grid row 0001-1001  ->  that digit row, 1 through 9
-    grid row 0000       ->  no digit punch (so the zone stands alone:
-                            12 is "+", 11 is "-", none is blank)
-    grid row 1010       ->  the 0 row when there is no zone, else 8-2
-                            (the 0 row is taken by the zone punch)
-    grid row 1011       ->  8-3
-    grid row 1100       ->  8-4
+    char   Appendix F   the derivation gave
+    '      0-3-8        4-8            <- transposed
+    ,      4-8          0-3-8          <- transposed
+    ;      11-0         not in the set
+    :      NO PUNCHES   0-2-8
 
-That rule, applied to the grid this project read at 150 dpi off
-printed p.166, reproduces the standard IBM card code at every one of
-twenty-two spot checks -- A = 12-1, J = 11-1, S = 0-2, 0 = the 0 row
-alone, "." = 12-8-3, "$" = 11-8-3, "," = 0-8-3, "=" = 8-3, "'" = 8-4,
-"(" = 0-8-4, ")" = 12-8-4, "*" = 11-8-4, ":" = 0-8-2, "/" = 0-1.  Two
-independent things agreeing, which is this project's standard: a
-derivation from a page it read, and a code that was never 7030-
-specific in the first place because it belongs to the CARD and the
-keypunch, not to the computer.
+The quote and the comma have each other's punches, and the 7030 set
+spends 11-0 on a semicolon and gives the colon no card code at all.
+Those are precisely the slots where the conventional commercial code
+and the 7030's 48-character set disagree -- so "it belongs to the
+card, not the computer" was true for the letters and digits and false
+for the punctuation, which is the only place it mattered.
+
+tests/verify_c22_6678_appendix_f.py runs that whole comparison, so
+the derivation is kept as a cross-check rather than as the source.
 
 ---------------------------------------------------------------------
 THE LAYOUT IS SOURCED: R23-9702, the 7503/7614 CE manual
@@ -92,12 +96,16 @@ System is in a binary form.  Each card punch position is a possible
 data bit, with a punched hole representing the data bit."
 
 **The 7503/7614 does no character translation at all.**  There is no
-card-code table anywhere in its 86 pages, by design, and that is the
-answer to why C28-6129 names `(CC*)` and tabulates nothing: the
-punch-to-character mapping is a property of the KEYPUNCH and the
-convention, never of the 7030.  So deriving it from the 48 Character
-Set grid above is not a workaround -- it is the only place a 7030
-document could put it.
+card-code table anywhere in its 86 pages, by design: the
+punch-to-character mapping is not the READER's business.
+
+That much stands.  What this file used to conclude from it -- that
+therefore no 7030 document could give the mapping, so deriving it was
+"the only place a 7030 document could put it" -- does not follow and
+is false.  The mapping is not the reader's business; it IS the
+software's, and MCP's own reference manual prints it in Appendix F.
+A unit manual's silence is evidence about that unit, not about the
+corpus.
 
 A REAL 7503 READS ROW BY ROW AND TRANSMITS COLUMN BY COLUMN.  Printed
 p.21, verbatim: "Although the card is read in rows (starting from the
@@ -123,17 +131,67 @@ WORDS_PER_CARD = COLUMNS * 12 // 64        # 15, exactly, no padding
 
 _ZONE = {0: (), 1: (0,), 2: (11,), 3: (12,)}
 
+# C22-6678-1 printed p.56, APPENDIX F. CHARACTER CODES, the "Punches"
+# column, transcribed at 200 dpi.  A character mapped to None is
+# printed in the table WITH AN IQS CODE AND NO PUNCHES: it exists in
+# the character set and has no card representation.  There are three
+# of them and the colon is one, which is why the card-reader test's
+# deck does not contain one.
+#
+# The IQS and BCD columns are transcribed too, in
+# tests/verify_c22_6678_appendix_f.py, which is where the whole table
+# is checked; here only the punches are needed.
+APPENDIX_F = {
+    "A": (12, 1), "B": (12, 2), "C": (12, 3), "D": (12, 4), "E": (12, 5),
+    "F": (12, 6), "G": (12, 7), "H": (12, 8), "I": (12, 9),
+    "J": (11, 1), "K": (11, 2), "L": (11, 3), "M": (11, 4), "N": (11, 5),
+    "O": (11, 6), "P": (11, 7), "Q": (11, 8), "R": (11, 9),
+    "S": (0, 2), "T": (0, 3), "U": (0, 4), "V": (0, 5), "W": (0, 6),
+    "X": (0, 7), "Y": (0, 8), "Z": (0, 9),
+    "0": (0,), "1": (1,), "2": (2,), "3": (3,), "4": (4,),
+    "5": (5,), "6": (6,), "7": (7,), "8": (8,), "9": (9,),
+    " ": (),                                   # printed "none"
+    "+": (12,), "$": (11, 3, 8), "=": (3, 8), "*": (11, 4, 8),
+    "(": (0, 4, 8), "/": (0, 1), ")": (12, 4, 8), "'": (0, 3, 8),
+    ";": (11, 0), ",": (4, 8), ".": (12, 3, 8), "-": (11,),
+    '"': None, ":": None, "?": None,
+}
+
 
 def punches(ch):
     """The punch rows for one character, as a set of row numbers.
 
-    Derived from the 48 Character Set grid; see the module docstring.
+    C22-6678-1 printed p.56, Appendix F; see the module docstring.
+    """
+    up = ch.upper()
+    if up not in APPENDIX_F:
+        raise ValueError(
+            f"{ch!r} is not in Appendix F's character set (C22-6678-1 "
+            f"printed p.56); this reader punches no other code")
+    rows = APPENDIX_F[up]
+    if rows is None:
+        raise ValueError(
+            f"{ch!r} is in Appendix F's character set but the Punches "
+            f"column is BLANK: it has no card representation")
+    return set(rows)
+
+
+def punches_from_grid(ch):
+    """The same thing DERIVED from the 48 Character Set grid.
+
+    Reference Manual printed p.166: the grid's four occupied columns
+    are the four zone punches and its sixteen rows are the digit
+    punches.  Kept because it is an independent path to the same
+    answer, and tests/verify_c22_6678_appendix_f.py measures how far
+    it gets -- 46 of 49, missing exactly the punctuation where the
+    7030's set and the conventional one disagree.  NOT used to punch
+    anything.
     """
     up = ch.upper()
     if up not in BCD_48:
         raise ValueError(
             f"{ch!r} is not in the 48 character set (Reference Manual "
-            f"printed p.166); this reader punches no other code")
+            f"printed p.166)")
     code = BCD_48[up]
     zone = _ZONE[code >> 4]
     row = code & 0xF
