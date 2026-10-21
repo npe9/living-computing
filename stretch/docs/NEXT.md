@@ -10,6 +10,43 @@ section comments of `tests/run_tests.sh`, and in commit messages.
 When an item here is finished it shrinks to a pointer; it does not
 accumulate.
 
+## WHERE THIS STANDS, 2026-10-21 — read this first
+
+MCP's **printed pp.17, 18 and 19 execute as one program**: an IOCD
+card loop that reads a punched card, converts its Hollerith channel
+number, looks up the equipment, builds the channel and unit status
+tables, loops for the next card and exits through MCP's own
+`X ERROR`. Four testbench modes cover it (no units / units / eight
+units / disk). The card the fixture feeds it is a real one — the
+column format is printed and the characters are punched through the
+7030's own card code.
+
+**The four things to pick from next**, in the order they unblock
+things:
+
+1. **`boot_plan.md` A3's remaining piece** — getting the IOCD cards
+   onto the system tape the way the real system did, rather than
+   preloaded by a testbench. The card format is now known; what is
+   missing is more of MCP's loader.
+2. **p.19 lines 27-53** — transcribed and bit-exact, but never
+   executed. They move the status tables into upper storage using
+   `$5`, `$8`, `$11`, `$12`, `$13`, none of which the testbench sets
+   up. Running them needs that context from pages not yet
+   transcribed.
+3. **The back-matter sweep's worklist** (section below) — six ranked
+   items, two already consumed. `C22-6728` printed 247-260, the rest
+   of Appendix A, is the largest.
+4. **Printed p.20 onward**, continuing the transcription.
+
+**One caveat carried forward, deliberately not in this file's
+worklist**: the look-ahead's store-fetch interlock is correct
+architecturally and the suite agrees, but `waitFor` is documented in
+`StretchLookAhead.bsv` as "done conservatively for any earlier
+level". The real LAAR resolved these conflicts with specific timing.
+That is fine while the order is MCP-first; it belongs to
+`docs/microarchitecture_plan.md` and will need revisiting when the
+ordering flips to cycle accuracy.
+
 ## The bar
 
 Two standards, and every test says which it meets:

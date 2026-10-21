@@ -6173,7 +6173,31 @@ channels (tags 3-6, priority above the Y buffers); a level whose
 operand address equals an earlier unretired level's waits for that
 level to retire (store-then-load ordering, the LAAR's job -- Cocke &
 Kolsky fig.6A's compare/forward, done conservatively for any earlier
-level rather than only stores). The arithmetic unit removes the head
+level rather than only stores).
+
+>>> THAT INTERLOCK HAD A HOLE UNTIL 2026-10-21, and what it was is
+worth keeping beside the design. It compares a younger level's
+operand address against earlier levels' `storeAddr`, which comes from
+`storeTarget()` -- and `storeTarget()` had no case for the
+CONNECTIVES, so CONNECT TO MEMORY, which writes storage and IS
+`isEboxClass`, could never trigger it. Because CM's store is a
+read-modify-write that reuses the fetched word, a stale copy went
+straight back and undid the CM before it. Found by running MCP
+printed p.19, isolated in `decks/cm_adjacent_offsets.strap`, fixed by
+adding the case. **The invariant the function now states: every
+`isEboxClass` instruction that writes general storage needs a case,
+and only those.**
+
+The conservatism itself is unchanged and still deliberate: waiting
+for ANY earlier level rather than only for stores, and no data
+forwarding. That is sound for the MCP-first ordering -- it can only
+delay, never corrupt -- but it is NOT the real LAAR's behaviour, which
+compared and forwarded with specific timing (Buchholz §15.4,
+Performance Characteristics pp.3-20..21). **This is one of the places
+the cycle-accuracy phase has to come back to**, and the hole above is
+a reminder that the conservative version still has to be COMPLETE to
+be safe: being conservative about the levels it checks does not help
+if an instruction never announces that it stores. <<< The arithmetic unit removes the head
 level when its operand is present, executing with the operand
 pre-supplied; further reads (crossing words, refills) go through the
 existing resume path. E-box time (`eboxClocks`) holds the next
