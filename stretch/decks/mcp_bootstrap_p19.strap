@@ -1,0 +1,164 @@
+! mcp_bootstrap_p19.strap -- MCP INITIALIZATION, printed page 19:
+! the DISK/CONSOLE half of the IOCD processing, and the move of the
+! status tables into upper storage.  docs/MCP_Mar63_001-249.pdf PDF
+! p.26, header "PAGE NUMBER 19".  docs/boot_plan.md M3.
+!
+! Contiguous with printed p.18: that page's last word sits at
+! 000740.00 and this one starts in its low half at 000740.40 -- which
+! is where p.18 line 2's "BZB, -.1($1), X18" branches, and the
+! address was read off that instruction's own encoding before this
+! page had been opened.  It is exact.
+!
+! ---------------------------------------------------------------
+! WHAT THE PAGE DOES
+! ---------------------------------------------------------------
+! p.18 handles a TAPE channel, which can carry up to eight units.
+! This page is where everything else goes.
+!
+!   lines  2-3   X18 tests the matched equipment entry and returns
+!                to X17 1 if the result is zero.
+!   lines  4-6   "LOGICAL MULTI UNIT * DISK OR CONSOL": KCI against
+!                six, and BZXE to X 18 4 when it is not one of them.
+!   lines  7-11  the disk/console arm -- UST entry counter to TWO,
+!                SV the unit status table address into the CST, unit
+!                count to two, MULTI bit on, meaningless assign bit
+!                off.
+!   lines 12-17  two passes over X18 2 / X18 3 setting the unit
+!                available and not-assigned bits, counted by CB+,
+!                then back to X17 1 for the next card.
+!   lines 18-22  X18 4, the SINGLE-unit arm: the same two bits, but
+!                written into ($3) -- the CST entry itself -- and not
+!                into ($15).
+!   lines 23-25  X19 asks whether the card is an IOD card instead,
+!                and takes X ERROR when it is neither.
+!   lines 27-41  X 191: compute the size of the UST area and
+!                TRANSMIT it to upper storage, then move the biased
+!                CST after it.
+!   lines 42-53  X20: walk the CST and, for every MULTI entry,
+!                rewrite its UST address unbiased.
+!
+! ---------------------------------------------------------------
+! THE FLOWCHART AND THE FIELD NAMES BOTH EXIST, which is new
+! ---------------------------------------------------------------
+! C22-6728 printed p.90, Figure 44 "The Initialization Program -
+! Chart 1", is this page and p.18 drawn as a flowchart, with the same
+! label names: "IS EQUIPMENT TAPE" -> X18 on NO, then "IS EQUIPMENT
+! DISK OR CONSOLE" -> X184 on NO, "INSERT UST ADDRESS IN CST", "SET
+! UNIT COUNT TO TWO AND SET MULTI BIT ON", "WERE TWO LOGICAL UNITS
+! PROCESSED", and X184's own availability test.
+!
+! And C22-6728 printed p.246, Appendix A, names the bits: .25 is
+! SCHAVL, .27 SMULTI, .28 SUNAVL, .29 SUNASG, and the unit count at
+! 59-62 is SUNITK.  LINE 9'S ".61" IS THE SECOND CONFIRMATION OF THAT
+! FIELD: p.18 line 30 sets ONE bit at .59 and calls it eight, this
+! page sets ONE bit at .61 and calls it two, and only a field running
+! 59-62 makes both true.  The prediction was committed before this
+! page was read.
+!
+! ---------------------------------------------------------------
+! EXTERNALS, every one recovered from this page's own binary output
+! ---------------------------------------------------------------
+!   X17 1     printed p.18 line 43   000737.00  (line 3, 17, 22)
+!   X ERR AD  printed p.13 line 37   000551.00  (line 24)
+!   X ERROR   printed p.5  line 5    000133.00  (line 25)
+!   X IOD     literal, not yet seen  001750.40  (line 23)
+!             -- and it begins EXACTLY where X IOCD ends: p.17 put
+!                X IOCD at 001747.60 and it is 48 bits long, which
+!                runs to 001750.40.  The two card keywords are
+!                adjacent literals.
+!   S LR BU   not yet seen           002155.00  (line 27)
+!   SMCP      not yet seen           002150.00  (line 43)
+!   X37 8     not yet seen           001726.00  (line 44)
+!
+! ONE SPELLING DIFFERENCE FROM THE LISTING, and it is the assembler's
+! not the page's: TRANSMIT's J field is written here as a BARE
+! INTEGER where the listing writes "$14" and "$3".  Same convention
+! as decks/ax4b_1246_memories.strap, whose own comments record the
+! listing's spelling beside each row.
+XERRAD  SYN, (8)551.0
+XERROR  SYN, (8)133.0
+X171    SYN, (8)737.0
+XIOD    SYN, (8)1750.40
+SLRBU   SYN, (8)2155.0
+SMCP    SYN, (8)2150.0
+X378    SYN, (8)1726.0
+
+        SLC, (8)740.40
+
+! ---- the equipment entry, and the disk/console arm ----------------
+X18     CT0011(BU,24), -.29($1)      ! line 2
+        BRZ, X171                    ! line 3
+X181    KCI, $1, 6.0                 ! line 4  -LOGICAL MULTI UNIT *
+                                     ! line 5   DISK OR CONSOL
+        BZXH, X184                   ! line 6
+        LCI, $15, 2.0                ! line 7
+        SV, $15, 0.0($3)             ! line 8  -YES * ENTER UST
+                                     !           ADDRESS IN CST
+        CM1111(BU,1), .61($3)        ! line 9  -SET UNIT COUNT TO TWO
+        CM1111(BU,1), .27($3)        ! line 10 -MULIT BIT ON IN CST
+        CM0000(BU,1), .29($3)        ! line 11 -MEANINGLESS ASG BIT
+                                     !           OFF
+
+! ---- two logical units -------------------------------------------
+X182    BZB, .25($3), X183           ! line 12 -IF CHANNEL AVAILABLE
+        CM1111(BU,1), .28($15)       ! line 13 -NO * THEN UNIT NOT
+                                     !           AVAILABLE
+X183    CM1111(BU,1), .29($15)       ! line 14 -YES * UNIT STATUS TO
+                                     ! line 15   NOT ASSIGNED
+        CB+, $15, X182               ! line 16 -IF PROCESSED TWO
+                                     !           LOGICAL UNITS *
+        B, X171                      ! line 17 -RETURN FOR NEXT CARD
+
+! ---- a single unit, written into the CST entry itself ------------
+X184    BZB, .25($3), X185           ! line 18 -IF CHANNEL AVAILABLE
+        CM1111(BU,1), .28($3)        ! line 19 -SINGLE UNIT STATUS TO
+                                     ! line 20   NOT AVAILABLE
+X185    CM1111(BU,1), .29($3)        ! line 21 -AND TO NOT ASSIGNED
+        B, X171                      ! line 22 -RETURN FOR NEXT CARD
+
+! ---- not an IOCD card: is it an IOD card? ------------------------
+X19     KF(BU,36), XIOD, 12          ! line 23 -COMPARE AGAINST * IOD
+XERR19  SIC, XERRAD                  ! line 24
+        BZAEZ, XERROR                ! line 25 -NOT AN IOD CARD
+                                     ! line 26   EITHER -IOD*
+        SV, $15, SLRBU               ! line 27 -SAVE BASE OF IO
+                                     ! line 28   ASSIGNMENT TABLES
+
+! ---- move the unit status table to upper storage -----------------
+X191    LC, $14, $15                 ! line 29 - ENTER CURRENT UST
+                                     !           TESTING ADDRESS IN CF
+        SVA, $14, $+.32              ! line 30
+        C-I, $14, 0.0                ! line 31 - COMPUTE SIZE OF UST
+                                     !           AREA
+        SV, $8, $13                  ! line 32 -TEMPORARILLY SAVE
+                                     !           BASE OF MCP
+        SC, $14, $12                 ! line 33 -TEMPORARILLY SAVE
+                                     !           SIZE OF UST
+        SVA, $12, $+.32              ! line 34
+        V-I, $13, 0.0                ! line 35
+        T, 14, 0.0($14), 0.0($13)    ! line 36 -MOVE UST TA UPPER
+                                     !           STORAGE
+X192    SC, $3, $11                  ! line 37
+        V+, $11, $5                  ! line 38 -UPPER BOUND OF OLD CST
+        V-I, $13, 1.0                ! line 39 -UPPER BOUND OF OLD CST
+        C+I, $3, 1.0                 ! line 40 -ADJUST ADDRESS AND
+                                     !           COUNT FOR TRANSFER
+        TB, 3, 0.0($11), 0.0($13)    ! line 41 -MOVE BIASED CTS
+
+! ---- unbias the UST addresses in the CST -------------------------
+X20     LX, $10, $3                  ! line 42 -SIZE OF CST
+        LV, $10, SMCP                ! line 43
+        SVA, $10, X378               ! line 44 -PRESERVE ADDRESS OF
+                                     !           COMREG
+        LV, $10, $13                 ! line 45 -UPPER LIMIT OF CST
+X201    BZB, .27($10), X202          ! line 46 -IF MULTI
+        LV, $9, 0.0($10)             ! line 47 -YES
+        SVA, $14, $+.32              ! line 48
+        V-I, $9, 0.0                 ! line 49
+        V+, $9, $13                  ! line 50
+        V+I, $9, 1.0                 ! line 51
+        SV, $9, 0.0($10)             ! line 52 -INSERT UNBIASED UST
+                                     !           ADDRESS
+X202    CB-, $10, X201               ! line 53
+
+        END, X18

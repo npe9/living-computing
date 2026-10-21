@@ -2797,6 +2797,55 @@ run "MCP INITIALIZATION, printed p.18, bit-exact (MCP_Mar63 PDF p.25)" python3 v
 # docs/c22_6531_appendix_a.md records the appendix, its page offset
 # and the one place it is incomplete.
 
+
+run "MCP INITIALIZATION, printed p.19, bit-exact (MCP_Mar63 PDF p.26)" python3 verify_mcp_bootstrap_p19.py
+# >>> PRINTED p.19 IS TRANSCRIBED, forty-six rows, all bit-exact.
+# It is the DISK/CONSOLE half of the IOCD processing -- p.18 handles
+# a TAPE channel, which can carry eight units; this page handles
+# everything else -- plus the move of the status tables into upper
+# storage. <<<
+#
+# THE PAGE WAS OPENED TO SETTLE A PREDICTION AND IT DID.  SUNITK had
+# been derived as bits 59-62 from p.18 line 30, which sets ONE bit at
+# .59 and calls the result eight.  Two is 0b0010, which is not a bit
+# at a field's left edge, so the prediction -- committed before this
+# page was read -- was that p.19 must set a single bit at .61.
+# Line 9 is "CM1111(BU,1),.61($3)" commented "-SET UNIT COUNT TO
+# TWO".  Two pages, two values, two offsets, ONE field width.
+#
+# BOTH FORWARD REFERENCES INTO THIS PAGE WERE RECOVERED FROM
+# ENCODINGS AND BOTH ARE EXACT.  X18 = 000740.40 came off p.18 line
+# 2's branch-address field; X19 = 000756.40 was recovered from p.17's
+# indicator encoding.  This page begins at 000740.40 and its line 23
+# sits at 000756.40.
+#
+# AND X IOD BEGINS WHERE X IOCD ENDS.  Line 23 compares THIRTY-SIX
+# bits -- three columns, the characters "IOD" -- against 001750.40,
+# and p.17 put X IOCD at 001747.60 with a length of 48 bits, which
+# runs to 001750.40 exactly.  The two card keywords are adjacent
+# literals, which is also the order C22-6728 printed p.88 gives for
+# the control cards: IOCD, then IOD, then MCPP.
+#
+# TWO ROWS FAILED FIRST AND BOTH WERE READING ERRORS, not assembler
+# ones:
+#
+#   LINE 6 IS "BZXH", NOT "BZXE" -- Index High, not Index Equal.  One
+#   glyph.
+#
+#   LINE 4's HEX BYTE IS 0A, NOT CA -- the FOURTH instance of
+#   docs/listing_typography.md 13, "digit zero read as C", which this
+#   project has already paid for three times.  Settled three ways:
+#   p.18's identical "KCI,$15,8.0" prints 0A; the Reference Manual's
+#   "jjjj10000xxxx" template for immediate index arithmetic requires
+#   bits 24-27 to be zero; and the glyph itself, below.
+#
+#   >>> WHAT THIS INSTANCE ADDS IS A TELL THAT NEEDS NO DECODING.  At
+#   1200 dpi the SIX-DIGIT ADDRESS FIELD OF THAT VERY ROW prints as
+#   "COCCO6" -- the same digit zero rendered as an open C-shape and a
+#   closed O-shape WITHIN ONE FIELD, three of each.  A field that
+#   disagrees with itself about a glyph is announcing which glyph is
+#   unstable, and the instability is visible without reference to any
+#   opcode.  13 is now four instances and has a second tell. <<<
 run "MCP's error table, printed pp.7-8 (MCP_Mar63 PDF pp.14-15)" python3 verify_mcp_bootstrap_p7_p8.py
 # X ERR DD -- THE LAST TWO PAGES OF THE BOOTSTRAP TO BE TRANSCRIBED,
 # and the index to all the rest: seventy-eight VF half words, one pair

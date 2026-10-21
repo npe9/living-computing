@@ -495,6 +495,19 @@ line 20's `64.0` to the UST base consistent.
   past line 44, when the card's bit is ONE; the row commented "-YES *
   CHANNEL AVAILABLE FLAG TO ON" runs only when it is ZERO.
 
+**>>> AND PRINTED p.19 IS TRANSCRIBED, 2026-10-21 — 46 rows,
+bit-exact. <<<** The disk/console half of the IOCD processing, plus
+the move of the status tables into upper storage. It is NOT yet in
+the running testbench; see `docs/NEXT.md` for the one trap that must
+be handled in the commit that adds it (`X18` and `X19` are both
+addresses the generator currently plants halts at, and both are now
+real instructions).
+
+Both forward references into the page were recovered from encodings
+before it was opened and both are exact: `X18` = `000740.40` off
+p.18 line 2's branch field, `X19` = `000756.40` from p.17's indicator
+encoding.
+
 **p.18 IS NOW RUNNING WITH p.17, 2026-10-21, so the test is the card
 LOOP and not one pass through it.** p.18 starts at `(8)713.0`,
 contiguous with p.17's last row at `000712.00`, and ends with `B,

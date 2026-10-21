@@ -588,9 +588,41 @@ be `111001011`, which appears nowhere on X22-6533. With `0B` it is
 `100001011` = `LVS`, which is what the statement column says. See
 `tests/verify_lvs_encoding.py`.
 
-**The rule, which now has three instances behind it** — `B0` read as
-`80` on MCP p.2 line 34, again on p.3 line 10, and `0B` read as `CB`
-on p.4 line 23: **decode the operation field before trusting the
-glyph.** Re-rendering at a higher resolution (§11) is the second
-move, not the first. The opcode tells you what the byte must be; the
-render only confirms it.
+**The rule, which now has four instances behind it** — `B0` read as
+`80` on MCP p.2 line 34, again on p.3 line 10, `0B` read as `CB` on
+p.4 line 23, and `0A` read as `CA` on **p.19 line 23** (2026-10-21):
+**decode the operation field before trusting the glyph.**
+Re-rendering at a higher resolution (§11) is the second move, not the
+first. The opcode tells you what the byte must be; the render only
+confirms it.
+
+### 13a. A SECOND TELL, from the fourth instance: the field that disagrees with itself
+
+p.19 line 4's row was transcribed as `000006.03 CA` and is
+`000006.03 0A`. Three things settle it — p.18's identical
+`KCI,$15,8.0` prints `0A`; the Reference Manual's
+`jjjj10000xxxx` template for immediate index arithmetic
+(printed p.169) requires bits 24-27 to be zero; and the glyph.
+
+**The glyph is the new part.** At 1200 dpi that row's six-digit
+address field prints as
+
+```
+COCCO6          (what the eye gives)
+000006          (what it is)
+```
+
+— the *same digit zero* rendered as an open `C`-shape three times and
+a closed `O`-shape twice, **within one field**. This is not a stable
+malformed glyph; it is a drum laying ink inconsistently stroke by
+stroke.
+
+That matters because it is a tell **available without decoding
+anything**. §13's original rule needs the opcode table to settle a
+byte; this one only needs you to notice that a field has disagreed
+with itself. Where a numeric field contains both shapes, every one of
+them is a zero, and any `C` elsewhere on that row is suspect too.
+
+The practical order, then: (1) look for a self-disagreeing field on
+the same row, (2) decode the operation field, (3) re-render higher.
+The first is free.

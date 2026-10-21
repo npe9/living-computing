@@ -5094,6 +5094,55 @@ fields on p.246 and nothing else on it**, which is a useful measure
 of how much of MCP's I/O bookkeeping the transcribed pages cover:
 not much, and now there is a printed map of the rest.
 
+## PRINTED p.19 IS TRANSCRIBED -- 46 rows, bit-exact, 2026-10-21
+
+`decks/mcp_bootstrap_p19.strap` + `tests/verify_mcp_bootstrap_p19.py`.
+The DISK/CONSOLE half of the IOCD processing — p.18 handles a TAPE
+channel, which carries up to eight units; this page handles
+everything else — plus the move of the status tables into upper
+storage (lines 27-53).
+
+**The page was opened to settle a prediction and it did.** Line 9 is
+`CM1111(BU,1),.61($3)`, "SET UNIT COUNT TO TWO". See the prediction
+section below.
+
+**Both forward references into this page were recovered from
+encodings and both are exact**: `X18` = `000740.40` off p.18 line 2's
+branch-address field, `X19` = `000756.40` from p.17's indicator
+encoding. The page begins at `000740.40` and its line 23 sits at
+`000756.40`.
+
+**`X IOD` begins where `X IOCD` ends.** Line 23 compares 36 bits —
+three columns, `IOD` — against `001750.40`, and p.17 put `X IOCD` at
+`001747.60` with a 48-bit length, which runs to `001750.40` exactly.
+Adjacent literals, in the order `C22-6728` p.88 gives the control
+cards: IOCD, IOD, MCPP.
+
+**Two rows failed first and both were MY reading errors**, not
+assembler ones. Line 6 is `BZXH`, not `BZXE` — Index High, not Index
+Equal, one glyph. And line 4's hex byte is `0A`, not `CA`, which is
+the fourth instance of `listing_typography.md` §13 and contributed a
+new tell to it (§13a): at 1200 dpi that row's six-digit address field
+prints as `COCCO6`, the same digit zero as three `C`-shapes and two
+`O`-shapes **within one field**. A field that disagrees with itself
+about a glyph announces which glyph is unstable, and that is visible
+without decoding anything.
+
+**WHAT IS NOT DONE: p.19 IS NOT IN THE RUNNING TESTBENCH.**
+`gen_mcp_p17_tb.py` assembles pp.17-18 only. Adding p.19 is the
+obvious next step and it has **one trap that must be handled in the
+same commit**: the generator plants `BEW,$` halts at `X19`, `XERROR`
+and `X18` via its `exits` dict, and `X18` is now p.19's *first
+instruction*. Leaving it in `exits` would silently overwrite
+`000740.40` with a halt and the page would appear to do nothing.
+`X19` has the same problem — it is p.19 line 23. Both must come out
+of `exits` when p.19 goes into `DECKS`, and the PC expectation
+changes with them: the IOCD loop's exit then runs into line 23's
+`KF(BU,36),XIOD,12`, fails it, and reaches `XERROR` — which is the
+correct behaviour for a deck with no IOD cards on it, and is only
+distinguishable from a real failure because `X ERR 19` does
+`SIC,X ERR AD` first and records *which* error site fired.
+
 ## >>> A FABRICATED QUOTATION, FOUND AND CORRECTED, 2026-10-21 <<<
 
 `tests/run_tests.sh` said, of printed p.17's `X 19` exit:
