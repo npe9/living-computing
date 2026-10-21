@@ -5094,6 +5094,38 @@ fields on p.246 and nothing else on it**, which is a useful measure
 of how much of MCP's I/O bookkeeping the transcribed pages cover:
 not much, and now there is a printed map of the rest.
 
+## A PREDICTION ABOUT PRINTED p.19, WRITTEN BEFORE READING IT, 2026-10-21
+
+Figure 44's `X18` branch — the disk/console path — contains a box
+reading **"SET UNIT COUNT TO TWO AND SET MULTI BIT ON, ASSIGN
+CHANNEL"**. That row is a check on today's `SUNITK` derivation, and
+it is checkable before the model runs anything, so the prediction
+goes here first.
+
+`SUNITK` was derived as **bits 59-62** because p.18 line 30 sets a
+SINGLE bit at `.59` under the comment "UNIT COUNT IN CST TO 8", and
+one bit at the left of a field means eight only if the field is four
+bits wide.
+
+**Two is `0b0010`, which is not a bit at a field's left edge.** So
+p.19's row cannot be another `CM1111(BU,1), .59`. On the 59-62
+reading it must write a single bit at **`.61`**.
+
+* **If p.19 sets one bit at `.61`** — the derivation is confirmed
+  from a second, independent direction, by a different page writing a
+  different value into the same field.
+* **If it writes something that only makes sense for a field at
+  56-59** — then Figure 138's tick marks were read wrong this
+  morning, and three commits' worth of comments go with it.
+
+Recorded because the second outcome is the valuable one and it is
+exactly the outcome a reader who already believes the first would
+explain away.
+
+(Note: 56-59 is *already* excluded by p.18 alone — a single bit at
+`.59` in a 56-59 field is one, not eight. So the prediction's real
+job is to catch a field this project has not considered at all.)
+
 ## >>> THE IOCD CARD'S COLUMN FORMAT IS PRINTED, AND EVERY DERIVATION WAS RIGHT <<< 2026-10-21
 
 `C22-6728` **printed p.88 = PDF p.88**, "The Initialization Program /
