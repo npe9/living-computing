@@ -11,6 +11,21 @@ export BLUESPECDIR=/opt/homebrew/Cellar/bsc/2026.01/libexec/lib
 export PATH=/opt/homebrew/Cellar/bsc/2026.01/bin:$PATH
 BSC=/opt/homebrew/Cellar/bsc/2026.01/bin/bsc
 cd "$TESTS_DIR"
+# THE MODULE NAME AND THE MODE MUST AGREE.  The generator rejects an
+# unknown mode, but a TYPO'D one that happens to be empty would
+# silently build the no-units test under the units module's name and
+# PASS -- a green section testing the wrong thing, which is the one
+# failure this suite cannot see.
+case "${2:-}" in
+  "")      expect="StretchMcpP17Tb" ;;
+  units)   expect="StretchMcpP17UnitsTb" ;;
+  units8)  expect="StretchMcpP17Units8Tb" ;;
+  *) echo "run_mcp_p17.sh: unknown mode '$2'" >&2; exit 1 ;;
+esac
+if [ "$MODULE" != "$expect" ]; then
+  echo "run_mcp_p17.sh: mode '${2:-<none>}' builds $expect, not $MODULE" >&2
+  exit 1
+fi
 python3 gen_mcp_p17_tb.py "$MODULE" $2 > "$BSV_DIR/$MODULE.bsv"
 cd "$BSV_DIR"
 mkdir -p build simbuild
