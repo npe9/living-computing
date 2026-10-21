@@ -1,0 +1,81 @@
+! mcp_bootstrap_p20.strap -- MCP INITIALIZATION, printed page 20:
+! "ENTRIES IN COMMUNICATION REGION * S X CHAN * S MCP * S Y CO CH",
+! and the search for the console channel.  docs/MCP_Mar63_001-249.pdf
+! PDF p.27, header "PAGE NUMBER 20".  docs/boot_plan.md M3.
+!
+! Contiguous with printed p.19: that page's last instruction is a half
+! word at 000776.40 and this one starts at 000777.00.
+!
+! ---------------------------------------------------------------
+! WHAT THE PAGE DOES
+! ---------------------------------------------------------------
+!   lines  6-12  put the channel status table's base and size, and
+!                MCP's own base, into the communication region, and
+!                step to the first basic-exchange channel.
+!   lines 14-21  walk the CST comparing each entry's equipment field
+!                against the console's code; XERR 20 if no console is
+!                found, XERR 21 if the one found is not available.
+!   lines 22-23  turn the matched entry's address into a CHANNEL
+!                NUMBER by subtracting the table's base, and store it
+!                in the communication region.
+!
+! ---------------------------------------------------------------
+! >>> THE CONSOLE'S EQUIPMENT CODE IS OCTAL 2, and this page is the
+! only place in the transcribed corpus that gives one. <<<
+! ---------------------------------------------------------------
+! Line 14 is "LFI(BU,4),(8)2" commented "-ENTER CONSOLE EQUIPMENT
+! CODE", and line 15 compares that four-bit value against ".52($10)".
+! X EQP T, which maps a card's equipment letter to a four-bit code,
+! sits on a page nobody has transcribed -- but one of its values is
+! now known, and it is known the way this project prefers: from the
+! program that uses it, not from a table.
+!
+! AND IT CONFIRMS SEQUIP FROM A THIRD PAGE.  C22-6728 printed p.246
+! names bits 52-55 of a channel status table entry SEQUIP; printed
+! p.17 line 54 WRITES four bits at .52; this page READS four bits at
+! .52 and calls it "the equipment field".
+!
+! ---------------------------------------------------------------
+! EXTERNALS, every one recovered from this page's own binary output
+! ---------------------------------------------------------------
+!   S MCP     002150.00  (line 11) -- and printed p.19 line 43's
+!             "LV,$10,SMCP" assembles to 002150.24 30, the same
+!             address from a different page.
+!   S X CHAN  002152.00  (lines 9 and 22)
+!   S Y CO CH 002156.00  (line 23)
+SMCP    SYN, (8)2150.0
+SXCHAN  SYN, (8)2152.0
+SYCOCH  SYN, (8)2156.0
+
+        SLC, (8)777.0
+
+! ---- the communication region entries ----------------------------
+X20A    SC, $3, $R                   ! line 6  -RESTORE SIZE OF CST
+        LC, $10, $R                  ! line 7
+        V+I, $10, 1.0                ! line 8
+        SX, $10, SXCHAN              ! line 9  -SAVE BASE OF CST AND
+                                     !           SIZE IN COMM REGIN
+        C-I, $10, 32.0-1.0           ! line 10 -GET SIZE OF BASIC
+                                     !           EXCHG CST
+X20A1   SV, $10, SMCP                ! line 11 -SET BASE OF MCP IN
+                                     !           COMM REGION
+        V+I, $10, 32.0               ! line 12 -COMP LOC OF FIRST
+                                     !           BASIC EACH CHG CHANNL
+
+! ---- search for the console channel in the CST -------------------
+        LFI(BU,4), (8)2              ! line 14 -ENTER CONSOLE
+                                     !           EQUIPMENT CODE
+X20A2   KF(BU,4), .52($10)           ! line 15 -TEST AGAINST EQUIPMENT
+                                     !           FIELD
+X20A3   BAE, X20A4                   ! line 16 -IF CONSOLE PRESENT
+        CB+, $10, X20A2              ! line 17 -IF TESTED ALL CHANNELS
+XERR20  BD, $                        ! line 18 -YES *ERROR* NO CONSOLE
+X20A4   BZB, +.25($10), X20A5        ! line 19 -IF CONSOL AVAILABLE
+XERR21  BD, $                        ! line 20 -NO$ERROR * CONSOLE NOT
+                                     !           AVAILABLE
+X20A5   SX, $10, $R                  ! line 21 -CONSOLE CST ENTRY
+        -(BU,19), SXCHAN, 45         ! line 22 -LESS BASE OF CST
+        ST(BU,19), SYCOCH, 46        ! line 23 -CONSLOE CHANNEL NUMBER
+                                     !           TO COMM REGION
+
+        END, X20A

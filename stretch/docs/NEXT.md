@@ -36,7 +36,8 @@ things:
 3. **The back-matter sweep's worklist** (section below) — six ranked
    items, two already consumed. `C22-6728` printed 247-260, the rest
    of Appendix A, is the largest.
-4. **Printed p.20 onward**, continuing the transcription.
+4. ~~Printed p.20~~ **— done, 2026-10-21, seventeen rows bit-exact
+   on the first run. Printed p.21 onward** is the continuation.
 
 **One caveat carried forward, deliberately not in this file's
 worklist**: the look-ahead's store-fetch interlock is correct
@@ -5299,6 +5300,43 @@ thing in the path: the word the look-ahead hands the E-box.
 
 Build the pair that differs only in history before building the pair
 that differs in operands.
+
+## PRINTED p.20 IS TRANSCRIBED -- and it names an equipment code, 2026-10-21
+
+Seventeen rows, all bit-exact on the first run. Short: the
+communication-region entries (`S X CHAN`, `S MCP`, `S Y CO CH`) and
+the **search for the console channel in the CST**.
+
+**>>> THE CONSOLE'S EQUIPMENT CODE IS OCTAL 2. <<<** Line 14 is
+`LFI(BU,4),(8)2`, commented "-ENTER CONSOLE EQUIPMENT CODE", and line
+15 compares that four-bit value against `.52($10)`. `X EQP T` — which
+maps a card's equipment letter to a four-bit code — is on a page
+nobody has transcribed, and this is the **first of its values to be
+known**, from the program that uses it rather than from a table.
+`gen_mcp_p17_tb.py` now carries it as the one real code among
+invented ones.
+
+**AND IT CONFIRMS `SEQUIP` FROM A THIRD PAGE.** `C22-6728` printed
+p.246 names bits 52-55 `SEQUIP`; p.17 line 54 *writes* four bits at
+`.52`; this page *reads* four bits at `.52` and calls it "the
+equipment field". Three independent sources, one field.
+
+**`S MCP` IS CROSS-CHECKED BETWEEN TWO PAGES**: line 11 puts it at
+`002150.00`, and p.19 line 43's `LV,$10,SMCP` assembles to
+`002150.24 30` — the same address recovered from a different page's
+binary output.
+
+**TWO NEW ERROR EXITS**, `X ERR 20` ("NO CONSOLE") and `X ERR 21`
+("CONSOLE NOT AVAILABLE"), both `BD,$` — branch disabled to self, a
+deliberate stop. That is `boot_plan.md` A4's point in MCP's own code:
+a machine with no console has nowhere to report that it has no
+console, so it stops.
+
+**NOT RUN YET.** Like p.19's lines 27-53, this page needs context the
+testbench does not set up — `$3`/`$R` carry the CST size from p.19's
+table move, and the communication region is at `002150`-`002156`,
+addresses no transcribed page populates. Transcription and execution
+are separate milestones here, as they have been throughout.
 
 ## PRINTED p.19 IS TRANSCRIBED -- 46 rows, bit-exact, 2026-10-21
 

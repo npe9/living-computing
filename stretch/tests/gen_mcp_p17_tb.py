@@ -172,10 +172,20 @@ EQUIPMENT_CODES = ["DK", "CN",         # 1-2: "DISK OR CONSOL"
 # branch, for disk and console, instead says "SET UNIT COUNT TO TWO".
 # A tape channel carries many units and a disk channel two.  The card
 # therefore has to be TP for p.18 to be the page under test.
+# >>> ONE EQUIPMENT CODE IS REAL: THE CONSOLE'S IS OCTAL 2. <<<
+# Printed p.20 line 14 is "LFI(BU,4),(8)2" commented "-ENTER CONSOLE
+# EQUIPMENT CODE", and line 15 compares it against ".52($10)", the
+# SEQUIP field.  X EQP T itself is on an untranscribed page, so every
+# other code here is still invented -- but this one comes from the
+# program that uses it, which is the same standard the rest of this
+# file's derivations meet.
+KNOWN_CODES = {"CN": 0o2}
+
+
 def equipment_table(card_equipment):
     """(letter column, equipment code, IS-TAPE flag) per entry."""
     return [(column_bits(c[1]),
-             EQP_CODE if c == card_equipment else 0,
+             KNOWN_CODES.get(c, EQP_CODE if c == card_equipment else 0),
              1 if c == "TP" else 0)
             for c in EQUIPMENT_CODES]
 

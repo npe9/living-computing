@@ -2992,6 +2992,37 @@ run "MCP INITIALIZATION, printed p.19, bit-exact (MCP_Mar63 PDF p.26)" python3 v
 #   disagrees with itself about a glyph is announcing which glyph is
 #   unstable, and the instability is visible without reference to any
 #   opcode.  13 is now four instances and has a second tell. <<<
+
+run "MCP INITIALIZATION, printed p.20, bit-exact (MCP_Mar63 PDF p.27)" python3 verify_mcp_bootstrap_p20.py
+# >>> PRINTED p.20 IS TRANSCRIBED, seventeen rows, all bit-exact on
+# the first run.  It is short -- the communication-region entries and
+# the SEARCH FOR THE CONSOLE CHANNEL -- and it carries one piece of
+# data this project has wanted for a while. <<<
+#
+# THE CONSOLE'S EQUIPMENT CODE IS OCTAL 2.  Line 14 is
+# "LFI(BU,4),(8)2" commented "-ENTER CONSOLE EQUIPMENT CODE" and line
+# 15 compares that four-bit value against ".52($10)".  X EQP T, which
+# maps a card's equipment letter to a four-bit code, is on a page
+# nobody has transcribed -- and one of its values is now known, from
+# the program that uses it rather than from a table.  The p.17
+# testbench's fixture carries it as the one real code among invented
+# ones.
+#
+# AND IT CONFIRMS SEQUIP FROM A THIRD PAGE.  C22-6728 printed p.246
+# names bits 52-55 of a channel status table entry SEQUIP; printed
+# p.17 line 54 WRITES four bits at .52; this page READS four bits at
+# .52 and calls it "the equipment field".  Three sources, one field.
+#
+# S MCP IS CROSS-CHECKED BETWEEN TWO PAGES: line 11 puts it at
+# 002150.00, and printed p.19 line 43's "LV,$10,SMCP" assembles to
+# 002150.24 30 -- the same address recovered independently from a
+# different page's binary output.
+#
+# THE PAGE ALSO NAMES TWO ERROR EXITS THIS PROJECT HAD NOT SEEN,
+# X ERR 20 ("NO CONSOLE") and X ERR 21 ("CONSOLE NOT AVAILABLE"), and
+# both are "BD,$" -- branch disabled to self, a deliberate stop,
+# which is what docs/boot_plan.md A4 means when it says a machine
+# with no console has nowhere to report that it has no console.
 run "MCP's error table, printed pp.7-8 (MCP_Mar63 PDF pp.14-15)" python3 verify_mcp_bootstrap_p7_p8.py
 # X ERR DD -- THE LAST TWO PAGES OF THE BOOTSTRAP TO BE TRANSCRIBED,
 # and the index to all the rest: seventy-eight VF half words, one pair
