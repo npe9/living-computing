@@ -5126,6 +5126,56 @@ explain away.
 `.59` in a 56-59 field is one, not eight. So the prediction's real
 job is to catch a field this project has not considered at all.)
 
+### >>> CONFIRMED, AT `.61`, AN HOUR LATER <<<
+
+Printed p.19, read at 600 dpi:
+
+```
+        LCI,$15,2.0
+        SV,$15,0.0($3)            -YES * ENTER UST A[DDRESS]
+        CM1111(BU,1),.61($3)      -SET UNIT COUNT TO [TWO]
+        CM1111(BU,1),.27($3)      -MULIT BIT ON
+        CM0000(BU,1),.29($3)      -MEANINGLESS ASG B[IT]
+```
+
+**`CM1111(BU,1), .61($3)`**, commented "SET UNIT COUNT TO [TWO]". A
+single bit at `.61` in a four-bit field at 59-62 is `0b0010` = **2**.
+
+So `SUNITK` = bits 59-62 now rests on **two pages writing two
+different values into the same field at two different offsets** —
+p.18's `.59` meaning eight and p.19's `.61` meaning two — and no
+other field width makes both true. `.59`→8 needs the field to start
+at 59; `.61`→2 needs it to end at 62. That is a stronger result than
+the figure could have given on its own, and it came from a drawing
+whose tick marks were too coarse to read.
+
+**THE REST OF THE BAND CORROBORATES FIGURE 44 ROW FOR ROW**, which
+is the other half of what this was for:
+
+```
+        BZX?,X 18 4               (the "IS EQUIPMENT DISK OR CONSOLE"
+                                   test -- glyph not yet settled)
+        LCI,$15,2.0               "SET UNIT COUNT TO TWO"
+        ...
+X18 2   BZB,.25($3),X18 3         -IF CHANNEL AVAILABLE
+        CM1111(BU,1),.28($15)     -NO * THEN UN[IT ...]
+X18 3   CM1111(BU,1),.29($15)     -YES * UNIT S[TATUS] ASSIGNED
+        CB+,$15,X18 2             -IF PROCESSED [TWO ...]
+        B,X17 1                   -RETURN FOR N[EXT CARD]
+X18 4   BZB,.25($3),X18 5         -IF CHANNEL A[VAILABLE]
+        CM1111(BU,1),.28($3)      -SINGLE UNIT STAT[US] AVAILABLE
+X18 5   CM1111(BU,1),.29($3)      -AND TO NOT A[SSIGNED]
+```
+
+`B, X17 1` is p.18's `X171` — so p.19 returns into p.18 exactly where
+Figure 44 says it does, and **pp.17, 18 and 19 are one loop**. The
+`.25` tests are `SCHAVL`, the `.28`/`.29` writes are `SUNAVL` and
+`SUNASG`, and `X184`'s single-unit arm writes them into **`($3)`, the
+CST entry itself** rather than `($15)` — which is Figure 137's
+"Channel Status Table Entry for Single-Unit Channel", where the
+channel and unit indicators share one word. The two figures and the
+two code paths line up.
+
 ## >>> THE IOCD CARD'S COLUMN FORMAT IS PRINTED, AND EVERY DERIVATION WAS RIGHT <<< 2026-10-21
 
 `C22-6728` **printed p.88 = PDF p.88**, "The Initialization Program /
