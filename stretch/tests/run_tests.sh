@@ -1585,6 +1585,56 @@ run "Figure 14 -- IBM's own sign-modifier example, and the N suffix" ./run_progr
 # Figure 12 on printed p.61, found that every unsigned subtract was
 # an addition.
 
+run "MCP's whole per-card path, printed p.17, over a synthetic IOCD card" ./run_program.sh ../decks/mcp_p17_card.strap StretchP17CardTb \
+    "PC=2087" \
+    "p17_channel_number:1080=0x8c00000000000" \
+    "p17_equipment_code:1081=0x600" \
+    "p17_card_walk_ended:1082=0x1099800002c0000"
+# Find the card, identify it, convert its channel number, look up its
+# equipment code -- lines 12-16, 26-36 and 46-54 run together over
+# one synthetic card.
+#
+# THE CARD'S FIELD MAP IS DERIVED FROM THE PAGE'S OWN INCREMENTS,
+# which is the result this deck records.  Under progressive indexing
+# the effective address IS the index value and the address field is
+# the INCREMENT, so the walk reads straight off the four rows:
+#
+#   offset  len  field              instruction            advance
+#        0    8  card type          CT0111(V+I)(BU,8),1.44     108
+#      108   48  IOCD identifier    L(V+I)(BU,48),.48+.2        50
+#      158    7  tens column        CT0011(V+I)(BU,7),.12       12
+#      170   16  units column       CT0011(V+I)(BU,16),.22      22
+#      192   12  equipment letter   L(V+I)(BU,12),.24           24
+#      204    1  channel available  BB,.12($4)            no advance
+#
+# AND THE HUNT'S TEST FALLS ON THE IDENTIFIER'S LEADING BIT: line 13
+# is "BB, 1.44($4)" with the comment "-IF ZONE BIT OF IOCD", and 1.44
+# is 108 bits -- exactly where the identifier starts.  The hunt steps
+# a WHOLE WORD, because the pocket card gives CB+ as "Add one in bit
+# position 17" and bit 17 of a 24-bit bit address is 64 bits, which
+# is what line 12's "-TEST 14 WORDS" means.
+#
+# FIXTURE VS DERIVATION, stated because it matters: the field MAP is
+# derived.  The card's CONTENTS, X IOCD's pattern and the equipment
+# table's entries are INVENTED -- all three live on untranscribed
+# pages -- and are chosen only to be consistent with each other.
+# Same standing caveat as strap/prosa.py.
+#
+# THE THIRD CHECK WAS PREDICTED WRONG TWICE and both corrections are
+# facts about the page.  The value is buffer+408, not +384: line 46's
+# L advances $4 by its own address field AFTER reading, so the walk
+# does not stop at the last field it reads.  The count is 11, not 10:
+# CB+ decrements only on a MISS, and the BB that finds the card
+# branches away before the fourth step.
+#
+# THE INJECTION IS CAUGHT BY THE CARD'S OWN IDENTIFICATION.
+# Progressive indexing made not to advance reads the identifier at
+# the card-type offset, the compare against X IOCD fails, and BZAE
+# takes the "NOT AN IOCD CARD" exit.  The hunt is untouched -- BB and
+# CB+ are not progressive -- so it shows the WALK failing while the
+# SEARCH still works, which is the whole distinction the geometry is
+# about.
+
 run "MCP's equipment-code lookup, printed p.17 lines 46-54" ./run_program.sh ../decks/mcp_p17_equipment_code.strap StretchP17EqpTb \
     "PC=2064" \
     "p17_equipment_code_in_cst:1064=0x600" \

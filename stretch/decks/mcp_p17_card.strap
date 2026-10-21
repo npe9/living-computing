@@ -1,0 +1,168 @@
+! MCP's PER-CARD PATH, printed p.17, run end to end over a synthetic
+! IOCD card: find the card, identify it, convert its channel number,
+! and look up its equipment code.
+!
+! THE CARD'S FIELD MAP IS DERIVED FROM THE PAGE'S OWN INCREMENTS, and
+! that is the result this deck exists to record.  Under progressive
+! indexing the effective address IS the index register's value and the
+! instruction's address field is the INCREMENT, so the walk down a
+! card is read straight off the four rows that do it:
+!
+!   offset  len  field                       advances by
+!        0    8  card type      CT0111(V+I)(BU,8), 1.44($4)   108
+!      108   48  IOCD identifier L(V+I)(BU,48), .48+.2($4)     50
+!      158    7  tens column    CT0011(V+I)(BU,7), .12($4)     12
+!      170   16  units column   CT0011(V+I)(BU,16), .22($4)    22
+!      192   12  equipment ltr  L(V+I)(BU,12), .24($4)         24
+!      204    1  channel available  BB, .12($4)  (no advance)
+!
+! AND THE HUNT'S TEST FALLS ON THE IDENTIFIER'S LEADING BIT.  Line 13
+! is "BB, 1.44($4), X13AA1" with the comment "-IF ZONE BIT OF IOCD",
+! and 1.44 is 108 bits -- exactly where the 48-bit identifier starts.
+! So the zone bit the search looks for is that field's top bit, which
+! is why X IOCD must have it set.
+!
+! THE HUNT STEPS A WHOLE WORD.  Line 14 is "CB+, $4, X13AA", and the
+! pocket card's COUNT AND BRANCH table gives "+" as "Add one to
+! value: Add one in bit position 17" -- bit 17 of a 24-bit bit
+! address is 64 bits.  Fourteen steps of one word each, which is
+! exactly what line 12's comment says: "-TEST 14 WORDS FOR FIRST
+! IOCD".
+!
+! WHAT IS A FIXTURE AND WHAT IS NOT.  The field MAP above is derived.
+! The card's CONTENTS, X IOCD's 48-bit pattern and the equipment
+! table's entries are INVENTED -- all three live on pages nobody has
+! transcribed -- and they are chosen here only to be consistent with
+! each other.  The same standing caveat as strap/prosa.py: this deck
+! proves the page's instructions compose, not that a real IOCD card
+! looked like this.
+!
+! LINES 37-45 ARE SKIPPED and that is safe: they index the channel
+! status table through $5, $15 and $R, which lines 17-25 set up, and
+! NONE of them advances $4.  The walk this deck checks is undisturbed
+! by leaving them out.
+!
+! The card is placed THREE WORDS into the buffer so the hunt has to
+! step; bits 108, 172 and 236 are zero, so the first three tests miss
+! and the fourth finds it.
+!
+!   T1  the channel number, 35, built from two punch positions.
+!   T2  the equipment code, 6, in the CST entry's bits 52-55.
+!   T3  the whole index word $4 ended on, and both halves of it were
+!       predicted WRONG the first time -- the model was right twice
+!       and the arithmetic here was not, which is worth keeping
+!       because each mistake is a fact about the page.
+!
+!       VALUE = buffer + 408 bits: 192 of hunt (three words), 192 of
+!       field walk, and then TWENTY-FOUR MORE, because line 46's
+!       "L(V+I)(BU,12), .24($4)" advances $4 by its own address field
+!       after reading the equipment letter.  The walk does not stop
+!       at the last field it reads.
+!
+!       COUNT = 11, not 10.  The hunt starts at 14 and CB+ decrements
+!       only on a MISS: three misses at bits 108, 172 and 236, and
+!       then the BB that finds the card at 300 branches away BEFORE
+!       the fourth step.  **The count is the evidence the hunt
+!       actually walked** -- a search that found the card without
+!       stepping would leave 14 -- and its exact value says how far.
+
+! ONE INJECTION, MEASURED, and the card's own identification catches
+! it: progressive indexing made not to advance (the increment forced
+! to zero) leaves the 48-bit identifier being read at the card-type
+! field's offset instead of 108 bits in, the compare against X IOCD
+! fails, and BZAE takes the page's "NOT AN IOCD CARD" exit at PC
+! 2085.  All four checks move.  The hunt is untouched -- BB and CB+
+! are not progressive -- so what this shows is the WALK failing while
+! the SEARCH still works, which is the distinction the card geometry
+! above is entirely about.
+
+        SLC, (8)2000.0
+
+! ---- find the first IOCD card (lines 12-16) ----------------------
+START   LVI, $X4, BUF                ! line 8  -END OF ASSEMBLED
+        LCI, $X4, 14                 ! line 12 -TEST 14 WORDS FOR
+                                     !          FIRST IOCD
+X13AA   BB, 1.44($X4), X13AA1        ! line 13 -IF ZONE BIT OF IOCD
+        CB+, $X4, X13AA              ! line 14 -IF SEARCH FRUITLESS
+        B, NOTFOUND                  ! lines 15-16 -NO IOCD DETECTED
+
+! ---- identify the card (lines 26-31) -----------------------------
+X13AA1  CT0111(V+I)(BU,8), 1.44($X4) ! line 26 -ADVANCE TO NEXT FIELD
+        L(V+I)(BU,48), .48+.2($X4)   ! line 28 -ENTER COLUMN
+        KF(BU,48), XIOCD             ! line 30
+        BZAE, NOTIOCD                ! line 31 -NOT AN IOCD CARD
+
+! ---- convert the channel number (lines 32-36) --------------------
+        CT0011(V+I)(BU,7), .12($X4)  ! line 32 -TEST TENS POSITION
+        LCV(DU,8,4), $LZC+.3, 46     ! line 34 -CONVERT TO OCTAL NUMBER
+        CT0011(V+I)(BU,16), .22($X4) ! line 35 -TEST UNITS POSITION
+        +(BU,4), $LZC+.3, 46         ! line 36 -FORM CHANNEL NUMBER
+        ST(BU,64,8), T1, 0           ! (not in the page: look at it)
+
+! ---- equipment code lookup (lines 46-54) -------------------------
+X134    L(V+I)(BU,12), .24($X4)      ! line 46 -SECOND LETTER OF
+                                     !          HOLLERITH EQUIPMENT
+        LVI, $X1, EQPT               ! line 47 -BASE OF EQUIPMENT TABLE
+        LCI, $X1, 10.0               ! line 48 -SIZE OF TABLE +1
+X135    CBZ, $X1, NOTFOUND           ! line 50 -WRONG EQUIPMENT CODE
+        KF(V+I)(BU,24), .29($X1)     ! line 51 -MATCH * ADVANCE
+        BZAE, X135                   ! line 52
+X136    L(BU,4), -.5($X1)            ! line 53 -ENTER EQUPMENT CODE
+        ST(BU,4), CSTE+.52           ! line 54 -INSERT IN CST ENTRY
+        SX, $X4, T3                  ! where the card walk ended
+        B, PASS
+
+NOTIOCD BEW, $                       ! the page's "NOT AN IOCD CARD"
+NOTFOUND BEW, $                      ! "NO IOCD DETECTED" / "WRONG CODE"
+PASS    BEW, $
+
+! Data, word-aligned.
+        SLC, (8)2040.0
+
+! The card buffer.  The card sits three words in; everything else is
+! zero, so the hunt's first three tests miss.
+BUF     DD(BU,64,8), 0
+        DD(BU,64,8), 0
+        DD(BU,64,8), 0
+        DD(BU,64,8), (8)0550000000000000000000
+        DD(BU,64,8), (8)0000000000000002000000
+        DD(BU,64,8), (8)0000005274010000200000
+        DD(BU,64,8), (8)1257100000000000000000
+        DD(BU,64,8), 0
+        DD(BU,64,8), 0
+        DD(BU,64,8), 0
+
+! The 48-bit pattern that says "this is an IOCD card", with the zone
+! bit the hunt looks for as its leading bit.  Invented; see above.
+XIOCD   DD(BU,48), (8)4000000000005274
+        DD(BU,16), 0
+
+! Ten equipment-table entries of 29 bits: 24 bits of letter, a
+! four-bit code, one spare.  The fourth matches this card.
+EQPT    DD(BU,24), 273
+        DD(BU,5), 0
+        DD(BU,24), 546
+        DD(BU,5), 0
+        DD(BU,24), 819
+        DD(BU,5), 0
+        DD(BU,24), 2748
+        DD(BU,5), 12
+        DD(BU,24), 1092
+        DD(BU,5), 0
+        DD(BU,24), 1365
+        DD(BU,5), 0
+        DD(BU,24), 1638
+        DD(BU,5), 0
+        DD(BU,24), 1911
+        DD(BU,5), 0
+        DD(BU,24), 2184
+        DD(BU,5), 0
+        DD(BU,24), 2457
+        DD(BU,5), 0
+
+        SLC, (8)2070.0
+T1      DD(BU,64,8), 0
+CSTE    DD(BU,64,8), 0
+T3      DD(BU,64,8), 0
+
+        END, START

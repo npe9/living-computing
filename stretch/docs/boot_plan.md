@@ -430,9 +430,45 @@ line 38 names that buffer "SLOTS LEFT FOR IOCD + IODS". They are card
 IMAGES placed on the tape when the system was built, which is what
 the off-line IBM 1401 is for.
 
-So A3 is about the tape's content. What is still missing is the IOCD
-card's own FORMAT, from a primary source rather than from p.17's
-usage.
+So A3 is about the tape's content.
+
+**THE CARD'S FIELD MAP IS NOW DERIVED, 2026-10-21**, from p.17's own
+increments rather than from an outside source — the same method the
+PROSA dictionary's shape got from printed p.4. Under progressive
+indexing the effective address IS the index register's value and the
+instruction's address field is the INCREMENT, so the walk down a card
+reads straight off the rows that do it:
+
+| offset | len | field | instruction | advance |
+|---|---|---|---|---|
+| 0 | 8 | card type | `CT0111(V+I)(BU,8), 1.44($4)` | 108 |
+| 108 | 48 | IOCD identifier | `L(V+I)(BU,48), .48+.2($4)` | 50 |
+| 158 | 7 | tens column | `CT0011(V+I)(BU,7), .12($4)` | 12 |
+| 170 | 16 | units column | `CT0011(V+I)(BU,16), .22($4)` | 22 |
+| 192 | 12 | equipment letter | `L(V+I)(BU,12), .24($4)` | 24 |
+| 204 | 1 | channel available | `BB, .12($4)` | — |
+
+and two more facts fall out:
+
+* **The hunt's test falls on the identifier's leading bit.** Line 13
+  is `BB, 1.44($4)` commented "-IF ZONE BIT OF IOCD", and 1.44 is 108
+  bits — exactly where the identifier starts. So `X IOCD` must have
+  its top bit set.
+* **The hunt steps a whole word.** `CB+` is "Add one in bit position
+  17" and bit 17 of a 24-bit bit address is 64 bits, which is what
+  line 12's "-TEST 14 WORDS FOR FIRST IOCD" means.
+
+`decks/mcp_p17_card.strap` runs the whole per-card path — hunt,
+identify, convert, look up — over a synthetic card built to that map,
+and the equipment table's 29-bit entry layout is derived the same way
+(`decks/mcp_p17_equipment_code.strap`).
+
+**WHAT IS STILL INVENTED**, and must stay labelled: the card's
+CONTENTS, `X IOCD`'s 48-bit pattern, and `X EQP T`'s ten entries. All
+three live on untranscribed pages. What remains for A3 proper is
+placing them at their real addresses in the MCP image and letting the
+boot test run through, which is plumbing plus the same judgement call
+PROSA got — not more reading.
 
 **p.40 WAS READ, 2026-10-19, AND IT MOVED THE ITEM ALONG TWICE.**
 
