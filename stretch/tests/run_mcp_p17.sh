@@ -11,7 +11,7 @@ export BLUESPECDIR=/opt/homebrew/Cellar/bsc/2026.01/libexec/lib
 export PATH=/opt/homebrew/Cellar/bsc/2026.01/bin:$PATH
 BSC=/opt/homebrew/Cellar/bsc/2026.01/bin/bsc
 cd "$TESTS_DIR"
-python3 gen_mcp_p17_tb.py "$MODULE" > "$BSV_DIR/$MODULE.bsv"
+python3 gen_mcp_p17_tb.py "$MODULE" $2 > "$BSV_DIR/$MODULE.bsv"
 cd "$BSV_DIR"
 mkdir -p build simbuild
 "$BSC" -sim -simdir simbuild -bdir build -info-dir build -show-schedule \

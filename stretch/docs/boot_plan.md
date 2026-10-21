@@ -521,6 +521,24 @@ the empty low half of p.18's last word, i.e. the first instruction of
 the structure's own page is still missing while the second program to
 read it has now named its last field.
 
+**THE UNIT LOOP RUNS TOO, as a second mode of the same test**
+(`run_mcp_p17.sh StretchMcpP17UnitsTb units`), and every check passed
+on the first run. **A UNIT IS A PUNCHED COLUMN**: p.18 line 13 reads
+twelve bits and advances twelve, so a unit entry is twelve rows — one
+column — which the 960-bit card stride confirms from the other end. A
+**UST entry is one word**, derived twice: X15 1/X15 2 write bits .27
+.28 .29 .39 of `($15)`, and `CB+` steps `$15` by one word. The two
+synthetic units are punched on different rows on purpose, so the two
+UST words differ in exactly bit 28 and the branch routing is measured
+rather than read off comments that contradict it.
+
+This is also the run that exercises **`-(BU,18)`, the unsigned
+subtract Figure 12 caught on printed p.61** — lines 34-37 compute
+8 − (what is left of the counter) and store the unit count in CST
+bits 59-62. The no-units mode cannot reach it. So the repair is now
+tested by MCP and not only by IBM's worked example. p.18's one
+remaining untested branch is line 30's eight-unit arm.
+
 **AND THE CST ENTRY IS DERIVED ONE PRINTED LINE AT A TIME**, which is
 the form these expectations should take from here: preset (p.17
 l.22), `CM0000` clearing the not-available bit (l.44), equipment

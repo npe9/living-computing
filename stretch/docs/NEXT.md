@@ -4958,12 +4958,81 @@ listing and an injection into it would be testing a different page:
    and the entry stops at `0x400000000`: available, no code, "not
    assigned" still standing, because p.18 never ran.
 
-**STILL NOT EXERCISED: p.18 lines 34-37**, the unit-count arm, which
-is where this session's unsigned-subtract repair (`-(BU,18),
-$15+.28`, fixed via Figure 12 on printed p.61) actually lives. The
-`BXE, X17` branch skips it for a card with no units. Giving the
-synthetic card unit entries would close that loop and is the obvious
-next step on this page.
+**AND THEN THE UNIT ARM WAS RUN THE SAME DAY**, as a second mode of
+the same generator (`run_mcp_p17.sh StretchMcpP17UnitsTb units`).
+**Every check passed on the first run, each predicted from the
+listing before the simulator was built.**
+
+**A UNIT IS A PUNCHED COLUMN**, and the increments say so twice over.
+p.18 line 13 is `CT0011(V+I)(BU,12), .12($4)` — read twelve bits,
+advance twelve — so a unit entry is twelve rows, one column. The card
+stride confirms it from the other end: 80 × 12 = 960 = line 43's
+fifteen words. Lines 16-17 test single ROWS of that column, ten and
+twelve bits BACK from where the read left `$4`, and p.17's walk left
+`$4` at card+216 — column 18. **A UST entry is one word**, derived
+twice independently: X15 1/X15 2 write bits .27 .28 .29 .39 of
+`($15)`, all inside one word, and `CB+` steps `$15` by "one in bit
+position 17" = 64 bits.
+
+**THE TWO UNITS ARE PUNCHED DIFFERENTLY ON PURPOSE.** The page's
+comments read backwards against what X15 1 and X15 2 do: line 16 is
+commented "-UNIT AVAILABLE" and branches to X15 2, which does NOT set
+the bit the listing calls "UNIT AVAILABLE BIT ON". Punching both
+units alike would measure nothing about that. Unit 1 takes the X15 2
+route, unit 2 the X15 1 route, and the two UST words come out
+differing in exactly bit 28 — the routing is a measurement, not a
+reading of the comments. Same shape as the tens/units split that
+caught the progressive-indexing misread.
+
+**THIS IS THE RUN THAT EXERCISES THE UNSIGNED SUBTRACT.** Lines 34-37
+are `LFI(BU,18), 8.0` / `-(BU,18), $15+.28` / `ST(BU,4), .59($3)`.
+Two units leave the counter at 6 and the CST count field comes out 2.
+`-(BU,18)` is the operation Figure 12 on printed p.61 caught this
+week — every unsigned subtract was being done as an addition — and
+the no-units mode *cannot* reach it, because `BXE, X17` jumps over
+it. The two modes together are what make that repair tested by MCP
+and not only by IBM's own worked example.
+
+**`8.0` IS EIGHT, NOT 512.** The immediate assembles into the 24-bit
+address field as `000010.00` (the deck header records it), and an
+18-bit operand from that field's bits 0-17 is the WORD number:
+512 >> 6 = 8. `$15+.28` has the same shape — word 31 bit 28, and
+eighteen bits from there is exactly the count field. Worth pinning
+rather than assuming: 512 would have given 512−6 = 506, whose low
+four bits are 10, a number small and plausible enough to pass a
+glance. **And the count field is bits 59-62**, from the pair of rows
+that write it: line 37 stores FOUR bits at offset .59, line 30 sets
+ONE bit at the same offset and is commented "UNIT COUNT IN CST TO 8",
+and one bit at the left of a four-bit field IS eight.
+
+**THE INJECTION IS p.18's OWN "IOCD PUNCHED INCORRECTLY"**, and it is
+the first injection that reaches `X ERROR` from INSIDE p.18. Punch a
+unit column on a row that is neither of the two the page tests; both
+BBs miss and line 19's `SIC, XERRAD` / line 20's `B, XERROR` fire.
+Observed PC 182 = 5824/32, UST entirely untouched, counter still 8.
+(The equipment-table injection also halts at 182, but via p.17's
+lookup, so it only proves p.18 was never entered — a reachability
+control, not a test of p.18's logic.)
+
+**AND IT CORROBORATED `SIC`'s FIELD RULE FROM MCP.** `X ERR AD` came
+back `0x0074eaaaaaaaaaaa` over `0xAAAA...` fill — nineteen bits of
+`000723.40` at the left, the rest undisturbed. Reference Manual
+printed pp.41-42 has three clauses: the counter goes "in bits 0-18 of
+the half-word", "other bits of the half-word are not disturbed", and
+the stored value "always address[es] the instruction whose location is
+next higher in storage than the branch instruction to which SIC is
+prefixed". `XERR18` is at `000722.40`, its inner `B, XERROR` is the
+right half at `000723.00`, and `000723.40` is `X15 1`. **All three
+clauses in one word, measured from a 1963 program's error exit rather
+than from a deck written to test it** — and it confirms in passing
+that the assembler pairs `SIC` with the following branch into one
+full word, which is how the listing's two source lines become one.
+
+**WHAT IS STILL NOT EXERCISED on this page: the EIGHT-unit arm**,
+line 30's `CM1111(BU,1), .59($3)` — the path taken when `CB+` runs
+the counter all the way out. Eight punched unit columns would reach
+it, and the entry's count field should come out 8 by the derivation
+above. Cheap, and it would close p.18's last untested branch.
 
 ## `M+MG` IS BUILT, AND `OP` IS OUT OF THE INDICATOR WORD AGAIN -- 2026-10-19
 

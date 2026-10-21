@@ -98,9 +98,16 @@ def halt_at(bitaddr):
 
 
 def main():
-    if len(sys.argv) != 2:
-        print("usage: %s ModuleName" % sys.argv[0], file=sys.stderr)
+    if len(sys.argv) not in (2, 3) or (len(sys.argv) == 3
+                                      and sys.argv[2] != "units"):
+        print("usage: %s ModuleName [units]" % sys.argv[0], file=sys.stderr)
         sys.exit(1)
+    # "units" punches UNIT COLUMNS onto the card, which is what sends
+    # printed p.18 down its OTHER arm -- lines 13-24's per-unit loop
+    # and lines 32-37's count.  Without them line 33's "BXE, X17"
+    # fires at once and lines 34-37 never run; those four rows are
+    # where this session's unsigned-subtract repair actually lives.
+    unit_mode = len(sys.argv) == 3
 
     # BOTH PAGES, because they are one program.  Printed p.17 ends at
     # 000712.00 with a full word and printed p.18 begins at
@@ -166,6 +173,43 @@ def main():
     # Set to one on the first run, which left the flag standing and
     # is how the sense was identified: every other check passed and
     # that single bit did not move.
+
+    # ---- the unit columns, and A UNIT IS A PUNCHED COLUMN ---------
+    #
+    # >>> DERIVED, and it is the same derivation the card's field map
+    # came from: the increments ARE the geometry. <<<  p.18 line 13 is
+    # "CT0011(V+I)(BU,12), .12($4)" -- read TWELVE bits, advance
+    # TWELVE.  Twelve bits is twelve rows, so a unit entry is ONE
+    # COLUMN of the card, and the stride confirms it from the other
+    # end: 80 columns x 12 rows = 960 bits = p.18 line 43's 15 words.
+    #
+    # Lines 16-17 then test individual ROWS of that column, ten and
+    # twelve bits BACK from where the read left $4:
+    #   BB, 0.0-.10($4), X152     row at column+2
+    #   BB, 0.0-.12($4), X151     row at column+0
+    # and a column with neither punched falls to line 19's
+    # "SIC, XERRAD" / "B, XERROR" -- "IOCD PUNCHED INCORRECTLY".
+    #
+    # p.17's walk left $4 at card+216: 0 -> +108 (line 26) -> +158
+    # (28) -> +170 (32) -> +192 (35) -> +216 (46's 12-bit read with a
+    # 24-bit advance).  So the units begin at column 18 of the card,
+    # which is where the first unit column goes.
+    #
+    # TWO UNITS, PUNCHED DIFFERENTLY ON PURPOSE.  The page's comments
+    # read backwards against what X15 1 and X15 2 do -- line 16 is
+    # commented "-UNIT AVAILABLE" and goes to X15 2, which does NOT
+    # set the bit named "UNIT AVAILABLE BIT ON".  Punching both units
+    # the same way would measure nothing about that.  Unit 1 takes
+    # the X15 2 route and unit 2 the X15 1 route, so the two UST
+    # words differ in exactly one bit and the routing is a fact
+    # rather than a reading of the comments.
+    UNIT_COLS = 2
+    if unit_mode:
+        put(words, card + 216 + 2, 1, 1)   # unit 1: row +2  -> X15 2
+        put(words, card + 228 + 0, 1, 1)   # unit 2: row +0  -> X15 1
+        # and card+240 is left ZERO, which is how the list ends:
+        # CT0011 copies the storage field, so an unpunched column
+        # gives a zero result and line 14's BRZ goes to X16 1.
 
     # ---- X IOCD, a 48-bit field that CROSSES a word boundary ------
     put(words, S["XIOCD"], 48, IDENT)
@@ -248,26 +292,76 @@ def main():
     entry = put_field(entry, 29, 29, 0)          # p.18 l.7  CM0000 -- "MEANINGLESS
                                                  #                     ASSIGN BIT"
     entry = put_field(entry, 27, 27, 1)          # p.18 l.9  CM1111 -- MULTI bit on
-    # p.18 line 33's "BXE, X17" is the branch marked "NO UNITS AT ALL ON
-    # MULTI CHANNEL": line 32 compares $15's count against 8, line 4 had
-    # just SET it to 8, and this card carries no unit entries, so the
-    # compare is equal and control reaches X17.  Line 42 then clears
-    # SEVENTEEN bits -- not twenty-four -- so the low seven bits of the
-    # UST address it just stored survive in bits 17-23.
-    entry = put_field(entry,  0, 16, 0)          # p.18 l.42 X17 -- clear CST address
+    if not unit_mode:
+        # p.18 line 33's "BXE, X17" is the branch marked "NO UNITS AT ALL
+        # ON MULTI CHANNEL": line 32 compares $15's count against 8, line
+        # 4 had just SET it to 8, and this card carries no unit entries,
+        # so the compare is equal and control reaches X17.  Line 42 then
+        # clears SEVENTEEN bits -- not twenty-four -- so the low seven
+        # bits of the UST address it just stored survive in bits 17-23.
+        entry = put_field(entry, 0, 16, 0)       # p.18 l.42 X17 -- clear address
+    else:
+        # WITH UNITS ON THE CARD, X17 IS NOT REACHED: line 38's "B, X171"
+        # jumps over it, so the UST address SURVIVES in the entry -- which
+        # is the whole point of line 5 having put it there.
+        #
+        # And lines 34-37 run instead:
+        #   LFI(BU,18), 8.0        load eight
+        #   -(BU,18), $15+.28      minus what is LEFT of the counter
+        #   ST(BU,4), .59($3)      insert the number of units
+        #
+        # THE COUNT FIELD IS BITS 59-62, derived from the pair of rows
+        # that write it: line 37 stores FOUR bits at offset .59, and line
+        # 30 -- the "eight units" arm -- sets ONE bit at the same offset
+        # and is commented "UNIT COUNT IN CST TO 8".  A single bit at the
+        # left of a four-bit field IS eight, so the field runs 59-62 and
+        # not 56-59.
+        #
+        # AND "8.0" IS EIGHT, not 512.  The immediate sits in the 24-bit
+        # address field, where the deck header records it assembling to
+        # 000010.00 -- word 8, bit 0 -- and an 18-bit operand taken from
+        # that field's bits 0-17 is the WORD number: 512 >> 6 = 8.  The
+        # subtrahend is the same shape: "$15+.28" is word 31 bit 28, and
+        # eighteen bits from there is exactly the count field.
+        entry = put_field(entry, 59, 62, UNIT_COLS)
     checks.append(("p17_cst_entry_for_channel_35", str(cst_word), entry))
     # A neighbour, to show only the addressed entry moved.
     checks.append(("p17_neighbour_still_preset", str(cst_word + 1), preset))
 
     # The index word that decided which way line 33 went.  $15 lives at
-    # word 31 (index registers occupy words 16-31).  Reaching X17 means
-    # the count was never decremented, so it is still the 8 that p.18
-    # line 4's "LCI, $15, 8.0" put there, and the value is still the UST
-    # base -- the unit loop at X15 never ran.  This is the independent
-    # witness for the branch the entry above depends on.
-    ust_reg = put_field(0, 0, 23, ust_bits)
-    ust_reg = put_field(ust_reg, 28, 45, 8)
-    checks.append(("p18_ust_counter_untouched", "31", ust_reg))
+    # word 31 (index registers occupy words 16-31).
+    ust_reg = put_field(0, 0, 23, ust_bits + (64 * UNIT_COLS if unit_mode else 0))
+    ust_reg = put_field(ust_reg, 28, 45, 8 - UNIT_COLS if unit_mode else 8)
+    if unit_mode:
+        # ONE "CB+" PER UNIT, and the pocket card gives CB+ as "Add one
+        # in bit position 17" -- bit 17 of a 24-bit bit address is 64
+        # bits, ONE WORD, so the value walks the UST one entry at a time
+        # while the count runs down.  Two units: value +2 words, count 6,
+        # and 8 - 6 = 2 is what lines 34-37 put in the CST entry above.
+        checks.append(("p18_ust_pointer_and_count", "31", ust_reg))
+
+        # >>> THE TWO UST ENTRIES, which is where the unit loop's work
+        # actually lands. <<<  X15 1 and X15 2 write bits of ($15):
+        #   .28  unit available      (X15 1 only)
+        #   .29  unit not assigned
+        #   .27  tape disposition
+        #   .39  select status
+        # so an entry is ONE WORD -- which CB+'s one-word step confirms
+        # independently.  Unit 1 took the X15 2 route and unit 2 the
+        # X15 1 route, so the two words differ in exactly bit 28.
+        ust_w = ust_bits // 64
+        common = (1 << (63 - 29)) | (1 << (63 - 27)) | (1 << (63 - 39))
+        checks.append(("p18_ust_entry_0_via_x152", str(ust_w), common))
+        checks.append(("p18_ust_entry_1_via_x151", str(ust_w + 1),
+                       common | (1 << (63 - 28))))
+        # The third entry is untouched: the list ended at the unpunched
+        # column, so the loop stopped where the card stopped.
+        checks.append(("p18_ust_entry_2_untouched", str(ust_w + 2), 0))
+    else:
+        # Reaching X17 means the count was never decremented, so the word
+        # still holds the 8 that line 4's "LCI, $15, 8.0" put there and
+        # the value is still the UST base -- the unit loop never ran.
+        checks.append(("p18_ust_counter_untouched", "31", ust_reg))
 
     print(generate(sys.argv[1], prog, checks,
                    pc_check=end_of_page // 32,

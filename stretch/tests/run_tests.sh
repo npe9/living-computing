@@ -1712,6 +1712,88 @@ run "THE REAL printed pp.17-18 execute -- IOCD cards into the CST" ./run_mcp_p17
 # and branches on it.  The structure's own page is still missing, but
 # the second program to read it has now named its last field.
 
+run "p.18's UNIT loop -- a card carrying units, and the unit count" ./run_mcp_p17.sh StretchMcpP17UnitsTb units
+# >>> THE SAME TWO PAGES, WITH UNIT COLUMNS ON THE CARD, which sends
+# printed p.18 down its OTHER arm: lines 13-24's per-unit loop and
+# lines 32-37's count.  EVERY CHECK PASSED ON THE FIRST RUN, each one
+# predicted from the listing before the simulator was built. <<<
+#
+# A UNIT IS A PUNCHED COLUMN, and the increments say so twice over.
+# p.18 line 13 is "CT0011(V+I)(BU,12), .12($4)" -- read TWELVE bits,
+# advance TWELVE -- so a unit entry is twelve rows, one column.  The
+# card stride confirms it from the other end: 80 columns x 12 rows =
+# 960 bits = line 43's fifteen words.  Lines 16-17 then test single
+# ROWS of that column, ten and twelve bits BACK from where the read
+# left $4, and p.17's walk left $4 at card+216 -- column 18.
+#
+# THE TWO UNITS ARE PUNCHED DIFFERENTLY ON PURPOSE.  The page's
+# comments read backwards against what X15 1 and X15 2 do: line 16 is
+# commented "-UNIT AVAILABLE" and branches to X15 2, which does NOT
+# set the bit the listing calls "UNIT AVAILABLE BIT ON".  Punching
+# both units the same way would measure nothing about that.  Unit 1
+# takes the X15 2 route, unit 2 the X15 1 route, and the two UST
+# words come out differing in exactly bit 28 -- so the routing is a
+# measurement and not a reading of the comments.  Same shape as the
+# tens/units split that caught the progressive-indexing misread.
+#
+# A UST ENTRY IS ONE WORD, derived twice independently: X15 1/X15 2
+# write bits .27 .28 .29 .39 of ($15), all inside one word, and CB+
+# steps $15 by "one in bit position 17" -- 64 bits.
+#
+# >>> AND THIS IS THE RUN THAT EXERCISES THE UNSIGNED SUBTRACT. <<<
+# Lines 34-37 are "LFI(BU,18), 8.0" / "-(BU,18), $15+.28" /
+# "ST(BU,4), .59($3)": eight, minus what is LEFT of the counter, into
+# the CST entry.  Two units leave the counter at 6, and the entry's
+# count field comes out 2.  THE "-(BU,18)" IS THE OPERATION FIGURE 12
+# ON PRINTED p.61 CAUGHT THIS WEEK -- every unsigned subtract was
+# being done as an addition -- and the no-units run cannot reach it,
+# because line 33's "BXE, X17" jumps over it.  So the two modes
+# together are what make the repair tested by MCP and not only by
+# IBM's own worked example.
+#
+# "8.0" IS EIGHT, NOT 512, and the deck header has the evidence: the
+# immediate assembles into the 24-bit address field as 000010.00 --
+# word 8, bit 0 -- and an 18-bit operand taken from that field's bits
+# 0-17 is the WORD number, 512 >> 6 = 8.  The subtrahend has the same
+# shape: "$15+.28" is word 31 bit 28, and eighteen bits from there is
+# exactly the count field.  Worth pinning rather than assuming: 512
+# would have given 512-6 = 506 and ST's low four bits are 10, a
+# number small and plausible enough to pass a glance.
+#
+# THE COUNT FIELD IS BITS 59-62, derived from the pair of rows that
+# write it.  Line 37 stores FOUR bits at offset .59; line 30 -- the
+# "eight units" arm -- sets ONE bit at the same offset and is
+# commented "UNIT COUNT IN CST TO 8".  One bit at the left of a
+# four-bit field IS eight, so the field runs 59-62 and not 56-59.
+#
+# AND X17 IS NOT REACHED HERE, so the UST address line 5 stored
+# SURVIVES in the entry's bits 0-23 -- which is the point of line 5
+# having stored it.  The no-units run has the same entry with those
+# bits cleared, so the two modes separate "the entry" from "the
+# counter that decided what went in it", which a single mode cannot.
+#
+# THE INJECTION IS p.18's OWN "IOCD PUNCHED INCORRECTLY".  Punch a
+# unit column on a row that is NEITHER of the two the page tests and
+# both BBs miss: line 19's "SIC, XERRAD" and line 20's "B, XERROR"
+# fire.  Observed PC 182 = 5824/32, X ERROR, with the UST entirely
+# untouched and the counter still at 8.  This one reaches X ERROR
+# from INSIDE p.18, unlike the equipment-table injection on the
+# section above, which reaches it from p.17's lookup and so only
+# proves p.18 was never entered.
+#
+# AND IT CORROBORATED SIC's FIELD RULE, 19 bits, from MCP.  X ERR AD
+# came back 0x0074eaaaaaaaaaaa over 0xAAAA... fill: nineteen bits of
+# 000723.40 at the left and the rest undisturbed.  Reference Manual
+# printed pp.41-42: the counter goes "in bits 0-18 of the half-word",
+# "other bits of the half-word are not disturbed", and the stored
+# value "always address[es] the instruction whose location is next
+# higher in storage than the branch instruction to which SIC is
+# prefixed".  XERR18 is at 000722.40, its inner "B, XERROR" is the
+# right half at 000723.00, and 000723.40 is X15 1 -- the next
+# half-word.  All three clauses of the rule in one word, measured
+# from a 1963 program's error exit rather than from a deck written to
+# test it.
+
 run "MCP's whole per-card path, printed p.17, over a synthetic IOCD card" ./run_program.sh ../decks/mcp_p17_card.strap StretchP17CardTb \
     "PC=2087" \
     "p17_channel_number:1080=0x8c00000000000" \
