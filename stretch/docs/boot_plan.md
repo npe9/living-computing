@@ -561,6 +561,99 @@ stores the value AND its sign, so the 24-bit address is at bits 0-23
 and the sign at 24; writing it as one 25-bit field put every bit of
 it one place too low.
 
+**>>> C22-6728 PRINTED p.215 CORROBORATES THE CARD GEOMETRY FROM
+OUTSIDE MCP, 2026-10-21. <<<** The stride and the field map were both
+derived from p.17's and p.18's own increments, which makes them
+derivations from a single source. p.215 is a second source and it
+agrees on both counts.
+
+**"Since information on the master tape is written in COLUMN BINARY
+CARD IMAGE..."** — printed p.215, in the 1401 utility writeup. A
+column-binary card image is 80 columns of 12 rows read as bits: 960
+bits, **which is exactly fifteen 64-bit words, which is exactly p.18
+line 43's `V+I, $13, 15.0`.** The stride derived from MCP's own
+increment and the format named by the Analysis Guide are the same
+number, reached from opposite ends.
+
+**AND EVERY FIELD OFFSET LANDS ON A CARD COLUMN.** Printed p.216
+shows MCP's control cards punched with a tag in column 1 and the
+operation field **starting in column 10** ("B ␣ HED, operation,
+ttaaaaaa, LOAD"; the library control cards are "punched starting in
+column 10"). Dividing p.17's derived offsets by twelve:
+
+| field | bits | column | |
+|---|---|---|---|
+| card type | 0, len 8 | col 1 | the tag field |
+| IOCD identifier | 108, len 48 | **cols 10-13** | four columns = four characters |
+| channel tens | 158, len 7 | col 14, rows 0-6 | the digit rows |
+| channel units | 170, len 16 | col 15, rows 0-9 | the digit rows |
+| equipment letter | 192, len 12 | col 17 | one column = one character |
+| channel available | 204, len 1 | col 18, row 12 | a zone punch |
+| unit entries | 216, 228, … | cols 19, 20, … | one column each |
+
+**The identifier starts at column 10 — where the Analysis Guide says
+a control card's operation field starts — and it is FOUR COLUMNS
+LONG, which is four characters: `IOCD`.** Nothing in p.17 says
+"column"; the number 12 never appears in the page. The map was read
+off `1.44`, `.48+.2`, `.12`, `.22`, `.24` and it comes out
+column-aligned anyway.
+
+**AND IT EXPLAINS A COMMENT THAT PREVIOUSLY ONLY MADE STRUCTURAL
+SENSE.** p.17 line 13 is `BB, 1.44($4)`, commented **"-IF ZONE BIT OF
+IOCD"**. Bit 108 is column 10 row 12 — the zone row — and column 10
+is the first character of `IOCD`. The hunt finds a card by testing
+the zone punch of a letter, and the letter is the `I`.
+
+**AND THE COLUMN-10 SKELETON IS THE WHOLE CONTROL-CARD FAMILY'S**,
+confirmed in the Reference Manual rather than only the Analysis
+Guide. `C22-6678-1` printed p.8 (offset +0) prints the LIM card's
+diagram with the boundaries **1 | 2…9 | 10…72 | 73…80**, "B" in
+column 1 and `LIM,n1,n2` beginning at column 10, and specifies the
+IOD card the same way: "Column 1 contains the single character 'B'";
+"Columns 2-9 contain a problem program symbol … the IODNAME"; the
+processors punch columns 63-66 and 67-72, "thus, when writing an IOD
+statement, the programmer can use only columns 1-62." The REEL and
+HED cards share the skeleton.
+
+So p.17's card-type field at column 1 and its identifier at columns
+10-13 are **the class character and the statement keyword** of an
+ordinary MCP control card. Four columns is four characters, and the
+statement keyword of this card is `IOCD` — a strong inference rather
+than a derivation, resting on three things at once: the field is
+exactly four columns, it is exactly at the keyword position, and
+line 13's "-IF ZONE BIT OF IOCD" tests column 10's row 12, which the
+`I` has and most letters do not.
+
+**BUT IOD IS NOT IOCD, and the distinction matters for A3.** The IOD
+card of printed p.8 is a *problem program's* symbolic request — "An
+IOD card describes symbolically an I/O requirement, or logical I/O
+unit" — in four variants (PRINTER/CONSOLE, READER/PUNCH, DISK/TRACK,
+TAPE), and the deck carries a real one: `B PROSA  IOD,DISK,CDIDEX`.
+The IOCD card is the other side of the same paragraph, the one that
+opens the IOD section:
+
+> "The configuration of I/O devices can vary not only from
+> installation to installation but also, at times, within a single
+> installation. **MCP assumes the responsibility of maintaining an
+> up-to-date record of the status and availability of all I/O devices
+> attached to the exchange.** The system can then assign I/O devices
+> to problem programs and prevent conflicting assignments."
+
+That record **is** the channel and unit status tables pp.17-18 build,
+and the IOCD cards are how the installation tells MCP what it has.
+**The IOCD card's own printed column assignment is still unlocated**
+— C22-6728 pp.215-217 is the UPDATE-30 writeup and does not carry
+it, and C22-6718 is not in `docs/` or on bitsavers.
+
+ONE THING THE COLUMN ARITHMETIC SAYS THAT IS WORTH CHASING: there is
+**no comma** after the keyword. The identifier ends at column 14 row
+12 and the tens digit begins at column 14 row 0 — the same column,
+with its two zone rows skipped, which is exactly how one reads an
+unzoned digit. So the statement runs `IOCD` then the channel digits
+directly, unlike `LIM,n1,n2` and `IOD,type,exit`. Either the IOCD
+card is punched differently from its siblings or one of these
+readings is off; it is recorded here rather than resolved.
+
 **What is left of A3** is narrower than it was: getting this data to
 MCP the way the real system would — on the tape, as card images
 placed there when the system was built — rather than preloaded by a

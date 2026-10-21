@@ -4889,6 +4889,58 @@ forgotten: Reference Manual **PDF page = printed page + 3**, and
 `ja_ua1_ssip` is cited by **PDF page** because its listing carries no
 printed page numbers.
 
+## THE IOCD CARD IS A HOLLERITH CONTROL CARD -- C22-6728 corroborates the geometry from outside MCP, 2026-10-21
+
+The card stride and the card's field map were both derived from
+pp.17-18's own progressive increments. That makes them two
+derivations from **one** source, which is exactly the situation where
+this project has been wrong before. C22-6728 printed p.215-216 is a
+second source and it agrees on both.
+
+**"Since information on the master tape is written in COLUMN BINARY
+CARD IMAGE..."** — printed p.215. A column-binary card image is 80
+columns of 12 rows read as bits: **960 bits = fifteen 64-bit words =
+p.18 line 43's `V+I, $13, 15.0`.** Same number from opposite ends.
+
+**AND EVERY FIELD OFFSET LANDS ON A CARD COLUMN.** Printed p.216
+shows MCP's control cards with a tag in column 1 and the operation
+field **starting in column 10** — "B ␣ HED, operation, ttaaaaaa,
+LOAD", and the library control cards are "punched starting in column
+10". Divide p.17's offsets by twelve:
+
+| field | bits | column | |
+|---|---|---|---|
+| card type | 0, len 8 | col 1 | the tag field |
+| IOCD identifier | 108, len 48 | **cols 10-13** | four columns = four characters |
+| channel tens | 158, len 7 | col 14, rows 0-6 | the digit rows |
+| channel units | 170, len 16 | col 15, rows 0-9 | the digit rows |
+| equipment letter | 192, len 12 | col 17 | one column = one character |
+| channel available | 204, len 1 | col 18, row 12 | a zone punch |
+| unit entries | 216, 228, … | cols 19, 20, … | one column each |
+
+**The identifier starts at column 10 and is FOUR COLUMNS LONG — four
+characters, `IOCD`.** Nothing in p.17 says "column"; the number 12
+never appears on the page. The map was read off `1.44`, `.48+.2`,
+`.12`, `.22`, `.24` and comes out column-aligned anyway.
+
+**AND IT EXPLAINS A COMMENT THAT PREVIOUSLY ONLY MADE STRUCTURAL
+SENSE.** p.17 line 13 is `BB, 1.44($4)`, commented **"-IF ZONE BIT OF
+IOCD"**. Bit 108 is column 10 row 12 — the zone row — and column 10
+holds the first character of `IOCD`. The hunt finds a card by testing
+the zone punch of a letter, and the letter is the `I`.
+
+**WHY THIS MATTERS BEYOND BEING TIDY.** `gen_mcp_p17_tb.py`'s header
+draws a hard line between DERIVED and INVENTED, and the INVENTED side
+— the card's contents, X IOCD's pattern, the equipment table's
+entries — is now carrying three test sections. This moves the card's
+GEOMETRY across that line. The contents are still invented; the shape
+they sit in is not.
+
+**STILL OPEN: the IOD card's own printed column assignment.**
+pp.215-217 are the UPDATE-30 writeup and do not carry it. Neither
+revision of C22-6728 has a text layer, so finding it means working
+from the table of contents and the index.
+
 ## pp.17 AND 18 RUN AS ONE PROGRAM -- the card LOOP, 2026-10-21
 
 `tests/gen_mcp_p17_tb.py` now assembles **both** transcribed pages and

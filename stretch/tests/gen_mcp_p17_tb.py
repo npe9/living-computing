@@ -26,6 +26,29 @@ WHAT IS DERIVED AND WHAT IS INVENTED, the same split prosa.py makes:
   108 -- the identifier's leading bit -- and "CB+" steps one word.
   The equipment table's 29-bit entries are derived the same way.
 
+  AND THE GEOMETRY IS NOW CORROBORATED FROM OUTSIDE MCP, which
+  matters because the map and the stride were both derived from the
+  SAME page's increments.  C22-6728 printed p.215 says information on
+  the master tape "is written in column binary card image", and a
+  column-binary card image is 80 columns of 12 rows = 960 bits =
+  fifteen 64-bit words = p.18 line 43's "V+I, $13, 15.0".  Printed
+  p.216 shows MCP's control cards with a tag in column 1 and the
+  operation field starting in COLUMN 10.  Divide p.17's offsets by
+  twelve and every one of them lands on a column:
+
+      0    col 1              the tag field
+      108  cols 10-13         FOUR columns = four characters, "IOCD"
+      158  col 14 rows 0-6    the digit rows of a tens digit
+      170  col 15 rows 0-9    the digit rows of a units digit
+      192  col 17             one column = one character
+      204  col 18 row 12      a zone punch
+      216+ cols 19, 20, ...   one column per unit
+
+  Nothing in p.17 says "column" and the number 12 never appears on
+  it.  This also explains line 13's comment "-IF ZONE BIT OF IOCD":
+  bit 108 is column 10 ROW 12, the zone row, and column 10 holds the
+  "I".  The hunt finds a card by testing the zone punch of a letter.
+
   INVENTED -- the card's CONTENTS, X IOCD's 48-bit pattern, and the
   table's ten entries.  All three live on pages nobody has
   transcribed; they are chosen here only to be consistent with each
