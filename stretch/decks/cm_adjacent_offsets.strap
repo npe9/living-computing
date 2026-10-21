@@ -1,62 +1,60 @@
-! cm_adjacent_offsets.strap -- A MODEL BUG, ISOLATED BUT NOT YET
-! EXPLAINED: two CONNECT TO MEMORY instructions in a row, and the
-! second sometimes loses the first's bit.
+! cm_adjacent_offsets.strap -- THE LOOK-AHEAD'S STORE-FETCH INTERLOCK,
+! for CONNECT TO MEMORY.  Thirteen blocks of two one-bit CMs into one
+! word, and whether the second preserves the first.
 !
-! >>> THIS DECK DOES NOT PASS.  It is a reproducer, kept in the tree
-! with its measurements, and it is deliberately NOT wired into
-! run_tests.sh -- see docs/NEXT.md.  Wiring a known-failing deck into
-! the suite would make the suite's own verdict useless. <<<
+! >>> THIS DECK FOUND A REAL MODEL BUG AND IS NOW ITS REGRESSION
+! TEST.  storeTarget() in StretchIBox.bsv listed the floating-point
+! stores and the four VFL store codes and had NO CASE for the
+! connectives, so CONNECT TO MEMORY -- which writes storage -- was
+! invisible to the look-ahead's level-to-level storeAddr interlock.
+! A younger level fetching the word a CM was about to write took its
+! copy BEFORE the write, and because CM's store is a read-modify-
+! write that reuses the fetched word, the stale copy went straight
+! back -- undoing the CM before it. <<<
 !
-! WHERE IT CAME FROM.  Printed p.19 lines 9-11 write three single
-! bits into the channel status table entry in a row:
+! WHERE IT CAME FROM.  Printed p.19 lines 9-11 set three single bits
+! in the channel status table entry in a row:
 !
 !     CM1111(BU,1),.61($3)      -SET UNIT COUNT TO TWO
 !     CM1111(BU,1),.27($3)      -MULIT BIT ON IN CST
 !     CM0000(BU,1),.29($3)      -MEANINGLESS ASG BIT OFF
 !
-! and running a disk card through pp.17-19 left bit 27 set and bit 61
+! and running a DISK card through pp.17-19 left bit 27 set and bit 61
 ! LOST.  Halts planted between the rows showed bit 61 present after
 ! line 9 and gone after line 10.
 !
 ! ---------------------------------------------------------------
-! WHAT WAS MEASURED HERE -- and two theories it kills
+! WHAT THE BLOCKS ARE FOR -- and the two theories they killed
 ! ---------------------------------------------------------------
-!   D1  .61 then .27            both bits      PASS
-!   D2  .27 then .61            both bits      PASS
-!   D3  .29 then .27            .29 LOST       FAIL
-!   D4  .61 then .62            both bits      PASS
-!   D5  .29 alone               bit 29         PASS
-!   D6  .27 alone               bit 27         PASS
-!   D7  .27 then .29            both bits      PASS
-!   D8  .29 then .31            both bits      PASS
-!   D9  .29, NOP, .27           both bits      PASS
-!   DA  .61 then .59            both bits      PASS
-!   DB  .29 then .3             both bits      PASS
-!   DC  NOP, then .29 then .27  both bits      PASS
-!   DD  .29 then .27 again      .29 LOST       FAIL
+!   D1  .61 then .27            D7  .27 then .29
+!   D2  .27 then .61            D8  .29 then .31
+!   D3  .29 then .27  <- failed D9  .29, NOP, .27
+!   D4  .61 then .62            DA  .61 then .59
+!   D5  .29 alone               DB  .29 then .3
+!   D6  .27 alone               DC  NOP, .29, .27
+!                               DD  .29 then .27  <- failed
 !
-! "THE WRITE IS EIGHT BITS WIDE, not one" fits D3 (a write at 27
-! covering 27-34 would take out 29) and every other row up to D8 --
-! AND DA KILLS IT.  A write at 59 covering 59-66 would take out 61
-! and does not.
+! "THE WRITE IS EIGHT BITS WIDE, not one" fits D3 -- a write at 27
+! covering 27-34 would take out 29 -- and every block through D8.
+! DA KILLS IT: a write at 59 covering 59-66 would take out 61, and
+! does not.
 !
-! "THE SECOND WRITE READS A STALE COPY OF THE WORD" fits D3 and D9 --
-! AND D1, D7, D8, DA and DB ALL KILL IT.  Every one of them is a
-! second write into a word the instruction before it just changed,
-! and every one of them keeps both bits.
+! "THE SECOND WRITE READS A STALE COPY" fits D3 and D9, and D1, D7,
+! D8, DA and DB ALL KILL IT: every one is a second write into a word
+! the instruction before it just changed, and every one keeps both
+! bits.  The staleness is real but it is not unconditional -- it
+! happens only when the LOOK-AHEAD supplied the operand.
 !
-! >>> WHAT ACTUALLY DECIDES IT IS DC AGAINST DD.  Those two blocks
-! are THE SAME INSTRUCTION PAIR ON THE SAME DATA, one after the
-! other, differing only in what precedes them -- and DC keeps both
-! bits while DD loses one.  Two identical instructions on identical
-! operands cannot correctly give two different answers, so this is
-! state in the model that should not be there.  That is as far as the
-! evidence goes; the mechanism is NOT identified and is not guessed
-! at here. <<<
+! >>> WHAT IDENTIFIED IT AS STATE RATHER THAN ARITHMETIC IS DC
+! AGAINST DD.  Those two blocks are THE SAME INSTRUCTION PAIR ON THE
+! SAME DATA, one after the other, differing only in what precedes
+! them -- and DC kept both bits while DD lost one.  Two identical
+! instructions on identical operands cannot correctly give two
+! different answers. <<<
 !
-! The offsets are not the variable either: 29-then-27 fails while
+! The offsets were never the variable: 29-then-27 failed while
 ! 61-then-59, the same descent two bits apart in the other half of
-! the word, passes.
+! the word, passed.
 !
 ! ---------------------------------------------------------------
 ! WHY NOTHING CAUGHT IT BEFORE
@@ -67,6 +65,10 @@
 ! Every other deck in the corpus writes a count field LAST.  p.19 is
 ! the first program here that sets a high-offset bit and then goes on
 ! writing lower ones into the same word.
+!
+! THE INJECTION IS THE FIX ITSELF: removing storeTarget()'s
+! Connective case puts D3 and DD back to one bit each and leaves the
+! other eleven blocks passing.
 
         SLC, (8)2000.0
 

@@ -59,6 +59,34 @@ function Maybe#(WordAddr) storeTarget(StretchStorage st, DecodedInstr d);
         BitAddr ea = prog ? st.readIndex(v.a.i1).addr : effAddr24(st, v.a.addr, v.a.i1);
         return tagged Valid ea[23:6];
       end else return tagged Invalid;
+    // >>> CONNECT TO MEMORY WRITES STORAGE AND WAS MISSING HERE. <<<
+    // The connectives ARE isEboxClass, so they do get look-ahead
+    // levels -- unlike BB above, a case here is not dead code -- and
+    // without it the level-to-level storeAddr interlock could never
+    // fire for a CM.  A younger level fetching the word a CM is about
+    // to write therefore took its copy BEFORE the write, and because
+    // CM's store is a read-modify-write that reuses the fetched word
+    // (`mHiWord` in StretchExecute's Conn arm), the stale copy was
+    // written straight back -- undoing the CM before it.
+    //
+    // FOUND VIA MCP printed p.19 lines 9-11, which set three single
+    // bits in the channel status table entry in a row; the first was
+    // lost.  decks/cm_adjacent_offsets.strap is the isolated
+    // reproducer, and what identified it as state rather than
+    // arithmetic is that the SAME instruction pair on the SAME data
+    // gave two different answers depending only on what preceded it.
+    //
+    // The address is computed exactly as the VflInt case above does,
+    // because the Conn arm computes its own `ea` the same way.
+    // C and CT are excluded: C writes the accumulator and CT writes
+    // nothing, so neither is a store.
+    tagged Connective .c:
+      if (c.suffix == conn_CM) begin
+        Bool prog = (c.a.p != 0 && c.a.p != 4);
+        BitAddr ea = prog ? st.readIndex(c.a.i1).addr
+                          : effAddr24(st, c.a.addr, c.a.i1);
+        return tagged Valid ea[23:6];
+      end else return tagged Invalid;
     default: return tagged Invalid;
   endcase
 endfunction

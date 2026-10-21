@@ -1920,6 +1920,32 @@ run "p.18's UNIT loop -- a card carrying units, and the unit count" ./run_mcp_p1
 # from a 1963 program's error exit rather than from a deck written to
 # test it.
 
+run "p.19's OWN body -- a DISK card, and the two-unit arm" ./run_mcp_p17.sh StretchMcpP17DiskTb disk
+# >>> THE ONLY CARD THAT REACHES PRINTED p.19's BODY.  A TP card
+# takes p.18's tape path and only p.19's lines 23-25 ever run; a DK
+# card goes to X18 and down lines 2-22. <<<
+#
+# p.19 line 7 sets the unit counter to TWO, not eight, and lines
+# 12-16 run it out -- two passes of "CB+,$15,X18 2", each stepping
+# $15 one word -- so $15 ends at value +2 words with the count at
+# zero.  The two UST entries get ONE bit each, SUNASG at .29, where
+# p.18's loop sets .27, .28 and .39: line 12's "BZB,.25($3)" tests
+# SCHAVL, which p.17 line 44 CLEARED because this channel is
+# available, so line 13's "-NO * THEN UNIT NOT AVAILABLE" is skipped.
+#
+# THE EQUIPMENT TABLE'S ORDER IS WHAT PUTS THE CARD ON THIS PATH, and
+# it is derived rather than chosen.  p.19 line 4's "KCI,$1,6.0" tests
+# the REMAINING COUNT of p.17's equipment search -- p.17 line 48 sets
+# it to ten and line 50's CBZ spends one per entry examined, so the
+# count is 10 minus the matched entry's position -- and "BZXH"
+# branches to the SINGLE-unit arm when XH is OFF.  So entries 1-3 are
+# the "logical multi unit * disk or consol" ones.  DK sits first.
+#
+# THAT DIRECTION WAS DERIVED BACKWARDS FIRST, and this test is what
+# caught it: with the table ordered the other way the DK card reached
+# X18 4 instead, PC 982, with $1's count measured at exactly six.
+# See the branch-grammar section in docs/NEXT.md.
+
 run "p.18's EIGHT-unit arm -- the counter runs out, and p.18 is covered" ./run_mcp_p17.sh StretchMcpP17Units8Tb units8
 # >>> p.18's LAST UNTESTED BRANCH.  Eight units run the counter out,
 # so line 28's CB+ stops branching and line 30 -- "CM1111(BU,1),
@@ -2106,6 +2132,76 @@ run "MCP's Hollerith channel-number conversion, printed p.17 lines 32-36" ./run_
 # them, reads 0x30 as 48 and makes the channel 53 -- moving the two
 # value checks and not the advance, which is the other half of the
 # same split.
+
+run "CONNECT TO MEMORY and the look-ahead's store-fetch interlock" ./run_program.sh ../decks/cm_adjacent_offsets.strap StretchCmAdjTb \
+    "PC=2098" \
+    "d1_61_then_27:1056=0x1000000004" \
+    "d2_27_then_61:1057=0x1000000004" \
+    "d3_29_then_27:1058=0x1400000000" \
+    "d4_61_then_62:1059=0x6" \
+    "d5_29_alone:1060=0x400000000" \
+    "d6_27_alone:1061=0x1000000000" \
+    "d7_27_then_29:1062=0x1400000000" \
+    "d8_29_then_31:1063=0x500000000" \
+    "d9_29_nop_27:1064=0x1400000000" \
+    "da_61_then_59:1065=0x14" \
+    "db_29_then_3:1066=0x1000000400000000" \
+    "dc_nop_29_27:1067=0x1400000000" \
+    "dd_29_then_27_again:1068=0x1400000000"
+# >>> A REAL MODEL BUG, FOUND BY MCP AND FIXED.  storeTarget() in
+# StretchIBox.bsv listed the floating-point stores and the four VFL
+# store codes and had NO CASE FOR THE CONNECTIVES, so CONNECT TO
+# MEMORY -- which writes storage -- was invisible to the look-ahead's
+# level-to-level storeAddr interlock. <<<
+#
+# A younger level fetching the word a CM was about to write took its
+# copy BEFORE the write, and because CM's store is a read-modify-write
+# that reuses the fetched word (`mHiWord` in the Conn arm), the stale
+# copy went straight back -- undoing the CM before it.
+#
+# THE CONNECTIVES ARE isEboxClass, so they DO get look-ahead levels.
+# That is what makes this different from the BB case the Conn arm's
+# own comment describes: BB is not E-box class, so iboxHazard drains
+# the whole look-ahead before it runs and a storeTarget() case for it
+# would be dead code.  For CM it was the missing case.
+#
+# FOUND VIA printed p.19 lines 9-11, which set three single bits in
+# the channel status table entry in a row:
+#
+#     CM1111(BU,1),.61($3)      -SET UNIT COUNT TO TWO
+#     CM1111(BU,1),.27($3)      -MULIT BIT ON IN CST
+#     CM0000(BU,1),.29($3)      -MEANINGLESS ASG BIT OFF
+#
+# A DISK card run through pp.17-19 came out with bit 27 set and bit
+# 61 LOST.  Halts planted between the rows put the loss on line 10.
+#
+# TWO THEORIES DIED ON THE WAY, and the blocks that killed them are
+# why there are thirteen.  "The write is eight bits wide rather than
+# one" fits D3 -- a write at 27 covering 27-34 takes out 29 -- and
+# every block through D8; DA kills it, because a write at 59 covering
+# 59-66 would take out 61 and does not.  "The second write reads a
+# stale copy" fits D3 and D9, and D1, D7, D8, DA and DB all kill it:
+# every one is a second write into a word the instruction before it
+# just changed, and every one keeps both bits.
+#
+# >>> WHAT IDENTIFIED IT AS STATE RATHER THAN ARITHMETIC WAS DC
+# AGAINST DD: the SAME instruction pair on the SAME data, one after
+# the other, differing only in what precedes them -- and DC kept both
+# bits while DD lost one.  Two identical instructions on identical
+# operands cannot correctly give two different answers, which rules
+# out every explanation that lives inside the instruction. <<<
+#
+# WHY NOTHING CAUGHT IT BEFORE.  Printed p.18 writes the same kind of
+# pair at .29 and .27 and comes out right, because its first write is
+# CM0000 -- it CLEARS bit 29, so losing that write and re-clearing
+# the bit are the same picture.  Every other deck writes a count
+# field LAST.  p.19 is the first program here that sets a high-offset
+# bit and then goes on writing lower ones into the same word.
+#
+# THE INJECTION IS THE FIX ITSELF: removing storeTarget()'s
+# Connective case puts D3 and DD back to one bit each -- measured --
+# and leaves the other eleven blocks passing, which is what says the
+# case is necessary and not merely sufficient.
 
 run "The connective counts at word 7 (pp.75-76)" ./run_program.sh ../decks/connective_counts.strap StretchConnCntTb \
     "PC=2086" \

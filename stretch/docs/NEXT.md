@@ -5134,13 +5134,29 @@ are entries **1-3**. `gen_mcp_p17_tb.py`'s `EQUIPMENT_CODES` is
 ordered on the corrected reading, and the `disk` mode reaching p.19's
 body at all is what demonstrates it.
 
-## >>> AN OPEN MODEL BUG: TWO "CONNECT TO MEMORY"s IN A ROW, 2026-10-21 <<<
+## >>> A MODEL BUG FOUND BY MCP AND FIXED: THE LOOK-AHEAD'S STORE-FETCH INTERLOCK DID NOT KNOW ABOUT "CONNECT TO MEMORY", 2026-10-21 <<<
 
-**`decks/cm_adjacent_offsets.strap` reproduces it in thirteen blocks
-and DOES NOT PASS.** It is deliberately **not** wired into
-`run_tests.sh` — a known-failing deck in the suite would make the
-suite's own verdict useless. This section is the record; the deck
-carries the same measurements beside the code.
+**THE CAUSE.** `storeTarget()` in `bsv/StretchIBox.bsv` listed the
+floating-point stores and the four VFL store codes and had **no case
+for the connectives**, so `CONNECT TO MEMORY` — which writes storage —
+was invisible to the look-ahead's level-to-level `storeAddr`
+interlock. A younger level fetching the word a `CM` was about to
+write took its copy **before** the write, and because `CM`'s store is
+a read-modify-write that reuses the fetched word (`mHiWord` in the
+`Conn` arm), the stale copy went straight back — undoing the `CM`
+before it.
+
+The connectives **are** `isEboxClass`, so they do get look-ahead
+levels. That is what separates this from the `BB` case the `Conn`
+arm's own comment describes: `BB` is not E-box class, `iboxHazard`
+drains the whole look-ahead before it runs, and a `storeTarget()`
+case for it would be dead code. For `CM` it was the missing case.
+
+`decks/cm_adjacent_offsets.strap` is now the regression test, in the
+suite, with the thirteen blocks below as its checks. **The injection
+is the fix itself**: removing the `Connective` case puts D3 and DD
+back to one bit each and leaves the other eleven passing — which is
+what says the case is necessary and not merely sufficient.
 
 **Where it came from.** Printed p.19 lines 9-11 write three single
 bits into the channel status table entry in a row:
@@ -5199,23 +5215,24 @@ corpus writes a count field **last**. p.19 is the first program here
 that sets a high-offset bit and then goes on writing lower ones into
 the same word.
 
-**WHAT IT BLOCKS.** `gen_mcp_p17_tb.py` has a working **`disk`**
-mode — a `DK` card, which is the only way to reach printed p.19's own
-body — and it passes every check except the unit-count field, which
-is this bug. **It is not wired into `run_tests.sh` until the bug is
-fixed**, because the honest alternative, deleting the one failing
-assertion, would hide the only thing in the suite that currently
-knows about it. Fixing this is the top open item.
+**WHAT IT UNBLOCKED.** `gen_mcp_p17_tb.py`'s **`disk`** mode — a
+`DK` card, the only card that reaches printed p.19's own body — now
+passes and is in the suite. All four modes (none/units/units8/disk)
+are green.
 
-**WHERE TO START.** `conn_CM`'s store is
-`writeFieldWithHi(st, ea, len_, result, mHiWord)` in
-`StretchExecute.bsv` (the `tagged Conn` arm), `mHiWord` comes from
-`execute()`'s prefetch, and `writeFieldWithHi`/`insertFieldBits` are
-in `StretchVFL.bsv`. `effLength(1)` is 1 and `connContract` returns
-one bit, so the arithmetic in isolation looks right — which is
-consistent with the fault being in how `mHiWord` is obtained rather
-than in what is done with it, even though plain staleness is ruled
-out above.
+**THE SHAPE OF THE SEARCH IS WORTH KEEPING**, because the two dead
+theories were both *reasonable* and both took real evidence to kill,
+and the thing that finally located the fault was not a theory at all.
+DC against DD is the same instruction pair on the same data, run one
+after the other, and they disagreed. That rules out **every**
+explanation living inside the instruction — width, offset, byte
+boundary, contraction, the arithmetic — in one step, without knowing
+anything about the mechanism. The remaining candidates all had to be
+state carried **between** instructions, and there is exactly one such
+thing in the path: the word the look-ahead hands the E-box.
+
+Build the pair that differs only in history before building the pair
+that differs in operands.
 
 ## PRINTED p.19 IS TRANSCRIBED -- 46 rows, bit-exact, 2026-10-21
 
