@@ -5094,6 +5094,129 @@ fields on p.246 and nothing else on it**, which is a useful measure
 of how much of MCP's I/O bookkeeping the transcribed pages cover:
 not much, and now there is a printed map of the rest.
 
+## THE INDICATOR-BRANCH MNEMONIC'S LEADING `Z` MEANS "BRANCH IF OFF", 2026-10-21
+
+`C22-6531` Appendix A footnote 2 gives the indicator-branch form as
+**`B[Z]<name>[Z]`**, two optional `Z`s around the indicator name, and
+the Reference Manual's INDICATOR BRANCHING block (printed p.169)
+gives the two modifier bits as *leave indicator / set indicator to
+zero* and *branch if off / branch if on*. **Which `Z` is which was
+never written down here, and it was assumed backwards.**
+
+It is the **leading** `Z` that means "branch if off". Three
+instructions across two pages agree:
+
+| | | |
+|---|---|---|
+| p.17 l.31 | `BZAE, X19` | takes the "NOT AN IOCD CARD" exit when the compare **failed** |
+| p.19 l.25 | `BZAEZ, X ERROR` | takes "NOT AN IOD CARD EITHER" the same way |
+| p.19 l.6 | `BZXH, X 18 4` | measured below |
+
+**The measurement.** A `DK` card was run with the equipment table
+ordered so that the matched entry left `$1`'s count at exactly six,
+and line 4's `KCI,$1,6.0` therefore compared six against six —
+equal, so `XH` **off**. A halt planted at `X18 4` caught the machine
+there (PC 982), and a probe on word 17 read the count back as six.
+So `BZXH` branched with `XH` off. Reading the grammar the other way
+predicts no branch.
+
+**This is not a claim about the encoding**, which is already proven:
+`verify_mcp_bootstrap_p19.py` matches line 6's assembled word to the
+listing bit-for-bit. It is about what the bits *mean*, and the
+evidence is that MCP's own control flow only makes sense this way.
+
+**IT CORRECTED A DERIVATION WRITTEN THE SAME DAY.** p.19 line 4
+partitions the equipment table by the *position* of the matched entry
+(see the p.19 section below), and the direction of that partition
+depends entirely on this. With the grammar read backwards, disk and
+console came out as entries **4 and beyond**; read correctly, they
+are entries **1-3**. `gen_mcp_p17_tb.py`'s `EQUIPMENT_CODES` is
+ordered on the corrected reading, and the `disk` mode reaching p.19's
+body at all is what demonstrates it.
+
+## >>> AN OPEN MODEL BUG: TWO "CONNECT TO MEMORY"s IN A ROW, 2026-10-21 <<<
+
+**`decks/cm_adjacent_offsets.strap` reproduces it in thirteen blocks
+and DOES NOT PASS.** It is deliberately **not** wired into
+`run_tests.sh` — a known-failing deck in the suite would make the
+suite's own verdict useless. This section is the record; the deck
+carries the same measurements beside the code.
+
+**Where it came from.** Printed p.19 lines 9-11 write three single
+bits into the channel status table entry in a row:
+
+```
+CM1111(BU,1),.61($3)      -SET UNIT COUNT TO TWO
+CM1111(BU,1),.27($3)      -MULIT BIT ON IN CST
+CM0000(BU,1),.29($3)      -MEANINGLESS ASG BIT OFF
+```
+
+Running a **disk** card through pp.17-19 left bit 27 set and **bit 61
+lost**. Halts planted between the rows showed bit 61 present after
+line 9 and gone after line 10.
+
+**What was measured, outside MCP:**
+
+| block | | result |
+|---|---|---|
+| D1 | `.61` then `.27` | both bits |
+| D2 | `.27` then `.61` | both bits |
+| **D3** | **`.29` then `.27`** | **`.29` LOST** |
+| D4 | `.61` then `.62` | both bits |
+| D5/D6 | each alone | correct |
+| D7 | `.27` then `.29` | both bits |
+| D8 | `.29` then `.31` | both bits |
+| D9 | `.29`, NOP, `.27` | both bits |
+| DA | `.61` then `.59` | both bits |
+| DB | `.29` then `.3` | both bits |
+| DC | NOP, then `.29` then `.27` | both bits |
+| **DD** | **`.29` then `.27` again** | **`.29` LOST** |
+
+**TWO THEORIES, BOTH KILLED BY THE DATA.** *"The write is eight bits
+wide, not one"* fits D3 — a write at 27 covering 27-34 would take out
+29 — and every row through D8. **DA kills it**: a write at 59
+covering 59-66 would take out 61, and does not. *"The second write
+reads a stale copy of the word"* fits D3 and D9. **D1, D7, D8, DA and
+DB all kill it**: every one is a second write into a word the
+instruction before it just changed, and every one keeps both bits.
+
+**WHAT ACTUALLY DECIDES IT IS DC AGAINST DD.** Those two blocks are
+**the same instruction pair on the same data**, one after the other,
+differing only in what precedes them — and DC keeps both bits while
+DD loses one. Two identical instructions on identical operands cannot
+correctly give two different answers. **So there is state in the
+model that should not be there.** That is as far as the evidence
+goes; the mechanism is *not* identified, and is deliberately not
+guessed at here. The offsets are not the variable either: `.29`→`.27`
+fails while `.61`→`.59`, the same descent two bits apart in the other
+half of the word, passes.
+
+**WHY NOTHING CAUGHT IT BEFORE.** Printed p.18 writes the same kind
+of pair at `.29` and `.27` and comes out right, because its first
+write is `CM0000` — it *clears* bit 29, so losing that write and
+re-clearing the bit are the same picture. Every other deck in the
+corpus writes a count field **last**. p.19 is the first program here
+that sets a high-offset bit and then goes on writing lower ones into
+the same word.
+
+**WHAT IT BLOCKS.** `gen_mcp_p17_tb.py` has a working **`disk`**
+mode — a `DK` card, which is the only way to reach printed p.19's own
+body — and it passes every check except the unit-count field, which
+is this bug. **It is not wired into `run_tests.sh` until the bug is
+fixed**, because the honest alternative, deleting the one failing
+assertion, would hide the only thing in the suite that currently
+knows about it. Fixing this is the top open item.
+
+**WHERE TO START.** `conn_CM`'s store is
+`writeFieldWithHi(st, ea, len_, result, mHiWord)` in
+`StretchExecute.bsv` (the `tagged Conn` arm), `mHiWord` comes from
+`execute()`'s prefetch, and `writeFieldWithHi`/`insertFieldBits` are
+in `StretchVFL.bsv`. `effLength(1)` is 1 and `connContract` returns
+one bit, so the arithmetic in isolation looks right — which is
+consistent with the fault being in how `mHiWord` is obtained rather
+than in what is done with it, even though plain staleness is ruled
+out above.
+
 ## PRINTED p.19 IS TRANSCRIBED -- 46 rows, bit-exact, 2026-10-21
 
 `decks/mcp_bootstrap_p19.strap` + `tests/verify_mcp_bootstrap_p19.py`.

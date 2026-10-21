@@ -1,0 +1,141 @@
+! cm_adjacent_offsets.strap -- A MODEL BUG, ISOLATED BUT NOT YET
+! EXPLAINED: two CONNECT TO MEMORY instructions in a row, and the
+! second sometimes loses the first's bit.
+!
+! >>> THIS DECK DOES NOT PASS.  It is a reproducer, kept in the tree
+! with its measurements, and it is deliberately NOT wired into
+! run_tests.sh -- see docs/NEXT.md.  Wiring a known-failing deck into
+! the suite would make the suite's own verdict useless. <<<
+!
+! WHERE IT CAME FROM.  Printed p.19 lines 9-11 write three single
+! bits into the channel status table entry in a row:
+!
+!     CM1111(BU,1),.61($3)      -SET UNIT COUNT TO TWO
+!     CM1111(BU,1),.27($3)      -MULIT BIT ON IN CST
+!     CM0000(BU,1),.29($3)      -MEANINGLESS ASG BIT OFF
+!
+! and running a disk card through pp.17-19 left bit 27 set and bit 61
+! LOST.  Halts planted between the rows showed bit 61 present after
+! line 9 and gone after line 10.
+!
+! ---------------------------------------------------------------
+! WHAT WAS MEASURED HERE -- and two theories it kills
+! ---------------------------------------------------------------
+!   D1  .61 then .27            both bits      PASS
+!   D2  .27 then .61            both bits      PASS
+!   D3  .29 then .27            .29 LOST       FAIL
+!   D4  .61 then .62            both bits      PASS
+!   D5  .29 alone               bit 29         PASS
+!   D6  .27 alone               bit 27         PASS
+!   D7  .27 then .29            both bits      PASS
+!   D8  .29 then .31            both bits      PASS
+!   D9  .29, NOP, .27           both bits      PASS
+!   DA  .61 then .59            both bits      PASS
+!   DB  .29 then .3             both bits      PASS
+!   DC  NOP, then .29 then .27  both bits      PASS
+!   DD  .29 then .27 again      .29 LOST       FAIL
+!
+! "THE WRITE IS EIGHT BITS WIDE, not one" fits D3 (a write at 27
+! covering 27-34 would take out 29) and every other row up to D8 --
+! AND DA KILLS IT.  A write at 59 covering 59-66 would take out 61
+! and does not.
+!
+! "THE SECOND WRITE READS A STALE COPY OF THE WORD" fits D3 and D9 --
+! AND D1, D7, D8, DA and DB ALL KILL IT.  Every one of them is a
+! second write into a word the instruction before it just changed,
+! and every one of them keeps both bits.
+!
+! >>> WHAT ACTUALLY DECIDES IT IS DC AGAINST DD.  Those two blocks
+! are THE SAME INSTRUCTION PAIR ON THE SAME DATA, one after the
+! other, differing only in what precedes them -- and DC keeps both
+! bits while DD loses one.  Two identical instructions on identical
+! operands cannot correctly give two different answers, so this is
+! state in the model that should not be there.  That is as far as the
+! evidence goes; the mechanism is NOT identified and is not guessed
+! at here. <<<
+!
+! The offsets are not the variable either: 29-then-27 fails while
+! 61-then-59, the same descent two bits apart in the other half of
+! the word, passes.
+!
+! ---------------------------------------------------------------
+! WHY NOTHING CAUGHT IT BEFORE
+! ---------------------------------------------------------------
+! Printed p.18 writes the same kind of pair at .29 and .27 and comes
+! out right, because its first write is CM0000 -- it CLEARS bit 29,
+! so losing that write and re-clearing the bit are the same picture.
+! Every other deck in the corpus writes a count field LAST.  p.19 is
+! the first program here that sets a high-offset bit and then goes on
+! writing lower ones into the same word.
+
+        SLC, (8)2000.0
+
+START   CM1111(BU,1), D1+.61
+        CM1111(BU,1), D1+.27
+
+        CM1111(BU,1), D2+.27
+        CM1111(BU,1), D2+.61
+
+        CM1111(BU,1), D3+.29
+        CM1111(BU,1), D3+.27
+
+        CM1111(BU,1), D4+.61
+        CM1111(BU,1), D4+.62
+
+        CM1111(BU,1), D5+.29
+
+        CM1111(BU,1), D6+.27
+
+        CM1111(BU,1), D7+.27
+        CM1111(BU,1), D7+.29
+
+        CM1111(BU,1), D8+.29
+        CM1111(BU,1), D8+.31
+
+! >>> THE DECISIVE PAIR: the same writes as D3, with an unrelated
+! instruction between them.  If D9 holds both bits and D3 does not,
+! the second write is reading a STALE copy of the word; if D9 fails
+! the same way, the write is simply WIDER than one bit. <<<
+        CM1111(BU,1), D9+.29
+        NOP, 0
+        CM1111(BU,1), D9+.27
+
+! Descending within the LOW half, close together.
+        CM1111(BU,1), DA+.61
+        CM1111(BU,1), DA+.59
+
+! Descending within the HIGH half, far apart.
+        CM1111(BU,1), DB+.29
+        CM1111(BU,1), DB+.3
+
+! The SAME pair as D3, shifted by one half-word in the instruction
+! stream.  If this one holds both bits, the fault is not about the
+! offsets at all.
+        NOP, 0
+        CM1111(BU,1), DC+.29
+        CM1111(BU,1), DC+.27
+
+! And the D3 pair again, unshifted, to show it is repeatable.
+        CM1111(BU,1), DD+.29
+        CM1111(BU,1), DD+.27
+
+PASS    BEW, $
+
+! Data, word-aligned: BEW is a half word, so without this the 64-bit
+! words below would straddle.
+        SLC, (8)2040.0
+D1      DD(BU,64,8), 0
+D2      DD(BU,64,8), 0
+D3      DD(BU,64,8), 0
+D4      DD(BU,64,8), 0
+D5      DD(BU,64,8), 0
+D6      DD(BU,64,8), 0
+D7      DD(BU,64,8), 0
+D8      DD(BU,64,8), 0
+D9      DD(BU,64,8), 0
+DA      DD(BU,64,8), 0
+DB      DD(BU,64,8), 0
+DC      DD(BU,64,8), 0
+DD      DD(BU,64,8), 0
+
+        END, START

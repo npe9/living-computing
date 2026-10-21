@@ -113,9 +113,47 @@ EQP_CODE = 6              # the 4-bit code the matching table entry carries
 # AND IT EXPLAINS WHY ONE COLUMN IS ENOUGH: the six codes' second
 # letters are N, K, R, U, P and D -- all distinct.  MCP never needs
 # the first letter.
-EQUIPMENT_CODES = ["CN", "DK", "PR", "PU", "TP", "RD"]
-CARD_EQUIPMENT  = "TP"    # Tape -- see below for why it must be tape
-LETTER = column_bits(CARD_EQUIPMENT[1])
+# >>> AND THE TABLE'S ORDER IS CONSTRAINED BY printed p.19 line 4,
+# which is why these are not in the page's own listing order. <<<
+#
+#     X18 1   KCI,$1,6.0     -LOGICAL MULTI UNIT * DISK OR CONSOL
+#             BZXH,X 18 4
+#
+# THAT TESTS THE REMAINING COUNT OF p.17's EQUIPMENT SEARCH, not the
+# equipment code.  p.17 line 48 sets the count to ten and line 50's
+# "CBZ,$1,X ERROR" spends one per entry examined, so after matching
+# the k-th entry the count is 10 - k -- which the equipment-code
+# deck measures independently: its fourth entry leaves six.
+#
+# So "6.0" PARTITIONS THE TABLE BY POSITION -- and the direction of
+# the partition was derived BACKWARDS the first time, which is worth
+# recording because the model is what corrected it.
+#
+# "BZXH" BRANCHES WHEN XH IS **OFF**.  In C22-6531 Appendix A
+# footnote 2's "B[Z]<name>[Z]", the LEADING Z is "branch if off" and
+# the trailing one sets the indicator to zero -- not the other way
+# round.  Three instructions across two pages agree: p.17 line 31's
+# "BZAE,X19" takes the "NOT AN IOCD CARD" exit when the compare
+# FAILED, p.19 line 25's "BZAEZ,X ERROR" takes "NOT AN IOD CARD
+# EITHER" the same way, and this one.
+#
+# A DK card run with the table ordered the other way reached X18 4
+# with $1's count measured at EXACTLY SIX -- equal, so XH off, so the
+# branch fired.  Reading the grammar the other way predicts no branch
+# and the run says otherwise.
+#
+# So: BZXH takes X18 4, the SINGLE-unit arm, when the count is NOT
+# high, i.e. 10 - k <= 6, i.e. k >= 4.  ENTRIES 1-3 ARE THE "LOGICAL
+# MULTI UNIT * DISK OR CONSOL" ONES and entries 4 and beyond are
+# single-unit.  Disk and console go first.
+#
+# That fixes a set and three positions, not a unique order, and it is
+# the most the code can say.  Tape's position is unconstrained
+# because p.18 line 2's tape flag diverts it before this test is ever
+# reached.
+EQUIPMENT_CODES = ["DK", "CN",         # 1-2: "DISK OR CONSOL"
+                   "TP",               # 3:   diverted earlier anyway
+                   "PR", "PU", "RD"]   # 4-6: single unit
 
 # (letter column, equipment code, IS-TAPE flag).
 #
@@ -134,9 +172,12 @@ LETTER = column_bits(CARD_EQUIPMENT[1])
 # branch, for disk and console, instead says "SET UNIT COUNT TO TWO".
 # A tape channel carries many units and a disk channel two.  The card
 # therefore has to be TP for p.18 to be the page under test.
-EQP_ENTRIES = [(column_bits(c[1]), EQP_CODE if c == CARD_EQUIPMENT else 0,
-                1 if c == "TP" else 0)
-               for c in EQUIPMENT_CODES]
+def equipment_table(card_equipment):
+    """(letter column, equipment code, IS-TAPE flag) per entry."""
+    return [(column_bits(c[1]),
+             EQP_CODE if c == card_equipment else 0,
+             1 if c == "TP" else 0)
+            for c in EQUIPMENT_CODES]
 
 
 def put(words, bitoff, nbits, val):
@@ -158,8 +199,9 @@ def halt_at(bitaddr):
 def main():
     if len(sys.argv) not in (2, 3) or (len(sys.argv) == 3
                                       and sys.argv[2] not in ("units",
-                                                              "units8")):
-        print("usage: %s ModuleName [units|units8]" % sys.argv[0],
+                                                              "units8",
+                                                              "disk")):
+        print("usage: %s ModuleName [units|units8|disk]" % sys.argv[0],
               file=sys.stderr)
         sys.exit(1)
     # "units" punches UNIT COLUMNS onto the card, which is what sends
@@ -174,7 +216,14 @@ def main():
     # "UNIT COUNT IN CST TO 8" -- runs INSTEAD of lines 34-37's
     # subtract.  The two arms write the same field by different means
     # and that is the point of testing both.
-    unit_mode = sys.argv[2] if len(sys.argv) == 3 else None
+    mode = sys.argv[2] if len(sys.argv) == 3 else None
+    # "disk" puts a DK card on instead of a TP one, which is the only
+    # way to reach printed p.19's OWN body.  A tape card takes p.18's
+    # path and only p.19's lines 23-25 ever run.
+    disk_mode = mode == "disk"
+    unit_mode = mode if mode in ("units", "units8") else None
+    CARD_EQUIPMENT = "DK" if disk_mode else "TP"
+    EQP_ENTRIES = equipment_table(CARD_EQUIPMENT)
 
     # BOTH PAGES, because they are one program.  Printed p.17 ends at
     # 000712.00 with a full word and printed p.18 begins at
@@ -459,7 +508,27 @@ def main():
     entry = put_field(entry, 29, 29, 0)          # p.18 l.7  CM0000 -- "MEANINGLESS
                                                  #                     ASSIGN BIT"
     entry = put_field(entry, 27, 27, 1)          # p.18 l.9  CM1111 -- MULTI bit on
-    if not unit_mode:
+    if disk_mode:
+        # >>> THE DISK CARD IS THE ONLY ONE THAT REACHES PRINTED p.19's
+        # OWN BODY, and the entry is built by that page's rows: <<<
+        #
+        #   p.19 l.8   SV, $15, 0.0($3)        UST address in
+        #   p.19 l.9   CM1111(BU,1), .61($3)   "UNIT COUNT TO TWO"
+        #   p.19 l.10  CM1111(BU,1), .27($3)   MULTI on
+        #   p.19 l.11  CM0000(BU,1), .29($3)   assign bit off
+        #
+        # X18 4 -- the single-unit arm, which would write .28/.29 into
+        # ($3) instead -- is NOT taken, because DK sits FIRST in the
+        # equipment table, so line 4's "KCI,$1,6.0" compares a count
+        # of NINE against six and leaves XH ON, and "BZXH" branches
+        # when XH is OFF.  That is the whole reason the table above is
+        # ordered the way it is.
+        entry = put_field(entry, 0, 23, ust_bits)
+        entry = put_field(entry, 24, 24, 0)
+        entry = put_field(entry, 59, 62, 2)      # ONE bit at .61
+        entry = put_field(entry, 27, 27, 1)
+        entry = put_field(entry, 29, 29, 0)
+    elif not unit_mode:
         # p.18 line 33's "BXE, X17" is the branch marked "NO UNITS AT ALL
         # ON MULTI CHANNEL": line 32 compares $15's count against 8, line
         # 4 had just SET it to 8, and this card carries no unit entries,
@@ -506,8 +575,34 @@ def main():
 
     # The index word that decided which way line 33 went.  $15 lives at
     # word 31 (index registers occupy words 16-31).
-    ust_reg = put_field(0, 0, 23, ust_bits + (64 * UNIT_COLS if unit_mode else 0))
-    ust_reg = put_field(ust_reg, 28, 45, 8 - UNIT_COLS if unit_mode else 8)
+    if disk_mode:
+        # p.19 line 7 sets the counter to TWO, not eight, and lines
+        # 12-16 run it out: two passes of "CB+,$15,X18 2", each
+        # stepping $15 by one word and decrementing.  So the word ends
+        # at value +2 words with the count at ZERO.
+        ust_reg = put_field(0, 0, 23, ust_bits + 128)
+        ust_reg = put_field(ust_reg, 28, 45, 0)
+        checks.append(("p19_ust_pointer_and_count", "31", ust_reg))
+
+        # THE TWO UST ENTRIES p.19 WRITES, and they differ from p.18's
+        # in exactly the way the page does.  Line 12's "BZB,.25($3)"
+        # tests the CST entry's SCHAVL bit -- which p.17 line 44
+        # CLEARED, because this channel is available -- so line 13,
+        # "-NO * THEN UNIT NOT AVAILABLE", is SKIPPED and only line
+        # 14's .29 is written.  p.18's loop sets .27, .28 and .39 as
+        # well; p.19's sets ONE bit.
+        ust_w = ust_bits // 64
+        want = 1 << (63 - 29)                    # SUNASG only
+        checks.append(("p19_ust_entry_0", str(ust_w), want))
+        checks.append(("p19_ust_entry_1", str(ust_w + 1), want))
+        # And the third is untouched: the COUNTER stopped the loop at
+        # two, and nothing on the card could have.
+        checks.append(("p19_ust_entry_2_untouched", str(ust_w + 2), 0))
+    else:
+        ust_reg = put_field(0, 0, 23,
+                            ust_bits + (64 * UNIT_COLS if unit_mode else 0))
+        ust_reg = put_field(ust_reg, 28, 45,
+                            8 - UNIT_COLS if unit_mode else 8)
     if unit_mode:
         # ONE "CB+" PER UNIT, and the pocket card gives CB+ as "Add one
         # in bit position 17" -- bit 17 of a 24-bit bit address is 64
@@ -542,7 +637,7 @@ def main():
         for k in range(UNIT_COLS, UNIT_COLS + max(EXTRA_COLS, 1)):
             checks.append(("p18_ust_entry_%d_untouched" % k,
                            str(ust_w + k), 0))
-    else:
+    elif not disk_mode:
         # Reaching X17 means the count was never decremented, so the word
         # still holds the 8 that line 4's "LCI, $15, 8.0" put there and
         # the value is still the UST base -- the unit loop never ran.

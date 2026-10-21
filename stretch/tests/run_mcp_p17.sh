@@ -20,6 +20,7 @@ case "${2:-}" in
   "")      expect="StretchMcpP17Tb" ;;
   units)   expect="StretchMcpP17UnitsTb" ;;
   units8)  expect="StretchMcpP17Units8Tb" ;;
+  disk)    expect="StretchMcpP17DiskTb" ;;
   *) echo "run_mcp_p17.sh: unknown mode '$2'" >&2; exit 1 ;;
 esac
 if [ "$MODULE" != "$expect" ]; then
