@@ -4923,6 +4923,158 @@ forgotten: Reference Manual **PDF page = printed page + 3**, and
 `ja_ua1_ssip` is cited by **PDF page** because its listing carries no
 printed page numbers.
 
+## THE BACK-MATTER MAP -- what is in the appendices of the manuals this project already cites, 2026-10-21
+
+Written because two finds in one day came out of appendices of
+documents `docs/` already had and this project already quoted. The
+rule drawn was **"a document you have CITED is not a document you
+have READ"**; this is the map that makes acting on it cheap. Offsets
+below were each confirmed against a rendered page.
+
+| document | appendix | printed | PDF | what it is |
+|---|---|---|---|---|
+| `22-6530-2` RefMan | *(unlettered, 7 sub-tables)* Instruction Formats | 163 | 166 | bit layouts of all 13 instruction formats + the index word |
+| | List of Indicators | 164 | 167 | all 64 indicators: number, mnemonic, mask bit, class, reset rule |
+| | Storage Assignment | 165 | 168 | special locations 0-31: name, length, bit address |
+| | Character Codes | 166 | 169 | four 8-bit code charts (48/49/89/120 sets) |
+| | Alphabetical Operation Codes | 167 | 170 | mnemonic → name |
+| | **Complete Operation and Modifier List** | **168-169** | **171-172** | **binary opcode bit patterns per class + modifier bits** |
+| | Powers of Two | 170 | 173 | 2^1-2^64 |
+| | Index | 171-172 | 174-175 | subject index |
+| `C28-6129` STRAP-II | A STRAP-II Mnemonics | 43-45 | 46-48 | every mnemonic: type, footnote, **Word No. + Bit Address** |
+| | B Pseudo-Operations | 46 | 49 | ~70 pseudo-ops |
+| | C Symbolic Descriptions | 47-53 | 50-56 | formal per-op semantics |
+| | D Error Messages | 54-55 | 57-58 | numbered assembler errors 1-127 |
+| | *(N28-1081 update, Apr 1963)* | — | 59-78 | new pseudo-ops, **relocatable card formats**, revised B/C/D |
+| | *Appendix E is cited by the update and ABSENT from this scan* | | | |
+| `C22-6729` STRAP-II SAG | A Formats | 189-194 | same | STRAP II's internal record layouts |
+| | B Additional Instructions | 195-196 | same | superset pseudo-op list (adds IOD/REEL) |
+| | C Coded Expressions | 197-201 | same | bit-prefix encoding spec |
+| | D-F designations / terms / rules | 202-207 | same | glossary and coding rules |
+| | G Binary Deck Composition | 208 | same | the actual card deck layout |
+| | H Memory Map of STRAP II | 209 | same | core layout of its sections |
+| `C22-6728` MCP SAG | **A Symbolic I-O Control Tables** | **246-260** | same | **channel/unit status (Fig 137-138), Unit Area, File Area, Symbolic I-O Location, Reel Pool -- every indicator named with its bit** |
+| | B Flow Chart Standards | 261-262 | same | documentation convention |
+| | C The Multiplier Register | 263 | same | `$MR` on K-2+: LMR/LFT 10010, STM 11110, `*+` 01110 |
+| | D Connector Index | 264-266 | same | flow-chart navigation |
+| | Index | 267-269 | same | subject index |
+| `R23-9694` CE Vol 2 | **none** | | | no appendix and no index |
+| `R23-9695` CE Vol 3 | A *(storage assignment)* | 118 | same | locations 0-31 **with a storage-class column M/I/T/K** -- finer than the RefMan's |
+| | B Extended Character Set | 119 | same | character → binary / octal / hex |
+| | C Symbolic Descriptions | 120-127 | same | duplicate of C28-6129 App C |
+| | D CE Abbreviations | 128-134 | same | the decoder ring for the `ja_*`/`jb_*`/`ka_*` listings |
+| `C22-6531` STRAP-1 | A Mnemonics | **56**-58 | 57-59 | type legend + `$` symbols with Word/Bit, then the operation list |
+| | B Pseudo-Operations | 59 | 60 | |
+| | C Symbolic Descriptions | 60-67 | 61-68 | duplicate, with handwritten corrections |
+| | D Error Marks | 68 | 69 | listing error marks A-Z and their causes |
+
+**DUPLICATES, so the same table is not counted three times.**
+"Symbolic Descriptions and Mnemonics for IBM 7030" is the same table
+in `C28-6129` App C, `R23-9695` App C and `C22-6531` App C; take
+`C28-6129`'s. The mnemonic + Word/Bit-address table is `C28-6129`
+App A and `C22-6531` App A. Storage assignment is `22-6530-2` p.165
+and `R23-9695` p.118 -- **take `R23-9695`'s**, which adds the storage
+class.
+
+**INDEXES EXIST IN ONLY TWO OF THESE**: `22-6530-2` (printed 171-172)
+and `C22-6728` (printed 267-269). That is worth knowing before
+planning a search.
+
+**THE RANKED WORKLIST**, highest value first, each one a thing this
+project would otherwise derive:
+
+1. `22-6530-2` printed **168-169** -- the Complete Operation and
+   Modifier List. Binary bit patterns for every operation class. A
+   direct normative cross-check for `strap/opcodes.py`, which is
+   `strap/README.md`'s own open item.
+2. `C22-6728` printed **247-260** -- the rest of Appendix A. p.246 is
+   done (see the section above); the Unit Area, File Area, Symbolic
+   I-O Location and Reel Pool tables are not.
+3. `C28-6129` PDF **59-78** -- the April 1963 newsletter's
+   relocatable binary card formats, which bear on boot_plan A3.
+4. `C22-6729` printed **208-209** -- STRAP II's binary deck
+   composition and memory map.
+5. `R23-9695` printed **128-134** -- the CE abbreviation glossary,
+   which would make three unused diagnostic oracles readable.
+6. `C22-6728` printed **263** -- `$MR`, a K-1/K-2 model difference
+   that affects decoding.
+
+**NOT SWEPT**: `C22-6728-1`, the later revision, whose back matter may
+differ from the base revision's.
+
+## >>> THE CHANNEL AND UNIT STATUS TABLES ARE PRINTED, AND EVERY BIT DERIVED FROM pp.17-18 IS NAMED ON THE PAGE <<< 2026-10-21
+
+`C22-6728` **printed pp.246-260 = PDF pp.246-260, "APPENDIX A --
+SYMBOLIC I-O CONTROL TABLES"**, Figures 137 and 138. Found by the
+appendix sweep that the Appendix F lesson prompted, in a document
+this project cites for its pp.215-217.
+
+The opening paragraph is the prose description of the two pages that
+now run:
+
+> "The channel and unit status tables reflect the operational status
+> of all I-O channels and units logically attached to the system.
+> **The tables are constructed by the Initializer program at IPL time
+> from IOCD cards defining the I-O configuration.** … The channel and
+> unit status tables will exist in two distinct forms, depending upon
+> whether a channel has a single logical or physical unit (Figure
+> 137), or multi-units (Figure 138). … **An entry in these tables
+> consists of one word.**"
+
+"An entry consists of one word" is the thing `CB+`'s one-word step was
+used to derive. Here it is stated.
+
+**EVERY BIT POSITION DERIVED FROM THE LISTING IS A NAMED FIELD**, and
+the names match the listing's own comments:
+
+| bit | printed name | the row that writes it | its comment |
+|---|---|---|---|
+| 25 | **SCHAVL** | p.17 l.44 `CM0000(BU,1), .25($3)` | "CHANNEL AVAILABLE FLAG" |
+| 27 | **SMULTI** | p.18 l.9 `CM1111(BU,1), .27($3)` | "MULTI BIT TO ON IN CST" |
+| 29 | **SUNASG** | p.18 l.7 `CM0000(BU,1), .29($3)` | "MEANINGLESS ASSIGN BIT" |
+| 0-26 | **SUNAA**, "Address of Unit Status Table" | p.18 l.5 `SV, $15, 0.0($3)` | "INSERT UNIT STATUS TABLE ADDRESS IN CST" |
+| 52-55 | **SEQUIP** | p.17 l.54 `ST(BU,4), .52($3)` | "INSERT IN CST ENTRY" |
+| 59-62 | **SUNITK** | p.18 l.30/l.37 at `.59($3)` | "UNIT COUNT IN CST" |
+
+and in the UNIT status table entry, which `$15` walks:
+
+| bit | printed name | the row | its comment |
+|---|---|---|---|
+| 27 | **SDISPO** | p.18 l.23 `.27($15)` | "TAPE DISPOSITION BIT ON" |
+| 28 | **SUNAVL** | p.18 l.21 `.28($15)` | "UNIT AVAILABLE BIT ON" |
+| 29 | **SUNASG** | p.18 l.22 `.29($15)` | "UNIT NOT ASSIGNED BIT ON" |
+| 39 | **SSEL** | p.18 l.24 `.39($15)` | "SELECT STATUS ON" |
+
+Ten for ten. `SDISPO` is *disposition*, `SSEL` is *select*, `SUNAVL`
+is *unit available* — the 1963 comments and the 1963 field names are
+the same words, and this project put them together from opposite
+ends without having seen either page name the other.
+
+**ONE AMBIGUITY, AND THE CODE RESOLVES IT.** Figure 138's tick labels
+(49, 55, 59, 63) do not survive magnification well enough to fix the
+right-hand edge of `SEQUIP` and `SUNITK`. MCP settles both. The
+equipment code is stored by `ST(BU,4), .52` — four bits at 52 — so
+`SEQUIP` is 52-55. And `SUNITK` **must be exactly 59-62**, because
+p.18 line 30 sets a SINGLE bit at `.59` under the comment "UNIT COUNT
+IN CST TO 8", and one bit at the left of a field means eight only if
+the field is four bits wide. A five-bit field would make that row
+write sixteen.
+
+That is the project's standing principle running the other way for
+once: usually the program is read to recover a structure whose page
+is missing. Here the page exists, its drawing is ambiguous, and the
+program disambiguates the drawing.
+
+**WHAT IS STILL NOT CHECKED in Appendix A**: `SARCAD` (bits 32-48 of a
+multi-unit entry), `SEMODE`, `SUNIT`, `STATI`, `SOWNER`, `SSETUP`,
+`SSETDN`, `SVER`, `SCNSSG`, `SUNDENS`, `SELG`, `SMOUNT`, `SREW`,
+`SIMNT`, `SRD`, `SWR`, `SSPACE`, `SCTL`, `SREL`, `SUNRES`, `SOVRES` —
+and pp.247-260's Unit Area Table, File Area Table, Symbolic I-O
+Location Table and Reel Pool Table. **pp.17-18 write ten of the
+fields on p.246 and nothing else on it**, which is a useful measure
+of how much of MCP's I/O bookkeeping the transcribed pages cover:
+not much, and now there is a printed map of the rest.
+
 ## THE IOCD CARD IS A HOLLERITH CONTROL CARD -- C22-6728 corroborates the geometry from outside MCP, 2026-10-21
 
 The card stride and the card's field map were both derived from

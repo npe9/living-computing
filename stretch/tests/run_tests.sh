@@ -1615,6 +1615,49 @@ run "THE REAL printed pp.17-18 execute -- IOCD cards into the CST" ./run_mcp_p17
 # the halt is planted.  The page's own comment on that row is "X 19
 # IS THE NORMAL END".
 #
+# >>> AND THE TABLE ITSELF IS PRINTED.  C22-6728 printed p.246 =
+# PDF p.246, "APPENDIX A -- SYMBOLIC I-O CONTROL TABLES", Figures 137
+# and 138.  EVERY BIT THIS SECTION DERIVES IS A NAMED FIELD ON THAT
+# PAGE, and the names are the listing's own words: <<<
+#
+#   bit  printed name   the row that writes it      its comment
+#    25  SCHAVL         p.17 l.44 .25($3)           "CHANNEL AVAILABLE"
+#    27  SMULTI         p.18 l.9  .27($3)           "MULTI BIT TO ON"
+#    29  SUNASG         p.18 l.7  .29($3)           "ASSIGN BIT"
+#  0-26  SUNAA          p.18 l.5  SV, $15, 0.0($3)  "UNIT STATUS TABLE
+#        "Address of Unit                            ADDRESS IN CST"
+#         Status Table"
+#  52-55 SEQUIP         p.17 l.54 ST(BU,4), .52     "INSERT IN CST"
+#  59-62 SUNITK         p.18 l.30/37 at .59         "UNIT COUNT IN CST"
+#
+# and in the UNIT status table entry, which $15 walks:
+#
+#    27  SDISPO         p.18 l.23 .27($15)          "TAPE DISPOSITION"
+#    28  SUNAVL         p.18 l.21 .28($15)          "UNIT AVAILABLE"
+#    29  SUNASG         p.18 l.22 .29($15)          "UNIT NOT ASSIGNED"
+#    39  SSEL           p.18 l.24 .39($15)          "SELECT STATUS"
+#
+# Ten for ten.  SDISPO is disposition, SSEL is select, SUNAVL is unit
+# available: the 1963 comments and the 1963 field names are the same
+# words, and this project put them together from opposite ends
+# without having seen either page name the other.  The page also
+# states outright what CB+'s one-word step was used to derive -- "AN
+# ENTRY IN THESE TABLES CONSISTS OF ONE WORD" -- and names the
+# program: "The tables are constructed by the Initializer program at
+# IPL time from IOCD cards defining the I-O configuration."
+#
+# ONE AMBIGUITY, AND THE CODE RESOLVES IT.  Figure 138's tick labels
+# do not survive magnification well enough to fix the right-hand edge
+# of SEQUIP and SUNITK.  MCP settles both: the equipment code is
+# stored by "ST(BU,4), .52", four bits at 52, so SEQUIP is 52-55; and
+# SUNITK must be EXACTLY 59-62, because p.18 line 30 sets a SINGLE
+# bit at .59 under the comment "UNIT COUNT IN CST TO 8", and one bit
+# at the left of a field means eight only if the field is four bits
+# wide.  A five-bit field would make that row write sixteen.  The
+# project's standing principle running the other way for once: the
+# page exists, its drawing is ambiguous, and the program
+# disambiguates the drawing.
+#
 # THE CST ENTRY IS DERIVED ONE PRINTED LINE AT A TIME and the
 # generator now reads as that list:
 #
@@ -1663,9 +1706,18 @@ run "THE REAL printed pp.17-18 execute -- IOCD cards into the CST" ./run_mcp_p17
 #
 # DERIVED vs INVENTED, as always: the card's field map, the equipment
 # table's 29-bit entry layout, and the one-word-per-channel CST
-# indexing are DERIVED from the page's own instructions.  The card's
-# contents, X IOCD's pattern and the table's entries are INVENTED --
-# all three are on untranscribed pages.
+# indexing are DERIVED from the page's own instructions.
+#
+# AND TWO THINGS CROSSED THAT LINE when the card code turned up in
+# C22-6678-1's Appendix F.  X IOCD's pattern is now the four
+# characters IOCD punched -- 0x801408840820, top bit set because "I"
+# is 12-9 -- instead of a constant chosen to have that bit set.  And
+# the equipment letters are now PUNCHED CHARACTERS: the card's was
+# 0xABC, which puts seven holes in one column and is not any
+# character, where p.17 line 46 reads twelve bits commented "-SECOND
+# LETTER OF ... EQUIPMENT CODE" and advances TWO columns.  Which
+# letter means which equipment is still invented; that it is a letter
+# is not.
 #
 # TWO THINGS THE RUN TAUGHT, both of them fixture bugs rather than
 # model bugs, and both worth keeping:

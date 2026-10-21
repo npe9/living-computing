@@ -5,8 +5,45 @@ Program / Simulator* (1960). **PDF page = printed page + 1.**
 
 | printed | PDF | content |
 |---|---|---|
+| **56** | **57** | **"APPENDIX A / STRAP-1 MNEMONICS": the TYPE-letter legend, and the `$` SYSTEM-SYMBOL table with Word No. / Bit Address columns** |
 | 57 | 58 | ALPHABETIC LIST OF OPERATIONS, both columns (`+` … `SRD`) |
 | 58 | 59 | the list's tail (`SRT` … `Z`) and the twelve FOOTNOTES |
+
+**THE FIRST ROW WAS MISSING FROM THIS NOTE UNTIL 2026-10-21**, which
+is the failure this file exists to prevent happening one level up:
+the note was written, the appendix was cited, and its opening page —
+the one carrying a normative special-storage map — was never turned
+to. Found by an appendix sweep prompted by the same thing happening
+to `C22-6678-1`'s Appendix F.
+
+Printed p.56 gives the Type legend (`V` VFL, `F` Floating Point, `$`
+System Symbol, `I` Index, `C` Count and Branch, `M` Branches and
+Miscellaneous, `B` Branch on Bit, `T` Transmits, `E` I-O Select or
+Control Word) and then every `$` symbol with its **word number and
+bit address**. It independently confirms a long list of constants
+this project had taken from the Reference Manual's Storage
+Assignment appendix or derived from listings:
+
+| symbol | name | word | bits |
+|---|---|---|---|
+| `$LZC` | Left Zeros Count | 7 | 17-23 |
+| `$AOC` | All Ones Count | 7 | 44-50 |
+| `$MOP` | To-Memory Operation | 11 | 55 |
+| `$RLZ` `$RZ` `$RGZ` `$RN` | result indicators | 11 | 56, 57, 58, 59 |
+| `$AL` `$AE` `$AH` | accumulator compare | 11 | 60, 61, 62 |
+| `$LC` `$PF` | Lost Carry, Partial Field | 11 | 22, 23 |
+| `$L` `$R` | halves of the accumulator | 8, 9 | 0-63 |
+| `$X0`…`$X15` | index registers | 16…31 | 0-63 |
+| `$IA` | Interruption Address | 2 | 0-17 |
+| `$MASK` | Mask | 12 | 21-49 |
+| `$IND` | Indicators | 11 | 0-63 |
+| `$FT` | Factor | 14 | 0-63 |
+| `$TC` `$IT` | Time Clock, Interval Timer | 1 | 28-63, 0-18 |
+
+The two that matter most are the first two: **`$LZC` at word 7 bits
+17-23 and `$AOC` at word 7 bits 44-50** are the connective counters
+built on 2026-10-20 from Reference Manual printed pp.75-76, and they
+are in a second source with the same numbers.
 
 This appendix is the only place in the corpus that gives, for **every
 STRAP-1 mnemonic**, a TYPE letter and a FOOTNOTE number. It is

@@ -99,7 +99,18 @@ CARD_AT_WORD = 3          # the card sits three words into the buffer,
 # "-IF ZONE BIT OF IOCD".  The old fixture had 0x800000000ABC, chosen
 # only so that bit would be set; the real value sets it for a reason.
 IDENT  = int("".join("%03x" % column_bits(c) for c in "IOCD"), 16)
-LETTER = 0xABC            # the card's equipment letter
+# THE EQUIPMENT LETTER IS A CHARACTER, and until the card code was
+# found this was 0xABC -- a bit pattern that punches rows 12-0-2-4-5-6-7,
+# seven holes in one column, which is not any character.  p.17 line 46
+# is "L(V+I)(BU,12), .24($4)" commented "-SECOND LETTER OF ...
+# EQUIPMENT CODE": TWELVE bits is one column is one character, and the
+# advance of 24 steps TWO columns, so the code is a two-letter
+# mnemonic in columns 16-17 and this reads the second of them.
+#
+# WHICH letter means which equipment is installation data on a page
+# nobody has transcribed, so "T" here is still invented.  What is no
+# longer invented is that it is a letter at all.
+LETTER = column_bits("T")   # the card's equipment letter, punched
 TENS   = 0x08             # 7-bit column, three zeros left of the punch
 UNITS  = 0x0400           # 16-bit column, five zeros left of the punch
 EQP_CODE = 6              # the code the matching table entry carries
@@ -118,10 +129,14 @@ CHANNEL  = 35             # tens 3, units 5 -- what the two columns encode
 # So the corrected layout is
 #   entry = [24-bit Hollerith letter][4-bit equipment code][tape flag]
 # and a 1 here means "not a tape", which is the path p.18 transcribes.
-EQP_ENTRIES = [(273, 0, 1), (546, 0, 1), (819, 0, 1),
-               (LETTER, EQP_CODE, 1), (1092, 0, 1),
-               (1365, 0, 1), (1638, 0, 1), (1911, 0, 1),
-               (2184, 0, 1), (2457, 0, 1)]
+#
+# The ten entries are keyed by a punched LETTER for the same reason.
+# The comparand is 24 bits wide and the card supplies 12, so a match
+# needs twelve zero bits above the column -- which is what a 12-bit
+# character value is.
+_EQP_LETTERS = "ABCTDEFGHJ"       # "T" is the one on the card
+EQP_ENTRIES = [(column_bits(c), EQP_CODE if c == "T" else 0, 1)
+               for c in _EQP_LETTERS]
 
 
 def put(words, bitoff, nbits, val):

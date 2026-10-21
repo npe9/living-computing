@@ -548,6 +548,27 @@ past the eighth and never read. That, and nothing else in either
 run, is what separates the arms; the injection that blanks the eighth
 column makes the field read 7, which only the subtract can produce.
 
+**>>> AND THE TABLE ITSELF IS PRINTED: `C22-6728` printed p.246,
+"APPENDIX A — SYMBOLIC I-O CONTROL TABLES", Figures 137-138. EVERY
+BIT DERIVED FROM pp.17-18 IS A NAMED FIELD ON THAT PAGE. <<<** The
+opening paragraph is this item's own description — "The tables are
+constructed by the Initializer program at IPL time **from IOCD cards
+defining the I-O configuration**" — and it states what `CB+`'s
+one-word step was used to derive: "An entry in these tables consists
+of one word."
+
+CST: bit 25 `SCHAVL`, 27 `SMULTI`, 29 `SUNASG`, 0-26 `SUNAA`
+("Address of Unit Status Table"), 52-55 `SEQUIP`, 59-62 `SUNITK`.
+UST: 27 `SDISPO`, 28 `SUNAVL`, 29 `SUNASG`, 39 `SSEL`. Ten for ten,
+and the printed names are the listing comments' own words —
+disposition, select, unit available. Where Figure 138's tick labels
+are too coarse to fix a field's right edge, MCP's own writes settle
+it: `SUNITK` must be exactly 59-62, because line 30 sets one bit at
+`.59` and calls the result eight.
+
+So A3's remaining question is narrower again. The TABLES are
+specified; what is still unlocated is the IOCD CARD that feeds them.
+
 **AND THE CST ENTRY IS DERIVED ONE PRINTED LINE AT A TIME**, which is
 the form these expectations should take from here: preset (p.17
 l.22), `CM0000` clearing the not-available bit (l.44), equipment
