@@ -76,7 +76,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), os.p
 
 from gen_tb import generate
 from strap_asm import assemble, AssemblerError
-from cards import column_bits
+from cards import column_bits, card_words, WORDS_PER_CARD
 
 DECKS = [os.path.join(os.path.dirname(os.path.abspath(__file__)),
                       os.pardir, "decks", "mcp_bootstrap_p%d.strap" % n)
@@ -85,58 +85,58 @@ DECK = DECKS[0]
 
 CARD_AT_WORD = 3          # the card sits three words into the buffer,
                           # so the hunt has to step to find it
-# >>> THE CARD'S KEYWORD, PUNCHED.  No longer invented. <<<  The
-# identifier field is columns 10-13 -- four columns, four characters --
-# and the statement keyword of this card is IOCD.  Appendix F of
-# C22-6678-1 (printed p.56) gives the punches, I = 12-9, O = 11-6,
-# C = 12-3, D = 12-4, and Reference Manual printed p.138 gives the bit
-# order within a column, row 12 first.  cards.py does both:
+CHANNEL  = 35             # what columns 14-15 spell
+EQP_CODE = 6              # the 4-bit code the matching table entry carries
+
+# >>> THE IOCD CARD'S COLUMN FORMAT IS PRINTED, and this fixture now
+# punches a real one.  C22-6728 printed p.88 = PDF p.88, "The
+# Initialization Program / Control Cards": <<<
 #
-#   0x801 0x408 0x840 0x820  ->  0x801408840820
+#   "I-O Configuration Definitions:  The IOCD cards define the
+#    distribution of I-O units at initializing time.  Each card
+#    describes a channel. ... The IOCD cards, which do not have to be
+#    in order of channel number, have the following fixed fields:
+#      Cols. 10-13 -- Card Type: contains the characters, IOCD.
+#      Cols. 14-15 -- Channel Number: contains the decimal number of
+#                     the channel.
+#      Cols. 16-17 -- Equipment: must contain one of the following
+#                     codes:   CN Console   DK Disk   PR Printer
+#                              PU Punch     TP Tape   RD Reader"
 #
-# AND ITS LEADING BIT IS SET BECAUSE "I" IS A 12-ZONE LETTER, which is
-# exactly what line 13's "BB, 1.44($4)" tests under the comment
-# "-IF ZONE BIT OF IOCD".  The old fixture had 0x800000000ABC, chosen
-# only so that bit would be set; the real value sets it for a reason.
-IDENT  = int("".join("%03x" % column_bits(c) for c in "IOCD"), 16)
-# THE EQUIPMENT LETTER IS A CHARACTER, and until the card code was
-# found this was 0xABC -- a bit pattern that punches rows 12-0-2-4-5-6-7,
-# seven holes in one column, which is not any character.  p.17 line 46
-# is "L(V+I)(BU,12), .24($4)" commented "-SECOND LETTER OF ...
-# EQUIPMENT CODE": TWELVE bits is one column is one character, and the
-# advance of 24 steps TWO columns, so the code is a two-letter
-# mnemonic in columns 16-17 and this reads the second of them.
+# Every one of those agrees with what p.17's increments had already
+# given: four columns of keyword at 10-13, two channel digits at
+# 14-15, and a TWO-LETTER equipment code at 16-17 of which line 46
+# reads the SECOND letter.  The page also says "there must be one
+# card for each channel physically in the system WHETHER THAT CHANNEL
+# IS AVAILABLE OR NOT", which is the availability flag line 43 tests.
 #
-# WHICH letter means which equipment is installation data on a page
-# nobody has transcribed, so "T" here is still invented.  What is no
-# longer invented is that it is a letter at all.
-LETTER = column_bits("T")   # the card's equipment letter, punched
-TENS   = 0x08             # 7-bit column, three zeros left of the punch
-UNITS  = 0x0400           # 16-bit column, five zeros left of the punch
-EQP_CODE = 6              # the code the matching table entry carries
-CHANNEL  = 35             # tens 3, units 5 -- what the two columns encode
-# (letter, equipment code, NOT-TAPE flag).
+# AND IT EXPLAINS WHY ONE COLUMN IS ENOUGH: the six codes' second
+# letters are N, K, R, U, P and D -- all distinct.  MCP never needs
+# the first letter.
+EQUIPMENT_CODES = ["CN", "DK", "PR", "PU", "TP", "RD"]
+CARD_EQUIPMENT  = "TP"    # Tape -- see below for why it must be tape
+LETTER = column_bits(CARD_EQUIPMENT[1])
+
+# (letter column, equipment code, IS-TAPE flag).
 #
-# THE ENTRY'S 29th BIT IS A TAPE FLAG, not the spare it was first
-# taken for.  Printed p.18 line 2 is "BZB, -.1($1), X18" commented
-# "-TAPE EQUIPMENT TYPE ENTRY": after p.17's lookup $1 sits just past
-# the matched entry, so -.1 is that entry's LAST bit, and a ZERO
-# there takes the tape path.  Found by setting it to zero and
-# watching the machine leave the transcribed pages entirely -- X18 is
-# 000740.40, the low half of p.18's last word, which is empty: it is
-# the first instruction of printed p.19.
+# THE 29th BIT IS "IS TAPE", AND AN EARLIER NOTE HERE HAD THE SENSE
+# BACKWARDS.  p.18 line 2 is "BZB, -.1($1), X18" commented "-TAPE
+# EQUIPMENT TYPE ENTRY", and this file first recorded a 1 as meaning
+# "not a tape".  C22-6728 printed p.90, Figure 44 "The Initialization
+# Program - Chart 1", settles it the other way: the decision box "IS
+# EQUIPMENT TAPE" goes to X18 on NO and to "SET UP STATUS TABLES FOR
+# UNITS" on YES.  So the transcribed path IS the tape path, a 1 here
+# means IT IS A TAPE, and X18 -- the first instruction of
+# untranscribed p.19 -- is where everything else goes.
 #
-# So the corrected layout is
-#   entry = [24-bit Hollerith letter][4-bit equipment code][tape flag]
-# and a 1 here means "not a tape", which is the path p.18 transcribes.
-#
-# The ten entries are keyed by a punched LETTER for the same reason.
-# The comparand is 24 bits wide and the card supplies 12, so a match
-# needs twelve zero bits above the column -- which is what a 12-bit
-# character value is.
-_EQP_LETTERS = "ABCTDEFGHJ"       # "T" is the one on the card
-EQP_ENTRIES = [(column_bits(c), EQP_CODE if c == "T" else 0, 1)
-               for c in _EQP_LETTERS]
+# THAT ALSO EXPLAINS THE EIGHT.  p.18 line 4 sets the unit counter to
+# EIGHT and the loop walks up to eight unit columns; Figure 44's X18
+# branch, for disk and console, instead says "SET UNIT COUNT TO TWO".
+# A tape channel carries many units and a disk channel two.  The card
+# therefore has to be TP for p.18 to be the page under test.
+EQP_ENTRIES = [(column_bits(c[1]), EQP_CODE if c == CARD_EQUIPMENT else 0,
+                1 if c == "TP" else 0)
+               for c in EQUIPMENT_CODES]
 
 
 def put(words, bitoff, nbits, val):
@@ -224,22 +224,6 @@ def main():
         words.setdefault(w, 0)
 
     card = S["XINEND"] + CARD_AT_WORD * 64
-    put(words, card + 0,   8,  0xFF)     # card type (0xFF: 8 ones, to tell it from the 0xAA fill)
-    put(words, card + 108, 48, IDENT)    # identifier; bit 108 is the zone bit
-    put(words, card + 158, 7,  TENS)
-    put(words, card + 170, 16, UNITS)
-    put(words, card + 192, 12, LETTER)
-    # CHANNEL AVAILABLE IS ACTIVE-LOW HERE, and the page's own
-    # structure says so.  Line 43 is "BB, .12($4), X134" commented
-    # "-IS CHANNEL AVAILABLE", and it branches AWAY -- past line 44 --
-    # when the bit is ONE.  Line 44, "CM0000(BU,1), .25($3)", is the
-    # one commented "-YES * CHANNEL AVAILABLE FLAG TO ON", and it
-    # runs only when the card's bit is ZERO.  So a zero here is what
-    # turns the CST's not-available flag off.
-    #
-    # Set to one on the first run, which left the flag standing and
-    # is how the sense was identified: every other check passed and
-    # that single bit did not move.
 
     # ---- the unit columns, and A UNIT IS A PUNCHED COLUMN ---------
     #
@@ -292,11 +276,44 @@ def main():
     # write a UST word with bit 28 set -- visibly different from the
     # eight before it, not merely present.
     EXTRA_COLS = 2 if UNIT_COLS == 8 else 0
+
+    # >>> AND NOW THE WHOLE CARD IS PUNCHED AS TEXT. <<<  Every field
+    # above is a character or a punch in a column, so the fixture is
+    # an eighty-column line run through strap/cards.py -- the same
+    # path decks/ take to the 7503 -- instead of bits deposited at
+    # computed offsets.  Nothing here knows a bit address.
+    #
+    #   col 1       "B", the class character every MCP control card
+    #               carries (C22-6678-1 printed p.8).  Line 26 reads
+    #               eight bits here and DISCARDS them -- it is a
+    #               CONNECT FOR TEST whose job is the advance to 1.44.
+    #   cols 10-13  "IOCD"
+    #   cols 14-15  "35", the channel number in decimal
+    #   cols 16-17  "TP", Tape
+    #   col 18      BLANK -- channel available.  The flag is
+    #               ACTIVE-LOW: line 43's "BB, .12($4), X134" branches
+    #               AWAY, past line 44, when the bit is ONE, and line
+    #               44 -- "-YES * CHANNEL AVAILABLE FLAG TO ON" --
+    #               runs only when it is ZERO.  Punching it ("+", a
+    #               12-row punch) left the CST's not-available flag
+    #               standing while every other check passed, which is
+    #               how the sense was identified.
+    #   cols 19+    one column per unit.  A punch in row 12 is the
+    #               character "+" and a punch in row 0 is "0", so
+    #               even these are text.
+    cols = [" "] * 80
+    cols[0] = "B"
+    for i, ch in enumerate("IOCD"):
+        cols[9 + i] = ch
+    cols[13], cols[14] = "%02d" % CHANNEL
+    cols[15], cols[16] = CARD_EQUIPMENT
     if unit_mode:
         for k, row in enumerate(UNIT_ROWS):
-            put(words, card + 216 + 12 * k + row, 1, 1)
+            cols[18 + k] = "+" if row == 0 else "0"
         for k in range(UNIT_COLS, UNIT_COLS + EXTRA_COLS):
-            put(words, card + 216 + 12 * k + 0, 1, 1)
+            cols[18 + k] = "+"
+    for i, w in enumerate(card_words("".join(cols))):
+        words[card // 64 + i] = w
         # With two units the next column is left ZERO, which is how
         # the list ends: CT0011 copies the storage field, so an
         # unpunched column gives a zero result and line 14's BRZ goes
@@ -304,7 +321,8 @@ def main():
         # different mechanisms, which is why both are run.
 
     # ---- X IOCD, a 48-bit field that CROSSES a word boundary ------
-    put(words, S["XIOCD"], 48, IDENT)
+    put(words, S["XIOCD"], 48,
+        int("".join("%03x" % column_bits(c) for c in "IOCD"), 16))
 
     # ---- X EQP T: ten 29-bit entries, 24-bit letter + 4-bit code --
     for i, (letter, code, nottape) in enumerate(EQP_ENTRIES):

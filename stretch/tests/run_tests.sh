@@ -1917,11 +1917,25 @@ run "MCP's whole per-card path, printed p.17, over a synthetic IOCD card" ./run_
 # position 17" and bit 17 of a 24-bit bit address is 64 bits, which
 # is what line 12's "-TEST 14 WORDS" means.
 #
-# FIXTURE VS DERIVATION, stated because it matters: the field MAP is
-# derived.  The card's CONTENTS, X IOCD's pattern and the equipment
-# table's entries are INVENTED -- all three live on untranscribed
-# pages -- and are chosen only to be consistent with each other.
-# Same standing caveat as strap/prosa.py.
+# >>> AND THE CARD'S COLUMN FORMAT IS PRINTED.  C22-6728 printed
+# p.88, found through that document's own INDEX ("IOCD CARDS ... 88"):
+#
+#   "The IOCD cards ... have the following fixed fields:
+#      Cols. 10-13 -- Card Type: contains the characters, IOCD.
+#      Cols. 14-15 -- Channel Number: contains the decimal number of
+#                     the channel.
+#      Cols. 16-17 -- Equipment: must contain one of the following
+#                     codes:  CN Console  DK Disk  PR Printer
+#                             PU Punch    TP Tape  RD Reader"
+#
+# EVERY FIELD ABOVE IS CONFIRMED, including the one this file had
+# labelled an inference rather than a derivation: the keyword IS the
+# literal string IOCD.  And the page explains something no amount of
+# reading p.17 would have given -- the six codes' second letters are
+# N, K, R, U, P, D, ALL DISTINCT -- which is why line 46 reads twelve
+# bits and not twenty-four.  The card's CONTENTS are no longer
+# invented; what remains invented is the equipment table's four-bit
+# codes, which are on a page nobody has transcribed. <<<
 #
 # THE THIRD CHECK WAS PREDICTED WRONG TWICE and both corrections are
 # facts about the page.  The value is buffer+408, not +384: line 46's

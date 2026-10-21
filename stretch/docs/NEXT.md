@@ -5094,6 +5094,79 @@ fields on p.246 and nothing else on it**, which is a useful measure
 of how much of MCP's I/O bookkeeping the transcribed pages cover:
 not much, and now there is a printed map of the rest.
 
+## >>> THE IOCD CARD'S COLUMN FORMAT IS PRINTED, AND EVERY DERIVATION WAS RIGHT <<< 2026-10-21
+
+`C22-6728` **printed p.88 = PDF p.88**, "The Initialization Program /
+Control Cards". Found through that document's own INDEX — "IOCD CARDS
+... 88" — which the back-matter sweep had revealed exists two hours
+earlier. The index also lists, on the same page, "INITIALIZATION
+PROGRAM", "INITIALIZING PROGRAM CONTROL CARDS" and "I-O STATUS TABLE
+SETUP".
+
+> "The IOCD cards, which do not have to be in order of channel
+> number, have the following fixed fields:
+> **Cols. 10-13 — Card Type: contains the characters, IOCD.**
+> **Cols. 14-15 — Channel Number: contains the decimal number of the
+> channel.**
+> **Cols. 16-17 — Equipment:** must contain one of the following
+> codes: CN Console, DK Disk, PR Printer, PU Punch, TP Tape, RD
+> Reader"
+
+**EVERY DERIVATION CONFIRMED, INCLUDING THE ONE THAT WAS LABELLED AN
+INFERENCE.** The keyword field is four columns at 10-13 and the
+keyword *is* the literal string `IOCD` — written up this morning as
+"a strong inference rather than a derivation", resting on the field
+being four columns at the keyword position plus line 13's "-IF ZONE
+BIT OF IOCD" comment. It is printed. The channel is two decimal
+digits at 14-15, matching the two columns p.17 converts separately.
+The equipment code is **two letters** at 16-17, of which line 46
+reads the **second**.
+
+**AND THE PAGE EXPLAINS WHY ONE COLUMN IS ENOUGH**, which no amount
+of reading p.17 would have given: the six codes' second letters are
+**N, K, R, U, P, D — all distinct**. MCP never needs the first
+letter. That is why line 46 reads twelve bits and not twenty-four.
+
+**THE FIXTURE NOW PUNCHES A REAL CARD.** `gen_mcp_p17_tb.py` builds
+an eighty-column line — `B`, blanks, `IOCD`, `35`, `TP`, a blank
+availability column, then one column per unit — and runs it through
+`strap/cards.py`, the same path `decks/` take to the 7503. Nothing in
+it knows a bit address any more. Even the unit columns are text: a
+punch in row 12 is `+` and a punch in row 0 is `0`.
+
+Two things fell out of punching it. The channel digits read correctly
+through MCP's own Hollerith conversion — `3` in column 14 gives a
+left-zeros count of 3, `5` in column 15 gives 5. And **the 16-bit
+units window comes out `0x0409`, not `0x0400`**, because it overruns
+into column 16's `T` — *and the count is still 5*, because those bits
+fall to the RIGHT of the punch. That was this morning's explanation
+for why a 16-bit window can read a 10-row digit; it is now measured
+rather than argued.
+
+**ONE CORRECTION TO SOMETHING THIS FILE SAID TODAY.** `C22-6728`
+printed p.90, **Figure 44 "The Initialization Program - Chart 1"**,
+is the flowchart of printed pp.17-18, with the same label names —
+`X131` "IS THIS AN IOCD CARD", `X19`, `X18`, `X171`. Its decision box
+**"IS EQUIPMENT TAPE" goes to `X18` on NO**. So bit 29 of an
+equipment-table entry means **IS tape**, not "not tape" as recorded
+this morning, and the path p.18 transcribes is the TAPE path. The
+fixture's VALUE was right and its NAME was backwards.
+
+**THAT ALSO EXPLAINS THE EIGHT.** p.18 line 4 sets the unit counter
+to eight and the loop walks up to eight unit columns; Figure 44's
+`X18` branch, for disk and console, instead says "SET UNIT COUNT TO
+TWO". A tape channel carries many units, a disk channel two. So the
+card has to be `TP` for p.18 to be the page under test, which is now
+why the fixture says so rather than an arbitrary choice.
+
+**AND FIGURE 44 IS A MAP OF THE UNTRANSCRIBED PAGE.** `X18` leads to
+"IS EQUIPMENT DISK OR CONSOLE", then "INSERT UST ADDRESS IN CST",
+"SET UNIT COUNT TO TWO AND SET MULTI BIT ON, ASSIGN CHANNEL", "IS
+CHANNEL AVAILABLE", "WERE TWO LOGICAL UNITS PROCESSED", and `X184`'s
+own availability test — **that is printed p.19 in outline**, before
+anybody transcribes it. Worth having beside the listing when that
+page is done.
+
 ## THE IOCD CARD IS A HOLLERITH CONTROL CARD -- C22-6728 corroborates the geometry from outside MCP, 2026-10-21
 
 The card stride and the card's field map were both derived from
@@ -6174,6 +6247,27 @@ installed storage with AD, exactly as p.30 describes.
   same mistake cost longer because I back-computed the operand from
   the expectation instead of printing the symbol -- `S["XBUFER"]` was
   one `python3 -c` away and settled it immediately.
+
+* **AND THE ORIGINAL RULE BIT AGAIN ON 2026-10-21, IN THE SESSION
+  THAT HAD JUST QUOTED IT.** "Never edit `run_tests.sh` while a suite
+  is reading it" is the oldest entry in this list, and it was broken
+  by backgrounding a suite and then editing a section comment in the
+  same file while it ran. The failure looks like nothing else:
+
+      run_tests.sh: line 2252: rather: command not found
+
+  `sh` resumed at a byte offset that the edit had moved, landed in
+  the middle of a comment paragraph, and tried to execute the word
+  that happened to start there. The run died at 895 lines with no
+  verdict. **The giveaway is a "command not found" naming an ordinary
+  English word**; `sh -n` afterwards reports the file is fine,
+  because it is. Discard the run and start again — a shortened run is
+  the good case, since the same accident can also skip sections and
+  still print a pass.
+
+  THE DISCIPLINE THAT ACTUALLY WORKS, since knowing the rule plainly
+  is not enough: while a suite is in the background, edit `docs/`
+  only. Everything else waits.
 
 * **DO NOT EDIT `strap_asm.py` WHILE A SUITE IS RUNNING.** The rule
   everyone remembers is "never edit `run_tests.sh` while a suite is

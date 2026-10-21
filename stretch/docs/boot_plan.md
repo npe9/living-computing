@@ -625,6 +625,65 @@ IOCD"**. Bit 108 is column 10 row 12 — the zone row — and column 10
 is the first character of `IOCD`. The hunt finds a card by testing
 the zone punch of a letter, and the letter is the `I`.
 
+**>>> A3's CENTRAL QUESTION IS ANSWERED: THE IOCD CARD'S COLUMN
+FORMAT IS PRINTED, `C22-6728` printed p.88 = PDF p.88. <<<** Found
+through that document's own INDEX — "IOCD CARDS ... 88" — which the
+back-matter sweep had just revealed exists.
+
+> "**I-O Configuration Definitions:** The IOCD cards define the
+> distribution of I-O units at initializing time. Each card describes
+> a channel. Channels which are not so defined are assumed to have no
+> attached units. The IOCD cards, which do not have to be in order of
+> channel number, have the following fixed fields:
+> **Cols. 10-13 — Card Type: contains the characters, IOCD.**
+> **Cols. 14-15 — Channel Number: contains the decimal number of the
+> channel.**
+> **Cols. 16-17 — Equipment:** must contain one of the following
+> codes: CN Console, DK Disk, PR Printer, PU Punch, TP Tape, RD
+> Reader"
+
+**EVERY DERIVATION BELOW IS CONFIRMED EXACTLY** — four columns of
+keyword at 10-13 (and the keyword *is* the literal `IOCD`, which was
+labelled "a strong inference rather than a derivation"), two channel
+digits at 14-15, and a **two-letter** equipment code at 16-17 of
+which p.17 line 46 reads the **second letter**. The page also says
+"there must be one card for each channel physically in the system
+**whether that channel is available or not**", which is the
+availability flag line 43 tests.
+
+**AND IT EXPLAINS WHY ONE COLUMN IS ENOUGH.** The six codes' second
+letters are N, K, R, U, P, D — all distinct. MCP never needs the
+first letter, which is why line 46 reads twelve bits and not
+twenty-four.
+
+**SO THE FIXTURE NOW PUNCHES A REAL CARD.** `gen_mcp_p17_tb.py`
+builds an eighty-column line — `B`, blanks, `IOCD`, `35`, `TP`, a
+blank availability column, then one column per unit — and runs it
+through `strap/cards.py`, the same path `decks/` take to the 7503.
+Nothing in the fixture knows a bit address any more. All three modes
+pass.
+
+Two things fell out of punching it. **The channel digits read
+correctly through MCP's own Hollerith conversion**: `3` in column 14
+gives a left-zeros count of 3 and `5` in column 15 gives 5. And the
+16-bit units window comes out `0x0409` rather than `0x0400`, because
+it overruns into column 16's `T` — **and the count is still 5**,
+because those bits fall to the RIGHT of the punch. That was the
+prediction made when the 16-bit field looked anomalous, and it is now
+measured.
+
+**ONE CORRECTION, from `C22-6728` printed p.90, Figure 44 "The
+Initialization Program - Chart 1"** — which is the flowchart of
+printed pp.17-18, with the same label names (`X131` "IS THIS AN IOCD
+CARD", `X19`, `X18`, `X171`). Its decision box **"IS EQUIPMENT TAPE"
+goes to `X18` on NO**. So bit 29 of an equipment entry means **IS
+tape**, not "not tape" as recorded here earlier, and the path p.18
+transcribes is the TAPE path. That also explains the eight: p.18's
+counter is 8 because a tape channel carries up to eight units, while
+Figure 44's `X18` branch for disk and console says "SET UNIT COUNT TO
+TWO". The card must therefore be `TP` for p.18 to be the page under
+test.
+
 **AND THE COLUMN-10 SKELETON IS THE WHOLE CONTROL-CARD FAMILY'S**,
 confirmed in the Reference Manual rather than only the Analysis
 Guide. `C22-6678-1` printed p.8 (offset +0) prints the LIM card's
