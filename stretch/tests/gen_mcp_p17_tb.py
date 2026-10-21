@@ -47,8 +47,10 @@ sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), os.p
 from gen_tb import generate
 from strap_asm import assemble, AssemblerError
 
-DECK = os.path.join(os.path.dirname(os.path.abspath(__file__)),
-                    os.pardir, "decks", "mcp_bootstrap_p17.strap")
+DECKS = [os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                      os.pardir, "decks", "mcp_bootstrap_p%d.strap" % n)
+         for n in (17, 18)]
+DECK = DECKS[0]
 
 CARD_AT_WORD = 3          # the card sits three words into the buffer,
                           # so the hunt has to step to find it
@@ -59,8 +61,24 @@ TENS   = 0x08             # 7-bit column, three zeros left of the punch
 UNITS  = 0x0400           # 16-bit column, five zeros left of the punch
 EQP_CODE = 6              # the code the matching table entry carries
 CHANNEL  = 35             # tens 3, units 5 -- what the two columns encode
-EQP_ENTRIES = [(273, 0), (546, 0), (819, 0), (LETTER, EQP_CODE), (1092, 0),
-               (1365, 0), (1638, 0), (1911, 0), (2184, 0), (2457, 0)]
+# (letter, equipment code, NOT-TAPE flag).
+#
+# THE ENTRY'S 29th BIT IS A TAPE FLAG, not the spare it was first
+# taken for.  Printed p.18 line 2 is "BZB, -.1($1), X18" commented
+# "-TAPE EQUIPMENT TYPE ENTRY": after p.17's lookup $1 sits just past
+# the matched entry, so -.1 is that entry's LAST bit, and a ZERO
+# there takes the tape path.  Found by setting it to zero and
+# watching the machine leave the transcribed pages entirely -- X18 is
+# 000740.40, the low half of p.18's last word, which is empty: it is
+# the first instruction of printed p.19.
+#
+# So the corrected layout is
+#   entry = [24-bit Hollerith letter][4-bit equipment code][tape flag]
+# and a 1 here means "not a tape", which is the path p.18 transcribes.
+EQP_ENTRIES = [(273, 0, 1), (546, 0, 1), (819, 0, 1),
+               (LETTER, EQP_CODE, 1), (1092, 0, 1),
+               (1365, 0, 1), (1638, 0, 1), (1911, 0, 1),
+               (2184, 0, 1), (2457, 0, 1)]
 
 
 def put(words, bitoff, nbits, val):
@@ -84,14 +102,29 @@ def main():
         print("usage: %s ModuleName" % sys.argv[0], file=sys.stderr)
         sys.exit(1)
 
-    try:
-        prog = assemble(open(DECK).read())
-    except AssemblerError as e:
-        print("error: %s" % e, file=sys.stderr)
-        sys.exit(1)
-
-    S = prog.symtab
-    words = dict(prog.words)
+    # BOTH PAGES, because they are one program.  Printed p.17 ends at
+    # 000712.00 with a full word and printed p.18 begins at
+    # 000713.00; p.18's last instruction is "B, X131", which is
+    # p.17's line 26.  They are a LOOP over the IOCD card deck, and
+    # running either alone would be running half of it.
+    #
+    # Assembled separately and merged by ADDRESS: each deck SYNs the
+    # other's labels to the same absolute values, so the branch
+    # targets agree without a merged source.  Their words do not
+    # overlap -- 0o655-0o712 and 0o713-0o740.
+    progs = []
+    for d in DECKS:
+        try:
+            progs.append(assemble(open(d).read()))
+        except AssemblerError as e:
+            print("error in %s: %s" % (d, e), file=sys.stderr)
+            sys.exit(1)
+    prog = progs[0]
+    S = dict(progs[0].symtab)
+    S.update(progs[1].symtab)
+    words = {}
+    for pr in progs:
+        words.update(pr.words)
 
     # ---- the card, at X IN END ------------------------------------
     #
@@ -108,7 +141,12 @@ def main():
     # system, so it is never fill; zeroing it here is the fixture
     # standing in for that.  Sixteen words is more than the hunt's
     # fourteen.
-    for w in range(S["XINEND"] // 64, S["XINEND"] // 64 + 16):
+    # Far enough for the hunt (14 words) AND for the loop to walk off
+    # the end of the one card: p.18 line 43's "V+I, $13, 15.0"
+    # advances by FIFTEEN WORDS, which is 960 bits -- eighty columns
+    # of twelve rows, one punched card exactly.  The stride IS the
+    # card.
+    for w in range(S["XINEND"] // 64, S["XINEND"] // 64 + 40):
         words.setdefault(w, 0)
 
     card = S["XINEND"] + CARD_AT_WORD * 64
@@ -133,19 +171,31 @@ def main():
     put(words, S["XIOCD"], 48, IDENT)
 
     # ---- X EQP T: ten 29-bit entries, 24-bit letter + 4-bit code --
-    for i, (letter, code) in enumerate(EQP_ENTRIES):
+    for i, (letter, code, nottape) in enumerate(EQP_ENTRIES):
         base = S["XEQPT"] + 29 * i
         put(words, base, 24, letter)
         put(words, base + 24, 4, code)
+        put(words, base + 28, 1, nottape)
 
-    # ---- the three halts ------------------------------------------
-    end_of_page = max(prog.words) * 64 + 64      # first word past line 54
-    exits = {"after_line_54": end_of_page,
-             "X19":    S["X19"],        # "NOT AN IOCD CARD"
-             "XERROR": S["XERROR"]}     # "NO IOCD DETECTED" / wrong code
+    # ---- the two halts --------------------------------------------
+    #
+    # With both pages in, the only exits that leave them are X 19 and
+    # X ERROR, and both are on pages nobody has transcribed.  A
+    # "BEW,$" at each makes them distinguishable stopping points, so
+    # the PC says which one the loop took.
+    #
+    # X 19 IS THE NORMAL END.  p.18 goes back to X131 for the next
+    # card; when that card does not match X IOCD, p.17 line 31's
+    # BZAE sends it to X 19.  So reaching the X 19 halt means the
+    # deck was processed and the loop ran out of cards -- not a
+    # failure.
+    exits = {"X19":    S["X19"],        # "NOT AN IOCD CARD" -- loop exit
+             "XERROR": S["XERROR"],     # "NO IOCD DETECTED" / wrong code
+             "X18":    S["X18"]}        # tape equipment type -- p.19
     for name, addr in exits.items():
         w, _ = divmod(addr, 64)
         words[w] = words.get(w, 0) | halt_at(addr)
+    end_of_page = S["X19"]
 
     prog.words.clear()
     prog.words.update(words)
@@ -168,11 +218,56 @@ def main():
     # lands 35 words in.  Line 44 clears the not-available bit the
     # preset set, and line 54 stores the equipment code at bits 52-55.
     cst_word = (S["XBUFER"] + (CHANNEL << 6)) // 64
-    preset   = (1 << (63 - 25)) | (1 << (63 - 29))   # not available, not assigned
-    filled   = (preset & ~(1 << (63 - 25))) | (EQP_CODE << (63 - 55))
-    checks.append(("p17_cst_entry_for_channel_35", str(cst_word), filled))
+
+    def put_field(word, ibm_lo, ibm_hi, val):
+        """Set IBM bits ibm_lo..ibm_hi (bit 0 = MSB) of a 64-bit word."""
+        nbits = ibm_hi - ibm_lo + 1
+        mask  = ((1 << nbits) - 1) << (63 - ibm_hi)
+        return (word & ~mask) | ((val & ((1 << nbits) - 1)) << (63 - ibm_hi))
+
+    # The preset entry (p.17 line 22) and then, in printed order, every
+    # instruction on the path that writes into it.  Each line of this
+    # derivation is a line of the listing; nothing here is observed.
+    preset = (1 << (63 - 25)) | (1 << (63 - 29))   # not available, not assigned
+
+    # $15 is the base of the unit status table area: p.17 line 18 loads
+    # X BUFER, line 20 adds 64.0 -- sixty-four WORDS, which is why the
+    # channel status table can be one word per channel and still not
+    # collide with the UST.
+    ust_bits = S["XBUFER"] + 64 * 64
+
+    entry = preset
+    entry = put_field(entry, 25, 25, 0)          # p.17 l.44 -- channel IS available
+    entry = put_field(entry, 52, 55, EQP_CODE)   # p.17 l.54 -- the equipment code
+    # SV stores the value AND its sign: the 24-bit address lands at IBM
+    # bits 0-23 and the sign at 24, so the address field is 24 bits wide
+    # and NOT 25 -- writing it as one 25-bit field puts every bit of it
+    # one place too low.
+    entry = put_field(entry,  0, 23, ust_bits)   # p.18 l.5  SV   -- UST address in
+    entry = put_field(entry, 24, 24, 0)          #           and its sign
+    entry = put_field(entry, 29, 29, 0)          # p.18 l.7  CM0000 -- "MEANINGLESS
+                                                 #                     ASSIGN BIT"
+    entry = put_field(entry, 27, 27, 1)          # p.18 l.9  CM1111 -- MULTI bit on
+    # p.18 line 33's "BXE, X17" is the branch marked "NO UNITS AT ALL ON
+    # MULTI CHANNEL": line 32 compares $15's count against 8, line 4 had
+    # just SET it to 8, and this card carries no unit entries, so the
+    # compare is equal and control reaches X17.  Line 42 then clears
+    # SEVENTEEN bits -- not twenty-four -- so the low seven bits of the
+    # UST address it just stored survive in bits 17-23.
+    entry = put_field(entry,  0, 16, 0)          # p.18 l.42 X17 -- clear CST address
+    checks.append(("p17_cst_entry_for_channel_35", str(cst_word), entry))
     # A neighbour, to show only the addressed entry moved.
     checks.append(("p17_neighbour_still_preset", str(cst_word + 1), preset))
+
+    # The index word that decided which way line 33 went.  $15 lives at
+    # word 31 (index registers occupy words 16-31).  Reaching X17 means
+    # the count was never decremented, so it is still the 8 that p.18
+    # line 4's "LCI, $15, 8.0" put there, and the value is still the UST
+    # base -- the unit loop at X15 never ran.  This is the independent
+    # witness for the branch the entry above depends on.
+    ust_reg = put_field(0, 0, 23, ust_bits)
+    ust_reg = put_field(ust_reg, 28, 45, 8)
+    checks.append(("p18_ust_counter_untouched", "31", ust_reg))
 
     print(generate(sys.argv[1], prog, checks,
                    pc_check=end_of_page // 32,

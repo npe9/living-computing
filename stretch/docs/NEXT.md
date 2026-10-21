@@ -4889,6 +4889,82 @@ forgotten: Reference Manual **PDF page = printed page + 3**, and
 `ja_ua1_ssip` is cited by **PDF page** because its listing carries no
 printed page numbers.
 
+## pp.17 AND 18 RUN AS ONE PROGRAM -- the card LOOP, 2026-10-21
+
+`tests/gen_mcp_p17_tb.py` now assembles **both** transcribed pages and
+runs them against a synthetic IOCD card. p.18 starts at `(8)713.0`,
+contiguous with p.17's last row at `000712.00`, and its last
+instruction is `B, X131` -- back into p.17 line 26. They were always
+one program. The run exits at `X 19`, the row whose own comment is
+"X 19 IS THE NORMAL END": the loop ran out of cards.
+
+**THE CARD STRIDE IS A PUNCHED CARD.** p.18 line 43 is `V+I, $13,
+15.0`. Fifteen 64-bit words = 960 bits = 80 columns x 12 rows, one
+IBM card as a bit image with nothing left over. The card's internal
+field map was derived from p.17's increments; this is the number that
+says where a card STOPS, and it is the first hard constraint on what
+the IOD cards on the system tape have to look like.
+
+**THE 29TH BIT OF AN EQUIPMENT ENTRY IS A TAPE FLAG, NOT A SPARE.**
+p.17 lines 46-54 gave the entry as 24 bits of Hollerith letter + a
+4-bit code + "1 spare". p.18 line 2 is `BZB, -.1($1), X18`, commented
+"-TAPE EQUIPMENT TYPE ENTRY". `X18` is `(8)740.40` -- the empty low
+half of p.18's last word, the first instruction of **untranscribed
+p.19**. So p.19 handles tape units, and the second program to read a
+structure has named the field the first one could only call spare.
+Same principle as the PROSA dictionary's shape from printed p.4: the
+code that reads a structure is a primary source for it.
+
+**THE CST ENTRY IS NOW DERIVED ONE PRINTED LINE AT A TIME**, and the
+generator reads as that list rather than as a hex constant:
+
+| line | instruction | effect on the entry |
+|---|---|---|
+| p.17 l.22 | preset | bit 25 not available, bit 29 not assigned |
+| p.17 l.44 | `CM0000(BU,1), .25($3)` | bit 25 off -- channel IS available |
+| p.17 l.54 | `ST(BU,4)` | bits 52-55 = equipment code |
+| p.18 l.5 | `SV, $15, 0.0($3)` | UST address into bits 0-23 |
+| p.18 l.7 | `CM0000(BU,1), .29($3)` | "meaningless assign" bit off |
+| p.18 l.9 | `CM1111(BU,1), .27($3)` | MULTI bit on |
+| p.18 l.42 | `CM0000(BU,17), 0.0($3)` | X17 clears 17 bits of it again |
+
+The last row needs its reason: p.18 line 32 compares `$15`'s count
+against 8, line 4 had just SET it to 8, and this card carries no unit
+entries -- so line 33's `BXE, X17` fires, the branch commented "NO
+UNITS AT ALL ON MULTI CHANNEL". **A channel with no units gets no
+unit status table, so MCP takes the table address back out of the
+entry.** The third check in the testbench -- word 31, `$15`, still
+holding the UST base and the 8 -- is the independent witness for
+which way that branch went, because the entry's value depends on it.
+
+**`SV` STORES THE VALUE *AND* ITS SIGN.** The first expectation put
+the UST address one bit too low because I wrote the index value as a
+single 25-bit field spanning bits 0-24. It is a 24-bit address at
+bits 0-23 with the SIGN at bit 24. The measurement was off by exactly
+2x, which is what a one-bit field-width error looks like and is worth
+recognising on sight -- see the trap entry at the end of this file.
+
+**TWO MEASURED INJECTIONS, both in the FIXTURE**, because
+`decks/mcp_bootstrap_p18.strap` is checked bit-for-bit against the
+listing and an injection into it would be testing a different page:
+
+1. **Clear the tape flag** on the matched equipment entry. Observed
+   PC 961 = 30752/32, the `X18` halt; the CST entry falls back to
+   `0x400000600`; the UST counter word loses its 8. **That fallback
+   value is exactly what this test asserted before p.18 was merged**,
+   so the injection measures p.18's contribution as a difference.
+2. **Remove the card's letter from the equipment table.** Observed PC
+   182 = 5824/32 -- `X ERROR`, MCP's "WRONG EQUIPMENT CODE" exit --
+   and the entry stops at `0x400000000`: available, no code, "not
+   assigned" still standing, because p.18 never ran.
+
+**STILL NOT EXERCISED: p.18 lines 34-37**, the unit-count arm, which
+is where this session's unsigned-subtract repair (`-(BU,18),
+$15+.28`, fixed via Figure 12 on printed p.61) actually lives. The
+`BXE, X17` branch skips it for a card with no units. Giving the
+synthetic card unit entries would close that loop and is the obvious
+next step on this page.
+
 ## `M+MG` IS BUILT, AND `OP` IS OUT OF THE INDICATOR WORD AGAIN -- 2026-10-19
 
 ADD MAGNITUDE TO MEMORY, the VFL form (`abc101001`), is the seventh
@@ -5728,6 +5804,18 @@ every word of core. With it, the transmit stops at the top of
 installed storage with AD, exactly as p.30 describes.
 
 ## Traps this project has paid for
+
+* **A ONE-BIT FIELD-WIDTH ERROR ANNOUNCES ITSELF AS A FACTOR OF TWO.**
+  2026-10-21, writing the index value as a 25-bit field at IBM bits
+  0-24 instead of a 24-bit address at 0-23 plus a sign at 24. The
+  measured word was exactly 2x the expectation in that field and
+  correct everywhere else. Before hunting for an arithmetic bug, check
+  whether the ratio is a power of two: 2^n says the field is n bits
+  wide in one place and n bits narrower in the other, and the fix is
+  in the field map, not the arithmetic. The earlier version of the
+  same mistake cost longer because I back-computed the operand from
+  the expectation instead of printing the symbol -- `S["XBUFER"]` was
+  one `python3 -c` away and settled it immediately.
 
 * **DO NOT EDIT `strap_asm.py` WHILE A SUITE IS RUNNING.** The rule
   everyone remembers is "never edit `run_tests.sh` while a suite is

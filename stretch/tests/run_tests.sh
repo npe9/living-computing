@@ -1585,7 +1585,7 @@ run "Figure 14 -- IBM's own sign-modifier example, and the N suffix" ./run_progr
 # Figure 12 on printed p.61, found that every unsigned subtract was
 # an addition.
 
-run "THE REAL printed p.17 executes -- IOCD cards into the CST" ./run_mcp_p17.sh
+run "THE REAL printed pp.17-18 execute -- IOCD cards into the CST" ./run_mcp_p17.sh
 # >>> decks/mcp_bootstrap_p17.strap IS CHECKED BIT-FOR-BIT AGAINST THE
 # LISTING AND HAD NEVER EXECUTED A ROW.  It does now. <<<
 #
@@ -1594,10 +1594,62 @@ run "THE REAL printed p.17 executes -- IOCD cards into the CST" ./run_mcp_p17.sh
 # TRANSMIT, hunts for the card, identifies it against X IOCD,
 # converts its Hollerith channel number to 35, presets 64 channel
 # status table entries and indexes to the right one, clears the
-# not-available flag, looks up the equipment code and stores it.  The
-# entry for channel 35 comes out 0x400000600 -- available, not
-# assigned, equipment code 6 -- and its neighbour is still at the
-# preset.
+# not-available flag, looks up the equipment code and stores it.
+#
+# >>> AND PRINTED p.18 NOW RUNS WITH IT, so this is the card LOOP and
+# no longer one pass through it. <<<  p.18 starts at (8)713.0, which
+# is contiguous with p.17's last row at 000712.00, and ends with "B,
+# X131" -- back into p.17 line 26.  The two pages are one program and
+# are now run as one.
+#
+# THE CARD STRIDE IS A PUNCHED CARD, which is the derivation this
+# merge produced.  p.18 line 43 is "V+I, $13, 15.0" -- advance to the
+# next card by FIFTEEN WORDS.  Fifteen 64-bit words is 960 bits, and
+# 960 is 80 columns x 12 rows: one IBM card, read as a bit image with
+# nothing left over.  The field map in the section below was derived
+# from the increments WITHIN a card; this is the number that says the
+# card ends where a card ends.
+#
+# THE RUN EXITS AT X 19, which is the loop running out of cards and
+# not a failure -- the generator's header says so at the point where
+# the halt is planted.  The page's own comment on that row is "X 19
+# IS THE NORMAL END".
+#
+# THE CST ENTRY IS DERIVED ONE PRINTED LINE AT A TIME and the
+# generator now reads as that list:
+#
+#   p.17 l.22  preset            bit 25 not available, 29 not assigned
+#   p.17 l.44  CM0000(BU,1),.25  bit 25 off -- channel IS available
+#   p.17 l.54  ST(BU,4)          bits 52-55 = equipment code 6
+#   p.18 l.5   SV, $15, 0.0($3)  UST address into bits 0-23
+#   p.18 l.7   CM0000(BU,1),.29  "MEANINGLESS ASSIGN BIT" off
+#   p.18 l.9   CM1111(BU,1),.27  MULTI bit on
+#   p.18 l.42  CM0000(BU,17)     X17 clears SEVENTEEN bits of it again
+#
+# and comes out 0x1000000600.  Every bit of that word is accounted
+# for by a row of the listing; nothing in it is an observation
+# promoted to an expectation.
+#
+# ONE CORRECTION WORTH THE SPACE: the first expectation put the UST
+# address one bit too low, because I wrote the index value as a
+# 25-bit field spanning bits 0-24.  SV stores the value AND its sign:
+# the 24-bit address lands at bits 0-23 and the SIGN at bit 24.  The
+# measurement was off by exactly a factor of two per bit of
+# misalignment, which is how a field-width mistake announces itself.
+#
+# WHY LINE 42 RUNS AT ALL, since it is the row that throws the
+# address away: p.18 line 32 compares $15's count against 8, line 4
+# had just SET it to 8, and this card carries no unit entries -- so
+# the compare is equal and line 33's "BXE, X17" fires, the branch
+# commented "NO UNITS AT ALL ON MULTI CHANNEL".  A channel with no
+# units gets no unit status table, so MCP takes the table address
+# back out of the entry.
+#
+# THAT MAKES THE THIRD CHECK THE WITNESS FOR THE FIRST.  $15 lives at
+# word 31, and reaching X17 means its count was never decremented, so
+# the word still holds the UST base and the 8 that line 4 put there.
+# The entry's value depends on which way line 33 went; this check is
+# what says which way that was, independently of the entry.
 #
 # This is the page, not a paraphrase of it.  The neighbouring decks
 # transcribe p.17's rows by hand; this runs the transcription.
@@ -1632,6 +1684,33 @@ run "THE REAL printed p.17 executes -- IOCD cards into the CST" ./run_mcp_p17.sh
 #   it is ZERO.  Setting it to one left the CST's not-available flag
 #   standing while every other check passed, which is how the sense
 #   was identified.
+#
+# TWO MEASURED INJECTIONS FOR THE p.18 PATH, both in the FIXTURE and
+# not in the deck -- mcp_bootstrap_p18.strap is checked bit-for-bit
+# against the listing by verify_mcp_bootstrap_p18.py, so an injection
+# that edited it would be testing a different page.
+#
+#   1. CLEAR THE TAPE FLAG on the matched equipment entry.  p.18 line
+#      2 is "BZB, -.1($1), X18" -- "-TAPE EQUIPMENT TYPE ENTRY" --
+#      and X18 is (8)740.40, the empty low half of p.18's LAST word,
+#      i.e. the first instruction of untranscribed p.19.  Observed:
+#      PC 961, which is 30752/32, the X18 halt; the CST entry falls
+#      back to 0x400000600; and the UST counter word loses its 8.
+#      THE ENTRY'S FALLBACK VALUE IS EXACTLY WHAT THIS SECTION
+#      ASSERTED BEFORE p.18 WAS MERGED, so the injection measures
+#      p.18's contribution as a difference.
+#
+#   2. REMOVE THE CARD'S LETTER FROM THE EQUIPMENT TABLE.  Observed:
+#      PC 182, which is 5824/32 -- X ERROR, MCP's "WRONG EQUIPMENT
+#      CODE" exit -- and the entry stops at 0x400000000, available
+#      but with no code and the "not assigned" bit still standing,
+#      because p.18 never ran.
+#
+# AND THE 29TH BIT OF AN EQUIPMENT ENTRY IS A TAPE FLAG, NOT A SPARE.
+# The section below derives the entry as 24 bits of Hollerith letter
+# plus a 4-bit code plus "1 spare"; p.18 line 2 tests that spare bit
+# and branches on it.  The structure's own page is still missing, but
+# the second program to read it has now named its last field.
 
 run "MCP's whole per-card path, printed p.17, over a synthetic IOCD card" ./run_program.sh ../decks/mcp_p17_card.strap StretchP17CardTb \
     "PC=2087" \

@@ -495,6 +495,45 @@ line 20's `64.0` to the UST base consistent.
   past line 44, when the card's bit is ONE; the row commented "-YES *
   CHANNEL AVAILABLE FLAG TO ON" runs only when it is ZERO.
 
+**p.18 IS NOW RUNNING WITH p.17, 2026-10-21, so the test is the card
+LOOP and not one pass through it.** p.18 starts at `(8)713.0`,
+contiguous with p.17's last row at `000712.00`, and ends with `B,
+X131` — back into p.17 line 26. They were always one program; they
+are now run as one, and the run exits at `X 19`, the row the page
+itself comments "X 19 IS THE NORMAL END", which is the loop running
+out of cards.
+
+**THE CARD STRIDE IS A PUNCHED CARD.** p.18 line 43 is `V+I, $13,
+15.0` — advance to the next card by FIFTEEN WORDS. Fifteen 64-bit
+words is 960 bits, and 960 = 80 columns × 12 rows: one IBM card as a
+bit image, with nothing left over. The field map above was derived
+from the increments WITHIN a card; this is the number that says a
+card ends where a card ends. It is also the first hard constraint on
+what the IOD cards on the tape have to look like, which is the rest
+of this item.
+
+**THE 29TH BIT OF AN EQUIPMENT ENTRY IS A TAPE FLAG, NOT A SPARE.**
+The entry was derived from p.17 lines 46-54 as 24 bits of Hollerith
+letter + a 4-bit code + 1 spare. p.18 line 2 is `BZB, -.1($1), X18`,
+commented "-TAPE EQUIPMENT TYPE ENTRY", and `X18` is `(8)740.40` —
+the empty low half of p.18's last word, i.e. the first instruction of
+**untranscribed p.19**. So p.19 is where tape units are handled, and
+the structure's own page is still missing while the second program to
+read it has now named its last field.
+
+**AND THE CST ENTRY IS DERIVED ONE PRINTED LINE AT A TIME**, which is
+the form these expectations should take from here: preset (p.17
+l.22), `CM0000` clearing the not-available bit (l.44), equipment
+code (l.54), UST address (p.18
+l.5), "meaningless assign" bit off (l.7), MULTI bit on (l.9), and
+then X17's `CM0000(BU,17)` taking SEVENTEEN bits of the address back
+out again (l.42) — because line 33's `BXE, X17`, "NO UNITS AT ALL ON
+MULTI CHANNEL", fires for a card with no unit entries. A channel with
+no units gets no unit status table. One correction en route: `SV`
+stores the value AND its sign, so the 24-bit address is at bits 0-23
+and the sign at 24; writing it as one 25-bit field put every bit of
+it one place too low.
+
 **What is left of A3** is narrower than it was: getting this data to
 MCP the way the real system would — on the tape, as card images
 placed there when the system was built — rather than preloaded by a
