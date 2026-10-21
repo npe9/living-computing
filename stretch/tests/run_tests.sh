@@ -1585,6 +1585,47 @@ run "Figure 14 -- IBM's own sign-modifier example, and the N suffix" ./run_progr
 # Figure 12 on printed p.61, found that every unsigned subtract was
 # an addition.
 
+run "MCP's Hollerith channel-number conversion, printed p.17 lines 32-36" ./run_program.sh ../decks/mcp_p17_channel_number.strap StretchP17ChanTb \
+    "PC=2060" \
+    "p17_tens_times_ten:1042=0x7800000000000" \
+    "p17_channel_number:1043=0x8c00000000000"
+# >>> THE FOUR ROWS THAT THREE DAYS OF WORK WERE FOR. <<<
+#
+#   X132    CT0011(V+I)(BU,7), .12($4)   -TEST TENS POSITION
+#           LCV(DU,8,4), $LZC+.3, 46     -CONVERT TO OCTAL NUMBER
+#   X132AA  CT0011(V+I)(BU,16), .22($4)  -TEST UNITS POSITION
+#           +(BU,4), $LZC+.3, 46         -FORM CHANNEL NUMBER
+#
+# A HOLLERITH DIGIT IS A POSITION, NOT A VALUE -- one punch among
+# several rows of a card column.  CONNECT FOR TEST discards its
+# result and sets only the counts, so running it over the column
+# leaves the number of zeros to the left of the punch, THE DIGIT
+# ITSELF, in the left-zeros counter.  "$LZC+.3" is word 7 bit 20, so
+# an eight-bit field there is the counter's low nibble over four zero
+# bits: the tens digit followed by a zero.  LOAD CONVERTED reads that
+# as two decimal digits and leaves tens*10 at offset 46; the second
+# CONNECT FOR TEST puts the units digit in the counter and the
+# four-bit add finishes the number.
+#
+# THREE THINGS HAD TO EXIST, and none of them was reachable at the
+# start of this week: KF (2026-10-19, which two rows earlier decides
+# the card IS an IOCD card), LCV (2026-10-20) and the connective
+# counts (2026-10-20).  Each alone was not enough -- building LCV
+# without the counters converts nothing, because the counter is where
+# its input comes from.  That is why boot_plan.md A2 looked finished
+# and was not.
+#
+# Only the addressing differs from the page: the listing walks a card
+# image through progressive indexing off $4 and this deck reads two
+# fixed columns.  The connectives, the conversion, the offsets and
+# the add are MCP's own.
+#
+# T1 IS CHECKED AS WELL AS T2 because the halves fail differently: a
+# broken counter gives the wrong tens AND units, a broken conversion
+# leaves both wrong by the same arithmetic.  The injection -- LCV
+# copying the digit bits instead of converting -- reads 0x30 as 48
+# and makes the channel 53.
+
 run "The connective counts at word 7 (pp.75-76)" ./run_program.sh ../decks/connective_counts.strap StretchConnCntTb \
     "PC=2086" \
     "cnt_punch_at_left:1079=0x2000" \

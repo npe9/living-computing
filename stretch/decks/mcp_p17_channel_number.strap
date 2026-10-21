@@ -1,0 +1,86 @@
+! MCP's HOLLERITH CHANNEL-NUMBER CONVERSION, printed p.17 lines
+! 32-36, lifted out of the page and run on its own.
+!
+! The four rows, as the listing prints them:
+!
+!   X132    CT0011(V+I)(BU,7), .12($4)   -TEST TENS POSITION OF
+!                                         CHANNEL
+!           LCV(DU,8,4), $LZC+.3, 46     -CONVERT TO OCTAL NUMBER
+!   X132AA  CT0011(V+I)(BU,16), .22($4)  -TEST UNITS POSITION
+!           +(BU,4), $LZC+.3, 46         -FORM CHANNEL NUMBER
+!
+! WHAT IT IS DOING, which took three separate pieces of machinery to
+! make runnable and is worth stating once in one place.
+!
+! A HOLLERITH DIGIT IS A POSITION, NOT A VALUE: one punch among
+! several rows of a card column.  CONNECT FOR TEST discards its
+! result and sets only the counts, so running it over the column
+! leaves the number of zeros to the left of the punch -- THE DIGIT
+! ITSELF -- in the left-zeros counter at word 7 bits 17-23
+! (Reference Manual printed pp.75-76).  "$LZC+.3" is word 7 bit 20,
+! so an eight-bit field there is the counter's low nibble followed by
+! four bits of the word beyond it, which are zero: the tens digit
+! over a zero.  LOAD CONVERTED reads that as two decimal digits
+! (pp.71-73) and leaves tens*10 in the accumulator at offset 46.
+! The second CONNECT FOR TEST puts the units digit in the counter,
+! and "+(BU,4)" adds the four-bit counter field at the same offset.
+!
+! Channel number = tens*10 + units, built out of two punch POSITIONS
+! by a counter, a radix conversion and an add.
+!
+! THREE THINGS HAD TO EXIST FOR THIS TO RUN, all built 2026-10-19/20:
+! KF (which decides the card is an IOCD card, two rows earlier), LCV,
+! and the connective counts.  None of them was reachable before, and
+! each on its own was not enough -- building LCV without the counters
+! converts nothing, because the counter is where its input comes
+! from.
+!
+! WHAT IS CHANGED FROM THE PAGE, and it is only the addressing: the
+! listing reads its columns through progressive indexing off $4,
+! which is walking a card image, and this deck reads two fixed
+! columns instead.  The connectives, the conversion, the offsets and
+! the add are the page's own.
+!
+! THE COLUMNS.  A tens digit of 3 is a punch with three zeros to its
+! left in a seven-bit column; a units digit of 5 is a punch with five
+! zeros to its left in the sixteen-bit column the page uses for the
+! units position.  So the channel number comes out 35.
+!
+!   T1  after the LOAD CONVERTED: 30, at offset 46.
+!   T2  after the add: 35, at offset 46.  **T1 is checked as well as
+!       T2 because the two halves fail differently** -- a broken
+!       counter gives the wrong tens AND the wrong units, while a
+!       broken conversion leaves T1 wrong and T2 wrong by the same
+!       amount.  Seeing both says which half moved.
+
+! ONE INJECTION, MEASURED: LOAD CONVERTED made to copy the digit bits
+! instead of converting them reads the eight-bit field 0x30 as binary
+! 48 rather than decimal 30, giving T1 = 0xc000000000000 and
+! T2 = 0xd400000000000 -- the channel number comes out 53 instead of
+! 35.  Both checks move, by the same arithmetic, which is what tells
+! the conversion apart from the counter underneath it.
+
+        SLC, (8)2000.0
+
+START   CT0011(BU,7), TENS+.57, 0     ! -TEST TENS POSITION OF CHANNEL
+        LCV(DU,8,4), $LZC+.3, 46      ! -CONVERT TO OCTAL NUMBER
+        ST(BU,64,8), T1, 0            ! (not in the page: look at it)
+        CT0011(BU,16), UNITS+.48, 0   ! -TEST UNITS POSITION
+        +(BU,4), $LZC+.3, 46          ! -FORM CHANNEL NUMBER
+        ST(BU,64,8), T2, 0
+
+PASS    BEW, $
+
+! Data, word-aligned: BEW is a half word, so without this the 64-bit
+! fields below would straddle two words.
+        SLC, (8)2020.0
+
+! A seven-bit column with three zeros to the left of the punch.
+TENS    DD(BU,64,8), (8)0000000000000000000010
+! A sixteen-bit column with five zeros to the left of the punch.
+UNITS   DD(BU,64,8), (8)0000000000000000002000
+
+T1      DD(BU,64,8), 0
+T2      DD(BU,64,8), 0
+
+        END, START
