@@ -903,9 +903,35 @@ until one has.
    no program exercised yet (`SYN`, `SLC` and `CNOP` were on this
    list; all three are now implemented and tested — `CNOP` is what
    let the I-Box 1 span reach back to p.43).
-2. Verify the opcode table exhaustively against `7030_Opcode_List.pdf`
-   (the rendered pages, not its noisy OCR — see `../bsv/README.md`
-   "Next steps", inherited here unchanged).
+2. ~~Verify the opcode table exhaustively against
+   `7030_Opcode_List.pdf`…~~ **DONE, 2026-10-21, and against a better
+   source than this item named.** The Reference Manual's own
+   **COMPLETE OPERATION AND MODIFIER LIST, `22-6530-2` printed
+   pp.168-169 = PDF pp.171-172**, is the normative table for the whole
+   machine, and this project had never opened it — found by the
+   back-matter sweep in `docs/NEXT.md`.
+   `tests/verify_refman_p168_opcodes.py` transcribes both pages and
+   checks all ten classes TWO-WAY: 24 VFL integer and radix, 29
+   floating point, 16 direct index, 16 immediate index, 6
+   unconditional branch, 5 miscellaneous, 11 input-output, 3
+   connective, 16 index branching, 8 transmit, plus the P-field
+   indexing modes. **Every one agrees.**
+
+   The check is on the TEMPLATES, not only the numbers. The page
+   states each code as a pattern over a named bit range —
+   `ssbxxxxx1iiii` for VFL over bits 51-63, `nssxxxxx10iiii` for
+   floating point over 18-31, `jjjj10000xxxx` for immediate index over
+   19-31 — and `opcodes.py` stores a different slice of each, so the
+   verifier applies the template's own rule and compares. The
+   immediate-index rule differs from the other three (its x's are at
+   the end, with nothing trailing them), which is exactly the kind of
+   thing a number-only comparison would pass with the template
+   misread. An injection that applies the VFL rule to the
+   floating-point block is caught.
+
+   TWO VALUES MOVED FROM A SUMMARY TO THE MANUAL: `CONNECTIVE_SUFFIX`
+   and `IO_OP` were taken from the `X22-6533` pocket card, and this
+   page confirms both.
 3. Format 8's `J'` (`i2`) field: encoded but not executed (see the
    "Scope" note on format 8 above) — `StretchExecute.bsv`'s `VflInt`
    case would need to read `vi.a.i2` and apply the manual's "modify

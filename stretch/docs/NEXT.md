@@ -4983,10 +4983,29 @@ planning a search.
 **THE RANKED WORKLIST**, highest value first, each one a thing this
 project would otherwise derive:
 
-1. `22-6530-2` printed **168-169** -- the Complete Operation and
-   Modifier List. Binary bit patterns for every operation class. A
-   direct normative cross-check for `strap/opcodes.py`, which is
-   `strap/README.md`'s own open item.
+1. ~~`22-6530-2` printed **168-169**~~ — **DONE THE SAME DAY.** The
+   Complete Operation and Modifier List is now
+   `tests/verify_refman_p168_opcodes.py`, checking all ten classes
+   two-way: 24 VFL integer and radix, 29 floating point, 16 direct
+   index, 16 immediate index, 6 unconditional branch, 5
+   miscellaneous, 11 input-output, 3 connective, 16 index branching,
+   8 transmit, plus the P-field indexing modes. **Every one agrees**,
+   which closes `strap/README.md`'s "Next steps" item 2 — and against
+   a better source than that item named.
+
+   Three things worth keeping from it. **The check is on the
+   TEMPLATES**: the page gives each code as a pattern over a named
+   bit range (`ssbxxxxx1iiii`, `nssxxxxx10iiii`, `jjjj10000xxxx`) and
+   `opcodes.py` stores a different slice of each, so the verifier
+   applies the template's own rule — and the immediate-index rule
+   *differs* from the other three, its x's being at the end with
+   nothing trailing them. **Two values moved from a summary to the
+   manual**: `CONNECTIVE_SUFFIX` and `IO_OP` were taken from the
+   `X22-6533` pocket card, which is a summary of this very page. And
+   **the P field is printed** — "INDEXING MODES FOR VARIABLE FIELD
+   LENGTH OPERATIONS; Instruction bits 32-34", 000 direct, 100
+   immediate, 001 `V+` … 111 `V-CR` — the field a whole session was
+   spent deriving from the other end.
 2. `C22-6728` printed **247-260** -- the rest of Appendix A. p.246 is
    done (see the section above); the Unit Area, File Area, Symbolic
    I-O Location and Reel Pool tables are not.

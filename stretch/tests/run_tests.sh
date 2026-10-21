@@ -7981,6 +7981,57 @@ run "XW refill" ./run_program.sh ../decks/xw_refill.strap StretchXwRefillTb \
 # StretchIO.bsv). Not a Reference Manual worked example -- this
 # project's first purpose-written program for a feature the manual
 # doesn't happen to walk through an instance of.
+run "The opcode table against the manual's own COMPLETE OPERATION AND MODIFIER LIST" python3 verify_refman_p168_opcodes.py
+# >>> 22-6530-2 printed pp.168-169 = PDF pp.171-172 is the normative
+# opcode table for the whole machine, and this project had never
+# opened it.  strap/README.md's "Next steps" item 2 asked for exactly
+# this cross-check and named a worse source for it. <<<  Found by the
+# back-matter sweep, two sections after the card code was found the
+# same way.
+#
+# ALL TEN CLASSES, TWO-WAY, AND EVERY ONE AGREES: 24 VFL integer and
+# radix conversion, 29 floating point, 16 direct index, 16 immediate
+# index, 6 unconditional branch, 5 miscellaneous, 11 input-output, 3
+# connective, 16 index branching, 8 transmit, plus the P-field
+# indexing modes.  Two-way means a mnemonic present on one side and
+# not the other fails too, which is the half that catches an
+# operation quietly added to the assembler.
+#
+# THE CHECK IS ON THE TEMPLATES, NOT ONLY THE NUMBERS.  The page
+# states each code as a pattern over a named bit range --
+# "ssbxxxxx1iiii" for VFL over bits 51-63, "nssxxxxx10iiii" for
+# floating point over 18-31, "jjjjxxxx1iiii" for direct index over
+# 19-31, "jjjj10000xxxx" for IMMEDIATE index over the same bits --
+# and opcodes.py stores a different slice of each.  The verifier
+# applies the template's own rule and compares.  THE
+# IMMEDIATE-INDEX RULE DIFFERS FROM THE OTHER THREE: its x's are at
+# the END with nothing trailing them, so its stored code is the
+# printed digits unchanged while the others carry a literal 1 or 10
+# underneath.  A number-only comparison would pass with that
+# misread.
+#
+# TWO VALUES MOVED FROM A SUMMARY TO THE MANUAL.  opcodes.py's own
+# comments credit the X22-6533 POCKET CARD for CONNECTIVE_SUFFIX and
+# IO_OP.  A pocket card is a summary of this page; now the page says
+# it.
+#
+# AND THE P FIELD IS PRINTED.  "INDEXING MODES FOR VARIABLE FIELD
+# LENGTH OPERATIONS; Instruction bits 32-34" gives 000 direct, 100
+# immediate, 001 V+, 010 V+C, 011 V+CR, 101 V-, 110 V-C, 111 V-CR.
+# That is the field this project spent a session on from the other
+# end -- progressive indexing, where the effective address IS the
+# index value -- and it is also "4 for immediate and 0 for direct",
+# which settled LFI on MCP printed p.18 by comparing one field of one
+# assembled word against the listing.
+#
+# THREE MEASURED INJECTIONS:
+#   1. Give CT the wrong connective suffix -> "connective_codes =
+#      {'CT': (31, 23)}", the stored value against the printed one.
+#   2. Delete SVA from DIR_INDEX_CODES -> the two-way mnemonic check
+#      names it, which a value comparison alone could not.
+#   3. Apply the VFL rule to the FLOATING POINT block, i.e. misread
+#      "nssxxxxx10iiii" as "ssbxxxxx1iiii" -> caught.
+
 run "The card code is PRINTED: C22-6678-1 Appendix F" python3 verify_c22_6678_appendix_f.py
 # >>> strap/cards.py ASSERTED THAT NO 7030 DOCUMENT GAVE THE CARD CODE
 # DIRECTLY.  C22-6678-1 printed p.56 = PDF p.56, "APPENDIX F.
