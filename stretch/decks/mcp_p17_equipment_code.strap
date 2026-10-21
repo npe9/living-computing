@@ -1,0 +1,133 @@
+! MCP's EQUIPMENT-CODE LOOKUP, printed p.17 lines 46-54, lifted out
+! of the page and run.  The rows, as the listing prints them:
+!
+!   X134    L(V+I)(BU,12), .24($4)    -SECOND LETTER OF HOLLERITH
+!                                      EQUIPMENT
+!           LVI, $1, X EQP T          -BASE OF EQUIPMENT TABLE
+!           LCI, $1, 10.0             -SIZE OF TABLE +1
+!   X135    SIC, X ERR AD
+!           CBZ, $1, X ERROR          -WRONG EQUIPMENT CODE
+!           KF(V+I)(BU,24), .29($1)   -MATCH * ADVANCE TO NEXT SLOT
+!           BZAE, X135
+!   X136    L(BU,4), -.5($1)          -ENTER EQUPMENT CODE FROM TABLE
+!           ST(BU,4), .52($3)         -INSERT IN CST ENTRY
+!
+! THE TABLE'S LAYOUT IS DERIVED FROM THESE ROWS, not guessed, and
+! this is the point of the deck as much as the execution is.  X EQP T
+! itself sits on a page nobody has transcribed, so its CONTENTS are a
+! fixture -- but its SHAPE follows from the code that reads it:
+!
+!   * `KF(V+I)(BU,24), .29($1)` compares TWENTY-FOUR bits and, under
+!     progressive indexing, advances $1 by the address field --
+!     TWENTY-NINE bits.  So an entry is 29 bits and only its first 24
+!     are the comparand.
+!   * `L(BU,4), -.5($1)` then reads FOUR bits five back from where
+!     the match left $1, i.e. at the entry's bits 24-27.  So the
+!     remaining five bits are a four-bit equipment code and one
+!     spare.
+!
+!   entry = [24-bit Hollerith letter][4-bit equipment code][1 spare]
+!
+! That is the same kind of derivation the PROSA dictionary's shape
+! got from printed p.4: the program that reads a structure is a
+! primary source for the structure, even when the structure's own
+! page is missing.
+!
+! AND THE LOOP IS A LINEAR SEARCH WITH A COUNTED BOUND.  "LCI,$1,10.0"
+! puts ten in $1's count field while "LVI,$1,X EQP T" puts the table's
+! address in its value; `CBZ` counts down and takes the error exit
+! when the table is exhausted, and `BZAE` goes back for another slot
+! while the comparison says not-equal.  Ten entries, the tenth being
+! the "+1" the comment names.
+!
+! WHAT IS CHANGED FROM THE PAGE: the card field and the CST entry are
+! read and written at fixed addresses rather than off $4 and $3,
+! because this deck has no card image and no channel status table.
+! The table walk -- which is the part with the derived layout -- is
+! the page's own, progressive indexing included.
+!
+!   T1  the equipment code lands in the CST entry's bits 52-55.  The
+!       table's fourth entry is the matching one, so a search that
+!       stopped early, ran away, or took the code from the wrong
+!       entry all give a different nibble.
+!   T2  the WHOLE index word $1 was left holding, value and count
+!       together: the table base plus four entries of 29 bits, and a
+!       count of 6 where it started at 10.
+!
+!       **Checked separately because the code alone cannot tell a
+!       correct search from a lucky one** -- the code is read at a
+!       NEGATIVE offset from wherever $1 ended, so a walk that
+!       advanced by the wrong amount and a compare that matched the
+!       wrong entry look the same in T1 and different here.
+!
+!       AND THE COUNT IS THE BETTER HALF OF IT, which I only noticed
+!       by getting the expected value wrong: the first version of
+!       this check asserted the value field alone and failed by
+!       exactly 6 << 18.  The count says HOW MANY SLOTS WERE
+!       EXAMINED -- four, for the fourth entry -- which is the one
+!       thing a search that found the right answer the wrong way
+!       could not reproduce.
+
+! ONE INJECTION, MEASURED, and the program's own error exit catches
+! it: progressive indexing made not to advance (the increment forced
+! to zero) leaves the search comparing the first entry ten times
+! over, the count runs out, and CBZ takes MCP's "WRONG EQUIPMENT
+! CODE" branch.  All three checks move -- the CST entry stays zero,
+! $1 is never stored, and the halt is at NOTFOUND rather than PASS.
+! A 1963 bootstrap's error path firing for the right reason.
+
+        SLC, (8)2000.0
+
+START   LVI, $X4, CARD              ! (page: $4 already walks the card)
+        L(V+I)(BU,12), .24($X4)     ! line 46 -SECOND LETTER OF
+                                    !          HOLLERITH EQUIPMENT
+        LVI, $X1, EQPT              ! line 47 -BASE OF EQUIPMENT TABLE
+        LCI, $X1, 10.0              ! line 48 -SIZE OF TABLE +1
+X135    CBZ, $X1, NOTFOUND          ! line 50 -WRONG EQUIPMENT CODE
+        KF(V+I)(BU,24), .29($X1)    ! line 51 -MATCH * ADVANCE TO
+                                    !          NEXT SLOT
+        BZAE, X135                  ! line 52
+X136    L(BU,4), -.5($X1)           ! line 53 -ENTER EQUPMENT CODE
+                                    !          FROM TABLE
+        ST(BU,4), CSTE+.52          ! line 54 -INSERT IN CST ENTRY
+        SX, $X1, T2                 ! where the search stopped
+        B, PASS
+
+NOTFOUND BEW, $                     ! the page's "WRONG EQUIPMENT CODE"
+PASS    BEW, $
+
+! Data, word-aligned: BEW is a half word, so without this the fields
+! below would straddle words.
+        SLC, (8)2030.0
+
+! The card's equipment letter, twelve bits at the field's own start.
+CARD    DD(BU,64,8), (8)1257000000000000000000
+
+! Ten entries of 29 bits: twenty-four bits of letter, a four-bit
+! equipment code, one spare.  The fourth matches the card.
+EQPT    DD(BU,24), 273
+        DD(BU,5), 0
+        DD(BU,24), 546
+        DD(BU,5), 0
+        DD(BU,24), 819
+        DD(BU,5), 0
+        DD(BU,24), 2748
+        DD(BU,5), 12
+        DD(BU,24), 1092
+        DD(BU,5), 0
+        DD(BU,24), 1365
+        DD(BU,5), 0
+        DD(BU,24), 1638
+        DD(BU,5), 0
+        DD(BU,24), 1911
+        DD(BU,5), 0
+        DD(BU,24), 2184
+        DD(BU,5), 0
+        DD(BU,24), 2457
+        DD(BU,5), 0
+
+        SLC, (8)2050.0
+CSTE    DD(BU,64,8), 0
+T2      DD(BU,64,8), 0
+
+        END, START

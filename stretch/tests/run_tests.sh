@@ -1585,6 +1585,42 @@ run "Figure 14 -- IBM's own sign-modifier example, and the N suffix" ./run_progr
 # Figure 12 on printed p.61, found that every unsigned subtract was
 # an addition.
 
+run "MCP's equipment-code lookup, printed p.17 lines 46-54" ./run_program.sh ../decks/mcp_p17_equipment_code.strap StretchP17EqpTb \
+    "PC=2064" \
+    "p17_equipment_code_in_cst:1064=0x600" \
+    "p17_search_examined_four_slots:1065=0x106b40000180000"
+# The last piece of p.17's per-card work: take the second letter of a
+# card's Hollerith equipment code, search X EQP T for it, and put the
+# matching four-bit code in the channel status table entry.
+#
+# THE TABLE'S LAYOUT IS DERIVED FROM THE CODE THAT READS IT, which is
+# the point of this deck as much as the execution is.  X EQP T sits
+# on an untranscribed page, so its CONTENTS are a fixture -- but its
+# SHAPE follows:
+#   * "KF(V+I)(BU,24), .29($1)" compares TWENTY-FOUR bits and, under
+#     progressive indexing, advances $1 by the address field --
+#     TWENTY-NINE.  An entry is 29 bits and only its first 24 are the
+#     comparand.
+#   * "L(BU,4), -.5($1)" then reads FOUR bits five back from where
+#     the match left $1, i.e. the entry's bits 24-27.
+#   entry = [24-bit Hollerith letter][4-bit equipment code][1 spare]
+# Same kind of derivation the PROSA dictionary's shape got from
+# printed p.4: the program that reads a structure is a primary source
+# for the structure, even when the structure's own page is missing.
+#
+# THE SECOND CHECK IS THE WHOLE INDEX WORD, value and count, and the
+# COUNT is the better half -- it says HOW MANY SLOTS WERE EXAMINED,
+# four for the fourth entry, which a search that found the right
+# answer the wrong way could not reproduce.  I noticed that by
+# getting the expectation wrong: asserting the value field alone
+# failed by exactly 6 << 18.
+#
+# THE INJECTION IS CAUGHT BY MCP'S OWN ERROR EXIT.  Progressive
+# indexing made not to advance leaves the search comparing the first
+# entry ten times, the count runs out, and CBZ takes the "WRONG
+# EQUIPMENT CODE" branch -- a 1963 bootstrap's error path firing for
+# the right reason.
+
 run "MCP's Hollerith channel-number conversion, printed p.17 lines 32-36" ./run_program.sh ../decks/mcp_p17_channel_number.strap StretchP17ChanTb \
     "PC=2062" \
     "p17_tens_times_ten:1041=0x7800000000000" \
