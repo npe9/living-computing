@@ -5094,6 +5094,64 @@ fields on p.246 and nothing else on it**, which is a useful measure
 of how much of MCP's I/O bookkeeping the transcribed pages cover:
 not much, and now there is a printed map of the rest.
 
+## >>> A FABRICATED QUOTATION, FOUND AND CORRECTED, 2026-10-21 <<<
+
+`tests/run_tests.sh` said, of printed p.17's `X 19` exit:
+
+> 'The page's own comment on that row is "X 19 IS THE NORMAL END".'
+
+**The page says no such thing.** Printed p.17 line 31's comment is
+`-NOT AN IOCD CARD`. "X 19 IS THE NORMAL END" was a heading **I**
+wrote in `gen_mcp_p17_tb.py`'s own commentary, and writing the
+section up turned my own paraphrase into a quotation attributed to a
+1963 listing.
+
+This is the worst error class this project can produce. Every other
+quoted comment in `run_tests.sh` was checked against the page. This
+one was invented, in a file whose entire purpose is citing primary
+sources, on the same day as five separate wins that all depended on
+quotations being trustworthy. **A reader has no way to tell the
+invented quotation from the forty real ones.**
+
+**HOW IT HAPPENED, because the mechanism is reusable and therefore
+dangerous.** The generator's comment blocks are written in the same
+voice as the listings they describe — capitals, terse, imperative —
+so a heading of mine sitting three lines above a real quoted comment
+reads exactly like one. When the section was written up, the heading
+was lifted across a file boundary and acquired quotation marks on the
+way.
+
+**THE RULE THIS NEEDS**: a quotation from a listing gets quotation
+marks only if it was copied from the rendered page in the same
+sitting, or from a deck line that carries the listing's own `!`
+comment. Anything recalled from this project's own prose is a
+paraphrase and must read as one. Checking is cheap — `grep` the deck.
+
+**AND IT WAS WRONG AS A FACT, WHICH IS HOW IT WAS CAUGHT.** Printed
+p.19 line 23 is
+
+```
+X19   KF(BU,36),XIOD,12     -COMPARE AGAINST * IOD *
+X ERR 19   SIC,X ERR AD
+      BZAEZ,X ERROR         -NOT AN IOD CARD EITHER
+```
+
+Thirty-six bits is **three columns** — the characters `IOD`. So
+`X 19` is not an end; it asks whether the card that failed the IOCD
+test is an **IOD** card, which is exactly the order `C22-6728`
+printed p.88 gives: "Three types of control cards are used: 1. I-O
+Configuration Definitions (IOCD) 2. MCP IOD's (IOD) 3. MCP Parameters
+(MCPP)." The claim was false twice over, and only the second
+falsehood was checkable by running anything.
+
+**ONE THING p.19 CONFIRMS IN PASSING, and it is the method working
+as designed.** Both forward references into this page were recovered
+from instruction encodings rather than read: `X18` = `000740.40`,
+taken off p.18 line 2's branch-address field, and `X19` =
+`000756.40`, "RECOVERED FROM THE INDICATOR ENCODING" on p.17. Printed
+p.19 begins at **000740.40** and its line 23 sits at **000756.40**.
+Both exact.
+
 ## A PREDICTION ABOUT PRINTED p.19, WRITTEN BEFORE READING IT, 2026-10-21
 
 Figure 44's `X18` branch — the disk/console path — contains a box

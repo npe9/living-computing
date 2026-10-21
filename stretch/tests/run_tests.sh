@@ -1610,10 +1610,34 @@ run "THE REAL printed pp.17-18 execute -- IOCD cards into the CST" ./run_mcp_p17
 # from the increments WITHIN a card; this is the number that says the
 # card ends where a card ends.
 #
-# THE RUN EXITS AT X 19, which is the loop running out of cards and
-# not a failure -- the generator's header says so at the point where
-# the halt is planted.  The page's own comment on that row is "X 19
-# IS THE NORMAL END".
+# THE RUN EXITS AT X 19, which is the IOCD loop running out of cards
+# and not a failure -- the generator's header says so at the point
+# where the halt is planted.
+#
+# >>> A CORRECTION, AND IT IS THE WORST KIND THIS PROJECT CAN MAKE.
+# An earlier version of this paragraph said: 'The page's own comment
+# on that row is "X 19 IS THE NORMAL END".'  THE PAGE SAYS NO SUCH
+# THING.  Printed p.17 line 31's comment is "-NOT AN IOCD CARD".
+# "X 19 IS THE NORMAL END" was a heading I wrote in
+# gen_mcp_p17_tb.py's own commentary, and writing it up here turned
+# my own paraphrase into a quotation attributed to a 1963 listing.
+# Every other quoted comment in this file was checked against the
+# page; this one was invented, in a file whose entire purpose is
+# citing primary sources. <<<
+#
+# AND IT WAS WRONG AS A FACT TOO, which printed p.19 settles.  X 19
+# is not an end at all.  Its first row is
+#
+#     X19   KF(BU,36),XIOD,12      -COMPARE AGAINST * IOD *
+#
+# -- thirty-six bits is THREE COLUMNS, the characters "IOD" -- and
+# the row after it is "X ERR 19  SIC,X ERR AD" / "BZAEZ,X ERROR"
+# commented "-NOT AN IOD CARD EITHER".  So X 19 asks whether the card
+# that failed the IOCD test is an IOD card, which is exactly what
+# C22-6728 printed p.88 says comes next: "Three types of control
+# cards are used: 1. I-O Configuration Definitions (IOCD)  2. MCP
+# IOD's (IOD)  3. MCP Parameters (MCPP)."  Reaching the X 19 halt
+# means the deck ran out of IOCD cards and initialization moved on.
 #
 # >>> AND THE TABLE ITSELF IS PRINTED.  C22-6728 printed p.246 =
 # PDF p.246, "APPENDIX A -- SYMBOLIC I-O CONTROL TABLES", Figures 137

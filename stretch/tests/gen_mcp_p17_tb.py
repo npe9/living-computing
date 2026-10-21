@@ -338,11 +338,26 @@ def main():
     # "BEW,$" at each makes them distinguishable stopping points, so
     # the PC says which one the loop took.
     #
-    # X 19 IS THE NORMAL END.  p.18 goes back to X131 for the next
-    # card; when that card does not match X IOCD, p.17 line 31's
-    # BZAE sends it to X 19.  So reaching the X 19 halt means the
-    # deck was processed and the loop ran out of cards -- not a
-    # failure.
+    # X 19 IS WHERE THE IOCD LOOP LEAVES OFF, not where the program
+    # ends, and this comment used to say the page called it "the
+    # normal end".  IT DOES NOT.  Printed p.17 line 31's comment is
+    # "-NOT AN IOCD CARD"; the other phrase was mine and was quoted
+    # elsewhere as if it were the listing's.
+    #
+    # What X 19 actually is, from printed p.19 line 23:
+    #
+    #     X19   KF(BU,36),XIOD,12     -COMPARE AGAINST * IOD *
+    #
+    # thirty-six bits = three columns = "IOD", followed by
+    # "X ERR 19  SIC,X ERR AD" / "BZAEZ,X ERROR" commented "-NOT AN
+    # IOD CARD EITHER".  C22-6728 printed p.88 lists the three
+    # control-card types in that order: IOCD, IOD, MCPP.
+    #
+    # So p.18 goes back to X131 for the next card; when that card
+    # does not match X IOCD, p.17 line 31's BZAE sends it to X 19,
+    # which asks whether it is an IOD card instead.  Reaching this
+    # halt means the IOCD cards were processed and initialization
+    # moved on -- not a failure.
     exits = {"X19":    S["X19"],        # "NOT AN IOCD CARD" -- loop exit
              "XERROR": S["XERROR"],     # "NO IOCD DETECTED" / wrong code
              "X18":    S["X18"]}        # tape equipment type -- p.19
