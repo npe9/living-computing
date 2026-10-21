@@ -5028,11 +5028,43 @@ than from a deck written to test it** — and it confirms in passing
 that the assembler pairs `SIC` with the following branch into one
 full word, which is how the listing's two source lines become one.
 
-**WHAT IS STILL NOT EXERCISED on this page: the EIGHT-unit arm**,
-line 30's `CM1111(BU,1), .59($3)` — the path taken when `CB+` runs
-the counter all the way out. Eight punched unit columns would reach
-it, and the entry's count field should come out 8 by the derivation
-above. Cheap, and it would close p.18's last untested branch.
+**AND THE EIGHT-UNIT ARM WAS CLOSED TOO, the same day: EVERY BRANCH
+OF PRINTED p.18 HAS NOW BEEN EXECUTED.** A third mode, `units8`,
+punches eight columns, so `CB+` runs the counter out, stops branching,
+and falls into line 30's `CM1111(BU,1), .59($3)` — "UNIT COUNT IN CST
+TO 8" — instead of lines 32-37's subtract.
+
+**THE TWO ARMS WRITE THE SAME FIELD AND THE VALUE CANNOT TELL THEM
+APART**: the subtract would give 8 − 0 = 8, exactly what line 30's
+single bit gives. Worth stating plainly, because it is why the first
+version of this test was **vacuous twice over**. Punching exactly
+eight columns leaves two things that could have ended the loop — the
+counter running out, or the ninth column being blank and line 14's
+BRZ taking it — and nothing in the run separates them. So columns 9
+and 10 are punched too, on row +0 so a loop that ran on would write a
+UST word with bit 28 SET: visibly different from the eight before it
+rather than merely present. "The ninth column was never read" is then
+a measurement, and it is the only thing in either units run that
+separates the two arms. **The cycle count is identical with and
+without the extra punches — 20176 either way** — which is the same
+fact from the other side.
+
+**THE INJECTION BLANKS THE EIGHTH COLUMN**, so seven units are
+punched and the BRZ, not the counter, ends the list. All three
+observations moved together: the CST count field read **7**
+(`0x...60e` not `0x...610`) — a value only the subtract can produce,
+since line 30 can only write 8 — `$15` came out value +7 words with
+counter remainder **1** rather than 0, and UST entry 7 was empty.
+That is the pair of arms separated by measurement.
+
+**A GENERAL LESSON ABOUT TERMINATION CHECKS**, worth the space
+because this one nearly shipped vacuous: *"the structure past the
+last element is untouched"* proves nothing when the input also ends
+there. Two mechanisms can stop a loop — the data running out and the
+counter running out — and a fixture that exhausts both at once
+measures neither. Put data PAST the point the counter should stop at,
+and make it data that would be distinguishable if it were consumed.
+
 
 ## `M+MG` IS BUILT, AND `OP` IS OUT OF THE INDICATOR WORD AGAIN -- 2026-10-19
 

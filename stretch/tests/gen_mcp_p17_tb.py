@@ -99,15 +99,24 @@ def halt_at(bitaddr):
 
 def main():
     if len(sys.argv) not in (2, 3) or (len(sys.argv) == 3
-                                      and sys.argv[2] != "units"):
-        print("usage: %s ModuleName [units]" % sys.argv[0], file=sys.stderr)
+                                      and sys.argv[2] not in ("units",
+                                                              "units8")):
+        print("usage: %s ModuleName [units|units8]" % sys.argv[0],
+              file=sys.stderr)
         sys.exit(1)
     # "units" punches UNIT COLUMNS onto the card, which is what sends
     # printed p.18 down its OTHER arm -- lines 13-24's per-unit loop
     # and lines 32-37's count.  Without them line 33's "BXE, X17"
     # fires at once and lines 34-37 never run; those four rows are
     # where this session's unsigned-subtract repair actually lives.
-    unit_mode = len(sys.argv) == 3
+    #
+    # "units8" punches EIGHT, which is p.18's LAST untested branch:
+    # eight units run the counter out, so line 28's CB+ stops
+    # branching and line 30 -- "CM1111(BU,1), .59($3)", commented
+    # "UNIT COUNT IN CST TO 8" -- runs INSTEAD of lines 34-37's
+    # subtract.  The two arms write the same field by different means
+    # and that is the point of testing both.
+    unit_mode = sys.argv[2] if len(sys.argv) == 3 else None
 
     # BOTH PAGES, because they are one program.  Printed p.17 ends at
     # 000712.00 with a full word and printed p.18 begins at
@@ -203,13 +212,38 @@ def main():
     # the X15 2 route and unit 2 the X15 1 route, so the two UST
     # words differ in exactly one bit and the routing is a fact
     # rather than a reading of the comments.
-    UNIT_COLS = 2
+    UNIT_COLS = 8 if unit_mode == "units8" else 2
+    # Which ROW each unit is punched on, and so which route it takes.
+    # In the two-unit case the second unit is punched on row +0 so the
+    # two UST words differ; with eight the count is what is under test
+    # and they are all alike.
+    UNIT_ROWS = [0 if (UNIT_COLS == 2 and k == 1) else 2
+                 for k in range(UNIT_COLS)]
+    # >>> WITH EIGHT UNITS, TWO MORE COLUMNS ARE PUNCHED PAST THEM, and
+    # without them the test is vacuous. <<<  Punching exactly eight
+    # leaves two things that could have stopped the loop -- the counter
+    # running out, or the ninth column being blank and line 14's BRZ
+    # taking it -- and the run cannot tell them apart.  It also cannot
+    # tell which arm wrote the count, because the subtract would give
+    # 8 - 0 = 8, the same answer line 30 gives.
+    #
+    # Punching columns 9 and 10 removes both ambiguities at once: the
+    # counter becomes the ONLY thing that can stop the loop, and "the
+    # ninth column was never read" becomes a measurement.  They are
+    # punched on row +0, the X15 1 route, so a loop that ran on would
+    # write a UST word with bit 28 set -- visibly different from the
+    # eight before it, not merely present.
+    EXTRA_COLS = 2 if UNIT_COLS == 8 else 0
     if unit_mode:
-        put(words, card + 216 + 2, 1, 1)   # unit 1: row +2  -> X15 2
-        put(words, card + 228 + 0, 1, 1)   # unit 2: row +0  -> X15 1
-        # and card+240 is left ZERO, which is how the list ends:
-        # CT0011 copies the storage field, so an unpunched column
-        # gives a zero result and line 14's BRZ goes to X16 1.
+        for k, row in enumerate(UNIT_ROWS):
+            put(words, card + 216 + 12 * k + row, 1, 1)
+        for k in range(UNIT_COLS, UNIT_COLS + EXTRA_COLS):
+            put(words, card + 216 + 12 * k + 0, 1, 1)
+        # With two units the next column is left ZERO, which is how
+        # the list ends: CT0011 copies the storage field, so an
+        # unpunched column gives a zero result and line 14's BRZ goes
+        # to X16 1.  So the two modes reach the two arms by two
+        # different mechanisms, which is why both are run.
 
     # ---- X IOCD, a 48-bit field that CROSSES a word boundary ------
     put(words, S["XIOCD"], 48, IDENT)
@@ -323,7 +357,16 @@ def main():
         # that field's bits 0-17 is the WORD number: 512 >> 6 = 8.  The
         # subtrahend is the same shape: "$15+.28" is word 31 bit 28, and
         # eighteen bits from there is exactly the count field.
-        entry = put_field(entry, 59, 62, UNIT_COLS)
+        if UNIT_COLS == 8:
+            # EIGHT UNITS TAKE THE OTHER ARM.  Line 28's CB+ has run
+            # the counter to zero, so it stops branching and falls into
+            # line 30, "CM1111(BU,1), .59($3)" -- ONE bit at the left
+            # of the four-bit field, which IS eight.  Lines 32-37 are
+            # not reached at all, so this run says nothing about the
+            # subtract and the two-unit run says nothing about this.
+            entry = put_field(entry, 59, 62, 8)
+        else:
+            entry = put_field(entry, 59, 62, UNIT_COLS)
     checks.append(("p17_cst_entry_for_channel_35", str(cst_word), entry))
     # A neighbour, to show only the addressed entry moved.
     checks.append(("p17_neighbour_still_preset", str(cst_word + 1), preset))
@@ -351,12 +394,21 @@ def main():
         # X15 1 route, so the two words differ in exactly bit 28.
         ust_w = ust_bits // 64
         common = (1 << (63 - 29)) | (1 << (63 - 27)) | (1 << (63 - 39))
-        checks.append(("p18_ust_entry_0_via_x152", str(ust_w), common))
-        checks.append(("p18_ust_entry_1_via_x151", str(ust_w + 1),
-                       common | (1 << (63 - 28))))
-        # The third entry is untouched: the list ended at the unpunched
-        # column, so the loop stopped where the card stopped.
-        checks.append(("p18_ust_entry_2_untouched", str(ust_w + 2), 0))
+        for k, row in enumerate(UNIT_ROWS):
+            # Row +0 goes to X15 1, which sets .28 and then falls into
+            # X15 2; row +2 goes straight to X15 2 and skips it.
+            want = common | ((1 << (63 - 28)) if row == 0 else 0)
+            checks.append(("p18_ust_entry_%d_via_x15%d"
+                           % (k, 1 if row == 0 else 2), str(ust_w + k), want))
+        # THE ENTRIES PAST THE LAST ONE, which say the loop stopped
+        # where it was supposed to rather than running on.  With two
+        # units the card stopped it; with eight the COUNTER stopped it,
+        # over two columns that are punched and were never read, which
+        # is the only thing in either run that separates line 30's arm
+        # from lines 32-37's.
+        for k in range(UNIT_COLS, UNIT_COLS + max(EXTRA_COLS, 1)):
+            checks.append(("p18_ust_entry_%d_untouched" % k,
+                           str(ust_w + k), 0))
     else:
         # Reaching X17 means the count was never decremented, so the word
         # still holds the 8 that line 4's "LCI, $15, 8.0" put there and

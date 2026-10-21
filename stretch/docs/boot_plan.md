@@ -536,8 +536,17 @@ This is also the run that exercises **`-(BU,18)`, the unsigned
 subtract Figure 12 caught on printed p.61** — lines 34-37 compute
 8 − (what is left of the counter) and store the unit count in CST
 bits 59-62. The no-units mode cannot reach it. So the repair is now
-tested by MCP and not only by IBM's worked example. p.18's one
-remaining untested branch is line 30's eight-unit arm.
+tested by MCP and not only by IBM's worked example.
+
+**A THIRD MODE CLOSED THE LAST BRANCH: EVERY BRANCH OF PRINTED p.18
+HAS NOW BEEN EXECUTED.** `units8` punches eight columns, so `CB+`
+runs the counter out and falls into line 30's `CM1111(BU,1), .59($3)`
+instead of the subtract. The two arms write the same field and the
+VALUE cannot tell them apart — the subtract gives 8 − 0 = 8, exactly
+what line 30's single bit gives — so two further columns are punched
+past the eighth and never read. That, and nothing else in either
+run, is what separates the arms; the injection that blanks the eighth
+column makes the field read 7, which only the subtract can produce.
 
 **AND THE CST ENTRY IS DERIVED ONE PRINTED LINE AT A TIME**, which is
 the form these expectations should take from here: preset (p.17

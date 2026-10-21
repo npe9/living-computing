@@ -1794,6 +1794,48 @@ run "p.18's UNIT loop -- a card carrying units, and the unit count" ./run_mcp_p1
 # from a 1963 program's error exit rather than from a deck written to
 # test it.
 
+run "p.18's EIGHT-unit arm -- the counter runs out, and p.18 is covered" ./run_mcp_p17.sh StretchMcpP17Units8Tb units8
+# >>> p.18's LAST UNTESTED BRANCH.  Eight units run the counter out,
+# so line 28's CB+ stops branching and line 30 -- "CM1111(BU,1),
+# .59($3)", commented "UNIT COUNT IN CST TO 8" -- runs INSTEAD of
+# lines 32-37's subtract.  With this, every branch of printed p.18 has
+# been executed. <<<
+#
+# TWO ARMS WRITE THE SAME FIELD BY DIFFERENT MEANS, and the value
+# alone CANNOT tell them apart: the subtract would give 8 - 0 = 8,
+# which is exactly what line 30's single bit gives.  That is worth
+# saying plainly, because it is the reason this section needed more
+# than one check.
+#
+# SO TWO MORE COLUMNS ARE PUNCHED PAST THE EIGHTH, and without them
+# the test is vacuous twice over.  Punching exactly eight leaves two
+# things that could have ended the loop -- the counter running out, or
+# the ninth column being blank and line 14's BRZ taking it -- and
+# nothing in the run distinguishes them.  Columns 9 and 10 are
+# punched, on row +0 so a loop that ran on would write a UST word
+# with bit 28 SET, visibly different from the eight before it rather
+# than merely present.  "The ninth column was never read" then
+# becomes a measurement, and it is the only thing in either units run
+# that separates line 30's arm from lines 32-37's.
+#
+# AND THE CYCLE COUNT IS IDENTICAL -- 20176 with the two extra
+# columns punched and 20176 without -- which is the same fact from
+# the other side: two punched columns that cost nothing were not
+# looked at.
+#
+# THE INJECTION LEAVES THE EIGHTH COLUMN BLANK, so seven units are
+# punched and the BRZ, not the counter, ends the list.  Observed, all
+# three moving together:
+#   CST entry        0x...60e, not 0x...610 -- the count field at bits
+#                    59-62 reads SEVEN, and 7 is a value only the
+#                    SUBTRACT can produce; line 30 can only write 8
+#   $15 (word 31)    value +7 words, counter remainder 1, not 0
+#   UST entry 7      empty
+# and entries 8 and 9 stay untouched, because the blank column
+# stopped the walk before the punched ones.  That is the pair of arms
+# separated by measurement: 8 with the counter at 0 from line 30,
+# 7 with the counter at 1 from the subtract.
+
 run "MCP's whole per-card path, printed p.17, over a synthetic IOCD card" ./run_program.sh ../decks/mcp_p17_card.strap StretchP17CardTb \
     "PC=2087" \
     "p17_channel_number:1080=0x8c00000000000" \
