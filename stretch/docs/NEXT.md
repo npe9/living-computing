@@ -5302,6 +5302,93 @@ thing in the path: the word the look-ahead hands the E-box.
 Build the pair that differs only in history before building the pair
 that differs in operands.
 
+## A SWEEP FOR CLAIMS THE LAST TEN PAGES SUPERSEDED -- eight of them, in six files, 2026-10-22
+
+Transcribing pp.27-36 and replacing the invented equipment table
+moved the ground under claims written days earlier. **None of them
+was marked, and three sat directly under paragraphs that contradict
+them.** This is the failure mode this file already names — *a
+correction that retracts the REASON for a claim can leave the claim
+standing* — at a larger scale: here the correction was a new page,
+not a new argument, and nothing went looking for what it had
+invalidated.
+
+Each is now marked where it stands rather than deleted, because what
+moved is the interesting part.
+
+### The boot-test section carried three dead paragraphs
+
+`run_tests.sh`'s "MCP'S OWN BOOTSTRAP RUNS" has a list headed *"WHAT
+THE MACHINE NOW DOES, in order"*. Underneath it sat three paragraphs
+describing earlier states as current:
+
+| claim | measured 2026-10-22 |
+|---|---|
+| "THIS TAPE HAS NO PROSA — 369 bootstrap words and a mark" | the run prints `host_tape: mounted /tmp/mcp.tape, 462 words`, and four checks verify the moved image |
+| "stops at 000124.40, printed p.4 line 32's `CB,0,$`… A HARNESS LIMIT" | stops at **PC 239 = 000167.40 = printed p.6 line 1, `BD,$`**, IBM's own halt |
+| "hands off to printed p.15… which is not transcribed" | p.15 and everything through p.36 is transcribed; the hand-off lands on real instructions |
+
+### Two injections had to be re-measured, and one had to change shape
+
+The p.18 fixture injections were recorded with values that the
+printed equipment table moved. Re-run against
+`StretchMcpP17UnitsTb`:
+
+* **Clear the MULTI flag** (p.35's bit 28, which p.18 line 2 reaches
+  as "-TAPE EQUIPMENT TYPE ENTRY") — the CST entry falls back to
+  `0x400000800`, not `0x400000600`; the UST pointer/count word loses
+  its count.
+* **Remove the card's letter from the table** — this now makes the
+  *fixture* refuse to build the card (`KeyError: 'TP'` out of
+  `equipment_code()`), which is a better failure but tests the
+  fixture rather than the machine. Punching `TQ` on the card instead
+  reproduces the original result exactly: `0x400000000`, and p.18
+  never runs.
+
+**And the PC in those notes was meaningless.** They recorded "PC 961,
+the X18 halt" and "PC 182, X ERROR". There is no X18 halt — p.19 is
+in `DECKS`, so X18 is a real row — and `X ERROR` is the only planted
+exit, which **a passing run also reaches**: the card loop runs out,
+the next buffer word matches neither IOCD nor IOD, and p.19 line 25
+sends it there. PC 182 is what every mode and every injection
+reports. Only the data checks discriminate.
+
+### "Untranscribed" was the wrong word four times, and once it always had been
+
+`gen_mcp_p17_tb.py` said `X ERROR` "is still on an untranscribed page
+— printed p.5 line 5". **Printed p.5 has been transcribed since
+2026-10-17.** What is true is that it is not in *this testbench's*
+`DECKS`, which assembles 17, 18 and 19 — and only that is a reason to
+plant a halt. The distinction is worth keeping: one phrase means
+"nobody has read this page", the other means "this fixture does not
+load it".
+
+### One prediction was satisfied and nobody went back to say so
+
+`verify_mcp_bootstrap_p23.py` predicted that `X VTIME` (001242.02)
+and `X VDATE` (001242.70) would turn out to be in the same word
+region "on a page nobody has transcribed yet — which is a prediction
+that page will have to satisfy". **It is printed p.24, transcribed
+the next day, and it satisfies it exactly**, by character count:
+
+```
+X VCLOK  (A*)DD(BU,,6),COMD,CLOCK,*   001241.00, 11 chars = 66 bits
+X VTIME  (A*)DD(BU,,6),00,00,00,*     001242.02,  9 chars = 54 bits
+X VDATE  (A*)DD(BU,,6),00/00/00*      001242.70,  8 chars = 48 bits
+```
+
+The heading also said "0o70 BITS PAST", which was a misreading of
+`X VDATE`'s own bit offset; the distance is 0o66 bits and it is the
+nine characters of `"00,00,00,"`.
+
+### What to do about it
+
+**When a page lands, grep for what it supersedes.** The cheap
+searches are the page's own symbol names, the words "untranscribed"
+and "nobody has transcribed", and any hexadecimal expectation that a
+fixture computes rather than states. Two of the eight above would
+have been caught by grepping `0x400000600` alone.
+
 ## EVERY PAGE OF MCP's LISTING FROM PRINTED p.2 THROUGH p.36 IS NOW TRANSCRIBED -- and the injection harness was lying, 2026-10-22
 
 `decks/mcp_bootstrap_p36.strap` closes the range `boot_plan.md`'s
@@ -6562,6 +6649,26 @@ listing and an injection into it would be testing a different page:
    182 = 5824/32 -- `X ERROR`, MCP's "WRONG EQUIPMENT CODE" exit --
    and the entry stops at `0x400000000`: available, no code, "not
    assigned" still standing, because p.18 never ran.
+
+> **BOTH RE-MEASURED 2026-10-22, and the two paragraphs above are
+> wrong in three places.** Two things moved under them: printed p.19
+> joined `DECKS`, and the equipment table stopped being invented.
+> `tests/run_tests.sh` carries the full re-measurement; the short
+> form is
+>
+> * **there is no `X18` halt** — p.19 is transcribed, so X18 is a
+>   real row, and `X ERROR` is the only planted exit. The NORMAL run
+>   ends there too, so **PC 182 is what every one of these runs
+>   reports** and the PC says nothing about which path was taken.
+>   The data checks do.
+> * **the fallback is `0x400000800`** — the 6 was the fixture's
+>   invented equipment code and printed p.35 gives TAPE octal 10.
+> * **injection 2 had to change shape.** Deleting the table's letter
+>   now makes the FIXTURE refuse to build the card (`KeyError:
+>   'TP'`), which is a better failure but tests the fixture rather
+>   than the machine. Punching `TQ` on the card instead leaves the
+>   table alone and reproduces the old result exactly:
+>   `0x400000000`, and p.18 never runs.
 
 **AND THEN THE UNIT ARM WAS RUN THE SAME DAY**, as a second mode of
 the same generator (`run_mcp_p17.sh StretchMcpP17UnitsTb units`).

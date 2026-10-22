@@ -25,10 +25,23 @@ selector: 001207.36 has it CLEAR (left half of 001207) while
 001225.76 has it SET (right half of 001225).  Defaulting an unknown
 forward reference to ".40" is a coin flip.
 
-X VDATE SITS 0o70 BITS PAST X VTIME.  p.22 line 35's immediate is
-001242.02 and line 15's here is 001242.70, so the two constants are
-in the same word region on a page nobody has transcribed yet -- which
-is a prediction that page will have to satisfy.
+X VDATE SITS IN THE SAME WORD AS X VTIME.  p.22 line 35's immediate
+is 001242.02 and line 15's here is 001242.70, so the two constants
+are in the same word region on a page nobody has transcribed yet --
+which is a prediction that page will have to satisfy.
+
+>>> THE PAGE IS PRINTED p.24 AND IT SATISFIED THE PREDICTION, the
+day after this was written.  decks/mcp_bootstrap_p24.strap lines
+49-51 place all three, and the spacing is the character counts:
+
+    X VCLOK  (A*)DD(BU,,6),COMD,CLOCK,*   001241.00, 11 chars = 66 bits
+    X VTIME  (A*)DD(BU,,6),00,00,00,*     001242.02,  9 chars = 54 bits
+    X VDATE  (A*)DD(BU,,6),00/00/00*      001242.70,  8 chars = 48 bits
+
+001241.00 + 66 bits is 001242.02 and 001242.02 + 54 is 001242.70.
+The heading above said "0o70 BITS PAST", which was a misreading of
+X VDATE's own bit offset: the DISTANCE is 0o66 bits, and it is the
+nine characters of "00,00,00,".  Corrected 2026-10-22. <<<
 """
 from listing_oracle import check_rows, finish
 from strap_asm import assemble

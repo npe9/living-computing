@@ -1324,24 +1324,48 @@ run "MCP'S OWN BOOTSTRAP RUNS (boot_plan.md M3)" ./run_mcp_boot.sh StretchMcpBoo
 # of the section being about an operating system rather than about a
 # bootstrap.
 #
-# AND AD IS THE TRANSMIT NOW RUNNING.  Line 24 takes the count out of
-# the PROSA record's dictionary and THIS TAPE HAS NO PROSA -- 369
-# bootstrap words and a mark, nothing else -- so the count field is
-# zero, which RefMan printed p.30 says means 2^18 and "is never
-# valid... not detected until the data transmission actually
-# encounters an invalid or protected address".  The transmit walks up
-# out of installed core and stops with AD, which is the manual's own
-# answer.  AD here is the tape being short, not the model being
-# wrong.
+# >>> THE NEXT THREE PARAGRAPHS ARE SUPERSEDED AND ARE KEPT ONLY
+# BECAUSE THE RECORD OF WHAT MOVED IS WORTH MORE THAN A TIDY FILE.
+# Each one described a state this section was in and is no longer;
+# all three sat UNDER the "WHAT THE MACHINE NOW DOES" list above,
+# which contradicts them.  Re-measured 2026-10-22; the corrections
+# follow each. <<<
 #
-# The run now stops at 000124.40, printed p.4 line 32's "CB,0,$" --
-# MCP's delay loop after RELEASE DISK.  The harness halts on "an
-# instruction branched to its own address", which is the BEW,$ idiom
-# it was built for and is also exactly this loop.  A HARNESS LIMIT,
-# not a model one.
-# IBM's operating system, executing on this model, off a tape built
-# from the thirteen transcribed pages.  It runs end to end and hands
-# off to printed p.15's MCP INITIALIZATION, which is not transcribed.
+# [SUPERSEDED] AND AD IS THE TRANSMIT NOW RUNNING.  Line 24 takes the
+# count out of the PROSA record's dictionary and THIS TAPE HAS NO
+# PROSA -- 369 bootstrap words and a mark, nothing else -- so the
+# count field is zero, which RefMan printed p.30 says means 2^18 and
+# "is never valid... not detected until the data transmission
+# actually encounters an invalid or protected address".  The transmit
+# walks up out of installed core and stops with AD, which is the
+# manual's own answer.  AD here is the tape being short, not the
+# model being wrong.
+#   CORRECTION: the tape HAS a PROSA record -- strap/prosa.py, and
+#   the run reports "host_tape: mounted /tmp/mcp.tape, 462 words".
+#   The transmit's count comes out of the dictionary and the move
+#   lands printed pp.15-18 at 000621.00, which mcp_moved_first,
+#   mcp_moved_last, mcp_moved_middle and
+#   mcp_moved_one_past_is_untouched all check.
+#
+# [SUPERSEDED] The run now stops at 000124.40, printed p.4 line 32's
+# "CB,0,$" -- MCP's delay loop after RELEASE DISK.  The harness halts
+# on "an instruction branched to its own address", which is the BEW,$
+# idiom it was built for and is also exactly this loop.  A HARNESS
+# LIMIT, not a model one.
+#   CORRECTION: it stops at PC 239, which is 7648 bits = 000167.40 =
+#   PRINTED p.6 LINE 1, "BD,$ -LOOP" -- IBM's own halt at the end of
+#   the error routine, and what the list above already says.  The
+#   delay loop was fixed when isHalt stopped treating a COUNT AND
+#   BRANCH to its own address as a halt.
+#
+# [SUPERSEDED] IBM's operating system, executing on this model, off a
+# tape built from the thirteen transcribed pages.  It runs end to end
+# and hands off to printed p.15's MCP INITIALIZATION, which is not
+# transcribed.
+#   CORRECTION: printed p.15 is transcribed, and so is every page
+#   through p.36 as of 2026-10-22.  The hand-off is not to an
+#   untranscribed page; pp.15-18 are the words the TRANSMIT moves and
+#   they execute.
 #
 # WHAT EACH CHECK IS FOR is in gen_mcp_boot_tb.py; the two that carry
 # the claim are:
@@ -1369,10 +1393,16 @@ run "MCP'S OWN BOOTSTRAP RUNS (boot_plan.md M3)" ./run_mcp_boot.sh StretchMcpBoo
 #      channel number and SPFL goes to channel zero.
 #   3. SPACE FILE, control code 077, and a tape mark for it to find.
 #
-# IT HALTS AT PC 0 AND THAT IS THE HAND-OFF, not a failure: printed
-# p.4's "B,X 10" goes to 000622.00, one word past X BS END, so the
-# machine runs into the zeros above the image.  When printed p.15 is
-# transcribed, that becomes a real entry point.
+# [SUPERSEDED] IT HALTS AT PC 0 AND THAT IS THE HAND-OFF, not a
+# failure: printed p.4's "B,X 10" goes to 000622.00, one word past
+# X BS END, so the machine runs into the zeros above the image.  When
+# printed p.15 is transcribed, that becomes a real entry point.
+#   CORRECTION (2026-10-22): it does not halt at PC 0 and printed
+#   p.15 IS transcribed.  "B,X 10" now lands on a real instruction,
+#   the machine runs MCP INITIALIZATION, and it stops at PC 239 --
+#   printed p.6 line 1's "BD,$".  Both halves of the old sentence
+#   have been overtaken; it is kept because "that becomes a real
+#   entry point" is exactly what happened.
 
 run "INITIAL PROGRAM LOAD from a host file, 19 words (boot_plan.md M0+M1)" ./run_ipl_file_test.sh StretchIplFileTb
 # THE SIXTEEN-WORD CEILING, LIFTED.  The IPL test above boots a
@@ -1749,15 +1779,19 @@ run "THE REAL printed pp.17-19 execute -- IOCD cards into the CST" ./run_mcp_p17
 #
 #   p.17 l.22  preset            bit 25 not available, 29 not assigned
 #   p.17 l.44  CM0000(BU,1),.25  bit 25 off -- channel IS available
-#   p.17 l.54  ST(BU,4)          bits 52-55 = equipment code 6
+#   p.17 l.54  ST(BU,4)          bits 52-55 = the equipment code,
+#                                which was an invented 6 until
+#                                printed p.35 was transcribed and is
+#                                now TAPE's octal 10 = 8
 #   p.18 l.5   SV, $15, 0.0($3)  UST address into bits 0-23
 #   p.18 l.7   CM0000(BU,1),.29  "MEANINGLESS ASSIGN BIT" off
 #   p.18 l.9   CM1111(BU,1),.27  MULTI bit on
 #   p.18 l.42  CM0000(BU,17)     X17 clears SEVENTEEN bits of it again
 #
-# and comes out 0x1000000600.  Every bit of that word is accounted
-# for by a row of the listing; nothing in it is an observation
-# promoted to an expectation.
+# and comes out 0x1000000800 (0x...600 before printed p.35 replaced
+# the invented equipment code with the printed one).  Every bit of
+# that word is accounted for by a row of the listing; nothing in it
+# is an observation promoted to an expectation.
 #
 # ONE CORRECTION WORTH THE SPACE: the first expectation put the UST
 # address one bit too low, because I wrote the index value as a
@@ -1843,6 +1877,50 @@ run "THE REAL printed pp.17-19 execute -- IOCD cards into the CST" ./run_mcp_p17
 #      CODE" exit -- and the entry stops at 0x400000000, available
 #      but with no code and the "not assigned" bit still standing,
 #      because p.18 never ran.
+#
+# >>> BOTH RE-MEASURED 2026-10-22, AND THE PARAGRAPH ABOVE IS NOW
+# WRONG IN THREE PLACES.  Two things moved under it: printed p.19 was
+# merged into DECKS, and the equipment table stopped being invented.
+# Kept as written, with the corrections here, because what changed is
+# the interesting part. <<<
+#
+#   "X18 ... the first instruction of untranscribed p.19" -- p.19 is
+#   TRANSCRIBED and in DECKS, so X18 is a real row of a real page and
+#   is no longer a planted halt.
+#
+#   "PC 961, the X18 halt" -- there is no X18 halt.  X ERROR is the
+#   ONLY planted exit now, and the NORMAL run ends there too, so
+#   PC 182 is what every one of these runs reports and the PC carries
+#   NO information about which path was taken.  The DATA checks do.
+#
+#   "0x400000600" -- the CST entry's fallback is 0x400000800.  The
+#   six was the fixture's invented equipment code; printed p.35 gives
+#   TAPE octal 10, so the field now reads 8.
+#
+# RE-MEASURED, with the printed table, against
+# StretchMcpP17UnitsTb:
+#
+#   1. CLEAR THE MULTI FLAG on the matched entry -- the printed
+#      table's bit 28, which p.35 comments "-MULTI UNIT CHANNEL" and
+#      p.18 line 2 reaches as "-TAPE EQUIPMENT TYPE ENTRY":
+#        p17_cst_entry_for_channel_35  0x400000800
+#            (expected 0x4d1801000000804 -- the UST address and the
+#             assign bit are both missing)
+#        p18_ust_pointer_and_count     0x4d1800000000000
+#            (expected 0x4d2000000180000 -- the count is gone)
+#      PC 182, the same as a passing run.
+#
+#   2. PUNCH A LETTER THE TABLE HAS NO ENTRY FOR.  The injection had
+#      to change SHAPE: deleting the table's letter now makes the
+#      FIXTURE refuse to build the card at all -- "KeyError: 'TP'"
+#      out of equipment_code() -- which is a better failure than the
+#      old one but tests the fixture, not the machine.  Punching "TQ"
+#      on the card instead leaves the table alone:
+#        p17_cst_entry_for_channel_35  0x400000000
+#            (available, no code, "not assigned" still standing)
+#        p18_ust_entry_0_via_x152      0
+#        p18_ust_entry_1_via_x151      0
+#      -- p.18 never ran.  PC 182 again.
 #
 # AND THE 29TH BIT OF AN EQUIPMENT ENTRY IS A TAPE FLAG, NOT A SPARE.
 # The section below derives the entry as 24 bits of Hollerith letter

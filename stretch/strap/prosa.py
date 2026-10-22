@@ -5,18 +5,22 @@
 >>> CHOSEN.  READ THE TWO SECTIONS BELOW BEFORE BELIEVING ANY NUMBER
 >>> THAT COMES OUT OF A RUN THAT USED IT. <<<
 
-MCP's real PROSA is the resident supervisor, and it lives in the 451
-pages of `docs/MCP_Mar63_*.pdf` that are not transcribed.  Until they
-are, the bootstrap reads its PROSA dictionary out of EMPTY TAPE --
-`mktape.py` writes 369 bootstrap words and a tape mark and nothing
-else -- so every size it reads comes back zero.  One consequence is
+MCP's real PROSA is the resident supervisor, and it lives in the
+pages of `docs/MCP_Mar63_*.pdf` that are not transcribed -- which, as
+of 2026-10-22, means printed p.37 onward: pp.2-36 ARE transcribed and
+bit-exact, and printed p.37 starts a new source deck, "THE
+COMMUNICATION REGION FOR MCP".  WITHOUT THIS FILE the bootstrap reads
+its PROSA dictionary out of EMPTY TAPE -- `mktape.py` writes 369
+bootstrap words and a tape mark and nothing else -- so every size it
+reads comes back zero.  One consequence is
 visible in the boot test: printed p.4 line 28's TRANSMIT takes its
 count from a dictionary entry, zero means 2^18 (Reference Manual
 printed p.30, "such a count is never valid"), and the transfer walks
 off the top of installed core and stops with Address Invalid.
 
-So printed pp.15-18 are transcribed bit-exactly and HAVE NEVER
-EXECUTED A SINGLE ROW.  This file is what lets them.
+That was why printed pp.15-18 were transcribed bit-exactly and had
+NEVER EXECUTED A SINGLE ROW.  This file is what lets them, and they
+do: the boot test moves them to 000621.00 and runs them.
 
 ---------------------------------------------------------------------
 WHAT IS DERIVED -- the record's SHAPE, read off transcribed rows

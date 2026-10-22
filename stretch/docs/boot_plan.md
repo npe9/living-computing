@@ -494,6 +494,11 @@ clears the not-available flag, looks up the equipment code and stores
 it. The entry for channel 35 comes out `0x400000600`: available, not
 assigned, equipment code 6.
 
+> **The 6 was invented and is now 8.** `X EQP T` is printed p.35,
+> transcribed 2026-10-22, and it gives TAPE octal 10. The entry the
+> testbench reports is `0x400000800` where this paragraph says
+> `0x400000600`; nothing else in the sentence changed.
+
 **The CST's one-word-per-channel indexing is derived too.** Line 37
 takes the channel out of `$R` — word 9, the accumulator's right half,
 where the conversion left it at offset 46, i.e. IBM bits 12-17 of

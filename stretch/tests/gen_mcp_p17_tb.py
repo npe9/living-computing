@@ -11,10 +11,16 @@ reach p.17.  gen_tb's `ipl=True` path deliberately preloads NOTHING
 -- "core storage starts empty and the tape fills it" -- because
 preloading would let the boot test pass even if the IPL read moved
 nothing.  The IOCD cards, X IOCD's pattern and the equipment table
-live at addresses the transcribed tape does not carry (they are on
-untranscribed pages), so putting them in core means preloading, and
-preloading them into THAT test would weaken the one invariant it
-exists to protect.  Here there is no IPL and nothing to undermine.
+live at addresses the transcribed tape does not carry, so putting
+them in core means preloading, and preloading them into THAT test
+would weaken the one invariant it exists to protect.  Here there is
+no IPL and nothing to undermine.
+
+(The parenthesis here used to read "they are on untranscribed
+pages".  That stopped being true on 2026-10-22: X EQP T is printed
+p.35 and is transcribed, and X IOCD came from C22-6678-1's Appendix
+F before that.  The reason stands anyway -- the TAPE does not carry
+them, and that is what makes putting them in core a preload.)
 
 WHAT IS DERIVED AND WHAT IS INVENTED, the same split prosa.py makes:
 
@@ -459,6 +465,10 @@ def main():
     # X ERROR, and both are on pages nobody has transcribed.  A
     # "BEW,$" at each makes them distinguishable stopping points, so
     # the PC says which one the loop took.
+    #   [BOTH HALVES OF THAT SENTENCE ARE SUPERSEDED -- see the
+    #    correction above the `exits` assignment at the end of this
+    #    block.  Neither page is untranscribed, and the PC does not
+    #    say which exit was taken because there is only one.]
     #
     # X 19 IS WHERE THE IOCD LOOP LEAVES OFF, not where the program
     # ends, and this comment used to say the page called it "the
@@ -492,7 +502,27 @@ def main():
     # page -- printed p.5 line 5 -- and it is now the ONLY exit from
     # the three pages, which is correct: p.19 line 25's "BZAEZ,X
     # ERROR" is where a card that is neither IOCD nor IOD goes.
-    exits = {"XERROR": S["XERROR"]}     # printed p.5 -- still untranscribed
+    #
+    # >>> CORRECTION 2026-10-22: "untranscribed" IS THE WRONG WORD
+    # FOR BOTH OF THEM, and it was wrong about printed p.5 even when
+    # it was written.  printed p.5 is decks/mcp_bootstrap_p5_p6.strap
+    # and has been transcribed since 2026-10-17; printed p.19 joined
+    # DECKS the day this block was last edited.  What is true is that
+    # neither page is IN THIS TESTBENCH'S DECKS -- it assembles 17,
+    # 18 and 19 -- so X ERROR has no instructions behind it HERE and
+    # a planted halt is the only thing that can stop the run there.
+    # The distinction matters because the first word says "nobody has
+    # read this page" and the second says "this fixture does not load
+    # it", and only the second is a reason to plant a halt.
+    #
+    # ONE CONSEQUENCE IS WORTH STATING OUTRIGHT: X ERROR is the only
+    # planted exit, and a PASSING RUN ENDS THERE TOO -- the card loop
+    # runs out, the next buffer word matches neither IOCD nor IOD,
+    # and p.19 line 25 sends it to X ERROR.  So the PC is 182 in
+    # every mode and in every injection, and it carries NO
+    # information about which path the page took.  The data checks
+    # do.  See run_tests.sh's re-measured p.18 injections. <<<
+    exits = {"XERROR": S["XERROR"]}     # printed p.5 -- not in DECKS here
     for name, addr in exits.items():
         w, _ = divmod(addr, 64)
         words[w] = words.get(w, 0) | halt_at(addr)

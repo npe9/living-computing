@@ -5,8 +5,16 @@ transcription.
 
 IT RUNS.  MCP's bootstrap executes from end to end on this model,
 off a tape built from the thirteen transcribed pages, and hands off
-to printed p.15's MCP INITIALIZATION -- which is not transcribed, so
-it then executes the zeros past X BS END and halts.
+to printed p.15's MCP INITIALIZATION.
+
+>>> AND p.15 IS TRANSCRIBED NOW -- the whole listing from printed p.2
+through p.36 is, as of 2026-10-22 -- so the hand-off lands on real
+instructions instead of the zeros past X BS END.  strap/prosa.py puts
+printed pp.15-18 in the PROSA record, the TRANSMIT on printed p.4
+line 28 moves them to 000621.00, and the run continues into MCP
+INITIALIZATION, reports "-NO IOCD DETECTED", enters the error
+routine and stops at PC 239 = 000167.40, printed p.6 line 1's
+"BD,$ -LOOP". <<<
 
 This file began as a DIAGNOSTIC whose expectations were all zero, so
 that every value would print and the model could say what was

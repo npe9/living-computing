@@ -14,6 +14,10 @@ only place in the transcribed corpus that gives one. <<<  Line 14 is
 letter to a four-bit code and sits on an untranscribed page; one of
 its values is now known from the program that uses it.
 
+>>> X EQP T IS PRINTED p.35, TRANSCRIBED 2026-10-22, AND IT AGREES:
+its second entry is CONSOLE, code 2.  A value derived from the
+program that uses it, checked against the table it came from. <<<
+
 AND IT CONFIRMS SEQUIP FROM A THIRD PAGE: C22-6728 printed p.246
 names bits 52-55 of a channel status table entry SEQUIP, printed p.17
 line 54 WRITES four bits at .52, and this page READS four bits at .52
