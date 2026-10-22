@@ -1309,6 +1309,42 @@ LISTING_CONTROL = frozenset([
 def statement_size(stmt):
     """Returns (alignment_bits, size_bits). alignment 0 = no rounding."""
     op = stmt.op.upper()
+    if op == '':
+    # >>> A NULL OPERATION FIELD.  C22-6531 printed p.7, under the
+    # twelve symbolic instruction formats:
+    #
+    #   "The comma is the major separator for the symbolic instruction
+    #    types. ... the instruction is compiled as if the missing
+    #    fields contained zeros ... Such fields ... are called NULL
+    #    FIELDS.  A null field is always compiled as a zero ... A
+    #    MAJOR FIELD MAY BE NULL, even though other non-null fields
+    #    follow it.  Such is the case if nothing but the comma
+    #    denoting the field termination is written."
+    #
+    # So ",A(I)" is a legal statement whose OPERATION is null, and MCP
+    # printed p.25 lines 42-43 write two of them as parameter words
+    # for the UNCODE routine:
+    #
+    #   001436.40  000000.00 87   ,0.0($7)   -GET CARD AT
+    #   001437.00  000002.00 87   ,2.0($7)   -PUT TABLE AT
+    #
+    # WHAT IT EMITS IS THE ADDRESS-AND-INDEX HALF WORD THAT EVERY
+    # FULL-WORD FORMAT BEGINS WITH, and that is printed rather than
+    # inferred: Reference Manual printed p.163, "Instruction Formats",
+    # draws INTEGER, CONNECTIVE, INPUT-OUTPUT, TRANSMIT, SIC BRANCH
+    # and BRANCH ON BIT with an identical first half --
+    #
+    #        ADDRESS (0-23) | 1000 (24-27) | I (28-31)
+    #
+    # -- six diagrams, one shared shape.  The "1000" is a literal of
+    # the full-word forms, NOT a VFL marker and not the operation's
+    # own bits; none of the half-word formats on that page has it,
+    # because they pack their operation into bits 18/19-31 instead.
+    #
+    # So a null operation lays down exactly the half the programmer
+    # wrote -- an address with an index -- and leaves everything after
+    # bit 31 unwritten.  Both printed rows reproduce exactly.
+        return 0, HALF
     if op == 'DD':
         if stmt.entry is not None:
             # A CONVERTED DD.  Its size is the character count times
@@ -1707,6 +1743,21 @@ def assemble(source, origin_bits=DEFAULT_ORIGIN_BITS):
 def emit_statement(stmt, symtab, image):
     op = stmt.op.upper()
     loc = stmt.addr
+
+    if op == '':
+        # See statement_size's note: a NULL OPERATION emits the
+        # address-and-index half word every full-word format begins
+        # with (Reference Manual printed p.163).
+        if len(stmt.fields) != 1:
+            raise AssemblerError(
+                "a null operation takes exactly one address field, got "
+                f"{len(stmt.fields)}", stmt.lineno)
+        base, paren = split_field_trailing_paren(stmt.fields[0])
+        ea = eval_expr(base, symtab, loc, lineno=stmt.lineno)
+        idx = eval_reg(paren, symtab, stmt.lineno)
+        image.deposit_half(loc // 32,
+                           ((ea & 0xFFFFFF) << 8) | (0b1000 << 4) | (idx & 0xF))
+        return
 
     if op in LISTING_CONTROL:
         return  # printout/punch control only -- see LISTING_CONTROL

@@ -1,0 +1,134 @@
+! mcp_bootstrap_p25.strap -- MCP INITIALIZATION, printed page 25:
+! the printer channel search, and the start of "TO UNCODE" -- the
+! routine that reads IOD and REEL cards.  docs/MCP_Mar63_001-249.pdf
+! PDF p.32, header "PAGE NUMBER 25".  docs/boot_plan.md M3.
+!
+! Contiguous with printed p.24: that page's last row is the first
+! eight bits of X IO STA at 001412.00, and this page continues the
+! same message at 001412.10.
+!
+! ---------------------------------------------------------------
+! >>> THE PRINTER'S EQUIPMENT CODE IS OCTAL 5 <<<
+! ---------------------------------------------------------------
+! Line 17 is "LFI(BU,4),(8)5" commented "-ENTER PRINTER EQUIPMENT
+! CODE" and line 18 compares it against ".52($10)", the SEQUIP field
+! C22-6728 printed p.246 names.  With printed p.20's console = 2,
+! TWO of X EQP T's values are now known from the programs that use
+! them.  The table's own page is still missing.
+!
+! ---------------------------------------------------------------
+! THE PAGE NEEDED A NULL OPERATION FIELD, and the assembler gained
+! one for it
+! ---------------------------------------------------------------
+! Lines 42 and 43 are
+!
+!     001436.40  000000.00 87   ,0.0($7)   -GET CARD AT
+!     001437.00  000002.00 87   ,2.0($7)   -PUT TABLE AT
+!
+! -- statements with NO OPERATION, written as nothing but the comma.
+! C22-6531 printed p.7: "A MAJOR FIELD MAY BE NULL, even though other
+! non-null fields follow it.  Such is the case if nothing but the
+! comma denoting the field termination is written", and "a null field
+! is always compiled as a zero".
+!
+! WHAT THEY EMIT IS THE ADDRESS-AND-INDEX HALF WORD EVERY FULL-WORD
+! FORMAT BEGINS WITH, and that is printed rather than inferred:
+! Reference Manual printed p.163, "Instruction Formats", draws
+! INTEGER, CONNECTIVE, INPUT-OUTPUT, TRANSMIT, SIC BRANCH and BRANCH
+! ON BIT with an identical first half --
+!
+!        ADDRESS (0-23) | 1000 (24-27) | I (28-31)
+!
+! -- six diagrams, one shared shape.  The "1000" is a literal of the
+! full-word forms, not the operation's own bits; no half-word format
+! on that page has it, because they pack their operation into bits
+! 18/19-31 instead.
+!
+! AND THIS PAGE CORROBORATES IT A THIRD TIME.  Line 51's
+! "BB,2.04($7),X22 2" is a REAL branch on bit -- a full-word format --
+! and its first half prints 000002.04 87: the same address, the same
+! 1000, the same index 7.  The null operations lay down exactly that
+! half and nothing after bit 31.
+!
+! ---------------------------------------------------------------
+! EXTERNALS, every one recovered from this page's own binary output
+! ---------------------------------------------------------------
+!   X IO STA  001412.00  (line 6)  -- printed p.24 line 56
+!   S X CHAN  002152.00  (lines 12, 23) -- printed p.20 line 9
+!   S Y PR CH 002156.40  (lines 24, 26) -- and printed p.20 put the
+!             CONSOLE channel number at 002156.00, so the two
+!             nineteen-bit fields share one word
+!   Y IPL 1   002201.00  (line 33)
+!   Y UNCOD   002166.00  (line 36)
+!   X ERR AD  000551.00  (line 46) / X ERROR  000133.00  (line 47)
+XIOSTA  SYN, (8)1412.0
+SXCHAN  SYN, (8)2152.0
+SYPRCH  SYN, (8)2156.40
+YIPL1   SYN, (8)2201.0
+YUNCOD  SYN, (8)2166.0
+XERRAD  SYN, (8)551.0
+XERROR  SYN, (8)133.0
+
+        SLC, (8)1412.10
+
+! ---- the rest of the I/O status message --------------------------
+        DD(BU,8), (2)00000010        ! line 1  -RED$
+        (IQS*)DD(BU,64,8), MAKE YOUR IO STATUS REPORT IF ANY*   ! line 2
+        DD(BU,8), (2)11111101        ! line 3  -CARRIAGE RETURN
+        DD(BU,8), (2)11111110        ! line 4  -END OF MSG
+        CNOP                         ! line 5
+XIOSTK  SYN, $-XIOSTA                ! line 6  -SIZE OF MSG
+
+! ---- search the CST for the printer channel ----------------------
+        SLC, (8)1417.0
+X20B    LX, $10, SXCHAN              ! line 12 -INITIALIZE FOR
+                                     !           PRINTER CHANNEL SEARCH
+        V+I, $10, 32.0               ! line 13 -COMPUTE FIRST CST
+                                     !           ENTRY FOR BASIC CHG
+        C-I, $10, 31.0               ! line 15 -COMPUT NUMBER OF
+                                     ! line 16  CHANNEL IN BASIC EXCHANGE
+        LFI(BU,4), (8)5              ! line 17 -ENTER PRINTER
+                                     !           EQUIPMENT CODE
+X20B1A  KF(BU,4), .52($10)           ! line 18 -TEST AGAINST EQUIPMENT
+                                     !           FIELD
+        BAE, X20B3                   ! line 19 -IF PRINTER PRESENT
+X20B1   CBZ+, $10, X20B2             ! line 20 -IF NO PRINTER
+        B, X20B1A                    ! line 21
+X20B3   SX, $10, $R                  ! line 22 -PRINTER CST ENTRY
+        -(BU,19), SXCHAN, 45         ! line 23 -LESS BASE OF CST
+        ST(BU,19), SYPRCH            ! line 24 -PRINTER CHANN NUM TO
+                                     !           COMM RIGON
+X20B4   B, X22                       ! line 25
+X20B2   CT1111(BU,19), SYPRCH        ! line 26 -ILLEGAL CHANN NUM IN
+                                     !           COMM REGION
+        B, X20B4                     ! line 27
+
+! ---- TO UNCODE ---------------------------------------------------
+X22     CT0011(V-I)(BU,8), +2.30($4) ! line 32 -COMPUTE BASE OF AREA
+        CM1111(BU,1), YIPL1+.21      ! line 33
+        LV, $7, $4                   ! line 34 -CONTAINING IOD AND
+                                     !           REEL CARDS
+X221    LVI, $14, X222A              ! line 35 -ENTER RETURNED
+                                     !           PARAMETER SLOT
+X222    B, YUNCOD                    ! line 36 -TO UNCODE ROUTINE
+        CNOP                         ! line 37
+X222AA  (AQ)DD(BU,42,6),MCP IPLQ     ! line 38 -PROGRAM NAME
+X222A   XW, 0                        ! line 39 -FOR TOE, FIELD COUNT,
+                                     ! line 40  IO REF NUMBER
+        VF, 4.0                      ! line 41 -EXPECT IOD AND REEL
+                                     !           CARDS
+        , 0.0($7)                    ! line 42 -GET CARD AT
+        , 2.0($7)                    ! line 43 -PUT TABLE AT
+        B, X223                      ! line 44 -NOT IOD OR REEL CARD
+        B, X224                      ! line 45 -NORMAL
+X223    SIC, XERRAD                  ! line 46
+        B, XERROR                    ! line 47 -ERROR IN UNCODE
+X224    TI, 2, -1.0($14), 0.0($7)    ! line 48 -SAVE RETURNED
+                                     ! line 49  PARAMETER IN TABLE
+        V+I, $7, 15.0                ! line 50
+        BB, 2.04($7), X222           ! line 51 -IF PROCESSED LAST CARD
+                                     ! line 52 -TEST 12 ZONE OF THIRD
+                                     ! line 53  LETTER IN IOD,REEL OR
+                                     !          MCPP TYPE FIELD
+
+        END, X20B

@@ -36,10 +36,8 @@ things:
 3. **The back-matter sweep's worklist** (section below) — six ranked
    items, two already consumed. `C22-6728` printed 247-260, the rest
    of Appendix A, is the largest.
-4. ~~Printed pp.20-24~~ **— all five done, 2026-10-21, bit-exact
-   (17, 28, 50, 54 and 44 rows). Printed p.25 IS BLOCKED on one
-   STRAP construct** — see its section below; it is a small, clearly
-   bounded piece of assembler work and the obvious next thing.
+4. ~~Printed pp.20-25~~ **— all six done, bit-exact (17, 28, 50,
+   54, 44 and 32 rows). Printed p.26 onward** is the continuation.
 
 **One caveat carried forward, deliberately not in this file's
 worklist**: the look-ahead's store-fetch interlock is correct
@@ -5303,88 +5301,62 @@ thing in the path: the word the look-ahead hands the E-box.
 Build the pair that differs only in history before building the pair
 that differs in operands.
 
-## PRINTED p.25 IS BLOCKED ON ONE CONSTRUCT -- and it gives a second equipment code, 2026-10-22
+## PRINTED p.25 IS TRANSCRIBED -- the block was a four-bit constant, and it was printed, 2026-10-22
 
-**NOT TRANSCRIBED.** The page was read and two results taken from it,
-but it is not in the tree, because transcribing it half way would
-break the standard every other page meets.
+Thirty-two rows and fourteen symbol locations, bit-exact. The page
+was blocked for one construct, written up here as *"two rows is not
+enough to fix a four-bit constant"* — which was the right call on the
+evidence then, and wrong about the evidence available.
 
 **>>> THE PRINTER'S EQUIPMENT CODE IS OCTAL 5. <<<** Line 17 is
-`LFI(BU,4),(8)5` commented "-ENTER PRINTER EQUIPMENT CODE", and line
-18 compares it against `.52($10)` — the same `SEQUIP` field, the same
-shape as p.20's console search. So **two** of `X EQP T`'s values are
-now known from the programs that use them: **console 2** (p.20) and
-**printer 5** (p.25). The table's own page is still missing.
+`LFI(BU,4),(8)5`, "ENTER PRINTER EQUIPMENT CODE", compared against
+`.52($10)` — the `SEQUIP` field. With p.20's console = 2, **two** of
+`X EQP T`'s values are now known from the programs that use them.
 
-**AND `X IO STK` IS CONFIRMED.** p.24 line 54's control word takes a
-count of 5 from `X IO STK`; p.25 line 6 is
-`X IO STK  SYN,$-X IO STA`, printing `000005.00+`. The size was read
-off a control word before the symbol was seen.
+### The null operation field, and where both halves of it are printed
 
-### What blocks it
+Lines 42-43 are `,0.0($7)` and `,2.0($7)` — statements with **no
+operation**, written as nothing but the comma.
 
-Lines 42 and 43 have an **empty operation field**:
+**The syntax** — `C22-6531` printed p.7: *"A major field may be null,
+even though other non-null fields follow it. Such is the case if
+nothing but the comma denoting the field termination is written"*,
+and *"a null field is always compiled as a zero."*
 
-```
-001436.40    000000.00 87          ,0.0($7)     -GET CARD AT
-001437.00    000002.00 87          ,2.0($7)     -PUT TABLE AT
-```
-
-Read at 600 dpi to be sure — the statement really does begin with a
-comma. They sit in a parameter block for the UNCODE routine: line 39
-`XW,0` ("FOR TOE, FIELD COUNT, IO REF NUMBER"), line 41 `VF,4.0`
-("EXPECT IOD AND REEL CARDS"), then these two address words.
-
-`strap_asm.py` rejects them — *"unknown mnemonic ''"*.
-
-**THE SYNTAX IS NOW SOURCED.** `C22-6531` **printed p.7**, under the
-twelve symbolic instruction formats:
-
-> "The comma is the major separator for the symbolic instruction
-> types. If there are less than the maximum number of major symbolic
-> fields in a given instruction expression (as indicated by the comma
-> count), the instruction is compiled as if the missing fields
-> contained zeros and had been added at the end of the statement.
-> Such fields … are called **null fields**. **A null field is always
-> compiled as a zero** … **A major field may be null, even though
-> other non-null fields follow it. Such is the case if nothing but
-> the comma denoting the field termination is written.**"
-
-So these are statements with a **null operation field**, and that is
-a legal, documented form — not a misprint and not a continuation.
-
-**WHAT IS STILL NOT SETTLED is which FORMAT a null operation
-selects**, and the bits say the null-field rule alone does not cover
-it. Both rows emit a 32-bit half word whose low byte is `0x87`, read
-at 900 dpi and unambiguous:
+**The encoding** — `22-6530-2` printed p.163, "Instruction Formats",
+draws INTEGER, CONNECTIVE, INPUT-OUTPUT, TRANSMIT, SIC BRANCH and
+BRANCH ON BIT with an **identical first half**:
 
 ```
-bits 0-23  = the address   (0, and 2.0)
-bits 24-27 = 1000
-bits 28-31 = 0111 = 7      matching the ($7) in both operands
+ADDRESS (0-23) │ 1000 (24-27) │ I (28-31) │ …rest from bit 32
 ```
 
-`1000` is **not zero**, so it is not the operation's own bits being
-nulled. It is exactly the **literal `1000` that marks VFL format**
-(address 0-23, `1000` 24-27, I 28-31) — which would make these the
-*first half* of a VFL word. But a VFL instruction is a FULL word and
-the listing prints one group per row for these two, where line 48's
-`TI` prints two. **Two rows is not enough to fix a four-bit constant**
-and the shape is not accounted for.
+Six diagrams, one shape. The `1000` is a **literal of the full-word
+forms** — not a VFL marker, not the operation's own bits. No
+half-word format on that page has it, because they pack their
+operation into bits 18/19-31 instead. So a null operation lays down
+exactly the half the programmer wrote and nothing after bit 31.
 
-**WHAT WOULD SETTLE IT**: more instances of a null operation
-elsewhere in the corpus (there are none in `decks/` today), or
-`C28-6129`'s STRAP-II treatment of the same form — its Appendix C
-("Symbolic Descriptions and Mnemonics", printed pp.47-53) and the
-April 1963 newsletter are both unswept for it. Implementing on a
-two-point fit would be guessing at an encoding, which is the one
-thing this project does not do.
+**AND THE PAGE CORROBORATES IT FROM INSIDE ITSELF.** Line 51's
+`BB,2.04($7),X22 2` is a *real* branch on bit — a full-word format —
+and its first half prints `000002.04 87`: same address shape, same
+`1000`, same index 7, from an instruction that is not a null
+operation at all.
 
-**Everything else on the page already works**: `(AQ)DD(BU,42,6)` —
-mode `A`, terminator `Q`, so `MCP IPLQ` is the seven characters
-`MCP IPL` in 42 bits — and `XW`, `VF`, `TI`, `CTOC11`, `CT1111` all
-assemble today. It is one construct, and the page is otherwise
-ordinary.
+### The lesson, which is the one this file keeps writing down
+
+The constant was never a fit waiting for more instances. **It was
+printed, in six diagrams, in a file `docs/` has had all along** — the
+Reference Manual's own appendix, which the back-matter sweep had
+already catalogued as "bit-layout diagram of all 13 instruction
+formats with bit-position rulers" without anyone opening it for this.
+
+"A document you have cited is not a document you have read" has now
+been paid for four times in two days: `C22-6678-1`'s Appendix F, the
+opcode list at `22-6530-2` pp.168-169, `C22-6531`'s Appendix A
+opening page, and this. **The back-matter map in this file exists
+precisely so the fifth time is cheap — use it before concluding that
+evidence is unavailable.**
 
 ## PRINTED p.24 IS TRANSCRIBED -- and it settles p.23's prediction, 2026-10-21
 

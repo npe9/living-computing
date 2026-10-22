@@ -3167,6 +3167,60 @@ run "MCP INITIALIZATION, printed p.24, bit-exact (MCP_Mar63 PDF p.31)" python3 v
 # are not: it is the one that had to PAD, and it prints 000000.30 00,
 # a NOP half word.  That is the difference between a CNOP that rounds
 # and a CNOP already rounded, visible in the listing itself.
+
+run "MCP INITIALIZATION, printed p.25, bit-exact (MCP_Mar63 PDF p.32)" python3 verify_mcp_bootstrap_p25.py
+# >>> PRINTED p.25 IS TRANSCRIBED, thirty-two rows and fourteen
+# symbol locations, all bit-exact -- and it took a trip to the
+# Reference Manual's own appendix to unblock. <<<
+#
+# THE PRINTER'S EQUIPMENT CODE IS OCTAL 5.  Line 17 is
+# "LFI(BU,4),(8)5" commented "-ENTER PRINTER EQUIPMENT CODE" and line
+# 18 compares it against ".52($10)", the SEQUIP field.  With printed
+# p.20's console = 2, TWO of X EQP T's values are now known from the
+# programs that use them; the table's own page is still missing.
+#
+# >>> THE PAGE NEEDED A NULL OPERATION FIELD, and both halves of it
+# are printed.  Lines 42-43 are ",0.0($7)" and ",2.0($7)" --
+# statements with NO operation, written as nothing but the comma.
+#
+#   THE SYNTAX: C22-6531 printed p.7, under the twelve symbolic
+#   instruction formats -- "A MAJOR FIELD MAY BE NULL, even though
+#   other non-null fields follow it.  Such is the case if nothing but
+#   the comma denoting the field termination is written", and "a null
+#   field is always compiled as a zero".
+#
+#   THE ENCODING: Reference Manual printed p.163, "Instruction
+#   Formats", draws INTEGER, CONNECTIVE, INPUT-OUTPUT, TRANSMIT, SIC
+#   BRANCH and BRANCH ON BIT with an IDENTICAL FIRST HALF --
+#
+#        ADDRESS (0-23) | 1000 (24-27) | I (28-31)
+#
+#   Six diagrams, one shape.  The "1000" is a literal of the
+#   FULL-WORD forms, not a VFL marker and not the operation's own
+#   bits; no half-word format on that page has it, because they pack
+#   their operation into bits 18/19-31 instead.  So a null operation
+#   lays down exactly the half the programmer wrote and nothing after
+#   bit 31. <<<
+#
+# BEFORE THAT APPENDIX WAS OPENED this was written up as unresolvable
+# on the evidence -- "two rows is not enough to fix a four-bit
+# constant" -- and that was the right call at the time.  The constant
+# was never a fit; it was printed, in six diagrams, in a file docs/
+# has had all along.
+#
+# AND THE PAGE CORROBORATES IT A THIRD TIME FROM INSIDE ITSELF: line
+# 51's "BB,2.04($7),X22 2" is a REAL branch on bit, a full-word
+# format, and its first half prints 000002.04 87 -- same address
+# shape, same 1000, same index 7, from an instruction that is not a
+# null operation at all.
+#
+# TWO ROWS WERE MISREAD AT 150 dpi AND THE OPCODE SETTLED BOTH, which
+# is 13's rule working: line 24's byte is D0 and not C0, because ST's
+# nine-bit operation field ends in the literal 1 at bit 59 that C0
+# would clear; and line 35's is 01 and not C1, because LVI's
+# immediate-index template "jjjj10000xxxx" puts 0000 at bits 24-27
+# and 0001 at 28-31.  Decoding decided both before the 900 dpi render
+# confirmed them.
 run "MCP's error table, printed pp.7-8 (MCP_Mar63 PDF pp.14-15)" python3 verify_mcp_bootstrap_p7_p8.py
 # X ERR DD -- THE LAST TWO PAGES OF THE BOOTSTRAP TO BE TRANSCRIBED,
 # and the index to all the rest: seventy-eight VF half words, one pair
