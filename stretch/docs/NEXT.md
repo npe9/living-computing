@@ -5335,14 +5335,50 @@ comma. They sit in a parameter block for the UNCODE routine: line 39
 `XW,0` ("FOR TOE, FIELD COUNT, IO REF NUMBER"), line 41 `VF,4.0`
 ("EXPECT IOD AND REEL CARDS"), then these two address words.
 
-`strap_asm.py` rejects them — *"unknown mnemonic ''"*. **What the
-empty field MEANS is a question for `C22-6531`, not for inference**,
-and the one thing already visible is that it is not simply "repeat
-the previous statement's type": `VF` prints a 24-bit value with a
-trailing `+` and these print a 32-bit half word. Bits 28-31 of that
-half word are `0111` = 7, which matches the `($7)` in both operands,
-so the index field at least is where a half-word instruction keeps
-it.
+`strap_asm.py` rejects them — *"unknown mnemonic ''"*.
+
+**THE SYNTAX IS NOW SOURCED.** `C22-6531` **printed p.7**, under the
+twelve symbolic instruction formats:
+
+> "The comma is the major separator for the symbolic instruction
+> types. If there are less than the maximum number of major symbolic
+> fields in a given instruction expression (as indicated by the comma
+> count), the instruction is compiled as if the missing fields
+> contained zeros and had been added at the end of the statement.
+> Such fields … are called **null fields**. **A null field is always
+> compiled as a zero** … **A major field may be null, even though
+> other non-null fields follow it. Such is the case if nothing but
+> the comma denoting the field termination is written.**"
+
+So these are statements with a **null operation field**, and that is
+a legal, documented form — not a misprint and not a continuation.
+
+**WHAT IS STILL NOT SETTLED is which FORMAT a null operation
+selects**, and the bits say the null-field rule alone does not cover
+it. Both rows emit a 32-bit half word whose low byte is `0x87`, read
+at 900 dpi and unambiguous:
+
+```
+bits 0-23  = the address   (0, and 2.0)
+bits 24-27 = 1000
+bits 28-31 = 0111 = 7      matching the ($7) in both operands
+```
+
+`1000` is **not zero**, so it is not the operation's own bits being
+nulled. It is exactly the **literal `1000` that marks VFL format**
+(address 0-23, `1000` 24-27, I 28-31) — which would make these the
+*first half* of a VFL word. But a VFL instruction is a FULL word and
+the listing prints one group per row for these two, where line 48's
+`TI` prints two. **Two rows is not enough to fix a four-bit constant**
+and the shape is not accounted for.
+
+**WHAT WOULD SETTLE IT**: more instances of a null operation
+elsewhere in the corpus (there are none in `decks/` today), or
+`C28-6129`'s STRAP-II treatment of the same form — its Appendix C
+("Symbolic Descriptions and Mnemonics", printed pp.47-53) and the
+April 1963 newsletter are both unswept for it. Implementing on a
+two-point fit would be guessing at an encoding, which is the one
+thing this project does not do.
 
 **Everything else on the page already works**: `(AQ)DD(BU,42,6)` —
 mode `A`, terminator `Q`, so `MCP IPLQ` is the seven characters
