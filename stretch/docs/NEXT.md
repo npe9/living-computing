@@ -5302,6 +5302,64 @@ thing in the path: the word the look-ahead hands the E-box.
 Build the pair that differs only in history before building the pair
 that differs in operands.
 
+## PRINTED pp.32 AND 33 ARE TRANSCRIBED -- and p.32 measures a page transcribed five pages ago, 2026-10-22
+
+Eighty-one rows and twenty-four symbol locations, bit-exact, in
+`tests/verify_mcp_bootstrap_p32.py` and `_p33.py`. **No assembler
+work for either**, which makes it five pages in six.
+
+**p.32** finishes the message-deletion passes and builds the message
+that tells the operator which channel the spool reader is on.
+
+**THE REAL CHECK IS THAT IT REACHES BACK.** Lines 24, 44 and 48 all
+address `X24 A2+.32`. `X24A2` is printed **p.27** line 21,
+transcribed from that page's own location column three commits ago
+as 001473.00; these rows print 001473.40. Line 22's `B,X33 1A`
+reaches back one page to printed p.31 line 35. Neither address was
+read off p.32 — both are `SYN`'d from the pages that define them —
+so the rows *measure* the earlier transcriptions instead of
+repeating them.
+
+**`TI,$10` is a COUNT, not a register**, and the page proves it
+against its own binary: line 46 is `TI,$10,X RDR MG,0.0($14)`, the
+Reference Manual's printed p.30 says an immediate-count transmit
+takes "the full word count ... by instruction bits 51-54", and the
+printed second half word `000000.24 AE` has `1010` in bits 19-22.
+Ten. Contrast printed p.29 line 38's `T,$11`, which **is** a
+register — same `$`, same evidence, opposite answer, because the
+opcode nibble differs (A immediate, 2 direct).
+
+**p.33** unassigns the spool reader in offline overlapped mode and
+primes the System Command routine three ways. Every row on the page,
+forty-five of them.
+
+* **Eleven null-operation rows** — `, S COMD`, `, 4.0`, `, 0.0($14)`
+  — the parameter list each `BD,0.0($12)` branches into. The form
+  the assembler gained for printed p.25; `C28-6129` printed p.6
+  specifies it and all eleven print exactly that.
+* **X36 is an address three earlier pages already compiled**: p.30
+  line 24, p.31 line 24 and p.32 line 51 all branch to it, all
+  transcribed first, all producing 001661.74, and this page opens at
+  001661.40.
+
+### One open grammar question, parked rather than guessed
+
+p.33 line 33 is `BZB1,X VSWCH.19,X37 4A` and the deck writes
+`XVSWCH+.19`. The printed address 001672.23 is `XVSWCH` (001672.00)
+plus nineteen bits, so for **this row** the two spellings are the
+same address, and that is measured. What is *not* settled is whether
+STRAP-II accepts `SYMBOL.bits` as an implicit sum at all:
+`C28-6129` printed p.8 defines a STRAP bit address as "two integers
+separated by a period", and every symbolic offset in that manual
+uses a `+` (`SAM+4`, printed p.30). **One row is not a grammar.** If
+a later page writes it again, read Section II before touching the
+expression parser.
+
+**The MCP bootstrap is now continuous and bit-exact from printed
+p.26 through p.33.** The next page is printed p.34, whose first
+row is at **001713.40** -- p.33's last instruction is a full-word
+BRANCH ON BIT at 001712.40, so the two meet exactly.
+
 ## PRINTED p.31 IS TRANSCRIBED -- every row on the page, and the assembler found a second real C, 2026-10-22
 
 Thirty-five rows and thirteen symbol locations, bit-exact, in

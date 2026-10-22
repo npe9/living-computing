@@ -1,0 +1,133 @@
+! mcp_bootstrap_p32.strap -- MCP INITIALIZATION, printed page 32:
+! "MESSAGE DELETION PASSES CONTINUED", and "BUILD MSG SPECIFYING
+! INPUT CHANNEL FOR SPOOL BYPASS AND ON LINE OVERLAPPED READER".
+! docs/MCP_Mar63_001-249.pdf PDF p.39, header "PAGE NUMBER 32".
+! docs/boot_plan.md M3.
+!
+! CONTIGUOUS WITH p.31 BY FALL-THROUGH: p.31's last instruction is a
+! full-word connective at 001631.40 and this page starts at
+! 001632.40.
+!
+! ---------------------------------------------------------------
+! THE PAGE REACHES BACK FIVE PAGES, TWICE
+! ---------------------------------------------------------------
+! Lines 24, 44 and 48 all address "X24 A2+.32", and X24A2 is printed
+! p.27 line 21 -- 001473.00, transcribed in
+! decks/mcp_bootstrap_p27.strap from that page's own location
+! column, five pages and three commits ago.  The three rows here
+! print 001473.40, which is that address plus thirty-two bits.
+!
+! Line 22's "B,X33 1A" goes back one page, to printed p.31 line 35's
+! X331A at 001620.00.
+!
+! ---------------------------------------------------------------
+! "TI,$10" -- THE LISTING'S SPELLING, AND WHY THE DECK WRITES 10
+! ---------------------------------------------------------------
+! Line 46 is "TI,$10,X RDR MG,0.0($14)" on the page.  TI is the
+! IMMEDIATE-count transmit, and Reference Manual printed p.30 is
+! explicit that for those "the full word count is specified by
+! instruction bits 51-54" -- a count, not a register -- so the "$"
+! is the programmer's hand and not a different field.  The compiled
+! bits agree: the printed second half word is 000000.24 AE, whose
+! bits 19-22 are 1010 = ten.  Every TRANSMIT in decks/ writes that
+! field as a bare digit; this one does too.
+!
+! ---------------------------------------------------------------
+! EXTERNALS, each recovered from this page's own binary output
+! ---------------------------------------------------------------
+!   X MSG BK  002000.00   S W TAPE  002154.00   S READ R 002154.40
+!   S BA MCP  002153.00   X RDR CR  001771.50   X RDR MG 001765.00
+!   S COM RG  002151.00   X ERR AD  000551.00   X ERROR  000133.00
+! FROM PAGES ALREADY TRANSCRIBED:
+!   X24 A2 001473.00 (printed p.27)   X33 1A 001620.00 (printed p.31)
+! FORWARD, into printed p.33:
+!   X36 001661.40   X37 001666.40
+XMSGBK  SYN, (8)2000.0
+SWTAPE  SYN, (8)2154.0
+SREADR  SYN, (8)2154.40
+SBAMCP  SYN, (8)2153.0
+XRDRCR  SYN, (8)1771.50
+XRDRMG  SYN, (8)1765.0
+SCOMRG  SYN, (8)2151.0
+XERRAD  SYN, (8)551.0
+XERROR  SYN, (8)133.0
+X24A2   SYN, (8)1473.0
+X331A   SYN, (8)1620.0
+X36     SYN, (8)1661.40
+X37     SYN, (8)1666.40
+
+        SLC, (8)1632.40
+
+! ---- message deletion passes continued ----------------------------
+X34     LX, $13, 0.0($12)             ! line 4  -GET CHANNEL =
+        V+, $13, $13                  ! line 5  -DOUBLE IT
+        LCV(BU,18), $13               ! line 6  -CONVERT CHANNEL TO
+                                      !          DECIMAL
+        LVI, $12, XMSGBK              ! line 7  -INITIALIZE FOR
+                                      !          MESSAGE BLOCK
+X341    KF(BU,4), 6.27($12)           ! line 8
+                                      ! line 9  -BIT POSITIONS 4,5,6,
+                                      !          AND 7 OF LOW ORDER 8
+                                      !          BIT CHANNEL DIGIT TES
+        BZAE, X342                    ! line 10 -IF TESTS SHOULD
+                                      !          CONTINUE
+        KF(BU,4), 6.19($12), 4        ! line 11 -YES
+                                      ! line 12 -BIT POSITIONS 4,5,6,
+                                      !          AND 7 OF 8 BIT TENS
+                                      !          DIGIT CHANNEL CODE TES
+        BZAE, X342                    ! line 13 -IF TEST SHOULD
+                                      !          CONTINUE
+        SV, $14, $R                   ! line 14 -GET UNIT NUMBER
+        KF(BU,4), 7.19($12), 46       ! line 15
+                                      ! line 16 -BIT POSITIONS 4,5,6
+                                      !          AND 7 OF 8 BIT UNIT
+                                      !          NUMBER CODE
+        BZAE, X342                    ! line 17 -IF CHANNEL FOR WHICH
+                                      !          SEARCHED
+        Z, 0.0($12)                   ! line 18 -CLEAR FIRST WORD OF
+                                      ! line 19  MESSAGE AS MARKER FOR
+                                      !          LATER SKIPPING OF MSG
+        CBZ, $0, X35                  ! line 20 -IF FOUND TWO MESSAGE
+        LX, $14, SWTAPE               ! line 21 -NO* GET F
+X341A   B, X331A                      ! line 22 -FIND SECOND MESSAGE
+X342    V+I, $12, 10.0                ! line 23 -ADVANCE TO NEXT
+                                      !          MESSAGE
+        LF(BU,18), X24A2+.32, 46      ! line 24 -GET NEXT ADDRESS
+                                      ! line 25  AVAILABLE IN MSG
+                                      !          BUFFER
+        KV, $12, $R                   ! line 26
+        BXL, X341                     ! line 27 -IF EXHAUSTED ALL MSG
+XERR29  SIC, XERRAD                   ! line 28
+        B, XERROR                     ! line 29 -BOTH MESSAGES NOT
+                                      !          FOUND
+
+! ---- build msg specifying input channel for spool bypass and ------
+! ---- on line overlapped reader ------------------------------------
+X35     LV, $14, SREADR               ! line 36 -GET SPOOL CARD READER
+                                      !          IODR F
+        V+, $14, SBAMCP               ! line 37 -SPOOL READER FILE
+                                      !          ENTRY IN IO LOCATION
+X351    LX, $14, 0.0($14)             ! line 38 -GET UAT
+        LX, $14, 0.0($14)             ! line 39 -GET CHANNEL NUMBER
+        V+, $14, $14                  ! line 40 -DOUBLE IT
+        LCV(BU,18), $14               ! line 41 -CONVERT TO DECIMAL
+X353    M+MG(BU,4,4), XRDRCR+.3, 4    ! line 42 -ADD CHANNEL TO MSG
+                                      !          IN IQS
+        M+MG(BU,4,4), XRDRCR+.8+.3    ! line 43 -ADD CHANNEL TO MSG
+                                      !          IN IQS
+        LVE, $14, X24A2+.32           ! line 44 -GET CURRENT MESS
+                                      ! line 45  BLOCK LOCATION
+                                      !          -UNITS POSITION
+        TI, 10, XRDRMG, 0.0($14)      ! line 46 -MOVE MSG TO MSG BLOCK
+                                      ! listing: "TI,$10,X RDR MG,0.0($14)"
+        V+I, $14, 10.0                ! line 47 -ADVANCE TO NEXT
+                                      !          AVAILABLE MESSAGE
+                                      !          BLOCK
+        SVA, $14, X24A2+.32           ! line 48 -SAVE MESS BLOCK LOC
+        B, X37                        ! line 49
+X35A    BB, SCOMRG+.9, X36            ! line 51 -IF OVERLAPPED ON LINE
+        B, X35                        ! line 52 -YES*SPECIFY READER
+                                      !          CHANNEL
+X37A    SYN, X37                      ! line 53
+
+        END, X34

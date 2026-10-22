@@ -3588,6 +3588,67 @@ run "MCP INITIALIZATION, printed p.31, bit-exact (MCP_Mar63 PDF p.38)" python3 v
 # "BZB,X LR IN+.31,X 32" and line 22 "BAH,X32" both compile
 # X32 = 001601.00, which is this page's first row -- and contiguous
 # with it as well, since p.30's last data byte ends at 001600.70.
+
+run "MCP INITIALIZATION, printed p.32, bit-exact (MCP_Mar63 PDF p.39)" python3 verify_mcp_bootstrap_p32.py
+# >>> PRINTED p.32 IS TRANSCRIBED, thirty-six rows and ten symbol
+# locations, all bit-exact: the rest of the message-deletion passes,
+# and the message that tells the operator which channel the spool
+# reader is on. <<<
+#
+# >>> THE PAGE REACHES BACK FIVE PAGES, AND THAT IS THE CHECK.  Lines
+# 24, 44 and 48 all address "X24 A2+.32".  X24A2 is printed p.27 line
+# 21, transcribed from THAT page's own location column three commits
+# ago as 001473.00, and these three rows print 001473.40.  Line 22's
+# "B,X33 1A" reaches back one page to printed p.31 line 35.  Neither
+# address was read off p.32; both are SYN'd from the pages that
+# define them, so the rows measure the earlier transcriptions rather
+# than repeating them. <<<
+#
+# "TI,$10" IS A COUNT, NOT A REGISTER, and the page proves it against
+# its own binary.  Line 46 is "TI,$10,X RDR MG,0.0($14)"; Reference
+# Manual printed p.30 says that for immediate-count transmits "the
+# full word count is specified by instruction bits 51-54"; and the
+# printed second half word, 000000.24 AE, has 1010 in bits 19-22.
+# Ten, the count.  The "$" is the programmer's hand.  (Contrast
+# printed p.29 line 38's "T,$11", which IS a register, on the same
+# evidence read the same way.)
+#
+# NO ASSEMBLER WORK.  The one mnemonic the page introduces, "Z"
+# (line 18's "Z,0.0($12)", clearing a message's first word as a
+# marker), was already built.
+
+run "MCP INITIALIZATION, printed p.33, bit-exact (MCP_Mar63 PDF p.40)" python3 verify_mcp_bootstrap_p33.py
+# >>> PRINTED p.33 IS TRANSCRIBED -- EVERY ROW ON THE PAGE, forty-five
+# of them, and fourteen symbol locations.  Unassigning the spool
+# reader in offline overlapped mode, and the three-way switch that
+# primes the System Command routine with ON LINE, OFF LINE or
+# BYPASS. <<<
+#
+# ELEVEN NULL-OPERATION ROWS, the form the assembler gained for
+# printed p.25 and has seen three times since.  Lines 27-31, 36-40
+# and 43 are the parameter list each "BD,0.0($12)" branches into:
+# ", S COMD", ", 4.0", ", 0.0($14)", ", 28.0", ", 0.0".  C28-6129
+# printed p.6: "it compiles the statement as a half word with a
+# 24-bit address field, the 25th bit set to one and all the rest of
+# the bits set to zero."  All eleven print exactly that.
+#
+# >>> X36 IS AN ADDRESS THREE EARLIER PAGES ALREADY COMPILED.
+# printed p.30 line 24, p.31 line 24 and p.32 line 51 all branch to
+# X36 and all three were transcribed before this page was opened;
+# each compiled 001661.74 -- half 1 of word 001661 -- and this page's
+# location column opens at 001661.40. <<<
+#
+# ONE SPELLING SUBSTITUTED, and the deck says so in the place a
+# reader will look.  Line 33 is "BZB1,X VSWCH.19,X37 4A" on the page
+# and "BZB1,XVSWCH+.19,X374A" in the deck.  The printed address
+# 001672.23 is XVSWCH (001672.00) plus octal 23 = nineteen bits, so
+# the two spellings are the same address -- MEASURED, not assumed.
+# WHAT IS NOT SETTLED is whether STRAP-II accepts "SYMBOL.bits" as an
+# implicit sum at all: C28-6129 printed p.8 defines a bit address as
+# "two integers separated by a period", and every symbolic offset in
+# that manual is written with a "+" ("SAM+4", printed p.30).  One row
+# is not a grammar.  If a second page writes it, read Section II
+# before teaching the assembler anything.
 run "MCP's error table, printed pp.7-8 (MCP_Mar63 PDF pp.14-15)" python3 verify_mcp_bootstrap_p7_p8.py
 # X ERR DD -- THE LAST TWO PAGES OF THE BOOTSTRAP TO BE TRANSCRIBED,
 # and the index to all the rest: seventy-eight VF half words, one pair

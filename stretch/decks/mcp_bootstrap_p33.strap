@@ -1,0 +1,134 @@
+! mcp_bootstrap_p33.strap -- MCP INITIALIZATION, printed page 33:
+! "OFFLINE OVERLAPPED * UNASSIGN SPOOL READER", and the switch that
+! primes the System Command routine with ON LINE, OFF LINE or BYPASS.
+! docs/MCP_Mar63_001-249.pdf PDF p.40, header "PAGE NUMBER 33".
+! docs/boot_plan.md M3.
+!
+! CONTIGUOUS WITH p.32 BY FALL-THROUGH: p.32's last instruction is
+! "B,X35" at 001661.00, a half word, and this page starts at
+! 001661.40 -- which is X36, the address three earlier pages (30, 31
+! and 32) already compiled into their branches.
+!
+! ---------------------------------------------------------------
+! THE NULL OPERATION FIELD, eleven rows of it
+! ---------------------------------------------------------------
+! Lines 27-31 and 36-40 and 43 are statements whose operation field
+! is EMPTY -- ", S COMD", ", 4.0", ", 0.0($14)" -- the parameter
+! list the "BD,0.0($12)" above them branches into.  C28-6129 printed
+! p.6:
+!
+!   "A null operation code field occurs if the first character in a
+!    7030 statement is a comma... STRAP treats a null operation
+!    field as a special case; it compiles the statement as a half
+!    word with a 24-bit address field, the 25th bit set to one and
+!    all the rest of the bits set to zero."
+!
+! which is the form the assembler gained for printed p.25 and is
+! exercised eleven times here.
+!
+! ---------------------------------------------------------------
+! ONE SPELLING THIS DECK DOES NOT COPY: "X VSWCH.19"
+! ---------------------------------------------------------------
+! Line 33 is "BZB1,X VSWCH.19,X37 4A" on the page and
+! "BZB1,XVSWCH+.19,X374A" here.  The compiled address settles what
+! it means -- the listing prints 001672.23, which is XVSWCH
+! (001672.00) plus octal 23 = nineteen bits -- so the two spellings
+! are the same address and the deck's is the one this assembler
+! parses.
+!
+! IT IS NOT GUESSED, BUT IT IS NOT SOURCED EITHER.  C28-6129 printed
+! p.8 defines a STRAP bit address as "two integers separated by a
+! period" and every symbolic offset in the manual is written with a
+! "+" ("SAM+4", printed p.30).  Whether STRAP-II accepts
+! "SYMBOL.bits" as an implicit sum is an open question; the
+! equivalence of the two FOR THIS ROW is measured, not assumed, and
+! that is all this deck claims.
+!
+! ---------------------------------------------------------------
+! EXTERNALS, each recovered from this page's own binary output
+! ---------------------------------------------------------------
+!   S READ R 002154.40  S BA MCP 002153.00  S X CHAN 002152.00
+!   S PR OUT 002160.40  S PR IN  002160.00  S COM RG 002151.00
+!   S COMD   000120.00  S JC4    000116.40  S IA     002163.00
+!   X VCLOK  001241.00  X BOUND  001777.00  X ON LIN 001761.00
+!   X OF LIN 001763.00  X BYPAS  001757.00  X LR IN  001034.00
+! FORWARD, into printed p.34:   X37 8  001726.00
+SREADR  SYN, (8)2154.40
+SBAMCP  SYN, (8)2153.0
+SXCHAN  SYN, (8)2152.0
+SPROUT  SYN, (8)2160.40
+SPRIN   SYN, (8)2160.0
+SCOMRG  SYN, (8)2151.0
+SCOMD   SYN, (8)120.0
+SJC4    SYN, (8)116.40
+SIA     SYN, (8)2163.0
+XVCLOK  SYN, (8)1241.0
+XBOUND  SYN, (8)1777.0
+XONLIN  SYN, (8)1761.0
+XOFLIN  SYN, (8)1763.0
+XBYPAS  SYN, (8)1757.0
+XLRIN   SYN, (8)1034.0
+X378    SYN, (8)1726.0
+
+        SLC, (8)1661.40
+
+! ---- offline overlapped: unassign the spool reader ----------------
+X36     LV, $14, SREADR              ! line 5  -GET SPOOL READER IOP
+                                     !          REFERENCE NUMBERS
+        V+, $14, SBAMCP              ! line 6  -SPOOL READ ENTRY IN
+                                     !          IO LOCATION TABLE
+        LX, $14, 0.0($14)            ! line 7  -GET UAT
+X363    LX, $14, 0.0($14)            ! line 8  -GET CHANNEL NUMBER
+        V+, $14, $14                 ! line 9  -DOUBLE IT
+        V+, $14, SXCHAN              ! line 10 -GET CST ENTRY
+X364    CM1111(BU,1), .29($14)       ! line 11 -UNIT STATUS TO NOT
+                                     !          ASSIGNED
+        CM0000(BU,1), .32($14)       ! line 12 -OWNERSHIP STATUS TO PP
+
+! ---- prime the system command routine -----------------------------
+X37     LV, $13, SPROUT              ! line 17 -SAVED RETURN ADDRESS
+                                     !          FOR PRIME
+        LV, $12, SPRIN               ! line 18 -ENTRY TO PRIME ROUTINE
+X371    BB, SCOMRG+.8, X371B         ! line 19 -IF BYPS
+        BB, SCOMRG+.9, X371A         ! line 20 -NO * IF ON LINE MODE
+X374    LVI, $14, XONLIN             ! line 21 -ON LINE
+XVSWCH  NOP, XVNOGO                  ! line 22
+        SVA, $14, XVPRIM             ! line 23
+        LVI, $14, XVCLOK             ! line 24
+        SIC, 0.0($13)                ! line 25
+        BD, 0.0($12)                 ! line 26
+        , SCOMD                      ! line 27
+        , 4.0                        ! line 28
+        , 0.0($14)                   ! line 29
+        , 28.0                       ! line 30
+        , 0.0                        ! line 31
+XVPRIM  LVI, $14, $                  ! line 32
+XVNOGO  BZB1, XVSWCH+.19, X374A      ! line 33
+                                     ! listing: "BZB1,X VSWCH.19,X37 4A"
+X374A   SIC, 0.0($13)                ! line 34
+        BD, 0.0($12)                 ! line 35 -PRIME SYSTEM COMMAND
+                                     !          ROUTINE
+        , SCOMD                      ! line 36
+        , 4.0                        ! line 37 -IPL INDICATOR AS
+                                     !          SENDER OF COMMAND
+        , 0.0($14)                   ! line 38 -LOCATION OF COMMAND
+                                     !          IN BCD
+        , 12.0                       ! line 39
+        , 0.0                        ! line 40 -ERROR RETURN
+X376    SIC, 0.0($13)                ! line 41
+        BD, 0.0($12)                 ! line 42 -PRIME JOB CONTROL 4
+        , SJC4                       ! line 43
+        B, X377                      ! line 44
+X371A   LVI, $14, XOFLIN             ! line 45 -OFF LINE
+        B, XVSWCH                    ! line 46
+X371B   LVI, $14, XBYPAS             ! line 47 - PRIME SYSTEM COMM FOR
+                                     !           BYPASS MODE
+        B, XVSWCH                    ! line 48
+X377    LV, $14, SIA                 ! line 49 -GET $IA
+        SV, $14, $IA                 ! line 50
+        LWF(U), XBOUND               ! line 51 -GET MCP BOUNDS
+        ST(BU), $UB, 64              ! line 52
+        BB, XLRIN+.28, X378          ! line 53 - BRANCH IF SUPPRESS
+                                     !           MESSAGES
+
+        END, X36
