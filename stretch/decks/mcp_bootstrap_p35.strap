@@ -70,7 +70,7 @@ XPROWR  XW, 0                        ! line 5  -COMPUTED DISK WRITE
 ! ---- card types in Hollerith --------------------------------------
 XMCPP   DD(BU,48), (8)2040410020042004   ! line 8  -MCPP IN HOLLERITH
 XIOCD   DD(BU,48), (8)4001201041004040   ! line 9  -IOCD IN HOLLERITH
-XICD    DD(BU,36), (8)400120104040       ! line 10 -ICD IN HOLLERITH
+XIOD    DD(BU,36), (8)400120104040       ! line 10 -IOD IN HOLLERITH
 
 ! ---- the equipment table ------------------------------------------
         CNOP                         ! line 12 -START XEQPT AT FULL

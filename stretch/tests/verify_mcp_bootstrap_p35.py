@@ -66,7 +66,7 @@ SYMBOLS = {
     "XPROWR": "001746.00",
     "XMCPP":  "001747.00",
     "XIOCD":  "001747.60",
-    "XICD":   "001750.40",
+    "XIOD":   "001750.40",
     "XEQPT":  "001752.00",
     # The five pseudo-op codes.  Four of these are addresses earlier
     # pages compiled into instructions before this page was opened.
@@ -85,7 +85,7 @@ ROWS = [
     ("001747.60", "4001201041004040",
      "line 9   X IOCD  DD(BU,48),(8)4001201041004040  -IOCD IN HOLLERITH", 48),
     ("001750.40", "400120104040",
-     "line 10  X ICD  DD(BU,36),(8)400120104040  -ICD IN HOLLERITH", 36),
+     "line 10  X IOD  DD(BU,36),(8)400120104040  -IOD IN HOLLERITH", 36),
     ("001751.40", "000000.30 00",
      "line 12  CNOP  -START XEQPT AT FULL WORD BOUNDARY"),
     # ---- the equipment table, nine entries of 24 + 4 + 1 bits ----
@@ -146,6 +146,34 @@ for loc, letter, pair, code, multi in SECOND_LETTERS:
     print(f"{'PASS' if ok else 'FAIL'} MCP p.35 {loc} {pair}: column "
           f"{got_col:#014b} (card column of {letter!r} is {want_col:#014b}), "
           f"code {got_code}, multi {got_multi}")
+
+# ---------------------------------------------------------------
+# THE THREE CARD-TYPE LITERALS ARE THE PUNCHED CHARACTERS, and this
+# check is what caught a misreading of the page.
+#
+# Line 10's name field reads "X ICD" at 900 dpi and the comment
+# "-ICD IN HOLLERITH".  THE DATUM SAYS OTHERWISE: 0o400120104040 is
+# the three columns of "IOD", not "ICD" -- and the same row prints
+# its own "DD(BU,36)" as "CD(BU,36)", which is
+# docs/listing_typography.md 13 with an O instead of a zero.  The
+# deck calls the symbol X IOD, which is also what printed p.19 line
+# 23's "KF(BU,36),X IOD,12  -COMPARE AGAINST * IOD *" calls it, so
+# mcp_image.merge() now checks p.19's stand-in against p.35's
+# placement instead of carrying it as an external.
+# ---------------------------------------------------------------
+LITERALS = [
+    ("001747.00", "MCPP", 48, "line 8   X MCPP"),
+    ("001747.60", "IOCD", 48, "line 9   X IOCD"),
+    ("001750.40", "IOD",  36, "line 10  X IOD"),
+]
+for loc, text, width, note in LITERALS:
+    got = read_bits(prog, loc_bits(loc), width)
+    want = int("".join("%03x" % column_bits(c) for c in text), 16)
+    ok = got == want
+    fails += not ok
+    print(f"{'PASS' if ok else 'FAIL'} MCP p.35 {loc} {note}: datum "
+          f"{got:0{-(-width//3)}o} is the card columns of {text!r} "
+          f"({want:0{-(-width//3)}o})")
 
 # The entries the page calls unused, and the first entry, must be
 # zero in all three fields -- "NO EQUIPMENT" is how a channel with

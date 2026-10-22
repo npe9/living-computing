@@ -188,7 +188,15 @@ def main():
         # half-word, and X S ROOF holds 6,291,456 bits in its value
         # field, whose top 18 bits are 98,304 -- the word count, and
         # StretchMemory's InstalledWords.
-        ("mcp_end_of_prosa_bit_X0", "16", (1 << (63 - 25)) | 98304),
+        #
+        # >>> AND SINCE 2026-10-22 THE COUNT FIELD IS FIFTEEN, not
+        # zero: printed p.15 line 20's "LC,$0,X BUFER+.32($9)  -GET
+        # SIZE OF COMM REGION" now finds a real size there, because
+        # the record carries a comm-region descriptor.  Before that
+        # the field read zero, and Reference Manual printed p.30 makes
+        # a direct count of zero mean 2**18. <<<
+        ("mcp_end_of_prosa_bit_X0", "16",
+         (1 << (63 - 25)) | (prosa.COMM_REGION_WORDS << 18) | 98304),
 
         # >>> AND MCP PUT THE SIZE WHERE THE REST OF MCP LOOKS <<<
         # Printed p.15 line 23 is "SR,$0,S ROOF  -PLACE 7030 SIZE IN
@@ -203,7 +211,20 @@ def main():
         # sized core by running a clearing loop off the end of it and
         # taking the Address Invalid; eleven pages later the answer is
         # in the communication region for the supervisor to use.
-        ("mcp_size_in_comm_region", str(0o2162), 98304 << 46),
+        #
+        # >>> AND THE REST OF THE WORD IS THE FIXTURE'S, which is new
+        # and is the point of the comm region being real.  S ROOF is
+        # the ELEVENTH word of the region (002162.00 - 002150.00 = 10
+        # words), so the TRANSMIT on printed p.15 line 21 delivers
+        # strap/prosa.py's filler there first and SR then overwrites
+        # only bits 0-23.  The low forty bits still carry the word's
+        # own buffer offset, so a region that arrived from the wrong
+        # place fails here with the offset in hand -- the same
+        # property every other fixture word has. <<<
+        ("mcp_size_in_comm_region", str(0o2162),
+         (98304 << 46)
+         | (prosa.body_word(prosa.COMM_AT + (0o2162 - 0o2150))
+            & ((1 << 40) - 1))),
 
         # >>> WHERE MCP STOPPED, AND IT STOPPED FOR A GOOD REASON <<<
         # X ERR AD, printed p.13 line 37, "-LOCATION OF ERROR +1.0".
@@ -329,18 +350,24 @@ def main():
         # compares what the assembler EMITS against what a deck USES
         # and says nothing about what the model EXECUTES.
         #
-        # AD is READ, not measured: printed p.15 line 20 takes the
+        # AD was READ, not measured: printed p.15 line 20 takes the
         # communication region's size out of the PROSA record with
         # "LC,$0,X BUFER+.32($9)" and line 21 transmits that many
-        # words.  The size comes from strap/prosa.py, which chooses
-        # the dictionary and leaves everything else as filler, so the
-        # count is arbitrary and the transmit runs until it leaves
-        # installed core -- the same shape as the AD this test used to
-        # report before the dictionary existed at all.  A fixture
-        # artifact; it goes away when the record is real.
+        # words.  The size came from strap/prosa.py, which chose the
+        # dictionary and left everything else as filler, so the count
+        # was arbitrary and the transmit ran until it left installed
+        # core.  This comment ended "A fixture artifact; it goes away
+        # when the record is real."
+        #
+        # >>> IT WENT AWAY ON 2026-10-22, and the prediction is the
+        # reason it is quoted rather than deleted.  The record now
+        # carries a comm-region descriptor whose bit-32 field is the
+        # region's size, LC loads FIFTEEN instead of zero, the
+        # transmit moves fifteen words, and ADDRESS INVALID IS NO
+        # LONGER RAISED ANYWHERE IN THE RUN.  AD is out of the
+        # expected set below. <<<
         ("mcp_indicators_word11", str(IND_WORD),
-         _ind("RGZ") | _ind("XE") | _ind("XVGZ")
-         | _ind("AD")),
+         _ind("RGZ") | _ind("XE") | _ind("XVGZ")),
 
         # >>> THE MOVE ITSELF, AND IT IS THE POINT OF THE FIXTURE <<<
         # Printed p.4 line 28, "T,$11,X BUFER($X1),X BS END  -MOVE MCP
@@ -418,7 +445,44 @@ def main():
         # comm region of its own.
         ("mcp_comm_region_moved_from_x9",
          str(prosa.MCP_IPL_AT + prosa.IPL_WORDS),
-         prosa.body_word(prosa.MCP_AT + prosa.IPL_WORDS)),
+         prosa.comm_descriptor(prosa.MCP_DEST_WORD,
+                               prosa.COMM_REGION_WORDS)),
+        # AND THE REST OF THE REGION CAME WITH IT.  The descriptor
+        # alone would arrive even if the count were wrong, because it
+        # is the first word; the LAST word of the fifteen is what says
+        # the count was read out of bits 32-49 and not left at zero.
+        # Every one of these carries its own buffer offset.
+        ("mcp_comm_region_last_word",
+         str(prosa.MCP_IPL_AT + prosa.IPL_WORDS
+             + prosa.COMM_REGION_WORDS - 1),
+         prosa.body_word(prosa.COMM_AT + prosa.COMM_REGION_WORDS - 1)),
+        # ONE PAST IT IS STILL ZERO, which is the count's upper edge.
+        # Before the descriptor existed this read a fixture word: the
+        # size field was zero, Reference Manual printed p.30 makes a
+        # direct count of zero mean 2**18, and the move ran until it
+        # left the record.
+        ("mcp_comm_region_one_past_is_zero",
+         str(prosa.MCP_IPL_AT + prosa.IPL_WORDS + prosa.COMM_REGION_WORDS),
+         0),
+        # >>> AND MCP IS PLACED.  printed p.15 line 24,
+        # "T,$10,X BUFER($9),0.0($8)  -PLACE MCP IN STORAGE": X10 is
+        # the dictionary's MCP SIZE and $8 is the address LVE pulled
+        # out of the descriptor's bits 0-23.  So this check is the
+        # whole descriptor read back through two different
+        # instructions -- LC for the size, LVE for the address. <<<
+        # The first word placed is the descriptor itself, because
+        # printed p.15 line 24 moves from X BUFER($9) -- the SAME
+        # source as line 21's comm-region move.  That is what the
+        # listing says and the fixture reproduces it rather than
+        # tidying it: the comm region's leading words ARE MCP's.
+        ("mcp_placed_at_dest_first", str(prosa.MCP_DEST_WORD),
+         prosa.comm_descriptor(prosa.MCP_DEST_WORD,
+                               prosa.COMM_REGION_WORDS)),
+        ("mcp_placed_at_dest_last",
+         str(prosa.MCP_DEST_WORD + prosa.MCP_SIZE_WORDS - 1),
+         prosa.body_word(prosa.COMM_AT + prosa.MCP_SIZE_WORDS - 1)),
+        ("mcp_placed_one_past_is_zero",
+         str(prosa.MCP_DEST_WORD + prosa.MCP_SIZE_WORDS), 0),
 
         # Printed p.2 line 39, "SV,15,X S ROOF -TEMPORARILY SAVE 7030
         # SIZE".  The value field holds 6291456 bits = word 98304,

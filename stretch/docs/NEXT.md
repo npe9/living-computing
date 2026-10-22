@@ -5358,6 +5358,87 @@ plain midpoint of 727, lands inside printed p.24's `DRZ(BU),100` — a
 hundred words of deliberate zeros. An expected value of zero over a
 region that was zero *before* the move proves nothing.
 
+## "X ICD" IS "X IOD", AND THE DATUM IS WHAT SAID SO, 2026-10-22
+
+printed p.35 line 10's name field reads **`X ICD`** at 900 dpi, and
+its comment reads `-ICD IN HOLLERITH`. The deck copied both. **The
+datum says IOD.**
+
+`0o400120104040` is the three card columns of `I`, `O`, `D` punched
+through `strap/cards.py` — i.e. through `C22-6678-1` printed p.56's
+Appendix F. Three things agree against the glyph:
+
+* **The datum itself**, decoded through a different manual.
+* **printed p.19 line 23**, `KF(BU,36),X IOD,12 -COMPARE AGAINST *
+  IOD *`, which SYNs 001750.40 — exactly where p.35 puts it.
+* **The same printed row**, which renders its own `DD(BU,36)` as
+  `CD(BU,36)`. §13 with an `O` in place of a zero, in the same six
+  glyphs.
+
+**The rename is not cosmetic.** `mcp_image.merge()` links a symbol
+one page *places* to every page that SYNs it. While this one was
+called `X ICD`, printed p.19's `X IOD` had no definition anywhere and
+was carried as an external; it is checked now, and the image's
+external count fell from 45 to 44.
+
+**And the check that caught it is in the suite**: all three
+card-type literals — `X MCPP`, `X IOCD`, `X IOD` — are now asserted
+to be the punched characters. A fourth manual would be needed to
+disagree.
+
+### §13 now has an O as well as a zero
+
+`listing_typography.md` §13 was "digit zero read as `C`" and §13b
+added "a `C` that is a real `C`". This is the third shape: **a
+letter `O` read as `C`**, in a NAME field, where no octal column and
+no opcode can rule it out. What ruled it out was the datum the name
+labels — which is a tell worth stating on its own: *when a name
+labels data, decode the data before trusting the name.*
+
+## THE COMM REGION IS BUILT, AND ADDRESS INVALID IS GONE FROM THE BOOT RUN, 2026-10-22
+
+The section below was written as "what the fixture needs next". It
+was built the same day, and the thing worth recording is that **the
+indicator check's own comment predicted it**:
+
+> AD is READ, not measured... the count is arbitrary and the
+> transmit runs until it leaves installed core... **A fixture
+> artifact; it goes away when the record is real.**
+
+It went away. `strap/prosa.py` now carries a comm-region descriptor,
+printed p.15 line 20's `LC` loads **fifteen** instead of zero, line
+21 moves fifteen words and stops, line 24 places MCP's twelve at the
+address `LVE` pulled out of the descriptor, and **Address Invalid is
+no longer raised anywhere in the run.**
+
+**The size is not a choice.** Every communication-region symbol the
+twenty-two transcribed pages name runs from `S MCP` at 002150.00 to
+`Y UNCOD` at 002166.00 — 0o17 = **fifteen words**, twenty-two symbols,
+mostly two to a word. Fourteen would cut `Y UNCOD` off; sixteen would
+be unreferenced.
+
+**And the bit-32 field is not a guess either.** printed p.34 line 29
+is `LC,$14,S COMSZ -GET SIZE OF MCP COMMUNIZIATION REGION`, and
+`S COMSZ` is **002150.40 — bit 32 of `S MCP`'s word**. After the move
+the descriptor *is* `S MCP`'s word, so the field printed p.15 reads
+out of the **buffer** and the field printed p.34 reads out of the
+**comm region** are the same field, read by the same instruction. The
+fixture did not invent the layout; it put the size where the program
+already looks.
+
+Four new checks pin it: the region's last word, one past it still
+zero, MCP's first and last placed words, and one past *those* still
+zero. Two existing expectations gained fixture bits, both derived —
+`X0`'s count is now the region's size, and `S ROOF`'s word keeps its
+buffer-offset tag in the forty bits `SR` does not write, so a region
+that arrived from the wrong place fails with the offset in hand.
+
+Still chosen: where MCP is placed (002200.00, the next round word
+above the region), the MCP SIZE of twelve the dictionary already
+carried, and the contents of the fourteen words after the descriptor.
+
+### [the derivation, as written before it was built]
+
 ## >>> WHAT THE FIXTURE NEEDS NEXT: A COMM REGION, and printed p.15 gives its shape <<<
 
 ```

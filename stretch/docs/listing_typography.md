@@ -656,3 +656,34 @@ Reading the rule the loose way would have corrupted two rows that the
 rule's own four instances made look routine. A transcription habit
 that has been right four times is exactly the one that stops being
 checked.
+
+### 13c. THE THIRD SHAPE: a letter `O` read as `C`, in a NAME field (printed p.35, 2026-10-22)
+
+§13 is a digit zero read as `C`; §13b is a `C` that is a real `C`.
+This is the third: **a letter `O` read as `C`**, and it landed where
+neither of the other two tells can reach — a **name field**, which
+has no octal column to contradict it and no operation code to decode.
+
+printed p.35 line 10 reads
+
+```
+X ICD     CD(BU,36),(8)400120104040     -ICD IN HOLLERITH
+```
+
+and it is `X IOD`, `DD(BU,36)`, `-IOD IN HOLLERITH`. **Two of the
+three `C`s in that row are wrong**, and the `DD`→`CD` is the tell
+that is free: a row that renders a known mnemonic wrong is a row
+whose round glyphs are not to be trusted anywhere.
+
+**What settled it was the datum the name labels.** `0o400120104040`
+is the three card columns of `I`, `O`, `D` punched through
+`C22-6678-1` Appendix F, and printed p.19 line 23 calls the same
+address `X IOD`. So:
+
+> **When a name labels data, decode the data before trusting the
+> name.** A name field is the one place in this listing with no
+> internal check at all — and the thing it names usually has one.
+
+The practical order from §13a now has a fourth entry: (1) look for a
+self-disagreeing field on the same row, (2) decode the operation
+field, (3) **decode what a name labels**, (4) re-render higher.

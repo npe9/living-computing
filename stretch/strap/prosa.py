@@ -147,6 +147,62 @@ MCP_SIZE_WORDS     = 12       # X10, "GET MCP SIZE"
 # LVS computes: the sum of the two "preceding" sizes.
 MCP_AT = WORDS_BEFORE_MCP_A + WORDS_BEFORE_MCP_B
 
+# ---------------------------------------------------------------------
+# THE COMMUNICATION REGION, and its SIZE is not a choice
+# ---------------------------------------------------------------------
+# printed p.15 lines 17-24 are the five rows that use it:
+#
+#   X10   LVS,$9,$12,$11,$14         -COMPUTE NUMBER OF WORDS PRECEEDING
+#         LVE,$8,X BUFER($9)         - GET (MCP)
+#   X101  LC,$0,X BUFER+.32($9)      -GET SIZE OF COMM REGION
+#         T,$0,X BUFER($9),S MCP     -MOVE COMM REGION
+#         T,$10,X BUFER($9),0.0($8)  -PLACE MCP IN STORAGE
+#
+# so the word at buffer offset $9 is a DESCRIPTOR: bits 0-23 are the
+# address MCP is placed at (LVE takes the address field of a half word
+# as a value) and the 18-bit field at BIT 32 is the comm region's
+# size, which LC loads into $0's count.
+#
+# >>> AND THE BIT-32 FIELD IS NOT A GUESS, because the region names
+# itself.  printed p.34 line 29 is "LC,$14,S COMSZ  -GET SIZE OF MCP
+# COMMUNIZIATION REGION" and S COMSZ is 002150.40 -- BIT 32 OF S MCP's
+# WORD.  After "T,$0,X BUFER($9),S MCP" the descriptor IS S MCP's
+# word, so the field printed p.15 reads out of the buffer and the
+# field printed p.34 reads out of the comm region are the same field,
+# read by the same instruction.  The fixture does not invent the
+# layout; it puts the size where the program already looks. <<<
+#
+# >>> THE SIZE IS FIFTEEN WORDS, DERIVED.  Every communication-region
+# symbol the twenty-two transcribed pages name, from
+# mcp_image.build_mcp_ipl()'s symbol table:
+#
+#   S MCP    002150.00   S COMSZ  002150.40   S COM RG 002151.00
+#   S X CHAN 002152.00   S BA MCP 002153.00   S R TAPE 002153.40
+#   S W TAPE 002154.00   S READ R 002154.40   S LR BU  002155.00
+#   S BA PP  002155.00   S MAX RN 002155.40   S YCO CH 002156.00
+#   S YPR CH 002156.40   S DK MCP 002157.00   S SYRFT  002157.40
+#   S PR IN  002160.00   S PR OUT 002160.40   S IF DMP 002161.00
+#   S REJ JB 002161.40   S ROOF   002162.00   S MARK   002162.40
+#   S IA     002163.00   Y UNCOD  002166.00
+#
+# 002150.00 through 002166.00 inclusive is 0o17 = FIFTEEN words, and
+# that is the smallest region containing every one of them --
+# twenty-two symbols in fifteen words, mostly two to a word.  It is a
+# LOWER BOUND read off the pages, not a number chosen to look round;
+# a sixteenth word would be unreferenced and a fourteenth would cut
+# Y UNCOD off. <<<
+COMM_REGION_WORDS = 15
+
+# Where the comm region sits in the record: immediately past the IPL
+# image, which is what printed p.15 line 17's three-register LVS
+# computes -- X12 + X11 + X14, the dictionary plus the IPL plus the
+# index.
+# CHOSEN: where MCP itself is placed, the address LVE pulls out of the
+# descriptor.  It has to clear the comm region, which ends at
+# 002166.00, and stay below X BUFER at 011406.00; 002200.00 is the
+# next round word above the region and is recognisable in a dump.
+MCP_DEST_WORD = 0o2200
+
 
 def mcp_ipl_image():
     """Printed pp.15-36, assembled: (first_word_address, [words]).
@@ -194,10 +250,15 @@ MCP_IPL_AT, MCP_IPL_WORDS = mcp_ipl_image()
 IPL_WORDS = len(MCP_IPL_WORDS)   # X11, "GET IPL" -- the TRANSMIT's
                                   # count.  DERIVED: the image's length.
 
-# A few words of filler past the image, so that a transmit which ran
+# printed p.15 line 17: "LVS,$9,$12,$11,$14" sums THREE counts -- the
+# dictionary, the IPL and the index -- so the comm region starts
+# exactly here.
+COMM_AT = WORDS_BEFORE_MCP_A + IPL_WORDS + WORDS_BEFORE_MCP_B
+
+# A few words of filler past everything, so that a transmit which ran
 # one word long would copy something recognisable rather than falling
 # off the end of the record.
-RECORD_WORDS = MCP_AT + IPL_WORDS + 4
+RECORD_WORDS = COMM_AT + COMM_REGION_WORDS + 4
 
 # A body word carries its own offset.  0x5A5A is a pattern no part of
 # the bootstrap or the control words uses, so a stray one is obvious
@@ -208,6 +269,18 @@ BODY_TAG = 0x5A5A000000000000
 def body_word(offset):
     """The fixture word that belongs at buffer offset `offset`."""
     return BODY_TAG | offset
+
+
+def comm_descriptor(mcp_dest_word, size_words):
+    """The word at buffer offset COMM_AT -- see the long note above.
+
+    bits  0-23  the address MCP is placed at, as a BIT address,
+                because LVE takes the address field of a half word
+                and printed p.15 line 24 then uses it as "0.0($8)"
+    bits 32-49  the comm region's size in words, which is S COMSZ
+    """
+    return ((((mcp_dest_word * 64) & 0xFFFFFF) << 40)
+            | ((size_words & 0x3FFFF) << 14))
 
 
 def index_word(value=0, sign=0, flag=0, spare=0, count=0, refill=0):
@@ -231,6 +304,12 @@ def record():
         words[offset] = index_word(count=n)
     # MCP's own image, at the offset the dictionary names.
     words[MCP_AT:MCP_AT + IPL_WORDS] = MCP_IPL_WORDS
+    # The communication region, at the offset printed p.15 line 17's
+    # three-register LVS computes.  Its FIRST word is the descriptor;
+    # the rest keep their buffer-offset filler, because nothing in the
+    # transcribed pages reads a value out of them -- they are read as
+    # a block by the TRANSMIT and written field by field afterwards.
+    words[COMM_AT] = comm_descriptor(MCP_DEST_WORD, COMM_REGION_WORDS)
     return words
 
 

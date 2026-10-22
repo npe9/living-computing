@@ -1322,6 +1322,49 @@ run "MCP'S OWN BOOTSTRAP RUNS (boot_plan.md M3)" ./run_mcp_boot.sh StretchMcpBoo
 #    move as well proves nothing, so the generator now takes the
 #    first NON-ZERO word at or after the midpoint.
 #
+# >>> BUILT, 2026-10-22, THE SAME DAY: THE COMM REGION IS IN THE
+# RECORD, AND ADDRESS INVALID IS GONE FROM THE RUN. <<<
+#
+# The paragraph below is kept as written because it ends in a
+# prediction that came true within the hour, and because the shape it
+# derives is the shape that was built.  What changed:
+#
+#   * strap/prosa.py carries a COMM-REGION DESCRIPTOR at buffer
+#     offset COMM_AT -- bits 0-23 the address MCP is placed at, bits
+#     32-49 the region's size -- followed by fourteen more words.
+#   * printed p.15 line 20's LC now loads FIFTEEN into $0's count
+#     instead of zero, so line 21 moves fifteen words to S MCP and
+#     stops, and line 24 places MCP's twelve words at the address LVE
+#     pulled out of the descriptor.
+#   * THE INDICATOR CHECK LOST AD.  The comment on
+#     mcp_indicators_word11 used to end "A fixture artifact; it goes
+#     away when the record is real."  It went away.  Address Invalid
+#     is no longer raised anywhere in this run.
+#   * Two expectations gained fixture bits and both are derived:
+#     X0's COUNT is now the region's size, and S ROOF's word keeps
+#     its buffer-offset tag in the forty bits SR does not write.
+#
+# THE SIZE IS NOT A CHOICE, which is the part worth keeping.  Every
+# communication-region symbol the twenty-two transcribed pages name
+# runs from S MCP at 002150.00 to Y UNCOD at 002166.00 -- 0o17 =
+# FIFTEEN words, twenty-two symbols, mostly two to a word.  Fourteen
+# would cut Y UNCOD off and sixteen would be unreferenced.
+#
+# AND THE BIT-32 FIELD IS NOT A GUESS EITHER.  printed p.34 line 29
+# is "LC,$14,S COMSZ  -GET SIZE OF MCP COMMUNIZIATION REGION" and
+# S COMSZ is 002150.40 -- BIT 32 OF S MCP's WORD.  After the move the
+# descriptor IS S MCP's word, so the field printed p.15 reads out of
+# the BUFFER and the field printed p.34 reads out of the COMM REGION
+# are the same field, read by the same instruction.  The fixture did
+# not invent the layout; it put the size where the program already
+# looks.
+#
+# WHAT IS STILL CHOSEN: where MCP is placed (002200.00, the next
+# round word above the region), the MCP SIZE of twelve the dictionary
+# already carried, and the contents of the fourteen words after the
+# descriptor.
+#
+# [THE DERIVATION, AS WRITTEN BEFORE IT WAS BUILT:]
 # >>> WHAT THE FIXTURE NEEDS NEXT, and printed p.15 says what shape
 # it has: A COMM REGION. <<<
 #
@@ -3924,6 +3967,31 @@ run "MCP INITIALIZATION, printed p.35, bit-exact (MCP_Mar63 PDF p.42)" python3 v
 # was opened: D MCP is printed p.27's X24A, D RET is printed p.34
 # line 45's operand, S JC4 is printed p.33 line 43's, S COMD is
 # printed p.33 lines 27 and 36's.
+#
+# >>> AND THE THREE CARD-TYPE LITERALS ARE THE PUNCHED CHARACTERS,
+# which caught a misreading of this page's NAME FIELD. <<<
+#
+#   line 8   X MCPP  0o2040410020042004 = the four columns of "MCPP"
+#   line 9   X IOCD  0o4001201041004040 = the four columns of "IOCD"
+#   line 10  X IOD   0o400120104040     = the three columns of "IOD"
+#
+# punched through strap/cards.py, i.e. through C22-6678-1 printed
+# p.56's Appendix F -- so a THIRD manual agrees with this page.
+#
+# LINE 10'S NAME READS "X ICD" AT 900 dpi and its comment reads "-ICD
+# IN HOLLERITH", and the deck originally copied that.  THE DATUM SAYS
+# IOD.  So does printed p.19 line 23 -- "KF(BU,36),X IOD,12  -COMPARE
+# AGAINST * IOD *" -- which SYNs 001750.40, exactly where this page
+# puts the datum.  And so does the same printed row: it renders its
+# own "DD(BU,36)" as "CD(BU,36)", which is
+# docs/listing_typography.md 13 with an O in place of a zero, in the
+# same six glyphs.
+#
+# THE RENAME IS NOT COSMETIC.  mcp_image.merge() links a symbol one
+# page PLACES to every page that SYNs it; while this one was called
+# X ICD, printed p.19's X IOD had no definition anywhere and was
+# carried as an external.  It is checked now, and the image's
+# external count fell from 45 to 44.
 
 run "MCP INITIALIZATION, printed p.36, bit-exact (MCP_Mar63 PDF p.43)" python3 verify_mcp_bootstrap_p36.py
 # >>> PRINTED p.36 IS TRANSCRIBED -- EVERY ROW ON THE PAGE, and with

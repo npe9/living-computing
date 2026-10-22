@@ -409,11 +409,16 @@ executed a single row.**
 >
 > Buffer offset `$9` = 3 + 727 + 5 = 735, just past the IPL image, is
 > a **descriptor**: bits 0-23 are the address MCP goes to and the
-> 18-bit field at bit 32 is the comm region's SIZE. The fixture's
-> filler word is there instead, its size field reads zero, and
-> Reference Manual printed p.30 makes a direct count of zero mean
-> 2^18 — so the comm-region move copies until it runs off the record.
-> **The move is not wrong; the descriptor is missing.**
+> 18-bit field at bit 32 is the comm region's SIZE.
+>
+> **BUILT THE SAME DAY.** The descriptor is in the record, the region
+> is fifteen words — the span of every comm-region symbol the
+> twenty-two pages name, `S MCP` 002150.00 to `Y UNCOD` 002166.00 —
+> and `S COMSZ` at 002150.40 *is* the bit-32 field, so the size sits
+> where printed p.34 line 29 already reads it. **Address Invalid is
+> gone from the boot run**: the indicator check's comment had said
+> the AD was "a fixture artifact; it goes away when the record is
+> real", and it did.
 
 **A2. `KF` AND `LCV` IN THE MODEL — DONE, 2026-10-19/20.** Printed
 p.17 line 30 is the compare that decides whether a card IS an IOCD
