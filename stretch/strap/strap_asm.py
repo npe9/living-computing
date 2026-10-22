@@ -455,7 +455,12 @@ def enc_branch_on_bit(bitaddr24, i1, addr19, mod2, cond1, idx1):
 _TERM_SYS = re.compile(r'[A-Za-z0-9]*')
 _TERM_SYM = re.compile(r'[A-Za-z][A-Za-z0-9]*')
 _TERM_NUM = re.compile(r'\d+')
-_TERM_RADIX = re.compile(r'\((\d+)\)(?=[\d.])')
+# Digits for a radix ABOVE TEN, which only a "(R)" prefix can
+# introduce.  Kept separate from _TERM_NUM so a bare identifier is
+# never read as hexadecimal: the letters are only reachable after the
+# prefix has already been matched.
+_TERM_NUM16 = re.compile(r'[0-9A-F]+')
+_TERM_RADIX = re.compile(r'\((\d+)\)(?=[\dA-F.])')
 
 def tokenize_expr(s, lineno=None):
     s = s.strip()
@@ -497,19 +502,33 @@ def tokenize_expr(s, lineno=None):
             if not m:
                 raise AssemblerError(f"cannot parse expression {s!r} at {s[i:]!r}", lineno)
             radix = int(m.group(1))
-            if radix < 2 or radix > 10:
+            # >>> SIXTEEN IS LEGAL HERE, and MCP printed p.22 is the
+            # witness.  Lines 20, 23 and 26 are "KFI(BU,8),(16)24" and
+            # "KFI(BU,8),(16)60" -- a radix-16 literal in an IMMEDIATE
+            # operand, not inside a DD -- and they assemble to
+            # 110000.00 80 410000.23 10 and 300000.00 80 410000.23 10,
+            # whose address fields are 0x24 and 0x60 left-justified in
+            # the 24-bit field.  The cap here was ten, so the page
+            # would not assemble at all.
+            #
+            # The DD path (parse_dd_value) has always accepted any
+            # radix, so this also removes an inconsistency inside the
+            # assembler: the same literal was legal as data and
+            # illegal as an operand.
+            if radix < 2 or radix > 16:
                 raise AssemblerError(f"unsupported radix ({radix}) in {s!r}", lineno)
             i = m.end(); c = s[i]
+        numre = _TERM_NUM16 if radix > 10 else _TERM_NUM
         if c == '.' and radix != 10:
-            m = _TERM_NUM.match(s, i + 1)
+            m = numre.match(s, i + 1)
             b = int(m.group(0), radix) if m else 0
             tokens.append((sign, 'bitaddr', (0, b)))
             i = m.end() if m else i + 1; sign = 1; continue
-        if c.isdigit():
-            m = _TERM_NUM.match(s, i)
+        if c.isdigit() or (radix > 10 and c in 'ABCDEF'):
+            m = numre.match(s, i)
             j = m.end()
             if j < n and s[j] == '.':
-                m2 = _TERM_NUM.match(s, j + 1)
+                m2 = numre.match(s, j + 1)
                 b = int(m2.group(0), radix) if m2 else 0
                 tokens.append((sign, 'bitaddr', (int(m.group(0), radix), b)))
                 i = m2.end() if m2 else j + 1

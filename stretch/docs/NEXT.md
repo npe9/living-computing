@@ -36,8 +36,8 @@ things:
 3. **The back-matter sweep's worklist** (section below) — six ranked
    items, two already consumed. `C22-6728` printed 247-260, the rest
    of Appendix A, is the largest.
-4. ~~Printed p.20, p.21~~ **— both done, 2026-10-21, bit-exact on
-   the first run (17 and 28 rows). Printed p.22 onward** is the
+4. ~~Printed p.20, p.21, p.22~~ **— all three done, 2026-10-21,
+   bit-exact (17, 28 and 50 rows). Printed p.23 onward** is the
    continuation.
 
 **One caveat carried forward, deliberately not in this file's
@@ -5301,6 +5301,44 @@ thing in the path: the word the look-ahead hands the E-box.
 
 Build the pair that differs only in history before building the pair
 that differs in operands.
+
+## PRINTED p.22 IS TRANSCRIBED -- and it found an assembler gap, 2026-10-21
+
+Fifty rows, all bit-exact. **"OPERATOR STATUS REPORT FOR IO"**: it
+*reads* the IPL options the operator typed and validates them — six
+characters of IPL time, each tested for being a valid digit and then
+in **pairs** against `(16)24` and `(16)60`, hours under twenty-four
+and minutes and seconds under sixty, then the same digit validation
+over the IPL date.
+
+**THREE PAGES SHARE ONE BUFFER.** Line 5 reads into `X LR IN`, which
+p.21 line 26 **reserved** with `DR(BU),(3)`, using `X D CW 2`, which
+p.21 line 31 **built**. And p.21 line 24's `B,XIC` is what branches
+here: `X IC` at `001052.00` was recovered from that branch's own
+encoding before this page was opened.
+
+**>>> THE PAGE FOUND AN ASSEMBLER GAP. <<<** Lines 20, 23 and 26 are
+`KFI(BU,8),(16)24` and `KFI(BU,8),(16)60` — a **radix-sixteen literal
+in an immediate operand**. `tokenize_expr` capped the `(R)` radix at
+**ten**, so the page would not assemble at all, while
+`parse_dd_value` had always accepted any radix: the same literal was
+legal as *data* and illegal as an *operand*. The cap is now sixteen,
+and the digits A-F are matched only after a prefix has introduced
+them, so a bare identifier can never be read as hexadecimal.
+
+**What makes the fix evidence rather than a guess**: the two rows
+print `110000.00 80 410000.23 10` and `300000.00 80 410000.23 10`,
+whose address fields are `0x24` and `0x60` left-justified in the
+24-bit field. Had the prefix meant anything else those words would
+not match — and 271 other decks assemble unchanged, which is the
+other half of the check.
+
+**AND THE C/D CONFUSION BIT AGAIN**, harmlessly this time because the
+two columns were read at different resolutions. Every `ST(BU,4)(V+I)`
+row ends `D0`; at 150 dpi six of them looked like `C0`. The statement
+column was read at 600 dpi and the code column at 900, so a misread
+in one could not cancel a misread in the other — which is the reason
+for reading them separately rather than from one render.
 
 ## PRINTED p.21 IS TRANSCRIBED -- the console date message, 2026-10-21
 

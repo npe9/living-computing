@@ -1,0 +1,120 @@
+! mcp_bootstrap_p22.strap -- MCP INITIALIZATION, printed page 22:
+! "OPERATOR STATUS REPORT FOR IO" -- reading the IPL options the
+! operator typed, and validating them.  docs/MCP_Mar63_001-249.pdf
+! PDF p.29, header "PAGE NUMBER 22".  docs/boot_plan.md M3.
+!
+! Contiguous with printed p.21 by BRANCH rather than by address:
+! p.21 line 24 is "B,XIC" and X IC is this page's first instruction
+! at 001052.00.  The address was recovered from that branch's own
+! encoding before this page was opened, and it is exact.
+!
+! ---------------------------------------------------------------
+! WHAT THE PAGE DOES
+! ---------------------------------------------------------------
+!   lines  5-7   READ the operator's reply into X LR IN -- the
+!                buffer printed p.21 line 26 reserved -- using
+!                X D CW 2, the control word p.21 line 31 built.
+!                Three pages, one buffer.
+!   lines  9-27  the IPL TIME CONSTANT: six characters, each tested
+!                for being a valid digit, then three pairs tested
+!                for valid COMBINATIONS against (16)24 and (16)60 --
+!                hours under 24, minutes and seconds under 60.
+!   lines 28-33  replace any character that is still zero with a
+!                BCD zero.
+!   lines 34-49  unpack the six characters into the time slots.
+!   lines 51-56  the IPL DATE CONSTANT, the same digit validation
+!                over the second half of the buffer.
+!
+! ---------------------------------------------------------------
+! EXTERNALS, every one recovered from this page's own binary output
+! ---------------------------------------------------------------
+!   X7 3     000066.40  (line 6)   -- same as printed p.21 line 22
+!   X7 1     000057.40  (line 7)   -- same as printed p.21 line 23
+!   X LR IN  001034.00  (lines 10, 18, 28, 34)  -- printed p.21's
+!            own buffer, and p.7/p.8 reference it too
+!   X D CW2  001044.00  (line 5)   -- printed p.21 line 31
+!   X VNOTM  001211.40  (line 13)
+!   X VTDER  001225.40  (lines 16, 21, 24, 27, 55)
+!   X VZER   001204.40  (line 32)
+!   X VTIME  001242.02  (line 35) -- an IMMEDIATE operand, not an
+!            address: "LI(BU,24),XVTIME,40" loads the 24-bit value.
+!
+! THE BRANCH-ADDRESS FIELD IS NINETEEN BITS, as printed p.21 line 23
+! showed: line 13's "001211.76 C2" has bit 18 SET, so the target is
+! the RIGHT half-word of 001211 -- location 001211.40, not a bit
+! offset of 0o76.
+X73     SYN, (8)66.40
+X71     SYN, (8)57.40
+XLRIN   SYN, (8)1034.0
+XDCW2   SYN, (8)1044.0
+XVNOTM  SYN, (8)1211.40
+XVTDER  SYN, (8)1225.40
+XVZER   SYN, (8)1204.40
+XVTIME  SYN, (8)1242.02
+
+        SLC, (8)1052.0
+
+! ---- read the operator's reply -----------------------------------
+XIC     RD(SEOP), 0.0($15), XDCW2    ! line 5  -GET IPL OPTIONS
+        SIC, X73                     ! line 6
+        B, X71                       ! line 7  -IO TEST
+
+! ---- IPL TIME CONSTANT -------------------------------------------
+        LCI, $3, 6.0                 ! line 9
+        LVI, $1, XLRIN               ! line 10
+        L(BU,64), XLRIN              ! line 11
+        KFI(BU,24), 0, 40            ! line 12 -NO TIME ENTERED
+        BAE, XVNOTM                  ! line 13
+XVLOOP  L(BU,4)(V+I), .4($1)         ! line 14 -TEST FOR VALID
+                                     !           CHARACTER.
+        KFI(BU,4), 9                 ! line 15
+        BAH, XVTDER                  ! line 16
+        CB, 3, XVLOOP                ! line 17
+        LVI, $1, XLRIN               ! line 18
+        L(BU,8)(V+I), .8($1)         ! line 19 -TEST FOR VALID
+                                     !           COMBINATIONS.
+        KFI(BU,8), (16)24            ! line 20
+        BZAL, XVTDER                 ! line 21
+        L(BU,8)(V+I), .8($1)         ! line 22
+        KFI(BU,8), (16)60            ! line 23
+        BZAL, XVTDER                 ! line 24
+        L(BU,8)(V+I), .8($1)         ! line 25
+        KFI(BU,8), (16)60            ! line 26
+        BZAL, XVTDER                 ! line 27
+
+! ---- replace a still-zero character with a BCD zero --------------
+XVBACK  LVI, $1, XLRIN               ! line 28
+        LCI, $3, 6.0                 ! line 29
+XVLOP2  L(BU,4)(V+I), .4($1)         ! line 30
+        KFI(BU,4), 0                 ! line 31
+        BAE, XVZER                   ! line 32 -REPLACE WITH BCD ZERO
+XVCONS  CB, $3, XVLOP2               ! line 33
+
+! ---- unpack the six characters into the time slots ---------------
+        LVI, $1, XLRIN               ! line 34
+        LI(BU,24), XVTIME, 40        ! line 35
+        LV, $2, $R                   ! line 36
+        L(BU,1)(V+I), .2($2)         ! line 37
+        L(BU,4)(V+I), .4($1)         ! line 38
+        ST(BU,4)(V+I), .6($2)        ! line 39 - STORE IN TIME SLOT
+        L(BU,4)(V+I), .4($1)         ! line 40
+        ST(BU,4)(V+I), .12($2)       ! line 41
+        L(BU,4)(V+I), .4($1)         ! line 42
+        ST(BU,4)(V+I), .6($2)        ! line 43
+        L(BU,4)(V+I), .4($1)         ! line 44
+        ST(BU,4)(V+I), .12($2)       ! line 45
+        L(BU,4)(V+I), .4($1)         ! line 46
+        ST(BU,4)(V+I), .6($2)        ! line 47
+        L(BU,4)(V+I), .4($1)         ! line 48
+        ST(BU,4)(V+I), .6($2)        ! line 49
+
+! ---- IPL DATE CONSTANT -------------------------------------------
+        LCI, $3, 6.0                 ! line 51
+        LVI, $1, XLRIN+.32           ! line 52
+XVLOPS  L(BU,4)(V+I), .4($1)         ! line 53 - TESTS FOR VALID
+                                     !           CHARACTERS
+        KFI(BU,4), 9                 ! line 54
+        BAH, XVTDER                  ! line 55
+        CB, $3, XVLOPS               ! line 56
+
+        END, XIC

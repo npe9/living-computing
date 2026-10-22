@@ -3068,6 +3068,36 @@ run "MCP INITIALIZATION, printed p.21, bit-exact (MCP_Mar63 PDF p.28)" python3 v
 # 101000 means word 000057, RIGHT half -- location 000057.40.  Read
 # as a plain bit offset 0o50 is 40 decimal, which is not a half-word
 # boundary and would have looked like a misprint.
+
+run "MCP INITIALIZATION, printed p.22, bit-exact (MCP_Mar63 PDF p.29)" python3 verify_mcp_bootstrap_p22.py
+# >>> PRINTED p.22 IS TRANSCRIBED, fifty rows, all bit-exact.
+# "OPERATOR STATUS REPORT FOR IO": it READS the IPL options the
+# operator typed and validates them -- six characters of IPL TIME,
+# each tested for being a valid digit and then in PAIRS against
+# (16)24 and (16)60, hours under twenty-four and minutes and seconds
+# under sixty, then the same digit validation over the IPL DATE. <<<
+#
+# THREE PAGES SHARE ONE BUFFER.  Line 5 reads into X LR IN, which
+# printed p.21 line 26 RESERVED with "DR(BU),(3)", using X D CW 2,
+# which p.21 line 31 BUILT.  And p.21 line 24's "B,XIC" is what
+# branches here: X IC at 001052.00 was recovered from that branch's
+# own encoding before this page was opened.
+#
+# >>> THE PAGE FOUND AN ASSEMBLER GAP.  Lines 20, 23 and 26 are
+# "KFI(BU,8),(16)24" and "KFI(BU,8),(16)60" -- a RADIX-SIXTEEN
+# literal in an IMMEDIATE operand.  tokenize_expr capped the "(R)"
+# radix at TEN, so the page would not assemble at all, while
+# parse_dd_value had always accepted any radix: the same literal was
+# legal as DATA and illegal as an OPERAND.  The cap is now sixteen,
+# and the digits A-F are matched only after a prefix has introduced
+# them, so a bare identifier can never be read as hexadecimal. <<<
+#
+# WHAT MAKES THE FIX EVIDENCE RATHER THAN A GUESS: the two rows print
+# 110000.00 80 410000.23 10 and 300000.00 80 410000.23 10, whose
+# address fields are 0x24 and 0x60 left-justified in the 24-bit
+# field.  Had the prefix meant anything else those words would not
+# match.  Fifty rows on this page and 271 decks elsewhere assemble
+# unchanged, which is the other half of the check.
 run "MCP's error table, printed pp.7-8 (MCP_Mar63 PDF pp.14-15)" python3 verify_mcp_bootstrap_p7_p8.py
 # X ERR DD -- THE LAST TWO PAGES OF THE BOOTSTRAP TO BE TRANSCRIBED,
 # and the index to all the rest: seventy-eight VF half words, one pair
