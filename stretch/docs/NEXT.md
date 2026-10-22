@@ -36,8 +36,8 @@ things:
 3. **The back-matter sweep's worklist** (section below) — six ranked
    items, two already consumed. `C22-6728` printed 247-260, the rest
    of Appendix A, is the largest.
-4. ~~Printed p.20, p.21, p.22~~ **— all three done, 2026-10-21,
-   bit-exact (17, 28 and 50 rows). Printed p.23 onward** is the
+4. ~~Printed pp.20-23~~ **— all four done, 2026-10-21, bit-exact
+   (17, 28, 50 and 54 rows). Printed p.24 onward** is the
    continuation.
 
 **One caveat carried forward, deliberately not in this file's
@@ -5301,6 +5301,39 @@ thing in the path: the word the look-ahead hands the E-box.
 
 Build the pair that differs only in history before building the pair
 that differs in operands.
+
+## PRINTED p.23 IS TRANSCRIBED -- and the 19-bit branch field cost something, 2026-10-21
+
+Fifty-four rows, all bit-exact. The IPL **date** constant's
+validation — the same shape p.22 used for the time — and then the
+**I/O status report loop**.
+
+**THE MONTH AND DAY LIMITS ARE PRINTED IN HEXADECIMAL**, `(16)13` and
+`(16)32`, and that is not an arbitrary radix. The characters being
+compared are a **pair of BCD digits packed one per nibble**, so
+`0x13` *is* the digit pair 1,3 and `0x32` *is* 3,2. The comparison is
+on the digits, and hexadecimal is the only radix in which the
+constant looks like the number it bounds. p.22 does the same with
+`(16)24` and `(16)60`.
+
+**FOUR PAGES NOW SHARE `X LR IN`**: p.21 reserved it with
+`DR(BU),(3)`, p.22 read the operator's reply into it, and this page
+reads the date half and then the channel number out of it at `+1.24`.
+
+**>>> THREE FORWARD REFERENCES WERE GUESSED `.40` AND ARE `.00`, and
+the verifier caught all three on the first run. <<<** The
+branch-address field is **nineteen bits** and bit 18 — the top bit of
+the printed `.bb` group — is the half-word selector: `001207.36` has
+it **clear** and means the *left* half of `001207`, while `001225.76`
+has it **set** and means the right half of `001225`. p.21 documented
+the field; this is the page where not actually using it cost
+something. **Defaulting an unknown forward reference to `.40` is a
+coin flip — read the bit.**
+
+**AND A PREDICTION FOR A PAGE NOT YET READ**: p.22 line 35's
+immediate is `X VTIME` = `001242.02` and line 15 here is `X VDATE` =
+`001242.70`, so the two constants sit `0o70` bits apart in one word
+region. Whatever page defines them has to put them there.
 
 ## PRINTED p.22 IS TRANSCRIBED -- and it found an assembler gap, 2026-10-21
 

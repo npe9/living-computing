@@ -1,0 +1,147 @@
+! mcp_bootstrap_p23.strap -- MCP INITIALIZATION, printed page 23:
+! the IPL DATE constant's validation, and the I/O status report loop.
+! docs/MCP_Mar63_001-249.pdf PDF p.30, header "PAGE NUMBER 23".
+! docs/boot_plan.md M3.
+!
+! Contiguous with printed p.22: that page's last instruction is a
+! half word at 001121.00 and this one starts at 001121.40.
+!
+! ---------------------------------------------------------------
+! WHAT THE PAGE DOES
+! ---------------------------------------------------------------
+!   lines  1-7   the DATE's valid COMBINATIONS, the same shape p.22
+!                used for the time: (16)13 for the month -- under
+!                thirteen -- and (16)32 for the day.
+!   lines  8-13  replace any character still zero with a BCD zero.
+!   lines 14-29  unpack the six characters into the date slots.
+!   lines 30-47  the I/O STATUS REPORT: ask for the next report,
+!                copy the control word, test the status bits, and
+!                release.
+!   lines 48-56  convert the channel number out of the reply, index
+!                into the channel status table with it, and work out
+!                the unit status table entry's address.
+!
+! >>> THE MONTH AND DAY LIMITS ARE PRINTED IN HEXADECIMAL, (16)13
+! and (16)32, which is how the page reads as "under thirteen" and
+! "under thirty-two" when the characters being compared are a PAIR
+! of BCD digits packed one per nibble.  0x13 is the digit pair 1,3
+! and 0x32 is 3,2 -- so the comparison is on the digits, not on a
+! binary value, and hexadecimal is the only radix in which the
+! constant looks like the number it bounds. <<<
+!
+! ---------------------------------------------------------------
+! EXTERNALS, every one recovered from this page's own binary output
+! ---------------------------------------------------------------
+!   X LR IN   001034.00  -- printed p.21's buffer, third page to use it
+!   X VTDER   001225.40  -- same as printed p.22
+!   X VZER 1  001207.00  (line 12)
+!   X VDATE   001242.70  (line 15) -- an IMMEDIATE, not an address,
+!             and it sits 0o70 bits past X VTIME on printed p.22
+!   X 20B     001417.00  (lines 30, 48)
+!   X IO CW   001410.40  (line 32)
+!   X IPL BS  000041.00  (lines 36, 39)
+!   X ERR AD  000551.00  (line 37)
+!   X ERROR   000133.00  (line 38)
+!   S X CHAN  002152.00  (line 51) -- printed p.20 line 9 put the
+!             channel status table's base there
+!   X IO 4    001176.00  (line 52)
+!   X IO 5    001177.40  (line 53)
+!   X D CW2   001044.00  (line 44) -- printed p.21 line 31
+!   X7 3      000066.40 / X7 1  000057.40
+!
+! >>> THREE OF THOSE WERE GUESSED .40 AND ARE .00, and the verifier
+! caught all three.  The branch-address field is NINETEEN bits and
+! bit 18 -- the top bit of the printed ".bb" group -- is the
+! HALF-WORD selector, so 001207.36 has bit 18 CLEAR and means the
+! LEFT half of 001207, while 001225.76 has it SET and means the
+! right half of 001225.  Defaulting an unknown forward reference to
+! ".40" is a coin flip; read the bit. <<<
+X73     SYN, (8)66.40
+X71     SYN, (8)57.40
+XLRIN   SYN, (8)1034.0
+XVTDER  SYN, (8)1225.40
+XVZER1  SYN, (8)1207.0
+XVDATE  SYN, (8)1242.70
+X20B    SYN, (8)1417.0
+XIOCW   SYN, (8)1410.40
+XIPLBS  SYN, (8)41.0
+XERRAD  SYN, (8)551.0
+XERROR  SYN, (8)133.0
+SXCHAN  SYN, (8)2152.0
+XIO4    SYN, (8)1176.0
+XIO5    SYN, (8)1177.40
+XDCW2   SYN, (8)1044.0
+
+        SLC, (8)1121.40
+
+! ---- the date's valid combinations -------------------------------
+        LVI, $1, XLRIN+.32           ! line 1
+        L(BU,8)(V+I), .8($1)         ! line 2  - TESTS FOR VALID
+                                     !            COMBINATIONS
+        KFI(BU,8), (16)13            ! line 3
+        BZAL, XVTDER                 ! line 4
+        L(BU,8)(V+I), .8($1)         ! line 5
+        KFI(BU,8), (16)32            ! line 6
+        BZAL, XVTDER                 ! line 7
+
+! ---- replace a still-zero character with a BCD zero --------------
+        LVI, $1, XLRIN+.32           ! line 8
+        LCI, $3, 6.0                 ! line 9
+XVLP    L(BU,4)(V+I), .4($1)         ! line 10
+        KFI(BU,4), 0                 ! line 11
+        BAE, XVZER1                  ! line 12 - REPLACE WITH BCD ZERO
+XVCONT  CB, $3, XVLP                 ! line 13
+
+! ---- unpack the six characters into the date slots ---------------
+        LVI, $1, XLRIN+.32           ! line 14
+        LI(BU,24), XVDATE, 40        ! line 15
+        LV, $2, $R                   ! line 16
+        L(BU,1)(V+I), .2($2)         ! line 17
+        L(BU,4)(V+I), .4($1)         ! line 18
+        ST(BU,4)(V+I), .6($2)        ! line 19 -STORE IN DATE SLOT
+        L(BU,4)(V+I), .4($1)         ! line 20
+        ST(BU,4)(V+I), .12($2)       ! line 21
+        L(BU,4)(V+I), .4($1)         ! line 22
+        ST(BU,4)(V+I), .6($2)        ! line 23
+        L(BU,4)(V+I), .4($1)         ! line 24
+        ST(BU,4)(V+I), .12($2)       ! line 25
+        L(BU,4)(V+I), .4($1)         ! line 26
+        ST(BU,4)(V+I), .6($2)        ! line 27
+        L(BU,4)(V+I), .4($1)         ! line 28
+        ST(BU,4)(V+I), .6($2)        ! line 29
+
+! ---- the I/O status report ---------------------------------------
+XVIORP  BZB, XLRIN+.29, X20B         ! line 30 - IF I/O STATUS REPORT
+                                     !            DESIRED
+        B, XIO2A                     ! line 31 - YES TO CHANGE TABLES
+XIC1    W(SEOP), 0.0($15), XIOCW     ! line 32 -YES*REQUEST NEXT IO
+                                     ! line 33  STATUS REPORT
+        SIC, X73                     ! line 34
+        B, X71                       ! line 35 -TO IO TEST
+XICA    CCW, 0.0($15), XIPLBS        ! line 36 -GET STATUS BITS
+XIOAA   SIC, XERRAD                  ! line 37
+        BEKJZ, XERROR                ! line 38 -IF EKJ
+        BZB, XIPLBS+.23, XICA        ! line 39
+        REL(SEOP), 0.0($15)          ! line 40 - CLEAR CS STATUS BIT
+        SIC, X73                     ! line 41
+        B, X71                       ! line 42 - IO TEST
+XICB    B, XIO2                      ! line 43
+XIO2    RD(SEOP), 0.0($15), XDCW2    ! line 44 -GET CHANNEL AND UNIT
+                                     ! line 45  NOT AVAILABLE
+        SIC, X73                     ! line 46
+        B, X71                       ! line 47 -TO IO TEST
+
+! ---- find the unit status table entry ----------------------------
+        BZB, XLRIN+.29, X20B         ! line 48 - IF DONE OUT
+XIO2A   LCV(DU,8), XLRIN+1.24, 46    ! line 49 -CONVERT CHANNEL NUMBER
+        LV, $14, $R                  ! line 50 -GET CHANNEL NUMBER
+        V+, $14, SXCHAN              ! line 51 -GET CST SLOT
+        BZB, .27($14), XIO4          ! line 52 -IF MULTI UNIT CHANNEL
+        BB, XLRIN+1.60, XIO5         ! line 53 -YES* IF ENTIRE CHANNEL
+                                     !           DOWN
+        LV, $14, 0.0($14)            ! line 54 -GET UST BASE
+        L(BU,3), XLRIN+1.61          ! line 55 -ENTER UNIT NUMBER
+        M+MG(BU,18), $14             ! line 56 -COMPUTE UST ENTRY
+                                     !           ADDRESS
+
+        END, XVLP

@@ -3098,6 +3098,38 @@ run "MCP INITIALIZATION, printed p.22, bit-exact (MCP_Mar63 PDF p.29)" python3 v
 # field.  Had the prefix meant anything else those words would not
 # match.  Fifty rows on this page and 271 decks elsewhere assemble
 # unchanged, which is the other half of the check.
+
+run "MCP INITIALIZATION, printed p.23, bit-exact (MCP_Mar63 PDF p.30)" python3 verify_mcp_bootstrap_p23.py
+# >>> PRINTED p.23 IS TRANSCRIBED, fifty-four rows, all bit-exact.
+# The IPL DATE constant's validation -- the same shape p.22 used for
+# the time -- and then the I/O STATUS REPORT loop. <<<
+#
+# THE MONTH AND DAY LIMITS ARE PRINTED IN HEXADECIMAL, (16)13 and
+# (16)32, and that is not an arbitrary radix.  The characters being
+# compared are a PAIR of BCD digits packed one per nibble, so 0x13 IS
+# the digit pair 1,3 and 0x32 IS 3,2: the comparison is on the
+# DIGITS, and hexadecimal is the only radix in which the constant
+# looks like the number it bounds.  p.22 does the same with (16)24
+# and (16)60 for hours, minutes and seconds.
+#
+# FOUR PAGES NOW SHARE X LR IN: p.21 reserved it with "DR(BU),(3)",
+# p.22 read the operator's reply into it, and this page reads the
+# date half and then the channel number out of it at +1.24.
+#
+# >>> THREE FORWARD REFERENCES WERE GUESSED ".40" AND ARE ".00", and
+# the verifier caught all three on the first run.  The
+# branch-address field is NINETEEN bits and bit 18 -- the top bit of
+# the printed ".bb" group -- is the HALF-WORD selector: 001207.36 has
+# it CLEAR and means the LEFT half of 001207, while 001225.76 has it
+# SET and means the right half of 001225.  Defaulting an unknown
+# forward reference to ".40" is a coin flip; read the bit.  p.21
+# documented the field and this page is where not using it cost
+# something. <<<
+#
+# AND A PREDICTION FOR A PAGE NOT YET READ: p.22 line 35's immediate
+# is X VTIME = 001242.02 and line 15 here is X VDATE = 001242.70, so
+# the two constants sit 0o70 bits apart in one word region.  Whatever
+# page defines them has to put them there.
 run "MCP's error table, printed pp.7-8 (MCP_Mar63 PDF pp.14-15)" python3 verify_mcp_bootstrap_p7_p8.py
 # X ERR DD -- THE LAST TWO PAGES OF THE BOOTSTRAP TO BE TRANSCRIBED,
 # and the index to all the rest: seventy-eight VF half words, one pair
