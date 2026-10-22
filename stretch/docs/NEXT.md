@@ -5302,6 +5302,103 @@ thing in the path: the word the look-ahead hands the E-box.
 Build the pair that differs only in history before building the pair
 that differs in operands.
 
+## THE EQUIPMENT TABLE IS PRINTED, ON p.35, AND THE TESTBENCH NO LONGER INVENTS IT -- pp.34 and 35, 2026-10-22
+
+Seventy-three rows and twenty symbol locations, bit-exact, in
+`tests/verify_mcp_bootstrap_p34.py` and `_p35.py`. The bootstrap is
+now continuous and bit-exact from printed **p.26 through p.35**.
+
+### X EQP T
+
+`tests/gen_mcp_p17_tb.py` has synthesised the equipment table since
+the testbench was written — an invented order with one known code,
+and the largest invented object in that file. It is printed p.35,
+`X EQP T` at 001752.00, nine entries of `DD(BU,24) + DD(BU,4) +
+DD(BU,1)`:
+
+```
+entry  column  letter       code  multi   the page's own comment
+    0  000000  (none)          0      0   -NO EQUIPMENT
+    1  002200  K  (11-2)       1      0   -DISK * DK
+    2  002020  N  (11-5)       2      0   -CONSOLE *CN
+    3  004040  D  (12-4)       3      0   -READER * RD
+    4  001040  U  (0-4)        4      0   -PUNCH *PU
+    5  002001  R  (11-9)       5      0   -PRINTER * PR
+    6  000000  (none)          0      0   -UNUSED
+    7  000000  (none)          0      0   -UNUSED
+    8  002004  P  (11-7)      10      1   -TAPE MULTI * TP
+```
+
+**The 24-bit field is a card column, and two independently
+transcribed documents agree about all six.** The verifier compares
+each entry against `strap/cards.py`'s `column_bits`, which came from
+`C22-6678-1` printed p.56's Appendix F — a different manual,
+transcribed for a different reason. K is 11-2, N is 11-5, D is 12-4,
+U is 0-4, R is 11-9, P is 11-7, in both.
+
+**The second letter alone identifies the unit.** This repository had
+already noticed that `C22-6728` p.88's CN/DK/PR/PU/TP/RD have second
+letters N, K, R, U, P, D, all distinct. *This table is why that
+matters*: MCP never looks at the first letter.
+
+**Two codes were already known from the programs that use them, and
+both agree** — console = 2 (printed p.20 line 14), printer = 5
+(printed p.25 line 17). Two derivations twenty pages apart, checked
+against the table they came from.
+
+### Two claims in the testbench were corrected, and one was vindicated
+
+* **Vindicated.** The order had been argued from printed p.19 line
+  4's `KCI,$1,6.0` / `BZXH`: the count is 10 − k after matching the
+  k-th entry, the single-unit arm is taken when k >= 4, therefore
+  "entries 1-3 are the DISK OR CONSOL ones". The printed first three
+  are **NO EQUIPMENT, DK, CN**, and the fourth is RD, the first
+  single-unit device. The derivation was right; it could not see the
+  zero entry at the head.
+* **Corrected.** The 29th bit was called "IS TAPE", argued from
+  `C22-6728` p.90's Figure 44 and p.18 line 2's comment. The
+  **polarity was right**; the name was not. p.35 comments every zero
+  entry `-SINGLE UNIT CHANNEL` and the single set entry `-MULTI UNIT
+  CHANNEL`. The field is the channel's unit multiplicity; tape is
+  the only multi-unit equipment, which is why no behaviour could
+  distinguish the two readings.
+
+All four p.17 testbench modes (none / `units` / `units8` / `disk`)
+pass with the printed table.
+
+### The oracle learned that a printed width is not a printed digit count
+
+`listing_oracle.render` guessed a DD's width from how many octal
+digits the listing printed (3 → 8 bits, 6 → 18, 11 → 32, 22 → 64).
+**Three octal digits is 7, 8 or 9 bits**, and p.35 puts `DD(BU,24)`,
+`DD(BU,4)` and `DD(BU,1)` adjacent, so a guess would have silently
+read the next datum's bits. `render` now takes an explicit `width`
+and `check_rows` accepts a fourth element per row; every row on p.35
+passes one. The old guesses stay for the callers that predate this.
+
+### printed p.34
+
+Every row, forty-one of them. **The first input-output instructions
+in the initialization** — everything since p.17 had been
+table-walking:
+
+```
+W(SEOP),0.0($15),X MSG W      000000.00 8F 001724.13 00
+LOC(SEOP),0.0($15),0.0        000000.00 8F 000000.17 00
+```
+
+and a **third `(.25)1`**, on line 19, one commit after the mode was
+built. The page also writes register fields both ways — `LC,$1,…`
+and `SV,1,…`, `LV,$15,…` and `LX,14,…` — which settles that the `$`
+is the programmer's hand, the same answer printed p.32's `TI,$10`
+gave.
+
+**The next page is printed p.36**, whose first printed row is a
+`CNOP` at **001756.40** — p.35's last datum is a one-bit `DD` at
+001756.04, so the counter stands at 001756.05 and the CNOP rounds it
+up. p.36's `X BYPAS` (001757.00) and `X ON LIN` (001761.00) are two
+more addresses printed p.33 compiled before that page was opened.
+
 ## PRINTED pp.32 AND 33 ARE TRANSCRIBED -- and p.32 measures a page transcribed five pages ago, 2026-10-22
 
 Eighty-one rows and twenty-four symbol locations, bit-exact, in

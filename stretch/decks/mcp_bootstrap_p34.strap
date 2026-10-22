@@ -1,0 +1,131 @@
+! mcp_bootstrap_p34.strap -- MCP INITIALIZATION, printed page 34:
+! "PRINT CONTENTS OF X MSG BK", and the setup that follows it --
+! mode bits, the IF trap instructions at word 32, the dummy
+! communication region, and the disk LOCATE loop.
+! docs/MCP_Mar63_001-249.pdf PDF p.41, header "PAGE NUMBER 34".
+! docs/boot_plan.md M3.
+!
+! CONTIGUOUS WITH p.33 BY FALL-THROUGH: p.33's last instruction is a
+! full-word BRANCH ON BIT at 001712.40, and this page starts at
+! 001713.40.
+!
+! ---------------------------------------------------------------
+! THE FIRST INPUT-OUTPUT INSTRUCTIONS IN THE INITIALIZATION
+! ---------------------------------------------------------------
+! Everything since printed p.17 has been table-walking.  Lines 12
+! and 39 finally talk to a device:
+!
+!   W(SEOP),0.0($15),X MSG W      000000.00 8F 001724.13 00
+!   LOC(SEOP),0.0($15),0.0        000000.00 8F 000000.17 00
+!
+! -- C28-6129 printed p.4's "OP1(OP2), A19(I), A18(I')": a primary
+! operation with a secondary in parentheses, a channel address and a
+! control-word address.  WRITE prints the message block to the
+! console; LOCATE positions the disk.  Both go through the same
+! "SIC,X7 3 / B,X7 1" IO TEST pair.
+!
+! ---------------------------------------------------------------
+! A THIRD "(.25)1", one commit after the mode was built
+! ---------------------------------------------------------------
+! Line 19 is "CW,X ZEROS,3,X MSG W2(.25)1", the same construct as
+! printed p.8 line 34 and printed p.30 line 27 -- chain flag on,
+! flag group printing 100.  The assembler learned it from C28-6129
+! Section II printed pp.25-26 in the previous commit; this page is
+! the first one transcribed after that, and it needed it on its
+! nineteenth line.
+!
+! ---------------------------------------------------------------
+! THE LISTING WRITES REGISTER FIELDS BOTH WAYS, ON ONE PAGE
+! ---------------------------------------------------------------
+! "LC,$1,X 24 A2+.32" and "SV,1,S MAXRN" are both on this page, and
+! so are "LX,14,S XCHAN" and "LV,$15,S Y CO CH".  The "$" is
+! optional in the programmer's hand and the compiled field is the
+! register number either way -- the page's own binary says so.  Only
+! line 30's TRANSMIT J is written here without it, following the
+! convention every TRANSMIT in decks/ already uses.
+!
+! ---------------------------------------------------------------
+! EXTERNALS, each recovered from this page's own binary output
+! ---------------------------------------------------------------
+!   X MSG BK 002000.00   S Y CO CH 002156.00   X7 3   000066.40
+!   X7 1     000057.40   X ZEROS   001037.00   S COM RG 002151.00
+!   S IF DMP 002161.00   S MAXRN   002155.40   S COMSZ 002150.40
+!   S MCP    002150.00   S XCHAN   002152.00   D RET   000041.00
+! FROM A PAGE ALREADY TRANSCRIBED:
+!   X 24 A2  001473.00  (printed p.27)
+! $MASK is the system symbol for the mask word, word 12 = octal 14.
+X24A2   SYN, (8)1473.0
+XMSGBK  SYN, (8)2000.0
+SYCOCH  SYN, (8)2156.0
+X73     SYN, (8)66.40
+X71     SYN, (8)57.40
+XZEROS  SYN, (8)1037.0
+SCOMRG  SYN, (8)2151.0
+SIFDMP  SYN, (8)2161.0
+SMAXRN  SYN, (8)2155.40
+SCOMSZ  SYN, (8)2150.40
+SMCP    SYN, (8)2150.0
+SXCHAN  SYN, (8)2152.0
+DRET    SYN, (8)41.0
+
+        SLC, (8)1713.40
+
+! ---- print the contents of X MSG BK -------------------------------
+        LC, $1, X24A2+.32            ! line 5  -DROP OUT BIAS
+        SC, $1, $1                   ! line 6
+X377A   LVI, $14, XMSGBK             ! line 7  -GET BASE OF MSG BLOCK
+X377B   CT0011(BU,64), 0.0($14)      ! line 8  -TEST IF MSG TO BE
+                                     !          PRINTED
+        BRZ, X377D                   ! line 9
+        SVA, $14, XMSGW2             ! line 10 -NO * FIX CW
+        LV, $15, SYCOCH              ! line 11 -GET CONSOLE CHANNEL
+X377C   W(SEOP), 0.0($15), XMSGW     ! line 12 -WRITE ONE MSG
+        SIC, X73                     ! line 13
+        B, X71                       ! line 14 -IO TEST
+X377D   V+I, $14, 10.0               ! line 15 -ADVANCE TO NEXT MSG
+        KV, $14, $1                  ! line 16
+        BXL, X377B                   ! line 17 -IF PRINTED LAST MSG
+        B, X378                      ! line 18
+XMSGW   CW, XZEROS, 3, XMSGW2(.25)1  ! line 19
+XMSGW2  CW, 0.0, 10, 0               ! line 20 -TYPE ONE MSG
+
+! ---- mode bits, trap instructions, dummy communication region -----
+X378    LVI, $14, 0.0                ! line 21 -GET BASE OF MCP
+                                     !          COMMUNICATION REGION
+        CM1111(BU,2), SCOMRG+.8      ! line 22 -SET MODE BITS TO
+                                     !          IPL CODE
+        Z, 32.0                      ! line 23 -CLEAR WORD 32.0
+        LV, $0, SIFDMP               ! line 24 -GET IF TRAP
+                                     !          INSTRUCTION FROM
+                                     !          COM RG.
+        SV, $0, 32.0                 ! line 25 -INSERT FIRST TRAP
+                                     !          INSTRUCTION
+        SV, $0, 32.32                ! line 26 -INSERT DUPLICATE OF
+                                     !          IF TRAP INSTR
+        LVI, $1, 0.0                 ! line 27
+        SV, 1, SMAXRN                ! line 28 -CLEAR S MAXRN
+        LC, $14, SCOMSZ              ! line 29 -GET SIZE OF MCP
+                                     !          COMMUNIZIATION REGION
+        T, 14, SMCP, 0.0($14)        ! line 30 -MOVE DUMMY
+                                     !  COMMUNICATION REGION TO MCP
+                                     ! listing: "T,$14,S MCP,0.0($14)"
+        CM1111(BU,1), $MASK+.21      ! line 31 -SET IF MASK BIT ON
+
+! ---- force LOCATE to zero on every disk unit in the CST ------------
+        LX, 14, SXCHAN               ! line 32 -GET BASE OF CST
+        CM1111(BU,1), .36($14)       ! line 33 -FORCE LOCATE TO ZERO
+                                     !          ON DISK
+        V+I, 14, 32.0                ! line 34
+        C-I, 14, 32.                 ! line 35
+        LVI, 15, 16.0                ! line 36
+XHERE   BB, .25($14), XGOON          ! line 37
+        BZB, .52($14), XGOON         ! line 38
+        LOC(SEOP), 0.0($15), 0.0     ! line 39
+        SIC, X73                     ! line 40
+        B, X71                       ! line 41 -IO TEST
+XGOON   V+I, 15, .32                 ! line 42
+        CB+, 14, XHERE               ! line 43
+X379    BE, 32.0                     ! line 44
+        , DRET                       ! line 45
+
+        END, X377A

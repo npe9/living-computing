@@ -24,7 +24,14 @@ WHAT IS DERIVED AND WHAT IS INVENTED, the same split prosa.py makes:
   at 158, the units at 170, the equipment letter at 192, the
   channel-available bit at 204.  The hunt's "BB, 1.44($4)" tests bit
   108 -- the identifier's leading bit -- and "CB+" steps one word.
-  The equipment table's 29-bit entries are derived the same way.
+
+  TRANSCRIBED, as of 2026-10-22 -- THE EQUIPMENT TABLE.  X EQP T is
+  printed p.35, 001752.00, and decks/mcp_bootstrap_p35.strap is it:
+  nine entries of DD(BU,24) + DD(BU,4) + DD(BU,1), checked bit for
+  bit by verify_mcp_bootstrap_p35.py.  This fixture used to
+  SYNTHESISE those entries -- an invented order with one known code
+  -- and now reads them off the page.  See EQUIPMENT_TABLE below for
+  what changed and for why the old derivation was right anyway.
 
   AND THE GEOMETRY IS NOW CORROBORATED FROM OUTSIDE MCP, which
   matters because the map and the stride were both derived from the
@@ -56,11 +63,14 @@ WHAT IS DERIVED AND WHAT IS INVENTED, the same split prosa.py makes:
   its top bit is set because "I" is 12-9, a 12-zone letter.  That is
   what line 13's "-IF ZONE BIT OF IOCD" is testing.
 
-  INVENTED -- the card's remaining CONTENTS and the equipment
-  table's ten entries.  All three live on pages nobody has
-  transcribed; they are chosen here only to be consistent with each
-  other.  Nothing this test reports is evidence about what a real
-  IOCD card looked like.
+  INVENTED -- the card's remaining CONTENTS.  Its fields beyond the
+  ones the page's own increments name are chosen here only to be
+  consistent with each other, and nothing this test reports is
+  evidence about what a real IOCD card looked like.
+
+  >>> THE EQUIPMENT TABLE IS NO LONGER ON THIS LIST.  It was the
+  largest invented thing in this file and it is now printed p.35,
+  transcribed and checked.  What remains invented is the card. <<<
 
 THREE HALTS ARE PLANTED, and they are the fixture's other half.  The
 page runs off its own end into p.18, and branches to X 19 and
@@ -86,7 +96,6 @@ DECK = DECKS[0]
 CARD_AT_WORD = 3          # the card sits three words into the buffer,
                           # so the hunt has to step to find it
 CHANNEL  = 35             # what columns 14-15 spell
-EQP_CODE = 6              # the 4-bit code the matching table entry carries
 
 # >>> THE IOCD CARD'S COLUMN FORMAT IS PRINTED, and this fixture now
 # punches a real one.  C22-6728 printed p.88 = PDF p.88, "The
@@ -113,81 +122,96 @@ EQP_CODE = 6              # the 4-bit code the matching table entry carries
 # AND IT EXPLAINS WHY ONE COLUMN IS ENOUGH: the six codes' second
 # letters are N, K, R, U, P and D -- all distinct.  MCP never needs
 # the first letter.
-# >>> AND THE TABLE'S ORDER IS CONSTRAINED BY printed p.19 line 4,
-# which is why these are not in the page's own listing order. <<<
+# >>> THE TABLE IS NO LONGER SYNTHESISED.  IT IS PRINTED, ON MCP's
+# OWN p.35, AND IT IS TRANSCRIBED. <<<
+#
+# Everything below used to be a derivation: an invented order with
+# one known code, defended by the argument that printed p.19 line 4
+# constrains the first three entries.  decks/mcp_bootstrap_p35.strap
+# is X EQP T itself -- nine entries at 001752.00, each
+# DD(BU,24) + DD(BU,4) + DD(BU,1) -- and
+# tests/verify_mcp_bootstrap_p35.py checks every bit of it against
+# the listing.  This fixture now uses that table.
+#
+# WHAT THE TABLE SAYS, with the page's own comments:
+#
+#   entry  column  letter       code  multi   comment on p.35
+#       0  000000  (none)          0      0   -NO EQUIPMENT
+#       1  002200  K  (11-2)       1      0   -DISK * DK
+#       2  002020  N  (11-5)       2      0   -CONSOLE *CN
+#       3  004040  D  (12-4)       3      0   -READER * RD
+#       4  001040  U  (0-4)        4      0   -PUNCH *PU
+#       5  002001  R  (11-9)       5      0   -PRINTER * PR
+#       6  000000  (none)          0      0   -UNUSED
+#       7  000000  (none)          0      0   -UNUSED
+#       8  002004  P  (11-7)      10      1   -TAPE MULTI * TP
+#
+# >>> THE OLD DERIVATION WAS RIGHT, AND THE REAL TABLE IS WHY.  The
+# argument from printed p.19 line 4 ran:
 #
 #     X18 1   KCI,$1,6.0     -LOGICAL MULTI UNIT * DISK OR CONSOL
 #             BZXH,X 18 4
 #
-# THAT TESTS THE REMAINING COUNT OF p.17's EQUIPMENT SEARCH, not the
-# equipment code.  p.17 line 48 sets the count to ten and line 50's
-# "CBZ,$1,X ERROR" spends one per entry examined, so after matching
-# the k-th entry the count is 10 - k -- which the equipment-code
-# deck measures independently: its fourth entry leaves six.
+# p.17 line 48 sets the count to ten and line 50's "CBZ,$1,X ERROR"
+# spends one per entry examined, so after matching the k-th entry
+# (counting from one) the count is 10 - k; BZXH takes the SINGLE-unit
+# arm when the count is NOT high, i.e. k >= 4.  The conclusion was
+# "entries 1-3 are the DISK OR CONSOL ones".
 #
-# So "6.0" PARTITIONS THE TABLE BY POSITION -- and the direction of
-# the partition was derived BACKWARDS the first time, which is worth
-# recording because the model is what corrected it.
+# The printed table's first three entries are NO EQUIPMENT, DK and
+# CN -- disk and console, behind a zero entry nobody had guessed --
+# and its fourth is RD, the first single-unit device.  k >= 4 is
+# exactly "not disk or console".  The derivation held; it just could
+# not see the head of the table. <<<
 #
-# "BZXH" BRANCHES WHEN XH IS **OFF**.  In C22-6531 Appendix A
-# footnote 2's "B[Z]<name>[Z]", the LEADING Z is "branch if off" and
-# the trailing one sets the indicator to zero -- not the other way
-# round.  Three instructions across two pages agree: p.17 line 31's
-# "BZAE,X19" takes the "NOT AN IOCD CARD" exit when the compare
-# FAILED, p.19 line 25's "BZAEZ,X ERROR" takes "NOT AN IOD CARD
-# EITHER" the same way, and this one.
+# >>> AND THE 29th BIT IS "MULTI UNIT", NOT "IS TAPE".  This file
+# argued the sense from C22-6728 printed p.90's Figure 44 ("IS
+# EQUIPMENT TAPE" -> X18 on NO) and p.18 line 2's comment "-TAPE
+# EQUIPMENT TYPE ENTRY", and got the polarity right.  p.35 NAMES the
+# field: every zero entry is commented "-SINGLE UNIT CHANNEL" and
+# the one entry with the bit set is "-MULTI UNIT CHANNEL".  Tape is
+# simply the only multi-unit equipment in the table, so the two
+# readings cannot be told apart by behaviour -- but the field is the
+# channel's unit multiplicity and p.18's comment is the programmer's
+# shorthand for the only equipment that has it. <<<
 #
-# A DK card run with the table ordered the other way reached X18 4
-# with $1's count measured at EXACTLY SIX -- equal, so XH off, so the
-# branch fired.  Reading the grammar the other way predicts no branch
-# and the run says otherwise.
-#
-# So: BZXH takes X18 4, the SINGLE-unit arm, when the count is NOT
-# high, i.e. 10 - k <= 6, i.e. k >= 4.  ENTRIES 1-3 ARE THE "LOGICAL
-# MULTI UNIT * DISK OR CONSOL" ONES and entries 4 and beyond are
-# single-unit.  Disk and console go first.
-#
-# That fixes a set and three positions, not a unique order, and it is
-# the most the code can say.  Tape's position is unconstrained
-# because p.18 line 2's tape flag diverts it before this test is ever
-# reached.
-EQUIPMENT_CODES = ["DK", "CN",         # 1-2: "DISK OR CONSOL"
-                   "TP",               # 3:   diverted earlier anyway
-                   "PR", "PU", "RD"]   # 4-6: single unit
+# Column, code, multi -- the page's three fields, in the page's own
+# order.  A letter of None is an entry with a zero column.
+EQUIPMENT_TABLE = [
+    (None, 0o00, 0),     # -NO EQUIPMENT
+    ("K",  0o01, 0),     # -DISK * DK
+    ("N",  0o02, 0),     # -CONSOLE *CN
+    ("D",  0o03, 0),     # -READER * RD
+    ("U",  0o04, 0),     # -PUNCH *PU
+    ("R",  0o05, 0),     # -PRINTER * PR
+    (None, 0o00, 0),     # -UNUSED
+    (None, 0o00, 0),     # -UNUSED
+    ("P",  0o10, 1),     # -TAPE MULTI * TP
+]
 
-# (letter column, equipment code, IS-TAPE flag).
-#
-# THE 29th BIT IS "IS TAPE", AND AN EARLIER NOTE HERE HAD THE SENSE
-# BACKWARDS.  p.18 line 2 is "BZB, -.1($1), X18" commented "-TAPE
-# EQUIPMENT TYPE ENTRY", and this file first recorded a 1 as meaning
-# "not a tape".  C22-6728 printed p.90, Figure 44 "The Initialization
-# Program - Chart 1", settles it the other way: the decision box "IS
-# EQUIPMENT TAPE" goes to X18 on NO and to "SET UP STATUS TABLES FOR
-# UNITS" on YES.  So the transcribed path IS the tape path, a 1 here
-# means IT IS A TAPE, and X18 -- the first instruction of
-# untranscribed p.19 -- is where everything else goes.
-#
-# THAT ALSO EXPLAINS THE EIGHT.  p.18 line 4 sets the unit counter to
-# EIGHT and the loop walks up to eight unit columns; Figure 44's X18
-# branch, for disk and console, instead says "SET UNIT COUNT TO TWO".
-# A tape channel carries many units and a disk channel two.  The card
-# therefore has to be TP for p.18 to be the page under test.
-# >>> ONE EQUIPMENT CODE IS REAL: THE CONSOLE'S IS OCTAL 2. <<<
-# Printed p.20 line 14 is "LFI(BU,4),(8)2" commented "-ENTER CONSOLE
-# EQUIPMENT CODE", and line 15 compares it against ".52($10)", the
-# SEQUIP field.  X EQP T itself is on an untranscribed page, so every
-# other code here is still invented -- but this one comes from the
-# program that uses it, which is the same standard the rest of this
-# file's derivations meet.
-KNOWN_CODES = {"CN": 0o2}
+# The second letter is what MCP matches on -- p.17 line 46 reads one
+# column -- and the six codes' second letters N, K, R, U, P, D are
+# all distinct, which is why one column is enough.  C22-6728 printed
+# p.88 lists the six two-letter codes; this maps each to the letter
+# the table actually stores.
+SECOND_LETTER = {"CN": "N", "DK": "K", "PR": "R",
+                 "PU": "U", "TP": "P", "RD": "D"}
 
 
-def equipment_table(card_equipment):
-    """(letter column, equipment code, IS-TAPE flag) per entry."""
-    return [(column_bits(c[1]),
-             KNOWN_CODES.get(c, EQP_CODE if c == card_equipment else 0),
-             1 if c == "TP" else 0)
-            for c in EQUIPMENT_CODES]
+def equipment_table():
+    """(letter column, equipment code, multi-unit flag) per entry,
+    straight off printed p.35."""
+    return [(column_bits(letter) if letter else 0, code, multi)
+            for letter, code, multi in EQUIPMENT_TABLE]
+
+
+def equipment_code(pair):
+    """The 4-bit code printed p.35 gives the two-letter code `pair`."""
+    want = SECOND_LETTER[pair]
+    for letter, code, _ in EQUIPMENT_TABLE:
+        if letter == want:
+            return code
+    raise KeyError(pair)
 
 
 def put(words, bitoff, nbits, val):
@@ -233,7 +257,11 @@ def main():
     disk_mode = mode == "disk"
     unit_mode = mode if mode in ("units", "units8") else None
     CARD_EQUIPMENT = "DK" if disk_mode else "TP"
-    EQP_ENTRIES = equipment_table(CARD_EQUIPMENT)
+    EQP_ENTRIES = equipment_table()
+    # The code printed p.35 gives this card's equipment -- 1 for DK,
+    # octal 10 for TP -- which is what p.17 line 54 stores in the
+    # channel status table entry and what the check below expects.
+    EQP_CODE = equipment_code(CARD_EQUIPMENT)
 
     # BOTH PAGES, because they are one program.  Printed p.17 ends at
     # 000712.00 with a full word and printed p.18 begins at
@@ -415,12 +443,15 @@ def main():
     put(words, S["XIOD"], 36,
         int("".join("%03x" % column_bits(c) for c in "IOD"), 16))
 
-    # ---- X EQP T: ten 29-bit entries, 24-bit letter + 4-bit code --
-    for i, (letter, code, nottape) in enumerate(EQP_ENTRIES):
+    # ---- X EQP T: printed p.35's nine 29-bit entries ---------------
+    # 24-bit letter column, 4-bit equipment code, 1-bit multi-unit
+    # flag.  decks/mcp_bootstrap_p35.strap is the same table and
+    # verify_mcp_bootstrap_p35.py checks it against the listing.
+    for i, (letter, code, multi) in enumerate(EQP_ENTRIES):
         base = S["XEQPT"] + 29 * i
         put(words, base, 24, letter)
         put(words, base + 24, 4, code)
-        put(words, base + 28, 1, nottape)
+        put(words, base + 28, 1, multi)
 
     # ---- the two halts --------------------------------------------
     #

@@ -1,0 +1,113 @@
+! mcp_bootstrap_p35.strap -- MCP INITIALIZATION, printed page 35:
+! "MCP IPL DEFINITIONS" -- the card-type constants in Hollerith, THE
+! EQUIPMENT TABLE, and the MCP pseudo-op codes.
+! docs/MCP_Mar63_001-249.pdf PDF p.42, header "PAGE NUMBER 35".
+! docs/boot_plan.md M3.
+!
+! CONTIGUOUS WITH p.34 BY FALL-THROUGH: p.34's last row is a
+! null-operation half word at 001745.40 and this page starts at
+! 001746.00.
+!
+! ===============================================================
+! THE EQUIPMENT TABLE IS ON THIS PAGE, PRINTED
+! ===============================================================
+! X EQP T at 001752.00 is the table printed p.17 line 46 searches,
+! and tests/gen_mcp_p17_tb.py has been SYNTHESISING it since the
+! testbench was written -- an invented order and one known code.
+! Here it is, as nine entries of DD(BU,24) + DD(BU,4) + DD(BU,1) =
+! twenty-nine bits each:
+!
+!   bits 0-23   the SECOND LETTER of the two-letter equipment code,
+!               as its twelve-bit CARD COLUMN, right-justified
+!   bits 24-27  the equipment code
+!   bit 28      1 for a MULTI-UNIT channel, 0 for single
+!
+!   entry  column  letter          code  multi  comment on the page
+!   -----  ------  --------------  ----  -----  -------------------
+!     0    000000   (none)          0     0     -NO EQUIPMENT
+!     1    002200   K  (11-2)       1     0     -DISK * DK
+!     2    002020   N  (11-5)       2     0     -CONSOLE *CN
+!     3    004040   D  (12-4)       3     0     -READER * RD
+!     4    001040   U  (0-4)        4     0     -PUNCH *PU
+!     5    002001   R  (11-9)       5     0     -PRINTER * PR
+!     6    000000   (none)          0     0     -UNUSED
+!     7    000000   (none)          0     0     -UNUSED
+!     8    002004   P  (11-7)      10     1     -TAPE MULTI * TP
+!
+! THE SECOND LETTER ALONE IDENTIFIES THE UNIT, which this repository
+! had already noticed from the other end -- C22-6728 p.88's CN/DK/
+! PR/PU/TP/RD have second letters N,K,R,U,P,D, all distinct -- and
+! this table is why that matters: MCP never looks at the first
+! letter at all.
+!
+! TWO OF THE NINE CODES WERE ALREADY KNOWN FROM THE PROGRAMS THAT
+! USE THEM -- console = 2 from printed p.20 line 14's "LFI(BU,4),
+! (8)2", printer = 5 from printed p.25 line 17 -- and both agree
+! with the table.  The other seven are new, and so is the ORDER,
+! which is not the one the testbench guessed.
+!
+! ---------------------------------------------------------------
+! THE PSEUDO-OP CODES CLOSE FOUR CROSS-PAGE LOOPS
+! ---------------------------------------------------------------
+! Lines 44-48 are five SYNs, and four of them are addresses pages
+! already transcribed compiled into their instructions:
+!
+!   D MCP  SYN,X24A    001472.00  = printed p.27 line 20's X24A
+!   D RET  SYN,33.0    000041.00  = printed p.34 line 45's ", D RET"
+!   S JC4  SYN,78.32   000116.40  = printed p.33 line 43's ", S JC4"
+!   S COMD SYN,80.0    000120.00  = printed p.33 lines 27 and 36
+!
+! None of those four addresses was read off this page; each was
+! decoded from an instruction on an earlier one, and this page is
+! where the program says what they are.
+X24A    SYN, (8)1472.0
+
+        SLC, (8)1746.0
+
+XPROWR  XW, 0                        ! line 5  -COMPUTED DISK WRITE
+                                     ! line 6   CW CARDS
+
+! ---- card types in Hollerith --------------------------------------
+XMCPP   DD(BU,48), (8)2040410020042004   ! line 8  -MCPP IN HOLLERITH
+XIOCD   DD(BU,48), (8)4001201041004040   ! line 9  -IOCD IN HOLLERITH
+XICD    DD(BU,36), (8)400120104040       ! line 10 -ICD IN HOLLERITH
+
+! ---- the equipment table ------------------------------------------
+        CNOP                         ! line 12 -START XEQPT AT FULL
+                                     ! line 13  WORD BOUNDARY
+XEQPT   DD(BU,24), (8)0000           ! line 14
+        DD(BU,4), (8)0               ! line 15 -NO EQUIPMENT
+        DD(BU,1), 0                  ! line 16 -SINGLE UNIT CHANNEL
+        DD(BU,24), (8)2200           ! line 17
+        DD(BU,4), (8)1               ! line 18 -DISK * DK
+        DD(BU,1), 0                  ! line 19 -SINGLE UNIT CHANNEL
+        DD(BU,24), (8)2020           ! line 20
+        DD(BU,4), (8)2               ! line 21 -CONSOLE *CN
+        DD(BU,1), 0                  ! line 22 -SINGLE UNIT CHANNEL
+        DD(BU,24), (8)4040           ! line 23
+        DD(BU,4), (8)3               ! line 24 -READER * RD
+        DD(BU,1), 0                  ! line 25 -SINGLE UNIT CHANNEL
+        DD(BU,24), (8)1040           ! line 26
+        DD(BU,4), (8)4               ! line 27 -PUNCH *PU
+        DD(BU,1), 0                  ! line 28 -SINGLE UNIT CHANNEL
+        DD(BU,24), (8)2001           ! line 29
+        DD(BU,4), (8)5               ! line 30 -PRINTER * PR
+        DD(BU,1), 0                  ! line 31 -SINGLE UNIT CHANNEL
+        DD(BU,24), (8)0              ! line 32
+        DD(BU,4), (8)0               ! line 33 -UNUSED
+        DD(BU,1), 0                  ! line 34 -SINGLE UNIT CHANNEL
+        DD(BU,24), (8)0              ! line 35
+        DD(BU,4), (8)0               ! line 36 -UNUSED
+        DD(BU,1), 0                  ! line 37 -SINGLE UNIT CHANNEL
+        DD(BU,24), (8)2004           ! line 38
+        DD(BU,4), (8)10              ! line 39 -TAPE MULTI * TP
+        DD(BU,1), 1                  ! line 40 -MULTI UNIT CHANNEL
+
+! ---- MCP pseudo op codes ------------------------------------------
+DMCP    SYN, X24A                    ! line 44
+DRET    SYN, 33.0                    ! line 45
+DCOMM   SYN, 35.32                   ! line 46
+SJC4    SYN, 78.32                   ! line 47
+SCOMD   SYN, 80.0                    ! line 48
+
+        END, XEQPT

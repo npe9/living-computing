@@ -1659,6 +1659,18 @@ run "THE REAL printed pp.17-19 execute -- IOCD cards into the CST" ./run_mcp_p17
 # whose own page nobody has transcribed -- and the fixture's six
 # entries are invented, so a DK card's behaviour here would be a fact
 # about the fixture and not about MCP.  Recorded rather than guessed.
+#
+# >>> SUPERSEDED 2026-10-22: X EQP T'S PAGE IS PRINTED p.35 AND IT IS
+# TRANSCRIBED.  decks/mcp_bootstrap_p35.strap is the table -- nine
+# entries, not six -- and the fixture reads it instead of inventing
+# it, so a DK card's behaviour here IS now a fact about MCP.
+#
+# THE ARGUMENT ABOVE SURVIVES INTACT, which is the part worth
+# keeping.  The printed table's first three entries are NO
+# EQUIPMENT, DK and CN, and its fourth is RD, the first single-unit
+# device; "k >= 4 takes the single-unit arm" is exactly "not disk or
+# console".  The derivation was right and could not see the zero
+# entry at the head of the table. <<<
 
 # THE RUN EXITS AT X 19, which is the IOCD loop running out of cards
 # and not a failure -- the generator's header says so at the point
@@ -3008,6 +3020,11 @@ run "MCP INITIALIZATION, printed p.20, bit-exact (MCP_Mar63 PDF p.27)" python3 v
 # testbench's fixture carries it as the one real code among invented
 # ones.
 #
+# >>> X EQP T IS PRINTED p.35, TRANSCRIBED 2026-10-22, AND IT SAYS
+# OCTAL 2 FOR THE CONSOLE.  A value read out of the program that uses
+# it, and the table it came from, agree -- which is the only kind of
+# confirmation this corpus can give. <<<
+#
 # AND IT CONFIRMS SEQUIP FROM A THIRD PAGE.  C22-6728 printed p.246
 # names bits 52-55 of a channel status table entry SEQUIP; printed
 # p.17 line 54 WRITES four bits at .52; this page READS four bits at
@@ -3178,6 +3195,10 @@ run "MCP INITIALIZATION, printed p.25, bit-exact (MCP_Mar63 PDF p.32)" python3 v
 # 18 compares it against ".52($10)", the SEQUIP field.  With printed
 # p.20's console = 2, TWO of X EQP T's values are now known from the
 # programs that use them; the table's own page is still missing.
+#
+# >>> FOUND, 2026-10-22: printed p.35, and it says 5 for the printer
+# and 2 for the console.  Both values, derived from two different
+# programs twenty pages apart, match the table they came from. <<<
 #
 # >>> THE PAGE NEEDED A NULL OPERATION FIELD, and both halves of it
 # are printed.  Lines 42-43 are ",0.0($7)" and ",2.0($7)" --
@@ -3649,6 +3670,88 @@ run "MCP INITIALIZATION, printed p.33, bit-exact (MCP_Mar63 PDF p.40)" python3 v
 # that manual is written with a "+" ("SAM+4", printed p.30).  One row
 # is not a grammar.  If a second page writes it, read Section II
 # before teaching the assembler anything.
+
+run "MCP INITIALIZATION, printed p.34, bit-exact (MCP_Mar63 PDF p.41)" python3 verify_mcp_bootstrap_p34.py
+# >>> PRINTED p.34 IS TRANSCRIBED -- EVERY ROW ON THE PAGE, forty-one
+# of them, and ten symbol locations.  "PRINT CONTENTS OF X MSG BK",
+# then the mode bits, the IF trap instructions at word 32, the dummy
+# communication region, and the disk LOCATE loop. <<<
+#
+# >>> THE FIRST INPUT-OUTPUT INSTRUCTIONS IN THE INITIALIZATION.
+# Everything since printed p.17 has been table-walking; lines 12 and
+# 39 talk to a device:
+#
+#   W(SEOP),0.0($15),X MSG W      000000.00 8F 001724.13 00
+#   LOC(SEOP),0.0($15),0.0        000000.00 8F 000000.17 00
+#
+# C28-6129 printed p.4's "OP1(OP2), A19(I), A18(I')" -- a primary
+# operation with a secondary in parentheses, a channel address and a
+# control-word address.  Both go through the same "SIC,X7 3 / B,X7 1"
+# IO TEST pair. <<<
+#
+# A THIRD "(.25)1", ONE COMMIT AFTER THE MODE WAS BUILT.  Line 19 is
+# "CW,X ZEROS,3,X MSG W2(.25)1" -- chain flag on, flag group printing
+# 100.  This is the first page transcribed after C28-6129 Section II
+# supplied the specification and it needed it on its nineteenth line.
+#
+# THE LISTING WRITES REGISTER FIELDS BOTH WAYS, ON ONE PAGE:
+# "LC,$1,X 24 A2+.32" and "SV,1,S MAXRN"; "LV,$15,S Y CO CH" and
+# "LX,14,S XCHAN".  The compiled field is the register number either
+# way, which the page's own binary settles -- the "$" is the
+# programmer's hand, exactly as it was for printed p.32's "TI,$10".
+#
+# NO ASSEMBLER WORK.  Line 35's bare trailing point ("C-I,14,32.")
+# and line 42's bare leading one ("V+I,15,.32") were both already
+# parsed.
+
+run "MCP INITIALIZATION, printed p.35, bit-exact (MCP_Mar63 PDF p.42)" python3 verify_mcp_bootstrap_p35.py
+# >>> PRINTED p.35 IS "MCP IPL DEFINITIONS", AND IT IS THE EQUIPMENT
+# TABLE.  X EQP T at 001752.00 is the structure printed p.17 line 46
+# searches and tests/gen_mcp_p17_tb.py has been SYNTHESISING since
+# the testbench was written.  Nine entries, each DD(BU,24) +
+# DD(BU,4) + DD(BU,1): <<<
+#
+#   entry  column  letter       code  multi   the page's own comment
+#       0  000000  (none)          0      0   -NO EQUIPMENT
+#       1  002200  K  (11-2)       1      0   -DISK * DK
+#       2  002020  N  (11-5)       2      0   -CONSOLE *CN
+#       3  004040  D  (12-4)       3      0   -READER * RD
+#       4  001040  U  (0-4)        4      0   -PUNCH *PU
+#       5  002001  R  (11-9)       5      0   -PRINTER * PR
+#       6  000000  (none)          0      0   -UNUSED
+#       7  000000  (none)          0      0   -UNUSED
+#       8  002004  P  (11-7)      10      1   -TAPE MULTI * TP
+#
+# >>> THE 24-BIT FIELD IS A CARD COLUMN, and two independently
+# transcribed documents agree about all six of them.  The verifier
+# compares each entry against strap/cards.py's column_bits, which
+# comes from C22-6678-1 printed p.56's Appendix F -- a different
+# manual, transcribed for a different reason.  K is 11-2, N is 11-5,
+# D is 12-4, U is 0-4, R is 11-9, P is 11-7, in both. <<<
+#
+# THE SECOND LETTER ALONE IDENTIFIES THE UNIT.  This repository had
+# already noticed that C22-6728 p.88's CN/DK/PR/PU/TP/RD have second
+# letters N,K,R,U,P,D, all distinct.  THIS TABLE IS WHY THAT MATTERS:
+# MCP never looks at the first letter at all.
+#
+# >>> TWO CODES WERE ALREADY KNOWN FROM THE PROGRAMS THAT USE THEM
+# and both agree with the table: console = 2 from printed p.20 line
+# 14's "LFI(BU,4),(8)2", printer = 5 from printed p.25 line 17.  Two
+# derivations, twenty pages apart, against the table they came from.
+# The other seven codes are new, and so is the order. <<<
+#
+# AND THE WIDTHS ARE STATED, NOT GUESSED.  The listing prints a DD as
+# bare octal digits and the digit count does not determine the width
+# -- three digits is 7, 8 or 9 bits.  This page puts DD(BU,24),
+# DD(BU,4) and DD(BU,1) next to each other, so a guessed width would
+# silently read the next datum's bits.  listing_oracle.render now
+# takes an explicit width and every row on this page passes one.
+#
+# LINES 44-48 CLOSE FOUR CROSS-PAGE LOOPS.  Five SYNs, four of them
+# addresses earlier pages compiled into instructions before this page
+# was opened: D MCP is printed p.27's X24A, D RET is printed p.34
+# line 45's operand, S JC4 is printed p.33 line 43's, S COMD is
+# printed p.33 lines 27 and 36's.
 run "MCP's error table, printed pp.7-8 (MCP_Mar63 PDF pp.14-15)" python3 verify_mcp_bootstrap_p7_p8.py
 # X ERR DD -- THE LAST TWO PAGES OF THE BOOTSTRAP TO BE TRANSCRIBED,
 # and the index to all the rest: seventy-eight VF half words, one pair

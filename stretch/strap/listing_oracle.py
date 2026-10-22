@@ -55,13 +55,40 @@ def word_at(prog, bits):
     return (hi << 32) | lo
 
 
-def render(prog, octal_loc, printed):
+def read_bits(prog, bits, width):
+    """The `width` bits starting at bit-count `bits`, as an integer."""
+    out = 0
+    for i in range(width):
+        w, b = divmod(bits + i, 64)
+        out = (out << 1) | ((prog.words.get(w, 0) >> (63 - b)) & 1)
+    return out
+
+
+def render(prog, octal_loc, printed, width=None):
     """Render the assembled content at octal_loc in the same shape as
-    the listing's printed text, so the two compare as strings."""
+    the listing's printed text, so the two compare as strings.
+
+    `width` is the datum's width IN BITS, and callers pass it for a
+    DD whose printed form is bare octal digits.  THE DIGIT COUNT DOES
+    NOT DETERMINE THE WIDTH: a three-digit group is 7, 8 or 9 bits
+    and the listing prints the same three digits for all of them, so
+    guessing from the print is guessing.  MCP printed p.35's
+    equipment table has DD(BU,24), DD(BU,4) and DD(BU,1) adjacent --
+    8, 2 and 1 digits -- and reading 9 bits where the deck wrote 4
+    would silently pull in the next datum's bits.  The widths the
+    oracle guesses (3 -> 8, 6 -> 18, 11 -> 32, 22 -> 64) are kept for
+    the callers that predate this and are the only widths those
+    programs use."""
     bits = loc_bits(octal_loc)
     word = prog.words.get(bits // 64, 0)
     half = (word >> 32) if bits % 64 == 0 else (word & 0xFFFFFFFF)
     toks = printed.split()
+    if width is not None:
+        if len(toks) != 1 or not all(c in "01234567" for c in toks[0]):
+            raise ValueError(
+                f"width given for a row whose printed form is not bare "
+                f"octal digits: {printed!r}")
+        return f"{read_bits(prog, bits, width):0{-(-width // 3)}o}"
     if len(toks) == 1 and printed[-1] in "+-":
         # VF: 24-bit value as W.B octal, then the sign bit.
         mag, sign = half >> 8, (half >> 7) & 1
@@ -155,9 +182,14 @@ def check_rows(prog, rows, symbols=None, label=""):
         ok = got == want
         fails += not ok
         print(f"{'PASS' if ok else 'FAIL'} {label}{name} at {loc}: assembled bit {got}, listing bit {want}")
-    for loc, printed, note in rows:
+    for row in rows:
+        # A row is (location, printed text, note) and may carry a
+        # fourth element, the datum's WIDTH IN BITS, for a DD printed
+        # as bare octal digits -- see render().
+        loc, printed, note = row[0], row[1], row[2]
+        width = row[3] if len(row) > 3 else None
         want = norm(printed)
-        got = render(prog, loc, want)
+        got = render(prog, loc, want, width)
         ok = got == want
         fails += not ok
         print(f"{'PASS' if ok else 'FAIL'} {label}{loc} {note}: assembled {got!r}, listing {want!r}")

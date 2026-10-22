@@ -467,6 +467,14 @@ and the equipment table's 29-bit entry layout is derived the same way
 CONTENTS, `X IOCD`'s 48-bit pattern, and `X EQP T`'s ten entries. All
 three live on untranscribed pages.
 
+> **TWO OF THE THREE HAVE SINCE CROSSED THE LINE.** `X IOCD` is now
+> the four characters punched through `C22-6678-1` Appendix F, and
+> **`X EQP T` IS PRINTED p.35, TRANSCRIBED 2026-10-22** —
+> `decks/mcp_bootstrap_p35.strap`, nine entries, not ten.
+> `tests/gen_mcp_p17_tb.py` reads it instead of inventing it and all
+> four of its modes still pass. What remains invented is the card's
+> contents.
+
 **AND THE PAGE ITSELF NOW EXECUTES, 2026-10-21.**
 `tests/run_mcp_p17.sh` runs `decks/mcp_bootstrap_p17.strap` — the
 bit-exact transcription, not a paraphrase — against a synthetic card
@@ -644,6 +652,30 @@ still missing. MCP printed p.20 line 14 is `LFI(BU,4),(8)2` —
 "ENTER CONSOLE EQUIPMENT CODE" — and printed p.25 line 17 is
 `LFI(BU,4),(8)5` — "ENTER PRINTER EQUIPMENT CODE". Both then compare
 against `.52($10)`, the `SEQUIP` field. **Console 2, printer 5.**
+
+> **AND THE TABLE'S PAGE WAS FOUND THE SAME DAY: printed p.35, "MCP
+> IPL DEFINITIONS".** `X EQP T` is at 001752.00, nine entries of
+> `DD(BU,24) + DD(BU,4) + DD(BU,1)` — a second-letter card column, a
+> four-bit code, a multi-unit flag:
+>
+> | entry | column | letter | code | multi | the page's comment |
+> |---|---|---|---|---|---|
+> | 0 | 000000 | — | 0 | 0 | `-NO EQUIPMENT` |
+> | 1 | 002200 | K (11-2) | 1 | 0 | `-DISK * DK` |
+> | 2 | 002020 | N (11-5) | 2 | 0 | `-CONSOLE *CN` |
+> | 3 | 004040 | D (12-4) | 3 | 0 | `-READER * RD` |
+> | 4 | 001040 | U (0-4) | 4 | 0 | `-PUNCH *PU` |
+> | 5 | 002001 | R (11-9) | 5 | 0 | `-PRINTER * PR` |
+> | 6 | 000000 | — | 0 | 0 | `-UNUSED` |
+> | 7 | 000000 | — | 0 | 0 | `-UNUSED` |
+> | 8 | 002004 | P (11-7) | 10 | 1 | `-TAPE MULTI * TP` |
+>
+> **Console 2 and printer 5 both match**, which is two derivations
+> twenty pages apart checked against the table they came from. The
+> twelve-bit columns match `strap/cards.py`'s independent Appendix F
+> transcription for all six letters, so two manuals agree as well.
+> And the table is why one column is enough: MCP matches on the
+> SECOND letter, and N, K, R, U, P, D are all distinct.
 
 **>>> A3's CENTRAL QUESTION IS ANSWERED: THE IOCD CARD'S COLUMN
 FORMAT IS PRINTED, `C22-6728` printed p.88 = PDF p.88. <<<** Found
