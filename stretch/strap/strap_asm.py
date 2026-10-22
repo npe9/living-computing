@@ -1378,6 +1378,63 @@ def statement_size(stmt):
         # dr_count has always taken either.
         return 0, dds_length_bits(stmt.mods, stmt.lineno) * dr_count(stmt)
     if op == 'VF':
+        # >>> VF IS TWENTY-FIVE BITS, NOT A WHOLE HALF WORD, and the
+        # size only ever showed as a half because everything that can
+        # follow one rounds up anyway.  C22-6531 printed p.18:
+        #
+        #   3. VF  "VALUE FIELD"   VF, VALUE
+        #   "The location counter is rounded to the next half word.
+        #    The contents of VALUE are compiled as a 24-bit plus sign
+        #    quantity in positions 0-24 of the next half word.  THE
+        #    LOCATION COUNTER STANDS AT BIT 25 at the end of the
+        #    operation."
+        #
+        # and printed p.19's table gives VF the data description
+        # (B,25) -- signed, twenty-five bits.
+        #
+        # >>> BUT THE SIZE HERE IS A HALF WORD, AND THE LISTING IS WHY.
+        # printed p.8 line 31 is "X E DD K  SYN,$-X ERR DD", measuring
+        # a table built entirely of VFs, and it prints 000047.00 --
+        # THIRTY-NINE WORDS EXACTLY, on a half-word boundary.  Were
+        # the counter left at bit 25 after the last VF, "$" would be
+        # 000046.71 and the XW on line 32 that uses "X E DD K+1.0" as
+        # its COUNT would print 000047 where the listing prints
+        # 000050.  Returning 25 here breaks that page.
+        #
+        # So "the location counter stands at bit 25" describes where
+        # the counter sits FOR A FOLLOWING FIELD, and is not what "$"
+        # reports: a SYN sees the rounded location.  Nothing in the
+        # corpus distinguishes the two any other way, because every
+        # storage-creating pseudo-operation rounds to at least a half
+        # word before it emits.  THE DEPOSIT below is still twenty-
+        # five bits, which is the part that matters -- a VF must not
+        # claim bits 25-31, or a CF sharing its boundary overlaps it.
+        return HALF, HALF
+    if op in ('CF', 'RF'):
+        # C22-6531 printed p.19:
+        #
+        #   4. CF  "COUNT FIELD"   CF, COUNT
+        #   "The location counter is rounded to the next HALF word.
+        #    The contents of the count field are compiled as an
+        #    18-BIT INTEGER IN POSITIONS 0-17.  The location counter
+        #    stands at BIT 18 at the end of the operation."
+        #   5. RF  "REFILL FIELD"  RF, REFILL
+        #   "This pseudo-operation is the same as CF, except Refill is
+        #    substituted for Count."
+        #
+        # and the same page's table gives CF and RF the data
+        # description (BU,18) -- unsigned, eighteen bits.
+        #
+        # MCP printed p.26 is what needed them: lines 16 and 30 are
+        # "CF,1.0" and "CF,1", both printing 000001 -- six octal
+        # digits, eighteen bits, no sign and no hex byte, which is
+        # exactly how the listing prints an 18-bit field.
+        #
+        # THE SIZE IS A HALF WORD FOR THE SAME REASON VF's IS -- see
+        # the note there.  p.26 cannot tell the two apart (its CF sits
+        # on a half-word boundary either way), and the only page that
+        # can, printed p.8, says the counter a SYN reads is rounded.
+        # The DEPOSIT is still eighteen bits.
         return HALF, HALF
     if op == 'XW':
         return FULL, FULL
@@ -1830,7 +1887,28 @@ def emit_statement(stmt, symtab, image):
         val = eval_expr(stmt.fields[0], symtab, loc, lineno=stmt.lineno)
         sign = 1 if val < 0 else 0
         mag = abs(val) & 0xFFFFFF
-        image.deposit_half(loc // 32, (mag << 8) | (sign << 7))
+        # TWENTY-FIVE BITS AT POSITIONS 0-24, not a whole half word:
+        # C22-6531 printed p.18 says so and gives VF the data
+        # description (B,25).  Depositing thirty-two here claimed
+        # seven bits VF does not own, which only showed once CF --
+        # whose own field is eighteen -- had to share a half word
+        # boundary with one.
+        image.deposit(loc, 25, ((mag & 0xFFFFFF) << 1) | sign)
+        return
+
+    if op in ('CF', 'RF'):
+        # See statement_size: an 18-bit integer at positions 0-17 of
+        # the half word.  "1.0" is a WORD count the same way LFI's
+        # "8.0" is -- eval_addr_field with no unit shift gives the
+        # bit address, and the field is the word number -- so the
+        # value is taken through the same path every other count
+        # field uses and then truncated to eighteen bits.
+        if len(stmt.fields) != 1:
+            raise AssemblerError(
+                f"{op} takes exactly one field", stmt.lineno)
+        val = eval_addr_field(stmt.fields[0], symtab, loc, 6,
+                              lineno=stmt.lineno)
+        image.deposit(loc, 18, val & 0x3FFFF)
         return
 
     if op == 'CW':

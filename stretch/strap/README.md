@@ -899,10 +899,34 @@ until one has.
    doc for the recommended transcription order (the shared MAINTENANCE
    COMPOOL symbol table first) and for the five I-Box diagnostic
    programs recommended as the next inventory target after that.
-1. `CF`, `RF`, `DDI`, `CW`, `EXT` — pseudo-ops C22-6531 defines that
+1. ~~`CF`, `RF`,~~ `DDI`, `EXT` — pseudo-ops C22-6531 defines that
    no program exercised yet (`SYN`, `SLC` and `CNOP` were on this
    list; all three are now implemented and tested — `CNOP` is what
-   let the I-Box 1 span reach back to p.43).
+   let the I-Box 1 span reach back to p.43. `CW` left it earlier,
+   and **`CF` and `RF` left on 2026-10-22**, driven by MCP printed
+   p.26 lines 16 and 30).
+
+   **`CF` CORRECTED `VF`'s DEPOSIT ON THE WAY IN**, which is the
+   part worth keeping. C22-6531 printed p.19 gives `VF` the data
+   description `(B,25)`; this assembler wrote a whole half word,
+   claiming bits 25-31 it does not own. Nothing ever noticed, because
+   **every statement that can follow a `VF` rounds up to a half word
+   anyway** — so the extra width was invisible until a `CF`, whose
+   own field is eighteen bits, had to share a boundary with one. It
+   then showed as an *overlap*, not as a wrong value. The general
+   shape: **a field that is too wide is only detectable where
+   something narrower follows it.**
+
+   **And the SIZE is a half word, which printed p.8 settled against
+   the manual's wording.** C22-6531 printed p.18 says the counter
+   "stands at bit 25 at the end of the operation", and making
+   `statement_size` return 25 broke pp.7-8: line 31's
+   `X E DD K SYN,$-X ERR DD` measures a table built entirely of `VF`s
+   and prints `000047.00` — thirty-nine words exactly, on a half-word
+   boundary. So "stands at bit 25" describes where the counter sits
+   *for a following field* and is **not what `$` reports**; a `SYN`
+   sees the rounded location. Half-word size, 25-bit deposit
+   satisfies both.
 2. ~~Verify the opcode table exhaustively against
    `7030_Opcode_List.pdf`…~~ **DONE, 2026-10-21, and against a better
    source than this item named.** The Reference Manual's own

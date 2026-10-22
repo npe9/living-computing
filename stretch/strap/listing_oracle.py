@@ -79,6 +79,21 @@ def render(prog, octal_loc, printed):
         # 000254.10), so the byte is cut out of the word by hand.
         off = bits % 64
         return f"{(word >> (64 - off - 8)) & 0xFF:03o}"
+    if (len(toks) == 1 and len(toks[0]) == 6
+            and all(c in "01234567" for c in toks[0])):
+        # A COUNT OR REFILL FIELD, printed as six octal digits and
+        # nothing else -- no bit position, no sign, no hex byte.
+        # C22-6531 printed p.19: CF "COUNT FIELD" compiles "an 18-bit
+        # integer in POSITIONS 0-17" of the half word it rounded to,
+        # and RF is the same with Refill substituted; the same page
+        # gives both the data description (BU,18).  Eighteen bits is
+        # six octal digits exactly, which is why the listing can print
+        # one without any of the punctuation the other field pseudo-
+        # ops need.
+        #
+        # MCP printed p.26 lines 16 and 30 are the first in this
+        # corpus: "CF,1.0" and "CF,1", both printing 000001.
+        return f"{(half >> 14) & 0x3FFFF:06o}"
     if len(toks) == 1 and len(toks[0]) == 11:
         # DD(BU,32,8): the listing prints a 32-bit datum as its own
         # half-word, 11 octal digits (jb_ax5b p.43's "00000003740").

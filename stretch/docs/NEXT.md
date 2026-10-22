@@ -36,8 +36,9 @@ things:
 3. **The back-matter sweep's worklist** (section below) — six ranked
    items, two already consumed. `C22-6728` printed 247-260, the rest
    of Appendix A, is the largest.
-4. ~~Printed pp.20-25~~ **— all six done, bit-exact (17, 28, 50,
-   54, 44 and 32 rows). Printed p.26 onward** is the continuation.
+4. ~~Printed pp.20-26~~ **— all seven done, bit-exact (17, 28, 50,
+   54, 44, 32 and 26 rows). Printed p.27 onward** is the
+   continuation.
 
 **One caveat carried forward, deliberately not in this file's
 worklist**: the look-ahead's store-fetch interlock is correct
@@ -5300,6 +5301,54 @@ thing in the path: the word the look-ahead hands the E-box.
 
 Build the pair that differs only in history before building the pair
 that differs in operands.
+
+## PRINTED p.26 IS TRANSCRIBED -- and a too-wide field was only visible where a narrower one followed, 2026-10-22
+
+Twenty-six rows and ten symbol locations, bit-exact. "TO DECODE":
+each broken-out IOD and REEL table is handed to the decode routine
+with a four-word linkage parameter block.
+
+**The assembler gained `CF` and `RF`**, and this time the manual was
+read *before* anything was written. C22-6531 printed p.19 gives
+`CF` "COUNT FIELD" as an 18-bit integer in positions 0-17, `RF` as
+the same with Refill substituted, and printed p.18 gives `VF` as a
+24-bit-plus-sign quantity in positions 0-24. The same page states the
+widths again as data descriptions: `XW` `(BU)`, `VF` `(B,25)`,
+`CF`/`RF` `(BU,18)`.
+
+**>>> AND THAT CORRECTED `VF`'s DEPOSIT, WHICH HAD BEEN WRONG SINCE
+IT WAS WRITTEN. <<<** `VF` wrote a whole half word — claiming bits
+25-31 it does not own. **Nothing ever noticed**, because every
+statement that can follow a `VF` rounds up to a half word anyway. A
+`CF` after a `VF` is the first case in the corpus where the
+difference is visible, and it showed as an **overlap**, not as a
+wrong value.
+
+> **A field that is too wide is only detectable where something
+> narrower follows it.**
+
+**AND THE SIZE QUESTION WENT THE OTHER WAY, which is the better
+half of the story.** The manual says the counter "stands at bit 25
+at the end of the operation", so I made `statement_size` return 25 —
+and **the full suite caught it**: pp.7-8 line 31 is
+`X E DD K SYN,$-X ERR DD`, measuring a table built entirely of `VF`s,
+and the listing prints `000047.00` — thirty-nine words exactly, on a
+half-word boundary. At bit 25 `$` would be `000046.71`, and line 32's
+`XW`, which uses `X E DD K+1.0` as its **count**, printed `000047`
+where the listing prints `000050`.
+
+So *"stands at bit 25"* describes where the counter sits **for a
+following field** and is **not what `$` reports**: a `SYN` sees the
+rounded location. Nothing else in the corpus distinguishes the two —
+p.26 can't, since its `CF` sits on a boundary either way — so the
+manual and the listing are both satisfied by a **half-word size with
+a 25-bit deposit**.
+
+**The pattern worth keeping**: the manual's sentence was about one
+thing (where a following field starts) and I applied it to another
+(what `$` reads). The listing is the oracle for which of those a
+1960 assembler actually did, and a page transcribed weeks ago was
+the thing that knew.
 
 ## PRINTED p.25 IS TRANSCRIBED -- the block was a four-bit constant, and it was printed, 2026-10-22
 

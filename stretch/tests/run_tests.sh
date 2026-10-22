@@ -3221,6 +3221,64 @@ run "MCP INITIALIZATION, printed p.25, bit-exact (MCP_Mar63 PDF p.32)" python3 v
 # immediate-index template "jjjj10000xxxx" puts 0000 at bits 24-27
 # and 0001 at 28-31.  Decoding decided both before the 900 dpi render
 # confirmed them.
+
+run "MCP INITIALIZATION, printed p.26, bit-exact (MCP_Mar63 PDF p.33)" python3 verify_mcp_bootstrap_p26.py
+# >>> PRINTED p.26 IS TRANSCRIBED, twenty-six rows and ten symbol
+# locations, all bit-exact.  "TO DECODE": each broken-out IOD and
+# REEL table is handed to the decode routine with a four-word linkage
+# parameter block. <<<
+#
+# THE ASSEMBLER GAINED "CF", and this time the manual was read BEFORE
+# anything was written.  C22-6531 printed p.19:
+#
+#   4. CF  "COUNT FIELD"   CF, COUNT
+#   "The location counter is rounded to the next HALF word.  The
+#    contents of the count field are compiled as an 18-BIT INTEGER IN
+#    POSITIONS 0-17.  The location counter stands at BIT 18 at the
+#    end of the operation."
+#   5. RF  "REFILL FIELD" -- "the same as CF, except Refill is
+#    substituted for Count."
+#
+# and printed p.18 for the one beside it:
+#
+#   3. VF  "VALUE FIELD"  VF, VALUE
+#   "...compiled as a 24-bit plus sign quantity in positions 0-24 of
+#    the next half word.  THE LOCATION COUNTER STANDS AT BIT 25 at
+#    the end of the operation."
+#
+# The same page's table says the widths again as data descriptions:
+# XW (BU), VF (B,25), CF or RF (BU,18).
+#
+# >>> AND THAT CORRECTED VF's DEPOSIT, WHICH HAD BEEN WRONG SINCE IT
+# WAS WRITTEN.  VF wrote a whole half word -- claiming bits 25-31,
+# which it does not own -- and nothing ever noticed, because every
+# statement that can follow a VF rounds up to a half word anyway.  A
+# CF after a VF is the first case in the corpus where the difference
+# is visible, and it showed as an OVERLAP, not as a wrong value. <<<
+#
+# >>> THE SIZE, THOUGH, IS A HALF WORD, AND PRINTED p.8 IS WHY.  The
+# manual says the counter "stands at bit 25 at the end of the
+# operation", and making statement_size return 25 BROKE pp.7-8: line
+# 31 is "X E DD K  SYN,$-X ERR DD", measuring a table built entirely
+# of VFs, and it prints 000047.00 -- THIRTY-NINE WORDS EXACTLY, on a
+# half-word boundary.  At bit 25 "$" would be 000046.71 and line
+# 32's XW, which uses "X E DD K+1.0" as its COUNT, printed 000047
+# where the listing prints 000050.
+#
+# So "stands at bit 25" describes where the counter sits FOR A
+# FOLLOWING FIELD and is not what "$" reports: a SYN sees the rounded
+# location.  Nothing else in the corpus distinguishes the two,
+# because every storage-creating pseudo-operation rounds to at least
+# a half word before it emits -- and p.26 cannot tell them apart
+# either, since its CF sits on a boundary either way.  THE MANUAL AND
+# THE LISTING ARE BOTH SATISFIED by a half-word SIZE with a
+# twenty-five-bit DEPOSIT, which is what is implemented. <<<
+#
+# THE LISTING ORACLE LEARNED THE SHAPE TOO.  A CF row prints SIX
+# OCTAL DIGITS and nothing else -- no bit position, no sign, no hex
+# byte -- because eighteen bits is six octal digits exactly.  That is
+# a different printed form from VF's "000000.00+" and from a half
+# word's "000000.00 00", and the renderer now dispatches on it.
 run "MCP's error table, printed pp.7-8 (MCP_Mar63 PDF pp.14-15)" python3 verify_mcp_bootstrap_p7_p8.py
 # X ERR DD -- THE LAST TWO PAGES OF THE BOOTSTRAP TO BE TRANSCRIBED,
 # and the index to all the rest: seventy-eight VF half words, one pair

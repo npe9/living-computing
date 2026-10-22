@@ -1,0 +1,104 @@
+! mcp_bootstrap_p26.strap -- MCP INITIALIZATION, printed page 26:
+! "TO DECODE" -- handing each broken-out IOD and REEL table to the
+! decode routine.  docs/MCP_Mar63_001-249.pdf PDF p.33, header
+! "PAGE NUMBER 26".  docs/boot_plan.md M3.
+!
+! Contiguous with printed p.25: that page's last instruction is a
+! full word at 001443.00 and this one starts at 001444.00.
+!
+! ---------------------------------------------------------------
+! THE ASSEMBLER GAINED "CF" FOR THIS PAGE, and the manual gave the
+! rounding rules that the page's own locations then check
+! ---------------------------------------------------------------
+! C22-6531 printed p.19:
+!
+!   4. CF  "COUNT FIELD"   CF, COUNT
+!   "The location counter is rounded to the next HALF word.  The
+!    contents of the count field are compiled as an 18-BIT INTEGER IN
+!    POSITIONS 0-17.  The location counter stands at BIT 18 at the end
+!    of the operation."
+!   5. RF  "REFILL FIELD"  RF, REFILL
+!   "This pseudo-operation is the same as CF, except Refill is
+!    substituted for Count."
+!
+! and printed p.18 for the one beside it:
+!
+!   3. VF  "VALUE FIELD"   VF, VALUE
+!   "...compiled as a 24-bit plus sign quantity in positions 0-24 of
+!    the next half word.  THE LOCATION COUNTER STANDS AT BIT 25 at the
+!    end of the operation."
+!
+! The same page's table gives them data descriptions that say the
+! widths again: XW (BU), VF (B,25), CF or RF (BU,18).
+!
+! LINES 14-18 ARE THE CHECK, and they only come out right if both
+! rules hold: a VF at 001447.40 ends at bit 25, the CF after it
+! rounds to 001450.00, that CF ends at bit 18, and the VF after THAT
+! rounds to 001450.40.  VF had been emitting a whole half word here,
+! claiming seven bits it does not own -- which never showed until a
+! CF had to share a boundary with one.
+!
+! ---------------------------------------------------------------
+! EXTERNALS, every one recovered from this page's own binary output
+! ---------------------------------------------------------------
+!   Y IPL 1   002201.00  (line 9)  -- printed p.25 line 33
+!   L DECOD   002737.00  (lines 13, 28)
+!   X ERR AD  000551.00  (line 20) / X ERROR  000133.00  (line 21)
+!   X22 2AA   001434.00  (line 26) -- printed p.25 line 38, the
+!             program name "MCP IPL"
+!   X24       001464.00  (line 33) -- forward, onto printed p.27
+YIPL1   SYN, (8)2201.0
+LDECOD  SYN, (8)2737.0
+XERRAD  SYN, (8)551.0
+XERROR  SYN, (8)133.0
+X222AA  SYN, (8)1434.0
+X24     SYN, (8)1464.0
+
+        SLC, (8)1444.0
+
+X23     LV, $14, $4                  ! line 5  -GET BASE OF AREA
+                                     ! line 6   CONTAINING IOD AND
+                                     !          REEL CARDS BROKEN OUT
+X231    LVI, $15, X233               ! line 7  -ENTER DECODE LINKAGE
+                                     ! line 8   PARAMETER LOCATION
+        CM1111(BU,1), YIPL1+.21      ! line 9  -MAKE BE IN UNCODE
+                                     !           INTO BD
+X232    V+I, $14, 1.0                ! line 10 -ADVANCE POINTER TO
+                                     ! line 11  SECOND WORD IN TABLE
+        SVA, $14, X233               ! line 12
+X232A   B, LDECOD                    ! line 13 -TO DECODE ROUTINE
+
+! ---- the decode linkage parameter block --------------------------
+X233    VF, 0.0                      ! line 14 -LOCATION OF TABLE TO
+                                     ! line 15  BE PROCESSED (ALPHA)
+        CF, 1.0                      ! line 16 -NON ZERO FOR BYPASS
+                                     !           MODE
+        VF, 0.0                      ! line 17 -ERROR DISPOSITION
+        B, X234                      ! line 18 -ERROR RETURN
+X23N    B, X235                      ! line 19 -NORMAL
+
+X234    SIC, XERRAD                  ! line 20
+        B, XERROR                    ! line 21 -IO REQUIREMENTS
+                                     !           REJECTED
+X235    V+I, $14, 14.                ! line 22 -ADVANCE TO NEXT TABLE
+        KV, $14, $7                  ! line 23 -TEST NEXT TABLE
+                                     ! line 24  ADDRESS FOR ADDRESS OF
+                                     !          MCPP CARD
+        BXL, X232                    ! line 25 -IF PROCESSED LAST
+                                     !           TABLE
+
+! ---- the last time through ---------------------------------------
+X236    TI, 1, X222AA, XLAST-1.0     ! line 26 -ENTER NAME AT ALPHA-1.0
+        SIC, $15                     ! line 27
+        B, LDECOD                    ! line 28
+        VF, XLAST                    ! line 29 -LOCATION OF ALPHA
+        CF, 1                        ! line 30 -BYPASS MODE
+        VF, 0                        ! line 31 -ERROR DISPOSITION
+        B, X234                      ! line 32 -ERROR RETURN
+        B, X24                       ! line 33 -NORMAL RETURN
+        XW, 0                        ! line 34 -TABLE SLOTS FOR LAST
+                                     !           TIME THROUGH
+XLAST   XW, 0                        ! line 35
+        XW, 0                        ! line 36
+
+        END, X23
