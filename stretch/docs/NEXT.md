@@ -5395,6 +5395,83 @@ no opcode can rule it out. What ruled it out was the datum the name
 labels — which is a tell worth stating on its own: *when a name
 labels data, decode the data before trusting the name.*
 
+## MCP READS ITS CONFIGURATION IN THE REAL BOOT, AND PRINTS A DIAGNOSIS ON THE CONSOLE, 2026-10-22
+
+```
+<CR><RED>000760|0 INCORRECT CARD TYPE <EOM>
+```
+
+That is MCP, running on the model, off a tape, having read five IOCD
+cards describing this machine, reached a sixth group that is zeros,
+and said what is wrong with the deck. **000760 is printed p.19 line
+25's own address** — `BZAEZ,X ERROR -NOT AN IOD CARD EITHER` — and it
+is the same number `mcp_x_err_ad` checks, because the error routine
+prints `X ERR AD` in octal. The register and the console agree. The
+message came out of printed pp.7-8's error table, which maps a
+failing address to a message and had never been exercised on more
+than one entry.
+
+The run before this said "NO IOCD DETECTED".
+
+### The cards' address was not a choice, and the listing said so
+
+printed p.17 line 8 points `$4` at `X IN END` and line 12 tests
+fourteen words from there; printed p.13 line 38 reserves what follows
+as `SLOTS LEFT FOR IOCD + IODS`. The cards are not read from a
+7503 — `C22-6678-1` printed p.29's operator procedure mounts the
+master system *tape* and no deck — so they arrive in the PROSA record.
+
+**How they get from the buffer to `X IN END` was already in the
+listing**: printed p.15 line 24, `T,$10,X BUFER($9),0.0($8) -PLACE
+MCP IN STORAGE`. Put the cards at the *end* of that block and they
+land at the end of where MCP is placed — which is what `X IN END`
+*is*. So MCP's destination stopped being free:
+
+```
+MCP_DEST_WORD = X IN END - MCP_BODY_WORDS
+```
+
+### Two fixture lessons, both about inert-looking data
+
+**1. Channel 35 is the console in this model, and the first deck
+called it a tape.** MCP processed the card, preset all sixty-four CST
+entries to not-available, marked 35 as tape — and then its error
+routine found no console and **wrote nothing at all**, where the run
+before it, with no cards whatever, had printed a message. *A
+configuration that lies about the machine makes MCP correct about the
+wrong machine, and the symptom is silence.* The deck now describes
+the five channels `bsv/StretchIO.bsv` actually presents.
+
+**2. The comm region's filler was not inert.** printed p.5 line 19 is
+`LV,$X1,S YCOCH -GET CONSOLE CHANNEL SLOT CONTENT` and line 20
+`BZXVZ,X2AERR -IF CHANNEL NUMBER PRESENT`: a **non-zero** `S YCOCH`
+sends the error routine straight to `GONG` on whatever channel it
+read instead of walking the exchange. `S YCOCH` is `S MCP` + 6 words,
+inside the fifteen the fixture was filling with tagged words — so MCP
+believed in a console on a channel made of `0x5A5A`. The region
+arrives zeroed now except its descriptor.
+
+### One check was measuring nothing
+
+`mcp_x15_word31` asserted that `$15` still held `LVE`'s result from
+printed p.3. printed p.17 lines 18-20 load it with the UST base and
+printed p.19 advances it per unit, so the check only measured how far
+the run got. It is replaced by `S LR BU`, the communication-region
+word printed p.19 line 27 *saves* that pointer into — still zero,
+because the run stops two rows earlier, which is itself a statement
+about where it stops.
+
+### Next: an IOD card
+
+`C22-6728` printed p.88 lists three control-card types — **IOCD, IOD,
+MCPP** — and the deck has only the first kind. printed p.19 line 23's
+`KF(BU,36),X IOD,12` is what wants the second, and what the page does
+after that compare succeeds is the body of p.19 that has never run.
+
+`strap/iocd.py` is one card builder with two users now; the
+testbench's inline version was proved byte-identical for all four of
+its modes before it was replaced.
+
 ## THE COMM REGION IS BUILT, AND ADDRESS INVALID IS GONE FROM THE BOOT RUN, 2026-10-22
 
 The section below was written as "what the fixture needs next". It

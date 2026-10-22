@@ -461,6 +461,24 @@ account and the route that should work. **Do this before A3**, which
 cannot be tested without it.
 
 **A3. IOCD CARD IMAGES ON THE SYSTEM TAPE.**
+
+> **DONE 2026-10-22, and MCP read them.** `strap/prosa.py` puts five
+> IOCD cards — one per channel `bsv/StretchIO.bsv` presents — at the
+> end of the block printed p.15 line 24 places, so they land exactly
+> at `X IN END` where printed p.17 line 8 points `$4`. The boot run
+> processes all five and then prints, on the console,
+> `<CR><RED>000760|0 INCORRECT CARD TYPE <EOM>` — printed p.19 line
+> 25's own address, out of printed pp.7-8's error table.
+>
+> **A3a — AN IOD CARD IS THE NEXT PIECE.** `C22-6728` printed p.88
+> lists three control-card types, IOCD, IOD and MCPP, and the deck
+> has only the first. printed p.19 line 23's `KF(BU,36),X IOD,12` is
+> what wants the second, and the body of p.19 after that compare has
+> never run.
+>
+> `strap/iocd.py` is the card builder, shared with
+> `tests/gen_mcp_p17_tb.py`.
+
 ~~An IOCD card deck for the reader.~~ **CORRECTED 2026-10-19 before
 anything was built on it** — see `docs/mcp_io_tables.md`. The IOCD
 cards are not read from a 7503 at initialization: `C22-6678-1`

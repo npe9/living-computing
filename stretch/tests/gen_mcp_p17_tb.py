@@ -92,6 +92,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), os.p
 
 from gen_tb import generate
 from strap_asm import assemble, AssemblerError
+import iocd
 from cards import column_bits, card_words, WORDS_PER_CARD
 
 DECKS = [os.path.join(os.path.dirname(os.path.abspath(__file__)),
@@ -414,18 +415,15 @@ def main():
     #   cols 19+    one column per unit.  A punch in row 12 is the
     #               character "+" and a punch in row 0 is "0", so
     #               even these are text.
-    cols = [" "] * 80
-    cols[0] = "B"
-    for i, ch in enumerate("IOCD"):
-        cols[9 + i] = ch
-    cols[13], cols[14] = "%02d" % CHANNEL
-    cols[15], cols[16] = CARD_EQUIPMENT
-    if unit_mode:
-        for k, row in enumerate(UNIT_ROWS):
-            cols[18 + k] = "+" if row == 0 else "0"
-        for k in range(UNIT_COLS, UNIT_COLS + EXTRA_COLS):
-            cols[18 + k] = "+"
-    for i, w in enumerate(card_words("".join(cols))):
+    #
+    # >>> THE PUNCHING ITSELF MOVED TO strap/iocd.py ON 2026-10-22,
+    # because strap/prosa.py now punches cards too -- into the PROSA
+    # record, so the REAL boot finds them at X IN END instead of
+    # reporting "-NO IOCD DETECTED".  Two card builders would have
+    # been two chances to disagree about a field map that took a page
+    # of derivation to establish. <<<
+    unit_rows = (list(UNIT_ROWS) + [0] * EXTRA_COLS) if unit_mode else []
+    for i, w in enumerate(iocd.card(CHANNEL, CARD_EQUIPMENT, unit_rows)):
         words[card // 64 + i] = w
         # With two units the next column is left ZERO, which is how
         # the list ends: CT0011 copies the storage field, so an

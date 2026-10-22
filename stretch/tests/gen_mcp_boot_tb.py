@@ -54,6 +54,7 @@ import sys
 from gen_tb import generate
 from mcp_image import build, build_mcp_ipl
 from opcodes import INDICATOR_BITS
+import iocd
 import prosa
 import struct
 
@@ -212,19 +213,14 @@ def main():
         # taking the Address Invalid; eleven pages later the answer is
         # in the communication region for the supervisor to use.
         #
-        # >>> AND THE REST OF THE WORD IS THE FIXTURE'S, which is new
-        # and is the point of the comm region being real.  S ROOF is
-        # the ELEVENTH word of the region (002162.00 - 002150.00 = 10
-        # words), so the TRANSMIT on printed p.15 line 21 delivers
-        # strap/prosa.py's filler there first and SR then overwrites
-        # only bits 0-23.  The low forty bits still carry the word's
-        # own buffer offset, so a region that arrived from the wrong
-        # place fails here with the offset in hand -- the same
-        # property every other fixture word has. <<<
-        ("mcp_size_in_comm_region", str(0o2162),
-         (98304 << 46)
-         | (prosa.body_word(prosa.COMM_AT + (0o2162 - 0o2150))
-            & ((1 << 40) - 1))),
+        # THE REST OF THE WORD IS ZERO, and for one commit it was the
+        # fixture's filler instead.  S ROOF is the eleventh word of
+        # the comm region, so whatever the record carries there
+        # arrives first and SR then overwrites only bits 0-23.  The
+        # record carries ZEROS there now, deliberately -- see
+        # strap/prosa.py, where a filler word six places earlier had
+        # MCP believing in a console on a channel made of 0x5A5A.
+        ("mcp_size_in_comm_region", str(0o2162), 98304 << 46),
 
         # >>> WHERE MCP STOPPED, AND IT STOPPED FOR A GOOD REASON <<<
         # X ERR AD, printed p.13 line 37, "-LOCATION OF ERROR +1.0".
@@ -250,8 +246,16 @@ def main():
         # +1.0", and one word is two half-words.  Derived from the
         # assembled image rather than written as a number, so it moves
         # if the page is ever re-transcribed.
+        #
+        # >>> AND THE SITE MOVED ON 2026-10-22, from printed p.17's
+        # "NO IOCD DETECTED" to printed p.19's.  With five IOCD cards
+        # at X IN END the hunt succeeds, all five are processed, and
+        # the run ends at line 25's "BZAEZ,X ERROR  -NOT AN IOD CARD
+        # EITHER" -- the sixth group is zeros and is neither.  THE
+        # CONSOLE PRINTS THE SAME NUMBER: the message checked below
+        # reads "000760|0 INCORRECT CARD TYPE". <<<
         ("mcp_x_err_ad", str(sym("XERRAD")),
-         ((ipl_hw("XER16C") + 2) & 0x7FFFF) << 45),
+         ((ipl_hw("XERR19") + 2) & 0x7FFFF) << 45),
 
         # The indicator register, word 11: RZ, XVZ, XF and **OP**.
         #
@@ -366,8 +370,14 @@ def main():
         # transmit moves fifteen words, and ADDRESS INVALID IS NO
         # LONGER RAISED ANYWHERE IN THE RUN.  AD is out of the
         # expected set below. <<<
+        #
+        # AL JOINED THE SET ON 2026-10-22 and it is the last compare:
+        # printed p.19 line 23's "KF(BU,36),X IOD,12" against a group
+        # of zeros leaves the accumulator LOW, which is what sends
+        # line 25's BZAEZ to X ERROR.  The indicator that ends the
+        # run is the indicator the run ends on.
         ("mcp_indicators_word11", str(IND_WORD),
-         _ind("RGZ") | _ind("XE") | _ind("XVGZ")),
+         _ind("RGZ") | _ind("XE") | _ind("XVGZ") | _ind("AL")),
 
         # >>> THE MOVE ITSELF, AND IT IS THE POINT OF THE FIXTURE <<<
         # Printed p.4 line 28, "T,$11,X BUFER($X1),X BS END  -MOVE MCP
@@ -455,7 +465,7 @@ def main():
         ("mcp_comm_region_last_word",
          str(prosa.MCP_IPL_AT + prosa.IPL_WORDS
              + prosa.COMM_REGION_WORDS - 1),
-         prosa.body_word(prosa.COMM_AT + prosa.COMM_REGION_WORDS - 1)),
+         prosa.record()[prosa.COMM_AT + prosa.COMM_REGION_WORDS - 1]),
         # ONE PAST IT IS STILL ZERO, which is the count's upper edge.
         # Before the descriptor existed this read a fixture word: the
         # size field was zero, Reference Manual printed p.30 makes a
@@ -478,11 +488,37 @@ def main():
         ("mcp_placed_at_dest_first", str(prosa.MCP_DEST_WORD),
          prosa.comm_descriptor(prosa.MCP_DEST_WORD,
                                prosa.COMM_REGION_WORDS)),
-        ("mcp_placed_at_dest_last",
-         str(prosa.MCP_DEST_WORD + prosa.MCP_SIZE_WORDS - 1),
-         prosa.body_word(prosa.COMM_AT + prosa.MCP_SIZE_WORDS - 1)),
         ("mcp_placed_one_past_is_zero",
          str(prosa.MCP_DEST_WORD + prosa.MCP_SIZE_WORDS), 0),
+
+        # >>> AND THE IOCD CARD IS AT X IN END, which is the whole
+        # reason MCP's destination is no longer a free choice. <<<
+        # printed p.17 line 8 points $4 at X IN END and line 12 tests
+        # fourteen words from there for the first card; printed p.13
+        # line 38 reserves what follows as "SLOTS LEFT FOR IOCD +
+        # IODS".  strap/prosa.py puts the cards at the END of the
+        # block printed p.15 line 24 places, and MCP_DEST_WORD is
+        # X IN END minus the body, so the first card lands exactly
+        # where the hunt starts.
+        #
+        # The card's FIRST word is the class column: "B" in column 1
+        # is a 12-2 punch, so the word reads 0x8800... and nothing
+        # else in the region does.
+        ("iocd_card_first_word_at_x_in_end",
+         str(prosa.XINEND_WORD),
+         iocd.card(*prosa.IOCD_CARDS[0][:2],
+                   units=prosa.IOCD_CARDS[0][2])[0]),
+        # And the word carrying columns 10-17 -- "IOCD", the channel
+        # digits and the equipment code -- because the first word
+        # alone would pass on a card that was all class column.
+        ("iocd_card_identifier_word",
+         str(prosa.XINEND_WORD + 1),
+         iocd.card(*prosa.IOCD_CARDS[0][:2],
+                   units=prosa.IOCD_CARDS[0][2])[1]),
+        ("iocd_card_last_word",
+         str(prosa.XINEND_WORD + iocd.WORDS_PER_CARD - 1),
+         iocd.card(*prosa.IOCD_CARDS[0][:2],
+                   units=prosa.IOCD_CARDS[0][2])[-1]),
 
         # Printed p.2 line 39, "SV,15,X S ROOF -TEMPORARILY SAVE 7030
         # SIZE".  The value field holds 6291456 bits = word 98304,
@@ -503,7 +539,26 @@ def main():
         # word 31, "the words in storage locations 16-31" (RefMan
         # printed p.28) -- holds 1088, the channel-34 address, which
         # every "0($15)" on pp.3-6 then uses.
-        ("mcp_x15_word31", "31", 0x0004400A06480000),
+        #
+        # >>> SUPERSEDED 2026-10-22.  The premise was that $15 still
+        # held LVE's result from printed p.3; it does not, because
+        # printed p.17 lines 18-20 load it with X BUFER + 64 words as
+        # the base of the unit status table area and printed p.19
+        # advances it per unit.  A check on a register that later
+        # code reuses measures only how far the run got. <<<
+        #
+        # What replaces it is the field printed p.19 line 27 SAVES
+        # that pointer into -- "SV,$15,S LR BU  -SAVE BASE OF IO
+        # ASSIGNMENT TABLES" -- which is a named communication-region
+        # word rather than a scratch register, and which printed
+        # pp.28 and 30 both read back.
+        #
+        # AND IT IS STILL ZERO, which is a statement about where the
+        # run stops: printed p.19 line 25's BZAEZ goes to X ERROR two
+        # rows before line 27's SV reaches it.  When the card deck
+        # grows an IOD card this becomes the UST base and the check
+        # stops being about the stopping point.
+        ("mcp_s_lr_bu", str(0o2155), 0),
 
         # THE LOAD ITSELF, and only the last word is a fair witness.
         # X IPL BS used to be checked here and cannot be: the program
@@ -640,10 +695,25 @@ def main():
     # landing one byte late because X MS 16C has no RED control code.
     # Both of those are explained above and neither is the model's.
     console_checks = [
-        ("console_msg_w3", 3, 0xfd606060606c6c78),  # <CR>0 000 +12+12 .+4
-        ("console_msg_w4", 4, 0x68004749003d4931),  # +8 NO IOC
-        ("console_msg_w5", 5, 0x3300312d4f330033),  # D CARD D
-        ("console_msg_w6", 6, 0x35533531533533fe),  # ETECTED<EOM>
+        # >>> THE MESSAGE CHANGED ON 2026-10-22, BECAUSE THE MACHINE
+        # NOW HAS A CONFIGURATION.  It used to read "NO IOCD
+        # DETECTED"; strap/prosa.py puts five IOCD cards at X IN END,
+        # MCP processes all five, reaches a sixth group that is
+        # neither IOCD nor IOD, and says so:
+        #
+        #   <CR><RED>000760|0 INCORRECT CARD TYPE <EOM>
+        #
+        # 000760 is printed p.19 line 25's "BZAEZ,X ERROR  -NOT AN
+        # IOD CARD EITHER", and it is the SAME NUMBER mcp_x_err_ad
+        # checks -- the error routine prints X ERR AD in octal, so
+        # the register and the console agree. <<<
+        ("console_msg_w3", 3, 0xfd026060606e6c60),  # <CR><RED>000760
+        ("console_msg_w4", 4, 0x7c60003d4731494f),  # |0 INCORRE
+        ("console_msg_w5", 5, 0x4f35315300312d4f),  # CT CARD T
+        ("console_msg_w6", 6, 0x3300535d4b3500fe),  # YPE <EOM>
+        # Words 7-9 are the over-run the control word's count of ten
+        # causes and the next table entry supplies -- "EKJ OF CCW
+        # IN" -- which is documented above and left unchecked.
     ]
 
     print(generate(module_name, prog, checks, console_checks=console_checks,

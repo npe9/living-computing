@@ -1322,6 +1322,99 @@ run "MCP'S OWN BOOTSTRAP RUNS (boot_plan.md M3)" ./run_mcp_boot.sh StretchMcpBoo
 #    move as well proves nothing, so the generator now takes the
 #    first NON-ZERO word at or after the midpoint.
 #
+# >>> AND THE IOCD CARDS ARE ON THE TAPE, 2026-10-22: MCP READS ITS
+# CONFIGURATION IN THE REAL BOOT AND PRINTS A DIAGNOSIS ON THE
+# CONSOLE. <<<
+#
+# printed p.17 line 8 points $4 at X IN END and line 12 tests
+# fourteen words from there for the first card; printed p.13 line 38
+# reserves what follows as "SLOTS LEFT FOR IOCD + IODS".  The cards
+# are not read from a 7503 -- C22-6678-1 printed p.29's operator
+# procedure mounts the master system TAPE and no deck -- so they
+# arrive in the PROSA record like everything else.
+#
+# HOW THEY GET FROM THE BUFFER TO X IN END was already in the
+# listing: printed p.15 line 24, "T,$10,X BUFER($9),0.0($8)  -PLACE
+# MCP IN STORAGE".  Put the cards at the END of that block and they
+# land at the end of where MCP is placed -- which is what X IN END
+# IS.  So MCP's destination stopped being a free choice:
+#
+#     MCP_DEST_WORD = X IN END - MCP_BODY_WORDS
+#
+# and the first card lands exactly where the hunt starts.
+#
+# THE DECK DESCRIBES THE MACHINE THE MODEL ACTUALLY IS, five cards
+# for the five channels bsv/StretchIO.bsv presents: 0 disk, 32
+# reader, 33 printer, 34 tape, 35 console.
+#
+# >>> AND WHAT MCP SAYS ABOUT IT, ON THE CONSOLE, IS: <<<
+#
+#     <CR><RED>000760|0 INCORRECT CARD TYPE <EOM>
+#
+# It read all five cards, reached a sixth group that is zeros, and
+# took printed p.19 line 25's "BZAEZ,X ERROR  -NOT AN IOD CARD
+# EITHER".  000760 is that row's own address, and it is the SAME
+# NUMBER mcp_x_err_ad checks -- the error routine prints X ERR AD in
+# octal, so the register and the console agree.  The message came out
+# of printed pp.7-8's error table, which maps a failing address to a
+# message and had never been exercised on anything but the one entry.
+#
+# THE RUN BEFORE THIS SAID "NO IOCD DETECTED".  It now says the deck
+# is badly terminated, which it is: C22-6728 printed p.88 lists three
+# control-card types -- IOCD, IOD, MCPP -- and this deck has only the
+# first kind.  AN IOD CARD IS THE NEXT PIECE.
+#
+# ===================================================================
+# TWO FIXTURE LESSONS, AND BOTH ARE ABOUT INERT-LOOKING DATA
+# ===================================================================
+#
+# 1. CHANNEL 35 IS THE CONSOLE IN THIS MODEL, and the first deck
+#    declared it a TAPE.  MCP processed the card, presetting all
+#    sixty-four CST entries to not-available and marking 35 as tape,
+#    and then its error routine found no console and WROTE NOTHING AT
+#    ALL -- where the run before it, with no cards whatever, had
+#    printed "NO IOCD DETECTED".  A configuration that lies about the
+#    machine makes MCP correct about the wrong machine, and the
+#    symptom is silence.
+#
+# 2. THE COMM REGION'S FILLER WAS NOT INERT.  printed p.5 line 19 is
+#    "LV,$X1,S YCOCH  -GET CONSOLE CHANNEL SLOT CONTENT" and line 20
+#    "BZXVZ,X2AERR  -IF CHANNEL NUMBER PRESENT": a NON-ZERO S YCOCH
+#    sends the error routine straight to GONG on whatever channel it
+#    read, instead of walking the exchange to find one.  S YCOCH is
+#    S MCP + 6 words, inside the fifteen the fixture was filling with
+#    tagged words, so MCP believed in a console on a channel made of
+#    0x5A5A.  The region arrives ZEROED now except its descriptor,
+#    which is also what a region the program fills looks like before
+#    it is filled.
+#
+# ===================================================================
+# THREE CHECKS MOVED, AND ONE OF THEM WAS MEASURING NOTHING
+# ===================================================================
+#   mcp_x_err_ad      the site moved from printed p.17's XER16C to
+#                     printed p.19's XERR19; still derived from the
+#                     image's own symbol table, not written down.
+#   mcp_indicators    AL joined the set, and it is the last compare:
+#                     "KF(BU,36),X IOD,12" against zeros leaves the
+#                     accumulator low, which is what sends BZAEZ to
+#                     X ERROR.
+#   mcp_x15_word31    DELETED.  Its premise was that $15 still held
+#                     LVE's result from printed p.3; printed p.17
+#                     lines 18-20 load it with the UST base and
+#                     printed p.19 advances it per unit, so the check
+#                     measured only how far the run got.  Replaced by
+#                     S LR BU, the communication-region word printed
+#                     p.19 line 27 SAVES that pointer into -- which
+#                     is still zero, because the run stops two rows
+#                     earlier.
+#
+# AND strap/iocd.py IS ONE CARD BUILDER WITH TWO USERS.  The
+# testbench above punched its own card inline; prosa.py needs the
+# same field map, and two builders would have been two chances to
+# disagree about a map that took a page of derivation.  The refactor
+# was proved byte-identical for all four of this suite's p.17 modes
+# before it was kept.
+
 # >>> BUILT, 2026-10-22, THE SAME DAY: THE COMM REGION IS IN THE
 # RECORD, AND ADDRESS INVALID IS GONE FROM THE RUN. <<<
 #

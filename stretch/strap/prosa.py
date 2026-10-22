@@ -109,6 +109,7 @@ PROSA record.  At that point the dictionary stops being chosen and
 the sizes become facts, and any test that still imports this module
 is testing the fixture.
 """
+import iocd
 import mcp_image
 
 # The record's own geometry.  Printed p.14's control words read it in
@@ -141,7 +142,6 @@ DICT_AT = (1, 3, 5, 7)        # derived: see section 1
 # Chosen sizes, in words.
 WORDS_BEFORE_MCP_A = 3        # X12, "GET DICTIONARY"
 WORDS_BEFORE_MCP_B = 5        # X14, "GET INDEX"
-MCP_SIZE_WORDS     = 12       # X10, "GET MCP SIZE"
 
 # Where MCP's own words start inside the record, which is what
 # LVS computes: the sum of the two "preceding" sizes.
@@ -197,11 +197,77 @@ COMM_REGION_WORDS = 15
 # image, which is what printed p.15 line 17's three-register LVS
 # computes -- X12 + X11 + X14, the dictionary plus the IPL plus the
 # index.
-# CHOSEN: where MCP itself is placed, the address LVE pulls out of the
-# descriptor.  It has to clear the comm region, which ends at
-# 002166.00, and stay below X BUFER at 011406.00; 002200.00 is the
-# next round word above the region and is recognisable in a dump.
-MCP_DEST_WORD = 0o2200
+# ---------------------------------------------------------------------
+# THE IOCD CARDS, AND WHY THEY FIX WHERE MCP IS PLACED
+# ---------------------------------------------------------------------
+# printed p.17 line 8 is "LVI,$4,X IN END  -END OF ASSEMBLED" and
+# line 12 "LCI,$4,14  -TEST 14 WORDS FOR FIRST IOCD", so MCP hunts
+# for its configuration cards at X IN END -- 005466.00, printed p.98
+# line 36's "X IN END SYN,$" -- and printed p.13 line 38 reserves
+# what follows: "X BUFER SYN, X IN END+2000.0", commented "SLOTS
+# LEFT FOR IOCD + IODS".  Two thousand words of slots.
+#
+# THE CARDS ARE NOT READ FROM A 7503.  C22-6678-1 printed p.29's
+# six-step operator procedure mounts the master system TAPE and no
+# deck; the cards are card IMAGES the system build put on the tape.
+# So they arrive the way everything else does -- in the PROSA record
+# -- and the only question is how they get from the buffer to
+# X IN END.
+#
+# >>> printed p.15 LINE 24 IS THE ANSWER, AND IT IS ALREADY THERE:
+# "T,$10,X BUFER($9),0.0($8)  -PLACE MCP IN STORAGE".  It moves X10
+# words from the same buffer offset the comm region came from to the
+# address the descriptor names.  Put the cards at the END of that
+# block and they land at the end of where MCP is placed -- which is
+# what X IN END IS: the end of the assembled image. <<<
+#
+# So MCP's destination is no longer a free choice.  It is
+#
+#     MCP_DEST_WORD = X IN END - MCP_BODY_WORDS
+#
+# and the cards follow the body, so the first one lands exactly at
+# X IN END and printed p.17's hunt finds it on its first test --
+# line 13's "BB, 1.44($4)" is bit 108 of the group, which is where
+# the IOCD identifier starts.
+#
+# CHOSEN: how long MCP's body is, and what is on the cards.  The
+# body is the comm region's own length, because the comm region IS
+# the start of the block (printed p.15 lines 21 and 24 move from the
+# SAME source) and nothing in the transcribed pages reads anything
+# between it and X IN END.
+#
+# >>> AND THE CARDS DESCRIBE THE MACHINE THE MODEL ACTUALLY IS, which
+# is the whole point of an IOCD deck: "the IOCD cards define the
+# distribution of I-O units at initializing time" (C22-6728 printed
+# p.88).  Every channel below is one bsv/StretchIO.bsv presents:
+#
+#     channel  0  chanDisk     an IBM 7612 and a 353 disk
+#     channel 32  chanReader   a card reader
+#     channel 33  chanPrinter  a printer
+#     channel 34  chanTape     a tape drive
+#     channel 35  chanConsole  the console
+#
+# THE FIRST DECK HERE SAID CHANNEL 35 WAS A TAPE, and the run said
+# so: MCP processed the card, presetting all sixty-four CST entries
+# to not-available and marking 35 as tape, and then its error routine
+# walked the channels looking for a console and found none -- so
+# NOTHING WAS WRITTEN TO THE CONSOLE AT ALL, where the run before it
+# had printed "NO IOCD DETECTED".  A configuration that lies about
+# the machine makes MCP correct about the wrong machine.
+#
+# CHOSEN: the unit rows.  A tape channel carries units and printed
+# p.18 walks their columns; the single-unit equipments are punched
+# with none, which is how the list ends (line 14's BRZ on an
+# unpunched column).
+IOCD_CARDS = [
+    # (channel, equipment, unit rows) -- see strap/iocd.py for what a
+    # row means and for the field map's provenance.
+    (0,  "DK", ()),
+    (32, "RD", ()),
+    (33, "PR", ()),
+    (34, "TP", (2, 0)),
+    (35, "CN", ()),
+]
 
 
 def mcp_ipl_image():
@@ -255,10 +321,22 @@ IPL_WORDS = len(MCP_IPL_WORDS)   # X11, "GET IPL" -- the TRANSMIT's
 # exactly here.
 COMM_AT = WORDS_BEFORE_MCP_A + IPL_WORDS + WORDS_BEFORE_MCP_B
 
+# MCP's body: the comm region's own length -- see the IOCD note.
+MCP_BODY_WORDS = COMM_REGION_WORDS
+CARD_WORDS = iocd.WORDS_PER_CARD * len(IOCD_CARDS)
+# X10, "GET MCP SIZE": the body plus the cards, because printed p.15
+# line 24 moves the whole block.
+MCP_SIZE_WORDS = MCP_BODY_WORDS + CARD_WORDS
+# DERIVED: the block has to END at X IN END plus its cards, so that
+# the first card lands where printed p.17 line 8 points $4.
+XINEND_WORD = mcp_image.build_mcp_ipl()[0].symtab["XINEND"] // 64
+MCP_DEST_WORD = XINEND_WORD - MCP_BODY_WORDS
+CARDS_AT = COMM_AT + MCP_BODY_WORDS   # inside the record
+
 # A few words of filler past everything, so that a transmit which ran
 # one word long would copy something recognisable rather than falling
 # off the end of the record.
-RECORD_WORDS = COMM_AT + COMM_REGION_WORDS + 4
+RECORD_WORDS = COMM_AT + max(COMM_REGION_WORDS, MCP_SIZE_WORDS) + 4
 
 # A body word carries its own offset.  0x5A5A is a pattern no part of
 # the bootstrap or the control words uses, so a stray one is obvious
@@ -309,7 +387,31 @@ def record():
     # the rest keep their buffer-offset filler, because nothing in the
     # transcribed pages reads a value out of them -- they are read as
     # a block by the TRANSMIT and written field by field afterwards.
+    # >>> THE COMM REGION IS THE DESCRIPTOR AND THEN ZEROS, and the
+    # zeros are the point.  A tagged filler word here is not inert:
+    # printed p.5 line 19 is "LV,$X1,S YCOCH  -GET CONSOLE CHANNEL
+    # SLOT CONTENT" and line 20 "BZXVZ,X2AERR  -IF CHANNEL NUMBER
+    # PRESENT", so a non-zero S YCOCH sends the error routine
+    # straight to GONG on whatever channel it read instead of walking
+    # the exchange to find one.  With filler there MCP believed in a
+    # console on a channel made of 0x5A5A and printed NOTHING; with
+    # zeros it walks, exactly as it does when no console has been
+    # declared.
+    #
+    # S YCOCH is S MCP + 6 words, so this is not a hypothetical: the
+    # region is fifteen words and the fixture was filling all of them.
+    # NOTHING IN THE TRANSCRIBED PAGES SAYS WHAT THE REGION ARRIVES
+    # CARRYING, so it arrives empty, which is also what a region the
+    # program fills in looks like before it is filled. <<<
+    for k in range(1, COMM_REGION_WORDS):
+        words[COMM_AT + k] = 0
     words[COMM_AT] = comm_descriptor(MCP_DEST_WORD, COMM_REGION_WORDS)
+    # The IOCD cards, at the end of the block printed p.15 line 24
+    # places -- so they land at X IN END.
+    for n, (channel, equipment, units) in enumerate(IOCD_CARDS):
+        at = CARDS_AT + n * iocd.WORDS_PER_CARD
+        words[at:at + iocd.WORDS_PER_CARD] = iocd.card(channel, equipment,
+                                                       units)
     return words
 
 
