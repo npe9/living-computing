@@ -3752,6 +3752,101 @@ run "MCP INITIALIZATION, printed p.35, bit-exact (MCP_Mar63 PDF p.42)" python3 v
 # was opened: D MCP is printed p.27's X24A, D RET is printed p.34
 # line 45's operand, S JC4 is printed p.33 line 43's, S COMD is
 # printed p.33 lines 27 and 36's.
+
+run "MCP INITIALIZATION, printed p.36, bit-exact (MCP_Mar63 PDF p.43)" python3 verify_mcp_bootstrap_p36.py
+# >>> PRINTED p.36 IS TRANSCRIBED -- EVERY ROW ON THE PAGE, and with
+# it EVERY PAGE OF MCP's LISTING FROM PRINTED p.2 THROUGH p.36 IS
+# TRANSCRIBED AND BIT-EXACT.  docs/boot_plan.md's M3+ listed "$IPLD,
+# printed pp.15-36 -- 22 pages, 3 sampled" as the open range; it is
+# closed. <<<
+#
+# "SYSTEM COMMAND OPS FOR STARTING MODE": the three command strings,
+# the console messages, the bounds words, the hundred-word IPL
+# message block, and the card codes for the operating modes.
+#
+# >>> TWELVE ADDRESSES EARLIER PAGES ALREADY COMPILED LAND HERE, and
+# that is what this page checks.  Each was decoded out of an
+# instruction on a page transcribed BEFORE this one was opened:
+#
+#   X BYPAS  001757.00   printed p.33 line 47
+#   X ON LIN 001761.00   printed p.33 line 21
+#   X OF LIN 001763.00   printed p.33 line 45
+#   X RDR MG 001765.00   printed p.32 line 46
+#   X RDR CR 001771.50   printed p.32 lines 42-43
+#   X MSG    001773.00   printed p.27 line 23
+#   X MSG CR 001774.00   printed p.27 line 24
+#   X BOUND  001777.00   printed p.33 line 51
+#   X MSG BK 002000.00   printed pp.27, 32 and 34
+#   X ON OV  002144.00   printed p.31 line 12
+#   X OF OV  002145.00   printed p.31 line 14
+#   X BYPS   002146.00   printed p.31 line 16
+#
+# and line 34's "S LR BU SYN, S BA PP" gives 002155.00, which
+# printed pp.28 and 30 had already compiled.  THEY ARE MEASURED BY
+# WHAT IS BETWEEN THEM: nothing in the deck states an address except
+# the SLC at the top, so each one is the running total of a
+# thirty-five character IQS message, a seven character one in a
+# different entry mode, a hundred-word reservation, a one-bit flag. <<<
+#
+# THE ASSEMBLER GAINED A BARE "VF", and both manuals say what it
+# means.  Line 31 is "Y NLST  VF" with no operand at all, printing
+# 000000.00+.
+#   C22-6531 printed p.7: "A MAJOR FIELD MAY BE NULL, even though
+#    other non-null fields follow it...  a null field is always
+#    compiled as a zero."
+#   C28-6129 printed p.4: "missing fields are compiled by STRAP-II as
+#    if they contained zeros AND WERE ADDED AT THE END OF THE
+#    STATEMENT."
+# The second sentence is the one covering an operand left off
+# entirely rather than written as a bare comma.  Both shapes are
+# checked: "VF" parses to NO fields and "VF," to ONE EMPTY field,
+# and only the page writes the first.
+#
+# THREE ENTRY MODES ON ONE PAGE: (A*) at byte size 6 for the command
+# strings, (IQS*) at 8 for the reader-channel message, and (IQSX)
+# for the prefix -- terminated by "X" because the datum "MCPIPL*"
+# CONTAINS an asterisk.  C28-6129 printed p.16 makes the terminator
+# the programmer's choice, and this page is why.
+#
+# >>> THREE INJECTIONS, AND THE HARNESS ITSELF WAS THE FINDING. <<<
+#
+#   J1  a bare VF compiles ONE instead of zero
+#       -> three checks fail, all reading 000000.01+ where the page
+#          prints 000000.00+.
+#   J2  only the no-field shape is accepted, not the bare comma
+#       -> "line 2: empty expression" -- the "VF," check.
+#   J3  only the bare-comma shape is accepted, not the no-field one
+#       -> "line 100: VF takes exactly one value field" -- the deck's
+#          own line 31.
+#
+# >>> J2 AND J3 FIRST REPORTED AS *SURVIVING*, AND BOTH REPORTS WERE
+# FALSE.  Two mechanical faults produced them, within an hour of each
+# other, and both fail in the dangerous direction -- they make a test
+# look stronger than it is: <<<
+#
+#   A STALE .pyc.  A one-character mutation leaves the file the SAME
+#   SIZE, and the restore can land in the same second, so CPython's
+#   (mtime, size) staleness check reuses bytecode compiled from the
+#   INJECTED source.  A verifier then "passes" against code that is
+#   not on disk.  This one cost a confused half hour chasing a bare
+#   VF that compiled 1 when the source said 0.
+#
+#   A NON-UNIQUE ANCHOR.  "if not stmt.fields or not
+#   stmt.fields[0].strip():" occurs EIGHT times in strap_asm.py, once
+#   per pseudo-operation with a null-field check, and a
+#   replace(old, new, 1) patched the FIRST -- a different
+#   pseudo-operation entirely.  The injection was never applied and
+#   was reported as surviving.
+#
+# tests/inject.py is the hardened harness: it clears __pycache__
+# between steps, runs with -B and PYTHONDONTWRITEBYTECODE, and
+# REFUSES an anchor that does not occur exactly once.
+#
+# EVERY INJECTION RESULT ALREADY IN THIS FILE WAS RE-RUN THROUGH IT.
+# The eight on the parenthetical integer entry mode reproduce
+# exactly, including I3 and I8, whose survival is genuine and
+# explained where they are reported.  Every one of their anchors
+# occurs exactly once; the count was checked.
 run "MCP's error table, printed pp.7-8 (MCP_Mar63 PDF pp.14-15)" python3 verify_mcp_bootstrap_p7_p8.py
 # X ERR DD -- THE LAST TWO PAGES OF THE BOOTSTRAP TO BE TRANSCRIBED,
 # and the index to all the rest: seventy-eight VF half words, one pair

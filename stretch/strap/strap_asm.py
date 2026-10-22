@@ -2067,6 +2067,30 @@ def emit_statement(stmt, symtab, image):
         return
 
     if op == 'VF':
+        # A BARE "VF" WITH NO VALUE IS LEGAL AND MEANS ZERO.  MCP
+        # printed p.36 line 31 is "Y NLST  VF", commented "- NOT USED
+        # IN UNCODE", and the listing prints 000000.00+ for it.  The
+        # rule is printed twice:
+        #
+        #   C22-6531 printed p.7: "A MAJOR FIELD MAY BE NULL, even
+        #   though other non-null fields follow it.  Such is the case
+        #   if nothing but the comma denoting the field termination is
+        #   written... a null field is always compiled as a zero."
+        #   C28-6129 printed p.4: "missing fields are compiled by
+        #   STRAP-II as if they contained zeros and were added at the
+        #   end of the statement.  A missing field that is always
+        #   compiled in some standard fashion (in this case zero) is
+        #   referred to as a NULL FIELD."
+        #
+        # The second sentence is the one that covers an operand left
+        # off entirely rather than written as a bare comma.  CW
+        # already accepts its bare form for the same reason (MCP
+        # printed p.8 lines 35 and 37); CF, RF and XW have not been
+        # asked for it by any row in the corpus and still refuse.
+        if not stmt.fields or not stmt.fields[0].strip():
+            stmt = Statement(stmt.lineno, stmt.name, stmt.op, stmt.mods,
+                             ['0'], stmt.raw, stmt.entry, stmt.pents)
+            stmt.addr = loc
         if len(stmt.fields) != 1:
             raise AssemblerError("VF takes exactly one value field", stmt.lineno)
         val = eval_expr(stmt.fields[0], symtab, loc, lineno=stmt.lineno)

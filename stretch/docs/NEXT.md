@@ -5302,6 +5302,89 @@ thing in the path: the word the look-ahead hands the E-box.
 Build the pair that differs only in history before building the pair
 that differs in operands.
 
+## EVERY PAGE OF MCP's LISTING FROM PRINTED p.2 THROUGH p.36 IS NOW TRANSCRIBED -- and the injection harness was lying, 2026-10-22
+
+`decks/mcp_bootstrap_p36.strap` closes the range `boot_plan.md`'s
+M3+ opened as *"$IPLD, printed pp.15-36 — 22 pages, 3 sampled"*.
+Twenty-six rows and twenty symbol locations on p.36, bit-exact, and
+with it there is no untranscribed page left between p.2 and p.36.
+
+### p.36 is where a dozen earlier derivations get paid
+
+Nothing in the deck states an address except the `SLC` at the top.
+Every symbol below is the running total of what precedes it — a
+thirty-five character `(IQS*)` message, a seven character `(IQSX)`
+one, a hundred-word `DR`, a one-bit flag — and every one of them
+matches an address an earlier page had already compiled into an
+instruction:
+
+```
+X BYPAS  001757.00   printed p.33 line 47
+X ON LIN 001761.00   printed p.33 line 21
+X OF LIN 001763.00   printed p.33 line 45
+X RDR MG 001765.00   printed p.32 line 46
+X RDR CR 001771.50   printed p.32 lines 42-43
+X MSG    001773.00   printed p.27 line 23
+X MSG CR 001774.00   printed p.27 line 24
+X BOUND  001777.00   printed p.33 line 51
+X MSG BK 002000.00   printed pp.27, 32 and 34
+X ON OV  002144.00   printed p.31 line 12
+X OF OV  002145.00   printed p.31 line 14
+X BYPS   002146.00   printed p.31 line 16
+S LR BU  002155.00   printed pp.28 and 30
+```
+
+**The assembler gained one thing: a bare `VF`.** Line 31 is
+`Y NLST  VF`, no operand at all, printing `000000.00+`. `C22-6531`
+printed p.7 ("a null field is always compiled as a zero") and
+`C28-6129` printed p.4 ("missing fields are compiled by STRAP-II as
+if they contained zeros **and were added at the end of the
+statement**") both say so; the second is the sentence that covers an
+operand left off entirely rather than written as a bare comma. Both
+shapes are now checked — `VF` parses to no fields, `VF,` to one
+empty field, and only the page writes the first.
+
+**Three entry modes on one page**: `(A*)` at byte size 6, `(IQS*)`
+at 8, and `(IQSX)` — terminated by `X` because the datum `MCPIPL*`
+*contains* an asterisk. `C28-6129` printed p.16 makes the terminator
+the programmer's choice, and this page is why.
+
+## >>> THE INJECTION HARNESS PRODUCED TWO FALSE "SURVIVED" REPORTS, and both faults fail in the dangerous direction <<<
+
+This project's convention is that every claim gets a measured
+injection and that a SURVIVING injection is reported as surviving,
+because it says something true. That convention is only as good as
+the harness, and on 2026-10-22 the harness lied twice within an
+hour. **Both faults make a test look stronger than it is.**
+
+**1. A stale `.pyc`.** A one-character mutation leaves the file the
+*same size*, and restoring it can land in the same second, so
+CPython's `(mtime, size)` staleness check reuses bytecode compiled
+from the **injected** source — or from the *previous* injection's.
+A verifier then passes against code that is not on disk. This one
+surfaced as a bare `VF` compiling 1 when the source plainly said
+`['0']`, and cost a confused half hour before `eval_expr` was traced
+and printed `'1'`.
+
+**2. A non-unique anchor.** `if not stmt.fields or not
+stmt.fields[0].strip():` occurs **eight times** in `strap_asm.py`,
+once per pseudo-operation with a null-field check. A
+`str.replace(old, new, 1)` against it patched the *first* — a
+different pseudo-operation entirely — so the injection was never
+applied and was reported as surviving.
+
+`tests/inject.py` is the hardened harness: it clears `__pycache__`
+between steps, runs with `-B` and `PYTHONDONTWRITEBYTECODE`, and
+**refuses an anchor that does not occur exactly once**.
+
+**Every injection result already recorded was re-run through it.**
+The eight on the parenthetical integer entry mode reproduce exactly,
+including I3 and I8, whose survival is genuine and explained where
+they are reported; every one of their anchors was confirmed to occur
+exactly once. Nothing in the record had to be withdrawn — but
+nothing in the record *would have been* withdrawn either, which is
+the point.
+
 ## THE EQUIPMENT TABLE IS PRINTED, ON p.35, AND THE TESTBENCH NO LONGER INVENTS IT -- pp.34 and 35, 2026-10-22
 
 Seventy-three rows and twenty symbol locations, bit-exact, in

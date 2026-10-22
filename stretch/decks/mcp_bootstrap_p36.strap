@@ -1,0 +1,127 @@
+! mcp_bootstrap_p36.strap -- MCP INITIALIZATION, printed page 36:
+! "SYSTEM COMMAND OPS FOR STARTING MODE", the console messages, the
+! bounds words, the IPL message block, and the card codes for the
+! operating modes.
+! docs/MCP_Mar63_001-249.pdf PDF p.43, header "PAGE NUMBER 36".
+! docs/boot_plan.md M3.
+!
+! CONTIGUOUS WITH p.35: that page's last datum is a one-bit DD at
+! 001756.04, so the counter stands at 001756.05 -- which is where
+! this deck's SLC puts it, and line 4's CNOP then rounds up to the
+! NOP the listing prints at 001756.40.
+!
+! ===============================================================
+! TWELVE ADDRESSES EARLIER PAGES ALREADY COMPILED LAND HERE
+! ===============================================================
+! Every one of these was decoded out of an instruction on a page
+! transcribed BEFORE this one was opened, and this page is where the
+! program defines it.  None of them is read off p.36.
+!
+!   X BYPAS  001757.00   printed p.33 line 47
+!   X ON LIN 001761.00   printed p.33 line 21
+!   X OF LIN 001763.00   printed p.33 line 45
+!   X RDR MG 001765.00   printed p.32 line 46
+!   X RDR CR 001771.50   printed p.32 lines 42-43
+!   X MSG    001773.00   printed p.27 line 23
+!   X MSG CR 001774.00   printed p.27 line 24
+!   X BOUND  001777.00   printed p.33 line 51
+!   X MSG BK 002000.00   printed pp.27, 32 and 34
+!   X ON OV  002144.00   printed p.31 line 12
+!   X OF OV  002145.00   printed p.31 line 14
+!   X BYPS   002146.00   printed p.31 line 16
+!
+! and line 34's "S LR BU SYN, S BA PP" gives 002155.00, which
+! printed pp.28 and 30 had already compiled.
+!
+! ---------------------------------------------------------------
+! THE ASSEMBLER GAINED ONE THING: A BARE "VF"
+! ---------------------------------------------------------------
+! Line 31 is "Y NLST  VF" with no operand at all, printing
+! 000000.00+.  Both manuals say a missing field is a zero:
+!
+!   C22-6531 printed p.7: "A MAJOR FIELD MAY BE NULL, even though
+!    other non-null fields follow it...  a null field is always
+!    compiled as a zero."
+!   C28-6129 printed p.4: "missing fields are compiled by STRAP-II
+!    as if they contained zeros AND WERE ADDED AT THE END OF THE
+!    STATEMENT."
+!
+! The second sentence is the one that covers an operand left off
+! entirely rather than written as a bare comma.  CW already accepted
+! its bare form for the same reason (printed p.8 lines 35 and 37).
+!
+! ---------------------------------------------------------------
+! THREE ENTRY MODES ON ONE PAGE
+! ---------------------------------------------------------------
+!   (A*)   the 48-character set, byte size 6 -- the three system
+!          command strings, twelve characters each
+!   (IQS*) the 89-character console set, byte size 8 -- the reader
+!          channel message
+!   (IQSX) the same set terminated by "X" instead of "*", because
+!          the datum "MCPIPL*" CONTAINS an asterisk
+!
+! That last one is why C28-6129 printed p.16 makes the terminator
+! the programmer's choice: an (IQS*) message cannot contain a
+! literal "*", and this one has to.
+SBAPP   SYN, (8)2155.0
+
+        SLC, (8)1756.05
+
+! ---- system command ops for starting mode -------------------------
+        CNOP                                         ! line 4
+XBYPAS  (A*)DD(BU,,6),COMD,BYPASS *                  ! line 5
+        CNOP                                         ! line 6
+XONLIN  (A*)DD(BU,,6),COMD,ONLINE *                  ! line 7
+        CNOP                                         ! line 8
+XOFLIN  (A*)DD(BU,,6),COMD,OFFLINE*                  ! line 9
+
+! ---- the reader-channel message -----------------------------------
+        CNOP                                         ! line 11
+XRDRMG  DD(BU,8), (2)1111 1101   ! line 12 -CARRIAGE RETURN
+        DD(BU,8), (2)00000010    ! line 13 -RED $
+        (IQS*)DD(BU,64,8), READER IS INPUT SOURCE ON CHANNEL *
+                                 ! line 14
+                                 ! line 15 -MSG SPECIFIES READER
+                                 !          CHANNEL
+XRDRCR  DD(BU,8,8),(2)01100000,(2)01100000,(2)11111101,(2)11111110
+                                 ! lines 16-19 -DUMMY IQS SLOTS, CR
+
+! ---- the IPL message prefix ---------------------------------------
+        CNOP                                         ! line 22
+XMSG    DD(BU,8), (2)00000010    ! line 23 -RED $
+        (IQSX)DD(BU,56,8),MCPIPL*X   ! line 24 -MESSAGE PREFIX
+        CNOP                                         ! line 25
+XMSGCR  DD(BU,64,8), (2)1111110111111110
+                                 ! line 26 -MSL CR AND END RETURN
+
+! ---- modification to IOD processing routines ----------------------
+YTBIT   DD(BU,1), 0              ! line 30 -FLAG USED BY THE UNCODE
+                                 !          ROUTINE
+YNLST   VF                       ! line 31 - NOT USED IN UNCODE FOR IPL
+YNOPUN  SYN, YNLST               ! line 32 - NOT USED IN UNCODE FOR IPL
+SIOLOC  SYN, 0                   ! line 33
+SLRBU   SYN, SBAPP               ! line 34 - SAME AS FIRST SLOT OF
+                                 !           IO LOC TABLE
+
+! ---- bounds and the IPL message block -----------------------------
+XARCK   VF, 0.0                  ! line 36 -ACCUMULATED PROSA ARCS
+        CNOP                                         ! line 37
+        CNOP                                         ! line 38
+XBOUND  VF, 33.0                 ! line 39
+        VF, 32.0                 ! line 40 -BOUNDS AND BOUNDARY
+                                 !          CONTROL BIT
+        CNOP                                         ! line 41
+XMSGBK  DR(BU), (100)            ! line 42 - MESSAGE BLOCK FOR IPL
+                                 ! line 43 - OPERATING MODES
+
+! ---- card codes for the operating modes ---------------------------
+        CNOP                                         ! line 44
+XONOV   DD(BU,24), (8)20102020   ! line 45 -ON IN CARD CODE
+        CNOP                                         ! line 46
+XOFOV   DD(BU,24), (8)20104010   ! line 47 -OF IN CARD CODE
+        CNOP                                         ! line 48
+XBYPS   DD(BU,24), (8)42001002   ! line 49 -BY IN CARD CODE
+XNOR    DD(BU,36), (8)202020102001  ! line 50 - UPL MODE * NORMAL
+XABN    DD(BU,36), (8)440042002020  ! line 51 - IPL MODE * ABNORMAL
+
+        END, XBYPAS

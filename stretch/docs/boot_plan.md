@@ -280,6 +280,15 @@ question, not an M3 one.
 sampled — which is now the actual next thing, because `X 10` is its
 first instruction.
 
+> **CLOSED 2026-10-22. ALL TWENTY-TWO PAGES ARE TRANSCRIBED, and so
+> is everything before them: every page of the listing from printed
+> p.2 through p.36 is bit-exact against the print.** The decks are
+> `decks/mcp_bootstrap_p2.strap` … `p36.strap` (with pp.5-6, 7-8 and
+> 9-12 combined), each with its own verifier in `tests/`. What is
+> still open is not transcription but EXECUTION: pp.19-36 have never
+> run a row, and the gate for that is A1, a PROSA record on the
+> tape.
+
 ### M3+ — pp.15-18 ARE TRANSCRIBED, 2026-10-18, and they name the gate
 
 Four pages, 118 printed rows, every one bit-exact against the
