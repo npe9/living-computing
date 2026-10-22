@@ -4,7 +4,7 @@
 ! PDF p.29, header "PAGE NUMBER 22".  docs/boot_plan.md M3.
 !
 ! Contiguous with printed p.21 by BRANCH rather than by address:
-! p.21 line 24 is "B,XIC" and X IC is this page's first instruction
+! p.21 line 24 is "B,XIO" and X IO is this page's first instruction
 ! at 001052.00.  The address was recovered from that branch's own
 ! encoding before this page was opened, and it is exact.
 !
@@ -55,7 +55,7 @@ XVTIME  SYN, (8)1242.02
         SLC, (8)1052.0
 
 ! ---- read the operator's reply -----------------------------------
-XIC     RD(SEOP), 0.0($15), XDCW2    ! line 5  -GET IPL OPTIONS
+XIO     RD(SEOP), 0.0($15), XDCW2    ! line 5  -GET IPL OPTIONS
         SIC, X73                     ! line 6
         B, X71                       ! line 7  -IO TEST
 
@@ -117,4 +117,4 @@ XVLOPS  L(BU,4)(V+I), .4($1)         ! line 53 - TESTS FOR VALID
         BAH, XVTDER                  ! line 55
         CB, $3, XVLOPS               ! line 56
 
-        END, XIC
+        END, XIO

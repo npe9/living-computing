@@ -1321,7 +1321,7 @@ def statement_size(stmt):
             # and "is not compiled" (C28-6129 printed p.16).
             return 0, len(stmt.fields[0]) * entry_byte_size(stmt)
         return 0, dds_length_bits(stmt.mods, stmt.lineno) * max(1, len(stmt.fields))
-    if op == 'DR':
+    if op in ('DR', 'DRZ'):
         # DATA RESERVATION.  "DR(dds),(n)" sets aside n items of the
         # dds's field length and initialises none of them -- C28-6129
         # Appendix B's roster, and MCP printed p.8 line 36's
@@ -1330,6 +1330,16 @@ def statement_size(stmt):
         # The listing prints 000003.00 in the BINARY OUTPUT column for
         # that row, which is the reservation's SIZE and not its
         # contents; there are no contents.
+        #
+        # DRZ IS THE SAME RESERVATION, ZEROED.  C22-6531 and C28-6129
+        # both carry the pair; docs/mcp_tape_manufacture.md records
+        # them as "Data Reservation, with and without zeroing".  MCP
+        # printed p.24 line 52 is "X VSTOR DRZ(BU),100 - TEMPORARY
+        # STORAGE", whose BINARY OUTPUT column prints 000144.00 --
+        # 0o144 is a hundred, so the reservation is a hundred WORDS
+        # and the printed value is its SIZE, exactly as DR's is.  Note
+        # the count is written BARE there and parenthesised on p.21;
+        # dr_count has always taken either.
         return 0, dds_length_bits(stmt.mods, stmt.lineno) * dr_count(stmt)
     if op == 'VF':
         return HALF, HALF
@@ -1750,6 +1760,17 @@ def emit_statement(stmt, symtab, image):
         # the location counter moves and the storage is left as the
         # loader found it.  The width is what the following rows'
         # addresses check.
+        return
+
+    if op == 'DRZ':
+        # THE Z IS THE WHOLE DIFFERENCE: the region is ZEROED, so the
+        # words are PRESENT in the image rather than left as the
+        # loader found them.  That matters to strap/mcp_image.py,
+        # which builds a tape from the emitted words: a DR region is
+        # absent from it and a DRZ region is a hundred zero words.
+        width = dds_length_bits(stmt.mods, stmt.lineno)
+        for k in range(dr_count(stmt)):
+            image.deposit(loc + k * width, width, 0)
         return
 
     if op == 'VF':

@@ -14,8 +14,8 @@ digit validation over the IPL DATE in the second half of the buffer.
 
 THREE PAGES SHARE ONE BUFFER.  Line 5 reads into X LR IN, which
 printed p.21 line 26 RESERVED with "DR(BU),(3)", using X D CW 2,
-which p.21 line 31 BUILT.  And printed p.21 line 24's "B,XIC" is what
-branches here: X IC at 001052.00 was recovered from that branch's
+which p.21 line 31 BUILT.  And printed p.21 line 24's "B,XIO" is what
+branches here: X IO at 001052.00 was recovered from that branch's
 encoding before this page was opened, and it is exact.
 
 >>> THE PAGE FOUND AN ASSEMBLER GAP, which is the useful part of this
@@ -39,7 +39,7 @@ from strap_asm import assemble
 prog = assemble(open("../decks/mcp_bootstrap_p22.strap").read())
 
 SYMBOLS = {
-    "XIC":    "001052.00",
+    "XIO":    "001052.00",
     "XVLOOP": "001057.40",
     "XVBACK": "001072.40",
     "XVLOP2": "001073.40",
@@ -53,7 +53,7 @@ _S12 = "000000.14 82 104000.20 D0"    # ST(BU,4)(V+I),.12($2)
 
 ROWS = [
     ("001052.00", "000000.00 8F 001044.11 00",
-     "line 5   X IC  RD(SEOP),0.0($15),X D CW2  -GET IPL OPTIONS"),
+     "line 5   X IO  RD(SEOP),0.0($15),X D CW2  -GET IPL OPTIONS"),
     ("001053.00", "000066.40 80",            "line 6   SIC,X7 3"),
     ("001053.40", "000057.50 00",            "line 7   B,X7 1  -IO TEST"),
     ("001054.00", "000006.07 02",            "line 9   LCI,$3,6.0"),

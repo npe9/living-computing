@@ -36,8 +36,8 @@ things:
 3. **The back-matter sweep's worklist** (section below) — six ranked
    items, two already consumed. `C22-6728` printed 247-260, the rest
    of Appendix A, is the largest.
-4. ~~Printed pp.20-23~~ **— all four done, 2026-10-21, bit-exact
-   (17, 28, 50 and 54 rows). Printed p.24 onward** is the
+4. ~~Printed pp.20-24~~ **— all five done, 2026-10-21, bit-exact
+   (17, 28, 50, 54 and 44 rows). Printed p.25 onward** is the
    continuation.
 
 **One caveat carried forward, deliberately not in this file's
@@ -5301,6 +5301,64 @@ thing in the path: the word the look-ahead hands the E-box.
 
 Build the pair that differs only in history before building the pair
 that differs in operands.
+
+## PRINTED p.24 IS TRANSCRIBED -- and it settles p.23's prediction, 2026-10-21
+
+Forty-four rows and nineteen symbol locations, all bit-exact on the
+first run.
+
+**>>> THE PREDICTION HOLDS. <<<** p.22 line 35 loads an immediate
+`X VTIME` = `001242.02` and p.23 line 15 loads `X VDATE` =
+`001242.70`, so the two constants had to sit `0o70` bits apart in one
+word region. Lines 50 and 51 **define** them, at `001242.02` and
+`001242.70` exactly — and the prediction was committed before this
+page was opened.
+
+**FOUR MORE FORWARD REFERENCES LAND**: `X VZER` at `001204.40`,
+`X VZER 1` at `001207.00`, `X VNOTM` at `001211.40` and `X VTDER` at
+`001225.40` were all SYN'd on pp.22-23 from those pages' own binary
+output, and this page defines every one at the address read off an
+instruction.
+
+**THE ASSEMBLER GAINED `DRZ`.** Line 52 is `X VSTOR DRZ(BU),100`,
+printing `000144.00` — `0o144` is a hundred, so it reserves a hundred
+**words** and the printed value is the size, as `DR`'s is. The pair
+`DR`/`DRZ` is "Data Reservation, with and without zeroing"; only
+`DR` existed here. The `Z` is not cosmetic: a `DR` region is *absent*
+from the image `strap/mcp_image.py` builds, a `DRZ` region is a
+hundred zero words.
+
+**AND THE LABEL FAMILY IS `X IO n`, NOT `X IC n` — §13a again.** This
+page's own name column prints `X IC 3`, `X IC 4`, `X IC 5` and then
+`X IO 6` for four labels of **one** family, and its operands read
+`X IO 1` and `X IO6` at 600 dpi. A column that disagrees with itself
+about a glyph is naming the unstable one. pp.21-23's decks were
+renamed to match; the bits were never affected, only the names, and
+all three still pass.
+
+**AND THE OPCODE RATCHET FIRED**, which is the first time this
+session that a page changed the coverage picture rather than just
+adding rows. `CV` and `LTRCV` were in the audit's `UNIMPLEMENTED`
+set — "expected to be *unused*" — and p.24's time conversion uses
+both:
+
+```
+CV(BU),$L,16              -CONVERT HOURS TO DECIMAL
+LTRCV(BU,6),$RM+.54       - CONVERT MINUTES TO DECIMAL
+LTRCV(BU,6),0.24($1)      -CONVERT SECONDS
+```
+
+They moved to `ENCODING_ONLY`, the same move `KF` and `LCV` made when
+p.17 first used them. **The model still refuses both** — they reach
+`setOpInvalid` — so building them is what would let the time
+conversion actually run. That is now the most concrete "make a
+transcribed page executable" item on the list.
+
+**LINE 44's CNOP IS IN THE CHECKED TABLE** and the page's other three
+are not: it is the one that had to **pad**, and it prints
+`000000.30 00`, a NOP half word. That is the difference between a
+`CNOP` that rounds and a `CNOP` already rounded, visible in the
+listing itself.
 
 ## PRINTED p.23 IS TRANSCRIBED -- and the 19-bit branch field cost something, 2026-10-21
 

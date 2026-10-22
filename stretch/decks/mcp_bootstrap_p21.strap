@@ -54,7 +54,7 @@
 !   X VERFY    000043.00  (line 6)
 !   X7 3       000066.40  (line 22)
 !   X7 1       000057.40  (line 23)
-!   X IC       001052.00  (line 24)
+!   X IO       001052.00  (line 24)
 !
 ! THE BRANCH-ADDRESS FIELD IS NINETEEN BITS AND THE PRINTED FORM
 ! HIDES IT.  Line 23's output is "000057.50 00": the ".50" group is
@@ -66,7 +66,7 @@ SYCOCH  SYN, (8)2156.0
 XVERFY  SYN, (8)43.0
 X73     SYN, (8)66.40
 X71     SYN, (8)57.40
-XIC     SYN, (8)1052.0
+XIO     SYN, (8)1052.0
 
         SLC, (8)1012.0
 
@@ -99,7 +99,7 @@ XDATE5  M+MG(BU,4), XMONTH+.3, 24    ! line 17 -GET TENS DIGIT
                                      !           SOURCE TAPE
         SIC, X73                     ! line 22
         B, X71                       ! line 23 -IO TEST
-        B, XIC                       ! line 24 -TO IO STATUS REPORT
+        B, XIO                       ! line 24 -TO IO STATUS REPORT
 
 ! ---- buffers and control words -----------------------------------
         CNOP                         ! line 25

@@ -3130,6 +3130,43 @@ run "MCP INITIALIZATION, printed p.23, bit-exact (MCP_Mar63 PDF p.30)" python3 v
 # is X VTIME = 001242.02 and line 15 here is X VDATE = 001242.70, so
 # the two constants sit 0o70 bits apart in one word region.  Whatever
 # page defines them has to put them there.
+
+run "MCP INITIALIZATION, printed p.24, bit-exact (MCP_Mar63 PDF p.31)" python3 verify_mcp_bootstrap_p24.py
+# >>> PRINTED p.24 IS TRANSCRIBED, forty-four rows and nineteen
+# symbol locations, all bit-exact on the first run -- AND IT SETTLES
+# THE PREDICTION p.23's SECTION MADE.  p.22 line 35 loads an
+# immediate X VTIME = 001242.02 and p.23 line 15 loads X VDATE =
+# 001242.70, so the two constants had to sit 0o70 bits apart in one
+# word region.  Lines 50 and 51 DEFINE them, at 001242.02 and
+# 001242.70 exactly, and the prediction was committed before this
+# page was opened. <<<
+#
+# FOUR MORE FORWARD REFERENCES LAND: X VZER at 001204.40, X VZER 1 at
+# 001207.00, X VNOTM at 001211.40 and X VTDER at 001225.40 were all
+# SYN'd on pp.22-23 from those pages' own binary output, and this
+# page defines every one at the address that was read off an
+# instruction.
+#
+# THE ASSEMBLER GAINED "DRZ".  Line 52 is "X VSTOR DRZ(BU),100",
+# whose binary output prints 000144.00 -- 0o144 is a hundred, so it
+# reserves a hundred WORDS and the printed value is the SIZE, as
+# DR's is.  DR and DRZ are the pair C22-6531 and C28-6129 both carry,
+# "Data Reservation, with and without zeroing"; only DR existed here.
+# The Z is not cosmetic: a DR region is ABSENT from the image
+# strap/mcp_image.py builds and a DRZ region is a hundred zero words.
+#
+# >>> AND THE LABEL FAMILY IS "X IO n", NOT "X IC n" -- 13a again.
+# This page's own name column prints "X IC 3", "X IC 4", "X IC 5" and
+# then "X IO 6" for four labels of ONE family, and its operands read
+# "X IO 1" and "X IO6" at 600 dpi.  A column that disagrees with
+# itself about a glyph is naming the unstable one.  pp.21-23's decks
+# were renamed to match; the bits were never affected, only the
+# names, and all three still pass. <<<
+#
+# LINE 44's CNOP IS IN THE CHECKED TABLE and the page's other three
+# are not: it is the one that had to PAD, and it prints 000000.30 00,
+# a NOP half word.  That is the difference between a CNOP that rounds
+# and a CNOP already rounded, visible in the listing itself.
 run "MCP's error table, printed pp.7-8 (MCP_Mar63 PDF pp.14-15)" python3 verify_mcp_bootstrap_p7_p8.py
 # X ERR DD -- THE LAST TWO PAGES OF THE BOOTSTRAP TO BE TRANSCRIBED,
 # and the index to all the rest: seventy-eight VF half words, one pair

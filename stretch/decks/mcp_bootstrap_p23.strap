@@ -38,7 +38,7 @@
 !   X VDATE   001242.70  (line 15) -- an IMMEDIATE, not an address,
 !             and it sits 0o70 bits past X VTIME on printed p.22
 !   X 20B     001417.00  (lines 30, 48)
-!   X IO CW   001410.40  (line 32)
+!   X IO CW   001410.00  (line 32)
 !   X IPL BS  000041.00  (lines 36, 39)
 !   X ERR AD  000551.00  (line 37)
 !   X ERROR   000133.00  (line 38)
@@ -48,6 +48,14 @@
 !   X IO 5    001177.40  (line 53)
 !   X D CW2   001044.00  (line 44) -- printed p.21 line 31
 !   X7 3      000066.40 / X7 1  000057.40
+!
+! >>> AND THE LABEL FAMILY IS "X IO n", NOT "X IC n".
+! docs/listing_typography.md 13a: printed p.24's own name column
+! prints "X IC 3", "X IC 4", "X IC 5" and then "X IO 6" for four
+! labels of one family, and its operands read "X IO 1" and "X IO6" at
+! 600 dpi.  A column that disagrees with itself about a glyph is
+! naming the unstable one.  The label at 001153.40 is X IO 1, spelled
+! XIO1A here only because this deck also SYNs the external X IO 1.
 !
 ! >>> THREE OF THOSE WERE GUESSED .40 AND ARE .00, and the verifier
 ! caught all three.  The branch-address field is NINETEEN bits and
@@ -63,7 +71,7 @@ XVTDER  SYN, (8)1225.40
 XVZER1  SYN, (8)1207.0
 XVDATE  SYN, (8)1242.70
 X20B    SYN, (8)1417.0
-XIOCW   SYN, (8)1410.40
+XIOCW   SYN, (8)1410.0
 XIPLBS  SYN, (8)41.0
 XERRAD  SYN, (8)551.0
 XERROR  SYN, (8)133.0
@@ -114,18 +122,18 @@ XVCONT  CB, $3, XVLP                 ! line 13
 XVIORP  BZB, XLRIN+.29, X20B         ! line 30 - IF I/O STATUS REPORT
                                      !            DESIRED
         B, XIO2A                     ! line 31 - YES TO CHANGE TABLES
-XIC1    W(SEOP), 0.0($15), XIOCW     ! line 32 -YES*REQUEST NEXT IO
+XIO1A    W(SEOP), 0.0($15), XIOCW     ! line 32 -YES*REQUEST NEXT IO
                                      ! line 33  STATUS REPORT
         SIC, X73                     ! line 34
         B, X71                       ! line 35 -TO IO TEST
-XICA    CCW, 0.0($15), XIPLBS        ! line 36 -GET STATUS BITS
+XIOA    CCW, 0.0($15), XIPLBS        ! line 36 -GET STATUS BITS
 XIOAA   SIC, XERRAD                  ! line 37
         BEKJZ, XERROR                ! line 38 -IF EKJ
-        BZB, XIPLBS+.23, XICA        ! line 39
+        BZB, XIPLBS+.23, XIOA        ! line 39
         REL(SEOP), 0.0($15)          ! line 40 - CLEAR CS STATUS BIT
         SIC, X73                     ! line 41
         B, X71                       ! line 42 - IO TEST
-XICB    B, XIO2                      ! line 43
+XIOB    B, XIO2                      ! line 43
 XIO2    RD(SEOP), 0.0($15), XDCW2    ! line 44 -GET CHANNEL AND UNIT
                                      ! line 45  NOT AVAILABLE
         SIC, X73                     ! line 46

@@ -63,8 +63,9 @@ OP_TABLES = ["BB_CODES", "CB_CODES", "DIR_INDEX_CODES", "FP_CODES",
 # VFL integer arms exist (L, ST, +, M+, K), which accounts for the ten
 # compare/convert codes here.
 UNIMPLEMENTED = {
-    "CV", "DCV", "LTRCV",                 # radix conversion
+    "DCV",                                # radix conversion
     # LCV moved to ENCODING_ONLY on 2026-10-18 (MCP printed p.17).
+    # CV and LTRCV moved there on 2026-10-21 (MCP printed p.24).
     "KE", "KFE", "KFR",                   # compare variants
     # KF moved to ENCODING_ONLY on 2026-10-18 (MCP printed p.17).
     "LTRS",                               # load transit and set
@@ -198,6 +199,23 @@ UNIMPLEMENTED = {
 #         arithmetic remains unimplemented and still refused.
 ENCODING_ONLY = {
     "RNX",
+    # CV AND LTRCV ARRIVED TOGETHER ON 2026-10-21, from MCP printed
+    # p.24's TIME CONVERSION, which is the only program in the corpus
+    # that needs either.  Lines 25-29 divide the 26-bit time clock by
+    # sixty twice and then convert each piece to decimal:
+    #
+    #     CV(BU),$L,16              -CONVERT HOURS TO DECIMAL
+    #     LTRCV(BU,6),$RM+.54       - CONVERT MINUTES TO DECIMAL
+    #     LTRCV(BU,6),0.24($1)      -CONVERT SECONDS
+    #
+    # The ratchet caught the change on the first full run after the
+    # page was transcribed, which is what it is for: both were in
+    # UNIMPLEMENTED, meaning "expected to be UNUSED", and a deck
+    # started using them.  THE MODEL STILL REFUSES BOTH -- they reach
+    # setOpInvalid -- so this page is transcribed and checked but
+    # cannot be executed, the same standing as every other page from
+    # printed p.20 on.  Building them is what would let the time
+    # conversion run.
     # LOCSEOP left on 2026-10-18 with LOC -- see the note in
     # UNIMPLEMENTED above.
     # KF left on 2026-10-19: built, and driven by its own deck.
