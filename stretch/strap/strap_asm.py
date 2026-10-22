@@ -1628,6 +1628,7 @@ def statement_size(stmt):
 
 class Image:
     def __init__(self):
+        self.reservations = []      # (bit location, bit width) from DR
         self.words = {}
         self._written = {}  # word_addr -> bitmask of bits already deposited,
                              # to catch a size-computation/alignment bug
@@ -1681,6 +1682,12 @@ class Image:
             remaining -= take
             pos += take
 
+    def reserve(self, loc_bits, width_bits):
+        """Record a DR's range.  Nothing is written; see
+        AssembledProgram.reservations."""
+        if width_bits:
+            self.reservations.append((loc_bits, width_bits))
+
     def deposit_half(self, hword_addr, value):
         self.deposit(hword_addr * 32, 32, value)
 
@@ -1718,10 +1725,28 @@ DEFAULT_ORIGIN_BITS = 32 * 64
 
 
 class AssembledProgram:
-    def __init__(self, words, symtab, end_pc):
+    def __init__(self, words, symtab, end_pc, reservations=()):
         self.words = words          # dict word_addr(int) -> value(int)
         self.symtab = symtab        # dict SYMBOL(str) -> bit-count(int)
         self.end_pc = end_pc        # half-word PC (int) from an END statement, or None
+        # DR's reserved ranges, as (bit location, bit width) in source
+        # order.  A RESERVATION IS THE ONE LEGITIMATE HOLE IN AN
+        # IMAGE: "nothing is emitted, and that is the point" (see DR's
+        # emit) -- the location counter moves and the storage is left
+        # as the loader found it.  A caller that walks an image word by
+        # word cannot otherwise tell a reservation from a transcription
+        # that lost a word, and the two must not be confused: a missing
+        # word reads as zero and a zero half word is BRANCH ENABLED to
+        # location zero.  DRZ is NOT here, because it emits.
+        self.reservations = list(reservations)
+
+    def reserved_words(self):
+        """The set of whole word addresses this program reserved."""
+        out = set()
+        for loc, width in self.reservations:
+            for b in range(loc, loc + width, 64):
+                out.add(b // 64)
+        return out
 
 
 def resolve_syns(syn_stmts, symtab, final):
@@ -1936,7 +1961,7 @@ def assemble(source, origin_bits=DEFAULT_ORIGIN_BITS):
                 raise AssemblerError("END target is not half-word aligned", stmt.lineno)
             end_pc = target_bits // 32
 
-    return AssembledProgram(image.words, symtab, end_pc)
+    return AssembledProgram(image.words, symtab, end_pc, image.reservations)
 
 
 def apply_parenthetical_entries(stmt, symtab, image):
@@ -2053,6 +2078,12 @@ def emit_statement(stmt, symtab, image):
         # the location counter moves and the storage is left as the
         # loader found it.  The width is what the following rows'
         # addresses check.
+        #
+        # IT IS RECORDED, THOUGH, in AssembledProgram.reservations --
+        # see the note there.  Without it an image walker cannot tell
+        # this hole from a lost word.
+        _, size = statement_size(stmt)
+        image.reserve(loc, size)
         return
 
     if op == 'DRZ':

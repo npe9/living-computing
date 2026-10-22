@@ -5302,6 +5302,88 @@ thing in the path: the word the look-ahead hands the E-box.
 Build the pair that differs only in history before building the pair
 that differs in operands.
 
+## THE MCP IMAGE THE BOOT MOVES IS NOW PRINTED pp.15-36 -- 727 words, where it was 80, 2026-10-22
+
+`strap/prosa.py`'s PROSA record carried printed pp.15-18. It now
+carries pp.15-36, because all twenty-two pages are transcribed and
+they form **one run from 000621.00 to 002147 with no gap** — each
+page starting on the word the one before it ended on or the next.
+
+**And the merge checks all twenty-two against each other.**
+`mcp_image.merge()` refuses a symbol defined twice and requires every
+`SYN` stand-in to equal the value the page that *places* that symbol
+gives it. Across pp.15-36 that is **253 symbols, 45 of them external
+to the whole range** — so the image is also the largest cross-page
+consistency check in the project, and it runs every time the tape is
+built.
+
+### Three things broke, and all three were invisible at eighty words
+
+**1. The tape had to be written in chunks.** printed p.14's control
+words have a COUNT of 513 and a STRIDE of 512, so consecutive records
+**overlap by one word** — the one-word header `C22-6728` printed
+p.215 describes. The fixture wrote its record flat, which is correct
+for anything shorter than one chunk and wrong for anything longer:
+the second control word read tape word 513 into buffer offset 512 and
+shifted everything after the first chunk down by one.
+
+**The fixture said so exactly, which is what `BODY_TAG` is for.**
+Every filler word carries its own buffer offset, so the failure read
+`mcp_moved_last = 0x5a5a0000000002df` — offset 735 where 734 was
+wanted. An off-by-one with its own size written in it.
+`prosa.tape_words()` emits the chunked form now.
+
+**2. The image has two holes and they are reservations.** printed
+p.21's two `DR(BU),(3)` leave 001034-001041 and printed p.36's
+`DR(BU),(100)` leaves 002000-002143. `prosa.py` used to refuse *any*
+hole, on the grounds that a missing word reads as zero and a zero
+half word is BRANCH ENABLED to location zero. That reasoning is right
+and the fix was not to relax it: **`AssembledProgram` now records
+every `DR`'s range**, and `mcp_ipl_image()` requires the set of
+missing words to be *exactly* the set of reserved ones. A
+transcription that loses a word still fails, and it fails naming the
+word.
+
+**3. "The word after the last one is still zero" had to go**, because
+MCP now runs far enough to write it. `S MCP` is 002150.00 — exactly
+one word past the image's last at 002147 — and printed p.15 line 21
+is `T,$0,X BUFER($9),S MCP -MOVE COMM REGION`. What replaces it is
+stronger: printed p.15 line 17's `LVS,$9,$12,$11,$14` sums **three**
+dictionary counts, 3 + 727 + 5 = 735, and the new check requires
+`S MCP` to hold the fixture word tagged 735, so a wrong sum fails
+with the offset MCP actually computed.
+
+**And "a word from the middle" had to be computed.** Index 363, the
+plain midpoint of 727, lands inside printed p.24's `DRZ(BU),100` — a
+hundred words of deliberate zeros. An expected value of zero over a
+region that was zero *before* the move proves nothing.
+
+## >>> WHAT THE FIXTURE NEEDS NEXT: A COMM REGION, and printed p.15 gives its shape <<<
+
+```
+X10   LVS,$9,$12,$11,$14         -COMPUTE NUMBER OF WORDS PRECEEDING
+      LVE,$8,X BUFER($9)         - GET (MCP)
+X101  LC,$0,X BUFER+.32($9)      -GET SIZE OF COMM REGION
+      T,$0,X BUFER($9),S MCP     -MOVE COMM REGION
+      T,$10,X BUFER($9),0.0($8)  -PLACE MCP IN STORAGE
+```
+
+Buffer offset `$9` — 735, just past the IPL image — is a
+**descriptor**: bits 0-23 are the address MCP is to be placed at
+(`LVE` loads it into `$8`) and the 18-bit field at bit 32 is the
+**size of the comm region** (`LC` loads it into `$0`'s count).
+
+The fixture's filler word sits there instead, and its bits 32-49 are
+zero — which Reference Manual printed p.30 says is a direct count of
+**2^18**. So the comm-region move copies until it runs off the record
+into the zeros above it. That is why four filler words appear at
+`S MCP` and everything past them is zero: **the move is not wrong,
+the descriptor is missing.**
+
+Build it from those five rows, the way the dictionary was built from
+printed p.4 lines 19-27 — derived shape, chosen contents, and say
+which is which.
+
 ## A SWEEP FOR CLAIMS THE LAST TEN PAGES SUPERSEDED -- eight of them, in six files, 2026-10-22
 
 Transcribing pp.27-36 and replacing the invented equipment table

@@ -76,6 +76,15 @@ MKTAPE = os.path.join(os.path.dirname(os.path.abspath(__file__)),
 IND_WORD = 11
 
 
+def _middle_index():
+    """The first non-zero word at or after the middle of the moved
+    image -- see mcp_moved_middle."""
+    for k in range(prosa.IPL_WORDS // 2, prosa.IPL_WORDS):
+        if prosa.MCP_IPL_WORDS[k]:
+            return k
+    raise SystemExit("gen_mcp_boot_tb: the image's upper half is all zeros")
+
+
 def main():
     if len(sys.argv) != 2:
         print(f"usage: {sys.argv[0]} ModuleName", file=sys.stderr)
@@ -125,8 +134,17 @@ def main():
     # about the IPL tape -- a control word and an image -- and this is
     # a second record that has nothing to do with initial program
     # loading.
+    #
+    # >>> IT IS WRITTEN IN prosa.tape_words()'s CHUNKED FORM, NOT
+    # FLAT.  printed p.14's control words read 513 words each with a
+    # 512-word stride, so consecutive records overlap by one word and
+    # the tape must carry every chunk boundary TWICE.  Writing the
+    # buffer image out flat was invisible while the record was 92
+    # words -- shorter than one chunk -- and shifted everything after
+    # the first 513 words down by one the moment printed pp.19-36
+    # joined the image. <<<
     with open(out, "ab") as f:
-        for w in prosa.record():
+        for w in prosa.tape_words():
             f.write(struct.pack(">Q", w & 0xFFFFFFFFFFFFFFFF))
 
     sym = lambda n: prog.symtab[n] // 64
@@ -337,26 +355,70 @@ def main():
         #
         # X BS END is the first word past the bootstrap image, so
         # everything at and above it was ZERO before the move.
-        # >>> AND WHAT IT MOVES IS MCP <<<  The eighty words are
-        # printed pp.15-18 ASSEMBLED, and they are assembled at
-        # 000621.00 because printed p.15 line 7 is "SLC,X BS END" --
-        # the same address this TRANSMIT delivers them to.  So the
-        # check is the image word for word, from the same assembler
-        # the transcriptions are verified with.
+        # >>> AND WHAT IT MOVES IS MCP <<<  The seven hundred and
+        # twenty-seven words are printed pp.15-36 ASSEMBLED, and they
+        # are assembled at 000621.00 because printed p.15 line 7 is
+        # "SLC,X BS END" -- the same address this TRANSMIT delivers
+        # them to.  So the check is the image word for word, from the
+        # same assembler the transcriptions are verified with.
+        #
+        # IT WAS EIGHTY WORDS AND pp.15-18 UNTIL 2026-10-22.
         ("mcp_moved_first", str(sym("XBSEND")), prosa.MCP_IPL_WORDS[0]),
         ("mcp_moved_last", str(sym("XBSEND") + prosa.IPL_WORDS - 1),
          prosa.MCP_IPL_WORDS[-1]),
         # A word from the middle, so the check is not two endpoints
-        # and a hope: printed p.17's X13 A, the CM1111 that presets
-        # every CST entry to not-available.
+        # and a hope.
+        #
+        # IT HAS TO BE A NON-ZERO ONE, and the plain midpoint stopped
+        # being that when the image grew to printed pp.15-36: index
+        # 363 lands at 001374, inside printed p.24's
+        # "X VSTOR DRZ(BU),100", a hundred words of deliberate zeros.
+        # A check whose expected value is zero over a region that was
+        # zero before the move as well proves nothing at all.  So the
+        # index is the first NON-ZERO word at or after the midpoint,
+        # computed rather than written down, which keeps it honest if
+        # the image changes again.
         ("mcp_moved_middle",
-         str(sym("XBSEND") + (prosa.IPL_WORDS // 2)),
-         prosa.MCP_IPL_WORDS[prosa.IPL_WORDS // 2]),
-        # AND THE WORD AFTER THE LAST ONE IS STILL ZERO, which is what
-        # pins the COUNT rather than merely the direction: a transmit
-        # of seven would land a fixture word here.
-        ("mcp_moved_one_past_is_untouched",
-         str(sym("XBSEND") + prosa.IPL_WORDS), 0),
+         str(sym("XBSEND") + _middle_index()),
+         prosa.MCP_IPL_WORDS[_middle_index()]),
+        # THE SECOND-TO-LAST WORD, so that the top of the image is
+        # pinned by a PAIR and not by one endpoint.  "mcp_moved_last"
+        # alone would pass if the move were one word short AND the
+        # record happened to repeat a value.
+        ("mcp_moved_second_last",
+         str(sym("XBSEND") + prosa.IPL_WORDS - 2),
+         prosa.MCP_IPL_WORDS[-2]),
+
+        # >>> THE WORD AFTER THE LAST ONE USED TO BE CHECKED AS STILL
+        # ZERO, and that check had to go -- because MCP now runs far
+        # enough to write it. <<<
+        #
+        # printed p.15 line 21 is "T,$0,X BUFER($9),S MCP -MOVE COMM
+        # REGION", and S MCP is 002150.00, which is EXACTLY one word
+        # past the image's last word at 002147.  So the first thing
+        # MCP INITIALIZATION does after being moved is overwrite the
+        # word this check used to require to be zero.  The old check
+        # was not wrong; it was measuring a machine that stopped
+        # sooner.
+        #
+        # WHAT REPLACES IT IS STRONGER, because it pins the offset MCP
+        # COMPUTED ITSELF.  printed p.15 line 17 is
+        # "X10 LVS,$9,$12,$11,$14 -COMPUTE NUMBER OF WORDS PRECEEDING
+        # MCP" -- the sum of THREE dictionary counts, 3 + 727 + 5 --
+        # and line 21 moves from X BUFER($9).  Every fixture word
+        # carries its own buffer offset, so if that sum is wrong the
+        # value landing at S MCP says by how much.
+        #
+        # The address is written as the image's own end rather than as
+        # a constant, and the two ARE the same thing: printed p.28
+        # line 11's "SV,$12,S MCP" compiles 002150.00, and
+        # 000621 + 727 is 002150.  If the image grows by a page this
+        # check moves with it and stops being about S MCP -- which is
+        # the right failure, because the record would then need a
+        # comm region of its own.
+        ("mcp_comm_region_moved_from_x9",
+         str(prosa.MCP_IPL_AT + prosa.IPL_WORDS),
+         prosa.body_word(prosa.MCP_AT + prosa.IPL_WORDS)),
 
         # Printed p.2 line 39, "SV,15,X S ROOF -TEMPORARILY SAVE 7030
         # SIZE".  The value field holds 6291456 bits = word 98304,

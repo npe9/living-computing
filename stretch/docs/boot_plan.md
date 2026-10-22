@@ -388,6 +388,33 @@ choice is the one judgement call in this plan.
 **Unblocks: printed pp.15-18, which are transcribed and have never
 executed a single row.**
 
+> **DONE, and widened on 2026-10-22: the record now carries printed
+> pp.15-36, 727 words.** All twenty-two pages are transcribed and
+> they form one run from 000621.00 to 002147 with no gap, so the
+> TRANSMIT on printed p.4 line 28 moves all of them and they execute.
+> `mcp_image.merge()` cross-checks 253 symbols across the twenty-two
+> pages every time the tape is built.
+>
+> **A1a — THE COMM REGION IS THE NEXT PIECE OF THE SAME FIXTURE.**
+> printed p.15 lines 17-24 give its shape the way printed p.4 lines
+> 19-27 gave the dictionary's:
+>
+> ```
+> X10   LVS,$9,$12,$11,$14         -COMPUTE NUMBER OF WORDS PRECEEDING
+>       LVE,$8,X BUFER($9)         - GET (MCP)
+> X101  LC,$0,X BUFER+.32($9)      -GET SIZE OF COMM REGION
+>       T,$0,X BUFER($9),S MCP     -MOVE COMM REGION
+>       T,$10,X BUFER($9),0.0($8)  -PLACE MCP IN STORAGE
+> ```
+>
+> Buffer offset `$9` = 3 + 727 + 5 = 735, just past the IPL image, is
+> a **descriptor**: bits 0-23 are the address MCP goes to and the
+> 18-bit field at bit 32 is the comm region's SIZE. The fixture's
+> filler word is there instead, its size field reads zero, and
+> Reference Manual printed p.30 makes a direct count of zero mean
+> 2^18 — so the comm-region move copies until it runs off the record.
+> **The move is not wrong; the descriptor is missing.**
+
 **A2. `KF` AND `LCV` IN THE MODEL — DONE, 2026-10-19/20.** Printed
 p.17 line 30 is the compare that decides whether a card IS an IOCD
 card and line 34 is the radix conversion that turns its Hollerith

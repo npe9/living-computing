@@ -1248,6 +1248,100 @@ run "MULTI-WORD TRANSMIT (RefMan printed p.30)" ./run_program.sh ../decks/transm
 # jb_ax4b routine 1246 transcriptions.
 
 run "MCP'S OWN BOOTSTRAP RUNS (boot_plan.md M3)" ./run_mcp_boot.sh StretchMcpBootTb
+# >>> THE MOVED IMAGE IS PRINTED pp.15-36 AS OF 2026-10-22 -- SEVEN
+# HUNDRED AND TWENTY-SEVEN WORDS, WHERE IT WAS EIGHTY. <<<
+#
+# Every page from printed p.15 to printed p.36 is transcribed, and
+# they form ONE RUN from 000621.00 to 002147 with no gap: each page
+# starts on the word the one before it ended on or the next.  So the
+# PROSA record now carries all of them and the TRANSMIT on printed
+# p.4 line 28 moves all of them.
+#
+# AND THE MERGE CHECKS ALL TWENTY-TWO PAGES AGAINST EACH OTHER.
+# mcp_image.merge() refuses a symbol defined twice and requires every
+# SYN stand-in to equal the value the page that PLACES that symbol
+# gives it.  Across pp.15-36 that is 253 symbols, 45 of them external
+# to the whole range -- so the image is also the largest cross-page
+# consistency check in the project, and it runs every time the tape
+# is built.
+#
+# ===================================================================
+# THREE THINGS BROKE ON THE WAY, AND ALL THREE WERE INVISIBLE AT
+# EIGHTY WORDS
+# ===================================================================
+#
+# 1. THE TAPE HAD TO BE WRITTEN IN CHUNKS.  printed p.14 line 4 is
+#    "CW(CDSC),0+X BUFER,513,$+1.0" and line 5 is
+#    "CW(CDSC),512.+X BUFER,513,$+1.0" -- a COUNT of 513 and a STRIDE
+#    of 512, so consecutive records OVERLAP BY ONE WORD (the one-word
+#    header C22-6728 printed p.215 describes).  The fixture wrote its
+#    record flat, which is correct for anything shorter than one
+#    chunk and wrong for anything longer: the second control word
+#    read tape word 513 into buffer offset 512 and shifted every word
+#    after the first chunk down by one.
+#
+#    THE FIXTURE SAID SO EXACTLY, which is what BODY_TAG is for.
+#    Every filler word carries its own buffer offset, so the failure
+#    read "mcp_moved_last = 0x5a5a0000000002df" -- offset 735 where
+#    734 was wanted.  The off-by-one with its own size written in it.
+#    prosa.tape_words() now emits the chunked form.
+#
+# 2. THE IMAGE HAS TWO HOLES AND THEY ARE RESERVATIONS.  printed
+#    p.21's "X LR IN DR(BU),(3)" and "X ZEROS DR(BU),(3)" leave
+#    001034-001041 empty and printed p.36's "X MSG BK DR(BU),(100)"
+#    leaves 002000-002143.  DR emits nothing BECAUSE the storage is
+#    meant to be left as the loader found it.
+#
+#    prosa.py used to refuse any hole, on the grounds that a missing
+#    word reads as zero and a zero half word is BRANCH ENABLED to
+#    location zero.  That reasoning is right and the fix is not to
+#    relax it: AssembledProgram now records every DR's range, and
+#    mcp_ipl_image() requires the set of missing words to be EXACTLY
+#    the set of reserved ones.  A transcription that loses a word
+#    still fails, and it fails naming the word.
+#
+# 3. "THE WORD AFTER THE LAST ONE IS STILL ZERO" HAD TO GO, because
+#    MCP now runs far enough to write it.  S MCP is 002150.00, which
+#    is EXACTLY one word past the image's last word at 002147, and
+#    printed p.15 line 21 is "T,$0,X BUFER($9),S MCP -MOVE COMM
+#    REGION".  The first thing MCP INITIALIZATION does after being
+#    moved is overwrite that word.
+#
+#    WHAT REPLACES IT IS STRONGER.  printed p.15 line 17 is
+#    "X10 LVS,$9,$12,$11,$14 -COMPUTE NUMBER OF WORDS PRECEEDING MCP"
+#    -- the sum of THREE dictionary counts, 3 + 727 + 5 = 735 -- and
+#    line 21 moves from X BUFER($9).  The new check requires S MCP to
+#    hold the fixture word tagged 735, so a wrong sum fails with the
+#    offset MCP actually computed.  mcp_moved_second_last was added
+#    at the same time so the top of the image is pinned by a pair.
+#
+#    AND "a word from the middle" HAD TO BE COMPUTED.  Index 363, the
+#    plain midpoint of 727, lands at 001374 -- inside printed p.24's
+#    "X VSTOR DRZ(BU),100", a hundred words of deliberate zeros.  An
+#    expected value of zero over a region that was zero before the
+#    move as well proves nothing, so the generator now takes the
+#    first NON-ZERO word at or after the midpoint.
+#
+# >>> WHAT THE FIXTURE NEEDS NEXT, and printed p.15 says what shape
+# it has: A COMM REGION. <<<
+#
+#   X10   LVS,$9,$12,$11,$14      -COMPUTE NUMBER OF WORDS PRECEEDING
+#         LVE,$8,X BUFER($9)      - GET (MCP)
+#   X101  LC,$0,X BUFER+.32($9)   -GET SIZE OF COMM REGION
+#         T,$0,X BUFER($9),S MCP  -MOVE COMM REGION
+#         T,$10,X BUFER($9),0.0($8)  -PLACE MCP IN STORAGE
+#
+# So buffer offset $9 -- 735, just past the IPL image -- is a
+# DESCRIPTOR: bits 0-23 are the address MCP is to be placed at (LVE
+# loads it into $8) and the 18-bit field at bit 32 is the SIZE OF THE
+# COMM REGION (LC loads it into $0's count).  The fixture's filler
+# word sits there instead, and its bits 32-49 are zero -- which
+# Reference Manual printed p.30 says is a direct count of 2**18.  So
+# the comm-region move copies until it runs off the record into the
+# zeros above it.  That is why the four filler words appear at S MCP
+# and the words past them are zero; the move is not wrong, the
+# descriptor is missing.  Build it from those five rows, the way the
+# dictionary was built from printed p.4 lines 19-27.
 # THE EXPECTED VALUES CHANGED ON 2026-10-18 WHEN THE DISK LANDED, and
 # the change is the useful part.  This section asserts the indicator
 # register EXACTLY, as a ratchet.  It used to read 0xA040 -- three

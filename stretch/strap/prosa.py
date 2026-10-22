@@ -112,10 +112,30 @@ is testing the fixture.
 import mcp_image
 
 # The record's own geometry.  Printed p.14's control words read it in
-# 513-word chunks with a 512-word stride; this record is far shorter
-# than one chunk, so the read ends in End Exception at the end of the
-# tape -- which is what the bootstrap already handles as END OF PROSA
-# FILE (printed p.4's X DONE).
+# 513-word chunks with a 512-word STRIDE, and `tape_words()` below is
+# what that costs once the image is longer than one chunk.  The read
+# ends in End Exception at the end of the tape -- which is what the
+# bootstrap already handles as END OF PROSA FILE (printed p.4's
+# X DONE).
+#
+# >>> THE COUNT AND THE STRIDE DIFFER BY ONE AND THAT IS NOT A
+# TYPOGRAPHICAL ACCIDENT.  printed p.14 line 4 is
+# "CW(CDSC),0+X BUFER,513,$+1.0" and line 5 is
+# "CW(CDSC),512.+X BUFER,513,$+1.0": each control word reads 513
+# words and the next one starts 512 words further into the BUFFER, so
+# consecutive records OVERLAP BY ONE WORD -- the one-word header
+# C22-6728 printed p.215 describes, read into the previous record's
+# last word.
+#
+# THE FIXTURE WAS 92 WORDS AND NEVER SAW IT.  Extending the image to
+# printed pp.15-36 made it 739, and the second control word then read
+# tape word 513 into buffer offset 512 -- shifting every word after
+# the first chunk down by one.  The boot test said so exactly: the
+# word that should have held the image's last word held the fixture
+# filler tagged 735 instead of 734, which is the off-by-one with its
+# own offset written in it.  That is what BODY_TAG is for. <<<
+CHUNK_COUNT  = 513            # printed p.14, every control word
+CHUNK_STRIDE = 512            # printed p.14, line 5 minus line 4
 DICT_AT = (1, 3, 5, 7)        # derived: see section 1
 
 # Chosen sizes, in words.
@@ -129,23 +149,45 @@ MCP_AT = WORDS_BEFORE_MCP_A + WORDS_BEFORE_MCP_B
 
 
 def mcp_ipl_image():
-    """Printed pp.15-18, assembled: (first_word_address, [words]).
+    """Printed pp.15-36, assembled: (first_word_address, [words]).
 
     Contiguous by construction -- printed p.15 line 7 is
-    `SLC,X BS END` -- and this asserts it rather than assuming it,
+    `SLC,X BS END` and every page after it starts where the one
+    before it ended -- and this asserts it rather than assuming it,
     because a hole would silently become a zero word in the record
     and a zero half-word is BRANCH ENABLED to location zero.
+
+    >>> A RESERVATION IS THE ONE LEGITIMATE HOLE, and it is PROVED
+    rather than allowed.  printed p.21's "X LR IN DR(BU),(3)" and
+    "X ZEROS DR(BU),(3)" leave 001034-001041 empty and printed p.36's
+    "X MSG BK DR(BU),(100)" leaves 002000-002143; DR emits nothing
+    because the storage is meant to be left as the loader found it.
+    The assembler records every DR's range, so this function can
+    require that the set of missing words is EXACTLY the set of
+    reserved ones -- a transcription that lost a word still fails,
+    and a reservation no longer has to be special-cased by address.
+
+    The reserved words go into the record as ZEROS, which is what the
+    loader leaves in freshly cleared core, and that choice is checked
+    by the one thing that would notice: X MSG BK is a message block
+    MCP fills, and X LR IN is a buffer it reads only after writing. <<<
     """
     prog, _, _, _ = mcp_image.build_mcp_ipl()
     lo, hi = min(prog.words), max(prog.words)
-    words = []
-    for a in range(lo, hi + 1):
-        if a not in prog.words:
-            raise SystemExit(
-                f"prosa.py: printed pp.15-18 have a HOLE at word "
-                f"{a:#o}; the image must be contiguous to be moved")
-        words.append(prog.words[a])
-    return lo, words
+    reserved = prog.reserved_words()
+    missing = {a for a in range(lo, hi + 1) if a not in prog.words}
+    if missing != reserved:
+        lost = sorted(missing - reserved)
+        spare = sorted(reserved - missing)
+        raise SystemExit(
+            "prosa.py: printed pp.15-36 do not account for every word.\n"
+            + (f"  words MISSING with no reservation: "
+               f"{[f'{a:06o}' for a in lost]}\n" if lost else "")
+            + (f"  words RESERVED but present: "
+               f"{[f'{a:06o}' for a in spare]}\n" if spare else "")
+            + "  a missing word reads as zero, and a zero half word is "
+              "BRANCH ENABLED to location zero")
+    return lo, [prog.words.get(a, 0) for a in range(lo, hi + 1)]
 
 
 MCP_IPL_AT, MCP_IPL_WORDS = mcp_ipl_image()
@@ -190,6 +232,26 @@ def record():
     # MCP's own image, at the offset the dictionary names.
     words[MCP_AT:MCP_AT + IPL_WORDS] = MCP_IPL_WORDS
     return words
+
+
+def tape_words(buf=None):
+    """The record as it must be WRITTEN TO TAPE for printed p.14's
+    control words to assemble `buf` at X BUFER.
+
+    Control word n reads CHUNK_COUNT words into buffer offsets
+    [CHUNK_STRIDE*n, CHUNK_STRIDE*n + CHUNK_COUNT - 1], so the tape
+    carries each boundary word TWICE -- once as the last word of one
+    chunk and once as the first of the next.  Writing the buffer
+    image out flat instead puts every word after the first chunk one
+    place too early.
+    """
+    if buf is None:
+        buf = record()
+    out, n = [], 0
+    while CHUNK_STRIDE * n < len(buf):
+        out.extend(buf[CHUNK_STRIDE * n:CHUNK_STRIDE * n + CHUNK_COUNT])
+        n += 1
+    return out
 
 
 if __name__ == "__main__":

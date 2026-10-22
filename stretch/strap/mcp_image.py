@@ -188,7 +188,7 @@ def build(verbose=False, pages=None, end_at='XIPLBS'):
 
 
 # ---------------------------------------------------------------------
-# MCP PROPER, printed pp.15-18 -- a SECOND image, and not part of the
+# MCP PROPER, printed pp.15-36 -- a SECOND image, and not part of the
 # bootstrap.
 #
 # The bootstrap is the tape record the IPL mechanism loads, X IPL BS
@@ -201,19 +201,41 @@ def build(verbose=False, pages=None, end_at='XIPLBS'):
 #
 # THEY ASSEMBLE CONTIGUOUSLY AND THAT IS NOT LUCK: printed p.15 line
 # 7 is "SLC,X BS END", so the first word lands at 000621.00, exactly
-# one past the bootstrap, and pp.16, 17 and 18 follow without a gap
-# or an overlap.  80 words, every one of them set.
+# one past the bootstrap, and every page after it follows without a
+# gap or an overlap.
+#
+# >>> IT WAS pp.15-18 AND EIGHTY WORDS UNTIL 2026-10-22; IT IS NOW
+# pp.15-36 AND 727.  Every page from printed p.15 to printed p.36 is
+# transcribed and bit-exact, and they form ONE RUN with no gap
+# anywhere: <<<
+#
+#   p15 000621..000632   p22 001052..001121   p29 001532..001553
+#   p16 000633..000654   p23 001121..001174   p30 001553..001600
+#   p17 000655..000712   p24 001174..001412   p31 001601..001632
+#   p18 000713..000740   p25 001412..001443   p32 001632..001661
+#   p19 000740..000776   p26 001444..001463   p33 001661..001713
+#   p20 000777..001011   p27 001464..001507   p34 001713..001745
+#   p21 001012..001051   p28 001507..001532   p35 001746..001756
+#                                             p36 001756..002147
+#
+# -- each page starting on the word the one before it ended on or the
+# next one, twenty-two pages running 000621.00 to 002147, and the
+# merge below checks all 253 symbols against each other on the way.
+#
+# TWO HOLES IN THAT RUN ARE RESERVATIONS AND NOT LOSSES, which is why
+# the assembler records them: printed p.21's "X LR IN DR(BU),(3)" and
+# "X ZEROS DR(BU),(3)" leave 001034-001041, and printed p.36's
+# "X MSG BK DR(BU),(100)" leaves 002000-002143.  prosa.py proves each
+# hole against AssembledProgram.reservations rather than assuming it.
 # ---------------------------------------------------------------------
 MCP_IPL_PAGES = [
-    (DECK("mcp_bootstrap_p15.strap"), "printed p.15"),
-    (DECK("mcp_bootstrap_p16.strap"), "printed p.16"),
-    (DECK("mcp_bootstrap_p17.strap"), "printed p.17"),
-    (DECK("mcp_bootstrap_p18.strap"), "printed p.18"),
+    (DECK("mcp_bootstrap_p%d.strap" % n), "printed p.%d" % n)
+    for n in range(15, 37)
 ]
 
 
 def build_mcp_ipl(verbose=False):
-    """The printed pp.15-18 image: (prog, src, defined, external)."""
+    """The printed pp.15-36 image: (prog, src, defined, external)."""
     return build(verbose, MCP_IPL_PAGES, end_at='X10')
 
 
