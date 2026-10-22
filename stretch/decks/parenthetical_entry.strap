@@ -1,0 +1,65 @@
+! parenthetical_entry.strap -- STRAP's PARENTHETICAL INTEGER ENTRY
+! MODE, "(.n)A", from C28-6129 Section II printed pp.25-26 (PDF
+! 29-30), heading "Field Entry Mode".  Read first-hand 2026-10-22,
+! before a line of it was written (AGENTS.md rule 4).
+!
+!   "This mode permits any integer or pattern of bits to be stored in
+!    any bit position of an instruction or pseudo operation that
+!    produces binary output.  The general format for this entry mode
+!    is:  (.n)A(n+1)
+!    The symbol .n represents the BIT ADDRESS OF THE RIGHTMOST BIT of
+!    the field into which the integer or bit pattern is to be
+!    entered.  The integer A(n+1) is formed as an unsigned field, n+1
+!    bits in length (because of the 7030 custom of addressing bits
+!    starting with zero), and inserted into the leftmost n+1 bits of
+!    the addressed instruction or data entry field by means of a
+!    LOGICAL OR type operation.  Logical OR is used so that the
+!    parenthetical entry may be combined with the existing contents
+!    of the particular field addressed or with other parenthetical
+!    entries."
+!
+! Every row below is one of the manual's own statements or a direct
+! consequence of a sentence quoted in verify_parenthetical_entry.py.
+
+DATA    SYN, (8)100.0
+
+        SLC, (8)1000.0
+
+! M1. THE MANUAL'S OWN INSTRUCTION EXAMPLE, printed p.25:
+!   "In the following instruction:  E+I, (.8)41  the integer 41 is
+!    converted to binary and OR'ed into the first nine bits of the
+!    E+I instruction."
+M1      E+I, (.8)41
+
+! M2/M3. THE MANUAL'S OWN "same word either way", printed p.26:
+!   "+(BU), DATA(.23)4, 20   or it may follow the offset
+!    specification as in this illustration:  +(BU), DATA, 20(.23)4
+!    In either use the result would be the same."
+! Bits 0-23 already hold DATA, so these two rows are also the test
+! that the combination is an OR and not a store: DATA is 001000 and
+! the compiled field must be 001004, not 000004.
+M2      +(BU), DATA(.23)4, 20
+M3      +(BU), DATA, 20(.23)4
+
+! M4. CONSECUTIVE ENTRIES OR TOGETHER -- the reason the manual gives
+! for specifying OR at all.  Two entries into the same 24-bit field
+! must both survive, and they must land in DIFFERENT bits or the
+! check is vacuous: "(.23)4" is a one in bit 21 (4 = 100, rightmost
+! bit at 23), so the second entry is written at bit 20.  The first
+! draft used "(.21)1", which sets the bit "(.23)4" already set and
+! would have passed with either entry dropped.
+M4      +(BU), DATA, 20(.23)4(.20)1
+
+! M5. A NEGATIVE PARENTHETICAL VALUE, printed p.25: "All
+! parenthetical fields are regarded as unsigned by STRAP, so that a
+! negative number is compiled as the complement, re 2**(n+1), of the
+! magnitude of the number."  -1 in a 4-bit field (.3) is 1111.
+M5      E+I, 0(.3)-1
+
+! M6. MCP's OWN ROW, printed p.30 line 27, with the externals it
+! names given here as integers so this deck stands alone.  The flag
+! group it produces is the CHAIN FLAG, bit 25, and the listing
+! prints it as "100".
+M6      CW, (8)1037.0, 3, (8)1574.0(.25)1
+
+        END, M1

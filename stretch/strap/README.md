@@ -906,6 +906,18 @@ until one has.
    and **`CF` and `RF` left on 2026-10-22**, driven by MCP printed
    p.26 lines 16 and 30).
 
+   **THE PARENTHETICAL INTEGER ENTRY MODE `(.n)A` ALSO LEFT THIS
+   LIST ON 2026-10-22**, driven by MCP printed p.30 line 27 — and it
+   is the one item here that had been *refused* rather than merely
+   unneeded. `decks/mcp_bootstrap_p7_p8.strap` met the same
+   construct on printed p.8 line 34 four months earlier, wrote
+   `CW(CCR),…` in its place, and said why: *"inventing their general
+   semantics from one row is what AGENTS.md rule 4 forbids."* The
+   semantics are printed in `C28-6129` Section II, printed pp.25-26,
+   under "Field Entry Mode", which the summary of this project's
+   back-matter sweeps had never reached. Both rows are verbatim now;
+   see `decks/parenthetical_entry.strap`.
+
    **`CF` CORRECTED `VF`'s DEPOSIT ON THE WAY IN**, which is the
    part worth keeping. C22-6531 printed p.19 gives `VF` the data
    description `(B,25)`; this assembler wrote a whole half word,

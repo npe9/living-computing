@@ -1,0 +1,91 @@
+! mcp_bootstrap_p30.strap -- MCP INITIALIZATION, printed page 30:
+! "MCP TYPE REQUEST REPORT" and "MCP MODE REPORT".
+! docs/MCP_Mar63_001-249.pdf PDF p.37, header "PAGE NUMBER 30".
+! docs/boot_plan.md M3.
+!
+! CONTIGUOUS WITH p.29 BY FALL-THROUGH: p.29 ends with a full-word
+! TRANSMIT at 001552.40 and this page starts at 001553.40.
+!
+! ---------------------------------------------------------------
+! THE PARENTHETICAL INTEGER ENTRY, line 27's "(.25)1"
+! ---------------------------------------------------------------
+! C28-6129 Section II, printed p.25 (PDF 29), "Field Entry Mode":
+!
+!   "A final STRAP entry mode that is used as a field entry mode is
+!    the parenthetical integer entry mode.  This mode permits any
+!    integer or pattern of bits to be stored in any bit position of
+!    an instruction or pseudo operation that produces binary output.
+!    The general format for this entry mode is:  (.n)A(n+1)
+!    The symbol .n represents the BIT ADDRESS OF THE RIGHTMOST BIT
+!    of the field into which the integer or bit pattern is to be
+!    entered.  The integer A(n+1) is formed as an unsigned field,
+!    n+1 bits in length..., and inserted into the leftmost n+1 bits
+!    of the addressed instruction or data entry field by means of a
+!    LOGICAL OR type operation."
+!
+! and printed p.26: "in the case of an instruction, the position of
+! the entry is determined by counting bits from the beginning of the
+! instruction, starting with bit zero, NO MATTER IN WHICH SUBFIELD
+! of the instruction the integer entry may be written."
+!
+! So line 27's "X MO CW1(.25)1" ORs a one into bit 25 of the full
+! word the CW compiles -- the CHAIN FLAG -- and the listing prints
+! the flag group as "100".  The programmer could have written
+! "CW(CCR)" for the same three bits; both notations are in the MCP.
+!
+! ---------------------------------------------------------------
+! EXTERNALS, each recovered from this page's own binary output
+! ---------------------------------------------------------------
+!   S YCOCH 002156.00   X LR IN  001034.00   S COM RG 002151.00
+!   S REJ JB 002161.40  X ZEROS  001037.00
+! FORWARD, into printed p.31 and beyond:
+!   X32 001601.00   X33AA 001617.00   X35 001647.40   X36 001661.40
+SYCOCH  SYN, (8)2156.0
+XLRIN   SYN, (8)1034.0
+SCOMRG  SYN, (8)2151.0
+SREJJB  SYN, (8)2161.40
+XZEROS  SYN, (8)1037.0
+X32     SYN, (8)1601.0
+X33AA   SYN, (8)1617.0
+X35     SYN, (8)1647.40
+X36     SYN, (8)1661.40
+
+        SLC, (8)1553.40
+
+! ---- MCP type request report --------------------------------------
+XREJ1   LV, $15, SYCOCH              ! line 5  -GET CONSOLE CHANNEL
+                                     !          NUMBER
+        BZB, XLRIN+.30, XMODE1       ! line 6  - IF JOBS ARE TO BE
+                                     !           REJECTED
+        CT1100(BU,4), XLRIN+1.36     ! line 7
+        BZRZ, XREJ2                  ! line 8
+        CM0000(BU,4), XLRIN+1.36     ! line 9
+XREJ2   CT1100(BU,4), XLRIN+1.40     ! line 10
+        BZRZ, XREJ3                  ! line 11
+        CM0000(BU,4), XLRIN+1.40     ! line 12
+XREJ3   LCV(DU,8,4), XLRIN+1.36      ! line 13 -CONVERT NUMBER
+        ST(BU,18), SREJJB            ! line 14 -SAVE COUNT
+
+! ---- MCP mode report ----------------------------------------------
+XMODE1  BZB, XLRIN+.31, X32          ! line 19 - IF NON-INSTALLATION
+                                     !           MODE
+        LF(BU,2), XLRIN+1.50         ! line 20
+        KFI(BU,2), (2)10             ! line 21
+        BAH, X32                     ! line 22
+        ST(BU,2), SCOMRG+.8          ! line 23 - ENTER MODE IN COM REG
+XMODE3  BB, SCOMRG+.9, X36           ! line 24 -IF OFFLINE MODE
+        BB, SCOMRG+.8, X33AA         ! line 25 -NO*IF BYPASS
+        B, X35                       ! line 26 -OVERLAPPED MODE ON LINE
+XMOCW   CW, XZEROS, 3, XMOCW1(.25)1  ! line 27
+XMOCW1  CW, XMODE, XMODEK            ! line 28 -CW USED TO REQUEST
+                                     ! line 29  OPERATING MODE
+        CNOP                         ! line 30
+XMODE   DD(BU,8), (2)1111 1101       ! line 31 -CONTROL CODE CARRIAGE
+                                     !          RETURN
+        (IQS*)DD(BU,64,8), SPECIFY MCP OPERATING MODE *    ! line 32
+        DD(BU,8), (2) 1111 1101      ! line 33 -CARRIAGE RETURN
+        DD(BU,8), (2) 1111 1110      ! line 34 -END OF MSG
+        CNOP                         ! line 35
+XMODEK  SYN, $-XMODE                 ! line 36 -SIZE OF MSG
+
+        END, XREJ1

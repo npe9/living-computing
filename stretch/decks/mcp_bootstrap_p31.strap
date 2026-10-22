@@ -1,0 +1,111 @@
+! mcp_bootstrap_p31.strap -- MCP INITIALIZATION, printed page 31:
+! "FROM MCPP CARD DETERMINE INSTALLATION MCP OPERATING MODE", and
+! "IF BYPASS MODE DELETE SPOOL INPUT TAPE MESSAGES AND UNASSIGN THE
+! UNITS".
+! docs/MCP_Mar63_001-249.pdf PDF p.38, header "PAGE NUMBER 31".
+! docs/boot_plan.md M3.
+!
+! REACHED BY BRANCH FROM p.30, twice: that page's line 19
+! "BZB,X LR IN+.31,X 32" and line 22 "BAH,X32" both compile X32 =
+! 001601.00, which is this page's first instruction, and p.30's own
+! last byte ends at 001600.70 -- so the two pages are contiguous as
+! well.
+!
+! ---------------------------------------------------------------
+! PROGRESSIVE INDEXING, first use in the MCP
+! ---------------------------------------------------------------
+! Lines 6 and 7 are
+!
+!   CT0000(V+I)(BU,8),+1.44($4)    000001.54 84 110000.01 70
+!   L(V+I)(BU,48),.48($4)          000000.60 84 160000.20 50
+!
+! -- a VFL operation with a SECONDARY operation in its own
+! parentheses, C28-6129 printed p.4's "OP1(OP2)(dds), A24(I),
+! OF7(I')": the instruction uses index register 4 and then advances
+! it, so the card is walked field by field without a separate
+! increment.  The assembler has had this since the I-Box decks; this
+! is the first MCP page to want it.
+!
+! ---------------------------------------------------------------
+! EXTERNALS, each recovered from this page's own binary output
+! ---------------------------------------------------------------
+!   X MCPP  001747.00   X ONOV  002144.00   X OFOV  002145.00
+!   X BYPS  002146.00   S COM RG 002151.00  S X CHAN 002152.00
+!   S BA MCP 002153.00  S R TAPE 002153.40
+!   X ERR AD 000551.00  X ERROR 000133.00
+! FORWARD, into printed pp.32-33:
+!   X35 001647.40   X35A 001660.00   X36 001661.40
+XMCPP   SYN, (8)1747.0
+XONOV   SYN, (8)2144.0
+XOFOV   SYN, (8)2145.0
+XBYPS   SYN, (8)2146.0
+SCOMRG  SYN, (8)2151.0
+SXCHAN  SYN, (8)2152.0
+SBAMCP  SYN, (8)2153.0
+SRTAPE  SYN, (8)2153.40
+X35     SYN, (8)1647.40
+X35A    SYN, (8)1660.0
+X36     SYN, (8)1661.40
+XERRAD  SYN, (8)551.0
+XERROR  SYN, (8)133.0
+
+        SLC, (8)1601.0
+
+! ---- from the MCPP card, determine the installation mode ----------
+X32     LV, $4, $7                     ! line 5
+        CT0000(V+I)(BU,8), +1.44($4)   ! line 6  -ADVANCE TO CARD
+                                       !          TYPE FIELD
+        L(V+I)(BU,48), .48($4)         ! line 7  -ENTER CARD TYPE
+                                       !          FIELD
+        KF(BU,48), XMCPP               ! line 8
+X322    SIC, XERRAD                    ! line 9
+        BZAE, XERROR                   ! line 10 - IF MCPP CARD
+X323    L(BU,24), 0.0($4)              ! line 11 -GET MCP INSTALATION
+                                       !          MODE FIELD
+        KF(BU,24), XONOV               ! line 12
+        BAE, X35                       ! line 13 -IF ON LINE
+                                       !          OVERLAPPED
+        KF(BU,24), XOFOV               ! line 14
+        BAE, X323B                     ! line 15 -IF OFF LINE
+                                       !          OVERLAPPED
+        KF(BU,24), XBYPS               ! line 16
+        BAE, X323C                     ! line 17 - IF BYPASS
+X323A   SIC, XERRAD                    ! line 18
+        B, XERROR                      ! line 19 -INCORRECT MODE ENTRY
+                                       ! line 20 -MODE CODES FOR
+                                       ! line 21  S COM RG
+                                       ! line 22  - OVERLAPPED ON
+                                       !             LINE 00
+                                       ! line 23  - OVERLAPPED OFF
+                                       !             LINE 01
+                                       !          - BYPASS OFF LINE 10
+X323B   BZB1, SCOMRG+.9, X36           ! line 24 -MODE CODE TO 01
+X323C   CM1111(BU,1), SCOMRG+.8        ! line 25 -MODE CODE TO 10
+
+! ---- if bypass mode, delete the spool input tape messages and -----
+! ---- unassign the units -------------------------------------------
+X33     BZB, SCOMRG+.8, X35A           ! line 32 -IF BYPASS
+X33AA   LCI, $0, 2                     ! line 33 -YES*SET UP TO
+                                       !          DELETE 2 MSG
+X331    LV, $14, SRTAPE                ! line 34 -BYPASS GET SPOOL
+                                       !          REAL TYPE IOD NUMBER
+X331A   V+, $14, SBAMCP                ! line 35 -SPOOL TAPE ENTRY IN
+                                       !          IO LOC TABLE
+X332    LX, $12, 0.0($14)              ! line 36 -GET UAT ADD FOR
+                                       !          DELET OF MOUNT MSG
+        LX, $14, 0.0($14)              ! line 37 -GET UAT ADDRESS IN
+                                       !          DUPLICATE
+        LX, $13, 0.0($14)              ! line 38 -GET CHANNEL NUMBER
+        V+, $13, $13                   ! line 39 -DOUBLE CHANNEL =
+        LV, $14, .32($14)              ! line 40 -GET UNIT NUMBER
+        V+, $13, SXCHAN                ! line 41 -CST ENTRY
+X334    LV, $13, 0.0($13)              ! line 42 -GET UST ENTRY
+        V+, $13, $14                   ! line 43 -UST ENTRY
+X335    CM1111(BU,1), .29($13)         ! line 44 -ASSIGNED BIT OFF
+        CM0000(BU,1), .32($13)         ! line 45 -OWNERSHIP BIT OFF
+        CM0000(BU,1), .51($13)         ! line 46 -MOUNT BIT OFF
+        CM0000(BU,1), .53($13)         ! line 47 -SI MMT OFF
+        CM0000(BU,1), .26($13)         ! line 48 -STATI OFF
+        CM1111(BU,1), .27($13)         ! line 49 -DISP TO 1
+
+        END, X32

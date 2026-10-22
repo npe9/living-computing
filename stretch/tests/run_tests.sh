@@ -3419,6 +3419,175 @@ run "MCP INITIALIZATION, printed p.29, bit-exact (MCP_Mar63 PDF p.36)" python3 v
 # honoured by the Bluespec Transmit arm, which moves exactly one word:
 # an immediate count of 0 means SIXTEEN and a direct count of 0 means
 # 2**18.  Recorded in docs/archival_inventory.md.
+
+run "STRAP's parenthetical integer entry mode, (.n)A" python3 verify_parenthetical_entry.py
+# >>> THE ASSEMBLER LEARNED "(.n)A", AND IT IS THE FEATURE THIS
+# PROJECT REFUSED TO INVENT FOUR MONTHS AGO AND HAS NOW READ.
+# decks/mcp_bootstrap_p7_p8.strap's "substitution (a)" wrote printed
+# p.8 line 34's "CW,X ZEROS,3,X MSG CW(.25)1" as "CW(CCR),X ZEROS,3,
+# X MSG CW" and said why in as many words: "This assembler does not
+# implement bit designations, and inventing their general semantics
+# from one row is what AGENTS.md rule 4 forbids." <<<
+#
+# C28-6129 Section II, printed pp.25-26 (PDF 29-30), heading "Field
+# Entry Mode" -- a heading reached by reading Section II, not from an
+# index:
+#
+#   "A final STRAP entry mode that is used as a field entry mode is
+#    the parenthetical integer entry mode.  This mode permits any
+#    integer or pattern of bits to be stored in any bit position of
+#    an instruction or pseudo operation that produces binary output.
+#    The general format for this entry mode is:  (.n)A(n+1)
+#    The symbol .n represents the BIT ADDRESS OF THE RIGHTMOST BIT of
+#    the field into which the integer or bit pattern is to be
+#    entered.  The integer A(n+1) is formed as an unsigned field, n+1
+#    bits in length..., and inserted into the leftmost n+1 bits of
+#    the addressed instruction or data entry field by means of a
+#    LOGICAL OR type operation.  Logical OR is used so that the
+#    parenthetical entry may be combined with the existing contents
+#    of the particular field addressed or with other parenthetical
+#    entries."
+#
+# and the rules that come with it: .n counts from the start of the
+# INSTRUCTION "no matter in which subfield" the entry is written; the
+# entry "must follow all other information in the field"; <= 31 in a
+# half word and <= 63 in a full word; at most 24 significant bits;
+# unsigned, modulo 2**(n+1); and NOT in a pseudo-operation that
+# compiles no storage (SCL, DDI, END).
+#
+# >>> IT CANNOT DISTURB ANYTHING THAT EXISTS, AND THAT WAS MEASURED
+# BEFORE THE SPLITTER WAS SWITCHED ON: its regular expression was run
+# over every statement field of every deck in decks/ -- 24,073 fields
+# parsed through parse_statement_text, ZERO matches.  The only rows
+# the mode can reach are the ones written for it. <<<
+#
+# EIGHT INJECTIONS, EVERY RESULT OBSERVED.  Six are caught and the
+# two that survive are reported here because they say something true
+# about the code rather than something comfortable:
+#
+#   I1  the OR becomes a STORE
+#       -> C2, C3, C2b, C4, C6 and R6 all fail.  C2b is the one that
+#          names it: the 24-bit address field assembles 0x000004
+#          instead of 0x001004, i.e. the entry ERASED the address it
+#          was supposed to be combined with.  This is why the manual
+#          specifies OR.
+#   I2  the field is n bits wide instead of n+1
+#       -> C1 fails with 0x29002760 against the manual's own
+#          0x14802760 -- 41 shifted one place too far left.  Five
+#          other checks fail with it.
+#   I3  the modulo-2**(n+1) mask in apply_parenthetical_entries is
+#       deleted
+#       -> SURVIVES.  Not a gap in the test: Image.or_into extracts
+#          each chunk with "(value >> k) & ((1 << take) - 1)", so the
+#          truncation is structural and the explicit mask is a second
+#          copy of it.  The mask is kept because it is where the
+#          manual's sentence belongs, but it is DOCUMENTATION, not a
+#          second mechanism, and no test can tell the two apart.
+#   I4  the "<= 31 in a half word" bound is removed
+#       -> R1 stops refusing "E+I, 0(.63)1".
+#   I5  .n counted from the field instead of the instruction
+#       (or_into at stmt.addr + 32)
+#       -> caught, but by Image.deposit's overlap guard rather than
+#          by a check: "internal: two statements deposited
+#          overlapping bits in word 512 (bit 32800, 32 bits)".  The
+#          entry lands on the NEXT statement's half word.
+#   I6  the 24-significant-bit refusal is removed
+#       -> R2 stops refusing "(.63)16777216".
+#   I7  the entry is applied BEFORE the statement's own emit
+#       -> caught, again by the overlap guard, at bit 32768.
+#   I8  the entries are not reversed back into source order
+#       -> SURVIVES, and must: OR is commutative, which is exactly
+#          the property the manual chose it for.  The reverse() only
+#          decides which entry an error message names first.
+#
+# THE TEST'S OWN FIRST DRAFT HAD A VACUOUS CHECK, and the deck says
+# so: C4 was written "20(.23)4(.21)1", two entries into the SAME bit
+# (4 = 100 puts a one at bit 21), so it would have passed with either
+# entry dropped.  It is "(.20)1" now.
+#
+# AND I5/I7 EXPOSED A GAP THE DECK COULD NOT COVER.  Both are caught
+# by Image.deposit's overlap guard, which fires because or_into marks
+# the bits it touches in _written -- so an entry at the MAXIMUM width
+# had better still leave the next statement able to deposit.  Every
+# check on the deck is on a row that is the last of its kind, so none
+# of them tests that.  R7-R10 do, inline: (.63)1 on a full word
+# followed by another full word, (.31)1 on a half word followed by
+# another half word, the same pair starting in the SECOND half of a
+# word (so the entry and its successor straddle a word boundary), and
+# an entry written in place of an entire field.  All four assemble;
+# the bound and the guard do not collide.
+#
+# THE NULL-FIELD SUBSTITUTION IS WIDER THAN THE MANUAL'S EXAMPLE and
+# strap_asm.py says so where it happens.  C28-6129 printed p.26
+# shows an entry "in place of" an ADDRESS field; this assembler
+# applies it to any field an entry empties, leaving the zero that
+# printed p.4 says a missing field compiles.  Written in place of a
+# field where zero is NOT neutral -- a TRANSMIT's J, where zero means
+# sixteen (Ref. Man. printed p.30) -- the result is the same as
+# writing that field null, which is what the programmer did.  R10 is
+# that case, recorded rather than assumed; no row in the corpus does
+# it.
+
+run "MCP INITIALIZATION, printed p.30, bit-exact (MCP_Mar63 PDF p.37)" python3 verify_mcp_bootstrap_p30.py
+# >>> PRINTED p.30 IS TRANSCRIBED, twenty-three rows and nine symbol
+# locations, all bit-exact.  "MCP TYPE REQUEST REPORT" and "MCP MODE
+# REPORT": the bootstrap reads two bits of the loader record to learn
+# whether jobs are to be rejected and which operating mode was asked
+# for, and builds the chained control words that type the question at
+# the console. <<<
+#
+# This is the page that wanted "(.n)A" -- line 27's
+# "CW,X ZEROS,3,X MO CW1(.25)1" prints its flag group as 100 and the
+# entry is what sets bit 25.  See the section above.
+#
+# >>> AND THE MESSAGE MEASURES ITSELF.  Line 32 is
+# "(IQS*)DD(BU,64,8), SPECIFY MCP OPERATING MODE *", twenty-eight
+# characters counting the space either side, and NOTHING IN THE DECK
+# STATES THAT.  Two things check it: line 33's carriage return has to
+# land at 001600.50 and line 34's end-of-message at 001600.60, and
+# line 36's "X MODE K SYN,$-X MODE" has to print 000004.00+, four
+# words.  A character miscounted anywhere in the string moves all
+# three. <<<
+#
+# CONTIGUOUS WITH p.29 BY FALL-THROUGH (p.29's last TRANSMIT is a
+# full word at 001552.40, this page starts at 001553.40), and its
+# forward reference X32 is 001601.00 -- which is where printed p.31
+# begins.
+
+run "MCP INITIALIZATION, printed p.31, bit-exact (MCP_Mar63 PDF p.38)" python3 verify_mcp_bootstrap_p31.py
+# >>> PRINTED p.31 IS TRANSCRIBED -- EVERY ROW ON THE PAGE, thirty-
+# five of them, and thirteen symbol locations, all bit-exact.  The
+# bootstrap reads the installation's operating mode off the MCPP
+# card, and in bypass mode walks the spool tape's UAT/CST/UST chain
+# turning six status bits off one at a time. <<<
+#
+# NO ASSEMBLER WORK, for the fourth page in five.  The one form the
+# page introduces, PROGRESSIVE INDEXING, has been in the assembler
+# since the I-Box decks and this is the first MCP page to use it:
+#
+#   line 6  CT0000(V+I)(BU,8),+1.44($4)  -> 000001.54 84 110000.01 70
+#   line 7  L(V+I)(BU,48),.48($4)        -> 000000.60 84 160000.20 50
+#
+# C28-6129 printed p.4 writes the format as "OP1(OP2)(dds), A24(I),
+# OF7(I')" -- a secondary operation in its own parentheses -- so the
+# instruction that reads a field of the card also advances $4 past
+# it, and the card is walked without a separate increment.
+#
+# >>> AND THE PAGE TURNS ON A C FOR THE SECOND TIME, with the
+# assembler finding it again.  Line 24's trailing byte was
+# transcribed "00" off the 600 dpi render and the assembler compiled
+# 0C.  The 900 dpi render says 0C, and the structure says so without
+# the render: "BZB1" differs from "BZB" exactly in bits 28-31, which
+# is where "and set the bit to one" lives, and line 32's plain BZB
+# prints 00 in the same column eight rows later.  See
+# docs/listing_typography.md 13b -- this is the fourth row in two
+# days where the glyph alone decided nothing and the FIELD decided
+# it. <<<
+#
+# REACHED BY BRANCH FROM p.30, twice -- that page's line 19
+# "BZB,X LR IN+.31,X 32" and line 22 "BAH,X32" both compile
+# X32 = 001601.00, which is this page's first row -- and contiguous
+# with it as well, since p.30's last data byte ends at 001600.70.
 run "MCP's error table, printed pp.7-8 (MCP_Mar63 PDF pp.14-15)" python3 verify_mcp_bootstrap_p7_p8.py
 # X ERR DD -- THE LAST TWO PAGES OF THE BOOTSTRAP TO BE TRANSCRIBED,
 # and the index to all the rest: seventy-eight VF half words, one pair

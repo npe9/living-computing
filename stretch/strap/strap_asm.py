@@ -6,9 +6,19 @@ StretchExecute.bsv (see opcodes.py for the shared table and citations).
 SCOPE (implemented / not, and why -- mirrors the "decode completely,
 execute partially, document the rest" ethos of the Bluespec model):
 
-  Pseudo-ops:  DD, VF, XW, END, SYN, SLC, CNOP.
-  Not yet:     CF, RF, DDI, CW, EXT (raise AssemblerError citing
-               C22-6531 rather than silently guessing).
+  Pseudo-ops:  DD, DR, DRZ, VF, CF, RF, XW, CW, END, SYN, SLC, CNOP.
+  Not yet:     DDI, EXT (raise AssemblerError citing C22-6531 rather
+               than silently guessing).
+
+  ENTRY MODES: the "(IQS*)" style prefix in front of a DD (see
+  parse_statement_text), the radix prefix "(8)7.0", and the
+  PARENTHETICAL INTEGER ENTRY "(.n)A" -- C28-6129 Section II, printed
+  pp.25-26, "Field Entry Mode" -- which ORs an n+1 bit field into
+  bits 0..n of whatever the statement compiles, counting from the
+  start of the instruction "no matter in which subfield" it is
+  written.  See split_parenthetical_entries and
+  apply_parenthetical_entries, decks/parenthetical_entry.strap, and
+  MCP printed p.8 line 34 / p.30 line 27, the two rows that need it.
 
   CNOP (C22-6531 "CNOP": "the machine instruction NOP is compiled" to
   bridge a half-word-to-full-word rounding gap): rounds the location
@@ -764,11 +774,75 @@ def parse_statement_text(text, lineno=None):
 
 
 class Statement:
-    def __init__(self, lineno, name, op, mods, fields, raw, entry=None):
+    def __init__(self, lineno, name, op, mods, fields, raw, entry=None,
+                 pents=()):
         self.lineno, self.name, self.op, self.mods, self.fields, self.raw = \
             lineno, name, op, mods, fields, raw
         self.entry = entry   # entry-mode prefix, raw; see parse_statement_text
+        self.pents = list(pents)  # parenthetical integer entries, (n, expr)
         self.addr = None  # filled in by pass 1: bit-count location
+
+
+# A trailing PARENTHETICAL INTEGER ENTRY: "(.n)A", with an optional
+# radix inside the parentheses on either side of the bit address
+# ("(.32, 8)" and "(8, .32)" both mean octal, rightmost bit 32).  The
+# expression tail carries no parentheses of its own, which is what
+# keeps this apart from an index modifier "($12)" and from a radix
+# prefix "(8)7.0".
+_PENT = re.compile(r'\(\s*(?:(\d+)\s*,\s*)?\.(\d+)\s*(?:,\s*(\d+)\s*)?\)([^()]*)$')
+
+
+def split_parenthetical_entries(field, lineno=None):
+    """field -> (field without its trailing "(.n)A" groups, [(n, expr)]).
+
+    C28-6129 Section II, printed p.25, "Field Entry Mode":
+
+      "A final STRAP entry mode that is used as a field entry mode is
+       the parenthetical integer entry mode.  This mode permits any
+       integer or pattern of bits to be stored in any bit position of
+       an instruction or pseudo operation that produces binary output.
+       The general format for this entry mode is:  (.n)A(n+1)
+       The symbol .n represents the BIT ADDRESS OF THE RIGHTMOST BIT
+       of the field into which the integer or bit pattern is to be
+       entered.  The integer A(n+1) is formed as an unsigned field,
+       n+1 bits in length..., and inserted into the leftmost n+1 bits
+       of the addressed instruction or data entry field by means of a
+       LOGICAL OR type operation."
+
+    printed p.26 adds the rule this function depends on: "the
+    parenthetical entry must follow all other information in the field
+    in which it does appear", so the groups are always a SUFFIX and
+    are peeled off the right.  Several in a row are legal and OR
+    together -- that is why the manual specifies OR and not store.
+
+    The returned expressions are in source form; a radix written
+    inside the parentheses is moved onto the expression as the radix
+    prefix the evaluator already understands.
+    """
+    entries = []
+    while True:
+        m = _PENT.search(field)
+        if not m:
+            break
+        radix = m.group(1) or m.group(3)
+        n, expr = int(m.group(2)), m.group(4).strip()
+        if not expr:
+            raise AssemblerError(
+                f"parenthetical integer entry (.{n}) has no value after it "
+                f"(C28-6129 printed p.25)", lineno)
+        if radix:
+            expr = f"({radix}){expr}"
+        entries.append((n, expr))
+        field = field[:m.start()]
+    entries.reverse()
+    return field, entries
+
+
+# Pseudo-operations that "give instructions to the compiler but result
+# in no binary output" -- C28-6129 printed p.26 names SCL, DDI and END
+# and says the entry mode "cannot be used" in them.  SCL is this
+# assembler's SLC.
+_PENT_FORBIDDEN = {'SLC', 'DDI', 'END', 'SYN'}
 
 
 def iter_statements(source):
@@ -787,8 +861,49 @@ def iter_statements(source):
             if not sub:
                 continue
             op, mods, fields, entry = parse_statement_text(sub, lineno)
+            pents = []
+            if entry is None:
+                # With an entry-mode prefix the datum is raw text (a
+                # message), not an expression, so nothing is peeled
+                # off it -- see parse_statement_text.
+                clean = []
+                for f in fields:
+                    f2, es = split_parenthetical_entries(f, lineno)
+                    if es and f.strip() and not f2.strip():
+                        # C28-6129 printed p.26: the parenthetical
+                        # entry is "a modification of the addressed
+                        # field ... OR IN PLACE OF such a field", and
+                        # the manual's own instruction example,
+                        # "E+I, (.8)41", writes nothing else in the
+                        # field.  printed p.4: "missing fields are
+                        # compiled by STRAP-II as if they contained
+                        # zeros", so that is what is left behind --
+                        # and only when the entry consumed something
+                        # that was there, never for a field the
+                        # programmer wrote empty.
+                        #
+                        # THIS IS THE GENERAL RULE APPLIED WIDER THAN
+                        # THE MANUAL ILLUSTRATES IT: p.26 shows an
+                        # entry in place of an ADDRESS field only.
+                        # Written in place of a field where zero is
+                        # not neutral -- a TRANSMIT's J, where zero
+                        # means sixteen (Ref. Man. printed p.30) --
+                        # the statement compiles J = 0 and means
+                        # sixteen, which is what writing the field
+                        # null means anyway.  No row in the corpus
+                        # does it; this note is here so the next one
+                        # is read rather than assumed.
+                        f2 = '0'
+                    clean.append(f2)
+                    pents.extend(es)
+                fields = clean
+            if pents and op.upper() in _PENT_FORBIDDEN:
+                raise AssemblerError(
+                    f"{op.upper()} produces no binary output, so a "
+                    f"parenthetical integer entry cannot appear in it "
+                    f"(C28-6129 printed p.26)", lineno)
             yield Statement(lineno, name if first else None, op, mods, fields,
-                            sub, entry)
+                            sub, entry, pents)
             first = False
 
 
@@ -1540,6 +1655,32 @@ class Image:
             remaining -= take
             pos += take
 
+    def or_into(self, loc_bits, width_bits, value):
+        """OR a field into bits that have already been deposited.
+
+        This is the one place that is allowed past deposit()'s overlap
+        check, and the manual is explicit about why: C28-6129 printed
+        p.25 says a parenthetical integer entry is "inserted into the
+        leftmost n+1 bits of the addressed instruction or data entry
+        field by means of a LOGICAL OR type operation.  Logical OR is
+        used so that the parenthetical entry may be combined with the
+        existing contents of the particular field addressed or with
+        other parenthetical entries."  Overlapping an already-written
+        field is the POINT here, not the bug deposit() refuses.
+        """
+        value &= (1 << width_bits) - 1
+        remaining, pos = width_bits, loc_bits
+        while remaining > 0:
+            word_addr, bit_in_word = divmod(pos, 64)
+            take = min(64 - bit_in_word, remaining)
+            chunk = (value >> (remaining - take)) & ((1 << take) - 1)
+            shift = 64 - bit_in_word - take
+            self._written[word_addr] = (self._written.get(word_addr, 0)
+                                        | (((1 << take) - 1) << shift))
+            self.words[word_addr] = self.words.get(word_addr, 0) | (chunk << shift)
+            remaining -= take
+            pos += take
+
     def deposit_half(self, hword_addr, value):
         self.deposit(hword_addr * 32, 32, value)
 
@@ -1788,6 +1929,7 @@ def assemble(source, origin_bits=DEFAULT_ORIGIN_BITS):
     end_pc = None
     for stmt in statements:
         emit_statement(stmt, symtab, image)
+        apply_parenthetical_entries(stmt, symtab, image)
         if stmt.op.upper() == 'END' and stmt.fields and stmt.fields[0].strip():
             target_bits = eval_expr(stmt.fields[0], symtab, stmt.addr, lineno=stmt.lineno)
             if target_bits % 32 != 0:
@@ -1795,6 +1937,49 @@ def assemble(source, origin_bits=DEFAULT_ORIGIN_BITS):
             end_pc = target_bits // 32
 
     return AssembledProgram(image.words, symtab, end_pc)
+
+
+def apply_parenthetical_entries(stmt, symtab, image):
+    """OR each "(.n)A" of a statement into the word it just compiled.
+
+    C28-6129 printed p.25: ".n represents the bit address of the
+    RIGHTMOST bit of the field", the value is "formed as an unsigned
+    field, n+1 bits in length", and bit zero is the first bit OF THE
+    INSTRUCTION -- "in the case of an instruction, the position of the
+    entry is determined by counting bits from the beginning of the
+    instruction, starting with bit zero, NO MATTER IN WHICH SUBFIELD
+    of the instruction the integer entry may be written."  So the
+    field written is bits 0..n of the statement's own storage, and
+    which comma the entry was written after does not matter.
+    """
+    if not stmt.pents:
+        return
+    _, size = statement_size(stmt)
+    for n, expr in stmt.pents:
+        # p.25: "<= 31 in a half word instruction, or 63 in a full
+        # word instruction" -- i.e. the field must fit in what this
+        # statement actually compiles.
+        if n + 1 > size:
+            raise AssemblerError(
+                f"parenthetical integer entry (.{n}) needs {n + 1} bits but "
+                f"this statement compiles only {size} "
+                f"(C28-6129 printed p.25: 31 in a half word, 63 in a full)",
+                stmt.lineno)
+        val = eval_expr(expr, symtab, stmt.addr, lineno=stmt.lineno)
+        # p.25: "a maximum of 24 significant bits can be converted in a
+        # parenthetical entry".  Refusing is the project's convention
+        # for a field that does not fit; truncating silently is how
+        # every one of these has cost a session before.
+        if not -(1 << 24) < val < (1 << 24):
+            raise AssemblerError(
+                f"parenthetical integer entry (.{n}){expr} evaluates to {val}, "
+                f"more than the 24 significant bits the entry converts "
+                f"(C28-6129 printed p.25)", stmt.lineno)
+        # p.25: "evaluated modulo 2**(n+1)... All parenthetical fields
+        # are regarded as unsigned by STRAP, so that a negative number
+        # is compiled as the complement, re 2**(n+1), of the magnitude
+        # of the number."  Masking is both of those.
+        image.or_into(stmt.addr, n + 1, val & ((1 << (n + 1)) - 1))
 
 
 def emit_statement(stmt, symtab, image):

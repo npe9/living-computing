@@ -46,17 +46,29 @@
 ! ---------------------------------------------------------------
 ! TWO SUBSTITUTIONS
 ! ---------------------------------------------------------------
-! (a) LINE 34's "CW,X ZEROS,3,X MSG CW(.25)1" IS WRITTEN "CW(CCR),
-!     X ZEROS,3,X MSG CW".  The "(.25)1" is a bit designation -- set
-!     bit 25 of the generated word to one -- and bit 25 is the CHAIN
-!     flag of a control word (the listing prints flags 25-27 as three
-!     separate digits, and this row prints 100).  This assembler does
-!     not implement bit designations, and inventing their general
-!     semantics from one row is what AGENTS.md rule 4 forbids.
-!     C28-6129 printed p.14's CCR, "Chain Counts Within Record", is
-!     chain 1 multiple 0 skip 0 -- THE SAME THREE BITS -- so the two
-!     spellings assemble to the identical word, which the checked row
-!     proves.
+! (a) RETIRED 2026-10-22 -- LINE 34 IS NOW VERBATIM.  It had been
+!     written "CW(CCR),X ZEROS,3,X MSG CW" in place of the page's
+!     "CW,X ZEROS,3,X MSG CW(.25)1", with this note:
+!
+!       "The '(.25)1' is a bit designation -- set bit 25 of the
+!        generated word to one... This assembler does not implement
+!        bit designations, and inventing their general semantics from
+!        one row is what AGENTS.md rule 4 forbids."
+!
+!     That was right, and it held for four months.  The construct is
+!     STRAP's PARENTHETICAL INTEGER ENTRY MODE and it is specified in
+!     full in C28-6129 Section II, printed pp.25-26 (PDF 29-30),
+!     under the heading "Field Entry Mode" -- see
+!     decks/parenthetical_entry.strap, which quotes it.  The
+!     assembler implements it now, so the page's own spelling is what
+!     this deck carries.
+!
+!     THE SUBSTITUTION'S OWN ARGUMENT IS NOW A TEST.  C28-6129
+!     printed p.14's CCR, "Chain Counts Within Record", is chain 1
+!     multiple 0 skip 0 -- the same three bits "(.25)1" sets -- so
+!     the two spellings must assemble to the identical word.  They
+!     do, and verify_parenthetical_entry.py checks exactly that
+!     equality rather than taking it on trust.
 !
 ! (b) LINE 35 IS "CW,0,10,0", NOT "CW,0,10,C".  The scan renders a
 !     leading digit zero with a gap on the right, so it reads as a C
@@ -252,7 +264,7 @@ XERRDD  VF, XERR00+1.0    ! p.7 line  2
 XEDDK   SYN, $-XERRDD      ! p.8 line 31  -SIZE OF ERROR TABLE
 XERRIN  XW, XERRDD, XEDDK+1.0, 0   ! p.8 line 32 -XW FOR INITIALIZING
                                     !              ERROR SEARCH
-XMSCW1  CW(CCR), XZEROS, 3, XMSGCW ! p.8 line 34 -- see substitution (a)
+XMSCW1  CW, XZEROS, 3, XMSGCW(.25)1 ! p.8 line 34, verbatim
                                     !  -CW FOR LOWER CONSOLE REGISTERS
 XMSGCW  CW, 0, 10, 0       ! p.8 line 35  -CW FOR ERROR MSG
 XLR     DR(BU,64),(3)      ! p.8 line 36  -ZERO WORDS FOR CONSOLE LR

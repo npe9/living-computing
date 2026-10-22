@@ -5302,6 +5302,43 @@ thing in the path: the word the look-ahead hands the E-box.
 Build the pair that differs only in history before building the pair
 that differs in operands.
 
+## PRINTED p.31 IS TRANSCRIBED -- every row on the page, and the assembler found a second real C, 2026-10-22
+
+Thirty-five rows and thirteen symbol locations, bit-exact, in
+`tests/verify_mcp_bootstrap_p31.py`. Reading the installation's
+operating mode off the MCPP card, and the bypass-mode walk that
+turns six status bits off along the spool tape's UAT/CST/UST chain.
+
+**No assembler work, for the fourth page in five.** The one form the
+page introduces, PROGRESSIVE INDEXING, has been in the assembler
+since the I-Box decks:
+
+```
+line 6  CT0000(V+I)(BU,8),+1.44($4)  -> 000001.54 84 110000.01 70
+line 7  L(V+I)(BU,48),.48($4)        -> 000000.60 84 160000.20 50
+```
+
+C28-6129 printed p.4 writes the format as `OP1(OP2)(dds), A24(I),
+OF7(I')`, so the instruction that reads a field of the card also
+advances `$4` past it and the card is walked with no separate
+increment.
+
+**A second real `C`, and again the assembler found it.** Line 24's
+trailing byte was transcribed `00` off the 600 dpi render; the
+assembler compiled `0C`, the 900 dpi render says `0C`, and the
+structure says so without any render: `BZB1` differs from `BZB`
+exactly in bits 28-31, where "and set the bit to one" lives, and
+line 32's plain `BZB` prints `00` in the same column eight rows
+later. Fourth row in two days where the glyph decided nothing and
+the field decided it — see `listing_typography.md` §13b.
+
+Reached by branch from p.30 twice (`BZB,X LR IN+.31,X 32` and
+`BAH,X32` both compile X32 = 001601.00) and contiguous with it as
+well, since p.30's last data byte ends at 001600.70.
+
+**The MCP bootstrap is now continuous and bit-exact from printed
+p.26 through p.31.** The next page is printed p.32 at 001632.40.
+
 ## PRINTED pp.27, 28 AND 29 ARE TRANSCRIBED -- three pages, no assembler work, and a glyph rule that needed a counter-instance, 2026-10-22
 
 Eighty-four printed rows and thirty-three symbol locations, all
@@ -5425,12 +5462,14 @@ Two of its rules are unimplemented and now have numbers attached: an
 immediate count of 0 means **sixteen**, a direct count of 0 means
 **2^18**, and the Bluespec Transmit arm moves exactly one word.
 
-### What p.30 will want
+### printed p.30 IS TRANSCRIBED TOO, and it needed the one feature this project had refused
 
-Scouted, not transcribed. Printed p.30 starts at 001553.40, picks up
-from p.29's last full word, and needs `CW`, `CNOP` and alphabetic
-`DD(BU,64,8)` -- all of which the assembler has. **The one thing it
-does not have is line 27's syntax:**
+Twenty-three rows and nine symbol locations, bit-exact, in
+`tests/verify_mcp_bootstrap_p30.py`. "MCP TYPE REQUEST REPORT" and
+"MCP MODE REPORT". It starts at 001553.40, picking up from p.29's
+last full word, and wanted `CW`, `CNOP` and alphabetic
+`DD(BU,64,8)`, all of which the assembler had. **The one thing it
+did not have was line 27's syntax:**
 
 ```
 X MO CW   CW,X ZEROS,3,X MO CW1(.25)1   ->  001037.00+ 100 000003 001574
@@ -5521,9 +5560,47 @@ feature**, so the one row that was worked around becomes the second
 witness for the thing that replaced the workaround.
 
 Note what the two rows have in common: both are `CW` with
-`(.25)1`, four pages and twenty-two printed pages apart, both
-setting the chain flag, and `CW(CCR)` sets the identical three bits.
-So the MCP's programmer had both spellings and used both.
+`(.25)1`, twenty-two printed pages apart, both setting the chain
+flag, and `CW(CCR)` sets the identical three bits. So the MCP's
+programmer had both spellings and used both.
+
+**BUILT THE SAME DAY, AND BOTH ROWS ARE VERBATIM NOW.**
+`decks/parenthetical_entry.strap` and
+`tests/verify_parenthetical_entry.py` carry the mode;
+`decks/mcp_bootstrap_p7_p8.strap`'s substitution (a) is retired, and
+the equality it *asserted* -- that `CW(CCR),…` and `CW,…(.25)1`
+compile the same word -- is check C6.
+
+**Measured before the splitter was switched on:** its regular
+expression was run over every statement field of every deck,
+**24,073 fields, zero matches**, so the mode cannot reach a row that
+was not written for it.
+
+**Eight injections, and the two that SURVIVED are the interesting
+ones:**
+
+* **I3, deleting the modulo-2^(n+1) mask, survives** -- and that is
+  not a hole in the test. `Image.or_into` extracts each chunk with
+  `(value >> k) & ((1 << take) - 1)`, so the truncation is
+  structural; the explicit mask is a *second copy* of it. It is kept
+  because it is where the manual's sentence belongs, but it is
+  documentation, not a mechanism, and no test can tell the two
+  apart. Say so rather than counting it as covered.
+* **I8, not reversing the entries back into source order, survives
+  and must** -- OR is commutative, which is exactly the property the
+  manual chose OR for. `reverse()` only decides which entry an error
+  message names first.
+
+The other six are caught; `run_tests.sh` has each one's measured
+failure. Two of them (I5, I7) are caught by `Image.deposit`'s
+overlap guard rather than by a check -- a misplaced entry lands on
+the *next* statement's half word -- which is worth knowing, because
+it means the guard is doing double duty here.
+
+**A vacuous check caught in the first draft:** C4 was written
+`20(.23)4(.21)1`, two entries into the SAME bit (4 = 100 puts a one
+at bit 21), so it would have passed with either entry dropped. It is
+`(.20)1` now, and the deck says why.
 
 ## PRINTED p.26 IS TRANSCRIBED -- and a too-wide field was only visible where a narrower one followed, 2026-10-22
 
