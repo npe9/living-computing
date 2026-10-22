@@ -1,0 +1,131 @@
+! mcp_bootstrap_p21.strap -- MCP INITIALIZATION, printed page 21:
+! "MCP SOURCE TAPE VERIFICATION".  docs/MCP_Mar63_001-249.pdf PDF
+! p.28, header "PAGE NUMBER 21".  docs/boot_plan.md M3.
+!
+! Contiguous with printed p.20: that page's last instruction is a full
+! word at 001011.00 and this one starts at 001012.00.
+!
+! ---------------------------------------------------------------
+! WHAT THE PAGE DOES
+! ---------------------------------------------------------------
+! It prints the IPL tape's date on the console so the operator can
+! see which system he has just loaded.
+!
+!   lines  5-6   get the console channel from the communication
+!                region (printed p.20 put it there) and load the
+!                32-bit date from X VERFY.
+!   lines  7-16  suppress LEADING ZEROS: four pairs of BZB, one per
+!                digit, each clearing a digit that is zero -- "IF A-8
+!                ZERO", "IF A-8 ZERO, EIGHT, OR NINE".
+!   lines 17-20  M+MG the four digits into the message text itself,
+!                at X MONTH and X DAY.
+!   line  21     WRITE the message to the console.
+!   lines 26-31  the buffers and control words.
+!   lines 33-40  the message, in IQS characters with carriage
+!                returns around it.
+!
+! ---------------------------------------------------------------
+! THE MESSAGE IS PATCHED IN PLACE, which is why the digits are
+! written with M+MG rather than stored
+! ---------------------------------------------------------------
+! Lines 37 and 38 are "(IQS*)DD(BU,64,8),00 MONTH *" and ",00 DAY  *"
+! -- the text carries ASCII-like zeros as PLACEHOLDERS, and lines
+! 17-20 ADD the four-bit digits into them.  M+MG(BU,4) on a character
+! whose low nibble is zero turns "0" into the digit.  The same trick
+! printed pp.9-12 use for the error address, and the reason the
+! leading-zero suppression above has to CLEAR rather than skip: a
+! cleared placeholder prints as a blank.
+!
+! ---------------------------------------------------------------
+! THE (IQS*)DD ROWS PRINT NOTHING IN THE BINARY OUTPUT COLUMN
+! ---------------------------------------------------------------
+! Lines 35, 37 and 38 have an EMPTY binary output field, exactly as
+! printed pp.9-12's message rows do, so no character code is checked
+! or can be.  What the verifier checks is the COUNTING -- where each
+! row starts -- which is what fixes the text lengths: 18 characters
+! for line 35, nine for X MONTH, eight for X DAY.
+!
+! ---------------------------------------------------------------
+! EXTERNALS, every one recovered from this page's own binary output
+! ---------------------------------------------------------------
+!   S Y CO CH  002156.00  (line 5)  -- and printed p.20 line 23 puts
+!              the console channel number there, which is what this
+!              line reads back.  Two pages, one address.
+!   X VERFY    000043.00  (line 6)
+!   X7 3       000066.40  (line 22)
+!   X7 1       000057.40  (line 23)
+!   X IC       001052.00  (line 24)
+!
+! THE BRANCH-ADDRESS FIELD IS NINETEEN BITS AND THE PRINTED FORM
+! HIDES IT.  Line 23's output is "000057.50 00": the ".50" group is
+! instruction bits 18-23, and bit 18 is the HALF-WORD selector, so
+! 101000 means word 000057, right half -- location 000057.40.  Read
+! as a plain bit offset, 0o50 is 40 decimal, which is not a half-word
+! boundary at all and would have looked like a misprint.
+SYCOCH  SYN, (8)2156.0
+XVERFY  SYN, (8)43.0
+X73     SYN, (8)66.40
+X71     SYN, (8)57.40
+XIC     SYN, (8)1052.0
+
+        SLC, (8)1012.0
+
+! ---- the date, with leading zeros suppressed ---------------------
+XDATE   LV, $15, SYCOCH              ! line 5  -GET CONSOLE CHANNEL
+        L(BU,32), XVERFY             ! line 6
+        BZB, $R+.36, XDATE2          ! line 7  -IF A-8 ZERO
+        CM0000(BU,4), $R+.36         ! line 8  -YES * CLEAR TENS
+                                     !           DIGIT OF MONTH
+XDATE2  BZB, $R+.44, XDATE3          ! line 9  -IF A-8 ZERO, EIGHT,
+                                     !           OR NINE
+        BZB, $R+.46, XDATE3          ! line 10 -YES * IF A-8 ZERO
+        CM0000(BU,4), $R+.44         ! line 11 -YES*CLEAR UNITS DIGIT
+                                     !           OF MONTH
+XDATE3  BZBZ, $R+.52, XDATE4         ! line 12 -IF A-8 ZERO
+        CM0000(BU,4), $R+.52         ! line 13 -YES * CLEAR TENS
+                                     !           DIGIT OF DAY
+XDATE4  BZB, $R+.60, XDATE5          ! line 14 -IF A-8 ZERO, EIGHT,
+                                     !           OR NINE
+        BZB, $R+.62, XDATE5          ! line 15 -YES * IF A-8 ZERO
+        CM0000(BU,4), $R+.60         ! line 16 -CLEAR UNITS DIGIT OF
+                                     !           DAY
+
+! ---- patch the digits into the message and write it --------------
+XDATE5  M+MG(BU,4), XMONTH+.3, 24    ! line 17 -GET TENS DIGIT
+        M+MG(BU,4), XMONTH+.8+.3, 16 ! line 18 -GET UNITS DIGIT
+        M+MG(BU,4), XDAY+.3, 8       ! line 19 -GET TENS DIGIT
+        M+MG(BU,4), XDAY+.8+.3       ! line 20 -GET UNITS DIGIT
+        W(SEOP), 0.0($15), XDCW      ! line 21 -IDENTIFY DATE OF
+                                     !           SOURCE TAPE
+        SIC, X73                     ! line 22
+        B, X71                       ! line 23 -IO TEST
+        B, XIC                       ! line 24 -TO IO STATUS REPORT
+
+! ---- buffers and control words -----------------------------------
+        CNOP                         ! line 25
+XLRIN   DR(BU), (3)                  ! line 26 -BUFFER FOR LOWER
+                                     ! line 27  REGISTERS FOR READ
+XZEROS  DR(BU), (3)                  ! line 28 -ZERO WORDS FOR LOWER
+                                     !           REGISTERS
+XDCW    CW(CCR), XZEROS, 3, XDCW1    ! line 29
+XDCW1   CW, XDATE1, XDATEK, 0        ! line 30 -CW USED TO STATE DATE
+XDCW2   CW, XLRIN, 3, 0              ! line 31 -CW USED TO GET IPL
+                                     !           OPTIONS
+
+! ---- the message -------------------------------------------------
+        CNOP                         ! line 32
+XDATE1  DD(BU,8), (2)11111101        ! line 33 -INITIAL CARRIAGE
+                                     !           RETURN
+        DD(BU,8), (2)00000010        ! line 34 -RED$
+        (IQS*)DD(BU,64,8), DATE OF IPL TAPE *   ! line 35
+        DD(BU,8), (2)11111101        ! line 36 -CARRIAGE RETURN FOR
+                                     !           FIRST LINE
+XMONTH  (IQS*)DD(BU,64,8),00 MONTH *                    ! line 37
+XDAY    (IQS*)DD(BU,64,8),00 DAY  *                     ! line 38
+        DD(BU,8), (2)11111101        ! line 39 -CARRIAGE RETURN FOR
+                                     !           SECOND LINE
+        DD(BU,8), (2)11111110        ! line 40 -END OF MSG
+        CNOP                         ! line 41 -ROUND TO FULL WORD
+XDATEK  SYN, $-XDATE1                ! line 42 -SIZE OF MSG
+
+        END, XDATE

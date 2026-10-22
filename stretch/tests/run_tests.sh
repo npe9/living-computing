@@ -3023,6 +3023,51 @@ run "MCP INITIALIZATION, printed p.20, bit-exact (MCP_Mar63 PDF p.27)" python3 v
 # both are "BD,$" -- branch disabled to self, a deliberate stop,
 # which is what docs/boot_plan.md A4 means when it says a machine
 # with no console has nowhere to report that it has no console.
+
+run "MCP INITIALIZATION, printed p.21, bit-exact (MCP_Mar63 PDF p.28)" python3 verify_mcp_bootstrap_p21.py
+# >>> PRINTED p.21 IS TRANSCRIBED, twenty-eight rows plus fourteen
+# symbol locations, all bit-exact on the first run.  "MCP SOURCE TAPE
+# VERIFICATION": it prints the IPL tape's DATE on the console so the
+# operator can see which system he has just loaded. <<<
+#
+# It gets the console channel out of the communication region --
+# which printed p.20 put there, so the two pages join -- suppresses
+# leading zeros digit by digit, patches the four digits into the
+# message text, and writes it.
+#
+# THE MESSAGE IS PATCHED IN PLACE, which is why the digits are added
+# rather than stored.  Lines 37-38 are "(IQS*)DD(BU,64,8),00 MONTH *"
+# and ",00 DAY  *" -- the text carries zeros as PLACEHOLDERS and
+# lines 17-20 M+MG four-bit digits into them.  That is also why the
+# leading-zero suppression CLEARS a digit instead of skipping it: a
+# cleared placeholder prints as a blank.  Printed pp.9-12 use the
+# same trick for an error address.
+#
+# THREE ROW KINDS ARE DELIBERATELY ABSENT FROM THE TABLE, each for a
+# reason that is itself a fact about the listing:
+#   * the (IQS*)DD rows print NOTHING in the binary output column, as
+#     pp.9-12's message rows do, so no character code is checked
+#     because none is printed.  What pins their text LENGTHS is the
+#     location of everything after them -- X MONTH at 001047.50 and
+#     X DAY at 001050.60 are only reachable if line 35 is eighteen
+#     characters and X MONTH is nine;
+#   * the DR rows print "000003.00", the RESERVED SIZE, not a stored
+#     word;
+#   * line 42's SYN prints its VALUE, a symbol definition and not
+#     storage.  It is checked as X DATE K == 000005.00 instead.
+#
+# AND A CROSS-PAGE CONFIRMATION FALLS OUT: decks/mcp_bootstrap_p7_p8
+# .strap already carried "XZEROS SYN,(8)1037.00" with the comment
+# 'printed p.21 line 28, "X ZEROS DR(BU),(3)"' -- a forward reference
+# written when p.21 was still unread.  p.21 defines X ZEROS at
+# 001037.00.
+#
+# THE BRANCH-ADDRESS FIELD IS NINETEEN BITS AND THE PRINTED FORM
+# HIDES IT.  Line 23's output is "000057.50 00": the ".50" group is
+# instruction bits 18-23, and bit 18 is the HALF-WORD selector, so
+# 101000 means word 000057, RIGHT half -- location 000057.40.  Read
+# as a plain bit offset 0o50 is 40 decimal, which is not a half-word
+# boundary and would have looked like a misprint.
 run "MCP's error table, printed pp.7-8 (MCP_Mar63 PDF pp.14-15)" python3 verify_mcp_bootstrap_p7_p8.py
 # X ERR DD -- THE LAST TWO PAGES OF THE BOOTSTRAP TO BE TRANSCRIBED,
 # and the index to all the rest: seventy-eight VF half words, one pair

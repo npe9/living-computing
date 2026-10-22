@@ -36,8 +36,9 @@ things:
 3. **The back-matter sweep's worklist** (section below) — six ranked
    items, two already consumed. `C22-6728` printed 247-260, the rest
    of Appendix A, is the largest.
-4. ~~Printed p.20~~ **— done, 2026-10-21, seventeen rows bit-exact
-   on the first run. Printed p.21 onward** is the continuation.
+4. ~~Printed p.20, p.21~~ **— both done, 2026-10-21, bit-exact on
+   the first run (17 and 28 rows). Printed p.22 onward** is the
+   continuation.
 
 **One caveat carried forward, deliberately not in this file's
 worklist**: the look-ahead's store-fetch interlock is correct
@@ -5300,6 +5301,44 @@ thing in the path: the word the look-ahead hands the E-box.
 
 Build the pair that differs only in history before building the pair
 that differs in operands.
+
+## PRINTED p.21 IS TRANSCRIBED -- the console date message, 2026-10-21
+
+Twenty-eight rows plus fourteen symbol locations, all bit-exact on
+the first run. **"MCP SOURCE TAPE VERIFICATION"**: it prints the IPL
+tape's date on the console so the operator can see which system he
+has just loaded. It takes the console channel out of the
+communication region — which p.20 put there, so the two pages join.
+
+**THE MESSAGE IS PATCHED IN PLACE**, which is why the digits are
+*added* rather than stored. Lines 37-38 are
+`(IQS*)DD(BU,64,8),00 MONTH *` and `,00 DAY  *` — the text carries
+zeros as **placeholders**, and lines 17-20 `M+MG` four-bit digits
+into them. That is also why the leading-zero suppression **clears** a
+digit instead of skipping it: a cleared placeholder prints as a
+blank. pp.9-12 use the same trick for an error address.
+
+**THREE ROW KINDS ARE DELIBERATELY ABSENT from the checked table**,
+each for a reason that is itself a fact about the listing: the
+`(IQS*)DD` rows print *nothing* in the binary column (so no character
+code is checked because none is printed — their text *lengths* are
+pinned instead by the locations of everything after them); the `DR`
+rows print the reserved **size**, not a stored word; and line 42's
+`SYN` prints its **value**, a symbol definition rather than storage.
+
+**A CROSS-PAGE CONFIRMATION FELL OUT.**
+`decks/mcp_bootstrap_p7_p8.strap` already carried
+`XZEROS SYN,(8)1037.00` with the comment *'printed p.21 line 28,
+"X ZEROS DR(BU),(3)"'* — a forward reference written when p.21 was
+unread. p.21 defines `X ZEROS` at `001037.00`.
+
+**AND THE BRANCH-ADDRESS FIELD IS NINETEEN BITS, WHICH THE PRINTED
+FORM HIDES.** Line 23's output is `000057.50 00`. The `.50` group is
+instruction bits 18-23 and **bit 18 is the half-word selector**, so
+`101000` means word `000057`, *right* half — location `000057.40`.
+Read as a plain bit offset, `0o50` is 40 decimal, which is not a
+half-word boundary at all and would have looked like a misprint.
+Worth remembering for every branch row on every future page.
 
 ## PRINTED p.20 IS TRANSCRIBED -- and it names an equipment code, 2026-10-21
 
