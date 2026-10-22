@@ -638,6 +638,13 @@ IOCD"**. Bit 108 is column 10 row 12 — the zone row — and column 10
 is the first character of `IOCD`. The hunt finds a card by testing
 the zone punch of a letter, and the letter is the `I`.
 
+**TWO OF `X EQP T`'s VALUES ARE NOW KNOWN, 2026-10-22**, both from
+the programs that use them rather than from the table, whose page is
+still missing. MCP printed p.20 line 14 is `LFI(BU,4),(8)2` —
+"ENTER CONSOLE EQUIPMENT CODE" — and printed p.25 line 17 is
+`LFI(BU,4),(8)5` — "ENTER PRINTER EQUIPMENT CODE". Both then compare
+against `.52($10)`, the `SEQUIP` field. **Console 2, printer 5.**
+
 **>>> A3's CENTRAL QUESTION IS ANSWERED: THE IOCD CARD'S COLUMN
 FORMAT IS PRINTED, `C22-6728` printed p.88 = PDF p.88. <<<** Found
 through that document's own INDEX — "IOCD CARDS ... 88" — which the

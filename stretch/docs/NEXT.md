@@ -37,8 +37,9 @@ things:
    items, two already consumed. `C22-6728` printed 247-260, the rest
    of Appendix A, is the largest.
 4. ~~Printed pp.20-24~~ **— all five done, 2026-10-21, bit-exact
-   (17, 28, 50, 54 and 44 rows). Printed p.25 onward** is the
-   continuation.
+   (17, 28, 50, 54 and 44 rows). Printed p.25 IS BLOCKED on one
+   STRAP construct** — see its section below; it is a small, clearly
+   bounded piece of assembler work and the obvious next thing.
 
 **One caveat carried forward, deliberately not in this file's
 worklist**: the look-ahead's store-fetch interlock is correct
@@ -5301,6 +5302,53 @@ thing in the path: the word the look-ahead hands the E-box.
 
 Build the pair that differs only in history before building the pair
 that differs in operands.
+
+## PRINTED p.25 IS BLOCKED ON ONE CONSTRUCT -- and it gives a second equipment code, 2026-10-22
+
+**NOT TRANSCRIBED.** The page was read and two results taken from it,
+but it is not in the tree, because transcribing it half way would
+break the standard every other page meets.
+
+**>>> THE PRINTER'S EQUIPMENT CODE IS OCTAL 5. <<<** Line 17 is
+`LFI(BU,4),(8)5` commented "-ENTER PRINTER EQUIPMENT CODE", and line
+18 compares it against `.52($10)` — the same `SEQUIP` field, the same
+shape as p.20's console search. So **two** of `X EQP T`'s values are
+now known from the programs that use them: **console 2** (p.20) and
+**printer 5** (p.25). The table's own page is still missing.
+
+**AND `X IO STK` IS CONFIRMED.** p.24 line 54's control word takes a
+count of 5 from `X IO STK`; p.25 line 6 is
+`X IO STK  SYN,$-X IO STA`, printing `000005.00+`. The size was read
+off a control word before the symbol was seen.
+
+### What blocks it
+
+Lines 42 and 43 have an **empty operation field**:
+
+```
+001436.40    000000.00 87          ,0.0($7)     -GET CARD AT
+001437.00    000002.00 87          ,2.0($7)     -PUT TABLE AT
+```
+
+Read at 600 dpi to be sure — the statement really does begin with a
+comma. They sit in a parameter block for the UNCODE routine: line 39
+`XW,0` ("FOR TOE, FIELD COUNT, IO REF NUMBER"), line 41 `VF,4.0`
+("EXPECT IOD AND REEL CARDS"), then these two address words.
+
+`strap_asm.py` rejects them — *"unknown mnemonic ''"*. **What the
+empty field MEANS is a question for `C22-6531`, not for inference**,
+and the one thing already visible is that it is not simply "repeat
+the previous statement's type": `VF` prints a 24-bit value with a
+trailing `+` and these print a 32-bit half word. Bits 28-31 of that
+half word are `0111` = 7, which matches the `($7)` in both operands,
+so the index field at least is where a half-word instruction keeps
+it.
+
+**Everything else on the page already works**: `(AQ)DD(BU,42,6)` —
+mode `A`, terminator `Q`, so `MCP IPLQ` is the seven characters
+`MCP IPL` in 42 bits — and `XW`, `VF`, `TI`, `CTOC11`, `CT1111` all
+assemble today. It is one construct, and the page is otherwise
+ordinary.
 
 ## PRINTED p.24 IS TRANSCRIBED -- and it settles p.23's prediction, 2026-10-21
 
