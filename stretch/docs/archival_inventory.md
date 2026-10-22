@@ -1174,6 +1174,53 @@ page. Only `TI` has a listing witness here; the other seven are
 card-only, stated in the table the way `CB_CODES` states its own
 provenance.
 
+> **NO LONGER CARD-ONLY (2026-10-22).** The Reference Manual states
+> the whole layout in prose, under a heading the index does not list
+> -- "Data Transmission", **printed p.30 (PDF 33)**, reached from the
+> CONTENTS line "DATA TRANSMISSION ... 30" and not from the index,
+> which has no TRANSMIT entry at all.
+>
+> **This page was already cited in this repository and had not been
+> read.** `docs/boot_plan.md`'s M3++ quotes it for one clause --
+> *"never valid"*, about a zero direct count -- and the paragraph
+> above was still describing the instruction's layout as
+> card-only. Fifth instance of the same lesson, and the first one
+> where the citation was the project's own. It prints the same word
+> diagram (`ADDRESS | OP | I | ADDRESS | J | FDT/BIS | OP | I`, with
+> the same bit numbers 0, 18, 24, 28, 32, 51, 55, 60, 63) and then
+> says what the card only implies:
+>
+> * *"Bits 55-57 of the data transmission instructions are used as
+>   modifiers... bit 57. A zero specifies unidirectional
+>   transmission; a one specifies bidirectional... modifier bit 56.
+>   A zero specifies a direct count; a one specifies an immediate
+>   count... modifier bit 55. A zero specifies forward transmission;
+>   a one specifies backward."* -- the card's `ab110`/`ab010` with
+>   `a` at 55 and `b` at 56, independently.
+> * *"In direct count operations, the field J, bits 51-54, **specifies
+>   an index register**. The count field, bits 28-45, of the index
+>   word in this register is used as a full word count. A count field
+>   of zero is interpreted as 2^18... The count field in the index
+>   register is not changed as a result of the operation, and the
+>   index result indicators are not affected. **A zero J field refers
+>   to location 16, X0.**"*
+> * *"In immediate count operations, the full word count is specified
+>   by instruction bits 51-54. **A zero count field indicates the
+>   maximum count of 16 full words.**"*
+> * *"Only 18 bits of each effective address are used"*, and
+>   separately *"All full-length instructions are assumed to have a
+>   24-bit address part in the left half-word... However, only 18
+>   bits of the effective address are used by these operations."*
+>
+> Two of those are rules this assembler does NOT implement and the
+> model does not honour, and they are now sourced rather than
+> suspected: **immediate count 0 means SIXTEEN**, and **direct count
+> 0 means 2^18**, so a `TI,0,...` or a `T` on a zeroed index word
+> moves a block, not nothing. `enc_transmit` writes the field
+> faithfully either way; it is the Bluespec Transmit arm, which moves
+> exactly one word, that would be wrong -- the hazard recorded in the
+> paragraph below, now with a number attached to it.
+
 **A hazard the encoder creates.** `StretchExecute.bsv`'s Transmit arm
 moves exactly one word and ignores both the immediate-count bit and
 `J`, so a count other than 1 now assembles correctly and executes

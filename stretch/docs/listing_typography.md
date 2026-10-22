@@ -591,7 +591,8 @@ be `111001011`, which appears nowhere on X22-6533. With `0B` it is
 **The rule, which now has four instances behind it** — `B0` read as
 `80` on MCP p.2 line 34, again on p.3 line 10, `0B` read as `CB` on
 p.4 line 23, and `0A` read as `CA` on **p.19 line 23** (2026-10-21):
-**decode the operation field before trusting the glyph.**
+**decode the operation field before trusting the glyph** — and see
+§13b, where decoding says the `C` is *real*.
 Re-rendering at a higher resolution (§11) is the second move, not the
 first. The opcode tells you what the byte must be; the render only
 confirms it.
@@ -626,3 +627,32 @@ them is a zero, and any `C` elsewhere on that row is suspect too.
 The practical order, then: (1) look for a self-disagreeing field on
 the same row, (2) decode the operation field, (3) re-render higher.
 The first is free.
+
+### 13b. THE COUNTER-INSTANCE: a `C` that is a `C` (printed p.27, 2026-10-22)
+
+Four instances of "a `C` that is a zero" had accumulated before a row
+turned up where it is not, and the near-miss is the useful part: the
+first draft of `tests/verify_mcp_bootstrap_p27.py` read printed p.27
+lines 23 and 24 as ending `A0` and the assembler refused them. They
+end `AC`.
+
+```
+line 21  TI,8,T BUFB1,X MSG BK     002000.2C A0     .2C is .20; A0 is A0
+line 23  TI,1,X MSG,0.0($12)       000000.02 AC     .02 is .02; AC is AC
+```
+
+Both rows are on the same page, in the same column, two lines apart.
+The `C` in line 21's **octal** group is a zero. The `C` in line 23's
+**hex** group is the index register `$12`. Line 21 — the same
+instruction with no index at all — prints `A0` directly above it, so
+the page carries its own control.
+
+**So §13 is not "a `C` in a trailing byte is a zero".** It is:
+
+> an octal column cannot hold a `C`; an index or operation field can.
+> The glyph is evidence only *after* the field it sits in is decoded.
+
+Reading the rule the loose way would have corrupted two rows that the
+rule's own four instances made look routine. A transcription habit
+that has been right four times is exactly the one that stops being
+checked.

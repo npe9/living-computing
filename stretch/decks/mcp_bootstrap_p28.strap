@@ -1,0 +1,138 @@
+! mcp_bootstrap_p28.strap -- MCP INITIALIZATION, printed page 28:
+! "COMPUTE BASE OF MCP AND MCP IO LOCATION TABLE AND RELOCATION",
+! "TEST FOR CORRECT SIZE OF PROSA", "COMPUTE SIZE OF MCP IO LOCATION
+! TABLE", and the start of "BEGIN RELOCATION".
+! docs/MCP_Mar63_001-249.pdf PDF p.35, header "PAGE NUMBER 28".
+! docs/boot_plan.md M3.
+!
+! CONTIGUOUS WITH p.27 BY FALL-THROUGH, not by branch: p.27's last
+! instruction is "BXL,X25 2" at 001507.00, a half word, and this
+! page's first instruction is at 001507.40.  The two pages were
+! transcribed separately and the location columns meet exactly.
+!
+! ---------------------------------------------------------------
+! THE FIRST PAGE OF THE MCP WITH VFL ARITHMETIC ON IT
+! ---------------------------------------------------------------
+! Everything before this page has been index arithmetic, transmits,
+! branches and connectives.  Here the bootstrap starts computing
+! with the variable-field-length unit: 18-bit unsigned binary fields
+! loaded, subtracted and compared at bit offset 46 of a word.
+!
+!   L(BU,18),S MARK,46        load 18 bits at .46 of S MARK
+!   -(BU,18),S LR BU,46       subtract the same field of S LR BU
+!   LC,$11,$R                 the 24-bit result register into $11
+!
+! Offset 46 is where these system words keep their 18-bit counts:
+! bits 46-63 is the last 18 bits of a 64-bit word, so a (BU,18) at
+! .46 is "the low 18 bits", written the only way a bit-addressed
+! machine can write it.
+!
+! ---------------------------------------------------------------
+! EXTERNALS, every one recovered from this page's own binary output
+! ---------------------------------------------------------------
+! Each address below was decoded from the printed half word, not
+! guessed, and the layout that makes that possible is PRINTED, in
+! the Reference Manual's "Instruction Format" and "Operand Address"
+! on printed p.19 (PDF 22) -- a page reached from the CONTENTS line
+! "Index Format ... 19", since the index has no entry for it:
+!
+!   Figure 6's second diagram:   | ADDRESS | J | OP. | I |
+!
+!   "A half word operand is implied by most branch, index
+!    modification, and transmit operations.  This group of operations
+!    has an address part of 19 BITS.  The 18 high-order bits address
+!    full words.  THE LOW-ORDER BIT ADDRESSES THE FIRST OR SECOND
+!    HALF of the full word."
+!
+! So bits 0-17 are the word, BIT 18 is the half-word selector, J
+! follows it at 19-22 and the operation part runs to bit 27 -- which
+! is why "LC,$12,S MAX RN" prints ".70": 111000 is half 1, register
+! 1100 = $12, and the op's low bit 0.  Every external address listed
+! below is read off that one rule, and the page checks it twenty-nine
+! times over.
+!
+! THE SAME SENTENCE SETTLES THE VFL ROWS BY EXCLUSION.  Integer
+! arithmetic and connectives "ha[ve] an address part of 24 bits", so
+! "L(BU,18),S MARK,46" carries no J and no half-selector: its
+! 002162.40 is a plain bit address, and S MARK really is at .40.
+!
+!   S MARK   002162.40     S LR BU  002155.00     S X CHAN 002152.00
+!   S MCP    002150.00     S BAMCP  002153.00     S MAX RN 002155.40
+!   S DK MCP 002157.00     S SYRFT  002157.40     X UPDAT  000621.40
+!   X ERR AD 000551.00     X ERROR  000133.00
+!
+! FORWARD INTO p.29, the same way p.26 reached into p.27:
+!   X31  001547.00    X31 2  001551.40    X30 4  001537.40
+SMARK   SYN, (8)2162.40
+SLRBU   SYN, (8)2155.0
+SXCHAN  SYN, (8)2152.0
+SMCP    SYN, (8)2150.0
+SBAMCP  SYN, (8)2153.0
+SMAXRN  SYN, (8)2155.40
+SDKMCP  SYN, (8)2157.0
+SSYRFT  SYN, (8)2157.40
+XUPDAT  SYN, (8)621.40
+XERRAD  SYN, (8)551.0
+XERROR  SYN, (8)133.0
+X31     SYN, (8)1547.0
+X312    SYN, (8)1551.40
+X304    SYN, (8)1537.40
+
+        SLC, (8)1507.40
+
+! ---- compute base of MCP and MCP IO location table ----------------
+X261    L(BU,18), SMARK, 46          ! line 5  -UPPER BOUND OF TABLES
+                                     !          PREP BY IO ASSIGN
+        -(BU,18), SLRBU, 46          ! line 6  -LESS LOWER BOUND
+        LC, $11, $R                  ! line 7  -SIZE OF TABLE
+X262    L(BU,18), SXCHAN, 46         ! line 8  -BASE OF CST
+        -(BU,18), $11+.28, 46        ! line 9  -LESS SIZE OF
+                                     !          ASSIGNMENT TABLES
+X263    LV, $12, $R                  ! line 10 -BASE OF MCP
+X264    SV, $12, SMCP                ! line 11 -SAVE BASE OF MCP IN
+                                     !          COM REGION
+X265    SV, $12, SBAMCP              ! line 12 -SAVE BASE OF MCP IO
+                                     !          LOCATION TABLE
+        -(BU,18), SLRBU, 46          ! line 13 -BIAS FACTOR FOR
+                                     !          RELOCATION
+
+! ---- test for correct size of PROSA -------------------------------
+        LV, $0, SDKMCP               ! line 18 -GET COUNT OF PROSA
+                                     !          ARCS
+        KV, $0, XUPDAT               ! line 19 -TEST AGAINST COUNT OF
+                                     ! line 20  PROSA RECORDS ON TAPE
+XERR26  SIC, XERRAD                  ! line 21
+        BZXE, XERROR                 ! line 22 -IF PROSA ARC COUNT
+                                     ! line 23  EQUALS ARCS ASSIGNED
+        V+I, $0, (8)7.0              ! line 24 -ROUND TO NUMBER OF
+                                     !          TRACKS
+        CM0000(BU,3), $0+.15         ! line 25
+        SV, $0, SDKMCP               ! line 26 -SAVE TRACK ADDRESS
+        SV, $0, SSYRFT               ! line 27 -SAVE TRACK ADDRESS
+
+! ---- compute size of MCP IO location table ------------------------
+X28     LF(BU,18), $12               ! line 33 -ENTER BASE OF MCP
+        LC, $12, SMAXRN              ! line 34 -GET SIZED IO LOCATION
+                                     !          TABLE
+        LV, $12, SLRBU               ! line 35 -GET LOCATION OF IO
+                                     !          LOCATION TABLE
+        C+I, $12, 1.0                ! line 36 -ADD ONE TO MAXIMUM
+                                     ! line 37  REFERENCE NUMBER TO
+                                     !          GET TABLE SIZE
+
+! ---- begin relocation: file area actuated entry -------------------
+X29     CBZ+, $12, X312              ! line 43 -GET THE CURRENT FAT
+                                     ! line 44  ADDRESS FROM IO
+                                     !          LOCATION TABLE
+        LV, $11, 0.0($12)            ! line 45 -GET UAT ADDRESS
+        BXVZ, X29                    ! line 46 - IF ZERO TABLE ELEMENT
+X292    KF(BU,18), 3.0($11)          ! line 47
+        BAL, X31                     ! line 48
+        M+MG(BU,18), 3.0($11), 46    ! line 49 -BIAS FAT LAST
+                                     !          ACTIVATED ENTRY
+X295    LX, $9, 8.0($11)             ! line 50 -GET UAT REEL ENTRIES
+        BXVZ, X304                   ! line 51 -IF TAPE * NO TO BIAS
+                                     ! line 52  UAT ADDRESS IN CST OR
+                                     ! line 53  UST  -YES*
+
+        END, X261

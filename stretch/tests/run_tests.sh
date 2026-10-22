@@ -3279,6 +3279,146 @@ run "MCP INITIALIZATION, printed p.26, bit-exact (MCP_Mar63 PDF p.33)" python3 v
 # byte -- because eighteen bits is six octal digits exactly.  That is
 # a different printed form from VF's "000000.00+" and from a half
 # word's "000000.00 00", and the renderer now dispatches on it.
+
+run "MCP INITIALIZATION, printed p.27, bit-exact (MCP_Mar63 PDF p.34)" python3 verify_mcp_bootstrap_p27.py
+# >>> PRINTED p.27 IS TRANSCRIBED, thirty rows and twelve symbol
+# locations, all bit-exact -- and it is the FIRST PAGE SINCE p.17
+# THAT THE ASSEMBLER TOOK AS IT STOOD.  Nine pages in a row each
+# needed a pseudo-operation, a width rule or an encoding; this one
+# needed nothing. <<<
+#
+# "TO ASSIGN" and "TO MOVE" are the same shape as p.26's "TO DECODE":
+# build a linkage parameter block, point $15 at it, branch to the
+# routine, and test $IND on return.  Between them sits the tape
+# mounting message, copied into the message block one slot at a time.
+#
+# THE ONE FORM THIS PAGE INTRODUCES WAS ALREADY RIGHT: XW with a
+# NEGATIVE value AND a flag digit, which the corpus had not shown
+# together before.
+#
+#   line 9   XW,-1,0,0,4    -> 000000.01- 100 000000 000000
+#   line 40  XW,-1.0,0,0,6  -> 000001.00- 110 000000 000000
+#
+# C22-6531 printed p.18 puts the sign at bit 24 and the flag at bits
+# 25-27, and the two rows show it twice over: the SAME magnitude
+# written two ways -- "-1" (one bit) and "-1.0" (one word) -- lands
+# six places apart in the value field, and the flag digit sits
+# untouched beside the sign either way.
+#
+# >>> AND THE PAGE SETTLES A GLYPH THAT docs/listing_typography.md 13
+# HAD ONLY EVER SEEN GO ONE WAY.  Lines 5 and 36 are both
+# "LVI,$15,<a label on this page>" and both print a trailing "C1"
+# that is 01 -- the C is a zero, as it was four times before.  But
+# lines 23 and 24 print a trailing "AC" that IS AN A AND A C: the C
+# is the index register $12 of "0.0($12)", and line 21, the TI
+# directly above them with no index at all, prints A0.
+#
+# THE FIRST DRAFT OF THE VERIFIER READ BOTH AC ROWS AS A0, and the
+# assembler refused them.  So the rule is not "a C in a trailing byte
+# is a zero".  The rule is that an OCTAL column cannot hold a C and
+# an INDEX field can, and the glyph is evidence only after the field
+# it sits in has been decoded.  13a is updated.
+#
+# CROSS-PAGE CHECK, now four pages deep: X24, this page's first
+# label, is at 001464.00 -- the address p.26 line 33's "B,X24" was
+# compiled to print before this page was opened.  Every external on
+# p.27 was likewise read off p.27's own binary output, so the
+# transcription is closed: nothing here was guessed from a name.
+
+run "MCP INITIALIZATION, printed p.28, bit-exact (MCP_Mar63 PDF p.35)" python3 verify_mcp_bootstrap_p28.py
+# >>> PRINTED p.28 IS TRANSCRIBED, twenty-nine rows and ten symbol
+# locations, all bit-exact -- and it is THE FIRST PAGE OF THE MCP
+# WITH VFL ARITHMETIC ON IT.  Everything up to here has been index
+# arithmetic, transmits, branches and connectives; p.28 computes,
+# with 18-bit unsigned fields at bit offset 46 of a word:
+#
+#   L(BU,18),S MARK,46    -(BU,18),S LR BU,46    LC,$11,$R
+#
+# Offset 46 is where these system words keep their counts -- bits
+# 46-63 is the last 18 bits of a 64-bit word, which is how a
+# bit-addressed machine writes "the low 18 bits". <<<
+#
+# THE ASSEMBLER NEEDED NOTHING, for the second page running.  Every
+# one of the twenty-nine rows assembled right the first time, VFL
+# and all.
+#
+# >>> AND THE PAGE'S OWN LOCATION COLUMN IS NOT WHERE ITS ADDRESSES
+# CAME FROM.  Each of the ELEVEN externals this page names was
+# decoded out of the printed half word, using a layout that is
+# PRINTED in the Reference Manual on printed p.19 (PDF 22) -- a page
+# the manual's own index does not point at, reached from the
+# CONTENTS line "Index Format ... 19":
+#
+#   Figure 6's second diagram:   | ADDRESS | J | OP. | I |
+#
+#   "A half word operand is implied by most branch, index
+#    modification, and transmit operations.  This group of operations
+#    has an address part of 19 BITS.  The 18 high-order bits address
+#    full words.  THE LOW-ORDER BIT ADDRESSES THE FIRST OR SECOND
+#    HALF of the full word."
+#
+# So bit 18 is the half selector and J follows at 19-22.  "LC,$12,S
+# MAX RN" prints ".70" = 111000: half 1, register 1100 = $12 -- and
+# S MAX RN is therefore at 002155.40, not .00.  Twenty-nine rows
+# agree with eleven addresses read that one way. <<<
+#
+# THE SAME SENTENCE SETTLES THE VFL ROWS BY EXCLUSION: integer
+# arithmetic and connectives "ha[ve] an address part of 24 bits", so
+# "L(BU,18),S MARK,46" carries no J and no half-selector and its
+# 002162.40 is a plain bit address.
+
+run "MCP INITIALIZATION, printed p.29, bit-exact (MCP_Mar63 PDF p.36)" python3 verify_mcp_bootstrap_p29.py
+# >>> PRINTED p.29 IS TRANSCRIBED, twenty-five rows and eleven symbol
+# locations, all bit-exact.  Relocation: every reel address, UAT, FAT
+# and table pointer in the loaded MCP is biased by the difference
+# between where it was assembled and where it has just been put. <<<
+#
+# >>> FOUR CROSS-PAGE CHECKS, IN BOTH DIRECTIONS.  p.28 was
+# transcribed first, and three of its branch encodings fixed three
+# addresses before this page was opened.  This page's location column
+# states all three, and one branch here closes the loop backwards:
+#
+#   p.28 l.51  BXVZ,X30 4      001537.71 42   ->  X30 4  001537.40
+#   p.28 l.48  BAL,X31         001547.36 42   ->  X31    001547.00
+#   p.28 l.43  CBZ+,$12,X31 2  001551.71 4A   ->  X31 2  001551.40
+#   p.29 l.35  B,X29           001525.50 00   ->  X29    001525.40
+#
+# An address two independently transcribed pages agree on is not a
+# reading; it is a measurement.  THE p.19 HALF-SELECTOR RULE IS WHAT
+# DECODED ALL FOUR, so the four agreements are also four tests of
+# that rule. <<<
+#
+# >>> THE ROW THAT LOOKED LIKE A BLOCKER AND WAS NOT.  Line 38 is
+# "T,$11,0.0($13),0.0($14)" -- a direct-count TRANSMIT whose count
+# register is written with a "$".  The assembler refused it, and the
+# right answer was NOT to teach it the spelling: every TRANSMIT in
+# decks/ already writes the register as a bare digit with the
+# listing's own spelling in a comment beside it (see
+# decks/ax4b_1246_memories.strap's 'T, 1, I46D4, $X3  ! listing
+# "T,$X1,I46D4,$X3"').  Adding "$n" for one page would have left the
+# corpus with two spellings for one field and no record of which page
+# used which. <<<
+#
+# AND THE SEMANTICS ARE NOW SOURCED, not inferred.  Reference Manual
+# printed p.30 (PDF 33), "Data Transmission" -- another section the
+# index does not list, reached from CONTENTS "DATA TRANSMISSION ...
+# 30":
+#
+#   "In direct count operations, the field J, bits 51-54, SPECIFIES
+#    AN INDEX REGISTER.  The count field, bits 28-45, of the index
+#    word in this register is used as a full word count.  A count
+#    field of zero is interpreted as 2**18...  A zero J field refers
+#    to location 16, X0."
+#   "In immediate count operations, the full word count is specified
+#    by instruction bits 51-54.  A ZERO COUNT FIELD INDICATES THE
+#    MAXIMUM COUNT OF 16 FULL WORDS."
+#
+# That page also states modifier bits 55 (backward), 56 (immediate
+# count) and 57 (bidirectional) in prose, which until now were
+# POCKET-CARD ONLY in this project.  Two of its rules are not
+# honoured by the Bluespec Transmit arm, which moves exactly one word:
+# an immediate count of 0 means SIXTEEN and a direct count of 0 means
+# 2**18.  Recorded in docs/archival_inventory.md.
 run "MCP's error table, printed pp.7-8 (MCP_Mar63 PDF pp.14-15)" python3 verify_mcp_bootstrap_p7_p8.py
 # X ERR DD -- THE LAST TWO PAGES OF THE BOOTSTRAP TO BE TRANSCRIBED,
 # and the index to all the rest: seventy-eight VF half words, one pair

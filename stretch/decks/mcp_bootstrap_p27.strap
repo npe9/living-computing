@@ -1,0 +1,104 @@
+! mcp_bootstrap_p27.strap -- MCP INITIALIZATION, printed page 27:
+! "TO ASSIGN", the tape-mounting message, and "TO MOVE".
+! docs/MCP_Mar63_001-249.pdf PDF p.34, header "PAGE NUMBER 27".
+! docs/boot_plan.md M3.
+!
+! Contiguous with printed p.26 by BRANCH: that page's line 33 is
+! "B,X24" and X24 is this page's first instruction at 001464.00, an
+! address read off that branch's encoding before this page was
+! opened.
+!
+! ---------------------------------------------------------------
+! XW's SIGN AND FLAG FIELDS, both exercised here for the first time
+! ---------------------------------------------------------------
+! C22-6531 printed p.18: "XW, VALUE, COUNT, REFILL, FLAG ... FLAG
+! denotes the machine field comprised of bits 25, 26, and 27 ... The
+! octal integer 4 written in the flag field turns on the index flag
+! in the index word being compiled.  NOTE: Bit 24 of the word format
+! is taken to be the VALUE sign position."
+!
+! Line 9 is "XW,-1,0,0,4" and prints 000000.01- 100, and line 40 is
+! "XW,-1.0,0,0,6" and prints 000001.00- 110: a NEGATIVE value, and
+! the flag digit landing in bits 25-27 exactly as the manual says.
+!
+! ---------------------------------------------------------------
+! EXTERNALS, every one recovered from this page's own binary output
+! ---------------------------------------------------------------
+!   T IPLB1   004474.00  (line 6)    T IPLB2  004540.40  (line 7)
+!   T ASIGN   003701.00  (line 8)    T SBHDI  004455.01  (line 20)
+!   T PENY    004570.40  (line 20)   T BUFB1  004432.00  (line 21)
+!   X MSG BK  002000.00  (line 21)   X MSG    001773.00  (line 23)
+!   X MSG CR  001774.00  (line 24)   T P3     004575.40  (line 27)
+!   T MOVE    005014.00  (line 39)
+!   X ERR AD  000551.00 / X ERROR    000133.00
+!
+! T SBHDI IS A BIT ADDRESS, not a word one: line 20's "BZB,TSBHDI"
+! prints 004455.01, and BRANCH ON BIT addresses the BIT it tests.
+TIPLB1  SYN, (8)4474.0
+TIPLB2  SYN, (8)4540.40
+TASIGN  SYN, (8)3701.0
+TSBHDI  SYN, (8)4455.01
+TPENY   SYN, (8)4570.40
+TBUFB1  SYN, (8)4432.0
+XMSGBK  SYN, (8)2000.0
+XMSG    SYN, (8)1773.0
+XMSGCR  SYN, (8)1774.0
+TP3     SYN, (8)4575.40
+TMOVE   SYN, (8)5014.0
+XERRAD  SYN, (8)551.0
+XERROR  SYN, (8)133.0
+
+        SLC, (8)1464.0
+
+! ---- TO ASSIGN ---------------------------------------------------
+X24     LVI, $15, X242               ! line 5  -ENTER PARAMETER
+                                     !           LOCATION
+        CM1111(BU,1), TIPLB1+.21     ! line 6  -CONVERT BE IN ASSIGN
+                                     !           TO BD
+        CM1111(BU,1), TIPLB2+.21     ! line 7  -CONVERT BE IN ASSIGN
+                                     !           TO BD
+X241    B, TASIGN                    ! line 8
+X242    XW, -1, 0, 0, 4              ! line 9  -MODE
+        LX, $0, X242                 ! line 11 -INITIALIZE $IND
+XERR24  SIC, XERRAD                  ! line 12
+        BZXCZ, XERROR                ! line 13 -IF ASSIGNMENT ERROR
+        B, X25                       ! line 14
+
+! ---- enter the tape mounting message in the message block --------
+X24A    BZB, TSBHDI, TPENY           ! line 20 -IF PASSED OVER FIRST
+                                     !           TWO WRITE REQUESTS
+X24A2   TI, 8, TBUFB1, XMSGBK        ! line 21 -SAVE CURRENT MOUNTING
+                                     !           MESSAGE
+        LVE, $12, X24A2+.32          ! line 22 -GET CURRENT MESSAGE
+                                     !           LOCATION
+X24A3   TI, 1, XMSG, 0.0($12)        ! line 23 -REPLACE MSG PREFIX
+        TI, 1, XMSGCR, 9.0($12)      ! line 24 -INSERT CARRIAGE RETURN
+        V+I, $12, 10.0               ! line 25
+        SVA, $12, X24A2+.32          ! line 26 -NEXT AVAILABLE MESSAGE
+                                     !           SLOT
+        B, TP3                       ! line 27
+
+! ---- TO MOVE -----------------------------------------------------
+X25     LV, $14, $4                  ! line 32 -GET THE BASE OF AREA
+                                     ! line 33  CONTAINING IOD
+                                     ! line 34  TABLES
+        V+I, $14, 1.0                ! line 35 -ADVANCE TO ALPHA +1.0
+X251    LVI, $15, X253               ! line 36 -ENTER MOVE LINKAGE
+                                     !           PARAMETER
+        SVA, $14, X253               ! line 37 -INITIAL ENTRY WITH
+                                     ! line 38  NEGATIVE VF IN X25 3
+X252    B, TMOVE                     ! line 39
+X253    XW, -1.0, 0, 0, 6            ! line 40 -IOD TABLE LOCATION/
+                                     ! line 41  EXIT DISP/ENTRY DISP/
+                                     !          BYPASS/MCP
+        LX, $0, X253                 ! line 42 -SET UP TO TEST ERROR
+XERR25  SIC, XERRAD                  ! line 43
+        BZXCZ, XERROR                ! line 44 -IF MOVE ERROR
+        V+I, $14, 15.0               ! line 45 -ADVANCE TO NEXT TABLE
+        KV, $14, $7                  ! line 46 -TEST CURRENT TABLE
+                                     !           ADDRESS
+        SV, $14, X253                ! line 47
+        BXL, X252                    ! line 48 -IF PROCESSED LAST
+                                     !           TABLE
+
+        END, X24

@@ -5302,6 +5302,229 @@ thing in the path: the word the look-ahead hands the E-box.
 Build the pair that differs only in history before building the pair
 that differs in operands.
 
+## PRINTED pp.27, 28 AND 29 ARE TRANSCRIBED -- three pages, no assembler work, and a glyph rule that needed a counter-instance, 2026-10-22
+
+Eighty-four printed rows and thirty-three symbol locations, all
+bit-exact, in `tests/verify_mcp_bootstrap_p27.py`, `_p28.py` and
+`_p29.py`. The bootstrap's MCP-relocation phase is now continuous
+from p.26's "TO DECODE" through p.29's last TRANSMIT.
+
+**THE ASSEMBLER NEEDED NOTHING FOR ANY OF THE THREE.** The nine
+pages before them each wanted a pseudo-operation, a field width or
+an encoding; these three wanted none. The two forms that looked new
+were already right:
+
+* **p.27's `XW` with a negative value AND a flag digit**, which the
+  corpus had not shown together. `XW,-1,0,0,4` prints
+  `000000.01- 100` and `XW,-1.0,0,0,6` prints `000001.00- 110` --
+  the same magnitude written two ways, six places apart in the
+  value field, with the flag digit untouched beside the sign.
+* **p.28's VFL arithmetic**, the first in the MCP:
+  `L(BU,18),S MARK,46`, `-(BU,18),S LR BU,46`, `LC,$11,$R`. Twenty-
+  nine rows, all right the first time.
+
+### The half-word layout is PRINTED, and eleven addresses rest on it
+
+p.28 names eleven external symbols and the page never gives their
+addresses -- they are decoded out of the printed half words. The
+rule that makes that possible had been reverse-engineered from
+matching rows; it is **printed in the Reference Manual on printed
+p.19 (PDF 22)**, a page the manual's own index does not point at,
+reached from the CONTENTS line "Index Format ... 19":
+
+> Figure 6's second diagram:  `| ADDRESS | J | OP. | I |`
+>
+> "A half word operand is implied by most branch, index
+> modification, and transmit operations. This group of operations
+> has an address part of **19 bits**. The 18 high-order bits address
+> full words. **The low-order bit addresses the first or second half
+> of the full word.**"
+
+So bit 18 is the half-word selector, `J` follows at 19-22, and the
+operation part runs to bit 27. `LC,$12,S MAX RN` prints `.70` =
+`111000`: half 1, register `1100` = `$12` -- which puts `S MAX RN`
+at 002155.40 and not 002155.00.
+
+The same sentence settles the VFL rows **by exclusion**: integer
+arithmetic and connectives "ha[ve] an address part of 24 bits", so
+`L(BU,18),S MARK,46` carries no J and no half-selector and its
+printed 002162.40 is a plain bit address.
+
+### Four cross-page checks, in both directions
+
+p.28 was transcribed before p.29 was opened, and three of its branch
+encodings fixed three addresses that p.29's location column then
+stated outright. One branch on p.29 closes the loop backwards:
+
+```
+p.28 l.51  BXVZ,X30 4      001537.71 42   ->  X30 4  001537.40
+p.28 l.48  BAL,X31         001547.36 42   ->  X31    001547.00
+p.28 l.43  CBZ+,$12,X31 2  001551.71 4A   ->  X31 2  001551.40
+p.29 l.35  B,X29           001525.50 00   ->  X29    001525.40
+```
+
+All four were decoded with the p.19 rule, so the four agreements are
+also four tests of the rule.
+
+### §13 needed a counter-instance, and the assembler supplied it
+
+`docs/listing_typography.md` §13 -- "a `C` in this scan is a digit
+zero" -- had four instances behind it and was about to acquire a
+fifth and sixth from p.27 lines 5 and 36, which print `C1` for `01`.
+**Lines 23 and 24 of the same page print `AC`, and the `C` is
+real**: it is the index register `$12` of `0.0($12)`. Line 21, the
+`TI` two rows above with no index, prints `A0`.
+
+The first draft of the verifier read both `AC` rows as `A0` and the
+assembler refused them. The rule is therefore **not** "a `C` in a
+trailing byte is a zero" but:
+
+> an octal column cannot hold a `C`; an index or operation field
+> can. The glyph is evidence only *after* the field it sits in has
+> been decoded.
+
+Written up as §13b. A transcription habit that has been right four
+times is exactly the one that stops being checked.
+
+### The row that looked like a blocker and was not
+
+p.29 line 38 is `T,$11,0.0($13),0.0($14)` -- a direct-count TRANSMIT
+whose count register is written with a `$`. The assembler refused
+it, and the right answer was **not** to teach it the spelling: every
+TRANSMIT in `decks/` already writes the register as a bare digit
+with the listing's own spelling in a comment beside it (see
+`decks/ax4b_1246_memories.strap`'s `T, 1, I46D4, $X3  ! listing
+"T,$X1,I46D4,$X3"`). Adding `$n` for one page would have left the
+corpus with two spellings for one field and no record of which page
+used which. **If `$n` is ever wanted, it is a migrate-everything
+change on its own, not folded into a page.**
+
+What the row did produce is a source. Reference Manual **printed
+p.30 (PDF 33)**, "Data Transmission" -- a section the index does not
+list either -- states the whole instruction in prose: modifier bits
+55 (backward), 56 (immediate count) and 57 (bidirectional), which
+this project had **only from the pocket card**; and
+
+> "In direct count operations, the field J, bits 51-54, **specifies
+> an index register**. The count field, bits 28-45, of the index
+> word in this register is used as a full word count. A count field
+> of zero is interpreted as 2^18... A zero J field refers to
+> location 16, X0."
+>
+> "In immediate count operations, the full word count is specified
+> by instruction bits 51-54. **A zero count field indicates the
+> maximum count of 16 full words.**"
+
+**`docs/boot_plan.md` had already been citing this page** for one
+clause -- *"never valid"* -- while `docs/archival_inventory.md` went
+on calling the layout card-only. Fifth instance of *a document you
+have cited is not a document you have read*, and the first where the
+citation was this project's own.
+
+Two of its rules are unimplemented and now have numbers attached: an
+immediate count of 0 means **sixteen**, a direct count of 0 means
+**2^18**, and the Bluespec Transmit arm moves exactly one word.
+
+### What p.30 will want
+
+Scouted, not transcribed. Printed p.30 starts at 001553.40, picks up
+from p.29's last full word, and needs `CW`, `CNOP` and alphabetic
+`DD(BU,64,8)` -- all of which the assembler has. **The one thing it
+does not have is line 27's syntax:**
+
+```
+X MO CW   CW,X ZEROS,3,X MO CW1(.25)1   ->  001037.00+ 100 000003 001574
+```
+
+The flag group prints `100`, the chain flag, and the statement
+carries no `CW(CCR)` secondary -- so `(.25)1` is setting bit 25
+directly. `C28-6129` printed p.14, the CW section, documents only
+the eight secondary mnemonics and says nothing about it.
+
+**IT IS PRINTED, IN FULL, AND IT WAS FOUND BEFORE ANYTHING WAS
+WRITTEN.** `C28-6129` Section II, **printed pp.25-26 (PDF 29-30)**,
+heading "Field Entry Mode":
+
+> "A final STRAP entry mode that is used as a field entry mode is
+> the **parenthetical integer entry mode**. This mode permits any
+> integer or pattern of bits to be stored in any bit position of an
+> instruction or pseudo operation that produces binary output. The
+> general format for this entry mode is:
+>
+>       (.n)A(n+1)
+>
+> The symbol `.n` represents the **bit address of the rightmost bit
+> of the field** into which the integer or bit pattern is to be
+> entered. The integer A(n+1) is formed as an unsigned field, **n+1
+> bits in length** (because of the 7030 custom of addressing bits
+> starting with zero), and inserted into the leftmost n+1 bits of
+> the addressed instruction or data entry field by means of a
+> **logical OR** type operation. Logical OR is used so that the
+> parenthetical entry may be combined with the existing contents of
+> the particular field addressed or with other parenthetical
+> entries."
+
+and the rules that go with it, all on those two pages:
+
+* **Where `.n` counts from.** *"In the case of an instruction, the
+  position of the entry is determined by counting bits from the
+  beginning of the instruction, starting with bit zero, no matter in
+  which subfield of the instruction the integer entry may be
+  written."* In a `DD`'s D field it is relative to **that field**
+  instead, counted from the previous comma forward.
+* **Where it may be written.** *"The parenthetical entry must follow
+  all other information in the field in which it does appear."*
+  `+(BU), DATA(.23)4, 20` and `+(BU), DATA, 20(.23)4` compile the
+  same word.
+* **Bounds.** `.n` must be <= 31 in a half-word instruction and <=
+  63 in a full word; at most 24 significant bits convert; the
+  expression is evaluated **modulo 2^(n+1)** and is unsigned, so a
+  negative is compiled as its complement re 2^(n+1).
+* **Not everywhere.** *"This entry mode must appear in a statement
+  that compiles space in storage. Therefore, this mode cannot be
+  used in pseudo operations that give instructions to the compiler
+  but result in no binary output (SCL, DDI, END, etc.)."*
+* **Radix inside the parentheses.** `(.32, 8)` or `(8, .32)` both
+  mean "octal, rightmost bit 32"; *"all numbers that appear within
+  parentheses are interpreted by STRAP as decimal numbers"* unless a
+  radix is given there or is already in force.
+* **Consecutive entries are legal and OR together**, which is the
+  whole point of using OR -- `L(BU), INFO(.50,8)17-JOE+(10)4203(4,
+  .22)-33303(.60)1030` is the manual's own example.
+
+So p.30 line 27's `X MO CW1(.25)1` ORs a 1 into bit 25 of the full
+word the `CW` compiles -- the chain flag -- which is exactly the
+`100` the listing prints, and it is the general mechanism the
+programmer reached for instead of writing `CW(CCR)`.
+
+**This is a real assembler feature and it is specified, not
+guessed.** It is also the first construct in this corpus that
+modifies a word *after* the field that names it, so it cannot be
+folded into expression evaluation: it needs a post-pass over the
+emitted half word or full word. Build it with the bounds and the
+modulo rule, not just the common case.
+
+**AND IT IS NOT NEW -- IT WAS DEFERRED ONCE, CORRECTLY.**
+`decks/mcp_bootstrap_p7_p8.strap` carries "substitution (a)":
+
+> LINE 34's `CW,X ZEROS,3,X MSG CW(.25)1` IS WRITTEN `CW(CCR), X
+> ZEROS,3,X MSG CW`. The `(.25)1` is a bit designation -- set bit 25
+> of the generated word to one... **This assembler does not implement
+> bit designations, and inventing their general semantics from one
+> row is what AGENTS.md rule 4 forbids.**
+
+That was the right call and it bought the project four months of not
+having a guessed feature. The same construct now has a printed
+general specification, so p.8 line 34 can be made VERBATIM and the
+substitution retired. **Retire it in the same change that builds the
+feature**, so the one row that was worked around becomes the second
+witness for the thing that replaced the workaround.
+
+Note what the two rows have in common: both are `CW` with
+`(.25)1`, four pages and twenty-two printed pages apart, both
+setting the chain flag, and `CW(CCR)` sets the identical three bits.
+So the MCP's programmer had both spellings and used both.
+
 ## PRINTED p.26 IS TRANSCRIBED -- and a too-wide field was only visible where a narrower one followed, 2026-10-22
 
 Twenty-six rows and ten symbol locations, bit-exact. "TO DECODE":

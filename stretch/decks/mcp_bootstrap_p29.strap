@@ -1,0 +1,92 @@
+! mcp_bootstrap_p29.strap -- MCP INITIALIZATION, printed page 29:
+! "RELOCATION OF FIRST, NEXT AND CURRENT REEL ADDRESSES" and
+! "RELOCATION AND TRANSFER OF TABLES - FILE AND UNIT AREA TABLE
+! ADDRESS".
+! docs/MCP_Mar63_001-249.pdf PDF p.36, header "PAGE NUMBER 29".
+! docs/boot_plan.md M3.
+!
+! CONTIGUOUS WITH p.28 BY FALL-THROUGH: p.28 ends with "BXVZ,X30 4"
+! at 001532.00, a half word, and this page starts at 001532.40.
+!
+! ---------------------------------------------------------------
+! THREE FORWARD REFERENCES FROM p.28 LAND HERE, AND ALL THREE AGREE
+! ---------------------------------------------------------------
+! p.28 was transcribed before this page was opened, and its branch
+! encodings fixed three addresses that this page's location column
+! now states outright:
+!
+!   p.28 line 51  BXVZ,X30 4   001537.71 42   ->  X30 4 = 001537.40
+!   p.28 line 48  BAL,X31      001547.36 42   ->  X31   = 001547.00
+!   p.28 line 43  CBZ+,$12,X31 2  001551.71 4A ->  X31 2 = 001551.40
+!
+! and this page's line 35 closes the loop the other way: "B,X29"
+! prints 001525.50 00, which is p.28's X29 at 001525.40.
+!
+! ---------------------------------------------------------------
+! THE ONE SPELLING THIS DECK DOES NOT COPY VERBATIM
+! ---------------------------------------------------------------
+! Line 38 is written "T,$11,0.0($13),0.0($14)" on the page and
+! "T, 11, ..." here, which is the convention every TRANSMIT in this
+! corpus already uses (see decks/ax4b_1246_*.strap, whose comments
+! carry the listing's own "$X1" spelling beside the bare digit).
+!
+! IT IS A REGISTER NUMBER EITHER WAY, and that is now sourced rather
+! than inferred.  Reference Manual printed p.30 (PDF 33), "Data
+! Transmission" -- a section the manual's index does not list:
+!
+!   "In direct count operations, the field J, bits 51-54, SPECIFIES
+!    AN INDEX REGISTER.  The count field, bits 28-45, of the index
+!    word in this register is used as a full word count...  A zero J
+!    field refers to location 16, X0."
+!
+! So this TRANSMIT moves however many words $11's COUNT field holds,
+! which line 47 of p.28 ("KF(BU,18),3.0($11)") is what loaded.
+!
+! ---------------------------------------------------------------
+! EXTERNALS, each recovered from this page's own binary output
+! ---------------------------------------------------------------
+!   S X CHAN 002152.00   S MCP  002150.00   S LR BU 002155.00
+!   X29      001525.40   (defined on printed p.28)
+SXCHAN  SYN, (8)2152.0
+SMCP    SYN, (8)2150.0
+SLRBU   SYN, (8)2155.0
+X29     SYN, (8)1525.40
+
+        SLC, (8)1532.40
+
+! ---- relocation of first, next and current reel addresses ---------
+X30     LV, $10, 0.0($9)             ! line 6  -GET NEXT REEL ADDR
+                                     !          ENTRY
+X301    BXVZ, X303                   ! line 7  -IF NEXT REEL ADDRESS
+X302    M+MG(BU,18), 0.0($9)         ! line 8  -BIAS NEXT REEL ADDR
+        LV, $9, 0.0($10)             ! line 9  -SET UP FOR NEXT
+        B, X30                       ! line 10 -MORE BIASING TO BE
+                                     !          DONE
+X303    M+MG(BU,18), 8.0($11), 46    ! line 11 -BIAS FIRST REEL ADDR
+        M+MG(BU,18), 8.32($11), 46   ! line 12 -BIAS CURRENT REEL
+
+! ---- relocation and transfer of tables ----------------------------
+! ---- file and unit area table address; bias UAT address in CST
+! ---- or UST
+X304    LV, $13, $11                 ! line 21 -GET COPY OF UAT
+        LV, $14, 0.0($13)            ! line 22 -GET CHANNEL
+        V+, $14, $14                 ! line 23 -DOUBLE IT
+        V+, $14, SXCHAN              ! line 24 -GET CST ENTRY
+X305    BB, .27($14), X306           ! line 25 -IF MULTI UNIT
+X305A   M+MG(BU,18), 0.0($14), 46    ! line 26 -FORM BIASED UAT ADDR
+        B, X31                       ! line 27 -GO TO BIAS IO
+X306    LV, $14, 0.0($14)            ! line 28 -GET BASE OF UST
+        V+, $14, .32($13)            ! line 29 -GET UST ENTRY
+        KF(BU,18), 0.0($14)          ! line 30
+        BAL, X31                     ! line 31 -IF NO BIASING
+        B, X305A                     ! line 32 -GO TO BIAS UAT
+X31     M+MG(BU,18), 0.0($12), 46    ! line 33 -BIAS UAT
+        M+MG(BU,18), .32($12), 46    ! line 34 -BIAS FAT
+X311    B, X29                       ! line 35 -PROCESS NEXT IO
+                                     !          LOCATION
+X312    LV, $14, SMCP                ! line 36 -GET BASE OF MCP
+        LV, $13, SLRBU               ! line 37 -GET BASE OF DEBIASED
+        T, 11, 0.0($13), 0.0($14)    ! line 38 -MOVE THE RELOCATED
+                                     ! listing: "T,$11,0.0($13),0.0($14)"
+
+        END, X30
