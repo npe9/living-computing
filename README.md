@@ -153,16 +153,18 @@ What runs, as of 2026-10-23 (`stretch/docs/boot_plan.md` §A5, §A8, §A10):
   same address under the name `Y UNCOD`: the prime routine and the
   UNCODE subroutine are the same entry, which neither page says on its
   own. The program counter then reaches `002422.00`, `S CA6`, the
-  convert-to-six-bit-BCD routine.
+  convert-to-six-bit-BCD routine, runs it against the character tables
+  on printed p.44, and calls `S BRK8` at `002502.00` — "break card into
+  fields", which printed p.38 had predicted at that address five pages
+  before the page holding it was opened.
 
-As of 2026-10-23 (commit `126ec87`), printed pages **2 through 40** of
-the MCP listing are transcribed bit-exactly. Transcription runs ahead
-of execution: the boot run does not reach p.40 yet, because `S CA6` on
-printed p.43 comes first. Pages
-transcribed before the pages that define their symbols have repeatedly
-served as predictions — printed p.39 confirmed three symbols at exactly
-the addresses p.38's binary output had implied, including one whose
-half-word selector bit would have put it half a word wrong.
+As of 2026-10-23, printed pages **2 through 44** of the MCP listing
+are transcribed bit-exactly. Transcription runs ahead of execution,
+and pages transcribed before the pages that define their symbols have
+repeatedly served as predictions — printed p.39 confirmed three
+symbols at exactly the addresses p.38's binary output had implied,
+including one whose half-word selector bit would have put it half a
+word wrong, and printed p.44 confirmed all four of p.43's.
 
 ## Running the tests
 

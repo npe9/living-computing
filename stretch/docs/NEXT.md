@@ -5395,6 +5395,93 @@ no opcode can rule it out. What ruled it out was the datum the name
 labels — which is a tell worth stating on its own: *when a name
 labels data, decode the data before trusting the name.*
 
+## PRINTED p.44, AND THE STEP COUNT IS THE MEASUREMENT, 2026-10-23
+
+printed p.44 is THE CHARACTER LOCATOR TABLES and THE TABLES, and it
+defines **all four** of the stand-ins printed p.43 had to `SYN`:
+`Q FLD` 002456.00, `Q` 002465.00, `Q SAV` 002472.00, `Q TB`
+002500.00. Not one moves. Its last datum ends at **002501.71**, which
+`boot_plan.md` A9 had recorded as printed p.45's opening address
+before this page was rendered.
+
+### The prediction was written down before the log was read
+
+p.44 is **data**: no entry point, no executable row, and p.43's loop
+branches on `$LZC` and the `KFI` punch tests, none of which touch
+`Q`. So the PC trail should **not** move, and it does not — still
+2692, `S BRK8`, whose body is on printed p.45. `mcp_indicators_word11`
+should *possibly* move, because `Q FLD` and `Q` used to be past the
+end of the image and the `LVE` chain was reading zeros; it does not,
+because `RZ` was already set.
+
+**What moves is the step count: 6,028,051 → 6,028,291.** Two hundred
+and forty more steps to reach the same address. That delta is the
+only thing in the run that says the tables are *live* — and it is a
+measurement, not a reading, because nothing else was added to the
+image.
+
+### The second `CNOP` absorbed an injection, and that is why there is an extra check
+
+Three injections were run against the new verifier and the third
+survived everything the listing can pin:
+
+* line 15 `,.66($2)` → `,.72($2)` — 1 FAIL, 002463.40.
+* line 21's data one character short — 1 FAIL, 002470.44, the colon's
+  address, which is what pins the three rows above it.
+* **line 25's data one character short — ALL twenty-two rows and all
+  four symbols passed.** Line 27's `CNOP` rounds the location counter
+  to the next word and absorbs it.
+
+So lines 21-23 are pinned by the colon row and **line 25 was pinned
+by nothing on the page**. What pins it is the two printed tables read
+together: `Q FLD`'s thirteen entries 0 through 72, and `Q TB`'s
+0/78/156/234, which is thirteen six-bit characters apiece. The test
+now checks the thirteenth character of every zone, and the same
+injection gives one FAIL at `Q+234+72`.
+
+*The lesson is an old one in a new shape: a rounding pseudo-operation
+between a datum and the next checked address is a place where errors
+go to hide.* `CNOP` was already known to be alignment-dependent
+(jb_ax5b p.80 against p.82); what was new is that the same property
+makes it an **error sink** for anything compiled just before it.
+
+### `UNTAIL`, and MCP's tailing is two levels deep
+
+Line 35 is `UNTAIL,(1)`. C28-6129 printed p.37 gives the level
+syntax, `TAIL, (n)DOG`, with `(1)` the default, and printed p.38:
+
+> "An untail statement will untail all levels up to and including the
+> level specified in the address field."
+
+So printed p.2 line 10's `TAIL,(2)G` covers the whole program at
+**level 2**, p.43 line 9's `TAIL,A` opens **level 1** over these two
+pages, and p.44 line 35 closes level 1 and leaves G standing. Nothing
+before had shown the second level in use. `UNTAIL` joins `TAIL` in
+`LISTING_CONTROL` for the same reason — tails mangle definitions and
+references alike.
+
+**And the condition that would make discarding them wrong is now
+CHECKED, in both directions, rather than asserted.** Outward: no
+other MCP deck names any of the thirteen symbols the level-1 block
+defines. Inward: printed p.43's four `SYN` stand-ins are exactly the
+four symbols p.44 defines, and neither of the two names p.43 defines
+before its `TAIL` (`S CA6`, `S CA8`) is referenced after it. A fourth
+injection — a fifth, unreferenced `SYN` on p.43, which moves no
+compiled row — gives 1 FAIL in the inward check and nothing else.
+
+### One standard stated rather than left as a hole
+
+The listing prints **no binary** for lines 21, 22, 23 and 25, so no
+character code on the page is transcription-checked and none can be.
+The codes are **manual-derived**: `strap/charsets.py`'s `A` table is
+the 48 Character Set from RefMan printed p.166. The grid they come
+out as is its own evidence — `0o6x` for the 12 zone, `0o4x` for the
+11, `0o2x` for the zero zone, `0o0x` for none — and the same
+structure settles the one typography question the page raises without
+a re-render: the tenth character of each row is that row's lone-zone
+punch (`+`, `-`, blank), so the zero zone's is the **digit** zero,
+and `JKLMNOPQR` has a **letter** O.
+
 ## MCP RUNS S CA6, AND CALLS S BRK8, 2026-10-23
 
 printed p.43 line 5 is

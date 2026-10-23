@@ -4773,6 +4773,66 @@ run "HOLLERITH TO BCD CONVERSION, printed p.43, bit-exact (MCP_Mar63 PDF p.50)" 
 # exactly, including I3 and I8, whose survival is genuine and
 # explained where they are reported.  Every one of their anchors
 # occurs exactly once; the count was checked.
+run "THE CHARACTER LOCATOR TABLES and THE TABLES, printed p.44, bit-exact (MCP_Mar63 PDF p.51)" python3 verify_mcp_bootstrap_p44.py
+# >>> ALL FOUR OF printed p.43's STAND-INS LAND. <<<  p.43 read four
+# addresses off its own binary and SYNned them because this page had
+# not been opened: Q FLD 002456.00, Q 002465.00, Q SAV 002472.00,
+# Q TB 002500.00.  Not one of them moves.  And the page's last datum
+# ends at 002501.71, which docs/boot_plan.md A9 had recorded as
+# printed p.45's opening address before p.44 was rendered.
+#
+# THE NULL OPERATION FIELD, THIRTEEN TIMES.  Lines 4-16 have nothing
+# in the operation column -- C22-6531 printed p.7's NULL FIELD, which
+# strap_asm.py has compiled since MCP printed p.25 -- and what each
+# lays down is the address-and-index half word every full-word format
+# begins with, ADDRESS(0-23) | 1000 | I(28-31), printed as 82.
+# WHAT THE TABLE IS FOR is RefMan printed p.29: p.43 line 46's LVE
+# chains through the half word at Q FLD+$3, and that half word "is
+# assumed to be either a half length instruction or the first half of
+# a full length instruction ... No check is made for invalid
+# operation codes."  Thirteen entries, stepping six bits apiece --
+# one BCD character -- which is the width of each of THE TABLES rows.
+#
+# "UNTAIL" IS NEW AND MAKES MCP'S TAILING NEST.  Line 35 is
+# "UNTAIL,(1)".  C28-6129 printed p.37 gives the level syntax,
+# "TAIL, (n)DOG", with (1) the default; printed p.38: "An untail
+# statement will untail all levels up to and including the level
+# specified in the address field."  So printed p.2 line 10's
+# "TAIL,(2)G" covers the whole program at LEVEL 2, printed p.43 line
+# 9's "TAIL,A" opens LEVEL 1 over these two pages, and this closes
+# level 1 and leaves G standing.  Nothing before had shown the second
+# level in use.  It is discarded for the same reason TAIL is, and
+# THE CONDITION THAT WOULD MAKE THAT WRONG IS NOW CHECKED rather
+# than asserted: the test scans every other MCP deck for the thirteen
+# symbols the level-1 block defines and finds none.
+#
+# THE TWO CNOPs DO DIFFERENT THINGS, which is the alignment trap
+# docs/NEXT.md recorded on jb_ax5b p.80 against p.82.  Line 20 sits
+# at 002464.40 and compiles a NOP, "000000.30 00"; line 27 sits at
+# 002471.70 and compiles NOTHING, printing neither a location nor a
+# binary, because there is no half word left in the word to put one
+# in.  Same source line, two outcomes, both from the location
+# counter.
+#
+# AND THE SECOND CNOP IS WHY ONE INJECTION SURVIVED.  Dropping the
+# last character of line 25's no-zone row passes ALL twenty-two rows
+# and ALL four symbols: the CNOP rounds to the next word and absorbs
+# it.  Dropping one from line 21 does not, because the colon's own
+# address 002470.44 sits between.  SO LINES 21-23 ARE PINNED BY THE
+# COLON ROW AND LINE 25 WAS PINNED BY NOTHING ON THE PAGE.  What
+# pins it is the two printed tables read together -- Q FLD's
+# thirteen entries 0 through 72, and Q TB's 0/78/156/234, which is
+# thirteen six-bit characters apiece -- so the test now checks the
+# THIRTEENTH CHARACTER of every zone, and the same injection gives
+# one FAIL at Q+234+72.
+#
+# NO BINARY IS PRINTED for lines 21, 22, 23 and 25, so no character
+# code on this page is checked or can be.  The zone rows read as a
+# clean grid -- 0o6x for the 12 zone, 0o4x for the 11, 0o2x for the
+# zero zone and 0o0x for none -- and the digit/letter question the
+# scan raises settles structurally: the tenth character of each row
+# is that row's lone-zone punch ("+", "-", blank), so the zero
+# zone's is the DIGIT zero, and "JKLMNOPQR" is a letter O.
 run "MCP's error table, printed pp.7-8 (MCP_Mar63 PDF pp.14-15)" python3 verify_mcp_bootstrap_p7_p8.py
 # X ERR DD -- THE LAST TWO PAGES OF THE BOOTSTRAP TO BE TRANSCRIBED,
 # and the index to all the rest: seventy-eight VF half words, one pair

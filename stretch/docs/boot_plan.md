@@ -595,6 +595,43 @@ cannot be tested without it.
 > itself** — the next page, and the one the run has been waiting
 > for.
 >
+> **A13 — PRINTED p.44, AND THE RUN SAYS THE TABLES ARE LIVE,
+> 2026-10-23.** p.44 is THE CHARACTER LOCATOR TABLES and THE TABLES,
+> and it defines all four of the stand-ins printed p.43 had to SYN:
+> `Q FLD` 002456.00, `Q` 002465.00, `Q SAV` 002472.00, `Q TB`
+> 002500.00. Not one moves. Its last datum ends at **002501.71**,
+> which A9 recorded as printed p.45's opening address before this
+> page was rendered.
+>
+> THE PC TRAIL DOES NOT MOVE, and that was predicted before the log
+> was read: p.44 is data, with no entry point and no executable row,
+> and p.43's loop branches on `$LZC` and the `KFI` punch tests, none
+> of which touch `Q`. The trail stays at **2692**, `S BRK8`, whose
+> body is on printed p.45.
+>
+> WHAT DOES MOVE IS THE STEP COUNT: 6,028,051 before p.44, 6,028,291
+> after. Two hundred and forty more steps to reach the same address.
+> `Q FLD` and `Q` used to be past the end of the image, so p.43 line
+> 46's `LVE` chain and line 47's `LF(BU,6,6),Q($6)` were reading
+> zeros; now they read real BCD and the conversion loop runs
+> differently on the way. That delta is the measurement that the
+> tables are being used — there is no other page in the image whose
+> addition could have changed the count.
+>
+> `mcp_indicators_word11` stays at `0x9240`, which was the other
+> half of the prediction and the less interesting outcome: `RZ` was
+> already set and the table going non-zero did not clear it.
+>
+> AND `UNTAIL` ARRIVES, making MCP's tailing two levels deep and
+> NESTED. C28-6129 printed p.37 gives `TAIL, (n)DOG` with `(1)` the
+> default and printed p.38 says an untail "will untail all levels up
+> to and including the level specified". So printed p.2 line 10's
+> `TAIL,(2)G` covers the whole program at level 2, p.43 line 9's
+> `TAIL,A` opens level 1 over these two pages, and p.44 line 35
+> closes level 1 and leaves G standing. Nothing before had shown the
+> second level in use.
+>
+
 > **A12 — MCP RUNS S CA6 AND CALLS S BRK8, 2026-10-23.** printed
 > p.43 line 5 IS 002422.00, `S CA6` — the address printed p.38
 > predicted five pages earlier and the one the PC trail had been

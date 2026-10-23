@@ -1476,6 +1476,23 @@ def enc_sic(addr24, idx):
 #
 # TWO INSTANCES SO FAR: printed p.2 line 10's "TAIL,(2)G", which
 # covers the whole bootstrap, and printed p.43 line 9's "TAIL,A".
+#
+# `UNTAIL` IS HERE FOR THE SAME REASON, and it is what makes those
+# two instances NEST rather than replace each other.  C28-6129
+# printed p.37 gives the level syntax -- "TAIL, (n)DOG ... where n
+# refers to the level of tailing to which the given tail symbol is
+# to be assigned.  If the level is not specified, the first level is
+# assumed" -- and printed p.38:
+#
+#   "An untail statement will untail all levels up to and including
+#    the level specified in the address field."
+#
+# So MCP's "TAIL,(2)G" is a LEVEL-2 tail over the whole program and
+# "TAIL,A" is a level-1 tail over printed pp.43-44, closed by
+# printed p.44 line 35's "UNTAIL,(1)" -- which leaves G standing.
+# Discarding the pair is bit-identical for the same reason
+# discarding either one is: every symbol in the block carries the
+# same set of tails, definitions and references alike.
 # C28-6129 printed p.14's table of CW's eight secondary pseudo
 # operations, transcribed verbatim.  Columns are Chain Bit, Multiple
 # Bit, Skip Flag -- the order the same page gives for control-word
@@ -1499,10 +1516,11 @@ LISTING_CONTROL = frozenset([
     'PRNID',    # print identification
     'RESEQ',    # resequence the card numbers
     'SEM',      # listing semantic/eject control
-    # NOT a listing control -- see the long note above for why it is
-    # nevertheless discarded, and for the one condition that would
-    # make that wrong.
+    # NOT listing controls -- see the long note above for why they
+    # are nevertheless discarded, and for the one condition that
+    # would make that wrong.
     'TAIL',
+    'UNTAIL',
 ])
 
 
