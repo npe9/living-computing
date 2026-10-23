@@ -261,6 +261,20 @@ XERRDD  VF, XERR00+1.0    ! p.7 line  2
         VF, XMSG29        ! p.8 line 28  -SPOOL INPUT ASSIGNMENTS NOT
 
 ! ---- the definitions that go with it ------------------------------
+!
+! >>> LINE 30'S "CNOP" WAS MISSING FROM THIS DECK UNTIL 2026-10-23,
+! and it is what makes line 31 print a whole word. <<<
+!
+! C22-6531 printed p.18 leaves the location counter at BIT 25 after a
+! VF, so the table above ends at 000244.40+25 bits = 000244.71.  Line
+! 30's CNOP rounds that to 000245.00 and line 31's "$-X ERR DD" is
+! 000245 - 000176 = 000047.00, which is what the listing prints.
+!
+! IT WAS INVISIBLE while strap_asm gave VF a whole half word, because
+! then the table ended on the boundary by itself.  printed p.46 lines
+! 29-30 -- a DD at bit 25 of the word a VF opened -- forced VF to 25
+! bits, and this omission was the first thing to fail.
+        CNOP                ! p.8 line 30
 XEDDK   SYN, $-XERRDD      ! p.8 line 31  -SIZE OF ERROR TABLE
 XERRIN  XW, XERRDD, XEDDK+1.0, 0   ! p.8 line 32 -XW FOR INITIALIZING
                                     !              ERROR SEARCH

@@ -602,7 +602,24 @@ class SymTab(dict):
 
 def eval_system_symbol(name, loc_bits, reg_context, lineno=None):
     if name == '':
-        return loc_bits  # bare "$" = current location counter
+        # >>> A BARE "$" IS THE LOCATION COUNTER, UNROUNDED, and
+        # MCP printed p.12 line 43 is what says so. <<<
+        #
+        # C22-6531 printed p.18 leaves the counter at BIT 25 after a
+        # VF and p.19 at BIT 18 after a CF, so after either of those
+        # the counter is not on any boundary, and what "$" reports
+        # there is a real question.  It reports the counter:
+        # "X MSG 25  SYN,$" follows an eight-bit DD ending at
+        # 000513.20 and the listing prints X MSG 25 at 000513.30.
+        #
+        # THE OTHER PAGE THAT LOOKED LIKE A COUNTER-EXAMPLE IS NOT
+        # ONE.  printed p.8 line 31, "X E DD K  SYN,$-X ERR DD",
+        # follows a table of VFs and prints 000047.00, a whole word
+        # -- which a 25-bit VF would make 000046.71.  LINE 30 IS A
+        # "CNOP", and this deck had omitted it: invisible while VF
+        # claimed a whole half word, and the first thing to fail
+        # when VF was corrected to 25 bits on 2026-10-23.
+        return loc_bits
     up = name.upper()
     n = None
     if up.startswith('X') and up[1:].isdigit():
@@ -994,7 +1011,7 @@ def entry_mode_name(stmt):
     return stmt.entry[:-1].strip().upper()
 
 
-def entry_byte_size(stmt):
+def entry_byte_size(stmt, symtab=None):
     """The per-character width of a converted DD, from the dds's third
     element.  C28-6129 printed p.16: "in a DD statement, the byte size
     of converted characters may range from one through 12 ... However,
@@ -1022,7 +1039,7 @@ def entry_byte_size(stmt):
         raise AssemblerError("a converted DD needs a data description "
                              "with a byte size", stmt.lineno)
     _, _, bs_expr = parse_dds(stmt.mods[0], stmt.lineno)
-    bs = 0 if bs_expr is None else eval_expr(bs_expr, {}, 0,
+    bs = 0 if bs_expr is None else eval_expr(bs_expr, symtab or {}, 0,
                                              lineno=stmt.lineno)
     if bs == 0:
         bs = 8                      # modulo 8, C28-6129 printed p.16
@@ -1448,13 +1465,21 @@ def classify_branch_indicator(op):
 
 HALF, FULL = 32, 64
 
-def dds_length_bits(mods, lineno=None):
+def dds_length_bits(mods, lineno=None, symtab=None):
+    """The dds's field length in bits.
+
+    `symtab` IS NOT OPTIONAL IN PRACTICE ANY MORE, and MCP printed
+    p.46 is why: lines 30 and 32 write "(A*)DD(BU,Q KSIZ,Q KSIZ)" --
+    the length and the byte size are a SYMBOL -- and line 33 defines
+    it, three rows BELOW its first use, as "Q KSIZ  SYN, 6".  Passing
+    an empty table here raised "undefined symbol".  See assemble()'s
+    constant-SYN pre-pass."""
     if not mods or not mods[0].strip():
         return 64
     mode, length_expr, _ = parse_dds(mods[0], lineno)
     if length_expr is None:
         return 64
-    n = eval_expr(length_expr, {}, 0, lineno=lineno) % 64
+    n = eval_expr(length_expr, symtab or {}, 0, lineno=lineno) % 64
     return 64 if n == 0 else n
 
 
@@ -1593,7 +1618,7 @@ LISTING_CONTROL = frozenset([
 ])
 
 
-def statement_size(stmt):
+def statement_size(stmt, symtab=None):
     """Returns (alignment_bits, size_bits). alignment 0 = no rounding."""
     op = stmt.op.upper()
     if op == '':
@@ -1631,7 +1656,16 @@ def statement_size(stmt):
     # So a null operation lays down exactly the half the programmer
     # wrote -- an address with an index -- and leaves everything after
     # bit 31 unwritten.  Both printed rows reproduce exactly.
-        return 0, HALF
+    #
+    # AND IT ALIGNS TO A HALF WORD, like every other instruction.  It
+    # returned alignment 0 until 2026-10-23, which was invisible while
+    # VF claimed a whole half word: MCP printed p.25 lines 41-42 are a
+    # "VF,4.0" and a ",0.0($7)" on consecutive rows, and with VF
+    # corrected to twenty-five bits the half word would have started
+    # at bit 25 and overlapped the VF.  The assembler caught it --
+    # "two statements deposited overlapping bits" -- rather than
+    # quietly producing a wrong word.
+        return HALF, HALF
     if op == 'DD':
         if stmt.entry is not None:
             # A CONVERTED DD.  Its size is the character count times
@@ -1642,8 +1676,8 @@ def statement_size(stmt):
             # cannot be bounding either.  The end-of-statement
             # character is already stripped by parse_statement_text
             # and "is not compiled" (C28-6129 printed p.16).
-            return 0, len(stmt.fields[0]) * entry_byte_size(stmt)
-        return 0, dds_length_bits(stmt.mods, stmt.lineno) * max(1, len(stmt.fields))
+            return 0, len(stmt.fields[0]) * entry_byte_size(stmt, symtab)
+        return 0, dds_length_bits(stmt.mods, stmt.lineno, symtab) * max(1, len(stmt.fields))
     if op in ('DR', 'DRZ'):
         # DATA RESERVATION.  "DR(dds),(n)" sets aside n items of the
         # dds's field length and initialises none of them -- C28-6129
@@ -1663,7 +1697,7 @@ def statement_size(stmt):
         # and the printed value is its SIZE, exactly as DR's is.  Note
         # the count is written BARE there and parenthesised on p.21;
         # dr_count has always taken either.
-        return 0, dds_length_bits(stmt.mods, stmt.lineno) * dr_count(stmt)
+        return 0, dds_length_bits(stmt.mods, stmt.lineno, symtab) * dr_count(stmt)
     if op == 'VF':
         # >>> VF IS TWENTY-FIVE BITS, NOT A WHOLE HALF WORD, and the
         # size only ever showed as a half because everything that can
@@ -1690,13 +1724,31 @@ def statement_size(stmt):
         #
         # So "the location counter stands at bit 25" describes where
         # the counter sits FOR A FOLLOWING FIELD, and is not what "$"
-        # reports: a SYN sees the rounded location.  Nothing in the
-        # corpus distinguishes the two any other way, because every
-        # storage-creating pseudo-operation rounds to at least a half
-        # word before it emits.  THE DEPOSIT below is still twenty-
-        # five bits, which is the part that matters -- a VF must not
-        # claim bits 25-31, or a CF sharing its boundary overlaps it.
-        return HALF, HALF
+        # reports: a SYN sees the rounded location.
+        #
+        # >>> THAT GUESS WAS RIGHT AND MCP PRINTED p.46 IS THE PAGE
+        # THAT PROVED IT, 2026-10-23.  The note above used to end
+        # "Nothing in the corpus distinguishes the two any other way"
+        # and "Returning 25 here breaks that page", and the size was
+        # HALF.  p.46 line 29 is "Q SKIP  VF,.16" at 002556.00 and
+        # line 30, the very next row, is "Q CMA (A*)DD(...)" at
+        # 002556.31 -- BIT 25.  A following field starts at 25, not
+        # at the next half word, and the size is 25.
+        #
+        # printed p.8 still gets its answer, because the OTHER half of
+        # the guess is now implemented too: `$` is the location
+        # counter ROUNDED UP TO THE NEXT HALF WORD (see
+        # eval_system_symbol).  One rule, both pages.
+        #
+        # THE ALIGNMENT STAYS HALF AND THAT IS THE WHOLE TRICK: p.18
+        # says the counter "is rounded to the next half word" BEFORE
+        # the value is compiled, so a VF after a VF still lands a
+        # half word on, and a run of them still measures in half
+        # words.  It is only a following pseudo-operation that does
+        # NOT round -- a DD -- that sees bit 25.  Returning (0, 25)
+        # instead broke seventeen verifiers; returning (HALF, HALF)
+        # broke printed p.46.  (HALF, 25) is both pages at once.
+        return HALF, 25
     if op in ('CF', 'RF'):
         # C22-6531 printed p.19:
         #
@@ -2034,6 +2086,32 @@ def assemble(source, origin_bits=DEFAULT_ORIGIN_BITS):
                      # symbol above is already known. This is exactly the
                      # bug this module's docstring describes fixing:
                      # SYN's name must NEVER just take the current `loc`.
+    # >>> A CONSTANT SYN IS RESOLVED BEFORE THE LOCATION WALK, because
+    # a dds can name one that is defined further down the page. <<<
+    #
+    # C22-6531 printed p.31 allows it in as many words -- a SYN's
+    # operand need only be "fully defined (although this may possibly
+    # mean as late as pass 3 of Strap-1)" -- and MCP printed p.46 is
+    # the first page here that uses it: lines 30 and 32 write
+    # "(A*)DD(BU,Q KSIZ,Q KSIZ)" and line 33, THREE ROWS BELOW them,
+    # is "Q KSIZ  SYN, 6".  The location counter needs those two
+    # lengths to walk past them, so a SYN whose operand is already a
+    # constant has to be known first.
+    #
+    # ONLY THE ONES THAT CANNOT MOVE: no symbol in the operand, and no
+    # "$" either, since the location counter is exactly what this
+    # pre-pass does not have yet.  Everything else stays for the
+    # fixpoint below, where it belongs.
+    const_syns = []
+    for stmt in statements:
+        if (stmt.op.upper() == 'SYN' and stmt.name and stmt.fields
+                and stmt.fields[0].strip() and '$' not in stmt.fields[0]
+                and not referenced_symbols(stmt.fields[0], stmt.lineno)):
+            stmt.addr = origin_bits
+            stmt.const_syn = True
+            const_syns.append((stmt.name.upper(), stmt))
+    resolve_syns(const_syns, symtab, final=False)
+
     loc = origin_bits
     for n, stmt in enumerate(statements):
         if stmt.op.upper() == 'SIC':
@@ -2074,7 +2152,7 @@ def assemble(source, origin_bits=DEFAULT_ORIGIN_BITS):
             loc = new_loc
             stmt.addr = loc
             continue
-        align, size = statement_size(stmt)
+        align, size = statement_size(stmt, symtab)
         old_loc = loc
         if align:
             loc = ((loc + align - 1) // align) * align
@@ -2090,12 +2168,34 @@ def assemble(source, origin_bits=DEFAULT_ORIGIN_BITS):
         stmt.addr = loc
         if stmt.name:
             up = stmt.name.upper()
-            if up in symtab:
+            # A SYN THE PRE-PASS ABOVE ALREADY RESOLVED is not a
+            # redefinition -- it is the SAME statement, seen a second
+            # time.  Skipping it here keeps "multiply defined" meaning
+            # what it says.
+            if getattr(stmt, 'const_syn', False):
+                pass
+            elif up in symtab:
                 raise AssemblerError(f"symbol {stmt.name!r} multiply defined", stmt.lineno)
-            if stmt.op.upper() == 'SYN':
+            elif stmt.op.upper() == 'SYN':
                 syn_stmts.append((up, stmt))
             else:
                 symtab[up] = loc
+                # A DATA SYMBOL CARRIES ITS dds -- the same C22-6531
+                # printed p.31 sentence SymTab quotes, read from the
+                # other end: "data properties (dds) associated with Y
+                # ... are transferred".  MCP printed p.46 line 30
+                # defines "Q CMA  (A*)DD(BU,Q KSIZ,Q KSIZ)" and
+                # printed p.45 line 20 writes "KF,Q CMA" with no dds
+                # of its own, which prints 006600 -- length 6, byte
+                # size 6.
+                #
+                # ONLY THE DATA PSEUDO-OPS, deliberately.  The rule is
+                # about data properties, and an instruction's
+                # parenthesised modifiers are not that.
+                if (stmt.op.upper() in ('DD', 'DR', 'DRZ')
+                        and stmt.mods and stmt.mods[0].strip()
+                        and hasattr(symtab, 'sym_dds')):
+                    symtab.sym_dds[up] = stmt.mods[0]
         loc += size
 
     # Resolve SYN symbols by fixpoint: each SYN's value is its own
@@ -2169,7 +2269,7 @@ def apply_parenthetical_entries(stmt, symtab, image):
     """
     if not stmt.pents:
         return
-    _, size = statement_size(stmt)
+    _, size = statement_size(stmt, symtab)
     for n, expr in stmt.pents:
         # p.25: "<= 31 in a half word instruction, or 63 in a full
         # word instruction" -- i.e. the field must fit in what this
@@ -2244,7 +2344,7 @@ def emit_statement(stmt, symtab, image):
 
     if op == 'DD':
         if stmt.entry is not None:
-            bs = entry_byte_size(stmt)
+            bs = entry_byte_size(stmt, symtab)
             table = entry_table(stmt)
             pos = loc
             for ch in stmt.fields[0]:
@@ -2256,7 +2356,7 @@ def emit_statement(stmt, symtab, image):
                 image.deposit(pos, bs, table[ch])
                 pos += bs
             return
-        length = dds_length_bits(stmt.mods, stmt.lineno)
+        length = dds_length_bits(stmt.mods, stmt.lineno, symtab)
         pos = loc
         for f in stmt.fields:
             image.deposit(pos, length, parse_dd_literal(f, stmt.lineno))
@@ -2272,7 +2372,7 @@ def emit_statement(stmt, symtab, image):
         # IT IS RECORDED, THOUGH, in AssembledProgram.reservations --
         # see the note there.  Without it an image walker cannot tell
         # this hole from a lost word.
-        _, size = statement_size(stmt)
+        _, size = statement_size(stmt, symtab)
         image.reserve(loc, size)
         return
 
@@ -2282,7 +2382,7 @@ def emit_statement(stmt, symtab, image):
         # loader found them.  That matters to strap/mcp_image.py,
         # which builds a tape from the emitted words: a DR region is
         # absent from it and a DRZ region is a hundred zero words.
-        width = dds_length_bits(stmt.mods, stmt.lineno)
+        width = dds_length_bits(stmt.mods, stmt.lineno, symtab)
         for k in range(dr_count(stmt)):
             image.deposit(loc + k * width, width, 0)
         return
@@ -2464,8 +2564,23 @@ def emit_statement(stmt, symtab, image):
         # only test that exercises XW's refill (figure7_progressive_
         # indexing.strap) never reads a record past the refill point,
         # so this bug produced a passing test before being caught.
+        # >>> A NULL VALUE FIELD IS A ZERO, and MCP printed p.46 is
+        # where it first mattered.  Lines 16-21 are six index words
+        # written "Q SAV1  XW," -- and line 20 "XW" with no comma at
+        # all -- six storage slots a routine saves its registers into,
+        # whose contents before it runs are nothing.  C22-6531 printed
+        # p.7: "the instruction is compiled as if the missing fields
+        # contained zeros ... A null field is always compiled as a
+        # zero."  The listing prints all six as
+        # "000000.00+ 000 000000 000000".
+        #
+        # This used to raise "XW needs at least a VALUE field", which
+        # is the right instinct for a typo and the wrong answer for
+        # the manual's own rule.
         if not stmt.fields or not stmt.fields[0].strip():
-            raise AssemblerError("XW needs at least a VALUE field", stmt.lineno)
+            stmt = Statement(stmt.lineno, stmt.name, stmt.op, stmt.mods,
+                             ['0'], stmt.entry, stmt.pents)
+            stmt.addr = loc
         val = eval_expr(stmt.fields[0], symtab, loc, lineno=stmt.lineno)
         sign = 1 if val < 0 else 0
         mag = abs(val) & 0xFFFFFF

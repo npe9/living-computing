@@ -163,9 +163,12 @@ What runs, as of 2026-10-23 (`stretch/docs/boot_plan.md` §A5, §A8, §A10):
   error exit, which displays the error address in the CE console and
   loops. Why the card is rejected is the current question — the first
   time in this project that MCP has made a decision about its input and
-  said so.
+  said so. Transcribing the routine's tables (printed p.46) halved the
+  run, from 12.8 to 6.0 million steps, and did **not** change the
+  answer: the missing tables were the plausible cause and are not the
+  cause.
 
-As of 2026-10-23, printed pages **2 through 45** of the MCP listing
+As of 2026-10-23, printed pages **2 through 46** of the MCP listing
 are transcribed bit-exactly. Transcription runs ahead of execution,
 and pages transcribed before the pages that define their symbols have
 repeatedly served as predictions — printed p.39 confirmed three

@@ -5395,6 +5395,110 @@ no opcode can rule it out. What ruled it out was the datum the name
 labels — which is a tell worth stating on its own: *when a name
 labels data, decode the data before trusting the name.*
 
+## THE TABLES ARRIVE, AND FOUR ASSEMBLER CORRECTIONS COME WITH THEM, 2026-10-23
+
+printed p.46 defines **every one of printed p.45's fourteen
+stand-ins** and not one of them moves. Three are index registers
+(`QX INN SYN,$1` and its two fellows, lines 22-24), one is the integer
+6, ten are addresses. The two `dds` p.45 had to write by hand are
+printed here as `(A*)DD(BU,Q KSIZ,Q KSIZ)` — `(BU,6,6)`, which is
+exactly what p.45's bare `KF,Q CMA` prints as `006600`.
+
+**And `SWAP` now has nine documented callers**: two on printed p.40,
+one on p.43, three on p.45, three here. The run still executes none of
+them.
+
+### The run halves and the answer does not change
+
+p.46 is not just more code — it is the DATA the breakdown routine runs
+on, and until now that data was **zero**. `boot_plan.md` A15 has the
+list; the short version is that `S BRK8` had been comparing every
+input character against a `Q CMA` of 0, which is the BCD **blank**.
+
+**12,847,130 steps to 6,036,053**, and the error is the same one at
+the same address. That was the prediction worth getting wrong: the
+missing tables were a plausible cause of printed p.25 line 44's "NOT
+IOD OR REEL CARD" and they are **not** the cause.
+
+**So the next place to look is the card, or where the routine is
+pointed at it.** `strap/iocd.py` punches an **IOCD** card; printed
+p.25 line 41's parameter word says "EXPECT IOD AND REEL CARDS"; lines
+32-36 compute the area from `$4` and pass `$7`. In that order.
+
+### FOUR ASSEMBLER CORRECTIONS, and one of them had a note predicting it
+
+* **`VF` is twenty-five bits.** C22-6531 printed p.18 says "THE
+  LOCATION COUNTER STANDS AT BIT 25 at the end of the operation", and
+  `strap_asm.py` carried that quote while returning a whole half word
+  anyway, because *"Nothing in the corpus distinguishes the two any
+  other way."* **Lines 29 and 30 do**: `Q SKIP VF,.16` is at
+  002556.00 and the very next row is at **002556.31** — bit 25. The
+  ALIGNMENT stays `HALF`, which is the whole trick: p.18 rounds the
+  counter up *before* compiling the value, so a run of VFs still
+  measures in half words and only a following pseudo-operation that
+  does not round sees bit 25. `(HALF, HALF)` breaks this page;
+  `(0, 25)` broke seventeen verifiers; `(HALF, 25)` is both at once.
+* **A null operation aligns to a half word.** It returned alignment 0,
+  invisible until the above: printed p.25 lines 41-42 are a `VF,4.0`
+  and a `,0.0($7)` on consecutive rows, and the half word would have
+  started at bit 25 and overlapped the VF. The assembler caught it as
+  "two statements deposited overlapping bits" rather than quietly
+  producing a wrong word.
+* **A constant `SYN` is resolved before the location walk.** Lines 30
+  and 32 write `(BU,Q KSIZ,Q KSIZ)` and line 33, three rows below,
+  defines it. C22-6531 printed p.31 allows the forward reference
+  outright: a SYN's operand need only be "fully defined (although this
+  may possibly mean as late as pass 3 of Strap-1)".
+* **A data symbol carries its `dds`** — the other end of the same p.31
+  sentence printed p.45 needed.
+
+### And the first of those found a missing line in another deck
+
+printed p.8 line 31 is `X E DD K  SYN,$-X ERR DD` and prints
+000047.00, a whole word, which a 25-bit VF would make 000046.71.
+**Line 30 of that page is a `CNOP`** and `mcp_bootstrap_p7_p8.strap`
+had omitted it — invisible while VF claimed a half word, and the first
+thing to fail when it stopped.
+
+*That is the second time this month a correction to the assembler has
+paid for itself by finding a transcription error nothing else could
+see.* It is an argument for making the assembler right rather than
+making it permissive: a permissive assembler cannot find anything.
+
+### Two things the injections said, and one of them was a survival
+
+**The step count's cause is measured, not inferred.** Four of the
+corrections above change how the assembler lays storage out, so "the
+run halved because p.46's tables arrived" needed checking rather than
+asserting. pp.15-45 were built under the **old** assembler and the
+**new** one and diffed word by word: **867 words, zero differences.**
+The step change is p.46's by construction.
+
+**`Q BLNK`'s length survived every check on its own page**, which is
+the printed p.44 line 25 shape one page later. It is the last datum
+here, `Q CMA` is held from above by `QCOUNT`'s 002556.37 but `Q BLNK`
+has no successor, and the content cannot discriminate either — a
+blank is `0o00` and so is a second blank. Giving it two passed every
+row, every symbol and the image build. **What pins it is the next
+page:** printed p.47 line 1 is `SLC,$` at **002556.67**, bit 55, and
+`Q BLNK`'s 002556.61 is bit 49 — 49 + 6 = 55 to the bit. The same
+shape as printed p.42's last datum ending exactly on `S CA6`.
+
+*Three pages running, the thing that pins a page's last datum has
+been the next page's opening address.* That is worth doing on purpose
+from now on rather than discovering each time.
+
+### The merge learned that two identical SYNs are not a duplicate
+
+`_STANDIN` only recognises the `(8)NNN.NN` form, because that is what
+a page writes when it reads an address off its own binary. p.45 has to
+write `QX INN SYN,$1` and `Q KSIZ SYN,6` because that is what those
+symbols *are*, and p.46 defines them with the identical text. When the
+two values **agree** the stand-in has been checked, which is all the
+cross-check exists to do; a disagreement, and any collision involving
+a location-counter symbol, is still a hard failure. The merge now
+reports "4 SYNs that agree with another page's SYN".
+
 ## MCP RUNS THE WHOLE UNCODE PATH AND REJECTS THE CARD, 2026-10-23
 
 printed p.45 is THE BREAKDOWN ROUTINE, its line 10 is `S BRK8` at

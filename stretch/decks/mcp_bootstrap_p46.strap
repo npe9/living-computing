@@ -1,0 +1,149 @@
+! mcp_bootstrap_p46.strap -- THE BREAKDOWN ROUTINE's re-entry, its
+! save area and its tables, printed page 46.
+! docs/MCP_Mar63_001-249.pdf PDF p.53, header "PAGE NUMBER 46".
+! docs/boot_plan.md M3.
+!
+! >>> THIS PAGE DEFINES EVERY ONE OF printed p.45's FOURTEEN
+! STAND-INS, AND NOT ONE OF THEM MOVES. <<<
+!
+!   QX INN  $1          line 22    QX OUT  $2          line 23
+!   QX CF9  $3          line 24    Q KSIZ  6           line 33
+!   QW CF9  002555.00   line 28    Q SKIP  002556.00   line 29
+!   Q CMA   002556.31   line 30    QCOUNT  002556.37   line 31
+!   Q BLNK  002556.61   line 32
+!   Q SAV1  002547.00   line 16    Q SAV2  002550.00   line 17
+!   Q SAV3  002551.00   line 18    Q SAV4  002552.00   line 19
+!   Q SAV6  002554.00   line 21
+!
+! AND THE TWO dds p.45 HAD TO WRITE BY HAND ARE PRINTED HERE: lines
+! 30 and 32 are "(A*)DD(BU,Q KSIZ,Q KSIZ)", which is (BU,6,6) --
+! exactly what p.45's stand-ins carried, and what its lines 20 and 22
+! print as 006600 without writing any dds of their own.
+!
+! ---------------------------------------------------------------
+! THREE MORE SWAPs, AND NOW THERE ARE NINE
+! ---------------------------------------------------------------
+! Lines 2-4 are "Q BRK8  SWAPI,1,QX INN,Q SAV1" and its two fellows,
+! under line 1's comment "-RE-ENTRY POINT FOLLOWING ERROR RETURN".
+! They are the mirror of printed p.45 lines 47-49: p.45 swapped the
+! live index registers into Q SAV on the way OUT of the error, and
+! these swap them back on the way IN.  Line 5's "TI,2,Q SAV4,$L" is
+! likewise p.45 line 50's "TI,2,$L,Q SAV4" reversed.
+!
+! So the instruction the model refuses has NINE documented callers:
+! two on printed p.40, one on p.43, three on p.45, three here.  The
+! run executes none of them -- tests/gen_tb.py's op_trail measures
+! that -- and the refusal survives with an expiry date.
+!
+! ---------------------------------------------------------------
+! AND THE PAGE CORRECTED THE ASSEMBLER IN FOUR PLACES
+! ---------------------------------------------------------------
+! (a) VF IS TWENTY-FIVE BITS AND THE NEXT FIELD STARTS AT BIT 25.
+!     C22-6531 printed p.18 says "THE LOCATION COUNTER STANDS AT BIT
+!     25 at the end of the operation", and strap_asm.py had carried a
+!     note saying so while returning a whole half word anyway,
+!     because "nothing in the corpus distinguishes the two".  LINES
+!     29 AND 30 DO: "Q SKIP  VF,.16" is at 002556.00 and the very
+!     next row, "Q CMA  (A*)DD(...)", is at 002556.31 -- bit 25.
+!
+!     The ALIGNMENT stays a half word, which is the whole trick: p.18
+!     rounds the counter up BEFORE compiling the value, so a run of
+!     VFs still measures in half words and only a following
+!     pseudo-operation that does not round sees bit 25.
+!
+! (b) A NULL OPERATION ALIGNS TO A HALF WORD.  It did not, which was
+!     invisible until (a): printed p.25 lines 41-42 are a "VF,4.0"
+!     and a ",0.0($7)" on consecutive rows, and the half word would
+!     have started at bit 25 and overlapped the VF.
+!
+! (c) A CONSTANT SYN IS RESOLVED BEFORE THE LOCATION WALK.  Lines 30
+!     and 32 write "(BU,Q KSIZ,Q KSIZ)" and line 33 -- THREE ROWS
+!     BELOW -- defines it.  The location counter needs those lengths
+!     to walk past them.  C22-6531 printed p.31 allows the forward
+!     reference outright: a SYN's operand need only be "fully defined
+!     (although this may possibly mean as late as pass 3 of Strap-1)".
+!
+! (d) A DATA SYMBOL CARRIES ITS dds, which is the other end of the
+!     same p.31 sentence printed p.45 needed.  Line 30 defines Q CMA
+!     with (BU,Q KSIZ,Q KSIZ); p.45 line 20's bare "KF,Q CMA" prints
+!     006600 and p.46's own line 9 is the same row.
+!
+! AND (a) FOUND A MISSING LINE IN ANOTHER DECK.  printed p.8 line 31
+! is "X E DD K  SYN,$-X ERR DD" and prints 000047.00, a whole word,
+! which a 25-bit VF would make 000046.71.  LINE 30 OF THAT PAGE IS A
+! "CNOP" and mcp_bootstrap_p7_p8.strap had omitted it -- invisible
+! while VF claimed a half word, and the first thing to fail when it
+! stopped.
+!
+! ---------------------------------------------------------------
+! SUBSTITUTIONS
+! ---------------------------------------------------------------
+! (1) BLANKS INSIDE SYMBOL NAMES ARE DROPPED, as on every page since
+!     p.2.
+!
+! (2) NOTHING ELSE.  "XW," with a null value field is written as
+!     printed and compiles as a zero (C22-6531 printed p.7: "A null
+!     field is always compiled as a zero"); line 20's "XW" with no
+!     comma at all is written the same way.  The comma and the blank
+!     on lines 30 and 32 are written as the listing writes them,
+!     ",,*" and ", *".
+!
+! ---------------------------------------------------------------
+! THE TWO STAND-INS THIS PAGE NEEDS, both on printed p.45
+! ---------------------------------------------------------------
+!   Q NEXT  002507.40   line 11's BAE target
+!   Q RSTR  002526.00   line 8's CBZ target
+
+        SLC, (8)2536.0
+
+QNEXT   SYN, (8)2507.40
+QRSTR   SYN, (8)2526.0
+
+        SLC, (8)2536.0
+
+! ---- the re-entry: swap the saved indexes back ---------------------
+QBRK8   SWAPI, 1, QXINN, QSAV1      ! line 2  -RESET INDEXES
+        SWAPI, 1, QXOUT, QSAV2      ! line 3
+        SWAPI, 1, QXCF9, QSAV3      ! line 4
+        TI, 2, QSAV4, $L            ! line 5  -RESET $L AND $R
+        LX, $15, QSAV6              ! line 6
+        V+, QXOUT, QSKIP            ! line 7  -SKIP TO BEG OF NEXT
+                                     !           OUTPUT FIELD
+
+! ---- skip blanks until the next comma ------------------------------
+QSPAC   CBZ, QXINN, QRSTR           ! line 8  -TEST FOR LAST INPUT
+                                     !           CHAR
+        KF, QCMA                    ! line 9  -TEST FOR COMMA.  FIRST
+                                     ! line 10   CANNOT BE A COMMA
+        BAE, QNEXT                  ! line 11
+        LF(V+I)(BU,QKSIZ), QKSIZ(QXINN)   ! line 12 -LOAD NEXT INPUT
+                                           !           CHAR
+        B, QSPAC                    ! line 13
+
+! ---- the save area --------------------------------------------------
+QSAV1   XW,                         ! line 16 -STORE INDEXES
+QSAV2   XW,                         ! line 17
+QSAV3   XW,                         ! line 18
+QSAV4   XW,                         ! line 19 -STORE $L
+        XW                          ! line 20 -STORE $R
+QSAV6   XW,                         ! line 21 -STORE $15
+
+QXINN   SYN, $1                     ! line 22
+QXOUT   SYN, $2                     ! line 23
+QXCF9   SYN, $3                     ! line 24
+
+! ---- PROGRAM MODIFICATION CARDS, lines 25-27's banner ---------------
+QWCF9   XW, 0., 9, QWCF9            ! line 28 -NO. OF CHARS PER
+                                     !           OUTPUT FIELD
+QSKIP   VF, .16                     ! line 29 -NO. OF BIT BETWEEN
+                                     !           SUCCESSIVE FIELDS
+QCMA    (A*)DD(BU,QKSIZ,QKSIZ),,*    ! line 30 -COMMA
+QCOUNT  DD(BU,18), (8)000014        ! line 31 -MAX. NO. FIELDS
+QBLNK   (A*)DD(BU,QKSIZ,QKSIZ), *    ! line 32 -BLANK
+QKSIZ   SYN, 6                      ! line 33
+
+        END, QBRK8
+
+! ---------------------------------------------------------------
+! AND ONE LISTING MARK, the bare "*" after the location that every
+! page since printed p.3 carries: line 9 ("002543.40 *").

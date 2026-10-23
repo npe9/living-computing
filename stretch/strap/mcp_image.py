@@ -81,6 +81,19 @@ _STANDIN = re.compile(r'^\(8\)[0-7]+(\.[0-7]+)?$')
 _NAMED = re.compile(r'^(\S+)\s+(.*)$')
 
 
+def _places_of(label, pages):
+    """The location-counter symbols of the page with this label.
+
+    Used by merge() to keep "defined twice" a hard failure whenever a
+    LOCATION is involved: two SYNs that agree are a stand-in and its
+    definition, but a name that labels storage on one page and
+    anything at all on another is a real collision."""
+    for path, lab in pages:
+        if lab == label:
+            return _classify(path)[0]
+    return {}
+
+
 def _classify(path):
     """Returns (places, standins, defines) for one page file, each a
     dict of symbol -> resolved bit address."""
@@ -111,13 +124,39 @@ def merge(verbose=False, pages=None, end_at='XIPLBS'):
     if pages is None:
         pages = PAGES
     defined, standins = {}, {}
+    agreed = 0
     for path, label in pages:
         places, s, d = _classify(path)
         for sym, val in list(places.items()) + list(d.items()):
             if sym in defined:
+                # >>> A SYN THAT REPRODUCES ANOTHER PAGE'S SYN EXACTLY
+                # IS A STAND-IN THAT AGREES WITH IT, not a duplicate.
+                # <<<
+                #
+                # _STANDIN only recognises the "(8)NNN.NN" form,
+                # because that is what a page writes when it reads an
+                # address off its own binary.  printed p.45 has to
+                # write "QX INN SYN,$1" and "Q KSIZ SYN,6" instead,
+                # because that is what the symbols ARE -- and printed
+                # p.46 line 22 defines QX INN with the identical text.
+                # There is no way to tell the stand-in from the
+                # definition by FORM, and no need to: if the two
+                # values agree, the stand-in has been checked, which
+                # is the only thing this cross-check exists to do.
+                #
+                # A DISAGREEMENT IS STILL A HARD FAILURE, and so is
+                # any collision involving a location-counter symbol,
+                # where two pages really would be claiming the same
+                # name for different storage.
+                if (defined[sym][1] == val and sym not in places
+                        and sym not in _places_of(defined[sym][0], pages)):
+                    agreed += 1
+                    continue
                 raise SystemExit(
                     f"FAIL {sym} is defined twice: {defined[sym][0]} and "
-                    f"{label}")
+                    f"{label}" + ("" if defined[sym][1] == val else
+                                  f", and they disagree: bit "
+                                  f"{defined[sym][1]} against bit {val}"))
             defined[sym] = (label, val)
         for sym, val in s.items():
             standins.setdefault(sym, []).append((label, val))
@@ -176,8 +215,9 @@ def merge(verbose=False, pages=None, end_at='XIPLBS'):
     out.append(f"        END, {end_at}")
     if verbose:
         print(f"merged {len(pages)} pages, {checked} stand-ins checked "
-              f"against their definitions, {len(external)} symbols "
-              f"external to the bootstrap")
+              f"against their definitions, {agreed} SYNs that agree with "
+              f"another page's SYN, {len(external)} symbols external to "
+              f"the bootstrap")
     return "\n".join(out) + "\n", defined, external
 
 
@@ -254,7 +294,7 @@ def build(verbose=False, pages=None, end_at='XIPLBS'):
 # opened.
 MCP_IPL_PAGES = [
     (DECK("mcp_bootstrap_p%d.strap" % n), "printed p.%d" % n)
-    for n in range(15, 46)
+    for n in range(15, 47)
 ]
 
 

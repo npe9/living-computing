@@ -4890,6 +4890,96 @@ run "THE BREAKDOWN ROUTINE, printed p.45, bit-exact (MCP_Mar63 PDF p.52)" python
 # byte -- so it is a per-ROW artifact and not the per-glyph one 13
 # had recorded.  The byte is 00; printed p.43 line 50's "B,Q CHK"
 # prints 002454.10 00 for the same shape.
+run "THE BREAKDOWN ROUTINE's re-entry and tables, printed p.46, bit-exact (MCP_Mar63 PDF p.53)" python3 verify_mcp_bootstrap_p46.py
+# >>> THIS PAGE DEFINES EVERY ONE OF printed p.45's FOURTEEN
+# STAND-INS AND NOT ONE OF THEM MOVES. <<<  Three are index registers
+# (lines 22-24, "QX INN SYN,$1" and its two fellows), one is the
+# integer 6 (line 33), ten are addresses.  And the two dds p.45 had to
+# write by hand are PRINTED here: lines 30 and 32 are
+# "(A*)DD(BU,Q KSIZ,Q KSIZ)", which is (BU,6,6) -- what p.45's bare
+# "KF,Q CMA" prints as 006600.
+#
+# THREE MORE SWAPs AND NOW THERE ARE NINE.  Lines 2-4 are the mirror
+# of p.45 lines 47-49, under line 1's "-RE-ENTRY POINT FOLLOWING ERROR
+# RETURN": p.45 swapped the live index registers out on the way into
+# the error, these swap them back on the way in.  Line 5's
+# "TI,2,Q SAV4,$L" is p.45 line 50 reversed.
+#
+# >>> AND THE PAGE CORRECTED THE ASSEMBLER IN FOUR PLACES, one of
+# which had a note in strap_asm.py saying exactly this would happen.
+# <<<
+#
+# (a) VF IS TWENTY-FIVE BITS.  C22-6531 printed p.18: "THE LOCATION
+#     COUNTER STANDS AT BIT 25 at the end of the operation."
+#     strap_asm carried that quote while returning a whole half word,
+#     because "Nothing in the corpus distinguishes the two any other
+#     way".  LINES 29 AND 30 DO: "Q SKIP VF,.16" is at 002556.00 and
+#     the very next row is at 002556.31 -- bit 25.  The ALIGNMENT
+#     stays HALF, which is the whole trick: p.18 rounds the counter up
+#     BEFORE compiling, so a run of VFs still measures in half words
+#     and only a following pseudo-op that does not round sees bit 25.
+#     (HALF, HALF) breaks this page; (0, 25) broke seventeen
+#     verifiers; (HALF, 25) is both at once.
+# (b) A NULL OPERATION ALIGNS TO A HALF WORD.  It returned alignment
+#     0, invisible until (a): printed p.25 lines 41-42 are a "VF,4.0"
+#     and a ",0.0($7)" on consecutive rows and the half word would
+#     have started at bit 25.  The assembler caught it as "two
+#     statements deposited overlapping bits" rather than quietly
+#     producing a wrong word.
+# (c) A CONSTANT SYN IS RESOLVED BEFORE THE LOCATION WALK.  Lines 30
+#     and 32 write "(BU,Q KSIZ,Q KSIZ)" and line 33, THREE ROWS BELOW,
+#     defines it; the location counter needs those lengths to walk
+#     past them.  C22-6531 printed p.31 allows it outright: a SYN's
+#     operand need only be "fully defined (although this may possibly
+#     mean as late as pass 3 of Strap-1)".
+# (d) A DATA SYMBOL CARRIES ITS dds, the other end of the p.31
+#     sentence printed p.45 needed.
+#
+# AND (a) FOUND A MISSING LINE IN ANOTHER DECK.  printed p.8 line 31
+# is "X E DD K  SYN,$-X ERR DD" and prints 000047.00, a whole word,
+# which a 25-bit VF would make 000046.71.  LINE 30 OF THAT PAGE IS A
+# "CNOP" and mcp_bootstrap_p7_p8.strap had omitted it -- invisible
+# while VF claimed a half word, and the first thing to fail when it
+# stopped.  The deck now carries it.
+#
+# AND THE MERGE LEARNED THAT TWO IDENTICAL SYNs ARE NOT A DUPLICATE.
+# _STANDIN only recognises the "(8)NNN.NN" form, because that is what
+# a page writes when it reads an address off its own binary; p.45 has
+# to write "QX INN SYN,$1" and "Q KSIZ SYN,6" because that is what
+# those symbols ARE, and p.46 defines them with the identical text.
+# When the two values AGREE the stand-in has been checked, which is
+# all the cross-check exists to do; a disagreement, and any collision
+# involving a location-counter symbol, is still a hard failure.  The
+# merge now reports "4 SYNs that agree with another page's SYN".
+#
+# Injections: "Q KSIZ SYN,6"->"SYN,8" gives 6 FAILs; line 20's bare
+# "XW" deleted gives 13; the XW count 9->8 gives 1; and the assembler
+# one -- VF back to (HALF, HALF) -- gives 5, all three symbols in word
+# 002556 seven bits out.
+#
+# AND ONE SURVIVED, WHICH IS WHY THERE IS A SIXTH CHECK.  Q BLNK is
+# the LAST datum on the page: Q CMA is held from above by QCOUNT's
+# 002556.37, but Q BLNK has no successor here, and the content cannot
+# discriminate either -- a blank is 0o00 and so is a second blank.
+# Giving it two passed every row, every symbol and the image build.
+# WHAT PINS IT IS THE NEXT PAGE: printed p.47 line 1 is "SLC,$" at
+# 002556.67, bit 55, and Q BLNK's 002556.61 is bit 49 -- 49 + 6 = 55
+# TO THE BIT.  The same shape as printed p.42's last datum ending
+# exactly on S CA6 and p.44's ending exactly on p.45's "SLC,$".  With
+# the check, the same injection gives 1 FAIL.
+#
+# AND ONE AGAINST THE MERGE, because the agreeing-SYN acceptance added
+# a path nothing exercised: printed p.45's "Q KSIZ SYN,6" changed to
+# "SYN,7" so the two pages disagree.  mcp_image dies with "QKSIZ is
+# defined twice: printed p.45 and printed p.46, and they disagree: bit
+# 7 against bit 6".
+#
+# AND THE STEP COUNT'S CAUSE IS MEASURED, NOT INFERRED.  Four of the
+# corrections above change how the assembler lays storage out, so
+# "the run halved because p.46's tables arrived" needed checking:
+# pp.15-45 were built under the OLD assembler and the NEW one and
+# diffed word by word.  867 words, ZERO differences.  So the step
+# change is p.46's by construction.
 run "MCP's error table, printed pp.7-8 (MCP_Mar63 PDF pp.14-15)" python3 verify_mcp_bootstrap_p7_p8.py
 # X ERR DD -- THE LAST TWO PAGES OF THE BOOTSTRAP TO BE TRANSCRIBED,
 # and the index to all the rest: seventy-eight VF half words, one pair

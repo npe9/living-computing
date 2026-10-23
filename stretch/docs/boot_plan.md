@@ -595,6 +595,34 @@ cannot be tested without it.
 > itself** — the next page, and the one the run has been waiting
 > for.
 >
+> **A15 — THE TABLES ARRIVE AND MCP STILL REJECTS THE CARD, IN HALF
+> THE STEPS, 2026-10-23.** printed p.46 is not just more code: it is
+> the DATA the breakdown routine runs on. Until it was transcribed,
+> `Q CMA`, `Q BLNK`, `Q SKIP`, `QCOUNT` and `QW CF9` were externals —
+> the merge kept a stand-in for each ADDRESS and emitted **no storage
+> at 002547-002556**. So `S BRK8` had been comparing every input
+> character against `Q CMA` = 0, which is the BCD **blank**, not a
+> comma; adding `Q SKIP` = 0 instead of sixteen bits between output
+> fields; counting with `QW CF9`'s count field 0 instead of 9; and
+> saving its index registers into words that were not there.
+>
+> **The run changes and the change is the measurement: 12,847,130
+> steps to 6,036,053.** Less than half. With real tables the routine
+> does its work and stops looping on a comma it could never find.
+>
+> **AND IT STILL REJECTS THE CARD.** `mcp_x_err_ad` is the same
+> 001441.40, the indicators are the same, the stop is the same
+> 000167.40. That was the prediction worth getting wrong: the missing
+> tables were a plausible cause of printed p.25 line 44's "NOT IOD OR
+> REEL CARD" and they are not the cause.
+>
+> **So the next place to look is the card, or where the routine is
+> pointed at it** — `strap/iocd.py` punches an **IOCD** card and
+> printed p.25 line 41's parameter word says "EXPECT IOD AND REEL
+> CARDS", and printed p.25 lines 32-36 compute the area `$4` and `$7`
+> address. `NEXT.md` has the order.
+>
+
 > **A14 — MCP RUNS THE WHOLE UNCODE PATH AND REJECTS THE CARD,
 > 2026-10-23.** printed p.45 is THE BREAKDOWN ROUTINE and its line 10
 > is `S BRK8` at 002502.00 — the address printed p.38 predicted seven
