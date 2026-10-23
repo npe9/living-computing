@@ -4910,6 +4910,35 @@ run "THE BREAKDOWN ROUTINE, printed p.45, bit-exact (MCP_Mar63 PDF p.52)" python
 # byte -- so it is a per-ROW artifact and not the per-glyph one 13
 # had recorded.  The byte is 00; printed p.43 line 50's "B,Q CHK"
 # prints 002454.10 00 for the same shape.
+run "RESERVATIONS, TABLES AND COUNTERS continued, printed p.49, bit-exact (MCP_Mar63 PDF p.56)" python3 verify_mcp_bootstrap_p49.py
+# EIGHT LINES, the shortest page this project has transcribed, and it
+# finishes the storage block printed p.48 opened.
+#
+# >>> IT STARTS AT 002602.00 AND THAT IS A ROUNDING, NOT A NEW
+# ORIGIN. <<<  printed p.48's last datum is line 52's ONE-BIT
+# "L INFAD DD(BU,1),0" at 002601.73, ending at 002601.74, and an XW
+# rounds to the next full word.  THERE IS NO SLC ON THIS PAGE AT ALL
+# -- the location counter carries over, which is what a single STRAP
+# assembly looks like when the listing's page break falls mid-deck.
+#
+# THREE SPELLINGS OF A NULL VALUE FIELD ON ONE PAGE: lines 1 and 4
+# are a bare "XW", lines 2 and 3 "XW,0", line 8 "XW,", and all five
+# compile the same all-zero index word (C22-6531 printed p.7: "A
+# null field is always compiled as a zero").  That the listing uses
+# all three within eight lines is the best evidence this project has
+# that they are interchangeable, and all five rows are checked.
+#
+# AND THE PAGE STATES ONE NUMBER TWICE: line 5's self-refilling
+# "L CLEAR XW,L RLCT,4,$" carries count four and line 6's
+# "L RLCT DRZ(BU,64),(4)" reserves four words.  The two injections
+# are each other's mirror.  Line 5's count 4->5 gives 1 FAIL, line
+# 5's row, and no symbol moves.  Line 6's (4)->(5) gives 1 FAIL,
+# LAST PP's SYMBOL check -- and NOT line 8's row, because the fifth
+# reserved word is zero and an all-zero index word is exactly what
+# that row expects.  PREDICTED 2 AND OBSERVED 1: a row check pinned
+# to an ADDRESS cannot see a symbol move into or out of it when the
+# storage either side is identical, and the symbol check is what
+# catches it.
 run "RESERVATIONS, TABLES AND COUNTERS, printed p.48, bit-exact (MCP_Mar63 PDF p.55)" python3 verify_mcp_bootstrap_p48.py
 # >>> PRINTED p.47 COMPILES NOTHING, so this page follows printed
 # p.46 directly, and mcp_image.py names it in NO_DECK_PAGES so the

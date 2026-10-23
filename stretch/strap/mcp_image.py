@@ -305,7 +305,7 @@ NO_DECK_PAGES = {47}
 
 MCP_IPL_PAGES = [
     (DECK("mcp_bootstrap_p%d.strap" % n), "printed p.%d" % n)
-    for n in range(15, 49) if n not in NO_DECK_PAGES
+    for n in range(15, 50) if n not in NO_DECK_PAGES
 ]
 
 

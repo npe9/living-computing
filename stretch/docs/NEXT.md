@@ -5395,6 +5395,43 @@ no opcode can rule it out. What ruled it out was the datum the name
 labels — which is a tell worth stating on its own: *when a name
 labels data, decode the data before trusting the name.*
 
+## PRINTED p.49, EIGHT LINES, AND THREE SPELLINGS OF ONE THING, 2026-10-23
+
+The shortest page this project has transcribed, and it finishes the
+storage block printed p.48 opened: four index words, a self-refilling
+clear word, a four-word count table and one more index word,
+002602-002613.
+
+**It starts at 002602.00 and that is a rounding, not a new origin.**
+printed p.48's last datum is line 52's **one-bit**
+`L INFAD DD(BU,1),0` at 002601.73, ending at 002601.74, and an `XW`
+rounds to the next full word. **There is no `SLC` on this page at
+all** — the location counter carries over, which is what a single
+STRAP assembly looks like when the listing's page break falls
+mid-deck.
+
+**Three spellings of a null value field on one page.** Lines 1 and 4
+are a bare `XW`, lines 2 and 3 `XW,0`, line 8 `XW,` — and all five
+compile the same all-zero index word (C22-6531 printed p.7: "A null
+field is always compiled as a zero"). *That the listing uses all
+three within eight lines is the best evidence this project has that
+they are interchangeable*, and all five rows are checked.
+
+**And the page states one number twice**, which makes its two
+injections each other's mirror: line 5's self-refilling
+`XW,L RLCT,4,$` carries count four and line 6's `DRZ(BU,64),(4)`
+reserves four words.
+
+* count `4 -> 5` — 1 FAIL, line 5's row, no symbol moves.
+* `(4) -> (5)` — 1 FAIL, `LAST PP`'s **symbol** check, and **not**
+  line 8's row: the fifth reserved word is zero and an all-zero index
+  word is exactly what that row expects.
+
+**Predicted 2 and observed 1**, and the gap is worth the sentence: *a
+row check pinned to an ADDRESS cannot see a symbol move into or out
+of it when the storage either side is identical.* The symbol check is
+what catches it, which is why every page here carries both.
+
 ## PRINTED pp.47-48, AND A GUESS THAT HAD BEEN WRONG SINCE THE FIRST XW, 2026-10-23
 
 **printed p.47 compiles nothing.** Twenty-three lines; the only
@@ -5408,9 +5445,19 @@ forgot.
 
 **printed p.48 is that program's storage**: ten self-refilling index
 words, a swap area of eight more, eight index-register SYNs and a
-block of counters, 002557-002601. The boot is unchanged by it —
-trail still 239, and the only clock difference is the 1,033 the
-nineteen extra tape words cost to read.
+block of counters, 002557-002601. The boot's trail stays at 239 and
+every check passes.
+
+**But the step count moves, and it is not a simple function of the
+image size.** p.48 adds nineteen words and costs **+1,033** clocks;
+printed p.49 adds ten more and costs **−692**. "That is the extra
+tape words being read" fits the first and not the second, so the step
+count is **not a tape-length meter** and this file should stop
+treating a move in it as self-explaining. It moved for p.44's tables
+(+240, and that one WAS traced), for the SWAP (+82, counted in
+`rl_xmit` itself), and now twice more without an account. *What the
+step count is a meter for is open; the trail and the checks are what
+the boot is judged on.*
 
 ### A second, independent witness for VF = 25 bits
 

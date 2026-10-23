@@ -622,9 +622,17 @@ cannot be tested without it.
 > **printed p.48 is that program's STORAGE** — ten self-refilling
 > index words, a swap area of eight more, eight index-register SYNs
 > and a block of counters, 002557 through 002601. Nothing on it is
-> executable, and the boot run confirms it: the trail stays at 239
-> and the only change is the 1,033 clocks the nineteen extra tape
-> words cost to read.
+> executable, and the boot run confirms the part that matters: the
+> trail stays at 239 and every check passes.
+>
+> **THE STEP COUNT MOVES AND IT IS NOT A SIMPLE FUNCTION OF THE IMAGE
+> SIZE**, which is worth recording because the obvious reading is
+> wrong. p.48 adds nineteen words and costs **+1,033** clocks;
+> printed p.49 adds ten more and costs **−692**. A first guess
+> ("that is the extra tape words being read") fits the first and not
+> the second, so the step count is NOT a tape-length meter and should
+> not be read as one. What it is a meter for is still open; the
+> trail and the checks are what the boot is judged on.
 >
 > **AND THE CARD TYPES ARE NOW DOCUMENTED FROM THE MANUAL.**
 > `C22-6728` printed p.88: *"Three types of control cards are used:
