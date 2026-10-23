@@ -560,6 +560,23 @@ cannot be tested without it.
 > ROUTINE`. **MCP's IPL initialization ran printed pp.15-36 and
 > handed off to the prime routine.** M3+ is closed.
 >
+> **A8 — AND MCP IS RUNNING THE UNCODE SUBROUTINE.** printed p.38
+> line 4 IS 002166.00, and its name is `Y UNCOD`: the PRIME ROUTINE
+> and the UNCODE SUBROUTINE are the same entry, which neither page
+> says on its own. With p.38 in the image the class-column test on
+> lines 6-8 passes — the card carries a `B` in the column C22-6728
+> printed p.88 names — and the PC trail moves to **002422.00**,
+> which is `S CA6`, the convert-to-six-bit-BCD routine line 12
+> calls. Thirty-six rows, bit-exact on the first run; fourteen of
+> its nineteen symbols are PREDICTIONS about pages not yet opened.
+>
+> **A9 — THE NEXT FIVE PAGES, AND WHY FIVE.** `S CA6` is on printed
+> p.43 (p.42 ends at 002417.30, p.45 opens at 002501.71), and
+> `mcp_ipl_image()` requires the image to be contiguous — a hole
+> becomes a zero word, and a zero half-word is BRANCH ENABLED to
+> zero. So printed pp.39-42 must be transcribed before p.43 helps.
+> Five pages, in order.
+>
 > **A6 — AND PRINTED p.37 IS TRANSCRIBED**, bit-exact on the first
 > run, 51 checks. It is a different source deck (card sequence
 > restarts at 13000001) sharing the LOCATION counter, and it defines

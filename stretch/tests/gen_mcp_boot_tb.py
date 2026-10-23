@@ -580,22 +580,31 @@ def main():
         # DECREMENTING the previous addresses by one").  The channel
         # status table is relocated, printed p.20 finds the console
         # it was told about, and the run goes on. <<<
-        # >>> AND IT MOVED AGAIN, 2026-10-22, BECAUSE THE RUN GOES
-        # FURTHER.  XCZ and XE out, MOP and XH in.  All five are
-        # RESULT indicators -- the last index and arithmetic
-        # operations' outcomes -- and the run no longer ends inside
-        # the error routine but somewhere in printed p.25's successors,
-        # so there is no reason for them to have stayed the same.
+        # >>> AND IT MOVED AGAIN, 2026-10-23, BECAUSE THE RUN GOES
+        # FURTHER AGAIN.  AE out, XCZ back in; MOP, RGZ, XVGZ and XH
+        # unchanged.  All five are RESULT indicators -- the last index
+        # and arithmetic operations' outcomes -- and the run now ends
+        # one subroutine call deeper than it did, so there is no
+        # reason for them to have stayed the same.
+        #
+        # THE HISTORY, because the value is a ratchet and a ratchet
+        # that is silently re-fitted is not one:
+        #   0xA040  RZ, XVZ, XCZ        -- an ARTIFACT, read after an
+        #                                  interrupt reset the register
+        #   0x9424  XCZ, XVGZ, XE, RGZ, AE   -- run ends in X ERROR
+        #   0x1324  XH, XVGZ, MOP, RGZ, AE   -- run ends at S PRIME
+        #   0x9320  XCZ, XVGZ, MOP, RGZ, XH  -- run ends at S CA6
         #
         # WHAT THE CHECK IS STILL FOR is the bit that is NOT here:
         # OP is clear, so the model still refuses nothing MCP
-        # executes, over eleven more pages of it than before.  MOP is
-        # printed p.55's "to-memory operation" (C22-6531 Appendix A,
-        # $MOP, indicator 55) and XH the index-result high -- both
-        # just the last store and the last index compare.
+        # executes, now through printed p.38's UNCODE subroutine as
+        # well.  MOP is "to-memory operation" (C22-6531 Appendix A,
+        # $MOP, indicator 55), XH the index-result high and XCZ the
+        # index count zero -- the last store and the last two index
+        # operations.
         ("mcp_indicators_word11", str(IND_WORD),
-         _ind("XH") | _ind("XVGZ") | _ind("MOP")
-         | _ind("RGZ") | _ind("AE")),
+         _ind("XCZ") | _ind("XVGZ") | _ind("MOP")
+         | _ind("RGZ") | _ind("XH")),
 
         # >>> THE MOVE ITSELF, AND IT IS THE POINT OF THE FIXTURE <<<
         # Printed p.4 line 28, "T,$11,X BUFER($X1),X BS END  -MOVE MCP

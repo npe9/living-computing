@@ -241,9 +241,20 @@ def build(verbose=False, pages=None, end_at='XIPLBS'):
 # AND IT DEFINES TWENTY-ONE OF THE EXTERNALS pp.15-36 HAD BEEN
 # SYNNING, so merge()'s cross-check now has a definition to compare
 # each stand-in against instead of comparing it with itself.
+# >>> AND PRINTED p.38 JOINED IT ON 2026-10-23.  Card sequence
+# 14000001, a THIRD source deck, and the LOCATION counter still does
+# not restart: p.37's S PRIME is 002166.00 and p.38 line 4 is
+# 002166.00 with the name Y UNCOD.  The PRIME ROUTINE and the UNCODE
+# SUBROUTINE are the same entry, and that is where the boot run's PC
+# trail said MCP's initialization went.
+#
+# IT DEFINES Y UNCOD, which pp.15-36 had been SYNning, and PREDICTS
+# fourteen more at 002213 through 002502 -- all later than anything
+# transcribed, so every one of them is a claim about a page not yet
+# opened.
 MCP_IPL_PAGES = [
     (DECK("mcp_bootstrap_p%d.strap" % n), "printed p.%d" % n)
-    for n in range(15, 38)
+    for n in range(15, 39)
 ]
 
 

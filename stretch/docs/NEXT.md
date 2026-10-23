@@ -5395,6 +5395,83 @@ no opcode can rule it out. What ruled it out was the datum the name
 labels — which is a tell worth stating on its own: *when a name
 labels data, decode the data before trusting the name.*
 
+## MCP IS RUNNING THE UNCODE SUBROUTINE, 2026-10-23
+
+printed p.38 line 4 is
+
+```
+002166.00  000033.00 80  002324.06 A0   Y UNCOD  TI,3,$11,Y UX SAV
+```
+
+**002166.00 is the address printed p.37 line 45 calls `S PRIME` and
+the PC trail said MCP branched to.** The PRIME ROUTINE and the
+UNCODE SUBROUTINE are the same entry, which neither page says on its
+own — p.37 names the address, p.38 names the code, and only putting
+them together names the thing.
+
+With p.38 in the image the boot run executes it: the class-column
+test on lines 6-8 **passes** — the card really does carry a `B` in
+the column `C22-6728` printed p.88 names — and the PC trail moves to
+
+```
+PC TRAIL: last non-zero half-word address 2596, after 6002202 steps
+```
+
+2596 half-words is **002422.00**, which is `S CA6`, the routine line
+12 calls to convert the card to six-bit BCD.
+
+### A page that is mostly predictions
+
+Thirty-six rows with binary output, bit-exact on the first run.
+Nineteen symbol locations — and **fourteen of them are symbols the
+page does not define**, every one at an address later than anything
+transcribed (002213 through 002502, where the page itself ends at
+002213.00). Each is SYN'd from this page's own binary output:
+
+| | | |
+|---|---|---|
+| `Y UX SAV` 002324.00 | `Y UCBF2` 002337.00 | `Y JCCER` 002303.40 |
+| `Y UER` 002311.00 | `Y JCBC` 002213.00 | `Y REELC` 002276.00 |
+| `S CA6` 002422.00 | `Y TCPGO` 002214.40 | `Y REL MK` 002360.00 |
+| `Y UCBF1` 002327.00 | `Y LIMC` 002246.00 | `Y TYPMK` 002355.00 |
+| `S BRK8` 002502.00 | `Y IODC` 002266.40 | |
+
+**Reading them needed the half-word BIT layout, not just the
+octal.** A half-word prints `wwwwww.bb XX` and the `.bb` pair is
+bits 18-23: bit 18 the **half-word selector**, bits 19-22 the J
+field, bit 23 the first bit of the operation code. So line 30's
+`.32` and line 40's `.36` are bit 18 **clear** — the first half
+word, `.00` — while line 31's `.72`, line 34's `.50` and line 35's
+`.72` are bit 18 **set**, which is `.40`. Three of the fourteen
+would have been half a word wrong without it.
+
+`Y UER` appears in **four** rows (8, 36, 38, 41) with three
+different operation codes and agrees in all of them.
+
+### Lines 13-15 and 18-20 are arguments, not instructions
+
+`LVI,$15,$+1.0` plants the return address in `$15` and
+`BD,<routine>` goes; the half-words **after** the branch are the
+call's parameters, and the routine steps over them on the way back.
+That is why two `VF`/`CF`/`VF` triples sit between branches. A
+transcription that read them as code would still assemble, which is
+why their addresses are checked as well as their contents.
+
+`CF` compiles a bare eighteen-bit count — line 14's `CF,80` prints
+`000120`, which is eighty, the number of columns on a card.
+
+### The next five pages, and why they have to be five
+
+`S CA6` is at 002422.00. Printed p.42 runs 002365.60 to 002417.30
+and printed p.45 opens at 002501.71, so **`S CA6` is on printed
+p.43** and `S BRK8` at 002502.00 is printed p.45 line 10.
+
+`strap/prosa.py`'s `mcp_ipl_image()` requires the image to be
+**contiguous** — "a hole would silently become a zero word in the
+record, and a zero half-word is BRANCH ENABLED to location zero" —
+so printed pp.39, 40, 41 and 42 have to be transcribed before p.43
+can help. Five pages, in order, each one extending the run.
+
 ## MCP FINISHED ITS INITIALIZATION, 2026-10-23
 
 It did not get lost. The run that ended at "PC 0" ended at

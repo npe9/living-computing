@@ -4327,6 +4327,37 @@ run "MCP INITIALIZATION, printed p.35, bit-exact (MCP_Mar63 PDF p.42)" python3 v
 
 run "MCP INITIALIZATION, printed p.36, bit-exact (MCP_Mar63 PDF p.43)" python3 verify_mcp_bootstrap_p36.py
 run "THE COMMUNICATION REGION FOR MCP, printed p.37, bit-exact (MCP_Mar63 PDF p.44)" python3 verify_mcp_bootstrap_p37.py
+run "UNCODE SUBROUTINE TO DECIPHER SYSTEM CARDS, printed p.38, bit-exact (MCP_Mar63 PDF p.45)" python3 verify_mcp_bootstrap_p38.py
+# >>> THIS IS WHERE MCP WENT, and the page says so in one address.
+# printed p.37 line 45 puts S PRIME at 002166.00; the boot run's PC
+# trail said MCP's initialization branched to half-word 2284, which
+# is 002166.00; and line 4 of THIS page is 002166.00 with the name
+# Y UNCOD.  THE PRIME ROUTINE AND THE UNCODE SUBROUTINE ARE THE SAME
+# ENTRY, which neither page says on its own.
+#
+# A THIRD SOURCE DECK, card sequence 14000001, still sharing the
+# LOCATION counter.  Thirty-six rows with binary output and nineteen
+# symbol locations, bit-exact on the first run.
+#
+# FOURTEEN OF THE NINETEEN SYMBOLS ARE PREDICTIONS.  This page uses
+# names it does not define, every one at an address LATER than
+# anything transcribed -- 002213 through 002502, where the page
+# itself ends at 002213.00 -- and each is SYN'd from THIS PAGE'S OWN
+# BINARY OUTPUT.  Reading them needed the half-word BIT layout and
+# not just the octal: the `.bb` pair is bits 18-23, bit 18 being the
+# HALF-WORD SELECTOR, so line 31's ".72", line 34's ".50" and line
+# 35's ".72" are at .40 while line 30's ".32" is at .00.  Three of
+# the fourteen would have been half a word wrong without it.
+#
+# Y UER APPEARS IN FOUR ROWS (8, 36, 38, 41) with three different
+# operation codes and agrees in all of them.
+#
+# AND THE RUN GOES FURTHER FOR IT.  With p.38 in the image MCP
+# executes Y UNCOD: the class-column test passes -- the card really
+# does carry a "B" in the column C22-6728 printed p.88 names -- and
+# the PC trail now reads half-word 2596, which is 002422.00, the
+# S CA6 the page calls to convert the card to six-bit BCD.  That is
+# the next transcription.
 # >>> THIS IS THE PAGE MCP'S INITIALIZATION WAS BRANCHING TO, and it
 # is a DIFFERENT SOURCE DECK -- its card sequence restarts at
 # 13000001 where p.36's ended at 11C11xxx.  The LOCATION counter does

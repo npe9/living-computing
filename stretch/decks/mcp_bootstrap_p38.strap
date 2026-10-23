@@ -1,0 +1,205 @@
+! mcp_bootstrap_p38.strap -- UNCODE SUBROUTINE TO DECIPHER SYSTEM
+! CARDS, printed page 38.  docs/MCP_Mar63_001-249.pdf PDF p.45,
+! header "PAGE NUMBER 38".  docs/boot_plan.md M3.
+!
+! >>> THIS IS WHERE MCP WENT. <<<
+!
+! printed p.37 line 45 puts S PRIME at 002166.00 and line 31 points
+! S PR IN at it; the boot run's PC trail says MCP's initialization
+! branched to half-word 2284, which is 002166.00.  LINE 4 OF THIS
+! PAGE IS THAT ADDRESS, and its name is Y UNCOD -- the last external
+! `strap/mcp_image.py` still carried at 002166.00.  The prime routine
+! and the UNCODE subroutine are the same entry.
+!
+! A THIRD SOURCE DECK.  Card sequence 14000001, where p.37's ran
+! 13000001-13000046 and p.36's ended at 11C11xxx.  The LOCATION
+! counter still does not restart: p.37's S PRIME is 002166.00 and
+! line 4 here is 002166.00.
+!
+! WHAT THIS PAGE IS.  Forty-one rows, every one of them code or the
+! arguments to a call.  It reads a system card's first field, decides
+! which KIND of card it is, and branches to the routine for that kind.
+!
+!   lines  4-12  SAVE AND CONVERT.  Save three index registers, get
+!                the card's address out of $14, load twelve bits of
+!                it and compare against (2)100010000000 -- a "B" in
+!                the card code, which is the class column every IOCD
+!                and IOD card carries (C22-6728 printed p.88).  Not a
+!                B, error return.  Then call S CA6 to convert the
+!                card to six-bit BCD.
+!   lines 13-20  THE TWO CALLS' ARGUMENT BLOCKS.  "LVI,$15,$+1.0"
+!                plants the return in $15 and "BD,<routine>" goes;
+!                the half-words AFTER the branch are the arguments,
+!                which is why lines 13-15 and 18-20 are VF/CF/VF
+!                triples and not instructions.
+!   lines 21-41  WHICH CARD IS IT.  Compare the card's first
+!                forty-eight bits against Y TYPMK, then walk the
+!                dispositions -- JOB, T.O.P., LIM, IOD, REEL -- each
+!                with its own branch out of this page.
+!
+! ---------------------------------------------------------------
+! SUBSTITUTIONS
+! ---------------------------------------------------------------
+! (1) BLANKS INSIDE SYMBOL NAMES ARE DROPPED, as on every page since
+!     p.2: Y UNCOD, Y UECS, Y USB8C, Y IPL1, Y MKEAR are the names
+!     this page DEFINES; Y UX SAV, Y UER, S CA6, Y UCBF1, S BRK8,
+!     Y UCBF2, Y JCBC, Y TCPGO, Y LIMC, Y IODC, Y JCCER, Y REL MK,
+!     Y REELC and Y TYPMK are the ones it uses.
+!
+! (2) NOTHING ELSE.  Every glyph on this page reads cleanly at 900
+!     dpi; the hex bytes are 8D/80/BE/C4/30/3E/01/00/C6/46/42/C2/50
+!     /10/04 and none of them is a 0-read-as-C case.
+!
+! ---------------------------------------------------------------
+! THE FOURTEEN STAND-IN SYNs, AND WHERE EACH ADDRESS COMES FROM
+! ---------------------------------------------------------------
+! Every one is READ OFF THIS PAGE'S OWN BINARY OUTPUT, the way
+! pp.15-36 read each other's.  A half-word instruction prints
+! `wwwwww.bb XX`, where bits 18-23 are the `.bb` octal pair -- bit 18
+! the HALF-WORD SELECTOR, bits 19-22 the J field, bit 23 the first
+! bit of the operation code.  So `.32` and `.36` are bit 18 CLEAR
+! (the first half word) and `.50`, `.72` are bit 18 SET (the second):
+!
+!   Y UX SAV 002324.00   line  4, the TRANSMIT's right address
+!   Y UER    002311.00   lines 8, 36, 38, 41 -- four rows agreeing
+!   S CA6    002422.00   line 12
+!   Y UCBF1  002327.00   line 15, and line 18 is Y UCBF1+.54
+!   S BRK8   002502.00   line 17
+!   Y UCBF2  002337.00   line 20, and line 25 loads from it
+!   Y JCBC   002213.00   line 30
+!   Y TCPGO  002214.40   line 31, bit 18 SET
+!   Y LIMC   002246.00   line 33
+!   Y IODC   002266.40   line 34, bit 18 SET
+!   Y JCCER  002303.40   line 35, bit 18 SET
+!   Y REELC  002276.00   line 40
+!   Y REL MK 002360.00   line 39, the compare's left address
+!   Y TYPMK  002355.00   line 26, the compare's left address
+!
+! ALL FOURTEEN ARE FORWARD REFERENCES into printed p.39 and after --
+! 002213 through 002502 -- so every one of them is a PREDICTION this
+! page makes about pages not yet opened, and each will be checked
+! against its definition the way p.37's twenty-one just were.
+
+        SLC, (8)2166.0
+
+YUXSAV  SYN, (8)2324.0
+YUER    SYN, (8)2311.0
+SCA6    SYN, (8)2422.0
+YUCBF1  SYN, (8)2327.0
+SBRK8   SYN, (8)2502.0
+YUCBF2  SYN, (8)2337.0
+YJCBC   SYN, (8)2213.0
+YTCPGO  SYN, (8)2214.40
+YLIMC   SYN, (8)2246.0
+YIODC   SYN, (8)2266.40
+YJCCER  SYN, (8)2303.40
+YREELC  SYN, (8)2276.0
+YRELMK  SYN, (8)2360.0
+YTYPMK  SYN, (8)2355.0
+
+        SLC, (8)2166.0
+
+! ---- save, convert, and test the class column ---------------------
+YUNCOD  TI, 3, $11, YUXSAV          ! line 4  -SAVE UNDICIES
+        LVE, $13, 1.32($14)         ! line 5  -GET LOCATION OF
+                                     !           HOLLERITH
+        L(BU,12), 0.0($13)          ! line 6  -CARD AND TEST FOR B
+        KFI(BU,12), (2)100010000000 ! line 7
+        BZAEZ, YUER                 ! line 8  -IF NOT A B GIVE ERROR
+                                     !           RETURN
+        SV, $13, YUECS              ! line 9  -LOCATION OF CARD TO
+                                     !           EDIT CALLING
+        LV, $13, 1.0($14)           ! line 10 -DISP. TO $13
+        LVI, $15, $+1.0             ! line 11 -CONVERT CARS TO 6-BIYT
+                                     !           BCD
+        BD, SCA6                    ! line 12
+
+! ---- the call's argument block ------------------------------------
+YUECS   VF, 0.0                     ! line 13
+        CF, 80                      ! line 14
+        VF, YUCBF1                  ! line 15
+
+        LVI, $15, $+1.0             ! line 16 -BREAK CARD INTO FIELDS
+        BD, SBRK8                   ! line 17
+        VF, YUCBF1+.54              ! line 18
+        CF, 53.                     ! line 19
+        VF, YUCBF2                  ! line 20
+
+YUSB8C  VF, 1.                      ! line 21
+        LVI, $13, 1.0               ! line 22 -ERROR RETURN- VALID
+                                     !           ONLY FOR
+YIPL1   BE, $+.32                   ! line 23 -JOB CARD SO FAKE
+                                     !           DISPOSITION
+
+! ---- which card is it ---------------------------------------------
+        L(BU,48), YUCBF2            ! line 25 -NORMAL RETURN TEST
+                                     !           FIRST
+        K(BU,48), YTYPMK($13)       ! line 26 -FIELD IN CARD
+        KVI, $13, 1.0               ! line 27 -TEST DISPOSITION
+        BZAEZ, YMKEAR               ! line 28 -IF FIRST FIELD IS NOT
+                                     !    CORRECT, FURTHER TESTING IS
+                                     !    REQUIRED
+        BXEZ, YJCBC                 ! line 30 -DISP. WAS JOB
+        BXLZ, YTCPGO                ! line 31 -CARD WAS T.O.P. - GO
+                                     !           TYPE
+        KVI, $13, 2.0               ! line 32 -TEST DISPOSITION
+                                     !           FURTHER
+        BXEZ, YLIMC                 ! line 33 -CARD WAS A LIM.
+        B, YIODC                    ! line 34 -CARD WAS AN IOD.
+
+YMKEAR  BXE, YJCCER                 ! line 35
+        BXL, YUER                   ! line 36
+        KVI, $13, 2.0               ! line 37 -DISP. 2.0 OR 4.0
+        BXEZ, YUER                  ! line 38 -DISPOSITION WAS LIM-
+                                     !           TO ERROR RETURN
+        K(BU,48), YRELMK            ! line 39 -TESTR FOR REEL CARD
+        BAEZ, YREELC                ! line 40
+        B, YUER                     ! line 41
+
+        END, YUNCOD
+
+! ---------------------------------------------------------------
+! THE CHECKED ROWS -- every printed row with a BINARY OUTPUT entry,
+! which on this page is every row that compiles anything.
+! ---------------------------------------------------------------
+!   line  4  002166.00  000033.00 80  002324.06 A0   Y UNCOD TI
+!   line  5  002167.00  000001.73 BE                 LVE
+!   line  6  002167.40  000000.00 8D  014000.20 50   L(BU,12)
+!   line  7  002170.40  420000.00 80  414000.23 10   KFI(BU,12)
+!   line  8  002171.40  002311.36 C4                 BZAEZ
+!   line  9  002172.00  002174.33 30                 SV
+!   line 10  002172.40  000001.32 3E                 LV
+!   line 11  002173.00  002174.37 01                 LVI
+!   line 12  002173.40  002422.04 00                 BD,S CA6
+!   line 13  002174.00  000000.00+                   Y UECS  VF,0.0
+!   line 14  002174.40  000120                       CF,80
+!   line 15  002175.00  002327.00+                   VF,Y UCBF1
+!   line 16  002175.40  002176.77 01                 LVI
+!   line 17  002176.00  002502.04 00                 BD,S BRK8
+!   line 18  002176.40  002327.66+                   VF,Y UCBF1+.54
+!   line 19  002177.00  000065                       CF,53.
+!   line 20  002177.40  002337.00+                   VF,Y UCBF2
+!   line 21  002200.00  000001.00+                   Y USB8C VF,1.
+!   line 22  002200.40  000001.33 01                 LVI
+!   line 23  002201.00  002201.40 00                 Y IPL1  BE,$+.32
+!   line 25  002201.40  002337.00 80  060000.20 50   L(BU,48)
+!   line 26  002202.40  002355.00 8D  060000.21 10   K(BU,48)
+!   line 27  002203.40  000001.33 04                 KVI
+!   line 28  002204.00  002207.36 C4                 BZAEZ
+!   line 30  002204.40  002213.32 C6                 BXEZ
+!   line 31  002205.00  002214.72 46                 BXLZ
+!   line 32  002205.40  000002.33 04                 KVI
+!   line 33  002206.00  002246.32 C6                 BXEZ
+!   line 34  002206.40  002266.50 00                 B,Y IODC
+!   line 35  002207.00  002303.72 C2                 Y MKEAR BXE
+!   line 36  002207.40  002311.32 42                 BXL
+!   line 37  002210.00  000002.33 04                 KVI
+!   line 38  002210.40  002311.32 C6                 BXEZ
+!   line 39  002211.00  002360.00 80  060000.21 10   K(BU,48)
+!   line 40  002212.00  002276.36 C6                 BAEZ
+!   line 41  002212.40  002311.10 00                 B,Y UER
+!
+! TWO LISTING MARKS, recorded and not explained, the same pair p.37
+! carries: line 10 prints a bare "*" after its location
+! ("002172.40 *") and so does line 33 ("002206.00 *").  Neither
+! changes a compiled bit.
