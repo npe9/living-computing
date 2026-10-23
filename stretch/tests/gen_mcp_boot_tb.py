@@ -254,8 +254,15 @@ def main():
         # EITHER" -- the sixth group is zeros and is neither.  THE
         # CONSOLE PRINTS THE SAME NUMBER: the message checked below
         # reads "000760|0 INCORRECT CARD TYPE". <<<
-        ("mcp_x_err_ad", str(sym("XERRAD")),
-         ((ipl_hw("XERR19") + 2) & 0x7FFFF) << 45),
+        # >>> AND SINCE THE DECK GREW AN IOD CARD IT IS ZERO AGAIN,
+        # WHICH IS THE STRONGEST FORM OF THIS CHECK.  Every error
+        # site in MCP does "SIC,X ERR AD" before branching, and the
+        # instruction counter is never zero inside the program, so
+        # ZERO MEANS NO ERROR SITE EVER RAN.  The run before this one
+        # ended at printed p.19 line 25's "NOT AN IOD CARD EITHER";
+        # the card deck is terminated now and that row is not
+        # reached. <<<
+        ("mcp_x_err_ad", str(sym("XERRAD")), 0),
 
         # The indicator register, word 11: RZ, XVZ, XF and **OP**.
         #
@@ -371,13 +378,23 @@ def main():
         # LONGER RAISED ANYWHERE IN THE RUN.  AD is out of the
         # expected set below. <<<
         #
-        # AL JOINED THE SET ON 2026-10-22 and it is the last compare:
-        # printed p.19 line 23's "KF(BU,36),X IOD,12" against a group
-        # of zeros leaves the accumulator LOW, which is what sends
-        # line 25's BZAEZ to X ERROR.  The indicator that ends the
-        # run is the indicator the run ends on.
+        # >>> OP IS BACK, AND THIS TIME IT NAMES A MISSING
+        # INSTRUCTION RATHER THAN A FIXTURE ARTIFACT.  printed p.19
+        # line 41 is "TB,3,0.0($11),0.0($13)  -MOVE BIASED CTS" -- a
+        # TRANSMIT BACKWARD -- and StretchExecute's Transmit arm
+        # refuses it outright: "if (t.backward == 1 || t.swap == 1)
+        # ind = setOpInvalid(ind)".  Reference Manual printed p.30
+        # specifies it ("modifier bit 55.  A zero specifies forward
+        # transmission; a one specifies backward"), so the gap is an
+        # unbuilt arm and not an unknown.
+        #
+        # AND IT IS ON THE CRITICAL PATH.  Without that move the
+        # channel status table is never relocated, so printed p.20's
+        # walk looks for a console in a table that was not brought
+        # along -- which is why the run halts where it does. <<<
         ("mcp_indicators_word11", str(IND_WORD),
-         _ind("RGZ") | _ind("XE") | _ind("XVGZ") | _ind("AL")),
+         _ind("OP") | _ind("XCZ") | _ind("XVGZ")
+         | _ind("XH") | _ind("RGZ") | _ind("AH")),
 
         # >>> THE MOVE ITSELF, AND IT IS THE POINT OF THE FIXTURE <<<
         # Printed p.4 line 28, "T,$11,X BUFER($X1),X BS END  -MOVE MCP
@@ -453,10 +470,15 @@ def main():
         # check moves with it and stops being about S MCP -- which is
         # the right failure, because the record would then need a
         # comm region of its own.
-        ("mcp_comm_region_moved_from_x9",
-         str(prosa.MCP_IPL_AT + prosa.IPL_WORDS),
-         prosa.comm_descriptor(prosa.MCP_DEST_WORD,
-                               prosa.COMM_REGION_WORDS)),
+        # >>> THE WITNESS THAT USED TO LIVE HERE HAD TO MOVE.  S MCP
+        # held the descriptor the comm-region move delivered, and
+        # printed p.20 line 11 -- "X20 A 1  SV,$10,S MCP  -SET BASE
+        # OF MCP IN COM REG" -- now runs and overwrites it.  The
+        # move's EXTENT is still pinned by X0's count (fifteen, the
+        # size LC read out of the descriptor) and by
+        # mcp_comm_region_one_past_is_zero; the descriptor's ARRIVAL
+        # is still pinned by mcp_placed_at_dest_first, which printed
+        # p.15 line 24 delivers to an address nothing overwrites. <<<
         # AND THE REST OF THE REGION CAME WITH IT.  The descriptor
         # alone would arrive even if the count were wrong, because it
         # is the first word; the LAST word of the fifteen is what says
@@ -553,12 +575,18 @@ def main():
         # word rather than a scratch register, and which printed
         # pp.28 and 30 both read back.
         #
-        # AND IT IS STILL ZERO, which is a statement about where the
-        # run stops: printed p.19 line 25's BZAEZ goes to X ERROR two
-        # rows before line 27's SV reaches it.  When the card deck
-        # grows an IOD card this becomes the UST base and the check
-        # stops being about the stopping point.
-        ("mcp_s_lr_bu", str(0o2155), 0),
+        # >>> AND IT IS NO LONGER ZERO: the deck grew an IOD card, so
+        # printed p.19 line 27's "SV,$15,S LR BU  -SAVE BASE OF IO
+        # ASSIGNMENT TABLES" runs.  The value is the unit-status-table
+        # pointer printed p.17 line 20 started at X BUFER + 64 words
+        # and printed p.18's unit loop advanced.
+        #
+        # EXACT ON PURPOSE, AS A RATCHET, and the arithmetic that
+        # produces it is NOT derived here -- it runs through printed
+        # p.18's unit loop and printed p.19's relocation, neither of
+        # which this file has worked out.  If it moves, something in
+        # those pages changed, and that is what the check is for. <<<
+        ("mcp_s_lr_bu", str(0o2155), 0x04D3000000000000),
 
         # THE LOAD ITSELF, and only the last word is a fair witness.
         # X IPL BS used to be checked here and cannot be: the program
@@ -694,27 +722,19 @@ def main():
     # digits of X ERR AD, each exactly doubled by LF's offset of 1,
     # landing one byte late because X MS 16C has no RED control code.
     # Both of those are explained above and neither is the model's.
-    console_checks = [
-        # >>> THE MESSAGE CHANGED ON 2026-10-22, BECAUSE THE MACHINE
-        # NOW HAS A CONFIGURATION.  It used to read "NO IOCD
-        # DETECTED"; strap/prosa.py puts five IOCD cards at X IN END,
-        # MCP processes all five, reaches a sixth group that is
-        # neither IOCD nor IOD, and says so:
-        #
-        #   <CR><RED>000760|0 INCORRECT CARD TYPE <EOM>
-        #
-        # 000760 is printed p.19 line 25's "BZAEZ,X ERROR  -NOT AN
-        # IOD CARD EITHER", and it is the SAME NUMBER mcp_x_err_ad
-        # checks -- the error routine prints X ERR AD in octal, so
-        # the register and the console agree. <<<
-        ("console_msg_w3", 3, 0xfd026060606e6c60),  # <CR><RED>000760
-        ("console_msg_w4", 4, 0x7c60003d4731494f),  # |0 INCORRE
-        ("console_msg_w5", 5, 0x4f35315300312d4f),  # CT CARD T
-        ("console_msg_w6", 6, 0x3300535d4b3500fe),  # YPE <EOM>
-        # Words 7-9 are the over-run the control word's count of ten
-        # causes and the next table entry supplies -- "EKJ OF CCW
-        # IN" -- which is documented above and left unchecked.
-    ]
+    # >>> AND NOW NOTHING IS PRINTED, WHICH IS THE POINT.  For one
+    # commit this read
+    #
+    #   <CR><RED>000760|0 INCORRECT CARD TYPE <EOM>
+    #
+    # -- MCP's own diagnosis of a card deck with no terminator, out
+    # of printed pp.7-8's error table, with 000760 being printed p.19
+    # line 25's own address.  The deck has an IOD card now, no error
+    # site runs, the error routine is never entered, and the console
+    # stays silent.  The checks stay, asserting silence, because an
+    # empty console is only good news next to the run that explains
+    # it. <<<
+    console_checks = [("console_silent_w%d" % i, i, 0) for i in range(8)]
 
     print(generate(module_name, prog, checks, console_checks=console_checks,
                    # >>> IT STOPS WHERE IBM TOLD IT TO <<<
@@ -739,7 +759,27 @@ def main():
                    # is one.  A COUNT AND BRANCH makes progress, so it
                    # is no longer a halt (StretchCore.bsv's `isHalt`),
                    # and everything pp.15-18 do was behind it.
-                   pc_check=239,
+                   # >>> AND IT MOVED AGAIN ON 2026-10-22, from the
+                   # error routine's halt to one ELEVEN PAGES
+                   # FURTHER ON.  1035 is half-word 1035 = 001005.40,
+                   # and that is **printed p.20 line 18, "XERR 20
+                   # BD,$  -YES *ERROR* NO CONSOLE"** -- IBM's own
+                   # stop for a machine whose channel status table
+                   # has no console in it.
+                   #
+                   # THE CONSOLE IS DECLARED: strap/prosa.py punches
+                   # a CN card for channel 35, which is where
+                   # bsv/StretchIO.bsv puts the console.  What is
+                   # missing is printed p.19 line 41's
+                   # "TB,3,0.0($11),0.0($13)  -MOVE BIASED CTS", a
+                   # TRANSMIT BACKWARD the model refuses -- so the
+                   # table p.20 walks was never relocated.  OP in the
+                   # indicator check above is that refusal.
+                   #
+                   # So the halt is MCP being right about the machine
+                   # the MODEL presents, and the next thing to build
+                   # is the backward arm.
+                   pc_check=1035,
                    step_cap=40000000,
                    ipl=True))
 

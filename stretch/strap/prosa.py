@@ -269,6 +269,23 @@ IOCD_CARDS = [
     (35, "CN", ()),
 ]
 
+# >>> AND THE DECK IS TERMINATED BY AN IOD CARD, which is what ENDS
+# the IOCD scan rather than an error. <<<
+#
+# printed p.17 line 31's BZAE sends a card that is not an IOCD to
+# X19, printed p.19 line 23 asks whether it is an IOD instead, and
+# line 25's "BZAEZ,X ERROR  -NOT AN IOD CARD EITHER" is where the
+# run used to stop -- on a group of zeros, which is neither.  So one
+# IOD card is the terminator, and C22-6728 printed p.88 lists the
+# three control-card types in exactly that order: IOCD, IOD, MCPP.
+#
+# WHAT IS ON IT: the class column and the three characters of its
+# type, and nothing else.  Printed p.19 does not read an IOD card's
+# other fields -- after the compare succeeds it goes straight on to
+# moving the unit status table -- so punching anything there would be
+# inventing a format the pages do not state.
+TERMINATOR_CARD = (None, None, (), iocd.IOD_CARD_TYPE)
+
 
 def mcp_ipl_image():
     """Printed pp.15-36, assembled: (first_word_address, [words]).
@@ -323,7 +340,7 @@ COMM_AT = WORDS_BEFORE_MCP_A + IPL_WORDS + WORDS_BEFORE_MCP_B
 
 # MCP's body: the comm region's own length -- see the IOCD note.
 MCP_BODY_WORDS = COMM_REGION_WORDS
-CARD_WORDS = iocd.WORDS_PER_CARD * len(IOCD_CARDS)
+CARD_WORDS = iocd.WORDS_PER_CARD * (len(IOCD_CARDS) + 1)
 # X10, "GET MCP SIZE": the body plus the cards, because printed p.15
 # line 24 moves the whole block.
 MCP_SIZE_WORDS = MCP_BODY_WORDS + CARD_WORDS
@@ -408,10 +425,12 @@ def record():
     words[COMM_AT] = comm_descriptor(MCP_DEST_WORD, COMM_REGION_WORDS)
     # The IOCD cards, at the end of the block printed p.15 line 24
     # places -- so they land at X IN END.
-    for n, (channel, equipment, units) in enumerate(IOCD_CARDS):
+    deck = [(c, e, u, iocd.CARD_TYPE) for c, e, u in IOCD_CARDS]
+    deck.append(TERMINATOR_CARD)
+    for n, (channel, equipment, units, kind) in enumerate(deck):
         at = CARDS_AT + n * iocd.WORDS_PER_CARD
-        words[at:at + iocd.WORDS_PER_CARD] = iocd.card(channel, equipment,
-                                                       units)
+        words[at:at + iocd.WORDS_PER_CARD] = iocd.card(
+            channel, equipment, units, card_type=kind)
     return words
 
 

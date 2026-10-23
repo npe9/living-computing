@@ -470,11 +470,25 @@ cannot be tested without it.
 > `<CR><RED>000760|0 INCORRECT CARD TYPE <EOM>` — printed p.19 line
 > 25's own address, out of printed pp.7-8's error table.
 >
-> **A3a — AN IOD CARD IS THE NEXT PIECE.** `C22-6728` printed p.88
-> lists three control-card types, IOCD, IOD and MCPP, and the deck
-> has only the first. printed p.19 line 23's `KF(BU,36),X IOD,12` is
-> what wants the second, and the body of p.19 after that compare has
-> never run.
+> **A3a — DONE THE SAME DAY.** One IOD card terminates the scan, and
+> its type field is three columns left-justified — settled by printed
+> p.19 line 23's offset of twelve against Reference Manual printed
+> p.65's "the contents of the accumulator left of the specified
+> offset", which is one card column. The boot run now reaches
+> **printed p.20 line 18's `XERR 20 BD,$ -YES *ERROR* NO CONSOLE`**
+> with `X ERR AD` **zero** — no error site ran at all — and the
+> console silent.
+>
+> **A3b — AND THE NEXT GATE IS A MISSING INSTRUCTION: TRANSMIT
+> BACKWARD.** printed p.19 line 41 is `TB,3,0.0($11),0.0($13) -MOVE
+> BIASED CTS`, and `StretchExecute.bsv` refuses it: `if (t.backward
+> == 1 || t.swap == 1) ind = setOpInvalid(ind)`. Reference Manual
+> printed p.30 specifies it ("modifier bit 55. A zero specifies
+> forward transmission; a one specifies backward"), so it is an
+> unbuilt arm and not an unknown. Without the move the channel status
+> table is never relocated, which is exactly why p.20 cannot find the
+> console it was told about. **Build the backward arm; SWAP is a
+> different datapath and p.19 does not need it.**
 >
 > `strap/iocd.py` is the card builder, shared with
 > `tests/gen_mcp_p17_tb.py`.

@@ -5395,6 +5395,80 @@ no opcode can rule it out. What ruled it out was the datum the name
 labels — which is a tell worth stating on its own: *when a name
 labels data, decode the data before trusting the name.*
 
+## ONE IOD CARD, AND MCP RUNS ELEVEN PAGES FURTHER -- the next gate is TRANSMIT BACKWARD, 2026-10-22
+
+With an IOD card terminating the deck, the boot run reaches
+**printed p.20 line 18, `XERR 20 BD,$ -YES *ERROR* NO CONSOLE`** —
+IBM's own stop — with **`X ERR AD` zero** and **nothing printed on
+the console**. Every error site in MCP does `SIC,X ERR AD` first and
+the instruction counter is never zero inside the program, so zero
+means *no error site ran at all*.
+
+### The terminator's format came out of the comparison, not a document
+
+printed p.17 line 31's `BZAE` sends a card that is not an IOCD to
+`X19`; printed p.19 line 23 asks whether it is an IOD instead; only
+line 25 is an error. So **one IOD card ends the scan.**
+
+Its type field is **three columns, left-justified**, and that is
+settled by the compare rather than by `C22-6728`. p.17 line 27 loads
+48 bits of the type field and line 30 compares all of them against
+`X IOCD`; p.19 line 23 is `KF(BU,36),X IOD,12` — 36 bits with an
+**offset of twelve**. Reference Manual printed p.65:
+
+> "The contents of the accumulator **left of the specified offset**
+> are algebraically compared with the addressed operand. The bits to
+> the right of the offset do not participate."
+
+Twelve bits is one card column, so the compare is columns 10-12 and
+column 13 is ignored. The two literals agree: `X IOCD` is 48 bits at
+001747.60, `X IOD` is 36 at 001750.40, and 001747.60 + 48 = 001750.40.
+
+**Nothing else is punched on it.** p.19 does not read an IOD card's
+other fields — after the compare succeeds it goes straight to moving
+the unit status table — so punching anything there would invent a
+format the pages do not state.
+
+## >>> THE NEXT GATE IS A MISSING INSTRUCTION: TRANSMIT BACKWARD <<<
+
+printed p.19 line 41 is
+
+```
+TB,3,0.0($11),0.0($13)    -MOVE BIASED CTS
+```
+
+and `StretchExecute.bsv`'s Transmit arm refuses it outright:
+
+```
+if (t.backward == 1 || t.swap == 1)
+  ind = setOpInvalid(ind);
+```
+
+**Reference Manual printed p.30 specifies it** — *"modifier bit 55.
+A zero specifies forward transmission; a one specifies backward"* —
+so this is an unbuilt arm, not an unknown. `OP` in the boot test's
+indicator check is that refusal.
+
+**And it is on the critical path.** Without the move the channel
+status table is never relocated, so p.20's walk looks for a console
+in a table that was not brought along. The console *is* declared —
+`prosa.py` punches a CN card for channel 35, where
+`bsv/StretchIO.bsv` puts it — so the halt is MCP being **right about
+the machine the model presents**.
+
+Build the backward arm next. `SWAP` is refused by the same line and
+is a different datapath; backward alone is what p.19 needs.
+
+### One witness had to be retired
+
+`S MCP` held the descriptor the comm-region move delivered, and
+printed p.20 line 11's `SV,$10,S MCP -SET BASE OF MCP IN COM REG`
+now runs and overwrites it. The move's extent is still pinned by
+`X0`'s count (fifteen, the size `LC` read out of the descriptor) and
+by `one_past_is_zero`; the descriptor's arrival by
+`mcp_placed_at_dest_first`, which p.15 line 24 delivers to an address
+nothing overwrites.
+
 ## MCP READS ITS CONFIGURATION IN THE REAL BOOT, AND PRINTS A DIAGNOSIS ON THE CONSOLE, 2026-10-22
 
 ```

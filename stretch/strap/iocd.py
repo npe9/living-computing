@@ -68,6 +68,24 @@ CLASS_COLUMN = "B"      # column 1 -- C22-6678-1 printed p.8
 CARD_TYPE = "IOCD"      # columns 10-13 -- C22-6728 printed p.88
 FIRST_UNIT_COLUMN = 18  # zero-based; column 19 in the manual's count
 
+# >>> AN IOD CARD'S TYPE IS THREE COLUMNS AND IT IS LEFT-JUSTIFIED IN
+# THE SAME FIELD, which the comparison settles.  printed p.17 line 27
+# loads FORTY-EIGHT bits of the card-type field into the accumulator
+# and line 30 compares all of them against X IOCD; printed p.19 line
+# 23 is "KF(BU,36),X IOD,12" -- thirty-six bits with an OFFSET of 12.
+#
+# Reference Manual printed p.65, COMPARE: "The contents of the
+# accumulator LEFT OF THE SPECIFIED OFFSET are algebraically compared
+# with the addressed operand.  The bits to the right of the offset do
+# not participate in the comparison."  Twelve bits is one card column,
+# so the compare is the FIRST THREE columns of the field -- 10, 11
+# and 12 -- and column 13 is ignored.
+#
+# The two literals agree: X IOCD is 48 bits at 001747.60 and X IOD is
+# 36 at 001750.40, which is 001747.60 plus 48.  Four columns and
+# three, end to end, both starting at column 10 of their card.
+IOD_CARD_TYPE = "IOD"
+
 
 def card_text(channel, equipment, units=(), available=True,
               card_type=CARD_TYPE, tag=CLASS_COLUMN):
@@ -84,8 +102,12 @@ def card_text(channel, equipment, units=(), available=True,
     cols[0] = tag
     for i, ch in enumerate(card_type):
         cols[9 + i] = ch
-    cols[13], cols[14] = "%02d" % channel
-    cols[15], cols[16] = equipment
+    # channel and equipment are None on a card whose other fields
+    # nothing in the transcribed pages reads -- see card_type below.
+    if channel is not None:
+        cols[13], cols[14] = "%02d" % channel
+    if equipment is not None:
+        cols[15], cols[16] = equipment
     if not available:
         cols[17] = "+"
     for k, row in enumerate(units):

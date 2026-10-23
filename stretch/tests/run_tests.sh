@@ -1322,6 +1322,77 @@ run "MCP'S OWN BOOTSTRAP RUNS (boot_plan.md M3)" ./run_mcp_boot.sh StretchMcpBoo
 #    move as well proves nothing, so the generator now takes the
 #    first NON-ZERO word at or after the midpoint.
 #
+# >>> AND THEN THE DECK GREW AN IOD CARD, AND MCP RAN ELEVEN PAGES
+# FURTHER.  It now halts at printed p.20 line 18 -- "XERR 20  BD,$
+# -YES *ERROR* NO CONSOLE" -- with NO ERROR SITE HAVING RUN AT ALL
+# (X ERR AD is zero) and nothing printed on the console. <<<
+#
+# ONE IOD CARD IS THE TERMINATOR, and the listing says so: printed
+# p.17 line 31's BZAE sends a card that is not an IOCD to X19,
+# printed p.19 line 23 asks whether it is an IOD instead, and only
+# line 25's "BZAEZ,X ERROR  -NOT AN IOD CARD EITHER" is an error.
+# C22-6728 printed p.88 lists the three types in that order: IOCD,
+# IOD, MCPP.
+#
+# AND ITS TYPE FIELD IS THREE COLUMNS, LEFT-JUSTIFIED, which the
+# comparison settles rather than a document.  printed p.17 line 27
+# loads FORTY-EIGHT bits of the card-type field into the accumulator
+# and line 30 compares all of them against X IOCD; printed p.19 line
+# 23 is "KF(BU,36),X IOD,12" -- thirty-six bits with an OFFSET of
+# twelve.  Reference Manual printed p.65: "The contents of the
+# accumulator LEFT OF THE SPECIFIED OFFSET are algebraically compared
+# with the addressed operand.  The bits to the right of the offset do
+# not participate."  Twelve bits is one card column, so the compare
+# is columns 10, 11 and 12 and column 13 is ignored.  The two
+# literals agree: X IOCD is 48 bits at 001747.60 and X IOD is 36 at
+# 001750.40, which is 001747.60 plus 48.
+#
+# NOTHING ELSE IS PUNCHED ON IT.  printed p.19 does not read an IOD
+# card's other fields -- after the compare succeeds it goes straight
+# on to moving the unit status table -- so punching anything there
+# would be inventing a format the pages do not state.
+#
+# ===================================================================
+# >>> AND THE THING THAT STOPS IT NOW IS A MISSING INSTRUCTION, NOT A
+# MISSING FIXTURE: TRANSMIT BACKWARD. <<<
+# ===================================================================
+# printed p.19 line 41 is "TB,3,0.0($11),0.0($13)  -MOVE BIASED CTS"
+# and StretchExecute's Transmit arm refuses it outright:
+#
+#     if (t.backward == 1 || t.swap == 1)
+#       ind = setOpInvalid(ind);
+#
+# Reference Manual printed p.30 specifies it -- "modifier bit 55.  A
+# zero specifies forward transmission; a one specifies backward" --
+# so this is an unbuilt arm, not an unknown.  OP in the indicator
+# check is that refusal, and it is ON THE CRITICAL PATH: without the
+# move the channel status table is never relocated, so printed p.20's
+# walk looks for a console in a table that was not brought along.
+#
+# THE CONSOLE IS DECLARED.  strap/prosa.py punches a CN card for
+# channel 35, which is where bsv/StretchIO.bsv puts the console.  The
+# halt is MCP being RIGHT about the machine the model presents.
+#
+# THREE CHECKS MOVED AGAIN, and one had to be retired:
+#   mcp_x_err_ad      ZERO, which is the strongest form this check
+#                     has: every error site SICs to it first and the
+#                     instruction counter is never zero inside the
+#                     program, so zero means none of them ran.
+#   console           silent, and the checks stay as assertions of
+#                     silence.  For one commit they held MCP's own
+#                     "INCORRECT CARD TYPE" diagnosis; an empty
+#                     console is only good news next to the run that
+#                     explains it.
+#   S LR BU           no longer zero -- printed p.19 line 27 runs now
+#                     -- and exact as a ratchet, with the arithmetic
+#                     that produces it explicitly NOT derived.
+#   the S MCP witness RETIRED.  printed p.20 line 11's "SV,$10,S MCP"
+#                     overwrites the descriptor the comm-region move
+#                     delivered there, so that word cannot witness
+#                     the move any more.  The move's extent is pinned
+#                     by X0's count and by one_past_is_zero, and the
+#                     descriptor's arrival by mcp_placed_at_dest_first.
+
 # >>> AND THE IOCD CARDS ARE ON THE TAPE, 2026-10-22: MCP READS ITS
 # CONFIGURATION IN THE REAL BOOT AND PRINTS A DIAGNOSIS ON THE
 # CONSOLE. <<<
