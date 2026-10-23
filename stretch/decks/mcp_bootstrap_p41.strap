@@ -1,0 +1,176 @@
+! mcp_bootstrap_p41.strap -- RETURNS, MASKS, TEMPORARY STORAGE FOR
+! UNCODE, printed page 41.
+! docs/MCP_Mar63_001-249.pdf PDF p.48, header "PAGE NUMBER 41".
+! docs/boot_plan.md M3.
+!
+! >>> FOURTEEN PREDICTIONS LAND ON ONE PAGE. <<<
+!
+! printed pp.38, 39 and 40 between them SYN'd forty-three symbols
+! they did not define, every address read off their own binary
+! output.  THIS PAGE DEFINES FOURTEEN OF THEM, and every one is at
+! the address those pages said:
+!
+!   Y NORR   002313.40   p.39 lines 5/11/32/43, p.40 lines 13/29
+!   Y IDX12  002321.00   p.40 line 14
+!   Y UCX12  002322.00   p.39 line 44
+!   Y UX SAV 002324.00   p.38 line 4; p.40 lines 24/28/33/38
+!   Y UCBF1  002327.00   p.38 lines 15 and 18
+!   Y UCBF2  002337.00   p.38 line 20, p.39 five rows, p.40 line 36
+!   Y UTOE   002334.64   p.40 line 20
+!   Y GOMK   002354.00   p.39 line 10
+!   Y TYPMK  002355.00   p.38 line 26
+!   Y REL MK 002360.00   p.38 line 39
+!   Y COMMK  002362.00   p.39 line 12
+!   Y CNGMK  002363.00   p.39 line 14
+!   Y BLWD4  002364.00   p.40 line 26
+!   Y UPDAT  002365.00   p.39 line 16
+!
+! Y UTOE IS THE ONE THAT COULD NOT HAVE BEEN GUESSED.  p.40 line 20
+! is "LF(BU,60,6),Y UTOE" whose VFL left half prints 002334.64 -- a
+! BIT address, word 0o2334 bit 0o64 -- and line 37 here is
+! "Y UTOE  SYN,Y UCBF1+.372", a DECIMAL bit offset from a symbol
+! three rows above.  002327.00 plus 372 bits is 002334.64 exactly.
+! Two pages, two notations, one bit.
+!
+! AND IT USES Y TBIT, which printed p.36 line 30 defines at
+! 001775.00 -- line 5's "CM0000(BU,1),Y TBIT" reads it, five pages
+! later.
+!
+! ---------------------------------------------------------------
+! THE MASKS ARE EIGHT CHARACTERS EACH, AND THE COLUMN SAYS SO
+! ---------------------------------------------------------------
+! Lines 18-36 are ten "(AX)DD(BU,48,6)" masks, the operands printed
+! pp.38-39 compare a card's first forty-eight bits against.  THE
+! LISTING PRINTS NO BINARY FOR ANY OF THEM, as it prints none for
+! printed p.37's two (AX) rows or pp.9-12's (IQS*) messages, so NO
+! CHARACTER CODE IS CHECKED OR CAN BE.
+!
+! WHAT IS CHECKED IS THE COUNTING, and the counting is exact: 48
+! bits at a byte size of 6 is EIGHT CHARACTERS, and every mask is
+! padded with trailing blanks to exactly eight.  THE PROOF IS COLUMN
+! ALIGNMENT at 600 dpi -- every end-of-statement "X" lands in the
+! same column -- and line 32 is the control that makes it certain:
+! "COMPILGOX" has its X one position EARLIER than all the others,
+! because "COMPILGO" is eight characters and leaves no room for a
+! blank.  A datum of any other length would have moved its X.
+!
+!   line 18  Y GOMK   "GO      "   (GO + six blanks)
+!   line 20  Y TYPMK  "TYPE    "
+!   line 22           "JOB     "
+!   line 24           "LIM     "
+!   line 26  Y REL MK "REEL    "
+!   line 28           "IOD     "
+!   line 30  Y COMMK  "COMPILE "
+!   line 32  Y CNGMK  "COMPILGO"   eight, no blank, X adjacent
+!   line 34  Y BLWD4  "        "   eight blanks and nothing else
+!   line 36  Y UPDAT  "UPDATE  "
+!
+! EACH IS FOLLOWED BY A CNOP, which is why they sit one word apart
+! even though forty-eight bits is three quarters of a word.
+!
+! ---------------------------------------------------------------
+! SUBSTITUTIONS
+! ---------------------------------------------------------------
+! (1) BLANKS INSIDE SYMBOL NAMES ARE DROPPED, as on every page since
+!     p.2.
+!
+! (2) A TRANSMIT'S COUNT REGISTER IS WRITTEN WITHOUT ITS "$", as on
+!     printed p.40 line 36 and printed p.4 line 28: line 10's
+!     listing "T,$15,Y UCBF2,0.0($15)" is written "T, 15, ...".
+!     Line 6's "TI,3,Y UX SAV,$11" keeps its "$11", because there
+!     the register is an ADDRESS and the count is the immediate 3.
+!
+! (3) NOTHING ELSE.  Every glyph reads cleanly at 900 dpi.
+!
+! ---------------------------------------------------------------
+! THE INDEX WORDS, AND A FIFTH XW OPERAND
+! ---------------------------------------------------------------
+! Line 14 is "XW,Y UCBF2+2.0,6,0,7" and prints
+!
+!     002341.00+  111  000006  000000
+!
+! -- value, then FLAGS 111, then count 6, then refill 0.  So the
+! fifth operand is the three FLAG bits (Reference Manual Figure 35:
+! an index word's chain, multiple and skip flags sit at bits 25-27,
+! the same positions a control word's do), and lines 12 and 13 leave
+! them zero by omission.  Line 13's refill is "$+1.0", which prints
+! 002323 -- one word past the 002322 that line itself occupies.
+
+        SLC, (8)2313.40
+
+YTBIT   SYN, (8)1775.0
+YUSB8C  SYN, (8)2200.0
+
+        SLC, (8)2313.40
+
+! ---- the normal return --------------------------------------------
+YNORR   SX, $12, 0.0($14)           ! line 4  -PUT INFORMATION IN
+                                     !           CALLING
+        CM0000(BU,1), YTBIT         ! line 5
+        TI, 3, YUXSAV, $11          ! line 6  -SEQUENCE
+        LVE, $15, 2.0($14)          ! line 7  -IF BETA SUB I ISNON
+                                     !           ZERO,
+        LC, $15, YUSB8C             ! line 8  -TRANSMIT BROKEN OUT
+        BXVZ, $+1.32                ! line 9  -CARD TO REQUESTED AREA
+        T, 15, YUCBF2, 0.0($15)     ! line 10  -- see note (2)
+        B, 3.0($14)                 ! line 11 -RETURN
+
+! ---- the index words for the routine above ------------------------
+YIDX12  XW, YUTOE, 10, 0            ! line 12
+YUCX12  XW, YUCBF2+1.0, 6, $+1.0    ! line 13 -INDEX WORDS FOR ABOVE
+                                     !           ROUTINE
+        XW, YUCBF2+2.0, 6, 0, 7     ! line 14
+
+! ---- the temporary storage ----------------------------------------
+YUXSAV  DRZ(BU,64), (3)             ! line 15
+YUCBF1  DRZ(BU,64), (8)             ! line 16
+YUCBF2  DRZ(BU,64), (13)            ! line 17
+
+! ---- the masks ----------------------------------------------------
+YGOMK   (AX)DD(BU,48,6),GO      X   ! line 18
+        CNOP                        ! line 19
+YTYPMK  (AX)DD(BU,48,6),TYPE    X   ! line 20
+        CNOP                        ! line 21
+        (AX)DD(BU,48,6),JOB     X   ! line 22
+        CNOP                        ! line 23
+        (AX)DD(BU,48,6),LIM     X   ! line 24
+        CNOP                        ! line 25
+YRELMK  (AX)DD(BU,48,6),REEL    X   ! line 26
+        CNOP                        ! line 27
+        (AX)DD(BU,48,6),IOD     X   ! line 28
+        CNOP                        ! line 29
+YCOMMK  (AX)DD(BU,48,6),COMPILE X   ! line 30
+        CNOP                        ! line 31
+YCNGMK  (AX)DD(BU,48,6),COMPILGOX   ! line 32
+        CNOP                        ! line 33
+YBLWD4  (AX)DD(BU,48,6),        X   ! line 34
+        CNOP                        ! line 35
+YUPDAT  (AX)DD(BU,48,6),UPDATE  X   ! line 36
+
+YUTOE   SYN, YUCBF1+.372            ! line 37 -LOCATION OF REF = AND
+                                     !           TOE
+
+        END, YNORR
+
+! ---------------------------------------------------------------
+! THE CHECKED ROWS -- the eleven with binary output, plus the three
+! index words and the three reservations.  Lines 18-36's masks print
+! nothing, and their extent is checked by the addresses after them.
+! ---------------------------------------------------------------
+!   line  4  002313.40  000000.31 1E                   Y NORR  SX
+!   line  5  002314.00  001775.00 80  001000.00 F0     CM0000
+!   line  6  002315.00  002324.00 80  000033.06 A0     TI
+!   line  7  002316.00  000002.37 BE                   LVE
+!   line  8  002316.40  002200.36 50                   LC
+!   line  9  002317.00  002320.71 42                   BXVZ
+!   line 10  002317.40  002337.00 80  000000.36 2F     T
+!   line 11  002320.40  000003.10 0E                   B,3.0($14)
+!   line 12  002321.00  002334.64+ 000 000012 000000   Y IDX12  XW
+!   line 13  002322.00  002340.00+ 000 000006 002323   Y UCX12  XW
+!   line 14  002323.00  002341.00+ 111 000006 000000   XW
+!   line 15  002324.00  000003.00                      Y UX SAV DRZ
+!   line 16  002327.00  000010.00                      Y UCBF1  DRZ
+!   line 17  002337.00  000015.00                      Y UCBF2  DRZ
+!
+! AND ONE LISTING MARK, the bare "*" after the location that every
+! page since printed p.3 carries: line 15, "002324.00 *".

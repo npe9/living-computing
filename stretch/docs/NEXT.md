@@ -5395,6 +5395,95 @@ no opcode can rule it out. What ruled it out was the datum the name
 labels — which is a tell worth stating on its own: *when a name
 labels data, decode the data before trusting the name.*
 
+## THE PAGES CLOSE ON S CA6, 2026-10-23
+
+printed p.38 line 12 is `BD,S CA6` and its binary put `S CA6` at
+**002422.00** — a prediction made four pages before anything near
+that address was opened, and the address the boot run's PC trail has
+been stopping at ever since.
+
+**Printed p.42's last datum ends there to the bit.** Its final row is
+21 characters of IQS data starting at 002417.30, and 21 × 8 bits
+lands on 002422.00 exactly; the assembler's highest compiled word is
+`0o2421`, the one before it.
+
+That checks the whole character-count chain at once. Lines 32-38
+print no binary except two radix-2 bytes, so no character code is
+checked or can be — but every string's **length** is pinned by the
+address of the row after it, and the last one is pinned by a symbol
+a different deck predicted:
+
+| line | at | datum | chars | next |
+|---|---|---|---|---|
+| 32 | 002412.00 | `/1234567890=` | 12 | 002413.40 |
+| 34 | 002413.50 | `/// /STUVWXYZ` | 13 | 002415.20 |
+| 36 | 002415.30 | `,(///-JKLMNOPQR` | 15 | 002417.20 |
+| 37 | 002417.20 | `/` | 1 | 002417.30 |
+| 38 | 002417.30 | `$*///+ABCDEFGHI/.)///` | 21 | **002422.00** |
+
+### Printed p.41: fourteen predictions on one page
+
+pp.38, 39 and 40 between them SYN'd forty-three symbols they did not
+define. p.41 defines **fourteen** of them — `Y NORR`, `Y IDX12`,
+`Y UCX12`, `Y UX SAV`, `Y UCBF1`, `Y UCBF2`, `Y UTOE`, `Y GOMK`,
+`Y TYPMK`, `Y REL MK`, `Y COMMK`, `Y CNGMK`, `Y BLWD4`, `Y UPDAT` —
+every one where those pages said.
+
+**`Y UTOE` could not have been guessed.** p.40 line 20 is
+`LF(BU,60,6),Y UTOE`, whose VFL left half prints `002334.64`, a *bit*
+address; line 37 of p.41 is `Y UTOE  SYN,Y UCBF1+.372`, a **decimal**
+bit offset from a symbol three rows above. 002327.00 plus 372 bits is
+002334.64 exactly. Two pages, two notations, one bit.
+
+**The three reservations are checked by what follows them**, not by
+their printed size — printed p.24's verifier established that a
+`DR`/`DRZ` row prints a size and not a word. Here `002324+3` is
+`Y UCBF1`, `002327+8` is `Y UCBF2`, `002337+13` is `Y GOMK`, and all
+three of those are themselves earlier pages' predictions. **A wrong
+reservation size moves a prediction.**
+
+**The ten masks are eight characters each and the column says so.**
+48 bits at byte size 6 is eight characters, every mask blank-padded
+to exactly eight, and the proof is column alignment at 600 dpi —
+every end-of-statement `X` in one column. **Line 32 is the control**:
+`COMPILGOX` puts its X one position *earlier*, because `COMPILGO` is
+eight characters and leaves no room for a blank. A datum of any
+other length would have moved its X.
+
+### §13 at its thickest, and the decode beat the re-render
+
+p.42 line 24 reads **`C00CC1.5C  CF`** at 200 dpi. At 900 dpi every
+one of those glyphs is a digit zero: `000001.50  0F`.
+
+**The decode settles it without the re-render**, which is the rule
+this project keeps relearning. printed p.40 lines 37 and 41 are the
+same instruction shape — `B,2.32($14)` — and print `000002.50 0E`.
+A branch through an index gives 0 in the high nibble and the index
+in the low one, so `CF` is not an operation this machine has.
+
+### Two substitutions on p.42, both checked rather than asserted
+
+- **The radix moves from the statement to the operand.** The listing
+  writes `(2)DD(BU,8,8),00101010`; the deck writes
+  `DD(BU,8,8), (2)00101010`, the form every other deck uses. Both
+  rows are in the checked set — `0o52` is `00101010`, `0o165` is
+  `01110101` — so the substitution is verified.
+- **Line 37's byte size loses a trailing period**, `8.` → `8`,
+  because this assembler evaluates a trailing period as `WORD.BIT`
+  and 8 words is 512. The addresses prove the size is eight either
+  way: line 38 sits eight bits later, and line 38's own length is
+  what lands on `S CA6`. printed p.39 line 19's `CF,53.` takes the
+  same period and compiles 53, because a count field is evaluated in
+  the other context. **The ambiguity is this assembler's, not the
+  listing's**, and it is written down rather than worked around.
+
+### And p.42 makes no predictions at all
+
+Every symbol it mentions it also defines — the first page since
+printed p.37 for which that is true. **The image is now contiguous
+from 000621 to 002421**, and printed p.43, which holds `S CA6`
+itself, is the next page and the one the run has been waiting for.
+
 ## MCP EXECUTES A SWAP, 2026-10-23
 
 printed p.40 lines 24 and 28:

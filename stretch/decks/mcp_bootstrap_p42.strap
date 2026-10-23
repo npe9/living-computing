@@ -1,0 +1,225 @@
+! mcp_bootstrap_p42.strap -- BCD TO IQS CONVERSION ROUTINE, printed
+! page 42.  docs/MCP_Mar63_001-249.pdf PDF p.49, header "PAGE NUMBER
+! 42".  docs/boot_plan.md M3.
+!
+! A FOURTH SOURCE DECK, card sequence 15000001, where printed p.38's
+! ran 14000001-14000177.  The LOCATION counter still does not
+! restart.
+!
+! >>> AND ITS LAST DATUM ENDS EXACTLY AT S CA6. <<<
+!
+! printed p.38 line 12 is "BD,S CA6" and its binary says S CA6 is at
+! 002422.00 -- a prediction made four pages before anything near
+! that address was opened, and the address the boot run's PC trail
+! has been stopping at.  THIS PAGE'S LAST ROW IS 21 CHARACTERS OF
+! IQS DATA STARTING AT 002417.30, AND 21 TIMES 8 BITS LANDS ON
+! 002422.00 TO THE BIT.
+!
+! That is the whole character-count chain checked at once.  Lines 32
+! through 38 print NO BINARY except the two "(2)DD" rows, so no
+! character code is checked or can be -- but every string's LENGTH
+! is pinned by the address of the row after it, and the last one is
+! pinned by a symbol a different deck predicted.
+!
+! ---------------------------------------------------------------
+! THE DECK BOUNDARY IS "SLC,$", AND IT ROUNDS
+! ---------------------------------------------------------------
+! Line 4 is "SLC,$" at 002365.60 -- printed p.41's last mask is 48
+! bits at 002365.00 and ends there -- and line 5 is at 002366.00.
+! So the sixteen bits between are consumed by the SLC: setting the
+! location counter to "$" rounds UP to the next word boundary.
+!
+! THIS DECK STATES 002366.00 OUTRIGHT rather than reproducing that,
+! which is what every page deck in this project does anyway (each
+! opens with its own SLC).  The 16-bit gap is inside word 002365,
+! which printed p.41 compiles, so `mcp_ipl_image()`'s contiguity
+! check sees no hole: it counts WORDS, and that word is present.
+!
+! ---------------------------------------------------------------
+! WHAT THIS PAGE IS
+! ---------------------------------------------------------------
+! The routine printed p.38 line 12 calls as S CA6 is NOT here -- it
+! is at 002422.00, on the next page.  What IS here is the table and
+! the loop it drives:
+!
+!   lines  5-6   S A8IQS, the 8-bit BCD entry: set the loop to
+!                G OSMI and fall into the common code.
+!   lines  7-14  S A6IQS, the 6-bit entry, then the shared prologue:
+!                save $13, $14 and $15 into G ULOZX, pick up the
+!                "in" and "out" pointers from the caller's argument
+!                block through $15, and count with "LC,$14,.32($15)".
+!   lines 16-20  the conversion loop.  G SKOK loads one byte through
+!                G RADA indexed by $15 -- the R register holds the
+!                bit address times eight -- stores it with
+!                progressive indexing, and counts back on G KRUH.
+!   lines 21-24  G PRYC restores the three index registers and
+!                returns through "B,1.32($15)".
+!   lines 26-28  the two loop bodies the entries select between,
+!                "L(V+I)(BU,8)" and "L(V+I)(BU,6)" -- the only
+!                difference between 8-bit and 6-bit BCD is the field
+!                width, which is why one routine serves both.
+!   lines 32-38  G RADA, the translate table itself.
+!
+! IT IS SELF-CONTAINED: every symbol it mentions it also defines, so
+! this page makes no predictions and needs no stand-in SYNs.  That
+! is the first page since printed p.37 for which that is true.
+!
+! ---------------------------------------------------------------
+! THE TABLE'S STRING LENGTHS, EACH PINNED BY THE NEXT ADDRESS
+! ---------------------------------------------------------------
+!   line 32  002412.00  "/1234567890="      12 chars -> 002413.40
+!   line 33  002413.40  (2)DD, one byte              -> 002413.50
+!   line 34  002413.50  "/// /STUVWXYZ"     13 chars -> 002415.20
+!   line 35  002415.20  (2)DD, one byte              -> 002415.30
+!   line 36  002415.30  ",(///-JKLMNOPQR"   15 chars -> 002417.20
+!   line 37  002417.20  "/"                  1 char  -> 002417.30
+!   line 38  002417.30  "$*///+ABCDEFGHI/.)///"
+!                                           21 chars -> 002422.00
+!
+! LINE 38'S ENTRY MODE IS "(IQSY)", terminated by Y rather than the
+! "*" the others use, BECAUSE THE DATUM CONTAINS AN ASTERISK.  Same
+! reason printed p.36 writes "(IQSX)" for a datum containing one;
+! C28-6129 printed p.16 makes the terminator the programmer's
+! choice, and this page and that one are why.
+!
+!
+! ---------------------------------------------------------------
+! SUBSTITUTIONS
+! ---------------------------------------------------------------
+! (1) BLANKS INSIDE SYMBOL NAMES ARE DROPPED, as on every page since
+!     p.2: S A8IQS, S A6IQS, G KRUH, G SKOK, G PRYC, G OSMI, G SEST,
+!     G ULOZX, G RADA.
+!
+! (2) THE TRANSMITS KEEP THEIR OPERANDS AS WRITTEN.  Lines 5 and 7
+!     are "TI,2,G OSMI,G KRUH" -- an IMMEDIATE count of two, so the
+!     "2" is the count and both symbols are addresses.  No "$" is
+!     involved and printed p.40 line 36's convention does not apply.
+!
+! (4) THE RADIX IS MOVED FROM THE STATEMENT TO THE OPERAND.  Lines
+!     33 and 35 are written "(2)DD(BU,8,8),00101010" -- the radix
+!     prefix in front of the operation -- and this deck writes
+!     "DD(BU,8,8), (2)00101010", which is the form every other deck
+!     in this project uses and the form the assembler implements
+!     (C22-6531's radix entry mode on a numeric TERM).
+!
+!     THE BITS ARE IDENTICAL AND THE LISTING PROVES IT: line 33
+!     prints 052 and 0o52 is 00101010; line 35 prints 165 and 0o165
+!     is 01110101.  Both rows are in the checked set, so the
+!     substitution is verified rather than asserted.
+!
+! (5) LINE 37'S BYTE SIZE LOSES A TRAILING PERIOD.  The listing
+!     writes "(IQS*)DD(BU,8,8.),/*" where every other row on the
+!     page writes a bare "8", and this deck writes "8".
+!
+!     BOTH ARE EIGHT AND THE ADDRESSES PROVE IT: line 37 is at
+!     002417.20 and line 38 at 002417.30, eight bits apart, for a
+!     one-character datum.  A byte size of anything else moves line
+!     38 -- and line 38's own length is what lands on S CA6.
+!
+!     WHY IT CANNOT BE WRITTEN AS PRINTED: this assembler evaluates
+!     a trailing period as the WORD.BIT form, so "8." in a data
+!     description is 8 words = 512 bits and is refused as a byte
+!     size.  printed p.39 line 19's "CF,53." takes the same period
+!     and compiles 53, because a count field is evaluated in the
+!     other context.  The period is C22-6531's decimal marker and
+!     changes no compiled bit; the ambiguity is this assembler's,
+!     not the listing's, and it is written down rather than worked
+!     around silently.
+!
+! (3) NOTHING ELSE.  Every glyph reads cleanly at 900 dpi, including
+!     line 35's "01110101", whose fourth-from-last character the
+!     scan renders like a C (listing_typography.md 13) and which the
+!     printed 165 settles: 0o165 is 01110101 and 0o161 would be
+!     01110001.
+
+        SLC, (8)2366.0
+
+! ---- the two entries ----------------------------------------------
+SA8IQS  TI, 2, GOSMI, GKRUH         ! line 5  -SET LOOP FOR 8BIT BCD
+        B, $+1.32                   ! line 6
+SA6IQS  TI, 2, GSEST, GKRUH         ! line 7  -SET LOOP FOR 6BIT BCD
+
+! ---- the shared prologue ------------------------------------------
+        SX, $13, GULOZX             ! line 8  -SAVE ORIGINAL INDEX
+                                     !           REGISTERS
+        SX, $14, GULOZX+1.0         ! line 9
+        SX, $15, GULOZX+2.0         ! line 10
+        LV, $14, 0.0($15)           ! line 11 -PUT *IN* IN VF OF $14
+        LC, $14, .32($15)           ! line 12 -PUT *N* IN CF OF $14
+        BXCZ, GPRYC                 ! line 13
+        LV, $13, 1.0($15)           ! line 14 -PUT *OUT* IN VF OF $13
+        CNOP                        ! line 15
+GKRUH   DRZ(BU,64), (2)             ! line 16 -RESERVE 2 FULL WORDS
+
+! ---- the conversion loop ------------------------------------------
+GSKOK   LV, $15, $R                 ! line 17 -PUT BIT ADDRESS*8 IN
+                                     !           $15
+        L(BU,8), GRADA($15)         ! line 18 -LOAD 8BIT CODE IQS
+                                     !           CHARACTER
+        ST(V+I)(BU,8), .8($13)      ! line 19 -STORE SAME
+        CB, $14, GKRUH              ! line 20
+
+! ---- restore and return -------------------------------------------
+GPRYC   LX, $13, GULOZX             ! line 21 -RESTORE INDEX REGISTERS
+        LX, $14, GULOZX+1.0         ! line 22
+        LX, $15, GULOZX+2.0         ! line 23
+        B, 1.32($15)                ! line 24
+        CNOP                        ! line 25 -BACK TO RETURN
+
+! ---- the two loop bodies ------------------------------------------
+GOSMI   L(V+I)(BU,8), .8($14), 43   ! line 26 -FOR 8BIT BCD
+        C0000(BU,2), 0.0, 49        ! line 27
+GSEST   L(V+I)(BU,6), .6($14), 43   ! line 28 -FOR 6BIT BCD
+        B, GSKOK                    ! line 29
+        NOP                         ! line 30
+
+GULOZX  DRZ(BU,64), (3)             ! line 31 -RESERVE 3 FULL WORDS
+                                     !           FOR INDEXES
+
+! ---- the translate table ------------------------------------------
+GRADA   (IQS*)DD(BU,8,8),/1234567890=*                 ! line 32
+        DD(BU,8,8), (2)00101010     ! line 33 -QUOTATION (see note 4)
+        (IQS*)DD(BU,8,8),/// /STUVWXYZ*                ! line 34
+        DD(BU,8,8), (2)01110101     ! line 35 -COLON (see note 4)
+        (IQS*)DD(BU,8,8),,(///-JKLMNOPQR*              ! line 36
+        (IQS*)DD(BU,8,8),/*         ! line 37 - SEMICOLON (note 5)
+        (IQSY)DD(BU,8,8),$*///+ABCDEFGHI/.)///Y        ! line 38
+
+        END, SA8IQS
+
+! ---------------------------------------------------------------
+! THE CHECKED ROWS -- the twenty-two with binary output.  The two
+! DRZ rows print their SIZE and not a word, so they are checked by
+! the addresses of what follows them (printed p.24's verifier
+! established that), and the five IQS strings print nothing at all.
+! ---------------------------------------------------------------
+!   line  5  002366.00  002403.00 80  002374.04 A0   S A8IQS  TI
+!   line  6  002367.00  002370.50 00                 B,$+1.32
+!   line  7  002367.40  002405.00 80  002374.04 A0   S A6IQS  TI
+!   line  8  002370.40  002407.33 10                 SX
+!   line  9  002371.00  002410.35 10                 SX
+!   line 10  002371.40  002411.37 10                 SX
+!   line 11  002372.00  000000.34 3F                 LV
+!   line 12  002372.40  000000.74 5F                 LC
+!   line 13  002373.00  002401.30 42                 BXCZ
+!   line 14  002373.40  000001.32 3F                 LV
+!   line 16  002374.00  000002.00                    G KRUH  DRZ
+!   line 17  002376.00  000011.36 30                 G SKOK  LV,$15,$R
+!   line 18  002376.40  002412.00 8F  010000.20 50   L(BU,8)
+!   line 19  002377.40  000000.10 8D  110000.20 D0   ST(V+I)
+!   line 20  002400.40  002374.34 48                 CB
+!   line 21  002401.00  002407.32 10                 G PRYC  LX
+!   line 22  002401.40  002410.34 10                 LX
+!   line 23  002402.00  002411.36 10                 LX
+!   line 24  002402.40  000001.50 CF                 B,1.32($15)
+!   line 26  002403.00  000000.10 8E  110025.60 50   G OSMI  L(V+I)
+!   line 27  002404.00  000000.00 80  002030.40 70   C0000(BU,2)
+!   line 28  002405.00  000000.06 8E  106025.60 50   G SEST  L(V+I)
+!   line 29  002406.00  002376.10 00                 B,G SKOK
+!   line 30  002406.40  000000.30 00                 NOP
+!   line 31  002407.00  000003.00                    G ULOZX  DRZ
+!   line 33  002413.40  052                          (2)DD
+!   line 35  002415.20  165                          (2)DD
+!
+! AND THREE LISTING MARKS, the bare "*" after the location that
+! every page since printed p.3 carries: lines 4, 16 and 31.

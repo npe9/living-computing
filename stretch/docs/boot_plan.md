@@ -582,6 +582,19 @@ cannot be tested without it.
 > p.43 comes first), so the refusal stands and the T3 injection
 > still survives — with an expiry date.
 >
+> **A11 — AND THE PAGES CLOSE ON S CA6, 2026-10-23.** printed pp.41
+> and 42 are transcribed. p.41 defines **fourteen** of the
+> forty-three symbols pp.38-40 had been SYNning, every one where
+> those pages said — including `Y UTOE`, which p.40 read off a VFL
+> left half as the bit address 002334.64 and p.41 computes as
+> `Y UCBF1+.372`, a decimal bit offset: two pages, two notations,
+> one bit. p.42's last datum ends **exactly** at 002422.00, which is
+> `S CA6`, the address printed p.38 predicted four pages earlier and
+> the one the PC trail has been stopping at. The image is now
+> contiguous from 000621 to 002421, and **printed p.43 holds `S CA6`
+> itself** — the next page, and the one the run has been waiting
+> for.
+>
 > **A9 — THE NEXT FIVE PAGES, AND WHY FIVE.** `S CA6` is on printed
 > p.43 (p.42 ends at 002417.30, p.45 opens at 002501.71), and
 > `mcp_ipl_image()` requires the image to be contiguous — a hole

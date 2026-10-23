@@ -4340,6 +4340,71 @@ run "THE COMMUNICATION REGION FOR MCP, printed p.37, bit-exact (MCP_Mar63 PDF p.
 run "UNCODE SUBROUTINE TO DECIPHER SYSTEM CARDS, printed p.38, bit-exact (MCP_Mar63 PDF p.45)" python3 verify_mcp_bootstrap_p38.py
 run "SERVICE ROUTINES TO EXTRACT INFORMATION FROM SYSTEM CARDS, printed p.39, bit-exact (MCP_Mar63 PDF p.46)" python3 verify_mcp_bootstrap_p39.py
 run "printed p.40, bit-exact: the LIM/IOD/REEL handlers and UNCODE's exits (MCP_Mar63 PDF p.47)" python3 verify_mcp_bootstrap_p40.py
+run "RETURNS, MASKS, TEMPORARY STORAGE FOR UNCODE, printed p.41, bit-exact (MCP_Mar63 PDF p.48)" python3 verify_mcp_bootstrap_p41.py
+# >>> FOURTEEN PREDICTIONS LAND ON ONE PAGE. <<<  printed pp.38, 39
+# and 40 between them SYN'd forty-three symbols they did not define,
+# every address read off their own binary output.  This page defines
+# FOURTEEN of them -- Y NORR, Y IDX12, Y UCX12, Y UX SAV, Y UCBF1,
+# Y UCBF2, Y UTOE, Y GOMK, Y TYPMK, Y REL MK, Y COMMK, Y CNGMK,
+# Y BLWD4, Y UPDAT -- and every one is where those pages said.
+#
+# Y UTOE COULD NOT HAVE BEEN GUESSED.  p.40 line 20 is
+# "LF(BU,60,6),Y UTOE", whose VFL left half prints 002334.64, a BIT
+# address; line 37 here is "Y UTOE  SYN,Y UCBF1+.372", a DECIMAL bit
+# offset from a symbol three rows above.  002327.00 plus 372 bits is
+# 002334.64 exactly.  Two pages, two notations, one bit.
+#
+# THE THREE RESERVATIONS ARE CHECKED BY WHAT FOLLOWS THEM rather
+# than by their printed size (printed p.24's verifier established
+# that a DR/DRZ row prints a SIZE, not a word): 002324+3 = Y UCBF1,
+# 002327+8 = Y UCBF2, 002337+13 = Y GOMK -- and all three of those
+# are themselves earlier pages' predictions, so a wrong reservation
+# size moves a prediction.
+#
+# THE TEN MASKS ARE EIGHT CHARACTERS EACH AND THE COLUMN SAYS SO.
+# 48 bits at byte size 6 is eight characters, every mask blank-padded
+# to exactly eight, and the proof is column alignment at 600 dpi --
+# every end-of-statement "X" in one column.  LINE 32 IS THE CONTROL:
+# "COMPILGOX" puts its X one position EARLIER, because "COMPILGO" is
+# eight characters and leaves no room for a blank.
+run "BCD TO IQS CONVERSION ROUTINE, printed p.42, bit-exact (MCP_Mar63 PDF p.49)" python3 verify_mcp_bootstrap_p42.py
+# >>> ITS LAST DATUM ENDS EXACTLY AT S CA6. <<<  printed p.38 line 12
+# is "BD,S CA6" and its binary puts S CA6 at 002422.00 -- a
+# prediction made four pages before anything near that address was
+# opened, and the address the boot run's PC trail has been stopping
+# at.  This page's last row is 21 characters of IQS data starting at
+# 002417.30, and 21 times 8 bits lands on 002422.00 TO THE BIT; the
+# assembler's highest compiled word is 0o2421, the one before it.
+#
+# That checks the whole character-count chain at once.  Lines 32-38
+# print no binary except two radix-2 bytes, so no character code is
+# checked or can be -- but every string's LENGTH is pinned by the
+# address of the row after it, and the last one by a symbol a
+# different deck predicted.
+#
+# LINE 24 IS listing_typography.md 13 AT ITS THICKEST: at 200 dpi the
+# row reads "C00CC1.5C  CF" and at 900 dpi every one of those glyphs
+# is a digit zero -- "000001.50  0F".  The DECODE settles it without
+# the re-render, which is the rule: printed p.40 lines 37 and 41 are
+# the same instruction shape, "B,2.32($14)", printing "000002.50 0E",
+# so a branch through an index gives 0 in the high nibble and "CF" is
+# not an operation this machine has.
+#
+# THE DECK BOUNDARY IS "SLC,$" AND IT ROUNDS.  Line 4 is "SLC,$" at
+# 002365.60 and line 5 is at 002366.00, so setting the counter to "$"
+# rounds up to the next word.  The sixteen-bit gap is INSIDE word
+# 002365, which p.41 compiles, so mcp_ipl_image()'s contiguity check
+# sees no hole: it counts WORDS, and that word is present.
+#
+# TWO SUBSTITUTIONS, both CHECKED rather than asserted.  The radix
+# moves from the statement to the operand -- the listing writes
+# "(2)DD(BU,8,8),00101010" and the deck writes
+# "DD(BU,8,8), (2)00101010" -- and both rows are in the checked set,
+# where 0o52 is 00101010 and 0o165 is 01110101.  And line 37's byte
+# size loses a trailing period ("8." -> "8"), because this assembler
+# evaluates a trailing period as WORD.BIT and 8 words is 512; the
+# addresses prove the size is eight either way, since line 38 sits
+# eight bits later and line 38's own length is what lands on S CA6.
 # >>> MCP EXECUTES A SWAP, AND THIS PAGE IS THE PROOF. <<<  Lines 24
 # and 28 are "SWAPI,3,$11,Y UX SAV" -- three words from the UNCODE
 # subroutine's normal exit -- and the page carries its own control:
