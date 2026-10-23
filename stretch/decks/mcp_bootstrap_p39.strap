@@ -1,0 +1,228 @@
+! mcp_bootstrap_p39.strap -- SERVICE ROUTINES TO EXTRACT INFORMATION
+! FROM SYSTEM CARDS, printed page 39.
+! docs/MCP_Mar63_001-249.pdf PDF p.46, header "PAGE NUMBER 39".
+! docs/boot_plan.md M3.
+!
+! >>> THREE OF PRINTED p.38's FOURTEEN PREDICTIONS LAND HERE, ON THE
+! VERY NEXT PAGE. <<<
+!
+! p.38 used fourteen symbols it did not define and SYN'd each from
+! its own binary output.  This page DEFINES three of them, at the
+! addresses p.38 said:
+!
+!   Y JCBC   002213.00   p.38 line 30's "BXEZ,Y JCBC"   -- line 4
+!   Y TCPGO  002214.40   p.38 line 31's "BXLZ,Y TCPGO"  -- line 7
+!   Y LIMC   002246.00   p.38 line 33's "BXEZ,Y LIMC"   -- line 44
+!
+! AND Y TCPGO WAS THE SHARPEST OF THE THREE.  p.38 line 31 prints
+! "002214.72 46", whose ".72" has BIT 18 SET -- the half-word
+! selector -- so the address is 002214.40 and not 002214.00.  Line 7
+! here is 002214.40.  A reading that ignored bit 18 would have been
+! half a word wrong and would have failed here.
+!
+! IT CONFIRMS FOUR MORE FROM EARLIER PAGES, which is the same
+! cross-check running the other way:
+!
+!   S ROOF   002162.00   printed p.37 line 37   -- line 20 reads it
+!   Y USB8C  002200.00   printed p.38 line 21   -- line 30 reads it
+!   Y NLST   001775.40   printed p.36 line 31   -- line 34 compares
+!   Y NOPUN  001775.40   printed p.36 line 31   -- line 40 compares
+!   Y UER    002311.00   p.38's prediction      -- lines 6, 17, 18
+!   Y UCBF2  002337.00   p.38's prediction      -- lines 9, 33, 39,
+!                                                  51, 53
+!
+! ---------------------------------------------------------------
+! WHAT THIS PAGE IS
+! ---------------------------------------------------------------
+! Fifty-six rows, fifty-three of them code.  Three entry points, one
+! per card kind that printed p.38's dispositions branch to:
+!
+!   Y JCBC  (line 4)   the JOB card.  Two rows and out.
+!   Y TCPGO (line 7)   the T.O.P. card.  Compares the card's first
+!                      forty-eight bits against four masks in turn --
+!                      Y GOMK, Y COMMK, Y CNGMK, Y UPDAT -- and goes
+!                      to a different place for each.  The GO case
+!                      sets a count field, tests the system-mode bit
+!                      S YSMCD, clears S CORG and sets up Y LOL1 and
+!                      Y LOL2 before branching to Y BCRD.
+!   Y LIMC  (line 44)  the LIM card.  "CONVERT BCD ZEROS TO TRUE
+!                      ZEROS" -- a six-bit byte loop over the card
+!                      buffer replacing (2)001010, which is the same
+!                      BCD ZERO printed p.24 line 13 writes with
+!                      "LFI(BU,4),(2)1010,46", with a true zero.  Then
+!                      two LF/SF pairs convert the limits to binary.
+!
+! ---------------------------------------------------------------
+! "SF" IS A CONNECTIVE WEARING ANOTHER NAME, and this page is where
+! it was found
+! ---------------------------------------------------------------
+! Line 52 is "SF(BU,18,3),$12" and the assembler did not know it.
+! The printed word is
+!
+!     002254.00   000034.00 80   022300.12 F0
+!
+! and the trailing F0 is CM, Connect to Memory (C prints 70, CT 77).
+! The ".12" is bits 18-23 of the right half word, whose bits 19-22
+! are the CONNECTIVE FUNCTION: 0101, five.  CM0011 renders ".06" and
+! does not match; CM0101 renders ".12" and does.
+!
+! AND THE PAIR MAKES SENSE AS A PAIR.  "LF" was already known to be
+! C0011 (strap/strap_asm.py CONNECTIVE_ALIASES, from printed p.5
+! line 12).  A connective's four bits are a TRUTH TABLE over
+! (accumulator bit, memory bit), so 0011 and 0101 are the two
+! operand-SELECTING functions: LOAD FIELD takes the memory operand
+! into the accumulator with C, STORE FIELD takes the accumulator
+! operand into memory with CM.  Same datapath, the other projection,
+! the other half of the table.  Line 51's LF and line 52's SF are
+! adjacent rows doing exactly that.
+!
+! ---------------------------------------------------------------
+! SUBSTITUTIONS
+! ---------------------------------------------------------------
+! (1) BLANKS INSIDE SYMBOL NAMES ARE DROPPED, as on every page since
+!     p.2.  Note that this listing's STATEMENT column already prints
+!     them without blanks -- "LV,$13,SROOF" where the NAME column on
+!     printed p.37 prints "S ROOF" -- so the substitution is visible
+!     here as the two columns disagreeing, which is what makes it
+!     safe.
+!
+! (2) "S CORG" IS NOT "S COM RG".  Line 19 is "CM0000(BU,1),SCORG"
+!     with a left address of 002151.03 -- word 0o2151, BIT 3 -- and
+!     printed p.37 line 11 puts S COM RG at 002151.00 with the
+!     comment "THE SYSTEM WORD FLAG".  So S CORG is a one-bit flag
+!     INSIDE the word S COM RG names, three bits in, and the two are
+!     different symbols for overlapping storage.  Both are carried
+!     here, and the addresses are read off the binary rather than
+!     assumed from the similar spelling.
+!
+! (3) NOTHING ELSE.  Every glyph reads cleanly at 900 dpi.
+!
+! ---------------------------------------------------------------
+! THE STAND-IN SYNs, AND WHERE EACH ADDRESS COMES FROM
+! ---------------------------------------------------------------
+! A VFL instruction's LEFT half word is a clean twenty-four bit BIT
+! address -- eighteen bits of word and six of bit, with no J field in
+! it -- so the K/L/CM rows give their operand's address directly.  A
+! HALF-WORD instruction's ".bb" is bits 18-23 and has to be decoded:
+! bit 18 the half-word selector, 19-22 the J field, 23 the first bit
+! of the operation code.
+!
+!   Y NORR   002313.40  lines 5, 11, 32, 43 -- FOUR rows, ".72",
+!                       ".76", ".73" and ".50", every one bit 18 SET
+!   Y GOMK   002354.00  line 10, VFL left address
+!   Y COMMK  002362.00  line 12, VFL left address
+!   Y CNGMK  002363.00  line 14, VFL left address
+!   Y UPDAT  002365.00  line 16, VFL left address
+!   S YSMCD  002151.10  line 18's left, a BIT address: word 0o2151
+!                       bit 0o10, which is bit 8
+!   S CORG   002151.03  line 19's left, bit 3 of the same word
+!   Y LOL2   005464.40  line 21, ".73", bit 18 SET
+!   Y LOL1   005465.00  line 23, ".33", bit 18 clear -- and line 24
+!                       CONFIRMS it independently, since
+!                       "Y LOL1+.25" prints 005465.31 and 0o31 is 25
+!   Y BCRD   005464.00  line 25, ".10", bit 18 clear
+!   Y UCX12  002322.00  line 44, ".30", bit 18 clear
+!   S TERMI  005465.40  line 55, ".70", bit 18 SET
+!   Y UCLLC  002262.00  line 56, ".32", bit 18 clear
+!
+! FOUR OF THEM ARE AT 0054xx, which is nowhere near this page: 005464
+! through 005465, just below X IN END at 005466.  They are in the
+! buffer area, on pages not yet opened.
+
+        SLC, (8)2213.0
+
+YNORR   SYN, (8)2313.40
+YUER    SYN, (8)2311.0
+YUCBF2  SYN, (8)2337.0
+YGOMK   SYN, (8)2354.0
+YCOMMK  SYN, (8)2362.0
+YCNGMK  SYN, (8)2363.0
+YUPDAT  SYN, (8)2365.0
+SYSMCD  SYN, (8)2151.10
+SCORG   SYN, (8)2151.03
+SROOF   SYN, (8)2162.0
+YLOL2   SYN, (8)5464.40
+YLOL1   SYN, (8)5465.0
+YBCRD   SYN, (8)5464.0
+YUSB8C  SYN, (8)2200.0
+YNLST   SYN, (8)1775.40
+YNOPUN  SYN, (8)1775.40
+YUCX12  SYN, (8)2322.0
+STERMI  SYN, (8)5465.40
+YUCLLC  SYN, (8)2262.0
+
+        SLC, (8)2213.0
+
+! ---- the JOB card -------------------------------------------------
+YJCBC   KV, $13, 1.0($14)           ! line 4
+        BXEZ, YNORR                 ! line 5
+        B, YUER                     ! line 6
+
+! ---- the T.O.P. card ----------------------------------------------
+YTCPGO  Z, $12                      ! line 7  -GO - SET COUNT FIELD
+                                     !           TO PROPER
+        LCI, $12, (2)00100          ! line 8  -VALUE + GO TO NORMAL
+                                     !           RETURN
+        L(BU,48), YUCBF2+1.0        ! line 9
+        K(BU,48), YGOMK             ! line 10
+        BAE, YNORR                  ! line 11
+        K(BU,48), YCOMMK            ! line 12
+        BAE, YTOPCM                 ! line 13
+        K(BU,48), YCNGMK            ! line 14
+        BAE, YTOPCG                 ! line 15
+        K(BU,48), YUPDAT            ! line 16
+        BZAE, YUER                  ! line 17
+        BZB, SYSMCD, YUER           ! line 18
+        CM0000(BU,1), SCORG         ! line 19
+        LV, $13, SROOF              ! line 20
+        SV, $13, YLOL2              ! line 21
+        Z, $13                      ! line 22
+        SV, $13, YLOL1              ! line 23
+        CM1111(BU,1), YLOL1+.25     ! line 24
+        B, YBCRD                    ! line 25
+        B, YUER                     ! line 26
+
+YTOPCM  LCI, $12, (2)10011          ! line 27
+        B, YTOPCG+.32               ! line 28
+
+YTOPCG  LCI, $12, (2)01011          ! line 29
+        LC, $15, YUSB8C             ! line 30
+        KCI, $15, 2.0               ! line 31
+        BZXH, YNORR                 ! line 32
+        L(BU,48), YUCBF2+3.0        ! line 33
+        K(BU,48), YNLST             ! line 34
+        BZAE, $+1.32                ! line 35
+        CM0000(BU,1), $12+.44       ! line 36
+        KCI, $15, 3.0               ! line 37
+        BZXH, YNORR                 ! line 38
+        L(BU,48), YUCBF2+4.0        ! line 39
+        K(BU,48), YNOPUN            ! line 40
+        BZAE, YNORR                 ! line 41
+        CM0000(BU,1), $12+.45       ! line 42
+        B, YNORR                    ! line 43
+
+! ---- the LIM card -------------------------------------------------
+YLIMC   LX, $12, YUCX12             ! line 44 -LIM CARD- CONVERT BCD
+                                     !           ZEROS
+        LI(BU,6), (2)001010         ! line 45 -TO TRUE ZEROS
+YLL2    CT0110(V+I)(BU,6), .6($12)  ! line 46 -IS THIS BYTE A BCD
+                                     !           ZERO
+        BZRZZ, $+1.32               ! line 47 -IF NOT TEST NEXT BYTE
+        CM0000(BU,6), -.6($12)      ! line 48 -IF SO, REPLACE BY TRUE
+                                     !           ZERO
+        CBR, $12, YLL2              ! line 49
+        BZXF, YLL2                  ! line 50
+        LF(BU,36,6), YUCBF2+1.0     ! line 51 -LIMITS TO
+        SF(BU,18,3), $12            ! line 52 -BINARY, PUT IN $12
+        LF(BU,36,6), YUCBF2+2.0     ! line 53
+        SF(BU,18,3), $12+.28        ! line 54
+        KV, $12, STERMI             ! line 55
+        BXL, YUCLLC                 ! line 56
+
+        END, YJCBC
+
+! ---------------------------------------------------------------
+! TWO LISTING MARKS, recorded and not explained -- the same bare "*"
+! after the location that printed pp.3, 37 and 38 carry.  Here it is
+! on line 14 ("002221.40 *"), line 32 ("002235.00 *") and line 47
+! ("002250.40 *").  None changes a compiled bit.

@@ -5395,6 +5395,93 @@ no opcode can rule it out. What ruled it out was the datum the name
 labels — which is a tell worth stating on its own: *when a name
 labels data, decode the data before trusting the name.*
 
+## PRINTED p.39, AND p.38's PREDICTIONS START LANDING, 2026-10-23
+
+printed p.38 used fourteen symbols it did not define and SYN'd each
+from its own binary output. **Three of them are defined on the very
+next page**, at exactly the addresses p.38 said:
+
+| symbol | address | p.38's row | p.39's row |
+|---|---|---|---|
+| `Y JCBC` | 002213.00 | line 30, `BXEZ,Y JCBC` | line 4 |
+| `Y TCPGO` | 002214.40 | line 31, `BXLZ,Y TCPGO` | line 7 |
+| `Y LIMC` | 002246.00 | line 33, `BXEZ,Y LIMC` | line 44 |
+
+**`Y TCPGO` is the sharpest of the three.** p.38 line 31 prints
+`002214.72 46`, and `.72` has **bit 18 set** — the half-word
+selector — so the address is `002214.40` and not `002214.00`. Line
+7 here is `002214.40`. A reading that ignored bit 18 would have been
+half a word wrong, and would have been caught by a page transcribed
+afterwards.
+
+p.39 confirms six more by *using* them: `S ROOF` (p.37), `Y USB8C`
+(p.38), `Y NLST` and `Y NOPUN` (p.36, both at 001775.40), and p.38's
+predictions `Y UER` and `Y UCBF2`.
+
+### `SF` is a connective wearing another name
+
+Line 52 is `SF(BU,18,3),$12` and the assembler refused it. The
+printed word is
+
+```
+002254.00   000034.00 80   022300.12 F0
+```
+
+The trailing `F0` is **CM**, Connect to Memory (C prints `70`, CT
+`77`), and `.12`'s bits 19-22 are the connective **function: 0101**.
+`CM0011` renders `.06` and does not match; `CM0101` renders `.12`
+and does.
+
+**And the pair makes sense as a pair**, which is what makes it more
+than a fitted constant. `LF` was already known to be `C0011`. A
+connective's four bits are a **truth table over (accumulator bit,
+memory bit)**, so `0011` and `0101` are the two *operand-selecting*
+functions — LOAD FIELD takes the memory operand into the accumulator
+with `C`, STORE FIELD takes the accumulator operand into memory with
+`CM`. Lines 51 and 52 are adjacent rows doing exactly that.
+
+**Three injections**, through `tests/inject.py`, and each wrong
+candidate fails in a *different field* — which is how the check
+shows it pins both halves of the derivation: `CM0011` (LF's
+function) misses in the function field, `C0101` misses in the
+C-versus-CM byte, `CM1010` misses in the function field the other
+way.
+
+The same lesson `LF` taught: **before implementing a mnemonic,
+decode one of its assembled words and look for that bit pattern
+among the operations already encoded.** No tally is kept here on
+purpose — `LF`, the `LFI` suffix fix and this one are the same
+lesson in three different shapes, and counting them invites the
+ordinal to go stale.
+
+### Three rows needed a second look, and the deck was right about all three
+
+Each is a reading fault this project already has a name for:
+
+- **line 25** — its LOCATION is `002231.40`, which a 200 dpi read
+  made `002231.00`. **The tell was arithmetic, not typography**:
+  line 24 is a full-word VFL instruction, so line 25 cannot be half
+  a word after it. (A full word at an *odd* half word is normal
+  here; p.38 line 6 does it too.)
+- **line 43** — the code column prints `002313.5C  C0` and **both
+  of those glyphs are digit zeros**: `002313.50 00`. The octal field
+  proves it — `.5C` cannot be octal — and the hex byte follows,
+  because the two glyphs are the same shape. `listing_typography.md`
+  §13, with §13a's self-disagreeing field one level up: the row
+  above prints `001000.00 F0` with round zeros.
+- **line 55** — the binary is `.70 90`, not `.70 50`. A 200 dpi read
+  made the 9 a 5, which decoded to `LC` where the statement column
+  says `KV` in crisp 900 dpi glyphs. **600 dpi for octal and 900 for
+  hex is the rule and 200 dpi is not evidence**; the two columns
+  never actually disagreed.
+
+### The run is unchanged, deliberately
+
+MCP calls `S CA6` before it reaches any of p.39's entry points, and
+`S CA6` is on printed p.43. p.39 is one of the four pages the image
+needs in order to stay **contiguous** before p.43 can be added.
+Three to go: pp.40, 41, 42.
+
 ## MCP IS RUNNING THE UNCODE SUBROUTINE, 2026-10-23
 
 printed p.38 line 4 is

@@ -1055,8 +1055,34 @@ def classify_connective(op):
 # guess, and that is why it is still not here.  LF's number was
 # recovered from an assembled word (MCP printed p.5 line 12, above);
 # no assembled SF has been found in this corpus.
+# >>> TWO MNEMONICS THAT ARE CONNECTIVES WEARING ANOTHER NAME. <<<
+#
+# "LF" looked like a missing instruction and is C0011 -- established
+# 2026-10-20 from MCP printed p.5 line 12, and the tell was that the
+# decoded modifier bits contradicted the written "(BU)", because for
+# a connective bits 51-54 are the FUNCTION and not abc.
+#
+# "SF" IS ITS MIRROR, found the same way on 2026-10-23 from MCP
+# printed p.39 line 52, "SF(BU,18,3),$12", which prints
+#
+#     002254.00  000034.00 80  022300.12 F0
+#
+# The trailing F0 is CM, Connect to Memory (C is 70, CT is 77), and
+# the ".12" is bits 18-23 of the right half word -- bits 19-22 of
+# which are the connective function: 0101, FIVE.  CM0011 renders
+# ".06" and does not match; CM0101 renders ".12" and does.
+#
+# AND THE PAIR MAKES SENSE AS A PAIR, which is what makes it more
+# than a fitted constant.  A connective's four bits are a TRUTH
+# TABLE over (accumulator bit, memory bit), so 0011 and 0101 are the
+# two operand-selecting functions -- one takes the memory operand,
+# the other the accumulator operand.  LOAD FIELD moves memory into
+# the accumulator with C (result to accumulator); STORE FIELD moves
+# the accumulator into memory with CM (result to storage).  Same
+# datapath, the other projection, and the other half of the table.
 CONNECTIVE_ALIASES = {
-    'LF': ('C', 0b0011),
+    'LF': ('C',  0b0011),
+    'SF': ('CM', 0b0101),
 }
 
 

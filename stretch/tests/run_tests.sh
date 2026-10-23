@@ -4328,6 +4328,64 @@ run "MCP INITIALIZATION, printed p.35, bit-exact (MCP_Mar63 PDF p.42)" python3 v
 run "MCP INITIALIZATION, printed p.36, bit-exact (MCP_Mar63 PDF p.43)" python3 verify_mcp_bootstrap_p36.py
 run "THE COMMUNICATION REGION FOR MCP, printed p.37, bit-exact (MCP_Mar63 PDF p.44)" python3 verify_mcp_bootstrap_p37.py
 run "UNCODE SUBROUTINE TO DECIPHER SYSTEM CARDS, printed p.38, bit-exact (MCP_Mar63 PDF p.45)" python3 verify_mcp_bootstrap_p38.py
+run "SERVICE ROUTINES TO EXTRACT INFORMATION FROM SYSTEM CARDS, printed p.39, bit-exact (MCP_Mar63 PDF p.46)" python3 verify_mcp_bootstrap_p39.py
+# >>> THREE OF p.38's FOURTEEN PREDICTIONS LAND ON THE VERY NEXT
+# PAGE: Y JCBC at 002213.00, Y TCPGO at 002214.40 and Y LIMC at
+# 002246.00.  Y TCPGO was the sharpest -- p.38 line 31 prints
+# "002214.72 46", whose ".72" has BIT 18 SET, so the address is
+# .40 and not .00.  A reading that ignored bit 18 would have been
+# half a word wrong and would have failed here. <<<
+#
+# AND IT CONFIRMS SIX MORE BY USING THEM: S ROOF (p.37), Y USB8C
+# (p.38), Y NLST and Y NOPUN (p.36, both at 001775.40), Y UER and
+# Y UCBF2 (p.38's predictions).
+#
+# "SF" WAS FOUND HERE.  Line 52 is "SF(BU,18,3),$12", which the
+# assembler did not know; its trailing F0 is CM (Connect to Memory;
+# C prints 70, CT 77) and the ".12" carries connective function
+# 0101.  SF IS CM0101, the mirror of LF's C0011 -- a connective's
+# four bits are a TRUTH TABLE over (accumulator, memory), and 0011
+# and 0101 are the two operand-SELECTING functions.  Lines 51 and
+# 52 are adjacent rows doing exactly that: load field from memory
+# with C, store field to memory with CM.
+#
+# THREE INJECTIONS, through tests/inject.py (a Python mutation
+# against a Python verifier, which is what that harness is for), and
+# each wrong candidate fails in a DIFFERENT FIELD -- which is how
+# the check shows it pins both halves of the derivation and not just
+# one:
+#
+#   SF as CM0011, LF's function and the obvious wrong answer
+#     -> 022300.06 where the listing has 022300.12.  The FUNCTION
+#        field, lines 52 and 54.
+#   SF as C0101, right function and wrong destination
+#     -> trailing 70 where the listing has F0.  The C-versus-CM
+#        byte, same two lines.
+#   SF as CM1010, the complement of 0101
+#     -> 022300.24.  The function field again, the other way.
+#
+# strap_asm.py was saved, mutated, restored and diffed byte-for-byte
+# against the saved copy.
+#
+# THREE ROWS NEEDED A SECOND LOOK AND THE DECK WAS RIGHT ABOUT ALL
+# THREE, each one a reading fault this project already has a name
+# for:
+#   line 25  LOCATION is 002231.40, not .00.  The tell was
+#            ARITHMETIC: line 24 is a full-word VFL, so line 25
+#            cannot be half a word after it.
+#   line 43  prints "002313.5C  C0" and BOTH glyphs are digit zeros
+#            (listing_typography.md 13).  The OCTAL FIELD proves it
+#            -- ".5C" cannot be octal -- and the hex byte follows,
+#            because the two glyphs are the same shape.
+#   line 55  is ".70 90", not ".70 50".  A 200 dpi read made the 9 a
+#            5, which decoded to LC where the statement says KV.
+#            600 dpi for octal and 900 for hex is the rule; 200 dpi
+#            is not evidence, and the two columns never disagreed.
+#
+# THE RUN IS UNCHANGED BY IT, deliberately: MCP calls S CA6 before
+# it reaches any of p.39's entry points, and S CA6 is on printed
+# p.43.  p.39 is one of the four pages the image needs to stay
+# CONTIGUOUS before p.43 can be added.
 # >>> THIS IS WHERE MCP WENT, and the page says so in one address.
 # printed p.37 line 45 puts S PRIME at 002166.00; the boot run's PC
 # trail said MCP's initialization branched to half-word 2284, which
