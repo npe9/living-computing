@@ -69,16 +69,21 @@
 ! several is only ever observed at the earliest.
 !
 ! WEAKER STANDARD: hand-written from Reference Manual printed p.30 and
-! the pocket card's TRANSMIT box.  No listing this project has read
-! prints a SWAP.  THE BACKWARD HALF OF THAT SENTENCE DIED ON
-! 2026-10-22: MCP's printed p.19 line 41 is a backward Transmit, and
-! `decks/mcp_bootstrap_p19.strap` reproduces it bit-exactly against
-! the printed machine code -- so backward is ENCODING-validated by a
-! listing even though its EXECUTION is still only pinned by
-! hand-written decks (this one and transmit_multiword).  jb_ax4b
-! section 146's own test plan covers forward/backward x
-! direct/immediate x transmit/swap and remains untranscribed; that is
-! the cross-validation still owed.
+! the pocket card's TRANSMIT box.
+!
+! >>> THIS PARAGRAPH SAID "No listing this project has read prints a
+! SWAP" AND IT IS FALSE TWICE OVER. <<<  Its backward half died on
+! 2026-10-22 (MCP printed p.19 line 41 is a backward Transmit, and
+! decks/mcp_bootstrap_p19.strap reproduces it bit-exactly).  THE
+! SWAP HALF DIED ON 2026-10-23, and by then two listings printed
+! one: jb_ax4b routine 1246 TEST 2C, transcribed in
+! decks/ax4b_1246_transmit_swap.strap, and MCP printed pp.40, 43, 45
+! and 46, which carry NINE SWAPIs between them.
+!
+! AND "jb_ax4b section 146's own test plan ... remains untranscribed"
+! was stale too: TEST 2A, 2B and 2C are all transcribed, and 2C's
+! EXECUTION is now tested by decks/swap_scope.strap, which is where
+! SWAP's semantics live.
 
         SLC, (8)4100.0
 !
@@ -86,10 +91,23 @@
 START   TI,    1, SRC, DST1
         BOP,   $                     ! hang if OP came on: this one is legal
 !
-! ---- 2. SWAPI: refused.  The case that was silently wrong ---------
-        SWAPI, 1, SRC, DST2
-        BZOP,  $                     ! hang if OP did NOT come on
-        BOPZ,  $+.32                 ! clear OP for the next case
+! ---- 2. SWAPI: HONOURED SINCE 2026-10-23, and this block used to
+! ---- assert the opposite ------------------------------------------
+! It read "SWAPI: refused.  The case that was silently wrong", and it
+! was right for as long as nothing in the corpus executed a swap.
+! MCP printed pp.40, 43, 45 and 46 carry NINE SWAPIs, and printed
+! p.40's Y REELC executes two of them on the path a REEL card takes,
+! so the refusal went from documented absence to blocker.  Forward
+! SWAP is built; decks/swap_scope.strap is where its semantics are
+! checked, including the overlapping-areas case that separates an
+! exchange from a copy.  THIS BLOCK NOW ASSERTS THE OPPOSITE OF WHAT
+! IT ASSERTED, which is why the old text is quoted rather than
+! deleted.
+! AND IT SWAPS ITS OWN PAIR, not SRC: an exchange EMPTIES the sending
+! word, and blocks 3-6 all read SRC afterwards.  SRC2 holds the same
+! pattern so the block still tests the same thing.
+        SWAPI, 1, SRC2, DST2
+        BOP,   $                     ! hang if OP came on: this one is legal
 !
 ! ---- 3. TI, immediate count 2: HONOURED, TWO words move -----------
 ! This block used to assert a refusal.  Both words are checked, so a
@@ -169,7 +187,9 @@ SRC     DD(BU,64,8), (8)1111111111111111111111
         SLC, (8)4300.0
 DST1    DD(BU,64,8), 0               ! must RECEIVE src
         SLC, (8)4310.0
-DST2    DD(BU,64,8), 0               ! must stay zero: SWAPI is refused
+SRC2    DD(BU,64,8), (8)1111111111111111111111   ! block 2's own sender
+        SLC, (8)4311.0
+DST2    DD(BU,64,8), 0               ! must RECEIVE src2; SRC2 ends zero
         SLC, (8)4320.0
 DST3    DD(BU,64,8), 0               ! two words, both must receive
         DD(BU,64,8), 0

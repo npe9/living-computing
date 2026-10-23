@@ -392,8 +392,30 @@ another, which is what a two-way interchange is for.
 Decimal-mode VFL (`c=1`), radix conversion (`CV`, `DCV`, `LCV`,
 `LTRCV`), the compare variants `KE`/`KF`/`KFE`/`KFR`, `LTRS`, `RNX`,
 Input-Output's `LOC` **on an Exchange channel** (the disk form is
-executed — see above) and most of `CTL`, and Transmit **`SWAP`**
-(backward moved to "Executed" on 2026-10-22).
+executed — see above) and most of `CTL`, and Transmit's **BACKWARD
+`SWAP`** only (`SWAPB`/`SWAPBI`).
+
+**`SWAP` LEFT THIS LIST ON 2026-10-23** — the FORWARD forms, `SWAP`
+and `SWAPI`, execute. The entry used to read "Transmit **`SWAP`**
+(backward moved to 'Executed' on 2026-10-22)". What is left is the
+backward pair, and the reason is narrower than "not built": **nothing
+in this corpus encodes one.** `tests/verify_ax4b_1246_modifiers_
+listing.py` calls `SWAPB` and `SWAPBI` *card-only* — named on pocket
+card X22-6533 and written by no deck — so building them would be
+manual-derived with no oracle, and `rl_xmit`'s sign handling would
+carry them unchanged the day one turns up.
+
+**WHAT CHECKS THE FORWARD FORMS:** `decks/swap_scope.strap`, five
+blocks, every expected value computed from Reference Manual printed
+p.30 before the arm existed. Block 1 is IBM's own `jb_ax4b` routine
+1246 TEST 2C with its branch logic replaced by a storage check; block
+4 overlaps the two areas by one word, which is the only way to see
+the order the words are exchanged in.
+
+*The caution this list exists for applies to its own former entry:
+the claim "nothing in the corpus executes one" was true when written
+and stopped being true when MCP printed pp.40-46 were transcribed.
+A scope list is a measurement with a date on it.*
 
 **TWO STALE ENTRIES WERE REMOVED FROM THIS LIST, 2026-10-19,** and
 they are named rather than quietly deleted because a scope list

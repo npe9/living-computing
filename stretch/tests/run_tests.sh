@@ -1283,6 +1283,17 @@ run "MULTI-WORD TRANSMIT, FORWARD AND BACKWARD (RefMan printed p.30)" ./run_prog
 #          by decks/ax4b_1246_transmit_swap.strap; its EXECUTION is
 #          not tested by anything and this says so.
 #
+#          >>> THE EXPIRY DATE ARRIVED ON 2026-10-23 AND T3 NO
+#          LONGER SURVIVES. <<<  Forward SWAP is built, and
+#          decks/swap_scope.strap now tests its EXECUTION -- five
+#          blocks, every expected value computed from Reference
+#          Manual printed p.30 before the arm existed.  An injection
+#          that accepts SWAP as a Transmit fails block 1 with IBM's
+#          own symptom: the sending word comes back unchanged.
+#          Nine SWAPIs across MCP printed pp.40, 43, 45 and 46, and
+#          printed p.40's Y REELC executes two of them on the path a
+#          REEL card takes.
+#
 # AND THE DECK'S ALIGNMENT PAD HAD TO CHANGE, which is worth keeping
 # because it failed loudly and in a recognisable shape.  The pad was
 # "NOP, 0" -- exactly one half-word, and therefore correct only while
@@ -4880,9 +4891,18 @@ run "THE BREAKDOWN ROUTINE, printed p.45, bit-exact (MCP_Mar63 PDF p.52)" python
 # tests/gen_tb's new `op_trail` says the OP indicator is raised ONCE
 # in the whole run, at half-word 1304 = 001214.00 -- printed p.24's
 # TIME CONVERSION -- and a control run with p.45 taken back out
-# raises it at the same address.  So no SWAP executed, and that is
-# now a result rather than a reading.  SWAP has six documented
-# callers: two on printed p.40, one on p.43, three here.
+# raises it at the same address.  SWAP has six documented callers at
+# this page: two on printed p.40, one on p.43, three here.
+#
+# >>> "SO NO SWAP EXECUTED, AND THAT IS NOW A RESULT RATHER THAN A
+# READING" IS WHAT THIS SAID, AND IT WAS WRONG. <<<  op_trail counts
+# RISING EDGES of OP, and the refusal at printed p.43 line 53 was
+# raised while OP was already high from 001214.00 -- no edge, nothing
+# counted.  When forward SWAP was built on 2026-10-23 StretchCore
+# began announcing each swap that starts and the boot printed exactly
+# one: "SWAP started at half-word 2649, 6 words", which is 002454.40,
+# Q FIN's index-register restore.  A trail that can only see a
+# TRANSITION cannot answer "did this ever happen".
 #
 # LINE 30 IS listing_typography.md 13 IN A NEW SHAPE: at 900 dpi the
 # row prints "3C* C02520.00   C02516.50 C0", THREE separate zeros
@@ -5403,9 +5423,79 @@ run "Opcode coverage audit (ratchet)" python3 audit_opcode_coverage.py
 # BZB1/BZBN/BZBZ (branch-if-off with set-one / invert / set-zero) and
 # the four I/O Suppress-End-Of-Op forms.
 
+run "SWAP: the exchange, and the overlap that tells it from a copy" ./run_program.sh ../decks/swap_scope.strap StretchSwapScopeTb \
+    "PC=$(python3 -c 'from strap_asm import assemble; print(assemble(open("../decks/swap_scope.strap").read()).symtab["HALT"]//32)')" \
+    "A1:2183=0xA72EE0A72EE0A72E" "B1:2184=0x0" \
+    "A2_0:2185=0xFFFFFFFFFFFFFFE4" "A2_1:2186=0xFFFFFFFFFFFFFFED" \
+    "A2_2:2187=0xFFFFFFFFFFFFFFF6" \
+    "B2_0:2188=0x9" "B2_1:2189=0x12" "B2_2:2190=0x1B" \
+    "A3:2191=0x9249249249249249" "B3:2192=0x3F" \
+    "OV_0:2193=0x2" "OV_1:2194=0x3" "OV_2:2195=0x1" \
+    "A5:2196=0x5" "B5:2197=0x6"
+# >>> FORWARD SWAP IS BUILT, 2026-10-23, and it was the last unbuilt
+# arm with a caller MCP is about to reach. <<<
+#
+# Reference Manual printed p.30: "...AT THE SAME TIME, the full words
+# of the area which starts at the right effective address are
+# transmitted to the area which starts at the left effective
+# address."  An exchange needs TWO reads and TWO writes per word and
+# this model has one of each per rule, so a swapped word takes THREE
+# clocks in rl_xmit -- read the sender, read the receiver and write
+# the sender's value into it, then write the receiver's old value
+# back.  BOTH READS HAPPEN BEFORE EITHER WRITE, and that is the whole
+# of "at the same time".
+#
+# A SWAP MOVES NO WORD IN THE EXECUTE ARM AT ALL, which is the one
+# asymmetry with Transmit worth naming: Transmit's first word is
+# moved there and the rest by rl_xmit; a swap's first word is
+# rl_xmit's too, because the arm has one write.
+#
+# WHY NOW.  MCP printed pp.40, 43, 45 and 46 carry NINE SWAPIs, and
+# printed p.40's Y REELC executes TWO of them on the path a REEL card
+# takes -- so the moment the fixture punches the IOD and REEL cards
+# printed p.25 expects, the refusal stops being a documented absence
+# and becomes a blocker.  Building it first is the dependency
+# docs/NEXT.md records.
+#
+# EVERY EXPECTED VALUE ABOVE WAS COMPUTED FROM p.30's SENTENCE IN
+# PYTHON BEFORE THE ARM WAS BUILT, not read off the model.
+#
+# TWO INJECTIONS, OBSERVED, and the second is why block 4 exists:
+#
+#   WRITE BEFORE READ -- rl_xmit's phase 0 made to write the
+#   receiving word as soon as the sender is in hand, so phase 1 reads
+#   a word it has already clobbered.  FAILS A1, A2_0, A3 and the
+#   overlap: every SENDING word comes back unchanged, which is IBM's
+#   own failure message -- "SWAP FAILS TO ALTER ORIGINAL WD AND
+#   THEREFORE ACTS LIKE TRANSMIT" -- and the overlap reads 1 1 1.
+#
+#   REVERSE WORD ORDER -- the execute arm made to start the swap at
+#   the LAST word of each area and step down.  PASSES EVERY DISJOINT
+#   BLOCK and fails ONLY block 4, which comes back 3 1 2 where the
+#   manual gives 2 3 1.  Blocks 1 and 3 are one word and block 2 is
+#   three disjoint words, so NOTHING BUT AN OVERLAP CAN SEE THE
+#   ORDER.  That is the whole argument for block 4, and the value it
+#   fails with was hand-computed before the injection was run.
+#
+# AND BLOCK 1 IS IBM'S OWN TEST.  jb_ax4b routine 1246 TEST 2C --
+# transcribed in decks/ax4b_1246_transmit_swap.strap and until now
+# checked only for its ENCODING -- zeroes the sending word, puts a
+# pattern in the receiving word, swaps one word, and fails with
+# "-SWAP FAILS TO ALTER ORIGINAL WD / -AND THEREFORE ACTS LIKE
+# TRANSMIT" if the sender is still zero.  Block 1 is that test with
+# the branch logic replaced by a storage check.
+#
+# BACKWARD SWAP IS STILL REFUSED and block 5 checks it.  SWAPB and
+# SWAPBI are CARD-ONLY -- named on pocket card X22-6533 and written
+# by no deck in this corpus -- so building them would be
+# manual-derived with nothing to check against.  rl_xmit's sign
+# handling would carry them unchanged the day one turns up.
+
 run "TRANSMIT: what is honoured, and what is refused out loud" ./run_program.sh ../decks/transmit_scope.strap StretchTransmitScopeTb \
-    "PC=4245" "SRC:2176=0x9249249249249249" \
-    "DST1:2240=0x9249249249249249" "DST2:2248=0" \
+    "PC=$(python3 -c 'from strap_asm import assemble; print(assemble(open("../decks/transmit_scope.strap").read()).symtab["PASS"]//32)')" \
+    "SRC:2176=0x9249249249249249" \
+    "DST1:2240=0x9249249249249249" \
+    "SRC2:2248=0" "DST2:2249=0x9249249249249249" \
     "DST3a:2256=0x9249249249249249" "DST3b:2257=0x9249249249249249" \
     "DST4a:2304=0x9249249249249249" "DST4z:2319=0x9249249249249249" \
     "DST5:2368=0x9249249249249249" "DST6:2376=0x9249249249249249"

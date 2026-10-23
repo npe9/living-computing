@@ -74,12 +74,31 @@
 ! So the SWAP that printed p.40 made a documented caller for has a
 ! second caller here, and the save/restore shape is identical.
 !
-! THE RUN DOES NOT EXECUTE IT, and what is MEASURED is only that:
-! the boot test's indicator check has OP clear, so no SWAP ran.  The
-! obvious reading is that line 53 sits on the RESTORE path and the
-! run leaves through line 47's call to S BRK8 first, but a
-! last-non-zero PC trail cannot show which rows were stepped
-! through, so that is a reading and not a result.
+! >>> THE RUN EXECUTES THIS ONE, AND THIS DECK SAID THE OPPOSITE
+! UNTIL 2026-10-23. <<<
+!
+! It read: "THE RUN DOES NOT EXECUTE IT, and what is MEASURED is only
+! that: the boot test's indicator check has OP clear, so no SWAP ran.
+! The obvious reading is that line 53 sits on the RESTORE path and the
+! run leaves through line 47's call to S BRK8 first."  Both halves
+! were wrong, and the second was the giveaway -- line 47 is not a
+! call, and the only way to reach S BRK8 is THROUGH line 53.
+!
+! When forward SWAP was built, StretchCore began announcing each swap
+! that starts, and the MCP boot prints exactly one line:
+!
+!     StretchCore: SWAP started at half-word 2649, 6 words
+!
+! 2649 is word 0o2454 half 1 -- 002454.40, THIS ROW -- and six words
+! is this row's count.  MCP's one executed SWAP in the whole run is
+! Q FIN's index-register restore.
+!
+! WHAT MISLED THE OLD NOTE was an indicator trail that counts RISING
+! EDGES: tests/gen_tb.py's op_trail saw OP raised once, at 001214.00
+! in printed p.24's time conversion, and a refusal raised here while
+! OP was ALREADY HIGH left no edge for it to count.  gen_tb.py
+! carries that caveat now, and the swap announcement is what the
+! question should have been asked with.
 !
 ! ---------------------------------------------------------------
 ! SUBSTITUTIONS

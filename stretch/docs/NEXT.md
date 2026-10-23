@@ -5395,6 +5395,141 @@ no opcode can rule it out. What ruled it out was the datum the name
 labels — which is a tell worth stating on its own: *when a name
 labels data, decode the data before trusting the name.*
 
+## FORWARD SWAP IS BUILT, AND IT WAS A DEPENDENCY RATHER THAN A WISH, 2026-10-23
+
+`SWAP` had been a documented absence for weeks, then a documented
+absence with a caller, then "a survival with an expiry date". The
+expiry date arrived, and not because the count of callers grew:
+**printed p.40's `Y REELC` — the REEL-card handler — executes two
+`SWAPI`s**, so the moment the fixture punches the IOD and REEL cards
+printed p.25 expects, the refusal stops being a note and becomes a
+halt.
+
+**THE ORDERING THAT FOLLOWS FROM THAT, worth writing down before it is
+rediscovered:** an **IOD** card can be the fixture's first card
+without `SWAP`; a **REEL** card cannot. `Y IODC` (printed p.40 lines
+14-22) does not swap.
+
+### What was built, and the one asymmetry worth naming
+
+Reference Manual printed p.30: "...**at the same time**, the full
+words of the area which starts at the right effective address are
+transmitted to the area which starts at the left effective address."
+
+An exchange needs **two reads and two writes per word** and this model
+has one of each per rule, so a swapped word takes **three clocks** in
+`rl_xmit`: read the sender, read the receiver and write the sender's
+value into it, then write the receiver's old value back. **Both reads
+happen before either write**, which is the whole of "at the same
+time".
+
+*The asymmetry with Transmit:* Transmit's first word is moved in the
+execute arm and the rest by `rl_xmit`; **a swap moves no word in the
+execute arm at all**, because the arm has one write. Keeping the swap
+branch out of the prefetch path entirely is what stops that from
+becoming a half-folded arm.
+
+### Two injections, and the second is the argument for the overlap block
+
+* **Write before read** — phase 0 made to write the receiving word as
+  soon as the sender is in hand. Fails blocks 1, 2, 3 *and* 4: every
+  sending word comes back unchanged, which is IBM's own failure
+  message, "SWAP FAILS TO ALTER ORIGINAL WD / AND THEREFORE ACTS LIKE
+  TRANSMIT".
+* **Reverse word order** — the execute arm made to start at the last
+  word of each area and step down. **Passes every disjoint block and
+  fails only block 4**, which comes back `3 1 2` where the manual
+  gives `2 3 1`.
+
+The second is the one that justifies block 4's existence: blocks 1 and
+3 are one word and block 2 is three *disjoint* words, and **nothing
+but an overlap can see the order**. Both failing values were
+hand-computed before the injections were run.
+
+### And block 1 is IBM's own test, finally executed
+
+`jb_ax4b` routine 1246 TEST 2C has been transcribed since the I-Box 4
+work and checked **only for its encoding** — `run_tests.sh` said so in
+as many words: "its ENCODING is pinned by
+`decks/ax4b_1246_transmit_swap.strap`; its EXECUTION is not tested by
+anything and this says so." Block 1 is that test with the branch logic
+replaced by a storage check, because this harness can read storage and
+the diagnostic could not.
+
+*A transcription that has only ever been encoding-checked is a test
+waiting to be run.* There are more of them.
+
+### AND THE FIRST THING IT MEASURED WAS A RETRACTION
+
+The boot run was expected to be unchanged — `op_trail` had said the
+one `OP` raise in the whole run was at 001214.00, in printed p.24's
+time conversion, and a control run reproduced it. **The step count
+moved by 82**, so something did change, and rather than theorise
+`StretchCore` was made to announce every swap that starts. The boot
+prints exactly one line:
+
+```
+StretchCore: SWAP started at half-word 2649, 6 words
+```
+
+2649 is word 0o2454 half 1 — **002454.40, printed p.43 line 53's
+`Q FIN  SWAPI,6,Q SAV,$1  -RESTORE INDEXES`** — and six words is that
+row's count. **MCP executes one SWAP and this project said three
+times that it executed none.**
+
+**What misled it was an indicator trail that can only see a
+TRANSITION.** `op_trail` counts RISING edges of `OP`; the refusal at
+002454.40 was raised while `OP` was already high from 001214.00, so
+there was no edge to count. The anomaly was even recorded at the time
+— "one edge each does not by itself account for two different
+endings" — and filed as an open question instead of being treated as
+the answer.
+
+> **A trail that can only see a transition cannot answer "did this
+> ever happen".** The fix was not a better trail: it was making the
+> thing announce itself at the point it occurs, which cannot be
+> missed and costs one `$display` on an event that is rare by
+> construction.
+
+**AND THE WHOLE OF THE 82 IS THE ARM, counted rather than
+estimated.** `rl_xmit` now reports what it spent — `SWAP finished, 82
+clocks in rl_xmit` — and the boot's step count moved by **exactly
+82**. So MCP's execution after `Q FIN` takes the same number of
+clocks whether `$1`-`$6` were restored or not; nothing downstream
+changed. (Six words at ~13.7 clocks each: each of the two reads per
+word waits on `responseReady`, which is memory latency, not the
+exchange.)
+
+**And the one swap is now observable in storage, not just in a
+`$display`.** Two boot checks read `Q SAV`, which the SWAP exchanges
+with `$1`-`$6`: `Q SAV+0` is `0x00000000001C0000` (count 7) and
+`Q SAV+5` is `0x0001200011480000` (value 000004.40, count 2122 =
+0o4112, a character counter — which is what `$6` is doing in printed
+p.43 line 46's `LVE,$6,Q FLD($3)`). **These are the loop's registers,
+not the `TI`'s**, and a future regression that silently refused SWAP
+again would leave the `TI`'s values standing and fail them.
+
+**The arm does not trip the core's own anomaly warning**, which was
+worth checking rather than assuming: the `swap_scope` run prints
+**zero** "E-box instruction at N executed at preparation
+(classification mismatch)" lines, and the MCP boot prints **73 both
+before and after the build — the identical set, none of them at the
+swap's address**. Those 73 are a pre-existing observation about other
+instructions and are an open item, not a consequence of this work.
+
+The three retracted claims are struck where they stand, in
+`decks/mcp_bootstrap_p43.strap`, `decks/mcp_bootstrap_p46.strap` and
+`run_tests.sh`'s p.45 section, rather than quietly edited.
+
+### Backward swap is still refused, and the reason is narrower now
+
+`SWAPB` and `SWAPBI` are **card-only** — named on pocket card
+X22-6533 and written by no deck in this corpus. Building them would be
+manual-derived with no oracle; `rl_xmit`'s sign handling would carry
+them unchanged the day one turns up. `bsv/README.md`'s scope list says
+this, and carries the caution its own former entry earned: **a scope
+list is a measurement with a date on it.**
+
 ## THE TABLES ARRIVE, AND FOUR ASSEMBLER CORRECTIONS COME WITH THEM, 2026-10-23
 
 printed p.46 defines **every one of printed p.45's fourteen
@@ -5405,8 +5540,9 @@ printed here as `(A*)DD(BU,Q KSIZ,Q KSIZ)` — `(BU,6,6)`, which is
 exactly what p.45's bare `KF,Q CMA` prints as `006600`.
 
 **And `SWAP` now has nine documented callers**: two on printed p.40,
-one on p.43, three on p.45, three here. The run still executes none of
-them.
+one on p.43, three on p.45, three here. ~~The run still executes none
+of them.~~ **RETRACTED the same day** — it executes exactly one, printed
+p.43 line 53's, and the retraction is at the top of this file.
 
 ### The run halves and the answer does not change
 
@@ -5865,12 +6001,13 @@ words, where printed p.40's two were three — and line 10 is its
 matched `TI,6,$1,Q SAV  -SAVE THE INDICES`, the same six words the
 other way, `A0` against `E0`.
 
-**`OP` is still clear, so no SWAP executed** — that is the
-measurement, and it is all of it. The obvious reading is that line
-53 sits on the *restore* path and the run leaves through the call to
-`S BRK8` before reaching it, but a last-non-zero PC trail cannot
-show which rows were stepped through, so that is a reading and not a
-result. What is measured is the indicator bit.
+~~**`OP` is still clear, so no SWAP executed** — that is the
+measurement, and it is all of it.~~ **RETRACTED 2026-10-23: THIS ROW
+IS THE ONE SWAP MCP EXECUTES.** When forward SWAP was built,
+`StretchCore` began announcing each swap that starts and the boot
+printed exactly one line — `SWAP started at half-word 2649, 6 words`
+— which is 002454.40, this row, with this row's count. See the entry
+at the top of this file.
 
 Two callers now, in two routines, in the identical save-and-restore
 shape.

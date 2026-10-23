@@ -1,0 +1,112 @@
+! swap_scope.strap -- SWAP, what it exchanges and what it still
+! refuses.  Reference Manual printed p.30, "Swap (SWAP)":
+!
+!   "The number of full words specified by the count is transmitted
+!    from the area which starts at the location addressed by bits
+!    0-17 of the left effective address to the area which starts at
+!    the location specified by bits 0-17 of the right effective
+!    address.  AT THE SAME TIME, the full words of the area which
+!    starts at the right effective address are transmitted to the
+!    area which starts at the left effective address."
+!
+! >>> "AT THE SAME TIME" IS THE WHOLE INSTRUCTION, and block 4 is the
+! only block that can see the ORDER the words are exchanged in. <<<
+!
+! Blocks 1 and 3 are one word; block 2 is three DISJOINT words, and
+! disjoint words can be exchanged in any order with the same result.
+! Block 4 overlaps the two areas by one word -- the case p.30's own
+! PROGRAMMING NOTES single out for TRANSMIT ("when the receiving area
+! overlaps the upper end of the sending area...") -- and there the
+! order shows: forward gives 2 3 1 and backward gives 3 1 2.  That
+! was measured, not argued: an injection that starts the swap at the
+! last word and steps down passes every other block and fails only
+! this one, with exactly 3 1 2.
+!
+! IBM'S OWN DIAGNOSTIC IS THE SHAPE OF BLOCK 1.  jb_ax4b routine 1246
+! TEST 2C -- transcribed in decks/ax4b_1246_transmit_swap.strap, and
+! until now checked only for its ENCODING -- zeroes the sending word,
+! puts a pattern in the receiving word, swaps one word, and fails
+! with
+!
+!     -SWAP FAILS TO ALTER ORIGINAL WD
+!     -AND THEREFORE ACTS LIKE TRANSMIT
+!
+! if the sending word is still zero afterwards.  Block 1 is that test
+! with the branch logic replaced by a storage check, because this
+! harness can read storage and the diagnostic could not.
+!
+! WEAKER STANDARD: hand-written from the manual.  What raises it above
+! the usual manual-derived deck is that the EXPECTED VALUES were
+! computed from p.30's sentence by hand before the model was built,
+! and block 1 reproduces an IBM test that states its own failure
+! message.
+!
+! WHAT IS STILL REFUSED: BACKWARD swap, block 5.  SWAPB and SWAPBI are
+! CARD-ONLY -- named on pocket card X22-6533 and written by no deck in
+! this corpus (tests/verify_ax4b_1246_modifiers_listing.py says so) --
+! so building them would be manual-derived with nothing to check
+! against.  rl_xmit's sign handling would carry them unchanged.
+
+        SLC, (8)4200.0
+
+! ---- 1. ONE WORD, IMMEDIATE COUNT -- IBM TEST 2C's shape ----------
+! A1 is zero and B1 is a pattern; after the swap A1 holds the pattern
+! and B1 is zero.  A model that "acts like transmit" leaves A1 zero.
+START   SWAPI, 1, A1, B1
+
+! ---- 2. THREE WORDS, IMMEDIATE COUNT ------------------------------
+! Every word of both areas is checked, so a model that exchanges the
+! first word and stops fails here.
+        SWAPI, 3, A2, B2
+
+! ---- 3. ONE WORD, DIRECT COUNT ------------------------------------
+! The count comes from index 1's count field, which block 3 loads
+! first.  p.30: "the field J, bits 51-54, specifies an index
+! register.  The count field, bits 28-45, of the index word in this
+! register is used as a full word count."
+        LX,   $1, CNT1
+        SWAP, 1, A3, B3
+
+! ---- 4. THE OVERLAP, which is the one that discriminates ----------
+! OV, OV+1 and OV+2 hold 1, 2 and 3.  The swap exchanges (OV, OV+1)
+! and then (OV+1, OV+2):
+!
+!   start            1  2  3
+!   after word 0     2  1  3
+!   after word 1     2  3  1
+!
+! A model that wrote the receiving word before reading it would get
+! 1 1 1 for the first pair and never see the 2 at all.
+        SWAPI, 2, OV, OV+1.0
+
+! ---- 5. BACKWARD SWAP IS STILL REFUSED ----------------------------
+        SWAPB, 1, A5, B5
+        BZOP,  $                    ! hang if OP did NOT come on
+        BOPZ,  $+.32                ! clear OP and fall through
+HALT    BEW,   $
+
+! ---- the data ------------------------------------------------------
+A1      DD(BU,64,8), 0
+B1      DD(BU,64,8), (8)1234567012345670123456
+
+A2      DD(BU,64,8), (8)0000000000000000000011
+        DD(BU,64,8), (8)0000000000000000000022
+        DD(BU,64,8), (8)0000000000000000000033
+B2      DD(BU,64,8), (8)7777777777777777777744
+        DD(BU,64,8), (8)7777777777777777777755
+        DD(BU,64,8), (8)7777777777777777777766
+
+A3      DD(BU,64,8), (8)0000000000000000000077
+B3      DD(BU,64,8), (8)1111111111111111111111
+
+OV      DD(BU,64,8), 1
+        DD(BU,64,8), 2
+        DD(BU,64,8), 3
+
+A5      DD(BU,64,8), (8)0000000000000000000005
+B5      DD(BU,64,8), (8)0000000000000000000006
+
+! The count register for block 3: one full word in bits 28-45.
+CNT1    XW, 0, 1, 0
+
+        END, START

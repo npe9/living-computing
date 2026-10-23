@@ -130,6 +130,12 @@ TB, TBI and all four SWAP forms had none.  This block supplies T
 now witnessed and five -- TB, TBI, SWAPI, SWAPB, SWAPBI -- remain
 card-only.
 
+UPDATED 2026-10-23: TB was witnessed by the sibling
+verify_ax4b_1246_modifiers_listing.py, and SWAPI by MCP printed
+pp.40, 43, 45 and 46, which carry NINE SWAPI rows between them.
+Five of the eight are witnessed and three remain card-only: TBI,
+SWAPB, SWAPBI.
+
 T AND SWAP ARE THE ONLY FIRSTS HERE, and that was measured, not
 assumed: every other mnemonic in the block was grepped across the
 other verify_*.py files before the claim was written.  KC already has

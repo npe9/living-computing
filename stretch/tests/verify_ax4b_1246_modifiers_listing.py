@@ -426,6 +426,13 @@ agent on this deck claimed four firsts and grep eliminated all four.
   listing rows -- T, TI, SWAP from before, plus TB -- and four remain
   card-only: TBI, SWAPI, SWAPB, SWAPBI.
 
+  >>> SWAPI LEFT THAT LIST ON 2026-10-23. <<<  MCP printed pp.40, 43,
+  45 and 46 carry NINE SWAPI rows between them, every one checked
+  bit-exactly, so FIVE of the eight now have listing rows and three
+  remain card-only: TBI, SWAPB, SWAPBI.  "Card-only" here means NO
+  LISTING ROW, not "no deck" -- decks/swap_scope.strap encodes a
+  SWAPB by hand to check that the model still refuses it.
+
   AND THAT IS THE ONLY FIRST.  Knocked out by grep, every one:
     TI    -- verify_ax5b_16087_listing.py 021377.40 and 021400.40,
              verify_ax5b_160105_listing.py 022365.40,

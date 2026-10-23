@@ -314,6 +314,40 @@ def main():
         # reached at all with this fixture.
         ("mcp_x_err_ad", str(sym("XERRAD")), 0x00C8600000000000),
 
+        # >>> THE ONE SWAP MCP EXECUTES, OBSERVED IN STORAGE. <<<
+        #
+        # printed p.43 line 53 is "Q FIN  SWAPI,6,Q SAV,$1  -RESTORE
+        # INDEXES" and StretchCore announces it -- "SWAP started at
+        # half-word 2649, 6 words" -- but an announcement is a
+        # $display, not a check.  These two read what it left.
+        #
+        # Q SAV is six words at 002472 and line 10's "TI,6,$1,Q SAV"
+        # filled it on the way IN with index registers 1-6.  The SWAP
+        # on the way out EXCHANGES them, so Q SAV ends holding what
+        # the conversion loop left in $1-$6, not what the TI put
+        # there.  A model that refused the SWAP again -- which is
+        # what every version before 2026-10-23 did -- would leave the
+        # TI's values standing, and these two checks are the only
+        # place in the suite where the difference is visible on the
+        # REAL program rather than on swap_scope's synthetic data.
+        #
+        # EXPECTED VALUES MEASURED, NOT PREDICTED, and both decode as
+        # index words (value 0-23, sign 24, flags 25-27, count 28-45,
+        # refill 46-63):
+        #
+        #   Q SAV+0  0x00000000001C0000  value 000000.00, count 7
+        #   Q SAV+5  0x0001200011480000  value 000004.40, count 2122
+        #
+        # The second is the interesting one: 2122 is 0o4112, and a
+        # count in the thousands is a character counter, which is
+        # what $6 is doing in printed p.43 line 46's
+        # "LVE,$6,Q FLD($3)".  These are the loop's registers, not
+        # the TI's.
+        ("mcp_qsav_first_after_swap",
+         str(sym("XBSEND") + _image_index("002472")), 0x00000000001C0000),
+        ("mcp_qsav_last_after_swap",
+         str(sym("XBSEND") + _image_index("002477")), 0x0001200011480000),
+
         # >>> AND THIS IS THE PROOF THAT MCP *USED* THE SWITCHES,
         # which is a different claim from "the read returned". <<<
         #

@@ -105,6 +105,23 @@ module mkStretchCore(StretchCore);
   // the sending word is a memory READ that takes a clock to come
   // back, so the rule has to remember that it already asked.
   Reg#(Bool) xmitReadIssued <- mkReg(False);
+  // SWAP's two extra states.  An exchange needs TWO reads and TWO
+  // writes per word and this model has one of each per rule, so a
+  // swapped word takes three clocks: read the sending word, read the
+  // receiving word and write the sending word's value into it, then
+  // write the receiving word's old value back into the sending word.
+  // BOTH READS HAPPEN BEFORE EITHER WRITE, which is Reference Manual
+  // printed p.30's "at the same time" and the only thing that makes
+  // an overlapping swap an exchange rather than a propagation.
+  Reg#(Bit#(2)) xmitSwapPhase <- mkReg(0);
+  Reg#(Word64)  xmitSwapHeld  <- mkReg(0);
+  // HOW MANY CLOCKS A SWAP COSTS, counted rather than reasoned
+  // about.  The MCP boot's step count moved by 82 when forward SWAP
+  // was built, and "about five clocks a word times six words" is an
+  // estimate; this is the number.  Whatever is left of the 82 is MCP
+  // running differently afterwards, because Q FIN's index-register
+  // restore now actually happens.
+  Reg#(Bit#(32)) xmitSwapClocks <- mkReg(0);
 
   // ---- The interruption mechanism (Ref. Manual p.48) ----
   // Valid while THE ONE instruction at the effective interruption
@@ -284,6 +301,15 @@ module mkStretchCore(StretchCore);
         pendingIdxWrite <= o.idxWrite;
         ioPending <= o.ioStart;
         xmitPending <= o.xmitStart;
+        // >>> A SWAP THAT RUNS SAYS SO. <<<  The question "does any
+        // program in this corpus execute a SWAP?" stayed open for
+        // four commits and was answered with an indicator trail that
+        // can MISS one: tests/gen_tb's op_trail counts RISING EDGES
+        // of OP, and a refusal raised while OP is already high leaves
+        // no edge.  This cannot be missed, and it is cheap -- it
+        // prints only when a swap actually starts.
+        if (o.xmitStart matches tagged Valid .xs &&& xs.swap)
+          $display("StretchCore: SWAP started at half-word %0d, %0d words", pc, xs.remaining);
         Bool taken = (o.next != pc + ((len == Full) ? 2 : 1));
         ibusy <= budgetClocks(di, taken);   // completed in the dispatch clock
         return isHalt(di, o.next, pc);
@@ -955,37 +981,80 @@ module mkStretchCore(StretchCore);
     // physically available").  Both ends are tested: a transmit can
     // run off the top reading as easily as writing.
     let x = validValue(xmitPending);
+    // THE NEXT PAIR, written once here because three places want it.
+    // p.30: forward obtains each successive pair of addresses "by
+    // incrementing the previous addresses by one", backward "by
+    // decrementing".
+    XmitXfer nextWord = XmitXfer {
+      src: x.backward ? x.src - 1 : x.src + 1,
+      dst: x.backward ? x.dst - 1 : x.dst + 1,
+      remaining: x.remaining - 1, backward: x.backward, swap: x.swap };
+    // ONE WRITE, AT THE END OF THE RULE.  Bluespec refuses two
+    // Reg writes it cannot order ("methods that conflict in
+    // parallel"), so the count is carried in a variable and stored
+    // once below.
+    Bit#(32) swapClk = xmitSwapClocks + (x.swap ? 1 : 0);
     if (!st.writeReady()) begin
       // The store queue is full: wait for the memory bus, the same
       // way rl_io does.
       noAction;
+    end else if (x.swap && xmitSwapPhase == 2) begin
+      // PHASE 2: no read.  The receiving word's OLD contents, held
+      // since phase 1, go back into the sending word -- the second
+      // half of p.30's exchange.  Both ends were checked in phase 0.
+      st.writeWord(x.src, xmitSwapHeld);
+      xmitSwapPhase <= 0;
+      if (x.remaining == 1) begin
+        $display("StretchCore: SWAP finished, %0d clocks in rl_xmit",
+                 swapClk);
+        swapClk = 0;
+        xmitPending <= tagged Invalid;
+      end else
+        xmitPending <= tagged Valid nextWord;
     end else if (!xmitReadIssued) begin
-      st.readWordReq(x.src);
+      // PHASE 0 reads the SENDING word, phase 1 the RECEIVING one.
+      st.readWordReq((x.swap && xmitSwapPhase == 1) ? x.dst : x.src);
       xmitReadIssued <= True;
     end else if (!st.responseReady()) begin
       noAction;
     end else begin
       Word64 v <- st.readWordResp();
       xmitReadIssued <= False;
+      // >>> A SWAP WRITES BOTH ENDS, so BOTH are protection-checked,
+      // and both are checked in phase 0 -- before anything has been
+      // written for this word -- so a refused pair leaves the words
+      // before it moved and this one untouched.  p.30 on an invalid
+      // or protected address: it is "not detected... until the data
+      // transmission actually encounters" it.
+      Bool protBad = protViolates(st, x.dst)
+                     || (x.swap && protViolates(st, x.src));
       if (!installed(x.src) || !installed(x.dst)) begin
         st.setIndicatorBits(setBit(st.readIndicators(), ind_AD, 1));
         xmitPending <= tagged Invalid;
-      end else if (protViolates(st, x.dst)) begin
+        xmitSwapPhase <= 0;
+      end else if (protBad) begin
         st.setIndicatorBits(setBit(st.readIndicators(), ind_DS, 1));
         xmitPending <= tagged Invalid;
+        xmitSwapPhase <= 0;
+      end else if (x.swap && xmitSwapPhase == 0) begin
+        // PHASE 0: the sending word is in hand and NOTHING is written
+        // yet.  p.30's "at the same time" is this: the receiving word
+        // must still be readable when phase 1 asks for it.
+        xmitSwapHeld <= v;
+        xmitSwapPhase <= 1;
+      end else if (x.swap) begin
+        // PHASE 1: `v` is the RECEIVING word.  Write the sending
+        // word's value into it and keep `v` for phase 2.
+        st.writeWord(x.dst, xmitSwapHeld);
+        xmitSwapHeld <= v;
+        xmitSwapPhase <= 2;
       end else begin
         st.writeWord(x.dst, v);
-        if (x.remaining == 1) xmitPending <= tagged Invalid;
-        else
-          // ONE SIGN IS THE WHOLE DIRECTION.  p.30: forward obtains
-          // each successive pair of addresses "by incrementing the
-          // previous addresses by one", backward "by decrementing".
-          xmitPending <= tagged Valid XmitXfer {
-            src: x.backward ? x.src - 1 : x.src + 1,
-            dst: x.backward ? x.dst - 1 : x.dst + 1,
-            remaining: x.remaining - 1, backward: x.backward };
+        xmitPending <= (x.remaining == 1) ? tagged Invalid
+                                          : tagged Valid nextWord;
       end
     end
+    xmitSwapClocks <= swapClk;
     ebusy <= eb;
     haltedReg <= False;
   endrule
@@ -1017,6 +1086,8 @@ module mkStretchCore(StretchCore);
       pendingIdxWrite <= o.idxWrite;
       ioPending <= o.ioStart;
       xmitPending <= o.xmitStart;
+      if (o.xmitStart matches tagged Valid .xs &&& xs.swap)
+        $display("StretchCore: SWAP started at half-word %0d, %0d words", pc, xs.remaining);
       if (fromLA) begin
         // A look-ahead level's instruction finished: retire it.
         ebn = eboxClocks(di);
@@ -1061,6 +1132,8 @@ module mkStretchCore(StretchCore);
       pendingIdxWrite <= o.idxWrite;
       ioPending <= o.ioStart;
       xmitPending <= o.xmitStart;
+      if (o.xmitStart matches tagged Valid .xs &&& xs.swap)
+        $display("StretchCore: SWAP started at half-word %0d, %0d words", h.pc, xs.remaining);
       ebn = eboxClocks(h.di);
       la.retireHead();
     end

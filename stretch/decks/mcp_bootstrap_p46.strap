@@ -30,10 +30,16 @@
 ! these swap them back on the way IN.  Line 5's "TI,2,Q SAV4,$L" is
 ! likewise p.45 line 50's "TI,2,$L,Q SAV4" reversed.
 !
-! So the instruction the model refuses has NINE documented callers:
-! two on printed p.40, one on p.43, three on p.45, three here.  The
-! run executes none of them -- tests/gen_tb.py's op_trail measures
-! that -- and the refusal survives with an expiry date.
+! So the instruction has NINE documented callers: two on printed
+! p.40, one on p.43, three on p.45, three here.
+!
+! THIS NOTE USED TO SAY "the run executes none of them -- op_trail
+! measures that -- and the refusal survives with an expiry date",
+! AND BOTH CLAUSES WERE WRONG.  Forward SWAP is built (2026-10-23)
+! and the boot prints "SWAP started at half-word 2649, 6 words",
+! which is printed p.43 line 53's Q FIN.  op_trail counts RISING
+! EDGES of OP and that refusal was raised while OP was already high,
+! so it left no edge to count.
 !
 ! ---------------------------------------------------------------
 ! AND THE PAGE CORRECTED THE ASSEMBLER IN FOUR PLACES

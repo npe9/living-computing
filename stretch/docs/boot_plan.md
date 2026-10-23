@@ -595,6 +595,42 @@ cannot be tested without it.
 > itself** — the next page, and the one the run has been waiting
 > for.
 >
+> **A16 — FORWARD SWAP IS BUILT, BECAUSE THE NEXT STEP NEEDS IT,
+> 2026-10-23.** printed p.40's `Y REELC` — the REEL-card handler —
+> executes two `SWAPI`s, so a REEL card cannot be the fixture's first
+> card until `SWAP` works. An **IOD** card can: `Y IODC`, printed
+> p.40 lines 14-22, does not swap. That ordering is the reason the
+> model work came before the fixture work.
+>
+> Five blocks in `decks/swap_scope.strap`, every expected value
+> computed from Reference Manual printed p.30 before the arm existed.
+> Block 1 is IBM's own `jb_ax4b` routine 1246 TEST 2C, transcribed
+> since the I-Box 4 work and until now **encoding-checked only**.
+> Block 4 overlaps the two areas by one word, which is the only way
+> to see the order the words are exchanged in — an injection that
+> reverses that order passes every other block and fails block 4
+> alone, with the hand-computed `3 1 2`.
+>
+> **AND THE BOOT WAS NOT UNCHANGED, which is the finding.** The step
+> count moved from 6,036,053 to **6,036,135**, so rather than
+> theorise, `StretchCore` was made to announce every swap that
+> starts. The boot prints exactly one line — `SWAP started at
+> half-word 2649, 6 words` — which is **002454.40, printed p.43 line
+> 53's `Q FIN  SWAPI,6,Q SAV,$1  -RESTORE INDEXES`**. MCP executes
+> one SWAP, and this project said three times that it executed none.
+> `op_trail` counts RISING edges of OP and that refusal was raised
+> while OP was already high, so it left no edge. Every check still
+> passes and the run still stops at 000167.40.
+>
+> **The whole of the 82 is the arm**, counted rather than estimated:
+> `rl_xmit` reports "SWAP finished, 82 clocks" and the step count
+> moved by exactly 82, so MCP's execution after `Q FIN` takes the
+> same clocks whether `$1`-`$6` were restored or not. Two new boot
+> checks read `Q SAV`, which the SWAP exchanges with `$1`-`$6`, so
+> the one real swap is observable in storage and not only in a
+> `$display`.
+>
+
 > **A15 — THE TABLES ARRIVE AND MCP STILL REJECTS THE CARD, IN HALF
 > THE STEPS, 2026-10-23.** printed p.46 is not just more code: it is
 > the DATA the breakdown routine runs on. Until it was transcribed,

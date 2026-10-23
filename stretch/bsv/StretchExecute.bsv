@@ -5160,9 +5160,44 @@ function ActionValue#(ExecResult)
         // printed p.19 line 41 is "TB,3,0.0($11),0.0($13)  -MOVE
         // BIASED CTS" and without it the channel status table is
         // never relocated.
-        if (t.swap == 1)
+        // >>> FORWARD SWAP IS BUILT, 2026-10-23, and the paragraphs
+        // above are kept because they are the history. <<<
+        //
+        // Reference Manual printed p.30: "...AT THE SAME TIME, the
+        // full words of the area which starts at the right effective
+        // address are transmitted to the area which starts at the
+        // left effective address."  An exchange needs two reads and
+        // two writes per word; this arm has one write and one
+        // prefetch.  SO A SWAP MOVES NO WORD HERE AT ALL -- every
+        // word of it, the first included, is rl_xmit's, which runs
+        // three clocks per word and reads both ends before writing
+        // either.  That asymmetry with Transmit (whose first word IS
+        // moved here) is deliberate and is the whole reason the swap
+        // branch does not share the prefetch path below.
+        //
+        // BACKWARD SWAP IS STILL REFUSED, and the reason is now
+        // narrow enough to state: NOTHING IN THE CORPUS ENCODES ONE.
+        // tests/verify_ax4b_1246_modifiers_listing.py calls SWAPB and
+        // SWAPBI "card-only" -- named on the pocket card and written
+        // by no deck -- so building them would be manual-derived with
+        // no oracle to check against.  rl_xmit's sign handling would
+        // carry them unchanged the day one turns up.
+        //
+        // WHAT CHECKS THE FORWARD FORM is IBM's own diagnostic:
+        // jb_ax4b routine 1246 TEST 2C zeroes the source, puts a
+        // pattern in the destination, swaps one word, and fails with
+        // "-SWAP FAILS TO ALTER ORIGINAL WD / -AND THEREFORE ACTS
+        // LIKE TRANSMIT" if the source is still zero.
+        if (t.swap == 1 && t.backward == 1)
           ind = setOpInvalid(ind);
-        else begin
+        else if (t.swap == 1) begin
+          WordAddr srcBase = baWord(effAddr24(st, t.addr1, t.i1));
+          WordAddr dstBase = (effAddr19(st, t.addr2, t.i2))[18:1];
+          xmitStart = tagged Valid XmitXfer {
+            src: srcBase, dst: dstBase,
+            remaining: xmitCount,
+            backward: False, swap: True };
+        end else begin
           // Prefetch/bail-out shape: reads srcBase, writes the SAME
           // value verbatim to dstBase once available -- a dependent
           // chain (the write's data IS the read's response), same
@@ -5191,7 +5226,7 @@ function ActionValue#(ExecResult)
                   src: (t.backward == 1) ? srcBase - 1 : srcBase + 1,
                   dst: (t.backward == 1) ? dstBase - 1 : dstBase + 1,
                   remaining: xmitCount - 1,
-                  backward: (t.backward == 1) };
+                  backward: (t.backward == 1), swap: False };
             end
           end else
             needsRead = tagged Valid srcBase;

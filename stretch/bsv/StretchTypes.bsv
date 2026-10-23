@@ -304,7 +304,33 @@ typedef struct {
   WordAddr  dst;        // next receiving word
   Bit#(19)  remaining;  // full words still to move, counting this one
   Bool      backward;   // modifier bit 55 -- see below
+  Bool      swap;       // modifier bit 57 -- see below
 } XmitXfer deriving (Bits, Eq, FShow);
+
+// >>> `swap` IS AN EXCHANGE, NOT A SECOND COPY, and Reference Manual
+// printed p.30 is explicit about the simultaneity:
+//
+//   "Swap (SWAP).  The number of full words specified by the count is
+//    transmitted from the area which starts at the location addressed
+//    by bits 0-17 of the left effective address to the area which
+//    starts at the location specified by bits 0-17 of the right
+//    effective address.  AT THE SAME TIME, the full words of the area
+//    which starts at the right effective address are transmitted to
+//    the area which starts at the left effective address."
+//
+// "At the same time" is what separates a SWAP from a copy followed by
+// a copy back, and it bites on OVERLAPPING areas: a swap that wrote
+// the destination before reading it would propagate one word through
+// the overlap instead of exchanging.  mkStretchCore's rl_xmit
+// therefore reads BOTH words of a pair before it writes EITHER, which
+// costs it three clocks per word on a model with one read and one
+// write per rule.
+//
+// IBM'S OWN DIAGNOSTIC IS THE ORACLE FOR THE DIFFERENCE.  jb_ax4b
+// routine 1246 TEST 2C zeroes the source, puts a pattern in the
+// destination, swaps one word, and fails with "-SWAP FAILS TO ALTER
+// ORIGINAL WD / -AND THEREFORE ACTS LIKE TRANSMIT" if the source is
+// still zero (decks/ax4b_1246_transmit_swap.strap).
 
 // >>> `backward` IS THE WHOLE OF THE DIRECTION, and Reference Manual
 // printed p.30 states both halves in two sentences:
