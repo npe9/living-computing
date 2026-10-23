@@ -282,6 +282,64 @@ def main():
         ("mcp_x_err_ad", str(sym("XERRAD")),
          ((prog.symtab["XERR05"] // 32 + 2) & 0x7FFFF) << 45),
 
+        # AND THIS IS THE CONTROL WORD THE LINE ABOVE TRIPPED ON.
+        # printed p.3 line 23 is "X7 1 CCW  CCW,0($15),X IPL BS", so
+        # X IPL BS holds MCP's own copy of the channel's control word
+        # as of the last I/O TEST -- the one that failed.  Checking it
+        # here turns the diagnosis into a MEASUREMENT: bits 18-24 are
+        # the status field (Reference Manual printed p.107, Figure 35,
+        # and its prose: 18 unit ready, 19 exchange program check, 20
+        # unit check, 21 end exception, 22 end of operation, 23 channel
+        # signal, 24 suppress end of operation).
+        #
+        # printed p.3 line 27's "CT0011(BU,5),X IPL BS+.19" tests bits
+        # 19-23 and line 28 returns only if they are all zero, which is
+        # the same set p.107 groups: "bits 19 through 23 have
+        # corresponding indicators in the indicator register".
+        #
+        # MEASURED 0x008A920000000000, AND EVERY FIELD OF IT HAS A
+        # REASON.  This was derived from the model's source first and
+        # then measured, in that order, because the two readings before
+        # it were derived and WRONG -- see docs/NEXT.md.
+        #
+        #   bits 19 and 22, EXCHANGE PROGRAM CHECK and END OF
+        #     OPERATION, both ON.  StretchExecute's "wrongUnit" guard
+        #     leaves the console out of RD's legal units and sets
+        #     exactly these two, citing Reference Manual printed p.113
+        #     ("an instruction is received that the selected unit is
+        #     not designed to perform, such as a READ given to a
+        #     printer").  THIS IS THE FAILURE, and the instruction is
+        #     printed p.22 line 5's "RD(SEOP),0.0($15),X DCW 2" --
+        #     a three-word read of the operator's console switches,
+        #     which this model does not have.  printed p.150: "A READ
+        #     instruction received by the console with the keyboard not
+        #     enabled is automatically terminated when the three words
+        #     scanned from the switches have been sent to the
+        #     exchange", and the console's word weight is 3.
+        #
+        #   bits 20, 21, 23 and 24 OFF -- no unit check, no end
+        #     exception, no channel signal, and SEOP already cleared.
+        #     So the WRITE before it finished cleanly; the message came
+        #     out and the model says so in the same word.
+        #
+        #   DATA WORD ADDRESS = X DATE 1 + X DATE K, one past the end
+        #     of the date message, which is the only field here that
+        #     could have come from anywhere else.  The exchange steps
+        #     it per word and the program check does not touch it, so
+        #     it still holds where the chained WRITE stopped.  X DATE K
+        #     is printed p.21 line 42's "SYN,$-X DATE 1" -- five words
+        #     -- and five is how many console words this test checks
+        #     above.  It also lands exactly on X IO, because printed
+        #     p.22 opens with "SLC,(8)1052.0" right after the message.
+        #
+        #   COUNT, REFILL, CHAIN all zero: the chain's last control
+        #     word, printed p.21 line 30's "X DCW 1  CW,X DATE 1,X
+        #     DATE K,0", is exhausted.
+        ("mcp_x_ipl_bs_control_word", str(sym("XIPLBS")),
+         ((ipl_hw("XDATE1") + ipl_hw("XDATEK")) // 2) << 46   # data word address
+         | 1 << (63 - 19)                                      # EPGK
+         | 1 << (63 - 22)),                                    # EOP
+
         # The indicator register, word 11: RZ, XVZ, XF and **OP**.
         #
         # THIS USED TO READ 0xA040 -- RZ, XVZ, XCZ, with OP CLEAR --

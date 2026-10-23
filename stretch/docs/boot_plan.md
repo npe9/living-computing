@@ -518,9 +518,28 @@ cannot be tested without it.
 > Reference Manual printed p.150: a console READ with the keyboard
 > not enabled is "terminated when the **three words scanned from the
 > switches** have been sent to the exchange", and the console's word
-> weight is 3. The fix is a three-word switch register, zero by
-> default — and zero is a real configuration, because printed p.22
-> line 12 is `KFI(BU,24),0,40 -NO TIME ENTERED`.
+> weight is 3. Zero is a real configuration, not a stub, because
+> printed p.22 line 12 is `KFI(BU,24),0,40 -NO TIME ENTERED`.
+>
+> **MEASURED, not just derived.** A 27th boot check reads `X IPL BS`
+> — MCP's own copy of the control word, filled by printed p.3 line
+> 23's `CCW,0($15),X IPL BS` on every I/O TEST — and it holds
+> `0x008A920000000000`: EPGK and EOP on, every other status bit off,
+> data word address `X DATE 1 + X DATE K`. The WRITE finished
+> cleanly and the READ never started.
+>
+> **A4 — AND THE FIX IS THREE PIECES IN ONE ORDER.** The injection
+> that pins the check is the HALF-fix: permit the console on `RD`
+> without building the register, and four checks fail — the read
+> succeeds out of the *card reader's* image (`dataAddr` becomes
+> `X LR IN + 3` with no status bit at all), MCP takes it as the
+> operator's options, and the run leaves the program. So:
+>
+> 1. a three-word console switch register in `StretchIO.bsv`, zero
+>    at power-on, with a testbench setter beside `setConsolePos`;
+> 2. `rl_io`'s device arm splitting on `DevConsole` for READ the way
+>    it already does for WRITE, capacity 3;
+> 3. `wrongUnit` dropping the console from the RD exclusion **last**.
 >
 > `strap/iocd.py` is the card builder, shared with
 > `tests/gen_mcp_p17_tb.py`.

@@ -5564,9 +5564,98 @@ cases the end-exception is accompanied by end-of-operation **unless
 the multiple block flag in the control word is on**." Neither is
 reachable without an operator, so neither needs building first.
 
-**MEASURE BEFORE BUILDING.** One boot-testbench check on channel 35's
-control word (`readChanCW`) names the bits instead of deriving them,
-and the derivation above is from the model's source, not from a run.
+**MEASURED, AND EVERY FIELD CORROBORATES.** printed p.3 line 23 is
+`X7 1 CCW  CCW,0($15),X IPL BS`, so `X IPL BS` holds MCP's own copy
+of the control word as of the failing I/O TEST — no new model
+plumbing needed. The boot testbench now checks it, and it reads
+
+```
+0x008A920000000000
+```
+
+which decodes, field by field, to the whole story:
+
+| field | value | why |
+|---|---|---|
+| data word address | `0o1052` | `X DATE 1 + X DATE K`, one past the date message — the chained WRITE ran to its end. `X DATE K` is printed p.21 line 42's `SYN,$-X DATE 1`, **five words**, which is how many console words this test checks. It lands on `X IO` because printed p.22 opens with `SLC,(8)1052.0` right after the message. |
+| 18 unit ready | 0 | |
+| **19 exchange program check** | **1** | the console READ |
+| 20 unit check | 0 | |
+| 21 end exception | 0 | |
+| **22 end of operation** | **1** | set alongside EPGK: the operation never started |
+| 23 channel signal | 0 | no operator |
+| 24 suppress end of op | 0 | cleared at the WRITE's completion |
+| chain / count / refill | 0 / 0 / 0 | printed p.21 line 30's `X DCW 1  CW,X DATE 1,X DATE K,0` is exhausted |
+
+**Bits 19 and 22 are exactly the pair `wrongUnit` sets, and nothing
+else is on.** The WRITE before it finished cleanly — the model says
+so in the same word that reports the failure.
+
+**This was derived from the model's source first and measured
+second, and that order mattered**: the two readings before it were
+derived and wrong. The check is written as an expression over
+`X DATE 1`, `X DATE K` and the two bit numbers, not as the constant,
+so it cannot drift from the thing it describes.
+
+**ITS INJECTION IS THE HALF-FIX, AND IT IS INSTRUCTIVE.** Permit the
+console on `RD` — add `&& !consoleCh` to `wrongUnit`'s RD arm, one
+token — without building the switch register. Four checks fail, and
+the control word is the one that explains the other three:
+
+```
+0x0087C00000000000   dataAddr 0o1037, every status bit OFF
+```
+
+`0o1037` is **`X LR IN` + 3**. The three-word read *succeeded*, out
+of the **card reader's** image, because `StretchCore.bsv`'s device
+arm only knows it is a console on the WRITE side. MCP then takes
+whatever was there for the operator's IPL options, finds no error
+(`X ERR AD` goes to **zero** — no error site ran at all), and the
+run leaves the program entirely: `PC` reads 0 against 239, and the
+indicator register reads `0x1324` against `0x9424`.
+
+**So the one-token fix is worse than the refusal it removes**, and
+the refusal's own comment said which line to change *and* what to
+build beside it: "the capacity in StretchCore's `rl_io` is 3."
+
+**AND THE THREE WORDS HAVE A DOCUMENTED LAYOUT**, which makes the
+register a real device and not a zero-filled placeholder.
+`C22-6678-1` printed p.29 = PDF 29, "INITIALIZING THE SYSTEM", step
+2: *"Set up the time in binary keys 0-23, and the date in binary keys
+32-55."* Its table:
+
+| Console binary key latched on | Option |
+|---|---|
+| **0–23** | Time |
+| **32–55** | Date |
+| 28 | Suppress Messages |
+| 29 | I/O Status Report |
+| 30 | Rejected Job Count Report |
+| 31 | Abnormal MCP Mode Report |
+
+**The binary keys are the FIRST of the three words, and MCP's own
+code proves the bit numbering independently.** printed p.22 line 11
+is `L(BU,64),X LR IN` — one word — and printed p.23 line 30 is
+`BZB,X LR IN+.29,X20B  - IF I/O STATUS REPORT DESIRED`: bit 29 of
+the first word is binary key 29, which p.29's table calls I/O Status
+Report. Two documents that do not cite each other, agreeing bit for
+bit.
+
+So a testbench that sets word 0 to a real date would make printed
+p.21's message print a real one, and `X VERFY` is *not* the only
+source — printed p.22 lines 9-24 validate the switch digits and
+printed p.23 line 15 loads `X VDATE`. That is the first thing to try
+once the register exists.
+
+What a correct fix needs, then, is three pieces, not one:
+
+1. a three-word console switch register in `StretchIO.bsv`, zero at
+   power-on, with a testbench setter beside `setConsolePos`;
+2. `rl_io`'s device arm splitting on `DevConsole` for READ as it
+   already does for WRITE, with a capacity of 3;
+3. `wrongUnit` dropping the console from the RD exclusion **last**,
+   once 1 and 2 exist — which is exactly the order the injection
+   above shows you cannot reverse.
 
 ### Also found while reading for this, and worth fixing on the way
 

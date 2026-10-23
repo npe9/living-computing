@@ -1766,6 +1766,40 @@ run "MCP'S OWN BOOTSTRAP RUNS (boot_plan.md M3)" ./run_mcp_boot.sh StretchMcpBoo
 #   untranscribed page; pp.15-18 are the words the TRANSMIT moves and
 #   they execute.
 #
+# >>> THE 27TH CHECK, 2026-10-22: WHERE THE RUN STOPS, IN THE
+# MACHINE'S OWN WORDS.  mcp_x_ipl_bs_control_word reads X IPL BS,
+# which printed p.3 line 23's "CCW,0($15),X IPL BS" fills with the
+# channel's control word on every I/O TEST -- so MCP's own copy of
+# the word its test rejected is already in storage and no new model
+# plumbing was needed to see it.  It reads 0x008A920000000000:
+# EXCHANGE PROGRAM CHECK (bit 19) and END OF OPERATION (bit 22) on,
+# every other status bit off, and a data word address of
+# X DATE 1 + X DATE K -- one past the date message, so the WRITE
+# before it finished cleanly.  The failure is printed p.22 line 5's
+# "RD(SEOP),0.0($15),X DCW 2", a three-word read of the operator's
+# CONSOLE SWITCHES (RefMan printed p.150), which this model does not
+# have.
+#
+# ITS INJECTION IS THE HALF-FIX.  Permit the console on RD -- add
+# "&& !consoleCh" to StretchExecute's wrongUnit RD arm, one token --
+# without building the switch register:
+#
+#   -> FOUR checks fail.  The control word becomes
+#      0x0087C00000000000: data word address 0o1037, which is
+#      X LR IN + 3, and NO status bit at all.  The read "succeeded"
+#      out of the CARD READER's image, because StretchCore's device
+#      arm only knows it is a console on the WRITE side.  MCP takes
+#      that as the operator's IPL options, X ERR AD goes to ZERO (no
+#      error site ran), PC reads 0 against 239 and the indicator
+#      register 0x1324 against 0x9424.
+#
+# So the one-token fix is WORSE than the refusal it removes, and the
+# refusal's own comment named both halves: "when the IPL needs the
+# switches this is the line to change, and the capacity in
+# StretchCore's rl_io is 3."  Measured by hand (Bluespec build plus
+# ./run_mcp_boot.sh, not tests/inject.py's python verifier); the
+# anchor was confirmed unique and the file restored and diffed. <<<
+#
 # WHAT EACH CHECK IS FOR is in gen_mcp_boot_tb.py; the two that carry
 # the claim are:
 #   mcp_end_of_prosa_bit_X0 -- printed p.4 line 37's

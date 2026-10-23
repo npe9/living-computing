@@ -734,6 +734,39 @@ all-zero result is a real configuration and not a stub: printed p.22
 line 12 is `KFI(BU,24),0,40 -NO TIME ENTERED`, followed by
 `BAE,X V NO TM`.
 
+**WHAT IS IN THE THREE WORDS**, from `C22-6678-1` printed p.29 = PDF
+29, "INITIALIZING THE SYSTEM", read first-hand. The operator sets the
+initialization options on the console's binary keys before pressing
+IPL:
+
+| Console binary key latched on | Option |
+|---|---|
+| **0–23** | Time |
+| **32–55** | Date |
+| 28 | Suppress Messages |
+| 29 | I/O Status Report |
+| 30 | Rejected Job Count Report |
+| 31 | Abnormal MCP Mode Report |
+
+and step 2 of the procedure is "Set up the time in binary keys 0-23,
+and the date in binary keys 32-55."
+
+**So the binary keys are the FIRST of the three words, and MCP's own
+code proves the bit numbering.** printed p.22 line 11 loads
+`L(BU,64),X LR IN` — one word — and printed p.23 line 30 is
+`BZB,X LR IN+.29,X20B  - IF I/O STATUS REPORT DESIRED`: **bit 29 of
+the first word is binary key 29, which p.29's table calls I/O Status
+Report.** The table and the listing agree bit for bit, from two
+documents that do not cite each other.
+
+The **numeric** switches are a separate set — "the numbers on the
+numeric switch columns run from 1 to 16; there is no numeric switch
+column 0 as with the binary keys" — and carry the unavailable
+device: columns 7 and 8 the channel number, 15 and 16 the tape unit
+number. MCP reads them with a *second* `RD(SEOP)` on printed p.23
+line 44, after the operator presses ENTER. Which of words 2 and 3
+they scan into is not stated on p.29 and is not settled here.
+
 **And the ENTER key is a channel signal**, which is the other half of
 MCP's console protocol:
 
@@ -761,11 +794,15 @@ quotation plus the line *"when the IPL needs the switches this is the
 line to change, and the capacity in StretchCore's `rl_io` is 3."* MCP
 needed them on 2026-10-22. See `docs/NEXT.md`.
 
-(It is worth knowing what would happen if that guard were simply
-removed: `StretchCore.bsv`'s device arm splits on `x.isWrite` and
-only the WRITE side knows it is a console, so a READ would fall
-through to the **card reader's** image and move the card reader's
-cursor. The switch register has to be built, not just permitted.)
+**And removing the guard alone is worse than leaving it**, which was
+measured rather than reasoned: `StretchCore.bsv`'s device arm splits
+on `x.isWrite` and only the WRITE side knows it is a console, so a
+permitted READ falls through to the **card reader's** image and moves
+the card reader's cursor. Run that way, MCP's three-word read of the
+"operator's options" comes back with card-reader words and no status
+bit at all — its control word reads `0x0087C00000000000`, data word
+address `X LR IN + 3` — and the boot run leaves the program
+entirely. The switch register has to be built, not just permitted.
 
 *Not transcribed:* the card punch's table (printed p.142). The MCP Reference's Appendix B (printed
 pp.43–46) independently lists the I/O operations MCP itself issues, and
