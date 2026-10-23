@@ -5457,6 +5457,42 @@ both exits write with `TI,3,Y UX SAV,$11` before they part. Zero there
 means UNCODE never ran; a value means it did. That is the check to
 add when the next question needs it.*
 
+### AND THE BRANCH IS LINE 41, WHICH MEANS MCP IS RIGHT AND THE FIXTURE IS WRONG
+
+Five branches reach `Y UER`. Four can be ruled out and the fifth is
+the one printed p.25 line 44 names.
+
+* **printed p.38 line 8**, `BZAEZ,Y UER  -IF NOT A B GIVE ERROR
+  RETURN`, is UNCODE's FIRST test: lines 6-7 load twelve bits of the
+  card and compare them against `(2)100010000000`. **It passed**, and
+  that is measured rather than argued: line 12 is `BD,S CA6`, the
+  boot run's PC trail reached `S CA6`, and the step count responds to
+  printed p.44's tables. A card that failed line 8 would never have
+  got there.
+* **lines 36 and 38** are inside `Y MKEAR`'s disposition tests, and
+  **line 41 is its fall-through**: line 39 is
+  `K(BU,48),Y RELMK  -TEST FOR REEL CARD`, line 40 branches to
+  `Y REELC` if it matches, and line 41 is `B,Y UER` when it does not.
+  "Not an IOD, not a LIM, not a REEL" is exactly the sentence printed
+  p.25 line 44 writes as `-NOT IOD OR REEL CARD`.
+
+**And the card the fixture punches is an IOCD card.**
+`strap/iocd.py`'s `CLASS_COLUMN = "B"` is why line 8 passes — every
+MCP control card carries a class character and this one is a B — and
+`CARD_TYPE` is `IOCD`, which is none of IOD, LIM or REEL.
+
+> **So MCP is behaving correctly and so is the model.** printed p.25
+> line 41's parameter word says "EXPECT IOD AND REEL CARDS", the boot
+> hands it a class-B card whose type is IOCD, and MCP says so. The
+> bug is in the FIXTURE, not in either program.
+
+**What that makes the next task** is `boot_plan.md` A3's remaining
+piece, stated more precisely than before: the PROSA record needs the
+cards this call expects — IOD and REEL — not only the IOCD cards
+printed p.17 wanted. One gap is still open in the chain and should be
+closed rather than assumed: that printed p.25 line 32's `$4` really
+does point at the area the fixture punches into.
+
 ### FOUR ASSEMBLER CORRECTIONS, and one of them had a note predicting it
 
 * **`VF` is twenty-five bits.** C22-6531 printed p.18 says "THE

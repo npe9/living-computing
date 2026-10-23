@@ -616,11 +616,15 @@ cannot be tested without it.
 > tables were a plausible cause of printed p.25 line 44's "NOT IOD OR
 > REEL CARD" and they are not the cause.
 >
-> **So the next place to look is the card, or where the routine is
-> pointed at it** — `strap/iocd.py` punches an **IOCD** card and
+> **AND THE ANSWER IS THAT MCP IS RIGHT.** Five branches reach
+> UNCODE's `Y UER`; the one that fires is printed p.38 line 41, the
+> fall-through after line 39's `K(BU,48),Y RELMK  -TEST FOR REEL
+> CARD`. Line 8's "IF NOT A B GIVE ERROR RETURN" passed — measured,
+> because line 12 is `BD,S CA6` and the run reached it. The card the
+> fixture punches is a class-B card whose TYPE is **IOCD**, and
 > printed p.25 line 41's parameter word says "EXPECT IOD AND REEL
-> CARDS", and printed p.25 lines 32-36 compute the area `$4` and `$7`
-> address. `NEXT.md` has the order.
+> CARDS". **The bug is in the fixture, not in MCP and not in the
+> model.** `NEXT.md` has the chain and the one gap left open in it.
 >
 
 > **A14 — MCP RUNS THE WHOLE UNCODE PATH AND REJECTS THE CARD,
