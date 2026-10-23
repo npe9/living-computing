@@ -5395,6 +5395,126 @@ no opcode can rule it out. What ruled it out was the datum the name
 labels — which is a tell worth stating on its own: *when a name
 labels data, decode the data before trusting the name.*
 
+## MCP RUNS S CA6, AND CALLS S BRK8, 2026-10-23
+
+printed p.43 line 5 is
+
+```
+002422.00   000011.22 00    S CA6   Z,$R   -SET UP FOR A-6 CONVERSION
+```
+
+**That is the address printed p.38 predicted five pages earlier, the
+address printed p.42's last datum ends on to the bit, and the
+address the boot run's PC trail has been stopping at since p.38
+joined the image.**
+
+With p.43 in the image MCP executes it, and the trail moves:
+
+```
+PC TRAIL: last non-zero half-word address 2692, after 6028051 steps
+```
+
+2692 half-words is **002502.00** — `S BRK8`, printed p.38 line 17's
+"BREAK CARD INTO FIELDS", predicted at that address by the same page
+that predicted `S CA6`. It is printed p.45 line 10.
+
+So MCP has now converted a system card from Hollerith to BCD and
+called the routine that breaks it into fields.
+
+### `TAIL` appears, and §5x predicted it would be inert
+
+Line 9 is `TAIL,A`. The project's memory has said since 2026-10-17
+that *"Nothing in MCP needs `TAIL`"* — derived when only pp.3-15
+were transcribed, and now false.
+
+**But §5x's analysis holds, and that is the point.** C28-6129
+printed p.37 makes `TAIL` name mangling for cross-program link
+safety, not lexical scoping: definitions and references are mangled
+alike, so a single-program assembly is bit-identical with or without
+it. §5x wrote that down **before any page using `TAIL` had been
+opened**. This page is the first test of it and all forty-three rows
+match.
+
+**The deck writes `TAIL, A` as printed and the *assembler* discards
+it** — which is the other way round from how this first landed.
+`strap_asm.py`'s `LISTING_CONTROL` carried a paragraph saying `TAIL`
+could *not* be discarded, resting on
+`docs/mcp_tape_manufacture.md` §4's *"multi-level scoping, this
+needs real symbol-table scoping"* — **a summary that printed p.37
+superseded three days later, in a different file, without this one
+being updated**. That paragraph is now replaced by the page itself,
+by the condition under which discarding *would* be wrong, and by the
+point at which it stops being true (the first multi-program
+assembly). Keeping the line in the deck makes the page a literal
+transcription and leaves something for that assembly to find.
+
+**And line 6 is exactly the case §5x said to watch for** — a
+reference from *outside* the tail block to a symbol defined *inside*
+it:
+
+```
+002422.40   002424.10 00    $B,Q GO$A
+```
+
+C28-6129 printed p.37: *"When tailing is used, the last two
+characters of the basic symbol are used for a special character that
+indicates tailing is being used and a character to represent the
+tail symbol."* So `Q GO$A` **is** the mangled name, spelled out by
+hand because from outside the block the plain name would not
+resolve. With no mangling at all, reference and definition match for
+the same reason they would have matched mangled.
+
+**The `$` in front of the `B` is not explained**, and is recorded
+rather than guessed at. p.37 accounts for the `$A` and says nothing
+about a `$` on an *operation*. It is in the statement column, not
+the name column — checked at 600 dpi against `S CA8` and
+`LI(BU,24)` on the row below. The compiled row is a plain branch,
+and lines 34 and 50 print the same shape with no `$`.
+
+### A second SWAP, with its matched TRANSMIT on the same page again
+
+Line 53 is `Q FIN  SWAPI,6,Q SAV,$1  -RESTORE INDEXES` — **six**
+words, where printed p.40's two were three — and line 10 is its
+matched `TI,6,$1,Q SAV  -SAVE THE INDICES`, the same six words the
+other way, `A0` against `E0`.
+
+**`OP` is still clear, so no SWAP executed** — that is the
+measurement, and it is all of it. The obvious reading is that line
+53 sits on the *restore* path and the run leaves through the call to
+`S BRK8` before reaching it, but a last-non-zero PC trail cannot
+show which rows were stepped through, so that is a reading and not a
+result. What is measured is the indicator bit.
+
+Two callers now, in two routines, in the identical save-and-restore
+shape.
+
+### Two checks had drifted onto MCP's own working storage
+
+`mcp_comm_region_last_word` and `mcp_comm_region_one_past_is_zero`
+sat at `MCP_IPL_AT + IPL_WORDS + COMM_REGION_WORDS`, which assumed
+the comm region lands immediately after the image — true while the
+image ended at 002147 and p.37's region began at 002150. Seven pages
+later `IPL_WORDS` is 925 and that expression points at **002473**,
+which is inside the `Q SAV` this very page saves its index registers
+into.
+
+The old comment had predicted it: *"if the image grows by a page
+this check moves with it and stops being about S MCP — which is the
+right failure."* The failure was right.
+
+**The move's extent is now pinned from both sides at addresses that
+do not move:**
+
+- **002165** is the last word the fourteen-word move covers, and
+  reads **zero**. The image puts p.37's `S TODAY` there, so a move
+  one word short leaves a non-zero datum standing.
+- **002166** is one past, and it is **printed p.38 line 4's
+  `Y UNCOD`** — the TRANSMIT MCP branches to. A move one word long
+  destroys it.
+
+Both were zero in the old formulation; one is now a specific
+instruction word. Strictly stronger, and neither drifts.
+
 ## THE PAGES CLOSE ON S CA6, 2026-10-23
 
 printed p.38 line 12 is `BD,S CA6` and its binary put `S CA6` at

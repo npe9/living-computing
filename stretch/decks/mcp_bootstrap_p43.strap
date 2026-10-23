@@ -1,0 +1,203 @@
+! mcp_bootstrap_p43.strap -- HOLLERITH TO BCD CONVERSION, printed
+! page 43.  docs/MCP_Mar63_001-249.pdf PDF p.50, header "PAGE NUMBER
+! 43".  docs/boot_plan.md M3.
+!
+! >>> LINE 5 IS S CA6, AT 002422.00. <<<
+!
+! printed p.38 line 12 is "BD,S CA6" and its binary put S CA6 at
+! 002422.00 -- a prediction made five pages before this one was
+! opened.  Printed p.42's last datum ends at 002422.00 to the bit.
+! And line 5 here is "S CA6  Z,$R" at 002422.00.
+!
+! THIS IS THE ROUTINE THE BOOT RUN HAS BEEN STOPPING AT.  The PC
+! trail has read half-word 2596 since printed p.38 joined the image,
+! and 2596 is this address.
+!
+! ---------------------------------------------------------------
+! "TAIL" APPEARS, AND docs/NEXT.md 5x PREDICTED IT WOULD BE INERT
+! ---------------------------------------------------------------
+! Line 9 is "TAIL,A".  The project's memory has said since
+! 2026-10-17 that "Nothing in MCP needs TAIL", which was derived when
+! only printed pp.3-15 were transcribed and is now false.
+!
+! BUT 5x's ANALYSIS HOLDS, and it is the reason the assembler can
+! DISCARD the pseudo-operation while this deck writes it as printed.
+! C28-6129 printed p.37:
+!
+!   "The pseudo operation TAIL appends the symbol that appears in its
+!    address field as a tail to every symbol in the statements that
+!    follow the tail statement until another tail statement, or an
+!    untail statement, is given."
+!
+! IT IS NAME MANGLING FOR CROSS-PROGRAM LINK SAFETY, not lexical
+! scoping, so DEFINITIONS AND REFERENCES ARE MANGLED ALIKE and a
+! single-program assembly is bit-identical with or without it.  5x
+! wrote that down before any page using TAIL had been opened; this
+! page is the first test of it and it passes -- every row below is
+! checked against the listing's own machine code.
+!
+! AND LINE 6 IS THE CASE 5x SAID TO WATCH FOR.  It reads
+!
+!     002422.40   002424.10 00    $B,Q GO$A
+!
+! -- a reference from OUTSIDE the tail block (line 9 is three rows
+! below it) to Q GO, which is defined INSIDE it on line 10.  C28-6129
+! printed p.37: "When tailing is used, the last two characters of the
+! basic symbol are used for a special character that indicates
+! tailing is being used and a character to represent the tail
+! symbol."  So "Q GO$A" IS the mangled name, spelled out by hand
+! because from outside the block the plain name would not resolve.
+!
+! WITH NO MANGLING AT ALL -- which is what the assembler does with
+! the TAIL line -- the reference "QGO" and the definition "QGO" match
+! for the same reason they would have matched mangled.  The binary is
+! the proof: a plain "B,QGO" renders 002424.10 00, which is the row.
+!
+! THE "$" IN FRONT OF THE "B" IS NOT EXPLAINED.  C28-6129 printed
+! p.37 accounts for the "$A" on the operand and says nothing about a
+! "$" on an OPERATION.  It is in the statement column, not the name
+! column -- checked at 600 dpi against "S CA8" and "LI(BU,24)" on the
+! row below, which start at the name and statement columns
+! respectively.  The compiled row is a plain unconditional branch:
+! printed p.43 line 50's "B,Q CHK" prints 002454.10 00 and line 34's
+! "B,Q CK" prints 002447.50 00, the same shape with no "$" in sight.
+! RECORDED AND NOT GUESSED AT, the way printed p.3's bare "*" is.
+!
+! ---------------------------------------------------------------
+! AND A SECOND SWAP
+! ---------------------------------------------------------------
+! Line 53 is "Q FIN  SWAPI,6,Q SAV,$1  -RESTORE INDEXES", six words
+! this time where printed p.40's two were three.  Line 10 is its
+! matched "TI,6,$1,Q SAV  -SAVE THE INDICES": the same six words
+! going the other way, A0 against E0, on one page again.
+!
+! So the SWAP that printed p.40 made a documented caller for has a
+! second caller here, and the save/restore shape is identical.
+!
+! THE RUN DOES NOT EXECUTE IT, and what is MEASURED is only that:
+! the boot test's indicator check has OP clear, so no SWAP ran.  The
+! obvious reading is that line 53 sits on the RESTORE path and the
+! run leaves through line 47's call to S BRK8 first, but a
+! last-non-zero PC trail cannot show which rows were stepped
+! through, so that is a reading and not a result.
+!
+! ---------------------------------------------------------------
+! SUBSTITUTIONS
+! ---------------------------------------------------------------
+! (1) BLANKS INSIDE SYMBOL NAMES ARE DROPPED, as on every page since
+!     p.2: S CA6, S CA8, Q GO, Q P, Q NO, Q NOZ, Q ER, Q CK, Q ST,
+!     Q CHK, Q FIN, and the four it uses -- Q SAV, Q TB, Q FLD and
+!     the one-character Q.
+!
+! (2) "TAIL,A" IS WRITTEN AS PRINTED, and the assembler discards it.
+!     The paragraph above is why that is correct here, and
+!     strap/strap_asm.py's LISTING_CONTROL carries the same reasoning
+!     plus the condition that would make it wrong.  THE LINE IS KEPT
+!     RATHER THAN DROPPED so that this page is a literal
+!     transcription and so that a future multi-program assembly has
+!     something to find.
+!
+! (3) LINE 6'S "$B,Q GO$A" IS WRITTEN "B, QGO".  Both halves are
+!     covered above: the "$A" is the tail form and drops out with
+!     the tail, the "$" on the operation is unexplained, and the
+!     compiled row is checked either way.
+!
+! (4) A TRANSMIT'S COUNT IS WRITTEN WITHOUT ITS "$" where the count
+!     is a register.  Lines 10 and 53 are "TI,6,..." and
+!     "SWAPI,6,..." -- IMMEDIATE counts of six -- so the "6" is the
+!     count and the "$1" is an address.  printed p.40 line 36's
+!     convention does not apply.
+!
+! (5) NOTHING ELSE.  Every glyph reads cleanly at 900 dpi.
+!
+! ---------------------------------------------------------------
+! THE FOUR STAND-IN SYNs, read off this page's binary
+! ---------------------------------------------------------------
+!   Q SAV   002472.00   lines 10 and 53, the TI/SWAPI pair
+!   Q FLD   002456.00   line 46, ".15" with bit 18 clear
+!   Q       002465.00   line 47's VFL left address.  A ONE-CHARACTER
+!                       SYMBOL, which C22-6531 printed p.10 allows
+!                       ("six or fewer") and which is the shortest
+!                       name this project has transcribed.
+!   Q TB    002500.00   line 26, ".04" with bit 18 clear
+!
+! "$LZC" IS NOT A STAND-IN BUT A REGISTER, and the assembler already
+! had it: strap/opcodes.py puts Left Zeros Count at word 7 bits
+! 17-23, and lines 20 and 28 print 000007.21 -- word 7, bit 0o21,
+! which is 17.  The table and the listing agree without anything
+! being added.
+
+        SLC, (8)2422.0
+
+QSAV    SYN, (8)2472.0
+QFLD    SYN, (8)2456.0
+Q       SYN, (8)2465.0
+QTB     SYN, (8)2500.0
+
+        SLC, (8)2422.0
+
+! ---- the two entries ----------------------------------------------
+SCA6    Z, $R                       ! line 5  -SET UP FOR A-6
+                                     !           CONVERSION
+        B, QGO                      ! line 6  -- listing "$B,Q GO$A",
+                                     !           see note (3)
+SCA8    LI(BU,24), 1.32, 40         ! line 8  -SETUP FOR A-8 TYPE
+                                     !           CONVERSION
+        TAIL, A                     ! line 9  -- see note (2)
+
+! ---- the shared prologue ------------------------------------------
+QGO     TI, 6, $1, QSAV             ! line 10 -SAVE THE INDICES
+        LVE, $4, 0($15)             ! line 11
+        LV, $1, $R                  ! line 12
+        LC, $4, .32($15)            ! line 13
+        BXCZ, QFIN                  ! line 14
+        LV, $5, 1.0($15)            ! line 15
+
+! ---- FIND THE CHARACTER IN TABLE ----------------------------------
+QP      CT0011(V+I)(BU,3), .3($4)   ! line 19
+        L(BU,7), $LZC, 45           ! line 20
+        LV, $2, $R                  ! line 21
+        LC, $2, 7.32                ! line 22
+        LF(V+I)(BU,9), .9($4)       ! line 23
+        C+I, $2, 0                  ! line 24
+        BZXCZ, QER                  ! line 25 -YES
+        LV, $2, QTB($2)             ! line 26
+        LC, $3, 7.32                ! line 27
+        LF(BU,7), $LZC, 45          ! line 28
+        LV, $3, $R                  ! line 29
+        BXCZ, QCK                   ! line 30 -IF NO TRIPLE OR MORE
+                                     !           PUNCHES
+        KFI(BU,9), (2)001000010     ! line 31 -CHECK FOR AN 8-3 COMBO
+        BZAE, QNO                   ! line 32 -NO
+        LVI, $3, 5.0                ! line 33
+        B, QCK                      ! line 34
+
+QNO     KFI(BU,9), (2)000100010     ! line 36 -CHECK FOR AN 8-4 COMBO
+        BZAE, QNOZ                  ! line 37 -NO
+        LVI, $3, 5.32               ! line 38
+        B, QCK                      ! line 39
+
+QNOZ    KFI(BU,9), (2)010000010     ! line 41 -CHECK FOR AN 8-I COMBO
+        LVI, $3, 6.0                ! line 42
+        BAE, QCK                    ! line 43 -OK MUST BE A COLON
+QER     LVI, $3, 6.0                ! line 44
+        LVI, $2, 0                  ! line 45
+
+! ---- store the converted character --------------------------------
+QCK     LVE, $6, QFLD($3)           ! line 46
+        LF(BU,6,6), Q($6)           ! line 47
+        B, QST($1)                  ! line 48
+QST     ST(V+I)(BU,6,6), .6($5)     ! line 49
+        B, QCHK                     ! line 50
+        ST(V+I)(BU,8,8), .8($5)     ! line 51
+QCHK    CB, $4, QP                  ! line 52
+
+QFIN    SWAPI, 6, QSAV, $1          ! line 53 -RESTORE INDEXES
+        B, 1.32($15)                ! line 54 -AND RETURN
+
+        END, SCA6
+
+! ---------------------------------------------------------------
+! AND THREE LISTING MARKS, the bare "*" after the location that
+! every page since printed p.3 carries: lines 4 ("002422.00 *"),
+! 27 ("002435.00 *") and 47 ("002450.00 *").

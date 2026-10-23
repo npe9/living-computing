@@ -594,17 +594,23 @@ def main():
         #   0x9424  XCZ, XVGZ, XE, RGZ, AE   -- run ends in X ERROR
         #   0x1324  XH, XVGZ, MOP, RGZ, AE   -- run ends at S PRIME
         #   0x9320  XCZ, XVGZ, MOP, RGZ, XH  -- run ends at S CA6
+        #   0x9240  XCZ, XVGZ, RZ, XH        -- run ends at S BRK8
         #
         # WHAT THE CHECK IS STILL FOR is the bit that is NOT here:
         # OP is clear, so the model still refuses nothing MCP
-        # executes, now through printed p.38's UNCODE subroutine as
-        # well.  MOP is "to-memory operation" (C22-6531 Appendix A,
-        # $MOP, indicator 55), XH the index-result high and XCZ the
-        # index count zero -- the last store and the last two index
-        # operations.
+        # executes -- now through printed p.38's UNCODE subroutine
+        # AND printed p.43's Hollerith-to-BCD conversion, including
+        # p.43's own SWAPI, which the model would refuse if the run
+        # reached it.  It does not: line 53's SWAP is on Q FIN, the
+        # RESTORE path, and the run leaves through the call to
+        # S BRK8 before it gets there.
+        #
+        # RZ REPLACED MOP AND RGZ.  All three are result indicators;
+        # RZ is "R register zero" and the last thing S CA6 does
+        # before the call is arithmetic on $R, so the set moving is
+        # what going one subroutine further looks like.
         ("mcp_indicators_word11", str(IND_WORD),
-         _ind("XCZ") | _ind("XVGZ") | _ind("MOP")
-         | _ind("RGZ") | _ind("XH")),
+         _ind("XCZ") | _ind("XVGZ") | _ind("RZ") | _ind("XH")),
 
         # >>> THE MOVE ITSELF, AND IT IS THE POINT OF THE FIXTURE <<<
         # Printed p.4 line 28, "T,$11,X BUFER($X1),X BS END  -MOVE MCP
@@ -743,18 +749,44 @@ def main():
         # is the first word; the LAST word of the fifteen is what says
         # the count was read out of bits 32-49 and not left at zero.
         # Every one of these carries its own buffer offset.
-        ("mcp_comm_region_last_word",
-         str(prosa.MCP_IPL_AT + prosa.IPL_WORDS
-             + prosa.COMM_REGION_WORDS - 1),
-         prosa.record()[prosa.COMM_AT + prosa.COMM_REGION_WORDS - 1]),
-        # ONE PAST IT IS STILL ZERO, which is the count's upper edge.
-        # Before the descriptor existed this read a fixture word: the
-        # size field was zero, Reference Manual printed p.30 makes a
-        # direct count of zero mean 2**18, and the move ran until it
-        # left the record.
-        ("mcp_comm_region_one_past_is_zero",
-         str(prosa.MCP_IPL_AT + prosa.IPL_WORDS + prosa.COMM_REGION_WORDS),
-         0),
+        # >>> THESE TWO MOVED TO FIXED ADDRESSES ON 2026-10-23, AND
+        # THE OLD ONES HAD DRIFTED ONTO MCP'S OWN WORKING STORAGE.
+        # <<<
+        #
+        # They used to sit at "MCP_IPL_AT + IPL_WORDS +
+        # COMM_REGION_WORDS", which assumed the comm region lands
+        # immediately after the image -- true while the image ended
+        # at 002147 and printed p.37's region began at 002150.  Seven
+        # pages later IPL_WORDS is 925 and that expression points at
+        # 002473, which is inside Q SAV, the six words printed p.43
+        # line 10 saves its index registers into.  The comment above
+        # said "if the image grows by a page this check moves with it
+        # and stops being about S MCP -- which is the right failure";
+        # the failure was right and this is the fix.
+        #
+        # THE MOVE'S EXTENT IS NOW PINNED FROM BOTH SIDES, at
+        # addresses that do not move:
+        #
+        #   002165 is the LAST word the fourteen-word comm-region
+        #     move covers (002150 through 002165 inclusive is 0o16).
+        #     The record's block is a descriptor and thirteen zeros,
+        #     so this reads ZERO -- and the image delivers printed
+        #     p.37 line 43's S TODAY here, "  /  /63" in BCD, which
+        #     is NOT zero.  A move one word short leaves that datum
+        #     standing.
+        #
+        #   002166 is ONE PAST, and it is printed p.38 line 4 --
+        #     Y UNCOD's TRANSMIT, the first word of the UNCODE
+        #     subroutine.  A move one word long destroys the
+        #     instruction MCP branches to, which is the sharpest
+        #     possible statement of the upper edge.
+        #
+        # Both were zero in the old formulation; now one is a
+        # specific instruction word.  The pair is strictly stronger
+        # and neither drifts.
+        ("mcp_comm_move_covers_s_today", str(0o2165), 0),
+        ("mcp_comm_move_stops_before_yuncod", str(0o2166),
+         prosa.MCP_IPL_WORDS[0o2166 - prosa.MCP_IPL_AT]),
         # >>> AND MCP IS PLACED.  printed p.15 line 24,
         # "T,$10,X BUFER($9),0.0($8)  -PLACE MCP IN STORAGE": X10 is
         # the dictionary's MCP SIZE and $8 is the address LVE pulled

@@ -1431,13 +1431,51 @@ def enc_sic(addr24, idx):
 # instruction (printed p.2 lines 3-9: PUNFUL, PUNORG, PUNID, RESEQ,
 # PRNS) and its pages would not parse at all without them.
 #
-# WHAT IS DELIBERATELY NOT IN THIS SET: `TAIL`.  MCP uses `TAIL,(2)G`
-# and that one is NOT inert -- docs/mcp_tape_manufacture.md 4 records
-# it as "multi-level scoping, this needs real symbol-table scoping".
-# Discarding it would silently change which definition a symbol
-# resolves to, i.e. produce wrong addresses that still assemble.  It
-# stays an error until it is implemented, which is the whole point of
-# keeping this list to things that genuinely emit nothing.
+# >>> `TAIL` IS IN THIS SET, AND THE PARAGRAPH THAT SAID IT COULD
+# NOT BE WAS RESTING ON A SUMMARY. <<<
+#
+# It used to read: "WHAT IS DELIBERATELY NOT IN THIS SET: `TAIL`.
+# MCP uses `TAIL,(2)G` and that one is NOT inert --
+# docs/mcp_tape_manufacture.md 4 records it as 'multi-level scoping,
+# this needs real symbol-table scoping'.  Discarding it would
+# silently change which definition a symbol resolves to."
+#
+# C28-6129 printed p.37 (PDF 41) says otherwise, and
+# docs/NEXT.md 5x read it on 2026-10-17:
+#
+#   "The pseudo operation TAIL appends the symbol that appears in
+#    its address field AS A TAIL TO EVERY SYMBOL in the statements
+#    that follow the tail statement until another tail statement, or
+#    an untail statement, is given."
+#
+# IT IS NAME MANGLING FOR CROSS-PROGRAM LINK SAFETY, NOT SCOPING.
+# Definitions and references are mangled alike, so for an assembly
+# of ONE program the object code is bit-identical with or without
+# it.  The manual says so in the same breath -- the feature exists
+# because "two programs, written by different people at different
+# locations, are assembled together".
+#
+# THE CONDITION UNDER WHICH DISCARDING IT WOULD BE WRONG, stated so
+# the next person does not have to re-derive it: a reference inside
+# a tailed block to a symbol defined OUTSIDE it, or the reverse.
+# Either would be mangled on one side only.  THAT CASE OCCURS AND
+# MCP HANDLES IT BY HAND: printed p.43 line 6 is "$B,Q GO$A", a
+# reference from before the "TAIL,A" on line 9 to Q GO defined after
+# it, written with the tail spelled out -- p.37: "the last two
+# characters of the basic symbol are used for a special character
+# that indicates tailing is being used and a character to represent
+# the tail symbol."  With no mangling at all the two sides match for
+# the same reason they would have matched mangled, and printed
+# p.43's forty-three rows check it.
+#
+# WHEN THIS STOPS BEING TRUE: the moment this assembler assembles
+# two programs together, TAIL has to become real suffix mangling --
+# append the active tails to the name field and to every symbol
+# token in operand expressions.  It is not a prerequisite for
+# transcribing MCP, which is assembled alone.
+#
+# TWO INSTANCES SO FAR: printed p.2 line 10's "TAIL,(2)G", which
+# covers the whole bootstrap, and printed p.43 line 9's "TAIL,A".
 # C28-6129 printed p.14's table of CW's eight secondary pseudo
 # operations, transcribed verbatim.  Columns are Chain Bit, Multiple
 # Bit, Skip Flag -- the order the same page gives for control-word
@@ -1461,6 +1499,10 @@ LISTING_CONTROL = frozenset([
     'PRNID',    # print identification
     'RESEQ',    # resequence the card numbers
     'SEM',      # listing semantic/eject control
+    # NOT a listing control -- see the long note above for why it is
+    # nevertheless discarded, and for the one condition that would
+    # make that wrong.
+    'TAIL',
 ])
 
 

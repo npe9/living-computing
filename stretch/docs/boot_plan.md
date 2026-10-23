@@ -595,6 +595,22 @@ cannot be tested without it.
 > itself** — the next page, and the one the run has been waiting
 > for.
 >
+> **A12 — MCP RUNS S CA6 AND CALLS S BRK8, 2026-10-23.** printed
+> p.43 line 5 IS 002422.00, `S CA6` — the address printed p.38
+> predicted five pages earlier and the one the PC trail had been
+> stopping at. With p.43 in the image MCP executes it and the trail
+> moves to **002502.00**, `S BRK8`, printed p.38 line 17's "BREAK
+> CARD INTO FIELDS", predicted by the same page and sitting on
+> printed p.45 line 10. MCP has converted a system card from
+> Hollerith to BCD and called the routine that breaks it into
+> fields.
+>
+> `TAIL` appears on line 9, and `docs/NEXT.md` §5x predicted it
+> would be **inert** for a single-program assembly — written
+> 2026-10-17, before any page using it had been opened. First test,
+> and it passes: the deck writes the line as printed, `strap_asm.py`
+> discards it, and all forty-three rows match.
+>
 > **A9 — THE NEXT FIVE PAGES, AND WHY FIVE.** `S CA6` is on printed
 > p.43 (p.42 ends at 002417.30, p.45 opens at 002501.71), and
 > `mcp_ipl_image()` requires the image to be contiguous — a hole

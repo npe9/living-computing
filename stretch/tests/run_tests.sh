@@ -4368,6 +4368,77 @@ run "RETURNS, MASKS, TEMPORARY STORAGE FOR UNCODE, printed p.41, bit-exact (MCP_
 # "COMPILGOX" puts its X one position EARLIER, because "COMPILGO" is
 # eight characters and leaves no room for a blank.
 run "BCD TO IQS CONVERSION ROUTINE, printed p.42, bit-exact (MCP_Mar63 PDF p.49)" python3 verify_mcp_bootstrap_p42.py
+run "HOLLERITH TO BCD CONVERSION, printed p.43, bit-exact (MCP_Mar63 PDF p.50)" python3 verify_mcp_bootstrap_p43.py
+# >>> LINE 5 IS S CA6, AT 002422.00 -- THE ADDRESS THE BOOT RUN HAS
+# BEEN STOPPING AT. <<<  printed p.38 line 12's "BD,S CA6" put it
+# there five pages before this one was opened, and printed p.42's
+# last datum ends on it to the bit.
+#
+# AND WITH THIS PAGE IN THE IMAGE MCP RUNS IT: the PC trail moves
+# from half-word 2596 to 2692, which is 002502.00 -- S BRK8, printed
+# p.38 line 17's "BREAK CARD INTO FIELDS", predicted at that address
+# by the same page.  S BRK8 is printed p.45 line 10.
+#
+# "TAIL" APPEARS AND docs/NEXT.md 5x PREDICTED IT WOULD BE INERT.
+# Line 9 is "TAIL,A"; C28-6129 printed p.37 makes TAIL name mangling
+# for cross-program link safety, not scoping, so definitions and
+# references are mangled alike and a single-program assembly is
+# bit-identical with or without it.  5x wrote that on 2026-10-17
+# before any page using TAIL had been opened.  THIS PAGE IS THE
+# FIRST TEST AND IT PASSES: all forty-three rows match.
+#
+# THE DECK WRITES "TAIL, A" AS PRINTED and the ASSEMBLER discards
+# it, which is the other way round from how this landed first.
+# strap_asm.py's LISTING_CONTROL had a paragraph saying TAIL could
+# NOT be discarded, resting on docs/mcp_tape_manufacture.md 4's
+# "multi-level scoping, this needs real symbol-table scoping" -- a
+# SUMMARY that printed p.37 superseded.  That paragraph is replaced
+# by the page, by the condition under which discarding WOULD be
+# wrong (a reference crossing the block boundary, which MCP handles
+# by hand on line 6), and by the point at which it stops being true
+# (the first multi-program assembly).  Keeping the line in the deck
+# rather than dropping it makes the page a literal transcription and
+# leaves something for that assembly to find.
+#
+# LINE 6 IS THE CASE 5x SAID TO WATCH FOR -- a reference from
+# OUTSIDE the tail block to a symbol defined INSIDE it -- and MCP
+# writes it mangled by hand: "$B,Q GO$A".  p.37: "the last two
+# characters of the basic symbol are used for a special character
+# that indicates tailing is being used and a character to represent
+# the tail symbol."  THE "$" IN FRONT OF THE "B" IS NOT EXPLAINED by
+# that page and is recorded rather than guessed at; the compiled row
+# is a plain branch, which lines 34 and 50 print without any "$".
+#
+# A SECOND SWAP.  Line 53 is "Q FIN  SWAPI,6,Q SAV,$1  -RESTORE
+# INDEXES", six words where printed p.40's were three, and line 10
+# is its matched "TI,6,$1,Q SAV  -SAVE THE INDICES" -- A0 against
+# E0, same page, same save-and-restore shape.  THE RUN DOES NOT
+# EXECUTE IT, and what is measured is only that: the boot test's
+# indicator check has OP clear, so no SWAP ran.  That line 53 is on
+# the RESTORE path and the run leaves through the call to S BRK8
+# first is a reading, not a result -- a last-non-zero PC trail
+# cannot show which rows were stepped through.
+#
+# $LZC IS A REGISTER THE ASSEMBLER ALREADY HAD: opcodes.py puts Left
+# Zeros Count at word 7 bits 17-23 and lines 20 and 28 print
+# 000007.21 -- word 7, bit 0o21, which is 17.  Nothing was added.
+# And line 47's "Q" is a ONE-CHARACTER symbol, which C22-6531
+# printed p.10 allows and which is the shortest this project has
+# transcribed.
+#
+# TWO COMM-REGION CHECKS MOVED TO FIXED ADDRESSES because the old
+# ones had DRIFTED ONTO MCP'S OWN WORKING STORAGE.  They sat at
+# "MCP_IPL_AT + IPL_WORDS + COMM_REGION_WORDS", which assumed the
+# comm region lands right after the image -- true while the image
+# ended at 002147.  Seven pages later that expression points at
+# 002473, inside the Q SAV this page saves its index registers
+# into.  The move's extent is now pinned from both sides at
+# addresses that do not move: 002165 is the LAST word the fourteen
+# cover and reads zero (the image puts S TODAY there, so a short
+# move leaves a non-zero datum standing), and 002166 is ONE PAST and
+# is printed p.38 line 4's Y UNCOD -- so a long move destroys the
+# instruction MCP branches to.  Strictly stronger, and neither
+# drifts.
 # >>> ITS LAST DATUM ENDS EXACTLY AT S CA6. <<<  printed p.38 line 12
 # is "BD,S CA6" and its binary puts S CA6 at 002422.00 -- a
 # prediction made four pages before anything near that address was

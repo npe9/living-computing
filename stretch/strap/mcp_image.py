@@ -254,7 +254,7 @@ def build(verbose=False, pages=None, end_at='XIPLBS'):
 # opened.
 MCP_IPL_PAGES = [
     (DECK("mcp_bootstrap_p%d.strap" % n), "printed p.%d" % n)
-    for n in range(15, 43)
+    for n in range(15, 44)
 ]
 
 
