@@ -185,13 +185,37 @@ MCP_AT = WORDS_BEFORE_MCP_A + WORDS_BEFORE_MCP_B
 #   S REJ JB 002161.40   S ROOF   002162.00   S MARK   002162.40
 #   S IA     002163.00   Y UNCOD  002166.00
 #
-# 002150.00 through 002166.00 inclusive is 0o17 = FIFTEEN words, and
-# that is the smallest region containing every one of them --
-# twenty-two symbols in fifteen words, mostly two to a word.  It is a
-# LOWER BOUND read off the pages, not a number chosen to look round;
+# >>> IT IS FOURTEEN, AND PRINTED p.37 SAYS SO IN ITS OWN COMPILED
+# WORD.  THE DERIVATION BELOW WAS RIGHT IN METHOD AND WRONG BY ONE.
+# <<<
+#
+# It read: "002150.00 through 002166.00 inclusive is 0o17 = FIFTEEN
+# words, and that is the smallest region containing every one of them
+# -- twenty-two symbols in fifteen words, mostly two to a word.  It is
+# a LOWER BOUND read off the pages, not a number chosen to look round;
 # a sixteenth word would be unreferenced and a fourteenth would cut
-# Y UNCOD off. <<<
-COMM_REGION_WORDS = 15
+# Y UNCOD off."
+#
+# printed p.37 line 9 is
+#
+#     002150.40  000016.00+  S COM SZ  VF,S END CM-S MCP
+#                            -SIZE OF COMMUNICATION REGION
+#
+# and 0o16 is FOURTEEN.  The one symbol the derivation had at
+# 002166.00 is Y UNCOD, and p.37 lines 44-45 put S END CM and S PRIME
+# there -- the END of the region and the PRIME ROUTINE's address,
+# which is where MCP's initialization branches when it finishes.  So
+# 002166.00 is one PAST the region, not the last word of it, and
+# Y UNCOD names the routine rather than a datum in the table.
+#
+# A LOWER BOUND FROM USAGE CANNOT SEE THAT, and it is worth saying
+# why: every symbol the derivation found was real and every address
+# was right.  What it could not know is which side of the boundary
+# the last one sits on, because an address used as a BRANCH TARGET
+# and an address used as a TABLE SLOT look identical from the
+# instruction that mentions them.  The size had to come from the
+# program's own arithmetic, and p.37 line 9 is that arithmetic.
+COMM_REGION_WORDS = 14
 
 # Where the comm region sits in the record: immediately past the IPL
 # image, which is what printed p.15 line 17's three-register LVS

@@ -77,6 +77,15 @@ MKTAPE = os.path.join(os.path.dirname(os.path.abspath(__file__)),
 IND_WORD = 11
 
 
+def _image_index(octal_word):
+    """The index into prosa.MCP_IPL_WORDS of a word named by its
+    printed octal address.  Written this way so the two checks below
+    say WHICH WORD they mean -- "002147", the one printed p.36's last
+    datum runs into and printed p.37's first CNOP sits in -- rather
+    than an offset from an end that moves whenever a page is added."""
+    return int(octal_word, 8) - prosa.MCP_IPL_AT
+
+
 def _middle_index():
     """The first non-zero word at or after the middle of the moved
     image -- see mcp_moved_middle."""
@@ -610,8 +619,57 @@ def main():
         #
         # IT WAS EIGHTY WORDS AND pp.15-18 UNTIL 2026-10-22.
         ("mcp_moved_first", str(sym("XBSEND")), prosa.MCP_IPL_WORDS[0]),
-        ("mcp_moved_last", str(sym("XBSEND") + prosa.IPL_WORDS - 1),
-         prosa.MCP_IPL_WORDS[-1]),
+        # >>> AND THE LAST WORD IS NOT THE LAST WORD OF THE IMAGE ANY
+        # MORE, 2026-10-23, because printed p.37 joined it and MCP
+        # OVERWRITES WHAT p.37 PUTS THERE. <<<
+        #
+        # p.37 is the COMMUNICATION REGION, 002150.00 through
+        # 002165.00, and MCP's initialization spends pp.15-36 filling
+        # it: printed p.15 line 23 is "SR,$0,S ROOF  -PLACE 7030 SIZE
+        # IN COMM", printed p.20 line 11 is "SV,$10,S MCP  -SET BASE
+        # OF MCP IN...", and printed p.15 line 21 is
+        # "T,$0,X BUFER($9),S MCP  -MOVE COMM REGION" with its count
+        # loaded the row before from the record.  So those fourteen
+        # words end the run holding what MCP WROTE, not what the
+        # image carried, and a check on them measures the fixture's
+        # comm-region block rather than the move.
+        #
+        # SO THE PAIR MOVED DOWN to the last two words BEFORE the
+        # communication region -- which are also the two that
+        # straddle the join between two source decks.  printed p.36's
+        # last datum is "X ABN  DD(BU,36),(8)440042002020" at
+        # 002146.74, thirty-six bits, so it RUNS INTO 002147; printed
+        # p.37's first row is a CNOP at 002147.40.  One word, two
+        # decks, and it is only right if both are.
+        ("mcp_moved_last", str(sym("XBSEND") + _image_index("002147")),
+         prosa.MCP_IPL_WORDS[_image_index("002147")]),
+        # >>> THE FIXTURE'S INVENTED FIELD AND IBM'S COMPILED WORD,
+        # IN THE SAME THIRTY-TWO BITS. <<<
+        #
+        # 002150's LOW half is S COM SZ.  printed p.37 line 9 compiles
+        # it to 000016.00+ -- FOURTEEN words as a bit address, 896,
+        # which is 0x00038000 once the value field is placed.  And
+        # strap/prosa.py's comm_descriptor, written a week before p.37
+        # was opened, puts "size_words << 14" in a word MCP reads with
+        # printed p.15 line 20's "LC,$0,X BUFER+.32($9)".  LC takes a
+        # half-word's bits 31:14 (StretchExecute's dixop_LC,
+        # "count: h[31:14]"), so 14 << 14 IS 0x00038000.  The two are
+        # BIT-IDENTICAL, from opposite directions.
+        #
+        # SO THIS IS A CROSS-CHECK, NOT A MEASUREMENT OF THE MOVE, and
+        # it was nearly committed as the opposite.  The low half is
+        # unchanged at the end of the run and the obvious reading is
+        # "the comm-region TRANSMIT never reached it".  IT DID REACH
+        # IT AND WROTE THE SAME BITS.  What settles it is the
+        # two-minute read of LC against index_word, not the fact that
+        # the word did not change.
+        #
+        # The HIGH half is MCP's own, written by printed p.20 line
+        # 11's "SV,$10,S MCP  -SET BASE OF MCP IN COMM REGION" -- so
+        # one word carries the fixture's number, IBM's number and
+        # MCP's answer at once.
+        ("mcp_comm_size_fixture_and_listing_agree", str(0o2150),
+         0x02BF800000038000),
         # A word from the middle, so the check is not two endpoints
         # and a hope.
         #
@@ -632,8 +690,8 @@ def main():
         # alone would pass if the move were one word short AND the
         # record happened to repeat a value.
         ("mcp_moved_second_last",
-         str(sym("XBSEND") + prosa.IPL_WORDS - 2),
-         prosa.MCP_IPL_WORDS[-2]),
+         str(sym("XBSEND") + _image_index("002146")),
+         prosa.MCP_IPL_WORDS[_image_index("002146")]),
 
         # >>> THE WORD AFTER THE LAST ONE USED TO BE CHECKED AS STILL
         # ZERO, and that check had to go -- because MCP now runs far
@@ -1065,6 +1123,7 @@ def main():
                    # notice when it lands.
                    pc_check=0,
                    step_cap=40000000,
+                   pc_trail=True,
                    ipl=True))
 
 

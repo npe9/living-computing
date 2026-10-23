@@ -551,11 +551,39 @@ cannot be tested without it.
 > (p.29's numeric switches), and the injection is caught in its own
 > two checks.
 >
-> **A5 — WHERE IT STOPS NOW.** No error site runs; the run ends at
-> **PC 0**. A zero half-word is `BE, 0.0`
-> (`UNCOND_BRANCH_CODES["BE"]` is `0b000` with a zero address, which
-> the assembler confirms), so MCP has **branched into untranscribed
-> storage**. The communication region is populated on the way —
+> **A5 — IT FINISHED. 2026-10-23.** No error site runs, and the
+> "PC 0" the run reported is `BE, 0.0` in untranscribed storage. The
+> testbench's new `pc_trail` says the last non-zero program counter
+> was half-word 2284 = **002166.00**, and printed p.37 line 45 names
+> that address `S PRIME  SYN,$  - SAVED ADDRESS FOR PRIME ROUTINE`,
+> with line 31 reading `S PR IN  VF,S PRIME  -ENTRY TO PRIME
+> ROUTINE`. **MCP's IPL initialization ran printed pp.15-36 and
+> handed off to the prime routine.** M3+ is closed.
+>
+> **A6 — AND PRINTED p.37 IS TRANSCRIBED**, bit-exact on the first
+> run, 51 checks. It is a different source deck (card sequence
+> restarts at 13000001) sharing the LOCATION counter, and it defines
+> **twenty-one** of the forty-four externals pp.15-36 had been
+> SYNning — every one decoded out of an instruction on one of nine
+> earlier pages. merge(): externals 44 → 23, stand-ins checked
+> 253 → 163, all agreeing. It also corrected `COMM_REGION_WORDS`
+> from a derived 15 to IBM's own **14** (line 9's `S COM SZ`
+> compiling to `000016.00+`), and taught the assembler that an
+> omitted byte size is **eight** (C28-6129 printed p.16, "byte size
+> is treated modulo 8").
+>
+> **A7 — AND THE REGION'S FINAL STATE IS SIX-EIGHTHS EXPLAINED.**
+> printed p.15 lines 20-21 are `LC,$0,X BUFER+.32($9)  -GET SIZE OF
+> COMM REGION` and `T,$0,X BUFER($9),S MCP  -MOVE COMM REGION`: a
+> direct-count TRANSMIT whose count MCP loads out of the record, so
+> the fixture's block is written over the real one, 002150 through
+> 002163. **The fixture's descriptor field and IBM's own `S COM SZ`
+> are the same thirty-two bits** — `LC` takes a half-word's 31:14,
+> `comm_descriptor` writes `size_words << 14`, and p.37 line 9
+> compiles `0x00038000` whose 31:14 is 14. **Still open: 002164 and
+> 002165**, outside the move and still zero.
+>
+> The communication region is populated on the way —
 > `S YCOCH` holds **35**, which is `chanConsole`, and the decoding is
 > not load-bearing: printed p.21 line 5 loads `$15` from it and every
 > console WRITE addresses `0.0($15)`, so the date message coming out

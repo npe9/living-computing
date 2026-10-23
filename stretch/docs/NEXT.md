@@ -5395,6 +5395,173 @@ no opcode can rule it out. What ruled it out was the datum the name
 labels — which is a tell worth stating on its own: *when a name
 labels data, decode the data before trusting the name.*
 
+## MCP FINISHED ITS INITIALIZATION, 2026-10-23
+
+It did not get lost. The run that ended at "PC 0" ended at
+**002166.00**, and printed p.37 line 45 names that address
+`S PRIME  SYN,$  - SAVED ADDRESS FOR PRIME ROUTINE`, with line 31
+nine rows above it reading
+`S PR IN  VF,S PRIME  -ENTRY TO PRIME ROUTINE`.
+
+MCP's IPL initialization **ran printed pp.15 through 36 without
+entering a single error site** — `X ERR AD` is zero — filled its
+communication region, and branched to the next phase.
+
+### The probe that turned "PC 0" into a sentence
+
+A halt reports the PC it stopped at, and that is enough while a
+program stops somewhere it meant to. It stops being enough the
+moment one branches into storage that holds zeros: a zero half-word
+is `BE, 0.0`, so **every such run reports PC 0 and they all look
+alike**. `gen_tb.py` gained an opt-in `pc_trail` that keeps the last
+NON-zero program counter, which is the branch's destination.
+
+```
+PC TRAIL: last non-zero half-word address 2284, after 6002413 steps
+```
+
+2284 half-words is 002166.00. **It earned its keep on its first
+run**, and the cost is one `$display` on the tests that ask for it.
+
+### printed p.37 is transcribed — and it is a different source deck
+
+Its card sequence restarts at **13000001** where p.36's ended at
+`11C11xxx`, and the banner reads `******* THE COMMUNICATION REGION
+FOR MCP *******`. **The LOCATION counter does not restart**: p.36's
+last datum is `X ABN` at 002146.74, thirty-six bits, which runs into
+002147, and p.37 opens with a `CNOP` at 002147.40. Forty-six rows,
+twenty-three with binary output, **bit-exact on the first run**.
+
+### TWENTY-ONE EXTERNALS BECAME DEFINITIONS
+
+`strap/mcp_image.py`'s `merge()` carried **44** names used across
+printed pp.15-36 with no definition on any transcribed page, each
+held up by one page's stand-in `SYN`. This one page defines
+twenty-one of them:
+
+| | | |
+|---|---|---|
+| `S MCP` 002150.00 | `S MAXRN` 002155.40 | `S IF DMP` 002161.00 |
+| `S COM SZ` 002150.40 | `S YCOCH` 002156.00 | `S REJ JB` 002161.40 |
+| `S COM RG` 002151.00 | `S YPRCH` 002156.40 | `S ROOF` 002162.00 |
+| `S XCHAN` 002152.00 | `S DKMCP` 002157.00 | `S MARK` 002162.40 |
+| `S BAMCP` 002153.00 | `S SYRFT` 002157.40 | `S IA` 002163.00 |
+| `S R TAPE` 002153.40 | `S PR IN` 002160.00 | |
+| `S W TAPE` 002154.00 | `S PR OUT` 002160.40 | |
+| `S READ R` 002154.40 | `S BA PP` 002155.00 | |
+
+**Every one of those addresses was decoded out of an instruction on
+one of NINE earlier pages**, before this page was opened. The merge
+now checks each stand-in against a definition instead of against
+itself: **externals 44 → 23**, and the number of stand-ins actually
+checked against a definition rose accordingly — they all agree. The pp.7-8/pp.9-13 cross-check in its strongest form
+so far.
+
+### A FIXTURE NUMBER THAT WAS DERIVED, CORRECTED BY THE DOCUMENT
+
+`strap/prosa.py` had `COMM_REGION_WORDS = 15`, from a lower bound it
+argued for at length: the smallest region containing every
+comm-region symbol pp.15-36 mention, 002150.00 through 002166.00
+inclusive, "twenty-two symbols in fifteen words". Line 9 of p.37 is
+
+```
+002150.40  000016.00+   S COM SZ  VF,S END CM-S MCP
+                        -SIZE OF COMMUNICATION REGION
+```
+
+and `0o16` is **fourteen**. The symbol the derivation had at
+002166.00 is `Y UNCOD`, and lines 44-45 put `S END CM` and `S PRIME`
+there — the END of the region, and the address MCP branches to.
+
+**A LOWER BOUND FROM USAGE CANNOT SEE WHICH SIDE OF THE BOUNDARY THE
+LAST SYMBOL IS ON**, and that is the generalisable part: an address
+used as a BRANCH TARGET and an address used as a TABLE SLOT look
+identical from the instruction that mentions them. Every symbol the
+derivation found was real and every address was right. The size had
+to come from the program's own arithmetic, and line 9 is that
+arithmetic.
+
+### AN OMITTED BYTE SIZE IS EIGHT, and the assembler used to refuse it
+
+Lines 42 and 43 are `(AX)DD(BU),03/15/63X` and
+`(AX)DD(BU),  /  /63X` — **no byte size in the dds at all** — and
+the listing puts them one word apart. C28-6129 printed p.16:
+
+> "the byte size in a 7030 statement may range from 1 through 8
+> because the byte size field is **restricted to 3 bits** in length.
+> Therefore, **byte size is treated modulo 8** by STRAP."
+
+A three-bit field cannot hold 8, so 8 is written as 0 — and
+C22-6531 printed p.7 makes a null field compile as a zero, which
+reaches the same place. **This is the 7030's standing idiom, not a
+special case**: printed p.30 reads a zero immediate TRANSMIT count
+as sixteen and a zero control-word count as 2¹⁸ by the identical
+argument.
+
+The two rows print no binary, as pp.9-12's `(IQS*)` messages do not,
+so no character code is checked. What *is* checked is the counting —
+and the counting is what found the rule. Line 43's blanks were
+counted by **column alignment** against line 42 at 900 dpi: its two
+slashes sit under line 42's two slashes, so `"  /  /63"` has two
+blanks per gap and not three.
+
+(The expected values the boot test computes are a free second
+witness for the character set: `0x0A03110105110603` is `03/15/63`
+and `0x0000110000110603` is `  /  /63` in six-bit BCD with the two
+leading zeros p.16 describes.)
+
+### WHAT THE RUN SAYS ABOUT THE REGION, AND WHAT IS STILL OPEN
+
+Adding p.37 to the image moved two boot checks onto words MCP
+rewrites. **The image does arrive** — `002150`'s LOW half still
+holds p.37 line 9's `S COM SZ` (`0x38000`) at the end of the run,
+while MCP writes `S MCP` into the HIGH half of the same word
+(printed p.20 line 11, `SV,$10,S MCP`). One word with both halves of
+the story in it, and it is a check now.
+
+The pair moved down to 002146 and 002147, which are also the two
+words that **straddle the join between the two source decks** —
+p.36's thirty-six-bit `X ABN` runs into 002147 and p.37's `CNOP`
+sits in it. One word, two decks, right only if both are.
+
+**SIX OF THE EIGHT ARE EXPLAINED, AND THE EXPLANATION IS printed
+p.15 lines 20-21:**
+
+```
+X101  LC, $0, X BUFER+.32($9)     -GET SIZE OF COMM REGION
+      T, $0, X BUFER($9), S MCP   -MOVE COMM REGION
+```
+
+A direct-count TRANSMIT whose count MCP **loads out of the record**,
+so the fixture's comm-region block is written over the real one —
+002150 through 002163, fourteen words, which covers 002151, 002153,
+002154, 002160, 002161 and 002163 exactly. MCP then writes 002152,
+002155, 002156, 002157 and 002162 over the zeros, and 002150's high
+half last of all.
+
+**AND THE FIXTURE'S DESCRIPTOR AND IBM'S OWN `S COM SZ` NOW AGREE
+BIT FOR BIT**, which is worth more than either on its own. `LC`
+reads a half-word's bits 31:14 (`StretchExecute.bsv`'s `dixop_LC`:
+`count: h[31:14]`); `prosa.py`'s `comm_descriptor` puts
+`size_words << 14`, which is those bits; and p.37 line 9's
+`S COM SZ` compiles to `0x00038000`, whose bits 31:14 are **14**.
+The fixture's invented field and the document's compiled word are
+the same thirty-two bits — so a check on 002150 after the run is a
+cross-check between them, not a measurement of the move.
+
+**I NEARLY SHIPPED THAT AS "THE IMAGE ARRIVES ANYWAY".** 002150's
+low half is unchanged at the end of the run, and the obvious reading
+is that the comm move did not reach it. It did; it wrote the same
+bits. Fourth unmeasured structural claim of this phase, caught
+before the commit this time, by doing the two-minute read of `LC`
+against `index_word` that the reading demanded.
+
+**STILL OPEN: 002164 and 002165** — `S DATE` and `S TODAY` — which
+are OUTSIDE the fourteen-word move and still end the run zero where
+the image delivers `03/15/63` and `  /  /63`. Two words, and the
+next measurement is a fixture block short enough that the move
+cannot reach them.
+
 ## MCP TYPES A MESSAGE TO ITS OPERATOR, 2026-10-22
 
 ```

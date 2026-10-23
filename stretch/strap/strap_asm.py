@@ -952,15 +952,32 @@ def entry_byte_size(stmt):
     of converted characters may range from one through 12 ... However,
     the byte size in a 7030 statement may range from 1 through 8
     because the byte size field is restricted to 3 bits" -- which is
-    what makes MCP's "(CC*)DD(BU,,12)" legal."""
+    what makes MCP's "(CC*)DD(BU,,12)" legal.
+
+    >>> AND A MISSING OR ZERO BYTE SIZE IS EIGHT, which is the rest of
+    that same sentence: "Therefore, byte size is treated MODULO 8 by
+    STRAP."  A three-bit field cannot hold 8, so 8 is written as 0 --
+    and C22-6531 printed p.7 makes a null field compile as a zero, so
+    an omitted byte size reaches the same place.  This is the 7030's
+    standing idiom, not a special case for DD: Reference Manual
+    printed p.30 reads a zero immediate TRANSMIT count as sixteen and
+    a zero control-word count as 2**18 by the identical argument.
+
+    FOUND ON PRINTED p.37, whose lines 42 and 43 are
+    "(AX)DD(BU),03/15/63X" and "(AX)DD(BU),  /  /63X" with no byte
+    size at all.  The listing puts the second at 002165.00, exactly
+    one word after the first, and S END CM one word after that -- so
+    eight characters occupy sixty-four bits and the per-character
+    width is eight.  Six would have put them 48 bits apart.
+    """
     if not stmt.mods or not stmt.mods[0].strip():
         raise AssemblerError("a converted DD needs a data description "
                              "with a byte size", stmt.lineno)
     _, _, bs_expr = parse_dds(stmt.mods[0], stmt.lineno)
-    if bs_expr is None:
-        raise AssemblerError("a converted DD needs an explicit byte size "
-                             "(the third element of the dds)", stmt.lineno)
-    bs = eval_expr(bs_expr, {}, 0, lineno=stmt.lineno)
+    bs = 0 if bs_expr is None else eval_expr(bs_expr, {}, 0,
+                                             lineno=stmt.lineno)
+    if bs == 0:
+        bs = 8                      # modulo 8, C28-6129 printed p.16
     if not 1 <= bs <= 12:
         raise AssemblerError(f"byte size {bs} is outside C28-6129 printed "
                              f"p.16's range of one through twelve", stmt.lineno)

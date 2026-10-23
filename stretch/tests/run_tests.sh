@@ -4326,6 +4326,58 @@ run "MCP INITIALIZATION, printed p.35, bit-exact (MCP_Mar63 PDF p.42)" python3 v
 # external count fell from 45 to 44.
 
 run "MCP INITIALIZATION, printed p.36, bit-exact (MCP_Mar63 PDF p.43)" python3 verify_mcp_bootstrap_p36.py
+run "THE COMMUNICATION REGION FOR MCP, printed p.37, bit-exact (MCP_Mar63 PDF p.44)" python3 verify_mcp_bootstrap_p37.py
+# >>> THIS IS THE PAGE MCP'S INITIALIZATION WAS BRANCHING TO, and it
+# is a DIFFERENT SOURCE DECK -- its card sequence restarts at
+# 13000001 where p.36's ended at 11C11xxx.  The LOCATION counter does
+# not restart (p.36's last datum is at 002146.74 and p.37 opens with
+# a CNOP at 002147.40), so the two are contiguous in storage.
+#
+# WITH THE CONSOLE SWITCHES BUILT the boot run gets through printed
+# pp.15-36 without entering an error site and branches to 002166.00.
+# Line 45 here is "S PRIME  SYN,$" and line 31 is
+# "S PR IN  VF,S PRIME  -ENTRY TO PRIME ROUTINE".  MCP had FINISHED
+# INITIALIZATION AND HANDED OFF, which is a different thing from
+# getting lost, and nothing but this page could say which.
+#
+# TWENTY-ONE EXTERNALS BECOME DEFINITIONS.  mcp_image.py's merge()
+# carried 44 names used across printed pp.15-36 with no definition on
+# any transcribed page; this one page defines twenty-one of them --
+# S MCP, S COM SZ, S COM RG, S XCHAN, S BAMCP, S R TAPE, S W TAPE,
+# S READ R, S BA PP, S MAXRN, S YCOCH, S YPRCH, S DKMCP, S SYRFT,
+# S PR IN, S PR OUT, S IF DMP, S REJ JB, S ROOF, S MARK and S IA --
+# and every one of those addresses had been decoded out of an
+# instruction on one of NINE EARLIER PAGES.  The merge now checks
+# each stand-in against a definition instead of against itself:
+# externals 44 -> 23, stand-ins checked 253 -> 163, and they all
+# agree.  That is the pp.7-8/pp.9-13 cross-check in its strongest
+# form so far.
+#
+# AND IT CORRECTED A FIXTURE NUMBER THAT HAD BEEN DERIVED.
+# strap/prosa.py had COMM_REGION_WORDS = 15, from a lower bound: the
+# smallest region containing every comm-region symbol pp.15-36
+# mention, which ran 002150.00 through 002166.00 inclusive.  Line 9
+# here is "S COM SZ  VF,S END CM-S MCP" compiling to 000016.00+ --
+# FOURTEEN.  The symbol at 002166.00 is Y UNCOD, and lines 44-45 put
+# S END CM and S PRIME there: the END of the region and the address
+# MCP branches to.  A LOWER BOUND FROM USAGE CANNOT SEE WHICH SIDE
+# OF THE BOUNDARY THE LAST SYMBOL IS ON, because an address used as
+# a BRANCH TARGET and one used as a TABLE SLOT look identical from
+# the instruction that mentions them.  The size had to come from the
+# program's own arithmetic.
+#
+# THE TWO (AX) ROWS PRINT NO BINARY, as the (IQS*) message rows on
+# printed pp.9-12 do not, so no character code is checked.  What is
+# checked is the COUNTING, and it found a rule: lines 42 and 43 are
+# "(AX)DD(BU)" with NO BYTE SIZE, and the listing puts them one word
+# apart.  C28-6129 printed p.16: "the byte size in a 7030 statement
+# may range from 1 through 8 because the byte size field is
+# restricted to 3 bits in length.  Therefore, byte size is treated
+# MODULO 8 by STRAP."  A three-bit field cannot hold 8, so 8 is
+# written as 0 -- and C22-6531 printed p.7 makes a null field compile
+# as a zero.  AN OMITTED BYTE SIZE IS EIGHT.  The assembler used to
+# refuse the row outright; it is the same shape as p.30's zero
+# TRANSMIT count meaning sixteen.
 # >>> PRINTED p.36 IS TRANSCRIBED -- EVERY ROW ON THE PAGE, and with
 # it EVERY PAGE OF MCP's LISTING FROM PRINTED p.2 THROUGH p.36 IS
 # TRANSCRIBED AND BIT-EXACT.  docs/boot_plan.md's M3+ listed "$IPLD,

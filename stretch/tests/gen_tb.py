@@ -21,7 +21,7 @@ def generate(module_name, prog, checks, step_cap=30000, reader_image=None,
              console_switches=None,
              printer_checks=None, tape_image=None, tape_checks=None,
              console_checks=None,
-             pc_check=None, cycle_bound=None, ipl=False):
+             pc_check=None, cycle_bound=None, ipl=False, pc_trail=False):
     """checks: list of (label:str, word_addr_expr:str, expected:int).
 
     reader_image: optional list of ints -- words to pre-load into the
@@ -82,6 +82,24 @@ def generate(module_name, prog, checks, step_cap=30000, reader_image=None,
     lines.append("  StretchCore core <- mkStretchCore;")
     lines.append("  Reg#(Bit#(32)) phase <- mkReg(0);")
     lines.append("  Reg#(Bit#(32)) stepCount <- mkReg(0);")
+    if pc_trail:
+        # WHERE DID IT GO?  A halt reports the PC it stopped at, and
+        # that is enough while the program stops somewhere it meant
+        # to.  It stops being enough the moment a program branches
+        # into storage that holds zeros: a zero half-word is
+        # BRANCH ENABLED to 0.0 (UNCOND_BRANCH_CODES["BE"] is 0b000
+        # with a zero address field), so EVERY such run reports PC 0
+        # and they all look alike.  The last NON-ZERO pc is the
+        # branch's destination, which names it.
+        #
+        # EARNED ITS KEEP ON ITS FIRST RUN, 2026-10-23: the MCP boot
+        # run's "PC 0" turned out to be 002166.00, which printed p.37
+        # line 45 calls S PRIME, "LOCATION OF PRIME ROUTINE" -- so
+        # MCP had FINISHED initialization and handed off, rather than
+        # got lost.  Opt-in, because it costs a $display on every run
+        # that asks for it.
+        lines.append("  Reg#(HWordAddr) pcTrail0 <- mkReg(0);")
+        lines.append("  Reg#(HWordAddr) lastNonZeroPc <- mkReg(0);")
     lines.append("  Reg#(Bit#(32)) fails <- mkReg(0);")
     lines.append("")
     lines.append("  function Action check(String label, Word64 got, Word64 expected) =")
@@ -166,6 +184,9 @@ def generate(module_name, prog, checks, step_cap=30000, reader_image=None,
     run_phase += 1
     lines.append(f"  rule run (phase == {run_phase} && !core.halted() && stepCount < {step_cap});")
     lines.append("    core.step();")
+    if pc_trail:
+        lines.append("    pcTrail0 <= core.getPC();")
+        lines.append("    if (core.getPC() != 0) lastNonZeroPc <= core.getPC();")
     lines.append("    stepCount <= stepCount + 1;")
     lines.append("  endrule")
     lines.append("")
@@ -174,6 +195,8 @@ def generate(module_name, prog, checks, step_cap=30000, reader_image=None,
     lines.append(f"      $display(\"FAIL: step cap ({step_cap}) reached without halting -- checks below run against mid-execution state\");")
     lines.append(f"      fails <= fails + 1;")
     lines.append(f"    end")
+    if pc_trail:
+        lines.append('    $display("PC TRAIL: last non-zero half-word address %0d, after %0d steps", lastNonZeroPc, stepCount);')
     lines.append(f"    phase <= {run_phase + 1};")
     lines.append("  endrule")
     lines.append("")

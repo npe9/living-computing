@@ -228,9 +228,22 @@ def build(verbose=False, pages=None, end_at='XIPLBS'):
 # "X MSG BK DR(BU),(100)" leaves 002000-002143.  prosa.py proves each
 # hole against AssembledProgram.reservations rather than assuming it.
 # ---------------------------------------------------------------------
+# >>> PRINTED p.37 JOINED THE IMAGE ON 2026-10-23, and it is a
+# DIFFERENT SOURCE DECK: its card sequence restarts at 13000001 where
+# p.36's ended at 11C11xxx.  The LOCATION counter does not restart --
+# p.36's last row is at 002146.74 and p.37's first is a CNOP at
+# 002147.40 -- so the two are contiguous in storage and the range
+# below stays a range.
+#
+# IT IS WHERE THE BOOT RUN WAS GOING.  MCP finishes printed pp.15-36
+# and branches to 002166.00, which p.37 line 45 names S PRIME.
+#
+# AND IT DEFINES TWENTY-ONE OF THE EXTERNALS pp.15-36 HAD BEEN
+# SYNNING, so merge()'s cross-check now has a definition to compare
+# each stand-in against instead of comparing it with itself.
 MCP_IPL_PAGES = [
     (DECK("mcp_bootstrap_p%d.strap" % n), "printed p.%d" % n)
-    for n in range(15, 37)
+    for n in range(15, 38)
 ]
 
 

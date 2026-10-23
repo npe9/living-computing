@@ -1,0 +1,221 @@
+! mcp_bootstrap_p37.strap -- THE COMMUNICATION REGION FOR MCP,
+! printed page 37.  docs/MCP_Mar63_001-249.pdf PDF p.44, header
+! "PAGE NUMBER 37".  docs/boot_plan.md M3.
+!
+! >>> THIS PAGE IS WHERE MCP'S INITIALIZATION WAS GOING. <<<
+!
+! The boot run reaches it.  With the console switch register built
+! (2026-10-22) MCP finishes every page from printed p.15 through
+! p.36 without entering an error site, and the last thing it does is
+! branch to 002166.00 -- which line 45 of THIS PAGE names
+! "S PRIME  SYN,$   - SAVED ADDRESS FOR PRIME ROUTINE", the first
+! word past the end of the communication region.  The model reported
+! that as "PC 0" because untranscribed storage is zeros and a zero
+! half-word is BRANCH ENABLED to 0.0; the testbench's PC trail says
+! the last non-zero program counter was half-word 2284 = 002166.00.
+!
+! A NEW SOURCE DECK STARTS HERE.  The card sequence in the rightmost
+! column restarts at 13000001, where printed p.36 ended at 11C11xxx,
+! and the header's PUNID is still 11C11IPL.  The LOCATION counter does
+! NOT restart: printed p.36's last row is at 002146.74 and line 6
+! here is a CNOP at 002147.40, so the two decks are contiguous in
+! storage and this one is assembled after it.
+!
+! WHAT THIS PAGE IS.  Twenty-eight data words and half-words, with
+! no instruction among them except line 34's BD -- the communication
+! region every other part of MCP reads.  C22-6728's SYSTEM ANALYSIS
+! GUIDE calls it that; printed p.15 line 23 of the initialization is
+! "SR,$0,S ROOF  -PLACE 7030 SIZE IN COMM REGION", and line 37 here
+! is where S ROOF lives.
+!
+! ---------------------------------------------------------------
+! IT DEFINES TWENTY-ONE SYMBOLS THAT pp.15-36 HAVE BEEN SYNNING
+! ---------------------------------------------------------------
+! strap/mcp_image.py's merge() counted 44 EXTERNAL symbols across
+! printed pp.15-36 -- names used there with no definition on any
+! transcribed page, each carried by one page's stand-in SYN.  This
+! page defines twenty-one of them:
+!
+!   S MCP  S COM SZ  S COM RG  S XCHAN  S BAMCP  S R TAPE  S W TAPE
+!   S READ R  S BA PP  S MAXRN  S YCOCH  S YPRCH  S DKMCP  S SYRFT
+!   S PR IN  S PR OUT  S IF DMP  S REJ JB  S ROOF  S MARK  S IA
+!
+! EVERY ONE OF THOSE ADDRESSES WAS DECODED OUT OF AN INSTRUCTION ON
+! A PAGE TRANSCRIBED BEFORE THIS ONE WAS OPENED, and merge() now
+! checks each stand-in against the definition here rather than
+! against itself.  That is the pp.7-8/pp.9-13 cross-check again, at
+! twenty-one symbols instead of thirty-nine.
+!
+! ---------------------------------------------------------------
+! SUBSTITUTIONS
+! ---------------------------------------------------------------
+! (1) BLANKS INSIDE SYMBOL NAMES ARE DROPPED, as on every page since
+!     p.2.  C22-6531 printed p.10 allows "six or fewer alphabetic and
+!     numeric characters" and requires "only alphameric characters",
+!     and every name here is six or fewer once the blanks come out:
+!     S MCP, S COM SZ, S COM RG, S XCHAN, S CHANK, S CHANS, S BAMCP,
+!     S R TAPE, S W TAPE, S READ R, S BA PP, S MAXRN, S YCOCH,
+!     S YPRCH, S DKMCP, S SYRFT, S PR IN, S PR OUT, S IF DMP,
+!     S REJ JB, S ROOF, S MARK, S IA, S DATE, S TODAY, S END CM,
+!     S PRIME, S PRIM R.
+!
+!     NOTE "S COM SZ" AND "S R TAPE": seven and six characters with
+!     the blanks in, SCOMSZ and SRTAPE with them out -- the same
+!     six-character limit being obeyed in IBM's own hand that p.3
+!     records for "X ERR 05" versus "X ER 05A".
+!
+! (2) NOTHING ELSE.  No glyph on this page needed a reading rule:
+!     the only hex byte is line 34's, and its leading digit is the
+!     one listing_typography.md 13 is about -- see below.
+!
+! ---------------------------------------------------------------
+! LINE 34 IS listing_typography.md 13 AGAIN, AND THE ASSEMBLER
+! SETTLED IT WITHOUT A SECOND LOOK
+! ---------------------------------------------------------------
+! The page prints
+!
+!     34* 002161.00   000000.C4 00   S IF DMP  BD,0
+!
+! and that "C" is a digit zero.  THE FIELD IT SITS IN CANNOT HOLD A
+! C: "000000.C4" is the OCTAL bit address, word.bit, and C is not an
+! octal digit.  Assembling "BD,0" gives 000000.04 00 -- the same
+! glyph the MCP scan renders with a gap at the right.  Thirteenth
+! instance; see 13, 13a, 13b and 13c for the ones that were not this
+! easy.
+!
+! ---------------------------------------------------------------
+! TWO LISTING MARKS, RECORDED AND NOT EXPLAINED
+! ---------------------------------------------------------------
+! Line 9 prints its line number as "9**" where every other row on
+! the page prints "N*", and line 9 is the only FORWARD reference on
+! the page ("VF,S END CM-S MCP", and S END CM is defined on line
+! 44).  Line 29 prints a bare "*" AFTER its location, "002157.40 *",
+! which is the mark printed p.3 already records as unexplained.
+! NEITHER IS CHECKED HERE and neither changes a compiled bit; they
+! are written down so the next page that carries one is recognised
+! rather than re-derived.
+!
+! ---------------------------------------------------------------
+! WHAT THE REGION SAYS ABOUT THE MACHINE, read off its own comments
+! ---------------------------------------------------------------
+!   * S COM SZ is "S END CM - S MCP" and compiles to 000016.00 --
+!     FOURTEEN WORDS.  strap/prosa.py's fixture had been building a
+!     fifteen-word region.
+!   * S YCOCH and S YPRCH BOTH START AT 22.4, the same value, and
+!     the comments distinguish them ("THE CHANNEL NUMBER OF THE
+!     CONSOLE" and "...OF THE PRINTER").  So the boot run finding
+!     the same value in both at the END of initialization is not by
+!     itself evidence of anything: the initial values are equal too.
+!   * S DATE is "03/15/63", the date of the IPL tape, and S TODAY is
+!     "  /  /63" with the day and month blank -- which is what the
+!     "replace a blank character with a BCD zero" routine on printed
+!     p.24 exists to fix up.
+!   * S IF DMP is an INSTRUCTION, "BD,0", sitting in a data region:
+!     "INSTRUCTION FETCH TRAP INSTRUCTION".  A Branch Disabled to
+!     0.0 -- a halt -- planted where a runaway instruction fetch
+!     would land.
+!
+! ---------------------------------------------------------------
+! THE TWO (AX) ROWS PRINT NO BINARY, AS pp.9-12's MESSAGES DO NOT
+! ---------------------------------------------------------------
+! Lines 42 and 43 are "(AX)DD(BU)" character data and the BINARY
+! OUTPUT column is empty for both, exactly as it is for the (IQS*)
+! rows on printed pp.9-12.  SO NO CHARACTER CODE IS CHECKED OR CAN
+! BE.  What IS checked is the COUNTING: eight characters at eight
+! bits is one word each, and line 44's S END CM lands at 002166.00
+! only if both rows are exactly that long.  Line 43's blanks were
+! counted by COLUMN ALIGNMENT against line 42 at 900 dpi -- its two
+! slashes sit under line 42's two slashes, so "  /  /63" has two
+! blanks in each gap and not three.
+
+        SLC, (8)2147.40
+
+! ---- the region ---------------------------------------------------
+        CNOP                         ! line 6
+SMCP    VF, 0                        ! line 7   -SLOT FOR BASE ADDRESS
+                                      !            OF MCP
+SCOMSZ  VF, SENDCM-SMCP              ! line 9   -SIZE OF COMMUNICATION
+                                      !            REGION
+SCOMRG  XW, (8)100000.0,             ! line 11  -THE SYSTEM WORD FLAG
+SXCHAN  XW, 0, 40, 0                 ! line 13  -BASE ADDRESS OF CHAN
+                                      !            STATUS TABLE
+SCHANK  SYN, SXCHAN+.28              ! line 14  -THE NUMBER OF CHANNELS
+                                      !            CONNECTED
+SCHANS  SYN, SXCHAN                  ! line 15
+SBAMCP  VF, 0                        ! line 17  -BASE ADDR OF THE MCP
+                                      !            SYMB I/O LOC TBL
+SRTAPE  VF, 1.0                      ! line 18  -THE SPOOL READ TAPE
+                                      !            IOD REF NO.
+SWTAPE  VF, 2.0                      ! line 19  -THE SPOOL WRITE TAPE
+                                      !            IOD REF NO.
+SREADR  VF, 3.0                      ! line 20  -THE SPOOL READER IOD
+                                      !            REF NO.
+SBAPP   VF, 0                        ! line 21  -BASE ADDRESS OF PP IO
+                                      !            LOCATION TABLE
+SMAXRN  VF                           ! line 23  -S MAX RN THE MAX
+                                      !            REFERENCE NO FOR PP
+SYCOCH  VF, 22.4                     ! line 25  -THE CHANNEL NUMBER OF
+                                      !            THE CONSOLE
+SYPRCH  VF, 22.4                     ! line 26  -THE CHANNEL NUMBER OF
+                                      !            THE PRINTER
+SDKMCP  VF, 0                        ! line 28  -MCP RESET TRACK FOR
+                                      !            DISK
+SSYRFT  VF, 0                        ! line 29  -VARIABLE POINTER FOR
+                                      !            PP DISK ASSIGN
+SPRIN   VF, SPRIME                   ! line 31  -ENTRY TO PRIME ROUTINE
+SPROUT  VF, SPRIMR                   ! line 32  -SAVED ADDRESS JOE
+                                      !            PRIME ROUTINE
+SIFDMP  BD, 0                        ! line 34  -INSTRUCTION FETCH TRAP
+                                      !            INSTRUCTION
+SREJJB  VF, 0.0                      ! line 35  -THE NUMBER OF JOBS TO
+                                      !            REJECT
+SROOF   VF, 0                        ! line 37  - TOP OF STORAGE
+SMARK   VF                           ! line 38  -THE NEXT VACANT REEL
+                                      !            SLOT FOR PP
+SIA     VF, 0                        ! line 40  - LOCATION OF INTERRUPT
+                                      !            TABLE
+        CNOP                         ! line 41
+SDATE   (AX)DD(BU),03/15/63X         ! line 42  - FOR DATE OF IPL TAPE
+                                      !            TO SPOOL
+STODAY  (AX)DD(BU),  /  /63X         ! line 43  -FOR DATE OF JOBS ON
+                                      !            SPOOL TAPE
+SENDCM  SYN, $                       ! line 44  -END OF COMMUNICATION
+                                      !            REGION
+SPRIME  SYN, $                       ! line 45  - SAVED ADDRESS FOR
+                                      !            PRIME ROUTINE
+SPRIMR  SYN, $+.32                   ! line 46  -LOCATION OF PRIME
+                                      !            ROUTINE
+        END, SMCP
+
+! ---------------------------------------------------------------
+! THE CHECKED ROWS -- every printed row with a BINARY OUTPUT entry.
+! ---------------------------------------------------------------
+!   line  6  002147.40  000000.30 00                 CNOP
+!   line  7  002150.00  000000.00+                   S MCP
+!   line  9  002150.40  000016.00+                   S COM SZ
+!   line 11  002151.00  100000.00+ 000 000000 000000 S COM RG
+!   line 13  002152.00  000000.00+ 000 000050 000000 S XCHAN
+!   line 17  002153.00  000000.00+                   S BAMCP
+!   line 18  002153.40  000001.00+                   S R TAPE
+!   line 19  002154.00  000002.00+                   S W TAPE
+!   line 20  002154.40  000003.00+                   S READ R
+!   line 21  002155.00  000000.00+                   S BA PP
+!   line 23  002155.40  000000.00+                   S MAXRN
+!   line 25  002156.00  000026.04+                   S YCOCH
+!   line 26  002156.40  000026.04+                   S YPRCH
+!   line 28  002157.00  000000.00+                   S DKMCP
+!   line 29  002157.40  000000.00+                   S SYRFT
+!   line 31  002160.00  002166.00+                   S PR IN
+!   line 32  002160.40  002166.40+                   S PR OUT
+!   line 34  002161.00  000000.04 00                 S IF DMP
+!   line 35  002161.40  000000.00+                   S REJ JB
+!   line 37  002162.00  000000.00+                   S ROOF
+!   line 38  002162.40  000000.00+                   S MARK
+!   line 40  002163.00  000000.00+                   S IA
+!   line 41  002163.40  000000.30 00                 CNOP
+!
+! AND THE ROWS WITH NO BINARY OUTPUT, whose extent is checked by the
+! addresses of what follows them:
+!   lines 14, 15, 44, 45, 46  SYN rows -- the LOCATION column prints
+!                             the RESOLVED VALUE, not the counter
+!   lines 42, 43              (AX) character data
