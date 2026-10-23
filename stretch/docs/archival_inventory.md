@@ -674,7 +674,13 @@ structural, not just topical, SVA dependency), Transmit backward and
 Swap (section 146's own stated test plan explicitly covers
 forward/backward x direct/immediate x transmit/swap -- 2 of the 3
 modifier axes are out of scope, only forward-direct-transmit is
-covered by the model), and `LVE`/`LVS` (section 156, the whole final
+covered by the model). **NARROWED 2026-10-22, and the distinction is
+the whole point of this list:** backward is now IMPLEMENTED and
+deck-tested (`decks/transmit_multiword.strap` steps 6-7), but those
+decks are hand-written from Reference Manual printed p.30 and say so
+-- **section 146 itself is still untranscribed and unrun**, so
+backward remains a LISTING-VALIDATION gap even though it is no
+longer an implementation gap. SWAP is both, and `LVE`/`LVS` (section 156, the whole final
 and one of the largest sections). Strong cross-validation candidates:
 section 138 (Refill/RCZ, self-contained, no external dependencies
 observed -- best candidate found in this document, similar shape to
@@ -1458,7 +1464,10 @@ reasoning and for what got transcribed instead.
    coverage behind them: `SVA` (structural self-modifying-code
    dependency in I-Box 3/4/5, plus I-Box 3's dedicated ~50-page
    section), `RNX` (I-Box 4), `LVE`/`LVS` (I-Box 4's entire final
-   section), Transmit backward/Swap (I-Box 4), the whole
+   section), Transmit backward and Swap (I-Box 4 -- backward was
+   IMPLEMENTED 2026-10-22 and is deck-tested, but section 146 is
+   still untranscribed, so it stays on this list, which is about
+   listing validation and not about implementation), the whole
    interrupt/mask/indicator/timer/boundary system (I-Box 5's routine
    1260 alone, ~68% of that document), and `EX`/`EXIC` (I-Box 5's
    routine 1262 -- a harder gap than SIC's, since EX'd subject

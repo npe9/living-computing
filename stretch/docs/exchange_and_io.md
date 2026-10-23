@@ -432,6 +432,18 @@ all from p.123:
    ignored by the exchange when it obtains a control word from core
    storage; normally bits 18 to 24 will be zeros." A fetched control
    word's status field must be *masked off*, not carried in.
+
+   **AND "IGNORED" IS SPELLED OUT ON p.107 ITSELF**, which matters
+   because the two readings differ: *"When obtaining a control word
+   from core storage, the exchange ignores these bits and treats them
+   as if they were zero. **Inside the exchange, however, these same
+   bit positions are used to retain the status bits which indicate
+   the status of the unit.**"* So the exchange keeps its own status
+   in those positions and a fetched word neither contributes to nor
+   **clears** them. `StretchCore.bsv`'s refill arm violates the
+   second half: `ioDev.writeChanCW(x.ch, n)` adopts the chained
+   control word verbatim, zeroing the SEOP status bit mid-operation.
+   See `docs/NEXT.md`.
 2. **Bit 25 (chain) doubles as the index-flag source.** "Bit 25, the
    chain flag, may set the index-flag indicator in the indicator
    register during indexing operations… Bits 26 and 27 are not used for
@@ -698,6 +710,62 @@ takes place some time later", and back-to-back SOUND GONGs ring "at
 its maximum rate of approximately once per second". A thirty-third
 pluggable-exit output jack (printed p.152) "furnishes a momentary
 current whenever the gong is sounded".
+
+**THE CONSOLE'S READ SIDE, from the same page — and it was on the
+page the whole time.** This section quoted printed p.150's CONTROL
+table and stopped there; the left column of that page says what a
+READ does, and nothing in this repo had used it until 2026-10-22,
+when MCP's initialization asked for it. The project's own recurring
+lesson in its half-read form: *a page you have quoted is not a page
+you have read.*
+
+> "A READ instruction received by the console **with the keyboard not
+> enabled** is automatically terminated when the **three words
+> scanned from the switches** have been sent to the exchange."
+
+and, at the head of the same page, "The console has a byte weight of
+zero and a word weight of **3**." The word weight *is* the three
+switch words.
+
+MCP uses exactly that: printed p.22 line 5 is
+`XIO RD(SEOP),0.0($15),X DCW 2` with `X DCW 2 = CW,X LR IN,3,0` —
+"GET IPL OPTIONS", a three-word read of the operator's switches. An
+all-zero result is a real configuration and not a stub: printed p.22
+line 12 is `KFI(BU,24),0,40 -NO TIME ENTERED`, followed by
+`BAE,X V NO TM`.
+
+**And the ENTER key is a channel signal**, which is the other half of
+MCP's console protocol:
+
+> "*Enter.* Depression of this key **enables** the keyboard and
+> generates a **channel-signal** indication. If the keyboard has been
+> enabled, it becomes *active* when the subsequent READ operation has
+> completed reading of the three words from the console switches."
+
+printed p.23 line 39 is `BZB,X IPL BS+.23,X IO A` — spin while
+control-word bit 23 (CS) is off — which is MCP waiting for a human to
+press ENTER, and printed p.23 line 40's `REL(SEOP) - CLEAR CS STATUS
+BIT` is how it acknowledges one.
+
+Two more status rules from the same page, for whoever builds this:
+the ERASE key "terminates the READ operation with an end-exception
+indication", and during a WRITE the same key "immediately terminates
+the WRITE operation with an end-exception indication" — "in both
+cases the end-exception is accompanied by end-of-operation **unless
+the multiple block flag in the control word is on**."
+
+**The model refuses a console READ, deliberately and in writing.**
+`StretchExecute.bsv`'s `wrongUnit` guard leaves the console out of
+`RD`'s legal units, sets EPGK and EOP, and carries this page's
+quotation plus the line *"when the IPL needs the switches this is the
+line to change, and the capacity in StretchCore's `rl_io` is 3."* MCP
+needed them on 2026-10-22. See `docs/NEXT.md`.
+
+(It is worth knowing what would happen if that guard were simply
+removed: `StretchCore.bsv`'s device arm splits on `x.isWrite` and
+only the WRITE side knows it is a console, so a READ would fall
+through to the **card reader's** image and move the card reader's
+cursor. The switch register has to be built, not just permitted.)
 
 *Not transcribed:* the card punch's table (printed p.142). The MCP Reference's Appendix B (printed
 pp.43–46) independently lists the I/O operations MCP itself issues, and

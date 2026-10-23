@@ -1202,15 +1202,86 @@ run "LVS: multiple indexing (RefMan printed p.28)" ./run_program.sh ../decks/lvs
 # both the model and strap_asm.py record the discrepancy where they
 # implement it.
 
-run "MULTI-WORD TRANSMIT (RefMan printed p.30)" ./run_program.sh ../decks/transmit_multiword.strap StretchXmitTb \
-    "A0:44=0xA000000000000001" "A1:45=0xA000000000000002" \
-    "A2:46=0xA000000000000003" "A3:47=0xA000000000000004" \
-    "B0:51=0xB000000000000001" "B1:52=0xB000000000000002" \
-    "B2:53=0xB000000000000003" "C0:55=0xC000000000000001" \
-    "OVL0:56=0xD000000000000001" "OVL1:57=0xD000000000000002" \
-    "OVL2:58=0xD000000000000003" "OVL3:59=0xD000000000000004" \
-    "OVL4:60=0xD000000000000004" \
-    "E0:77=0xE000000000000001" "E15:92=0xE000000000000010"
+run "MULTI-WORD TRANSMIT, FORWARD AND BACKWARD (RefMan printed p.30)" ./run_program.sh ../decks/transmit_multiword.strap StretchXmitTb \
+    "A0:46=0xA000000000000001" "A1:47=0xA000000000000002" \
+    "A2:48=0xA000000000000003" "A3:49=0xA000000000000004" \
+    "B0:53=0xB000000000000001" "B1:54=0xB000000000000002" \
+    "B2:55=0xB000000000000003" "C0:57=0xC000000000000001" \
+    "OVL0:58=0xD000000000000001" "OVL1:59=0xD000000000000002" \
+    "OVL2:60=0xD000000000000003" "OVL3:61=0xD000000000000004" \
+    "OVL4:62=0xD000000000000004" \
+    "OVB0:63=0x1000000000000000" "OVB1:64=0x1000000000000000" \
+    "OVB2:65=0x1000000000000001" "OVB3:66=0x1000000000000002" \
+    "OVB4:67=0x1000000000000003" \
+    "BWD0:71=0x2000000000000000" "BWD1:72=0x2000000000000001" \
+    "BWD2:73=0x2000000000000002" "BWD3:74=0xFFFFFFFFFFFFFFFF" \
+    "BWD4:75=0xFFFFFFFFFFFFFFFF" \
+    "E0:92=0xE000000000000001" "E15:107=0xE000000000000010"
+# >>> TRANSMIT BACKWARD IS BUILT, 2026-10-22, AND A PAGE OF MCP IS
+# WHY.  This deck used to say "NOT TESTED HERE, deliberately:
+# backward transmission and SWAP ... MCP NEEDS NEITHER."  MCP printed
+# p.19 line 41 is "TB,3,0.0($11),0.0($13)  -MOVE BIASED CTS", and
+# with the IOCD card deck on the tape the boot run reaches it: the
+# refusal set Operation Code Invalid, the channel status table was
+# never relocated, and printed p.20 halted at "XERR 20  BD,$  -YES
+# *ERROR* NO CONSOLE" for a machine whose console HAD been declared.
+# <<<
+#
+# THE SPEC IS ONE SIGN, Reference Manual printed p.30:
+#
+#   "In FORWARD transmission, the sending and receiving addresses of
+#    each successive word transmitted are obtained by INCREMENTING
+#    the previous addresses by one.  The starting addresses specified
+#    in the instruction are therefore the addresses of the FIRST word
+#    in each of the two storage areas.
+#    In BACKWARD transmission ... by DECREMENTING the previous
+#    addresses by one.  The starting addresses ... are therefore the
+#    addresses of the LAST word in each of the two storage areas."
+#
+# so the instruction's own addresses are the starting pair EITHER
+# WAY and only the step changes sign.  The change is three lines:
+# XmitXfer carries the direction, rl_xmit decrements when it is set,
+# and the Transmit arm stops refusing it.
+#
+# AND THE SAME PAGE SAYS WHAT IT IS FOR: "When the receiving area
+# overlaps the UPPER end of the sending area, backward transmission
+# must be used; if the receiving area overlaps the lower end of the
+# sending area, forward transmission must be used."  Step 6 is
+# exactly that overlap and step 4 is its mirror, so the deck now
+# tests both directions against the case each is REQUIRED for.
+#
+# SWAP STILL SETS OP.  Its two-way interchange is a different
+# datapath -- p.30: "At the same time, the full words of the area
+# which starts at the right effective address are transmitted to the
+# area which starts at the left effective address" -- and nothing in
+# the corpus executes one.
+#
+# THREE INJECTIONS, through the uniqueness-and-cache-checking harness
+# (see tests/inject.py):
+#
+#   T1  rl_xmit steps UP when backward
+#       -> OVB1 reads D...0003 where D...0000 is wanted, OVB2 is one
+#          too high, and BWD0 holds the wrong source word.  Three
+#          checks, each naming a different word.
+#   T2  the FIRST continuation steps up (the arm, not the rule)
+#       -> five checks fail, and the extra two are the tell: BWD1 is
+#          never written at all, because an ascending run from BWS2
+#          leaves the words below it alone.
+#   T3  SWAP is accepted as well
+#       -> SURVIVES, and must: no deck in the corpus executes a SWAP,
+#          so nothing can see the difference.  Its ENCODING is pinned
+#          by decks/ax4b_1246_transmit_swap.strap; its EXECUTION is
+#          not tested by anything and this says so.
+#
+# AND THE DECK'S ALIGNMENT PAD HAD TO CHANGE, which is worth keeping
+# because it failed loudly and in a recognisable shape.  The pad was
+# "NOP, 0" -- exactly one half-word, and therefore correct only while
+# the instruction run above it has odd parity.  Steps 6 and 7 added
+# two words and a half, parity flipped, and every DD below came out
+# HALF A WORD LOW: the first check read 0x1800A0000000 where it
+# wanted 0xA000000000000001, which is two adjacent words seen through
+# a 32-bit shift.  It is "CNOP" now, which rounds to the next full
+# word whatever the parity is.
 # THE ARM USED TO EXECUTE EXACTLY ONE SHAPE -- a one-word IMMEDIATE-
 # count forward transmit -- and set Operation Code Invalid on every
 # other, "conservative by construction" in its own comment.  MCP
@@ -1322,6 +1393,33 @@ run "MCP'S OWN BOOTSTRAP RUNS (boot_plan.md M3)" ./run_mcp_boot.sh StretchMcpBoo
 #    move as well proves nothing, so the generator now takes the
 #    first NON-ZERO word at or after the midpoint.
 #
+# >>> AND THEN TRANSMIT BACKWARD WAS BUILT, AND MCP TYPED A MESSAGE
+# TO ITS OPERATOR: <<<
+#
+#     <CR><RED> DATE OF IPL TAPE <CR>00 MONTH 00 DAY  <CR><EOM>
+#
+# Five words, out of printed pp.21-24's date routine, through the
+# console it found in the channel status table -- the table printed
+# p.19 line 41's "TB,3,0.0($11),0.0($13)  -MOVE BIASED CTS"
+# relocates, which the model refused until the backward arm existed.
+# The date reads 00/00 because printed p.24's constants are
+# "(A*)DD(BU,,6),00,00,00,*", placeholders MCP fills from a clock
+# this fixture has no source for.  What the message proves is the
+# PATH: relocation, console hunt, and WRITE, all of it MCP's own
+# code on a machine it configured itself from cards.
+#
+# OP IS OUT OF THE INDICATOR SET.  It was that refusal.
+#
+# AND THE RUN NOW ENDS WITH AN I/O STATUS BIT, not a missing table.
+# X ERR AD holds printed p.3's X ERR 05 -- "X7 3  BRZ,0.0
+# -SUCCESSFUL" one row above it -- which is the shared I/O test
+# every WRITE in the program calls through "SIC,X7 3 / B,X7 1".
+# printed p.7 line 12's error table maps it to X MSG 05,
+# "UNSUCCESSFUL COMPLETION".  WHICH STATUS BIT THE MODEL LEAVES SET
+# AFTER A CONSOLE WRITE IS THE NEXT QUESTION, and it is a model
+# question: the message came out right, so the write worked.
+#
+# [and before that, the step this section described first:]
 # >>> AND THEN THE DECK GREW AN IOD CARD, AND MCP RAN ELEVEN PAGES
 # FURTHER.  It now halts at printed p.20 line 18 -- "XERR 20  BD,$
 # -YES *ERROR* NO CONSOLE" -- with NO ERROR SITE HAVING RUN AT ALL
@@ -4675,24 +4773,55 @@ run "Opcode coverage audit (ratchet)" python3 audit_opcode_coverage.py
 # the four I/O Suppress-End-Of-Op forms.
 
 run "TRANSMIT: what is honoured, and what is refused out loud" ./run_program.sh ../decks/transmit_scope.strap StretchTransmitScopeTb \
-    "PC=4246" "SRC:2176=0x9249249249249249" \
+    "PC=4245" "SRC:2176=0x9249249249249249" \
     "DST1:2240=0x9249249249249249" "DST2:2248=0" \
     "DST3a:2256=0x9249249249249249" "DST3b:2257=0x9249249249249249" \
     "DST4a:2304=0x9249249249249249" "DST4z:2319=0x9249249249249249" \
-    "DST5:2368=0x9249249249249249" "DST6:2376=0"
-# THREE OF THE SIX BLOCKS FLIPPED ON 2026-10-18, from "refused" to
-# "happens", because multi-word and direct-count TRANSMIT are built.
-# DST3, DST4 and DST5 used to be asserted ZERO and are now asserted to
-# have RECEIVED -- DST3 both of its two words, DST4 its first and its
-# SIXTEENTH (p.30: "a zero count field indicates the maximum count of
-# 16 full words"), DST5 by the direct-count path with index 1's count
-# loaded first.  decks/transmit_multiword.strap is the deck that pins
-# the new behaviour in detail; this one keeps its original job, the
-# SCOPE, one block per rule.
+    "DST5:2368=0x9249249249249249" "DST6:2376=0x9249249249249249"
+# FOUR OF THE SIX BLOCKS HAVE NOW FLIPPED, from "refused" to
+# "happens", and each flip was MCP asking for the operation.
 #
-# DST2 AND DST6 ARE STILL ZERO, and that is what the file is for now:
-# SWAP in either direction and BACKWARD transmission are still refused
-# out loud.
+# 2026-10-18, DST3/DST4/DST5: multi-word and direct-count TRANSMIT.
+# They used to be asserted ZERO and are now asserted to have RECEIVED
+# -- DST3 both of its two words, DST4 its first and its SIXTEENTH
+# (p.30: "a zero count field indicates the maximum count of 16 full
+# words"), DST5 by the direct-count path with index 1's count loaded
+# first.  printed p.4 line 28 is an eleven-word direct-count transmit,
+# "MOVE MCP IPL", so the refusal was stopping MCP moving itself.
+#
+# 2026-10-22, DST6: TRANSMIT BACKWARD, and THE PC MOVED BACK ONE
+# HALF-WORD BECAUSE OF IT.  Block 6's "BZOP,$ / BOPZ,$+.32" pair
+# became a single "BOP,$", so PASS is 4245 where it was 4246 -- the
+# PC check is load-bearing here and not decoration.  printed p.19
+# line 41 is "TB,3,0.0($11),0.0($13) -MOVE BIASED CTS", which the
+# boot run reaches once an IOCD deck is on the tape.
+# decks/transmit_multiword.strap steps 6 and 7 pin the STEPPING, with
+# five and three words each and the upper-end overlap p.30 says
+# backward is *required* for; this block pins only that the modifier
+# is ACCEPTED, which a count of one is enough for.
+#
+# DST2 IS THE ONE REFUSAL LEFT, and that is what the file is for now:
+# SWAP, in either direction, is a two-way interchange and no deck this
+# project has read executes one.
+#
+# BLOCK 6'S INJECTION HAD TO BE REPLACED, not just re-run.  The old
+# one was "remove the backward check", which is meaningless now that
+# the check is gone; the new one is its inverse -- restore
+# "t.backward == 1 ||" in StretchExecute's Transmit arm:
+#
+#   T4  the Transmit arm refuses backward again
+#       -> caught, at a NAMED address: the run hangs on block 6's
+#          "BOP,$" at 004111.40 (half-word 4243), DST6 reads 0 where
+#          0x9249249249249249 is wanted, and the step cap reports
+#          "reached without halting".  Three checks, and the PC is
+#          one of them.
+#
+# Measured 2026-10-22 by hand rather than through tests/inject.py:
+# that harness runs a PYTHON verifier, and this one is a Bluespec
+# build plus ./run_program.sh.  The uniqueness check it exists to
+# enforce was done explicitly -- "if (t.swap == 1)\n          ind =
+# setOpInvalid(ind);" occurs exactly once in StretchExecute.bsv --
+# and the file was restored from a saved copy and diffed afterwards.
     # 004114.00; hand-written from Ref. Manual pp.30-31 and the card
 # A CLAIM IN bsv/README.md THAT WAS TWO-THIRDS FALSE, found 2026-09-22.
 # Its "decoded but not executed (sets indicator 15, OP, and no-ops)"

@@ -5395,6 +5395,219 @@ no opcode can rule it out. What ruled it out was the datum the name
 labels — which is a tell worth stating on its own: *when a name
 labels data, decode the data before trusting the name.*
 
+## MCP TYPES A MESSAGE TO ITS OPERATOR, 2026-10-22
+
+```
+<CR><RED> DATE OF IPL TAPE <CR>00 MONTH 00 DAY  <CR><EOM>
+```
+
+Five words, out of printed pp.21-24's date routine, on the console
+MCP found in the channel status table it relocated itself, on a
+machine it configured from cards it read off a tape.
+
+The date reads 00/00 because the fixture's tape has no date on it.
+printed p.21 lines 17-20 build the digits with
+`M+MG(BU,4),X MONTH+.3,24` and three more like it, **adding** into
+the literal `00 MONTH ` / `00 DAY  ` that lines 37-38 assemble; what
+they add comes from `X VERFY`, which printed p.2 line 27 declares as
+`DD(BU,32,8),0 -SLOT FOR DATE OF SOURCE TAPE`. `strap/prosa.py`
+writes no tape label, so the slot is zero and zero is what gets
+added. What the message proves is the **path**: relocation, console
+hunt, and WRITE.
+
+### TRANSMIT BACKWARD is built, and a page of MCP is why
+
+`decks/transmit_multiword.strap` used to say *"NOT TESTED HERE,
+deliberately: backward transmission and SWAP ... **MCP needs
+neither**."* printed p.19 line 41 is `TB,3,0.0($11),0.0($13) -MOVE
+BIASED CTS`, and with the IOCD deck on the tape the boot run reaches
+it.
+
+**The spec is one sign.** Reference Manual printed p.30:
+
+> "In **forward** transmission, the sending and receiving addresses
+> of each successive word transmitted are obtained by
+> **incrementing** the previous addresses by one. The starting
+> addresses specified in the instruction are therefore the addresses
+> of the **first** word in each of the two storage areas.
+>
+> In **backward** transmission ... by **decrementing** the previous
+> addresses by one. The starting addresses ... are therefore the
+> addresses of the **last** word in each of the two storage areas."
+
+So the instruction's own addresses are the starting pair either way
+and only the step changes sign. The change is three lines: `XmitXfer`
+carries the direction, `rl_xmit` decrements when it is set, and the
+Transmit arm stops refusing it. **SWAP still sets OP** — a two-way
+interchange is a different datapath and nothing in the corpus
+executes one.
+
+The deck now tests both directions against the case each is
+*required* for, which the same page names: *"When the receiving area
+overlaps the upper end of the sending area, backward transmission
+must be used; if the receiving area overlaps the lower end, forward
+must be used."*
+
+**Four injections.** T1 and T2 are caught with distinct failure
+sets — T2's extra two are the tell, because an ascending run from
+`BWS2` never writes the words below it. **T3, accepting SWAP as
+well, SURVIVES and must**: no deck executes a SWAP, so nothing can
+see the difference. Its *encoding* is pinned by
+`decks/ax4b_1246_transmit_swap.strap`; its *execution* is not tested
+by anything, and the record now says so.
+
+**T4 had to be WRITTEN, not re-run.** `decks/transmit_scope.strap`'s
+block 6 flipped from asserting a refusal to asserting the move, so
+its old injection — "remove the backward check" — became
+meaningless: the check is gone. The replacement is its inverse,
+restoring `t.backward == 1 ||` in the Transmit arm, and it is caught
+at a named address: the run hangs on block 6's `BOP,$` at
+**`004111.40`** (half-word 4243), `DST6` reads zero, and the step cap
+reports "reached without halting". **A flipped assertion needs a
+flipped injection**; re-running the old one would have reported a
+survival and meant nothing.
+
+That flip also moved the deck's `PASS` back one half-word, 4246 to
+4245, because `BZOP,$ / BOPZ,$+.32` became a single `BOP,$` — so the
+run's PC check is load-bearing in that file and not decoration.
+
+### The deck's alignment pad failed loudly, in a recognisable shape
+
+The pad was `NOP, 0` — exactly one half-word, and therefore correct
+only while the instruction run above it has **odd parity**. The new
+steps added two words and a half, parity flipped, and every `DD`
+below came out **half a word low**: the first check read
+`0x1800A0000000` where it wanted `0xA000000000000001`, which is two
+adjacent words seen through a 32-bit shift. It is `CNOP` now, which
+rounds to the next full word whatever the parity is.
+
+### Next: THE STATUS BIT AND THE SILENT CONSOLE ARE ONE GATE
+
+The run ends with `X ERR AD` holding printed p.3's `X ERR 05` — one
+row below `X7 3 BRZ,0.0 -SUCCESSFUL` — which printed p.7 line 12's
+error table maps to `X MSG 05`, **"UNSUCCESSFUL COMPLETION"**. The
+test is printed p.3 lines 26-28: `BB,X IPL BS+.24` spins while the
+SEOP status bit is set, then `CT0011(BU,5),X IPL BS+.19` tests
+control-word bits **19-23** — EPGK, UK, EE, EOP, CS — and `BRZ,0.0`
+returns only if all five are off.
+
+**IT IS NOT THE WRITE. IT IS THE READ THAT FOLLOWS IT, AND THE MODEL
+PREDICTED IT IN ITS OWN SOURCE.** printed p.21 line 24, the
+instruction `X7 3`'s `BRZ` returns to after the date message, is
+`B,X IO`, and `X IO` is printed p.22 line 5:
+
+```
+XIO     RD(SEOP),0.0($15),X DCW 2    -GET IPL OPTIONS
+```
+
+with `X DCW 2 = CW,X LR IN,3,0` — **a three-word READ from the
+console**. `StretchExecute.bsv`'s `wrongUnit` guard excludes the
+console from `RD`'s legal units and sets `cw.epgk = 1; cw.eop = 1`.
+**EPGK is control-word bit 19 and EOP is bit 22** — both inside the
+five bits `CT0011` tests. So p.22 line 5 program-checks, p.3's shared
+I/O test finds it, and the run ends in `X ERROR` at printed p.6 line
+1's `BD,$`, half-word 239.
+
+**I HAD THIS WRONG TWICE BEFORE READING THE ARM.** First I looked for
+a bit the console WRITE leaves behind — it leaves none, and the
+message came out right. Then I guessed the READ "falls through to the
+card reader's image", which is what `StretchCore.bsv`'s device `else`
+would do if the transfer ever started; it never starts, because
+`execute()` refuses it two stages earlier. **The arm was commented
+for this exact day:**
+
+> "THE CONSOLE IS WRITE-ONLY HERE, AND THAT IS A KNOWN DEVIATION
+> rather than a modelling choice… Nothing on the path that runs today
+> reads them, so the three-word switch image is not built and a READ
+> here program-checks instead. **When the IPL needs the switches this
+> is the line to change**, and the capacity in StretchCore's `rl_io`
+> is 3."
+
+That is the second time in this phase a check's own comment named the
+next failure before it happened; the Address Invalid one was the
+first. A deviation recorded where the code is beats a deviation
+recorded in a plan.
+
+### What to build: the console's three switch words
+
+Reference Manual **printed p.150** (PDF 153), the console's whole
+specification, read first-hand:
+
+> "A READ instruction received by the console **with the keyboard not
+> enabled** is automatically terminated when the **three words
+> scanned from the switches** have been sent to the exchange."
+
+and, at the head of the same page, "The console has a byte weight of
+zero and a word weight of **3**." The word weight *is* the three
+switch words, and MCP's count of three is that word weight exactly.
+`C22-6678-1` printed p.29 says what the operator sets in them: the
+time and date, in binary keys 0-23 and 32-55.
+
+**ZERO IS THE RIGHT DEFAULT AND MCP SAYS SO.** printed p.22 line 12
+is `KFI(BU,24),0,40 -NO TIME ENTERED` followed by `BAE,X V NO TM`:
+all-zero switches *are* the documented "the operator entered nothing"
+case, so a zeroed register is a real configuration and not a stub.
+
+**AND THE ENTER KEY IS A CHANNEL SIGNAL**, which is the other half of
+MCP's console protocol and explains printed p.23. Line 39 is
+`BZB,X IPL BS+.23,X IO A` — spin while control-word bit 23 (CS) is
+off — and p.150 says *"Enter. Depression of this key enables the
+keyboard and generates a **channel-signal** indication."* That loop
+is MCP waiting for a human. With zero switches the run never reaches
+it: printed p.23 line 30's `BZB,X LR IN+.29` takes the other branch.
+
+**Two more status rules from the same page**, for whoever builds it:
+the ERASE key "terminates the READ operation with an end-exception
+indication", and during a WRITE the same key "immediately terminates
+the WRITE operation with an end-exception indication" — "in both
+cases the end-exception is accompanied by end-of-operation **unless
+the multiple block flag in the control word is on**." Neither is
+reachable without an operator, so neither needs building first.
+
+**MEASURE BEFORE BUILDING.** One boot-testbench check on channel 35's
+control word (`readChanCW`) names the bits instead of deriving them,
+and the derivation above is from the model's source, not from a run.
+
+### Also found while reading for this, and worth fixing on the way
+
+**The refill arm adopts a chained control word verbatim.**
+`StretchCore.bsv`'s `ioRefillIssued` branch does
+`ioDev.writeChanCW(x.ch, n)` with `n` unpacked straight out of core
+storage, where bits 18-24 are zero — so **a chained SEOP operation
+clears its own SEOP status bit the moment it refills**, and the date
+message *is* a chain (`X DCW` chains to `X DCW 1`).
+
+**THIS IS NOT AN INFERENCE, AND I NEARLY FILED IT AS ONE.** I was
+about to flag it the way `tape_unit_contract.md` item 31 flags the
+SEOP clear, on the grounds that printed p.123's "ignored" does not
+say what the exchange does with its own copy. **Reference Manual
+printed p.107 says, in the paragraph introducing Figure 35's status
+field:**
+
+> "Bits 18 to 24, Status Bits. When obtaining a control word from
+> core storage, the exchange **ignores these bits and treats them as
+> if they were zero**. **Inside the exchange, however, these same bit
+> positions are used to retain the status bits which indicate the
+> status of the unit.**"
+
+*Retain* — the exchange's own status is kept in those positions, and
+a fetched word's zeros are not copied over it. The refill arm is
+simply wrong. Nothing observable depends on it today (the poll exits
+early and then finds zeros), which is exactly why it should be fixed
+before something does. **The page was two clicks away the whole
+time** — see the half-read note above; this is the same page Figure
+35 was transcribed from.
+
+The same page settles a second thing, against MCP's own prose. printed
+p.3 line 47's comment reads `-YES*TEST FOR UK` on a branch testing
+bit **19**, and p.107 is explicit: *"19-22. Exchange Program Check,
+Unit Check, End Exception, End of Operation"* and *"23. Channel
+Signal"*. So 19 is EPGK, 20 is UK, and the listing's comment is loose
+prose. `docs/exchange_and_io.md` §3.2's table was right. p.107 also
+confirms the field `CT0011(BU,5)` at `.19` covers: *"Bits 19 through
+23 have corresponding indicators in the indicator register"* — MCP
+tests exactly the set the manual groups.
+
 ## ONE IOD CARD, AND MCP RUNS ELEVEN PAGES FURTHER -- the next gate is TRANSMIT BACKWARD, 2026-10-22
 
 With an IOD card terminating the deck, the boot run reaches
@@ -6345,6 +6558,30 @@ opcode list at `22-6530-2` pp.168-169, `C22-6531`'s Appendix A
 opening page, and this. **The back-matter map in this file exists
 precisely so the fifth time is cheap — use it before concluding that
 evidence is unavailable.**
+
+**A SIXTH, 2026-10-22, AND IT IS A NEW SHAPE: HALF-READ, NOT
+UNREAD.** `docs/exchange_and_io.md` quotes Reference Manual printed
+p.150 at length — the console's four CONTROL codes, the gong's
+timing, the pluggable-exit jack — and introduces it as *"the
+console's whole specification"*. The LEFT COLUMN of that page says
+what a console READ does: *"terminated when the three words scanned
+from the switches have been sent to the exchange"*, and the ENTER key
+"generates a channel-signal indication". Both are things MCP's
+printed pp.22-23 use and the model does not have. The quotation was
+right, the page number was right, and the half of the page nobody
+needed yet went unread for a month. **The corollary: a page is read
+when you know what is on all of it, not when you have the sentence
+you came for.**
+
+**AND IT HAPPENED TWICE ON THE SAME DAY, IN THE SAME FILE.** §3.2 of
+that document transcribes Figure 35 from printed p.107 field by
+field, and then sources its three "properties the model does not
+honour" from printed p.123. p.107's own prose beside the figure says
+*"Inside the exchange, however, these same bit positions are used to
+retain the status bits which indicate the status of the unit"* —
+which is the sentence that turns `StretchCore.bsv`'s refill bug from
+an inference into a fact, and it sat eight lines from a figure this
+project had already read twice. **A figure is not a page either.**
 
 ## PRINTED p.24 IS TRANSCRIBED -- and it settles p.23's prediction, 2026-10-21
 

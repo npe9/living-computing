@@ -5031,8 +5031,8 @@ function ActionValue#(ExecResult)
       end
 
       // -----------------------------------------------------------
-      // Transmit (forward only; T only, not SWAP/backward). Copies one
-      // whole word from the effective address of addr1 to the
+      // Transmit (forward or backward; T only, not SWAP). Copies
+      // whole words from the effective address of addr1 to the
       // effective (word-truncated) address of addr2.
       //
       // SIMPLIFICATION: real Transmit moves `count` words (from index
@@ -5096,14 +5096,23 @@ function ActionValue#(ExecResult)
         // affected."  So this arm reads the count and forgets the
         // register, which is why there is no idxWrite here.
         //
-        // BACKWARD AND SWAP STILL SET OP.  MCP needs neither, SWAP's
-        // two-way interchange is a different datapath, and a refusal
+        // SWAP STILL SETS OP.  Its two-way interchange is a
+        // different datapath and nothing executes one, and a refusal
         // that is documented beats a half-built interchange.
         Bit#(19) xmitCount = (t.immCount == 1)
           ? ((t.j == 0) ? 19'd16 : zeroExtend(t.j))
           : ((st.readIndex(t.j).count == 0)
                ? 19'h40000 : zeroExtend(st.readIndex(t.j).count));
-        if (t.backward == 1 || t.swap == 1)
+        // SWAP ALONE STILL SETS OP.  Its two-way interchange is a
+        // different datapath -- p.30: "At the same time, the full
+        // words of the area which starts at the right effective
+        // address are transmitted to the area which starts at the
+        // left effective address" -- and nothing in the corpus
+        // executes one.  BACKWARD IS BUILT (2026-10-22), because MCP
+        // printed p.19 line 41 is "TB,3,0.0($11),0.0($13)  -MOVE
+        // BIASED CTS" and without it the channel status table is
+        // never relocated.
+        if (t.swap == 1)
           ind = setOpInvalid(ind);
         else begin
           // Prefetch/bail-out shape: reads srcBase, writes the SAME
@@ -5123,9 +5132,18 @@ function ActionValue#(ExecResult)
               // incrementing the previous addresses by one", so the
               // continuation starts one past each.
               if (xmitCount > 1)
+                // p.30 again: backward decrements instead.  The
+                // instruction's own addresses are the starting pair
+                // EITHER WAY -- "the starting addresses specified in
+                // the instruction are therefore the addresses of the
+                // LAST word in each of the two storage areas" -- so
+                // the first word is moved at srcBase/dstBase above
+                // and only the step changes sign.
                 xmitStart = tagged Valid XmitXfer {
-                  src: srcBase + 1, dst: dstBase + 1,
-                  remaining: xmitCount - 1 };
+                  src: (t.backward == 1) ? srcBase - 1 : srcBase + 1,
+                  dst: (t.backward == 1) ? dstBase - 1 : dstBase + 1,
+                  remaining: xmitCount - 1,
+                  backward: (t.backward == 1) };
             end
           end else
             needsRead = tagged Valid srcBase;

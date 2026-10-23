@@ -262,7 +262,25 @@ def main():
         # ended at printed p.19 line 25's "NOT AN IOD CARD EITHER";
         # the card deck is terminated now and that row is not
         # reached. <<<
-        ("mcp_x_err_ad", str(sym("XERRAD")), 0),
+        #
+        # >>> AND IT IS NO LONGER ZERO: WITH TRANSMIT BACKWARD BUILT,
+        # MCP GETS PAST THE TABLE RELOCATION, FINDS THE CONSOLE,
+        # TYPES ITS DATE MESSAGE -- and then its I/O TEST finds a
+        # status bit on. <<<
+        #
+        # printed p.3 line 28 is "X7 3  BRZ,0.0  -SUCCESSFUL" and
+        # line 29 "X ERR 05  SIC,X ERR AD" at 000067.00, so this is
+        # the shared I/O status routine the whole program calls --
+        # printed p.30 line 13 and printed p.34 line 13 both do
+        # "SIC,X7 3 / B,X7 1  -IO TEST" after a WRITE.  printed p.7
+        # line 12's error table maps X ERR 05 + 1.0 to X MSG 05,
+        # "UNSUCCESSFUL COMPLETION".
+        #
+        # WHICH STATUS BIT THE MODEL LEAVES SET AFTER A CONSOLE WRITE
+        # IS THE NEXT QUESTION, and it is a model question: the
+        # message came out right, so the write worked.
+        ("mcp_x_err_ad", str(sym("XERRAD")),
+         ((prog.symtab["XERR05"] // 32 + 2) & 0x7FFFF) << 45),
 
         # The indicator register, word 11: RZ, XVZ, XF and **OP**.
         #
@@ -392,9 +410,15 @@ def main():
         # channel status table is never relocated, so printed p.20's
         # walk looks for a console in a table that was not brought
         # along -- which is why the run halts where it does. <<<
+        # >>> OP IS GONE.  It was printed p.19 line 41's "TB" -- a
+        # TRANSMIT BACKWARD the model refused -- and the arm is built
+        # now (Reference Manual printed p.30, "obtained by
+        # DECREMENTING the previous addresses by one").  The channel
+        # status table is relocated, printed p.20 finds the console
+        # it was told about, and the run goes on. <<<
         ("mcp_indicators_word11", str(IND_WORD),
-         _ind("OP") | _ind("XCZ") | _ind("XVGZ")
-         | _ind("XH") | _ind("RGZ") | _ind("AH")),
+         _ind("XCZ") | _ind("XVGZ") | _ind("XE")
+         | _ind("RGZ") | _ind("AE")),
 
         # >>> THE MOVE ITSELF, AND IT IS THE POINT OF THE FIXTURE <<<
         # Printed p.4 line 28, "T,$11,X BUFER($X1),X BS END  -MOVE MCP
@@ -734,7 +758,26 @@ def main():
     # stays silent.  The checks stay, asserting silence, because an
     # empty console is only good news next to the run that explains
     # it. <<<
-    console_checks = [("console_silent_w%d" % i, i, 0) for i in range(8)]
+    # >>> AND MCP TYPES A MESSAGE TO ITS OPERATOR.  Five words, out
+    # of printed pp.21-24's date routine, through the console it
+    # found in the relocated channel status table:
+    #
+    #   <CR><RED> DATE OF IPL TAPE <CR>00 MONTH 00 DAY  <CR><EOM>
+    #
+    # The date reads 00/00 because printed p.24's constants are
+    # "(A*)DD(BU,,6),00,00,00,*" -- placeholders MCP fills from the
+    # clock, which this fixture has no source for.  What the check
+    # pins is that the MESSAGE got there: the right characters, in
+    # the right order, in the IQS console code, which means the
+    # relocation, the console hunt and the WRITE all worked. <<<
+    console_checks = [
+        ("console_date_w3", 3, 0xfd0200332d533500),  # <CR><RED> DATE
+        ("console_date_w4", 4, 0x4937003d4b430053),  # " OF IPL T"
+        ("console_date_w5", 5, 0x2d4b3500fd606000),  # "APE <CR>00 "
+        ("console_date_w6", 6, 0x454947533b006060),  # "MONTH 00 "
+        ("console_date_w7", 7, 0x00332d5d0000fdfe),  # "DAY <CR><EOM>"
+        ("console_nothing_after", 8, 0),
+    ]
 
     print(generate(module_name, prog, checks, console_checks=console_checks,
                    # >>> IT STOPS WHERE IBM TOLD IT TO <<<
@@ -779,7 +822,17 @@ def main():
                    # So the halt is MCP being right about the machine
                    # the MODEL presents, and the next thing to build
                    # is the backward arm.
-                   pc_check=1035,
+                   # >>> AND IT IS 239 AGAIN, WHICH IS NOT A STEP
+                   # BACKWARD.  1035 was printed p.20 line 18's
+                   # "XERR 20  BD,$  -YES *ERROR* NO CONSOLE", a
+                   # halt MCP took because TRANSMIT BACKWARD was
+                   # missing and the channel status table had never
+                   # been relocated.  With the arm built the console
+                   # IS found, the date message IS typed, and the run
+                   # ends at printed p.6 line 1's "BD,$" -- the end
+                   # of the error routine -- after the I/O test on
+                   # printed p.3 finds a status bit on.
+                   pc_check=239,
                    step_cap=40000000,
                    ipl=True))
 

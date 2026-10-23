@@ -300,10 +300,37 @@ typedef struct {
 // out.  `remaining` is Bit#(19) for the same reason IoXfer's is:
 // p.30's direct count of zero "is interpreted as 2^18".
 typedef struct {
-  WordAddr  src;        // next sending word  (p.30: "incrementing the
-  WordAddr  dst;        // next receiving word  previous addresses by one")
+  WordAddr  src;        // next sending word
+  WordAddr  dst;        // next receiving word
   Bit#(19)  remaining;  // full words still to move, counting this one
+  Bool      backward;   // modifier bit 55 -- see below
 } XmitXfer deriving (Bits, Eq, FShow);
+
+// >>> `backward` IS THE WHOLE OF THE DIRECTION, and Reference Manual
+// printed p.30 states both halves in two sentences:
+//
+//   "In FORWARD transmission, the sending and receiving addresses of
+//    each successive word transmitted are obtained by INCREMENTING
+//    the previous addresses by one.  The starting addresses
+//    specified in the instruction are therefore the addresses of the
+//    FIRST word in each of the two storage areas.
+//
+//    In BACKWARD transmission, the sending and receiving addresses
+//    of each successive word transmitted are obtained by
+//    DECREMENTING the previous addresses by one.  The starting
+//    addresses specified in the instruction are therefore the
+//    addresses of the LAST word in each of the two storage areas."
+//
+// So the two directions differ in exactly one sign, and the
+// instruction's own addresses are the starting point either way --
+// there is no "compute the other end" step.
+//
+// AND THE SAME PAGE SAYS WHAT IT IS FOR: "When the receiving area
+// overlaps the UPPER end of the sending area, backward transmission
+// must be used; if the receiving area overlaps the LOWER end of the
+// sending area, forward transmission must be used."  MCP printed
+// p.19 line 41's "TB,3,0.0($11),0.0($13)  -MOVE BIASED CTS" is the
+// first case.
 
 // ---------------------------------------------------------------------
 // THE TAPE MARK, and the one design decision behind it.

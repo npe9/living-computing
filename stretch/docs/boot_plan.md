@@ -490,6 +490,38 @@ cannot be tested without it.
 > console it was told about. **Build the backward arm; SWAP is a
 > different datapath and p.19 does not need it.**
 >
+> **A3b — BUILT THE SAME DAY, AND MCP TYPED A MESSAGE.** Three lines:
+> `XmitXfer` carries the direction, `rl_xmit` decrements instead of
+> incrementing when it is set, and the Transmit arm signs on
+> `t.swap` alone. The CST relocates, p.20 finds the console, and the
+> boot run ends with
+> `<CR><RED> DATE OF IPL TAPE <CR>00 MONTH 00 DAY  <CR><EOM>` — five
+> words out of printed pp.21-24's date routine. `X ERR AD` now holds
+> printed p.3's `X ERR 05`, the shared I/O completion test, which
+> printed p.7 line 12 maps to "UNSUCCESSFUL COMPLETION": a model
+> question about what the console device leaves in the channel's
+> status word, not a fixture one, because the message came out right.
+> **CORRECTED BELOW THE SAME DAY: it is not the write.**
+>
+> **A3c — AND IT IS ONE GATE, NOT TWO: THE CONSOLE HAS NO SWITCHES.**
+> The instruction `X7 3`'s `BRZ` returns to after the date message is
+> printed p.21 line 24, `B,X IO`, and `X IO` is printed p.22 line 5:
+> `RD(SEOP),0.0($15),X DCW 2` with `X DCW 2 = CW,X LR IN,3,0` — "GET
+> IPL OPTIONS", **a three-word READ from the console**.
+> `StretchExecute.bsv`'s `wrongUnit` guard excludes the console from
+> `RD`'s legal units and sets `epgk` and `eop` — **control-word bits
+> 19 and 22, both inside the five bits p.3's `CT0011` tests.** So the
+> status bit above IS this read, and the arm's own comment said so
+> before it happened: *"when the IPL needs the switches this is the
+> line to change, and the capacity in StretchCore's rl_io is 3."*
+>
+> Reference Manual printed p.150: a console READ with the keyboard
+> not enabled is "terminated when the **three words scanned from the
+> switches** have been sent to the exchange", and the console's word
+> weight is 3. The fix is a three-word switch register, zero by
+> default — and zero is a real configuration, because printed p.22
+> line 12 is `KFI(BU,24),0,40 -NO TIME ENTERED`.
+>
 > `strap/iocd.py` is the card builder, shared with
 > `tests/gen_mcp_p17_tb.py`.
 

@@ -941,8 +941,13 @@ module mkStretchCore(StretchCore);
         st.writeWord(x.dst, v);
         if (x.remaining == 1) xmitPending <= tagged Invalid;
         else
+          // ONE SIGN IS THE WHOLE DIRECTION.  p.30: forward obtains
+          // each successive pair of addresses "by incrementing the
+          // previous addresses by one", backward "by decrementing".
           xmitPending <= tagged Valid XmitXfer {
-            src: x.src + 1, dst: x.dst + 1, remaining: x.remaining - 1 };
+            src: x.backward ? x.src - 1 : x.src + 1,
+            dst: x.backward ? x.dst - 1 : x.dst + 1,
+            remaining: x.remaining - 1, backward: x.backward };
       end
     end
     ebusy <= eb;

@@ -46,10 +46,37 @@
 !      zero as zero moves nothing; one reading it as 2^18 runs off the
 !      end of this program.
 !
-! NOT TESTED HERE, deliberately: backward transmission and SWAP, which
-! still set Operation Code Invalid.  MCP needs neither, and their
-! ENCODINGS are already pinned by the jb_ax4b routine 1246
-! transcriptions (decks/ax4b_1246_transmit_swap.strap).
+! NOT TESTED HERE, deliberately: SWAP, which still sets Operation
+! Code Invalid.  Its two-way interchange is a different datapath and
+! nothing in the corpus executes one; its ENCODING is already pinned
+! by the jb_ax4b routine 1246 transcriptions
+! (decks/ax4b_1246_transmit_swap.strap).
+!
+! >>> THIS PARAGRAPH USED TO SAY "backward transmission and SWAP ...
+! MCP NEEDS NEITHER", AND THAT WAS WRONG ABOUT BACKWARD.  MCP printed
+! p.19 line 41 is "TB,3,0.0($11),0.0($13)  -MOVE BIASED CTS", and
+! with the IOCD card deck on the tape the boot run reaches it: the
+! refusal set Operation Code Invalid, the channel status table was
+! never relocated, and printed p.20 halted at "XERR 20  BD,$  -YES
+! *ERROR* NO CONSOLE" for a machine whose console HAD been declared.
+! Steps 6 and 7 are backward, and they are here because a page of
+! MCP needed them. <<<
+!
+!   6. BACKWARD IS A SIGN, NOT A SECOND ALGORITHM.  Reference Manual
+!      printed p.30: "In backward transmission, the sending and
+!      receiving addresses of each successive word transmitted are
+!      obtained by DECREMENTING the previous addresses by one.  The
+!      starting addresses specified in the instruction are therefore
+!      the addresses of the LAST word in each of the two storage
+!      areas."
+!
+!   7. AND THE SAME PAGE SAYS WHAT IT IS FOR: "When the receiving
+!      area overlaps the UPPER end of the sending area, backward
+!      transmission must be used; if the receiving area overlaps the
+!      lower end of the sending area, forward transmission must be
+!      used."  Step 6 is exactly that overlap -- a block shifted UP
+!      by one -- which a forward implementation smears, in the mirror
+!      of what step 4 does to a descending one.
 
 START   LVI, $X1, 0        !no displacement; the index is here so step
                             !1 has the same (addr)(index) shape MCP's
@@ -62,10 +89,28 @@ START   LVI, $X1, 0        !no displacement; the index is here so step
         LCI, $X4, 4
         T,   4, OVL1, OVL0         !step 4: shift the block down by one
         TI,  0, SRCE, DSTE         !step 5: zero means SIXTEEN
+        LCI, $X5, 4
+        TB,  5, OVB3, OVB4         !step 6: shift the block UP by one,
+                                    !backward, with the receiving area
+                                    !overlapping the sender's TOP
+        TBI, 3, BWS2, BWD2         !step 7: three words, backward,
+                                    !immediate count, NOT overlapping
         BEW, $
-        NOP, 0             !pad to a word boundary: the run above is an
-                            !odd number of half-words and DD applies no
-                            !automatic alignment
+        CNOP               !pad to a word boundary -- DD applies no
+                            !automatic alignment and the run above is
+                            !not a whole number of words.
+                            !
+                            !IT WAS "NOP, 0" UNTIL 2026-10-22, which
+                            !pads by exactly one half-word and is
+                            !therefore right only while the run above
+                            !has odd parity.  Adding steps 6 and 7 --
+                            !two full words and a half -- flipped it,
+                            !and every DD below came out half a word
+                            !low: the first check read 0x1800A0000000
+                            !where it wanted 0xA000000000000001, which
+                            !is two adjacent words seen through a
+                            !32-bit shift.  CNOP rounds to the next
+                            !full word whatever the parity is.
 
 SRCA    DD(BU,64), (16)A000000000000001
         DD(BU,64), (16)A000000000000002
@@ -93,6 +138,34 @@ OVL1    DD(BU,64), (16)D000000000000001
         DD(BU,64), (16)D000000000000002
         DD(BU,64), (16)D000000000000003
         DD(BU,64), (16)D000000000000004
+
+! OVB0..OVB4: five words.  Step 6 moves four of them BACKWARD, from
+! OVB3 into OVB4 and down, so afterwards OVB1-OVB4 hold B0-B3 and
+! OVB0 is untouched.  THE STARTING ADDRESSES ARE THE LAST WORDS of
+! each area, which is what printed p.30 says they are for a backward
+! transmit -- OVB3 is the last word of the sending area OVB0..OVB3
+! and OVB4 the last of the receiving area OVB1..OVB4.
+!
+! A FORWARD IMPLEMENTATION OF THIS INSTRUCTION WOULD SMEAR: starting
+! at OVB3 and ascending it would copy OVB3 into OVB4, then OVB4 into
+! the word above, and OVB1 and OVB2 would never be written at all.
+OVB0    DD(BU,64), (16)1000000000000000
+OVB1    DD(BU,64), (16)1000000000000001
+OVB2    DD(BU,64), (16)1000000000000002
+OVB3    DD(BU,64), (16)1000000000000003
+OVB4    DD(BU,64), (16)1000000000000004
+
+! Step 7's areas do not overlap, so the only thing it can measure is
+! the DIRECTION: a forward run from BWS2 would write BWD2, BWD3 and
+! BWD4 and leave BWD0 and BWD1 at F.
+BWS0    DD(BU,64), (16)2000000000000000
+BWS1    DD(BU,64), (16)2000000000000001
+BWS2    DD(BU,64), (16)2000000000000002
+BWD0    DD(BU,64), (16)FFFFFFFFFFFFFFFF
+BWD1    DD(BU,64), (16)FFFFFFFFFFFFFFFF
+BWD2    DD(BU,64), (16)FFFFFFFFFFFFFFFF
+BWD3    DD(BU,64), (16)FFFFFFFFFFFFFFFF
+BWD4    DD(BU,64), (16)FFFFFFFFFFFFFFFF
 
 SRCE    DD(BU,64), (16)E000000000000001
         DD(BU,64), (16)E000000000000002

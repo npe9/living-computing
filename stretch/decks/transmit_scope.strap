@@ -36,8 +36,18 @@
 ! p.30's rules; this one keeps its original job, which is the SCOPE:
 ! one block per rule, hanging at the first that is wrong.
 !
-! WHAT IS STILL REFUSED, and those blocks are unchanged: SWAP in
-! either direction, and BACKWARD transmission.  MCP needs neither.
+! WHAT IS STILL REFUSED, and that is now ONE thing: SWAP, in either
+! direction.  BACKWARD TRANSMISSION WAS BUILT ON 2026-10-22, for the
+! same reason multi-word and direct-count were: printed p.19 line 41
+! of MCP's initialization is "TB,3,0.0($11),0.0($13) -MOVE BIASED
+! CTS", and with an IOCD deck on the tape the boot run reaches it.
+! Reference Manual printed p.30 specifies the whole difference as one
+! sign -- "obtained by DECREMENTING the previous addresses by one.
+! The starting addresses specified in the instruction are therefore
+! the addresses of the LAST word in each of the two storage areas" --
+! so block 6 below now asserts that the operation HAPPENS.  Four of
+! the six blocks have now flipped, and block 2 is the only refusal
+! left.
 !
 ! THE OLD TEXT IS KEPT BELOW because the history is the point of the
 ! file -- a claim in bsv/README.md that was two-thirds false, found by
@@ -59,8 +69,16 @@
 ! several is only ever observed at the earliest.
 !
 ! WEAKER STANDARD: hand-written from Reference Manual printed p.30 and
-! the pocket card's TRANSMIT box.  No listing prints a SWAP or a
-! backward Transmit anywhere this project has read.
+! the pocket card's TRANSMIT box.  No listing this project has read
+! prints a SWAP.  THE BACKWARD HALF OF THAT SENTENCE DIED ON
+! 2026-10-22: MCP's printed p.19 line 41 is a backward Transmit, and
+! `decks/mcp_bootstrap_p19.strap` reproduces it bit-exactly against
+! the printed machine code -- so backward is ENCODING-validated by a
+! listing even though its EXECUTION is still only pinned by
+! hand-written decks (this one and transmit_multiword).  jb_ax4b
+! section 146's own test plan covers forward/backward x
+! direct/immediate x transmit/swap and remains untranscribed; that is
+! the cross-validation still owed.
 
         SLC, (8)4100.0
 !
@@ -95,19 +113,34 @@ START   TI,    1, SRC, DST1
         T,     1, SRC, DST5
         BOP,   $
 !
-! ---- 6. TBI, backward: REFUSED.  Unchanged ------------------------
-! IT MUST BE TBI, NOT TB, and that was found by an injection rather
-! than by thinking.  TB is backward with a DIRECT count; while direct
-! counts were refused wholesale, removing the backward check changed
-! nothing and the block still passed.  TBI is backward with an
-! immediate count, so only the backward check can refuse it.  The
-! reasoning survives the scope change for a different reason now: a
-! direct count no longer refuses anything, so TB would move words
-! backward and the block would catch it -- but TBI is still the
-! sharper probe and is kept.
+! ---- 6. TBI, backward: HONOURED, the word moves -------------------
+! THIS BLOCK FLIPPED ON 2026-10-22.  It used to assert a refusal, and
+! the note below is why it was written as TBI rather than TB -- kept
+! because the reasoning is still what makes the block sharp:
+!
+!   "IT MUST BE TBI, NOT TB, and that was found by an injection
+!   rather than by thinking.  TB is backward with a DIRECT count;
+!   while direct counts were refused wholesale, removing the backward
+!   check changed nothing and the block still passed.  TBI is
+!   backward with an immediate count, so only the backward check can
+!   refuse it."
+!
+! A COUNT OF ONE IS THE ONE CASE WHERE DIRECTION DOES NOT SHOW, and
+! that is deliberate here: this file's job is the SCOPE -- does the
+! arm accept the modifier at all -- and one word proves acceptance
+! without depending on the stepping.  THE STEPPING IS PINNED
+! ELSEWHERE: decks/transmit_multiword.strap steps 6 and 7 move five
+! and three words backward and check every one, including the
+! upper-end overlap printed p.30 says backward is *required* for.
+!
+! THE INJECTION FOR THIS BLOCK WAS REPLACED, NOT RE-RUN.  The old one
+! removed the backward check, which means nothing now that the check
+! is gone; the new one restores it ("t.backward == 1 || t.swap == 1"
+! in StretchExecute's Transmit arm) and is caught here, at this
+! block's BOP -- 004111.40, half-word 4243 -- with DST6 still zero
+! and the step cap reporting "reached without halting".
         TBI,   1, SRC, DST6
-        BZOP,  $
-        BOPZ,  $+.32
+        BOP,   $                     ! hang if OP came on: backward is legal
         B, PASS
 PASS    BEW, $
 !
@@ -160,5 +193,5 @@ DST4END DD(BU,64,8), 0
         SLC, (8)4500.0
 DST5    DD(BU,64,8), 0               ! direct count of one
         SLC, (8)4510.0
-DST6    DD(BU,64,8), 0               ! must stay zero: TBI is refused
+DST6    DD(BU,64,8), 0               ! must RECEIVE src: TBI is honoured
         END, START

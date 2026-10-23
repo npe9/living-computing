@@ -205,13 +205,16 @@ execution operations: `EX` executes as of 2026-09-25 and `EXIC` as of
   wrapped value rather than the magnitude. Nothing transcribed
   exercises that.
 - **Refill / Refill on Count Zero / Store Zero**.
-- **Transmit** — forward, non-swap, **immediate count of one only**.
-  Every other form (backward, `SWAP`, any other immediate count, and
-  every *direct* count, whose register this arm does not read) sets OP
-  and no-ops. Ref. Manual pp.30-31 gives the count as index J bits
-  28-45 (0 meaning 2^18) or immediate bits 51-54 where **0 means
-  sixteen**, so "one word" is exactly immediate-and-one. See
-  "Toolchain" below for why one word.
+- **Transmit** — see the `TRANSMIT`, multi-word entry below. **THIS
+  BULLET WAS A STALE DUPLICATE UNTIL 2026-10-22** and is kept named
+  rather than deleted, because that is how this file treats a claim
+  it outgrew. It read *"forward, non-swap, immediate count of one
+  only. Every other form (backward, `SWAP`, any other immediate
+  count, and every *direct* count, whose register this arm does not
+  read) sets OP and no-ops."* Multi-word and direct counts were built
+  on 2026-10-18 and backward on 2026-10-22; the list below was
+  updated and this one was not. **SWAP is the only form still
+  refused.**
 - **Floating point** — all 29 operation codes have execute arms: `L`/
   `ST` and the `LWF`/`LFT`/`DL`/`DLWF` load family, `+`/`+MG`/`M+`/
   `M+MG`/`D+`/`D+MG`/`F+`/`E+`/`E+I`, `*`/`*+`/`D*`, `/`/`R/`/`D/`,
@@ -262,8 +265,23 @@ execution operations: `EX` executes as of 2026-09-25 and `EXIC` as of
   the data transmission actually encounters" it — and because without
   the latter a direct count of zero wraps the address space and zeroes
   core, which is what it did the first time MCP ran it. Driven by
-  `../decks/transmit_multiword.strap`. **Backward and `SWAP` still set
-  OP**, deliberately.
+  `../decks/transmit_multiword.strap`.
+- **`TRANSMIT` BACKWARD** — same page, and the whole difference is one
+  sign: *"In backward transmission, the sending and receiving
+  addresses of each successive word transmitted are obtained by
+  **decrementing** the previous addresses by one. The starting
+  addresses specified in the instruction are therefore the addresses
+  of the **last** word in each of the two storage areas."* So the
+  instruction's own addresses are the starting pair either way.
+  `XmitXfer` carries a `backward` flag, `rl_xmit` decrements when it
+  is set, and that is the entire change. Built 2026-10-22 because
+  MCP's printed p.19 line 41 is `TB,3,0.0($11),0.0($13) -MOVE BIASED
+  CTS` and the boot run reaches it. Driven by
+  `../decks/transmit_multiword.strap` steps 6 and 7 — five words
+  backward with a direct count, three with an immediate count, and
+  the **upper-end overlap** the same page says backward is *required*
+  for. **`SWAP` still sets OP**, deliberately: a two-way interchange
+  is a different datapath and nothing in the corpus executes one.
 - **`EX` (EXECUTE)** — Reference Manual printed pp.49-50. "Bits 0-18
   of the effective address form the address of the location of a
   subject instruction that is fetched and executed." The subject may
@@ -333,8 +351,8 @@ execution operations: `EX` executes as of 2026-09-25 and `EXIC` as of
 Decimal-mode VFL (`c=1`), radix conversion (`CV`, `DCV`, `LCV`,
 `LTRCV`), the compare variants `KE`/`KF`/`KFE`/`KFR`, `LTRS`, `RNX`,
 Input-Output's `LOC` **on an Exchange channel** (the disk form is
-executed — see above) and most of `CTL`, and Transmit **backward**
-and `SWAP`.
+executed — see above) and most of `CTL`, and Transmit **`SWAP`**
+(backward moved to "Executed" on 2026-10-22).
 
 **TWO STALE ENTRIES WERE REMOVED FROM THIS LIST, 2026-10-19,** and
 they are named rather than quietly deleted because a scope list
@@ -370,11 +388,19 @@ project's assembler could not encode Transmit at all until
 `TRANSMIT_CODES` landed the same day. A claim no test can break is a
 claim nothing checks, which is `docs/NEXT.md`'s own corollary applied
 to prose. The guard is now `decks/transmit_scope.strap`, six
-blocks and five injections, one per rule — **three of whose blocks
-flipped on 2026-10-18 from asserting a refusal to asserting that the
-operation happens**, when multi-word and direct-count Transmit were
-built. SWAP and backward are the two still refused, and they are the
-two whose injections still bite.
+blocks and five injections, one per rule — **four of whose blocks
+have now flipped from asserting a refusal to asserting that the
+operation happens**: three on 2026-10-18 when multi-word and
+direct-count Transmit were built, and block 6 on 2026-10-22 when
+backward was. Each flip was MCP asking for the operation. SWAP is the
+one refusal left. **The 2026-10-22 flip also moved the deck's PASS
+address back one half-word** (`BZOP,$ / BOPZ,$+.32` became a single
+`BOP,$`), so the run's PC check is load-bearing in that file and not
+decoration. **Block 6's injection was replaced rather than re-run**:
+"remove the backward check" means nothing once the check is gone, so
+the new one restores `t.backward == 1 ||` and is caught at a named
+address — the run hangs on block 6's `BOP,$` at `004111.40` with
+`DST6` still zero.
 
 Per the "decode completely, execute partially" principle: every format
 in Figure 6 has a `DecodedInstr` constructor and is field-extracted
@@ -445,7 +471,12 @@ it recognizes independent of what the datapath implements.
   when a store's half-word overlaps the index result indicators the
   same instruction sets -- the store is applied first, then
   `setIndexResultIndicatorsF`. The deck does not discriminate either.
-- **Transmit moves one word**, not `count` words (see "Toolchain").
+- ~~**Transmit moves one word**, not `count` words.~~ **FIXED
+  2026-10-18** (any count, immediate or direct) **and 2026-10-22**
+  (backward). Left struck through rather than deleted: this list is
+  the record of what the model does not do, and a limit that silently
+  disappears is indistinguishable from one nobody rechecked. `SWAP`
+  is the remaining Transmit limit.
 - **A crossing-field VFL store under progressive indexing suppresses
   the increment too, not just the store.** This falls directly out of
   the crossing-field simplification above combined with the manual's
