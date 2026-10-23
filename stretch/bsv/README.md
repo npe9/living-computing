@@ -225,8 +225,9 @@ execution operations: `EX` executes as of 2026-09-25 and `EXIC` as of
   StretchTypes.bsv for the register layout.)
 - **Input-Output** — `RD`, `W`, `CCW` (Copy Control Word), `REL`
   (Release), `CTL` (Control), and their `SEOP` forms, against a
-  **simulated** Exchange and three fixed devices (a card reader,
-  channel 32; a printer, channel 33; a tape drive, channel 34) — see
+  **simulated** Exchange and five fixed devices (a disk, channel 0;
+  a card reader, channel 32; a printer, channel 33; a tape drive,
+  channel 34; an operator's console, channel 35) — see
   `StretchIO.bsv`'s file header for the full scope statement:
   synchronous single-block transfer (no real CPU/IO overlap, no
   interrupt propagation), the documented deviation from the manual's
@@ -237,7 +238,38 @@ execution operations: `EX` executes as of 2026-09-25 and `EXIC` as of
   BACKSPACE BLOCK, p.132); every other tape function code (SPACE
   BLOCK/FILE, WRITE TAPE MARK, BACKSPACE FILE, density/ECC/parity/
   light functions) and `CTL` on the reader/printer still fall through
-  to Operation Code Invalid. **`LOC` now splits in two.** On a disk
+  to Operation Code Invalid.
+- **The operator's console, IBM 7152 + 7623, channel 35** —
+  Reference Manual printed p.150, which is its whole specification in
+  one page. A **WRITE** prints and keeps its place across
+  instructions, because a console printer does not restart at the top
+  of the page for every message and MCP writes one message as a chain
+  of control words. A **READ** scans a **three-word switch register**
+  — p.150 gives the console "a word weight of 3" and says a READ with
+  the keyboard not enabled "is automatically terminated when the
+  three words scanned from the switches have been sent to the
+  exchange" — and *scans* is literal: nothing advances, so a second
+  READ gets the same three words. `C22-6678-1` printed p.29 says what
+  the operator puts in them, and MCP's own printed p.23 line 30
+  (`BZB,X LR IN+.29`) confirms its bit numbering. Built 2026-10-22
+  because MCP's printed p.22 line 5 asks for them.
+  *Known limits, all of them p.150's and none of them reached by
+  anything that runs here*: the **keyboard** is not modelled (only
+  p.150's "keyboard not enabled" case exists), the ENTER key's
+  **channel signal** is never raised, the ERASE and END keys'
+  **end-exception** terminations cannot happen. Its four `CTL`
+  function codes *are* implemented and are the exception that proves
+  the rule: 016/017/116 drive lights and 177 sounds a gong, none of
+  which a model has, so all four are **accepted and do nothing** —
+  and the acceptance is the point, because MCP's error routine
+  identifies the console by issuing `GONG` and checking that EPGK did
+  *not* come on (printed p.5 lines 45-51). 177 on a 729 IV is
+  BACKSPACE FILE, which is why that arm dispatches on the unit before
+  the code. Which of switch words 1 and 2
+  the **numeric** switches scan into is not stated by anything read,
+  so they are zero at power-on and that is recorded rather than
+  guessed.
+- **`LOC` now splits in two.** On a disk
   channel it is a SEEK and is implemented: Reference Manual printed
   p.160, "the right effective address… specifies the arc address",
   and it sets the arc address register the disk's READ and WRITE then

@@ -248,6 +248,12 @@ import StretchDiskSource::*;  // DiskSource, mkDiskSourceSmall, and the
 import RegFile::*;
 
 typedef 32 DeviceWords;
+// The console's switch register: exactly three words, Reference
+// Manual printed p.150 ("a word weight of 3").  Not DeviceWords --
+// the number is the device's, and a READ that asks for more than
+// three is terminated by the capacity arm in StretchCore's rl_io.
+typedef 3 ConsoleSwitchWords;
+typedef Bit#(2) ConsoleSwitchIndex;
 typedef Bit#(TLog#(DeviceWords)) DeviceIndex;
 // One bit wider, room for "one past the end", the same idiom TapePos
 // uses against TapeIndex -- see "CARD FEED".
@@ -435,6 +441,48 @@ interface StretchIO;
   method DevicePos consolePos();
   method Action setConsolePos(DevicePos p);
 
+  // ---------------------------------------------------------------
+  // AND A READ SCANS THE SWITCHES.  Reference Manual printed p.150,
+  // the same page, left column: "A READ instruction received by the
+  // console with the keyboard not enabled is automatically terminated
+  // when the THREE WORDS SCANNED FROM THE SWITCHES have been sent to
+  // the exchange."  The head of that page gives the console "a byte
+  // weight of zero and a word weight of 3" -- the word weight IS the
+  // three switch words.
+  //
+  // THEY ARE NOT THE PAPER.  A console WRITE walks consolePos across
+  // consoleImg; a console READ scans a fixed three-word register and
+  // moves nothing, which is why this is a separate image with no
+  // position beside it.  The keyboard is NOT modelled: p.150's
+  // "keyboard not enabled" case is the only one, and it is the one
+  // MCP's initialization uses.
+  //
+  // WHAT IS IN THEM, from C22-6678-1 printed p.29 = PDF 29,
+  // "INITIALIZING THE SYSTEM", step 2: "Set up the time in binary
+  // keys 0-23, and the date in binary keys 32-55."  Its table also
+  // gives 28 Suppress Messages, 29 I/O Status Report, 30 Rejected Job
+  // Count Report, 31 Abnormal MCP Mode Report.
+  //
+  // THE BINARY KEYS ARE WORD 0, and MCP's own code proves the bit
+  // numbering without citing that page: printed p.22 line 11 loads
+  // "L(BU,64),X LR IN" -- one word -- and printed p.23 line 30 is
+  // "BZB,X LR IN+.29,X20B  - IF I/O STATUS REPORT DESIRED", which is
+  // p.29's key 29 exactly.
+  //
+  // ZERO AT POWER-ON IS A REAL CONFIGURATION, not a stub: printed
+  // p.22 line 12 is "KFI(BU,24),0,40  -NO TIME ENTERED", so all-zero
+  // switches are the documented "the operator entered nothing" case.
+  //
+  // WHICH OF WORDS 1 AND 2 THE NUMERIC SWITCHES SCAN INTO IS NOT
+  // SETTLED.  p.29 describes them (columns 7-8 the channel number,
+  // 15-16 the tape unit number, read by printed p.23 line 44's
+  // second RD) but does not say where they land, and nothing this
+  // project has read does.  They are zero here and that is recorded
+  // rather than guessed.
+  // ---------------------------------------------------------------
+  method Word64 consoleSwitchWord(ConsoleSwitchIndex i);
+  method Action setConsoleSwitchWord(ConsoleSwitchIndex i, Word64 v);
+
   // Per-channel control word (Figure 35): what COPY CONTROL WORD reads
   // back, and what a RD/W/REL/CTL updates. This is the EXCHANGE's own
   // copy -- distinct from the control word an instruction reads out of
@@ -482,6 +530,10 @@ module mkStretchIO(StretchIO);
   // The console printer's paper, and where the next character goes.
   Vector#(DeviceWords, Reg#(Word64)) consoleImg <- replicateM(mkReg(0));
   Reg#(DevicePos) consolePosReg <- mkReg(0);
+  // The console's three switch words, zero at power-on -- which is
+  // MCP's "NO TIME ENTERED" case, not an absence of behaviour.  See
+  // the interface above.
+  Vector#(ConsoleSwitchWords, Reg#(Word64)) switchImg <- replicateM(mkReg(0));
 
   // unitReady is fixed at 1 (installed) for all three simulated
   // devices; there is no not-ready/busy state to model without real
@@ -564,6 +616,16 @@ module mkStretchIO(StretchIO);
   method DevicePos consolePos() = consolePosReg;
   method Action setConsolePos(DevicePos p);
     consolePosReg <= p;
+  endmethod
+
+  // THE SWITCHES ARE SCANNED, NOT CONSUMED -- p.150 calls them "the
+  // three words scanned from the switches", and a second READ gets
+  // the same three.  So there is no position to advance here, which
+  // is the whole difference from the card reader two methods up.
+  method Word64 consoleSwitchWord(ConsoleSwitchIndex i) =
+    (i < fromInteger(valueOf(ConsoleSwitchWords))) ? switchImg[i] : 0;
+  method Action setConsoleSwitchWord(ConsoleSwitchIndex i, Word64 v);
+    if (i < fromInteger(valueOf(ConsoleSwitchWords))) switchImg[i] <= v;
   endmethod
 
   method ControlWord readChanCW(WordAddr ch);

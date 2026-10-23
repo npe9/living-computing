@@ -18,6 +18,7 @@ from strap_asm import assemble, AssemblerError
 
 
 def generate(module_name, prog, checks, step_cap=30000, reader_image=None,
+             console_switches=None,
              printer_checks=None, tape_image=None, tape_checks=None,
              console_checks=None,
              pc_check=None, cycle_bound=None, ipl=False):
@@ -52,6 +53,14 @@ def generate(module_name, prog, checks, step_cap=30000, reader_image=None,
     """
     words = sorted(prog.words.items())
     reader_image = reader_image or []
+    # THE OPERATOR SETS THESE BEFORE PRESSING IPL.  Reference Manual
+    # printed p.150 gives the console "a word weight of 3" and says a
+    # READ returns "the three words scanned from the switches";
+    # C22-6678-1 printed p.29 step 2 says what goes in them ("Set up
+    # the time in binary keys 0-23, and the date in binary keys
+    # 32-55").  Loaded exactly the way reader_image is, one write per
+    # phase, so the program starts with the console already set.
+    console_switches = console_switches or []
     printer_checks = printer_checks or []
     console_checks = console_checks or []
     tape_image = tape_image or []
@@ -117,8 +126,20 @@ def generate(module_name, prog, checks, step_cap=30000, reader_image=None,
         lines.append("  endrule")
         lines.append("")
 
+    n_switch = len(console_switches)
+    switch_load_phase = reader_load_phase + n_reader
+    if n_switch:
+        lines.append(f"  rule loadSwitches (phase >= {switch_load_phase} && phase < {switch_load_phase + n_switch});")
+        lines.append(f"    case (phase - {switch_load_phase})")
+        for i, val in enumerate(console_switches):
+            lines.append(f"      {i}: core.io.setConsoleSwitchWord({i}, 64'h{val & ((1<<64)-1):016x});")
+        lines.append("    endcase")
+        lines.append("    phase <= phase + 1;")
+        lines.append("  endrule")
+        lines.append("")
+
     n_tape = len(tape_image)
-    tape_load_phase = reader_load_phase + n_reader
+    tape_load_phase = switch_load_phase + n_switch
     if n_tape:
         lines.append(f"  rule loadTape (phase >= {tape_load_phase} && phase < {tape_load_phase + n_tape});")
         lines.append(f"    case (phase - {tape_load_phase})")

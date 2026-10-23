@@ -5597,26 +5597,27 @@ derived and wrong. The check is written as an expression over
 `X DATE 1`, `X DATE K` and the two bit numbers, not as the constant,
 so it cannot drift from the thing it describes.
 
-**ITS INJECTION IS THE HALF-FIX, AND IT IS INSTRUCTIVE.** Permit the
-console on `RD` — add `&& !consoleCh` to `wrongUnit`'s RD arm, one
-token — without building the switch register. Four checks fail, and
-the control word is the one that explains the other three:
+**ITS INJECTION IS THE HALF-FIX.** Permit the console on `RD` — add
+`&& !consoleCh` to `wrongUnit`'s RD arm, one token — without
+building the switch register. Four checks fail: the control word
+becomes `0x0087C00000000000` (dataAddr `0o1037` = `X LR IN` + 3,
+every status bit off), `X ERR AD` goes to zero, `PC` reads 0 against
+239 and the indicator register `0x1324` against `0x9424`.
 
-```
-0x0087C00000000000   dataAddr 0o1037, every status bit OFF
-```
-
-`0o1037` is **`X LR IN` + 3**. The three-word read *succeeded*, out
-of the **card reader's** image, because `StretchCore.bsv`'s device
-arm only knows it is a console on the WRITE side. MCP then takes
-whatever was there for the operator's IPL options, finds no error
-(`X ERR AD` goes to **zero** — no error site ran at all), and the
-run leaves the program entirely: `PC` reads 0 against 239, and the
-indicator register reads `0x1324` against `0x9424`.
-
-**So the one-token fix is worse than the refusal it removes**, and
-the refusal's own comment said which line to change *and* what to
-build beside it: "the capacity in StretchCore's `rl_io` is 3."
+> **CORRECTION, SAME DAY, AND IT MATTERS.** I wrote here and in
+> commit `a945d53` that the half-fix is *worse* than the refusal,
+> because the read "succeeded out of the card reader's image". The
+> mechanism is right — `StretchCore.bsv`'s device arm only knows it
+> is a console on the WRITE side — but the conclusion was not
+> measured. When the switch register was actually built, **the run
+> produced byte-for-byte the same four values.** The card reader's
+> image in this fixture is all zeros and so is the switch register,
+> so nothing could tell them apart. The four checks were measuring
+> "MCP now gets past the read", not "the card reader served it".
+>
+> That is the third unmeasured structural claim in this one phase,
+> after the two above, and it is the one that got into a commit
+> message. **The injection, not the reasoning, is the claim.**
 
 **AND THE THREE WORDS HAVE A DOCUMENTED LAYOUT**, which makes the
 register a real device and not a zero-filled placeholder.
@@ -5647,15 +5648,89 @@ source — printed p.22 lines 9-24 validate the switch digits and
 printed p.23 line 15 loads `X VDATE`. That is the first thing to try
 once the register exists.
 
-What a correct fix needs, then, is three pieces, not one:
+## THE SWITCHES ARE BUILT, AND MCP RAN OFF THE END OF THE
+## TRANSCRIPTION, 2026-10-22
 
-1. a three-word console switch register in `StretchIO.bsv`, zero at
-   power-on, with a testbench setter beside `setConsolePos`;
+Four pieces, not the one the guard looked like:
+
+1. a three-word switch register in `StretchIO.bsv` (`switchImg`),
+   zero at power-on, with `consoleSwitchWord`/`setConsoleSwitchWord`
+   beside `consolePos`;
 2. `rl_io`'s device arm splitting on `DevConsole` for READ as it
-   already does for WRITE, with a capacity of 3;
-3. `wrongUnit` dropping the console from the RD exclusion **last**,
-   once 1 and 2 exist — which is exactly the order the injection
-   above shows you cannot reverse.
+   already did for WRITE — scanning, not consuming, so nothing
+   advances — and a **capacity of 3** on that direction only;
+3. **the `devIdx` origin**, which is the piece I missed and the model
+   caught in one word. A console WRITE starts at `consolePos`; a
+   console READ must start at **zero**, because the switches have no
+   position. Left at `consolePos` — 8 after the date message — the
+   read began past a capacity of 3 and `rl_io`'s "runs out of
+   material" arm fired before a single word moved. The control word
+   came back `0x00870400000C0000`: **End Exception on, data word
+   address still `X LR IN`, count still 3.** A transfer that moved
+   nothing and said exactly why;
+4. `wrongUnit` dropping the console from the RD exclusion, last.
+
+### MCP used them, and said so in BCD
+
+`X LR IN`'s first word reads **`0xAAAAAA00AAAAAA00`** at the end of
+the run: nibble `1010` six times across **bits 0-23** and six more
+across **bits 32-55**, and nothing in between or after. Those are
+`C22-6678-1` printed p.29's Time and Date key fields exactly, and the
+nibble is MCP's own — printed p.24 line 13 is
+`X VZER  LFI(BU,4),(2)1010,46  - BCD ZERO`, under the banner *"replace
+a blank character with a BCD zero"*. The whole path is legible in one
+word: switches read (all zero), printed p.22 line 12's
+`KFI(BU,24),0,40  -NO TIME ENTERED` taken, blank-to-BCD-zero run over
+both fields p.29 names.
+
+### AN ALL-ZERO FIXTURE CANNOT TEST AN ALL-ZERO REGISTER
+
+The first injection written against the new check — serve the console
+READ out of the card reader's image again, which is what the model
+did before — **SURVIVED**. Both images are zero; there is nothing to
+see. The fix is that the testbench now *sets* switch words 1 and 2 to
+markers (`0x5A5A…`, `0xA5A5…`), which MCP reads into `X LR IN+1` and
+`X LR IN+2` and then never touches, because those are p.29's NUMERIC
+switches and only the I/O-status-report path reads them. Re-run, the
+injection is caught in its own two checks.
+
+**Word 0 stays zero deliberately**: all-zero *is* p.22's "no time
+entered", and taking that branch is what exercises p.24's BCD-zero
+routine. An operator who sets nothing is a real operator.
+
+### WHERE IT STOPS NOW: PC 0, AND THAT IS A SENTENCE
+
+No error site runs — `X ERR AD` is **zero** — and the run ends with
+the program counter at **0**. That is not a mystery and not a crash:
+`UNCOND_BRANCH_CODES["BE"]` is `0b000` and the address field is zero,
+so **`BE, 0.0` assembles to all zeros** (checked with the assembler)
+and all zeros disassemble to it. MCP has branched into storage this
+project has not transcribed, where every word is a branch to location
+zero and location zero is another one — which the model reports as
+"the last instruction branched to itself".
+
+**MCP ran off the end of the transcription.** Printed p.36 is the
+last page in the image; the next source deck begins at printed p.37,
+"THE COMMUNICATION REGION FOR MCP", card sequence 13000001. **That is
+the next transcription**, and `pc_check=0` is what will notice when it
+lands.
+
+### How far it got, measured
+
+The communication region is populated at the end of the run:
+
+| symbol | value | what it is |
+|---|---|---|
+| `S YCOCH` | `0x0004600000000000` | **35** in bits 0-18. MCP learned it from the IOCD cards on the tape, and the value is confirmed independently of any decoding: printed p.21 line 5 is `LV,$15,S YCOCH  -GET CONSOLE CHANNEL` and every console WRITE addresses `0.0($15)` — **the date message printed, so `$15` is the console.** |
+| `S YPRCH` | same | **OPEN, and flagged rather than explained.** The printer channel slot holds the same 35, but `strap/prosa.py`'s IOCD deck puts the printer on channel **33**, and printed p.25 lines 22-24 store a *difference* (`SX,$10,$R` / `-(BU,19),S XCHAN,45` / `ST(BU,19),S YPRCH`), not a channel address. Whether 35 is that difference coming out right, the "IF NO PRINTER" path at line 26 leaving something behind, or a real bug is **not established** — only the two values being equal is measured. |
+| `S MARK`, `S MCP`, `S XCHAN`, `S MAXRN`, `S DKMCP`, `S SYRFT` | non-zero | filled during printed pp.25-36 |
+| `S PRIN`, `S PROUT`, `S READR`, `S RTAPE`, `S WTAPE`, `S IA`, `S REJJB`, `S BAMCP`, `S COMRG` | zero | not reached, or no device for them |
+
+and the indicator register moved from `0x9424` to `0x1324` — `XCZ`
+and `XE` out, `MOP` and `XH` in, all five result indicators of
+whatever ran last. **`OP` is still clear**, which is the bit that
+check is for: eleven pages further on, the model still refuses
+nothing MCP executes.
 
 ### Also found while reading for this, and worth fixing on the way
 

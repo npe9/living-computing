@@ -4196,13 +4196,34 @@ function ActionValue#(IoOutcome)
             // the console switches are three words and a READ returns
             // them, which is how MCP's IPL takes the time and date
             // the operator sets in binary keys 0-23 and 32-55
-            // (C22-6678-1 printed p.29).  Nothing on the path that
-            // runs today reads them, so the three-word switch image
-            // is not built and a READ here program-checks instead.
+            // (C22-6678-1 printed p.29).
+            //
+            // >>> THIS USED TO READ "Nothing on the path that runs
+            // today reads them, so the three-word switch image is
+            // not built and a READ here program-checks instead.
             // When the IPL needs the switches this is the line to
-            // change, and the capacity in StretchCore's rl_io is 3.
+            // change, and the capacity in StretchCore's rl_io is 3."
+            // MCP'S IPL NEEDED THEM ON 2026-10-22.  Printed p.22
+            // line 5 is "RD(SEOP),0.0($15),X DCW 2" with
+            // "X DCW 2 = CW,X LR IN,3,0" -- three words, p.150's
+            // word weight exactly -- and the refusal landed EXCHANGE
+            // PROGRAM CHECK and END OF OPERATION in the control
+            // word, bits 19 and 22, both inside the five that
+            // printed p.3 line 27's "CT0011(BU,5),X IPL BS+.19"
+            // tests.  The run ended in MCP's error routine.
+            //
+            // THE THREE PIECES WENT IN IN THIS ORDER, AND THE ORDER
+            // IS NOT ARBITRARY: StretchIO's switchImg, then rl_io's
+            // DevConsole read arm and its capacity of 3, then this
+            // line.  Doing this line ALONE was measured first, as
+            // the injection for the boot test's control-word check:
+            // the read then succeeded out of the CARD READER's
+            // image, four checks failed and MCP took card words for
+            // the operator's options.  Permitting is not
+            // implementing. <<<
             Bool wrongUnit = (base == 3'b000)
-              ? (!readerCh && !tapeCh && !diskCh)   // RD: reader, tape, disk
+              ? (!readerCh && !tapeCh && !diskCh
+                 && !consoleCh)                     // RD: + the console
               : (!printerCh && !tapeCh && !diskCh
                  && !consoleCh);                    // W: + the console
             if (wrongUnit) begin
@@ -4291,9 +4312,27 @@ function ActionValue#(IoOutcome)
                 // message as a CHAIN of control words (printed p.8's
                 // X MS CW1 then X MSG CW), so consecutive writes that
                 // restarted would print on top of each other.
+                // AND THE CONSOLE'S TWO DIRECTIONS START IN
+                // DIFFERENT PLACES.  A WRITE continues down the paper
+                // from consolePos, per the paragraph above; a READ
+                // scans the three-word SWITCH register, which has no
+                // position -- p.150 calls them "the three words
+                // scanned from the switches", so a second READ gets
+                // the same three and the origin is always zero.
+                //
+                // THIS LINE WAS MISSED ONCE AND THE MODEL SAID SO IN
+                // ONE WORD.  Without it a console READ starts at
+                // consolePos, which after the date message is 8, and
+                // 8 is past the switch register's capacity of 3 --
+                // so rl_io's "unit runs out of material" arm fired
+                // before a single word moved.  The control word came
+                // back 0x00870400000C0000: END EXCEPTION on, data
+                // word address still X LR IN, COUNT STILL 3.  A
+                // transfer that moved nothing and reported why.
                 devIdx: tapeCh    ? io.tapePos()
                       : readerCh  ? zeroExtend(io.readerPos())
-                      : consoleCh ? zeroExtend(io.consolePos())
+                      : consoleCh ? ((base == 3'b001)
+                                       ? zeroExtend(io.consolePos()) : 0)
                       : diskCh    ? (zeroExtend(io.arcAddr())
                                      * fromInteger(arcWords))
                       : 0,

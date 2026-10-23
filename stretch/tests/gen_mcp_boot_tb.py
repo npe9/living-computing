@@ -276,11 +276,87 @@ def main():
         # line 12's error table maps X ERR 05 + 1.0 to X MSG 05,
         # "UNSUCCESSFUL COMPLETION".
         #
-        # WHICH STATUS BIT THE MODEL LEAVES SET AFTER A CONSOLE WRITE
-        # IS THE NEXT QUESTION, and it is a model question: the
-        # message came out right, so the write worked.
-        ("mcp_x_err_ad", str(sym("XERRAD")),
-         ((prog.symtab["XERR05"] // 32 + 2) & 0x7FFFF) << 45),
+        # >>> AND IT IS ZERO AGAIN, FOR THE SECOND TIME AND A BETTER
+        # REASON.  The status bit was printed p.22 line 5's
+        # "RD(SEOP),0.0($15),X DCW 2" -- a three-word read of the
+        # OPERATOR'S CONSOLE SWITCHES -- which the model refused
+        # because it had no switches.  It has three now
+        # (StretchIO.bsv's switchImg, Reference Manual printed
+        # p.150), the read succeeds, and NO ERROR SITE RUNS AT ALL.
+        # MCP goes on into printed p.25 and the pages after it. <<<
+        ("mcp_x_err_ad", str(sym("XERRAD")), 0),
+
+        # >>> AND THIS IS THE PROOF THAT MCP *USED* THE SWITCHES,
+        # which is a different claim from "the read returned". <<<
+        #
+        # X LR IN is the three-word buffer printed p.21 line 26
+        # reserves and printed p.22 line 5 reads the switches into.
+        # After initialization its first word reads
+        #
+        #     0xAAAAAA00AAAAAA00
+        #
+        # which is BCD ZERO in six nibbles across bits 0-23 and six
+        # more across bits 32-55 -- and those are not arbitrary
+        # ranges.  C22-6678-1 printed p.29: "Set up the time in
+        # binary keys 0-23, and the date in binary keys 32-55."  The
+        # nibble is MCP's own: printed p.24 line 13 is
+        # "X VZER  LFI(BU,4),(2)1010,46  - BCD ZERO", under the
+        # banner "replace a blank character with a BCD zero".
+        #
+        # SO THE WHOLE PATH IS VISIBLE IN ONE WORD: the switches
+        # were read (all zero -- printed p.22 line 12's
+        # "KFI(BU,24),0,40  -NO TIME ENTERED"), MCP took the
+        # no-time-entered branch, and its blank-to-BCD-zero routine
+        # filled exactly the two fields p.29 names.  A model that
+        # returned the card reader's image instead would have to
+        # produce this by accident.
+        ("mcp_switch_words_became_bcd_zero",
+         str(ipl_hw("XLRIN") // 2),
+         sum(0xA << (60 - 4 * i) for i in range(6))      # keys 0-23, time
+         | sum(0xA << (28 - 4 * i) for i in range(6))),  # keys 32-55, date
+
+        # >>> AND MCP WROTE THE CONSOLE'S CHANNEL INTO ITS
+        # COMMUNICATION REGION. <<<
+        #
+        # S YCOCH is the comm-region word that names the console.
+        # It holds 35 in bits 0-18, and 35 is where
+        # bsv/StretchIO.bsv's chanConsole is -- MCP learned that from
+        # the IOCD cards it read off the tape, since nothing in this
+        # fixture tells it directly.
+        #
+        # THE DECODING IS NOT LOAD-BEARING HERE, which is why this
+        # check is worth having: printed p.21 line 5 is
+        # "X DATE  LV,$15,S YCOCH  -GET CONSOLE CHANNEL" and every
+        # console WRITE in the program addresses "0.0($15)".  The
+        # date message checked above came out, so $15 IS the console
+        # whatever one calls its bit fields.
+        #
+        # S YPRCH, the printer slot, holds the same 35 and that is
+        # NOT explained.  strap/prosa.py's IOCD deck puts the printer
+        # on channel 33, and printed p.25 lines 22-24 store a
+        # DIFFERENCE ("SX,$10,$R" / "-(BU,19),S XCHAN,45" /
+        # "ST(BU,19),S YPRCH"), not a channel address.  Left
+        # unchecked and written down rather than guessed at.
+        # AND THE TWO WORDS THE SWITCH REGISTER DELIVERED UNTOUCHED.
+        # The testbench sets console switch words 1 and 2 to markers
+        # (see console_switches below); MCP reads all three into
+        # X LR IN and never looks at these two, because they are
+        # p.29's NUMERIC switches and only the I/O-status-report path
+        # reads them.  So they are still there at the end of the run.
+        #
+        # THIS IS THE CHECK THAT DISCRIMINATES.  Everything else about
+        # the console READ is satisfied by zeros, and the first
+        # injection written against it -- serving the READ out of the
+        # card reader's image, which is what the model did before the
+        # switch register existed -- SURVIVED, because both images
+        # were zero.  With the markers it fails on these two words.
+        ("mcp_switch_word1_arrived",
+         str(ipl_hw("XLRIN") // 2 + 1), 0x5A5A5A5A5A5A5A5A),
+        ("mcp_switch_word2_arrived",
+         str(ipl_hw("XLRIN") // 2 + 2), 0xA5A5A5A5A5A5A5A5),
+
+        ("mcp_console_channel_in_comm_region",
+         str(ipl_hw("SYCOCH") // 2), 35 << (63 - 18)),
 
         # AND THIS IS THE CONTROL WORD THE LINE ABOVE TRIPPED ON.
         # printed p.3 line 23 is "X7 1 CCW  CCW,0($15),X IPL BS", so
@@ -335,10 +411,31 @@ def main():
         #   COUNT, REFILL, CHAIN all zero: the chain's last control
         #     word, printed p.21 line 30's "X DCW 1  CW,X DATE 1,X
         #     DATE K,0", is exhausted.
+
+        # >>> AND IT READS 0x0087C00000000000 NOW, WHICH IS THE SAME
+        # WORD WITH THE FAILURE TAKEN OUT.  The switch register is
+        # built, so the console READ runs: data word address
+        # X LR IN + 3, count stepped to zero, and NOT ONE STATUS BIT
+        # ON.  EPGK and EOP are gone -- the two bits that were the
+        # whole diagnosis -- and bits 20, 21, 23, 24 stay off as they
+        # already were.  The last I/O TEST on printed p.3 therefore
+        # returns through "X7 3  BRZ,0.0  -SUCCESSFUL". <<<
+        #
+        # THE OLD VALUE AND WHY IT WAS WORTH KEEPING is below, because
+        # it is the only reason the gap was found at all:
+        #
+        #   0x008A920000000000 -- EXCHANGE PROGRAM CHECK (bit 19) and
+        #   END OF OPERATION (bit 22) on, every other status bit off,
+        #   data word address X DATE 1 + X DATE K.  printed p.3 line
+        #   23's "CCW,0($15),X IPL BS" had put MCP's own copy of the
+        #   control word in storage, so the machine was already
+        #   holding the answer; nothing had to be added to the model
+        #   to see it.  The data word address said the date WRITE had
+        #   finished cleanly, and bits 19 and 22 are exactly the pair
+        #   StretchExecute's "wrongUnit" guard sets -- which named the
+        #   failing instruction without a trace.
         ("mcp_x_ipl_bs_control_word", str(sym("XIPLBS")),
-         ((ipl_hw("XDATE1") + ipl_hw("XDATEK")) // 2) << 46   # data word address
-         | 1 << (63 - 19)                                      # EPGK
-         | 1 << (63 - 22)),                                    # EOP
+         (ipl_hw("XLRIN") // 2 + 3) << 46),   # data word address, no status
 
         # The indicator register, word 11: RZ, XVZ, XF and **OP**.
         #
@@ -474,8 +571,21 @@ def main():
         # DECREMENTING the previous addresses by one").  The channel
         # status table is relocated, printed p.20 finds the console
         # it was told about, and the run goes on. <<<
+        # >>> AND IT MOVED AGAIN, 2026-10-22, BECAUSE THE RUN GOES
+        # FURTHER.  XCZ and XE out, MOP and XH in.  All five are
+        # RESULT indicators -- the last index and arithmetic
+        # operations' outcomes -- and the run no longer ends inside
+        # the error routine but somewhere in printed p.25's successors,
+        # so there is no reason for them to have stayed the same.
+        #
+        # WHAT THE CHECK IS STILL FOR is the bit that is NOT here:
+        # OP is clear, so the model still refuses nothing MCP
+        # executes, over eleven more pages of it than before.  MOP is
+        # printed p.55's "to-memory operation" (C22-6531 Appendix A,
+        # $MOP, indicator 55) and XH the index-result high -- both
+        # just the last store and the last index compare.
         ("mcp_indicators_word11", str(IND_WORD),
-         _ind("XCZ") | _ind("XVGZ") | _ind("XE")
+         _ind("XH") | _ind("XVGZ") | _ind("MOP")
          | _ind("RGZ") | _ind("AE")),
 
         # >>> THE MOVE ITSELF, AND IT IS THE POINT OF THE FIXTURE <<<
@@ -837,7 +947,39 @@ def main():
         ("console_nothing_after", 8, 0),
     ]
 
-    print(generate(module_name, prog, checks, console_checks=console_checks,
+    # ---- THE OPERATOR'S CONSOLE SWITCHES -------------------------
+    # Reference Manual printed p.150: a console READ with the keyboard
+    # not enabled returns "the three words scanned from the switches",
+    # and the console's word weight is 3.  printed p.22 line 5 is the
+    # READ -- "RD(SEOP),0.0($15),X DCW 2" with
+    # "X DCW 2 = CW,X LR IN,3,0".
+    #
+    # WORD 0 STAYS ZERO AND THAT IS THE CONFIGURATION, NOT AN
+    # OMISSION.  C22-6678-1 printed p.29 puts the time in binary keys
+    # 0-23 and the date in 32-55, with 28-31 the four report options;
+    # printed p.22 line 12's "KFI(BU,24),0,40  -NO TIME ENTERED" is
+    # MCP's own name for all-zero, and taking that branch is what
+    # exercises printed p.24's "replace a blank character with a BCD
+    # zero" routine.  An operator who sets nothing is a real operator.
+    #
+    # WORDS 1 AND 2 CARRY A MARKER, AND THEY ARE WHY THE CHECK ON
+    # X LR IN+1 BELOW DISCRIMINATES.  p.29 describes the NUMERIC
+    # switches -- columns 7-8 the channel number, 15-16 the tape unit
+    # -- and MCP reads them only on the I/O-status-report path, which
+    # binary key 29 selects and which is not taken here.  So these two
+    # words should arrive in storage and then be left alone, and
+    # anything else serving the READ (the card reader's image is the
+    # one that nearly did) delivers zeros instead.
+    #
+    # THE MARKER HAD TO EXIST AT ALL because an all-zero fixture
+    # cannot tell a correct implementation from a wrong one: the first
+    # injection written against this check SURVIVED, with the console
+    # READ served out of the card reader, for exactly that reason.
+    console_switches = [0, 0x5A5A5A5A5A5A5A5A, 0xA5A5A5A5A5A5A5A5]
+
+    print(generate(module_name, prog, checks,
+                   console_switches=console_switches,
+                   console_checks=console_checks,
                    # >>> IT STOPS WHERE IBM TOLD IT TO <<<
                    # 239 is half-word 239 = 000167.40, and that is
                    # **printed p.6 line 1, "BD,$  -LOOP"** -- the last
@@ -890,7 +1032,38 @@ def main():
                    # ends at printed p.6 line 1's "BD,$" -- the end
                    # of the error routine -- after the I/O test on
                    # printed p.3 finds a status bit on.
-                   pc_check=239,
+                   # >>> AND IT IS 0, WHICH IS NOT A WORSE PLACE TO
+                   # STOP BUT A MUCH LATER ONE.  239 was printed p.6
+                   # line 1's "BD,$", the end of MCP's ERROR ROUTINE,
+                   # taken because the console READ on printed p.22
+                   # line 5 program-checked.  With the switch
+                   # register built NO ERROR SITE RUNS (X ERR AD is
+                   # zero above) and MCP goes on through printed p.25
+                   # and the pages after it, filling its
+                   # communication region -- S YCOCH, S YPRCH,
+                   # S MARK, S MCP, S XCHAN, S MAXRN, S DKMCP and
+                   # S SYRFT are all non-zero at the end of the run.
+                   #
+                   # WHAT PC 0 MEANS, AND IT IS NOT A MYSTERY: a
+                   # zero half-word is BRANCH ENABLED to 0.0 --
+                   # UNCOND_BRANCH_CODES["BE"] is 0b000 and the
+                   # address field is zero, so "BE,0.0" assembles to
+                   # all zeros and all zeros disassemble to it.
+                   # (The same fact is spelled out in the indicator
+                   # comment above, where it explained a wiped
+                   # indicator register.)  So MCP has branched into
+                   # storage this project has not transcribed, where
+                   # every word is a branch to location zero, and
+                   # location zero is another one -- which the model
+                   # reports as "the last instruction branched to
+                   # itself".
+                   #
+                   # MCP LEFT THE TRANSCRIBED PAGES.  Printed p.36 is
+                   # the last page in the image; the next source deck
+                   # begins at printed p.37.  THAT IS THE NEXT
+                   # TRANSCRIPTION, and this check is what will
+                   # notice when it lands.
+                   pc_check=0,
                    step_cap=40000000,
                    ipl=True))
 

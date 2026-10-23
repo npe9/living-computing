@@ -528,18 +528,43 @@ cannot be tested without it.
 > data word address `X DATE 1 + X DATE K`. The WRITE finished
 > cleanly and the READ never started.
 >
-> **A4 — AND THE FIX IS THREE PIECES IN ONE ORDER.** The injection
-> that pins the check is the HALF-fix: permit the console on `RD`
-> without building the register, and four checks fail — the read
-> succeeds out of the *card reader's* image (`dataAddr` becomes
-> `X LR IN + 3` with no status bit at all), MCP takes it as the
-> operator's options, and the run leaves the program. So:
+> **A4 — BUILT THE SAME DAY, IN FOUR PIECES.** `StretchIO.bsv`'s
+> `switchImg` (three words, p.150's "word weight of 3"); `rl_io`'s
+> `DevConsole` READ arm, *scanning* rather than consuming so nothing
+> advances; a capacity of **3 on that direction only**; and the
+> **`devIdx` origin**, which was missed and which the model caught in
+> one word — a console READ left starting at `consolePos` (8, after
+> the date message) begins past a capacity of 3, and the control word
+> comes back `0x00870400000C0000`: End Exception on, data word
+> address still `X LR IN`, count still 3.
 >
-> 1. a three-word console switch register in `StretchIO.bsv`, zero
->    at power-on, with a testbench setter beside `setConsolePos`;
-> 2. `rl_io`'s device arm splitting on `DevConsole` for READ the way
->    it already does for WRITE, capacity 3;
-> 3. `wrongUnit` dropping the console from the RD exclusion **last**.
+> **MCP uses them, in BCD.** `X LR IN`'s first word ends the run at
+> `0xAAAAAA00AAAAAA00` — nibble `1010` across bits 0-23 and 32-55 and
+> nowhere else, which is `C22-6678-1` printed p.29's Time and Date
+> key fields, filled by printed p.24 line 13's
+> `LFI(BU,4),(2)1010,46  - BCD ZERO`.
+>
+> **An all-zero fixture cannot test an all-zero register**: the first
+> injection — serve the console READ out of the card reader again —
+> SURVIVED, both images being zero. The testbench now sets switch
+> words 1 and 2 to markers, which MCP reads in and never touches
+> (p.29's numeric switches), and the injection is caught in its own
+> two checks.
+>
+> **A5 — WHERE IT STOPS NOW.** No error site runs; the run ends at
+> **PC 0**. A zero half-word is `BE, 0.0`
+> (`UNCOND_BRANCH_CODES["BE"]` is `0b000` with a zero address, which
+> the assembler confirms), so MCP has **branched into untranscribed
+> storage**. The communication region is populated on the way —
+> `S YCOCH` holds **35**, which is `chanConsole`, and the decoding is
+> not load-bearing: printed p.21 line 5 loads `$15` from it and every
+> console WRITE addresses `0.0($15)`, so the date message coming out
+> *is* the proof. `S MARK`, `S MCP`, `S XCHAN`, `S MAXRN`, `S DKMCP`
+> and `S SYRFT` are all non-zero too. **`S YPRCH` holds the same 35
+> and that is unexplained** — the IOCD deck puts the printer on
+> channel 33 — so it is flagged, not interpreted. **Printed p.37, "THE COMMUNICATION REGION FOR MCP",
+> is the next transcription**, and `pc_check=0` is what will notice
+> when it lands.
 >
 > `strap/iocd.py` is the card builder, shared with
 > `tests/gen_mcp_p17_tb.py`.

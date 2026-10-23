@@ -787,22 +787,34 @@ the WRITE operation with an end-exception indication" — "in both
 cases the end-exception is accompanied by end-of-operation **unless
 the multiple block flag in the control word is on**."
 
-**The model refuses a console READ, deliberately and in writing.**
-`StretchExecute.bsv`'s `wrongUnit` guard leaves the console out of
-`RD`'s legal units, sets EPGK and EOP, and carries this page's
+**The model built this on 2026-10-22, when MCP's IPL asked for it.**
+`StretchExecute.bsv`'s `wrongUnit` guard had left the console out of
+`RD`'s legal units and set EPGK and EOP, carrying this page's
 quotation plus the line *"when the IPL needs the switches this is the
-line to change, and the capacity in StretchCore's `rl_io` is 3."* MCP
-needed them on 2026-10-22. See `docs/NEXT.md`.
+line to change, and the capacity in StretchCore's `rl_io` is 3."* It
+took four pieces, not that one line: `StretchIO.bsv`'s three-word
+`switchImg`; `StretchCore.bsv`'s `rl_io` gaining a `DevConsole` READ
+arm that **scans** rather than consumes (nothing advances — a second
+READ gets the same three words); a **capacity of 3 on the READ
+direction only**, the WRITE still walking `DeviceWords` of paper; and
+the **`devIdx` origin**, zero for a READ where a WRITE continues from
+`consolePos`.
 
-**And removing the guard alone is worse than leaving it**, which was
-measured rather than reasoned: `StretchCore.bsv`'s device arm splits
-on `x.isWrite` and only the WRITE side knows it is a console, so a
-permitted READ falls through to the **card reader's** image and moves
-the card reader's cursor. Run that way, MCP's three-word read of the
-"operator's options" comes back with card-reader words and no status
-bit at all — its control word reads `0x0087C00000000000`, data word
-address `X LR IN + 3` — and the boot run leaves the program
-entirely. The switch register has to be built, not just permitted.
+**The origin was the piece that was missed, and the model named it in
+one word.** Left at `consolePos` — 8, after MCP's date message — a
+console READ starts past a capacity of 3, so the "unit runs out of
+material" arm fires before a word moves: control word
+`0x00870400000C0000`, End Exception on, data word address still
+`X LR IN`, count still 3.
+
+**And removing the guard alone would not have been caught**, which is
+worth recording because the opposite was asserted first.
+`StretchCore.bsv`'s device arm splits on `x.isWrite` and only the
+WRITE side knew it was a console, so a permitted READ fell through to
+the **card reader's** image — but that image is zero in the boot
+fixture and so is the switch register, so the two produce identical
+runs. The boot testbench now *sets* switch words 1 and 2 to markers
+to tell them apart. See `docs/NEXT.md`.
 
 *Not transcribed:* the card punch's table (printed p.142). The MCP Reference's Appendix B (printed
 pp.43–46) independently lists the I/O operations MCP itself issues, and

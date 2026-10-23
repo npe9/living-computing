@@ -513,6 +513,21 @@ module mkStretchCore(StretchCore);
       // StretchDiskSource.bsv is two arcs.  Running off the end is
       // End Exception, exactly as running off the end of a reel is.
       : (kind == DevDisk) ? zeroExtend(ioDev.diskCapacity())
+      // THE CONSOLE HAS TWO CAPACITIES, one per direction.  A WRITE
+      // walks the paper, DeviceWords of it; a READ scans the switch
+      // register, and Reference Manual printed p.150 says how many
+      // there are -- "a word weight of 3", and a READ "is
+      // automatically terminated when the three words scanned from
+      // the switches have been sent to the exchange".  A read asking
+      // for more than three therefore ends on the End Exception arm
+      // below, which is this model's "the unit runs out of material"
+      // (p.121) and the nearest thing the manual gives to
+      // "automatically terminated".  MCP asks for exactly three
+      // (printed p.21 line 31's "X DCW 2  CW,X LR IN,3,0"), so
+      // nothing on the boot path depends on that choice -- but
+      // something had to be chosen and this says so.
+      : (kind == DevConsole && !x.isWrite)
+          ? fromInteger(valueOf(ConsoleSwitchWords))
       : fromInteger(valueOf(DeviceWords));
     if (ioRefillIssued) begin
       // A CHAINED CONTROL WORD IS IN FLIGHT.  This arm is first in the
@@ -692,6 +707,27 @@ module mkStretchCore(StretchCore);
             ioDev.setConsolePos(truncate(x.devIdx + 1));
           end else
             ioDev.writePrinterWord(di, v);
+        end else if (kind == DevConsole) begin
+          // THE CONSOLE'S READ SIDE SCANS THE SWITCHES, and it had to
+          // be its own arm: without this the `else` below served a
+          // console READ out of the CARD READER's image and moved the
+          // card reader's cursor, which was measured on 2026-10-22 as
+          // the injection for this very change -- the control word
+          // came back with a data word address of X LR IN + 3 and no
+          // status bit at all.
+          //
+          // Reference Manual printed p.150: "A READ instruction
+          // received by the console with the keyboard not enabled is
+          // automatically terminated when the three words scanned
+          // from the switches have been sent to the exchange."
+          //
+          // NOTHING ADVANCES.  They are SCANNED, so a second READ
+          // gets the same three words; the bound is the capacity test
+          // above, not a cursor.  SKIP is honoured the way every
+          // other READ honours it (p.107: the flag suppresses the
+          // core-storage write, not the device).
+          if (!x.skip)
+            st.writeWord(x.memAddr, ioDev.consoleSwitchWord(truncate(x.devIdx)));
         end else begin
           if (!x.skip)
             st.writeWord(x.memAddr, ioDev.readerWord(di));

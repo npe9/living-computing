@@ -1780,25 +1780,61 @@ run "MCP'S OWN BOOTSTRAP RUNS (boot_plan.md M3)" ./run_mcp_boot.sh StretchMcpBoo
 # CONSOLE SWITCHES (RefMan printed p.150), which this model does not
 # have.
 #
-# ITS INJECTION IS THE HALF-FIX.  Permit the console on RD -- add
-# "&& !consoleCh" to StretchExecute's wrongUnit RD arm, one token --
-# without building the switch register:
+# [SUPERSEDED THE SAME DAY -- the switches are built now; see the
+# block below.]  Its injection was the half-fix: permit the console
+# on RD, one token, without building the switch register.  Four
+# checks fail; the control word becomes 0x0087C00000000000, data
+# word address X LR IN + 3, no status bit at all.
 #
-#   -> FOUR checks fail.  The control word becomes
-#      0x0087C00000000000: data word address 0o1037, which is
-#      X LR IN + 3, and NO status bit at all.  The read "succeeded"
-#      out of the CARD READER's image, because StretchCore's device
-#      arm only knows it is a console on the WRITE side.  MCP takes
-#      that as the operator's IPL options, X ERR AD goes to ZERO (no
-#      error site ran), PC reads 0 against 239 and the indicator
-#      register 0x1324 against 0x9424.
+#   CORRECTION: this block went on to say the half-fix is WORSE than
+#   the refusal, "because the read succeeded out of the CARD READER's
+#   image".  The mechanism is right and the conclusion was NOT
+#   MEASURED -- building the switch register produced byte-for-byte
+#   the same four values, because the card reader's image and the
+#   switch register are both zero in this fixture.  The four checks
+#   were measuring "MCP gets past the read", not "the card reader
+#   served it".  The injection, not the reasoning, is the claim. <<<
 #
-# So the one-token fix is WORSE than the refusal it removes, and the
-# refusal's own comment named both halves: "when the IPL needs the
-# switches this is the line to change, and the capacity in
-# StretchCore's rl_io is 3."  Measured by hand (Bluespec build plus
-# ./run_mcp_boot.sh, not tests/inject.py's python verifier); the
-# anchor was confirmed unique and the file restored and diffed. <<<
+# >>> AND THE SWITCHES ARE BUILT, 2026-10-22, IN FOUR PIECES.
+# StretchIO's switchImg (three words, RefMan printed p.150's "word
+# weight of 3"); rl_io's DevConsole READ arm, scanning rather than
+# consuming; a capacity of 3 on that direction ONLY; and the devIdx
+# ORIGIN, which is the piece that was missed and which the model
+# caught in one word -- a console READ left starting at consolePos
+# (8, after the date message) began past a capacity of 3, and the
+# control word came back 0x00870400000C0000: END EXCEPTION on, data
+# word address still X LR IN, count still 3.  A transfer that moved
+# nothing and said why.
+#
+# WHAT THE RUN DOES NOW: no error site runs at all (X ERR AD zero),
+# MCP goes on through printed p.25 and after, fills its communication
+# region -- S YCOCH holds 35 in bits 12-18, which is where RefMan
+# printed p.111 puts a channel number and where StretchIO's
+# chanConsole is -- and ends at PC 0.  A zero half-word is
+# "BE, 0.0" (UNCOND_BRANCH_CODES["BE"] is 0b000 and the address is
+# zero, checked with the assembler), so PC 0 means MCP BRANCHED INTO
+# UNTRANSCRIBED STORAGE.  printed p.37 is the next deck.
+#
+# AN ALL-ZERO FIXTURE CANNOT TEST AN ALL-ZERO REGISTER.  The first
+# injection against the new checks -- serve the console READ out of
+# the card reader again -- SURVIVED, because both images are zero.
+# The testbench now SETS switch words 1 and 2 to markers, which MCP
+# reads into X LR IN+1 and +2 and never touches (p.29's NUMERIC
+# switches, read only on the I/O-status-report path).  Re-run:
+#
+#   -> caught, in its own two checks, mcp_switch_word1_arrived and
+#      mcp_switch_word2_arrived, both reading 0.
+#
+# Word 0 stays zero deliberately: all-zero IS printed p.22 line 12's
+# "NO TIME ENTERED", and taking that branch is what exercises printed
+# p.24's "replace a blank character with a BCD zero" routine --
+# which is visible in mcp_switch_words_became_bcd_zero, nibble 1010
+# across bits 0-23 and 32-55, exactly C22-6678-1 printed p.29's Time
+# and Date key fields.
+#
+# Measured by hand (Bluespec build plus ./run_mcp_boot.sh, not
+# tests/inject.py's python verifier); anchors confirmed unique, files
+# restored from saved copies and diffed. <<<
 #
 # WHAT EACH CHECK IS FOR is in gen_mcp_boot_tb.py; the two that carry
 # the claim are:
