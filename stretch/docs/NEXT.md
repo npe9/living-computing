@@ -5524,8 +5524,8 @@ words that **straddle the join between the two source decks** —
 p.36's thirty-six-bit `X ABN` runs into 002147 and p.37's `CNOP`
 sits in it. One word, two decks, right only if both are.
 
-**SIX OF THE EIGHT ARE EXPLAINED, AND THE EXPLANATION IS printed
-p.15 lines 20-21:**
+**ALL EIGHT ARE EXPLAINED, AND THE EXPLANATION IS printed p.15
+lines 20-21:**
 
 ```
 X101  LC, $0, X BUFER+.32($9)     -GET SIZE OF COMM REGION
@@ -5533,11 +5533,22 @@ X101  LC, $0, X BUFER+.32($9)     -GET SIZE OF COMM REGION
 ```
 
 A direct-count TRANSMIT whose count MCP **loads out of the record**,
-so the fixture's comm-region block is written over the real one —
-002150 through 002163, fourteen words, which covers 002151, 002153,
-002154, 002160, 002161 and 002163 exactly. MCP then writes 002152,
-002155, 002156, 002157 and 002162 over the zeros, and 002150's high
-half last of all.
+so the fixture's comm-region block — a descriptor and thirteen zeros
+— is written over the real one. **002150 through 002165 inclusive IS
+fourteen words** (`0o2165 - 0o2150 + 1 = 0o16`), so the move covers
+the whole region including `S DATE` and `S TODAY`. MCP then writes
+002152, 002155, 002156, 002157 and 002162 over the zeros, and
+002150's high half last of all.
+
+**I HAD THIS "STILL OPEN" FOR AN HOUR ON AN OCTAL SLIP** — I read
+fourteen words from 002150 as ending at 002163 rather than 002165,
+which left two words apparently unaccounted for and sent me looking
+for a second writer that does not exist. **MEASURED, not re-derived:**
+rebuilding with a two-word block moved the boundary exactly two words
+and every other word came back holding the image's value —
+002164 reading `0x0A03110105110603` and 002165 `0x0000110000110603`,
+IBM's `03/15/63` and `  /  /63`. A probe that moves the boundary
+beats re-checking the arithmetic that put it in the wrong place.
 
 **AND THE FIXTURE'S DESCRIPTOR AND IBM'S OWN `S COM SZ` NOW AGREE
 BIT FOR BIT**, which is worth more than either on its own. `LC`
@@ -5556,11 +5567,35 @@ bits. Fourth unmeasured structural claim of this phase, caught
 before the commit this time, by doing the two-minute read of `LC`
 against `index_word` that the reading demanded.
 
-**STILL OPEN: 002164 and 002165** — `S DATE` and `S TODAY` — which
-are OUTSIDE the fourteen-word move and still end the run zero where
-the image delivers `03/15/63` and `  /  /63`. Two words, and the
-next measurement is a fixture block short enough that the move
-cannot reach them.
+### TRIED AND REVERTED: the comm block built out of printed p.37
+
+The obvious next step is to stop inventing the block at all. p.37
+**is** the communication region, so the fourteen words the record
+carries could be p.37's own, with the single field the fixture must
+supply — `S MCP`, "SLOT FOR BASE ADDRESS OF MCP", which p.37
+compiles as zero because the address is not known until the tape is
+generated. Fourteen invented words down to one invented field.
+
+**It works and the run is unchanged** (same PC trail, same step
+count to the digit), and `S DATE` and `S TODAY` end the run holding
+IBM's dates instead of zeros. **It was reverted anyway**, for two
+reasons worth writing down:
+
+1. `mcp_console_channel_in_comm_region` moves from
+   `0x0004600000000000` to `0x0004640000000400` — which is expected
+   in kind, because the region now STARTS at p.37's `VF,22.4` in
+   both channel slots instead of zero and MCP writes over a
+   different residue, but "expected in kind" is not a measurement.
+2. `mcp_comm_region_last_word` reads zero where the fixture now
+   expects `S TODAY`, and I cannot yet say why.
+
+**The fixture's whole comm-block concept is an inference** from
+printed p.15 lines 17-21 — that the PROSA record carries a copy of
+the region at the offset the three-register `LVS` computes. Nothing
+read so far states it. Replacing invented contents inside an
+inferred structure is not obviously progress, and it perturbs two
+measured values. The change is described here so it can be made
+deliberately rather than discovered again.
 
 ## MCP TYPES A MESSAGE TO ITS OPERATOR, 2026-10-22
 

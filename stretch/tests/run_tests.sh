@@ -4378,6 +4378,36 @@ run "THE COMMUNICATION REGION FOR MCP, printed p.37, bit-exact (MCP_Mar63 PDF p.
 # as a zero.  AN OMITTED BYTE SIZE IS EIGHT.  The assembler used to
 # refuse the row outright; it is the same shape as p.30's zero
 # TRANSMIT count meaning sixteen.
+#
+# WHAT THE REGION LOOKS LIKE AT THE END OF THE RUN, measured.
+# printed p.15 lines 20-21 are "LC,$0,X BUFER+.32($9)  -GET SIZE OF
+# COMM REGION" and "T,$0,X BUFER($9),S MCP  -MOVE COMM REGION": a
+# direct-count TRANSMIT whose count MCP loads out of the record, so
+# the fixture's block -- a descriptor and thirteen zeros -- is
+# written over printed p.37's values, 002150 THROUGH 002165, which is
+# fourteen words (0o2165 - 0o2150 + 1 = 0o16).  MCP then writes
+# 002152, 002155, 002156, 002157 and 002162 over the zeros and
+# 002150's high half last.
+#
+# THE FIXTURE'S DESCRIPTOR AND IBM'S S COM SZ ARE THE SAME THIRTY-TWO
+# BITS, which is why COMM_REGION_WORDS could be checked against the
+# document at all: LC takes a half-word's 31:14 (StretchExecute's
+# dixop_LC), comm_descriptor writes "size_words << 14", and p.37 line
+# 9 compiles 0x00038000 whose 31:14 is 14.
+#
+# AND THAT IS WHY mcp_comm_size_fixture_and_listing_agree IS NAMED
+# WHAT IT IS.  002150's low half is unchanged at the end of the run
+# and the obvious reading is "the move never reached it"; the move
+# reached it and wrote the SAME BITS.  The check is a cross-check
+# between the invented field and the compiled word, not a measurement
+# of the move -- and it was nearly committed as the latter.
+#
+# TRIED AND REVERTED: building the block out of p.37's own fourteen
+# words, with only S MCP's address field supplied by the fixture.  It
+# works, the run is unchanged to the step, and S DATE and S TODAY end
+# holding IBM's dates -- but it moves two measured values this
+# project cannot yet account for, and the block's EXISTENCE is itself
+# an inference from p.15 lines 17-21.  See docs/NEXT.md.
 # >>> PRINTED p.36 IS TRANSCRIBED -- EVERY ROW ON THE PAGE, and with
 # it EVERY PAGE OF MCP's LISTING FROM PRINTED p.2 THROUGH p.36 IS
 # TRANSCRIBED AND BIT-EXACT.  docs/boot_plan.md's M3+ listed "$IPLD,

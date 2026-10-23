@@ -580,8 +580,10 @@ cannot be tested without it.
 > 002163. **The fixture's descriptor field and IBM's own `S COM SZ`
 > are the same thirty-two bits** — `LC` takes a half-word's 31:14,
 > `comm_descriptor` writes `size_words << 14`, and p.37 line 9
-> compiles `0x00038000` whose 31:14 is 14. **Still open: 002164 and
-> 002165**, outside the move and still zero.
+> compiles `0x00038000` whose 31:14 is 14. The move covers
+> 002150 **through 002165** — `0o2165 - 0o2150 + 1` is `0o16` — so
+> the whole region, `S DATE` and `S TODAY` included. Confirmed by
+> moving the boundary: a two-word block clears exactly two words.
 >
 > The communication region is populated on the way —
 > `S YCOCH` holds **35**, which is `chanConsole`, and the decoding is
