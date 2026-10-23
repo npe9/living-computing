@@ -94,7 +94,31 @@ POINTS = [
 # anywhere in decks/.  Recorded rather than fixed because it lives in
 # the expression tokenizer, which every address in the corpus goes
 # through, and it has no witness beyond this appendix.
-KNOWN_GAP = {"M.", "M.M"}
+# >>> "M.M" LEFT THIS LIST ON 2026-10-23, and not because point
+# notation was implemented. <<<
+#
+# strap_asm learned that a SYN to a plain integer carries an INTEGER
+# CLASSIFICATION (C22-6531 printed p.31, and SymTab.sym_int), so an
+# address field stops scaling it as a bit count.  With "M SYN,5",
+# "M.M" tokenizes as M + (bare point) + M = 10, and "5.5" is 325 bits
+# which a 19-bit half-word field divides to 10.  THE PAIR AGREES; the
+# general case does not.
+#
+# AND ".M" JOINED IT THE SAME DAY, which is the other half of the
+# same story and is worth more than the first.  It used to PASS, and
+# it passed BY ACCIDENT: ".M" tokenizes as a bare point plus the
+# symbol M, i.e. 0 + M, and while M was scaled as a bit count that
+# came to 0 -- which is also what "0.5" comes to in a 19-bit
+# half-word field, because bit 5 is inside half-word 0.  Two
+# different wrongs cancelling.  With M no longer scaled, ".M" is 5
+# half-words and the accident is over.
+#
+# SO POINT NOTATION ON A SYMBOLIZED INTEGER IS STILL NOT IMPLEMENTED
+# -- that has not changed and is what both entries record.  What
+# changed is that one pair stopped agreeing for a reason that was
+# never the right one, and another started agreeing for a reason
+# that is only right in this field.  Neither is point notation.
+KNOWN_GAP = {"M.", ".M"}
 
 
 def words_of(src):

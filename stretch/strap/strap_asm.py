@@ -592,12 +592,29 @@ class SymTab(dict):
     of 6 and a byte size of 6, which is the table character's dds and
     not any default.  Before this the assembler ACCEPTED a dds on a
     SYN and silently dropped it, which is the wrong-output-no-error
-    shape this project keeps finding; now it keeps it."""
+    shape this project keeps finding; now it keeps it.
+
+    `sym_int` holds the third thing the same sentence transfers.
+    C22-6531 printed p.31 again: "data properties (dds) associated
+    with Y and its bit address or INTEGER CLASSIFICATION are
+    transferred to A."  An eighteen-bit field reads an INTEGER as
+    a count of words and a BIT ADDRESS as a bit count to be
+    divided by 64 (p.12's note), so which of the two a symbol is
+    decides its value -- and the assembler used to guess from the
+    TEXT, treating any symbol as a bit address.
+
+    MCP printed p.48 is where that guess failed.  Lines 9-14 are
+    index words whose counts are SYMBOLS -- "XW,T IOREQ,T IOC,$"
+    prints count 000120, eighty -- and T IOC is "SYN,80", an
+    integer.  Shifted, eighty became one.  The same page writes
+    "32-2" as a literal two rows later and gets it right, which
+    is what made the shape visible."""
 
     def __init__(self, *a, **k):
         super().__init__(*a, **k)
         self.sys_alias = {}
         self.sym_dds = {}
+        self.sym_int = set()
 
 
 def eval_system_symbol(name, loc_bits, reg_context, lineno=None):
@@ -684,8 +701,16 @@ def eval_addr_field(expr, symtab, loc_bits, unit_shift, lineno=None, int_shift=0
             if up not in symtab:
                 raise AssemblerError(f"undefined symbol {val!r}", lineno)
             alias = getattr(symtab, 'sys_alias', {}).get(up)
-            term = ((eval_system_symbol(alias, loc_bits, False, lineno)
-                     if alias is not None else symtab[up]) >> unit_shift)
+            raw = (eval_system_symbol(alias, loc_bits, False, lineno)
+                   if alias is not None else symtab[up])
+            # >>> AN INTEGER-CLASSIFIED SYMBOL COUNTS WHAT THE FIELD
+            # COUNTS AND IS NOT SCALED, which is the same rule
+            # C22-6531 printed p.11 gives for a literal integer --
+            # "integers add into all fields as integers" -- carried
+            # through a SYN by p.31's "its bit address or INTEGER
+            # CLASSIFICATION are transferred".  See SymTab.sym_int.
+            term = (raw if up in getattr(symtab, 'sym_int', ())
+                    else raw >> unit_shift)
         elif kind == 'sys':
             term = eval_system_symbol(val, loc_bits, False, lineno) >> unit_shift
         else:
@@ -2009,6 +2034,18 @@ def resolve_syns(syn_stmts, symtab, final):
             if (stmt.mods and stmt.mods[0].strip()
                     and hasattr(symtab, 'sym_dds')):
                 symtab.sym_dds[up] = stmt.mods[0]
+            # INTEGER OR BIT ADDRESS -- see SymTab.  A SYN is an
+            # INTEGER when every term of its operand is one: a plain
+            # number, or another symbol already classified as one.  A
+            # dot, a "$" or an unclassified symbol makes it an
+            # address, which is the assembler's prior behaviour and
+            # stays the default.
+            if hasattr(symtab, 'sym_int'):
+                kinds = [k for _, k, _ in tokenize_expr(body, stmt.lineno)]
+                names = referenced_symbols(body, stmt.lineno)
+                if (all(k == 'int' or k == 'sym' for k in kinds)
+                        and all(n in symtab.sym_int for n in names)):
+                    symtab.sym_int.add(up)
             symtab[up] = eval_expr(stmt.fields[0], symtab, stmt.addr, lineno=stmt.lineno)
             progressed = True
         if not progressed:
@@ -2514,8 +2551,18 @@ def emit_statement(stmt, symtab, image):
             # A bit address carries a dot (word.bit) or a symbol that
             # resolves to one; a bare integer, with or without a radix
             # prefix like (8), carries neither.
+            #
+            # AND A SYMBOL SYNNED TO AN INTEGER IS NOT ONE, which the
+            # text alone cannot say -- see SymTab.sym_int and
+            # C22-6531 printed p.31's "its bit address or INTEGER
+            # CLASSIFICATION are transferred".
             body = re.sub(r'\(\s*\d+\s*\)', '', text)
-            return ('.' in body) or bool(re.search(r'[A-Za-z$]', body))
+            if '.' in body:
+                return True
+            names = referenced_symbols(text, stmt.lineno)
+            if names and all(n in getattr(symtab, 'sym_int', ()) for n in names):
+                return False
+            return bool(re.search(r'[A-Za-z$]', body))
 
         def _word_field(text):
             v = eval_expr(text, symtab, loc, lineno=stmt.lineno)

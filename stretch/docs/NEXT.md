@@ -5395,6 +5395,97 @@ no opcode can rule it out. What ruled it out was the datum the name
 labels — which is a tell worth stating on its own: *when a name
 labels data, decode the data before trusting the name.*
 
+## PRINTED pp.47-48, AND A GUESS THAT HAD BEEN WRONG SINCE THE FIRST XW, 2026-10-23
+
+**printed p.47 compiles nothing.** Twenty-three lines; the only
+non-comment is line 1's `SLC,$` at 002556.67, where printed p.46's
+`Q BLNK` ends to the bit. The rest is **THE DECODE PROGRAM LINKAGE
+FORMAT** written out as a worked call — `boot_plan.md` A17 has it —
+so `L DECOD` is handed the area `S BRK8` filled, a mode, and a
+disposition list. `mcp_image.py` names p.47 in `NO_DECK_PAGES`
+because a gap in that range would otherwise look like a page someone
+forgot.
+
+**printed p.48 is that program's storage**: ten self-refilling index
+words, a swap area of eight more, eight index-register SYNs and a
+block of counters, 002557-002601. The boot is unchanged by it —
+trail still 239, and the only clock difference is the 1,033 the
+nineteen extra tape words cost to read.
+
+### A second, independent witness for VF = 25 bits
+
+Line 44 is `L NO6  VF,.06` at 002601.00 and line 45 is at
+**002601.31** — bit 25 — and eight more rows chain off it without a
+byte boundary: `.31 .40 .51 .52 .53 .62 .63 .73`. Every one is
+printed and every one is checked. printed p.46 forced that correction
+and this page, which had no part in it, confirms it.
+
+### AND IT FOUND A GUESS THAT HAD BEEN WRONG SINCE THE FIRST XW
+
+An eighteen-bit field reads an **integer** as a count of words and a
+**bit address** as a bit count to divide by 64 (C22-6531 printed
+p.12). `strap_asm` decided which by looking at the **text**: anything
+with a letter in it was an address. Lines 9-14 write their counts as
+SYMBOLS — `XW,T IOREQ,T IOC,$` prints count 000120, eighty, and
+`T IOC` is `SYN,80` — so **eighty came out as one**. Six rows wrong.
+
+What made it visible is that the same page writes `32-2` as a literal
+two rows later and gets it right.
+
+**The rule is the same sentence the last two pages needed.** C22-6531
+printed p.31: *"data properties (dds) associated with Y and its bit
+address or INTEGER CLASSIFICATION are transferred to A."* `SymTab`
+now carries `sym_int` beside `sys_alias` and `sym_dds` — **three
+things one sentence transfers, found one page at a time**, and each
+time the assembler had been guessing at what the sentence states.
+
+### It moved two entries in the file that exists to record exactly this
+
+`verify_c22_6578_a4_addresses.py` keeps a `KNOWN_GAP` list and fails
+if a gap starts passing. Both halves happened at once:
+
+* **`M.M` left the list.** With `M` no longer scaled it comes to 10
+  half-words and so does `5.5`.
+* **`.M` joined it, and that is the more useful half.** It used to
+  pass **by accident**: `.M` tokenizes as `0 + M`, and `M` scaled as
+  a bit count came to 0 — which is also what `0.5` comes to in a
+  half-word field, because bit 5 is inside half-word 0. *Two
+  different wrongs cancelling.*
+
+Point notation on a symbolized integer is **still not implemented**.
+What changed is which pairs happen to agree, and the list now says
+so.
+
+### A check was removed for drifting
+
+`mcp_qsav_last_after_swap` lasted one commit. Its count field was
+1106; adding p.48 made it 1125 — **exactly nineteen more, the number
+of words p.48 adds to the image**. So `$6`'s count tracks the image
+SIZE, and the check would have to be re-measured on every page and
+would say nothing new each time. `Q SAV+0`'s count does not move and
+one word is enough to say the swap ran.
+
+*This project has been bitten by a drifting check before — two
+comm-region checks that walked onto MCP's own working storage as the
+image grew. A ratchet nobody can predict is a ratchet nobody reads.*
+
+### And the card types are documented after all
+
+`C22-6728` printed p.88: *"Three types of control cards are used:
+1. I-O Configuration Definitions (IOCD) 2. MCP IOD's (IOD) 3. MCP
+Parameters (MCPP)."* **MCPP's fields are given** — cols. 10-13
+`MCPP`, cols. 14-17 a mode of `OFFLINE`/`ONLINE`/`BYPASS` — and the
+IOD card's are not, because an IOD *"perform[s] the same function for
+MCP as [it does] for the problem program"*. printed p.25 line 51's
+comment names the same three: *"TEST 12 ZONE OF THIRD LETTER IN IOD,
+REEL OR MCPP TYPE FIELD"*, and the 12-zone test is what ends the
+loop: `D` and `E` carry it, `P` does not.
+
+**So the fixture needs at least one IOD or REEL card, then an MCPP.**
+The first call to UNCODE is unconditional, so the first card after
+the IOCDs cannot be the MCPP. And `Y REELC` executes two `SWAPI`s,
+which is why SWAP came first.
+
 ## FORWARD SWAP IS BUILT, AND IT WAS A DEPENDENCY RATHER THAN A WISH, 2026-10-23
 
 `SWAP` had been a documented absence for weeks, then a documented

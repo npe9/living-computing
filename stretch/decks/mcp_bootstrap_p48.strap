@@ -1,0 +1,203 @@
+! mcp_bootstrap_p48.strap -- RESERVATIONS, TABLES AND COUNTERS, the
+! DECODE program's storage, printed page 48.
+! docs/MCP_Mar63_001-249.pdf PDF p.55, header "PAGE NUMBER 48".
+! docs/boot_plan.md M3.
+!
+! >>> PRINTED p.47 COMPILES NOTHING, so this page follows printed
+! p.46 directly. <<<
+!
+! p.47 is twenty-three lines and the only one that is not a comment
+! is line 1's "SLC,$" at 002556.67 -- which is where printed p.46's
+! Q BLNK ends, to the bit.  The rest of it is THE DECODE PROGRAM
+! LINKAGE FORMAT, written out as a worked call:
+!
+!         LVI,$15,X
+!         B,LDECOD
+!   X     VF,A          LET A = FWA OF THE BREAK DOWN AREA
+!         CF,B          LET B = THE MODE
+!                         ZERO = OVERLAP MODE
+!                         NOT ZERO = NOT OVERLAP MODE
+!         VF,C          LET C = THE RETURN DISPOSITIONS
+!         BEW,$   ERROR RETURN
+!         BEW,$   NORMAL RETURN
+!                       SEE THE DISTRIBUTED WRITE - UP
+!
+! -- so DECODE is handed the area printed pp.45-46's S BRK8 filled.
+! That is recorded in docs/boot_plan.md; there is no deck for p.47
+! because there is nothing to compile and nothing to check.
+!
+! AND THIS PAGE OPENS A FIFTH SOURCE DECK: the card sequence is
+! 16000001, where printed pp.42-46 were 15000xxx.
+!
+! ---------------------------------------------------------------
+! THE BIT CHAIN AT THE END IS A SECOND WITNESS FOR VF = 25 BITS
+! ---------------------------------------------------------------
+! Line 44 is "L NO6  VF,.06" at 002601.00 and line 45 is at
+! 002601.31 -- BIT 25.  printed p.46 lines 29-30 forced that
+! correction (C22-6531 printed p.18, "THE LOCATION COUNTER STANDS AT
+! BIT 25") and this page confirms it independently, then chains
+! eight more rows off it without a single byte boundary:
+!
+!   .31 + 7  = .40   line 45's DRZ(BU,7)
+!   .40 + 9  = .51   line 46's DRZ(BU,9)
+!   .51 + 1  = .52   line 47's DD(BU,1)
+!   .52 + 1  = .53   line 48's DD(BU,1)
+!   .53 + 7  = .62   line 49's DRZ(BU,7)
+!   .62 + 1  = .63   line 50's DD(BU,1)
+!   .63 + 8  = .73   line 51's (AX)DD(BU,8,8)
+!
+! Every one of those addresses is printed, so the chain is checked
+! end to end rather than asserted.
+!
+! ---------------------------------------------------------------
+! EIGHT MORE INDEX-REGISTER SYNs
+! ---------------------------------------------------------------
+! Lines 33-40 are "L IODX SYN,$3" through "L WORKX SYN,$10" -- the
+! shape printed p.46 lines 22-24 introduced and strap_asm.py was
+! taught on the same day (C22-6531 printed p.31: "THE MEANING OF SYN
+! IS ALWAYS ONE OF EXACT SUBSTITUTION").  The listing prints their
+! LOCATION as the register's own bit address, 000023.00 through
+! 000032.00, which is what this deck checks.
+!
+! AND LINE 5 IS THE SAME PSEUDO-OP CARRYING BOTH A dds AND A BIT
+! ADDRESS: "L IREF  SYN(BU,12),0.52".  The listing prints the
+! location 000000.64 -- 0o64 is 52 -- so the "52" is DECIMAL in the
+! source and OCTAL in the location column, which is this listing's
+! habit everywhere.  The dds column prints "BU,14 ,10", octal for
+! (BU,12,8).
+!
+! ---------------------------------------------------------------
+! SUBSTITUTIONS
+! ---------------------------------------------------------------
+! (1) BLANKS INSIDE SYMBOL NAMES ARE DROPPED, as on every page since
+!     p.2.  Note that three names on this page are printed with NO
+!     blank -- LPPREF, LIOTBX and LFSTRX -- beside eleven that have
+!     one.
+!
+! (2) LINE 1'S "PRNS" IS WRITTEN AS PRINTED and discarded
+!     (LISTING_CONTROL); it is print control and emits nothing.
+!
+! (3) NOTHING ELSE.
+!
+! ---------------------------------------------------------------
+! LINE 46 IS A ROW WHERE THE DRUM LOST SEVERAL GLYPHS AT ONCE,
+! which is listing_typography.md 13d's shape.
+! ---------------------------------------------------------------
+! At 900 dpi it prints
+!
+!     L ICSCR  DRZ(BU,9),(1)        -ICDSQ COLNTER
+!
+! and "COLNTER" is "COUNTER", so at least one glyph on the row is
+! wrong before anything else is read.  The NAME is transcribed
+! "L IOSCR" and the comment "-IODSQ COUNTER".
+!
+! WHAT MAKES THAT SAFE RATHER THAN A GUESS: the symbol is not
+! referenced anywhere on this page, so NO COMPILED BIT DEPENDS ON
+! ITS SPELLING -- only the reservation's nine bits do, and those are
+! checked by line 47's address.  The reading itself leans on line
+! 35, "L XIO  SYN,$5  -I.O. REQUEST TABLE INDEX", which is this
+! program writing I-O as "IO" in a name on the same page.  IF A
+! LATER PAGE REFERENCES THIS SYMBOL, that print is the decider and
+! this note is the thing to come back to.
+!
+! ---------------------------------------------------------------
+! THE SIXTEEN STAND-INS, read off this page's own binary
+! ---------------------------------------------------------------
+!   T PURFT 003370.00  T UPPC  2      lines 9 and 23's value/count
+!   T UIORQ 003514.00  T UIOC  20     line 10
+!   T UFRE  003623.00  T UFRC  20     line 11
+!   T PREFT 003317.00  T PPC   20     lines 12 and 23
+!   T IOREQ 003373.00  T IOC   80     lines 13 and 24
+!   T FSTRE 003541.00  T FRC   50     lines 14 and 25
+!   L SYMU  002620.00                 lines 15 and 26
+!   L SYMC  002660.00                 lines 16 and 27
+!   L NTPU  002700.00                 lines 17 and 28
+!   L DISK  002723.00                 line 18
+!
+! THE COUNTS ARE INTEGERS, NOT ADDRESSES, and the listing's own
+! arithmetic says so: lines 15-17 write "32-2" and "16-2" where the
+! count column prints 000036 and 000016 -- 30 and 14 in octal -- so
+! a count is a plain number and the deck SYNs these as integers.
+
+        SLC, (8)2557.0
+
+TPURFT  SYN, (8)3370.0
+TUPPC   SYN, 2
+TUIORQ  SYN, (8)3514.0
+TUIOC   SYN, 20
+TUFRE   SYN, (8)3623.0
+TUFRC   SYN, 20
+TPREFT  SYN, (8)3317.0
+TPPC    SYN, 20
+TIOREQ  SYN, (8)3373.0
+TIOC    SYN, 80
+TFSTRE  SYN, (8)3541.0
+TFRC    SYN, 50
+LSYMU   SYN, (8)2620.0
+LSYMC   SYN, (8)2660.0
+LNTPU   SYN, (8)2700.0
+LDISK   SYN, (8)2723.0
+
+        PRNS                        ! line 1
+
+! ---- RESERVATIONS, TABLES AND COUNTERS -----------------------------
+LIREF   SYN(BU,12), 0.52            ! line 5  -P.P. REFERENCE NUMBER
+
+        SLC, (8)2557.0
+
+! ---- TABLE INDICES FOR REFILL USE ----------------------------------
+LPPURF  XW, TPURFT, TUPPC, $        ! line 9  -NOT OVERLAP PP REF.
+        XW, TUIORQ, TUIOC, $        ! line 10 -NOT OVERLAP I/O REQ.
+        XW, TUFRE, TUFRC, $         ! line 11 -NOT OVERLAP FIRST REEL
+LPPREF  XW, TPREFT, TPPC, $         ! line 12
+LIOTBX  XW, TIOREQ, TIOC, $         ! line 13
+LFSTRX  XW, TFSTRE, TFRC, $         ! line 14
+LSYMUX  XW, LSYMU, 32-2, $          ! line 15 -SYMBOLIC TAPE INDEX
+LSYMCX  XW, LSYMC, 16-2, $          ! line 16 -SYMBOLIC CHANNEL INDEX
+LNTPUX  XW, LNTPU, 16-2, $          ! line 17 -NON-TAPE INDEX REFILL
+LXTYPE  XW, LDISK, 9, $             ! line 18 -THE TYPE CODE INDEX
+
+! ---- SWAP AREA FOR EIGHT MCP-DECODE INDICES ------------------------
+LTY     XW                          ! line 22
+        XW, TPREFT, TPPC, LPPREF    ! line 23
+        XW, TIOREQ, TIOC, LIOTBX    ! line 24
+        XW, TFSTRE, TFRC, LFSTRX    ! line 25
+        XW, LSYMU, 32-2, LSYMUX     ! line 26
+        XW, LSYMC, 16-2, LSYMCX     ! line 27
+        XW, LNTPU, 16-2, LNTPUX     ! line 28
+        XW                          ! line 29
+
+! ---- TABLE INDICES -------------------------------------------------
+LIODX   SYN, $3                     ! line 33 -INDEX FOR GETTING IOD
+                                     !           IMAGE
+LXPP    SYN, $4                     ! line 34 -P.P. REFERENCE TABLE
+                                     !           INDEX
+LXIO    SYN, $5                     ! line 35 -I.O. REQUEST TABLE
+                                     !           INDEX
+LXFR    SYN, $6                     ! line 36 -FIRST REEL NUMBER
+                                     !           TABLE INDEX
+LXSU    SYN, $7                     ! line 37 -SYMBOLIC TAPE UNIT
+                                     !           TABLE INDEX
+LXSC    SYN, $8                     ! line 38 -SYMBOLIC CHANNEL TABLE
+                                     !           INDEX
+LXNT    SYN, $9                     ! line 39 -NON-TAPE TABLE INDEX
+LWORKX  SYN, $10                    ! line 40 -WORKING INDEX
+
+! ---- COUNTERS AND BITS ---------------------------------------------
+LNO6    VF, .06                     ! line 44 -FOR IX BUMMPING (sic)
+LTAPEC  DRZ(BU,7), (1)              ! line 45 -TAPE REEL COUNTER
+LIOSCR  DRZ(BU,9), (1)              ! line 46 -IODSQ COUNTER; see the
+                                     !           note above
+LFINB   DD(BU,1), 1                 ! line 47 -FINAL BIT
+LNTB    DD(BU,1), 0                 ! line 48 -NON-TAPE BIT
+LCOUNT  DRZ(BU,7), (1)              ! line 49 -COUNT OF RLSYMS
+LCVBIT  DD(BU,1), 0                 ! line 50 -OVERLAPPED JOB
+LBLZOR  (AX)DD(BU,8,8),0X           ! line 51 -BCD -8 ZERO
+LINFAD  DD(BU,1), 0                 ! line 52 -INFINITE-DISK A...
+
+        END, LPPURF
+
+! ---------------------------------------------------------------
+! AND TWO LISTING MARKS, the bare "*" after the location that every
+! page since printed p.3 carries: lines 23 ("002572.00 *") and 45
+! ("002601.31 *").

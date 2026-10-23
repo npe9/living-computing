@@ -292,9 +292,20 @@ def build(verbose=False, pages=None, end_at='XIPLBS'):
 # fourteen more at 002213 through 002502 -- all later than anything
 # transcribed, so every one of them is a claim about a page not yet
 # opened.
+# >>> PRINTED p.47 HAS NO DECK, AND THAT IS NOT AN OMISSION. <<<
+# It is twenty-three lines and the only one that is not a comment is
+# line 1's "SLC,$" at 002556.67 -- where printed p.46's Q BLNK ends,
+# to the bit.  The rest is THE DECODE PROGRAM LINKAGE FORMAT written
+# out as a worked call, which is recorded in docs/boot_plan.md.  A
+# page that compiles nothing has nothing for listing_oracle to check
+# and contributes no word to the image, so there is no file to merge
+# -- but the GAP IN THIS RANGE would look exactly like a page someone
+# forgot, which is why it is named here.
+NO_DECK_PAGES = {47}
+
 MCP_IPL_PAGES = [
     (DECK("mcp_bootstrap_p%d.strap" % n), "printed p.%d" % n)
-    for n in range(15, 47)
+    for n in range(15, 49) if n not in NO_DECK_PAGES
 ]
 
 

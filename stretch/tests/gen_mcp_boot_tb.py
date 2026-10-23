@@ -331,22 +331,29 @@ def main():
         # place in the suite where the difference is visible on the
         # REAL program rather than on swap_scope's synthetic data.
         #
-        # EXPECTED VALUES MEASURED, NOT PREDICTED, and both decode as
-        # index words (value 0-23, sign 24, flags 25-27, count 28-45,
-        # refill 46-63):
-        #
-        #   Q SAV+0  0x00000000001C0000  value 000000.00, count 7
-        #   Q SAV+5  0x0001200011480000  value 000004.40, count 2122
-        #
-        # The second is the interesting one: 2122 is 0o4112, and a
-        # count in the thousands is a character counter, which is
-        # what $6 is doing in printed p.43 line 46's
-        # "LVE,$6,Q FLD($3)".  These are the loop's registers, not
-        # the TI's.
+        # EXPECTED VALUE MEASURED, NOT PREDICTED.  Q SAV+0 decodes as
+        # an index word (value 0-23, sign 24, flags 25-27, count
+        # 28-45, refill 46-63): value 000000.00, COUNT 7.  Seven is
+        # what the conversion loop left in $1, not what line 10's TI
+        # put there.
         ("mcp_qsav_first_after_swap",
          str(sym("XBSEND") + _image_index("002472")), 0x00000000001C0000),
-        ("mcp_qsav_last_after_swap",
-         str(sym("XBSEND") + _image_index("002477")), 0x0001200011480000),
+
+        # >>> AND Q SAV+5 IS NOT CHECKED, DELIBERATELY. <<<
+        #
+        # It was, for one commit, at 0x0001200011480000 -- value
+        # 000004.40, count 1106.  Adding printed p.48 moved the count
+        # to 1125, EXACTLY NINETEEN MORE, which is the number of words
+        # p.48 adds to the image.  So $6's count tracks the image
+        # SIZE, and a check on it would have to be re-measured on
+        # every page transcribed and would say nothing new each time.
+        #
+        # This project has been bitten by a drifting check before --
+        # two comm-region checks that walked onto MCP's own working
+        # storage as the image grew -- and the lesson is the same
+        # one: a ratchet nobody can predict is a ratchet nobody reads.
+        # Q SAV+0's count does not move, and one word is enough to
+        # say the swap ran.
 
         # >>> AND THIS IS THE PROOF THAT MCP *USED* THE SWITCHES,
         # which is a different claim from "the read returned". <<<

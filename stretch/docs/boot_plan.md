@@ -595,6 +595,48 @@ cannot be tested without it.
 > itself** — the next page, and the one the run has been waiting
 > for.
 >
+> **A17 — PRINTED pp.47-48, AND THE DECODE PROGRAM'S LINKAGE IS
+> PRINTED IN FULL, 2026-10-23.** printed p.47 **compiles nothing**:
+> twenty-three lines, of which the only non-comment is line 1's
+> `SLC,$` at 002556.67 — where printed p.46's `Q BLNK` ends, to the
+> bit. The rest is **THE DECODE PROGRAM LINKAGE FORMAT**, written out
+> as a worked call:
+>
+> ```
+>         LVI,$15,X
+>         B,LDECOD
+>   X     VF,A          LET A = FWA OF THE BREAK DOWN AREA
+>         CF,B          LET B = THE MODE
+>                         ZERO = OVERLAP MODE
+>                         NOT ZERO = NOT OVERLAP MODE
+>         VF,C          LET C = THE RETURN DISPOSITIONS
+>         BEW,$   ERROR RETURN
+>         BEW,$   NORMAL RETURN
+>                       SEE THE DISTRIBUTED WRITE - UP
+> ```
+>
+> So `L DECOD` is handed the area `S BRK8` filled, a mode, and a
+> disposition list. `mcp_image.py` names p.47 in `NO_DECK_PAGES` so
+> the gap in the range cannot be mistaken for a page someone forgot.
+>
+> **printed p.48 is that program's STORAGE** — ten self-refilling
+> index words, a swap area of eight more, eight index-register SYNs
+> and a block of counters, 002557 through 002601. Nothing on it is
+> executable, and the boot run confirms it: the trail stays at 239
+> and the only change is the 1,033 clocks the nineteen extra tape
+> words cost to read.
+>
+> **AND THE CARD TYPES ARE NOW DOCUMENTED FROM THE MANUAL.**
+> `C22-6728` printed p.88: *"Three types of control cards are used:
+> 1. I-O Configuration Definitions (IOCD) 2. MCP IOD's (IOD) 3. MCP
+> Parameters (MCPP)."* MCPP's own fields are given — cols. 10-13
+> `MCPP`, cols. 14-17 a mode of `OFFLINE`/`ONLINE`/`BYPASS` — and the
+> IOD card's are not, because an IOD "perform[s] the same function
+> for MCP as [it does] for the problem program". printed p.25 line
+> 51's comment names the same three: *"TEST 12 ZONE OF THIRD LETTER
+> IN IOD, REEL OR MCPP TYPE FIELD"*.
+>
+
 > **A16 — FORWARD SWAP IS BUILT, BECAUSE THE NEXT STEP NEEDS IT,
 > 2026-10-23.** printed p.40's `Y REELC` — the REEL-card handler —
 > executes two `SWAPI`s, so a REEL card cannot be the fixture's first

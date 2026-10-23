@@ -4910,6 +4910,64 @@ run "THE BREAKDOWN ROUTINE, printed p.45, bit-exact (MCP_Mar63 PDF p.52)" python
 # byte -- so it is a per-ROW artifact and not the per-glyph one 13
 # had recorded.  The byte is 00; printed p.43 line 50's "B,Q CHK"
 # prints 002454.10 00 for the same shape.
+run "RESERVATIONS, TABLES AND COUNTERS, printed p.48, bit-exact (MCP_Mar63 PDF p.55)" python3 verify_mcp_bootstrap_p48.py
+# >>> PRINTED p.47 COMPILES NOTHING, so this page follows printed
+# p.46 directly, and mcp_image.py names it in NO_DECK_PAGES so the
+# gap in the range does not look like a page someone forgot. <<<
+#
+# p.47 is twenty-three lines and the only one that is not a comment
+# is line 1's "SLC,$" at 002556.67 -- where printed p.46's Q BLNK
+# ends, to the bit.  The rest is THE DECODE PROGRAM LINKAGE FORMAT
+# written out as a worked call, recorded in docs/boot_plan.md.
+#
+# AND THE BIT CHAIN AT THE END OF p.48 IS A SECOND WITNESS FOR
+# VF = 25 BITS.  Line 44 is "L NO6  VF,.06" at 002601.00 and line 45
+# is at 002601.31 -- BIT 25 -- and eight more rows chain off it
+# without a byte boundary: .31, .40, .51, .52, .53, .62, .63, .73.
+# Every one is printed and every one is checked, so the correction
+# printed p.46 forced is confirmed by a page that had no part in it.
+#
+# EIGHT MORE INDEX-REGISTER SYNs, lines 33-40, and the listing prints
+# each register's own bit address as the location: 000023.00 through
+# 000032.00.  Line 5 carries a dds AND a bit address --
+# "L IREF  SYN(BU,12),0.52" prints 000000.64, so the source is
+# DECIMAL and the location column OCTAL.
+#
+# >>> AND THE PAGE FOUND A GUESS IN THE ASSEMBLER THAT HAD BEEN
+# WRONG SINCE THE FIRST XW. <<<
+#
+# An eighteen-bit field reads an INTEGER as a count of words and a
+# BIT ADDRESS as a bit count to divide by 64 (C22-6531 printed p.12),
+# and strap_asm decided which by looking at the TEXT: anything with a
+# letter in it was an address.  Lines 9-14 write their counts as
+# SYMBOLS -- "XW,T IOREQ,T IOC,$" prints count 000120, eighty, and
+# T IOC is "SYN,80" -- so eighty came out as ONE.  Six rows wrong,
+# and the same page writes "32-2" as a literal two rows later and
+# gets it right, which is what made the shape visible.
+#
+# THE RULE IS THE SAME SENTENCE THE LAST TWO PAGES NEEDED.  C22-6531
+# printed p.31: "data properties (dds) associated with Y and its bit
+# address or INTEGER CLASSIFICATION are transferred to A."  SymTab
+# now carries sym_int beside sys_alias and sym_dds -- three things
+# one sentence transfers, found one page at a time.
+#
+# AND IT MOVED TWO ENTRIES IN verify_c22_6578_a4_addresses.py, which
+# is the file that exists to record exactly this.  "M.M" LEFT the
+# known-gap list: with M no longer scaled it comes to 10 half-words
+# and so does "5.5".  ".M" JOINED it, and that is the more useful
+# half -- it used to pass BY ACCIDENT, because 0 + M scaled as a bit
+# count came to 0 and so does "0.5" in a half-word field.  Two
+# different wrongs cancelling.  Point notation on a symbolized
+# integer is still not implemented; what changed is which pairs
+# happen to agree.
+#
+# Injections: "T IOC SYN,80"->"SYN,81" gives 2 FAILs, lines 13 and 24,
+# the only two rows that use it, and NO symbol moves -- a count is not
+# a size.  "VF,.06"->"VF,.07" gives 1, line 44's row, and no symbol
+# moves either, which is the point: VF's twenty-five bits are its SIZE
+# and the value is independent.  "DRZ(BU,7)"->"DRZ(BU,8)" gives 9:
+# seven symbols shift one bit AND lines 47 and 48's one-bit data read
+# the wrong bit, which a symbol check alone would not have caught.
 run "THE BREAKDOWN ROUTINE's re-entry and tables, printed p.46, bit-exact (MCP_Mar63 PDF p.53)" python3 verify_mcp_bootstrap_p46.py
 # >>> THIS PAGE DEFINES EVERY ONE OF printed p.45's FOURTEEN
 # STAND-INS AND NOT ONE OF THEM MOVES. <<<  Three are index registers
