@@ -285,15 +285,34 @@ def main():
         # line 12's error table maps X ERR 05 + 1.0 to X MSG 05,
         # "UNSUCCESSFUL COMPLETION".
         #
-        # >>> AND IT IS ZERO AGAIN, FOR THE SECOND TIME AND A BETTER
-        # REASON.  The status bit was printed p.22 line 5's
-        # "RD(SEOP),0.0($15),X DCW 2" -- a three-word read of the
-        # OPERATOR'S CONSOLE SWITCHES -- which the model refused
-        # because it had no switches.  It has three now
-        # (StretchIO.bsv's switchImg, Reference Manual printed
-        # p.150), the read succeeds, and NO ERROR SITE RUNS AT ALL.
-        # MCP goes on into printed p.25 and the pages after it. <<<
-        ("mcp_x_err_ad", str(sym("XERRAD")), 0),
+        # >>> IT WAS ZERO FOR TWO COMMITS.  WITH PRINTED p.45 IN THE
+        # IMAGE IT IS NOT, AND WHAT IT HOLDS IS AN ADDRESS THAT NAMES
+        # THE ERROR. <<<
+        #
+        # Until 2026-10-23 this check said "NO ERROR SITE EVER RAN",
+        # and that was true while the run stopped dead at S BRK8 on a
+        # zero word.  printed p.45 fills S BRK8, MCP runs the whole
+        # UNCODE path, and it comes back out through printed p.25
+        # line 44 -- "B,X 223  -NOT IOD OR REEL CARD" -- whose target
+        # is line 46's "SIC,X ERRAD / B,X ERROR  -ERROR IN UNCODE".
+        #
+        # SIC and the branch after it are ONE 64-bit instruction
+        # (Reference Manual printed p.41), so the counter SIC stores
+        # points at the half word after the pair: 001441.40, which
+        # printed p.25 line 48 names X224.  The stored form is that
+        # bit address in bits 0-23, so the word reads
+        # 0x00C8600000000000.
+        #
+        # SO THE CHECK NOW NAMES THE ERROR SITE INSTEAD OF DENYING
+        # ONE.  It is a ratchet with a reason, not a weakening: any
+        # OTHER error site, and any return to zero, fails it.
+        #
+        # WHY MCP REJECTS THE CARD IS THE NEXT QUESTION, and
+        # docs/NEXT.md carries it.  The card the fixture punches is
+        # an IOCD card and printed p.25 expects an IOD or REEL card,
+        # so the first thing to check is whether this path should be
+        # reached at all with this fixture.
+        ("mcp_x_err_ad", str(sym("XERRAD")), 0x00C8600000000000),
 
         # >>> AND THIS IS THE PROOF THAT MCP *USED* THE SWITCHES,
         # which is a different claim from "the read returned". <<<
@@ -609,8 +628,20 @@ def main():
         # RZ is "R register zero" and the last thing S CA6 does
         # before the call is arithmetic on $R, so the set moving is
         # what going one subroutine further looks like.
+        # >>> THE SET MOVED AGAIN WITH printed p.45, AND OP IS IN IT.
+        # <<<  The run no longer stops at S BRK8; it finishes through
+        # MCP's own error routine, which ends at printed p.6 line 1's
+        # "BD,$" -- X6ERR having displayed X ERRAD in the CE console
+        # -- so the indicators are whatever that path leaves.
+        #
+        # OP IS SET AND IT IS NOT printed p.45's SWAP.  tests/gen_tb's
+        # `op_trail` says the bit is first raised at half-word 1304,
+        # 001214.00, after six million steps -- printed p.24's TIME
+        # CONVERSION -- and a CONTROL RUN WITH p.45 TAKEN BACK OUT
+        # raises it at the same address.  So the refusal predates this
+        # page.  docs/NEXT.md carries which instruction it is.
         ("mcp_indicators_word11", str(IND_WORD),
-         _ind("XCZ") | _ind("XVGZ") | _ind("RZ") | _ind("XH")),
+         _ind("OP") | _ind("XVGZ") | _ind("XE") | _ind("RGZ") | _ind("AH")),
 
         # >>> THE MOVE ITSELF, AND IT IS THE POINT OF THE FIXTURE <<<
         # Printed p.4 line 28, "T,$11,X BUFER($X1),X BS END  -MOVE MCP
@@ -1162,9 +1193,18 @@ def main():
                    # begins at printed p.37.  THAT IS THE NEXT
                    # TRANSCRIPTION, and this check is what will
                    # notice when it lands.
-                   pc_check=0,
+                   # >>> IT NO LONGER HALTS AT PC 0. <<<  printed
+                   # p.45 fills S BRK8, so the run stops where MCP
+                   # MEANS to stop: half-word 239 = 000167.40, which
+                   # is printed p.6 line 1's "BD,$  -LOOP", one
+                   # instruction after printed p.5 line 56's
+                   # "X6ERR  TI,1,X ERRAD,$R  -DISPLAY ERROR ADDRESS
+                   # IN CE CONSOLE".  A deliberate error stop, not a
+                   # branch into zeros.
+                   pc_check=239,
                    step_cap=40000000,
                    pc_trail=True,
+                   op_trail=True,
                    ipl=True))
 
 

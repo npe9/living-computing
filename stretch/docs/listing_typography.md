@@ -687,3 +687,44 @@ address `X IOD`. So:
 The practical order from §13a now has a fourth entry: (1) look for a
 self-disagreeing field on the same row, (2) decode the operation
 field, (3) **decode what a name labels**, (4) re-render higher.
+
+### 13d. THE FOURTH SHAPE: THREE zeros as `C` in ONE row — a per-ROW artifact (printed p.45, 2026-10-23)
+
+§13, §13b and §13c are all about a single glyph: is *this* round mark
+a zero, a letter `O`, or a real `C`? printed p.45 line 30 is about the
+**row**.
+
+At 900 dpi it renders
+
+```
+3C*  C02520.00      C02516.50 C0          B,Q BL
+```
+
+and the true row is
+
+```
+30*  002520.00      002516.50 00          B,Q BL
+```
+
+**Three separate zeros come out as `C`** — one in the LINE NUMBER,
+one in the LOCATION and one in the trailing byte — and the line
+number is the one that gives it away for free: line numbers on this
+page run 1 through 52 in order, and the rows above and below print
+`29*` and `31*`, so `3C` can only be 30.
+
+> **A drum that drops one zero on a row has usually dropped more than
+> one.** The earlier entries treat a round glyph as a question to be
+> settled glyph by glyph. This row says to settle the ROW: once any
+> field on it is known to have lost a zero, every round glyph on that
+> row is suspect, including the ones in columns that looked clean.
+
+The byte was settled two other ways as well, and both are cheap:
+printed p.43 line 50's `B,Q CHK` prints `002454.10 00` for the
+identical shape, and an operation of `1100` is the *conditional*
+branch that line 21 prints as `C2` — a plain `B` cannot carry it.
+
+The practical order from §13a and §13c gains a fifth entry, and it
+comes first because it costs nothing: (0) **check the row's own line
+number against its neighbours**, (1) look for a self-disagreeing
+field on the same row, (2) decode the operation field, (3) decode
+what a name labels, (4) re-render higher.

@@ -595,6 +595,54 @@ cannot be tested without it.
 > itself** — the next page, and the one the run has been waiting
 > for.
 >
+> **A14 — MCP RUNS THE WHOLE UNCODE PATH AND REJECTS THE CARD,
+> 2026-10-23.** printed p.45 is THE BREAKDOWN ROUTINE and its line 10
+> is `S BRK8` at 002502.00 — the address printed p.38 predicted seven
+> pages earlier and the one the PC trail had been stopping at, on a
+> zero word. With it in the image the run goes **more than twice as
+> far**: 6,028,291 steps to **12,847,130**, ending at half-word 239 =
+> **000167.40**, which is printed p.6 line 1's `BD,$  -LOOP`.
+>
+> THAT IS MCP'S OWN ERROR STOP, not a crash. The chain is printed on
+> three different pages and reads end to end:
+>
+> * printed p.25 line 36 `B,Y UNCOD` enters the UNCODE routine with a
+>   parameter block that says "EXPECT IOD AND REEL CARDS".
+> * UNCODE converts the card (printed pp.42-44's tables), breaks it
+>   into fields (`S BRK8`, printed pp.45-46) and returns through one
+>   of two exits.
+> * It takes line 44's, **`B,X 223  -NOT IOD OR REEL CARD`**.
+> * `X 223` is line 46: `SIC,X ERRAD` / `B,X ERROR  -ERROR IN UNCODE`.
+> * The bootstrap's error routine ends at printed p.5 line 56,
+>   `X6ERR  TI,1,X ERRAD,$R  -DISPLAY ERROR ADDRESS IN CE CONSOLE`,
+>   and p.6 line 1 loops.
+>
+> `X ERRAD` holds **001441.40**, which printed p.25 line 48 names
+> `X 224` — the half word after the `SIC`/branch pair, which is what
+> `SIC` stores (RefMan printed p.41: the two are one instruction).
+>
+> **SO THE NEXT QUESTION IS WHY THE CARD IS REJECTED**, and it is the
+> first time this project has had MCP make a decision about its input
+> and say so. The fixture punches an **IOCD** card and printed p.25
+> is looking for an **IOD or REEL** card, so the first thing to
+> establish is whether this path should be reached with this fixture
+> at all — see `NEXT.md`.
+>
+> **AND THE SWAP REFUSAL SURVIVES, MEASURED THIS TIME.** p.45 lines
+> 47-49 are three `SWAPI`s under `Q 2BIG`, the oversized-field path.
+> `tests/gen_tb.py`'s new `op_trail` says the OP indicator is raised
+> **once** in the whole run, at half-word 1304 = **001214.00**, in
+> printed p.24's TIME CONVERSION — and a **control run with p.45
+> taken back out of the image** raises it at the same address. So no
+> `SWAP` executed, and that is a result rather than a reading. The
+> refusal has six documented callers now: two on printed p.40, one on
+> p.43, three here.
+>
+> **A SEPARATE REFUSAL WAS FOUND BY THE SAME TRAIL**, at 001214.00,
+> and it has been in every run since printed p.24 joined the image
+> without anything showing it. Which instruction it is, is open.
+>
+
 > **A13 — PRINTED p.44, AND THE RUN SAYS THE TABLES ARE LIVE,
 > 2026-10-23.** p.44 is THE CHARACTER LOCATOR TABLES and THE TABLES,
 > and it defines all four of the stand-ins printed p.43 had to SYN:

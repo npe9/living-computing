@@ -5395,6 +5395,107 @@ no opcode can rule it out. What ruled it out was the datum the name
 labels — which is a tell worth stating on its own: *when a name
 labels data, decode the data before trusting the name.*
 
+## MCP RUNS THE WHOLE UNCODE PATH AND REJECTS THE CARD, 2026-10-23
+
+printed p.45 is THE BREAKDOWN ROUTINE, its line 10 is `S BRK8` at
+002502.00 — the address the PC trail had been stopping at, on a zero
+word — and the page is **signed**: lines 6-7 read "-SBRK8, 6 BIT BCD
+VERSION, 16 BITS BETWEEN FIELDS.   **LARRY LEVY**", the first author's
+name transcribed out of this listing.
+
+With it in the image the run goes **more than twice as far**:
+6,028,291 steps to 12,847,130, ending at half-word 239 = **000167.40**
+= printed p.6 line 1's `BD,$  -LOOP`. `boot_plan.md` A14 has the
+chain; in one line, MCP ran UNCODE, decided the card was **NOT an IOD
+or REEL card**, and said so through its own error routine.
+
+### THE NEXT THING TO DO, and it is now a question with a shape
+
+**Why is the card rejected?** The fixture punches an **IOCD** card
+and printed p.25 line 41's parameter word says "EXPECT IOD AND REEL
+CARDS". Before chasing the conversion, establish whether this path
+should be reached with this fixture at all. Three places to look, in
+order:
+
+1. **printed p.25 lines 32-36**, the call. `X 22` computes the base
+   of the area "CONTAINING IOD AND REEL CARDS" from `$4`. If `$4` is
+   wrong the routine is looking at the wrong storage.
+2. **The card itself.** `strap/iocd.py` punches it; printed p.46's
+   `Q CMA` and `Q BLNK` are what `S BRK8` splits on, so a card with
+   no commas breaks into one field.
+3. **printed p.46**, which is not transcribed. It holds the rest of
+   `S BRK8` and the table `Q CMA`/`Q BLNK`/`Q COUNT`/`Q SKIP` live
+   in, and it is the next page either way.
+
+### TWO THINGS A `SYN` HAS TO CARRY, and this page needed both
+
+C22-6531 printed p.31: "**THE MEANING OF SYN IS ALWAYS ONE OF EXACT
+SUBSTITUTION** ... data properties (dds) associated with Y and its bit
+address or integer classification are transferred to A."
+
+* **A register SYN stays a register.** printed p.46 lines 22-24 are
+  `QX INN SYN,$1`, `QX OUT SYN,$2`, `QX CF9 SYN,$3`, and p.45 uses
+  them as a J field (line 10) *and* as an index (line 19). `$1` was
+  already context-dependent in `strap_asm` — register 1 in an I or J
+  field, bit address 000021.00 in an address field — and storing a
+  SYN's **value** loses that: 000021.00 in four bits is 0. `SymTab`
+  now keeps the substitution. **Line 19 prints 81 and the old
+  assembler gave 80.**
+* **A dds travels too.** Lines 20 and 22 are `KF,Q CMA` and
+  `KF,Q BLNK` with no data description written, and both print
+  006600 — length 6, byte size 6. `strap_asm` had been **accepting a
+  dds on a SYN and silently dropping it**, which is the
+  wrong-output-no-error shape this project keeps finding. It now
+  keeps it, and `inherited_dds()` is where.
+
+*The second one is worth the note it got in `strap_asm.py`: the fix
+was not "implement a missing feature", it was "stop accepting input
+you then ignore."*
+
+### The SWAP refusal survives, and this time it is measured
+
+p.45 lines 47-49 are three `SWAPI`s under `Q 2BIG`, the
+oversized-field path. `tests/gen_tb.py` gained an opt-in **`op_trail`**
+that latches the PC the first time the OP indicator rises. It says OP
+is raised **once**, at half-word 1304 = **001214.00**, after six
+million steps — and a **control run with p.45 taken back out of the
+image** raises it at the same address. So no `SWAP` executed, and that
+is a result rather than a reading. Six documented callers now: two on
+printed p.40, one on p.43, three here.
+
+### TWO THINGS THE SAME TRAIL OPENED
+
+1. **What is refused at 001214.00?** It is in printed p.24's TIME
+   CONVERSION and it has been in every run since p.24 joined the
+   image, invisible, because MCP's interruption system clears the bit.
+   The candidates are on four consecutive rows — line 21's
+   `/I(BU,6),60,-60`, line 22's `C0011(BU,6),$RM+.54`, line 25's
+   `CV(BU),$L,16`, line 26's `LTRCV(BU,6),$RM+.54` — and `bsv/README`
+   lists `CV`/`DCV`/`LCV`/`LTRCV` and `KE`/`KF`/`KFE`/`KFR` as
+   decoded-but-not-executed. **The PC the trail reports is a LOCATOR
+   AND NOT A PROOF**: this model has a look-ahead, so `getPC()` can be
+   running ahead of the operation that set the bit. A one-instruction
+   deck per candidate, run on the model with a `BB,$OP` after it,
+   settles it in minutes and should be written before anything is
+   built.
+2. **The edge count does not account for both endings.** The p.45 run
+   reports one edge and ends with OP **set**; the control reports one
+   edge at the same address and ends with OP **clear**. One edge each
+   cannot be both. Either a clear and a re-set fall between two
+   samples, or `mem.readIndicators()` and the word 11 the checks read
+   are not the same thing. Recorded in `gen_tb.py` rather than
+   guessed at; the **address** is what the trail is trusted for, and
+   the control reproduces it exactly.
+
+### Three boot checks moved, and each now names something
+
+`mcp_x_err_ad` said "no error site ever ran" and now holds
+**001441.40**, printed p.25 line 48's `X 224`; `mcp_indicators_word11`
+moved to `OP|XVGZ|XE|RGZ|AH`; `pc_check` moved from 0 to **239**,
+MCP's deliberate error stop rather than a branch into zeros. Ratchets
+with reasons: any *other* error site, and any return to zero, fails
+them.
+
 ## PRINTED p.44, AND THE STEP COUNT IS THE MEASUREMENT, 2026-10-23
 
 printed p.44 is THE CHARACTER LOCATOR TABLES and THE TABLES, and it

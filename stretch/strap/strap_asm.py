@@ -556,6 +556,50 @@ def tokenize_expr(s, lineno=None):
     return tokens
 
 
+class SymTab(dict):
+    """The symbol table, plus the one thing a plain dict cannot carry.
+
+    >>> A `SYN` WHOSE OPERAND IS A SYSTEM SYMBOL IS NOT A VALUE. <<<
+
+    C22-6531 printed p.31, on `A | SYN(dds), Y`:
+
+      "the meaning of the newly defined symbol A is that whenever A is
+       written in the program, the effect is the same as if Y had been
+       written.  THE MEANING OF SYN IS ALWAYS ONE OF EXACT
+       SUBSTITUTION."
+
+    `$1` is already context-dependent in this assembler -- register
+    number 1 in an I or J field, bit address 000021.00 in an address
+    field, which is C22-6531's own worked example.  So a symbol
+    SYNned to `$1` has to stay context-dependent too, and storing its
+    VALUE loses exactly that: 000021.00 in a four-bit register field
+    is 0, not 1.
+
+    MCP printed p.46 lines 22-24 are the case -- "QX INN SYN,$1",
+    "QX OUT SYN,$2", "QX CF9 SYN,$3" -- and printed p.45 is where it
+    shows: line 19's "LF(V+I)(BU,Q KSIZ), Q KSIZ(QX INN)" prints 81,
+    not 80, and the difference is the index field.
+
+    `sys_alias` holds the substitution for those symbols.  Every
+    other SYN keeps its value in the dict, where it belongs.
+
+    `sym_dds` holds the other half of the same sentence.  "Data
+    properties (dds) associated with Y and its bit address or integer
+    classification are TRANSFERRED to A", so a VFL statement that
+    writes no dds of its own takes the one its operand symbol
+    carries.  MCP printed p.45 lines 20 and 22 are bare --
+    "KF,Q CMA" and "KF,Q BLNK" -- and both print 006600, a length
+    of 6 and a byte size of 6, which is the table character's dds and
+    not any default.  Before this the assembler ACCEPTED a dds on a
+    SYN and silently dropped it, which is the wrong-output-no-error
+    shape this project keeps finding; now it keeps it."""
+
+    def __init__(self, *a, **k):
+        super().__init__(*a, **k)
+        self.sys_alias = {}
+        self.sym_dds = {}
+
+
 def eval_system_symbol(name, loc_bits, reg_context, lineno=None):
     if name == '':
         return loc_bits  # bare "$" = current location counter
@@ -587,7 +631,9 @@ def eval_expr(expr, symtab, loc_bits, reg_context=False, lineno=None):
             up = val.upper()
             if up not in symtab:
                 raise AssemblerError(f"undefined symbol {val!r}", lineno)
-            term = symtab[up]
+            alias = getattr(symtab, 'sys_alias', {}).get(up)
+            term = (eval_system_symbol(alias, loc_bits, reg_context, lineno)
+                    if alias is not None else symtab[up])
         elif kind == 'sys':
             term = eval_system_symbol(val, loc_bits, reg_context, lineno)
         else:
@@ -620,7 +666,9 @@ def eval_addr_field(expr, symtab, loc_bits, unit_shift, lineno=None, int_shift=0
             up = val.upper()
             if up not in symtab:
                 raise AssemblerError(f"undefined symbol {val!r}", lineno)
-            term = symtab[up] >> unit_shift
+            alias = getattr(symtab, 'sys_alias', {}).get(up)
+            term = ((eval_system_symbol(alias, loc_bits, False, lineno)
+                     if alias is not None else symtab[up]) >> unit_shift)
         elif kind == 'sys':
             term = eval_system_symbol(val, loc_bits, False, lineno) >> unit_shift
         else:
@@ -1410,6 +1458,27 @@ def dds_length_bits(mods, lineno=None):
     return 64 if n == 0 else n
 
 
+def inherited_dds(stmt, symtab):
+    """The dds a bare VFL statement takes from its operand symbol.
+
+    C22-6531 printed p.31, on SYN: "data properties (dds) associated
+    with Y and its bit address or integer classification are
+    transferred to A."  A statement that writes no dds of its own
+    therefore takes the symbol's.  Returns the dds text, or None when
+    the address field is not a single symbol carrying one -- in which
+    case the caller keeps the old default and nothing changes.
+
+    MCP printed p.45 lines 20 and 22, "KF,Q CMA" and "KF,Q BLNK",
+    print 006600: length 6, byte size 6."""
+    if not stmt.fields or not stmt.fields[0].strip():
+        return None
+    base, _ = split_field_trailing_paren(stmt.fields[0])
+    names = sorted(referenced_symbols(base, stmt.lineno))
+    if len(names) != 1:
+        return None
+    return getattr(symtab, 'sym_dds', {}).get(names[0])
+
+
 def is_half_word_branch(op):
     op = op.upper()
     return (op in UNCOND_BRANCH_CODES or op in CB_CODES
@@ -1870,6 +1939,24 @@ def resolve_syns(syn_stmts, symtab, final):
             if missing:
                 still_pending.append((up, stmt))
                 continue
+            # EXACT SUBSTITUTION, C22-6531 printed p.31 -- see SymTab.
+            # An operand that is nothing but a system symbol is
+            # remembered AS the system symbol, so the alias keeps $N's
+            # register-field/address-field duality.  Its value still
+            # goes in the table, so anything that reads the table
+            # directly (the merge's stand-in cross-check, listings)
+            # sees the address the listing prints.
+            # A BARE "$" IS NOT ALIASED.  It is the location counter,
+            # and C22-6531 p.32's own ordering rule has SYN capture it
+            # where the SYN stands; substituting it textually would
+            # re-read it at every use, which is a different symbol.
+            body = stmt.fields[0].strip()
+            if (len(body) > 1 and re.fullmatch(r"\$[A-Za-z0-9]+", body)
+                    and hasattr(symtab, 'sys_alias')):
+                symtab.sys_alias[up] = body[1:]
+            if (stmt.mods and stmt.mods[0].strip()
+                    and hasattr(symtab, 'sym_dds')):
+                symtab.sym_dds[up] = stmt.mods[0]
             symtab[up] = eval_expr(stmt.fields[0], symtab, stmt.addr, lineno=stmt.lineno)
             progressed = True
         if not progressed:
@@ -1934,7 +2021,7 @@ def assemble(source, origin_bits=DEFAULT_ORIGIN_BITS):
     # this assembler applies that same fill automatically wherever
     # alignment forces a gap, rather than requiring an explicit CNOP
     # before every full-word instruction.
-    symtab = {}
+    symtab = SymTab()
     gaps = []
     syn_stmts = []  # SYN statements: named but NOT assigned the location
                      # counter (unlike every other pseudo-op/instruction)
@@ -2693,8 +2780,12 @@ def emit_statement(stmt, symtab, image):
     kind, base_op, invert, immediate, p_progressive, dds_mods, conn = classify_vfl_or_fp(stmt)
     if kind == 'CONN':
         suffix_name, conn_value = conn
-        mode, length_expr, bs_expr = ('BU', None, None) if not dds_mods or not dds_mods[0].strip() \
-            else parse_dds(dds_mods[0], stmt.lineno)
+        # A BARE VFL STATEMENT TAKES ITS OPERAND SYMBOL'S dds --
+        # C22-6531 printed p.31, see inherited_dds().
+        dds_text = (dds_mods[0] if dds_mods and dds_mods[0].strip()
+                    else inherited_dds(stmt, symtab))
+        mode, length_expr, bs_expr = (('BU', None, None) if not dds_text
+                                      else parse_dds(dds_text, stmt.lineno))
         if mode not in MODE_BITS:
             raise AssemblerError(f"unknown VFL mode {mode!r}", stmt.lineno)
         length_field = 0 if length_expr is None else eval_expr(length_expr, symtab, 0, lineno=stmt.lineno) & 0x3F
@@ -2752,8 +2843,12 @@ def emit_statement(stmt, symtab, image):
         return
 
     if kind == 'VFL':
-        mode, length_expr, bs_expr = ('BU', None, None) if not dds_mods or not dds_mods[0].strip() \
-            else parse_dds(dds_mods[0], stmt.lineno)
+        # A BARE VFL STATEMENT TAKES ITS OPERAND SYMBOL'S dds --
+        # C22-6531 printed p.31, see inherited_dds().
+        dds_text = (dds_mods[0] if dds_mods and dds_mods[0].strip()
+                    else inherited_dds(stmt, symtab))
+        mode, length_expr, bs_expr = (('BU', None, None) if not dds_text
+                                      else parse_dds(dds_text, stmt.lineno))
         if mode not in MODE_BITS:
             raise AssemblerError(f"unknown VFL mode {mode!r}", stmt.lineno)
         unsign, decimal = MODE_BITS[mode]

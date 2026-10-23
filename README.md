@@ -157,8 +157,15 @@ What runs, as of 2026-10-23 (`stretch/docs/boot_plan.md` §A5, §A8, §A10):
   on printed p.44, and calls `S BRK8` at `002502.00` — "break card into
   fields", which printed p.38 had predicted at that address five pages
   before the page holding it was opened.
+* With `S BRK8` transcribed (printed p.45) the run goes more than twice
+  as far and **ends where MCP means to end**: it runs the whole UNCODE
+  path, decides the card is "NOT IOD OR REEL CARD", and takes its own
+  error exit, which displays the error address in the CE console and
+  loops. Why the card is rejected is the current question — the first
+  time in this project that MCP has made a decision about its input and
+  said so.
 
-As of 2026-10-23, printed pages **2 through 44** of the MCP listing
+As of 2026-10-23, printed pages **2 through 45** of the MCP listing
 are transcribed bit-exactly. Transcription runs ahead of execution,
 and pages transcribed before the pages that define their symbols have
 repeatedly served as predictions — printed p.39 confirmed three

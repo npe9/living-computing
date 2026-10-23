@@ -1,0 +1,226 @@
+! mcp_bootstrap_p45.strap -- THE BREAKDOWN ROUTINE, printed page 45.
+! docs/MCP_Mar63_001-249.pdf PDF p.52, header "PAGE NUMBER 45".
+! docs/boot_plan.md M3.
+!
+! >>> LINE 10 IS S BRK8, AT 002502.00 -- THE ADDRESS THE BOOT RUN
+! HAS BEEN STOPPING AT. <<<
+!
+! printed p.38 line 17 is "BD,S BRK8" and its binary put S BRK8 at
+! 002502.00, seven pages before this one was opened.  With printed
+! pp.43 and 44 in the image the PC trail reached half-word 2692,
+! which is that address, and stopped: the instruction there was a
+! zero.  This is the page that fills it.
+!
+! AND THE PAGE IS SIGNED.  Line 6-7 read
+!
+!     -SBRK8,  6 BIT BCD VERSION,  16 BITS BETWEEN
+!     -FIELDS.        LARRY LEVY
+!
+! -- the first author's name this project has transcribed out of the
+! MCP listing.
+!
+! ---------------------------------------------------------------
+! "SLC,$" AGAIN, AND IT LANDS ON printed p.44's LAST BIT
+! ---------------------------------------------------------------
+! Line 5 is "SLC,$" at 002501.71.  printed p.44's last datum is
+! line 33's "VF,234", which rounds to 002501.40 and is 25 bits wide
+! (C22-6531 printed p.18: "THE LOCATION COUNTER STANDS AT BIT 25"),
+! ending at 002501.71 to the bit.  docs/boot_plan.md A9 recorded
+! that address as p.45's opening before p.44 was rendered.
+!
+! This deck states 002502.00 outright, as every page deck here does;
+! the sixteen-bit gap is inside word 002501, which p.44 compiles, so
+! mcp_ipl_image()'s contiguity check sees no hole.
+!
+! ---------------------------------------------------------------
+! THREE SYMBOLS ARE INDEX REGISTERS, AND THAT TOOK AN ASSEMBLER FIX
+! ---------------------------------------------------------------
+! Q X INN, Q X OUT and Q X CF9 are not addresses -- printed p.46
+! lines 22-24 define them "QX INN SYN,$1", "QX OUT SYN,$2",
+! "QX CF9 SYN,$3" -- and this page uses them in BOTH kinds of field:
+! as the J field of "SX,QX INN,Q SAV1" and as the INDEX of
+! "Q KSIZ(QX INN)".
+!
+! C22-6531 printed p.31 is why one symbol can do both:
+!
+!   "the meaning of the newly defined symbol A is that whenever A is
+!    written in the program, the effect is the same as if Y had been
+!    written.  THE MEANING OF SYN IS ALWAYS ONE OF EXACT
+!    SUBSTITUTION."
+!
+! and "$1" was already context-dependent in this assembler -- the
+! register number 1 in an I or J field, the bit address 000021.00 in
+! an address field, which is C22-6531's own worked example.  Storing
+! a SYN's VALUE loses that: 000021.00 in a four-bit register field
+! is 0, not 1.  strap_asm.py now remembers the substitution.  LINE
+! 19 IS THE ROW THAT SAYS SO: it prints 81, and 80 is what the old
+! assembler gave.
+!
+! ---------------------------------------------------------------
+! AND A dds TRAVELS THROUGH A SYN TOO
+! ---------------------------------------------------------------
+! Lines 20 and 22 are "KF,Q CMA" and "KF,Q BLNK" with NO data
+! description written, and both print 006600 -- a length of six and
+! a byte size of six.  Those are the table character's properties,
+! and the same sentence of C22-6531 printed p.31 carries them:
+! "data properties (dds) associated with Y and its bit address or
+! integer classification are TRANSFERRED to A."
+!
+! strap_asm.py had been ACCEPTING a dds on a SYN and silently
+! dropping it, which is the wrong-output-no-error shape this project
+! keeps finding.  It now keeps it, and these two rows are the check.
+!
+! ---------------------------------------------------------------
+! THREE MORE SWAPs, AND THEY ARE ON THE ERROR PATH
+! ---------------------------------------------------------------
+! Lines 47-49 are "SWAPI,1,QX INN,Q SAV1" and its two fellows,
+! commented "-RESTORE INDEXES BUT SAVE PRESENT VALUES AT QBRK8".
+! They sit under Q 2BIG, which line 24's "CBRZ,QX CF9,Q 2BIG"
+! reaches when a card field is longer than the output slot -- the
+! OVERSIZED-FIELD path, ending in line 52's "-ERROR RETURN".
+!
+! So SWAP now has SIX documented callers: two on printed p.40, one
+! on p.43, three here.  The model still refuses the instruction.
+! WHETHER THIS PAGE EXECUTES ONE IS A QUESTION THE BOOT RUN
+! ANSWERS, not this deck -- see docs/boot_plan.md.
+!
+! ---------------------------------------------------------------
+! LINE 30 IS listing_typography.md 13 IN A NEW SHAPE
+! ---------------------------------------------------------------
+! The row prints "3C* C02520.00    C02516.50 C0" at 900 dpi.  THREE
+! separate zeros come out as C in one row -- in the LINE NUMBER
+! (30), in the LOCATION (002520) and in the trailing byte -- so this
+! is a per-ROW artifact and not the per-glyph one 13 has recorded
+! until now.  The byte is 00 and the statement is a plain "B,Q BL";
+! the decode says the same thing, because printed p.43 line 50's
+! "B,Q CHK" prints 002454.10 00 and an operation of 1100 is the
+! conditional branch line 21 prints as C2.
+!
+! ---------------------------------------------------------------
+! SUBSTITUTIONS
+! ---------------------------------------------------------------
+! (1) BLANKS INSIDE SYMBOL NAMES ARE DROPPED, as on every page since
+!     p.2.
+!
+! (2) THE STAND-IN SYNs CARRY A dds WHERE THE LISTING'S ROWS PROVE
+!     ONE.  Q CMA and Q BLNK are written "SYN(BU,6,6)" because lines
+!     20 and 22 print 006600 and nothing else can put it there.  The
+!     other stand-ins carry none, because no row on this page shows
+!     one.
+!
+! (3) NOTHING ELSE.  "0.($15)", "1.($15)" and "2.($15)" are written
+!     as the listing writes them, trailing period and all.
+!
+! ---------------------------------------------------------------
+! THE FOURTEEN STAND-INS, read off THIS page's binary
+! ---------------------------------------------------------------
+!   QX INN  $1          lines 10, 13, 14: the J field
+!   QX OUT  $2          lines 11, 15
+!   QX CF9  $3          lines 12, 16
+!   Q KSIZ  6           line 19's address 000000.06 and byte size 6
+!   QW CF9  002555.00   line 16
+!   QCOUNT  002556.37   line 18
+!   Q CMA   002556.31   line 20, with the dds note (2) gives
+!   Q BLNK  002556.61   line 22, likewise
+!   Q SKIP  002556.00   line 36 -- a 19-bit address field, so this
+!                       page pins it only to the word
+!   Q SAV1  002547.00   lines 10, 41, 47
+!   Q SAV2  002550.00   lines 11, 42, 48
+!   Q SAV3  002551.00   lines 12, 43, 49
+!   Q SAV4  002552.00   line 50
+!   Q SAV6  002554.00   line 51
+!
+! THE GAP BETWEEN Q SAV4 AND Q SAV6 IS TWO WORDS AND LINE 50 FILLS
+! IT EXACTLY: "TI,2,$L,Q SAV4" prints a count of 2 in its J field,
+! and 002552 + 2 = 002554.  A count of one would leave 002553
+! unwritten and a count of three would overwrite Q SAV6 -- so the
+! page states its own extent, and printed p.46 line 20 names 002553
+! "-STORE $R".
+
+        SLC, (8)2502.0
+
+QXINN   SYN, $1
+QXOUT   SYN, $2
+QXCF9   SYN, $3
+QKSIZ   SYN, 6
+QWCF9   SYN, (8)2555.0
+QCOUNT  SYN, (8)2556.37
+QCMA    SYN(BU,6,6), (8)2556.31
+QBLNK   SYN(BU,6,6), (8)2556.61
+QSKIP   SYN, (8)2556.0
+QSAV1   SYN, (8)2547.0
+QSAV2   SYN, (8)2550.0
+QSAV3   SYN, (8)2551.0
+QSAV4   SYN, (8)2552.0
+QSAV6   SYN, (8)2554.0
+
+        SLC, (8)2502.0
+
+! ---- save, and set up IN, N, OUT and the character count ----------
+SBRK8   SX, QXINN, QSAV1            ! line 10 -SAVE INDEX REGISTERS
+        SX, QXOUT, QSAV2            ! line 11
+        SX, QXCF9, QSAV3            ! line 12
+        LV, QXINN, 0.($15)          ! line 13 -INITIALIZE IN
+        LC, QXINN, .32($15)         ! line 14 -INITIALIZE N
+        LV, QXOUT, 1.($15)          ! line 15 -INITIALIZE OUT
+        LX, QXCF9, QWCF9            ! line 16 -COUNT CHARS IN STORED
+        CM0000(BU,18,8), 1.32($15)  ! line 17 -INITIALIZE FIELD COUNT
+        L(BU,18+QKSIZ), QCOUNT, 64  ! line 18
+
+! ---- the character loop -------------------------------------------
+QNEXT   LF(V+I)(BU,QKSIZ), QKSIZ(QXINN)   ! line 19 -LOAD INPUT CHAR.
+                                           !           STEP X
+        KF, QCMA                    ! line 20 -IS THIS A COMMA
+        BAE, QIFC                   ! line 21
+        KF, QBLNK                   ! line 22 -IS THIS A BLANK
+        BAE, QSTEP                  ! line 23
+        CBRZ, QXCF9, Q2BIG          ! line 24 -TEST FOR OVERSIZED
+                                     !           FIELD
+        SF(V+I)(BU,QKSIZ), QKSIZ(QXOUT)   ! line 25 -STORE CHAR. STEP X
+QSTEP   CB, QXINN, QNEXT            ! line 26 -TEST FOR LAST INPUT
+                                     !           CHAR
+
+! ---- the last field, and the blanks that pad it -------------------
+        M+1(BU,18), 1.32($15)       ! line 27 -COUNT LAST FIELD
+QBL     CBZ, QXCF9, QRSTR           ! line 28 -STORE R.H. BLANKS AT
+                                     !           END OF LAST FIELD
+        SF(V+I)(BU,QKSIZ), QKSIZ(QXOUT), 64   ! line 29 -IF NECESSARY
+        B, QBL                      ! line 30 -- see the note above;
+                                     !           the listing prints
+                                     !           the byte with a C
+
+! ---- a comma closes a field ---------------------------------------
+QIFC    M+1(BU,18), 1.32($15)       ! line 32 -COUNT THIS FIELD
+        CBRZ, QXCF9, QREDY          ! line 33 -TEST FOR SHORT INPUT
+                                     !           FIELD
+QZERO   SF(V+I)(BU,QKSIZ), QKSIZ(QXOUT), 64   ! line 34 -STORE R.H.
+        CBR, QXCF9, QZERO           ! line 35 -  BLANKS AFTER SHORT
+                                     !           FIELD
+QREDY   V+, QXOUT, QSKIP            ! line 36 -SKIP TO BEG OF NEXT
+                                     !           OUTPUT FIELD
+        KF(BU,18), 1.32($15), 64+QKSIZ   ! line 37
+        BZAH, QRSTR                 ! line 38
+        CB, QXINN, QNEXT            ! line 39 -TEST FOR LAST INPUT
+                                     !           CHAR
+
+! ---- the normal return --------------------------------------------
+QRSTR   LX, QXINN, QSAV1            ! line 41 -RESTORE INDEX REGISTERS
+        LX, QXOUT, QSAV2            ! line 42
+        LX, QXCF9, QSAV3            ! line 43
+        B, 2.32($15)                ! line 44 -NORMAL RETURN
+
+! ---- the oversized-field error path, and the three SWAPs ----------
+Q2BIG   M+1(BU,18), 1.32($15)       ! line 46 -COUNT THIS FIELD
+        SWAPI, 1, QXINN, QSAV1      ! line 47 -RESTORE INDEXES BUT
+        SWAPI, 1, QXOUT, QSAV2      ! line 48 -  SAVE PRESENT VALUES
+        SWAPI, 1, QXCF9, QSAV3      ! line 49 -  AT QBRK8
+        TI, 2, $L, QSAV4            ! line 50 -SAVE $L AND $R
+        SX, $15, QSAV6              ! line 51
+        B, 2.($15)                  ! line 52 -ERROR RETURN
+
+        END, SBRK8
+
+! ---------------------------------------------------------------
+! AND THREE LISTING MARKS, the bare "*" after the location that
+! every page since printed p.3 carries: lines 5 ("002501.71 *"),
+! 26 ("002515.00 *") and 46 ("002530.00 *").

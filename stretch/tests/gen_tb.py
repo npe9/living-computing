@@ -21,7 +21,8 @@ def generate(module_name, prog, checks, step_cap=30000, reader_image=None,
              console_switches=None,
              printer_checks=None, tape_image=None, tape_checks=None,
              console_checks=None,
-             pc_check=None, cycle_bound=None, ipl=False, pc_trail=False):
+             pc_check=None, cycle_bound=None, ipl=False, pc_trail=False,
+             op_trail=False):
     """checks: list of (label:str, word_addr_expr:str, expected:int).
 
     reader_image: optional list of ints -- words to pre-load into the
@@ -100,6 +101,24 @@ def generate(module_name, prog, checks, step_cap=30000, reader_image=None,
         # that asks for it.
         lines.append("  Reg#(HWordAddr) pcTrail0 <- mkReg(0);")
         lines.append("  Reg#(HWordAddr) lastNonZeroPc <- mkReg(0);")
+    if op_trail:
+        # WHICH INSTRUCTION DID THE MODEL REFUSE?  An unimplemented
+        # operation sets the OP indicator and the program carries on
+        # into its own error routine, so by the time the checks run
+        # the PC is wherever that routine ended and the refusal's
+        # address is gone.  This latches it.
+        #
+        # THE PC IT REPORTS IS THE ONE SAMPLED THE CLOCK BEFORE OP
+        # WENT HIGH, which is a LOCATOR AND NOT A PROOF: this model
+        # has a look-ahead, so getPC() is the instruction unit's
+        # counter and can be running ahead of the operation that set
+        # the bit.  Use it to find the row, then read the row.
+        lines.append("  Reg#(HWordAddr) opTrailPc <- mkReg(0);")
+        lines.append("  Reg#(Bit#(32)) opTrailStep <- mkReg(0);")
+        lines.append("  Reg#(Bool) opTrailSeen <- mkReg(False);")
+        lines.append("  Reg#(Bool) opTrailWas <- mkReg(False);")
+        lines.append("  Reg#(HWordAddr) opTrailLastPc <- mkReg(0);")
+        lines.append("  Reg#(Bit#(32)) opTrailCount <- mkReg(0);")
     lines.append("  Reg#(Bit#(32)) fails <- mkReg(0);")
     lines.append("")
     lines.append("  function Action check(String label, Word64 got, Word64 expected) =")
@@ -187,6 +206,34 @@ def generate(module_name, prog, checks, step_cap=30000, reader_image=None,
     if pc_trail:
         lines.append("    pcTrail0 <= core.getPC();")
         lines.append("    if (core.getPC() != 0) lastNonZeroPc <= core.getPC();")
+    if op_trail:
+        # EVERY 0->1 EDGE, not just the first: MCP's interruption
+        # system CLEARS the indicator once it has taken it, so a run
+        # can refuse several operations and finish with the bit low.
+        #
+        # >>> THE COUNT IS A LOWER BOUND AND THE FIRST ADDRESS IS THE
+        # FINDING. <<<  Measured 2026-10-23 on the MCP boot: the run
+        # reports ONE edge, at half-word 1304, and ends with OP SET,
+        # while the control run with printed p.45 taken out of the
+        # image reports ONE edge at the SAME address and ends with OP
+        # CLEAR.  One edge each does not by itself account for two
+        # different endings, so something -- a clear and a re-set
+        # between two samples, or a difference between
+        # mem.readIndicators() and the word 11 the checks read -- is
+        # not being seen here.  That is RECORDED AND NOT GUESSED AT;
+        # docs/NEXT.md carries it.  What the trail is trusted for is
+        # the ADDRESS of the first raise, which the control run
+        # reproduces exactly.
+        lines.append("    opTrailWas <= (core.mem.readIndicators()[64 - 1 - 15] == 1);")
+        lines.append("    if (!opTrailWas && core.mem.readIndicators()[64 - 1 - 15] == 1) begin")
+        lines.append("      opTrailCount <= opTrailCount + 1;")
+        lines.append("      opTrailLastPc <= core.getPC();")
+        lines.append("      if (!opTrailSeen) begin")
+        lines.append("        opTrailSeen <= True;")
+        lines.append("        opTrailPc <= core.getPC();")
+        lines.append("        opTrailStep <= stepCount;")
+        lines.append("      end")
+        lines.append("    end")
     lines.append("    stepCount <= stepCount + 1;")
     lines.append("  endrule")
     lines.append("")
@@ -197,6 +244,11 @@ def generate(module_name, prog, checks, step_cap=30000, reader_image=None,
     lines.append(f"    end")
     if pc_trail:
         lines.append('    $display("PC TRAIL: last non-zero half-word address %0d, after %0d steps", lastNonZeroPc, stepCount);')
+    if op_trail:
+        lines.append("    if (opTrailSeen)")
+        lines.append('      $display("OP TRAIL: operation invalid raised %0d times; first at half-word address %0d after %0d steps, last at %0d", opTrailCount, opTrailPc, opTrailStep, opTrailLastPc);')
+        lines.append("    else")
+        lines.append('      $display("OP TRAIL: operation invalid never set");')
     lines.append(f"    phase <= {run_phase + 1};")
     lines.append("  endrule")
     lines.append("")

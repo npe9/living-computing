@@ -4833,6 +4833,63 @@ run "THE CHARACTER LOCATOR TABLES and THE TABLES, printed p.44, bit-exact (MCP_M
 # scan raises settles structurally: the tenth character of each row
 # is that row's lone-zone punch ("+", "-", blank), so the zero
 # zone's is the DIGIT zero, and "JKLMNOPQR" is a letter O.
+run "THE BREAKDOWN ROUTINE, printed p.45, bit-exact (MCP_Mar63 PDF p.52)" python3 verify_mcp_bootstrap_p45.py
+# >>> LINE 10 IS S BRK8, AT 002502.00 -- THE ADDRESS THE BOOT RUN HAD
+# BEEN STOPPING AT. <<<  printed p.38 line 17's "BD,S BRK8" put it
+# there seven pages before this one was opened, and with pp.43 and 44
+# in the image the PC trail reached it and stopped on a zero word.
+# This page fills it.  The page is also SIGNED: lines 6-7 read
+# "-SBRK8, 6 BIT BCD VERSION, 16 BITS BETWEEN FIELDS.  LARRY LEVY",
+# the first author's name transcribed out of this listing.
+#
+# AND THE RUN GOES MORE THAN TWICE AS FAR: 6,028,291 steps to
+# 12,847,130, ending at half-word 239 = 000167.40, which is printed
+# p.6 line 1's "BD,$  -LOOP".  MCP ran the whole UNCODE path, came
+# back out through printed p.25 line 44 -- "B,X 223  -NOT IOD OR REEL
+# CARD" -- and X 223's "SIC,X ERRAD / B,X ERROR  -ERROR IN UNCODE"
+# sent it to the bootstrap's error routine, which displays the error
+# address in the CE console (printed p.5 line 56's X6ERR) and loops.
+# X ERRAD holds 001441.40, printed p.25 line 48's X 224.  So THREE
+# boot checks moved, and each one now names something instead of
+# denying it; see gen_mcp_boot_tb.py.
+#
+# TWO THINGS A SYN HAS TO CARRY, and this page needed both.
+# C22-6531 printed p.31: "THE MEANING OF SYN IS ALWAYS ONE OF EXACT
+# SUBSTITUTION ... data properties (dds) associated with Y and its bit
+# address or integer classification are transferred to A."
+#   (a) printed p.46 lines 22-24 are "QX INN SYN,$1" and its two
+#       fellows, and this page uses them BOTH as a J field (line 10)
+#       and as an index (line 19).  "$1" was already context-dependent
+#       in strap_asm -- register 1 in an I or J field, bit address
+#       000021.00 in an address field -- and storing a SYN's VALUE
+#       loses that: 000021.00 in four bits is 0.  LINE 19 PRINTS 81
+#       AND THE OLD ASSEMBLER GAVE 80.
+#   (b) lines 20 and 22 are "KF,Q CMA" and "KF,Q BLNK" with NO data
+#       description written, and both print 006600 -- length 6, byte
+#       size 6.  strap_asm had been ACCEPTING a dds on a SYN and
+#       silently dropping it, the wrong-output-no-error shape this
+#       project keeps finding.  It now keeps it.
+# Injections: the register SYN replaced by its address gives 7 FAILs
+# (lines 10, 13, 14, 19, 26, 39, 41) and NOT lines 47-49, because a
+# SWAPI's first half word carries the register's ADDRESS either way;
+# dropping Q CMA's dds gives 1 FAIL, line 20, with Q BLNK still
+# passing; "TI,2" -> "TI,3" gives 2, the row and the extent check.
+#
+# THREE MORE SWAPs, AND THE REFUSAL SURVIVES WITH A MEASUREMENT THIS
+# TIME.  Lines 47-49 sit under Q 2BIG, the oversized-field path.
+# tests/gen_tb's new `op_trail` says the OP indicator is raised ONCE
+# in the whole run, at half-word 1304 = 001214.00 -- printed p.24's
+# TIME CONVERSION -- and a control run with p.45 taken back out
+# raises it at the same address.  So no SWAP executed, and that is
+# now a result rather than a reading.  SWAP has six documented
+# callers: two on printed p.40, one on p.43, three here.
+#
+# LINE 30 IS listing_typography.md 13 IN A NEW SHAPE: at 900 dpi the
+# row prints "3C* C02520.00   C02516.50 C0", THREE separate zeros
+# coming out as C in ONE row -- line number, location and trailing
+# byte -- so it is a per-ROW artifact and not the per-glyph one 13
+# had recorded.  The byte is 00; printed p.43 line 50's "B,Q CHK"
+# prints 002454.10 00 for the same shape.
 run "MCP's error table, printed pp.7-8 (MCP_Mar63 PDF pp.14-15)" python3 verify_mcp_bootstrap_p7_p8.py
 # X ERR DD -- THE LAST TWO PAGES OF THE BOOTSTRAP TO BE TRANSCRIBED,
 # and the index to all the rest: seventy-eight VF half words, one pair
