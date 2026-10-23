@@ -5476,8 +5476,35 @@ printed p.40, one on p.43, three here.
    AND NOT A PROOF**: this model has a look-ahead, so `getPC()` can be
    running ahead of the operation that set the bit. A one-instruction
    deck per candidate, run on the model with a `BB,$OP` after it,
-   settles it in minutes and should be written before anything is
-   built.
+   looked like it would settle this in minutes.
+
+   **IT WAS TRIED ON 2026-10-23 AND IT DID NOT**, which is worth the
+   paragraph so the next attempt starts further on. A scratch deck
+   ran `/I(BU,6),60,-60`, `C0011(BU,6)`, `CV(BU),$L,16`,
+   `LTRCV(BU,6)` and `KF(BU,6,6)` in sequence on the model and
+   finished with **word 11 = `0x44` — `AE|RZ`, OP CLEAR**. So on a
+   bare program none of the five refuses, which is at odds with
+   `bsv/README`'s "decoded but not executed" list naming `CV`,
+   `LTRCV` and `KF`.
+
+   **Do not act on that yet.** A second version of the same deck,
+   snapshotting word 11 with `L(BU,64),(8)11.0` / `ST` between the
+   candidates, returned nonsense — the FIRST snapshot, taken before
+   any candidate ran, came back `0x0104500000000000` and every later
+   one came back zero — so **reading word 11 from inside a program is
+   not trustworthy here**, and the single end-of-run read that gave
+   `0x44` inherits that doubt. The model also prints "E-box
+   instruction at N executed at preparation (classification
+   mismatch)" for several of these rows, which is its own signal that
+   they take an odd path. The deck was deleted rather than kept as a
+   test it cannot support.
+
+   **What to build instead is an exact locator, not another probe.**
+   `StretchCore` already has the E-box's instruction address in hand
+   where it prints that warning; latching it in a register and
+   exposing it read-only would let `op_trail` report the address of
+   the operation that set OP instead of the instruction unit's
+   counter — one run instead of a probe per candidate.
 2. **The edge count does not account for both endings.** The p.45 run
    reports one edge and ends with OP **set**; the control reports one
    edge at the same address and ends with OP **clear**. One edge each
