@@ -5425,6 +5425,38 @@ pointed at it.** `strap/iocd.py` punches an **IOCD** card; printed
 p.25 line 41's parameter word says "EXPECT IOD AND REEL CARDS"; lines
 32-36 compute the area from `$4` and pass `$7`. In that order.
 
+### WHICH EXIT UNCODE TOOK, measured — and a check that was removed for being green for nothing
+
+printed p.25 line 39's `X 222A  XW,0` is the slot UNCODE writes its
+answer into, "FOR TOE, FIELD COUNT, IO REF NUMBER", and line 35's
+`LVI,$14,X 222A` is what points the routine at it. A boot check was
+added on that word and the run was read: **it is zero.**
+
+printed p.40 line 40 is `Y UER`'s `Z, 0.0($15)` — UNCODE's error exit
+**zeroes that slot** and then returns to `2.32($14)`, which with
+`$14` = X 222A is 001437.40, printed p.25 line 44's `B,X 223  -NOT
+IOD OR REEL CARD`. The success exit, `Y JCCER` on p.40 lines 35-36,
+writes the slot instead. So the rejection is **UNCODE's own `Y UER`**,
+not something downstream of it, and the question narrows to which of
+the five branches reaches `Y UER` — printed p.38 lines 8, 36, 38 and
+41, and p.40 line 32's `BZXE,Y UER`.
+
+**THE CHECK WAS THEN REMOVED, deliberately.** The slot is assembled
+zero and `Y UER` zeroes it, so a green there is consistent with "the
+error exit ran" AND with "nothing ran at all" — an all-zero fixture
+cannot test an all-zero result, which is the same lesson the console
+switch register cost earlier in the same week. It cannot be fixed by
+preloading either: the bootstrap MOVES the whole image into place, so
+a marker written before the run is overwritten, and a marker in the
+tape image would mean the tape no longer matches the deck. The
+measurement is recorded here instead of being enshrined as a test
+that proves nothing.
+
+*What WOULD be discriminating is `Y UX SAV` on printed p.40, which
+both exits write with `TI,3,Y UX SAV,$11` before they part. Zero there
+means UNCODE never ran; a value means it did. That is the check to
+add when the next question needs it.*
+
 ### FOUR ASSEMBLER CORRECTIONS, and one of them had a note predicting it
 
 * **`VF` is twenty-five bits.** C22-6531 printed p.18 says "THE
