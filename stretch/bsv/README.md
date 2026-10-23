@@ -313,7 +313,16 @@ execution operations: `EX` executes as of 2026-09-25 and `EXIC` as of
   backward with a direct count, three with an immediate count, and
   the **upper-end overlap** the same page says backward is *required*
   for. **`SWAP` still sets OP**, deliberately: a two-way interchange
-  is a different datapath and nothing in the corpus executes one.
+  is a different datapath. **"NOTHING IN THE CORPUS EXECUTES ONE"
+  WAS TRUE UNTIL 2026-10-23 AND IS NOT NOW**: printed p.40 lines 24 and 28 are "SWAPI,3,$11,Y UX SAV", three
+words from the UNCODE subroutine's normal exit, and line 33 is the
+matched "TI,3,Y UX SAV,$11" with A0 where the SWAPs carry E0.  MCP
+saves three index registers with a SWAP and restores them with
+another, which is what a two-way interchange is for.
+  So SWAP is an unbuilt arm with a documented caller, exactly the
+  shape backward transmission was in before it was built -- and the
+  run does not reach printed p.40 yet, because `S CA6` on printed
+  p.43 comes first.
 - **`EX` (EXECUTE)** — Reference Manual printed pp.49-50. "Bits 0-18
   of the effective address form the address of the location of a
   subject instruction that is fetched and executed." The subject may

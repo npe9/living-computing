@@ -5395,6 +5395,75 @@ no opcode can rule it out. What ruled it out was the datum the name
 labels — which is a tell worth stating on its own: *when a name
 labels data, decode the data before trusting the name.*
 
+## MCP EXECUTES A SWAP, 2026-10-23
+
+printed p.40 lines 24 and 28:
+
+```
+002276.40   000033.00 80   002324.06 E0   SWAPI,3,$11,Y UX SAV
+002302.00   000033.00 80   002324.06 E0   SWAPI,3,$11,Y UX SAV
+```
+
+`bsv/README.md` has said since 2026-09-22 that SWAP *"is a different
+datapath and **nothing in the corpus executes one**"*.
+`decks/transmit_multiword.strap` says it, `StretchExecute.bsv`'s own
+arm says it, and `run_tests.sh` records a surviving injection
+(**T3**) whose whole justification is that sentence. **All four are
+now false**, and the instruction is three words from the UNCODE
+subroutine's normal exit.
+
+### The page carries its own control
+
+**Line 33 is `TI,3,Y UX SAV,$11`** — the *same three words going the
+other way* — and it prints a trailing **`A0`** where the two SWAPs
+print **`E0`**. Sub-op 010 against 110, the one bit X22-6533's
+TRANSMIT box uses to tell them apart, on two rows of one page. There
+is no reading of this that makes the SWAPs transmits.
+
+### And what it is for makes it believable
+
+Lines 23-29 are the **REEL card's handler**. It swaps three index
+registers out to `Y UX SAV`, does its work, and swaps the same three
+back. A two-way interchange is exactly what *"save these and restore
+the old ones"* wants, and it is why a SWAP and not a TRANSMIT is
+written here. Lines 33 and 38 are the one-way version, on the exit
+paths that do not need the old values back.
+
+**SWAP is now an unbuilt arm with a documented caller** — the shape
+backward transmission was in on 2026-10-22, when the same kind of
+sentence ("MCP needs neither") died the same way. The boot run does
+**not** reach printed p.40 yet, because `S CA6` on printed p.43 comes
+first, so the refusal still stands and T3 still survives. **It is a
+survival with an expiry date**, and the record says so rather than
+being quietly edited.
+
+### Five more predictions land, three of them on bit 18
+
+| symbol | address | predicted by | defined on p.40 |
+|---|---|---|---|
+| `Y IODC` | 002266.40 | p.38 line 34, `.50` | line 14 |
+| `Y REELC` | 002276.00 | p.38 line 40, `.36` | line 23 |
+| `Y JCCER` | 002303.40 | p.38 line 35, `.72` | line 30 |
+| `Y UER` | 002311.00 | p.38 lines 8/36/38/41 | line 38 |
+| `Y UCLLC` | 002262.00 | p.39 line 56, `.32` | line 5 |
+
+**The half-word selector has now been checked on five separate
+symbols by three separate pages**, each transcribed before the page
+that defines it. `Y IODC`, `Y JCCER` and `Y UCLLC` would all have
+been half a word wrong without bit 18.
+
+### A TRANSMIT's count register is written without its `$`
+
+Line 36's listing is `T,$15,Y UCBF2,0.0($15)` and the deck writes
+`T, 15, ...`, which is printed p.4 line 28's convention. Reference
+Manual printed p.30: the direct count comes from *"the field J, bits
+51-54"*, so that `$15` is a **four-bit register number**, not an
+address — as an address it would be word `0o37` and the assembler
+refuses it in those words. **Line 33's `TI,3,Y UX SAV,$11` keeps its
+`$11`**, because there the index register *is* the transmit's source
+address and the count is the immediate 3. Same page, both readings,
+and the binary distinguishes them.
+
 ## PRINTED p.39, AND p.38's PREDICTIONS START LANDING, 2026-10-23
 
 printed p.38 used fourteen symbols it did not define and SYN'd each
@@ -5817,7 +5886,9 @@ must be used."*
 **Four injections.** T1 and T2 are caught with distinct failure
 sets — T2's extra two are the tell, because an ascending run from
 `BWS2` never writes the words below it. **T3, accepting SWAP as
-well, SURVIVES and must**: no deck executes a SWAP, so nothing can
+well, SURVIVES and must** (**until 2026-10-23 — printed p.40 lines
+24 and 28 are `SWAPI,3,$11,Y UX SAV`; see that page's section
+above**): no deck executed a SWAP, so nothing could
 see the difference. Its *encoding* is pinned by
 `decks/ax4b_1246_transmit_swap.strap`; its *execution* is not tested
 by anything, and the record now says so.

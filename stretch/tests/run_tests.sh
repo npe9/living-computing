@@ -1269,7 +1269,17 @@ run "MULTI-WORD TRANSMIT, FORWARD AND BACKWARD (RefMan printed p.30)" ./run_prog
 #          leaves the words below it alone.
 #   T3  SWAP is accepted as well
 #       -> SURVIVES, and must: no deck in the corpus executes a SWAP,
-#          so nothing can see the difference.  Its ENCODING is pinned
+#          so nothing can see the difference.
+#
+#          >>> AND THAT STOPPED BEING TRUE ON 2026-10-23. <<<  MCP
+#          printed p.40 lines 24 and 28 are "SWAPI,3,$11,Y UX SAV",
+#          three words from the UNCODE subroutine's normal exit, with
+#          line 33's matched "TI,3,Y UX SAV,$11" carrying A0 where
+#          the SWAPs carry E0.  T3 still survives TODAY because the
+#          boot run stops at S CA6 on printed p.43 and never reaches
+#          p.40 -- but it is now a survival with an expiry date, and
+#          SWAP is an unbuilt arm with a documented caller rather
+#          than a documented absence.  Its ENCODING is pinned
 #          by decks/ax4b_1246_transmit_swap.strap; its EXECUTION is
 #          not tested by anything and this says so.
 #
@@ -4329,6 +4339,43 @@ run "MCP INITIALIZATION, printed p.36, bit-exact (MCP_Mar63 PDF p.43)" python3 v
 run "THE COMMUNICATION REGION FOR MCP, printed p.37, bit-exact (MCP_Mar63 PDF p.44)" python3 verify_mcp_bootstrap_p37.py
 run "UNCODE SUBROUTINE TO DECIPHER SYSTEM CARDS, printed p.38, bit-exact (MCP_Mar63 PDF p.45)" python3 verify_mcp_bootstrap_p38.py
 run "SERVICE ROUTINES TO EXTRACT INFORMATION FROM SYSTEM CARDS, printed p.39, bit-exact (MCP_Mar63 PDF p.46)" python3 verify_mcp_bootstrap_p39.py
+run "printed p.40, bit-exact: the LIM/IOD/REEL handlers and UNCODE's exits (MCP_Mar63 PDF p.47)" python3 verify_mcp_bootstrap_p40.py
+# >>> MCP EXECUTES A SWAP, AND THIS PAGE IS THE PROOF. <<<  Lines 24
+# and 28 are "SWAPI,3,$11,Y UX SAV" -- three words from the UNCODE
+# subroutine's normal exit -- and the page carries its own control:
+# LINE 33 IS "TI,3,Y UX SAV,$11", the SAME three words going the
+# other way, with a trailing A0 where the SWAPs carry E0.  Sub-op
+# 010 against 110, the one bit X22-6533's TRANSMIT box uses to tell
+# them apart, on two rows of one page.
+#
+# WHAT IT IS FOR makes it believable: lines 23-29 are the REEL
+# card's handler, which swaps three index registers out to Y UX SAV,
+# does its work, and swaps the same three back.  A two-way
+# interchange is exactly what "save these and restore the old ones"
+# wants.
+#
+# SO SWAP IS NOW AN UNBUILT ARM WITH A DOCUMENTED CALLER, the shape
+# backward transmission was in on 2026-10-22, and three files that
+# said "nothing in the corpus executes one" are corrected rather
+# than quietly edited.  The boot run does NOT reach p.40 yet -- S CA6
+# on printed p.43 comes first -- so the refusal still stands and the
+# T3 injection above still survives, with an expiry date.
+#
+# FIVE MORE PREDICTIONS LAND: Y IODC 002266.40, Y REELC 002276.00,
+# Y JCCER 002303.40 and Y UER 002311.00 from printed p.38, and
+# Y UCLLC 002262.00 from p.39.  THREE OF THE FIVE WERE BIT-18
+# READINGS (".50", ".72", ".32"), so the half-word selector has now
+# been checked on five separate symbols by three separate pages,
+# each transcribed before the page that defines it.
+#
+# AND A TRANSMIT'S COUNT REGISTER IS WRITTEN WITHOUT ITS "$", which
+# is printed p.4 line 28's convention.  RefMan printed p.30: the
+# direct count comes from "the field J, bits 51-54", so line 36's
+# listing "$15" is a four-bit register number, not an address -- as
+# an address it would be word 0o37 and the assembler says so.  Line
+# 33's "TI,3,Y UX SAV,$11" KEEPS its "$11", because there the index
+# register IS the transmit's source address and the count is the
+# immediate 3.  Same page, both readings, binary distinguishes them.
 # >>> THREE OF p.38's FOURTEEN PREDICTIONS LAND ON THE VERY NEXT
 # PAGE: Y JCBC at 002213.00, Y TCPGO at 002214.40 and Y LIMC at
 # 002246.00.  Y TCPGO was the sharpest -- p.38 line 31 prints

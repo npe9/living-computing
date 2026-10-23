@@ -5136,7 +5136,16 @@ function ActionValue#(ExecResult)
         // register, which is why there is no idxWrite here.
         //
         // SWAP STILL SETS OP.  Its two-way interchange is a
-        // different datapath and nothing executes one, and a refusal
+        // different datapath.  "NOTHING EXECUTES ONE" WAS TRUE UNTIL
+        // 2026-10-23: MCP printed p.40 lines 24 and 28 are
+        // "SWAPI,3,$11,Y UX SAV", three words from the UNCODE
+        // subroutine's normal exit, with line 33's matched
+        // "TI,3,Y UX SAV,$11" carrying A0 where the SWAPs carry E0.
+        // So this is now an UNBUILT ARM WITH A DOCUMENTED CALLER,
+        // the shape backward transmission was in before it was
+        // built.  The boot run does not reach p.40 yet -- S CA6 on
+        // printed p.43 comes first -- so the refusal still stands,
+        // and a refusal
         // that is documented beats a half-built interchange.
         Bit#(19) xmitCount = (t.immCount == 1)
           ? ((t.j == 0) ? 19'd16 : zeroExtend(t.j))

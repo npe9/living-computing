@@ -1,0 +1,177 @@
+! mcp_bootstrap_p40.strap -- printed page 40, the rest of the service
+! routines: the LIM card's limit check, the IOD card's field
+! conversion, the REEL card, and the UNCODE subroutine's two EXITS.
+! docs/MCP_Mar63_001-249.pdf PDF p.47, header "PAGE NUMBER 40".
+! docs/boot_plan.md M3.
+!
+! >>> MCP EXECUTES A SWAP, AND THIS PAGE IS THE PROOF. <<<
+!
+! Lines 24 and 28 are
+!
+!     002276.40   000033.00 80   002324.06 E0   SWAPI,3,$11,Y UX SAV
+!     002302.00   000033.00 80   002324.06 E0   SWAPI,3,$11,Y UX SAV
+!
+! and `bsv/README.md` has said since 2026-09-22 that SWAP "is a
+! different datapath and NOTHING IN THE CORPUS EXECUTES ONE".
+! decks/transmit_multiword.strap says it too.  Both are now false,
+! and the instruction is three words from the UNCODE subroutine's
+! normal exit.
+!
+! THE ENCODING AGREES WITH THE POCKET CARD.  The trailing byte is E0
+! where a TRANSMIT's is A0 -- sub-op 110 against 010, the one bit
+! X22-6533's TRANSMIT box uses to tell them apart -- and the right
+! half word's ".06" carries J = 0011, the immediate count of three.
+! Line 33's "TI,3,Y UX SAV,$11" is the SAME three words going the
+! other way with A0, so the page contains the matched pair.
+!
+! WHAT IT IS FOR: lines 23-29 are the REEL card's handler.  It swaps
+! three index registers out to Y UX SAV, does its work, and swaps the
+! same three back -- a two-way interchange is exactly the operation
+! "save these and restore the old ones" wants, and it is why a SWAP
+! and not a TRANSMIT is written here.
+!
+! ---------------------------------------------------------------
+! FIVE MORE PREDICTIONS LAND
+! ---------------------------------------------------------------
+! printed p.38 SYN'd fourteen symbols from its own binary output and
+! p.39 SYN'd nineteen.  This page DEFINES five of them, at the
+! addresses those pages said:
+!
+!   Y IODC   002266.40   p.38 line 34's "B,Y IODC"      -- line 14
+!   Y REELC  002276.00   p.38 line 40's "BAEZ,Y REELC"  -- line 23
+!   Y JCCER  002303.40   p.38 line 35's "BXE,Y JCCER"   -- line 30
+!   Y UER    002311.00   p.38 lines 8/36/38/41          -- line 38
+!   Y UCLLC  002262.00   p.39 line 56's "BXL,Y UCLLC"   -- line 5
+!
+! THREE OF THE FIVE WERE BIT-18 READINGS -- Y IODC from ".50",
+! Y JCCER from ".72" and p.39's Y UCLLC from ".32" -- so the
+! half-word selector has now been checked on five separate symbols
+! by three separate pages.
+!
+! AND IT USES FOUR EARLIER DEFINITIONS: S ROOF (printed p.37 line
+! 37) on lines 1 and 3, S MCP (p.37 line 7) on lines 5 and 9,
+! Y USB8C (p.38 line 21) on lines 23 and 30, and Y UCBF2 (p.38's
+! prediction) on line 36.
+!
+! ---------------------------------------------------------------
+! SUBSTITUTIONS
+! ---------------------------------------------------------------
+! (1) BLANKS INSIDE SYMBOL NAMES ARE DROPPED, as on every page since
+!     p.2.
+!
+! (2) "S MAXUB" IS AT 002153.00, WHICH IS ALSO S BAMCP's ADDRESS.
+!     printed p.37 line 17 defines S BAMCP there ("BASE ADDR OF THE
+!     MCP SYMB I/O LOC TBL") and line 10 here stores to S MAXUB.
+!     Two names for one half word is not new -- printed p.36 line 34
+!     SYNs S LR BU to S BA PP -- and the address is read off this
+!     page's own binary, not inferred from the spelling.
+!
+! (3) A TRANSMIT'S COUNT REGISTER IS WRITTEN WITHOUT ITS "$", which
+!     is the convention printed p.4 line 28 already set: the listing
+!     prints "T,$11,X BUFER($X1),X BS END" and the deck writes
+!     "T, 11, ...".  Line 36 here is the same shape -- the listing's
+!     "T,$15,Y UCBF2,0.0($15)" is written "T, 15, ...".  THE "$15" IS
+!     THE J FIELD, not an address: Reference Manual printed p.30 says
+!     the direct count comes from "the field J, bits 51-54", and a
+!     "$15" written as an address would be word 0o37 and does not fit
+!     in four bits.  The assembler says exactly that if you try it.
+!     Note that line 33's "TI,3,Y UX SAV,$11" keeps ITS "$11",
+!     because there the index register IS an address -- the source of
+!     the transmit -- and the count is the immediate 3.
+!
+! (4) NOTHING ELSE.  Every glyph reads cleanly at 900 dpi.
+!
+! ---------------------------------------------------------------
+! THE STAND-IN SYNs
+! ---------------------------------------------------------------
+!   S ROOF   002162.00   lines 1 and 3, ".31"/".26", bit 18 clear
+!   S MCP    002150.00   lines 5 and 9, ".31"/".26", bit 18 clear
+!   S MAXUB  002153.00   line 10, ".27", bit 18 clear
+!   Y NORR   002313.40   lines 13 and 29, ".50", bit 18 SET
+!   Y IDX12  002321.00   line 14, ".30", bit 18 clear
+!   Y UTOE   002334.52   line 20's VFL left address, a clean
+!                        twenty-four bit BIT address: word 0o2334,
+!                        bit 0o64 = 52
+!   Y USB8C  002200.00   lines 23 and 30, ".30"/".36", bit 18 clear
+!   Y UX SAV 002324.00   lines 24, 28, 33 and 38 -- FOUR rows, two
+!                        of them SWAPI and two TI
+!   Y BLWD4  002364.00   line 26's VFL left address
+!   Y UCBF2  002337.00   line 36's left address
+
+        SLC, (8)2260.0
+
+SROOF   SYN, (8)2162.0
+SMCP    SYN, (8)2150.0
+SMAXUB  SYN, (8)2153.0
+YNORR   SYN, (8)2313.40
+YIDX12  SYN, (8)2321.0
+YUTOE   SYN, (8)2334.64
+YUSB8C  SYN, (8)2200.0
+YUXSAV  SYN, (8)2324.0
+YBLWD4  SYN, (8)2364.0
+YUCBF2  SYN, (8)2337.0
+
+        SLC, (8)2260.0
+
+! ---- the LIM card's limit check, continued from printed p.39 ------
+        KC, $12, SROOF              ! line 1
+        BXH, YUER                   ! line 2
+        LV, $11, SROOF              ! line 3
+        B, YUCLLH                   ! line 4
+YUCLLC  KC, $12, SMCP               ! line 5
+        BXH, YUER                   ! line 6
+        KVI, $12, 33.0              ! line 7
+        BXL, YUER                   ! line 8
+        LV, $11, SMCP               ! line 9
+YUCLLH  SV, $11, SMAXUB             ! line 10
+        KC, $12, $12                ! line 11 -IS LOWER GREATER
+        BZXH, YUER                  ! line 12 -THAN UPPER LIMIT
+        B, YNORR                    ! line 13 -LIMITS OK - TO NORMAL
+                                     !           RETURN
+
+! ---- the IOD card -------------------------------------------------
+YIODC   LX, $12, YIDX12             ! line 14 -CONVERT I-O REFERENCE
+        LI(BU,6), (2)001010         ! line 15 -NUMBER AND ABSOLUTE
+                                     !           EXIT
+YIODTL  CT0110(V+I)(BU,6), .6($12)  ! line 16 -FUELDS ON IOD CARD TO
+                                     !           BINARY
+        BZRZZ, YIOCB                ! line 17
+        CM0000(BU,6), -.6($12)      ! line 18
+YIOCB   CBR, $12, YIODTL            ! line 19
+        LF(BU,60,6), YUTOE          ! line 20
+        SF(BU,12,3), $12+.52, 48    ! line 21 -PUT IN $12
+        SF(BU,18,3), $12            ! line 22
+
+! ---- the REEL card, and the two SWAPs -----------------------------
+YREELC  LC, $12, YUSB8C             ! line 23 -LOAD COUNT WITH = OF
+                                     !           FIELDS
+        SWAPI, 3, $11, YUXSAV       ! line 24
+        LVE, $15, 2.0($14)          ! line 25
+        TI, 1, YBLWD4, 0.0($15)     ! line 26
+        TI, 7, 0.0($15), 1.0($15)   ! line 27
+        SWAPI, 3, $11, YUXSAV       ! line 28
+        B, YNORR                    ! line 29 -IN BREAKDOWN, AND
+                                     !           RETURN
+
+! ---- the two exits ------------------------------------------------
+YJCCER  LC, $15, YUSB8C             ! line 30
+        KV, $13, 1.0($14)           ! line 31
+        BZXE, YUER                  ! line 32
+        TI, 3, YUXSAV, $11          ! line 33
+        LVE, $15, 2.0($14)          ! line 34
+        CM0000(BU), 0($15)          ! line 35
+        T, 15, YUCBF2, 0.0($15)     ! line 36  -- see note (4)
+        B, 2.32($14)                ! line 37
+
+YUER    TI, 3, YUXSAV, $11          ! line 38
+        LVE, $15, 2.0($14)          ! line 39
+        Z, 0.0($15)                 ! line 40
+        B, 2.32($14)                ! line 41
+
+        END, YUCLLC
+
+! ---------------------------------------------------------------
+! THREE LISTING MARKS, recorded and not explained -- the bare "*"
+! after the location that printed pp.3, 37, 38 and 39 all carry.
+! Here it is on line 9 ("002264.00 *"), line 25 ("002277.40 *") and
+! line 41 ("002313.00 *").  None changes a compiled bit.

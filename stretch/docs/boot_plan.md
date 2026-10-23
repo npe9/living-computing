@@ -570,6 +570,18 @@ cannot be tested without it.
 > calls. Thirty-six rows, bit-exact on the first run; fourteen of
 > its nineteen symbols are PREDICTIONS about pages not yet opened.
 >
+> **A10 — AND MCP EXECUTES A SWAP, 2026-10-23.** printed p.40 lines
+> 24 and 28 are `SWAPI,3,$11,Y UX SAV`, three words from the UNCODE
+> subroutine's normal exit, and the page carries its own control:
+> line 33 is `TI,3,Y UX SAV,$11`, the same three words going the
+> other way, printing `A0` where the SWAPs print `E0`. Lines 23-29
+> are the REEL card's handler, which swaps three index registers out
+> and swaps them back — which is what a two-way interchange is for.
+> **Four files said "nothing in the corpus executes one" and all
+> four are corrected.** The run does not reach p.40 yet (`S CA6` on
+> p.43 comes first), so the refusal stands and the T3 injection
+> still survives — with an expiry date.
+>
 > **A9 — THE NEXT FIVE PAGES, AND WHY FIVE.** `S CA6` is on printed
 > p.43 (p.42 ends at 002417.30, p.45 opens at 002501.71), and
 > `mcp_ipl_image()` requires the image to be contiguous — a hole

@@ -48,6 +48,15 @@
 !
 ! NOT TESTED HERE, deliberately: SWAP, which still sets Operation
 ! Code Invalid.  Its two-way interchange is a different datapath and
+! >>> "NOTHING IN THE CORPUS EXECUTES ONE" DIED ON 2026-10-23.  <<<
+! printed p.40 lines 24 and 28 are "SWAPI,3,$11,Y UX SAV", three
+! words from the UNCODE subroutine's normal exit, and line 33 is the
+! matched "TI,3,Y UX SAV,$11" with A0 where the SWAPs carry E0.  MCP
+! saves three index registers with a SWAP and restores them with
+! another, which is what a two-way interchange is for.
+! The claim below is kept as written because the history is the
+! point of this file, the same way the backward paragraph above is.
+!
 ! nothing in the corpus executes one; its ENCODING is already pinned
 ! by the jb_ax4b routine 1246 transcriptions
 ! (decks/ax4b_1246_transmit_swap.strap).
