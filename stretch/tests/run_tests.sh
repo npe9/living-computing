@@ -4910,6 +4910,57 @@ run "THE BREAKDOWN ROUTINE, printed p.45, bit-exact (MCP_Mar63 PDF p.52)" python
 # byte -- so it is a per-ROW artifact and not the per-glyph one 13
 # had recorded.  The byte is 00; printed p.43 line 50's "B,Q CHK"
 # prints 002454.10 00 for the same shape.
+run "DECODE SECTION OF MCP, printed p.52, bit-exact (MCP_Mar63 PDF p.59)" python3 verify_mcp_bootstrap_p52.py
+# >>> LINE 7 IS L DECOD AT 002737.00, THE ENTRY printed p.47's
+# LINKAGE FORMAT NAMES, AND IT OPENS WITH AN EIGHT-WORD SWAP. <<<
+# p.47's worked call is "LVI,$15,X / B,L DECOD / X VF,A / CF,B /
+# VF,C", A the first word address of the break-down area and B the
+# mode; lines 8 and 9 read exactly that.  The SWAPI of eight words is
+# the largest in the corpus and the tenth caller; line 12 is a
+# second, of three.  Forward SWAP was built the same day for printed
+# p.40's Y REELC and this page would have needed it anyway.
+#
+# THE IOD AND REEL DISPATCH IS FOUR CHARACTERS WIDE: lines 19-25 load
+# twenty-four bits of the card, compare against L IOD and L REEL,
+# branch to L IODRN or L REELR, and otherwise set a flag of 9 and go
+# to L ERROR.  Twenty-four bits is four BCD characters, so the
+# comparison reads "IOD " and "REEL" and no more -- which says what a
+# card's type field must hold and where.
+#
+# >>> A dds TRAVELS THROUGH A SYN ACROSS A PAGE BOUNDARY, AND LINES
+# 36 AND 37 ARE THE PROOF. <<<  Both are bare connectives with no
+# data description written:
+#     line 36  CM0000,L INFAD   prints 001000.00 F0  -- length ONE
+#     line 37  CM0000,L COUNT   prints 007000.00 F0  -- length SEVEN
+# L INFAD is printed p.48 line 52's "DD(BU,1),0" and L COUNT its line
+# 49's "DRZ(BU,7),(1)", so the two rows differ ONLY in a property
+# carried from four pages away.  C22-6531 printed p.31 is the rule,
+# printed p.45 is where strap_asm learned it, and this is where it
+# crosses a page.
+#
+# THIS PAGE IS listing_typography.md 13d AT ITS THICKEST.  The drum
+# prints DIGIT ZERO AS C across whole rows -- line 24 prints its own
+# location as "CCCC11.37" and line 35 its operand as "C.O" -- and
+# five bytes were settled by DECODE plus a row already checked
+# elsewhere: line 24's "C2" is 02 (LCI is an immediate index
+# operation and printed p.43 line 33's LVI prints 000005.07 01);
+# line 35's "FC" is F0; lines 39, 52 and 53's "CA", "C0", "C8" are
+# 0A, 00 and 08 (printed p.40 line 40's "Z,0.0($15)" prints
+# 000000.22 0F).
+#
+# AND TWO ROWS ARE NOT THE ARTIFACT, which is the other half of the
+# rule: lines 21 and 23 print "003021.76 C6" and "003147.76 C6" and
+# BOTH Cs ARE REAL -- printed p.43 line 43's "BAE,Q CK" prints
+# 002447.76 C2 and is checked.  What mattered there is the OCTAL
+# pair, which cannot hold a C: 0o76 has BIT 18 SET, so L IODRN and
+# L REELR are at .40 and not .00.  Reading them as .00 was the first
+# draft and three rows failed.
+#
+# Injections: L INFAD's stand-in dds dropped gives 1 FAIL, line 36,
+# reading 000000.00 F0 where the listing prints 001000.00 F0, and
+# line 37 still passes because L COUNT keeps its own -- the
+# cross-page dds in one row.  L IODRN's stand-in moved back to
+# 003021.00 gives 1 FAIL, line 21, reading .36 for .76.
 run "TYPE SYMBOLS AND CODES and the IOD AND REEL COMPARISONS, printed p.51, bit-exact (MCP_Mar63 PDF p.58)" python3 verify_mcp_bootstrap_p51.py
 # >>> L DISK LANDS AT 002723.00 AND THAT IS printed p.48's LAST
 # STAND-IN. <<<  p.48 line 18 is "L XTYPE XW,L DISK,9,$" -- a

@@ -728,3 +728,47 @@ comes first because it costs nothing: (0) **check the row's own line
 number against its neighbours**, (1) look for a self-disagreeing
 field on the same row, (2) decode the operation field, (3) decode
 what a name labels, (4) re-render higher.
+
+
+### 13e. A C THAT IS A ZERO AND A C THAT IS A C, ON ONE PAGE (printed p.52, 2026-10-23)
+
+§13d said a drum that drops one zero on a row has usually dropped
+more. MCP printed p.52 is a whole PAGE like that, and it is the
+clearest statement yet of the rule that tells the two apart.
+
+**Which column the C sits in decides it.**
+
+Five bytes on that page print with a leading `C` that is a **digit
+zero**:
+
+```
+line 24   CCCC11.37  C2     is   000011.37  02
+line 35   002601.51 80  001000.CC  FC       is  ... 001000.00  F0
+lines 39, 52, 53   CA, C0, C8               are  0A, 00, 08
+```
+
+and the rows hand it over for free — line 24 prints its own LOCATION
+as `CCCC11.37`, and line 35 prints its operand `0.0` as `C.O`.
+
+**Two bytes on the same page print a `C` that is real:**
+
+```
+line 21   003021.76  C6     is   003021.76  C6
+line 23   003147.76  C6     is   003147.76  C6
+```
+
+A branch on an indicator genuinely carries `C` in that nibble —
+printed p.43 line 43's `BAE,Q CK` prints `002447.76 C2` and is a
+checked row.
+
+> **The hex byte is where a `C` is ambiguous; the OCTAL pair is where
+> it cannot be.** `0o76` is unambiguous, and on these two rows it was
+> the load-bearing field: bit 18 is set, so the branch targets `.40`
+> and not `.00`. Transcribing them as `.00` made three rows fail.
+
+The practical order gains nothing new — it is still (0) check the
+row's own line number, (1) look for a self-disagreeing field, (2)
+decode the operation field, (3) decode what a name labels, (4)
+re-render higher — but §13e is the reminder that **step 2 cuts both
+ways**: it is as good at confirming a `C` as at refuting one, and a
+page that needs it will usually need it in both directions.

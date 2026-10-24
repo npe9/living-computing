@@ -1,0 +1,177 @@
+! mcp_bootstrap_p52.strap -- DECODE SECTION OF MCP, the dispatcher
+! entry and the initialization routine, printed page 52.
+! docs/MCP_Mar63_001-249.pdf PDF p.59, header "PAGE NUMBER 52".
+! docs/boot_plan.md M3.
+!
+! >>> LINE 7 IS L DECOD AT 002737.00 -- THE ENTRY printed p.47's
+! LINKAGE FORMAT NAMES. <<<
+!
+! p.47's worked call is "LVI,$15,X / B,L DECOD / X VF,A / CF,B /
+! VF,C / BEW,$ ERROR / BEW,$ NORMAL", with A the first word address
+! of the break-down area, B the mode and C the return dispositions.
+! Lines 8 and 9 read exactly that: "LV,L IODX,0.0($15)" takes A and
+! "LC,L IODX,0.32($15)" takes B.
+!
+! AND IT OPENS WITH AN EIGHT-WORD SWAP, "SWAPI,8,L TY,L IODX" --
+! the largest in the corpus, and the tenth caller.  Line 12 is a
+! second, three words.  Forward SWAP was built the same day for
+! printed p.40's Y REELC; this page would have needed it anyway.
+!
+! ---------------------------------------------------------------
+! THE IOD AND REEL DISPATCH IS FOUR CHARACTERS WIDE
+! ---------------------------------------------------------------
+! Lines 19-25 are the whole of it:
+!
+!   L FWA  L(BU,24),1.0(L IODX),0.0     -- twenty-four bits of card
+!          K(BU,24),L IOD,0.0
+!          BAEZ,L IODRN                 -IOD----BRANCH.
+!          K(BU,24),L REEL,0.0
+!          BAEZ,L REELR                 -REEL----BRANCH.
+!          LCI,$15,9.0                  -NEITHER -- ERROR FLAG
+!          B,L ERROR                    -BRANCH TO ERROR
+!
+! TWENTY-FOUR BITS IS FOUR BCD CHARACTERS, so the comparison reads
+! "IOD " and "REEL" and no more.  That does not pin printed p.51's
+! data lengths -- both tables are ten characters by column
+! measurement -- but it does say what a card's type field must hold
+! and where: word 1 of the area L IODX points at.
+!
+! ---------------------------------------------------------------
+! A dds TRAVELS THROUGH A SYN ACROSS A PAGE BOUNDARY, AND LINES 36
+! AND 37 ARE THE PROOF
+! ---------------------------------------------------------------
+! Both are bare connectives with no data description written:
+!
+!   line 36  CM0000,L INFAD    prints 001000.00 F0   -- length ONE
+!   line 37  CM0000,L COUNT    prints 007000.00 F0   -- length SEVEN
+!
+! L INFAD is printed p.48 line 52's "DD(BU,1),0" and L COUNT is its
+! line 49's "DRZ(BU,7),(1)", so the two rows differ ONLY in a
+! property carried from four pages away.  C22-6531 printed p.31:
+! "data properties (dds) associated with Y ... are transferred to A."
+! strap_asm.py learned that for printed p.45 and this page is where
+! it crosses a page boundary.  THE DECK'S STAND-INS CARRY THE dds
+! FOR THAT REASON and the two rows check it.
+!
+! ---------------------------------------------------------------
+! THIS PAGE IS listing_typography.md 13d AT ITS THICKEST
+! ---------------------------------------------------------------
+! The drum prints DIGIT ZERO AS C across whole rows here.  Line 24
+! prints its own location as "CCCC11.37" and line 35 prints its
+! operand as "C.O" -- so the rows announce themselves.  Five bytes
+! had to be settled:
+!
+!   line 24  "C2" is 02.  LCI is an immediate index operation and
+!            enc_imm_index puts 10000 at bits 23-27, so the byte's
+!            high nibble is ZERO -- printed p.43 line 33's
+!            "LVI,$3,5.0" prints 000005.07 01 and is already
+!            checked.
+!   line 35  "FC" is F0.  Same row prints "001000.CC" and "C.O".
+!   lines 39, 52, 53  "CA", "C0", "C8" are 0A, 00 and 08.  printed
+!            p.40 line 40's "Z,0.0($15)" prints 000000.22 0F and is
+!            already checked, so Z's high nibble is zero and the low
+!            one is the index.
+!
+! AND TWO ROWS ARE NOT THE ARTIFACT, which is the other half of the
+! rule: lines 21 and 23 print "003021.76 C6" and "003147.76 C6" and
+! BOTH Cs are real.  printed p.43 line 43's "BAE,Q CK" prints
+! 002447.76 C2 and is checked, so a branch-on-indicator genuinely
+! carries C in that nibble.  THE OCTAL PAIR 76 IS WHAT MATTERED
+! THERE: an octal column cannot hold a C, and 0o76 has bit 18 set,
+! which is how L IODRN and L REELR were found to be at .40 and not
+! .00.  Reading them as .00 was this deck's first draft and three
+! rows failed.
+!
+! ---------------------------------------------------------------
+! SUBSTITUTIONS
+! ---------------------------------------------------------------
+! (1) BLANKS INSIDE SYMBOL NAMES ARE DROPPED, as on every page since
+!     p.2.
+!
+! (2) NOTHING ELSE.
+!
+! ---------------------------------------------------------------
+! THE STAND-INS.  Four are forward and the rest are pages 48-51's:
+!   L IODRN 003021.40   line 21, read off bit 18 of 0o76
+!   L REELR 003147.40   line 23, likewise
+!   L FINAL 003170.00   line 18
+!   L ERROR 003241.00   line 25
+!   L OOPN  002775.40   line 56's "L OOPN+1." at 002776.40
+        SLC, (8)2737.0
+
+LTY     SYN, (8)2571.0
+LIODX   SYN, $3
+LXPP    SYN, $4
+LXIO    SYN, $5
+LXFR    SYN, $6
+LXSU    SYN, $7
+LXSC    SYN, $8
+LXNT    SYN, $9
+LWORKX  SYN, $10
+LPPURF  SYN, (8)2557.0
+LSAVEY  SYN, (8)2603.0
+LSAVEZ  SYN, (8)2604.0
+LCLEAR  SYN, (8)2606.0
+LFINB   SYN(BU,1), (8)2601.51
+LCOUNT  SYN(BU,7), (8)2601.53
+LOVBIT  SYN(BU,1), (8)2601.62
+LINFAD  SYN(BU,1), (8)2601.73
+LNOSAV  SYN, (8)2720.0
+LSYMU   SYN, (8)2620.0
+LSYMC   SYN, (8)2660.0
+LIOD    SYN, (8)2734.0
+LREEL   SYN, (8)2735.0
+LIODRN  SYN, (8)3021.40
+LREELR  SYN, (8)3147.40
+LFINAL  SYN, (8)3170.0
+LERROR  SYN, (8)3241.0
+LOOPN   SYN, (8)2775.40
+
+        SLC, (8)2737.0
+
+LDECOD  SWAPI, 8, LTY, LIODX
+        LV, LIODX, 0.0($15)
+        LC, LIODX, 0.32($15)
+        BXCZ, LOVER
+        BB1, LOVBIT, LOVER
+        SWAPI, 3, LXPP, LNOSAV
+        TI, 3, LPPURF, LXPP
+        Z, 0.0(LXPP)
+        Z, 1.0(LXPP)
+LOVER   L(BU,64), 1.0(LIODX), 0.0
+        BB, LFINB, LINIT
+        BRZZ, LFINAL
+LFWA    L(BU,24), 1.0(LIODX), 0.0
+        K(BU,24), LIOD, 0.0
+        BAEZ, LIODRN
+        K(BU,24), LREEL, 0.0
+        BAEZ, LREELR
+        LCI, $15, 9.0
+        B, LERROR
+LINIT   L(BU,24), 1.0(LIODX)
+        SX, LXIO, LSAVEY
+        SX, LXFR, LSAVEZ
+        BRZ, LINITA+1.
+LINITA  CM0000(BU,1), LFINB, 0.0
+        CM0000, LINFAD
+        CM0000, LCOUNT
+        LX, LWORKX, LCLEAR
+        Z, 0.0(LWORKX)
+        CBR+, LWORKX, $-.32
+        LX, LXSU, LXSU
+        BXVZZ, LOOPU+1.
+        V-I, LXSU, LSYMU-1.
+        LC, LXSU, LXSU
+        Z, LSYMU
+LOOPU   Z, LSYMU(LXSU)
+        CB-, LXSU, LOOPU
+        LX, LXSC, LXSC
+        BXVZZ, LOOPC+1.
+        V-I, LXSC, LSYMC-1.
+        LC, LXSC, LXSC
+        Z, LSYMC
+LOOPC   Z, LSYMC(LXSC)
+        CB-, LXSC, LOOPC
+        LX, LXNT, LXNT
+        BXVZZ, LOOPN+1.
+        END, LDECOD

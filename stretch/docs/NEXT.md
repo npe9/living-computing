@@ -5395,6 +5395,56 @@ no opcode can rule it out. What ruled it out was the datum the name
 labels — which is a tell worth stating on its own: *when a name
 labels data, decode the data before trusting the name.*
 
+## PRINTED p.52 — THE DECODE PROGRAM ITSELF, 2026-10-23
+
+Forty-five rows of code. **Line 7 is `L DECOD` at 002737.00 — the
+entry printed p.47's linkage format names — and it opens with an
+eight-word `SWAPI`**, the largest in the corpus and the tenth caller.
+p.47's worked call passes A (the break-down area) and B (the mode),
+and lines 8 and 9 read exactly those two.
+
+**The IOD/REEL dispatch is four characters wide**: lines 19-25 load
+twenty-four bits of the card, compare against `L IOD` and `L REEL`,
+branch to `L IODRN` or `L REELR`, and otherwise flag 9 and go to
+`L ERROR`. Four BCD characters, so the comparison reads `IOD ` and
+`REEL` and no more.
+
+### A dds travels through a SYN across a page boundary
+
+Lines 36 and 37 are bare connectives with no data description
+written, and they differ only in a property carried from four pages
+away:
+
+```
+line 36   CM0000,L INFAD    prints 001000.00 F0   -- length ONE
+line 37   CM0000,L COUNT    prints 007000.00 F0   -- length SEVEN
+```
+
+`L INFAD` is p.48 line 52's `DD(BU,1),0` and `L COUNT` its line 49's
+`DRZ(BU,7),(1)`. C22-6531 p.31 is the rule, printed p.45 is where
+`strap_asm` learned it, and this is where it crosses a page.
+
+### This page is §13d at its thickest — and two rows are not the artifact
+
+The drum prints digit zero as C across whole rows here: line 24
+prints its own location as `CCCC11.37` and line 35 its operand as
+`C.O`, so the rows announce themselves. Five bytes were settled by
+**decode plus a row already checked elsewhere in the corpus** —
+`C2`→`02` (LCI's high nibble is zero; p.43 line 33's LVI prints
+`000005.07 01`), `FC`→`F0`, and `CA`/`C0`/`C8`→`0A`/`00`/`08` (p.40
+line 40's `Z,0.0($15)` prints `000000.22 0F`).
+
+**But lines 21 and 23 print `003021.76 C6` and `003147.76 C6` and
+both Cs are real** — p.43 line 43's `BAE,Q CK` prints `002447.76 C2`
+and is checked. What mattered on those rows is the **octal pair,
+which cannot hold a C**: `0o76` has bit 18 **set**, so `L IODRN` and
+`L REELR` are at `.40`, not `.00`.
+
+> Reading them as `.00` was this deck's first draft and three rows
+> failed. **The same page taught both halves of §13 in one pass: a C
+> that is a zero, and a C that is a C, told apart by which column it
+> sits in.**
+
 ## PRINTED p.51 — AND A BLANK COUNT MEASURED IN PIXELS, 2026-10-23
 
 TYPE SYMBOLS AND CODES, nine of them, plus the IOD AND REEL
