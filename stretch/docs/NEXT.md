@@ -5395,6 +5395,86 @@ no opcode can rule it out. What ruled it out was the datum the name
 labels — which is a tell worth stating on its own: *when a name
 labels data, decode the data before trusting the name.*
 
+## THE ASSIGN PROGRAM — printed pp.59-65 surveyed, and two of them are free, 2026-10-24
+
+The boot run's trail now points at `T ASIGN` (003701.00), and
+`decks/mcp_bootstrap_p27.strap` line 60 is `X241 B,T ASIGN`, so it is
+a genuine branch target despite the `T` prefix. **Printed p.65 line 6
+is 003701.00** — the bisection landed on the nose. Reaching it means
+pp.59-65, because `prosa.py` wants the range gapless.
+
+**Surveyed before transcribing, and the survey changes the estimate.**
+
+### printed p.59 and p.60 COMPILE NOTHING — they are p.47's shape
+
+`p.59` has 26 lines of which only line 1 (`003264.40 * SLC,$`)
+touches the counter. It is the section heading — *"I/O ASSIGNMENT
+--- ASSIGN ---"* — plus **THE ASSIGN PROGRAM LINKAGE FORMAT**,
+written out as a worked call exactly as p.47 does for DECODE:
+
+```
+         LVI,$15,Y
+         B,T ASIGN
+Y        XW,A,B,,C
+         BEW,$            RETURN LOCATION
+
+LET A = STATUS OF MACHINE
+    ZERO = NO MACHINE CONF. CHANGE
+    NOT ZERO = MACHINE CONF. CHANGE
+LET B = EXIT DISPOSITION
+LET C = MODE
+    ZERO = OVERLAP MODE
+    NOT ZERO = NOT OVERLAP MODE
+```
+
+That is the convention `X241` on printed p.27 uses, and it says what
+the caller must plant: a four-field `XW` and a `BEW,$` to come back
+to.
+
+`p.60` is *"SYN CARDS FOR THE LENGTHS OF THE THREE TABLES"* — six
+integer SYNs, and **the BINARY OUTPUT column prints `NULL` on every
+one**, which is the listing saying no word was compiled:
+
+```
+line  6  +00000024  NULL  T PPC   SYN,20
+line  7  +00000120  NULL  T IOC   SYN,80
+line  8  +00000062  NULL  T FRC   SYN,50   -THE FIRST REEL TABLE LENGHT
+line 10  +00000002  NULL  T UPPC  SYN,2    -NOT OVERLAP PP REF TABLE LENGTH
+line 11  +00000024  NULL  T UIOC  SYN,20   -NOT OVERLAP I/O REQ TABLE LENGTH
+line 12  +00000024  NULL  T UFRC  SYN,20   -NOT OVERLAPFIRST REEL TABLE LENGHT
+```
+
+The location column prints the resolved value in octal with a
+leading `+` and it checks: 20 = 0o24, 80 = 0o120, 50 = 0o62, 2 = 0o2.
+**These are INTEGER SYNs** — no dot — which is the classification
+printed p.48 forced `strap_asm` to get right (`sym_int`).
+
+**So both go in `NO_DECK_PAGES` beside p.47.** That is two of the
+seven pages for free, and it is the first time a *second* kind of
+no-deck page has turned up: p.47 and p.59 are documentation, p.60 is
+declarations the listing itself marks `NULL`.
+
+### And p.60's lengths are visible in p.62's addresses
+
+p.62's location column jumps by exactly those counts: line 7
+(003320.00) to line 8 (003344.00) is 0o24 = **20** = `T PPC`; line 28
+(003373.00) to line 29 (003513.00) is 0o120 = **80** = `T IOC`; line
+48 (003541.00) to line 51 (003623.00) is 0o62 = **50** = `T FRC`. So
+p.62 is where the three tables are reserved, and p.60's SYN cards are
+what size them. Those are `DR`-shaped holes, which is the ONE kind of
+hole `prosa.py` accepts — and it will want them declared as `DR`s,
+not left implicit.
+
+### What is left, and in what order
+
+* **p.61** — 56 lines, about 20 compiled, the rest SYNs: the ASSIGN
+  program's symbol declarations, including its index-register names
+  (lines 31-47 resolve to 000021-000032, which are words 17-26, i.e.
+  `$1`-`$10`).
+* **p.62** — the three tables and their not-overlap counterparts.
+* **pp.63, 64** — not yet surveyed.
+* **p.65** — `T ASIGN` is its line 6.
+
 ## PRINTED pp.55, 56 AND 57 — the gap closes and the image reaches p.58, 2026-10-24
 
 **123 rows, 122 of them bit-exact on the first run.** `prosa.py` is
