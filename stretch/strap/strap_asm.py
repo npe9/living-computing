@@ -1012,16 +1012,32 @@ def parse_dds(mod_text, lineno=None):
     return mode, length, bs
 
 
-def dr_count(stmt):
+def dr_count(stmt, symtab=None):
     """DR's dimension, written in parentheses: "DR(BU,64),(3)".
     C28-6129 Appendix B calls DR a Data Reservation and MCP writes it
-    with the count parenthesised; a bare count is accepted too."""
+    with the count parenthesised; a bare count is accepted too.
+
+    >>> THE DIMENSION MAY BE A SYMBOL, AND MCP'S ASSIGN PROGRAM
+    WRITES IT THAT WAY THROUGHOUT. <<<  This used to evaluate against
+    an EMPTY symbol table, so only a literal could ever resolve --
+    which was enough while every DR this project had read was
+    "DR(BU,64),(3)" or "DRZ(BU),100".  Printed p.62 is six rows of
+    "DRZ(BU,64),(T PPC)", "(T IOC)", "(T FRC)", "T UIOC-1" and
+    "T UFRC", whose counts are the six SYN cards on printed p.60 --
+    declared there with NULL in the binary column because a SYN
+    compiles nothing, and spent here.  "T UIOC-1" is an EXPRESSION in
+    a symbol, which is why this takes the whole symbol table and not
+    a lookup.
+
+    `symtab` is optional only so the two call sites can be read in
+    either order; both pass it."""
     if len(stmt.fields) != 1:
         raise AssemblerError("DR takes one dimension field", stmt.lineno)
     f = stmt.fields[0].strip()
     if f.startswith('(') and f.endswith(')'):
         f = f[1:-1]
-    n = eval_expr(f, {}, 0, lineno=stmt.lineno)
+    n = eval_expr(f, symtab if symtab is not None else {}, 0,
+                  lineno=stmt.lineno)
     if n < 1:
         raise AssemblerError(f"DR dimension {n} is not positive", stmt.lineno)
     return n
@@ -1722,7 +1738,7 @@ def statement_size(stmt, symtab=None):
         # and the printed value is its SIZE, exactly as DR's is.  Note
         # the count is written BARE there and parenthesised on p.21;
         # dr_count has always taken either.
-        return 0, dds_length_bits(stmt.mods, stmt.lineno, symtab) * dr_count(stmt)
+        return 0, dds_length_bits(stmt.mods, stmt.lineno, symtab) * dr_count(stmt, symtab)
     if op == 'VF':
         # >>> VF IS TWENTY-FIVE BITS, NOT A WHOLE HALF WORD, and the
         # size only ever showed as a half because everything that can
@@ -2420,7 +2436,7 @@ def emit_statement(stmt, symtab, image):
         # which builds a tape from the emitted words: a DR region is
         # absent from it and a DRZ region is a hundred zero words.
         width = dds_length_bits(stmt.mods, stmt.lineno, symtab)
-        for k in range(dr_count(stmt)):
+        for k in range(dr_count(stmt, symtab)):
             image.deposit(loc + k * width, width, 0)
         return
 

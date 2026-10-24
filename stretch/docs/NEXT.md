@@ -5395,6 +5395,88 @@ no opcode can rule it out. What ruled it out was the datum the name
 labels — which is a tell worth stating on its own: *when a name
 labels data, decode the data before trusting the name.*
 
+## PRINTED pp.61 AND 62 — and p.62 confirms eleven derivations from four earlier pages, 2026-10-24
+
+Thirty-two rows and seventy symbols between them, **all bit-exact on
+the first run.**
+
+`p.61` is the ASSIGN program's constants and index names; `p.62` is
+its three tables and their SYN cards.
+
+### >>> p.62 is the declaration page for what pp.55-58 had to infer <<<
+
+Those four pages were transcribed before this one was read. Each
+needed symbols it could only derive — from a length field's
+arithmetic, from an octal pair in a location, or from a row that
+wrote no dds at all. p.62 carries IBM's own SYN cards:
+
+| derived on | p.62's card |
+|---|---|
+| `T UNCT` (BU,8) 0.28 — pp.54, 58 | line 10 `SYN(BU,08),0.28` |
+| `T RJECT` 0.37 — p.58 | line 12 `SYN(BU,1),0.37` |
+| **`T LPPEN` (BU,1) 0.39 — p.58** | **line 14 `SYN(BU,1),0.39`** |
+| `T LREFN` (BU,12) 0.40 — p.56 | line 15 `SYN(BU,12),0.40` |
+| `T IODCT` (BU,12) 0.52 — p.56 | line 16 `SYN(BU,12),0.52` |
+| `T RLSYM` 0.11 — p.55 | line 35 `SYN(BU,7),0.11` |
+| `T LAST` 0.18 — pp.57, 58 | line 36 `SYN(BU,1),0.18` |
+| `T FREEL` 0.28 — p.56 | line 38 `SYN(BU,18),0.28` |
+| `T TYPE` (BU,4) 0.03 — pp.54, 55 | line 33 `SYN(BU,4),0.03` |
+| `T IOREQ` 003373.0 — pp.57, 58 | line 28, its own location |
+| `T UIORQ` 003514.0 — p.57 | line 41, its own location |
+
+**Eleven for eleven.** The `(BU,1)` on `T LPPEN` is worth naming
+twice: p.58 lines 31 and 35 write `CM0000,T LPPEN(L XPP)` with no dds
+on the statement, so the length could *only* come from the symbol,
+and the deck gave it `SYN(BU,1)` on that reasoning alone. Line 14 is
+that card.
+
+**And `T FREEL` and `T UNCT` are both 0.28 because they are in
+different tables.** p.56's deck recorded that as *"a coincidence
+worth not re-deriving later"*. `T UNCT` is in the PP REFERENCE
+TABLE's SYN block (lines 9-17); `T FREEL` is in the I/O REQUEST
+TABLE's (lines 30-39). The page shows it rather than arguing it.
+
+### p.61's one XW predicted two addresses on p.62
+
+p.61 line 19 is `T SAV XW,T PREFT,T PPC,T PPREF` compiling
+`003317.00+ 000 000024 003314`. p.62 line 6 defines `T PREFT` at
+003317.00 and line 3 defines `T PPREF` at 003314.00. Both to the bit,
+from a row on the page before — and the count group `000024` = 20 is
+p.60's `T PPC SYN,20`, which p.60 itself prints with `NULL` because a
+SYN compiles nothing.
+
+### `(.39)1` places a value at a bit, and `T LPPEN` is bit .39
+
+p.62 line 21 is `XW,0(.39)1`, commented *"-NECESSARY FOR LAST ENTRY
+BIT"*, compiling `000000.00+ 000 000100 000000`. An XW's third group
+is its 18-bit count field at bits 28-45, so bit .39 is offset eleven
+within it and a 1 there is 2^6 = 0o100. Line 14 says what bit .39 is:
+`T LPPEN ... -LAST ENTRY BIT`. The XW and the SYN card agree about
+which bit, and each comment names the same thing. Moving it to
+`(.38)1` prints `000200` — the encoding is legible because the octal
+doubles.
+
+### One assembler gap, forced by this page
+
+**`dr_count` evaluated its dimension against an EMPTY symbol table**,
+so only a literal could resolve. That was enough while every `DR`
+this project had read was `DR(BU,64),(3)` or `DRZ(BU),100`. p.62 has
+six rows of `DRZ(BU,64),(T PPC)` and the like — the counts are p.60's
+six SYN cards — and line 42 is `T UIOC-1`, an **expression** in a
+symbol. `dr_count` now takes the symbol table.
+
+That `-1` is load-bearing in four places: its injection moves
+`T FSTRE` and `T UFRE`, changes line 43's VF from `000000.40+` to
+`000000.00+`, and changes line 47's CNOP from `000000.30 00` to
+`000000.00 00` because it no longer has to pad.
+
+### Where the range stands
+
+pp.61 and 62 are **not in the image yet** — pp.63, 64 and 65 are
+still unread and `prosa.py` wants it gapless. p.62 ends at 003647.00
+(line 51's `DRZ(BU,64),T UFRC`, 20 words from 003623.00), so p.63
+starts there. `T ASIGN` is p.65 line 6.
+
 ## THE ASSIGN PROGRAM — printed pp.59-65 surveyed, and two of them are free, 2026-10-24
 
 The boot run's trail now points at `T ASIGN` (003701.00), and

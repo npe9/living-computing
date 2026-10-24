@@ -5005,6 +5005,37 @@ run "the CHANNEL SYMBOL TABLE SEARCH, printed p.55, bit-exact (MCP_Mar63 PDF p.6
 run "the REEL CARD and FINAL routines, printed p.56, bit-exact (MCP_Mar63 PDF p.63)" python3 verify_mcp_bootstrap_p56.py
 run "the IOREQ SEARCH AND SORT, printed p.57, bit-exact (MCP_Mar63 PDF p.64)" python3 verify_mcp_bootstrap_p57.py
 run "the ASSIGN program's CONSTANTS and INDEX NAMES, printed p.61, bit-exact (MCP_Mar63 PDF p.68)" python3 verify_mcp_bootstrap_p61.py
+run "the ASSIGN program's THREE TABLES and their SYN cards, printed p.62, bit-exact (MCP_Mar63 PDF p.69)" python3 verify_mcp_bootstrap_p62.py
+# >>> THIS PAGE DECLARES WHAT FOUR EARLIER PAGES HAD TO DERIVE, AND
+# ELEVEN FOR ELEVEN ARE CONFIRMED. <<<  T UNCT (BU,8) 0.28, T RJECT
+# 0.37, T LPPEN (BU,1) 0.39, T LREFN (BU,12) 0.40, T IODCT (BU,12)
+# 0.52, T RLSYM 0.11, T LAST 0.18, T FREEL 0.28, T TYPE (BU,4) 0.03,
+# T IOREQ 003373.0 and T UIORQ 003514.0 were each INFERRED on
+# printed pp.55-58 -- from a length field's arithmetic, from an octal
+# pair in a location, or from a row that wrote no dds at all.  Here
+# are IBM's own SYN cards for them and every value agrees.
+#
+# THE (BU,1) ON T LPPEN IS THE ONE WORTH NAMING TWICE.  printed p.58
+# lines 31 and 35 write "CM0000,T LPPEN(L XPP)" with NO dds on the
+# statement, so the length could only come from the symbol, and the
+# deck gave it SYN(BU,1) on that reasoning alone.  Line 14 here is
+# that card.  A derivation forced by two rows, confirmed four pages
+# later by the declaration.
+#
+# AND T FREEL AND T UNCT ARE BOTH 0.28 BECAUSE THEY ARE IN DIFFERENT
+# TABLES -- p.56's deck called that "a coincidence worth not
+# re-deriving later", and this page shows it: T UNCT is in the PP
+# REFERENCE TABLE's SYN block, T FREEL in the I/O REQUEST TABLE's.
+#
+# THE ASSEMBLER GAINED ONE THING FOR THIS PAGE, and it is in
+# strap_asm.py rather than here: dr_count now evaluates its dimension
+# against the SYMBOL TABLE.  It used an EMPTY one, so only a literal
+# could ever resolve -- enough while every DR this project had read
+# was "DR(BU,64),(3)" or "DRZ(BU),100".  Six rows here are
+# "DRZ(BU,64),(T PPC)" and the like, whose counts are printed p.60's
+# six SYN cards, and line 42 is "T UIOC-1", an EXPRESSION in a
+# symbol.  Its injection fails four ways: two symbols move, a VF
+# changes and a CNOP stops having to pad.
 # >>> THE FIRST PAGE OF THE ASSIGN PROGRAM THAT COMPILES ANYTHING.
 # <<<  printed p.59 and p.60 are its heading, its LINKAGE FORMAT and
 # its table-length SYN cards, and NEITHER COMPILES A WORD -- p.60's

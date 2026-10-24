@@ -1,0 +1,203 @@
+! MCP INITIALIZATION, printed p.62 (MCP_Mar63_001-249 PDF p.69) --
+! THE ASSIGN PROGRAM'S THREE TABLES AND THEIR SYN CARDS.
+!
+! Fifty-six lines: eighteen compile, twenty-one are SYN cards and the
+! rest are comments.  Four boxed headings divide it, and the listing
+! names each:
+!
+!   lines 23-25  "SYN CARDS FOR THE I/O REQUEST TABLE"
+!   lines 44-46  "SYN CARDS FOR THE FIRST REEL NUMBER TABLE"
+!   lines 52-54  "SYN CARDS FOR THE CHANNEL/UNIT STATUS TABLE"
+!
+! (printed p.61's own lines 54-56 head the first block, "SYN CARDS
+! FOR THE PP REFERENCE TABLE", whose cards are lines 9-17 here.)
+!
+! >>> THIS IS THE PAGE THAT DECLARES WHAT FOUR EARLIER PAGES HAD TO
+! DERIVE, AND EVERY DERIVATION IS CONFIRMED. <<<
+!
+! pp.55-58 were transcribed before this one was read.  Each needed
+! symbols it could only infer -- from a length field's arithmetic,
+! from an octal pair in a location, from a row that wrote no dds at
+! all.  Here are IBM's own SYN cards for them:
+!
+!   line 10  T UNCT  SYN(BU,08),0.28   <- p.54 and p.58 derived
+!                                         (BU,8) and 0.28
+!   line 12  T RJECT SYN(BU,1),0.37    <- p.58 derived 0.37
+!   line 14  T LPPEN SYN(BU,1),0.39    <- p.58 FORCED the (BU,1),
+!                                         from two rows that write
+!                                         the operation bare
+!   line 15  T LREFN SYN(BU,12),0.40   <- p.56 derived (BU,12) from
+!                                         014000/512 = 12
+!   line 16  T IODCT SYN(BU,12),0.52   <- p.56 derived the same way
+!   line 35  T RLSYM SYN(BU,7),0.11    <- p.55 derived 0.11
+!   line 36  T LAST  SYN(BU,1),0.18    <- p.57 and p.58 derived 0.18
+!   line 38  T FREEL SYN(BU,18),0.28   <- p.56 derived 0.28
+!   line 33  T TYPE  SYN(BU,4),0.03    <- p.54 derived 0.3, and p.55
+!                                         line 5's ST(BU,4) the width
+!   line 28  T IOREQ DRZ(BU,64),(T IOC) at 003373.00
+!                                      <- pp.57 and 58 derived
+!                                         (8)3373.0
+!   line 41  T UIORQ XW,0 at 003514.00 <- p.57 derived (8)3514.0
+!
+! ELEVEN FOR ELEVEN.  The (BU,1) on T LPPEN is the one worth naming
+! twice: printed p.58 lines 31 and 35 write "CM0000,T LPPEN(L XPP)"
+! with no dds on the statement, so the length could ONLY come from
+! the symbol, and the deck gave it SYN(BU,1) on that reasoning alone.
+! Line 14 here is that card.
+!
+! >>> AND T FREEL AND T UNCT ARE BOTH 0.28 BECAUSE THEY ARE IN
+! DIFFERENT TABLES, WHICH THIS PAGE SHOWS RATHER THAN ARGUES. <<<
+! decks/mcp_bootstrap_p56.strap recorded that as "a coincidence worth
+! not re-deriving later".  T UNCT is in the PP REFERENCE TABLE's SYN
+! block (lines 9-17) and T FREEL is in the I/O REQUEST TABLE's
+! (lines 30-39).  Two tables, one offset.
+!
+! ---------------------------------------------------------------
+! printed p.61's ONE XW PREDICTED TWO ADDRESSES ON THIS PAGE
+! ---------------------------------------------------------------
+! p.61 line 19 is "T SAV XW,T PREFT,T PPC,T PPREF" compiling
+! 003317.00+ 000 000024 003314.  Here line 6 defines T PREFT at
+! 003317.00 and line 3 defines T PPREF at 003314.00.  Both to the
+! bit, from a row on the page before.
+!
+! ---------------------------------------------------------------
+! "(.39)1" PLACES A VALUE AT A BIT, AND T LPPEN IS BIT .39
+! ---------------------------------------------------------------
+! Line 21 is "XW,0(.39)1" commented "-NECESSARY FOR LAST ENTRY BIT",
+! and compiles 000000.00+ 000 000100 000000.  An XW's third group is
+! its eighteen-bit COUNT field at bits 28-45, so bit .39 is offset
+! eleven within it, and a 1 there is 2^6 = 0o100.  THE PRINTED VALUE
+! IS 000100.
+!
+! AND LINE 14 SAYS WHAT BIT .39 IS: "T LPPEN SYN(BU,1),0.39 -LAST
+! ENTRY BIT".  So the XW and the SYN card agree about which bit, and
+! the comment on each names the same thing.  Line 6's "(.39)9" is the
+! same construction with a nine: 0o1100.
+!
+! ---------------------------------------------------------------
+! THE THREE TABLES, SIZED BY printed p.60 AND SPENT HERE
+! ---------------------------------------------------------------
+!   line  7  DRZ(BU,64),(T PPC)    000024.00  = 20   PP REFERENCE
+!   line  8  DRZ(BU,64),(T PPC)    000024.00  = 20   ... second half
+!   line 28  DRZ(BU,64),(T IOC)    000120.00  = 80   I/O REQUEST
+!   line 42  DRZ(BU,64),T UIOC-1   000023.00  = 19   not-overlap I/O
+!   line 48  DRZ(BU,64),(T FRC)    000062.00  = 50   FIRST REEL
+!   line 51  DRZ(BU,64),T UFRC     000024.00  = 20   not-overlap reel
+!
+! p.60's six SYN cards are 20, 80, 50, 2, 20 and 20, printed there
+! with NULL in the binary column.  Every one is spent on this page,
+! and line 42's "T UIOC-1" is why the not-overlap I/O table is
+! NINETEEN words where its SYN card says twenty.
+!
+! ROWS DELIBERATELY ABSENT, as printed p.24 established: a DRZ row
+! prints its SIZE and not a word, and a SYN row prints its VALUE.
+! The sizes are listed above and the SYN values are checked in
+! SYMBOLS, which is the stronger place for them.
+!
+! FIVE LISTING MARKS: lines 7, 28, 42, 48 and -- the page's own first
+! compiled row is line 2, which carries none.
+
+        SLC, (8)3313.0
+
+! ---- printed p.60's table lengths ---------------------------------
+TPPC    SYN, 20
+TIOC    SYN, 80
+TFRC    SYN, 50
+TUPPC   SYN, 2
+TUIOC   SYN, 20
+TUFRC   SYN, 20
+! ---- from pages already transcribed -------------------------------
+SXCHAN  SYN, (8)2152.0
+
+        SLC, (8)3313.0
+
+! ---- the PP REFERENCE TABLE ---------------------------------------
+TPPURF  XW, TPURFT, TUPPC, $         ! line 2  -CONSTANT IX FOR THE
+                                      !           NOT OVERLAP TBL
+TPPREF  XW, TPREFT, TPPC, $          ! line 3  -CONSTANT IX FOR THE
+                                      !           PP REF TBL
+TPPRUN  XW, TPREFT, TPPC, TPPREF     ! line 4  -THE NEXT JOB TO BE
+                                      !           RUN POINTER
+        XW                           ! line 5  -A BLANK WORD MUST
+                                      !           PRECEED THE PP REF
+TPREFT  XW, TIOREQ, 0, (.39)9        ! line 6  -INITIAL ENTRY WITHIN
+                                      !           THE PP REF TBL
+        DRZ(BU,64), (TPPC)           ! line 7  -THE PP REFERENCE TABLE
+        DRZ(BU,64), (TPPC)           ! line 8  -THE PP REFERENCE
+                                      !           TABLE SECOND HALF
+TCRREF  SYN(BU,18), 0.0              ! line 9  -THE CROSS REFERENCE
+                                      !           ADDRESS
+TUNCT   SYN(BU,08), 0.28             ! line 10 -I/O REQUEST COUNT
+TJBPRO  SYN(BU,1), 0.36              ! line 11 -JOB PROCESSED BIT
+TRJECT  SYN(BU,1), 0.37              ! line 12 -JOB REJECTED BIT
+TASGNP  SYN(BU,1), 0.38              ! line 13 -JOB ASSIGNED BIT
+TLPPEN  SYN(BU,1), 0.39              ! line 14 -LAST ENTRY BIT
+TLREFN  SYN(BU,12), 0.40             ! line 15 -IF GO TYPE PP - THE
+                                      !           LARGEST REF NO.
+TIODCT  SYN(BU,12), 0.52             ! line 16 -THE NUMBER OF IODS
+                                      !           PER PP
+TPNAME  SYN(BU,48,6), 1.0            ! line 17 -NAME OF PP 8 BCD-6
+                                      !           CHAR
+TPURFT  XW, 0                        ! line 19 -NOT OVERLAP PP REF
+                                      !           WORD NO. 1
+        XW, 0                        ! line 20 -NOT OVERLAP PP REF
+                                      !           WD NO. 2
+        XW, 0(.39)1                  ! line 21 -NECESSARY FOR LAST
+                                      !           ENTRY BIT
+
+! ---- SYN CARDS FOR THE I/O REQUEST TABLE --------------------------
+        CNOP                         ! line 27
+TIOREQ  DRZ(BU,64), (TIOC)           ! line 28 -I/O REQUEST TABLE
+        VF, 0.32                     ! line 29 -DO NOT REMOVE -
+                                      !           MARKS LAST WORD
+TASGNI  SYN(BU,1), 0.00              ! line 30 -I/O ASSIGNED INDICATOR
+TUNOBT  SYN(BU,1), 0.01              ! line 31 -NOT OVERLAP BIT
+TPRINT  SYN(BU,1), 0.02              ! line 32 -I/O REQ PRINTED TO
+                                      !           OPERATOR BIT
+TTYPE   SYN(BU,4), 0.03              ! line 33 -TYPE OF REQUEST
+TABSUN  SYN(BU,3), 0.07              ! line 34 -UNIT NUMBER
+TRLSYM  SYN(BU,7), 0.11              ! line 35 -THE SYMBOLIC CHANNEL
+                                      !           NUMBER
+TLAST   SYN(BU,1), 0.18              ! line 36 -LAST WORD OF THE I/O
+                                      !           REQ TABLE
+TIODSQ  SYN(BU,9), 0.19              ! line 37 -IOD SEQUENCE NUMBER
+                                      !           AS RECEIVED
+TFREEL  SYN(BU,18), 0.28             ! line 38 -THE FIRST REEL ADDRESS
+TABSCH  SYN(BU,18), 0.46             ! line 39 -THE ABSOLUTE CHANNEL
+                                      !           ADDRESS
+TUIORQ  XW, 0                        ! line 41 -THE NOT OVERLAP I/O
+                                      !           REQ TBL
+        DRZ(BU,64), TUIOC-1          ! line 42
+        VF, 0.32                     ! line 43 -DO NOT REMOVE -
+                                      !           MARKS LAST WORD
+
+! ---- SYN CARDS FOR THE FIRST REEL NUMBER TABLE --------------------
+        CNOP                         ! line 47
+TFSTRE  DRZ(BU,64), (TFRC)           ! line 48 -THE FIRST REEL TABLE
+TREELN  SYN(BU,48), 0.00             ! line 49 -A REEL NUMBER FOR A
+                                      !           GIVEN UNIT
+TUFRE   DRZ(BU,64), TUFRC            ! line 51 -THE NOT OVERLAP FIRST
+                                      !           REEL TABLE
+
+! ---- SYN CARDS FOR THE CHANNEL/UNIT STATUS TABLE ------------------
+TCHSXW  SYN, SXCHAN                  ! line 56 -INDEX WORD FOR CHAN
+                                      !           STAT TBL
+        END, TPPURF
+
+! ---------------------------------------------------------------
+! THE CHECKED ROWS -- the twelve that compile a word.  The six DRZ
+! rows print a SIZE and the twenty-one SYNs print a VALUE; both are
+! handled as printed p.24 established.
+! ---------------------------------------------------------------
+!   line  2  003313.00  003370.00+ 000 000002 003313   T PPURF XW
+!   line  3  003314.00  003317.00+ 000 000024 003314   T PPREF XW
+!   line  4  003315.00  003317.00+ 000 000024 003314   T PPRUN XW
+!   line  5  003316.00  000000.00+ 000 000000 000000   XW
+!   line  6  003317.00  003373.00+ 000 001100 000000   T PREFT XW
+!   line 19  003370.00  000000.00+ 000 000000 000000   T PURFT XW,0
+!   line 20  003371.00  000000.00+ 000 000000 000000   XW,0
+!   line 21  003372.00  000000.00+ 000 000100 000000   XW,0(.39)1
+!   line 29  003513.00  000000.40+                     VF,0.32
+!   line 41  003514.00  000000.00+ 000 000000 000000   T UIORQ XW,0
+!   line 43  003540.00  000000.40+                     VF,0.32
+!   line 47  003540.40  000000.30 00                   CNOP
