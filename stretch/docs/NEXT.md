@@ -5395,6 +5395,134 @@ no opcode can rule it out. What ruled it out was the datum the name
 labels — which is a tell worth stating on its own: *when a name
 labels data, decode the data before trusting the name.*
 
+## PRINTED p.58 IS TRANSCRIBED — the page the boot run was stopping at, 2026-10-24
+
+THE DISPATCHER'S TWO RETURNS. Thirty-two compiled rows out of
+forty-two lines (5-6 and 12-41), bit-exact. The run had been ending
+by branching into zeroed storage at 003237.40 — printed p.54's
+`L NORM SYN,(8)3237.40` — and **line 5 is that symbol**.
+
+### It was found by bisecting the location column, not by reading code
+
+MCP's listing is in address order, so the LOCATION column alone
+answers "which page defines this?". Three renders at 600 dpi:
+
+```
+printed p.55  line 6 = 003112.40 ... line 21 = 003125.40
+printed p.57  line 6 = 003212.00 ... line 21 = 003223.40
+printed p.57  line 38 003237.00   003237.50 00        B,L NORM
+printed p.58  line  5 003237.40   002571.00 80  000023.20 E0   L NORM  SWAPI,8,L TY,L IODX
+```
+
+p.57's **last** compiled line is a branch to the very next half
+word. About 0o50 words a page is the rate; the column restarting at
+printed pp.63, 105 and 111 is the only thing that can break the
+bisection.
+
+### What the page is
+
+Two exits from one dispatcher, named by the listing's own comments:
+`L NORM` (003237.40) is "-SWAP 8 INDICES." then "-DISPATCHER NORMAL
+RETURN."; `L ERROR` (003241.00) heads the ERROR RETURN ROUTINE, which
+zeroes this program's IOREQ and FREEL slots, sets the reject bit,
+steps the PPREF index and ends at "-DISPATCHER ERROR RETURN."
+
+**Both return through `$15` and they differ by a half word** — line 6
+is `B,2.0($15)`, line 41 is `B,1.32($15)`. The caller plants a
+two-word linkage and the callee picks the arm, which is the same
+convention printed p.43 line 54 uses to return from `S CA6`. And
+**lines 5 and 39 are the same instruction to the bit**
+(`SWAPI,8,L TY,L IODX` → `002571.00 80 000023.20 E0`): the error path
+rejoins the normal path's index restore, then takes the other return.
+
+### Sixteen stand-ins re-derived from this page's own binary, all sixteen agreeing
+
+Each had been given a value by an earlier deck from a different page.
+Each was re-derived here from p.58's printed binary alone — an index
+number out of an opcode byte's low nibble, a bit offset out of a
+location's octal pair — before the existing values were looked at.
+`L TY`, `L IODX`, `L XPP`, `L XIO`, `L XFR`, `L XNT`, `L WORKX`,
+`L FINB`, `L OVBIT`, `L SAVEY`, `L SAVEZ`, `L NOSAV`, `T UNCT`,
+`T LPPEN`, `L NORM`, `L ERROR`.
+
+**The sharpest is `L XNT`.** Line 23 is `SC,L XNT,L XNT` and pins it
+twice in one row: the address is `000031` = word 0o31 = 16+9, and the
+J field `.23` = 010011 has bits 19-22 = 1001. Two independent fields
+of the same printed half-word giving 9.
+
+Five symbols are new and derived here: `L SAVE` (8)2602.0 — lines 13
+and 36 are the save and the restore of one index at the same address,
+differing only in bit 23 — plus `T IOREQ`, `T LAST`, `T RJECT` and
+`LASTPP`.
+
+### Thirty of thirty-two were bit-exact first try; the other two are the finding
+
+Lines 31 and 35 failed with `000000` where the listing prints
+`001000` in the second group — the **field length**.
+
+**This page is the first that writes the operation BARE.** printed
+p.53 and printed p.57 only ever write
+`CM1111(BU,1),T LPPEN(L XPP)`, with the dds on the statement, so
+`T LPPEN`'s own dds never had to exist. Lines 31 and 35 are
+`CM0000,T LPPEN(L XPP)` and `CM1111,T LPPEN(L XPP)` with nothing on
+the statement, and a bare VFL statement takes its operand symbol's
+dds — C22-6531 printed p.31 again, the same sentence that has now
+cost four separate corrections.
+
+So `T LPPEN` is `SYN(BU,1)`, and **the listing is what says so**: line
+30's `CM1111(BU,1),T RJECT(L XPP)` and line 35's bare
+`CM1111,T LPPEN(L XPP)` print the same second group, `001000.36 F0`.
+`decks/mcp_bootstrap_p53.strap` got the same change in the same
+commit — `merge` treats two identical SYNs as a confirmation and two
+that disagree as a hard failure, so the pair has to move together.
+
+### `.22` means three different things on this page
+
+Lines 19, 20, 24, 25 and 29 all print `.22` in their first address
+group, and it is not the same field:
+
+* line 19 `LX,L XNT,0.0(L WORKX)` — the **J field** (1001 = 9), with
+  the modifying index in the opcode byte (`1A` → 10).
+* line 20 `BZB,T LAST(L WORKX)` — a **bit address**, 0o22 = 18.
+* lines 24, 25, 29 `Z,0.0(index)` — **constant**. All three print
+  `000000.22` and differ only in the opcode byte (09, 0A, 04), so the
+  index is carried there.
+
+The first reading tried to make `.22` an index field and could not:
+two rows naming different index registers print the same `.22`.
+
+### Four injections, all caught
+
+`L SAVE` +1 → 2 FAIL (lines 13, 36); `T LPPEN` loses its dds → 2 FAIL
+(lines 31, 35); `T LAST` 0.18→0.17 → 1 FAIL (line 20); `L IODX`
+$3→$2 → 2 FAIL (lines 5, 39, the page's two SWAPIs).
+
+### >>> AND IT IS NOT IN THE IMAGE YET, WHICH IS THE NEXT JOB <<<
+
+Adding p.58 to `mcp_image.MCP_IPL_PAGES` makes `prosa.py` refuse the
+record, correctly:
+
+```
+prosa.py: printed pp.15-36 do not account for every word.
+  words MISSING with no reservation: 003106 ... 003236
+```
+
+That hole is **printed pp.55, 56 and 57**, which have code on them
+and have not been read. `prosa.py` allows exactly one kind of hole —
+a reservation **proved by a `DR` in the listing**, storage the
+program means to leave as the loader found it — and three unread
+pages are not that. Declaring them reserved would be precisely the
+lie that check exists to catch.
+
+**So pp.55-57 are the next three transcriptions**, and when they land
+the range becomes `range(15, 59)` and p.58 joins with them. Until
+then p.58 stands on its own verifier, which needs no image. The run
+still stops at 003237.40 — the page is transcribed, not yet loaded.
+
+What is already legible of p.57: `L SEARE`, `L SEARG`, `L SKIP`,
+`L FIN3`, and an IOREQ search loop whose line 22 is
+`SWAPI,1,0.0(L WORKX),0.0(L IODX)  -SWAP IOREQ`.
+
 ## >>> MCP ACCEPTS ITS IOD CARD. SIXTY-FOUR IS NOT A MULTIPLE OF SIX, 2026-10-24 <<<
 
 **The model was refusing a store IBM's operating system depends on,

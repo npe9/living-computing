@@ -303,6 +303,31 @@ def build(verbose=False, pages=None, end_at='XIPLBS'):
 # forgot, which is why it is named here.
 NO_DECK_PAGES = {47}
 
+# >>> printed p.58 IS TRANSCRIBED AND IS DELIBERATELY NOT IN THIS
+# RANGE YET, 2026-10-24. <<<
+#
+# decks/mcp_bootstrap_p58.strap is bit-exact, 32 of 32 rows, and it
+# DEFINES the two symbols the boot run stops at -- L NORM (003237.40)
+# and L ERROR (003241.00).  Adding it here is one edit.  It is not
+# made yet because prosa.py REFUSES THE RESULT, and refuses it
+# correctly:
+#
+#   prosa.py: printed pp.15-36 do not account for every word.
+#     words MISSING with no reservation: 003106 ... 003236
+#
+# That hole is printed pp.55, 56 and 57, which have code on them and
+# have not been read.  prosa.py's contract is that the only
+# legitimate hole is a RESERVATION PROVED BY A `DR` IN THE LISTING --
+# storage the program means to leave as the loader found it.  Three
+# untranscribed pages are not that, and declaring them reserved would
+# be precisely the lie that check exists to catch: a missing word
+# reads as zero and a zero half word is BRANCH ENABLED to location
+# zero.
+#
+# SO THE RANGE IS CONTIGUOUS OR IT IS NOTHING.  pp.55-57 are the next
+# three transcriptions, and when they land this becomes
+# `range(15, 59)` and p.58 joins with them.  Until then p.58 stands
+# on its own verifier, which needs no image.
 MCP_IPL_PAGES = [
     (DECK("mcp_bootstrap_p%d.strap" % n), "printed p.%d" % n)
     for n in range(15, 55) if n not in NO_DECK_PAGES

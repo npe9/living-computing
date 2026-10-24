@@ -5000,6 +5000,37 @@ run "THE BREAKDOWN ROUTINE, printed p.45, bit-exact (MCP_Mar63 PDF p.52)" python
 # had recorded.  The byte is 00; printed p.43 line 50's "B,Q CHK"
 # prints 002454.10 00 for the same shape.
 run "the DISK-TRACK CHECK and TAPE IOD routines, printed p.54, bit-exact (MCP_Mar63 PDF p.61)" python3 verify_mcp_bootstrap_p54.py
+run "the DISPATCHER'S TWO RETURNS, printed p.58, bit-exact (MCP_Mar63 PDF p.65)" python3 verify_mcp_bootstrap_p58.py
+# >>> THE PAGE THE BOOT RUN WAS STOPPING AT. <<<  Until 2026-10-24
+# the run ended by branching into zeroed storage at 003237.40 --
+# printed p.54's "L NORM  SYN,(8)3237.40", a stand-in for a page that
+# had not been read.  This is that page, and line 5 is that symbol.
+# It was FOUND BY BISECTING THE LOCATION COLUMN rather than by
+# reading code: printed p.57's last compiled line (38) is
+# "003237.00 | 003237.50 00 | B,L NORM", a branch to the very next
+# half word, and printed p.58 line 5 is where it lands.
+#
+# THIRTY-TWO ROWS, THIRTY OF THEM BIT-EXACT ON THE FIRST RUN.  The
+# two that were not are the finding -- see the deck header and the
+# verifier docstring: lines 31 and 35 write "CM0000,T LPPEN(L XPP)"
+# BARE, and a bare VFL statement takes its operand symbol's dds, so
+# T LPPEN had to become SYN(BU,1).  printed p.53 and p.57 only ever
+# write the dds on the statement, which is why three pages could use
+# the symbol without its own dds ever having to exist.
+#
+# SIXTEEN STAND-INS FROM pp.51-54 RE-DERIVED FROM THIS PAGE'S BINARY,
+# all sixteen agreeing, and two of them (L NORM, L ERROR) DEFINED
+# here.  The sharpest is L XNT: line 23's "SC,L XNT,L XNT" pins it
+# twice in one row -- the address is 000031 = word 0o31 = 16+9, and
+# the J field ".23" is 1001.
+#
+# AND IT IS NOT IN THE IMAGE YET, DELIBERATELY.  strap/mcp_image.py
+# carries the reason in full: adding it makes prosa.py refuse the
+# record, because printed pp.55, 56 and 57 are untranscribed and
+# 003106-003236 would be a silent hole.  prosa.py allows exactly one
+# kind of hole -- a reservation proved by a `DR` in the listing --
+# and three unread pages are not that.  pp.55-57 are the next three
+# transcriptions; this page stands on its own verifier until then.
 # >>> IT CONFIRMS TWO MORE OF printed p.53's STAND-INS: L CODE at
 # 003042.00 and L IODTP at 003077.00. <<<
 #
