@@ -1,0 +1,65 @@
+! mcp_bootstrap_p50.strap -- the count table and the INTERNAL DECODE
+! TABLES, printed page 50.  docs/MCP_Mar63_001-249.pdf PDF p.57,
+! header "PAGE NUMBER 50".  docs/boot_plan.md M3.
+!
+! >>> THREE OF PRINTED p.48's STAND-INS LAND HERE. <<<
+!
+!   L SYMU  002620.00  line 36, DRZ(BU),(32)
+!   L SYMC  002660.00  line 38, DRZ(BU),(16)
+!   L NTPU  002700.00  line 39, DRZ(BU),(16)
+!
+! -- the three tables printed p.48 lines 15-17 and 26-28 build
+! refilling index words over.  Each one's SIZE is what puts the next
+! one where p.48 said it would be, so this page checks p.48's
+! arithmetic as much as its own.  L DISK, p.48's fourth stand-in at
+! 002723.00, is still forward.
+!
+! ---------------------------------------------------------------
+! THE LISTING PRINTS A SYMBOL'S CLASSIFICATION, AND THIS PAGE IS
+! WHERE THAT BECAME VISIBLE
+! ---------------------------------------------------------------
+! Lines 37 and 40 are both one-bit SYNs and the listing puts their
+! values in DIFFERENT COLUMNS:
+!
+!   line 37  000000.61+                 L RLBIT  SYN(BU,1),0.49
+!   line 40  000000.00+   +00000077     L ZBIT   SYN(BU,1),63
+!
+! A BIT ADDRESS goes in the LOCATION column (0o61 is 49) and an
+! INTEGER goes in the INTEGER column (0o77 is 63) with the location
+! left at zero.  That is C22-6531 printed p.31's "its bit address or
+! INTEGER CLASSIFICATION" shown rather than stated -- and it is the
+! same distinction printed p.48 forced strap_asm.py to learn a page
+! earlier, when a count SYNned to 80 was being scaled as a bit
+! address and came out as one.  THE LISTING HAD BEEN PRINTING THE
+! ANSWER ALL ALONG, in a column this project had not had a reason to
+! read.
+!
+! ---------------------------------------------------------------
+! SUBSTITUTIONS
+! ---------------------------------------------------------------
+! (1) BLANKS INSIDE SYMBOL NAMES ARE DROPPED, as on every page since
+!     p.2: L CT, L SYMU, L RLBIT, L SYMC, L NTPU and L ZBIT.
+!
+! (2) NOTHING ELSE.  The two DD rows are written with all thirty-one
+!     values as printed, and the listing gives one output row per
+!     value, 001 through 037.
+
+        SLC, (8)2614.0
+
+! ---- the count table: thirty-one bytes, 1 through 31 --------------
+LCT     DD(BU,8),1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16      ! line 1
+        DD(BU,8),17,18,19,20,21,22,23,24,25,26,27,28,29,30,31 ! line 17
+
+! ---- INTERNAL DECODE TABLES ----------------------------------------
+        CNOP                        ! line 35
+LSYMU   DRZ(BU), (32)               ! line 36 -SYMBOLIC UNIT TABLE
+LRLBIT  SYN(BU,1), 0.49             ! line 37 -THE REEL ENTERED BIT
+LSYMC   DRZ(BU), (16)               ! line 38 -SYMBOLIC CHANNEL TABLE
+LNTPU   DRZ(BU), (16)               ! line 39 -NON TAPE TABLE
+LZBIT   SYN(BU,1), 63               ! line 40 -INFINITY BIT
+
+        END, LCT
+
+! ---------------------------------------------------------------
+! AND ONE LISTING MARK, the bare "*" after the location that every
+! page since printed p.3 carries: line 36 ("002620.00 *").

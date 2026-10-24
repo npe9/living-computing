@@ -4910,6 +4910,43 @@ run "THE BREAKDOWN ROUTINE, printed p.45, bit-exact (MCP_Mar63 PDF p.52)" python
 # byte -- so it is a per-ROW artifact and not the per-glyph one 13
 # had recorded.  The byte is 00; printed p.43 line 50's "B,Q CHK"
 # prints 002454.10 00 for the same shape.
+run "the count table and the INTERNAL DECODE TABLES, printed p.50, bit-exact (MCP_Mar63 PDF p.57)" python3 verify_mcp_bootstrap_p50.py
+# >>> THREE OF PRINTED p.48's STAND-INS LAND HERE: L SYMU 002620.00,
+# L SYMC 002660.00, L NTPU 002700.00. <<<  They are the three tables
+# p.48 lines 15-17 and 26-28 build refilling index words over, and
+# each one's SIZE is what puts the next where p.48 said it would be,
+# so this page checks p.48's arithmetic as much as its own.  The
+# merge now reports 222 stand-ins checked and 35 external, from 219
+# and 38.
+#
+# >>> AND THE LISTING PRINTS A SYMBOL'S CLASSIFICATION, which is the
+# thing printed p.48 had just cost an assembler fix to learn. <<<
+#
+# Lines 37 and 40 are both one-bit SYNs and their values go in
+# DIFFERENT COLUMNS:
+#     line 37  000000.61+                L RLBIT  SYN(BU,1),0.49
+#     line 40  000000.00+  +00000077     L ZBIT   SYN(BU,1),63
+# A BIT ADDRESS goes in the LOCATION column (0o61 is 49); an INTEGER
+# goes in the INTEGER column (0o77 is 63) with the location left at
+# zero.  That is C22-6531 printed p.31's "its bit address or INTEGER
+# CLASSIFICATION" SHOWN rather than stated -- and the listing had
+# been printing it all along, in a column this project had no reason
+# to read until p.48's count-SYNned-to-80 came out as one.
+#
+# THE COUNT TABLE IS CHECKED BYTE BY BYTE, all thirty-one, at their
+# own addresses -- which also pins the two DD rows' lengths (16
+# values then 15) without either row printing a length.
+#
+# Injections: line 36's "(32)"->"(31)" gives 2 FAILs here, L SYMC and
+# L NTPU, and nothing on the count table moves -- AND THE BETTER HALF
+# IS IN THE MERGE, which dies with "LNTPU: printed p.48 SYNs bit
+# 94208, printed p.50 places it at bit 94144", one page's reservation
+# against another page's stand-in, which no single verifier can see.
+# Dropping the last value from line 17's list gives 1 FAIL, the last
+# byte's row, and NO symbol moves: line 35's CNOP rounds the
+# eight-bit shortfall away before L SYMU, which is the printed p.44
+# shape again and is why the table is checked byte by byte rather
+# than by what follows it.
 run "RESERVATIONS, TABLES AND COUNTERS continued, printed p.49, bit-exact (MCP_Mar63 PDF p.56)" python3 verify_mcp_bootstrap_p49.py
 # EIGHT LINES, the shortest page this project has transcribed, and it
 # finishes the storage block printed p.48 opened.

@@ -5395,6 +5395,47 @@ no opcode can rule it out. What ruled it out was the datum the name
 labels — which is a tell worth stating on its own: *when a name
 labels data, decode the data before trusting the name.*
 
+## PRINTED p.50 — AND THE LISTING HAD BEEN PRINTING THE ANSWER ALL ALONG, 2026-10-23
+
+Thirty-one printed rows: a count table of the bytes 1 through 31, and
+the INTERNAL DECODE TABLES. **Three of printed p.48's stand-ins land**
+— `L SYMU` 002620.00, `L SYMC` 002660.00, `L NTPU` 002700.00 — and
+each one's SIZE is what puts the next where p.48 said it would be, so
+this page checks p.48's arithmetic as much as its own. The merge now
+reports **222 stand-ins checked and 35 external**, from 219 and 38.
+
+### The listing prints a symbol's classification
+
+Lines 37 and 40 are both one-bit SYNs and their values go in
+**different columns**:
+
+```
+line 37  000000.61+                L RLBIT  SYN(BU,1),0.49
+line 40  000000.00+  +00000077     L ZBIT   SYN(BU,1),63
+```
+
+A **bit address** goes in the LOCATION column (0o61 is 49); an
+**integer** goes in the INTEGER column (0o77 is 63) with the location
+left at zero. That is C22-6531 printed p.31's *"its bit address or
+INTEGER CLASSIFICATION"* **shown rather than stated** — the same
+distinction printed p.48 had just cost an assembler fix to learn,
+when a count SYNned to 80 was scaled as a bit address and came out as
+one.
+
+> **The listing had been printing the answer all along, in a column
+> this project had no reason to read until a bug made one.** Worth
+> remembering next time a property seems undecidable from the page:
+> the symbol-table columns carry more than the value.
+
+### And the injection that matters is in the merge, not the verifier
+
+Line 36's `(32) -> (31)` gives two failures in p.50's own verifier
+and the useful one somewhere else entirely: `mcp_image` dies with
+*"LNTPU: printed p.48 SYNs bit 94208, printed p.50 places it at bit
+94144"*. One page's reservation size against another page's stand-in
+— a claim no single verifier can see, and the reason the merge is a
+program rather than a shell pipeline.
+
 ## PRINTED p.49, EIGHT LINES, AND THREE SPELLINGS OF ONE THING, 2026-10-23
 
 The shortest page this project has transcribed, and it finishes the
