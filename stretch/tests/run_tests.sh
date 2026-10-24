@@ -4910,6 +4910,44 @@ run "THE BREAKDOWN ROUTINE, printed p.45, bit-exact (MCP_Mar63 PDF p.52)" python
 # byte -- so it is a per-ROW artifact and not the per-glyph one 13
 # had recorded.  The byte is 00; printed p.43 line 50's "B,Q CHK"
 # prints 002454.10 00 for the same shape.
+run "the DISK-TRACK CHECK and TAPE IOD routines, printed p.54, bit-exact (MCP_Mar63 PDF p.61)" python3 verify_mcp_bootstrap_p54.py
+# >>> IT CONFIRMS TWO MORE OF printed p.53's STAND-INS: L CODE at
+# 003042.00 and L IODTP at 003077.00. <<<
+#
+# A THIRD "$" IN FRONT OF AN OPERATION.  Line 15 is
+# "$SF(BU,4),.48(L XNT)" and it compiles as a plain SF.  printed
+# p.43 line 6 was "$B,Q GO$A" and printed p.53 line 14 "$TI,...".
+# THREE INSTANCES IN THREE SOURCE DECKS, every one inert, all three
+# on operations whose compiled row is ordinary.  C28-6129 printed
+# p.37 accounts for a "$" on an OPERAND and says nothing about one
+# on an OPERATION.  Three is a pattern rather than an oddity:
+# whatever the "$" marks, it is not in the object program.
+#
+# >>> AND printed p.51's L BLANK dds TRAVELS HERE, WHICH IS A THIRD
+# WITNESS FOR ITS LENGTH. <<<  Line 32 is a BARE "KF,L BLANK" and
+# prints 060600 -- length 0o60, FORTY-EIGHT, byte size 6.  p.51 line
+# 34 declares "L BLANK (AY)DD(BU,48,6)" and its eight characters of
+# blanks were settled by measuring the Y terminator's column in
+# pixels, with the declared dds as the only other witness.  This row
+# is a third and a different kind: the dds is not merely declared on
+# p.51, it is USED here by a row whose own printed length depends on
+# it, so a wrong dds on p.51 makes this row wrong too.
+#
+# L ZBIT IS AN INTEGER AND LINE 41 USES IT AS A BIT ADDRESS:
+# "BZB1,L ZBIT(L XNT),L NORM" prints 000000.77 89, and 0o77 is 63,
+# which printed p.50 line 40 puts in the INTEGER column with the
+# location at zero.  C22-6531 printed p.11: an integer "adds into
+# the low-order position of the field".
+#
+# LINE 55 IS A HALT: "BD,$" at 003104.00, branch disabled to its own
+# address -- the second deliberate stop this project has
+# transcribed, after printed p.6 line 1's "BD,$ -LOOP".
+#
+# Injections: L BLANK's stand-in dds changed to (BU,48,8) gives 1
+# FAIL, line 32, reading 060000 -- NOT 061000, because a byte size
+# of EIGHT does not fit a three-bit field and goes in as ZERO
+# (C28-6129 printed p.16's modulo 8).  L ZBIT's 63 -> 62 gives 1
+# FAIL, line 41, and nothing else: the symbol is used once.
 run "the IOD CARD ROUTINE, printed p.53, bit-exact (MCP_Mar63 PDF p.60)" python3 verify_mcp_bootstrap_p53.py
 # >>> IT CONFIRMS BOTH OF printed p.52's DERIVED STAND-INS. <<<
 # L OOPN is at 002775.40 (line 4) and L IODRN at 003021.40 (line 37),

@@ -5395,6 +5395,52 @@ no opcode can rule it out. What ruled it out was the datum the name
 labels — which is a tell worth stating on its own: *when a name
 labels data, decode the data before trusting the name.*
 
+## PRINTED p.54 — A THIRD `$`, AND A dds CHECKED FROM THREE PAGES AWAY, 2026-10-24
+
+The DISK-TRACK CHECK ROUTINE and the TAPE IOD ROUTINE, forty-eight
+rows. **Two more of printed p.53's stand-ins land**: `L CODE` at
+003042.00 and `L IODTP` at 003077.00.
+
+### A third `$` in front of an operation, and three is a pattern
+
+Line 15 is `$SF(BU,4),.48(L XNT)` and it compiles as a plain `SF`.
+printed p.43 line 6 was `$B,Q GO$A`; printed p.53 line 14 was
+`$TI,1,-1.0(L IODX),1.0(L XPP)`. **Three instances in three source
+decks, every one inert**, and all three on operations whose compiled
+row is ordinary. C28-6129 printed p.37 accounts for a `$` on an
+*operand* and says nothing about one on an *operation*.
+
+> Still recorded rather than guessed at — but three is a pattern:
+> **whatever the `$` marks, it is not in the object program.**
+
+### printed p.51's `L BLANK` dds travels here, which is a third witness
+
+Line 32 is a bare `KF,L BLANK` and prints **060600** — length 48,
+byte size 6. p.51 line 34 declares `L BLANK (AY)DD(BU,48,6)`, and its
+eight characters of blanks were settled by measuring the `Y`
+terminator's column **in pixels**, with the declared dds as the only
+other witness.
+
+This row is a third, and a different kind: the dds is not merely
+*declared* on p.51, it is **used** here, three pages on, by a row
+whose own printed length depends on it. A wrong dds on p.51 makes
+this row wrong too.
+
+### An integer-classified symbol in a bit-address field
+
+Line 41's `BZB1,L ZBIT(L XNT),L NORM` prints `000000.77 89` — 0o77 is
+63, which printed p.50 line 40 puts in the **integer** column with
+the location at zero. C22-6531 printed p.11: an integer "adds into
+the low-order position of the field". The classification built for
+p.48 and shown by p.50 is now exercised by p.54.
+
+### And a prediction in an injection note was wrong
+
+Changing `L BLANK`'s stand-in to `(BU,48,8)` was predicted to print
+`061000` and prints **060000**: a byte size of eight does not fit a
+three-bit field and goes in as **zero** (C28-6129 printed p.16, "byte
+size is treated modulo 8"). The note now says what happened.
+
 ## PRINTED p.53 — TWO DERIVED STAND-INS CONFIRMED AND A FLAG LOWERED, 2026-10-23
 
 Fifty-one rows: the end of the initialization routine and the **IOD

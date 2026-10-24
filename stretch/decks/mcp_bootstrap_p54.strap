@@ -1,0 +1,143 @@
+! mcp_bootstrap_p54.strap -- the DISK-TRACK CHECK ROUTINE and the
+! TAPE IOD ROUTINE, printed page 54.
+! docs/MCP_Mar63_001-249.pdf PDF p.61, header "PAGE NUMBER 54".
+! docs/boot_plan.md M3.
+!
+! >>> IT CONFIRMS TWO MORE OF printed p.53's STAND-INS: L CODE at
+! 003042.00 (line 3) and L IODTP at 003077.00 (line 48). <<<
+!
+! ---------------------------------------------------------------
+! A THIRD "$" IN FRONT OF AN OPERATION
+! ---------------------------------------------------------------
+! Line 15 is "$SF(BU,4),.48(L XNT)  -AND PLACE IN CHANNEL" and it
+! compiles as a plain SF: 000000.60 89 / 004000.12 F0, which is what
+! this deck's "SF(BU,4),.48(L XNT)" produces to the bit.
+!
+! printed p.43 line 6 was "$B,Q GO$A" and printed p.53 line 14 was
+! "$TI,1,-1.0(L IODX),1.0(L XPP)".  THREE INSTANCES IN THREE SOURCE
+! DECKS, every one inert, and all three on operations whose compiled
+! row is ordinary.  C28-6129 printed p.37 accounts for a "$" on an
+! OPERAND and says nothing about one on an OPERATION.  Recorded and
+! not guessed at, as before, but three is a pattern rather than an
+! oddity: whatever the "$" marks, it is not in the object program.
+!
+! ---------------------------------------------------------------
+! AND printed p.51's L BLANK dds TRAVELS HERE, WHICH IS A SECOND
+! WITNESS FOR ITS LENGTH
+! ---------------------------------------------------------------
+! Line 32 is a BARE "KF,L BLANK" and prints 060600 -- a length of
+! 0o60, FORTY-EIGHT, and a byte size of 6.  p.51 line 34 declares
+! "L BLANK  (AY)DD(BU,48,6)" and its EIGHT CHARACTERS of blanks were
+! settled by measuring the "Y" terminator's column in pixels, with
+! the declared (BU,48,6) as the only other witness.
+!
+! THIS ROW IS A THIRD, and a different kind: the dds is not just
+! declared on p.51, it is USED here, three pages on, by a row whose
+! own printed length depends on it.  A wrong dds on p.51 would make
+! this row wrong too.
+!
+! ---------------------------------------------------------------
+! L ZBIT IS AN INTEGER AND LINE 41 USES IT AS A BIT ADDRESS
+! ---------------------------------------------------------------
+! "BZB1,L ZBIT(L XNT),L NORM" prints 000000.77 89 -- 0o77 is 63, and
+! printed p.50 line 40 defines "L ZBIT  SYN(BU,1),63" with the
+! listing putting 63 in the INTEGER column and leaving the location
+! at zero.  So an integer-classified symbol lands in a 24-bit bit
+! address field as the number itself, which is what C22-6531 printed
+! p.11 says an integer does: it "adds into the low-order position of
+! the field".
+!
+! ---------------------------------------------------------------
+! SUBSTITUTIONS
+! ---------------------------------------------------------------
+! (1) BLANKS INSIDE SYMBOL NAMES ARE DROPPED, as on every page since
+!     p.2.
+!
+! (2) LINE 15'S "$SF" IS WRITTEN "SF".  See above; the compiled row
+!     is checked either way.
+!
+! (3) NOTHING ELSE.
+!
+! ---------------------------------------------------------------
+! LINE 55 IS A HALT: "BD,$" at 003104.00, printing 003104.04 00 --
+! branch disabled to its own address, commented "-INTERNAL UNIT
+! TABLE" and whatever follows it off the right edge.  It is the
+! second deliberate stop this project has transcribed, after printed
+! p.6 line 1's "BD,$  -LOOP".
+        SLC, (8)3041.0
+
+LIODX   SYN, $3
+LXPP    SYN, $4
+LXIO    SYN, $5
+LXSU    SYN, $7
+LXNT    SYN, $9
+LWORKX  SYN, $10
+LNTPUX  SYN, (8)2567.0
+LSYMUX  SYN, (8)2565.0
+LNO6    SYN, (8)2601.0
+LTAPEC  SYN(BU,7), (8)2601.31
+LIOSCR  SYN(BU,9), (8)2601.40
+LNTB    SYN(BU,1), (8)2601.52
+LBLZOR  SYN(BU,8,8), (8)2601.63
+LZBIT   SYN(BU,1), 63
+LDISK   SYN, (8)2723.0
+LTRACK  SYN, (8)2724.0
+LBLANK  SYN(BU,48,6), (8)2736.0
+LERROR  SYN, (8)3241.0
+LNORM   SYN, (8)3237.40
+LSET    SYN, (8)3137.40
+TTYPE   SYN, 0.3
+TIODSQ  SYN, 0.19
+TUNCT   SYN(BU,8), 0.28
+
+        SLC, (8)3041.0
+
+        LCI, $15, 6.0
+        B, LERROR
+LCODE   LX, LXNT, LNTPUX
+LOOPNT  L(BU,48), 0.0(LXNT), 0.0
+        BRZZ, LIOD2
+        K(BU,48), 4.0(LIODX), 0.0
+        BZAE, LNONCH
+        LF(BU,4), .48(LXNT)
+        KF(BU,4), .60(LWORKX)
+        BAE, LNON
+LNONCH  CB+, LXNT, LOOPNT
+LIOD2   TI, 1, 4.0(LIODX), 0.0(LXNT)
+        M+1, LTAPEC
+        L(BU,4), .60(LWORKX)
+        SF(BU,4), .48(LXNT)
+        ST(BU,4), TTYPE(LXIO)
+LFOUND  M+1, TUNCT(LXPP)
+        L(BU,9), LIOSCR, 0.0
+        ST(BU,9), TIODSQ(LXIO)
+        M+1(BU,9), LIOSCR
+        V+ICR, LXIO, 1.0
+LNON    LF(BU,48), 2.0(LIODX)
+        KF(BU,48), LDISK
+        BAEZ, LNEW
+        KF(BU,48), LTRACK
+        BZAEZ, LNORM
+LNEW    L(BU,48), 5.0(LIODX)
+        KF, LBLANK
+        BAEZ, LDSKD
+        LV, LWORKX, LIODX
+        LCI, LWORKX, 8
+        LF(BU,6), LBLZOR+.2
+LDSKC   KF(BU,6,6), 5.(LWORKX)
+        BZAEZ, LNORM
+        V+, LWORKX, LNO6
+        CB, LWORKX, LDSKC
+LDSKD   BZB1, LZBIT(LXNT), LNORM
+        LCI, $15, 7.0
+        B, LERROR
+LIODTP  CM0000(BU,1), LNTB, 0.0
+        LX, LXSU, LSYMUX
+LOOPSU  L(BU,48), 0.0(LXSU), 0.0
+        BRZZ, LIOD3
+        K(BU,48), 5.0(LIODX), 0.0
+        BAEZ, LSET
+LETA    CB+, LXSU, LOOPSU
+        BD, $
+LIOD3   TI, 1, 5.0(LIODX), 0.0(LXSU)
+        END, LCODE

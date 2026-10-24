@@ -168,7 +168,7 @@ What runs, as of 2026-10-23 (`stretch/docs/boot_plan.md` §A5, §A8, §A10):
   answer: the missing tables were the plausible cause and are not the
   cause.
 
-As of 2026-10-23, printed pages **2 through 53** of the MCP listing
+As of 2026-10-24, printed pages **2 through 54** of the MCP listing
 are transcribed bit-exactly. Transcription runs ahead of execution,
 and pages transcribed before the pages that define their symbols have
 repeatedly served as predictions — printed p.39 confirmed three
