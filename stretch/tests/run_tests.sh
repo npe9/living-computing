@@ -4910,6 +4910,39 @@ run "THE BREAKDOWN ROUTINE, printed p.45, bit-exact (MCP_Mar63 PDF p.52)" python
 # byte -- so it is a per-ROW artifact and not the per-glyph one 13
 # had recorded.  The byte is 00; printed p.43 line 50's "B,Q CHK"
 # prints 002454.10 00 for the same shape.
+run "TYPE SYMBOLS AND CODES and the IOD AND REEL COMPARISONS, printed p.51, bit-exact (MCP_Mar63 PDF p.58)" python3 verify_mcp_bootstrap_p51.py
+# >>> L DISK LANDS AT 002723.00 AND THAT IS printed p.48's LAST
+# STAND-IN. <<<  p.48 line 18 is "L XTYPE XW,L DISK,9,$" -- a
+# refilling index word over NINE entries -- and this page has exactly
+# nine type symbols, DISK through TAPE.  The count and the table are
+# three pages apart and they agree.
+#
+# >>> AND THE TRAILING BLANK COUNTS WERE MEASURED, NOT EYEBALLED.
+# <<<  The statement column was rendered at 600 dpi and the ink runs
+# read off NUMERICALLY, the way listing_typography.md settles a
+# glyph.  One character pitch is about 61 px in that crop, and every
+# "Y" terminator in the nine type rows sits at x = 1818-1868 -- the
+# same card column, so every datum is ten characters.  The same
+# measurement settles the three rows no address can:
+#     L IOD   Y at 1818  -- ten characters, "IOD" + 7 blanks
+#     L REEL  Y at 1819  -- ten characters, "REEL" + 6
+#     L BLANK Y at 1701  -- TWO pitches earlier, EIGHT characters
+# L BLANK's eight has a second witness, its own "(BU,48,6)" where
+# 8 x 6 is 48, while L IOD's and L REEL's declared 64 is NOT 10 x 6.
+#
+# L IOD's AND L REEL's LENGTHS ARE PINNED BY NOTHING ELSE, which is
+# the printed p.44 shape again: lines 31 and 33 are CNOPs that round
+# sixty bits to sixty-four, so nine or ten characters leave the next
+# row where it is, and printed p.52's first compiled word at
+# 002737.00 bounds L BLANK only to 33-64 bits.  The code that
+# compares against them will settle it and is not transcribed yet.
+#
+# Injections: one blank dropped from line 8's DISK datum gives 12
+# FAILs -- every type symbol from L TRACK on moves six bits and
+# every code row with it, the first reading 03 where the listing
+# prints 01.  Line 25's "(8)10"->"(8)11" gives 1, and that row is the
+# witness for the radix substitution: the listing prints 10 in a
+# column that is octal throughout, so the ninth type code is eight.
 run "the count table and the INTERNAL DECODE TABLES, printed p.50, bit-exact (MCP_Mar63 PDF p.57)" python3 verify_mcp_bootstrap_p50.py
 # >>> THREE OF PRINTED p.48's STAND-INS LAND HERE: L SYMU 002620.00,
 # L SYMC 002660.00, L NTPU 002700.00. <<<  They are the three tables

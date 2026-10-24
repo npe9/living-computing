@@ -1,0 +1,95 @@
+! mcp_bootstrap_p51.strap -- TYPE SYMBOLS AND CODES, and the IOD AND
+! REEL COMPARISONS, printed page 51.
+! docs/MCP_Mar63_001-249.pdf PDF p.58, header "PAGE NUMBER 51".
+! docs/boot_plan.md M3.
+!
+! >>> L DISK LANDS AT 002723.00 AND THAT IS printed p.48's LAST
+! STAND-IN. <<<
+!
+! p.48 line 18 is "L XTYPE  XW,L DISK,9,$" -- a refilling index word
+! over NINE entries -- and this page has exactly nine type symbols,
+! DISK through TAPE.  The count and the table are three pages apart
+! and they agree.
+!
+! ---------------------------------------------------------------
+! EVERY DATUM IS TEN CHARACTERS AND THE COLUMN SAYS SO
+! ---------------------------------------------------------------
+! The nine type symbols are "(AY)DD(BU,60,6),NAME<blanks>Y", sixty
+! bits apiece, and the addresses prove it: each entry's four-bit
+! code sits at .74 -- bit 60 -- and the next entry at the next word.
+!
+! THE TRAILING BLANK COUNTS WERE MEASURED, NOT EYEBALLED.  The
+! statement column was rendered at 600 dpi and the ink runs read off
+! numerically, the way listing_typography.md settles a glyph: every
+! "Y" terminator in the nine type rows sits at x = 1818-1868 in the
+! same crop, one character pitch being about 61 px, so every datum
+! ends in the same card column and every one is ten characters.
+!
+! AND THE SAME MEASUREMENT SETTLES THE THREE ROWS NO ADDRESS CAN:
+!   L IOD   (line 30) Y at 1818  -- ten characters, "IOD" + 7 blanks
+!   L REEL  (line 32) Y at 1819  -- ten characters, "REEL" + 6
+!   L BLANK (line 34) Y at 1701  -- TWO character pitches EARLIER,
+!                                   so EIGHT characters, 48 bits
+!
+! L BLANK's eight is confirmed twice over: its own dds says
+! "(BU,48,6)" and 8 x 6 is 48.  L IOD's and L REEL's are not
+! confirmed by anything on this page -- lines 31 and 33 are CNOPs
+! that round sixty bits up to sixty-four, so a datum anywhere from
+! nine to ten characters would leave the next row where it is.  THAT
+! IS THE printed p.44 SHAPE AGAIN, and this time the column
+! measurement is all there is until the code that compares against
+! them is transcribed.
+!
+! ---------------------------------------------------------------
+! SUBSTITUTIONS
+! ---------------------------------------------------------------
+! (1) BLANKS INSIDE SYMBOL NAMES ARE DROPPED, as on every page since
+!     p.2: L NOSAV, L DISK, L TRACK, L TAPE, L IOD, L REEL, L BLANK.
+!
+! (2) A RADIX IS MOVED FROM THE STATEMENT PREFIX TO THE OPERAND.
+!     The listing writes "(8)DD(BU,4),1"; this deck writes
+!     "DD(BU,4), (8)1".  printed p.42 line 33 made the same move for
+!     "(2)DD(BU,8,8)" and the compiled byte checked it; here the
+!     four-bit codes are 1 through 10 OCTAL and the last one is the
+!     witness -- "(8)10" is eight, and the listing prints 10 in a
+!     column that is octal throughout.
+!
+! (3) NOTHING ELSE.  The trailing blanks are written as counted.
+
+        SLC, (8)2720.0
+
+! ---- SWAP AREAS FOR THE 3 INTERNAL INDEXES ------------------------
+LNOSAV  DRZ(BU,64), (3)             ! line 4
+
+! ---- TYPE SYMBOLS AND CODES ---------------------------------------
+LDISK   (AY)DD(BU,60,6),DISK      Y ! line 8
+        DD(BU,4), (8)1              ! line 9
+LTRACK  (AY)DD(BU,60,6),TRACK     Y ! line 10
+        DD(BU,4), (8)1              ! line 11
+        (AY)DD(BU,60,6),CONSOLE   Y ! line 12
+        DD(BU,4), (8)2              ! line 13
+        (AY)DD(BU,60,6),READER    Y ! line 14
+        DD(BU,4), (8)3              ! line 15
+        (AY)DD(BU,60,6),PUNCH     Y ! line 16
+        DD(BU,4), (8)4              ! line 17
+        (AY)DD(BU,60,6),PRINTER   Y ! line 18
+        DD(BU,4), (8)5              ! line 19
+        (AY)DD(BU,60,6),IQS       Y ! line 20
+        DD(BU,4), (8)6              ! line 21
+        (AY)DD(BU,60,6),          Y ! line 22 -- ten blanks
+        DD(BU,4), (8)7              ! line 23
+LTAPE   (AY)DD(BU,60,6),TAPE      Y ! line 24
+        DD(BU,4), (8)10             ! line 25
+
+! ---- IOD AND REEL COMPARISONS -------------------------------------
+LIOD    (AY)DD(BU,64,6),IOD       Y ! line 30
+        CNOP                        ! line 31
+LREEL   (AY)DD(BU,64,6),REEL      Y ! line 32
+        CNOP                        ! line 33
+LBLANK  (AY)DD(BU,48,6),        Y   ! line 34 -BCD BLANKS
+
+        END, LDISK
+
+! ---------------------------------------------------------------
+! AND ONE LISTING MARK, the bare "*" after the location that every
+! page since printed p.3 carries: line 34 ("002736.00 *").

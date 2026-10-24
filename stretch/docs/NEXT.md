@@ -5395,6 +5395,58 @@ no opcode can rule it out. What ruled it out was the datum the name
 labels — which is a tell worth stating on its own: *when a name
 labels data, decode the data before trusting the name.*
 
+## PRINTED p.51 — AND A BLANK COUNT MEASURED IN PIXELS, 2026-10-23
+
+TYPE SYMBOLS AND CODES, nine of them, plus the IOD AND REEL
+COMPARISONS. **`L DISK` lands at 002723.00 and that is printed p.48's
+last stand-in** — p.48 line 18 is `L XTYPE XW,L DISK,9,$`, a refilling
+index word over **nine** entries, and this page has exactly nine type
+symbols. The count and the table are three pages apart and they
+agree.
+
+### The trailing blank counts were measured, not eyeballed
+
+Every type datum is `(AY)DD(BU,60,6),NAME<blanks>Y`, sixty bits, and
+the addresses prove the sixty: each entry's four-bit code sits at
+`.74` and the next entry at the next word. **How many blanks** is a
+different question, and the usual answer — squint at it — is the one
+`listing_typography.md` exists to replace.
+
+So the statement column was rendered at 600 dpi and the **ink runs
+read off numerically**. One character pitch is ~61 px in that crop,
+and every `Y` terminator in the nine type rows sits at x = 1818-1868:
+the same card column, so every datum is ten characters. The same
+measurement settles the three rows no address can:
+
+| row | Y at | characters |
+|---|---|---|
+| `L IOD` (line 30) | 1818 | ten — `IOD` + 7 blanks |
+| `L REEL` (line 32) | 1819 | ten — `REEL` + 6 |
+| `L BLANK` (line 34) | **1701** | **eight** — two pitches earlier |
+
+`L BLANK`'s eight has a second witness: its own dds is `(BU,48,6)`
+and 8 × 6 is 48, where `L IOD`'s and `L REEL`'s declared 64 is *not*
+10 × 6. Neither witness is conclusive alone — a converted DD's size
+is characters times byte size and the declared length "plays no part"
+— but they agree.
+
+> **A column position is a measurement when it is read in pixels and
+> a guess when it is read by eye.** The method is the same one
+> §13 uses for a glyph; it had not been pointed at a *count* before.
+
+**`L IOD`'s and `L REEL`'s lengths are pinned by nothing else** —
+lines 31 and 33 are CNOPs that round sixty bits to sixty-four, so
+nine or ten characters leave the next row where it is. printed p.52's
+first compiled word, 002737.00, bounds `L BLANK` only to 33-64 bits.
+The code that compares against them will settle it and is not
+transcribed yet.
+
+### And printed p.52 opens with the entry p.47 named
+
+`L DECOD  SWAPI,8,L TY,L IODX  -SAVE INDEXES` at **002737.00** — the
+DECODE program's entry, opening with an **eight-word SWAP**, which is
+a tenth caller and the largest yet.
+
 ## PRINTED p.50 — AND THE LISTING HAD BEEN PRINTING THE ANSWER ALL ALONG, 2026-10-23
 
 Thirty-one printed rows: a count table of the bytes 1 through 31, and
