@@ -5395,6 +5395,100 @@ no opcode can rule it out. What ruled it out was the datum the name
 labels — which is a tell worth stating on its own: *when a name
 labels data, decode the data before trusting the name.*
 
+## >>> MCP EXECUTES ITS ASSIGN ROUTINE — printed pp.63, 64 and 65, 2026-10-24 <<<
+
+**71 rows, all bit-exact on the first run**, and the ASSIGN program
+is in the image from printed p.59 through p.65.
+
+**The run goes past `T ASIGN`.** The PC trail had ended at
+003701.00 from the moment p.58 landed; p.65 line 6 *is* that
+address:
+
+```
+T ASIGN  SWAPI,12,$1,T ASAVE   -SAVE INDEXES
+         000021.00 80  003274.30 E0
+```
+
+Every field checks against a page already transcribed: `000021` is
+word 0o21 = 16+1 = `$1`; `003274` is `T ASAVE`, p.61 line 52's
+`DRZ(BU,64),(15)`; and `.30` → bits 19-22 = 0110 = **twelve**.
+Twelve index registers into a fifteen-word save area. Line 7 then
+reads the caller's `XW` through `$15` — exactly what p.59's LINKAGE
+FORMAT page says the caller plants. **The documentation page and the
+code page agree.**
+
+The trail is now **004215.00 = `T A9`**, p.65 line 9's forward
+branch on a machine-configuration change, on printed p.66 or after.
+
+### `(8)` is an octal entry mode, and one row is the whole proof
+
+p.64's lines 6, 9, 12, 15, 18, 21, 24 and 27 are each
+`(8)DD(BU,8),n,m,0` — **one statement compiling three 8-bit bytes**,
+printed on three rows at three consecutive addresses.
+
+Seven of the eight cannot tell the radix: their type codes are 1
+through 7. **Line 27 can.** It is `(8)DD(BU,8),10,0,0`, commented
+`-SAME AS ABOVE - TAPE`, and prints `010`. Tape's equipment code is
+eight; ten octal is eight, ten decimal would print `012`. The
+injection reads exactly that `012`.
+
+**The assembler gained two things**: a numeric entry mode now takes
+the ordinary field parse rather than the converted-datum one (it is
+a radix, not a character set — C22-6531 defines `(R)` and
+`eval_expr` has always honoured it on a *value*), and
+`parse_statement_text` stopped discarding the entry on that path.
+
+### The dds rule now checks from both ends
+
+Seven bare VFL statements on p.65 take their dds from symbols this
+project *derived* before p.62 was read. Line 27 is
+`L,T UNCT(T IXE),46` with nothing written, compiling `010027.20 50`
+— 010000/512 = 8 — from `T UNCT`'s own `SYN(BU,8)`. Likewise line 46
+(`T RCAD`, 8), line 51 (`T TYPE`, 4) and line 52 (`T TYAD`, 8).
+
+So the page that **declares** each symbol and the page that
+**spends** it bare are both transcribed, and the bits agree. A dds
+that was an inference three commits ago is now pinned from both
+sides.
+
+### Two more things the listing showed rather than argued
+
+**An XW's value field is signed.** p.64 line 38 is
+`T RCHSC XW,-T CHCUC-32.0,0,0` and prints `003721.00-` where every
+XW transcribed before it printed `+`.
+
+**A CNOP has two cases and these pages show both.** p.64 line 5 had
+to pad and prints `000000.30 00`; p.65 line 5 was already rounded —
+p.64's `DRZ` ends exactly at 003701.00 — and compiles **nothing at
+all**, no location and no binary.
+
+### A check retired for drifting, the second one
+
+`mcp_end_of_prosa_bit_X0` read word 16, `$X0`, at the end of the run
+and asserted the measured core size. That was a fact about a
+**mid-run state**, true only while the run stopped before anything
+reused the register. With p.65 in the image, MCP's ASSIGN path runs
+and `$X0` ends holding what that path left.
+
+**Nothing is lost**: `mcp_x_s_roof`, `mcp_comm_size_fixture_and_listing_agree`
+and `mcp_placed_at_dest_first` cover the same fact from storage the
+program wrote *on purpose*, and all three pass on the run that broke
+this one. The precedent is `mcp_qsav_last_after_swap`, retired
+2026-10-23. **Pin a check to storage the program wrote deliberately,
+not to a register it happened to leave alone** — because the whole
+point of this project is that the run keeps going further.
+
+### Where the range stands
+
+```
+merged 48 pages, 335 stand-ins checked against their definitions,
+88 SYNs that agree with another page's SYN, 35 symbols external
+```
+
+printed pp.15-65 are in the image, gapless, with p.47, p.59 and p.60
+named as the three that compile nothing. **Printed p.66 onward is
+next, and the run names its own target: `T A9` at 004215.00.**
+
 ## PRINTED pp.61 AND 62 — and p.62 confirms eleven derivations from four earlier pages, 2026-10-24
 
 Thirty-two rows and seventy symbols between them, **all bit-exact on

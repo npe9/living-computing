@@ -301,7 +301,25 @@ def build(verbose=False, pages=None, end_at='XIPLBS'):
 # and contributes no word to the image, so there is no file to merge
 # -- but the GAP IN THIS RANGE would look exactly like a page someone
 # forgot, which is why it is named here.
-NO_DECK_PAGES = {47}
+# >>> AND printed p.59 AND p.60 ARE TWO MORE, 2026-10-24, OF TWO
+# DIFFERENT KINDS. <<<
+#
+# p.59 is p.47's shape: 26 lines of which only line 1 ("003264.40 *
+# SLC,$") touches the counter.  It carries the section heading "I/O
+# ASSIGNMENT --- ASSIGN ---" and THE ASSIGN PROGRAM LINKAGE FORMAT,
+# written out as a worked call exactly as p.47 does for DECODE.
+#
+# p.60 IS A NEW KIND: six SYN cards for the three tables' lengths,
+# and THE LISTING'S OWN BINARY OUTPUT COLUMN PRINTS `NULL` ON EVERY
+# ONE.  A SYN compiles nothing, so the page contributes nothing, but
+# it is not documentation -- it is declarations.  T PPC 20, T IOC 80,
+# T FRC 50, T UPPC 2, T UIOC 20, T UFRC 20, every one of them spent
+# on printed p.62.
+#
+# So a hole in this range now has three explanations and each is
+# named here: p.47 and p.59 compile nothing because they are prose,
+# p.60 because a SYN card is not a word.
+NO_DECK_PAGES = {47, 59, 60}
 
 # >>> THE RANGE REACHES printed p.58, 2026-10-24, AND IT IS
 # CONTIGUOUS. <<<
@@ -330,7 +348,7 @@ NO_DECK_PAGES = {47}
 # every build, so this comment is a summary and not the evidence.
 MCP_IPL_PAGES = [
     (DECK("mcp_bootstrap_p%d.strap" % n), "printed p.%d" % n)
-    for n in range(15, 59) if n not in NO_DECK_PAGES
+    for n in range(15, 66) if n not in NO_DECK_PAGES
 ]
 
 

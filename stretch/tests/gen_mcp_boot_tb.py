@@ -205,8 +205,35 @@ def main():
         # the record carries a comm-region descriptor.  Before that
         # the field read zero, and Reference Manual printed p.30 makes
         # a direct count of zero mean 2**18. <<<
-        ("mcp_end_of_prosa_bit_X0", "16",
-         (1 << (63 - 25)) | (prosa.COMM_REGION_WORDS << 18) | 98304),
+        # >>> AND IT IS REMOVED, 2026-10-24, FOR DRIFTING -- the
+        # second check this project has retired for that reason. <<<
+        #
+        # It read word 16, $X0, at the END of the run, and asserted
+        # the measured size MCP had loaded into it.  That was a fact
+        # about a MID-RUN state, and it held only while the run
+        # stopped before anything reused the register.  With printed
+        # p.65 in the image the run executes MCP's ASSIGN entry and
+        # goes on to T A9, and $X0 ends holding whatever that path
+        # left -- 0x1C000000000 rather than the size.
+        #
+        # NOTHING IS LOST, and that is why it is removed rather than
+        # re-measured.  Three checks still cover the same fact from
+        # places the program does not reuse:
+        #   mcp_x_s_roof                       -- printed p.15 line
+        #     23's "SR,$0,S ROOF  -PLACE 7030 SIZE IN COMM REGION",
+        #     the size where the REST of MCP looks for it
+        #   mcp_comm_size_fixture_and_listing_agree
+        #   mcp_placed_at_dest_first
+        # All three pass on the run that broke this one.
+        #
+        # THE PRECEDENT IS mcp_qsav_last_after_swap, retired on
+        # 2026-10-23 because its count tracked the IMAGE SIZE.  The
+        # lesson is the same and worth stating once more: a check
+        # pinned to a register's value at the end of a run is pinned
+        # to WHERE THE RUN STOPS, and the whole point of this project
+        # is that the run keeps going further.  Pin a check to
+        # STORAGE THE PROGRAM WROTE ON PURPOSE, not to a register it
+        # happened to leave alone.
 
         # >>> AND MCP PUT THE SIZE WHERE THE REST OF MCP LOOKS <<<
         # Printed p.15 line 23 is "SR,$0,S ROOF  -PLACE 7030 SIZE IN
@@ -800,8 +827,13 @@ def main():
         #                                  the image; the run goes
         #                                  THROUGH L NORM and ends at
         #                                  T ASIGN
+        #   0x200C544  AE, MOP, RZ, XCZ, XE, XF, XVLZ -- printed
+        #                                  pp.61-65 too; the run
+        #                                  EXECUTES MCP's ASSIGN
+        #                                  entry and ends at T A9
         ("mcp_indicators_word11", str(IND_WORD),
-         _ind("AE") | _ind("MOP") | _ind("RGZ") | _ind("XE") | _ind("XVGZ")),
+         _ind("AE") | _ind("MOP") | _ind("RZ") | _ind("XCZ")
+         | _ind("XE") | _ind("XF") | _ind("XVLZ")),
 
         # >>> THE MOVE ITSELF, AND IT IS THE POINT OF THE FIXTURE <<<
         # Printed p.4 line 28, "T,$11,X BUFER($X1),X BS END  -MOVE MCP
@@ -1390,8 +1422,24 @@ def main():
                    # NINE swaps execute where five did, including
                    # L NORM's own SWAPI,8 at half-word 3391 twice and
                    # printed p.58 line 38's SWAPI,3 at 3388.
+                   #
+                   # >>> AND IT MOVED TO 4378, 2026-10-24: THE RUN
+                   # EXECUTES MCP's ASSIGN ROUTINE. <<<  printed p.65
+                   # line 6 IS T ASIGN -- "SWAPI,12,$1,T ASAVE  -SAVE
+                   # INDEXES" at 003701.00 -- so the branch the trail
+                   # had been stopping at now lands on code.  MCP
+                   # saves twelve index registers into printed p.61's
+                   # fifteen-word save area, reads the caller's XW
+                   # through $15 exactly as printed p.59's LINKAGE
+                   # FORMAT says it will, resets its indicators, and
+                   # branches on a machine-configuration change to
+                   # T A9.
+                   #
+                   # Half-word 4378 is 004215.00, which is T A9 --
+                   # p.65 line 9's forward reference, on printed p.66
+                   # or after.  THAT IS THE NEXT TRANSCRIPTION.
                    pc_check=0,
-                   pc_trail_check=3970,
+                   pc_trail_check=4378,
                    step_cap=40000000,
                    pc_trail=True,
                    op_trail=True,

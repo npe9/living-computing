@@ -659,6 +659,22 @@ cannot be tested without it.
 > exits are the dispatcher's two returns. When A3 lands, the code
 > that consumes its card already exists in the image.
 >
+> **A20 — >>> MCP EXECUTES ITS ASSIGN ROUTINE, 2026-10-24. <<<**
+> printed pp.59-65 are transcribed and in the image, and the run no
+> longer stops at `T ASIGN`: p.65 line 6 IS that address, and the row
+> is `SWAPI,12,$1,T ASAVE  -SAVE INDEXES`. MCP saves twelve index
+> registers into p.61's fifteen-word save area, reads the caller's
+> `XW` through `$15` exactly as p.59's LINKAGE FORMAT page says it
+> will, resets its indicators, and branches on a
+> machine-configuration change to `T A9` at 004215.00.
+>
+> **Two of the seven pages cost nothing**: p.59 is documentation and
+> p.60 is six SYN cards the listing prints `NULL` for. The image now
+> holds printed pp.15-65 gapless — 48 pages, 335 stand-ins checked,
+> 88 agreeing SYNs.
+>
+> **printed p.66 onward is next**, and the run names its own target.
+>
 > **A17 — PRINTED pp.47-48, AND THE DECODE PROGRAM'S LINKAGE IS
 > PRINTED IN FULL, 2026-10-23.** printed p.47 **compiles nothing**:
 > twenty-three lines, of which the only non-comment is line 1's

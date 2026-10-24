@@ -804,7 +804,15 @@ def parse_statement_text(text, lineno=None):
         after = text[j + 1:]
         if after[:1].isalpha():
             entry, text = text[1:j], after
-    if entry is not None:
+    # A NUMERIC ENTRY MODE IS A RADIX, NOT A CHARACTER SET, so it
+    # takes the ORDINARY comma-separated field parse below rather
+    # than the converted-datum one here.  `entry` is still carried on
+    # the statement; entry_radix reads it and the DD emitter applies
+    # it to each field.  MCP printed p.64's eight
+    # "(8)DD(BU,8),n,m,0" rows are the instance, and its line 27
+    # ("...,10,0,0" printing 010 for TAPE's equipment code EIGHT) is
+    # what says the radix is octal.
+    if entry is not None and not entry.strip().isdigit():
         # op(mods),<raw datum up to and excluding the terminator>
         k, depth = 0, 0
         while k < len(text):
@@ -860,7 +868,10 @@ def parse_statement_text(text, lineno=None):
         fields = [f.strip() for f in split_top_level(rest[1:], ',')]
     elif rest.strip():
         raise AssemblerError(f"unexpected trailing text {rest!r}", lineno)
-    return op, mods, fields, None
+    # `entry` rather than None: it is None for an ordinary statement
+    # anyway, and a NUMERIC entry mode reaches here (see the note
+    # above) and must keep its radix for entry_radix to find.
+    return op, mods, fields, entry
 
 
 class Statement:
@@ -1041,6 +1052,37 @@ def dr_count(stmt, symtab=None):
     if n < 1:
         raise AssemblerError(f"DR dimension {n} is not positive", stmt.lineno)
     return n
+
+
+def entry_radix(stmt):
+    """The RADIX of a numeric entry mode, or None.
+
+    C22-6531 defines "(R)" as an entry mode and strap_asm has always
+    honoured it on a VALUE -- eval_expr's _TERM_RADIX accepts
+    "(8)7.0" anywhere an expression is allowed.  MCP's ASSIGN program
+    writes it on the OPERATION instead: printed p.64 lines 6, 9, 12,
+    15, 18, 21, 24 and 27 are each "(8)DD(BU,8),n,m,0", one statement
+    compiling three eight-bit bytes whose values are OCTAL.
+
+    SEVEN OF THE EIGHT ROWS CANNOT TELL THE RADIX, because their type
+    codes are 1 through 7.  THE EIGHTH CAN: line 27 is
+    "(8)DD(BU,8),10,0,0", commented "-SAME AS ABOVE - TAPE", and the
+    listing's BINARY OUTPUT column prints 010.  Tape's equipment code
+    is EIGHT; ten OCTAL is eight, ten DECIMAL would print 012.  The
+    row is the oracle and it says octal.
+
+    Without this a numeric entry mode was read as a CHARACTER mode
+    whose last character is the end-of-statement character (C28-6129
+    printed p.16's rule for "(IQS*)"), so "(8)" meant "mode '',
+    terminated by 8" and the row failed with "entry-mode datum is not
+    terminated by '8'"."""
+    if stmt.entry is None:
+        return None
+    body = stmt.entry.strip()
+    if body.startswith('(') and body.endswith(')'):
+        body = body[1:-1]
+    body = body.strip()
+    return int(body) if body.isdigit() else None
 
 
 def entry_mode_name(stmt):
@@ -1708,7 +1750,7 @@ def statement_size(stmt, symtab=None):
     # quietly producing a wrong word.
         return HALF, HALF
     if op == 'DD':
-        if stmt.entry is not None:
+        if stmt.entry is not None and entry_radix(stmt) is None:
             # A CONVERTED DD.  Its size is the character count times
             # the BYTE SIZE, and the declared field length plays no
             # part -- MCP's printed p.9 writes DD(BU,64,8) for an
@@ -2396,7 +2438,7 @@ def emit_statement(stmt, symtab, image):
         return  # any NOP it implies was emitted by assemble()'s gap filler
 
     if op == 'DD':
-        if stmt.entry is not None:
+        if stmt.entry is not None and entry_radix(stmt) is None:
             bs = entry_byte_size(stmt, symtab)
             table = entry_table(stmt)
             pos = loc
@@ -2410,9 +2452,19 @@ def emit_statement(stmt, symtab, image):
                 pos += bs
             return
         length = dds_length_bits(stmt.mods, stmt.lineno, symtab)
+        # A NUMERIC ENTRY MODE IS A RADIX FOR EVERY FIELD -- see
+        # entry_radix.  The literal parser already understands a
+        # "(R)" prefix anywhere (eval_expr's _TERM_RADIX), so the
+        # mode is applied by writing the prefix onto each field
+        # rather than by a second code path.  A field that carries
+        # its own prefix keeps it.
+        rad = entry_radix(stmt)
         pos = loc
         for f in stmt.fields:
-            image.deposit(pos, length, parse_dd_literal(f, stmt.lineno))
+            t = f.strip()
+            if rad is not None and t[:1].isdigit():
+                t = "(%d)%s" % (rad, t)
+            image.deposit(pos, length, parse_dd_literal(t, stmt.lineno))
             pos += length
         return
 

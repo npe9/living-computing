@@ -1,0 +1,257 @@
+! MCP INITIALIZATION, printed p.65 (MCP_Mar63_001-249 PDF p.72) --
+! THE ENTRY POINT TO THE ASSIGN ROUTINE.
+!
+! Fifty-six lines, thirty-eight of which compile.  Three boxed
+! headings:
+!
+!   lines  1-3   "THE ENTRY POINT TO THE ASSIGN ROUTINE"
+!   lines 11-13  "NOT OVERLAPPED TYPE OF PROBLEM PROGRAM"
+!   lines 17-20  "OVERLAP TYPE OF PP"
+!   lines 39-43  "DO A VALIDITY CHECK ON THE REQUEST" /
+!                "FIRST CLEAR COUNT AREA"
+!
+! >>> LINE 6 IS T ASIGN, AND IT IS WHERE THE BOOT RUN HAS BEEN
+! BRANCHING. <<<
+!
+! decks/mcp_bootstrap_p27.strap line 60 is "X241 B,T ASIGN" and the
+! run's PC trail has ended at half-word 3970 = 003701.00 since
+! printed p.58 landed.  THIS IS THAT ADDRESS, and the row is
+!
+!   T ASIGN  SWAPI,12,$1,T ASAVE   -SAVE INDEXES
+!
+! compiling 000021.00 80 003274.30 E0.  Every field checks against a
+! page already transcribed: 000021 is word 0o21 = 16+1 = $1; 003274
+! is T ASAVE, printed p.61 line 52's "DRZ(BU,64),(15)"; and ".30" ->
+! bits 19-22 = 0110 = TWELVE, the count.  Twelve index registers into
+! a fifteen-word save area.
+!
+! AND printed p.59 SAID WHAT THE CALLER MUST DO.  That page compiles
+! nothing and carries THE ASSIGN PROGRAM LINKAGE FORMAT as a worked
+! call: "LVI,$15,Y / B,T ASIGN / Y XW,A,B,,C / BEW,$ RETURN
+! LOCATION".  Line 7 here is "LX,T CTWDX,0.0($15)" commented
+! "-OVERLAP AND MACHINE CONF TEST", which is the callee reading that
+! XW through $15.  The documentation page and the code page agree.
+!
+! ---------------------------------------------------------------
+! LINE 5's CNOP DID NOT HAVE TO PAD, AND THAT IS VISIBLE
+! ---------------------------------------------------------------
+! printed p.64 line 39's "T CHCUC DRZ(BU,32),(32)" ends exactly at
+! 003701.00, so the counter was already on a word boundary and line
+! 5's CNOP compiles NOTHING -- it has no location and no binary.
+! printed p.24 line 44's CNOP HAD to pad and prints 000000.30 00;
+! printed p.61 line 51 and p.64 line 5 likewise.  This is the other
+! half of that distinction, and the listing shows it by printing
+! nothing at all.
+!
+! ---------------------------------------------------------------
+! >>> SEVEN BARE VFL STATEMENTS TAKE THEIR dds FROM SYMBOLS THIS
+! PROJECT DERIVED BEFORE READING printed p.62 <<<
+! ---------------------------------------------------------------
+! Line 27 is "L,T UNCT(T IXE),46" with NOTHING written on the
+! statement, and compiles 010027.20 50 -- 010000/512 = 8, so the
+! length is EIGHT, from T UNCT's own SYN(BU,8).  That dds was
+! derived on printed pp.54 and 58 and confirmed by p.62 line 10.
+!
+! Line 46 is "ST,T RCAD(T X1)" -> 010000.20 D0, eight bits from
+! printed p.63 line 29's SYN(BU,8).  Line 51 is "L,T TYPE(T IXA)" ->
+! 004000.20 50, and 0o4000/512 = 4, from p.62 line 33's SYN(BU,4).
+! Line 52 is "K,T TYAD(T X1)" -> 010000.21 10, eight again.
+!
+! So the pages that DECLARE these symbols and the page that SPENDS
+! them bare are both transcribed, and the bits agree.  A dds that
+! was an inference three commits ago is now checked from both ends.
+!
+! ---------------------------------------------------------------
+! EVERY SYMBOL THIS PAGE USES FROM AN EARLIER ONE, AND ITS ROW
+! ---------------------------------------------------------------
+!   T ASAVE 003274.0   line  6   p.61 line 52
+!   T CTWDX $10        lines 7, 33  p.61 line 31 (a SYN to a SYN)
+!   T MODE  003273.23  line  8   p.61 line 22
+!   T PPURF 003313.0   line 14   p.62 line 19
+!   T ASGNP 0.38       lines 15, 25  p.62 line 13
+!   T SAV   003272.0   line 21   p.61 line 19
+!   T INDE  003273.30  line 22   p.61 line 27
+!   T LPPEN 0.39       line 23   p.62 line 14  <- the forced (BU,1)
+!   T JBPRO 0.36       line 24   p.62 line 11
+!   T CRREF 0.0        line 26   p.62 line 9
+!   T UNCT  0.28       line 27   p.62 line 10
+!   T REFIL 003271.0   lines 30, 31  p.61 line 18
+!   T RJECT 0.37       line 32   p.62 line 12
+!   T LOOP1 003273.33  line 35   p.61 line 30
+!   T VALVF 003651.0   lines 36, 38  p.63 line 23
+!   T TYARA 003647.0   line 44   p.63 line 20
+!   T RCAD  0.16       line 46   p.63 line 29
+!   T COMBO 003650.0   lines 47, 54  p.63 line 21
+!   T LAST  0.18       line 49   p.62 line 36
+!   T IOREQ 003373.0   line 50   p.62 line 28
+!   T TYPE  0.03       line 51   p.62 line 33
+!   T TYAD  0.0        line 52   p.63 line 27
+!
+! TWENTY-TWO, AND EVERY ONE IS A STAND-IN CONFIRMED BY ITS
+! DEFINITION once the image holds both pages.
+!
+! ---------------------------------------------------------------
+! NINE SYMBOLS POINT FORWARD, OFF THE PAGE
+! ---------------------------------------------------------------
+! T A9 004215.0, T D 004416.40, T F 004417.0, T B8 004211.40,
+! T B8Z 004203.40, T B8C 004201.40, T AREJ 004361.0, T A2 003743.40
+! and T C1 003733.40, each read out of the branch that names it.
+! They are stand-ins here and printed p.66 onward will place them.
+!
+! "Z,0.0" PRINTS ".22" AGAIN.  Line 45 is "Z,$R" compiling
+! 000011.22 00 -- address 000011 is word 9, the remainder register,
+! and ".22" is the constant printed p.58 lines 24, 25 and 29
+! established that Z carries whatever its operand.
+!
+! TWO LISTING MARKS: lines 27 ("003713.40 *") and 51 ("003727.40 *").
+
+        SLC, (8)3701.0
+
+! ---- index names, from printed p.61 -------------------------------
+TCTWDX  SYN, $10
+TX1     SYN, $10
+TIXA    SYN, $4
+TIXE    SYN, $3
+! ---- words, from printed pp.61, 62 and 63 -------------------------
+TASAVE  SYN, (8)3274.0
+TSAV    SYN, (8)3272.0
+TREFIL  SYN, (8)3271.0
+TMODE   SYN(BU,6), (8)3273.23
+TINDE   SYN(BU,2), (8)3273.30
+TLOOP1  SYN(BU,1), (8)3273.33
+TPPURF  SYN, (8)3313.0
+TIOREQ  SYN, (8)3373.0
+TTYARA  SYN, (8)3647.0
+TCOMBO  SYN, (8)3650.0
+TVALVF  SYN, (8)3651.0
+! ---- table offsets, from printed pp.62 and 63 ---------------------
+TCRREF  SYN(BU,18), 0.0
+TUNCT   SYN(BU,8), 0.28
+TJBPRO  SYN(BU,1), 0.36
+TRJECT  SYN(BU,1), 0.37
+TASGNP  SYN(BU,1), 0.38
+TLPPEN  SYN(BU,1), 0.39
+TTYPE   SYN(BU,4), 0.03
+TLAST   SYN(BU,1), 0.18
+TTYAD   SYN(BU,8), 0.0
+TRCAD   SYN(BU,8), 0.16
+! ---- forward, onto printed p.66 and after -------------------------
+TA9     SYN, (8)4215.0
+TA2     SYN, (8)3743.40
+TC1     SYN, (8)3733.40
+TD      SYN, (8)4416.40
+TF      SYN, (8)4417.0
+TB8     SYN, (8)4211.40
+TB8Z    SYN, (8)4203.40
+TB8C    SYN, (8)4201.40
+TAREJ   SYN, (8)4361.0
+
+        SLC, (8)3701.0
+
+! ---- THE ENTRY POINT TO THE ASSIGN ROUTINE ------------------------
+        CNOP                         ! line 5  -- already rounded,
+                                      !            compiles nothing
+TASIGN  SWAPI, 12, $1, TASAVE        ! line 6  -SAVE INDEXES
+        LX, TCTWDX, 0.0($15)         ! line 7  -OVERLAP AND MACHINE
+                                      !           CONF TEST
+        CM0000(BU,6), TMODE          ! line 8  -RESET INDICATORS
+        BZXVZ, TA9                   ! line 9  -IF A MACH CNF CHANGE
+TB1F    BZXF, TB1C                   ! line 10 -IF OVERLAP MODE
+
+! ---- NOT OVERLAPPED TYPE OF PROBLEM PROGRAM -----------------------
+        LX, TIXE, TPPURF             ! line 14 -NOT OVERLAP PP SET UP
+        BB, TASGNP, TD               ! line 15 -IF THE PP IS ASSINGED
+        B, TA1                       ! line 16
+
+! ---- OVERLAP TYPE OF PP -------------------------------------------
+TB1C    LX, TIXE, TSAV               ! line 21 -FIND LOC. WITH IN
+                                      !           P P REF TBL
+        CM0000(BU,2), TINDE          ! line 22
+TA1     BB, TLPPEN(TIXE), TF         ! line 23 -IF LAST ENTRY WITHIN
+                                      !           PP REF TB
+        BB, TJBPRO(TIXE), TB8        ! line 24 -IF THE JOB WAS
+                                      !           PROCESSED
+        BB, TASGNP(TIXE), TB8Z       ! line 25 -IF PP IS ASSIGNED
+                                      !           BYPASS REMAINDER
+        LV, TIXA, TCRREF(TIXE)       ! line 26 -GET I/O REQ TBL
+                                      !           ADDRESS
+        L, TUNCT(TIXE), 46           ! line 27 -GET THE UNIT COUNT
+        LC, TIXA, $R                 ! line 28
+        BXCZ, TB8C                   ! line 29 -IF NO I/O REQUEST
+                                      !           FOR PP
+        LRI, TIXA, TREFIL            ! line 30 -REFILL ADDR TO INDEX
+        SX, TIXA, TREFIL             ! line 31
+        BB, TRJECT(TIXE), TAREJ      ! line 32 -IF PP WAS REJD AND
+                                      !           TBLS TO BE CLEARED
+        LX, TCTWDX, 0.0($15)         ! line 33 -TO ACTIVATE THE
+                                      !           FLAG IND
+        BXF, TD1+.32                 ! line 34 -TO PREVENT A DOUBLE
+                                      !           VALIDITY
+        BBZ, TLOOP1, TD1             ! line 35 -IF IX-E- WAS REFILLED
+        KV, TIXE, TVALVF             ! line 36 -CHECK TO PREVENT A
+                                      !           DOUBLE VALIDITY CK
+        BZXH, TA2                    ! line 37 -IF A VALIDITY CHECK
+                                      !           HAS BEEN MADE
+TD1     SV, TIXE, TVALVF             ! line 38 -SAVE TO PREVENT
+                                      !           DOUBLE VALIDY CHECK
+
+! ---- DO A VALIDITY CHECK ON THE REQUEST / FIRST CLEAR COUNT AREA --
+        LX, TX1, TTYARA              ! line 44 -LOAD TO BEGINNING
+                                      !           OF TABLE
+        Z, $R                        ! line 45 -ZERO THE ACC
+TCLEAR  ST, TRCAD(TX1)               ! line 46 -THEN CLEAR THE
+                                      !           COUNT AREA
+        V+CR, TX1, TCOMBO            ! line 47
+        BZXCZ, TCLEAR                ! line 48
+TSETAC  BZB, TLAST(TIXA), TSETBC     ! line 49
+        LVI, TIXA, TIOREQ            ! line 50 -RELOAD TO BEGINING
+                                      !           OF TABLE
+TSETBC  L, TTYPE(TIXA)               ! line 51 -REQUESTED TYPE TO ACC
+TCOMPA  K, TTYAD(TX1)                ! line 52 -COMPARE FOR EQUALITY
+        BAE, TC1                     ! line 53 -IF EQUAL
+        V+C, TX1, TCOMBO             ! line 54 -GET NEXT FEILD
+        BZXCZ, TCOMPA                ! line 55
+        END, TASIGN
+
+! ---------------------------------------------------------------
+! THE CHECKED ROWS -- the thirty-eight that compile a word.  Line
+! 5's CNOP compiles nothing (see the header) and has no row.
+! ---------------------------------------------------------------
+!   line  6  003701.00  000021.00 80  003274.30 E0   T ASIGN SWAPI,12
+!   line  7  003702.00  000000.24 1F                 LX,T CTWDX
+!   line  8  003702.40  003273.23 80  006000.00 F0   CM0000(BU,6)
+!   line  9  003703.40  004215.31 40                 BZXVZ,T A9
+!   line 10  003704.00  003706.63 40                 T B1F  BZXF
+!   line 14  003704.40  003313.06 10                 LX,T IXE,T PPURF
+!   line 15  003705.00  000000.46 80  004416.74 02   BB,T ASGNP,T D
+!   line 16  003706.00  003710.10 00                 B,T A1
+!   line 21  003706.40  003272.06 10                 T B1C  LX
+!   line 22  003707.00  003273.30 80  002000.00 F0   CM0000(BU,2)
+!   line 23  003710.00  000000.47 83  004417.34 02   T A1  BB,T LPPEN
+!   line 24  003711.00  000000.44 83  004211.74 02   BB,T JBPRO
+!   line 25  003712.00  000000.46 83  004203.74 02   BB,T ASGNP
+!   line 26  003713.00  000000.10 33                 LV,T IXA
+!   line 27  003713.40  000000.34 83  010027.20 50   L,T UNCT,46
+!   line 28  003714.40  000011.10 50                 LC,T IXA,$R
+!   line 29  003715.00  004201.70 42                 BXCZ,T B8C
+!   line 30  003715.40  003271.11 03                 LRI
+!   line 31  003716.00  003271.11 10                 SX
+!   line 32  003716.40  000000.45 83  004361.34 02   BB,T RJECT
+!   line 33  003717.40  000000.24 1F                 LX,T CTWDX
+!   line 34  003720.00  003723.23 42                 BXF,T D1+.32
+!   line 35  003720.40  003273.33 80  003722.74 06   BBZ,T LOOP1
+!   line 36  003721.40  003651.06 90                 KV
+!   line 37  003722.00  003743.73 40                 BZXH,T A2
+!   line 38  003722.40  003651.07 30                 T D1  SV
+!   line 44  003723.00  003647.24 10                 LX,T X1,T TYARA
+!   line 45  003723.40  000011.22 00                 Z,$R
+!   line 46  003724.00  000000.20 8A  010000.20 D0   T CLEAR ST
+!   line 47  003725.00  003650.24 F0                 V+CR
+!   line 48  003725.40  003724.30 40                 BZXCZ,T CLEAR
+!   line 49  003726.00  000000.22 84  003727.74 00   T SETAC BZB
+!   line 50  003727.00  003373.11 01                 LVI
+!   line 51  003727.40  000000.03 84  004000.20 50   T SETBC L,T TYPE
+!   line 52  003730.40  000000.00 8A  010000.21 10   T COMPA K,T TYAD
+!   line 53  003731.40  003733.76 C2                 BAE,T C1
+!   line 54  003732.00  003650.24 D0                 V+C
+!   line 55  003732.40  003730.70 40                 BZXCZ,T COMPA

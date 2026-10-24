@@ -5006,6 +5006,48 @@ run "the REEL CARD and FINAL routines, printed p.56, bit-exact (MCP_Mar63 PDF p.
 run "the IOREQ SEARCH AND SORT, printed p.57, bit-exact (MCP_Mar63 PDF p.64)" python3 verify_mcp_bootstrap_p57.py
 run "the ASSIGN program's CONSTANTS and INDEX NAMES, printed p.61, bit-exact (MCP_Mar63 PDF p.68)" python3 verify_mcp_bootstrap_p61.py
 run "the ASSIGN program's THREE TABLES and their SYN cards, printed p.62, bit-exact (MCP_Mar63 PDF p.69)" python3 verify_mcp_bootstrap_p62.py
+run "the CHANNEL/UNIT STATUS and VALID CHECK tables, printed p.63, bit-exact (MCP_Mar63 PDF p.70)" python3 verify_mcp_bootstrap_p63.py
+run "the REQUEST VALIDITY CHECK and MULTI-UNIT COUNT tables, printed p.64, bit-exact (MCP_Mar63 PDF p.71)" python3 verify_mcp_bootstrap_p64.py
+run "THE ENTRY POINT TO THE ASSIGN ROUTINE, printed p.65, bit-exact (MCP_Mar63 PDF p.72)" python3 verify_mcp_bootstrap_p65.py
+# >>> printed p.65 LINE 6 IS T ASIGN, AND THE BOOT RUN NOW EXECUTES
+# IT. <<<  decks/mcp_bootstrap_p27.strap line 60 is "X241 B,T ASIGN"
+# and the PC trail stopped at 003701.00 from the moment printed p.58
+# landed.  The row is "SWAPI,12,$1,T ASAVE  -SAVE INDEXES": 000021 is
+# word 0o21 = 16+1 = $1, 003274 is T ASAVE (printed p.61 line 52's
+# DRZ(BU,64),(15)), and ".30" is bits 19-22 = 0110 = TWELVE.  Twelve
+# index registers into a fifteen-word save area.  The trail is now
+# 004215.00 = T A9, on printed p.66 or after.
+#
+# >>> "(8)" IS AN OCTAL ENTRY MODE, AND printed p.64 LINE 27 IS THE
+# WHOLE PROOF. <<<  Its eight "(8)DD(BU,8),n,m,0" rows each compile
+# THREE eight-bit bytes.  Seven cannot tell the radix -- their type
+# codes are 1 to 7.  Line 27 is ",10,0,0" commented "-SAME AS ABOVE
+# - TAPE" and prints 010: tape's equipment code is EIGHT, ten octal
+# is eight, ten decimal would print 012.  The injection reads
+# exactly that 012.
+#
+# THE ASSEMBLER GAINED TWO THINGS FOR IT, both in strap_asm.py: a
+# NUMERIC entry mode now takes the ordinary field parse rather than
+# the converted-datum one (it is a radix, not a character set --
+# C22-6531 defines "(R)" and eval_expr has always honoured it on a
+# VALUE), and parse_statement_text stopped discarding the entry on
+# that path.
+#
+# SEVEN BARE VFL STATEMENTS ON p.65 TAKE THEIR dds FROM SYMBOLS THIS
+# PROJECT DERIVED BEFORE READING printed p.62.  Line 27 is
+# "L,T UNCT(T IXE),46" with nothing written, compiling 010027.20 50
+# -- 010000/512 = 8 -- from T UNCT's own SYN(BU,8).  Its injection
+# reads 000027 instead.  So the pages that DECLARE these symbols and
+# the page that SPENDS them bare are both transcribed and the bits
+# agree from both ends.
+#
+# AN XW's VALUE FIELD IS SIGNED: printed p.64 line 38 prints
+# 003721.00- where every XW before it printed "+".
+#
+# AND A CNOP SHOWS BOTH OF ITS CASES ACROSS THESE PAGES: p.64 line 5
+# HAD to pad and prints 000000.30 00; p.65 line 5 was already
+# rounded (p.64's DRZ ends exactly at 003701.00) and compiles
+# NOTHING AT ALL -- no location, no binary.
 # >>> THIS PAGE DECLARES WHAT FOUR EARLIER PAGES HAD TO DERIVE, AND
 # ELEVEN FOR ELEVEN ARE CONFIRMED. <<<  T UNCT (BU,8) 0.28, T RJECT
 # 0.37, T LPPEN (BU,1) 0.39, T LREFN (BU,12) 0.40, T IODCT (BU,12)

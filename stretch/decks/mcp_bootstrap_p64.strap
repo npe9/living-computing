@@ -1,0 +1,137 @@
+! MCP INITIALIZATION, printed p.64 (MCP_Mar63_001-249 PDF p.71) --
+! THE REQUEST VALIDITY CHECK TABLE AND THE MULTI-UNIT COUNT TABLE.
+!
+! Forty-six lines; twenty-nine compile.  Two boxed headings:
+!
+!   lines  1-3   "REQUEST VALIDITY CHECK TABLE"
+!   lines 30-33  "THE MULTI-UNIT COUNT TABLE -- SORTED"
+!   lines 41-43  "SYN CARDS FOR THE MULTI-UNIT COUNT TABLE"
+!
+! >>> THIS PAGE ENDS EXACTLY AT T ASIGN. <<<  Line 39 is
+! "T CHCUC DRZ(BU,32),(32)" at 003661.00 -- thirty-two 32-bit items
+! is SIXTEEN WORDS, printed 000020.00 -- so it ends at 003701.00,
+! which is printed p.65 line 6 and the symbol the boot run has been
+! branching to.  printed p.27 line 60 is "X241 B,T ASIGN".
+!
+! ---------------------------------------------------------------
+! >>> "(8)" IS AN OCTAL ENTRY MODE, AND ONE ROW PROVES IT <<<
+! ---------------------------------------------------------------
+! Lines 6, 9, 12, 15, 18, 21, 24 and 27 are each
+! "(8)DD(BU,8),n,m,0" -- ONE statement compiling THREE eight-bit
+! bytes, which the listing prints on three rows at three consecutive
+! addresses (003652.00, .10, .20 and so on, 0o10 = 8 bits apart).
+!
+! SEVEN OF THE EIGHT WOULD READ THE SAME IN ANY RADIX, because their
+! type codes are 1 through 7.  THE EIGHTH IS THE PROOF: line 27 is
+! "(8)DD(BU,8),10,0,0" commented "-SAME AS ABOVE - TAPE", and the
+! listing prints 010.  Tape's equipment code is EIGHT, and eight in
+! octal is 10.  A table whose first seven rows cannot distinguish the
+! radix and whose eighth can.
+!
+! THE EIGHT ARE THE EQUIPMENT TYPES, named in the comments: DISK,
+! CONSOLE, CARD READER, PUNCH, PRINTER, IQS, EXTRA, TAPE -- codes 1
+! to 8.  Each row is "TYPE CODE, MACH CONF, REQ CNT", and only DISK
+! has a non-zero machine-configuration count.
+!
+! ---------------------------------------------------------------
+! AN XW's VALUE FIELD IS SIGNED, AND THIS IS THE FIRST MINUS
+! ---------------------------------------------------------------
+! Every XW transcribed so far prints "vvvvvv.vv+".  Line 38 is
+! "T RCHSC XW,-T CHCUC-32.0,0,0" commented "-THE REVERSE SCAN" and
+! prints
+!
+!     003721.00- 000 000000 000000
+!
+! -- a MINUS.  T CHCUC is 003661.0 and thirty-two words on is
+! 003661 + 0o40 = 003721, so the value is -(T CHCUC+32.0) and the
+! sign character is the listing's way of showing it.  The forward
+! scan on line 37 is the same table with a plus.
+!
+! ---------------------------------------------------------------
+! THE SCAN PAIR, AND LINE 36 POINTS AT LINE 37
+! ---------------------------------------------------------------
+!   line 35  T MUCTX XW,T CHCUC,0,0    003661.00+  the table's start
+!   line 36  T YSCAN XW,T FCHSC,2,0    003657.00+  count 2 -- the
+!                                                  TWO scans
+!   line 37  T FCHSC XW,T CHCUC,0,0    003661.00+  forward
+!   line 38  T RCHSC XW,-T CHCUC-32.0  003721.00-  reverse
+!
+! Line 36's value 003657 is line 37's own address, so "LOCATOR FOR
+! THE TWO SCANS" points at the first of the pair and counts two.
+!
+! LINE 5's CNOP HAD TO PAD: printed p.63 line 23's "T VALVF VF,0.0"
+! at 003651.00 is twenty-five bits, so the counter stood at
+! 003651.31 and the CNOP rounded to 003651.40 and emitted
+! 000000.30 00 -- the same shape printed p.24 line 44 and printed
+! p.61 line 51 have.
+!
+! ONE LISTING MARK: line 39 ("003661.00 *").
+
+        SLC, (8)3651.40
+
+! ---- REQUEST VALIDITY CHECK TABLE ---------------------------------
+        CNOP                         ! line 5
+TDISK   (8)DD(BU,8), 1, 1, 0         ! line 6  -TYPE CODE, MACH CONF,
+                                      !           REQ CNT- DISK
+        (8)DD(BU,8), 2, 0, 0         ! line 9  -SAME AS ABOVE -
+                                      !           CONSOLE
+        (8)DD(BU,8), 3, 0, 0         ! line 12 -SAME AS ABOVE -
+                                      !           CARD READER
+        (8)DD(BU,8), 4, 0, 0         ! line 15 -SAME AS ABOVE - PUNCH
+        (8)DD(BU,8), 5, 0, 0         ! line 18 -SAME AS ABOVE -
+                                      !           PRINTER
+        (8)DD(BU,8), 6, 0, 0         ! line 21 -SAME AS ABOVE - IQS
+        (8)DD(BU,8), 7, 0, 0         ! line 24 -SAME AS ABOVE - EXTRA
+        (8)DD(BU,8), 10, 0, 0        ! line 27 -SAME AS ABOVE - TAPE
+
+! ---- THE MULTI-UNIT COUNT TABLE -- SORTED -------------------------
+TMUCTX  XW, TCHCUC, 0, 0             ! line 35 -CONSTANT TO THE
+                                      !           BEGINNING OF CNT TBL
+TYSCAN  XW, TFCHSC, 2, 0             ! line 36 -LOCATOR FOR THE TWO
+                                      !           SCANS
+TFCHSC  XW, TCHCUC, 0, 0             ! line 37 -FORWARD SCAN
+TRCHSC  XW, -TCHCUC-32.0, 0, 0       ! line 38 -THE REVERSE SCAN
+TCHCUC  DRZ(BU,32), (32)             ! line 39 -MULTI CHANNEL UNIT
+                                      !           COUNT
+
+! ---- SYN CARDS FOR THE MULTI-UNIT COUNT TABLE ---------------------
+TCHADD  SYN(BU,18), 0.0              ! line 45 -MULTI-UNIT CHAN
+                                      !           ADDRESS
+TCHCNT  SYN(BU,4), 0.20              ! line 46 -NUMBER OF UNITS ON
+                                      !           CHANNEL
+        END, TDISK
+
+! ---------------------------------------------------------------
+! THE CHECKED ROWS -- the CNOP, the twenty-four bytes and the four
+! XWs.  Line 39's DRZ prints its SIZE (000020.00 = 16 words) and the
+! two SYNs print their VALUE; both are checked elsewhere.
+! ---------------------------------------------------------------
+!   line  5  003651.40  000000.30 00                   CNOP
+!   line  6  003652.00  001                            T DISK   (8)DD
+!   line  7  003652.10  001
+!   line  8  003652.20  000
+!   line  9  003652.30  002                            CONSOLE
+!   line 10  003652.40  000
+!   line 11  003652.50  000
+!   line 12  003652.60  003                            CARD READER
+!   line 13  003652.70  000
+!   line 14  003653.00  000
+!   line 15  003653.10  004                            PUNCH
+!   line 16  003653.20  000
+!   line 17  003653.30  000
+!   line 18  003653.40  005                            PRINTER
+!   line 19  003653.50  000
+!   line 20  003653.60  000
+!   line 21  003653.70  006                            IQS
+!   line 22  003654.00  000
+!   line 23  003654.10  000
+!   line 24  003654.20  007                            EXTRA
+!   line 25  003654.30  000
+!   line 26  003654.40  000
+!   line 27  003654.50  010                            TAPE = 8
+!   line 28  003654.60  000
+!   line 29  003654.70  000
+!   line 35  003655.00  003661.00+ 000 000000 000000   T MUCTX XW
+!   line 36  003656.00  003657.00+ 000 000002 000000   T YSCAN XW
+!   line 37  003657.00  003661.00+ 000 000000 000000   T FCHSC XW
+!   line 38  003660.00  003721.00- 000 000000 000000   T RCHSC XW

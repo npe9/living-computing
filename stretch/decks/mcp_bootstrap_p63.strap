@@ -1,0 +1,129 @@
+! MCP INITIALIZATION, printed p.63 (MCP_Mar63_001-249 PDF p.70) --
+! THE CHANNEL/UNIT STATUS TABLE'S SYN CARDS, AND THE VALID CHECK
+! TABLE.
+!
+! Twenty-nine lines and only FOUR compile a word: lines 20-23.  The
+! other twenty-five are comments and SYN cards, which makes this the
+! smallest page of the ASSIGN program and the densest in symbols.
+!
+! The listing's heading at lines 16-18 is "SYN CARDS FOR THE VALID
+! CHECK TABLE"; lines 1-13 finish the CHANNEL/UNIT STATUS TABLE block
+! that printed p.62 lines 52-54 head.
+!
+! >>> IT RUNS STRAIGHT INTO printed p.64. <<<  Line 23 is "T VALVF
+! VF,0.0" at 003651.00 -- twenty-five bits -- and printed p.64 line 5
+! stands at 003651.40, the next half word.  printed p.62's last
+! reservation ended at 003647.00, which is line 20 here.
+!
+! ---------------------------------------------------------------
+! INTEGER SYNs PRINT "NULL", AND THAT IS printed p.60's SHAPE AGAIN
+! ---------------------------------------------------------------
+! Lines 24, 25 and 26 are "T TYBC SYN,0.8", "T MACBC SYN,0.8" and
+! "T REQBC SYN,0.8", and the BINARY OUTPUT column prints NULL on all
+! three -- the same thing printed p.60's six table-length cards do.
+! Lines 27-29 are SYNs WITH a dds and print "BU,10 ,10" instead, so
+! one page shows both forms three rows apart.
+!
+! AND THE THREE ARE SPENT IMMEDIATELY ABOVE THEM.  Line 21 is
+! "T COMBO VF,T TYBC+T MACBC+T REQBC" compiling 000000.30+ -- 0o30 is
+! 24, which is 8+8+8 -- and line 22 is "T 2COMB VF,T TYBC+T MACBC"
+! compiling 000000.20+, which is 16.  A SYN that compiles nothing,
+! checked by the two rows that add it up.
+!
+! ---------------------------------------------------------------
+! LINE 20's XW POINTS AT printed p.64 AND AT ITSELF
+! ---------------------------------------------------------------
+! "T TYARA XW,T DISK,8,T TYARA" compiles
+!
+!     003652.00+ 000 000010 003647
+!
+! -- value T DISK = 003652.0, count 8, refill T TYARA = 003647, which
+! is the row's OWN address.  printed p.64 line 6 stands at 003652.00,
+! so this row fixes a symbol on the next page before that page is
+! read, exactly as printed p.61 line 19 did for p.62.
+!
+! ---------------------------------------------------------------
+! TWO SYMBOLS SHARE BIT .27, AND A THIRD PAIR SHARED .28 TWO PAGES AGO
+! ---------------------------------------------------------------
+! Lines 2 and 4 are "T MULTI SYN(BU,1),0.27 -THE MULTI -CHANNEL BIT"
+! and "T FDISP SYN(BU,1),0.27 -THE KIND OF REEL MOUNTED ON UNIT".
+! Both print 000000.33, and 0o33 is 27.
+!
+! printed p.62 had the same shape -- T UNCT and T FREEL both 0.28 --
+! and there the two were in DIFFERENT TABLES, which that page showed
+! by putting them in different SYN blocks.  THESE TWO ARE IN THE SAME
+! BLOCK, so the explanation cannot be the same one.  What the listing
+! supports is that the CHANNEL/UNIT STATUS TABLE's word means
+! different things for a CHANNEL entry and a UNIT entry -- line 3's
+! "T CHAVL ... CHANNEL AVAILABLE" against line 5's "T UNAVL ... UNIT
+! AVAILABLE" is the same split one bit apart -- but THAT IS A READING
+! OF THE COMMENTS, NOT A MEASUREMENT, and no row on this page settles
+! it.  Recorded as an open question rather than resolved.
+!
+! THE LOCATION COLUMN CHECKS EVERY ONE OF THE THIRTEEN.  0.27 ->
+! 000000.33, 0.25 -> .31, 0.28 -> .34, 0.29 -> .35, 0.32 -> .40,
+! 0.39 -> .47, 0.40 -> .50, 0.52 -> .64, 0.59 -> .73, 0.62 -> .76,
+! 0.63 -> .77.  Octal of the decimal offset, every time.
+!
+! A NAME THAT STARTS WITH A DIGIT AFTER ITS LETTER: line 22 is
+! "T 2COMB", written here as T2COMB because STRAP ignores the blanks
+! in a name (the practice note in docs/NEXT.md 5t).
+
+        SLC, (8)3647.0
+
+! ---- external: printed p.64 ---------------------------------------
+TDISK   SYN, (8)3652.0
+
+        SLC, (8)3647.0
+
+! ---- SYN CARDS FOR THE CHANNEL/UNIT STATUS TABLE ------------------
+TUNTBA  SYN(BU,18), 0.0             ! line 1  -THE UNIT TABLE ADDRESS
+TMULTI  SYN(BU,1), 0.27             ! line 2  -THE MULTI -CHANNEL BIT
+TCHAVL  SYN(BU,1), 0.25             ! line 3  -THE CHANNEL AVAILABLE
+                                     !           BIT
+TFDISP  SYN(BU,1), 0.27             ! line 4  -THE KIND OF REEL
+                                     !           MOUNTED ON UNIT
+TUNAVL  SYN(BU,1), 0.28             ! line 5  -THE UNIT AVAILABLE BIT
+TUNASG  SYN(BU,1), 0.29             ! line 6  -THE UNIT ASSIGNED BIT
+TCHOWN  SYN(BU,1), 0.32             ! line 7  -THE OWNERSHIP LEVEL
+                                     !           INDICATOR
+TSEL    SYN(BU,1), 0.39             ! line 8  -THE MULTI UNIT SELECT
+                                     !           BIT
+TVER    SYN(BU,1), 0.40             ! line 9  -THE VERIFY BIT
+TEQUIP  SYN(BU,4), 0.52             ! line 10 -TYPE OF UNIT REQUESTED
+TUNITK  SYN(BU,4), 0.59             ! line 11 -NUMBER OF UNITS TO A
+                                     !           GIVEN CHANNEL
+TUNRES  SYN(BU,1), 0.62             ! line 12 -NOT OVERLAP RESERVED
+                                     !           BIT
+TOVRES  SYN(BU,1), 0.63             ! line 13 -THE OVERLAP RESERVED
+                                     !           BIT
+
+! ---- SYN CARDS FOR THE VALID CHECK TABLE --------------------------
+TTYARA  XW, TDISK, 8, TTYARA        ! line 20 -THE TYPE CODE
+TCOMBO  VF, TTYBC+TMACBC+TREQBC     ! line 21 -A CONSTANT THAT WILL
+                                     !           BY PASS ONE WORD
+T2COMB  VF, TTYBC+TMACBC            ! line 22 -FOR COMPUTING THE
+                                     !           NUMBER OF UNITS
+TVALVF  VF, 0.0                     ! line 23 -TO PREVENT A DOUBLE
+                                     !           VALIDITY CHECK
+TTYBC   SYN, 0.8                    ! line 24 -THE TYPE CODE BIT COUNT
+TMACBC  SYN, 0.8                    ! line 25 -THE MACHINE CONF COUNT
+                                     !           BIT COUNT
+TREQBC  SYN, 0.8                    ! line 26 -THE REQUEST COUNT BIT
+                                     !           COUNT
+TTYAD   SYN(BU,8), 0.0              ! line 27 -ADDRESS OF THE TYPE
+                                     !           CODE
+TMCAD   SYN(BU,8), TTYAD+0.8        ! line 28 -MACHINE CONF COUNT
+                                     !           ADDRESS
+TRCAD   SYN(BU,8), TMCAD+0.8        ! line 29 -THE REQUEST COUNT
+                                     !           ADDRESS
+        END, TTYARA
+
+! ---------------------------------------------------------------
+! THE CHECKED ROWS -- the four that compile a word.  The twenty-five
+! SYNs print a VALUE or NULL and are checked in SYMBOLS instead.
+! ---------------------------------------------------------------
+!   line 20  003647.00  003652.00+ 000 000010 003647   T TYARA XW
+!   line 21  003650.00  000000.30+                     T COMBO VF
+!   line 22  003650.40  000000.20+                     T 2COMB VF
+!   line 23  003651.00  000000.00+                     T VALVF VF,0.0
