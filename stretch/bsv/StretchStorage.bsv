@@ -92,6 +92,45 @@ interface StretchStorage;
   method Bool writeReady();
   method Action writeWord(WordAddr a, Word64 v);
 
+  // THE TAIL WORD OF A VFL FIELD THAT CROSSES A WORD BOUNDARY.
+  //
+  // Sixty-four is not a multiple of six, so a program that stores
+  // 6-bit characters one after another eventually stores one that
+  // straddles two storage words.  MCP does exactly that: printed
+  // p.43 line 49 of its Hollerith-to-BCD converter is
+  // "ST(V+I)(BU,6,6),.6($5)", and character ten of every card lands
+  // at bits 60-65.  Two words have to change, and `writeWord` can
+  // move one.
+  //
+  // WHY THIS IS A SECOND METHOD AND NOT A SECOND writeWord CALL.
+  // `writeWord` hands its request to the `storeW` RWire, and an
+  // RWire takes one value per clock; a second call in the same rule
+  // is the G0004 conflict recorded in StretchExecute.bsv's header
+  // ("the underlying RegFile likewise accepts only one write per
+  // rule").  This method writes a REGISTER instead, which memCtl
+  // drains into the store queue on the FOLLOWING clock -- so the
+  // caller may call writeWord and writeWordTail in one rule, because
+  // they touch different state.
+  //
+  // THE HEAD GOES THROUGH writeWord AND THE TAIL THROUGH HERE, in
+  // that order, and the queue preserves it.  Reads are held off while
+  // a tail is pending (see memCtl) exactly as they are held off while
+  // the queue is non-empty, so no channel can see the first word
+  // changed and the second not.
+  //
+  // CORE STORAGE ONLY.  The tail is drained to the store queue, which
+  // is the core-storage path; it does not run the special-address
+  // dispatch writeWord's `case` does.  A crossing field whose SECOND
+  // word is special (below 32) is therefore refused on the execute
+  // side rather than handled here -- see StretchExecute.bsv's ST arm.
+  method Action writeWordTail(WordAddr a, Word64 v);
+
+  // True on the one clock a tail is waiting to be queued.  The core
+  // folds it into `busyXfer` so no instruction is armed while it
+  // waits -- the same stall rl_xmit's multi-word transfer uses, for
+  // the same reason: one more writer would have nowhere to go.
+  method Bool storeTailPending();
+
   // Indicators: read the current 64-bit indicator word, or replace it
   // wholesale. An instruction that changes several indicator bits must
   // compute the combined new value itself (see StretchExecute.bsv's
@@ -259,6 +298,13 @@ module mkStretchStorage(StretchStorage);
   Vector#(NumTags, RWire#(WordAddr))       reqW      <- replicateM(mkRWire);
   Vector#(NumTags, PulseWire)              takeW     <- replicateM(mkPulseWire);
   RWire#(MemReq)   storeW <- mkRWire;   // writeWord (core storage) this clock
+  // The crossing-field tail: the wire a writeWordTail call lands on,
+  // and the register memCtl parks it in for one clock.  memCtl is the
+  // ONLY writer of the register -- the same discipline every other
+  // register in this module keeps, and the reason the wire exists at
+  // all (see memCtl's own header).
+  RWire#(MemReq)   storeTailW <- mkRWire;
+  Reg#(Maybe#(MemReq)) storeTail <- mkReg(tagged Invalid);
   Reg#(Bool)       irqEn  <- mkConfigReg(False); // interrupt system: reset = disabled (ConfigReg: intDueCalc)
   Reg#(Maybe#(WordAddr)) recentStoreReg <- mkReg(tagged Invalid); // see recentStore()
   function Bool memInRange(WordAddr a) = installed(a);
@@ -528,12 +574,31 @@ module mkStretchStorage(StretchStorage);
   rule memCtl;
     // Stores: enqueue this clock's store (if any); issue the oldest
     // queued store when its unit is free.
-    if (storeW.wget matches tagged Valid .r) begin
+    //
+    // A CROSSING FIELD'S TAIL GOES FIRST.  Its two words belong to ONE
+    // instruction and the head was queued last clock, so the tail is
+    // older in program order than anything arriving now.  The core
+    // holds off arming for the clock the tail waits
+    // (storeTailPending, folded into busyXfer), so nothing SHOULD
+    // arrive -- and the $display says so rather than the comment,
+    // because "should" is a claim and a message is a measurement.
+    Maybe#(MemReq) tailNext = storeTail;
+    if (storeTail matches tagged Valid .t) begin
+      if (storeQ.notFull) storeQ.enq(t);
+      else $display("StretchStorage: store queue full, CROSSING-FIELD TAIL to %0d LOST", t.addr);
+      recentStoreReg <= tagged Valid t.addr;
+      tailNext = tagged Invalid;
+      if (storeW.wget matches tagged Valid .r)
+        $display("StretchStorage: write to %0d arrived while a crossing-field tail was pending and was LOST", r.addr);
+    end
+    else if (storeW.wget matches tagged Valid .r) begin
       if (storeQ.notFull) storeQ.enq(r);
       else $display("StretchStorage: store queue full, write to %0d LOST", r.addr);
       recentStoreReg <= tagged Valid r.addr;
     end else
       recentStoreReg <= tagged Invalid;
+    if (storeTailW.wget matches tagged Valid .t2) tailNext = tagged Valid t2;
+    storeTail <= tailNext;
     Bool busUsed = False;
     if (storeQ.notEmpty && mbcu.canAccept(storeQ.first.addr)) begin
       mbcu.put(storeQ.first);
@@ -561,7 +626,12 @@ module mkStretchStorage(StretchStorage);
       // the same word must see the store; the look-ahead's LAAR
       // forwarding replaces this in stage 3) and the conservative
       // program-store compare for the instruction channels.
-      if (!busUsed && !issued && !storeQ.notEmpty) begin
+      // `!isValid(storeTail)` is the crossing-field tail's half of the
+      // same ordering: `storeQ.notEmpty` is read BEFORE this clock's
+      // enqueue, so without it a read could issue on the very clock
+      // the tail is queued and see the head word changed and the tail
+      // word not.
+      if (!busUsed && !issued && !storeQ.notEmpty && !isValid(storeTail)) begin
         if (pr matches tagged Valid .a &&& mbcu.canAccept(a)) begin
           mbcu.put(MemReq{ write: False, addr: a, data: 0, tag: fromInteger(c) });
           issued = True;
@@ -676,7 +746,15 @@ module mkStretchStorage(StretchStorage);
   endmethod
 
   method Bool writeReady();
-    return storeQ.notFull;
+    return storeQ.notFull && !isValid(storeTail);
+  endmethod
+
+  method Action writeWordTail(WordAddr a, Word64 v);
+    storeTailW.wset(MemReq{ write: True, addr: a, data: v, tag: 0 });
+  endmethod
+
+  method Bool storeTailPending();
+    return isValid(storeTail);
   endmethod
 
   method Action writeWord(WordAddr a, Word64 v);

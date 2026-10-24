@@ -5395,6 +5395,239 @@ no opcode can rule it out. What ruled it out was the datum the name
 labels — which is a tell worth stating on its own: *when a name
 labels data, decode the data before trusting the name.*
 
+## >>> MCP ACCEPTS ITS IOD CARD. SIXTY-FOUR IS NOT A MULTIPLE OF SIX, 2026-10-24 <<<
+
+**The model was refusing a store IBM's operating system depends on,
+and the cost was ten characters out of eighty.**
+
+### What was measured, in the order it was measured
+
+The question carried in since commit `c6e3e60` was why MCP rejects the
+IOD card. Four probe runs had established that UNCODE *was* handed the
+fixture's card and that the card is correctly punched — columns 1
+(`12-2` = `B`), 10 (`12-9` = `I`), 11 (`11-6` = `O`), 12 (`12-4` =
+`D`). So the next thing to read was what the conversion produced.
+
+Printed p.38 lines 11-20 are two call blocks. The first hands `S CA6`
+the card's address, `CF,80` — **eighty columns**, printed as `000120`
+and reproduced bit-exactly by `decks/mcp_bootstrap_p38.strap` — and
+`Y UCBF1` (002327.00) to convert into. The second hands `S BRK8`
+`Y UCBF1+.54` and 53 characters, into `Y UCBF2` (002337.00).
+
+`Y UCBF1` word 0 read `0xc800000000000390`, with words 1-7 zero. As
+ten 6-bit characters that is `0o62`, eight zeros, `0o71` — **`B`,
+eight blanks, `I`** — and bits 60-63, the top of character eleven,
+are zero. **Exactly ten characters out of eighty**, and the card has
+`IOD`.
+
+### Why ten, and the self-check that makes it mean the word boundary
+
+Printed p.43 is the converter and its loop is explicit: line 19's
+`CT0011(V+I)(BU,3)` and line 23's `LF(V+I)(BU,9)` read **twelve bits**
+— one card column, twelve rows — line 49's
+`ST(V+I)(BU,6,6),.6($5)` stores **six**, and line 52's `CB,$4,Q P`
+counts the eighty down. Ten passes × 6 bits = 60 bits. **Character
+ten lands at bits 60-65 of a 64-bit word and straddles the
+boundary.**
+
+**The input side proves it is the boundary and not the glyph.** Twelve
+bits per column straddles too — column 6's nine-bit `LF` sits at bits
+63-71 — so if crossing *loads* were also refused, `$4` would have
+stuck at column 6 and character 9 would be a blank. It is `0o71`,
+`I`, read from column 10. Crossing loads worked. The store was the
+sole governor, and ten is arithmetic, not coincidence.
+
+### The mechanism, found in the code and not guessed
+
+`bsv/StretchExecute.bsv`'s ST arm read
+`if (immediate || fieldCrosses(ea, len_)) setOpInvalid`. And the
+refusal cost more than the one character: `vflOk = False` also gates
+the progressive-index advance (line 2956), so **`$5` stayed at bit 60
+and the remaining seventy characters were refused at the same
+place.** That is why words 1-7 were zero rather than holding the rest
+of the card.
+
+So `Y UCBF2` held `I` and blanks; printed p.38 line 26's
+`K(BU,48),Y TYPMK($13)` compared it against `Y IOD MK`
+(`0xe66d000000000000`, measured); line 28's `BZAEZ,Y MKEAR` was
+taken; and MCP left through printed p.25 line 44's
+`B,X 223  -NOT IOD OR REEL CARD`.
+
+**It was never a documented restriction.** `StretchExecute.bsv`'s own
+header recorded it as the one-write-per-rule toolchain limit, in the
+same breath as "Transmit moves only one word" — which was the same
+limit, and was lifted the same way in October. Rule 4 wants a primary
+source for a semantic, and **printed p.43 line 49 is one**: IBM's
+operating system stores a crossing VFL field in its card converter.
+
+### How it is built
+
+`StretchStorage.writeWordTail` writes a **register** where
+`writeWord` writes a **wire**, so the ST arm can call both in one
+`execute()` without the G0004 conflict a second `writeWord` would be;
+`memCtl` drains the register into the store queue on the following
+clock, ahead of anything newer, and holds reads off while it waits.
+`insertFieldBitsPair` in `StretchVFL.bsv` does the 128-bit insert and
+cuts it at the word boundary — the write-side mirror of
+`extractFieldBits`. `StretchCore`'s `busyXfer` gains
+`st.storeTailPending()`, so nothing is armed for the one clock the
+tail waits. **`StretchCore`'s FSM was not touched**, which the old
+`bsv/README.md` item 3 predicted it would have to be.
+
+### What it changed, and the three checks were written first
+
+`tests/gen_mcp_boot_tb.py`'s `mcp_ucbf1_0`, `mcp_ucbf1_1` and
+`mcp_ucbf2_0` were computed in Python from `strap/iocd.card_text`
+**before the arm existed**, and failed in the exact way a stuck
+output pointer fails. They now read `0xc800000000000399`,
+`0xb400000000000000` and `0xe66d000000000000` — and the third is not
+a prediction from the card but the value **measured at `Y IOD MK`**,
+so the check says the type field MCP reads out of the card is
+bit-for-bit the mark MCP tests it with.
+
+Then the run went further and four checks moved. Re-measured, not
+re-predicted:
+
+* **`mcp_x_err_ad` is zero** — and for the opposite reason to the
+  first time it was zero. Not "no error site ran because MCP stopped
+  dead", but **MCP does not take the error exit at all.**
+* **`mcp_indicators_word11` is `0x1248`** — `AL`, `RZ`, `XH`,
+  `XVGZ`. **OP is out of the word again.**
+* **The PC is 0 and the trail is 3391.** MCP goes on into printed
+  p.54's TAPE IOD ROUTINE and branches to `L NORM`, which p.54 line
+  87 compiles as `SYN,(8)3237.40` — a stand-in for a symbol on a page
+  not yet transcribed. 003237.40 holds zeros, and a zero half-word is
+  BRANCH ENABLED to 0.0.
+* **Five swaps now execute where one did.** Half-words 2649 (printed
+  p.43's `Q FIN`), 2429 and 2436 (002276 and 002302 — printed p.40's
+  `Y REELC`, the two swaps on a card's path), 3006 and 3013.
+
+`gen_tb.py` gained `pc_trail_check` for this: when a run ends by
+branching into zeros the PC is 0 for every such run, so the **trail**
+is the datum, and a `$display` is not a check.
+
+### A negative result worth the line
+
+**The OP refusal at half-word 1304 (001214.00, printed p.24's time
+conversion) is NOT the crossing-field store.** Building the store
+would have cleared it if it were; `op_trail` still reports exactly
+one rise, still at that address. That open question stays open and is
+one hypothesis narrower. An exact locator in `StretchCore` remains
+the right tool for it, not another probe.
+
+### Two injections, and one of them survived
+
+**Caught:** drop `st.writeWordTail(w0 + 1, tpl_2(np))` and
+`mcp_ucbf1_0` still PASSES — the head word is written — while
+`mcp_ucbf1_1` fails at `0x3400000000000000` against
+`0xb400000000000000`. The two missing bits are exactly character
+ten's low two: `D`, wholly inside the tail word, still lands through
+its own non-crossing store, so **only the straddling character is
+lost**. Four more checks fail with it and the run returns to MCP's
+error exit at half-word 239.
+
+**Survived:** remove `st.storeTailPending()` from `busyXfer` and both
+the new deck — including its deliberately back-to-back block — and
+the whole boot run stay green, with no `LOST` message. The collision
+is unreachable at this pipeline's latency: two stores cannot be one
+clock apart. **It is kept anyway**, because without it the tail's
+correctness rests on a timing property nothing states, and the
+failure mode is a word dropped in silence. Recorded here because a
+guard no test can reach is exactly what a later reader would
+otherwise assume was tested.
+
+**AND "UNREACHABLE" IS A CLAIM ABOUT *THIS* PIPELINE.** The ordering
+is MCP first, then cycle accuracy, and the cycle-accurate rebuild
+(`5g`, `microarchitecture_plan.md`) changes exactly the latency that
+makes the collision unreachable — a multi-cycle E-box retiring two
+stores closer together is the whole point of it. **So the guard is
+load-bearing for the rebuild rather than for today**, and
+`StretchStorage`'s `$display` is the thing that will say so. Put this
+on the rebuild's list: when the E-box becomes multi-cycle, re-run the
+`busyXfer` injection against `decks/vfl_crossing_store.strap` block 2
+and expect it to be caught.
+
+**One more thing the rebuild inherits:** `recentStore()` reports the
+head's address for one clock and the tail's for the next, and the
+look-ahead's interlock compares one `storeAddr` per level. A level
+loaded on the head's clock that fetches the TAIL word sees no
+hazard — a two-clock window where the head write's own is one.
+`decks/store_close_to_fetch.strap` and `store_then_execute.strap` are
+the sections that would show it.
+
+### And the deck corrected itself — `LVI`'s address field is 19 bits
+
+`decks/vfl_crossing_store.strap` (twelve checks, every expectation
+derived in Python from Reference Manual printed p.21 and p.31 before
+the arm existed, every target starting as all ones) set up its
+progressive block with `LVI,$X2,TE+.60` and the stores landed at bits
+32 and 38.
+
+**`LVI`'s address field is eighteen bits of word and ONE of half
+word.** A bit offset of 60 is not expressible in it and became 32.
+Printed p.43 proves it on one page: line 33's `LVI,$3,5.0` compiles
+as `000005.07 01` and line 38's `LVI,$3,5.32` as `000005.47 01` —
+differing **in bit 18 alone**, with `$3` in bits 19-22 and the flag
+in bit 23 unchanged. Both rows are checked bit-exactly by
+`verify_mcp_bootstrap_p43.py`.
+
+**And IBM never asks for a finer one.** Every `LVI` in the converter
+uses `.0` or `.32` — lines 33, 38, 42, 44. A full 24-bit bit address
+comes from a **data word**, which is exactly why printed p.38 line 15
+is `VF,Y UCBF1` and printed p.43 line 15 reads it with
+`LV,$5,1.0($15)`. The deck uses that idiom now.
+
+**The assembler rounded silently, and no diagnostic was added.**
+Nothing this project has read says whether real STRAP diagnosed an
+operand its address field cannot hold, and rule 4 forbids inventing
+one. **Open item:** if a source turns up, `eval_addr_field` is where
+the check would go. Until then this paragraph is the warning.
+
+### What this unblocks: `L NORM` is printed p.58 line 5, and it was found by bisection
+
+The run stops at a symbol whose page had not been transcribed, which
+is the cleanest possible signal for which page is next — and the
+LOCATION column answers it without reading a word of code. MCP's
+listing is in address order, so **bisect on the octal address**
+(the practice note in memory; the column restarts at printed pp.63,
+105 and 111, which is the only thing that can break it).
+
+Rendering the location column alone, at 600 dpi, three pages:
+
+```
+printed p.55  line 6 = 003112.40 ... line 21 = 003125.40
+printed p.57  line 6 = 003212.00 ... line 21 = 003223.40
+```
+
+About 0o50 words a page, so 003237 is on p.57 or just past it. It is
+just past it, and the way it ends is the useful part:
+
+```
+printed p.57  line 38  003237.00   003237.50 00        B,L NORM
+printed p.58  line  5  003237.40   002571.00 80  000023.20 E0   L NORM  SWAPI,8,L...
+printed p.58  line  6  003240.40   000002.10 0F        B,2.0($15)
+```
+
+**`L NORM` is the first compiled line of printed p.58**, and p.57's
+last line is a branch to the very next half-word. It is a NORMAL
+RETURN: restore eight index registers with a `SWAPI,8` and return
+through `$15`, which is the same linkage printed p.43 line 53's
+`Q FIN  SWAPI,6,Q SAV,$1` uses one routine down. `decks/`'s p.54
+`SYN,(8)3237.40` for it is confirmed exactly.
+
+**PRINTED p.58 IS THE NEXT PAGE.** Its neighbourhood is already
+legible: p.57 carries `L SEARE`, `L SEARG`, `L SKIP`, `L FIN3` and an
+IOREQ search loop (`SWAPI,1,0.0(L WORKX),0.0(L IODX)  -SWAP IOREQ`),
+and p.58 opens into `L ERROR` at 003241.00 with `L ERRA` at
+003245.40. So the model is about to need whatever those swaps and
+`CB+` loops do — and **both swaps visible on these two pages are
+`SWAPI`** (p.57 line 22 and p.58 line 5), which is built. Backward
+`SWAP` is the one thing still refused, and neither page asks for it.
+
+`boot_plan.md` A3's remaining piece — getting IOD/REEL/MCPP cards
+onto the system tape the way the real system did — is unchanged by
+this, but the card it would deliver is now one MCP accepts.
+
 ## THE `$4` GAP IS CLOSED, AND A MECHANISM CLAIM IS CORRECTED, 2026-10-24
 
 Four boot runs with temporary probes, no code changed. The probes are
@@ -5464,6 +5697,27 @@ whatever precedes column 10 — blanks — and no type mark matches.
 *This is a hypothesis with a mechanism, not a measurement.* What
 would settle it is finding where the break-down output goes, which
 is the question above.
+
+### >>> AND IT WAS WRONG, 2026-10-24. BOTH HALVES. <<<
+
+Kept above rather than deleted, because it was wrong in a way worth
+being able to find again: it was a mechanism argued from two
+documents, and it named the card when the fault was in the model.
+
+**The card never needed commas.** Printed p.38 line 18 is
+`VF,Y UCBF1+.54` — bit 54, character ten, **column 10**, exactly
+where `C22-6728` printed p.88 puts the card type. The break-down
+starts where the fixture already punches. Field splitting was never
+in play.
+
+**And "where does the break-down output go" dissolves.** It goes to
+`Y UCBF2` (002337.00), exactly where printed p.38 line 20 puts it,
+and `mcp_ucbf2_0` now reads it. 005603 was only ever going to be
+filled by `Y JCCER`'s `T,15,Y UCBF2,0.0($15)`, and JCCER never ran —
+because the type field it compares was one character long. The empty
+table was a *consequence* of the rejection, not a clue to it.
+
+**The rejection was the model's.** See the section above this one.
 
 ## PRINTED p.54 — A THIRD `$`, AND A dds CHECKED FROM THREE PAGES AWAY, 2026-10-24
 

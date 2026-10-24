@@ -82,6 +82,36 @@ function Word64 insertFieldBits(Word64 hi, Bit#(6) off, Bit#(7) len_, Bit#(64) v
   return (hi & ~fieldMask) | fieldVal;
 endfunction
 
+// The same insertion for a field that STRADDLES two storage words --
+// the write-side counterpart of extractFieldBits' two-word read, and
+// built the same way, by doing the arithmetic in 128 bits and cutting
+// it in half at the end so the two halves cannot disagree about where
+// the field is.
+//
+// `hi` and `lo` are the words at the field's word address and the one
+// after it; the result is the new pair.  A caller that has only `hi`
+// must not use this -- fieldCrosses() is the test.
+//
+// WHY IT EXISTS.  MCP printed p.43 line 49 stores 6-bit characters
+// progressively ("ST(V+I)(BU,6,6),.6($5)"), and character ten of a
+// card lands at bits 60-65 of the output word.  Until 2026-10-24 the
+// ST arm refused that store outright, which left IBM's own card
+// converter producing ten characters out of eighty -- see
+// tests/gen_mcp_boot_tb.py's mcp_ucbf1_* checks.
+function Tuple2#(Word64, Word64)
+    insertFieldBitsPair(Word64 hi, Word64 lo, Bit#(6) off, Bit#(7) len_,
+                        Bit#(64) val);
+  Bit#(8) off8 = zeroExtend(off);
+  Bit#(8) len8 = zeroExtend(len_);
+  Bit#(128) mask64 = (len_ == 64) ? 128'h0000000000000000FFFFFFFFFFFFFFFF
+                                  : ((1 << len8) - 1);
+  Bit#(8) shiftAmt = 128 - off8 - len8;
+  Bit#(128) fieldMask = mask64 << shiftAmt;
+  Bit#(128) fieldVal  = (zeroExtend(val) & mask64) << shiftAmt;
+  Bit#(128) combined  = ({hi, lo} & ~fieldMask) | fieldVal;
+  return tuple2(combined[127:64], combined[63:0]);
+endfunction
+
 // readField/readFieldWithHi/writeField (the internal-read variants of
 // this section) were removed once every caller had migrated to the
 // prefetch/bail-out mechanism in StretchExecute.bsv's execute() --

@@ -367,7 +367,22 @@ module mkStretchCore(StretchCore);
   // and an instruction cannot start while a transfer is draining --
   // but the ordering is written down rather than assumed.
   Bool armXmit     = !armRecover && !isValid(ioPending) && isValid(xmitPending);
-  Bool busyXfer    = isValid(ioPending) || isValid(xmitPending);
+  // A CROSSING VFL FIELD'S TAIL WRITE IS THE THIRD THING THAT MAKES
+  // THE MACHINE BUSY, 2026-10-24.  StretchStorage's writeWordTail
+  // parks the second word of the store for one clock; while it waits,
+  // nothing may be armed, because a newly armed instruction's own
+  // write would arrive at the store queue on the clock the tail needs
+  // and one of the two would be lost.  Exactly the stall a multi-word
+  // transfer gets, for exactly the reason.
+  //
+  // IT DOES NOT NEED TO BE IN armXmit.  A transmit and a crossing
+  // store cannot overlap: a transfer blocks arming through this same
+  // boolean, so no ST executes while one drains, and the clock after a
+  // crossing ST nothing can be armed either -- so xmitPending cannot
+  // become Valid while a tail is pending.  Written down rather than
+  // assumed, as with rl_io's ordering above.
+  Bool busyXfer    = isValid(ioPending) || isValid(xmitPending)
+                     || st.storeTailPending();
   Bool armIdx      = !armRecover && !busyXfer && isValid(pendingIdxWrite);
   Bool resumeReady = ebox.canResume();
   Bool armResume   = !armRecover && !busyXfer && !isValid(pendingIdxWrite) && resumeReady;

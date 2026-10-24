@@ -1979,6 +1979,95 @@ run "mktape.py builds an IPL tape image (Ref. Man. printed p.126)" python3 verif
 # format first, before the hardware that reads it, is the whole point
 # of that milestone order.
 
+run "A VFL STORE ACROSS A WORD BOUNDARY -- the store MCP's card converter needs" ./run_program.sh ../decks/vfl_crossing_store.strap StretchVflCrossStoreTb \
+    "c32_at48_head:264=18446744073709490740" \
+    "c32_at48_tail:265=6231011559443791871" \
+    "b2b_first_head:272=18446744073709490740" \
+    "b2b_first_tail:273=6231011559443791871" \
+    "b2b_second_head:280=18446744073709490740" \
+    "b2b_second_tail:281=6231011559443791871" \
+    "mcp_width_head:288=18446744073709551609" \
+    "mcp_width_tail:289=13835058055282163711" \
+    "progressive_head:296=18446744073709551609" \
+    "progressive_tail:297=12033618204333965311" \
+    "mplus_refused_head:304=18446744073709551615" \
+    "mplus_refused_tail:305=18446744073709551615"
+# >>> MCP ASKED FOR THIS ONE, AND THE REFUSAL WAS COSTING IT ITS
+# CONFIGURATION CARD. <<<  printed p.43 line 49 is
+# "Q ST  ST(V+I)(BU,6,6),.6($5)" -- the store at the bottom of IBM's
+# Hollerith-to-BCD conversion loop -- and sixty-four is not a multiple
+# of six, so character ten of every card straddles the word boundary.
+# StretchExecute's ST arm refused any crossing field, and because a
+# suppressed VFL operation also skips its progressive index advance
+# (Reference Manual printed p.21) the output pointer STAYED at bit 60:
+# MCP's converter produced ten characters out of eighty, "IOD" arrived
+# as "I", and MCP rejected its own IOD card.  See
+# gen_mcp_boot_tb.py's mcp_ucbf1_0/mcp_ucbf1_1/mcp_ucbf2_0, written
+# before this arm was.
+#
+# WEAKER STANDARD, and the program says so in its header.  MCP's rows
+# pin line 49's encoding bit-exactly; this is hand-written from
+# Reference Manual printed p.21 and p.31, with every expectation
+# computed in Python from that arithmetic BEFORE the arm existed.
+# Every target starts as ALL ONES, so a store that wrote a whole word,
+# or masked the wrong half, leaves ones where the derivation says
+# zeros.
+#
+# THE INJECTION IS THE TAIL WRITE, and it was run on the BOOT, where
+# it is caught four ways.  Dropping "st.writeWordTail(w0 + 1,
+# tpl_2(np))" from the ST arm leaves mcp_ucbf1_0 PASSING -- the head
+# word is still written -- and fails mcp_ucbf1_1 at
+# 0x3400000000000000 against 0xb400000000000000.  The two missing bits
+# are exactly character ten's low two, which is the whole point: "D",
+# wholly inside the tail word, still lands through its own
+# non-crossing store, so only the straddling character is lost.
+# mcp_ucbf2_0, mcp_x_err_ad, mcp_indicators_word11 and both PC checks
+# fail with it, and the run goes back to MCP's error exit at half-word
+# 239.
+#
+# >>> AND ONE INJECTION SURVIVED, SAID PLAINLY. <<<  Removing
+# "st.storeTailPending()" from StretchCore's busyXfer -- the stall that
+# stops a newly armed instruction's write from arriving on the clock
+# the parked tail needs the store queue -- leaves BOTH this deck
+# (including its deliberately back-to-back block 2) and the whole boot
+# run green, with no "LOST" message from StretchStorage.  The
+# collision is unreachable at this pipeline's latency: two stores
+# cannot be one clock apart.
+#
+# IT IS KEPT ANYWAY, and that is a choice with a reason.  Without it
+# the tail's correctness rests on a timing property nothing in the
+# design enforces or states, and the failure mode is a word dropped in
+# silence.  The guard makes it structural and StretchStorage's
+# $display is its detector.  Recorded here because a guard no test can
+# reach is exactly the thing a later reader would otherwise assume was
+# tested.
+#
+# AND "UNREACHABLE" IS A CLAIM ABOUT *THIS* PIPELINE.  The ordering is
+# MCP first then cycle accuracy, and the cycle-accurate rebuild
+# (docs/NEXT.md 5g) changes exactly the latency that makes the
+# collision unreachable -- a multi-cycle E-box retiring two stores
+# closer together is the point of it.  So the guard is load-bearing
+# FOR THE REBUILD rather than for today.  WHEN THE E-BOX BECOMES
+# MULTI-CYCLE, RE-RUN THIS INJECTION against block 2 and expect it to
+# be caught.  Same list: recentStore() reports the head's address for
+# one clock and the tail's for the next, so a look-ahead level loaded
+# on the head's clock that fetches the TAIL word sees no hazard -- a
+# two-clock window where an ordinary store's is one.  The
+# store-close-to-fetch and store-then-EXECUTE sections both pass
+# today, which is what says it is not reachable yet.
+#
+# THE DECK ALSO CORRECTED ITSELF ONCE, and the correction is a finding:
+# its first draft set up block 4's index with "LVI,$X2,TE+.60" and the
+# stores landed at bits 32 and 38.  LVI'S ADDRESS FIELD IS NINETEEN
+# BITS -- eighteen of word and one of half word -- so .60 is not
+# expressible and became .32.  printed p.43 proves it on one page:
+# line 33's "LVI,$3,5.0" is 000005.07 01 and line 38's "LVI,$3,5.32"
+# is 000005.47 01, differing in bit 18 alone, and both are checked by
+# verify_mcp_bootstrap_p43.py.  Every LVI in MCP's converter uses .0
+# or .32.  A full 24-bit bit address comes from a DATA WORD, which is
+# why printed p.38 line 15 is "VF,Y UCBF1" and p.43 line 15 reads it
+# with "LV,$5,1.0($15)" -- the idiom block 4 now uses.
+#
 run "M+1, Add One to Memory -- the sixth VFL integer arm" ./run_program.sh ../decks/vfl_m_plus_one.strap StretchMPlusOneTb \
     "f6_two_increments_at_w63_58:134=576460752303423493" \
     "f64_whole_word:135=1001" \

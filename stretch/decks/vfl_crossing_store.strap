@@ -1,0 +1,187 @@
+! vfl_crossing_store.strap -- a VFL STORE whose field straddles two
+! storage words.
+!
+! WHY IT EXISTS, AND WHO ASKED FOR IT.  MCP did.  Printed p.43 line 49
+! of IBM's own operating system is
+!
+!       Q ST    ST(V+I)(BU,6,6), .6($5)
+!
+! the store at the bottom of the Hollerith-to-BCD conversion loop that
+! printed p.38 lines 11-15 call to read an IOD control card.  It stores
+! six bits at a time and advances six bits at a time, and SIXTY-FOUR IS
+! NOT A MULTIPLE OF SIX: character ten of every card lands at bits
+! 60-65 and straddles the word boundary.
+!
+! Until 2026-10-24 the model refused that store -- StretchExecute's ST
+! arm called setOpInvalid on any crossing field, which bsv/README.md's
+! scope list recorded.  The refusal cost more than the one character.
+! A suppressed VFL operation also skips its progressive index advance
+! (Reference Manual printed p.21), so the output pointer STAYED at bit
+! 60 and the remaining seventy characters were refused at the same
+! place: MCP's card converter produced TEN characters out of eighty,
+! "IOD" arrived as "I", the card type did not match Y IOD MK, and MCP
+! rejected its own configuration card.  The measurement is in
+! tests/gen_mcp_boot_tb.py (mcp_ucbf1_0, mcp_ucbf1_1, mcp_ucbf2_0).
+!
+! THE SOURCE THAT SAYS A CROSSING STORE IS LEGAL is that line.  Rule 4
+! asks for a primary source and MCP's listing is one: the operating
+! system the machine shipped with depends on it, so the refusal was
+! never a documented restriction -- it was a one-write-per-rule
+! toolchain limit, recorded as such in StretchExecute.bsv's header in
+! the same breath as "Transmit moves only one word", which was the same
+! limit and was lifted the same way.
+!
+! WEAKER STANDARD, STATED PLAINLY.  MCP's rows pin line 49's ENCODING
+! bit-exactly (decks/mcp_bootstrap_p43.strap) and the boot run pins its
+! EFFECT on one card.  This program is hand-written from Reference
+! Manual printed p.21 (the VFL field at a bit address) and printed p.31
+! (the straddling rule for address monitoring), and its expectations
+! were computed in Python from that arithmetic BEFORE the arm was
+! built.  It is weaker than a deck oracle and stronger than the boot
+! run alone, because it varies the width and the offset.
+!
+! EVERY TARGET STARTS AS ALL ONES, which is not decoration: a store
+! that wrote a whole word instead of a field, or that masked the wrong
+! half, leaves ones where the derivation says zeros and the other way
+! round.  A zeroed target would hide both.
+!
+! HOW THE EXPECTATIONS WERE DERIVED.  A field at bit address A, length
+! L, occupies IBM bits A..A+L-1 of the two-word pair; so for the pair
+! (W, W+1) seen as one 128-bit quantity the field is at 128-A-L from
+! the bottom, and the halves come back out at the word boundary:
+!
+!   32 bits at .48, value 0x12345678  -> W   bits 48-63 = 0x1234
+!                                        W+1 bits  0-15 = 0x5678
+!    6 bits at .60, value (8)46       -> W   bits 60-63 = 1001
+!                                        W+1 bits  0-1  = 10
+!
+! BLOCK 4 IS THE ONE THAT REPRODUCES THE MCP BUG.  Two progressive
+! stores through one index: the first crosses, the second must land six
+! bits further on.  If the advance is lost -- which is exactly what the
+! refusal did -- the second store repeats the first and T E+1 reads
+! (16)BFFFFFFFFFFFFFFF instead of (16)A6FFFFFFFFFFFFFFFF's pattern.
+! The two expectations differ, so this block cannot pass either way.
+!
+! BLOCK 2 IS THE ONE THAT ATTACKS THE STALL.  StretchStorage's
+! writeWordTail parks the second word for one clock and StretchCore
+! holds off arming while it waits (storeTailPending, folded into
+! busyXfer).  Two crossing stores BACK TO BACK put the first store's
+! tail write and the second store's head write one clock apart, which
+! is the collision that stall exists to prevent -- and if it is ever
+! reached without it, StretchStorage says so out loud ("arrived while a
+! crossing-field tail was pending and was LOST").
+!
+! >>> AND THE STALL SURVIVED ITS INJECTION ON THE BOOT RUN. <<<
+! Removing `st.storeTailPending()` from busyXfer left
+! tests/gen_mcp_boot_tb.py entirely green -- MCP's loop never puts two
+! stores close enough together -- so the guard is argued from the
+! mechanism and not yet from a measurement.  Recorded here rather than
+! left to be assumed; block 2 is the attempt to make it load-bearing.
+!
+! WHAT IS STILL REFUSED, and block 5 is the scope check for it:
+!   * M+ with a crossing field, and the CM connective likewise.
+!     Nothing measured needs them; bsv/README.md carries them with the
+!     date.
+!   * A crossing field whose SECOND word is below 32 (the machine's
+!     registers): the tail is drained to the core-storage queue and
+!     does not run writeWord's special-address dispatch.
+!   * A crossing field that ALSO needs a progressive refill: that
+!     wants three reads of a two-slot prefetch.
+
+        SLC, (8)300.0
+START   LVI, $X1, 0
+
+! ---- 1. a 32-bit field at .48: sixteen bits either side -----------
+        L(BU,32,8), DATA1
+        ST(BU,32,8), TA+.48
+
+! ---- 2. BACK TO BACK, the stall's own case ------------------------
+! Two crossing stores with nothing between them.  Separate targets, so
+! neither can be mistaken for the other's work.
+        L(BU,32,8), DATA1
+        ST(BU,32,8), TB+.48
+        ST(BU,32,8), TC+.48
+
+! ---- 3. MCP's width and MCP's offset: six bits at .60 -------------
+        L(BU,6,6), DATA2
+        ST(BU,6,6), TD+.60
+
+! ---- 4. TWO PROGRESSIVE STORES, THE FIRST OF THEM CROSSING -------
+! This is printed p.43 line 49's own shape.  The second store proves
+! the index advanced PAST the crossing field; if it did not, it
+! overwrites the first and the check below fails with the derivation's
+! other value.
+! >>> AND THE INDEX IS LOADED FROM A DATA WORD, NOT BY LVI, WHICH IS
+! >>> A CORRECTION THIS PROGRAM EARNED THE HARD WAY. <<<
+!
+! The first draft wrote "LVI,$X2,TE+.60" and the two stores landed at
+! bits 32-37 and 38-43 instead of 60-65 and 66-71.  LVI's ADDRESS
+! FIELD IS NINETEEN BITS -- eighteen of word and ONE of half word --
+! so a bit offset of 60 cannot be expressed in it and 60 became 32.
+!
+! THE PRINTED LISTING IS WHAT SAYS SO, and it says it twice on one
+! page.  MCP printed p.43 line 33 is "LVI,$3,5.0" and compiles as
+! 000005.07 01; line 38 is "LVI,$3,5.32" and compiles as
+! 000005.47 01.  The ONLY difference is bit 18, the half-word
+! selector: 0o07 = 000111 against 0o47 = 100111, with $3 in bits
+! 19-22 and the flag in bit 23 unchanged.  Both rows are checked
+! bit-exactly by tests/verify_mcp_bootstrap_p43.py.
+!
+! AND IBM NEVER ASKS FOR A FINER ONE.  Every LVI in MCP's converter
+! uses .0 or .32 -- lines 33, 38, 42, 44 -- because that is all the
+! field holds.  A full 24-bit bit address has to come from a DATA
+! WORD, which is exactly why printed p.38 line 15's call block is
+! "VF,Y UCBF1" and printed p.43 line 15 reads it with
+! "LV,$5,1.0($15)".  This block uses that idiom because it is the one
+! the operation requires, not merely the one MCP happens to use.
+!
+! THE ASSEMBLER ROUNDED SILENTLY and nothing here says whether real
+! STRAP diagnosed it; no source this project has read speaks to it, so
+! no diagnostic was added on a guess.  docs/NEXT.md carries it.
+        LV, $X2, TEADDR
+        L(BU,6,6), DATA2
+        ST(V+I)(BU,6,6), .6($X2)
+        ST(V+I)(BU,6,6), .6($X2)
+
+! ---- nothing so far may have been refused ------------------------
+        BOP, $                       ! hang if OP came on: all legal
+
+! ---- 5. M+ ACROSS A BOUNDARY IS STILL REFUSED --------------------
+! The scope check, and it is LAST because OP is sticky: every block
+! above has already been tested for a clear OP.
+        M+(BU,32,8), TF+.48
+        BZOP, $                      ! hang if OP did NOT come on
+        B, PASS
+PASS    BEW, $
+        CNOP
+
+! ---- data --------------------------------------------------------
+        SLC, (8)400.0
+DATA1   DD(BU,32), (16)12345678
+DATA2   DD(BU,6), (8)46
+! The bit address block 4's index is loaded from.  A VF compiles 25
+! bits and the location counter stands at bit 25 afterwards (C22-6531
+! printed p.18), so it gets a word of its own.
+        SLC, (8)401.0
+TEADDR  VF, TE+.60
+! Every target is TWO words of ones, because a crossing store changes
+! both and the second is where the dropped-tail bug lives.
+        SLC, (8)410.0
+TA      DD(BU,64), (8)1777777777777777777777
+        DD(BU,64), (8)1777777777777777777777
+        SLC, (8)420.0
+TB      DD(BU,64), (8)1777777777777777777777
+        DD(BU,64), (8)1777777777777777777777
+        SLC, (8)430.0
+TC      DD(BU,64), (8)1777777777777777777777
+        DD(BU,64), (8)1777777777777777777777
+        SLC, (8)440.0
+TD      DD(BU,64), (8)1777777777777777777777
+        DD(BU,64), (8)1777777777777777777777
+        SLC, (8)450.0
+TE      DD(BU,64), (8)1777777777777777777777
+        DD(BU,64), (8)1777777777777777777777
+        SLC, (8)460.0
+TF      DD(BU,64), (8)1777777777777777777777
+        DD(BU,64), (8)1777777777777777777777
+        END, START

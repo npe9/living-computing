@@ -415,7 +415,12 @@ endfunction
 // And the straddling rule ("an instruction or data
 // field which straddles a boundary always gives an address monitoring
 // signal", p.31) for STORES: dfSignal's callers ask about both words
-// of a crossing field, the store sites still compare one word each.
+// of a crossing field, and SO DOES THE ST ARM'S CROSSING STORE, as of
+// 2026-10-24 -- it compares w0 and w0+1 and signals DS if either
+// objects.  This comment used to end "the store sites still compare
+// one word each", which was true only while a crossing store was
+// refused outright.  The remaining one-word-each sites are the ones
+// that still cannot cross: M+ and the CM connective.
 function Bool protViolates(StretchStorage st, WordAddr a);
   Word64  b     = st.readBoundaries();
   WordAddr upper = b[63:46];   // IBM bits 0-17
@@ -2394,9 +2399,68 @@ function ActionValue#(VflOutcome)
           end
           6'b001101: begin // ST (Store) -- prefetch/bail-out shape,
             // inlining writeField's own internal RMW read rather
-            // than calling it: guaranteed non-crossing (checked
-            // just above), so exactly 1 read, same as SV/SC/SR.
-            if (immediate || fieldCrosses(ea, len_)) begin
+            // than calling it.
+            //
+            // >>> A STORE MAY NOW CROSS A WORD BOUNDARY, 2026-10-24,
+            // AND MCP IS THE SOURCE THAT SAYS IT MUST. <<<
+            //
+            // This arm used to read "guaranteed non-crossing (checked
+            // just above), so exactly 1 read, same as SV/SC/SR", and
+            // the check above it called setOpInvalid on any crossing
+            // field.  That was never a documented restriction -- it
+            // was the one-write-per-rule toolchain limit this file's
+            // header records, in the same breath as "Transmit moves
+            // only one word", which was the same limit and was lifted
+            // the same way.
+            //
+            // MCP printed p.43 line 49 is the primary source: its
+            // Hollerith-to-BCD converter stores 6-bit characters
+            // progressively, "ST(V+I)(BU,6,6),.6($5)", and sixty-four
+            // is not a multiple of six -- character ten of every card
+            // lands at bits 60-65 of the output word.  With the store
+            // refused, IBM's own card reader produced TEN characters
+            // out of eighty: a suppressed VFL operation also skips its
+            // progressive index advance (see vflOk), so the output
+            // pointer stuck at bit 60 and the remaining seventy
+            // characters were all refused at the same place.  The
+            // measurement is in tests/gen_mcp_boot_tb.py's
+            // mcp_ucbf1_0/mcp_ucbf1_1/mcp_ucbf2_0, which were written
+            // before this arm was.
+            //
+            // HOW TWO WORDS GET WRITTEN IN ONE RULE.  They do not:
+            // StretchStorage's writeWordTail parks the second word in
+            // a REGISTER, which memCtl drains into the store queue on
+            // the following clock, and the core refuses to arm
+            // anything while it waits (busyXfer).  writeWord takes a
+            // wire and writeWordTail a register, so calling both in
+            // one execute() is not the G0004 conflict a second
+            // writeWord would be.
+            //
+            // TWO THINGS STAY REFUSED, each for a stated reason:
+            //
+            //   * A TAIL BELOW WORD 32.  The tail is drained to the
+            //     store queue, which is the core-storage path, and
+            //     does not run writeWord's special-address dispatch.
+            //     Words 0-31 are the machine's registers.
+            //   * A CROSSING FIELD THAT ALSO NEEDS A REFILL.  That
+            //     wants THREE reads -- both words of the field and the
+            //     refill word -- and `prefetch` holds two.  The
+            //     trailing progressive block already refuses this
+            //     combination after the fact (vflNeedsRefill &&
+            //     vflReadsUsed >= 2); refusing it HERE, before the
+            //     write, is the difference between a suppressed
+            //     operation and a half-done one.  Nothing in MCP's
+            //     converter hits it: the three checks above go green,
+            //     and line 49's own index has no refill.
+            //
+            // M+ (code 010001 below) and the CM connective keep the
+            // old refusal.  Nothing measured needs them yet, and
+            // bsv/README.md's scope list carries them with the date.
+            Bool stCrosses = fieldCrosses(ea, len_);
+            WordAddr stW0 = baWord(ea);
+            if (immediate
+                || (stCrosses && (stW0 + 1) < 32)
+                || (stCrosses && vflNeedsRefill)) begin
               ind = setOpInvalid(ind);
               vflOk = False;
             end else begin
@@ -2404,9 +2468,41 @@ function ActionValue#(VflOutcome)
               SM128 shifted = SM128 { sign: acc.sign, mag: acc.mag >> offSh };
               Bit#(1) fsign = (vi.m.invert == 1) ? ~shifted.sign : shifted.sign;
               Bit#(64) packedField = smToField(SM128{sign:fsign, mag:shifted.mag}, len_, bsz, vi.m.unsign);
-              WordAddr w0 = baWord(ea);
+              WordAddr w0 = stW0;
               Bit#(6) off = baBit(ea);
-              if (!vflNeedsRefill) begin
+              if (stCrosses) begin
+                // Two reads, then one write and one tail write.
+                //
+                // BOTH WORDS ARE COMPARED FOR PROTECTION, which is
+                // p.31's straddling rule on the store side -- "an
+                // instruction or data field which straddles a
+                // boundary always gives an address monitoring
+                // signal" -- and is why the comment beside
+                // protViolates no longer says "the store sites still
+                // compare one word each".
+                if (prefetchCount >= 2) begin
+                  Bool dsHi = protViolates(st, w0);
+                  Bool dsLo = protViolates(st, w0 + 1);
+                  if (dsHi || dsLo) ind = setBit(ind, ind_DS, 1);
+                  else begin
+                    Tuple2#(Word64, Word64) np =
+                      insertFieldBitsPair(prefetch[0], prefetch[1], off,
+                                          len_, packedField);
+                    st.writeWord(w0, tpl_1(np));
+                    st.writeWordTail(w0 + 1, tpl_2(np));
+                  end
+                  vflReadsUsed = 2;
+                end else if (prefetchCount == 1)
+                  needsRead = tagged Valid (w0 + 1);
+                else
+                  needsRead = tagged Valid w0;
+                // vflWriteArmHandled stays False: with a refill
+                // refused above, the shared trailing block's
+                // progressive advance writes no storage (it hands the
+                // index back through vflPending), so it is safe here
+                // in a way it is not on the refill path below.
+              end
+              else if (!vflNeedsRefill) begin
                 if (prefetchCount >= 1) begin
                   if (protViolates(st, w0)) ind = setBit(ind, ind_DS, 1);
                   else st.writeWord(w0, insertFieldBits(prefetch[0], off, len_, packedField));

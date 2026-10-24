@@ -595,6 +595,50 @@ cannot be tested without it.
 > itself** — the next page, and the one the run has been waiting
 > for.
 >
+> **A18 — >>> MCP ACCEPTS ITS IOD CARD, AND THE BLOCKER WAS A STORE
+> THE MODEL REFUSED, 2026-10-24. <<<** Every A-item from A12 on has
+> ended "and MCP still rejects the card". It does not any more, and
+> the reason was not on the card and not in the tape layout — it was
+> in `bsv/StretchExecute.bsv`.
+>
+> MCP's Hollerith-to-BCD converter (printed p.43) stores six bits at
+> a time and advances six bits at a time, and **sixty-four is not a
+> multiple of six**: character ten of every card lands at bits 60-65
+> and straddles the word boundary. The ST arm refused any crossing
+> field, and because a suppressed VFL operation also skips its
+> progressive index advance, the output pointer stuck at bit 60 and
+> every later character was refused at the same place. **`IOD`
+> arrived as `I`** — ten characters out of eighty — printed p.38 line
+> 26's compare against `Y IOD MK` failed, and MCP left through
+> printed p.25 line 44's `B,X 223  -NOT IOD OR REEL CARD`.
+>
+> The crossing store is built (`StretchStorage.writeWordTail`,
+> `insertFieldBitsPair`), and the card's type field is now
+> bit-for-bit the mark MCP tests it with. **`X ERR AD` is zero
+> because no error site runs**, where for three A-items it held the
+> address of one. Five swaps execute where one did, printed p.40's
+> `Y REELC` among them, and the run reaches **printed p.54's TAPE IOD
+> ROUTINE**.
+>
+> **WHAT A3 LOOKS LIKE NOW.** A3's remaining piece is unchanged —
+> getting IOD/REEL/MCPP cards onto the system tape the way the real
+> system did, rather than preloaded by a testbench — but the card
+> that piece would deliver is now one MCP accepts, which it was not
+> before. The run's new end is `L NORM`, a `SYN` on printed p.54 for
+> a symbol defined on a page not yet transcribed: **printed p.55
+> onward is the next transcription, and the page defining `L NORM` is
+> the one to find first.** `docs/NEXT.md` has the measurements.
+>
+> **AND THAT PAGE IS printed p.58, FOUND THE SAME DAY BY BISECTING
+> THE LOCATION COLUMN.** printed p.57's last compiled line (38) is
+> `003237.00 | 003237.50 00 | B,L NORM` — a branch to the very next
+> half word — and printed p.58's first (line 5) is
+> `003237.40 | 002571.00 80  000023.20 E0 | L NORM  SWAPI,8,L...`,
+> with line 6 `B,2.0($15)`. It is a NORMAL RETURN: restore eight
+> indices by swap and return through `$15`, the same linkage printed
+> p.43 line 53 uses. p.54's `SYN,(8)3237.40` for it is confirmed to
+> the bit. **Printed p.58 is the next page to transcribe.**
+>
 > **A17 — PRINTED pp.47-48, AND THE DECODE PROGRAM'S LINKAGE IS
 > PRINTED IN FULL, 2026-10-23.** printed p.47 **compiles nothing**:
 > twenty-three lines, of which the only non-comment is line 1's

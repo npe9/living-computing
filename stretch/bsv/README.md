@@ -540,8 +540,31 @@ it recognizes independent of what the datapath implements.
   the record of what the model does not do, and a limit that silently
   disappears is indistinguishable from one nobody rechecked. `SWAP`
   is the remaining Transmit limit.
-- **A crossing-field VFL store under progressive indexing suppresses
-  the increment too, not just the store.** This falls directly out of
+- ~~**A crossing-field VFL store under progressive indexing suppresses
+  the increment too, not just the store.**~~ **LIFTED FOR `ST`,
+  2026-10-24, AND MCP IS WHAT LIFTED IT.** `ST` now splits a crossing
+  field across two words: `StretchStorage.writeWordTail` parks the
+  second word for one clock and `StretchCore`'s `busyXfer` holds off
+  arming while it waits, so the progressive advance happens as p.21
+  says it should. Printed p.43 line 49 of MCP's Hollerith-to-BCD
+  converter is `ST(V+I)(BU,6,6),.6($5)`, and sixty-four is not a
+  multiple of six: with the store refused, IBM's own card reader
+  produced TEN characters out of eighty — the advance was skipped, so
+  the output pointer stuck at bit 60 and every later character was
+  refused at the same place — `IOD` arrived as `I`, and MCP rejected
+  its own configuration card. `decks/vfl_crossing_store.strap` pins
+  the semantics (twelve checks, every expectation derived before the
+  arm existed) and `tests/gen_mcp_boot_tb.py`'s `mcp_ucbf1_*` pin the
+  effect on MCP itself.
+  **WHAT IS STILL REFUSED**, each for a stated reason:
+  `M+` and the `CM` connective keep the old guard (nothing measured
+  needs them); a crossing field whose SECOND word is below 32 — the
+  machine's registers — because the tail drains to the core-storage
+  queue and does not run `writeWord`'s special-address dispatch; and a
+  crossing field that ALSO needs a progressive refill, which wants
+  three reads of a two-slot prefetch. The paragraph below is kept
+  because the *reasoning* still applies to those three.
+  This falls directly out of
   the crossing-field simplification above combined with the manual's
   own rule (p.22 PROGRAMMING NOTES: "If an exception condition is
   detected during the variable field length portion of the operation,
@@ -690,6 +713,18 @@ isn't repeated:
    boundary is OP-invalid rather than split across two writes
    (`fieldCrosses` in StretchVFL.bsv); Transmit moves one word, not a
    run of `count` words.
+   **BOTH OF THOSE LAST TWO ARE NOW FALSE, and they were lifted the
+   same way, which is the point worth keeping.** Transmit moves
+   `count` words in `StretchCore`'s own `rl_xmit` rule; `ST` splits a
+   crossing field via `StretchStorage.writeWordTail`, which writes a
+   REGISTER where `writeWord` writes a WIRE, so the two can be called
+   in one `execute()` and the second word reaches the store queue a
+   clock later. The constraint was never a machine restriction — MCP
+   printed p.43 line 49 depends on the crossing store and printed p.4
+   line 28 on the multi-word transmit — so what the constraint
+   actually forced was a STAGING DISCIPLINE, not a reduced
+   instruction set. `M+` and the `CM` connective still carry the old
+   refusal; see the scope list above for the three cases that remain.
 5. **`RegFile`'s Verilog primitive hard-caps reads at 5 ports**
    (`sub[5]` in `RegFile.bs`), and `execute()` has far more than 5
    textual call sites that read a word in a given instruction (each
@@ -996,12 +1031,21 @@ of these).
    `LVE` remains open — see "Direct index arithmetic" above and
    `strap/README.md`'s Problem 2.2 Method 3 writeup for what's been
    ruled out so far. `SIC` is done (see "Executed").
-3. Multi-word Transmit and crossing-field VFL stores, properly, as
-   multi-cycle operations (needs `StretchCore`'s FSM to support an
-   instruction that isn't done after one `step()` — the `pendingIdxWrite`
-   two-cycle mechanism added for progressive indexing is a template for
-   this, not a ready-made solution: crossing-field stores need to split
-   across a word boundary, not just defer a single write).
+3. ~~Multi-word Transmit and crossing-field VFL stores, properly, as
+   multi-cycle operations~~ **BOTH DONE** — Transmit 2026-10-18
+   (`rl_xmit`), the `ST` crossing store 2026-10-24
+   (`StretchStorage.writeWordTail`). The guess recorded here was
+   right about the shape and wrong about the difficulty: it said
+   `pendingIdxWrite` was "a template for this, not a ready-made
+   solution: crossing-field stores need to split across a word
+   boundary, not just defer a single write". Splitting across a word
+   boundary turned out to be the easy half — `insertFieldBitsPair` in
+   StretchVFL.bsv, twelve lines, the write-side mirror of
+   `extractFieldBits`. Deferring the single write was the hard half,
+   and the answer was not to touch `StretchCore`'s FSM at all: a
+   method that writes a register instead of a wire is a second write
+   port, and one clock of `busyXfer` is the whole stall. `M+` and
+   `CM` are what is left.
 4. Open question, not yet resolved either way: does a branch
    instruction immediately following a progressive-indexing
    instruction (e.g. `BZXCZ` right after `ST(V+ICR)`, as in

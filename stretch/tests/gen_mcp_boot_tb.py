@@ -307,12 +307,109 @@ def main():
         # ONE.  It is a ratchet with a reason, not a weakening: any
         # OTHER error site, and any return to zero, fails it.
         #
-        # WHY MCP REJECTS THE CARD IS THE NEXT QUESTION, and
-        # docs/NEXT.md carries it.  The card the fixture punches is
-        # an IOCD card and printed p.25 expects an IOD or REEL card,
-        # so the first thing to check is whether this path should be
-        # reached at all with this fixture.
-        ("mcp_x_err_ad", str(sym("XERRAD")), 0x00C8600000000000),
+        # >>> AND IT IS ZERO AGAIN, 2026-10-24, FOR THE OPPOSITE
+        # REASON TO THE FIRST TIME. <<<
+        #
+        # It was zero because MCP stopped dead on a zero word before
+        # any error site ran.  It is zero now because MCP DOES NOT
+        # TAKE THE ERROR EXIT AT ALL: the card is accepted.
+        #
+        # THE REJECTION WAS THE MODEL'S, NOT MCP'S.  printed p.38
+        # line 26 compares the card's type field against Y TYPMK, and
+        # the field MCP had to compare was one character long -- the
+        # crossing-field store refusal above (mcp_ucbf1_*) stopped
+        # the Hollerith converter after ten characters, so "IOD"
+        # arrived as "I".  With the store built, mcp_ucbf2_0 is
+        # bit-for-bit Y IOD MK, line 28's "BZAEZ,Y MKEAR" is not
+        # taken, and printed p.25 line 44's "B,X 223  -NOT IOD OR
+        # REEL CARD" -- the branch that filled this word -- is never
+        # reached.
+        #
+        # SO THIS CHECK HAS SAID THREE DIFFERENT THINGS and the third
+        # is the strongest: no error site ran, on a run that reaches
+        # printed p.54's tape IOD routine and executes five swaps.
+        # Any return to the error path fails it.
+        ("mcp_x_err_ad", str(sym("XERRAD")), 0),
+
+        # >>> THE CARD TYPE, OUT OF MCP'S OWN HOLLERITH CONVERTER <<<
+        #
+        # These three checks are the reason the model can store a VFL
+        # field that crosses a word boundary.  They were written
+        # BEFORE the arm was built, with the values computed in
+        # Python from strap/iocd.card_text, and they failed in the
+        # exact way a stuck output pointer fails.
+        #
+        # THE PATH.  printed p.38 lines 11-15 call S CA6 with a
+        # three-word block: the card's address, "CF,80" -- eighty
+        # columns, printed as 000120 and reproduced bit-exactly by
+        # decks/mcp_bootstrap_p38.strap -- and Y UCBF1 (002327.00) to
+        # convert into.  printed p.43 is the converter: line 19's
+        # "CT0011(V+I)(BU,3)" and line 23's "LF(V+I)(BU,9)" read
+        # TWELVE BITS -- one card column, twelve rows -- line 49's
+        # "ST(V+I)(BU,6,6),.6($5)" stores SIX, and line 52's
+        # "CB,$4,Q P" counts the eighty down.
+        #
+        # SIXTY-FOUR IS NOT A MULTIPLE OF SIX.  Character ten lands
+        # at bits 60-65 of Y UCBF1 and straddles the word boundary.
+        # The model refused that store -- bsv/StretchExecute's ST arm
+        # called setOpInvalid on any crossing field -- and a
+        # suppressed VFL operation also skips its progressive index
+        # advance, so $5 STAYED at bit 60 and every one of the
+        # remaining seventy characters was refused at the same place.
+        #
+        # MEASURED BEFORE THE FIX: ucbf1_0 = 0xc800000000000390,
+        # ucbf1_1 = 0, ucbf2_0 = 0xe400000000000000.  The card is
+        # punched "B", eight blanks, "IOD" (strap/iocd.py, columns
+        # 10-13 per C22-6728 printed p.88), so that is "B" + blanks +
+        # "I" and then nothing: EXACTLY TEN CHARACTERS, and ten is
+        # the word boundary and nothing else.
+        #
+        # THE INPUT SIDE IS THE SELF-CHECK THAT MAKES "TEN" MEAN THE
+        # BOUNDARY.  Twelve bits per column into a 64-bit word
+        # straddles too -- column 6's nine-bit LF sits at bits 63-71 --
+        # so if crossing LOADS were refused as well, $4 would have
+        # stuck at column 6 and character 9 would be a blank.  It is
+        # 0o71, "I", read from column 10.  Crossing loads worked; the
+        # store was the sole governor.
+        #
+        # AND MCP IS THE PRIMARY SOURCE.  Rule 4 wants an encoding or
+        # a semantic from a document, and printed p.43 line 49 is one:
+        # IBM's own operating system stores a crossing VFL field in
+        # its card converter, so the refusal was never a documented
+        # restriction -- it was a one-write-per-rule toolchain limit,
+        # recorded as such in bsv/StretchExecute's header next to
+        # "Transmit moves only one word", which was the same limit
+        # and was lifted the same way.
+        #
+        # WHAT EACH CHECK IS FOR, and the two are not
+        # interchangeable:
+        #  * ucbf1_0's low four bits are the TOP of character ten --
+        #    "O", 0o46 = 100110 -- and they live in the HEAD word, so
+        #    this check catches a store that wrote NEITHER word.
+        #  * ucbf1_1's top eight bits are the BOTTOM of character ten
+        #    and all of character eleven, "D" = 0o64, and they live
+        #    in the TAIL word -- so this is the check that catches a
+        #    store that wrote the head and dropped the tail, which is
+        #    the failure StretchStorage's one-clock tail exists to
+        #    avoid.  THE INJECTION IS THAT: drop the
+        #    st.writeWordTail call in StretchExecute's ST arm and
+        #    ucbf1_0 passes while ucbf1_1 fails.
+        #  * ucbf2_0 is the payoff: S BRK8 (printed p.38 lines 16-20)
+        #    breaks the card from Y UCBF1+.54 -- bit 54, character
+        #    ten, column 10, where C22-6728 printed p.88 puts the
+        #    card type -- into Y UCBF2 (002337.00).  Its expected
+        #    value 0xe66d000000000000 IS NOT A PREDICTION FROM THE
+        #    CARD: it is the value MEASURED at Y IOD MK, the literal
+        #    printed p.38 line 26's "K(BU,48),Y TYPMK($13)" compares
+        #    against.  So this check says the type field MCP reads
+        #    out of the card is bit-for-bit the type mark MCP tests
+        #    it with.
+        ("mcp_ucbf1_0",
+         str(sym("XBSEND") + _image_index("002327")), 0xc800000000000399),
+        ("mcp_ucbf1_1",
+         str(sym("XBSEND") + _image_index("002327") + 1), 0xb400000000000000),
+        ("mcp_ucbf2_0",
+         str(sym("XBSEND") + _image_index("002337")), 0xe66d000000000000),
 
         # >>> THE ONE SWAP MCP EXECUTES, OBSERVED IN STORAGE. <<<
         #
@@ -681,8 +778,26 @@ def main():
         # CONVERSION -- and a CONTROL RUN WITH p.45 TAKEN BACK OUT
         # raises it at the same address.  So the refusal predates this
         # page.  docs/NEXT.md carries which instruction it is.
+        #
+        # >>> AND OP IS OUT OF THE WORD AGAIN, 2026-10-24, WITHOUT
+        # THAT REFUSAL HAVING GONE AWAY. <<<  The crossing-field store
+        # (mcp_ucbf1_*) carries the run past MCP's error exit and into
+        # printed p.54's tape IOD routine, and something on that path
+        # rewrites the indicator register; `op_trail` still reports
+        # exactly one rise, still at half-word 1304.  So this check no
+        # longer witnesses that refusal AND THE TRAIL STILL DOES,
+        # which is why op_trail stays on.
+        #
+        # IT IS ALSO A NEGATIVE RESULT WORTH THE LINE: the p.24
+        # refusal is NOT the crossing-field store.  Building the store
+        # would have cleared it if it were, and the trail is
+        # unchanged.  docs/NEXT.md carries what that leaves.
+        #
+        # THE HISTORY CONTINUES (see the ratchet above):
+        #   0x1248  AL, RZ, XH, XVGZ    -- run ends at L NORM, a SYN
+        #                                  for a page not transcribed
         ("mcp_indicators_word11", str(IND_WORD),
-         _ind("OP") | _ind("XVGZ") | _ind("XE") | _ind("RGZ") | _ind("AH")),
+         _ind("AL") | _ind("RZ") | _ind("XH") | _ind("XVGZ")),
 
         # >>> THE MOVE ITSELF, AND IT IS THE POINT OF THE FIXTURE <<<
         # Printed p.4 line 28, "T,$11,X BUFER($X1),X BS END  -MOVE MCP
@@ -1242,7 +1357,26 @@ def main():
                    # "X6ERR  TI,1,X ERRAD,$R  -DISPLAY ERROR ADDRESS
                    # IN CE CONSOLE".  A deliberate error stop, not a
                    # branch into zeros.
-                   pc_check=239,
+                   # >>> AND IT BRANCHES INTO ZEROS AGAIN,
+                   # 2026-10-24, HAVING GOT MUCH FURTHER. <<<  The
+                   # crossing-field store (see mcp_ucbf1_* above)
+                   # makes MCP accept the IOD card, so it never takes
+                   # the error exit this check was pinned to; it goes
+                   # on into printed p.54's TAPE IOD ROUTINE and
+                   # branches to L NORM, which p.54 line 87 compiles
+                   # as "L NORM  SYN,(8)3237.40" -- A STAND-IN FOR A
+                   # SYMBOL DEFINED ON A PAGE NOT YET TRANSCRIBED.
+                   # 003237.40 holds zeros, so the run ends the way
+                   # the note above describes.
+                   #
+                   # SO THE PC IS ZERO AND THE TRAIL IS THE DATUM,
+                   # which is exactly the case gen_tb's pc_trail was
+                   # written for.  pc_trail_check pins it: half-word
+                   # 3391 = 003237.40 = L NORM.  PRINTED p.55 ONWARD
+                   # IS THE NEXT TRANSCRIPTION, and the page that
+                   # defines L NORM is the one to find first.
+                   pc_check=0,
+                   pc_trail_check=3391,
                    step_cap=40000000,
                    pc_trail=True,
                    op_trail=True,

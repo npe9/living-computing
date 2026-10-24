@@ -22,7 +22,7 @@ def generate(module_name, prog, checks, step_cap=30000, reader_image=None,
              printer_checks=None, tape_image=None, tape_checks=None,
              console_checks=None,
              pc_check=None, cycle_bound=None, ipl=False, pc_trail=False,
-             op_trail=False):
+             pc_trail_check=None, op_trail=False):
     """checks: list of (label:str, word_addr_expr:str, expected:int).
 
     reader_image: optional list of ints -- words to pre-load into the
@@ -329,6 +329,25 @@ def generate(module_name, prog, checks, step_cap=30000, reader_image=None,
     if pc_check is not None:
         lines.append(f"  rule pccheck (phase == {pccheck_phase});")
         lines.append(f'    check("PC (half-word address)", zeroExtend(core.getPC()), {pc_check});')
+        lines.append(f"    phase <= {pccheck_phase + 1};")
+        lines.append("  endrule")
+        lines.append("")
+        pccheck_phase += 1
+    # THE LAST NON-ZERO PC, AS A CHECK AND NOT ONLY A MESSAGE.
+    #
+    # pc_trail above explains why a run that branches into zeroed
+    # storage reports PC 0: a zero half-word is BRANCH ENABLED to 0.0,
+    # so the counter sits at zero for the rest of the run and
+    # `pc_check` can only assert the value every such run has.  The
+    # TRAIL is the datum in that case -- the last address the program
+    # reached under its own control -- and a $display is not a check.
+    #
+    # Requires pc_trail (the register it reads is only declared then).
+    if pc_trail_check is not None:
+        assert pc_trail, "pc_trail_check needs pc_trail"
+        lines.append(f"  rule pctrailcheck (phase == {pccheck_phase});")
+        lines.append('    check("last non-zero PC (half-word address)", '
+                     f'zeroExtend(lastNonZeroPc), {pc_trail_check});')
         lines.append(f"    phase <= {pccheck_phase + 1};")
         lines.append("  endrule")
         lines.append("")
