@@ -5395,6 +5395,76 @@ no opcode can rule it out. What ruled it out was the datum the name
 labels — which is a tell worth stating on its own: *when a name
 labels data, decode the data before trusting the name.*
 
+## THE `$4` GAP IS CLOSED, AND A MECHANISM CLAIM IS CORRECTED, 2026-10-24
+
+Four boot runs with temporary probes, no code changed. The probes are
+removed again; what they measured is here.
+
+### UNCODE *was* handed the fixture's IOD card
+
+The gap flagged since commit `c6e3e60` — "that printed p.25 line
+32's `$4` really does point at the area the fixture punches into" —
+is closed. Reading the sixteen index registers at the end of the run:
+
+```
+$4  value 005601.00      $7  value 005601.00
+$14 value 001435.00      $15 value 005603.00
+```
+
+`0o5601` is **the terminator IOD card's slot**: `strap/prosa.py`
+punches six cards fifteen words apart from `X IN END` = `0o5466`, and
+the sixth is at `0o5466 + 5×15 = 0o5601`. `$14` is `X 222A`
+(001435.00), which printed p.25 line 35 loads. And `$15` is
+`2.0($7)`, which is exactly what printed p.40 line 39's
+`LVE,$15,2.0($14)` computes by chaining through line 43's
+`,2.0($7)`.
+
+A sweep of the whole card region confirms the card is there and
+intact: six images fifteen words apart, the terminator's first word
+`0x8800000000000000` — bits 0-11 are `100010000000`, **the exact
+pattern printed p.38 line 7 tests for**.
+
+### A mechanism claim from commit 869d4a0 was wrong
+
+That commit said *"printed p.40 line 40 is `Y UER`'s `Z,0.0($15)` —
+UNCODE's error exit zeroes that slot"*, with "that slot" meaning
+`X 222A`. **It zeroes the BREAK-DOWN TABLE, not `X 222A`**: `$15` is
+`2.0($7)` = 005603.00, not the parameter word. `X 222A` reads zero
+because nothing ever wrote it, which is a weaker fact than the
+commit claimed.
+
+**The conclusion survives on better evidence.** `Y JCCER` and `Y UER`
+both return through `2.32($14)`, and they differ in what they leave
+at `0.0($15)`: JCCER writes fifteen words (`T,15,Y UCBF2,0.0($15)`),
+UER writes a zero. The break-down table at 005603 **and the five
+words after it** are all zero, so UER ran and JCCER did not.
+
+### And the break-down output is not where printed p.25 line 43 points
+
+That is the new open question. `S BRK8` demonstrably runs — the PC
+trail reached it and p.44's tables changed the run — but 005603
+onward is empty, so its output went somewhere else. Either the OUT
+parameter it is given is not `2.0($7)`, or the breakdown produced
+nothing.
+
+### The likely reason the card is rejected, stated as a hypothesis
+
+`C22-6728` printed p.88 says IOD cards *"perform the same function
+for MCP as they do for the problem program"* — i.e. they are
+**job-control cards**, and printed p.52's dispatch compares a
+**broken-down field**, not a fixed column. The fixture's terminator
+card carries `IOD` in **columns 10-13**, the IOCD layout, because
+that is what printed p.19's IOCD-scan terminator test reads — in
+Hollerith, before any conversion.
+
+**So the same card may be right for p.19 and wrong for UNCODE.** If
+`S BRK8` splits on commas and the card has none, the first field is
+whatever precedes column 10 — blanks — and no type mark matches.
+
+*This is a hypothesis with a mechanism, not a measurement.* What
+would settle it is finding where the break-down output goes, which
+is the question above.
+
 ## PRINTED p.54 — A THIRD `$`, AND A dds CHECKED FROM THREE PAGES AWAY, 2026-10-24
 
 The DISK-TRACK CHECK ROUTINE and the TAPE IOD ROUTINE, forty-eight

@@ -746,6 +746,15 @@ cannot be tested without it.
 > establish is whether this path should be reached with this fixture
 > at all — see `NEXT.md`.
 >
+> **UPDATE 2026-10-24: UNCODE WAS HANDED THE FIXTURE'S IOD CARD.**
+> `$4` and `$7` both hold **005601.00** at the end of the run, which
+> is the terminator IOD card's slot (`X IN END` = 0o5466, six cards
+> fifteen words apart), and `$14` is `X 222A`. The gap flagged in
+> commit `c6e3e60` is closed by measurement. `NEXT.md` has the
+> register dump, a mechanism claim it corrects, and the new open
+> question: the break-down output is **not** at `2.0($7)` where
+> printed p.25 line 43 points.
+>
 > **AND THE SWAP REFUSAL SURVIVES, MEASURED THIS TIME.** p.45 lines
 > 47-49 are three `SWAPI`s under `Q 2BIG`, the oversized-field path.
 > `tests/gen_tb.py`'s new `op_trail` says the OP indicator is raised
