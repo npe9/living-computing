@@ -1,0 +1,155 @@
+! mcp_bootstrap_p53.strap -- the end of the initialization routine
+! and the IOD CARD ROUTINE, printed page 53.
+! docs/MCP_Mar63_001-249.pdf PDF p.60, header "PAGE NUMBER 53".
+! docs/boot_plan.md M3.
+!
+! >>> IT CONFIRMS BOTH OF printed p.52's DERIVED STAND-INS AND
+! SETTLES A NAME p.48 FLAGGED. <<<
+!
+! L OOPN  002775.40  line 4.  p.52 line 56's "BXVZZ,L OOPN+1."
+!                    prints 002776.71 -- bit 18 SET -- so the target
+!                    is 002776.40 and L OOPN is one word below it.
+!                    That was read off a single octal digit and it
+!                    is right.
+! L IODRN 003021.40  line 37.  p.52 line 21's "BAEZ,L IODRN" prints
+!                    003021.76, bit 18 set again.
+!
+! AND LINE 28 IS "CM0000(BU,9),L IOSCR,0.0  -SET IODSQ COUNTER TO
+! 1.".  printed p.48 line 46 defines that symbol as
+! "DRZ(BU,9),(1)" at 002601.40 and this deck's note said the name
+! was read off a row where the drum had lost several glyphs -- "L
+! ICSCR ... -ICDSQ COLNTER" -- with no compiled bit depending on the
+! spelling and the next page that referenced it to decide.  THIS IS
+! THAT PAGE: at 900 dpi line 28 reads L IOSCR and the dds (BU,9)
+! matches.  The flag comes down.
+!
+! ---------------------------------------------------------------
+! A SECOND "$" IN FRONT OF AN OPERATION, AND IT IS STILL INERT
+! ---------------------------------------------------------------
+! Line 14 is "$TI,1,-1.0(L IODX),1.0(L XPP)  -STORE PP ID" and the
+! row compiles as a plain TI: 777777.00 83 / 000001.02 A4, which is
+! what this deck's "TI,1,..." produces to the bit.
+!
+! printed p.43 line 6 was the first, "$B,Q GO$A", and its note said
+! C28-6129 printed p.37 accounts for the "$A" on the operand and
+! says NOTHING about a "$" on an OPERATION.  Two instances now, in
+! two different source decks, both inert.  STILL RECORDED AND NOT
+! GUESSED AT -- but the pattern is worth naming: both are operations
+! whose compiled row is ordinary, so whatever the "$" marks, it is
+! not in the object program.
+!
+! ---------------------------------------------------------------
+! A dds TRAVELS THROUGH A SYN TWICE MORE
+! ---------------------------------------------------------------
+! Lines 37-41 write "M+1,T IODCT(L XPP)", "L,L IREF(L IODX),0.0",
+! "K,T LREFN(L XPP)" and "ST,T LREFN(L XPP)" -- four bare
+! operations, no data description on any of them -- and every one
+! prints a length of 014000, TWELVE.  L IREF is printed p.48 line
+! 5's "SYN(BU,12),0.52"; T IODCT and T LREFN are forward and this
+! deck gives them the same dds because the rows demand it.
+!
+! THE LISTING ALSO DISTINGUISHES A FIELD SYMBOL FROM AN ADDRESS
+! here, which is printed p.50's lesson in use: L IREF, T IODCT and
+! T LREFN are all BIT OFFSETS inside a table entry -- 0.52, 0.52 and
+! 0.40 -- not storage addresses, and the index register supplies the
+! entry.
+!
+! ---------------------------------------------------------------
+! SUBSTITUTIONS
+! ---------------------------------------------------------------
+! (1) BLANKS INSIDE SYMBOL NAMES ARE DROPPED, as on every page since
+!     p.2.
+!
+! (2) LINE 14'S "$TI" IS WRITTEN "TI".  See the paragraph above; the
+!     compiled row is checked either way.
+!
+! (3) NOTHING ELSE.
+!
+! ---------------------------------------------------------------
+! AND THE ZEROS-AS-C ROWS, which is 13e's page-wide shape again:
+! line 3's "002700.22 C0" is 00 (Z's high nibble is zero -- printed
+! p.40 line 40's "Z,0.0($15)" prints 000000.22 0F) and line 11's
+! "001000.36 FC" is F0.  Both are checked rows in this file.
+        SLC, (8)2774.0
+
+LXNT    SYN, $9
+LXPP    SYN, $4
+LIODX   SYN, $3
+LXIO    SYN, $5
+LWORKX  SYN, $10
+LNTPU   SYN, (8)2700.0
+LXTYPE  SYN, (8)2570.0
+LFINB   SYN(BU,1), (8)2601.51
+LNTB    SYN(BU,1), (8)2601.52
+LOVBIT  SYN(BU,1), (8)2601.62
+LIOSCR  SYN(BU,9), (8)2601.40
+LTAPEC  SYN(BU,7), (8)2601.31
+LIREF   SYN(BU,12), 0.52
+LTAPE   SYN, (8)2733.0
+LIOD    SYN, (8)2734.0
+LFWA    SYN, (8)2750.0
+LFINAL  SYN, (8)3170.0
+LERROR  SYN, (8)3241.0
+LERR4   SYN, (8)3262.40
+LIODTP  SYN, (8)3077.0
+LCODE   SYN, (8)3042.0
+TJBPRO  SYN, 0.36
+TCRREF  SYN, 0.0
+TLPPEN  SYN, 0.39
+TIODCT  SYN(BU,12), 0.52
+TLREFN  SYN(BU,12), 0.40
+
+        SLC, (8)2774.0
+
+        V-I, LXNT, LNTPU-1.
+        LC, LXNT, LXNT
+        Z, LNTPU
+LOOPN   Z, LNTPU(LXNT)
+        CB-, LXNT, LOOPN
+        L(BU,1), TJBPRO(LXPP)
+        BZRZZ, LINITB
+        L(BU,18), TCRREF(LXPP)
+        BRZZ, LINITB
+        LCI, $15, 1.0
+        CM1111(BU,1), LFINB, 0.0
+        B, LERR4
+LINITB  Z, 0.0(LXPP)
+        TI, 1, -1.0(LIODX), 1.0(LXPP)
+        CM1111(BU,1), TLPPEN(LXPP)
+        L(BU,24), 1.0(LIODX)
+        BRZ, LFINAL
+        K(BU,24), LIOD
+        BAE, LINBB
+        LCI, $15, 8.0
+        B, LERROR
+LINBB   BB, LOVBIT, LINITC-.32
+        L(BU,64), 0.0(LXIO), 0.0
+        BRZZ, LINITC
+        B, LIOFUL
+        Z, 0.0(LXIO)
+LINITC  SV, LXIO, 0.0(LXPP)
+        CM0000(BU,9), LIOSCR, 0.0
+        M+1(BU,9), LIOSCR
+        CM0000, LTAPEC
+        B, LFWA
+LIODRN  M+1, TIODCT(LXPP)
+        L, LIREF(LIODX), 0.0
+        K, TLREFN(LXPP)
+        BALZ, LIODA
+        ST, TLREFN(LXPP)
+        BB, LOVBIT, LIOD1-0.32
+LIODA   L(BU,64), 0.0(LXIO), 0.0
+        BRZZ, LIOD1
+LIOFUL  LCI, $15, 2.0
+        B, LERR4
+        Z, 0.0(LXIO)
+LIOD1   L(BU,48), 2.0(LIODX), 0.0
+        K(BU,48), LTAPE, 0.0
+        BAEZ, LIODTP
+        CM1111(BU,1), LNTB, 0.0
+        LX, LWORKX, LXTYPE
+LTYPR   L(BU,48), 2.0(LIODX)
+        K(BU,48), .0(LWORKX)
+        BAE, LCODE
+        CB+, LWORKX, LTYPR
+        END, LOOPN

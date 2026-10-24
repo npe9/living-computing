@@ -56,8 +56,11 @@ lost several glyphs at once, "L ICSCR ... -ICDSQ COLNTER", and
 "COLNTER" gives it away before anything else is read.  The name is
 transcribed "L IOSCR" and NO COMPILED BIT DEPENDS ON THE SPELLING:
 the symbol is referenced nowhere on this page, and the nine bits it
-reserves are checked by line 47's address.  The deck's header says
-what to come back to if a later page references it.
+reserves are checked by line 47's address.  printed p.53 line 28 is
+"CM0000(BU,9),L IOSCR,0.0  -SET IODSQ COUNTER TO 1.", the name
+spelled again in a row whose dds matches this reservation, so the
+flag is down -- and it came down by a REFERENCE, not by a better
+look at the definition.
 
 THREE INJECTIONS, OBSERVED FAILURE SETS WRITTEN DOWN:
 

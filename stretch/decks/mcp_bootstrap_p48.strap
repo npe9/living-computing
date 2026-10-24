@@ -116,9 +116,15 @@
 ! ITS SPELLING -- only the reservation's nine bits do, and those are
 ! checked by line 47's address.  The reading itself leans on line
 ! 35, "L XIO  SYN,$5  -I.O. REQUEST TABLE INDEX", which is this
-! program writing I-O as "IO" in a name on the same page.  IF A
-! LATER PAGE REFERENCES THIS SYMBOL, that print is the decider and
-! this note is the thing to come back to.
+! program writing I-O as "IO" in a name on the same page.
+!
+! >>> AND A LATER PAGE DID REFERENCE IT, THE SAME DAY. <<<  printed
+! p.53 line 28 is "CM0000(BU,9),L IOSCR,0.0  -SET IODSQ COUNTER TO
+! 1." -- the name spelled again, at 900 dpi, in a row whose dds
+! (BU,9) matches this reservation.  L IOSCR is right and the comment
+! is "-IODSQ COUNTER".  THE FLAG IS DOWN, and it came down the way
+! this note said it would: by a REFERENCE, not by a better look at
+! the definition.
 !
 ! ---------------------------------------------------------------
 ! THE SIXTEEN STAND-INS, read off this page's own binary

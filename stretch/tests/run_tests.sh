@@ -4910,6 +4910,45 @@ run "THE BREAKDOWN ROUTINE, printed p.45, bit-exact (MCP_Mar63 PDF p.52)" python
 # byte -- so it is a per-ROW artifact and not the per-glyph one 13
 # had recorded.  The byte is 00; printed p.43 line 50's "B,Q CHK"
 # prints 002454.10 00 for the same shape.
+run "the IOD CARD ROUTINE, printed p.53, bit-exact (MCP_Mar63 PDF p.60)" python3 verify_mcp_bootstrap_p53.py
+# >>> IT CONFIRMS BOTH OF printed p.52's DERIVED STAND-INS. <<<
+# L OOPN is at 002775.40 (line 4) and L IODRN at 003021.40 (line 37),
+# and BOTH were read off p.52 from ONE OCTAL DIGIT: "BXVZZ,L OOPN+1."
+# prints 002776.71 and "BAEZ,L IODRN" prints 003021.76, bit 18 SET in
+# each.  Transcribing them as .00 was p.52's first draft and three
+# rows failed; this page says the corrected reading was right.
+#
+# >>> AND IT SETTLES A NAME printed p.48 FLAGGED. <<<  Line 28 is
+# "CM0000(BU,9),L IOSCR,0.0  -SET IODSQ COUNTER TO 1."  p.48 line 46
+# defines that symbol at 002601.40 as "DRZ(BU,9),(1)" and its deck
+# recorded that the name came off a row where the drum had lost
+# several glyphs -- "L ICSCR ... -ICDSQ COLNTER" -- with NO COMPILED
+# BIT depending on the spelling, and said the next page to reference
+# it would decide.  At 900 dpi line 28 reads L IOSCR and the dds
+# matches.  The flag is down, and it came down BY A REFERENCE rather
+# than by a better look at the definition.
+#
+# A SECOND "$" IN FRONT OF AN OPERATION, AND IT IS STILL INERT: line
+# 14 is "$TI,1,-1.0(L IODX),1.0(L XPP)" and the row compiles as a
+# plain TI, 777777.00 83 / 000001.02 A4.  printed p.43 line 6's
+# "$B,Q GO$A" was the first.  C28-6129 printed p.37 accounts for a
+# "$" on an OPERAND and says nothing about one on an OPERATION.
+#
+# A dds TRAVELS THROUGH A SYN TWICE MORE.  Lines 37-41 are four bare
+# operations with no data description written and every one prints a
+# length of 014000, TWELVE: L IREF is printed p.48 line 5's
+# "SYN(BU,12),0.52", and T IODCT and T LREFN are forward.  THE
+# LISTING ALSO DISTINGUISHES A FIELD SYMBOL FROM AN ADDRESS, which is
+# printed p.50's lesson in use -- all three are BIT OFFSETS inside a
+# table entry, 0.52, 0.52 and 0.40, and the index register supplies
+# the entry.
+#
+# Injections: T LREFN's stand-in moved from 0.40 to 0.41 gives 2
+# FAILs, lines 39 and 41, the only two rows that use it, and no
+# symbol moves.  L IREF's stand-in dds dropped gives 1 FAIL, line 38,
+# reading 000000.20 50 for 014000.20 50, with lines 37, 39 and 41
+# still passing because T IODCT and T LREFN keep theirs -- the
+# cross-page dds isolated to one symbol.
 run "DECODE SECTION OF MCP, printed p.52, bit-exact (MCP_Mar63 PDF p.59)" python3 verify_mcp_bootstrap_p52.py
 # >>> LINE 7 IS L DECOD AT 002737.00, THE ENTRY printed p.47's
 # LINKAGE FORMAT NAMES, AND IT OPENS WITH AN EIGHT-WORD SWAP. <<<

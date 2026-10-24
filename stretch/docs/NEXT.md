@@ -5395,6 +5395,56 @@ no opcode can rule it out. What ruled it out was the datum the name
 labels — which is a tell worth stating on its own: *when a name
 labels data, decode the data before trusting the name.*
 
+## PRINTED p.53 — TWO DERIVED STAND-INS CONFIRMED AND A FLAG LOWERED, 2026-10-23
+
+Fifty-one rows: the end of the initialization routine and the **IOD
+CARD ROUTINE**.
+
+### Both of printed p.52's derived stand-ins land
+
+`L OOPN` at 002775.40 and `L IODRN` at 003021.40 — and both were read
+off p.52 from **one octal digit**. `BXVZZ,L OOPN+1.` prints
+`002776.71` and `BAEZ,L IODRN` prints `003021.76`; bit 18 is set in
+each, which puts the target on the `.40` half word. Transcribing them
+as `.00` was p.52's first draft and three rows failed. This page says
+the corrected reading was right.
+
+### And a flag printed p.48 raised comes down the way it said it would
+
+Line 28 is `CM0000(BU,9),L IOSCR,0.0  -SET IODSQ COUNTER TO 1.`
+p.48 line 46 defines that symbol at 002601.40 as `DRZ(BU,9),(1)`, and
+its deck recorded that the name came off a row where the drum had
+lost several glyphs — `L ICSCR ... -ICDSQ COLNTER` — with **no
+compiled bit depending on the spelling**, and said the next page to
+reference it would decide.
+
+At 900 dpi line 28 reads `L IOSCR` and the dds `(BU,9)` matches.
+
+> **It came down by a reference, not by a better look at the
+> definition.** That is the second time in two pages: `L CVBIT` →
+> `L OVBIT` went the same way. A name field has no internal check; a
+> use of it does.
+
+### A second `$` in front of an operation, and it is still inert
+
+Line 14 is `$TI,1,-1.0(L IODX),1.0(L XPP)  -STORE PP ID` and the row
+compiles as a plain `TI` — `777777.00 83 / 000001.02 A4`. printed
+p.43 line 6's `$B,Q GO$A` was the first. Two instances, two source
+decks, both inert; C28-6129 printed p.37 accounts for a `$` on an
+**operand** and says nothing about one on an **operation**. Still
+recorded rather than guessed at, but the pattern is worth naming:
+whatever the `$` marks, it is not in the object program.
+
+### A dds travels through a SYN twice more
+
+Lines 37-41 are four bare operations with no data description
+written — `M+1,T IODCT(L XPP)`, `L,L IREF(L IODX),0.0`,
+`K,T LREFN(L XPP)`, `ST,T LREFN(L XPP)` — and every one prints a
+length of **014000, twelve**. And the listing distinguishes a *field*
+symbol from an *address*, which is printed p.50's lesson in use: all
+three are **bit offsets inside a table entry** (0.52, 0.52, 0.40),
+with the index register supplying the entry.
+
 ## PRINTED p.52 — THE DECODE PROGRAM ITSELF, 2026-10-23
 
 Forty-five rows of code. **Line 7 is `L DECOD` at 002737.00 — the
