@@ -5395,6 +5395,109 @@ no opcode can rule it out. What ruled it out was the datum the name
 labels — which is a tell worth stating on its own: *when a name
 labels data, decode the data before trusting the name.*
 
+## PRINTED pp.55, 56 AND 57 — the gap closes and the image reaches p.58, 2026-10-24
+
+**123 rows, 122 of them bit-exact on the first run.** `prosa.py` is
+why these three exist: p.58 was transcribed first and could not join
+the image, because the record then had a hole at 003106-003236 and
+that check refused it. Rather than weaken the check, the pages behind
+the hole were read.
+
+```
+printed p.55  44 lines, all 44 compile   003105.40 - 003147.00
+printed p.56  56 lines, 41 compile       003147.40 - 003205.40
+printed p.57  38 lines, all 38 compile   003206.00 - 003237.00
+```
+
+**pp.54-58 are now contiguous to the bit.** Each page's last
+instruction ends exactly on the next page's first printed location —
+p.54 line 56 → p.55 line 1, p.55 line 44 → p.56 line 5, p.56 line 56
+→ p.57 line 1, p.57 line 38 → p.58 line 5 — and `prosa.py` rechecks
+the whole range on every build.
+
+### What they are
+
+`p.55` is the CHANNEL SYMBOL TABLE SEARCH: an IOD card's channel name
+looked up, entered if absent, the unit slot pointed at it. Its line
+12 is a HALT — `BD,$` commented *"-INTERNAL CHANNEL TABLE EXCEEDED"*
+— the third deliberate stop transcribed, after p.6 line 1 and p.54
+line 55. All three are table overflows.
+
+`p.56` is THE REEL CARD ROUTINE, the FINAL ROUTINE and the sort's
+entry, in three boxed sections the listing names itself. Every branch
+off the page lands on one already transcribed: `L ERROR`, `L NORM`
+and `L ERR4` on p.58, `L FIN3` and `L SKIP` on p.57.
+
+`p.57` is the IOREQ SEARCH AND SORT, and **its last seven lines are
+p.58's error tail to the bit** — p.57 lines 32-35 and 37 equal p.58
+lines 31, 33, 34, 35 and 38, differing only in line 36's branch
+target. The normal path and the error path do the same housekeeping
+and differ in where they go.
+
+### The one row that was wrong, and 900 dpi is what got it wrong
+
+p.55 line 40's opcode byte was transcribed `80` and is `B0`.
+`listing_typography.md` §11 already names this pair — *"B and 8 are
+the only pair in 0-9A-F that differ mainly in one vertical stroke,
+and that stroke is the first thing a worn drum printer loses"* — and
+the memory records p.3 line 10 as the instance that cost three
+commits. **The standing practice is "900 dpi for hex", and 900 dpi
+got this one wrong too.**
+
+At **1800 dpi** it is not close: the glyph has a straight vertical
+left stroke with two bowls hung off it, which is a B; an 8 is two
+closed round bowls with no straight edge. And the corpus settles it
+without the assembler — five rows already transcribed from earlier
+pages print `V+` as `B0` (000702.00, 001167.40, 001540.40, 001622.00,
+001623.00).
+
+**The practice this adds:** when the assembler and a hex byte
+disagree, re-render *that byte* at 1800 dpi and grep the corpus for
+the mnemonic. Two cheap checks, neither of which is "believe the
+model" — the listing is the oracle, and a disagreement is a prompt to
+look again, not an answer.
+
+### The dds rule demonstrated on one operand across two pages
+
+p.55 line 18 is `K(BU,48),L BLANK` → `060000.21 10`.
+p.56 line 11 is `K,L BLANK` → `060600.21 10`.
+
+Same symbol, same operation, one page apart, and the only difference
+is whether the dds was written. The `0600` is the BYTE SIZE, which
+p.54 carries as `SYN(BU,48,6)` and derived by measuring a blank count
+in pixels. The injection bites on the bare row only.
+
+**And the length field is arithmetic**: the second group's leading
+octal is the field length × 512 — `010000` = 8, `014000` = 12,
+`022000` = 18, `060000` = 48. That is how p.56's `T IODCT` and
+`T LREFN` were given `SYN(BU,12)` from rows that write no dds at all,
+the same way p.58 forced `T LPPEN`'s.
+
+### What the image and the run say now
+
+```
+merged 43 pages, 313 stand-ins checked against their definitions,
+55 SYNs that agree with another page's SYN, 33 symbols external
+```
+(was 39 pages, 265, 25 and 39 before p.58.)
+
+**The run goes through `L NORM` instead of stopping at it.** Nine
+swaps execute where five did — including `L NORM`'s own `SWAPI,8` at
+half-word 3391, twice, and p.58 line 38's `SWAPI,3` at 3388. The
+trail is now **half-word 3970 = 003701.00**, which
+`decks/mcp_bootstrap_p27.strap` carries as `T ASIGN SYN,(8)3701.0` —
+a stand-in for a page still unread, around printed p.65. `X ERR AD`
+is still zero: no error site runs.
+
+### What is next
+
+**Printed p.59 onward.** p.59 line 1 is `003264.40 * SLC,$` followed
+by `PRND`, so the page boundary is already confirmed. The run's own
+trail names where it wants to go: whatever defines `T ASIGN` at
+003701. The same location-column bisection that found p.58 will find
+it — about 0o50 words a page, so 003701 is roughly printed p.65, and
+the pages between are what the next `prosa.py` refusal will ask for.
+
 ## PRINTED p.58 IS TRANSCRIBED — the page the boot run was stopping at, 2026-10-24
 
 THE DISPATCHER'S TWO RETURNS. Thirty-two compiled rows out of

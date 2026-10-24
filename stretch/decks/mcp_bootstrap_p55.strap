@@ -1,0 +1,282 @@
+! MCP INITIALIZATION, printed p.55 (MCP_Mar63_001-249 PDF p.62) --
+! THE CHANNEL SYMBOL TABLE SEARCH.
+!
+! Forty-four lines and ALL FORTY-FOUR COMPILE -- no comment rows and
+! no heading box, solid code from 003105.40 to 003147.00.
+!
+! >>> THIS PAGE CLOSES THE GAP. <<<  printed p.54's last line (56) is
+! "L IOD3  TI,1,5.0(L IODX),0.0(L XSU)" at 003104.40, a full word,
+! ending at 003105.40 -- line 1 here.  And line 44 is "B,L ETA" at
+! 003147.00, one half word, ending at 003147.40 -- printed p.56 line
+! 5.  With pp.56, 57 and 58 that makes printed pp.54-58 CONTIGUOUS TO
+! THE BIT, which is what strap/prosa.py requires before the image may
+! hold any of them.
+!
+! ---------------------------------------------------------------
+! WHAT THE PAGE IS
+! ---------------------------------------------------------------
+! An IOD card's channel name is looked up in the symbolic channel
+! table, entered if absent, and the unit slot is pointed at it.
+!
+!   lines 1-5    carry the tape reel count and tape type into the
+!                unit table and the IOREQ slot.
+!   lines 6-12   L OOPSC, the search proper -- and line 12 is a HALT.
+!   lines 13-24  L IOD4 / L CHAN: enter the channel, compute where in
+!                the table it landed, and join the channel name to
+!                the unit name.
+!   lines 25-33  L ENTER: a new RLSYM, its count bumped, then back.
+!   lines 34-44  L SET / L SETA: the null-channel case and the
+!                direct move to the associated channel slot.
+!
+! >>> LINE 12 IS A HALT, AND THE THIRD THIS PROJECT HAS TRANSCRIBED.
+! <<<  "BD,$" at 003116.40 printing 003116.44 00 -- branch disabled
+! to its own address -- commented "-INTERNAL CHANNEL TABLE EXCEEDED".
+! The others are printed p.6 line 1's "BD,$  -LOOP" and printed p.54
+! line 55's "BD,$  -INTERNAL UNIT TABLE".  All three are table
+! overflows or error stops, which is what a machine with no operating
+! system under it can do about one.
+!
+! ---------------------------------------------------------------
+! >>> L BLANK APPEARS TWICE, ONCE BARE AND ONCE NOT, AND THE TWO
+! ROWS DIFFER EXACTLY AS THE dds RULE PREDICTS <<<
+! ---------------------------------------------------------------
+! Line 18 is "K(BU,48),L BLANK" -- dds WRITTEN -- and compiles
+! 060000.21 10.  printed p.56 line 11 is "K,L BLANK" -- dds NOT
+! written -- and compiles 060600.21 10.  The difference is 0600, the
+! BYTE SIZE, which printed p.54 carries as
+! "L BLANK SYN(BU,48,6),(8)2736.0" and derived by measuring a blank
+! count in pixels.
+!
+! SO THE SAME SYMBOL, ON TWO PAGES, PRINTS TWO DIFFERENT SECOND
+! GROUPS, and the one that differs is the one that wrote nothing.
+! That is C22-6531 printed p.31's sentence demonstrated on a single
+! operand -- "data properties (dds) associated with Y ... are
+! transferred to A" -- and it is the cleanest instance this project
+! has: no second symbol, no second length, only the presence or
+! absence of the written dds.
+!
+! Lines 1 and 3 are the same shape: "L,L TAPEC" and "M+1,L TAPEC",
+! both bare, both compiling 007000 = length 7 out of printed p.54's
+! "L TAPEC SYN(BU,7),(8)2601.31".
+!
+! ---------------------------------------------------------------
+! EVERY SYMBOL OFF THIS PAGE IS ALREADY PLACED, AND IT POINTS BOTH
+! WAYS
+! ---------------------------------------------------------------
+!   BACKWARD, to printed p.54:
+!     line 24  B,L FOUND  003055.50 00 -> 003055.40
+!     line 33  B,L FOUND  003055.50 00 -> 003055.40
+!     line 44  B,L ETA    003103.50 00 -> 003103.40
+!     line 34  L SET is this page's own label at 003137.40, which
+!              printed p.54 line 53 ("BAEZ,L SET") SYNs.
+!   FORWARD, to printed p.58:
+!     line 37  BZRZ,L NORM  003237.74 C0 -> 003237.40
+!     line 43  BAEZ,L NORM  003237.76 C6 -> 003237.40
+!
+! AND IT CONFIRMS printed p.56's L COUNT INDEPENDENTLY.  Line 31 is
+! "ST(BU,7),L COUNT" compiling 002601.53 80, the same 002601.53 that
+! p.56 line 51's "L(BU,7),L COUNT,46" gives.  Two pages, two rows,
+! one bit address.
+!
+! ---------------------------------------------------------------
+! L XSC IS $8, AND TWO ROWS SAY SO INDEPENDENTLY
+! ---------------------------------------------------------------
+! Line 6's "LX,L XSC,L SYMCX" has ".20" -> bits 19-22 = 1000 = 8 in
+! its J field, and line 26's "L(BU,7),L XSC+.11,0.0" has the ADDRESS
+! 000030 = word 0o30 = 16+8.  The same shape that pinned L XNT on
+! printed p.58 line 23, here split across two rows instead of one.
+!
+! ---------------------------------------------------------------
+! FOUR EXPRESSIONS, AND TWO OF THEM ARE NEGATIVE
+! ---------------------------------------------------------------
+!   line  4  "L TAPE+.60"   -> 002733.74   (0o74 = 60)
+!   line 29  "L WORKX+.14"  -> 000032.16   (0o16 = 14)
+!   line 30  "L RLCT-.8(L WORKX)" -> 002606.70; L RLCT is 002607.0,
+!            and eight bits back is 002606 bit 56 = 0o70.
+!   line 32  "L SYMC-1."    -> 002657; L SYMC is 002660.
+! None of the four needs a new symbol -- each is an offset from one
+! this page or another already fixes.
+!
+! THREE LISTING MARKS, the bare "*" after the location: lines 1
+! ("003105.40 *"), 16 ("003121.00 *") and 30 ("003134.40 *").
+!
+! ---------------------------------------------------------------
+! >>> 900 dpi WAS NOT ENOUGH FOR ONE BYTE, AND THE PAIR WAS B/8
+! AGAIN <<<
+! ---------------------------------------------------------------
+! Line 40's opcode byte was transcribed as 80 from a 900 dpi render
+! and is B0.  listing_typography.md 11 already names this pair -- "B
+! and 8 are the only pair in 0-9A-F that differ mainly in one
+! vertical stroke, and that stroke is the first thing a worn drum
+! printer loses" -- and the project's memory records printed p.3 line
+! 10 as the instance that cost three commits.  THE MEMORY ALSO SAYS
+! TO READ HEX AT 900 dpi, AND HERE 900 dpi GOT IT WRONG.
+!
+! AT 1800 dpi IT IS NOT CLOSE: the glyph has a STRAIGHT VERTICAL LEFT
+! STROKE with two bowls hung off it, which is a B; an 8 is two closed
+! round bowls with no straight edge anywhere.  Rendering one byte at
+! 1800 dpi costs one pdftoppm.
+!
+! AND THE CORPUS SETTLED IT WITHOUT THE ASSEMBLER.  The assembler
+! disagreeing with a transcription is a PROMPT to look again, not an
+! answer -- the listing is the oracle, not the model.  Five rows
+! already transcribed from earlier pages print "V+" as B0:
+!
+!   000702.00  000025.06 B0   X13 2A  V+,$3,$5
+!   001167.40  002152.34 B0   V+,$14,S X CHAN
+!   001540.40  000036.34 B0   V+,$14,$14
+!   001622.00  000035.32 B0   V+,$13,$13
+!   001623.00  002152.32 B0   V+,$13,S X CHAN
+!
+! so B0 is V+'s byte on five independent pages.  (M+1 also shows B0
+! -- lines 3 and 30 here -- but in the SECOND half word of a
+! full-word VFL instruction, which is a different field; line 40 is a
+! half-word index operation and its single byte is its own.)
+!
+! THE PRACTICE THIS ADDS: when the assembler and a hex byte disagree,
+! re-render THAT BYTE at 1800 dpi and grep the corpus for the
+! mnemonic.  Two cheap checks, neither of which is "believe the
+! model".
+
+        SLC, (8)3105.40
+
+! ---- index registers ----------------------------------------------
+LIODX   SYN, $3
+LXIO    SYN, $5
+LXSU    SYN, $7
+LXSC    SYN, $8
+LWORKX  SYN, $10
+! ---- stand-ins confirmed by pages already transcribed -------------
+LTAPEC  SYN(BU,7), (8)2601.31
+LBLANK  SYN(BU,48,6), (8)2736.0
+TTYPE   SYN, 0.3
+LFOUND  SYN, (8)3055.40
+LETA    SYN, (8)3103.40
+LNORM   SYN, (8)3237.40
+LRLCT   SYN, (8)2607.0
+LCOUNT  SYN, (8)2601.53
+! ---- new on this page ---------------------------------------------
+LTAPE   SYN, (8)2733.0
+LSYMCX  SYN, (8)2566.0
+LSYMC   SYN, (8)2660.0
+TRLSYM  SYN, 0.11
+
+        SLC, (8)3105.40
+
+! ---- the tape reel count and tape type ----------------------------
+        L, LTAPEC                    ! line 1  -ENTER THE TAPE REEL
+                                      !           COUNT
+        ST(BU,7), .50(LXSU)          ! line 2  -IN THE TAPE UNIT TABLE
+        M+1, LTAPEC                  ! line 3  -AND BUMP BY ONE
+        L(BU,4), LTAPE+.60, 0.0      ! line 4  -STORE TAPE TYPE IN
+        ST(BU,4), TTYPE(LXIO)        ! line 5  -  IOREQ SLOT
+
+! ---- the symbolic channel table search ----------------------------
+        LX, LXSC, LSYMCX             ! line 6  -IS CHANNEL IN SYMBOLIC
+LOOPSC  L(BU,48), 0.0(LXSC), 0.0     ! line 7  -   CHANNEL TABLE.
+        BRZZ, LIOD4                  ! line 8  -   NO----STEP DOWN.
+        K(BU,48), 4.0(LIODX), 0.0    ! line 9
+        BAEZ, LCHAN                  ! line 10 -   YES----STEP DOWN.
+        CB+, LXSC, LOOPSC            ! line 11 -TRY AGAIN ON NON-ZERO
+                                      !           COUNT.
+        BD, $                        ! line 12 -INTERNAL CHANNEL TABLE
+                                      !           EXCEEDED
+LIOD4   TI, 1, 4.0(LIODX), 0.0(LXSC) ! line 13 -ENTER CHANNEL IN
+                                      !           TABLE.
+LCHAN   V-I, LXSC, LSYMC             ! line 14 -COMPUTE WHERE IN TABLE
+        SV, LXSC, $R                 ! line 15
+        ST(BU,7), 0.57(LXSU), 46     ! line 16 -CHAN NAME WITH THE
+                                      !           UNIT NAME
+        L(BU,48), 4.0(LIODX)         ! line 17 -IS CHANNEL SYMBOL
+                                      !           BLANK
+        K(BU,48), LBLANK             ! line 18
+        BZAEZ, LENTER                ! line 19 -   NO----STEP DOWN.
+        CM0000(BU,7), TRLSYM(LXIO)   ! line 20
+        CM1111(BU,1), 0.48(LXSU)     ! line 21 -SET THE UNIT SLOT TO
+                                      !           NULL CHAN
+        V+I, LXSC, LSYMC             ! line 22 -RESTORE THE CHAN IX
+        CM0000(BU,64), 0.0(LXSC)     ! line 23 -CLEAR A BLANK FROM
+                                      !           THE CHAN TBL
+        B, LFOUND                    ! line 24 -BRANCH
+
+! ---- a new RLSYM --------------------------------------------------
+LENTER  V+I, LXSC, 1.0               ! line 25 -INCREASE BY ONE FOR
+                                      !           RLSYM
+        L(BU,7), LXSC+.11, 0.0       ! line 26
+        ST(BU,7), TRLSYM(LXIO)       ! line 27
+        Z, LWORKX                    ! line 28 -STORE RLSYM SHIFTED
+                                      !           3 BITS
+        ST(BU,7), LWORKX+.14, 0.0    ! line 29 -   FOR SUBSEQUENT
+                                      !           SORT.
+        M+1(BU,8), LRLCT-.8(LWORKX)  ! line 30 -ADD ONE TO PROPER
+                                      !           COUNT.
+        ST(BU,7), LCOUNT             ! line 31
+        V+I, LXSC, LSYMC-1.          ! line 32 -RESTORE CHANNEL INDEX.
+        B, LFOUND                    ! line 33 -BRANCH
+
+! ---- the null-channel case ----------------------------------------
+LSET    LF(BU,48), 4.0(LIODX)        ! line 34 -IS THE CARD CHANNEL
+                                      !           NULL
+        KF(BU,48), LBLANK            ! line 35
+        BZAE, LSETA                  ! line 36 -IF NOT NULL CONTINUE
+                                      !           LOOKING
+        BZRZ, LNORM                  ! line 37 -YES A NULL CHANNEL
+LSETA   LX, LXSC, LSYMCX             ! line 38 -IS CHANNEL IN THE
+                                      !           SYMBOLIC
+        L(BU,7), 0.57(LXSU), 46      ! line 39 -MOVE INDEX DIRECTLY
+                                      !           TO THE
+        V+, LXSC, $R                 ! line 40 -ASSOCIATED CHAN SLOT
+        L(BU,48), 0.0(LXSC), 0.0     ! line 41 -   CHANNEL TABLE.
+        K(BU,48), 4.0(LIODX), 0.0    ! line 42
+        BAEZ, LNORM                  ! line 43 -   YES----NORMAL
+                                      !           RETURN.
+        B, LETA                      ! line 44
+        END, LOOPSC
+
+! ---------------------------------------------------------------
+! THE CHECKED ROWS -- all forty-four.
+! ---------------------------------------------------------------
+!   line  1  003105.40  002601.31 80  007000.20 50   L,L TAPEC
+!   line  2  003106.40  000000.62 87  007000.20 D0   ST(BU,7)
+!   line  3  003107.40  002601.31 80  007000.22 B0   M+1,L TAPEC
+!   line  4  003110.40  002733.74 80  004000.20 50   L(BU,4)
+!   line  5  003111.40  000000.03 85  004000.20 D0   ST(BU,4),T TYPE
+!   line  6  003112.40  002566.20 10                 LX,L XSC
+!   line  7  003113.00  000000.00 88  060000.20 50   L OOPSC L(BU,48)
+!   line  8  003114.00  003117.34 C6                 BRZZ,L IOD4
+!   line  9  003114.40  000004.00 83  060000.21 10   K(BU,48)
+!   line 10  003115.40  003120.36 C6                 BAEZ,L CHAN
+!   line 11  003116.00  003113.21 48                 CB+
+!   line 12  003116.40  003116.44 00                 BD,$
+!   line 13  003117.00  000004.00 83  000000.02 A8   L IOD4  TI,1
+!   line 14  003120.00  002660.21 0D                 L CHAN  V-I
+!   line 15  003120.40  000011.21 30                 SV
+!   line 16  003121.00  000000.71 87  007027.20 D0   ST(BU,7)
+!   line 17  003122.00  000004.00 83  060000.20 50   L(BU,48)
+!   line 18  003123.00  002736.00 80  060000.21 10   K(BU,48),L BLANK
+!   line 19  003124.00  003130.76 C4                 BZAEZ,L ENTER
+!   line 20  003124.40  000000.13 85  007000.00 F0   CM0000(BU,7)
+!   line 21  003125.40  000000.60 87  001000.36 F0   CM1111(BU,1)
+!   line 22  003126.40  002660.21 05                 V+I
+!   line 23  003127.00  000000.00 88  000000.00 F0   CM0000(BU,64)
+!   line 24  003130.00  003055.50 00                 B,L FOUND
+!   line 25  003130.40  000001.21 05                 L ENTER V+I
+!   line 26  003131.00  000030.13 80  007000.20 50   L(BU,7),L XSC+.11
+!   line 27  003132.00  000000.13 85  007000.20 D0   ST(BU,7),T RLSYM
+!   line 28  003133.00  000032.22 00                 Z,L WORKX
+!   line 29  003133.40  000032.16 80  007000.20 D0   ST(BU,7)
+!   line 30  003134.40  002606.70 8A  010000.22 B0   M+1(BU,8)
+!   line 31  003135.40  002601.53 80  007000.20 D0   ST(BU,7),L COUNT
+!   line 32  003136.40  002657.21 05                 V+I,L SYMC-1.
+!   line 33  003137.00  003055.50 00                 B,L FOUND
+!   line 34  003137.40  000004.00 83  060000.06 70   L SET  LF(BU,48)
+!   line 35  003140.40  002736.00 80  060000.23 10   KF(BU,48),L BLANK
+!   line 36  003141.40  003142.76 C0                 BZAE,L SETA
+!   line 37  003142.00  003237.74 C0                 BZRZ,L NORM
+!   line 38  003142.40  002566.20 10                 L SETA  LX
+!   line 39  003143.00  000000.71 87  007027.20 50   L(BU,7)
+!   line 40  003144.00  000011.20 B0                 V+,L XSC,$R
+!   line 41  003144.40  000000.00 88  060000.20 50   L(BU,48)
+!   line 42  003145.40  000004.00 83  060000.21 10   K(BU,48)
+!   line 43  003146.40  003237.76 C6                 BAEZ,L NORM
+!   line 44  003147.00  003103.50 00                 B,L ETA

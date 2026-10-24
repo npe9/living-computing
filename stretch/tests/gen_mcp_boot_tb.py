@@ -796,8 +796,12 @@ def main():
         # THE HISTORY CONTINUES (see the ratchet above):
         #   0x1248  AL, RZ, XH, XVGZ    -- run ends at L NORM, a SYN
         #                                  for a page not transcribed
+        #   0x1524  AE, MOP, RGZ, XE, XVGZ -- printed pp.55-58 are in
+        #                                  the image; the run goes
+        #                                  THROUGH L NORM and ends at
+        #                                  T ASIGN
         ("mcp_indicators_word11", str(IND_WORD),
-         _ind("AL") | _ind("RZ") | _ind("XH") | _ind("XVGZ")),
+         _ind("AE") | _ind("MOP") | _ind("RGZ") | _ind("XE") | _ind("XVGZ")),
 
         # >>> THE MOVE ITSELF, AND IT IS THE POINT OF THE FIXTURE <<<
         # Printed p.4 line 28, "T,$11,X BUFER($X1),X BS END  -MOVE MCP
@@ -1375,8 +1379,19 @@ def main():
                    # 3391 = 003237.40 = L NORM.  PRINTED p.55 ONWARD
                    # IS THE NEXT TRANSCRIPTION, and the page that
                    # defines L NORM is the one to find first.
+                   #
+                   # >>> AND THE TRAIL MOVED TO 3970, 2026-10-24,
+                   # BECAUSE printed pp.55, 56, 57 AND 58 ARE IN THE
+                   # IMAGE. <<<  Half-word 3970 is 003701.00, which
+                   # decks/mcp_bootstrap_p27.strap carries as
+                   # "T ASIGN SYN,(8)3701.0" -- a stand-in for a page
+                   # still unread, around printed p.65.  The run no
+                   # longer stops AT L NORM; it goes THROUGH it, and
+                   # NINE swaps execute where five did, including
+                   # L NORM's own SWAPI,8 at half-word 3391 twice and
+                   # printed p.58 line 38's SWAPI,3 at 3388.
                    pc_check=0,
-                   pc_trail_check=3391,
+                   pc_trail_check=3970,
                    step_cap=40000000,
                    pc_trail=True,
                    op_trail=True,

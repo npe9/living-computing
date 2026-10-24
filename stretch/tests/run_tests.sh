@@ -5001,6 +5001,42 @@ run "THE BREAKDOWN ROUTINE, printed p.45, bit-exact (MCP_Mar63 PDF p.52)" python
 # prints 002454.10 00 for the same shape.
 run "the DISK-TRACK CHECK and TAPE IOD routines, printed p.54, bit-exact (MCP_Mar63 PDF p.61)" python3 verify_mcp_bootstrap_p54.py
 run "the DISPATCHER'S TWO RETURNS, printed p.58, bit-exact (MCP_Mar63 PDF p.65)" python3 verify_mcp_bootstrap_p58.py
+run "the CHANNEL SYMBOL TABLE SEARCH, printed p.55, bit-exact (MCP_Mar63 PDF p.62)" python3 verify_mcp_bootstrap_p55.py
+run "the REEL CARD and FINAL routines, printed p.56, bit-exact (MCP_Mar63 PDF p.63)" python3 verify_mcp_bootstrap_p56.py
+run "the IOREQ SEARCH AND SORT, printed p.57, bit-exact (MCP_Mar63 PDF p.64)" python3 verify_mcp_bootstrap_p57.py
+# >>> THESE THREE CLOSE THE GAP, AND prosa.py IS WHY THEY EXIST. <<<
+# printed p.58 was transcribed first and could not join the image: the
+# record then had a hole at 003106-003236 and prosa.py refused it,
+# correctly.  Rather than weaken that check, the three pages behind
+# the hole were read.  printed pp.54-58 are now CONTIGUOUS TO THE BIT
+# -- each page's last instruction ends exactly on the next page's
+# first printed location -- and the image holds all five.
+#
+# 44 + 41 + 38 ROWS, AND 122 OF THE 123 WERE BIT-EXACT FIRST TRY.
+# The one that was not is printed p.55 line 40, transcribed as 80 and
+# actually B0: listing_typography.md 11's B/8 pair, which the
+# project's memory already records costing three commits on printed
+# p.3 -- AND WHICH 900 dpi GOT WRONG AGAIN HERE.  At 1800 dpi the
+# glyph has a straight vertical left stroke with two bowls, which is
+# a B and not an 8, and five rows already transcribed from earlier
+# pages print "V+" as B0.  The practice this adds: when the assembler
+# and a hex byte disagree, re-render THAT BYTE at 1800 dpi and grep
+# the corpus for the mnemonic -- two cheap checks, neither of which
+# is "believe the model".
+#
+# THE dds RULE IS DEMONSTRATED ON ONE OPERAND ACROSS TWO PAGES.
+# printed p.55 line 18 is "K(BU,48),L BLANK" and compiles
+# 060000.21 10; printed p.56 line 11 is "K,L BLANK" and compiles
+# 060600.21 10.  Same symbol, same operation, and the only difference
+# is whether the dds was written -- 0600 is the BYTE SIZE, which
+# printed p.54 carries as SYN(BU,48,6) and derived by measuring a
+# blank count in pixels.  The injection confirms it bites on the bare
+# row only.
+#
+# AND THE LENGTH FIELD IS ARITHMETIC: the second group's leading
+# octal is the field length times 512 (010000 = 8, 014000 = 12,
+# 022000 = 18, 060000 = 48), which is how printed p.56's T IODCT and
+# T LREFN were given SYN(BU,12) from rows that write no dds at all.
 # >>> THE PAGE THE BOOT RUN WAS STOPPING AT. <<<  Until 2026-10-24
 # the run ended by branching into zeroed storage at 003237.40 --
 # printed p.54's "L NORM  SYN,(8)3237.40", a stand-in for a page that
@@ -5024,13 +5060,14 @@ run "the DISPATCHER'S TWO RETURNS, printed p.58, bit-exact (MCP_Mar63 PDF p.65)"
 # twice in one row -- the address is 000031 = word 0o31 = 16+9, and
 # the J field ".23" is 1001.
 #
-# AND IT IS NOT IN THE IMAGE YET, DELIBERATELY.  strap/mcp_image.py
-# carries the reason in full: adding it makes prosa.py refuse the
-# record, because printed pp.55, 56 and 57 are untranscribed and
-# 003106-003236 would be a silent hole.  prosa.py allows exactly one
-# kind of hole -- a reservation proved by a `DR` in the listing --
-# and three unread pages are not that.  pp.55-57 are the next three
-# transcriptions; this page stands on its own verifier until then.
+# IT WAS HELD OUT OF THE IMAGE FOR ONE COMMIT, and the reason is
+# worth keeping: adding it made prosa.py refuse the record, because
+# printed pp.55, 56 and 57 were untranscribed and 003106-003236 would
+# have been a silent hole.  prosa.py allows exactly one kind of hole
+# -- a reservation proved by a `DR` in the listing -- and three
+# unread pages are not that.  So the three were transcribed (below)
+# rather than the check weakened, and p.58 joined the image with
+# them.
 # >>> IT CONFIRMS TWO MORE OF printed p.53's STAND-INS: L CODE at
 # 003042.00 and L IODTP at 003077.00. <<<
 #

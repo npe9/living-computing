@@ -639,6 +639,26 @@ cannot be tested without it.
 > p.43 line 53 uses. p.54's `SYN,(8)3237.40` for it is confirmed to
 > the bit. **Printed p.58 is the next page to transcribe.**
 >
+> **A19 — printed pp.55, 56, 57 AND 58 ARE IN THE IMAGE, AND
+> `prosa.py` IS WHY, 2026-10-24.** p.58 was transcribed and could not
+> join: the record then had a hole at 003106-003236 and `prosa.py`
+> refused it, because the only legitimate hole is a reservation
+> proved by a `DR` in the listing. Three untranscribed pages are not
+> that. So the three were read rather than the check weakened, and
+> **printed pp.54-58 are now contiguous to the bit** — 123 rows, 122
+> bit-exact first try.
+>
+> **The run goes THROUGH `L NORM` now instead of stopping at it.**
+> Nine swaps execute where five did; the trail reaches half-word 3970
+> = 003701.00, which printed p.27 carries as `T ASIGN`, a stand-in
+> for a page around printed p.65. `X ERR AD` is still zero.
+>
+> **A3's remaining piece is unchanged** — IOD/REEL/MCPP cards onto
+> the system tape the way the real system did — but the REEL card's
+> own routine is now transcribed (p.56 line 5, `L REELR`) and its two
+> exits are the dispatcher's two returns. When A3 lands, the code
+> that consumes its card already exists in the image.
+>
 > **A17 — PRINTED pp.47-48, AND THE DECODE PROGRAM'S LINKAGE IS
 > PRINTED IN FULL, 2026-10-23.** printed p.47 **compiles nothing**:
 > twenty-three lines, of which the only non-comment is line 1's

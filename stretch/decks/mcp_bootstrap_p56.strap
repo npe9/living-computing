@@ -1,0 +1,247 @@
+! MCP INITIALIZATION, printed p.56 (MCP_Mar63_001-249 PDF p.63) --
+! THE REEL CARD ROUTINE, THE FINAL ROUTINE, AND THE SORT'S ENTRY.
+!
+! Fifty-six lines, forty-one of which compile.  Three heading boxes
+! divide the page and the listing names each one:
+!
+!   lines 1-4    "THE REEL CARD ROUTINE"      L REELR at 003147.40
+!   lines 27-31  "FINAL ROUTINE"              L FINAL at 003170.00
+!   lines 43-46  "SORT IOREQ TABLE ENTRIES FOR THIS PROBLEM
+!                 PROGRAM BY UNIT-PER-CHANNEL SIZE."
+!                                             L FINI  at 003200.40
+!
+! >>> AND IT RUNS STRAIGHT INTO printed p.57. <<<  Line 56 is
+! "LVI,L IODX,L RLCT" at 003205.40, one half word, and printed p.57
+! line 1 stands at 003206.00.  With p.57 and p.58 that is three
+! pages contiguous to the bit.
+!
+! ---------------------------------------------------------------
+! >>> THIS PAGE DEFINES L SEARA, WHICH printed p.57 POINTS BACK AT
+! ---------------------------------------------------------------
+! p.57 line 30 is "CB,L WORKX,L SEARA" compiling 003205.24 48 -- a
+! target one word BEFORE p.57's first line, which that deck could
+! only carry as a stand-in.  LINE 55 HERE IS "L SEARA
+! LC,L IODX,L SAVE" at 003205.00.  The outer loop of the sort begins
+! on this page and its body is the next one.
+!
+! ---------------------------------------------------------------
+! EVERY BRANCH OFF THIS PAGE LANDS ON ONE ALREADY TRANSCRIBED
+! ---------------------------------------------------------------
+! and each is a stand-in confirmed by its definition:
+!
+!   line  7  B,L ERROR    003241.10 00  -> 003241.00, p.58 line 12
+!   line 12  BAEZ,L NORM  003237.76 C6  -> 003237.40, p.58 line 5
+!   line 17  B,L ERR4     003262.50 00  -> 003262.40, p.58 line 39
+!   line 26  B,L NORM     003237.50 00  -> 003237.40, p.58 line 5
+!   line 36  BB,...,L ERROR  003241.34 -> 003241.00, p.58 line 12
+!   line 37  B,L FIN3     003232.10 00  -> 003232.00, p.57 line 32
+!   line 52  BRZZ,L SKIP  003231.74 C6  -> 003231.40, p.57 line 31
+!
+! So the REEL routine's two exits are the dispatcher's two returns,
+! which is what printed p.58's header says those returns are for.
+!
+! ---------------------------------------------------------------
+! FOUR dds DERIVED FROM THE LENGTH FIELD, WHICH IS ARITHMETIC
+! ---------------------------------------------------------------
+! The second group's leading octal is the field LENGTH times 512,
+! and four rows on this page pin lengths that way:
+!
+!   010000 / 512 =  8   (printed p.57 line 9's CM0000(BU,8))
+!   022000 / 512 = 18   (line 23's L(BU,18))
+!   060000 / 512 = 48   (line 10's LF(BU,48))
+!   014000 / 512 = 12   <- lines 39, 40 and 42
+!
+! Lines 39, 40 and 42 write the operation BARE -- "L,T IODCT(L XPP)",
+! "K,T LREFN(L XPP)", "ST,T LREFN(L XPP)" -- so the length can only
+! come from the symbol, exactly as printed p.58 lines 31 and 35
+! forced T LPPEN's.  Hence T IODCT and T LREFN are SYN(BU,12).
+!
+! AND L BLANK's BYTE SIZE SHOWS THE SAME WAY.  Line 11 is "K,L BLANK"
+! with nothing written, compiling 060600.21 10, where line 10's
+! explicit (BU,48) gives 060000.  The extra 0600 is the BYTE SIZE,
+! and printed p.54 already carries "L BLANK SYN(BU,48,6),(8)2736.0"
+! -- derived there from a blank count measured in pixels.  This row
+! is that derivation checked from another page.
+!
+! ---------------------------------------------------------------
+! A LEADING "$" ON AN OPERATION, FOR THE THIRD TIME
+! ---------------------------------------------------------------
+! Line 32 prints "$TI,1,-1.0(L IODX),1.0(L XPP)".  printed p.43 line
+! 6 prints "$B,Q GO$A" and printed p.57 line 5 prints "$L(BU,8)...".
+! p.43's note (3) called the "$" unexplained and said the compiled
+! row is checked either way; with THREE instances on three pages it
+! is a listing habit, not a smudge.  None of the three changes a bit.
+!
+! A SECOND NEGATIVE ADDRESS, and a whole word this time.  Line 32's
+! "-1.0(L IODX)" compiles 777777.00 -- as one 24-bit quantity
+! 0o77777700 = -64 = one word back.  printed p.57 line 5's "-0.8"
+! was -8, one byte.  Both print as octal all-ones with the magnitude
+! in the low digits.
+!
+! ---------------------------------------------------------------
+! TWO EXPRESSIONS IN BRANCH TARGETS
+! ---------------------------------------------------------------
+!   line 13  "BB,L OVBIT,L REEL2-0.32" -> 003160.74, which is
+!            003160.40; L REEL2 is 003161.00 (line 19), so the
+!            operand is one HALF WORD before the label.
+!   line 33  "BZB1,L FINB,L FIN2-1."   -> 003174.34, which is
+!            003174.00; L FIN2 is 003175.00 (line 39), so the
+!            operand is one WORD before the label.
+! Both are branches into the middle of the instruction before their
+! label, which the comments explain: line 34 is "IF 1, GO ON....IF 0,
+! MAKE IT 1 AND BRANCH."
+!
+! THREE LISTING MARKS, the bare "*" after the location: lines 5
+! ("003147.40 *"), 21 ("003163.00 *") and 41 ("003177.00 *").
+!
+! T FREEL AND T UNCT ARE BOTH 0.28, and that is not a misreading:
+! line 24's ".34" is 0o34 = 28 and printed p.54's T UNCT is 0.28 as
+! well.  They are offsets into DIFFERENT tables -- an IOREQ slot and
+! an internal unit entry -- so there is no conflict, only a
+! coincidence worth not re-deriving later.
+
+        SLC, (8)3147.40
+
+! ---- index registers ----------------------------------------------
+LIODX   SYN, $3
+LXPP    SYN, $4
+LXIO    SYN, $5
+LXFR    SYN, $6
+LXSU    SYN, $7
+LXNT    SYN, $9
+LWORKX  SYN, $10
+! ---- stand-ins confirmed by pages already transcribed -------------
+LNTB    SYN(BU,1), (8)2601.52
+LFINB   SYN(BU,1), (8)2601.51
+LOVBIT  SYN(BU,1), (8)2601.62
+LBLANK  SYN(BU,48,6), (8)2736.0
+LNORM   SYN, (8)3237.40
+LERROR  SYN, (8)3241.0
+LERR4   SYN, (8)3262.40
+LFIN3   SYN, (8)3232.0
+LSKIP   SYN, (8)3231.40
+LPUT    SYN, (8)2605.0
+LSAVE   SYN, (8)2602.0
+LRLCT   SYN, (8)2607.0
+! ---- new on this page ---------------------------------------------
+LRLBIT  SYN, 0.49
+LCOUNT  SYN, (8)2601.53
+TFREEL  SYN, 0.28
+TIODCT  SYN(BU,12), 0.52
+TLREFN  SYN(BU,12), 0.40
+
+        SLC, (8)3147.40
+
+! ---- THE REEL CARD ROUTINE ----------------------------------------
+LREELR  BZB, LNTB, LREEL1            ! line 5  -BRANCH IF NON-TAPE
+                                      !           BIT 0.
+        LCI, $15, 5.0                ! line 6  -BIT ONE -- ERROR
+                                      !           FLAG 5.
+        B, LERROR                    ! line 7  -BRANCH TO ERROR
+                                      !           ROUTINE.
+LREEL1  BB1, LRLBIT(LXSU), LNORM     ! line 8  -BRANCH ON REEL BIT
+                                      !   ONE / IF ZERO MAKE IT A ONE
+        LF(BU,48), 2.0(LIODX)        ! line 10 -TEST FOR BLANK FREEL
+                                      !           SYMBOLIC
+        K, LBLANK                    ! line 11
+        BAEZ, LNORM                  ! line 12 -NORMAL RETURN IF
+                                      !           BLANK.
+        BB, LOVBIT, LREEL2-0.32      ! line 13
+        L(BU,64), 0.0(LXFR), 0.0     ! line 14 -IS FREEL SLOT
+                                      !           AVAILABLE.
+        BRZZ, LREEL2                 ! line 15 -   YES----STEP DOWN.
+        LCI, $15, 3.0                ! line 16 -NO ERROR FLAG SI 3.
+        B, LERR4                     ! line 17
+        Z, 0.0(LXFR)                 ! line 18
+LREEL2  TI, 1, 2.0(LIODX), 0.0(LXFR) ! line 19 -STORE FREEL SYMBOL
+                                      !           IN SLOT.
+        L(BU,64), 0.0(LXPP), 0.0     ! line 20 -GET PROPER IOREQ SLOT.
+        +(BU,7), .50(LXSU), 46       ! line 21
+        ST(BU,64), LWORKX, 0.0       ! line 22
+        L(BU,18), LXFR, 0.0          ! line 23 -STORE FREEL ADDRESS
+        ST(BU,18), TFREEL(LWORKX)    ! line 24 -  IN IOREQ SLOT
+        V+ICR, LXFR, 1.0             ! line 25 -STEP FREEL INDEX.
+        B, LNORM                     ! line 26 -NORMAL RETURN.
+
+! ---- FINAL ROUTINE -------------------------------------------------
+LFINAL  TI, 1, -1.0(LIODX), 1.0(LXPP) ! line 32 -STORE PP ID
+                                      !   listing prints "$TI,1,..."
+        BZB1, LFINB, LFIN2-1.        ! line 33 -IS FINAL BIT 1.
+                                      !   IF 1, GO ON....IF 0, MAKE
+                                      !   IT 1 AND BRANCH.
+        SV, LXIO, 0.0(LXPP)          ! line 35 -STORE ORREF.
+        BB, 0.26($15), LERROR        ! line 36 -BRANCH ON REJECT END
+                                      !           COMBO.
+        B, LFIN3                     ! line 37 -BRANCH TO STEP PPREF
+                                      !           TABLE.
+        BB, 0.26($15), LERROR        ! line 38 -BRANCH ON REJECT END
+                                      !           COMBO.
+LFIN2   L, TIODCT(LXPP)              ! line 39 -IS LARGEST PP
+                                      !           REFERENCE NO.
+        K, TLREFN(LXPP)              ! line 40 -  LARGER THAN THE
+                                      !           IODCT
+        BALZ, LFINI                  ! line 41 -  YES....STEP DOWN.
+        ST, TLREFN(LXPP)             ! line 42 -  NO.... REPLACE BY
+                                      !           IODCT
+
+! ---- the SORT's entry, whose body is printed p.57 ------------------
+LFINI   SX, LXNT, LPUT               ! line 47 -ENTER SORT----SAVE
+                                      !           LXNT INDEX.
+        Z, LWORKX                    ! line 48 -ZERO 2 INDICES.
+        Z, LIODX                     ! line 49
+        LV, LWORKX, 0.0(LXPP)        ! line 50 -PUT ORREF IN XA VF.
+        L(BU,7), LCOUNT, 46          ! line 51 -LOAD RLSYM NO. COUNT.
+        BRZZ, LSKIP                  ! line 52 -NO RLSYMS----SKIP
+                                      !           SORT.
+        LC, LWORKX, $R               ! line 53 -PUT COUNT INTO XA CF.
+        SC, LWORKX, LSAVE            ! line 54
+LSEARA  LC, LIODX, LSAVE             ! line 55 -OUTER LOOP----LOAD
+                                      !           XB CF.
+        LVI, LIODX, LRLCT            ! line 56 -INITIALIZE XB AND
+                                      !           XC VF.
+        END, LREELR
+
+! ---------------------------------------------------------------
+! THE CHECKED ROWS -- all forty-one that compile.
+! ---------------------------------------------------------------
+!   line  5  003147.40  002601.52 80  003151.74 00   L REELR BZB
+!   line  6  003150.40  000005.37 02                 LCI
+!   line  7  003151.00  003241.10 00                 B,L ERROR
+!   line  8  003151.40  000000.61 87  003237.74 0E   L REEL1 BB1
+!   line 10  003152.40  000002.00 83  060000.06 70   LF(BU,48)
+!   line 11  003153.40  002736.00 80  060600.21 10   K,L BLANK
+!   line 12  003154.40  003237.76 C6                 BAEZ,L NORM
+!   line 13  003155.00  002601.62 80  003160.74 02   BB,L OVBIT
+!   line 14  003156.00  000000.00 86  000000.20 50   L(BU,64)
+!   line 15  003157.00  003161.34 C6                 BRZZ,L REEL2
+!   line 16  003157.40  000003.37 02                 LCI
+!   line 17  003160.00  003262.50 00                 B,L ERR4
+!   line 18  003160.40  000000.22 06                 Z,0.0(L XFR)
+!   line 19  003161.00  000002.00 83  000000.02 A6   L REEL2 TI,1
+!   line 20  003162.00  000000.00 84  000000.20 50   L(BU,64)
+!   line 21  003163.00  000000.62 87  007027.20 10   +(BU,7)
+!   line 22  003164.00  000032.00 80  000000.20 D0   ST(BU,64)
+!   line 23  003165.00  000026.00 80  022000.20 50   L(BU,18)
+!   line 24  003166.00  000000.34 8A  022000.20 D0   ST(BU,18)
+!   line 25  003167.00  000001.15 07                 V+ICR
+!   line 26  003167.40  003237.50 00                 B,L NORM
+!   line 32  003170.00  777777.00 83  000001.02 A4   L FINAL TI,1,-1.0
+!   line 33  003171.00  002601.51 80  003174.34 0C   BZB1,L FINB
+!   line 35  003172.00  000000.13 34                 SV
+!   line 36  003172.40  000000.32 8F  003241.34 02   BB,0.26($15)
+!   line 37  003173.40  003232.10 00                 B,L FIN3
+!   line 38  003174.00  000000.32 8F  003241.34 02   BB,0.26($15)
+!   line 39  003175.00  000000.64 84  014000.20 50   L FIN2  L,T IODCT
+!   line 40  003176.00  000000.50 84  014000.21 10   K,T LREFN
+!   line 41  003177.00  003200.76 46                 BALZ,L FINI
+!   line 42  003177.40  000000.50 84  014000.20 D0   ST,T LREFN
+!   line 47  003200.40  002605.23 10                 L FINI  SX
+!   line 48  003201.00  000032.22 00                 Z,L WORKX
+!   line 49  003201.40  000023.22 00                 Z,L IODX
+!   line 50  003202.00  000000.24 34                 LV
+!   line 51  003202.40  002601.53 80  007027.20 50   L(BU,7),L COUNT
+!   line 52  003203.40  003231.74 C6                 BRZZ,L SKIP
+!   line 53  003204.00  000011.24 50                 LC
+!   line 54  003204.40  002602.25 50                 SC
+!   line 55  003205.00  002602.06 50                 L SEARA LC
+!   line 56  003205.40  002607.07 01                 LVI
