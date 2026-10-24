@@ -5004,6 +5004,32 @@ run "the DISPATCHER'S TWO RETURNS, printed p.58, bit-exact (MCP_Mar63 PDF p.65)"
 run "the CHANNEL SYMBOL TABLE SEARCH, printed p.55, bit-exact (MCP_Mar63 PDF p.62)" python3 verify_mcp_bootstrap_p55.py
 run "the REEL CARD and FINAL routines, printed p.56, bit-exact (MCP_Mar63 PDF p.63)" python3 verify_mcp_bootstrap_p56.py
 run "the IOREQ SEARCH AND SORT, printed p.57, bit-exact (MCP_Mar63 PDF p.64)" python3 verify_mcp_bootstrap_p57.py
+run "the ASSIGN program's CONSTANTS and INDEX NAMES, printed p.61, bit-exact (MCP_Mar63 PDF p.68)" python3 verify_mcp_bootstrap_p61.py
+# >>> THE FIRST PAGE OF THE ASSIGN PROGRAM THAT COMPILES ANYTHING.
+# <<<  printed p.59 and p.60 are its heading, its LINKAGE FORMAT and
+# its table-length SYN cards, and NEITHER COMPILES A WORD -- p.60's
+# binary column literally prints NULL on all six.  This is the page
+# that spends what they declare.
+#
+# LINE 19 CONFIRMS p.60 FROM p.61's OWN BINARY: "T SAV XW,T PREFT,
+# T PPC,T PPREF" compiles 003317.00+ 000 000024 003314, and an XW's
+# third group is its COUNT -- 000024 = 20 decimal, which is p.60 line
+# 6's "T PPC SYN,20".  One page says the number and the next spends
+# it; the injection moves both together.
+#
+# THE LOCATION COLUMN ALONE PROVES ELEVEN FIELD WIDTHS.  Line 20 is
+# DD(BU,18) at 003273.00 and lines 21-30 are ten DD(BU,1) at
+# 003273.22 through .33 -- consecutive octal bit offsets.  Shrinking
+# T LUCT by one bit moves all ten.
+#
+# AND SEVEN OF THE SEVENTEEN INDEX NAMES ALIAS ANOTHER ALIAS, not a
+# register: T CTWDX, T IXF, T IXK and T IXL are SYN,T X1; T IXH is
+# SYN,T X3; T IXI is SYN,T IXB; T IXM is SYN,T IXG.  Moving T X1
+# fails five symbols at once, which is C22-6531 printed p.31's
+# "EXACT SUBSTITUTION" applied twice over.
+#
+# IT IS NOT IN THE IMAGE YET: printed pp.62-65 are still unread and
+# prosa.py wants the range gapless, exactly as it did for p.58.
 # >>> THESE THREE CLOSE THE GAP, AND prosa.py IS WHY THEY EXIST. <<<
 # printed p.58 was transcribed first and could not join the image: the
 # record then had a hole at 003106-003236 and prosa.py refused it,
