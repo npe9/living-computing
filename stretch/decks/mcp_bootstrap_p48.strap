@@ -80,6 +80,26 @@
 ! (3) NOTHING ELSE.
 !
 ! ---------------------------------------------------------------
+! LINE 50'S NAME IS "L OVBIT" AND THIS DECK READ IT "L CVBIT",
+! which printed p.52 corrected the same day.
+! ---------------------------------------------------------------
+! p.52 line 11 is "BB1,L OVBIT,L OVER" and its binary carries the
+! address 002601.62 -- THIS ROW.  A second print of the same symbol,
+! three pages on, in a listing whose drum turns digit zeros into Cs:
+! that is listing_typography.md 13c's rule ("decode what a name
+! labels") in its cheapest form, because a NAME field has no
+! internal check and a REFERENCE to it does.
+!
+! The comment on this row said so too -- "-OVERLAPPED JOB", and
+! OVBIT is the OVerlap BIT -- which is the tell that was there to be
+! read and was not.
+!
+! NO COMPILED BIT MOVED.  The symbol is unreferenced within this
+! page, so the rename changes the symbol table and nothing else; it
+! is the IMAGE that would have broken, silently, the first time p.52
+! joined it and resolved L OVBIT to nothing.
+!
+! ---------------------------------------------------------------
 ! LINE 46 IS A ROW WHERE THE DRUM LOST SEVERAL GLYPHS AT ONCE,
 ! which is listing_typography.md 13d's shape.
 ! ---------------------------------------------------------------
@@ -191,7 +211,7 @@ LIOSCR  DRZ(BU,9), (1)              ! line 46 -IODSQ COUNTER; see the
 LFINB   DD(BU,1), 1                 ! line 47 -FINAL BIT
 LNTB    DD(BU,1), 0                 ! line 48 -NON-TAPE BIT
 LCOUNT  DRZ(BU,7), (1)              ! line 49 -COUNT OF RLSYMS
-LCVBIT  DD(BU,1), 0                 ! line 50 -OVERLAPPED JOB
+LOVBIT  DD(BU,1), 0                 ! line 50 -OVERLAPPED JOB
 LBLZOR  (AX)DD(BU,8,8),0X           ! line 51 -BCD -8 ZERO
 LINFAD  DD(BU,1), 0                 ! line 52 -INFINITE-DISK A...
 

@@ -5447,6 +5447,30 @@ transcribed yet.
 DECODE program's entry, opening with an **eight-word SWAP**, which is
 a tenth caller and the largest yet.
 
+**It also corrected a name on printed p.48.** p.52 line 11 is
+`BB1,L OVBIT,L OVER` and its binary carries **002601.62** — p.48 line
+50, which this project had transcribed as `L CVBIT`. A second print
+of the same symbol three pages on, in a listing whose drum turns
+digit zeros into Cs: that is `listing_typography.md` §13c's rule in
+its cheapest form, because **a name field has no internal check and a
+reference to it does**. The comment on the row said so too —
+"-OVERLAPPED JOB", and OVBIT is the OVerlap BIT. No compiled bit
+moved; what would have broken is the **image**, silently, the first
+time p.52 joined it and `L OVBIT` resolved to nothing.
+
+*`L IOSCR` on p.48 line 46 is still flagged for the same reason and
+is still unreferenced. The next page that names it decides it.*
+
+### And the IOD/REEL dispatch is four characters wide
+
+p.52 lines 19-25 are the card-type test: `L(BU,24),1.0(L IODX)` then
+`K(BU,24),L IOD,0.0` / `BAEZ,L IODRN`, then the same against
+`L REEL`, then `LCI,$15,9.0  -NEITHER -- ERROR FLAG` and
+`B,L ERROR`. **Twenty-four bits is four BCD characters**, so the
+comparison reads `IOD ` and `REEL` and no more — which does not pin
+p.51's data lengths but does say what a card's type field has to
+contain and where: word 1 of the area `L IODX` points at.
+
 ## PRINTED p.50 — AND THE LISTING HAD BEEN PRINTING THE ANSWER ALL ALONG, 2026-10-23
 
 Thirty-one printed rows: a count table of the bytes 1 through 31, and

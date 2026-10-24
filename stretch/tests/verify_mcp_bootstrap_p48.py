@@ -42,7 +42,16 @@ THE COUNTS ARE INTEGERS, NOT ADDRESSES, and the listing's own
 arithmetic says so: lines 15-17 write "32-2" and "16-2" where the
 count column prints 000036 and 000016.
 
-LINE 46 IS listing_typography.md 13d's SHAPE -- a row where the drum
+LINE 50'S NAME IS "L OVBIT" AND THIS FILE READ IT "L CVBIT" FOR
+ONE COMMIT.  printed p.52 line 11 is "BB1,L OVBIT,L OVER" and its
+binary carries 002601.62, this row -- a second print of the same
+symbol three pages on, which is listing_typography.md 13c's rule in
+its cheapest form: a NAME field has no internal check and a
+REFERENCE to it does.  The comment said so too, "-OVERLAPPED JOB",
+and OVBIT is the OVerlap BIT.  No compiled bit moved; what would
+have broken is the IMAGE, silently, the first time p.52 joined it.
+
+LINE 46 IS listing_typography.md 13d'''s SHAPE -- a row where the drum
 lost several glyphs at once, "L ICSCR ... -ICDSQ COLNTER", and
 "COLNTER" gives it away before anything else is read.  The name is
 transcribed "L IOSCR" and NO COMPILED BIT DEPENDS ON THE SPELLING:
@@ -101,7 +110,7 @@ SYMBOLS = {
     "LFINB":  "002601.51",
     "LNTB":   "002601.52",
     "LCOUNT": "002601.53",
-    "LCVBIT": "002601.62",
+    "LOVBIT": "002601.62",
     "LBLZOR": "002601.63",
     "LINFAD": "002601.73",
     # The four tables this page predicts, read off its own binary.
@@ -150,7 +159,7 @@ ROWS = [
     # The one-bit data, printed as a single digit.
     ("002601.51", "1", "line 47  L FINB  DD(BU,1),1  -FINAL BIT", 1),
     ("002601.52", "0", "line 48  L NTB  DD(BU,1),0  -NON-TAPE BIT", 1),
-    ("002601.62", "0", "line 50  L CVBIT  DD(BU,1),0  -OVERLAPPED JOB", 1),
+    ("002601.62", "0", "line 50  L OVBIT  DD(BU,1),0  -OVERLAPPED JOB", 1),
     ("002601.73", "0", "line 52  L INFAD  DD(BU,1),0  -INFINITE-DISK", 1),
 ]
 
