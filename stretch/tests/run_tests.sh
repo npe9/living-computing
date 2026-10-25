@@ -5741,6 +5741,63 @@ run "CONVERT THE CHANNEL FIELDS, printed p.78, bit-exact (MCP_Mar63 PDF p.85)" p
 # 004522.00 (000000 for 030000 -- the length comes from the SYMBOL);
 # T LBL's byte size 6 -> 8, 1 FAIL at 004532.00; and $L -> $R on
 # line 13, 1 FAIL at 004517.00.
+run "CHECK FOR REEL PROTECTION and the three messages, printed p.79, bit-exact (MCP_Mar63 PDF p.86)" python3 verify_mcp_bootstrap_p79.py
+# >>> THIS IS WHERE printed p.76's BUFFERS ARE ACTUALLY WRITTEN. <<<
+# p.76 is thirty-seven lines of character data whose only check was
+# that seventeen labels landed on their printed locations.  This
+# page is what the data is for: three calls to DMCP, each a branch
+# followed by a three-word parameter block -- a control word, a
+# buffer address, and a word count.
+#
+# AND THE COUNTS ARE THE CHECK ON p.76 THAT p.76 COULD NOT MAKE.
+# T BUF01 is forty characters -- FIVE WORDS -- and the call asks for
+# 5.0.  The "--- SET UP THE FOLLOWING UNITS ---" message is counted
+# twice, once by the location counter on p.76 and once by the caller
+# here, two pages apart, and they agree.
+#
+# >>> AND THE SUB HEADING'S COUNT IS FOUR WHERE ITS TEXT IS THREE,
+# WHICH IS NOT AN ERROR -- IT IS THE POINT. <<<  p.76 puts T SUBHD
+# at 004445.00 and T PID at 004450.00, so " -- PROBLEM PROGRAM --- "
+# is exactly THREE words.  The call asks for FOUR, and the fourth
+# word is T PID, the eight blanks p.76 line 22 declares.  THAT SLOT
+# IS FILLED BY printed p.77: its line 26 is "SF,T PID", storing the
+# problem program's name after the conversion routine has turned it
+# into IQS characters.  So the sub heading on the operator's console
+# is the literal "-- PROBLEM PROGRAM ---" followed by the name of
+# the job, and IT TAKES THREE PAGES TO SAY SO -- p.76 reserves the
+# words, p.77 fills the last one, p.79 writes all four as one
+# message.  The injection that "corrects" 4.0 to the 3.0 the text
+# measures is the careless reading, and the listing refuses it.
+#
+# THE MOUNTING MESSAGE IS THE SAME TRICK, INDEXED.  ",T BUFB1(T
+# IXZ)" and ",7.(T IXY)" index both the start and the length: T IXZ
+# is 1.0 for overlap and 0.0 for not overlap (lines 6, 8), T IXY is
+# 0, +1.0 if not overlap, +2.0 if the reel is protected (lines 5, 9,
+# 15).  Seven words from T BUFB1 is 004432.00 to 004441.00, covering
+# p.76's T BUFB1, the " MOUNT - REEL NUMBER " text, T REELX and the
+# " ON CHANNEL " text, stopping just short of T UNITX at 004441.20 --
+# and the index adds the words that reach the unit number and the
+# protection text, which printed p.78 has just filled in.  So the
+# message LENGTH is computed from the machine's state.
+#
+# AND IT BRANCHES TO T PICA, WHERE THE RUN STOPS.  Lines 36 and 37
+# are "BZXF,T PICA" and "BBN,T NGATE,T PICA", both to 004604.00 --
+# the address the PC trail has read since printed p.75 landed, and
+# printed p.80 line 4.
+#
+# Three of printed p.77's forward stand-ins are placed here -- T P1
+# at 004600.00, T P2 at 004576.00, T P3 at 004575.40 -- and T PENY
+# was a stand-in too.  All four agree.
+#
+# Injections, against the DECK: the sub heading's 4.0 -> 3.0, 1 FAIL
+# at 004573.00; the major heading's 5.0 -> 4.0, 1 FAIL at 004570.00;
+# the length index dropped, 1 FAIL at 004575.00 (80 for 86 -- the
+# index is the opcode byte's low nibble on a NULL-OPERATION row, the
+# only place in this corpus a parameter word is indexed); the start
+# index dropped, 1 FAIL at 004574.40; BB1 -> BB, 1 FAIL at
+# 004565.40; BBN -> BB, 1 FAIL at 004602.00; and T SBHDI's stand-in
+# moved ONE BIT to T HEAD's, 2 FAILS -- p.76 declares four one-bit
+# flags in one word and a stand-in on the wrong one still assembles.
 run "the IOD CARD ROUTINE, printed p.53, bit-exact (MCP_Mar63 PDF p.60)" python3 verify_mcp_bootstrap_p53.py
 # >>> IT CONFIRMS BOTH OF printed p.52's DERIVED STAND-INS. <<<
 # L OOPN is at 002775.40 (line 4) and L IODRN at 003021.40 (line 37),

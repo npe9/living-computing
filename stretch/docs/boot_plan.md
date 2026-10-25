@@ -719,8 +719,19 @@ cannot be tested without it.
 > there — but the step count rises to 22,047,265 because the IPL
 > TRANSMIT moves thirty more words.
 >
-> **printed pp.77, 78 and 79 remain**, and p.78 needs C22-6531
-> consulted first for its `$`-prefixed operations.
+> **printed pp.76-79 have all landed.** p.76 is the print
+> sub-routine's message store (checked by counting: seventeen labels
+> on their printed locations); p.77 is `T SCRIB`, where four of
+> p.75's ten dispatch exits go, and it uses printed p.47's DECODE
+> LINKAGE FORMAT for real; p.78 converts the channel and unit fields
+> and carries four rows with a `$` before the operation that **no
+> IBM source describes** — measured four-for-four as bit-neutral and
+> documented as dropped, not explained; p.79 writes the three
+> messages and is what p.76's counting was checking for.
+>
+> The image is **62 pages gapless, 500 stand-ins checked, 297
+> agreeing SYNs, 29 external**. **printed p.80 line 4 is `T PICA`,
+> and that is the run's next instruction.**
 >
 > The image holds printed pp.15-73 gapless — 56 pages, 432 stand-ins
 > checked against their definitions, 218 agreeing SYNs, 41 symbols

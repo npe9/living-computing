@@ -981,3 +981,34 @@ middle bars did not print**.
 > the assembler produces, and ask whether the corpus prints the same
 > thing elsewhere. The glyph is the last witness to call, not the
 > first.
+
+#### And a fourth witness, which names it in English (2026-10-25)
+
+MCP printed p.27 — transcribed weeks before p.77 was rendered — is
+**ASSIGN's caller**, and its lines 5-8 are:
+
+```
+X24    LVI,$15,X242               -ENTER PARAMETER LOCATION
+       CM1111(BU,1),T IPLB1+.21   -CONVERT BE IN ASSIGN TO BD
+       CM1111(BU,1),T IPLB2+.21   -CONVERT BE IN ASSIGN TO BD
+X241   B,T ASIGN
+```
+
+**The comment says `BE`.** Not an inference, not an encoding
+argument — a 1963 programmer's own word for the instruction two
+pages away, written on a page that has been in this image since
+long before the question arose.
+
+And the arithmetic closes it. `T IPLB1` and `T IPLB2` are p.27's
+stand-ins at 004474.0 and 004540.40, which is exactly where printed
+pp.77 and 78 place them; `BE,$+.32` compiles `.40` and `BD,$+.32`
+compiles `.44`; and the bit p.27 sets is **`.21`** — the one bit by
+which those two differ. The rows p.77 and p.78 comment *MODIFIED BY
+IPL* are modified by this, and it says what the modification is.
+
+> **The corpus is now large enough to answer questions about
+> itself.** Four independent agreements — the glyph ruled out by the
+> mnemonic table, the encoding reproduced by the assembler, the twin
+> row on the next page, and a caller fifty pages back naming the
+> mnemonic in a comment — and only the first of them was available
+> when the row was first read.

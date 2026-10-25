@@ -1,0 +1,207 @@
+! MCP INITIALIZATION, printed p.79 (MCP_Mar63_001-249 PDF p.86) --
+! CHECK FOR REEL PROTECTION, and the three messages themselves.
+!
+! Thirty-nine lines, thirty-five of which compile, under one boxed
+! heading (lines 10-12).
+!
+! ---------------------------------------------------------------
+! >>> THIS IS WHERE printed p.76's BUFFERS ARE ACTUALLY WRITTEN <<<
+! ---------------------------------------------------------------
+! printed p.76 is thirty-seven lines of character data whose only
+! check was that seventeen labels landed on their printed
+! locations.  THIS page is what the data is for -- three calls to
+! DMCP, each a branch followed by a three-word parameter block:
+!
+!   T WRITE  BB1,T HEAD,T PENY     -CHECK FOR MAJOR HEADING
+!            B,DMCP                -WRITE THE MAJOR HEADING
+!            ,DCCMM
+!            ,T BUF01              <- p.76 line  9, 40 characters
+!            ,5.0                     ... which is five words
+!   T PENY   BB1,T SBHDI,T PEN
+!            B,DMCP                -WRITE THE SUB HEADING
+!            ,DCCMM
+!            ,T SUBHD              <- p.76 line 21, 24 characters
+!            ,4.0                     ... three words, PLUS ONE
+!   T PEN    B,DMCP                -WRITE THE MOUNTING PROCEDURES
+!            ,DCCMM
+!            ,T BUFB1(T IXZ)       <- p.76 line 11, the hex datum
+!            ,7.(T IXY)
+!
+! AND THE COUNTS ARE THE CHECK ON p.76 THAT p.76 COULD NOT MAKE.
+! T BUF01 is forty characters -- FIVE WORDS -- and the call asks for
+! 5.0.  That is the "---  SET UP THE FOLLOWING UNITS  ---" message
+! counted twice, once by the location counter on printed p.76 and
+! once by the caller here, two pages apart, and agreeing.
+!
+! >>> AND THE SUB HEADING'S COUNT IS FOUR WHERE ITS TEXT IS THREE,
+! >>> WHICH IS NOT AN ERROR -- IT IS THE POINT. <<<  printed p.76
+! puts T SUBHD at 004445.00 and T PID at 004450.00, so T SUBHD's
+! " -- PROBLEM PROGRAM --- " is exactly THREE words.  The call asks
+! for FOUR, and the fourth word is T PID -- the eight blanks p.76
+! line 22 declares.
+!
+! THAT SLOT IS FILLED BY printed p.77.  Its line 26 is "SF,T PID",
+! storing the problem program's name after the conversion routine
+! has turned it into IQS characters (p.77 lines 15-26).  So the sub
+! heading printed on the operator's console is the literal
+! "-- PROBLEM PROGRAM ---" followed by the name of the job, and it
+! takes THREE PAGES to say so: p.76 reserves the words, p.77 fills
+! the last one, p.79 writes all four as one message.
+!
+! >>> AND THE MOUNTING MESSAGE IS THE SAME TRICK, INDEXED. <<<
+! The third call is ",T BUFB1(T IXZ)" and ",7.(T IXY)" -- BOTH the
+! start and the length are index-modified:
+!
+!   T IXZ  1.0 for overlap (line 6), 0.0 for not overlap (line 8)
+!   T IXY  0 to start (line 5), +1.0 if not overlap (line 9),
+!          +2.0 if the reel is protected (line 15)
+!
+! Seven words from T BUFB1 is 004432.00 to 004441.00, which covers
+! printed p.76's T BUFB1, the " MOUNT - REEL NUMBER " text,
+! T REELX and the " ON CHANNEL " text, ending just short of
+! T UNITX at 004441.20.  The index adds up to two words more, which
+! is what reaches the unit number and the protection text -- the
+! buffers printed p.78 has just filled in.
+!
+! So the message LENGTH is computed from the machine's state, and
+! every word of it was declared on a page that could not be checked
+! except by counting.  THE COUNTING WAS THE CHECK, AND THIS IS WHAT
+! IT WAS CHECKING FOR.
+!
+! T HEAD and T SBHDI, the one-bit flags p.76 line 31-32 declare, are
+! the gates on the two heading messages: the major heading is
+! written only if T HEAD is set, the sub heading only if T SBHDI is.
+! Lines 32 and 34 clear them again.
+!
+! ---------------------------------------------------------------
+! >>> AND IT BRANCHES TO T PICA, WHICH IS WHERE THE RUN STOPS <<<
+! ---------------------------------------------------------------
+! Lines 36 and 37 are "BZXF,T PICA" and "BBN,T NGATE,T PICA", both
+! to 004604.00.  The boot run's PC trail has read 004604.00 since
+! printed p.75 landed, and printed p.80 line 4 is that address.
+!
+! THREE OF printed p.77's FORWARD STAND-INS ARE PLACED HERE:
+! T P1 at 004600.00, T P2 at 004576.00 and T P3 at 004575.40, all
+! three agreeing.  T PENY was a stand-in too.
+!
+! ONE LISTING MARK: line 16.
+
+        SLC, (8)4555.40
+
+! ---- index names, printed pp.61 and 76 ----------------------------
+TCTWDX  SYN, $10
+TXA     SYN, $2
+TXB     SYN, $3
+TXC     SYN, $4
+TIXZ    SYN, $5
+TIXY    SYN, $6
+! ---- words, printed pp.61-64, 76 and 77 ---------------------------
+DMCP    SYN, (8)1472.0
+DCCMM   SYN, (8)43.40
+TPPURF  SYN, (8)3313.0
+TBUF01  SYN, (8)4424.0
+TBUFB1  SYN, (8)4432.0
+TSUBHD  SYN, (8)4445.0
+THEAD   SYN(BU,1), (8)4455.0
+TSBHDI  SYN(BU,1), (8)4455.01
+TNGATE  SYN(BU,1), (8)4455.02
+TMODE   SYN(BU,1), (8)3273.23
+! ---- table offsets, printed pp.62-64 ------------------------------
+STATI   SYN(BU,1), 0.26
+SMOUNT  SYN(BU,1), 0.51
+SIMNT   SYN(BU,1), 0.53
+! ---- back, onto printed pp.77 and 78 ------------------------------
+TP5     SYN, (8)4477.0
+TP6     SYN, (8)4461.40
+! ---- forward, onto printed p.80 -----------------------------------
+TPICA   SYN, (8)4604.0
+TNOP    SYN(BU,6,6), (8)4631.02
+
+        SLC, (8)4555.40
+
+        CM0000(BU,2), STATI(TXC)     ! line 1  -SET TO TAPE MTED-
+                                      !           SCRATCH
+TP4     CM1111, SMOUNT(TXC)          ! line 3  -SET MOUNT BIT AND
+        CM1111, SIMNT(TXC)           ! line 4  -THE INITIAL MOUNT BIT
+        LVI, TIXY, 0                 ! line 5  -INITIALIZE TO NON
+                                      !           PROTECT
+        LVI, TIXZ, 1.0               ! line 6  -SET UP FOR OVERLAP
+        BZB, TMODE, TP7              ! line 7  -IF OVERLAP MODE
+        LVI, TIXZ, 0.0               ! line 8  -SET UP FOR NOT OVERLAP
+        V+I, TIXY, 1.0               ! line 9  -GET ALL OF MESSAGE
+                                      !           PLUS
+
+! ---- CHECK FOR REEL PROTECTION ------------------------------------
+TP7     KF, TNOP, 56                 ! line 13 -LOOK FOR NON-PROTECT
+        BAE, TWRITE                  ! line 14 -IF NOT PROTECTED
+        V+I, TIXY, 2.0               ! line 15
+TWRITE  BB1, THEAD, TPENY            ! line 16 -CHECK FOR MAJOR
+                                      !           HEADING
+        B, DMCP                      ! line 17 -WRITE THE MAJOR
+                                      !           HEADING
+        , DCCMM                      ! line 18
+        , TBUF01                     ! line 19
+        , 5.0                        ! line 20
+TPENY   BB1, TSBHDI, TPEN            ! line 21
+        B, DMCP                      ! line 22 -WRITE THE SUB HEADING
+        , DCCMM                      ! line 23
+        , TSUBHD                     ! line 24
+        , 4.0                        ! line 25
+TPEN    B, DMCP                      ! line 26 -WRITE THE MOUNTING
+                                      !           PROCEDURES
+        , DCCMM                      ! line 27
+        , TBUFB1(TIXZ)               ! line 28
+        , 7.(TIXY)                   ! line 29
+TP3     CB+, TXB, TP5                ! line 30
+TP2     V+ICR, TXA, 2.0              ! line 31
+        CM0000(BU,1), TSBHDI         ! line 32
+        B, TP6                       ! line 33
+TP1     CM0000(BU,2), THEAD          ! line 34 -ZERO THE IND
+        LX, TCTWDX, 0.0($15)         ! line 35 -CHECK THE MODE
+        BZXF, TPICA                  ! line 36 -IF OVERLAP PROCEED
+                                      !           ONWARD
+        BBN, TNGATE, TPICA           ! line 37 -IF SECOND PASS
+        LX, TXA, TPPURF              ! line 38 -SET UP FOR THE NOT
+                                      !           OVERLAP
+        B, TP6                       ! line 39 -FOR NOT OVERLAP
+                                      !           RE-ITERATION
+        END, TP4
+
+! ---------------------------------------------------------------
+! THE CHECKED ROWS -- all thirty-five that compile.
+! ---------------------------------------------------------------
+!   line  1  004555.40  000000.32 84  002000.00 F0     CM0000(BU,2),STATI(TXC)
+!   line  3  004556.40  000000.63 84  001000.36 F0     T P4  CM1111,SMOUNT(TXC)
+!   line  4  004557.40  000000.65 84  001000.36 F0     CM1111,SIMNT(TXC)
+!   line  5  004560.40  000000.15 01                   LVI,TIXY,0
+!   line  6  004561.00  000001.13 01                   LVI,TIXZ,1.0
+!   line  7  004561.40  003273.23 80  004563.74 00     BZB,TMODE,TP7
+!   line  8  004562.40  000000.13 01                   LVI,TIXZ,0.0
+!   line  9  004563.00  000001.15 05                   V+I,TIXY,1.0
+!   line 13  004563.40  004631.02 80  006634.23 10     T P7  KF,TNOP,56
+!   line 14  004564.40  004565.76 C2                   BAE,TWRITE
+!   line 15  004565.00  000002.15 05                   V+I,TIXY,2.0
+!   line 16  004565.40  004455.00 80  004570.74 0E     T WRITE  BB1,THEAD,TPENY
+!   line 17  004566.40  001472.10 00                   B,DMCP
+!   line 18  004567.00  000043.40 80                   ,DCCMM
+!   line 19  004567.40  004424.00 80                   ,TBUF01
+!   line 20  004570.00  000005.00 80                   ,5.0
+!   line 21  004570.40  004455.01 80  004573.74 0E     T PENY  BB1,TSBHDI,TPEN
+!   line 22  004571.40  001472.10 00                   B,DMCP
+!   line 23  004572.00  000043.40 80                   ,DCCMM
+!   line 24  004572.40  004445.00 80                   ,TSUBHD
+!   line 25  004573.00  000004.00 80                   ,4.0
+!   line 26  004573.40  001472.10 00                   T PEN  B,DMCP
+!   line 27  004574.00  000043.40 80                   ,DCCMM
+!   line 28  004574.40  004432.00 85                   ,TBUFB1(TIXZ)
+!   line 29  004575.00  000007.00 86                   ,7.(TIXY)
+!   line 30  004575.40  004477.07 48                   T P3  CB+,TXB,TP5
+!   line 31  004576.00  000002.05 07                   T P2  V+ICR,TXA,2.0
+!   line 32  004576.40  004455.01 80  001000.00 F0     CM0000(BU,1),TSBHDI
+!   line 33  004577.40  004461.50 00                   B,TP6
+!   line 34  004600.00  004455.00 80  002000.00 F0     T P1  CM0000(BU,2),THEAD
+!   line 35  004601.00  000000.24 1F                   LX,TCTWDX,0.0($15)
+!   line 36  004601.40  004604.23 40                   BZXF,TPICA
+!   line 37  004602.00  004455.02 80  004604.34 0A     BBN,TNGATE,TPICA
+!   line 38  004603.00  003313.04 10                   LX,TXA,TPPURF
+!   line 39  004603.40  004461.50 00                   B,TP6

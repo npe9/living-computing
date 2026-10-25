@@ -12,10 +12,10 @@ accumulate.
 
 ## WHERE THIS STANDS, 2026-10-25 — read this first
 
-**The frontier is `T PICA` at 004604.00, and printed p.78 is the
-blocker.** The MCP image holds printed pp.15-77 gapless (60 decks,
-467 stand-ins checked against their definitions, 276 agreeing SYNs,
-32 symbols still external), and
+**The frontier is `T PICA` at 004604.00 — printed p.80 line 4, the
+next page.** The MCP image holds printed pp.15-79 gapless (62 decks,
+500 stand-ins checked against their definitions, 297 agreeing SYNs,
+29 symbols still external), and
 the boot run executes MCP's ASSIGN routine end to end: it saves its
 indexes, walks the channel status table for a machine-configuration
 change (p.72), sorts the multi-unit count table and runs the MULTI
@@ -5416,6 +5416,150 @@ no opcode can rule it out. What ruled it out was the datum the name
 labels — which is a tell worth stating on its own: *when a name
 labels data, decode the data before trusting the name.*
 
+## >>> printed p.27 HAS BEEN HOLDING THE ANSWER TO p.77's HARDEST GLYPH SINCE IT LANDED — 2026-10-25 <<<
+
+printed p.77 line 23 prints `BL,$+.32` and printed p.78 line 40
+prints `BE,$+.32`, both commented *MODIFIED BY IPL*. §13i settled
+them as `BE` on three grounds: `BL` is not a mnemonic, `BE`
+reproduces the printed row exactly, and the two rows are one idiom.
+
+**There was a fourth witness and it was already in the image.**
+printed p.27 — transcribed weeks ago — is ASSIGN's *caller*:
+
+```
+X24    LVI,$15,X242               -ENTER PARAMETER LOCATION
+       CM1111(BU,1),T IPLB1+.21   -CONVERT BE IN ASSIGN TO BD
+       CM1111(BU,1),T IPLB2+.21   -CONVERT BE IN ASSIGN TO BD
+X241   B,T ASIGN
+X242   XW,-1,0,0,4                -MODE
+```
+
+**The comment says `BE`** — a 1963 programmer's own word for the
+instruction, on a page that has been in this image since long before
+the question arose. And the arithmetic closes it:
+
+* `T IPLB1` and `T IPLB2` are p.27's stand-ins at 004474.0 and
+  004540.40, **exactly where pp.77 and 78 place them**;
+* `BE,$+.32` compiles `.40`, `BD,$+.32` compiles `.44`;
+* the bit p.27 sets is **`.21`** — the one bit by which they differ.
+
+So *MODIFIED BY IPL* is not a vague note. The IPL loader patches two
+specific half-words in ASSIGN, turning two **enabled** branches into
+**disabled** ones, and the page that does it names the instruction,
+the symbol and the bit.
+
+> **The corpus is now large enough to answer questions about
+> itself.** Four independent agreements — the mnemonic table, the
+> assembler, the twin row, and a caller fifty pages back — and only
+> the first was available when the row was read. *Before reaching
+> for a manual, grep the decks: by sixty pages in, the listing is
+> its own best reference.*
+
+### And it says where the run goes next
+
+p.27 line 5 is `LVI,$15,X242` and line 8 is `B,T ASIGN`, so `$15`
+holds **X242 = 001467.00** across the whole of ASSIGN. printed p.80
+line 31 — the routine's last instruction — is `B,1.00($15)`: one
+word past the parameter block, **001470.00**, which is p.27 line 11,
+`LX,$0,X242  -INITIALIZE $IND`.
+
+```
+p.27 line  5   X24     LVI,$15,X242      001464.00
+p.27 line  8   X241    B,T ASIGN         001466.40
+p.27 line  9   X242    XW,-1,0,0,4       001467.00   -MODE
+p.27 line 11           LX,$0,X242        001470.00   <- the return
+p.27 line 12   XERR24  SIC,X ERR AD      001470.40
+p.27 line 13           BZXCZ,XERROR                  -IF ASSIGNMENT ERROR
+```
+
+The boot run's PC trail has read 004604.00 since printed p.75
+landed, six pages ago. **When printed p.80 lands it should move to
+001470.00 — backwards, by nearly two thousand half words, into a
+page transcribed weeks ago** — and then straight into
+`BZXCZ,XERROR`, the test for whether the assignment failed.
+
+*That is the first prediction this project has been able to make
+about where the run goes before running it.* The address, the
+register that carries it, the page and the line are all in hand; the
+only thing not yet known is which way `BZXCZ` branches.
+
+## >>> PRINTED p.79 IS WHAT p.76's COUNTING WAS CHECKING FOR — 2026-10-25 <<<
+
+Thirty-five compiled rows of thirty-nine lines, all bit-exact. Seven
+measured injections, one of which is the sharpest test on this page
+and refuses the obvious correction.
+
+### p.76 could only be checked by counting; this is what the counts are
+
+printed p.76 is thirty-seven lines of character data. The listing
+prints no binary for any of it, so the only verification was that
+seventeen labels landed on their printed locations. **This page is
+what the data is for** — three calls to `DMCP`, each a branch
+followed by a three-word parameter block:
+
+```
+T WRITE  BB1,T HEAD,T PENY     -CHECK FOR MAJOR HEADING
+         B,DMCP                -WRITE THE MAJOR HEADING
+         ,DCCMM / ,T BUF01 / ,5.0
+T PENY   BB1,T SBHDI,T PEN
+         B,DMCP                -WRITE THE SUB HEADING
+         ,DCCMM / ,T SUBHD / ,4.0
+T PEN    B,DMCP                -WRITE THE MOUNTING PROCEDURES
+         ,DCCMM / ,T BUFB1(T IXZ) / ,7.(T IXY)
+```
+
+`T BUF01` is forty characters — **five words** — and the call asks
+for `5.0`. The *--- SET UP THE FOLLOWING UNITS ---* message is
+counted twice, once by the location counter on p.76 and once by the
+caller here, two pages apart, and they agree.
+
+### >>> The sub heading's count is four where its text is three <<<
+
+p.76 puts `T SUBHD` at 004445.00 and `T PID` at 004450.00, so
+` -- PROBLEM PROGRAM --- ` is exactly **three** words. The call asks
+for **four**.
+
+That is not an error. **The fourth word is `T PID`** — the eight
+blanks p.76 line 22 declares — and **printed p.77 line 26 is
+`SF,T PID`**, storing the problem program's name after the
+conversion routine has turned it into IQS characters.
+
+> So the line printed on the operator's console is the literal
+> `-- PROBLEM PROGRAM ---` followed by the name of the job, and **it
+> takes three pages to say so**: p.76 reserves the words, p.77 fills
+> the last one, p.79 writes all four as one message.
+
+The injection that "corrects" `4.0` to the `3.0` the text measures
+is exactly the careless reading, and the listing refuses it. *A
+count that disagrees with the thing it counts is worth a second look
+before it is worth a correction.*
+
+### The mounting message is the same trick, indexed
+
+`,T BUFB1(T IXZ)` and `,7.(T IXY)` index **both** the start and the
+length. `T IXZ` is 1.0 for overlap and 0.0 for not (lines 6, 8);
+`T IXY` is 0, `+1.0` if not overlap, `+2.0` if the reel is protected
+(lines 5, 9, 15). Seven words from `T BUFB1` is 004432.00-004441.00,
+covering p.76's `T BUFB1`, the ` MOUNT - REEL NUMBER ` text,
+`T REELX` and the ` ON CHANNEL ` text, stopping just short of
+`T UNITX` at 004441.20 — and the index adds the words that reach the
+unit number and the protection text **that printed p.78 has just
+filled in**.
+
+So the message length is computed from the machine's state, and the
+index lives in the opcode byte's low nibble of a **null-operation**
+row — the only place in this corpus a parameter word is indexed.
+
+### And it branches to `T PICA`
+
+Lines 36 and 37 are `BZXF,T PICA` and `BBN,T NGATE,T PICA`, both to
+004604.00 — the address the PC trail has read since printed p.75
+landed, and **printed p.80 line 4**.
+
+The image is now **62 pages gapless, 500 stand-ins checked**, 297
+agreeing SYNs, 29 external — predicted exactly. printed p.80 is the
+next page and the run's next instruction.
+
 ## >>> PRINTED p.78 CARRIES A SYNTAX NO SOURCE DESCRIBES, AND THE DECK SAYS SO — 2026-10-25 <<<
 
 Forty-five compiled rows of fifty-six lines, all bit-exact. Seven
@@ -5946,7 +6090,8 @@ is the third instance of that shape after `*`/`M+` on printed p.72.
 Still unread in the manuals: C28-6129's section on the offset field
 and its pseudo-operation chapter.
 
-**printed p.79** — 004555.40-004603.40, 39 lines.
+**printed p.79** — **LANDED**, 35/35 rows, seven injections. It is
+what p.76's counting was checking for; the entry above has it.
 
 Then **printed p.80 line 4 is 004604.00**, and the run moves again.
 
