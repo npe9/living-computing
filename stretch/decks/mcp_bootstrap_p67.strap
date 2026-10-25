@@ -1,0 +1,208 @@
+! MCP INITIALIZATION, printed p.67 (MCP_Mar63_001-249 PDF p.74) --
+! THE MULTI-UNIT AND SINGLE-UNIT ASSIGNMENT ATTEMPTS.
+!
+! Fifty-six lines, thirty-eight of which compile.  Three boxed
+! headings, and the listing's wording is the page's structure:
+!
+!   lines  7-11  "CONCLUSION -- TRY TO ASSIGN THIS MULTI-UNIT REQ"
+!   lines 29-31  "GET ABSOLUTE CHANNEL NO. AS REQUEST IS PARTIALY
+!                 ASSIGNED"
+!   lines 44-49  "CONCLUSION --TRY TO ASSIGN THIS SINGLE UNIT
+!                 REQUEST"
+!
+! >>> IT PICKS UP WHERE printed p.66 LEFT OFF, AND PLACES BOTH OF
+! ITS FORWARD REFERENCES. <<<  p.66 line 45 branches to T A2E and
+! line 49 to T A7; LINE 5 HERE IS T A2E at 003775.00 and LINE 50 IS
+! T A7 at 004020.40.  Both were stand-ins there.
+!
+! ---------------------------------------------------------------
+! NINE BARE VFL STATEMENTS, AND EVERY dds COMES FROM A PAGE ALREADY
+! TRANSCRIBED
+! ---------------------------------------------------------------
+!   line 13  LF,T RLSYM(T IXA)      007000 ->  7  p.62 line 35
+!   line 17  KF,T RLSYM(T X1)       007000 ->  7
+!   line 25  KF,T CTSCH             007000 ->  7  p.61 line 14
+!   line 32  L,T CTACH,46           022000 -> 18  p.61 line 13
+!   line 35  L,T UNITK(T X3),46     004000 ->  4  p.63 line 11
+!   line 41  CM1111,T INDB          001000 ->  1  p.61 line 24
+!   line 53  LF,T TYPE(T IXA)       004000 ->  4  p.62 line 33
+!   line 54  KF,T EQUIP(T X3)       004000 ->  4  p.63 line 10
+!
+! T INDB is the one to notice: like printed p.66's T MODE and
+! T INDD it is a `DD` LABEL and not a SYN -- p.61 line 24 defines it
+! with "DD(BU,1),0" -- so this page is a second independent instance
+! of a dds carried by a DD rather than a SYN card.
+!
+! ---------------------------------------------------------------
+! T CTACH AND T CTSCH ARE THE TWO HALVES OF ONE WORD, AND BOTH ARE
+! SPENT HERE
+! ---------------------------------------------------------------
+! printed p.61 lines 13 and 14 define them as
+! "SYN(BU,18),T CTEMP+0.0" and "SYN(BU,7),T CTEMP+0.25", whose
+! location column prints 003265.00+ and 003265.31+.  Line 32 here is
+! "L,T CTACH,46" compiling 003265.00 and line 25 is "KF,T CTSCH"
+! compiling 003265.31.  The ABSOLUTE channel number and the SYMBOLIC
+! one, eighteen bits and seven, in one temp word -- declared six
+! pages back and used here.
+!
+! ---------------------------------------------------------------
+! FOUR SYMBOLS POINT FORWARD
+! ---------------------------------------------------------------
+! T A3 004046.0, T B7 004034.0, T A7D 004035.0 and T C3Z 004065.0,
+! each read out of the branch that names it.  printed p.68 onward
+! will place them.
+!
+! TWO LISTING MARKS: lines 25 ("004005.40 *") and 51 ("004021.00 *").
+!
+! A NAME WITH AN INTERNAL BLANK THE LISTING SHOWS TWICE: lines 51,
+! 52, 54 and 56 print "T X3 " with a trailing space inside the
+! parentheses -- "BB,T EQUIP(T X3 ),T B7".  STRAP ignores blanks in
+! a name (docs/NEXT.md 5t), so it compiles as T X3 and the space is
+! typography, not a different symbol.  The binary agrees: the opcode
+! byte's low nibble is 2, which is $2, which is T X3.
+
+        SLC, (8)3774.0
+
+! ---- index names, printed p.61 ------------------------------------
+TX1     SYN, $10
+TX2     SYN, $9
+TX3     SYN, $2
+TIXA    SYN, $4
+TIXE    SYN, $3
+TIXJ    SYN, $6
+! ---- words, printed pp.61-66 --------------------------------------
+TCTACH  SYN(BU,18), (8)3265.0
+TCTSCH  SYN(BU,7), (8)3265.31
+TWORK1  SYN, (8)3267.0
+TREFIL  SYN, (8)3271.0
+TLUCT   SYN(BU,18), (8)3273.0
+TMODE   SYN(BU,1), (8)3273.23
+TINDA   SYN(BU,1), (8)3273.24
+TINDB   SYN(BU,1), (8)3273.25
+TINDZ   SYN(BU,1), (8)3273.31
+TPPRUN  SYN, (8)3315.0
+TCHSXW  SYN, (8)2152.0
+TB2     SYN, (8)3756.40
+! ---- table offsets, printed pp.62 and 63 --------------------------
+TTYPE   SYN(BU,4), 0.03
+TRLSYM  SYN(BU,7), 0.11
+TMULTI  SYN(BU,1), 0.27
+TCHAVL  SYN(BU,1), 0.25
+TEQUIP  SYN(BU,4), 0.52
+TUNITK  SYN(BU,4), 0.59
+TUNTBA  SYN(BU,18), 0.0
+! ---- forward, onto printed p.68 and after -------------------------
+TB7     SYN, (8)4034.0
+TA7D    SYN, (8)4035.0
+TA3     SYN, (8)4046.0
+TC3Z    SYN, (8)4065.0
+
+        SLC, (8)3774.0
+
+        BZXE, TB2                    ! line 1  -NO, DO NOT ASSIGN
+        B, TA7                       ! line 2
+
+TA2E    BB, TMODE, TA6               ! line 5  -IF NOT OVERLAP MODE
+        BB1, TINDZ, TB2              ! line 6
+
+! ---- CONCLUSION -- TRY TO ASSIGN THIS MULTI-UNIT REQ --------------
+TA6     LX, TX1, TREFIL              ! line 12 -SET FOR CHANNEL SCAN
+        LF, TRLSYM(TIXA)             ! line 13 -SYMBOLIC CHANNEL
+                                      !           NUMBER TO ACC
+        Z, TX3                       ! line 14 -ZERO THE COUNTER
+                                      !           INDEX
+        SC, TIXA, TWORK1             ! line 15 -SAVE FOR COMPARING
+        BRZ, TA3                     ! line 16 -DO NOT COMPARE IF
+                                      !           RLSYM IS ZERO
+TA6A    KF, TRLSYM(TX1)              ! line 17 -LOOK FOR LIKE
+                                      !           SYMBOLIC CHAN
+        BAE, TA6C                    ! line 18 -IF LIKE SYMBOLIC
+                                      !           CHANNEL
+TA6B    CB+, TX1, TA6A               ! line 19
+        B, TA6D                      ! line 20
+TA6C    C+I, TX3, 1.0                ! line 22 -ADVANCE THE LIKE
+                                      !           REQUEST COUNTER
+        B, TA6B                      ! line 23
+TA6D    KF, TCTSCH                   ! line 25 -COMPARE ACC AGAINST
+                                      !           TEMP
+        KC, TX3, TLUCT               ! line 26 -IS THERE A CHANNEL
+                                      !           WITH ENOUGH UNITS
+        BXH, TAQ                     ! line 27 -IF THE CHANNEL REQ
+                                      !           IS TOO LARGE
+        BZAE, TA3                    ! line 28 -IF UNLIKE ABS CHAN
+                                      !           LOC
+
+! ---- GET ABSOLUTE CHANNEL NO. AS REQUEST IS PARTIALY ASSIGNED -----
+        L, TCTACH, 46                ! line 32 -GET ABSOLUTE CHAN
+                                      !           ADDRESS
+        LX, TX3, $R                  ! line 33 -PLACE IN INDEX
+        LV, TIXJ, TUNTBA(TX3)        ! line 34 -GET UNIT TABLE
+                                      !           ADDRESS
+        L, TUNITK(TX3), 46           ! line 35
+        LC, TIXJ, $R                 ! line 36 -UNIT COUNT TO CF
+        BZB, TINDA, TC3Z             ! line 37 -IF THE SAME CHAN IS
+                                      !           NOT ALLOWED
+        BB, TMODE, TAQ               ! line 38 -IF NOT OVERLAP
+        KV, TIXE, TPPRUN             ! line 39 -IS THIS THE NEXT JOB
+                                      !           TO BE RUN
+        BZXE, TC3Z                   ! line 40 -NO -- BYPASS
+TAQ     CM1111, TINDB                ! line 41 -SET THE SPLIT
+                                      !           CHANNEL IND
+        V+I, TX2, 1.0                ! line 42 -STEP TO THE REVERSE
+                                      !           SCAN
+        B, TA3                       ! line 43
+
+! ---- CONCLUSION --TRY TO ASSIGN THIS SINGLE UNIT REQUEST ----------
+TA7     LX, TX3, TCHSXW              ! line 50
+TA7A    BB, TEQUIP(TX3), TB7         ! line 51 -IF A TAPE CHANNEL
+        BB, TCHAVL(TX3), TB7         ! line 52 -IF THE CHANNEL IS
+                                      !           NOT AVAILABLE
+        LF, TTYPE(TIXA)              ! line 53 -IS IT THE CORRECT
+                                      !           EQUIP TYPE
+        KF, TEQUIP(TX3)              ! line 54
+        BZAE, TB7                    ! line 55 -NO
+        BB, TMULTI(TX3), TA7D        ! line 56 -IF A MULTI SING
+                                      !           UNIT CHANNEL
+        END, TA2E
+
+! ---------------------------------------------------------------
+! THE CHECKED ROWS -- all thirty-eight that compile.
+! ---------------------------------------------------------------
+!   line  1  003774.00  003756.72 C0                   BZXE,T B2
+!   line  2  003774.40  004020.50 00                   B,T A7
+!   line  5  003775.00  003273.23 80  003777.34 02     T A2E  BB
+!   line  6  003776.00  003273.31 80  003756.74 0E     BB1,T INDZ
+!   line 12  003777.00  003271.24 10                   T A6  LX
+!   line 13  003777.40  000000.13 84  007000.06 70     LF,T RLSYM
+!   line 14  004000.40  000022.22 00                   Z,T X3
+!   line 15  004001.00  003267.11 50                   SC,T WORK1
+!   line 16  004001.40  004046.34 C2                   BRZ,T A3
+!   line 17  004002.00  000000.13 8A  007000.23 10     T A6A  KF
+!   line 18  004003.00  004004.76 C2                   BAE,T A6C
+!   line 19  004003.40  004002.25 48                   T A6B  CB+
+!   line 20  004004.00  004005.50 00                   B,T A6D
+!   line 22  004004.40  000001.05 00                   T A6C  C+I
+!   line 23  004005.00  004003.50 00                   B,T A6B
+!   line 25  004005.40  003265.31 80  007000.23 10     T A6D  KF
+!   line 26  004006.40  003273.05 90                   KC,T LUCT
+!   line 27  004007.00  004016.73 42                   BXH,T AQ
+!   line 28  004007.40  004046.36 C0                   BZAE,T A3
+!   line 32  004010.00  003265.00 80  022027.20 50     L,T CTACH,46
+!   line 33  004011.00  000011.04 10                   LX,T X3,$R
+!   line 34  004011.40  000000.14 32                   LV,T IXJ
+!   line 35  004012.00  000000.73 82  004027.20 50     L,T UNITK,46
+!   line 36  004013.00  000011.14 50                   LC,T IXJ,$R
+!   line 37  004013.40  003273.24 80  004065.34 00     BZB,T INDA
+!   line 38  004014.40  003273.23 80  004016.74 02     BB,T MODE
+!   line 39  004015.40  003315.06 90                   KV,T PPRUN
+!   line 40  004016.00  004065.32 C0                   BZXE,T C3Z
+!   line 41  004016.40  003273.25 80  001000.36 F0     T AQ  CM1111
+!   line 42  004017.40  000001.23 05                   V+I,T X2
+!   line 43  004020.00  004046.10 00                   B,T A3
+!   line 50  004020.40  002152.04 10                   T A7  LX
+!   line 51  004021.00  000000.64 82  004034.34 02     T A7A  BB
+!   line 52  004022.00  000000.31 82  004034.34 02     BB,T CHAVL
+!   line 53  004023.00  000000.03 84  004000.06 70     LF,T TYPE
+!   line 54  004024.00  000000.64 82  004000.23 10     KF,T EQUIP
+!   line 55  004025.00  004034.36 C0                   BZAE,T B7
+!   line 56  004025.40  000000.33 82  004035.34 02     BB,T MULTI

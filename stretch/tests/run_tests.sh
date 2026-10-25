@@ -5010,6 +5010,24 @@ run "the CHANNEL/UNIT STATUS and VALID CHECK tables, printed p.63, bit-exact (MC
 run "the REQUEST VALIDITY CHECK and MULTI-UNIT COUNT tables, printed p.64, bit-exact (MCP_Mar63 PDF p.71)" python3 verify_mcp_bootstrap_p64.py
 run "THE ENTRY POINT TO THE ASSIGN ROUTINE, printed p.65, bit-exact (MCP_Mar63 PDF p.72)" python3 verify_mcp_bootstrap_p65.py
 run "the REQUEST-COUNT CHECK and the I/O REQUEST SCAN, printed p.66, bit-exact (MCP_Mar63 PDF p.73)" python3 verify_mcp_bootstrap_p66.py
+run "the MULTI-UNIT and SINGLE-UNIT assignment attempts, printed p.67, bit-exact (MCP_Mar63 PDF p.74)" python3 verify_mcp_bootstrap_p67.py
+# IT PLACES BOTH OF printed p.66's FORWARD REFERENCES: p.66 line 45
+# branches to T A2E and line 49 to T A7, and lines 5 and 50 here are
+# those labels, at 003775.00 and 004020.40.
+#
+# NINE BARE VFL STATEMENTS, AND EVERY dds COMES FROM A PAGE ALREADY
+# TRANSCRIBED -- printed p.61's T CTACH (18), T CTSCH (7) and T INDB
+# (1), p.62's T RLSYM (7) and T TYPE (4), p.63's T EQUIP (4) and
+# T UNITK (4).  T INDB is a `DD` LABEL and not a SYN, so this is a
+# SECOND independent instance of the shape printed p.66 found: the
+# dds rule is about the symbol, not the card that made it.
+#
+# T CTACH AND T CTSCH ARE THE TWO HALVES OF ONE WORD AND BOTH ARE
+# SPENT HERE.  printed p.61 lines 13 and 14 declare them
+# SYN(BU,18),T CTEMP+0.0 and SYN(BU,7),T CTEMP+0.25; line 32 here
+# compiles 003265.00 and line 25 compiles 003265.31 -- the absolute
+# channel number and the symbolic one, eighteen bits and seven, in
+# one temp word declared six pages back.
 # IT PICKS UP EXACTLY WHERE printed p.65 LEFT OFF: p.65's last line
 # branches to T C1 and its line 37 to T A2, and lines 3 and 19 here
 # ARE those two labels, at 003733.40 and 003743.40.

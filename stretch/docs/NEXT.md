@@ -5395,6 +5395,47 @@ no opcode can rule it out. What ruled it out was the datum the name
 labels — which is a tell worth stating on its own: *when a name
 labels data, decode the data before trusting the name.*
 
+## PRINTED p.67 — the assignment attempts, and a dds rule confirmed on a second kind of symbol, 2026-10-24
+
+Thirty-eight compiled rows, **all bit-exact on the first run**. It
+places both of p.66's forward references: line 5 is `T A2E` at
+003775.00, line 50 is `T A7` at 004020.40.
+
+### `T CTACH` and `T CTSCH` are the two halves of one word
+
+p.61 lines 13-14 declare them `SYN(BU,18),T CTEMP+0.0` and
+`SYN(BU,7),T CTEMP+0.25` — the **absolute** channel number and the
+**symbolic** one, eighteen bits and seven, packed in one temp word.
+Line 32 here is `L,T CTACH,46` compiling `003265.00`; line 25 is
+`KF,T CTSCH` compiling `003265.31`. Declared six pages back, spent
+here, and the bit offsets match to the digit (0o31 = 25).
+
+### A second independent instance of a dds carried by a `DD` label
+
+Line 41's `CM1111,T INDB` is bare and compiles `001000` — length
+one — and p.61 line 24 made `T INDB` with `DD(BU,1),0`, not a SYN.
+p.66 showed this with `T MODE` and `T INDD`; p.67 confirms it on a
+different symbol, and its injection fails the row.
+
+**Nine bare VFL statements on the page, and every dds comes from a
+page already transcribed**: p.61's `T CTACH` (18), `T CTSCH` (7) and
+`T INDB` (1); p.62's `T RLSYM` (7) and `T TYPE` (4); p.63's
+`T EQUIP` (4) and `T UNITK` (4).
+
+### Where the range stands
+
+```
+merged 50 pages, 361 stand-ins checked against their definitions,
+120 SYNs that agree with another page's SYN, 41 symbols external
+```
+
+printed pp.15-67 are in the image, gapless. The trail stays at
+004215.00 (`T A9`, p.72 line 4) — the run branches straight there
+from p.65 line 9 and does not enter pp.66-67 yet. **pp.68-71 are what
+remain**, four dense code pages; p.67's own forward references name
+part of what is on them (`T A3` 004046.0, `T B7` 004034.0, `T A7D`
+004035.0, `T C3Z` 004065.0).
+
 ## PRINTED p.66 — and a `C` misread as a ZERO, the mirror of §13, 2026-10-24
 
 Forty-four compiled rows; forty-three bit-exact on the first run.
