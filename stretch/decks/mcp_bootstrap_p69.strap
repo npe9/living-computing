@@ -1,0 +1,235 @@
+! MCP INITIALIZATION, printed p.69 (MCP_Mar63_001-249 PDF p.76) --
+! THE UNIT TABLE SCAN AND THE RESERVED-UNIT SEARCH.
+!
+! Fifty-six lines, forty-five of which compile.  Two boxed headings:
+!
+!   lines  3-4   "IF IT GETS HERE,  DO A UNIT TABLE SCAN"
+!   lines 30-33  "SINGLE NOT OVERLAP MODE -- BE SURE THE UNIT IS
+!                 RESERVED FOR A PP THAT IS IN QUEUE AFTER THIS PP"
+!
+! >>> IT PLACES printed p.68's LAST TWO FORWARD REFERENCES. <<<
+! p.68 line 50 branches to T A3CB and lines 40 and 46 to T C3Z;
+! LINE 2 HERE IS T A3CB at 004064.40 and LINE 5 IS T C3Z at
+! 004065.00.  With those, every symbol p.68 pointed forward at is
+! placed.
+!
+! ---------------------------------------------------------------
+! >>> A BARE WRITTEN MINUS, AND IT IS ONLY THE SECOND IN THE CORPUS
+! ---------------------------------------------------------------
+! Line 48 is
+!
+!     -,T ABSUN(T IXM),46      -COMPUTE THE RELATIVE UNIT NUMBER
+!
+! -- the OPERATION is a single minus sign.  The project's memory
+! records that "only one deck in the corpus spells an unsigned
+! written-minus at all, MCP printed p.18 line 35", which is the row
+! that found `fieldToSM` returning sign 0 for every unsigned field
+! and dropping the negative sign modifier -- "every unsigned
+! subtract in the model was an addition".  THIS IS THE SECOND.
+!
+! AND THE LISTING SHOWS THE MODIFIER.  Line 47 is "L,T UNITK(T X1),46"
+! compiling 004027.20 50 and line 48 is the minus compiling
+! 003027.30 10.  The second group's ".20" becomes ".30" -- one bit,
+! which is p.57's "Unsigned, use -" table entry and p.60's "whether
+! the sign of the storage operand is taken as-is or is inverted".
+! A row that would have been silently wrong before 2026-10-19.
+!
+! ---------------------------------------------------------------
+! TEN BARE VFL STATEMENTS, AND THREE TAKE THEIR dds FROM `DD` LABELS
+! ---------------------------------------------------------------
+! Lines 8 and 18 are "CM0000,T INDZ", line 23 is "LF,T ONE" and line
+! 26 is "CM1111,T INDC" -- all bare, all length ONE, and printed
+! p.61 lines 21, 25 and 28 define T ONE, T INDC and T INDZ with
+! "DD(BU,1)".  printed p.66 and p.67 each found one such symbol;
+! this page has three.
+!
+! The rest take SYN dds already transcribed: T UNAVL, T UNASG,
+! T UNRES, T FDISP from p.63; T FREEL (18), T UNCT (8), T ABSCH (18),
+! T ABSUN (3), T ASGNI, T PRINT, T ASGNP from p.62; T UNITK (4) from
+! p.63.
+!
+! ---------------------------------------------------------------
+! ONE SYMBOL IS NEW AND IS NOT A `T` NAME
+! ---------------------------------------------------------------
+! Line 24 is "KF,STATI(T IXJ)" compiling 000000.32 86 001000.23 10 --
+! a one-bit field at 0.26 (0o32).  Every other table offset on these
+! pages is named "T something"; this one is not, which suggests it
+! belongs to a table declared outside the ASSIGN program.  Carried as
+! a stand-in at 0.26 with dds (BU,1), both read off this row.
+!
+! FOUR SYMBOLS POINT FORWARD: T B3 004127.0 (printed p.70 line 5),
+! T A5A 004137.0, T A5MA 004142.40 and T A5S -- the last already a
+! stand-in in p.68.
+!
+! FOUR LISTING MARKS: lines 19, 38, 55 and -- line 2, the page's
+! first compiled row, carries none.
+
+        SLC, (8)4064.40
+
+! ---- index names, printed p.61 ------------------------------------
+TX1     SYN, $10
+TX3     SYN, $2
+TIXA    SYN, $4
+TIXE    SYN, $3
+TIXJ    SYN, $6
+TIXK    SYN, $10
+TIXL    SYN, $10
+TIXM    SYN, $8
+! ---- words, printed pp.61-68 --------------------------------------
+TWORK2  SYN, (8)3270.0
+TONE    SYN(BU,1), (8)3273.22
+TMODE   SYN(BU,1), (8)3273.23
+TINDC   SYN(BU,1), (8)3273.26
+TINDD   SYN(BU,1), (8)3273.27
+TINDZ   SYN(BU,1), (8)3273.31
+TA3CA   SYN, (8)4060.40
+! ---- table offsets, printed pp.62 and 63 --------------------------
+TASGNI  SYN(BU,1), 0.0
+TPRINT  SYN(BU,1), 0.02
+TABSUN  SYN(BU,3), 0.07
+TUNOBT  SYN(BU,1), 0.01
+TUNCT   SYN(BU,8), 0.28
+TFREEL  SYN(BU,18), 0.28
+TUNAVL  SYN(BU,1), 0.28
+TUNASG  SYN(BU,1), 0.29
+TFDISP  SYN(BU,1), 0.27
+TJBPRO  SYN(BU,1), 0.36
+TASGNP  SYN(BU,1), 0.38
+TLPPEN  SYN(BU,1), 0.39
+TABSCH  SYN(BU,18), 0.46
+TUNITK  SYN(BU,4), 0.59
+TUNRES  SYN(BU,1), 0.62
+TCRREF  SYN(BU,18), 0.0
+! ---- new on this page, read off line 24 ---------------------------
+STATI   SYN(BU,1), 0.26
+! ---- forward, onto printed p.70 and after -------------------------
+TB3     SYN, (8)4127.0
+TA5A    SYN, (8)4137.0
+TA5MA   SYN, (8)4142.40
+
+        SLC, (8)4064.40
+
+TA3CB   CB+, TIXK, TA3CA             ! line 2
+
+! ---- IF IT GETS HERE, DO A UNIT TABLE SCAN ------------------------
+TC3Z    SX, TIXJ, TWORK2             ! line 5  -SAVE IX FOR RELOAD
+TC3     LX, TIXJ, TWORK2             ! line 6  -RELOAD
+TC3A    BB, TUNAVL(TIXJ), TB3        ! line 7  -IF THE UNIT IS NOT
+                                      !           AVAILABLE
+        CM0000, TINDZ                ! line 8  -RESET
+        BZB, TUNASG(TIXJ), TB3       ! line 12 -IF THE UNIT IS
+                                      !           ASSIGNED
+        CT0011(BU,2), TUNRES(TIXJ)   ! line 13 -=TEST THE RESERVE BITS
+        BRZ, TA4A                    ! line 14 -IF NOT RESERVED
+        BZB, TMODE, TB3              ! line 15 -IF OVERLAP MODE
+        BB, TUNRES(TIXJ), TB3        ! line 16 -IF NOT OVERLAP
+                                      !           RESERVED
+        BB, TUNOBT(TIXA), TA4C       ! line 17 -IF SINGLE UNIT NOT
+                                      !           OVERLAP MODE
+TA4A    CM0000, TINDZ                ! line 18 -SET THE MULTI-UNIT
+                                      !           AVAIL.BIT
+        BB, TINDD, TA5A              ! line 19 -IF THE OPT. REEL
+                                      !           MOUNT IS BY PASSED
+        LF, TFREEL(TIXA)             ! line 20 -GET THE REEL NUMBER
+                                      !           ADDRESS
+        BRZ, TA4B                    ! line 21 -IF SCRATCH REQ.
+        BB, TFDISP(TIXJ), TA5A       ! line 22 -IF NO TAPE MTED, MNT
+                                      !           THE LAB TAP
+        LF, TONE                     ! line 23 -IF REEL ADDRESS IS
+                                      !           NOT ZERO
+TA4BA   KF, STATI(TIXJ)              ! line 24 -ORIGINAL VS THE NEW
+        BAE, TA5A                    ! line 25 -IF LIKE MOUNTING
+TA4CM   CM1111, TINDC                ! line 26 -SET THE UNIT FOUND
+                                      !           IND.
+        B, TB3                       ! line 27
+TA4B    BB, TFDISP(TIXJ), TA4CM      ! line 28 -SCRATCH. IS A TAPE
+                                      !           MTED
+        B, TA4BA                     ! line 29 -YES
+
+! ---- SINGLE NOT OVERLAP MODE -- BE SURE THE UNIT IS RESERVED ------
+! ---- FOR A PP THAT IS IN QUEUE AFTER THIS PP ----------------------
+TA4C    LX, TIXL, TIXE               ! line 34 -LOAD FOR PP REF
+                                      !           TABLE SCAN
+TA4CA   V+ICR, TIXL, 2.0             ! line 35 -GET THE NEXT PP REF
+                                      !           NUMBER
+        BB, TLPPEN(TIXL), TB3        ! line 36 -IF LAST ENTRY
+        BB, TJBPRO(TIXL), TA4CA      ! line 37 -IF NOT OVERLAP JOB
+                                      !           WAS PROCESSED
+        L, TUNCT(TIXL), 46           ! line 38 -GET THE I/O REQ COUNT
+        BRZ, TA4CA                   ! line 39 -IF THERE IS NO I/O
+                                      !           REQ FOR PP
+        LC, TIXM, $R                 ! line 40 -UNIT COUNT TO CF
+        LV, TIXM, TCRREF(TIXL)       ! line 41 -GET I/O REQ TBL
+                                      !           ADDRESS
+TA4CB   L, TABSCH(TIXM), 46          ! line 43 -GET THE CHANNEL
+                                      !           ADDRESS
+        KV, TX3, $R                  ! line 44 -COMPARE CHANNEL
+                                      !           ADDRESSES
+        BZXE, TA4CC                  ! line 45 -IF THEY ARE UNLIKE
+        LV, TX1, $R                  ! line 46
+        L, TUNITK(TX1), 46           ! line 47 -GET THE UNIT COUNT
+        -, TABSUN(TIXM), 46          ! line 48 -COMPUTE THE RELATIVE
+                                      !           UNIT NUMBER
+        KC, TIXJ, $R                 ! line 49 -COMPARE UNIT NUMBERS
+        BZXE, TA4CC                  ! line 50 -IF UNLIKE UNITS
+        CM0000, TASGNI(TIXM)         ! line 51 -ZERO THE ASIGNED BIT
+                                      !           -- UNIT BASIS
+        CM0000, TPRINT(TIXM)         ! line 52 -RESET THE PRINT BIT
+        CM0000, TASGNP(TIXL)         ! line 53 -ZERO THE ASIGNED BIT
+                                      !           -- JOB BASIS
+        B, TA5MA                     ! line 54 -THE UNIT IS NOW
+                                      !           RELEASED
+TA4CC   CB+, TIXM, TA4CB             ! line 55 -IF UNLIKE UNIT/CHAN
+                                      !           NUMBER
+        B, TA4CA                     ! line 56 -COULD NOT FIND
+                                      !           RESERVED UNIT
+        END, TC3Z
+
+! ---------------------------------------------------------------
+! THE CHECKED ROWS -- all forty-five that compile.
+! ---------------------------------------------------------------
+!   line  2  004064.40  004060.65 48                   T A3CB  CB+
+!   line  5  004065.00  003270.15 10                   T C3Z  SX
+!   line  6  004065.40  003270.14 10                   T C3  LX
+!   line  7  004066.00  000000.34 86  004127.34 02     T C3A  BB
+!   line  8  004067.00  003273.31 80  001000.00 F0     CM0000,T INDZ
+!   line 12  004070.00  000000.35 86  004127.34 00     BZB,T UNASG
+!   line 13  004071.00  000000.76 86  002000.07 70     CT0011(BU,2)
+!   line 14  004072.00  004075.74 C2                   BRZ,T A4A
+!   line 15  004072.40  003273.23 80  004127.34 00     BZB,T MODE
+!   line 16  004073.40  000000.76 86  004127.34 02     BB,T UNRES
+!   line 17  004074.40  000000.01 84  004107.74 02     BB,T UNOBT
+!   line 18  004075.40  003273.31 80  001000.00 F0     T A4A  CM0000
+!   line 19  004076.40  003273.27 80  004137.34 02     BB,T INDD
+!   line 20  004077.40  000000.34 84  022000.06 70     LF,T FREEL
+!   line 21  004100.40  004106.34 C2                   BRZ,T A4B
+!   line 22  004101.00  000000.33 86  004137.34 02     BB,T FDISP
+!   line 23  004102.00  003273.22 80  001000.06 70     LF,T ONE
+!   line 24  004103.00  000000.32 86  001000.23 10     T A4BA  KF
+!   line 25  004104.00  004137.36 C2                   BAE,T A5A
+!   line 26  004104.40  003273.26 80  001000.36 F0     T A4CM  CM1111
+!   line 27  004105.40  004127.10 00                   B,T B3
+!   line 28  004106.00  000000.33 86  004104.74 02     T A4B  BB
+!   line 29  004107.00  004103.10 00                   B,T A4BA
+!   line 34  004107.40  000023.24 10                   T A4C  LX
+!   line 35  004110.00  000002.25 07                   T A4CA  V+ICR
+!   line 36  004110.40  000000.47 8A  004127.34 02     BB,T LPPEN
+!   line 37  004111.40  000000.44 8A  004110.34 02     BB,T JBPRO
+!   line 38  004112.40  000000.34 8A  010027.20 50     L,T UNCT,46
+!   line 39  004113.40  004110.34 C2                   BRZ,T A4CA
+!   line 40  004114.00  000011.20 50                   LC,T IXM,$R
+!   line 41  004114.40  000000.20 3A                   LV,T IXM
+!   line 43  004115.00  000000.56 88  022027.20 50     T A4CB  L
+!   line 44  004116.00  000011.04 90                   KV,T X3,$R
+!   line 45  004116.40  004126.32 C0                   BZXE,T A4CC
+!   line 46  004117.00  000011.24 30                   LV,T X1,$R
+!   line 47  004117.40  000000.73 8A  004027.20 50     L,T UNITK,46
+!   line 48  004120.40  000000.07 88  003027.30 10     -,T ABSUN,46
+!   line 49  004121.40  000011.15 90                   KC,T IXJ,$R
+!   line 50  004122.00  004126.32 C0                   BZXE,T A4CC
+!   line 51  004122.40  000000.00 88  001000.00 F0     CM0000,T ASGNI
+!   line 52  004123.40  000000.02 88  001000.00 F0     CM0000,T PRINT
+!   line 53  004124.40  000000.46 8A  001000.00 F0     CM0000,T ASGNP
+!   line 54  004125.40  004142.50 00                   B,T A5MA
+!   line 55  004126.00  004115.21 48                   T A4CC  CB+
+!   line 56  004126.40  004110.10 00                   B,T A4CA

@@ -5012,6 +5012,32 @@ run "THE ENTRY POINT TO THE ASSIGN ROUTINE, printed p.65, bit-exact (MCP_Mar63 P
 run "the REQUEST-COUNT CHECK and the I/O REQUEST SCAN, printed p.66, bit-exact (MCP_Mar63 PDF p.73)" python3 verify_mcp_bootstrap_p66.py
 run "the MULTI-UNIT and SINGLE-UNIT assignment attempts, printed p.67, bit-exact (MCP_Mar63 PDF p.74)" python3 verify_mcp_bootstrap_p67.py
 run "the UNIT AVAILABILITY TESTS and MULTI-UNIT CHANNEL SCAN, printed p.68, bit-exact (MCP_Mar63 PDF p.75)" python3 verify_mcp_bootstrap_p68.py
+run "the UNIT TABLE SCAN and RESERVED-UNIT SEARCH, printed p.69, bit-exact (MCP_Mar63 PDF p.76)" python3 verify_mcp_bootstrap_p69.py
+# IT PLACES printed p.68's LAST TWO FORWARD REFERENCES: line 2 is
+# T A3CB at 004064.40 and line 5 is T C3Z at 004065.00.
+#
+# >>> A BARE WRITTEN MINUS, AND IT IS ONLY THE SECOND IN THE CORPUS.
+# <<<  Line 48 is "-,T ABSUN(T IXM),46" -- the OPERATION is a single
+# minus sign.  The only other is MCP printed p.18 line 35, and THAT
+# is the row that found fieldToSM returning sign 0 for every
+# unsigned field and dropping the negative sign modifier, i.e. that
+# every unsigned subtract in the model was an addition (2026-10-19,
+# from RefMan printed p.61's Figure 12).
+#
+# AND THE LISTING SHOWS THE MODIFIER.  Line 47 is
+# "L,T UNITK(T X1),46" compiling 004027.20 50; line 48 is the minus
+# compiling 003027.30 10.  The second group's ".20" becomes ".30" --
+# ONE BIT, which is RefMan printed p.57's "Unsigned, use -" and
+# p.60's "whether the sign of the storage operand is taken as-is or
+# is inverted".  The injection that turns the minus into a plus
+# reads exactly 003027.20, so this row would have been silently
+# wrong before that fix.
+#
+# TEN BARE VFL STATEMENTS, AND THREE TAKE THEIR dds FROM `DD` LABELS
+# -- T ONE, T INDC and T INDZ, printed p.61 lines 21, 25 and 28.
+# printed pp.66 and 67 each found one such symbol; this page has
+# three, so the shape is confirmed on five symbols across three
+# pages.
 # IT PLACES THREE OF printed p.67's FOUR FORWARD REFERENCES: line 7
 # is T B7 at 004034.00, line 12 is T A7D at 004035.00 and line 30 is
 # T A3 at 004046.00.  The fourth, T C3Z, is one word past this

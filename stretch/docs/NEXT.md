@@ -5395,6 +5395,65 @@ no opcode can rule it out. What ruled it out was the datum the name
 labels — which is a tell worth stating on its own: *when a name
 labels data, decode the data before trusting the name.*
 
+## PRINTED p.69 — the second written minus in the corpus, 2026-10-24
+
+Forty-five compiled rows, **all bit-exact on the first run**. It
+places p.68's last two forward references: line 2 is `T A3CB`
+(004064.40), line 5 is `T C3Z` (004065.00).
+
+### >>> A bare written minus, and it is only the second ever seen <<<
+
+Line 48 is `-,T ABSUN(T IXM),46` — the **operation** is a single
+minus sign.
+
+The only other instance in the whole corpus is MCP printed p.18 line
+35, and **that is the row that found a real model bug**: `fieldToSM`
+returned sign 0 for every unsigned field and dropped the negative
+sign modifier, so *every unsigned subtract in the model was an
+addition*. It was found on 2026-10-19 by typing in RefMan p.61's
+Figure 12.
+
+**The listing shows the modifier, one bit wide:**
+
+```
+line 47  L,T UNITK(T X1),46   004027.20 50
+line 48  -,T ABSUN(T IXM),46  003027.30 10
+```
+
+The second group's `.20` becomes `.30`. That is RefMan p.57's
+"Unsigned, use −" and p.60's *"whether the sign of the storage
+operand is taken as-is or is inverted"*. The injection that turns
+the minus into a plus reads exactly `003027.20`, so **this row would
+have been silently wrong before that fix** — and it is the only
+check on it outside the deck written for it.
+
+### Three more `DD`-label dds
+
+Lines 8/18 (`CM0000,T INDZ`), 23 (`LF,T ONE`) and 26
+(`CM1111,T INDC`) are bare and compile length one; p.61 lines 21, 25
+and 28 define all three with `DD(BU,1)`. pp.66 and 67 each found one
+such symbol — this page has three, so the shape is confirmed on
+**five symbols across three pages**.
+
+### One symbol that is not a `T` name
+
+Line 24 is `KF,STATI(T IXJ)` compiling `000000.32 86 001000.23 10` —
+a one-bit field at 0.26. Every other table offset on these pages is
+`T something`; this one is not, which suggests a table declared
+outside the ASSIGN program. Carried as a stand-in at 0.26 with
+`(BU,1)`, both read off that row alone.
+
+### Where the range stands
+
+```
+merged 52 pages, 381 stand-ins checked against their definitions,
+159 SYNs that agree with another page's SYN, 42 symbols external
+```
+
+printed pp.15-69 are in the image, gapless. **pp.70 and 71 are all
+that remain** before `T A9` (p.72 line 4) is reachable. p.69's `T B3`
+at 004127.0 is p.70's line 5.
+
 ## PRINTED p.68 — twin blocks that check each other, 2026-10-24
 
 Forty-one compiled rows, **all bit-exact on the first run**. It
