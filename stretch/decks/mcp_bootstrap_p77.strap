@@ -1,0 +1,178 @@
+! MCP INITIALIZATION, printed p.77 (MCP_Mar63_001-249 PDF p.84) --
+! SCAN THE PP REF TABLE FOR NEW ASSIGNMENTS.
+!
+! Forty-one lines, thirty-two of which compile, under one boxed
+! heading.
+!
+! >>> IT IS T SCRIB, AND printed p.75 BRANCHES TO IT FOUR TIMES. <<<
+! Line 6 is 004461.00 = T SCRIB, and FOUR of p.75's ten dispatch
+! exits -- T D, T F, T G and T K -- are "B,T SCRIB".  Their comments
+! are "NOT OVERLAP FULLY ASSIGNED", "ALL I/O REQ HAVE BEEN
+! PROCESSED", "NO MORE UNITS AVAIL FOR ASSIGN" and "NOT OVERLAP JOB
+! FULLY ASSIGNED": four ways for ASSIGN to finish, one place to go
+! afterwards, and this page is what happens there.
+!
+! ---------------------------------------------------------------
+! >>> printed p.47's LINKAGE FORMAT, USED FOR REAL <<<
+! ---------------------------------------------------------------
+! printed p.47 compiles nothing and is THE DECODE PROGRAM LINKAGE
+! FORMAT written out as a worked call.  Lines 17-24 here are that
+! call, in live code:
+!
+!   line 17  SX,$15,T PSAV         save the caller's index
+!   line 18  LVI,$15,T P6A         point $15 at the parameter block
+!   line 19  BD,S A8IQS            and enter the routine
+!   line 20  T P6A  VF,T P5IN      -FWA IN
+!   line 21         CF,8           -N
+!   line 22         VF,T P5OUT     -FWA OUT
+!   line 23  T IPLB1  BE,$+.32     -MODIFIED BY IPL
+!   line 24  LF(BU,64,8),T P5OUT   -GET THE CONVERTED WORD
+!
+! VF, CF, VF -- first word address in, count, first word address out
+! -- is p.47's block exactly, and $15 is the linkage register p.59's
+! LINKAGE FORMAT page names.  THE DOCUMENTATION PAGE AND THE CALL
+! SITE ARE THIRTY PAGES APART and they agree field for field.
+!
+! AND "BD,S A8IQS" IS A BRANCH, NOT A HALT.  printed p.75 has five
+! "BD,$" rows and they stop the machine only because the target is
+! the instruction's own address.  Here the same operation, branch
+! DISABLED, enters a subroutine with interruptions off.
+!
+! ---------------------------------------------------------------
+! >>> AN `E` READ AS AN `L`, AND THE GLYPH IS THE LAST WITNESS <<<
+! ---------------------------------------------------------------
+! Line 23 prints "BL,$+.32" at 1800 dpi -- a vertical stroke and a
+! bottom bar, with no top bar and no middle bar.  It is BE:
+!
+!   1. BL IS NOT A MNEMONIC.  The unconditional branch family is
+!      B, BD, BE, BEW, BR, NOP and nothing else.
+!   2. "BE,$+.32" assembled at 004474.00 produces 004474.40 00,
+!      which is the printed row exactly.
+!   3. printed p.78 line 40 is the TWIN -- "T IPLB2 BE,$+.32",
+!      compiling 004541.00 00, same operation, same J field 0000,
+!      same comment "-MODIFIED BY IPL".
+!
+! So the stroke-dropping artifact of listing_typography.md 13 is not
+! about digits: a drum that drops a zero's left stroke drops an E's
+! bars too.  13i carries it.
+!
+! T IPLB1 WAS ALREADY A STAND-IN at 004474.00, and this page places
+! it.  Its comment says the IPL MODIFIES this row -- a branch the
+! loader patches -- which is why it has a name at all.
+!
+! T XA, T XB and T XC are printed p.76's SYN cards, one page back:
+! the data page feeds this one immediately.
+!
+! TWO LISTING MARKS: lines 23 and 40.
+
+        SLC, (8)4461.0
+
+! ---- index names, printed pp.61 and 76 ----------------------------
+TXA     SYN, $2
+TXB     SYN, $3
+TXC     SYN, $4
+! ---- words, printed pp.61-64 and 76 -------------------------------
+SA8IQS  SYN, (8)2366.0
+TPPRUN  SYN, (8)3315.0
+TIOREQ  SYN, (8)3373.0
+TPID    SYN, (8)4450.0
+TP5IN   SYN, (8)4456.0
+TP5OUT  SYN, (8)4457.0
+TPSAV   SYN, (8)4460.0
+! ---- table offsets, printed pp.62-64 ------------------------------
+TASGNI  SYN(BU,1), 0.00
+TPRINT  SYN(BU,1), 0.02
+TTYPE   SYN, 0.3
+TABSUN  SYN(BU,3), 0.07
+TLAST   SYN(BU,1), 0.18
+TUNCT   SYN(BU,8), 0.28
+TJBPRO  SYN, 0.36
+TRJECT  SYN(BU,1), 0.37
+TLPPEN  SYN(BU,1), 0.39
+TABSCH  SYN(BU,18), 0.46
+TUNRES  SYN(BU,1), 0.62
+TCRREF  SYN, 0.0
+TPNAME  SYN(BU,48,6), 1.0
+! ---- forward, onto printed pp.78 and 79 ---------------------------
+TP5A    SYN, (8)4511.0
+TP3     SYN, (8)4575.40
+TP2     SYN, (8)4576.0
+TP1     SYN, (8)4600.0
+
+        SLC, (8)4461.0
+
+! ---- SCAN THE PP REF TABLE FOR NEW ASSIGNMENTS --------------------
+TSCRIB  LX, TXA, TPPRUN              ! line 6
+TP6     BB, TLPPEN(TXA), TP1         ! line 7
+        BB, TJBPRO(TXA), TP2         ! line 8
+        BB, TRJECT(TXA), TP2         ! line 9
+        LV, TXB, TCRREF(TXA)         ! line 11 -GET CROSS REF ADDRESS
+        L, TUNCT(TXA), 46            ! line 12
+        LC, TXB, $R                  ! line 13
+        BXCZ, TP2                    ! line 14
+        LF, TPNAME(TXA)              ! line 15 -GET PP NAME
+        SF(BU,64,8), TP5IN           ! line 16 -SAVE FOR CONVERSION
+        SX, $15, TPSAV               ! line 17
+        LVI, $15, TP6A               ! line 18 -SET UP FOR CONV ROUTINE
+        BD, SA8IQS                   ! line 19
+TP6A    VF, TP5IN                    ! line 20 -FWA IN
+        CF, 8                        ! line 21 - N
+        VF, TP5OUT                   ! line 22 -FWA OUT
+TIPLB1  BE, $+.32                    ! line 23 -MODIFIED BY IPL
+        LF(BU,64,8), TP5OUT          ! line 24 -GET THE CONVERTED WORD
+        LX, $15, TPSAV               ! line 25 -RESTORE INDEX
+        SF, TPID                     ! line 26
+TP5     BZB, TLAST(TXB), TP5Z        ! line 28
+        LVI, TXB, TIOREQ             ! line 29
+TP5Z    BZB, TASGNI(TXB), TP3        ! line 30
+        BZB, TTYPE(TXB), TP3         ! line 31
+        L, TABSCH(TXB), 46           ! line 33 -GET THE CHANNEL
+                                      !           STATUS WORD
+        LV, TXC, $R                  ! line 34
+        LV, TXC, 0.0(TXC)            ! line 35 -GET ADDRESS OF UNIT
+                                      !           TABLE
+        L, TABSUN(TXB), 46           ! line 36 -GET THE UNIT NUMBER
+        V+, TXC, $R                  ! line 37 -ADD TO VF TO GET UNIT
+                                      !           STATUS WORD
+        BZB1, TPRINT(TXB), TP5A      ! line 38
+        BZB, TUNRES(TXC), TP3        ! line 40 -IF OVERLAP RESERVED
+                                      !           -- ONLY --
+        BBZ, TPRINT(TXB), TP3        ! line 41 -RESET THE PRINT BIT
+                                      !           AND GO
+        END, TSCRIB
+
+! ---------------------------------------------------------------
+! THE CHECKED ROWS -- all thirty-two that compile.
+! ---------------------------------------------------------------
+!   line  6  004461.00  003315.04 10                   T SCRIB  LX,TXA,TPPRUN
+!   line  7  004461.40  000000.47 82  004600.34 02     T P6  BB,TLPPEN(TXA),TP1
+!   line  8  004462.40  000000.44 82  004576.34 02     BB,TJBPRO(TXA),TP2
+!   line  9  004463.40  000000.45 82  004576.34 02     BB,TRJECT(TXA),TP2
+!   line 11  004464.40  000000.06 32                   LV,TXB,TCRREF(TXA)
+!   line 12  004465.00  000000.34 82  010027.20 50     L,TUNCT(TXA),46
+!   line 13  004466.00  000011.06 50                   LC,TXB,$R
+!   line 14  004466.40  004576.30 42                   BXCZ,TP2
+!   line 15  004467.00  000001.00 82  060600.06 70     LF,TPNAME(TXA)
+!   line 16  004470.00  004456.00 80  000000.12 F0     SF(BU,64,8),TP5IN
+!   line 17  004471.00  004460.37 10                   SX,$15,TPSAV
+!   line 18  004471.40  004472.77 01                   LVI,$15,TP6A
+!   line 19  004472.00  002366.04 00                   BD,SA8IQS
+!   line 20  004472.40  004456.00+                     T P6A  VF,TP5IN
+!   line 21  004473.00  000010                         CF,8
+!   line 22  004473.40  004457.00+                     VF,TP5OUT
+!   line 23  004474.00  004474.40 00                   T IPLB1  BE,$+.32
+!   line 24  004474.40  004457.00 80  000000.06 70     LF(BU,64,8),TP5OUT
+!   line 25  004475.40  004460.36 10                   LX,$15,TPSAV
+!   line 26  004476.00  004450.00 80  000000.12 F0     SF,TPID
+!   line 28  004477.00  000000.22 83  004500.74 00     T P5  BZB,TLAST(TXB),TP5Z
+!   line 29  004500.00  003373.07 01                   LVI,TXB,TIOREQ
+!   line 30  004500.40  000000.00 83  004575.74 00     T P5Z  BZB,TASGNI(TXB),TP3
+!   line 31  004501.40  000000.03 83  004575.74 00     BZB,TTYPE(TXB),TP3
+!   line 33  004502.40  000000.56 83  022027.20 50     L,TABSCH(TXB),46
+!   line 34  004503.40  000011.10 30                   LV,TXC,$R
+!   line 35  004504.00  000000.10 34                   LV,TXC,0.0(TXC)
+!   line 36  004504.40  000000.07 83  003027.20 50     L,TABSUN(TXB),46
+!   line 37  004505.40  000011.10 B0                   V+,TXC,$R
+!   line 38  004506.00  000000.02 83  004511.34 0C     BZB1,TPRINT(TXB),TP5A
+!   line 40  004507.00  000000.76 84  004575.74 00     BZB,TUNRES(TXC),TP3
+!   line 41  004510.00  000000.02 83  004575.74 06     BBZ,TPRINT(TXB),TP3

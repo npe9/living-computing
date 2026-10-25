@@ -5615,6 +5615,67 @@ run "A PRINT SUB-ROUTINE THAT WILL PRINT ASSIGNMENTS, printed p.76, bit-exact (M
 # message losing ONE of four trailing blanks, 11 FAILS -- every
 # label from T MBLK on is eight bits early; T MESSY losing its final
 # period, 7 FAILS.
+run "SCAN THE PP REF TABLE FOR NEW ASSIGNMENTS, printed p.77, bit-exact (MCP_Mar63 PDF p.84)" python3 verify_mcp_bootstrap_p77.py
+# >>> IT IS T SCRIB, AND printed p.75 BRANCHES TO IT FOUR TIMES. <<<
+# Line 6 is 004461.00 = T SCRIB, and FOUR of p.75's ten dispatch
+# exits -- T D, T F, T G and T K -- are "B,T SCRIB".  Their comments
+# are "NOT OVERLAP FULLY ASSIGNED", "ALL I/O REQ HAVE BEEN
+# PROCESSED", "NO MORE UNITS AVAIL FOR ASSIGN" and "NOT OVERLAP JOB
+# FULLY ASSIGNED": four ways for ASSIGN to finish, one place to go
+# afterwards, and this page is what happens there.
+#
+# >>> printed p.47's LINKAGE FORMAT, USED FOR REAL. <<<  p.47
+# compiles nothing and is THE DECODE PROGRAM LINKAGE FORMAT written
+# out as a worked call.  Lines 17-24 are that call in live code:
+#
+#   SX,$15,T PSAV        save the caller's index
+#   LVI,$15,T P6A        point $15 at the parameter block
+#   BD,S A8IQS           and enter the routine
+#   T P6A  VF,T P5IN     -FWA IN
+#          CF,8          -N
+#          VF,T P5OUT    -FWA OUT
+#   T IPLB1  BE,$+.32    -MODIFIED BY IPL
+#   LF(BU,64,8),T P5OUT  -GET THE CONVERTED WORD
+#
+# VF, CF, VF -- first word address in, count, first word address out
+# -- is p.47's block exactly, and $15 is the linkage register p.59
+# names.  THE DOCUMENTATION PAGE AND THE CALL SITE ARE THIRTY PAGES
+# APART and they agree field for field.
+#
+# AND "BD,S A8IQS" IS A BRANCH, NOT A HALT.  printed p.75 has five
+# "BD,$" rows and they stop the machine only because the target is
+# the instruction's own address.  Here the same operation, branch
+# DISABLED, enters a subroutine with interruptions off.  The
+# injection that makes it a plain B moves the J field 0001 -> 0100
+# and nothing else.
+#
+# >>> AN `E` READ AS AN `L`, AND THE GLYPH IS THE LAST WITNESS. <<<
+# Line 23 prints "BL,$+.32" at 1800 dpi -- a vertical stroke and a
+# bottom bar, no top bar, no middle bar.  It is BE:
+#   1. BL IS NOT A MNEMONIC.  The unconditional branch family is
+#      B, BD, BE, BEW, BR, NOP and nothing else.
+#   2. "BE,$+.32" assembled at 004474.00 produces 004474.40 00,
+#      the printed row exactly.
+#   3. printed p.78 line 40 is the TWIN -- "T IPLB2 BE,$+.32" --
+#      same operation, same J field 0000, same comment.
+# So the stroke-dropping artifact of listing_typography.md 13 is NOT
+# ABOUT DIGITS: a drum that drops a zero's left stroke drops an E's
+# bars too.  13i carries it.
+#
+# T IPLB1 was already a stand-in at 004474.00 and this page places
+# it; its comment says the IPL MODIFIES that row, a branch the
+# loader patches, which is why it has a name at all.  T XA, T XB and
+# T XC are printed p.76's SYN cards -- the data page feeds this one
+# immediately.
+#
+# Injections, against the DECK: BE -> BD gives 1 FAIL at 004474.00
+# (one bit, bit 23); T PNAME's byte size 6 -> 8, 1 FAIL at 004467.00
+# (060000 for 060600, eight being zero modulo eight); CF,8 -> CF,10,
+# 1 FAIL at 004473.00; BD -> B, 1 FAIL at 004472.00; BZB1 -> BZB, 1
+# FAIL at 004506.00; line 35's T XC -> T XB, 1 FAIL at 004504.00.
+# AND ONE SURVIVES: "$+.32" -> "$+.40" changes nothing, because a
+# branch address is nineteen bits -- word plus half-word -- so every
+# offset from 32 to 63 names the same target.
 run "the IOD CARD ROUTINE, printed p.53, bit-exact (MCP_Mar63 PDF p.60)" python3 verify_mcp_bootstrap_p53.py
 # >>> IT CONFIRMS BOTH OF printed p.52's DERIVED STAND-INS. <<<
 # L OOPN is at 002775.40 (line 4) and L IODRN at 003021.40 (line 37),

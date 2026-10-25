@@ -12,9 +12,10 @@ accumulate.
 
 ## WHERE THIS STANDS, 2026-10-25 — read this first
 
-**The frontier is `T PICA` at 004604.00.** The MCP image holds
-printed pp.15-75 gapless (58 decks, 453 stand-ins checked against
-their definitions, 260 agreeing SYNs, 35 symbols still external), and
+**The frontier is `T PICA` at 004604.00, and printed p.78 is the
+blocker.** The MCP image holds printed pp.15-77 gapless (60 decks,
+467 stand-ins checked against their definitions, 276 agreeing SYNs,
+32 symbols still external), and
 the boot run executes MCP's ASSIGN routine end to end: it saves its
 indexes, walks the channel status table for a machine-configuration
 change (p.72), sorts the multi-unit count table and runs the MULTI
@@ -5415,6 +5416,145 @@ no opcode can rule it out. What ruled it out was the datum the name
 labels — which is a tell worth stating on its own: *when a name
 labels data, decode the data before trusting the name.*
 
+## >>> THE "HALVED OFFSET" IS A SEVEN-BIT FIELD, AND BIT 18 IS ITS LOW BIT — 2026-10-25 <<<
+
+For dozens of transcribed pages the printed second group's low octal
+has been **half the offset the statement writes**: `,46` printing
+`027`, `,32` printing `020`, `,40` printing `024`. It has been
+checked against the listing every time and never explained, and the
+explanation was one odd number away.
+
+printed p.78 line 14 is the odd number:
+
+```
+LFI(BU,2),3,5    ->   402002.46 70
+LFI(BU,2),3,13   ->   402006.46 70
+```
+
+Five halved is two and a half. The missing half is **bit 18 of the
+second group**:
+
+> **The VFL offset is SEVEN bits: bits 12-17 of the second group
+> hold `offset >> 1`, and bit 18 holds `offset & 1`.** The printed
+> `.bb` pair begins at bit 18, so an odd offset shows up as `.46`
+> where an even one shows `.06`.
+
+That is C28-6129 printed p.3's format 7 read back off the machine:
+`OP(dds), A₂₄(I), OF₇(I')`. **`OF₇` — seven bits — is written in the
+manual, and this is the listing agreeing with it.**
+
+Checked across three pages, odd and even, positive and negative:
+
+```
+row                             offset   hi    b18
+p.73 line 10  LF(BU,32),...,32      32   020    0
+p.73 line 25  L,T UNITK,46          46   027    0
+p.78 line 13  LF(BU,12,4),$L+.20,1   1   000    1
+p.78 line 14  LFI(BU,2),3,5          5   002    1
+p.78 line 15  LFI(BU,2),3,13        13   006    1
+p.78 line  9  L,T ABSCH,-60        -60   042    0
+p.78 line 12  CV(BU,18),0.0,-32     -32   060    0
+```
+
+Seven for seven, with the negatives in seven-bit two's complement
+(−60 → 68 → `042`, low bit 0).
+
+> **An unexplained regularity is a bug report you have not filed
+> yet.** "The offset prints halved" was tolerated because every row
+> still checked bit-for-bit — the assembler had the rule right
+> without anyone writing down why. It took one odd offset to turn a
+> curiosity into a field width, and the field width was in the
+> manual the whole time. *When a derived quantity is consistently
+> off by a factor, look for the bit that fell off the end.*
+
+## >>> PRINTED p.77 IS `T SCRIB`, AND p.47's LINKAGE FORMAT IS USED FOR REAL — 2026-10-25 <<<
+
+Thirty-two compiled rows of forty-one lines, all bit-exact on the
+first assembly. Seven measured injections, one of which survives and
+says something true.
+
+### Four of p.75's ten exits come here
+
+Line 6 is 004461.00 = `T SCRIB`, and **four** of the dispatch table's
+exits are `B,T SCRIB`:
+
+```
+T D  -NOT OVERLAP FULLY ASSIGNED
+T F  -OK -- ALL I/O REQ HAVE BEEN PROCESSED
+T G  -OK -- NO MORE UNITS AVAIL FOR ASSIGN
+T K  -OK -- NOT OVERLAP JOB FULLY ASSIGNED
+```
+
+Four ways for ASSIGN to finish, one place to go afterwards, and this
+page — *SCAN THE PP REF TABLE FOR NEW ASSIGNMENTS* — is what happens
+there.
+
+### printed p.47 documented a call; this page makes it
+
+p.47 compiles **nothing**. It is THE DECODE PROGRAM LINKAGE FORMAT
+written out as a worked example, and it has been sitting in the
+image as a documentation page since 2026-10-23. Lines 17-24 here are
+that call in live code:
+
+```
+        SX,$15,T PSAV          save the caller's index
+        LVI,$15,T P6A          point $15 at the parameter block
+        BD,S A8IQS             and enter the routine
+T P6A   VF,T P5IN              -FWA IN
+        CF,8                   -N
+        VF,T P5OUT             -FWA OUT
+T IPLB1 BE,$+.32               -MODIFIED BY IPL
+        LF(BU,64,8),T P5OUT    -GET THE CONVERTED WORD
+```
+
+`VF, CF, VF` — first word address in, count, first word address out
+— is p.47's block field for field, and `$15` is the linkage register
+printed p.59's LINKAGE FORMAT page names. **The documentation page
+and the call site are thirty pages apart and they agree exactly.**
+*That is what a transcribed corpus buys that a transcribed page does
+not.*
+
+**And `BD,S A8IQS` is a branch, not a halt.** p.75 has five `BD,$`
+rows that stop the machine only because the target is the
+instruction's own address. Here the same operation — branch
+*disabled* — enters a subroutine with interruptions off. The
+injection that makes it a plain `B` moves the J field 0001 → 0100
+and nothing else.
+
+### >>> An `E` read as an `L`, and the glyph is the last witness <<<
+
+Line 23 prints `BL,$+.32` at 1800 dpi: a vertical stroke and a bottom
+bar, no top bar, no middle bar. It is **`BE`**.
+
+1. **`BL` is not a mnemonic.** The unconditional branch family is
+   `B`, `BD`, `BE`, `BEW`, `BR`, `NOP` and nothing else. A reading
+   that produces a mnemonic no source lists is a reading to doubt.
+2. **`BE,$+.32` at 004474.00 produces `004474.40 00`** — the printed
+   row exactly. Nothing else does.
+3. **The twin says so.** printed p.78 line 40 is `T IPLB2 BE,$+.32`,
+   same operation, same J field 0000, same comment *MODIFIED BY
+   IPL*, printed cleanly.
+
+> So the stroke-dropping artifact is **about ink, not about
+> character class**. A drum that drops a zero's left stroke drops an
+> `E`'s bars too. §13 spent six sub-sections on digits because
+> digits are where the octal column could catch it; the mechanism
+> never cared. `listing_typography.md` §13i.
+
+`T IPLB1` was already a stand-in at 004474.00 and this page places
+it. Its comment says **the IPL modifies that row** — a branch the
+loader patches — which is why a `BE` to the next half word has a
+name at all.
+
+### The injection that survived
+
+`$+.32` → `$+.40` changes nothing. A branch address is nineteen bits
+— word plus half-word selector — so **every offset from 32 to 63
+bits names the same target**. The deck could have written `.32`,
+`.40` or `.50` and the listing could not tell them apart; `.32` is
+what the card says. *Recorded, because a survival that explains the
+encoding is worth as much as a failure that confirms it.*
+
 ## >>> PRINTED p.76 IS A DATA PAGE, AND THE COUNTING IS THE WHOLE CHECK — 2026-10-25 <<<
 
 Thirty-seven lines, thirty compiled, and **only seven print any
@@ -5611,14 +5751,10 @@ entry mode (`(IQSX)DD(BU,64,8)`) plus radix-16 datums
 `T MESSY` at 004451.00 and `YSCRBT` at 004455.03** — p.74's and
 p.75's forward stand-ins, confirmed by name and by bit.
 
-**printed p.77** — 004461.00-004510.00, 41 lines, 32 compiled,
-*SCAN THE PP REF TABLE FOR NEW ASSIGNMENTS*. Ordinary code; its line
-6 is **`T SCRIB` at 004461.00**, which is p.75's stand-in and the
-target of four of its dispatch exits. Lines 20-22 are a `VF`/`CF`/
-`VF` linkage block of exactly the shape printed p.47 documents, and
-line 19 is `BD,S A8IQS` — **a `BD` with a real target, which is a
-disabled branch and not a halt**, worth noting beside p.75's five
-`BD,$`.
+**printed p.77** — **LANDED**, 32/32 rows, seven injections, image
+at 60 pages and 32 externals (predicted exactly). `T SCRIB`, four
+of p.75's dispatch exits, and printed p.47's linkage format used for
+real.
 
 **printed p.78** — 004511.00-004554.40, 56 lines, *CONVERT THE
 CHANNEL FIELDS*. **BLOCKED ON A PRIMARY SOURCE, and the search so
@@ -5678,11 +5814,53 @@ Instructions*; and its **Appendix D — "Symbolic Designations"**
 (p.202), which turns out to be STRAP II's own internal naming
 convention, not user syntax.
 
-Still unread: C28-6129's section on the offset field, its
-pseudo-operation chapter, and C22-6729's "Including a Coprocessor
-Subroutine with STRAP II" (p.180) — a coprocessor is the one
-mechanism found so far that could put a character in the operation
-field that the twelve formats do not describe.
+**A coprocessor lead was followed and DOES NOT fit.** C22-6729
+printed p.180, *Including a Coprocessor Subroutine with STRAP II*,
+says Pass 1 enters a coprocessor on six conditions, and condition 5
+is "an illegal operation code (detected by `MAIN`)". That is a real
+mechanism by which an operation no manual lists could appear in a
+STRAP II listing — **but it cannot be this one.** An illegal
+operation code is an ERROR condition; STRAP II would have flagged
+the row. p.78's four rows compiled to correct, sensible machine code
+with no error indication. **Whatever `$` is, STRAP II understood
+it.** Recorded so the next session does not spend the morning there.
+
+### >>> AND THE PREFIX CONTRIBUTES NOTHING TO THE BITS: FOUR FOR FOUR <<<
+
+Assembled in the scratchpad from the UNPREFIXED mnemonic and checked
+against the printed rows:
+
+```
+line  9  L, T ABSCH(T XB), -60     000000.56 83  022042.20 50  PASS
+line 10  -(BU,18), T CHSXW, -60    002152.00 80  022042.30 10  PASS
+line 11  SF(BU,18), T IPL+1, -60   003266.01 80  022042.12 F0  PASS
+line 12  CV(BU,18), 0.0, -32       000000.00 80  022060.21 B0  PASS
+```
+
+**All four, with no prefix anywhere.** Two operation classes (VFL
+arithmetic, connective, convert), four different second-group bytes
+— 50, 10, F0, B0 — and one of them is a written minus with its `.30`
+sign modifier. One row matching could be luck; four rows across
+three encodings is a measurement.
+
+> So the deck can be written with the base mnemonics and will be
+> bit-exact, **provided the header, the verifier and `run_tests.sh`
+> all say loudly that the card reads `$L` and the deck writes `L`,
+> and why.** That is not inferring an instruction's meaning from
+> listing usage — it is declining to represent a character that
+> cannot be explained, with the evidence for why it is safe stated
+> in full. If the meaning turns up later, the decks name every row
+> that would need revisiting.
+
+The encoding check that fell out of it, free: `CV` is VFL operation
+27 = 0b11011, so its byte is `0xB0` (low four bits 1011) and bit 23
+carries the 16 — printing `.21`. `M+1` is 43 = 0b101011, same byte,
+bit 22 carrying the 32 — printing `.22`. printed p.73's `M+1` and
+this page's `CV` share a byte and are told apart by one bit, which
+is the third instance of that shape after `*`/`M+` on printed p.72.
+
+Still unread in the manuals: C28-6129's section on the offset field
+and its pseudo-operation chapter.
 
 **printed p.79** — 004555.40-004603.40, 39 lines.
 
