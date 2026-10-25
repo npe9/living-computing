@@ -5395,6 +5395,77 @@ no opcode can rule it out. What ruled it out was the datum the name
 labels — which is a tell worth stating on its own: *when a name
 labels data, decode the data before trusting the name.*
 
+## >>> PRINTED p.72 IS `T A9`, AND THE RUN MOVES AGAIN — 2026-10-25 <<<
+
+Forty-nine compiled rows, the densest page of the ASSIGN program.
+48 of 49 bit-exact on the first run.
+
+**Line 4 is the address the boot has been stopping on since p.65
+landed.** p.65 line 9 is `BZXVZ,T A9` commented *"-IF A MACH CNF
+CHANGE"*, and this page's heading three lines above line 4 reads
+**"MACHINE CONFIGURATION CHANGE / ADJUST THE NECESSARY TABLES"**. So
+the fixture's machine does report one, and MCP now walks the channel
+status table adjusting it.
+
+**The step count is the tell: 6.05 million before this page, 22.04
+million after.** Line 51 is `CB+,T IXF,T A9A`, a count-branch over
+the whole table, and line 12 loops the machine-configuration count
+table as well. The trail is now **004263.00 — printed p.73's first
+word**.
+
+### A multiply, the first in this corpus
+
+Line 19 is `*(BU,24),T COMBO,40` — the operation is a **bare
+asterisk**, and no page read before this one spells a multiply at
+all. It compiles `030024.21 90`; line 26's `M+,T DISK(T IXG)`
+compiles `010000.20 90`. **The same opcode byte**, told apart by bit
+23 of the second group — the same shape the written minus has.
+
+### And a fifth written minus, two lines below it
+
+Line 20 is `-(BU,24),T 2COMB,20` with the familiar `.30`. **This
+pair is the sharpest instance yet**, because each operand is the
+*other half of one constant*:
+
+```
+p.63 line 21  T COMBO  VF,T TYBC+T MACBC+T REQBC
+p.63 line 22  T 2COMB  VF,T TYBC+T MACBC
+```
+
+Multiply by the three-field width, subtract the two-field width — a
+computation in which a wrong sign produces a different table offset
+**in silence**. That is precisely what the 2026-10-19 unsigned-
+subtract fix was protecting, and until p.69 there was one row in the
+corpus to protect.
+
+### A sixth `DD`-label dds — and the first from an entry-mode DD
+
+Line 26's bare `M+,T DISK(T IXG)` takes length **eight** from
+`T DISK`, which p.64 line 6 defines as `(8)DD(BU,8),1,1,0` — an
+*octal entry-mode* DD. pp.66, 67 and 69 found this shape on plain
+`DD(BU,1),0` labels; it carries identically here. **That was the one
+row of forty-nine the deck got wrong first**, which is how the case
+was found.
+
+### Two immediates that prove their own field position
+
+`KFI(BU,4),2` compiles `100000.00` and `KFI(BU,4),5` compiles
+`240000.00` — the value times 2^14, left-justified in the eighteen-
+bit address field. Their comments read *"-LOOK FOR CONSOLE"* and
+*"-LOOK FOR A PRINTER"*, equipment codes 2 and 5 — which is **p.64's
+REQUEST VALIDITY CHECK TABLE read back**, three pages after it was
+transcribed.
+
+### Where the range stands
+
+```
+merged 55 pages, 425 stand-ins checked against their definitions,
+203 SYNs that agree with another page's SYN, 40 symbols external
+```
+
+printed pp.15-72 are in the image, gapless. **printed p.73 is next**
+and the run names it: 004263.00.
+
 ## PRINTED p.71 — the range closes on `T ASIGN`'s forward branch, 2026-10-24
 
 Thirty-six compiled rows, **all bit-exact on the first run**.

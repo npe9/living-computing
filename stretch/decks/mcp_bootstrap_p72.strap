@@ -1,0 +1,272 @@
+! MCP INITIALIZATION, printed p.72 (MCP_Mar63_001-249 PDF p.79) --
+! MACHINE CONFIGURATION CHANGE: ADJUST THE NECESSARY TABLES.
+!
+! Fifty-six lines, forty-nine of which compile -- the densest page
+! of the ASSIGN program so far.  Two boxed headings, and the first
+! is the page's whole subject:
+!
+!   lines  1-3   "MACHINE CONFIGURATION CHANGE /
+!                 ADJUST THE NECESSARY TABLES"
+!   lines 52-54  "SAVE THE VALUES OF THE UNIT COUNT INDEX"
+!
+! >>> LINE 4 IS T ASIGN'S FORWARD BRANCH, AND THE BOOT RUN HAS BEEN
+! STOPPING ON IT. <<<
+!
+! printed p.65 line 9 is "BZXVZ,T A9" commented "-IF A MACH CNF
+! CHANGE", and the PC trail has ended at 004215.00 ever since p.65
+! landed.  LINE 4 IS THAT ADDRESS, and the heading three lines above
+! it names what it is for.  So the fixture's machine DOES report a
+! configuration change, and this is the path it takes.
+!
+! ---------------------------------------------------------------
+! >>> A MULTIPLY, AND IT IS THE FIRST IN THIS CORPUS <<<
+! ---------------------------------------------------------------
+! Line 19 is
+!
+!     *(BU,24),T COMBO,40      -COMPUTE LOC WITHIN TABLE
+!
+! -- the OPERATION is a bare asterisk.  No page this project has
+! read spells a multiply at all until now.  It compiles
+! 003650.00 80  030024.21 90, and line 26's "M+,T DISK(T IXG)"
+! compiles 003652.00 88  010000.20 90 -- THE SAME OPCODE BYTE, 90,
+! differing in bit 23 of the second group (".21" against ".20").
+! So multiply and add-to-memory share a byte and are told apart by
+! one bit, which is the same shape the written minus has.
+!
+! ---------------------------------------------------------------
+! >>> AND A FIFTH WRITTEN MINUS, TWO LINES BELOW THE MULTIPLY <<<
+! ---------------------------------------------------------------
+! Line 20 is "-(BU,24),T 2COMB,20" compiling 003650.40 80
+! 030012.30 10.  Its ".30" is the negative-sign modifier, exactly as
+! on printed p.69 line 48 and p.70 lines 37 and 40.
+!
+! THE COUNT WAS ONE UNTIL TWO DAYS AGO.  MCP printed p.18 line 35
+! was the only written minus in the corpus, and it is the row that
+! found fieldToSM returning sign 0 for every unsigned field --
+! every unsigned subtract in the model was an addition.  p.69 made
+! it two, p.70 made it four, and this makes FIVE, on four pages.
+!
+! AND THE PAIR ON LINES 19-20 IS THE SHARPEST YET, because the
+! operand of each is the OTHER HALF of one constant: printed p.63
+! line 21 is "T COMBO VF,T TYBC+T MACBC+T REQBC" and line 22 is
+! "T 2COMB VF,T TYBC+T MACBC".  Multiply by the three-field width,
+! subtract the two-field width.  The two rows are a computation,
+! and getting the minus wrong would have computed a different
+! table offset silently.
+!
+! ---------------------------------------------------------------
+! "V+" IS B0, FOR THE THIRD TIME
+! ---------------------------------------------------------------
+! Lines 40 and 48 are "V+,T IXG,S XCHAN" compiling 002152.20 B0.
+! printed p.55 line 40 was transcribed as 80 and corrected to B0 at
+! 1800 dpi (listing_typography.md 11); five rows on earlier pages
+! already printed B0 for V+.  These two are a third page saying it,
+! and they read cleanly at 900 dpi.
+!
+! ---------------------------------------------------------------
+! TWO IMMEDIATE VALUES THAT PROVE THEIR OWN FIELD POSITION
+! ---------------------------------------------------------------
+! Line 36 is "KFI(BU,4),2" compiling 100000.00 80 and line 44 is
+! "KFI(BU,4),5" compiling 240000.00 80.  A four-bit immediate
+! LEFT-JUSTIFIED in the eighteen-bit address field is the value
+! times 2^14: 2 x 16384 = 0o100000 and 5 x 16384 = 0o240000.  The
+! two rows differ only in the value and the printed octal scales
+! exactly.
+!
+! The comments say what they are looking for: "-LOOK FOR CONSOLE"
+! and "-LOOK FOR A PRINTER", equipment codes 2 and 5 -- which is
+! printed p.64's REQUEST VALIDITY CHECK TABLE read back.  That
+! table's eight rows are DISK 1, CONSOLE 2, CARD READER 3, PUNCH 4,
+! PRINTER 5, IQS 6, EXTRA 7, TAPE 10 octal.
+!
+! ONE NEW MNEMONIC: "SF" on lines 42 and 50, compiling 021027.12 F0
+! against operands S YCOCH+.2 and S YPRCH+.2.  Written as printed.
+!
+! ---------------------------------------------------------------
+! >>> AND A SIXTH dds FROM A `DD` LABEL -- THIS ONE FROM AN
+! ENTRY-MODE DD <<<
+! ---------------------------------------------------------------
+! Line 26 is "M+,T DISK(T IXG)" with NOTHING written, and it
+! compiles 010000.20 90 -- 010000/512 = 8, so the length is EIGHT.
+! T DISK is not a SYN: printed p.64 line 6 defines it as
+!
+!     T DISK  (8)DD(BU,8),1,1,0
+!
+! the first row of the REQUEST VALIDITY CHECK TABLE, an OCTAL
+! entry-mode DD.  printed pp.66, 67 and 69 found this shape on
+! plain "DD(BU,1),0" labels; this is the first time the dds comes
+! from a DD that also carries an ENTRY MODE, and it carries
+! identically.
+!
+! THE DECK HAD IT WRONG FIRST.  T DISK was written "SYN,(8)3652.0"
+! with no dds and line 26 compiled 000000 for 010000 -- the single
+! row that failed on this page.
+!
+! FOUR LISTING MARKS: lines 7, 23, 35 and 55.
+
+        SLC, (8)4215.0
+
+! ---- index names, printed p.61 ------------------------------------
+TX1BR   SYN, $1
+TIXF    SYN, $10
+TIXG    SYN, $8
+TIXH    SYN, $2
+! ---- words, printed pp.61-71 --------------------------------------
+TLUCT   SYN(BU,18), (8)3273.0
+TCHSXW  SYN, (8)2152.0
+TTYARA  SYN, (8)3647.0
+TCOMBO  SYN, (8)3650.0
+T2COMB  SYN, (8)3650.40
+TDISK   SYN(BU,8), (8)3652.0
+TMUCTX  SYN, (8)3655.0
+TRCHSC  SYN, (8)3660.0
+! ---- table offsets, printed pp.62-64 ------------------------------
+TMCAD   SYN(BU,8), 0.8
+TCHCNT  SYN(BU,4), 0.20
+TCHAVL  SYN(BU,1), 0.25
+TMULTI  SYN(BU,1), 0.27
+TUNAVL  SYN(BU,1), 0.28
+TUNASG  SYN(BU,1), 0.29
+TCHOWN  SYN(BU,1), 0.32
+TEQUIP  SYN(BU,4), 0.52
+TUNITK  SYN(BU,4), 0.59
+TUNRES  SYN(BU,1), 0.62
+! ---- new on this page ---------------------------------------------
+SXCHAN  SYN, (8)2152.0
+SBAMCP  SYN, (8)2153.0
+SYCOCH  SYN, (8)2156.0
+SYPRCH  SYN, (8)2156.40
+TDSIO   SYN, (8)4767.0
+! ---- forward, onto printed p.73 and after -------------------------
+TA9D    SYN, (8)4275.40
+TA1C    SYN, (8)4320.0
+TM      SYN, (8)4422.0
+
+        SLC, (8)4215.0
+
+! ---- MACHINE CONFIGURATION CHANGE / ADJUST THE NECESSARY TABLES ---
+TA9     LX, TIXF, TCHSXW             ! line 4  -BEGINNING OF CHAN
+                                      !           STAT TABLE
+        CM0000(BU,24), 0.0($15)      ! line 5  -CLEAR CON FIG CHANGE
+        LV, TIXG, SBAMCP             ! line 6  -SET UP THE DUMMY
+                                      !           SIOL FOR
+        TI, 1, TDSIO, 03.(TIXG)      ! line 7  -UNLOADING TAPES ON
+                                      !           UNITS
+        TI, 1, TDSIO+1., 9.(TIXG)    ! line 8  -FOR UNLOADING
+                                      !           SCRATCH TAPES
+        LX, TIXG, TTYARA             ! line 9  -CLEAR THE MACHINE
+                                      !           CONFIGUATION
+TCM9    CM0000, TMCAD(TIXG)          ! line 10 -COUNT TABLE
+        V+C, TIXG, TCOMBO            ! line 11
+        BZXCZ, TCM9                  ! line 12
+        CM0000, TLUCT                ! line 14 -CLEAR LARGEST COUNT
+                                      !           AREA
+        LX, TIXH, TMUCTX             ! line 15 -BEGINNING OF THE
+                                      !           MULTI UNIT CNT TBLE
+TA9A    CM0000, TCHCNT(TIXH)         ! line 16 -CLEAR THE UNIT COUNT
+                                      !           AREA
+        L, TEQUIP(TIXF), 40          ! line 17 -GET EQUIP FOR MACH
+                                      !           CONF
+        BRZ, TB9B                    ! line 18 -IF NO EQUIP ON THIS
+                                      !           CHAN
+        *(BU,24), TCOMBO, 40         ! line 19 -COMPUTE LOC WITHIN
+                                      !           TABLE
+        -(BU,24), T2COMB, 20         ! line 20
+        L(BU,64), $R, 20             ! line 21 -LEFT SHIFT TO VF
+        LV, TIXG, $R                 ! line 22
+        LI(BU,1), 1                  ! line 23 -AT LEAST GIVE A
+                                      !           COUNT OF ONE
+        BZB, TEQUIP(TIXF), T9M       ! line 24 -IF A NON TAPE CHAN
+        L, TUNITK(TIXF)              ! line 25 -GET COUNT FOR MULTI
+                                      !           CHAN
+T9M     M+, TDISK(TIXG)              ! line 26 -ADD CONFIGURATION TO
+                                      !           TABLE
+        BB, TMULTI(TIXF), TA9D       ! line 27 -IF A MULTI CHANNEL
+        BB, TCHAVL(TIXF), TA9B       ! line 28 -IF CHANNEL NOT
+                                      !           AVAILABLE
+        BB, TCHOWN(TIXF), TA9BA      ! line 29 -IF MCP LEVEL IT IS
+                                      !           NOT AVAIL TO PP
+        BZB, TUNAVL(TIXF), TB9       ! line 30 -IF UNIT IS AVAILABLE
+TA9B    BZB, TUNASG(TIXF), TM        ! line 31 -IF THE UNIT IS
+                                      !           ASSIGNED
+TA9BA   LVI, TX1BR, TB9              ! line 32 -LOAD FOR SUB ROUTINE
+                                      !           BRANCH
+        CT0011(BU,2), TUNRES(TIXF)   ! line 33 -IS UNIT RESERVED BY PP
+        BZRZ, TA1C                   ! line 34 -YES
+TB9     LF, TEQUIP(TIXF)             ! line 35
+        KFI(BU,4), 2                 ! line 36 -LOOK FOR CONSOLE
+        BZAE, TB9A                   ! line 37 -NO
+        LV, TIXG, TIXF               ! line 38
+        CM1111(BU,1), TIXG+.24       ! line 39 -SET IX NEG SO TO SUB
+        V+, TIXG, SXCHAN             ! line 40 -COMPUTE CONSOLE
+                                      !           CHANNEL
+        SV, TIXG, $R                 ! line 41
+        SF(BU,17), SYCOCH+.2, 46     ! line 42
+        B, TB9B                      ! line 43
+TB9A    KFI(BU,4), 5                 ! line 44 -LOOK FOR A PRINTER
+        BZAE, TB9B                   ! line 45 -NO
+        LV, TIXG, TIXF               ! line 46
+        CM1111(BU,1), TIXG+.24       ! line 47 -SET IX NEG SO TO SUB
+        V+, TIXG, SXCHAN             ! line 48 -COMPUTE THE PRINTER
+                                      !           CHANNEL
+        SV, TIXG, $R                 ! line 49
+        SF(BU,17), SYPRCH+.2, 46     ! line 50
+TB9B    CB+, TIXF, TA9A              ! line 51
+
+! ---- SAVE THE VALUES OF THE UNIT COUNT INDEX ----------------------
+        V-I, TIXH, 0.32              ! line 55 -REDUCE BY A HALF
+        SX, TIXH, TRCHSC             ! line 56
+        END, TA9
+
+! ---------------------------------------------------------------
+! THE CHECKED ROWS -- all forty-nine that compile.
+! ---------------------------------------------------------------
+!   line  4  004215.00  002152.24 10                   T A9  LX
+!   line  5  004215.40  000000.00 8F  030000.00 F0     CM0000(BU,24)
+!   line  6  004216.40  002153.20 30                   LV,SBAMCP
+!   line  7  004217.00  004767.00 80  000003.02 A8     TI,1,T DSIO
+!   line  8  004220.00  004770.00 80  000011.02 A8     TI,1,T DSIO+1.
+!   line  9  004221.00  003647.20 10                   LX,T TYARA
+!   line 10  004221.40  000000.10 88  010000.00 F0     T CM9  CM0000
+!   line 11  004222.40  003650.20 D0                   V+C,T COMBO
+!   line 12  004223.00  004221.70 40                   BZXCZ,T CM9
+!   line 14  004223.40  003273.00 80  022000.00 F0     CM0000,T LUCT
+!   line 15  004224.40  003655.04 10                   LX,T MUCTX
+!   line 16  004225.00  000000.24 82  004000.00 F0     T A9A  CM0000
+!   line 17  004226.00  000000.64 8A  004024.20 50     L,T EQUIP,40
+!   line 18  004227.00  004261.74 C2                   BRZ,T B9B
+!   line 19  004227.40  003650.00 80  030024.21 90     *(BU,24)
+!   line 20  004230.40  003650.40 80  030012.30 10     -(BU,24)
+!   line 21  004231.40  000011.00 80  000012.20 50     L(BU,64),$R,20
+!   line 22  004232.40  000011.20 30                   LV,T IXG,$R
+!   line 23  004233.00  400000.00 80  401000.20 50     LI(BU,1),1
+!   line 24  004234.00  000000.64 8A  004236.34 00     BZB,T EQUIP
+!   line 25  004235.00  000000.73 8A  004000.20 50     L,T UNITK
+!   line 26  004236.00  003652.00 88  010000.20 90     T 9M  M+
+!   line 27  004237.00  000000.33 8A  004275.74 02     BB,T MULTI
+!   line 28  004240.00  000000.31 8A  004243.34 02     BB,T CHAVL
+!   line 29  004241.00  000000.40 8A  004244.34 02     BB,T CHOWN
+!   line 30  004242.00  000000.34 8A  004246.34 00     BZB,T UNAVL
+!   line 31  004243.00  000000.35 8A  004422.34 00     T A9B  BZB
+!   line 32  004244.00  004246.03 01                   T A9BA  LVI
+!   line 33  004244.40  000000.76 8A  002000.07 70     CT0011(BU,2)
+!   line 34  004245.40  004320.34 C0                   BZRZ,T A1C
+!   line 35  004246.00  000000.64 8A  004000.06 70     T B9  LF
+!   line 36  004247.00  100000.00 80  404000.23 10     KFI(BU,4),2
+!   line 37  004250.00  004254.76 C0                   BZAE,T B9A
+!   line 38  004250.40  000032.20 30                   LV,T IXG,T IXF
+!   line 39  004251.00  000030.30 80  001000.36 F0     CM1111(BU,1)
+!   line 40  004252.00  002152.20 B0                   V+,S XCHAN
+!   line 41  004252.40  000011.21 30                   SV,T IXG,$R
+!   line 42  004253.00  002156.02 80  021027.12 F0     SF(BU,17)
+!   line 43  004254.00  004261.50 00                   B,T B9B
+!   line 44  004254.40  240000.00 80  404000.23 10     T B9A  KFI,5
+!   line 45  004255.40  004261.76 C0                   BZAE,T B9B
+!   line 46  004256.00  000032.20 30                   LV,T IXG,T IXF
+!   line 47  004256.40  000030.30 80  001000.36 F0     CM1111(BU,1)
+!   line 48  004257.40  002152.20 B0                   V+,S XCHAN
+!   line 49  004260.00  000011.21 30                   SV,T IXG,$R
+!   line 50  004260.40  002156.42 80  021027.12 F0     SF(BU,17)
+!   line 51  004261.40  004225.25 48                   T B9B  CB+
+!   line 55  004262.00  000000.45 0D                   V-I,T IXH,0.32
+!   line 56  004262.40  003660.05 10                   SX,T RCHSC

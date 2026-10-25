@@ -5015,6 +5015,47 @@ run "the UNIT AVAILABILITY TESTS and MULTI-UNIT CHANNEL SCAN, printed p.68, bit-
 run "the UNIT TABLE SCAN and RESERVED-UNIT SEARCH, printed p.69, bit-exact (MCP_Mar63 PDF p.76)" python3 verify_mcp_bootstrap_p69.py
 run "MULTI-UNIT ASSIGNMENT and the UNLOAD PATH, printed p.70, bit-exact (MCP_Mar63 PDF p.77)" python3 verify_mcp_bootstrap_p70.py
 run "SINGLE UNIT ASSIGNMENT and the ALL-UNITS check, printed p.71, bit-exact (MCP_Mar63 PDF p.78)" python3 verify_mcp_bootstrap_p71.py
+run "MACHINE CONFIGURATION CHANGE, printed p.72, bit-exact (MCP_Mar63 PDF p.79)" python3 verify_mcp_bootstrap_p72.py
+# >>> LINE 4 IS T A9, AND THE BOOT RUN HAS BEEN STOPPING ON IT SINCE
+# printed p.65 LANDED. <<<  p.65 line 9 is "BZXVZ,T A9" commented
+# "-IF A MACH CNF CHANGE"; this page's heading three lines above
+# line 4 reads "MACHINE CONFIGURATION CHANGE / ADJUST THE NECESSARY
+# TABLES".  The fixture's machine DOES report one, and the trail
+# moves from 004215.00 to 004263.00 -- printed p.73's first word.
+#
+# THE STEP COUNT IS THE TELL: 6.05 MILLION before this page, 22.04
+# MILLION after.  Line 51 is "CB+,T IXF,T A9A", a count-branch over
+# the whole channel status table, and line 12 loops the machine
+# configuration count table as well.
+#
+# >>> A MULTIPLY, THE FIRST IN THIS CORPUS. <<<  Line 19 is
+# "*(BU,24),T COMBO,40" -- the operation is a bare asterisk, and no
+# page read before this one spells a multiply at all.  It compiles
+# 030024.21 90; line 26's "M+,T DISK(T IXG)" compiles 010000.20 90.
+# The SAME opcode byte, told apart by bit 23 of the second group.
+#
+# >>> AND A FIFTH WRITTEN MINUS, TWO LINES BELOW IT. <<<  Line 20 is
+# "-(BU,24),T 2COMB,20" with the familiar ".30".  The pair is the
+# sharpest instance yet because each operand is the OTHER HALF of
+# one constant: printed p.63 line 21 is "T COMBO VF,T TYBC+T MACBC
+# +T REQBC" and line 22 is "T 2COMB VF,T TYBC+T MACBC".  Multiply by
+# the three-field width, subtract the two-field width -- a
+# computation where a wrong sign gives a different table offset in
+# silence.
+#
+# A SIXTH dds FROM A `DD` LABEL, AND THE FIRST FROM AN ENTRY-MODE
+# DD.  Line 26 writes no dds and takes length EIGHT from T DISK,
+# which printed p.64 line 6 defines as "(8)DD(BU,8),1,1,0" -- an
+# OCTAL entry-mode DD.  pp.66, 67 and 69 found the shape on plain
+# "DD(BU,1),0" labels; it carries identically here.  That was the
+# one row of forty-nine the deck got wrong first.
+#
+# TWO IMMEDIATES THAT PROVE THEIR OWN FIELD POSITION: "KFI(BU,4),2"
+# compiles 100000.00 and "KFI(BU,4),5" compiles 240000.00 -- the
+# value times 2^14, left-justified in the eighteen-bit address
+# field.  Their comments are "-LOOK FOR CONSOLE" and "-LOOK FOR A
+# PRINTER", equipment codes 2 and 5, which is printed p.64's
+# REQUEST VALIDITY CHECK TABLE read back.
 # >>> THIS PAGE CLOSES THE RANGE ON T ASIGN'S FORWARD BRANCH. <<<
 # Line 52 is "B,T A1" at 004214.40, one half word, ending at
 # 004215.00 -- which is printed p.72 line 4, and 004215.00 is T A9,

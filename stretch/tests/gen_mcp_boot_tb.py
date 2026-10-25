@@ -831,9 +831,18 @@ def main():
         #                                  pp.61-65 too; the run
         #                                  EXECUTES MCP's ASSIGN
         #                                  entry and ends at T A9
+        #   0x009544   AE, MOP, RZ, XCZ, XE, XVGZ -- printed pp.66-72
+        #                                  as well, so T A9's own
+        #                                  code runs: XF out, XVLZ
+        #                                  out, XVGZ in.  All six are
+        #                                  result indicators and the
+        #                                  run is 16 MILLION STEPS
+        #                                  longer, so there is no
+        #                                  reason for them to have
+        #                                  stayed the same.
         ("mcp_indicators_word11", str(IND_WORD),
          _ind("AE") | _ind("MOP") | _ind("RZ") | _ind("XCZ")
-         | _ind("XE") | _ind("XF") | _ind("XVLZ")),
+         | _ind("XE") | _ind("XVGZ")),
 
         # >>> THE MOVE ITSELF, AND IT IS THE POINT OF THE FIXTURE <<<
         # Printed p.4 line 28, "T,$11,X BUFER($X1),X BS END  -MOVE MCP
@@ -1438,8 +1447,26 @@ def main():
                    # Half-word 4378 is 004215.00, which is T A9 --
                    # p.65 line 9's forward reference, on printed p.66
                    # or after.  THAT IS THE NEXT TRANSCRIPTION.
+                   #
+                   # >>> AND IT MOVED TO 4454, 2026-10-25, BECAUSE
+                   # printed p.72 IS T A9 ITSELF. <<<  p.72 line 4 is
+                   # that address and its heading three lines above
+                   # reads "MACHINE CONFIGURATION CHANGE / ADJUST THE
+                   # NECESSARY TABLES" -- so the fixture's machine
+                   # DOES report a configuration change and MCP now
+                   # walks the channel status table adjusting it.
+                   #
+                   # THE STEP COUNT IS THE TELL: 6.05 MILLION before
+                   # this page, 22.04 MILLION after.  p.72's line 51
+                   # is "CB+,T IXF,T A9A", a count-branch over the
+                   # whole table, and line 12 loops the machine
+                   # configuration count table as well.
+                   #
+                   # Half-word 4454 is 004263.00, which is printed
+                   # p.73's first word -- p.72 ends at 004262.40.
+                   # THAT IS THE NEXT TRANSCRIPTION.
                    pc_check=0,
-                   pc_trail_check=4378,
+                   pc_trail_check=4454,
                    step_cap=40000000,
                    pc_trail=True,
                    op_trail=True,
