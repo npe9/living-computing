@@ -659,6 +659,40 @@ cannot be tested without it.
 > exits are the dispatcher's two returns. When A3 lands, the code
 > that consumes its card already exists in the image.
 >
+> **A21 — >>> MCP WALKS, SORTS AND SCANS ITS OWN UNIT TABLES,
+> 2026-10-25. <<<** printed pp.66-73 are transcribed and in the
+> image, and the run no longer stops at `T A9`. p.72 line 4 IS that
+> address, under the heading **MACHINE CONFIGURATION CHANGE / ADJUST
+> THE NECESSARY TABLES** — so the fixture's machine reports a
+> configuration change and MCP walks the whole channel status table
+> adjusting it. **The step count is the tell: 6.05 million before
+> p.72, 22.04 million after**, because p.72 line 51 is
+> `CB+,T IXF,T A9A`, a count-branch over the entire table.
+>
+> p.73 then **sorts** it: lines 8-18 are a two-deep bubble sort over
+> the multi-unit count table, and lines 25-36 are the MULTI UNIT
+> SCAN. The PC trail moves 004215.00 → 004263.00 → **004360.00**,
+> and the step count barely moves for p.73 (22,045,771) because its
+> loops are over a table this fixture's machine hardly fills.
+>
+> **The run now leaves the transcribed range from inside p.73.** Its
+> line 35 is `BZRZ,T C10` (004322.40) and p.72 line 34 is
+> `BZRZ,T A10` (004320.00); the image's last word is 004317.40, so
+> 004360.00 is a walk through zeros from whichever branch it took.
+> **printed p.74 is next, and two symbols already name it.**
+>
+> The image holds printed pp.15-73 gapless — 56 pages, 432 stand-ins
+> checked against their definitions, 218 agreeing SYNs, 41 symbols
+> still external.
+>
+> **One operation arrived with p.73 that no page had used**:
+> `M+1`, add one to memory (line 55), compiling `004000.22 B0`
+> against p.72 line 26's plain `M+` at `010000.20 90`. The encoding
+> model it confirms — a VFL operation's low four bits in the byte's
+> high nibble, its high bits in bits 22-23 of the second group —
+> covers the whole of `opcodes.VFL_INT_CODES` without a change to
+> it.
+>
 > **A20 — >>> MCP EXECUTES ITS ASSIGN ROUTINE, 2026-10-24. <<<**
 > printed pp.59-65 are transcribed and in the image, and the run no
 > longer stops at `T ASIGN`: p.65 line 6 IS that address, and the row

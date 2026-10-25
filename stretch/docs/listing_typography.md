@@ -773,6 +773,31 @@ re-render higher — but §13e is the reminder that **step 2 cuts both
 ways**: it is as good at confirming a `C` as at refuting one, and a
 page that needs it will usually need it in both directions.
 
+#### One ROW with both, printed p.73 (2026-10-25)
+
+p.52 made the case page by page. MCP printed p.73 makes it twice in
+a single row, which is as tight as this gets:
+
+```
+line 35   C04322.74  CO     is   004322.74  C0
+line 42   C04246.34  C2     is   004246.34  C2
+```
+
+In each row the LOCATION's leading `C` is a zero and the BYTE's `C`
+is real. The operations say so independently: printed p.72 line 34's
+`BZRZ,T A10` is a checked `004320.34 C0` and its line 18's
+`BRZ,T B9B` is a checked `004261.74 C2`. **Same two mnemonics, same
+two bytes, one page earlier.**
+
+And the third shape is on the same page. Line 33 prints
+`004306.C3 C1` and is `004306.03 01` — a §13d per-row artifact in
+which BOTH `C` glyphs are zeros — with p.72 line 32's twin
+`T A9BA LVI,T X1BR,T B9` = `004246.03 01` to say it.
+
+> So one page can carry all three readings at once, and the column
+> is still what decides each one. **Do not generalise a row's verdict
+> to the row below it; generalise the COLUMN RULE instead.**
+
 ### 13f. >>> THE DIRECTION REVERSES: a `C` READ AS A ZERO (printed p.66, 2026-10-24) <<<
 
 Every instance above is a ZERO taken for a `C`. **Printed p.66 line 5
@@ -810,3 +835,65 @@ disagree, re-render *that byte* at 1800 dpi and grep the corpus for the
 mnemonic. Two cheap checks, neither of which is "believe the model".
 It works in both directions, which is why this instance is recorded
 separately rather than folded into §13.
+
+### 13g. >>> ONE TOKEN, FOUR IDENTICAL ZEROS, TWO SHAPES (printed p.74, 2026-10-25) <<<
+
+Everything above argues about one glyph at a time. MCP printed p.74
+line 10 settles the question with a **single six-character token**:
+
+```
+statement column, 1800 dpi:   C M O C O C ,
+what it is:                   C M 0 0 0 0 ,
+```
+
+`CM0000` is the connective `0000`, and its machine code
+`001000.00 F0` says so — bits 19-22 of the second group are the
+connective and they are zero. **So all four of those glyphs are the
+same digit, printed twice as a closed oval and twice as an open
+curve, in one word, in one impression of one drum.**
+
+> That is the whole of §13 in one token. The open shape is not a
+> different character and not a different field; it is the same `0`
+> with its left stroke dropped, and the drum drops it often enough
+> that two of four can go either way **within a single token**.
+
+**AND IT CORRECTED TWO PAGES ALREADY TRANSCRIBED.** p.72 line 34
+reads `BZRZ,T A1C` and p.73 line 35 reads `BZRZ,T C1C` — at 1800 dpi
+both final glyphs are open curves, so both were transcribed `C`.
+printed p.74 **defines** those two symbols, at exactly the addresses
+the branches carry (004320.00 and 004322.40), and names them
+
+```
+line  6   T A10
+line 10   T C10
+```
+
+with the `0` closed. They are `T A10` and `T C10`, the generation
+after p.72-73's `T A9`, `T B9`, `T C9` — and p.74 goes on to define
+`T A10A`, `T B10A`, `T B10B`, `T B10`, `T A11`, `T A11A`, `T A11B`
+and `T B11C`. A symbol named `A1C` would have been the only one of
+its kind on either page.
+
+> **A NAME IN A REFERENCE CANNOT BE CHECKED; A NAME IN ITS
+> DEFINITION CAN.** No bit check can catch a misnamed stand-in,
+> because a `SYN` to the right address assembles to the right bits
+> whatever it is called. What catches it is the page that *places*
+> the symbol — and the cost of not catching it is a merge that
+> carries two names for one address. **When a forward reference's
+> name is the only evidence for it, mark it as unconfirmed and let
+> the defining page confirm it.**
+
+Three code bytes on p.74 went the same way and were settled the same
+morning, each by ink and not by the assembler:
+
+```
+line 36   000002.17 C7  ->  07   the row's own octal field prints
+                                 00CC02, so it is a 13d row
+line 38   004326.34 0C  ->  0C   a CLOSED oval and an OPEN curve
+                                 side by side inside one byte
+line 47   004342.74 C2  ->  02   closed oval at 1800 dpi
+```
+
+Line 38 is the sharpest of the three and belongs beside the token
+above: **two adjacent glyphs in one byte, one closed and one open.
+They cannot both be zeros, and they cannot both be C's.**

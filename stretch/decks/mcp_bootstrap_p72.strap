@@ -139,7 +139,7 @@ SYPRCH  SYN, (8)2156.40
 TDSIO   SYN, (8)4767.0
 ! ---- forward, onto printed p.73 and after -------------------------
 TA9D    SYN, (8)4275.40
-TA1C    SYN, (8)4320.0
+TA10    SYN, (8)4320.0
 TM      SYN, (8)4422.0
 
         SLC, (8)4215.0
@@ -192,7 +192,7 @@ TA9B    BZB, TUNASG(TIXF), TM        ! line 31 -IF THE UNIT IS
 TA9BA   LVI, TX1BR, TB9              ! line 32 -LOAD FOR SUB ROUTINE
                                       !           BRANCH
         CT0011(BU,2), TUNRES(TIXF)   ! line 33 -IS UNIT RESERVED BY PP
-        BZRZ, TA1C                   ! line 34 -YES
+        BZRZ, TA10                   ! line 34 -YES
 TB9     LF, TEQUIP(TIXF)             ! line 35
         KFI(BU,4), 2                 ! line 36 -LOOK FOR CONSOLE
         BZAE, TB9A                   ! line 37 -NO
@@ -250,7 +250,7 @@ TB9B    CB+, TIXF, TA9A              ! line 51
 !   line 31  004243.00  000000.35 8A  004422.34 00     T A9B  BZB
 !   line 32  004244.00  004246.03 01                   T A9BA  LVI
 !   line 33  004244.40  000000.76 8A  002000.07 70     CT0011(BU,2)
-!   line 34  004245.40  004320.34 C0                   BZRZ,T A1C
+!   line 34  004245.40  004320.34 C0                   BZRZ,T A10
 !   line 35  004246.00  000000.64 8A  004000.06 70     T B9  LF
 !   line 36  004247.00  100000.00 80  404000.23 10     KFI(BU,4),2
 !   line 37  004250.00  004254.76 C0                   BZAE,T B9A

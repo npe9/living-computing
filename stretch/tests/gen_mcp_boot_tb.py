@@ -840,9 +840,22 @@ def main():
         #                                  longer, so there is no
         #                                  reason for them to have
         #                                  stayed the same.
+        #   0x200A448  AL, RZ, XCZ, XE, XF, XVZ -- printed p.73 too.
+        #                                  The step count barely
+        #                                  moves but the SET does:
+        #                                  the three that leave (AE,
+        #                                  MOP, XVGZ) and the three
+        #                                  that arrive (AL, XF, XVZ)
+        #                                  are what a bubble sort
+        #                                  over an index leaves
+        #                                  behind -- XF and XVZ are
+        #                                  set by the CBH pair on
+        #                                  lines 16 and 18, and AL by
+        #                                  the KF on line 11 that
+        #                                  decides each swap.
         ("mcp_indicators_word11", str(IND_WORD),
-         _ind("AE") | _ind("MOP") | _ind("RZ") | _ind("XCZ")
-         | _ind("XE") | _ind("XVGZ")),
+         _ind("AL") | _ind("RZ") | _ind("XCZ") | _ind("XE")
+         | _ind("XF") | _ind("XVZ")),
 
         # >>> THE MOVE ITSELF, AND IT IS THE POINT OF THE FIXTURE <<<
         # Printed p.4 line 28, "T,$11,X BUFER($X1),X BS END  -MOVE MCP
@@ -1462,11 +1475,32 @@ def main():
                    # whole table, and line 12 loops the machine
                    # configuration count table as well.
                    #
-                   # Half-word 4454 is 004263.00, which is printed
-                   # p.73's first word -- p.72 ends at 004262.40.
-                   # THAT IS THE NEXT TRANSCRIPTION.
+                   # >>> AND IT MOVED AGAIN TO 4576, 2026-10-25,
+                   # BECAUSE printed p.73 IS IN THE IMAGE. <<<  4454
+                   # was 004263.00, p.73's own first word, so the run
+                   # was stopping ON the page.  It now executes it --
+                   # the bubble sort on lines 8-18 and the MULTI UNIT
+                   # SCAN on lines 25-36 -- and leaves it through one
+                   # of its two forward branches, line 35's
+                   # "BZRZ,T C10" (004322.40) or printed p.72 line
+                   # 34's "BZRZ,T A10" (004320.00).  Both are PAST
+                   # the image, whose last word is 004317.40, so the
+                   # trail's 4576 = 004360.00 is a walk through zeros
+                   # from whichever one it took.
+                   #
+                   # THE STEP COUNT SAYS SO TOO, by NOT moving:
+                   # 22,045,771 against p.72's 22.04 million.  p.73's
+                   # loops are over the MULTI-UNIT count table, which
+                   # this fixture's machine barely fills, so the page
+                   # costs almost nothing to run -- in contrast to
+                   # p.72, which cost sixteen million.
+                   #
+                   # 004320.00 is T A10 and 004322.40 is T C10, two
+                   # symbols printed p.73 and p.72 both reference and
+                   # neither defines.  THAT IS THE NEXT
+                   # TRANSCRIPTION: printed p.74.
                    pc_check=0,
-                   pc_trail_check=4454,
+                   pc_trail_check=4576,
                    step_cap=40000000,
                    pc_trail=True,
                    op_trail=True,

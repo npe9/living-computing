@@ -5406,6 +5406,52 @@ run "MACHINE CONFIGURATION CHANGE, printed p.72, bit-exact (MCP_Mar63 PDF p.79)"
 # of EIGHT does not fit a three-bit field and goes in as ZERO
 # (C28-6129 printed p.16's modulo 8).  L ZBIT's 63 -> 62 gives 1
 # FAIL, line 41, and nothing else: the symbol is used once.
+run "SORT THE UNIT COUNT TABLE and the MULTI UNIT SCAN, printed p.73, bit-exact (MCP_Mar63 PDF p.80)" python3 verify_mcp_bootstrap_p73.py
+# >>> THE PAGE THE BOOT RUN'S TRAIL NAMES. <<<  printed p.72 line 27
+# is "BB,T MULTI(T IXF),T A9D" and T A9D is 004275.40, which is this
+# page's line 25.  Fifty-six lines, forty-one compiled, under FOUR
+# boxed headings -- the most of any page of the ASSIGN program.
+#
+# A BUBBLE SORT, lines 8-18, two deep over the multi-unit count
+# table, and the two loops are named apart ONLY by their index
+# fields: line 16 is 004267.24 C8 (bits 19-22 = 1010 = T IXF) and
+# line 18 is 004265.04 C8 (0010 = T IXH).
+#
+# >>> THE INDEX FIELD CAUGHT A MISREAD STATEMENT. <<<  Line 2 read
+# "LVI,T IXF,T CHCUC" at 600 dpi, but its code is 003661.05 01 and
+# bits 19-22 are 0010 = $2 = T IXH.  At 1200 dpi the glyph is an H.
+# F and H are the hardest pair in the statement column at this size
+# and eight rows here turn on it, so THE CODE COLUMN IS THE
+# AUTHORITY FOR AN INDEX NAME.
+#
+# >>> M+1, AN OPERATION THE ASSEMBLER HAD AND NO PAGE HAD USED. <<<
+# Line 55 is "M+1,T CHCNT(T IXH)" -- add one to memory -- compiling
+# 004000.22 B0 where printed p.72 line 26's plain "M+" is
+# 010000.20 90.  The arithmetic is exact: a VFL operation's low four
+# bits are the byte's high nibble and its high bits sit in bits
+# 22-23 of the second group.  M+1 is operation 43 = 0b101011, so the
+# byte is 0xB0 and bit 22 carries the 32 -- ".22" against M+ (9)
+# at ".20" and * (25) at ".21".  Three operations one byte apart in
+# the printed column, all three agreeing with opcodes.VFL_INT_CODES
+# with no change to it.
+#
+# TWO BYTES THE C/ZERO RULE DECIDED, IN OPPOSITE DIRECTIONS.  Line
+# 33 prints "004306.C3 C1"; the octal pair cannot hold a C
+# (listing_typography.md 13e) so the row is 004306.03 01, which
+# printed p.72 line 32's twin "T A9BA LVI,T X1BR,T B9" =
+# 004246.03 01 says independently.  But line 35 prints "C04322.74
+# CO" and line 42 prints "C04246.34 C2": there the LOCATION's
+# leading C is a zero while the BYTES are real C's -- p.72 line 34's
+# BZRZ is C0 and its line 18's BRZ is C2.  One row, two fields, the
+# rule read each way.
+#
+# Injections, against the DECK: M+1 -> M+ gives 1 FAIL at 004316.40
+# (004000.20 90 for 004000.22 B0); line 2's T IXH -> T IXF, the
+# misread itself, 1 FAIL at 004264.00 (003661.25 01); line 18's CBH
+# taking the inner index, 1 FAIL at 004274.00 (004265.24 C8); BZRZ
+# -> BRZ, 1 FAIL at 004305.40 (C2 for C0); line 44's offset 46 ->
+# 40, 1 FAIL at 004310.40 (022024 for 022027 -- the printed field
+# is the offset HALVED, so it scales with the operand).
 run "the IOD CARD ROUTINE, printed p.53, bit-exact (MCP_Mar63 PDF p.60)" python3 verify_mcp_bootstrap_p53.py
 # >>> IT CONFIRMS BOTH OF printed p.52's DERIVED STAND-INS. <<<
 # L OOPN is at 002775.40 (line 4) and L IODRN at 003021.40 (line 37),

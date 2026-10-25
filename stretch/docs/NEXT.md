@@ -10,7 +10,25 @@ section comments of `tests/run_tests.sh`, and in commit messages.
 When an item here is finished it shrinks to a pointer; it does not
 accumulate.
 
-## WHERE THIS STANDS, 2026-10-21 — read this first
+## WHERE THIS STANDS, 2026-10-25 — read this first
+
+**The frontier is printed p.74.** The MCP image holds printed
+pp.15-73 gapless (56 decks, 432 stand-ins checked against their
+definitions, 218 agreeing SYNs, 41 symbols still external), and the
+boot run executes MCP's ASSIGN routine: it saves its indexes, walks
+the channel status table for a machine-configuration change (p.72),
+sorts the multi-unit count table and runs the MULTI UNIT SCAN
+(p.73), then leaves the transcribed range through `BZRZ,T C10` at
+004322.40 or `BZRZ,T A10` at 004320.00. The PC trail reads
+004360.00. `boot_plan.md` A21 carries the detail.
+
+**The one unexplained refusal** is still the OP trail's single
+`operation invalid` at half-word 1304 = 001214.00, printed p.24's
+time conversion, raised once after 6.01 million steps. It is proven
+NOT to be the crossing store (that is built and tested). An exact
+locator in `StretchCore` is the tool that will name it.
+
+### The older orientation, 2026-10-21
 
 MCP's **printed pp.17, 18 and 19 execute as one program**: an IOCD
 card loop that reads a punched card, converts its Hollerith channel
@@ -5394,6 +5412,130 @@ letter `O` read as `C`**, in a NAME field, where no octal column and
 no opcode can rule it out. What ruled it out was the datum the name
 labels — which is a tell worth stating on its own: *when a name
 labels data, decode the data before trusting the name.*
+
+## >>> PRINTED p.73 SORTS THE TABLE, AND THE RUN LEAVES THE RANGE — 2026-10-25 <<<
+
+Forty-one compiled rows of fifty-six lines, under **four boxed
+headings** — more than any page of the ASSIGN program so far. All
+forty-one passed on the first assembly, which has now happened on
+enough pages that the interesting part of a page is no longer
+whether it compiles.
+
+**The run moved from 004263.00 to 004360.00.** 004263.00 was this
+page's own first word, so the run had been stopping *on* it; it now
+executes the page and leaves the transcribed range through a forward
+branch — line 35's `BZRZ,T C10` (004322.40) or p.72 line 34's
+`BZRZ,T A10` (004320.00), both past the image's last word 004317.40.
+**printed p.74 is next and two symbols already name it.**
+
+**The step count did NOT move** — 22,045,771 against p.72's 22.04
+million — and that is informative rather than disappointing. p.72
+cost sixteen million steps because line 51 count-branches over the
+whole channel status table. p.73's loops are over the MULTI-UNIT
+count table, which this fixture's machine barely fills, so the page
+runs almost for free. *A page that adds no steps is not a page that
+did nothing; it is a page whose loops this fixture does not fill.*
+
+### `M+1` — an operation the assembler had and no page had used
+
+Line 55 is `M+1,T CHCNT(T IXH)`, add one to memory, compiling
+`004000.22 B0`. p.72 line 26's plain `M+` compiles `010000.20 90`.
+The two bytes differ, and so does the second group's `.bb`, and the
+arithmetic is exact:
+
+> **A VFL operation's low four bits are the printed byte's high
+> nibble; its high bits are bits 22 and 23 of the second group,
+> worth 32 and 16.**
+
+`M+1` is operation 43 = `0b101011` → byte `0xB0`, bit 22 set, so
+`.22`. `M+` is 9 → `0x90`, `.20`. `*` is 25 → `0x90`, bit 23, `.21`
+— which is the pair printed p.72 already showed, now explained
+rather than observed. Four bits plus two is six, so the model covers
+0-63 and `opcodes.VFL_INT_CODES` tops out at 61: **the whole table,
+not just the three rows that prompted it, and no change to the
+assembler.**
+
+### The index field is the authority for an index NAME
+
+Line 2 read `LVI,T IXF,T CHCUC` at 600 dpi. Its code is
+`003661.05 01`, whose bits 19-22 are `0010` = `$2` = **`T IXH`**. At
+1200 dpi the glyph is an H. **F and H are the hardest pair in the
+statement column at this size**, and eight rows on this page turn on
+it, including the two `CBH`s that name the sort's inner and outer
+loops apart (`004267.24 C8` against `004265.04 C8`) — the two rows
+whose statements are otherwise identical.
+
+*Read the index field before trusting an index name.* That is the
+same shape as "decode the data before trusting the name that labels
+it" (printed p.71), and this is the second column it applies to.
+
+### A false count the byte checks could not have caught
+
+The deck's first header said **FOUR LISTING MARKS: lines 32, 33, 36
+and 54**. It is TWO, lines 25 and 44.
+
+The four were read off the **right edge of the code crop**: at 900
+dpi `-x 4200 -W 3000` ends at 7200 and the statement column begins
+at 6150, so the leading `T` of `T A9F`, `T A9FA`, `T A9G` and `T C9`
+— exactly the four *labelled* lines in that range — bled in. A
+listing mark is a bare `*` **after the location**, and the location
+column has two.
+
+> **A crop that overlaps the next column invents a feature in the
+> one you are reading.** Nothing in the forty-one row checks could
+> have found this, because the claim was about ink and not about
+> bits. The guard is to know where each column's x-range ENDS, not
+> only where it starts.
+
+### What p.73 says about the C/zero rule
+
+One page, all three readings, and the column decides each:
+
+* line 33 `004306.C3 C1` → `004306.03 01`, both C's zeros (a §13d
+  per-row artifact), confirmed by p.72 line 32's twin `T A9BA
+  LVI,T X1BR,T B9` = `004246.03 01`;
+* line 35 `C04322.74 CO` → `004322.74 C0` and line 42
+  `C04246.34 C2` → `004246.34 C2`, where the **location's** leading
+  C is a zero and the **byte's** C is real — p.72's own `BZRZ` (C0)
+  and `BRZ` (C2) say so.
+
+`listing_typography.md` §13e now carries the pair as its worked
+example. **Do not generalise a row's verdict to the row below it;
+generalise the column rule instead.**
+
+### >>> AND READING p.74's FIRST PAGE RENAMED TWO SYMBOLS <<<
+
+p.73's forward branch and p.72's were transcribed `BZRZ,T C1C` and
+`BZRZ,T A1C`, and at 1800 dpi both final glyphs really are open
+curves. **printed p.74 DEFINES both addresses** — 004320.00 at its
+line 6 and 004322.40 at its line 10 — and names them `T A10` and
+`T C10`, with the zero closed. They are the generation after `T A9`,
+`T B9`, `T C9`, and p.74 goes on to define `T A10A`, `T B10A`,
+`T B10`, `T B10B`, `T A11`, `T A11A`, `T A11B` and `T B11C`.
+`A1C` would have been the only name of its kind.
+
+**And p.74 proves the shape in one token.** Its line 10 statement is
+`CM0000`, whose code `001000.00 F0` puts zero in the connective
+field — and at 1800 dpi it prints **`CMOCOC`**: the same digit, four
+times, twice closed and twice open, in one word of one impression.
+`listing_typography.md` §13g now carries it as the section's
+evidence.
+
+> **A NAME IN A REFERENCE CANNOT BE CHECKED; A NAME IN ITS
+> DEFINITION CAN.** A `SYN` stand-in assembles to the right bits
+> whatever it is called, so no bit check in this project could have
+> caught either name. Only the page that PLACES the symbol can.
+> Both decks and both verifiers are renamed here; no bit changed.
+
+### The indicator word moved, and it was re-measured, not retired
+
+`mcp_indicators_word11` went `0x9544` → `0x200A448`: out go AE, MOP
+and XVGZ, in come AL, XF and XVZ. XF and XVZ are what the `CBH` pair
+on lines 16 and 18 leave behind and AL is what the `KF` on line 11
+that decides each swap leaves. **A check that moves because the run
+went further is still measuring something** — retirement was right
+for `mcp_end_of_prosa_bit_X0`, whose quantity stopped being
+meaningful, and is wrong here.
 
 ## >>> PRINTED p.72 IS `T A9`, AND THE RUN MOVES AGAIN — 2026-10-25 <<<
 

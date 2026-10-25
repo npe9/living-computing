@@ -1,0 +1,227 @@
+! MCP INITIALIZATION, printed p.73 (MCP_Mar63_001-249 PDF p.80) --
+! SORT THE UNIT COUNT TABLE, then the MULTI UNIT SCAN.
+!
+! Fifty-six lines, forty-one of which compile.  FOUR boxed headings,
+! the most on any page of the ASSIGN program so far:
+!
+!   lines  4-7   "SORT THE UNIT COUNT TABLE"
+!   lines 22-24  "MULTI UNIT SCAN"
+!   lines 37-40  "ADVANCE THE UNIT COUNT TABLE FOR ANOTHER CHANNEL"
+!   lines 51-53  "ADD TO THE UNIT COUNT IN THE MULTI UNIT TABLE"
+!
+! >>> LINE 25 IS THE ADDRESS THE BOOT RUN'S TRAIL NOW NAMES. <<<
+!
+! printed p.72 line 27 is "BB,T MULTI(T IXF),T A9D" -- if the channel
+! is a multi-unit channel -- and T A9D is 004275.40, which is this
+! page's line 25.  The run walks the channel status table on p.72 and
+! leaves it here.
+!
+! ---------------------------------------------------------------
+! >>> A SORT, AND IT IS A BUBBLE SORT <<<
+! ---------------------------------------------------------------
+! Lines 8-18 are a two-deep loop over the multi-unit count table:
+!
+!   T D9A  LX,T IXF,T IXH        the inner index starts at the outer
+!          LF(BU,32),0.0(T IXH),32   hold this entry in the accumulator
+!   T D9B  KF,T CHCNT(T IXF),40  compare its count with a later one
+!          BZAH,T D9C            if ours is not high, leave it
+!          LV,T IXG,0.0(T IXF)   otherwise swap: take the later entry
+!          ST(BU,32),0.0(T IXF),32    write ours into its slot
+!          SV,T IXG,$R           and carry the later one along
+!   T D9C  CBH,T IXF,T D9B       count the inner index and repeat
+!          ST(BU,32),0.0(T IXH),32    deposit the winner
+!          CBH,T IXH,T D9A       count the outer index and repeat
+!
+! The two CBH rows are what name the two loops apart, and they are
+! told apart ONLY by their index fields: line 16 compiles
+! 004267.24 C8 (bits 19-22 = 1010 = T IXF) and line 18 compiles
+! 004265.04 C8 (bits 19-22 = 0010 = T IXH).  The statement column
+! reads F and H at a size where those two glyphs are the hardest
+! pair on the page, and the machine code is what settles it --
+! see the note on line 2 below.
+!
+! ---------------------------------------------------------------
+! >>> THE INDEX FIELD CAUGHT A MISREAD STATEMENT <<<
+! ---------------------------------------------------------------
+! Line 2 read "LVI,T IXF,T CHCUC" at 600 dpi.  Its code is
+! 003661.05 01, whose bits 19-22 are 0010 = $2 = T IXH, NOT 1010 =
+! $10 = T IXF.  At 1200 dpi the glyph is an H.  Lines 3, 18, 41, 44,
+! 45, 46 and 55 all carry T IXH for the same reason, and line 36's
+! T IXG (.21, bits 19-22 = 1000) is a third letter in the same
+! column.  THE CODE COLUMN IS THE AUTHORITY FOR AN INDEX NAME.
+!
+! ---------------------------------------------------------------
+! >>> M+1, AN OPERATION THE ASSEMBLER HAD AND NO PAGE HAD USED <<<
+! ---------------------------------------------------------------
+! Line 55 is "M+1,T CHCNT(T IXH)" -- ADD ONE TO MEMORY -- compiling
+! 000000.24 82  004000.22 B0.  Its byte is B0 where p.72 line 26's
+! plain "M+" is 90, and the arithmetic is exact: a VFL operation's
+! low four bits are the byte's high nibble and its high bits sit in
+! bits 22-23 of the second group.  M+1 is operation 43 = 0b101011,
+! so the byte is 0xB0 (1011) and bit 22 carries the 32, printing
+! ".22" where M+ (operation 9) prints ".20" and * (25) prints ".21".
+! Three operations, one byte apart in the printed column, and all
+! three now agree with opcodes.VFL_INT_CODES without a change to it.
+!
+! ---------------------------------------------------------------
+! >>> TWO BYTES THE C/ZERO RULE DECIDED, IN BOTH DIRECTIONS <<<
+! ---------------------------------------------------------------
+! Line 33's row prints "004306.C3 C1".  The octal pair cannot hold
+! a C (listing_typography.md 13e), so ".C3" is ".03" -- and the row
+! is p.72 line 32's twin, "T A9BA LVI,T X1BR,T B9" = 004246.03 01,
+! which fixes the byte as 01 as well.  A per-row artifact, 13d.
+!
+! Line 35's row prints "C04322.74 CO" and line 42's "C04246.34 C2".
+! Here the leading C of the LOCATION is a zero both times, but the
+! BYTES are real C's: p.72 line 34's "BZRZ,T A10" is 004320.34 C0
+! and its line 18's "BRZ,T B9B" is 004261.74 C2.  Same page, same
+! two mnemonics, same two bytes.  The octal field and the hex field
+! take the C/zero rule in OPPOSITE directions in one row.
+!
+! TWO LISTING MARKS, the bare "*" after the location that every
+! earlier page has carried unexplained: lines 25 and 44.
+!
+! THE FIRST COUNT HERE WAS WRONG AND THE CROP IS WHY.  "Four marks,
+! lines 32, 33, 36 and 54" was read off the right edge of the CODE
+! crop -- but 900 dpi x=4200 W=3000 ends at 7200 and the statement
+! column starts at 6150, so what bled in was the leading "T" of
+! T A9F, T A9FA, T A9G and T C9, which are exactly the four LABELLED
+! lines in that range.  A listing mark sits in the LOCATION column,
+! and in the location column this page has two.
+
+        SLC, (8)4263.0
+
+! ---- index names, printed p.61 ------------------------------------
+TX1BR   SYN, $1
+TIXF    SYN, $10
+TIXG    SYN, $8
+TIXH    SYN, $2
+TCTWDX  SYN, $10
+! ---- words, printed pp.61-64 --------------------------------------
+TLUCT   SYN(BU,18), (8)3273.0
+TFCHSC  SYN, (8)3657.0
+TRCHSC  SYN, (8)3660.0
+TCHCUC  SYN, (8)3661.0
+! ---- table offsets, printed pp.62-64 ------------------------------
+TUNTBA  SYN(BU,18), 0.0
+TCHADD  SYN(BU,18), 0.0
+TCHCNT  SYN(BU,4), 0.20
+TCHAVL  SYN(BU,1), 0.25
+TUNAVL  SYN(BU,1), 0.28
+TUNASG  SYN(BU,1), 0.29
+TCHOWN  SYN(BU,1), 0.32
+TEQUIP  SYN(BU,4), 0.52
+TUNITK  SYN(BU,4), 0.59
+TUNRES  SYN(BU,1), 0.62
+! ---- back, onto printed pp.65 and 72 ------------------------------
+TB1F    SYN, (8)3704.0
+TB9     SYN, (8)4246.0
+! ---- forward, past this page --------------------------------------
+TC10    SYN, (8)4322.40
+TN      SYN, (8)4422.40
+
+        SLC, (8)4263.0
+
+        CM1111(BU,1), TRCHSC+.24     ! line 1  -SET THE REVERSE SCAN
+        LVI, TIXH, TCHCUC            ! line 2
+        SX, TIXH, TFCHSC             ! line 3
+
+! ---- SORT THE UNIT COUNT TABLE ------------------------------------
+TD9A    LX, TIXF, TIXH               ! line 8
+        BXCZ, TD9                    ! line 9
+        LF(BU,32), 0.0(TIXH), 32     ! line 10
+TD9B    KF, TCHCNT(TIXF), 40         ! line 11
+        BZAH, TD9C                   ! line 12
+        LV, TIXG, 0.0(TIXF)          ! line 13
+        ST(BU,32), 0.0(TIXF), 32     ! line 14
+        SV, TIXG, $R                 ! line 15
+TD9C    CBH, TIXF, TD9B              ! line 16
+        ST(BU,32), 0.0(TIXH), 32     ! line 17
+        CBH, TIXH, TD9A              ! line 18
+TD9     LX, TCTWDX, 0.0($15)         ! line 20 -RESTORE THE ENTRY
+                                      !           CONTROL WORD
+        B, TB1F                      ! line 21
+
+! ---- MULTI UNIT SCAN ----------------------------------------------
+TA9D    L, TUNITK(TIXF), 46          ! line 25 -NUMBER OF UNITS TO
+                                      !           A CHANNEL
+        LC, TIXG, $R                 ! line 26
+        BXCZ, TB9                    ! line 27
+        LV, TIXG, TUNTBA(TIXF)       ! line 28 -THE UNIT TABLE
+                                      !           ADDRESS
+TA9E    BB, TCHAVL(TIXF), TA9F       ! line 29 -IF CHANNEL NOT
+                                      !           AVAILABLE
+        BB, TCHOWN(TIXG), TA9FA      ! line 30 -IF MCP LEVEL IT IS
+                                      !           NOT AVAIL TO PP
+        BZB, TUNAVL(TIXG), TC9       ! line 31 -IF UNIT IS AVAILABLE
+TA9F    BZB, TUNASG(TIXG), TN        ! line 32 -IF THE UNIT IS
+                                      !           ASSIGNED
+TA9FA   LVI, TX1BR, TA9G             ! line 33 -LOAD FOR SUB ROUTINE
+                                      !           BRANCH
+        CT0011(BU,2), TUNRES(TIXG)   ! line 34 -IS UNIT RESERVED BY PP
+        BZRZ, TC10                   ! line 35 -YES
+TA9G    CB+, TIXG, TA9E              ! line 36
+
+! ---- ADVANCE THE UNIT COUNT TABLE FOR ANOTHER CHANNEL -------------
+        LF, TCHCNT(TIXH)             ! line 41
+        BRZ, TB9                     ! line 42
+        SV, TIXF, $R                 ! line 43
+        ST, TCHADD(TIXH), 46         ! line 44
+        V+I, TIXH, 0.32              ! line 45
+        C+I, TIXH, 1.0               ! line 46
+        KF, TLUCT                    ! line 47 -LARGEST UNIT COUNT
+        BZAH, TB9                    ! line 48
+        ST, TLUCT                    ! line 49
+        B, TB9                       ! line 50
+
+! ---- ADD TO THE UNIT COUNT IN THE MULTI UNIT TABLE ----------------
+TC9     BZB, TEQUIP(TIXF), TA9G      ! line 54 -IF NO EQUIP ON
+                                      !           THIS CHANNEL
+        M+1, TCHCNT(TIXH)            ! line 55 -ADD ONE TO THE COUNT
+        B, TA9G                      ! line 56
+        END, TD9A
+
+! ---------------------------------------------------------------
+! THE CHECKED ROWS -- all forty-one that compile.
+! ---------------------------------------------------------------
+!   line  1  004263.00  003660.30 80  001000.36 F0   CM1111(BU,1)
+!   line  2  004264.00  003661.05 01                 LVI,T IXH
+!   line  3  004264.40  003657.05 10                 SX,T FCHSC
+!   line  8  004265.00  000022.24 10                 T D9A  LX
+!   line  9  004265.40  004274.70 42                 BXCZ,T D9
+!   line 10  004266.00  000000.00 82  040020.06 70   LF(BU,32)
+!   line 11  004267.00  000000.24 8A  004024.23 10   T D9B  KF
+!   line 12  004270.00  004272.77 40                 BZAH,T D9C
+!   line 13  004270.40  000000.20 3A                 LV,T IXG
+!   line 14  004271.00  000000.00 8A  040020.20 D0   ST(BU,32)
+!   line 15  004272.00  000011.21 30                 SV,T IXG,$R
+!   line 16  004272.40  004267.24 C8                 T D9C  CBH
+!   line 17  004273.00  000000.00 82  040020.20 D0   ST(BU,32)
+!   line 18  004274.00  004265.04 C8                 CBH,T IXH
+!   line 20  004274.40  000000.24 1F                 T D9  LX
+!   line 21  004275.00  003704.10 00                 B,T B1F
+!   line 25  004275.40  000000.73 8A  004027.20 50   T A9D  L
+!   line 26  004276.40  000011.20 50                 LC,T IXG,$R
+!   line 27  004277.00  004246.30 42                 BXCZ,T B9
+!   line 28  004277.40  000000.20 3A                 LV,T UNTBA
+!   line 29  004300.00  000000.31 8A  004303.34 02   T A9E  BB
+!   line 30  004301.00  000000.40 88  004304.34 02   BB,T CHOWN
+!   line 31  004302.00  000000.34 88  004315.74 00   BZB,T UNAVL
+!   line 32  004303.00  000000.35 88  004422.74 00   T A9F  BZB
+!   line 33  004304.00  004306.03 01                 T A9FA  LVI
+!   line 34  004304.40  000000.76 88  002000.07 70   CT0011(BU,2)
+!   line 35  004305.40  004322.74 C0                 BZRZ,T C10
+!   line 36  004306.00  004300.21 48                 T A9G  CB+
+!   line 41  004306.40  000000.24 82  004000.06 70   LF,T CHCNT
+!   line 42  004307.40  004246.34 C2                 BRZ,T B9
+!   line 43  004310.00  000011.25 30                 SV,T IXF,$R
+!   line 44  004310.40  000000.00 82  022027.20 D0   ST,T CHADD
+!   line 45  004311.40  000000.45 05                 V+I,T IXH
+!   line 46  004312.00  000001.05 00                 C+I,T IXH
+!   line 47  004312.40  003273.00 80  022000.23 10   KF,T LUCT
+!   line 48  004313.40  004246.37 40                 BZAH,T B9
+!   line 49  004314.00  003273.00 80  022000.20 D0   ST,T LUCT
+!   line 50  004315.00  004246.10 00                 B,T B9
+!   line 54  004315.40  000000.64 8A  004306.34 00   T C9  BZB
+!   line 55  004316.40  000000.24 82  004000.22 B0   M+1,T CHCNT
+!   line 56  004317.40  004306.10 00                 B,T A9G
