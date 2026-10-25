@@ -5676,6 +5676,71 @@ run "SCAN THE PP REF TABLE FOR NEW ASSIGNMENTS, printed p.77, bit-exact (MCP_Mar
 # AND ONE SURVIVES: "$+.32" -> "$+.40" changes nothing, because a
 # branch address is nineteen bits -- word plus half-word -- so every
 # offset from 32 to 63 names the same target.
+run "CONVERT THE CHANNEL FIELDS, printed p.78, bit-exact (MCP_Mar63 PDF p.85)" python3 verify_mcp_bootstrap_p78.py
+# Fifty-six lines, forty-five compiled.  It builds the mounting
+# message printed p.76 holds the buffers for: the channel and unit
+# numbers converted to IQS characters, the reel number through the
+# same conversion routine printed p.77 calls, and the tape's
+# mounted/verify/scratch bits.
+#
+# >>> FOUR ROWS CARRY A "$" BEFORE THE OPERATION AND THE DECK DOES
+# NOT WRITE IT.  READ THIS BEFORE TRUSTING LINES 9-12. <<<  The cards
+# read "$L,T ABSCH(T XB),-60", "$-(BU,18),T CHSXW,-60",
+# "$SF(BU,18),T IPL+1,-60" and "$CV(BU,18),0.0,-32", confirmed at
+# 1200 dpi, the "$" being the first character of the OPERATION
+# field, on four consecutive rows and nowhere else on the page.
+#
+#   1. NO SOURCE THIS PROJECT HAS DESCRIBES IT.  C28-6129 printed
+#      pp.3-4 give ALL TWELVE STRAP-II instruction formats and none
+#      has a prefix on the operation; its April 1963 bulletin lists
+#      no such addition; c22_6531_appendix_a.md's footnotes are all
+#      about SUFFIXES; and C22-6729's Appendix B -- the complete
+#      list of additional instructions and pseudo-ops STRAP II
+#      accepts -- and its Appendix D have nothing.
+#   2. A COPROCESSOR DOES NOT EXPLAIN IT.  C22-6729 printed p.180
+#      lets Pass 1 hand an ILLEGAL OPERATION CODE to an installation
+#      subroutine, but that is an ERROR path and STRAP II would have
+#      flagged the row.  These four compiled cleanly: STRAP II
+#      UNDERSTOOD THEM.
+#   3. AND THE PREFIX CONTRIBUTES NOTHING TO THE BITS -- MEASURED,
+#      FOUR FOR FOUR.  Each row assembled from the UNPREFIXED
+#      mnemonic reproduces the printed row: 022042.20 50,
+#      022042.30 10, 022042.12 F0, 022060.21 B0.  Two operation
+#      classes, four different second-group bytes, and line 10 is a
+#      written minus carrying its ".30".  One row would be a
+#      coincidence; four across three encodings is a measurement.
+#
+# So the deck is bit-exact and says nothing about what "$" means.
+# If the meaning turns up, LINES 9-12 ARE THE ROWS TO REVISIT.
+#
+# >>> AND THE "HALVED OFFSET" IS A SEVEN-BIT FIELD. <<<  For dozens
+# of pages the printed second group's low octal has been HALF the
+# offset the statement writes -- ",46" printing "027" -- checked
+# bit-for-bit every time and never explained.  Line 14 is
+# "LFI(BU,2),3,5" and five halved is two and a half.  The missing
+# half is BIT 18: the VFL offset is SEVEN bits, bits 12-17 holding
+# offset>>1 and bit 18 holding offset&1, so an odd offset prints
+# ".46" where an even one prints ".06".  That is C28-6129 printed
+# p.3's format 7, "OP(dds), A24(I), OF7(I')", read back off the
+# machine.  The injection that changes 5 to 4 moves ONLY BIT 18.
+#
+# A THIRD PAIR SHARING A BYTE: line 12's CV compiles ".21 B0" and
+# printed p.73 line 55's M+1 compiles ".22 B0".  CV is operation 27
+# and M+1 is 43, both 1011 in their low four bits; the 16 and the 32
+# are bits 23 and 22 of the second group.  printed p.72's "*" and
+# "M+" were the first.
+#
+# T P5A and T IPLB2 were already stand-ins -- printed p.77 line 38
+# branches to T P5A, and p.77's T IPLB1 is this page's T IPLB2's
+# twin, both "BE,$+.32  -MODIFIED BY IPL" -- and both agree.
+#
+# Injections, against the DECK: offset 5 -> 4, 1 FAIL at 004520.00
+# (bit 18 alone); -60 -> +60, 1 FAIL at 004513.00; CV -> M+1, 1 FAIL
+# at 004516.00 (the byte does not move); the written minus -> plus,
+# 1 FAIL at 004514.00; T CHANX losing p.76's dds, 1 FAIL at
+# 004522.00 (000000 for 030000 -- the length comes from the SYMBOL);
+# T LBL's byte size 6 -> 8, 1 FAIL at 004532.00; and $L -> $R on
+# line 13, 1 FAIL at 004517.00.
 run "the IOD CARD ROUTINE, printed p.53, bit-exact (MCP_Mar63 PDF p.60)" python3 verify_mcp_bootstrap_p53.py
 # >>> IT CONFIRMS BOTH OF printed p.52's DERIVED STAND-INS. <<<
 # L OOPN is at 002775.40 (line 4) and L IODRN at 003021.40 (line 37),

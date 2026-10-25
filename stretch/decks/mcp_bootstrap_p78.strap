@@ -1,0 +1,236 @@
+! MCP INITIALIZATION, printed p.78 (MCP_Mar63_001-249 PDF p.85) --
+! CONVERT THE CHANNEL FIELDS.
+!
+! Fifty-six lines, forty-five of which compile, under one boxed
+! heading.  It builds the mounting message printed p.76 holds the
+! buffers for: the channel number and unit number converted to IQS
+! characters, the reel number through the same conversion routine
+! printed p.77 calls, and the tape's mounted/verify/scratch bits.
+!
+! ---------------------------------------------------------------
+! >>> FOUR ROWS CARRY A `$` BEFORE THE OPERATION, AND THIS DECK
+! >>> DOES NOT WRITE IT.  READ THIS BEFORE TRUSTING LINES 9-12. <<<
+! ---------------------------------------------------------------
+! THE CARDS READ:
+!
+!   line  9   T P5A1  $L,T ABSCH(T XB),-60
+!   line 10           $-(BU,18),T CHSXW,-60
+!   line 11           $SF(BU,18),T IPL+1,-60
+!   line 12           $CV(BU,18),0.0,-32
+!
+! confirmed at 1200 dpi: the "$" is the first character of the
+! OPERATION field, on four consecutive rows and nowhere else on the
+! page.  THIS DECK WRITES L, -, SF AND CV.
+!
+! WHY, AND WHAT IS AND IS NOT KNOWN:
+!
+! 1. NO SOURCE THIS PROJECT HAS DESCRIBES IT.  C28-6129 printed
+!    pp.3-4 give ALL TWELVE STRAP-II symbolic instruction formats,
+!    from "OP, A" outward, and not one has a prefix on the
+!    operation.  Its April 1963 bulletin (N28-1081) itemises the
+!    additions to Appendix C's mnemonics and lists none.
+!    c22_6531_appendix_a.md's eight footnotes are the mnemonic
+!    grammar and are all about SUFFIXES; its only "$" rule is that
+!    a SYSTEM SYMBOL must be prefixed by "$" whenever used, which
+!    is about operands like the $L on line 13.  C22-6729's
+!    Appendix B -- the complete list of additional instructions and
+!    pseudo-ops STRAP II accepts -- and its Appendix D have nothing.
+!
+! 2. A COPROCESSOR DOES NOT EXPLAIN IT.  C22-6729 printed p.180
+!    lets Pass 1 hand an ILLEGAL OPERATION CODE to an installation
+!    subroutine, which would let an undocumented operation into a
+!    listing.  But that is an ERROR path and STRAP II would have
+!    flagged the row.  These four compiled to correct machine code
+!    with no error indication: STRAP II UNDERSTOOD THEM.
+!
+! 3. AND THE PREFIX CONTRIBUTES NOTHING TO THE BITS -- MEASURED,
+!    FOUR FOR FOUR.  Each row was assembled from the UNPREFIXED
+!    mnemonic and checked against the printed row:
+!
+!      line  9  L,T ABSCH(T XB),-60    022042.20 50   PASS
+!      line 10  -(BU,18),T CHSXW,-60   022042.30 10   PASS
+!      line 11  SF(BU,18),T IPL+1,-60  022042.12 F0   PASS
+!      line 12  CV(BU,18),0.0,-32      022060.21 B0   PASS
+!
+!    Two operation classes, four different second-group bytes --
+!    50, 10, F0, B0 -- and line 10 is a written minus carrying its
+!    ".30" sign modifier.  One row matching would be a coincidence;
+!    four rows across three encodings is a measurement.
+!
+! SO THE DECK IS BIT-EXACT AND SAYS NOTHING ABOUT WHAT "$" MEANS.
+! It is not an inference from listing usage -- it is declining to
+! represent a character that cannot be explained, with the evidence
+! for why that is safe written out above.  If the meaning turns up,
+! THESE FOUR ROWS ARE THE ONES TO REVISIT and they are named here,
+! in the verifier docstring and in tests/run_tests.sh.
+!
+! ---------------------------------------------------------------
+! >>> THE NEGATIVE OFFSETS, HOWEVER, ARE FULLY EXPLAINED <<<
+! ---------------------------------------------------------------
+! C28-6129 printed p.3's format 7 is "OP(dds), A24(I), OF7(I')" --
+! the offset field is SEVEN BITS and therefore signed.  "-60"
+! compiles to 042 in the printed second group: -60 halved is -30,
+! and -30 in six bits two's complement is 0o42.  "-32" compiles to
+! 060 the same way.  Nothing about the minus needed the prefix.
+!
+! ---------------------------------------------------------------
+! >>> AND A THIRD INSTANCE OF TWO OPERATIONS SHARING A BYTE <<<
+! ---------------------------------------------------------------
+! Line 12's CV compiles ".21 B0" and printed p.73 line 55's M+1
+! compiles ".22 B0".  CV is VFL operation 27 = 0b11011 and M+1 is
+! 43 = 0b101011: the low four bits are the byte's high nibble (1011
+! = 0xB0 for both) and the high bits sit in bits 22-23 of the
+! second group, 16 for CV and 32 for M+1.  printed p.72's "*" and
+! "M+" were the first pair to share a byte this way; this is the
+! third, and the model has not needed a change since p.73.
+!
+! T P5A and T IPLB2 were ALREADY STAND-INS -- p.77 line 38 branches
+! to T P5A at 004511.00 and p.77's own T IPLB1 is this page's
+! T IPLB2's twin -- and both agree.
+!
+! THREE LISTING MARKS: lines 18, 36 and 53.
+
+        SLC, (8)4511.0
+
+! ---- index names, printed pp.61 and 76 ----------------------------
+TCTWDX  SYN, $10
+TXA     SYN, $2
+TXB     SYN, $3
+TXC     SYN, $4
+TIXZ    SYN, $5
+! ---- words, printed pp.61-64, 76 and 77 ---------------------------
+SA8IQS  SYN, (8)2366.0
+TCHSXW  SYN, (8)2152.0
+TIPL    SYN, (8)3266.0
+TPURFT  SYN, (8)3370.0
+TMBLK   SYN(BU,64,8), (8)4431.0
+TREELX  SYN(BU,64,8), (8)4435.50
+TCHANX  SYN(BU,24,8), (8)4440.10
+TUNITX  SYN, (8)4441.20
+TSCRAT  SYN(BU,64,8), (8)4444.0
+TP5IN   SYN, (8)4456.0
+TP5OUT  SYN, (8)4457.0
+TPSAV   SYN, (8)4460.0
+! ---- table offsets, printed pp.62-64 ------------------------------
+TREELN  SYN(BU,48,6), 0.0
+TABSUN  SYN(BU,3), 0.07
+TFDISP  SYN(BU,1), 0.27
+STATI   SYN(BU,1), 0.26
+TFREEL  SYN(BU,18), 0.28
+TVER    SYN(BU,1), 0.40
+TABSCH  SYN(BU,18), 0.46
+! ---- forward, onto printed pp.79 and 80 ---------------------------
+TP3     SYN, (8)4575.40
+TP4     SYN, (8)4556.40
+TLBL    SYN(BU,6,6), (8)4630.74
+TNOP    SYN(BU,6,6), (8)4631.02
+
+        SLC, (8)4511.0
+
+! ---- CONVERT THE CHANNEL FIELDS -----------------------------------
+TP5A    LX, TCTWDX, 0.0($15)         ! line 5  -CHECK THE MODE
+        BZXF, TP5A1                  ! line 6
+        KVI, TXA, TPURFT             ! line 7  -PRINT ONLY THE
+                                      !           MESSAGES OF THAT MODE
+        BZXE, TP3                    ! line 8  -
+TP5A1   L, TABSCH(TXB), -60          ! line 9  -LOAD FOR ABS CHANNEL
+                                      !           CONVERSION   (card: $L)
+        -(BU,18), TCHSXW, -60        ! line 10                 (card: $-)
+        SF(BU,18), TIPL+1, -60       ! line 11 -TO SAVE THE CHAN
+                                      !           FOR IPL PRINT (card: $SF)
+        CV(BU,18), 0.0, -32          ! line 12                 (card: $CV)
+        LF(BU,12,4), $L+.20, 1       ! line 13 -CONVERT TO 8 BIT BYTE
+        LFI(BU,2), 3, 5              ! line 14 -GET THE IQS LEAD BITS
+        LFI(BU,2), 3, 13             ! line 15 -GET THE IQS LEAD BITS
+        CM0101, TCHANX               ! line 16
+        C0011, TABSUN(TXB), 1        ! line 18 -GET UNIT NUMBER
+        LFI(BU,2), 3, 5              ! line 19 -GET THE IQS LEAD BITS
+        CM0101(BU,8,8), TUNITX       ! line 20
+        CM1111, TVER(TXC)            ! line 23 -SET THE VERIFY BIT
+        LF, TFREEL(TXB), 46          ! line 24 -GET THE FIRST REEL
+                                      !           ADDRESS
+        BRZ, TPSCR                   ! line 25 -SCRATCH TAPE REQUEST
+        LV, TIXZ, $R                 ! line 26
+        C0011(BU,48,6), TREELN(TIXZ) ! line 28
+        KF, TLBL, 48                 ! line 29 -LOOK FOR A
+                                      !           NON-LABELED TAPE
+        BAE, TP5A2                   ! line 30 -IF A LABELED TAPE
+        CM0000, TVER(TXC)            ! line 31 -RESET THE VERIFY BIT
+TP5A2   SX, $15, TPSAV               ! line 33
+        SF(BU,64,8), TP5IN           ! line 34 -SAVE FOR CONVERSION
+        LVI, $15, TP5A3              ! line 35 -SET UP TO GO TO IQS
+                                      !           CONV RTNE
+        BD, SA8IQS                   ! line 36
+TP5A3   VF, TP5IN                    ! line 37 -FWA IN
+        CF, 8                        ! line 38 -N
+        VF, TP5OUT                   ! line 39 -FWA OUT
+TIPLB2  BE, $+.32                    ! line 40 -MODIFIED BY IPL
+        LF(BU,64,8), TP5OUT          ! line 41 -GET THE CONVERTED WORD
+        SF(BU,40,8), TREELX          ! line 42 -SET UP IQS REEL NUMBER
+        LX, $15, TPSAV               ! line 43 -RESTORE
+        C0011, TMBLK, 64             ! line 45 -GET ACC FULL OF BLANKS
+        CM0101(BU,24,8), TREELX+.40, 64  ! line 46
+        CM0000, TFDISP(TXC)          ! line 47 -SET TO TAPE MOUNTED
+        CM1111, STATI(TXC)           ! line 48 -SET TO TAPE MTED-
+                                      !           SPECIFIC
+        LF(BU,48,6), TREELN(TIXZ)    ! line 49 -RESET ACC FOR REEL
+                                      !           PROTECT TEST
+        B, TP4                       ! line 50
+TPSCR   CT0011(BU,2), STATI(TXC)     ! line 52
+        BRZ, TP3                     ! line 53
+        C0011, TSCRAT                ! line 54 -GET THE SCRATCH TAPE
+                                      !           WORD
+        CM0101, TREELX               ! line 55 -BUILD WORD
+        C0011(BU,6,6), TNOP, 56      ! line 56 -GET NOT FILE PROTECT
+                                      !           MASK
+        END, TP5A
+
+! ---------------------------------------------------------------
+! THE CHECKED ROWS -- all forty-five that compile.  Lines 9-12 are
+! the rows whose cards carry a "$" this deck does not write.
+! ---------------------------------------------------------------
+!   line  5  004511.00  000000.24 1F                   T P5A  LX,TCTWDX,0.0($15)
+!   line  6  004511.40  004513.23 40                   BZXF,TP5A1
+!   line  7  004512.00  003370.05 04                   KVI,TXA,TPURFT
+!   line  8  004512.40  004575.72 C0                   BZXE,TP3
+!   line  9  004513.00  000000.56 83  022042.20 50     T P5A1  $L,TABSCH(TXB),-60
+!   line 10  004514.00  002152.00 80  022042.30 10     $-(BU,18),TCHSXW,-60
+!   line 11  004515.00  003266.01 80  022042.12 F0     $SF(BU,18),TIPL+1,-60
+!   line 12  004516.00  000000.00 80  022060.21 B0     $CV(BU,18),0.0,-32
+!   line 13  004517.00  000010.24 80  014400.46 70     LF(BU,12,4),$L+.20,1
+!   line 14  004520.00  600000.00 80  402002.46 70     LFI(BU,2),3,5
+!   line 15  004521.00  600000.00 80  402006.46 70     LFI(BU,2),3,13
+!   line 16  004522.00  004440.10 80  030000.12 F0     CM0101,TCHANX
+!   line 18  004523.00  000000.07 83  003000.46 70     C0011,TABSUN(TXB),1
+!   line 19  004524.00  600000.00 80  402002.46 70     LFI(BU,2),3,5
+!   line 20  004525.00  004441.20 80  010000.12 F0     CM0101(BU,8,8),TUNITX
+!   line 23  004526.00  000000.50 84  001000.36 F0     CM1111,TVER(TXC)
+!   line 24  004527.00  000000.34 83  022027.06 70     LF,TFREEL(TXB),46
+!   line 25  004530.00  004551.34 C2                   BRZ,TPSCR
+!   line 26  004530.40  000011.12 30                   LV,TIXZ,$R
+!   line 28  004531.00  000000.00 85  060600.06 70     C0011(BU,48,6),TREELN(TIXZ)
+!   line 29  004532.00  004630.74 80  006630.23 10     KF,TLBL,48
+!   line 30  004533.00  004534.76 C2                   BAE,TP5A2
+!   line 31  004533.40  000000.50 84  001000.00 F0     CM0000,TVER(TXC)
+!   line 33  004534.40  004460.37 10                   T P5A2  SX,$15,TPSAV
+!   line 34  004535.00  004456.00 80  000000.12 F0     SF(BU,64,8),TP5IN
+!   line 35  004536.00  004537.37 01                   LVI,$15,TP5A3
+!   line 36  004536.40  002366.04 00                   BD,SA8IQS
+!   line 37  004537.00  004456.00+                     T P5A3  VF,TP5IN
+!   line 38  004537.40  000010                         CF,8
+!   line 39  004540.00  004457.00+                     VF,TP5OUT
+!   line 40  004540.40  004541.00 00                   T IPLB2  BE,$+.32
+!   line 41  004541.00  004457.00 80  000000.06 70     LF(BU,64,8),TP5OUT
+!   line 42  004542.00  004435.50 80  050000.12 F0     SF(BU,40,8),TREELX
+!   line 43  004543.00  004460.36 10                   LX,$15,TPSAV
+!   line 45  004543.40  004431.00 80  000040.06 70     C0011,TMBLK,64
+!   line 46  004544.40  004436.20 80  030040.12 F0     CM0101(BU,24,8),TREELX+.40,64
+!   line 47  004545.40  000000.33 84  001000.00 F0     CM0000,TFDISP(TXC)
+!   line 48  004546.40  000000.32 84  001000.36 F0     CM1111,STATI(TXC)
+!   line 49  004547.40  000000.00 85  060600.06 70     LF(BU,48,6),TREELN(TIXZ)
+!   line 50  004550.40  004556.50 00                   B,TP4
+!   line 52  004551.00  000000.32 84  002000.07 70     T PSCR  CT0011(BU,2),STATI(TXC)
+!   line 53  004552.00  004575.74 C2                   BRZ,TP3
+!   line 54  004552.40  004444.00 80  000000.06 70     C0011,TSCRAT
+!   line 55  004553.40  004435.50 80  000000.12 F0     CM0101,TREELX
+!   line 56  004554.40  004631.02 80  006634.06 70     C0011(BU,6,6),TNOP,56

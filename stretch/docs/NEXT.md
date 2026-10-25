@@ -5416,6 +5416,91 @@ no opcode can rule it out. What ruled it out was the datum the name
 labels — which is a tell worth stating on its own: *when a name
 labels data, decode the data before trusting the name.*
 
+## >>> PRINTED p.78 CARRIES A SYNTAX NO SOURCE DESCRIBES, AND THE DECK SAYS SO — 2026-10-25 <<<
+
+Forty-five compiled rows of fifty-six lines, all bit-exact. Seven
+measured injections. It builds the mounting message p.76 holds the
+buffers for: channel and unit numbers converted to IQS characters,
+the reel number through the same routine p.77 calls, and the tape's
+mounted/verify/scratch bits.
+
+### Four rows carry a `$` before the operation
+
+```
+line  9   T P5A1  $L,T ABSCH(T XB),-60
+line 10           $-(BU,18),T CHSXW,-60
+line 11           $SF(BU,18),T IPL+1,-60
+line 12           $CV(BU,18),0.0,-32
+```
+
+Confirmed at 1200 dpi: the `$` is the first character of the
+**operation** field, on four consecutive rows and nowhere else.
+**This deck writes `L`, `-`, `SF`, `CV`.**
+
+**Nothing describes it.** C28-6129 printed pp.3-4 give all *twelve*
+STRAP-II instruction formats, from `OP, A` outward, and not one has
+a prefix on the operation. Its April 1963 bulletin itemises the
+additions to Appendix C and lists none.
+`c22_6531_appendix_a.md`'s eight footnotes are the mnemonic grammar
+and are all about **suffixes** — its only `$` rule is that a *system
+symbol* must be prefixed by `$`, which is the `$L` on line 13, an
+operand. C22-6729's Appendix B is the complete list of additional
+instructions and pseudo-ops STRAP II accepts; Appendix D is STRAP
+II's own internal naming convention. Both empty.
+
+**And the coprocessor lead does not fit.** C22-6729 p.180 lets Pass
+1 hand an *illegal operation code* to an installation subroutine —
+which would admit an undocumented operation — but that is an error
+path and STRAP II would have flagged the row. These four compiled
+to correct machine code with no error indication. **STRAP II
+understood them.**
+
+**So the question became: is it safe to drop a character I cannot
+explain?** Only with a measurement, and only with all four:
+
+```
+line  9  L,T ABSCH(T XB),-60     022042.20 50   PASS
+line 10  -(BU,18),T CHSXW,-60    022042.30 10   PASS
+line 11  SF(BU,18),T IPL+1,-60   022042.12 F0   PASS
+line 12  CV(BU,18),0.0,-32       022060.21 B0   PASS
+```
+
+Two operation classes, four different second-group bytes, and line
+10 is a written minus carrying its `.30`. I had compared **one** of
+them against a twin on another page and was ready to call it
+settled; one row is a coincidence, four across three encodings is a
+measurement.
+
+> The deck is bit-exact and asserts nothing about what `$` means.
+> That is not inferring an instruction's meaning from listing usage
+> — it is declining to represent a character that cannot be
+> explained, with the evidence for why that is safe written out in
+> the deck header, the verifier docstring and `run_tests.sh`. **If
+> the meaning turns up, lines 9-12 are named in all three places.**
+> And the assembler was not touched: every entry in that file is a
+> citation, and an uncited construct does not belong in it.
+
+### What the page explained instead
+
+The negative offsets, which looked like part of the mystery, are
+nothing of the kind — and chasing them produced the session's best
+structural finding, written up above: **the VFL offset is seven
+bits, and bit 18 of the second group is its low bit.** `-60`
+compiles to `042` because −60 in seven-bit two's complement is 68,
+and 68 ≫ 1 is `042`. C28-6129's format 7 says `OF₇` and the listing
+agrees.
+
+**A third pair sharing a byte.** Line 12's `CV` compiles `.21 B0`
+and p.73 line 55's `M+1` compiles `.22 B0`. `CV` is operation 27 and
+`M+1` is 43; both have `1011` in their low four bits, so both print
+`B0`, and the 16 and the 32 are bits 23 and 22. p.72's `*` and `M+`
+were the first such pair, and the encoding model has not needed a
+change since p.73.
+
+`T P5A` and `T IPLB2` were already stand-ins — p.77 line 38 branches
+to `T P5A`, and p.77's `T IPLB1` is this page's `T IPLB2`'s twin,
+both `BE,$+.32  -MODIFIED BY IPL` — and both agree.
+
 ## >>> THE "HALVED OFFSET" IS A SEVEN-BIT FIELD, AND BIT 18 IS ITS LOW BIT — 2026-10-25 <<<
 
 For dozens of transcribed pages the printed second group's low octal
@@ -5756,10 +5841,11 @@ at 60 pages and 32 externals (predicted exactly). `T SCRIB`, four
 of p.75's dispatch exits, and printed p.47's linkage format used for
 real.
 
-**printed p.78** — 004511.00-004554.40, 56 lines, *CONVERT THE
-CHANNEL FIELDS*. **BLOCKED ON A PRIMARY SOURCE, and the search so
-far has come up empty.** Lines 9-12 carry a syntax no page in this
-corpus has used:
+**printed p.78** — **LANDED**, 45/45 rows, seven injections.
+*CONVERT THE CHANNEL FIELDS*. It was held back for most of a day on
+a primary source that does not exist; the resolution and the
+evidence are the entry above. Lines 9-12 carry a syntax no page in
+this corpus has used:
 
 ```
 T P5A1  $L,T ABSCH(T XB),-60
@@ -5796,14 +5882,12 @@ is `L,T ABSCH(T XB),46` compiling `000000.56 83  022027.20 50`, and
 p.78 line 9 is `$L,T ABSCH(T XB),-60` compiling
 `000000.56 83  022042.20 50`. Identical but for the offset field.
 
-> **That is exactly the situation Rule 4 exists for.** The temptation
-> is to write `L` for `$L`, get fifty bit-exact rows, and move on —
-> and the deck would then assert, silently and without evidence,
-> that the prefix means nothing. It might mean something STRAP
-> records elsewhere (a listing control, a relocation flag, a
-> programmer's convention the assembler ignores) and the one thing
-> that is certain is that **this listing cannot tell us which**.
-> p.78 waits for a source.
+> **That is exactly the situation Rule 4 exists for** — and the
+> resolution was not to guess and not to stop, but to *measure every
+> instance* and then say in the deck, the verifier and the suite
+> exactly what was dropped and why it is safe. The silent version of
+> this — write `L`, collect the bit-exact rows, move on — is what
+> Rule 4 forbids. The loud version is what shipped.
 
 **Also checked and empty**, same day: C22-6729 (the STRAP-II System
 Analysis Guide) **Appendix B — "Additional Instructions and
