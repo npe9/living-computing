@@ -1,0 +1,1088 @@
+
+===== X22-6533_7030_PocketCard PDF page 1 =====
+STRAP MNEMONIC OPERATION CODES
+
+TRANSMIT--Strap Format: OP, J,A1(I1),A2(12)
+
+SWAP Swap
+
+SWAPI Swap Immediate
+
+SWAPB Swap Backward
+
+SWAPBI Swap Backward Immediate
+
+T Transmit
+
+TI Transmit Immediate
+
+TB Transmit Backward
+
+TBI Transmit Backward Immediate
+
+IBM 7030 Reference Card
+
+X22-6533-1
+Printed in U.S.A.
+
+INDICATOR LIST
+
+CB(+, -, H)
+
+CBR(+, -, H)
+CBZ(+, -, H)
+CBRZ(+, -, 1)
+
+COUNT AND BRANCH--Strap Format: OP, J,A(K)
+
+Count and Branch
+
+Count, Branch and Refill
+
+Count and Branch on Zero Count
+
+Count, Branch on Zero Count, and Refill
+
++ = Add one to value. - =
+H_= Add half to value. K = Index register 1 only.
+
+v-Ic*
+VCR
+
+I = Immediate modifier.
+
+progressive indexing.
+
+INDEX ARITHMETIC--Strap Format: OP, J, A(I)
+
+C+ Add Immediate to Count
+
+C-l Subtract Immediate from Count
+KC(I) Compare Count
+
+KV(I, ND Compare Value
+
+LC) Load Count
+
+LR(I) Load Refill
+
+LV(I, NI) Load Value
+
+LVE Load Value Effective
+
+LVS Load Value with Sum
+
+LX Load Index
+
+RNX Rename
+
+sc Store Count
+
+SR Store Refill
+
+SV Store Value
+
+SVA Store Value in Address
+
+SX Store Index
+
+Vt Add to Value
+
+V+C Add to Value and Count
+
+V+CR Add to Value, Count and Refill
+V+I* Add Immediate to Value
+
+V+IC* Add Immediate to Value and Count
+V+ICR* Add Immediate to Value, Count and Refill
+
+V-I* Subtract Immediate from Value
+Subtract Immediate from Value and Count
+Subtract Immediate from Value, Count, Refill __d
+
+NI = Negative immediate modifier.
+
+* These codes may indicate immediate indexing or (in OP2)
+
+b = Read operation only.
+
+P = Permanently protected area of storage, a = Read only except
+for store value, store count, store refill, and store address.
+
+SPECIAL STORAGE ASSIGNMENT Bit
+Location Name Length Positions
+0 Zero 64 0-63
+1,P,a Interval Timer 19 0-18
+1,P,b Time Clock 36 28-63
+2,P Interruption Address 18 0-17
+3,P Upper Boundary 18 0-17
+3,P Lower Boundary 18 32-49
+3,P Boundary Control Bit 1 57
+4 Maintenance Bits 64 0-63
+5,b Channel Address 7 12-18
+6 Other CPU Bits 19 0-18
+7 Left Zeros Count 7 17-23
+7 All Ones Count 7 44-50
+8 Left Half of Accumulator 64 0-63
+9 Right Half of Accumulator 64 0-63
+10 Accumulator Sign Byte 8 0-7
+ll,e Indicators 64 0-63
+12,d Mask 64 0-63
+13 Remainder 64 0-63
+14 Factor 64 0-63
+15 Transit 64 0-63
+16-31 Index Registers X0-X15 64 0-63
+
+c » Bit positions 0-19 are read only.
+
+d= Bit positions 0-19 arc always ones, 48-63 arc always zeros.
+
+otherwise class C.
+
+execution will be completed.
+
+cept with EX, EXIC, T, SWAP.
+
+Name
+Machine Check
+Instruction Check
+Instruction Reject
+Exchange Control Check
+Time Signal
+CPU Signal
+Exchange Check Reject
+Unit Not Ready Reject
+Channel Busy Reject
+Exchange Program Check
+Unit Check
+End Exception
+End of Operation
+Channel Signal
+Reserved
+Operation Code Invalid
+Address Invalid
+Unended Sequence of Addresses
+Execute Exception
+Data Store
+Data Fetch
+Instruction Fetch
+
+Lost Carry
+
+Partial Field
+
+Zero Divisor
+
+Imaginary Root
+
+Lost Significance
+
+Preparatory Shift Greater than 48
+Exp. Flag Positive: Exp. > 210
+Exp. Overflow: Exp. > 210
+Exp,High: 2°° > Exp. = 28
+
+Exp. Low: 29 >Exp. = 26
+
+Exp. Underflow: Exp. = 21
+Exp. Flag Negative: Exp. = -210
+Remainder Underflow: Exp. <-219
+
+Data Flag T ] reset by VFL and
+Data Flag U } floating point oper.
+Data Flag V J which require a
+
+data fetch.
+Index flag-reset by index oper.
+
+No. Mnemonic Mask Class
+0 MK 1 PH
+1 IK 1 PH
+2 IJ 1 P,s
+3 EK 1 Pc
+4 TS 1 P,C
+5 CPUS 1 P,C
+6 EKJ 1 P,S
+7 UNRJ 1 P,S
+8 CBI 1 P,S
+9 EPGK 1 P,C
+10 UK 1 P,c
+11 EE 1 Pic
+12 EOP 1 P,c
+13 cs 1 P,C
+14 oo 1
+
+15 OP 1 P,s
+16 AD 1 P,S
+17 USA 1 P,S
+18 EXE 1 P,Ss
+19 DS 1 P,S
+20 DF m P,*
+21 IF m P*
+* Class S when mask is one; otherwise class C.
+22 LC m P,C
+23 PF m P,C
+24 ZD m P,C
+25 IR m P,C
+26 LS m P,c
+27 PSH m P,c
+28 XPFP m P,C
+29 XPO m P,c
+30 XPH m P,c
+31 XPL m P,C
+32 XPU m P,C
+33 ZM m P,C
+34 RU m P,C
+35 TF m T,C
+36 UF m T,C
+37 VF m T,C
+38 XF m T*
+
+* Class $ with index branching and a one mask and system enabled;
+
+Binary Transit
+
+Decimal Transit
+
+Program Indicators 0-6
+
+Index Count 0 } reset by index
+Index Value 0 | arithmetic oper-
+Index Value 0 [ ations other than
+
+Index Value 0 J] comparisons.
+Index Low reset by index
+Index Equal } comparisons
+Index High operations.
+
+To-Memory Operation*
+
+Result 0 | reset by VFL or
+Result 0 | floating point
+Result 0 + operations except
+Result
+Negative
+Accumulator Low [comp by
+
+comparisons
+
+Accumulator Equal } comparison
+Accumulator High J operations.
+Noisy Mode
+
+39 BTR m P,C
+40 DTR m Pc
+41-47 PGO-PG6 m P,Cc
+48 XCZ 0 T,C
+49 XVLZ 0 T,C
+50 XVZ 0 T,c
+51 XVGZ 0 T,Cc
+52 XL 0 T,c
+53 XE 0 T,C
+54 XH 0 T,Cc
+55 MOP 0 T,C
+* Reset by variable field or floating point operations.
+56 RLZ 0 T,C
+57 RZ 0 T,C
+58 RGZ 0 T,C
+59 RN 0 T,Cc
+60 AL 0 T,Cc
+61 AE 0 T,C
+62 Ali 0 T,C
+63 NM 0 P,C
+
+T = Indicator temporary-reset by later operations.
+permanent-turned off by interruption or BI. C = When set, instruction
+If = When set, instruction execution is
+terminated. S$ =~ When set, execution of instruction is suppressed ex
+
+P = Indicator
+
+
+===== X22-6533_7030_PocketCard PDF page 2 =====
+ALPHABETICAL LIST OF MNEMONIC CODES
+
+OPERATION CODES
+
++MG
+
+-MG
+
+wn
+
+BB
+BD
+BE
+BEW
+BI
+BR
+
+C+l
+CB
+CBR
+CCW
+cM
+
+CTL
+CV
+D+
+D+MG
+D-
+D-MG
+D*
+D/
+DCV
+
+DLWF
+E+
+
+EX
+EXIC
+
+F+
+F-
+
+KC
+
+KE
+
+KF
+KFE
+KFR
+KMG
+KMGR
+
+KR
+KV
+
+Add
+
+Add to Magnitude
+
+Subtract
+
+Subtract Magnitude
+
+Multiply
+
+Multiply and Add
+
+Divide
+
+Branch
+
+Branch on Bit
+
+Branch Disabled
+
+Branch Enabled
+
+Branch Enabled and Wait
+
+Branch on Indicator
+
+Branch Relative
+
+Connect
+
+Add Immediate to Count
+
+Count and Branch
+
+Count, Branch and Refill
+
+Copy Control Word
+
+Connect to Memory
+
+Connect for Test
+
+Control
+
+Convert
+
+Add Double
+
+Add Double to Magnitude
+
+Subtract Double
+
+Subtract Double from Mag,
+
+Multiply Double
+
+Divide Double
+
+Convert Double
+
+Load Double
+
+Load Double with Flag
+
+Add to Exponent
+
+Subtract from Exponent
+
+Execute
+
+Execute Indirect and
+Count
+
+Add to Fraction
+
+Subtract from Fraction
+
+Compare
+
+Compare Count
+
+Compare if Equal
+
+Compare Field
+
+Compare Field if Equal
+
+Compare Field for Range
+
+Compare Magnitude
+
+Compare Magnitude for
+Range
+
+Compare for Range
+
+Compare Value
+
+L
+
+LC
+LCV
+LF
+LET
+LOC
+LR
+LTRCV
+LTRS
+LV
+LVE
+LVS
+LWF
+LX
+M+
+M+MG
+M+
+M-
+M-1
+
+M-MG
+
+NOP
+R
+R/
+RCZ
+RD
+
+SLO
+SR
+SRD
+SRT
+ST
+
+SV
+SVA
+SWAP
+SX
+
+V+
+V+C
+VtCR
+WwW
+
+Z
+
+Load
+
+Load Count
+
+Load Converted
+
+Load Field
+
+Load Factor
+
+Locate
+
+Load Refill
+
+Load Transit Converted
+
+Load Transit and Set
+
+Load Value
+
+Load Value Effective
+
+Load Value with Sum
+
+Load with Flag
+
+Load Index
+
+Add to Memory
+
+Add Mag. to Memory
+
+Add One to Memory
+
+Subtract from Memory
+
+Subtract One from
+Memory
+
+Subtract Mag. from
+Memory
+
+No Operation
+
+Refill
+
+Reciprocal Divide
+
+Refill on Count Zero
+
+Read
+
+Release
+
+Rename
+
+Store Count
+
+Suppress End of Op.
+
+Store Field
+
+Shift Fraction
+
+Store Instruction Counter
+If
+
+Store Low Order
+
+Store Refill
+
+Store Rounded
+
+Store Root
+
+Store
+
+Store Value
+
+Store Value in Address
+
+Swap
+
+Store Index
+
+Transmit
+
+Add to Value
+
+Add to Value and Count
+
+Add to Value, Count, Refill
+
+Write
+
+Store Zero
+
+INTEGER ARITHMETIC
+
+ADDRESS f |000| I | LENCTHs orrser|s op 4] |
+0 18 24 28 «3235 41 44 Si 60 63
+
++ Add abcO0000L
++MG Add to Magnitude abc100001
+L Load abc000101
+LWF Load with Flag abc100101
+M+ Add to Memory abc001001
+M+MG Add Magnitude to Memory abe101001
+M+L Add One to Memory abe101011
+sT Store abe001101
+SRD Store Rounded abe101101
+K Compare abc010001
+KF Compare Field abe110001
+KE Compare if Equal abe010011
+KFE Compare Field if Equal abel10011
+KR Compare for Range abc010101
+KFR Compare Field for Range abe110101
+LTRS Load Transit and Set abe111101
+* Multiply abc011001
+LFT Load Factor abc001011
+At Multiply and Add abel11001
+/ Divide abe011101
+RADIX CONVERSION
+
+LCV Load Converted abc000011
+LTRCV Load Transit Converted abc100011
+CV Convert abc011011
+DCV Convert Double abc111011
+
+Instruction Modifiers = abe
+c =0, binary operation
+a =1, data unsigned
+
+a =0, data signed
+b =0, same sign
+
+b=1, invert sign
+c=1, decimal operation
+
+CONNECTIVES
+
+Symbolic Representation
+of Logical Function
+
+OBADTAKRWNR OS
+
+Result Bit for
+Operand Bit Combinations
+malma|lma]ma
+Ooo;o1;/10}11
+
+0 0 0 0
+0 0 0 1
+0 0 1 0
+0 0 1 1
+0 1 0 0
+0 1 0 1
+0 1 1 0
+0 1 1 1
+1 id 0 0
+1 0 0 1
+1 0 1 0
+1 0 1 1
+1 1 0 0
+1 1 0 1
+1 1 1 0
+| 1 1 1
+
+B38
+T=)
+
+3
+<ctee
+BoE P
+
+B83
+
+a
+
+a
+a
+
+5
+
+BIg
+
+CONNECTIVES
+Cc Connect xxxx00111
+CM Connect to Memory xxxx01111
+CT Connect for Test xxxx10111
+xxxx = One of 16 logical functions
+VARIABLE FIELD LENGTH INDEXING
+Normal Address Modification ppp field
+Direct Addressing 000
+I (suffix) Immediate Addressing 100
+Progressive Indexing
+Vl Add to Value 001
+V+IC Add to Value and Count 010
+VHCR Add to Value, Count and Refill 011
+V-I Subtract from Value 101
+V-IC Subtract from Value and Count 110
+V-ICR Sub, from Value, Count and
+Refill lil
+DIRECT INDEX ARITHMETIC
+ADDRESS | J lor | I |
+0 19 23 28 31
+LX Load Index 00001
+LV Load Value 00011
+LC Load Count 00101
+LR Load Refill 00111
+SX Store Index 10001
+SV Store Value 10011
+SC Store Count 10101
+sR Store Refill 10111
+V+ Add to Value 01011
+V+C Add to Value and Count 01101
+V+CR Add to Value, Count and Refill 01111
+KV Compare Value 01001
+KC Compare Count 11001
+RNX Rename 11111
+LVE Toad Value Effective Hloll
+SVA Store Value in Address LLLOL
+
+
+===== X22-6533_7030_PocketCard PDF page 3 =====
+OPERATION CODES
+
+OPERATION CODES
+
+FLOATING POINT ARITHMETIC
+hs | |
+Chan OP jo I
+
+ADDRESS
+18 21 28 31
+
++ Add
++MG Add to Magnitude
+L Load
+LWF Load with Flag
+M+ Add to Memory
+M+MG Add Magnitude to Memory
+8T Store
+K Compare
+KMG Compare Magnitude
+KR Compare for Range
+KMGR Compare Magnitude for Range
+* Multiply
+/ Divide
+R/ Reciprocal Divide
+SRT Store Root
+D+ Add Double
+D+MG Add Double to Magnitude
+DL Load Double
+DLWF Load Double with Flag
+SRD Store Rounded
+SLO Store Low Order
+D* Multiply Double
+LFT Load Factor
+Rt Multiply and Add
+D/ Divide Double
+F+ Add to Fraction
+SHF Shift Fraction
+E+ Add to Exponent
+E+T Add Immediate to Exponent
+
+Instruction Modifiers = abe
+a =0, normalized operation
+b =0, same sign
+c =0, same sign
+
+b= 1, absolute sign
+ce=1, invert sign
+
+abc0000010
+abc010001C
+abc0000110
+abc0100110
+abc0001010
+abc0101010
+abc0001110
+abc0010010
+abc0110010
+abc0010110
+abc0110110
+abe0011010
+abe0011110
+abc0111110
+abe1101110
+abe1000010
+abc1100010
+abc1000110
+abe1100110
+abe0101110
+abc1001110
+abe1011010
+abe1001010
+abc0111010
+abe1011110
+abc1010010
+abce1110010
+abc1010110
+abe1110110
+
+a=1, unnormalized operation
+
+INDICATOR BRANCHING
+
+Lean
+1 006 7
+15 3
+
+T
+| ADDRESS IND
+o 1
+
+BI Branch on Indicator 1000ab
+
+Instr'n Modifiers =ab a =0,leave indicator a-=1, setindicatortozero
+b = 0,branch if off b=1, branch if on
+
+BIT_ BRANCHING
+
+T Tu
+ADDRESS {:000] I ADDRESS j {111000000 zn}
+0 18 24 28 32 BRANCHADDRESS Si 63
+BB Branch on Bit 111000000abe
+
+Instr'n Modifiers = abc a=0, leave bit
+(Branch when bit b =0, leave bit
+tested matches) c =0, branch if off
+
+a=l1, invert bit
+b =1, set bit to zero
+ec =1,branch if on
+
+INDEX BRANCHING
+
+T
+ADDRESS F | J [vjootpe
+19 23 31
+CB Count and Branch ab10010¢
+CBR Count, Branch, and Refill ab10011e
+
+Instr'n Modifiers = abe
+ab = 00, leave value unchanged
+ab = 01, add half to value
+ab = 10, add one to value
+
+ab = 11, subtract one from value
+c = 0, branch if count non-zero
+c =1, branch if count zero
+
+STORE INSTRUCTION COUNTER IF
+
+T T
+ADDRESS. L {000 | I | ADDRESS l | OP |
+18 24 28 32BRANCHADDRESS 51 63
+SIC Store Instruction Counter If 1000
+
+TRANSMIT OPERATIONS
+
+q FDI
+ADDRESS 000] I ADDRESS vf 2 [arto Ft
+0 18 24 «2832 51°55 60 63
+SWAP Swap ab110
+T Transmit ab010
+
+Instr'n Modifiers = ab a = 0,forward a=1, backward
+b = 0,direct count b=1, immediate count
+
+IMMEDIATE INDEX ARITHMETIC
+
+T T
+[ ADDRESS aE [10000 oP |
+
+19 23 28 31
+
+LVI Load Value Immediate
+
+LCI Load Count Immediate
+
+LRI Load Refill Immediate
+
+LVNI Load Value Negative Immediate
+Vsi Add Immediate to Value
+
+V+IC Add Immediate to Value and Count
+
+V+HICR Add Immediate to Value, Count, Refill
+V-I Subtract Immediate from Value
+
+V-IC Sub. Immediate from Value and Count
+V-ICR Sub, Imm. from Value, Count, Refill
+C+ Add Immediate to Count
+
+C-I Subtract Immediate from Count
+
+KVI Compare Value Immediate
+
+KVNI Compare Value Negative Immediate
+KCI Compare Count Immediate
+
+LVS Load Value with Sum
+
+UNCONDITIONAL BRANCHING
+
+T T T
+[ ADDRESS lL [or ,oo0009 : |
+19 22 28 31
+B Branch
+BR Branch Relative
+BE Branch Enabled
+BD Branch Disabled
+BEW Branch Enabled and Wait
+
+NOP No Operation
+
+010006000
+011006000
+000000000
+001000000
+100000000
+
+110000000
+
+INPUT-OUTPUT OPERATIONS
+T T
+| or 10009] I
+
+[ ADDRESS | I | ADDRESS
+
+© CHANNEL ADDRESS 18 24 2832 5k 60 63
+RD Read 10
+WwW Write
+CTL Control
+LOC Locate
+REL Release
+RDSEOP Read SEOP
+WSEOP Write SEOP
+CTLSEOP Control SEOP
+LOCSEOP Locate SEOP
+RELSEOP Release SEOP
+CCW Copy Control Word
+MISCELLANEOUS OPERATIONS
+ADDRESS lor 100009] I
+ft) 19 22
+R Refill
+RCZ Refill on Count Zero
+EX Execute
+EXIC Execute Indirect Count 011190000
+Z Store Zero 100100000.
+INDEX WORD FORMAT
+| VALUE oF COUNT | REFILL |
+fa) 18 25 28 46 63
+CONTROL WORD FORMAT.
+[para WORD ADDRESS STATUS fags COUNT | REFILL FIELD |
+° 18 251 128 46 63
+
+i
+27 SKIP
+
+~+-26 MULT IPLE
+
+‘
+t
+IL
+
+I
+i
+'
+'
+L
+
+- - -- CHAIN
+
+
+===== X22-6533_7030_PocketCard PDF page 4 =====
+STRAP MNEMONIC OPERATION CODES STRAP MNEMONIC OPERATION CODES
+FLOATING POINT--Strap Format: OP(dds), A(f}. dds=N,normalized
+
+INPUT-OUTPUT--Strap Format: OP1(OP2), C(I1), A(I2)
+
+Mnemonic Name or U, unnormalized BS(SEOP)* Backspace
+
++(A) Add CCW Copy Control Word
+
++MG(A) Add to Magnitude CRDRUN Card Run-Out
+
+-(A) Subtract CTL Control
+
+-MG(A) Subtract from Magnitude ECC ECC (and odd parity for tape)
+
+*(N,A,NA) Multiply ERG Erase Gap
+
+Multiply and Add EVEN Even Parity No ECC (tape only)
+
+FAL Multiply Absolute and Add GONG Sound Gong
+
+*N+ Multiply Negative and Add HD High Density
+
+ANAT Multiply Negative Absolute and Add KLN Check Light On
+
+/(N, A, NA) Divide LD Low Density
+
+B Branch LOC Locate (same as select unit)
+
+BD Branch Disabled NOECC No ECC, even Parity (tape only)
+
+BE Branch Enabled ODDECC Odd Parity, ECC
+
+BEW Branch Enabled and Wait ODDNEC Odd Parity, No ECC
+
+BR Branch Relative RD Read
+
+D+(A) Add Double REL Release Channel
+
+D+MG(A) Add Double to Magnitude REW Rewind
+
+D-(A) Subtract Double RLF Reserved Light Off
+
+D-MG(A) Subtract Double from Magnitude RLN Reserved Light On
+
+DL(N, A, NA) Load Double sp Space
+
+DLWF(N,A, NA) Load Double with Flag SPFL Space File *SEOP (suppress end of
+D*(N, A, NA) Multiply Double TILF Tape Indicator Light Off operation) may be used as
+D/(N, A, NA) Divide Double UNLOAD Unload a secondary operation code
+E+(A) Add to Exponent Ww Write with all T-O codes except
+Et] Add Immediate to Exponent WEF Write End of File cCw
+
+EtaAl Add Immediate Absolute to Exponent
+
+E-(A) Subtract from Exponent
+
+E-} Subtract Immediate from Exponent
+
+VARIABLE FIELD LENGTH--Strap Format: OP1(OP2)(dds), A(I1),
+
+E-AI Subtract Absolute Immediate from Exponent OFFSET(I2) dds = mode, field length,
+EX Execute byte size where mode = (B, BU,D,DU, P)
+EXIC Execute Indirect and Count +() Add
+F+(A) Add to Fraction +MG(D) Add to Magnitude
+F-{A) Subtract from Fraction -(I) Subtract
+K(N, A, NA) Compare -MG(D Subtract from Magnitude
+KMG(N, A, NA) Compare Magnitude *(1,N, ND Multiply
+KR(N, A, NA) Compare for Range ee Multiply and Add
+KMGR(N,A, NA) Compare Magnitude for Range aaen Multiply Immediate and Add
+L(N, A, NA) Load AN+ Multiply Negative and Add
+LFT(N, A, NA) Load Factor *NI+ Multiply Negative Immediate and Add
+LWF(N,A, NA) Load with Flag /(1,N, NT) Divide
+M+ Add to Memory C(xxxx, I) Connect
+MtaA Add to Absolute Memory CM(xxxx) Connect to Memory
+M+MG(A) Add Magnitude to Memory CT (xxxx, I) Connect for Test
+M- Subtract from Memory CV(N) Convert
+M-A Subtract from Absolute Memory DCV(N) Convert Double
+M-MG(A) Subtract Magnitude from Memory K(I,N, NI) Compare
+NOP No Operation KE(I, N, NI) Compare if Equal
+R Refill KF(I,N, NI) Compare Field
+RCZ Refill on Count Zero KFE(I, N, NI) Compare Field if Equal
+R/(N, A, NA) Reciprocal Divide KFR(I, N, NI) Compare Field for Range
+SHF(N, A, NA) Shift Fraction : KRd,N, NI) Compare for Range
+SHFL Shift Fraction Left L(I, N, NI) Load
+SHFR Shift Fraction Right LCV(I, N, NI) Load Converted
+SIC Store Instruction Counter If-- LF Load Field
+SLO(N, A, NA) Store Low Order N = Negative sign modifier LFT(I, N, NY) Load Factor
+SRT(A) Store Root A = Absolute sign modifier LTRCV(I,N, ND Load Transit Converted
+SNRT(A) Store Negative Poot | NA = Negative sign modifier LTRS(, N, NI) Load Transit and Set
+SRD(N, A, NA) Store Rounded with absolute sign modifier LWF (I, N, NI) Load with Flag
+ST(N,A,NA) Store (Only one of these modifiers M+ Add to Memory
+Z Store Zero may be used at one time) M+1 Add One to Memory
+M+MG Add Magnitude to Memory
+BRANCH ON BIT--Strap Format: OP,B, (1), A(K) va Subtract from Memory
+BB Branch on Bit M-1 Subtract One from Memory
+: M-MG Subtract Magnitude from Memory
+BBL Branch on Bit and Set to One sK Store Field
+BBN Branch on Bit and Negate SRD(N) Store Rounded
+BBZ Branch on Bit and Zero ST(N) Store
+BZB Branch on Zero Bit; 2 ee ee ee
+BZBI Branch on Zero Bit and Set to One T~ Immediate addressing. N = Negative sign modifier.
+BZBN Branch on Zero Bit and Negnte NI. Negative sign modifier with immediate addressing.
+
+BABZ Branch on Zero Bit and Zero
+
+xxxx One of the 16 conncetive combinations,
+

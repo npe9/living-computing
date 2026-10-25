@@ -3017,6 +3017,7 @@ function ActionValue#(VflOutcome)
             end
           end
           default: begin
+            $display("StretchCore:   OP site = vflIntOp/unimplemented-code");
             ind = setOpInvalid(ind);
             vflOk = False;
           end
@@ -3128,6 +3129,7 @@ function ActionValue#(VflOutcome)
       Bool isProgressive = (cn.a.p != 0 && cn.a.p != 4);
       Bool immediate = (cn.a.p == 4);
       if (isProgressive && cn.a.i1 == 0) begin
+        $display("StretchCore:   OP site = conn/progressive-with-index-0");
         ind = setOpInvalid(ind);
       end else if (cn.suffix == conn_CM && immediate) begin
         // CM + immediate: "Immediate addressing is not possible in
@@ -3135,6 +3137,7 @@ function ActionValue#(VflOutcome)
         // operation is not performed and the OP indicator is turned
         // on" (p.56) -- same rule already enforced for VflInt's
         // ST/M+ above.
+        $display("StretchCore:   OP site = conn/CM-immediate");
         ind = setOpInvalid(ind);
       end else begin
         Bit#(7) len_ = effLength(cn.a.length);
@@ -3230,6 +3233,13 @@ function ActionValue#(VflOutcome)
         if (cn.suffix == conn_CM && fieldCrosses(ea, len_)) begin
           // CM writing a crossing field: same single-word-write
           // limitation as VflInt's ST/M+ (writeField's precondition).
+          // The length and offset are printed because THAT IS WHAT
+          // CAUGHT THE 2026-10-25 IMAGE BUG: three CM1111 rows came
+          // through with rawlen=0 (which effLength reads as 64) where
+          // the assembled word has 1, and the numbers are what showed
+          // the fault was in the MERGED IMAGE and not in this guard.
+          $display("StretchCore:   OP site = conn/CM-crossing-field  len=%0d off=%0d",
+                   len_, baBit(ea));
           ind = setOpInvalid(ind);
           vflOk = False;
         end else if (cn.suffix == conn_CM && vflNeedsRefill) begin
@@ -4471,6 +4481,38 @@ function ActionValue#(ExecResult)
     HWordAddr fallthrough = pc + ((len == Full) ? 2 : 1);
     HWordAddr next = fallthrough;
     Word64 ind = st.readIndicators();
+    // THE OP LOCATOR, docs/NEXT.md's recommended tool rather than
+    // another probe.  `ind` is committed exactly once per instruction,
+    // at this function's single `st.setIndicatorBits(ind)` below, so
+    // comparing the committed word against this entry snapshot names
+    // the instruction that set OP -- which the OP TRAIL CANNOT: that
+    // trail reports the INSTRUCTION UNIT's pc, and this model has a
+    // look-ahead, so getPC() can be running ahead of the operation
+    // that set the bit.  See the 2026-10-23 attempt in docs/NEXT.md
+    // for why a one-instruction probe deck did not settle it.
+    //
+    // Bit 48 is IBM indicator 15, OP: setBit shifts by 63 - n.
+    //
+    // IT REPORTS THE RISING EDGE ONLY, AND THAT IS DELIBERATE AFTER A
+    // MISTAKE WORTH RECORDING.  A version of this ran the arms with OP
+    // CLEARED and ORed the entry value back at the commit, so that
+    // every refusal printed and not merely the first -- which is what
+    // produced the census in docs/NEXT.md.  It was reverted the same
+    // day because IT IS NOT BEHAVIOUR-NEUTRAL: the indicator-branch
+    // arm reads `ind0[63 - bi.indNum]` at a DYNAMIC index, so a
+    // program that branches on indicator 15 reads the very bit that
+    // version cleared.  decks/swap_scope.strap and the VFL
+    // cross-store deck both do, and both ran past their step cap.
+    //
+    // The reasoning that justified it was "`ind_OP` appears once in
+    // this file and nothing reads it" -- a grep for a NAME used to
+    // conclude something about a BEHAVIOUR.  The bit is read by
+    // number, not by name.
+    //
+    // So a refusal raised while OP is already high still leaves no
+    // edge here.  To take a full census, instrument a scratch build;
+    // do not change what the arms see.
+    Word64 indEntry = ind;
 
     // IF, p.32 CLASS 1: "The location of each instruction to be
     // executed with the exception of the single instructions at the
@@ -5778,6 +5820,11 @@ function ActionValue#(ExecResult)
         end
       end
       if (doIdxWrite) st.writeIndex(idxWriteReg, idxWriteVal);
+      // The OP locator's report (see `indEntry` at the top of this
+      // function).  Bit 48 is IBM indicator 15, OP: setBit shifts by
+      // 63 - n.  Rising edge only -- see the note above.
+      if (ind[48] == 1 && indEntry[48] == 0)
+        $display("StretchCore: OP SET by the instruction at half-word %0d", pc);
       st.setIndicatorBits(ind);
       return tuple5(next, vflPending, ioStart, tagged Invalid, xmitStart);
     end else begin

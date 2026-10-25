@@ -5847,6 +5847,57 @@ run "LOOK AHEAD -N- JOBS, printed p.80, bit-exact (MCP_Mar63 PDF p.87)" python3 
 # 004621.40 (both real addresses in the image); V+ICR -> V+IC, 1
 # FAIL at 004625.00; and YSCRBT's stand-in moved to T NGATE's bit, 1
 # FAIL at 004617.40.
+run "the MERGE REFUSES a symbol declared with two data descriptions (the 2026-10-25 image bug)" python3 verify_merge_dds_guard.py
+# >>> THE MODEL WAS RIGHT AND THE IMAGE WAS WRONG. <<<  The OP locator
+# reported three "CM1111,<bit>(index)" rows refused as crossing-field
+# writes, on printed pp.66, 75 and 80.  A ONE-BIT FIELD CANNOT CROSS A
+# WORD, so this looked like a model bug for an hour.  It was not.
+#
+# The decoded connective at the guard read "rawlen=0 len=64 off=37
+# addr=37 i1=3 p=0 conn=15" -- every field matching the ASSEMBLED word
+# except the length, which is 1 there.  A run-time probe of memory
+# returned the MERGED IMAGE's word, not the deck's.  So the model
+# decoded correctly, effLength(0) read 64 as it is written to, and the
+# guard refused a 64-bit connective at offset 37 CORRECTLY.
+#
+# THE CAUSE WAS ONE SYMBOL WITH TWO DECLARATIONS.  printed p.62 line
+# 11 declares "T JBPRO SYN(BU,1),0.36"; three other decks declared
+# "T JBPRO SYN,0.36" with the dds left off -- correctly for those
+# pages, which only BRANCH on the bit, and a branch never uses a
+# length.  printed p.80 line 24 is "CM1111,T JBPRO(T IXG)" and writes
+# no dds, so it takes its length FROM THE SYMBOL (C22-6531 printed
+# p.31).
+#
+# EVERY DECK STILL VERIFIED BIT-FOR-BIT, because within one deck a
+# symbol has exactly one declaration.  Only the merge saw both, took
+# the one without the dds, and compiled length 0.  Three instructions
+# across three pages were silently wrong in the image while every
+# page-level test passed -- AND THE THREE ARE MCP RECORDING ITS OWN
+# DECISIONS: set the reject bit, set the job processed bit.
+#
+# mcp_image.merge() compared ADDRESSES AND NOTHING ELSE and the
+# addresses agreed exactly, so nothing fired.  It now also requires
+# every declaration of a symbol to carry the same data description,
+# and on its first run that guard found SIXTEEN conflicting symbols --
+# more than a hand scan had -- two of them (T INDE 1 vs 2, T MODE 1 vs
+# 6) CONTRADICTORY rather than merely incomplete, and one (T REELN)
+# introduced the same day.
+#
+# A CROSS-PAGE CHECK IS ONLY AS GOOD AS THE FIELDS IT COMPARES.  The
+# merge has been this project's strongest invariant for weeks -- 509
+# stand-ins checked against their definitions on every build -- and it
+# was comparing one field out of two.  When a per-item test passes and
+# the assembled whole misbehaves, suspect the JOIN, and ask what the
+# join does not compare.
+#
+# WHAT THE FIX CHANGED, MEASURED: the three refusals are gone and the
+# locator now reports five, all of them printed p.24's time conversion
+# (the genuinely unimplemented / , CV and LTRCV).  Exactly ONE
+# indicator bit moved, AL -> AH -- the accumulator comparison those
+# three connectives leave behind.  The PC trail, the halt in X6ERR and
+# X ERR AD are unchanged, so the EXHAUSTED ALL CHANNELS halt was NOT
+# an artefact of this.  Fixing a real defect and finding the symptom
+# unchanged is a result: it removes a suspect.
 run "the IOD CARD ROUTINE, printed p.53, bit-exact (MCP_Mar63 PDF p.60)" python3 verify_mcp_bootstrap_p53.py
 # >>> IT CONFIRMS BOTH OF printed p.52's DERIVED STAND-INS. <<<
 # L OOPN is at 002775.40 (line 4) and L IODRN at 003021.40 (line 37),

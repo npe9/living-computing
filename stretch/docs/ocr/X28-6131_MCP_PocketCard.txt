@@ -1,0 +1,217 @@
+
+===== X28-6131_MCP_PocketCard PDF page 1 =====
+MC P Compile and Go Option
+
+MASTER
+CONTROL
+PROGRAM
+
+I DETERMINES
+
+COMPILE
+
+>
+TYPE OF PROBLEM
+
+AND GO
+
+@ CALLS FIRST PROCESSOR OF CHAIN
+
+(3) CONTROL To
+
+FOR
+
+PROCESSOR
+
+1® CONTROL TO MCP
+
+EXAMPLE,
+
+SMAC
+PROCESSOR
+
+FROM DISK |
+DISK
+-_ — ” 7
+
+-
+=
+
+ALLS DATA
+@ caus oA SPOOL
+
+(PROGRAM TO BE PROCESSED
+FROMINPUT BUFFER) = INPUT
+oer _-—7 BUFFER
+LANGUAGE
+
+PROGRAM
+©® processes
+
+PROGRAM
+
+STRAPIL
+LANGUAGE
+PROGRAM
+
+© PUTS OUT OPTIONAL INTER; MEDIATE LISTING
+
+@ output To pisK
+
+<i>
+
+1S DATA FOR NEXT
+
+@ CALLS NEXT PROCESSOR OF CHAIN FROM DISK
+
+LINK OF PROCESSOR
+CHAIN
+
+OISK
+
+=
+_——
+_
+
+@ coNnTROL TO
+
+PROCESSOR
+
+@ cats ata
+
+(PROGRAM TO BE a
+PROCES SEG) FROM DISK
+y
+
+STRAPIL
+LANGUAGE
+
+®
+
+Vv
+
+[
+
+IBM 7030
+
+Programming System
+Reference Card
+
+PROGRAM
+STRAP IL @ PROCESSES PROGRAM
+PROCESSOR
+MACHINE
+LANGUAGE
+PROGRAM Y
+PUTS OUT OPTIONAL LISTING] AND/OR DECK iA
+® SL ANO/OR DEC > fouTPuT
+u TAPE
+@ output To DISK
+@® conTRoL To mcP
+iS PROBLEM PROGRAM
+|
+@ CALLS PROBLEM PROGRAM FROM DISK v
+OISK
+@ controt to aaa 1401
+PROBLEM PROGRAM <
+PROBLEM
+PROGRAM WA \
+Ec
+
+Printed in U.S.A. X28-6131
+
+LISTING
+
+===== X28-6131_MCP_PocketCard PDF page 2 =====
+MCP On-Line Overlapped Mode MC P Off-Line Overlapped Mode MC P Common Output
+MCP Bypass Mode
+
+READ
+
+!
+
+I
+
+t
+
+“dé TAPE TAPE ,
+re {
+us {
+
+|
+
+|
+
+|
+
+|
+
+|
+
+SCAN TAPE 2
+[4
+ON-LINE PREPARED oe
+OFF-LINE ON ro EO
+CARD READER zw 855
+1401 Zu 22 -
+T e5 835 iz
+I ~ E°% oo
+! < rue m a
+= az
+: BUFFER BUFFER |_| BUFFER ra L wit 2a
+- a
+BUFFER "a | , —_— > 2 os oft
+1 2 I 2 ons
+T J r a) zug
+I ; Fs)
+1/0 | ol] |-_&
+Le | L afpcavesrfe} te --- =) /2b -
+PREQUEST HE -|-|- - —-——- 4 TABLE p) ViA OPERATOR x > a &
+TABLE L o o a}
+L- Pr =
+am ~ 5
+SCAN <
+aaa
+
+ao”
+f READ
+ef ° TAPE
+Puig
+
+USE SEPARATE CHANNELS
+FOR HIGHEST EFFICIENCY
+
+1401
+
+E SEPARATE CHANNELS
+FOR HIGHEST EFFICIENCY
+
+PROBLEM
+PROGRAM
+
+a es
+
+OUTPUT ONE J sme OUT PUT
+
+BUFFER BUFFER
+BUFFER r BUFFER < Cy
+ne y, 3 4 _
+3 4 < us
+a! ra Paar x
+CONSOLE Siieus
+CONSOLE $scR TYPEWRITER $ SCR =1/22
+TYPEWRITER NO.OF CARDS iNSTRUCTIONS NO. OF CARDS S
+FWA 19 oR FWA 3 L z>
+oe iy = a
+=. =
+> a2
+\ a 6 ®
+2 3% L
+PR zie
+PROBLEM OBLEM zu
+PROGRAM oa
+PROGRAM
+MCP CONTROL MCP CONTROL
+MCP CONTROL PP CONTROL PP CONTROL
+
+PP CONTROL OPERATOR CONTROL OPERATOR CONTROL

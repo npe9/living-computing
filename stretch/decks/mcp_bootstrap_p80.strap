@@ -91,7 +91,7 @@ TPPRUN  SYN, (8)3315.0
 TAREJX  SYN, (8)4360.0
 YSCRBT  SYN(BU,1), (8)4455.03
 ! ---- table offsets, printed pp.62-64 ------------------------------
-TCRREF  SYN, 0.0
+TCRREF  SYN(BU,18), 0.0
 TUNCT   SYN(BU,8), 0.28
 TJBPRO  SYN(BU,1), 0.36
 TRJECT  SYN(BU,1), 0.37

@@ -1,0 +1,607 @@
+
+===== N22-0085_MCP_RefMan_Upd_May63 PDF page 1 =====
+IBM Technical Newsletter system 7030
+Re: Form No. C22-6678
+
+This Newsletter No. N22-0085
+Date May 10, 1963
+
+Previous Newsletter Nos. None
+
+ADDITIONS AND CORRECTIONS TO THE MCP REFERENCE MANUAL
+
+Since the MCP Reference Manual (C22-6678) was published, the MCP program has been
+expanded. It is the purpose of this publication to correct and update the manual.
+Changes have been made in the following areas:
+1. Input
+2. Output
+3. IPL Options
+a. TIME/DATE
+b. Message Suppression
+c. Rejected Job Count Report
+Reserve Light Eliminated
+New Commands
+New List of Loader Cards
+Appendix A - Pseudo-Ops
+Appendix B - Messages
+Appendix D - MCP Pseudo-Op Codes
+10. Errata
+
+Oman no
+. 8 « © «© «
+
+INPUT CHANGES
+
+Modifications have been made to both the system input and system output programs to
+facilitate initializing the system. In previous versions of MCP, the IPL program in the
+overlapped mode requested two input tapes. If the operator did not ready the second
+tape, the first tape would never enter the read phase. MCP now allows the input tapes
+to be made ready in any order and if only one tape is to be run the second tape need not
+be made ready. The program no longer asks for system input tapes to be made ready
+but expects a channel signal (caused by ready condition) to begin processing tapes. The
+normal mount messages are still given and a message, "$CH XX UN X IS THE NEW IP
+READ TAPE" refers to the tape that has been made ready.
+
+OUTPUT CHANGES
+
+The output program formerly referred to the tape unit assigned to the second output
+tape IOD. The output program now expects the unit associated with the first output
+tape IOD to be ready and after an output command, waits for a channel signal to tell it
+which unit to use next. Therefore, the operator may if he wishes use only a single
+output unit.
+
+International Business Machines Corp., Advanced Systems Programming Dept., Poughkeepsie, N.Y.
+
+PRINTED IN U.S.A. Page 1 of 12
+
+===== N22-0085_MCP_RefMan_Upd_May63 PDF page 2 =====
+IPL OPTIONS
+
+IPL TIME and DATE Options
+
+The time and date may be entered through the binary keys on the console at IPL time.
+Any valid time and date will be put on the output tape after the job card. The time is
+entered in the upper row of keys (0-23) and the date in the lower row of keys (32-55).
+Both entries are in decimal. Keys not to be considered as on should be latched off, not
+left in the neutral position. The four IPL options are now located in binary keys (28-31).
+(See Figure 1.)
+An invalid time and/or date will cause the console message:
+$DATE/TIME INVALID RETRY VIA COMD, CLOCK
+The time and date should then be entered through the clock command or no time or date
+will be put on the output tape. Any command clock entry of time and/or date will replace
+that previously entered at IPL time.
+A zero time and valid or zero date entry will produce the typewriter message:
+$TIME AFTER CALIBRATION XX: XX:XX
+The present time clock reading will appear in the message and on the output tape. Ifa
+valid non-zero time is entered and the date is valid, this time will recalibrate the clock
+and will appear in the message and on the output tape.
+
+Suppress Messages
+
+If binary key 28 is latched on, all initializing messages will be suppressed except the
+system tape date message and the invalid time/date message if applicable.
+
+Rejected Job Count Report
+
+Binary key 30 determines if any jobs are to be rejected. The number of jobs to be
+rejected should be inserted in the numeric switches columns 10 and 11 instead of only
+column 11.
+
+RESERVE LIGHT ELIMINATED
+
+It should be noted that the conceptor, debugger, and command package no longer turn the
+reserve light on or off.
+
+NEW COMMANDS
+
+A new command and an addition to a command have been added to the Master Control
+Program. The commands are the following:
+
+COMD, COMMENT, maximum 40 character message: This command is used to put
+comments on the output tape. The operator's console and/or system input may
+be the source of the command. If system input is the source, the comment will
+appear on the console typewriter as well as on the output tape preceding the job
+card.
+
+Page 2 of 12
+
+===== N22-0085_MCP_RefMan_Upd_May63 PDF page 3 =====
+COMD, CLOCK, hours, minutes, seconds, month/day/year: This command has
+If the date field contains a date in the
+form XX/XX/XX, this date will be put on the output tape with the time and
+
+been expanded to allow a date option.
+
+version of the IPL tape.
+
+When no date is entered the command will function
+
+as before and only the time entered will replace that established at IPL time.
+
+RELOCATABLE LOADER CARDS
+
+The loader handles fourteen classes of cards.
+
+punches in column 1:
+Relocatable Data
+Common Definition
+FORTRAN Branch
+FORTRAN Program
+
+Relocatable Binary Instruction
+
+Special Origin (O punch)
+
+(1.
+(1.
+(1.
+(1.
+(1.
+(1.
+
+.
+
+ANNAN
+
+Besides the 8 classes given on page 13
+of the MCP Reference Manual, the 6 other types are relocatable cards identified by the
+
+>
+
+el
+© 0 mw wo
+a a ne eo
+
+1.8)
+
+10, 1.11)
+.10, 1.11)
+.9, 1.10, 1.11)
+.9, 1.11)
+
+These cards and their formats are described in detail in the STRAP II Programming
+Systems Analysis Guide (C22-6729), pages 187-188.
+
+Binary Switches eeoee eee0e
+Hour Hour
+Binary Keys eee eeoee
+9
+Month Month
+Binary Keys eeeen @eee
+
+32
+
+Minute
+e@eece
+
+Figure 1, Console Setup for IPL Options, Time, and Date
+
+Minute
+eeee
+
+Day
+eee
+
+Console
+Typewriter
+
+Second
+eeeoe
+
+Year
+e@eee
+
+eeee
+Second
+ee
+
+Year
+eeoe0e
+
+IPL
+
+Options
+
+eeoce
+31
+
+eeee
+63
+
+Page 3 of 12
+
+===== N22-0085_MCP_RefMan_Upd_May63 PDF page 4 =====
+ADDITIONS TO APPENDIX A - Pseudo-Operations - Page 35
+
+NEW PSEUDO-OPS
+
+A number of new pseudo-ops have been added to MCP. The general calling sequence is
+as follows:
+B, $MCP
+, PSEUDO-OP CODE
+, IODNAME())
+(Return)
+The following additional I-O operations should be included in Appendix A:
+
+HIGH DENSITY
+
+MHD or MHDS, IODNAME()
+B, $MCP
+, $HD or $HDS
+, IODNAME(D
+(Return)
+EPGK (Disk, Console, Reader, Punch, or Printer)
+Invalid operation.
+EPGK (TAPE) Tape is not at load point.
+EOP $HD completed
+NONE $HDS completed
+
+LOW DENSITY
+
+MLD or MLDS, IODNAME())
+B, $MCP
+, $LD or $LDS
+, IODNAME()
+(Return)
+EPGK (Disk, Console, Reader, Punch, or Printer)
+Invalid operation.
+EPGK (TAPE) Tape is not at load point.
+EOP $LD completed
+NONE $LDS completed
+
+EVEN PARITY
+
+MEVEN or MEVENS, IODNAME())
+B, $MCP
+, $EVEN or $EVENS
+, IODNAME()
+(Return)
+
+Page 4 of 12
+
+===== N22-0085_MCP_RefMan_Upd_May63 PDF page 5 =====
+EPGK (Disk, Console, Reader, Punch, or Printer)
+
+Invalid operation.
+EOP $EVEN completed
+NONE $EVENS completed
+
+ODD PARITY, NO ECC
+
+MODD or MODDS, IODNAME(D
+B, $MCP
+, $ODD or $0DDS
+, IODNAME()
+(Return)
+EPGK (Disk, Console, Reader, Punch, or Printer)
+Invalid operation.
+EOP $ODD completed
+NONE $ODDS completed
+
+ERROR CHECKING AND CORRECTION
+
+MECC or MECCS, IODNAME()
+B, $MCP
+, $ECC or $ECCS
+, IODNAME())
+(Return)
+
+EPGK (Disk, Console, or Printer)
+Invalid operation.
+
+EOP $ECC completed
+
+NONE $ECCS completed
+
+NO ERROR CHECKING OR CORRECTION
+
+MNOECC or MNOECCS, IODNAME (J)
+B, $MCP
+, 8NOECC or $NOECCS
+, IODNAME())
+(Return)
+
+EPGK (Disk, Console, Printer, or Tape)
+Invalid operation.
+
+EOP $NOECC completed
+
+NONE $NOECCS completed
+
+$FELR PSEUDO-OP
+
+FETCH LOWER REGISTERS may be used with its corresponding pseudo-op, STORE
+LOWER REGISTERS, to allow the user to examine the contents of mainstream lower
+registers and to alter them if he chooses.
+
+$FELR will fetch the lower registers, describing the status of the last problem pro-
+gram interrupt, into a thirty-one word program buffer.
+
+Page 5 of 12
+
+===== N22-0085_MCP_RefMan_Upd_May63 PDF page 6 =====
+$FELR uses the following calling sequence:
+B, $MCP
+, $FELR
+, FWA. (D
+(Return)
+
+FWA. (I) specifies the first word (18-bit address) of a thirty-one word buffer into which
+the contents of the problem program lower registers will be placed.
+
+If, in mainstream the problem program was interrupted during a $WAIT pseudo-op
+for an interrupt which has not been released, then the associated IOD reference number
+(which did not cause the current auto-stack mode) is put in the buffer. The base address
+of the problem program I-O location tables will be placed into the problem program
+buffer.
+
+The user's buffer will have the following contents after execution of $FELR:
+
+FWA. (D IOD Reference Number
+FWA. (D +1. Boundary Register
+FWA. (I + 2. Maintenance Bits
+FWA. (J + 3. Channel Address
+FWA. (D + 4. Other CPU Bits
+FWA. (J) +5. Left Zeros Count
+All Ones Count
+FWA. (J + 6. Left Half of Accumulator
+FWA. (I) + 7. Right Half of Accumulator
+FWA. (J) + 8. Accumulator Sign Byte
+FWA. () +9. Indicators
+FWA. (D + 10. Mask
+FWA. (D +11. Remainder
+FWA. (J + 12. Factor
+FWA. (J) + 13. Transit
+FWA. (J + 14. - FWA. (1) + 29. Index Registers 0-15
+FWA. (J) + 30. Instruction Counter
+FWA. (D + 30.32 Base Address of I-O Location Tables
+
+$STLR PSEUDO-OP
+
+$STLR will allow the user to replace mainstream lower registers with the contents of a
+thirty-one word problem program buffer.
+$STLR may be used only in the auto-stacked mode, i.e., when the problem program
+is I-O interrupted and control is passed to an I-O table of exits.
+$STLR uses the following calling sequence:
+B, $MCP
+, $STLR
+, FWA. ())
+(Return)
+FWA. (D specifies the first word (18-bit address) of the thirty-one word buffer which
+will be used to replace the lower registers.
+The following are restrictions on the use of $STLR:
+1. Word 3, boundary control, is not changed by $STLR.
+2, TS and EXE indicators are not changed by $STLR.
+3. IF bit in the mask register is forced on by $STLR.
+
+Page 6 of 12
+
+===== N22-0085_MCP_RefMan_Upd_May63 PDF page 7 =====
+The user's lower registers from the Maintenance Bits to the Instruction Counter will
+be taken from the buffer in the same order as described under $FELR. The IOD
+Reference Number, Boundary Register and Base Address of I-O Location Tables are
+not stored.
+
+$FIXUP
+
+The $FIXUP pseudo-op facilitates the handling of maskable interrupts, (20, 22-47), by
+inserting a single instruction directly into the interrupt table of MCP.
+
+The calling sequence is:
+
+B, $MCP
+, $FIXUP
+» A(t)
+(Return)
+
+A() is the location where the slots to be changed, in the interrupt table, may be saved.
+If A() is zero, nothing will be saved; if non-zero, the Pattern Word from B(J) and the
+contents of the interrupt table slots to be altered, will be saved at A(I). If the interrupt
+slot contains the original MCP instruction, then a zero will be saved.
+
+B(J) is the location of a Pattern Word specifying the maskable interrupt entries to be
+altered, immediately followed by the changes, in ascending order. For each one bit in
+the Pattern Word, (20, 22-47), there must be a full word instruction following. If the
+instruction is zero, the original MCP instruction will be restored into the interrupt
+table; if non-zero, the specified instruction will be stored. The instruction cannot be
+an I-O instruction, BD or SIC;BD but this is the only restriction.
+
+Page 7 of 12
+
+===== N22-0085_MCP_RefMan_Upd_May63 PDF page 8 =====
+ADDITIONS TO APPENDIX B - Messages - Page 39
+
+PROGRAMMER MESSAGES
+
+The first message of every job on the system output tape is usually a job card. It is
+possible that a COMD, COMMENT card may be in the deck and then a comment will
+appear before the job card. After the job card another message is given with the TIME,
+RUN DATE, and VERSION of the system tape.
+
+ERRORS DURING EXECUTION
+
+YOUR PROGRAM WAS ENDED BECAUSE OF A TYPE XX ERROR. New error codes:
+05 - Problem Program IOD Table of Exits is out of bounds.
+19 - legal $FIXUP word (i.e., I/O Instruction, BD, SIC;BD).
+20 - Attempt has been made to use $STLR when not auto-stacked.
+
+INITIALIZATION MESSAGES - Page 40
+
+The following two messages have been removed because the improved input routine will
+operate with only one input tape in the overlapped mode.
+
+$FIRST JOB TO BE RUN WILL BE ON CHANNEL XX UNIT X
+
+$OTHER INPUT TAPE WILL BE ON CHANNEL XX UNIT X
+
+NEW MESSAGES
+
+$DATE/TIME INVALID RETRY VIA COMD, CLOCK
+An illegal time and/or date has been entered. Unless a time and date is put in by
+COMD, CLOCK none will appear on the output tape.
+
+$SERVICE RD/FD CHECK ON CARD READER
+
+If the reader's FEED CHECK light is off it is a read check. The procedure then is to
+push the STOP button on the reader and remove the remaining cards from the hopper.
+Then unload the reader and take the last 4 cards which have unloaded and put them in
+the hopper before loading the remaining cards and starting the reader.
+
+For a feed check the procedure may vary. It is possible that a serious card jam may
+have occurred, and it is best to let the engineers remove the cards to avoid damage to
+the brushes. If it is only a minor feed check usually feeding through the last two cards
+that were inside the reader will correct the situation.
+
+$CH XX UN X UNLOADING, REUSE TAPE.
+
+This message indicates that an uncorrectible card reader error has occurred. The
+bad card has been written on the tape. When this error is detected the tape is unloaded
+but may be reused because the tape was not at fault.
+
+$STRIP CH XX UN X BEFORE REUSING.
+
+An uncorrectible tape error has occurred on the designated tape.
+
+$CH XX UN X IS UNLOADING, INPUT FOUND END OF TAPE.
+
+The End of Tape reflective spot has been sensed while writing tape.
+
+Page 8 of 12
+
+===== N22-0085_MCP_RefMan_Upd_May63 PDF page 9 =====
+$INPUT SKIPPED A JOB BECAUSE OF UK DIFFICULTY.
+This message will be given via the typewriter if the UK occurred at the beginning of
+the first record of a file. If the UK occurs during the execution phase, a similar
+message will be put only on the output tape.
+
+ERROR MESSAGES - Page 42
+$TYPE XX ERROR
+XX = 82 Special Assignment Error
+An attempt has been made to assign or unassign the same MCP unit a second time.
+COMMAND RESPONSES - Page 42
+$TIME AFTER CALIBRATION XX:XX:XX
+
+The new time constant has already been used to calibrate the time shown. This message
+is issued in response to COMD, CLOCK or a valid IPL time and date setting.
+
+Page 9 of 12
+
+===== N22-0085_MCP_RefMan_Upd_May63 PDF page 10 =====
+ADDITIONS TO APPENDIX D - MCP Pseudo-Operation Codes
+
+The following additional mnemonic and absolute codes should be included in Appendix D
+
+as they are now available for use by the problem program:
+
+$HD
+$HDS
+$LD
+$LDS
+SEVEN
+$EVENS
+$ODD
+$ODDS
+$ECC
+$ECCS
+$NOECC
+$NOECCS
+$ FIXUP
+$STLR
+$FELR
+
+14,
+14,
+14.
+14.
+15.
+15.
+15.
+15.
+16.
+16.
+16.
+16.
+36.
+37.
+37.
+
+00
+01
+32
+33
+00
+01
+32
+33
+00
+01
+32
+33
+32
+00
+32
+
+Page 10 of 12
+
+===== N22-0085_MCP_RefMan_Upd_May63 PDF page 11 =====
+ERRATA
+
+Page 9 - columni1 - line 14: The word immediately should be stricken from the
+following sentence as the tables are not always immediately above the problem program.
+"The tables that the problem program requires will be immediately above ng in pro-
+tected storage."
+
+Page 10 - column 2 - line 19: Strike out the sentence: "The same unit symbol on
+several tape IOD's unconditionally associates them with the same tape unit."
+
+Page 13 - column1 - line 7b:
+not ''The loader handles eight classes of cards."'
+but 'The loader handles fourteen classes of cards."
+
+Page 18 - column1 - line 5b: The dump format for octal hex without panel:
+not 4. 32
+but 0.32
+
+Page 20 - column 2 - 38rd line, under Error Interrupts:
+not ''For interrupts 0.3 and 5,"
+but "For interrupts 0-3 and 5,"
+
+Page 25 - column2 - line 5: The option for binary key 30 should read: REJECTED
+JOB COUNT REPORT
+
+Page 25 - column 2 - line 34: The following two messages and the paragraph
+following them are no longer valid. These messages are not given as the system now
+can run with one input tape in the overlapped mode.
+
+$FIRST JOB TO BE RUN WILL BE ON CHANNEL XX UNIT X.
+
+$OTHER INPUT TAPE WILL BE ON CHANNEL XX UNIT X.
+
+Page 26 - column1 - line 9 after Rejected Job Count Report:
+not ''The number of jobs to be rejected (1-9) is inserted in numeric switch column 11."
+but "The number of jobs to be rejected is inserted in numeric switches columns 10
+and 11."
+
+Page 28 - column1 - line 34: Delete the paragraph referring to the reserve light
+being used to indicate that the console input has been processed. The reserve light is
+no longer turned on.
+
+Page 33 and 34 - may be entirely deleted: A complete writeup of the 7030 update
+program may be found in the MCP Programming Systems Analysis Guide (C22-6678)
+starting on page 215. A bulletin has also been published explaining the Update 30
+program. (C22-6718)
+
+Page 11 of 12
+
+===== N22-0085_MCP_RefMan_Upd_May63 PDF page 12 =====
+Page 45 - column 2 - line 1: A comment mark is inserted before the EOP comment:
+not EOP
+
+but 'EOP
+
+Page 48 - column1 - second and third line from bottom:
+BCD code for Y is 30 not 4
+
+BCD code for Z is 31 not 35
+
+Page 12 of 12

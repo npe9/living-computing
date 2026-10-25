@@ -112,7 +112,7 @@ TP5IN   SYN, (8)4456.0
 TP5OUT  SYN, (8)4457.0
 TPSAV   SYN, (8)4460.0
 ! ---- table offsets, printed pp.62-64 ------------------------------
-TREELN  SYN(BU,48,6), 0.0
+TREELN  SYN(BU,48), 0.0
 TABSUN  SYN(BU,3), 0.07
 TFDISP  SYN(BU,1), 0.27
 STATI   SYN(BU,1), 0.26

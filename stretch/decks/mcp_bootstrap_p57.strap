@@ -116,7 +116,7 @@ LXNT    SYN, $9
 LWORKX  SYN, $10
 ! ---- confirmed from printed p.58 ----------------------------------
 TIOREQ  SYN, (8)3373.0
-TLAST   SYN, 0.18
+TLAST   SYN(BU,1), 0.18
 LASTPP  SYN, (8)2613.0
 TLPPEN  SYN(BU,1), 0.39
 LOVBIT  SYN(BU,1), (8)2601.62

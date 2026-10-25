@@ -29,11 +29,20 @@ decision was made. `boot_plan.md` A22 carries the detail.
 **printed pp.65-80 are MCP's ASSIGN routine entire** — sixteen
 pages, all bit-exact, all with measured injections.
 
-**The one unexplained refusal** is still the OP trail's single
-`operation invalid` at half-word 1304 = 001214.00, printed p.24's
-time conversion, raised once after 6.01 million steps. It is proven
-NOT to be the crossing store (that is built and tested). An exact
-locator in `StretchCore` is the tool that will name it.
+**The OP refusal is solved, and it was never one refusal.** An exact
+locator — three lines at `execute()`'s single `setIndicatorBits` —
+names every instruction that sets OP. There are **five**, all in
+printed p.24's time conversion, and all are VFL operations the model
+does not implement: `/` twice, `CV`, `LTRCV` twice. The trail's
+001214.00 was the look-ahead running one instruction ahead of
+001213.00, exactly as this file warned when it said the trail's PC is
+a locator and not a proof.
+
+Three more were hidden behind it and turned out to be **an image bug,
+not a model bug** — see the entry below. They are fixed.
+
+**What is left is `*`**, VFL multiply, which printed p.72 line 19
+uses to compute a table offset and the model does not have.
 
 ### The older orientation, 2026-10-21
 
@@ -5419,6 +5428,444 @@ letter `O` read as `C`**, in a NAME field, where no octal column and
 no opcode can rule it out. What ruled it out was the datum the name
 labels — which is a tell worth stating on its own: *when a name
 labels data, decode the data before trusting the name.*
+
+## >>> `$opr` IS SOLVED, AND BULK OCR SOLVED IT IN TWO GREPS — 2026-10-25 <<<
+
+printed p.78 lines 9-12 carry a `$` before the operation — `$L`,
+`$-`, `$SF`, `$CV`. A day was spent on this: C28-6129's twelve
+instruction formats, its April 1963 bulletin, the STRAP-1 appendix
+footnotes, C22-6729's Appendices B and D, and the coprocessor
+section. All empty, and the page shipped with the prefix dropped and
+a four-for-four measurement showing it contributes no bits.
+
+**The answer was on C28-6129 printed p.10 the whole time**, in
+*System Symbols* — a section I never opened because I was reading
+instruction-format pages:
+
+> "Another special use of the `$` character is to prefix any
+> operation code in this manner: **`$opr`**. This directs the
+> compiler to **suppress any error indications** that arise in
+> connection with the compilation of this statement."
+
+### It explains every observation at once
+
+* **Why it contributes no bits** — it is a *compiler directive*, not
+  an instruction modifier. The four-for-four measurement was right
+  and is now explained rather than merely true.
+* **Why STRAP II compiled the rows cleanly with no error flag** —
+  that is literally what the prefix does. The earlier note reasoned
+  "STRAP II understood them, so the coprocessor path cannot be it";
+  correct, and this is why.
+* **Why no instruction-format page describes it** — it is not part
+  of any instruction format.
+
+### And the deck's decision is now cited rather than inferred
+
+`decks/mcp_bootstrap_p78.strap` writes `L`, `-`, `SF`, `CV` and says
+so in three places. That was defensible before as a measurement; it
+is now **correct by the manual**: the prefix emits nothing, so a
+deck that omits it is bit-identical by construction, and what is
+lost is only the record that MCP's authors expected a diagnostic
+there and told the compiler to be quiet.
+
+**What error?** Still unknown, and now a much smaller question.
+Negative offsets are not the trigger: printed p.24 line 19 is
+`L(BU,26),$TC,-60` and line 21 is `/I(BU,6),60,-60`, both confirmed
+at 1200 dpi with **no prefix**, and negative offsets appear in seven
+decks. Only these four rows carry it.
+
+> **AN OPTION NOW OPEN:** `strap_asm.py` could accept and ignore a
+> leading `$` on an operation, with C28-6129 printed p.10 as the
+> citation — which is exactly the standard that kept it out before.
+> The decks would then carry the card as written. Worth doing when
+> the assembler is next touched; not worth a commit of its own.
+
+### The method, which is the real result
+
+Eight pages rendered and read, by eye, over an hour, finding
+nothing. Then `tesseract` over the whole manual — 79 pages, 237 KB,
+about ninety seconds — and `grep -i prefix` returned four lines, one
+of which was the answer.
+
+*The expensive thing was never the reading. It was the searching.*
+
+## >>> WHAT STANDS BETWEEN THE RUN AND AN ASSIGNMENT: VFL MULTIPLY — 2026-10-25 <<<
+
+The image bug is fixed and the halt did not move, so the remaining
+suspect is named and single:
+
+```
+printed p.72 line 19   *(BU,24),T COMBO,40   -COMPUTE LOC WITHIN TABLE
+```
+
+**VFL multiply is operation 25 and the model does not have it.** That
+row computes a location *within the machine-configuration count
+table*; suppressed, it leaves the offset at whatever the accumulator
+held, the table is built at the wrong place, ASSIGN finds no units,
+and the run rejects the assignment and halts in `X6ERR` —
+*EXHAUSTED ALL CHANNELS*. That chain is a hypothesis, not a
+measurement, and the only way to test it is to build the operation.
+
+### >>> THE SOURCING PROBLEM IS SOLVED: THE REFERENCE MANUAL HAS BOTH, IN FULL <<<
+
+`22-6530-2` printed **pp.68-70** specify every operation at issue,
+normatively and bit by bit.
+
+**Multiply (`*`), printed p.68:** *"the product of the addressed
+operand and the accumulator field specified by the offset is placed
+into the **cleared accumulator at offset 20**. Neither operand may
+exceed **48 significant numeric bits**."* PF if either does (the
+low-order 48 are used, higher-order bits lost); RLZ/RZ/RGZ/RN as in
+ADD.
+
+**Divide (`/`), printed p.70:** *"the entire accumulator contents to
+the left of the offset are divided by the addressed storage field.
+Accumulator positions to the right of the offset are ignored ... the
+quotient is placed in the **cleared accumulator at the specified
+offset**, and the remainder with sign is placed in the **remainder
+register (RM)**."* Dividend ≤ 96 significant bits, divisor ≤ 48. **ZD
+(zero divisor): the division is not attempted and both the
+accumulator and RM remain unchanged.** The arithmetic result
+indicators describe the **quotient**, not the remainder.
+
+And p.70 gives RM's layout to the bit: *"Bits 60-63 of RM form a
+four-bit remainder sign byte with bit 60, the sign bit, set to the
+original accumulator sign. Bits 61-63 are set to zero. **Bits 0-59 of
+RM are replaced by the integer remainder with the low-order remainder
+bit in bit position 59.**"*
+
+> **WHICH EXPLAINS MCP'S INSTRUCTION EXACTLY.** printed p.24 line 22
+> is `C0011(BU,6),$RM+.54` — **bits 54-59**, the low-order six bits
+> of the remainder. Sixty seconds needs exactly six bits. A page
+> transcribed from a 1963 listing and a manual page never read
+> together until now agree to the bit, and that agreement is a free
+> check on both.
+
+printed p.69 also gives **Load Factor (`LFT`)** and **Multiply and
+Add (`*+`)**, two more from the missing list, and confirms `FT` is a
+64-bit register at **word address 14** — so four of the fourteen
+missing operations are sourced from three facing pages.
+
+### >>> AND MCP'S OWN DOCUMENTATION SAYS WHAT ASSIGN IS FOR <<<
+
+`C22-6728` *MCP System Analysis Guide*, now searchable, describes
+the routine printed pp.65-80 implement:
+
+> "**Assign:** On request from JC4 at the beginning of the next job
+> in the PP reference table, insures that all its I-O requests have
+> been assigned; in addition, it proceeds down the table **assigning
+> leftover tape units until either the tape units are all assigned**
+> or the tape requirements of all jobs in the table have been met."
+
+**ASSIGN assigns TAPE UNITS.** And the fixture's machine, from
+`bsv/StretchIO.bsv`, has exactly one tape channel:
+
+```
+channel  0  chanDisk      channel 33  chanPrinter
+channel 32  chanReader    channel 34  chanTape     <- one
+                          channel 35  chanConsole
+```
+
+> So `EXHAUSTED ALL CHANNELS` may be **correct behaviour for this
+> machine**, not a defect at all. A routine whose stated job is to
+> hand out tape units until they run out, on a machine with one tape
+> drive, reaching the exit that says it ran out, is the system
+> working.
+
+That makes the open question well-posed for the first time, with two
+candidate answers and a cheap experiment to separate them:
+
+1. **The fixture is too small.** Give it more tape units and ASSIGN
+   succeeds. This is a TESTBENCH change, not a model fix.
+2. **printed p.72's suppressed multiply** leaves the
+   machine-configuration table offset wrong, so ASSIGN never sees
+   the units that are there. This needs `*` built.
+
+They are distinguishable: build `*` first and the halt either moves
+or does not. If it does not, add tape units. **Do not do both at
+once** — that is the mistake the image-bug fix avoided by being
+measured on its own, where three refusals vanished and the halt
+stayed put, removing a suspect.
+
+### The oracle problem, restated
+
+`bsv/README.md` refuses to build `SWAPB`/`SWAPBI` because **nothing
+in this corpus encodes one**, so they would be manual-derived with no
+oracle. VFL multiply is not in that position — MCP encodes it, on
+printed p.72 and nowhere else — but **no IBM diagnostic in `docs/`
+exercises it**. The five `jb_ax*` listings are I-box tests and
+`jb_af1c` is floating point; a grep across every deck finds `*(BU` and
+`/(BU` only in `mcp_bootstrap_p24` and `mcp_bootstrap_p72`.
+
+So no diagnostic will supply *expected values*; the semantics come
+from the manual above, and a worked example would still be welcome.
+Three documents are candidates, in this order:
+
+1. **`22-6530-2` the Reference Manual** — the normative description of
+   VFL multiply and divide, including what happens to the accumulator
+   and to the REMAINDER REGISTER (word 13), which printed p.24 line 22
+   reads with `C0011(BU,6),$RM+.54` right after its divide. That read
+   is already transcribed and is a free second check on the divide.
+2. **`C22-6578` Programming Examples (Apr 61)** — worked examples with
+   expected results are exactly the shape of oracle this project
+   prefers, and it has not been opened yet.
+3. **`R23-9694`/`R23-9695` CE Introduction to Programming vols 2-3** —
+   the source of the ADD family's 128-cell sign table already in the
+   suite, so it is known to carry exhaustive tables.
+
+### And the check that comes free
+
+printed p.24's time conversion is a **self-checking sequence**: it
+divides by 60 twice and reads `$RM` after each, so the quotient and
+the remainder must both be right or the printed console time is
+wrong. The deck is transcribed and bit-exact; what is missing is
+only the operation. **Build `/` and `*`, and p.24 becomes a test of
+them rather than five lines the model declines.**
+
+> *The cost of a missing operation is not the operation.* `/`, `CV`
+> and `LTRCV` have been silently suppressed in every run since
+> printed p.24 joined the image — MCP has never once converted the
+> time correctly — and nobody noticed, because a suppressed
+> instruction sets OP and no-ops, which is exactly what a real
+> machine does.
+
+## >>> THE MODEL WAS RIGHT AND THE IMAGE WAS WRONG — 2026-10-25 <<<
+
+The OP locator reported three `CM1111` rows refused as crossing-field
+writes, on printed pp.66, 75 and 80. A one-bit field cannot cross a
+word, so this looked like a model bug. **It was not.**
+
+### What the numbers said
+
+Printing the decoded connective at the guard gave
+
+```
+rawlen=0 len=64 off=37 bs=0 addr=37 i1=3 p=0 conn=15
+```
+
+— every field matching the assembled word **except the length**. The
+assembled word is `0000258300801EF0` with `length = 1`. The merged
+image's word is `0000248800001EF0` with `length = 0`, and a run-time
+probe of memory returned exactly the image's word. So the model
+decoded correctly, `effLength(0)` read 64 as it is written to, and the
+guard refused a 64-bit connective at offset 37 — **correctly**.
+
+### The cause: one symbol, two declarations
+
+printed p.62 line 11 declares
+
+```
+T JBPRO  SYN(BU,1), 0.36      -JOB PROCESSED BIT
+```
+
+and three other decks declare
+
+```
+T JBPRO  SYN, 0.36
+```
+
+with the dds left off — because **those pages only branch on the bit,
+and a branch does not use a length**. printed p.80 line 24 is
+`CM1111,T JBPRO(T IXG)` and writes no dds, so it takes its length
+*from the symbol* (C22-6531 printed p.31).
+
+> **Every deck still verified bit-for-bit**, because within one deck a
+> symbol has exactly one declaration. Only the MERGE saw both, took
+> the one without the dds, and compiled length 0. Three instructions
+> across three pages were silently wrong in the image while every
+> page-level test passed — and the ones that were wrong are MCP
+> recording its own decisions: *set the reject bit*, *set the job
+> processed bit*.
+
+### The check that catches it
+
+`mcp_image.merge()` compares **values** and nothing else, and the
+addresses agreed exactly, so nothing fired. It now also requires every
+declaration of a symbol to carry the same data description, and that
+guard found **sixteen** conflicting symbols on its first run — more
+than a hand scan had:
+
+```
+LCOUNT LRLBIT TCRREF TDISK TFREEL TINDE TIODSQ TJBPRO
+TLAST TMODE TRJECT TRLSYM TSBHDI TTYPE TUNCT TREELN
+```
+
+Two are worse than an omission: **`T INDE` was declared `(BU,1)` and
+`(BU,2)`, `T MODE` `(BU,1)` and `(BU,6)`** — contradictions, not gaps.
+And `T REELN` was mine, written today, `(BU,48,6)` where printed p.62
+says `(BU,48)`.
+
+All sixteen now carry their documenting page's dds; all fourteen
+affected decks still verify bit-exactly, because the pages that had
+the dds wrong never used the length.
+
+> **A cross-page check is only as good as the fields it compares.**
+> The merge has been the project's strongest invariant for weeks — 509
+> stand-ins checked against their definitions on every build — and it
+> was comparing one field out of two. *When a per-item test passes and
+> the assembled whole misbehaves, suspect the join, and ask what the
+> join does NOT compare.*
+
+### And the cost of not catching it
+
+A suppressed operation sets OP and no-ops, which is correct
+behaviour for a real machine and is why nothing crashed. MCP ran
+twenty-two million steps, took its reject path, dispatched through
+its own exit table and halted deliberately — all with three of its
+state-recording instructions quietly doing nothing.
+
+### What the fix changed, measured
+
+**The three refusals are gone.** The locator now reports five, and
+all five are printed p.24's time conversion — the genuinely
+unimplemented `/`, `CV` and `LTRCV`. Nothing else in a
+twenty-two-million-step run is refused.
+
+**And exactly one indicator bit moved: `AL` → `AH`.** That is the
+accumulator comparison the three connectives leave behind, and it is
+the only visible trace of three instructions that had been doing
+nothing for the whole life of this fixture. Everything else — the
+PC trail, the halt in `X6ERR`, `X ERR AD` — is unchanged.
+
+> So the `EXHAUSTED ALL CHANNELS` halt was **not** an artefact of
+> the image bug, and the honest answer is the one the machine gave
+> all along: this fixture's machine cannot satisfy the assignment.
+> *Fixing a real defect and finding the symptom unchanged is a
+> result, not a disappointment — it removes a suspect.* What is left
+> pointing at the halt is printed p.72 line 19's `*(BU,24),T COMBO,40
+> -COMPUTE LOC WITHIN TABLE`, an unimplemented multiply that
+> computes a table offset, and that one cannot be ruled out by
+> reading: it has to be built.
+
+## >>> THE OP LOCATOR, AND IT NAMED THE WRONG INSTRUCTION'S NEIGHBOUR — 2026-10-25 <<<
+
+`docs/NEXT.md` has carried this for days: *what is refused at
+001214.00?* The OP trail reported one `operation invalid` in the
+whole 22-million-step run, at half-word 1304, and the note said
+**the PC the trail reports is a locator and not a proof** — the
+model has a look-ahead, so `getPC()` can be running ahead of the
+operation that set the bit. A probe deck was tried on 2026-10-23 and
+did not settle it. The recommendation was to build an exact locator.
+
+**It is three lines.** `execute()` commits its indicator word exactly
+once, at a single `st.setIndicatorBits(ind)`, with `pc` in scope.
+Snapshot the entry value, compare at the commit, print the pc.
+
+**The answer, first run: half-word 1302 — 001213.00, not 001214.00.**
+
+```
+printed p.24 line 21   /I(BU,6),60,-60        001213.00  <- REFUSED
+printed p.24 line 22   C0011(BU,6),$RM+.54    001214.00     -SECONDS IN RM
+```
+
+The look-ahead was one instruction ahead, exactly as the note warned.
+**It is the VFL DIVIDE**, not the connective that reads the remainder
+it produces. MCP's time conversion divides by 60 and reads `$RM`
+(word 13) for the seconds; the model refuses the divide and the
+connective then reads a remainder nobody wrote.
+
+### And the model implements ten of twenty-four VFL operations
+
+```
+IMPLEMENTED   +(1) LCV(3) L(5) M+(9) ST(13) K(17)
+              +MG(33) M+MG(41) M+1(43) KF(49)
+
+MISSING       LFT(11) KE(19) KR(21) *(25) CV(27) /(29)
+              LTRCV(35) LWF(37) SRD(45) KFE(51) KFR(53)
+              *+(57) DCV(59) LTRS(61)
+```
+
+`bsv/README.md`'s "decoded but not executed" list names the radix
+conversions and the compare variants — **it does not name `*` or
+`/`**, and those are the two that matter here.
+
+### >>> WHICH MEANS THE MULTIPLY ON printed p.72 IS ALSO SUPPRESSED <<<
+
+p.72 line 19 is
+
+```
+*(BU,24),T COMBO,40      -COMPUTE LOC WITHIN TABLE
+```
+
+— the first multiply in this corpus, found earlier today. **It is
+operation 25 and the model does not have it.** It was invisible
+because OP was already high from 001213.00 and the trail counts
+rising edges only.
+
+> So the `EXHAUSTED ALL CHANNELS` halt may not be the fixture's
+> machine being small. **p.72 line 19 computes a location WITHIN the
+> machine-configuration table**, and a suppressed multiply leaves
+> that offset at whatever the accumulator held. The run would then
+> build the table wrong, find no units, and reject the assignment —
+> which is precisely what it does. *An unimplemented operation that
+> sets OP and no-ops is "correct behaviour for a suppressed
+> instruction" right up until the program under test depends on the
+> result.*
+
+To take the census the locator was temporarily changed to run the
+arms with OP **cleared**, ORing the entry value back at the commit,
+so that every refusal printed and not merely the first.
+
+> **AND THAT CHANGE WAS WRONG, WHICH IS WORTH MORE THAN THE CENSUS.**
+> It was justified as behaviour-neutral because *"`ind_OP` appears
+> exactly once in `StretchExecute.bsv`, in `setOpInvalid`, and
+> nothing reads it"*. That is a grep for a **name** used to conclude
+> something about a **behaviour**. The indicator-branch arm reads
+> `ind0[63 - bi.indNum]` at a **dynamic index** — so a program that
+> branches on indicator 15 reads exactly the bit that version
+> cleared. `decks/swap_scope.strap` and the VFL cross-store deck both
+> do, and both ran past their step cap in the next suite.
+>
+> Reverted to the rising-edge form, which is neutral by construction
+> because it only reads and prints. **The census stands — it was
+> measured — but it was measured on an instrumented build, and the
+> committed locator reports first refusals only.** To census again,
+> instrument a scratch build; do not change what the arms see.
+
+### >>> AND THERE ARE EIGHT, NOT ONE <<<
+
+```
+001213.00   p.24 line 21   /I(BU,6),60,-60
+001216.00   p.24 line 24   /I(BU,6),60,-60
+001217.00   p.24 line 25   CV(BU),$L,16
+001220.00   p.24 line 26   LTRCV(BU,6),$RM+.54
+001222.00   p.24 line 28   LTRCV(BU,6),0.24($1)
+003740.40   p.66 line 13   CM1111, T RJECT(T IXE)
+004361.40   p.75 line  2   CM1111, T RJECT(T IXE)
+004622.00   p.80 line 24   CM1111, T JBPRO(T IXG)
+```
+
+**Five are printed p.24's time conversion** and are exactly the
+candidate list `docs/NEXT.md` named in October: the two divides, the
+`CV` and the two `LTRCV`s. Every one is a VFL operation the model
+does not implement, so that whole block is explained and the fix is
+"build the missing operations".
+
+**The other three are not.** `CM1111` is a connective the model DOES
+implement, and all three are the same shape: *set a one-bit field to
+one, through an index register*. Worse, read what they are:
+
+```
+p.75 line  2   CM1111,T RJECT(T IXE)    -SET THE REJECT BIT
+p.80 line 24   CM1111,T JBPRO(T IXG)    -IF SO SET JOB PROCESSED BIT TO ONE
+```
+
+> **These are MCP recording its decisions, and they are being
+> silently suppressed.** The reject bit is never set; the job
+> processed bit is never set. A model that refuses an operation it
+> implements, on three rows that all write MCP's own state, is a far
+> more serious finding than fourteen unimplemented opcodes — and it
+> is a much better candidate for the `EXHAUSTED ALL CHANNELS` halt
+> than the fixture's machine being small.
+
+And none of the connective arm's four refusal guards can explain it.
+`p` is IBM bits 32-34 and the second group is `001000.36`, so
+`p = 0`: not progressive, not immediate, and `progressiveIndex`
+returns `progressive && ...` so no refill either. The field is ONE
+BIT, so it cannot cross a word. **Whatever refuses these is not in
+`connectiveOp`'s guards**, which means the instruction may not be
+reaching `connectiveOp` at all. The locator now also prints
+`fshow(di)` to say which arm it did reach.
 
 ## >>> MCP's ASSIGN ROUTINE RAN TO ITS OWN RETURN, AND MCP HALTED THE MACHINE ON PURPOSE — 2026-10-25 <<<
 

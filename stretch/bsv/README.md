@@ -389,11 +389,68 @@ another, which is what a two-way interchange is for.
 ### Decoded but not executed (sets indicator 15, OP, and no-ops —
 ### matches real-machine behavior for a suppressed instruction)
 
-Decimal-mode VFL (`c=1`), radix conversion (`CV`, `DCV`, `LCV`,
-`LTRCV`), the compare variants `KE`/`KF`/`KFE`/`KFR`, `LTRS`, `RNX`,
+Decimal-mode VFL (`c=1`), radix conversion (`CV`, `DCV`,
+`LTRCV`), the compare variants `KE`/`KFE`/`KFR`, `LTRS`, `RNX`,
 Input-Output's `LOC` **on an Exchange channel** (the disk form is
 executed — see above) and most of `CTL`, and Transmit's **BACKWARD
 `SWAP`** only (`SWAPB`/`SWAPBI`).
+
+**AND THE VFL INTEGER LIST WAS WRONG IN BOTH DIRECTIONS, 2026-10-25.**
+An exact census -- every `6'b......` arm in `vflIntOp` against
+`opcodes.VFL_INT_CODES` -- says the model executes **ten of
+twenty-four**:
+
+```
+EXECUTED   +(1) LCV(3) L(5) M+(9) ST(13) K(17) +MG(33) M+MG(41)
+           M+1(43) KF(49)
+NOT        LFT(11) KE(19) KR(21) *(25) CV(27) /(29) LTRCV(35)
+           LWF(37) SRD(45) KFE(51) KFR(53) *+(57) DCV(59) LTRS(61)
+```
+
+So `LCV` and `KF` were named here and DO execute, while **`*`, `/`,
+`KR`, `LFT`, `LWF`, `SRD` and `*+` were not named and do not** --
+seven operations missing from a list whose whole job is to say what
+is missing. The two that matter for MCP are `/`, which printed p.24's
+time conversion uses twice, and `*`, which printed p.72 line 19 uses
+to compute a location within the machine-configuration table.
+
+**AND THE SOURCING IS IN HAND FOR THE TWO THAT MATTER.** Reference
+Manual `22-6530-2` printed **pp.68-70** specify them normatively:
+
+* **p.68, Multiply (`*`)** — "the product of the addressed operand
+  and the accumulator field specified by the offset is placed into
+  the CLEARED ACCUMULATOR AT OFFSET 20. Neither operand may exceed 48
+  significant numeric bits." PF if either does; result indicators as
+  in ADD.
+* **p.69** — Load Factor (`LFT`) and Multiply and Add (`*+`), and
+  "FT is a 64-bit register with word address 14".
+* **p.70, Divide (`/`)** — "the entire accumulator contents to the
+  left of the offset are divided by the addressed storage field ...
+  the quotient is placed in the cleared accumulator at the specified
+  offset, and the remainder with sign is placed in the remainder
+  register (RM)". Dividend ≤ 96 significant bits, divisor ≤ 48.
+  **ZD: the division is not attempted and both the accumulator and
+  RM remain unchanged.** Result indicators describe the QUOTIENT.
+  And RM to the bit: "Bits 0-59 of RM are replaced by the integer
+  remainder with the low-order remainder bit in bit position 59."
+
+That last sentence is checkable against the corpus right now: MCP
+printed p.24 line 22 is `C0011(BU,6),$RM+.54` — bits 54-59, the
+low-order six bits of the remainder, which is exactly what sixty
+seconds needs. **The listing and the manual agree to the bit.**
+
+What is still missing is an *oracle with expected values*: no
+diagnostic in `docs/` exercises VFL `*` or `/`, and a grep across
+every deck finds them only in `mcp_bootstrap_p24` and
+`mcp_bootstrap_p72`. `C22-6578` Programming Examples (Apr 61) is
+unopened and is the likeliest source of worked arithmetic.
+
+**HOW THE LIST GOT CHECKED:** `StretchExecute.bsv`'s commit point
+now prints the address of every instruction that sets OP (one
+`$display` at the single `st.setIndicatorBits(ind)`, with the arms
+run on an OP-cleared word so every refusal shows and not just the
+first). One boot run names them all. That is the tool
+`docs/NEXT.md` asked for in October, and it is three lines.
 
 **`SWAP` LEFT THIS LIST ON 2026-10-23** — the FORWARD forms, `SWAP`
 and `SWAPI`, execute. The entry used to read "Transmit **`SWAP`**

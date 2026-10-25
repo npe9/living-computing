@@ -103,7 +103,7 @@ TIOREQ  SYN, (8)3373.0
 ! ---- table offsets, printed pp.62-64 ------------------------------
 TASGNI  SYN(BU,1), 0.00
 TABSUN  SYN(BU,3), 0.07
-TLAST   SYN, 0.18
+TLAST   SYN(BU,1), 0.18
 TMULTI  SYN(BU,1), 0.27
 TFREEL  SYN(BU,18), 0.28
 TUNASG  SYN(BU,1), 0.29

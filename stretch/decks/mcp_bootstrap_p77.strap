@@ -82,16 +82,16 @@ TPSAV   SYN, (8)4460.0
 ! ---- table offsets, printed pp.62-64 ------------------------------
 TASGNI  SYN(BU,1), 0.00
 TPRINT  SYN(BU,1), 0.02
-TTYPE   SYN, 0.3
+TTYPE   SYN(BU,4), 0.3
 TABSUN  SYN(BU,3), 0.07
 TLAST   SYN(BU,1), 0.18
 TUNCT   SYN(BU,8), 0.28
-TJBPRO  SYN, 0.36
+TJBPRO  SYN(BU,1), 0.36
 TRJECT  SYN(BU,1), 0.37
 TLPPEN  SYN(BU,1), 0.39
 TABSCH  SYN(BU,18), 0.46
 TUNRES  SYN(BU,1), 0.62
-TCRREF  SYN, 0.0
+TCRREF  SYN(BU,18), 0.0
 TPNAME  SYN(BU,48,6), 1.0
 ! ---- forward, onto printed pp.78 and 79 ---------------------------
 TP5A    SYN, (8)4511.0

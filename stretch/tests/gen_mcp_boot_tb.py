@@ -910,8 +910,28 @@ def main():
         #                                  ASSIGN's entry does, so it
         #                                  is still showing at the
         #                                  halt.
+        #   0x1000000001422  AH, OP, RGZ, XE, XVGZ -- ONE BIT, AL ->
+        #                                  AH, and it is the bit the
+        #                                  IMAGE BUG was hiding.  Three
+        #                                  "CM1111,<bit>(index)" rows
+        #                                  on printed pp.66, 75 and 80
+        #                                  were compiling with length 0
+        #                                  -- SIXTY-FOUR -- because the
+        #                                  merge had taken a stand-in
+        #                                  declared without its dds, so
+        #                                  the model refused them as
+        #                                  crossing-field writes and
+        #                                  MCP never set its reject or
+        #                                  job-processed bits.  With
+        #                                  every declaration carrying
+        #                                  its documenting page's dds
+        #                                  the three run, and the
+        #                                  accumulator comparison they
+        #                                  leave behind goes the other
+        #                                  way.  docs/NEXT.md has the
+        #                                  whole chain.
         ("mcp_indicators_word11", str(IND_WORD),
-         _ind("AL") | _ind("OP") | _ind("RGZ") | _ind("XE")
+         _ind("AH") | _ind("OP") | _ind("RGZ") | _ind("XE")
          | _ind("XVGZ")),
 
         # >>> THE MOVE ITSELF, AND IT IS THE POINT OF THE FIXTURE <<<

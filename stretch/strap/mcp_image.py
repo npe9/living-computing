@@ -182,6 +182,48 @@ def merge(verbose=False, pages=None, end_at='XIPLBS'):
             checked += len(cites) - 1
     external = {s: c[0][0] for s, c in standins.items() if s not in defined}
 
+    # >>> AND EVERY DECLARATION OF A SYMBOL MUST CARRY THE SAME DATA
+    # DESCRIPTION.  The check above compares VALUES and nothing else,
+    # and on 2026-10-25 that was not enough. <<<
+    #
+    # printed p.80 line 24 is "CM1111,T JBPRO(T IXG)  -IF SO SET JOB
+    # PROCESSED BIT TO ONE" and writes NO dds, so it takes its field
+    # length FROM THE SYMBOL (C22-6531 printed p.31).  p.62 line 11
+    # declares "T JBPRO SYN(BU,1),0.36" -- but three other decks wrote
+    # "T JBPRO SYN,0.36" with the dds left off, because those pages
+    # only ever BRANCH on the bit and a branch does not use a length.
+    #
+    # EVERY DECK STILL VERIFIED BIT-FOR-BIT, because within one deck a
+    # symbol has one declaration.  Only the MERGE saw both, took the
+    # one without the dds, and compiled length 0 -- which effLength
+    # reads as SIXTY-FOUR.  The model then refused the instruction as
+    # a crossing-field write, correctly, and MCP never set its job
+    # processed bit.  Three rows across printed pp.66, 75 and 80 were
+    # silently wrong in the image while every page-level test passed.
+    #
+    # A VALUE CHECK CANNOT CATCH THIS: the addresses agreed exactly.
+    # Fourteen symbols were declared both ways when this was written,
+    # two of them (T INDE, T MODE) with CONTRADICTORY lengths rather
+    # than a missing one.
+    ddsers = {}
+    for path, label in pages:
+        for raw in open(path).read().splitlines():
+            code = raw.split('!', 1)[0]
+            m = re.match(r'^([A-Z0-9]+)\s+SYN(\([^)]*\))?\s*,', code)
+            if m:
+                ddsers.setdefault(m.group(1), {}).setdefault(
+                    (m.group(2) or '').replace(' ', ''), []).append(label)
+    for sym, byd in sorted(ddsers.items()):
+        if len(byd) > 1:
+            shown = '; '.join(
+                '%s on %s' % (d or '(no dds)', ', '.join(pp))
+                for d, pp in sorted(byd.items()))
+            raise SystemExit(
+                f"FAIL {sym} is declared with more than one data "
+                f"description: {shown}.  A connective or a VFL "
+                f"operation that writes no dds takes its length from "
+                f"the SYMBOL, so the merge would silently pick one.")
+
     # Now emit: every line of every page file, minus the stand-ins it
     # no longer needs and minus its END.
     out = []

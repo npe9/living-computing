@@ -149,17 +149,17 @@ LWORKX  SYN, $10
 ! ---- stand-ins confirmed by pages already transcribed -------------
 LTAPEC  SYN(BU,7), (8)2601.31
 LBLANK  SYN(BU,48,6), (8)2736.0
-TTYPE   SYN, 0.3
+TTYPE   SYN(BU,4), 0.3
 LFOUND  SYN, (8)3055.40
 LETA    SYN, (8)3103.40
 LNORM   SYN, (8)3237.40
 LRLCT   SYN, (8)2607.0
-LCOUNT  SYN, (8)2601.53
+LCOUNT  SYN(BU,7), (8)2601.53
 ! ---- new on this page ---------------------------------------------
 LTAPE   SYN, (8)2733.0
 LSYMCX  SYN, (8)2566.0
 LSYMC   SYN, (8)2660.0
-TRLSYM  SYN, 0.11
+TRLSYM  SYN(BU,7), 0.11
 
         SLC, (8)3105.40
 
