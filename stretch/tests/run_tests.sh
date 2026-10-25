@@ -5009,6 +5009,34 @@ run "the ASSIGN program's THREE TABLES and their SYN cards, printed p.62, bit-ex
 run "the CHANNEL/UNIT STATUS and VALID CHECK tables, printed p.63, bit-exact (MCP_Mar63 PDF p.70)" python3 verify_mcp_bootstrap_p63.py
 run "the REQUEST VALIDITY CHECK and MULTI-UNIT COUNT tables, printed p.64, bit-exact (MCP_Mar63 PDF p.71)" python3 verify_mcp_bootstrap_p64.py
 run "THE ENTRY POINT TO THE ASSIGN ROUTINE, printed p.65, bit-exact (MCP_Mar63 PDF p.72)" python3 verify_mcp_bootstrap_p65.py
+run "the REQUEST-COUNT CHECK and the I/O REQUEST SCAN, printed p.66, bit-exact (MCP_Mar63 PDF p.73)" python3 verify_mcp_bootstrap_p66.py
+# IT PICKS UP EXACTLY WHERE printed p.65 LEFT OFF: p.65's last line
+# branches to T C1 and its line 37 to T A2, and lines 3 and 19 here
+# ARE those two labels, at 003733.40 and 003743.40.
+#
+# LINE 1 IS A HALT, the fourth transcribed -- "BD,$" commented
+# "-ILLEGAL REQUEST - MCP ERROR".  The other three (printed p.6 line
+# 1, p.54 line 55, p.55 line 12) are all table overflows; this one
+# is not.
+#
+# >>> THREE BARE VFL STATEMENTS TAKE THEIR dds FROM A `DD` LABEL
+# RATHER THAN A SYN. <<<  Lines 22, 39 and 44 are "CM0000,T INDD",
+# "CM0000,T MODE" and "CM1111,T MODE", all bare, all compiling
+# 001000 -- length ONE.  Neither symbol is a SYN: printed p.61 lines
+# 22 and 26 define them with "DD(BU,1),0".  So C22-6531 printed
+# p.31's dds sentence is about the SYMBOL, not about the card that
+# made it, and this page is where that distinction shows.
+#
+# >>> AND A C WAS MISREAD AS A ZERO, WHICH IS THE MIRROR OF
+# listing_typography.md 13. <<<  Line 5's opcode byte was
+# transcribed 40 and is 4C.  Every earlier instance of that pair --
+# 13 and its four sub-cases -- is a ZERO taken for a C; this is the
+# first the other way, and it is now 13f.  At 1800 dpi the glyph is
+# an open curve against the closed ovals of the same row's three
+# zeros, and the corpus prints "CBR" as 4C in two rows transcribed
+# long ago (002252.00, 002272.40) where plain "CB+" prints 48 --
+# one bit apart, which is what the R adds.  Neither check is
+# "believe the model".
 # >>> printed p.65 LINE 6 IS T ASIGN, AND THE BOOT RUN NOW EXECUTES
 # IT. <<<  decks/mcp_bootstrap_p27.strap line 60 is "X241 B,T ASIGN"
 # and the PC trail stopped at 003701.00 from the moment printed p.58

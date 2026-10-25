@@ -5395,6 +5395,83 @@ no opcode can rule it out. What ruled it out was the datum the name
 labels — which is a tell worth stating on its own: *when a name
 labels data, decode the data before trusting the name.*
 
+## PRINTED p.66 — and a `C` misread as a ZERO, the mirror of §13, 2026-10-24
+
+Forty-four compiled rows; forty-three bit-exact on the first run.
+The page picks up exactly where p.65 left off — p.65's last line
+branches to `T C1` and its line 37 to `T A2`, and lines 3 and 19 here
+*are* those two labels, at 003733.40 and 003743.40.
+
+**Line 1 is a halt, the fourth transcribed**: `BD,$` commented
+*"-ILLEGAL REQUEST - MCP ERROR"*. The other three (p.6 line 1, p.54
+line 55, p.55 line 12) are all table overflows; this one is not.
+
+### Three bare VFL statements take their dds from a `DD` label
+
+Lines 22, 39 and 44 are `CM0000,T INDD`, `CM0000,T MODE` and
+`CM1111,T MODE` — all bare, all compiling `001000`, length one.
+**Neither symbol is a SYN**: p.61 lines 22 and 26 define them with
+`DD(BU,1),0`.
+
+So C22-6531 printed p.31's dds sentence is about the **symbol**, not
+about the card that made it. Every earlier confirmation of that rule
+on this project has been against a SYN card; this page is where the
+other kind shows.
+
+### >>> The one row that was wrong reverses the direction of §13 <<<
+
+Line 5's opcode byte was transcribed `40` and is `4C`.
+
+**Every earlier instance of that pair is a ZERO taken for a `C`** —
+§13 and its four sub-cases, going back to the MCP scan's own glyph
+trap. **This is a `C` taken for a ZERO**, and it is the first.
+
+Three things settle it, none of them the assembler:
+
+1. At **1800 dpi** the glyph is an open curve with a clear gap,
+   against the *closed ovals* of the three zeros in the same row's
+   `003726`. 900 dpi was not enough — the same resolution that failed
+   on p.55 line 40's `B0`.
+2. The corpus prints `CBR` as `4C` in two rows transcribed long
+   before this page (002252.00, 002272.40).
+3. Plain `CB+` prints `48`. `48` is `01001000`, `4C` is `01001100` —
+   one bit, which is what the `R` adds.
+
+**Why it matters beyond the row.** §13 trains a reflex — *a `C` in a
+hex byte is probably a zero* — which is right most of the time and
+wrong here. A reflex applied in only one direction will eventually
+turn a correct `C` into a wrong `0` with nothing to catch it, because
+the octal fields cannot see a hex byte. The practice that catches it
+is symmetric and was already written down for p.55: **when the
+assembler and a hex byte disagree, re-render that byte at 1800 dpi
+and grep the corpus for the mnemonic.** Recorded as
+`listing_typography.md` §13f.
+
+### Two expressions worth the note
+
+Line 35's `T LAST+1.0(T IXA)` compiles `000001.22` — `T LAST` is
+0.18 (0o22) and one *word* on is 1.18, so the word part and the bit
+part move independently and the printed pair shows both.
+
+Line 36's `T IOREQ-1` compiles `003372.51`. `T IOREQ` is 003373.0 and
+the `-1` is **one bit**, landing at 003372.63; LVI's address field is
+nineteen bits — eighteen of word and one of half word, as p.55 line
+40 established — so it holds 003372 with the half-word bit set. The
+injection changes *both* the word and that bit.
+
+### Where the range stands
+
+```
+merged 49 pages, 347 stand-ins checked against their definitions,
+107 SYNs that agree with another page's SYN, 39 symbols external
+```
+
+The trail is unchanged at 004215.00 (`T A9`), because the run
+branches straight from p.65 line 9 and does not enter p.66's code
+yet. **`T A9` is printed p.72 line 4**, found by bisection, so
+pp.67-71 are what stand between the run and it — five dense code
+pages of roughly forty rows each.
+
 ## >>> MCP EXECUTES ITS ASSIGN ROUTINE — printed pp.63, 64 and 65, 2026-10-24 <<<
 
 **71 rows, all bit-exact on the first run**, and the ASSIGN program

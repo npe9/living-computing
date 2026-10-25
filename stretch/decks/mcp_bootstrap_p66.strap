@@ -1,0 +1,267 @@
+! MCP INITIALIZATION, printed p.66 (MCP_Mar63_001-249 PDF p.73) --
+! THE REQUEST-COUNT CHECK AND THE I/O REQUEST SCAN.
+!
+! Fifty-six lines, forty-four of which compile.  Three boxed
+! headings the listing names itself:
+!
+!   lines  6-8   "CHECK REQUEST COUNT AGAINST THE MACH CONF COUNT"
+!   lines 25-27  "GET AN I/O REQUEST AND FOLLOW IT THRU"
+!   lines 46-48  "SINGLE UNIT REQUEST, ASSIGN ONLY NEXT PP TO RUN"
+!
+! >>> IT PICKS UP EXACTLY WHERE printed p.65 LEFT OFF. <<<  p.65's
+! last line branches to T C1 and its line 37 to T A2; LINE 3 HERE IS
+! T C1 at 003733.40 and LINE 19 IS T A2 at 003743.40.  Both were
+! stand-ins in that deck and both are placed here.
+!
+! >>> LINE 1 IS A HALT, AND IT IS THE FOURTH THIS PROJECT HAS
+! TRANSCRIBED. <<<  "BD,$" at 003733.00 printing 003733.04 00,
+! commented "-ILLEGAL REQUEST - MCP ERROR".  The others are printed
+! p.6 line 1 ("-LOOP"), p.54 line 55 ("-INTERNAL UNIT TABLE") and
+! p.55 line 12 ("-INTERNAL CHANNEL TABLE EXCEEDED").  THREE OF THE
+! FOUR ARE TABLE OVERFLOWS AND THIS ONE IS NOT: it is reached when a
+! request is illegal, which is a different kind of giving up.
+!
+! ---------------------------------------------------------------
+! >>> NINE BARE VFL STATEMENTS, AND ONE OF THEM TAKES ITS dds FROM
+! A `DD` LABEL RATHER THAN A SYN <<<
+! ---------------------------------------------------------------
+! The dds rule has been checked on this project against SYN cards.
+! Lines 22, 39 and 44 are "CM0000,T INDD", "CM0000,T MODE" and
+! "CM1111,T MODE", all BARE, and all compile 001000 -- length ONE.
+! T MODE and T INDD are NOT SYNs: printed p.61 lines 22 and 26
+! define them with "DD(BU,1),0".  So a label defined by a DD carries
+! its dds the same way, and C22-6531 printed p.31's sentence --
+! "data properties (dds) associated with Y ... are transferred to A"
+! -- is about the SYMBOL, not about the card that made it.
+!
+! THE OTHER SIX are ordinary: line 3's "M+1,T RCAD(T X1)" and line 9
+! and 11's pair take printed p.63's SYN(BU,8); line 13's
+! "CM1111,T RJECT(T IXE)" takes p.62's SYN(BU,1); line 30's
+! "L,T RLSYM(T IXA),32" takes p.62's SYN(BU,7); lines 32 and 33 take
+! p.62's (BU,18) and (BU,3).
+!
+! ---------------------------------------------------------------
+! TWO EXPRESSIONS WORTH THE NOTE
+! ---------------------------------------------------------------
+! Line 35 is "BZB,T LAST+1.0(T IXA),T B2Z" and compiles 000001.22 --
+! T LAST is 0.18 (0o22) and one WORD on is 1.18, so the word part and
+! the bit part move independently and the printed pair shows both.
+!
+! Line 36 is "LVI,T IXA,T IOREQ-1" and compiles 003372.51 01.
+! T IOREQ is 003373.0 and the "-1" is ONE BIT, which lands at
+! 003372.63; LVI's address field is nineteen bits -- eighteen of word
+! and one of half word, as printed p.55 line 40 established -- so it
+! holds 003372 with the half-word bit SET.  That is why ".51" has bit
+! 18 on where line 35's ".22" does not.
+!
+! ---------------------------------------------------------------
+! SIX SYMBOLS POINT FORWARD, OFF THE PAGE
+! ---------------------------------------------------------------
+! T AREJX 004360.0, T A8 004176.0, T A2E 003775.0, T A7 004020.40,
+! T C 004417.40 and T P 004423.0, each read out of the branch that
+! names it.  printed p.67 onward will place them.
+!
+! "$Z" APPEARS AS AN OPERAND.  Line 21 is "LX,T IXB,$Z" commented
+! "-INITIALIZE TO PREVENT ERROR" and compiles 000000.12 10 -- the
+! address field is zero.  Written as printed.
+!
+! FOUR LISTING MARKS: lines 16, 35, 53 and -- the page's first
+! compiled row, line 1, carries none.
+!
+! ---------------------------------------------------------------
+! >>> A C MISREAD AS A ZERO -- THE MIRROR OF listing_typography.md
+! 13, AND THE FIRST TIME IT HAS GONE THIS WAY <<<
+! ---------------------------------------------------------------
+! Line 5's opcode byte was transcribed 40 and is 4C.  Every earlier
+! instance of this pair has been the OTHER direction: 13 says the
+! scan prints digit zero with a gap at the right so a leading 0
+! reads as C, and 13a through 13e are all cases of a ZERO being
+! taken for a C.  THIS IS A C BEING TAKEN FOR A ZERO.
+!
+! AT 1800 dpi IT IS NOT CLOSE: the glyph is an open curve with a
+! clear gap, against the closed ovals of the three zeros in the same
+! row's 003726.  The practice printed p.55 line 40 established --
+! re-render THAT BYTE at 1800 dpi when the assembler disagrees --
+! works in both directions, which is the point worth recording.
+!
+! AND THE CORPUS SETTLES IT WITHOUT THE ASSEMBLER.  "CBR" prints 4C
+! in two rows already transcribed --
+!
+!   002252.00  002247.70 4C   line 49  CBR,$12,Y LL2
+!   002272.40  002270.30 4C   line 19  Y IOCB  CBR,$12,Y IODTL
+!
+! -- and plain "CB+" prints 48 (001740.35 48).  48 is 01001000 and
+! 4C is 01001100, one bit apart, which is what the R adds.
+
+        SLC, (8)3733.0
+
+! ---- index names, printed p.61 ------------------------------------
+TX1     SYN, $10
+TX2     SYN, $9
+TIXA    SYN, $4
+TIXB    SYN, $5
+TIXE    SYN, $3
+TCTWDX  SYN, $10
+! ---- words, printed pp.61-65 --------------------------------------
+TCTEMP  SYN, (8)3265.0
+TMODE   SYN(BU,1), (8)3273.23
+TINDA   SYN(BU,1), (8)3273.24
+TINDD   SYN(BU,1), (8)3273.27
+TINDZ   SYN(BU,1), (8)3273.31
+TPPRUN  SYN, (8)3315.0
+TIOREQ  SYN, (8)3373.0
+TCOMBO  SYN, (8)3650.0
+TYSCAN  SYN, (8)3656.0
+TSETAC  SYN, (8)3726.0
+! ---- table offsets, printed pp.62 and 63 --------------------------
+TASGNI  SYN(BU,1), 0.0
+TUNOBT  SYN(BU,1), 0.01
+TTYPE   SYN(BU,4), 0.03
+TABSUN  SYN(BU,3), 0.07
+TRLSYM  SYN(BU,7), 0.11
+TLAST   SYN(BU,1), 0.18
+TJBPRO  SYN(BU,1), 0.36
+TRJECT  SYN(BU,1), 0.37
+TLPPEN  SYN(BU,1), 0.39
+TABSCH  SYN(BU,18), 0.46
+TTYAD   SYN(BU,8), 0.0
+TMCAD   SYN(BU,8), 0.8
+TRCAD   SYN(BU,8), 0.16
+! ---- forward, onto printed p.67 and after -------------------------
+TA8     SYN, (8)4176.0
+TA7     SYN, (8)4020.40
+TA2E    SYN, (8)3775.0
+TAREJX  SYN, (8)4360.0
+TC      SYN, (8)4417.40
+TP      SYN, (8)4423.0
+
+        SLC, (8)3733.0
+
+        BD, $                        ! line 1  -ILLEGAL REQUEST -
+                                      !           MCP ERROR
+TC1     M+1, TRCAD(TX1)              ! line 3  -INCREMENT REQUEST
+                                      !           COUNT
+        R, TX1                       ! line 4  -REFILL TO BEGINNING
+                                      !           OF TABLE
+        CBR+, TIXA, TSETAC           ! line 5
+
+! ---- CHECK REQUEST COUNT AGAINST THE MACH CONF COUNT --------------
+TCHEK   LF, TRCAD(TX1)               ! line 9  -REQUEST COUNT TO ACC
+        BRZ, TCONT                   ! line 10 -NO REQUEST
+        KF, TMCAD(TX1)               ! line 11 -COMPARE MACHINE
+                                      !           CONF. COUNT
+        BZAH, TCONT                  ! line 12 -IF REQUEST IS OK
+        CM1111, TRJECT(TIXE)         ! line 13 -REJECT PP FOR REQ IS
+                                      !           TO HIGH
+TCONT   V+C, TX1, TCOMBO             ! line 14
+        BZXCZ, TCHEK                 ! line 15
+        BB, TRJECT(TIXE), TAREJX     ! line 16 -IF PP WAS REJECTED
+
+TA2     Z, TCTEMP                    ! line 19 -CLEAR THE TEMP SYMB
+                                      !           CHAN WORD
+        CM0000(BU,4), TINDA          ! line 20 -RESET ALL IND
+TA2A    LX, TIXB, $Z                 ! line 21 -INITIALIZE TO
+                                      !           PREVENT ERROR
+        CM0000, TINDD                ! line 22 -RESET THE OPTIMIZE
+                                      !           IND
+        BZB, TINDZ, TA2B             ! line 23 -IF MORE MULTI UNIT
+                                      !           CHAN AVAILALBE
+        B, TC                        ! line 24
+
+! ---- GET AN I/O REQUEST AND FOLLOW IT THRU ------------------------
+TA2B    BZB, TASGNI(TIXA), TA2D      ! line 28 -IF REQ IS NOT
+                                      !           ASSIGNED
+        BZB, TTYPE(TIXA), TB2        ! line 29 -IF A SINGLE UNIT
+                                      !           TYPE OF REQUEST
+        L, TRLSYM(TIXA), 32          ! line 30 -REL SYMBOLIC CHANNEL
+                                      !           TO ACC
+        BRZ, TB2                     ! line 31 -IF A ZERO CHANNEL
+                                      !           REQEST
+        C0011, TABSCH(TIXA), 46      ! line 32 -ABSOLUTE CHANNEL
+                                      !           TO ACC
+        C0011, TABSUN(TIXA)          ! line 33 -ABSOLUTE UNIT TO ACC
+        ST(BU,64), TCTEMP            ! line 34 -BUILD TEMP CHAN WORD
+TB2     BZB, TLAST+1.0(TIXA), TB2Z   ! line 35 -CHECK FOR TABLE
+                                      !           LOOP AROUND
+        LVI, TIXA, TIOREQ-1          ! line 36 -RELOAD VF TO
+                                      !           BEGINNING OF TABLE
+TB2Z    CB+, TIXA, TA2A              ! line 37
+        B, TA8                       ! line 38 -IF COUNT GOES TO ZERO
+TA2D    CM0000, TMODE                ! line 39 -RESET IND
+        LX, TX2, TYSCAN              ! line 40 -SET UP FOR FORWARD
+                                      !           SCAN
+        LX, TCTWDX, 0.0($15)         ! line 41 -SET UP FOR OVERLAP
+                                      !           MODE TEST
+        BXF, TA2DB                   ! line 42 -IF FULL NOT OVERLAP
+                                      !           MODE
+        BZB, TUNOBT(TIXA), TA2DC     ! line 43 -IF SINGLE OVERLAP
+                                      !           MODE
+TA2DB   CM1111, TMODE                ! line 44 -SET IND TO NOT
+                                      !           OVERLAP MODE
+TA2DC   BB, TTYPE(TIXA), TA2E        ! line 45 -IF A TAPE CHAN
+                                      !           REQUEST
+
+! ---- SINGLE UNIT REQUEST, ASSIGN ONLY NEXT PP TO RUN --------------
+        BXF, TA7                     ! line 49 -IF NOT OVERLAP CASE,
+                                      !           BYPASS
+        LX, TX1, TPPRUN              ! line 50 -SET IX TO NEXT JOB
+                                      !           TO RUN
+        BB, TLPPEN(TX1), TP          ! line 51 -ERROR - SOMETHING IS
+                                      !           OUT OF PHASE
+TC2B    BB, TRJECT(TX1), TC2BA       ! line 52 -IF THIS JOB WAS
+                                      !           REJECTED
+        BZB, TJBPRO(TX1), TC2BC      ! line 53 -IF THE JOB WAS NOT
+                                      !           PROCESSED
+TC2BA   V+ICR, TX1, 2.0              ! line 54
+        B, TC2B                      ! line 55
+TC2BC   KV, TIXE, TX1                ! line 56 -IS ASSIGNMENT FOR
+                                      !           NEXT JOB TO BE RUN
+        END, TC1
+
+! ---------------------------------------------------------------
+! THE CHECKED ROWS -- all forty-four that compile.
+! ---------------------------------------------------------------
+!   line  1  003733.00  003733.04 00                   BD,$
+!   line  3  003733.40  000000.20 8A  010000.22 B0     T C1  M+1
+!   line  4  003734.40  000032.02 00                   R,T X1
+!   line  5  003735.00  003726.11 4C                   CBR+
+!   line  9  003735.40  000000.20 8A  010000.06 70     T CHEK  LF
+!   line 10  003736.40  003741.74 C2                   BRZ,T CONT
+!   line 11  003737.00  000000.10 8A  010000.23 10     KF,T MCAD
+!   line 12  003740.00  003741.77 40                   BZAH,T CONT
+!   line 13  003740.40  000000.45 83  001000.36 F0     CM1111
+!   line 14  003741.40  003650.24 D0                   T CONT  V+C
+!   line 15  003742.00  003735.70 40                   BZXCZ,T CHEK
+!   line 16  003742.40  000000.45 83  004360.34 02     BB,T AREJX
+!   line 19  003743.40  003265.22 00                   T A2  Z,T CTEMP
+!   line 20  003744.00  003273.24 80  004000.00 F0     CM0000(BU,4)
+!   line 21  003745.00  000000.12 10                   T A2A  LX,$Z
+!   line 22  003745.40  003273.27 80  001000.00 F0     CM0000,T INDD
+!   line 23  003746.40  003273.31 80  003750.34 00     BZB,T INDZ
+!   line 24  003747.40  004417.50 00                   B,T C
+!   line 28  003750.00  000000.00 84  003761.34 00     T A2B  BZB
+!   line 29  003751.00  000000.03 84  003756.74 00     BZB,T TYPE
+!   line 30  003752.00  000000.13 84  007020.20 50     L,T RLSYM,32
+!   line 31  003753.00  003756.74 C2                   BRZ,T B2
+!   line 32  003753.40  000000.56 84  022027.06 70     C0011,T ABSCH
+!   line 33  003754.40  000000.07 84  003000.06 70     C0011,T ABSUN
+!   line 34  003755.40  003265.00 80  000000.20 D0     ST(BU,64)
+!   line 35  003756.40  000001.22 84  003760.34 00     T B2  BZB
+!   line 36  003757.40  003372.51 01                   LVI,T IOREQ-1
+!   line 37  003760.00  003745.11 48                   T B2Z  CB+
+!   line 38  003760.40  004176.10 00                   B,T A8
+!   line 39  003761.00  003273.23 80  001000.00 F0     T A2D  CM0000
+!   line 40  003762.00  003656.22 10                   LX,T X2,T YSCAN
+!   line 41  003762.40  000000.24 1F                   LX,T CTWDX
+!   line 42  003763.00  003764.63 42                   BXF,T A2DB
+!   line 43  003763.40  000000.01 84  003765.74 00     BZB,T UNOBT
+!   line 44  003764.40  003273.23 80  001000.36 F0     T A2DB  CM1111
+!   line 45  003765.40  000000.03 84  003775.34 02     T A2DC  BB
+!   line 49  003766.40  004020.63 42                   BXF,T A7
+!   line 50  003767.00  003315.24 10                   LX,T X1,T PPRUN
+!   line 51  003767.40  000000.47 8A  004423.34 02     BB,T LPPEN,T P
+!   line 52  003770.40  000000.45 8A  003772.74 02     T C2B  BB
+!   line 53  003771.40  000000.44 8A  003773.74 00     BZB,T JBPRO
+!   line 54  003772.40  000002.25 07                   T C2BA  V+ICR
+!   line 55  003773.00  003770.50 00                   B,T C2B
+!   line 56  003773.40  000032.06 90                   T C2BC  KV

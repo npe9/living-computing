@@ -772,3 +772,41 @@ decode the operation field, (3) decode what a name labels, (4)
 re-render higher — but §13e is the reminder that **step 2 cuts both
 ways**: it is as good at confirming a `C` as at refuting one, and a
 page that needs it will usually need it in both directions.
+
+### 13f. >>> THE DIRECTION REVERSES: a `C` READ AS A ZERO (printed p.66, 2026-10-24) <<<
+
+Every instance above is a ZERO taken for a `C`. **Printed p.66 line 5
+is a `C` taken for a ZERO**, and it is the first.
+
+The row is `CBR+,T IXA,T SETAC` and its opcode byte was transcribed
+`40`. It is `4C`.
+
+**Three things settle it, and none of them is the assembler.**
+
+1. **At 1800 dpi the glyph is not close.** It is an open curve with a
+   clear gap on the right, against the *closed ovals* of the three
+   zeros in the same row's `003726`. 900 dpi was not enough — the
+   same resolution that failed on printed p.55 line 40's `B0`.
+2. **The corpus prints the same byte twice**, in rows transcribed
+   long before this page:
+   ```
+   002252.00  002247.70 4C   line 49  CBR,$12,Y LL2
+   002272.40  002270.30 4C   line 19  Y IOCB  CBR,$12,Y IODTL
+   ```
+3. **And the neighbouring mnemonic differs by one bit.** Plain `CB+`
+   prints `48` (001740.35 48). `48` is `01001000`, `4C` is
+   `01001100` — one bit, which is what the `R` adds.
+
+**WHY THIS MATTERS BEYOND THE ONE ROW.** §13 and its four sub-cases
+have trained a reflex: *a `C` in a hex byte is probably a zero*. That
+reflex is right most of the time and it is wrong here, and a reflex
+applied in only one direction will eventually turn a correct `C` into
+a wrong `0` with nothing to catch it — the octal fields cannot, because
+the byte is hex.
+
+**The practice that catches it is symmetric and already written down**
+(printed p.55 line 40, 2026-10-24): when the assembler and a hex byte
+disagree, re-render *that byte* at 1800 dpi and grep the corpus for the
+mnemonic. Two cheap checks, neither of which is "believe the model".
+It works in both directions, which is why this instance is recorded
+separately rather than folded into §13.
