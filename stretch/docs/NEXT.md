@@ -5395,6 +5395,58 @@ no opcode can rule it out. What ruled it out was the datum the name
 labels — which is a tell worth stating on its own: *when a name
 labels data, decode the data before trusting the name.*
 
+## PRINTED p.71 — the range closes on `T ASIGN`'s forward branch, 2026-10-24
+
+Thirty-six compiled rows, **all bit-exact on the first run**.
+
+**Line 52 ends at 004215.00**, which is printed p.72 line 4 — and
+004215.00 is `T A9`, the address p.65 line 9 branches to and the
+boot run's PC trail has named since p.65 landed. **printed pp.15-71
+are now contiguous in the image**, and the run stops at exactly the
+first word p.72 would provide.
+
+It also places five stand-ins: `T A5S` (p.68) and `T A8`, `T B8C`,
+`T B8Z`, `T B8` (all p.66).
+
+### Statements with no operation
+
+Lines 1 and 2 print `,DFREE` and `,9.` — a comma and a field,
+nothing before it. They are the **parameter block of p.70 line 56's
+`B,DMCP`**, straddling the page break; that row's comment reads
+*"-THEN UNLOAD WITH - SFREE -"*. A null operation compiles a half
+word and both rows print one. `9.` is nine **words**, and the
+injection that drops the dot reads `000000.11` for `000011.00` —
+nine moving from the word field to the bit field, visible in both
+halves of the printed pair.
+
+### >>> Line 26 is a §13d row, and the octal field decides it <<<
+
+At 1800 dpi the row prints `C0C024.02 C0`. The **six-digit octal
+field contains two of those `C` glyphs** — and octal has no `C`, so
+the drum dropped the left stroke on *every* zero in this row. That
+is §13d's per-ROW artifact. The opcode byte's first glyph has the
+same shape, so the row is `000024.02 00`, which p.66 line 4's
+`R,T X1` (`000032.02 00`) says independently.
+
+**That is the opposite call from p.66 line 5 three pages ago**,
+where a `C` in a hex byte *was* a `C` (`4C`, not `40`). The
+difference is that this row's octal field is contaminated and that
+one's was not. §13e's rule — *"the hex byte is where a `C` is
+ambiguous, the OCTAL pair is where it cannot be"* — made both
+decisions, in opposite directions, within three pages.
+
+### Where this leaves the arc
+
+```
+merged 54 pages, 412 stand-ins checked against their definitions,
+189 SYNs that agree with another page's SYN, 37 symbols external
+```
+
+The external count has fallen from 42 to 37 over pp.68-71. The boot
+run is unchanged at 004215.00 because `T A9`'s code is p.72's, so
+**printed p.72 is the next page** and it is the one that moves the
+run again.
+
 ## PRINTED p.70 — the written-minus count goes from two to four, 2026-10-24
 
 Thirty-eight compiled rows, **all bit-exact on the first run**. It

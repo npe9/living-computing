@@ -5014,6 +5014,37 @@ run "the MULTI-UNIT and SINGLE-UNIT assignment attempts, printed p.67, bit-exact
 run "the UNIT AVAILABILITY TESTS and MULTI-UNIT CHANNEL SCAN, printed p.68, bit-exact (MCP_Mar63 PDF p.75)" python3 verify_mcp_bootstrap_p68.py
 run "the UNIT TABLE SCAN and RESERVED-UNIT SEARCH, printed p.69, bit-exact (MCP_Mar63 PDF p.76)" python3 verify_mcp_bootstrap_p69.py
 run "MULTI-UNIT ASSIGNMENT and the UNLOAD PATH, printed p.70, bit-exact (MCP_Mar63 PDF p.77)" python3 verify_mcp_bootstrap_p70.py
+run "SINGLE UNIT ASSIGNMENT and the ALL-UNITS check, printed p.71, bit-exact (MCP_Mar63 PDF p.78)" python3 verify_mcp_bootstrap_p71.py
+# >>> THIS PAGE CLOSES THE RANGE ON T ASIGN'S FORWARD BRANCH. <<<
+# Line 52 is "B,T A1" at 004214.40, one half word, ending at
+# 004215.00 -- which is printed p.72 line 4, and 004215.00 is T A9,
+# the address printed p.65 line 9 branches to and the boot run's PC
+# trail has named ever since p.65 landed.  printed pp.15-71 are now
+# contiguous.
+#
+# It also places FIVE stand-ins: T A5S (printed p.68) and T A8,
+# T B8C, T B8Z and T B8 (all printed p.66).
+#
+# LINES 1 AND 2 ARE STATEMENTS WITH NO OPERATION -- ",DFREE" and
+# ",9." -- the parameter block of printed p.70 line 56's "B,DMCP",
+# straddling the page break.  A null operation compiles a half word
+# and both print one.  "9." is nine WORDS; the injection that drops
+# the dot reads 000000.11 for 000011.00, moving nine from the word
+# field to the bit field.
+#
+# >>> LINE 26 IS A listing_typography.md 13d ROW, AND THE OCTAL
+# FIELD DECIDES IT. <<<  At 1800 dpi it prints C0C024.02 C0, and the
+# SIX-DIGIT OCTAL field contains two of those C glyphs.  Octal has
+# no C, so the drum dropped the left stroke on every zero in this
+# row -- 13d's per-ROW artifact -- and the opcode's first glyph has
+# the same shape.  The row is 000024.02 00, which printed p.66 line
+# 4's "R,T X1" (000032.02 00) says independently.
+#
+# THAT IS THE OPPOSITE CALL FROM printed p.66 LINE 5, where a C in a
+# hex byte WAS a C (4C, not 40).  The difference is that this row's
+# octal field is contaminated and that one's was not.  13e's rule --
+# "the hex byte is where a C is ambiguous, the OCTAL pair is where
+# it cannot be" -- made both decisions.
 # >>> TWO MORE BARE WRITTEN MINUSES -- THE CORPUS GOES FROM TWO TO
 # FOUR ON ONE PAGE. <<<  Lines 37 and 40 are "-(BU,18),T CHSXW,46"
 # and "- (BU,4),T IXJ+0.42,46", the second with a space after the

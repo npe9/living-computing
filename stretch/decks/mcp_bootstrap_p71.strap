@@ -1,0 +1,196 @@
+! MCP INITIALIZATION, printed p.71 (MCP_Mar63_001-249 PDF p.78) --
+! SINGLE UNIT ASSIGNMENT, AND THE ALL-UNITS-ASSIGNED CHECK.
+!
+! Fifty-six lines, thirty-six of which compile.  Three boxed
+! headings:
+!
+!   lines  5-9   "SINGLE UNIT ASSIGNMENT / MARK THE I/O CHAN/UNIT
+!                 RESERVED / MARK THE I/O REQUEST ASSIGNED"
+!   lines 19-25  "CHECK TO SEE THAT ALL UNITS WERE ASSIGNED TO A
+!                 GIVEN PP.  IF SO MARK THE ASSIGNED BIT ON IN THE
+!                 PP REFERENCE TABLE"
+!
+! >>> THIS PAGE CLOSES THE RANGE ON T ASIGN'S FORWARD BRANCH. <<<
+! Line 52 is "B,T A1" at 004214.40, one half word, ending at
+! 004215.00 -- which is printed p.72 line 4, and 004215.00 is T A9,
+! the address printed p.65 line 9 branches to and the boot run's PC
+! trail has named since printed p.65 landed.
+!
+! IT ALSO PLACES FIVE STAND-INS: T A5S (printed p.68) at 004167.40,
+! and T A8 (p.66) at 004176.00, T B8C (p.66) at 004201.40, T B8Z
+! (p.66) at 004203.40 and T B8 (p.66) at 004211.40.
+!
+! ---------------------------------------------------------------
+! LINES 1 AND 2 ARE STATEMENTS WITH NO OPERATION
+! ---------------------------------------------------------------
+! They print ",DFREE" and ",9." -- a comma and a field, nothing
+! before it.  They are the PARAMETER BLOCK of printed p.70 line
+! 56's "T IPL3  B,DMCP", whose comment reads "-THEN UNLOAD WITH
+! - SFREE -", so the call and its arguments straddle the page break.
+! A null operation compiles a half word, which is what both rows
+! print: 000000.00 80 and 000011.00 80.  "9." is nine WORDS, and
+! nine in octal is 11.
+!
+! DFREE COMPILES ZERO.  It is not defined anywhere this project has
+! read, and the listing prints 000000 for it, so it is carried as a
+! stand-in at zero -- the value the listing itself shows.
+!
+! ---------------------------------------------------------------
+! >>> LINE 26 IS A listing_typography.md 13d ROW, AND THE OCTAL
+! FIELD PROVES IT <<<
+! ---------------------------------------------------------------
+! At 1800 dpi line 26 prints
+!
+!     C0C024.02 C0
+!
+! -- and the SIX-DIGIT OCTAL field contains two of those C glyphs.
+! OCTAL HAS NO C, so both are zeros: the drum dropped the left
+! stroke on every zero in this row, which is 13d's per-ROW artifact.
+! The opcode byte's first glyph has the SAME shape, so it is a zero
+! too, and the row is 000024.02 00.
+!
+! AND THE CORPUS AGREES: printed p.66 line 4 is "R,T X1" compiling
+! 000032.02 00, the same operation with a different index.  13e's
+! rule -- "the hex byte is where a C is ambiguous, the OCTAL pair is
+! where it cannot be" -- decides this row by itself, and p.66
+! confirms it from outside.
+!
+! THIS IS THE OPPOSITE CALL FROM printed p.66 LINE 5, three pages
+! ago, where a C in a hex byte WAS a C (4C, not 40).  The difference
+! is that THIS row's octal field is contaminated and that one's was
+! not.  Both decisions came from the same rule.
+!
+! ---------------------------------------------------------------
+! FOUR SYMBOLS POINT FORWARD, ALL ONTO printed p.72 AND AFTER
+! ---------------------------------------------------------------
+! T H 004420.0, T I 004420.40 (already a stand-in on printed p.70),
+! T K 004421.0 and T AREJX 004360.0 (a stand-in from p.66).
+!
+! TWO LISTING MARKS: lines 12 ("004170.40 *") and 38
+! ("004204.00 *").
+
+        SLC, (8)4165.0
+
+! ---- index names, printed p.61 ------------------------------------
+TX3     SYN, $2
+TIXA    SYN, $4
+TIXE    SYN, $3
+TIXJ    SYN, $6
+TCTWDX  SYN, $10
+! ---- words, printed pp.61-70 --------------------------------------
+TSAV    SYN, (8)3272.0
+TINDE   SYN(BU,1), (8)3273.30
+TLOOP1  SYN(BU,1), (8)3273.33
+TIOREQ  SYN, (8)3373.0
+TA1     SYN, (8)3710.0
+TA2A    SYN, (8)3745.0
+TB2     SYN, (8)3756.40
+TAREJX  SYN, (8)4360.0
+! ---- table offsets, printed pp.62 and 63 --------------------------
+TASGNI  SYN(BU,1), 0.0
+TLAST   SYN(BU,1), 0.18
+TCHOWN  SYN(BU,1), 0.32
+TASGNP  SYN(BU,1), 0.38
+TABSCH  SYN(BU,18), 0.46
+TUNRES  SYN(BU,1), 0.62
+TOVRES  SYN(BU,1), 0.63
+! ---- forward, onto printed p.72 and after -------------------------
+TH      SYN, (8)4420.0
+TI      SYN, (8)4420.40
+TK      SYN, (8)4421.0
+! ---- undefined in anything read so far; the listing prints zero ---
+DFREE   SYN, 0
+
+        SLC, (8)4165.0
+
+! ---- printed p.70 line 56's call block, continued -----------------
+        , DFREE                      ! line 1
+        , 9.                         ! line 2
+        CM0000, TCHOWN(TIXJ)         ! line 3  -THEN RESET BACK TO
+                                      !           PP OWNER
+        B, TA2A                      ! line 4
+
+! ---- SINGLE UNIT ASSIGNMENT ---------------------------------------
+TA5S    LX, TCTWDX, 0.0($15)         ! line 10 -CHECK THE MODE
+        BXF, TA5Z                    ! line 11 -IF NOT OVERLAP
+        CM1111, TOVRES(TX3)          ! line 12 -SET THE OVERLAP
+                                      !           RESERVED BIT
+        B, TA5SA                     ! line 13
+TA5Z    CM1111, TUNRES(TX3)          ! line 14 -SET THE NOT OVERLAP
+                                      !           RESERVED BIT
+TA5SA   BB1, TASGNI(TIXA), TH        ! line 15 -SET THE ASSIGNED BIT
+                                      !           -- I/O REQ TBL
+        SV, TX3, $R                  ! line 16 -THE CHAN/UNIT ADDRESS
+        ST, TABSCH(TIXA), 46         ! line 17 -PLACE IN THE I/O REQ
+                                      !           TBLE
+        B, TB2                       ! line 18
+
+! ---- CHECK TO SEE THAT ALL UNITS WERE ASSIGNED TO A GIVEN PP ------
+TA8     R, TIXA                      ! line 26 -RELOAD -A-
+TA8A    BZB, TLAST(TIXA), TA8BB      ! line 27
+        LVI, TIXA, TIOREQ            ! line 28 -RELOAD IX TO
+                                      !           BEGINNING OF TABLE
+TA8BB   BZB, TASGNI(TIXA), TA8B      ! line 29 -IF NOT ASSIGNED
+        CB+, TIXA, TA8A              ! line 30
+TB8C    CM1111, TASGNP(TIXE)         ! line 33 -SET PP ASSIGNED BIT
+        LX, TCTWDX, 0.0($15)         ! line 34 -LOAD FOR OVERLAP TEST
+        BXF, TK                      ! line 35 -IF NOT OVERLAP MODE
+TB8Z    V+ICR, TIXE, 2.0             ! line 37 -STEP IX -E-
+        BZXCZ, TB8A                  ! line 38 -COUNT IS OK
+        M+1, TLOOP1                  ! line 39 -IX REFILLED INDICATOR
+TB8A    BB, TINDE, TA1               ! line 40 -IF SAVING IS TO BE
+                                      !           IGNORED
+        LX, TCTWDX, 0.0($15)         ! line 41 -CHECK MODE BEFORE
+                                      !           SAVING
+        BXF, TA1                     ! line 42 -IF NOT OVERLAP
+        SX, TIXE, TSAV               ! line 43 -IF NOT SAVE
+        B, TA1                       ! line 44
+TA8B    LX, TCTWDX, 0.0($15)         ! line 46 -LOAD FOR OVERLAP TEST
+        BXF, TAREJX                  ! line 47 -NOT OVERLAP ASSIGNED
+TB8     V+ICR, TIXE, 2.0             ! line 48
+        CM1111, TINDE                ! line 49 -DO NOT SAVE INDEX
+                                      !           TIXE FROM HERE ON
+        BZXCZ, TA1                   ! line 50 -COUNT STILL OK
+        M+1, TLOOP1                  ! line 51 -IX REFILLED INDICATOR
+        B, TA1                       ! line 52 -SO DO NOT SAVE -E-
+        END, TA5S
+
+! ---------------------------------------------------------------
+! THE CHECKED ROWS -- all thirty-six that compile.
+! ---------------------------------------------------------------
+!   line  1  004165.00  000000.00 80                   ,DFREE
+!   line  2  004165.40  000011.00 80                   ,9.
+!   line  3  004166.00  000000.40 86  001000.00 F0     CM0000,T CHOWN
+!   line  4  004167.00  003745.10 00                   B,T A2A
+!   line 10  004167.40  000000.24 1F                   T A5S  LX
+!   line 11  004170.00  004172.23 42                   BXF,T A5Z
+!   line 12  004170.40  000000.77 82  001000.36 F0     CM1111,T OVRES
+!   line 13  004171.40  004173.10 00                   B,T A5SA
+!   line 14  004172.00  000000.76 82  001000.36 F0     T A5Z  CM1111
+!   line 15  004173.00  000000.00 84  004420.34 0E     T A5SA  BB1
+!   line 16  004174.00  000011.05 30                   SV,T X3,$R
+!   line 17  004174.40  000000.56 84  022027.20 D0     ST,T ABSCH
+!   line 18  004175.40  003756.50 00                   B,T B2
+!   line 26  004176.00  000024.02 00                   T A8  R,T IXA
+!   line 27  004176.40  000000.22 84  004200.34 00     T A8A  BZB
+!   line 28  004177.40  003373.11 01                   LVI,T IOREQ
+!   line 29  004200.00  000000.00 84  004210.74 00     T A8BB  BZB
+!   line 30  004201.00  004176.51 48                   CB+,T A8A
+!   line 33  004201.40  000000.46 83  001000.36 F0     T B8C  CM1111
+!   line 34  004202.40  000000.24 1F                   LX,T CTWDX
+!   line 35  004203.00  004421.23 42                   BXF,T K
+!   line 37  004203.40  000002.07 07                   T B8Z  V+ICR
+!   line 38  004204.00  004205.70 40                   BZXCZ,T B8A
+!   line 39  004204.40  003273.33 80  001000.22 B0     M+1,T LOOP1
+!   line 40  004205.40  003273.30 80  003710.34 02     T B8A  BB
+!   line 41  004206.40  000000.24 1F                   LX,T CTWDX
+!   line 42  004207.00  003710.23 42                   BXF,T A1
+!   line 43  004207.40  003272.07 10                   SX,T IXE,T SAV
+!   line 44  004210.00  003710.10 00                   B,T A1
+!   line 46  004210.40  000000.24 1F                   T A8B  LX
+!   line 47  004211.00  004360.23 42                   BXF,T AREJX
+!   line 48  004211.40  000002.07 07                   T B8  V+ICR
+!   line 49  004212.00  003273.30 80  001000.36 F0     CM1111,T INDE
+!   line 50  004213.00  003710.30 40                   BZXCZ,T A1
+!   line 51  004213.40  003273.33 80  001000.22 B0     M+1,T LOOP1
+!   line 52  004214.40  003710.10 00                   B,T A1
