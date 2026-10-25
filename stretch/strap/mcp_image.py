@@ -348,7 +348,7 @@ NO_DECK_PAGES = {47, 59, 60}
 # every build, so this comment is a summary and not the evidence.
 MCP_IPL_PAGES = [
     (DECK("mcp_bootstrap_p%d.strap" % n), "printed p.%d" % n)
-    for n in range(15, 70) if n not in NO_DECK_PAGES
+    for n in range(15, 71) if n not in NO_DECK_PAGES
 ]
 
 

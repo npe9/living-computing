@@ -1,0 +1,224 @@
+! MCP INITIALIZATION, printed p.70 (MCP_Mar63_001-249 PDF p.77) --
+! MULTI-UNIT ASSIGNMENT, AND THE UNLOAD PATH.
+!
+! Fifty-six lines, thirty-eight of which compile.  Three boxed
+! headings:
+!
+!   lines 13-15  "IN THE CASE OF AN INDEX RUNOUT"
+!   lines 21-27  "MULTI - UNIT ASSIGNMENT / MARK THE I/O UNIT
+!                 RESERVED / MARK THE I/O REQUEST ASSIGNED"
+!   lines 48-49  "CONCLUSION IS A SCRATCH IS MOUNTED AND A LABEL
+!                 TAPE IS TO REPLACE IT , HENCE WE MUST UNLOAD"
+!
+! >>> IT PLACES THREE STAND-INS FROM TWO EARLIER PAGES. <<<  Line 10
+! is T A3F1 at 004132.00 (printed p.68 line 42 and p.68 line 56),
+! line 28 is T A5A at 004137.00 and line 34 is T A5MA at 004142.40
+! (both printed p.69).
+!
+! ---------------------------------------------------------------
+! >>> TWO MORE BARE WRITTEN MINUSES -- THE CORPUS GOES FROM TWO TO
+! FOUR ON ONE PAGE <<<
+! ---------------------------------------------------------------
+! Line 37 is "-(BU,18),T CHSXW,46" and line 40 is
+! "- (BU,4),T IXJ+0.42,46" -- the second with a SPACE after the
+! minus, which STRAP ignores.
+!
+! Before printed p.69 this project had exactly ONE written minus in
+! the whole corpus: MCP printed p.18 line 35, the row that found
+! fieldToSM returning sign 0 for every unsigned field and dropping
+! the negative sign modifier -- every unsigned subtract in the model
+! was an addition, fixed 2026-10-19 off RefMan printed p.61's
+! Figure 12.  p.69 line 48 made it two; THESE MAKE IT FOUR.
+!
+! AND THE MODIFIER IS VISIBLE IN BOTH, against a plain row two lines
+! away each time:
+!
+!   line 36  ST,T ABSCH(T IXA),46   022027.20 D0
+!   line 37  -(BU,18),T CHSXW,46    022027.30 10   <- .30
+!   line 39  L,T UNITK(T X3),46     004027.20 50
+!   line 40  - (BU,4),T IXJ+0.42,46 004027.30 10   <- .30
+!
+! The same single bit printed p.69 line 48 showed.  Four instances
+! now, on three pages, and every one of them would have compiled an
+! ADDITION before the fix.
+!
+! ---------------------------------------------------------------
+! printed p.69's STATI IS CONFIRMED FROM A SECOND ROW
+! ---------------------------------------------------------------
+! p.69 line 24 is "KF,STATI(T IXJ)" and gave STATI = 0.26 with dds
+! (BU,1), both read off that row alone -- the one symbol on that
+! page that is not a "T" name.  LINE 45 HERE IS
+! "BB,STATI(T IXJ),T A5LC" compiling 000000.32 86, and 0o32 is 26.
+! A symbol derived from one row, checked by a row on the next page.
+!
+! ---------------------------------------------------------------
+! TWO NEW MNEMONICS, BOTH READ OFF THEIR OWN ROWS
+! ---------------------------------------------------------------
+! Line 12 is "CBH,T IXB,T A3D" compiling 004047.12 C8 and line 19 is
+! "T ABBN  BBN,T INDA,T B2" compiling 003273.24 80 003756.74 0A.
+! Neither mnemonic has appeared in this corpus before; both are
+! written as printed and the assembler reproduces the byte.
+!
+! THREE SYMBOLS THAT ARE NOT "T" NAMES: SIMNT 0.53, SMOUNT 0.51 and
+! DMCP 001472.0 -- lines 54, 55 and 56, the unload path.  Like
+! STATI they suggest tables declared outside the ASSIGN program.
+! Line 56's comment names what it is doing: "-THEN UNLOAD WITH
+! - SFREE -".
+!
+! T A2A IS ON printed p.66.  Lines 43, 44 and 47 branch to
+! 003745.00, which is p.66 line 21's T A2A -- so this page closes a
+! loop four pages long.
+!
+! TWO LISTING MARKS: lines 33 ("004141.40 *") and 45 ("004155.00 *").
+
+        SLC, (8)4127.0
+
+! ---- index names, printed p.61 ------------------------------------
+TX3     SYN, $2
+TIXA    SYN, $4
+TIXB    SYN, $5
+TIXE    SYN, $3
+TIXJ    SYN, $6
+TCTWDX  SYN, $10
+! ---- words, printed pp.61-69 --------------------------------------
+TINDA   SYN(BU,1), (8)3273.24
+TINDC   SYN(BU,1), (8)3273.26
+TINDD   SYN(BU,1), (8)3273.27
+TMODE   SYN(BU,1), (8)3273.23
+TPPRUN  SYN, (8)3315.0
+TCHSXW  SYN, (8)2152.0
+TA2A    SYN, (8)3745.0
+TB2     SYN, (8)3756.40
+TA3     SYN, (8)4046.0
+TA3D    SYN, (8)4047.0
+TC3     SYN, (8)4065.40
+TC3A    SYN, (8)4066.0
+! ---- table offsets, printed pp.62 and 63 --------------------------
+TASGNI  SYN(BU,1), 0.0
+TTYPE   SYN(BU,4), 0.03
+TABSUN  SYN(BU,3), 0.07
+TFDISP  SYN(BU,1), 0.27
+TFREEL  SYN(BU,18), 0.28
+TUNASG  SYN(BU,1), 0.29
+TCHOWN  SYN(BU,1), 0.32
+TABSCH  SYN(BU,18), 0.46
+TUNITK  SYN(BU,4), 0.59
+TUNRES  SYN(BU,1), 0.62
+TOVRES  SYN(BU,1), 0.63
+! ---- printed p.69's one non-T symbol, confirmed by line 45 --------
+STATI   SYN(BU,1), 0.26
+! ---- new on this page ---------------------------------------------
+TCOT    SYN, (8)5002.0
+SMOUNT  SYN(BU,1), 0.51
+SIMNT   SYN(BU,1), 0.53
+DMCP    SYN, (8)1472.0
+TI      SYN, (8)4420.40
+
+        SLC, (8)4127.0
+
+TB3     CB+, TIXJ, TC3A              ! line 5
+        BZBZ, TINDC, TA3F1           ! line 6  -IF IND -C- IS OFF
+        CM1111, TINDD                ! line 7  -SET THE OPTIMUM REEL
+                                      !           MTNG BYPASS IND
+        B, TC3                       ! line 8
+
+! ---- IN THE CASE OF AN INDEX RUNOUT -------------------------------
+TA3F1   LX, TIXB, TIXB               ! line 10
+        BXCZ, TB2                    ! line 11 -IF THERE ARE NO MULTI
+                                      !           UNITS AVAILABLE
+        CBH, TIXB, TA3D              ! line 12 -GET THE NEXT CHANNEL
+        BB, TMODE, TABBN             ! line 16 -CONTINUE IF NOT
+                                      !           OVERLAP
+        KV, TIXE, TPPRUN             ! line 17 -OVERLAP, IS IT THE
+                                      !           NEXT JOB TO BE RUN
+        BZXE, TB2                    ! line 18 -NO, SO DO NOT ALLOW
+                                      !           THE SAME CHANNEL
+TABBN   BBN, TINDA, TB2              ! line 19 --SET THE SAME CHANNEL
+                                      !           ALLOWED IND.
+        B, TA3                       ! line 20
+
+! ---- MULTI - UNIT ASSIGNMENT --------------------------------------
+TA5A    LX, TCTWDX, 0.0($15)         ! line 28 -CHECK THE MODE
+        BZXF, TA5M1                  ! line 29 -IF OVERLAP
+        CM1111, TUNRES(TIXJ)         ! line 31 -SET NOT OVERLAP
+                                      !           RESERVED BIT
+        B, TA5MA                     ! line 32
+TA5M1   CM1111, TOVRES(TIXJ)         ! line 33 -SET THE OVERLAP
+                                      !           RESERVED BIT
+TA5MA   BB1, TASGNI(TIXA), TI        ! line 34 -SET THE ASSIGNED BIT
+                                      !           -- I/O REQ TBL
+        SV, TX3, $R                  ! line 35 -THE CHANNEL ADDRESS
+        ST, TABSCH(TIXA), 46         ! line 36 -ABSOLUTE CHAN TO I/O
+                                      !           REQ TABLE
+        -(BU,18), TCHSXW, 46         ! line 37 -COMPUTE THE CHANNEL
+                                      !           NUMBER
+        ST(BU,7), TCOT+.12, 46       ! line 38
+        L, TUNITK(TX3), 46           ! line 39 -COMPUTE REAL UNIT
+                                      !           NUMBER
+        - (BU,4), TIXJ+0.42, 46      ! line 40
+        ST, TABSUN(TIXA), 46         ! line 41 -TO THE I/O REQUEST
+                                      !           TABLE
+        ST(BU,3), TCOT+.47, 46       ! line 42
+        BZB, TTYPE(TIXA), TA2A       ! line 43
+        BB, TFDISP(TIXJ), TA2A       ! line 44 -IF THERE IS NOTAPE
+                                      !           MOUNTED
+        BB, STATI(TIXJ), TA5LC       ! line 45 -IF THE TAPE MTED IS
+                                      !           A SPECIFIC TP
+        CT0011, TFREEL(TIXA)         ! line 46
+        BRZ, TA2A                    ! line 47 -AND A THE REQUEST IS
+                                      !           FOR A SCRATCH
+
+! ---- CONCLUSION IS A SCRATCH IS MOUNTED AND A LABEL TAPE IS TO ----
+! ---- REPLACE IT , HENCE WE MUST UNLOAD ----------------------------
+TA5LC   LCI, TIXB, TCOT              ! line 50
+        SC, TIXB, 0.0(TIXJ)          ! line 51 -SET UP THE DUMMY UNIT
+                                      !           AREA ADDR.
+        CM1111, TCHOWN(TIXJ)         ! line 52 -AND SET TO MCP OWNER
+        CM0000, TUNASG(TIXJ)         ! line 53 -ALSO SET ASSIGNED
+        CM0000, SIMNT(TIXJ)          ! line 54 -RESET THE
+        CM0000, SMOUNT(TIXJ)         ! line 55 -MOUNT BITS
+TIPL3   B, DMCP                      ! line 56 -THEN UNLOAD WITH
+                                      !           - SFREE -
+        END, TB3
+
+! ---------------------------------------------------------------
+! THE CHECKED ROWS -- all thirty-eight that compile.
+! ---------------------------------------------------------------
+!   line  5  004127.00  004066.15 48                   T B3  CB+
+!   line  6  004127.40  003273.26 80  004132.34 04     BZBZ,T INDC
+!   line  7  004130.40  003273.27 80  001000.36 F0     CM1111,T INDD
+!   line  8  004131.40  004065.50 00                   B,T C3
+!   line 10  004132.00  000025.12 10                   T A3F1  LX
+!   line 11  004132.40  003756.70 42                   BXCZ,T B2
+!   line 12  004133.00  004047.12 C8                   CBH,T A3D
+!   line 16  004133.40  003273.23 80  004135.74 02     BB,T MODE
+!   line 17  004134.40  003315.06 90                   KV,T PPRUN
+!   line 18  004135.00  003756.72 C0                   BZXE,T B2
+!   line 19  004135.40  003273.24 80  003756.74 0A     T ABBN  BBN
+!   line 20  004136.40  004046.10 00                   B,T A3
+!   line 28  004137.00  000000.24 1F                   T A5A  LX
+!   line 29  004137.40  004141.63 40                   BZXF,T A5M1
+!   line 31  004140.00  000000.76 86  001000.36 F0     CM1111,T UNRES
+!   line 32  004141.00  004142.50 00                   B,T A5MA
+!   line 33  004141.40  000000.77 86  001000.36 F0     T A5M1  CM1111
+!   line 34  004142.40  000000.00 84  004420.74 0E     T A5MA  BB1
+!   line 35  004143.40  000011.05 30                   SV,T X3,$R
+!   line 36  004144.00  000000.56 84  022027.20 D0     ST,T ABSCH
+!   line 37  004145.00  002152.00 80  022027.30 10     -(BU,18)
+!   line 38  004146.00  005002.14 80  007027.20 D0     ST(BU,7)
+!   line 39  004147.00  000000.73 82  004027.20 50     L,T UNITK
+!   line 40  004150.00  000026.52 80  004027.30 10     - (BU,4)
+!   line 41  004151.00  000000.07 84  003027.20 D0     ST,T ABSUN
+!   line 42  004152.00  005002.57 80  003027.20 D0     ST(BU,3)
+!   line 43  004153.00  000000.03 84  003745.34 00     BZB,T TYPE
+!   line 44  004154.00  000000.33 86  003745.34 02     BB,T FDISP
+!   line 45  004155.00  000000.32 86  004157.74 02     BB,STATI
+!   line 46  004156.00  000000.34 84  022000.07 70     CT0011,T FREEL
+!   line 47  004157.00  003745.34 C2                   BRZ,T A2A
+!   line 50  004157.40  005002.13 02                   T A5LC  LCI
+!   line 51  004160.00  000000.13 56                   SC,T IXB
+!   line 52  004160.40  000000.40 86  001000.36 F0     CM1111,T CHOWN
+!   line 53  004161.40  000000.35 86  001000.00 F0     CM0000,T UNASG
+!   line 54  004162.40  000000.65 86  001000.00 F0     CM0000,SIMNT
+!   line 55  004163.40  000000.63 86  001000.00 F0     CM0000,SMOUNT
+!   line 56  004164.40  001472.10 00                   T IPL3  B,DMCP

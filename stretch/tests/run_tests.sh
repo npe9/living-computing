@@ -5013,6 +5013,40 @@ run "the REQUEST-COUNT CHECK and the I/O REQUEST SCAN, printed p.66, bit-exact (
 run "the MULTI-UNIT and SINGLE-UNIT assignment attempts, printed p.67, bit-exact (MCP_Mar63 PDF p.74)" python3 verify_mcp_bootstrap_p67.py
 run "the UNIT AVAILABILITY TESTS and MULTI-UNIT CHANNEL SCAN, printed p.68, bit-exact (MCP_Mar63 PDF p.75)" python3 verify_mcp_bootstrap_p68.py
 run "the UNIT TABLE SCAN and RESERVED-UNIT SEARCH, printed p.69, bit-exact (MCP_Mar63 PDF p.76)" python3 verify_mcp_bootstrap_p69.py
+run "MULTI-UNIT ASSIGNMENT and the UNLOAD PATH, printed p.70, bit-exact (MCP_Mar63 PDF p.77)" python3 verify_mcp_bootstrap_p70.py
+# >>> TWO MORE BARE WRITTEN MINUSES -- THE CORPUS GOES FROM TWO TO
+# FOUR ON ONE PAGE. <<<  Lines 37 and 40 are "-(BU,18),T CHSXW,46"
+# and "- (BU,4),T IXJ+0.42,46", the second with a space after the
+# minus that STRAP ignores.
+#
+# Before printed p.69 this project had EXACTLY ONE written minus in
+# the whole corpus -- MCP printed p.18 line 35, the row that found
+# fieldToSM returning sign 0 for every unsigned field and dropping
+# the negative sign modifier, i.e. that every unsigned subtract in
+# the model was an addition (2026-10-19, RefMan printed p.61's
+# Figure 12).  p.69 line 48 made it two; these make it FOUR, on
+# three pages.
+#
+# AND THE MODIFIER IS VISIBLE IN BOTH, against a plain row two lines
+# away each time:
+#
+#   line 36  ST,T ABSCH(T IXA),46    022027.20 D0
+#   line 37  -(BU,18),T CHSXW,46     022027.30 10
+#   line 39  L,T UNITK(T X3),46      004027.20 50
+#   line 40  - (BU,4),T IXJ+0.42,46  004027.30 10
+#
+# The injections turn each minus into a plus and read exactly the
+# .20 form.  Three separate rows across two pages now rest on that
+# one bit.
+#
+# printed p.69's STATI IS CONFIRMED FROM A SECOND ROW.  p.69 line 24
+# gave STATI = 0.26 with dds (BU,1), both read off ONE row -- the
+# only symbol on that page that is not a "T" name, which made it the
+# weakest derivation there.  Line 45 here compiles 000000.32 86 and
+# 0o32 is 26.
+#
+# TWO NEW MNEMONICS, both written as printed and reproduced by the
+# assembler: line 12's CBH (byte C8) and line 19's BBN (byte 0A).
 # IT PLACES printed p.68's LAST TWO FORWARD REFERENCES: line 2 is
 # T A3CB at 004064.40 and line 5 is T C3Z at 004065.00.
 #

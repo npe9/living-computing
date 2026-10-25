@@ -5395,6 +5395,62 @@ no opcode can rule it out. What ruled it out was the datum the name
 labels — which is a tell worth stating on its own: *when a name
 labels data, decode the data before trusting the name.*
 
+## PRINTED p.70 — the written-minus count goes from two to four, 2026-10-24
+
+Thirty-eight compiled rows, **all bit-exact on the first run**. It
+places three stand-ins from two earlier pages: `T A3F1` (p.68),
+`T A5A` and `T A5MA` (p.69).
+
+### >>> A recorded fact was wrong, and this page corrected it <<<
+
+The project's memory said *"only one deck in the corpus spells an
+unsigned written-minus at all, MCP printed p.18 line 35"*. p.69 line
+48 made it two. **Lines 37 and 40 here make it four**:
+
+```
+line 37  -(BU,18),T CHSXW,46
+line 40  - (BU,4),T IXJ+0.42,46      (a space after the minus)
+```
+
+And the modifier is visible in both, against a plain row two lines
+away each time:
+
+```
+line 36  ST,T ABSCH(T IXA),46    022027.20 D0
+line 37  -(BU,18),T CHSXW,46     022027.30 10
+line 39  L,T UNITK(T X3),46      004027.20 50
+line 40  - (BU,4),T IXJ+0.42,46  004027.30 10
+```
+
+**Three rows across two pages now rest on that one bit**, and all
+three would have compiled an *addition* before the 2026-10-19 fix —
+which was itself found by typing in RefMan p.61's Figure 12 rather
+than by any test. The memory has been corrected.
+
+### p.69's weakest derivation is confirmed
+
+`STATI = 0.26`, dds `(BU,1)`, was read off **one row** on p.69 — the
+only symbol on that page not named `T something`, and therefore the
+one with no corroboration. Line 45 here is `BB,STATI(T IXJ),T A5LC`
+compiling `000000.32 86`, and 0o32 is 26.
+
+### Two mnemonics new to the corpus
+
+Line 12's `CBH` (byte `C8`) and line 19's `BBN` (byte `0A`), both
+written as printed and reproduced by the assembler.
+
+### Where the range stands
+
+```
+merged 53 pages, 398 stand-ins checked against their definitions,
+177 SYNs that agree with another page's SYN, 40 symbols external
+```
+
+printed pp.15-70 are in the image, gapless, and the external count
+has started *falling* — 42 after p.68, 40 now — because these pages
+define more than they borrow. **printed p.71 is the last page**
+before `T A9` (p.72 line 4) is reachable.
+
 ## PRINTED p.69 — the second written minus in the corpus, 2026-10-24
 
 Forty-five compiled rows, **all bit-exact on the first run**. It
