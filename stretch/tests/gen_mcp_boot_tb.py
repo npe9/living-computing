@@ -356,7 +356,24 @@ def main():
         # is the strongest: no error site ran, on a run that reaches
         # printed p.54's tape IOD routine and executes five swaps.
         # Any return to the error path fails it.
-        ("mcp_x_err_ad", str(sym("XERRAD")), 0),
+        #
+        # >>> AND ON 2026-10-25 IT RETURNED TO THE ERROR PATH, WHICH
+        # IS THE FOURTH THING AND THE BIGGEST. <<<  printed p.80
+        # completed MCP's ASSIGN routine, so ASSIGN now RUNS TO ITS
+        # OWN RETURN -- p.80 line 31's "B,1.00($15)" -- and lands
+        # back in printed p.27, its caller, at 001470.00.  Two
+        # instructions later p.27 line 12 is "XERR24  SIC,X ERR AD"
+        # and line 13 is "BZXCZ,XERROR  -IF ASSIGNMENT ERROR".
+        #
+        # THE BRANCH IS TAKEN, AND THIS WORD IS WHAT THE SIC STORED:
+        # 001471.40, the instruction after it.  That is not a failure
+        # of the model -- it is MCP's own diagnostic recording where
+        # the error was detected, in the field the routine exists to
+        # fill.  The fixture's machine cannot satisfy the assignment
+        # and MCP says so in the way it was written to.
+        ("mcp_x_err_ad", str(sym("XERRAD")),
+         # 001471.40 in bits 0-23, which is printed p.27 line 13.
+         0x00CE600000000000),
 
         # >>> THE CARD TYPE, OUT OF MCP'S OWN HOLLERITH CONVERTER <<<
         #
@@ -879,9 +896,23 @@ def main():
         #                                  that comes BACK is as much
         #                                  a measurement as one that
         #                                  moves.
+        #   0x1000000001428  AL, OP, RGZ, XE, XVGZ -- printed p.80
+        #                                  too, and the run now ends
+        #                                  in MCP's ERROR ROUTINE
+        #                                  rather than on an address
+        #                                  it cannot reach.  OP is
+        #                                  the single "operation
+        #                                  invalid" the OP trail has
+        #                                  reported since printed
+        #                                  p.24 landed; the error
+        #                                  path does not reset the
+        #                                  indicators the way
+        #                                  ASSIGN's entry does, so it
+        #                                  is still showing at the
+        #                                  halt.
         ("mcp_indicators_word11", str(IND_WORD),
-         _ind("AL") | _ind("RZ") | _ind("XCZ") | _ind("XE")
-         | _ind("XF") | _ind("XVZ")),
+         _ind("AL") | _ind("OP") | _ind("RGZ") | _ind("XE")
+         | _ind("XVGZ")),
 
         # >>> THE MOVE ITSELF, AND IT IS THE POINT OF THE FIXTURE <<<
         # Printed p.4 line 28, "T,$11,X BUFER($X1),X BS END  -MOVE MCP
@@ -1548,10 +1579,47 @@ def main():
                    # the exit it takes is the one whose comment says
                    # this job is not overlap and not assigned.
                    #
-                   # T PICA IS THE NEXT TRANSCRIPTION, and the deck
-                   # already carries its address as a stand-in.
-                   pc_check=0,
-                   pc_trail_check=4872,
+                   # >>> AND THEN IT LEFT ALTOGETHER, 2026-10-25,
+                   # BECAUSE printed p.80 IS T PICA AND THE END OF
+                   # THE ASSIGN ROUTINE. <<<
+                   #
+                   # p.80 line 30 is "SWAPI,12,$1,T ASAVE  -RESTORE
+                   # INDEXES" and line 31 is "B,1.00($15)  -RETURN".
+                   # printed p.65 line 6 -- the routine's FIRST
+                   # instruction, fifteen pages back -- is
+                   # "SWAPI,12,$1,T ASAVE  -SAVE INDEXES", and the
+                   # two rows are BYTE FOR BYTE IDENTICAL, because
+                   # SWAP is an exchange.  The simulator logs both:
+                   # "SWAP started at half-word 3970" is p.65's and
+                   # "at half-word 4908" is p.80's.
+                   #
+                   # THE RETURN WAS PREDICTED BEFORE IT WAS RUN.
+                   # printed p.27 is ASSIGN's caller -- "X24
+                   # LVI,$15,X242" then "X241 B,T ASIGN" -- so $15
+                   # holds X242 = 001467.00 throughout, and
+                   # "B,1.00($15)" is one word past it: 001470.00,
+                   # p.27 line 11.  X ERR AD now holds 001471.40,
+                   # which is what p.27 line 12's "SIC,X ERR AD"
+                   # stores there, so the path is confirmed to the
+                   # instruction.
+                   #
+                   # p.27 line 13 is "BZXCZ,XERROR  -IF ASSIGNMENT
+                   # ERROR" AND THE BRANCH IS TAKEN.  The run enters
+                   # the IPL bootstrap's error routine at XERROR
+                   # (000133.00) and HALTS at 000167.40, which
+                   # assembles 000167.44 00 -- "BD,$", a deliberate
+                   # stop -- and is the last half word of X6ERR.
+                   # printed p.5 lines 29, 37, 40 and 46 all branch
+                   # there with the comment "-EXHAUSTED ALL CHANNELS
+                   # OR ...".
+                   #
+                   # SO THE RUN NO LONGER ENDS BY FALLING INTO ZEROS.
+                   # It ends on a halt MCP chose, in a routine MCP
+                   # wrote, having recorded in X ERR AD where the
+                   # decision was made.  pc_check is no longer 0: the
+                   # instruction counter is SITTING on the halt.
+                   pc_check=239,
+                   pc_trail_check=239,
                    step_cap=40000000,
                    pc_trail=True,
                    op_trail=True,

@@ -12,18 +12,22 @@ accumulate.
 
 ## WHERE THIS STANDS, 2026-10-25 — read this first
 
-**The frontier is `T PICA` at 004604.00 — printed p.80 line 4, the
-next page.** The MCP image holds printed pp.15-79 gapless (62 decks,
-500 stand-ins checked against their definitions, 297 agreeing SYNs,
-29 symbols still external), and
-the boot run executes MCP's ASSIGN routine end to end: it saves its
-indexes, walks the channel status table for a machine-configuration
-change (p.72), sorts the multi-unit count table and runs the MULTI
-UNIT SCAN (p.73), takes the reject path (p.74's `T AREJX` into p.75),
-clears the reel slot and the assigned and mount bits, and **dispatches
-through p.75's exit table at `T L` — *NOT OVERLAP JOB NOT ASSIGNED* —
-to `T PICA`**, which is not yet transcribed. `boot_plan.md` A21
-carries the detail.
+**MCP's ASSIGN routine now runs to its own return, and MCP halts the
+machine on purpose.** The image holds printed pp.15-80 gapless (63
+decks, 509 stand-ins checked against their definitions, 306 agreeing
+SYNs, 27 symbols still external). The run saves its indexes (p.65),
+walks the channel status table for a machine-configuration change
+(p.72), sorts the multi-unit count table and runs the MULTI UNIT
+SCAN (p.73), takes the reject path (p.74's `T AREJX` into p.75),
+dispatches through p.75's exit table at `T L` to `T PICA` (p.80),
+**restores its indexes with the same instruction that saved them and
+returns** — into printed p.27, its caller, where `BZXCZ,XERROR` is
+taken and the machine stops on a `BD,$` in `X6ERR`, *EXHAUSTED ALL
+CHANNELS*. `X ERR AD` holds 001471.40, MCP's own record of where the
+decision was made. `boot_plan.md` A22 carries the detail.
+
+**printed pp.65-80 are MCP's ASSIGN routine entire** — sixteen
+pages, all bit-exact, all with measured injections.
 
 **The one unexplained refusal** is still the OP trail's single
 `operation invalid` at half-word 1304 = 001214.00, printed p.24's
@@ -5415,6 +5419,141 @@ letter `O` read as `C`**, in a NAME field, where no octal column and
 no opcode can rule it out. What ruled it out was the datum the name
 labels — which is a tell worth stating on its own: *when a name
 labels data, decode the data before trusting the name.*
+
+## >>> MCP's ASSIGN ROUTINE RAN TO ITS OWN RETURN, AND MCP HALTED THE MACHINE ON PURPOSE — 2026-10-25 <<<
+
+The boot run no longer ends by falling into zeros. **It ends on a
+halt MCP chose, in a routine MCP wrote, having recorded in its own
+diagnostic word where the decision was made.**
+
+### What happened, instruction by instruction
+
+```
+p.80 line 30  SWAPI,12,$1,T ASAVE   004626.00   -RESTORE INDEXES
+p.80 line 31  B,1.00($15)           004627.00   -RETURN
+p.27 line 11  LX,$0,X242            001470.00   <- the return lands
+p.27 line 12  XERR24  SIC,X ERR AD  001470.40
+p.27 line 13  BZXCZ,XERROR          001471.00   -IF ASSIGNMENT ERROR
+              ... XERROR 000133.00 ...
+X6ERR         BD,$                  000167.40   -- HALT
+```
+
+**The return was predicted before it was run.** printed p.27 is
+ASSIGN's caller — `X24 LVI,$15,X242` then `X241 B,T ASIGN` — so
+`$15` holds X242 = 001467.00 across the whole routine, and
+`B,1.00($15)` is one word past it. The prediction was written into
+`docs/NEXT.md` and the commit message before the simulator was
+started.
+
+**And `X ERR AD` proves the path to the instruction.** It now holds
+**001471.40**, which is exactly what p.27 line 12's `SIC,X ERR AD`
+stores: the address following the `SIC`. The only way that word gets
+that value is by executing p.27 line 12 — which can only be reached
+by falling out of line 11, which can only be reached by ASSIGN's
+return.
+
+**The simulator logged both halves of the bookend**: `SWAP started
+at half-word 3970` is printed p.65 line 6's save, and `at half-word
+4908` is p.80 line 30's restore. Same instruction, both ends.
+
+### `BZXCZ,XERROR` is taken — and that is the right answer
+
+The fixture's machine cannot satisfy the assignment, and MCP says so
+the way it was written to. The run enters the IPL bootstrap's error
+routine at `XERROR` (000133.00) and stops at **000167.40**, which
+assembles `000167.44 00` — **`BD,$`**, branch disabled to its own
+address — and is the last half word of **`X6ERR`**. printed p.5
+lines 29, 37, 40 and 46 all branch there, every one commented
+*EXHAUSTED ALL CHANNELS OR ...*.
+
+> **`pc_check` is no longer 0.** For the whole life of this
+> testbench the instruction counter ended at zero, because the run
+> ended by running off into unwritten memory. It now ends sitting on
+> an instruction — a halt — and the check that has read `0` since
+> the fixture was built reads 239.
+
+### Four checks moved, and every one of them is a measurement
+
+* `mcp_x_err_ad` `0` → `0x00CE600000000000`. Its comment, written
+  three states ago, ends *"Any return to the error path fails it."*
+  **It did exactly what it was built to do.**
+* `mcp_indicators_word11` → `AL, OP, RGZ, XE, XVGZ`. `OP` is the
+  single *operation invalid* the OP trail has reported since printed
+  p.24 landed; the error path does not reset the indicators the way
+  ASSIGN's entry does, so it is still showing at the halt.
+* `PC` `0` → `239` and the trail `4872` → `239`.
+
+*A test that has said the same thing for weeks and then changes is
+either a regression or the thing you were building toward. The way
+to tell them apart is whether you can name the instruction that
+moved it — and here there are two, fifteen printed pages apart,
+compiling to the same eight bytes.*
+
+## >>> PRINTED p.80 IS T PICA, AND IT IS THE END OF THE ASSIGN ROUTINE — 2026-10-25 <<<
+
+Twenty-eight compiled rows of thirty-one lines, all bit-exact. Seven
+measured injections. A short page, and the one the boot run has been
+waiting six pages for.
+
+### The bookend
+
+Lines 30-31:
+
+```
+T P1A  SWAPI,12,$1,T ASAVE    -RESTORE INDEXES
+       B,1.00($15)            -RETURN
+```
+
+and printed p.65 line 6 — **fifteen pages back, the first
+instruction of the routine**:
+
+```
+T ASIGN  SWAPI,12,$1,T ASAVE  -SAVE INDEXES
+```
+
+**The two rows are byte for byte identical.** Both compile
+`000021.00 80  003274.30 E0`, one at 003701.00 and one at
+004626.00.
+
+> They are the same instruction because **`SWAP` is an exchange**.
+> It does not copy — it swaps — so saving twelve index registers on
+> entry and restoring them on exit is *one operation written twice*,
+> and the only thing that differs is the comment. A machine with an
+> exchange instruction does not need a separate restore, and a
+> programmer who knows that writes the same card at both ends.
+
+So **printed pp.65-80 are MCP's ASSIGN routine entire**: entry, the
+channel and unit scans, the sort, the dispatch table, the reject
+path, the printed messages, and the return. Sixteen pages, and the
+image now holds **63 gapless** with **509 stand-ins checked** and 27
+symbols still external — predicted exactly.
+
+### A fifth byte the assembler disputed and the ink settled
+
+Line 16's opcode byte was transcribed `3B` at 600 dpi. It is `38`.
+The statement is `LV,T IXA,T CRREF(T IXG)` — confirmed at 1200 dpi —
+and `T IXG` is `$8`, so the index modifier in the byte's low nibble
+must be 8. At 1800 dpi the glyph is an `8`, and the row's own octal
+field prints `C0CCC00` for `0000000`: five of seven glyphs open, a
+§13d row throughout. The injection that swaps the index to `T IXA`
+produces `34`, so **neither plausible reading of that row gives
+`B`**.
+
+That is **seven disputes this session and seven times the ink agreed
+with the assembler**:
+
+```
+p.74 line 36   C7 -> 07        p.76 line 18   hex 0 -> D
+p.74 line 38   00 -> 0C        p.77 line 23   BL -> BE
+p.74 line 47   C2 -> 02        p.80 line 16   3B -> 38
+p.75 line 30   C5 -> 05
+```
+
+> **And the render still happens first, every time.** printed p.66
+> line 5 is the case that went the other way — `40` read where the
+> listing says `4C` — and it is why §13f exists. A practice that is
+> right seven times running is exactly the practice most likely to
+> be abandoned just before the eighth.
 
 ## >>> printed p.27 HAS BEEN HOLDING THE ANSWER TO p.77's HARDEST GLYPH SINCE IT LANDED — 2026-10-25 <<<
 

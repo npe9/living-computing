@@ -1,0 +1,171 @@
+! MCP INITIALIZATION, printed p.80 (MCP_Mar63_001-249 PDF p.87) --
+! LOOK AHEAD -N- JOBS AND DETERMINE THE STATUS.
+!
+! Thirty-one lines, twenty-eight of which compile.  A short page,
+! and the one the boot run has been waiting for.
+!
+! >>> LINE 4 IS T PICA, AND THE PC TRAIL HAS READ 004604.00 SINCE
+! >>> printed p.75 LANDED. <<<  printed p.75 line 50 is
+! "T L  B,T PICA  -NOT OVERLAP JOB NOT ASSIGNED", one of the ten
+! exits in its dispatch table, and printed p.79 lines 36-37 branch
+! here twice more.
+!
+! ---------------------------------------------------------------
+! >>> AND IT IS THE END OF THE ASSIGN ROUTINE <<<
+! ---------------------------------------------------------------
+! Lines 30 and 31 are
+!
+!   T P1A  SWAPI,12,$1,T ASAVE    -RESTORE INDEXES
+!          B,1.00($15)            -RETURN
+!
+! and printed p.65 line 6 -- FIFTEEN PRINTED PAGES BACK, the first
+! instruction of the routine -- is
+!
+!   T ASIGN  SWAPI,12,$1,T ASAVE  -SAVE INDEXES
+!
+! THE TWO ROWS ARE BYTE FOR BYTE IDENTICAL: both compile
+! 000021.00 80  003274.30 E0, one at 003701.00 and one at
+! 004626.00.  They are the same instruction because SWAP is an
+! EXCHANGE -- it does not copy, it swaps -- so saving and restoring
+! twelve index registers is one operation written twice, and the
+! only thing that differs is the comment.
+!
+! printed p.59's LINKAGE FORMAT page says the caller's control word
+! comes in through $15; line 31 returns through it, one word in.
+! So pp.65-80 are MCP's ASSIGN routine entire: entry, the channel
+! and unit scans, the dispatch table, the reject path, the printed
+! messages, and the return.
+!
+! ---------------------------------------------------------------
+! >>> A FIFTH BYTE THE ASSEMBLER DISPUTED AND THE INK SETTLED <<<
+! ---------------------------------------------------------------
+! Line 16's opcode byte was transcribed 3B at 600 dpi.  It is 38.
+! The statement is "LV,T IXA,T CRREF(T IXG)" -- confirmed at 1200
+! dpi, T IXG and not some other name -- and T IXG is $8, so the
+! index modifier in the byte's low nibble must be 8.  At 1800 dpi
+! the glyph is an 8: two bowls, closed on the left, no flat stem.
+! The row's own octal field prints C0CCC00 for 0000000, five of
+! seven glyphs open, so it is a listing_typography.md 13d row
+! throughout.
+!
+! THE TALLY, because it is now long enough to be a fact about the
+! corpus rather than a run of luck.  Every one of these was a 600
+! dpi reading the assembler disputed, re-rendered BEFORE the
+! assembler's answer was adopted, and every one came back agreeing
+! with the assembler:
+!
+!   printed p.74 line 36   C7 -> 07
+!   printed p.74 line 38   00 -> 0C
+!   printed p.74 line 47   C2 -> 02
+!   printed p.75 line 30   C5 -> 05
+!   printed p.76 line 18   hex digit 0 -> D (settled by the
+!                          compiled octal, then confirmed at 1800)
+!   printed p.77 line 23   BL -> BE (a mnemonic, not a byte)
+!   printed p.80 line 16   3B -> 38
+!
+! Seven for seven.  THE PRACTICE STILL HOLDS AND SHOULD: the render
+! costs a minute, and the one case that goes the other way is the
+! one that matters.  printed p.66 line 5 was that case -- 40 read
+! where the listing says 4C -- and it is why 13f exists.
+!
+! T PICA and T P1BA were already stand-ins -- p.75 and p.79 for the
+! first, printed p.77 line 37's "BBZ,YSCRBT,T P1BA" for the second
+! -- and both agree.  T JBPRO's stand-in needed the (BU,1) printed
+! p.62 line 11 gives it: line 24 is a CONNECTIVE and takes its
+! length from the symbol.
+!
+! ONE LISTING MARK: line 16.
+
+        SLC, (8)4604.0
+
+! ---- index names, printed p.61 ------------------------------------
+TCTWDX  SYN, $10
+TIXA    SYN, $4
+TIXG    SYN, $8
+! ---- words, printed pp.61-64 and 74 -------------------------------
+TNEXT   SYN, (8)3264.40
+TREFIL  SYN, (8)3271.0
+TASAVE  SYN, (8)3274.0
+TPPURF  SYN, (8)3313.0
+TPPRUN  SYN, (8)3315.0
+TAREJX  SYN, (8)4360.0
+YSCRBT  SYN(BU,1), (8)4455.03
+! ---- table offsets, printed pp.62-64 ------------------------------
+TCRREF  SYN, 0.0
+TUNCT   SYN(BU,8), 0.28
+TJBPRO  SYN(BU,1), 0.36
+TRJECT  SYN(BU,1), 0.37
+TASGNP  SYN(BU,1), 0.38
+TLPPEN  SYN(BU,1), 0.39
+
+        SLC, (8)4604.0
+
+! ---- LOOK AHEAD -N- JOBS AND DETERMINE THE STATUS -----------------
+TPICA   LX, TIXG, TPPRUN             ! line 4  -GET NEXT JOB TO BE RUN
+        LX, TCTWDX, 0.0($15)         ! line 5  -CHECK MODE
+        BZXF, TPIC                   ! line 6  -IF OVERLAP
+        LX, TIXG, TPPURF             ! line 7  -IF NOT OVERLAP
+TPIC    CM0000(BU,2), 0.28($15)      ! line 8  -CLEAR RETURN
+                                      !           DISPOSITION FIELD
+        SV, TIXG, TNEXT              ! line 9  -SAVE THE ADDR OF THE
+                                      !           NEXT PP TO RUN
+        BZB, TLPPEN(TIXG), TP1B      ! line 10 -IF MORE JOBS
+        CM1111(BU,1), 0.45($15)      ! line 11
+        B, TP1A                      ! line 12
+TP1B    CT0011, TRJECT(TIXG)         ! line 13 -LOOK FOR A REJECT
+        BZRZ, TP1BA                  ! line 14 -IF PP IS REJECTED
+        BB, TASGNP(TIXG), TP1A       ! line 15 -IF PP ASSIGNED
+        LV, TIXA, TCRREF(TIXG)       ! line 16 -COMPUTE THE IO REQ
+                                      !           TBL ADDR
+        L, TUNCT(TIXG), 46           ! line 17 -AND THE NUMBER OF I/O
+                                      !           UNITS REQUESTED
+        LC, TIXA, $R                 ! line 18 -AS TO ENABLE ASSIGN TO
+        CM1111, TRJECT(TIXG)         ! line 19 -IF NOT ST REJECT BIT
+                                      !           TO ONE
+        CM1111, YSCRBT               ! line 20
+        LRI, TIXA, TREFIL            ! line 21
+        SX, TIXA, TREFIL             ! line 22
+        B, TAREJX                    ! line 23
+TP1BA   CM1111, TJBPRO(TIXG)         ! line 24 -IF SO SET JOB
+                                      !           PROCESSED BIT TO ONE
+        CM1111(BU,1), 0.28($15)      ! line 25 -SET THE DISPOSITION BIT
+        LX, TCTWDX, 0.0($15)         ! line 26 -ACTIVATE THE MODE
+        BXF, TP1A                    ! line 27 -AS TO CHECK MODE--
+                                      !           IF NOT OVERLAP
+        V+ICR, TIXG, 2.0             ! line 28 -UP DATE THE POINTER
+        SX, TIXG, TPPRUN             ! line 29 -AND SAVE
+TP1A    SWAPI, 12, $1, TASAVE        ! line 30 -RESTORE INDEXES
+        B, 1.00($15)                 ! line 31 -RETURN
+        END, TPICA
+
+! ---------------------------------------------------------------
+! THE CHECKED ROWS -- all twenty-eight that compile.
+! ---------------------------------------------------------------
+!   line  4  004604.00  003315.20 10                   T PICA  LX,TIXG,TPPRUN
+!   line  5  004604.40  000000.24 1F                   LX,TCTWDX,0.0($15)
+!   line  6  004605.00  004606.23 40                   BZXF,TPIC
+!   line  7  004605.40  003313.20 10                   LX,TIXG,TPPURF
+!   line  8  004606.00  000000.34 8F  002000.00 F0     T PIC  CM0000(BU,2),0.28($15)
+!   line  9  004607.00  003264.61 30                   SV,TIXG,TNEXT
+!   line 10  004607.40  000000.47 88  004612.34 00     BZB,TLPPEN(TIXG),TP1B
+!   line 11  004610.40  000000.55 8F  001000.36 F0     CM1111(BU,1),0.45($15)
+!   line 12  004611.40  004626.10 00                   B,TP1A
+!   line 13  004612.00  000000.45 88  001000.07 70     T P1B  CT0011,TRJECT(TIXG)
+!   line 14  004613.00  004622.34 C0                   BZRZ,TP1BA
+!   line 15  004613.40  000000.46 88  004626.34 02     BB,TASGNP(TIXG),TP1A
+!   line 16  004614.40  000000.10 38                   LV,TIXA,TCRREF(TIXG)
+!   line 17  004615.00  000000.34 88  010027.20 50     L,TUNCT(TIXG),46
+!   line 18  004616.00  000011.10 50                   LC,TIXA,$R
+!   line 19  004616.40  000000.45 88  001000.36 F0     CM1111,TRJECT(TIXG)
+!   line 20  004617.40  004455.03 80  001000.36 F0     CM1111,YSCRBT
+!   line 21  004620.40  003271.11 03                   LRI,TIXA,TREFIL
+!   line 22  004621.00  003271.11 10                   SX,TIXA,TREFIL
+!   line 23  004621.40  004360.10 00                   B,TAREJX
+!   line 24  004622.00  000000.44 88  001000.36 F0     T P1BA  CM1111,TJBPRO(TIXG)
+!   line 25  004623.00  000000.34 8F  001000.36 F0     CM1111(BU,1),0.28($15)
+!   line 26  004624.00  000000.24 1F                   LX,TCTWDX,0.0($15)
+!   line 27  004624.40  004626.23 42                   BXF,TP1A
+!   line 28  004625.00  000002.21 07                   V+ICR,TIXG,2.0
+!   line 29  004625.40  003315.21 10                   SX,TIXG,TPPRUN
+!   line 30  004626.00  000021.00 80  003274.30 E0     T P1A  SWAPI,12,$1,TASAVE
+!   line 31  004627.00  000001.10 0F                   B,1.00($15)

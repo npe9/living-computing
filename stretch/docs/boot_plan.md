@@ -729,9 +729,36 @@ cannot be tested without it.
 > documented as dropped, not explained; p.79 writes the three
 > messages and is what p.76's counting was checking for.
 >
-> The image is **62 pages gapless, 500 stand-ins checked, 297
-> agreeing SYNs, 29 external**. **printed p.80 line 4 is `T PICA`,
-> and that is the run's next instruction.**
+> **A22 — >>> MCP's ASSIGN ROUTINE RUNS TO ITS OWN RETURN, AND MCP
+> HALTS THE MACHINE ON PURPOSE, 2026-10-25. <<<** printed p.80 is
+> `T PICA` and the end of ASSIGN. Its line 30 restores twelve index
+> registers with `SWAPI,12,$1,T ASAVE` — **byte for byte the same
+> instruction printed p.65 line 6 saved them with**, fifteen pages
+> back, because `SWAP` is an exchange — and line 31 returns through
+> `$15`.
+>
+> **The return was predicted before it was run.** printed p.27 is
+> ASSIGN's caller, so `$15` holds X242 = 001467.00 and the return
+> lands at 001470.00, p.27 line 11. `X ERR AD` now holds
+> **001471.40**, which is what p.27 line 12's `SIC,X ERR AD` stores
+> — the path confirmed to the instruction.
+>
+> p.27 line 13's `BZXCZ,XERROR` **is taken**: the fixture's machine
+> cannot satisfy the assignment. The run enters the IPL bootstrap's
+> error routine at `XERROR` (000133.00) and **halts at 000167.40**,
+> which assembles `000167.44 00` — `BD,$` — and is the last half
+> word of `X6ERR`, the routine printed p.5 branches to with
+> *EXHAUSTED ALL CHANNELS*.
+>
+> So the run no longer ends by falling into unwritten memory. **It
+> ends on a halt MCP chose, in a routine MCP wrote, having recorded
+> where the decision was made.** `pc_check` has read 0 for the whole
+> life of this testbench and now reads 239: the instruction counter
+> is sitting on the halt.
+>
+> The image is **63 pages gapless, 509 stand-ins checked, 306
+> agreeing SYNs, 27 external** — printed pp.65-80 being MCP's ASSIGN
+> routine entire.
 >
 > The image holds printed pp.15-73 gapless — 56 pages, 432 stand-ins
 > checked against their definitions, 218 agreeing SYNs, 41 symbols

@@ -5798,6 +5798,55 @@ run "CHECK FOR REEL PROTECTION and the three messages, printed p.79, bit-exact (
 # 004565.40; BBN -> BB, 1 FAIL at 004602.00; and T SBHDI's stand-in
 # moved ONE BIT to T HEAD's, 2 FAILS -- p.76 declares four one-bit
 # flags in one word and a stand-in on the wrong one still assembles.
+run "LOOK AHEAD -N- JOBS, printed p.80, bit-exact (MCP_Mar63 PDF p.87)" python3 verify_mcp_bootstrap_p80.py
+# >>> LINE 4 IS T PICA, AND THE PC TRAIL HAS READ 004604.00 SINCE
+# printed p.75 LANDED -- SIX PAGES. <<<  p.75 line 50 is "T L
+# B,T PICA  -NOT OVERLAP JOB NOT ASSIGNED", one of the ten exits in
+# its dispatch table, and printed p.79 lines 36-37 branch here twice
+# more.
+#
+# >>> AND IT IS THE END OF THE ASSIGN ROUTINE. <<<  Lines 30-31 are
+# "T P1A  SWAPI,12,$1,T ASAVE  -RESTORE INDEXES" and "B,1.00($15)
+# -RETURN", and printed p.65 line 6 -- FIFTEEN PAGES BACK, the first
+# instruction of the routine -- is "T ASIGN  SWAPI,12,$1,T ASAVE
+# -SAVE INDEXES".  THE TWO ROWS ARE BYTE FOR BYTE IDENTICAL: both
+# compile 000021.00 80  003274.30 E0, one at 003701.00 and one at
+# 004626.00.  They are the same instruction because SWAP is an
+# EXCHANGE -- it does not copy, it swaps -- so saving and restoring
+# twelve index registers is ONE OPERATION WRITTEN TWICE, and the
+# only thing that differs is the comment.
+#
+# So printed pp.65-80 are MCP's ASSIGN routine entire: entry, the
+# channel and unit scans, the dispatch table, the reject path, the
+# printed messages, and the return.
+#
+# AND WHERE THE RETURN GOES IS KNOWN BEFORE IT IS RUN.  printed p.27
+# -- ASSIGN's caller, transcribed weeks ago -- is "X24 LVI,$15,X242"
+# then "X241 B,T ASIGN", so $15 holds X242 = 001467.00 across the
+# whole routine.  Line 31 branches one word past it, to 001470.00,
+# which is p.27 line 11 "LX,$0,X242  -INITIALIZE $IND", and two rows
+# later p.27 line 13 is "BZXCZ,XERROR  -IF ASSIGNMENT ERROR".
+#
+# A FIFTH BYTE THE ASSEMBLER DISPUTED AND THE INK SETTLED: line 16's
+# opcode byte was transcribed 3B at 600 dpi and is 38.  The
+# statement is "LV,T IXA,T CRREF(T IXG)", confirmed at 1200 dpi, and
+# T IXG is $8, so the index modifier in the byte's low nibble must
+# be 8.  At 1800 dpi the glyph is an 8, and the row's own octal
+# field prints C0CCC00 for 0000000 -- five of seven glyphs open, a
+# 13d row throughout.  Seven such disputes this session and seven
+# times the ink agreed with the assembler; the render still happens
+# FIRST, because printed p.66 line 5 is the case that went the other
+# way and it is why 13f exists.
+#
+# Injections, against the DECK: SWAPI's count 12 -> 11, 1 FAIL at
+# 004626.00 (".26" for ".30" -- the count is bits 18-23 of the
+# second group); the return offset 1.00 -> 0.0, 1 FAIL at 004627.00;
+# line 16's T IXG -> T IXA, 1 FAIL at 004614.40 (34 for 38 -- and
+# NEITHER plausible index gives B); T JBPRO losing p.62's (BU,1), 1
+# FAIL at 004622.00; line 23's T AREJX -> T PICA, 1 FAIL at
+# 004621.40 (both real addresses in the image); V+ICR -> V+IC, 1
+# FAIL at 004625.00; and YSCRBT's stand-in moved to T NGATE's bit, 1
+# FAIL at 004617.40.
 run "the IOD CARD ROUTINE, printed p.53, bit-exact (MCP_Mar63 PDF p.60)" python3 verify_mcp_bootstrap_p53.py
 # >>> IT CONFIRMS BOTH OF printed p.52's DERIVED STAND-INS. <<<
 # L OOPN is at 002775.40 (line 4) and L IODRN at 003021.40 (line 37),
