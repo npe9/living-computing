@@ -1,0 +1,212 @@
+! MCP INITIALIZATION, printed p.68 (MCP_Mar63_001-249 PDF p.75) --
+! THE UNIT AVAILABILITY TESTS AND THE MULTI-UNIT CHANNEL SCAN.
+!
+! Fifty-six lines, forty-one of which compile.  Four boxed headings:
+!
+!   lines  9-11  "MULTI-SINGLE UNIT REQUEST.  EG DISK, CONSOLE"
+!   lines 24-29  "MULTI-UNIT CHANNEL SCAN"
+!   lines 43-45  "IS THIS CHAN ASSIGNED TO ANOTHER I/O WITHIN PP"
+!   lines 51-53  "YES -- DOES THE I/O REQUEST THE SAME CHANNEL"
+!
+! >>> IT PLACES THREE OF printed p.67's FOUR FORWARD REFERENCES. <<<
+! p.67 branches to T B7, T A7D and T A3; LINE 7 IS T B7 at 004034.00,
+! LINE 12 IS T A7D at 004035.00 and LINE 30 IS T A3 at 004046.00.
+! The fourth, T C3Z at 004065.0, is one word past this page's last
+! line and belongs to printed p.69.
+!
+! ---------------------------------------------------------------
+! >>> TWO EIGHT-LINE BLOCKS THAT DIFFER ONLY IN THEIR INDEX <<<
+! ---------------------------------------------------------------
+! Lines 1-8 and lines 16-23 are the same test, written twice:
+!
+!   lines 1-8    ...(T X3)  -- the SINGLE-unit channel's units
+!   lines 16-23  ...(T IXJ) -- the MULTI-single unit's
+!
+! and the binary shows the difference in ONE NIBBLE per row, the
+! index in the opcode byte: 82 against 86, which is $2 against $6.
+! Every other field is identical -- T UNAVL 0.34, T UNASG 0.35,
+! T UNRES 0.76, the same CT0011(BU,2), the same BZB on T MODE.
+!
+! THAT IS WORTH THE NOTE BECAUSE IT IS A TRANSCRIPTION CHECK THE
+! PAGE PROVIDES ITSELF: two blocks eight rows apart whose binaries
+! must agree in every field but one.  A misread digit in either
+! block shows up as a disagreement with the other.
+!
+! ---------------------------------------------------------------
+! "$R+.32" IS AN EXPRESSION ON A SYSTEM SYMBOL
+! ---------------------------------------------------------------
+! Line 38 is "KC,T X3,$R+.32" compiling 000011.45 90.  $R is word 9
+! (000011 octal) and ".45" is 100101 -- bit 18 SET, which is the
+! half-word selector, so the operand is word 9's SECOND half.  The
+! comment says why: "-ARE THERE ENOUGH UNITS TO SATIFY REQ", and the
+! count being compared was put in $R's low half by line 37's
+! "LC,T IXJ,$R".
+!
+! ---------------------------------------------------------------
+! FIVE SYMBOLS POINT FORWARD
+! ---------------------------------------------------------------
+! T A5S 004167.40, T A5A 004137.0, T A3F1 004132.0, T A3CB 004064.40
+! and T C3Z 004065.0, each read out of the branch that names it.
+!
+! EIGHT BARE VFL STATEMENTS, and every dds comes from a page already
+! transcribed: T UNRES (BU,1) and T UNITK (BU,4) and T CHCNT (BU,4)
+! and T UNAVL/T UNASG (BU,1) from printed p.63, T RLSYM (BU,7) and
+! T ABSCH (BU,18) from p.62, T INDA/T INDB (BU,1) from p.61.
+!
+! FOUR LISTING MARKS: lines 8, 34, 55 and -- the page's first
+! compiled row, line 1, carries none.
+
+        SLC, (8)4026.40
+
+! ---- index names, printed p.61 ------------------------------------
+TX2     SYN, $9
+TX3     SYN, $2
+TIXA    SYN, $4
+TIXB    SYN, $5
+TIXJ    SYN, $6
+TIXK    SYN, $10
+! ---- words, printed pp.61-67 --------------------------------------
+TREFIL  SYN, (8)3271.0
+TMODE   SYN(BU,1), (8)3273.23
+TINDA   SYN(BU,1), (8)3273.24
+TINDB   SYN(BU,1), (8)3273.25
+TB2     SYN, (8)3756.40
+TA7A    SYN, (8)4021.0
+! ---- table offsets, printed pp.62-64 ------------------------------
+TRLSYM  SYN(BU,7), 0.11
+TCHCNT  SYN(BU,4), 0.20
+TCHAVL  SYN(BU,1), 0.25
+TUNAVL  SYN(BU,1), 0.28
+TUNASG  SYN(BU,1), 0.29
+TABSCH  SYN(BU,18), 0.46
+TUNITK  SYN(BU,4), 0.59
+TUNRES  SYN(BU,1), 0.62
+TUNTBA  SYN(BU,18), 0.0
+! ---- forward, onto printed p.69 and after -------------------------
+TA3CB   SYN, (8)4064.40
+TC3Z    SYN, (8)4065.0
+TA3F1   SYN, (8)4132.0
+TA5A    SYN, (8)4137.0
+TA5S    SYN, (8)4167.40
+
+        SLC, (8)4026.40
+
+        BB, TUNAVL(TX3), TB7         ! line 1  -IF UNIT IS NOT
+                                      !           AVAILABLE
+        BZB, TUNASG(TX3), TB7        ! line 2  -IF THE UNIT IS
+                                      !           ASSIGNED
+        CT0011(BU,2), TUNRES(TX3)    ! line 3  -IS THE UNIT RESERVED
+        BRZ, TA5S                    ! line 4  -NO
+        BZB, TMODE, TB7              ! line 5  -YES, WHAT IS THE MODE
+        BZB, TUNRES(TX3), TA5S       ! line 6  - NOT OVERLAP, GO ONLY
+                                      !           IF OVERLAP RES
+TB7     CB+, TX3, TA7A               ! line 7
+        B, TB2                       ! line 8  -IF IX -D- RUNS OUT
+
+! ---- MULTI-SINGLE UNIT REQUEST.  EG DISK, CONSOLE -----------------
+TA7D    LV, TIXJ, TUNTBA(TX3)        ! line 12 -ADDRESS OF UNIT TABLE
+        L, TUNITK(TX3), 46           ! line 13 -GET UNIT COUNT
+        LC, TIXJ, $R                 ! line 14 -PLACE IN CF
+        BXCZ, TB7                    ! line 15 -IF NO UNITS ARE
+                                      !           AVAILABLE
+TA7CA   BB, TUNAVL(TIXJ), TC7        ! line 16 -IF THE UNIT IS NOT
+                                      !           AVAILABLE
+        BZB, TUNASG(TIXJ), TC7       ! line 17 -IF THE UNIT IS
+                                      !           ASSIGNED
+        CT0011(BU,2), TUNRES(TIXJ)   ! line 18 -IS UNIT RESERVED
+        BRZ, TA5A                    ! line 19 -NO
+        BZB, TMODE, TC7              ! line 20 -YES, WHAT IS THE MODE
+        BZB, TUNRES(TIXJ), TA5A      ! line 21 -NOT OVERLAP, GO IF
+                                      !           OVERLAP RES
+TC7     CB+, TIXJ, TA7CA             ! line 22
+        B, TB7                       ! line 23
+
+! ---- MULTI-UNIT CHANNEL SCAN --------------------------------------
+TA3     LX, TIXB, 0.0(TX2)           ! line 30 -GET THE PROPER SCAN
+        BXCZ, TB2                    ! line 31 -IF THERE ARE NO MULTI
+                                      !           UNITS AVAILABLE
+TA3D    LC, TIXJ, 0.0(TIXB)          ! line 32 -LOCATE THE CHANNEL
+                                      !           WORD INDEX
+        SC, TIXJ, TX3                ! line 33 -TO REMOVE THE
+                                      !           INTERGER FROM THE VF
+        LV, TIXJ, TUNTBA(TX3)        ! line 34 -ADDRESS OF THE UNIT
+                                      !           TABLE TO IX
+        L, TUNITK(TX3), 46           ! line 35 -GET THE NUMBER OF
+                                      !           UNITS ON CHANNEL
+        LF, TCHCNT(TIXB), 14         ! line 36 -GET NO. OF UNITS ON
+                                      !           CHAN FOR COMPARE
+        LC, TIXJ, $R                 ! line 37 -PLACE IN CF
+        KC, TX3, $R+.32              ! line 38 -ARE THERE ENOUGH
+                                      !           UNITS TO SATIFY REQ
+        LF, TRLSYM(TIXA)             ! line 39 -TEST FOR BLANK
+                                      !           CHANNEL REQUEST
+        BRZ, TC3Z                    ! line 40 -YES, ASSIGN TO ANY
+                                      !           CHANNEL
+        BZXH, TA3C                   ! line 41 -IF THERE ARE ENOUGH
+                                      !           UNITS ON A CHAN
+        BZB, TINDB, TA3F1            ! line 42 -IF THE SPLIT CHAN
+                                      !           IND IS OFF
+
+! ---- IS THIS CHAN ASSIGNED TO ANOTHER I/O WITHIN PP ---------------
+TA3C    BB, TINDA, TC3Z              ! line 46 -IF SAME CHAN IS
+                                      !           ALLOWED
+        LX, TIXK, TREFIL             ! line 47 -SET IX FOR SCANNING
+                                      !           I/O REQ TABLE
+        SV, TX3, $R                  ! line 48 -CHANNEL ADDRESS TO ACC
+TA3CA   KF, TABSCH(TIXK), 46         ! line 49 -LOOK FOR LIKE CHANNEL
+                                      !           ADDRESS
+        BZAE, TA3CB                  ! line 50 -IF CHAN IS NOT
+                                      !           ASSIGNED TO ANOTHER
+
+! ---- YES -- DOES THE I/O REQUEST THE SAME CHANNEL -----------------
+        LF, TRLSYM(TIXK)             ! line 54 -REL SYMB CHAN
+                                      !           NUMBER VS
+        KF, TRLSYM(TIXA)             ! line 55 -THE ASSIGNED REL
+                                      !           SYMB CHAN NUMBER
+        BZAE, TA3F1                  ! line 56 -IF THEY ARE UN-LIKE
+        END, TB7
+
+! ---------------------------------------------------------------
+! THE CHECKED ROWS -- all forty-one that compile.
+! ---------------------------------------------------------------
+!   line  1  004026.40  000000.34 82  004034.34 02     BB,T UNAVL
+!   line  2  004027.40  000000.35 82  004034.34 00     BZB,T UNASG
+!   line  3  004030.40  000000.76 82  002000.07 70     CT0011(BU,2)
+!   line  4  004031.40  004167.74 C2                   BRZ,T A5S
+!   line  5  004032.00  003273.23 80  004034.34 00     BZB,T MODE
+!   line  6  004033.00  000000.76 82  004167.74 00     BZB,T UNRES
+!   line  7  004034.00  004021.05 48                   T B7  CB+
+!   line  8  004034.40  003756.50 00                   B,T B2
+!   line 12  004035.00  000000.14 32                   T A7D  LV
+!   line 13  004035.40  000000.73 82  004027.20 50     L,T UNITK,46
+!   line 14  004036.40  000011.14 50                   LC,T IXJ,$R
+!   line 15  004037.00  004034.30 42                   BXCZ,T B7
+!   line 16  004037.40  000000.34 86  004045.34 02     T A7CA  BB
+!   line 17  004040.40  000000.35 86  004045.34 00     BZB,T UNASG
+!   line 18  004041.40  000000.76 86  002000.07 70     CT0011(BU,2)
+!   line 19  004042.40  004137.34 C2                   BRZ,T A5A
+!   line 20  004043.00  003273.23 80  004045.34 00     BZB,T MODE
+!   line 21  004044.00  000000.76 86  004137.34 00     BZB,T UNRES
+!   line 22  004045.00  004037.55 48                   T C7  CB+
+!   line 23  004045.40  004034.10 00                   B,T B7
+!   line 30  004046.00  000000.12 19                   T A3  LX
+!   line 31  004046.40  003756.70 42                   BXCZ,T B2
+!   line 32  004047.00  000000.14 55                   T A3D  LC
+!   line 33  004047.40  000022.15 50                   SC,T IXJ,T X3
+!   line 34  004050.00  000000.14 32                   LV,T IXJ
+!   line 35  004050.40  000000.73 82  004027.20 50     L,T UNITK,46
+!   line 36  004051.40  000000.24 85  004007.06 70     LF,T CHCNT,14
+!   line 37  004052.40  000011.14 50                   LC,T IXJ,$R
+!   line 38  004053.00  000011.45 90                   KC,T X3,$R+.32
+!   line 39  004053.40  000000.13 84  007000.06 70     LF,T RLSYM
+!   line 40  004054.40  004065.34 C2                   BRZ,T C3Z
+!   line 41  004055.00  004056.73 40                   BZXH,T A3C
+!   line 42  004055.40  003273.25 80  004132.34 00     BZB,T INDB
+!   line 46  004056.40  003273.24 80  004065.34 02     T A3C  BB
+!   line 47  004057.40  003271.24 10                   LX,T IXK
+!   line 48  004060.00  000011.05 30                   SV,T X3,$R
+!   line 49  004060.40  000000.56 8A  022027.23 10     T A3CA  KF
+!   line 50  004061.40  004064.76 C0                   BZAE,T A3CB
+!   line 54  004062.00  000000.13 8A  007000.06 70     LF,T RLSYM
+!   line 55  004063.00  000000.13 84  007000.23 10     KF,T RLSYM
+!   line 56  004064.00  004132.36 C0                   BZAE,T A3F1

@@ -5395,6 +5395,61 @@ no opcode can rule it out. What ruled it out was the datum the name
 labels — which is a tell worth stating on its own: *when a name
 labels data, decode the data before trusting the name.*
 
+## PRINTED p.68 — twin blocks that check each other, 2026-10-24
+
+Forty-one compiled rows, **all bit-exact on the first run**. It
+places three of p.67's four forward references: line 7 is `T B7`
+(004034.00), line 12 is `T A7D` (004035.00), line 30 is `T A3`
+(004046.00). The fourth, `T C3Z`, is one word past the page and
+belongs to p.69.
+
+### >>> Two eight-line blocks that differ only in their index <<<
+
+Lines 1-8 and lines 16-23 are the **same unit-availability test
+written twice** — once on `T X3`, once on `T IXJ`:
+
+```
+line  1  000000.34 82  004034.34 02   BB,T UNAVL(T X3),T B7
+line 16  000000.34 86  004045.34 02   BB,T UNAVL(T IXJ),T C7
+```
+
+**The binary differs in one nibble per row** — the index in the
+opcode byte, `82` against `86`, which is `$2` against `$6`. Every
+other field is identical: `T UNAVL` 0.34, `T UNASG` 0.35, `T UNRES`
+0.76, the same `CT0011(BU,2)`, the same `BZB` on `T MODE`.
+
+**That is a transcription check the page provides itself.** A
+misread digit in either block disagrees with the other. The
+injections show both halves: moving `T UNRES` fails **four** rows,
+two in each block; moving `T IXJ` fails **six**, all in the second.
+One symbol common to both, one that separates them.
+
+This is a different kind of self-check from the ones this project
+has relied on so far — those come from a *reference* agreeing with
+its target's own location. This one comes from the program being
+written twice.
+
+### `$R+.32` is an expression on a system symbol
+
+Line 38's `KC,T X3,$R+.32` compiles `000011.45 90`. `$R` is word 9
+(`000011` octal) and `.45` has **bit 18 set**, the half-word
+selector, so the operand is word 9's *second* half — which is where
+line 37's `LC,T IXJ,$R` put the count being compared. The injection
+reads `000011.05`.
+
+### Where the range stands
+
+```
+merged 51 pages, 371 stand-ins checked against their definitions,
+135 SYNs that agree with another page's SYN, 42 symbols external
+```
+
+printed pp.15-68 are in the image, gapless. **pp.69, 70 and 71
+remain** before `T A9` (p.72 line 4) is reachable; p.68's own
+forward references name part of what is on them — `T A3CB`
+004064.40, `T C3Z` 004065.0, `T A3F1` 004132.0, `T A5A` 004137.0,
+`T A5S` 004167.40.
+
 ## PRINTED p.67 — the assignment attempts, and a dds rule confirmed on a second kind of symbol, 2026-10-24
 
 Thirty-eight compiled rows, **all bit-exact on the first run**. It

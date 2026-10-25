@@ -5011,6 +5011,30 @@ run "the REQUEST VALIDITY CHECK and MULTI-UNIT COUNT tables, printed p.64, bit-e
 run "THE ENTRY POINT TO THE ASSIGN ROUTINE, printed p.65, bit-exact (MCP_Mar63 PDF p.72)" python3 verify_mcp_bootstrap_p65.py
 run "the REQUEST-COUNT CHECK and the I/O REQUEST SCAN, printed p.66, bit-exact (MCP_Mar63 PDF p.73)" python3 verify_mcp_bootstrap_p66.py
 run "the MULTI-UNIT and SINGLE-UNIT assignment attempts, printed p.67, bit-exact (MCP_Mar63 PDF p.74)" python3 verify_mcp_bootstrap_p67.py
+run "the UNIT AVAILABILITY TESTS and MULTI-UNIT CHANNEL SCAN, printed p.68, bit-exact (MCP_Mar63 PDF p.75)" python3 verify_mcp_bootstrap_p68.py
+# IT PLACES THREE OF printed p.67's FOUR FORWARD REFERENCES: line 7
+# is T B7 at 004034.00, line 12 is T A7D at 004035.00 and line 30 is
+# T A3 at 004046.00.  The fourth, T C3Z, is one word past this
+# page's last line and belongs to printed p.69.
+#
+# >>> TWO EIGHT-LINE BLOCKS THAT DIFFER ONLY IN THEIR INDEX, AND
+# THAT IS A TRANSCRIPTION CHECK THE PAGE PROVIDES ITSELF. <<<  Lines
+# 1-8 and 16-23 are the same unit-availability test written twice --
+# once on T X3, once on T IXJ -- and the binary differs in ONE
+# NIBBLE per row, the index in the opcode byte: 82 against 86, which
+# is $2 against $6.  Every other field is identical, so a misread
+# digit in either block disagrees with the other.
+#
+# The injections show both halves of that: moving T UNRES fails FOUR
+# rows, two in each block, while moving T IXJ fails six rows all in
+# the SECOND block.  One symbol common to both, one that separates
+# them.
+#
+# "$R+.32" IS AN EXPRESSION ON A SYSTEM SYMBOL.  Line 38's
+# "KC,T X3,$R+.32" compiles 000011.45 90 -- $R is word 9 (000011
+# octal) and ".45" has bit 18 SET, the half-word selector -- so the
+# operand is word 9's SECOND half, which is where line 37's
+# "LC,T IXJ,$R" put the count it is comparing.
 # IT PLACES BOTH OF printed p.66's FORWARD REFERENCES: p.66 line 45
 # branches to T A2E and line 49 to T A7, and lines 5 and 50 here are
 # those labels, at 003775.00 and 004020.40.
