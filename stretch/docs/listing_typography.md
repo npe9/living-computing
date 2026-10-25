@@ -897,3 +897,87 @@ line 47   004342.74 C2  ->  02   closed oval at 1800 dpi
 Line 38 is the sharpest of the three and belongs beside the token
 above: **two adjacent glyphs in one byte, one closed and one open.
 They cannot both be zeros, and they cannot both be C's.**
+
+### 13h. >>> THE ARTIFACT ALTERNATES WITH THE COLUMN (printed p.76, 2026-10-25) <<<
+
+§13g showed one token, `CM0000`, printing as `CMOCOC`. MCP printed
+p.76 line 19 shows the mechanism:
+
+```
+statement, 1800 dpi:   (16)8993151193 C 0 C 0 C 0
+compiled datum:        1046230521062300000000
+                       = 8993151193000000
+```
+
+Six zeros in a row, printed **C 0 C 0 C 0** — and p.74's `CM0000`
+printed **O C O C**, the same alternation in the opposite phase.
+
+> **The open shape is a fact about which COLUMN a character sits in,
+> not about what the character is.** The drum drops the left stroke
+> on alternate print positions, so a run of identical zeros comes out
+> in two shapes necessarily, and the phase depends on where the run
+> starts.
+
+**This kills the last defence of a single-glyph reading.** "It looked
+like a `C` at 1800 dpi" is worth nothing by itself. The order that
+works is: read the RUN (do neighbouring identical digits disagree?),
+read the FIELD (octal cannot hold a `C`; hex can), read the COMPILED
+VALUE (it is printed, in octal, three columns to the left).
+
+#### And a hex literal is the one field with no internal answer
+
+Every rule from §13 to §13f leans on a field that cannot hold a `C`.
+A HEXADECIMAL literal can, so none of them applies. printed p.76 has
+three, and line 11 is the hardest:
+
+```
+DD(BU),(16) C C 0 F 9 D B 6 8 B C D 9 1 9 1
+```
+
+— three open-C shapes and one closed zero among its four zeros. Its
+compiled datum is `0000174733321303310621` = `000F9DB68B0D9191`, so
+all four are zeros.
+
+> **The compiled value is the only authority for a hex literal.** It
+> is loud, too: the injection that takes those C's literally prints
+> `14` where the listing prints `00`, because a leading `C` puts
+> 1100 in the datum's top four bits.
+
+And the compiled value catches what no typographic rule would: line
+18's sixth hex digit was read `0` at 600 dpi and is `D`. The octal
+said so before the 1800 dpi render confirmed it.
+
+### 13i. >>> AND IT IS NOT DIGIT-SPECIFIC: AN `E` READ AS AN `L` (printed p.77, 2026-10-25) <<<
+
+Every instance from §13 to §13h is a digit — a zero printed with its
+left stroke dropped. MCP printed p.77 line 23 is the same mechanism
+on a LETTER:
+
+```
+statement, 1800 dpi:   B L , $ + . 3 2      -MODIFIED BY IPL
+what it is:            BE,$+.32
+```
+
+At 1800 dpi the second glyph has a vertical stroke and a bottom bar
+and reads `L` without much doubt. It is an `E` whose **top and
+middle bars did not print**.
+
+**Three things settle it, and the glyph is not one of them.**
+
+1. **`BL` IS NOT A MNEMONIC.** The unconditional branch family is
+   `B`, `BD`, `BE`, `BEW`, `BR`, `NOP` and nothing else. A reading
+   that produces a mnemonic no source lists is a reading to doubt.
+2. **`BE,$+.32` assembled at 004474.00 produces `004474.40 00`,
+   which is the printed row exactly.** Nothing else does.
+3. **The twin row says so.** printed p.78 line 40 is `T IPLB2
+   BE,$+.32` at 004540.40, compiling `004541.00 00` — the same
+   operation with the same J field, 0000, and the same comment,
+   *MODIFIED BY IPL*. The two rows are one idiom written twice, and
+   one of the two printed cleanly.
+
+> **So the artifact is about ink, not about character class.** A
+> drum that drops a zero's left stroke drops an `E`'s bars too, and
+> the recovery is identical: ask what the field can hold, ask what
+> the assembler produces, and ask whether the corpus prints the same
+> thing elsewhere. The glyph is the last witness to call, not the
+> first.

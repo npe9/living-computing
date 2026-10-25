@@ -705,13 +705,22 @@ cannot be tested without it.
 > The image now holds printed pp.15-75 gapless: 58 pages, 453
 > stand-ins checked, 260 agreeing SYNs, 35 symbols still external —
 > **a count predicted exactly before the build** (39 − 9 placed + 5
-> new). **`T PICA` is next: it is printed p.80 line 4**, so printed
-> pp.76-79 lie between and the merge needs all four before p.80 can
-> join. printed p.76 is already read and confirms two forward
-> stand-ins by name — `T MESSY` at 004451.00 (p.74's) and `YSCRBT`
-> at 004455.03 (p.75's) — and is a different kind of page: character
-> data in `(IQSX)` entry mode and radix-16 datums, for *A PRINT
-> SUB-ROUTINE THAT WILL PRINT ASSIGNMENTS*.
+> new). **`T PICA` is printed p.80 line 4**, so printed pp.76-79 lie
+> between and the merge needs all four before p.80 can join.
+>
+> **printed p.76 has landed** (59 pages, 457 stand-ins, 31 external,
+> predicted exactly) — a data page of message buffers for *A PRINT
+> SUB-ROUTINE THAT WILL PRINT ASSIGNMENTS*, which confirms four
+> stand-ins including `T MESSY` at 004451.00 and `YSCRBT` at
+> 004455.03, the latter down to the BIT. Only seven of its rows
+> print machine code; the other check is that all seventeen of its
+> labels land on their printed locations, which they did on the
+> first assembly. The trail does not move — the run never executes
+> there — but the step count rises to 22,047,265 because the IPL
+> TRANSMIT moves thirty more words.
+>
+> **printed pp.77, 78 and 79 remain**, and p.78 needs C22-6531
+> consulted first for its `$`-prefixed operations.
 >
 > The image holds printed pp.15-73 gapless — 56 pages, 432 stand-ins
 > checked against their definitions, 218 agreeing SYNs, 41 symbols

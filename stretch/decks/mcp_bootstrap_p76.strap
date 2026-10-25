@@ -1,0 +1,117 @@
+! MCP INITIALIZATION, printed p.76 (MCP_Mar63_001-249 PDF p.83) --
+! A PRINT SUB - ROUTINE THAT WILL PRINT ASSIGNMENTS.
+!
+! THIRTY-SEVEN lines, of which thirty compile and SEVEN print any
+! machine code at all.  It is a data page: the message buffers the
+! assignment printer fills in, three hexadecimal constants, five SYN
+! cards, four one-bit flags and three index words.
+!
+! ---------------------------------------------------------------
+! >>> FOUR OF ITS LABELS WERE ALREADY STAND-INS, AND ALL FOUR AGREE
+! ---------------------------------------------------------------
+!   T BUFB1  004432.00   line 11
+!   T MESSY  004451.00   line 24   printed p.74 line 55's LVI
+!   T SBHDI  004455.01   line 32
+!   YSCRBT   004455.03   line 34   printed p.75 line 37's BBZ -- and
+!                                  the stand-in gives the BIT, 03
+!
+! ---------------------------------------------------------------
+! >>> THE COUNTING IS THE CHECK, AND IT CHECKS SEVENTEEN TIMES <<<
+! ---------------------------------------------------------------
+! THE LISTING PRINTS NO BINARY FOR CHARACTER DATA -- as it prints
+! none for printed p.41's (AX) masks or pp.9-12's (IQS*) messages --
+! so no character code is checked or can be.  WHAT IS CHECKED IS THE
+! COUNTING, and on a page that is almost all character data the
+! counting is the whole page: SEVENTEEN labels, each landing on its
+! printed location, and ONE wrong character anywhere shifts every
+! label after it.  All seventeen landed on the first assembly.
+!
+! AND THE ADVANCE IS THE DATUM'S CHARACTER COUNT, NOT THE DECLARED
+! ITEM LENGTH.  Line 16 is "(IQS*)DD(BU,36,8), UNIT *" -- six
+! characters -- and advances FORTY-EIGHT bits, from 004440.40 to
+! 004441.20.  Thirty-six is in the card and does not drive the
+! counter.  Line 14 declares 64 and advances 96 for twelve
+! characters; line 15 declares 24 and advances 24 for three.
+!
+! THE ONE THING THE PAGE CANNOT CHECK is where a datum's blanks
+! sit.  A total of forty with a thirty-four character core leaves
+! six blanks, and the locations cannot say how they split.  Those
+! were MEASURED at 1800 dpi against the character pitch: line 9 is
+! two leading and four trailing (the "-" lands three advances after
+! the comma, and the terminator five advances after the last "-"),
+! line 20 has NO leading blank ("SCRATCH" starts against the comma)
+! and line 21 has one.  Recorded as measurement, not as proof.
+!
+! ---------------------------------------------------------------
+! >>> A HEX LITERAL IS THE ONE FIELD WHERE THE C/ZERO RULE HAS NO
+! >>> INTERNAL ANSWER -- AND THE COMPILED OCTAL IS THE AUTHORITY <<<
+! ---------------------------------------------------------------
+! listing_typography.md 13e turns on octal having no C.  A
+! HEXADECIMAL literal does, so the field cannot rule it out, and
+! this page has three of them.  Line 11 prints
+!
+!     DD(BU),(16)C C 0 F 9 D B 6 8 B C D 9 1 9 1
+!
+! with THREE open-C shapes and ONE closed zero among its four zeros.
+! Its compiled datum prints 0000174733321303310621, which is
+! 000F9DB68B0D9191 -- so all four are zeros and the open shapes are
+! the artifact.  NOTHING IN THE STATEMENT COULD HAVE SAID SO.
+!
+! Line 19 is sharper still: "(16)8993151193000000" prints its six
+! trailing zeros as C 0 C 0 C 0, ALTERNATING, and its compiled datum
+! 1046230521062300000000 = 8993151193000000 proves all six are
+! zeros.  printed p.74 line 10's "CM0000" prints C M O C O C -- the
+! same alternation in the opposite phase.  THE SHAPE ALTERNATES WITH
+! THE COLUMN, NOT WITH THE DIGIT, which is why a run of identical
+! zeros comes out in two shapes and why no "it looked like a C"
+! reading of a single glyph is worth anything on its own.
+!
+! Line 18 was misread a THIRD way: its sixth hex digit was read 0
+! and is D.  The compiled octal said so before the 1800 dpi render
+! confirmed it.
+!
+! TWO LISTING MARKS: lines 10 and 21.
+
+        SLC, (8)4423.40
+
+        CNOP                         ! line 8
+TBUF01  (IQS*)DD(BU,64,8),  --- SET UP THE FOLLOWING UNITS ---    *
+TMBLK   (IQS*)DD(BU,64,8),        *
+TBUFB1  DD(BU),(16)000F9DB68B0D9191
+        (IQS*)DD(BU), MOUNT - REEL NUMBER *
+TREELX  (IQS*)DD(BU,64,8),        *
+        (IQS*)DD(BU,64,8), ON CHANNEL *
+TCHANX  (IQS*)DD(BU,24,8),   *
+        (IQS*)DD(BU,36,8), UNIT *
+TUNITX  (IQS*)DD(BU),      *
+        DD(BU),(16)00171D8315008B8F
+        DD(BU),(16)8993151193000000
+TSCRAT  (IQS*)DD(BU,64,8),SCRATCH *
+TSUBHD  (IQS*)DD(BU,8,8), -- PROBLEM PROGRAM --- *
+TPID    (IQS*)DD(BU,64,8),        *
+        CNOP                         ! line 23
+TMESSY  (A*)DD(BU), I/O REQ. INCOMP WITH MACH CONF.*
+TXA     SYN, $2
+TXB     SYN, $3
+TXC     SYN, $4
+TIXZ    SYN, $5
+TIXY    SYN, $6
+THEAD   DD(BU,1), 0
+TSBHDI  DD(BU,1), 0
+TNGATE  DD(BU,1), 0
+YSCRBT  DD(BU,1), (2)0
+TP5IN   XW
+TP5OUT  XW
+TPSAV   XW
+        END, TBUF01
+
+! ---------------------------------------------------------------
+! THE CHECKED ROWS -- all seven that print machine code.
+! ---------------------------------------------------------------
+!   line  8  004423.40  000000.30 00                   CNOP
+!   line 11  004432.00  0000174733321303310621         T BUFB1  DD(BU),(16)000F9DB68B0D9191
+!   line 18  004442.00  0000270730142500105617         DD(BU),(16)00171D8315008B8F
+!   line 19  004443.00  1046230521062300000000         DD(BU),(16)8993151193000000
+!   line 35  004456.00  000000.00+ 000 000000 000000   T P5IN  XW
+!   line 36  004457.00  000000.00+ 000 000000 000000   T P5OUT  XW
+!   line 37  004460.00  000000.00+ 000 000000 000000   T PSAV  XW

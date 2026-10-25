@@ -5415,6 +5415,88 @@ no opcode can rule it out. What ruled it out was the datum the name
 labels — which is a tell worth stating on its own: *when a name
 labels data, decode the data before trusting the name.*
 
+## >>> PRINTED p.76 IS A DATA PAGE, AND THE COUNTING IS THE WHOLE CHECK — 2026-10-25 <<<
+
+Thirty-seven lines, thirty compiled, and **only seven print any
+machine code at all**. It is the print sub-routine's message store:
+the buffers the assignment printer fills in, three hexadecimal
+constants, five SYN cards, four one-bit flags and three index words.
+
+### Seventeen labels, seventeen locations, first assembly
+
+The listing prints no binary for character data — as it prints none
+for p.41's `(AX)` masks or pp.9-12's `(IQS*)` messages — so **no
+character code is checked or can be**. What is checked is the
+counting, and on a page that is almost all character data the
+counting *is* the page: seventeen labels, each landing on its printed
+location, and **one wrong character anywhere shifts every label after
+it**. The injection that drops a single blank from line 9 produces
+**eleven failures**, each exactly eight bits early.
+
+**And the advance is the datum's character count, not the declared
+item length.** Line 16 is `(IQS*)DD(BU,36,8), UNIT *` — six
+characters — and advances forty-eight bits. Line 14 declares 64 and
+advances 96 for twelve characters; line 15 declares 24 and advances
+24 for three. The injection that changes 36 to 48 **survives**, which
+is how that is recorded.
+
+Four of its labels were already stand-ins and all four agree:
+`T BUFB1`, `T MESSY` (p.74 line 55's `LVI`), `T SBHDI`, and `YSCRBT`
+(p.75 line 37's `BBZ` — and that stand-in gives the *bit*, 03). The
+external count went 35 → **31**, predicted exactly.
+
+### >>> A hex literal is the one field where the C/zero rule has no internal answer <<<
+
+`listing_typography.md` §13e turns on octal having no `C`.
+**Hexadecimal does**, so the field cannot rule it out — and this page
+has three such literals. Line 11 prints
+
+```
+DD(BU),(16) C C 0 F 9 D B 6 8 B C D 9 1 9 1
+```
+
+with **three open-C shapes and one closed zero among its four
+zeros**. Its compiled datum prints `0000174733321303310621`, which is
+`000F9DB68B0D9191`: all four are zeros.
+
+> **Nothing in the statement could have said so.** The compiled value
+> is the only authority for a hex literal's `C`, and it is printed in
+> octal three columns to the left. The injection that takes the C's
+> literally prints `14` where the listing prints `00` — 1100 in the
+> top four bits — so the discriminator is loud once you look for it.
+
+### The artifact alternates with the COLUMN, not with the digit
+
+Line 19 is `(16)8993151193000000` and prints its six trailing zeros
+
+```
+C 0 C 0 C 0
+```
+
+and printed p.74 line 10's `CM0000` prints `C M O C O C` — **the same
+alternation in the opposite phase**. That is the mechanism showing
+through: the drum drops the stroke on alternate columns, so a run of
+identical zeros necessarily comes out in two shapes.
+
+> **Which kills the last defence of a single-glyph reading.** "It
+> looked like a C at 1800 dpi" is worth nothing on its own, because
+> the shape is a fact about where the character sits, not about what
+> it is. Read the run, read the field, read the compiled value — in
+> that order.
+
+Line 18 was misread a third way, and neither rule would have caught
+it: its sixth hex digit was read `0` and is `D`. The compiled octal
+said so before the render confirmed it.
+
+### The trail does not move, and the step count does
+
+004604.00 is still `T PICA` — p.76 is data the run never executes, so
+nothing was re-measured and all 36 boot checks passed unchanged. But
+the step count rose 22,046,898 → **22,047,265**, because the IPL
+TRANSMIT moves the whole image and the image is thirty words longer.
+*A page that adds no instructions still costs the bootstrap something
+to load, and the step counter is where it shows.*
+
 ## >>> PRINTED p.75 IS THE DISPATCH TABLE, AND MCP USES IT — 2026-10-25 <<<
 
 Fifty compiled rows of fifty-three lines — the first short page in
@@ -5539,8 +5621,9 @@ disabled branch and not a halt**, worth noting beside p.75's five
 `BD,$`.
 
 **printed p.78** — 004511.00-004554.40, 56 lines, *CONVERT THE
-CHANNEL FIELDS*. **This one needs research first.** Lines 9-12 carry
-a syntax no page in this corpus has used:
+CHANNEL FIELDS*. **BLOCKED ON A PRIMARY SOURCE, and the search so
+far has come up empty.** Lines 9-12 carry a syntax no page in this
+corpus has used:
 
 ```
 T P5A1  $L,T ABSCH(T XB),-60
@@ -5549,11 +5632,57 @@ T P5A1  $L,T ABSCH(T XB),-60
         $CV(BU,18),0.0,-32
 ```
 
-a `$` PREFIX ON THE OPERATION, with **negative offsets**. The
-assembler knows a bare `$` as the location counter and nothing else.
-**Rule 4 applies: C22-6531 has to say what the prefix means before a
-line of it is written.** It is four rows out of fifty, so the rest of
-the page is ordinary.
+a `$` PREFIX ON THE OPERATION, with **negative offsets**. Confirmed
+at 1200 dpi: the `$` really is the first character of the operation
+field, on four consecutive rows and nowhere else on the page.
+
+**Where it is NOT documented**, as of 2026-10-25:
+
+* **C28-6129 printed pp.3-4** lists *all twelve* STRAP-II symbolic
+  instruction formats, from `OP, A` outward. None has a prefix on
+  the operation. Format 7 (VFL) is `OP(dds), A₂₄(I), OF₇(I')` — and
+  that **`OF₇` is a seven-bit offset field, which is where the
+  negative offsets come from**; `-60` compiles to `042` in the
+  printed second group, two's complement of −30 at the half-bit
+  scale the field uses. So the minus signs are explained and the
+  `$` is not.
+* The **April 1963 bulletin** (N28-1081, bound in at PDF 59-79)
+  itemises additions to Appendix C's mnemonics — including
+  `M+N1`/`M−N1`, the negative of printed p.73's `M+1` — and lists no
+  prefix.
+* `docs/c22_6531_appendix_a.md`'s eight footnotes are the mnemonic
+  grammar and are all about **suffixes**; its only `$` rule is "this
+  mnemonic is a system symbol, it must be prefixed by `$` whenever
+  used", which is about operands such as `$L` and `$R`.
+
+**And the bits say the prefix does nothing.** printed p.77 line 33
+is `L,T ABSCH(T XB),46` compiling `000000.56 83  022027.20 50`, and
+p.78 line 9 is `$L,T ABSCH(T XB),-60` compiling
+`000000.56 83  022042.20 50`. Identical but for the offset field.
+
+> **That is exactly the situation Rule 4 exists for.** The temptation
+> is to write `L` for `$L`, get fifty bit-exact rows, and move on —
+> and the deck would then assert, silently and without evidence,
+> that the prefix means nothing. It might mean something STRAP
+> records elsewhere (a listing control, a relocation flag, a
+> programmer's convention the assembler ignores) and the one thing
+> that is certain is that **this listing cannot tell us which**.
+> p.78 waits for a source.
+
+**Also checked and empty**, same day: C22-6729 (the STRAP-II System
+Analysis Guide) **Appendix B — "Additional Instructions and
+Pseudo-Ops Accepted by STRAP II"** (printed p.195), which is the
+complete list and does confirm `CNOP`, `SLC`, `SYN`, `DD`, `VF`,
+`CF`, `XW`, `DR`, `DRZ` and names `IOD` and `REEL` as *MCP
+Instructions*; and its **Appendix D — "Symbolic Designations"**
+(p.202), which turns out to be STRAP II's own internal naming
+convention, not user syntax.
+
+Still unread: C28-6129's section on the offset field, its
+pseudo-operation chapter, and C22-6729's "Including a Coprocessor
+Subroutine with STRAP II" (p.180) — a coprocessor is the one
+mechanism found so far that could put a character in the operation
+field that the twelve formats do not describe.
 
 **printed p.79** — 004555.40-004603.40, 39 lines.
 

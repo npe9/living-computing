@@ -5553,6 +5553,68 @@ run "THE REJECT PATH and the ASSIGN DISPATCH TABLE, printed p.75, bit-exact (MCP
 # bit 18); "T CAT+.12" made "T CAT+12.0", 1 FAIL at 004366.40
 # (005005.00 for 004771.14); and T FREEL's dds 18 -> 8 bits, 1 FAIL
 # at 004373.40 (010027 for 022027).
+run "A PRINT SUB-ROUTINE THAT WILL PRINT ASSIGNMENTS, printed p.76, bit-exact (MCP_Mar63 PDF p.83)" python3 verify_mcp_bootstrap_p76.py
+# Thirty-seven lines, thirty compiled, and only SEVEN print any
+# machine code at all.  A data page: the message buffers the
+# assignment printer fills in, three hexadecimal constants, five SYN
+# cards, four one-bit flags and three index words.
+#
+# >>> FOUR OF ITS LABELS WERE ALREADY STAND-INS, AND ALL FOUR AGREE:
+# T BUFB1 (004432.00), T MESSY (004451.00, printed p.74 line 55's
+# LVI), T SBHDI (004455.01) and YSCRBT (004455.03, printed p.75 line
+# 37's BBZ -- and that stand-in gives the BIT, 03).
+#
+# >>> THE COUNTING IS THE CHECK, AND IT CHECKS SEVENTEEN TIMES. <<<
+# The listing prints no binary for character data, so no character
+# code is checked or can be.  What is checked is the counting, and
+# on a page that is almost all character data the counting is the
+# whole page: seventeen labels, each on its printed location, and
+# ONE wrong character anywhere shifts every label after it.  All
+# seventeen landed on the first assembly.
+#
+# AND THE ADVANCE IS THE DATUM'S CHARACTER COUNT, NOT THE DECLARED
+# ITEM LENGTH.  Line 16 is "(IQS*)DD(BU,36,8), UNIT *" -- six
+# characters -- and advances FORTY-EIGHT bits.  Line 14 declares 64
+# and advances 96 for twelve characters; line 15 declares 24 and
+# advances 24 for three.  The injection that changes 36 to 48
+# SURVIVES, which is how that is recorded.
+#
+# THE ONE THING THE PAGE CANNOT CHECK is where a datum's blanks sit.
+# Forty characters with a thirty-four character core leaves six
+# blanks and the locations cannot say how they split.  Those were
+# MEASURED at 1800 dpi against the character pitch -- line 9 is two
+# leading and four trailing, line 20 has none and line 21 has one --
+# and are recorded as measurement, not as proof.
+#
+# >>> A HEX LITERAL IS THE ONE FIELD WHERE THE C/ZERO RULE HAS NO
+# INTERNAL ANSWER, AND THE COMPILED OCTAL IS THE AUTHORITY. <<<
+# listing_typography.md 13e turns on octal having no C.  HEX does,
+# so the field cannot rule it out, and this page has three such
+# literals.  Line 11 prints "(16)C C 0 F 9 D B 6 8 B C D 9 1 9 1"
+# with THREE open-C shapes and ONE closed zero among its four zeros;
+# its compiled datum 0000174733321303310621 is 000F9DB68B0D9191, so
+# all four are zeros.  Nothing in the statement could have said so,
+# and the injection that takes the C's literally prints 14 where the
+# listing prints 00 -- 1100 in the top four bits.
+#
+# Line 19 is sharper: "(16)8993151193000000" prints its six trailing
+# zeros as C 0 C 0 C 0, ALTERNATING.  printed p.74 line 10's
+# "CM0000" prints C M O C O C -- the same alternation in the
+# opposite phase.  THE SHAPE ALTERNATES WITH THE COLUMN, NOT WITH
+# THE DIGIT, which is why a run of identical zeros comes out in two
+# shapes and why no "it looked like a C" reading of a single glyph
+# is worth anything on its own.
+#
+# Line 18 was misread a third way: its sixth hex digit was read 0
+# and is D.  The compiled octal said so before the 1800 dpi render
+# confirmed it.
+#
+# Injections, against the DECK: line 11's C's taken literally gives
+# 1 FAIL at 004432.00; line 19's six zeros taken as C0C0C0, 1 FAIL
+# at 004443.00; line 18's D read as 0, 1 FAIL at 004442.00; line 9's
+# message losing ONE of four trailing blanks, 11 FAILS -- every
+# label from T MBLK on is eight bits early; T MESSY losing its final
+# period, 7 FAILS.
 run "the IOD CARD ROUTINE, printed p.53, bit-exact (MCP_Mar63 PDF p.60)" python3 verify_mcp_bootstrap_p53.py
 # >>> IT CONFIRMS BOTH OF printed p.52's DERIVED STAND-INS. <<<
 # L OOPN is at 002775.40 (line 4) and L IODRN at 003021.40 (line 37),
