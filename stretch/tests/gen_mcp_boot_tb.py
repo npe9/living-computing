@@ -867,9 +867,21 @@ def main():
         #                                  ROWS, THREE INDICATOR
         #                                  BITS, and all three are
         #                                  what those two rows do.
+        #   0x200A448  AL, RZ, XCZ, XE, XF, XVZ -- printed p.75 too,
+        #                                  and the set returns to
+        #                                  what printed p.73 left.
+        #                                  The reject path reloads
+        #                                  T IXA, counts it down to
+        #                                  zero through line 36's
+        #                                  "CB+,T IXA,T AREJ1" and
+        #                                  leaves the index zero and
+        #                                  flagged again.  A value
+        #                                  that comes BACK is as much
+        #                                  a measurement as one that
+        #                                  moves.
         ("mcp_indicators_word11", str(IND_WORD),
          _ind("AL") | _ind("RZ") | _ind("XCZ") | _ind("XE")
-         | _ind("XVGZ")),
+         | _ind("XF") | _ind("XVZ")),
 
         # >>> THE MOVE ITSELF, AND IT IS THE POINT OF THE FIXTURE <<<
         # Printed p.4 line 28, "T,$11,X BUFER($X1),X BS END  -MOVE MCP
@@ -1518,9 +1530,28 @@ def main():
                    # advances by EXACTLY TWO half words, to
                    # 004361.00, for 424 more steps.  004361.00 is
                    # printed p.75 line 1, "T AREJ R,T IXA  -RELOAD
-                   # IX".  THAT IS THE NEXT TRANSCRIPTION.
+                   # IX".
+                   #
+                   # >>> AND THEN TO 4872, THE SAME DAY, BECAUSE
+                   # printed p.75 IS IN THE IMAGE. <<<  4872 is
+                   # 004604.00, and p.75 line 50 NAMES IT:
+                   #
+                   #     T L   B,T PICA   -NOT OVERLAP JOB NOT
+                   #                       ASSIGNED
+                   #
+                   # The run walks p.75's reject path -- clearing the
+                   # reel slot, the assigned bits and the mount bits
+                   # -- counts T IXA down through line 36's
+                   # "CB+,T IXA,T AREJ1", falls out at line 40's
+                   # "B,T L" and dispatches to T PICA, 703 steps
+                   # later.  THE DISPATCH TABLE IS BEING USED, and
+                   # the exit it takes is the one whose comment says
+                   # this job is not overlap and not assigned.
+                   #
+                   # T PICA IS THE NEXT TRANSCRIPTION, and the deck
+                   # already carries its address as a stand-in.
                    pc_check=0,
-                   pc_trail_check=4578,
+                   pc_trail_check=4872,
                    step_cap=40000000,
                    pc_trail=True,
                    op_trail=True,

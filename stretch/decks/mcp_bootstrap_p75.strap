@@ -1,0 +1,256 @@
+! MCP INITIALIZATION, printed p.75 (MCP_Mar63_001-249 PDF p.82) --
+! THE REJECT PATH, AND THE DISPATCH TABLE THE ASSIGN ROUTINE
+! RETURNS THROUGH.
+!
+! FIFTY-THREE lines, not fifty-six -- the first short page in this
+! run -- of which fifty compile.  No boxed heading at all; lines 41,
+! 42 and 43 are three blank comment cards and that is the only break
+! on the page.
+!
+! >>> IT IS WHERE THE BOOT RUN NOW STOPS. <<<  printed p.74 line 55
+! is T AREJX, whose two half words run and fall through to
+! 004361.00 -- this page's line 1, "T AREJ R,T IXA  -RELOAD IX".
+!
+! ---------------------------------------------------------------
+! >>> NINE OF ITS LABELS WERE ALREADY IN THE IMAGE, AND ALL NINE
+! >>> AGREE <<<
+! ---------------------------------------------------------------
+! Earlier pages have been carrying stand-ins for this page's exits
+! for weeks of transcription:
+!
+!   T AREJ  004361.00   line  1   p.74 falls into it
+!   T D     004416.40   line 44
+!   T F     004417.00   line 45
+!   T H     004420.00   line 47
+!   T I     004420.40   line 48
+!   T K     004421.00   line 49   a stand-in in p.71
+!   T M     004422.00   line 51   printed p.72 line 31 branches here
+!   T N     004422.40   line 52   printed p.73 line 32 branches here
+!   T P     004423.00   line 53
+!
+! Every one lands on the address its stand-in gives, and the merge
+! now checks all nine on every build.  T M and T N are the pair that
+! made this worth doing first: p.72's "BZB,T UNASG(T IXF),T M" and
+! p.73's "BZB,T UNASG(T IXG),T N" are the same test on different
+! index registers, and the two targets are the two halves of ONE
+! WORD, 004422.
+!
+! ---------------------------------------------------------------
+! >>> FIVE DELIBERATE HALTS IN TEN LINES <<<
+! ---------------------------------------------------------------
+! Lines 44-53 are a dispatch table of ten exits and nothing else:
+!
+!   T D  B,T SCRIB   -NOT OVERLAP FULLY ASSIGNED
+!   T F  B,T SCRIB   -OK -- ALL I/O REQ HAVE BEEN PROCESSED
+!   T G  B,T SCRIB   -OK -- NO MORE UNITS AVAIL FOR ASSIGN
+!   T H  BD,$        -ASSIGN BIT ON - SING UNIT CHAN
+!   T I  BD,$        -ASSIGN BIT ON - MULTI UNIT CHAN
+!   T K  B,T SCRIB   -OK -- NOT OVERLAP JOB FULLY ASSIGNED
+!   T L  B,T PICA    -NOT OVERLAP JOB NOT ASSIGNED
+!   T M  BD,$        -MACH CONF CH. ASSIGN BIT ON - SING
+!   T N  BD,$        -MACH CONF CH. ASSIGN BIT ON - MULTI
+!   T P  BD,$        -ERROR MCP IS OUT OF PHASE
+!
+! "BD,$" is branch disabled to its own address -- a halt.  This
+! project had transcribed THREE in the whole corpus (printed p.6
+! line 1, printed p.52 line 55, printed p.74 line 39) and this page
+! adds FIVE, each with a comment naming the impossible condition it
+! stands for.  Four of the five are "the assign bit is already on",
+! which is a state ASSIGN believes it has just ruled out.
+!
+! ---------------------------------------------------------------
+! >>> A SEVENTH WRITTEN MINUS <<<
+! ---------------------------------------------------------------
+! Line 7 is "-(BU,18),T CHSXW,46" commented "-COMPUTE THE CHANNEL
+! NUMBER", compiling 002152.00 80  022027.30 10 -- the ".30"
+! negative-sign modifier, after printed p.18 line 35 and printed
+! pp.69, 70, 72 and 74.  The count was ONE three days ago.
+!
+! ---------------------------------------------------------------
+! >>> AND THE STRONGEST 13d ROW YET: FOUR OF SIX ZEROS OPEN <<<
+! ---------------------------------------------------------------
+! Line 30 is "V+I,T X1,0.0" and its octal field prints, at 1800 dpi,
+!
+!     C 0 0 C C C 0 . 2 5     C 5
+!
+! Six digits of a field that is ZERO -- the statement says 0.0 and
+! the operation is an immediate -- and FOUR of the six dropped their
+! left stroke.  Octal has no C, so all six are zeros
+! (listing_typography.md 13e), and the byte's leading glyph has the
+! same open shape in the same row, so it is 05 and not C5 -- which
+! printed p.73 line 45's V+I (000000.45 05) says independently.
+!
+! THE DECK HAD IT WRONG FIRST, along with T P1BA's stand-in, which
+! was read .40 where the branch's own bit 18 says .00.  Two rows of
+! fifty, and the second is a reminder that A STAND-IN DERIVED FROM A
+! BRANCH MUST USE THE BRANCH'S BIT 18.
+!
+! THREE LISTING MARKS: lines 8, 23 and 40.
+
+        SLC, (8)4361.0
+
+! ---- index names, printed p.61 ------------------------------------
+TIXA    SYN, $4
+TIXE    SYN, $3
+TX1     SYN, $10
+TX3     SYN, $2
+TCTWDX  SYN, $10
+! ---- words, printed pp.61-64 and the MCP dispatcher ---------------
+DFREE   SYN, 0
+DMCP    SYN, (8)1472.0
+TCHSXW  SYN, (8)2152.0
+TIOREQ  SYN, (8)3373.0
+! ---- table offsets, printed pp.62-64 ------------------------------
+TASGNI  SYN(BU,1), 0.00
+TABSUN  SYN(BU,3), 0.07
+TLAST   SYN, 0.18
+TMULTI  SYN(BU,1), 0.27
+TFREEL  SYN(BU,18), 0.28
+TUNASG  SYN(BU,1), 0.29
+TCHOWN  SYN(BU,1), 0.32
+TRJECT  SYN(BU,1), 0.37
+TABSCH  SYN(BU,18), 0.46
+SMOUNT  SYN(BU,1), 0.51
+SIMNT   SYN(BU,1), 0.53
+TUNRES  SYN(BU,1), 0.62
+TOVRES  SYN(BU,1), 0.63
+TUNTBA  SYN(BU,18), 0.0
+! ---- back, onto printed p.69 --------------------------------------
+TB8Z    SYN, (8)4203.40
+! ---- forward, past this page --------------------------------------
+YSCRBT  SYN(BU,1), (8)4455.03
+TSCRIB  SYN, (8)4461.0
+TPICA   SYN, (8)4604.0
+TP1BA   SYN, (8)4622.0
+TCAT    SYN, (8)4771.0
+
+        SLC, (8)4361.0
+
+TAREJ   R, TIXA                      ! line 1  -RELOAD IX
+        CM1111, TRJECT(TIXE)         ! line 2  -SET THE REJECT BIT
+TAREJ1  L, TABSCH(TIXA), 46          ! line 3  -GET THE CHANNEL
+                                      !           ASSIGNED
+        LV, TX1, $R                  ! line 4
+        BRZ, TAREJN                  ! line 5
+        BZB, TMULTI(TX1), TAREJ3     ! line 6  -IF NOT A MULTI CASE
+        -(BU,18), TCHSXW, 46         ! line 7  -COMPUTE THE CHANNEL
+                                      !           NUMBER
+        ST(BU,7), TCAT+.12, 46       ! line 8
+        L, TUNTBA(TX1), 46           ! line 9  -GET UNIT TABLE
+                                      !           ADDRESS
+        LV, TX1, $R                  ! line 10
+        L, TABSUN(TIXA), 46          ! line 11 -GET UNIT NUMBER
+        ST(BU,3), TCAT+.47, 46       ! line 12 -ALSO STORE THE UNIT
+                                      !           NUMBER
+        V+, TX1, $R                  ! line 13 -ADD TO VALUE
+TAREJN  L, TFREEL(TIXA), 46          ! line 14 -GET ADDRESS OF REEL
+        BRZ, TAREJ3                  ! line 15 -IF NO REEL
+        LV, TX3, $R                  ! line 16
+        Z, 0.0(TX3)                  ! line 17 -ZERO THE REEL SLOT
+        BZB, TASGNI(TIXA), TAREJ3    ! line 18 -IF REQ WAS NOT
+                                      !           ASSIGNED AS UNIT
+        LCI, TX1, TCAT               ! line 19 -SET UP THE UNIT AREA
+                                      !           TABLE ADDRESS
+        SC, TX1, 0.0(TX1)            ! line 20 -IN THE UNIT STATUS
+                                      !           TABLE
+        CM0000, TUNASG(TX1)          ! line 21 -RESET THE ASSIGNED
+                                      !           BIT
+        CM1111, TCHOWN(TX1)          ! line 22 -SET UNIT OWNER TO MCP
+        CM0000, SIMNT(TX1)           ! line 23 -TO RESET THE
+        CM0000, SMOUNT(TX1)          ! line 24 -MOUNT BITS
+TIPL4   B, DMCP                      ! line 25 -GO TO FREE THE TAPE
+        , DFREE                      ! line 26
+        , 3.                         ! line 27
+        CM0000, TCHOWN(TX1)          ! line 28 -RESET UNIT TO PP
+                                      !           OWNER
+TAREJ3  Z, 0.0(TIXA)                 ! line 29 -ZERO THE I/O REQ SLOT
+        V+I, TX1, 0.0                ! line 30 -FOR INDEX CHECK
+        BXVZ, TAREJ4                 ! line 31 -IF REQ WAS NOT
+                                      !           ASSIGNED
+        BBZ, TUNRES(TX1), TAREJ4     ! line 32 -RESET THE NOT OV RES
+                                      !           FIRST
+        CM0000, TOVRES(TX1)          ! line 33
+TAREJ4  BZB, TLAST+1.0(TIXA), TAREJ5 ! line 34
+        LVI, TIXA, TIOREQ-1          ! line 35 -RELOAD IS END OF TAB
+TAREJ5  CB+, TIXA, TAREJ1            ! line 36
+        BBZ, YSCRBT, TP1BA           ! line 37
+        LX, TCTWDX, 0.0($15)         ! line 38 -CHECK THE MODE
+        BZXF, TB8Z                   ! line 39
+        B, TL                        ! line 40 -IF NOT OVERLAP
+
+! ---- THE DISPATCH TABLE: ten exits, five of them halts ------------
+TD      B, TSCRIB                    ! line 44 -NOT OVERLAP FULLY
+                                      !           ASSIGNED
+TF      B, TSCRIB                    ! line 45 -OK -- ALL I/O REQ
+                                      !           HAVE BEEN PROCESSED
+TG      B, TSCRIB                    ! line 46 -OK -- NO MORE UNITS
+                                      !           AVAIL FOR ASSIGN
+TH      BD, $                        ! line 47 -ASSIGN BIT ON -
+                                      !           SING UNIT CHAN
+TI      BD, $                        ! line 48 -ASSIGN BIT ON -
+                                      !           MULTI UNIT CHAN
+TK      B, TSCRIB                    ! line 49 -OK -- NOT OVERLAP JOB
+                                      !           FULLY ASSIGNED
+TL      B, TPICA                     ! line 50 -NOT OVERLAP JOB NOT
+                                      !           ASSIGNED
+TM      BD, $                        ! line 51 -MACH CONF CH. ASSIGN
+                                      !           BIT ON - SING
+TN      BD, $                        ! line 52 -MACH CONF CH. ASSIGN
+                                      !           BIT ON - MULTI
+TP      BD, $                        ! line 53 -ERROR MCP IS OUT OF
+                                      !           PHASE
+        END, TAREJ
+
+! ---------------------------------------------------------------
+! THE CHECKED ROWS -- all fifty that compile.
+! ---------------------------------------------------------------
+!   line  1  004361.00  000024.02 00                 T AREJ  R,TIXA
+!   line  2  004361.40  000000.45 83  001000.36 F0   CM1111,TRJECT(TIXE)
+!   line  3  004362.40  000000.56 84  022027.20 50   T AREJ1  L,TABSCH(TIXA),46
+!   line  4  004363.40  000011.24 30                 LV,TX1,$R
+!   line  5  004364.00  004373.74 C2                 BRZ,TAREJN
+!   line  6  004364.40  000000.33 8A  004406.74 00   BZB,TMULTI(TX1),TAREJ3
+!   line  7  004365.40  002152.00 80  022027.30 10   -(BU,18),TCHSXW,46
+!   line  8  004366.40  004771.14 80  007027.20 D0   ST(BU,7),TCAT+.12,46
+!   line  9  004367.40  000000.00 8A  022027.20 50   L,TUNTBA(TX1),46
+!   line 10  004370.40  000011.24 30                 LV,TX1,$R
+!   line 11  004371.00  000000.07 84  003027.20 50   L,TABSUN(TIXA),46
+!   line 12  004372.00  004771.57 80  003027.20 D0   ST(BU,3),TCAT+.47,46
+!   line 13  004373.00  000011.24 B0                 V+,TX1,$R
+!   line 14  004373.40  000000.34 84  022027.20 50   T AREJN  L,TFREEL(TIXA),46
+!   line 15  004374.40  004406.74 C2                 BRZ,TAREJ3
+!   line 16  004375.00  000011.04 30                 LV,TX3,$R
+!   line 17  004375.40  000000.22 02                 Z,0.0(TX3)
+!   line 18  004376.00  000000.00 84  004406.74 00   BZB,TASGNI(TIXA),TAREJ3
+!   line 19  004377.00  004771.25 02                 LCI,TX1,TCAT
+!   line 20  004377.40  000000.25 5A                 SC,TX1,0.0(TX1)
+!   line 21  004400.00  000000.35 8A  001000.00 F0   CM0000,TUNASG(TX1)
+!   line 22  004401.00  000000.40 8A  001000.36 F0   CM1111,TCHOWN(TX1)
+!   line 23  004402.00  000000.65 8A  001000.00 F0   CM0000,SIMNT(TX1)
+!   line 24  004403.00  000000.63 8A  001000.00 F0   CM0000,SMOUNT(TX1)
+!   line 25  004404.00  001472.10 00                 T IPL4  B,DMCP
+!   line 26  004404.40  000000.00 80                 ,DFREE
+!   line 27  004405.00  000003.00 80                 ,3.
+!   line 28  004405.40  000000.40 8A  001000.00 F0   CM0000,TCHOWN(TX1)
+!   line 29  004406.40  000000.22 04                 T AREJ3  Z,0.0(TIXA)
+!   line 30  004407.00  000000.25 05                 V+I,TX1,0.0
+!   line 31  004407.40  004412.31 42                 BXVZ,TAREJ4
+!   line 32  004410.00  000000.76 8A  004412.34 06   BBZ,TUNRES(TX1),TAREJ4
+!   line 33  004411.00  000000.77 8A  001000.00 F0   CM0000,TOVRES(TX1)
+!   line 34  004412.00  000001.22 84  004413.74 00   T AREJ4  BZB,TLAST+1.0(TIXA),TAREJ5
+!   line 35  004413.00  003372.51 01                 LVI,TIXA,TIOREQ-1
+!   line 36  004413.40  004362.51 48                 T AREJ5  CB+,TIXA,TAREJ1
+!   line 37  004414.00  004455.03 80  004622.34 06   BBZ,YSCRBT,TP1BA
+!   line 38  004415.00  000000.24 1F                 LX,TCTWDX,0.0($15)
+!   line 39  004415.40  004203.63 40                 BZXF,TB8Z
+!   line 40  004416.00  004421.50 00                 B,TL
+!   line 44  004416.40  004461.10 00                 T D  B,TSCRIB
+!   line 45  004417.00  004461.10 00                 T F  B,TSCRIB
+!   line 46  004417.40  004461.10 00                 T G  B,TSCRIB
+!   line 47  004420.00  004420.04 00                 T H  BD,$
+!   line 48  004420.40  004420.44 00                 T I  BD,$
+!   line 49  004421.00  004461.10 00                 T K  B,TSCRIB
+!   line 50  004421.40  004604.10 00                 T L  B,TPICA
+!   line 51  004422.00  004422.04 00                 T M  BD,$
+!   line 52  004422.40  004422.44 00                 T N  BD,$
+!   line 53  004423.00  004423.04 00                 T P  BD,$

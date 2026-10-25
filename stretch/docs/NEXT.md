@@ -12,15 +12,17 @@ accumulate.
 
 ## WHERE THIS STANDS, 2026-10-25 — read this first
 
-**The frontier is printed p.75.** The MCP image holds printed
-pp.15-74 gapless (57 decks, 440 stand-ins checked against their
-definitions, 240 agreeing SYNs, 39 symbols still external), and the
-boot run executes MCP's ASSIGN routine: it saves its indexes, walks
-the channel status table for a machine-configuration change (p.72),
-sorts the multi-unit count table and runs the MULTI UNIT SCAN
-(p.73), takes the reject path two earlier pages name (`T AREJX`,
-p.74 line 55) and stops on **004361.00 — printed p.75 line 1**,
-`T AREJ R,T IXA`. `boot_plan.md` A21 carries the detail.
+**The frontier is `T PICA` at 004604.00.** The MCP image holds
+printed pp.15-75 gapless (58 decks, 453 stand-ins checked against
+their definitions, 260 agreeing SYNs, 35 symbols still external), and
+the boot run executes MCP's ASSIGN routine end to end: it saves its
+indexes, walks the channel status table for a machine-configuration
+change (p.72), sorts the multi-unit count table and runs the MULTI
+UNIT SCAN (p.73), takes the reject path (p.74's `T AREJX` into p.75),
+clears the reel slot and the assigned and mount bits, and **dispatches
+through p.75's exit table at `T L` — *NOT OVERLAP JOB NOT ASSIGNED* —
+to `T PICA`**, which is not yet transcribed. `boot_plan.md` A21
+carries the detail.
 
 **The one unexplained refusal** is still the OP trail's single
 `operation invalid` at half-word 1304 = 001214.00, printed p.24's
@@ -5412,6 +5414,150 @@ letter `O` read as `C`**, in a NAME field, where no octal column and
 no opcode can rule it out. What ruled it out was the datum the name
 labels — which is a tell worth stating on its own: *when a name
 labels data, decode the data before trusting the name.*
+
+## >>> PRINTED p.75 IS THE DISPATCH TABLE, AND MCP USES IT — 2026-10-25 <<<
+
+Fifty compiled rows of fifty-three lines — the first short page in
+this run — with **no boxed heading at all**. All fifty assembled on
+the first try except two, both of which are recorded below. Six
+measured injections.
+
+### The run dispatches, and the exit it takes has a comment
+
+The trail moved **4578 → 4872 = 004604.00**, and p.75 line 50 names
+that address:
+
+```
+T L   B,T PICA    -NOT OVERLAP JOB NOT ASSIGNED
+```
+
+MCP walks the reject path — clearing the reel slot, the assigned
+bits, the mount bits — counts `T IXA` down through line 36's
+`CB+,T IXA,T AREJ1`, falls out at line 40's `B,T L`, and dispatches.
+703 steps. **The dispatch table is not a table the run passes over;
+it is a table the run uses, and the exit it chooses is labelled with
+the condition it means.**
+
+`T PICA` is next, and p.75's own deck already carries its address.
+**It is printed p.80 line 4** (MCP_Mar63 PDF p.87, whose location
+column reads 004604.00 at its first compiled line) — so printed
+pp.76, 77, 78 and 79 lie between, and the merge needs all four before
+p.80 can join. *The run's next step is four pages of reading away,
+and it has already told us which four.*
+
+### Nine labels were already in the image, and all nine agree
+
+`T AREJ`, `T D`, `T F`, `T H`, `T I`, `T K`, `T M`, `T N`, `T P` —
+every one carried as a stand-in by printed pp.66-74, every one
+landing on the address its stand-in gives.
+
+**`T M` and `T N` are the pair that made this page worth doing
+first.** p.72 line 31 is `BZB,T UNASG(T IXF),T M` and p.73 line 32 is
+`BZB,T UNASG(T IXG),T N` — *the same test on different index
+registers* — and their two targets are the two halves of one word,
+004422. A page that resolves a pair like that is worth more than its
+own fifty rows.
+
+**And the external count predicted it.** 39 − 9 placed + 5 new = 35,
+and the merge printed 35. Yesterday that number caught a wrong
+diagnosis by landing on 39 where I said 40; today it confirms a
+right one. *Predict it before you build.*
+
+### Five deliberate halts in ten lines
+
+Lines 44-53 are a dispatch table of ten exits and nothing else:
+
+```
+T D  B,T SCRIB   -NOT OVERLAP FULLY ASSIGNED
+T F  B,T SCRIB   -OK -- ALL I/O REQ HAVE BEEN PROCESSED
+T G  B,T SCRIB   -OK -- NO MORE UNITS AVAIL FOR ASSIGN
+T H  BD,$        -ASSIGN BIT ON - SING UNIT CHAN
+T I  BD,$        -ASSIGN BIT ON - MULTI UNIT CHAN
+T K  B,T SCRIB   -OK -- NOT OVERLAP JOB FULLY ASSIGNED
+T L  B,T PICA    -NOT OVERLAP JOB NOT ASSIGNED
+T M  BD,$        -MACH CONF CH. ASSIGN BIT ON - SING
+T N  BD,$        -MACH CONF CH. ASSIGN BIT ON - MULTI
+T P  BD,$        -ERROR MCP IS OUT OF PHASE
+```
+
+The corpus had **three** `BD,$` halts in total (printed p.6 line 1,
+printed p.52 line 55, printed p.74 line 39). This page adds five, and
+each carries the impossible condition it stands for. Four of the five
+are *the assign bit is already on* — a state ASSIGN has just
+convinced itself it ruled out. **This is 1963's assertion failure**,
+and it is written the only way the machine allows: stop, with the
+address in the instruction counter naming which assumption broke.
+
+### A seventh written minus, and the strongest §13d row yet
+
+Line 7 is `-(BU,18),T CHSXW,46` with the familiar `.30`. The count
+was **one** three days ago.
+
+And line 30, `V+I,T X1,0.0`, prints its octal field at 1800 dpi as
+
+```
+C 0 0 C C C 0 . 2 5     C 5
+```
+
+— six digits of a field that **is** zero, four of which dropped their
+left stroke. Octal has no C, so all six are zeros, and the byte's
+leading glyph has the same open shape in the same row: `05`, which
+p.73 line 45's `V+I` (`000000.45 05`) says independently.
+
+### The two rows the deck got wrong, out of fifty
+
+That byte was one. The other was **`T P1BA`'s stand-in, read `.40`
+where the branch's own bit 18 says `.00`** — I derived the address
+from the code and then mis-split the `.bb` pair.
+
+> **A stand-in derived from a branch must use the branch's bit 18.**
+> The branch target's low bits and the J field share one printed
+> octal pair, and reading it as an address when it is half condition
+> code puts the symbol half a word away — where it will assemble
+> cleanly and fail only when the defining page arrives.
+
+### The four pages between here and `T PICA`, all read
+
+`T PICA` is printed p.80 line 4. pp.76-79 lie between, the merge
+needs all four, and all four are now read. What each one costs:
+
+**printed p.76** — 004423.40-004460.00, 37 lines. *A PRINT
+SUB-ROUTINE THAT WILL PRINT ASSIGNMENTS*: character data in `(IQSX)`
+entry mode (`(IQSX)DD(BU,64,8)`) plus radix-16 datums
+(`DD(BU),(16)C00F9DB68BCD9191`). `charsets.ENTRY_MODES` already has
+`(IQSX)`, so this should need no assembler work. **It defines
+`T MESSY` at 004451.00 and `YSCRBT` at 004455.03** — p.74's and
+p.75's forward stand-ins, confirmed by name and by bit.
+
+**printed p.77** — 004461.00-004510.00, 41 lines, 32 compiled,
+*SCAN THE PP REF TABLE FOR NEW ASSIGNMENTS*. Ordinary code; its line
+6 is **`T SCRIB` at 004461.00**, which is p.75's stand-in and the
+target of four of its dispatch exits. Lines 20-22 are a `VF`/`CF`/
+`VF` linkage block of exactly the shape printed p.47 documents, and
+line 19 is `BD,S A8IQS` — **a `BD` with a real target, which is a
+disabled branch and not a halt**, worth noting beside p.75's five
+`BD,$`.
+
+**printed p.78** — 004511.00-004554.40, 56 lines, *CONVERT THE
+CHANNEL FIELDS*. **This one needs research first.** Lines 9-12 carry
+a syntax no page in this corpus has used:
+
+```
+T P5A1  $L,T ABSCH(T XB),-60
+        $-(BU,18),T CHSXW,-60
+        $SF(BU,18),T IPL+1,-60
+        $CV(BU,18),0.0,-32
+```
+
+a `$` PREFIX ON THE OPERATION, with **negative offsets**. The
+assembler knows a bare `$` as the location counter and nothing else.
+**Rule 4 applies: C22-6531 has to say what the prefix means before a
+line of it is written.** It is four rows out of fifty, so the rest of
+the page is ordinary.
+
+**printed p.79** — 004555.40-004603.40, 39 lines.
+
+Then **printed p.80 line 4 is 004604.00**, and the run moves again.
 
 ## >>> PRINTED p.74 IS `T AREJX`, AND THE TRAIL MOVES BY TWO HALF WORDS — 2026-10-25 <<<
 

@@ -687,9 +687,31 @@ cannot be tested without it.
 > by exactly two half words.** `T AREJX`'s two rows —
 > `LVI,T X1,T MESSY` and `SV,T X1,0.0(T IXE)` — ran, for 424 more
 > steps, and the run stopped on **004361.00, printed p.75 line 1**
-> (`T AREJ R,T IXA  -RELOAD IX`). The image now holds printed
-> pp.15-74 gapless: 57 pages, 440 stand-ins checked, 240 agreeing
-> SYNs, 39 symbols still external. **printed p.75 is next.**
+> (`T AREJ R,T IXA  -RELOAD IX`).
+>
+> **And printed p.75 is the dispatch table, which MCP then USES.**
+> The run walks the reject path — clearing the reel slot, the
+> assigned bits and the mount bits — counts `T IXA` down through
+> line 36's `CB+,T IXA,T AREJ1`, falls out at line 40's `B,T L` and
+> dispatches to **`T PICA` at 004604.00**, 703 steps later. p.75
+> line 50 is that exit, and its comment is *NOT OVERLAP JOB NOT
+> ASSIGNED*.
+>
+> Nine of p.75's labels were already stand-ins in pp.66-74 and all
+> nine agree — including `T M` (004422.00) and `T N` (004422.40),
+> the two halves of one word, which p.72 line 31 and p.73 line 32
+> reach by the same test on different index registers.
+>
+> The image now holds printed pp.15-75 gapless: 58 pages, 453
+> stand-ins checked, 260 agreeing SYNs, 35 symbols still external —
+> **a count predicted exactly before the build** (39 − 9 placed + 5
+> new). **`T PICA` is next: it is printed p.80 line 4**, so printed
+> pp.76-79 lie between and the merge needs all four before p.80 can
+> join. printed p.76 is already read and confirms two forward
+> stand-ins by name — `T MESSY` at 004451.00 (p.74's) and `YSCRBT`
+> at 004455.03 (p.75's) — and is a different kind of page: character
+> data in `(IQSX)` entry mode and radix-16 datums, for *A PRINT
+> SUB-ROUTINE THAT WILL PRINT ASSIGNMENTS*.
 >
 > The image holds printed pp.15-73 gapless — 56 pages, 432 stand-ins
 > checked against their definitions, 218 agreeing SYNs, 41 symbols

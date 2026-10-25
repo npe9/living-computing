@@ -5502,6 +5502,57 @@ run "MACHINE CONFIGURATION CHANGE, THE RESERVED BIT IS ON, printed p.74, bit-exa
 # for 010027); and T LOOP's bit offset read DECIMAL instead of octal,
 # 3 FAILS -- every row that names it -- each reading 003273.26 for
 # 003273.32, which is exactly what dropping the (8) entry mode does.
+run "THE REJECT PATH and the ASSIGN DISPATCH TABLE, printed p.75, bit-exact (MCP_Mar63 PDF p.82)" python3 verify_mcp_bootstrap_p75.py
+# >>> WHERE THE BOOT RUN NOW STOPS. <<<  printed p.74 line 55 is
+# T AREJX, whose two half words run and fall through to 004361.00 --
+# this page's line 1, "T AREJ R,T IXA  -RELOAD IX".  FIFTY-THREE
+# lines, not fifty-six -- the first short page in this run -- of
+# which fifty compile, with no boxed heading at all.
+#
+# >>> NINE OF ITS LABELS WERE ALREADY IN THE IMAGE, AND ALL NINE
+# AGREE. <<<  T AREJ, T D, T F, T H, T I, T K, T M, T N and T P have
+# been carried as stand-ins by printed pp.66-74 and every one lands
+# on the address its stand-in gives.  T M and T N are the pair that
+# made this page worth doing first: p.72 line 31's "BZB,T UNASG(T
+# IXF),T M" and p.73 line 32's "BZB,T UNASG(T IXG),T N" are the SAME
+# TEST on different index registers, and their two targets are the
+# two halves of ONE WORD, 004422.
+#
+# >>> FIVE DELIBERATE HALTS IN TEN LINES. <<<  Lines 44-53 are a
+# dispatch table of ten exits and nothing else, and T H, T I, T M,
+# T N and T P are all "BD,$" -- branch disabled to its own address.
+# This project had transcribed THREE halts in the whole corpus
+# (printed p.6 line 1, printed p.52 line 55, printed p.74 line 39);
+# this page adds five, each commented with the impossible condition
+# it stands for, and four of the five are "the assign bit is already
+# on" -- a state ASSIGN believes it has just ruled out.
+#
+# A SEVENTH WRITTEN MINUS: line 7's "-(BU,18),T CHSXW,46" compiles
+# 022027.30 10, after printed p.18 line 35 and printed pp.69, 70, 72
+# and 74.  The count was ONE three days ago.
+#
+# >>> AND THE STRONGEST 13d ROW YET: FOUR OF SIX ZEROS OPEN. <<<
+# Line 30 is "V+I,T X1,0.0" and its octal field prints at 1800 dpi as
+#
+#     C 0 0 C C C 0 . 2 5     C 5
+#
+# -- six digits of a field that IS zero, four of which dropped their
+# left stroke.  Octal has no C (listing_typography.md 13e) so all six
+# are zeros, and the byte's leading glyph has the same open shape in
+# the same row, so it is 05 and not C5 -- which printed p.73 line
+# 45's V+I (000000.45 05) says independently.
+#
+# THE DECK HAD TWO ROWS WRONG FIRST, out of fifty: that byte, and
+# T P1BA's stand-in, read .40 where the BRANCH's own bit 18 says .00.
+# A STAND-IN DERIVED FROM A BRANCH MUST USE THE BRANCH'S BIT 18.
+#
+# Injections, against the DECK: V+I -> V-I gives 1 FAIL at 004407.00
+# (0D for 05); T P1BA's stand-in back to .40, 1 FAIL at 004414.00;
+# the written minus -> plus, 1 FAIL at 004365.40; T N's halt made
+# T M's, 1 FAIL at 004422.40 (004422.04 for 004422.44 -- one bit,
+# bit 18); "T CAT+.12" made "T CAT+12.0", 1 FAIL at 004366.40
+# (005005.00 for 004771.14); and T FREEL's dds 18 -> 8 bits, 1 FAIL
+# at 004373.40 (010027 for 022027).
 run "the IOD CARD ROUTINE, printed p.53, bit-exact (MCP_Mar63 PDF p.60)" python3 verify_mcp_bootstrap_p53.py
 # >>> IT CONFIRMS BOTH OF printed p.52's DERIVED STAND-INS. <<<
 # L OOPN is at 002775.40 (line 4) and L IODRN at 003021.40 (line 37),
