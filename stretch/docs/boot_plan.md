@@ -675,11 +675,21 @@ cannot be tested without it.
 > and the step count barely moves for p.73 (22,045,771) because its
 > loops are over a table this fixture's machine hardly fills.
 >
-> **The run now leaves the transcribed range from inside p.73.** Its
-> line 35 is `BZRZ,T C10` (004322.40) and p.72 line 34 is
-> `BZRZ,T A10` (004320.00); the image's last word is 004317.40, so
-> 004360.00 is a walk through zeros from whichever branch it took.
-> **printed p.74 is next, and two symbols already name it.**
+> **And 004360.00 has a name: it is `T AREJX`.** printed p.66 line 16
+> (`BB,T RJECT(T IXE),T AREJX` — *IF PP WAS REJECTED*) and printed
+> p.71 line 47 (`BXF,T AREJX` — *NOT OVERLAP ASSIGNED*) both branch
+> there, and both decks have carried it as a stand-in at 004360.0
+> since they landed. The run branches to it and stops because the
+> page that holds it is not in the image — the same way it stopped on
+> 004263.00 before p.73 landed.
+>
+> **printed p.74 holds it, at its line 55, and the trail then moved
+> by exactly two half words.** `T AREJX`'s two rows —
+> `LVI,T X1,T MESSY` and `SV,T X1,0.0(T IXE)` — ran, for 424 more
+> steps, and the run stopped on **004361.00, printed p.75 line 1**
+> (`T AREJ R,T IXA  -RELOAD IX`). The image now holds printed
+> pp.15-74 gapless: 57 pages, 440 stand-ins checked, 240 agreeing
+> SYNs, 39 symbols still external. **printed p.75 is next.**
 >
 > The image holds printed pp.15-73 gapless — 56 pages, 432 stand-ins
 > checked against their definitions, 218 agreeing SYNs, 41 symbols

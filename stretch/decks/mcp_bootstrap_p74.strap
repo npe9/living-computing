@@ -1,0 +1,245 @@
+! MCP INITIALIZATION, printed p.74 (MCP_Mar63_001-249 PDF p.81) --
+! MACHINE CONFIGURATION CHANGE, THE RESERVED BIT IS ON AND THE CHAN
+! AND/OR UNIT IS DOWN.
+!
+! Fifty-six lines, forty-five of which compile, under ONE boxed
+! heading (lines 3-4).  Lines 22-24 and line 40 are blank comment
+! cards inside rule boxes with NO TEXT -- the first page in this
+! corpus to box nothing.
+!
+! >>> THIS PAGE IS WHERE pp.72 AND 73 BOTH BRANCH. <<<
+!
+!   p.72 line 34  BZRZ,T A10   004320.34 C0   -> line 6, 004320.00
+!   p.73 line 35  BZRZ,T C10   004322.74 C0   -> line 10, 004322.40
+!
+! and it defines the whole generation after p.72-73's T A9/T B9/T C9:
+! T A10, T C10, T A10A, T B10A, T B10, T B10B, T A11, T A11A,
+! T A11B, T B11C and T AREJX.
+!
+! ---------------------------------------------------------------
+! >>> AND IT RENAMED TWO SYMBOLS IN TWO FINISHED DECKS <<<
+! ---------------------------------------------------------------
+! Those two branches were transcribed "T A1C" and "T C1C", and at
+! 1800 dpi both final glyphs ARE open curves.  This page's line 10
+! settles it in ONE TOKEN: the statement is "CM0000", its code
+! 001000.00 F0 puts zero in the connective field, and at 1800 dpi
+! it prints
+!
+!     C M O C O C ,
+!
+! -- the same digit four times, twice closed and twice open, in one
+! word of one impression of one drum.  listing_typography.md 13g
+! carries it.  A SYN stand-in assembles to the right bits whatever
+! it is called, so NO BIT CHECK IN THIS PROJECT COULD HAVE CAUGHT
+! EITHER NAME; only the page that places the symbol can.
+!
+! ---------------------------------------------------------------
+! >>> EVERY SYMBOL THIS PAGE USES WAS ALREADY PLACED <<<
+! ---------------------------------------------------------------
+! Eighteen stand-ins, and the image had every one of them before
+! this deck was written -- T IXD = $7, T IXE = $3, T IXI = T IXB,
+! T LOOP at 003273.32, T PPRUN at 003315.0, T SAV at 003272.0,
+! T VALVF at 003651.0, and the table offsets T UNCT(BU,8) at 0.28,
+! T ABSUN(BU,3) at 0.07, T ABSCH(BU,18) at 0.46 and the rest.
+! EVERY ONE WAS DERIVED FROM THIS PAGE'S CODE FIRST and then found
+! to agree: the index fields gave $7, $3 and $5, the second groups
+! gave the field lengths 8, 3 and 18, and the ".bb" pairs gave the
+! offsets.  Only T MESSY (004451.0) is forward, and its NAME is
+! confirmed at 1200 dpi because nothing else can confirm it.
+!
+! ---------------------------------------------------------------
+! >>> A SIXTH WRITTEN MINUS, AND A THIRD DELIBERATE HALT <<<
+! ---------------------------------------------------------------
+! Line 32 is "-,T ABSUN(T IXI),46" commented "-COMPUTE THE RELATIVE
+! UNIT NUMBER", compiling 003027.30 10 -- the ".30" negative-sign
+! modifier, after MCP printed p.18 line 35 and printed pp.69, 70
+! and 72.
+!
+! Line 39 is "BD,$" at 004345.00, branch disabled to its own
+! address, commented "-MCP OR MACHINE ERROR".  The third halt this
+! project has transcribed, after printed p.6 line 1 and printed
+! p.52 line 55.
+!
+! ---------------------------------------------------------------
+! >>> THREE BYTES THE ASSEMBLER DISPUTED, AND THE INK AGREED WITH
+! >>> THE ASSEMBLER THREE TIMES OUT OF THREE <<<
+! ---------------------------------------------------------------
+!   line 36  read C7, is 07   the row's own octal field prints
+!                             00CC02, so it is a 13d row
+!   line 38  read 00, is 0C   a CLOSED oval and an OPEN curve side
+!                             by side INSIDE ONE BYTE -- they
+!                             cannot both be zeros
+!   line 47  read C2, is 02   closed oval at 1800 dpi
+!
+! Each was settled by re-rendering THAT BYTE at 1800 dpi before it
+! was adopted, which is the order this project requires (printed
+! p.55 line 40, printed p.66 line 5).  That the ink agreed with the
+! assembler three times running is a calibration fact about THE
+! CORPUS -- this drum drops zero strokes often -- and not a licence
+! to skip the render.
+!
+! THREE LISTING MARKS, the bare "*" after the location: lines 13,
+! 31 and 47.
+
+        SLC, (8)4320.0
+
+! ---- index names, printed p.61 ------------------------------------
+TX1BR   SYN, $1
+TX1     SYN, $10
+TIXD    SYN, $7
+TIXE    SYN, $3
+TIXF    SYN, $10
+TIXG    SYN, $8
+TIXI    SYN, $5
+! ---- words, printed pp.61-64 --------------------------------------
+TSAV    SYN, (8)3272.0
+TLOOP   SYN(BU,1), (8)3273.32
+TPPRUN  SYN, (8)3315.0
+TIOREQ  SYN, (8)3373.0
+TVALVF  SYN, (8)3651.0
+! ---- table offsets, printed pp.62-64 ------------------------------
+TASGNI  SYN(BU,1), 0.00
+TUNOBT  SYN(BU,1), 0.01
+TPRINT  SYN(BU,1), 0.02
+TTYPE   SYN, 0.3
+TABSUN  SYN(BU,3), 0.07
+TCRREF  SYN, 0.0
+TLAST   SYN, 0.18
+TUNCT   SYN(BU,8), 0.28
+TJBPRO  SYN, 0.36
+TASGNP  SYN(BU,1), 0.38
+TLPPEN  SYN(BU,1), 0.39
+TABSCH  SYN(BU,18), 0.46
+TUNITK  SYN(BU,4), 0.59
+TUNRES  SYN(BU,1), 0.62
+TOVRES  SYN(BU,1), 0.63
+! ---- forward, past this page --------------------------------------
+TMESSY  SYN, (8)4451.0
+
+        SLC, (8)4320.0
+
+! ---- MACHINE CONFIGURATION CHANGE, THE RESERVED BIT IS ON AND THE
+! ---- CHAN AND/OR UNIT IS DOWN -------------------------------------
+TA10    CM0000, TUNRES(TIXF)         ! line 6  -RESET THE UNIT
+                                      !           RESERVED BIT
+        CM0000, TOVRES(TIXF)         ! line 7  -RESET THE NOT OVER
+                                      !           LAP RES BIT
+        B, TA10A                     ! line 8
+TC10    CM0000, TUNRES(TIXG)         ! line 10 -RESET THE UNIT
+                                      !           RESERVED BIT
+        CM0000, TOVRES(TIXG)         ! line 11 -RESET THE NOT
+                                      !           OVERLAP RES BIT
+TA10A   LX, TIXD, TPPRUN             ! line 13 -SET FOR LOCATING
+                                      !           NEXT JOB TO BE RUN
+        CM0000, TLOOP                ! line 14 -RESET THE LOOP
+                                      !           INDICATOR
+TB10A   BB, TLPPEN(TIXD), 0.0(TX1BR) ! line 15 -IF LAST ENTRY IN
+                                      !           PP REF TBL
+        BB, TJBPRO(TIXD), TB10       ! line 16 -IF THE JOB WAS
+                                      !           PROCESSED
+        L, TUNCT(TIXD), 46           ! line 17 -GET THE UNIT COUNT
+        BRZ, TB10                    ! line 18 -IF A NON I/O TYPE JOB
+        LC, TIXI, TCRREF(TIXD)       ! line 19 -GET 18 BIT I/O REQ
+                                      !           TBL ADD
+        SC, TIXI, TIXI               ! line 20 -SAVE ONLY 18 BITS
+        LC, TIXI, $R                 ! line 21 -UNIT COUNT TO CF
+TA11    BZB, TLAST(TIXI), TA11B      ! line 25
+        LVI, TIXI, TIOREQ            ! line 26
+TA11B   L, TABSCH(TIXI), 46          ! line 27 -GET ABSOLUTE CHANNEL
+                                      !           ADDRESS
+        KV, TIXF, $R                 ! line 28 -COMPARE CHANNEL
+                                      !           ADDRESSES
+        BZXE, TB10B                  ! line 29 -IF UNLIKE
+        BZB, TTYPE(TIXI), TA11A      ! line 30 -IF THE TYPE IS NOT
+                                      !           TAPE
+        L, TUNITK(TIXF), 46          ! line 31
+        -, TABSUN(TIXI), 46          ! line 32 -COMPUTE THE RELATIVE
+                                      !           UNIT NUMBER
+        KC, TIXG, $R                 ! line 33 -COMPARE UNIT
+                                      !           LOCATIONS
+        BXE, TA11A                   ! line 34 -IF LIKE
+TB10B   CB+, TIXI, TA11              ! line 35
+TB10    V+ICR, TIXD, 2.0             ! line 36
+        BZXCZ, TB10A                 ! line 37 -IF THE COUNT IS OK
+        BZB1, TLOOP, TB10A           ! line 38 -SET THE LOOP
+                                      !           PREVENTER
+        BD, $                        ! line 39 -MCP OR MACHINE ERROR
+TA11A   CM0000, TASGNP(TIXD)         ! line 41 -RESET THE ASSIGNED
+                                      !           BIT --- PP REF TBL
+        CM0000, TASGNI(TIXI)         ! line 42 -RESET THE ASSIGNED
+                                      !           BIT --I/O REQ TBLE
+        CM0000, TABSCH(TIXI)         ! line 43 -ZERO THE CHANNEL
+                                      !           ADDRESS
+        CM0000, TABSUN(TIXI)         ! line 44 -ZERO THE REL UNIT
+                                      !           ADDRESS
+        CM0000, TPRINT(TIXI)         ! line 45 -RESET THE PRINT TO
+                                      !           OPERATOR BIT
+        CM1111, TUNOBT(TIXI)         ! line 46 -RESET TO ONE THE NOT
+                                      !           OVERLAP BIT
+        BB, TLOOP, TB10B             ! line 47 -IF IX WAS REFILLED
+                                      !           -- BRANCH
+        KV, TIXD, TVALVF             ! line 48 -SHALL WE RESET THE
+                                      !           VALID CHK PTR
+        BZXL, TB11C                  ! line 49 -NO
+        SV, TIXD, TVALVF             ! line 50 -YES  --
+TB11C   LV, TIXD, TSAV               ! line 51 -RESET TO LAST
+                                      !           UNASSIGNED LOCATION
+        BZXL, TB10B                  ! line 52 -DO NOT PLACE IXH IN
+                                      !           TSAV IF IX GREATR
+        SX, TIXD, TSAV               ! line 53 -DO PLACE IX IN TSAV
+                                      !           IF LESS
+        B, TB10B                     ! line 54 -LOOK FOR MORE
+TAREJX  LVI, TX1, TMESSY             ! line 55 -SET REASON FOR
+                                      !           REJECTION
+        SV, TX1, 0.0(TIXE)           ! line 56 -IN THE PP REF TABLE
+                                      !           WORD
+        END, TA10
+
+! ---------------------------------------------------------------
+! THE CHECKED ROWS -- all forty-five that compile.
+! ---------------------------------------------------------------
+!   line  6  004320.00  000000.76 8A  001000.00 F0   T A10  CM0000
+!   line  7  004321.00  000000.77 8A  001000.00 F0   CM0000,T OVRES
+!   line  8  004322.00  004324.50 00                 B,T A10A
+!   line 10  004322.40  000000.76 88  001000.00 F0   T C10  CM0000
+!   line 11  004323.40  000000.77 88  001000.00 F0   CM0000,T OVRES
+!   line 13  004324.40  003315.16 10                 T A10A  LX
+!   line 14  004325.00  003273.32 80  001000.00 F0   CM0000,T LOOP
+!   line 15  004326.00  000000.47 87  000000.34 03   T B10A  BB
+!   line 16  004327.00  000000.44 87  004343.34 02   BB,T JBPRO
+!   line 17  004330.00  000000.34 87  010027.20 50   L,T UNCT,46
+!   line 18  004331.00  004343.34 C2                 BRZ,T B10
+!   line 19  004331.40  000000.12 57                 LC,T CRREF
+!   line 20  004332.00  000025.13 50                 SC,T IXI,T IXI
+!   line 21  004332.40  000011.12 50                 LC,T IXI,$R
+!   line 25  004333.00  000000.22 85  004334.74 00   T A11  BZB
+!   line 26  004334.00  003373.13 01                 LVI,T IOREQ
+!   line 27  004334.40  000000.56 85  022027.20 50   T A11B  L
+!   line 28  004335.40  000011.24 90                 KV,T IXF,$R
+!   line 29  004336.00  004342.72 C0                 BZXE,T B10B
+!   line 30  004336.40  000000.03 85  004345.74 00   BZB,T TYPE
+!   line 31  004337.40  000000.73 8A  004027.20 50   L,T UNITK,46
+!   line 32  004340.40  000000.07 85  003027.30 10   -,T ABSUN,46
+!   line 33  004341.40  000011.21 90                 KC,T IXG,$R
+!   line 34  004342.00  004345.72 C2                 BXE,T A11A
+!   line 35  004342.40  004333.13 48                 T B10B  CB+
+!   line 36  004343.00  000002.17 07                 T B10  V+ICR
+!   line 37  004343.40  004326.30 40                 BZXCZ,T B10A
+!   line 38  004344.00  003273.32 80  004326.34 0C   BZB1,T LOOP
+!   line 39  004345.00  004345.04 00                 BD,$
+!   line 41  004345.40  000000.46 87  001000.00 F0   T A11A  CM0000
+!   line 42  004346.40  000000.00 85  001000.00 F0   CM0000,T ASGNI
+!   line 43  004347.40  000000.56 85  022000.00 F0   CM0000,T ABSCH
+!   line 44  004350.40  000000.07 85  003000.00 F0   CM0000,T ABSUN
+!   line 45  004351.40  000000.02 85  001000.00 F0   CM0000,T PRINT
+!   line 46  004352.40  000000.01 85  001000.36 F0   CM1111,T UNOBT
+!   line 47  004353.40  003273.32 80  004342.74 02   BB,T LOOP
+!   line 48  004354.40  003651.16 90                 KV,T VALVF
+!   line 49  004355.00  004356.32 40                 BZXL,T B11C
+!   line 50  004355.40  003651.17 30                 SV,T VALVF
+!   line 51  004356.00  003272.16 30                 T B11C  LV
+!   line 52  004356.40  004342.72 40                 BZXL,T B10B
+!   line 53  004357.00  003272.17 10                 SX,T SAV
+!   line 54  004357.40  004342.50 00                 B,T B10B
+!   line 55  004360.00  004451.25 01                 T AREJX  LVI
+!   line 56  004360.40  000000.25 33                 SV,T X1,0.0(T IXE)

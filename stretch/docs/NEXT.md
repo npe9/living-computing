@@ -12,15 +12,15 @@ accumulate.
 
 ## WHERE THIS STANDS, 2026-10-25 — read this first
 
-**The frontier is printed p.74.** The MCP image holds printed
-pp.15-73 gapless (56 decks, 432 stand-ins checked against their
-definitions, 218 agreeing SYNs, 41 symbols still external), and the
+**The frontier is printed p.75.** The MCP image holds printed
+pp.15-74 gapless (57 decks, 440 stand-ins checked against their
+definitions, 240 agreeing SYNs, 39 symbols still external), and the
 boot run executes MCP's ASSIGN routine: it saves its indexes, walks
 the channel status table for a machine-configuration change (p.72),
 sorts the multi-unit count table and runs the MULTI UNIT SCAN
-(p.73), then leaves the transcribed range through `BZRZ,T C10` at
-004322.40 or `BZRZ,T A10` at 004320.00. The PC trail reads
-004360.00. `boot_plan.md` A21 carries the detail.
+(p.73), takes the reject path two earlier pages name (`T AREJX`,
+p.74 line 55) and stops on **004361.00 — printed p.75 line 1**,
+`T AREJ R,T IXA`. `boot_plan.md` A21 carries the detail.
 
 **The one unexplained refusal** is still the OP trail's single
 `operation invalid` at half-word 1304 = 001214.00, printed p.24's
@@ -5413,6 +5413,86 @@ no opcode can rule it out. What ruled it out was the datum the name
 labels — which is a tell worth stating on its own: *when a name
 labels data, decode the data before trusting the name.*
 
+## >>> PRINTED p.74 IS `T AREJX`, AND THE TRAIL MOVES BY TWO HALF WORDS — 2026-10-25 <<<
+
+Forty-five compiled rows of fifty-six lines, under one boxed heading.
+All forty-five passed on the first assembly. Five measured
+injections, one of which fails three rows.
+
+### The trail moved by exactly the length of what landed
+
+4576 → **4578**. 004360.00 is `T AREJX`, printed p.74's line 55; its
+two half words — `LVI,T X1,T MESSY` and `SV,T X1,0.0(T IXE)` — ran,
+and the PC trail advanced **two half words and no more**, to
+004361.00, for 424 more steps.
+
+**004361.00 is printed p.75 line 1**, `T AREJ R,T IXA -RELOAD IX`.
+The run is now stopping one page at a time, and each stop names its
+own next transcription.
+
+> *The stop address is a transcription target, not a symptom.* Before
+> p.74, the trail sat on 004360.00 and I wrote that the run must be
+> walking off the end of p.73 through zeros. **It was not.** p.66
+> line 16 (`BB,T RJECT(T IXE),T AREJX` — *IF PP WAS REJECTED*) and
+> p.71 line 47 (`BXF,T AREJX` — *NOT OVERLAP ASSIGNED*) both branch
+> to 004360.0 and both have carried it as a stand-in since they
+> landed. The run was taking a branch two transcribed pages print.
+> **When a stop address is unexplained, grep the decks for it before
+> inventing a mechanism** — it took one `grep -l` to find that two
+> pages already named it.
+
+### Three indicator bits, and two rows account for all three
+
+`mcp_indicators_word11` went `0x200A448` → `0x9448`: XVZ out, XVGZ
+in, XF out. An `LVI` of 004451.0 into an index leaves that index
+**greater** than zero (XVZ→XVGZ), and the `SV` that follows clears
+XF. Two instructions, three bits, and every one of them is what those
+two instructions do. Re-measured, not retired.
+
+### Every symbol was already placed, and every value was derived first
+
+Eighteen stand-ins, and the image held every one before this deck was
+written. What makes that worth saying is the **order**: each value
+came out of *this page's* machine code and was only then looked up.
+
+* the index fields gave `T IXD` = $7, `T IXE` = $3, `T IXI` = $5;
+* the second groups gave the field lengths 8 (`T UNCT`), 3
+  (`T ABSUN`), 18 (`T ABSCH`);
+* the `.bb` pairs gave the offsets — `.34`→28, `.07`→7, `.56`→46,
+  `.47`→39, `.44`→36, `.22`→18, `.46`→38, `.02`→2, `.01`→1.
+
+All eighteen agreed with printed pp.61-64. **A page that only
+confirms is still worth the morning**: it is eighteen independent
+checks of four earlier pages, run by the merge on every build.
+
+And the external count fell 41 → **39** rather than 40, which is one
+more confirmation than I predicted: `T A10` and `T C10` stopped being
+external, `T MESSY` joined — and so did `T AREJX` leave, because
+pp.66 and 71 had been carrying it all along.
+
+### A sixth written minus and a third deliberate halt
+
+Line 32 is `-,T ABSUN(T IXI),46` — *COMPUTE THE RELATIVE UNIT NUMBER*
+— compiling `003027.30 10`, the familiar `.30`. Line 39 is `BD,$` at
+004345.00, branch disabled to its own address, commented *MCP OR
+MACHINE ERROR*: the third deliberate stop this project has
+transcribed, after printed p.6 line 1 and printed p.52 line 55.
+
+### Three bytes the assembler disputed, and the ink agreed three times
+
+```
+line 36   read C7, is 07    its own octal field prints 00CC02 (13d)
+line 38   read 00, is 0C    closed oval + open curve in ONE byte
+line 47   read C2, is 02    closed oval at 1800 dpi
+```
+
+Each was re-rendered **before** it was adopted, which is the order
+this project requires. That the ink agreed with the assembler three
+times running is a calibration fact about *the corpus* — this drum
+drops zero strokes often — and not a licence to skip the render. Line
+38 is the sharpest: two adjacent glyphs inside one byte, one closed
+and one open, which cannot both be zeros and cannot both be C's.
+
 ## >>> PRINTED p.73 SORTS THE TABLE, AND THE RUN LEAVES THE RANGE — 2026-10-25 <<<
 
 Forty-one compiled rows of fifty-six lines, under **four boxed
@@ -5423,10 +5503,15 @@ whether it compiles.
 
 **The run moved from 004263.00 to 004360.00.** 004263.00 was this
 page's own first word, so the run had been stopping *on* it; it now
-executes the page and leaves the transcribed range through a forward
-branch — line 35's `BZRZ,T C10` (004322.40) or p.72 line 34's
-`BZRZ,T A10` (004320.00), both past the image's last word 004317.40.
-**printed p.74 is next and two symbols already name it.**
+executes the page and stops on the next address it cannot reach.
+
+**And that address has a name: 004360.00 is `T AREJX`.** printed
+p.66 line 16 (`BB,T RJECT(T IXE),T AREJX` — *IF PP WAS REJECTED*) and
+printed p.71 line 47 (`BXF,T AREJX` — *NOT OVERLAP ASSIGNED*) both
+branch there and have carried it as a stand-in since they landed. The
+run is not walking off the end of p.73 into zeros; it is taking a
+branch two earlier pages print, into a page that is not in the image
+yet. *The stop address is a transcription target, not a symptom.*
 
 **The step count did NOT move** — 22,045,771 against p.72's 22.04
 million — and that is informative rather than disappointing. p.72

@@ -5452,6 +5452,56 @@ run "SORT THE UNIT COUNT TABLE and the MULTI UNIT SCAN, printed p.73, bit-exact 
 # -> BRZ, 1 FAIL at 004305.40 (C2 for C0); line 44's offset 46 ->
 # 40, 1 FAIL at 004310.40 (022024 for 022027 -- the printed field
 # is the offset HALVED, so it scales with the operand).
+run "MACHINE CONFIGURATION CHANGE, THE RESERVED BIT IS ON, printed p.74, bit-exact (MCP_Mar63 PDF p.81)" python3 verify_mcp_bootstrap_p74.py
+# >>> THE PAGE pp.72 AND 73 BOTH BRANCH TO. <<<  p.72 line 34's
+# "BZRZ,T A10" is 004320.34 C0 and lands on line 6; p.73 line 35's
+# "BZRZ,T C10" is 004322.74 C0 and lands on line 10.  Fifty-six
+# lines, forty-five compiled, under ONE boxed heading -- and lines
+# 22-24 and line 40 are blank comment cards inside rule boxes with
+# NO TEXT, the first page in this corpus to box nothing.
+#
+# >>> AND IT RENAMED TWO SYMBOLS IN TWO FINISHED DECKS. <<<  Those
+# two branches were transcribed "T A1C" and "T C1C", and at 1800 dpi
+# both final glyphs ARE open curves.  This page's line 10 settles it
+# in ONE TOKEN: the statement is "CM0000", its code 001000.00 F0
+# puts zero in the connective field, and at 1800 dpi it prints
+#
+#     C M O C O C ,
+#
+# -- the same digit four times, twice closed and twice open, in one
+# word of one impression of one drum.  listing_typography.md 13g
+# carries it.  A SYN stand-in assembles to the right bits whatever
+# it is called, so NO BIT CHECK IN THIS PROJECT COULD HAVE CAUGHT
+# EITHER NAME; only the page that PLACES a symbol can.
+#
+# EVERY SYMBOL THIS PAGE USES WAS ALREADY PLACED, and every value
+# was derived from THIS page's code before it was looked up: the
+# index fields gave T IXD = $7, T IXE = $3 and T IXI = $5, the
+# second groups gave the lengths 8 (T UNCT), 3 (T ABSUN) and 18
+# (T ABSCH), and the ".bb" pairs gave the offsets.  All eighteen
+# agreed with printed pp.61-64.  Only T MESSY is forward, and its
+# NAME is confirmed at 1200 dpi because nothing else can confirm it.
+#
+# A SIXTH WRITTEN MINUS (line 32, 003027.30 10) and A THIRD
+# DELIBERATE HALT (line 39, "BD,$" at 004345.00, commented "-MCP OR
+# MACHINE ERROR", after printed p.6 line 1 and printed p.52 line 55).
+#
+# THREE BYTES THE ASSEMBLER DISPUTED, AND THE INK AGREED WITH THE
+# ASSEMBLER THREE TIMES OUT OF THREE: line 36 read C7 and is 07 (its
+# own octal field prints 00CC02, a 13d row); line 38 read 00 and is
+# 0C (a CLOSED oval and an OPEN curve side by side INSIDE ONE BYTE);
+# line 47 read C2 and is 02.  Each was settled by re-rendering THAT
+# BYTE at 1800 dpi BEFORE it was adopted.  That the ink agreed three
+# times running is a calibration fact about the CORPUS, not a licence
+# to skip the render.
+#
+# Injections, against the DECK: BZB1 -> BZB gives 1 FAIL at 004344.00
+# (00 for 0C -- the byte first read wrong); V+ICR -> V+IC, 1 FAIL at
+# 004343.00 (06 for 07); the written minus -> plus, 1 FAIL at
+# 004340.40; T UNCT's dds 8 -> 4 bits, 1 FAIL at 004330.00 (004027
+# for 010027); and T LOOP's bit offset read DECIMAL instead of octal,
+# 3 FAILS -- every row that names it -- each reading 003273.26 for
+# 003273.32, which is exactly what dropping the (8) entry mode does.
 run "the IOD CARD ROUTINE, printed p.53, bit-exact (MCP_Mar63 PDF p.60)" python3 verify_mcp_bootstrap_p53.py
 # >>> IT CONFIRMS BOTH OF printed p.52's DERIVED STAND-INS. <<<
 # L OOPN is at 002775.40 (line 4) and L IODRN at 003021.40 (line 37),

@@ -853,9 +853,23 @@ def main():
         #                                  lines 16 and 18, and AL by
         #                                  the KF on line 11 that
         #                                  decides each swap.
+        #   0x009448   AL, RZ, XCZ, XE, XVGZ -- printed p.74 too, and
+        #                                  only TWO instructions more
+        #                                  ran: its lines 55 and 56,
+        #                                  "T AREJX LVI,T X1,T MESSY"
+        #                                  and "SV,T X1,0.0(T IXE)".
+        #                                  An LVI of 004451.0 into an
+        #                                  index leaves that index
+        #                                  GREATER than zero, so XVZ
+        #                                  goes out and XVGZ comes
+        #                                  in, and the SV that
+        #                                  follows clears XF.  TWO
+        #                                  ROWS, THREE INDICATOR
+        #                                  BITS, and all three are
+        #                                  what those two rows do.
         ("mcp_indicators_word11", str(IND_WORD),
          _ind("AL") | _ind("RZ") | _ind("XCZ") | _ind("XE")
-         | _ind("XF") | _ind("XVZ")),
+         | _ind("XVGZ")),
 
         # >>> THE MOVE ITSELF, AND IT IS THE POINT OF THE FIXTURE <<<
         # Printed p.4 line 28, "T,$11,X BUFER($X1),X BS END  -MOVE MCP
@@ -1480,13 +1494,7 @@ def main():
                    # was 004263.00, p.73's own first word, so the run
                    # was stopping ON the page.  It now executes it --
                    # the bubble sort on lines 8-18 and the MULTI UNIT
-                   # SCAN on lines 25-36 -- and leaves it through one
-                   # of its two forward branches, line 35's
-                   # "BZRZ,T C10" (004322.40) or printed p.72 line
-                   # 34's "BZRZ,T A10" (004320.00).  Both are PAST
-                   # the image, whose last word is 004317.40, so the
-                   # trail's 4576 = 004360.00 is a walk through zeros
-                   # from whichever one it took.
+                   # SCAN on lines 25-36.
                    #
                    # THE STEP COUNT SAYS SO TOO, by NOT moving:
                    # 22,045,771 against p.72's 22.04 million.  p.73's
@@ -1495,12 +1503,24 @@ def main():
                    # costs almost nothing to run -- in contrast to
                    # p.72, which cost sixteen million.
                    #
-                   # 004320.00 is T A10 and 004322.40 is T C10, two
-                   # symbols printed p.73 and p.72 both reference and
-                   # neither defines.  THAT IS THE NEXT
-                   # TRANSCRIPTION: printed p.74.
+                   # 004360.00 HAS A NAME: it is T AREJX, which
+                   # printed p.66 line 16 ("BB,T RJECT(T IXE),
+                   # T AREJX  -IF PP WAS REJECTED") and printed p.71
+                   # line 47 ("BXF,T AREJX  -NOT OVERLAP ASSIGNED")
+                   # both branch to and both carry as a stand-in.
+                   # The run TAKES that branch and stops because the
+                   # page holding it is not in the image.
+                   #
+                   # >>> AND THEN TO 4578, THE SAME DAY, BECAUSE
+                   # printed p.74 HOLDS IT. <<<  T AREJX is p.74 line
+                   # 55.  Its two half words run -- "LVI,T X1,T
+                   # MESSY" and "SV,T X1,0.0(T IXE)" -- and the trail
+                   # advances by EXACTLY TWO half words, to
+                   # 004361.00, for 424 more steps.  004361.00 is
+                   # printed p.75 line 1, "T AREJ R,T IXA  -RELOAD
+                   # IX".  THAT IS THE NEXT TRANSCRIPTION.
                    pc_check=0,
-                   pc_trail_check=4576,
+                   pc_trail_check=4578,
                    step_cap=40000000,
                    pc_trail=True,
                    op_trail=True,
