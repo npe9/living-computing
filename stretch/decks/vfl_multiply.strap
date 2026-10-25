@@ -1,0 +1,202 @@
+! MULTIPLY (*), the VFL integer form, opcode abc011001.  Reference
+! Manual printed p.68 defines the binary operation in two sentences:
+!
+!   "If binary is specified, the product of the addressed operand and
+!   the accumulator field specified by the offset is placed into the
+!   CLEARED ACCUMULATOR AT OFFSET 20.  Neither operand may exceed 48
+!   SIGNIFICANT NUMERIC BITS.  If decimal is specified, this operation
+!   has the same action as LOAD TRANSIT AND SET, except that the two
+!   high-order bits of the left zeros counter are set to zeros."
+!
+! and Partial Field on the same page says what happens when the 48 is
+! exceeded: "turned on in a binary operation if either operand exceeds
+! 48 significant bits in length.  In such a case, only the 48 LOW-ORDER
+! bits of the oversized operand are used in the operation.  If the
+! accumulator operand was oversized, the higher-order bits are lost."
+!
+! OFFSET 20 IS A CONSTANT AND THAT IS THE WHOLE POINT OF THIS DECK.
+! The instruction's offset selects the ACCUMULATOR OPERAND, exactly as
+! it does in ADD; the product is then deposited at a FIXED position,
+! 20, wherever the operand came from.  Reading "at offset 20" as "at
+! the offset, 20 being this example's value" is the natural misreading
+! and it is wrong, so T6 and T7 run THE SAME MULTIPLICATION FROM TWO
+! DIFFERENT OFFSETS and require the same answer in the same place.
+!
+! TWO INDEPENDENT SOURCES STATE THE RULE.  The Reference Manual states
+! it normatively, above.  C22-6578 "Programming Examples", April 1961,
+! states it as a working programmer's note under Problem 2.10 -- "(b)
+! After a binary VFL multiply the answer is placed in the CLEARED
+! ACCUMULATOR WITH OFFSET 20" -- and its Problem 2.12 carries it in a
+! comment on the instruction itself, "*I(BU, 18), N, 128-18   'answer
+! is at 20 offset".  Two documents, two revisions, five years apart.
+!
+! THE CONSTANTS ARE IBM'S.  Problem 2.12, matrix transposition, ends
+!
+!     M       SYN, 20      'no. of rows
+!     N       SYN, 5       'no. of columns
+!
+! and opens "LI(BU, 18), M" / "*I(BU, 18), N", so 20 times 5 is the
+! first product IBM's own example computes.  T1 and T2 are that
+! product, by the storage form and by the immediate form.
+!
+! 20 + 96 = 116 AND THE ACCUMULATOR IS 128 BITS, which is why no
+! product can overflow and why CONVERT DOUBLE reads the 20/96 field:
+! printed p.70 gives DOUBLE CONVERT "an implied offset of 20 and its
+! length is 96 numeric bits", and printed p.71 says "DCV is used
+! instead of CV because of the offset of 20".  The constant is pinned
+! three ways in the manual before this deck tests it once.
+!
+! WHAT EACH CHECK ESTABLISHES
+!   T1    IBM's 20 times 5, the storage form.
+!   T2    the same by the IMMEDIATE form, which takes its operand
+!         from the address field instead of memory.
+!   T3    the PARTIAL FIELD indicator is OFF after the clean
+!         multiplies -- the control for T9, without which T9 proves
+!         nothing about what set the bit.
+!   T6    24 bits times 24 bits at offset 0: 0xFFFFFF squared is
+!         0xFFFFFE000001, 48 bits, read back from offset 20.
+!   T7    THE SAME MULTIPLICATION AT OFFSET 40, read back from the
+!         SAME offset 20.  A model that deposited the product at the
+!         instruction's offset would leave T7 holding the product
+!         shifted twenty bits left of where it is read, 0x...000000,
+!         and T6 and T7 would disagree.  They must be identical.
+!   T8    PF TRUNCATION IS OF THE LOW 48 BITS.  The accumulator holds
+!         2**48 + 3, forty-nine significant bits; the manual discards
+!         the HIGH bits, so the operand is 3 and the product is 15.
+!         A model that truncated the other way would compute 2**48
+!         times 5, and one that refused the oversized operand would
+!         leave T8 at zero.
+!   T9    and PF is ON for that one, which with T3 at zero makes the
+!         multiply the thing that set it.
+!   T11   A STORAGE OPERAND THAT CROSSES A WORD BOUNDARY, which is
+!         the shape MCP's own multiply has and the shape nothing else
+!         in this deck exercises: every other operand here is a
+!         word-aligned full word or an immediate, so the arm's
+!         two-word path -- fieldCrosses, the second prefetch slot,
+!         the (w0+1) bail-out -- would be copied code that has never
+!         run.  The operand is twenty-four bits at CROSS+.56: eight
+!         in CROSS's last byte and sixteen in the word after, 0xABCDEF
+!         read across the seam, times twenty.  A model that took the
+!         two prefetch slots in the wrong order would read 0xCDEF00
+!         or 0x00ABCD here and pass every other check in this file.
+!         This is the same class of hole as the crossing-field
+!         connective bug of 2026-10-25 (docs/NEXT.md).
+!   T10   "the CLEARED accumulator" means cleared.  Twenty bits of
+!         ones are placed at offset 0, BELOW the operand, where the
+!         operand shift discards them and the product at offset 20
+!         cannot reach them.  They must be gone.  A model that wrote
+!         only the product's own 96-bit field, or that OR'd it in,
+!         would leave 0xFFFFF standing here.
+!
+! EVERY CONSTANT BELOW IS A FULL WORD, 64 bits with an 8-bit byte
+! size, and not the 18 and 24 bits Problem 2.12 writes.  CONSECUTIVE
+! DDs PACK CONTIGUOUSLY: written as "DD(BU,18), 20" and "DD(BU,18), 5"
+! the two constants share a word, M occupying bits 0-17 and N bits
+! 18-35, and the first assembly of this deck duly produced
+! "word[1056] = 000500005fffffff" -- four constants in one word with
+! the fifth straddling into the next.  The operand WIDTHS are not what
+! this deck is testing, and 20 and 5 and 0xFFFFFF are the same numbers
+! in an 18-bit field as in a 64-bit one, so each gets its own word and
+! the addresses stay checkable.
+!
+! FOUR INJECTIONS, MEASURED.  They cover eight of the nine checks;
+! T3 is the control for T9 and no injection should move it:
+!
+!   "mag: prod << 20" changed to "mag: prod << offSh", i.e. the
+!     product deposited at the INSTRUCTION'S offset instead of the
+!     constant -- five checks fail and T6 and T7 separate for the
+!     first time: T1 = 0, T2 = 0, T6 = 0xFFFFFE0 (the product read
+!     twenty bits above where it was put), T7 = 0xFFFFE00000100000
+!     (read twenty bits BELOW), T8 = 0.
+!   "accOp[47:0]" changed to "accOp[95:48]", i.e. the oversized
+!     operand truncated to its HIGH 48 bits instead of its low --
+!     T1 = T2 = T6 = T7 = 0, because those operands have nothing
+!     above bit 48, and T8 = 5, because 2**48 + 3 keeps the 1 and
+!     loses the 3.  The manual says the low bits survive.
+!   the accumulator OR'd instead of cleared, with the PF set
+!     removed (disjoint checks, so run together): T6 =
+!     0xFFFFFE00000F and T7 = 0xFFFFFFF00001 (the old operand still
+!     there under the product), T8 = 0x1000000F, T9 = 0, T10 =
+!     0xFFFFF.
+!   the two prefetch slots exchanged in the crossing-field read:
+!     T11 = 0 AND NOTHING ELSE MOVES.  That single line is the
+!     reason T11 exists -- the other eight checks use word-aligned
+!     or immediate operands and cannot see the crossing path at all.
+
+! A VFL FIELD IS ADDRESSED BY ITS LEFTMOST BIT, which is why T10's
+! twenty-bit store is written "T10+.44" and not "T10": a twenty-bit
+! field at a word's own address is that word's TOP twenty bits, and
+! decks/plus_mg.strap learned this the expensive way.
+!
+! THE OFFSET COUNTS FROM THE ACCUMULATOR'S LOW-ORDER END, so "offset
+! 0" is the bottom of the accumulator and the ONES constant added
+! there sits BELOW the product's low bit at offset 20.
+
+        SLC, (8)2000.0
+
+! -- Problem 2.12's own first product, both forms ----------------
+START   L(BU,64), M, 0
+        *(BU,64), N, 0
+        ST(BU,64), T1, 20          ! 20 * 5 = 100
+
+        L(BU,64), M, 0
+        *I(BU,18), 5
+        ST(BU,64), T2, 20          ! 100 again, immediate
+
+! -- the control for the PF check below --------------------------
+        L(BU,1), $IND+.23, 0
+        ST(BU,64), T3, 0           ! PF must still be 0 here
+
+! -- offset 20 is a constant: same product, two offsets ----------
+        L(BU,64), A, 0
+        *(BU,64), B, 0
+        ST(BU,64), T6, 20          ! 0xFFFFFF squared
+
+        L(BU,64), A, 40
+        *(BU,64), B, 40
+        ST(BU,64), T7, 20          ! identical to T6
+
+! -- PF, and which 48 bits survive ------------------------------
+        L(BU,64), FORTY9, 0        ! 2**48 + 3: forty-nine bits
+        *(BU,64), N, 0             ! operand truncates to 3
+        ST(BU,64), T8, 20          ! 3 * 5 = 15
+        L(BU,1), $IND+.23, 0
+        ST(BU,64), T9, 0           ! PF now 1
+
+! -- "the CLEARED accumulator" ----------------------------------
+        L(BU,64), A, 40            ! operand A at offset 40
+        +(BU,64), ONES, 0          ! and junk below it, at offset 0
+        *(BU,64), B, 40            ! the junk shifts out of the operand
+        ST(BU,20), T10+.44, 0      ! and must be cleared from the result
+
+! -- a storage operand that STRADDLES a word boundary -----------
+        L(BU,64), M, 0             ! acc := 20
+        *(BU,24), CROSS+.56, 0     ! eight bits in one word, sixteen
+        ST(BU,64), T11, 20         ! in the next: 0xABCDEF times 20
+
+PASS    BEW, $
+
+! Data, word-aligned: BEW is a half word, so without this every 64-bit
+! field below would straddle two words and be refused.
+        SLC, (8)2040.0
+
+M       DD(BU,64,8), 20            ! Problem 2.12: no. of rows
+N       DD(BU,64,8), 5             ! Problem 2.12: no. of columns
+A       DD(BU,64,8), (16)FFFFFF
+B       DD(BU,64,8), (16)FFFFFF
+FORTY9  DD(BU,64,8), (16)1000000000003
+ONES    DD(BU,64,8), (16)FFFFF     ! twenty ones, offset 0 to offset 19
+CROSS   DD(BU,64,8), (16)AB         ! 0xAB in the LAST byte of this word
+CROSS2  DD(BU,64,8), (16)CDEF000000000000
+
+T1      DD(BU,64,8), 0
+T2      DD(BU,64,8), 0
+T3      DD(BU,64,8), 0
+T6      DD(BU,64,8), 0
+T7      DD(BU,64,8), 0
+T8      DD(BU,64,8), 0
+T9      DD(BU,64,8), 0
+T10     DD(BU,64,8), 0
+T11     DD(BU,64,8), 0
+
+        END, START

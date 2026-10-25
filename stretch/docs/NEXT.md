@@ -10,6 +10,254 @@ section comments of `tests/run_tests.sh`, and in commit messages.
 When an item here is finished it shrinks to a pointer; it does not
 accumulate.
 
+
+## `*` IS BUILT, AND THE CE MANUAL EXPLAINS ITS TWO MAGIC NUMBERS -- 2026-10-25
+
+`bsv/StretchExecute.bsv` arm `6'b011001`, `decks/vfl_multiply.strap`,
+nine checks, four measured injections. Eleven of twenty-four VFL
+integer operations now execute.
+
+**The find is not the arm, it is printed p.117 of `R23-9694`.** The
+Reference Manual states two unexplained constants for MULTIPLY --
+operands may not exceed 48 significant bits, and the product lands at
+offset 20 -- and the Customer Engineering manual says why both:
+
+> "The actual multiplication in this operation is performed by **PAU**.
+> This restricts the operands to 48 significant bits each. Similarly,
+> the result appears at offset 20 as this is the normal result field
+> **(12-107)** for a double-precision PAU operation."
+
+Bit 107 is offset 20 counting from the accumulator's low end and bit
+12 is offset 115, so 48 x 48 = 96 and "offset 20" are ONE fact. The
+VFL multiply is the floating-point multiplier with a different front
+end, and `/` says "as in MULTIPLY, this operation is actually
+performed by PAU" on printed p.121.
+
+**That also decided the sign**, which printed p.68 never mentions and
+which I was about to label unverified. The PAU's own multiply,
+printed p.75, states it: "the sign of the product replaces the
+accumulator sign in bit position 4 of the sign byte register ...
+determined by the rules of algebra, using the accumulator sign and
+the effective sign of the addressed operand." Nothing in the corpus
+exercises a signed VFL multiply -- MCP's use and both of IBM's worked
+examples are `(BU, ...)` -- so without the CE manual this would have
+been a guess sitting in a comment.
+
+> **The lesson is about the corpus, not the opcode.** Two `R23-969x`
+> volumes had been sitting in `docs/` unread because they are "CE
+> manuals" and the Reference Manual is the normative source. They
+> are normative about mechanism, which is exactly what a model needs
+> and exactly what the programmer's manual omits.
+
+**A hole the deck nearly shipped with.** The first nine checks all
+used word-aligned or immediate operands, so the arm's crossing-field
+path -- `fieldCrosses`, the second prefetch slot, the `(w0+1)`
+bail-out -- was copied code that had never run, and MCP's own
+multiply (printed p.72 line 19) is a 24-bit field. The added check
+`mul_operand_crosses_word` fails ALONE when the two prefetch slots
+are exchanged. Same class as the CM1111 crossing-field bug found the
+same day. **Copied code is untested code until a check exercises the
+branch that differs.**
+
+### `/` is next -- but p.24 needs THREE operations, not one
+
+**Found by reading printed p.73 while the suite ran, and it changes
+the plan's shape.** The eleven lines of MCP's time conversion use
+`/` twice, then `CV`, then `LTRCV` twice. Building `/` alone moves
+the first refusal from `001213.00` to `001217.00` -- line 25, the
+`CV` -- and stops there.
+
+And `CV`/`LTRCV` are not more VFL integer arms: they are **radix
+conversion**, the first operations in this project that must produce
+a decimal result rather than refuse `decimal`. `docs/vfl_arith_spec.md`
+has both specifications in full, including the unifying fact that
+every implied offset in the set -- `*`'s 20, `CV`'s 68, `DCV`'s 20 --
+is one end of one of the PAU's two fraction fields, and the
+four-instruction chain in MCP p.24 that confirms `CV`'s 68
+independently of the manual, and every offset in the block decoded
+out of the printed BINARY OUTPUT column rather than read off the
+STRAP statements.
+
+**Order: `/` first anyway**, because it is specified, drafted,
+checked and free of the decimal question; then decide whether to
+take decimal on, which is a larger piece of work than the two arms
+suggest.
+
+### `/` is fully specified
+
+Printed p.70 plus `R23-9694` printed pp.120-122, which adds three
+rules the Reference Manual omits:
+
+* the divisor is normalized in PAU before the division, and the
+  quotient length is `(dividend length + 1) - divisor length`;
+* **"If the divisor contains over 48 bits, but the low-order 48 bits
+  are zero, both the PF and ZD indicators are turned on"** -- so the
+  zero test is on the TRUNCATED divisor, not the written one;
+* "Operation Code: 01110", which with the VFL integer codes' trailing
+  1 is `011101` = 29, the code the model decodes.
+
+Unlike multiply, the quotient goes at the INSTRUCTION'S offset:
+"the rightmost bit of the quotient is always found at the offset
+specified in the instruction. The bits to the right of the offset are
+zero." MCP printed p.24 uses offset `-60` = 68 throughout, which is
+where its `L(BU,26), $TC, -60` puts the 26-bit clock.
+
+`Bit#(96)` division elaborates in bsc and was probed before being
+relied on (1000000 / 60 = 16666 r 40) rather than assumed.
+
+**AND IT SHOULD BE MEASURED, NOT ASSERTED.** A 48x48 multiplier is
+already in the execute path and a 96-bit divider is about to join it,
+both combinational. The honest statement today is that no number has
+been taken: **run `depth_census.py` before and after `/` lands** and
+record the two figures beside the 844 LUT levels already on record.
+Item 9 of `bsv/README.md` argues the datapath has to go multi-cycle
+for the FPGA regardless; that argument does not need these two
+operations to be expensive, and this file should not claim they are
+until the census says so.
+
+## >>> THE MCP LISTING IS OCR'd, AND IT HAS A SYMBOL-DEFINITION SECTION <<< 2026-10-25
+
+All 451 pages, both volumes, 1.1 MB. `docs/ocr/listing_index.py`
+answers "which printed page" in one command instead of a render.
+
+**And the first real query found something the project needs.**
+Looking up `TJBPRO` returned its five uses AND this, on printed
+p.288:
+
+```
+T JBPRO SYN(BU,1),0.36 -JOB PROCESSED BIT
+```
+
+**And the section is not a section.** Counting `SYN(` per page across
+both volumes gives **555 declarations on 25 printed pages**, and they
+are scattered, not collected:
+
+```
+p.61-64     75    p.84-85    92    p.98-109   200
+p.236,268,277,287  16        p.288-289  70     p.291 4
+p.317 6     p.357 4          p.418-419  88
+```
+
+The two clusters that matter first are **pp.84-85 and pp.98-109**,
+just past the last page transcribed (p.80), holding roughly 290 of
+them -- the declarations for the tables the transcribed pages
+already reference by name. These are MCP's **SYN cards**: every table
+field with its data description and bit offset.
+
+> **Not a new kind of evidence -- a complete one.** `TJBPRO`'s
+> declaration was already in hand: printed p.62 line 11 is
+> transcribed and carries `SYN(BU,1),0.36`. That is exactly how this
+> session's image bug was diagnosed. What the index adds is that
+> there are **555 of these and only a fraction sit on transcribed
+> pages**, so the next symbol to be merged from a page that declares
+> it without its dds has a documented answer waiting instead of a
+> day of searching.
+
+**The work this unlocks**, in order:
+
+1. Render the SYN-card pages and transcribe them as one deck. They
+   are declarations, not code, so they assemble to data and every
+   line is checkable against the printed binary column like any
+   other page.
+2. Cross-check every `SYN` in `decks/mcp_bootstrap_p*.strap` against
+   it. `strap/mcp_image.py`'s new guard catches *disagreement
+   between pages*; this would catch *agreement on the wrong value*,
+   which nothing currently can.
+
+**A second lead, recorded and not chased.** `listing_index.py grep
+EXHAUSTED` puts "EXHAUSTED ALL CHANNELS OR EXCHANGE" on printed
+**p.5** lines 25 and 37, at `000146.00` and `000152.00`, both
+branching to `X6ERR` -- the IPL channel search, which
+`decks/mcp_bootstrap_p5_p6.strap` already transcribes.
+
+> **That locates the TEXT, not the PATH, and the distinction is the
+> whole value of the note.** A grep of OCR'd comments says where the
+> message is printed in the source. Which route the running machine
+> took to reach it is a question only an execution trail answers, and
+> none has been run. I wrote the stronger sentence first and am
+> correcting it here rather than deleting it, because the mistake is
+> the recurring one: a grep for a NAME used to conclude about a
+> BEHAVIOUR, which is the same error that produced this session's
+> OP-indicator regression.
+
+### >>> AND THE OP LOCATOR REPORTS THE RISING EDGE ONLY <<<
+
+Which changes how its output may be read, and I nearly published a
+conclusion that ignored it. The baseline refusal set
+
+```
+half-words 1302 1308 1310 1312 1316 = 001213.00 .. 001222.00
+```
+
+is five addresses in printed p.24's time conversion -- the two `/I`,
+and `CV` and `LTRCV`. Those latch `OP` early. **After that, no later
+refusal can report**, because the locator fires on a 0->1 transition
+of the indicator and the indicator is already 1. MCP's multiply at
+`004227.40` (half-word 4399) was never in the list and its absence
+was never evidence that it did not run.
+
+So for the experiment now running:
+
+* **The refusal SET is not the discriminator.** It should be
+  unchanged, since the five that latch `OP` are all `/`, `CV` and
+  `LTRCV`, none of which `*` affects. Unchanged is the EXPECTED
+  result, not a null one.
+* **The halt address and the PC trail are the discriminator.**
+* **If the halt does not move, that does not implicate the tape
+  channels.** It is equally consistent with the multiply never being
+  reached, and with its being reached but fed a garbage accumulator
+  by the refused `/` four thousand half-words upstream.
+
+### THE EXPERIMENT RAN. THE ANSWER IS "NOTHING MOVED", AND THE FIRST READING OF IT WAS WRONG
+
+The boot was run twice against the same tree, once with the multiply
+arm present and once with it reverted to `HEAD`:
+
+```
+                       OP SET at   PC trail   steps       result
+no multiply arm        1302        239        22048542    ALL TESTS PASSED
+with multiply arm      1302        239        22048542    ALL TESTS PASSED
+```
+
+**Identical in every number.** Not merely the same halt -- the same
+step count, which means the same instruction sequence. Building `*`
+changed nothing the boot can observe.
+
+> **And the first comparison said something quite different, for a
+> reason this file already recorded.** An earlier log in the
+> scratchpad showed FIVE refusals -- 1302, 1308, 1310, 1312, 1316 --
+> against the new run's one, and "four refusals cured" was sitting
+> right there to be written up. It was false. Those five are
+> `001213.00`, `001216.00`, `001217.00`, `001220.00` and
+> `001222.00`: **the census below, taken on the OP-CLEARED
+> instrumented build that prints every refusal rather than the first.**
+> The committed locator reports rising edges only, so it prints one.
+> Nothing was cured; the two logs came from two different detectors.
+>
+> **A log file is not a baseline unless it was produced by the build
+> you are comparing against** -- and "the build" includes its
+> instrumentation, not just its source. A baseline rebuilt from
+> `HEAD` on the spot shows ONE, which is the number to compare with.
+
+> **AND THE CENSUS HAD ALREADY PREDICTED THE NULL RESULT.** It lists
+> eight refusals and `004227.40` -- MCP's multiply -- **is not among
+> them**, on a build instrumented precisely so that every refusal
+> would print. An operation that is never refused on a run where it
+> is unimplemented is an operation that never executes. The
+> experiment was worth running because that inference is indirect
+> and the census was taken on a since-reverted build; but the
+> evidence to expect this answer was already in this file, and I did
+> not consult it before running. **Read the record before buying the
+> measurement again.**
+
+**So the pre-committed plan's "if not, add tape units" branch is the
+one that fires -- and it should not be taken yet.** `/` is refused at
+`001213.00`, four thousand half-words upstream of the multiply, and
+the OP locator's rising edge cannot report anything after it. Nothing
+downstream of a refused instruction can be read cleanly. **`/` comes
+before tape units.**
+
+
 ## WHERE THIS STANDS, 2026-10-25 — read this first
 
 **MCP's ASSIGN routine now runs to its own return, and MCP halts the
@@ -5802,6 +6050,22 @@ rising edges only.
 > instruction" right up until the program under test depends on the
 > result.*
 
+> ### >>> AND THAT HYPOTHESIS IS DEAD, 2026-10-25. <<<
+>
+> `*` was built and the boot was run twice against the same tree,
+> with the arm and with it reverted to `HEAD`. **Identical: same
+> halt, same PC trail, same 22,048,542 steps.** MCP's multiply at
+> `004227.40` is never reached — it is absent from the census above,
+> which was taken on a build instrumented to print every refusal.
+>
+> The paragraph above stays because the reasoning in it is sound and
+> worth keeping: a suppressed instruction IS invisible until
+> something reads its result. It was simply the wrong instruction.
+> **The remaining candidates for the halt are the one-tape-channel
+> fixture and the p.24 time conversion**, whose five refused
+> operations run four thousand half-words earlier and whose result
+> MCP stores into its communication region.
+
 To take the census the locator was temporarily changed to run the
 arms with OP **cleared**, ORing the entry value back at the commit,
 so that every refusal printed and not merely the first.
@@ -5834,6 +6098,13 @@ so that every refusal printed and not merely the first.
 004361.40   p.75 line  2   CM1111, T RJECT(T IXE)
 004622.00   p.80 line 24   CM1111, T JBPRO(T IXG)
 ```
+
+> **THE LAST THREE ARE GONE as of 2026-10-25** -- they were the image
+> bug, not model refusals, and the merge now carries every symbol's
+> data description. A census retaken today would list the five p.24
+> rows and nothing else. **And `004227.40`, MCP's multiply, was never
+> on this list**, which is why building `*` changed nothing the boot
+> can observe: it is never reached.
 
 **Five are printed p.24's time conversion** and are exactly the
 candidate list `docs/NEXT.md` named in October: the two divides, the
@@ -6273,6 +6544,74 @@ p.78 line 12  CV(BU,18),0.0,-32     -32   060    0
 
 Seven for seven, with the negatives in seven-bit two's complement
 (−60 → 68 → `042`, low bit 0).
+
+#### A SIMPLIFICATION AND A SWEEP, 2026-10-25
+
+**The two pieces are one field.** "Bits 12-17 hold `offset >> 1` and
+bit 18 holds `offset & 1`" is arithmetically identical to "bits 12-18
+are the offset" -- the same function, written twice. The two-part
+phrasing reads like two fields and is not; it is describing how the
+field LOOKS, which is worth keeping but worth separating:
+
+> a group prints as `WWWWWW.BB FF`, and bits 12-18 **straddle the
+> dot** -- bits 12-17 are the last two octal digits of `WWWWWW`,
+> bit 18 is the TOP bit of `BB`. One field in the word, two columns
+> on the page. That is the whole of "the offset prints halved".
+
+**And it holds on every VFL and connective row in the corpus.**
+`tests/audit_offset_field.py` decodes bits 12-18 out of the printed
+column of every `tests/verify_mcp_bootstrap_p*.py` row and compares
+it with the offset the deck's statement writes: **299 rows reached,
+297 parsed, ALL AGREEING, zero disagreements**, plus two offsets
+written as expressions and checked by hand -- `18+9` = 27 on printed
+p.16, and `64+QKSIZ` = 70 on printed p.45, where p.45 declares
+`QKSIZ SYN, 6`.
+
+> **THE TOOL WAS WRONG TWICE BEFORE IT WAS RIGHT, and both ways are
+> worth knowing.** First it read the VERIFIER'S LABEL, which is often
+> abbreviated -- `ST(BU,7)` where the deck says
+> `ST(BU,7), 0.57(LXSU), 46` -- and reported twenty rows it could not
+> parse. Then it took THE LAST NUMBER ON THE LINE as the offset and
+> reported four rows as FAILURES OF THE RULE:
+>
+> ```
+> DIFFER p22 001060.40 column 0, statement 9: KFI(BU,4), 9
+> ```
+>
+> **That 9 is the immediate operand.** STRAP format 7 is
+> `OP(dds), ADDRESS, OFFSET`; with one operand there is no offset and
+> it defaults to zero. Counting operands is the whole fix.
+>
+> An audit that reports a failure it cannot justify is worse than no
+> audit, because the next reader has to re-derive whether the rule or
+> the tool is broken. Both times here it was the tool.
+
+**The window position is doing the work.** Move the seven bits one
+place either way and all five of the sharpest rows fail together:
+
+```
+                       bits 11-17   bits 12-18   bits 13-19
+L(BU,26),$TC,-60  68          34           68            9
+CV(BU),$L,16      16           8           16           33
+C0011(..),+.52,8   8           4            8           16
+LFI(BU,2),3,5      5           2            5           10
+LFI(BU,2),3,13    13           6           13           26
+```
+
+> **NOT ADDED AS A TEST, and the reason matters.** `check_rows`
+> already compares the assembled word with the printed column
+> bit-for-bit, so an assembler that put the offset anywhere else
+> would fail there first. A separate assertion that bits 12-18
+> decode to the statement's offset would be measuring the assembler
+> against itself. **This sweep is evidence for the READING RULE a
+> human uses on the scan, not a regression test**, and recording it
+> as the second is how a suite grows checks that cannot fail.
+>
+> The rule is also VFL-and-connective only. The same sweep over
+> BRANCH, TRANSMIT and I/O rows disagrees constantly, because bits
+> 12-18 of those words are not an offset at all -- 714 rows
+> unfiltered gives 236 "failures", every one a different instruction
+> format. Do not carry this decode outside format 7.
 
 > **An unexplained regularity is a bug report you have not filed
 > yet.** "The offset prints halved" was tolerated because every row

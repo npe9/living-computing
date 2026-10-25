@@ -91,12 +91,35 @@ outright.
 
 `listing_index.py` searches the listing volumes by symbol, address
 or free text and reports **printed** page numbers (volume 1's PDF
-page N is printed page N-7). It needs the listing volumes, which are
-not built yet.
+page N is printed page N-7).
 
 ## Status, 2026-10-25
 
-Built: all 15 manuals, 1,555 pages, 4.4 MB.
-Not built: the two MCP listing volumes (451 pages) — started and
-stopped to free the machine, which was carrying load 150 from
-unrelated work. Re-run the two `ocr_listing.sh` lines above.
+**Everything is built**: 15 manuals (1,555 pages, 4.4 MB) and both
+MCP listing volumes (451 pages, 1.1 MB).
+
+### What it found in its first hour
+
+* **`$opr`** — printed p.10 of `C28-6129`, System Symbols: "directs
+  the compiler to suppress any error indications". A day of manual
+  searching had failed; two greps found it.
+* **The PAU** — `R23-9694` printed p.117 explains why a VFL multiply
+  puts its product at offset 20, which the Reference Manual states
+  and never justifies. Two CE volumes had gone unread because they
+  are not the normative source; they are normative about MECHANISM.
+* **MCP's SYN cards** — printed pp.~285-300 declare every table field
+  with its data description (`T JBPRO SYN(BU,1),0.36`). See
+  `docs/NEXT.md`; this is the authoritative check on the symbol
+  declarations scattered through the transcribed pages, and the
+  image bug of this same day was exactly a disagreement among them.
+* **"EXHAUSTED ALL CHANNELS"** — printed p.5 lines 25 and 37, not
+  p.72 as assumed.
+
+### How good is the listing OCR, measured
+
+`listing_index.py sym TJBPRO` returns nine usable hits across nine
+printed pages. Every one of them has mangled octal (`OC2776.4C` for
+`002776.40`, `CCCCCO.44` for `000000.44`) and a legible SYMBOL and a
+legible COMMENT. That is the shape of its usefulness exactly: it
+finds pages by NAME and by ENGLISH, never by number, and the numbers
+on the page are what you then go and render.

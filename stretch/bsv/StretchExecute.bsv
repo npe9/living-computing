@@ -2644,6 +2644,109 @@ function ActionValue#(VflOutcome)
               ind = setResultIndicatorsF(ind, stored);
             end
           end
+          6'b011001: begin // * (Multiply)
+            // MULTIPLY, Reference Manual printed p.68, and the
+            // binary half of the operation is two sentences:
+            //
+            //   "If binary is specified, the product of the addressed
+            //   operand and the accumulator field specified by the
+            //   offset is placed into the CLEARED ACCUMULATOR AT
+            //   OFFSET 20.  Neither operand may exceed 48 SIGNIFICANT
+            //   NUMERIC BITS.  If decimal is specified, this operation
+            //   has the same action as LOAD TRANSIT AND SET, except
+            //   that the two high-order bits of the left zeros counter
+            //   are set to zeros."
+            //
+            // OFFSET 20 IS A CONSTANT, NOT THE INSTRUCTION'S OFFSET.
+            // The offset field selects the ACCUMULATOR OPERAND -- the
+            // field whose low-order bit sits at the offset, exactly as
+            // in ADD -- and then the product is deposited at a FIXED
+            // position, 20, wherever that operand came from.  Reading
+            // "at offset 20" as "at the offset, 20 being an example"
+            // is the easy mistake and it is wrong: p.71 confirms the
+            // constant independently, "DCV is used instead of CV
+            // because of the offset of 20", i.e. the 96-bit product
+            // MULTIPLY leaves behind is the same fixed 20/96 field
+            // that CONVERT DOUBLE reads, whose "implied offset of 20
+            // and ... length is 96 numeric bits" is stated on p.70.
+            // 20 + 96 = 116, so the product cannot overflow the
+            // 128-bit accumulator and no truncation arises.
+            //
+            // 48 x 48 IS WHY THE PRODUCT IS 96 BITS.  "Neither operand
+            // may exceed 48 significant numeric bits" is not advice:
+            // printed p.68 under Partial Field says what happens when
+            // it is exceeded, "only the 48 low-order bits of the
+            // oversized operand are used in the operation.  If the
+            // accumulator operand was oversized, the higher-order bits
+            // are lost."  So the model truncates to 48 and raises PF
+            // rather than refusing, and the truncation is of the LOW
+            // 48 bits -- the high bits are what is discarded.
+            //
+            // DECIMAL IS REFUSED ABOVE, with the rest of the decimal
+            // VFL set: the decimal action is LOAD TRANSIT AND SET's,
+            // which the model does not implement either, and p.68's
+            // own Programming Note describes decimal MULTIPLY as an
+            // automatic subroutine entry via the decimal-transit
+            // indicator rather than a multiplication.
+            //
+            // ARRIVED VIA MCP.  decks/mcp_bootstrap_p72.strap uses
+            // "*(BU,24)" inside the channel-assignment arithmetic and
+            // the model set Operation Code Invalid on it, which is the
+            // OP refusal docs/NEXT.md records being chased from the
+            // boot trail.  Both that use and IBM's own worked example
+            // (C22-6578 Problem 2.10, docs/vfl_arith_spec.md) are
+            // BINARY UNSIGNED, so the signed product's sign is stated
+            // nowhere in the corpus and exercised nowhere in it; the
+            // algebraic product below is the conventional reading of
+            // "Unsigned; Negative Sign.  These modifiers operate as in
+            // ADD" and is marked here as the one unverified detail.
+            //
+            // Same prefetch/bail-out shape as + above.
+            Bit#(64) raw = 0;
+            if (immediate) begin
+              raw = immediateOperand(vi.a.addr, len_);
+            end else begin
+              WordAddr w0 = baWord(ea);
+              Bit#(6) off = baBit(ea);
+              if (!fieldCrosses(ea, len_)) begin
+                if (prefetchCount >= 1) begin
+                  raw = extractFieldBits(prefetch[0], 0, off, len_);
+                  vflReadsUsed = 1;
+                end else
+                  needsRead = tagged Valid w0;
+              end else begin
+                if (prefetchCount >= 2) begin
+                  raw = extractFieldBits(prefetch[0], prefetch[1], off, len_);
+                  vflReadsUsed = 2;
+                end else if (prefetchCount == 1)
+                  needsRead = tagged Valid (w0 + 1);
+                else
+                  needsRead = tagged Valid w0;
+              end
+            end
+            if (!isValid(needsRead)) begin
+              SM128 opnd = fieldToSM(raw, len_, bsz, vi.m.unsign, vi.m.invert);
+              SM128 acc = readAcc(st);
+              // "the accumulator field specified by the offset"
+              Bit#(128) accOp = acc.mag >> offSh;
+              // "either operand exceeds 48 significant bits in length"
+              if ((accOp >> 48) != 0 || (opnd.mag >> 48) != 0)
+                ind = setBit(ind, ind_PF, 1);
+              Bit#(96) a = zeroExtend(accOp[47:0]);
+              Bit#(96) b = zeroExtend(opnd.mag[47:0]);
+              Bit#(96) prod = a * b;
+              // "placed into the CLEARED accumulator at offset 20" --
+              // cleared means cleared, so every other accumulator bit
+              // goes to zero, including the bits below 20 and the ones
+              // the accumulator operand itself came from.
+              SM128 res = SM128 { sign: acc.sign ^ opnd.sign,
+                                  mag: zeroExtend(prod) << 20 };
+              writeAcc(st, res);
+              // "Arithmetic Result (RLZ, RZ, RGZ, RN).  In a binary
+              // operation, these indicators are set as in ADD."
+              ind = setResultIndicatorsF(ind, res);
+            end
+          end
           6'b001001, 6'b101011, 6'b101001: begin // M+, M+1, M+MG
             // (Add One to Memory) -- prefetch/bail-out shape,
             // inlining readFieldWithHi/writeFieldWithHi's own logic

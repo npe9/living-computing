@@ -401,11 +401,15 @@ An exact census -- every `6'b......` arm in `vflIntOp` against
 twenty-four**:
 
 ```
-EXECUTED   +(1) LCV(3) L(5) M+(9) ST(13) K(17) +MG(33) M+MG(41)
-           M+1(43) KF(49)
-NOT        LFT(11) KE(19) KR(21) *(25) CV(27) /(29) LTRCV(35)
+EXECUTED   +(1) LCV(3) L(5) M+(9) ST(13) K(17) *(25) +MG(33)
+           M+MG(41) M+1(43) KF(49)
+NOT        LFT(11) KE(19) KR(21) CV(27) /(29) LTRCV(35)
            LWF(37) SRD(45) KFE(51) KFR(53) *+(57) DCV(59) LTRS(61)
 ```
+
+**`*` MOVED ACROSS ON 2026-10-25** and the census above already
+reflects it: eleven of twenty-four. `decks/vfl_multiply.strap` is the
+check and `docs/vfl_arith_spec.md` is the sourcing.
 
 So `LCV` and `KF` were named here and DO execute, while **`*`, `/`,
 `KR`, `LFT`, `LWF`, `SRD` and `*+` were not named and do not** --
@@ -421,7 +425,14 @@ Manual `22-6530-2` printed **pp.68-70** specify them normatively:
   and the accumulator field specified by the offset is placed into
   the CLEARED ACCUMULATOR AT OFFSET 20. Neither operand may exceed 48
   significant numeric bits." PF if either does; result indicators as
-  in ADD.
+  in ADD. **Built.** And the CE manual `R23-9694` printed p.117 says
+  *why* 20: "the actual multiplication in this operation is performed
+  by PAU ... the result appears at offset 20 as this is the normal
+  result field (12-107) for a double-precision PAU operation", which
+  also decides the product's sign — the Reference Manual never states
+  it, but the PAU's own multiply (printed p.75) does: "the sign of
+  the product replaces the accumulator sign ... determined by the
+  rules of algebra".
 * **p.69** — Load Factor (`LFT`) and Multiply and Add (`*+`), and
   "FT is a 64-bit register with word address 14".
 * **p.70, Divide (`/`)** — "the entire accumulator contents to the

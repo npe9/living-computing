@@ -3219,6 +3219,63 @@ run "KF, Compare Field -- the bounded accumulator operand, p.65" ./run_program.s
 # has; LCV, the other, needs decimal mode and is still unbuilt
 # (docs/boot_plan.md A2).
 
+run "*, VFL Multiply -- the product at the PAU's own offset 20" ./run_program.sh ../decks/vfl_multiply.strap StretchVflMultiplyTb \
+    "PC=2100" \
+    "mul_ibm_2_12_storage:1064=100" \
+    "mul_ibm_2_12_immediate:1065=100" \
+    "mul_pf_clear_before:1066=0" \
+    "mul_24x24_at_offset_0:1067=0xfffffe000001" \
+    "mul_24x24_at_offset_40:1068=0xfffffe000001" \
+    "mul_pf_keeps_low_48:1069=15" \
+    "mul_pf_set_after:1070=1" \
+    "mul_accumulator_cleared:1071=0" \
+    "mul_operand_crosses_word:1072=225187500"
+# VFL MULTIPLY, opcode abc011001, the eleventh VFL integer arm and the
+# first of the two MCP still needs.  Reference Manual printed p.68:
+# "the product of the addressed operand and the accumulator field
+# specified by the offset is placed into the CLEARED ACCUMULATOR AT
+# OFFSET 20.  Neither operand may exceed 48 significant numeric bits."
+#
+# OFFSET 20 IS A CONSTANT AND THE DECK IS BUILT AROUND PROVING IT.
+# The instruction's offset selects the accumulator OPERAND, as in ADD;
+# the product then lands at a FIXED position.  mul_24x24_at_offset_0
+# and mul_24x24_at_offset_40 run the SAME multiplication from two
+# different offsets and require the same answer read from the same
+# place -- the injection that deposits at the instruction's offset
+# makes those two disagree, 0xFFFFFE0 against 0xFFFFE00000100000.
+#
+# >>> AND THE CE MANUAL SAYS WHY 20, WHICH NO OTHER SOURCE DOES. <<<
+# R23-9694, Customer Engineering Introduction to Programming Vol. 2,
+# printed p.117: "The actual multiplication in this operation is
+# performed by PAU.  This restricts the operands to 48 significant
+# bits each.  Similarly, the result appears at offset 20 as this is
+# the normal result field (12-107) for a double-precision PAU
+# operation."  Bit 107 IS offset 20 counting from the accumulator's
+# low end, and bit 12 is offset 115, so the Reference Manual's two
+# unexplained constants -- 48 significant bits, offset 20 -- are one
+# hardware fact stated twice.  The VFL multiply is the floating-point
+# multiplier with a different front end.
+#
+# That also settles the product's SIGN, which printed p.68 never
+# mentions: the PAU's own multiply, R23-9694 printed p.75, does --
+# "the sign of the product replaces the accumulator sign in bit
+# position 4 of the sign byte register ... determined by the rules of
+# algebra, using the accumulator sign and the effective sign of the
+# addressed operand."  Nothing in the corpus exercises it: MCP's use
+# and IBM's two worked examples are all (BU, ...).
+#
+# THE CONSTANTS ARE IBM'S.  C22-6578 Problem 2.12 ends "M SYN, 20" and
+# "N SYN, 5" and opens by multiplying them, so mul_ibm_2_12_storage
+# and mul_ibm_2_12_immediate are the first product that example
+# computes, by both forms.  Problem 2.10's note states the offset-20
+# rule independently of the Reference Manual, five years earlier.
+#
+# mul_operand_crosses_word EXISTS BECAUSE THE OTHER EIGHT CANNOT SEE
+# THE CROSSING PATH.  Every other operand here is a word-aligned full
+# word or an immediate, so the arm's two-slot prefetch read would be
+# copied code that never ran -- and MCP's own multiply, printed p.72
+# line 19, is a 24-bit field.  Exchanging the two prefetch slots
+# fails this check ALONE, at 0, with the other eight unmoved.
 run "+MG, Add to Magnitude -- Reference Manual Figure 12" ./run_program.sh ../decks/plus_mg.strap StretchPlusMgTb \
     "PC=2086" \
     "pmg_fig12_x_minus_y:1064=70" \
