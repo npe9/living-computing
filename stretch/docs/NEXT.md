@@ -18,6 +18,67 @@ accumulate.
 
 
 
+
+## >>> MCP TYPES ITS OWN ERROR REPORT, WITH THE FAILING ADDRESS <<< 2026-10-26
+
+```
+<CR><RED>001471.0  IO ASSIGNMENTS CAN NOT BE MADE <EOM>
+<CR><RED>000000.0  IO TABLES CAN NOT BE FORMED
+```
+
+Read out of the console image at words 11-20 with
+`strap/charsets.py`'s `IQS` table -- the same decoder that read the
+date message. **Both strings are transcribed listing text**:
+`decks/mcp_bootstrap_p9_p12.strap` lines 311 and 327 are
+`(IQS*)DD(BU,64,8), IO ASSIGNMENTS CAN NOT BE MADE *` and
+`... IO TABLES CAN NOT BE FORMED *`.
+
+**And `001471` is the address this file decoded from `X ERR AD`
+hours earlier**, arrived at from the other end: `0x00CE600000000000`
+-> word 825 -> `001471.40` -> printed p.27 line 13's
+`BZXCZ,X ERROR -IF ASSIGNMENT ERROR`. The machine typed the same
+number out of its own console.
+
+### The whole path, end to end
+
+1. **ASSIGN rejects.** printed p.76 line 93 carries the reason,
+   `I/O REQ. INCOMP WITH MACH CONF.`
+2. **It returns without setting the disposition bit** -- printed
+   p.80 line 25's `CM1111(BU,1),0.28($15)` is on the ACCEPT path and
+   is not executed.
+3. **The caller notices**: p.27 line 11 reloads the parameter word,
+   line 13's `BZXCZ` branches, and the prefixed `SIC` records
+   `001471.40` on the way.
+4. **`XERROR` finds the console** in `S YCOCH` (p.5 lines 19-20),
+   issues `GONG` (line 45), reads the control word back (line 48),
+   and never takes `X5ERR`, the "not a console" exit.
+5. **It writes** (line 52) through `XMSCW1` -- three zero words,
+   chaining to the ten-word message.
+6. **It halts** at `000167.40`, `BD,$`.
+
+**Nothing here is a model defect.** The three zero words are why
+word 8 reads zero and why `console_nothing_after` passes; the
+message is at words 11-20, where nothing was looking.
+
+> **TWO INDEPENDENT DERIVATIONS OF ONE NUMBER.** `001471` was read
+> out of `X ERR AD` by decoding a 24-bit field, and typed by MCP out
+> of a console write. Neither was consulted for the other. That is
+> the strongest form of agreement this project gets.
+
+### One loose end, recorded not chased
+
+The address prints as `001471{7c}0` where `0x7c` is **not in the
+`IQS` table**, while the second message's separator is `0x74`, which
+IS `.`. Both should be the same character. The digits themselves
+decode cleanly on EVEN codes (`0x60`='0', `0x62`='1', `0x68`='4',
+`0x6E`='7'), which matches `charsets.py`'s note that the ten ITALIC
+digits occupy "column 0111, odd rows". So `0x7c` is probably an
+italic or zoned variant the table does not yet carry. **It does not
+affect the result** -- the text and the digits are unambiguous --
+but the table has a hole and printed p.166's grid is where to close
+it.
+
+
 ## `console_nothing_after` CHECKS ONE WORD AND IS NAMED AS IF IT CHECKED THE REST -- 2026-10-26
 
 `tests/gen_mcp_boot_tb.py`:
