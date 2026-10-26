@@ -1418,7 +1418,84 @@ def main():
         ("console_date_w5", 5, 0x2d4b3500fd606000),  # "APE <CR>00 "
         ("console_date_w6", 6, 0x454947533b006060),  # "MONTH 00 "
         ("console_date_w7", 7, 0x00332d5d0000fdfe),  # "DAY <CR><EOM>"
-        ("console_nothing_after", 8, 0),
+        # >>> AND MCP TYPES ITS OWN ERROR REPORT, 2026-10-26. <<<
+        #
+        # This check used to be the last word on the console and was
+        # named `console_nothing_after`, asserting word 8 is zero. It
+        # still asserts exactly that -- but the NAME claimed the
+        # console was empty from here on, and it is not. The write at
+        # printed p.5 line 52 goes through `X MS CW1`, which printed
+        # p.8 line 34 defines as `CW,X ZEROS,3` -- THREE WORDS OF
+        # ZEROS -- chaining to `X MSG CW`'s ten-word message. Word 8
+        # is where the FIRST ZERO lands, so this check passing was
+        # always consistent with MCP WRITING, never with it failing.
+        #
+        # "The console write produces nothing" was one sentence from
+        # being recorded as a model defect on the strength of it.
+        # A name is an assertion too, and it is the one people read.
+        ("console_word8_is_first_of_three_zeros", 8, 0),
+        ("console_word9_zero",  9, 0),
+        ("console_word10_zero", 10, 0),
+        # The message itself, words 11-20, decoded with the same
+        # strap/charsets.py IQS table that reads the date message:
+        #
+        #   <CR><RED>001471.0  IO ASSIGNMENTS CAN NOT BE MADE <EOM>
+        #   <CR><RED>000000.0  IO TABLES CAN NOT BE FORMED
+        #
+        # Both strings are TRANSCRIBED LISTING TEXT --
+        # decks/mcp_bootstrap_p9_p12.strap lines 311 and 327 are
+        # "(IQS*)DD(BU,64,8), IO ASSIGNMENTS CAN NOT BE MADE *" and
+        # "... IO TABLES CAN NOT BE FORMED *".
+        #
+        # >>> AND 001471 IS X ERR AD, ARRIVED AT FROM THE OTHER END.
+        # <<<  mcp_x_err_ad above reads 0x00CE600000000000, whose top
+        # 24 bits are the bit address 52832 = word 825 = 001471.40 =
+        # printed p.27 line 13's "BZXCZ,X ERROR -IF ASSIGNMENT
+        # ERROR".  The machine types the same number out of its own
+        # console.  Neither derivation was consulted for the other.
+        #
+        # WHAT THESE TEN WORDS ASSERT is the whole error path:
+        # ASSIGN rejecting (printed p.76 line 93's reason, "I/O REQ.
+        # INCOMP WITH MACH CONF."), returning without p.80 line 25's
+        # disposition bit, p.27 line 13 branching, XERROR finding the
+        # console in S YCOCH, GONG identifying it, and the chained
+        # write landing.  If any link breaks, these move.
+        #
+        # >>> 0x7C IS NOT A CHARACTER AT ALL, AND THAT IS AN OPEN
+        # QUESTION, NOT A TABLE GAP. <<<
+        #
+        # Word 11's separator reads 0x7C where word 18's, in the same
+        # position of the same message format, reads 0x74 = ".".
+        # The first guess was that charsets.py lacked an italic or
+        # zoned variant.  Reference Manual printed p.166's 89-set
+        # grid was then rendered and read, and column 0111 is:
+        #
+        #   row 0000  8     row 0100  .     row 1000  (blank)
+        #   row 0001  8it   row 0101  :      ...
+        #   row 0010  9     row 0110  -     row 1100  (blank)  <- 0x7C
+        #   row 0011  9it   row 0111  ?      ...
+        #
+        # **That cell is EMPTY.**  charsets.py is right; 0x7C is not
+        # a printable 89-set code, so MCP emitted a byte the console
+        # typewriter has no glyph for.  Either the model renders the
+        # error address wrongly, or MCP writes a byte the real
+        # typewriter ignores.  Both messages otherwise decode
+        # perfectly and both are transcribed listing text, so this is
+        # ONE BYTE in an otherwise exact match.
+        #
+        # Checked here as the raw word either way, so that whichever
+        # answer turns up, the change is visible.
+        ("mcp_console_err_w11", 11, 0xfd02606062686e62),  # <CR><RED>001471
+        ("mcp_console_err_w12", 12, 0x7c60003d49002d51),  # .0  IO AS
+        ("mcp_console_err_w13", 13, 0x513d394745354753),  # SIGNMENT
+        ("mcp_console_err_w14", 14, 0x5100312d47004749),  # S CAN NO
+        ("mcp_console_err_w15", 15, 0x53002f3500452d33),  # T BE MAD
+        ("mcp_console_err_w16", 16, 0x3500fe0000001800),  # E <EOM>
+        ("mcp_console_err_w17", 17, 0xfd02606060606060),  # <CR><RED>000000
+        ("mcp_console_err_w18", 18, 0x7460003d4900532d),  # .0  IO TA
+        ("mcp_console_err_w19", 19, 0x2f43355100312d47),  # BLES CAN
+        ("mcp_console_err_w20", 20, 0x00474953002f3500),  #  NOT BE
+        ("mcp_console_silent_after_the_report", 21, 0),
     ]
 
     # ---- THE OPERATOR'S CONSOLE SWITCHES -------------------------

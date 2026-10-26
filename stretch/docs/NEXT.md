@@ -65,18 +65,74 @@ message is at words 11-20, where nothing was looking.
 > of a console write. Neither was consulted for the other. That is
 > the strongest form of agreement this project gets.
 
-### One loose end, recorded not chased
+### One loose end -- and the first guess about it was wrong
 
-The address prints as `001471{7c}0` where `0x7c` is **not in the
-`IQS` table**, while the second message's separator is `0x74`, which
-IS `.`. Both should be the same character. The digits themselves
-decode cleanly on EVEN codes (`0x60`='0', `0x62`='1', `0x68`='4',
-`0x6E`='7'), which matches `charsets.py`'s note that the ten ITALIC
-digits occupy "column 0111, odd rows". So `0x7c` is probably an
-italic or zoned variant the table does not yet carry. **It does not
-affect the result** -- the text and the digits are unambiguous --
-but the table has a hole and printed p.166's grid is where to close
-it.
+The address prints as `001471{7c}0`, where `0x7c` is **not in the
+`IQS` table**, while word 18's separator in the same position of the
+same message format is `0x74`, which IS `.`.
+
+I guessed the table was missing an italic or zoned variant, and said
+so. **Then I rendered printed p.166 and read the 89-set grid.**
+Column `0111` is:
+
+```
+row 0000  8        row 0100  .        row 1000  (blank)
+row 0001  8italic  row 0101  :         ...
+row 0010  9        row 0110  -        row 1100  (blank)   <- 0x7C
+row 0011  9italic  row 0111  ?         ...
+```
+
+**That cell is EMPTY.** `charsets.py` is not missing an entry;
+`0x7c` is not a printable 89-set code at all. So MCP emitted a byte
+the console typewriter has no glyph for.
+
+**CHASED, AND THE MODEL IS FAITHFUL.** printed p.5 builds the
+address into the message by ARITHMETIC, not by formatting:
+
+```
+X1ERR  LF(BU,21,3), XERRAD, 1        -BREAK ADDRESS INTO EIGHT BIT BYTES
+       M+MG(BU,48,8), .8+.8($X2), 8  -FORM FULL WORD PORTION IN IQS
+       M+MG(BU,8,8), .8+.48+.8($X2)  -FORM HALF WORD PORTION
+```
+
+`LF(BU,21,3)` splits the address into **seven three-bit octal
+digits**, loaded at offset 1 so each is DOUBLED -- because the IQS
+digits are spaced two apart (`0x60`='0', `0x62`='1', `0x68`='4',
+`0x6E`='7'). `M+MG` then ADDS those doubled digits onto a template of
+`'0'` characters: six bytes, then one more.
+
+Three facts, each verified separately:
+
+* **The template is `000000.0`** -- six zeros, a period, one zero --
+  read at **1800 dpi** off printed p.12 line 40. The period is a
+  square dot, unmistakable against the round zeros. Its length is
+  independently confirmed by the listing's own addresses: the slot
+  runs `000506.20` to `000507.20`, exactly eight bytes.
+* **The second `M+MG` targets byte 8.** Its printed machine code is
+  `000001.00 82 010000.22 90`; `000001.00` is 64 bits, and the
+  message starts at byte 0, so 64 bits is byte 8 -- which in that
+  template is the PERIOD.
+* **The seventh octal digit is 4**, doubled to 8. `0x74 + 8 = 0x7C`.
+
+So `0x7C` is precisely what MCP's own instructions compute from its
+own template, and the model reproduces it exactly. **Nothing here is
+a model defect**, and the earlier guess that `charsets.py` was
+missing a glyph was wrong in the other direction too: p.166's grid
+shows that cell is empty because no character belongs there.
+
+> **What is left is a question about MCP, not about the model.** The
+> display is evidently meant to read `001471.4`, which would need the
+> seventh digit at byte 9. MCP puts it at byte 8. Either the shipped
+> system really did print a spurious glyph in its error address, or
+> something about `$X2`'s base is subtler than the three instructions
+> above suggest. Recorded, not resolved -- and the thirteen console
+> checks pin the exact bytes either way, so whichever answer turns
+> up, the change is visible.
+
+> **The lesson is small and repeats.** "The table has a hole" was a
+> guess about a tool; "the cell is blank" is a fact from the page.
+> They point in opposite directions -- one says fix the decoder, the
+> other says look at the byte.
 
 
 ## `console_nothing_after` CHECKS ONE WORD AND IS NAMED AS IF IT CHECKED THE REST -- 2026-10-26
