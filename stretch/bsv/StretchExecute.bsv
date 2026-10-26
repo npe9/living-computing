@@ -4604,11 +4604,35 @@ function ActionValue#(IoOutcome)
         endaction
       endfunction
 
-      if (kind == DevNone) begin
-        // Unit Not Ready Reject (p.112): none of this model's
-        // simulated devices is installed at this channel address.
-        // The instruction is never accepted; no control word
-        // anywhere is touched.
+      if (!channelInstalled(chAddr)) begin
+        // EXCHANGE CHECK REJECT (printed p.112 and the fuller
+        // statement in the indicator chapter): "an error was detected
+        // by the exchange in the course of testing and setting up the
+        // present instruction.  This reject may indicate equipment
+        // malfunction or ATTEMPTED SELECTION OF A CHANNEL WHICH IS
+        // NOT AVAILABLE TO THE PROGRAMMER.  The instruction is not
+        // executed, and the indicator is actuated before the computer
+        // proceeds to the next instruction."
+        //
+        // THE MANUAL DRAWS THE LINE THIS ARM USED TO MISS: an
+        // unavailable channel "is one that is NOT INSTALLED in the
+        // particular system.  It DOES NOT INCLUDE channels that are
+        // installed but are not operative because no units have been
+        // provided for them."  Both used to land on UNRJ below, under
+        // a comment reasoning from "none of this model's three
+        // devices is ever installed anywhere else" -- written when
+        // there were three, and there are now five.
+        //
+        // See channelInstalled in StretchIO.bsv for the range and its
+        // two sources.
+        ind = setBit(ind, ind_EKJ, 1);
+      end else if (kind == DevNone) begin
+        // Unit Not Ready Reject (p.112): the channel IS installed --
+        // so this is not an exchange check -- but no unit is provided
+        // for it, which leaves the unit-ready status bit zero.  "An
+        // instruction was given for a unit which was not ready to be
+        // operated ... The instruction is not executed."  No control
+        // word anywhere is touched.
         ind = setBit(ind, ind_UNRJ, 1);
       end else begin
         // Address Invalid (AD) for an out-of-range control-word

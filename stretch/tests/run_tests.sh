@@ -3246,6 +3246,37 @@ run "KF, Compare Field -- the bounded accumulator operand, p.65" ./run_program.s
 # has; LCV, the other, needs decimal mode and is still unbuilt
 # (docs/boot_plan.md A2).
 
+run "EKJ vs UNRJ -- no channel and no unit are different rejects" ./run_program.sh ../decks/io_exchange_reject.strap StretchIoRejectTb \
+    "PC=2070" \
+    "unrj_for_installed_channel_with_no_unit:1056=1" \
+    "ekj_not_raised_for_a_missing_unit:1057=0" \
+    "ekj_for_a_channel_below_the_exchange:1058=1" \
+    "ekj_for_a_channel_past_the_exchange:1059=1"
+# EXCHANGE CHECK REJECT, which was declared in StretchTypes.bsv and
+# raised nowhere.  The Reference Manual's rule is exact: "an
+# unavailable channel is one that is NOT INSTALLED in the particular
+# system.  It DOES NOT INCLUDE channels that are installed but are not
+# operative because no units have been provided for them.  The test
+# applies only to the 7-bit channel address portion of the left
+# effective address, bit positions 12 through 18."
+#
+# THE MODEL GAVE BOTH CASES UNRJ.  The comment doing it reasoned from
+# "none of this model's THREE devices is ever installed anywhere else"
+# -- true when it was written, and there are now five.  kindOf()
+# returns DevNone for a channel with no device AND for a channel that
+# does not exist; channelInstalled() in StretchIO.bsv is the half that
+# was missing.
+#
+# THE RANGE IS SOURCED TWICE.  printed p.104: "The exchange provides
+# up to 32 channels ... The minimum is eight ... in groups of eight up
+# to a total of 32."  And MCP from the other side: printed p.5 line 21
+# enters at channel octal 20 = 16 and line 23 takes 32 of them.  So
+# the basic exchange is 16-47, modelled full; channel 0 is the disk,
+# which hangs off the disk synchronizer instead.
+#
+# ORDER IN THE DECK IS LOAD-BEARING.  Indicators latch, so the
+# no-unit case must be read BEFORE any EKJ is raised -- test the
+# not-installed case first and the distinction becomes untestable.
 run "CV and LTRCV -- MCP's own time conversion, end to end" ./run_program.sh ../decks/vfl_convert.strap StretchVflConvertTb \
     "PC=2092" \
     "cv_mcp_hours_decimal:1093=0x12" \

@@ -1,0 +1,104 @@
+! EXCHANGE CHECK REJECT (EKJ) versus UNIT NOT READY REJECT (UNRJ),
+! and the distinction the Reference Manual draws between them.
+!
+! EKJ, from the indicator chapter, read at the ink:
+!
+!   "This indicator is turned on when an error is detected by the
+!   exchange in the course of testing and setting up the present
+!   instruction.  It can be caused by: ... 2. Specification of channel
+!   addresses that are not available to the programmer.  AN
+!   UNAVAILABLE CHANNEL IS ONE THAT IS NOT INSTALLED in the particular
+!   system.  IT DOES NOT INCLUDE CHANNELS THAT ARE INSTALLED BUT ARE
+!   NOT OPERATIVE BECAUSE NO UNITS HAVE BEEN PROVIDED FOR THEM.  The
+!   test applies only to the 7-bit channel address portion of the left
+!   effective address, BIT POSITIONS 12 THROUGH 18.  The remaining
+!   bits of the field are ignored."
+!
+! and printed p.112's shorter form: "This reject may indicate
+! equipment malfunction or attempted selection of a channel which is
+! not available to the programmer.  The instruction is not executed,
+! and the indicator is actuated before the computer proceeds to the
+! next instruction."
+!
+! UNRJ, same page: "An instruction was given for a unit which was not
+! ready to be operated.  The unit ready status bit is zero.  The
+! instruction is not executed."
+!
+! >>> SO "NO CHANNEL" AND "NO UNIT" ARE DIFFERENT REJECTS, and the
+! model used to give both of them UNRJ.  The comment that did it
+! reasoned from "none of this model's THREE devices is ever installed
+! anywhere else" -- written when there were three, and there are now
+! five.  `kindOf` returns DevNone for both cases and cannot tell them
+! apart; `channelInstalled` is the other half.
+!
+! THE INSTALLED RANGE IS SOURCED TWICE.  Reference Manual printed
+! p.104: "The exchange provides up to 32 channels ... The minimum is
+! eight.  This minimum can be augmented by additional channels in
+! groups of eight up to 24 additional, or a total of 32 channels."
+! And MCP agrees from the other side -- printed p.5 line 21 is
+! "LVI,$X1,(8)20.0  -ENTER FIRST CHANNEL OF BASIC EXCHANGE" and line
+! 23 "LCI,$X1,32.  -GET MAXIMUM SIZE OF BASIC EXCHANGE".  Channels 16
+! through 47, and channel 0 for the disk, which hangs off the disk
+! synchronizer rather than the exchange.
+!
+! A CHANNEL NUMBER IS WRITTEN HERE AS A BIT ADDRESS, because the
+! field is bits 12-18 of a 24-bit address: channel n is n<<5 bits.
+! Channel 20 is 10.0, channel 5 is 2.32, channel 48 is 24.0.  The
+! manual's "the remaining bits of the field are ignored" is why the
+! low five bits may be anything.
+!
+! WHAT EACH CHECK ESTABLISHES
+!   T1  channel 20 is INSTALLED (it is inside 16-47) and has no unit,
+!       so it rejects with UNRJ.
+!   T2  and NOT with EKJ -- this is the check that fails if the two
+!       cases are collapsed, and it must be read BEFORE any EKJ is
+!       raised, because indicators latch.
+!   T3  channel 5 is BELOW the exchange and not installed at all, so
+!       it raises EKJ.
+!   T4  channel 48 is one past the top of a full 32-channel exchange,
+!       the other edge of the same range.
+!
+! ONE INJECTION, MEASURED: the two rejects collapsed back together,
+! which is what the model did before -- `if (False && ...)` on the
+! EKJ arm, so every bad channel falls through to UNRJ.  T3 = 0 and
+! T4 = 0, and T1 and T2 DO NOT MOVE.
+!
+! T2 SURVIVING THAT INJECTION IS THE POINT.  It catches the OPPOSITE
+! error -- raising EKJ for a channel that is installed but unitless --
+! which no amount of under-raising can trigger.  The four checks
+! partition: T1 is the reject itself, T2 is over-raising, T3 and T4
+! are under-raising at the two edges of the installed range.
+!
+! ORDER MATTERS AND IS THE POINT.  T1 and T2 come first because once
+! EKJ is set it stays set; a deck that tested the not-installed case
+! first could not then show that the no-unit case leaves EKJ alone.
+
+        SLC, (8)2000.0
+
+! -- an INSTALLED channel with no unit: UNRJ, and NOT EKJ ---------
+START   CTL(SEOP), 10.0, 0.0         ! channel 20, inside the exchange
+        L(BU,1), $IND+.7, 0          ! UNRJ is indicator 7
+        ST(BU,64), T1, 0
+        L(BU,1), $IND+.6, 0          ! EKJ is indicator 6
+        ST(BU,64), T2, 0             ! must still be 0
+
+! -- a channel BELOW the exchange: EKJ ---------------------------
+        CTL(SEOP), 2.32, 0.0         ! channel 5
+        L(BU,1), $IND+.6, 0
+        ST(BU,64), T3, 0
+
+! -- and one PAST the top of it ----------------------------------
+        CTL(SEOP), 24.0, 0.0         ! channel 48
+        L(BU,1), $IND+.6, 0
+        ST(BU,64), T4, 0
+
+PASS    BEW, $
+
+        SLC, (8)2040.0
+
+T1      DD(BU,64,8), 0
+T2      DD(BU,64,8), 0
+T3      DD(BU,64,8), 0
+T4      DD(BU,64,8), 0
+
+        END, START

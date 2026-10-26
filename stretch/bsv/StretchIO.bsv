@@ -310,6 +310,46 @@ WordAddr chanDisk    = 0;
 // the printer and the tape.
 WordAddr chanConsole = 35;
 
+// WHICH CHANNELS THIS MACHINE HAS, as distinct from which have a
+// device.  The Reference Manual makes that exact distinction the
+// test for Exchange Check Reject:
+//
+//   "Specification of channel addresses that are not available to
+//   the programmer.  AN UNAVAILABLE CHANNEL IS ONE THAT IS NOT
+//   INSTALLED in the particular system.  IT DOES NOT INCLUDE
+//   CHANNELS THAT ARE INSTALLED BUT ARE NOT OPERATIVE BECAUSE NO
+//   UNITS HAVE BEEN PROVIDED FOR THEM.  The test applies only to the
+//   7-bit channel address portion of the left effective address,
+//   bit positions 12 through 18."
+//
+// So a channel with no unit is NOT an EKJ -- it is a Unit Not Ready
+// Reject, because the unit-ready status bit is zero.  `kindOf`
+// returns DevNone for BOTH cases and so cannot tell them apart;
+// this is the other half.
+//
+// THE RANGE IS SOURCED TWICE.  Reference Manual printed p.104: "The
+// exchange provides up to 32 channels ... The exchange can have
+// several combinations of channels.  The minimum is eight.  This
+// minimum can be augmented by additional channels in groups of eight
+// up to 24 additional, or a total of 32 channels."  And MCP agrees
+// from the other side -- printed p.5 line 21 is
+// "LVI,$X1,(8)20.0  -ENTER FIRST CHANNEL OF BASIC EXCHANGE" and line
+// 23 "LCI,$X1,32.  -GET MAXIMUM SIZE OF BASIC EXCHANGE", so the
+// basic exchange is channels 16 through 47.
+//
+// A FULL 32-CHANNEL EXCHANGE IS MODELLED, which is the configuration
+// MCP's own error routine assumes when it walks all 32 looking for a
+// console, and which the project's goal ("a typical Stretch") asks
+// for.  A machine with a PARTIAL exchange -- eight or sixteen
+// channels -- is legal per p.104 and would raise EKJ on the absent
+// groups; this predicate is where that would be expressed.
+//
+// Channel 0 is the DISK, which hangs off the disk synchronizer
+// rather than the basic exchange (printed p.230's bus priority lists
+// them separately), so it is installed independently of the range.
+function Bool channelInstalled(WordAddr ch) =
+  (ch >= 16 && ch <= 47) || (ch == chanDisk);
+
 // Which (if any) of this model's devices a channel address names. See
 // "DEVICE GENERALIZATION" above -- this is what every future device
 // should extend instead of adding another hardcoded predicate.
