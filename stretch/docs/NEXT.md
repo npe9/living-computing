@@ -51,11 +51,46 @@ byte counts -- would be high too. `(BU,64,8)` and `(B,64,1)` both
 compute eight bytes under the model and differ by 1.19 us on the
 page.
 
-**So something about the UNSIGNED path's byte count is wrong**, and
-printed p.3-10's `x` is where to look: "field length in unsigned
-operations - field length minus the byte size in signed operations".
-The signed half of that rule is evidently right. Recorded as a lead
-with the page cited; not guessed at.
+**So something about the UNSIGNED path looked wrong**, and printed
+p.3-10's `x` was the obvious suspect.
+
+### >>> AND CHASING IT FOUND A BETTER-FITTING RULE THAT IS WRONG. <<<
+
+Setting `x = field length - byte size` for BOTH signed and unsigned
+more than halves the error on p.110: **mean 0.281 -> 0.120 us, worst
+1.20 -> 0.60**. Five of the six decimal pairs measure IDENTICALLY on
+the page -- `(DU,16,4)` and `(D,16,4)` are both 7.84, and so on at
+32 and 48 -- while the model separates every pair by exactly one byte.
+
+**Then printed p.3-10 was rendered and read, and the transcription is
+exactly right**: "X -- Field length in unsigned operations - field
+length minus the byte size in signed operations". The model reads the
+manual correctly. The better-fitting rule contradicts it.
+
+**The gap is explained by terms the model OMITS, not by `x`.** Two
+things on those pages that the generic `1.8 + .6(x/y) + .6` does not
+have:
+
+* **Table 3's preamble**: "All equations were developed for UNSIGNED
+  operations. **Signed operations can be computed by adding .6
+  microseconds to the pre-execution time.** An additional .6
+  microseconds must be added if the result of the operation requires
+  complementing. The following operations require no additional time
+  when signed: SRD, C, CM, CT, CV, DCV, LCV (D-B), LTRCV (D-B),
+  LTRS, LFT."
+* **A per-instruction COMMENTS column.** `M+`'s row reads "Unlike
+  signs AB > CD, add .6(x/y + 1) to the execution time", and `M+1`'s
+  is different again. The model has one formula for every SAU
+  instruction.
+
+So the residual IS the omitted terms, and fitting `x` to absorb them
+would bake the error in where no source puts it.
+
+> **A BETTER FIT THAT CONTRADICTS THE SOURCE IS A WORSE MODEL.** The
+> alternative halves the error and is not adopted. What it actually
+> measures is how much of Table 3 is missing -- which is the useful
+> number, and the reason to write the omitted terms rather than
+> tune the one that is already right.
 
 ### And the sixteen-byte cap cannot bind for binary VFL
 
