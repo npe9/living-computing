@@ -3219,6 +3219,63 @@ run "KF, Compare Field -- the bounded accumulator operand, p.65" ./run_program.s
 # has; LCV, the other, needs decimal mode and is still unbuilt
 # (docs/boot_plan.md A2).
 
+run "/, VFL Divide -- quotient at the instruction's offset, remainder in RM" ./run_program.sh ../decks/vfl_divide.strap StretchVflDivideTb \
+    "PC=2124" \
+    "div_quotient:1098=16666" \
+    "div_remainder_as_mcp_reads_it:1099=40" \
+    "div_quotient_at_offset_0:1100=16666" \
+    "div_quotient_at_offset_40:1101=18324460788514816" \
+    "div_below_offset_cleared:1102=0" \
+    "div_immediate:1103=16666" \
+    "div_low48_zero_is_zero_divisor:1104=1000000" \
+    "div_low48_zero_sets_pf:1105=1" \
+    "div_low48_zero_sets_zd:1106=1" \
+    "div_zero_divisor_keeps_acc:1107=1000000" \
+    "div_zero_divisor_keeps_rm:1108=40" \
+    "div_quotient_sign_is_algebraic:1109=4266496" \
+    "div_rm_sign_is_the_dividend_s:1110=8" \
+    "div_divisor_crosses_word:1111=7"
+# VFL DIVIDE, opcode abc011101, the twelfth VFL integer arm and the
+# one printed p.24's time conversion stops on first, at 001213.00.
+#
+# THE OFFSET IS NOT A CONSTANT, WHICH IS THE WHOLE DIFFERENCE FROM
+# MULTIPLY.  `*` selects its accumulator operand by the offset and
+# deposits at a fixed 20; `/` selects its dividend by the offset and
+# puts the quotient BACK AT THAT OFFSET.  Injecting multiply's
+# constant here fails SIX checks.
+#
+# >>> AND THE CE MANUAL CARRIES A RULE THE REFERENCE MANUAL DOES NOT
+# HAVE AT ALL. <<<  R23-9694 printed p.121, under Zero Divisor: "If
+# the divisor contains over 48 bits, but the low-order 48 bits are
+# zero, both the PF and ZD indicators are turned on."  So the zero
+# test is on the TRUNCATED divisor: 2**48 is not zero and divides by
+# zero anyway.  div_low48_zero_* are that sentence, and moving the
+# test to the divisor as written fails two of them.
+#
+# THE TWO SIGNS GO TO DIFFERENT PLACES.  The accumulator sign byte
+# gets the QUOTIENT's sign; RM's four-bit sign byte gets the ORIGINAL
+# ACCUMULATOR's, because an integer remainder carries the dividend's
+# sign.  A negative dividend over a negative divisor gives a positive
+# quotient and a negative remainder, so the two disagree and the deck
+# can tell them apart -- div_rm_sign_is_the_dividend_s fails ALONE
+# when RM is given the quotient's sign.
+#
+# div_remainder_as_mcp_reads_it READS RM THE WAY MCP READS IT.
+# printed p.24 line 22 is "C0011(BU,6),$RM+.54" -- six bits at
+# position 54 -- and p.70 puts the remainder's low-order bit at
+# position 59, so 54-59 is exactly the low six bits and sixty seconds
+# needs exactly six.
+#
+# >>> A GUARDED DIVISION BY ZERO IS NOT GUARDED. <<<  This deck's
+# first run died with SIGFPE.  In BSV both arms of an `if` are
+# elaborated, so the divider runs whatever the guard decides, and
+# Bluesim's wide-integer path traps before any action in the rule
+# executes.  Below 65 bits it is worse: the CONDITION is miscompiled
+# and the else arm is taken.  tests/toolchain/ has the probe, the
+# controls that prove the `if` is sound, and the finding that both
+# bsc 2026.01 and 2026.07 do it.  The arm divides by
+# (dsr == 0) ? 1 : dsr -- which is also the faithful reading, since
+# p.70 says the division is NOT ATTEMPTED rather than discarded.
 run "*, VFL Multiply -- the product at the PAU's own offset 20" ./run_program.sh ../decks/vfl_multiply.strap StretchVflMultiplyTb \
     "PC=2100" \
     "mul_ibm_2_12_storage:1064=100" \

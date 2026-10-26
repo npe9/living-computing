@@ -18,9 +18,10 @@ nine checks, four measured injections. Eleven of twenty-four VFL
 integer operations now execute.
 
 **The find is not the arm, it is printed p.117 of `R23-9694`.** The
-Reference Manual states two unexplained constants for MULTIPLY --
-operands may not exceed 48 significant bits, and the product lands at
-offset 20 -- and the Customer Engineering manual says why both:
+Reference Manual states two constants for MULTIPLY with no reason
+beside them -- operands may not exceed 48 significant bits, and the
+product lands at offset 20 -- and the Customer Engineering manual
+says why both:
 
 > "The actual multiplication in this operation is performed by **PAU**.
 > This restricts the operands to 48 significant bits each. Similarly,
@@ -46,8 +47,21 @@ been a guess sitting in a comment.
 > **The lesson is about the corpus, not the opcode.** Two `R23-969x`
 > volumes had been sitting in `docs/` unread because they are "CE
 > manuals" and the Reference Manual is the normative source. They
-> are normative about mechanism, which is exactly what a model needs
-> and exactly what the programmer's manual omits.
+> are normative about MECHANISM -- "performed by PAU" -- which is
+> what decided the product's sign.
+>
+> **BUT THE CORRESPONDENCE WAS IN THE REFERENCE MANUAL ALL ALONG, and
+> this entry said otherwise for several hours.** Printed p.74, beside
+> Figure 19: the 48-bit field at offset 68 "corresponds to the
+> fraction field of a single-precision floating point number", the
+> 96-bit field at offset 20 to the double-precision one, and "this
+> 96-bit field also corresponds to the result field of a binary
+> integer MULTIPLY instruction". Written up in
+> `docs/vfl_arith_spec.md` under its own correction heading. The
+> claim "the Reference Manual never explains this" was made after
+> reading p.68 and p.70 and not the two pages between them -- which
+> is this file's own standing rule, broken in the same session that
+> re-quoted it.
 
 **A hole the deck nearly shipped with.** The first nine checks all
 used word-aligned or immediate operands, so the arm's crossing-field

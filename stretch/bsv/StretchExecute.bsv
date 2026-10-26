@@ -2747,6 +2747,161 @@ function ActionValue#(VflOutcome)
               ind = setResultIndicatorsF(ind, res);
             end
           end
+          6'b011101: begin // / (Divide)
+            // DIVIDE, Reference Manual printed p.70, and the binary
+            // operation is one long paragraph there:
+            //
+            //   "If a binary operation is specified, the ENTIRE
+            //   ACCUMULATOR CONTENTS TO THE LEFT OF THE OFFSET are
+            //   divided by the addressed storage field.  Accumulator
+            //   positions to the right of the offset are ignored.  At
+            //   the completion of the operation, the quotient is
+            //   placed in the CLEARED ACCUMULATOR AT THE SPECIFIED
+            //   OFFSET, and the remainder with sign is placed in the
+            //   REMAINDER REGISTER (RM).  Both dividend and divisor
+            //   are treated as integers, and only the integral part
+            //   of the quotient is developed.  The length of the
+            //   dividend to the left of the offset cannot exceed 96
+            //   significant bits, and the divisor cannot exceed 48
+            //   significant numeric bits.  THE SIGN OF THE QUOTIENT
+            //   REPLACES THE SIGN BIT IN THE ACCUMULATOR SIGN BYTE
+            //   REGISTER.  Bits 60-63 of RM form a four-bit remainder
+            //   sign byte with bit 60, the sign bit, SET TO THE
+            //   ORIGINAL ACCUMULATOR SIGN.  Bits 61-63 are set to
+            //   zero.  Bits 0-59 of RM are replaced by the integer
+            //   remainder with the LOW-ORDER REMAINDER BIT IN BIT
+            //   POSITION 59 of the remainder register."
+            //
+            // THE OFFSET IS NOT A CONSTANT HERE, WHICH IS THE WHOLE
+            // DIFFERENCE FROM MULTIPLY.  `*` selects its accumulator
+            // operand by the offset and then deposits at a fixed 20;
+            // `/` selects its dividend by the offset and deposits the
+            // quotient BACK AT THAT SAME OFFSET.  The CE manual
+            // R23-9694 printed p.121 states it twice over: "the
+            // rightmost bit of the quotient is always found at the
+            // offset specified in the instruction.  The bits to the
+            // right of the offset are zero."
+            //
+            // AND THE CE MANUAL ADDS A RULE THE REFERENCE MANUAL DOES
+            // NOT HAVE, printed p.121 under Zero Divisor: "If the
+            // divisor contains over 48 bits, but THE LOW-ORDER 48
+            // BITS ARE ZERO, both the PF and ZD indicators are turned
+            // on."  So the zero test is on the TRUNCATED divisor, not
+            // on the field as written -- a 49-bit divisor of 2**48
+            // divides by zero.  Testing the untruncated value would
+            // pass every obvious test and be wrong exactly there.
+            //
+            // THE TWO SIGNS GO TO DIFFERENT PLACES AND THAT IS NOT A
+            // TYPO.  The accumulator's sign byte receives the
+            // QUOTIENT's sign; RM's four-bit sign byte receives the
+            // ORIGINAL ACCUMULATOR's sign, because the remainder of
+            // an integer division carries the dividend's sign and the
+            // dividend came from the accumulator.  A reader who
+            // "fixes" these to agree breaks the remainder.
+            //
+            // "AS IN MULTIPLY, THIS OPERATION IS ACTUALLY PERFORMED
+            // BY PAU" (R23-9694 printed p.121), which is where the 96
+            // and the 48 come from, the same way they do for `*`:
+            // they are the double-precision and single-precision
+            // fraction lengths of the floating-point unit.  See
+            // docs/vfl_arith_spec.md.
+            //
+            // ARRIVED VIA MCP.  printed p.24 lines 21 and 24 are the
+            // time conversion, "/I(BU,6), 60, -60" twice -- divide
+            // the 26-bit time clock by sixty for seconds, then again
+            // for minutes -- and the OP locator put the model's first
+            // refusal of the whole boot at 001213.00, which is line
+            // 21.  The offset is -60, seven-bit two's complement 68,
+            // and line 19's "L(BU,26), $TC, -60" put the clock there.
+            //
+            // Same prefetch/bail-out shape as + and * above.
+            Bit#(64) raw = 0;
+            if (immediate) begin
+              raw = immediateOperand(vi.a.addr, len_);
+            end else begin
+              WordAddr w0 = baWord(ea);
+              Bit#(6) off = baBit(ea);
+              if (!fieldCrosses(ea, len_)) begin
+                if (prefetchCount >= 1) begin
+                  raw = extractFieldBits(prefetch[0], 0, off, len_);
+                  vflReadsUsed = 1;
+                end else
+                  needsRead = tagged Valid w0;
+              end else begin
+                if (prefetchCount >= 2) begin
+                  raw = extractFieldBits(prefetch[0], prefetch[1], off, len_);
+                  vflReadsUsed = 2;
+                end else if (prefetchCount == 1)
+                  needsRead = tagged Valid (w0 + 1);
+                else
+                  needsRead = tagged Valid w0;
+              end
+            end
+            if (!isValid(needsRead)) begin
+              SM128 opnd = fieldToSM(raw, len_, bsz, vi.m.unsign, vi.m.invert);
+              SM128 acc = readAcc(st);
+              // "the entire accumulator contents TO THE LEFT OF the
+              // offset ... positions to the right of the offset are
+              // ignored"
+              Bit#(128) dividend = acc.mag >> offSh;
+              // "more than 96 significant bits in the accumulator to
+              // the left of the offset, or ... the divisor exceeds 48
+              // significant bits.  In such a case, only the low-order
+              // 96 or 48 bits are used"
+              if ((dividend >> 96) != 0 || (opnd.mag >> 48) != 0)
+                ind = setBit(ind, ind_PF, 1);
+              Bit#(96) dvd = truncate(dividend);
+              Bit#(96) dsr = zeroExtend(opnd.mag[47:0]);
+              if (dsr == 0) begin
+                // "turned on if the binary divisor is zero.  THE
+                // DIVISION IS NOT ATTEMPTED, and both the accumulator
+                // and the remainder register remain unchanged."  So
+                // this arm writes nothing at all -- not the
+                // accumulator, not RM, and not the arithmetic result
+                // indicators, which printed p.70 says "describe the
+                // quotient" and there is no quotient.
+                ind = setBit(ind, ind_ZD, 1);
+              end else begin
+                // >>> THE DIVISOR MUST BE MADE SAFE EVEN THOUGH THIS
+                // ARM IS GUARDED, and Bluesim said so with a
+                // FLOATING POINT EXCEPTION on this deck's very first
+                // run. <<<  The `if (dsr == 0)` above is a MUX, not a
+                // branch: Bluespec evaluates both sides, so `dvd /
+                // dsr` is elaborated and executed whatever the guard
+                // decides, and the generated C++ traps on integer
+                // division by zero before the mux ever chooses.
+                //
+                // Dividing by one instead costs nothing -- the result
+                // is discarded on exactly the path where the guard
+                // was going to discard it -- and it keeps the zero
+                // divisor rule where the manual puts it, in the
+                // indicator logic rather than in the arithmetic.
+                Bit#(96) dsrSafe = (dsr == 0) ? 1 : dsr;
+                Bit#(96) q    = dvd / dsrSafe;
+                Bit#(96) rem_ = dvd % dsrSafe;
+                // "the quotient is placed in the cleared accumulator
+                // at the specified offset", and the quotient's sign
+                // "replaces the sign bit in the accumulator sign byte
+                // register".  writeAcc writes exactly that bit and
+                // keeps the byte's flags.
+                SM128 quot = SM128 { sign: acc.sign ^ opnd.sign,
+                                     mag: zeroExtend(q) << offSh };
+                writeAcc(st, quot);
+                // RM, to the bit.  IBM numbers from the left, this
+                // model's Bit#(64) from the right, so IBM bit k is
+                // BSV bit 63-k: the remainder's low-order bit at IBM
+                // 59 is BSV 4, and the sign bit at IBM 60 is BSV 3.
+                // The slice rem_[59:0] cannot lose anything -- a
+                // remainder is strictly less than its divisor and the
+                // divisor is at most 48 bits -- so sixty bits is
+                // twelve more than it can ever need.
+                Bit#(64) remBits = zeroExtend(rem_[59:0]);
+                Bit#(64) rmSign  = zeroExtend(acc.sign);
+                st.writeWord(addrRemainder, (remBits << 4) | (rmSign << 3));
+                ind = setResultIndicatorsF(ind, quot);
+              end
+            end
+          end
           6'b001001, 6'b101011, 6'b101001: begin // M+, M+1, M+MG
             // (Add One to Memory) -- prefetch/bail-out shape,
             // inlining readFieldWithHi/writeFieldWithHi's own logic
@@ -3101,7 +3256,23 @@ function ActionValue#(VflOutcome)
                 // the sign modifiers" (p.72).  Unsigned fields are
                 // positive before the negative modifier is applied,
                 // as in ADD (p.60).
-                Bit#(1) rawSign = !signed_ ? 0 : raw[bsz - 1];
+                // THE SIGN IS NOT AT THE TOP OF THE BYTE FOR THE
+                // WIDE BYTE SIZES.  Reference Manual printed p.36
+                // tabulates every byte size against its "POSITION IN
+                // SIGN BYTE REGISTER", and S is at position 4 in ALL
+                // EIGHT ROWS: size 4 is "S T U V" at positions 4-7,
+                // but size 8 is "Z Z Z Z S T U V" -- four ZONE bits
+                // first.  So within the field the sign is the
+                // leftmost NON-ZONE bit: bit (bsz-1) while bsz <= 4,
+                // and bit 3 from there on.  This read `raw[bsz - 1]`
+                // and so took a ZONE bit as the sign for byte sizes
+                // five through eight.
+                //
+                // NOTHING IN THE CORPUS EXERCISES IT -- every MCP
+                // `LCV` is unsigned, so no existing test could catch
+                // it, which is exactly why it is worth a deck.
+                Bit#(4) signIdx = (bsz > 4) ? 3 : (bsz - 1);
+                Bit#(1) rawSign = !signed_ ? 0 : raw[signIdx];
                 Bit#(1) sgn     = rawSign ^ vi.m.invert;
                 match {.cvVal, .cvDigits} = bcdToBinary(digitsRaw, numBits, bsz);
                 // "The accumulator is cleared and the converted field

@@ -246,7 +246,9 @@ offset:     115 ........................................  20
 Both numbers in the manual's "48 significant bits" and "offset 20"
 are therefore the SAME fact stated twice: 48 x 48 = 96, and 96 bits
 at offset 20 reach to offset 115, which is bit 12. The Reference
-Manual's two unexplained constants are one hardware constraint.
+Manual's two constants are one hardware constraint. (They are also
+stated outright on printed p.74 -- see the correction at the end of
+this file.)
 
 **This also decides the sign, which p.68 leaves unstated.** If the
 VFL multiply is the PAU's multiply, the PAU's own sign rule applies,
@@ -331,8 +333,9 @@ digits.
 VFL arithmetic and conversion set is one end of one of the PAU's two
 result fields**, which is what `R23-9694` printed p.117 says outright
 for `*` and printed p.121 repeats for `/`. The Reference Manual
-states four unexplained numbers; there are two, and they are the
-floating-point unit's.
+states four numbers that look arbitrary beside each operation;
+there are two, they are the floating-point unit's, and printed p.74
+says so -- see the correction at the end of this file.
 
 > And printed p.71's aside finally parses: "`DCV` is used instead of
 > `CV` because of the offset of 20." A multiply leaves a 96-bit
@@ -448,6 +451,48 @@ arranged after the fact.
 Building `/` alone moves the first refusal from `001213.00` to
 `001217.00` -- line 25, the `CV` -- because the second `/` at
 `001216.00` will then also run.
+
+---
+
+## >>> AND THE REFERENCE MANUAL EXPLAINS IT TOO, ON PRINTED p.74. <<<
+## A CORRECTION TO THIS FILE, 2026-10-25
+
+Everything above about the PAU is right, and the framing around it
+was wrong. This file said the Reference Manual "states four
+unexplained numbers" and that only the CE manual says why. **It does
+not.** Printed p.74, in the right-hand column beside Figure 19, two
+pages after the MULTIPLY section that leaves them bare:
+
+> "The fixed offsets used in the accumulator conversion operations
+> are designed to facilitate conversion between binary floating point
+> and decimal formats. Thus, the **48-bit binary field at offset 68**
+> used in CONVERT corresponds to the fraction field of a
+> **single-precision floating point number**; and the **96-bit binary
+> field at offset 20** used in CONVERT DOUBLE corresponds to the
+> fraction field of a **double-precision floating point number**.
+> This 96-bit field also corresponds to **the result field of a
+> binary integer MULTIPLY instruction**."
+
+That is the entire unification -- 68/48 single, 20/96 double, and
+multiply landing in the double field -- stated normatively, in the
+manual this project reads first.
+
+**What the CE manual actually adds** is the MECHANISM rather than the
+correspondence: "the actual multiplication in this operation is
+performed by PAU", which says these are not merely laid out to match
+the floating-point format but computed by the floating-point unit.
+That is still worth having, and it is still what decided the sign.
+But the constants were explained in the Reference Manual all along.
+
+> **THE LESSON IS THE ONE THIS PROJECT KEEPS PAYING FOR.** The claim
+> "the Reference Manual never explains this" was made after reading
+> the MULTIPLY section and the DIVIDE section and not the two pages
+> between them. `docs/NEXT.md` already carries the rule in capitals
+> -- **SWEEP THE BACK MATTER OF A MANUAL BEFORE DERIVING ANYTHING
+> FROM IT; a document you have CITED is not a document you have
+> READ** -- and it was broken within the same session that re-quoted
+> it. A negative claim about a source ("X does not say Y") is a claim
+> about every page of X, and costs a sweep to make honestly.
 
 ## What is still missing
 

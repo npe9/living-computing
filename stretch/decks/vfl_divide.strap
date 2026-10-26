@@ -1,0 +1,212 @@
+! DIVIDE (/), the VFL integer form, opcode abc011101.  Reference
+! Manual printed p.70 defines the binary operation in one paragraph:
+!
+!   "If a binary operation is specified, the ENTIRE ACCUMULATOR
+!   CONTENTS TO THE LEFT OF THE OFFSET are divided by the addressed
+!   storage field.  Accumulator positions to the right of the offset
+!   are ignored.  At the completion of the operation, the quotient is
+!   placed in the CLEARED ACCUMULATOR AT THE SPECIFIED OFFSET, and
+!   the remainder with sign is placed in the REMAINDER REGISTER (RM).
+!   Both dividend and divisor are treated as integers, and only the
+!   integral part of the quotient is developed.  The length of the
+!   dividend to the left of the offset cannot exceed 96 significant
+!   bits, and the divisor cannot exceed 48 significant numeric bits.
+!   THE SIGN OF THE QUOTIENT REPLACES THE SIGN BIT IN THE ACCUMULATOR
+!   SIGN BYTE REGISTER.  Bits 60-63 of RM form a four-bit remainder
+!   sign byte with bit 60, the sign bit, SET TO THE ORIGINAL
+!   ACCUMULATOR SIGN.  Bits 61-63 are set to zero.  Bits 0-59 of RM
+!   are replaced by the integer remainder with the LOW-ORDER
+!   REMAINDER BIT IN BIT POSITION 59 of the remainder register."
+!
+! THE OFFSET IS NOT A CONSTANT HERE AND THAT IS THE DIFFERENCE FROM
+! MULTIPLY, which is the sibling deck decks/vfl_multiply.strap.  `*`
+! selects its accumulator operand by the offset and then deposits the
+! product at a FIXED offset 20; `/` selects its dividend by the offset
+! and deposits the quotient BACK AT THAT SAME OFFSET.  R23-9694
+! printed p.121: "the rightmost bit of the quotient is always found at
+! the offset specified in the instruction.  The bits to the right of
+! the offset are zero."
+!
+! AND THE CE MANUAL CARRIES A RULE THE REFERENCE MANUAL DOES NOT,
+! printed p.121 under Zero Divisor: "If the divisor contains over 48
+! bits, but THE LOW-ORDER 48 BITS ARE ZERO, both the PF and ZD
+! indicators are turned on."  So the zero test is applied to the
+! TRUNCATED divisor.  A divisor of 2**48 -- which is not zero, and
+! which no reading of printed p.70 alone would make a zero divisor --
+! divides by zero.  T7, T8 and T9 are that sentence.
+!
+! THE CONSTANTS ARE MCP'S.  printed p.24 lines 19-22 are
+!
+!     L(BU,26), $TC, -60           -GET TIME
+!     LVI, $1, XVSTOR
+!     /I(BU,6), 60, -60
+!     C0011(BU,6), $RM+.54         -SECONDS IN RM IN BINARY
+!
+! -- read the 26-bit time clock, divide by sixty, and read the
+! seconds out of the LOW SIX BITS OF RM.  Sixty seconds needs exactly
+! six bits and the manual puts the remainder's low-order bit at
+! position 59, so bits 54-59 are exactly the seconds.  This deck reads
+! its remainder the same way, with the same "$RM+.54", because that
+! read is the one the operating system actually performs.
+!
+! WHAT EACH CHECK ESTABLISHES
+!   T1    the quotient.  1000000 divided by 60 is 16666.
+!   T2    the remainder, 40, read out of RM the way MCP reads it.
+!   T3    the quotient at offset 0, and
+!   T4    THE SAME DIVISION AT OFFSET 40, read back from offset 0 --
+!         16666 shifted left forty bits.  A model that deposited at a
+!         constant (multiply's offset 20, say) would put 16666 at
+!         offset 20 here and T4 would read 16666 shifted by twenty.
+!         T3 and T4 together are the whole "at the specified offset".
+!   T5    "the bits to the right of the offset are zero", and the
+!         accumulator cleared: twenty bits of ones are placed below
+!         the dividend where the offset shift discards them, and must
+!         be gone afterwards.
+!   T6    the IMMEDIATE form, which is the form MCP uses.
+!   T7    >>> THE CE MANUAL'S RULE <<<  A divisor of 2**48 has 49
+!         significant bits and its low 48 are zero, so the division
+!         is NOT ATTEMPTED and the accumulator still holds the
+!         dividend.  A model that tested the written divisor for zero
+!         would divide 1000000 by 2**48 and store 0 here.
+!   T8    and PF is on for it, and
+!   T9    so is ZD -- "both the PF and ZD indicators are turned on".
+!   T10   a plain zero divisor leaves the accumulator alone, and
+!   T11   leaves THE REMAINDER REGISTER alone too: RM still holds the
+!         40 from T2, which is what "both the accumulator and the
+!         remainder register remain unchanged" claims and what a
+!         model that cleared RM first would lose.
+!   T12   THE TWO SIGNS GO TO DIFFERENT PLACES.  A negative dividend
+!         divided by a negative divisor gives a POSITIVE quotient, so
+!         the accumulator sign byte must end up positive, while
+!   T13   RM's four-bit sign byte must hold the ORIGINAL ACCUMULATOR
+!         sign, which is negative -- bit 60 set, bits 61-63 zero, so
+!         the four bits read 8.  A model that wrote the quotient's
+!         sign into RM reads 0 here and passes T12.
+!   T14   a divisor that STRADDLES A WORD BOUNDARY, for the same
+!         reason decks/vfl_multiply.strap has one: every other divisor
+!         in this file is a word-aligned full word or an immediate, so
+!         the arm's two-slot prefetch read would otherwise be copied
+!         code that never ran.  Exchanging the slots reads a divisor
+!         of zero, which this arm declines to divide by, so the
+!         accumulator would still hold the dividend.
+!
+! FIVE INJECTIONS, MEASURED, all five run in ONE wall-clock in
+! private copies of bsv/ rather than one compile each:
+!
+!   the quotient deposited at a CONSTANT offset 20, as MULTIPLY does,
+!     instead of at the instruction's offset -- six checks fail and
+!     T1/T3/T4 separate: T1 = T3 = 0x411A00000 (the quotient twenty
+!     bits above where it is read), T4 = 0x411A00000 against
+!     0x411A0000000000, T6 = 0x411A00000, T12 = 0x411A0000000,
+!     T14 = 0x700000.  This is the whole difference from multiply.
+!   ZD tested on the divisor AS WRITTEN instead of on its low 48
+!     bits: T9 = 0 and T11 = 0.  THE CASCADE IS THE POINT -- with the
+!     test moved, 2**48 is no longer a zero divisor, so the division
+!     runs, the remainder register is overwritten, and T11 loses the
+!     40 it was holding.  T7 still passes by coincidence, because the
+!     quotient of 1000000 by the safe divisor is 1000000 again.
+!   RM's sign byte taking the QUOTIENT's sign instead of the
+!     DIVIDEND's: T13 = 0, alone.  That one line is why T13 exists.
+!   the remainder not shifted up past its four-bit sign byte:
+!     T2 = 2 and T11 = 2, which is 40 shifted four bits down.
+!   the two prefetch slots exchanged on the crossing-field read:
+!     T14 = 78815628 -- the dividend, untouched, because the swapped
+!     slots read a divisor of zero and this arm declines to divide by
+!     it.  Nothing else moves.
+!
+! EVERY CONSTANT IS A FULL WORD because consecutive DDs pack
+! contiguously -- see the sibling deck's header for the assembly that
+! proved it.  The offset counts from the accumulator's LOW-ORDER end.
+
+        SLC, (8)2000.0
+
+! -- the quotient and the remainder, read as MCP reads them ------
+START   L(BU,64), DVD, 0           ! 1000000
+        /(BU,64), DSR, 0           ! by 60
+        ST(BU,64), T1, 0           ! 16666
+        L(BU,6), $RM+.54, 0        ! the low six bits of RM
+        ST(BU,64), T2, 0           ! 40
+
+! -- the quotient goes to the INSTRUCTION'S offset ---------------
+        L(BU,64), DVD, 0
+        /(BU,64), DSR, 0           ! offset 0
+        ST(BU,64), T3, 0           ! 16666
+
+        L(BU,64), DVD, 40
+        /(BU,64), DSR, 40          ! offset 40
+        ST(BU,64), T4, 0           ! 16666 shifted left forty
+
+! -- and the accumulator below the offset is cleared -------------
+        L(BU,64), DVD, 40
+        +(BU,64), ONES, 0          ! junk below the dividend
+        /(BU,64), DSR, 40
+        ST(BU,20), T5+.44, 0       ! must be 0
+
+! -- the immediate form, which is MCP's ---------------------------
+        L(BU,64), DVD, 0
+        /I(BU,6), 60
+        ST(BU,64), T6, 0           ! 16666
+
+! -- a divisor whose low 48 bits are zero IS a zero divisor ------
+        L(BU,64), DVD, 0
+        /(BU,64), BIG49, 0         ! 2**48: not zero, low 48 are
+        ST(BU,64), T7, 0           ! unchanged: still 1000000
+        L(BU,1), $IND+.23, 0
+        ST(BU,64), T8, 0           ! PF
+        L(BU,1), $IND+.24, 0
+        ST(BU,64), T9, 0           ! ZD
+
+! -- and a plain zero divisor changes neither accumulator nor RM --
+        L(BU,64), DVD, 0
+        /(BU,64), ZERO, 0
+        ST(BU,64), T10, 0          ! still 1000000
+        L(BU,6), $RM+.54, 0
+        ST(BU,64), T11, 0          ! RM still holds T2's 40
+
+! -- the quotient's sign and the remainder's sign differ ---------
+        L(B,64,8), NEGDVD, 0       ! -1000000
+        /(B,64,8), NEGDSR, 0       ! by -60: quotient is POSITIVE
+        ST(B,64,8), T12, 0         ! (16666<<8), sign bit clear
+        L(BU,4), $RM+.60, 0        ! RM's four-bit sign byte
+        ST(BU,64), T13, 0          ! 8: the ORIGINAL accumulator sign
+
+! -- a divisor that crosses a word boundary ----------------------
+        L(BU,64), CDVD, 0          ! 0xABCDEF times seven, plus three
+        /(BU,24), CROSS+.56, 0     ! 0xABCDEF across the seam
+        ST(BU,64), T14, 0          ! 7
+
+PASS    BEW, $
+
+! Data, word-aligned: BEW is a half word, so without this every 64-bit
+! field below would straddle two words and be refused.
+        SLC, (8)2100.0
+
+DVD     DD(BU,64,8), 1000000
+DSR     DD(BU,64,8), 60
+ZERO    DD(BU,64,8), 0
+BIG49   DD(BU,64,8), 281474976710656   ! 2**48: 49 bits, low 48 zero
+ONES    DD(BU,64,8), (16)FFFFF
+! A signed field with byte size 8 is (magnitude << 8) | (sign << 7),
+! which is how decks/plus_mg.strap writes its negative constant.
+NEGDVD  DD(BU,64,8), 256000128         ! -(1000000)
+NEGDSR  DD(BU,64,8), 15488             ! -(60)
+CDVD    DD(BU,64,8), 78815628        ! 0xABCDEF * 7 + 3
+CROSS   DD(BU,64,8), (16)AB
+CROSS2  DD(BU,64,8), (16)CDEF000000000000
+
+T1      DD(BU,64,8), 0
+T2      DD(BU,64,8), 0
+T3      DD(BU,64,8), 0
+T4      DD(BU,64,8), 0
+T5      DD(BU,64,8), 0
+T6      DD(BU,64,8), 0
+T7      DD(BU,64,8), 0
+T8      DD(BU,64,8), 0
+T9      DD(BU,64,8), 0
+T10     DD(BU,64,8), 0
+T11     DD(BU,64,8), 0
+T12     DD(BU,64,8), 0
+T13     DD(BU,64,8), 0
+T14     DD(BU,64,8), 0
+
+        END, START
