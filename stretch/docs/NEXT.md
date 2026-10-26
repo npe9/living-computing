@@ -20,6 +20,59 @@ accumulate.
 
 
 
+
+## THE `VflInt` TIMING ERROR IS STRUCTURED, NOT NOISE -- 2026-10-26
+
+After the connective arm was fixed against Vol. 2 PDF 140, the same
+method was turned on the VFL arithmetic arm using **Vol. 2 PDF 117,
+printed p.110, the `M+` page** (NO INDEXING / EXTERNL OPERAND).
+Rendered and read; 24 rows.
+
+**The existing formula reproduces its claimed accuracy exactly**:
+mean |error| 0.28 us, which is what `StretchTiming.bsv`'s comment
+has said since the x/y correction landed. That validation holds.
+
+**But the residual is not scatter.** Splitting by sign modifier:
+
+```
+signed   (B,  D )   -0.04 .. +0.00   near-exact at EVERY length
+unsigned (BU, DU)   +0.27 +0.56 +0.58 +1.19   growing with bytes
+```
+
+Every signed row lands on the measurement. Every unsigned row is
+HIGH, and the gap widens with the byte count -- `(BU,64,8)` is
++1.19 us, `(DU,64,4)` +1.20. Two rows at one byte are -0.03 either
+way, so the error starts at zero and accumulates.
+
+**What that rules out.** It is not the SAU constant: that would be a
+uniform offset, as the connectives' 2.40 us was. It is not missing
+look-ahead overlap either, or the signed rows -- same lengths, same
+byte counts -- would be high too. `(BU,64,8)` and `(B,64,1)` both
+compute eight bytes under the model and differ by 1.19 us on the
+page.
+
+**So something about the UNSIGNED path's byte count is wrong**, and
+printed p.3-10's `x` is where to look: "field length in unsigned
+operations - field length minus the byte size in signed operations".
+The signed half of that rule is evidently right. Recorded as a lead
+with the page cited; not guessed at.
+
+### And the sixteen-byte cap cannot bind for binary VFL
+
+The cap found on the connective page was checked here too. **It is
+unreachable in binary**, and the reason is in the formula: `y` is 8
+for binary operations whatever byte size is declared, so
+`bytes = ceil(x/8)` is at most 8 for a 64-bit field. The cap is
+reachable only for DECIMAL with a small byte size, and the largest
+decimal row on p.110 is `(DU,64,4)` at exactly 16.
+
+**So not adding the cap to the `VflInt` arm is a decision, not an
+oversight** -- and deliberately not made by analogy with the
+connectives, because the one thing the two classes were measured to
+DISAGREE about is the constant. Two measurements, two answers; an
+analogy would have discarded that.
+
+
 ## `eboxClocks` IS FIXED, AND THE MCP BOOT CANNOT SEE IT -- 2026-10-26
 
 `bsv/StretchTiming.bsv` now gives each floating-point instruction
