@@ -14,6 +14,78 @@ accumulate.
 
 
 
+
+## THE NEXT MCP BLOCKER IS **ASSIGN**, AND THE HALT WAS NEVER THE TAPE CHANNELS -- 2026-10-26
+
+With `*`, `/`, `CV` and `LTRCV` built the boot refuses nothing, and it
+still halts at `000167.40` -- `BD,$`, a deliberate stop at the end of
+`X6ERR`. The standing plan said: if the halt does not move, add tape
+units. **Do not.** The evidence says the channel exhaustion is not the
+failure.
+
+### `X6ERR` IS THE ERROR REPORTER, NOT THE ERROR
+
+Printed p.5 lines 21-54 are a scan: enter the first channel of the
+basic exchange, take 32 of them, issue a **deliberately invalid**
+control code (`CTL(SEOP), 0.0($X1), 0.0`) to find which channels
+answer at all, test each for a tape, then for a console, and type the
+error address on the first console that answers. `X6ERR` is where the
+scan gives up. **MCP is already in its error path when it gets
+there** -- finding no console to complain to is the last thing that
+goes wrong, not the first.
+
+So "EXHAUSTED ALL CHANNELS" has been a red herring for as long as it
+has been on this list. The fixture's single tape channel may still be
+worth more units one day; it is not what stops the boot.
+
+### WHERE THE ERROR ACTUALLY IS, AND HOW THE ADDRESS PROVES IT
+
+`X ERR AD` reads `0x00CE600000000000`; its top 24 bits are a bit
+address, `52832` = word 825 = **001471.40**. Printed p.27:
+
+```
+line 11           LX, $0, X242      -INITIALIZE $IND
+line 12  X ERR 24 SIC, X ERR AD                  <- 001470.40
+line 13           BZXCZ, X ERROR    -IF ASSIGNMENT ERROR   <- 001471.00
+line 14           B, X25                                   <- 001471.40
+```
+
+At first reading the recorded address looked one half-word too high
+and so looked like a model bug. It is not, and the Reference Manual's
+**Store Instruction Counter If** says why:
+
+> "This instruction may always be **prefixed to one of the half-word
+> branching instructions**. It is executed **if and only if the
+> associated branching is successful**. ... The stored instruction
+> counter contents always address the instruction whose location is
+> next higher in storage than that of the **BRANCH** instruction to
+> which STORE INSTRUCTION COUNTER IF is prefixed."
+
+`SIC` at `001470.40` is a PREFIX to the branch at `001471.00`. It
+runs only when that branch is taken, and it stores the half-word
+after the BRANCH, which is `001471.40`. Observed exactly.
+
+> **So the recorded address is not merely consistent -- it is proof
+> the branch was taken.** A `SIC` that did not execute would have
+> left `X ERR AD` holding an older value. MCP's **ASSIGN** routine
+> reported an assignment error, and everything after that is MCP
+> trying to tell somebody.
+
+### What to do next
+
+**Find out why ASSIGN fails.** It is printed pp.65-80 and every page
+of it is transcribed. Note that its multiply at `004227.40` is NEVER
+REACHED (the refusal census never saw it), so ASSIGN gives up
+*before* p.72 line 19 -- which is also why building `*` changed
+nothing.
+
+The method that worked twice today is the one to use: a targeted
+`$display` probe on the write that matters, run the boot, read the
+sequence. The XLRIN probe settled the switch-word question in one
+run and cost ten minutes. Probe what sets the condition `BZXCZ`
+tests, and work backwards from there.
+
+
 ## THE TIMING TABLES ARE TRANSCRIBED, AND StretchTiming.bsv HAS A REAL BUG -- 2026-10-25
 
 `docs/spec_timing.md` has Performance Characteristics Tables 2-10
