@@ -1,0 +1,9 @@
+# OCR WORKING DIRECTORIES, which ocr_pdf.sh and ocr_listing.sh create
+# with mktemp-style names and remove when they finish.  A run that is
+# still in flight when someone stages the tree leaves its page images
+# behind in the commit -- b21ba39 picked up one 255th-page PNG that
+# way.  They are intermediates of a generator that ships beside them;
+# nothing here should ever be tracked.
+w.*/
+L.*/
+*.png

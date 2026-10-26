@@ -1,0 +1,114 @@
+! CONNECT (C0011) SAU timing microbenchmark, in the style of
+! decks/ibox_timing_cb.strap.
+!
+! >>> SYNTAX NOT VERIFIED: this deck was written in this session from the
+! >>> patterns in decks/connective_byte_size.strap and was NOT run through the
+! >>> assembler or the model.  The CYCLES<= numbers below are arithmetic from
+! >>> the manual, not measurements.  Assemble it before trusting either. <<<
+!
+! THIS IS A CONSTRUCTED DECK, NOT A TRANSCRIPTION.  No benchmark printed in
+! Performance Characteristics volume 2 is runnable on this model (see
+! spec_timing.md section 3.3).  It instead reproduces, in miniature, what
+! volume 2's atlas actually measures: the per-instruction throughput of a
+! straight-line sequence of one VFL instruction.
+!
+! THE PAGE IT IS AGAINST
+!
+!   Vol. 2 printed p.133 (PDF 140), "VFL INSTRUCTION C(0011)   NO FORWARDING
+!   DIRECT ADDRESSING   OFFSET 0   INSTRUCTION AT FULL WORD ADDRESS",
+!   column "NO INDEXING / EXTERNL OPERAND".
+!
+!   That page is the best regression target in either volume, because it is
+!   the one that varies the BYTE SIZE at fixed field length and so pins the
+!   SAU's byte count instead of merely being consistent with it.  Its
+!   thirty-five rows obey one law to within 0.01 us:
+!
+!            t  =  3.6  +  0.6 * ceil(field length / byte size)   us
+!
+!   -- exactly, on 34 of 35 rows.  (The 35th, (BU,32,1), needs 32 bytes and
+!   is capped; see "THE CAP" below.)  Spot checks, all read off the render:
+!       (BU, 8,8)  1 byte    3.6 + 0.6  =  4.20   page:  4.20
+!       (BU,16,8)  2 bytes   3.6 + 1.2  =  4.80   page:  4.80
+!       (BU, 8,3)  3 bytes   3.6 + 1.8  =  5.40   page:  5.40
+!       (BU,32,8)  4 bytes   3.6 + 2.4  =  6.00   page:  6.00
+!       (BU,48,8)  6 bytes   3.6 + 3.6  =  7.20   page:  7.20
+!       (BU,64,8)  8 bytes   3.6 + 4.8  =  8.40   page:  8.40
+!       (BU,64,5) 13 bytes   3.6 + 7.8  = 11.40   page: 11.40
+!       (BU,64,4) 16 bytes   3.6 + 9.6  = 13.20   page: 13.20
+!
+!   The 3.6 is the VFL decoding minimum of Vol. 1 printed p.3-18 (PDF 36),
+!   "The minimum time is 3.6 microseconds which includes the loading of two
+!   LA levels".  The 0.6-per-byte is Table 3's execution term .6(x/y)
+!   (printed p.3-7, PDF 25; the connectives C, CM, CT are printed in Table 3
+!   on printed p.3-8, PDF 26).  WHAT IS NOT THERE is Table 3's 1.8 us of
+!   pre-execution and 0.6 us of termination: on a straight-line sequence the
+!   real machine overlaps all 2.4 us of it with the previous instruction.
+!
+! WHAT THE MODEL PRODUCES TODAY, AND THE ONE NUMBER THIS DECK WATCHES
+!
+!   StretchTiming.bsv charges 2*(6) + (8 + 2*bytes) clocks, i.e.
+!   3.6 + 1.8 + 0.6*bytes + 0.6 us -- the law above PLUS 2.40 us.  It is
+!   therefore exactly 8 clocks per connective too slow, on every row, today.
+!
+!   THAT IS THE POINT.  The model's BYTE COUNT is right: ceil(field length /
+!   DECLARED byte size), confirmed against all 34 rows, and independently
+!   confirmed by Reference Manual printed p.75 ("the byte size specified in
+!   the instruction designates the number of bits used to represent each
+!   character ... the field is processed in eight-bit bytes starting with the
+!   offset"), which decks/connective_byte_size.strap already quotes.  Only
+!   the constant is wrong, and it is wrong for a reason stage 3 is meant to
+!   fix: preparation is not yet overlapped with execution.
+!
+! THE CAP (inferred, not stated)
+!
+!   Page 133 omits every combination needing more than 16 bytes -- there is
+!   no (BU,48,1), (BU,48,2), (BU,64,1), (BU,64,2) or (BU,64,3) -- and the one
+!   printed row that would need more, (BU,32,1) at 32 bytes, is measured at
+!   13.20 us, identical to the 16-byte rows.  Sixteen is the width of the
+!   SAU's first byte-extraction switch matrix (Buchholz fig.14.6).  The model
+!   does not cap and is 12.00 us too slow on (BU,32,1).  This deck deliberately
+!   stays at or below 16 bytes so that it tests the law and not the cap.
+!
+! BUDGET  (one clock = 0.3 us, Vol. 1 printed p.3-2, PDF 20)
+!
+!   LCI   2.4 + dec 0.6 = 3.0 us = 10 clocks   (table 5, PDF 29; dec = 0.6 us
+!                                               is printed p.3-18, PDF 36)
+!   loop body, eight connectives of 1,2,3,4,6,8,13,16 bytes:
+!       model today  6.6+7.2+7.8+8.4+9.6+10.8+13.8+15.6 = 79.8 us = 266 clocks
+!       page 133     4.2+4.8+5.4+6.0+7.2+ 8.4+11.4+13.2 = 60.6 us = 202 clocks
+!       difference                        19.2 us = 8 * 2.40 = 64 clocks
+!   CB    successful 4.2 + 0.6 = 16 clocks, unsuccessful 3.6 + 0.6 = 14
+!                                               (table 8, PDF 32)
+!   Ten taken branches, then the fall-through:
+!       today   10 + 10*(266+16) + 266 + 14 = 3110 clocks
+!       target  10 + 10*(202+16) + 202 + 14 = 2406 clocks
+!   plus the first instruction fetch and the halt's own preparation.
+!
+!   Suggested bound now:            CYCLES<= 3200
+!   Suggested bound after stage 3:  CYCLES<= 2450
+!
+!   A model that overlaps preparation with execution closes 64 clocks per
+!   iteration here, and closes them on all eight byte counts at once -- which
+!   is why this is a law and not a coincidence.
+
+        SLC, (8)2000.0
+START   LCI, $1, 11         ! count 11: ten taken branches, then fall through
+LOOP    C0011(BU,8,8),  SRC, 0      !  1 byte   page 4.20   model 6.60
+        C0011(BU,16,8), SRC, 0      !  2 bytes  page 4.80   model 7.20
+        C0011(BU,8,3),  SRC, 0      !  3 bytes  page 5.40   model 7.80
+        C0011(BU,32,8), SRC, 0      !  4 bytes  page 6.00   model 8.40
+        C0011(BU,48,8), SRC, 0      !  6 bytes  page 7.20   model 9.60
+        C0011(BU,64,8), SRC, 0      !  8 bytes  page 8.40   model 10.80
+        C0011(BU,64,5), SRC, 0      ! 13 bytes  page 11.40  model 13.80
+        C0011(BU,64,4), SRC, 0      ! 16 bytes  page 13.20  model 15.60
+        CB, $1, LOOP        ! branch back while count != 0
+DONE    BEW, $              ! halt
+
+        SLC, (8)4000.0
+! C0011 is a + not-b: the accumulator keeps whatever it holds where the
+! storage operand's bits are zero.  The data does not affect the timing --
+! Table 3 gives the connectives no data-dependent term and no unlike-sign
+! comment -- so an all-ones operand is chosen only to make a wrong answer
+! visible if this deck is ever given a correctness check as well.
+SRC     DD(BU,64,8), (8)1777777777777777777777
+        END, START

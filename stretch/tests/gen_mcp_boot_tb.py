@@ -520,9 +520,49 @@ def main():
         # filled exactly the two fields p.29 names.  A model that
         # returned the card reader's image instead would have to
         # produce this by accident.
+        # >>> AND THE TIME FIELD IS NO LONGER ALL BLANK, 2026-10-25,
+        # BECAUSE MCP NOW COMPUTES THE TIME. <<<
+        #
+        # This expected every one of the twelve digits to be a BCD
+        # zero, and that was right for a machine that REFUSED printed
+        # p.24's time conversion: `/`, `CV` and `LTRCV` were
+        # unimplemented, line 30's "ST(BU,24),XLRIN" never ran, every
+        # position stayed blank, and the fill routine wrote 0xA into
+        # all twelve.
+        #
+        # With the three operations built, a probe on word 540
+        # (octal 1034, the address the listing itself prints as
+        # ST(BU,24),XLRIN's operand) shows fifteen writes, and they
+        # tell the whole story:
+        #
+        #    4: 0000010000000000   <- ONE 24-bit store: 0x000001
+        #    5: a000010000000000   }
+        #    6: aa00010000000000   }  the blank-fill, ONE NIBBLE AT
+        #    7: aaa0010000000000   }  A TIME, SKIPPING position 5
+        #    8: aaaa010000000000   }  because it is no longer blank
+        #    9: aaaaa10000000000   }
+        #   10-15: ...aaaaaa00        the date field, same routine
+        #
+        # Write 4 is the conversion depositing 00:00:01.  The fill
+        # then replaces only the BLANK digits, which is why five
+        # zeros read 0xA and the seconds' units digit reads 1.
+        # decks/vfl_convert.strap confirms the arithmetic
+        # independently: the same eleven instructions on a clock of 1
+        # produce 0x000001, and on 45296 produce 0x123456.
+        #
+        # >>> THIS CHECK IS NOW TIMING-SENSITIVE, AND THAT IS A REAL
+        # COST. <<<  The last digit is the SECONDS READ OFF THE
+        # MODEL'S OWN TIME CLOCK during the boot, so anything that
+        # changes how much simulated time the boot takes -- the
+        # interval timer, the look-ahead of stage 3, a different step
+        # cap -- will change it.  If this check fails after a TIMING
+        # change, read the digit before assuming a regression: a
+        # value of the shape 0xaaaaaN00aaaaaa00 is this same success
+        # with a different clock.  The date field staying all-blank
+        # is the part that must not move.
         ("mcp_switch_words_became_bcd_zero",
          str(ipl_hw("XLRIN") // 2),
-         sum(0xA << (60 - 4 * i) for i in range(6))      # keys 0-23, time
+         (sum(0xA << (60 - 4 * i) for i in range(5)) | (0x1 << 40))
          | sum(0xA << (28 - 4 * i) for i in range(6))),  # keys 32-55, date
 
         # >>> AND MCP WROTE THE CONSOLE'S CHANNEL INTO ITS
@@ -931,7 +971,20 @@ def main():
         #                                  way.  docs/NEXT.md has the
         #                                  whole chain.
         ("mcp_indicators_word11", str(IND_WORD),
-         _ind("AH") | _ind("OP") | _ind("RGZ") | _ind("XE")
+         # >>> AND "OP" IS OUT OF THIS WORD FOR GOOD, 2026-10-25. <<<
+         # Operation Code Invalid was in this expectation because
+         # printed p.24's time conversion used five operations the
+         # model did not have -- two `/`, a `CV` and two `LTRCV` --
+         # and every one of them set it.  All five are built, and the
+         # boot now reports "OP TRAIL: operation invalid never set".
+         # MCP'S BOOTSTRAP EXECUTES WITH NOTHING REFUSED.
+         #
+         # If OP ever comes back, something REGRESSED or MCP reached
+         # code it had never reached before; either way the OP
+         # locator in StretchExecute.bsv prints the half-word address
+         # of the instruction that set it, and that address is the
+         # first thing to look at.
+         _ind("AH") | _ind("RGZ") | _ind("XE")
          | _ind("XVGZ")),
 
         # >>> THE MOVE ITSELF, AND IT IS THE POINT OF THE FIXTURE <<<

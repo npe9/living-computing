@@ -3219,6 +3219,58 @@ run "KF, Compare Field -- the bounded accumulator operand, p.65" ./run_program.s
 # has; LCV, the other, needs decimal mode and is still unbuilt
 # (docs/boot_plan.md A2).
 
+run "CV and LTRCV -- MCP's own time conversion, end to end" ./run_program.sh ../decks/vfl_convert.strap StretchVflConvertTb \
+    "PC=2092" \
+    "cv_mcp_hours_decimal:1093=0x12" \
+    "cv_mcp_time_hhmmss:1092=0x123456" \
+    "cv_reads_at_implied_68:1094=0x90" \
+    "ltrcv_leaves_accumulator:1095=90" \
+    "ltrcv_ignores_its_offset:1096=0x07"
+# RADIX CONVERSION.  CV is opcode abc011011 and LTRCV abc100011; LCV
+# gained the binary-to-decimal direction it had always refused, and
+# StretchALU.bsv gained binaryToBcd.  Fourteen of twenty-four VFL
+# integer operations now execute.
+#
+# >>> THE ORACLE IS MCP'S OWN PROGRAM. <<<  cv_mcp_time_hhmmss runs
+# printed p.24 lines 19-30 unmodified -- two divides, a CV, two
+# LTRCVs and three connectives -- on a 26-bit clock of 45296, and
+# requires 0x123456.  That is 12:34:56 as six BCD digits.  EVERY
+# COMPONENT IS ABOVE NINE ON PURPOSE: a model that moved the BINARY
+# values into the same positions produces 0x0C2238, differing in all
+# three digit pairs, and the injection that makes binaryToBcd divide
+# by sixteen produces exactly that shape (0xC2E3A).
+#
+# AND IT PROVES THE CLEARING SEMANTICS VIA A LINE THAT LOOKS
+# REDUNDANT.  p.24 line 23 saves the binary seconds to memory one
+# instruction after computing them -- why save what is in the
+# accumulator?  Because line 25's CV loads into the CLEARED
+# accumulator and they do not survive it; line 28 reads them back.
+# A model that did not clear would run MCP's program correctly and
+# still be wrong.
+#
+# cv_reads_at_implied_68 IS THE ONE CHECK MCP CANNOT MAKE.  Reference
+# Manual printed p.73: the binary operand "is obtained at an IMPLIED
+# OFFSET OF 68 and its length is 48 numeric bits".  A decoy is placed
+# at the RESULT offset; reading the operand there instead returns the
+# decoy, and ORing instead of clearing returns answer-or-decoy.
+#
+# printed p.74 says why 68: "the 48-bit binary field at offset 68
+# used in CONVERT corresponds to the fraction field of a
+# single-precision floating point number", and the 96-bit field at
+# offset 20 to the double-precision one -- "this 96-bit field also
+# corresponds to the result field of a binary integer MULTIPLY".
+# Every implied offset in the VFL set is one end of one of the PAU's
+# two fraction fields.
+#
+# ltrcv_leaves_accumulator and ltrcv_ignores_its_offset are the two
+# sentences printed p.73 puts in capitals: "THE ACCUMULATOR IS NOT
+# ALTERED BY THIS OPERATION, AND THE OFFSET FIELD OF THE INSTRUCTION
+# IS IGNORED."  Nothing else in the deck would notice either.
+#
+# >>> AND MCP'S BOOTSTRAP NOW REFUSES NOTHING. <<<  With these three
+# operations built, StretchMcpBootTb reports "OP TRAIL: operation
+# invalid never set" for the first time.  The five p.24 refusals that
+# docs/NEXT.md has been tracking since October are gone.
 run "/, VFL Divide -- quotient at the instruction's offset, remainder in RM" ./run_program.sh ../decks/vfl_divide.strap StretchVflDivideTb \
     "PC=2124" \
     "div_quotient:1098=16666" \

@@ -11,6 +11,227 @@ When an item here is finished it shrinks to a pointer; it does not
 accumulate.
 
 
+
+
+
+## THE TIMING TABLES ARE TRANSCRIBED, AND StretchTiming.bsv HAS A REAL BUG -- 2026-10-25
+
+`docs/spec_timing.md` has Performance Characteristics Tables 2-10
+transcribed from 42 rendered pages, with every column heading
+verbatim. `tests/perf_char_timing.py` is the importable, self-testing
+form. Two decks assemble: `decks/vfl_connective_sau_timing.strap` and
+`decks/vfl_mplus_sau_timing.strap`. **Neither is registered in the
+suite**, deliberately -- see the 2.40 us below.
+
+### >>> eboxClocks GIVES EVERY FLOATING-POINT INSTRUCTION THE SAME TIME. <<< Verified.
+
+`bsv/StretchTiming.bsv:109`:
+
+```bluespec
+tagged Fp .*: return 3;          // preparation; E-box cycles added below
+```
+
+**There is no below.** Line 159 is
+`2 * iboxCycles(d, taken) + eboxClocks(d)` and that is the whole
+budget. The comment is copy-pasted from `iboxCycles`, where the
+promise is kept. Table 2 gives distinct E-box cycle counts -- `*` is
+**9**, `+` 5, `E+` 6, `*+` 20, `SRT` **108** -- so a floating-point
+multiply and a floating-point load currently cost the same. Table
+10's A0 column spends 220 multiplies and 88 divides out of 1364
+floating-point operations, so this is not a corner.
+
+A flat 3 is correct only for the `L`/`LWF`/`LFT`/`ST` class.
+
+### The connective byte count is RIGHT, and the model is a constant 2.40 us slow
+
+Volume 2 PDF 140 varies byte size at fixed field length -- the one
+experiment that pins the SAU byte count -- and all 35 rows obey
+
+```
+t = 3.6 + 0.6 * ceil(field_length / byte_size)   microseconds
+```
+
+to 0.01 us. Reproduced here: **34 of 35 rows sit at a constant 2.40
+us (eight clocks) offset from the model**, and the 35th is field
+length 32 at byte size 1 -- thirty-two bytes, past a **16-byte cap**
+that no table states. A constant offset is a missing term, not a
+wrong shape.
+
+> **AND THAT REVERSED A CORRECTION BEFORE IT WAS WRITTEN.**
+> `StretchTiming.bsv` calls its connective byte count "unsourced".
+> The obvious fix from Table 3's glossary is `y = 8`, and that was
+> drafted as the correction -- then PDF 140 refuted it and
+> **confirmed the existing code**, which Reference Manual p.75 and
+> `decks/connective_byte_size.strap` already corroborated. An
+> "unsourced" comment is an invitation to check, not a defect.
+
+### Three numbers in StretchTiming.bsv are cited to the wrong page or to nothing
+
+* **`dec = 0.6 us` is on printed p.3-18**, not p.3-17: "The decoding
+  time of I-box instructions is 0.6 microsecond." The file cites
+  p.3-17 for this and for the VFL 3.6+0.6 rule; both are one page
+  off. The 0.3 us clock on p.3-2 is right.
+* **"one I-box control cycle = 2 clocks" is stated by no source.**
+  It is an inference presented as a citation.
+* **`BD`'s "+2 LA drains" at 0.6 us each is an invention.** Neither
+  volume quantifies LAAR, LAdr or LAMT anywhere -- they are symbolic
+  in fourteen places and never given a value. Consistent with
+  `docs/spec_lookahead.md`: no source gives a look-ahead-internal
+  cycle count.
+
+### Two more measured corrections
+
+* **`BranchInd: 6`** charges 3.6 us to every branch-on-indicator.
+  Volume 2 PDF 112 measures four distinct numbers: index-indicator
+  **4.52 taken / 2.26 not**, arithmetic-indicator **19.78 taken /
+  7.20 not**. That 12.58 us spread is the measured price of a wrong
+  guess, which is exactly what stage 3c is for.
+* **`Transmit: 7`** (4.2 us) against Table 9's 8.4 us and a measured
+  13.84 us for one word; PDF 106's 3.02 us-per-word slope settles
+  that Table 9's "Loop time" is per word.
+
+### >>> AND I TOLD THE USER THE WRONG THING ABOUT THE ORACLES. <<<
+
+Earlier today I answered the cycle-accuracy question by citing §A.8's
+five benchmarks -- GERB2, MXM16, PRIMC, Monte Carlo, the weather
+loops -- as "real end-to-end oracles". **None of the five is
+runnable**, each for its own reason:
+
+* PRIMC's loop **exit is an interrupt**, and two-thirds of it is an
+  interrupt vector;
+* Monte Carlo needs twenty cards printed nowhere;
+* GERB2's inner loop is `DL`/`D/`, double-precision divide;
+* MXM16 is a seven-page `GENER` harness;
+* **the weather program has no listing in either volume** -- and it
+  is the only one Table 10 breaks down.
+
+**The real oracle is Volume 2 PDF 37-189**: a per-instruction
+measured timing atlas, roughly 150 pages, one instruction per page.
+That is what a timing test should assert against, instruction by
+instruction, and it is what `tests/perf_char_timing.py` is shaped
+for. Carry the caveat the volume itself prints: these are the output
+of a 1961 simulator subroutine, `GENER`, over thousand-instruction
+sequences -- **throughput, not latency**, and "representative times
+... will be updated".
+
+**And IBM's own arithmetic in Table 10 is wrong in three places**
+(Grid branching sums 281 against a printed 280; both Elementary
+grand totals are short by 4), and its rows are **buckets, not
+opcodes** -- p.4-8 says "/ and R/; V+, V-, V+I, V-I; +, M+". A model
+checked against Table 10 row-by-opcode would be checked against a
+category.
+
+
+## >>> THE SHIPPED MACHINE HAS TWO LAARs, AND THAT BREAKS THIS PROJECT'S OWN TIE-BREAKER <<< 2026-10-25
+
+**The fact, verified at the ink.** `R23-9732` PDF page 92, Figure
+3.2.1 "IAUC LOAD ENABLE AND ADVANCE CONDITIONS", header "M3-04-3 LA
+FLOW DIAGRAMS", **page stamped 2/1/62**, carries decision boxes
+reading **BOTH LAARS BUSY**, **BOTH LAARS 1&2 BUSY** and **BOTH LAARS
+NOT BUSY**. The page's own OCR corroborates independently: "LAAR 1
+BUSY COND", "LAAR 1 OR 2", "LAAR 1 NEXT", "LAAR 2 NEXT", "FOR LAAR 1
+FOR LAAR 2". The trigger index names `2L025`/`2L026` LAAR 1/2 BUSY
+TGR and `2E001`/`2D001` LOOKAHEAD ADDRESS REGISTER 1/2.
+
+**Buchholz p.266 says one. Performance Characteristics p.3-21 says
+one.** Both are wrong about the machine as shipped, or right about
+the machine as designed.
+
+### The tie-breaker produces an inconsistency here, and that is the real finding
+
+`docs/microarchitecture_plan.md` §6 records the rule: *where Buchholz,
+Blosk and Performance Characteristics disagree, the 1961 Performance
+Characteristics (measured on the built machine) wins for TIMING and
+the CE manual (1963) wins for STRUCTURE.*
+
+Apply it to this and it contradicts itself:
+
+* the CE pages showing two LAARs are stamped **2/1/62** and
+  **1/1/63**;
+* every "+ LAAR" stall time in Performance Characteristics Tables 4-9
+  is stamped **3/8/61** -- **measured on the one-LAAR machine.**
+
+Taking structure from the CE manual and timing from Performance
+Characteristics therefore charges **one-LAAR stalls to two-LAAR
+hardware**. The model would be slower than either real machine, and
+no oracle in the corpus would catch it, because the oracles are the
+very numbers being misapplied.
+
+> **A tie-breaker that names documents cannot settle a disagreement
+> between two machines.** Buchholz and Perf. Char. are not mistaken
+> about the LAAR count; they describe an earlier build. The rule
+> needs a third clause: **when sources disagree, check their DATE
+> STAMPS before deciding which is wrong** -- a 1961 timing and a 1963
+> structure may both be right and still not belong in the same model.
+
+**The recommendation, and it is not "implement the newer one":**
+build two LAARs with the second **switchable off, defaulting to
+one**, and run every published-timing oracle in the one-LAAR
+configuration. That keeps the timings honest against the machine they
+were measured on, and keeps the structure available for the machine
+the CE manual documents. Which configuration a future ULX3S build
+should use is then a decision with a name, not an accident.
+
+### And a gap no amount of reading will close
+
+**No source in this corpus gives a per-action cycle count internal to
+the look-ahead.** The three CE figures whose titles promise timing
+(3.2.4, 3.2.22, 3.2.25) name timers -- STORE DATA TIMER, WRITE INDEX
+LA, HSCLN -- and print no durations. So the implementable look-ahead
+is **condition-driven, not count-driven**, and any LA-internal cycle
+count written into Bluespec **will be invented**. It must say so in
+the source, the way every other unmeasured number in this project
+does.
+
+### Three concrete corrections to the plan
+
+* **§A.7's memory cycle of 2.1 us matches neither source.** Buchholz
+  says 2.0, Performance Characteristics says 2.2. The plan's own rule
+  (Perf. Char. wins for timing) gives **2.2**.
+* **`TR00.722` is not "Blosk's 1959 report".** It is March **1960**,
+  supervised by E. **Bloch**; *Blosk* is the author of the Buchholz
+  book's look-ahead chapter. The plan conflates two people and two
+  documents.
+* **§6b's level model is wrong in a way that changes code.** It loads
+  one look-ahead level per E-box instruction. Perf. Char. Table A-2
+  gives the real counts per instruction -- FP 1-2, VFL 2-3 (doubled
+  on word-boundary crossover, +1 for progressive indexing, 6 worst
+  case), guessed branch 4, I/O 2, Transmit 2+N -- and **every I-box
+  instruction loads a level too**. That is what actually throttles
+  the I-box, and the model does not have it.
+
+Full working, with page citations and ten tabulated source conflicts,
+is in `docs/spec_lookahead.md`.
+
+
+## TWO LIVE IMAGE BUGS, FOUND AND FIXED FROM PRINTED p.98 -- 2026-10-25
+
+`decks/mcp_bootstrap_p39.strap` declared
+
+```
+SYSMCD  SYN, (8)2151.10
+SCORG   SYN, (8)2151.03
+```
+
+with no data description, which compiles **length 0** and which
+`effLength` reads as **SIXTY-FOUR**. Printed p.98 lines 30 and 34
+declare them `SYN(BU,2),S COMRG+.8` and `SYN(BU,1),S COMRG+.3`. The
+addresses agreed; only the lengths were missing.
+
+**This is the same fault as the `CM1111` image bug**, and it hid for
+the same reason: p.39 line 18 branches on `SYSMCD` and line 19 on
+`SCORG`, and a branch never uses a length, so every row on that page
+compiled correctly and every test passed. Both now carry their
+documenting page's dds; p.39 still verifies bit-exactly and the
+merge guard is satisfied.
+
+**And a deck note is retired.** `decks/mcp_bootstrap_p71.strap`
+carried `DFREE SYN, 0` with a header saying it is "not defined
+anywhere this project has read". Printed p.98 line 27 is that card.
+The note is now false and should be corrected when p.71 is next
+touched.
+
+
 ## `*` IS BUILT, AND THE CE MANUAL EXPLAINS ITS TWO MAGIC NUMBERS -- 2026-10-25
 
 `bsv/StretchExecute.bsv` arm `6'b011001`, `decks/vfl_multiply.strap`,
@@ -145,6 +366,34 @@ T JBPRO SYN(BU,1),0.36 -JOB PROCESSED BIT
 **And the section is not a section.** Counting `SYN(` per page across
 both volumes gives **555 declarations on 25 printed pages**, and they
 are scattered, not collected:
+
+> ### >>> THAT COUNT IS WRONG, AND WRONG STRUCTURALLY. <<<
+>
+> **`SYN(` cannot see a SYN card that carries no data description**,
+> and plenty do not -- `decks/mcp_bootstrap_p39.strap` is full of
+> `SYSMCD SYN, (8)2151.10`, and printed p.105 is thirty consecutive
+> bare cards that this regex scores as ZERO. The real figure is
+> larger and spread over more pages; a delegated agent counting
+> statement-position SYN puts it near 628 cards on 88 pages, which I
+> have not independently reproduced and so do not assert here.
+>
+> **Two more corrections to the list below.** Printed pp.287-289 and
+> 417-419 are a SECOND ASSEMBLY of pp.61-63 and 83-85, not new
+> declarations -- p.288's `T PPREF` compiles `000025` where p.62's
+> compiles `000024` -- so this list double-counts them. And it omits
+> pp.100 and 104-107 entirely.
+>
+> **pp.84-85 are NOT the place to start**, which is the opposite of
+> what this entry said. All 38 symbols p.84 declares were grepped
+> against every deck: zero are referenced. It is the biggest page and
+> the right one to take eventually, not first. **Printed p.98** is,
+> with seven symbols the decks already use.
+>
+> The lesson is the session's recurring one: a count produced by a
+> regex is a claim about the regex. This is the fourth time today --
+> a hyphen that hid 310 look-ahead references, `$?` after a pipeline
+> reporting `tr`'s status, a parser reading `KFI`'s immediate as an
+> offset, and now this.
 
 ```
 p.61-64     75    p.84-85    92    p.98-109   200

@@ -674,6 +674,27 @@ function Word64 foldIndicatorHW(Word64 ind, HWordAddr ha, Bit#(32) nh) =
 // docs/phase2_arm_inventory.md.
 function SM128 readAcc(StretchStorage st) = accToSM(st.readAccLeft(), st.readAccRight(), st.readAccSign());
 
+// THE SIGN BYTE CAN ONLY BE WRITTEN ONCE PER RULE, which is not a
+// style preference.  execute() is one rule and `st.writeWord` is one
+// method, so calling it twice is a G0004 scheduling conflict that
+// stops the build outright:
+//
+//   Rule `RL_rl_exec_resume' uses methods that conflict in parallel:
+//     st_accSignByte.write(...) and st_accSignByte.write(...)
+//
+// LCV needs a sign byte whose FLAG BITS ARE CLEARED -- printed p.72,
+// "the four low-order bits of the sign byte register are cleared" --
+// where every other operation preserves them.  So it needs its own
+// single write, not a correction applied after writeAcc.  Writing it
+// the obvious way first is how the rule above got learned.
+function Action writeAccFlags(StretchStorage st, SM128 v, Bit#(3) flags) =
+  action
+    let {hi,lo} = packAcc(v.mag);
+    st.writeWord(addrAccLeft, hi);
+    st.writeWord(addrAccRight, lo);
+    st.writeWord(addrAccSignByte, sbWith(st.readAccSign(), v.sign, flags));
+  endaction;
+
 function Action writeAcc(StretchStorage st, SM128 v) =
   action
     let {hi,lo} = packAcc(v.mag);
@@ -2248,7 +2269,14 @@ function ActionValue#(VflOutcome)
       //
       // Decimal ARITHMETIC is still unimplemented and still refused;
       // only code 000011, LCV, is let past here.
-      Bool radixConv = (vi.code == 6'b000011);
+      // LCV, CV and LTRCV are the radix conversion operations:
+      // the decimal modifier SELECTS A DIRECTION for them rather
+      // than asking for decimal arithmetic, so the blanket refusal
+      // below must let all three past.  (DCV, code 59, is not built:
+      // nothing in MCP uses it -- see docs/spec_decimal.md.)
+      Bool radixConv = (vi.code == 6'b000011)     // LCV
+                    || (vi.code == 6'b011011)     // CV
+                    || (vi.code == 6'b100011);    // LTRCV
       if (vi.m.decimal == 1 && !radixConv)
         ind = setOpInvalid(ind);
       else if (isProgressive && vi.a.i1 == 0)
@@ -3239,9 +3267,35 @@ function ActionValue#(VflOutcome)
             end
             if (!isValid(needsRead)) begin
               if (vi.m.decimal == 0) begin
-                // Binary to decimal: see the scope note above.
-                ind = setOpInvalid(ind);
-                vflOk = False;
+                // BINARY TO DECIMAL, printed p.72's Radix: "If binary
+                // is specified, the storage operand is converted from
+                // binary to decimal, with the decimal result in byte
+                // size four."  This direction was refused until
+                // binaryToBcd existed; it is the direction MCP needs.
+                Bool    signed_ = (vi.m.unsign == 0);
+                Bit#(7) sbBits  = zeroExtend(bsz);
+                Bit#(7) numBits = !signed_ ? len_
+                                : ((len_ > sbBits) ? (len_ - sbBits) : 0);
+                Bit#(64) mask   = (numBits >= 64) ? 64'hFFFFFFFFFFFFFFFF
+                                                  : ((64'b1 << numBits) - 1);
+                Bit#(64) valRaw = (!signed_ ? raw : (raw >> bsz)) & mask;
+                Bit#(4) signIdx = (bsz > 4) ? 3 : (bsz - 1);
+                Bit#(1) sgn = (!signed_ ? 0 : raw[signIdx]) ^ vi.m.invert;
+                match {.dig, .nd} = binaryToBcd(zeroExtend(valRaw));
+                SM128 conv = SM128 { sign: sgn, mag: zeroExtend(dig) << offSh };
+                // p.72: LCV clears the sign byte's four low-order
+                // bits, unlike CV and DCV -- one write, see
+                // writeAccFlags above.
+                writeAccFlags(st, conv, 3'b000);
+                // p.72's shared PF rule: "turned on if a radix
+                // conversion operation does not use all of the
+                // operand data provided ... if significant result
+                // bits extend beyond the left end of the
+                // accumulator".
+                if ((zeroExtend(nd) * 4) + offSh > 128)
+                  ind = setBit(ind, ind_PF, 1);
+                ind = setBit(ind, ind_MOP, 0);
+                ind = setResultIndicatorsF(ind, conv);
               end else begin
                 // A signed decimal field's sign byte is its RIGHTMOST
                 // byte and is inside `len_` (p.56), so shift it off
@@ -3278,7 +3332,20 @@ function ActionValue#(VflOutcome)
                 // "The accumulator is cleared and the converted field
                 // is placed into it at the specified offset."
                 SM128 conv = SM128 { sign: sgn, mag: cvVal << offSh };
-                writeAcc(st, conv);
+                // "THE FOUR LOW-ORDER BITS OF THE SIGN BYTE REGISTER
+                // ARE CLEARED.  The sign bit in the sign byte
+                // register is set according to the sign of the data
+                // as affected by the sign modifiers" (printed p.72,
+                // read at the ink).  writeAcc writes the sign and
+                // KEEPS the flags, which is right for CV and DCV --
+                // printed pp.73-74 say "all other positions of the
+                // sign byte register remain unchanged" -- and wrong
+                // here.  LCV is the one conversion that clears them.
+                //
+                // The four low-order bits of the register are IBM
+                // bits 4-7, which sbWith splits into the sign (IBM 4)
+                // and the three flag bits (IBM 5-7).
+                writeAccFlags(st, conv, 3'b000);
                 // p.73: PF "is also actuated if the storage field
                 // exceeds 15 decimal digits ... Meaningless results
                 // are then obtained."
@@ -3288,6 +3355,166 @@ function ActionValue#(VflOutcome)
                 ind = setBit(ind, ind_MOP, 0);
                 ind = setResultIndicatorsF(ind, conv);
               end
+            end
+          end
+          6'b011011: begin // CV (Convert)
+            // CONVERT, Reference Manual printed p.73, read at the ink:
+            //
+            //   "A field from the accumulator is converted as an
+            //   integer from binary to decimal or from decimal to
+            //   binary depending on the setting of the radix
+            //   modifier.  If the original field is binary, it is
+            //   obtained at an IMPLIED OFFSET OF 68 and its length is
+            //   48 NUMERIC BITS.  The decimal result is loaded into
+            //   the CLEARED ACCUMULATOR AT THE SPECIFIED OFFSET.  If
+            //   the original field is decimal, it is obtained at the
+            //   specified offset.  The binary result, which can be a
+            //   maximum of 48 significant bits, is loaded into the
+            //   cleared accumulator AT OFFSET 68.  The sign modifiers
+            //   operate on the sign bit in the sign byte register;
+            //   ALL OTHER POSITIONS OF THE SIGN BYTE REGISTER REMAIN
+            //   UNCHANGED."
+            //
+            // 68 IS NOT ARBITRARY and printed p.74 says so outright:
+            // "the 48-bit binary field at offset 68 used in CONVERT
+            // corresponds to the fraction field of a single-precision
+            // floating point number".  IBM bits 12-59 are offsets
+            // 115 down to 68.  See docs/vfl_arith_spec.md.
+            //
+            // THERE IS NO STORAGE OPERAND.  printed p.72: "In the
+            // accumulator conversion operations, CONVERT and CONVERT
+            // DOUBLE, no storage operand is required, and the word
+            // address, bit address, length, and byte size fields of
+            // the instruction are not normally used."  So this arm
+            // has no prefetch, no bail-out and no crossing-field
+            // case -- it cannot fail to read.
+            //
+            // ARRIVED VIA MCP.  printed p.24 line 25 is
+            // "CV(BU),$L,16", the second blocker of the boot after
+            // the divide, at 001217.00.  Lines 19-24 put the hours at
+            // offset 68 with three instructions, which is exactly
+            // where this reads.
+            SM128 acc = readAcc(st);
+            // "the accumulator sign is taken as-is ... as positive
+            // ... inverted" (p.73's Modifiers)
+            Bit#(1) sgn = (vi.m.unsign == 1 ? 0 : acc.sign) ^ vi.m.invert;
+            if (vi.m.decimal == 0) begin
+              // Binary to decimal.  "Higher-order bits (positions
+              // 0-11 of the accumulator) are ignored and lost.  NO
+              // INDICATION OF THIS LOSS IS RETAINED" -- a silent
+              // truncation, unusual enough in this manual to be
+              // worth doing deliberately.
+              Bit#(48) src = acc.mag[115:68];
+              match {.dig, .nd} = binaryToBcd(zeroExtend(src));
+              SM128 res = SM128 { sign: sgn, mag: zeroExtend(dig) << offSh };
+              writeAcc(st, res);
+              if ((zeroExtend(nd) * 4) + offSh > 128)
+                ind = setBit(ind, ind_PF, 1);
+              ind = setBit(ind, ind_MOP, 0);
+              ind = setResultIndicatorsF(ind, res);
+            end else begin
+              // Decimal to binary.  "The original decimal field is
+              // assumed to be byte size four" (p.73).  THE MANUAL IS
+              // SILENT ON ITS LENGTH -- the length field is ignored
+              // and no digit count is stated -- so fifteen digits is
+              // taken, which is the most that can yield the stated
+              // maximum of 48 significant bits.  Recorded as a
+              // reading, not a quotation.
+              Bit#(64) digits = truncate(acc.mag >> offSh);
+              match {.val, .nd} = bcdToBinary(digits & 64'h0FFFFFFFFFFFFFFF, 60, 4);
+              SM128 res = SM128 { sign: sgn, mag: (val & 128'hFFFFFFFFFFFF) << 68 };
+              writeAcc(st, res);
+              if ((val >> 48) != 0) ind = setBit(ind, ind_PF, 1);
+              ind = setBit(ind, ind_MOP, 0);
+              ind = setResultIndicatorsF(ind, res);
+            end
+          end
+          6'b100011: begin // LTRCV (Load Transit Converted)
+            // LOAD TRANSIT CONVERTED, printed p.73, read at the ink:
+            //
+            //   "The addressed STORAGE field is converted as an
+            //   integer ... The TRANSIT REGISTER, STORAGE LOCATION
+            //   15, IS CLEARED.  The four low-order bits of the
+            //   transit register form a sign byte in which the
+            //   leftmost bit is the sign of the addressed storage
+            //   operand as modified by the negative sign modifier.
+            //   The remaining three bits of the sign byte are zero.
+            //   The converted field is placed in the transit register
+            //   POSITIONED TO THE LEFT OF THE FOUR-BIT SIGN BYTE.
+            //   THE ACCUMULATOR IS NOT ALTERED BY THIS OPERATION, AND
+            //   THE OFFSET FIELD OF THE INSTRUCTION IS IGNORED."
+            //
+            // THE OFFSET IS IGNORED, which is why `offSh` appears
+            // nowhere below.  MCP writes 0 there on printed p.24
+            // lines 26 and 28 -- the one value that cannot mislead.
+            //
+            // THE LAYOUT IS RM's LAYOUT.  Four sign bits at IBM
+            // 60-63 with the sign at 60, payload above: in this
+            // model's Bit#(64) that is (digits << 4) | (sign << 3),
+            // the same shape the DIVIDE arm writes into the remainder
+            // register.  MCP then reads "$TR+.52" for eight bits --
+            // IBM 52-59, exactly the two byte-size-four digits
+            // immediately above the sign byte, and minutes and
+            // seconds never need three.
+            //
+            // Same prefetch/bail-out shape as LCV, because the
+            // operand is a storage field just as LCV's is.
+            Bit#(64) raw = 0;
+            if (immediate) begin
+              raw = immediateOperand(vi.a.addr, len_);
+            end else begin
+              WordAddr w0 = baWord(ea);
+              Bit#(6) off = baBit(ea);
+              if (!fieldCrosses(ea, len_)) begin
+                if (prefetchCount >= 1) begin
+                  raw = extractFieldBits(prefetch[0], 0, off, len_);
+                  vflReadsUsed = 1;
+                end else
+                  needsRead = tagged Valid w0;
+              end else begin
+                if (prefetchCount >= 2) begin
+                  raw = extractFieldBits(prefetch[0], prefetch[1], off, len_);
+                  vflReadsUsed = 2;
+                end else if (prefetchCount == 1)
+                  needsRead = tagged Valid (w0 + 1);
+                else
+                  needsRead = tagged Valid w0;
+              end
+            end
+            if (!isValid(needsRead)) begin
+              Bool    signed_ = (vi.m.unsign == 0);
+              Bit#(7) sbBits  = zeroExtend(bsz);
+              Bit#(7) numBits = !signed_ ? len_
+                              : ((len_ > sbBits) ? (len_ - sbBits) : 0);
+              Bit#(64) mask   = (numBits >= 64) ? 64'hFFFFFFFFFFFFFFFF
+                                                : ((64'b1 << numBits) - 1);
+              Bit#(64) valRaw = (!signed_ ? raw : (raw >> bsz)) & mask;
+              Bit#(4) signIdx = (bsz > 4) ? 3 : (bsz - 1);
+              Bit#(1) sgn = (!signed_ ? 0 : raw[signIdx]) ^ vi.m.invert;
+              Bit#(128) payload = 0;
+              Bit#(7)   ndig    = 0;
+              if (vi.m.decimal == 0) begin
+                match {.dig, .nd} = binaryToBcd(zeroExtend(valRaw));
+                payload = dig; ndig = nd;
+              end else begin
+                match {.val, .nd} = bcdToBinary(valRaw, numBits, bsz);
+                payload = val; ndig = nd;
+              end
+              Bit#(64) trDig  = truncate(payload);
+              Bit#(64) trSign = zeroExtend(sgn);
+              st.writeWord(addrTransit, (trDig << 4) | (trSign << 3));
+              // p.73: PF if a binary-to-decimal result exceeds 15
+              // significant decimal digits, or a decimal-to-binary
+              // result exceeds 48 significant bits.
+              Bool pfTr = (vi.m.decimal == 0) ? (ndig > 15)
+                                              : ((payload >> 48) != 0);
+              if (pfTr) ind = setBit(ind, ind_PF, 1);
+              ind = setBit(ind, ind_MOP, 0);
+              // "Arithmetic Result ... set according to the final
+              // result in the TRANSIT REGISTER" -- not the
+              // accumulator, which this operation never touches.
+              ind = setResultIndicatorsF(ind,
+                      SM128 { sign: sgn, mag: payload });
             end
           end
           default: begin

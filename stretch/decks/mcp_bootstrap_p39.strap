@@ -138,8 +138,19 @@ YGOMK   SYN, (8)2354.0
 YCOMMK  SYN, (8)2362.0
 YCNGMK  SYN, (8)2363.0
 YUPDAT  SYN, (8)2365.0
-SYSMCD  SYN, (8)2151.10
-SCORG   SYN, (8)2151.03
+! THESE TWO CARRY THEIR DATA DESCRIPTIONS BECAUSE PRINTED p.98
+! DECLARES THEM, and this page only REFERENCES them.  p.98 line 30
+! is "S YSMCD SYN(BU,2),S COMRG+.8" and line 34 is
+! "S CORG SYN(BU,1),S COMRG+.3"; both addresses agree with what was
+! read here, and only the LENGTH was missing.  A bare SYN compiles
+! length 0, which effLength reads as SIXTY-FOUR -- the same fault
+! that made three correct CM1111 rows look like model bugs on
+! 2026-10-25 (docs/NEXT.md, "the model was right and the image was
+! wrong").  Nothing on THIS page changes: line 18 branches on
+! S YSMCD and line 19 on S CORG, and a branch never uses a length,
+! which is exactly why it went unnoticed.
+SYSMCD  SYN(BU,2), (8)2151.10
+SCORG   SYN(BU,1), (8)2151.03
 SROOF   SYN, (8)2162.0
 YLOL2   SYN, (8)5464.40
 YLOL1   SYN, (8)5465.0

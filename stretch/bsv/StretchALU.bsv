@@ -177,6 +177,46 @@ function Tuple2#(Bit#(128), Bit#(7))
   return tuple2(val, nd);
 endfunction
 
+// THE OTHER DIRECTION, and the one that stands in front of MCP's
+// boot.  bcdToBinary above has existed since LCV was built; every
+// MCP site that reaches it converts DECIMAL TO BINARY.  Printed
+// p.24's time conversion goes the other way -- line 25's CV and
+// lines 26 and 28's LTRCV all produce decimal -- so this function
+// is the whole of what was missing.
+//
+// DIVIDE BY TEN, TWENTY-FOUR TIMES, and the choice was measured
+// rather than argued.  The alternative is double dabble, which is
+// the cheaper circuit; the worry was that twenty-four 96-bit
+// dividers would be ruinous to ELABORATE, since elaboration is this
+// model's real build cost.  Built standalone, this version
+// elaborates and links in two seconds and converts
+// 281474976710655 to fifteen digits correctly.  Two seconds is not
+// worth an argument.
+//
+// >>> THAT IS AN ELABORATION MEASUREMENT AND NOT A GATE COUNT. <<<
+// Twenty-four 96-bit dividers is a large circuit and nothing here
+// has synthesised it.  bsv/README.md item 9 already says the
+// datapath must go multi-cycle before the ULX3S; this function
+// belongs on that list, and the honest state today is that its cost
+// in LUTs is UNMEASURED.
+//
+// Returns the packed digits and the count of significant ones --
+// the caller needs the count for Partial Field, exactly as it does
+// for bcdToBinary.
+function Tuple2#(Bit#(128), Bit#(7)) binaryToBcd(Bit#(96) v);
+  Bit#(128) out  = 0;
+  Bit#(7)   nd   = 0;
+  Bit#(96)  rest = v;
+  for (Integer k = 0; k < 24; k = k + 1) begin
+    Bit#(96) q = rest / 10;
+    Bit#(4)  d = truncate(rest - (q * 10));
+    out = out | (zeroExtend(d) << (4 * k));
+    if (rest != 0) nd = fromInteger(k) + 1;
+    rest = q;
+  end
+  return tuple2(out, nd);
+endfunction
+
 // ADD MAGNITUDE TO MEMORY's store rule, Reference Manual printed
 // p.62, which is two sentences and both of them are about SIGNS:
 //

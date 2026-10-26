@@ -1,0 +1,99 @@
+! VFL M+ SAU timing microbenchmark, in the style of decks/ibox_timing_cb.strap.
+!
+! >>> SUPERSEDED as the primary regression target by
+! >>> vfl_connective_sau_timing.strap.  KEEP IT AS THE SECOND, CONTRASTING
+! >>> CASE, not as the anchor: the 6.6-vs-6.63 agreement advertised below is
+! >>> TWO ERRORS CANCELLING, not agreement.  The model over-charges every VFL
+! >>> instruction's preparation by a uniform 2.40 us (proved on 34 rows in
+! >>> spec_timing.md section 5.2 C5) and under-charges M+'s store, which
+! >>> Vol. 2 printed p.108 (PDF 115) item 2 requires: "All VFL 'to memory'
+! >>> operations require memory fetches".  2.43 ~= 2.40, so the two cancel at
+! >>> (BU,8,8) and nowhere else: at (BU,64,8) the model is 10.8 against a
+! >>> published 9.61.  Measured against the connective law t = 3.6 + 0.6*bytes,
+! >>> M+ costs an extra 2.43, 2.13, 1.84, 1.82, 1.21 us at 1, 2, 4, 6, 8
+! >>> bytes -- a store overhead that is itself progressively overlapped.
+! >>> THAT decreasing series, not the single coincidence, is what this deck is
+! >>> worth keeping for.
+! >>>
+! >>> SYNTAX NOT VERIFIED: written from the patterns in
+! >>> decks/add_family_signs.strap; not assembled or run in this session.
+!
+! THIS IS A CONSTRUCTED DECK, NOT A TRANSCRIPTION.  No benchmark printed in
+! Performance Characteristics volume 2 is runnable on this model (see
+! spec_timing.md section 3.3: GERB2 needs *+ / SRD SVA, MXM16 is a seven-page
+! GENER harness, PRIMC cannot EXIT without the interrupt system, Monte Carlo
+! needs twenty punched cards that are not printed anywhere, and the weather
+! program has no listing at all).  So this deck instead reproduces, in
+! miniature, the thing Volume 2's atlas actually measures: the per-instruction
+! throughput of a straight-line sequence of one VFL instruction.
+!
+! THE NUMBER IT IS AGAINST
+!
+!   Vol. 2 printed p.110 (PDF 117), "VFL INSTRUCTION M+   NO FORWARDING
+!   DIRECT ADDRESSING   OFFSET 0   INSTRUCTION AT FULL WORD ADDRESS",
+!   row (BU,8,8), column "NO INDEXING / EXTERNL OPERAND":
+!
+!                            6.63 microseconds per instruction
+!
+!   That is a THROUGHPUT, measured by the GENER subroutine over a thousand
+!   generated instructions run ten times (Vol. 2 printed p.34, PDF 37), so it
+!   already contains the look-ahead and decode overlap.
+!
+! WHAT THE MODEL SHOULD PRODUCE TODAY
+!
+!   Vol. 1 table 3 (printed p.3-7, PDF 25), M+:  pre-execution 1.8 us,
+!   execution .6(x/y), termination .6 us.  With the p.3-10 (PDF 28) glossary,
+!   an unsigned field of length 8 in binary gives x = 8, y = 8, so one byte:
+!   1.8 + 0.6 + 0.6 = 3.0 us of E-box time.
+!   Vol. 1 printed p.3-18 (PDF 36): VFL decoding is 3.6 us minimum, loading
+!   two look-ahead levels, with no indexing operation here.
+!   Total per instruction: 3.6 + 3.0 = 6.6 us = 22 clocks at 0.3 us.
+!
+!   6.6 against a published 6.63 -- and see the banner: that near-match is a
+!   cancellation, not an agreement.  At (BU,64,8) the same arithmetic gives
+!   10.8 against a published 9.61.
+!
+! BUDGET
+!
+!   LCI    2.4 + dec 0.6 = 3.0 us = 10 clocks        (table 5, PDF 29)
+!   M+     6.6 us = 22 clocks, x 16 in the loop body = 352
+!   CB     successful 4.2 + 0.6 = 4.8 us = 16 clocks (table 8, PDF 32)
+!          unsuccessful 3.6 + 0.6 = 4.2 us = 14 clocks
+!   Ten taken branches, then the fall-through:
+!     10 + 10*(352 + 16) + 352 + 14 = 4056 clocks,
+!   plus the first instruction fetch and the halt's own preparation.
+!   Suggested CYCLES<= bound: 4150.
+!
+!   `dec` = 0.6 us is NOT printed in tables 4-8 (they say only
+!   "dec = decade"); it is Vol. 1 printed p.3-18, PDF 36, "The decoding time
+!   of I-box instructions is 0.6 microsecond."
+!
+! The accumulator operand is left at its initial value and the memory operand
+! is a single byte of ones, so no carry propagates out of the byte: Table 3's
+! Full Word Total column is defined for "operations using unsigned full word
+! operands which produce no arithmetic carries" (printed p.3-6, PDF 24), and
+! the unlike-sign recomplement term in M+'s Comments column never fires.
+
+        SLC, (8)2000.0
+START   LCI, $1, 11         ! count 11: ten taken branches, then fall through
+LOOP    M+(BU,8,8), OPND, 0
+        M+(BU,8,8), OPND, 0
+        M+(BU,8,8), OPND, 0
+        M+(BU,8,8), OPND, 0
+        M+(BU,8,8), OPND, 0
+        M+(BU,8,8), OPND, 0
+        M+(BU,8,8), OPND, 0
+        M+(BU,8,8), OPND, 0
+        M+(BU,8,8), OPND, 0
+        M+(BU,8,8), OPND, 0
+        M+(BU,8,8), OPND, 0
+        M+(BU,8,8), OPND, 0
+        M+(BU,8,8), OPND, 0
+        M+(BU,8,8), OPND, 0
+        M+(BU,8,8), OPND, 0
+        M+(BU,8,8), OPND, 0
+        CB, $1, LOOP        ! branch back while count != 0
+DONE    BEW, $              ! halt
+        SLC, (8)4000.0
+OPND    DD(BU,64,8), 1
+        END, START
