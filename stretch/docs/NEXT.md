@@ -15,6 +15,81 @@ accumulate.
 
 
 
+
+## MCP SAYS WHY IT REJECTED, IN ITS OWN WORDS -- 2026-10-26
+
+Chasing "what machine would satisfy ASSIGN?" rather than "why does
+ASSIGN fail?" landed on the answer in one hop, because MCP carries
+the sentence:
+
+```
+decks/mcp_bootstrap_p76.strap:93
+TMESSY  (A*)DD(BU), I/O REQ. INCOMP WITH MACH CONF.*
+```
+
+printed p.74 line 55 is `TAREJX LVI, TX1, TMESSY -SET REASON FOR`,
+and `TAREJX` is where ASSIGN goes when it rejects. **"I/O REQUEST
+INCOMPATIBLE WITH MACHINE CONFIGURATION"** is the operating system's
+own diagnosis, and it agrees exactly with what `docs/boot_plan.md`
+A20 concluded from the control flow.
+
+### The disposition bit, and how the caller learns
+
+printed p.80 line 25, on the accept path, is
+
+```
+CM1111(BU,1), 0.28($15)      -SET THE DISPOSITION BIT
+```
+
+`$15` points at the caller's parameter word, printed p.27 line 9's
+`X242 XW,-1,0,0,4`. ASSIGN sets bit 28 of it and returns through
+`B,1.00($15)`; p.27 line 11 loads that word back with `LX,$0,X242`
+and line 13's `BZXCZ,XERROR` branches when the bit is absent. So the
+reject path (p.80 line 23, `B,TAREJX`) simply never sets it. **The
+accept and reject paths differ by one bit in one word**, which is
+why the caller can be three instructions long.
+
+### >>> AND A SECOND PROBLEM: MCP CANNOT REPORT IT <<<
+
+MCP typed its date message successfully, so a console exists and
+works. Yet the error routine's console hunt exhausts. printed p.5:
+
+```
+line 21  LVI, $X1, (8)20.0   -ENTER FIRST CHANNEL OF BASIC EXCHANGE
+line 23  LCI, $X1, 32.       -GET MAXIMUM SIZE OF BASIC EXCHANGE
+line 28  CTL(SEOP), 0.0($X1), 0.0   -ILLEGAL IO CONTROL CODE
+line 29  BEKJ, X6ERR         -EXHAUSTED ALL CHANNELS OR EXCHANGE ERROR
+```
+
+It starts at channel **octal 20 = 16** and walks 32 of them. The
+fixture's machine is:
+
+```
+channel  0   DK      channel 33  PR
+channel 32  RD       channel 34  TP  units=(2,0)
+                     channel 35  CN   <- the console
+```
+
+**Channels 16-31 do not exist**, and `BEKJ` after the very first
+`CTL` is an immediate give-up, not a per-channel "no answer". So if
+addressing an unequipped channel raises `EKJ`, MCP abandons the scan
+at channel 16 and never reaches the console at 35.
+
+**That is a question about the machine, not about MCP**, and it is
+the next thing to settle: *does addressing an unequipped channel of
+the basic exchange raise EKJ on a real 7030, or does the exchange
+answer for every channel in its range and only the UNIT report
+absent?* The Reference Manual's exchange chapter and `C22-6728` are
+the places to look. If the real exchange answers, the fixture needs
+channels 16-31 present-but-empty and the model needs to distinguish
+"no channel" from "no unit".
+
+> **Note which way the evidence points before fixing anything.** MCP
+> reached the console once already. A machine on which the operating
+> system can type a date message but cannot type an error message is
+> more likely to be an incomplete fixture than a faithful 7030.
+
+
 ## CORRECTED: ASSIGN IS NOT FAILING, AND THIS ENTRY RE-DERIVED WHAT WAS ALREADY WRITTEN DOWN -- 2026-10-26
 
 With `*`, `/`, `CV` and `LTRCV` built the boot refuses nothing, and it
