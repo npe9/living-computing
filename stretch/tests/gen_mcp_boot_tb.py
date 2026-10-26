@@ -1419,6 +1419,27 @@ def main():
         ("console_date_w6", 6, 0x454947533b006060),  # "MONTH 00 "
         ("console_date_w7", 7, 0x00332d5d0000fdfe),  # "DAY <CR><EOM>"
         ("console_nothing_after", 8, 0),
+        ("probe_console_w9", 9, 0xDEADBEEF),
+        ("probe_console_w10", 10, 0xDEADBEEF),
+        ("probe_console_w11", 11, 0xDEADBEEF),
+        ("probe_console_w12", 12, 0xDEADBEEF),
+        ("probe_console_w13", 13, 0xDEADBEEF),
+        ("probe_console_w14", 14, 0xDEADBEEF),
+        ("probe_console_w15", 15, 0xDEADBEEF),
+        ("probe_console_w16", 16, 0xDEADBEEF),
+        ("probe_console_w17", 17, 0xDEADBEEF),
+        ("probe_console_w18", 18, 0xDEADBEEF),
+        ("probe_console_w19", 19, 0xDEADBEEF),
+        ("probe_console_w20", 20, 0xDEADBEEF),
+        ("probe_console_w21", 21, 0xDEADBEEF),
+        ("probe_console_w22", 22, 0xDEADBEEF),
+        ("probe_console_w23", 23, 0xDEADBEEF),
+        ("probe_console_w24", 24, 0xDEADBEEF),
+        ("probe_console_w25", 25, 0xDEADBEEF),
+        ("probe_console_w26", 26, 0xDEADBEEF),
+        ("probe_console_w27", 27, 0xDEADBEEF),
+        ("probe_console_w28", 28, 0xDEADBEEF),
+        ("probe_console_w29", 29, 0xDEADBEEF),
     ]
 
     # ---- THE OPERATOR'S CONSOLE SWITCHES -------------------------

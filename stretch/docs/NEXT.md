@@ -16,6 +16,137 @@ accumulate.
 
 
 
+
+
+## `console_nothing_after` CHECKS ONE WORD AND IS NAMED AS IF IT CHECKED THE REST -- 2026-10-26
+
+`tests/gen_mcp_boot_tb.py`:
+
+```python
+("console_nothing_after", 8, 0),
+```
+
+**It asserts that console word 8 is zero.** Its name says the console
+is empty after the date message. Those are different claims, and the
+difference nearly produced a false bug report today.
+
+MCP's error routine reaches printed p.5 line 52,
+`W(SEOP),0.0($X1),XMSCW1 -CONSOLE`, and executes it -- confirmed by a
+PC trace of half-words 182-239, which also shows `X5ERR` (the "not a
+console" exit) is NEVER entered. The console appeared to show
+nothing, and "the write executes and produces nothing" was one
+sentence away from being written down as a model defect.
+
+**But `XMSCW1` does not write the message.** The deck's own notes on
+printed p.8 give the chain:
+
+```
+X MS CW1  CW, X ZEROS, 3, ...     000246.00   <- THREE WORDS OF ZEROS
+X MSG CW  CW, 0, 10, 0            000247.00   <- ten words, address
+                                                 filled by p.5 line 18
+```
+
+So the transfer emits **three zero words first**, and word 8 is
+exactly where the first of them lands. **The check passing is
+consistent with MCP writing, not with MCP failing.**
+
+> **A CORRECT TOOL ANSWERING A QUESTION IT WAS NOT ASKED.** The other
+> six tooling errors this session were broken instruments -- a hyphen
+> in a grep, `$?` after a pipeline, a probe in the wrong unit. This
+> one is different and worse: the check does precisely what it says
+> in code, and its NAME invites a reader to conclude something
+> stronger. A name is an assertion too, and it is the one people
+> read.
+
+**Two things to do:**
+
+1. **Rename it** to `console_word8_is_zero`, or widen it to cover the
+   words the message would occupy. A check named for a universal
+   should test the universal.
+2. **Look where the message would be.** `XMSCW1`'s three zeros then
+   `XMSGCW`'s ten words put the text well past word 8. The decoder in
+   `strap/charsets.py` (`IQS`, plus `IQS_ITALIC_DIGITS`) reads it
+   straight out -- that is how the date message
+   `<CR><RED> DATE OF IPL TAPE <CR>00 MONTH 00 DAY <CR><EOM>` was
+   read.
+
+If the text is there, MCP typed **`I/O REQ. INCOMP WITH MACH CONF.`**
+(`decks/mcp_bootstrap_p76.strap` line 93) and the boot is doing
+exactly what the listing says it should, end to end.
+
+
+## `EKJ` AND `CBJ` ARE DECLARED AND NEVER RAISED, AND THE MANUAL GIVES EKJ AN EXACT RULE -- 2026-10-26
+
+```
+UNRJ  Unit Not Ready Reject    declared, RAISED (2 sites)
+EKJ   Exchange Check Reject    declared, NEVER RAISED
+CBJ   Channel Busy Reject      declared, NEVER RAISED
+```
+
+Two of the three I/O reject indicators do nothing, and `EKJ` is the
+one MCP's error routine branches on four times (printed p.5 lines 29,
+37, 40, 46, every one commented *EXHAUSTED ALL CHANNELS OR EXCHANGE
+ERROR*).
+
+**The Reference Manual's rule is implementable as written:**
+
+> "Exchange Check Reject (EKJ) ... can be caused by: ... 2.
+> **Specification of channel addresses that are not available to the
+> programmer. An unavailable channel is one that is NOT INSTALLED in
+> the particular system. It does not include channels that are
+> installed but are not operative because NO UNITS HAVE BEEN PROVIDED
+> for them.** The test applies only to the 7-bit channel address
+> portion of the left effective address, **bit positions 12 through
+> 18**. The remaining bits of the field are ignored."
+
+Three testable clauses: the field is bits 12-18; *not installed*
+raises it; *installed but unit-less* does **not**.
+
+**The model cannot currently express that distinction.**
+`StretchIO.bsv`'s `kindOf(ch)` returns `DevNone` both for a channel
+with no device and for a channel that does not exist. Implementing
+`EKJ` means adding a notion of INSTALLED CHANNELS separate from
+channels that have devices.
+
+**And the exchange's size is sourced**, printed p.104: "The exchange
+provides up to 32 channels ... The exchange can have several
+combinations of channels. **The minimum is eight.** This minimum can
+be augmented by additional channels in **groups of eight** up to 24
+additional, or a total of 32 channels." MCP's own scan agrees -- p.5
+line 21 enters at channel octal 20 = 16 and line 23 takes 32 of them.
+
+> **NOT RAISING IT IS CURRENTLY HARMLESS BY ACCIDENT.** A model that
+> never raises `EKJ` behaves like a machine with all 32 exchange
+> channels installed, which is a legal configuration and the one
+> MCP's scan assumes. So this gap is not what stops the boot -- but
+> it is a real divergence, and a fixture with a PARTIAL exchange
+> (eight or sixteen channels) could not be modelled correctly today.
+
+## A SIXTH TOOLING ERROR, AND THE TELL THAT WOULD HAVE CAUGHT IT -- 2026-10-26
+
+A `$display` probe for the error routine's half-words (182-239) was
+put in `execute()` and reported **ZERO steps**. The routine plainly
+runs: the same log's PC trail reports the halt at half-word **239**,
+inside the range the probe claimed was never entered.
+
+`execute()` is the E-box. The error routine is branches, index
+operations and I/O, none of which go through it. The probe belongs
+in the testbench's run rule, where `core.getPC()` is already read
+once per step and sees every instruction whichever unit executes it.
+
+> **TWO FACTS FROM ONE RUN THAT CONTRADICT EACH OTHER ARE THE TELL.**
+> "The routine never ran" and "the machine halted inside the routine"
+> cannot both be true, and the second came from an instrument that
+> had been trusted for weeks. When a new probe disagrees with an old
+> one, suspect the new one.
+
+This is the sixth instance in one session of a tool being wrong
+rather than the subject -- a hyphen in a grep, `$?` after a pipeline
+twice, a parser reading an immediate as an offset, a census regex
+that could not match the thing it was hunting, and now a probe in the
+wrong unit. See `stretch-working-method` in the session memory.
+
+
 ## MCP SAYS WHY IT REJECTED, IN ITS OWN WORDS -- 2026-10-26
 
 Chasing "what machine would satisfy ASSIGN?" rather than "why does
