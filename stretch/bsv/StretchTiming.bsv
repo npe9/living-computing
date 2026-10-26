@@ -106,7 +106,78 @@ endfunction
 // 1.8 us + 0.6 us per byte + 0.6 us, bytes = ceil(length / byte size)).
 function Bit#(16) eboxClocks(DecodedInstr d);
   case (d) matches
-    tagged Fp .*: return 3;          // preparation; E-box cycles added below
+    // >>> TABLE 2 GIVES EVERY FLOATING-POINT INSTRUCTION ITS OWN
+    // TIME, AND THIS RETURNED A FLAT 3 FOR ALL OF THEM. <<<
+    //
+    // The comment it carried, "preparation; E-box cycles added
+    // below", was copy-pasted from iboxCycles, where the promise is
+    // kept.  THERE IS NO BELOW: budgetClocks is
+    // `2 * iboxCycles(d, taken) + eboxClocks(d)` and that is the
+    // whole budget.  So a floating-point multiply and a floating-
+    // point load cost the same, and Table 10's A0 column spends 220
+    // multiplies and 88 divides out of 1,364 floating-point
+    // operations.
+    //
+    // Performance Characteristics Vol. 1 Table 2, printed pp.3-3 to
+    // 3-5 (PDF 21-23), is two columns, PRE-EXECUTION and EXECUTION,
+    // in machine cycles of 0.3 us.  The values below are their SUM
+    // AT THE MINIMUM -- no extra pre-shift, no extra normalization,
+    // no recomplement, no forced zero.  The old flat 3 is exactly
+    // the L/LWF/LFT/ST row (2 + 1), which is why it was never
+    // obviously wrong.
+    //
+    // >>> THESE ARE MINIMA, AND THE TABLE IS DATA-DEPENDENT. <<<
+    // Table 2 adds "1 cycle for each additional pre-shift of 4",
+    // "2 cycles for each additional norm. of 6", "2 cycles if
+    // recomplement is necessary", and for DIVIDE "2 cycles for each
+    // additional reduction loop (number of cycles is data
+    // dependent)".  A faithful model computes those from the
+    // operands -- StretchFP.bsv already derives the shift and
+    // normalize counts to produce the ANSWERS, so the data is in
+    // hand -- and this does not yet do it.  Recorded as the next
+    // step rather than hidden: these numbers are a floor.
+    //
+    // ALSO NOT MODELLED: *+'s "cannot enter execution cycles until
+    // Factor is available" (Table 2, printed p.3-4).  That is an
+    // INTERLOCK, not a duration, and it belongs with the look-ahead
+    // work in docs/spec_lookahead.md, not in a cycle count.
+    //
+    // UNVALIDATED AGAINST THE ORACLE.  Perf. Char. Vol. 2 PDF 37-189
+    // is a per-instruction MEASURED timing atlas, one instruction per
+    // page, and it -- not Table 2 -- is what these should be checked
+    // against.  Vol. 2's numbers are THROUGHPUT over thousand-
+    // instruction sequences from the 1961 GENER simulator, not
+    // isolated latency, so a constant offset is expected; the
+    // connective path already shows one of 2.40 us.  See
+    // docs/spec_timing.md.
+    tagged Fp .f: return
+      // L(6) LWF(38) LFT(74) ST(14) DL(70) DLWF(102): 2 + 1
+      (f.code == 7'd6 || f.code == 7'd38 || f.code == 7'd74 ||
+       f.code == 7'd14 || f.code == 7'd70 || f.code == 7'd102) ? 3 :
+      // SRD(46): 3 + 1
+      (f.code == 7'd46) ? 4 :
+      // E+(86) E+I(118): 1 + 5
+      (f.code == 7'd86 || f.code == 7'd118) ? 6 :
+      // *(26) D*(90): 5 + 4
+      (f.code == 7'd26 || f.code == 7'd90) ? 9 :
+      // *+(58): 3 + 17
+      (f.code == 7'd58) ? 20 :
+      // /(30): 2 + 2, before the data-dependent reduction loops
+      (f.code == 7'd30) ? 4 :
+      // D/(94): Divide plus 6 for the remainder normalization
+      (f.code == 7'd94) ? 10 :
+      // R/(62): 2 + 2 "plus all pre-execution and execution cycles
+      // of Divide", so 4 + 4
+      (f.code == 7'd62) ? 8 :
+      // SLO(78): 2 + 17 unnormalized (15 if normalized with no
+      // leading zeros -- the unnormalized figure is the floor)
+      (f.code == 7'd78) ? 19 :
+      // SRT(110): 2 + 106
+      (f.code == 7'd110) ? 108 :
+      // The ADD class and everything sharing its shape: + (2),
+      // +MG(34), M+(10), M+MG(42), K(18), KMG(50), KR(22),
+      // KMGR(54), D+(66), D+MG(98), F+(82), SHF(114).  4 + 1.
+      5;
     tagged VflInt .v: begin
       // Table 3's SAU byte count is .6(x/y), and Perf. Char. Vol. 1
       // printed p.3-10 (PDF 28) defines x and y -- NEITHER is the

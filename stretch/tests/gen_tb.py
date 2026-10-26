@@ -413,9 +413,20 @@ if __name__ == '__main__':
     tape_image = None
     pc_check = None
     cycle_bound = None
+    # STEPS=N raises the run rule's step cap.  A deck needs this when
+    # it executes instructions the TIMING MODEL charges heavily for:
+    # the cap counts core.step() calls, and an instruction's budget
+    # holds the machine for its duration.  Store Root is 108 clocks
+    # (Perf. Char. Table 2, printed p.3-5: 2 pre-execution + 106
+    # execution), so a deck doing several of them needs a cap sized
+    # for that, not for the flat 3 every floating-point instruction
+    # used to cost.
+    step_cap = 30000
     for spec in sys.argv[3:]:
         if spec.startswith('PC='):
             pc_check = int(spec[3:], 0)
+        elif spec.startswith('STEPS='):
+            step_cap = int(spec[6:], 0)
         elif spec.startswith('CYCLES<='):
             cycle_bound = int(spec[8:], 0)
         elif spec.startswith('R='):
@@ -434,7 +445,8 @@ if __name__ == '__main__':
             label, rest = spec.split(':', 1)
             addr_expr, expected = rest.split('=', 1)
             checks.append((label, addr_expr, int(expected, 0)))
-    print(generate(module_name, prog, checks, reader_image=reader_image,
+    print(generate(module_name, prog, checks, step_cap=step_cap,
+                    reader_image=reader_image,
                     printer_checks=printer_checks, tape_image=tape_image,
                     tape_checks=tape_checks, pc_check=pc_check,
                     cycle_bound=cycle_bound))

@@ -3032,8 +3032,35 @@ run "R23-9694 p.51 Ex.3 -- overlapping TRANSMIT, and the order is the point" ./r
 # SHORT moves only the 600 check, which is what that one is for.
 
 run "IBM's own MULTIPLY/STORE ROOT/DIVIDE self-check (R23-9694 p.82)" ./run_program.sh ../decks/ce_vol2_sqrt_check.strap StretchSqrtChkTb \
+    "STEPS=60000" \
     "PC=2056" \
     "sqrt_temp_holds_the_root:1041=0x4c000000000000"
+# >>> AND THIS DECK IS THE ONLY FLOATING-POINT TIMING ORACLE THE
+# SUITE HAS, WHICH NOBODY INTENDED. <<<  "STEPS=60000" was added on
+# 2026-10-26 when eboxClocks stopped charging every floating-point
+# instruction a flat 3 clocks and started using Performance
+# Characteristics Table 2.  STORE ROOT is 108 clocks there -- 2
+# pre-execution plus 106 execution, printed p.3-5 -- where it used to
+# cost 3, and this deck does several of them.  It ran out of the
+# default 30,000 steps; it needs between 30,000 and 40,000, and 60,000
+# is headroom.
+#
+# NOTHING ELSE IN 5,540 CHECKS NOTICED.  The jb_af1c floating-point
+# decks exercise the arithmetic hard but assert VALUES, not cycle
+# counts, and MCP's entire bootstrap contains ONE floating-point
+# instruction -- LWF, in the one class whose timing did not change.
+# So a bug that made a square root cost the same as a load was
+# invisible to every test except this one, and this one only caught
+# it by running out of time.
+#
+# THAT IS NOT A TIMING ORACLE, IT IS A TRIPWIRE.  A real one checks
+# Perf. Char. Vol. 2 PDF 37-189's per-instruction measured atlas,
+# which tests/perf_char_timing.py is shaped for.  Carry Vol. 2's own
+# caveat when it is written: those numbers are THROUGHPUT over
+# thousand-instruction sequences from the 1961 GENER simulator, not
+# isolated latency, so a constant offset is expected -- the
+# connective path already shows one of 2.40 us.
+#
 # R23-9694 printed p.82, the Programming Example under STORE ROOT:
 # "Assume a short routine is to check the operation of the
 # instructions MULTIPLY, DIVIDE, and STORE ROOT.  One method is to

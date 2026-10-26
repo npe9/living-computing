@@ -19,6 +19,66 @@ accumulate.
 
 
 
+
+## `eboxClocks` IS FIXED, AND THE MCP BOOT CANNOT SEE IT -- 2026-10-26
+
+`bsv/StretchTiming.bsv` now gives each floating-point instruction
+Performance Characteristics Table 2's own time instead of a flat 3:
+`*` 9, `*+` 20, `E+` 6, `SRT` 108, the ADD class 5, `L`/`LWF`/`LFT`/
+`ST` 3. The old flat 3 was exactly the load/store row, which is why
+it never looked obviously wrong.
+
+**The boot run is byte-for-byte unchanged**: 22,048,506 steps, the
+same figure as the three runs before it, all console checks passing,
+`OP` still never set. That is not the budget being dead --
+`StretchCore.bsv:314` is `ibusy <= budgetClocks(di, taken)`, it is
+live -- and the reason is exact:
+
+```
+$ grep -hoE "\b[A-Z+*/]+\((U|N)[,)]" decks/mcp_bootstrap_p*.strap | sort | uniq -c
+   1 LWF(U)
+```
+
+> **>>> MCP'S ENTIRE BOOTSTRAP CONTAINS ONE FLOATING-POINT
+> INSTRUCTION. <<<** And `LWF` is code 38, in the one class whose
+> value did not change. So the null result is fully explained, and
+> it carries a sharper fact with it: **the MCP boot cannot validate
+> floating-point timing at all.** The flat-3 bug made a `SRT` cost
+> the same as a load for as long as it existed, and this test -- the
+> project's most elaborate -- could never have noticed.
+
+**So the FP timing has no oracle in the suite.** The `jb_af1c` decks
+exercise the arithmetic heavily but check VALUES, not cycle counts.
+Perf. Char. Vol. 2 PDF 37-189's per-instruction measured atlas is
+the only thing in the corpus that can check it, and
+`tests/perf_char_timing.py` is shaped for exactly that.
+
+**Carry the caveat when that check is written.** Vol. 2's numbers are
+throughput over thousand-instruction sequences from the 1961 `GENER`
+simulator, not isolated latency, so a CONSTANT OFFSET is expected
+rather than alarming -- the connective path already shows one of
+2.40 us across 34 of 35 rows. A timing test that demands exact
+equality against those pages will fail for a reason that is not a
+bug.
+
+### Still to do on this path, in order
+
+1. **The connective constant.** 34 of 35 rows of Vol. 2 PDF 140 sit
+   at a uniform 2.40 us (eight clocks) from the model, and the 35th
+   reveals a **16-byte cap** no table states. Both are one-line
+   changes to `eboxClocks`'s `Connective` arm, and the comment there
+   calling the byte count "unsourced" is now WRONG -- PDF 140 is the
+   experiment that sources it, and it CONFIRMS the existing code.
+2. **Make the FP values data-dependent.** Table 2's entries are
+   minima: "1 cycle for each additional pre-shift of 4", "2 cycles
+   for each additional norm. of 6", "2 cycles if recomplement is
+   necessary", and for DIVIDE "number of cycles is data dependent".
+   `StretchFP.bsv` already derives the shift and normalize counts to
+   produce the ANSWERS, so the inputs exist.
+3. **`*+`'s interlock**, "cannot enter execution cycles until Factor
+   is available", is not a duration and belongs with the look-ahead.
+
+
 ## >>> MCP TYPES ITS OWN ERROR REPORT, WITH THE FAILING ADDRESS <<< 2026-10-26
 
 ```
