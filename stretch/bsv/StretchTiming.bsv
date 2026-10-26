@@ -211,16 +211,54 @@ function Bit#(16) eboxClocks(DecodedInstr d);
     // no VflMod -- no sign and no radix bit -- so p.3-10's x and y have
     // no referent here, and p.3-10 belongs to Table 3, "EQUATIONS FOR
     // SAU INSTRUCTIONS", whose instruction list (ST, L, M+, K, KI, KF,
-    // KR, KRI, KE, LTRS, LCV, ...) does not include them.  Vol. 2 has
-    // no connective page either: its 66 instruction headers are all VFL
-    // arithmetic.  So the declared byte size stays here until a source
-    // says otherwise -- unsourced, and recorded as such in
-    // docs/NEXT.md 5g rather than fixed by analogy.
+    // KR, KRI, KE, LTRS, LCV, ...) does not include them.
+    //
+    // >>> AND VOL. 2 *DOES* HAVE A CONNECTIVE PAGE.  THE DECLARED
+    // BYTE SIZE IS SOURCED, AND IT WAS RIGHT ALL ALONG. <<<
+    //
+    // This comment used to end "unsourced, and recorded as such in
+    // docs/NEXT.md 5g rather than fixed by analogy", and said Vol. 2
+    // had no connective page.  **PDF 140 is one** -- "VFL
+    // INSTRUCTION C0011, NO FORWARDING, DIRECT ADDRESSING, OFFSET 0,
+    // INSTRUCTION AT FULL WORD ADDRESS" -- and it is the one
+    // experiment that pins the byte count, because it VARIES THE
+    // BYTE SIZE AT FIXED FIELD LENGTH.  Rendered and read:
+    //
+    //   (BU, 8,1)  8.40     (BU,16,1) 13.20     (BU,32,1) 13.20
+    //   (BU, 8,2)  6.00     (BU,32,2) 13.20     (BU,48,3) 13.20
+    //   (BU, 8,8)  4.20     (BU,64,4) 13.20
+    //
+    // All 35 rows obey  t = 3.6 + 0.6 * ceil(FL / byte size)  us to
+    // 0.01, with the DECLARED byte size -- confirming this code
+    // rather than correcting it.  The obvious "fix" from Table 3's
+    // glossary, y = 8, was drafted and the page refuted it.
+    //
+    // TWO CORRECTIONS THE PAGE DOES MAKE:
+    //
+    // 1. THE CONSTANT.  iboxCycles returns 6 here, doubled to 12
+    //    clocks = 3.6 us, and this used to add a further 8 clocks =
+    //    2.40 us for Table 3's "1.8 us pre-execution + 0.6 us
+    //    termination".  The measured law has NO such constant: those
+    //    two are ENTIRELY OVERLAPPED with the I-box preparation.  All
+    //    34 in-range rows sat at a uniform 2.40 us too high.
+    //
+    // 2. A SIXTEEN-BYTE CAP that no table states.  (BU,32,1) is
+    //    thirty-two bytes and reads 13.20 -- identical to (BU,16,1).
+    //    Every row needing more than sixteen bytes reads the
+    //    sixteen-byte time.  It is the 35th row, the one that did not
+    //    fit the law, and it is why the law holds on the other 34.
+    //
+    // NOT APPLIED TO VflInt ABOVE, deliberately: that arm's constant
+    // was itself measured, against Vol. 2 printed p.110's M+ page, to
+    // a mean error of 0.28 us.  Two instruction classes, two
+    // measurements, and they disagree about the constant -- which is
+    // what a measurement is for.
     tagged Connective .c: begin
       Bit#(7) len_ = effLength(c.a.length);
       Bit#(4) bsz  = effByteSize(c.a.bs);
-      Bit#(8) bytes = (zeroExtend(len_) + zeroExtend(bsz) - 1) / zeroExtend(bsz);
-      return 8 + 2 * zeroExtend(bytes);
+      Bit#(8) raw  = (zeroExtend(len_) + zeroExtend(bsz) - 1) / zeroExtend(bsz);
+      Bit#(8) bytes = (raw > 16) ? 16 : raw;
+      return 2 * zeroExtend(bytes);
     end
     default: return 0;
   endcase
