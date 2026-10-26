@@ -15,7 +15,7 @@ accumulate.
 
 
 
-## THE NEXT MCP BLOCKER IS **ASSIGN**, AND THE HALT WAS NEVER THE TAPE CHANNELS -- 2026-10-26
+## CORRECTED: ASSIGN IS NOT FAILING, AND THIS ENTRY RE-DERIVED WHAT WAS ALREADY WRITTEN DOWN -- 2026-10-26
 
 With `*`, `/`, `CV` and `LTRCV` built the boot refuses nothing, and it
 still halts at `000167.40` -- `BD,$`, a deliberate stop at the end of
@@ -71,19 +71,50 @@ after the BRANCH, which is `001471.40`. Observed exactly.
 > reported an assignment error, and everything after that is MCP
 > trying to tell somebody.
 
-### What to do next
+### >>> AND THEN I CHECKED THE RECORD, WHICH ALREADY SAID ALL OF THIS <<<
 
-**Find out why ASSIGN fails.** It is printed pp.65-80 and every page
-of it is transcribed. Note that its multiply at `004227.40` is NEVER
-REACHED (the refusal census never saw it), so ASSIGN gives up
-*before* p.72 line 19 -- which is also why building `*` changed
-nothing.
+`docs/boot_plan.md` A20 and this file's own printed-p.80 entry had it
+on 2026-10-24 and 2026-10-25: `X ERR AD` holding `001471.40`, "which
+is what p.27 line 12's `SIC,X ERR AD` stores -- **the path confirmed
+to the instruction**", and the halt at `000167.40` in `X6ERR`. The
+heading above said "the next blocker is ASSIGN"; the record says
+something different and better:
 
-The method that worked twice today is the one to use: a targeted
-`$display` probe on the write that matters, run the boot, read the
-sequence. The XLRIN probe settled the switch-word question in one
-run and cost ten minutes. Probe what sets the condition `BZXCZ`
-tests, and work backwards from there.
+> **`BZXCZ,XERROR` is taken -- and that is the right answer. The
+> fixture's machine cannot satisfy the assignment, and MCP says so
+> the way it was written to.**
+
+**ASSIGN IS NOT FAILING. ASSIGN IS WORKING.** It runs its fifteen
+pages, saves and restores the index registers with the `SWAPI`
+bookend at printed p.65 line 6 and p.80 line 30, returns through
+`$15` to its caller at p.27 line 11, and reports that the machine it
+was given cannot satisfy the request. That is the routine doing its
+job.
+
+**What survives from this entry, and it is one thing:** the Reference
+Manual's *Store Instruction Counter If* is now quoted for WHY
+`001471.40` is the stored value -- `SIC` is a PREFIX to the
+half-word branch, runs "if and only if the associated branching is
+successful", and stores the half-word after the BRANCH. That upgrades
+the record's "which is what `SIC,X ERR AD` stores" from an observed
+fact to a cited rule, **and makes the address evidence that the
+branch was TAKEN** rather than merely consistent with it. A `SIC`
+that never executed would have left an older value.
+
+**And the headline was an overstatement.** `X6ERR`'s channel scan is
+downstream -- that part stands -- but the ROOT cause is the
+fixture's machine configuration, which is the same territory "add
+tape units" was pointing at, less precisely. The real question is
+not "why does ASSIGN fail" but **"what machine would satisfy it?"**,
+which means reading pp.65-80 for the conditions it tests rather than
+probing for a bug that is not there.
+
+> **THE LESSON IS THE ONE THIS PROJECT WROTE DOWN FIRST.** The
+> standing instruction is to read `docs/NEXT.md` and
+> `docs/boot_plan.md` before deriving status, and this entry was
+> written from a live investigation without doing that. Everything
+> in it above this line was rediscovered at the cost of an hour. The
+> investigation was sound and the conclusion was already on disk.
 
 
 ## THE TIMING TABLES ARE TRANSCRIBED, AND StretchTiming.bsv HAS A REAL BUG -- 2026-10-25
