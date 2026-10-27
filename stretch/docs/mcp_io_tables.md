@@ -182,3 +182,29 @@ keyed by, in the same order.
 > explanation of the reject should be written down** -- two have
 > already been written ahead of the evidence this week and both were
 > wrong (see `docs/NEXT.md`, the supersession of `46ba25d`).
+
+### The three outcomes, pre-registered
+
+Written down before the probe runs, because the failure mode this
+week has been fitting an explanation to whichever number appeared:
+
+| conf bytes read back | what it means |
+|---|---|
+| `1,0,0,0,0,0,0,0` — the STATIC table | **`TA9` never ran.** The reject is not about a count being exceeded; the configuration was never installed, and the IOCD cards are not reaching p.72. |
+| `1,1,1,0,1,0,0,2` | **`TA9` ran and counted this fixture's deck correctly.** Then whichever type has `REQ CNT > MACH CONF` is the culprit and p.66 line 13 is doing its job on a request the fixture should not be making. |
+| all zero, type codes `1..8` intact | **Mid-pass.** p.72 line 10's `CM0000, TMCAD(TIXG)` cleared them and the halt caught the table between clear and recount. The probe must move earlier and says nothing about the reject. |
+
+**`TIOREQ`'s first words settle the cheaper half.** The I/O request
+table is printed p.62 line 28, `TIOREQ DRZ(BU,64),(TIOC)` with
+`TIOC = 80`, at `003373.0` = word **1787**. If it is zero, there are
+no requests at all, p.66 line 10's `BRZ` skips every row, line 13
+never runs — and the chain above would be right about the machinery
+and **wrong about which test fires.**
+
+> **The addressing is verified rather than assumed.** `gen_tb.py:266`
+> emits `core.mem.readWordReq(<addr>)` and `readWordReq` takes a
+> `WordAddr`, so the check's address string is a WORD index, not a bit
+> address. `prosa.XINEND_WORD` is 2870, the same range as 1962 and
+> 1787. This is the same class of unit error as the sign that had to
+> be superseded in `a2d66b8`, so it was checked against the emitted
+> BSV and not against the shape of the neighbouring checks.
