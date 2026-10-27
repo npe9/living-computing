@@ -250,3 +250,85 @@ every link in it is sourced:
 > bytes read `1,1,1,0,1,0,0,2` and some type's request count exceeds
 > its conf count. If the probe shows the static table instead, this
 > derivation is wrong somewhere and the branch is the place to look.
+
+## >>> THE NUMBERS, AND THEY MATCH NONE OF THE THREE PREDICTIONS <<< 2026-10-26
+
+Read out of a boot run, five probe checks and then a wider window of
+thirteen. **The table was NOT relocated** -- `TTYARA` still reads
+`0x01ea8000002007a7`, whose value field is `0x01ea80` = 125568 =
+`1962 x 64`, and `TCOMBO` (24), word 1961, 1965 and 1966 are all
+byte-identical to the assembled image. Only the table's own 24 bytes
+changed:
+
+| row | static (type, conf, req) | runtime | |
+|---|---|---|---|
+| DISK | (1, 1, 0) | **(0, 0, 1)** | changed |
+| CONSOLE | (2, 0, 0) | **(1, 0, 0)** | changed |
+| READER | (3, 0, 0) | **(37, 0, 0)** | changed |
+| PUNCH | (4, 0, 0) | (4, 0, 0) | . |
+| PRINTER | (5, 0, 0) | (5, 0, 0) | . |
+| IQS | (6, 0, 0) | (6, 0, 0) | . |
+| EXTRA | (7, 0, 0) | **(0, 0, 0)** | changed |
+| TAPE | (8, 0, 0) | **(0, 0, 0)** | changed |
+
+and `TIOREQ` (words 1787-1789) is **all zero**.
+
+### What is now MEASURED, not inferred
+
+1. **The reject is explained, and the four-page chain was right about
+   WHICH test fires.** DISK's row has `REQ CNT` = 1 and `MACH CONF` =
+   0. p.66 line 9 loads 1, line 10's `BRZ` does not skip it, line 11
+   compares against 0, line 12's `BZAH` does not take the OK exit, and
+   line 13 sets the reject bit. **One non-zero byte against one zero
+   byte is the whole reject.**
+2. **`TA9` RAN.** DISK's conf went 1 -> 0, which only p.72 line 10's
+   `CM0000, TMCAD(TIXG)` does. So the `BZXVZ` derivation was right.
+3. **`TA9` CLEARED THE COUNTS AND NEVER PUT THEM BACK.** Every conf
+   byte is zero, including the three channels whose IOCD cards MCP
+   demonstrably processed.
+4. **AND THREE TYPE BYTES ARE CORRUPTED.** `CONSOLE` 2 -> 1,
+   `READER` 3 -> 37, `EXTRA` 7 -> 0, `TAPE` 8 -> 0. **The counting
+   loop has no business writing a type byte at all.**
+
+> **ALL THREE PRE-REGISTERED OUTCOMES WERE WRONG**, and it is worth
+> saying so plainly. (a) said the static table; it is not. (b) said
+> `1,1,1,0,1,0,0,2`; the conf bytes are all zero. (c) said all-zero
+> conf with the type codes INTACT; the conf bytes are zero but four
+> type codes are not intact. The pre-registration still did its job --
+> it stopped the fourth reading from being dressed up as a prediction.
+
+### THE HYPOTHESIS THIS POINTS AT -- labelled, and not yet tested
+
+`TA9`'s write target is computed, not indexed, and the computation is
+VFL arithmetic at two different offsets:
+
+```
+line 17  L, TEQUIP(TIXF), 40      -GET EQUIP FOR MACH CONF
+line 19  *(BU,24), TCOMBO, 40     -COMPUTE LOC WITHIN TABLE
+line 20  -(BU,24), T2COMB, 20
+line 21  L(BU,64), $R, 20         -LEFT SHIFT TO VF
+line 22  LV, TIXG, $R
+line 26  M+, TDISK(TIXG)          -ADD CONFIGURATION TO TABLE
+```
+
+**The intended address is arithmetic this project can check.**
+`TCOMBO`'s value field is 24 and `T2COMB` is p.63 line 22's
+`VF, TTYBC+TMACBC` = 8 + 8 = **16**, so the offset is
+`code*24 - 16`: for DISK (code 1) that is bit 8, exactly row 0's conf
+byte, and for each later code exactly that row's conf byte. The
+intent is unambiguous.
+
+**So if `TIXG` comes out wrong, `M+` writes into a NEIGHBOURING byte
+-- which is a type byte -- and no conf byte ever receives its
+count. That is precisely the symptom measured above.** And the
+operations that compute it are `*(BU,24)` at offset 40 and `-(BU,24)`
+at offset 20: VFL multiply with an offset, which **was built in this
+session**.
+
+> **NOT A CONCLUSION.** The symptom fits, the arithmetic is sourced,
+> and the suspect instruction is new -- but "fits" is what the last
+> two wrong explanations also did. The test is a deck that runs
+> p.72 lines 17-22's exact sequence for each of the eight equipment
+> codes and checks `TIXG` against `code*24 - 16`, with a measured
+> injection. That deck is the next thing to write, and it needs no
+> boot run to be decisive.
