@@ -839,3 +839,45 @@ ones, which was the one way isolation differed from the boot:
 > The intermediate VALUES of writes 8 and 12 came from an instrumented
 > run and keep the provenance that cost a retraction earlier today; the
 > FINAL state above is from clean runs and is the thing to explain.
+
+### Five decks, all green: it is not logic -- 2026-10-27
+
+The refill and the address are both eliminated. `mcp_p72_clear_loop_live.strap`
+puts the table at **word 1962** -- MCP's own address -- with a
+self-refilling pointer in `LIOTBX`'s shape, assembling to
+`0x01ea8000002007a8` against the live `T TYARA`'s
+`0x01ea8000002007a7`: same value, same count of 8, refill differing
+only because the card sits one word along. **It passes.**
+
+| difference from the boot | deck | result |
+|---|---|---|
+| none (baseline) | `mcp_p72_clear_loop` | pass |
+| fresh accumulator | `mcp_p72_clear_loop_dirty` | pass |
+| fresh accumulator | `mcp_p65_reqcount_clear_dirty` | pass |
+| table address, refill | `mcp_p72_clear_loop_live` | pass |
+| — | `mcp_p65_reqcount_clear` | pass |
+
+> **SO THE FAULT IS NOT IN ANY INSTRUCTION'S LOGIC.** The loop is
+> correct with a dirty accumulator, at the boot's own address, with the
+> boot's own self-refilling pointer, over a table of distinct bytes,
+> eight times, in both offset variants. What is left is what a deck
+> cannot reproduce: **the boot's concurrent state** -- look-ahead
+> levels loaded, I/O in flight, interruptions armed, the store queue
+> carrying other traffic.
+>
+> That is the same conclusion `6b614b7` reached from the other
+> direction and it is now reached by elimination rather than by
+> assumption. **It also means the fault belongs to M2.** A VFL
+> read-modify-write that is correct in isolation and wrong under
+> concurrent memory traffic is a hazard in the store path, and the
+> look-ahead is the structure that governs it -- which is the same
+> reason `docs/NEXT.md` already gives for M2 preceding M1.
+
+**What NOT to do next:** write a sixth deck. Five have eliminated the
+reproducible dimensions. The next measurement has to be taken *in the
+boot* -- the instrumented sequence is the only place the wrong value
+has ever been seen, and its provenance is exactly what cost a
+retraction earlier today, so it needs a probe designed to survive its
+own scheduling perturbation: run the SAME instrumented build twice
+with the watchpoint reading different address ranges, and check that
+the writes to 1962-1964 agree between them.
