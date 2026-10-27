@@ -43,6 +43,26 @@ explicit cycle assertion.
 against it, and let it fail by the known offset. Nothing below is
 verifiable until something fails for a reason you can name.
 
+## >>> ORDERING CORRECTED, 2026-10-26: M1 IS BLOCKED ON M2 <<<
+
+This file ordered the datapath before the look-ahead. **That is
+backwards, and it was tested.** The exact VFL timing formula —
+derived from the manual and matching Vol. 2's cycle-exact page at 24
+rows of 24 — was applied, and the MCP boot went from 22,048,336 steps
+to 6,015,582 with twenty-six checks failing on a UNIT NOT READY
+REJECT in the IPL's IO TEST.
+
+**The surplus in the present timing numbers IS the overlap.**
+`budgetClocks` feeds `ibusy`, which "covers the instruction's own
+memory waits when memory is free". With no look-ahead, the memory
+access hides inside the instruction's budget; the atlas's figures
+were measured on a machine where the look-ahead covered it instead.
+Cut the budget to the measured value and the read no longer fits.
+
+So: **M2 first.** The timing arithmetic is already solved on paper
+and recorded in `docs/NEXT.md`; it becomes applicable — and becomes
+the test that M2 works — only once the overlap exists.
+
 ## M1 — the arithmetic datapath: A, B, C, D, X, Z, ADDER OUTPUT
 
 **Why first among the structures:** the timing tables are conditional

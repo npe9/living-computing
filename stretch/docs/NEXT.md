@@ -22,6 +22,168 @@ accumulate.
 
 
 
+
+## >>> THE VFL TIMING IS SOLVED EXACTLY -- AND APPLYING IT BREAKS THE BOOT <<< 2026-10-26
+
+Against Volume 2 **printed p.113 (PDF 120), VFL `L`, NO INDEXING /
+EXTERNL OPERAND** -- rendered and read -- this reproduces **24 rows
+of 24 in whole cycles**:
+
+```
+cycles = 12 + 2*ceil(x/y) + (2 if signed and x > 0)
+
+  x = field length            (unsigned)      printed p.3-10 glossary
+    = field length - byte size (signed)       printed p.3-10 glossary
+  y = 8 binary / byte size decimal            printed p.3-10 glossary
+  +2 cycles when signed                       Table 3 preamble
+```
+
+Nothing in it is invented except the `x = 0` edge, and that is
+labelled as a reading of two rows rather than a quotation.
+
+### What was wrong, and why it hid
+
+**The base was 20 cycles and should have been 12.** The extra eight
+are Table 3's "1.8 us pre-execution + .6 us termination" added on top
+of `iboxCycles`' six -- and those are ENTIRELY OVERLAPPED with the
+I-box preparation. **The same eight clocks, the same mistake, in both
+arms**: Vol. 2 PDF 140 showed it for the connectives earlier the same
+day, and `VflInt` was not checked for it because its comment cited a
+measurement against `M+`.
+
+### >>> THIS REVERSES "WRITING TABLE 3'S OMITTED SIGNED TERM MAKES THE FIT WORSE" <<<
+
+That entry is **wrong and is superseded**. It tested glossary-plus-
+preamble, found the error doubled, and concluded the two were
+alternative formulations of one adjustment. **They are
+complementary.** The test was run with the 20-cycle base, where eight
+spurious clocks swamp a two-cycle term and invert the comparison.
+With the base corrected, both apply and together they are exact.
+
+**And "the VflInt timing error is structured, not noise" is
+superseded too** -- not because the structure was imaginary, but
+because it was measured against printed p.110, `M+`, which is an
+AVERAGED page. The structure was partly the averaging.
+
+> **"A better fit that contradicts the source is a worse model"
+> stands, and is now better evidenced than when it was written.**
+> The rule rejected there -- `x = len - bs` for both -- was
+> curve-fitting against an averaged page. The formula above is an
+> exact fit against a cycle-exact page using the documented
+> definitions unchanged. Had the curve-fit been adopted, this would
+> have been unreachable.
+
+### The page-classification rule, now with numbers
+
+Dividing a page's values by 0.3 asks whether it is a cycle oracle:
+
+```
+p.113  VFL L    whole throughout        -- cycle-exact
+p.110  VFL M+   4 of 24 whole           -- averaged
+```
+
+And the split is physical, not arbitrary. Across 69 atlas pages whose
+instruction could be identified:
+
+```
+instructions that STORE (M+, M+MG, ST, CM, SRD):  median 10% whole
+all others (L, LWF, +, K, ...):                   median 46% whole
+```
+
+**A store contends for the memory bus and its completion time
+varies**, so the 1961 `GENER` simulator averaged it. `M+` was the
+worst available page to calibrate on, and it is the one the old
+comment cited.
+
+**Rule for the roadmap's M0:** before using an atlas page as an
+oracle, divide by 0.3. Prefer a READ-ONLY instruction's page. If the
+values are whole it is a cycle oracle; if not, only its integer part
+is, and loosely.
+
+## >>> AND THE FORMULA IS NOT APPLIED, BECAUSE IT BREAKS THE BOOT <<<
+
+Applied to `StretchTiming.bsv`, the exact formula took the MCP boot
+from 22,048,336 steps to **6,015,582** and failed twenty-six checks.
+`X ERR AD` reads `000060.40` -- printed p.3 line 19 -- and the branch
+taken is line 20:
+
+```
+X ERR 02  SIC, X ERR AD
+          BUNRJZ, X ERROR   -UNIT NOT READY REJECT
+```
+
+The IPL's **IO TEST**, failing on a unit-not-ready reject. **Reverted.**
+
+### Why, and it is structural rather than arithmetic
+
+`budgetClocks` feeds `ibusy`, and `StretchTiming.bsv`'s own comment
+says what that means:
+
+> "The budget covers the instruction's own memory waits when memory
+> is free: it is started at dispatch and whatever is left when the
+> semantics complete holds the next preparation."
+
+**The eight clocks removed were covering the memory access.** In the
+real machine that access is overlapped by the look-ahead; in this
+model, with no look-ahead, it is hidden inside the instruction's
+budget. Cut the budget to the atlas's figure -- which was MEASURED on
+a machine that had a look-ahead -- and the read no longer fits.
+
+> **>>> SO M1 IS BLOCKED ON M2, AND THE ROADMAP HAD THEM THE OTHER
+> WAY ROUND. <<<** `docs/microarchitecture_roadmap.md` ordered the
+> datapath before the look-ahead. The evidence says the VFL timing
+> cannot be made exact until the overlap exists, because the surplus
+> in the present numbers IS the overlap, standing in for a structure
+> that is not there yet. Fixing the arithmetic first does not make
+> the model more faithful -- it makes it incoherent, which is what
+> twenty-six failing checks are.
+
+### What to keep
+
+The formula is right and is recorded above. Apply it **after** M2, and
+expect the atlas to become reachable only then -- which is also the
+test that M2 works, since Vol. 2's numbers were measured with overlap.
+
+**And the same eight clocks were safe to remove from the CONNECTIVE
+arm**, which is committed and green: the boot moved 170 steps and
+nothing failed. Same constant, same justification, opposite outcome.
+I first guessed that was a matter of VOLUME -- more VFL arithmetic
+than connectives in the boot. **It is not. It is a store-to-
+instruction-stream hazard, and MCP's IPL is SELF-MODIFYING:**
+
+```
+X1      M+1(BU,19), X1CCW       line 5  - ADVANCE CHANNEL
+X1CCW   CCW, 15.32, XIPLBS      line 6  -- NOT in the checked set
+        BEKJZ, XERROR           line 8
+        BZB, XIPLBS+.63, X1     line 9  -IS IT IPL CHANNEL
+```
+
+printed p.3's channel search adds one to the 19-bit field **of the
+instruction on the next line**, incrementing the channel number
+inside the `CCW` it is about to execute, and loops. The deck's own
+comment records that line 6 cannot be checked statically because it
+is modified at run time.
+
+**So the budget was holding the store long enough to drain before the
+modified instruction was fetched.** Eight clocks less and the `CCW`
+executes against a stale channel number; the unit is not ready; `UNRJ`
+is set; printed p.3 line 20 branches to `XERROR`. The twenty-six
+failures are all downstream of that one fetch.
+
+> **THAT IS EXACTLY THE INTERLOCK M2 HAS TO IMPLEMENT**, and
+> `docs/spec_lookahead.md` already names it: the machine compares a
+> level's operand address against ONE address register and FORWARDS,
+> "including fetch->fetch". A store followed by a fetch of the same
+> address is the look-ahead's problem, and here it is being solved by
+> accident, by a timing constant that happens to be big enough.
+>
+> **So M2 is not merely a prerequisite for exact timing -- it is
+> already load-bearing for CORRECTNESS, invisibly.** The model
+> currently depends on an unmodelled structure via a number that was
+> wrong for a different reason. That is worth more than the eight
+> clocks: it says where the next real bug lives.
+
+
 ## >>> MEASURE IN CYCLES. THE ATLAS PAGES ARE NOT ALL THE SAME KIND. <<< 2026-10-26
 
 The user's instruction -- *"it's okay to be cycle accurate and not
