@@ -3406,6 +3406,33 @@ run "/, VFL Divide -- quotient at the instruction's offset, remainder in RM" ./r
 # bsc 2026.01 and 2026.07 do it.  The arm divides by
 # (dsr == 0) ? 1 : dsr -- which is also the faithful reading, since
 # p.70 says the division is NOT ATTEMPTED rather than discarded.
+run "printed p.72 lines 9-12: the machine-configuration clear loop" ./run_program.sh ../decks/mcp_p72_clear_loop.strap StretchP72ClearTb \
+    "PC=2053" \
+    "clear_word0:1029=0x1000301100311200" \
+    "clear_word1:1030=0x3213003314003415" \
+    "clear_word2:1031=0x0035160036170037"
+# THE LOOP A WATCHPOINT CAUGHT MISBEHAVING IN THE BOOT, run on its own.
+# Instrumenting StretchStorage to report every write landing in words
+# 1962-1964 of the MCP boot, with the PC, gave half-word 4389 =
+# 004222.40 for eight writes.  p.72's checked rows put line 11 there
+# and line 10 -- CM0000, T MCAD(T IXG) -- is the only STORE in the
+# loop.  The loop ran exactly eight times, the right count, and SIX of
+# the eight writes were right; the two for field offsets 32 and 128
+# replaced the whole word instead of clearing one byte.
+#
+# >>> AND IT IS CORRECT HERE.  ALL THREE WORDS PASS. <<<  Eight conf
+# bytes cleared, twenty-four distinct bytes otherwise untouched, with
+# T TYARA's count of 8 and T COMBO's value of 24 copied from the live
+# index words (0x01ea8000002007a7 and 0x0000180000001000).  So the
+# instruction, the stride, the 8-bit field at offset 8 and V+C's
+# count-down are all right, and whatever corrupts the boot's table
+# depends on BOOT CONTEXT -- memory contention -- not on this loop.
+# docs/mcp_io_tables.md carries the open question and the five
+# "CROSSING-FIELD TAIL ... LOST" messages the same run produced.
+#
+# INJECTION (measured): change MCAD's SYN from 0.8 to 0.0 and the loop
+# clears the TYPE bytes instead, failing clear_word0 at word 1029 with
+# 0x0020300021310022.
 run "printed p.72 lines 17-22: the conf-byte offset MCP computes" ./run_program.sh ../decks/mcp_p72_conf_offset.strap StretchP72ConfTb \
     "PC=2105" \
     "code1_disk_offset:1059=8" \

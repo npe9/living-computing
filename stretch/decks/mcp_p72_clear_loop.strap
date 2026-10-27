@@ -1,0 +1,53 @@
+! printed p.72 lines 9-12, THE MACHINE-CONFIGURATION CLEAR LOOP, on its
+! own, over a table whose every byte is distinct.
+!
+! >>> WHY: A WATCHPOINT CAUGHT THIS LOOP WRITING WORDS IT SHOULD NOT. <<<
+! Instrumenting StretchStorage to report every write landing in words
+! 1962-1964 of the MCP boot, with the program counter, gave PC
+! half-word 4389 = 004222.40 for eight writes.  p.72's checked rows put
+! line 11 ("V+C,T COMBO") at 004222.40, and line 10 is the only STORE
+! in the loop:
+!
+!   line  9  004221.00  LX,T TYARA
+!   line 10  004221.40  T CM9  CM0000, T MCAD(T IXG)
+!   line 11  004222.40  V+C, T COMBO
+!   line 12  004223.00  BZXCZ, T CM9
+!
+! The loop ran exactly eight times -- the right count -- and SIX of the
+! eight writes were correct.  Two were not: the writes for the conf
+! bytes at field offsets 32 and 128 replaced the whole word with
+! unrelated content instead of clearing one byte.
+!
+! T TYARA carries count 8 and T COMBO value 24 (decoded from the live
+! words: 0x01ea8000002007a7 and 0x0000180000001000), so V+C counts down
+! and the stride is 24 bits -- three bytes, one row.  T MCAD is
+! printed p.63 line 28's SYN(BU,8),0.8, the MACH CONF byte.
+!
+! EVERY BYTE HERE IS DISTINCT so a stray write names itself: row r is
+! (16+r, 32+r, 48+r), and after a correct loop only the middle byte of
+! each row -- the conf byte -- is zero.
+
+        SLC, (8)2000.0
+
+START   LX, $8, TABPTR
+LOOP    CM0000, MCAD($8)
+        V+C, $8, COMBO
+        BZXCZ, LOOP
+PASS    BEW, $
+
+        CNOP
+TABPTR  XW, TABLE, 8, 0
+COMBO   XW, 24, 0, 0
+        CNOP
+TABLE   DD(BU,8), 16, 32, 48
+        DD(BU,8), 17, 33, 49
+        DD(BU,8), 18, 34, 50
+        DD(BU,8), 19, 35, 51
+        DD(BU,8), 20, 36, 52
+        DD(BU,8), 21, 37, 53
+        DD(BU,8), 22, 38, 54
+        DD(BU,8), 23, 39, 55
+
+MCAD    SYN(BU,8), 0.8
+
+        END, START

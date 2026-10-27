@@ -465,3 +465,66 @@ single `$display` guarded on the address range names the instruction
 responsible, and MCP's own listing then says what that instruction
 is. Five writes are expected and their PCs will say whether they come
 from p.72 line 26 at all.
+
+## THE WATCHPOINT NAMED THE WRITER, AND THEN CLEARED IT -- 2026-10-26
+
+`StretchStorage` was instrumented to report every write landing in
+words 1962-1964, and `StretchCore` to print `pcReg` when it fired
+(one register write per rule -- the first attempt drew G0004, which
+`rl_xmit`'s own comment warns about). Twenty-three writes:
+
+| writes | PC (half-word) | listing | what |
+|---|---|---|---|
+| 3 | 82 | — | the image zeroed |
+| 3 | 165 | — | a 494-word TRANSMIT, `src 6439 dst 1962`, loading the static table **correctly** |
+| 8 | 4389 | `004222.40` | p.72's clear loop |
+| rest | 4010, … | | later routines |
+
+printed p.72's checked rows put line 11 (`V+C,T COMBO`) at
+`004222.40`, and **line 10, `T CM9 CM0000, T MCAD(T IXG)`, is the only
+STORE in the loop.** It ran exactly eight times -- the right count --
+and six of the eight writes were right. The two for field offsets
+**32** and **128** replaced the whole word instead of clearing one
+byte.
+
+### And the loop is CORRECT in isolation
+
+`decks/mcp_p72_clear_loop.strap` runs lines 9-12 over a table whose
+twenty-four bytes are all distinct, with `T TYARA`'s count of 8 and
+`T COMBO`'s value of 24 decoded from the live index words. **All three
+words pass.** Eight conf bytes cleared, nothing else touched. So the
+instruction, the 24-bit stride, the 8-bit field at offset 8 and `V+C`'s
+count-down are all right.
+
+> **SO THE CORRUPTION DEPENDS ON BOOT CONTEXT, NOT ON THE LOOP** --
+> which means memory contention, and that is a very different kind of
+> bug from the three already ruled out.
+
+### >>> AND THE SAME RUN REPORTED FIVE SILENTLY DROPPED STORES <<<
+
+```
+StretchStorage: store queue full, CROSSING-FIELD TAIL to 1240 LOST
+                                                        1241 LOST
+                                                        1243 LOST
+                                                        1244 LOST
+                                                        1246 LOST
+```
+
+`bsv/StretchStorage.bsv`'s own comment on that message says the core
+"holds off arming for the clock the tail waits (`storeTailPending`,
+folded into `busyXfer`), so nothing SHOULD arrive -- and the
+`$display` says so rather than the comment, because **'should' is a
+claim and a message is a measurement**."
+
+**The measurement now contradicts the claim.** `storeQ` is
+`mkUGSizedFIFOF(8)` and it fills during the boot, and when it does a
+crossing-field tail is thrown away -- a half-written field, silently.
+Words 1240-1246 are not the conf table, so this is not proved to be
+the same fault; it is an independent defect found by the same run,
+and it is the first mechanism on the list that can corrupt a word
+without any instruction being wrong.
+
+**That is where this goes next**, and it is a model bug rather than an
+MCP question: either the hold-off is not covering every path that can
+enqueue, or depth 8 is not enough, and the `$display` already says
+which words to watch.
