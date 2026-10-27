@@ -21,6 +21,63 @@ accumulate.
 
 
 
+
+## >>> MEASURE IN CYCLES. THE ATLAS PAGES ARE NOT ALL THE SAME KIND. <<< 2026-10-26
+
+The user's instruction -- *"it's okay to be cycle accurate and not
+timing accurate; just measure by cycle adjusted to time"* -- turned a
+fuzzy residual into a precise bug report in one step.
+
+`StretchCore.step()` "advances the core exactly one clock", so the
+model counts CYCLES and a clock is 0.3 us. Dividing the atlas's
+printed microseconds by 0.3 asks whether its values are whole cycles:
+
+```
+connective page (Vol. 2 PDF 140)   34/34 values are WHOLE CYCLES
+M+ page         (Vol. 2 PDF 117)    4/24 values are whole cycles
+```
+
+**They are different kinds of table.** The connective page is
+cycle-exact. The M+ page is AVERAGED -- 22.10, 23.10, 26.13, 30.07,
+32.03 cycles -- which is what Vol. 2's own caveat means by
+"representative times" from the `GENER` simulator over
+thousand-instruction sequences. The fractions are memory-conflict
+averaging; **the integer part is the cycle count**.
+
+> **So comparing a cycle-counting model against the M+ page's
+> microseconds was comparing against an average.** Every conclusion
+> drawn from that comparison in microseconds -- the "structured
+> residual", the rule that halved it, the rejected signed term --
+> was measuring the averaging as much as the model.
+
+### Redone in cycles, against the integer part
+
+```
+SIGNED   (B, D )   10 of 12 EXACT       diffs 0 -1 0 0 0 0 0 -1 0 0 0 0
+UNSIGNED (BU, DU)   3 of 12             diffs 0  0 1 2 2 4 0  1 2 2 2 4
+```
+
+**The signed path is cycle-exact.** Both misses are the same case --
+an eight-bit field, `(B,8,1)` and `(D,8,4)` -- each one cycle low.
+
+**The unsigned path is wrong by whole cycles**, and the error grows
+with the byte count: +1, +2, +2, +4. That is a real defect with a
+sharp signature, not the 0.281 us of scatter it looked like before.
+
+### What this changes about the plan
+
+`docs/microarchitecture_roadmap.md` says M0 is the harness and its
+deliverable is a failing test. **Add a prior step: classify each
+atlas page before using it as an oracle.** Divide by 0.3; if the
+values are whole cycles the page is a cycle oracle, and if they are
+not it is an average and only its integer part is.
+
+The harness itself should assert CYCLES, not microseconds, and
+report the atlas figure in cycles beside it. A model that is
+cycle-accurate against a cycle-exact page is right; a model within
+0.3 us of an averaged page may be anything.
+
+
 ## THE `VflInt` TIMING ERROR IS STRUCTURED, NOT NOISE -- 2026-10-26
 
 After the connective arm was fixed against Vol. 2 PDF 140, the same
