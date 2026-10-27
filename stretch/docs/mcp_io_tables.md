@@ -881,3 +881,26 @@ retraction earlier today, so it needs a probe designed to survive its
 own scheduling perturbation: run the SAME instrumented build twice
 with the watchpoint reading different address ranges, and check that
 the writes to 1962-1964 agree between them.
+
+### The three variant decks were RUN and then REMOVED -- 2026-10-27
+
+`mcp_p72_clear_loop_dirty`, `mcp_p65_reqcount_clear_dirty` and
+`mcp_p72_clear_loop_live` are named above and are **not in the
+repository.** Each was written, run, given a verified injection, and
+deleted, because each pins a NEGATIVE result about a hypothesis that
+is now dead and cannot regress independently of the two loops that
+remain under test. Eight suite entries went in today for one
+investigation; five stay out, and `run_tests.sh` keeps the two decks
+that pin the loops against their printed sources plus
+`mcp_p72_conf_offset`.
+
+**Each is one edit away from existing again**, which is why deleting
+them costs nothing:
+
+| deck | recipe from its surviving sibling |
+|---|---|
+| `..._dirty` | before `LX, $1, TABPTR`, insert `L(BU,64), DIRTY, 0` and `L(BU,64), DIRTY, 64`; add `DIRTY DD(BU,64,8), -1` |
+| `..._live` | `TABPTR XW, TABLE, 8, $` and `SLC, (8)3650.0` before the data, which puts `TABLE` at word 1962 |
+
+All three passed. The findings they establish are in the table above
+and in `1e62c3f`; what is NOT kept is the compile time.

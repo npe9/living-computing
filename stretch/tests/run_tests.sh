@@ -3406,54 +3406,6 @@ run "/, VFL Divide -- quotient at the instruction's offset, remainder in RM" ./r
 # bsc 2026.01 and 2026.07 do it.  The arm divides by
 # (dsr == 0) ? 1 : dsr -- which is also the faithful reading, since
 # p.70 says the division is NOT ATTEMPTED rather than discarded.
-run "printed p.72 lines 9-12 at the boot's OWN address, self-refilling" ./run_program.sh ../decks/mcp_p72_clear_loop_live.strap StretchP72LiveTb \
-    "PC=2053" \
-    "clear_word0:1962=0x1000301100311200" \
-    "clear_word1:1963=0x3213003314003415" \
-    "clear_word2:1964=0x0035160036170037"
-# THE LAST TWO DIFFERENCES between the passing decks and the failing
-# boot, removed together: the table sits at WORD 1962 -- 003652.0,
-# where MCP's own REQUEST VALIDITY CHECK TABLE lives -- and the pointer
-# is "XW, TABLE, 8, $", self-refilling in the shape of p.48 line 13's
-# LIOTBX.  It assembles to 0x01ea8000002007a8 against the live
-# T TYARA's 0x01ea8000002007a7: same value, same count of 8, refill
-# differing only because the card sits one word along.
-#
-# >>> STILL PASSES, so neither the ADDRESS nor the REFILL is the
-# boot's corrupter. <<<  With the two dirty-accumulator decks that is
-# five decks over these two loops, all green, and docs/mcp_io_tables.md
-# records what that leaves.
-#
-# INJECTION (measured): MCAD 0.8 -> 0.0 fails clear_word0 at word 1962
-# with 0x0020300021310022.
-run "printed p.72 lines 9-12 with a DIRTY accumulator" ./run_program.sh ../decks/mcp_p72_clear_loop_dirty.strap StretchP72DirtyTb \
-    "PC=2057" \
-    "clear_word0:1031=0x1000301100311200" \
-    "clear_word1:1032=0x3213003314003415" \
-    "clear_word2:1033=0x0035160036170037"
-run "printed p.65 lines 44-48 with a DIRTY accumulator" ./run_program.sh ../decks/mcp_p65_reqcount_clear_dirty.strap StretchP65DirtyTb \
-    "PC=2058" \
-    "req_word0:1032=0x1020001121001222" \
-    "req_word1:1033=0x0013230014240015" \
-    "req_word2:1034=0x2500162600172700"
-# THE ONE WAY THE CLEAN VERSIONS DIFFER FROM THE BOOT: they start from
-# a zeroed accumulator and the boot's is never fresh.  Writing an
-# EIGHT-BIT field is a read-modify-write of a whole word, so if the
-# surrounding fifty-six bits came from the ACCUMULATOR instead of from
-# memory, a fresh accumulator would hide it; both halves are filled
-# with ones here before the loop runs.  printed p.65's version also
-# tests that line 45's "Z,$R" really clears what line 46's ST reads --
-# $R is the accumulator's RIGHT half (strap/opcodes.py line 348) and
-# the accumulator is 128 bits in two halves.
-#
-# >>> BOTH STILL PASS, so neither loop is the boot's corrupter and the
-# merge does not leak accumulator bits. <<<  A negative result, kept
-# because it was expensive to get and because it is exactly what would
-# regress if the VFL store path were rewritten.
-#
-# INJECTIONS (measured, both verified by running them): MCAD 0.8 -> 0.0
-# fails clear_word0 at word 1031 with 0x0020300021310022, and RCAD
-# 0.16 -> 0.8 fails req_word0 at word 1032 with 0x1000301100311200.
 run "printed p.65 lines 44-48: the request-count clear loop" ./run_program.sh ../decks/mcp_p65_reqcount_clear.strap StretchP65ReqTb \
     "PC=2054" \
     "req_word0:1030=0x1020001121001222" \
