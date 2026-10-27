@@ -631,3 +631,51 @@ no content.
 > card is where it came from. **One probe of word
 > `0o3346`-ish's pointer settles which**, and it decides whether the
 > next change is in `bsv/` or in `strap/prosa.py`.
+
+### The pointer says NINE and the table says NOTHING -- 2026-10-27
+
+`T PREFT` is `(8)3317.0` = word **1743**. At run time it reads
+`0x01bec00009000000`:
+
+```
+value  0x01bec0 = 114368 = 1787 x 64   -- T IOREQ, correct
+count  576
+refill 0
+```
+
+printed p.62 line 6 declares it `T PREFT XW, T IOREQ, 0, (.39)9` --
+**count 0** -- so the count was set at run time, and `576 = 9 x 64`
+against a card whose refill operand is a **9**. The arithmetic is
+suggestive and the parenthetical entry mode `(.39)` is not sourced
+here, so 9-the-entry-count is **read, not proved**.
+
+> **THAT ANSWERS THE EITHER/OR.** The count is NOT zero at run time,
+> so MCP has every reason to walk the request table -- the walk is not
+> the model inventing work. **What is wrong is that the table it walks
+> is empty.** MCP has been told there are nine I/O definitions and
+> finds none, and a blank entry's TYPE field of zero indexes row 0,
+> which is DISK.
+>
+> **SO THE NEXT CHANGE IS IN `strap/prosa.py`, NOT IN `bsv/`.** The
+> fixture supplies exactly one IOD card, `TERMINATOR_CARD =
+> (None, None, (), iocd.IOD_CARD_TYPE)`, with every field blank and
+> no I/O definition in it. Everything measured is consistent with MCP
+> being correct about a machine whose I/O definitions were never
+> punched -- which is the same lesson `prosa.py`'s own comment already
+> records about the first IOCD deck: *"A configuration that lies about
+> the machine makes MCP correct about the wrong machine."*
+
+**What to do, and what to measure first.** The IOD card's field map is
+NOT derived the way the IOCD card's was (`docs/boot_plan.md` has the
+IOCD map from p.17's own increments; the IOD's fields are the ones
+`C22-6728` printed p.88 declines to give because an IOD "perform[s]
+the same function for MCP as [it does] for the problem program").
+printed p.40's `Y IODC` lines 14-22 convert "I-O REFERENCE NUMBER AND
+ABSOLUTE EXIT" off it, and **that conversion's own increments are the
+same derivation method p.17 yielded to** -- so the map is obtainable
+from a page already transcribed. Derive it, punch one real IOD, and
+the request table should stop being empty.
+
+> And **check the count before believing this too**: if nine
+> definitions are expected, a fixture that punches one should move
+> `T PREFT`'s count, and that is a probe of word 1743 away.
