@@ -1,0 +1,121 @@
+! printed p.72 lines 17-22, THE ADDRESS ARITHMETIC THAT PICKS A
+! MACHINE-CONFIGURATION COUNT, run on its own for every equipment code
+! the fixture's IOCD deck presents.
+!
+! WHY THIS DECK EXISTS.  The MCP boot reaches ASSIGN, ASSIGN rejects,
+! and docs/mcp_io_tables.md traced the reject to ONE BYTE: printed
+! p.64's REQUEST VALIDITY CHECK TABLE has DISK's REQUEST COUNT at 1
+! and its MACH CONF COUNT at 0, so p.66 line 13 sets the reject bit.
+! Probing the table showed every conf byte zero and FOUR TYPE BYTES
+! CORRUPTED, and the corrupted bytes sit exactly one byte BELOW the
+! conf byte each equipment code should have reached.
+!
+! printed p.72 computes that address rather than indexing it:
+!
+!   line 17  L, TEQUIP(TIXF), 40      -GET EQUIP FOR MACH CONF
+!   line 19  *(BU,24), TCOMBO, 40     -COMPUTE LOC WITHIN TABLE
+!   line 20  -(BU,24), T2COMB, 20
+!   line 21  L(BU,64), $R, 20         -LEFT SHIFT TO VF
+!   line 22  LV, TIXG, $R
+!   line 26  M+, TDISK(TIXG)          -ADD CONFIGURATION TO TABLE
+!
+! THE EXPECTED ANSWER IS NOT GUESSED.  printed p.63 line 21 is
+! "T COMBO VF,T TYBC+T MACBC+T REQBC" = 8+8+8 = 24 and line 22 is
+! "T 2COMB VF,T TYBC+T MACBC" = 8+8 = 16, so the offset of a code's
+! conf byte is
+!
+!     code * 24 - 16
+!
+! which for code 1 is bit 8 -- row 0's conf byte -- and for each later
+! code exactly that row's conf byte.  Checked against the listing's
+! own machine code: p.72 line 19's operand address is 003650.00 and
+! line 20's is 003650.40, bit offset octal 40 = 32, and word 003650
+! holds 24 in bits 0-23 and 16 in bits 32-55 because a VF is a
+! 24-bit value in a 32-bit slot -- 00 00 18 00 | 00 00 10 00.
+!
+! >>> SO TCOMBO AND T2COMB ARE THE SAME WORD, read at bit 0 and at
+! bit 32.  A model that loses the .40 would subtract 24 instead of 16
+! and land one byte low on every code, which is the measured symptom.
+! <<<
+!
+! $R IS THE RIGHT HALF OF THE ACCUMULATOR, word 9 (strap/opcodes.py
+! line 348), so lines 21-22 shift the computed offset up into an index
+! word's value field.
+
+        SLC, (8)2000.0
+
+! ---- code 1, DISK: 1*24 - 16 = 8 ----------------------------------
+START   LVI, $1, CST1
+        L, TEQUIP($1), 40
+        *(BU,24), TCOMBO, 40
+        -(BU,24), T2COMB, 20
+        ST(BU,64), T1, 20            ! the offset, before the shift
+        L(BU,64), $R, 20
+        LV, $2, $R
+        SX, $2, T2                   ! and after it, in an index word
+
+! ---- code 2, CONSOLE: 2*24 - 16 = 32 ------------------------------
+        LVI, $1, CST2
+        L, TEQUIP($1), 40
+        *(BU,24), TCOMBO, 40
+        -(BU,24), T2COMB, 20
+        ST(BU,64), T3, 20
+
+! ---- code 3, READER: 3*24 - 16 = 56 -------------------------------
+        LVI, $1, CST3
+        L, TEQUIP($1), 40
+        *(BU,24), TCOMBO, 40
+        -(BU,24), T2COMB, 20
+        ST(BU,64), T4, 20
+
+! ---- code 5, PRINTER: 5*24 - 16 = 104 -----------------------------
+        LVI, $1, CST5
+        L, TEQUIP($1), 40
+        *(BU,24), TCOMBO, 40
+        -(BU,24), T2COMB, 20
+        ST(BU,64), T5, 20
+
+! ---- code 8, TAPE: 8*24 - 16 = 176 --------------------------------
+        LVI, $1, CST8
+        L, TEQUIP($1), 40
+        *(BU,24), TCOMBO, 40
+        -(BU,24), T2COMB, 20
+        ST(BU,64), T6, 20
+
+! ---- the two operands read separately, to split the suspects ------
+! If T7 is 24 and T8 is 16 the fields are being READ correctly and any
+! error is in the multiply's product placement; if T8 is 24 the .40 is
+! being lost, which is the other candidate.
+        L(BU,24), TCOMBO, 0
+        ST(BU,64), T7, 0
+        L(BU,24), T2COMB, 0
+        ST(BU,64), T8, 0
+
+PASS    BEW, $
+
+! ---- data, word-aligned -------------------------------------------
+        CNOP
+! printed p.63 lines 21-22: two VF cards in one word.
+TCOMBO  VF, 24
+T2COMB  VF, 16
+        CNOP
+! Channel-status words carrying TEQUIP, SYN(BU,4),0.52 -- IBM bits
+! 52-55, so the code sits in (w >> 8) & 0xF.  These are the five the
+! probe read out of the live table at words 2814 and 2846-2849.
+CST1    DD(BU,64,8), 256               ! 0x100, code 1  DISK
+CST2    DD(BU,64,8), 512               ! 0x200, code 2  CONSOLE
+CST3    DD(BU,64,8), 768               ! 0x300, code 3  READER
+CST5    DD(BU,64,8), 1280              ! 0x500, code 5  PRINTER
+CST8    DD(BU,64,8), 2048              ! 0x800, code 8  TAPE
+T1      DD(BU,64,8), 0
+T2      DD(BU,64,8), 0
+T3      DD(BU,64,8), 0
+T4      DD(BU,64,8), 0
+T5      DD(BU,64,8), 0
+T6      DD(BU,64,8), 0
+T7      DD(BU,64,8), 0
+T8      DD(BU,64,8), 0
+
+TEQUIP  SYN(BU,4), 0.52
+
+        END, START

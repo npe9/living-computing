@@ -3406,6 +3406,43 @@ run "/, VFL Divide -- quotient at the instruction's offset, remainder in RM" ./r
 # bsc 2026.01 and 2026.07 do it.  The arm divides by
 # (dsr == 0) ? 1 : dsr -- which is also the faithful reading, since
 # p.70 says the division is NOT ATTEMPTED rather than discarded.
+run "printed p.72 lines 17-22: the conf-byte offset MCP computes" ./run_program.sh ../decks/mcp_p72_conf_offset.strap StretchP72ConfTb \
+    "PC=2105" \
+    "code1_disk_offset:1059=8" \
+    "code1_index_value:1060=0x80000000000" \
+    "code2_console_offset:1061=32" \
+    "code3_reader_offset:1062=56" \
+    "code5_printer_offset:1063=104" \
+    "code8_tape_offset:1064=176" \
+    "tcombo_reads_24:1065=24" \
+    "t2comb_reads_16:1066=16"
+# THE ARITHMETIC MCP USES TO PICK A MACHINE-CONFIGURATION COUNT, run
+# on its own.  printed p.72 computes the address of a type's conf byte
+# instead of indexing it -- *(BU,24) by TCOMBO at offset 40, then
+# -(BU,24) by T2COMB at offset 20, then a shift through $R into an
+# index value -- and the answer should be code*24 - 16, which for code
+# 1 is bit 8, row 0's conf byte.
+#
+# WHY IT WAS WRITTEN: the boot's conf table came back with every conf
+# byte zero and four TYPE bytes changed, and the changed bytes sat one
+# byte BELOW the conf byte each code should have reached.  Subtracting
+# TCOMBO's 24 instead of T2COMB's 16 would do exactly that, and the
+# two constants live in the SAME WORD at bit 0 and bit 32 -- so losing
+# the .40 was the obvious suspect.
+#
+# >>> IT IS NOT THE FAULT.  ALL EIGHT CHECKS PASS. <<<  The model
+# computes 8, 32, 56, 104 and 176 for codes 1, 2, 3, 5 and 8, reads
+# TCOMBO as 24 and T2COMB as 16, and LV lands 8 in the index value.
+# The deck stays as the regression test that says so, and
+# docs/mcp_io_tables.md records the refutation.
+#
+# The two VF cards reproduce MCP's own word bit for bit: word 1053
+# assembles to 0x0000180000001000, which is what the live word 1960
+# holds, because a VF is a 24-bit value in a 32-bit slot.
+#
+# INJECTION (measured): change the code-1 block's "-(BU,24),T2COMB,20"
+# to subtract TCOMBO instead and code1_disk_offset reads 0, not 8 --
+# 24 - 24 -- failing at word 1059.
 run "*, VFL Multiply -- the product at the PAU's own offset 20" ./run_program.sh ../decks/vfl_multiply.strap StretchVflMultiplyTb \
     "PC=2100" \
     "mul_ibm_2_12_storage:1064=100" \

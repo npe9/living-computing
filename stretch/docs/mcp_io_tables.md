@@ -404,3 +404,64 @@ as the seven-bit-field-straddling-the-dot rule predicts.
 > resulting index value against `code*24 - 16`, with a measured
 > injection. It needs no boot run, and it decides between the multiply
 > and the subtract rather than assuming either.
+
+## >>> AND THAT HYPOTHESIS IS REFUTED TOO -- BY A TEST, THIS TIME BEFORE IT WAS ASSERTED <<<
+
+`decks/mcp_p72_conf_offset.strap` runs printed p.72 lines 17-22 on
+their own for every equipment code the fixture presents, and **all
+eight checks pass**:
+
+```
+code1_disk_offset     = 8        code5_printer_offset = 104
+code1_index_value     = 0x80000000000   code8_tape_offset = 176
+code2_console_offset  = 32       tcombo_reads_24      = 24
+code3_reader_offset   = 56       t2comb_reads_16      = 16
+```
+
+The model computes `code*24 - 16` correctly for codes 1, 2, 3, 5 and
+8; it reads `TCOMBO` as 24 at bit 0 and `T2COMB` as 16 at bit 32 of
+the same word; and `LV` through `$R` lands 8 in the index value. **The
+multiply's offset-20 product, the subtract at offset 20, and the
+`.40` bit-offset read are all correct.** The deck's two `VF` cards
+even assemble word 1053 to `0x0000180000001000`, byte for byte what
+the live word 1960 holds.
+
+> That is **three** wrong explanations in this session. The difference
+> is that this one was written down as a hypothesis, given a test, and
+> killed by the test before anything was built on it. That is the
+> process working, and it cost one deck.
+
+### What the measured bytes actually say, re-read without the hypothesis
+
+Going back to the seven changed bytes with the arithmetic cleared of
+suspicion, **two of them are correct behaviour**:
+
+* **flat byte 1** (DISK's conf, 1 -> 0) is p.72 line 10's
+  `CM0000, TMCAD(TIXG)` doing its job. The clear loop covers bytes
+  1, 4, 7, 10, 13, 16, 19 and 22, and every one of those was ALREADY
+  zero except DISK's -- so a correct clear changes exactly one byte,
+  which is what happened. **The clear loop is fine.**
+* **flat byte 2** (DISK's req, 0 -> 1) is p.66 line 3's
+  `M+1, TRCAD(TX1)` counting MCP's own request for one disk. Correct.
+
+That leaves **bytes 0, 3, 6, 18 and 21** -- the TYPE bytes of rows 0,
+1, 2, 6 and 7, which are codes **1, 2, 3, 7 and 8**. The codes the
+IOCD deck actually supplies are **1, 2, 3, 5 and 8**.
+
+> **SO FOUR WRITES LANDED ON THEIR OWN ROW'S TYPE BYTE INSTEAD OF ITS
+> CONF BYTE, AND THE FIFTH -- PRINTER, CODE 5 -- LANDED ON CODE 7'S
+> ROW.** The first four are eight bits low. The fifth is forty bits
+> HIGH. One constant offset error cannot produce both, so the
+> remaining fault is not a constant, and guessing which one it is has
+> now failed three times.
+
+### The next measurement, and it is a watchpoint, not a guess
+
+Stop inferring the writer from what it wrote. **Instrument the model
+to report every write that lands in words 1962-1964, with the
+program counter and the value.** `StretchStorage.bsv` funnels core
+stores through one place -- the `storeW` RWire and `storeQ` -- so a
+single `$display` guarded on the address range names the instruction
+responsible, and MCP's own listing then says what that instruction
+is. Five writes are expected and their PCs will say whether they come
+from p.72 line 26 at all.
