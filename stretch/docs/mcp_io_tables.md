@@ -767,3 +767,75 @@ Two readings, neither settled: the setter is on an untranscribed page
 `TLAST` in a `DRZ` table IS the correct "table exhausted" state and
 nothing ever needs to write it. `C22-6728-1`'s `TIOREQ` section is
 where to check.
+
+## THE WRITE THAT SETS DISK'S COUNT IS p.66 LINE 3, BY DESIGN -- 2026-10-27
+
+Pairing every watched write with its PC, rather than reading the
+sequence in a lump:
+
+| writes | PC | listing | routine |
+|---|---|---|---|
+| 1-3 | 82 | — | the image zeroed |
+| 4-6 | 165 | — | the 494-word TRANSMIT, static table loaded **correctly** |
+| 7-14 | 4389 | `004222.40` | p.72's conf-count clear loop, 8 writes |
+| 15-22 | 4010 | `003725.00` | p.65's request-count clear loop, 8 writes |
+| **23** | **4025** | **`003734.00`** | **p.66 line 3, `T C1 M+1, T RCAD(TX1)`** |
+
+printed p.66's checked rows put `T C1 M+1` at `003733.40`, a full-word
+instruction, so PC `003734.00` is inside it. **Zero tail writes**, so
+nothing reached the table by another path and these 23 are all of them.
+
+**So DISK's `REQ CNT` of 1 is `-INCREMENT REQUEST COUNT` doing exactly
+what it says.** And p.65's loop is visible doing its job correctly in
+the same trace: writes 15 and 16 clear flat bytes 2 and 5 -- rows 0 and
+1's request counts -- and writes 17-22 leave words 1963 and 1964 alone
+because those request bytes were already zero.
+
+> **THE PHANTOM REQUEST IS NOW MEASURED RATHER THAN SUPPOSED.** The
+> request table is empty, `T PREFT` is untouched, MCP-DECODE never ran
+> -- and p.66 line 3 still counted one request, into row 0, which is
+> DISK because a blank entry's TYPE field is zero.
+
+### What is still unexplained, stated exactly
+
+Applying the three correct operations to the assembled table predicts
+
+```
+word 1962  0x0100010200000300
+word 1963  0x0004000005000006
+word 1964  0x0000070000080000
+```
+
+and clean runs measure
+
+```
+word 1962  0x0000010100002500     <- differs
+word 1963  0x0004000005000006     <- matches
+word 1964  0x0000000000000000     <- differs
+```
+
+Rows 3, 4 and 5 are correct; rows 0, 1, 2, 6 and 7 have wrong TYPE
+bytes, **and no loop writes a type byte.** Four decks now say the
+loops are right -- clean and with both accumulator halves filled with
+ones, which was the one way isolation differed from the boot:
+
+| deck | result |
+|---|---|
+| `mcp_p72_clear_loop.strap` | pass |
+| `mcp_p72_clear_loop_dirty.strap` | pass |
+| `mcp_p65_reqcount_clear.strap` | pass |
+| `mcp_p65_reqcount_clear_dirty.strap` | pass |
+
+> **SO A LOOP MISBEHAVES ONLY IN THE BOOT, AND THE NEXT DIFFERENCE TO
+> TEST IS THE REFILL FIELD.** The decks' pointers are
+> `XW, TABLE, 8, 0` -- refill **0**. The live `T TYARA` is
+> `0x01ea8000002007a7`, refill **1959**, which is `T TYARA`'s own word:
+> self-refilling. p.65 line 47 is `V+CR` where p.72 line 11 is `V+C`,
+> and p.66 line 4 is `R, T X1 -REFILL TO BEGINNING OF TABLE`. **None of
+> the four decks exercises a refill at all.** That is the remaining
+> structural difference between the passing decks and the failing boot,
+> and it is one deck away from being settled.
+>
+> The intermediate VALUES of writes 8 and 12 came from an instrumented
+> run and keep the provenance that cost a retraction earlier today; the
+> FINAL state above is from clean runs and is the thing to explain.
