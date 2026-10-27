@@ -3437,9 +3437,28 @@ run "printed p.65 lines 44-48: the request-count clear loop" ./run_program.sh ..
 # 1030 with 0x1000301100311200.
 run "printed p.72 lines 9-12: the machine-configuration clear loop" ./run_program.sh ../decks/mcp_p72_clear_loop.strap StretchP72ClearTb \
     "PC=2053" \
+    "CYCLES=423+-0" \
     "clear_word0:1029=0x1000301100311200" \
     "clear_word1:1030=0x3213003314003415" \
     "clear_word2:1031=0x0035160036170037"
+# >>> AND THE FIRST USE OF CYCLES=N+-T, THE M0 HARNESS. <<<  423 is
+# what this model takes today, measured, with a tolerance of ZERO.
+#
+# IT IS A TRIPWIRE, NOT AN ORACLE, and the distinction is the one the
+# STORE ROOT entry below already draws: no printed source gives a
+# figure for this loop, so 423 says only "unchanged", never "right".
+# The oracle is Perf. Char. Vol. 2's atlas and it is still unwritten.
+#
+# WHY TWO-SIDED AND WHY ZERO TOLERANCE.  A CYCLES<= bound only catches
+# a model that got SLOWER, and every structural change in M1 and M2
+# makes it FASTER -- overlap is the whole point -- so a bound would
+# pass more easily the more look-ahead was added, and would have
+# passed a look-ahead that retired every instruction in one clock.
+#
+# WHEN M2 LANDS THIS NUMBER WILL CHANGE, and the right response is to
+# RE-RECORD it with the new value and say in the commit why it moved.
+# Do NOT widen the tolerance: a window wide enough never to fail is a
+# check that has stopped measuring anything.
 # THE LOOP A WATCHPOINT CAUGHT MISBEHAVING IN THE BOOT, run on its own.
 # Instrumenting StretchStorage to report every write landing in words
 # 1962-1964 of the MCP boot, with the PC, gave half-word 4389 =

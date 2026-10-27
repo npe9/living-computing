@@ -21,7 +21,8 @@ def generate(module_name, prog, checks, step_cap=30000, reader_image=None,
              console_switches=None,
              printer_checks=None, tape_image=None, tape_checks=None,
              console_checks=None,
-             pc_check=None, cycle_bound=None, ipl=False, pc_trail=False,
+             pc_check=None, cycle_bound=None, cycle_window=None,
+             ipl=False, pc_trail=False,
              pc_trail_check=None, op_trail=False):
     """checks: list of (label:str, word_addr_expr:str, expected:int).
 
@@ -326,6 +327,28 @@ def generate(module_name, prog, checks, step_cap=30000, reader_image=None,
         lines.append("  endrule")
         lines.append("")
         pccheck_phase += 1
+    # TWO-SIDED cycle check ("CYCLES=N+-T"), which the one-sided bound
+    # above cannot express.  docs/microarchitecture_roadmap.md's M0 asks
+    # for it by name, and the reason is that a bound only catches a model
+    # that got SLOWER.  Every structural change in M1 and M2 makes the
+    # machine FASTER -- overlap is the whole point -- so a bound passes
+    # more easily the more overlap is added, and would have passed a
+    # look-ahead that retired every instruction in one clock.  A window
+    # fails in both directions and names the actual count either way.
+    if cycle_window is not None:
+        want, tol = cycle_window
+        lo, hi = want - tol, want + tol
+        lines.append(f"  rule cyclewindow (phase == {pccheck_phase});")
+        lines.append(f"    if (stepCount >= {lo} && stepCount <= {hi})")
+        lines.append(f'      $display("PASS cycles = %0d (want {want} +- {tol})", stepCount);')
+        lines.append("    else begin")
+        lines.append(f'      $display("FAIL cycles = %0d, want {want} +- {tol} ({lo}..{hi})", stepCount);')
+        lines.append("      fails <= fails + 1;")
+        lines.append("    end")
+        lines.append(f"    phase <= {pccheck_phase + 1};")
+        lines.append("  endrule")
+        lines.append("")
+        pccheck_phase += 1
     if pc_check is not None:
         lines.append(f"  rule pccheck (phase == {pccheck_phase});")
         lines.append(f'    check("PC (half-word address)", zeroExtend(core.getPC()), {pc_check});')
@@ -385,6 +408,12 @@ if __name__ == '__main__':
     #   CYCLES<=N              -- check that the run halted within N clock
     #                             cycles (stepCount); the timing oracle,
     #                             kept separate from the result checks
+    #   CYCLES=N+-T            -- check that the run halted in N+-T clock
+    #                             cycles: TWO-SIDED, so a change that makes
+    #                             the model too FAST fails too.  Written
+    #                             "CYCLES=120+-3"; the unicode plus-minus is
+    #                             accepted as well.  Use this and not the
+    #                             bound for anything judging overlap
     #   PC=EXPECTED            -- check the instruction counter (a 19-bit
     #                             half-word address) where the program
     #                             halted; see the pccheck rule above
@@ -413,6 +442,7 @@ if __name__ == '__main__':
     tape_image = None
     pc_check = None
     cycle_bound = None
+    cycle_window = None
     # STEPS=N raises the run rule's step cap.  A deck needs this when
     # it executes instructions the TIMING MODEL charges heavily for:
     # the cap counts core.step() calls, and an instruction's budget
@@ -429,6 +459,15 @@ if __name__ == '__main__':
             step_cap = int(spec[6:], 0)
         elif spec.startswith('CYCLES<='):
             cycle_bound = int(spec[8:], 0)
+        elif spec.startswith('CYCLES='):
+            body = spec[7:].replace('\u00b1', '+-')
+            if '+-' not in body:
+                raise SystemExit(
+                    "CYCLES= needs a tolerance, written N+-T (a bare "
+                    "equality would be a bound with extra steps); got "
+                    + repr(spec))
+            n, t = body.split('+-', 1)
+            cycle_window = (int(n, 0), int(t, 0))
         elif spec.startswith('R='):
             reader_image = [int(x, 0) for x in spec[2:].split(',') if x]
         elif spec.startswith('T='):
@@ -449,4 +488,5 @@ if __name__ == '__main__':
                     reader_image=reader_image,
                     printer_checks=printer_checks, tape_image=tape_image,
                     tape_checks=tape_checks, pc_check=pc_check,
-                    cycle_bound=cycle_bound))
+                    cycle_bound=cycle_bound,
+                    cycle_window=cycle_window))
