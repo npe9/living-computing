@@ -332,3 +332,75 @@ session**.
 > codes and checks `TIXG` against `code*24 - 16`, with a measured
 > injection. That deck is the next thing to write, and it needs no
 > boot run to be decisive.
+
+## THE CHANNEL STATUS TABLE IS PERFECT, AND THE WRITES ARE ONE BYTE LOW
+
+Two more probe runs. `TCHSXW` (printed p.67 line 84, `(8)2152.0` =
+word 1130, inside the communication region) reads
+`0x02bf800000900000`, whose value field is `0x02bf80` = 180096 =
+**word 2814**. Decoding `TEQUIP` — p.63 line 10's `SYN(BU,4), 0.52`,
+so IBM bits 52-55, which is `(w >> 8) & 0xF`:
+
+| word | channel | TEQUIP | device | IOCD card |
+|---|---|---|---|---|
+| 2814 | 0 | 1 | DISK | `(0, "DK", ())` |
+| 2846 | 32 | 3 | READER | `(32, "RD", ())` |
+| 2847 | 33 | 5 | PRINTER | `(33, "PR", ())` |
+| 2848 | 34 | 8 | TAPE | `(34, "TP", (2,0))` |
+| 2849 | 35 | 2 | CONSOLE | `(35, "CN", ())` |
+
+**Every card MCP was given is in the table with the right code.** So
+the configuration reached `TA9` and the fault is not upstream: p.72
+line 17's `L, TEQUIP(TIXF), 40` has something to load and line 18's
+`BRZ, TB9B` has no reason to skip.
+
+### The writes land at `code*24 - 24`, not `code*24 - 16`
+
+The changed bytes of the conf table are flat 0, 1, 2, 3, 6, 18, 21.
+Against the intended offset and against one eight bits lower:
+
+| device | code | intended byte | `-24` byte | measured |
+|---|---|---|---|---|
+| DISK | 1 | 1 | 0 | **hit** |
+| CONSOLE | 2 | 4 | 3 | **hit** |
+| READER | 3 | 7 | 6 | **hit** |
+| PRINTER | 5 | 13 | 12 | miss |
+| TAPE | 8 | 22 | 21 | **hit** |
+
+**Four of five land exactly one byte low**, which is what subtracting
+24 instead of 16 would do — and 24 is `TCOMBO`'s value, sitting at bit
+0 of the same word whose bit 32 holds `T2COMB`'s 16. PRINTER is the
+one miss and is not explained.
+
+### >>> AND THE ASSEMBLER IS VINDICATED, SO THE MODEL IS IMPLICATED <<<
+
+p.72's checked rows carry IBM's own printed machine code:
+
+```
+line 19  004227.40  003650.00 80  030024.21 90     *(BU,24),TCOMBO,40
+line 20  004230.40  003650.40 80  030012.30 10     -(BU,24),T2COMB,20
+line 21  004231.40  000011.00 80  000012.20 50     L(BU,64),$R,20
+line 22  004232.40  000011.20 30                   LV,TIXG,$R
+```
+
+Line 20's operand address is **`003650.40`** — bit offset octal 40 =
+32 — and it compiles bit-exactly against the listing. So `T2COMB` is
+ADDRESSED correctly, and word 1960's bits 32-55 really do hold 16
+(`0x0000180000001000`, `(w >> 8) & 0xFFFFFF` = 16). The printed
+offsets confirm themselves too: 40 prints as `24.2` and 20 as `12.3`,
+octal 24 = 20 and octal 12 = 10, each half the decimal offset, exactly
+as the seven-bit-field-straddling-the-dot rule predicts.
+
+> **So the encoding is right and the EXECUTION is wrong**, and the
+> suspects are the two instructions whose offsets differ: a VFL
+> multiply whose product offset is implied, and a VFL subtract reading
+> a 24-bit field at bit 32. `docs/NEXT.md`'s PAU unification note has
+> `*` carrying the **offset-20 (double-precision)** implied field, and
+> an eight-bit error in where that product lands would shift
+> everything downstream by exactly the one byte measured here.
+>
+> **STILL NOT A CONCLUSION.** The test is a self-contained deck that
+> runs p.72 lines 17-22 for each equipment code and checks the
+> resulting index value against `code*24 - 16`, with a measured
+> injection. It needs no boot run, and it decides between the multiply
+> and the subtract rather than assuming either.
