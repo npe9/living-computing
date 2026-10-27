@@ -1492,3 +1492,104 @@ Not rendered in this pass, and likely to close gaps in §6.2:
 - **CE manual PDF 62** — the figure index for section 3.2, to confirm nothing between 3.2.1 and
   3.2.27 was missed.
 - **Perf Char Vol.2** — the benchmark sources, for whole-program `CYCLES<=` oracles.
+
+---
+
+## 5. M2 step 1: level occupancy, mapped onto THIS model's decode — 2026-10-27
+
+§1.7 transcribes Table A-2. What follows is the same table expressed
+in the tags of `DecodedInstr` (`bsv/StretchTypes.bsv:584-671`), because
+the model loads **one level per instruction** today
+(`StretchCore.bsv:1314` and `:1328`) and Table A-2 says that is the FP
+case only. This section is the mapping an implementation needs and
+nothing more; every count is §1.7's, not a new reading.
+
+| `DecodedInstr` tag | sub-case | levels | kinds | LAAR |
+|---|---|---|---|---|
+| `DirIndex` | LX, LV, LC, LR, V+, V+C, V+CR, R(index) | 1 | IX Rec. | no |
+| | KV, KC | 1 | NOOP | no |
+| | SX, Z, SV, SC, SR, SVA, R(memory) | 1 | store | **yes** |
+| | LVE, LVS | 1 | IX Rec. | no |
+| | RNX | 3 | test, store, NOOP | middle only |
+| | EX | 1 | NOOP | no |
+| | EXIC | **N** | N stores | **N times** |
+| `ImmIndex` | all, incl. KVI/KCI | 1 | IX Rec. / NOOP | no |
+| `CountBranch` | CB, CBR | 1 | IX Rec. | no |
+| `BranchInd` | index conditions (XF, XC≠, XVL≠, XV≠, XVGZ, XL, XE, XH) | 1 | noop | no |
+| | **non-index conditions** | **4** | OP / INT / INT.stores / B Rec. | 2nd only |
+| `BitBranch` | BB | **4** | OP / opnd / store / B Rec. | 3rd only |
+| `BranchOrMisc` | B, BR, BE, NOP | 2 | NOOP, test | no |
+| | BD | 2 | test, NOOP | no |
+| | BEW | 3 | NOOP, 2 test | no |
+| `Sic` | SIC B/BR/BE/BD | 1 | store | **yes** |
+| | SIC BEW | 3 | store, 2 test | 1st only |
+| | SIC CB/CBR, branch taken | 2 | IX Rec., store | 1st only |
+| | SIC B ind (index), taken | 1 | store | **yes** |
+| | SIC B ind (non-index) | **5** | op / INT / INT store / B Rec. / store | 2nd, 5th |
+| `Transmit` | T | **2 + N** | test, N stores, NOOP | N times |
+| | SWAP | **2 + 2N** | each N doubled | N times |
+| `Fp` | ±, L, LWF, ±MG, D±, K, \*, /, R/, F±, E± … | 1 | op + opnd | no |
+| | E±I | 1 | op + opnd | no |
+| | SHF | 1 | op + count | no |
+| | ST, SL0, SRD, SRT | 1 | store | **yes** |
+| | M±, M±MG | 2 | op + opnd / store | 2nd |
+| | \*+ | 2 | op + opnd / C($FT) | no |
+| | LFT, D/ | 2 | op + opnd / store | 2nd |
+| `VflInt` | +, L, LWF, ±MG, K…, LCV | 2 | op / opnd | no |
+| | \* (binary) | 2 | op / opnd | no |
+| | CV, DCV | 2 | op / INT | no |
+| | ST, SRD, M±MG, M+1 | 3 | op / opnd / store | 3rd |
+| | \*+ (binary) | 3 | op / opnd / C($FT) | no |
+| | LFT, LTRS, LTRCV, \*(dec), /(dec), \*+(dec) | 3 | op / opnd / store | 3rd |
+| `Connective` | C, CT | 2 | op / opnd | no |
+| | **CM** | 3 | op / opnd / store | 3rd |
+| `IoOp` | all | 2 | op / LAOP | no |
+
+### The two modifiers, and they are not optional
+
+Sheet 3's own note: *"For all VFL operations, if opnd crosses over full
+word boundary, the no. of LA opnd and/or store levels is doubled.
+Progressive indexing required one more IX box."*
+
+So for `VflInt` and `Connective`:
+
+```
+levels = base
+       + (opnd crosses a full-word boundary ? number_of_opnd_and_store_levels : 0)
+       + (progressive indexing ? 1 : 0)
+```
+
+**The model already knows both.** The crossing test is the one
+`StretchStorage`'s `writeWordTail` exists for, and progressive indexing
+is `StretchCore.bsv`'s `progressivePending`.
+
+### >>> THE RING HAS FOUR LEVELS AND THE WORST CASE NEEDS SIX <<<
+
+Buchholz (PDF 271): *"An extreme case is a VFL ADD TO MEMORY
+instruction with progressive indexing, which may require six
+successive levels (two levels being used twice)."* `M+` with a
+crossing operand and progressive indexing is `3 + 2 + 1` = **6** by the
+rule above, which is the same number from the other direction — a
+useful check on the rule.
+
+**So the implementation must not allocate N levels atomically.** Six
+cannot be resident in a four-level ring, and Buchholz says the real
+machine reused two. An implementation that waits for `count() + N <= 4`
+**deadlocks** on a six-level instruction, because nothing will free a
+level while the instruction that owns the head is waiting to allocate.
+
+Two admissible shapes, and the choice is not settled here:
+
+1. **Allocate one level at a time**, with the instruction holding a
+   residual count and the E-box retiring levels as it consumes them.
+   This is what "two levels being used twice" describes and it cannot
+   deadlock, because progress needs only ONE free level.
+2. **Cap occupancy at 4 and serialise the remainder** — correct in
+   throughput terms only if the cap is never the binding constraint,
+   which Table A-2 says it is for exactly the six-level case.
+
+> **CHECK THIS BEFORE WRITING ANY OF IT**: today's `StretchCore.bsv`
+> guards level loading with `la.count() < 4`. That guard is already
+> shape (2) with N = 1, so the deadlock above is not hypothetical —
+> it is what shape (2) becomes the moment N > 1. **The first code
+> change should be the residual-count form, not the level table.**
