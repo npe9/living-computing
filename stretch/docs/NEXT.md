@@ -92,6 +92,37 @@ would bake the error in where no source puts it.
 > number, and the reason to write the omitted terms rather than
 > tune the one that is already right.
 
+### AND WRITING THE OMITTED SIGNED TERM MAKES IT WORSE
+
+The obvious next step was to add the preamble's documented
+adjustment. Measured over the same 24 rows:
+
+```
+current   (x reduced for signed, no +0.6)   mean 0.281   worst 1.20
+current + Table 3's signed +0.6             mean 0.511   worst 1.20
+literal   (x = len for both, signed +0.6)   mean 0.636   worst 1.20
+```
+
+**Adding the documented term makes the fit twice as bad, and the
+most literal reading of the manual is the worst of the three.**
+
+So printed p.3-10's `X` and Table 3's preamble are **two
+formulations of the same signed adjustment, not two adjustments**.
+Applying both double-counts it. The manual states each in its own
+place and never says they are alternatives -- and `StretchTiming.bsv`
+already picked the one that fits, which is why its comment cites
+p.3-10 and not the preamble.
+
+> **This is where the timing thread stops for now, and stopping is
+> the finding.** Three readings of the same two pages were measured;
+> the model already holds the best of them. The remaining 0.281 us
+> is the per-instruction COMMENTS column -- `M+`'s "Unlike signs
+> AB > CD, add .6(x/y + 1)", `M+1`'s different again -- which is
+> conditional on OPERAND VALUES the timing function is not given.
+> Closing it means handing `eboxClocks` the operands, which is the
+> same change the floating-point minima need, and is a design
+> decision rather than a constant to tune.
+
 ### And the sixteen-byte cap cannot bind for binary VFL
 
 The cap found on the connective page was checked here too. **It is
