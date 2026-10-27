@@ -3246,6 +3246,26 @@ run "KF, Compare Field -- the bounded accumulator operand, p.65" ./run_program.s
 # has; LCV, the other, needs decimal mode and is still unbuilt
 # (docs/boot_plan.md A2).
 
+run "MCP printed p.98 -- the SYN cards, 18 rows bit-exact" python3 verify_mcp_bootstrap_p98.py
+# THE SYN CARDS AT THE TAIL OF THE CONVERSION SUBROUTINE, and the
+# first page transcribed outside the gapless pp.2-80 range.  NOT in
+# the merged image: strap/mcp_image.py lists its pages explicitly
+# rather than globbing decks/, so this file changes nothing until it
+# is named there, and wiring a non-contiguous page in is a separate
+# decision from preserving a verified transcription.
+#
+# CHOSEN OUT OF THE 88 PAGES THAT CARRY SYN CARDS because it declares
+# seven symbols the existing decks already REFERENCE.  printed p.84
+# is bigger -- 34 cards -- but all 38 symbols it declares were
+# grepped against every deck and none is referenced.
+#
+# IT FOUND TWO LIVE BUGS, fixed in decks/mcp_bootstrap_p39.strap:
+# SYSMCD and SCORG were declared there with no data description
+# (length 0, read as 64), where lines 30 and 34 give SYN(BU,2) and
+# SYN(BU,1).  Same fault as the CM1111 image bug, hidden the same
+# way -- p.39 only BRANCHES on them, and a branch never uses a
+# length.  And it retires p.71's note that DFREE is "not defined
+# anywhere this project has read": line 27 is that card.
 run "EKJ vs UNRJ -- no channel and no unit are different rejects" ./run_program.sh ../decks/io_exchange_reject.strap StretchIoRejectTb \
     "PC=2070" \
     "unrj_for_installed_channel_with_no_unit:1056=1" \

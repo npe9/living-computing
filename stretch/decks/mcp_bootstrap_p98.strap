@@ -1,0 +1,169 @@
+! MCP, printed p.98 lines 20-37 (MCP_Mar63_001-249 PDF p.105) --
+! THE SYN CARDS AT THE TAIL OF THE CONVERSION SUBROUTINE.
+!
+! Thirty-seven lines on the page.  Lines 1-4 box "CONVERSION
+! SUBROUTINE" and lines 5-19 are its fifteen VFL rows; this deck
+! takes the TAIL, lines 20-37, which is where every SYN card on the
+! page lives.  Four of those lines compile a word and ten are SYN
+! cards.  Lines 5-19 are deliberately NOT here: they carry no SYN
+! value and they reference LBLZCR and TMX1, which no deck has read,
+! so transcribing them would mean back-deriving two symbols from the
+! very binary column that is supposed to check the work.
+!
+! >>> THIS PAGE IS THE AUTHORITATIVE DECLARATION OF SEVEN SYMBOLS
+! THAT EXISTING DECKS HAD TO DERIVE, AND IT CONTRADICTS TWO OF
+! THEM. <<<
+!
+!   line 24  STATI  SYN(BU,1),.26   <- pp.69, 70, 78, 79 derived
+!                                      0.26 and the (BU,1)
+!   line 25  SIMNT  SYN(BU,1),.53   <- pp.70, 75, 79 derived 0.53
+!   line 26  S MOUNT SYN(BU,1),.51  <- pp.70, 75, 79 derived 0.51
+!   line 27  D FREE SYN,0           <- p.71 wrote "DFREE COMPILES
+!                                      ZERO.  It is not defined
+!                                      anywhere this project has
+!                                      [read]".  HERE IS THE CARD.
+!   line 30  SYSMCD SYN(BU,2),SCOMRG+.8   <- p.39 has SYSMCD with
+!                                            NO dds.  CONTRADICTION.
+!   line 33  S MAXUB SYN,S BA MCP   <- p.40 and p.28 both put
+!                                      SMAXUB and SBAMCP at
+!                                      (8)2153.0; this card says
+!                                      they are the SAME SYMBOL.
+!   line 34  SCORG  SYN(BU,1),SCOMRG+.3   <- p.39 has SCORG with
+!                                            NO dds.  CONTRADICTION.
+!   line 36  X IN END SYN,$         <- pp.13, 15, 17 derived
+!                                      (8)5466.0
+!
+! ---------------------------------------------------------------
+! THE DATA DESCRIPTION COLUMN IS PRINTED IN OCTAL
+! ---------------------------------------------------------------
+! The column between BINARY OUTPUT and NAME prints mode, LENGTH and
+! BYTE SIZE.  Line 24's card says SYN(BU,1) and the column says
+! "BU,01 ,10"; line 30's says SYN(BU,2) and the column says
+! "BU,02 ,10".  A byte size of 0o10 is 8 bits, which is the STRAP
+! default, so the column is OCTAL.  Printed p.84 line 7 is the same
+! reading from the other end -- SYN(BU,48) printing "BU,60 ,10",
+! and 0o60 is 48.
+!
+! FIVE OF THE TEN CARDS ARE DOUBLE-ATTESTED that way, because the
+! dds appears in the STATEMENT column too: lines 24, 25, 26, 30 and
+! 34.  TWO REST ON THE OCTAL READING ALONE and are flagged as such:
+!
+!   line 20  L XA    "BU,1CC,1C"  ->  (BU,64,8)
+!   line 33  S MAXUB "B ,31 ,01"  ->  (B,25,1), inherited from
+!                                     S BA MCP, which this page does
+!                                     not declare
+!
+! ---------------------------------------------------------------
+! SUBSTITUTIONS
+! ---------------------------------------------------------------
+! (1) BLANKS INSIDE SYMBOL NAMES ARE DROPPED, as on every page since
+!     p.2.  The NAME column prints "S MOUNT", "D FREE", "Z FINIS",
+!     "S MAXUB", "X IN END", "L XA", "Y BCRD"; the STATEMENT column
+!     on line 33 prints "S BA MCP" for SBAMCP.
+!
+! (2) "SCCRG" IS WRITTEN SCORG, AND THE GLYPH IS DISPUTED.  Line
+!     34's NAME column prints five characters with no blank, and at
+!     1800 dpi characters 2 and 3 are IDENTICAL open-right C's --
+!     the ink says SCCRG.  It is read as SCORG on an argument that
+!     does not depend on any glyph: line 34's LOCATION is 002151.03,
+!     and printed p.39 line 19 ("CM0000(BU,1),SCORG") has a left
+!     address of 002151.03.  Same bit, same symbol.  Corroborating
+!     but weaker: p.39 line 19's own STATEMENT renders at 1800 dpi
+!     with a CLOSED O, plainly different from the open C beside it,
+!     on the same row off the same printer; and line 34's own
+!     statement column prints "SCOMRG+.3" with a closed O two
+!     characters along.  Recorded as a DISPUTED GLYPH, resolved
+!     symbol.
+!
+! (3) A SYN VALUE WRITTEN ".26" IS WRITTEN 0.26.  The listing writes
+!     the word number as empty where it is zero; p.62's deck already
+!     writes those as "0.00".
+!
+! (4) NOTHING ELSE.  Every other glyph reads cleanly at 600 dpi.
+!
+! ---------------------------------------------------------------
+! ONE LISTING MARK: line 29 carries the bare "*" after its location
+! ("005465.00 *") that printed pp.3, 37, 38 and 39 also carry.  It
+! changes no compiled bit.  (Line 6, outside this block, carries a
+! second.)
+!
+! ROWS DELIBERATELY ABSENT, as printed p.24 established: a SYN row
+! prints its VALUE in the location column and no word, so the ten
+! SYN cards are checked in SYMBOLS rather than in the row list.
+
+! ---- from pages already transcribed -------------------------------
+SCOMRG  SYN, (8)2151.0               ! printed p.37 line 11, "THE
+                                      !   SYSTEM WORD FLAG"
+SBAMCP  SYN, (8)2153.0               ! printed p.28; line 33 below
+                                      !   says SMAXUB IS this symbol
+! ---- read off line 20's OWN location and dds columns ---------------
+! The listing prints TMLXA nowhere on this page; line 20's location
+! is 000034.00+ and its dds "BU,1CC,1C".  THE VALUE IS FROM THE INK;
+! THE READING IS NOT: 0o34 is word 28, and word 28 is index register
+! $12 only by the Stretch index-register layout, which this page does
+! not state.  Nothing checked here depends on it -- TMLXA and LXA
+! resolve to the same bit either way.  Printed p.83 line 22 appears to
+! carry the declaration itself and is the page to check when p.83 is
+! read.
+TMLXA   SYN, (8)34.0
+
+        SLC, (8)5464.0
+
+LXA     SYN, TMLXA                   ! line 20
+        CNOP                         ! line 21 -- pads nothing.  Line
+                                      !   19's printed location is
+                                      !   005463.40 and it is a
+                                      !   half-word B, so the counter
+                                      !   reaches this card already at
+                                      !   005464.00.  That location was
+                                      !   rendered but line 19 itself is
+                                      !   not transcribed here.
+
+! ---- ADDITIONS MADE TO MAKE ASSIGNMT. COMPATIBLE (line 22) --------
+YBCRD   BD, $                        ! line 23 -UNCODE PATH NOT TO
+                                      !           BE TAKEN
+STATI   SYN(BU,1), 0.26              ! line 24
+SIMNT   SYN(BU,1), 0.53              ! line 25
+SMOUNT  SYN(BU,1), 0.51              ! line 26
+DFREE   SYN, 0                       ! line 27
+YLCL2   VF                           ! line 28
+YLCL1   VF                           ! line 29
+SYSMCD  SYN(BU,2), SCOMRG+.8         ! line 30 -TWO BIT OPERATIONG
+                                      !           MODE
+STERMI  VF, ZFINIS                   ! line 31 -THE LAST LOC USED
+                                      !           BY MCP
+ZFINIS  SYN, (8)17777.0              ! line 32
+SMAXUB  SYN, SBAMCP                  ! line 33 -MAX UB+1 THAT CAN
+                                      !           BE USED
+SCORG   SYN(BU,1), SCOMRG+.3         ! line 34 -TH+ COMPILE GO BITS
+        CNOP                         ! line 35
+XINEND  SYN, $                       ! line 36
+        UNTAIL, (2)                  ! line 37
+        END, YBCRD
+
+! ---------------------------------------------------------------
+! THE CHECKED ROWS -- the four that compile a word.  The ten SYN
+! cards print a VALUE and no word, and are checked in SYMBOLS below,
+! which is the stronger place for them (printed p.24's convention).
+! ---------------------------------------------------------------
+!   line 23  005464.00  005464.04 00                 Y BCRD BD,$
+!   line 28  005464.40  000000.00+                   Y LCL2 VF
+!   line 29  005465.00  000000.00+                   Y LCL1 VF   (*)
+!   line 31  005465.40  017777.00+                   S TERMI VF,ZFINIS
+!
+! THE CHECKED SYMBOLS -- the location column of every SYN card, and
+! the four labels.  The listing prints these in OCTAL word.bit.
+!   L XA     000034.00     line 20
+!   Y BCRD   005464.00     line 23
+!   STATI    000000.32     line 24   0o32 = bit 26
+!   SIMNT    000000.65     line 25   0o65 = bit 53
+!   S MOUNT  000000.63     line 26   0o63 = bit 51
+!   D FREE   000000.00     line 27
+!   Y LCL2   005464.40     line 28
+!   Y LCL1   005465.00     line 29
+!   SYSMCD   002151.10     line 30   0o10 = bit 8 past SCOMRG
+!   S TERMI  005465.40     line 31
+!   Z FINIS  017777.00     line 32
+!   S MAXUB  002153.00     line 33
+!   SCORG    002151.03     line 34   bit 3 past SCOMRG
+!   X IN END 005466.00     line 36
