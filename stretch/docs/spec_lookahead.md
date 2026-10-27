@@ -1593,3 +1593,59 @@ Two admissible shapes, and the choice is not settled here:
 > shape (2) with N = 1, so the deadlock above is not hypothetical —
 > it is what shape (2) becomes the moment N > 1. **The first code
 > change should be the residual-count form, not the level table.**
+
+### >>> AND THE RESIDUAL-COUNT REFACTOR IS NOT A REFACTOR <<< 2026-10-27
+
+The section above says the first code change should be the
+residual-count form rather than the level table. **Reading the load
+site says it is not that simple, and the reason is worth more than the
+plan it corrects.**
+
+`bsv/StretchCore.bsv:1314` loads
+
+```bluespec
+la.load(LaLevel{valid: True, di: di, pc: pc, len: len, da: da, ...});
+```
+
+and `di` is **the whole decoded instruction**. `rl_decide`'s head arm
+runs `execute()` from `la.headLevel().di`. So in this model
+
+> **ONE LEVEL = ONE ENTIRE INSTRUCTION.**
+
+Table A-2's levels are not that. Its `op`, `opnd`, `store`, `INT`,
+`test`, `IX Rec.`, `B Rec.` and `NOOP` are **parts** of one
+instruction — a VFL `ST` occupies three levels because its op code,
+its operand and its store each sit in one. The model's level and
+Table A-2's level are different objects that happen to share a name.
+
+**So allocating N levels per instruction, as written, would execute
+the instruction N times.** A residual count that loads N copies of the
+same `LaLevel` is not a faithful model of anything; it is a bug with a
+citation.
+
+> **M2 STEP 1 IS THEREFORE NOT "LOAD MORE LEVELS". IT IS "A LEVEL IS A
+> PART OF AN INSTRUCTION, NOT AN INSTRUCTION".** That means a level
+> kind (`LaKind`: `Op`, `Opnd`, `Store`, `Int`, `Test`, `IxRec`,
+> `BRec`, `Noop`), a level that carries only its own part, and an
+> E-box that consumes a sequence of them instead of one whole `di`.
+> `execute()` currently takes a `DecodedInstr` and does the lot.
+>
+> **That is the change, and it is the largest one in the roadmap** --
+> which is what M2 being "the largest absent structure" was always
+> going to mean. It is not reachable by an increment that keeps
+> `execute()`'s signature.
+
+**What the 1650-level figure does and does not mean, given this.** It
+is a correct count of the real machine's level occupancy over MCP's
+code, and it correctly says the model's ring is loaded half as deeply
+as it should be. It does **not** mean the fix is to load 1650 more
+levels of the present kind. The ring's depth is only a throttle once
+levels mean parts; today a deeper ring would just let the I-box run
+further ahead of a single-level-per-instruction E-box.
+
+**The admissible first increment, and it is smaller than either plan:**
+give `LaLevel` its kind field, set it to a single value (`Whole`) for
+every level the core loads today, and change nothing else. That is a
+true refactor — the suite and the `CYCLES=423+-0` tripwire prove it —
+and it is the one edit that every later step needs and no later step
+has to undo.
