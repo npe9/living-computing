@@ -112,3 +112,73 @@ column 1 "B", columns 2-9 an IODNAME, columns 63-66 and 67-72 filled
 in by the processors — and it describes a *logical* unit a job wants,
 not a *physical* one the machine has. Two similar names, two
 different purposes, and `X BUFER`'s comment names both.
+
+## The chain from an IOCD card to the ASSIGN reject, traced 2026-10-26
+
+`docs/NEXT.md` records that ASSIGN rejects and that `TAREJX` names
+the reason -- `I/O REQ. INCOMP WITH MACH CONF.` What it did not
+record is the mechanism, which is four transcribed pages and no
+inference:
+
+| step | page | what it does |
+|---|---|---|
+| 1 | p.17 | processes the IOCD cards, one per channel, into the channel status table |
+| 2 | p.35 | `X EQPT` maps the card's equipment LETTERS to type CODES |
+| 3 | p.72 | `TA9` clears the machine-configuration counts and recounts them from the channel status table |
+| 4 | p.66 | `TCHEK` compares each type's REQUEST COUNT against its MACH CONF COUNT and rejects |
+| 5 | p.74 | `TAREJX` sets `T MESSY` as the reason and the caller sees no disposition bit |
+
+**Step 4 is the decision, and it is three instructions:**
+
+```
+TCHEK   LF, TRCAD(TX1)      line  9  -REQUEST COUNT TO ACC
+        BRZ, TCONT          line 10  -NO REQUEST
+        KF, TMCAD(TX1)      line 11  -COMPARE MACHINE CONF. COUNT
+        BZAH, TCONT         line 12  -IF REQUEST IS OK
+        CM1111, TRJECT(TIXE) line 13 -REJECT PP FOR REQ IS TO HIGH
+```
+
+So a reject needs a type whose REQUEST COUNT is **non-zero** (line 10
+would otherwise skip it) and **greater than** its conf count.
+
+### THE TABLE IS THREE WORDS AND THEY CAN BE READ DIRECTLY
+
+printed p.64 line 6 is the REQUEST VALIDITY CHECK TABLE: `T DISK` at
+`003652.00`, eight rows of `TYPE CODE, MACH CONF, REQ CNT`, one byte
+each. Eight rows x three bytes is 24 bytes, which is **exactly three
+words**, `0o3652`-`0o3654` = **1962-1964**.
+
+As ASSEMBLED -- only DISK has a count, and it is the static default
+before `TA9` has run:
+
+```
+word 1962  0x0101000200000300
+word 1963  0x0004000005000006
+word 1964  0x0000070000080000
+```
+
+What `TA9` SHOULD leave, given that `strap/prosa.py`'s deck is
+`DK`/`RD`/`PR`/`TP(2 units)`/`CN` and p.35 maps those letters to
+codes 1/3/5/8/2, if every request count is zero:
+
+```
+word 1962  0x0101000201000301     DISK 1, CONSOLE 1, READER 1
+word 1963  0x0004000005010006     PUNCH 0, PRINTER 1, IQS 0
+word 1964  0x0000070000080200     EXTRA 0, TAPE 2
+```
+
+**The equipment-letter mapping is not assumed.** printed p.35 lines
+18-39 are `DD(BU,4)` constants: `DK`=1, `CN`=2, `RD`=3, `PU`=4,
+`PR`=5, `TP`=octal 10 = 8 -- the same eight codes p.64's rows are
+keyed by, in the same order.
+
+> **THIS IS A MEASUREMENT, NOT A HYPOTHESIS, AND IT HAS NOT BEEN
+> TAKEN YET.** Three words of the boot's final state say which type
+> asked for more than the machine has, and therefore whether the
+> fault is in the fixture's deck, in `TA9`'s count, or in whatever
+> sets the request counts. `gen_tb.py:129` prints the actual value on
+> a mismatch, so three checks with an impossible expectation read the
+> table out of a boot run. Until those three numbers exist, **no
+> explanation of the reject should be written down** -- two have
+> already been written ahead of the evidence this week and both were
+> wrong (see `docs/NEXT.md`, the supersession of `46ba25d`).
