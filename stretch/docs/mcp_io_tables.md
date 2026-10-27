@@ -1019,3 +1019,57 @@ other word of the image" is out.
    worth using first: run the boot repeatedly with increasing caps and
    probe words 1962-1964, which brackets *when* the table first goes
    wrong without touching `bsv/` at all.
+
+## >>> A NON-PERTURBING BISECTION: THE CORRUPTION IS A 10,000-STEP WINDOW <<< 2026-10-27
+
+Every instrument in this investigation so far has touched `bsv/`, and
+one of them manufactured a finding. **This one touches nothing but the
+step cap.** `tests/gen_tb.py` already stops a run at `step_cap` and
+then runs the checks "against mid-execution state", so setting the cap
+and probing words 1962-1964 reads the table *at a chosen moment* with
+the model bit-for-bit as committed.
+
+Bisecting the MCP boot:
+
+| steps | word 1962 | word 1964 | PC (half-word) |
+|---|---|---|---|
+| 2,000,000 | `0` | `0` | — (not yet loaded) |
+| 6,000,000 | `0x0101000200000300` | `0x0000070000080000` | correct |
+| 6,020,000 | `0x0101000200000300` | `0x0000070000080000` | 2607 |
+| 6,030,000 | `0x0101000200000300` | `0x0000070000080000` | 2613 |
+| 6,040,000 | `0x0101000200000300` | `0x0000070000080000` | 2617 |
+| **6,050,000** | **`0x0101000200000300`** | **`0x0000070000080000`** | **3062** |
+| **6,060,000** | **`0x0000060100602500`** | **`0x0000060000600040`** | **4396** |
+| 6,200,000 … 18,000,000 | `0x0000060100602500` | `0x0000060000600040` | 4394-4399 |
+
+> **THE WHOLE CORRUPTION HAPPENS IN ONE 10,000-STEP WINDOW**, between
+> 6,050,000 and 6,060,000 steps, and nothing touches those words again
+> for the next twelve million.
+
+**Three things this settles.**
+
+1. **It is confined to the table.** Words 1959, 1960, 1961, 1965 and
+   1966 -- `T TYARA`, `T COMBO`, the `CNOP` filler and the two words
+   after -- hold their assembled values at every sample. Whatever
+   writes wrongly writes *inside* `003652`-`003654` and nowhere else,
+   which rules out a wide or runaway write.
+2. **The table is PERFECT until the window.** At 6,050,000 word 1962
+   is still `0x0101000200000300`: DISK's conf byte is still **1**, so
+   p.72's clear loop has not run. One pass of that routine both clears
+   and corrupts.
+3. **p.72 is where the machine is.** At 6,050,000 the PC is 3062, well
+   away; from 6,060,000 on it sits at 4394-4399, which printed p.72's
+   checked rows give as lines 15-19 -- `T A9A`'s per-channel loop.
+   **`5279b62` was right to retract attributing individual writes to a
+   `pcReg` value; the time bracket reaches the same routine by a method
+   that does not depend on that assumption at all.**
+
+### Why this is the method to keep
+
+The bisection costs one boot run per sample and needs no `$display`,
+no extra rule and no register, so it cannot change the schedule it is
+measuring -- which is exactly what went wrong with the `LOST` messages
+(`7738d9d`). **Narrow first, instrument second**: a 10,000-step window
+is small enough that a level-pc log inside it will be short enough to
+read, and short enough that its provenance can be checked against
+these numbers.
