@@ -12003,6 +12003,32 @@ run "The card code is PRINTED: C22-6678-1 Appendix F" python3 verify_c22_6678_ap
 #   2. Give ":" a code.  Two checks move: the punch comparison names
 #      it, and the blank-cell list drops from three entries to two.
 
+run "PUNCHED CARDS: raw column punching, and column 32 = bit 372" python3 verify_card_columns.py
+# >>> A 7030 CARD IS NOT ALWAYS CHARACTERS, and the IOD control card is
+# the first field in this project that proves it. <<<  Reference Manual
+# printed p.21: "The data punched in the IBM card used with the 7030
+# System is in a binary form.  Each card punch position is a possible
+# data bit."  The character table in strap/cards.py is the KEYPUNCH's
+# mapping; a field MCP reads as raw bits has no character for it, so
+# card_words_cols() takes twelve raw bits per column instead.
+#
+# WHAT MADE IT NECESSARY: printed p.40 lines 14-22 convert TEN SIX-BIT
+# fields off an IOD card -- TWO PER COLUMN -- which no single character
+# can punch.  They start at Y UTOE, which printed p.41 line 37 defines
+# as Y UCBF1+.372.
+#
+# AND THE DIVISION IS THE DERIVATION, so this file pins it: a column is
+# twelve bits (R23-9702 Figure 4.3-1, and WORDS_PER_CARD is
+# 80 * 12 // 64 = 15 exactly), 372 % 12 is 0, and 372 / 12 + 1 = 32.
+# THE IOD'S FIELD BEGINS AT CARD COLUMN 32 and runs five columns.
+# Checked independently by punching column 32 and reading the card back
+# as one 960-bit integer: the override sets exactly bits 372-383, its
+# two six-bit halves come back as the two values put in, and nothing
+# else on the card moves.
+#
+# INJECTION (measured): make the override land one column late
+# (cols[c] -> cols[c + 1]) and override_sets_column_32_bits reads 0
+# instead of 131, with three sibling checks failing beside it.
 run "PUNCHED CARDS: an ASCII deck read on the IBM 7503" ./run_card_test.sh StretchCardTb
 # SIMH-STYLE IN, PUNCHES OUT.  strap/cards.py turns a line of text into
 # the 960 bits a real card presents -- 80 columns of 12 punch rows,

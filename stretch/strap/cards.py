@@ -235,6 +235,48 @@ def card_words(line):
             for i in range(WORDS_PER_CARD)]
 
 
+def card_words_cols(line, overrides=None):
+    """`card_words`, but with raw 12-bit COLUMN values allowed.
+
+    `overrides` maps a ZERO-BASED column index to the twelve bits of
+    that column, most significant bit first in ROW_ORDER -- row 12
+    first, exactly as `column_bits` returns them.  Columns not named
+    come from `line` through the character table as usual.
+
+    >>> WHY THIS EXISTS: A 7030 CARD IS NOT ALWAYS CHARACTERS. <<<
+    Reference Manual printed p.21, already quoted at the top of this
+    file: "The data punched in the IBM card used with the 7030 System
+    is in a binary form.  Each card punch position is a possible data
+    bit, with a punched hole representing the data bit."  The
+    character table above is the KEYPUNCH's mapping and belongs to
+    cards people type; a field that MCP reads as raw bits has no
+    character for it, and `card_words` cannot express one.
+
+    The first such field is the IOD control card's -- printed p.40
+    lines 14-22 read ten SIX-BIT fields, two per column, which no
+    single character can produce.
+    """
+    if overrides is None:
+        return card_words(line)
+    if len(line) > COLUMNS:
+        raise ValueError(
+            f"card is {len(line)} characters; a card has {COLUMNS} columns "
+            f"and this will not truncate one silently: {line!r}")
+    text = line.ljust(COLUMNS)
+    cols = [column_bits(ch) for ch in text]
+    for c, bits in overrides.items():
+        if not 0 <= c < COLUMNS:
+            raise ValueError(f"column {c} is outside 0..{COLUMNS - 1}")
+        if not 0 <= bits < (1 << 12):
+            raise ValueError(f"column {c}: {bits} does not fit twelve bits")
+        cols[c] = bits
+    bits = 0
+    for v in cols:
+        bits = (bits << 12) | v
+    return [(bits >> (64 * (WORDS_PER_CARD - 1 - i))) & 0xFFFFFFFFFFFFFFFF
+            for i in range(WORDS_PER_CARD)]
+
+
 def deck_words(lines):
     """A whole deck, card after card, as one flat list of words."""
     out = []
