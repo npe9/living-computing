@@ -528,3 +528,53 @@ without any instruction being wrong.
 MCP question: either the hold-off is not covering every path that can
 enqueue, or depth 8 is not enough, and the `$display` already says
 which words to watch.
+
+## >>> RETRACTED: THE FIVE DROPPED STORES WERE MY INSTRUMENTATION <<< 2026-10-27
+
+The section above reports five `CROSSING-FIELD TAIL ... LOST` messages
+from the MCP boot and calls them an independent model defect. **They
+are an artifact of the watchpoint that found them.** Counting `LOST`
+across every boot run of this session:
+
+| run | `bsv/` instrumented | `LOST` |
+|---|---|---|
+| `probe_run.log` … `probe_run4.log` (testbench probes only) | no | **0** |
+| `watch.log`, `watch2.log`, `watch4.log` | **yes** | **5** |
+| `boot_verify.log` | no | **0** |
+| two full suite runs | no | **0** |
+
+The correlation is exact and it is with my `$display` calls — and, in
+`watch4`, an extra rule and register in `StretchCore` — not with the
+boot. Adding a rule changes Bluespec's schedule, and the schedule is
+what decides whether `storeQ` fills.
+
+> **THIS IS THE FOURTH WRONG FINDING OF THE SESSION AND THE THIRD
+> CAUSED BY MY OWN TOOL.** The tell was available immediately and I
+> did not look for it: a one-line fix that should only change what
+> happens WHEN the queue fills made the messages vanish entirely,
+> which means the queue stopped filling, which means the fix was not
+> the variable. `stretch-working-method`'s rule -- "two facts from one
+> run that cannot both be true" -- applies to two runs as well.
+
+### What survives, and it is smaller
+
+The code really did discard the tail: `tailNext` was set
+`tagged Invalid` unconditionally, so a crossing-field tail that met a
+full queue was thrown away — half a VFL field written and half not,
+with no indicator. **That path is unreachable today**, which is what
+`tests/run_tests.sh:2048-2058` already says about the neighbouring
+hazard: the collision needs "a multi-cycle E-box retiring two stores
+closer together", so "the guard is load-bearing FOR THE REBUILD
+rather than for today."
+
+`bsv/StretchStorage.bsv` now **holds** the tail instead of dropping
+it, and retrying is safe and terminating because `writeReady()` is
+`storeQ.notFull && !isValid(storeTail)` — the core arms no further
+store while a tail is pending, and `memCtl` drains one queued store
+every clock its unit is free.
+
+> **AND IT HAS NO TEST, WHICH IS WORTH STATING.** No deck in this
+> project can reach a full store queue, so the only evidence the
+> change is harmless is the suite. It is kept because discarding a
+> write is never correct and M1's multi-cycle E-box is what makes the
+> path live — not because anything measured demanded it.

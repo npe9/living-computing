@@ -582,12 +582,35 @@ module mkStretchStorage(StretchStorage);
     // (storeTailPending, folded into busyXfer), so nothing SHOULD
     // arrive -- and the $display says so rather than the comment,
     // because "should" is a claim and a message is a measurement.
+    //
+    // >>> AND THE MESSAGE FIRED, SO THE TAIL IS NOW RETRIED RATHER THAN
+    // DROPPED. <<<  Measured on the MCP boot, 2026-10-26: five tails --
+    // to words 1240, 1241, 1243, 1244 and 1246 -- met a FULL queue and
+    // the old code discarded them, `tailNext` having been set Invalid
+    // unconditionally.  That is half a VFL field written and half
+    // silently not, which no program can recover from and no indicator
+    // reports.
+    //
+    // RETRYING IS SAFE AND IT TERMINATES.  `writeReady()` is
+    // `storeQ.notFull && !isValid(storeTail)`, so while a tail is
+    // pending the core arms no further store, and `memCtl` drains one
+    // queued store every clock the addressed unit is free -- so the
+    // queue cannot stay full with nothing else arriving.  Holding the
+    // tail one more clock is exactly the wait the comment above already
+    // claims the core performs.
     Maybe#(MemReq) tailNext = storeTail;
     if (storeTail matches tagged Valid .t) begin
-      if (storeQ.notFull) storeQ.enq(t);
-      else $display("StretchStorage: store queue full, CROSSING-FIELD TAIL to %0d LOST", t.addr);
-      recentStoreReg <= tagged Valid t.addr;
-      tailNext = tagged Invalid;
+      if (storeQ.notFull) begin
+        storeQ.enq(t);
+        recentStoreReg <= tagged Valid t.addr;
+        tailNext = tagged Invalid;
+      end else begin
+        // Keep it: tailNext stays `storeTail` and this rule tries again
+        // next clock.  recentStoreReg is NOT set, because nothing was
+        // stored and the forwarding compare must not claim otherwise.
+        recentStoreReg <= tagged Invalid;
+        $display("StretchStorage: store queue full, CROSSING-FIELD TAIL to %0d HELD", t.addr);
+      end
       if (storeW.wget matches tagged Valid .r)
         $display("StretchStorage: write to %0d arrived while a crossing-field tail was pending and was LOST", r.addr);
     end
