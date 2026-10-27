@@ -679,3 +679,91 @@ the request table should stop being empty.
 > And **check the count before believing this too**: if nine
 > definitions are expected, a fixture that punches one should move
 > `T PREFT`'s count, and that is a probe of word 1743 away.
+
+## >>> CORRECTION: T PREFT WAS NEVER TOUCHED, AND (.39)9 IS THE 576 <<< 2026-10-27
+
+`604421e` said T PREFT's count "was set at run time" because the
+static card reads `XW, T IOREQ, 0, (.39)9` and the probe read 576.
+**Both halves of that were a misreading.** Assembling printed p.62
+alone and comparing:
+
+```
+static  word 1743 = 0x01bec00009000000
+runtime word 1743 = 0x01bec00009000000
+```
+
+**Byte identical.** The word is untouched, and `(.39)9` is a
+parenthetical entry placing **9 at bit 39**, which falls inside the
+count field (IBM bits 28-45) at `9 << 6` = **576**. The third
+operand's `0` is the count OPERAND; the parenthetical overrides it.
+So the count was 576 before the machine started and nothing set it.
+
+> **AND THAT IS A STRONGER FACT THAN THE ONE IT REPLACES.** An
+> untouched `T PREFT` means MCP's request-table machinery never ran at
+> all -- not that it ran and got nine.
+
+## WHERE THE REQUEST TABLE IS BUILT, AND WHY IT IS EMPTY
+
+The builder **is** transcribed. It is MCP-DECODE's IOD path on printed
+**pp.52-56**, reached through index register `LXIO` = `$5`, which
+printed p.48 line 35 names "I.O. REQUEST TABLE INDEX". `LXIO` is
+loaded with `T IOREQ` not by an `LVI` -- which is why grepping for one
+found nothing -- but by a **SWAP of eight index words**: p.48 lines
+22-29 are the "SWAP AREA FOR EIGHT MCP-DECODE INDICES" at `LTY`, whose
+third word is `XW, T IOREQ, TIOC, LIOTBX` (count 80, self-refilling),
+and p.52 line 1 is
+
+```
+LDECOD  SWAPI, 8, LTY, LIODX
+```
+
+which covers `$3..$10` so word three lands in `$5`. p.58 line 5 swaps
+them back out on the normal return.
+
+**The chain, end to end:**
+
+| step | page.line | what |
+|---|---|---|
+| 1 | p.38 L34 | `B, Y IODC` |
+| 2 | p.40 L14-22 | convert the card's two fields to binary in `$12` |
+| 3 | p.41 L4 | `Y NORR SX, $12, 0.0($14)` -- hand them to the caller |
+| 4 | p.52 L1 | `SWAPI, 8` loads `LXIO` = `T IOREQ`, count 80 |
+| 5 | p.53 L27 | `SV, LXIO, 0.0(LXPP)` -- the slot's address into the PP table |
+| 6 | p.53 L38 | `L, LIREF(LIODX), 0.0` reads the **12-bit reference number** |
+| 7 | p.54 L16,19,21 | `ST(BU,4), TTYPE` / `ST(BU,9), TIODSQ` / `V+ICR` to the next slot |
+| 8 | p.55 L5,27 | `ST(BU,4), TTYPE` / `ST(BU,7), TRLSYM` |
+| 9 | p.56 L24 | `ST(BU,18), TFREEL(LWORKX)` |
+| 10 | p.57 | the search and sort already known |
+
+**And the card-to-table link is the 12-bit reference number, not the
+18-bit exit.** p.40 line 21's `SF(BU,12,3), $12+.52, 48` writes bit
+52; p.48 line 5 declares `LIREF SYN(BU,12), 0.52 -P.P. REFERENCE
+NUMBER` at the same width and offset; p.53 line 38's compiled left half
+is `000000.64` -- octal 64 = 52 -- with length `014000` = 12. **The
+18-bit absolute exit has no located reader** in any transcribed page.
+
+> **SO THE TABLE IS EMPTY BECAUSE MCP-DECODE NEVER RAN.** pp.52-58 are
+> the JOB LOADER; they run when a problem program is loaded, and this
+> boot has loaded none. An empty request table and an untouched
+> `T PREFT` are both exactly what that predicts. **The open question is
+> therefore no longer "why is the table empty" but "why is ASSIGN
+> being called at all before a job exists", and whether DISK's
+> `REQ CNT` of 1 is written by a path that has any business running.**
+
+### A hole worth recording: nothing writes `TLAST`
+
+Every occurrence of `TLAST` in all 72 decks is a **test** --
+`BZB, TLAST(LIODX)` (p.57 L13), `BZB, TLAST(LWORKX)` (p.57 L24,
+p.58 L20), `BZB, TLAST(TIXA)` (p.65 L49), `BZB, TLAST+1.0(TIXA)`
+(p.66 L35), `BZB, TLAST(TIXA)` (p.71 L27), `BZB, TLAST(TIXI)`
+(p.74 L25). **No instruction anywhere writes bit 0.18 of an entry**,
+and the build path sets `TTYPE`, `TRLSYM`, `TIODSQ` and `TFREEL` but
+never the end-of-table marker six branch rows on five pages
+interrogate.
+
+Two readings, neither settled: the setter is on an untranscribed page
+(pp.1, 5, 7, 9-11 and 81-97 are the gaps; pp.15-80 are complete bar
+47, 59 and 60, which compile nothing), **or** a permanently-zero
+`TLAST` in a `DRZ` table IS the correct "table exhausted" state and
+nothing ever needs to write it. `C22-6728-1`'s `TIOREQ` section is
+where to check.
