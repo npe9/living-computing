@@ -606,9 +606,23 @@ module mkStretchStorage(StretchStorage);
         tailNext = tagged Invalid;
       end else begin
         // Keep it: tailNext stays `storeTail` and this rule tries again
-        // next clock.  recentStoreReg is NOT set, because nothing was
-        // stored and the forwarding compare must not claim otherwise.
-        recentStoreReg <= tagged Invalid;
+        // next clock.
+        //
+        // AND recentStoreReg STAYS VALID WHILE THE TAIL IS HELD, which
+        // is the conservative direction and not the obvious one.  A
+        // first draft set it Invalid here, reasoning that "nothing was
+        // stored so the compare must not claim otherwise".  THAT IS
+        // BACKWARDS.  `recentStore()` is the PROGRAM STORE COMPARE
+        // (StretchIBox.bsv:253): a Valid address invalidates a
+        // prefetched word and rewinds the fetch stream, so Valid is the
+        // safe value and Invalid means "no store touched this word".
+        // The tail is still pending and WILL be written, so reporting
+        // Invalid would let the I-box keep a prefetched copy of a word
+        // that is about to change -- exactly the self-modifying-code
+        // hazard printed p.3's channel search depends on.  Reporting it
+        // every clock the tail is held costs a redundant invalidate and
+        // cannot be wrong.
+        recentStoreReg <= tagged Valid t.addr;
         $display("StretchStorage: store queue full, CROSSING-FIELD TAIL to %0d HELD", t.addr);
       end
       if (storeW.wget matches tagged Valid .r)

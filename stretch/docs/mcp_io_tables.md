@@ -578,3 +578,56 @@ every clock its unit is free.
 > change is harmless is the suite. It is kept because discarding a
 > write is never correct and M1's multi-cycle E-box is what makes the
 > path live — not because anything measured demanded it.
+
+## >>> THE REJECT'S ONE BYTE HAS NO REQUEST BEHIND IT <<< 2026-10-27
+
+`T IOREQ` is printed p.62 line 28's `DRZ(BU,64),(TIOC)` with
+`TIOC = 80`, at `003373.0` = word **1787**. Thirteen probes across
+words 1787-1866 of a boot run **all read zero.**
+
+> **SO MCP HAS NO I/O REQUESTS AT ALL, AND DISK'S REQUEST COUNT IS
+> STILL 1.** Those cannot both describe a legitimate request. The
+> conclusion committed earlier -- "one non-zero byte against one zero
+> byte is the whole reject" -- is still true about the MECHANISM and
+> **wrong about the cause**: that byte is not MCP asking for a disk.
+
+### Both clear loops are correct, so neither is the writer
+
+| deck | printed source | result |
+|---|---|---|
+| `decks/mcp_p72_clear_loop.strap` | p.72 lines 9-12, `CM0000, T MCAD(T IXG)`, `V+C` | **all pass** |
+| `decks/mcp_p65_reqcount_clear.strap` | p.65 lines 44-48, `ST, T RCAD(TX1)`, `V+CR` | **all pass** |
+
+Both run over a table whose twenty-four bytes are distinct, with
+`T TYARA`'s count of 8 and `T COMBO`'s value of 24 taken from the live
+index words, and both have measured injections. Eight conf bytes
+cleared in one, eight request counts cleared in the other, nothing
+else moved in either.
+
+### What this reframes
+
+p.65 line 50 is `LVI, ..., T IOREQ` and p.66 line 3 is
+`T C1 M+1, T RCAD(TX1) -INCREMENT REQUEST COUNT`, so the counts are
+accumulated by walking `T IOREQ`. Walking an all-zero table yields
+entries whose TYPE field is zero, and type 0 indexes **row 0 -- DISK**.
+A phantom type-0 request incrementing DISK's count is consistent with
+every byte measured, and p.66 line 1's `BD,$ -ILLEGAL REQUEST` is not
+reached, so nothing rejects the blank entry as invalid.
+
+**AND THAT POINTS AT THE FIXTURE.** `strap/prosa.py`'s
+`TERMINATOR_CARD` is `(None, None, (), iocd.IOD_CARD_TYPE)` -- an IOD
+card with every field blank, present only to END the IOCD scan. But
+`C22-6728` printed p.88 says an IOD "perform[s] the same function for
+MCP as [it does] for the problem program", and printed p.40's
+`Y IODC` converts an **I-O reference number and absolute exit** off
+it. A blank IOD is not a no-op to MCP; it is an I/O definition with
+no content.
+
+> **NOT YET A CONCLUSION, AND THE TEST IS NAMED.** printed p.62 line 6
+> is `T PREFT XW, T IOREQ, 0, (.39)9` -- a pointer to the table with
+> **count 0**. If that count still reads 0 at run time, MCP should not
+> be walking the table at all and the walk is the model's fault; if it
+> reads non-zero, something entered a request and the fixture's IOD
+> card is where it came from. **One probe of word
+> `0o3346`-ish's pointer settles which**, and it decides whether the
+> next change is in `bsv/` or in `strap/prosa.py`.

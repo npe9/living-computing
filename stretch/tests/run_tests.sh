@@ -3406,6 +3406,35 @@ run "/, VFL Divide -- quotient at the instruction's offset, remainder in RM" ./r
 # bsc 2026.01 and 2026.07 do it.  The arm divides by
 # (dsr == 0) ? 1 : dsr -- which is also the faithful reading, since
 # p.70 says the division is NOT ATTEMPTED rather than discarded.
+run "printed p.65 lines 44-48: the request-count clear loop" ./run_program.sh ../decks/mcp_p65_reqcount_clear.strap StretchP65ReqTb \
+    "PC=2054" \
+    "req_word0:1030=0x1020001121001222" \
+    "req_word1:1031=0x0013230014240015" \
+    "req_word2:1032=0x2500162600172700"
+# THE OTHER LOOP OVER printed p.64's TABLE, and the one that should
+# have left every REQUEST COUNT zero.  T RCAD is p.63 line 29's
+# SYN(BU,8), T MCAD+0.8 -- bit 16 of an entry, the third byte -- and
+# this uses V+CR where p.72's loop uses V+C.
+#
+# WHY IT MATTERS: the boot's I/O REQUEST TABLE IS ENTIRELY EMPTY (T
+# IOREQ is p.62 line 28's 003373.0 = word 1787, eighty entries;
+# thirteen probes across 1787-1866 all read zero) and yet DISK's
+# REQUEST COUNT comes out of the same run at 1.  That single non-zero
+# byte IS the ASSIGN reject, because p.66 line 10's BRZ skips any row
+# whose count is zero -- so with every count zero, line 13 never runs
+# and ASSIGN does not reject.
+#
+# >>> AND THIS LOOP IS CORRECT TOO.  ALL THREE WORDS PASS. <<<  Eight
+# request counts zeroed, sixteen other distinct bytes untouched.  So
+# BOTH loops over that table are right in isolation -- see also
+# decks/mcp_p72_clear_loop.strap -- and the open question is where a
+# count of 1 comes from when there is no request to count, which is a
+# question about the FIXTURE'S IOD CARD as much as about the model.
+# docs/mcp_io_tables.md carries it.
+#
+# INJECTION (measured): change RCAD's SYN from 0.16 to 0.8 and the
+# loop clears the MACH CONF bytes instead, failing req_word0 at word
+# 1030 with 0x1000301100311200.
 run "printed p.72 lines 9-12: the machine-configuration clear loop" ./run_program.sh ../decks/mcp_p72_clear_loop.strap StretchP72ClearTb \
     "PC=2053" \
     "clear_word0:1029=0x1000301100311200" \
