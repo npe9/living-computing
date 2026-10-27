@@ -3481,6 +3481,45 @@ run "printed p.72 lines 9-12: the machine-configuration clear loop" ./run_progra
 # INJECTION (measured): change MCAD's SYN from 0.8 to 0.0 and the loop
 # clears the TYPE bytes instead, failing clear_word0 at word 1029 with
 # 0x0020300021310022.
+run "LOOK-AHEAD level occupancy: Table A-2, and a census over MCP" python3 la_levels.py
+# >>> M2's FIRST MEASUREMENT: HOW MUCH IS THE MISSING OVERLAP WORTH? <<<
+# bsv/StretchCore.bsv:1314 and :1328 load ONE look-ahead level per
+# instruction.  Perf. Char. Table A-2 -- transcribed in
+# docs/spec_lookahead.md 1.7 and mapped onto this project's mnemonics in
+# its section 5 -- says one level is the FLOATING-POINT case only.
+#
+# Over the 72 transcribed MCP decks: 1759 statements placed, mean 1.94
+# levels each, so THE MODEL IS SHORT BY ABOUT 1650 LEVELS -- it loads
+# roughly half the levels the real machine did.  That is the number M2
+# has to close, measured statically over MCP's own code, with no model
+# run, so it cannot be an artifact of instrumenting the model (which
+# cost a retraction earlier in this work).
+#
+# BUCHHOLZ CROSS-CHECKS THE RULE, from the other end.  PDF 271 gives the
+# worst case as six levels for a VFL ADD TO MEMORY with progressive
+# indexing; sheet 3's base of 3 for M+ plus its own note -- a crossing
+# operand doubles the opnd and store levels, progressive indexing adds
+# one -- gives 3 + 2 + 1.  Neither number came from the other.
+#
+# AND THE CENSUS IS AN ASSERTION.  census_leaves_nothing_unmatched is 0:
+# every mnemonic in every deck is either placed or in a FIXED list of
+# eight the page is silent about (VFL immediates and Transmit).  A
+# census that silently skips what it cannot match is the failure mode
+# this project has a memory note about -- a SYN census once counted
+# "SYN(" and so could not match the bare SYN cards it was hunting -- so
+# a new instruction in a deck fails HERE rather than quietly shrinking
+# the denominator.
+#
+# NOTHING IS GUESSED WHERE THE PAGE IS SILENT.  Binary "/" and FP "D*"
+# are absent from sheet 3 and are marked so, as are EXIC's "N stores"
+# and Transmit's "2 + N".  The VFL immediates are the interesting
+# refusal: the tempting inference is base - 1, since an immediate
+# fetches no operand, but the one immediate the page DOES cost -- FP
+# E+-I at 1 level, same as E+- -- cannot settle it, because FP's single
+# level is "op + opnd" together and VFL's are two separate levels.
+#
+# INJECTION (measured): make the connective regex demand five bits
+# instead of four and census_leaves_nothing_unmatched reads 180.
 run "printed p.72 lines 17-22: the conf-byte offset MCP computes" ./run_program.sh ../decks/mcp_p72_conf_offset.strap StretchP72ConfTb \
     "PC=2105" \
     "code1_disk_offset:1059=8" \
