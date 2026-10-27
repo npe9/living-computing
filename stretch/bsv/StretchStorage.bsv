@@ -668,7 +668,31 @@ module mkStretchStorage(StretchStorage);
       // enqueue, so without it a read could issue on the very clock
       // the tail is queued and see the head word changed and the tail
       // word not.
-      if (!busUsed && !issued && !storeQ.notEmpty && !isValid(storeTail)) begin
+      //
+      // >>> AND `storeW` IS THE SAME HOLE, FOR THE PLAIN STORE, WHICH
+      // THIS GATE DID NOT COVER. <<<  The comment above states the
+      // mechanism and then guards only the tail against it.  A store
+      // arriving THIS clock lands on `storeW` and is enqueued further
+      // up this very rule, so `storeQ.notEmpty` -- read before that
+      // enqueue -- is False for it.  With an empty queue, a pending
+      // read therefore issued to memory on the same clock as a store to
+      // the same word, and read the PRE-STORE value.  A one-clock
+      // window, open only when the queue happened to be empty, which is
+      // why it showed up as a timing-dependent corruption rather than
+      // as a reproducible wrong answer.
+      //
+      // MEASURED: printed p.64's REQUEST VALIDITY CHECK TABLE came out
+      // of the MCP boot with four type bytes wrong, five decks said the
+      // two loops that write it are correct in isolation, and the
+      // corrupted bytes CHANGED when look-ahead level occupancy changed
+      // -- see docs/mcp_io_tables.md and docs/spec_lookahead.md.
+      //
+      // `storeTailW` is included for the same reason one clock earlier:
+      // a crossing field's head goes through `writeWord` and its tail
+      // through `writeWordTail` in the SAME clock, so a read must not
+      // slip between them either.
+      if (!busUsed && !issued && !storeQ.notEmpty && !isValid(storeTail)
+          && !isValid(storeW.wget) && !isValid(storeTailW.wget)) begin
         if (pr matches tagged Valid .a &&& mbcu.canAccept(a)) begin
           mbcu.put(MemReq{ write: False, addr: a, data: 0, tag: fromInteger(c) });
           issued = True;

@@ -3437,7 +3437,7 @@ run "printed p.65 lines 44-48: the request-count clear loop" ./run_program.sh ..
 # 1030 with 0x1000301100311200.
 run "printed p.72 lines 9-12: the machine-configuration clear loop" ./run_program.sh ../decks/mcp_p72_clear_loop.strap StretchP72ClearTb \
     "PC=2053" \
-    "CYCLES=423+-0" \
+    "CYCLES=421+-0" \
     "clear_word0:1029=0x1000301100311200" \
     "clear_word1:1030=0x3213003314003415" \
     "clear_word2:1031=0x0035160036170037"
@@ -3459,6 +3459,14 @@ run "printed p.72 lines 9-12: the machine-configuration clear loop" ./run_progra
 # RE-RECORD it with the new value and say in the commit why it moved.
 # Do NOT widen the tolerance: a window wide enough never to fail is a
 # check that has stopped measuring anything.
+#
+# RE-RECORDED 423 -> 421 when the store-to-load race was closed in
+# StretchStorage.bsv.  It went DOWN, which is worth a sentence: holding
+# a read for the clock a store is enqueued changes bus arbitration, and
+# the store then issues a clock earlier than it used to, so the loop
+# finishes two clocks sooner.  A correctness fix is allowed to move a
+# tripwire; what is not allowed is widening the tolerance so it stops
+# noticing.
 # THE LOOP A WATCHPOINT CAUGHT MISBEHAVING IN THE BOOT, run on its own.
 # Instrumenting StretchStorage to report every write landing in words
 # 1962-1964 of the MCP boot, with the PC, gave half-word 4389 =

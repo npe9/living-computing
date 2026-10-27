@@ -904,3 +904,56 @@ them costs nothing:
 
 All three passed. The findings they establish are in the table above
 and in `1e62c3f`; what is NOT kept is the compile time.
+
+## A REAL STORE-TO-LOAD RACE, CLOSED -- AND IT IS NOT THE TABLE'S CAUSE -- 2026-10-27
+
+`bsv/StretchStorage.bsv`'s read-issue gate was
+
+```bluespec
+if (!busUsed && !issued && !storeQ.notEmpty && !isValid(storeTail))
+```
+
+and the comment above it already states the mechanism: *"`storeQ.notEmpty`
+is read BEFORE this clock's enqueue, so without it a read could issue on
+the very clock the tail is queued"*. **It then guards only the tail.**
+
+A plain store arriving this clock lands on `storeW` and is enqueued
+further up the same rule, so `storeQ.notEmpty` -- read before that
+enqueue -- is False for it. With an empty queue a pending read therefore
+issued to memory **on the same clock as a store to the same word, and
+read the pre-store value.** A one-clock window, open only when the queue
+happened to be empty: which is exactly why it presented as
+timing-dependent corruption instead of a reproducible wrong answer.
+
+Closed by adding `&& !isValid(storeW.wget) && !isValid(storeTailW.wget)`
+-- the second because a crossing field's head and tail are presented in
+the same clock, so a read must not slip between them either.
+
+**It is real: behaviour changed.** Word 1964 of the conf table moved from
+`0x0000000000000000` to `0x0000060000600000`, and the p.72 clear loop went
+from 423 cycles to 421 -- *down*, because holding a read for one clock
+lets the store issue a clock earlier. **And nothing derived broke:**
+`mcp_indicators_word11` still reads `0x1422`, the value
+`tests/gen_mcp_boot_tb.py:952` derives as `AH, OP, RGZ, XE, XVGZ`.
+
+> **BUT IT IS NOT THE TABLE'S CAUSE.** The table is still wrong, and
+> still wrong in the type bytes:
+>
+> | word | expected if correct | measured, race closed |
+> |---|---|---|
+> | 1962 | `0x0100010200000300` | `0x0000010100002500` |
+> | 1963 | `0x0004000005000006` | `0x0004000005000006` |
+> | 1964 | `0x0000070000080000` | `0x0000060000600000` |
+>
+> Row 6's type byte reads `0x06` where the table says `07`, and row 7's
+> reads `0x60` where it says `08`. **So there is at least one more
+> mechanism**, and the honest position is that closing this one removed a
+> real ordering violation and one candidate, not the fault.
+
+**What this changes about the plan.** `850d0d6` made the race a blocker
+for M2. That still holds -- results are still timing-dependent -- but the
+blocker is now narrower and better evidenced: one hole is closed, the
+corruption survived it, and the next step is to find the second writer
+path the same way, by gating and measuring rather than by reasoning about
+which instruction *ought* to be wrong. Five decks have already shown the
+instructions are not.
