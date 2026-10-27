@@ -957,3 +957,65 @@ corruption survived it, and the next step is to find the second writer
 path the same way, by gating and measuring rather than by reasoning about
 which instruction *ought* to be wrong. Five decks have already shown the
 instructions are not.
+
+## >>> THE PC ATTRIBUTION WAS WRONG IN PRINCIPLE, AND THAT IS THE FINDING <<< 2026-10-27
+
+`bd60d0a` paired every watched write with `pcReg` and concluded that
+eight writes came from p.72's clear loop at `004222.40` and one from
+p.66 line 3. **Under a look-ahead that conclusion does not follow, and
+the model's own code says why.**
+
+`StretchCore.bsv:1314-1315` is
+
+```bluespec
+la.load(LaLevel{... pc: pc ...});
+pcReg <= pc + ((len == Full) ? 2 : 1);
+```
+
+**The program counter advances when a level is LOADED. The level
+EXECUTES later.** So when an E-box level's store finally lands,
+`pcReg` is wherever the I-box has run on to -- by as many instructions
+as it managed to load in the meantime. A watchpoint that prints
+`pcReg` prints *where the I-box is*, not *which instruction stored*.
+
+> That is the whole point of the structure under investigation, and I
+> used an instrument that assumes it away. The right thing to log is
+> the **level's own `pc`** -- `h.pc` in `rl_au_remove`, and the
+> `storeAddr`-bearing level's `pc` in general -- which is carried in
+> `LaLevel` precisely so the instruction can be identified after the
+> fact.
+
+**What survives from that trace, and what does not.**
+
+* **Survives:** the final state. The instrumented build's last write to
+  each word matches the clean build's probe exactly
+  (1962 `0x0000010100002500`, 1963 `0x0004000005000006`, 1964 `0`), so
+  the *sequence of values* is describing the same execution. The
+  earlier worry that the whole trace was an artifact was too broad:
+  only the `LOST` count was.
+* **Does not survive:** every attribution of a write to a named
+  printed line. Eight writes at one `pcReg` value means eight stores
+  landed while the I-box sat at `004222.40`, which is consistent with
+  p.72's loop and equally consistent with levels from earlier
+  instructions draining behind it.
+
+**And one hypothesis is closed by search rather than by argument.** If
+the bad write were a read-modify-write over the wrong BASE WORD, that
+base word would be `0x0000060100602540` with byte 4 masked. Assembling
+all 72 decks gives 2317 distinct words and **none** matches it -- not
+outside byte 4, not on its low 32 bits, not even on the byte pair
+`25 40`. So the value is **runtime-derived**, and "the RMW read some
+other word of the image" is out.
+
+### The next instrument, specified
+
+1. Log the **level's** `pc` and `kind`, not `pcReg`.
+2. Log it at the point the store is *generated* (`rl_au_remove` /
+   `execute`'s store sites), not where it is enqueued.
+3. Keep the final-state comparison as the provenance check: an
+   instrumented run whose final table differs from the clean probe is
+   describing a different execution and must be discarded.
+4. `tests/gen_tb.py`'s `STEPS=N` gives a **non-perturbing** alternative
+   worth using first: run the boot repeatedly with increasing caps and
+   probe words 1962-1964, which brackets *when* the table first goes
+   wrong without touching `bsv/` at all.
