@@ -147,41 +147,67 @@ test that M2 works, since Vol. 2's numbers were measured with overlap.
 **And the same eight clocks were safe to remove from the CONNECTIVE
 arm**, which is committed and green: the boot moved 170 steps and
 nothing failed. Same constant, same justification, opposite outcome.
-I first guessed that was a matter of VOLUME -- more VFL arithmetic
-than connectives in the boot. **It is not. It is a store-to-
-instruction-stream hazard, and MCP's IPL is SELF-MODIFYING:**
+>>> AND BOTH OF MY EXPLANATIONS OF *WHY* WERE WRONG. <<<
+
+I guessed VOLUME first -- more VFL arithmetic than connectives in the
+boot -- then, finding printed p.3's channel search to be
+SELF-MODIFYING:
 
 ```
 X1      M+1(BU,19), X1CCW       line 5  - ADVANCE CHANNEL
 X1CCW   CCW, 15.32, XIPLBS      line 6  -- NOT in the checked set
-        BEKJZ, XERROR           line 8
-        BZB, XIPLBS+.63, X1     line 9  -IS IT IPL CHANNEL
 ```
 
-printed p.3's channel search adds one to the 19-bit field **of the
-instruction on the next line**, incrementing the channel number
-inside the `CCW` it is about to execute, and loops. The deck's own
-comment records that line 6 cannot be checked statically because it
-is modified at run time.
+I wrote that the budget had been holding the store long enough to
+drain before the modified instruction was fetched. **That is refuted
+by this model's own code, and the commit that claimed it
+(`46ba25d`) is superseded here.** Three things are now PROVEN, two of
+them against me:
 
-**So the budget was holding the store long enough to drain before the
-modified instruction was fetched.** Eight clocks less and the `CCW`
-executes against a stale channel number; the unit is not ready; `UNRJ`
-is set; printed p.3 line 20 branches to `XERROR`. The twenty-six
-failures are all downstream of that one fetch.
+1. **A fetch cannot see a stale store.** `bsv/StretchStorage.bsv:634`
+   gates every read on `!storeQ.notEmpty`, conservatively, for all of
+   `reqW[c]`; `fetchReq` is `reqW[1 + y]`. Store->fetch ordering is
+   already total. There is no hazard for a budget to be papering over.
 
-> **THAT IS EXACTLY THE INTERLOCK M2 HAS TO IMPLEMENT**, and
-> `docs/spec_lookahead.md` already names it: the machine compares a
-> level's operand address against ONE address register and FORWARDS,
-> "including fetch->fetch". A store followed by a fetch of the same
-> address is the look-ahead's problem, and here it is being solved by
-> accident, by a timing constant that happens to be big enough.
->
-> **So M2 is not merely a prerequisite for exact timing -- it is
-> already load-bearing for CORRECTNESS, invisibly.** The model
-> currently depends on an unmodelled structure via a number that was
-> wrong for a different reason. That is worth more than the eight
-> clocks: it says where the next real bug lives.
+2. **`UNRJ` can only mean `kind == DevNone`.** `bsv/StretchIO.bsv:578`
+   records that `unitReady` is hardwired to 1 for all three simulated
+   devices -- "there is no not-ready/busy state to model". So the
+   reject at printed p.3 line 20 says the `CCW` addressed a channel
+   with NO DEVICE. The channel number really was wrong. The mechanism
+   was not the one I gave.
+
+3. **THE DIRECTION WAS BACKWARDS.** I wrote "eight clocks removed"
+   throughout. The committed arm is `8 + 2*ceil(x/y)`; the exact
+   formula is `12 + 2*ceil(x/y) + (2 if signed)`. Over the field
+   shapes the decks actually use -- all 1,106 are `(BU,n,8)`, so
+   y=8 -- that is **+4 clocks unsigned and +6 signed, never fewer, at
+   any length.** The budget GREW. Every sentence reasoning from a
+   shorter budget, in both of my explanations, had no premise.
+
+> AND 22,048,336 -> 6,015,582 IS NOT A TIMING MEASUREMENT. That run
+> halted at `XERROR`. 6,015,582 is where it DIED, not how fast it ran;
+> a larger per-instruction budget cannot make a completing run
+> shorter. Reading the drop as a speed result is what made "clocks
+> were removed" feel plausible for as long as it did.
+
+**No replacement mechanism is offered here, deliberately.** Two
+narratives in a row were written ahead of the evidence, and the thing
+they have in common is that I reasoned from a remembered sign instead
+of evaluating the expression. What survives is the finding that the
+IPL is self-modifying -- that is real, printed p.3 lines 5-6, and
+worth knowing -- and the three facts above.
+
+THE MEASUREMENT THAT WOULD SETTLE IT, to run under both budgets and
+diff: log at the `CCW` execution site the resolved channel number, the
+resolved `kind`, and the clock, and log again at the `UNRJ` raise
+site. The channel SEQUENCES are the evidence. Whether the loop
+started wrong or walked past the IPL channel are different faults with
+different causes, and the sequence distinguishes them. The candidate
+worth testing first, with the sign now right, is that a LONGER budget
+changes how much device-response time elapses per iteration relative
+to when `XIPLBS+.63` is written -- i.e. the loop overruns the IPL
+channel into an uninstalled one, which is exactly what fact 2 says the
+reject means.
 
 
 ## >>> MEASURE IN CYCLES. THE ATLAS PAGES ARE NOT ALL THE SAME KIND. <<< 2026-10-26
