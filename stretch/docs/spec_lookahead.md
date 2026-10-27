@@ -1649,3 +1649,56 @@ every level the core loads today, and change nothing else. That is a
 true refactor — the suite and the `CYCLES=423+-0` tripwire prove it —
 and it is the one edit that every later step needs and no later step
 has to undo.
+
+### >>> I-BOX LEVELS ARE IMPLEMENTABLE, AND THEY EXPOSE A RACE <<< 2026-10-27
+
+The next increment was built and then **reverted**. It is worth
+recording in full because what it found reorders the roadmap.
+
+**What was built.** Perf. Char. PDF 40 — *"Each I-box instruction
+results in one (sometimes more) level of LA being loaded"* — and PDF 36
+— *"these levels are not useful to the E-box and have the effect of
+reducing the number of LA levels"*. So: the I-box arm loads one level
+per I-box instruction, kind `LaIxRec` / `LaStore` / `LaNoop` by Table
+A-2 (stores picked out with the existing `storeTarget()`), gated on
+`la.count() < 4` so the I-box can no longer run arbitrarily far ahead;
+and `rl_au_remove` retires a non-`Whole` head **without** calling
+`ebox.start`, because the instruction already ran in the I-box and
+handing it to the E-box would execute it twice.
+
+**It works.** It compiles, the p.72 clear loop still computes the right
+answer at 424 cycles against 423, and the MCP boot still passes
+**48 of 49** checks including every console-message word.
+
+**The one failure is the finding.** `mcp_indicators_word11` read
+`0x1424` where the suite expects `0x1422` — IBM bit 62 to 61, which is
+**AH to AE**: an accumulator comparison that said *high* now says
+*equal*. And probing the conf table under the two builds, same program,
+same input:
+
+| word | committed | with I-box levels |
+|---|---|---|
+| 1962 | `0x0000010100002500` | **`0x000001c000000000`** |
+| 1963 | `0x0004000005000006` | `0x0004000005000006` |
+| 1964 | `0x0000000000000000` | `0x0000000000000000` |
+
+> **THE CORRUPTION MOVED WITH THE TIMING.** `1e62c3f` concluded by
+> elimination that the conf-table corruption was "the boot's concurrent
+> state, not any instruction's logic". **This demonstrates it.** A
+> change that alters only how many ring slots are occupied alters which
+> bytes come out wrong, which is what a race is and nothing else is.
+
+**And it is why the change cannot land.** `0x1422`'s expectation is
+*derived*, not snapshotted: `tests/gen_mcp_boot_tb.py:952-972` records
+it as `AH, OP, RGZ, XE, XVGZ` and explains that the AL→AH bit was the
+one the image bug was hiding. Updating it to `AE` would paper over a
+race with a new number.
+
+> **SO THE STORE-PATH RACE IS NOW A BLOCKER FOR M2, NOT A PARKED
+> CURIOSITY.** Every M2 step changes timing; while results are
+> timing-dependent, no M2 step can be told apart from a regression.
+> **Fix the race first.** The reverted change should go back in
+> afterwards unchanged — it was right.
+
+What survives in the tree is `LaKind` (`082858a`), which is a no-op and
+green, and this note.
