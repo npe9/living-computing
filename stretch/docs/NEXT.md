@@ -168,6 +168,14 @@ them against me:
    gates every read on `!storeQ.notEmpty`, conservatively, for all of
    `reqW[c]`; `fetchReq` is `reqW[1 + y]`. Store->fetch ordering is
    already total. There is no hazard for a budget to be papering over.
+   **And it is TESTED**: the suite has a `Look-ahead:
+   store-close-to-fetch` section and a store-then-EXECUTE sibling,
+   both passing, over and above the `recentStore()` hazard reporter --
+   see `tests/run_tests.sh:2048-2058`, which says in its own words
+   that the collision is "unreachable" until the E-box goes
+   multi-cycle. So the protection was not merely present, it was
+   deliberate and under test, and the claim contradicted a green
+   check that was already in the suite I was running.
 
 2. **`UNRJ` can only mean `kind == DevNone`.** `bsv/StretchIO.bsv:578`
    records that `unitReady` is hardwired to 1 for all three simulated
