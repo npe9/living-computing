@@ -208,3 +208,45 @@ and **wrong about which test fires.**
 > 1787. This is the same class of unit error as the sign that had to
 > be superseded in `a2d66b8`, so it was checked against the emitted
 > BSV and not against the shape of the neighbouring checks.
+
+### Outcome (c) is RULED OUT, and (b) is predicted, before the run
+
+`TA9` is not reached unconditionally. printed p.65 lines 6-9 are
+ASSIGN's entry:
+
+```
+TASIGN  SWAPI, 12, $1, TASAVE   line 6  -SAVE INDEXES
+        LX, TCTWDX, 0.0($15)    line 7  -OVERLAP AND MACHINE CONF TEST
+        CM0000(BU,6), TMODE     line 8  -RESET INDICATORS
+        BZXVZ, TA9              line 9  -IF A MACH CNF CHANGE
+```
+
+and p.65 line 9 is `TA9`'s **only** caller anywhere in the decks. So
+whether the configuration is ever counted turns on one branch, and
+every link in it is sourced:
+
+* **The caller's word.** printed p.27 line 9 is `X242 XW,-1,0,0,4`,
+  commented `-MODE`, and `$15` points at it (line 5's
+  `LVI,$15,X242`). Assembled, it is `0x000001c000000000`.
+* **Its fields.** `StretchTypes.bsv:90-97` gives `IndexWord` as
+  `addr` IBM bits 0-23, `sign` bit 24, `flag` bit 25. The word has
+  bit 23 (magnitude 1), bit 24 (sign) and bit 25 — so the value is
+  **-1** and the `4` is the index FLAG.
+* **The branch sense.** `ind_XVZ` is set from `x.addr == 0`
+  (`StretchExecute.bsv:952`), and `opcodes.py:285-290`'s
+  `BBZ`/`BZBZ` pairs fix the convention: `BZ<ind>` branches when the
+  indicator is ZERO. `addr` is 1, so `XVZ` is 0, so **the branch is
+  taken and `TA9` runs.**
+
+> **AND TA9 CLEARS THE FIELD THAT BROUGHT IT THERE.** printed p.72
+> line 5 is `CM0000(BU,24), 0.0($15)` — "CLEAR CON FIG CHANGE" — which
+> zeroes the caller word's 24-bit value. So `-1` means "the
+> configuration changed, count it", `TA9` counts once, and every later
+> ASSIGN call finds zero and skips it.
+>
+> **That rules out outcome (c).** The counts cannot be caught between
+> the clear and the recount at the halt, because `TA9` ran once, early,
+> and ran to completion. **Outcome (b) is the prediction**: the conf
+> bytes read `1,1,1,0,1,0,0,2` and some type's request count exceeds
+> its conf count. If the probe shows the static table instead, this
+> derivation is wrong somewhere and the branch is the place to look.
