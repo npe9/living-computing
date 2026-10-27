@@ -54,7 +54,7 @@ module mkLookAhead #(StretchStorage st) (LookAhead);
   // decision arms, which run after it in the same clock) -- the one
   // intra-clock ordering the old monolithic step() relied on, now
   // explicit.
-  Vector#(4, Array#(Reg#(LaLevel))) la <- replicateM(mkCReg(2, LaLevel{valid: False, di: tagged Invalid,
+  Vector#(4, Array#(Reg#(LaLevel))) la <- replicateM(mkCReg(2, LaLevel{valid: False, kind: Whole, di: tagged Invalid,
         pc: 0, len: Half, da: tagged Invalid, data: tagged Invalid, fetchIssued: False,
         waitFor: tagged Invalid, branch: False, target: 0, storeAddr: tagged Invalid}));
   function Vector#(4, LaLevel) laRead(Integer port);

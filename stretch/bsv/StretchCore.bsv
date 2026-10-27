@@ -1311,7 +1311,7 @@ module mkStretchCore(StretchCore);
               if (!wfound && hz) begin wf = tagged Valid pos; wfound = True; end
             end
           end
-          la.load(LaLevel{valid: True, di: di, pc: pc, len: len, da: da,
+          la.load(LaLevel{valid: True, kind: Whole, di: di, pc: pc, len: len, da: da,
                           data: tagged Invalid, fetchIssued: False, waitFor: wf,
                           branch: False, target: 0, storeAddr: storeTarget(st, di)});
           pcReg <= pc + ((len == Full) ? 2 : 1);
@@ -1325,7 +1325,7 @@ module mkStretchCore(StretchCore);
       // index words and indicators, and carry on down the fall-
       // through path. One guess at a time.
       if (!guessPending && la.count() < 4 && !progressivePending) begin
-        la.load(LaLevel{valid: True, di: di, pc: pc, len: len, da: tagged Invalid,
+        la.load(LaLevel{valid: True, kind: Whole, di: di, pc: pc, len: len, da: tagged Invalid,
                         data: tagged Invalid, fetchIssued: False, waitFor: tagged Invalid,
                         branch: True, target: effAddr19(st, bi.addr, {3'b0, bi.idx}),
                         storeAddr: tagged Invalid});

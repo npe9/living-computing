@@ -696,8 +696,43 @@ typedef struct {
 // immediate operand), the operand once fetched, whether the fetch
 // has been issued, and the earlier level whose retirement this
 // level's fetch must wait for (a store to the same word ahead of it).
+// WHAT KIND OF LOOK-AHEAD LEVEL THIS IS -- Perf. Char. Table A-2's own
+// vocabulary, transcribed in docs/spec_lookahead.md section 1.7 from its
+// legend on rendered PDF 69: "INT internal operand fetch, INT STORE
+// internal operand store, Store store, IX Rec. index-register recovery
+// (also called pseudo-store), B Rec. branch recovery, LAOP LA
+// operation, NOOP no-op (indicator transfer only), Op operation-code
+// level, opnd operand level".
+//
+// >>> ONLY `Whole` IS USED TODAY, AND THAT IS THE POINT. <<<  This model
+// puts ONE ENTIRE INSTRUCTION in a level: StretchCore.bsv loads
+// `di: di` and the head arm runs execute() off `headLevel().di`.
+// Table A-2's levels are PARTS of an instruction -- a VFL ST occupies
+// three because its op code, its operand and its store each sit in one
+// -- so the model's level and the table's level are different objects
+// that share a name, and allocating N of the present kind per
+// instruction would execute the instruction N times.
+//
+// `Whole` names the present object honestly so the difference is in the
+// type system rather than in a comment, and so the later steps that do
+// split an instruction into parts have somewhere to put the answer. See
+// docs/spec_lookahead.md section 5 for the per-instruction counts and
+// for why this is the one edit no later step has to undo.
+typedef enum {
+  Whole,     // this model: the entire instruction, not a Table A-2 kind
+  LaOp,      // Table A-2 "Op"        -- operation-code level
+  LaOpnd,    // Table A-2 "opnd"      -- operand level
+  LaStore,   // Table A-2 "Store"
+  LaInt,     // Table A-2 "INT"       -- internal operand fetch
+  LaTest,    // Table A-2 "test"
+  LaIxRec,   // Table A-2 "IX Rec."   -- index recovery, a pseudo-store
+  LaBRec,    // Table A-2 "B Rec."    -- branch recovery
+  LaNoop     // Table A-2 "NOOP"      -- indicator transfer only
+} LaKind deriving (Bits, Eq, FShow);
+
 typedef struct {
   Bool             valid;
+  LaKind           kind;        // `Whole` everywhere today -- see LaKind
   DecodedInstr     di;
   HWordAddr        pc;
   InstrLen         len;
