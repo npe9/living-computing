@@ -619,3 +619,75 @@ the render:
   validity check table". If that is where the conf counts come from,
   the question is why it generates none -- and that is a different
   question from the one A1 answered.
+
+## THE RENDER OF `-1` PRINTED p.72, AND WHAT IT SETTLES -- 2026-10-28
+
+Queue item 2, rendered from the PDF rather than read out of OCR. Three
+things it gives, all verbatim.
+
+### 1. ASSIGN's linkage, which independently confirms a derivation
+
+```
+     LVI, $15, Y
+     B, TASIGN
+Y    XW, A, B, C
+     (Return)
+```
+
+> **A** is the status of the machine: `0` -- no configuration change has
+> taken place; `≠0` -- configuration change has taken place.
+> **B** is the exit disposition: `0` -- next PP has been assigned
+> successfully and is ready for Move; `≠0` -- next PP has been rejected
+> and cannot be given to Move.
+> **C** is the Assign entry mode: `0` -- overlapped mode; `≠0` --
+> unoverlapped mode.
+
+printed p.27's caller is `X242 XW, -1, 0, 0, 4`, so **A = -1**:
+*configuration change has taken place*. That is the same conclusion
+`75be218` reached from the other end -- by decoding the index word's
+`addr`/`sign`/`flag` bits and the `BZXVZ` branch sense -- and the two
+derivations never touched each other. **B is the disposition bit** the
+project already tracks through printed p.80 line 25.
+
+**And C = 0 means OVERLAPPED**, while the fixture's MCPP card says
+`BYPASS`, which printed p.98 calls unoverlapped. That is not
+necessarily a contradiction -- C comes from MCP's own caller, not from
+the card -- but it is the first place the two could disagree and is
+worth a line in the plan.
+
+### 2. The configuration-change section's three functions, verbatim
+
+> 1. All requests reserving units that have become unavailable due to a
+>    machine configuration change must be relieved of these units. At
+>    the same time these relieved requests must be marked so that they
+>    have priority in re-assignment (pseudo-unoverlapped).
+> 2. **The equipment count is generated for the validity check table.
+>    This table contains the equipment code and count and a zero field
+>    for the requested count for a PP.**
+> 3. The multi-unit count table is generated. This gives the total
+>    number of tapes on a channel. The format of the table is half-word:
+>    `.0-.17` the channel number and `.18-.21` the unit count. Along
+>    with this, the largest count per channel is stored for PP request
+>    checking.
+
+**Function 2 settles the open question.** printed p.64's table is the
+validity check table, its three bytes are "the equipment code and
+count and a zero field for the requested count", and the count **is
+supposed to be generated** by this section. So the conf bytes coming
+out of the boot as zero is a **defect**, not documented behaviour --
+which is what the plan needed to know before spending anything on it.
+
+**Function 3 gives a layout the project did not have**: the multi-unit
+count table is half-words of `channel .0-.17` and `unit count .18-.21`.
+`T CHCUC` is at `003661` = word 1969, and nothing has looked at it.
+
+### 3. What it does NOT give, stated so nobody looks again
+
+It does not say how the count is generated, only that it is. The code
+is printed p.72 lines 16-30 of the listing, already transcribed, and
+two hypotheses about it have now been refuted before being asserted:
+the `code*24 - 16` arithmetic is correct (five decks), and lines 23/25/26
+all take offset 0 in the source, so the `LI(BU,1),1` feeding `M+` is not
+an offset mismatch. **The next step is to watch `T EQUIP` as `TA9A`
+reads it**, which the step-cap bisection can do without instrumenting
+the model.
