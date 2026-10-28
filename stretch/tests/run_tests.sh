@@ -3569,6 +3569,34 @@ run "LOOK-AHEAD level occupancy: Table A-2, and a census over MCP" python3 la_le
 #
 # INJECTION (measured): make the connective regex demand five bits
 # instead of four and census_leaves_nothing_unmatched reads 180.
+run "printed p.72 lines 17-26: the conf-byte offset AND the add" ./run_program.sh ../decks/mcp_p72_conf_add.strap StretchConfAddTb \
+    "PC=2063" \
+    "conf_word0:1035=0x0121300221310322" \
+    "conf_word1:1036=0x3204233305243406" \
+    "conf_word2:1037=0x2535072636082737"
+# THE SAME SEQUENCE AS THE DECK BELOW, CARRIED THREE INSTRUCTIONS
+# FURTHER -- through line 23's "LI(BU,1),1  -AT LEAST GIVE A COUNT OF
+# ONE" and line 26's "M+, T DISK(T IXG)  -ADD CONFIGURATION TO TABLE"
+# -- and checking the CONF BYTE rather than the index value.
+#
+# WHY: the MCP boot leaves every conf byte ZERO, and `C22-6728-1`
+# printed p.72, rendered, says the count "is generated for the validity
+# check table", so a zero is a DEFECT rather than documented behaviour.
+#
+# >>> AND THE SEQUENCE IS CORRECT.  ALL THREE WORDS PASS. <<<  Row 0's
+# conf byte goes 0x20 -> 0x21 and the other twenty-three bytes do not
+# move.  That is SIX decks over p.72's two loops, all green, so the
+# instructions are not the fault and the boot's context is -- the same
+# shape as the look-ahead bug fixed in a2b210e.
+#
+# T DISK IS THE TABLE'S OWN LABEL, not an offset: printed p.64 line 6 is
+# "T DISK (8)DD(BU,8),1,1,0", so "M+, T DISK(T IXG)" addresses
+# table + TIXG and takes its dds from that DD.  A first draft of this
+# deck wrote "T DISK SYN(BU,8),0.0", which would have addressed absolute
+# bit TIXG -- a different instruction entirely.
+#
+# INJECTION (measured): LI(BU,1),1 -> LI(BU,1),0 and conf_word0 reads
+# 0x0120300221310322, the conf byte left at 0x20.
 run "printed p.72 lines 17-22: the conf-byte offset MCP computes" ./run_program.sh ../decks/mcp_p72_conf_offset.strap StretchP72ConfTb \
     "PC=2105" \
     "code1_disk_offset:1059=8" \

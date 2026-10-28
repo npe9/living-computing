@@ -691,3 +691,45 @@ all take offset 0 in the source, so the `LI(BU,1),1` feeding `M+` is not
 an offset mismatch. **The next step is to watch `T EQUIP` as `TA9A`
 reads it**, which the step-cap bisection can do without instrumenting
 the model.
+
+## THE CONF COUNT: SIX DECKS GREEN, AND THE WINDOW IS 100,000 STEPS -- 2026-10-28
+
+`-1` printed p.72, rendered, says the equipment count "is generated for
+the validity check table", so the boot leaving every conf byte at zero
+is a defect. Four hypotheses have now been tested and **all four are
+refuted**, each before it was asserted:
+
+| hypothesis | how it died |
+|---|---|
+| the `code*24 - 16` arithmetic is wrong | `mcp_p72_conf_offset.strap`, green |
+| lines 23/25/26 have mismatched offsets | the SOURCE carries no offset operand on any of the three, so all are offset 0 |
+| the loop does not reach the equipped channels | `T CHSXW` carries **count 36** and `TB9B CB+, TIXF, TA9A` advances one word, covering words 2814-2849 -- channels 0 and 32-35 are all inside it |
+| **`TA9` runs before the channel status table is built** | **the bisection below** |
+
+### The new deck
+
+`decks/mcp_p72_conf_add.strap` carries the same sequence three
+instructions further -- through `LI(BU,1),1` and
+`M+, T DISK(T IXG)` -- and checks the **conf byte**. It passes: row 0's
+conf byte goes `0x20` to `0x21`, the other twenty-three do not move.
+**Six decks over p.72's two loops, all green.**
+
+### The bisection, non-perturbing as before
+
+| steps | `T CHSXW` | CST 2814 / 2846 | conf table |
+|---|---|---|---|
+| 4,000,000 | `0xa00000` (partial) | 0 / 0 | static |
+| 6,000,000 | **0** | 0 / 0 | static |
+| **6,100,000** | word 2814 | **built, TEQUIP 1 / 3** | **still static** |
+| 6,200,000 | word 2814 | built | **cleared** |
+
+> **SO THE CHANNEL STATUS TABLE IS FULLY BUILT BEFORE `TA9`'s CLEAR
+> RUNS**, and the hypothesis that `TA9` reads an empty table is dead.
+> When the loop runs it has correct data, a correct count, a correct
+> stride, and a sequence proven correct in isolation -- and adds
+> nothing.
+
+**That is the same shape as the look-ahead bug** (`a2b210e`): right in a
+deck, wrong in the boot. The window is now **6,100,000 to 6,200,000**,
+one hundred thousand steps, which is where to instrument -- **narrow
+first, instrument second**, and log the LEVEL's `pc`, not `pcReg`.

@@ -1,0 +1,52 @@
+! printed p.72 lines 17-26: compute the slot AND add the count.
+!
+! The CST entry is one word with T EQUIP -- printed p.63 line 10's
+! SYN(BU,4),0.52 -- in IBM bits 52-55, which is (w >> 8) & 0xF.  The
+! live table reads 1 there for the disk on channel 0, so that is what
+! this feeds it.
+!
+! T COMBO and T 2COMB are one word, 24 at bit 0 and 16 at bit 32, which
+! is how a VF lays out -- a 24-bit value in a 32-bit slot.  Word 1053
+! assembles to 0x0000180000001000, byte for byte the live word 1960.
+!
+! EVERY CONF BYTE STARTS AT 0x20+r AND EVERY REQ BYTE AT 0x30+r so a
+! stray write names itself; a correct run adds ONE to row 0's conf byte
+! and leaves the other twenty-three alone.
+
+        SLC, (8)2000.0
+
+START   LX, $10, CSTPTR              ! TIXF -> the channel status entry
+        L, TEQUIP($10), 40           ! line 17 -GET EQUIP FOR MACH CONF
+        BRZ, DONE                    ! line 18 -IF NO EQUIP ON THIS CHAN
+        *(BU,24), TCOMBO, 40         ! line 19 -COMPUTE LOC WITHIN TABLE
+        -(BU,24), T2COMB, 20         ! line 20
+        L(BU,64), $R, 20             ! line 21 -LEFT SHIFT TO VF
+        LV, $8, $R                   ! line 22 -TIXG
+        LI(BU,1), 1                  ! line 23 -AT LEAST GIVE A COUNT OF ONE
+        M+, TABLE($8)                ! line 26 -ADD CONFIGURATION TO TABLE
+DONE    BEW, $
+
+        CNOP
+TCOMBO  VF, 24
+T2COMB  VF, 16
+        CNOP
+CSTPTR  XW, CST, 36, 0
+CST     DD(BU,64,8), 256             ! 0x100 -> T EQUIP = 1, the disk
+        CNOP
+TABLE   DD(BU,8), 1, 32, 48
+        DD(BU,8), 2, 33, 49
+        DD(BU,8), 3, 34, 50
+        DD(BU,8), 4, 35, 51
+        DD(BU,8), 5, 36, 52
+        DD(BU,8), 6, 37, 53
+        DD(BU,8), 7, 38, 54
+        DD(BU,8), 8, 39, 55
+
+TEQUIP  SYN(BU,4), 0.52
+! NOTE: p.72 writes "M+, T DISK(T IXG)" where T DISK is the TABLE'S
+! OWN LABEL -- printed p.64 line 6's "(8)DD(BU,8),1,1,0" -- so the
+! effective address is table + TIXG and the dds (BU,8) comes from
+! that DD.  Using a SYN of 0.0 here would have addressed absolute
+! bit TIXG instead, which is a different instruction entirely.
+
+        END, START
