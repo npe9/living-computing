@@ -1154,3 +1154,52 @@ needing anything to be corrupted after the fact.
 > still the right one -- it names the loop -- but outcome (d) of its
 > pre-registration (`$S/prereg_a4.md`) is live, and the first thing to
 > read off the next full-cap suite run is the boot's own step count.
+
+### CONFOUND RESOLVED: outcome (d). The loop is finite, and the project had already measured it.
+
+`tests/gen_mcp_boot_tb.py:942`, written long before this session, says
+of the stretch of boot that reaches `T A9`'s code: **"the run is 16
+MILLION STEPS longer"**. That is the number, independently recorded:
+
+    ~6.1M steps   to reach the loop
+    ~16.0M steps  in it            (2^18 iterations x 61 cycles = 15,990,784)
+    ~22.0M total  against a known full boot of 22,048,336 steps
+
+So the loop **terminates**, the boot completes, and the MCP bootstrap
+section of the suite passes at the canonical 40,000,000 cap. The
+"spinning in an MCP loop" framing was an artifact of the 6,140,000 cap
+I set for log size, exactly as pre-registered outcome (d) said it might
+be. **Phase A4 as originally written is withdrawn.**
+
+> **>>> WHAT IS LEFT IS A BETTER QUESTION THAN THE ONE I STARTED WITH.
+> <<<** A loop runs **262,144** times and eats **16 of the boot's 22
+> million steps** -- roughly three quarters of the entire bootstrap.
+> 2^18 is exactly the width of the index count field (IBM bits 28-45),
+> so this is a count-controlled loop entered with its count at ZERO,
+> which decrements, wraps, and runs the field's full range. MCP does
+> not intend that. **The defect is not that a count gets zeroed after
+> the fact; it is that the loop is ENTERED with count zero.**
+
+That is a sharp, falsifiable question with a cheap instrument: name the
+loop's count register, then log every write to it between the last
+correct load and the loop's first iteration. It also explains why the
+earlier probes found `$2` and `$10` reading zero *mid-loop* while
+`TCHSXW`/`TMUCTX` were correct -- mid-loop is after the wrap, so a zero
+there is the consequence, not the cause, and every probe placed there
+was downstream of the event by up to 16 million steps.
+
+**Three method notes, all paid for in this session.**
+
+1. **A harness number is not a machine number.** The cap produced the
+   tail; the tail was read as behaviour. This file already recorded the
+   same error as "22M to 6M means it ran faster" -- it meant it halted.
+   Recognising the pattern in the abstract did not stop me repeating it.
+2. **Pre-registering outcomes caught it, and nothing else did.** The
+   confound surfaced while writing outcome (d) for a run not yet made,
+   two commits after the bad conclusion was already committed. Writing
+   down what each result WOULD mean is what made the reduced cap
+   visible as an assumption.
+3. **Check the repo for the number before measuring it.** "16 MILLION
+   STEPS" was sitting in a comment in the very testbench being
+   instrumented. A grep for the magnitude would have found it before
+   any of the six instrumented builds.
