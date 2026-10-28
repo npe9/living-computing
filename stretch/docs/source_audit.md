@@ -349,3 +349,80 @@ PRIORITY CHKR`, `REQUEST 4TH PRIORITY FOR I CHKR`, implemented with
 "no N req" hold lines. **This is access to the I CHECKER (the ECC /
 parity unit), not the memory bus.** Roadmap stage M3 is about memory
 and bus arbitration and must not absorb this by name similarity.
+
+## Audit 4 of 4: `C22-6729`, Buchholz, and the two early papers
+
+### `C22-6729` carries a COMPLETE FORMAL GRAMMAR of STRAP II's expression language
+
+Appendix C, printed pp.197-201, is the bit-level encoding of what STRAP
+II actually parsed: an operator is nine bits -- a 1-bit exists flag, a
+**3-bit operator code**, and a 5-bit datum reference number.
+`strap/strap_asm.py`'s `tokenize_expr` accepts `+`, `-`, bit-address
+dots, symbols, `$sys` and a radix prefix, and has **no `*`, `/`, `**`
+or parentheses**. Sixteen plan items came out of this document; the two
+that bear on work done this week:
+
+* **Entry modes are a three-bit code** (printed p.21), and `(8)` octal
+  and `(.n)` are **peers in the same field** -- `(r)` radix is `010`,
+  `(.n)` parenthetical integer is `011`. `(.n)` is a leading entry
+  mode, not an afterthought, and the radix may be **2-16**.
+* **`(.39)9` is corroborated.** Appendix C gives a gp as an exists
+  flag, **six bits of n** (so n is 0-63), and "a coded expression for
+  the entry to be **OR'ed into the field**", repeatable. And the forms
+  where a gp is forbidden are **`SYN`, `DR`, `DDI`, `DRZ`** -- `XW` is
+  not among them, so `T PREFT XW, T IOREQ, 0, (.39)9` is legal and the
+  reading that gives its count field `9 << 6` = 576 stands.
+* **Address-term scaling is stated in prose with a worked example**
+  (printed p.144): *"if the address SAM + 10 is to be inserted into an
+  18-bit address, the routine adds 10 full words; if a 19-bit address,
+  it adds 10 half words; if a 24-bit address, it adds 10 bits … the
+  addition is determined by the FUNCTION of the address, not the size
+  of the field."* That is the same family as the `effAddr18`/`effAddr19`
+  bug, and it says the choice is a property of the operand's function
+  -- a cleaner invariant than the per-call-site constants
+  `eval_addr_field` uses today, and testable against the listing
+  oracle. **It does not settle the bare-integer-as-address gap**, which
+  is a different question; do not conflate them.
+
+### Buchholz Appendix A is an independent cross-check, barely touched
+
+A.3 (registers and special addresses), A.4 (operations and modifiers),
+A.5 (**the 64 indicators with class codes** -- what
+`opcodes.INDICATOR_BITS` follows), A.2 (instruction formats with bit
+boundaries), Appendix B (six worked programs). Cleanly OCR'd and
+independent of the Reference Manual.
+
+### The early papers: dated, and two misleading figures flagged
+
+* `ADescriptionOfStretch_Dec59` is **mostly as-designed**, but its body
+  carries timing numbers **its own author retracted on a separate
+  errata sheet**, and its indicator table is a genuinely earlier
+  design. Cite A.5, not Johnson's Table 3.
+* `Bloch_EngrDesOfStretch_1959` is as-designed and **superseded by
+  `Planning` ch.14, which is its own revision** -- but the discussion
+  transcript at the end is primary source found nowhere else. Its
+  "765 different types of instructions" **disagrees with its own
+  figure's total of 735**; do not cite either.
+
+### >>> AND ONE FLAG FROM THE AUDIT IS A FALSE ALARM, WHICH I CHECKED RATHER THAN PROPAGATED <<<
+
+The report suggests the roadmap "may have mis-attributed Bloch's 2.0 µs
+memory cycle to Buchholz". **It has not.** The project cites **2.1 µs
+to Buchholz §14.1**, `docs/ocr/Planning_A_Computer_System.txt` line 2089
+reads *"2.1 microseconds"*, and
+`docs/microarchitecture_roadmap.md:130` already records that Perf.
+Char.'s measured **2.2** is preferred over it. Nothing to fix.
+
+> A "may have" from a delegated audit is a question, exactly as a low
+> citation count is. This session has already paid for the habit of
+> acting on one before checking.
+
+### A real reconciliation item, though
+
+Bloch's discussion transcript says *"**There is no such thing** [as a
+machine cycle] … each unit has a clock … between 200 and 300
+millimicroseconds"*, while `docs/exchange_and_io.md:1533` reasons about
+"the CPU runs on 0.3 µs cycles **from a master oscillator**". The 7101
+CE manual's two-phase A/B clock (audit 3) sits between them. **One
+paragraph of reconciliation is owed**, and it matters because the whole
+cycle-accuracy goal is denominated in that unit.
