@@ -1256,3 +1256,65 @@ p.65's ASSIGN prologue runs `BB,TASGNP,TOD` and
 `BB,TIBPRC(TIXE),TB8` before any of them. If MCP's intended path always
 passes the `LX` and the model's does not, the defect is a branch
 condition, not an address and not a store.
+
+### Two checks on the section above, one of which I had taken on trust
+
+**1. `T MUCTX` has count zero BY DESIGN, and that is not the defect.**
+printed **p.290**:
+
+    T MUCTX   XW,TCHCUC,0,0   -CONSTANT TO THE BEGINNING OF CNT TBL
+
+An index word whose value is `T CHCUC` with sign, **count and refill
+all zero**. It is a base pointer, not a counter, so
+`LX,TIXH,TMUCTX` (printed p.72 line 15) is *supposed* to leave `$2`
+with count zero. The loop's count comes from `$10` via line 4's
+`LX,TIXF,TCHSXW`, which carries 36. The earlier probe table that
+recorded `T MUCTX` as "correct" was right, and reading its zero count
+as suspicious would have been a thirteenth false lead.
+
+**2. The "16 MILLION STEPS" comment does name this interval -- checked,
+because I had cited it as corroboration without reading it.**
+`gen_mcp_boot_tb.py`'s comment is a *ratchet history* of indicator sets
+as successive listing pages were transcribed, not a direct measurement
+of a loop. But the entry in question is
+
+    printed pp.66-72 as well, so T A9's own code runs ... and the
+    run is 16 MILLION STEPS longer
+
+i.e. **adding pp.66-72 -- which is the `T ADA` region -- lengthened the
+boot by 16 million steps.** So it corroborates the interval, and more
+specifically than claimed: it attributes the 16M to `T A9`'s own code
+executing. The arithmetic (2^18 x 61 = 15,990,784) and the comment are
+two independent witnesses to the same thing.
+
+**It also shows the 16M growth was observed before and accepted as
+normal.** The comment's concern was the indicator set, not the step
+count. A number that large went by as unremarkable because nothing was
+asserting against it -- which is the same gap `docs/microarchitecture_roadmap.md`
+opens with ("a stage with no oracle is a stage whose bugs survive").
+
+### Where this leaves the question, stated precisely
+
+The loop body is reached only by falling through from `004224.40` or by
+its own back-edge: a lookup of every listing line citing `004225`
+returns **one**, the definition itself, so nothing branches into
+`T ADA`. Yet the 262,144 writes land at **word 0** offset 20, which
+requires `$2 == 0`, and the count reached 2^18, which requires `$10`'s
+count `== 0`. **Both registers zero means neither `LX` at p.72 lines 4
+and 15 took effect on that pass**, while the fall-through path to the
+loop crosses both.
+
+The one event known to zero exactly those registers is `T ASSIGN`'s
+prologue `SWAP I,12,$1,T ASAVE` (words 17-28), measured entering
+**exactly once**, at ~6.12M -- after the correct 36-iteration pass at
+~6.01M.
+
+> **THE NEXT MEASUREMENT, AND IT SHOULD BE AT THE CANONICAL
+> 40,000,000 CAP:** log every execution of `004215` (`T AD`),
+> `004224.40` and `004225` (`T ADA`) with `$2` and `$10` beside it. If
+> `T ADA` runs without `004215` preceding it, the loop is being
+> re-entered by a path the listing does not show and the model's
+> control flow is wrong. If both `LX`s execute and the registers are
+> still zero, the `LX` instruction itself is at fault for an index
+> word read from a special address. Those are the two arms, and they
+> are distinguishable in one run.
