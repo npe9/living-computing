@@ -1117,3 +1117,40 @@ then which writer, then why the save area. That regress is the tell
 that the symptom's cause is not where the digging is. The cheap
 check that broke it was reading the guess classification against a
 sourced list instead of instrumenting a thirteenth time.
+
+### >>> A CONFOUND IN THE SECTION ABOVE, FOUND BY PRE-REGISTERING THE NEXT RUN <<<
+
+The claim "the boot is spinning in an MCP loop at step ~6.12M", written
+two commits ago and used to justify Phase A4, rests on runs whose
+`step_cap` was **6,140,000** -- a reduction I made to keep the
+instrumented logs small. The canonical cap is **40,000,000**.
+
+**The tail of every one of those runs is at the cap by construction.**
+So "it is still issuing wrong-way recoveries when the log ends" is not
+evidence of a hang. It is evidence that the log ended. This is the same
+error as "a step count dropping from 22M to 6M means it ran faster"
+(recorded in the working-method notes: it halted) wearing different
+clothes -- a number that comes from the harness being read as a number
+that comes from the machine.
+
+**What survives the confound.** The 61-cycle period is real and
+measured across ~16,000 cycles, so there IS a tight loop. What does not
+survive is "spinning" in the sense of *forever*.
+
+**And the arithmetic points the other way.** `TA9A` was measured
+earlier running **262,144 = 2^18** times. At 61 cycles an iteration
+that is ~16.0M cycles, which on top of the ~6.1M already elapsed is
+~22M -- and the boot's known full length is **22,048,336 steps**. So
+the loop is very likely FINITE and simply truncated by the reduced cap.
+
+**2^18 is also exactly the width of the index count field** (IBM bits
+28-45). A count-controlled loop entered with its count at ZERO
+decrements, wraps, and runs 2^18 times. That is the signature of this
+loop, and it reconnects the count question to the symptom without
+needing anything to be corrupted after the fact.
+
+> **THE OPEN QUESTION IS THEREFORE NOT "WHERE IS IT STUCK" BUT "WHY IS
+> A LOOP COUNT ZERO WHEN THE LOOP IS ENTERED".** A4's instrument is
+> still the right one -- it names the loop -- but outcome (d) of its
+> pre-registration (`$S/prereg_a4.md`) is live, and the first thing to
+> read off the next full-cap suite run is the boot's own step count.
