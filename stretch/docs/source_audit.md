@@ -766,3 +766,78 @@ conf table's address range, and check the run's final table against the
 bisection numbers above to prove the trace describes the same
 execution. All three of those rules were bought with retractions
 earlier in this work.
+
+## >>> THE CONF COUNT: BOTH INDEX REGISTERS ARE ZERO, AND IT IS 2^18 WRITES TO WORD 0 <<< 2026-10-28
+
+Instrumented inside the window, to the specification written before
+starting: at the store's **generation** site, with the final table
+checked against the bisection to prove the trace describes the same
+execution.
+
+### The chain, measured
+
+**1. `M+` never adds a conf count.** Logging every `M+` store that
+targets words 1962-1964 over the whole boot gives **three** hits:
+
+```
+MPLUS word 1963 off  0 len 8    flat byte  8 = READER's REQUEST count
+MPLUS word 1964 off 56 len 8    flat byte 23 = TAPE's REQUEST count
+MPLUS word 1964 off 56 len 8    TAPE again, 0 -> 1 -> 2
+```
+
+All three are printed p.66 line 3's `M+1, T RCAD`. **printed p.72 line
+26's conf add never fires.** (The instrument was proved able to fire
+first -- unguarded it logs 60 stores before the window closes -- so the
+negative is evidence rather than silence.)
+
+**2. `TA9A`'s body IS entered, and writes the wrong place.** Filtering
+every four-bit `CM` write -- `T CHCNT` is `SYN(BU,4), 0.20`, so length
+four is line 16's signature:
+
+```
+262144  word 0  off 20  len 4
+```
+
+**2^18 writes to word 0.** `262144 = 2^18` is the Reference Manual's
+own "a count field of zero is interpreted as 2^18", and offset 20 with
+length 4 is `T CHCNT` exactly.
+
+**3. Both index registers are zero while their source words are
+right.** Index registers X0-X15 live at words 16-31, so `TIXH` = `$2`
+is word 18 and `TIXF` = `$10` is word 26. Probed mid-loop at 6,500,000
+steps:
+
+| | value | count | refill |
+|---|---|---|---|
+| `$2` (`T IXH`) | **0** | **0** | **0** |
+| `$10` (`T IXF`) | **0** | **0** | **0** |
+| `T MUCTX` word 1965 | `0x01ec400000000000` -- correct | | |
+| `T CHSXW` word 1130 | `0x02bf800000900000` -- correct | | |
+
+printed p.72 line 4 is `LX, T IXF, T CHSXW` and line 15 is
+`LX, T IXH, T MUCTX`. **Both load from correct, non-zero words, and
+both registers end up entirely zero.** That accounts for every symptom:
+`T IXF`'s count of zero gives 2^18 iterations, `T IXH`'s value of zero
+puts every write on word 0, and `T EQUIP(T IXF)` reads word 0 -- zero
+-- so line 18's `BRZ` skips the add on all 262,144 passes.
+
+### The mechanism this points at, labelled as a hypothesis
+
+**Zero in value, count AND refill is the signature of being
+OVERWRITTEN, not of a failed load.** `StretchCore.bsv:154` declares
+`xSnap <- mkReg(replicate(0))` -- sixteen zero index words -- and line
+523, in `rl_recover`, does `st.restoreIndex(xSnap)`. A restore that
+runs with `xSnap` still at its reset value, or with a snapshot older
+than the `LX`, writes exactly what is measured.
+
+`rl_recover` fires only on a wrong branch guess, and the snapshot is
+taken at the guess (`StretchCore.bsv:1332`), so the pair looks correct
+on its face. **What is not established is whether a branch level can
+survive a `cancelAll()` and recover against a stale snapshot** -- which
+is the same subsystem, and the same shape, as the look-ahead bug fixed
+in `a2b210e`.
+
+**NOT A CONCLUSION.** It is the first hypothesis of this investigation
+that has not yet been tested, and six have died already. The test is to
+log `xSnap`'s contents and the `branchSeq` at `rl_recover`, in the same
+window, with the same provenance check.
