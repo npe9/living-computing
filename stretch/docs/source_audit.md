@@ -733,3 +733,36 @@ conf byte goes `0x20` to `0x21`, the other twenty-three do not move.
 deck, wrong in the boot. The window is now **6,100,000 to 6,200,000**,
 one hundred thousand steps, which is where to instrument -- **narrow
 first, instrument second**, and log the LEVEL's `pc`, not `pcReg`.
+
+### A fifth hypothesis, refuted, and the window narrows to 30,000 steps
+
+`S YCOCH` looked like a free witness for whether `TA9A`'s body reaches
+line 26: printed p.72 line 42 writes it (`SF(BU,17), S YCOCH+.2, 46`),
+and line 42 is *after* line 26, so finding it written inside the window
+would prove the add executed. Measured:
+
+| steps | `S YCOCH` (word 1134) | conf table |
+|---|---|---|
+| 6,000,000 | 0 | static |
+| **6,120,000** | **35** | **still static** |
+| 6,150,000 | 35 | cleared |
+
+**It is written BEFORE the conf clear.** p.72's clear loop (lines 10-12)
+runs *before* the per-channel loop that contains line 42, so if line 42
+had written it the order would be the other way round. `S YCOCH` is
+populated earlier -- by the communication-region move, which
+`docs/boot_plan.md` already records -- and **is not a witness for line
+26.** Hypothesis five, refuted.
+
+> **What it buys instead is a tighter window.** The conf clear now sits
+> between **6,120,000 and 6,150,000 steps** -- thirty thousand, down
+> from a hundred thousand -- and that is small enough that a log of
+> every store in it will be readable.
+
+**The next instrument, specified so it is not got wrong a second time:**
+log at the **generation** site of the store (`StretchExecute`'s VflInt
+`M+` arm), printing the LEVEL's `pc` rather than `pcReg`, guarded on the
+conf table's address range, and check the run's final table against the
+bisection numbers above to prove the trace describes the same
+execution. All three of those rules were bought with retractions
+earlier in this work.
