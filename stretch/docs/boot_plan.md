@@ -1372,7 +1372,11 @@ prediction made when the 16-bit field looked anomalous, and it is now
 measured.
 
 **ONE CORRECTION, from `C22-6728` printed p.90, Figure 44 "The
-Initialization Program - Chart 1"** — which is the flowchart of
+Initialization Program - Chart 1"** (in the `-1` edition the same
+chart is **Figure 49, printed p.99** -- see the edition concordance in
+`docs/source_audit.md`; `-1`'s own Figure 44 is "The Relocation Table
+Structure", a different chart, so the bare number must never be
+carried between editions) — which is the flowchart of
 printed pp.17-18, with the same label names (`X131` "IS THIS AN IOCD
 CARD", `X19`, `X18`, `X171`). Its decision box **"IS EQUIPMENT TAPE"
 goes to `X18` on NO**. So bit 29 of an equipment entry means **IS

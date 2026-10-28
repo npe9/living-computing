@@ -265,7 +265,48 @@ against `Y TYPMK` and takes the error return.
   `0101` is a strong fingerprint for the comparison.)
 * **`TLAST`** -- narrowed, as recorded earlier in this file.
 
-### Two edition-confusion bugs to fix
+### Two edition-confusion bugs -- BOTH FIXED 2026-10-28, and an edition concordance
+
+> **>>> THE RULE THIS ESTABLISHES: NEVER CARRY A BARE FIGURE NUMBER OR
+> PAGE BETWEEN THE TWO EDITIONS OF `C22-6728`. <<<** They renumber, and
+> the collision is not benign -- the base edition's Figure 44 is the
+> chart this project depends on, while `-1`'s Figure 44 is "The
+> Relocation Table Structure", a different chart that would read as
+> plausible. Always name the form number WITH the figure.
+
+**Verified, both editions, PDF page == printed page.** That offset is
+not assumed. In `-1`, two running heads confirm it: "Debugging Aids
+215" on PDF page 215, "Debugging Aids 221" on PDF page 221. In the base
+edition, three: "System Operation Programs" 85, 87 and 91, each on the
+PDF page of the same number.
+
+**Every page in the table below was read off a page marker, not derived
+from the +5 pattern.** The pattern does not in fact hold: Chart 1 moves
+90 -> 99 (+9) and Chart 2 moves 92 -> 100 (+8). The figure NUMBERS move
+by 5; the PAGES do not move by a constant, and an inferred page here
+was wrong by one before it was checked.
+
+| chart | `C22-6728` (base) | `C22-6728-1` |
+|---|---|---|
+| The Initialization Program - Chart 1 | **Figure 44, p.90** | **Figure 49, p.99** |
+| The Initialization Program - Chart 2 (decode-assign-move) | **Figure 45, p.92** | **Figure 50, p.100** |
+| The Relocation Table Structure | -- | Figure 44 (the collision) |
+
+**AND THE ROUTINE LABEL CHANGED WITH IT, which is the worse trap.**
+The base edition reads "decode-assign-move routine (**X20B**, Figure
+45)"; `-1` reads "decode-assign-move routine (**SB22**, Figure 50)".
+This project cites `SB22`, which is the `-1` name, so a search for
+`SB22` in the base edition returns nothing and would read as the
+routine being absent rather than renamed.
+
+
+The renumbering is pinned by the *same sentence* in both editions:
+base, "At X13 (Figure 44), the initialization program proc-"; `-1`,
+"At X13 (Figure 49), the initialization program proc-".
+
+### The two bugs as originally found
+
+
 
 * `docs/mcp_io_tables.md:102` cites "`C22-6728-1` ... its §215 UPDATE 30
   writeup". In `-1`, printed p.215 is **Debugging Aids**; UPDATE-30 is

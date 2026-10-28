@@ -99,8 +99,11 @@ about the JOB stream, not the system tape.
 
 So the IOCD card's own format is **still not located**, and the
 places left to look are: the System Analysis Guide's IPL section
-(`C22-6728-1`, sampled but not read for this question), its §215
-UPDATE 30 writeup, and the bulletin `C22-6718` which p.40 cites and
+(`C22-6728-1`, sampled but not read for this question), its
+UPDATE-30 writeup (printed **pp.228** ff. -- NOT §215, which is
+Debugging Aids; verified 2026-10-28 against two running heads,
+"Debugging Aids 215" on PDF page 215 and "Debugging Aids 221" on PDF
+page 221, confirming PDF page == printed page for this edition), and the bulletin `C22-6718` which p.40 cites and
 which is not in `docs/`. Recorded as open rather than guessed at —
 printed p.17's usage shows a 12-bit Hollerith field pair for the
 channel and a two-letter equipment code looked up in `X EQP T`, which
