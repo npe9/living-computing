@@ -308,6 +308,54 @@ IOCD_CARDS = [
 # other fields -- after the compare succeeds it goes straight on to
 # moving the unit status table -- so punching anything there would be
 # inventing a format the pages do not state.
+# >>> AND IT IS A REAL IOD CARD NOW, NOT A BLANK ONE. <<<
+#
+# It used to be `(None, None, (), iocd.IOD_CARD_TYPE)` -- every field
+# blank but the card type -- present only to END the IOCD scan.  Three
+# things say that cannot work, all from documents already in the corpus:
+#
+#   * `C22-6728-1` printed p.66: Uncode compares the first field against
+#     its mask at `Y TYPMK`, and "if not, error return is given, and no
+#     information is transmitted".  A card blank but for `B` in column 1
+#     takes that error return and NEVER REACHES DECODE.  The guide even
+#     uses such a card as deliberate filler elsewhere (printed p.166).
+#   * `C22-6678-1` printed p.96: "The IOD cards define the I-O
+#     requirements of MCP and perform the same function for MCP as they
+#     do for the problem program."
+#   * `C22-6728-1` printed p.98: IPL assignment is a MODIFIED
+#     decode-assign-move, and its minimal case -- normal IPL,
+#     unoverlapped -- needs IOD cards defining a card reader and output
+#     tape units.
+#
+# THE FIELD POSITIONS ARE VERIFIED, not derived: `C22-6678-1` printed
+# pp.7-10 prints the column ruler, and the cards MCP reads at IPL are
+# STRAP II's OUTPUT cards, which carry columns 63-72 punched.  See
+# strap/iocd.py's IOD section.
+#
+# WHAT IS STILL INVENTED, and labelled: the IODNAME and the ABSOLUTE
+# EXIT.  The exit is "the first word address of the I/O table of exits
+# to be used when an interrupt occurs for the logical unit", which is a
+# location inside MCP that no transcribed page names.  It must be
+# NON-ZERO -- the guide says "a zero address denotes the absence of an
+# IOD card" -- so a plausible in-range stand-in is used and marked here.
+MCP_IOD_EXIT = 0o4000          # INVENTED: a word address inside MCP
+# The statement carries the exit SYMBOL as the programmer wrote it; the
+# trailing channel and mode subfields are null and so are dropped
+# right-to-left, and a null mode means NOECC anyway.
+# >>> NO COMMAS, DELIBERATELY, AND THE REASON IS MEASURED. <<<  A
+# statement of "IOD,READER,XRDEXIT" came back out of SBRK8 as the
+# single field "IOD-READ" -- eight characters, the comma rendered as a
+# dash -- so the comma did not survive the card -> SCA6 -> field path,
+# the field ran past SBRK8's eight-character limit, and Uncode took its
+# error return (X ERR 22, "INCORRECT CARD TYPE WITHIN IODS").  See
+# docs/source_audit.md.  So this card carries the TYPE FIELD ALONE,
+# which is what the old blank-statement card did and what got as far as
+# ASSIGN -- plus the two fields that card lacked, the reference number
+# and the absolute exit, which are what MCP needs and which live in
+# columns 63-72 where no comma is involved.
+TERMINATOR_IOD = dict(name="MCPRDR", iod_type="READER",
+                      exit_sym="XRDEXIT", subfields=(),
+                      ref_number=1, absolute_exit=MCP_IOD_EXIT)
 TERMINATOR_CARD = (None, None, (), iocd.IOD_CARD_TYPE)
 
 
@@ -364,7 +412,12 @@ COMM_AT = WORDS_BEFORE_MCP_A + IPL_WORDS + WORDS_BEFORE_MCP_B
 
 # MCP's body: the comm region's own length -- see the IOCD note.
 MCP_BODY_WORDS = COMM_REGION_WORDS
-CARD_WORDS = iocd.WORDS_PER_CARD * (len(IOCD_CARDS) + 1)
+# +2: the IOD terminator and the MCPP card after it.  C22-6728 printed
+# p.88 gives the order IOCD, IOD, MCPP, and MCP read the IOD and then
+# reported X ERR 22, "INCORRECT CARD TYPE WITHIN IODS" (printed p.8
+# line 14) -- it wanted the next legal card type and found none.
+MCPP_MODE = "BYPASS"   # printed p.98 case 1: normal IPL, unoverlapped
+CARD_WORDS = iocd.WORDS_PER_CARD * (len(IOCD_CARDS) + 2)
 # X10, "GET MCP SIZE": the body plus the cards, because printed p.15
 # line 24 moves the whole block.
 MCP_SIZE_WORDS = MCP_BODY_WORDS + CARD_WORDS
@@ -451,10 +504,17 @@ def record():
     # places -- so they land at X IN END.
     deck = [(c, e, u, iocd.CARD_TYPE) for c, e, u in IOCD_CARDS]
     deck.append(TERMINATOR_CARD)
+    deck.append((None, None, (), iocd.MCPP_CARD_TYPE))
     for n, (channel, equipment, units, kind) in enumerate(deck):
         at = CARDS_AT + n * iocd.WORDS_PER_CARD
-        words[at:at + iocd.WORDS_PER_CARD] = iocd.card(
-            channel, equipment, units, card_type=kind)
+        if kind == iocd.MCPP_CARD_TYPE:
+            cw = iocd.mcpp_card(MCPP_MODE)
+        elif kind == iocd.IOD_CARD_TYPE:
+            # the IOD terminator, punched as STRAP II would emit it
+            cw = iocd.iod_card(**TERMINATOR_IOD)
+        else:
+            cw = iocd.card(channel, equipment, units, card_type=kind)
+        words[at:at + iocd.WORDS_PER_CARD] = cw
     return words
 
 

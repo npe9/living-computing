@@ -77,6 +77,28 @@ MKTAPE = os.path.join(os.path.dirname(os.path.abspath(__file__)),
 IND_WORD = 11
 
 
+def _sca6_word(n):
+    """Word `n` of SCA6's output for the fixture's IOD card.
+
+    The card is converted to the A set as a continuous six-bit stream,
+    high-order character first, and the separator is mapped to the
+    COMMA's code -- both facts measured against the model; see the
+    comment at the mcp_ucbf1_* checks.
+    """
+    import charsets, iocd, prosa
+    text = iocd.iod_card_text(**prosa.TERMINATOR_IOD)
+    sep_code = charsets.A[","]
+    bits, nbits = 0, 0
+    for ch in text:
+        code = sep_code if ch == iocd.IOD_SUBFIELD_SEPARATOR else charsets.A.get(ch, 0)
+        bits = (bits << 6) | code
+        nbits += 6
+    pad = (-nbits) % 64
+    bits <<= pad
+    nbits += pad
+    return (bits >> (nbits - 64 * (n + 1))) & 0xFFFFFFFFFFFFFFFF
+
+
 def _image_index(octal_word):
     """The index into prosa.MCP_IPL_WORDS of a word named by its
     printed octal address.  Written this way so the two checks below
@@ -448,10 +470,31 @@ def main():
         #    against.  So this check says the type field MCP reads
         #    out of the card is bit-for-bit the type mark MCP tests
         #    it with.
+        # >>> DERIVED FROM THE CARD, NOT RECORDED FROM A RUN. <<<  These
+        # two words used to be hardcoded against a card whose statement
+        # was blank.  The fixture now punches a real IOD card, so the
+        # buffer legitimately has content -- and rather than re-record
+        # two magic numbers, they are COMPUTED from the card text, which
+        # turns the check into a test of SCA6's conversion and cannot
+        # drift when the card changes.
+        #
+        # SCA6 packs the card as a CONTINUOUS six-bit stream, not ten
+        # characters per word with padding: word 0's low four bits carry
+        # the top of character eleven.  Established by computing it both
+        # ways and comparing against the model (0xca4ce7a74a400399
+        # matches the continuous form exactly and the padded form in all
+        # but its low nibble).
+        #
+        # AND THE SEPARATOR MAPS TO THE A-SET COMMA, which is the
+        # measured disagreement with `C22-6678` Appendix F recorded in
+        # strap/iocd.py: the character cards.py punches 0-3-8 comes out
+        # of SCA6 as code 27, the comma, not code 12, the quote.  With
+        # code 27 substituted both words match bit for bit; with code 12
+        # word 1 does not.
         ("mcp_ucbf1_0",
-         str(sym("XBSEND") + _image_index("002327")), 0xc800000000000399),
+         str(sym("XBSEND") + _image_index("002327")), _sca6_word(0)),
         ("mcp_ucbf1_1",
-         str(sym("XBSEND") + _image_index("002327") + 1), 0xb400000000000000),
+         str(sym("XBSEND") + _image_index("002327") + 1), _sca6_word(1)),
         ("mcp_ucbf2_0",
          str(sym("XBSEND") + _image_index("002337")), 0xe66d000000000000),
 
