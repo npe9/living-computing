@@ -252,9 +252,19 @@ def card_words_cols(line, overrides=None):
     cards people type; a field that MCP reads as raw bits has no
     character for it, and `card_words` cannot express one.
 
-    The first such field is the IOD control card's -- printed p.40
-    lines 14-22 read ten SIX-BIT fields, two per column, which no
-    single character can produce.
+    >>> THE MOTIVATION FIRST WRITTEN HERE WAS WRONG, and the
+    capability is right anyway. <<<  It said the IOD control card
+    needed this because printed p.40 reads "ten SIX-BIT fields, two per
+    column, which no single character can produce".  It does not:
+    `C22-6728-1` printed p.66 says Uncode converts the card to BCD into
+    `Y UCBF1` via SCA6 first, so those ten six-bit fields are ten
+    ORDINARY BCD CHARACTERS in card columns 63-72, one per column, and
+    a keypunch produces them.  See tests/verify_card_columns.py.
+
+    What remains true is the need: a 7030 card may carry a field that
+    has no character -- p.21's "each card punch position is a possible
+    data bit" -- and `card_words` cannot express one.  This can.  The
+    IOD card simply turned out not to be an example.
     """
     if overrides is None:
         return card_words(line)

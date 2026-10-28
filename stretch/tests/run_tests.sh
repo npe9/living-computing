@@ -12124,17 +12124,36 @@ run "PUNCHED CARDS: raw column punching, and column 32 = bit 372" python3 verify
 # can punch.  They start at Y UTOE, which printed p.41 line 37 defines
 # as Y UCBF1+.372.
 #
-# AND THE DIVISION IS THE DERIVATION, so this file pins it: a column is
-# twelve bits (R23-9702 Figure 4.3-1, and WORDS_PER_CARD is
-# 80 * 12 // 64 = 15 exactly), 372 % 12 is 0, and 372 / 12 + 1 = 32.
-# THE IOD'S FIELD BEGINS AT CARD COLUMN 32 and runs five columns.
-# Checked independently by punching column 32 and reading the card back
-# as one 960-bit integer: the override sets exactly bits 372-383, its
-# two six-bit halves come back as the two values put in, and nothing
-# else on the card moves.
+# >>> AND THE DIVISION THAT WAS "THE DERIVATION" WAS BY THE WRONG
+# NUMBER.  This block used to conclude "THE IOD'S FIELD BEGINS AT CARD
+# COLUMN 32", from 372 / 12 + 1.  The arithmetic was right and the
+# proposition was false: Y UCBF1 does not hold the card image, it holds
+# SCA6's output at SIX BITS PER CHARACTER (C22-6728-1 printed p.66,
+# "Cards are converted to BCD into Y UCBF1").  The divisor is 6. <<<
+#
+# THE REFUTATION IS IN THE LISTING, not a preference between readings.
+# Line 2156 of the OCR'd listing is VF,YUCBF1+.54, the second argument
+# of the same call: 54 / 6 = 9 exactly, character 10, column 10, and the
+# CF,53 beside it gives columns 10-62 -- the documented statement field.
+# 54 / 12 = 4.5.  MID-COLUMN, which no character-string argument can be.
+#
+# SO THE FIELD IS AT CARD COLUMNS 63-72, and four facts agree: 372/6 = 62
+# -> column 63; 372 + 60 = 432 = 72 * 6 -> it ends at column 72, the last
+# column of the IOD statement area; LF(BU,60,6) reads ten six-bit bytes
+# and C22-6678-1 printed p.9 gives reference number 63-66 plus absolute
+# exit 67-72, four plus six; and the SYN's own comment names both,
+# "LOCATION OF REF # AND TOE".
+#
+# A COLUMN IS STILL TWELVE BITS and card_words_cols is still right --
+# R23-9702 Fig 4.3-1, and SCA6's own call passes CF,80.  Only the
+# MOTIVATION was wrong: after SCA6 there is one six-bit character per
+# column, so the IOD's ten fields are ten ordinary BCD characters a
+# keypunch produces.  R23-9695 line 300 independently confirms the
+# twelve bits ("15 full words"; "13 full words ... 78 card columns, with
+# the last two columns ignored").
 #
 # INJECTION (measured): make the override land one column late
-# (cols[c] -> cols[c + 1]) and override_sets_column_32_bits reads 0
+# (cols[c] -> cols[c + 1]) and override_sets_card_column_63_bits reads 0
 # instead of 131, with three sibling checks failing beside it.
 run "PUNCHED CARDS: an ASCII deck read on the IBM 7503" ./run_card_test.sh StretchCardTb
 # SIMH-STYLE IN, PUNCHES OUT.  strap/cards.py turns a line of text into
