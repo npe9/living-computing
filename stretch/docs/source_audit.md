@@ -1203,3 +1203,56 @@ was downstream of the event by up to 16 million steps.
    STEPS" was sitting in a comment in the very testbench being
    instrumented. A grep for the magnitude would have found it before
    any of the six instrumented builds.
+
+### >>> THE SWAP IS NAMED, AND IT IS `T ASSIGN`'s OWN PROLOGUE <<<
+
+Half-word 3970 is word 1985, octal 3701, and printed **p.65 line 9** is
+
+    003701.00   T ASSIGN   SWAP I,12,$1,T ASAVE   -SAVE INDEXES
+
+**Every measured detail matches.** The instrument reported a 12-word
+SWAP at half-word 3970 with `x.src == 26`; the listing says 12 words
+starting at `$1`. Twelve words from `$1` is words **17-28**, which
+contains word 26 (`$10` = `T IXF`) and deliberately spares `$0` and
+`$13`-`$15` -- and `$15` is used two instructions later as `020($15)`,
+so sparing it is necessary and the range is self-confirming.
+
+> **SO `$10` GOING TO ZERO AT ASSIGN ENTRY IS CORRECT, AND INTENDED.**
+> `SWAP` is how MCP saves indexes: the caller's live registers go out
+> to `T ASAVE` and `T ASAVE`'s contents come in. One instruction both
+> saves and restores. On a first entry `T ASAVE` is zero, so ASSIGN
+> necessarily begins with a zero index set. Nothing is corrupted.
+
+**This retires the writer hunt completely.** Every write to `$10` in
+the boot is now not merely "legitimate" but traced to a named
+instruction at a named listing address.
+
+### And the loop is correct too, on the pass that was measured
+
+Printed **p.72 line 4** is the load the loop depends on:
+
+    004215.00   T AD   LX,TIXF,TCHSXW   -BEGINNING OF CHAN STAT TABLE
+
+`T CHSXW` (word 1130) was measured as `0x02bf800000900000` -- address
+word 2814, count 36 -- and the census shows `$10` loaded and walked
+**2849 down to 2814 with the count going 36, 35, 34, ...**, which is
+exactly `T CHSXW`'s 36-word span. **The loop runs 36 times and is
+right.**
+
+> **>>> THEREFORE THE 2^18 PASS IS A SECOND, DIFFERENT ENTRY TO THE
+> SAME LOOP. <<<** `TB9B CB+,TIXF,TA9A` is reached on some path that
+> does NOT pass p.72 line 4's `LX,TIXF,TCHSXW`, so it counts on
+> whatever the ASSIGN-entry SWAP left behind -- zero -- and a count
+> field of zero means 2^18 (Reference Manual). The 262,144 writes to
+> `word 0 off 20 len 4` are `T CHCNT` resolved against a zero index:
+> `T CHCNT` is `SYN(BU,4), 0.20`, a TEMPLATE with offset 20 and no
+> base, so a zero index puts it at word 0.
+
+**The question is now a control-flow question about a named routine,
+which is the most tractable form it has taken.** Which branch reaches
+`TA9A` without the load? printed p.72 has the candidates in view
+already -- line 25's `L,TUNITK(TIXF)`, line 38's `LV,TIXG,TIXF` -- and
+p.65's ASSIGN prologue runs `BB,TASGNP,TOD` and
+`BB,TIBPRC(TIXE),TB8` before any of them. If MCP's intended path always
+passes the `LX` and the model's does not, the defect is a branch
+condition, not an address and not a store.
