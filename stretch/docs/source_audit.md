@@ -274,3 +274,78 @@ against `Y TYPMK` and takes the error return.
 * **Figure numbers differ by 5 across the IPL block.** The project cites
   base numbers (`gen_mcp_p17_tb.py:175` cites "p.90's Figure 44"); in
   `-1` that chart is **Figure 49, printed p.99**.
+
+## Audit 3 of 4: `R23-9732`, 7101 CPU CE Reference Manual
+
+### >>> FIRST, A CORRECTION TO THIS FILE'S OWN METHOD <<<
+
+The census above put this manual among the gaps on 19 citations in
+23,527 lines. **That reading is wrong, and the way it is wrong matters
+for the whole audit.** `docs/spec_lookahead.md`'s provenance block
+records that a prior delegated agent rendered and read CE PDF pp. 92,
+93, 96, 104, 114, 117, 171, 172 and 175 -- the highest-value look-ahead
+pages in the volume. The nineteen citations are **concentrated, not
+absent.**
+
+> **SO CITATION DENSITY CONFLATES "NEVER READ" WITH "READ AND CITED
+> CONCISELY."** It is still the right first cut -- it found a 49,000-line
+> document cited fifteen times and that one WAS unread -- but a low
+> score is a question, not a verdict, and each gap document has to be
+> checked against the project's own provenance notes before it is
+> called unmined. The two documents this file has now examined properly
+> fell on opposite sides of exactly that distinction.
+
+### What is genuinely unmined here
+
+* ~22 further look-ahead flow-diagram pages (95, 97-103, 105-113,
+  115, 116, 118, 119);
+* **the complete LA timer inventory, Table 3.4.1**;
+* **Section 4 Procedure 1** (pp. 273-279), filed as a field-service
+  adjustment procedure and in fact the best memory-timing source in
+  the volume;
+* Tables 3.3.1/3.3.2/3.3.4, the PAU trigger, logic-area and datapath
+  gate inventories;
+* **the PAU/SAU timing-chart category (pp. 225-243)**, which does give
+  numbered per-cycle charts.
+
+### The status of "no per-action look-ahead cycle count" CHANGES
+
+`docs/spec_lookahead.md` §1123 marks this `[NOT IN THE SOURCES]`, and
+`docs/microarchitecture_roadmap.md` M2 correction 4 says any LA-internal
+count in the Bluespec is invented and must say so.
+
+**That survives as to a NUMBER** -- Index 3-1 lists eleven diagnostic
+categories and the only timing-chart category is Cat 8, PAU; there is
+no LA timing-chart category. **But the LA's per-action timing has a
+named hardware structure, and this manual inventories it completely:
+thirteen timers**, each with its phase triggers and ALD page --
+operand check, operand correct, transfer bus, transfer indicator,
+arithmetic bus, indicator register, houseclean, LA houseclean over, LA
+indicator test, store data, LA-to-Instruction-Unit, clear index, write
+index. Every LA action in Figures 3.2.3-3.2.27 is drawn as a vertical
+swim-lane under one of them.
+
+> **AND THE AGENT REFUSED THE INFERENCE THAT WOULD HAVE BEEN WRONG**,
+> which is worth recording as much as the finding. "Two triggers = two
+> cycles" is rejected on three grounds: the column headers are logical
+> combinations (`E`, `E·M`, `E+M`, `M`) and so overlapping states, not
+> a sequential chain; the arithmetic bus timer has **three** triggers
+> (EE/E/M), so there is no uniform two-stage model; and **the clock is
+> two-phase A/B**, so "one phase" is ambiguous between one A-or-B pulse
+> and an A+B pair -- a factor of two straight into the model. The
+> manual's own control glossary is the evidence: "1 PULSE … either an A
+> or a B pulse", "2 PULSE … either A and B or B and A", "3 PULSE …
+> either ABA or BAB".
+>
+> **So `[NOT IN THE SOURCES]` should be REWRITTEN, not deleted**: the
+> count has a named structure and known pages, and the A/B-pulse
+> mapping must come from a clock-timing source rather than from
+> counting triggers.
+
+### One arbitration finding, and a warning not to over-read it
+
+Figures 3.2.3 and 3.2.26 show a numbered priority scheme -- `3RD
+PRIORITY CHKR`, `REQUEST 4TH PRIORITY FOR I CHKR`, implemented with
+"no N req" hold lines. **This is access to the I CHECKER (the ECC /
+parity unit), not the memory bus.** Roadmap stage M3 is about memory
+and bus arbitration and must not absorb this by name similarity.
