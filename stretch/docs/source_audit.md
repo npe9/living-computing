@@ -426,3 +426,123 @@ millimicroseconds"*, while `docs/exchange_and_io.md:1533` reasons about
 CE manual's two-phase A/B clock (audit 3) sits between them. **One
 paragraph of reconciliation is owed**, and it matters because the whole
 cycle-accuracy goal is denominated in that unit.
+
+---
+
+# THE GOAL SET
+
+*What the audit was for. Phase A is the current blocker; everything
+after it is the "what else" list, ordered, with the evidence for why
+each item is on it and what would finish it.*
+
+## Phase A — finish MCP. Three items, all now citable.
+
+**A1. Punch the IOD card at columns 63-72.** `C22-6678-1` printed p.9:
+I/O Reference Number **cols 63-66**, Absolute Exit **cols 67-72**. The
+fixture's `TERMINATOR_CARD` is blank, and a card blank but for `B` in
+column 1 never reaches Decode -- Uncode masks field 1 against
+`Y TYPMK` and takes the error return. *Done when `T IOREQ` is
+non-empty at the ASSIGN call.*
+
+**A2. Supply the cards case 1 actually requires.** printed p.98: IPL
+assignment is a **modified** decode-assign-move (SB22, Figure 50) with
+four cases; the minimal one -- normal IPL, unoverlapped -- needs IOD
+cards defining **a card reader and output tape units**. *Done when
+ASSIGN sets the disposition bit.*
+
+**A3. Supply the `MCPP` card.** printed p.101: the mode is taken from
+the MCP parameter card unless the operator overrides at the console.
+Without it the case selection is undefined. *Done when the mode is a
+chosen value rather than whatever zero decodes to.*
+
+> **RENDER FIRST, BEFORE WRITING ANY OF IT:** `-1` printed **pp.99-100**
+> (Figures 49-50) is the flowchart of the project's own p.17/p.18 code
+> and the highest-value page pair in either volume; and `-1` printed
+> **p.72**, Assign's configuration-change section, which decides
+> whether the "phantom request" is a defect or the documented initial
+> entry.
+
+## G1 — Cycle accuracy. The roadmap, with the audit's corrections folded in.
+
+| stage | state | what the audit adds |
+|---|---|---|
+| **M0** harness | **done** -- two-sided `CYCLES=N+-T`, measured baseline | the atlas oracle is still **unwritten**; that is M0's real remainder |
+| **M2** look-ahead | `LaKind` landed (no-op); level occupancy **built and reverted** | **13 named timers** (Table 3.4.1) with ALD pages; ~22 unmined flow pages (95, 99-119) |
+| **M1** datapath | blocked on M2 | **PAU/SAU timing charts pp.225-243 give numbered per-cycle charts** -- the first real per-cycle source |
+| **M3** memory/bus | not started | **§4 Procedure 1, pp.273-279** -- filed as field service, actually the best memory-timing source in the volume |
+| **M4** error detection | deliberately last | the I-checker priority scheme (3rd/4th) is **checker arbitration, not the memory bus** -- do not absorb it into M3 by name |
+
+**G1.0, and it gates the rest: reconcile the clock unit.** Bloch's
+discussion transcript denies a machine cycle exists; the project reasons
+from a 0.3 µs master oscillator; the 7101 manual has a **two-phase A/B
+clock** where "one phase" is ambiguous by a factor of two. *Cycle
+accuracy is denominated in this unit and it is currently three
+different units.*
+
+**G1.1 Finish M2 properly**: a level is a PART of an instruction, which
+needs the kind field (done), a level carrying only its own part, and an
+E-box consuming a sequence instead of one whole `di`. The reverted
+I-box-level change goes back in unchanged once results stop being
+timing-dependent.
+
+## G2 — Close the instruction set. The best-measured activity in the project.
+
+**G2.1 The worked-example worklist.** Six run, four found bugs; **31
+problem headings survive OCR in `C22-6578` with visible gaps, so ~45
+exist and ~40 remain.** This is the highest-yield-per-hour work on
+record here and it needs no new infrastructure.
+
+**G2.2 Buchholz Appendix B** adds six more worked programs, independent
+of `C22-6578`.
+
+**G2.3 The arms still refused.** `SRD`, the decimal VFL set, `SWAP`'s
+remaining variants. `storeTarget`'s invariant names the ones that will
+need a case when they land.
+
+## G3 — Assembler completeness, from `C22-6729`'s grammar
+
+**G3.1** Implement what Appendix C encodes and `tokenize_expr` does not:
+`*`, `/`, parentheses, and `**` (noting App. C's 3-bit operator field
+has no free code for `**`, which is unresolved). STRAP-1 forbade
+parentheses, so scope the change to what the project targets.
+
+**G3.2** Replace `eval_addr_field`'s per-call-site `unit_shift` with
+printed p.144's rule -- scaling by the operand's **function** -- and
+test it against the listing oracle.
+
+**G3.3** The numbered error-message list (printed p.177) is a rule book
+with a column `C28-6129` lacks; it fences `(.n)` behaviour with six
+specific errors.
+
+## G4 — Verification infrastructure
+
+**G4.1 Write the atlas oracle.** `run_tests.sh:3057` has said Perf.
+Char. Vol. 2's per-instruction atlas is the real timing oracle and that
+`perf_char_timing.py` is "shaped for" it. It is still not written, and
+**M2's correctness is defined as how much of that residual it closes**.
+
+**G4.2 Keep the probe guard honest.** `verify_no_probes.py` caught three
+real accidents in one day; add a check for anything else that looks
+like instrumentation as it is invented.
+
+## G5 — The render and mine queue, in priority order
+
+1. `-1` **pp.99-100** -- Figures 49-50, the IPL flowchart (A1-A3)
+2. `-1` **p.72** -- Assign's configuration change (is the phantom real?)
+3. MCP listing **p.41 line 37** -- confirm `Y UCBF1+.372` (OCR reads `.2372`)
+4. 7101 **pp.225-243** -- PAU/SAU per-cycle charts (G1/M1)
+5. 7101 **pp.273-279** -- §4 Procedure 1, memory timing (G1/M3)
+6. 7101 **pp.95, 99-119** -- the LA flow diagrams (G1/M2)
+7. `-1` **pp.73-78** -- Assign charts; the reject logic is only here
+8. `C22-6729` **pp.197-204** -- Appendices C and E, the grammar (G3)
+9. Buchholz **A.2-A.5 and Appendix B** -- the independent cross-check
+10. `-1` **p.261** / base **p.246** -- `SEQUIP`'s 4-bit codes against p.68's
+
+## What stays out, and why
+
+**The FPGA and the SD-card disk.** The arithmetic is encouraging -- an
+emulated 2.1 µs memory cycle is ~52 clocks at 25 MHz, a 353 arc is
+exactly eight SD blocks, and putting the disk in SDRAM moves
+flash-translation pauses off the critical path. **None of it is
+reachable until MCP boots**, and starting it now trades a near goal for
+a distant one.
