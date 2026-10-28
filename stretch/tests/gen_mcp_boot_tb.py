@@ -86,7 +86,10 @@ def _sca6_word(n):
     comment at the mcp_ucbf1_* checks.
     """
     import charsets, iocd, prosa
-    text = iocd.iod_card_text(**prosa.TERMINATOR_IOD)
+    # The LAST IOD Uncode processed: printed p.25 line 51 tests the
+    # next card's 12-zone BEFORE looping, so the MCPP card that ends
+    # the scan is never converted and the buffer holds IOD number N.
+    text = iocd.iod_card_text(**prosa.MCP_IODS[-1])
     sep_code = charsets.A[","]
     bits, nbits = 0, 0
     for ch in text:
