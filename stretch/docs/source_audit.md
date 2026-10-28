@@ -1318,3 +1318,86 @@ prologue `SWAP I,12,$1,T ASAVE` (words 17-28), measured entering
 > still zero, the `LX` instruction itself is at fault for an index
 > word read from a special address. Those are the two arms, and they
 > are distinguishable in one run.
+
+## A4 MEASURED AT THE CANONICAL 40,000,000 CAP -- what is established, and what is not
+
+Four runs, all at the real cap, instrumented in the testbench's run
+rule (which sees every instruction whichever unit executes it) and at
+`StretchExecute`'s one general `st.writeIndex` site, where the
+instruction's **own** `pc` is in scope rather than the I-box's
+running-ahead `pcReg`.
+
+### Established
+
+1. **The boot runs to step 22,118,685 and completes.** It does not
+   hang. The confound resolution above is confirmed directly.
+2. **`$10` changes 113 times in 22 million steps**, and `execute()`
+   performs **105** index writes to it. Both are tiny numbers, and they
+   agree.
+3. **`$10` is zeroed at step 6,123,419, at `pc=3972`** -- two
+   half-words past 3970, the I-box running ahead of `T ASSIGN`'s
+   `SWAP I,12,$1,T ASAVE`. This independently confirms the SWAP
+   identification from the listing.
+4. **`$10` then stays zero from step 6,123,419 until ~22,116,090 --
+   about 16 million steps**, three quarters of the boot. The 16M is
+   therefore not a loop whose counter is being decremented; it is 16
+   million steps during which `$10` is never written at all.
+5. **No index write to `$10` originates anywhere in the p.72 region.**
+   The writer PCs are 1021 (36 times -- the loop that works), 4020,
+   4035, 4010, 3137, 3047, 4622, 4583, 4025, 1034, 4576, 4006, 3332,
+   3131. **4378 (`TA9`'s `LX,TIXF,TCHSXW`) is absent, and so is every
+   PC in the loop's body.**
+6. **The transcription is right.** `decks/mcp_bootstrap_p72.strap` has
+   `SLC, (8)4215.0`, `TA9  LX, TIXF, TCHSXW` at line 4, `TCHSXW SYN,
+   (8)2152.0` (= word 1130), `TIXF SYN, $10`, and
+   `TB9B  CB+, TIXF, TA9A` at line 51. The loop does count on `$10`.
+7. **The correct 36-iteration pass is a DIFFERENT routine**, at
+   `pc` 1010-1031, not p.72. The two were conflated earlier in this
+   session because both load count 36 from `T CHSXW`.
+
+> **THE SHARP OPEN QUESTION: `TA9`'s `LX` and `TB9B`'s `CB+` both name
+> `TIXF`, both are transcribed correctly, the loop body demonstrably
+> executes -- and `$10` is never written in that region across 16
+> million steps.** Those cannot all be true of a machine executing
+> that code as written. Something in the p.72 region is not executing
+> as an index operation.
+
+### NOT established, and the reason is my own instrument
+
+**`tadaN` counts STEP-SAMPLES, NOT ITERATIONS.** The run rule fires
+once per step and `core.getPC()` holds the same value for as long as an
+instruction occupies the machine -- measured directly: `pc=4378`
+appears on **23 consecutive steps**. So every per-PC count in these
+runs is a residence time, not an execution count, and the "159 body
+samples" figure means nothing about iterations.
+
+**This puts the 2^18 = 262,144 figure back in question.** It came from
+counting `CM` stores of `word 0 off 20 len 4`, which is per-execution
+and so is probably sound, but it has not been re-measured at the
+canonical cap in this session, and it is in tension with finding 5: a
+loop closing on `CB+,TIXF` 262,144 times must write `$10` 262,144
+times, and the measurement says it writes it never.
+
+> **ONE OF THOSE TWO MEASUREMENTS IS WRONG, AND THAT IS THE NEXT
+> THING TO SETTLE** -- before any model change. Re-count the `CM`
+> stores and the `CB+` executions **in the same run**, from
+> `StretchExecute`'s store path and its index-write path, so the two
+> numbers cannot come from different builds. This project has a
+> written rule about exactly that and it is the third time this
+> session it has mattered.
+
+### Method notes from the four runs
+
+* A probe at `StretchCore`'s `rl_idx` reported **zero** writes to
+  `$10` in a boot that demonstrably writes it 105 times. That rule's
+  own comment says it handles "Part 2 of a progressive-indexing
+  instruction" -- it is not the general path. **Read the rule's comment
+  before trusting its silence**, which is the same lesson as the
+  `execute()`-versus-run-rule probe already recorded.
+* `readIndex(2)` and `readIndex(10)` in one rule is a `(G0002)` port
+  conflict. `snapshotIndex()` returns all sixteen in one call and is
+  the right instrument for watching index registers from a testbench.
+* "build errors: 0" was a **false green** once: the generator died with
+  a Python `NameError`, so `bsc` never ran and there was no `^Error:`
+  line to match. A grep for the absence of errors is only meaningful
+  if the thing that produces them actually ran. Check the exit status.
