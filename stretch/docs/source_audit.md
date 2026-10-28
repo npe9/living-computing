@@ -177,3 +177,100 @@ boot's live path is the first thing to establish.
 | Console entry and display devices | **mined above** |
 | Control word / index word (1396, 1404) | cross-check against the Reference Manual's Figure 35 |
 | Appendix A storage assignment, glossary | already cited |
+
+## Audit 2 of 4: `C22-6728` / `C22-6728-1`, MCP System Analysis Guide
+
+**97,000 lines across two editions, ~13 of 550 printed pages cited.**
+The full report is long; what follows is what changes the project.
+
+### >>> RETRACTED: THE IOD FIELD IS AT CARD COLUMNS 63-72, NOT 32-36 <<<
+
+`a62b6ba` derived the IOD card's field as five columns at 32-36, by
+dividing `Y UTOE`'s offset of 372 bits by 12 bits per column, and
+`tests/verify_card_columns.py` asserts it as
+`yutoe_372_is_column_32_one_based`. **The arithmetic is right and the
+proposition is false.**
+
+`Y UCBF1` does not hold the raw card image. It holds **SCA6's output,
+six bits per character.** The guide says so: printed p.66, *"Uncode
+uses two subroutines, SCA6 and SBRK8, respectively to convert the card
+to BCD"* and *"Y UTOE is the symbolic location of the reference number
+on a BCD IOD card. Cards are converted to BCD into Y UCBF1."*
+
+**The clincher is in the listing and I verified it myself.** Line 2156
+of `docs/ocr/MCP_Mar63_001-249.txt` is `VF,YUCBF1+.54`, the second
+argument of the same call sequence:
+
+```
+ 54 / 6  =  9.00  -> character 10 = column 10, and CF,53 -> columns 10-62
+ 54 / 12 =  4.50  -> MID-COLUMN.  Impossible for a character-string argument.
+```
+
+**54 is not divisible by 12.** Under my reading that argument lands
+half way through a column, which no character string can do. Under the
+six-bit reading it is column 10, and 53 characters from there is
+columns 10-62 -- exactly the documented statement field.
+
+And the rest closes on it:
+
+* `372 / 6` = 62 exactly -> **column 63**; `372 + 60 = 432 = 72 x 6`,
+  so the field **ends exactly at column 72**, the documented last
+  column of the IOD statement area (73-80 are program ID).
+* `LF(BU,60,6), YUTOE` reads **ten six-bit bytes**, and `C22-6678-1`
+  printed p.9 gives I/O Reference Number = **cols 63-66** (four) and
+  Absolute Exit = **cols 67-72** (six). Four plus six is ten.
+* The listing's own comment on the `SYN` names both: *"LOCATION OF
+  REF # AND TOE"*.
+
+**PRECISION GUARD, because the correction is narrower than it looks.**
+`strap/cards.py::card_words_cols` and the 12-bit-per-column card model
+are **right**, and `R23-9702` Figure 4.3-1 is right -- SCA6 itself
+reads the card that way (`CF,80`). Two things are wrong and only two:
+
+1. the division of **`Y UCBF1`'s bit offset** by 12;
+2. the stated *motivation* for `card_words_cols` -- "ten six-bit
+   fields, two per column, which no single character can punch". After
+   SCA6 there is **one** six-bit character per column, and columns
+   63-72 are ten ordinary BCD characters a keypunch produces. The
+   raw-column capability is still correct and still useful; its
+   justification was not.
+
+> **AND IT IS A CANDIDATE ROOT CAUSE OF THE EMPTY REQUEST TABLE.** If
+> the fixture punches the reference number anywhere but columns 63-66,
+> the IOD decodes with reference number **0**.
+
+### The fixture cannot work, and now that is citable
+
+printed p.98: *"The assignment of absolute units from IOD cards will be
+done for MCP at IPL time through a **modified decode-assign-move
+routine** (SB22, Figure 50)."* The guide then enumerates **four cases**
+by normal/abnormal IPL x mode, the mode coming from the `MCPP` card
+unless the operator overrides at the console. The minimal one -- normal
+IPL, unoverlapped -- requires MCP IOD cards defining **a card reader
+and output tape units**.
+
+**One blank IOD card satisfies none of them**, and a card blank but for
+`B` in column 1 never reaches Decode at all: Uncode masks field 1
+against `Y TYPMK` and takes the error return.
+
+### Two things the project recorded as unknown, printed in the guide
+
+* **The four-bit equipment type codes.** `tests/run_tests.sh:2748` says
+  "what remains invented is the equipment table's four-bit codes, which
+  are on a page nobody has transcribed." printed p.68 gives six:
+  `0001` disk, `0010` console, `0011` card reader, `0100` card punch,
+  `0101` printer, `1000` tape. (Caveat: this is the `TIOREQ` *request*
+  type; whether it is the same encoding as the channel status table's
+  `SEQUIP` is likely but not stated. `1000` being non-contiguous with
+  `0101` is a strong fingerprint for the comparison.)
+* **`TLAST`** -- narrowed, as recorded earlier in this file.
+
+### Two edition-confusion bugs to fix
+
+* `docs/mcp_io_tables.md:102` cites "`C22-6728-1` ... its §215 UPDATE 30
+  writeup". In `-1`, printed p.215 is **Debugging Aids**; UPDATE-30 is
+  printed pp.228-239. The citation mixes a `-1` form number with a base
+  page number.
+* **Figure numbers differ by 5 across the IPL block.** The project cites
+  base numbers (`gen_mcp_p17_tb.py:175` cites "p.90's Figure 44"); in
+  `-1` that chart is **Figure 49, printed p.99**.
