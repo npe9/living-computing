@@ -841,3 +841,56 @@ in `a2b210e`.
 that has not yet been tested, and six have died already. The test is to
 log `xSnap`'s contents and the `branchSeq` at `rl_recover`, in the same
 window, with the same provenance check.
+
+### The xSnap hypothesis is refuted, and so is one of my own refutations
+
+**`rl_recover` is not the culprit.** Logging `xSnap` and the live
+registers at `StretchCore.bsv:523` over 6,318 firings: in every case
+where a live register was non-zero, **the snapshot matched it exactly**
+(`xSnap[10]` = `live[10]` = `0x0025400002540000`). The restore puts
+back what was there. Seventh hypothesis, refuted.
+
+**And it exposed that an earlier refutation of mine was too coarse.**
+"`TA9` runs before the channel status table is built" was dismissed by
+comparing the CST build against the **clear** (p.72 lines 9-12). But
+`LX, T IXF, T CHSXW` is **line 4**, earlier than the clear, so that
+comparison never tested the thing it was taken to test.
+
+### >>> A DATASET THAT WAS GARBAGE, AND THE TREE IS WHAT SAID SO <<<
+
+The re-run bisection produced four identical rows. `git status` showed
+why: a leftover `step_cap=6500000` in the testbench meant the bracket
+script's `replace("step_cap=40000000,", ...)` **never matched**, so
+every run used the same cap regardless of its `N`.
+
+**The script had no assertion that the substitution happened** -- the
+same hole as the probe that silently never applied earlier today, and
+the fix is the same one: it now asserts the canonical cap is present
+before substituting. Four rows of plausible, identical, meaningless
+numbers is exactly what this project's memory file calls "two facts
+from one run that cannot both be true", and the only reason it was
+caught is that deterministic runs are not supposed to disagree with
+earlier ones.
+
+### What the corrected bisection actually shows
+
+| steps | `T CHSXW` (1130) | `$10` = `T IXF` (word 26) | conf table |
+|---|---|---|---|
+| 6,000,000 | **0** | `0x0025400002540000` | static |
+| 6,040,000 | correct | **`0x02c7c00000100000`** -> word **2847** | static |
+| 6,110,000 | correct | word 2847 | static |
+
+**`$10` is not permanently zero.** At 6,040,000 it holds a valid
+pointer into the channel status table -- word 2847 is channel 33, the
+printer -- so the index machinery works and `LX` loads. The conf table
+is still static at 6,110,000, so `TA9`'s clear has not run yet.
+
+> **SO THE QUESTION NARROWS AGAIN: what zeroes `T IXF` between its load
+> at p.72 line 4 and `TA9A`'s loop?** Both registers are entirely zero
+> during the 2^18 passes, and both were fine shortly before. That is
+> the next measurement, and it is a bisection between 6,110,000 and
+> 6,500,000 on word 26 alone.
+
+**Seven hypotheses tested, seven refuted.** Every one of them died to a
+measurement rather than an argument, and two of the seven were my own
+earlier refutations being re-examined.
