@@ -894,3 +894,102 @@ is still static at 6,110,000, so `TA9`'s clear has not run yet.
 **Seven hypotheses tested, seven refuted.** Every one of them died to a
 measurement rather than an argument, and two of the seven were my own
 earlier refutations being re-examined.
+
+## Refutation log, continued: naming the writer that zeroes `$10`
+
+Method: one instrumented build per question, every diagnostic
+cycle-stamped from a single free-running counter in `StretchStorage` so
+all events share one timeline (the provenance rule). Two builds --
+`ixw5` without the counter, `ixw6` with it -- agree on 12 special-path
+writes to word 26, 3 of them zeroing a live `$10`, with identical
+`was` values, so `rl_dbg_cyc` did not manufacture the effect.
+
+**The complete ordered census settled what six hypotheses could not.**
+Every write to `xreg[10]` from all three paths (`writeIndex`,
+the special-address store path, `restoreIndex`) in one run, 491 events:
+the last event leaving `$10` non-zero is index 227, and the kill is
+
+    [6122846] Z arm        -> 0          (was 0x0175800000180578)
+    [6122869] writeIndex   -> 0x01d3000000000000
+    [6123192] SWAP hw 3391 -> 0x02c7c00000100000   (x.dst == 26)
+    [6123422] SWAP hw 3970 -> 0                    (x.src == 26)
+    [6124063+] restoreIndex every 61 cycles to the cap
+
+### H9 REFUTED: the read side is correct
+
+`readWordResp` (storage printed line 787) *does* apply `lookupSpecial`,
+so Transmit/Swap reads word 26 as `xreg[10]` and not as raw core. The
+hypothesis that a swap filled the save area with zeros because its read
+bypassed the special-register alias is dead.
+
+### H10 REFUTED: the swap phase machine is never stale
+
+`xmitSwapPhase` and `xmitReadIssued` are reset at neither of the three
+`xmitPending <= o.xmitStart` sites (`StretchCore` 303, 1103, 1149), so a
+swap abandoned mid-flight could in principle leave phase at 2 and make
+the next swap write a stale `xmitSwapHeld` with no read at all. An
+instrument at all three start sites fired **zero** times in the whole
+boot. The latent fragility is real and worth closing, but it is not
+this bug.
+
+### H11 REFUTED: the `Z` (clear) arm is behaving correctly
+
+Both groups of `Z` instructions that clear a word in 16..31 were given
+full address provenance (`bm.addr`, `bm.idx`, the index value and sign):
+
+* **Group 1 -- `bmidx=15`, index value stepping 0x40 (one word) --
+  clears `zw=16..30` and STOPS BEFORE WORD 31.** This is the listing's
+  "CLEAR LOWER REGISTERS" loop (printed p.2, under the banner "CLEAR
+  7030 LOWER REGISTERS AND STORAGE"), and stopping one short of word 31
+  is exactly right: word 31 is `$15`, the loop's own counter. The model
+  reproduces this correctly.
+* **Group 2 -- `zw=26, bm.addr=0x34, bm.idx=0`, unindexed.** 0x34 = 52
+  half-words; 52*32 = 1664 bits; 1664/64 = word 26. A deliberate,
+  constant-address Store Zero to `$10`. A second one clears word 19
+  (`$3`) from `bm.addr=0x26`. MCP clears these index registers on
+  purpose.
+
+So the Z arm is not the defect, and neither clear is a units error.
+
+### What the 8 bouncing writes were: ordinary context switching
+
+`SWAP` at half-word 3391 (8 words) and half-word 3006 (8 words)
+alternate, exchanging `$10` between `0x02c7c00000100000` and
+`0x0175800000180578` four times each. That is MCP saving and restoring
+a context, and it is correct behaviour, not corruption. The kill is a
+*different* swap -- half-word 3970, 12 words -- whose partner word read
+zero.
+
+> **THE DEFECT HAS MOVED UPSTREAM AND CHANGED SHAPE.** It is no longer
+> "something zeroes `$10`". Every writer is now named and each one is
+> doing what the listing tells it to. The live question is why the
+> 12-word save area that SWAP 3970 exchanges into words around 26 is
+> zero.
+
+### A downstream consequence, recorded and NOT to be chased yet
+
+After the kill the machine runs `rl_recover` every 61 cycles until the
+step cap -- 417 wrong-way branch recoveries. `rl_recover` clears
+`recover` itself, so it is being re-armed each time at `StretchCore`
+1142: the I-box mispredicts the same branch forever. That is a livelock
+in MCP's own code, consistent with a count-controlled loop whose count
+is zero, and it is a *consequence* of the kill rather than a second
+model bug.
+
+### Settled in passing: the `effAddr18`/`effAddr19` units bug was REAL and IS FIXED
+
+They live in `StretchExecute.bsv` (435-492), not `StretchTypes.bsv`,
+which is why a search for them in the latter comes back empty. The
+comment there records the bug in its own words -- the two helpers
+"previously added the value STRAIGHT to a word or half-word address,
+which is wrong by 64x and 32x respectively" -- and the present code
+converts to the 24-bit bit-address domain first (`{raw,6'b0}`,
+`{raw,5'b0}`), adds the index value unscaled, and then takes only the
+applicable part (`[23:6]`, `[23:5]`). That matches Reference Manual
+printed pp.20-21: "the missing low-order bits, if any, are always
+assumed to be zero" and "only the applicable part of the effective
+address is used", corroborated by printed p.41's index-increment table
+equating "H add half to value" with bit position 18 and "+ add one to
+value" with bit position 17 -- weights 2**5 and 2**6 over a value field
+of bits 0-23. `effAddr24` needed no change because its instruction
+address is already a bit address.
