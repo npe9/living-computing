@@ -455,6 +455,30 @@ the MCP parameter card unless the operator overrides at the console.
 Without it the case selection is undefined. *Done when the mode is a
 chosen value rather than whatever zero decodes to.*
 
+**A4. Find where the boot is spinning, and what it is waiting for.**
+Added 2026-10-28, and it REPLACES the conf-count hunt rather than
+extending it. Twelve hypotheses named every writer of `$10` and found
+each one doing what the listing says; the 417 wrong-way recoveries that
+follow are sourced as correct (Perf Char PDF 41 excludes CB-family and
+the eight index indicators from guessing, and the model implements both
+exclusions). So the conf counts are not corrupted -- **the boot never
+reaches the code that fills them.** It is spinning in an MCP loop at
+step ~6.12M whose closing branch is an arithmetic-indicator branch
+taken every iteration, at an exact 61-cycle period.
+
+*The instrument:* log the recovery target `o.next` at `StretchCore`
+1142, map the half-word PC through the listing, and read what MCP is
+testing. One run. *Done when the spinning loop is named in the listing
+and the indicator it waits on is identified.* The three SWAPs already
+located nearby -- half-words 3006, 3388, 3391 and 3970 -- bracket it,
+and 3970 is a 12-word context swap, so the loop is in MCP's
+post-context-switch path, not in the IPL bootstrap.
+
+**Why this ordering matters:** A1-A3 are about feeding MCP the right
+cards. A4 is about whether it then runs. A4 is cheap, it is upstream of
+the symptom every earlier item chased, and it is the only item whose
+answer is currently unknown rather than merely unwritten.
+
 > **RENDER FIRST, BEFORE WRITING ANY OF IT:** `-1` printed **pp.99-100**
 > (Figures 49-50) is the flowchart of the project's own p.17/p.18 code
 > and the highest-value page pair in either volume; and `-1` printed
@@ -993,3 +1017,62 @@ equating "H add half to value" with bit position 18 and "+ add one to
 value" with bit position 17 -- weights 2**5 and 2**6 over a value field
 of bits 0-23. `effAddr24` needed no change because its instruction
 address is already a bit address.
+
+### H12 REFUTED, and the model comes out correct: the recovery loop is legitimate
+
+The 417 wrong-way recoveries at a fixed 61-cycle period were labelled a
+consequence without being measured, so the label was checked.
+
+`StretchCore:1136` guesses **unconditionally not taken** --
+
+    Bool taken = (o.next != h.pc + ((h.len == Full) ? 2 : 1));
+    if (taken) begin la.cancelAll(); recover <= tagged Valid o.next; end
+
+-- so every taken branch costs one recovery, and 417 recoveries at an
+exact 61-cycle period is 417 iterations of a 61-cycle loop whose
+back-edge is taken. The guess direction is sourced: Buchholz PDF 263,
+design decision 4, *"the instruction unit proceeds as if the branch will
+fail"*, with TR00.722 PDF 30 recording that the study "did not clearly
+indicate an advantage either way".
+
+**The promising version of the defect was that the model guesses a
+branch the real machine never guessed.** Perf Char PDF 41 is explicit:
+*"The following branches, however, involve conditions known to the
+I-box and are executed entirely within the I-box: CB and variants;
+B ind for XF, XVLZ, XVZ, XVGZ, XCZ, XL, XE, XH."* MCP's loops close
+with `CB+`, `CBR+` and `C3`, so if the model guessed those, recovery's
+`st.restoreIndex(xSnap)` would undo the CB's own count decrement and a
+counting loop would never terminate -- which is exactly what a fixed
+61-cycle recovery period looks like.
+
+**It does not.** The guess site (`StretchCore` 1321-1336) is guarded
+
+    di matches tagged BranchInd .bi &&& !indexIndicator(bi.indNum)
+
+so the eight index indicators are excluded by name, and CB-family is
+not `BranchInd` at all -- it falls through to the I-box-class arm and
+executes in the I-box without a level or a guess. Both exclusions in
+Perf Char PDF 41 are faithfully implemented.
+
+So the spinning loop closes on a genuine arithmetic-indicator branch
+that is taken every iteration, and paying one recovery per iteration is
+correct behaviour -- the case Buchholz names as the guess's known
+weakness, *"an unusual situation in a problem with a very high
+probability that the branch will always be taken"*.
+
+> **>>> THE PATH IS EXHAUSTED, AND THAT IS THE RESULT. <<<** Twelve
+> hypotheses, every writer of `$10` named, every one of them doing what
+> the listing tells it to, and the recovery loop sourced as correct.
+> The conf counts are not zero because something corrupts them. **They
+> are zero because the boot never reaches the point that fills them**
+> -- it is spinning in an MCP loop at step ~6.12M. That reframes the
+> question from "what is the model corrupting?" to "what is MCP waiting
+> for?", which is a question about the boot's progress and is answered
+> by the PC of the spinning loop, not by another writer hunt.
+
+**Method note worth keeping.** The eleven refutations before this one
+each pushed the question one frame upstream -- conf table, then `$10`,
+then which writer, then why the save area. That regress is the tell
+that the symptom's cause is not where the digging is. The cheap
+check that broke it was reading the guess classification against a
+sourced list instead of instrumenting a thirteenth time.
