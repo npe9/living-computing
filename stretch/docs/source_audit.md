@@ -546,3 +546,76 @@ exactly eight SD blocks, and putting the disk in SDRAM moves
 flash-translation pauses off the critical path. **None of it is
 reachable until MCP boots**, and starting it now trades a near goal for
 a distant one.
+
+---
+
+# PHASE A PROGRESS
+
+## A1 is DONE: MCP reads a real IOD card -- 2026-10-28
+
+The column map came from `C22-6678-1` printed pp.7-10, **verified in the
+OCR rather than derived**: `1` = B, `2-9` = IODNAME, `10-62` =
+statement, `63-66` = I/O reference number (four octal digits), `67-72` =
+absolute exit (six octal digits), `73-80` = program id. The manual's
+own words settle why the fixture must punch 63-72: those columns are
+*"left blank by the problem program"* and filled by STRAP II, and the
+cards MCP reads at IPL are the compiler's **output** cards.
+
+MCP's answer walked forward through three states, which is the useful
+part:
+
+| fixture | MCP's answer |
+|---|---|
+| blank IOD (statement empty) | X ERR 24, "IO ASSIGNMENTS CANNOT BE MADE" -- phantom request on DISK |
+| `IOD,READER,XRDEXIT`, comma punched 4-8 | **X ERR 22, "INCORRECT CARD TYPE WITHIN IODS"** |
+| same, separator punched 0-3-8 | **decodes; READER's request count = 1** |
+
+### >>> THE SUBFIELD SEPARATOR IS PUNCHED 0-3-8, NOT 4-8 <<<
+
+`strap/cards.py`'s table, from `C22-6678` Appendix F, gives comma = 4-8
+and quote = 0-3-8 -- and **already flags these two** as "precisely the
+slots where the conventional commercial code and the 7030's
+48-character set disagree". Measured two independent ways against MCP's
+own SCA6 and SBRK8:
+
+* **Behaviourally.** With 4-8 the first broken-out field came back as
+  `'IOD-READ'` -- eight characters, the separator rendered as a dash,
+  the field never broken, SBRK8's eight-character limit exceeded, and
+  Uncode's error return taken. With 0-3-8: `'IOD'`, `'READER'`,
+  `'XRDEXIT'`, three fields, exactly as a comma should do.
+* **Bit-exactly.** SCA6's output words match the card computed as a
+  continuous six-bit stream **only** when the separator maps to the
+  A-set **comma** code 27. With the quote's code 12, word 1 does not
+  match.
+
+`cards.py` is deliberately **not** changed:
+`tests/verify_c22_6678_appendix_f.py` pins it to the manual and the
+manual still says what it says. Which of the three is wrong -- our
+reading of Appendix F, Appendix F itself, or SCA6's table sitting a
+keypunch convention away from it -- is **open**, and Appendix F is on
+the render queue.
+
+### A method note worth keeping
+
+The two card-buffer checks were hardcoded hex against a blank-statement
+card. They now **derive from the card text** (`_sca6_word()`), which
+turns them into a test *of* SCA6's conversion rather than a recording of
+one run, and makes them proof against drift when the card changes.
+**Re-recording a magic number is the lazy fix; deriving it is the
+cheap one, and it was cheap here.** Establishing it also settled the
+packing: SCA6 writes a continuous six-bit stream, so word 0's low four
+bits carry the top of character eleven.
+
+## What A1 did NOT fix, and what that leaves
+
+`T IOREQ` is still empty and READER's `MACH CONF` count is still zero,
+so `TCHEK` will still reject. Two things remain, and they are A2 and
+the render:
+
+* **A2**: printed p.98's minimal case needs IOD cards for **a card
+  reader AND output tape units**. Only the reader exists.
+* **The render**: `-1` printed p.72, Assign's configuration-change
+  section, which says "the equipment count is generated for the
+  validity check table". If that is where the conf counts come from,
+  the question is why it generates none -- and that is a different
+  question from the one A1 answered.
