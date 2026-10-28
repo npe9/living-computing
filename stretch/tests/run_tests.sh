@@ -50,6 +50,21 @@ run() {
   status=0
   "$@" > "$TMPOUT" 2>&1 || status=$?
   tail -20 "$TMPOUT"
+  # >>> AND EVERY FAIL LINE, WHEREVER IT IS IN THE OUTPUT. <<<
+  # `tail -20` shows the END of a section, which is fine when a section
+  # is short and silently lossy when it is not.  On 2026-10-27 that hid
+  # TEN probe failures in the MCP boot section: the suite printed 5576
+  # PASS lines, not one FAIL line, and "ONE OR MORE TESTS FAILED" --
+  # three facts that cannot all be true, and the only reason they looked
+  # consistent is that the failures had scrolled past the window.
+  # Duplicating a FAIL that tail already showed costs a line; losing one
+  # costs an afternoon.
+  nfail=$(grep -c '^FAIL' "$TMPOUT" 2>/dev/null || true)
+  [ -z "$nfail" ] && nfail=0
+  if [ "$nfail" -gt 0 ]; then
+    echo "--- all $nfail FAIL line(s) in this section ---"
+    grep '^FAIL' "$TMPOUT" || true
+  fi
   if [ "$status" -ne 0 ] || grep -q "TEST(S) FAILED" "$TMPOUT"; then
     FAILED=1
     # FAIL_FAST=1 stops at the first failing section instead of running
@@ -69,6 +84,32 @@ run() {
 
 # -- 0. SYN pseudo-op (strap_asm.py, pure Python, no Bluesim needed --
 # see test_syn.py's own header) --
+run "NO DEBUG INSTRUMENTATION IN COMMITTED FILES" python3 verify_no_probes.py
+# FIRST, because it is cheap and because what it catches invalidates
+# everything after it.
+#
+# >>> THREE THINGS GOT COMMITTED BY ACCIDENT ON 2026-10-27, all in one
+# day, and none of them is a discipline problem worth a reminder. <<<
+#
+#   * TEN PROBE CHECKS in gen_mcp_boot_tb.py, swept in by `git add -A`.
+#     A probe is a MEASUREMENT -- a check with an impossible expectation,
+#     used to read a word out of a running model -- and `git add -A`
+#     cannot tell a measurement from a change.  So this can.
+#   * A REDUCED step_cap, left behind by a bisection.  That one is the
+#     worst of the three because it looks like a pass: the boot stops
+#     early and every check still green.
+#   * WATCHPOINT $displays in StretchStorage.bsv and StretchCore.bsv.
+#     Those are not inert -- adding one changed the schedule enough to
+#     invent five "lost store" messages that cost a retraction.
+#
+# The suite could not see any of it, for a reason now also fixed: run()
+# echoed only `tail -20`, so the ten probe failures scrolled past and the
+# suite printed 5576 PASS lines, zero FAIL lines and "ONE OR MORE TESTS
+# FAILED" -- three facts that cannot all be true.
+#
+# INJECTIONS (measured, all three run): a PROBE_ label in a tests/*.py
+# fails on the label AND on 0xDEADBEEFDEADBEEF; a $display("WATCH in
+# bsv/ fails by name; step_cap=6060000 fails with the value it found.
 run "SYN pseudo-op" python3 test_syn.py
 
 # -- 0b. DCP Maintenance Compool transcription (SYN symbol table from
