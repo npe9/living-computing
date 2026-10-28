@@ -700,12 +700,38 @@ module mkStretchStorage(StretchStorage);
         end
       end
       if (reqW[c].wget matches tagged Valid .a) begin
+        // >>> A NEW REQUEST DISCARDS THE RESPONSE STILL HELD FOR THE OLD
+        // ONE. <<<  This channel protocol is "one read outstanding at a
+        // time", so a response that has not been taken by the time a
+        // NEW address is requested belongs to an address nobody is
+        // asking about any more, and keeping it is not conservative --
+        // it is a wrong answer waiting to be collected.
+        //
+        // HOW IT WAS REACHED.  A look-ahead level that issues a fetch
+        // and is then retired, or cancelled by `cancelAll()` on a wrong
+        // branch guess, leaves its word sitting in `chResp`; nothing in
+        // StretchLookAhead.bsv tells storage the level is gone.  The
+        // ring then wraps, a NEW level is loaded at the same position
+        // with a different `da`, issues its own `laReq`, and on the next
+        // clock `collect()` sees `st.laReady(k)` already true and takes
+        // the DEAD LEVEL'S WORD as its own.
+        //
+        // MEASURED, with the CM writeback logging its own base word:
+        // the clear loop wrote word 1964 using a base of
+        // 0x0000060100602540, which is WORD 1962's content -- the
+        // previous level's fetch, collected by the next level at the
+        // same ring position.  writeFieldWithHi's precondition is that
+        // `hi` is the word most recently read AT THAT ADDRESS, and this
+        // is precisely how it was being violated.  See
+        // docs/mcp_io_tables.md for the bisection that found the window.
         if (isSpecialAddr(a))
           ps = tagged Valid a;
         else begin
           pr = tagged Valid a;
           issued = False;
         end
+        rs = tagged Invalid;
+        if (!isSpecialAddr(a)) ps = tagged Invalid;
       end
       chPending[c] <= pr;
       chIssued[c]  <= issued;

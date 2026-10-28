@@ -1073,3 +1073,83 @@ measuring -- which is exactly what went wrong with the `LOST` messages
 is small enough that a level-pc log inside it will be short enough to
 read, and short enough that its provenance can be checked against
 these numbers.
+
+## >>> FOUND AND FIXED: A RETIRED LEVEL'S RESPONSE WAS COLLECTED BY THE NEXT ONE <<< 2026-10-27
+
+The 10,000-step window was small enough to instrument. Logging the CM
+writeback's own base word at `StretchExecute.bsv`'s `conn_CM` arm --
+and checking provenance by confirming the run's final table matched the
+bisection exactly -- gave this:
+
+```
+word 1962 off  8  base 0x0101000200000300   <- correct, the static table
+word 1962 off 32  base 0x0000060101602540   <- ALREADY WRONG
+word 1964 off  0  base 0x0000060100602540   <- that is WORD 1962's content
+```
+
+`writeFieldWithHi`'s stated precondition is that `hi` is *"the word most
+recently read at `ba`'s word address"*. **The fetch for word 1964
+returned word 1962's word.**
+
+### The mechanism, in the two files that share it
+
+`StretchLookAhead.bsv`'s `collect()` takes a response whenever
+`st.laReady(k)` is true for a valid level with `fetchIssued` set. And
+`StretchStorage.bsv`'s read-channel loop, on a NEW request:
+
+```bluespec
+if (reqW[c].wget matches tagged Valid .a) begin
+  ... pr = tagged Valid a; issued = False;     // new address -- `rs` KEPT
+end
+```
+
+**Nothing ever discards a channel's held response.** `rs` is cleared
+only by `takeW[c]`. So:
+
+1. the level at ring position `k` issues `laReq(k, A)`;
+2. it is retired, or **cancelled by `cancelAll()` on a wrong branch
+   guess**, before its word is collected -- and neither `retireHead()`
+   nor `cancelAll()` tells storage anything;
+3. the ring wraps and a new level is loaded at position `k` with
+   `da = B`;
+4. it issues `laReq(k, B)`, sets `fetchIssued`, and on the next clock
+   `collect()` finds `laReady(k)` **already true** from the dead
+   level's response -- and takes address A's word as address B's.
+
+**One read outstanding per channel is the protocol** (`StretchStorage`
+says so in its own header), so a response not taken by the time a new
+address is requested belongs to an address nobody is asking about.
+Keeping it is not conservative; it is a wrong answer waiting to be
+collected. The fix discards `rs` (and the special-address `ps`) when a
+new request arrives.
+
+### What it fixes, measured
+
+Every base word becomes correct, including `word 1964 base
+0x0000070000080000` -- its own content. And the table:
+
+| word | before | after |
+|---|---|---|
+| 1962 | `0x0000060100602500` | **`0x0100000200000300`** |
+| 1963 | `0x0004000005000006` | `0x0004000005000006` |
+| 1964 | `0x0000060000600040` | **`0x0000070001080000`** |
+
+**All eight TYPE bytes are now intact -- 1, 2, 3, 4, 5, 6, 7, 8 --** the
+conf bytes are cleared as p.72 intends, and the MCP boot passes **49 of
+49**, `mcp_indicators_word11` included, so the derived `AH` expectation
+survives.
+
+### And it separates the model from the fixture
+
+The phantom request did not go away; it **moved**, from row 0 to row 6:
+
+| row | type | conf | req |
+|---|---|---|---|
+| DISK | 1 | 0 | 0 |
+| EXTRA | 7 | 0 | **1** |
+
+So p.66 line 3 still counts one request against an empty request table,
+and p.66 line 13 still rejects. **That was never the model's bug.** It
+is the fixture's single blank IOD card, and with the corruption gone the
+two questions are finally separate: the look-ahead bug is fixed, and
+what remains is a deck that declares no I/O.
