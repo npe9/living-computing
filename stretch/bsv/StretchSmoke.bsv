@@ -196,6 +196,7 @@ module mkStretchTb(Empty);
   // of shape.
   rule setStart (phase == 20);
     core.setPC(64);
+    core.start();
     phase <= 21;
   endrule
 
@@ -225,11 +226,13 @@ module mkStretchTb(Empty);
   // to address 0, and the all-zero word 0 is a branch to itself --
   // this model's halt. The bound is only a runaway guard.
   rule run (phase == 21 && stepCount < 2000 && !core.halted());
-    core.step();
     stepCount <= stepCount + 1;
   endrule
 
   rule afterRun (phase == 21 && (stepCount == 2000 || core.halted()));
+    // No stop() here: this phase ends because the program HALTED (see
+    // the run rule's comment), and a halted core stops itself --
+    // `stepping` includes `!haltedReg`.
     phase <= 22;
   endrule
 
@@ -266,6 +269,7 @@ module mkStretchTb(Empty);
   // be honored in one clock), so a rule may not call both.
   rule restartRnx (phase == 26);
     core.setPC(89);   // the BD, which falls into RNX at 90
+    core.start();     // setPC clears haltedReg; this re-raises the latch
 
     stepCount <= 0; // reused for the RNX counted loop below
     phase <= 27;
@@ -293,7 +297,6 @@ module mkStretchTb(Empty);
   // storage holds after it (Bluesim's BRAM is not zero-initialized)
   // gets little chance to run before the indicator is read.
   rule stepRnx (phase == 27 && stepCount < 40 && !core.halted());
-    core.step();
     stepCount <= stepCount + 1;
   endrule
 
@@ -301,18 +304,30 @@ module mkStretchTb(Empty);
     phase <= 28;
   endrule
 
-  rule checkRnxReq (phase == 28);
-    core.mem.readWordReq(11);
+  // >>> THIS PHASE EXISTS ONLY TO DROP THE RUN LATCH. <<<  Unlike
+  // phase 21, the RNX loop above ends on its 40-clock bound rather than
+  // by halting, so the core is still running and would keep running
+  // while the checks below read storage.  `core.stop()` cannot share a
+  // rule with `core.halted()` (bsc reports them as conflicting at the
+  // synthesized boundary, the same way it does `setPC` and
+  // `mem.readWordResp` -- see restartRnx), hence a phase of its own.
+  rule stopRnx (phase == 28);
+    core.stop();
     phase <= 29;
   endrule
 
-  rule checkRnxResp (phase == 29 && core.mem.responseReady());
-    let v <- core.mem.readWordResp();
-    check("indicator OP after RNX (unimplemented)", (v >> 48) & 1, 1);
+  rule checkRnxReq (phase == 29);
+    core.mem.readWordReq(11);
     phase <= 30;
   endrule
 
-  rule finish (phase == 30);
+  rule checkRnxResp (phase == 30 && core.mem.responseReady());
+    let v <- core.mem.readWordResp();
+    check("indicator OP after RNX (unimplemented)", (v >> 48) & 1, 1);
+    phase <= 31;
+  endrule
+
+  rule finish (phase == 31);
     if (fails == 0)
       $display("ALL TESTS PASSED");
     else

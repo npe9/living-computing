@@ -62,7 +62,14 @@ interface StretchCore;
   // overlap) even though the real hardware overlaps them. Neither
   // mechanism can halt (a taken branch is the only way next==pc, and
   // neither progressive indexing nor an I/O transfer branches).
-  method Action step();      // advance the core exactly one clock
+  // >>> THE MACHINE'S RUN LATCH, NOT A PER-CLOCK POKE FROM THE HARNESS.
+  // <<<  `start` raises it, `stop` drops it, and every rule below is
+  // gated on it AND on not having halted.  Reference Manual printed
+  // p.34 -- "The timer runs whenever the machine is operating" -- is a
+  // description of exactly this latch, which is why the oscillator
+  // pulse is generated under the same gate.
+  method Action start();
+  method Action stop();
   method Bool   halted();    // the last clock's instruction branched to itself
   method HWordAddr getPC();
   method Action setPC(HWordAddr a);
@@ -92,7 +99,7 @@ module mkStretchCore(StretchCore);
   LookAhead    la   <- mkLookAhead(st);
   // The harness's clock enable and the halt flag it polls (see the
   // rules section below for the contract).
-  PulseWire  tick      <- mkPulseWire;
+  Reg#(Bool) running   <- mkReg(False);   // the run latch; see `start`/`stop`
   Reg#(Bool) haltedReg <- mkReg(False);
   Reg#(HWordAddr) pcReg <- mkReg(0);
   Reg#(Maybe#(Tuple2#(Bit#(4), IndexWord))) pendingIdxWrite <- mkReg(tagged Invalid);
@@ -320,11 +327,13 @@ module mkStretchCore(StretchCore);
   // =====================================================================
   // Idiomatic-Bluespec rewrite step 4 (docs/microarchitecture_plan.md
   // §1c): the instruction unit's per-clock work as RULES, not one
-  // monolithic step() method. The test harness's `step()` is now just a
-  // clock enable (the `tick` pulse), and every rule below is gated on
-  // it, so the harness keeps the exact control it had: one `step()`
-  // call advances the core exactly one clock, and no rule fires while
-  // the harness is loading storage or reading results.
+  // monolithic step() method. The harness no longer supplies a pulse
+  // per clock at all: it raises the machine's RUN LATCH once with
+  // `start()` and drops it with `stop()`, and every rule below is gated
+  // on `stepping` (= `running && !haltedReg`). No rule fires while the
+  // harness is loading storage or reading results, because the latch is
+  // down; and a halted machine stops itself rather than waiting to stop
+  // being poked.
   //
   // The rules and how they relate, cycle by cycle:
   //   rl_clock        -- the clock counter.
@@ -383,6 +392,29 @@ module mkStretchCore(StretchCore);
   // assumed, as with rl_io's ordering above.
   Bool busyXfer    = isValid(ioPending) || isValid(xmitPending)
                      || st.storeTailPending();
+  // >>> THE GATE IS `running` ALONE, AND `!haltedReg` IS DELIBERATELY
+  // NOT IN IT. <<<  The first version of this gate was
+  // `running && !haltedReg`, to stop a halted machine in the same clock
+  // the old harness stopped poking it.  StretchSmoke's scheduling
+  // tripwire refused it:
+  //
+  //     FAIL rl_exec_resume is blocked by core rule(s): rl_clock
+  //     FAIL rl_prepare     is blocked by core rule(s): rl_clock
+  //
+  // -- because `rl_clock` would then READ `haltedReg` through its guard
+  // while `rl_exec_resume` and `rl_prepare` WRITE it, so bsc must order
+  // the clock ahead of them.  `tick`, being a PulseWire, carried no such
+  // dependency.  A gate that silently serialises the clock against the
+  // instruction unit is worse than the extra clocks it was buying.
+  //
+  // WHAT THE EXTRA CLOCKS COST: after the machine halts the harness
+  // needs two phases to notice and drop the latch (`afterRun`, then
+  // `stopRun`), so the core re-executes its halt -- a branch to its own
+  // address, which stores nothing -- for those clocks.  The CYCLES
+  // bounds and windows are unaffected because they assert on the
+  // HARNESS's `stepCount`, which stops the moment `run`'s
+  // `!core.halted()` guard goes false.
+
   Bool armIdx      = !armRecover && !busyXfer && isValid(pendingIdxWrite);
   Bool resumeReady = ebox.canResume();
   Bool armResume   = !armRecover && !busyXfer && !isValid(pendingIdxWrite) && resumeReady;
@@ -465,20 +497,20 @@ module mkStretchCore(StretchCore);
                      && !resumeReady && !headReady && !armInterrupt;
 
   (* fire_when_enabled *)
-  rule rl_clock (tick);
+  rule rl_clock (running);
     clk <= clk + 1;
     // ---- THE OSCILLATOR PULSE ----
     // Reference Manual printed p.34: "The timer runs whenever the
     // machine is operating, which includes also the execution of BRANCH
-    // ENABLED AND WAIT."  `tick` IS this model's "the machine is
-    // operating" signal -- the harness raises it once per step() and
+    // ENABLED AND WAIT."  `stepping` IS this model's "the machine is
+    // operating" signal -- a run latch the harness raises once and
     // never while it is loading the program image or reading results --
     // so the pulse is generated here rather than by a free-running rule
     // inside StretchStorage, which would count the timer down through
     // gen_tb.py's loader (one clock per word, thousands of them) and
     // hand the first instruction a timer that was already stale.  BEW
     // does not stop the clock in this model (it is a self-branch the
-    // harness keeps ticking), so p.34's named case needs nothing extra.
+    // harness leaves running), so p.34's named case needs nothing extra.
     Bit#(17) acc = oscAcc + fromInteger(oscPulseNumer);
     if (acc >= fromInteger(oscPulseDenom)) begin
       acc = acc - fromInteger(oscPulseDenom);
@@ -491,15 +523,15 @@ module mkStretchCore(StretchCore);
   // (No fire_when_enabled on this rule or rl_ic_controls: they share the
   // look-ahead / Y-buffer bus channels with the exported `mem`
   // interface, and at the synthesized boundary bsc must assume the
-  // harness could call those methods in a ticked clock. It never does
-  // -- the harness ticks only in its run rule -- but that is a harness
+  // harness could call those methods while the latch is up. It never
+  // does -- it reads only between phases -- but that is a harness
   // fact, not something the scheduler can prove here.)
-  rule rl_la_fetch (tick);
+  rule rl_la_fetch (running);
     la.collect();
   endrule
 
   // ---- IC controls: run every clock, alongside the instruction FSM ----
-  rule rl_ic_controls (tick);
+  rule rl_ic_controls (running);
     Bool restart = (restartSeq != restartSeen) || (branchSeq != branchSeen);
     // While the interruption instruction is in flight the fetch stream
     // follows IT, not the instruction counter -- the counter is
@@ -514,7 +546,7 @@ module mkStretchCore(StretchCore);
   endrule
 
   (* mutually_exclusive = "rl_recover, rl_io, rl_idx_write, rl_exec_resume, rl_au_remove, rl_prepare" *)
-  rule rl_recover (tick && armRecover);
+  rule rl_recover (running && armRecover);
     // Wrong-way recovery (Perf. Char. p.3-23): undo the index
     // registers and index indicators the I-box changed ahead, take the
     // branch, and refetch. Charged as the branch's own execution
@@ -532,7 +564,7 @@ module mkStretchCore(StretchCore);
     haltedReg <= False;
   endrule
 
-  rule rl_io (tick && armIo);
+  rule rl_io (running && armIo);
     // Service one word of an in-flight RD/W transfer. See this
     // interface's step() doc above and StretchIO.bsv's file header.
     // Capacity is device-kind-dependent: the tape's TapeWords is
@@ -949,7 +981,7 @@ module mkStretchCore(StretchCore);
     haltedReg <= False;
   endrule
 
-  rule rl_xmit (tick && armXmit);
+  rule rl_xmit (running && armXmit);
     // Service one word of an in-flight multi-word TRANSMIT.  This is
     // rl_io's shape with the device taken out: a storage read, then a
     // storage write of what came back, one word per clock, because
@@ -1074,7 +1106,7 @@ module mkStretchCore(StretchCore);
     haltedReg <= False;
   endrule
 
-  rule rl_idx_write (tick && armIdx);
+  rule rl_idx_write (running && armIdx);
     // Part 2 of a progressive-indexing instruction: nothing was
     // fetched this call, and PC already advanced on part 1.
     let p = validValue(pendingIdxWrite);
@@ -1084,7 +1116,7 @@ module mkStretchCore(StretchCore);
     haltedReg <= False;
   endrule
 
-  rule rl_exec_resume (tick && armResume);
+  rule rl_exec_resume (running && armResume);
     // The E-box's held instruction gets its operand word: let the box
     // collect it and re-run (it may bail again for a second word);
     // on completion, retire the level or advance the instruction
@@ -1120,7 +1152,7 @@ module mkStretchCore(StretchCore);
     haltedReg <= done;
   endrule
 
-  rule rl_au_remove (tick && armRemove);
+  rule rl_au_remove (running && armRemove);
     // Remove the head level into the arithmetic unit: its operand
     // (if any) is present, so the E-box runs with it pre-supplied;
     // any further read it needs, the box holds it for (resume arm).
@@ -1163,7 +1195,7 @@ module mkStretchCore(StretchCore);
   // is the part that belongs to the instruction unit -- turn that
   // indicator off, point the fetch stream at the routine, and stop the
   // instruction counter.
-  rule rl_interrupt (tick && armInterrupt);
+  rule rl_interrupt (running && armInterrupt);
     let {n, eia} = validValue(intDue);
 
     // "After this leftmost indicator has been turned off" -- and only
@@ -1202,7 +1234,7 @@ module mkStretchCore(StretchCore);
     ebusy <= eb;
   endrule
 
-  rule rl_prepare (tick && armPrepare);
+  rule rl_prepare (running && armPrepare);
     // Preparation: transfer the next instruction from the Y buffers
     // (both halves of a full-word instruction, which may straddle
     // 1Y/2Y); an E-box-class instruction is loaded into a look-ahead
@@ -1348,8 +1380,12 @@ module mkStretchCore(StretchCore);
     haltedReg <= done;
   endrule
 
-  method Action step();
-    tick.send();
+  method Action start();
+    running <= True;
+  endmethod
+
+  method Action stop();
+    running <= False;
   endmethod
   method Bool halted() = haltedReg;
 

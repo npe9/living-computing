@@ -197,13 +197,19 @@ def generate(module_name, prog, checks, step_cap=30000, reader_image=None,
         lines.append("    core.iplStart();")
     else:
         lines.append(f"    core.setPC({prog.end_pc});")
+    # >>> RAISE THE RUN LATCH ONCE. <<<  The core used to need a
+    # `core.step()` pulse from the `run` rule every clock; it now owns
+    # its own run state, so the harness says "go" here and "stop" in
+    # afterRun.  `run` still fires once per clock and still counts, so
+    # `stepCount` -- which every CYCLES bound and window asserts on --
+    # keeps counting core clocks 1:1.
+    lines.append("    core.start();")
     lines.append(f"    phase <= {run_phase + 1};")
     lines.append("  endrule")
     lines.append("")
 
     run_phase += 1
     lines.append(f"  rule run (phase == {run_phase} && !core.halted() && stepCount < {step_cap});")
-    lines.append("    core.step();")
     if pc_trail:
         lines.append("    pcTrail0 <= core.getPC();")
         lines.append("    if (core.getPC() != 0) lastNonZeroPc <= core.getPC();")
@@ -250,6 +256,26 @@ def generate(module_name, prog, checks, step_cap=30000, reader_image=None,
         lines.append('      $display("OP TRAIL: operation invalid raised %0d times; first at half-word address %0d after %0d steps, last at %0d", opTrailCount, opTrailPc, opTrailStep, opTrailLastPc);')
         lines.append("    else")
         lines.append('      $display("OP TRAIL: operation invalid never set");')
+    lines.append(f"    phase <= {run_phase + 1};")
+    lines.append("  endrule")
+    lines.append("")
+
+    # >>> DROPPING THE RUN LATCH NEEDS ITS OWN PHASE. <<<  `stop()`
+    # writes the latch, and the latch gates the rules that write
+    # `haltedReg`, so bsc annotates `core.stop()` and `core.halted()`
+    # as conflicting at mkStretchCore's synthesized boundary: a rule may
+    # not use both, and `afterRun`'s own GUARD reads `halted()`.  This
+    # is the same conflict StretchSmoke's `restartRnx` already records
+    # for `setPC` and `mem.readWordResp`, and the same fix -- give it a
+    # phase of its own.
+    #
+    # On the HALT path the core has already stopped itself, because
+    # `stepping` includes `!haltedReg`; this is what covers the step-cap
+    # path, where the core would otherwise keep running while the check
+    # phases below read storage through the interface it is using.
+    run_phase += 1
+    lines.append(f"  rule stopRun (phase == {run_phase});")
+    lines.append("    core.stop();")
     lines.append(f"    phase <= {run_phase + 1};")
     lines.append("  endrule")
     lines.append("")
