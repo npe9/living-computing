@@ -1401,3 +1401,55 @@ times, and the measurement says it writes it never.
   a Python `NameError`, so `bsc` never ran and there was no `^Error:`
   line to match. A grep for the absence of errors is only meaningful
   if the thing that produces them actually ran. Check the exit status.
+
+## THE 2^18 FIGURE RESOLVED: word 0 is the PERMANENT-ZERO REGISTER
+
+Settled by counting both numbers in **one** build, as the rule
+requires, and then by one line of `StretchTypes.bsv`:
+
+    WordAddr addrZero = 0;   // permanently 0, writes ignored
+
+**Word 0 is the 7030's hardwired zero register.** So the earlier
+finding -- "262,144 writes to `word 0 off 20 len 4`" -- was counting
+stores that the machine *discards by design*. `T CHCNT` is
+`SYN(BU,4), 0.20`, a template with offset 20 and no base, so an index
+of zero resolves it to word 0, and every one of those stores went into
+the bit bucket.
+
+> **>>> SO THAT FINDING WAS NEVER A CAUSE, AND NOT EVEN AN EFFECT ON
+> STORAGE. IT WAS A RESTATEMENT OF `$2 == 0` IN DIFFERENT UNITS. <<<**
+> Six measurements in this session were spent downstream of it.
+
+**And it does not reproduce at the canonical cap.** In one run:
+
+| count | measured |
+|---|---|
+| field stores of shape (word 0, off 20, len 4) | **0** |
+| ALL four-bit field stores, whole boot | **36** -- at words 552, 674, 675, none at word 0 |
+| index writes to `$10`, same run | **105** |
+
+The 36 proves the instrument fires, so the zero is evidence and not
+silence. The four sites probed are the generic VFL field stores
+(`insertFieldBits(prefetch[0], off, len_, ...)`); `CM0000` is the
+CONNECT family and may store by another path, so the honest statement
+is: **either the CONNECT store is routed elsewhere, or these stores do
+not happen at the canonical cap.** Which of those does not matter,
+because word 0 absorbs them either way.
+
+### What survives, and it is the same single question
+
+The contradiction that prompted this -- "a loop closing on
+`CB+,TIXF` 262,144 times must write `$10` 262,144 times, and the
+measurement says never" -- **dissolves**: the 262,144 was not an
+iteration count of anything. The 105 index writes stand.
+
+> **THE QUESTION IS NOW UNPOLLUTED AND SINGULAR: why does
+> `TA9  LX, TIXF, TCHSXW` at half-word 4378 never write `$10`?**
+> `decks/mcp_bootstrap_p72.strap` places it correctly (`SLC, (8)4215.0`,
+> `TCHSXW SYN, (8)2152.0` = word 1130, `TIXF SYN, $10`); the testbench
+> run rule sees the I-box PC resident on 4378 for 23 steps; and
+> `StretchExecute`'s one general index-write site, which carries the
+> instruction's own `pc`, never reports 4378. Three arms remain:
+> `execute()` is never called with that `pc`; it is called and
+> `doIdxWrite` is false; or the instruction decodes to something other
+> than an index load.
