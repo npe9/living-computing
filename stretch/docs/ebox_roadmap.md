@@ -406,3 +406,74 @@ arm's test with `False` and all four checks fail, with
 `refused_head` at word 272 showing the store LANDING
 (`0xfffffffffffffff9`, `0xffffffffffff1234`) and the machine hanging on
 its `BZOP, $` self-branch at half-word 392 or 391 until the step cap.
+
+# Step 6 groundwork: the divide timing charts, MINED
+
+`docs/source_audit.md`'s Audit 3 lists **"the PAU/SAU timing-chart
+category (pp. 225-243), which does give numbered per-cycle charts"** as
+genuinely unmined, and its goal table calls it *"the first real
+per-cycle source"* for M1. This is not a new discovery; it is two of
+those pages finally read.
+
+**There are nineteen of them**, Figures 3.8.1-3.8.19, one per
+arithmetic operation: Load, Add, Add to Magnitude, Compare, Add to
+Fraction, Shift Fraction, Store, Store Rounded, Store Low Order, Store
+Root (2 sheets), Multiply, Load/Store Multiplier Register, **Divide (3
+sheets)**, Divide Double, SAU Multiply and Multiply-and-Add, and SAU
+Divide. They are timing charts with named triggers and per-cycle
+pulses, and they are legible at 300 dpi.
+
+## Figure 3.8.19, SAU DIVIDE (TIMING) -- PDF 243, printed 8-23
+
+Read at the ink. Two halves, DIVISOR NORMALIZATION and DIVIDE REDUCTION
+CYCLES, with these lines among others:
+
+* `GATES 36 & 72 & ENABLE MULTIPLE DECODING`
+* `GATE COUNTER ADDER TO REG & SUB SHIFT AMOUNT FROM CTR`
+* `(D3, CTR=0, TRUE RESULT)` -> `FINAL DVDE TGR`
+* `IF DIVIDEND NOT NORMALIZED TAKE SAME ACTION AS FP`
+* `REDUCTION CYCLES JUST LIKE FP`
+
+**So the loop is counter-driven and terminates on CTR = 0**, each
+reduction cycle subtracting a shift amount from the counter. That is
+the FSM shape, and it is the thing Table 2's "2 cycles for each
+additional reduction loop (number of cycles is data dependent)" is
+counting.
+
+## Figure 3.8.15 sheet 2 of 3, FLOATING-POINT DIVIDE -- PDF 240, printed 8-17/8-18
+
+The phases are named: **Trial Reduction Cycle**, then **Intermediate
+Reduction Cycle**s, then a **Last Reduction Cycle**. And twice, in the
+chart's own words:
+
+> **"Number of Reduction or Dummy Cycles Depend Upon Number of Quotient
+> Bits Developed per Step (Cycle)"**
+
+with a note that an intermediate cycle **"could be a dummy cycle ... if
+more than 6 quotient bits were developed on the previous reduction
+cycle"**, and an exponent-subtraction lane annotated
+
+> **"Divider Determined by Multiple Selection Circuits"**
+
+## >>> WHAT THIS ESTABLISHES, AND THE ONE THING IT DOES NOT <<<
+
+**Established, and enough to build the FSM:** the divide is not 96
+single-bit steps. It is a counter-driven loop of trial / intermediate /
+last reduction cycles, developing a VARIABLE number of quotient bits
+per cycle, with dummy cycles when a step runs ahead, terminating when
+the shift counter reaches zero. `fpDivFrac` currently does all 96
+restoring-division iterations combinationally in one clock, and
+`eboxClocks` charges a flat 4 -- which its own comment calls a floor.
+
+**NOT established:** how many quotient bits a given cycle develops.
+The chart attributes it to the "Multiple Selection Circuits", which are
+ALDs this volume does not reproduce. So the bits-per-cycle rule is
+**[NOT IN THE SOURCES]** as things stand, and any FSM written today
+must either derive its loop count from Table 2's aggregate rules --
+which `tests/perf_char_timing.py` already carries, transcribed, with
+"2 cycles for each additional reduction loop" among them -- or say in
+its own comment that the per-cycle division is invented.
+
+That is the decision to make before writing `mkDivBox`, and it should
+be made deliberately rather than discovered halfway through. The
+remaining seventeen charts are the same seam for the other operations.
