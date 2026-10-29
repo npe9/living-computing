@@ -1,5 +1,8 @@
 # PIM primary-source inventory
 
+`fetch_all.sh` retrieves every PDF listed in the table and regenerates
+`SHA256SUMS`; `fetch.sh` remains the minimal initial-corpus fetcher.
+
 Run `./fetch.sh` from this directory to retrieve the public archive
 copies. The script refuses truncated or non-PDF responses, writes files
 under stable names, and produces `SHA256SUMS`. Commit the PDFs and
@@ -7,6 +10,7 @@ checksum file together after checking the archive's redistribution terms.
 
 | local file | source | role |
 |---|---|---|
+| `FGCS92_Volume_2.pdf` | [ICOT FGCS '92 Proceedings, volume 2](https://bitsavers.trailing-edge.com/pdf/icot/Fifth_Generation_Computer_Systems_1992_Volume_2.pdf) | additional PIM, KL1, and evaluation papers |
 | `FGCS92_Volume_1.pdf` | [ICOT, FGCS '92 proceedings, volume 1](https://bitsavers.trailing-edge.com/pdf/icot/Fifth_Generation_Computer_Systems_1992_Volume_1.pdf) | PIM overview and the PIM/p and PIM/m implementation papers |
 | `ICOT_TR-324_Parallel_Inference_Machine_Research.pdf` | [AIST ICOT archive, TR-324](https://www.airc.aist.go.jp/aitec-icot/ICOT/Museum/TRTM/TR/TRpdf/tr0324.pdf) | architecture rationale and execution model |
 

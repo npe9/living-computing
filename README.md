@@ -15,7 +15,7 @@ files: a STRAP-1 assembler in Python, a Bluespec model of the machine,
 303 card decks, 226 verify scripts, and 55 scanned PDFs of primary
 sources. The other 26 directories are documented stubs: each has a
 sourced README, a staged reproduction plan, a local source inventory,
-and an empty `bsv/`. Their initial corpus currently contains 29 PDFs and
+and an empty `bsv/`. Their initial corpus currently contains 76 PDFs and
 four captured archive pages. 496 commits since 2026-08-24, almost all of
 them in `stretch/`.
 
