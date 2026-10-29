@@ -2089,6 +2089,30 @@ def resolve_syns(syn_stmts, symtab, final):
             if (len(body) > 1 and re.fullmatch(r"\$[A-Za-z0-9]+", body)
                     and hasattr(symtab, 'sys_alias')):
                 symtab.sys_alias[up] = body[1:]
+            # >>> AND THE SUBSTITUTION IS TRANSITIVE, BECAUSE "EXACT
+            # SUBSTITUTION" IS. <<<  C22-6531 printed p.31 says the
+            # properties of Y are TRANSFERRED to A, which is why
+            # `sym_dds` and `sym_int` below are inherited through a
+            # bare-symbol SYN; the system-symbol alias is the same kind
+            # of property and was not.
+            #
+            # MCP's own source is the witness, printed p.61 lines 32
+            # and 39 (and again on printed p.287):
+            #
+            #     T X1    SYN, $10    -TEMPORARY INDEX
+            #     T IXF   SYN, TX1    --MACH CONF CHANGE-- CHAN. SCAN IX
+            #
+            # so T IXF names index register 10 through TWO levels.
+            # Without this, `LX, TIXF, TCHSXW` (printed p.72 line 4)
+            # assembled with j = 1664 & 0xF = 0 -- it loaded $0 instead
+            # of $10 -- and the merged MCP image differed from the
+            # standalone deck in that one field.  The standalone deck
+            # defines TIXF SYN, $10 directly, which is why the page's
+            # own tests never saw it.
+            elif (body and hasattr(symtab, 'sys_alias')
+                    and re.fullmatch(r"[A-Za-z][A-Za-z0-9 ]*", body)
+                    and body.upper() in symtab.sys_alias):
+                symtab.sys_alias[up] = symtab.sys_alias[body.upper()]
             if (stmt.mods and stmt.mods[0].strip()
                     and hasattr(symtab, 'sym_dds')):
                 symtab.sym_dds[up] = stmt.mods[0]

@@ -651,8 +651,27 @@ def main():
         ("mcp_switch_word2_arrived",
          str(ipl_hw("XLRIN") // 2 + 2), 0xA5A5A5A5A5A5A5A5),
 
+        # >>> AND S YPRCH NOW HOLDS 33, WHICH RESOLVES THE PUZZLE THE
+        # PARAGRAPH ABOVE RECORDED, 2026-10-28. <<<  That paragraph
+        # says S YPRCH "holds the same 35 and that is NOT explained",
+        # and that strap/prosa.py's IOCD deck puts the printer on
+        # channel 33.  It holds 33 now.
+        #
+        # S YCOCH and S YPRCH SHARE WORD 1134: S YCOCH is at bit
+        # offset 0 and S YPRCH at bit offset 32, two 19-bit slots in
+        # one word, so this check -- which reads the whole word -- sees
+        # both.  Measured: the two stores are `off=0 len=19` and
+        # `off=32 len=19`.
+        #
+        # The second store never used to happen.  printed p.72's
+        # machine-configuration scan ran with a ZERO index, because
+        # MCP's chained "T IXF SYN, TX1 SYN, $10" lost its register
+        # designation in the assembler and LX,TIXF,TCHSXW loaded $0
+        # (see tests/verify_syn_chain_reg.py).  With the scan indexing
+        # correctly, p.72 lines 38-42 compute and store the channel.
         ("mcp_console_channel_in_comm_region",
-         str(ipl_hw("SYCOCH") // 2), 35 << (63 - 18)),
+         str(ipl_hw("SYCOCH") // 2),
+         (35 << (63 - 18)) | (33 << (63 - 50))),
 
         # AND THIS IS THE CONTROL WORD THE LINE ABOVE TRIPPED ON.
         # printed p.3 line 23 is "X7 1 CCW  CCW,0($15),X IPL BS", so
@@ -1030,7 +1049,30 @@ def main():
          # locator in StretchExecute.bsv prints the half-word address
          # of the instruction that set it, and that address is the
          # first thing to look at.
-         _ind("AH") | _ind("RGZ") | _ind("XE")
+         #
+         # >>> AH -> AE, 2026-10-28, AND THERE IS A PRECEDENT FOR
+         # EXACTLY THIS. <<<  The paragraph above records the last
+         # time a MERGE defect was removed: three "CM1111,<bit>(index)"
+         # rows were compiling with length 64 "because the merge had
+         # taken a stand-in declared without its dds", and when they
+         # ran, "the accumulator comparison they leave behind goes the
+         # other way".  This is the same shape -- the merge taking a
+         # definition that lost a property -- one property along.
+         #
+         # MCP's "T IXF SYN, TX1" / "TX1 SYN, $10" (printed p.61 lines
+         # 32 and 39) chains TWO levels to an index register, and
+         # strap_asm.py recorded the $N alias only one level deep, so
+         # printed p.72 line 4's LX,TIXF,TCHSXW loaded $0 instead of
+         # $10 and the machine-configuration channel scan ran on a zero
+         # index.  See tests/verify_syn_chain_reg.py.
+         #
+         # With the scan indexing correctly the comparison it closes on
+         # FINDS its channel instead of running off the end, so the
+         # accumulator ends EQUAL rather than HIGH.  The independent
+         # corroboration is in the check above: S YPRCH now holds 33,
+         # the printer's channel, which that check's own comment had
+         # recorded as unexplained when it held 35.
+         _ind("AE") | _ind("RGZ") | _ind("XE")
          | _ind("XVGZ")),
 
         # >>> THE MOVE ITSELF, AND IT IS THE POINT OF THE FIXTURE <<<

@@ -1453,3 +1453,114 @@ iteration count of anything. The 105 index writes stand.
 > `execute()` is never called with that `pc`; it is called and
 > `doIdxWrite` is false; or the instruction decodes to something other
 > than an index load.
+
+# >>>>>> ROOT CAUSE FOUND, AND IT IS AN ASSEMBLER BUG <<<<<<
+
+**A SYN to a SYN to an index register lost the register.** Found
+2026-10-28, with MCP's own listing as the witness, after thirteen
+refuted hypotheses about the model.
+
+## The chain of evidence, each link measured
+
+`execute()` was asked directly what it does with printed p.72 line 4:
+
+    TA9DIX  code=1  di_j=0  xo_do=1  xo_reg=0  xo_val=0x02bf800000900000
+
+`code=1` is `dixop_LX`, so it decodes as LX. `xo_val` is **exactly
+`T CHSXW`'s contents** -- word 2814, count 36 -- so the address field is
+right and the fetch is right. But **`di_j=0`**: the decoded instruction
+names index register **0**, not 10.
+
+The decoder is not at fault (`j: hw[12:9]`, and the listing's second
+printed field is bits [12:8], giving `$2` -> 4 and `$10` -> 20, both
+exactly 2*j). **The instruction word in memory had j=0:**
+
+| | word 2189 left half | `j` |
+|---|---|---|
+| standalone `decks/mcp_bootstrap_p72.strap` | `0x011a9410` | **10** |
+| merged MCP-IPL tape image | `0x011a8010` | **0** |
+
+Same address field, same opcode, one field different.
+
+## The cause, in one line of `strap_asm.py`
+
+`SymTab.sys_alias` keeps a symbol defined as `SYN, $N` **as** the system
+symbol, so `$N`'s register-field/address-field duality survives: in a
+register field it yields `N`, in an address field `(16+N)*64`. It was
+recorded by
+
+    if (len(body) > 1 and re.fullmatch(r"\$[A-Za-z0-9]+", body) ...):
+        symtab.sys_alias[up] = body[1:]
+
+-- which matches only a body that is **literally** `$...`. MCP's source,
+printed **p.61 lines 32 and 39**, and again on printed **p.287**:
+
+    T X1    SYN, $10    -TEMPORARY INDEX
+    T IXF   SYN, TX1    --MACH CONF CHANGE-- CHAN. SCAN IX
+
+`T IXF` names index register 10 through **two** levels. The second SYN's
+body is `TX1`, a symbol and not a `$`, so no alias was recorded and
+`TIXF` fell back to its numeric value -- 1664, the bit address of word
+26. And
+
+    1664 & 0xF = 0
+
+which is the `j=0` that was measured. **The arithmetic closes.**
+
+## Why it is a bug and not a transcription error
+
+The deck is faithful; the listing says `SYN, TX1` twice, in two
+independent places. And C22-6531 printed **p.31** calls SYN an **"EXACT
+SUBSTITUTION"** in which the properties of Y "are **TRANSFERRED** to A".
+The assembler already honoured that for data descriptions (`sym_dds`)
+and for integer classification (`sym_int`) -- both inherited through a
+bare-symbol SYN. **The system-symbol alias is the same kind of property
+and was the one that was not.** The fix makes it transitive, which is
+what the printed rule says it always was.
+
+## Why nothing caught it for so long
+
+> **>>> THE PAGE'S OWN DECK DEFINES `TIXF SYN, $10` DIRECTLY -- ONE
+> LEVEL -- SO printed p.72 ASSEMBLED CORRECTLY IN ISOLATION. <<<** Only
+> the MERGED image, where printed p.61's chained definition wins, ever
+> carried `j=0`. Every per-page test passed. The new verifier therefore
+> checks the standalone deck AND the merge **and asserts that they
+> agree**, because their disagreement in exactly one field is what this
+> bug was.
+
+And the failure mode is the quiet one this project keeps finding: the
+address field was correct, the value fetched was correct, `doIdxWrite`
+was set, no indicator was raised, nothing was refused. **The right value
+went to the wrong register, silently.**
+
+## What it explains
+
+`LX, TIXF, TCHSXW` loaded `$0` instead of `$10`, so `$10` kept whatever
+`T ASSIGN`'s prologue `SWAP I,12,$1,T ASAVE` left in it -- zero, which
+is correct for that SWAP -- and printed p.72's channel scan then ran
+with a zero index and a zero count. That is the whole symptom the
+session began with, and every model component it passed through was
+behaving correctly.
+
+> **AND IT IS WHY THIRTEEN HYPOTHESES ABOUT THE MODEL ALL FAILED.** The
+> defect was never in the Bluespec. The instrumentation campaign was not
+> wasted -- it is what eliminated the model, one named writer at a time,
+> until the only thing left was the instruction word itself -- but the
+> lesson is cheaper than the route: **when every reader of a value is
+> innocent, suspect the value.** Two assemblies of the same source line
+> differing in one field is a five-line Python check, and it was
+> available on day one.
+
+## The test and its measured injection
+
+`tests/verify_syn_chain_reg.py`, registered second in the suite. Eight
+checks: one, two and three levels of chaining; that the ADDRESS field
+and the numeric value are untouched; the merged image's word `004215`
+by J field and by whole half-word; and that the standalone deck agrees
+with the merge.
+
+**Injection, measured:** removing the transitive arm fails **five of
+eight**, including the named address -- merged word `004215`, printed
+p.72 line 4, J field 0 instead of 10 -- while "one level (`TX1 SYN,
+$10`)" still passes, which is what isolates transitivity as the thing
+under test.

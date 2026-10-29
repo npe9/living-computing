@@ -85,6 +85,26 @@ run() {
 # -- 0. SYN pseudo-op (strap_asm.py, pure Python, no Bluesim needed --
 # see test_syn.py's own header) --
 run "NO DEBUG INSTRUMENTATION IN COMMITTED FILES" python3 verify_no_probes.py
+run "SYN CHAIN TO AN INDEX REGISTER keeps naming the register" python3 verify_syn_chain_reg.py
+# >>> A REAL BUG, AND MCP'S OWN SOURCE IS THE WITNESS. <<<  C22-6531
+# printed p.31 calls SYN an "EXACT SUBSTITUTION" whose properties are
+# TRANSFERRED; the assembler transferred data descriptions and integer
+# classification but not the system-symbol alias, so it was recorded
+# only one level deep.  MCP printed p.61 lines 32 and 39 chain
+# "T X1 SYN, $10" and "T IXF SYN, TX1", so printed p.72 line 4's
+# "LX,TIXF,TCHSXW" assembled with j = 1664 & 0xF = 0 and loaded $0
+# instead of $10 -- address field correct, value correct, wrong
+# register, no error.
+#
+# IT WAS INVISIBLE TO THE PAGE'S OWN DECK, which defines TIXF SYN, $10
+# directly; only the MERGED image, where p.61's chained definition
+# wins, carried it.  The test checks both and asserts they AGREE.
+#
+# INJECTION, measured 2026-10-28: removing the transitive arm from
+# strap_asm.py fails FIVE of the eight checks, including the named
+# address -- merged word 004215, printed p.72 line 4, J field 0 instead
+# of 10 -- while "one level (TX1 SYN, $10)" still passes, which is what
+# isolates transitivity as the thing under test.
 # FIRST, because it is cheap and because what it catches invalidates
 # everything after it.
 #
