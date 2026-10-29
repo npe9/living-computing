@@ -51,15 +51,43 @@
 // attributes it to the "Multiple Selection Circuits", which are ALDs
 // this volume does not reproduce, so the rule is [NOT IN THE SOURCES].
 //
-// `divBitsPerCycle` below is therefore INVENTED and says so, following
-// the precedent docs/microarchitecture_roadmap.md sets for the
-// look-ahead: "Any LA-internal count written in Bluespec is invented
-// and must say so." Six is chosen because the same chart's note --
-// an intermediate cycle may be a dummy "if more than 6 quotient bits
-// were developed on the previous reduction cycle" -- is the only
-// number on the page, and it bounds a step rather than fixing one.
-// IT IS NOT CALIBRATED AGAINST THE ATLAS. Doing that is the next step
-// and needs Perf. Char. Vol. 2's measured divide page.
+// `divBitsPerCycle` below is therefore STILL NOT PROVEN, and says so.
+// But it is no longer a number picked out of the air, and that changed
+// on 2026-10-29 when the same figure was read for a different reason:
+//
+// >>> SIX IS THE MACHINE'S SHIFTER WIDTH, AND IT IS PRINTED IN THREE
+// PLACES. <<<
+//   * Vol. 1 Table 2, FOUR times, as the unit in which shifts are
+//     charged: "2 cycles for each additional divisor shift OF 6",
+//     "each additional dividend shift OF 6", "remainder norm. <= 6",
+//     "norm. <= 6".
+//   * Figure 3.8.19's divisor-normalization half: "(D3, BIT 2-0
+//     SHIFT <= 6)", beside a lane labelled "NORMALIZATION LOOP".
+//   * Figure 3.8.15 sheet 2: an intermediate cycle may be a dummy "if
+//     more than 6 QUOTIENT BITS were developed on the previous
+//     reduction cycle".
+//
+// So Table 2's "of 6" is not a grouping convention chosen by whoever
+// wrote the table -- it is the width of the shifter, and the "+2 per
+// additional shift of 6" is a NORMALISATION LOOP being counted from
+// outside. That is why the divisor normalisation below is written as
+// an actual loop: its cycle count then matches Table 2's rule BY
+// CONSTRUCTION rather than by a formula evaluating the rule.
+//
+// >>> ONE DISCREPANCY, RECORDED RATHER THAN TUNED AWAY. <<<  This loop
+// spends ONE cycle per shift of six; Table 2 charges TWO ("2 cycles for
+// each additional divisor shift of 6").  Figure 3.8.19 shows the
+// normalisation lane pulsing D4 and D3 in pairs, so a plausible reading
+// is that one loop pass IS two machine cycles -- but that is a reading,
+// not a statement, and no page says it.  The loop therefore reports its
+// own passes (`normCycles`) and the test asserts those; converting
+// passes to Table 2's cycles is left until something prints the rule.
+//
+// What remains unproven is only that the REDUCTION loop develops the
+// same 6 bits a shift cycle moves. The sources bound it ("more than 6"
+// forces a dummy cycle) without fixing it, and the atlas cannot settle
+// it -- its divide pages divide by one and then by zero, which skips
+// the loop entirely (docs/atlas_reading_guide.md).
 //
 // THE ANSWER, BY CONTRAST, IS NOT INVENTED AND NOT APPROXIMATE: the
 // loop performs the same 96 restoring steps `fpDivFrac` does, just
@@ -73,19 +101,27 @@ import StretchFP::*;
 // >>> INVENTED. See the header. <<<  Quotient bits developed per
 // reduction cycle. 96 restoring steps at this rate is the loop count.
 Integer divBitsPerCycle = 6;
+// >>> AND THIS ONE IS SOURCED, unlike the line above. <<<  The shifter
+// moves at most six places in a normalisation cycle: figure 3.8.19's
+// "(D3, BIT 2-0 SHIFT <= 6)", and Table 2 charging shifts in units of
+// six four separate times.  Named so the injection can move it.
+Integer divShiftWidth = 6;
 Integer divTotalBits    = 96;
 
-typedef enum { DivIdle, DivTrial, DivReduce, DivLast, DivDone }
+typedef enum { DivIdle, DivNorm, DivTrial, DivReduce, DivLast, DivDone }
   DivState deriving (Bits, Eq, FShow);
 
 interface FpDivBox;
   method Bool requestReady();
+  // `dvs` is the RAW divisor: the box normalises it itself, in a loop,
+  // because that loop's length is what Table 2 charges for.
   method Action request(Bit#(96) dvd, Bit#(48) dvs);
   method Bool responseReady();
   method ActionValue#(Tuple2#(Bit#(49), Bit#(49))) response();
   // Reduction cycles actually taken: the timing oracle reads this
   // rather than a table being charged on the operation's behalf.
   method Bit#(16) cyclesTaken();
+  method Bit#(16) normCycles();
 endinterface
 
 (* synthesize *)
@@ -97,6 +133,31 @@ module mkFpDivBox(FpDivBox);
   Reg#(Bit#(49))  rg_q     <- mkReg(0);
   Reg#(Bit#(8))   rg_ctr   <- mkReg(0);   // restoring steps still to do
   Reg#(Bit#(16))  rg_cyc   <- mkReg(0);
+  Reg#(Bit#(48))  rg_dvs   <- mkRegU;    // the divisor, being normalised
+  Reg#(Bit#(16))  rg_norm  <- mkReg(0);  // normalisation cycles, reported
+
+  // THE DIVISOR NORMALISATION LOOP (figure 3.8.19's left half, the lane
+  // labelled "NORMALIZATION LOOP").  It shifts at most SIX places a
+  // cycle -- "(D3, BIT 2-0 SHIFT <= 6)" on that chart -- so a divisor
+  // needing 13 places takes three passes, and Table 2's "2 cycles for
+  // each additional divisor shift of 6" falls out of the loop instead
+  // of being evaluated as a formula.  A zero divisor would never
+  // normalise, so it exits on the counter rather than on the top bit;
+  // the caller suppresses the whole operation in that case anyway
+  // (p.93's ZD), which is also what makes the atlas's divide pages
+  // useless.
+  rule rl_norm (rg_state == DivNorm);
+    rg_cyc  <= rg_cyc + 1;
+    rg_norm <= rg_norm + 1;
+    if (rg_dvs[47] == 1 || rg_dvs == 0)
+      rg_state <= DivTrial;
+    else begin
+      Bit#(6) lead = 0;
+      for (Integer k = 0; k < divShiftWidth; k = k + 1)
+        if (rg_dvs[47 - k] == 0 && lead == fromInteger(k)) lead = fromInteger(k + 1);
+      rg_dvs <= rg_dvs << lead;
+    end
+  endrule
 
   // THE TRIAL REDUCTION CYCLE (fig 3.8.15's name). One cycle of setup
   // before the loop proper, which is what the chart shows preceding the
@@ -117,8 +178,8 @@ module mkFpDivBox(FpDivBox);
       if (n != 0) begin
         rem = { rem[47:0], dvd[95] };
         dvd = { dvd[94:0], 1'b0 };
-        if (rem >= rg_d) begin
-          rem = rem - rg_d;
+        if (rem >= {1'b0, rg_dvs}) begin
+          rem = rem - {1'b0, rg_dvs};
           q   = { q[47:0], 1'b1 };
         end else
           q   = { q[47:0], 1'b0 };
@@ -141,12 +202,14 @@ module mkFpDivBox(FpDivBox);
 
   method Action request(Bit#(96) dvd, Bit#(48) dvs) if (rg_state == DivIdle);
     rg_dvd   <= dvd;
-    rg_d     <= { 1'b0, dvs };
+    rg_dvs   <= dvs;
+    rg_d     <= { 1'b0, dvs };   // kept for FShow/debug; the loop uses rg_dvs
     rg_rem   <= 0;
     rg_q     <= 0;
     rg_ctr   <= fromInteger(divTotalBits);
     rg_cyc   <= 0;
-    rg_state <= DivTrial;
+    rg_norm  <= 0;
+    rg_state <= DivNorm;
   endmethod
 
   method Bool responseReady() = (rg_state == DivDone);
@@ -158,6 +221,9 @@ module mkFpDivBox(FpDivBox);
   endmethod
 
   method Bit#(16) cyclesTaken() = rg_cyc;
+  // Reported separately so a test can check Table 2's divisor-shift
+  // rule on its own, without the reduction loop's unproven term.
+  method Bit#(16) normCycles() = rg_norm;
 endmodule
 
 // ---------------------------------------------------------------------
@@ -193,8 +259,9 @@ module mkDivBoxTb(Empty);
   Reg#(Bool)    issued <- mkReg(False);
   Reg#(Bool)    done   <- mkReg(False);
 
-  // Divisors are pre-normalised (>= 2^47), which is what fpDivFrac's
-  // own comment requires of its caller.
+  // >>> RAW DIVISORS NOW, chosen for their LEADING-ZERO COUNTS. <<<
+  // The box normalises internally, so these exercise the
+  // normalisation loop at 0, 1, 7, 15 and 47 leading zeros.
   function Bit#(96) dvdOf(Bit#(4) i) =
     case (i)
       0: 96'h000000000001_000000000000;
@@ -205,22 +272,24 @@ module mkDivBoxTb(Empty);
     endcase;
   function Bit#(48) dvsOf(Bit#(4) i) =
     case (i)
-      0: 48'h800000000000;
-      1: 48'hffffffffffff;
-      2: 48'hc000000000ff;
-      3: 48'h800000000001;
-      default: 48'h800000000000;
+      0: 48'h800000000000;   // 0 leading zeros
+      1: 48'h400000000000;   // 1
+      2: 48'h010000000000;   // 7
+      3: 48'h000100000000;   // 15
+      default: 48'h000000000001;  // 47
     endcase;
+  // LITERALS, not a formula -- see the note below.  The loop shifts at
+  // most 6 a cycle and then spends one more cycle observing that the
+  // divisor is normalised, so it is ceil(lz/6) + 1: 1, 2, 3, 4, 9.
+  function Bit#(16) expNormOf(Bit#(4) i) =
+    case (i) 0: 1; 1: 2; 2: 3; 3: 4; default: 9; endcase;
 
-  // >>> A LITERAL, NOT A FORMULA, AND THE FIRST VERSION OF THIS TEST
-  // WAS WRONG BECAUSE IT WAS A FORMULA. <<<  It read
-  // `1 + ceil(divTotalBits / divBitsPerCycle) + 1`, which is computed
-  // FROM the constant under test, so changing divBitsPerCycle from 6
-  // to 8 moved the FSM and its own expectation together and the test
-  // still passed.  An expectation derived from the thing it checks is
-  // not an expectation.  Eighteen is 1 trial + 16 reduction cycles
-  // (96 restoring steps at 6 per cycle) + 1 last.
-  Integer expCycles = 18;
+  // >>> AND A LITERAL AGAIN, FOR THE REASON THE LAST VERSION OF THIS
+  // TEST FAILED TO CATCH ITS OWN INJECTION. <<<  An expectation
+  // computed from the constant under test is not an expectation.
+  // 18 = 1 trial + 16 reduction (96 restoring steps at 6 a cycle) + 1
+  // last, and the normalisation cycles are added per vector.
+  Integer expAfterNorm = 18;
 
   rule rl_issue (!done && !issued && box.requestReady());
     box.request(dvdOf(idx), dvsOf(idx));
@@ -228,19 +297,30 @@ module mkDivBoxTb(Empty);
   endrule
 
   rule rl_collect (!done && issued && box.responseReady());
-    Bit#(16) took = box.cyclesTaken();
+    Bit#(16) took  = box.cyclesTaken();
+    Bit#(16) norm  = box.normCycles();
     let got <- box.response();
-    let want = fpDivFrac(dvdOf(idx), dvsOf(idx));
+    // The answer is the division by the NORMALISED divisor, which is
+    // what the box computes and what p.93 specifies.
+    Bit#(48) raw  = dvsOf(idx);
+    UInt#(6) lz   = countZerosMSB(raw);
+    Bit#(48) nrm  = (raw == 0) ? 0 : (raw << lz);
+    let want = fpDivFrac(dvdOf(idx), nrm);
     if (tpl_1(got) != tpl_1(want) || tpl_2(got) != tpl_2(want)) begin
       $display("FAIL divbox[%0d] answer: q=%h want %h, rem=%h want %h",
                idx, tpl_1(got), tpl_1(want), tpl_2(got), tpl_2(want));
       fails <= fails + 1;
-    end else if (took != fromInteger(expCycles)) begin
-      $display("FAIL divbox[%0d] cycles = %0d, want %0d", idx, took, expCycles);
+    end else if (norm != expNormOf(idx)) begin
+      $display("FAIL divbox[%0d] normalisation cycles = %0d, want %0d",
+               idx, norm, expNormOf(idx));
+      fails <= fails + 1;
+    end else if (took != expNormOf(idx) + fromInteger(expAfterNorm)) begin
+      $display("FAIL divbox[%0d] cycles = %0d, want %0d", idx, took,
+               expNormOf(idx) + fromInteger(expAfterNorm));
       fails <= fails + 1;
     end else
-      $display("PASS divbox[%0d] q=%h rem=%h in %0d cycles",
-               idx, tpl_1(got), tpl_2(got), took);
+      $display("PASS divbox[%0d] q=%h rem=%h in %0d cycles (%0d normalising)",
+               idx, tpl_1(got), tpl_2(got), took, norm);
     issued <= False;
     if (idx == fromInteger(valueOf(NDivVec) - 1)) done <= True;
     else idx <= idx + 1;

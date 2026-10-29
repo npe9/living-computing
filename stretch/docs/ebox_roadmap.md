@@ -500,8 +500,19 @@ files under `stretch/`, and these are above it.
 > cannot reach into a sibling project.
 
 Splitting the commit afterwards means rewriting pushed history, which
-is a destructive operation and needs the owner's explicit say-so, so it
-has deliberately NOT been done.
+is a destructive operation and needs the owner's explicit say-so.
+
+**DEFERRED BY THE OWNER, 2026-10-29: "we can do a squash/cherry pick
+later."** Two refs are parked for it -- `backup-before-split` at the
+history as it stood, and `split-fix` at `23ca2d5^`, the commit to
+build the replacement on.
+
+> **AND THERE IS A SECOND REASON TO WAIT, FOUND AFTER THE FIRST.**
+> `git worktree list` reports **48 worktrees**, and `git status` from
+> the repository root shows ~29 sibling machine projects being modified
+> concurrently. Rewriting `master` out from under agents working in it
+> would cause far more damage than one commit with a mixed subject
+> line. Do the split when the repository is quiet.
 
 # >>>>>> THE ATLAS CANNOT CALIBRATE DIVIDE, AND IT SAYS SO ITSELF <<<<<<
 
