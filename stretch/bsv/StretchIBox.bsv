@@ -21,6 +21,8 @@ import StretchTypes::*;
 import StretchStorage::*;
 import StretchDecode::*;
 import StretchExecute::*;   // effAddr18/19/24, baWord
+import StretchMemory::*;    // installed(): the address-invalid bound
+import StretchVFL::*;       // fieldCrosses, effLength
 
 // ---- Instruction classification and the I-box hazard test ----
 function Bool isEboxClass(DecodedInstr d);
@@ -88,6 +90,14 @@ endfunction
 typedef struct {
   Maybe#(WordAddr) operandAddr;   // the word a storage operand read wants
   Maybe#(WordAddr) storeAddr;     // the word the instruction writes back
+  // >>> DOES THIS INSTRUCTION FINISH WITHOUT READING ANYTHING? <<<
+  // The preparation arm's probe used to answer this by RUNNING
+  // execute() and seeing whether it asked for a word, which is why
+  // execution had to double as a query.  Every cause is a pure
+  // condition; they were enumerated by instrumenting each
+  // disagreement between the probe and this record and mapping it to
+  // its test section (docs/ebox_roadmap.md, "Step 3, scoped").
+  Bool completesWithoutFetch;
 } PreparedExec deriving (Bits, Eq, FShow);
 
 function PreparedExec prepareExec(StretchStorage st, DecodedInstr d);
@@ -102,21 +112,42 @@ function PreparedExec prepareExec(StretchStorage st, DecodedInstr d);
       // The four storing VflInt operations: ST, M+, M+MG, M+1.
       Bool stores = (v.code == 6'b001101) || (v.code == 6'b001001)
                  || (v.code == 6'b101001) || (v.code == 6'b101011);
+      // M+/M+1/M+MG, unlike ST since 2026-10-24, still cannot cross a
+      // word boundary -- see protViolates' note -- and refuse with OP.
+      Bool mPlus = (v.code == 6'b001001) || (v.code == 6'b101001)
+                || (v.code == 6'b101011);
+      // The three radix conversions are let past the decimal refusal;
+      // anything else with the decimal modifier sets OP.
+      Bool radixConv = (v.code == 6'b000011) || (v.code == 6'b011011)
+                    || (v.code == 6'b100011);
+      Bit#(7) len_ = effLength(v.a.length);
+      Bool done = (v.m.decimal == 1 && !radixConv)      // decimal refusal
+               || (prog && v.a.i1 == 0)                  // progressive, no index
+               || (mPlus && fieldCrosses(ea, len_))      // M+ cannot cross
+               || dfSuppresses(st, w)                    // DF, mask-dependent
+               || !installed(w);                         // AD
       return PreparedExec {
         operandAddr: (v.a.p == 4) ? tagged Invalid : tagged Valid w,
-        storeAddr:   stores       ? tagged Valid w : tagged Invalid };
+        storeAddr:   stores       ? tagged Valid w : tagged Invalid,
+        completesWithoutFetch: done };
     end
     tagged Connective .c: begin
       Bool prog = (c.a.p != 0 && c.a.p != 4);
       BitAddr ea = prog ? st.readIndex(c.a.i1).addr
                         : effAddr24(st, c.a.addr, c.a.i1);
       WordAddr w = ea[23:6];
+      Bit#(7) len_ = effLength(c.a.length);
+      Bool done = (prog && c.a.i1 == 0)
+               || (c.suffix == conn_CM && fieldCrosses(ea, len_))
+               || dfSuppresses(st, w)
+               || !installed(w);
       return PreparedExec {
         operandAddr: (c.a.p == 4) ? tagged Invalid : tagged Valid w,
         // C and CT are excluded: C writes the accumulator and CT writes
         // nothing, so neither is a store.  See storeTarget's note on
         // how CM's absence here was found.
-        storeAddr: (c.suffix == conn_CM) ? tagged Valid w : tagged Invalid };
+        storeAddr: (c.suffix == conn_CM) ? tagged Valid w : tagged Invalid,
+        completesWithoutFetch: done };
     end
     tagged Fp .f: begin
       // The FP format has no progressive indexing, which is why there
@@ -128,10 +159,12 @@ function PreparedExec prepareExec(StretchStorage st, DecodedInstr d);
       return PreparedExec {
         // FP L only; ST fetches nothing.
         operandAddr: (f.code == fpop_L) ? tagged Valid w : tagged Invalid,
-        storeAddr:   stores             ? tagged Valid w : tagged Invalid };
+        storeAddr:   stores             ? tagged Valid w : tagged Invalid,
+        completesWithoutFetch: dfSuppresses(st, w) || !installed(w) };
     end
     default: return PreparedExec { operandAddr: tagged Invalid,
-                                   storeAddr:   tagged Invalid };
+                                   storeAddr:   tagged Invalid,
+                                   completesWithoutFetch: False };
   endcase
 endfunction
 

@@ -6479,9 +6479,6 @@ typedef struct {
 } HeldOp deriving (Bits, Eq, FShow);
 
 interface EBox;
-  method ActionValue#(ExecDispatch)
-    exec(HWordAddr pc, InstrLen len, DecodedInstr di,
-         Vector#(2, Word64) prefetch, Bit#(2) prefetchCount, Bool atIntAddr);
   method ActionValue#(Maybe#(ExecDone))
     start(HWordAddr pc, InstrLen len, DecodedInstr di,
           Vector#(2, Word64) prefetch, Bit#(2) prefetchCount, ExecOwner owner,
@@ -6532,17 +6529,6 @@ module mkEBox #(StretchStorage st, StretchIO io) (EBox);
   // and the look-ahead arm, and canResume() blocks rl_prepare, exactly
   // as they are blocked while a read is outstanding.
   Reg#(Bool)               subjReady     <- mkReg(False);
-
-  method ActionValue#(ExecDispatch)
-      exec(HWordAddr pc, InstrLen len, DecodedInstr di,
-           Vector#(2, Word64) pf, Bit#(2) cnt, Bool atIntAddr);
-    // The preparation arm's side-effect-free operand-address probe.
-    // Never an execution operation: StretchIBox's fetchesOperand (which
-    // is what gates this call) answers False for BranchOrMisc, so an EX
-    // is dispatched through start() like every other I-box instruction.
-    let r <- execute(st, io, pc, len, di, pf, cnt, atIntAddr, notSubject);
-    return r;
-  endmethod
 
   method ActionValue#(Maybe#(ExecDone))
       start(HWordAddr pc, InstrLen len, DecodedInstr di,

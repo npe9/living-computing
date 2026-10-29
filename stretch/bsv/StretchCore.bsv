@@ -88,9 +88,12 @@ module mkStretchCore(StretchCore);
   StretchIO ioDev <- mkStretchIO;
   // Idiomatic-Bluespec rewrite step 1 (plan §1c): the execute datapath
   // as ONE shared sub-module, not a function inlined at each call site
-  // (the mkFBox/mkMBox shape). The four ebox.exec call sites below are
-  // mutually-exclusive branches of step(), so they share this one
-  // instance's method port. See StretchExecute's mkEBox comment.
+  // (the mkFBox/mkMBox shape). Its start()/resume() call sites below are
+  // mutually-exclusive arms of the rule ladder, so they share this one
+  // instance's method ports. See StretchExecute's mkEBox comment.
+  // (This said "the four ebox.exec call sites" and "branches of step()";
+  // `exec` was the preparation probe and is gone, and step() is now a
+  // run latch -- see rl_prepare and `running`.)
   EBox ebox <- mkEBox(st, ioDev);
   // Step 5b: the instruction buffers (1Y/2Y + IC controls) and the
   // four-level look-ahead are stage modules of their own
@@ -1292,43 +1295,39 @@ module mkStretchCore(StretchCore);
         // down -- see StretchIBox's prepareExec.
         let prep = prepareExec(st, di);
         Maybe#(WordAddr) da = tagged Invalid;
-        Bool loaded = True;
-        if (fetchesOperand(di)) begin
-          // Side-effect-free probe: execute() with no operand bails
-          // out with the address of the operand it needs.
-          // A multi-word TRANSMIT cannot come back from this call: a
-          // transmit is only started once its first operand word has
-          // arrived, and this call passes none.  It rides in the
-          // `Complete` variant with the rest of the effects, and the
-          // mismatch arm below forwards them all rather than naming
-          // them one at a time.
-          let r <- ebox.exec(pc, len, di, replicate(0), 0, isValid(intPC));
-          // >>> THE ADDRESS COMES FROM THE PURE FUNCTION, AND THE
-          // DISPATCH IS NOW A TYPED SUM. <<<  `operandTarget` was run
-          // beside this probe across the whole suite and there was not
-          // ONE address disagreement in 5621 checks
-          // (docs/ebox_roadmap.md, "Step 1, measured"), so
-          // `NeedOperand`'s address is discarded in favour of it.
-          //
-          // The probe survives only for the OTHER answer, which it used
-          // to smuggle through the same `Maybe#(WordAddr)`: "this
-          // instruction is already FINISHED" -- which AD, OP,
-          // DF-suppression and the crossing store can each cause. That
-          // is now `Complete`, a variant of its own, which is what
-          // deleting this call will need.
-          case (r) matches
-            tagged NeedOperand .*: da = prep.operandAddr;
-            tagged Complete .d: begin
-              // Classified as fetching but completed: treat as executed.
-              $display("StretchCore: E-box instruction at %0d executed at preparation (classification mismatch)", pc);
-              commitNext(pc, len, d.next);
-              pendingIdxWrite <= d.idxWrite;
-              ioPending <= d.ioStart;
-              loaded = False;
-            end
-          endcase
-        end
-        if (loaded) begin
+        if (fetchesOperand(di) && !prep.completesWithoutFetch)
+          da = prep.operandAddr;
+        // >>> THE PROBE IS GONE, 2026-10-29. <<<  This used to call
+        // `ebox.exec` with no operands so that `execute()` would bail
+        // out with the address it wanted, and then treat a non-bail as
+        // "classified as fetching but completed" and commit the
+        // instruction inline.  Execution was therefore both a
+        // supposedly side-effect-free query and the operation that
+        // commits architectural effects, and every arm had to do no
+        // irreversible work before noticing an operand was missing --
+        // a contract no type enforced.
+        //
+        // Both of the probe's answers are now pure, and both were
+        // PROVEN against it across the whole corpus before it was
+        // removed (docs/ebox_roadmap.md):
+        //
+        //   the ADDRESS      -- `prep.operandAddr`, not one
+        //                       disagreement in 5621 checks;
+        //   "ALREADY DONE"   -- `prep.completesWithoutFetch`, zero
+        //                       disagreements in 5621 checks, with its
+        //                       six causes enumerated by measurement:
+        //                       the decimal refusal, progressive with
+        //                       index 0, M+/CM crossing a word
+        //                       boundary, DF suppression, and AD.
+        //
+        // An instruction that will finish without reading now simply
+        // gets a level with NO operand address, exactly like ST and
+        // every other non-fetching E-box instruction, and is dispatched
+        // through `ebox.start()` in the ordinary way.  The inline
+        // completion path and its "classification mismatch" message are
+        // gone with it -- there is no longer a classification to
+        // mismatch.
+        begin
           // Store-close-to-fetch (plan stage 3a note): if this level
           // fetches word `a`, wait for the NEWEST earlier level that
           // stores to `a` -- every current level is program-earlier

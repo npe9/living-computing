@@ -275,3 +275,52 @@ beside the probe and require ZERO mismatches before deleting anything:
    completion's own effects still come from running `execute()` through
    the ordinary dispatch path. It removes a query that commits, not the
    interpreter.
+
+
+# >>>>>> STEP 3 IS DONE: `EBox.exec` IS DELETED, 2026-10-29 <<<<<<
+
+The preparation arm no longer calls execution to ask a question. Both of
+the probe's answers are pure, and both were PROVEN against it across the
+whole corpus before it was removed:
+
+| answer | replacement | evidence |
+|---|---|---|
+| "I need word A" | `prep.operandAddr` | **0** address disagreements in 5621 checks |
+| "I am already finished" | `prep.completesWithoutFetch` | **0** disagreements in 5621 checks |
+
+`completesWithoutFetch`'s six causes, every one a pure condition and
+every one found by measurement rather than by reading the arms and
+hoping:
+
+* the decimal refusal, `m.decimal == 1 && !radixConv`
+* progressive indexing with index 0
+* M+/M+1/M+MG, and the CM connective, crossing a word boundary —
+  `fieldCrosses(ea, len_)`; a plain ST may cross as of 2026-10-24, these
+  may not
+* DF suppression, `dfSuppresses(st, w)`
+* the address not installed (AD), `!installed(w)`
+
+and separately, CV was removed from `fetchesOperand` altogether, because
+printed p.73 says its operand is the ACCUMULATOR — that was never a
+completion, it was a misclassification the probe had been papering over.
+
+**An instruction that will finish without reading now gets a level with
+no operand address, exactly like ST, and is dispatched through
+`ebox.start()` in the ordinary way.** The inline completion path and its
+"classification mismatch" message are gone: there is no longer a
+classification to mismatch. That display was its own counter, and it
+went 8 → 6 when CV was reclassified, exactly as predicted beforehand.
+
+## What this does NOT buy, stated plainly
+
+`execute()` is still a 6,800-line ActionValue that computes and commits
+in one invocation, and the completion's effects still come from running
+it through ordinary dispatch. **This removed a query that commits; it
+did not remove the interpreter.** The remaining steps are unchanged:
+
+5. an explicit arithmetic completion record,
+6. **divide as the first genuinely iterative box** — the forcing case,
+7. readiness rather than `ebusy` as its timing authority,
+8. generalise into PAU/SAU,
+9. preparation as a real stage-output bundle (`prepareExec` is its seed),
+10. split the look-ahead's `Whole` levels into the historical pieces.
