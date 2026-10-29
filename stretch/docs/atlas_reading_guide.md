@@ -228,3 +228,69 @@ arms do.
 
 `INSTRUCTION SEQUENCE GENERATION AND TIMING` (around PDF 36), which is
 GENER's own description and governs every number in the volume.
+
+---
+
+# GENER itself — PDF 37-39, and it bounds the precision of every number
+
+`INSTRUCTION SEQUENCE GENERATION AND TIMING` describes the program that
+produced the whole volume. It governs every column in it.
+
+## How a number is made
+
+1. **One instruction is replicated.** GENER takes the instruction at a
+   location, ORs **two masks** into it, stores it, and repeats —
+   *"This series is then reproduced until a thousand instructions are
+   available"*. So a page's sequence is a THOUSAND COPIES of one
+   instruction, varied only by the masks.
+2. **A count branch closes the loop**: *"after which a count branch
+   (with an original count of 10) is inserted"*, and *"this sequence
+   is then executed 10 times"*. 1,000 × 10 = **10,000 executions**,
+   which is the "10,000 instructions" the floating-point notes refer
+   to.
+3. **It is timed by the INTERVAL TIMER.** Figure 1's flow chart reads
+   `SET INTERVAL TIMER TO 0.32 (1/1024 SECOND)` then `WAIT FOR TIME
+   SIGNAL`, `EXECUTE SEQUENCE`, `MULTIPLY BY 100`, `CONVERT TO
+   DECIMAL`.
+4. *"the measured elapsed time is multiplied by 100 to produce the
+   execution time for 1 million instructions; the seconds now indicate
+   integer micro-seconds"* — so a printed figure is **µs per
+   instruction**, extrapolated from 10,000 of them.
+
+Branches are handled specially, the branch address being rewritten to
+the loop's own location, *"which allows any instruction sequence to be
+constructed and timed"*.
+
+> **AND THE INSTRUMENT IS ONE THIS MODEL IMPLEMENTS.** The 1/1024-second
+> interval timer that produced these numbers is the same timer
+> `StretchCore`'s `rl_clock` steps through its exact-rational divider,
+> and `decks/interval_timer_steps.strap` pins. The oracle and the model
+> share a clock.
+
+## >>> THE PRECISION BOUND, STATED BY THE AUTHORS <<<
+
+> *"The results are calculated to two fractional positions and compare
+> exactly to representative timings when the loop is actually executed
+> one thousand times. **The last digit in each number may be in error
+> by one unit.**"*
+
+**So every figure in the atlas is ±0.01 µs**, and a model difference
+below that is noise, not a discrepancy. Any calibration should carry
+that tolerance explicitly — `docs/spec_timing.md`'s residuals (the
+connective path's 2.40 µs offset, `VflInt`'s 0.281 µs mean) are far
+above it and so are real, but a future box tuned to the third decimal
+would be fitting the error bar.
+
+And the preface says what the volume is: *"The following are
+REPRESENTATIVE times of 7030 instructions. They will be updated when
+more information becomes available."* Provisional, by its authors'
+own description.
+
+## What this adds to the per-class caveats above
+
+Every figure carries **one count-branch per thousand instructions**
+amortised into it, because that is how the loop closes. It is small —
+a tenth of a percent — but it is systematic, it is in every number, and
+it is part of the "constant offset expected" that
+`docs/spec_timing.md` already records without a mechanism. Now there is
+a mechanism.
