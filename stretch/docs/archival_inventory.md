@@ -1,5 +1,10 @@
 # Archival inventory: what's recoverable from bitsavers' 7030 collection
 
+> **Web pages are catalogued separately in `docs/web_references.md`**,
+> as SECONDARY sources: useful for orientation and for finding scans,
+> never citable for an encoding or a semantic (rule 4).
+
+
 Follow-up to a broader archival survey (not done in this repo) that
 catalogued which historical Stretch software survives *in some form* --
 manuals, System Analysis Guides, language references -- versus what's
