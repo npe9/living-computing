@@ -4,4 +4,7 @@ Manchester University / Ferranti. Successor to the Baby; first commercially avai
 
 Bluespec implementation: `bsv/` (not started).
 
+See [`plan.md`](plan.md) for the staged reproduction plan and
+[`docs/README.md`](docs/README.md) for the local primary-source inventory.
+
 Sources: Turing, *Programmers' Handbook for the Manchester Electronic Computer Mark II* (1951); Lavington, *A History of Manchester Computers*.

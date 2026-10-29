@@ -4,4 +4,7 @@ Williams, Kilburn, Tootill, Manchester. First stored-program computer to run a p
 
 Bluespec implementation: `bsv/` (not started).
 
+See [`plan.md`](plan.md) for the staged reproduction plan and
+[`docs/README.md`](docs/README.md) for the local primary-source inventory.
+
 Sources: Lavington, *Early British Computers*; Kilburn's 1948 report; Napper's SSEM reference.

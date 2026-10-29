@@ -4,4 +4,7 @@ Edson de Castro / Gordon Bell, DEC. The first commercially successful minicomput
 
 Bluespec implementation: `bsv/` (not started).
 
+See [`plan.md`](plan.md) for the staged reproduction plan and
+[`docs/README.md`](docs/README.md) for the local primary-source inventory.
+
 Sources: *PDP-8 Small Computer Handbook* (DEC, 1966 onward).

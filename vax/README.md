@@ -4,4 +4,7 @@ Bill Strecker et al., DEC. 32-bit "Virtual Address eXtension" of the PDP-11: 16 
 
 Bluespec implementation: `bsv/` (not started).
 
+See [`plan.md`](plan.md) for the staged reproduction plan and
+[`docs/README.md`](docs/README.md) for the local primary-source inventory.
+
 Sources: *VAX Architecture Reference Manual* (Digital Press); *VAX-11/780 Hardware Handbook*.

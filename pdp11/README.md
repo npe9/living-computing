@@ -4,4 +4,7 @@ Gordon Bell, Harold McFarland, DEC. 16-bit minicomputer; orthogonal instruction 
 
 Bluespec implementation: `bsv/` (not started).
 
+See [`plan.md`](plan.md) for the staged reproduction plan and
+[`docs/README.md`](docs/README.md) for the local primary-source inventory.
+
 Sources: *PDP-11/20 Processor Handbook* (1969); *PDP-11 Architecture Handbook*.

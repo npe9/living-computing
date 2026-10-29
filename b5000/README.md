@@ -4,4 +4,7 @@ Bob Barton, Burroughs. Stack architecture designed for ALGOL; descriptors, tagge
 
 Bluespec implementation: `bsv/` (not started).
 
+See [`plan.md`](plan.md) for the staged reproduction plan and
+[`docs/README.md`](docs/README.md) for the local primary-source inventory.
+
 Sources: *Burroughs B5000 Reference Manual* (1961); Barton, "A New Approach to the Functional Design of a Digital Computer" (WJCC 1961).

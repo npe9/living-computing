@@ -4,4 +4,7 @@ Eckert–Mauchly / Remington Rand. First commercial computer in the US. Decimal,
 
 Bluespec implementation: `bsv/` (not started).
 
+See [`plan.md`](plan.md) for the staged reproduction plan and
+[`docs/README.md`](docs/README.md) for the local primary-source inventory.
+
 Sources: *UNIVAC I Programming Manual* (Remington Rand, 1954).

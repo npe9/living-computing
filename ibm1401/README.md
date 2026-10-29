@@ -4,4 +4,7 @@ Fran Underwood, IBM. Most widely installed computer of the early 1960s (>10,000)
 
 Bluespec implementation: `bsv/` (not started).
 
+See [`plan.md`](plan.md) for the staged reproduction plan and
+[`docs/README.md`](docs/README.md) for the local primary-source inventory.
+
 Sources: *IBM 1401 Data Processing System Reference Manual* (A24-1403).

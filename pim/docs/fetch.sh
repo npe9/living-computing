@@ -11,7 +11,7 @@ fetch_pdf() {
 }
 
 fetch_pdf \
-  'https://www.bitsavers.org/pdf/icot/Fifth_Generation_Computer_Systems_1992_Volume_1.pdf' \
+  'https://bitsavers.trailing-edge.com/pdf/icot/Fifth_Generation_Computer_Systems_1992_Volume_1.pdf' \
   'FGCS92_Volume_1.pdf'
 fetch_pdf \
   'https://www.airc.aist.go.jp/aitec-icot/ICOT/Museum/TRTM/TR/TRpdf/tr0324.pdf' \

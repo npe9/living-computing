@@ -13,9 +13,11 @@ code the listing prints next to them.
 **One machine has substance.** `stretch/` (the IBM 7030) is 697 tracked
 files: a STRAP-1 assembler in Python, a Bluespec model of the machine,
 303 card decks, 226 verify scripts, and 55 scanned PDFs of primary
-sources. The other 26 directories are stubs — a sourced README and an
-empty `bsv/`. 496 commits since 2026-08-24, almost all of them in
-`stretch/`.
+sources. The other 26 directories are documented stubs: each has a
+sourced README, a staged reproduction plan, a local source inventory,
+and an empty `bsv/`. Their initial corpus currently contains 29 PDFs and
+four captured archive pages. 496 commits since 2026-08-24, almost all of
+them in `stretch/`.
 
 ## Method
 
@@ -73,40 +75,41 @@ recorded as a survival with an expiry date.
 | directory | machine | state |
 |---|---|---|
 | `stretch/` | IBM 7030 "Stretch" (1961) | **the live project** — assembler, Bluespec model, boots MCP from tape |
-| `atlas/` | Ferranti / Manchester Atlas (1962) | stub |
-| `b5000/` | Burroughs B5000 (1961) | stub |
-| `baby/` | Manchester Baby / SSEM (1948) | stub |
-| `cdc6600/` | CDC 6600 (1964) | stub |
-| `colossus/` | Colossus (1944) | stub |
-| `cray1/` | Cray-1 (1976) | stub |
-| `edsac/` | EDSAC (1949) | stub |
-| `eniac/` | ENIAC (1945) | stub |
-| `ias/` | IAS Machine (1952) | stub |
-| `ibm1401/` | IBM 1401 (1959) | stub |
-| `ibm701/` | IBM 701 (1952) | stub |
-| `ibm704/` | IBM 704 (1954) | stub |
-| `ibm7090/` | IBM 7090 (1959) | stub |
-| `mark1/` | Manchester Mark 1 / Ferranti Mark 1 (1949–51) | stub |
-| `pdp1/` | DEC PDP-1 (1959) | stub |
-| `pdp11/` | DEC PDP-11 (1970) | stub |
-| `pdp8/` | DEC PDP-8 (1965) | stub |
-| `pim/` | ICOT Parallel Inference Machine, initially PIM/m (1992) | stub; staged plan |
-| `risc1/` | Berkeley RISC I (1981) | stub |
-| `s360/` | IBM System/360 (1964) | stub |
-| `symbolics3600/` | Symbolics 3600 Lisp machine (1983) | stub; staged plan |
-| `transputer/` | INMOS IMS T800 transputer (1987) | stub; staged plan |
-| `univac1/` | UNIVAC I (1951) | stub |
-| `vax/` | DEC VAX-11/780 (1977) | stub |
-| `whirlwind/` | Whirlwind I (1951) | stub |
-| `z3/` | Zuse Z3 (1941) | stub |
+| `atlas/` | Ferranti / Manchester Atlas (1962) | stub; plan + sources |
+| `b5000/` | Burroughs B5000 (1961) | stub; plan + sources |
+| `baby/` | Manchester Baby / SSEM (1948) | stub; plan + sources |
+| `cdc6600/` | CDC 6600 (1964) | stub; plan + sources |
+| `colossus/` | Colossus (1944) | stub; plan + sources |
+| `cray1/` | Cray-1 (1976) | stub; plan + sources |
+| `edsac/` | EDSAC (1949) | stub; plan + sources |
+| `eniac/` | ENIAC (1945) | stub; plan + sources |
+| `ias/` | IAS Machine (1952) | stub; plan + sources |
+| `ibm1401/` | IBM 1401 (1959) | stub; plan + sources |
+| `ibm701/` | IBM 701 (1952) | stub; plan + sources |
+| `ibm704/` | IBM 704 (1954) | stub; plan + sources |
+| `ibm7090/` | IBM 7090 (1959) | stub; plan + sources |
+| `mark1/` | Manchester Mark 1 / Ferranti Mark 1 (1949–51) | stub; plan + sources |
+| `pdp1/` | DEC PDP-1 (1959) | stub; plan + sources |
+| `pdp11/` | DEC PDP-11 (1970) | stub; plan + sources |
+| `pdp8/` | DEC PDP-8 (1965) | stub; plan + sources |
+| `pim/` | ICOT Parallel Inference Machine, initially PIM/m (1992) | stub; plan + sources |
+| `risc1/` | Berkeley RISC I (1981) | stub; plan + sources |
+| `s360/` | IBM System/360 (1964) | stub; plan + sources |
+| `symbolics3600/` | Symbolics 3600 Lisp machine (1983) | stub; plan + sources |
+| `transputer/` | INMOS IMS T800 transputer (1987) | stub; plan + sources |
+| `univac1/` | UNIVAC I (1951) | stub; plan + sources |
+| `vax/` | DEC VAX-11/780 (1977) | stub; plan + sources |
+| `whirlwind/` | Whirlwind I (1951) | stub; plan + sources |
+| `z3/` | Zuse Z3 (1941) | stub; plan + sources |
 
 A stub is a `README.md` on a fixed template — machine, year, the people
 and the place, what the machine introduced with concrete figures, the
 line `Bluespec implementation: bsv/ (not started)`, and the sources that
-would be used — plus a `bsv/` directory holding only `.gitkeep`. They
-are sourced notes on what each machine was, not scaffolding for code
-that exists. A few stubs also have a `plan.md` that fixes scope and
-evidence gates before implementation begins.
+would be used — plus a `bsv/` directory holding only `.gitkeep`. Each
+also has a `plan.md` fixing scope and evidence gates and a `docs/`
+directory containing an initial local source, its checksum, provenance,
+and a reproducible fetch script. They are sourced plans, not scaffolding
+for code that exists.
 
 ## `stretch/`
 

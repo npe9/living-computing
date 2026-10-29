@@ -4,4 +4,7 @@ Amdahl, Blaauw, Brooks. First computer *family* with a common architecture acros
 
 Bluespec implementation: `bsv/` (not started).
 
+See [`plan.md`](plan.md) for the staged reproduction plan and
+[`docs/README.md`](docs/README.md) for the local primary-source inventory.
+
 Sources: *IBM System/360 Principles of Operation* (A22-6821); Amdahl, Blaauw, Brooks, "Architecture of the IBM System/360" (IBM J. R&D, 1964).

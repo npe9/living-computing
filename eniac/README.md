@@ -4,4 +4,7 @@ Eckert & Mauchly, Moore School, U. Penn. First general-purpose electronic comput
 
 Bluespec implementation: `bsv/` (not started).
 
+See [`plan.md`](plan.md) for the staged reproduction plan and
+[`docs/README.md`](docs/README.md) for the local primary-source inventory.
+
 Sources: *Report on the ENIAC* (1946); Haigh, Priestley, Rope, *ENIAC in Action*.

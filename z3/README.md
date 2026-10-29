@@ -4,4 +4,7 @@ Konrad Zuse, Berlin. First working programmable, fully automatic digital compute
 
 Bluespec implementation: `bsv/` (not started).
 
+See [`plan.md`](plan.md) for the staged reproduction plan and
+[`docs/README.md`](docs/README.md) for the local primary-source inventory.
+
 Sources: Zuse, *Der Computer – Mein Lebenswerk*; Rojas, "How to Make Zuse's Z3 a Universal Computer" (IEEE Annals 1998).

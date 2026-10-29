@@ -1,7 +1,7 @@
 #!/bin/sh
 set -eu
 
-base='https://bitsavers.org/pdf/symbolics/3600_series'
+base='https://bitsavers.trailing-edge.com/pdf/symbolics/3600_series'
 
 fetch_pdf() {
     remote=$1

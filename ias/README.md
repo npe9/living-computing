@@ -4,4 +4,7 @@ John von Neumann, Julian Bigelow, Institute for Advanced Study, Princeton. The a
 
 Bluespec implementation: `bsv/` (not started).
 
+See [`plan.md`](plan.md) for the staged reproduction plan and
+[`docs/README.md`](docs/README.md) for the local primary-source inventory.
+
 Sources: Burks, Goldstine, von Neumann, *Preliminary Discussion of the Logical Design of an Electronic Computing Instrument* (1946); Dyson, *Turing's Cathedral*.

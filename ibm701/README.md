@@ -4,4 +4,7 @@ IBM's first commercial scientific computer ("Defense Calculator"). 36-bit words,
 
 Bluespec implementation: `bsv/` (not started).
 
+See [`plan.md`](plan.md) for the staged reproduction plan and
+[`docs/README.md`](docs/README.md) for the local primary-source inventory.
+
 Sources: *IBM 701 Principles of Operation* (Form 24-6042).

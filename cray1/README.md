@@ -4,4 +4,7 @@ Seymour Cray, Cray Research. First successful vector supercomputer: 64-bit words
 
 Bluespec implementation: `bsv/` (not started).
 
+See [`plan.md`](plan.md) for the staged reproduction plan and
+[`docs/README.md`](docs/README.md) for the local primary-source inventory.
+
 Sources: *Cray-1 Computer System Hardware Reference Manual* (2240004); Russell, "The CRAY-1 Computer System" (CACM 1978).

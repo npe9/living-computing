@@ -4,4 +4,7 @@ Gene Amdahl et al. First mass-produced computer with hardware floating point and
 
 Bluespec implementation: `bsv/` (not started).
 
+See [`plan.md`](plan.md) for the staged reproduction plan and
+[`docs/README.md`](docs/README.md) for the local primary-source inventory.
+
 Sources: *IBM 704 Electronic Data-Processing Machine Manual of Operation* (Form 24-6661).

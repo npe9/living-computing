@@ -1,0 +1,400 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+<meta name="viewport" content="width=1200, maximum-scale=4">
+<title>Ferranti Atlas Provisional Programming Manual - Manual  - Computing History</title>
+
+	<meta name="description" content="112page illustrated programming manual for the Atlas computer.112page illustrated programming manual for the Atlas computer. The Atlas Computer was a joint development between the University of Man...">
+	<meta name="keywords" content="old computers, vintage computers, video games, game consoles, computer museum, video game museum, center computer history">
+	<meta name="last-modified" content="Thu, 29 Oct 2026 02:09:10 GMT">
+	
+<link href='https://fonts.googleapis.com/css?family=Source+Code+Pro:400' rel='stylesheet' type='text/css'>
+<link href='https://fonts.googleapis.com/css?family=Noto+Sans:400,700,400italic,700italic' rel='stylesheet' type='text/css'>
+<link rel="stylesheet" type="text/css" href="/userdata/design-stu.css">
+<link rel="stylesheet" type="text/css" href="/js/sitewisemenu.css">
+<link rel="stylesheet" type="text/css" href="/userdata/colorbox.css">
+<link rel="stylesheet" type="text/css" href="/js/flipclock/flipclock.css">
+<link rel="stylesheet" type="text/css" href="/js/swiper/swiper.min.css">
+<script type="text/javascript" src="/js/jquery-1.8.3.min.js"></script>
+<script type="text/javascript" src="/js/sitewise.js"></script>
+<script type="text/javascript" src="/js/colorbox/jquery.colorbox.js"></script>
+<!-- Optionally include jquery.history.js for history support -->
+<script type="text/javascript" src="/js/galleriffic-2.0/js/jquery.history.js"></script>
+<script type="text/javascript" src="/js/galleriffic-2.0/js/jquery.opacityrollover.js"></script>
+
+<script type="text/javascript" src="/js/jssor.js"></script>
+<script type="text/javascript" src="/js/jssor.slider.js"></script>
+<script type="text/javascript" src="/js/comphist.js"></script>
+<script type="text/javascript" src="/js/flipclock/flipclock.js"></script>
+<script type="text/javascript" src="/js/swiper/swiper.min.js"></script>
+<script type="text/javascript" src="/js/moment.min.js"></script>
+
+<!-- Cookies for those who want them -->
+<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+<link rel="stylesheet" id="silktide-consent-manager-css" href="https://cdn.jsdelivr.net/gh/silktide/consent-manager@v2.0.0/silktide-consent-manager.css" integrity="sha384-IO1E/jCrQXyH5rwcI0SXP7OXw47JFqQNDQcKhbFvqnL2IunBxxwE2Ne5XyAmCqKs" crossorigin="anonymous">
+<script src="https://cdn.jsdelivr.net/gh/silktide/consent-manager@v2.0.0/silktide-consent-manager.js" integrity="sha384-j4NIMOecmtzMWe9GJADIIe5hTlHG63aiTQ/2XorW10RNyQJg+IU+xwFVDy45wBah" crossorigin="anonymous"></script>
+<script>
+window.silktideConsentManager.init({
+  backdrop: {
+    show: true
+  },
+  icon: {
+    position: "bottomRight"
+  },
+  prompt: {
+    position: "center"
+  },
+  consentTypes: [
+    {
+      id: "essential",
+      label: "Essential",
+      description: "<p>These cookies are necessary for the website to function properly and cannot be switched off. They help with things like logging in and setting your privacy preferences.</p>",
+      required: true,
+      onAccept: function() {
+        console.log('Add logic for the required Essential consent type here');
+      }
+    },
+    {
+      id: "analytics",
+      label: "Analytics",
+      description: "<p>These cookies help us improve the site by tracking which pages are most popular and how visitors move around the site.</p>",
+      required: false,
+      gtag: "analytics_storage",
+      scripts: [
+        {
+          url: "https://www.googletagmanager.com/gtag/js?id=G-KXHPZHLT18",
+          load: "async"
+        }
+      ],
+      onAccept: function() {
+        // Google Analytics 4 (G-KXHPZHLT18)
+        window.dataLayer = window.dataLayer || [];
+        function gtag() { window.dataLayer.push(arguments); }
+        gtag('js', new Date());
+        gtag('config', 'G-KXHPZHLT18');
+      }
+    },
+    {
+      id: "marketing",
+      label: "Marketing",
+      description: "<p>These cookies are used by us and our advertising partners to show you relevant ads on this site and elsewhere, and to measure how those campaigns perform.</p>",
+      required: false,
+      gtag: [
+        "ad_storage",
+        "ad_user_data",
+        "ad_personalization"
+      ]
+    }
+  ],
+  text: {
+    prompt: {
+      description: "<p>We use cookies on our site to enhance your user experience, provide personalized content, and analyze our traffic.</p>",
+      acceptAllButtonText: "Accept all",
+      acceptAllButtonAccessibleLabel: "Accept all cookies",
+      rejectNonEssentialButtonText: "Reject non-essential",
+      rejectNonEssentialButtonAccessibleLabel: "Reject all non-essential cookies",
+      preferencesButtonText: "Preferences",
+      preferencesButtonAccessibleLabel: "Toggle preferences"
+    },
+    preferences: {
+      title: "Customize your cookie preferences",
+      description: "<p>We respect your right to privacy. You can choose not to allow some types of cookies. Your cookie preferences will apply across our website.</p>",
+      saveButtonText: "Save and close",
+      saveButtonAccessibleLabel: "Save your cookie preferences",
+      creditLinkText: "Get this banner for free",
+      creditLinkAccessibleLabel: "Get this banner for free"
+    }
+  }
+});
+</script>
+<style type="text/css">
+#stcm-wrapper {
+  --primaryColor: #FFFFFF;
+  --backgroundColor: #0E83CD;
+  --textColor: #FFFFFF;
+  --boxShadow: -5px 5px 10px 0px #00000012, 0px 0px 50px 0px #0000001a;
+  --backdropBackgroundColor: #00000077;
+  --backdropBackgroundBlur: 5px;
+  --iconColor: #0E83CD;
+  --iconBackgroundColor: #FFFFFF;
+}
+@media only screen and (max-width: 1200px) and (orientation: portrait) {
+#stcm-banner.stcm-pos-center {
+	zoom: 2;
+}
+#stcm-banner p {
+	font-size: 24px;
+	line-height: 32px;
+}
+#stcm-banner .stcm-actions {
+	flex-direction: column;
+	align-items: stretch;
+}
+}
+</style>
+<!-- End cookie code -->
+
+
+</head>
+<body onunload="secwin_close();">
+<div id="header">
+<div id="logo"><a href="/"><img src="/images/new/centre-computing-history.gif" width="210" height="176" alt="Centre For Computing History"></a></div>
+<div id="headerbanner"></div>
+<ul id="headerlinks">
+<li><a class="" href="https://www.computinghistory.org.uk/pages/14522/Volunteering/">Volunteer</a></li>
+<li><a class="opendiv optioninfo" href="#donate">Donate</a></li>
+<li><a href="/shop">Shop</li>
+<li><a href="https://centreforcomputinghistory.beaconforms.com/form/9c78ce4a/">Mailing List</a></li>
+</ul>
+<div id="headersearch">
+<form method="get" action="/pages/49753/site-search/">
+		<input type="text" style="color:#333333;text-align:center" value="Search_Here" name="q" class="text">
+		<input type="image" alt="Search" src="/images/new/search-button.png" class="submit">
+	</form></div>
+<div id="headersocial"><a class="facebook" href="https://www.facebook.com/computinghistory" target="_blank"><span>Facebook</span></a><a class="instagram" href="https://instagram.com/thecentreforcomputinghistory/" target="_blank"><span>Instagram</span></a></div>
+<ul id="menutop">
+<li>
+	<a id="menuitem6" class="menu6" href="#"><span>About</span></a>
+	<ul class="submenu" id="menu6" style="display: none;">
+		<!--<li><a id="menuitem7" class="menu7" href="/news"><span>News</span></a></li>//-->
+		<li><a id="menuitem8" class="menu8" href="https://www.computinghistory.org.uk/pages/176/About-Us/"><span>About</span></a></li>
+		<li><a id="menuitem10" class="menu10" href="https://www.computinghistory.org.uk/pages/263/People/"><span>People</span></a></li>
+		<li><a id="menuitem77187" class="menu77187" href="https://www.computinghistory.org.uk/pages/77187/Annual-Report-24_25/"><span>Annual Report</span></a></li>
+	</ul>
+</li>
+<li><a id="menuitem3" class="menu3" href="/news"><span>News</span></a>
+<li><a id="menuitem2" class="menu2" href="https://www.computinghistory.org.uk/pages/30677/What-s-On/"><span>Events</span></a></li>
+<li><a id="menuitem37533" class="menu37533" href="#"><span>Visiting</span></a>
+	<ul class="submenu" id="menu37533" style="display: none;">
+
+<li><a id="menuitem28568" class="menu28568" href="/pages/28568/Plan-Your-Visit/"><span>Plan Your Visit</span></a>
+
+<li><a id="menuitem77547" class="menu77547" href="/pages/77547/Group-Visits/"><span>Group Visits</span></a>
+
+<li><a id="menuitem77548" class="menu77548" href="/pages/77548/Venue-Hire/"><span>Venue Hire</span></a>
+
+<li><a id="menuitem66402" class="menu66402" href="/pages/66402/Retro-Gaming-Parties/"><span>Retro Gaming Parties</span></a>
+
+<li><a id="menuitem37534" class="menu37534" href="/pages/37534/Accessibility/"><span>Accessibility</span></a>
+
+<li><a id="menuitem59434" class="menu59434" href="/pages/59434/Code-of-Conduct/"><span>Code of Conduct</span></a>
+
+<li><a id="menuitem1777" class="menu1777" href="/pages/1777/Contact-Us/"><span>Contact Us</span></a>
+
+</ul> </li>
+	
+<li><a id="menuitem37333" class="menu37333" href="#"><span>Learning</span></a>
+	<ul class="submenu" id="menu37333" style="display: none;">
+
+<li><a id="menuitem77524" class="menu77524" href="/pages/77524/Education-Group-Visits/"><span>Education Group Visits</span></a>
+
+<li><a id="menuitem77545" class="menu77545" href="/pages/77545/Learning-Resources/"><span>Learning Resources</span></a>
+
+<li><a id="menuitem42187" class="menu42187" href="/pages/42187/Research/"><span>Research</span></a>
+
+</ul> </li>
+<li><a id="menuitem38162" class="menu38162" href="#"><span>Collection</span></a>
+	<ul class="submenu" id="menu38162" style="display: none;">
+
+<li><a id="menuitem77546" class="menu77546" href="/pages/77546/Galleries-and-Exhibitions/"><span>Galleries and Exhibitions</span></a>
+
+<li><a id="menuitem590" class="menu590" href="/pages/590/Browse-Our-Collection/"><span>Browse Our Collection</span></a>
+
+<li><a id="menuitem4895" class="menu4895" href="/pages/4895/Latest-Acquisitions/"><span>Latest Acquisitions</span></a>
+
+<li><a id="menuitem38163" class="menu38163" href="/pages/38163/Donate-Items/"><span>Donate Items</span></a>
+
+</ul> </li>
+<li><a id="menuitem39483" class="menu39483" href="#"><span>Support Us</span></a>
+	<ul class="submenu" id="menu39483" style="display: none;">
+
+<li><a id="menuitem43456" class="menu43456" href="/pages/43456/Annual-Pass/"><span>Annual Pass</span></a>
+
+<li><a id="menuitem77526" class="menu77526" href="/pages/77526/Our-Supporters/"><span>Our Supporters</span></a>
+
+<li><a id="menuitem9075" class="menu9075" href="http://www.computinghistory.org.uk/shop"><span>Museum Shop</span></a>
+
+<li><a id="menuitem57757" class="menu57757" href="/pages/57757/Ways-You-Can-Help-Us/"><span>Ways You Can Help Us</span></a>
+
+</ul> </li>
+	</ul>
+<script type="text/javascript" src="/js/sitewisemenu.js"></script>
+</div>
+
+
+
+
+
+
+
+
+
+
+	
+<div id="main"> 
+	
+<!-- PRINTABLE START -->
+<h1 style="padding-left:205px;">Ferranti<span> </span>Atlas<span> </span>Provisional<span> </span>Programming<span> </span>Manual</h1>
+
+<table width="100%" border="0">
+<tr ><td><strong>&nbsp;<a href="/">Home</a> <span style="color:;">&gt;</span> <a href="https://www.computinghistory.org.uk/sec/319/Browse-Our-Collection/">Browse Our Collection</a> <span style="color:;">&gt;</span> <a href="https://www.computinghistory.org.uk/sec/398/Manuals/">Manuals</a> <span style="color:;">&gt;</span> <a href="https://www.computinghistory.org.uk/sec/910/Ferranti/">Ferranti</a> <span style="color:;">&gt;</span> <span class="current_location">Ferranti Atlas Provis ... al Programming Manual</span></strong></td></tr>
+<tr><td>&nbsp;</td></tr>
+</table>
+
+<table width="100%" border="0" cellspacing="4">
+  <tr> 
+    <td valign="top"> 
+      <p>
+        <p>112-page illustrated programming manual for the Atlas computer.</p>
+<p>The Atlas Computer was a joint development between the University of Manchester, Ferranti, and Plessey. The first Atlas, installed at Manchester University and officially commissioned in 1962, was one of the world's first supercomputers, considered to be the most powerful computer in the world at that time. It was said that whenever Atlas went offline half of the United Kingdom's computer capacity was lost. It was a second-generation machine, using discrete germanium transistors.</p>
+<p>Two other Atlas machines were built: one for British Petroleum and the University of London, and one for the Atlas Computer Laboratory at Chilton near Oxford. A derivative system was built by Ferranti for Cambridge University. Called the Titan, or Atlas 2, it had a different memory organisation and ran a time-sharing operating system developed by Cambridge Computer Laboratory. Two further Atlas 2s were delivered: one to the CAD lab at Cambridge, and the other to the Atomic Weapons Establishment, Aldermaston.</p>
+<p>The University of Manchester's Atlas was decommissioned in 1971, but the last was in service until 1974. Parts of the Chilton Atlas are preserved by the National Museums of Scotland in Edinburgh.</p>
+<p>We are extremely grateful to both Dawn and Kim Wakefield for the kind donation of the collection of their late father Richard Wakefield.</p>        </p>
+      <p><br>
+        <b>Reference Number :</b> LIST CS 348 <br>
+        
+        <br>
+	<b>Date Published :</b> January 1963<br><br>
+	
+	
+	<b>Manufacturer :</b> Ferranti<br><br>
+	
+	
+	
+	<b>Platform :</b> Atlas<br><br>
+	
+	
+	
+
+	
+	
+      <p>&nbsp;  </p>
+      <p>&nbsp;</p>
+      <p>&nbsp; </p>
+      <p>&nbsp;  </p>
+      <p>&nbsp;</p>
+
+<font size="1">This exhibit has a reference ID of <b>CH15674</b>. Please quote this reference ID in any communication with the Centre for Computing History.</font>
+</td>
+    <td width="20" valign="top">&nbsp;</td>
+    <td width="180" valign="top"><p><span class="books"><a href="/userdata/images/large/2/58/product-90258.jpg" class="group1"><img src="/userdata/images/medium/2/58/product-90258.jpg" border="0" class="pictable" alt="Ferranti Atlas Provisional Programming Manual"></a></span></p>
+<font size="1">Click on the Images For Detail</font>
+		
+		
+      
+			<p><br>
+        <br>
+        <br>
+        <br>
+        <br>
+    </p></td>
+  </tr>
+</table>
+
+<!-- PRINTABLE END --> 
+<div style="clear:both"></div>
+
+
+<!-- HOME PAGE START -->
+
+
+<!-- HOME PAGE FINISH -->
+
+</div>
+
+<!-- SPONSORS PANEL START -->
+
+<div id="sponsorsbarbg">
+<div id="sponsorsbar">
+<div id="sponsorsbarl">
+<div style="margin-top:10px;text-align:left;padding-right:10px">
+</div>
+</div>
+<div id="sponsorsbarm">Heritage Lottery Funded
+<div style="margin-top:10px">
+<img src="/images/new/sponsors/heritage-lottery-fund.png" alt="Heritage Lottery Fund">
+</div>
+</div>
+<div id="sponsorsbarr">
+<img src="/images/new/sponsors/accredited-museum.png" alt="Accredited Museum">
+</div>
+</div>
+<div class="clear"></div>
+</div>
+</div>
+
+<!-- FOOTER START -->
+
+<div id="footer">
+<div id="footerlinks"><ul>
+<li><a href="https://www.computinghistory.org.uk/pages/28568/Plan-Your-Visit/">Visiting The Museum</a></li>
+<li><a href="https://www.computinghistory.org.uk">Education Group Visits</a></li>
+<li><a href="https://www.computinghistory.org.uk/pages/30677/What-s-On/">What's On!</a></li>
+<li><a href="http://www.computinghistory.org.uk/news">Latest Updates</a></li>
+</ul>
+<ul>
+<li><a href="https://www.computinghistory.org.uk/pages/66402/Retro-Gaming-Parties/">Retro Gaming Parties</a></li>
+<li><a href="https://www.computinghistory.org.uk/pages/30598/Corporate-Venue-Hire/">Corporate Venue Hire</a></li>
+<li><a href="http://www.computinghistory.org.uk/cgi/computing-timeline.pl">Computing Timeline</a></li>
+<li><a href="https://www.computinghistory.org.uk/pages/590/Browse-Our-Collection/">Browse our Collection</a></li>
+</ul>
+<ul>
+<li><a href="https://www.computinghistory.org.uk/pages/77526/Our-Supporters/">Corporate Sponsorship</a></li>
+<li><a href="http://www.computinghistory.org.uk/pages/14522/volunteering/">Volunteering</a></li>
+<li><a href="https://www.computinghistory.org.uk/pages/48937/Privacy-Policy/">Privacy Policy</a></li>
+<li><a href="https://www.computinghistory.org.uk/pages/1777/Contact-Us/">Contact Us</a></li>
+</ul></div>
+<div id="footercontact"> <span itemprop="name"><span style="font-size:20px">The Centre</span> <span style="font-size:12px">for</span><br> <span style="font-size:20px">Computing History</span></span><br> <span itemprop="address" itemscope itemtype="http://schema.org/PostalAddress"> <span itemprop="streetAddress">Rene Court<br> Coldhams Road</span><br> <span itemprop="addressRegion">Cambridge</span><br> <span itemprop="postalCode">CB1 3EW</span> </span><p style="font-size:14px;color:#ffffff">Tel : <span itemprop="telephone">+44 (0) 1223 214446</span><br>Donations: <span itemprop="email">collection@computinghistory.org.uk</span><br>Other Email: <span itemprop="email">admin@computinghistory.org.uk</span></p>
+</div>
+<div id="footercopy">© The Centre for Computing History | Registered Charity No: 1130071</div>
+<div id="footerdesign"><a href="http://www.pureenergymultimedia.com" target="_blank">Web Design</a> by Pure Energy</div>
+</div>
+
+<div id="hiddendivs" style="display: none;">
+<div id="donate"><h1>Donate Today!</h1>
+<div><p style="font-family: Source Code Pro; font-size: 24px; color: #0e83cd;">Be_part_of_our_story...</p>
+<p>We are a registered charity. Since opening in 2013, over 160,000 people, including 18,000 school pupils, have visited the Centre. Our visitors deserve a space which is engaging and inspiring, where they can feel a sense of adventure, exploration and wonder!</p>
+<p style="text-align: center;"><span style="font-size: 18px;"><a href="https://centreforcomputinghistory.beaconforms.com/form/0a2afc45" target="_blank" rel="noopener"><strong>DONATE ONLINE</strong></a></span></p>
+<p>We have an ongoing need for small donations to support our work, major donations to move us forward as a charity, as well as everything in between. All donations of any size will make an immediate and significant impact.</p>
+<p>Online donations can be made above, or <span><a href="mailto:admin@computinghistory.org.uk" target="_blank" rel="noopener">email us</a> for our bank details to make a direct transfer. We also welcome <a href="https://www.computinghistory.org.uk/pages/77526/Our-Supporters/" target="_blank" rel="noopener">Corporate partnerships and sponsorships</a>, </span>please contact our <a href="mailto:partnerships@computinghistory.org.uk">partnerships team</a> for more details about getting involved.</p></div></div>
+</div>
+<div><script type="text/javascript">
+<!--
+$(document).ready(function() {
+
+$(".opendiv").colorbox({width:"790px",height:"550px",inline:true, href:function(){
+    var elementID = $(this).attr('href');
+		return elementID; 
+}}); 
+
+});
+
+-->
+</script>
+</div>
+
+<script>
+    var swiper = new Swiper('.swiper-container', {
+      slidesPerView: 5,
+      spaceBetween: 30
+    });
+  </script>
+
+	<script type="text/javascript">
+	$(document).ready(function(){
+		$(".group1, .pullImage>figure>a").colorbox({rel:'group1',scalePhotos:true,maxHeight:'90%',maxWidth:'90%'});
+		$(".callbacks").colorbox({
+			onOpen:function(){ alert('onOpen: colorbox is about to open'); },
+			onLoad:function(){ alert('onLoad: colorbox has started to load the targeted content'); },
+			onComplete:function(){ alert('onComplete: colorbox has displayed the loaded content'); },
+			onCleanup:function(){ alert('onCleanup: colorbox has begun the close process'); },
+			onClosed:function(){ alert('onClosed: colorbox has completely closed'); }
+		});
+	$("#click").click(function(){ 
+		$('#click').css({"background-color":"#f00", "color":"#fff", "cursor":"inherit"}).text("Open this window again and this message will still be here.");
+		return false;
+	});
+	});
+	</script></body>
+</html>

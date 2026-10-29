@@ -4,4 +4,7 @@ Tom Kilburn, Manchester University with Ferranti. Commissioned Dec 1962; arguabl
 
 Bluespec implementation: `bsv/` (not started).
 
+See [`plan.md`](plan.md) for the staged reproduction plan and
+[`docs/README.md`](docs/README.md) for the local primary-source inventory.
+
 Sources: Kilburn et al., "One-Level Storage System" (IRE Trans. EC-11, 1962); *Ferranti Atlas Programming Manual*; Lavington, *A History of Manchester Computers*.
