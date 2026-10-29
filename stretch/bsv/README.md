@@ -473,6 +473,22 @@ card X22-6533 and written by no deck — so building them would be
 manual-derived with no oracle, and `rl_xmit`'s sign handling would
 carry them unchanged the day one turns up.
 
+> **>>> THAT JUSTIFICATION IS FALSE, AND THIS IS THE ONE SENTENCE IN
+> THIS FILE THAT WAS LOAD-BEARING FOR A REFUSAL. <<<** "Written by no
+> deck" is true; **"nothing in this corpus encodes one" is not.**
+> `C22-6578`, which is in `docs/` with OCR, prints `SWAPBI` TWICE as a
+> worked example:
+>
+> * **printed p.5, Problem 1.2, Method 1** — "Use immediate swap
+>   instructions": `SWAPI, 2, DOG, CAT` **or**
+>   `SWAPBI, 2, DOG +1.0, CAT +1.0`
+> * **printed p.6, Problem 1.3** — `SWAPBI, K, DOG + N-K-1`
+>
+> So backward SWAP is **buildable with two printed oracles**, not
+> blocked. It is one of the four items left on StretchExecute's scope
+> list, and the cheapest of them. Found 2026-10-29 by a census of the
+> worked examples; verified at the OCR before this note was written.
+
 **WHAT CHECKS THE FORWARD FORMS:** `decks/swap_scope.strap`, five
 blocks, every expected value computed from Reference Manual printed
 p.30 before the arm existed. Block 1 is IBM's own `jb_ax4b` routine

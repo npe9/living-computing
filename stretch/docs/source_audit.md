@@ -1688,3 +1688,105 @@ one.
    mechanically observable: the conf table at 1962-1964; `S COM RG`
    (word 1129) bits .8/.9 for A3's mode; the MCPP card's arrival at
    2990; and the IOD card's columns 63-72.
+
+# >>>>>> G2 RE-CENSUSED, 2026-10-29: THE POOL G2.1 SIZES IS THE LOWEST-YIELDING <<<<<<
+
+G2.1 says "Six run, four found bugs; ~45 exist and ~40 remain" and
+sizes the pool from `C22-6578`. A census corrects the counts and —
+more usefully — shows the sizing is pointed at the **wrong document**.
+
+## The counts
+
+* **`C22-6578` has exactly 44 problems, not ~45.** All 44 `^PROBLEM`
+  headings recovered (1.1-1.9, 2.1-2.12, 3.1-3.10, 4.1-4.13), matching
+  its own table of contents. **41 remain.**
+* **NINE worked examples are done, not six.** The campaign six are
+  {RefMan Fig 12, Fig 14, P1.6, `R23-9694` p.51 Ex.3, p.82, A4.8};
+  RefMan Fig 7, P2.1 and P2.2 predate the framing and were mined as
+  ordinary decks.
+* **`docs/NEXT.md:13658-13662` contradicts itself**: it says the
+  Reference Manual "has 49 numbered figures, of which **13** are
+  programs", then lists **fifteen** (7, 8, 9, 10, 12, 14, 15, 17, 18,
+  19, 21, 28, 29, 31, 33). All fifteen carry programs; **12 remain.**
+
+## >>> AND THE HIT RATE INVERTS THE PLAN <<<
+
+| document | finds / attempts |
+|---|---|
+| **Reference Manual program figures** | **2 / 2** |
+| `R23-9694` | 1 / 2 |
+| `C22-6578` | **1 / 4** |
+
+G2.1 sizes the worklist from `C22-6578`, which is the **lowest**-yielding
+of the three. The Reference Manual's figures are two-for-two and there
+are twelve of them left.
+
+## Three stale claims, each with a consequence
+
+**(a) `/`, `CV` and `LTRCV` are BUILT and three files still call them
+refused** — `bsv/README.md`'s census (dated 2026-10-25),
+`tests/audit_opcode_coverage.py`'s `ENCODING_ONLY` set, and
+`NEXT.md:1382`. The arms are at `StretchExecute.bsv:2860`, `:3442`,
+`:3514`, each with a deck and a registration. By this project's own
+rule — a scope list is a measurement with a date on it — all three want
+re-dating.
+
+**(b) `VflAddr.i2` is decoded and read NOWHERE.** Extracted at
+`StretchDecode.bsv:117`; the only `.i2` reads in the model are I/O and
+Transmit. Reference Manual printed p.21: *"In the variable field
+instructions, the 19 bits which form the length, byte size, and offset
+field are indexed as a single field. Carries between parts of this
+field, if present, are not suppressed."* `strap_asm.py:134-138` already
+records it, but it is **absent from `bsv/README.md`'s "decoded but not
+executed" list**, so the scope list does not know.
+
+**(c) `SWAPB`/`SWAPBI`'s refusal rests on a false premise — CORRECTED
+IN `bsv/README.md` TODAY.** That file said "nothing in this corpus
+encodes one … building them would be manual-derived with no oracle."
+`C22-6578` prints `SWAPBI` twice, **printed p.5 Problem 1.2 Method 1**
+(`SWAPBI, 2, DOG +1.0, CAT +1.0`) and **printed p.6 Problem 1.3**.
+Verified at the OCR. Backward SWAP is buildable with two printed
+oracles and is the cheapest of the four items left on
+`StretchExecute`'s scope list.
+
+**(d) Problem 4.5's recorded blocker is the wrong one.**
+`NEXT.md:13678-13690` says it is blocked on `$AOC`/`$LZC`, which were
+**built on 2026-10-20**. Its real blocker is (b): its own comment says
+*"The second I field in a VFL instruction can be used to index the
+field length and byte size besides the offset."*
+
+## What is actually blocked — and it is never the source
+
+Every candidate document is already in `docs/` with OCR. **The blocked
+axis is INSTRUCTION-blocked**: `RNX` (RefMan Fig 9), decimal VFL plus
+`KE`/`KR`/`KFE`/`KFR` (Figs 15, 17, 18; problems 2.3, 2.8, 4.2),
+`DCV` (Fig 19 — one arm away, and the only printed oracle for the
+radix-conversion family), and the `i2` field (4.5).
+
+## The one to do next: Reference Manual FIGURE 21, printed p.77
+
+Three connective statements that shift the 128-bit accumulator left ten
+places: `C0011(BU,54,8),8.10,74` / `C0011(BU,64,8),9.0,10` /
+`C0000(BU,10,8),0,0`.
+
+**The discriminator is measured, not aesthetic.** Words 8 and 9 ARE the
+accumulator (`StretchTypes.bsv:62-63`). A census of **1,219**
+connective statements across every deck found **ZERO** naming word 8 or
+9 as a storage operand. Figure 21 does it twice — both operands the
+same register, an unexercised read-modify-write ordering case, in an
+arm whose offset handling `bsv/README.md` records as having been wrong
+once already ("built as a rounded-down byte offset on three strands of
+manual reading, and fifty-six sections of `jb_af1c` killed it"). Its
+note 1 also reasons about avoiding a **partial field**, which is
+explicitly not implemented for connectives.
+
+Three statements, every arm built, source in hand, and the document it
+comes from is two-for-two.
+
+**Runner-up, to take second rather than instead: `C22-6578` Problem
+1.7, printed pp.9-10** — interrupt free-instruction entry, two
+statements, targeting what `NEXT.md:1491` calls the single
+highest-value item (the interruption mechanism is manual-derived only).
+Its comment (d) states a corner no deck exercises: *"The SIC action is
+not performed unless the ensuing branch is successful, and even then it
+is performed AFTER the execution of the branch."*
