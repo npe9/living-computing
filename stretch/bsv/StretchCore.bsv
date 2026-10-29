@@ -1292,32 +1292,37 @@ module mkStretchCore(StretchCore);
         if (fetchesOperand(di)) begin
           // Side-effect-free probe: execute() with no operand bails
           // out with the address of the operand it needs.
-          // The fifth member is a multi-word TRANSMIT, which this
-          // probe can never produce: a transmit is only started once
-          // its first operand word has arrived, and this call passes
-          // none.  Bound and ignored so the pattern still matches the
-          // tuple's shape.
-          let {next, vflPending, ioStart, needsRead, probeXmit} <-
-            ebox.exec(pc, len, di, replicate(0), 0, isValid(intPC));
-          // >>> THE ADDRESS NOW COMES FROM THE PURE FUNCTION. <<<
-          // `operandTarget` was run beside this probe across the whole
-          // suite and there was not ONE address disagreement in 5621
-          // checks (docs/ebox_roadmap.md, "Step 1, measured").  The
-          // probe survives only to answer the OTHER question it was
-          // smuggling through `Maybe`: "does this instruction complete
-          // immediately?", which AD, OP, DF-suppression and the
-          // crossing store can each cause.  That is a real outcome and
-          // needs the typed dispatch of step 2 to be representable; it
-          // is why the probe cannot simply be deleted here.
-          if (needsRead matches tagged Valid .a) da = operandTarget(st, di);
-          else begin
-            // Classified as fetching but completed: treat as executed.
-            $display("StretchCore: E-box instruction at %0d executed at preparation (classification mismatch)", pc);
-            commitNext(pc, len, next);
-            pendingIdxWrite <= vflPending;
-            ioPending <= ioStart;
-            loaded = False;
-          end
+          // A multi-word TRANSMIT cannot come back from this call: a
+          // transmit is only started once its first operand word has
+          // arrived, and this call passes none.  It rides in the
+          // `Complete` variant with the rest of the effects, and the
+          // mismatch arm below forwards them all rather than naming
+          // them one at a time.
+          let r <- ebox.exec(pc, len, di, replicate(0), 0, isValid(intPC));
+          // >>> THE ADDRESS COMES FROM THE PURE FUNCTION, AND THE
+          // DISPATCH IS NOW A TYPED SUM. <<<  `operandTarget` was run
+          // beside this probe across the whole suite and there was not
+          // ONE address disagreement in 5621 checks
+          // (docs/ebox_roadmap.md, "Step 1, measured"), so
+          // `NeedOperand`'s address is discarded in favour of it.
+          //
+          // The probe survives only for the OTHER answer, which it used
+          // to smuggle through the same `Maybe#(WordAddr)`: "this
+          // instruction is already FINISHED" -- which AD, OP,
+          // DF-suppression and the crossing store can each cause. That
+          // is now `Complete`, a variant of its own, which is what
+          // deleting this call will need.
+          case (r) matches
+            tagged NeedOperand .*: da = operandTarget(st, di);
+            tagged Complete .d: begin
+              // Classified as fetching but completed: treat as executed.
+              $display("StretchCore: E-box instruction at %0d executed at preparation (classification mismatch)", pc);
+              commitNext(pc, len, d.next);
+              pendingIdxWrite <= d.idxWrite;
+              ioPending <= d.ioStart;
+              loaded = False;
+            end
+          endcase
         end
         if (loaded) begin
           // Store-close-to-fetch (plan stage 3a note): if this level

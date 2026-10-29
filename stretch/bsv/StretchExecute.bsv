@@ -2225,20 +2225,51 @@ function ActionValue#(Word64) fpArithClass(StretchStorage st, Bit#(7) c,
   endactionvalue
 endfunction
 
-// What execute() hands back: the next instruction address, progressive
-// indexing's deferred index write, an I/O transfer to start, and the
-// word a still-unsatisfied operand read wants.  Declared here rather
-// than beside mkEBox at the foot of the file so execute() can name it;
-// BSV needs the typedef before its first use, which is the only reason
-// the signature used to spell the Tuple4 out longhand and the call
-// sites read it through tpl_1..tpl_4.
+// What a completed instruction hands back to the instruction unit.
+// (Declared here, above execute(), because BSV needs a typedef before
+// its first use.)
+typedef struct {
+  HWordAddr next;                              // next instruction address
+  Maybe#(Tuple2#(Bit#(4), IndexWord)) idxWrite; // progressive indexing's part 2
+  Maybe#(IoXfer) ioStart;                      // an RD/W transfer to service
+  Maybe#(XmitXfer) xmitStart;                  // a multi-word TRANSMIT
+} ExecDone deriving (Bits, Eq, FShow);
+
+// >>> WHAT execute() HANDS BACK IS A SUM, AND IT USED TO BE SPELLED AS
+// A PRODUCT. <<<  This was
 //
-// A FIFTH MEMBER WAS APPENDED RATHER THAN INSERTED, 2026-10-18: the
-// multi-word TRANSMIT's transfer goes LAST so that needsRead stays
-// tpl_4 and every existing call site reads unchanged.
-typedef Tuple5#(HWordAddr, Maybe#(Tuple2#(Bit#(4), IndexWord)),
-                Maybe#(IoXfer), Maybe#(WordAddr),
-                Maybe#(XmitXfer)) ExecResult;
+//     typedef Tuple5#(HWordAddr, Maybe#(Tuple2#(Bit#(4), IndexWord)),
+//                     Maybe#(IoXfer), Maybe#(WordAddr),
+//                     Maybe#(XmitXfer)) ExecResult;
+//
+// read through `tpl_1`..`tpl_5`, with a comment explaining that a fifth
+// member had been APPENDED rather than inserted so that `needsRead`
+// would stay `tpl_4` and no call site would have to change.  That is
+// protocol debt describing itself.
+//
+// THE TUPLE COULD REPRESENT STATES execute() NEVER PRODUCES -- complete
+// AND requesting an operand, or an I/O transfer to start alongside an
+// unsatisfied read.  The two `return`s at the foot of execute() show
+// what it actually produces: one fills four members and leaves
+// `needsRead` Invalid; the other sets `next` to `pc` and forces the
+// other three to Invalid *because it is a different answer*.
+//
+// So they are variants.  `NeedOperand` is the address
+// `StretchIBox`'s `operandTarget` computes purely; `Complete` carries
+// the finished instruction's effects.  The combinations that cannot
+// happen are now unrepresentable rather than merely unproduced.
+//
+// AND THIS IS WHAT UNBLOCKS DELETING THE PROBE.  `docs/ebox_roadmap.md`
+// records the measurement: the probe was smuggling TWO answers through
+// one `Maybe#(WordAddr)` -- "I need word A", and "I am already
+// finished", which AD, OP, DF-suppression and the crossing store can
+// each cause.  "Completes immediately" is a real outcome, and it needs
+// a variant of its own before the preparation arm can stop asking
+// execute() to discover it.
+typedef union tagged {
+  ExecDone Complete;
+  WordAddr NeedOperand;
+} ExecDispatch deriving (Bits, Eq, FShow);
 
 // ---------------------------------------------------------------------
 // VFL INTEGER ARITHMETIC (binary mode only; decimal is out of scope,
@@ -5020,7 +5051,7 @@ function ActionValue#(IoOutcome)
   endactionvalue
 endfunction
 
-function ActionValue#(ExecResult)
+function ActionValue#(ExecDispatch)
     execute(StretchStorage st, StretchIO io, HWordAddr pc, InstrLen len, DecodedInstr di,
             Vector#(2, Word64) prefetch, Bit#(2) prefetchCount, Bool atIntAddr,
             ExSubject ex) =
@@ -6388,15 +6419,15 @@ function ActionValue#(ExecResult)
       if (ind[48] == 1 && indEntry[48] == 0)
         $display("StretchCore: OP SET by the instruction at half-word %0d", pc);
       st.setIndicatorBits(ind);
-      return tuple5(next, vflPending, ioStart, tagged Invalid, xmitStart);
+      return tagged Complete ExecDone{ next: next, idxWrite: vflPending,
+                                       ioStart: ioStart, xmitStart: xmitStart };
     end else begin
       // Bailed out partway through: the arm that set `needsRead` did
       // so before touching any of these, so returning the function-
       // ENTRY values here (not whatever partial computation produced)
       // is correct by construction -- see this function's own header
       // comment.
-      return tuple5(pc, tagged Invalid, tagged Invalid, needsRead,
-                    tagged Invalid);
+      return tagged NeedOperand validValue(needsRead);
     end
   endactionvalue;
 
@@ -6412,15 +6443,7 @@ function ActionValue#(ExecResult)
 // call sites are mutually-exclusive branches of step(), so they share
 // this one instance's method port. (This step alone is behavior-neutral
 // scaffolding; step 2 makes the FP/VFL datapath multi-cycle boxes.)
-// (ExecResult is declared above execute(), which needs it.)
-
-// What a completed instruction hands back to the instruction unit.
-typedef struct {
-  HWordAddr next;                              // next instruction address
-  Maybe#(Tuple2#(Bit#(4), IndexWord)) idxWrite; // progressive indexing's part 2
-  Maybe#(IoXfer) ioStart;                      // an RD/W transfer to service
-  Maybe#(XmitXfer) xmitStart;                  // a multi-word TRANSMIT
-} ExecDone deriving (Bits, Eq, FShow);
+// (ExecDone and ExecDispatch are declared above execute(), which needs them.)
 
 // Who dispatched the operation the E-box is holding: the instruction
 // unit directly (an I-box-class instruction executing in preparation)
@@ -6456,7 +6479,7 @@ typedef struct {
 } HeldOp deriving (Bits, Eq, FShow);
 
 interface EBox;
-  method ActionValue#(ExecResult)
+  method ActionValue#(ExecDispatch)
     exec(HWordAddr pc, InstrLen len, DecodedInstr di,
          Vector#(2, Word64) prefetch, Bit#(2) prefetchCount, Bool atIntAddr);
   method ActionValue#(Maybe#(ExecDone))
@@ -6510,11 +6533,7 @@ module mkEBox #(StretchStorage st, StretchIO io) (EBox);
   // as they are blocked while a read is outstanding.
   Reg#(Bool)               subjReady     <- mkReg(False);
 
-  function ExecDone doneOf(ExecResult r) =
-    ExecDone { next: tpl_1(r), idxWrite: tpl_2(r), ioStart: tpl_3(r),
-               xmitStart: tpl_5(r) };
-
-  method ActionValue#(ExecResult)
+  method ActionValue#(ExecDispatch)
       exec(HWordAddr pc, InstrLen len, DecodedInstr di,
            Vector#(2, Word64) pf, Bit#(2) cnt, Bool atIntAddr);
     // The preparation arm's side-effect-free operand-address probe.
@@ -6534,17 +6553,19 @@ module mkEBox #(StretchStorage st, StretchIO io) (EBox);
     // word and becomes the held instruction; resume() takes it from
     // there.
     let r <- execute(st, io, pc, len, di, pf, cnt, atIntAddr, notSubject);
-    if (tpl_4(r) matches tagged Valid .a) begin
-      st.readWordReq(a);
-      held <= tagged Valid HeldOp{pc: pc, len: len, di: di,
-                                  atIntAddr: atIntAddr, ex: notSubject,
-                                  exic: tagged Invalid};
-      prefetch <= pf;
-      prefetchCount <= cnt;
-      owner <= o;
-      return tagged Invalid;
-    end else
-      return tagged Valid doneOf(r);
+    case (r) matches
+      tagged NeedOperand .a: begin
+        st.readWordReq(a);
+        held <= tagged Valid HeldOp{pc: pc, len: len, di: di,
+                                    atIntAddr: atIntAddr, ex: notSubject,
+                                    exic: tagged Invalid};
+        prefetch <= pf;
+        prefetchCount <= cnt;
+        owner <= o;
+        return tagged Invalid;
+      end
+      tagged Complete .d: return tagged Valid d;
+    endcase
   endmethod
 
   method Bool busy() = isValid(held);
@@ -6774,7 +6795,8 @@ module mkEBox #(StretchStorage st, StretchIO io) (EBox);
       return tagged Invalid;
     end else begin
       let r <- execute(st, io, rpc, rlen, rdi, rpf, rcnt, h.atIntAddr, rex);
-      if (tpl_4(r) matches tagged Valid .a) begin
+      case (r) matches
+      tagged NeedOperand .a: begin
         st.readWordReq(a);
         // Rewritten rather than left alone: on a subject swap `rdi` and
         // `rex` are new, and on an ordinary operand arrival they are
@@ -6785,10 +6807,12 @@ module mkEBox #(StretchStorage st, StretchIO io) (EBox);
         prefetch <= rpf;
         prefetchCount <= rcnt;
         return tagged Invalid;
-      end else begin
-        held <= tagged Invalid;
-        return tagged Valid doneOf(r);
       end
+      tagged Complete .d: begin
+        held <= tagged Invalid;
+        return tagged Valid d;
+      end
+      endcase
     end
   endmethod
 endmodule
