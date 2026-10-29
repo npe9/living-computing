@@ -1287,6 +1287,10 @@ module mkStretchCore(StretchCore);
     end
     else if (prepared matches tagged Valid {.len, .di} &&& isEboxClass(di)) begin
       if (la.count() < 4 && !progressivePending) begin
+        // ONE derivation of this instruction's addresses, used for both
+        // the operand read below and the level's storeAddr further
+        // down -- see StretchIBox's prepareExec.
+        let prep = prepareExec(st, di);
         Maybe#(WordAddr) da = tagged Invalid;
         Bool loaded = True;
         if (fetchesOperand(di)) begin
@@ -1313,7 +1317,7 @@ module mkStretchCore(StretchCore);
           // is now `Complete`, a variant of its own, which is what
           // deleting this call will need.
           case (r) matches
-            tagged NeedOperand .*: da = operandTarget(st, di);
+            tagged NeedOperand .*: da = prep.operandAddr;
             tagged Complete .d: begin
               // Classified as fetching but completed: treat as executed.
               $display("StretchCore: E-box instruction at %0d executed at preparation (classification mismatch)", pc);
@@ -1361,7 +1365,7 @@ module mkStretchCore(StretchCore);
           end
           la.load(LaLevel{valid: True, kind: Whole, di: di, pc: pc, len: len, da: da,
                           data: tagged Invalid, fetchIssued: False, waitFor: wf,
-                          branch: False, target: 0, storeAddr: storeTarget(st, di)});
+                          branch: False, target: 0, storeAddr: prep.storeAddr});
           pcReg <= pc + ((len == Full) ? 2 : 1);
           ibusy <= 2 * iboxCycles(di, False);   // its preparation time
         end

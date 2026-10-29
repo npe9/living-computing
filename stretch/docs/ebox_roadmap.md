@@ -201,3 +201,77 @@ in a predicate would duplicate the dispatch it is meant to replace.
 address source, then do step 2's typed result, and only then delete
 `EBox.exec`. Deleting the probe first would mean inventing a predicate
 for "does the model implement this", which is the wrong direction.
+
+# Step 3, scoped: all eight "completes without fetching" causes, named
+
+The step-1 measurement said eight instructions in the corpus are
+classified as fetching and then complete without a read, and that the
+third cause looked like "will `execute()` set OP?", which is a
+statement about which arms exist. **Measured properly, it is not.** A
+second instrumented run printed, for each of the eight, the address and
+every candidate condition, then mapped each to its test section:
+
+| cause | n | condition, and it is PURE |
+|---|---|---|
+| DF suppression | 3 | `dfSuppresses(st, addr)` — already a pure function |
+| address not installed (AD) | 2 | `!installed(addr)` |
+| **CV reads the accumulator** | 2 | not a completion at all: `fetchesOperand` OVER-REPORTS |
+| **M+ crossing a word boundary** | 1 | `fieldCrosses(ea, len_)` — pure arithmetic |
+
+One per class for DF (VflInt, Connective, Fp), which is a good sign the
+three arms agree.
+
+**The two surprises are the useful part.**
+
+`CV`'s mismatches both had `addr = 8` — the ACCUMULATOR. printed p.73,
+quoted at the arm: *"A field from the accumulator is converted as an
+integer from binary to decimal..."*. CV has no storage operand, so
+`fetchesOperand` returning True for it (because `v.a.p != 4`) is wrong,
+and the probe was compensating. `LTRCV` is different — *"The addressed
+STORAGE field is converted"* — so it genuinely fetches. The fix is to
+NARROW `fetchesOperand`, not to add a completion clause.
+
+`M+`'s was in `decks/vfl_crossing_store.strap`, whose own source says
+what it expects:
+
+```
+        M+(BU,32,8), TF+.48
+        BZOP, $                      ! hang if OP did NOT come on
+```
+
+`protViolates`'s comment already recorded why: a STORE may cross a word
+boundary as of 2026-10-24, but *"the remaining one-word-each sites are
+the ones that still cannot cross: M+ and the CM connective."*
+
+**And reading the VflInt arm for this turned up two more pure OP causes
+the corpus does not currently reach** — `vi.m.decimal == 1 && !radixConv`
+and `isProgressive && vi.a.i1 == 0`. Both are conditions on the decoded
+instruction. So the predicate is enumerable, with roughly six clauses,
+and none of them requires knowing which arms exist.
+
+> **>>> WHICH IS WHY THE NEXT STEP WAS NOT TO WRITE THAT PREDICATE.
+> <<<** Every clause needs `ea` and `len_`, and a review of this file
+> had just named the real problem: the effective address was being
+> derived in THREE independently maintained places — `operandTarget`,
+> `storeTarget`, and the arms of `execute()`. A predicate with its own
+> derivation would have been a FOURTH.
+>
+> So `prepareExec` came first: one pure function, one `ea` per class,
+> returning a `PreparedExec` record, with `operandTarget` and
+> `storeTarget` reduced to projections out of it and `rl_prepare`
+> calling it once for both. The completion prediction is then one more
+> field on a record that already has the derivation, rather than a new
+> copy of it.
+
+**Order for the rest of step 3**, each with the same oracle — run it
+beside the probe and require ZERO mismatches before deleting anything:
+
+1. Narrow `fetchesOperand` to exclude CV. (Expect the two CV mismatches
+   to disappear and nothing else to move.)
+2. Add `completesWithoutFetch` to `PreparedExec`, with the six clauses
+   above.
+3. Only then delete `EBox.exec`. Note what that does and does not buy:
+   preparation stops calling execution *speculatively*, but the
+   completion's own effects still come from running `execute()` through
+   the ordinary dispatch path. It removes a query that commits, not the
+   interpreter.

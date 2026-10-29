@@ -41,124 +41,94 @@ function Bool fetchesOperand(DecodedInstr d);
     default: return False;
   endcase
 endfunction
-// >>> THE OPERAND ADDRESS, AS A PURE FUNCTION. <<<
+// >>> ONE PURE DERIVATION OF AN INSTRUCTION'S ADDRESSES. <<<
 //
-// This replaces a protocol `docs/ebox_roadmap.md` step 1 names as the
-// first thing to remove: `rl_prepare` used to call `ebox.exec` with no
-// operands so that `execute()` would "bail out" with the address it
-// wanted.  That made execution serve as BOTH a supposedly
+// `prepareExec` is the beginning of the prepared bundle
+// `docs/ebox_roadmap.md` asks for.  It exists because the effective
+// address was being derived in THREE independently maintained places --
+// here, in `storeTarget` below, and in the arms of `execute()` itself --
+// and a review of this file named that as the thing to fix before
+// adding a fourth.  `operandTarget` and `storeTarget` are now both
+// projections out of this one record, so the `ea` arithmetic and the
+// progressive-indexing rule are written once.
+//
+// IT REPLACES A PROTOCOL, TOO.  `rl_prepare` used to call `ebox.exec`
+// with no operands so `execute()` would "bail out" with the address it
+// wanted, which made execution serve as both a supposedly
 // side-effect-free query and the operation that commits architectural
-// effects, so every instruction arm had to do no irreversible work
-// before noticing an operand was missing -- a contract no type
-// enforces.  (It was untested until this function existed: running the
-// two side by side across the corpus IS the test for it, and the result
-// is in docs/ebox_roadmap.md -- not one address disagreement in 5621
-// checks, and eight cases where the probe was answering a different
-// question entirely.)
+// effects -- a contract no type enforces.  Running this against that
+// probe across the corpus is what tested it: not one address
+// disagreement in 5621 checks.
 //
-// The surface is small, because `fetchesOperand` above admits only
-// three classes, and the address arithmetic is the same shape
-// `storeTarget` below already uses.
-//
-// >>> THE ONE PLACE A COPY OF THAT SHAPE CAN SILENTLY DIVERGE: `p` HAS
-// THREE STATES, NOT TWO. <<<  `p == 4` fetches nothing (so
-// `fetchesOperand` is false and this is never asked); `p == 0` is an
-// ordinary effective address; any other `p` is PROGRESSIVE INDEXING,
-// where the address comes from the index register rather than from the
-// instruction.  `fetchesOperand` collapses the last two, and
-// `rl_prepare`'s `progressivePending` gate proves those paths are live,
-// so getting this wrong would disagree on every progressively-indexed
-// fetch.  Hence the same `prog` split as `storeTarget`.
-function Maybe#(WordAddr) operandTarget(StretchStorage st, DecodedInstr d);
+// >>> THE PLACE A COPY OF THIS SHAPE SILENTLY DIVERGES: `p` HAS THREE
+// STATES, NOT TWO. <<<  `p == 4` is immediate and addresses no storage;
+// `p == 0` is an ordinary effective address; any other `p` is
+// PROGRESSIVE INDEXING, where the address comes from the index register
+// rather than from the instruction.  `fetchesOperand` collapses the
+// last two, and `rl_prepare`'s `progressivePending` gate proves those
+// paths are live.
+typedef struct {
+  Maybe#(WordAddr) operandAddr;   // the word a storage operand read wants
+  Maybe#(WordAddr) storeAddr;     // the word the instruction writes back
+} PreparedExec deriving (Bits, Eq, FShow);
+
+function PreparedExec prepareExec(StretchStorage st, DecodedInstr d);
   case (d) matches
     tagged VflInt .v: begin
-      if (v.a.p == 4) return tagged Invalid;
-      else begin
-        Bool prog = (v.a.p != 0 && v.a.p != 4);
-        BitAddr ea = prog ? st.readIndex(v.a.i1).addr
-                          : effAddr24(st, v.a.addr, v.a.i1);
-        return tagged Valid ea[23:6];
-      end
+      // Derived exactly as the VflInt arm of execute() derives it (see
+      // its `ea`): progressive takes the index register's own address.
+      Bool prog = (v.a.p != 0 && v.a.p != 4);
+      BitAddr ea = prog ? st.readIndex(v.a.i1).addr
+                        : effAddr24(st, v.a.addr, v.a.i1);
+      WordAddr w = ea[23:6];
+      // The four storing VflInt operations: ST, M+, M+MG, M+1.
+      Bool stores = (v.code == 6'b001101) || (v.code == 6'b001001)
+                 || (v.code == 6'b101001) || (v.code == 6'b101011);
+      return PreparedExec {
+        operandAddr: (v.a.p == 4) ? tagged Invalid : tagged Valid w,
+        storeAddr:   stores       ? tagged Valid w : tagged Invalid };
     end
     tagged Connective .c: begin
-      if (c.a.p == 4) return tagged Invalid;
-      else begin
-        Bool prog = (c.a.p != 0 && c.a.p != 4);
-        BitAddr ea = prog ? st.readIndex(c.a.i1).addr
-                          : effAddr24(st, c.a.addr, c.a.i1);
-        return tagged Valid ea[23:6];
-      end
+      Bool prog = (c.a.p != 0 && c.a.p != 4);
+      BitAddr ea = prog ? st.readIndex(c.a.i1).addr
+                        : effAddr24(st, c.a.addr, c.a.i1);
+      WordAddr w = ea[23:6];
+      return PreparedExec {
+        operandAddr: (c.a.p == 4) ? tagged Invalid : tagged Valid w,
+        // C and CT are excluded: C writes the accumulator and CT writes
+        // nothing, so neither is a store.  See storeTarget's note on
+        // how CM's absence here was found.
+        storeAddr: (c.suffix == conn_CM) ? tagged Valid w : tagged Invalid };
     end
-    // FP L only; ST fetches nothing, and the FP format has no
-    // progressive indexing, which is why there is no `prog` split here.
-    tagged Fp .f:
-      if (f.code == fpop_L) return tagged Valid effAddr18(st, f.addr, f.idx);
-      else return tagged Invalid;
-    default: return tagged Invalid;
+    tagged Fp .f: begin
+      // The FP format has no progressive indexing, which is why there
+      // is no `prog` split here.
+      WordAddr w = effAddr18(st, f.addr, f.idx);
+      Bool stores = (f.code == fpop_ST) || (f.code == fpop_M_PLUS)
+                 || (f.code == fpop_M_PLUS_MG) || (f.code == fpop_SRD)
+                 || (f.code == fpop_SLO) || (f.code == fpop_SRT);
+      return PreparedExec {
+        // FP L only; ST fetches nothing.
+        operandAddr: (f.code == fpop_L) ? tagged Valid w : tagged Invalid,
+        storeAddr:   stores             ? tagged Valid w : tagged Invalid };
+    end
+    default: return PreparedExec { operandAddr: tagged Invalid,
+                                   storeAddr:   tagged Invalid };
   endcase
 endfunction
+
+function Maybe#(WordAddr) operandTarget(StretchStorage st, DecodedInstr d) =
+  prepareExec(st, d).operandAddr;
 
 // The word an E-box level stores to (Fp ST/M+/M+MG, VflInt
 // ST/M+/M+MG/M+1), for the store-close-to-fetch hazard; Invalid for a
 // level that writes only the accumulator (L/+/E+/F+/SHF/*/D*/*+) or
 // nothing; LFT writes only the factor register, word 14.
-function Maybe#(WordAddr) storeTarget(StretchStorage st, DecodedInstr d);
-  case (d) matches
-    tagged Fp .f:
-      if (f.code == fpop_ST || f.code == fpop_M_PLUS || f.code == fpop_M_PLUS_MG
-          || f.code == fpop_SRD || f.code == fpop_SLO    // SRD and SLO write theirs too
-          || f.code == fpop_SRT)                           // SRT stores the root there
-        return tagged Valid effAddr18(st, f.addr, f.idx);
-      else return tagged Invalid;
-    tagged VflInt .v:
-      if (v.code == 6'b001101 || v.code == 6'b001001 || v.code == 6'b101001 || v.code == 6'b101011) begin
-        Bool prog = (v.a.p != 0 && v.a.p != 4);
-        BitAddr ea = prog ? st.readIndex(v.a.i1).addr : effAddr24(st, v.a.addr, v.a.i1);
-        return tagged Valid ea[23:6];
-      end else return tagged Invalid;
-    // >>> CONNECT TO MEMORY WRITES STORAGE AND WAS MISSING HERE. <<<
-    // The connectives ARE isEboxClass, so they do get look-ahead
-    // levels -- unlike BB above, a case here is not dead code -- and
-    // without it the level-to-level storeAddr interlock could never
-    // fire for a CM.  A younger level fetching the word a CM is about
-    // to write therefore took its copy BEFORE the write, and because
-    // CM's store is a read-modify-write that reuses the fetched word
-    // (`mHiWord` in StretchExecute's Conn arm), the stale copy was
-    // written straight back -- undoing the CM before it.
-    //
-    // FOUND VIA MCP printed p.19 lines 9-11, which set three single
-    // bits in the channel status table entry in a row; the first was
-    // lost.  decks/cm_adjacent_offsets.strap is the isolated
-    // reproducer, and what identified it as state rather than
-    // arithmetic is that the SAME instruction pair on the SAME data
-    // gave two different answers depending only on what preceded it.
-    //
-    // The address is computed exactly as the VflInt case above does,
-    // because the Conn arm computes its own `ea` the same way.
-    // C and CT are excluded: C writes the accumulator and CT writes
-    // nothing, so neither is a store.
-    //
-    // THE REST OF THIS LIST WAS AUDITED WHEN THIS CASE WAS ADDED, and
-    // CM was the only gap.  The VflInt arm implements four storing
-    // operations and all four are above; the Fp arm's writes to the
-    // effective address are ST/SRD/SLO, SRT and M+/M+MG, and all six
-    // are above.  BB and SIC write storage and are deliberately
-    // absent because neither is isEboxClass -- iboxHazard drains the
-    // whole look-ahead before they run, which is stronger.
-    //
-    // THE INVARIANT: every isEboxClass instruction that writes
-    // general storage needs a case here, and only those.  SRD, CV and
-    // DCV are not implemented yet and will each need one.
-    tagged Connective .c:
-      if (c.suffix == conn_CM) begin
-        Bool prog = (c.a.p != 0 && c.a.p != 4);
-        BitAddr ea = prog ? st.readIndex(c.a.i1).addr
-                          : effAddr24(st, c.a.addr, c.a.i1);
-        return tagged Valid ea[23:6];
-      end else return tagged Invalid;
-    default: return tagged Invalid;
-  endcase
-endfunction
+// (The derivation itself now lives in `prepareExec` above, so the `ea`
+// arithmetic is written once; everything above this line is why each
+// opcode is or is not in the storing set.)
+function Maybe#(WordAddr) storeTarget(StretchStorage st, DecodedInstr d) =
+  prepareExec(st, d).storeAddr;
 
 function Bool hasProgressive(DecodedInstr d);
   case (d) matches
