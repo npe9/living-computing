@@ -225,7 +225,7 @@ function Word64 packControlWord(ControlWord c);
 endfunction
 
 // A started-but-not-yet-drained input-output word transfer, threaded
-// from StretchExecute's IoOp case out to StretchCore.step()'s FSM
+// from StretchExecute's IoOp case out to StretchCore's I/O FSM
 // exactly the way progressive indexing's index-register write is
 // threaded out via the Maybe#(Tuple2#(...)) already returned by
 // execute() -- see StretchCore.bsv for why this has to be a multi-cycle

@@ -41,6 +41,63 @@ function Bool fetchesOperand(DecodedInstr d);
     default: return False;
   endcase
 endfunction
+// >>> THE OPERAND ADDRESS, AS A PURE FUNCTION. <<<
+//
+// This replaces a protocol `docs/ebox_roadmap.md` step 1 names as the
+// first thing to remove: `rl_prepare` used to call `ebox.exec` with no
+// operands so that `execute()` would "bail out" with the address it
+// wanted.  That made execution serve as BOTH a supposedly
+// side-effect-free query and the operation that commits architectural
+// effects, so every instruction arm had to do no irreversible work
+// before noticing an operand was missing -- a contract no type
+// enforces.  (It was untested until this function existed: running the
+// two side by side across the corpus IS the test for it, and the result
+// is in docs/ebox_roadmap.md -- not one address disagreement in 5621
+// checks, and eight cases where the probe was answering a different
+// question entirely.)
+//
+// The surface is small, because `fetchesOperand` above admits only
+// three classes, and the address arithmetic is the same shape
+// `storeTarget` below already uses.
+//
+// >>> THE ONE PLACE A COPY OF THAT SHAPE CAN SILENTLY DIVERGE: `p` HAS
+// THREE STATES, NOT TWO. <<<  `p == 4` fetches nothing (so
+// `fetchesOperand` is false and this is never asked); `p == 0` is an
+// ordinary effective address; any other `p` is PROGRESSIVE INDEXING,
+// where the address comes from the index register rather than from the
+// instruction.  `fetchesOperand` collapses the last two, and
+// `rl_prepare`'s `progressivePending` gate proves those paths are live,
+// so getting this wrong would disagree on every progressively-indexed
+// fetch.  Hence the same `prog` split as `storeTarget`.
+function Maybe#(WordAddr) operandTarget(StretchStorage st, DecodedInstr d);
+  case (d) matches
+    tagged VflInt .v: begin
+      if (v.a.p == 4) return tagged Invalid;
+      else begin
+        Bool prog = (v.a.p != 0 && v.a.p != 4);
+        BitAddr ea = prog ? st.readIndex(v.a.i1).addr
+                          : effAddr24(st, v.a.addr, v.a.i1);
+        return tagged Valid ea[23:6];
+      end
+    end
+    tagged Connective .c: begin
+      if (c.a.p == 4) return tagged Invalid;
+      else begin
+        Bool prog = (c.a.p != 0 && c.a.p != 4);
+        BitAddr ea = prog ? st.readIndex(c.a.i1).addr
+                          : effAddr24(st, c.a.addr, c.a.i1);
+        return tagged Valid ea[23:6];
+      end
+    end
+    // FP L only; ST fetches nothing, and the FP format has no
+    // progressive indexing, which is why there is no `prog` split here.
+    tagged Fp .f:
+      if (f.code == fpop_L) return tagged Valid effAddr18(st, f.addr, f.idx);
+      else return tagged Invalid;
+    default: return tagged Invalid;
+  endcase
+endfunction
+
 // The word an E-box level stores to (Fp ST/M+/M+MG, VflInt
 // ST/M+/M+MG/M+1), for the store-close-to-fetch hazard; Invalid for a
 // level that writes only the accumulator (L/+/E+/F+/SHF/*/D*/*+) or

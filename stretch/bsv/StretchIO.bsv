@@ -14,7 +14,7 @@
 // asynchronously with CPU execution -- "the computer program can
 // proceed with processing while a read or write operation continues"
 // (p.104). This model instead completes an entire block transfer
-// SYNCHRONOUSLY, one WORD per StretchCore.step() call, with no other
+// SYNCHRONOUSLY, one WORD per core clock, with no other
 // instruction executing until the transfer drains (see
 // StretchCore.bsv's `ioPending` FSM). Consequence: any program that
 // depends on genuine CPU/IO overlap, or on a Channel Signal (CS)
@@ -389,7 +389,7 @@ interface StretchIO;
   method Word64 readPrinterWord(DeviceIndex i);
 
   // Per-word transfer primitives StretchCore's ioPending FSM drives,
-  // one call per step().
+  // one call per core clock.
   method Word64 readerWord(DeviceIndex i);
   method Action writePrinterWord(DeviceIndex i, Word64 v);
 

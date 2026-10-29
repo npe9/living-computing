@@ -283,7 +283,7 @@ module mkStretchTb(Empty);
   // decode/execute -- not 1 (see the "run" rule's own comment above
   // for the same fetch-FSM-conversion reason). ONE counted-loop rule
   // (reusing "run"'s own shape), not two separate rules each with
-  // their own `core.step()` call: Bluesim's code generator inlines
+  // their own per-clock core call: Bluesim's code generator inlines
   // step()'s entire body -- which itself inlines execute()'s
   // instruction dispatch -- at EVERY textual call site, so two
   // separate rules would double this section's contribution to the

@@ -471,7 +471,7 @@ if __name__ == '__main__':
     cycle_window = None
     # STEPS=N raises the run rule's step cap.  A deck needs this when
     # it executes instructions the TIMING MODEL charges heavily for:
-    # the cap counts core.step() calls, and an instruction's budget
+    # the cap counts core clocks, and an instruction's budget
     # holds the machine for its duration.  Store Root is 108 clocks
     # (Perf. Char. Table 2, printed p.3-5: 2 pre-execution + 106
     # execution), so a deck doing several of them needs a cap sized

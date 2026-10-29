@@ -1141,7 +1141,7 @@ endfunction
 // instruction safe (unlike the rejected "call execute() twice"
 // shortcut, which would have re-fired every write on a second call):
 // the FIRST call, when it bails, performs literally zero side effects,
-// so there's nothing to double-fire. `StretchCore.step()` drives this:
+// so there's nothing to double-fire. StretchCore's run latch drives this:
 // call with `prefetchCount=0`; on `needsRead=Valid(a)`, issue
 // `st.readWordReq(a)`, park (remembering `pc`/`len`/`di`), and on the
 // next call pass a `prefetch` with one more slot filled and
@@ -6404,7 +6404,7 @@ function ActionValue#(ExecResult)
 // The E-box as a single shared MODULE (idiomatic-Bluespec rewrite step
 // 1, microarchitecture_plan.md §1c). `execute` above is the whole
 // execute datapath as one function; BSV inlines functions, so calling
-// it directly at StretchCore.step()'s four sites is un-idiomatic (the
+// it directly at StretchCore's four call sites is un-idiomatic (the
 // "weird Verilog" the owner flagged). Wrapping it in a module
 // instantiated once and calling its `exec` method is the mkFBox/mkMBox
 // shape from Bluespec's Piccolo/Flute: the datapath lives in a

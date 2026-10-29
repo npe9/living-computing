@@ -133,3 +133,71 @@ boxed operations, Volume 2's per-instruction atlas, which is throughput
 measured on a machine WITH overlap. `docs/microarchitecture_roadmap.md`
 M2 is where that becomes the oracle; the measured `VflInt` residual is
 0.281 µs mean and 1.20 worst.
+
+# Step 1, measured: the address is pure; the PROBE ANSWERS A SECOND QUESTION
+
+`operandTarget(st, di)` was written as the pure analogue of
+`storeTarget` (`bsv/StretchIBox.bsv`), and then run BESIDE the old
+`ebox.exec`-with-no-operands probe across the whole suite, comparing
+both answers and printing on mismatch.
+
+## The positive result, and it is strong
+
+**Across 5621 checks there was not one address disagreement.** Every
+mismatch was `pure = Valid`, `probe = Invalid` — eight of them. There
+were **zero** cases where both were Valid and differed, and **zero**
+where the pure function said "no fetch" and the probe wanted one.
+
+So: *wherever the probe asked for a fetch, `operandTarget` named the
+same word.* The three-state `p` split matters and is handled — `p == 4`
+no fetch, `p == 0` ordinary effective address, any other `p`
+progressive, where the address comes from the index register.
+
+## The blocker, which the measurement found and the plan did not
+
+The eight mismatches are not address errors. They are the probe
+answering a **different question**: not "which word does this
+instruction want?" but "**will this instruction fetch anything at
+all?**" — and that has at least four separate causes, named by the
+sections the mismatches fell in:
+
+| section | why the probe returned Invalid |
+|---|---|
+| `DF SUPPRESSED (p.32/p.45 class 1)` | `dfSuppresses` — DF masked on and the address protected |
+| `Address Invalid (AD, no-op)` | the address is not installed, so the operation is a no-op |
+| `OP and AD indicators (both polarities)` | Operation Code Invalid — the model has no arm |
+| `CV and LTRCV` | same shape (DCV is unbuilt and sets OP) |
+| `A VFL STORE ACROSS A WORD BOUNDARY` | the store path completes without the probe's fetch |
+
+`dfSuppresses(st, a)` is already pure and `installed` is available, so
+two of those are cheap. **The third is not**: "will `execute()` set OP?"
+is a statement about WHICH ARMS EXIST, which is precisely the
+interpreter shape this conversion is trying to remove. Enumerating it
+in a predicate would duplicate the dispatch it is meant to replace.
+
+> **>>> SO STEP 1 AND STEP 2 ARE COUPLED, AND THAT IS THE FINDING.
+> <<<** The probe has two legitimate answers — "I need word A" and "I
+> am already finished, with these indicators" — and `Maybe#(WordAddr)`
+> can only carry the first, so the second is smuggled in as `Invalid`.
+> **"Completes immediately" is a real outcome, not a bail-out**, and it
+> cannot be removed until it is representable. That is exactly the
+> typed dispatch union step 2 proposes:
+>
+> ```bluespec
+> typedef union tagged {
+>    ExecCompletion Complete;      // AD / OP / DF-suppressed, with indicators
+>    OperandRequest NeedOperand;   // operandTarget's answer
+>    SauRequest     StartSAU;
+>    PauRequest     StartPAU;
+> } ExecDispatch deriving (Bits);
+> ```
+>
+> With that, `Complete` carries the indicator effects the no-op cases
+> set, `NeedOperand` carries `operandTarget`'s address, and the
+> impossible combinations a `Tuple5` currently permits stop being
+> representable.
+
+**Revised order for step 1:** land `operandTarget` as the proven pure
+address source, then do step 2's typed result, and only then delete
+`EBox.exec`. Deleting the probe first would mean inventing a predicate
+for "does the model implement this", which is the wrong direction.

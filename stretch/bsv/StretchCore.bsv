@@ -36,7 +36,8 @@ interface StretchCore;
   // targets the instruction itself) and stays so until setPC. Runners
   // that assemble and load real STRAP programs poll it to stop instead
   // of using a fixed step count -- see stretch/tests/gen_tb.py, whose
-  // run rule is `(!core.halted()) core.step(); stepCount++`, so the
+  // run rule is `(!core.halted()) stepCount++` with the run latch up,
+  // so the
   // step count at halt is the program's clock count on this model.
   //
   // What one clock does is the per-arm story in the rules below. Two
@@ -1298,7 +1299,17 @@ module mkStretchCore(StretchCore);
           // tuple's shape.
           let {next, vflPending, ioStart, needsRead, probeXmit} <-
             ebox.exec(pc, len, di, replicate(0), 0, isValid(intPC));
-          if (needsRead matches tagged Valid .a) da = tagged Valid a;
+          // >>> THE ADDRESS NOW COMES FROM THE PURE FUNCTION. <<<
+          // `operandTarget` was run beside this probe across the whole
+          // suite and there was not ONE address disagreement in 5621
+          // checks (docs/ebox_roadmap.md, "Step 1, measured").  The
+          // probe survives only to answer the OTHER question it was
+          // smuggling through `Maybe`: "does this instruction complete
+          // immediately?", which AD, OP, DF-suppression and the
+          // crossing store can each cause.  That is a real outcome and
+          // needs the typed dispatch of step 2 to be representable; it
+          // is why the probe cannot simply be deleted here.
+          if (needsRead matches tagged Valid .a) da = operandTarget(st, di);
           else begin
             // Classified as fetching but completed: treat as executed.
             $display("StretchCore: E-box instruction at %0d executed at preparation (classification mismatch)", pc);
