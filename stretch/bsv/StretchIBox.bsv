@@ -35,7 +35,25 @@ endfunction
 // loaded with its address from execute()'s side-effect-free bail)?
 function Bool fetchesOperand(DecodedInstr d);
   case (d) matches
-    tagged VflInt .v: return v.a.p != 4;
+    // >>> CV IS EXCLUDED BECAUSE ITS OPERAND IS THE ACCUMULATOR, NOT
+    // STORAGE, 2026-10-29. <<<  Reference Manual printed p.73, quoted
+    // at CV's own arm in StretchExecute: "A field from the ACCUMULATOR
+    // is converted as an integer from binary to decimal or from decimal
+    // to binary depending on the setting of the radix modifier."  It
+    // has no storage operand at all, so `v.a.p != 4` -- which only asks
+    // whether the addressing is immediate -- was over-reporting.
+    //
+    // THE OTHER TWO CONVERSIONS DO FETCH, and were checked rather than
+    // assumed: LCV's arm quotes p.72's Field Definition, "the storage
+    // operand is defined by the effective address, field length, and
+    // byte size in the same manner as in integer arithmetic", and
+    // LTRCV's quotes p.73, "the addressed STORAGE field is converted".
+    //
+    // HOW THE OVER-REPORT WAS FOUND: it was one of eight cases where
+    // the preparation arm's probe disagreed with the pure
+    // `prepareExec`, and both CV mismatches reported an operand address
+    // of 8 -- the accumulator's own word. See docs/ebox_roadmap.md.
+    tagged VflInt .v: return v.a.p != 4 && v.code != 6'b011011;
     tagged Connective .c: return c.a.p != 4;
     tagged Fp .f: return f.code == fpop_L;   // FP L; ST fetches nothing
     default: return False;
