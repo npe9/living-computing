@@ -578,3 +578,131 @@ half the stated average.
 > bits-per-cycle then stops being free: it is whatever makes the rule
 > counts come out, and if no value does, that is a finding about the
 > model rather than a number to pick.
+
+# The PAU/SAU timing charts, surveyed — and MULTIPLY is the second box
+
+Nine of the nineteen chart-units have now been read. **Figure 3.8.11
+was re-read at the ink by the author of this note; the rest are a
+survey's readings and are marked as such**, the same READ/LISTED
+distinction `docs/web_references.md` keeps.
+
+## Locating them, and a navigation hazard
+
+| fig | title | PDF | printed |
+|---|---|---|---|
+| 3.8.1 | FP Load | 225 | 8-1 |
+| 3.8.2 | FP Add | 226 | 8-2 |
+| 3.8.3 | Add to Magnitude | 227 | 8-3 |
+| 3.8.4 | Compare | 228 | 8-4 |
+| 3.8.5 | Add to Fraction | 229 | 8-5 |
+| 3.8.6 | Shift Fraction | 230 | 8-6 |
+| 3.8.7/3.8.8 | Store / Store Rounded | 231 | 8-7/8-8 |
+| 3.8.9 | Store Low Order | 232 | — |
+| 3.8.10 | Store Root, sheets 1-2 | 233, 234 | 8-9, 8-10 |
+| 3.8.11 | **FP Multiply** | **235** | 8-11 |
+| 3.8.12 | Load Multiplier Register | 236 | 8-12 |
+| 3.8.13 | Multiply and Add | 237 | 8-13/8-14 |
+| 3.8.14 | Store Multiplier Register | 238 | 8-15 |
+| 3.8.15 | FP Divide, sheets 1-3 | 239, 240, **241 left** | 8-16, 8-17/18, 8-19 |
+| 3.8.16 | Divide Double | **242 right** | 8-20 |
+| 3.8.17 | Add to Exponent | **241 right** | 8-21 |
+| 3.8.18 | SAU Multiply / Multiply-and-Add | **242 left** | 8-22 |
+| 3.8.19 | SAU Divide | 243 | 8-23 |
+
+> **>>> PRINTED ORDER IS SCRAMBLED AGAINST PDF ORDER ON THE FOLD-OUTS.
+> <<<** PDF 241 carries printed **8-19 and 8-21**; PDF 242 carries
+> **8-22 and 8-20**. Anyone converting a printed number from the table
+> of contents will land on the wrong page. And **3.8.15 sheet 3 is
+> rotated 90°** on PDF 241, which is why its OCR is noise and why a
+> caption grep misses it.
+
+## Figure 3.8.11, FP MULTIPLY — verified first-hand
+
+The chart closes multiply's iteration count, which no other chart in
+the set does for its operation:
+
+* `CSA LOOPS` is braced into **four** passes, labelled **I II III IV**,
+  followed by a fifth brace **`MAIN ADDER LOOP`**.
+* `SHIFT RIGHT 12 TGR` `(GATE 47)`, and
+  `ALLOW FOR F REG SHIFT OF 12 POS 1-37 & 62-85`.
+* **4 passes x 12 bits = 48**, the fraction width.
+* `ALLOW DEVELOPMENT OF 1 & 3 X MULTIPLE` — multiple-selection, as in
+  divide.
+* The only data-dependent exit on the page is the normalisation one:
+  `(T3, NE, SHIFT <= 6) END OP`. The CSA loop has **no** conditional
+  termination.
+* Page head: **"SEQUENCE SHOWS NORMALIZATION SHIFT OF 6 OR LESS."**
+* `(DELAYED TO ALLOW CSA LOOP TIME TO COMPLETE)`.
+
+## Four corroborations, from a document unrelated to the timing tables
+
+Reported by the survey; recorded because each pairs an aggregate rule
+in Perf. Char. Vol. 1 with a mechanism in the CE manual.
+
+1. **"2 cycles for each additional norm. of 6" IS the ring-trigger
+   loop.** Each normalisation pass runs `TC -> T3 -> T4` and advances
+   FP CLOCK by **two** periods, exiting on `(T3, NE, SH <= 6) END OP`
+   — seen on 3.8.5 ("2 NORMALIZATION CYCLES"), 3.8.17 ("TWO
+   NORMALIZATION SEQUENCES"), 3.8.10 sheet 2, 3.8.11 and 3.8.16. **Two
+   unrelated documents now agree on both the number and the
+   mechanism.**
+2. **Six is the shifter width, third witness.** `SH <= 6` appears on
+   every chart read, and 3.8.11's page head says it of a NON-divide
+   operation.
+3. **"1 cycle for each additional pre-shift of 4" is a counter test.**
+   3.8.2 draws `PRE SHIFT > 3`, `SHIFT CTR REG > 4`, `SHIFT CTR REG =
+   4` with the loop conditioned on `(T2, PSA & SH > 3)`; 3.8.5 shows
+   the complementary `PRE-SHIFT <= 3` with the loop not taken.
+4. **The 0.3 us machine cycle, from a second source.**
+   `perf_char_timing.py` takes `CLOCK_US = 0.3` from Perf. Char. alone;
+   3.8.15 sheet 3's NOTE 2 says removing a trigger cycle **"SHORTENS
+   THE OPERATION BY 300 NANOSECONDS."**
+
+And `eboxClocks` charging `E+` and `E+I` the same 6 is vindicated:
+3.8.17 says **"ADD IMMEDIATE TO EXPONENT IS IDENTICAL — E + I"**.
+
+## Two leads that are NOT corroborations, held deliberately
+
+* **Store Root.** 3.8.10 has a gorgeous explicit loop — `DEV ROOT BIT`
+  numbered 1..48, `SET SCR TO 96`, `SET RFL TO 47`, terminating
+  `(RFL = 0) EOC1`. `eboxClocks` charges `SRT = 2 + 106 = 108`, and 96
+  sits temptingly near 106. **Do not connect them.** SCR is decremented
+  under **A PULSES**, a separate and faster waveform than FP CLOCK, and
+  neither sheet gives the ratio. Adjacent facts, not a derivation.
+* **`*+`.** The model charges 20 (Table 2's 3+17); 3.8.13's clock axis
+  runs 0-15. The two count from different origins so this is not a
+  contradiction — but it is the one place a chart's axis is visibly
+  shorter than the charged number, and worth checking when `*+` is
+  boxed. (3.8.11's 0-10 against `*` = 9, and 3.8.17's 0-8 against
+  `E+` = 6, run the other way, consistent with the model being a floor.)
+
+## >>> MULTIPLY IS THE SECOND BOX, AND THE REASON IS NOT "IT IS NEXT" <<<
+
+It is the only operation in the set whose **iteration count the sources
+close**. Every other candidate has a hole:
+
+* **Divide** cannot be closed — bits-per-cycle belongs to the "Multiple
+  Selection Circuits", `[NOT IN THE SOURCES]`.
+* **Store Root** has an explicit 48-step loop but runs on A PULSES with
+  no stated ratio: countable in steps, not in cycles.
+* **Add / Add-to-Fraction / Add-to-Exponent** are cheap, already roughly
+  right, and better done once the shared normalisation-loop and
+  pre-shift-counter primitives exist.
+
+Multiply's only data dependence is the `SH <= 6` normalisation loop,
+**which the divide box already needs** — so the second box reuses the
+first's hardest part instead of inventing structure. And one box covers
+**four paths**: `*` (26), `D*` (90), `*+` (58) via 3.8.13's shared
+spine, and SAU multiply via 3.8.18's **"IDENTICAL TO FLOATING POINT
+MULTIPLY BETWEEN THESE POINTS"** — the latter reduced to the same box
+by a stated constant, **"SHIFT = 0 — WILL ALWAYS BE ZERO ON SAU
+MULTIPLY SINCE PAU EXECUTION REGISTER IS RESET."**
+
+## Next reads, when wanted
+
+**3.8.9 Store Low Order (PDF 232)** — the model charges 19 (2+17), the
+second-largest FP figure, and Table 2 carries two conditional variants
+("17 unnormalized", "15 if normalized with no leading zeros") a chart
+would resolve. Then **3.8.15 sheet 1 (PDF 239)**, because sheet 3 and
+3.8.16 both branch back into it by named point ("RETURN TO POINT 9 /
+POINT 11, PART B, SHEET 1") and those points are defined only there.
