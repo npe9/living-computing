@@ -207,11 +207,19 @@
 //
 // WHAT REJECTS VS. WHAT SETS A STATUS BIT (p.111-113, "Input-Output
 // Reject Indicators" / "Input-Output Status Indicators"): addressing a
-// channel that isn't chanReader, chanPrinter, or chanTape is a genuine
-// reject (Unit Not Ready -- ind_UNRJ; the instruction is never accepted
-// and the addressed channel's control word location, if any, is never
-// touched) since none of this model's three devices is ever installed
-// anywhere else. Addressing the right channel with the wrong operation
+// channel that no device answers is a genuine reject -- the instruction
+// is never accepted and the addressed channel's control word location,
+// if any, is never touched.
+//
+// >>> CORRECTED 2026-10-28, AND THE OLD WORDING IS WHY. <<<  This used
+// to read "isn't chanReader, chanPrinter, or chanTape ... since none of
+// this model's three devices is ever installed anywhere else".  There
+// are now FIVE devices (DevReader, DevPrinter, DevTape, DevDisk,
+// DevConsole), and StretchExecute's I/O arm draws the line the manual
+// draws and this sentence missed: a channel that is NOT INSTALLED is an
+// Exchange Check Reject (ind_EKJ), while a channel that is installed
+// but has no device is Unit Not Ready (ind_UNRJ).  See
+// `channelInstalled` below and the long quotation at that arm. Addressing the right channel with the wrong operation
 // -- e.g. RD to the printer -- is accepted but fails as an Exchange
 // Program Check (EPGK) status bit, matching "an instruction is received
 // that the selected unit is not designed to perform, such as a READ

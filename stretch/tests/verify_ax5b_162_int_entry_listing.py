@@ -163,7 +163,7 @@ and written "BD,0"; the 32 bits are identical -- both are the printed
 "0.04 00", measured below -- but STRAP's "$" prefix on an operation is
 not explained by any page read for this work.  It occurs only on
 data-in-the-instruction-stream rows (these two, and I60SX1 at
-023041.00, verify_ax5b_160s1_clear_inds_listing.py).  Left open.
+023041.00, verify_ax5b_160s1_tail_listing.py).  Left open.
 
 PROVEN DISCRIMINATING.  Observed failure sets, not predicted; each
 injection was made with __pycache__ removed on BOTH sides of the run

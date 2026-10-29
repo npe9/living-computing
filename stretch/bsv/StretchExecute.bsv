@@ -20,6 +20,30 @@
 // Transmit that was only TRUE OF `backward` until 2026-09-22: see the
 // Transmit arm and StretchTypes' Transmit comment.
 //
+// >>> THAT LIST IS NOW FOUR ITEMS LONG, 2026-10-28.  The sentence above
+// is kept because it is the history; this is what is actually left. <<<
+// Re-derived against the file rather than from the list:
+//
+//   decimal ARITHMETIC   -- still refused, and deliberately: see the
+//                           `radixConv` guard, which exists to let the
+//                           three conversions past the blanket refusal.
+//   DCV (code 59)        -- not built; nothing in MCP uses it, and
+//                           docs/spec_decimal.md says so.
+//   RNX                  -- decoded (`isValidDirIndexOp` admits
+//                           `dixop_RNX`) but there is NO arm for it in
+//                           this file, so it reaches the DirIndex
+//                           default and sets OP.  This is the one
+//                           entry on the original list still true as
+//                           written.
+//   backward SWAP        -- `t.swap == 1 && t.backward == 1` is refused
+//                           at the Transmit arm.  SWAPB/SWAPBI are
+//                           card-only; forward SWAP executes.
+//
+// Everything else named above is built, with its arm: radix conversion
+// (LCV, CV, LTRCV), interrupts (StretchCore's rl_interrupt), EXIC,
+// LVE (`dixop_LVE`), SVA (`dixop_SVA`), LVS (code 1011), and Transmit
+// multi-word and direct-count (`xmitCount`).
+//
 // EX (EXECUTE) LEFT THAT LIST on 2026-09-25 and EXIC did not.  The two
 // share the subject-fetch machinery below (the `ExSubject` context, the
 // EX arm's bail-out, mkEBox's subject swap, the EXE suppression in the
@@ -231,16 +255,29 @@ function BranchOutcome evalBranch(StretchStorage st, DecodedInstr d, Word64 ind0
     end
 
     // Unconditional branching. B=010 BR=011 BE=000 BD=001 BEW=100
-    // NOP=110. BE/BD/BEW's interrupt-enable distinction is not modeled
-    // (no interrupt system in this implementation, see README); all
-    // four unconditional-branch codes other than NOP branch. The misc
+    // NOP=110.  BE/BD/BEW's interrupt-enable distinction IS modeled:
+    // the arm below calls st.setIrqEnabled(True) for BE and BEW and
+    // (False) for BD, and StretchCore has rl_interrupt.  (This comment
+    // said "not modeled (no interrupt system in this implementation)"
+    // until 2026-10-28; what is still unmodeled is BEW's WAIT, which
+    // does not stop the clock here -- see rl_clock's note on printed
+    // p.34.)  All four unconditional-branch codes other than NOP
+    // branch. The misc
     // (Z/R/RCZ/EX) half of this format is NOT a branch and is handled
     // by execute()'s own BranchOrMisc arm; a caller only hands the
     // non-misc shape here.
     tagged BranchOrMisc .bm: begin
+      // >>> HISTORY, 2026-10-28: BR IS IMPLEMENTED.  The paragraph below
+      // is kept for its two primary sources and for the reasoning that
+      // identified the displacement, but its conclusion -- "does not
+      // implement it", "setOpInvalid is the honest state", "Nothing in
+      // the suite uses BR" -- is superseded by the arm immediately
+      // after it, which quotes printed p.40 verbatim, and by
+      // decks/br_relative.strap. <<<
+      //
       // BRANCH RELATIVE (code 011) is NOT an absolute branch, and this
-      // model does not implement it -- so it fails loud rather than
-      // branching to the wrong place.  Two primary sources:
+      // model did not originally implement it -- so it failed loud
+      // rather than branching to the wrong place.  Two primary sources:
       //
       //   * X22-6533 pocket card, UNCONDITIONAL BRANCHING: the codes are
       //     B 010000000, BR 011000000, BE 000000000, BD 001000000,

@@ -1,4 +1,5 @@
-// StretchFP.bsv -- IBM 7030 floating-point arithmetic, single precision
+// StretchFP.bsv -- IBM 7030 floating-point arithmetic, single and
+// double precision
 // (docs/microarchitecture_plan.md stage 4c). Pure functions over the
 // Reference Manual's formats, called by StretchExecute's Fp arm.
 //
@@ -40,10 +41,17 @@
 //     48-bit quotient, exponent difference (+1 on quotient overflow),
 //     ZD suppresses the division.
 //
-// NOT MODELED HERE (yet): double precision (D+, DL, D*, D/, SRD, SLO,
-// LFT, *+), store root, shift fraction, add to exponent, the unnormalized
-// divide's PF/LZC details (an unnormalized divide behaves as normalized
-// with PF left off).
+// NOT MODELED HERE (yet): the unnormalized divide's PF/LZC details (an
+// unnormalized divide behaves as normalized with PF left off).
+//
+// >>> THAT LIST WAS NINE ITEMS LONG AND IS NOW ONE, 2026-10-28. <<<  It
+// used to name "double precision (D+, DL, D*, D/, SRD, SLO, LFT, *+),
+// store root, shift fraction, add to exponent" as well.  Re-derived
+// against the files rather than from the list: `fpAddDouble`,
+// `fpMulDouble`, `fpDivDouble` and `fpSqrt` are all here, and
+// `fpop_SRD`, `fpop_SLO`, `fpop_LFT`, `fpop_SHF` and `fpop_E_PLUS` all
+// dispatch in StretchExecute.  The first line of this file said "single
+// precision" for the same reason and has been corrected too.
 
 package StretchFP;
 

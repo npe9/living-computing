@@ -5,6 +5,11 @@ model.** `docs/structural_audit.md` says what is missing. This says in
 what order to build it, and — the part that matters — **how each stage
 is checked**.
 
+> **See also `docs/ebox_roadmap.md`**, which supersedes this file on the
+> E-box specifically: the owner's 2026-10-28 direction to REPRODUCE the
+> timings with real multi-cycle arithmetic boxes rather than emulate
+> them with budgets, with Flute's `mkIntDiv` as the reference shape.
+
 ## The organising principle: build what you can check
 
 The ordering below is by ORACLE AVAILABILITY, not by architectural
@@ -22,6 +27,11 @@ comes first, and each stage after it must move a number that someone
 measured in 1961.
 
 ## M0 — the measurement harness. Before any structure.
+
+> **>>> M0 HAS LANDED, 2026-10-28. <<<** `CYCLES=N±T` is implemented in
+> `tests/gen_tb.py` (`cycle_window`), it REFUSES a bare `CYCLES=N`, and
+> two decks use it — one at `421±0`, zero tolerance. The section below
+> is kept because it states why a one-sided bound was not enough.
 
 **`CYCLES<=` is a one-sided bound** (nine decks use it) and cannot
 detect a model that is too FAST, which is what every missing-overlap
@@ -73,8 +83,38 @@ divide loop is "data dependent". Table 3's COMMENTS column is the same
 shape — `M+`: "Unlike signs AB > CD, add .6(x/y + 1)".
 
 `StretchFP.bsv` already derives the shift and normalize counts to
-produce the ANSWERS. The structural change is to make them available
-to timing, which is the same change the working registers need.
+produce the ANSWERS.
+
+> **>>> AND THE PLAN THAT FOLLOWED FROM THAT IS WRONG, 2026-10-28.
+> <<<** This section used to continue: "The structural change is to
+> make them available to timing." That keeps TWO notions of completion
+> — the answer is computed, and separately a budget is allowed to
+> expire — and it is EMULATING the timing rather than REPRODUCING it.
+>
+> **With a real arithmetic box there is nothing to hand to timing,
+> because the iteration IS the timing.** Flute's `mkIntDiv`
+> (`~/src/Flute/src_Core/CPU/IntMulDiv.bsv`) is the shape: a `DivState`
+> enum, `rl_loop1` shifting while `denom2 <= numer>>1`, `rl_loop2`
+> subtracting while `numer >= denom`, and a `result_valid` that is
+> simply `rg_state == Div_DONE`. No budget appears anywhere, and the
+> cycle count is whatever the data required.
+>
+> That is exactly the shape of the figures this section quotes. "For
+> each additional pre-shift of 4", "for each additional norm. of 6",
+> "if recomplement is necessary", and a divide loop that is "data
+> dependent", stop being a table to reproduce and become a CONSEQUENCE
+> of the hardware. `eboxClocks(DecodedInstr)` never being given the
+> operands is then not a problem to work around; it is a sign that the
+> computation belongs in a box with its own state.
+>
+> **Divide is the forcing case** — genuinely iterative, data-dependent
+> in the sources, and `ebusy` should DISAPPEAR for it rather than be
+> recalibrated. Timing-table countdowns stay only for operations whose
+> internal machinery is not yet modelled.
+>
+> The target is CYCLE accuracy, not timing accuracy: a rule firing is a
+> clock edge, so sub-cycle delay still has nowhere to live — see "What
+> stays out" at the end of this file.
 
 **`ADDER OUTPUT` is bits 3-102** — a hundred-bit path, which is the
 PAU's double-precision field (12-107) seen from the adder's end. Width
@@ -88,7 +128,19 @@ datapath — see M2. Do not tune M1 past the point where the error stops
 being structured; `docs/NEXT.md` records a rule that halved the error
 and was rejected for contradicting printed p.3-10.
 
-## M2 — the look-ahead. The largest absent structure.
+## M2 — the look-ahead. ~~The largest absent structure.~~
+
+> **>>> THE RING LANDED; THE TITLE IS NOW WRONG, 2026-10-28. <<<**
+> `bsv/StretchLookAhead.bsv` is a four-level ring with
+> `load`/`headLevel`/`retireHead`/`cancelAll`, instantiated in
+> `StretchCore` and loaded from `rl_prepare`. What is still absent is
+> narrower and should be stated narrowly: the **41 named trigger
+> fields** are not modelled, every live level is `LaKind.Whole` rather
+> than the historical operation / operand / store / internal-fetch /
+> index-recovery / branch-recovery pieces, and the **timing overlap is
+> not wired** — `bsv/StretchTiming.bsv` still says E-box time is not
+> overlapped. Splitting the levels is the largest remaining gap in the
+> look-ahead, not the ring.
 
 46 triggers across 41 named fields. `docs/spec_lookahead.md` has the
 design; four corrections from it belong here:

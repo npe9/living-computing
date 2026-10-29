@@ -21,9 +21,10 @@ primary sources say that is wrong:
     displacement.  The old absolute reading would have branched to 0.0,
     which p.39 separately calls an invalid branching address.
 
-BR now sets OP instead of branching wrongly, and ../decks/
-br_unimplemented.strap pins that.  A silent wrong answer became a
-visible unimplemented one.
+BR is implemented from Reference Manual printed p.40, and
+../decks/br_relative.strap pins it.  (It formerly set OP instead of
+branching wrongly, pinned by a br_unimplemented.strap that
+run_tests.sh's own note says br_relative.strap replaced.)
 
 WHAT THIS DOES NOT TELL YOU, same caveat as the indicator audit: it is
 a REFERENCE audit.  A mnemonic appearing in a program is not evidence

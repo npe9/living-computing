@@ -7,7 +7,7 @@ machine.  80 columns of 12 punch rows.  A short line is blank-padded
 to 80; a long one is an error, because silently truncating a card is
 how a deck quietly stops being the deck you wrote.
 
-    deck.txt  ->  mkcards.py  ->  15 words per card  ->  chanReader
+    deck.txt  ->  cards.py  ->  15 words per card  ->  chanReader
 
 ---------------------------------------------------------------------
 THE PUNCH PATTERNS ARE PRINTED, AND FINDING THAT OUT COST THREE OF

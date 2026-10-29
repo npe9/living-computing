@@ -76,7 +76,7 @@ execute partially, document the rest" ethos of the Bluespec model):
   C22-6531's own worked example (p.31 "Example B": ALF=DDI(B),-142;
   JIM=SYN(B,24),389; RIP=SYN(B,24),-210; LI,ALF;+I,JIM;+I,JIM+RIP -->
   accumulator = 426, since JIM+RIP resolves to 179 through two chained
-  SYN lookups -- see strap/tests or run_tests.sh). SYN's own (dds)
+  SYN lookups -- see tests/test_syn.py or run_tests.sh). SYN's own (dds)
   modifier, when given, is also supposed to set the *data description*
   an instruction implicitly inherits by naming the symbol -- out of
   scope here, since this assembler's symtab only ever stores numeric

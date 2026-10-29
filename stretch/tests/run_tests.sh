@@ -713,9 +713,10 @@ run "DF SUPPRESSED: the mask-dependent half (p.32/p.45 class 1)" ./run_program.s
 # 004112.00.
 #
 # THE "classification mismatch" LINES ARE EXPECTED, not a defect, and
-# they are the same accepted path ad_indicator.strap's AD guard
-# already documents: the core probes an operand-fetching E-box
-# instruction by running execute() with no operand and expecting a
+# they are the same accepted path decks/df_fetch_suppress.strap and
+# decks/df_refill_suppress.strap already document: the core probes an
+# operand-fetching E-box instruction by running execute() with no
+# operand and expecting a
 # bail-out, and a SUPPRESSED operation reads nothing, so it completes
 # during the probe.  The core detects that, says so, and commits the
 # probe as the execution.  DF is set, the accumulator is untouched,
@@ -11958,7 +11959,7 @@ run "I-Box 1 WEN/WEN2/VEN at original listing addresses" ./run_program.sh ../dec
 # block ends by walking that chain. A branch to itself halts this
 # model, so PC alone says pass (halted at the substituted BEW at
 # 5432.40) or fail (halted at the un-rewritten hang). Expected words
-# derived from the assembled program by sic_cb_expected.py.
+# derived from the assembled program by ibox1_expected.py.
 run "I-Box 1 SIC-CB / SIC-CBZ (verbatim, own pass/fail)" ./run_program.sh ../decks/ibox1_sic_cb_cbz.strap StretchIboxSicTb \
     $(python3 ibox1_expected.py ../decks/ibox1_sic_cb_cbz.strap ISBI \
         ISCBA:ISCBB ISCBB:ISCBC ISCBC:ISCBD ISCBD:ISCBH ISCBH:ISCBI ISCBI:ISCBK)

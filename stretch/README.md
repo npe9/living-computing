@@ -15,8 +15,8 @@ Key facts (Reference Manual 22-6530-2):
 | directory | what is in it |
 |---|---|
 | `bsv/` | the Bluespec model of the machine — see `bsv/README.md` |
-| `strap/` | the assembler and the host-side tools it needs: `strap_asm.py`, `opcodes.py`, `charsets.py`, `cards.py`, `mktape.py`, `mcp_image.py`, `listing_oracle.py`, `line_addresses.py` — see `strap/README.md` |
-| `decks/` | 257 STRAP card decks: transcriptions of the scanned diagnostic and MCP listings, plus the test programs written to pin model behaviour |
+| `strap/` | the assembler and the host-side tools it needs: `strap_asm.py`, `opcodes.py`, `charsets.py`, `cards.py`, `mktape.py`, `mcp_image.py`, `listing_oracle.py`, `line_addresses.py`, `iocd.py`, `prosa.py`, `mcp_crop.sh` — see `strap/README.md` |
+| `decks/` | 353 STRAP card decks: transcriptions of the scanned diagnostic and MCP listings, plus the test programs written to pin model behaviour |
 | `tests/` | the harness — one `verify_*.py` per transcribed listing, the `gen_*_tb.py` testbench generators, the `run_*.sh` runners, the coverage audits, and `run_tests.sh`, which runs all of it |
 | `docs/` | the scanned primary sources, and this project's structured notes on them |
 
