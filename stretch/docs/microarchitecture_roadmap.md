@@ -163,6 +163,12 @@ design; four corrections from it belong here:
    durations. The implementable model is CONDITION-DRIVEN. Any
    LA-internal count written in Bluespec is invented and must say so.
 
+> **>>> READ `docs/atlas_reading_guide.md` FIRST. <<<** The atlas's
+> own methodology pages (Vol. 2 PDF 110-116) say what operand each
+> instruction was fed and which results the authors consider invalid.
+> For DIVIDE the oracle is void — those pages divide by one, then by
+> zero, and a zero divisor skips the reduction loop entirely.
+>
 > **>>> THIS IS WHERE THE ATLAS BECOMES THE ORACLE. <<<** Volume 2's
 > numbers are THROUGHPUT over thousand-instruction sequences from the
 > 1961 `GENER` simulator — measured on a machine WITH overlap. The
