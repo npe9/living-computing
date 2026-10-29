@@ -502,3 +502,68 @@ files under `stretch/`, and these are above it.
 Splitting the commit afterwards means rewriting pushed history, which
 is a destructive operation and needs the owner's explicit say-so, so it
 has deliberately NOT been done.
+
+# >>>>>> THE ATLAS CANNOT CALIBRATE DIVIDE, AND IT SAYS SO ITSELF <<<<<<
+
+The divide box's one invented number -- `divBitsPerCycle` -- was left
+uncalibrated with "Perf. Char. Vol. 2's measured divide page" named as
+the next step. **There is no usable measured divide page.** Vol. 2 says
+so twice, in its own words.
+
+**Vol. 2 PDF 41:**
+
+> *"The present measurements for /, D/, and R/ do not give a realistic
+> timing, since the latter is strongly data dependent. **The average
+> divide time should be about 10 us.**"*
+
+**Vol. 2 PDF 115**, in the notes to the VFL section:
+
+> *"The error marks on divide instructions (pp. 127, 154, 177) are
+> **due the use of a zero divider**."*
+
+A zero divisor is precisely the case that SKIPS the reduction loop:
+Vol. 1 Table 2's own `zero_divisor` entry -- transcribed in
+`tests/perf_char_timing.py` -- is "3 cycles pre-execution and 2 cycles
+execution INSTEAD OF previous", i.e. five cycles with no reduction
+loops at all. So the three atlas pages measure the one input for which
+the loop does not run.
+
+## What this costs, and it is not only divide
+
+`docs/microarchitecture_roadmap.md` M1 and M2 both name Vol. 2's
+per-instruction atlas as THE oracle -- "this is where the atlas becomes
+the oracle", with M2's correctness "measured by how much of the
+residual it closes". **For divide that oracle is void**, and the
+roadmap does not say so. The same question should be asked of every
+other operation before its box is calibrated: Vol. 2's notes pages
+(PDF 110-116) are where the authors flag which measurements are
+unrepresentative, and they have not been read as a whole.
+
+## What is left for divide, stated honestly
+
+1. **Vol. 1 Table 2's data-dependent rules**, already transcribed:
+   2 pre-execution cycles (+2 per additional divisor shift of 6), 2
+   execution (+2 per additional dividend shift of 6, +2 for the initial
+   reduction loop if the dividend is normalised, +3 for the initial
+   dividend pass if it has leading zeros, **+2 for each additional
+   reduction loop**, +2 if the final remainder needs complementing,
+   +1 all). These are RULES, not a measured total, and they are the
+   best divide oracle in the corpus.
+2. **"about 10 us"**, which at the project's 0.3 us machine cycle is
+   ~33 cycles -- a sanity bound, not a measurement, and explicitly an
+   average over unknown data.
+
+The box currently takes 18 cycles (1 trial + 16 reduction at 6 bits
+per cycle + 1 last), i.e. ~5.4 us. That is the right order and about
+half the stated average.
+
+> **>>> AND TUNING `divBitsPerCycle` TO 3 SO THAT 33 CYCLES FALLS OUT
+> WOULD BE EXACTLY THE MOVE THIS WORK EXISTS TO AVOID. <<<** It would
+> be fitting an invented constant to a rough average so the total looks
+> right -- emulating the timing, not reproducing it. The honest path is
+> Table 2's RULES: derive the pre-shift, dividend-shift and
+> normalisation counts from the operands, which `StretchFP` already
+> computes to produce the answer, and let the loop count follow. The
+> bits-per-cycle then stops being free: it is whatever makes the rule
+> counts come out, and if no value does, that is a finding about the
+> model rather than a number to pick.
