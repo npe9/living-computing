@@ -97,6 +97,22 @@ typedef struct {
   // condition; they were enumerated by instrumenting each
   // disagreement between the probe and this record and mapping it to
   // its test section (docs/ebox_roadmap.md, "Step 3, scoped").
+  //
+  // >>> NO TEST DISTINGUISHES THIS FIELD, AND THAT IS MEASURED, NOT
+  // SUSPECTED. <<<  A full-suite sweep with it hard-wired to False came
+  // back 5633 PASS / 0 FAIL, and the two decks written for its
+  // never-otherwise-reached clauses -- decks/vfl_progressive_index0.strap
+  // and decks/vfl_decimal_refused.strap -- report IDENTICAL cycle counts
+  // with those clauses deleted.  The look-ahead's operand fetch
+  // overlaps, so issuing a pointless one costs nothing observable
+  // today.
+  //
+  // IT IS KEPT ANYWAY, for the reason the project exists: the machine
+  // would not request an operand for an operation it has already
+  // refused, and the target is CYCLE accuracy.  What would pin it is
+  // either a count of memory requests the testbench can read, or the
+  // look-ahead overlap of roadmap M2 -- at which point a pointless
+  // fetch would cost a clock and those two decks' windows would move.
   Bool completesWithoutFetch;
 } PreparedExec deriving (Bits, Eq, FShow);
 

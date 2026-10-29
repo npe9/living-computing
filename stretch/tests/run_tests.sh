@@ -2054,6 +2054,74 @@ run "A VFL STORE ACROSS A WORD BOUNDARY -- the store MCP's card converter needs"
     "progressive_tail:297=12033618204333965311" \
     "mplus_refused_head:304=18446744073709551615" \
     "mplus_refused_tail:305=18446744073709551615"
+
+# >>> THE TWO CAUSES THE CORPUS NEVER REACHED. <<<  prepareExec's
+# `completesWithoutFetch` has six causes (docs/ebox_roadmap.md).  A
+# census of which ones the suite actually exercises -- a temporary
+# bitmask on the record, displayed per firing -- found DF suppression
+# (3), address-not-installed (2) and M+ crossing a word boundary (1),
+# and found these two firing ZERO times in 5621 checks.  They had been
+# reasoned from the arms rather than measured, so each now has a deck.
+#
+# >>> AND THE FIRST INJECTION I WROTE FOR THEM SURVIVED, WHICH IS WHY
+# THIS COMMENT SAYS SOMETHING DIFFERENT FROM WHAT IT WAS GOING TO. <<<
+# The plan was that these decks would pin the two prepareExec clauses,
+# on the reasoning that removing a clause makes the preparation arm
+# issue an operand fetch for an instruction that never reads it, and
+# that the extra fetch would move the cycle count.  IT DOES NOT.  With
+# both clauses deleted the counts are still exactly 145 and 142, every
+# value check still passes, and a FULL-SUITE sweep with
+# completesWithoutFetch hard-wired to False came back 5633 PASS / 0
+# FAIL.  The field is behaviourally INERT on this corpus: the
+# look-ahead's operand fetch overlaps, so issuing a pointless one costs
+# nothing observable here.
+#
+# So what these decks actually pin is the OP REFUSALS THEMSELVES, which
+# is worth having on its own and is what the injection below measures.
+# The clause is kept for cycle-accuracy reasons -- the machine would not
+# request an operand for an operation it has already refused -- and
+# StretchIBox says, at the field, that no test distinguishes it and what
+# would be needed to.
+run "PROGRESSIVE INDEXING WITH X0 is OP (RefMan printed p.21)" ./run_program.sh ../decks/vfl_progressive_index0.strap StretchVflProgX0Tb \
+    "PC=394" \
+    "CYCLES=145+-0" \
+    "control_head:264=18446744073709551609" \
+    "control_tail:265=13835058055282163711" \
+    "refused_head:272=18446744073709551615" \
+    "refused_tail:273=18446744073709551615"
+# The rule is PRINTED, and was an uncited refusal in both VFL arms until
+# 2026-10-29.  Reference Manual printed p.21 (PDF 24): "In progressive
+# indexing, the value field, bits 0-24 of the index specified by I, is
+# used as the effective address.  IF PROGRESSIVE INDEXING WITH INDEX
+# REGISTER X0 IS SPECIFIED, INDICATOR OP (OPERATION CODE INVALID) IS
+# SET."  X0 is loaded with the refused store's target, so the target
+# names a real word: if the refusal ever stops, `refused_head` changes.
+#
+# INJECTION (measured): replace the arm's
+# `isProgressive && vi.a.i1 == 0` test with `False` and all four checks
+# fail -- refused_head at word 272 becomes 0xfffffffffffffff9 because
+# the store LANDS, and the machine never halts, hanging on the
+# `BZOP, $` self-branch at half-word 392 until the step cap.
+
+run "DECIMAL VFL is refused by THIS MODEL, not by the machine" ./run_program.sh ../decks/vfl_decimal_refused.strap StretchVflDecRefTb \
+    "PC=393" \
+    "CYCLES=142+-0" \
+    "control_head:264=18446744073709490740" \
+    "control_tail:265=6231011559443791871" \
+    "refused_head:272=18446744073709551615" \
+    "refused_tail:273=18446744073709551615"
+# >>> A SCOPE TEST, AND LABELLED AS ONE. <<<  The real 7030 performs
+# decimal VFL arithmetic; this model does not, and refuses it with OP so
+# that an unbuilt operation is a visible refusal rather than a silent
+# wrong answer.  The three radix conversions are exempt and tested
+# elsewhere: for LCV/CV/LTRCV the decimal bit selects a DIRECTION
+# (printed p.72) rather than asking for decimal arithmetic.
+#
+# INJECTION (measured): replace the arm's
+# `vi.m.decimal == 1 && !radixConv` test with `False` and all four
+# checks fail -- refused_head at word 272 becomes 0xffffffffffff1234
+# because the decimal store LANDS, and the machine hangs on the
+# `BZOP, $` self-branch at half-word 391 until the step cap.
 # >>> MCP ASKED FOR THIS ONE, AND THE REFUSAL WAS COSTING IT ITS
 # CONFIGURATION CARD. <<<  printed p.43 line 49 is
 # "Q ST  ST(V+I)(BU,6,6),.6($5)" -- the store at the bottom of IBM's

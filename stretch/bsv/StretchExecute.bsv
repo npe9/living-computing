@@ -2347,6 +2347,20 @@ function ActionValue#(VflOutcome)
                     || (vi.code == 6'b100011);    // LTRCV
       if (vi.m.decimal == 1 && !radixConv)
         ind = setOpInvalid(ind);
+      // >>> PROGRESSIVE INDEXING WITH X0 IS OP, AND THAT IS PRINTED,
+      // not inferred -- cited 2026-10-29, having been an uncited
+      // refusal in both VFL arms until then. <<<  Reference Manual
+      // printed p.21 (PDF 24), read at the ink:
+      //
+      //   "In progressive indexing, the value field, bits 0-24 of the
+      //   index specified by I, is used as the effective address.  IF
+      //   PROGRESSIVE INDEXING WITH INDEX REGISTER X0 IS SPECIFIED,
+      //   INDICATOR OP (OPERATION CODE INVALID) IS SET."
+      //
+      // Index field 0 means "no indexing" for ordinary addressing --
+      // see effAddr24's `if (idx == 0) return raw` -- and progressive
+      // indexing has no register to advance, so the machine refuses it.
+      // Pinned by decks/vfl_progressive_index0.strap.
       else if (isProgressive && vi.a.i1 == 0)
         ind = setOpInvalid(ind);
       else begin
@@ -3697,6 +3711,20 @@ function ActionValue#(VflOutcome)
 
       Bool isProgressive = (cn.a.p != 0 && cn.a.p != 4);
       Bool immediate = (cn.a.p == 4);
+      // >>> PROGRESSIVE INDEXING WITH X0 IS OP, AND THAT IS PRINTED,
+      // not inferred -- cited 2026-10-29, having been an uncited
+      // refusal in both VFL arms until then. <<<  Reference Manual
+      // printed p.21 (PDF 24), read at the ink:
+      //
+      //   "In progressive indexing, the value field, bits 0-24 of the
+      //   index specified by I, is used as the effective address.  IF
+      //   PROGRESSIVE INDEXING WITH INDEX REGISTER X0 IS SPECIFIED,
+      //   INDICATOR OP (OPERATION CODE INVALID) IS SET."
+      //
+      // Index field 0 means "no indexing" for ordinary addressing --
+      // see effAddr24's `if (idx == 0) return raw` -- and progressive
+      // indexing has no register to advance, so the machine refuses it.
+      // Pinned by decks/vfl_progressive_index0.strap.
       if (isProgressive && cn.a.i1 == 0) begin
         $display("StretchCore:   OP site = conn/progressive-with-index-0");
         ind = setOpInvalid(ind);

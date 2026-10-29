@@ -1,0 +1,47 @@
+! PROGRESSIVE INDEXING WITH X0 IS OPERATION CODE INVALID, and this
+! pins it against the printed rule rather than against the model.
+!
+! >>> THE REFUSAL WAS IN THE MODEL, UNCITED, IN BOTH VFL ARMS. <<<
+! Reference Manual printed p.21 (PDF 24), read at the ink:
+!
+!   "In progressive indexing, the value field, bits 0-24 of the index
+!   specified by I, is used as the effective address.  IF PROGRESSIVE
+!   INDEXING WITH INDEX REGISTER X0 IS SPECIFIED, INDICATOR OP
+!   (OPERATION CODE INVALID) IS SET."
+!
+! Index field 0 means "no indexing" for ordinary addressing -- see
+! effAddr24's `if (idx == 0) return raw` -- so progressive indexing has
+! no register to advance and the machine refuses it.
+!
+! WHY IT NEEDED A DECK: it is one of the six causes of
+! StretchIBox's prepareExec.completesWithoutFetch, and a census of
+! which causes the corpus reaches (docs/ebox_roadmap.md) found this one
+! and the decimal refusal firing ZERO times in 5621 checks.  They were
+! reasoned from the arms rather than measured.
+!
+! THE POSITIVE CONTROL IS THE POINT.  A deck that only asserts "OP came
+! on" passes if nothing works at all, so the legal non-progressive store
+! runs first and its target is checked for the value it must have.  X0
+! is loaded with TB's address, so the refused store names a real word:
+! if the refusal ever stops happening, TB changes and the check says so.
+        SLC, (8)300.0
+START   LV, $X0, TBADDR
+        L(BU,6,6), DATA2
+        ST(BU,6,6), TA+.60           ! legal, non-progressive
+        BOP, $                       ! hang if OP came on: that one is legal
+        ST(V+I)(BU,6,6), .6($X0)     ! PROGRESSIVE WITH X0 -- p.21 says OP
+        BZOP, $                      ! hang if OP did NOT come on
+        B, PASS
+PASS    BEW, $
+        CNOP
+        SLC, (8)400.0
+DATA2   DD(BU,6), (8)46
+        SLC, (8)401.0
+TBADDR  VF, TB+.60
+        SLC, (8)410.0
+TA      DD(BU,64), (8)1777777777777777777777
+        DD(BU,64), (8)1777777777777777777777
+        SLC, (8)420.0
+TB      DD(BU,64), (8)1777777777777777777777
+        DD(BU,64), (8)1777777777777777777777
+        END, START

@@ -324,3 +324,85 @@ did not remove the interpreter.** The remaining steps are unchanged:
 8. generalise into PAU/SAU,
 9. preparation as a real stage-output bundle (`prepareExec` is its seed),
 10. split the look-ahead's `Whole` levels into the historical pieces.
+
+# A NEGATIVE RESULT WORTH THE SPACE: `completesWithoutFetch` IS INERT
+
+The step-3 writeup ended with a caveat: zero prediction-vs-probe
+mismatches proves agreement *everywhere the corpus reaches*, and two of
+the six clauses -- the decimal refusal and progressive-indexing-with-X0
+-- were reasoned from the arms rather than measured. Closing that
+caveat produced three results, and the second one contradicts what the
+first was supposed to show.
+
+## 1. A census, and the two clauses really were unreached
+
+A temporary `Bit#(8) whyMask` on `PreparedExec`, displayed on every
+firing, over the whole suite:
+
+| clause | firings |
+|---|---|
+| DF suppression | 3 |
+| address not installed (AD) | 2 |
+| M+/CM crossing a word boundary | 1 |
+| **the decimal refusal** | **0** |
+| **progressive indexing with X0** | **0** |
+
+Six firings, matching the six remaining inline completions exactly.
+
+## 2. >>> AND THE PROGRESSIVE-X0 REFUSAL IS PRINTED, NOT INFERRED <<<
+
+It had been an **uncited** refusal in BOTH VFL arms. Reference Manual
+printed **p.21** (PDF 24), read at the ink:
+
+> *"In progressive indexing, the value field, bits 0-24 of the index
+> specified by I, is used as the effective address. **IF PROGRESSIVE
+> INDEXING WITH INDEX REGISTER X0 IS SPECIFIED, INDICATOR OP (OPERATION
+> CODE INVALID) IS SET.**"*
+
+Index field 0 means "no indexing" for ordinary addressing -- see
+`effAddr24`'s `if (idx == 0) return raw` -- so progressive indexing has
+no register to advance and the machine refuses it. The citation is now
+at both arms and in the deck. **The model was right and simply never
+said why.**
+
+## 3. THE INJECTION I WROTE FOR THE DECKS SURVIVED
+
+Both decks were written expecting to pin the two clauses, on the
+reasoning that deleting a clause makes preparation issue an operand
+fetch for an instruction that never reads it, and that the extra fetch
+would move a zero-tolerance cycle window.
+
+**It does not.** With both clauses deleted the counts are still exactly
+145 and 142, and every value check still passes. So the claim was swept
+properly rather than left as an impression:
+
+> **A full-suite run with `completesWithoutFetch` hard-wired to `False`
+> came back 5633 PASS / 0 FAIL.**
+
+The field is **behaviourally inert on this corpus**. The look-ahead's
+operand fetch overlaps, so issuing a pointless one costs nothing any
+current check can see.
+
+### What was done about it
+
+The field is **kept**, and labelled at its declaration with exactly
+that: no test distinguishes it, measured rather than suspected. It is
+kept because the machine would not request an operand for an operation
+it has already refused and the target is cycle accuracy -- but a field
+nothing can observe is a liability if it is not advertised as one.
+
+**What would pin it:** either a count of memory requests the testbench
+can read, or M2's look-ahead overlap, at which point a pointless fetch
+costs a clock and those two decks' windows move.
+
+### And the decks keep their value, with the right claim attached
+
+They pin the OP REFUSALS, which is worth having independently -- one
+sourced to printed p.21, one labelled as a MODEL scope boundary, since
+the real 7030 does perform decimal VFL arithmetic and this model
+refuses it so an unbuilt operation is visible rather than silently
+wrong. Their measured injection is the refusal itself: replace either
+arm's test with `False` and all four checks fail, with
+`refused_head` at word 272 showing the store LANDING
+(`0xfffffffffffffff9`, `0xffffffffffff1234`) and the machine hanging on
+its `BZOP, $` self-branch at half-word 392 or 391 until the step cap.

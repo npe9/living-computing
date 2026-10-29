@@ -1,0 +1,46 @@
+! THE DECIMAL REFUSAL IS A MODEL SCOPE BOUNDARY, NOT IBM SEMANTICS, and
+! this deck is labelled that way on purpose.
+!
+! The real 7030 performs decimal VFL arithmetic.  THIS MODEL DOES NOT,
+! and refuses it with indicator OP (operation code invalid) so that an
+! unimplemented operation is a VISIBLE refusal rather than a silent
+! wrong answer -- the same choice bsv/README.md's scope list records for
+! every other unbuilt operation.  What this deck pins is therefore the
+! MODEL's documented boundary; it must not be read as a statement about
+! the machine.
+!
+! The three RADIX CONVERSIONS are deliberately exempt and are tested
+! elsewhere (decks/load_converted.strap, decks/vfl_convert.strap): for
+! LCV, CV and LTRCV the decimal bit SELECTS A DIRECTION rather than
+! asking for decimal arithmetic -- Reference Manual printed p.72, "If
+! this bit is zero, the original field is binary; if this bit is one,
+! the original field is decimal" -- so refusing them was refusing the
+! operation's normal case.  See StretchExecute's `radixConv`.
+!
+! WHY IT NEEDED A DECK: it is one of the six causes of
+! StretchIBox's prepareExec.completesWithoutFetch, and a census of which
+! causes the corpus reaches (docs/ebox_roadmap.md) found this one and
+! progressive-indexing-with-X0 firing ZERO times in 5621 checks.  Both
+! were reasoned from the arms rather than measured.
+!
+! THE POSITIVE CONTROL IS THE POINT: the legal BINARY store runs first
+! and its target is checked for the value it must have, so the deck
+! cannot pass by doing nothing at all.
+        SLC, (8)300.0
+START   L(BU,32,8), DATA1
+        ST(BU,32,8), TA+.48          ! legal: binary unsigned
+        BOP, $                       ! hang if OP came on: that one is legal
+        ST(DU,32,8), TB+.48          ! DECIMAL, and not a radix conversion
+        BZOP, $                      ! hang if OP did NOT come on
+        B, PASS
+PASS    BEW, $
+        CNOP
+        SLC, (8)400.0
+DATA1   DD(BU,32), (16)12345678
+        SLC, (8)410.0
+TA      DD(BU,64), (8)1777777777777777777777
+        DD(BU,64), (8)1777777777777777777777
+        SLC, (8)420.0
+TB      DD(BU,64), (8)1777777777777777777777
+        DD(BU,64), (8)1777777777777777777777
+        END, START
