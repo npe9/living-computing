@@ -3,6 +3,35 @@
 Instructions for AI agents (Claude Code and others) working in this
 repository.
 
+## Scope — FINISH STRETCH FIRST
+
+**The owner's standing instruction, 2026-10-29, in-session: "only
+concentrate on the stretch. the stretch must be finished before moving
+on. Make that a rule."**
+
+This repository holds a sibling directory per machine — `atlas`,
+`b5000`, `cdc6600`, `cray1`, `pim`, `symbolics3600`, `transputer` and
+the rest. **They are not the work.** `stretch/` is the work, until it
+is finished.
+
+Concretely, for an agent working on Stretch:
+
+- **Do not start, plan, or extend another machine.** If a "keep going"
+  leaves you short of ideas, the next item comes from `stretch/`'s own
+  lists — `stretch/bsv/README.md`, `stretch/strap/README.md`,
+  `stretch/docs/archival_inventory.md`, and the goal set in
+  `stretch/docs/source_audit.md` — never from a sibling directory.
+- **Do not commit another machine's files.** `git add -A` run from
+  `stretch/` stages the WHOLE repository, and has swept a sibling
+  project's work into a Stretch commit (see
+  `stretch/docs/ebox_roadmap.md`). **Stage by path.**
+- A comparison with another machine is research only, and belongs in
+  `stretch/docs/` as a citation, not as code in a sibling directory.
+
+"Finished" is defined by `stretch/docs/source_audit.md`'s goal set:
+Phase A (MCP runs), then G1 cycle accuracy, G2 the instruction set,
+G3 the assembler, G4 verification infrastructure, G5 the render queue.
+
 ## Autonomy
 
 The owner has granted standing permission to **act independently**
