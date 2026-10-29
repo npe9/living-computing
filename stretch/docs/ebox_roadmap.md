@@ -477,3 +477,28 @@ its own comment that the per-cycle division is invented.
 That is the decision to make before writing `mkDivBox`, and it should
 be made deliberately rather than discovered halfway through. The
 remaining seventeen charts are the same seam for the other operations.
+
+
+# A COMMIT-HYGIENE RULE, PAID FOR TWICE
+
+**`git add -A` run from `stretch/` stages the whole repository, not
+`stretch/`.** Commit `23ca2d5`, whose subject is the divide box, also
+contains fifteen files belonging to three unrelated machine projects --
+`pim/`, `symbolics3600/`, `transputer/` -- plus a `README.md` change,
+all of which were the owner's untracked work in progress. Nothing was
+lost or altered, but unrelated work is mixed into a commit that claims
+to be about one thing, and it was pushed before anyone noticed.
+
+This is the SECOND time in one session. The first swept ten debug
+probes into a commit, which is why `tests/verify_no_probes.py` exists
+and runs first. **That check cannot see this one**: it scans committed
+files under `stretch/`, and these are above it.
+
+> **THE RULE: stage by path, never `-A`, and when the working directory
+> is `stretch/` remember that the repository root is one level up.**
+> `git add bsv/X.bsv tests/Y.sh docs/Z.md` costs one extra line and
+> cannot reach into a sibling project.
+
+Splitting the commit afterwards means rewriting pushed history, which
+is a destructive operation and needs the owner's explicit say-so, so it
+has deliberately NOT been done.
