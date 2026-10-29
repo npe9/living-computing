@@ -7882,6 +7882,47 @@ run "I-Box 4 listing bit-exact comparison" python3 verify_ibox4_listing.py
 # -- 1. Hand-assembled BSV smoke test (StretchSmoke.bsv, not STRAP-derived) --
 cd "$BSV_DIR"
 run "bsv smoke test (make run)" make run
+
+# >>> THE FIRST ARITHMETIC BOX: DIVIDE AS ITERATIVE HARDWARE. <<<
+# docs/ebox_roadmap.md step 6, and the owner's framing is the point --
+# "you aren't trying to EMULATE Stretch's timings, you are trying to
+# REPRODUCE them", "stalls etc should happen as actual stalls".
+#
+# fpDivFrac does all 96 restoring-division iterations combinationally in
+# ONE clock and eboxClocks charges a flat 4 for `/`, a number its own
+# comment calls a floor.  mkFpDivBox is a counter-driven FSM instead:
+# trial cycle, intermediate reduction cycles developing several quotient
+# bits each, last cycle, ending when the shift counter reaches zero.
+#
+# THE STRUCTURE IS SOURCED, from two of the nineteen PAU/SAU timing
+# charts docs/source_audit.md lists as unmined -- R23-9732 figure 3.8.19
+# (PDF 243) "GATE COUNTER ADDER TO REG & SUB SHIFT AMOUNT FROM CTR" and
+# "(D3, CTR=0, TRUE RESULT) -> FINAL DVDE TGR", and figure 3.8.15 sheet
+# 2 (PDF 240), which names the trial/intermediate/last phases.
+#
+# ONE NUMBER IS INVENTED and says so at its declaration: how many
+# quotient bits a cycle develops.  Figure 3.8.15 attributes that to the
+# "Multiple Selection Circuits", ALDs the volume does not reproduce.
+#
+# TWO ASSERTIONS, DIFFERENT IN KIND.  The ANSWER is checked
+# bit-identical against fpDivFrac -- same 96 restoring steps, several
+# per clock instead of all at once, so there is nothing to approximate.
+# The CYCLE COUNT is checked against a LITERAL 18.
+#
+# INJECTION (measured, and the FIRST version of this test FAILED to
+# catch it): change divBitsPerCycle from 6 to 8 and all five checks
+# fail with "cycles = 14, want 18" while every ANSWER check still
+# passes -- which is exactly the separation wanted.  The first version
+# computed the expectation as 1 + ceil(96/divBitsPerCycle) + 1, derived
+# FROM the constant under test, so the injection moved the FSM and its
+# own expectation together and the test passed.  An expectation derived
+# from the thing it checks is not an expectation.
+# NOTE THE PATH: this block sits after `cd "$BSV_DIR"` above, so a
+# bare ./run_divbox_test.sh is looked for in bsv/ and not found.
+# (Measured: the suite reported "ONE OR MORE TESTS FAILED" with ZERO
+# FAIL lines, which is the run() status check added 2026-10-27
+# working -- before it, a build failure with no FAIL lines passed.)
+run "DIVIDE AS AN ITERATIVE BOX (answer bit-exact, cycles structural)" "$TESTS_DIR/run_divbox_test.sh"
 # -- 1b. StretchDecode's instruction formats swept against the length
 # tag jb_ax3a p.140 states, over all 2^14 half-words (both with the
 # address field zeroed and all ones).  Not a program: it drives

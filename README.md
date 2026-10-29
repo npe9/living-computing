@@ -13,7 +13,7 @@ code the listing prints next to them.
 **One machine has substance.** `stretch/` (the IBM 7030) is 697 tracked
 files: a STRAP-1 assembler in Python, a Bluespec model of the machine,
 303 card decks, 226 verify scripts, and 55 scanned PDFs of primary
-sources. The other 23 directories are stubs — a sourced README and an
+sources. The other 26 directories are stubs — a sourced README and an
 empty `bsv/`. 496 commits since 2026-08-24, almost all of them in
 `stretch/`.
 
@@ -90,8 +90,11 @@ recorded as a survival with an expiry date.
 | `pdp1/` | DEC PDP-1 (1959) | stub |
 | `pdp11/` | DEC PDP-11 (1970) | stub |
 | `pdp8/` | DEC PDP-8 (1965) | stub |
+| `pim/` | ICOT Parallel Inference Machine, initially PIM/m (1992) | stub; staged plan |
 | `risc1/` | Berkeley RISC I (1981) | stub |
 | `s360/` | IBM System/360 (1964) | stub |
+| `symbolics3600/` | Symbolics 3600 Lisp machine (1983) | stub; staged plan |
+| `transputer/` | INMOS IMS T800 transputer (1987) | stub; staged plan |
 | `univac1/` | UNIVAC I (1951) | stub |
 | `vax/` | DEC VAX-11/780 (1977) | stub |
 | `whirlwind/` | Whirlwind I (1951) | stub |
@@ -102,7 +105,8 @@ and the place, what the machine introduced with concrete figures, the
 line `Bluespec implementation: bsv/ (not started)`, and the sources that
 would be used — plus a `bsv/` directory holding only `.gitkeep`. They
 are sourced notes on what each machine was, not scaffolding for code
-that exists.
+that exists. A few stubs also have a `plan.md` that fixes scope and
+evidence gates before implementation begins.
 
 ## `stretch/`
 
