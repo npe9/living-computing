@@ -1564,3 +1564,127 @@ eight**, including the named address -- merged word `004215`, printed
 p.72 line 4, J field 0 instead of 10 -- while "one level (`TX1 SYN,
 $10`)" still passes, which is what isolates transitivity as the thing
 under test.
+
+# >>>>>> PHASE A RE-AUDITED AGAINST THE CODE, 2026-10-29 <<<<<<
+
+The Phase A section above describes a fixture that no longer exists.
+**All three punching tasks are done**; the prose was written before
+they landed. What follows corrects it, and the correction changes the
+shape of the work: **Phase A is ONE blocking item plus one piece of
+genuinely missing A2, not three items.**
+
+## A1 — done, and its DONE-CRITERION IS RETIRED, not merely unmet
+
+The punching is correct: `strap/iocd.py:215-216, 262-271` writes the
+reference number to columns 63-66 and the absolute exit to 67-72, and
+raises on a wrong digit count. Measured over `prosa.MCP_IODS`:
+`MCPRDR` -> `0001`/`004000`, `MCPOUT1` -> `0002`/`004000`, `MCPOUT2`
+-> `0003`/`004000`.
+
+**But the criterion "done when `T IOREQ` is non-empty" was retired by
+commit `782f6af`** and this file never caught up: `T IOREQ` is the
+PROBLEM-PROGRAM request table that MCP-DECODE builds for a job, and no
+job is loaded, so empty is CORRECT. The request counts live in printed
+p.64's table. The two were conflated.
+
+> **AND A1 HAS NO DIRECT REGRESSION COVERAGE.**
+> `tests/verify_card_columns.py` checks the BIT ARITHMETIC that column
+> 63 is bit 372 — it never calls `iod_card_text`. The only boot checks
+> derived from the card text are `mcp_ucbf1_0/1`, which cover SCA6
+> output words 0-1, i.e. roughly columns 1-21. **Columns 63-72 are
+> asserted nowhere.**
+
+## A2 — the doc is stale AND A2 is genuinely incomplete
+
+Stale: `MCP_IODS` (`strap/prosa.py:368-378`) has had the reader and
+TWO OUTPUT TAPES since `782f6af`; `TERMINATOR_CARD` (`:379`) is now a
+marker tuple whose blank fields are never punched. The deck is nine
+cards — five IOCD, three IOD, one MCPP — landing at 2870-3004,
+starting exactly at `X IN END`.
+
+**Incomplete, and this is the finding.** printed p.98 case 1, read at
+the ink rather than from a summary:
+
+> *"The card reader is assigned to MCP… **The output tape units are
+> assigned to MCP** and the necessary tables are constructed… **unit
+> and file area tables are formed for the input tapes**, but they are
+> not put under MCP ownership until a system command changes the
+> operating status to overlapped."*
+
+Three things, and the deck supplies two. **The input tapes are
+missing.** Corroborated inside the model: `decks/mcp_bootstrap_p31.strap:90`
+reads a spool INPUT tape IOD number out of the communication region
+(`LV, $14, SRTAPE`, "BYPASS GET SPOOL REAL TYPE IOD NUMBER"), which
+with no input-tape IOD is zero. Note also `prosa.py:291` gives channel
+34 only two units and both are consumed by the output tapes.
+
+## A3 — the card IS punched, and is bit-exact against MCP's own literals
+
+Not an unused helper. `prosa.py:528, 532-534` punches it as card 9 at
+word 2990, and it matches the listing's comparands exactly:
+
+| | fixture | MCP's literal |
+|---|---|---|
+| cols 10-13 | `0o2040410020042004` | `XMCPP DD(BU,48)`, `decks/mcp_bootstrap_p35.strap:71` |
+| cols 14-15 | `0o42001002` | `XBYPS DD(BU,24)`, `decks/mcp_bootstrap_p36.strap:123` |
+
+It also **terminates the IOD scan correctly**: `decks/mcp_bootstrap_p25.strap:129`
+loops while bit 132 is one, and that bit is 1 for `IOCD` and `IOD` and
+**0 for `MCPP`**.
+
+**Its criterion is unmet for an ORDERING reason, not a card reason.**
+p.31's mode read is reached only from p.30, and the chain
+p.27 -> p.28 -> p.29 -> p.30 -> p.31 is cut at p.27 line 13's
+`BZXCZ, XERROR`. The current boot never executes the MCPP read.
+
+> **A3's OWN OPEN QUESTION IS ALREADY ANSWERED.** `strap/iocd.py:299-307`
+> says `C22-6728-1` p.96's mode-field width "is on the render queue in
+> docs/source_audit.md". It is not on that queue and does not need to
+> be: `decks/mcp_bootstrap_p31.strap:63` reads **24 bits = two columns,
+> 14-15**, and compares against `ON`/`OF`/`BY`. The rest are never read.
+
+## What the testbench actually asserts — the failure, as the expected state
+
+There is **no check** for `T IOREQ`, for p.64's validity-check table,
+for the MACH CONF counts, or for the disposition bit. What is asserted
+is the whole error path: `mcp_x_err_ad` = `0x00CE600000000000`
+(= `001471.40`, p.27 line 13 taken), ten console words of
+"IO ASSIGNMENTS CAN NOT BE MADE", and `pc_check = 239`. **When Phase A
+succeeds, twelve checks move at once.**
+
+## Did the SYN fix explain it? Partly, and the reject SURVIVED
+
+The MACH-CONF-zero symptom is plausibly explained — p.72's scan ran on
+a zero index, and two post-fix corroborations are already in the
+testbench (`S YPRCH` now 33, the printer's channel; AH -> AE). **But
+the reject did not move.** Commit `6925932` changed exactly two
+expectations, and `mcp_x_err_ad`, the console words and `pc_check` were
+not among them. So either the conf counts are still zero for a second
+reason, or they are now non-zero and ASSIGN rejects for a different
+one.
+
+> **>>> THE NEXT ACTION IS ONE MEASUREMENT, AND IT NEEDS NO NEW CODE.
+> <<<** Read words **1962-1964** (the validity-check table) and
+> **1787-1789** (`T IOREQ`) after one boot and compare against the
+> pre-fix rows recorded in `docs/mcp_io_tables.md:264-278` — DISK
+> (0,0,1), CONSOLE (1,0,0), READER (37,0,0), EXTRA (0,0,0), TAPE
+> (0,0,0), conf bytes all zero, three type bytes corrupted.
+>
+> **Non-zero conf ⇒ the SYN fix closed the counts and the reject has a
+> NEW cause** (most likely the missing input tapes, or `X242`'s
+> `C = 4` against rendered p.72's "C = 0 means overlapped", flagged
+> earlier in this file and never followed up).
+> **Still zero ⇒ the two were independent all along.**
+
+## Phase A, restated
+
+1. **Measure 1962-1964 and 1787-1789 after one boot.** Everything is
+   downstream of this. No instrumentation, no new code.
+2. **Supply the INPUT-tape IODs p.98 case 1 names**, and whatever tape
+   units `bsv/StretchIO.bsv` must present for them.
+3. **Reconcile `X242`'s `C = 4`** (`decks/mcp_bootstrap_p27.strap:61`)
+   against rendered p.72's entry-mode meaning. A reading, not a run.
+4. **Add the checks that are missing**, so the criteria become
+   mechanically observable: the conf table at 1962-1964; `S COM RG`
+   (word 1129) bits .8/.9 for A3's mode; the MCPP card's arrival at
+   2990; and the IOD card's columns 63-72.
