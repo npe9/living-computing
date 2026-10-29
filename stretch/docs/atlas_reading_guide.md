@@ -129,3 +129,102 @@ operations.
 The remaining classes — floating point, index, branch, I/O — have their
 own methodology pages in the same range and have NOT yet been read with
 this question in mind.
+
+---
+
+# The other methodology pages, read 2026-10-29
+
+The VFL section above was read first because the divide question
+forced it. These are the rest, and two of them turn out to contain
+ARCHITECTURAL STATEMENTS rather than only methodology.
+
+## Floating point — PDF 40-41
+
+**Method:** *"Sequences of operations were generated and timed by
+GENER."* Simulator output, not hardware measurement — which the
+project already records, and which these pages confirm in the authors'
+own words.
+
+**Data:** *"A normalized floating point one (1) was the initial operand
+unless otherwise specified… The execution of large numbers of
+consecutive operations caused a time increase due to shifting in some
+cases (normalized add is one example). The addition of 10 thousand
+ones involves preshifting and post normalization time."*
+
+So the FP columns are **1 + 1 + 1 … ten thousand times**, with the
+exponent climbing and dragging pre-shift and normalisation time in. A
+model matching those numbers has matched that sequence, not floating
+point in general.
+
+**Operand placement:** external `100011₈`-`100014₈` without
+forwarding, `1000011₈` with; I-box operands index registers 9-12
+(9 with forwarding); internal always `$R`, the accumulator's right
+half — and the authors note `$R` changing under successive double-length
+operations *"introduced a large factor of time… by large exponent
+differences"*.
+
+### >>> TWO MORE CLASSES OF UNREPRESENTATIVE COLUMN <<<
+
+**"To memory" operations are WORST CASE**, not typical:
+
+> *"Repeated 'to memory' operations lead to queuing for the LAAR, and
+> the present measurements on these instructions actually refer to the
+> WORST POSSIBLE SITUATIONS, not often realized in actual practice."*
+
+Named: `ST`, `SLO`, `SRD`, `SRT`, `D/`, `LFT`, `M+`, `M+MG`. Calibrate
+a store against those pages and you have calibrated the worst case.
+
+**And the forwarding columns contain almost no memory traffic at all:**
+
+> *"Forwarding merely means using the same operand address. For
+> fetch-type instructions, 'forwarding on consecutive fetch' actually
+> occurs, and **only one true memory fetch is made for the entire
+> sequence of 10,000 instructions**."*
+
+One fetch in ten thousand instructions. Those columns measure a fully
+forwarded pipeline; they say nothing about per-instruction memory cost.
+
+## Transmit — PDF 105, and the model already agrees
+
+> *"**LA is emptied before the actual transmission of information.**"*
+
+**The model does this**, and did before the page was read: Transmit is
+not `isEboxClass`, so it goes through `iboxHazard`, whose default arm
+is `Bool h = True; // anything not listed (Transmit, I/O, EX...):
+drain first`. An independent corroboration of existing behaviour.
+
+(Operands: external in the two lowest memory boxes, internal at
+`4.0`-`9.0`, index operands `$2`-`$14`, i.e. words 18-30.)
+
+## Index arithmetic — PDF 108, and one REQUIREMENT the model does not meet
+
+Statements about the machine, not the measurement:
+
+* *"In SX, no memory fetch is necessary. This is not true for SV, SC
+  and SR. This explains the large difference in timing."*
+* *"All successful refill action requires memory fetches. All direct
+  index arithmetic instructions except SX require memory fetches. **No
+  memory fetch is required for immediate index arithmetic.**"*
+* *"Concurrent E-box activity can overlap much of the I-box time. This
+  is, of course, not possible if the LA is empty."*
+* > *"**The RNX instruction requires the draining of LA.**"*
+
+> **>>> THE LAST ONE IS AN OPEN REQUIREMENT. <<<** `iboxHazard`'s
+> `DirIndex` arm — which is where `dixop_RNX` lands — does NOT drain:
+> it waits only if a level holds the effective address, or the refill
+> word for `V+CR`. RNX is unimplemented today (it reaches the DirIndex
+> default and sets OP, the one entry still true on
+> `StretchExecute`'s original scope list), so nothing is wrong now.
+> **When RNX is built, `iboxHazard` needs a case for it**, and this
+> page is the citation.
+
+The fetch list is also a cross-check on `prepareExec`: these are
+I-box-class instructions, so they do not go through `fetchesOperand`,
+but "all direct index arithmetic except SX require memory fetches" is
+the same kind of statement and should agree with whatever the index
+arms do.
+
+## Still unread
+
+`INSTRUCTION SEQUENCE GENERATION AND TIMING` (around PDF 36), which is
+GENER's own description and governs every number in the volume.
