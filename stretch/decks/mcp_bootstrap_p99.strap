@@ -1,0 +1,324 @@
+! mcp_bootstrap_p99.strap -- printed page 99:
+! "***** CHANNEL-UNIT STATUS TABLE DEFINITION *****".
+! docs/MCP_Mar63_001-249.pdf PDF p.106, header read not assumed: the
+! top line prints "TIME CLOCK 00054041  PUNID 11C11IPL  CARD ID
+! AA000001  DIST. OF 3701  3701  PAGE NUMBER 99".
+!
+! FIFTY-TWO LINES, AND THE COUNT WAS CONFIRMED, NOT ESTIMATED.  The
+! rightmost column prints the card serial: lines 1-7 are AA000001 to
+! AA000007 and lines 8-52 are BA000001 to BA000045, so for the BA
+! series the line number is the serial plus seven.  BA000045 is the
+! last printed row and it is line 52.
+!
+! >>> THE WHOLE PAGE IS DEFINITIONS.  Thirty-four of the fifty-two
+! lines (19-52) are SYN cards and NOT ONE of them compiles a word.
+! Two lines compile storage -- 9 and 10 -- and they are punch card
+! images, not program (see SUBSTITUTIONS below).  So this deck's
+! entire check surface is THIRTY-FOUR SYMBOLS AND ZERO LISTING ROWS,
+! which is printed p.24's convention and the one p.98 used: a SYN
+! prints its VALUE in the LOCATION column and no word, so it is
+! checked in !SYM and must not be faked into a !CHECK.
+!
+! WHAT THE PAGE IS.  It is the start of a SECOND punched deck inside
+! the SAME assembly.  Printed p.98 line 36 is "X IN END SYN,$" at
+! 005466.00; line 9 HERE compiles at that very location, so the
+! location counter never restarted, and this page's own header reads
+! "PUNID 11C11IPL" -- the previous deck's identification -- which
+! line 13 then changes to 11D11MCP.  That is exactly the pattern
+! printed pp.13/15/37 recorded for the IPL-to-MCP handoff.  Lines
+! 7-14 are punch control (PRNS, PUNFUL, two card images, SLC,
+! PUNORG, PUNID, RESEQ); lines 15-18 are the boxed heading; lines
+! 19-52 are the table.
+!
+! FIRST PRINTED LOCATION on the page is 005466.00 (line 9, not
+! transcribed).  FIRST AND LAST TRANSCRIBED LOCATIONS are the SLC's
+! 215000.00 (line 11) and the symbol values, which all lie in word
+! zero: 000000.00+ (line 19) through 000000.77+ (line 51), with line
+! 52 at 000000.40+.
+!
+! ---------------------------------------------------------------
+! SUBSTITUTIONS AND OMISSIONS
+! ---------------------------------------------------------------
+! (1) LINES 9 AND 10 ARE NOT TRANSCRIBED, and this is an ASSEMBLER
+!     LIMITATION, not a reading.  Both are
+!     "(CC*)DD(BU,,12),<card image>" -- line 9's datum begins
+!     "B      HED, REP, 11D11MCP, LOAD," and line 10's is an
+!     11D11MCP trailer.  strap_asm.entry_table raises "entry mode
+!     'CC' is not implemented ... CC's 12-bit card code is tabulated
+!     in no document read so far".  Printed p.15's deck already set
+!     this precedent and for the same reason, and it costs nothing
+!     here: the two card images occupy 005466.00 to 005476.34 and
+!     line 11's SLC moves the counter to 215000.00 regardless, and
+!     no symbol on this page depends on either.
+!
+! (2) LINES 1-8 AND 15-18 COMPILE NOTHING AND ARE NOT TRANSCRIBED:
+!     1-6 are the title block (IBM 7030 MASTER CONTROL PROGRAM /
+!     INTERNATIONAL BUSINESS MACHINES CORP. / DEPT. 271, BLDG. 705 /
+!     POUGHKEEPSIE,N.Y. / MARCH 15, 1963), 7 is PRNS, 8 is PUNFUL,
+!     and 15-18 are the asterisk box around the heading.  The deck
+!     starts at the SLC, as printed p.15's does.
+!
+! (3) BLANKS INSIDE SYMBOL NAMES ARE DROPPED, as on every page since
+!     p.2.  The NAME column prints "S UN A A", "S CH AVL", "S CH OP",
+!     "S MULTI", "S DISP O", "S UN AVL", "S UN ASG", "S UN SUP",
+!     "S SET UP", "S OWNER", "S SETDN", "S SEL", "S VER", "S SEOP",
+!     "S CNS SG", "S U DENS", "S C MODE", "S EQUIP", "S UNIT",
+!     "S UNIT K", "S ELG", "S MOUNT", "S REW", "S I MNT", "S RD",
+!     "S WR", "S SPACE", "S CTL", "S REL", "S OVRES", "S ARC AD";
+!     only "STATI" and "SUNRES" are printed closed up.  Line 20's
+!     STATEMENT column likewise prints "SYN, S UN A A".
+!
+! (4) A SYN VALUE WRITTEN ".26" IS WRITTEN 0.26, p.98's convention
+!     (3).  Lines 23, 25, 36, 44, 48, 49 and 50 print the word
+!     number as empty where it is zero.
+!
+! (5) NOTHING ELSE.  Among the lines this deck DOES transcribe --
+!     11-14 and 19-52 -- no printed spelling was refused by
+!     strap_asm.  Lines 9 and 10 were, and that is omission (1).
+!
+! ---------------------------------------------------------------
+! THE GLYPHS, AND HOW EACH DISPUTED ONE WAS SETTLED
+! ---------------------------------------------------------------
+! EVERY LOCATION ON THIS PAGE IS AN OCTAL FIELD and prints as
+! "000000.NN+".  A round glyph there is a 0 with certainty, and the
+! page prints a great many of them open on the right: line 19's
+! location renders to the eye at 1200 dpi as "000000.0C+" and line
+! 20's as "000000.CC+".  They are all zeros.  That same ink level
+! calibrates the NAME column beside it, which is where the C/O/0
+! trouble actually lives.
+!
+! >>> THE NAMES ARE CORROBORATED BY A PRIMARY SOURCE, which is the
+! unusual thing about this page.  C22-6728-1, "MCP System Analysis
+! Guide", Appendix A "Symbolic I-O Control Tables", printed pp.261-
+! 267 (PDF page = printed page), tabulates the channel status table,
+! the unit status table and their bit symbols.  THIRTY-THREE OF THE
+! THIRTY-FOUR NAMES HERE, AND THEIR BIT POSITIONS, APPEAR THERE:
+!
+!   .00-.17 SUNAA   .25 SCHAVL  .26 SCHOP   .27 SMULTI  .28 SUNAVL
+!   .29 SUNASG  .30 SUNSUP  .31 SSETUP  .32 SOWNER  .46 SSEOP
+!   .50-.51 SCMODE  .52-.55 SEQUIP  .57 SRD  .58 SWR  .60 SCTL
+!   .61 SREL  .62 SUNRES  .63 SOVRES  .32-.49 SARCAD
+!   .56-.58 SUNIT  .59-.62 SUNITK  .26 STATI  .27 SDISPO
+!   .33 SSETDN  .39 SSEL  .40 SVER  .47 SCNSSG  .50 SELG
+!   .51 SMOUNT  .52 SREW  .53 SIMNT  .59 SSPACE
+!
+! That settles by document, not by squinting, the four glyph pairs
+! this page cannot decide by shape:
+!   line 25's last character -- "S DISP O" or "S DISP C"?  Appendix
+!     A, printed p.265: ".27 SDISPO, 0 Tape mounted / 1 No tape
+!     mounted".  It is an O.
+!   line 30 -- the first letter of "OWNER" prints open-right and is
+!     indistinguishable from the C of line 35's "S CNS SG".
+!     Appendix A printed p.262: ".32 SOWNER".  The row's own comment
+!     says "-PRIORITY LEVEL,  OWNERSHIP".
+!   line 51 -- "S OVRES" likewise; Appendix A printed p.264 ".63
+!     SOVRES", comment "-OVERLAPPED RESERVE INDICATOR".
+!   line 34 -- "S SEOP"; Appendix A printed p.266 ".46 SSEOP".
+! The C/D pair gave no trouble here: line 31's SETDN, line 36's
+! DENS, line 37's MODE, line 45's RD and line 52's AD all print the
+! straight vertical left stem and squared corners, plainly unlike
+! the round stemless C of SCNSSG and SCMODE in the same rows.
+!
+! >>> TWO PLACES WHERE THE LISTING AND APPENDIX A DISAGREE.  Both
+! are recorded, neither is "corrected" -- the listing is the primary
+! artifact and C22-6728-1 is a LATER REVISION of a different
+! document.
+!   (a) LINE 36 IS "S U DENS", six characters, and Appendix A
+!       printed p.266 calls bit .49 SUNDENS, seven.  Rendered at
+!       1800 dpi the NAME column shows S, blank, U, blank, D, E, N,
+!       S with no N before the D.  Transcribed as printed: SUDENS.
+!   (b) LINE 19 IS "SYN(BU,25)", confirmed twice on its own row --
+!       the data-description column prints "BU,31 ,10" and 0o31 is
+!       25 -- while Appendix A printed p.261 gives SUNAA as bits
+!       .00-.17, eighteen.  Transcribed as printed: 25.
+!
+! ---------------------------------------------------------------
+! WHAT ACTUALLY CHECKS WHAT
+! ---------------------------------------------------------------
+! * NO ROW IS AN INDEPENDENT BINARY CHECK, because there are no
+!   rows.  The BINARY OUTPUT column prints "+00000000" on all
+!   thirty-four SYN lines and that is the column working correctly
+!   on a definitions page, not a crop in the wrong place.
+! * EACH SYMBOL IS CHECKED TWICE BY THE PAGE ITSELF, and this is a
+!   real check of the digits though not of the card: the STATEMENT
+!   column prints the bit offset in DECIMAL and the LOCATION column
+!   prints the same offset in OCTAL, and all thirty-four agree
+!   (0.25/.31, 0.46/.56, 0.63/.77, and so on).  The data-description
+!   column gives a third rendering of the LENGTH for the seven
+!   multi-bit fields: BU,31=25, BU,02=2, BU,04=4, BU,03=3, BU,22=18.
+! * THREE SYMBOLS ARE CHECKED AGAINST ANOTHER TRANSCRIBED PAGE.
+!   Printed p.98 lines 24, 25 and 26 declare STATI SYN(BU,1),.26,
+!   SIMNT SYN(BU,1),.53 and S MOUNT SYN(BU,1),.51 in the OTHER deck
+!   of this same assembly.  All three agree with this page exactly.
+!   That is three of thirty-four.
+! * APPENDIX A CORROBORATES THIRTY-THREE SPELLINGS AND BIT
+!   POSITIONS but it is a different document and a later revision,
+!   with the two disagreements above.  Treat it as corroboration of
+!   the SPELLINGS -- which listing_oracle can never check -- and not
+!   as verification of the transcription.
+!
+! ---------------------------------------------------------------
+! LISTING MARKS
+! ---------------------------------------------------------------
+! EVERY ONE of the fifty-two line numbers carries an asterisk right
+! after it ("19*", "52*").  That is not the mark printed pp.3/37/38/
+! 39/88/98 carry, which sits after the LOCATION; this one is in the
+! line-number column and is on every line of the page.  Lines 8 and
+! 10 carry a SECOND asterisk, in the location column, which is the
+! familiar one.  No asterisk changes a compiled bit.
+
+        SLC, (8)215000.0            ! line 11 -80K
+
+        PUNORG                      ! line 12
+        PUNID, 11D11MCP             ! line 13
+        RESEQ                       ! line 14
+
+! ---- ***** CHANNEL-UNIT STATUS TABLE DEFINITION ***** (lines 15-17)
+SUNAA   SYN(BU,25), 0.0             ! line 19 -UNIT AREA TABLE FIELD
+SUNA    SYN, SUNAA                  ! line 20 -UNIT AREA TABLE FIELD
+SCHAVL  SYN(BU,1), 0.25             ! line 21 -CHANNEL AVAILABILITY,
+                                     !           CHANNEL STATUS
+SCHOP   SYN(BU,1), 0.26             ! line 22 -CHAN OPERATING, CHAN
+                                     !           STATUS
+STATI   SYN(BU,1), 0.26             ! line 23 -TYPE OF TAPE MTED.
+                                     !           0 SCRATCH 1 SPECIF
+SMULTI  SYN(BU,1), 0.27             ! line 24 -MULTI-UNIT CHAN, CHAN
+                                     !           STATUS
+SDISPO  SYN(BU,1), 0.27             ! line 25 -UST REEL TUPE  (sic,
+                                     !           printed exactly so)
+SUNAVL  SYN(BU,1), 0.28             ! line 26 -UNIT AVAILABILITY,
+                                     !           UNIT STATUS
+SUNASG  SYN(BU,1), 0.29             ! line 27 -UNIT ASSIGNMENT,
+                                     !           UNIT STATUS
+SUNSUP  SYN(BU,1), 0.30             ! line 28 -UNIT SUPPRESSION,
+                                     !           UNIT STATUS
+SSETUP  SYN(BU,1), 0.31             ! line 29 -PSEUDO-OP SET-UP,
+                                     !           UNIT STATUS
+SOWNER  SYN(BU,1), 0.32             ! line 30 -PRIORITY LEVEL,
+                                     !           OWNERSHIP
+SSETDN  SYN(BU,1), 0.33             ! line 31 -ORIGINAL DENSITY SET
+                                     !           INDICATOR
+SSEL    SYN(BU,1), 0.39             ! line 32 -SELECT FILE STATUS
+SVER    SYN(BU,1), 0.40             ! line 33 -VERIFY FILE STATUS
+SSEOP   SYN(BU,1), 0.46             ! line 34 -SUPP END OF OP STATUS
+SCNSSG  SYN(BU,1), 0.47             ! line 35 -CONSOLE SIGNAL, FILE
+                                     !           STATUS
+SUDENS  SYN(BU,1), 0.49             ! line 36 -CURRENT DENSITY OF UNIT
+SCMODE  SYN(BU,2), 0.50             ! line 37 -CHANNEL MODE
+SEQUIP  SYN(BU,4), 0.52             ! line 38 -EQUIPMENT
+SUNIT   SYN(BU,3), 0.56             ! line 39 -UNIT (MULTI UNIT
+                                     !           CHANNEL ONLY)
+SUNITK  SYN(BU,4), 0.59             ! line 40 -UNIT COUNT(MULTI UNIT
+                                     !           CHANNEL ONLY)
+SELG    SYN(BU,1), 0.50             ! line 41 -ERASE LONG GAP
+SMOUNT  SYN(BU,1), 0.51             ! line 42 -MOUNT TAPE
+SREW    SYN(BU,1), 0.52             ! line 43 -REWIND TAPE
+SIMNT   SYN(BU,1), 0.53             ! line 44 -INITIAL MOUNTING OF REEL
+SRD     SYN(BU,1), 0.57             ! line 45 -READ, OPERATION STATUS
+SWR     SYN(BU,1), 0.58             ! line 46 -WRITE, OPERATION STATUS
+SSPACE  SYN(BU,1), 0.59             ! line 47 -SPACE FILE STATUS
+SCTL    SYN(BU,1), 0.60             ! line 48 -CONTROL - OPERATION
+                                     !           STATUS
+SREL    SYN(BU,1), 0.61             ! line 49 -RELEASE - OPERATION
+                                     !           STATUS
+SUNRES  SYN(BU,1), 0.62             ! line 50 -NOT OVERLAP RESERVED BIT
+SOVRES  SYN(BU,1), 0.63             ! line 51 -OVERLAPPED RESERVE
+                                     !           INDICATOR
+SARCAD  SYN(BU,18), 0.32            ! line 52 -ARC ADDRESS (DISK)
+
+! ---------------------------------------------------------------
+! THE PRINTED LISTING -- all thirty-four SYN cards, as printed.
+! LINE | LOCATION | BINARY OUTPUT | dds | NAME | STATEMENT
+! ---------------------------------------------------------------
+!   line 19  000000.00+  +00000000  BU,31 ,10  S UN A A SYN(BU,25), 0.0
+!   line 20  000000.00+  +00000000  BU,31 ,10  S UN A   SYN, S UN A A
+!   line 21  000000.31+  +00000000  BU,01 ,10  S CH AVL SYN(BU,1),0.25
+!   line 22  000000.32+  +00000000  BU,01 ,10  S CH OP  SYN(BU,1), 0.26
+!   line 23  000000.32+  +00000000  BU,01 ,10  STATI    SYN(BU,1),.26
+!   line 24  000000.33+  +00000000  BU,01 ,10  S MULTI  SYN(BU,1), 0.27
+!   line 25  000000.33+  +00000000  BU,01 ,10  S DISP O SYN(BU,1),.27
+!   line 26  000000.34+  +00000000  BU,01 ,10  S UN AVL SYN(BU,1), 0.28
+!   line 27  000000.35+  +00000000  BU,01 ,10  S UN ASG SYN(BU,1), 0.29
+!   line 28  000000.36+  +00000000  BU,01 ,10  S UN SUP SYN(BU,1), 0.30
+!   line 29  000000.37+  +00000000  BU,01 ,10  S SET UP SYN(BU,1), 0.31
+!   line 30  000000.40+  +00000000  BU,01 ,10  S OWNER  SYN(BU,1), 0.32
+!   line 31  000000.41+  +00000000  BU,01 ,10  S SETDN  SYN(BU,1),0.33
+!   line 32  000000.47+  +00000000  BU,01 ,10  S SEL    SYN(BU,1), 0.39
+!   line 33  000000.50+  +00000000  BU,01 ,10  S VER    SYN(BU,1), 0.40
+!   line 34  000000.56+  +00000000  BU,01 ,10  S SEOP   SYN(BU,1), 0.46
+!   line 35  000000.57+  +00000000  BU,01 ,10  S CNS SG SYN(BU,1), 0.47
+!   line 36  000000.61+  +00000000  BU,01 ,10  S U DENS SYN(BU,1),.49
+!   line 37  000000.62+  +00000000  BU,02 ,10  S C MODE SYN(BU,2), 0.50
+!   line 38  000000.64+  +00000000  BU,04 ,10  S EQUIP  SYN(BU,4), 0.52
+!   line 39  000000.70+  +00000000  BU,03 ,10  S UNIT   SYN(BU,3), 0.56
+!   line 40  000000.73+  +00000000  BU,04 ,10  S UNIT K SYN(BU,4),0.59
+!   line 41  000000.62+  +00000000  BU,01 ,10  S ELG    SYN(BU,1), 0.50
+!   line 42  000000.63+  +00000000  BU,01 ,10  S MOUNT  SYN(BU,1), 0.51
+!   line 43  000000.64+  +00000000  BU,01 ,10  S REW    SYN(BU,1), 0.52
+!   line 44  000000.65+  +00000000  BU,01 ,10  S I MNT  SYN(BU,1),.53
+!   line 45  000000.71+  +00000000  BU,01 ,10  S RD     SYN(BU,1), 0.57
+!   line 46  000000.72+  +00000000  BU,01 ,10  S WR     SYN(BU,1), 0.58
+!   line 47  000000.73+  +00000000  BU,01 ,10  S SPACE  SYN(BU,1), 0.59
+!   line 48  000000.74+  +00000000  BU,01 ,10  S CTL    SYN(BU,1),.60
+!   line 49  000000.75+  +00000000  BU,01 ,10  S REL    SYN(BU,1),.61
+!   line 50  000000.76+  +00000000  BU,01 ,10  SUNRES   SYN(BU,1),.62
+!   line 51  000000.77+  +00000000  BU,01 ,10  S OVRES  SYN(BU,1),0.63
+!   line 52  000000.40+  +00000000  BU,22 ,10  S ARC AD SYN(BU,18), 0.32
+!
+! THE OTHER PRINTED LINES, for the record:
+!   line  9  005466.00   (CC*)DD(BU,,12),B      HED, REP, 11D11MCP, LOAD,
+!   line 10  005476.34 * (CC*)DD(BU,,12),       11D11<truncated by
+!                                                  the crop>
+!   line 11  215000.00   SLC,(8)215000.        - 80K
+!
+! FIELDS THAT OVERLAY.  Several bits carry two names because the
+! single-unit CHANNEL status entry and the multi-unit UNIT status
+! entry are two readings of the same word: .26 is SCHOP and STATI,
+! .27 is SMULTI and SDISPO, .32 is SOWNER and the start of SARCAD,
+! .50 is SELG and the start of SCMODE, .52 is SREW and the start of
+! SEQUIP, .59 is SSPACE and the start of SUNITK.  Appendix A's
+! separate "Channel Status Table Entry" and "Unit Status Table
+! Entry" headings say the same thing.  It is not a mis-read.
+
+! ---- CHECKS, read by tests/verify_mcp_page.py 99 -----------------
+! Thirty-four symbols and no rows: a SYN deposits no storage word,
+! so there is nothing for a !CHECK to look at.  The trailing "+"
+! the page prints after every location is the SIGN, printed as a
+! suffix the way printed p.84's negative SYN prints "000001.00-".
+! It is dropped here because listing_oracle.loc_bits parses a
+! location as "word.bit" and has no sign field, and because every
+! landed deck records the bare NNNNNN.NN.
+!SYM   SUNAA    000000.00
+!SYM   SUNA     000000.00
+!SYM   SCHAVL   000000.31
+!SYM   SCHOP    000000.32
+!SYM   STATI    000000.32
+!SYM   SMULTI   000000.33
+!SYM   SDISPO   000000.33
+!SYM   SUNAVL   000000.34
+!SYM   SUNASG   000000.35
+!SYM   SUNSUP   000000.36
+!SYM   SSETUP   000000.37
+!SYM   SOWNER   000000.40
+!SYM   SSETDN   000000.41
+!SYM   SSEL     000000.47
+!SYM   SVER     000000.50
+!SYM   SSEOP    000000.56
+!SYM   SCNSSG   000000.57
+!SYM   SUDENS   000000.61
+!SYM   SCMODE   000000.62
+!SYM   SEQUIP   000000.64
+!SYM   SUNIT    000000.70
+!SYM   SUNITK   000000.73
+!SYM   SELG     000000.62
+!SYM   SMOUNT   000000.63
+!SYM   SREW     000000.64
+!SYM   SIMNT    000000.65
+!SYM   SRD      000000.71
+!SYM   SWR      000000.72
+!SYM   SSPACE   000000.73
+!SYM   SCTL     000000.74
+!SYM   SREL     000000.75
+!SYM   SUNRES   000000.76
+!SYM   SOVRES   000000.77
+!SYM   SARCAD   000000.40

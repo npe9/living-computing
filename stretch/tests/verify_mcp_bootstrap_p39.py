@@ -92,7 +92,7 @@ SYMBOLS = {
     # at 002151.10 (bit 8) and line 19 clears one at 002151.03
     # (bit 3).  Read off the binary rather than assumed from the
     # similar spelling.
-    "SYSMCD": "002151.10",
+    "SYSMOD": "002151.10",
     "SCORG":  "002151.03",
     "SROOF":  "002162.00",
     "YLOL2":  "005464.40",

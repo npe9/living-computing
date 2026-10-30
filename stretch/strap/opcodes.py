@@ -75,12 +75,30 @@ VFL_INT_MINUS_BASE = "+"
 # come from jb_af1c's printed codes -- a different family that
 # happens to share mnemonics.)
 #
-# "M-" AND "M-MG" ARE DELIBERATELY ABSENT.  Nothing in the corpus
+# "M-1" IS WITNESSED BY MCP PRINTED p.92 LINE 27, which spells it on
+# a VFL operation carrying a VFL data description:
+#
+#     M-1(BU,12),$L+.52        at 005231.00
+#     printed  000010.64 80  014000.32 B0
+#
+# That is the same standard "-MG" meets -- a primary source spelling
+# the written-minus form on a VFL op, not a listing used to GUESS a
+# meaning.  The meaning is fixed independently: M-1 is M+1 with the
+# invert-sign modifier, the rule strip_fp_sign already carries as
+# "M-" -> ("M+", 0, 1), and the bits agree in both half words.
+# Measured: with this entry, "M-1(BU,12),$L+.52" assembles to
+# 000010.64 80 014000.32 B0, the printed word exactly.  The printed
+# ".32 B0" against M+1's ".22 B0" on printed pp.55, 71 and 73 differs
+# by 0o10, which is exactly the bit separating M- (.50 A0) from
+# M+ (.40 A0).
+#
+# "M-" AND "M-MG" REMAIN DELIBERATELY ABSENT.  Nothing in the corpus
 # spells either of them on a VFL operation.  C22-6531 Appendix A
 # footnote 4's "N" suffix is the documented general mechanism and is
 # also unimplemented; see docs/NEXT.md.
 VFL_INT_WRITTEN_MINUS = {
     "-MG": "+MG",
+    "M-1": "M+1",
 }
 
 # ---------------------------------------------------------------------

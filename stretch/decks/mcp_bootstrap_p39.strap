@@ -149,7 +149,7 @@ YUPDAT  SYN, (8)2365.0
 ! wrong").  Nothing on THIS page changes: line 18 branches on
 ! S YSMCD and line 19 on S CORG, and a branch never uses a length,
 ! which is exactly why it went unnoticed.
-SYSMCD  SYN(BU,2), (8)2151.10
+SYSMOD  SYN(BU,2), (8)2151.10
 SCORG   SYN(BU,1), (8)2151.03
 SROOF   SYN, (8)2162.0
 YLOL2   SYN, (8)5464.40
@@ -183,7 +183,7 @@ YTCPGO  Z, $12                      ! line 7  -GO - SET COUNT FIELD
         BAE, YTOPCG                 ! line 15
         K(BU,48), YUPDAT            ! line 16
         BZAE, YUER                  ! line 17
-        BZB, SYSMCD, YUER           ! line 18
+        BZB, SYSMOD, YUER           ! line 18
         CM0000(BU,1), SCORG         ! line 19
         LV, $13, SROOF              ! line 20
         SV, $13, YLOL2              ! line 21

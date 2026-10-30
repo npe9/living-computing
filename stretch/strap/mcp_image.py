@@ -394,7 +394,21 @@ NO_DECK_PAGES = {47, 59, 60, 81, 82}
 # page's own last instruction, and each lands on the later page's
 # first printed location.  prosa.py checks the whole range again on
 # every build, so this comment is a summary and not the evidence.
-# >>> THE RANGE REACHES printed p.96, 2026-10-30. <<<
+# >>> THE RANGE REACHES printed p.99, 2026-10-30. <<<
+# pp.97 and 98 close the chain: p.96 ends 005424.00 = p.97 line 1,
+# p.97 ends 005450.00 = p.98 line 5.  p.98's SYN cards resolve
+# thirteen symbols that used to be external (26 -> 13).
+#
+# p.99 IS IN THE RANGE AND ADDS NO WORDS.  It begins the second
+# punched deck of the SAME assembly -- the location counter runs
+# straight through its reprinted title block, and its line 11 SLC
+# moves the origin to (8)215000 -- but everything it compiles is SYN
+# cards, so the image still ends at 0o5465 with p.99 in or out.  That
+# is why the origin jump costs nothing here; if a later page actually
+# EMITS a word at 0o215000, prosa.py's word accounting has to be
+# re-checked before it is added.  printed p.100 is all comment cards
+# and will need a NO_DECK_PAGES entry when the range reaches it.
+#
 # pp.90-96 continue MOVE from p.89 and their address chain closes end
 # to end (tests/run_tests.sh records each boundary).  Merging them
 # caught three symbols that the per-page checks cannot see, because a
@@ -407,7 +421,7 @@ NO_DECK_PAGES = {47, 59, 60, 81, 82}
 # way.  None of the three changed a single assembled bit.
 MCP_IPL_PAGES = [
     (DECK("mcp_bootstrap_p%d.strap" % n), "printed p.%d" % n)
-    for n in range(15, 97) if n not in NO_DECK_PAGES
+    for n in range(15, 100) if n not in NO_DECK_PAGES
 ]
 
 

@@ -73,7 +73,7 @@ TMMAX   DD(BU,12), 4095              ! line 8  -THE VERY MAX DISK REF
 TMIOD   (AX)DD(BU,24,6),IOD X       ! line 9  - BCD CODE FOR IOD
 TMREEL  (AX)DD(BU,24,6),REELX       ! line 10 -BCD CODE FOR A REEL
 TLBL    (AX)DD(BU,6,6),LX           ! line 11 -LABELED CHARACTER
-TNCP    (AX)DD(BU,6,6),NX           ! line 12 -NOT PROTECT CHARACTER
+TNOP    (AX)DD(BU,6,6),NX           ! line 12 -NOT PROTECT CHARACTER
 TM6BL   (AX)DD(BU,48,6),       X           ! line 13
 TERFLG  VF, 0                        ! line 14 -IOD CARD ERROR INDICATOR
 TLIMB   SYN, SBAPP                   ! line 15 -UPPER BOUNDARY
@@ -138,7 +138,7 @@ TDKSAV  VF, 0                        ! line 42 -ADDRESS OF THE UNIT ...
 !SYM   TMIOD    004630.14
 !SYM   TMREEL   004630.44
 !SYM   TLBL     004630.74
-!SYM   TNCP     004631.02
+!SYM   TNOP     004631.02
 !SYM   TM6BL    004631.10
 !SYM   TERFLG   004632.00
 !SYM   TLIMB    002155.00

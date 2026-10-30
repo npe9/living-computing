@@ -14,16 +14,16 @@
 !
 !   T WRITE  BB1,T HEAD,T PENY     -CHECK FOR MAJOR HEADING
 !            B,DMCP                -WRITE THE MAJOR HEADING
-!            ,DCCMM
+!            ,DCOMM
 !            ,T BUF01              <- p.76 line  9, 40 characters
 !            ,5.0                     ... which is five words
 !   T PENY   BB1,T SBHDI,T PEN
 !            B,DMCP                -WRITE THE SUB HEADING
-!            ,DCCMM
+!            ,DCOMM
 !            ,T SUBHD              <- p.76 line 21, 24 characters
 !            ,4.0                     ... three words, PLUS ONE
 !   T PEN    B,DMCP                -WRITE THE MOUNTING PROCEDURES
-!            ,DCCMM
+!            ,DCOMM
 !            ,T BUFB1(T IXZ)       <- p.76 line 11, the hex datum
 !            ,7.(T IXY)
 !
@@ -97,7 +97,7 @@ TIXZ    SYN, $5
 TIXY    SYN, $6
 ! ---- words, printed pp.61-64, 76 and 77 ---------------------------
 DMCP    SYN, (8)1472.0
-DCCMM   SYN, (8)43.40
+DCOMM   SYN, (8)43.40
 TPPURF  SYN, (8)3313.0
 TBUF01  SYN, (8)4424.0
 TBUFB1  SYN, (8)4432.0
@@ -139,17 +139,17 @@ TWRITE  BB1, THEAD, TPENY            ! line 16 -CHECK FOR MAJOR
                                       !           HEADING
         B, DMCP                      ! line 17 -WRITE THE MAJOR
                                       !           HEADING
-        , DCCMM                      ! line 18
+        , DCOMM                      ! line 18
         , TBUF01                     ! line 19
         , 5.0                        ! line 20
 TPENY   BB1, TSBHDI, TPEN            ! line 21
         B, DMCP                      ! line 22 -WRITE THE SUB HEADING
-        , DCCMM                      ! line 23
+        , DCOMM                      ! line 23
         , TSUBHD                     ! line 24
         , 4.0                        ! line 25
 TPEN    B, DMCP                      ! line 26 -WRITE THE MOUNTING
                                       !           PROCEDURES
-        , DCCMM                      ! line 27
+        , DCOMM                      ! line 27
         , TBUFB1(TIXZ)               ! line 28
         , 7.(TIXY)                   ! line 29
 TP3     CB+, TXB, TP5                ! line 30
@@ -183,16 +183,16 @@ TP1     CM0000(BU,2), THEAD          ! line 34 -ZERO THE IND
 !   line 15  004565.00  000002.15 05                   V+I,TIXY,2.0
 !   line 16  004565.40  004455.00 80  004570.74 0E     T WRITE  BB1,THEAD,TPENY
 !   line 17  004566.40  001472.10 00                   B,DMCP
-!   line 18  004567.00  000043.40 80                   ,DCCMM
+!   line 18  004567.00  000043.40 80                   ,DCOMM
 !   line 19  004567.40  004424.00 80                   ,TBUF01
 !   line 20  004570.00  000005.00 80                   ,5.0
 !   line 21  004570.40  004455.01 80  004573.74 0E     T PENY  BB1,TSBHDI,TPEN
 !   line 22  004571.40  001472.10 00                   B,DMCP
-!   line 23  004572.00  000043.40 80                   ,DCCMM
+!   line 23  004572.00  000043.40 80                   ,DCOMM
 !   line 24  004572.40  004445.00 80                   ,TSUBHD
 !   line 25  004573.00  000004.00 80                   ,4.0
 !   line 26  004573.40  001472.10 00                   T PEN  B,DMCP
-!   line 27  004574.00  000043.40 80                   ,DCCMM
+!   line 27  004574.00  000043.40 80                   ,DCOMM
 !   line 28  004574.40  004432.00 85                   ,TBUFB1(TIXZ)
 !   line 29  004575.00  000007.00 86                   ,7.(TIXY)
 !   line 30  004575.40  004477.07 48                   T P3  CB+,TXB,TP5

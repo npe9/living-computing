@@ -1,0 +1,277 @@
+! mcp_bootstrap_p97.strap -- MCP INITIALIZATION, printed page 97:
+! THE TAIL OF THE IPL/REJECT PATH, AND "PREPARE FOR RETURN".
+! docs/MCP_Mar63_001-249.pdf PDF p.104, header "PAGE NUMBER 97" --
+! read, not assumed: the top line prints "TIME CLOCK 00054041  PUNID
+! 11011IPL  CARD ID 18000754  DIST. OF 3/01   3/01   PAGE NUMBER 97",
+! and the page's own LOCATION sub-header prints 005424.
+!
+! THIRTY-TWO LINES, AND THAT IS COUNTED, NOT ESTIMATED.  The card
+! serial column runs 18000754 (line 1) to 18000785 (line 32), so the
+! line number is the serial minus 18000753 and nothing fell off the
+! top or the bottom of the render.  The rest of the page is blank --
+! this is the last page of the MOVE sub-routine and it ends short.
+! Twenty-seven of the thirty-two lines compile.  The five that do not
+! are 22-26: a blank, a rule, the boxed heading "PREPARE FOR RETURN",
+! a rule and a blank.
+!
+! THE LOCATION CHAIN CLOSES END TO END.  005424.40 (line 1) through
+! 005450.00 (line 32); every row's printed location plus its half
+! words equals the next row's printed location, with no gap and no
+! overlap, across all twenty-seven compiled rows.  Line 32 is a single
+! half-word, so the counter reaches 005450.40.
+!
+! THE JOIN TO p.96 IS EXACT.  printed p.96's last compiled line (56)
+! is a half-word at 005424.00, so the counter reaches 005424.40, and
+! this page's own header prints LOCATION 005424 with line 1 at
+! 005424.40.
+!
+! >>> WHAT THE PAGE DOES. <<<  Lines 1-11 finish the unit-status
+! table entry the previous page was building: ST stores the unit
+! number into T CAT+.47, L picks up the first reel address out of the
+! I/O-request slot (T FREEL at index T MXB), and a zero reel address
+! branches to T MREJ5 at line 16.  Otherwise LV/Z zero the reel slot,
+! LCI/SC set the unit-status table up with the dummy unit-area table
+! address, and four CM connectives set the unit-assigned bit
+! (T UNASG) on, the ownership bit (T CHOWN) to MCP with CM1111, and
+! the two mount bits (SIMNT, SMOUNT) off.  Lines 12-14 are a three
+! half-word call: B,DMCP with the two parameter half-words DFREE and
+! 3., "GO TO THE D FREE ROUTINE ... AS TO REMOVE THE MOUNTED TAPES".
+! Line 15 resets the ownership bit to PP on return.  T MREJ5 (line
+! 16) zeroes the I/O-request slot, clears the overlap-reserved bit if
+! the unit-reserved bit is off, and T MREJ3 (line 19) tests the
+! end-of-table bit T LAST: not the end, set T MXB back to T IOREQ-1
+! and T MREJ4 counts and branches back to T MREJ1 on printed p.96.
+! Lines 27-32, under the boxed heading "PREPARE FOR RETURN", save the
+! reel-pool index and the disposition, pick the IOD-card error out of
+! T ERFLG+.15, store it through the control word, restore the twelve
+! indexes with the same SWAPI printed p.88 opens T MOVE with, and
+! branch to 1.00($15).
+!
+! >>> THE 0/C GLYPH PAIR BIT ONCE ON THIS PAGE, ON LINE 9. <<<
+! Line 9's trailing byte prints with a wide break in its right side
+! and reads FC to the eye at 1200 dpi, while lines 8, 10 and 11 print
+! a closed F0 in the same column.  It is F0, and NOT because the
+! assembler says so:
+!   * printed p.18 prints CM1111(BU,1) six times -- lines 9, 21, 22,
+!     23, 24 and 30 -- and every one of them is "001000.36 F0".  That
+!     is an independently transcribed witness on another page.
+!   * line 15 of THIS page is the same instruction on the same field,
+!     CM0000,T CHOWN(T MXG), and prints "001000.00 F0".  The only
+!     difference between lines 9 and 15 is the connective, which
+!     lives in the .36/.00 field, not in the byte.
+!   * the low nibble of a VFL full word is i2, the offset index, and
+!     CM1111,T CHOWN(T MXG) has no second operand, so i2 is 0.
+! Ink dropout opens a closed glyph and never closes an open one, so
+! an observed C may be a damaged 0 -- this is that case.  Note that
+! line 10's own octal field prints ".CC" for ".00" while its byte
+! prints a clean closed 0, which is the same row dropping ink in one
+! place and not the other: SHAPE ALONE DECIDES NOTHING HERE.
+!
+! Every other round glyph on the page sits in an octal field, where a
+! C cannot occur, so it is a 0 with certainty: line 4's "C0CC11.26",
+! line 5's "C0CCC0.22", line 14's "00CC03.CC", line 28's "CCCC11.C3"
+! and line 32's "C0CC01.10 CF" all print 0 as an open C and every one
+! of them is read as 0.
+!
+! >>> ONE LISTING MARK: line 13 carries an asterisk after the
+! location, 005435.40 *.  (The asterisk after every LINE number is
+! the ordinary column and is not a mark.)
+!
+! >>> WRITTEN DECIMAL, PRINTED OCTAL. <<<  Line 1 writes T CAT+.47
+! and prints 004771.57 (47 decimal = 0o57); line 29 writes
+! T ERFLG+.15 and prints 004632.17 (15 decimal = 0o17); line 30
+! writes 0.28($15) and prints 000000.34.
+!
+! >>> NOTHING IN THIS DECK WAS BACK-DERIVED FROM THIS PAGE'S OWN
+! BINARY COLUMN. <<<  Every SYN below carries the page it was read
+! on, and all of them were transcribed before this page was opened,
+! so each row that uses one is a real check and not a tautology.  The
+! one forward/backward reference is T MREJ1, whose address comes from
+! printed p.96's LOCATION column (its line 47 label), not from this
+! row; line 21 is therefore a cross-page agreement rather than an
+! independent check of that address.
+
+        SLC, (8)5424.40
+
+! ---- index names, printed p.83 ------------------------------------
+TMX1    SYN, $1                      ! p.83 line 21
+TMXB    SYN, $3                      ! p.83 line 23 -I/O REQ TABLE INDEX
+TMXF    SYN, $7                      ! p.83 line 27 -REEL POOL INDEX
+TMXG    SYN, $8                      ! p.83 line 30 -TEMPORARY INDEX
+TMXGA   SYN, $11                     ! p.83 line 31 -TEMPORARY INDEX
+! ---- words, printed p.83 ------------------------------------------
+TERFLG  SYN, (8)4632.0               ! p.83 line 14 VF,0
+TSIOXW  SYN, (8)4633.0               ! p.83 line 40 DRZ(BU,64),(15)
+TMARK   SYN, (8)2162.40              ! p.83 line 19 SYN,SMARK
+! ---- unit-status / IOREQ field offsets ----------------------------
+TFREEL  SYN(BU,18), 0.28             ! pp.56, 62, 69
+TUNASG  SYN(BU,1), 0.29              ! p.63 line 6  -UNIT ASSIGNED BIT
+TCHOWN  SYN(BU,1), 0.32              ! p.63 line 7  -OWNERSHIP LEVEL
+SMOUNT  SYN(BU,1), 0.51              ! p.70; p.98 line 26 prints the card
+SIMNT   SYN(BU,1), 0.53              ! p.70; p.98 line 25 prints the card
+TUNRES  SYN(BU,1), 0.62              ! p.63 line 12 -NOT OVERLAP RESERVED
+TOVRES  SYN(BU,1), 0.63              ! p.63 line 13 -OVERLAP RESERVED
+TLAST   SYN(BU,1), 0.18              ! pp.57, 58   -END OF TABLE BIT
+! ---- tables and routines off this page ----------------------------
+TCAT    SYN, (8)4771.0               ! p.75 (and p.96 line 52)
+TIOREQ  SYN, (8)3373.0               ! pp.48, 57
+DMCP    SYN, (8)1472.0               ! p.70
+DFREE   SYN, 0                       ! p.98 line 27 D FREE SYN,0
+! ---- backward, onto printed p.96 ----------------------------------
+TMREJ1  SYN, (8)5414.40              ! p.96 line 47
+
+        SLC, (8)5424.40
+
+! ---- the tail of the unit-status table entry ----------------------
+        ST(BU,3), TCAT+.47, 46       ! line  1 -STORE THE UNIT NUMBER
+                                      !           ALSO
+        L, TFREEL(TMXB), 46          ! line  2 -GET THE FIRST REEL
+                                      !           ADDRESS
+        BRZ, TMREJ5                  ! line  3 -IF NONE
+        LV, TMXGA, $R                ! line  4
+        Z, 0.0(TMXGA)                ! line  5 -ZERO THE REEL SLOT
+        LCI, TMXG, TCAT              ! line  6 -SET UP THE UNIT STATUS
+                                      !           TABLE
+        SC, TMXG, 0.0(TMXG)          ! line  7 -WITH THE DUMMY UNIT
+                                      !           AREA TBL ADDR.
+        CM0000, TUNASG(TMXG)         ! line  8 -AND SET THE UNIT
+                                      !           ASSIGNED
+        CM1111, TCHOWN(TMXG)         ! line  9 -SET UNIT OWNER TO MCP
+        CM0000, SIMNT(TMXG)          ! line 10 -TO RESET THE
+        CM0000, SMOUNT(TMXG)         ! line 11 -MOUNT BITS
+TIPL5   B, DMCP                      ! line 12 -GO TO THE D FREE
+                                      !           ROUTINE
+        , DFREE                      ! line 13 -AS TO REMOVE THE
+                                      !           MOUNTED TAPES
+        , 3.                         ! line 14
+        CM0000, TCHOWN(TMXG)         ! line 15 -RESET UNIT OWNER TO PP
+
+! ---- the reject path ----------------------------------------------
+TMREJ5  Z, 0.0(TMXB)                 ! line 16 -ZERO THE I/O REQ SLOT
+        BBZ, TUNRES(TMXG), TMREJ3    ! line 17
+        CM0000, TOVRES(TMXG)         ! line 18
+TMREJ3  BZB, TLAST+1.0(TMXB), TMREJ4 ! line 19 - TO PREVENT A LOOP
+        LVI, TMXB, TIOREQ-1          ! line 20
+TMREJ4  CB+, TMXB, TMREJ1            ! line 21
+
+! ---- PREPARE FOR RETURN -------------------------------------------
+TN2     SV, TMXF, TMARK              ! line 27 -SAVE THE REEL POOL
+                                      !           INDEX
+        SV, TMX1, $R                 ! line 28 -SAVE DISPOSITION
+        LF(BU,3), TERFLG+.15, 61     ! line 29 -GET THE IOD CARD ERROR
+                                      !           IF ANY
+        ST(BU,18), 0.28($15), 46     ! line 30
+        SWAPI, 12, $1, TSIOXW        ! line 31 -RESTORE INDEXES
+        B, 1.00($15)                 ! line 32
+
+! ---------------------------------------------------------------
+! THE PRINTED LISTING -- all twenty-seven rows that compile.
+! ---------------------------------------------------------------
+!   line  1  005424.40  004771.57 80  003027.20 D0          ST(BU,3),T CAT+.47,46
+!   line  2  005425.40  000000.34 83  022027.20 50          L,T FREEL(T MXB),46
+!   line  3  005426.40  005437.74 C2                        BRZ,T MREJ5
+!   line  4  005427.00  000011.26 30                        LV,T MXGA,$R
+!   line  5  005427.40  000000.22 0B                        Z,0.0(T MXGA)
+!   line  6  005430.00  004771.21 02                        LCI,T MXG,T CAT
+!   line  7  005430.40  000000.21 58                        SC,T MXG,0.0(T MXG)
+!   line  8  005431.00  000000.35 88  001000.00 F0          CM0000,T UNASG(T MXG)
+!   line  9  005432.00  000000.40 88  001000.36 F0          CM1111,T CHOWN(T MXG)
+!   line 10  005433.00  000000.65 88  001000.00 F0          CM0000,SIMNT(T MXG)
+!   line 11  005434.00  000000.63 88  001000.00 F0          CM0000,SMOUNT(T MXG)
+!   line 12  005435.00  001472.10 00                T IPL5  B,DMCP
+!   line 13  005435.40* 000000.00 80                        ,DFREE
+!   line 14  005436.00  000003.00 80                        ,3.
+!   line 15  005436.40  000000.40 88  001000.00 F0          CM0000,T CHOWN(T MXG)
+!   line 16  005437.40  000000.22 03                T MREJ5 Z,0.0(T MXB)
+!   line 17  005440.00  000000.76 88  005442.34 06          BBZ,T UNRES(T MXG),T MREJ3
+!   line 18  005441.00  000000.77 88  001000.00 F0          CM0000,T OVRES(T MXG)
+!   line 19  005442.00  000001.22 83  005443.74 00  T MREJ3 BZB,T LAST+1.0(T MXB),T MREJ4
+!   line 20  005443.00  003372.47 01                        LVI,T MXB,T IOREQ-1
+!   line 21  005443.40  005414.47 48                T MREJ4 CB+,T MXB,T MREJ1
+!   line 27  005444.00  002162.57 30                T N2    SV,T MXF,T MARK
+!   line 28  005444.40  000011.03 30                        SV,T MX1,$R
+!   line 29  005445.00  004632.17 80  003036.46 70          LF(BU,3),T ERFLG+.15,61
+!   line 30  005446.00  000000.34 8F  022027.20 D0          ST(BU,18),0.28($15),46
+!   line 31  005447.00  000021.00 80  004633.30 E0          SWAPI,12,$1,T SIOXW
+!   line 32  005450.00  000001.10 0F                        B,1.00($15)
+
+! WHICH ROWS ARE INDEPENDENT CHECKS.  Twenty-six of the twenty-seven
+! rows reproduce an address that was read off a DIFFERENT page's
+! LOCATION or STATEMENT column: T CAT from p.75 (lines 1 and 6, and
+! p.96 line 52 prints T CAT+.12 at the same base), T FREEL from
+! pp.56/62/69 (line 2), T UNASG/T CHOWN/T UNRES/T OVRES from p.63
+! (lines 8, 9, 15, 17, 18), SIMNT and SMOUNT from p.70 and from the
+! SYN cards printed on p.98 (lines 10, 11), DMCP from p.70 and DFREE
+! from p.98 (lines 12, 13), T LAST from pp.57/58 (line 19), T IOREQ
+! from pp.48/57 (line 20), T MARK, T ERFLG, T SIOXW and the five
+! index names from p.83 (lines 27, 28, 29, 31 and every indexed row).
+! T MREJ1 (line 21) comes from printed p.96's line 47 label.
+!
+! AND THREE OF THE FIVE LABELS WERE PREDICTED BEFORE THIS PAGE WAS
+! READ, which is a stronger class of evidence than a SYN substitution
+! because it is another page's BINARY column fixing this page's
+! LOCATION column:
+!   T MREJ5  005437.40  -- printed p.96 carries SYN,(8)5437.40 as a
+!                          forward stand-in, taken from its line 50
+!                          BZB,T MULTI(T MXG),T MREJ5
+!   T MREJ3  005442.00  -- printed p.96 SYN,(8)5442.0, from its line
+!                          48 BRZ,T MREJ3
+!   T N2     005444.00  -- printed p.93 line 26 and p.95 line 3 both
+!                          print B,T N2 as 005444.10 00, and a plain
+!                          B prints target+8 bits, so 005444.10 - 8
+!                          = 005444.00.  Two pages' binary columns.
+! Only TWO labels rest on this page alone: T MREJ4 (005443.40), which
+! line 19 on this page references, and T IPL5 (005435.00), which
+! nothing in the corpus references -- T IPL5 is the one symbol here
+! that rests on ink alone and that listing_oracle cannot catch if it
+! is misspelled.  It was read at 1200 dpi scaled 250% and T-I-P-L-5
+! carries none of the hazard pairs; p.70 line 56 names a sibling
+! T IPL3 that also does B,DMCP.
+! Lines 5, 7, 14, 16, 30 and 32 use no external symbol at all.
+!
+! >>> ONE THING THIS DECK DOES NOT EXPLAIN. <<<  Line 20 writes
+! T IOREQ-1 and prints 003372.47.  Backing out the LVI encoding
+! (value + 2*regnum + 1, which printed p.88 line 21's LVI,T MXGA,0.0
+! -> 000000.27 fixes), $3 contributes 7, so the VALUE is word 0o3372
+! bit 32 -- that is T IOREQ (pp.48 and 57: (8)3373.0) minus a HALF
+! WORD, where printed p.88's T ITYCD-1 is minus one BIT and its
+! T MXI+24 is plus 24 BITS.  strap_asm reproduces the printed word
+! from the printed spelling, and the printed binary rules out a
+! written "-1.0" (that would land on 0o07), so the row is a genuine
+! agreement; but WHY the offset unit differs on this operand is NOT
+! established from a primary source here and should not be inferred
+! from this one row.
+
+! ---- CHECKS, read by tests/verify_mcp_page.py 97 -----------------
+!SYM   TIPL5    005435.00
+!SYM   TMREJ5   005437.40
+!SYM   TMREJ3   005442.00
+!SYM   TMREJ4   005443.40
+!SYM   TN2      005444.00
+!CHECK 005424.40 | 004771.57 80 003027.20 D0 | line 1 ST(BU,3),T CAT+.47,46
+!CHECK 005425.40 | 000000.34 83 022027.20 50 | line 2 L,T FREEL(T MXB),46
+!CHECK 005426.40 | 005437.74 C2 | line 3 BRZ,T MREJ5
+!CHECK 005427.00 | 000011.26 30 | line 4 LV,T MXGA,$R
+!CHECK 005427.40 | 000000.22 0B | line 5 Z,0.0(T MXGA)
+!CHECK 005430.00 | 004771.21 02 | line 6 LCI,T MXG,T CAT
+!CHECK 005430.40 | 000000.21 58 | line 7 SC,T MXG,0.0(T MXG)
+!CHECK 005431.00 | 000000.35 88 001000.00 F0 | line 8 CM0000,T UNASG(T MXG)
+!CHECK 005432.00 | 000000.40 88 001000.36 F0 | line 9 CM1111,T CHOWN(T MXG) -- byte prints as an open glyph, see header
+!CHECK 005433.00 | 000000.65 88 001000.00 F0 | line 10 CM0000,SIMNT(T MXG)
+!CHECK 005434.00 | 000000.63 88 001000.00 F0 | line 11 CM0000,SMOUNT(T MXG)
+!CHECK 005435.00 | 001472.10 00 | line 12 T IPL5 B,DMCP
+!CHECK 005435.40 | 000000.00 80 | line 13 ,DFREE  (location carries an asterisk)
+!CHECK 005436.00 | 000003.00 80 | line 14 ,3.
+!CHECK 005436.40 | 000000.40 88 001000.00 F0 | line 15 CM0000,T CHOWN(T MXG)
+!CHECK 005437.40 | 000000.22 03 | line 16 T MREJ5 Z,0.0(T MXB)
+!CHECK 005440.00 | 000000.76 88 005442.34 06 | line 17 BBZ,T UNRES(T MXG),T MREJ3
+!CHECK 005441.00 | 000000.77 88 001000.00 F0 | line 18 CM0000,T OVRES(T MXG)
+!CHECK 005442.00 | 000001.22 83 005443.74 00 | line 19 T MREJ3 BZB,T LAST+1.0(T MXB),T MREJ4
+!CHECK 005443.00 | 003372.47 01 | line 20 LVI,T MXB,T IOREQ-1
+!CHECK 005443.40 | 005414.47 48 | line 21 T MREJ4 CB+,T MXB,T MREJ1
+!CHECK 005444.00 | 002162.57 30 | line 27 T N2 SV,T MXF,T MARK
+!CHECK 005444.40 | 000011.03 30 | line 28 SV,T MX1,$R
+!CHECK 005445.00 | 004632.17 80 003036.46 70 | line 29 LF(BU,3),T ERFLG+.15,61
+!CHECK 005446.00 | 000000.34 8F 022027.20 D0 | line 30 ST(BU,18),0.28($15),46
+!CHECK 005447.00 | 000021.00 80 004633.30 E0 | line 31 SWAPI,12,$1,T SIOXW
+!CHECK 005450.00 | 000001.10 0F | line 32 B,1.00($15)

@@ -3453,7 +3453,7 @@ run "MCP printed p.98 -- the SYN cards, 18 rows bit-exact" python3 verify_mcp_bo
 # grepped against every deck and none is referenced.
 #
 # IT FOUND TWO LIVE BUGS, fixed in decks/mcp_bootstrap_p39.strap:
-# SYSMCD and SCORG were declared there with no data description
+# SYSMOD and SCORG were declared there with no data description
 # (length 0, read as 64), where lines 30 and 34 give SYN(BU,2) and
 # SYN(BU,1).  Same fault as the CM1111 image bug, hidden the same
 # way -- p.39 only BRANCHES on them, and a branch never uses a
@@ -6251,6 +6251,29 @@ run "MOVE's mode and density scan, printed p.93" python3 verify_mcp_page.py 93
 run "MOVE's reel status and job synchronization, printed p.94" python3 verify_mcp_page.py 94
 run "MOVE's IOD sort and table locations, printed p.95" python3 verify_mcp_page.py 95
 run "MOVE's table zeroing, printed p.96" python3 verify_mcp_page.py 96
+
+# >>> MOVE ENDS ON printed p.97, AND THE CHAIN CLOSES TO p.98. <<<
+# p.96 ends 005424.00 = p.97 line 1 at 005424.40; p.97 ends 005450.00
+# = p.98 line 5 at 005450.40.  p.97 is the end of the MOVE
+# sub-routine (the reject path, then PREPARE FOR RETURN restoring the
+# twelve indexes with the same SWAPI p.88 opens T MOVE with).
+run "MOVE's reject path and return, printed p.97" python3 verify_mcp_page.py 97
+# printed p.98 is the CONVERSION SUBROUTINE plus the assignment-
+# compatibility SYN cards.  Its deck used to cover lines 20-37 only,
+# because lines 5-19 need LBLZOR (printed p.54) and T MX1 (printed
+# p.83) and neither had been read; both have, so all 37 lines are
+# transcribed and the fifteen VFL rows are checked.  The older
+# hand-written verify_mcp_bootstrap_p98.py is KEPT, not retired: it
+# checks the same page from a separate hardcoded table, so the two
+# disagreeing would be a finding.
+run "the conversion subroutine, printed p.98" python3 verify_mcp_page.py 98
+# printed p.99 starts the second punched deck of the SAME assembly --
+# the location counter runs straight through its reprinted title
+# block, and line 11's SLC moves the origin to (8)215000.  READ THIS
+# RESULT CONSERVATIVELY: 34 symbol locations and ZERO binary rows, an
+# all-SYN definitions page, so no bit pattern here is compared with
+# anything and each SYN's data description is checked by nothing.
+run "the channel-unit status table definitions, printed p.99" python3 verify_mcp_page.py 99
 
 # A LABEL'S SPELLING IS THE ONE THING listing_oracle CANNOT CHECK:
 # it compares LOCATIONS and BINARY, and a name is not in the machine

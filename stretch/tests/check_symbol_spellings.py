@@ -14,6 +14,23 @@ externals from its own page. When two pages reference the same word,
 two different transcribers read the same name independently. Agreement
 is evidence; disagreement is a defect in one of them.
 
+TWO SOURCES OF NAME->LOCATION, because one was not enough. The first
+version of this file read only SYN lines, and it MISSED A LIVE DEFECT
+it should have caught: decks/mcp_bootstrap_p98.strap spelled a word
+YLCL2 where printed p.39 spells it YLOL2, at the one location both
+print. It escaped because p.98 defines the name with a VF card, not a
+SYN, so the two never grouped. A label can be defined by anything
+that occupies storage, so this now also reads the `!SYM NAME octal`
+blocks, which give a name its ABSOLUTE location however it was
+defined, and resolves literal SYN addresses to the same bit number so
+the two sources share one key.
+
+WHAT IT STILL CANNOT CATCH is both decks being wrong together. printed
+p.39 and printed p.98 agreed on SYSMCD for a word whose own comment
+reads "-TWO BIT OPERATING MODE"; nothing here could have flagged that,
+and only reading the comment did. See docs/transcription_workflow.md,
+"THE COMMENT COLUMN IS ENGLISH".
+
 WHAT MAKES IT PRECISE is restricting it to the drum's own failure
 modes (docs/transcription_workflow.md, "THREE GLYPH PAIRS BREAK ON
 THIS DRUM"): O/C, C/D, B/8, O/0, C/0, plus a wholly dropped or added
@@ -75,9 +92,32 @@ def drum_confusion(a, b):
     return None
 
 
+SYM_RE = re.compile(r'^!SYM\s+([A-Z0-9$]+)\s+([0-7]+\.[0-7]+)\s*$',
+                    re.IGNORECASE)
+
+
+def _as_bit(addr):
+    """A literal bit address as an int, or None if it is symbolic.
+
+    Keying on the TEXT would not do: printed p.39 writes (8)5464.40
+    and a !SYM block writes 005464.40 for the same bit.
+    """
+    try:
+        import strap_asm
+        return strap_asm.eval_expr(addr, {}, 0, lineno=0)
+    except Exception:
+        return None
+
+
 def collect(deck_dir=DECKS):
-    """address -> {name -> {pages}} for every MCP deck's SYN lines."""
+    """key -> {name -> {pages}} over every MCP deck.
+
+    The key is a resolved bit number where the address is a literal,
+    and the raw text otherwise, so symbolic forms like SCOMRG+.8 still
+    group with each other.
+    """
     addr_names = collections.defaultdict(lambda: collections.defaultdict(set))
+    aliases = set()
     names = re.compile(r'mcp_bootstrap_p(\d+(?:_p\d+)?)\.strap$')
     for fn in sorted(os.listdir(deck_dir)):
         m = names.search(fn)
@@ -88,21 +128,42 @@ def collect(deck_dir=DECKS):
                   errors="replace") as fh:
             for line in fh:
                 hit = SYN_RE.match(line)
-                if not hit:
+                if hit:
+                    name, addr = hit.group(1).upper(), hit.group(2).strip().rstrip(',')
+                    if addr.startswith('$'):      # index-register aliases
+                        continue
+                    bit = _as_bit(addr)
+                    if bit is None and addr.upper().isalnum():
+                        # "S UN A  SYN, S UN A A" -- a deck giving one
+                        # word a second name ON PURPOSE.  Two names at
+                        # one location is exactly what this file looks
+                        # for, so an explicit alias has to be excluded
+                        # or printed p.99's SUNA/SUNAA reads as a
+                        # misspelling.  Only a bare symbol counts;
+                        # SCOMRG+.8 is an offset, not an alias.
+                        aliases.add(frozenset((name, addr.upper())))
+                    addr_names[bit if bit is not None else addr][name].add(page)
                     continue
-                name, addr = hit.group(1).upper(), hit.group(2).strip().rstrip(',')
-                if addr.startswith('$'):      # index-register aliases
-                    continue
-                addr_names[addr][name].add(page)
-    return addr_names
+                hit = SYM_RE.match(line)
+                if hit:
+                    # A !SYM line gives a name its absolute location
+                    # however the deck defined it -- SYN, VF, DD or a
+                    # label on an instruction.
+                    name, loc = hit.group(1).upper(), hit.group(2)
+                    bit = _as_bit("(8)%s" % loc)
+                    if bit is not None:
+                        addr_names[bit][name].add(page)
+    return addr_names, aliases
 
 
 def main():
-    addr_names = collect()
+    addr_names, aliases = collect()
     total = sum(len(v) for v in addr_names.values())
     bad = []
-    for addr, names in sorted(addr_names.items()):
+    for addr, names in sorted(addr_names.items(), key=lambda kv: str(kv[0])):
         for a, b in itertools.combinations(sorted(names), 2):
+            if frozenset((a, b)) in aliases:
+                continue
             why = drum_confusion(a, b)
             if why:
                 bad.append((addr, a, sorted(names[a]), b, sorted(names[b]), why))
@@ -113,7 +174,7 @@ def main():
         print("FAIL %d symbol(s) spelled two ways; one reading of each is wrong"
               % len(bad))
     else:
-        print("PASS %d SYN definitions, no symbol spelled two ways" % total)
+        print("PASS %d symbol definitions, no symbol spelled two ways" % total)
     return len(bad)
 
 

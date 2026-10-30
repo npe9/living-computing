@@ -37,7 +37,9 @@ SYMBOLS = {
     "TTOELO": "000002.00",
     "TDENMD": "000002.33",
     "TREELD": "000002.35",
-    "TFMCDE": "000002.60",
+    # T FMODE: the row's own comment prints "-FILE MCDE" for the
+    # word MODE, so both glyphs are O. printed p.91 agrees.
+    "TFMODE": "000002.60",
     "TORARC": "000005.06",
     "TMXARC": "000005.46",
     "TCUARC": "000006.06",

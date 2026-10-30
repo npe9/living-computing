@@ -1144,6 +1144,33 @@ def entry_table(stmt):
     return ENTRY_MODES[name]
 
 
+# >>> THE LISTING PRINTS THE IMMEDIATE "I" INSIDE A TWO-CHARACTER
+# OPERATION, and that is a SPELLING, not a different instruction.
+#
+# MCP printed p.95 line 55 and printed p.96 both print "*I+", which
+# this assembler reads as an unknown mnemonic.  The operation is "*+"
+# carrying Appendix A footnote 3's immediate suffix ("This operation
+# code may be suffixed by the letter 'I' to invoke immediate
+# addressing"), written by IBM with the I in the middle.
+#
+# THE BITS SAY SO, which is what keeps this out of Rule 4's way --
+# the meaning comes from the opcode table, not from listing usage.
+# p.95 line 55 prints 070000.00 80 406027.23 90.  Written "*I" it
+# assembles to ...406027.21 90: the 18-bit immediate, the length, the
+# offset and the opcode byte all match and the entire delta is 0o02
+# in the printed .21/.23 field, which is IBM bit 54 -- the MSB of
+# code6, the single bit separating "*" (0b011001) from "*+"
+# (0b111001).  Printed p.96 confirms it independently: written "*+I"
+# the row assembles to the printed word bit for bit in both halves.
+#
+# Compare E+I / E+AI / E-I / E-AI in strip_fp_sign, the family whose
+# modifier letters already sit inside the mnemonic.  Only spellings a
+# PAGE actually prints belong here; "*I+" has two witnesses.
+VFL_INFIX_IMMEDIATE = {
+    "*I+": "*+I",
+}
+
+
 def classify_connective(op):
     """C/CM/CT + exactly 4 binary digits (X22-6533 pocket card
     "CONNECTIVES" table: xxxx00111 = C "Connect" (result -> accumulator),
@@ -1388,7 +1415,7 @@ def classify_vfl_or_fp(stmt):
     op = stmt.op
     invert = 0
     immediate = False
-    base_op = op
+    base_op = VFL_INFIX_IMMEDIATE.get(op.upper(), op)
     if op == '-':
         base_op, invert = VFL_INT_MINUS_BASE, 1
 

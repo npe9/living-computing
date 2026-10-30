@@ -60,7 +60,9 @@ SYMBOLS = {
     "TIDSCD": "000010.76",
     "TCHANN": "000000.14",
     "TUNITN": "000000.57",
-    "TIODCK": "000001.06",
+    # T IODK, four letters -- the deck read a C that the page does
+    # not print; printed p.91 line 23 references it the short way.
+    "TIODK": "000001.06",
     "TFIAAC": "000003.00",
     "TSYSTM": "000007.31",
     "TFRLAD": "000010.00",

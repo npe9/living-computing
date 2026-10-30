@@ -95,24 +95,27 @@
 ! .34 and nothing on this page had to be assumed to get it.
 !
 ! ---------------------------------------------------------------
-! >>> LINE 27 IS "M-1" AND THIS ASSEMBLER HAS NO M-1 <<<
+! >>> LINE 27 IS "M-1", AND strap_asm NOW HAS IT <<<
 ! ---------------------------------------------------------------
 ! "M-1(BU,12),$L+.52" at 005231.00, printed 000010.64 80
-! 014000.32 B0.  strap_asm.assemble raises KeyError 'M-1'.
+! 014000.32 B0.  When this page was first transcribed strap_asm
+! raised KeyError 'M-1' and the row was deliberately LEFT OUT of the
+! checked set rather than written as M+1, because compiling a
+! knowingly wrong word into the one column this deck exists to check
+! would have been worse than leaving the hole.  That was right.
 !
-! The encoding is not a mystery -- strap_asm.strip_fp_sign already
-! carries "M-" -> ("M+", 0, 1), the written-minus form being M+ with
-! the invert-sign modifier, and the printed bits say M-1 is the same
-! rule applied to M+1: M+1 prints ".22 B0" on printed pp.55, 71 and
-! 73, M-1 prints ".32 B0" here, and 0o32 - 0o22 = 0o10 is exactly
-! the bit that separates M- (.50 A0) from M+ (.40 A0).  But that is
-! a conclusion about the assembler, not a reading of this page, so
-! the row is NOT written as M+1 -- compiling a knowingly wrong word
-! into the one column this deck exists to check would be worse than
-! leaving the hole.  The statement is kept verbatim as a comment,
-! line 28 is re-anchored with its own SLC, and the row is left out
-! of the checked set.  Same shape as printed p.3's "left OUT of the
-! checked set" and p.7/p.8's "This assembler does not implement".
+! The hole is now closed from the PAGE, not from the assembler.
+! opcodes.py's VFL_INT_WRITTEN_MINUS requires a PRIMARY SOURCE that
+! spells the written-minus form on a VFL operation, and this line is
+! one: it carries a VFL data description, (BU,12).  M-1 is M+1 with
+! the invert-sign modifier -- the rule strip_fp_sign already carried
+! as "M-" -> ("M+", 0, 1) -- and the bits agree independently: M+1
+! prints ".22 B0" on printed pp.55, 71 and 73, M-1 prints ".32 B0"
+! here, and 0o32 - 0o22 = 0o10 is exactly the bit that separates
+! M- (.50 A0) from M+ (.40 A0).
+!
+! The row is assembled and CHECKED below, and line 28's re-anchoring
+! SLC is gone with it.
 !
 ! ---------------------------------------------------------------
 ! EXTERNAL SYMBOLS AND THEIR SOURCE PAGES
@@ -185,12 +188,8 @@ TMDK3   +(BU,12), $R+.52, 67         ! line 25 -ADD THE CONVERTED
                                      !           NUMBER -- TRACK
 TMDK4   ST, TSBDFT(TMXGA), 64        ! line 26 -UP DATE THE COUNTER
 
-! line 27  005231.00  000010.64 80  014000.32 B0   M-1(BU,12),$L+.52
-! NOT ASSEMBLED: strap_asm has no "M-1" (KeyError 'M-1').  See the
-! header.  Its full word is left as a hole and line 28 re-anchored.
-
-        SLC, (8)5232.0
-
+        M-1(BU,12), $L+.52           ! line 27 -SUBTRACT ONE FOR THE
+                                     !           PROPER COUNT
         KF, TMMAX, 64                ! line 28 -LOOK FOR ILLEGAL DISK
                                      !           REQUEST
         BAH, TMDSK3                  ! line 29 -YES
@@ -279,11 +278,15 @@ TMDK1A  ST, TCUARC(TMXD)             ! line 38 -UPDATE CURRENT ARC
 !CHECK 005226.40 | 005230.10 00 | line 24 B,TMDK4
 !CHECK 005227.00 | 000011.64 80  014041.60 10 | line 25 T MDK3 +(BU,12),$R+.52,67
 !CHECK 005230.00 | 004737.05 8B  014040.20 D0 | line 26 T MDK4 ST,TSBDFT(TMXGA),64
-! NO !CHECK FOR LINE 27 (005231.00, printed 000010.64 80 014000.32
-! B0, "M-1(BU,12),$L+.52").  strap_asm has no M-1 and the row is not
-! assembled; see the header.  DO NOT CLOSE THE GAP BY WRITING M+1 --
-! it compiles .22 B0 where the page prints .32 B0.  Thirty-four rows
-! are printed on the page and thirty-three are checked here.
+! LINE 27 IS CHECKED.  It was the one printed row this deck could not
+! assemble, and it is now assembled FROM THE PAGE: opcodes.py gained
+! M-1 on the strength of this very line, which spells the written-
+! minus form on a VFL operation carrying a VFL dds.  The warning that
+! stood here -- DO NOT CLOSE THE GAP BY WRITING M+1, it compiles
+! ".22 B0" where the page prints ".32 B0" -- still holds and is why
+! M-1 is a real entry and not an alias.  All thirty-four printed rows
+! are checked.
+!CHECK 005231.00 | 000010.64 80  014000.32 B0 | line 27 M-1(BU,12),$L+.52
 !CHECK 005232.00 | 004630.00 80  014040.23 10 | line 28 KF,TMMAX,64
 !CHECK 005233.00 | 005263.77 42 | line 29 BAH,TMDSK3
 !CHECK 005233.40 | 000005.46 85  014040.20 D0 | line 30 ST,TMXARC(TMXD),64

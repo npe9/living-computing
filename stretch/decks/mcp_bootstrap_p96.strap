@@ -164,17 +164,20 @@
 !            RECORDED AS AN UNRESOLVED GLYPH.
 !
 ! ---------------------------------------------------------------
-! ONE SUBSTITUTION
+! NO SUBSTITUTION REMAINS
 ! ---------------------------------------------------------------
-! >>> THE LISTING SPELLS CUMULATIVE MULTIPLY IMMEDIATE "*I+" AND THIS
-! DECK SPELLS IT "*+I". <<<  Line 2 prints "*I+,T UNLGN,46" -- the
+! >>> THE LISTING SPELLS CUMULATIVE MULTIPLY IMMEDIATE "*I+", AND SO
+! DOES THIS DECK NOW. <<<  Line 2 prints "*I+,T UNLGN,46" -- the
 ! asterisk is unmistakable at 1200 dpi and is a six-pointed glyph
-! plainly unlike the "+" two characters along.  strap_asm implements
-! the immediate suffix as C22-6531 Appendix A footnote 4 words it ("may
-! be suffixed by the letter I"), i.e. TRAILING, and rejects the infix
-! form with "unknown mnemonic '*I+'".  Written "*+I", the row
+! plainly unlike the "+" two characters along.  strap_asm implemented
+! the immediate suffix only as C22-6531 Appendix A footnote 3 words it
+! ("may be suffixed by the letter I"), i.e. TRAILING, and rejected the
+! infix form; this deck therefore wrote "*+I" for one commit, which
 ! assembles to 110000.00 80  406027.23 90 -- the printed word, bit for
-! bit, both half-words.  So this is a spelling difference and not a
+! bit, both half-words.  That equality is what established the infix
+! form as a SPELLING rather than another instruction, and strap_asm
+! now accepts "*I+" directly (VFL_INFIX_IMMEDIATE), so the printed
+! spelling is restored here and on printed p.95 line 55.  So this is a spelling difference and not a
 ! different instruction, and it is ALSO the check on T UNLGN: the left
 ! half-word carries 9 left-justified in a 6-bit field, which is printed
 ! p.84 line 45's "T UNLGN SYN(BU,6),9" arriving from the other end.
@@ -227,7 +230,7 @@ TMREJ5  SYN, (8)5437.40
 
         LFT, TUNCT(TMXA)             ! line 1  -THE NO. OF UNITS REQ
                                       !           TO FACTOR REG
-        *+I, TUNLGN, 46              ! line 2  -ADD UNIT AREA TBL
+        *I+, TUNLGN, 46              ! line 2  -ADD UNIT AREA TBL
                                       !     LENGHT  (card: "*I+")
         LV, TMXF, $R                 ! line 3  -FIRST CELL AVAIL FOR
                                       !           REEL NUMBER

@@ -16,7 +16,7 @@ p.84 has 34 cards -- but all 38 symbols it declares were grepped
 against every deck and NONE is referenced, so it proves nothing yet.
 
 AND IT FOUND TWO LIVE BUGS, both now fixed in
-decks/mcp_bootstrap_p39.strap: SYSMCD and SCORG were declared there
+decks/mcp_bootstrap_p39.strap: SYSMOD and SCORG were declared there
 with NO data description -- length 0, which effLength reads as
 SIXTY-FOUR -- where line 30 declares SYN(BU,2) and line 34
 SYN(BU,1).  Addresses agreed; only the lengths were missing.  Same
@@ -51,9 +51,14 @@ SYMBOLS = {
     "SIMNT":  "000000.65",   # line 25  0o65 = bit 53
     "SMOUNT": "000000.63",   # line 26  0o63 = bit 51
     "DFREE":  "000000.00",   # line 27  -- p.71 said this was nowhere
-    "YLCL2":  "005464.40",   # line 28
-    "YLCL1":  "005465.00",   # line 29
-    "SYSMCD": "002151.10",   # line 30  SCOMRG + bit 8
+    # YLOL2/YLOL1, not YLCL2/YLCL1.  This file carried the C spelling
+    # and so did decks/mcp_bootstrap_p98.strap, while printed p.39 --
+    # which DEFINES both, at (8)5464.40 and (8)5465.0, the two
+    # locations printed here -- spells them with an O.  The drum's
+    # O/C dropout; see docs/transcription_workflow.md.
+    "YLOL2":  "005464.40",   # line 28
+    "YLOL1":  "005465.00",   # line 29
+    "SYSMOD": "002151.10",   # line 30  SCOMRG + bit 8
     "STERMI": "005465.40",   # line 31
     "ZFINIS": "017777.00",   # line 32
     "SMAXUB": "002153.00",   # line 33  = SBAMCP

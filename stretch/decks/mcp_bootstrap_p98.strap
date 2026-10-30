@@ -1,169 +1,277 @@
-! MCP, printed p.98 lines 20-37 (MCP_Mar63_001-249 PDF p.105) --
-! THE SYN CARDS AT THE TAIL OF THE CONVERSION SUBROUTINE.
+! mcp_bootstrap_p98.strap -- MCP INITIALIZATION, printed page 98:
+! THE CONVERSION SUBROUTINE, AND THE END OF THE ASSEMBLY.
+! docs/MCP_Mar63_001-249.pdf PDF p.105, header "PAGE NUMBER 98" --
+! read, not assumed: the top line prints "TIME CLOCK 00054041  PUNID
+! 11C11IPL  CARD ID 18000787  DIST. OF 3/01  3/01  PAGE NUMBER 98".
 !
-! Thirty-seven lines on the page.  Lines 1-4 box "CONVERSION
-! SUBROUTINE" and lines 5-19 are its fifteen VFL rows; this deck
-! takes the TAIL, lines 20-37, which is where every SYN card on the
-! page lives.  Four of those lines compile a word and ten are SYN
-! cards.  Lines 5-19 are deliberately NOT here: they carry no SYN
-! value and they reference LBLZCR and TMX1, which no deck has read,
-! so transcribing them would mean back-deriving two symbols from the
-! very binary column that is supposed to check the work.
+! THIRTY-SEVEN LINES, AND THE COUNT IS MEASURED, NOT ESTIMATED.  The
+! right-hand LOCATION column prints the card serial of every line:
+! 18000787 on line 1 down to 18000823 on line 37, thirty-seven
+! consecutive serials with no break, so line N = serial - 18000786.
+! Twenty-nine of those lines produce something the oracle can check:
+! nineteen compile a word or half-word (!CHECK) and ten are SYN
+! cards whose printed location is the check (!SYM, plus the four
+! on-page labels).  Eight compile nothing -- 1-4, 21, 22, 35, 37.
 !
-! >>> THIS PAGE IS THE AUTHORITATIVE DECLARATION OF SEVEN SYMBOLS
-! THAT EXISTING DECKS HAD TO DERIVE, AND IT CONTRADICTS TWO OF
-! THEM. <<<
+! >>> THIS IS THE LAST PAGE OF THE ASSEMBLY. <<<  Line 37 is
+! "UNTAIL,(2)" and nothing follows it.  Lines 22-36 are a block the
+! listing itself labels "ADDITIONS MADE TO MAKE ASSIGNMT. COMPATIBLE"
+! -- SYN declarations of names the ASSIGN program owns, carried here
+! so the two assemble together.  They cost no storage; their printed
+! LOCATION carries the "+" suffix that marks a definition.
 !
-!   line 24  STATI  SYN(BU,1),.26   <- pp.69, 70, 78, 79 derived
-!                                      0.26 and the (BU,1)
-!   line 25  SIMNT  SYN(BU,1),.53   <- pp.70, 75, 79 derived 0.53
-!   line 26  S MOUNT SYN(BU,1),.51  <- pp.70, 75, 79 derived 0.51
-!   line 27  D FREE SYN,0           <- p.71 wrote "DFREE COMPILES
-!                                      ZERO.  It is not defined
-!                                      anywhere this project has
-!                                      [read]".  HERE IS THE CARD.
-!   line 30  SYSMCD SYN(BU,2),SCOMRG+.8   <- p.39 has SYSMCD with
-!                                            NO dds.  CONTRADICTION.
-!   line 33  S MAXUB SYN,S BA MCP   <- p.40 and p.28 both put
-!                                      SMAXUB and SBAMCP at
-!                                      (8)2153.0; this card says
-!                                      they are the SAME SYMBOL.
-!   line 34  SCORG  SYN(BU,1),SCOMRG+.3   <- p.39 has SCORG with
-!                                            NO dds.  CONTRADICTION.
-!   line 36  X IN END SYN,$         <- pp.13, 15, 17 derived
-!                                      (8)5466.0
+! NOT CONTIGUOUS WITH THE LAST TRANSCRIBED PAGE.  printed p.96 ends
+! at 005424.00 (a half-word, so storage ends 005424.40) and this page
+! begins at 005450.40.  printed p.97 is not transcribed and holds the
+! 0o24 words in between.  Nothing here depends on p.97.
 !
-! ---------------------------------------------------------------
-! THE DATA DESCRIPTION COLUMN IS PRINTED IN OCTAL
-! ---------------------------------------------------------------
-! The column between BINARY OUTPUT and NAME prints mode, LENGTH and
-! BYTE SIZE.  Line 24's card says SYN(BU,1) and the column says
-! "BU,01 ,10"; line 30's says SYN(BU,2) and the column says
-! "BU,02 ,10".  A byte size of 0o10 is 8 bits, which is the STRAP
-! default, so the column is OCTAL.  Printed p.84 line 7 is the same
-! reading from the other end -- SYN(BU,48) printing "BU,60 ,10",
-! and 0o60 is 48.
+! >>> WHAT THE ROUTINE DOES. <<<  T MCONV expands a 48-bit, 6-bit-byte
+! field at $R+.16 into 8-bit bytes (line 6), contracts it to 4-bit
+! bytes at $R+.32 (line 7), and then walks the 4-bit bytes from the
+! right with LXA: line 10 asks whether the byte is 1010, line 12
+! replaces it by 0000 if it is, line 13 asks whether the NEXT byte is
+! 0000 and line 14 loops back while it is.  Line 15 turns the final
+! index into a field length, line 16 fetches it as a 6-bit byte from
+! LXA+.18, line 17 loads it into $L, line 18 does the convert proper
+! (LCV from $R+.32 under $L) and line 19 returns through T MX1.  The
+! comments on the page say exactly this: "-EXPAND TO 8 BIT BYTES.",
+! "-CONTRACT TO 4-BIT BYTES.", "-IS 4-BIT BYTE 1010.", "- NO----
+! BRANCH", "- YES --- REPLACE BY 0000.", "-IS NEXT BYTE 0000.",
+! "- NO----GO BACK.", "-COMPUTE FIELD LENGTH.", "-CONVERT.",
+! "-OUT OF ROUTINE."
 !
-! FIVE OF THE TEN CARDS ARE DOUBLE-ATTESTED that way, because the
-! dds appears in the STATEMENT column too: lines 24, 25, 26, 30 and
-! 34.  TWO REST ON THE OCTAL READING ALONE and are flagged as such:
+! >>> THE DRUM OPENS EVERY ROUND GLYPH ON THIS PAGE. <<<  The page's
+! own column headings print "LCCATICN" for LOCATION and the boxed
+! title prints "CCNVERSICN SUBRCUTINE", so a round glyph here is as
+! likely to be O or 0 as C.  Three readings settled the hex bytes,
+! and none of them was "look harder":
 !
-!   line 20  L XA    "BU,1CC,1C"  ->  (BU,64,8)
-!   line 33  S MAXUB "B ,31 ,01"  ->  (B,25,1), inherited from
-!                                     S BA MCP, which this page does
-!                                     not declare
+!   (1) THE OCTAL FIELDS IN THE SAME ROW.  Line 5's location prints
+!       "0C545C.4C" -- the first two fields are octal and cannot hold
+!       a C, so this row drops ink on three zeros before it reaches
+!       its hex byte, and the byte is 00, not CC.
+!   (2) THE INDEX NIBBLE.  The low nibble of the trailing byte is the
+!       index register of the indexed operand.  LXA is $12 = 0xC, so
+!       lines 10, 12 and 13 -- .4(LXA), -.4(LXA), 0.0(LXA) -- print a
+!       GENUINE C in "8C", and line 18's second half-word ends "3C"
+!       because its second operand is 0.0(LXA).  Line 19's B,0.0(T
+!       MX1) with T MX1 = $1 ends "01" and line 23's unindexed BD,$
+!       ends "00".  These C's are structure, not ink.
+!   (3) THE ASSEMBLER.  Every one of the nineteen rows below was
+!       assembled before it was believed, and all nineteen
+!       reproduce the printed binary bit for bit on the first
+!       run, as do all seventeen symbol locations.
 !
-! ---------------------------------------------------------------
-! SUBSTITUTIONS
-! ---------------------------------------------------------------
-! (1) BLANKS INSIDE SYMBOL NAMES ARE DROPPED, as on every page since
-!     p.2.  The NAME column prints "S MOUNT", "D FREE", "Z FINIS",
-!     "S MAXUB", "X IN END", "L XA", "Y BCRD"; the STATEMENT column
-!     on line 33 prints "S BA MCP" for SBAMCP.
+! >>> FOUR SPELLINGS WERE DECIDED BY AN INDEPENDENT PAGE, NOT BY EYE.
+! The listing_oracle checks locations and binary and never checks a
+! label's spelling, so each round glyph in a NAME was settled against
+! a page transcribed separately:
+!   line  9  LBLZOR  -- printed "LBLZCR".  printed p.54 line 81 has
+!            LBLZOR SYN(BU,8,8),(8)2601.63 and this row's first
+!            half-word is 002601.63 80, the same bit to the bit.
+!   lines 28/29  YLOL2 / YLOL1 -- printed "YLCL2"/"YLCL1".  printed
+!            p.39 has YLOL2 (8)5464.40 and YLOL1 (8)5465.0, which are
+!            exactly the two locations printed here.
+!   line 30  SYSMOD -- printed "SYSMCD"; the comment beside it reads
+!            "-TWO BIT OPERATING MODE".
+!   line 34  SCORG  -- printed "SCCRG".  printed p.39 line 19 already
+!            has SCORG at (8)2151.03, this page's location.
+! Also checked against other decks and matching exactly: STATI 0.26,
+! SIMNT 0.53 and SMOUNT 0.51 (printed pp.69/70), Y BCRD (8)5464.0
+! (p.39), S MAXUB (8)2153.0 (p.40), X IN END (8)5466.0 (pp.13/15/17).
 !
-! (2) "SCCRG" IS WRITTEN SCORG, AND THE GLYPH IS DISPUTED.  Line
-!     34's NAME column prints five characters with no blank, and at
-!     1800 dpi characters 2 and 3 are IDENTICAL open-right C's --
-!     the ink says SCCRG.  It is read as SCORG on an argument that
-!     does not depend on any glyph: line 34's LOCATION is 002151.03,
-!     and printed p.39 line 19 ("CM0000(BU,1),SCORG") has a left
-!     address of 002151.03.  Same bit, same symbol.  Corroborating
-!     but weaker: p.39 line 19's own STATEMENT renders at 1800 dpi
-!     with a CLOSED O, plainly different from the open C beside it,
-!     on the same row off the same printer; and line 34's own
-!     statement column prints "SCOMRG+.3" with a closed O two
-!     characters along.  Recorded as a DISPUTED GLYPH, resolved
-!     symbol.
+! >>> ONE GLYPH I COULD NOT DECIDE AND DID NOT PRETEND TO. <<<  Line
+! 23's name prints "Y B?RD", the fourth character an open round glyph
+! identical to the O of "ADDITIONS" two lines above and to the C of
+! "CNOP" one line above -- this drum prints BOTH that way.  It is
+! spelled YBCRD here because printed p.39's landed deck spells it
+! YBCRD and the merge has to agree with itself; the binary does not
+! depend on it.  Line 27's "D FREE" IS decidable: its first glyph has
+! the straight vertical left stem and squared corners of the D in
+! "BCRD" and of "SYSMCD"'s last letter, which the round C of "CNOP"
+! does not have.
 !
-! (3) A SYN VALUE WRITTEN ".26" IS WRITTEN 0.26.  The listing writes
-!     the word number as empty where it is zero; p.62's deck already
-!     writes those as "0.00".
+! >>> TWO SPELLINGS strap_asm WOULD NOT TAKE, AND ONE IT WOULD. <<<
+!   line 12 prints "$CMC000(BU,4,4),-.4(LXA)".  strap_asm rejects the
+!     "$" prefix with KeyError '$CM0000'; written CM0000 it assembles
+!     to the printed word exactly.  The printed spelling is kept
+!     verbatim in the !CHECK note.
+!   line 37's "UNTAIL,(2)" IS accepted verbatim, and so is line 10's
+!     "KF(BU,4,4)(V+I)" with the modifier AFTER the mode -- printed
+!     p.88 puts it before, and strap_asm takes either.
 !
-! (4) NOTHING ELSE.  Every other glyph reads cleanly at 600 dpi.
+! >>> A BIT OFFSET UNDER "(8)" IS OCTAL, FRACTION INCLUDED. <<<  The
+! origin here is written SLC,(8)5450.40, NOT (8)5450.32: strap_asm
+! parses the fraction of an (8) literal in base 8, so (8)5450.32 is
+! bit 26 and lands six bits low.  It happens to still produce the
+! right address for line 5 -- a half-word instruction realigns -- so
+! this one is invisible to the oracle and is written down instead.
+! The STATEMENT column is the other way round: its offsets are
+! DECIMAL, which is why line 24's ",.26" prints as location
+! 000000.32, line 30's "SCOMRG+.8" as 002151.10, and line 16's
+! "LXA+.18" as 000034.22.
 !
-! ---------------------------------------------------------------
-! ONE LISTING MARK: line 29 carries the bare "*" after its location
-! ("005465.00 *") that printed pp.3, 37, 38 and 39 also carry.  It
-! changes no compiled bit.  (Line 6, outside this block, carries a
-! second.)
+! >>> ONE OPERAND I READ BUT DID NOT CONFIRM. <<<  Line 18's mode
+! field prints "(DU,C,4)" and I read the middle character as 0, a
+! round open glyph like every other 0 on the page.  The row
+! assembles bit-identically with it, so the bits are right; what I
+! have NOT done is check against a primary source what a zero
+! LENGTH in a DU mode field means.  Line 17 loads $L immediately
+! before, which is consistent with the length coming from $L at
+! execution, but that is a reading of the code and not a citation.
 !
-! ROWS DELIBERATELY ABSENT, as printed p.24 established: a SYN row
-! prints its VALUE in the location column and no word, so the ten
-! SYN cards are checked in SYMBOLS rather than in the row list.
+! >>> THE STATEMENT OPERANDS ARE WRITTEN AS THE PAGE PRINTS THEM.
+! Lines 24-26 are ",.26" / ",.53" / ",.51" with no leading zero,
+! which is what the page prints; other decks write "0.26".  Both
+! assemble to the same bit and the printed form was chosen on
+! purpose.
+!
+! >>> TWO LISTING MARKS: lines 6 and 29 carry an asterisk after the
+! location (005451.00 * and 005465.00 *).
+!
+! Five symbols are carried as SYN stand-ins from pages transcribed
+! elsewhere.  Only T MLXA's value is NOT confirmed by a row on this
+! page: lines 8/10/12/13/15/16/18 all depend on LXA = T MLXA = $12,
+! and they do reproduce the printed binary, so the page agrees with
+! p.83 -- but p.83 is where the $12 came from.
 
-! ---- from pages already transcribed -------------------------------
-SCOMRG  SYN, (8)2151.0               ! printed p.37 line 11, "THE
-                                      !   SYSTEM WORD FLAG"
-SBAMCP  SYN, (8)2153.0               ! printed p.28; line 33 below
-                                      !   says SMAXUB IS this symbol
-! ---- read off line 20's OWN location and dds columns ---------------
-! The listing prints TMLXA nowhere on this page; line 20's location
-! is 000034.00+ and its dds "BU,1CC,1C".  THE VALUE IS FROM THE INK;
-! THE READING IS NOT: 0o34 is word 28, and word 28 is index register
-! $12 only by the Stretch index-register layout, which this page does
-! not state.  Nothing checked here depends on it -- TMLXA and LXA
-! resolve to the same bit either way.  Printed p.83 line 22 appears to
-! carry the declaration itself and is the page to check when p.83 is
-! read.
-TMLXA   SYN, (8)34.0
+TMLXA   SYN, $12                     ! p.83 line 33 -CONVERSION ROUTINE
+TMX1    SYN, $1                      ! p.83 line 21
+LBLZOR  SYN(BU,8,8), (8)2601.63      ! p.54 line 81
+SCOMRG  SYN, (8)2151.0               ! p.33 (p.37 line 11 is the
+                                      !   XW that allocates it)
+SBAMCP  SYN, (8)2153.0               ! p.33 and p.72 (p.37 line 17
+                                      !   is the VF that allocates it)
 
-        SLC, (8)5464.0
+        SLC, (8)5450.40
 
+! ---- THE CONVERSION SUBROUTINE ------------------------------------
+TMCONV  NOP                          ! line 5
+        LF(BU,48,6), $R+.16          ! line 6  -EXPAND TO 8 BIT BYTES.
+        SF(BU,32,4), $R+.32          ! line 7  -CONTRACT TO 4-BIT BYTES.
+        LVI, LXA, $R+.32             ! line 8
+        LF(BU,8,8), LBLZOR, 32       ! line 9
+LCONVA  KF(BU,4,4)(V+I), .4(LXA), 32 ! line 10 -IS 4-BIT BYTE 1010.
+        BAH, LCONVB                  ! line 11 -   NO----BRANCH
+        CM0000(BU,4,4), -.4(LXA)     ! line 12 -YES --- REPLACE BY 0000.
+LCONVB  KF(BU,4,4), 0.0(LXA), 36     ! line 13 -IS NEXT BYTE 0000.
+        BZAEZ, LCONVA                ! line 14 -   NO----GO BACK.
+        V-I, LXA, $R+.32             ! line 15 -COMPUTE FIELD LENGTH.
+        LF(BU,6,6), LXA+.18, 119     ! line 16
+        LV, LXA, $L                  ! line 17
+        LCV(DU,0,4), $R+.32, 0.0(LXA) ! line 18 -CONVERT.
+        B, 0.0(TMX1)                 ! line 19 -OUT OF ROUTINE.
 LXA     SYN, TMLXA                   ! line 20
-        CNOP                         ! line 21 -- pads nothing.  Line
-                                      !   19's printed location is
-                                      !   005463.40 and it is a
-                                      !   half-word B, so the counter
-                                      !   reaches this card already at
-                                      !   005464.00.  That location was
-                                      !   rendered but line 19 itself is
-                                      !   not transcribed here.
+        CNOP                         ! line 21
 
-! ---- ADDITIONS MADE TO MAKE ASSIGNMT. COMPATIBLE (line 22) --------
-YBCRD   BD, $                        ! line 23 -UNCODE PATH NOT TO
-                                      !           BE TAKEN
-STATI   SYN(BU,1), 0.26              ! line 24
-SIMNT   SYN(BU,1), 0.53              ! line 25
-SMOUNT  SYN(BU,1), 0.51              ! line 26
+! ---- ADDITIONS MADE TO MAKE ASSIGNMT. COMPATIBLE ------------------
+YBCRD   BD, $                        ! line 23 -UNCODE PATH NOT TO BE TAKEN
+STATI   SYN(BU,1), .26               ! line 24
+SIMNT   SYN(BU,1), .53               ! line 25
+SMOUNT  SYN(BU,1), .51               ! line 26
 DFREE   SYN, 0                       ! line 27
-YLCL2   VF                           ! line 28
-YLCL1   VF                           ! line 29
-SYSMCD  SYN(BU,2), SCOMRG+.8         ! line 30 -TWO BIT OPERATIONG
-                                      !           MODE
-STERMI  VF, ZFINIS                   ! line 31 -THE LAST LOC USED
-                                      !           BY MCP
+YLOL2   VF                           ! line 28
+YLOL1   VF                           ! line 29
+SYSMOD  SYN(BU,2), SCOMRG+.8         ! line 30 -TWO BIT OPERATING MODE
+STERMI  VF, ZFINIS                   ! line 31 -THE LAST LOC USED BY MCP
 ZFINIS  SYN, (8)17777.0              ! line 32
-SMAXUB  SYN, SBAMCP                  ! line 33 -MAX UB+1 THAT CAN
-                                      !           BE USED
+SMAXUB  SYN, SBAMCP                  ! line 33 -MAX UB+1 THAT CAN BE USED
 SCORG   SYN(BU,1), SCOMRG+.3         ! line 34 -TH+ COMPILE GO BITS
         CNOP                         ! line 35
 XINEND  SYN, $                       ! line 36
         UNTAIL, (2)                  ! line 37
-        END, YBCRD
 
 ! ---------------------------------------------------------------
-! THE CHECKED ROWS -- the four that compile a word.  The ten SYN
-! cards print a VALUE and no word, and are checked in SYMBOLS below,
-! which is the stronger place for them (printed p.24's convention).
+! THE PRINTED LISTING -- all thirty-seven lines.  Lines 1-4, 21, 22
+! and 35-37 print no LOCATION and no BINARY OUTPUT.
 ! ---------------------------------------------------------------
-!   line 23  005464.00  005464.04 00                 Y BCRD BD,$
-!   line 28  005464.40  000000.00+                   Y LCL2 VF
-!   line 29  005465.00  000000.00+                   Y LCL1 VF   (*)
-!   line 31  005465.40  017777.00+                   S TERMI VF,ZFINIS
-!
-! THE CHECKED SYMBOLS -- the location column of every SYN card, and
-! the four labels.  The listing prints these in OCTAL word.bit.
-!   L XA     000034.00     line 20
-!   Y BCRD   005464.00     line 23
-!   STATI    000000.32     line 24   0o32 = bit 26
-!   SIMNT    000000.65     line 25   0o65 = bit 53
-!   S MOUNT  000000.63     line 26   0o63 = bit 51
-!   D FREE   000000.00     line 27
-!   Y LCL2   005464.40     line 28
-!   Y LCL1   005465.00     line 29
-!   SYSMCD   002151.10     line 30   0o10 = bit 8 past SCOMRG
-!   S TERMI  005465.40     line 31
-!   Z FINIS  017777.00     line 32
-!   S MAXUB  002153.00     line 33
-!   SCORG    002151.03     line 34   bit 3 past SCOMRG
-!   X IN END 005466.00     line 36
+!   line  1                                             *-------------------
+!   line  2                                             - CONVERSION SUBROUTINE
+!   line  3                                             *-------------------
+!   line  4                                             -
+!   line  5  005450.40   000000.30 00                   T MCONV NOP
+!   line  6  005451.00 * 000011.20 80  060600.06 70             LF(BU,48,6),$R+.16
+!   line  7  005452.00   000011.40 80  040400.12 F0             SF(BU,32,4),$R+.32
+!   line  8  005453.00   000011.71 01                           LVI,LXA,$R+.32
+!   line  9  005453.40   002601.63 80  010020.06 70             LF(BU,8,8),LBLZOR,32
+!   line 10  005454.40   000000.04 8C  104420.23 10   L CONVA   KF(BU,4,4)(V+I),.4(LXA),32
+!   line 11  005455.40   005457.37 42                           BAH,LCONVB
+!   line 12  005456.00   777777.74 8C  004400.00 F0             $CM0000(BU,4,4),-.4(LXA)
+!   line 13  005457.00   000000.00 8C  004422.23 10   L CONVB   KF(BU,4,4),0.0(LXA),36
+!   line 14  005460.00   005454.76 C4                           BZAEZ,LCONVA
+!   line 15  005460.40   000011.71 0D                           V-I,LXA,$R+.32
+!   line 16  005461.00   000034.22 80  006673.46 70             LF(BU,6,6),LXA+.18,119
+!   line 17  005462.00   000010.30 30                           LV,LXA,$L
+!   line 18  005462.40   000011.40 80  000400.24 3C             LCV(DU,0,4),$R+.32,0.0(LXA)
+!   line 19  005463.40   000000.10 01                           B,0.0(T MX1)
+!   line 20  000034.00+  +00000000     BU,100,10     L XA       SYN,TMLXA
+!   line 21                                                     CNOP
+!   line 22                                             - ADDITIONS MADE TO MAKE ASSIGNMT. COMPATIBLE
+!   line 23  005464.00   005464.04 00                 Y BCRD    BD,$
+!   line 24  000000.32+  +00000000     BU,01 ,10     STATI      SYN(BU,1),.26
+!   line 25  000000.65+  +00000000     BU,01 ,10     SIMNT      SYN(BU,1),.53
+!   line 26  000000.63+  +00000000     BU,01 ,10     S MOUNT    SYN(BU,1),.51
+!   line 27  000000.00+  +00000000     NULL          D FREE     SYN,0
+!   line 28  005464.40   000000.00+                  YLOL2      VF
+!   line 29  005465.00 * 000000.00+                  YLOL1      VF
+!   line 30  002151.10+  +00000000     BU,02 ,10     SYSMOD     SYN(BU,2),SCOMRG+.8
+!   line 31  005465.40   017777.00+                  S TERMI    VF,ZFINIS
+!   line 32  017777.00+  +00000000     NULL          Z FINIS    SYN,(8)17777.0
+!   line 33  002153.00+  +00000000     B ,31 ,01     S MAXUB    SYN,S BA MCP
+!   line 34  002151.03+  +00000000     BU,01 ,10     SCORG      SYN(BU,1),SCOMRG+.3
+!   line 35                                                     CNOP
+!   line 36  005466.00+  +00000000     NULL          X IN END   SYN,$
+!   line 37                                                     UNTAIL,(2)
+
+! WHICH ROWS ARE INDEPENDENT CHECKS.
+!   SELF-CONTAINED, resting on nothing outside this page: lines 5, 7,
+!   11, 14, 17, 23, 28, 29 and 31.  Lines 11 and 14 branch to LCONVB
+!   and LCONVA, both defined by rows on this page (005457.00 and
+!   005454.40), so they really do close on themselves.
+!   REST ON $R, $L (C22-6531 Appendix A, words 9 and 8): lines 6, 7,
+!   8, 15, 17, 18.  Those are the assembler's own register table, not
+!   another transcription.
+!   REST ON AN EXTERNAL SYN: line 9 on LBLZOR (p.54), line 19 on
+!   T MX1 (p.83), lines 8/10/12/13/15/16/18 and !SYM LXA on T MLXA
+!   (p.83), !SYM SYSMOD and !SYM SCORG on SCOMRG (p.33), !SYM SMAXUB
+!   on SBAMCP (p.33/p.72).  Each of those external addresses is
+!   CONFIRMED here rather than assumed: the page prints the location
+!   or the binary that the external value produces, and they agree.
+
+! ---- CHECKS, read by tests/verify_mcp_page.py 98 -----------------
+!SYM   TMCONV   005450.40
+!SYM   LCONVA   005454.40
+!SYM   LCONVB   005457.00
+!SYM   LXA      000034.00
+!SYM   YBCRD    005464.00
+!SYM   STATI    000000.32
+!SYM   SIMNT    000000.65
+!SYM   SMOUNT   000000.63
+!SYM   DFREE    000000.00
+!SYM   YLOL2    005464.40
+!SYM   YLOL1    005465.00
+!SYM   SYSMOD   002151.10
+!SYM   STERMI   005465.40
+!SYM   ZFINIS   017777.00
+!SYM   SMAXUB   002153.00
+!SYM   SCORG    002151.03
+!SYM   XINEND   005466.00
+!CHECK 005450.40 | 000000.30 00 | line 5  T MCONV NOP
+!CHECK 005451.00 | 000011.20 80 060600.06 70 | line 6  LF(BU,48,6),$R+.16
+!CHECK 005452.00 | 000011.40 80 040400.12 F0 | line 7  SF(BU,32,4),$R+.32
+!CHECK 005453.00 | 000011.71 01 | line 8  LVI,LXA,$R+.32
+!CHECK 005453.40 | 002601.63 80 010020.06 70 | line 9  LF(BU,8,8),LBLZOR,32
+!CHECK 005454.40 | 000000.04 8C 104420.23 10 | line 10 L CONVA KF(BU,4,4)(V+I),.4(LXA),32
+!CHECK 005455.40 | 005457.37 42 | line 11 BAH,LCONVB
+!CHECK 005456.00 | 777777.74 8C 004400.00 F0 | line 12 printed "$CM0000(BU,4,4),-.4(LXA)"
+!CHECK 005457.00 | 000000.00 8C 004422.23 10 | line 13 L CONVB KF(BU,4,4),0.0(LXA),36
+!CHECK 005460.00 | 005454.76 C4 | line 14 BZAEZ,LCONVA
+!CHECK 005460.40 | 000011.71 0D | line 15 V-I,LXA,$R+.32
+!CHECK 005461.00 | 000034.22 80 006673.46 70 | line 16 LF(BU,6,6),LXA+.18,119
+!CHECK 005462.00 | 000010.30 30 | line 17 LV,LXA,$L
+!CHECK 005462.40 | 000011.40 80 000400.24 3C | line 18 LCV(DU,0,4),$R+.32,0.0(LXA)
+!CHECK 005463.40 | 000000.10 01 | line 19 B,0.0(T MX1)
+!CHECK 005464.00 | 005464.04 00 | line 23 Y BCRD BD,$
+!CHECK 005464.40 | 000000.00+ | line 28 YLOL2 VF
+!CHECK 005465.00 | 000000.00+ | line 29 YLOL1 VF
+!CHECK 005465.40 | 017777.00+ | line 31 S TERMI VF,ZFINIS

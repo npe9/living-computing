@@ -141,9 +141,11 @@
 ! mnemonics -- and none of them is a transcription doubt about an
 ! address:
 !
-!   line 55  THE PAGE PRINTS "*I+", WHICH strap_asm DOES NOT ACCEPT
-!            ("unknown mnemonic").  The deck writes the supported
-!            spelling "*+I" and the !CHECK note keeps the printed one.
+!   line 55  THE PAGE PRINTS "*I+", AND SO DOES THIS DECK.  When the
+!            page was first transcribed strap_asm rejected it as an
+!            unknown mnemonic and the deck wrote "*+I" instead; the
+!            spelling is now accepted (VFL_INFIX_IMMEDIATE) and the
+!            printed form is restored.
 !            This is a SPELLING difference, not a different
 !            instruction, and the bits say so: the delta between "*"
 !            and the page is 0o02 in the printed .21/.23 field, which
@@ -290,7 +292,7 @@ TSORT3  CB+, TMXG, TSORT2            ! line 41
                                       !           TABLE SIZE
         LV, TMXD, $R                 ! line 54 -FIRST CELL AVAIL FOR
                                       !           FILE AREA
-        *+I, TFLLGN, 46              ! line 55 -ADD FILE AREA TABLE
+        *I+, TFLLGN, 46              ! line 55 -ADD FILE AREA TABLE
                                       !           LENGHT
         LV, TMXE, $R                 ! line 56 -FIRST CELL AVAILABLE
                                       !           FOR UNIT AREA TB
