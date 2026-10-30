@@ -60,6 +60,64 @@ Six reads become one.
 > averaging over pages that compile nothing. A window onto an artifact
 > is not the artifact.
 
+> **THREE GLYPH PAIRS BREAK ON THIS DRUM, AND THE THIRD IS THE WORST.**
+>
+> * **B vs 8** -- they differ mainly in one vertical stroke, which is the
+>   first thing a worn drum loses. `mcp_crop.sh` renders the code column
+>   at 900 dpi for this reason.
+> * **O vs C** -- a worn O has a break in its upper right and reads as C
+>   when zoomed ALONE. printed p.87's label read `T WCRM` in isolation
+>   and is `T WORM`: the references on the same page print a closed O
+>   identical to the one in `T BOID` a line above.
+> * **C vs D, AND THE ORACLE CANNOT CATCH IT.** This drum prints D with
+>   the bowl worn through, so at 400 dpi a D reads as a C. On printed
+>   p.93 six glyphs came back D and three first-pass readings were
+>   wrong: `T MDK2`, `TMDK1A` and `TMDK` had all been read with a C.
+>   **The discriminator is the LEFT side**: C and 0 are round with no
+>   stem; D has a straight vertical left stem and squared corners.
+>
+> **THE CALIBRATION GLYPH IS IN THE SAME ROW, IN AN OCTAL FIELD.**
+> A half-word prints as `oooooo.oo HH` -- the first two fields are
+> OCTAL, so they can only hold 0-7. **A round glyph in an octal field
+> is therefore a 0 with certainty, whatever it looks like**, and it
+> sets the ink level for that row's hex byte a couple of characters
+> away. Printed p.95 line 49 reads, to the eye at 900 dpi:
+>
+> ```
+> 005356.40   COC000.64 82   014000.2C BC      LFT,T IODCT(T MXA)
+> ```
+>
+> `COC000` and `.2C` are `000000` and `.20` -- a C cannot occur in
+> either field -- so this row prints 0 as an open C three times before
+> it reaches the byte, and the byte is `B0`, not `BC`. Line 53's
+> `COC011.CC 80` and line 55's `C70C000.00` say the same thing.
+>
+> This matters because the asymmetry runs ONE WAY: **ink dropout can
+> open a closed glyph but never closes an open one, so an observed C
+> may be a damaged 0 while an observed 0 is never a damaged C.** The
+> octal fields tell you whether this particular row is dropping ink.
+> Comparing against zeros in OTHER rows is not the same test and can
+> give the opposite answer -- that is exactly how p.95's first reading
+> concluded `BC` on lines 49 and 53, against an assembler that was
+> right.
+>
+> When the two still disagree, the STATEMENT column is the tie-breaker,
+> because it is what produced the bits: `LFT,T IODCT(T MXA)` has no
+> second operand, and the low nibble of a VFL full word is `i2`, the
+> OFFSET INDEX from the `OF7(I')` operand (`vflAddrOf`: `w[3:0]`, IBM
+> bits 60-63). No `(I')` in the statement means `i2` is 0 means the
+> byte ends in 0. Assemble the variant and look -- adding `, 0(T MLXA)`
+> to that statement turns `B0` into `BC` and nothing else changes.
+
+> The reason C/D is the dangerous one: `listing_oracle` checks LOCATIONS
+> and BINARY, never label SPELLINGS. A misspelled label that nothing
+> references assembles perfectly and is simply wrong. What caught it on
+> p.93 was an INTERNAL INCONSISTENCY -- two lines read as the same name
+> `TM6C` yet compiled to different addresses -- not an external check.
+> A symbol another page references is safe (the merge would fail on an
+> undefined symbol); one that nothing references rests on ink alone, so
+> read those at 1800 dpi against a known-good instance of each candidate.
+
 > **A DD OR SYN LINE PRINTS A DATA DESCRIPTION, NOT MACHINE CODE**, in
 > the BINARY OUTPUT column -- `BU,100,10` is mode BU, length 0o100=64,
 > byte size 0o10=8. That is the column working correctly on a
