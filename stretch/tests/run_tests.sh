@@ -1453,6 +1453,18 @@ run "MCP'S OWN BOOTSTRAP RUNS (boot_plan.md M3)" ./run_mcp_boot.sh StretchMcpBoo
 # strap/prosa.py's MCP_IODS[0] decoded through printed p.62's field map.
 # One value pins the whole IOD-card-to-request-table path.
 run "WHAT MCP-DECODE BUILT (read at ASSIGN's entry, before the reject clears it)" ./run_mcp_decode_test.sh StretchMcpDecodeTb
+
+# >>> AND ASSIGN SUCCEEDS, ON A MACHINE THAT HAS THE UNITS MCP ASKS
+# FOR. <<<  The two sections above run the DEFAULT fixture, which
+# declares one available tape unit against MCP's two output-tape IODs --
+# so ASSIGN rejects and MCP halts in X6ERR, which the boot section's
+# twelve console checks pin.  This one selects
+# TAPE_UNITS_BOTH_AVAILABLE, the machine C22-6728-1 printed p.98's
+# minimal IPL case describes, and MCP assigns all three requests and
+# goes on to T MOVE.  Both fixtures are kept on purpose: the rejection
+# is a real MCP behaviour verified against printed console text, and
+# the forward progress is the milestone.
+run "ASSIGN SUCCEEDS and MCP reaches T MOVE (both tape units available)" ./run_mcp_assign_test.sh StretchMcpAssignTb
 # >>> THE MOVED IMAGE IS PRINTED pp.15-36 AS OF 2026-10-22 -- SEVEN
 # HUNDRED AND TWENTY-SEVEN WORDS, WHERE IT WAS EIGHTY. <<<
 #

@@ -120,85 +120,21 @@ def _middle_index():
     raise SystemExit("gen_mcp_boot_tb: the image's upper half is all zeros")
 
 
-def main():
-    if len(sys.argv) != 2:
-        print(f"usage: {sys.argv[0]} ModuleName", file=sys.stderr)
-        sys.exit(1)
-    module_name = sys.argv[1]
+def write_tape(src):
+    """Write the IPL tape at $STRETCH_TAPE and return its path.
 
-    prog, src, defined, external = build()
+    >>> EVERY VARIANT IN main() MUST CALL THIS. <<<  It was inline in
+    main() until 2026-10-30, and the two early-returning variants
+    (DecodeTb, AssignTb) therefore never wrote a tape at all.  DecodeTb
+    appeared to work because the boot section runs first in the suite
+    and leaves its tape behind -- a hidden ordering dependency that
+    would have failed on a fresh checkout or a reordered suite.  The
+    AssignTb run that exposed it read 0xaaaaaaaaaaaaaaaa, the
+    uninitialised fill, and halted after five steps.
 
-    # ---------------------------------------------------------------
-    # >>> THE SECOND TESTBENCH: WHAT MCP-DECODE BUILT, READ BEFORE
-    # ASSIGN THROWS IT AWAY. <<<
-    # ---------------------------------------------------------------
-    # The boot's end-of-run state cannot witness this.  MCP-DECODE
-    # fills the I/O request table from the punched IOD cards, ASSIGN
-    # then fails, and ASSIGN's reject path CLEARS the table -- so every
-    # word of it reads zero at the end however well DECODE performed.
-    # Measured 2026-10-30: TUIORQ's first word is 0x0600001000000000
-    # mid-run and 0 at the end.
-    #
-    # So this variant runs until ASSIGN IS ENTERED and reads the table
-    # there.  The stop is an ADDRESS, not a step number, because the
-    # window between the stores and ASSIGN is only about four thousand
-    # steps wide and a newly transcribed page moves it.
-    #
-    # WHY THE NOT-OVERLAP TABLE.  This fixture boots unoverlapped --
-    # X242's flag bit is set (the ",4" at IBM 25), p.57 line 17 is
-    # "LVI,LIODX,TUIORQ  -IF NOT OVERLAP MODE", and C22-6728-1 printed
-    # p.98's minimal IPL case is "normal IPL, unoverlapped".  $5 was
-    # measured holding TUIORQ (word 1868) at every DECODE site, not
-    # T IOREQ (word 1787).  Checking 1787 -- which this file did until
-    # today -- reads the OVERLAP table, which is correctly zero in a
-    # not-overlap boot and could not fail for any reason worth knowing.
-    if module_name.endswith("DecodeTb"):
-        # The entry's layout is printed: MCP p.62 lines 30, 33 and 37
-        # give TASGNI SYN(BU,1),0.00 / TTYPE SYN(BU,4),0.03 /
-        # TIODSQ SYN(BU,9),0.19.  IBM bit n is bit 63-n, and a field's
-        # value sits at its LOW end, so a field whose last bit is n
-        # shifts by 63-n.  Written out rather than as a magic constant,
-        # so the check says WHY it expects what it expects.
-        def ioreq(ttype, iodsq):
-            return (ttype << (63 - 6)) | (iodsq << (63 - 27))
-
-        # strap/prosa.py's MCP_IODS[0] is MCPRDR, iod_type="READER",
-        # ref_number=1.  READER is type 3 in MCP's own configuration
-        # table (the conf-table checks above measure row 3 for it), so
-        # the first request-table entry must read type 3, sequence 1,
-        # and TASGNI still clear because ASSIGN has not run yet.
-        # LITERALS, BECAUSE THE MERGED IMAGE'S SYMTAB DOES NOT CARRY
-        # THESE, and every other check in this file is a literal word
-        # number for the same reason.  Both are derived, not guessed:
-        #
-        #   TUIORQ = word 1868.  Assemble decks/mcp_bootstrap_p62.strap
-        #   alone and its symtab gives bit 119552; 119552/64 = 1868.
-        #   Independently, $5 was measured holding exactly 119552 at
-        #   every MCP-DECODE site.
-        #
-        #   T ASIGN = half-word 3970.  printed p.27 line 8 declares
-        #   "TASIGN SYN, (8)3701.0", and 0o3701 = 1985 words = 3970
-        #   half-words.  Corroborated by this file's own note further
-        #   down: "SWAP started at half-word 3970" is printed p.65
-        #   line 6, ASSIGN's first instruction.
-        tuiorq = 1868
-        tasign_hw = 3970
-        print(generate(module_name, prog,
-                       [("mcp_decode_tuiorq0_reader_seq1",
-                         str(tuiorq), ioreq(3, 1))],
-                       step_cap=40000000,
-                       stop_at_pc=tasign_hw,
-                       pc_trail=True,
-                       ipl=True))
-        return
-
-    # THE pp.15-18 IMAGE, for the checks that describe what MCP did
-    # after it moved itself.  Built here from the same decks
-    # strap/prosa.py puts on the tape, so a check cannot drift from
-    # the thing it describes.
-    ipl_prog, _, _, _ = build_mcp_ipl()
-    ipl_hw = lambda n: ipl_prog.symtab[n] // 32
-
+    A variant that chooses a different machine (prosa.set_tape_units)
+    must do so BEFORE calling this, because the tape carries the cards.
+    """
     out = os.environ.get("STRETCH_TAPE")
     if not out:
         print("error: set STRETCH_TAPE to the image path", file=sys.stderr)
@@ -245,6 +181,140 @@ def main():
     with open(out, "ab") as f:
         for w in prosa.tape_words():
             f.write(struct.pack(">Q", w & 0xFFFFFFFFFFFFFFFF))
+    return out
+
+
+def main():
+    if len(sys.argv) != 2:
+        print(f"usage: {sys.argv[0]} ModuleName", file=sys.stderr)
+        sys.exit(1)
+    module_name = sys.argv[1]
+
+    prog, src, defined, external = build()
+
+    # ---------------------------------------------------------------
+    # >>> THE SECOND TESTBENCH: WHAT MCP-DECODE BUILT, READ BEFORE
+    # ASSIGN THROWS IT AWAY. <<<
+    # ---------------------------------------------------------------
+    # The boot's end-of-run state cannot witness this.  MCP-DECODE
+    # fills the I/O request table from the punched IOD cards, ASSIGN
+    # then fails, and ASSIGN's reject path CLEARS the table -- so every
+    # word of it reads zero at the end however well DECODE performed.
+    # Measured 2026-10-30: TUIORQ's first word is 0x0600001000000000
+    # mid-run and 0 at the end.
+    #
+    # So this variant runs until ASSIGN IS ENTERED and reads the table
+    # there.  The stop is an ADDRESS, not a step number, because the
+    # window between the stores and ASSIGN is only about four thousand
+    # steps wide and a newly transcribed page moves it.
+    #
+    # WHY THE NOT-OVERLAP TABLE.  This fixture boots unoverlapped --
+    # X242's flag bit is set (the ",4" at IBM 25), p.57 line 17 is
+    # "LVI,LIODX,TUIORQ  -IF NOT OVERLAP MODE", and C22-6728-1 printed
+    # p.98's minimal IPL case is "normal IPL, unoverlapped".  $5 was
+    # measured holding TUIORQ (word 1868) at every DECODE site, not
+    # T IOREQ (word 1787).  Checking 1787 -- which this file did until
+    # today -- reads the OVERLAP table, which is correctly zero in a
+    # not-overlap boot and could not fail for any reason worth knowing.
+    # ---------------------------------------------------------------
+    # >>> THE THIRD TESTBENCH: ASSIGN SUCCEEDS, ON A MACHINE THAT HAS
+    # THE UNITS MCP ASKS FOR. <<<
+    # ---------------------------------------------------------------
+    # The default fixture declares ONE available tape unit and MCP's own
+    # deck asks for TWO output tapes, so the third I/O request cannot be
+    # satisfied and MCP halts in X6ERR with "EXHAUSTED ALL CHANNELS".
+    # That is correct behaviour and the boot testbench keeps twelve
+    # checks on it.
+    #
+    # This run declares the machine C22-6728-1 printed p.98's minimal
+    # IPL case describes -- a card reader and output tape unitS -- and
+    # MCP then assigns all three requests and goes on to T MOVE.
+    #
+    # It stops at T MOVE rather than running to the end for two reasons:
+    # the request table is cleared by paths downstream, and past T MOVE
+    # the run falls into storage no transcribed page fills, so the end
+    # of the run says nothing.  T MOVE is printed p.27's own
+    # "TMOVE SYN, (8)5014.0" = word 2572 = half-word 5144.
+    if module_name.endswith("AssignTb"):
+        # set_tape_units BEFORE write_tape: the tape carries the cards.
+        prosa.set_tape_units(prosa.TAPE_UNITS_BOTH_AVAILABLE)
+        write_tape(src)
+        tuiorq = 1868
+        tmove_hw = 5144
+        # Decoded with printed p.62's field map (TASGNI 0.00, TTYPE
+        # 0.03, TRLSYM 0.11, TLAST 0.18, TIODSQ 0.19, TFREEL 0.28,
+        # TABSCH 0.46).  All three carry TASGNI=1 -- the point of the
+        # test -- and their types and sequence numbers are the three
+        # punched IOD cards in order:
+        #
+        #   slot 0  TTYPE 3 READER, TIODSQ 1, TABSCH 2846  MCPRDR
+        #   slot 1  TTYPE 8 TAPE,   TIODSQ 2, TABSCH 2848  MCPOUT1
+        #   slot 2  TTYPE 8 TAPE,   TIODSQ 3, TABSCH 2848  MCPOUT2
+        #
+        # The two tapes share TABSCH because TABSCH is "THE ABSOLUTE
+        # CHANNEL" (p.62 line 39) and both units sit on channel 34; the
+        # reader's 2846 is channel 32.
+        print(generate(module_name, prog,
+                       [("mcp_assign_slot0_reader_assigned",
+                         str(tuiorq), 0x8600001000000b1e),
+                        ("mcp_assign_slot1_tape_assigned",
+                         str(tuiorq + 1), 0xb000002000000b20),
+                        ("mcp_assign_slot2_tape_assigned",
+                         str(tuiorq + 2), 0xb040003000000b20)],
+                       step_cap=40000000,
+                       stop_at_pc=tmove_hw,
+                       pc_trail=True,
+                       ipl=True))
+        return
+
+    if module_name.endswith("DecodeTb"):
+        write_tape(src)
+        # The entry's layout is printed: MCP p.62 lines 30, 33 and 37
+        # give TASGNI SYN(BU,1),0.00 / TTYPE SYN(BU,4),0.03 /
+        # TIODSQ SYN(BU,9),0.19.  IBM bit n is bit 63-n, and a field's
+        # value sits at its LOW end, so a field whose last bit is n
+        # shifts by 63-n.  Written out rather than as a magic constant,
+        # so the check says WHY it expects what it expects.
+        def ioreq(ttype, iodsq):
+            return (ttype << (63 - 6)) | (iodsq << (63 - 27))
+
+        # strap/prosa.py's MCP_IODS[0] is MCPRDR, iod_type="READER",
+        # ref_number=1.  READER is type 3 in MCP's own configuration
+        # table (the conf-table checks above measure row 3 for it), so
+        # the first request-table entry must read type 3, sequence 1,
+        # and TASGNI still clear because ASSIGN has not run yet.
+        # LITERALS, BECAUSE THE MERGED IMAGE'S SYMTAB DOES NOT CARRY
+        # THESE, and every other check in this file is a literal word
+        # number for the same reason.  Both are derived, not guessed:
+        #
+        #   TUIORQ = word 1868.  Assemble decks/mcp_bootstrap_p62.strap
+        #   alone and its symtab gives bit 119552; 119552/64 = 1868.
+        #   Independently, $5 was measured holding exactly 119552 at
+        #   every MCP-DECODE site.
+        #
+        #   T ASIGN = half-word 3970.  printed p.27 line 8 declares
+        #   "TASIGN SYN, (8)3701.0", and 0o3701 = 1985 words = 3970
+        #   half-words.  Corroborated by this file's own note further
+        #   down: "SWAP started at half-word 3970" is printed p.65
+        #   line 6, ASSIGN's first instruction.
+        tuiorq = 1868
+        tasign_hw = 3970
+        print(generate(module_name, prog,
+                       [("mcp_decode_tuiorq0_reader_seq1",
+                         str(tuiorq), ioreq(3, 1))],
+                       step_cap=40000000,
+                       stop_at_pc=tasign_hw,
+                       pc_trail=True,
+                       ipl=True))
+        return
+
+    # THE pp.15-18 IMAGE, for the checks that describe what MCP did
+    # after it moved itself.  Built here from the same decks
+    # strap/prosa.py puts on the tape, so a check cannot drift from
+    # the thing it describes.
+    ipl_prog, _, _, _ = build_mcp_ipl()
+    ipl_hw = lambda n: ipl_prog.symtab[n] // 32
+    out = write_tape(src)
 
     sym = lambda n: prog.symtab[n] // 64
 

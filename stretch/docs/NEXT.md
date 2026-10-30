@@ -15056,7 +15056,43 @@ rows (2,0)   last non-zero PC 239    -- halts in X6ERR, prints EXHAUSTED ALL CHA
 rows (2,2)   last non-zero PC 5144   -- T MOVE; X ERR AD never set, no error report
 ```
 
-### WHY IT IS NOT APPLIED YET, AND WHAT IT COSTS
+### APPLIED 2026-10-30, AS TWO FIXTURES RATHER THAN ONE FIX
+
+Done the way the paragraph below argued for, so both facts keep a test:
+
+* `strap/prosa.py` now names both machines --
+  `TAPE_UNITS_ONE_SHORT = (2, 0)` and
+  `TAPE_UNITS_BOTH_AVAILABLE = (2, 2)` -- with `set_tape_units()` to
+  choose, and **ONE_SHORT remains the default**, so the boot section
+  and its twelve console checks are untouched.
+* `tests/run_mcp_assign_test.sh` is a third testbench off the same
+  generator. It selects `BOTH_AVAILABLE`, stops at `T MOVE` (half-word
+  5144) and pins all three request-table entries assigned:
+
+```
+PASS mcp_assign_slot0_reader_assigned = 0x8600001000000b1e
+PASS mcp_assign_slot1_tape_assigned   = 0xb000002000000b20
+PASS mcp_assign_slot2_tape_assigned   = 0xb040003000000b20
+```
+
+* Injection: put the fixture back to `ONE_SHORT` and all three fail
+  with the slots reading zero -- and that run reproduces the original
+  boot **exactly**, PC 239 after 6,140,103 steps, which is the figure
+  the step-count ratchet pins. So nothing existing moved.
+
+> **AND IT EXPOSED A BUG IN YESTERDAY'S WORK.**
+> `tests/run_mcp_decode_test.sh` NEVER WROTE ITS OWN TAPE. Its variant
+> returned from `main()` before the tape-writing code, and it passed
+> only because the boot section runs first in the suite and leaves
+> `/tmp/mcp.tape` behind -- green in two full suites, and broken on a
+> fresh checkout or a reordered suite. It surfaced because the new
+> section was given its OWN tape path for hygiene, which removed the
+> accidental dependency: the run then read `0xaaaaaaaaaaaaaaaa`, the
+> uninitialised fill, and halted after five steps. The tape writer is
+> now `write_tape()` with that story in its docstring, every variant
+> calls it, and the hygiene measure found a bug it was not looking for.
+
+### WHAT IT WOULD HAVE COST TO DO IT THE OTHER WAY
 
 Twelve committed checks in `gen_mcp_boot_tb.py` pin MCP's reaction to
 the under-declared machine -- `mcp_x_err_ad`, `mcp_indicators_word11`,

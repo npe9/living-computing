@@ -283,15 +283,56 @@ COMM_REGION_WORDS = 14
 # p.18 walks their columns; the single-unit equipments are punched
 # with none, which is how the list ends (line 14's BRZ on an
 # unpunched column).
+# >>> THE TAPE UNITS' AVAILABILITY IS A FIXTURE CHOICE AND BOTH
+# CHOICES ARE WANTED. <<<
+#
+# A unit column punched "0" takes printed p.18 line 16's branch; one
+# punched "+" takes line 17's, whose comment is "IF UNIT NOT
+# AVAILABLE".  card_text below punches "+" for row 0 and "0" for
+# anything else, so row 0 declares a unit the machine HAS NOT GOT.
+#
+# ONE_SHORT is what this fixture declared until 2026-10-30, and it is
+# why MCP's ASSIGN rejected: MCP's own deck asks for TWO output tapes
+# (MCP_IODS' MCPOUT1 and MCPOUT2) and C22-6728-1 printed p.98's minimal
+# IPL case calls for output tape unitS, so one available unit cannot
+# satisfy both requests.  Measured: with ONE_SHORT the third request
+# gets TASGNI=0 and MCP halts in X6ERR; with BOTH_AVAILABLE all three
+# are assigned and MCP goes on to T MOVE.
+#
+# BOTH ARE KEPT, and ONE_SHORT IS STILL THE DEFAULT.  Twelve checks in
+# tests/gen_mcp_boot_tb.py pin what MCP does when it cannot satisfy an
+# I/O requirement -- X ERR AD, the indicators, and the ten console
+# words of "EXHAUSTED ALL CHANNELS" -- all verified against the printed
+# listing.  That is a real MCP behaviour and deleting its test to make
+# the boot go further would be trading evidence for distance.  The
+# forward-progress run selects BOTH_AVAILABLE for itself.
+TAPE_UNITS_BOTH_AVAILABLE = (2, 2)
+TAPE_UNITS_ONE_SHORT = (2, 0)
+
+_TAPE_UNITS = TAPE_UNITS_ONE_SHORT
+
 IOCD_CARDS = [
     # (channel, equipment, unit rows) -- see strap/iocd.py for what a
     # row means and for the field map's provenance.
     (0,  "DK", ()),
     (32, "RD", ()),
     (33, "PR", ()),
-    (34, "TP", (2, 0)),
+    (34, "TP", _TAPE_UNITS),
     (35, "CN", ()),
 ]
+
+
+def set_tape_units(rows):
+    """Choose the machine this fixture declares, before building words.
+
+    Call before tape_words()/words(); IOCD_CARDS is read inside those,
+    so setting it here reaches them.
+    """
+    global _TAPE_UNITS, IOCD_CARDS
+    _TAPE_UNITS = tuple(rows)
+    IOCD_CARDS = [(c, e, (_TAPE_UNITS if e == "TP" else u))
+                  for c, e, u in IOCD_CARDS]
+    return IOCD_CARDS
 
 # >>> AND THE DECK IS TERMINATED BY AN IOD CARD, which is what ENDS
 # the IOCD scan rather than an error. <<<
