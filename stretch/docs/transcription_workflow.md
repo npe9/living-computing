@@ -289,3 +289,47 @@ contiguous and each page lands against the one before.
 * **Record the printed listing in the deck**, so the oracle can check
   the page later without re-rendering it.
 * Encodings and semantics come from primary sources, cited by page.
+
+### A BIT OFFSET IS OCTAL INSIDE `(8)`, DECIMAL ONLY WHEN BARE
+
+Every `SLC` in these decks is written `(8)NNNN.FF`, and **inside an
+`(8)` literal BOTH parts are base 8**, so the bit offset is written
+EXACTLY AS THE PAGE PRINTS IT. Measured through `eval_expr`:
+
+```
+  (8)5450.40  -> word 5450 . bit 40      (0o40 = 32 decimal)
+  (8)5450.32  -> word 5450 . bit 32      (0o32 = 26 decimal)
+  (8)5450.8   -> ERROR: invalid literal for int() with base 8: '8'
+      5450.32 -> word 12512 . bit 40     (both parts decimal)
+```
+
+The `.8` error is the proof: 8 is not an octal digit, so the fraction
+really is parsed in base 8.
+
+**The rule "a STRAP bit offset is written decimal and printed octal"
+is TRUE ONLY FOR A BARE DECIMAL LITERAL.** Applied to an `(8)` SLC it
+lands six bits low — `(8)5450.32` for a printed `.40`. That wording
+was given to four transcription agents in their briefs on 2026-10-30
+and it was wrong; it is recorded here so it is not repeated. No deck
+was corrupted by it, because every landed `SLC` writes the printed
+octal (`(8)5154.40` for p.91's first row at 005154.40), but the error
+can HIDE: on printed p.98 a wrong `SLC` still produced the right
+address for the next row, because a half-word instruction realigned
+the counter. A misread origin is not guaranteed to show up as a
+failing check.
+
+> **SAME-ROW CALIBRATION IS NECESSARY BUT NOT SUFFICIENT.** Two rows
+> found while transcribing pp.97 and 98 drop ink in one field and not
+> another, within one row off one drum:
+>
+> * printed p.97 line 10 prints its octal field as `.CC` for `.00`
+>   while its hex byte prints a clean closed `0`.
+> * printed p.97 line 9's byte reads `FC` at 1200 dpi and its own
+>   octal field `001000.36` is well inked, so the row's calibration
+>   points the WRONG WAY. It is `F0`, settled by printed p.18, which
+>   prints `CM1111(BU,1)` six times and every one is `001000.36 F0`.
+>
+> So an octal-field C tells you the page CAN drop ink; it never tells
+> you a particular glyph did. Settle the byte on what produced it --
+> the statement, the same instruction on another page, or the index
+> rule (the low nibble is `i2`, 0 when there is no second operand).
