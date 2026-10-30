@@ -15000,3 +15000,81 @@ second tape unit looks like at that moment.**
 > DISK requests from zeroed slots, and a type mismatch -- and the data
 > killed all three. What was actually wrong is a single unsatisfied
 > tape request, which none of them predicted.
+
+## >>> ASSIGN SUCCEEDS, AND MCP REACHES "TO MOVE" <<< 2026-10-30
+
+The blocker was the FIXTURE under-declaring its own machine, and the
+fix is one tuple. **Not yet applied** -- see the cost below.
+
+### The bug, derived and not guessed
+
+`strap/prosa.py`'s `IOCD_CARDS` punches channel 34 as
+`("TP", (2, 0))` -- two tape unit columns, "rows" 2 and 0. What those
+mean is settled by `strap/iocd.py`'s own punch table plus printed p.18:
+
+```
+card_text:  cols[FIRST_UNIT_COLUMN + k] = "+" if row == 0 else "0"
+            ("+" for row 0, "0" for row 2)
+
+p.18 L13    CT0011(V+I)(BU,12), .12($4)   -TEST UNIT AVAILABLE FIELD
+p.18 L16    BB, 0.0-.10($4), X152
+p.18 L17    BB, 0.0-.12($4), X151         -IF UNIT NOT AVAILABLE
+p.18 L21    X151  CM1111(BU,1), .28($15)  -sets the bit, falls into X152
+p.18 L22    X152  CM1111(BU,1), .29($15)
+```
+
+The column read spans bits -12..-1, so bit -.12 is the `"+"` punch and
+bit -.10 is the `"0"` punch. `"+"` therefore takes p.18 line 17's
+branch -- the one whose comment is *IF UNIT NOT AVAILABLE* -- and
+`"0"` takes line 16's.
+
+**So `(2, 0)` declared ONE AVAILABLE TAPE AND ONE UNAVAILABLE ONE**,
+while MCP's own deck asks for two output tapes (`MCPOUT1`, `MCPOUT2`)
+and `C22-6728-1` printed p.98's minimal IPL case calls for output tape
+unit*s*. Exactly one tape request could be satisfied, which is exactly
+what was measured.
+
+### Measured, both ways
+
+With `(2, 2)` -- both punched `"0"`, both available -- stopping at
+`T MOVE` (`TMOVE SYN, (8)5014.0` on printed p.27, half-word 5144):
+
+```
+slot 0  0x8600001000000b1e  TASGNI=1 TTYPE=3 READER TIODSQ=1 TABSCH=2846
+slot 1  0xb000002000000b20  TASGNI=1 TTYPE=8 TAPE   TIODSQ=2 TABSCH=2848
+slot 2  0xb040003000000b20  TASGNI=1 TTYPE=8 TAPE   TIODSQ=3 TABSCH=2848
+slot 3  0                   (unused, never reached)
+```
+
+**All three requests assigned.** The two tapes share `TABSCH` 2848
+because `TABSCH` is *THE ABSOLUTE CHANNEL* (p.62 L39) and both units
+sit on channel 34; the reader's 2846 is channel 32. And the whole boot
+then behaves differently:
+
+```
+rows (2,0)   last non-zero PC 239    -- halts in X6ERR, prints EXHAUSTED ALL CHANNELS
+rows (2,2)   last non-zero PC 5144   -- T MOVE; X ERR AD never set, no error report
+```
+
+### WHY IT IS NOT APPLIED YET, AND WHAT IT COSTS
+
+Twelve committed checks in `gen_mcp_boot_tb.py` pin MCP's reaction to
+the under-declared machine -- `mcp_x_err_ad`, `mcp_indicators_word11`,
+and `mcp_console_err_w11` through `w20`, the console text of
+*EXHAUSTED ALL CHANNELS* -- plus `pc_check`/`pc_trail_check` at 239.
+All twelve become wrong the moment the fixture is corrected, and the
+boot's "it ends on a halt MCP chose" property is replaced by a run that
+falls into unwritten memory past `T MOVE`.
+
+**Those checks are not worthless and should not simply be deleted.**
+They are a precise, printed-text-verified record of what MCP does when
+it cannot satisfy an I/O requirement, and that is a real MCP behaviour
+worth keeping a test for. The right shape is TWO fixtures: the
+corrected machine for the boot's forward progress, and a deliberately
+under-declared one that still exercises the error path and keeps those
+twelve values. `strap/prosa.py` would need the unit rows as a
+parameter.
+
+That is the next piece of work, and it is a change to the fixture
+machinery rather than a measurement, so it is left to start from a
+clean footing rather than tacked onto a long session.
