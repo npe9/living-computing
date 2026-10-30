@@ -1362,6 +1362,46 @@ running-ahead `pcReg`.
 > that code as written. Something in the p.72 region is not executing
 > as an index operation.
 
+### >>> THAT QUESTION IS ANSWERED, AND THE ANSWER WAS THE ASSEMBLER -- 2026-10-29 <<<
+
+The last sentence above was right and the search was looking in the
+wrong place. Nothing in the p.72 region failed to execute as an index
+operation; **`LX, TIXF, TCHSXW` was ASSEMBLED with no index register at
+all.** `TIXF` is `SYN, $10` and `$10` is itself a `SYN` -- MCP printed
+p.61 lines 32 and 39 -- and `strap_asm.py` recorded `SYN, $N` only ONE
+level deep, so a chained `SYN` lost its register and the instruction
+compiled with `j = 1664 & 0xF = 0`. Word 0 is `addrZero`, the permanent
+zero whose writes are ignored, which is exactly "the loop body executes
+and `$10` is never written."
+
+Thirteen model-side hypotheses were refuted before the defect was found,
+and it was never in the Bluespec. `tests/verify_syn_chain_reg.py` now
+pins it with eight checks.
+
+**Items 1, 3 and 4 of the Established list above are SUPERSEDED.**
+Re-measured today on the fixed assembler, same testbench, same tape,
+same ending (PC 239, all 55 checks passing):
+
+| | before the fix | now |
+|---|---|---|
+| boot completes at step | 22,118,685 | **6,140,103** |
+| `$10`'s last change | ~22,116,090 | **6,137,982** |
+| steps from that change to the halt | ~2,595, after 16M of silence | **2,121, with no silent stretch at all** |
+| `$10` first reads zero at step | 6,123,419 | 6,117,533 |
+
+**The sixteen million steps are gone**, and that is the whole finding:
+`$10` is now written continuously up to two thousand steps before the
+machine halts, instead of being abandoned for three quarters of the
+boot. The boot is 3.6x shorter because the dead stretch was the defect's
+signature, not work.
+
+> **AND THIS SECTION'S OWN WARNING APPLIES TO THE NEW NUMBERS TOO.**
+> The `$10` figures above are VALUE-CHANGE counts sampled once per step,
+> which is a different instrument from the old "113 times", so 113 and
+> today's 164 are **not comparable** and no conclusion is drawn from the
+> difference. What is comparable is WHERE the last change falls relative
+> to the halt, because both runs end at the same place.
+
 ### NOT established, and the reason is my own instrument
 
 **`tadaN` counts STEP-SAMPLES, NOT ITERATIONS.** The run rule fires
