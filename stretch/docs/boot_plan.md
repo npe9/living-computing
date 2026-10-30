@@ -1729,3 +1729,51 @@ is the decisive one.
 > others. What marks a comment card in STRAP's own card format is NOT
 > established from a primary source here; C22-6729 is in `docs/` and
 > would settle it.
+
+### THE `DFREE` COLLISION, 2026-10-30 — open, and it gates pp.100-104
+
+**Two pages print `D FREE` with two different values, and neither is
+a transcription error.**
+
+```
+  printed p.98  line 27   D FREE  SYN, 0          -> 000000.00
+  printed p.104 line 44   D FREE  SYN, 10.32      -> 000012.40
+```
+
+`C22-6678-1_7030_MCP_Reference_Jun64.pdf` printed p.42, Appendix A
+"MCP Pseudo-Operation Codes", independently gives `$FREE 10.32`,
+siding with p.104. But **the IPL deck's own rows prove 0 was in force
+where they sit**: printed pp.71, 75 and 97 each print the parameter
+half-word `,DFREE` as `000000.00 80`, and at 0o12.40 they would have
+printed `000012.40 80`.
+
+So both values are real at the points they are used, and the question
+is which of these is true:
+
+* **One assembly in which STRAP permits a SYN to be REDEFINED** --
+  DFREE is 0 for pp.15-98 and 10.32 from p.104 line 44 onward; or
+* **two assemblies sharing a TIME CLOCK.**
+
+printed p.99's evidence for one assembly -- the location counter does
+not restart across its reprinted title block, line 9 sits at
+005466.00 where p.98 leaves it -- is good, and **it does not rule out
+redefinition**, which is the whole difficulty. Nothing read so far
+decides it. C22-6531 on SYN redefinition would.
+
+**WHAT IT GATES.** `DFREE` is the ONLY one of printed p.104's 23
+names that any other deck in the corpus mentions; the other 22 appear
+nowhere else. So this is a MERGE-TIME collision, not a transcription
+defect, and `mcp_image`'s symbol-agreement guard will reject a merged
+image containing both -- which is the guard working. **printed p.104
+must stay OUT of `MCP_IPL_PAGES` until this is settled.** Its deck is
+transcribed and verified (23 symbols, 0 rows) and can land in
+`decks/` with a page check meanwhile.
+
+**AND ONE PLACE AN ERROR COULD HIDE.** printed p.104 line 6 prints
+`SLC,$`; its deck writes the hard `SLC,(8)215020.71`, because `$` is
+zero in an isolated deck. **A hard SLC cannot disagree with the
+arriving location counter -- it overrides it silently.** When pp.100
+to 103 land, the counter they leave has to be compared BY HAND
+against that printed 215020.71. A bare `SLC,$` would make the join
+self-checking; it is written hard only because the deck is checked
+standing alone.
