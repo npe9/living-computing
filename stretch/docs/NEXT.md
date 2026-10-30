@@ -14559,3 +14559,61 @@ installed storage with AD, exactly as p.30 describes.
   **A 20-line testbench with one rule in the same if/else shape as the
   caller reproduces every one of these scheduling errors in seconds.**
   Write the repro before the second attempt, not after the third.
+
+## PHASE A HAS ONE CANDIDATE LEFT, AND ONE OF THE TWO WAS NEVER OPEN -- 2026-10-29
+
+After the chained-`SYN` fix the configuration table at words 1962-1964
+is **fully correct** (all five corrupted type bytes repaired; counts
+right for the deck), so the remaining ASSIGN reject has a new cause.
+Two candidates were carried: `X242`'s fourth operand, and the missing
+input-tape IODs. **The first was never open.**
+
+`decks/mcp_bootstrap_p27.strap:61` is `X242 XW, -1, 0, 0, 4`, and the
+`4` was being read as a COUNT. It is not. STRAP's field order is
+
+> `XW, VALUE, COUNT, REFILL, FLAG`  (C22-6531)
+
+so the `4` is the FOURTH operand, which is the **three-bit field at IBM
+25-27** -- the index flag plus two spares -- and `,4` sets IBM bit 25.
+That encoding is already pinned by a printed oracle, jb_ax5b p.114's
+own three-row bit table:
+
+```
+BIT25  XW,0,0,0,4  ->  0.00 40      IBM bit 25
+BIT26  XW,0,0,0,2  ->  0.00 20      IBM bit 26
+BIT27  XW,0,0,0,1  ->  0.00 10      IBM bit 27
+```
+
+Re-measured independently today by assembling the deck and decoding
+the word by field:
+
+```
+X242 = 0x000001c000000000
+  IBM  0-23 addr   = 1        IBM 28-45 count  = 0
+  IBM 24    sign   = 1        IBM 46-63 refill = 0
+  IBM 25    flag   = 1        IBM 26-27 spare  = 0
+```
+
+addr 1 with sign 1 is **VALUE = -1**, count is **zero**, and the flag
+is on.  That is the same `0x000001c000000000` that
+`docs/mcp_io_tables.md` already records, reached by a different route.
+
+And p.72 is already reconciled there too: p.72 line 5 is
+`CM0000(BU,24), 0.0($15)` -- "CLEAR CON FIG CHANGE" -- so `-1` means
+"the configuration changed, count it", `TA9` counts once, and later
+calls find zero and skip.  Nothing is unexplained.
+
+**So Phase A's remaining candidate is the input-tape IODs, alone.**
+The measured counts say why it is the live one: TAPE conf=2 is the two
+OUTPUT-tape IODs and READER conf=1 is the one reader, and no
+input-tape IOD is supplied at all.  Printed p.98 case 1 is where the
+cards are named, and the constraint on their shape is already known --
+p.18 line 43's `V+I, $13, 15.0` makes the stride fifteen 64-bit words,
+960 bits, exactly one 80x12 punched card.
+
+LESSON, and it is the second time this exact shape has cost time: the
+defect was in MY NOTE, not in the deck or the model.  "C = 4" named a
+field the assembler does not have in that position.  Before carrying a
+field value as a suspect, read the pseudo-op's field ORDER from the
+assembler or the manual -- `XW, VALUE, COUNT, REFILL, FLAG` -- rather
+than from the position it appears to occupy.
