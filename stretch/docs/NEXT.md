@@ -14927,3 +14927,76 @@ latching `$R` / `TX3` around p.70 L34 and p.71 L15 -- the two
 > or badly DECODE performed. They cannot fail for any reason worth
 > knowing about. The real datum needs a capped run, because at
 > end-of-run every word of both tables is zero by design.
+
+## >>> PHASE A'S BLOCKER, LOCALISED TO ONE REQUEST <<< 2026-10-30
+
+ASSIGN assigns two of the three IOD requests and rejects on the third.
+Measured by stopping the run AT THE REJECT -- `stop_at_pc` = 4369,
+`TA8B`, printed p.71 line 46, reached only when an entry is not
+assigned -- and reading the not-overlap request table there:
+
+```
+slot 0  word 1868  0x8600001000000b1e  TASGNI=1 TTYPE=3 TIODSQ=1 TABSCH=2846
+slot 1  word 1869  0x9000002000000b20  TASGNI=1 TTYPE=8 TIODSQ=2 TABSCH=2848
+slot 2  word 1870  0x1000003000000000  TASGNI=0 TTYPE=8 TIODSQ=3 TABSCH=0
+slot 3  word 1871  0x0000000000000000  (unused)
+```
+
+Decoded with printed p.62's own field map (`TASGNI` 0.00, `TTYPE` 0.03,
+`TIODSQ` 0.19, `TABSCH` 0.46). Against `strap/prosa.py`'s `MCP_IODS`:
+
+| slot | TIODSQ | TTYPE | the card | outcome |
+|---|---|---|---|---|
+| 0 | 1 | 3 READER | `MCPRDR` | **assigned**, TABSCH 2846 |
+| 1 | 2 | 8 TAPE | `MCPOUT1` | **assigned**, TABSCH 2848 |
+| 2 | 3 | 8 TAPE | `MCPOUT2` | **NOT assigned**, TABSCH 0 |
+
+**All three cards decode correctly** -- sequence numbers 1, 2, 3 and
+types matching the punched deck exactly -- and ASSIGN gives real
+channel/unit addresses to two of them. It rejects because the SECOND
+OUTPUT TAPE gets no unit.
+
+### What this rules out
+
+* **Not a missing IOD.** Three are punched and all three arrive.
+* **Not a decode defect.** Types and sequence numbers are right.
+* **Not a type mismatch.** READER found a reader; the first TAPE found
+  a tape.
+* **Not an end-of-table problem.** This was the live hypothesis before
+  the measurement -- `TLAST` is never written anywhere in 72 decks, and
+  a 20-slot table with few used entries looked like it must over-run.
+  It does not: the loop rejects at slot 2, which is a REAL request, not
+  an unused slot. Slot 3 is the first unused one and is never reached.
+  **The `TLAST` hole remains unexplained but is NOT this blocker**, and
+  the "unused slots read as DISK requests" idea was wrong too -- no
+  phantom entry was assigned.
+
+### The one question left
+
+Why does the second tape request find no unit? Two readings, and the
+fixture's own code says the second is possible:
+
+1. The unit search does not consider the second tape unit -- e.g. the
+   first assignment's `CM1111, TUNRES(TX3)` (printed p.71 line 14, "SET
+   THE NOT OVERLAP RESERVED BIT") reserves something broader than one
+   unit.
+2. The fixture declares two tape units in a way MCP reads as one.
+   `IOCD_CARDS` gives channel 34 as `("TP", (2, 0))` -- two unit
+   columns, punched on rows 2 and 0 -- and `strap/iocd.py` says
+   outright, under WHAT IS STILL INVENTED: *"WHICH ROW a unit is
+   punched on. printed p.18 routes a unit two ways depending on a bit
+   of the column it reads, and the row that selects each route is a
+   reading of the code rather than of a document."* So row 0 versus
+   row 2 may send the two units down different paths.
+
+The conf table measured TAPE as `(8, 2, 2)` -- type 8, two configured,
+two available -- so MCP believes it has two. **The next measurement is
+inside the unit search, with the run stopped at the reject as above,
+reading the unit status table and the reserved bits to see what the
+second tape unit looks like at that moment.**
+
+> **AND NOTE WHICH WAY THE EVIDENCE WENT.** Three hypotheses were
+> carried into this measurement -- an end-of-table over-run, phantom
+> DISK requests from zeroed slots, and a type mismatch -- and the data
+> killed all three. What was actually wrong is a single unsatisfied
+> tape request, which none of them predicted.
