@@ -7965,6 +7965,12 @@ run "bsv smoke test (make run)" make run
 # FAIL lines, which is the run() status check added 2026-10-27
 # working -- before it, a build failure with no FAIL lines passed.)
 run "DIVIDE AS AN ITERATIVE BOX (answer bit-exact, cycles structural)" "$TESTS_DIR/run_divbox_test.sh"
+
+# fpStoreClass with NO STORAGE INSTANTIATED -- step 2's first family.
+# Absolute path for the same reason the divbox line uses one: this block
+# sits after `cd "$BSV_DIR"`, so a bare ./run_fpcommit_test.sh is looked
+# for in bsv/ and not found.
+run "FP STORE CLASS AS A PURE FUNCTION (no storage instantiated)" "$TESTS_DIR/run_fpcommit_test.sh"
 # -- 1b. StretchDecode's instruction formats swept against the length
 # tag jb_ax3a p.140 states, over all 2^14 half-words (both with the
 # address field zeroed and all ones).  Not a program: it drives

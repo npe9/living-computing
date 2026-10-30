@@ -1170,13 +1170,97 @@ endfunction
 // The Fp payload is an anonymous struct inside DecodedInstr, so the two
 // sign-modifier bits are passed as themselves rather than as `fp`.
 // ---------------------------------------------------------------------
-function ActionValue#(Word64) fpStoreClass(StretchStorage st, Bit#(7) c,
-                                           Bit#(1) absSign, Bit#(1) invSign,
-                                           WordAddr ea, FpNum acc, Word64 accL,
-                                           Word64 accS, Bool normalized, Bool noisy,
-                                           Word64 ind0);
-  actionvalue
+// ---------------------------------------------------------------------
+// THE FLOATING-POINT COMMIT RECORD -- step 2's first family.
+//
+// docs/ebox_roadmap.md step 2: "arithmetic should not mutate global
+// architectural state halfway through its own calculation."  The
+// measurement that picked this family: of the 88 direct architectural
+// writes left in this file, 44 are floating point and every one of
+// them is a writeWord.  fpStoreClass is the first 10.
+//
+// WHAT THE RECORD BUYS, and it is not tidiness: fpStoreClass is now a
+// PURE FUNCTION.  It had exactly two kinds of `st` use -- ten
+// writeWord and four readAccRight -- plus four protViolates(st, ea).
+// The reads became one parameter each, so the function no longer
+// mentions `st` at all and can be exercised without instantiating
+// storage.  That is the property step 2 is actually for.
+//
+// HOISTING THE READ IS SAFE, AND IT HAD TO BE CHECKED RATHER THAN
+// ASSUMED.  st.readAccRight() moved from four points inside the arms
+// to one unconditional call at the single call site.  A value method
+// returns the register as of the START of the clock and writeWord
+// lands at the end of it, so every arm saw the pre-write value before
+// and sees the same pre-write value now.  What did change: the read is
+// unconditional where it used to sit inside arms that may not be
+// taken, which is a new combinational read in the schedule.  Measured
+// -- elaborating mkStretchCore before and after gives 133 warnings
+// each, differing only in which struct a (G0024) *unfolding progress*
+// message happened to name at the 300,000-step mark, and neither build
+// reaches the next report at 400,000.
+//
+// WHAT THE SUITE CAN AND CANNOT WITNESS.  A clean 518-section run shows
+// NO SECTION REGRESSED.  It does not by itself show byte-identity,
+// because run() echoes only each section's last twenty lines plus its
+// FAIL lines -- the same blind spot that hid ten probe failures on
+// 2026-10-27.  The byte-identical evidence is narrower on purpose: the
+// floating-point sections' FULL output, captured before and after this
+// change and diffed.
+//
+// AND commitFp'S OWN MAPPING IS NOT PINNED BY StretchFpCommitTest.
+// That file checks which fields an arm fills; it cannot check that
+// commitFp sends accLeft to word 8 rather than to word 9, because
+// doing so needs storage -- which is the very thing it refuses to
+// instantiate.  The mapping's oracle is the printed F212/F213/F219
+// decks, and the measurement that keeps that from being an assumption
+// is an injection which swaps two writes inside commitFp and requires
+// a named FP section to fail.
+//
+// FOUR FIELDS, NOT SIX.  The family's other half (fpArithClass) also
+// writes addrFactor, addrRemainder and calls setLeftZerosCount; those
+// fields are NOT declared here.  A field nothing sets is a field no
+// injection can catch, so each one arrives with the arm that fills it.
+//
+// THE ARMS CANNOT ALIAS, which is why committing at the end is safe.
+// fpStoreClass's six arms are mutually exclusive, and each one either
+// writes the computed address `ea` (ST, SRT, SRD, SLO) or the
+// accumulator trio (SHF, E+I) -- never both.  So no two fields can
+// name the same word and the commit order cannot matter.
+//
+// SUPPRESSION DID NOT MOVE.  All four `ea` writes were the `else` of
+// the DS protection test (see protViolates and the p.31-32 discussion
+// above).  They still are: `store` is Valid only where that predicate
+// already permitted the write, so a suppressed store stays suppressed
+// and DS is still set by the same line.  Relocating that decision is
+// separate work with its own suite run.
+// ---------------------------------------------------------------------
+typedef struct {
+  Maybe#(Word64) accLeft;                    // word 8
+  Maybe#(Word64) accRight;                   // word 9
+  Maybe#(Word64) accSign;                    // word 10
+  Maybe#(Tuple2#(WordAddr, Word64)) store;   // the computed-address store
+} FpCommit deriving (Bits, Eq, FShow);
+
+function Action commitFp(StretchStorage st, FpCommit fpc);
+  action
+    if (fpc.accLeft  matches tagged Valid .v) st.writeWord(addrAccLeft, v);
+    if (fpc.accRight matches tagged Valid .v) st.writeWord(addrAccRight, v);
+    if (fpc.accSign  matches tagged Valid .v) st.writeWord(addrAccSignByte, v);
+    if (fpc.store    matches tagged Valid .t) st.writeWord(tpl_1(t), tpl_2(t));
+  endaction
+endfunction
+
+
+function Tuple2#(Word64, FpCommit)
+    fpStoreClass(Bit#(7) c, Bit#(1) absSign, Bit#(1) invSign,
+                 WordAddr ea, FpNum acc, Word64 accL,
+                 Word64 accS, Word64 accR0, Bool normalized, Bool noisy,
+                 Bool protViol, Word64 ind0);
     Word64 ind = ind0;
+    FpCommit fpc = FpCommit { accLeft: tagged Invalid,
+                              accRight: tagged Invalid,
+                              accSign: tagged Invalid,
+                              store: tagged Invalid };
     Bool isST   = (c == fpop_ST);
     Bool isSRD  = (c == fpop_SRD);
     Bool isSLO  = (c == fpop_SLO);
@@ -1208,8 +1292,8 @@ function ActionValue#(Word64) fpStoreClass(StretchStorage st, Bit#(7) c,
         let {vn, g} = fpMakeExp(signExtend(fpExp(v)) + adj, f48, v.sign, v.flags);
         v = vn; gen = g;
       end
-      if (protViolates(st, ea)) ind = setBit(ind, ind_DS, 1);
-      else st.writeWord(ea, fpToWord(v));
+      if (protViol) ind = setBit(ind, ind_DS, 1);
+      else fpc.store = tagged Valid tuple2(ea, fpToWord(v));
       ind = setBit(ind, ind_MOP, 1);
       ind = setResultIndicatorsFp(ind, v);
       // "If an EF of 1 is generated during normalization, the
@@ -1222,8 +1306,8 @@ function ActionValue#(Word64) fpStoreClass(StretchStorage st, Bit#(7) c,
       // "As with other store operations, the accumulator flag bits,
       // sign byte register bits 5-7, are placed in the flag bit
       // positions, bits 61-63 of the addressed storage location."
-      if (protViolates(st, ea)) ind = setBit(ind, ind_DS, 1);
-      else st.writeWord(ea, { r.res.ef, r.res.em, r.res.es, r.res.frac,
+      if (protViol) ind = setBit(ind, ind_DS, 1);
+      else fpc.store = tagged Valid tuple2(ea, { r.res.ef, r.res.em, r.res.es, r.res.frac,
                          r.res.sign, sbFlags(accS) });
       // "The entire accumulator and its sign byte remain unchanged."
       ind = setBit(ind, ind_MOP, 1);
@@ -1245,7 +1329,7 @@ function ActionValue#(Word64) fpStoreClass(StretchStorage st, Bit#(7) c,
       // Nothing here writes the accumulator: "the entire accumulator
       // and its sign byte register remain unchanged throughout the
       // operation unless used as the effective address."
-      Word64 accR = st.readAccRight();
+      Word64 accR = accR0;
       FpDouble da = fpdFromAcc(accL, accR, accS);
       Bit#(97) sum  = {1'b0, da.frac} + (97'b1 << 47);
       Bit#(1)  ovf  = sum[96];
@@ -1281,8 +1365,8 @@ function ActionValue#(Word64) fpStoreClass(StretchStorage st, Bit#(7) c,
                                w96[95:48], msign, da.flags);
         out = o; gen = g; lc = l;
       end
-      if (protViolates(st, ea)) ind = setBit(ind, ind_DS, 1);
-      else st.writeWord(ea, fpToWord(out));
+      if (protViol) ind = setBit(ind, ind_DS, 1);
+      else fpc.store = tagged Valid tuple2(ea, fpToWord(out));
       // "These indicators are set as in ADD TO MEMORY": MOP, the
       // arithmetic result four, LC, the exponent range five, ZM.
       ind = setBit(ind, ind_MOP, 1);
@@ -1303,7 +1387,7 @@ function ActionValue#(Word64) fpStoreClass(StretchStorage st, Bit#(7) c,
       // entire accumulator and sign byte register remain unchanged
       // throughout the operation unless used as the effective
       // address."
-      Word64 accR = st.readAccRight();
+      Word64 accR = accR0;
       FpDouble da = fpdFromAcc(accL, accR, accS);
       Bit#(48) lo48 = da.frac[47:0];
       // "The accumulator sign, as modified by the sign modifiers,
@@ -1338,8 +1422,8 @@ function ActionValue#(Word64) fpStoreClass(StretchStorage st, Bit#(7) c,
                                f48, msign, da.flags);
         out = o; gen = g;
       end
-      if (protViolates(st, ea)) ind = setBit(ind, ind_DS, 1);
-      else st.writeWord(ea, fpToWord(out));
+      if (protViol) ind = setBit(ind, ind_DS, 1);
+      else fpc.store = tagged Valid tuple2(ea, fpToWord(out));
       // "The above indicators are set as in STORE": MOP, the
       // arithmetic result four, the exponent range four, ZM. Note
       // p.97 lists no LOST CARRY for SLO -- there is no carry out
@@ -1368,7 +1452,7 @@ function ActionValue#(Word64) fpStoreClass(StretchStorage st, Bit#(7) c,
       // demanding a zero result and LC ON via BZLC) is the row
       // that catches it. The exponent is not changed by this
       // operation, and neither is the sign byte.
-      Word64 accRs = st.readAccRight();
+      Word64 accRs = accR0;
       FpDouble ds = fpdFromAcc(accL, accRs, accS);
       Bit#(11) amt = ea[17:7];
       Bit#(1) dir = ea[6];
@@ -1444,9 +1528,9 @@ function ActionValue#(Word64) fpStoreClass(StretchStorage st, Bit#(7) c,
         // with BLC,SERS "ERROR IF LC INDICATOR ON".
         v.frac = ds.frac >> sh;
       end
-      st.writeWord(addrAccLeft, fpdAccLeft(v));
-      st.writeWord(addrAccRight, fpdAccRight(v, accRs));
-      st.writeWord(addrAccSignByte, sbWith(accS, ds.sign, sbFlags(accS)));
+      fpc.accLeft = tagged Valid fpdAccLeft(v);
+      fpc.accRight = tagged Valid fpdAccRight(v, accRs);
+      fpc.accSign = tagged Valid sbWith(accS, ds.sign, sbFlags(accS));
       FpNum vind = fpdHead(v);
       vind.frac = (v.frac == 0) ? 0 : 48'b1;
       ind = setBit(ind, ind_MOP, 0);
@@ -1467,7 +1551,7 @@ function ActionValue#(Word64) fpStoreClass(StretchStorage st, Bit#(7) c,
       // through E+.  The addend carries its own ES, and E+I has no
       // storage operand, so there are no sign modifiers in play.
       FpNum imm = FpNum { ef: ea[17], em: ea[16:7], es: ea[6], frac: 0, sign: 0, flags: 0 };
-      Word64 accR = st.readAccRight();
+      Word64 accR = accR0;
       FpDouble da = fpdFromAcc(accL, accR, accS);
       FpDouble v = da; Bool gen = False; Bool prop = False;
       if (da.ef == 1 || imm.ef == 1) begin
@@ -1498,9 +1582,9 @@ function ActionValue#(Word64) fpStoreClass(StretchStorage st, Bit#(7) c,
           gen = gen || g2;
         end
       end
-      st.writeWord(addrAccLeft, fpdAccLeft(v));
-      st.writeWord(addrAccRight, fpdAccRight(v, accR));
-      st.writeWord(addrAccSignByte, sbWith(accS, v.sign, sbFlags(accS)));
+      fpc.accLeft = tagged Valid fpdAccLeft(v);
+      fpc.accRight = tagged Valid fpdAccRight(v, accR);
+      fpc.accSign = tagged Valid sbWith(accS, v.sign, sbFlags(accS));
       ind = setBit(ind, ind_MOP, 0);
       FpNum vind = fpdHead(v);
       vind.frac = (v.frac == 0) ? 0 : 48'b1;
@@ -1508,8 +1592,7 @@ function ActionValue#(Word64) fpStoreClass(StretchStorage st, Bit#(7) c,
       ind = setRangeIndicators(ind, fpRangeBits(vind, gen, prop));
       ind = setBit(ind, ind_ZM, 0);
     end
-    return ind;
-  endactionvalue
+    return tuple2(ind, fpc);
 endfunction
 
 // ---------------------------------------------------------------------
@@ -6120,8 +6203,13 @@ function ActionValue#(ExecDispatch)
         else if (!known)
           ind = setOpInvalid(ind);   // every floating-point operation is now implemented
         else if (isStoreClass) begin
-          ind <- fpStoreClass(st, c, fp.absSign, fp.invSign, ea, acc, accL, accS,
-                              normalized, noisy, ind);
+          // One commit point: the pure function decides, commitFp writes.
+          let {indSt, fpc} = fpStoreClass(c, fp.absSign, fp.invSign, ea, acc,
+                                          accL, accS, st.readAccRight(),
+                                          normalized, noisy,
+                                          protViolates(st, ea), ind);
+          ind = indSt;
+          commitFp(st, fpc);
         end else if (prefetchCount < 1)
           needsRead = tagged Valid ea;
         else begin
