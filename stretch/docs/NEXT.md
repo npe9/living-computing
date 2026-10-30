@@ -15158,3 +15158,53 @@ that is worth knowing for the next estimate.
 > requirement" remains tested while the corrected machine goes forward.
 > That was the whole point of keeping two fixtures rather than fixing
 > one.
+
+### >>> THAT ESTIMATE IS FALSIFIED, AND THE METHOD WAS WRONG <<< 2026-10-30
+
+The p.85 estimate above was committed as falsifiable. It is false, and
+it took four renders to say so.
+
+**printed p.85 is PDF p.92** -- its own header reads `PAGE NUMBER 85`,
+so the +7 offset holds here -- and its LOCATION column reads
+
+```
+000000.00+   000002.00+   000002.33+   000002.35+   000002.60+
+000005.06+   000005.46+   000006.06+   ...   000000.31+   000000.32+
+```
+
+Those are not code addresses near 005014. They are **field offsets**,
+the values of SYN cards -- `000000.31` is a bit offset within a word,
+exactly the shape of `TTYPE SYN(BU,4), 0.03` on printed p.62. So p.85
+is a definitions page.
+
+**printed p.81's location column is EMPTY** through its whole top band:
+lines 4 to 11 compile nothing at all.
+
+And both pages carry the same `PUNID 11C11IPL` as printed p.80, so this
+is NOT an address-space reset into a second assembly unit, which was
+the first thing it looked like.
+
+#### Why the method failed
+
+Averaging five page lengths assumed every page advances the location
+counter. **Pages of SYN cards and comments advance it by ZERO**, and
+this project already knew that -- `docs/mcp_io_tables.md` records that
+printed pp.47, 59 and 60 "compile nothing". Extrapolating 136 words at
+29.4 words per page silently assumed none of the intervening pages were
+of that kind, and at least two of them are.
+
+So `T MOVE` is somewhere past p.80 and the distance in PAGES is not
+derivable from the distance in WORDS.
+
+#### What to do instead, and it is mechanical
+
+Scan the LOCATION column of printed pp.81 onward for the page whose
+addresses bracket **005014** -- `strap/mcp_crop.sh PAGE loc 1` renders
+one in a second, and a page either shows addresses in that range or it
+does not. No estimate, no averaging. The pages that compile nothing are
+skipped by inspection rather than by assumption, and the page that
+brackets 005014 is `T MOVE`'s page.
+
+> Recording the failure rather than quietly replacing the number: the
+> estimate was wrong because of an assumption that was never stated when
+> it was made, which is the only interesting thing about it.
