@@ -15253,3 +15253,42 @@ every page so far has been.
 > offsets, so either its later bands carry 004740-004753 or those
 > addresses belong to a page not yet looked at. Worth knowing before
 > assuming p.85 compiles nothing.
+
+#### CORRECTION, same day: p.85 IS a code page
+
+The entry above says "printed 85 -- SYN field offsets" and "p.85 is
+field definitions, no code". **That is wrong**, and it was wrong for
+the same reason the p.85 ESTIMATE was: reading part of the artifact and
+generalising. Both readings came from band 1 alone.
+
+Rendering p.85's LOCATION column in full:
+
+```
+lines  6-23   000000.00+ .. 000000.42+     SYN field offsets
+lines 24-28   (blank)
+lines 29-47   004743.00 .. 004752.14       CODE
+```
+
+So p.85 is a MIXED page -- definitions on top, nineteen lines of code at
+the bottom -- and its code sits exactly in the gap the previous entry
+flagged between p.84's 004737.05 and p.86's 004754.00.
+
+The corrected trail is essentially contiguous:
+
+```
+p.83  004627.40 .. 004652.00
+p.84  004736.00 .. 004737.05   (band 1; later bands may hold 004740-004742)
+p.85  004743.00 .. 004752.14
+p.86  004754.00 .. 004765.76
+p.87  004767.00 .. 005013.00
+p.88  005014.00 = T MOVE
+```
+
+**So it is five code pages to reach T MOVE, not four** -- pp.83, 84, 85,
+86, 87 -- with pp.81 and 82 compiling nothing.
+
+> THE LESSON IS THE SAME ONE TWICE IN ONE HOUR, and it is this project's
+> recurring one: `run()`'s `tail -20` hid ten probe failures on
+> 2026-10-27, and band 1 of a rendered page hid nineteen lines of code
+> today. A window onto an artifact is not the artifact. Render the whole
+> column before saying what a page contains.
