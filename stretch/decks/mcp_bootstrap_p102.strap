@@ -1,0 +1,335 @@
+! mcp_bootstrap_p102.strap -- printed page 102:
+! "***** FILE AREA TABLE DEFINITIONS *****".
+! docs/MCP_Mar63_001-249.pdf PDF p.109, header READ AND NOT ASSUMED:
+! the top line prints "TIME CLOCK 00054041  PUNID 11011MCP  CARD ID
+! BH000001  DIST. OF 3/01   3/01   PAGE NUMBER 102", and the column
+! sub-header prints "LINE  LOCATION  BINARY OUTPUT  NAME  STATEMENT
+! LOCATION" (the right-hand "LOCATION" is printed LCCATICN, which is
+! this drum's O/C dropout in the form's own heading).
+!
+! NINETEEN LINES, AND THE COUNT IS MEASURED, NOT ESTIMATED.  The
+! rightmost column prints the card serial: line 1 is BH000001 and
+! line 19 is BH000019, so line N is serial BH00000N with nothing
+! missing at either end.  Rows were located mechanically by an ink
+! profile of the serial column run over the FULL PAGE HEIGHT
+! (y=0..3299 at 300 dpi, not the top third): it finds exactly
+! nineteen 30-pixel text bands, y=360..1289, and one more at
+! y=3204..3231, which is the "IBM." in the form's bottom frame.
+! The same profile run on the LOCATION, BINARY OUTPUT, data-
+! description and NAME+STATEMENT columns finds NO band eight
+! pixels tall or more anywhere below y=1300 -- only the form's own
+! dashed rules.  The page really does stop at line 19.
+! THE CARD SERIES CHANGES HERE: printed p.100 is BD000001-BD000016
+! and this page opens BH000001, so a block of card series (BE, BF,
+! BG) falls on printed p.101, which is the UNIT AREA TABLE
+! DEFINITIONS page.
+!
+! >>> THE WHOLE PAGE IS DEFINITIONS AND NOT ONE CARD COMPILES A
+! WORD. <<<  Thirteen of the nineteen lines (5-9, 11-15, 17-19) are
+! SYN cards; the other six (1-4, 10, 16) are comment cards.  The
+! BINARY OUTPUT column prints "+00000000" on every one of the
+! thirteen and the data-description column prints "BU,nn ,10" --
+! that is the column working correctly on a definitions page, not a
+! crop in the wrong place (docs/transcription_workflow.md says so,
+! and printed pp.24, 98 and 99 set the convention).  SO THIS DECK'S
+! ENTIRE CHECK SURFACE IS THIRTEEN SYMBOLS AND ZERO LISTING ROWS.
+! There is no !CHECK block below and there must not be one: a SYN
+! deposits no storage word, and a !CHECK manufactured from the
+! commented-out card on line 10 would be a fabrication.
+!
+! >>> THERE IS NO SLC ON THIS PAGE AND THIS DECK DOES NOT INVENT
+! ONE. <<<  Every location printed here is a SYN VALUE -- a relative
+! word.bit offset into a file-area-table entry, printed with the
+! trailing "+" that is the SIGN -- not a storage address.  The
+! location counter is never touched, so printed p.102 neither
+! advances nor interrupts the chain: whatever counter printed p.101
+! leaves, printed p.103 inherits.  FIRST AND LAST PRINTED LOCATIONS
+! on the page are 000000.40+ (line 5) and 000006.00+ (line 19), and
+! they are offsets, not addresses.  The smallest is 000000.00+
+! (line 6) and the entry described runs from word 0 bit 0 through
+! word 6 bit 17.
+!
+! ---------------------------------------------------------------
+! WHAT THE PAGE IS
+! ---------------------------------------------------------------
+! It is the S-PREFIXED FILE AREA TABLE, and printed p.85 already
+! carried the T-PREFIXED one ("SYN CARDS FOR FILE AREA TABLE").
+! That makes p.85 an independent, already-transcribed witness for
+! five of these thirteen fields, read off a different page months
+! of transcription earlier:
+!
+!      p.85 line  7  T IODRN  SYN(BU,18), 0.0    <->  line  6 here
+!      p.85 line  8  T TOELO  SYN(BU,18), 2.0    <->  line 11 here
+!      p.85 line  9  T DENMD  SYN(BU,2), 2.27    <->  line 12 here
+!      p.85 line 10  T REELD  SYN(BU,3), 2.29    <->  line 10 here
+!      p.85 line 11  T FMODE  SYN(BU,2), 2.48    <->  line 13 here
+!
+! Same length, same offset, four of the five the same spelling after
+! the prefix.  Line 10 is the strongest of them: it is the REEL
+! DISPOSITION card, commented out here, and it still reads
+! SYN(BU,3),2.29 -- bit for bit what p.85 prints for T REELD.  The
+! three ARC fields are the interesting disagreement: p.85 has
+! T ORARC/T MXARC/T CUARC as SYN(BU,12) at 5.06, 5.38 and 6.06,
+! while this page has S OR ARC/S MX ARC/S CU ARC as SYN(BU,18) at
+! 5.00, 5.32 and 6.00 -- eighteen bits, word-aligned and half-word-
+! aligned.  That is a REAL DIFFERENCE BETWEEN TWO TABLES, not a
+! misreading, and a THIRD PAGE takes this page's side:
+!   * the widths are printed three times each on this page --
+!     statement "18", data description "BU,22", and the 32-bit gap
+!     between 5.00 and 5.32 -- and both pages are transcribed from
+!     their own ink;
+!   * PRINTED p.99 LINE 52 IS "S ARC AD SYN(BU,18), 0.32", an
+!     already-transcribed S-SERIES witness that an ARC address in
+!     the S tables is EIGHTEEN bits, against the T series' twelve;
+!   * and the fields line up on their LOW-ORDER ends.  p.85's
+!     12-bit ARCs at 5.06 and 5.38 end at bits 17 and 49; this
+!     page's 18-bit ARCs at 5.00 and 5.32 end at bits 17 and 49
+!     too.  Same right edge, field widened leftward by six bits.
+!     That is what a deliberate revision looks like, not a
+!     transcription slip in either direction.
+!
+! ---------------------------------------------------------------
+! COMMENT CARDS -- WHICH LINES, AND HOW THEY ARE TOLD APART
+! ---------------------------------------------------------------
+! TWO TELLS DECIDE IT, AND THE DASH IS NOT ONE OF THEM.  A card is
+! a comment card here when (1) its LOCATION and its BINARY OUTPUT
+! are BOTH empty and (2) its fields DO NOT LINE UP with the rows
+! that assemble.  Six lines satisfy both: 1, 2, 3, 4, 10 and 16.
+!
+! >>> DO NOT USE THE "-" IN THE FIRST CHARACTER CELL AS THE TEST.
+! <<<  Four of the six (1, 3, 4, 10) print a "-" at x=2345..2368 in
+! the 300-dpi render -- the cell where every assembling line prints
+! the "S" of its name -- and TWO OF THEM (2 and 16) PRINT NOTHING
+! THERE AT ALL, though they are plainly comments.  Printed p.101
+! line 2 behaves the same way.  That cell is just CARD COLUMN 2 of
+! a raw card image, which holds a "-" on some comment cards and a
+! blank on others, so its presence is weak evidence either way and
+! its absence is no evidence at all.
+!
+! THE DECISIVE TELL IS THE RAGGED COLUMN, and it is measurable.  The
+! character pitch on this page is exactly 30 pixels at 300 dpi and
+! the cells are 2345, 2375, 2405, ... with the STATEMENT field
+! beginning at 2615.  An assembling card puts its eight-character
+! name in cells 2345-2555 and its statement at 2615 -- line 11's
+! "S TOE LO" is S, blank, T, O, E, blank, L, O in exactly those
+! eight cells.  Line 10 instead reads "-" at 2345, blank at 2375,
+! then S, blank, R, E, E, L, D in 2405-2585 and SYN at 2615: THE
+! WHOLE CARD IS SHIFTED RIGHT BY ONE CHARACTER, because what is
+! printed is the raw card with a "-" punched into column 1 and the
+! original SYN card text following it.  That is what commenting a
+! card out looks like on this listing.
+!
+! LINES 2 AND 16 ARE THE COUNTEREXAMPLES TO THE DASH RULE.  Both
+! print nothing at all in cells 2345-2585 and begin at 2615 (line 2
+! "-***** FILE AREA TABLE DEFINITIONS *****-", line 16 "-ENTRIES
+! FOR DISK ONLY"), so both are cards whose image is blank through
+! about column 10 and whose text then starts where a STATEMENT
+! would start while the NAME field is empty -- which is itself the
+! misalignment, since no assembling card on this page has an empty
+! name.  Both have empty LOCATION and empty BINARY OUTPUT, so both
+! compile nothing.  Lines 1 and 3 are the asterisk rules of the box
+! and line 4 is a bare "-".
+!
+! ---------------------------------------------------------------
+! THE ONE GLYPH I COULD NOT SETTLE BY MEANING: LINE 9's NAME
+! ---------------------------------------------------------------
+! Line 9's name is six characters printed CLOSED UP (cells 2345,
+! 2375, 2405, 2435, 2465, 2495 all occupied, no blank), unlike every
+! other name on the page.  It reads S E W A I L and its comment is
+! "-LOOP BIT FOR $WAIT".  SO THE COMMENT ORACLE DOES NOT SETTLE IT:
+! the comment's word is WAIT and the name's last letter is not T.
+!
+! WHAT IS CERTAIN.  The sixth character is L: a left stem with a
+! bottom bar and NO top bar and no mid-height ink, against the T of
+! "$WAIT" in the same row's comment, which has a top bar and a
+! centred stem.  Ink dropout opens and shortens glyphs; it cannot
+! add a bottom bar to a T.  Characters 1, 3, 4, 5 (S, W, A, I) carry
+! none of this drum's hazard pairs.
+!
+! WHAT IS NOT CERTAIN IS CHARACTER 2.  I read it as E rather than L,
+! and THE CASE IS WEAK -- weak enough that it is written down here
+! as weak rather than argued into looking strong.  From a greyscale
+! pixel dump of the cell at 1200 dpi:
+!   * the cell contains a full-height left stem and a full bottom
+!     bar, which both E and L have;
+!   * it ALSO contains a SOLID dark mark across the upper right of
+!     the cell, level with the top of the neighbouring S, and a
+!     fainter one at mid height directly below it -- the two places
+!     where E's upper and middle bars run and where an L has
+!     nothing.  Measured at 1200 dpi with the cell spanning about
+!     x=265..340, the stem ends at x=287, the top mark covers
+!     x=303..320 and the mid marks x=298..315, so both sit in the
+!     MIDDLE of the span a bar would occupy, not at one end;
+!   * tesseract, run on the name alone, reads SEWAIL independently.
+! Ink dropout can open or break a bar but cannot print one that is
+! not there, which is the whole of the argument for E.
+!
+! AND HERE IS WHY IT IS STILL WEAK.  Neither mark TOUCHES the stem
+! -- there is a clear gap of about eleven pixels at 1200 dpi
+! between the stem's right edge and the start of each -- and
+! neither reaches the right end of the cell, so an E here would be
+! more damaged than any other character on the page; and the SAME
+! pixel dump finds a faint speck at x=327..331 ABOVE the middle
+! bar's level, where neither an E nor an L has any ink, so this
+! cell demonstrably collects marks that no letter explains.  A
+! SIXTH CHARACTER THAT PRINTS A
+! CLEAN L IS NOT A CONTROL FOR THIS, and I am not offering it as
+! one: a drum printer has a separate hammer per column, ink varies
+! per CHARACTER and not per row, and printed p.85 line 12 is the
+! standing proof -- a clean closed O in the comment beside an open
+! C in the name, one row, one drum.  Nothing in the corpus
+! references this symbol, so listing_oracle can never catch this
+! and its !SYM below will pass forever whichever letter is right,
+! because it compares my statement against my own reading.  SEWAIL
+! is a word in no sense.  IF A LATER PAGE REFERENCES THIS FIELD,
+! PREFER THAT PAGE'S SPELLING OVER THIS ONE.  The alternative
+! reading is SLWAIL -- never SLWAIT or SEWAIT, the final L is not
+! in doubt.
+!
+! ---------------------------------------------------------------
+! THE OTHER ROUND GLYPHS, AND WHY NONE OF THEM IS IN DOUBT
+! ---------------------------------------------------------------
+! This page drops ink on round glyphs constantly -- every LOCATION
+! on it is an octal field printed as "0000nn.nn+" and several render
+! to the eye as "CCCCCC.CC+" (line 6 is "0C0000.0C+", line 12's
+! binary is "+CCCC0C00").  A C cannot occur in an octal field, so
+! all of those are zeros with certainty.  In the NAME column the
+! COMMENT COLUMN IS THE ORACLE and it settles every one:
+!   line  6  "S IOD RN"  <- "-IOD REFERENCE NUMBER"  (and p.85's
+!                           T IODRN)
+!   line  7  "S IO IND"  <- "-IO INDICATORS"
+!   line 11  "S TOE LO"  <- "-TABLE OF EXITS LOCATION", Table Of
+!                           Exits LOcation; both O's (and p.85's
+!                           T TOELO)
+!   line 13  "S F MODE"  <- "-FILE MODE"  (and p.85's T FMODE)
+!   line 14  "S CW"      <- "-CONTROL WORD", so C not O
+!   line 15  "S CCW"     <- "-COPIED CONTROL WORD", both C's
+!   line 17  "S OR ARC"  <- "- ORIGINAL ARC"; the name reads CR ARC
+!                           in isolation and is OR ARC.  This is the
+!                           exact pattern printed p.85 line 12 set
+!                           with T CRARC/-ORIGINAL ARC = T ORARC.
+!   line 19  "S CU ARC"  <- "-CURRENT ARC", so CU with a C
+!   line  5  "S ACT AD"  <- "-ACTUATED ADDRESS", ACTuated ADdress
+!   line  8  "S INT AD"  <- "-INTERRUPTED ADDRESS"
+! C/D gave no trouble: the D of "S IOD RN", "S IO IND", "S INT AD"
+! and "S F DEN" prints the straight vertical left stem and squared
+! corners, plainly unlike the stemless round C of "S CW".
+!
+! ---------------------------------------------------------------
+! WHAT CHECKS WHAT
+! ---------------------------------------------------------------
+! * NO ROW IS A BINARY CHECK, because there are no rows.
+! * EACH SYMBOL IS CHECKED TWICE BY THE PAGE ITSELF, which is a real
+!   check of the digits though not of the card: the STATEMENT prints
+!   the bit offset in DECIMAL and the LOCATION prints it in OCTAL,
+!   and all thirteen agree --
+!     0.32/.40  0.0/.00  1.09/.11  1.32/.40  1.57/.71  2.0/.00
+!     2.27/.33  2.48/.60  3.0/.00  4.0/.00  5.00/.00  5.32/.40
+!     6.00/.00
+!   The data-description column gives a THIRD rendering of each
+!   LENGTH and all thirteen agree too: BU,19/BU,23, BU,18/BU,22,
+!   BU,5/BU,05, BU,1/BU,01, BU,2/BU,02, BU,64/BU,100.
+! * FIVE FIELDS AGREE WITH ANOTHER TRANSCRIBED PAGE.  Printed p.85's
+!   lines 7, 8, 9, 10 and 11 give the same lengths and the same
+!   offsets for the T-prefixed IODRN, TOELO, density, REELD and
+!   FMODE fields.  That is five of thirteen, and line 10's agreement
+!   is with a card this page has commented out.
+! * THE THREE ARC FIELDS ARE CORROBORATED BY A THIRD PAGE, not
+!   orphaned by their disagreement with p.85: printed p.99 line 52
+!   gives the S-series ARC address as SYN(BU,18), and p.85's 12-bit
+!   ARCs end on the same bits (17 and 49) as these 18-bit ones, so
+!   the two tables agree on the right edge and differ by a
+!   deliberate six-bit widening.  That is three more of thirteen.
+! * NOTHING ELSE CROSS-CHECKS.  S ACT AD, S IO IND, S INT AD,
+!   SEWAIL, S CW and S CCW rest on this page's ink alone, and
+!   SEWAIL's second character is the weakest thing in this deck.
+! * WHAT THE VERIFIER DOES NOT COVER.  tests/verify_mcp_page.py
+!   compares OFFSETS only ("assembled bit 32, listing bit 32").
+!   The thirteen LENGTHS never enter it.  They rest on the eye plus
+!   the statement/data-description agreement recorded above, and a
+!   PASS must not be read as covering them.
+! * NO SUBSTITUTIONS AND NO OMISSIONS AMONG THE CARDS THAT COMPILE.
+!   strap_asm refused no printed spelling on this page.  "S CW"
+!   assembles cleanly as the name SCW although CW is also an
+!   opcode.  Nothing here needed the $KF/$CM0000/(CC*)DD class of
+!   workaround.
+!
+! ---------------------------------------------------------------
+! LISTING MARKS
+! ---------------------------------------------------------------
+! EVERY one of the nineteen line numbers carries an asterisk right
+! after it ("5*", "19*"), as on printed p.99.  That is the line-
+! number column's own mark, not the one that sits after a LOCATION,
+! and no line here carries that second kind.  Line 12's comment is
+! printed further right than the others, starting in the comment
+! field at a later column; that is the card, not the crop.
+
+! ---- FILE AREA TABLE DEFINITIONS (box, lines 1-4) ----------------
+SACTAD  SYN(BU,19), 0.32            ! line  5 -ACTUATED ADDRESS
+SIODRN  SYN(BU,18), 0.0             ! line  6 -IOD REFERENCE NUMBER
+SIOIND  SYN(BU,5), 1.09             ! line  7 -IO INDICATORS
+SINTAD  SYN(BU,19), 1.32            ! line  8 -INTERRUPTED ADDRESS
+SEWAIL  SYN(BU,1), 1.57             ! line  9 -LOOP BIT FOR $WAIT
+! line 10 is "- S REELDSYN(BU,3),2.29  -REEL DISPOSITION", a card
+! commented out in column 1.  It defines nothing and is not
+! transcribed; printed p.85 line 10 carries the same field as
+! T REELD SYN(BU,3),2.29.
+STOELO  SYN(BU,18), 2.0             ! line 11 -TABLE OF EXITS LOCATION
+SFDEN   SYN(BU,2), 2.27             ! line 12 -IOD DENSITY*01-HI,
+                                     !          11-LO,00-NULL
+SFMODE  SYN(BU,2), 2.48             ! line 13 -FILE MODE
+SCW     SYN(BU,64), 3.0             ! line 14 -CONTROL WORD
+SCCW    SYN(BU,64), 4.0             ! line 15 -COPIED CONTROL WORD
+! ---- ENTRIES FOR DISK ONLY (line 16, a comment card) -------------
+SORARC  SYN(BU,18), 5.00            ! line 17 - ORIGINAL ARC
+SMXARC  SYN(BU,18), 5.32            ! line 18 - MAXIMUM ARC
+SCUARC  SYN(BU,18), 6.00            ! line 19 -CURRENT ARC
+
+! ---------------------------------------------------------------
+! THE PRINTED LISTING -- all thirteen SYN cards, as printed.
+! LINE | LOCATION | BINARY OUTPUT | dds | NAME | STATEMENT
+! ---------------------------------------------------------------
+!   line  5  000000.40+  +00000000  BU,23 ,10  S ACT AD SYN (BU,19), 0.32
+!   line  6  000000.00+  +00000000  BU,22 ,10  S IOD RN SYN(BU,18), 0.0
+!   line  7  000001.11+  +00000000  BU,05 ,10  S IO IND SYN (BU,5), 1.09
+!   line  8  000001.40+  +00000000  BU,23 ,10  S INT AD SYN(BU,19), 1.32
+!   line  9  000001.71+  +00000000  BU,01 ,10  SEWAIL   SYN(BU,1),1.57
+!   line 11  000002.00+  +00000000  BU,22 ,10  S TOE LO SYN (BU,18),2.0
+!   line 12  000002.33+  +00000000  BU,02 ,10  S F DEN  SYN(BU,2),2.27
+!   line 13  000002.60+  +00000000  BU,02 ,10  S F MODE SYN(BU,2), 2.48
+!   line 14  000003.00+  +00000000  BU,100,10  S CW     SYN(BU,64), 3.0
+!   line 15  000004.00+  +00000000  BU,100,10  S CCW    SYN (BU,64), 4.0
+!   line 17  000005.00+  +00000000  BU,22 ,10  S OR ARC SYN(BU,18),5.00
+!   line 18  000005.40+  +00000000  BU,22 ,10  S MX ARC SYN(BU,18),5.32
+!   line 19  000006.00+  +00000000  BU,22 ,10  S CU ARC SYN(BU,18),6.00
+!
+! THE SIX LINES THAT COMPILE NOTHING, for the record:
+!   line  1  -  ****************************************************
+!   line  2     -***** FILE AREA TABLE DEFINITIONS  *****-
+!   line  3  -  ****************************************************
+!   line  4  -
+!   line 10  -  S REELDSYN(BU,3),2.29        -REEL DISPOSITION
+!   line 16     -ENTRIES FOR DISK ONLY
+!
+! THE TRAILING "+" after every location is the SIGN, printed as a
+! suffix the way printed p.84's negative SYN prints "000001.00-".
+! It is dropped in the !SYM lines below because listing_oracle's
+! loc_bits parses a location as "word.bit" and has no sign field,
+! and because every landed deck records the bare NNNNNN.NN.
+
+! ---- CHECKS, read by tests/verify_mcp_page.py 102 ----------------
+! Thirteen symbols and no rows.  A SYN deposits no storage word, so
+! there is nothing for a !CHECK to look at and none is written.
+!SYM   SACTAD   000000.40
+!SYM   SIODRN   000000.00
+!SYM   SIOIND   000001.11
+!SYM   SINTAD   000001.40
+!SYM   SEWAIL   000001.71
+!SYM   STOELO   000002.00
+!SYM   SFDEN    000002.33
+!SYM   SFMODE   000002.60
+!SYM   SCW      000003.00
+!SYM   SCCW     000004.00
+!SYM   SORARC   000005.00
+!SYM   SMXARC   000005.40
+!SYM   SCUARC   000006.00

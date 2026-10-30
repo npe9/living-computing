@@ -1,0 +1,314 @@
+! mcp_bootstrap_p101.strap -- MCP, printed page 101:
+! "***** UNIT AREA TABLE DEFINITIONS *****".
+! docs/MCP_Mar63_001-249.pdf PDF p.108, header READ not assumed: the
+! top line prints "TIME CLOCK 00054041  PUNID 11011MCP  CARD ID
+! BF000001  DIST. OF 3/01   3/01   PAGE NUMBER 101".
+!
+! TWENTY-EIGHT LINES, AND THE COUNT WAS CONFIRMED, NOT ESTIMATED.
+! The rightmost column prints the card serial: line 1 is BF000001 and
+! line 28 is BF000028, so line N is serial BF0000NN with no break,
+! and BF000028 is the last printed row -- the rest of the page is
+! blank (the bottom band of the render carries only the form's
+! rules).  Nothing fell off the top or the bottom.
+!
+! >>> THE WHOLE PAGE IS DEFINITIONS, AND IT COMPILES NOT ONE BIT. <<<
+! Lines 1-4 are the asterisk box around the heading.  Lines 5-20 and
+! 22-28 are TWENTY-THREE SYN cards.  Line 21 carries nothing but a
+! comment.  A SYN deposits no storage word, so this deck's entire
+! check surface is TWENTY-THREE SYMBOLS AND ZERO LISTING ROWS -- the
+! convention printed pp.24, 98 and 99 established.  The BINARY OUTPUT
+! column prints "+00000000" and a data description "BU,NN ,10" on all
+! twenty-three rows; that is the column working correctly on a
+! definitions page and it must NOT be faked into a !CHECK.
+!
+! WHAT THE PAGE IS.  Printed p.99 opened the second punched deck of
+! this assembly and defined the CHANNEL-UNIT STATUS TABLE; printed
+! p.100 is sixteen comment cards and compiles nothing; this page
+! defines the UNIT AREA TABLE, the nine-word block whose address the
+! status table's SUNAA field (p.99 line 19) points at.  Word 0 holds
+! the channel and unit numbers, word 1 the IOD-card count and the
+! mount-reminder time, words 2-3 the evaluation table/mask and the
+! file-area and control-word addresses, word 4 the last I/O
+! instruction, word 5 the MCP return address and control op code,
+! word 6 the scratch pad, and words 7-8 the tape-only entries (label
+! mode and density, file count, reel addresses and count).
+!
+! FIRST AND LAST PRINTED LOCATION on the page: line 5 prints
+! 000000.14+ and line 28 prints 000010.40+.  These are SYN VALUES,
+! not an assembly address -- the location counter does not move on
+! this page at all.  THE JOIN TO THE NEIGHBOURING PAGES is therefore
+! not a location chain: printed p.99 line 11's SLC,(8)215000. set the
+! counter to 215000.00, printed p.100 compiles nothing, and this page
+! compiles nothing, so the counter is still 215000.00 when printed
+! p.102 begins.  The SLC below records that and nothing else uses it.
+! THAT PREDICTION IS NOT TESTABLE AGAINST p.102 and I did not pretend
+! otherwise: PDF p.109 prints "PAGE NUMBER 102" over the heading
+! "***** FILE AREA TABLE DEFINITIONS *****" and its rows are SYN
+! cards too (line 5 "S ACT AD SYN (BU,19), 0.32" at 000000.40+), so
+! its LOCATION column prints SYN VALUES, not an assembly address.
+! The join has to be checked against the next page that compiles.
+!
+! ---------------------------------------------------------------
+! LINE 21, AND WHY IT IS NOT TRANSCRIBED
+! ---------------------------------------------------------------
+! Line 21's LOCATION and BINARY OUTPUT columns are empty, its NAME
+! and STATEMENT columns are empty, and its only content is the
+! comment "-ENTRIES FOR TAPE ONLY", which is a heading for lines
+! 22-28.  It compiles nothing either way.
+!
+! >>> AND IT BREAKS THE "DASH IN THE FLAG COLUMN" RULE, WHICH IS THE
+! REUSABLE FINDING ON THIS PAGE.  Lines 1, 3 and 4 print a "-" in the
+! one-character column between BINARY OUTPUT and NAME (x = 2330..2372
+! at 300 dpi).  LINE 2 DOES NOT, AND NEITHER DOES LINE 21 -- checked
+! at 1200 dpi, where lines 20's and 22's "S" is the only ink anywhere
+! near that x and lines 2 and 21 are blank there.  But line 2 is
+! UNAMBIGUOUSLY a comment card: it prints
+! "-***** UNIT AREA TABLE DEFINITIONS *****-" with an empty LOCATION
+! and an empty BINARY OUTPUT.  So that column is NOT a per-card
+! comment flag on this page.
+!
+! WHAT EXPLAINS ALL FIVE LINES WITH NO EXCEPTION is the RAW CARD
+! IMAGE reading: a comment card is printed verbatim from card column
+! 2 on, and column 2 happens to hold a "-" on lines 1, 3 and 4 and a
+! blank on lines 2 and 21.  PRINTED p.102 (PDF p.109) SETTLES IT with
+! a case this page does not have: its line 10 prints a "-" at that x
+! followed by "S REELDSYN(BU,3),2.29" -- a SYN card commented out,
+! with the NAME and STATEMENT JAMMED TOGETHER instead of landing in
+! their columns, and with an empty LOCATION and BINARY OUTPUT.  Its
+! line 2 prints "-***** FILE AREA TABLE DEFINITIONS *****-" with
+! nothing at the flag x, exactly as here.  The two reliable tells are
+! therefore (a) empty LOCATION and BINARY OUTPUT and (b) fields that
+! do not line up with the rows above; the dash is just column 2.
+! Horizontal position of the comment settles nothing either way,
+! because the comment field prints at its literal card column and is
+! ragged down the page (line 20's comment starts left of line 22's).
+!
+! So line 21 is most likely a comment card whose image begins with
+! blanks, by the same reading that explains line 2; the alternative
+! -- a card with a blank name and statement and only a comment field
+! -- is not excluded, and it changes no bit either way.
+!
+! ---------------------------------------------------------------
+! THE SPELLINGS ARE SETTLED BY A PRIMARY SOURCE, NOT BY SQUINTING
+! ---------------------------------------------------------------
+! C22-6728-1, "MCP System Analysis Guide", Appendix A "Symbolic I-O
+! Control Tables", section "THE UNIT AREA TABLE" (printed p.266,
+! figure 147 on printed p.268, the field table on printed pp.269-271;
+! PDF page = printed page) tabulates this exact table.  ALL
+! TWENTY-THREE NAMES ON THIS PAGE APPEAR THERE, with their bit
+! positions.  ALL TWENTY-THREE AGREE ON THE NAME AND ON THE STARTING
+! BIT -- which is what the !SYM block below checks -- and
+! twenty-two of the twenty-three also agree on the LENGTH.  SSCRPM
+! is the exception and is marked (*) below and set out in full
+! further down:
+!
+!   0.12-0.18 SCHANN   0.47-0.49 SUNITN   1.06-1.17 SIODK
+!   1.32-1.57 SRMTC    1.62 SUUNAS        1.63 SRMIND
+!   2.00-2.18 SEVLTB   2.32-2.50 SEVLMK   3.00-3.17 SFIAAC
+!   3.32-3.49 SCWADR   3.60 SRETRY        3.61 SREMNT
+!   4.00-4.63 SIOINS   5.00-5.18 SRETAD   5.42-5.49 SCTLOP
+!   6.00-6.31 SSCRPM(*)   7.16-7.17 SLABM    7.25 SSYSTM
+!   7.29 SLABD         7.38-7.49 SFILEK   8.00-8.17 SFREEL
+!   8.32-8.49 SCREEL   8.57-8.63 SREELK
+!
+! (The Appendix also lists RMCPLB/RPPLB at 6.32-6.63, which this
+! page does not define at all.)
+!
+! That settles the two glyphs this page cannot decide by shape alone:
+!   line 13's last character, "S FI AAC" -- round, no left stem, so
+!     C or O rather than D, and the comment reads "-FILE AREA
+!     ACTIVATED ADDRESS".  Appendix A printed p.269: SFIAAC.  The
+!     discriminator was confirmed in the SAME 1200-dpi strip: lines
+!     14 and 18 print "ADR" and "AD" with a straight vertical left
+!     stem and squared corners, visibly unlike line 13's bowl.
+!   line 19's "S CTL OP" and line 17's "S IO INS" -- the round
+!     glyphs are O's; Appendix A printed p.270 gives SCTLOP and
+!     SIOINS.
+! The C/D pair gave no other trouble: line 7's IODK, line 10's
+! SRMIND, line 14's ADR, line 18's AD and line 24's LAB D all print
+! the D stem, and line 8's RMTC ("-REMINDER MESSAGE TIME CONSTANT"),
+! line 28's "S C REEL" ("-CURRENT REEL ADDRESS") and line 13's AAC
+! all print the stemless bowl.
+!
+! >>> (*) ONE PLACE WHERE THE LISTING AND APPENDIX A DISAGREE.  It is
+! recorded, not "corrected" -- the listing is the primary artifact
+! and C22-6728-1 is a later revision of a different document.
+!   LINE 20 IS "S SCR PM SYN(BU,64),6.0", confirmed twice on its own
+!   row (the data-description column prints "BU,100 ,10" and 0o100 is
+!   64), i.e. the scratch pad is the WHOLE of word 6.  Appendix A
+!   printed p.270 gives SSCRPM as bits 6.00-6.31, thirty-two, and
+!   puts RMCPLB (if MCP UAT) / RPPLB (if PP UAT) in 6.32-6.63.
+!   Neither RMCPLB nor RPPLB is defined anywhere on this page.
+!   Transcribed as printed: BU,64.
+!
+! ---------------------------------------------------------------
+! WHAT ACTUALLY CHECKS WHAT
+! ---------------------------------------------------------------
+! * NO ROW IS AN INDEPENDENT BINARY CHECK, because there are no rows.
+! * NO SYMBOL ON THIS PAGE IS REFERENCED BY ANY LANDED DECK.  A grep
+!   of decks/, strap/ and tests/ for all twenty-three names returns
+!   nothing, so not one of them is corroborated by another page's
+!   transcription and none of them can fail a merge.  Every !SYM
+!   below therefore rests on this page's own ink plus Appendix A.
+! * EACH SYMBOL IS CHECKED TWICE BY THE PAGE ITSELF, and that is a
+!   real check of the digits though not of the card: the STATEMENT
+!   column prints the bit offset in DECIMAL and the LOCATION column
+!   prints the same offset in OCTAL.  All twenty-three agree --
+!   0.12/.14, 0.47/.57, 1.06/.06, 1.32/.40, 1.62/.76, 1.63/.77,
+!   2.0/.00, 2.32/.40, 3.0/.00, 3.32/.40, 3.60/.74, 3.61/.75,
+!   4.0/.00, 5.0/.00, 5.42/.52, 6.0/.00, 7.16/.20, 7.25/.31,
+!   7.29/.35, 7.38/.46, 8.0/.00, 8.57/.71, 8.32/.40.
+!   THE DATA-DESCRIPTION COLUMN GIVES A THIRD RENDERING OF THE
+!   LENGTH, in octal: BU,07=7, BU,03=3, BU,14=12, BU,32=26, BU,01=1,
+!   BU,23=19, BU,22=18, BU,100=64, BU,10=8, BU,02=2.  All agree with
+!   the SYN(BU,n) written in the statement.
+! * APPENDIX A CORROBORATES ALL TWENTY-THREE SPELLINGS AND BIT
+!   POSITIONS, with the one disagreement above.  It is a different
+!   document and a later revision; treat it as corroboration of the
+!   SPELLINGS -- which listing_oracle can never check -- and not as
+!   verification of the transcription.
+!
+! ---------------------------------------------------------------
+! CONVENTIONS AND OMISSIONS
+! ---------------------------------------------------------------
+! (1) BLANKS INSIDE SYMBOL NAMES ARE DROPPED, as on every page since
+!     p.2.  The NAME column prints "S CHAN N", "S UNIT N", "S IODK",
+!     "S RMTC", "SUUNAS", "SRMIND", "S EVL TB", "S EVL MK",
+!     "S FI AAC", "S CW ADR", "S RETRY", "S REMNT", "S IO INS",
+!     "S RET AD", "S CTL OP", "S SCR PM", "S LAB M", "S SYSTM",
+!     "S LAB D", "S FILE K", "SFREEL", "S REEL K", "S C REEL"; only
+!     SUUNAS, SRMIND and SFREEL are printed closed up.
+! (2) A SYN VALUE WRITTEN "2.0" IS WRITTEN 2.0 VERBATIM; lines 26 and
+!     27 print a space after the comma ("SYN(BU,18), 8.0") and that
+!     is dropped, SYN not being an entry-mode pseudo-op.
+! (3) LINES 1-4 AND 21 COMPILE NOTHING AND ARE NOT TRANSCRIBED: 1, 3
+!     and 4 are the asterisk rules, 2 is the heading
+!     "-***** UNIT AREA TABLE DEFINITIONS *****-", and 21 is the
+!     comment discussed above.
+! (4) THE LAST THREE LOCATIONS ARE NOT MONOTONIC AND THAT IS NOT A
+!     MISREAD: lines 26, 27 and 28 print 000010.00+, 000010.71+ and
+!     000010.40+, because the deck punches SFREEL, SREELK, SCREEL in
+!     that order while the field order in word 8 is SFREEL (8.00),
+!     SCREEL (8.32), SREELK (8.57).  Appendix A lists them in field
+!     order; the cards are in card order.  A SYN does not advance the
+!     location counter, so nothing depends on the order.
+! (5) NOTHING ELSE.  No printed spelling on this page was refused by
+!     strap_asm; there is no substitution anywhere in this deck.
+!
+! ---------------------------------------------------------------
+! LISTING MARKS
+! ---------------------------------------------------------------
+! EVERY ONE of the twenty-eight line numbers carries an asterisk
+! right after it ("5*", "28*"), exactly as printed p.99 does.  That
+! is the line-number column and not the mark that sits after a
+! LOCATION on pp.3/37/88/97/98.  No location on this page carries a
+! mark.  Every location prints a trailing "+" -- the sign, printed as
+! a suffix the way printed p.84's negative SYN prints "000001.00-".
+! It is dropped in the !SYM lines below because listing_oracle's
+! loc_bits parses "word.bit" and has no sign field, which is what
+! printed p.99's deck does.
+
+        SLC, (8)215000.0            ! not printed on this page; the
+                                     ! counter stands where p.99 line
+                                     ! 11 left it.  Nothing here uses it.
+
+! ---- ***** UNIT AREA TABLE DEFINITIONS ***** (lines 1-4) ----------
+SCHANN  SYN(BU,7), 0.12             ! line  5 -CHANNEL NUMBER
+SUNITN  SYN(BU,3), 0.47             ! line  6 -UNIT NUMBER
+SIODK   SYN(BU,12), 1.06            ! line  7 -NUMBER OF IOD CARDS
+                                     !           FOR UNIT
+SRMTC   SYN(BU,26), 1.32            ! line  8 -REMINDER MESSAGE TIME
+                                     !           CONSTANT
+SUUNAS  SYN(BU,1), 1.62             ! line  9 -UNIT ALREADY
+                                     !           UNASSIGNED IF EQ 1
+SRMIND  SYN(BU,1), 1.63             ! line 10 -REMINDER MESSAGE
+                                     !           INDICATOR
+SEVLTB  SYN(BU,19), 2.0             ! line 11 - EVALUATION TABLE BASE
+                                     !           ADDRESS
+SEVLMK  SYN(BU,19), 2.32            ! line 12 - EVALUATION MASK
+                                     !           ADDRESS
+SFIAAC  SYN(BU,18), 3.0             ! line 13 -FILE AREA ACTIVATED
+                                     !           ADDRESS
+SCWADR  SYN(BU,18), 3.32            ! line 14 -CONTROL WORD ADDRESS
+SRETRY  SYN(BU,1), 3.60             ! line 15 -I/O RETRY INDICATOR
+SREMNT  SYN(BU,1), 3.61             ! line 16 -AWAITING CORRECT REEL
+SIOINS  SYN(BU,64), 4.0             ! line 17 -IO INSTR. LAST
+                                     !           EXECUTED
+SRETAD  SYN(BU,19), 5.0             ! line 18 -RETURN ADDRESS IN MCP
+SCTLOP  SYN(BU,8), 5.42             ! line 19 -OCTAL CONTROL OP CODE
+SSCRPM  SYN(BU,64), 6.0             ! line 20 -SCRATCH PAD MEMORY
+
+! ---- -ENTRIES FOR TAPE ONLY (line 21) -----------------------------
+SLABM   SYN(BU,2), 7.16             ! line 22 -MODE SPECIFIED IN
+                                     !           LABEL
+SSYSTM  SYN(BU,1), 7.25             ! line 23 -SYSTEM TAPE FLAG
+SLABD   SYN(BU,1), 7.29             ! line 24 -DENSITY SPECIFIED IN
+                                     !           LABEL
+SFILEK  SYN(BU,12), 7.38            ! line 25 -FILE COUNT
+SFREEL  SYN(BU,18), 8.0             ! line 26 -FIRST REEL ADDRESS
+SREELK  SYN(BU,7), 8.57             ! line 27 -CURRENT REEL COUNT
+SCREEL  SYN(BU,18), 8.32            ! line 28 -CURRENT REEL ADDRESS
+
+! ---------------------------------------------------------------
+! THE PRINTED LISTING -- all twenty-three definition lines, with the
+! LOCATION and the data description exactly as printed.
+! ---------------------------------------------------------------
+!   line  5  000000.14+  +00000000  BU,07 ,10  S CHAN N SYN(BU,7),0.12
+!   line  6  000000.57+  +00000000  BU,03 ,10  S UNIT N SYN(BU,3),0.47
+!   line  7  000001.06+  +00000000  BU,14 ,10  S IODK   SYN(BU,12),1.06
+!   line  8  000001.40+  +00000000  BU,32 ,10  S RMTC   SYN(BU,26),1.32
+!   line  9  000001.76+  +00000000  BU,01 ,10  SUUNAS   SYN(BU,1),1.62
+!   line 10  000001.77+  +00000000  BU,01 ,10  SRMIND   SYN(BU,1),1.63
+!   line 11  000002.00+  +00000000  BU,23 ,10  S EVL TB SYN(BU,19),2.0
+!   line 12  000002.40+  +00000000  BU,23 ,10  S EVL MK SYN(BU,19),2.32
+!   line 13  000003.00+  +00000000  BU,22 ,10  S FI AAC SYN(BU,18),3.0
+!   line 14  000003.40+  +00000000  BU,22 ,10  S CW ADR SYN(BU,18),3.32
+!   line 15  000003.74+  +00000000  BU,01 ,10  S RETRY  SYN(BU,1),3.60
+!   line 16  000003.75+  +00000000  BU,01 ,10  S REMNT  SYN(BU,1),3.61
+!   line 17  000004.00+  +00000000  BU,100,10  S IO INS SYN(BU,64),4.0
+!   line 18  000005.00+  +00000000  BU,23 ,10  S RET AD SYN(BU,19),5.0
+!   line 19  000005.52+  +00000000  BU,10 ,10  S CTL OP SYN(BU,8),5.42
+!   line 20  000006.00+  +00000000  BU,100,10  S SCR PM SYN(BU,64),6.0
+!   line 22  000007.20+  +00000000  BU,02 ,10  S LAB M  SYN(BU,2),7.16
+!   line 23  000007.31+  +00000000  BU,01 ,10  S SYSTM  SYN(BU,1),7.25
+!   line 24  000007.35+  +00000000  BU,01 ,10  S LAB D  SYN(BU,1),7.29
+!   line 25  000007.46+  +00000000  BU,14 ,10  S FILE K SYN(BU,12),7.38
+!   line 26  000010.00+  +00000000  BU,22 ,10  SFREEL   SYN(BU,18), 8.0
+!   line 27  000010.71+  +00000000  BU,07 ,10  S REEL K SYN(BU,7), 8.57
+!   line 28  000010.40+  +00000000  BU,22 ,10  S C REEL SYN(BU,18),8.32
+!
+! THE OTHER PRINTED LINES, for the record:
+!   line  1  - ****************************************************
+!   line  2    -*****   UNIT AREA TABLE DEFINITIONS   *****-
+!   line  3  - ****************************************************
+!   line  4  -
+!   line 21                                     -ENTRIES FOR TAPE ONLY
+
+! ---- CHECKS, read by tests/verify_mcp_page.py 101 ----------------
+! Twenty-three symbols and no rows: a SYN deposits no storage word,
+! so there is nothing for a !CHECK to look at.  Manufacturing one
+! from the "+00000000" the BINARY OUTPUT column prints would be
+! checking the printer, not the assembler.
+!SYM   SCHANN   000000.14
+!SYM   SUNITN   000000.57
+!SYM   SIODK    000001.06
+!SYM   SRMTC    000001.40
+!SYM   SUUNAS   000001.76
+!SYM   SRMIND   000001.77
+!SYM   SEVLTB   000002.00
+!SYM   SEVLMK   000002.40
+!SYM   SFIAAC   000003.00
+!SYM   SCWADR   000003.40
+!SYM   SRETRY   000003.74
+!SYM   SREMNT   000003.75
+!SYM   SIOINS   000004.00
+!SYM   SRETAD   000005.00
+!SYM   SCTLOP   000005.52
+!SYM   SSCRPM   000006.00
+!SYM   SLABM    000007.20
+!SYM   SSYSTM   000007.31
+!SYM   SLABD    000007.35
+!SYM   SFILEK   000007.46
+!SYM   SFREEL   000010.00
+!SYM   SREELK   000010.71
+!SYM   SCREEL   000010.40

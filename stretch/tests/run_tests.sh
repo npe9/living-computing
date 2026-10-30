@@ -6275,6 +6275,35 @@ run "the conversion subroutine, printed p.98" python3 verify_mcp_page.py 98
 # anything and each SYN's data description is checked by nothing.
 run "the channel-unit status table definitions, printed p.99" python3 verify_mcp_page.py 99
 
+# >>> printed pp.101-104 ARE A SECOND IMAGE, AND THEY ARE DELIBERATELY
+# NOT IN MCP_IPL_PAGES. <<<
+# printed p.99 line 11's SLC moved the origin to (8)215000 and printed
+# p.103 reassembles MCP's COMMUNICATION REGION there -- the same region
+# printed p.37 assembles at 002150.  So these pages REDEFINE names the
+# landed decks already define, at second-assembly addresses:
+#
+#   SMCP   002150.00 -> 215000.00     ZFINIS 017777.00 -> 236464.00
+#   SCOMRG 002151.00 -> 215001.00     SPRIME 002166.00 -> 215570.00
+#   SXCHAN 002152.00 -> 215002.00     STERMI 005465.40 -> 215020.40
+#
+# The sharpest case is that the SAME STATEMENT, "S TERMI VF,ZFINIS",
+# compiles to a different value in each assembly and NEITHER IS WRONG.
+# Widening MCP_IPL_PAGES over them would make mcp_image.merge() reject
+# on duplicate symbols, which is that guard working. They get page
+# checks here and their own page list when someone builds the second
+# image. docs/boot_plan.md carries the open DFREE question, which is
+# one instance of this same thing.
+#
+# pp.101, 102 and 104 are SYN-only definition pages: their LOCATION
+# column prints SYMBOL VALUES, not addresses, the location counter
+# never moves, and so they have ZERO listing rows. A page check on
+# them tests offsets only -- not the field LENGTHS, which no oracle
+# reads. Do not read their PASS as covering the dds.
+run "the unit area table definitions, printed p.101" python3 verify_mcp_page.py 101
+run "the file area table definitions, printed p.102" python3 verify_mcp_page.py 102
+run "MCP's communication region at its second origin, printed p.103" python3 verify_mcp_page.py 103
+run "the MCP pseudo-operation codes, printed p.104" python3 verify_mcp_page.py 104
+
 # A LABEL'S SPELLING IS THE ONE THING listing_oracle CANNOT CHECK:
 # it compares LOCATIONS and BINARY, and a name is not in the machine
 # code.  printed p.84 read T IODK as TIODCK and printed p.85 read

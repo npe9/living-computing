@@ -1,0 +1,549 @@
+! mcp_bootstrap_p103.strap -- "THE COMMUNICATION REGION FOR MCP",
+! printed page 103.  docs/MCP_Mar63_001-249.pdf PDF p.110, header
+! read and not assumed: the top line prints "TIME CLOCK 00054041
+! PUNID 11011MCP   CARD ID CA000001   DIST. OF 3/01   3/01
+! PAGE NUMBER 103".
+!
+! >>> A NEW PUNCHED DECK STARTS HERE, AND IT IS A SECOND COPY OF
+! THE COMMUNICATION REGION. <<<  The card-serial column restarts at
+! CA000001 (line 1) and runs to CA000056 (line 56) -- fifty-six
+! lines, counted off the serial column, nothing lost off the top or
+! the bottom of the render.  printed pp.97-98 were still punching
+! 18xxxxxx serials.
+!
+! THIS PAGE IS printed p.37 ASSEMBLED AGAIN AT A NEW ORIGIN.  p.37
+! is "THE COMMUNICATION REGION FOR MCP" at 002147.40..002166.40;
+! this page lays the same region out at 215000.00..215021.00 with
+! nineteen new SCOMRG bit definitions added and several values
+! changed.  Twenty-six of its names are p.37's names to the letter
+! (S MCP, S COM SZ, S COM RG, S XCHAN, S CHAN K, S CHANS, S BAMCP,
+! S R TAPE, S W TAPE, S READ R, S BA PP, S MAXRN, S YCOCH, S YPRCH,
+! S DKMCP, S SYRFT, S PR IN, S PR OUT, S IF DMP, S REJ JB, S ROOF,
+! S MARK, S IA, S DATE, S TODAY, S END CM).
+!
+! >>> THE ORIGIN IS NOT SET ON THIS PAGE. <<<  There is no SLC row
+! here.  printed p.99 line 11 is "SLC,(8)215000.", and nothing
+! between there and here consumes storage, so the counter arrives
+! at 215000.00 and line 6 is the first row to spend it.  CHECKED,
+! NOT ASSUMED, for the two pages I had not been told about:
+!   printed p.101 ("UNIT AREA TABLE DEFINITIONS") and printed p.102
+!   ("FILE AREA TABLE DEFINITIONS") are SYN-only pages.  Every row
+!   with a LOCATION prints a SYN VALUE with a trailing "+" relative
+!   to a zero base -- 000000.14+, 000001.06+, 000010.40+ and so on
+!   -- which is a resolved value and not the location counter, so
+!   the counter does not move on either page.
+!   printed p.100 ("MCP IOD CARDS") is comment cards only.
+! The agreement is then two-sided: p.99's SLC says 215000 and THIS
+! page's line 6 PRINTS 215000.00.
+! The SLC written below is that origin, restated so the deck
+! assembles standalone.
+!
+! >>> TWO KINDS OF ENTRY IN THE LOCATION COLUMN, AND ONLY ONE OF
+! THEM IS AN ADDRESS. <<<  A row whose location ends in "+"
+! (lines 10-27, 29, 30 and 51) is a SYN and the column prints its
+! RESOLVED VALUE, not the counter; the counter does not move for
+! it.  A row whose location has no "+" (lines 6, 7, 8, 28, 31-50
+! and 53-56) is storage and the column is the real address.
+!
+! THE ADDRESS CHAIN CLOSES END TO END OVER THE SECOND KIND.
+! FIRST printed address 215000.00 (line 6), LAST printed address
+! 215020.40 (line 56); every storage row's printed address plus its
+! own length equals the next storage row's printed address, with no
+! gap and no overlap, across all twenty-eight of them.  Line 56 is
+! a half word, so the counter reaches 215021.00 for whatever page
+! follows.
+!
+! SEVEN COMMENT CARDS: lines 1, 2, 3, 4, 5, 9 and 52.
+!
+! >>> THE "-" IN THE FLAG COLUMN IS NOT THE TELL, AND THIS PAGE
+! DISPROVES IT. <<<  Measured at 1200 dpi: lines 1-5 and line 9 DO
+! print a "-" in the one-character column between BINARY OUTPUT and
+! NAME.  LINE 52 DOES NOT.  Line 52's column is blank and the
+! hyphen one sees is the first character of the comment TEXT,
+! "-IPL TENTACLE TABLE", printed out in the STATEMENT column.  That
+! column is simply card column 2 of a RAW CARD IMAGE, and column 2
+! holds a dash on some comment cards and a blank on others.
+!
+! THE TWO TELLS THAT HOLD FOR ALL SEVEN are:
+!   (1) LOCATION and BINARY OUTPUT are BOTH empty, and
+!   (2) the card prints raw from column 2 on, so its fields do not
+!       line up: the NAME column is empty on every one of them and
+!       the text runs straight through from the STATEMENT column.
+! Compare line 53, which looks crowded ("S IPL IN INDMK,4" with no
+! gap) but is NOT a comment card: its name is eight characters and
+! fills the field exactly, and it prints a LOCATION (215016.00) and
+! a full word of BINARY.
+!
+! The seven read:
+!   1  *********************************************************
+!   2       ******** THE COMMUNICATION REGION FOR MCP ********
+!   3  *********************************************************
+!   4  THE FOLLOWING UP TO SIPL + 1.0 SHALL NOT BE MODIFIED UNDER ANY
+!   5  CIRCUMSTANCE WITHOUT THE CONSENT OF THE IPL MAINTAINER........
+!   9  19 BITS DEFINED FOR SCOMRG ARE BELOW.
+!  52  -IPL TENTACLE TABLE
+! Line 4 names SIPL, which is not defined on this page.
+! S IPL IN's address is corroborated off the page: printed p.120
+! line 2 prints "XS IPL IN" with the half word 215016.00+.
+!
+! >>> TWO LISTING MARKS, RECORDED AND NOT EXPLAINED. <<<  Line 7
+! prints its line number as "7**" where every other row prints
+! "N*", and line 7 is the only FORWARD reference on the page
+! ("VF,SENDCM-SMCP", and S END CM is defined on line 51) -- printed
+! p.37 line 9 is the same statement and carries the same "9**".
+! Line 48 prints a bare "*" AFTER its location, "215013.40 *";
+! p.37's line 29 and p.3 carry that mark too.  Neither changes a
+! compiled bit and neither is checked here.
+!
+! ---------------------------------------------------------------
+! WHAT THE PAGE CONTAINS
+! ---------------------------------------------------------------
+! Line 6    S MCP    VF,SMCP        -- the region's base, pointing at
+!                                      itself: 215000.00.
+! Line 7    S COM SZ VF,SENDCM-SMCP -- 000016.00, FOURTEEN WORDS, the
+!                                      same size p.37 compiles.
+! Line 8    S COM RG XW,(8)520000.  -- the system word.  p.37's is
+!                                      XW,(8)100000.0 -- a DIFFERENT
+!                                      flag pattern, read as printed.
+! Lines 10-27  nineteen SYN(BU,1)/SYN(BU,2) bit definitions inside
+!              S COM RG, bits 0..18 (the page's own line 9 says "19
+!              BITS DEFINED FOR SCOMRG ARE BELOW" and there are
+!              exactly nineteen bits once SYSMOD's two are counted).
+! Line 28   S XCHAN  XW,0           -- channel status table base.
+! Lines 29-30  its two SYN views (S CHAN K at +.28, S CHANS at +0).
+! Lines 31-47  sixteen VF half words and one instruction: the I/O
+!              reference numbers,
+!              the console and printer channel numbers, the PRIME
+!              routine entry and save slots, and the instruction-
+!              fetch trap S IF DMP (line 43), which is the page's
+!              ONLY instruction -- a BD, Branch Disabled, this time
+!              not to 0 as on p.37 but to SDISIC+.32.
+! Line 48   CNOP, to full-word-align the two date words.
+! Lines 49-50  S DATE "03/15/63" and S TODAY "  /  /63", the same
+!              two (AX) character words p.37 lines 42-43 carry.
+! Line 51   S END CM SYN,$ -- the end of the region, 215016.00.
+! Lines 53-56  the IPL TENTACLE TABLE: an INDMK indicator mask, a
+!              zero word, S JCTWS and S TERMI.
+!
+! ---------------------------------------------------------------
+! SUBSTITUTIONS AND SPELLINGS
+! ---------------------------------------------------------------
+! (1) BLANKS INSIDE SYMBOL NAMES ARE DROPPED, as on every page since
+!     p.2.  Every name here is six or fewer characters once the
+!     blanks come out, and THAT IS LOAD-BEARING for one glyph: see
+!     S HS ECH below.
+! (2) Nothing else is substituted.  No printed spelling was rejected
+!     by strap_asm except as recorded under ASSEMBLER LIMITATION.
+!
+! >>> THE 0/C GLYPH PAIR, AND HOW EACH ONE WAS SETTLED. <<<
+! This page opens round glyphs everywhere -- its own column heading
+! prints "LCCATICN" for LOCATION and line 5's comment prints
+! "WITFOUT ... MCDIFIED".  Every round glyph in a LOCATION or an
+! octal BINARY field is a 0 with certainty, because a C is not an
+! octal digit: line 31's "2150CC.CC", line 35's "CCCCCC.CC+", line
+! 53's "000000.CC CC" and line 54's bare-octal word all print 0 as
+! an open C and every one is read as 0.
+!
+! The round glyphs that are NOT in an octal field are all in NAMES,
+! and each was settled on something other than its shape:
+!   * S HS ECH (line 11).  "ECH" could be a damaged "EXCH", which is
+!     what "high speed exchange" would want.  IT CANNOT BE: names
+!     are six or fewer characters once blanks are dropped (C22-6531
+!     printed p.10), and S HS EXCH would be seven.  S HS ECH is six.
+!     The comment "-HS ECH OPERATION BIT" prints the same three
+!     letters, and printed p.153 line 42 prints
+!     "CM1111(BU,1),S HS ECH" against 215001.01 -- another page
+!     using the name, at THIS line's own address.
+!   * S CNF CG (line 12) -- comment "-CONFIGURATION CHANGE FLAG",
+!     so CNF = ConFiguration and CG = ChanGe.  Genuine C's.
+!   * S CORG (line 13) -- comment "-COMPILE OR GO BIT", so C-OR-G.
+!     Genuine C.  printed p.98 line 34 already carries S CORG.
+!   * SLOCSU (line 26) -- printed "SLCCSU".  THE COMMENT IS NOT THE
+!     ORACLE HERE ("-ON WHEN DISK IN SETUP" shares no letters), so
+!     it was settled on ANOTHER PAGE: the listing prints
+!     "Z DISKL BB,SLOCSU,$+2.0" against 215001.21 on printed p.152
+!     line 7, with an O, and "CM0000,SLOCSU" against 215001.21 on
+!     printed p.160.  Line 26's own address IS 215001.21, so those
+!     rows and this one are the same symbol.  Read SLOCSU.
+!     (Both witnesses were located in the OCR text and the glyph
+!     was read there, NOT re-rendered -- weaker than the p.100
+!     render above, and said so.)
+!   * SYSMOD (line 18) -- the final glyph has the straight vertical
+!     LEFT stem and squared corners of a D, not the round bowl of a
+!     C or 0, and printed p.98 line 30 already carries SYSMOD.
+!
+! >>> ONE GLYPH NOT FULLY SETTLED: SJ1FUL (line 25). <<<  Grepping
+! the whole listing for "FUL" -- deliberately NOT for "1FUL", since
+! the OCR renders this very row's name as "SJLFUL" and a digit-
+! keyed grep could not find a reference it had mangled the same way
+! -- returns this row and nothing else.  So the name really does
+! rest on ink: no other page uses it.  The second
+! character is a digit 1 to the eye at 1200 dpi scaled 300% (it
+! carries the top-left flag stroke that this drum's I does not), and
+! the comment reads "-EQUALS ONE WHEN JC1 TABLES ARE FULL", which
+! puts a 1 in the neighbourhood -- but the comment says JC1 and the
+! name says J1, so the comment is NOT an exact oracle for it.
+! Nothing else in the listing references the name, so it rests on
+! ink.  SJIFUL with a letter I would assemble identically and
+! listing_oracle could not tell them apart.  Recorded as uncertain.
+!
+! >>> WRITTEN DECIMAL, PRINTED OCTAL. <<<  Every SCOMRG bit offset
+! is written decimal and prints octal: line 18 writes "+.8" and
+! prints .10, line 19 writes "+.10" and prints .12, line 25 writes
+! ".16" and prints .20, line 27 writes ".18" and prints .22.  Line
+! 29 writes "+.28" and prints .34.  The (8) literals are the other
+! way round and are written exactly as printed: line 37's
+! "VF,(8)23.40" prints 000023.40+ and line 55's "VF,(8)42.0" prints
+! 000042.00+.
+!
+! ---------------------------------------------------------------
+! WHICH ROWS ARE INDEPENDENT CHECKS, AND WHICH ARE NOT
+! ---------------------------------------------------------------
+! >>> EIGHT EXTERNAL SYMBOLS ARE SYNNED BELOW, AND SEVEN OF THEM
+! CAME OFF ANOTHER PRINTED PAGE. <<<  No neighbouring page of this
+! SECOND assembly has been transcribed into decks/ yet, so the
+! witnesses are the listing itself on other printed pages rather
+! than landed decks.  BE PRECISE ABOUT HOW EACH WAS READ: VRTP,
+! VCRD and VWTP were found in docs/ocr/MCP_Mar63_001-249.txt and
+! then RE-RENDERED off the PDF at 900 dpi and read by eye, because
+! the OCR mangled VRTP's value to "24-6".  The other four
+! (SDISIC, SPRIME, SPRIMR, SIT) were read in the OCR text ONLY and
+! were NOT re-rendered; each is corroborated by two to four
+! separate OCR rows that agree digit for digit, which is why they
+! are accepted, but they are a weaker class of evidence than the
+! p.100 render and this deck does not pretend otherwise.
+!   VRTP    000004.00  -- printed p.100 ("MCP IOD CARDS") prints the
+!                         comment card "- VRTP   SYN,4." , rendered
+!                         and read at 900 dpi, not taken from OCR.
+!                         printed p.126 line 31 "RTABLE VF,VRTP"
+!                         prints 000004.00+ as a second witness.
+!   VCRD    000005.00  -- printed p.100's comment card "- VCRD
+!                         SYN,5.", same render.  NOT a tautology.
+!   VWTP    000006.00  -- printed p.100's "- VWTP   SYN,6."; printed
+!                         p.126 line 32 "VF,VWTP" prints 000006.00+.
+!   SDISIC  217451.40  -- the listing prints "SIC,SDISIC" with the
+!                         operand half word "217451.40 80" on
+!                         printed pp.119, 169, 173 and 193.  Line 43
+!                         here writes SDISIC+.32 and prints
+!                         217452.04, which is 217451.40 plus 32
+!                         bits, so line 43 IS an independent check
+!                         of the +.32 arithmetic and the BD encoding.
+!   SPRIME  215570.00  -- printed p.132 "B,SPRIME" prints 215570.10
+!                         and a plain B prints target+8 bits;
+!                         printed p.193 prints it twice more.
+!   SPRIMR  215571.00  -- printed pp.132 and 193 print "SIC,SPRIMR"
+!                         as 215571.00 80.
+!   SIT     215023.00  -- a LABEL in the LOCATION column on printed
+!                         p.110 ("S IT  SIC,YMFIC" at 215023.00) and
+!                         referenced as "SIT($4)" at 215023.00 on
+!                         printed p.175.
+!   ZFINIS  236464.00  -- BACK-DERIVED FROM LINE 56 OF THIS PAGE.
+!                         It is the ONE tautological row here: no
+!                         other row in the listing names ZFINIS.
+!                         NOTE THE CONFLICT: decks/mcp_bootstrap_
+!                         p98.strap carries ZFINIS at 017777.00 off
+!                         printed p.98 line 31, which is the SAME
+!                         statement "S TERMI VF,ZFINIS" in the FIRST
+!                         assembly.  The two assemblies disagree and
+!                         neither is wrong; see THE MERGE HAZARD.
+! So twenty-five of the twenty-six checked rows are real checks and
+! ONE (line 56) is a tautology.  The strongest rows are:
+!   line  7  S COM SZ = SENDCM-SMCP = 000016.00, a fourteen-word
+!            span this deck reproduces only if EVERY intervening
+!            row's length is right -- it is the whole page's
+!            counting in one number.
+!   line 43  SDISIC+.32 -> 217452.04, address arithmetic across a
+!            word boundary against an address read on four other
+!            printed pages.
+!   lines 6 and 31  SMCP -> 215000.00, this page's own origin.
+! Lines 35, 36, 39, 40, 44, 45, 46, 48 and 54 name no symbol at all
+! and check the encoding of VF, CNOP and DD alone.
+!
+! >>> THE MERGE HAZARD, WHICH IS NOT MINE TO FIX BUT MUST BE SAID.
+! <<<  This page redefines, at new addresses, names that landed
+! decks already define:
+!     SMCP    002150.00 (pp.15/19/20/28/40)  ->  215000.00
+!     SCOMRG  002151.00 (pp.31/33/98)        ->  215001.00
+!     SXCHAN  002152.00 (p.37)               ->  215002.00
+!     SYSMOD  002151.10 (p.98)               ->  215001.10
+!     SCORG   002151.03 (p.98)               ->  215001.03
+!     STERMI  005465.40 (p.98)               ->  215020.40
+!     ZFINIS  017777.00 (p.98)               ->  236464.00
+!     SPRIME  002166.00 (p.37)               ->  215570.00
+!     SPRIMR  002166.40 (p.37)               ->  215571.00
+!     and every other name p.37 defines.
+! printed p.99 line 11's "SLC,(8)215000." starts a SECOND ASSEMBLY
+! of MCP at a new origin; p.103 is its communication region.
+! strap/mcp_image.py's merge() will see duplicate definitions the
+! moment this page is added beside p.37 and p.98.  REPORTED, NOT
+! TOUCHED -- nothing under strap/ was modified.
+
+        SLC, (8)215000.0
+
+! ---- externals, with the page each value was read on ---------------
+VRTP    SYN, (8)4.0                  ! p.100 card; p.126 VF,VRTP
+VWTP    SYN, (8)6.0                  ! p.100 card; p.126 VF,VWTP
+VCRD    SYN, (8)5.0                  ! p.100 card "- VCRD SYN,5."
+SPRIME  SYN, (8)215570.0             ! pp.132,193 "B,SPRIME" 215570.10
+SPRIMR  SYN, (8)215571.0             ! pp.132,193 "SIC,SPRIMR" 215571.00
+SDISIC  SYN, (8)217451.40            ! pp.119,169,173,193 "SIC,SDISIC"
+SIT     SYN, (8)215023.0             ! p.110 label; p.175 SIT($4)
+ZFINIS  SYN, (8)236464.0             ! ONLY line 56 here -- TAUTOLOGY
+
+        SLC, (8)215000.0
+
+! ---- the communication region --------------------------------------
+SMCP    VF, SMCP                     ! line  6 -BASE ADDRESS OF MCP
+SCOMSZ  VF, SENDCM-SMCP              ! line  7 -SIZE OF COMMUNICATION
+                                      !           REGION
+SCOMRG  XW, (8)520000.               ! line  8
+
+! ---- the nineteen bits defined inside S COM RG ---------------------
+SE      SYN(BU,1), SCOMRG            ! line 10
+SHSECH  SYN(BU,1), SCOMRG+.1         ! line 11 -HS ECH OPERATION BIT
+SCNFCG  SYN(BU,1), SCOMRG+.2         ! line 12 -CONFIGURATION CHANGE
+                                      !           FLAG
+SCORG   SYN(BU,1), SCOMRG+0.03       ! line 13 -COMPILE OR GO BIT
+SL      SYN(BU,1), SCOMRG+0.04       ! line 14 -LEVEL OF INSTRUCTION
+                                      !           COUNTER
+SM      SYN(BU,1), SCOMRG+0.05       ! line 15 -LEVEL OF INTERRUPT
+SPINCL  SYN(BU,1), SCOMRG+.6         ! line 16
+SCSINT  SYN(BU,1), SCOMRG.7          ! line 17
+SYSMOD  SYN(BU,2), SCOMRG+.8         ! line 18 -TWO-BIT OPERATING MODE
+STRANB  SYN(BU,1), SCOMRG+.10        ! line 19
+SSPFIX  SYN(BU,1), SCOMRG+.11        ! line 20 -ON IF PP IN SPECIAL
+                                      !           FIXUP
+STSBIT  SYN(BU,1), SCOMRG+.12        ! line 21 -ON IF TS STACKED FOR PP
+SPPBT1  SYN(BU,1), SCOMRG+.13        ! line 22 -3BITS FOR TRANSITION
+                                      !           COMMANDS
+SPPBT2  SYN(BU,1), SCOMRG+.14        ! line 23
+SPPBT3  SYN(BU,1), SCOMRG+.15        ! line 24
+SJ1FUL  SYN(BU,1), SCOMRG.16         ! line 25 -EQUALS ONE WHEN JC1
+                                      !           TABLES ARE FULL
+SLOCSU  SYN(BU,1), SCOMRG.17         ! line 26 -ON WHEN DISK IN SETUP
+SJBUSY  SYN(BU,1), SCOMRG.18         ! line 27
+
+! ---- the channel status table --------------------------------------
+SXCHAN  XW, 0                        ! line 28 -BASE ADDRESS OF CHANNEL
+                                      !           STATUS TBLE.
+SCHANK  SYN(BU,18), SXCHAN+.28       ! line 29 -NUMBER OF CHANNELS
+                                      !           CONNECTED
+SCHANS  SYN, SXCHAN                  ! line 30
+
+! ---- the half-word slots -------------------------------------------
+SBAMCP  VF, SMCP                     ! line 31
+SRTAPE  VF, VRTP                     ! line 32
+SWTAPE  VF, VWTP                     ! line 33
+SREADR  VF, VCRD                     ! line 34 -INPUT SPOOL READER
+                                      !           REF NO.
+SBAPP   VF, 0                        ! line 35 -BASE ADDRESS OF THE PP
+                                      !           I/O LOC TBL
+SMAXRN  VF, 0                        ! line 36 -THE MAX. REF. NUMBER
+                                      !           FOR A PP
+SYCOCH  VF, (8)23.40                 ! line 37 -CONSOLE CHANNEL NUMBER
+SYPRCH  VF, (8)22.40                 ! line 38 -PRINTER CHANNEL NUMBER
+SDKMCP  VF, 0                        ! line 39 -MCP RESET TRACK FOR
+                                      !           DISK
+SSYRFT  VF, 0                        ! line 40 -VARIABLE POINTER FOR
+                                      !           PP DISK ASSIGN
+SPRIN   VF, SPRIME                   ! line 41 -ENTRY TO THE PRIME
+                                      !           ROUTINE
+SPROUT  VF, SPRIMR                   ! line 42 -SAVED ADDRESS OF JOES
+                                      !           PRIME ROUTINE
+SIFDMP  BD, SDISIC+.32               ! line 43
+SREJJB  VF, 0                        ! line 44 -THE NUMBER OF JOBS TO
+                                      !           REJECT
+SROOF   VF, 0                        ! line 45
+SMARK   VF                           ! line 46 -THE NEXT VACANT REEL
+                                      !           SLOT FOR PP
+SIA     VF, SIT                      ! line 47 -INTERRUPT TABLE ADDRESS
+        CNOP                         ! line 48
+SDATE   (AX)DD(BU),03/15/63X         ! line 49 - FOR DATE OF IPL TAPE
+                                      !           TO SPOOL
+STODAY  (AX)DD(BU),  /  /63X         ! line 50 -FOR DATE OF JOBS ON
+                                      !           SPOOL TAPE
+SENDCM  SYN, $                       ! line 51 -END OF COMMUNICATION
+                                      !           REGION
+
+! ---- the IPL tentacle table (line 52 is its heading card) ----------
+! >>> SUBSTITUTION, FLAGGED.  The page prints "INDMK,4" and
+! strap_asm has no INDMK: "AssemblerError: unknown mnemonic 'INDMK'".
+! C28-6129 (STRAP-II with the Apr63 update), in its list of pseudo-
+! ops not in the STRAP manual:
+!   "6. INDMK - Create one word of binary output ... produces one
+!    full word of binary output beginning at a full word address,
+!    with a bit pattern as specified in the address field, bits
+!    0-63.  These integers may also be specified symbolically ...
+!    e.g., INDMK, $ZM, $EXE, $IF."
+! So INDMK,4 is one full word with BIT 4 set, i.e. 2**59, and the
+! printed binary 020000.00 00 / 000000.00 00 is exactly that
+! (0o020000 in bits 0-17 is 2**13, and bit 4 of an 18-bit field is
+! 2**13).  The DD below assembles BIT-IDENTICALLY at the same
+! full-word address.  THE PRINTED FORM IS "INDMK,4" -- see the
+! !CHECK note.  strap_asm should grow INDMK.
+SIPLIN  DD(BU,64), (8)40000000000000000000   ! line 53 printed "INDMK,4"
+                                      !          -USERBIT MCP
+        DD(BU), 0                    ! line 54
+SJCTWS  VF, (8)42.0                  ! line 55 - TWS FOR JC
+STERMI  VF, ZFINIS                   ! line 56 -LAST MCP SLOT
+
+! ---------------------------------------------------------------
+! THE PRINTED LISTING -- every row with a LOCATION or BINARY entry.
+! "BU,nn ,10" in the BINARY OUTPUT column of a SYN row is the DATA
+! DESCRIPTION (mode BU, length nn octal, byte size 10 octal = 8),
+! not machine code.
+! ---------------------------------------------------------------
+!   line  6  215000.00   215000.00+                      S MCP    VF,SMCP
+!   line  7**215000.40   000016.00+                      S COMSZ  VF,SENDCM-SMCP
+!   line  8  215001.00   520000.00+ 000 000000 000000    SCOMRG   XW,(8)520000.
+!   line 10  215001.00+  +00000000     BU,01 ,10         S E      SYN(BU,1), S COM RG
+!   line 11  215001.01+  +00000000     BU,01 ,10         S HS ECH SYN(BU,1),S COM RG+.1
+!   line 12  215001.02+  +00000000     BU,01 ,10         S CNF CG SYN(BU,1),S COMRG+.2
+!   line 13  215001.03+  +00000000     BU,01 ,10         S CORG   SYN(BU,1), S COM RG + 0.03
+!   line 14  215001.04+  +00000000     BU,01 ,10         S L      SYN(BU,1), S COM RG + 0.04
+!   line 15  215001.05+  +00000000     BU,01 ,10         S M      SYN(BU,1),S COM RG+0.05
+!   line 16  215001.06+  +00000000     BU,01 ,10         S P INCL SYN(BU,1),S COMRG+.6
+!   line 17  215001.07+  +00000000     BU,01 ,10         S CS INT SYN(BU,1),S COM RG.7
+!   line 18  215001.10+  +00000000     BU,02 ,10         SYSMOD   SYN(BU,2),SCOMRG+.8
+!   line 19  215001.12+  +00000000     BU,01 ,10         S TRAN B SYN(BU,1),S COM RG+.10
+!   line 20  215001.13+  +00000000     BU,01 ,10         SSPFIX   SYN(BU,1),SCOMRG+.11
+!   line 21  215001.14+  +00000000     BU,01 ,10         STSBIT   SYN(BU,1),SCOMRG+.12
+!   line 22  215001.15+  +00000000     BU,01 ,10         SPPBT1   SYN(BU,1),SCOMRG+.13
+!   line 23  215001.16+  +00000000     BU,01 ,10         SPPBT2   SYN(BU,1),SCOMRG+.14
+!   line 24  215001.17+  +00000000     BU,01 ,10         SPPBT3   SYN(BU,1),SCOMRG+.15
+!   line 25  215001.20+  +00000000     BU,01 ,10         SJ1FUL   SYN(BU,1),SCOMRG.16
+!   line 26  215001.21+  +00000000     BU,01 ,10         SLOCSU   SYN(BU,1),SCOMRG.17
+!   line 27  215001.22+  +00000000     BU,01 ,10         S JBUSY  SYN(BU,1),SCOMRG.18
+!   line 28  215002.00   000000.00+ 000 000000 000000    SXCHAN   XW,0
+!   line 29  215002.34+  +00000000     BU,22 ,10         S CHAN K SYN(BU,18),S X CHAN+.28
+!   line 30  215002.00+  +00000000     BU,100,10         S CHANS  SYN,SXCHAN
+!   line 31  215003.00   215000.00+                      SBAMCP   VF,SMCP
+!   line 32  215003.40   000004.00+                      SRTAPE   VF,VRTP
+!   line 33  215004.00   000006.00+                      SWTAPE   VF,VWTP
+!   line 34  215004.40   000005.00+                      S READR  VF,VCRD
+!   line 35  215005.00   000000.00+                      S BAPP   VF,0
+!   line 36  215005.40   000000.00+                      S MAXRN  VF,0
+!   line 37  215006.00   000023.40+                      S YCOCH  VF,(8)23.40
+!   line 38  215006.40   000022.40+                      S YPRCH  VF,(8)22.40
+!   line 39  215007.00   000000.00+                      S DKMCP  VF,0
+!   line 40  215007.40   000000.00+                      S SYRFT  VF,0
+!   line 41  215010.00   215570.00+                      S PR IN  VF,SPRIME
+!   line 42  215010.40   215571.00+                      S PROUT  VF,SPRIMR
+!   line 43  215011.00   217452.04 00                    SIFDMP   BD,SDISIC+.32
+!   line 44  215011.40   000000.00+                      S REJJB  VF,0
+!   line 45  215012.00   000000.00+                      S ROOF   VF,0
+!   line 46  215012.40   000000.00+                      S MARK   VF
+!   line 47  215013.00   215023.00+                      S IA     VF,SIT
+!   line 48  215013.40 * 000000.30 00                             CNOP
+!   line 49  215014.00   (no binary printed)             S DATE   (AX)DD(BU),03/15/63X
+!   line 50  215015.00   (no binary printed)             STODAY   (AX)DD(BU),  /  /63X
+!   line 51  215016.00+  +00000000     NULL              S ENDCM  SYN,$
+!   line 53  215016.00   020000.00 00  000000.00 00      S IPL IN INDMK,4
+!   line 54  215017.00   0000000000000000000000          (no name) DD(BU),0
+!   line 55  215020.00   000042.00+                      SJCTWS   VF,(8)42.0
+!   line 56  215020.40   236464.00+                      STERMI   VF,ZFINIS
+!
+! Lines 49 and 50 print NO BINARY, exactly as p.37's lines 42-43 and
+! pp.9-12's message rows do, so NO CHARACTER CODE IS CHECKED OR CAN
+! BE.  What IS checked is the COUNTING: eight 8-bit characters is
+! one word each, and line 51's S END CM lands on 215016.00 only if
+! both rows are exactly that long.  That also settles line 50's
+! blanks WITHOUT measuring them -- "  /  /63" is the only reading
+! with eight characters; three blanks in each gap would be ten and
+! would push S END CM to 215017.00, which the page does not print.
+!
+! >>> WHAT THE ORACLE DOES NOT CHECK. <<<  The DATA DESCRIPTIONS
+! the SYN rows print in the BINARY OUTPUT column -- "BU,01 ,10",
+! "BU,02 ,10", "BU,22 ,10", "BU,100,10" -- are NOT checked by
+! listing_oracle, which has no renderer for them (the same is true
+! of printed p.98's SYN rows).  The !SYM lines below check each
+! SYN's ADDRESS and nothing else, so a SYN(BU,2) written as
+! SYN(BU,1) would pass.  The lengths were transcribed from the
+! column and are recorded in the listing block; they are not
+! independently verified.
+!
+! ---------------------------------------------------------------
+! ASSEMBLER LIMITATION
+! ---------------------------------------------------------------
+! strap_asm does not implement the INDMK pseudo-op (line 53).  The
+! deck writes a bit-identical DD(BU,64) in its place and keeps the
+! printed form in the row's !CHECK note; see the comment above the
+! statement.  NOTHING UNDER strap/ WAS MODIFIED -- this is reported,
+! not fixed.  C22-6729's own pseudo-op list (OCR line 3711) groups
+! INDMK with RF, VF, CW and CNOP, all of which strap_asm already
+! has, so it is a one-pseudo-op gap and not a design question.
+
+! ---- CHECKS, read by tests/verify_mcp_page.py 103 ------------------
+!SYM   SMCP     215000.00
+!SYM   SCOMSZ   215000.40
+!SYM   SCOMRG   215001.00
+!SYM   SE       215001.00
+!SYM   SHSECH   215001.01
+!SYM   SCNFCG   215001.02
+!SYM   SCORG    215001.03
+!SYM   SL       215001.04
+!SYM   SM       215001.05
+!SYM   SPINCL   215001.06
+!SYM   SCSINT   215001.07
+!SYM   SYSMOD   215001.10
+!SYM   STRANB   215001.12
+!SYM   SSPFIX   215001.13
+!SYM   STSBIT   215001.14
+!SYM   SPPBT1   215001.15
+!SYM   SPPBT2   215001.16
+!SYM   SPPBT3   215001.17
+!SYM   SJ1FUL   215001.20
+!SYM   SLOCSU   215001.21
+!SYM   SJBUSY   215001.22
+!SYM   SXCHAN   215002.00
+!SYM   SCHANK   215002.34
+!SYM   SCHANS   215002.00
+!SYM   SBAMCP   215003.00
+!SYM   SRTAPE   215003.40
+!SYM   SWTAPE   215004.00
+!SYM   SREADR   215004.40
+!SYM   SBAPP    215005.00
+!SYM   SMAXRN   215005.40
+!SYM   SYCOCH   215006.00
+!SYM   SYPRCH   215006.40
+!SYM   SDKMCP   215007.00
+!SYM   SSYRFT   215007.40
+!SYM   SPRIN    215010.00
+!SYM   SPROUT   215010.40
+!SYM   SIFDMP   215011.00
+!SYM   SREJJB   215011.40
+!SYM   SROOF    215012.00
+!SYM   SMARK    215012.40
+!SYM   SIA      215013.00
+!SYM   SDATE    215014.00
+!SYM   STODAY   215015.00
+!SYM   SENDCM   215016.00
+!SYM   SIPLIN   215016.00
+!SYM   SJCTWS   215020.00
+!SYM   STERMI   215020.40
+!CHECK 215000.00 | 215000.00+ | line 6 S MCP VF,SMCP
+!CHECK 215000.40 | 000016.00+ | line 7 S COMSZ VF,SENDCM-SMCP (line number prints "7**")
+!CHECK 215001.00 | 520000.00+ 000 000000 000000 | line 8 SCOMRG XW,(8)520000.
+!CHECK 215002.00 | 000000.00+ 000 000000 000000 | line 28 SXCHAN XW,0
+!CHECK 215003.00 | 215000.00+ | line 31 SBAMCP VF,SMCP
+!CHECK 215003.40 | 000004.00+ | line 32 SRTAPE VF,VRTP
+!CHECK 215004.00 | 000006.00+ | line 33 SWTAPE VF,VWTP
+!CHECK 215004.40 | 000005.00+ | line 34 S READR VF,VCRD -- VCRD is back-derived from this row
+!CHECK 215005.00 | 000000.00+ | line 35 S BAPP VF,0
+!CHECK 215005.40 | 000000.00+ | line 36 S MAXRN VF,0
+!CHECK 215006.00 | 000023.40+ | line 37 S YCOCH VF,(8)23.40
+!CHECK 215006.40 | 000022.40+ | line 38 S YPRCH VF,(8)22.40
+!CHECK 215007.00 | 000000.00+ | line 39 S DKMCP VF,0
+!CHECK 215007.40 | 000000.00+ | line 40 S SYRFT VF,0
+!CHECK 215010.00 | 215570.00+ | line 41 S PR IN VF,SPRIME
+!CHECK 215010.40 | 215571.00+ | line 42 S PROUT VF,SPRIMR
+!CHECK 215011.00 | 217452.04 00 | line 43 SIFDMP BD,SDISIC+.32
+!CHECK 215011.40 | 000000.00+ | line 44 S REJJB VF,0
+!CHECK 215012.00 | 000000.00+ | line 45 S ROOF VF,0
+!CHECK 215012.40 | 000000.00+ | line 46 S MARK VF
+!CHECK 215013.00 | 215023.00+ | line 47 S IA VF,SIT
+!CHECK 215013.40 | 000000.30 00 | line 48 CNOP (location carries an asterisk)
+!CHECK 215016.00 | 020000.00 00 000000.00 00 | line 53 S IPL IN -- page prints INDMK,4; deck writes a bit-identical DD(BU,64)
+!CHECK 215017.00 | 0000000000000000000000 | line 54 DD(BU),0 | 64
+!CHECK 215020.00 | 000042.00+ | line 55 SJCTWS VF,(8)42.0
+!CHECK 215020.40 | 236464.00+ | line 56 STERMI VF,ZFINIS -- ZFINIS is back-derived from this row

@@ -44,7 +44,10 @@ for m in ("+", "L", "LWF", "+MG", "K", "KR", "KE", "KF", "KFE", "KFR", "LCV"):
 VFL["*"] = 2                       # binary
 for m in ("CV", "DCV"):
     VFL[m] = 2                     # op / INT
-for m in ("ST", "SRD", "M+MG", "M+1", "M+"):
+# M-1 is M+1 with the invert-sign modifier (opcodes.py
+# VFL_INT_WRITTEN_MINUS, witnessed by MCP printed p.92 line 27).
+# A sign modifier changes no level, so it costs what M+1 costs.
+for m in ("ST", "SRD", "M+MG", "M+1", "M-1", "M+"):
     VFL[m] = 3                     # op / opnd / store
 VFL["*+"] = 3                      # op / opnd / C($FT)
 for m in ("LFT", "LTRS", "LTRCV"):
@@ -107,6 +110,12 @@ for _m in ("KFI", "LFI", "LI", "/I", "*I", "+I", "-I", "KI", "KRI",
            "STI", "SRDI", "CVI", "LCVI"):
     if _m[:-1] in _VFL_IMM_STEMS:
         VFL_IMM[_m] = NOT_GIVEN
+# "*I+" is "*+" with that same immediate suffix, written by IBM with the
+# I INSIDE the two-character operation (MCP printed pp.95 and 96; see
+# strap_asm.VFL_INFIX_IMMEDIATE).  The loop above builds only trailing-I
+# spellings and cannot reach it.  Immediate, therefore NOT GIVEN, for
+# exactly the reason the paragraph above gives for "*I".
+VFL_IMM["*I+"] = NOT_GIVEN
 
 # Branch on indicator: 1 level for an INDEX condition, 4 for any other.
 # The index conditions are sheet 2's own list.
@@ -189,7 +198,10 @@ def lookup(mnemonic):
 # ---------------------------------------------------------------------------
 PSEUDO = {"DD", "DR", "DRZ", "VF", "CF", "RF", "XW", "CW", "END", "SYN",
           "SLC", "CNOP", "DDI", "EXT", "SIC", "TAIL", "UNTAIL",
-          "PRNS"}
+          # PRNS, and printed p.99 lines 12-14's punch control: these
+          # direct the card punch and the listing and execute nothing,
+          # so Table A-2 has no cost for them and should not.
+          "PRNS", "PUNORG", "PUNID", "RESEQ"}
 
 
 def opcode_of(line):
@@ -199,6 +211,17 @@ def opcode_of(line):
     operation.  Modifiers in parentheses and the operand comma are
     stripped; "SIC" is a prefix to the NEXT statement and carries no
     level of its own here.
+
+    >>> THE COMMA NEEDS SPLITTING, NOT STRIPPING. <<<  This used to end
+    with op.split("(")[0].rstrip(","), which recovers the mnemonic from
+    "BAE, TM1D" and returns the WHOLE STRING for "BAE,TM1D".  STRAP does
+    not require that space and the decks for printed pp.90-99 do not
+    always write it, so 36 ordinary statements -- BAE, SV, LX, ST, BZB,
+    CB+, LF, L -- were counted as 36 distinct unmatched MNEMONICS.
+    Every earlier deck happened to use the space, which is the only
+    reason this ever worked.  Same shape as the SYN census that counted
+    "SYN(" and so structurally could not match the bare SYN cards it
+    was hunting.
     """
     line = line.split("!", 1)[0].rstrip()
     if not line.strip():
@@ -209,7 +232,7 @@ def opcode_of(line):
         return None
     if op.startswith(","):
         return None            # an operand continuation line, not an opcode
-    op = op.split("(", 1)[0].rstrip(",")
+    op = op.split("(", 1)[0].split(",", 1)[0]
     return op or None
 
 
@@ -312,9 +335,13 @@ def main():
     # The page-silent set is allowed but FIXED: if it grows, a deck has
     # started using an instruction Table A-2 does not cost, and that is
     # a thing to know before M2 relies on the table.
+    # "*I+" joined it on 2026-10-30 with printed pp.95 and 96: a VFL
+    # cumulative-multiply immediate, which Table A-2 does not cost for
+    # the same reason it costs no other VFL immediate.  Grown on
+    # purpose, which is what this check exists to force.
     check("page_silent_mnemonics_in_mcp",
           sorted(notgiven),
-          ["/I", "KFI", "LFI", "LI", "SWAPI", "T", "TB", "TI"])
+          ["*I+", "/I", "KFI", "LFI", "LI", "SWAPI", "T", "TB", "TI"])
 
     if fails:
         print(f"\n{fails} TEST(S) FAILED")
