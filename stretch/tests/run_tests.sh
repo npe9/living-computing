@@ -6187,6 +6187,24 @@ run "A PRINT SUB-ROUTINE THAT WILL PRINT ASSIGNMENTS, printed p.76, bit-exact (M
 run "MOVE's constants and index names, printed p.83, bit-exact (MCP_Mar63 PDF p.90)" python3 verify_mcp_bootstrap_p83.py
 run "The unit name and disk allocation tables, printed p.84, bit-exact (MCP_Mar63 PDF p.91)" python3 verify_mcp_bootstrap_p84.py
 run "The file area, reel pool and TYPE SCAN tables, printed p.85, bit-exact (MCP_Mar63 PDF p.92)" python3 verify_mcp_bootstrap_p85.py
+
+# >>> THE GENERIC PAGE CHECKER, AND WHY IT IS REGISTERED ON PAGES THAT
+# ALREADY HAVE ONE. <<<  Every transcribed page has had a hand-written
+# verifier -- 76 of them -- each re-typing as Python literals the facts
+# its deck already records.  tests/verify_mcp_page.py reads a !SYM /
+# !CHECK block out of the deck instead, so a new page costs a deck and
+# one registration line rather than a second file to keep in step.
+#
+# Running it over pp.83-85, which DO have hand-written verifiers above,
+# is the test that the generic path reproduces them: same symbols, same
+# rows, same result.  When it has earned that on a few more pages the
+# hand-written ones can migrate with strap/to_block.py, which generates
+# the block from the verifier so nothing is retyped.
+#
+# It FAILS a deck that declares no checks rather than passing it.  A
+# checker that silently approves a page it never looked at is worse
+# than no checker.
+run "The generic page checker reproduces pp.83-85 from the decks' own blocks" sh -c 'python3 verify_mcp_page.py 83 && python3 verify_mcp_page.py 84 && python3 verify_mcp_page.py 85'
 # Thirty-seven lines, thirty compiled, and only SEVEN print any
 # machine code at all.  A data page: the message buffers the
 # assignment printer fills in, three hexadecimal constants, five SYN
