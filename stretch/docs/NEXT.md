@@ -15292,3 +15292,34 @@ p.88  005014.00 = T MOVE
 > 2026-10-27, and band 1 of a rendered page hid nineteen lines of code
 > today. A window onto an artifact is not the artifact. Render the whole
 > column before saying what a page contains.
+
+#### The roadmap to T MOVE, every page's full column read
+
+Not band 1 this time. Each of these is the whole LOCATION column:
+
+```
+p.80  ends 004627.00   B,1.00($15)  -- ASSIGN's return, ALREADY TRANSCRIBED
+p.81  no locations at all, lines 4-27        compiles nothing
+p.82  no locations at all, lines 4-21        compiles nothing
+p.83  004627.40 .. 004633.00, then 004652.00 at line 42
+      plus SYN values 002153-002162 and index SYNs 000021-000034
+p.84  004736.00 .. 004737.05
+p.85  004743.00 .. 004752.14   (lines 29-47; lines 6-23 are field offsets)
+p.86  004754.00 .. 004765.76
+p.87  004767.00 .. 005013.00
+p.88  005014.00 = T MOVE
+```
+
+**p.80 ends at 004627.00 and p.83 begins at 004627.40 -- the very next
+half-word.** The trail joins the transcribed image exactly, with pp.81
+and 82 contributing nothing between them.
+
+The one apparent gap, p.83's 004652.00 to p.84's 004736.00, is 52
+words. p.83's line 42 is its LAST line and carries 004652.00, so that
+line is almost certainly a reservation (a `DRZ` of 52 words) which moves
+the counter to where p.84 resumes. Worth confirming from p.83's
+statement column when it is transcribed rather than assumed -- it is
+stated here as the reading it is.
+
+**So printed p.83 is the next page to transcribe**, and it is a short
+one: about ten lines of code, a block of SYN cards, and a reservation.
