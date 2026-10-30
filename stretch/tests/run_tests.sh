@@ -7970,7 +7970,7 @@ run "DIVIDE AS AN ITERATIVE BOX (answer bit-exact, cycles structural)" "$TESTS_D
 # Absolute path for the same reason the divbox line uses one: this block
 # sits after `cd "$BSV_DIR"`, so a bare ./run_fpcommit_test.sh is looked
 # for in bsv/ and not found.
-run "FP STORE CLASS AS A PURE FUNCTION (no storage instantiated)" "$TESTS_DIR/run_fpcommit_test.sh"
+run "THE FP COMMIT RECORD: BOTH CLASSES PURE, 128 OPCODES SWEPT (no storage instantiated)" "$TESTS_DIR/run_fpcommit_test.sh"
 # -- 1b. StretchDecode's instruction formats swept against the length
 # tag jb_ax3a p.140 states, over all 2^14 half-words (both with the
 # address field zeroed and all ones).  Not a program: it drives

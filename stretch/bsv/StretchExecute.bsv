@@ -1238,6 +1238,9 @@ typedef struct {
   Maybe#(Word64) accLeft;                    // word 8
   Maybe#(Word64) accRight;                   // word 9
   Maybe#(Word64) accSign;                    // word 10
+  Maybe#(Word64) factor;                     // word 14
+  Maybe#(Word64) remainder;
+  Maybe#(Bit#(7)) leftZerosCount;            // st.setLeftZerosCount
   Maybe#(Tuple2#(WordAddr, Word64)) store;   // the computed-address store
 } FpCommit deriving (Bits, Eq, FShow);
 
@@ -1246,6 +1249,9 @@ function Action commitFp(StretchStorage st, FpCommit fpc);
     if (fpc.accLeft  matches tagged Valid .v) st.writeWord(addrAccLeft, v);
     if (fpc.accRight matches tagged Valid .v) st.writeWord(addrAccRight, v);
     if (fpc.accSign  matches tagged Valid .v) st.writeWord(addrAccSignByte, v);
+    if (fpc.factor   matches tagged Valid .v) st.writeWord(addrFactor, v);
+    if (fpc.remainder matches tagged Valid .v) st.writeWord(addrRemainder, v);
+    if (fpc.leftZerosCount matches tagged Valid .v) st.setLeftZerosCount(v);
     if (fpc.store    matches tagged Valid .t) st.writeWord(tpl_1(t), tpl_2(t));
   endaction
 endfunction
@@ -1260,6 +1266,9 @@ function Tuple2#(Word64, FpCommit)
     FpCommit fpc = FpCommit { accLeft: tagged Invalid,
                               accRight: tagged Invalid,
                               accSign: tagged Invalid,
+                              factor: tagged Invalid,
+                              remainder: tagged Invalid,
+                              leftZerosCount: tagged Invalid,
                               store: tagged Invalid };
     Bool isST   = (c == fpop_ST);
     Bool isSRD  = (c == fpop_SRD);
@@ -1612,13 +1621,20 @@ endfunction
 // read is the caller's business -- this function is only ever entered
 // once the word is in hand.
 // ---------------------------------------------------------------------
-function ActionValue#(Word64) fpArithClass(StretchStorage st, Bit#(7) c,
-                                           Bit#(1) absSign, Bit#(1) invSign,
-                                           WordAddr ea, FpNum acc, Word64 accL,
-                                           Word64 accS, Bool normalized, Bool noisy,
-                                           Word64 operand, Word64 ind0);
-  actionvalue
+function Tuple2#(Word64, FpCommit)
+    fpArithClass(Bit#(7) c, Bit#(1) absSign, Bit#(1) invSign,
+                 WordAddr ea, FpNum acc, Word64 accL,
+                 Word64 accS, Word64 accR0, Word64 factor0,
+                 Bool normalized, Bool noisy,
+                 Bool protViol, Word64 operand, Word64 ind0);
     Word64 ind = ind0;
+    FpCommit fpc = FpCommit { accLeft: tagged Invalid,
+                              accRight: tagged Invalid,
+                              accSign: tagged Invalid,
+                              factor: tagged Invalid,
+                              remainder: tagged Invalid,
+                              leftZerosCount: tagged Invalid,
+                              store: tagged Invalid };
     FpNum opnd0 = fpFromWord(operand);
     FpNum opnd = fpApplySignMods(opnd0, absSign, invSign);
     ind = setBit(ind, ind_TF, opnd0.flags[2]);
@@ -1647,8 +1663,8 @@ function ActionValue#(Word64) fpArithClass(StretchStorage st, Bit#(7) c,
           let {vn, g} = fpMakeExp(signExtend(fpExp(v)) + adj, f48, v.sign, v.flags);
           v = vn; gen = g;
         end
-        st.writeWord(addrAccLeft, fpAccLeft(v, accL));
-        st.writeWord(addrAccSignByte, fpSignByte(v, accS));
+        fpc.accLeft = tagged Valid fpAccLeft(v, accL);
+        fpc.accSign = tagged Valid fpSignByte(v, accS);
         ind = setBit(ind, ind_MOP, 0);
         ind = setResultIndicatorsFp(ind, v);
         ind = setRangeIndicators(ind, fpRangeBits(v, gen, !gen && v.ef == 1));
@@ -1700,7 +1716,7 @@ function ActionValue#(Word64) fpArithClass(StretchStorage st, Bit#(7) c,
           let {vn, g} = fpMakeExp(signExtend(fpExp(v)) + adj, f48, v.sign, v.flags);
           v = vn; gen = g;
         end
-        st.writeWord(addrFactor, fpToWord(v));
+        fpc.factor = tagged Valid fpToWord(v);
         ind = setBit(ind, ind_MOP, 0);
         ind = setResultIndicatorsFp(ind, v);
         // p.98 lists XPU alongside XPFP/XPH/XPL where LOAD's list
@@ -1745,10 +1761,10 @@ function ActionValue#(Word64) fpArithClass(StretchStorage st, Bit#(7) c,
           let {vn, g} = fpMakeExp(signExtend(fpExp(v)) + adj, w96[95:48], v.sign, v.flags);
           v = vn; gen = g; f96 = w96;
         end
-        Word64 accR = st.readAccRight();
-        st.writeWord(addrAccLeft, { v.ef, v.em, v.es, v.frac, f96[47:44] });
-        st.writeWord(addrAccRight, { f96[43:0], accR[19:0] });
-        st.writeWord(addrAccSignByte, fpSignByte(v, accS));
+        Word64 accR = accR0;
+        fpc.accLeft = tagged Valid ({ v.ef, v.em, v.es, v.frac, f96[47:44] });
+        fpc.accRight = tagged Valid ({ f96[43:0], accR[19:0] });
+        fpc.accSign = tagged Valid fpSignByte(v, accS);
         ind = setBit(ind, ind_MOP, 0);
         ind = setResultIndicatorsFp(ind, v);
         ind = setRangeIndicators(ind, fpRangeBits(v, gen, !gen && v.ef == 1));
@@ -1760,7 +1776,7 @@ function ActionValue#(Word64) fpArithClass(StretchStorage st, Bit#(7) c,
         // extended with 48 low-order zeros. Bits 108-127 are
         // outside the fraction and are carried through
         // untouched, exactly as for DL.
-        Word64 accR = st.readAccRight();
+        Word64 accR = accR0;
         FpDouble da = fpdFromAcc(accL, accR, accS);
         FpDouble db = fpdFromWord(operand);
         db.sign = opnd.sign;   // the sign modifiers, already applied
@@ -1774,8 +1790,8 @@ function ActionValue#(Word64) fpArithClass(StretchStorage st, Bit#(7) c,
         // put the real one back here, exactly as the +MG arm
         // does with acc.sign.
         if (c == fpop_D_PLUS_MG) r.res.sign = sbSign(accS);
-        st.writeWord(addrAccLeft, fpdAccLeft(r.res));
-        st.writeWord(addrAccRight, fpdAccRight(r.res, accR));
+        fpc.accLeft = tagged Valid fpdAccLeft(r.res);
+        fpc.accRight = tagged Valid fpdAccRight(r.res, accR);
         // ADD leaves sign byte bits 0-3 and 5-7 alone and replaces
         // only bit 4 with the sum's sign (p.86), and D+ is "similar
         // to ADD". Take the flag bits from accS and say so, rather
@@ -1788,7 +1804,7 @@ function ActionValue#(Word64) fpArithClass(StretchStorage st, Bit#(7) c,
         // demands 111 afterward. The TF/UF/VF INDICATORS are a
         // separate thing and do come from the addressed operand
         // (p.87, set above for every FP op with an operand).
-        st.writeWord(addrAccSignByte, sbWith(accS, r.res.sign, sbFlags(accS)));
+        fpc.accSign = tagged Valid sbWith(accS, r.res.sign, sbFlags(accS));
         ind = setBit(ind, ind_MOP, 0);
         // The result indicators only ever ask whether the result
         // fraction is zero and what its sign is, so they are fed
@@ -1833,14 +1849,14 @@ function ActionValue#(Word64) fpArithClass(StretchStorage st, Bit#(7) c,
         // the exponent must be forced BEFORE the range test,
         // not after; dropping the substitution halts XA4 at
         // 016676.40.
-        Word64 accR = st.readAccRight();
+        Word64 accR = accR0;
         FpDouble da = fpdFromAcc(accL, accR, accS);
         FpDouble db = fpdFromWord(operand);
         db.sign = opnd.sign;   // the sign modifiers, already applied
         db.ef = da.ef; db.em = da.em; db.es = da.es;
         FpdResult r = fpAddDouble(da, db, normalized, noisy, False);
-        st.writeWord(addrAccLeft, fpdAccLeft(r.res));
-        st.writeWord(addrAccRight, fpdAccRight(r.res, accR));
+        fpc.accLeft = tagged Valid fpdAccLeft(r.res);
+        fpc.accRight = tagged Valid fpdAccRight(r.res, accR);
         // Sign byte: bit 4 from the sum, flags from accS. NOTE
         // that for F+, unlike D+, sbFlags(accS) and r.res.flags
         // are provably the SAME thing: fpAddDouble's unflagged
@@ -1855,7 +1871,7 @@ function ActionValue#(Word64) fpArithClass(StretchStorage st, Bit#(7) c,
         // uniformity with D+, where the two DO differ (its
         // flagged path can return the storage operand whole) and
         // where F208C2 pins the choice.
-        st.writeWord(addrAccSignByte, sbWith(accS, r.res.sign, sbFlags(accS)));
+        fpc.accSign = tagged Valid sbWith(accS, r.res.sign, sbFlags(accS));
         ind = setBit(ind, ind_MOP, 0);
         FpNum vind = fpdHead(r.res);
         vind.frac = (r.res.frac == 0) ? 0 : 48'b1;
@@ -1887,7 +1903,7 @@ function ActionValue#(Word64) fpArithClass(StretchStorage st, Bit#(7) c,
         // sign byte after every +MG/+MGA/-MG/-MGA: bit 1 whenever
         // the accumulator was loaded with LN, whatever the sum.
         if (c == fpop_PLUS_MG) r.res.sign = acc.sign;
-        st.writeWord(addrAccLeft, fpAccLeft(r.res, accL));
+        fpc.accLeft = tagged Valid fpAccLeft(r.res, accL);
         // Sign byte bits 5-7 are the accumulator's own, for the
         // same reason as D+ below: p.86 is ADD's own page and says
         // bits 0-3 and 5-7 "remain unchanged", but fpAdd's FLAGGED
@@ -1898,7 +1914,7 @@ function ActionValue#(Word64) fpArithClass(StretchStorage st, Bit#(7) c,
         // plain ADD -- F203 ends at F203B, the exponent-range
         // indicator test, and F204 begins straight after. F205C
         // checks +MG's sign byte bits 0-3 only, not 5-7.
-        st.writeWord(addrAccSignByte, sbWith(accS, r.res.sign, sbFlags(accS)));
+        fpc.accSign = tagged Valid sbWith(accS, r.res.sign, sbFlags(accS));
         ind = setBit(ind, ind_MOP, 0);
         ind = setResultIndicatorsFp(ind, r.res);
         if (r.lc) ind = setBit(ind, ind_LC, 1);
@@ -1938,8 +1954,8 @@ function ActionValue#(Word64) fpArithClass(StretchStorage st, Bit#(7) c,
         // stored is still the negative one. Storing the sum's sign
         // halted at B19's BB.
         if (c == fpop_M_PLUS_MG) v.sign = opnd0.sign;
-        if (protViolates(st, ea)) ind = setBit(ind, ind_DS, 1);
-        else st.writeWord(ea, fpToWord(v));
+        if (protViol) ind = setBit(ind, ind_DS, 1);
+        else fpc.store = tagged Valid tuple2(ea, fpToWord(v));
         ind = setBit(ind, ind_MOP, 1);
         ind = setResultIndicatorsFp(ind, v);
         if (r.lc) ind = setBit(ind, ind_LC, 1);
@@ -1973,8 +1989,8 @@ function ActionValue#(Word64) fpArithClass(StretchStorage st, Bit#(7) c,
       end
       fpop_STAR: begin // *
         FpResult r = fpMul(acc, opnd, normalized, noisy);
-        st.writeWord(addrAccLeft, fpAccLeft(r.res, accL));
-        st.writeWord(addrAccSignByte, fpSignByte(r.res, accS));
+        fpc.accLeft = tagged Valid fpAccLeft(r.res, accL);
+        fpc.accSign = tagged Valid fpSignByte(r.res, accS);
         ind = setBit(ind, ind_MOP, 0);
         ind = setResultIndicatorsFp(ind, r.res);
         ind = setRangeIndicators(ind, fpRangeBits(r.res, r.generated, r.propagated));
@@ -2005,8 +2021,8 @@ function ActionValue#(Word64) fpArithClass(StretchStorage st, Bit#(7) c,
           // the case of a zero divisor".
           ind = setBit(ind, ind_ZD, 1);
         end else begin
-          st.writeWord(addrAccLeft, fpAccLeft(r.res, accL));
-          st.writeWord(addrAccSignByte, fpSignByte(r.res, accS));
+          fpc.accLeft = tagged Valid fpAccLeft(r.res, accL);
+          fpc.accSign = tagged Valid fpSignByte(r.res, accS);
           // LZC is IBM bits 17-23 of word 7 and shares that word
           // with the all-ones count at 44-50, which has to
           // survive; IBM bit n is model bit 63-n, so 17-23 is
@@ -2015,7 +2031,7 @@ function ActionValue#(Word64) fpArithClass(StretchStorage st, Bit#(7) c,
           // multiplication, LOAD TRANSIT, division or connective
           // operations".  NOTHING IN F217 READS IT, nor PF which
           // is derived from it -- both are manual-only here.
-          st.setLeftZerosCount(r.lzc);
+          fpc.leftZerosCount = tagged Valid r.lzc;
           ind = setResultIndicatorsFp(ind, r.res);
           ind = setRangeIndicators(ind, fpRangeBits(r.res, r.generated, r.propagated));
           if (r.pf) ind = setBit(ind, ind_PF, 1);
@@ -2045,14 +2061,14 @@ function ActionValue#(Word64) fpArithClass(StretchStorage st, Bit#(7) c,
           // remains in the accumulator".
           ind = setBit(ind, ind_ZD, 1);
         end else begin
-          st.writeWord(addrAccLeft, fpAccLeft(r.res, accL));
+          fpc.accLeft = tagged Valid fpAccLeft(r.res, accL);
           // Spelled out rather than fpSignByte'd, because for R/
           // the result's flag bits come from the DIVIDEND, which
           // is the storage operand -- the accumulator's own flags
           // are what must survive, as everywhere else.  For / the
           // two happen to coincide.
-          st.writeWord(addrAccSignByte, sbWith(accS, r.res.sign, sbFlags(accS)));
-          st.setLeftZerosCount(r.lzc);
+          fpc.accSign = tagged Valid sbWith(accS, r.res.sign, sbFlags(accS));
+          fpc.leftZerosCount = tagged Valid r.lzc;
           ind = setResultIndicatorsFp(ind, r.res);
           ind = setRangeIndicators(ind, fpRangeBits(r.res, r.generated, r.propagated));
           if (r.pf) ind = setBit(ind, ind_PF, 1);
@@ -2075,7 +2091,7 @@ function ActionValue#(Word64) fpArithClass(StretchStorage st, Bit#(7) c,
         // through IBM 107 and keeps 108-127.  That 49th bit is
         // what makes the field 0-60 rather than DIVIDE's 0-59,
         // and jb_af1c F217WA checks it in every sub-test.
-        Word64 accR = st.readAccRight();
+        Word64 accR = accR0;
         FpDouble da = fpdFromAcc(accL, accR, accS);
         FpDivDblResult r = fpDivDouble(da, opnd, normalized, noisy);
         ind = setBit(ind, ind_MOP, 0);
@@ -2084,15 +2100,15 @@ function ActionValue#(Word64) fpArithClass(StretchStorage st, Bit#(7) c,
           // range indicators are left alone.
           ind = setBit(ind, ind_ZD, 1);
         end else begin
-          st.writeWord(addrAccLeft,
-                       { r.res.ef, r.res.em, r.res.es, r.res.frac, r.q49, 3'b0 });
-          st.writeWord(addrAccRight, { 44'b0, accR[19:0] });
-          st.writeWord(addrAccSignByte, fpSignByte(r.res, accS));
+          fpc.accLeft = tagged Valid
+                       ({ r.res.ef, r.res.em, r.res.es, r.res.frac, r.q49, 3'b0 });
+          fpc.accRight = tagged Valid ({ 44'b0, accR[19:0] });
+          fpc.accSign = tagged Valid fpSignByte(r.res, accS);
           // RM: exponent and fraction in bits 0-59, the ORIGINAL
           // accumulator sign in bit 60, flags 61-63 zero.
-          st.writeWord(addrRemainder,
-                       { r.rem.ef, r.rem.em, r.rem.es, r.rem.frac, r.rem.sign, 3'b0 });
-          st.setLeftZerosCount(r.lzc);
+          fpc.remainder = tagged Valid
+                       ({ r.rem.ef, r.rem.em, r.rem.es, r.rem.frac, r.rem.sign, 3'b0 });
+          fpc.leftZerosCount = tagged Valid r.lzc;
           FpNum vind = r.res;
           vind.frac = (r.res.frac == 0 && r.q49 == 0) ? 0 : 48'b1;
           ind = setResultIndicatorsFp(ind, vind);
@@ -2127,11 +2143,11 @@ function ActionValue#(Word64) fpArithClass(StretchStorage st, Bit#(7) c,
         // XB's accumulator low half is NOT zero but XB inspects
         // only IBM 108-127 and the sign byte. Manual-only until a
         // later block loads the low half with DL and multiplies.
-        Word64 accR = st.readAccRight();
+        Word64 accR = accR0;
         FpdResult r = fpMulDouble(acc, opnd, normalized, noisy);
-        st.writeWord(addrAccLeft, fpdAccLeft(r.res));
-        st.writeWord(addrAccRight, fpdAccRight(r.res, accR));
-        st.writeWord(addrAccSignByte, sbWith(accS, r.res.sign, r.res.flags));
+        fpc.accLeft = tagged Valid fpdAccLeft(r.res);
+        fpc.accRight = tagged Valid fpdAccRight(r.res, accR);
+        fpc.accSign = tagged Valid sbWith(accS, r.res.sign, r.res.flags);
         ind = setBit(ind, ind_MOP, 0);
         // The indicators want a 48-bit stand-in; only "is the
         // fraction zero" matters and that is a 96-bit question.
@@ -2174,9 +2190,9 @@ function ActionValue#(Word64) fpArithClass(StretchStorage st, Bit#(7) c,
         // share a flagged range, whatever their magnitudes --
         // which is why the rule cannot be expressed by ordering
         // the arguments to a comparison.
-        Word64 accR = st.readAccRight();
+        Word64 accR = accR0;
         FpDouble da = fpdFromAcc(accL, accR, accS);
-        FpNum ftv = fpFromWord(st.readFactor());
+        FpNum ftv = fpFromWord(factor0);
         // Normalization and noisy mode belong to the ADDITION
         // only: p.99, "the intermediate product fraction remains
         // unnormalized throughout the addition", and noisy's
@@ -2184,14 +2200,14 @@ function ActionValue#(Word64) fpArithClass(StretchStorage st, Bit#(7) c,
         // with normalization" of the sum.
         FpdResult m = fpMulDouble(opnd, ftv, False, False);
         FpdResult r = fpAddDouble(da, m.res, normalized, noisy, False);
-        st.writeWord(addrAccLeft, fpdAccLeft(r.res));
-        st.writeWord(addrAccRight, fpdAccRight(r.res, accR));
+        fpc.accLeft = tagged Valid fpdAccLeft(r.res);
+        fpc.accRight = tagged Valid fpdAccRight(r.res, accR);
         // The sign byte takes the sum's sign and the ACCUMULATOR's
         // flag bits, as ADD DOUBLE does -- so r.res.flags never
         // reaches storage and m.res.flags (which fpMulDouble takes
         // from its first argument, here the storage operand) is
         // inert.  Said explicitly because it looks like it matters.
-        st.writeWord(addrAccSignByte, sbWith(accS, r.res.sign, sbFlags(accS)));
+        fpc.accSign = tagged Valid sbWith(accS, r.res.sign, sbFlags(accS));
         ind = setBit(ind, ind_MOP, 0);
         FpNum vind = fpdHead(r.res);
         vind.frac = (r.res.frac == 0) ? 0 : 48'b1;
@@ -2241,7 +2257,7 @@ function ActionValue#(Word64) fpArithClass(StretchStorage st, Bit#(7) c,
         // from +1073 to FK57's +1061.  A13 checks it again
         // independently with a shift of 10.  This arm used to
         // normalize {frac, 48'b0} and never wrote addrAccRight.
-        Word64 accR = st.readAccRight();
+        Word64 accR = accR0;
         FpDouble da = fpdFromAcc(accL, accR, accS);
         FpDouble v = da; Bool gen = False; Bool prop = False;
         if (da.ef == 1 || opnd0.ef == 1) begin
@@ -2293,9 +2309,9 @@ function ActionValue#(Word64) fpArithClass(StretchStorage st, Bit#(7) c,
             gen = gen || g2;
           end
         end
-        st.writeWord(addrAccLeft, fpdAccLeft(v));
-        st.writeWord(addrAccRight, fpdAccRight(v, accR));
-        st.writeWord(addrAccSignByte, sbWith(accS, v.sign, sbFlags(accS)));
+        fpc.accLeft = tagged Valid fpdAccLeft(v);
+        fpc.accRight = tagged Valid fpdAccRight(v, accR);
+        fpc.accSign = tagged Valid sbWith(accS, v.sign, sbFlags(accS));
         ind = setBit(ind, ind_MOP, 0);
         FpNum vind = fpdHead(v);
         vind.frac = (v.frac == 0) ? 0 : 48'b1;
@@ -2305,8 +2321,7 @@ function ActionValue#(Word64) fpArithClass(StretchStorage st, Bit#(7) c,
       end
       default: ind = setOpInvalid(ind);
     endcase
-    return ind;
-  endactionvalue
+    return tuple2(ind, fpc);
 endfunction
 
 // What a completed instruction hands back to the instruction unit.
@@ -6214,8 +6229,15 @@ function ActionValue#(ExecDispatch)
         end else if (prefetchCount < 1)
           needsRead = tagged Valid ea;
         else begin
-          ind <- fpArithClass(st, c, fp.absSign, fp.invSign, ea, acc, accL, accS,
-                              normalized, noisy, prefetch[0], ind);
+          // One commit point, as for fpStoreClass above.
+          let {indAr, fpcA} = fpArithClass(c, fp.absSign, fp.invSign, ea, acc,
+                                           accL, accS, st.readAccRight(),
+                                           st.readFactor(),
+                                           normalized, noisy,
+                                           protViolates(st, ea),
+                                           prefetch[0], ind);
+          ind = indAr;
+          commitFp(st, fpcA);
         end
         end  // AD guard
       end

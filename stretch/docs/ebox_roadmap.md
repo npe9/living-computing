@@ -108,7 +108,7 @@ Every number below is a grep over `bsv/*.bsv`, not a recollection.
 | Step | State | Evidence |
 |---|---|---|
 | 1 `prepareExec`, no exec-as-query | **DONE** | `PreparedExec` + `prepareExec` in `StretchIBox.bsv` (8 hits); `EBox.exec` deleted |
-| 2 typed `ExecRequest`/`ExecCompletion`, commit records | **FIRST FAMILY LANDED** (2026-10-29) | `FpCommit` + `commitFp`; `fpStoreClass` is a PURE function with zero `st` references.  Its ten writes became four at one commit point, so the file's direct-write count is **88 -> 82**.  The remaining 78 inside arithmetic are the work |
+| 2 typed `ExecRequest`/`ExecCompletion`, commit records | **WHOLE FP FAMILY LANDED** (2026-10-29) | `FpCommit` (7 fields) + `commitFp`.  **Both** `fpStoreClass` and `fpArithClass` are PURE functions with zero `st` references.  Direct-write count **88 -> 50**, of which six are `commitFp`'s, so **44** remain inside execution -- half the debt gone |
 | 3 one iterative op as a request/response box | **DONE** | `mkFpDivBox`, `bsv/StretchDivBox.bsv`, 336 lines |
 | 4 generalise to `mkPAU`/`mkSAU` | **NOT STARTED** | `mkPAU` 0 hits, `mkSAU` 0 hits.  Divide is one box; multiply is the second (see fig 3.8.11 below) |
 | 5 `ebusy` -> real response readiness | **NOT STARTED** | `ebusy` 17 hits; `StretchCore.bsv:427` still gates `headReady` on `ebusy == 0` |
@@ -118,12 +118,27 @@ Every number below is a grep over `bsv/*.bsv`, not a recollection.
 
 ### The one number that says "interpreter" best
 
-**78, and it was 88.**  That is how many times execution reaches out
+**44, and it was 88.**  That is how many times execution reaches out
 and mutates architectural state in the middle of computing a result.
-`fpStoreClass`'s ten are gone -- it hands back an `FpCommit` the caller
-applies -- and the four writes in `commitFp` are a commit point rather
+The whole floating-point family is gone: `fpStoreClass`'s ten and
+`fpArithClass`'s thirty-four now travel back as an `FpCommit` that one
+caller applies, and `commitFp`'s six writes are a commit point rather
 than arithmetic mutating state mid-calculation.  Every remaining
-number in this document that says 88 or 89 predates that.  Step 2 is
+number in this document that says 88, 89 or 78 predates that.
+
+**The bet the first increment made is paid.**  It declared four fields
+and deliberately refused the other three, on the rule that a field
+nothing sets is a field no injection can catch.  `fpArithClass` then
+needed EXACTLY those three -- `factor`, `remainder`,
+`leftZerosCount` -- and nothing else.  The layout a live call site
+taught was right, which is the evidence the family-at-a-time method
+was asking for.
+
+**Next: `vflIntOp` (11) and `execute` itself (15).**  Those two are 26
+of the 44, and unlike floating point they are not one effect kind --
+`execute` writes words, index registers and indicators.  So the next
+record is not `FpCommit` with more fields; it is where the general
+`ExecCompletion` shape actually has to be decided.  Step 2 is
 not a naming exercise; it is the step that makes a box testable
 without storage, makes suppression on alarm or protection violation a
 single decision, and makes branch recovery something other than

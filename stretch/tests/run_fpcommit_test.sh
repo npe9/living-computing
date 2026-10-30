@@ -1,6 +1,6 @@
 #!/bin/sh
 # Build and run mkFpCommitTb (bsv/StretchFpCommitTest.bsv): fpStoreClass
-# exercised with NO STORAGE INSTANTIATED.
+# AND fpArithClass exercised with NO STORAGE INSTANTIATED.
 #
 # A SEPARATE SCRIPT for the same reason run_divbox_test.sh is one -- this
 # testbench has no deck and cannot go through run_program.sh.  The point
