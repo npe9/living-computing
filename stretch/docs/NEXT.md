@@ -15114,3 +15114,47 @@ parameter.
 That is the next piece of work, and it is a change to the fixture
 machinery rather than a measurement, so it is left to start from a
 clean footing rather than tacked onto a long session.
+
+## THE NEW FRONTIER IS T MOVE, AND IT IS ABOUT PRINTED p.85 -- 2026-10-30
+
+With ASSIGN succeeding, the boot runs on to `T MOVE` and then falls into
+storage no transcribed page fills. That is progress, not a failure: the
+run previously stopped five pages earlier, inside ASSIGN's reject.
+
+`T MOVE` is declared on printed p.27 as an EXTERNAL --
+`TMOVE SYN, (8)5014.0` -- so its code is elsewhere, and it is past the
+last page transcribed:
+
+```
+p75  (8)4361 = word 2289
+p76  (8)4423 = word 2323   (+34)
+p77  (8)4461 = word 2353   (+30)
+p78  (8)4511 = word 2377   (+24)
+p79  (8)4555 = word 2413   (+36)
+p80  (8)4604 = word 2436   (+23)
+
+T MOVE  (8)5014 = word 2572   -- 136 words past p.80's start
+```
+
+Five page deltas, mean 29.4 words per page, so **T MOVE is about 4.6
+pages past p.80: printed p.85, give or take one.** That is an ESTIMATE
+from a page-length average, not a reading of the page -- pp.81-97 are
+among the gaps `docs/mcp_io_tables.md` lists, and nothing here has
+opened them.
+
+### What to do with it
+
+The arithmetic says pp.81-84 lie between p.80 and `T MOVE`, so the next
+MCP work is the same kind the project has been doing all along:
+transcribe printed p.81 onward, each page checked against its own binary
+column, until `T MOVE`'s page lands and the run can continue through it.
+The estimate above is worth keeping because it is falsifiable -- if
+`T MOVE` turns up on p.84 or p.86, the page-length average was off and
+that is worth knowing for the next estimate.
+
+> **AND THE PREVIOUS ENDING IS NOT LOST.** The default fixture still
+> runs ASSIGN into its rejection and halts in `X6ERR`, with the twelve
+> console checks intact, so "MCP reports an unsatisfiable I/O
+> requirement" remains tested while the corrected machine goes forward.
+> That was the whole point of keeping two fixtures rather than fixing
+> one.
