@@ -1664,3 +1664,55 @@ two-page COMPOOL transcription, because every other listing in
 `docs/diag/` depends on it. **The single highest-risk assumption** is
 that DCP needs no disk; nothing has checked, and it should be checked
 before M4 starts, the same way `$IPLD` should be read before M3.
+
+### Where MOVE ends, and what printed p.99 actually is, 2026-10-30
+
+MOVE is transcribed through printed p.96 and `MCP_IPL_PAGES` reaches
+it. pp.97 and 98 are in flight. **The range must not be widened past
+p.98 without reading this section.**
+
+**Printed p.99 is NOT a new assembly**, although it looks like one at
+a glance and was first reported that way. It reprints the whole title
+block (`IBM 7030 MASTER CONTROL PROGRAM / DEPT. 271, BLDG. 705 /
+POUGHKEEPSIE,N.Y. / MARCH 15, 1963`), its `PUNID` changes from
+`11011MCP` to `11011IPL`, and its card IDs restart at `AA000001`.
+All three of those say a new SOURCE DECK was concatenated. None of
+them says a new assembly, and the LOCATION column settles it:
+
+```
+  9* 005466.00            (CC*)DD(BU,,12),B   HED, REP, 11D11MCP, LOAD,,
+ 10* 005476.34            (CC*)DD(BU,,12),              11D11MCP*
+ 11* 215000.00            SLC,(8)215000. -    80K
+ 12*                      PUNORG
+ 13*                      PUNID,11D11MCP
+ 14*                      RESEQ
+```
+
+Line 9 is at 005466.00, which is exactly where printed p.98 leaves
+the counter: **the location counter runs straight through the title
+block.** It is one assembly. What line 11 does is an ordinary `SLC`,
+moving the origin to 0o215000 -- the card's own comment reads "80K"
+-- after a header/trailer `DD` pair closes the preceding region.
+
+So the real question for the range is not "is this a different
+program" but **"does prosa.py's word accounting tolerate a deck whose
+origin jumps to 0o215000"**, which is a different question and is
+unanswered. Check it before registering p.99, not after.
+
+**Printed p.100 compiles nothing** and belongs in `NO_DECK_PAGES`
+whenever the range reaches it, for the same reason as pp.47, 59, 60,
+81 and 82. All sixteen of its lines are comment cards: a boxed
+`MCP IOD CARDS` heading and twelve commented-out `SYN` cards naming
+the IOD reference numbers 1.0-12.0 (`PROSA`, `VRTP`, `VCRD`, `VWTP`,
+`JCIOD`, `PCDEF2`, `OT11`, `OT21` and four unused/reserved slots).
+Both its LOCATION and BINARY columns are empty on every row, so there
+is nothing for `verify_mcp_page.py` to check and a registered line
+would be a permanent red.
+
+Three independent tells identify a comment card, worth reusing:
+a one-character flag column between BINARY OUTPUT and NAME prints a
+`-`; both printed columns are empty; and **the card image is printed
+raw from column 2 on, so nothing aligns** -- p.100's twelve comments
+land at twelve different x positions, where a card that assembles is
+printed field by field and lines up. The ragged column is the
+decisive one.
