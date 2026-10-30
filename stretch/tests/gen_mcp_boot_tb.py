@@ -700,14 +700,49 @@ def main():
         ("mcp_conf_table_word1", "1963", 0x0104000005010006),
         ("mcp_conf_table_word2", "1964", 0x0000070000080202),
 
-        # T IOREQ, words 1787-1789, is STILL ALL ZERO AND THAT IS
-        # CORRECT -- it is the problem-program request table that
-        # MCP-DECODE builds for a JOB (printed pp.52-56), and no job is
-        # loaded.  It was conflated with the conf counts above earlier
-        # in this work; asserting zero here keeps the two apart.
-        ("mcp_t_ioreq_empty_no_job", "1787", 0),
-        ("mcp_t_ioreq_empty_no_job1", "1788", 0),
-        ("mcp_t_ioreq_empty_no_job2", "1789", 0),
+        # T IOREQ, words 1787-1789, is ALL ZERO.  Keeping it apart from
+        # the conf counts above is the point -- the two were conflated
+        # earlier in this work -- but the REASON these were first
+        # committed with has been measured and is WRONG, so it is
+        # withdrawn here rather than left to mislead.
+        #
+        # THE NAME USED TO BE mcp_t_ioreq_empty_no_job AND THE COMMENT
+        # SAID "no job is loaded, so there is no I/O request to queue".
+        # Measured 2026-10-30, that explanation does not survive:
+        #
+        #   * The requests at IPL do not come from a job.  printed p.25
+        #     line 41 is `VF, 4.0  -EXPECT IOD AND REEL CARDS` and p.26
+        #     line 5 is `LV, $14, $4  -GET BASE OF AREA CONTAINING IOD
+        #     AND REEL CARDS BROKEN OUT`: initialization UNCODEs the
+        #     installation's own cards into 14-word tables and LDECODs
+        #     each one.  C22-6678-1 printed p.96 says so outright --
+        #     "The IOD cards define the I-O requirements of MCP and
+        #     perform the same function for MCP as they do for the
+        #     problem program."
+        #   * The cards ARE punched.  strap/prosa.py's MCP_IODS is a
+        #     reader and two output tapes, which is C22-6728-1 printed
+        #     p.98's minimal IPL case, and the conf table above counts
+        #     them correctly (READER conf 1, TAPE conf 2).
+        #   * AND THE CHAIN RUNS.  A probe of the boot measured first
+        #     samples at YUNCOD step 6,019,410; p.26's loop 6,117,328;
+        #     LDECOD 6,117,411 (83 steps later, which is that loop's
+        #     own `B, LDECOD`); p.27 'TO ASSIGN' 6,123,233; ASSIGN's
+        #     entry 6,123,287.  docs/mcp_io_tables.md's "the table is
+        #     empty because MCP-DECODE never ran" was true when it was
+        #     written, on the pre-SYN-fix image, and is not true now.
+        #
+        # So what is pinned here is the OBSERVATION and not a story
+        # about it: the table is empty, measured zero across words
+        # 1787-1800 (fourteen words, not the three asserted), while
+        # T PREFT at word 1743 still reads 0x01bec00009000000 --
+        # byte-identical to its static value, so nothing wrote it.
+        # MCP-DECODE is entered and builds no entry.  WHY is open, and
+        # the next measurement is named in docs/NEXT.md: the write
+        # sites on printed pp.53-56 (p.53 L27 `SV, LXIO, 0.0(LXPP)`,
+        # p.54 L16 `ST(BU,4), TTYPE`) say how far into DECODE it gets.
+        ("mcp_t_ioreq_0", "1787", 0),
+        ("mcp_t_ioreq_1", "1788", 0),
+        ("mcp_t_ioreq_2", "1789", 0),
 
         ("mcp_console_channel_in_comm_region",
          str(ipl_hw("SYCOCH") // 2),

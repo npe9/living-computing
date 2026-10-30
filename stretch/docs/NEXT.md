@@ -14697,3 +14697,86 @@ reach a successful assignment at IPL at all, or whether rejecting with
 no job queued and halting in `X6ERR` is the designed behaviour. p.27
 line 13's `BZXCZ,XERROR` is taken and the halt is deliberate, which is
 consistent with either reading.
+
+## MCP-DECODE DOES RUN AT IPL, AND IT BUILDS NOTHING -- 2026-10-30
+
+This supersedes `docs/mcp_io_tables.md`'s "SO THE TABLE IS EMPTY
+BECAUSE MCP-DECODE NEVER RAN". That was true when it was written, on
+the pre-SYN-fix image. It is not true now.
+
+### The chain is printed, and all of it executes
+
+```
+p.25 L34   LV, $7, $4                      -CONTAINING IOD AND REEL CARDS
+p.25 L41   VF, 4.0                         -EXPECT IOD AND REEL CARDS
+p.25 L50   V+I, $7, 15.0                   (card stride: fifteen words)
+p.26 L5    LV, $14, $4                     -GET BASE OF AREA CONTAINING IOD
+                                            AND REEL CARDS BROKEN OUT
+p.26 L13   X232A  B, LDECOD                -TO DECODE ROUTINE
+p.27 X24   LVI,$15,X242 / B,TASIGN         -TO ASSIGN
+```
+
+Probed on the boot (temporary gitignored testbench, since removed):
+
+| site | half-word | first sample |
+|---|---|---|
+| `YUNCOD` p.25 UNCODE | 2284 | step 6,019,410 |
+| `X23` p.26's card-table loop | 1608 | step 6,117,328 |
+| `LDECOD` p.26 -> pp.52-56 | 3006 | step 6,117,411 |
+| `X24` p.27 'TO ASSIGN' | 1640 | step 6,123,233 |
+| `TASIGN` p.65 ASSIGN entry | 3970 | step 6,123,287 |
+
+LDECOD's first sample is **83 steps after** p.26's loop, which is that
+loop's own `B, LDECOD`. UNCODE ran 98,000 steps earlier. So the
+installation's cards are uncoded, decoded, and then assigned -- and the
+reject at p.71 line 47 happens downstream of a chain that completed.
+
+> **AND THE REQUESTS AT IPL DO NOT COME FROM A JOB.** That was the
+> premise under the superseded conclusion, and `C22-6678-1` printed
+> p.96 contradicts it outright: "The IOD cards define the I-O
+> requirements of MCP and perform the same function for MCP as they do
+> for the problem program." pp.52-56 are reached at IPL by p.26, not
+> only by the job loader.
+
+### What is built: nothing
+
+```
+T PREFT   word 1743        0x01bec00009000000   (static value, unwritten)
+T IOREQ   words 1787-1800  all zero             (fourteen words)
+```
+
+`T PREFT` is **byte-identical to its assembled value**, so the 2026-10-27
+correction ("T PREFT was never touched") still stands and the SYN fix did
+not change it. The table is empty across fourteen words, not merely the
+three that `gen_mcp_boot_tb.py` asserts.
+
+So MCP-DECODE is entered and writes no entry. The three checks on words
+1787-1789 have been renamed from `mcp_t_ioreq_empty_no_job` to
+`mcp_t_ioreq_N` and their stated reason withdrawn, because "no job is
+loaded" is now measured to be the wrong explanation.
+
+### The next measurement, named
+
+How far into DECODE does it get? The write sites are transcribed and
+`docs/mcp_io_tables.md` already lists the chain step by step:
+
+* p.53 L27  `SV, LXIO, 0.0(LXPP)` -- the slot's address into the PP table
+* p.53 L38  `L, LIREF(LIODX), 0.0` -- reads the 12-bit reference number
+* p.54 L16  `ST(BU,4), TTYPE`
+* p.54 L19  `ST(BU,9), TIODSQ`
+* p.55 L5   `ST(BU,4), TTYPE`
+* p.56 L24  `ST(BU,18), TFREEL(LWORKX)`
+
+A visit probe on those six says whether DECODE exits before the first
+store, and if so, which test turned it away. **The 12-bit reference
+number is the card-to-table link** (p.40 L21 writes bit 52; p.48 L5
+declares `LIREF SYN(BU,12), 0.52` at the same width and offset), and
+`MCP_IODS` punches ref numbers 1, 2 and 3 -- so whether p.53 L38 reads
+those three values is the sharpest single question available.
+
+> **AND READ THE SAMPLE COUNTS AS RESIDENCE TIMES.** `X23` shows 2
+> samples and `LDECOD` 63; neither is an execution count. The loop
+> re-enters at `X232` (p.26 L10), not at `X23`, so `X23`'s 2 samples do
+> not bound the number of cards processed, and a `SWAPI, 8` occupying
+> the machine for many clocks accounts for LDECOD's 63 without implying
+> repetition.
