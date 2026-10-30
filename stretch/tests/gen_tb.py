@@ -24,7 +24,7 @@ def generate(module_name, prog, checks, step_cap=30000, reader_image=None,
              pc_check=None, cycle_bound=None, cycle_window=None,
              ipl=False, pc_trail=False,
              pc_trail_check=None, op_trail=False,
-             max_steps_check=None):
+             max_steps_check=None, stop_at_pc=None):
     """checks: list of (label:str, word_addr_expr:str, expected:int).
 
     reader_image: optional list of ints -- words to pre-load into the
@@ -85,6 +85,24 @@ def generate(module_name, prog, checks, step_cap=30000, reader_image=None,
     lines.append("  StretchCore core <- mkStretchCore;")
     lines.append("  Reg#(Bit#(32)) phase <- mkReg(0);")
     lines.append("  Reg#(Bit#(32)) stepCount <- mkReg(0);")
+    if stop_at_pc is not None:
+        # >>> STOP ON A PROGRAM CONDITION, NOT ON A STEP NUMBER. <<<
+        #
+        # Some state is zero by design at the end of a run and only
+        # exists in the middle of it.  MCP's I/O request table is the
+        # case this was built for: MCP-DECODE fills it, ASSIGN fails,
+        # and ASSIGN's reject path CLEARS it (docs/boot_plan.md:
+        # "clearing the reel slot, the assigned bits and the mount
+        # bits"), so every end-of-run check reads zero however well
+        # DECODE performed.
+        #
+        # A low step_cap can stop the run there, and that is how the
+        # finding was first made -- but a step number is BRITTLE: the
+        # window between the stores and ASSIGN's entry is about four
+        # thousand steps wide and a newly transcribed page moves it.
+        # An ADDRESS does not move: it is the program's own structure.
+        lines.append("  Reg#(Bool) stoppedAtPc <- mkReg(False);")
+
     if pc_trail:
         # WHERE DID IT GO?  A halt reports the PC it stopped at, and
         # that is enough while the program stops somewhere it meant
@@ -224,7 +242,10 @@ def generate(module_name, prog, checks, step_cap=30000, reader_image=None,
     lines.append("")
 
     run_phase += 1
-    lines.append(f"  rule run (phase == {run_phase} && !core.halted() && stepCount < {step_cap});")
+    stop_guard = " && !stoppedAtPc" if stop_at_pc is not None else ""
+    lines.append(f"  rule run (phase == {run_phase} && !core.halted() && stepCount < {step_cap}{stop_guard});")
+    if stop_at_pc is not None:
+        lines.append(f"    if (core.getPC() == {stop_at_pc}) stoppedAtPc <= True;")
     if pc_trail:
         lines.append("    pcTrail0 <= core.getPC();")
         lines.append("    if (core.getPC() != 0) lastNonZeroPc <= core.getPC();")
@@ -259,8 +280,17 @@ def generate(module_name, prog, checks, step_cap=30000, reader_image=None,
     lines.append("    stepCount <= stepCount + 1;")
     lines.append("  endrule")
     lines.append("")
-    lines.append(f"  rule afterRun (phase == {run_phase} && (core.halted() || stepCount == {step_cap}));")
-    lines.append(f"    if (!core.halted()) begin")
+    stop_or = " || stoppedAtPc" if stop_at_pc is not None else ""
+    lines.append(f"  rule afterRun (phase == {run_phase} && (core.halted() || stepCount == {step_cap}{stop_or}));")
+    if stop_at_pc is not None:
+        # A DELIBERATE STOP IS NOT A FAILURE, but it must announce
+        # itself: every check below reads MID-EXECUTION state, and a
+        # reader who does not know that will misread all of them.
+        lines.append("    if (stoppedAtPc)")
+        lines.append(f'      $display("STOPPED DELIBERATELY at half-word {stop_at_pc} after %0d steps -- the checks below read MID-EXECUTION state", stepCount);')
+        lines.append("    else if (!core.halted()) begin")
+    else:
+        lines.append(f"    if (!core.halted()) begin")
     lines.append(f"      $display(\"FAIL: step cap ({step_cap}) reached without halting -- checks below run against mid-execution state\");")
     lines.append(f"      fails <= fails + 1;")
     lines.append(f"    end")

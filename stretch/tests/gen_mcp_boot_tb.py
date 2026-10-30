@@ -128,6 +128,70 @@ def main():
 
     prog, src, defined, external = build()
 
+    # ---------------------------------------------------------------
+    # >>> THE SECOND TESTBENCH: WHAT MCP-DECODE BUILT, READ BEFORE
+    # ASSIGN THROWS IT AWAY. <<<
+    # ---------------------------------------------------------------
+    # The boot's end-of-run state cannot witness this.  MCP-DECODE
+    # fills the I/O request table from the punched IOD cards, ASSIGN
+    # then fails, and ASSIGN's reject path CLEARS the table -- so every
+    # word of it reads zero at the end however well DECODE performed.
+    # Measured 2026-10-30: TUIORQ's first word is 0x0600001000000000
+    # mid-run and 0 at the end.
+    #
+    # So this variant runs until ASSIGN IS ENTERED and reads the table
+    # there.  The stop is an ADDRESS, not a step number, because the
+    # window between the stores and ASSIGN is only about four thousand
+    # steps wide and a newly transcribed page moves it.
+    #
+    # WHY THE NOT-OVERLAP TABLE.  This fixture boots unoverlapped --
+    # X242's flag bit is set (the ",4" at IBM 25), p.57 line 17 is
+    # "LVI,LIODX,TUIORQ  -IF NOT OVERLAP MODE", and C22-6728-1 printed
+    # p.98's minimal IPL case is "normal IPL, unoverlapped".  $5 was
+    # measured holding TUIORQ (word 1868) at every DECODE site, not
+    # T IOREQ (word 1787).  Checking 1787 -- which this file did until
+    # today -- reads the OVERLAP table, which is correctly zero in a
+    # not-overlap boot and could not fail for any reason worth knowing.
+    if module_name.endswith("DecodeTb"):
+        # The entry's layout is printed: MCP p.62 lines 30, 33 and 37
+        # give TASGNI SYN(BU,1),0.00 / TTYPE SYN(BU,4),0.03 /
+        # TIODSQ SYN(BU,9),0.19.  IBM bit n is bit 63-n, and a field's
+        # value sits at its LOW end, so a field whose last bit is n
+        # shifts by 63-n.  Written out rather than as a magic constant,
+        # so the check says WHY it expects what it expects.
+        def ioreq(ttype, iodsq):
+            return (ttype << (63 - 6)) | (iodsq << (63 - 27))
+
+        # strap/prosa.py's MCP_IODS[0] is MCPRDR, iod_type="READER",
+        # ref_number=1.  READER is type 3 in MCP's own configuration
+        # table (the conf-table checks above measure row 3 for it), so
+        # the first request-table entry must read type 3, sequence 1,
+        # and TASGNI still clear because ASSIGN has not run yet.
+        # LITERALS, BECAUSE THE MERGED IMAGE'S SYMTAB DOES NOT CARRY
+        # THESE, and every other check in this file is a literal word
+        # number for the same reason.  Both are derived, not guessed:
+        #
+        #   TUIORQ = word 1868.  Assemble decks/mcp_bootstrap_p62.strap
+        #   alone and its symtab gives bit 119552; 119552/64 = 1868.
+        #   Independently, $5 was measured holding exactly 119552 at
+        #   every MCP-DECODE site.
+        #
+        #   T ASIGN = half-word 3970.  printed p.27 line 8 declares
+        #   "TASIGN SYN, (8)3701.0", and 0o3701 = 1985 words = 3970
+        #   half-words.  Corroborated by this file's own note further
+        #   down: "SWAP started at half-word 3970" is printed p.65
+        #   line 6, ASSIGN's first instruction.
+        tuiorq = 1868
+        tasign_hw = 3970
+        print(generate(module_name, prog,
+                       [("mcp_decode_tuiorq0_reader_seq1",
+                         str(tuiorq), ioreq(3, 1))],
+                       step_cap=40000000,
+                       stop_at_pc=tasign_hw,
+                       pc_trail=True,
+                       ipl=True))
+        return
+
     # THE pp.15-18 IMAGE, for the checks that describe what MCP did
     # after it moved itself.  Built here from the same decks
     # strap/prosa.py puts on the tape, so a check cannot drift from
@@ -700,46 +764,40 @@ def main():
         ("mcp_conf_table_word1", "1963", 0x0104000005010006),
         ("mcp_conf_table_word2", "1964", 0x0000070000080202),
 
-        # T IOREQ, words 1787-1789, is ALL ZERO.  Keeping it apart from
-        # the conf counts above is the point -- the two were conflated
-        # earlier in this work -- but the REASON these were first
-        # committed with has been measured and is WRONG, so it is
-        # withdrawn here rather than left to mislead.
+        # >>> THESE THREE ASSERT THAT THE *OVERLAP* REQUEST TABLE
+        # STAYS IDLE, and that is all they can assert. <<<
         #
-        # THE NAME USED TO BE mcp_t_ioreq_empty_no_job AND THE COMMENT
-        # SAID "no job is loaded, so there is no I/O request to queue".
-        # Measured 2026-10-30, that explanation does not survive:
+        # This fixture boots UNOVERLAPPED.  X242's flag bit is set (the
+        # ",4" at IBM 25 -- C22-6531 printed p.18 gives the field), and
+        # MCP branches on it: printed p.57 line 17 is
+        # "LVI,LIODX,TUIORQ  -IF NOT OVERLAP MODE", printed p.71 lines
+        # 42 and 47 are "BXF,... -NOT OVERLAP", and C22-6728-1 printed
+        # p.98's minimal IPL case is "normal IPL, unoverlapped".
+        # Measured 2026-10-30: $5 (LXIO) holds TUIORQ -- word 1868 --
+        # at every MCP-DECODE site, never T IOREQ at word 1787.
         #
-        #   * The requests at IPL do not come from a job.  printed p.25
-        #     line 41 is `VF, 4.0  -EXPECT IOD AND REEL CARDS` and p.26
-        #     line 5 is `LV, $14, $4  -GET BASE OF AREA CONTAINING IOD
-        #     AND REEL CARDS BROKEN OUT`: initialization UNCODEs the
-        #     installation's own cards into 14-word tables and LDECODs
-        #     each one.  C22-6678-1 printed p.96 says so outright --
-        #     "The IOD cards define the I-O requirements of MCP and
-        #     perform the same function for MCP as they do for the
-        #     problem program."
-        #   * The cards ARE punched.  strap/prosa.py's MCP_IODS is a
-        #     reader and two output tapes, which is C22-6728-1 printed
-        #     p.98's minimal IPL case, and the conf table above counts
-        #     them correctly (READER conf 1, TAPE conf 2).
-        #   * AND THE CHAIN RUNS.  A probe of the boot measured first
-        #     samples at YUNCOD step 6,019,410; p.26's loop 6,117,328;
-        #     LDECOD 6,117,411 (83 steps later, which is that loop's
-        #     own `B, LDECOD`); p.27 'TO ASSIGN' 6,123,233; ASSIGN's
-        #     entry 6,123,287.  docs/mcp_io_tables.md's "the table is
-        #     empty because MCP-DECODE never ran" was true when it was
-        #     written, on the pre-SYN-fix image, and is not true now.
+        # So words 1787-1789 belong to the table MCP is NOT using, and
+        # zero is the right answer for a reason that has nothing to do
+        # with whether DECODE works.  Keeping them is still worth one
+        # line each: if some future change wrote the overlap table
+        # during an unoverlapped boot, these would catch it.
         #
-        # So what is pinned here is the OBSERVATION and not a story
-        # about it: the table is empty, measured zero across words
-        # 1787-1800 (fourteen words, not the three asserted), while
-        # T PREFT at word 1743 still reads 0x01bec00009000000 --
-        # byte-identical to its static value, so nothing wrote it.
-        # MCP-DECODE is entered and builds no entry.  WHY is open, and
-        # the next measurement is named in docs/NEXT.md: the write
-        # sites on printed pp.53-56 (p.53 L27 `SV, LXIO, 0.0(LXPP)`,
-        # p.54 L16 `ST(BU,4), TTYPE`) say how far into DECODE it gets.
+        # TWO EARLIER READINGS OF THESE WORDS WERE WRONG, both mine,
+        # and both are withdrawn:
+        #   * "no job is loaded, so there is no I/O request to queue" --
+        #     the requests at IPL come from the installation's own IOD
+        #     and REEL cards (printed p.25 line 41 "EXPECT IOD AND REEL
+        #     CARDS"), not from a job, and C22-6678-1 printed p.96 says
+        #     the IOD cards "define the I-O requirements of MCP".
+        #   * "MCP-DECODE is entered and writes no entry" -- it writes
+        #     the entry correctly, into the OTHER table.
+        #
+        # THE REAL CHECK IS A DIFFERENT TESTBENCH.  The request table is
+        # built by DECODE and then CLEARED by ASSIGN's reject path, so
+        # NO end-of-run check can witness it -- measured by injection:
+        # with the deliberate stop removed, the same word reads 0.  See
+        # tests/run_mcp_decode_test.sh, which stops at ASSIGN's entry
+        # and pins TUIORQ's first word at type 3 / sequence 1.
         ("mcp_t_ioreq_0", "1787", 0),
         ("mcp_t_ioreq_1", "1788", 0),
         ("mcp_t_ioreq_2", "1789", 0),

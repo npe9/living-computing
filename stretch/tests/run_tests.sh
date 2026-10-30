@@ -1444,6 +1444,15 @@ run "MULTI-WORD TRANSMIT, FORWARD AND BACKWARD (RefMan printed p.30)" ./run_prog
 # jb_ax4b routine 1246 transcriptions.
 
 run "MCP'S OWN BOOTSTRAP RUNS (boot_plan.md M3)" ./run_mcp_boot.sh StretchMcpBootTb
+
+# WHAT MCP-DECODE BUILT, read before ASSIGN clears it.  The boot section
+# above CANNOT see this: ASSIGN's reject path wipes the I/O request
+# table, so every word of it is zero at end of run whatever DECODE did.
+# This stops at ASSIGN's entry instead and reads the entry DECODE wrote
+# for the first punched IOD card -- type 3 (READER), sequence 1, which is
+# strap/prosa.py's MCP_IODS[0] decoded through printed p.62's field map.
+# One value pins the whole IOD-card-to-request-table path.
+run "WHAT MCP-DECODE BUILT (read at ASSIGN's entry, before the reject clears it)" ./run_mcp_decode_test.sh StretchMcpDecodeTb
 # >>> THE MOVED IMAGE IS PRINTED pp.15-36 AS OF 2026-10-22 -- SEVEN
 # HUNDRED AND TWENTY-SEVEN WORDS, WHERE IT WAS EIGHTY. <<<
 #

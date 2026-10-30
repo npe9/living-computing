@@ -58,11 +58,31 @@ boot = os.path.join(HERE, "gen_mcp_boot_tb.py")
 caps = re.findall(r"step_cap\s*=\s*(\d+)", open(boot).read())
 if not caps:
     bad("tests/gen_mcp_boot_tb.py", "no step_cap found at all")
-elif caps != [str(CANON_CAP)]:
-    bad("tests/gen_mcp_boot_tb.py",
-        f"step_cap is {caps}, expected ['{CANON_CAP}']")
 else:
-    print(f"PASS boot step_cap is the canonical {CANON_CAP}")
+    # EVERY cap must be canonical, and the COUNT is not the point.
+    #
+    # This used to demand `caps == ['40000000']` -- exactly one
+    # occurrence -- and on 2026-10-30 that refused a legitimate change:
+    # gen_mcp_boot_tb.py now emits a SECOND testbench
+    # (StretchMcpDecodeTb, which stops at ASSIGN's entry to read what
+    # MCP-DECODE built before the reject path clears it), and it passes
+    # its own perfectly canonical step_cap.  Two canonical caps are not
+    # a probe.
+    #
+    # The guard is NOT weakened by this.  What it exists to catch is a
+    # REDUCED cap left behind by a bisection, which makes the boot stop
+    # early and every later check read a half-finished machine -- and a
+    # reduced cap anywhere in the file still fails here.  Requiring all
+    # of them to be canonical is exactly as strong against that as
+    # requiring one of them to be.
+    offenders = sorted(set(c for c in caps if c != str(CANON_CAP)))
+    if offenders:
+        bad("tests/gen_mcp_boot_tb.py",
+            f"step_cap(s) {offenders} are not the canonical {CANON_CAP} "
+            f"(found {caps})")
+    else:
+        print(f"PASS all {len(caps)} boot step_cap(s) are the canonical "
+              f"{CANON_CAP}")
 
 if fails:
     print(f"{fails} TEST(S) FAILED")
