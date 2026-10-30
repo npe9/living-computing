@@ -14780,3 +14780,71 @@ those three values is the sharpest single question available.
 > not bound the number of cards processed, and a `SWAPI, 8` occupying
 > the machine for many clocks accounts for LDECOD's 63 without implying
 > repetition.
+
+### THE STORES LAND OUTSIDE THE TABLE -- 2026-10-30
+
+MCP-DECODE runs, finishes normally, reaches its request-table store
+blocks, and the table stays zero because **`LXIO` does not point into
+it when the stores execute.**
+
+```
+PROBE LIOD2  p.54 the TTYPE store block   hw 3153: 36 samples, first step 6119138
+PROBE LFOUND p.54 the TIODSQ store block  hw 3163: 46 samples, first step 6119233
+PROBE $5 addr at FIRST LIOD2  = 119552    at step 6119138
+PROBE $5 addr at FIRST LFOUND = 119552
+PROBE $5 EVER held T IOREQ (114368)?  yes
+```
+
+`TIOC` is **80** (p.48 L159, p.62 L104), so `T IOREQ` spans words
+1787-1866, bits **114368-119424**. `119552` is word **1868** -- past
+the end. The stores are `ST(BU,4), TTYPE(LXIO)` and
+`ST(BU,9), TIODSQ(LXIO)`, so they execute against an address outside
+the table and the table is never written.
+
+**The swap that loads it is correct in the source.** p.48's
+*SWAP AREA FOR EIGHT MCP-DECODE INDICES* at `LTY` is eight `XW`s, and
+`SWAPI, 8, LTY, LIODX` with `LIODX = $3` covers `$3..$10`, so `LTY`'s
+word 2 lands in `$5` -- and word 2 is `XW, TIOREQ, TIOC, LIOTBX`. The
+probe agrees: `$5` does hold 114368 at some point. By the first store
+it is 81 words further on.
+
+> **81 IS TIOC + 1, AND THAT IS AN OBSERVATION, NOT A CONCLUSION.**
+> `V+ICR, LXIO, 1.0` (p.54, just after the `TIODSQ` store) is an
+> advance-value-count-refill: when the count is exhausted the refill
+> word `LIOTBX` (`XW, TIOREQ, TIOC, $`) should reload the index to the
+> top of the table. An index sitting exactly one word past an 80-word
+> table is what a refill firing one step late would look like -- and it
+> is equally what eighty-one ordinary advances would look like. Nothing
+> here distinguishes them.
+
+### The next measurement, and it is a small one
+
+Trace `$5` between the `SWAPI` and the first store: latch its value at
+`LDECOD` (hw 3006), at `LINITC` (3099), at `LIOD1` (3124) and at
+`LTYPR` (3132), all FIRST-visit. Four numbers say whether it starts
+right and walks, or arrives wrong.
+
+Then, and only if it walks: check `V+ICR`'s count-exhaustion and refill
+against the Reference Manual's own words (the progressive-indexing and
+refill sections, printed pp.21 and 53 are already cited elsewhere in
+this repo), because an off-by-one in refill timing is a MODEL defect
+and eighty-one legitimate advances are not.
+
+> **AND THE OTHER LIVE POSSIBILITY IS NOT EXCLUDED.**
+> `ST(BU,4), TTYPE(LXIO)` stores a FOUR-BIT field. If the decoded type
+> code is zero, the store executes correctly and the word stays zero --
+> a table that reads empty because it was filled with zeros. That would
+> make "empty" and "written" both true at once, and
+> `gen_mcp_boot_tb.py`'s `mcp_t_ioreq_N` checks cannot tell the two
+> apart. They assert zero; they do not assert unwritten.
+
+> **THREE INSTRUMENT ERRORS IN THIS INVESTIGATION, ALL OVER-REPORTING.**
+> Visit counts read as execution counts when they are residence times
+> (`pc=4378` occupies 23 consecutive steps). A cleanup trap with a
+> relative path after a `cd`, which printed "(restored)" and had not.
+> And `if (core.getPC() == 3153) x5AtStore <= a5;` with no first-visit
+> guard, which answered "where was `$5` at the store" with its value at
+> the LAST store. Each produced a confident number meaning something
+> other than its label. The pattern is worth the vigilance: a probe
+> that is wrong tends to be wrong in the direction of looking
+> informative.
