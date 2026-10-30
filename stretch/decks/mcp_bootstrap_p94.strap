@@ -1,0 +1,292 @@
+! mcp_bootstrap_p94.strap -- MCP, printed page 94:
+! DETERMINE THE REEL STATUS, and INITIAL ENTRY PER PROBLEM PROGRAM.
+! docs/MCP_Mar63_001-249.pdf PDF p.101, header "PAGE NUMBER 94".
+!
+! Fifty-six printed lines, THIRTY-EIGHT of which compile, under four
+! headings:
+!
+!   lines  1-3   DETERMINE THE REEL STATUS - EG. FILE PROTECT, SYSTEM
+!   lines 29-31  INITIAL ENTRY PER PROBLEM PROGRAM
+!   lines 35-37  RESET THE DISK PARAMETERS     (no rules, just blanks)
+!   lines 52-54  TEST FOR JOB SYNCHRONIZATION
+!
+! The eighteen lines that compile nothing are 1-3, 14, 18, 28-32,
+! 35-37, 41, 45, 52-54 -- box rules, headings and spacers.
+!
+! The page runs 005274.00 .. 005326.00 and is a continuation of the
+! MOVE sub-routine that begins on printed p.88 at 005014.00.  printed
+! p.93 has NOT been transcribed, so contiguity with the page before is
+! not checked here; this page simply begins at 005274.00.
+!
+! ---------------------------------------------------------------
+! THE LOCATION COLUMN CHECKS ITSELF, END TO END
+! ---------------------------------------------------------------
+! Every one of the thirty-eight compiled rows is one half-word or two,
+! and the printed LOCATION of each is the previous one plus exactly
+! that.  005274.00 -> 005275.00 -> 005275.40 -> ... -> 005326.00, with
+! no gap and no overlap anywhere in the thirty-eight.  That chain does not
+! depend on a single external symbol, and it is the strongest check
+! this page carries.
+!
+! ---------------------------------------------------------------
+! WHAT THE EXTERNAL SYMBOLS ARE WORTH
+! ---------------------------------------------------------------
+! All but TWO of the symbols this page names are already declared by
+! decks transcribed from OTHER pages, so the prologue below is copied
+! from them rather than back-derived from this page's own binary
+! column.  Five of those land on the printed address independently,
+! which is attestation and not circularity:
+!
+!   line  4  TM6BL   p.83 puts it at 004631.10; the page prints
+!                    004631.10
+!   line  7  TNOP    p.78 SYN(BU,6,6),(8)4631.02; prints 004631.02
+!   line 10  TLBL    p.78 SYN(BU,6,6),(8)4630.74; prints 004630.74
+!   line 27  TMREJB  p.89 SYN,(8)5377.0;          prints 005377.10
+!                    (.10 is B's own modifier bit -- see below)
+!   line 33  TUNXW   p.84 puts T UNXW at 004653.00 and the statement
+!                    reads "TUNXW+0.28"; 28 decimal is 0o34 and the
+!                    page prints 004653.34
+!   line 43  TSBDFT  p.84 SYN(BU,12),TSBDTB+.05 with T SBDTB at
+!                    004737.00; the page prints 004737.05.  This is
+!                    also what settles TSBDFT against TSBDTB, which
+!                    differ by one letter in a worn font.
+!
+! >>> TWO SYMBOLS ARE DERIVED FROM THIS PAGE AND ARE MARKED AS SUCH.
+! <<<  TOK (line 20) and TN6 (line 25) are branch targets on a page
+! this project has not read, so their SYN values below were worked
+! back out of this page's own binary column.  Lines 20 and 25 are
+! therefore NOT an independent check of those two addresses.
+!
+! They are, however, DETERMINED rather than guessed.  A branch's
+! 6-bit field is [modifier | half-word select], so a half-word-aligned
+! target can only make the field one of two values, and the page picks
+! one of them:
+!
+!   CBZ+,TMXGA,(8)5262.00  assembles 005262.27 4A
+!   CBZ+,TMXGA,(8)5262.40  assembles 005262.67 4A   <- the page
+!   BXL,(8)5272.00         assembles 005272.32 42
+!   BXL,(8)5272.40         assembles 005272.72 42   <- the page
+!
+! so TOK = (8)5262.40 and TN6 = (8)5272.40 are the only addresses in
+! those words that print what the page prints.  The same arithmetic is
+! visible in the clear on line 40, where CB+,TMXG,TMCLR prints
+! 005315.21 with TMCLR at 005315.00 and TMXG = $8, 0o21 = 8*2+1, and
+! on printed p.79, where CB+,TXB,TP5 prints 004477.07 with TP5 at
+! 004477.00 and TXB = $3.
+!
+! ---------------------------------------------------------------
+! A BIT OFFSET IS WRITTEN DECIMAL AND PRINTED OCTAL
+! ---------------------------------------------------------------
+! p.85 writes T RENTY SYN(BU,1),0.25 and this page prints 000000.31
+! for it; p.85 writes T REPR 0.26 and the page prints .32, T RELB
+! 0.27 -> .33, T RENME 0.34 -> .42, p.84's T SYSTM 7.25 -> 000007.31,
+! TLPPEN 0.39 -> 000000.47.  Every one is the same decimal-to-octal
+! step, on six symbols from three different decks, which is what makes
+! it a rule rather than a coincidence.
+!
+! ---------------------------------------------------------------
+! "C" AND "0" ARE THE GLYPH HAZARD ON THIS PAGE, AND THE ROW ITSELF
+! SETTLES THEM
+! ---------------------------------------------------------------
+! The BINARY OUTPUT column's trailing byte is HEX, so C0 and 00 are
+! both legal and the drum printed them within a hair of each other.
+! At 1200 dpi, lines 13, 27, 48 and 51 all appear to read "C0" in
+! isolation -- but in those rows the LEADING digit of the six-octal-
+! digit word address prints with the SAME gap, and that digit cannot
+! be a C.  Rows 11 and 16, by contrast, print their octal zeros closed
+! and the byte's first glyph visibly open, far wider than any zero in
+! the same row.  So:
+!
+!   line 13  B,TM8A      005306.10 00     lines 27, 48 are the same
+!   line 11  BZAE,TM8AZ  005304.36 C0     line 16 is the same
+!   line  5  BAE,TM8AB   005302.76 C2     and strap_asm emits C2 for
+!                                          this very statement; p.79
+!                                          prints the same shape for
+!                                          BAE,T WRITE, which
+!                                          corroborates
+!
+! The same test resolves the seven CM rows: line 17's second half-word
+! prints "001000.00 F0" with its own ".00" gapped exactly like the
+! byte's second glyph, so all seven are F0, not FC.
+!
+! ---------------------------------------------------------------
+! ONE SUBSTITUTION, AND IT IS THE ONLY ONE
+! ---------------------------------------------------------------
+! >>> LINE 56 IS PRINTED "$KF,T JCNME(T MXI)" AND IS WRITTEN HERE AS
+! "KF, TJCNME(TMXI)". <<<  strap_asm rejects the "$" prefix --
+! "unknown mnemonic '$KF'" -- and no deck in this corpus has met one
+! before.  The "$" is unmistakable at 1200 dpi (the bar through the S
+! is there), and in STRAP "$" is the SYSTEM-SYMBOL sigil -- $1, $15,
+! $IND -- so "$KF" in an operation field is not something this project
+! has an explanation for.  (docs/microarchitecture_plan.md records the
+! opposite confusion, a printed "SIND" that is really "$IND", the drum
+! rendering $ as S; that is not what this is.)  What IS
+! established is that it does not change the word: plain KF with the
+! same operand assembles 777777.00 8A 060600.23 10, which is what the
+! page prints, to the bit.  The !CHECK note below keeps the printed
+! spelling.
+!
+! ---------------------------------------------------------------
+! LISTING MARKS
+! ---------------------------------------------------------------
+! Two rows carry an asterisk after the location: line 10 (005301.00,
+! T M8) and line 39 (005315.00, T MCLR).  Both are labels, but not
+! every label on the page is marked -- T M8AB, T M8AZ, T M8A, T M6C,
+! T M2, T M2A, T M3D and T M3E are not -- and what the mark means is
+! not established here.  It is recorded, not interpreted.
+
+        SLC, (8)5274.0
+
+! ---- index names, printed p.83 ------------------------------------
+TMX1    SYN, $1
+TMXA    SYN, $2
+TMXF    SYN, $7
+TMXG    SYN, $8
+TMXEE   SYN, $9
+TMXI    SYN, $10
+TMXGA   SYN, $11
+TMXH    SYN, TMX1
+! ---- words and field offsets, printed pp.78, 83, 84, 85 -----------
+TLBL    SYN(BU,6,6), (8)4630.74
+TNOP    SYN(BU,6,6), (8)4631.02
+TM6BL   SYN(BU,48,6), (8)4631.10
+SSYRFT  SYN, (8)2157.40
+SMAXUB  SYN, (8)2153.0
+SMAXRN  SYN, (8)2155.40
+TSYRFT  SYN, SSYRFT
+TBAMCP  SYN, SMAXUB
+TMAXRF  SYN, SMAXRN
+TUNXW   SYN, (8)4653.0
+TDCLRX  SYN, (8)4736.0
+TSBDFT  SYN(BU,12), (8)4737.05
+TSYSTM  SYN(BU,1), 7.25
+TFRLAD  SYN(BU,18), 8.0
+TJCNME  SYN(BU,48,6), -1.0
+TRENTY  SYN(BU,1), 0.25
+TREPR   SYN(BU,1), 0.26
+TRELB   SYN(BU,1), 0.27
+TRENME  SYN(BU,30), 0.34
+! ---- the problem-program tables, printed pp.62, 77, 80 ------------
+TPPURF  SYN, (8)3313.0
+TPPRUN  SYN, (8)3315.0
+TLPPEN  SYN(BU,1), 0.39
+TPNAME  SYN(BU,48,6), 1.0
+! ---- forward, printed p.89 ----------------------------------------
+TMREJB  SYN, (8)5377.0
+! ---- DERIVED FROM THIS PAGE'S OWN BINARY COLUMN -- see header -----
+TOK     SYN, (8)5262.40
+TN6     SYN, (8)5272.40
+
+        SLC, (8)5274.0
+
+! ---- DETERMINE THE REEL STATUS - EG. FILE PROTECT, SYSTEM --------
+        KF(BU,30,6), TM6BL           ! line 4  -BYPASS PROTECTION IF
+                                      !           SCRATCH
+        BAE, TM8AB                   ! line 5
+        CM0101, TRENME(TMXH)         ! line 6  -INSERT THE NAME
+        KF, TNOP, 42                 ! line 7  -LOOK FOR A NON-PROTECT
+        BAE, TM8                     ! line 8
+        CM1111, TREPR(TMXH)          ! line 9  -SET THE REEL PROTECT
+                                      !           BIT ON
+TM8     KF, TLBL, 36                 ! line 10 -LOOK FOR A LABELED TAPE
+        BZAE, TM8AZ                  ! line 11 -IF NOT A LABELED TAPE
+TM8AB   CM1111, TRELB(TMXH)          ! line 12 -SET THE LABEL BIT TO ONE
+        B, TM8A                      ! line 13
+TM8AZ   KV, TMXH, TFRLAD(TMXEE)      ! line 15 -CHECK TO SEE IF FIRST
+                                      !           REEL ENTRY
+        BZXE, TM8A                   ! line 16 -NO
+        CM0000, TSYSTM(TMXEE)        ! line 17 -RESET SYSTEM BIT
+TM8A    CM1111, TRENTY(TMXH)         ! line 19 -SET THE ENTRY BIT TO ONE
+TM6C    CBZ+, TMXGA, TOK             ! line 20 -STEP BREAKDOWN INDEX
+        SV, TMXF, 0.0(TMXH)          ! line 21 -STORE THE SLOT ADDRESS
+        LV, TMXH, TMXF               ! line 22 -GET NEW SLOT
+        V+I, TMXF, 1.0               ! line 23
+        KV, TMXF, TBAMCP             ! line 24 -IS THE REEL POOL
+                                      !           EXCEEDING BOUNDS
+        BXL, TN6                     ! line 25 -NO
+        LVI, TMX1, 4.0               ! line 26 -NOTE ERROR - PP
+                                      !           EXCEEDING LIMITS
+        B, TMREJB                    ! line 27
+
+! ---- INITIAL ENTRY PER PROBLEM PROGRAM ---------------------------
+TM2     CM0000(BU,18), TUNXW+0.28    ! line 33 -CLEAR UNIT NAME TABLE
+                                      !           COUNTER
+        SX, TMXI, 0.0($15)           ! line 34 -SET CONTROL WORD PLUS
+
+! ---- RESET THE DISK PARAMETERS -----------------------------------
+        LX, TMXG, TDCLRX             ! line 38 -LOAD FOR TABLE CLEARING
+TMCLR   Z, 0.0(TMXG)                 ! line 39 -CLEAR THE ACCUMULATING
+                                      !           AREA
+        CB+, TMXG, TMCLR             ! line 40
+        LF(BU,12), TSYRFT+.6         ! line 42 -RESTORE THE MCP USER
+                                      !           AREA
+        ST, TSBDFT                   ! line 43
+        CM0000(BU,18), TMAXRF        ! line 44 -RESET THE MAX REF TO
+                                      !           ZERO
+        BB, .25($15), TM2A           ! line 46 -IF NOT OVERLAP
+        LX, TMXA, TPPRUN             ! line 47 -LOAD FOR NEXT JOB TO
+                                      !           BE RUN
+        B, TM3D                      ! line 48
+TM2A    LX, TMXA, TPPURF             ! line 49 -SET UP FOR NOT OVERLAP
+                                      !           JOB
+TM3D    BZB, TLPPEN(TMXA), TM3E      ! line 50 -IF MORE JOBS TO BE RUN
+        BD, $                        ! line 51 -MCP ERROR , NO MORE
+                                      !           JOBS TO BE RUN
+
+! ---- TEST FOR JOB SYNCHRONIZATION --------------------------------
+TM3E    LF(BU,48,8), TPNAME(TMXA)    ! line 55 -GET JOB NAME FROM PP
+                                      !           REF TBL
+        KF, TJCNME(TMXI)             ! line 56 -COMPARE AGAINST JC-4
+                                      !           JOB CARD
+                                      ! >>> THE PAGE PRINTS "$KF".
+                                      !     See the header. <<<
+
+! ---- CHECKS, read by tests/verify_mcp_page.py 94 -----------------
+!SYM   TM8      005301.00
+!SYM   TM8AB    005302.40
+!SYM   TM8AZ    005304.00
+!SYM   TM8A     005306.00
+!SYM   TM6C     005307.00
+!SYM   TM2      005313.00
+!SYM   TMCLR    005315.00
+!SYM   TM2A     005323.00
+!SYM   TM3D     005323.40
+!SYM   TM3E     005325.00
+!CHECK 005274.00 | 004631.10 80 036600.23 10 | line 4  KF(BU,30,6),TM6BL
+!CHECK 005275.00 | 005302.76 C2 | line 5  BAE,TM8AB
+!CHECK 005275.40 | 000000.42 81 036000.12 F0 | line 6  CM0101,TRENME(TMXH)
+!CHECK 005276.40 | 004631.02 80 006625.23 10 | line 7  KF,TNOP,42
+!CHECK 005277.40 | 005301.36 C2 | line 8  BAE,TM8
+!CHECK 005300.00 | 000000.32 81 001000.36 F0 | line 9  CM1111,TREPR(TMXH)
+!CHECK 005301.00 | 004630.74 80 006622.23 10 | line 10 T M8 KF,TLBL,36
+!CHECK 005302.00 | 005304.36 C0 | line 11 BZAE,TM8AZ
+!CHECK 005302.40 | 000000.33 81 001000.36 F0 | line 12 T M8AB CM1111,TRELB(TMXH)
+!CHECK 005303.40 | 005306.10 00 | line 13 B,TM8A
+!CHECK 005304.00 | 000010.02 99 | line 15 T M8AZ KV,TMXH,TFRLAD(TMXEE)
+!CHECK 005304.40 | 005306.32 C0 | line 16 BZXE,TM8A
+!CHECK 005305.00 | 000007.31 89 001000.00 F0 | line 17 CM0000,TSYSTM(TMXEE)
+!CHECK 005306.00 | 000000.31 81 001000.36 F0 | line 19 T M8A CM1111,TRENTY(TMXH)
+!CHECK 005307.00 | 005262.67 4A | line 20 T M6C CBZ+,TMXGA,TOK
+!CHECK 005307.40 | 000000.17 31 | line 21 SV,TMXF,0.0(TMXH)
+!CHECK 005310.00 | 000027.02 30 | line 22 LV,TMXH,TMXF
+!CHECK 005310.40 | 000001.17 05 | line 23 V+I,TMXF,1.0
+!CHECK 005311.00 | 002153.16 90 | line 24 KV,TMXF,TBAMCP
+!CHECK 005311.40 | 005272.72 42 | line 25 BXL,TN6
+!CHECK 005312.00 | 000004.03 01 | line 26 LVI,TMX1,4.0
+!CHECK 005312.40 | 005377.10 00 | line 27 B,TMREJB
+!CHECK 005313.00 | 004653.34 80 022000.00 F0 | line 33 T M2 CM0000(BU,18),TUNXW+0.28
+!CHECK 005314.00 | 000000.25 1F | line 34 SX,TMXI,0.0($15)
+!CHECK 005314.40 | 004736.20 10 | line 38 LX,TMXG,TDCLRX
+!CHECK 005315.00 | 000000.22 08 | line 39 T MCLR Z,0.0(TMXG)
+!CHECK 005315.40 | 005315.21 48 | line 40 CB+,TMXG,TMCLR
+!CHECK 005316.00 | 002157.46 80 014000.06 70 | line 42 LF(BU,12),TSYRFT+.6
+!CHECK 005317.00 | 004737.05 80 014000.20 D0 | line 43 ST,TSBDFT
+!CHECK 005320.00 | 002155.40 80 022000.00 F0 | line 44 CM0000(BU,18),TMAXRF
+!CHECK 005321.00 | 000000.31 8F 005323.34 02 | line 46 BB,.25($15),TM2A
+!CHECK 005322.00 | 003315.04 10 | line 47 LX,TMXA,TPPRUN
+!CHECK 005322.40 | 005323.50 00 | line 48 B,TM3D
+!CHECK 005323.00 | 003313.04 10 | line 49 T M2A LX,TMXA,TPPURF
+!CHECK 005323.40 | 000000.47 82 005325.34 00 | line 50 T M3D BZB,TLPPEN(TMXA),TM3E
+!CHECK 005324.40 | 005324.44 00 | line 51 BD,$
+!CHECK 005325.00 | 000001.00 82 060000.06 70 | line 55 T M3E LF(BU,48,8),TPNAME(TMXA)
+!CHECK 005326.00 | 777777.00 8A 060600.23 10 | line 56 $KF,TJCNME(TMXI) (written KF -- see header)

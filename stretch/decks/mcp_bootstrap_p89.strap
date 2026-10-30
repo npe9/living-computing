@@ -1,0 +1,309 @@
+! mcp_bootstrap_p89.strap -- MCP INITIALIZATION, printed page 89:
+! the tail of the IOD-card field scan (DENSITY and DISPOSITION), and
+! the head of "IS THIS IOD IN THE UNIT NAME TABLE".
+! docs/MCP_Mar63_001-249.pdf PDF p.96, header "PAGE NUMBER 89",
+! LOCATION 005053 printed in the column header.
+!
+! Fifty-six printed lines.  FORTY-SEVEN COMPILE; lines 2, 13, 26 and
+! 30-35 carry only the dash in the STATEMENT column (30-35 are the
+! boxed banner "IS THIS IOD IN THE UNIT NAME TABLE").
+!
+! CONTIGUOUS BY ADDRESS.  The page's first located line is 1 at
+! 005053.40 and its last is 56 at 005114.00, two half words long, so
+! printed p.90 must begin at 005115.00.  Every link in between closes:
+! each row's location plus one half word per "XXXXXX.NN NN" group in
+! its BINARY OUTPUT equals the next row's location, all forty-six
+! links, with no gap and no overlap.  This is what says no line was
+! dropped off the top or the bottom of the render.
+!
+! WHAT THE PAGE DOES.  Lines 1-23 are two copies of one loop.  Each
+! loads a type-scan index (T SCIX3 for density, T SCIX4 for
+! disposition), compares the IOD card's field against the scan table
+! with KF under progressive indexing, steps the index by the backup
+! constant on a mismatch, and on a match connects the matched code
+! into the card's two-bit CODE field (T IDNCD, T IDSCD).  A scan that
+! runs off the end bumps T MXGA -- the error count -- by 2 for density
+! and by 1 for disposition.  Line 24 saves that flag in T ERFLG and
+! lines 25-29 reject the card if the TYPE code is invalid.  Lines
+! 36-56 then walk the UNIT NAME TABLE looking for this IOD's channel
+! name, equipment type and (for tape) unit name.
+!
+! ---------------------------------------------------------------
+! EXTERNALS -- WHICH ARE TRANSCRIBED AND WHICH ARE DERIVED
+! ---------------------------------------------------------------
+! (a) ALREADY TRANSCRIBED ELSEWHERE, and confirmed a second time by
+!     this page's own BINARY OUTPUT column.  Every field offset below
+!     is printed in this page's address field and matches
+!     decks/mcp_bootstrap_p84.strap's !SYM block exactly:
+!
+!       line  1  T IMOCD  000006.76        line 37  T IREF   000000.64
+!       line  4  T IDN    000007.00        line 45  T ICH    000004.00
+!       line 12  T IDNCD  000007.76        line 46  T IUN    000005.00
+!       line 15  T IDS    000010.00        line 47  T ITYCD  000002.74
+!       line 23  T IDSCD  000010.76        line 50  T CHNM   000000.00
+!       line 27  T ITYCD  000002.74        line 52  T UNTYP  000000.74
+!       line 36  T UNXW   004653.00        line 56  T UNME   000031.00
+!
+!     and from decks/mcp_bootstrap_p83.strap:
+!
+!       line 24  T ERFLG  004632.00  (printed 004632.27 30)
+!       line 41  T LIMB   002155.00  (printed 002155.00 80)
+!       line 54  T DKSAV  004652.00  (printed 004652.21 30)
+!       the index names T MX1=$1, T MXC=$4, T MXG=$8, T MXI=$10,
+!       T MXGA=$11 -- each confirmed here by the register offset the
+!       address field prints (.21 for $8, .27 for $11, two per
+!       register, exactly as printed p.80 line 28's V+ICR,T IXG).
+!
+! (b) NOT YET TRANSCRIBED, recovered from this page's own binary
+!     column where the instruction's low octal field is a FIXED
+!     constant calibrated on this page:
+!
+!       LX / V+ print ".20"  (lines 3, 14, 36 against T UNXW)
+!         line  3  004757.20 10  -> T SCIX3 = 004757.00
+!         line 10  004760.20 B0  -> T SCBK3 = 004760.00
+!         line 14  004762.20 10  -> T SCIX4 = 004762.00
+!         line 21  004763.20 B0  -> T SCBK4 = 004763.00
+!         >>> ALL FOUR CONFIRMED INDEPENDENTLY. <<<  printed p.86 was
+!         transcribed while this page was, and its !SYM block prints
+!         T SCIX3 004757.00, T SCBK3 004760.00, T SCIX4 004762.00 and
+!         T SCBK4 004763.00 off its own LOCATION column -- the same
+!         four values this page's address field gives.
+!       B prints ".10"  (lines 9, 20 against on-page T GET3/T GET4)
+!         line 40  005377.10 00  -> T MREJB = 005377.00
+!       BZXCZ prints ".30"  (lines 7, 18 against T MLOK3/T MLOK4)
+!         line 49  005116.30 42  -> T M1E   = 005116.00
+!         -- one notch weaker than the rest of this bucket: line 49
+!         is BXCZ, not BZXCZ.  What carries the constant across the
+!         pair is printed p.80, where BZXF and BXF both print ".23"
+!         (its lines 6 and 27), so the Z prefix does not move the low
+!         field.  The assembler reproduces 005116.30 42 from 5116.0.
+!       BZB prints ".34"  (printed p.80 line 10, BZB -> T P1B)
+!         line 55  005162.34 00  -> T M1D   = 005162.00
+!
+!     >>> THE LOW FIELD OF A BRANCH IS NOT THE TARGET'S OFFSET. <<<
+!     Line 38's "BZRZ,T MEAT" prints 005100.74 and T MEAT is at
+!     005100.40 -- the .74 carries the condition as well.  Each
+!     constant above was therefore calibrated against a target this
+!     page or an already-transcribed page states outright, never
+!     assumed.
+!
+! (c) ONE DERIVED VALUE, AND IT IS MARKED.  T M1B is reached only by
+!     BZAE (lines 51 and 53, both printing 005115.76), and this page
+!     has no BZAE to a known target.  5115.40 is what reproduces the
+!     printed bytes under the assembler; 5115.00 would print
+!     005115.36.  THE ASSEMBLER, NOT THE PAGE, IS THE AUTHORITY FOR
+!     THIS ONE VALUE -- when printed p.90 is read, T M1B's own
+!     LOCATION line settles it.
+!
+! THREE LISTING MARKS: the asterisk after the location on lines 1, 20
+! and 44, recorded as printed and not interpreted here.
+
+! ---- index names, printed p.83 ------------------------------------
+TMX1    SYN, $1
+TMXC    SYN, $4
+TMXG    SYN, $8
+TMXGA   SYN, $11
+TMXI    SYN, $10
+
+! ---- words, printed p.83 ------------------------------------------
+TERFLG  SYN, (8)4632.0
+TDKSAV  SYN, (8)4652.0
+TLIMB   SYN, (8)2155.0
+
+! ---- the unit name table and its offsets, printed p.84 ------------
+TUNXW   SYN, (8)4653.0
+TCHNM   SYN(BU,48), 0.0
+TUNTYP  SYN(BU,4), 0.60
+TUNME   SYN(BU,48), 25.0
+
+! ---- IOD card breakdown table offsets, printed p.84 ---------------
+TIREF   SYN(BU,12), 0.52
+TITYCD  SYN(BU,4), 2.60
+TICH    SYN(BU,48), 4.0
+TIUN    SYN(BU,48), 5.0
+TIMOCD  SYN(BU,2), 6.62
+TIDN    SYN(BU,12), 7.0
+TIDNCD  SYN(BU,2), 7.62
+TIDS    SYN(BU,30), 8.0
+TIDSCD  SYN(BU,2), 8.62
+
+! ---- off page, read out of THIS page's binary column --------------
+TSCIX3  SYN, (8)4757.0
+TSCBK3  SYN, (8)4760.0
+TSCIX4  SYN, (8)4762.0
+TSCBK4  SYN, (8)4763.0
+TMREJB  SYN, (8)5377.0
+TM1E    SYN, (8)5116.0
+TM1D    SYN, (8)5162.0
+TM1B    SYN, (8)5115.40           ! DERIVED -- see (c) above
+
+        SLC, (8)5053.40
+
+! ---- THE DENSITY FIELD SCAN --------------------------------------
+        CM0101, TIMOCD(TMXI)         ! line 1
+        LX, TMXG, TSCIX3             ! line 3  -LOAD FOR DENSITY SCAN
+        C0011, TIDN(TMXI)            ! line 4
+TMLOK3  KF(V+IC)(BU,12,6), 0.14(TMXG) ! line 5
+        BAE, TMOK3                   ! line 6
+        BZXCZ, TMLOK3                ! line 7
+        V+I, TMXGA, 02.0             ! line 8  - A DENSITY FIELD ERROR
+        B, TGET3                     ! line 9
+TMOK3   V+, TMXG, TSCBK3             ! line 10
+TGET3   C0011(BU,2), 0.0(TMXG)       ! line 11
+        CM0101, TIDNCD(TMXI)         ! line 12
+
+! ---- THE DISPOSITION FIELD SCAN ----------------------------------
+        LX, TMXG, TSCIX4             ! line 14 -LOAD FOR DISP SCAN
+        C0011, TIDS(TMXI)            ! line 15
+TMLOK4  KF(V+IC)(BU,30,6), 0.33(TMXG) ! line 16
+        BAE, TMOK4                   ! line 17
+        BZXCZ, TMLOK4                ! line 18
+        V+I, TMXGA, 01.0             ! line 19 - A DISPOSITION FIELD ERROR
+        B, TGET4                     ! line 20
+TMOK4   V+, TMXG, TSCBK4             ! line 21
+TGET4   C0011(BU,3), 0.0(TMXG)       ! line 22
+        CM0101, TIDSCD(TMXI)         ! line 23
+TMNG    SV, TMXGA, TERFLG            ! line 24 -SAVE ERROR FLAG IF ANY
+        BXVZ, TM1AA                  ! line 25 -IF THE CARD IS OK
+        L, TITYCD(TMXI)              ! line 27 -CHECK FOR INVALID TYPE CODE
+        BZRZ, TM1AA                  ! line 28 -TYPE CODE OK
+        BD, $                        ! line 29 -MCP ERROR, INVALID TYPE CODE
+
+! ---- IS THIS IOD IN THE UNIT NAME TABLE --------------------------
+TM1AA   LX, TMXG, TUNXW              ! line 36 -LOAD TO BEGINNING OF
+                                      !          UNIT NAME TABLE
+        L, TIREF(TMXI), 46           ! line 37 -GET THE REFERENCE NUMBER
+        BZRZ, TMEAT                  ! line 38 -NO
+TMDOG   LVI, TMX1, 8.0               ! line 39 -ILLEGAL REF NO. ON AN
+                                      !          IOD CARD
+        B, TMREJB                    ! line 40
+TMEAT   +(BU,18), TLIMB, 46          ! line 41 -COMPUTE THE SIOL ADDRESS
+        LV, TMXC, $R                 ! line 42 -ADDRESS OF SIOL TO IX
+        LF(BU), 0.0(TMXC)            ! line 43 -IS SIOL SLOT ALREADY USED
+        BZRZ, TMDOG                  ! line 44 -YES - REPORT ILLEGAL IOD
+                                      !          CARD TO JC
+        L, TICH(TMXI), 16            ! line 45 -GET CHAN FIELD OF IOD CARD
+        LF, TIUN(TMXI), 80           ! line 46 -GET THE UNIT NAME -
+                                      !          TAPE ONLY
+        LF, TITYCD(TMXI)             ! line 47 -GET THE TYPE FIELD CODED
+        V+I, TMXG, 0.0               ! line 48 -TO RE-ACTIVATE INDEX
+                                      !          IND. FOR T MXG
+        BXCZ, TM1E                   ! line 49 -IF ZERO ENTRY
+TM1A    KF, TCHNM(TMXG), 16          ! line 50 -COMPARE AGAINST TABLE
+        BZAE, TM1B                   ! line 51 -IF UNLIKE ENTRY
+        KF, TUNTYP(TMXG)             ! line 52 -COMPARE EQUIP FEILD
+        BZAE, TM1B                   ! line 53 -IF NOT ALIKE
+        SV, TMXG, TDKSAV             ! line 54
+        BZB, TITYCD(TMXI), TM1D      ! line 55 -IF NOT TAPE
+        KF, TUNME(TMXG), 80          ! line 56 -TAPE COMPARE UNIT NAME
+
+! ---------------------------------------------------------------
+! THE PRINTED LISTING -- all forty-seven rows that compile.
+! ---------------------------------------------------------------
+!   line  1  005053.40 *  000006.76 8A  002000.12 F0          CM0101,TIMOCD(TMXI)
+!   line  3  005054.40    004757.20 10                        LX,TMXG,TSCIX3
+!   line  4  005055.00    000007.00 8A  014000.06 70          C0011,TIDN(TMXI)
+!   line  5  005056.00    000000.16 88  214600.23 10  T MLOK3 KF(V+IC)(BU,12,6),0.14(TMXG)
+!   line  6  005057.00    005061.36 C2                        BAE,TMOK3
+!   line  7  005057.40    005056.30 40                        BZXCZ,TMLOK3
+!   line  8  005060.00    000002.27 05                        V+I,TMXGA,02.0
+!   line  9  005060.40    005061.50 00                        B,TGET3
+!   line 10  005061.00    004760.20 B0                T MOK3  V+,TMXG,TSCBK3
+!   line 11  005061.40    000000.00 88  002000.06 70  T GET3  C0011(BU,2),0.0(TMXG)
+!   line 12  005062.40    000007.76 8A  002000.12 F0          CM0101,TIDNCD(TMXI)
+!   line 14  005063.40    004762.20 10                        LX,TMXG,TSCIX4
+!   line 15  005064.00    000010.00 8A  036000.06 70          C0011,TIDS(TMXI)
+!   line 16  005065.00    000000.41 88  236600.23 10  T MLOK4 KF(V+IC)(BU,30,6),0.33(TMXG)
+!   line 17  005066.00    005070.36 C2                        BAE,TMOK4
+!   line 18  005066.40    005065.30 40                        BZXCZ,TMLOK4
+!   line 19  005067.00    000001.27 05                        V+I,TMXGA,01.0
+!   line 20  005067.40 *  005070.50 00                        B,TGET4
+!   line 21  005070.00    004763.20 B0                T MOK4  V+,TMXG,TSCBK4
+!   line 22  005070.40    000000.00 88  003000.06 70  T GET4  C0011(BU,3),0.0(TMXG)
+!   line 23  005071.40    000010.76 8A  002000.12 F0          CM0101,TIDSCD(TMXI)
+!   line 24  005072.40    004632.27 30                T MNG   SV,TMXGA,TERFLG
+!   line 25  005073.00    005075.71 42                        BXVZ,TM1AA
+!   line 27  005073.40    000002.74 8A  004000.20 50          L,TITYCD(TMXI)
+!   line 28  005074.40    005075.74 C0                        BZRZ,TM1AA
+!   line 29  005075.00    005075.04 00                        BD,$
+!   line 36  005075.40    004653.20 10                T M1AA  LX,TMXG,TUNXW
+!   line 37  005076.00    000000.64 8A  014027.20 50          L,TIREF(TMXI),46
+!   line 38  005077.00    005100.74 C0                        BZRZ,TMEAT
+!   line 39  005077.40    000010.03 01                T MDOG  LVI,TMX1,8.0
+!   line 40  005100.00    005377.10 00                        B,TMREJB
+!   line 41  005100.40    002155.00 80  022027.20 10  T MEAT  +(BU,18),TLIMB,46
+!   line 42  005101.40    000011.10 30                        LV,TMXC,$R
+!   line 43  005102.00    000000.00 84  000000.06 70          LF(BU),0.0(TMXC)
+!   line 44  005103.00 *  005077.74 C0                        BZRZ,TMDOG
+!   line 45  005103.40    000004.00 8A  060010.20 50          L,TICH(TMXI),16
+!   line 46  005104.40    000005.00 8A  060050.06 70          LF,TIUN(TMXI),80
+!   line 47  005105.40    000002.74 8A  004000.06 70          LF,TITYCD(TMXI)
+!   line 48  005106.40    000000.21 05                        V+I,TMXG,0.0
+!   line 49  005107.00    005116.30 42                        BXCZ,TM1E
+!   line 50  005107.40    000000.00 88  060010.23 10  T M1A   KF,TCHNM(TMXG),16
+!   line 51  005110.40    005115.76 C0                        BZAE,TM1B
+!   line 52  005111.00    000000.74 88  004000.23 10          KF,TUNTYP(TMXG)
+!   line 53  005112.00    005115.76 C0                        BZAE,TM1B
+!   line 54  005112.40    004652.21 30                        SV,TMXG,TDKSAV
+!   line 55  005113.00    000002.74 8A  005162.34 00          BZB,TITYCD(TMXI),TM1D
+!   line 56  005114.00    000031.00 88  060050.23 10          KF,TUNME(TMXG),80
+
+! ---- CHECKS, read by tests/verify_mcp_page.py 89 --------
+!SYM   TMLOK3   005056.00
+!SYM   TMOK3    005061.00
+!SYM   TGET3    005061.40
+!SYM   TMLOK4   005065.00
+!SYM   TMOK4    005070.00
+!SYM   TGET4    005070.40
+!SYM   TMNG     005072.40
+!SYM   TM1AA    005075.40
+!SYM   TMDOG    005077.40
+!SYM   TMEAT    005100.40
+!SYM   TM1A     005107.40
+!CHECK 005053.40 | 000006.76 8A  002000.12 F0 | line 1   CM0101,TIMOCD(TMXI)
+!CHECK 005054.40 | 004757.20 10 | line 3   LX,TMXG,TSCIX3
+!CHECK 005055.00 | 000007.00 8A  014000.06 70 | line 4   C0011,TIDN(TMXI)
+!CHECK 005056.00 | 000000.16 88  214600.23 10 | line 5   T MLOK3 KF(V+IC)(BU,12,6),0.14(TMXG)
+!CHECK 005057.00 | 005061.36 C2 | line 6   BAE,TMOK3
+!CHECK 005057.40 | 005056.30 40 | line 7   BZXCZ,TMLOK3
+!CHECK 005060.00 | 000002.27 05 | line 8   V+I,TMXGA,02.0
+!CHECK 005060.40 | 005061.50 00 | line 9   B,TGET3
+!CHECK 005061.00 | 004760.20 B0 | line 10  T MOK3 V+,TMXG,TSCBK3
+!CHECK 005061.40 | 000000.00 88  002000.06 70 | line 11  T GET3 C0011(BU,2),0.0(TMXG)
+!CHECK 005062.40 | 000007.76 8A  002000.12 F0 | line 12  CM0101,TIDNCD(TMXI)
+!CHECK 005063.40 | 004762.20 10 | line 14  LX,TMXG,TSCIX4
+!CHECK 005064.00 | 000010.00 8A  036000.06 70 | line 15  C0011,TIDS(TMXI)
+!CHECK 005065.00 | 000000.41 88  236600.23 10 | line 16  T MLOK4 KF(V+IC)(BU,30,6),0.33(TMXG)
+!CHECK 005066.00 | 005070.36 C2 | line 17  BAE,TMOK4
+!CHECK 005066.40 | 005065.30 40 | line 18  BZXCZ,TMLOK4
+!CHECK 005067.00 | 000001.27 05 | line 19  V+I,TMXGA,01.0
+!CHECK 005067.40 | 005070.50 00 | line 20  B,TGET4
+!CHECK 005070.00 | 004763.20 B0 | line 21  T MOK4 V+,TMXG,TSCBK4
+!CHECK 005070.40 | 000000.00 88  003000.06 70 | line 22  T GET4 C0011(BU,3),0.0(TMXG)
+!CHECK 005071.40 | 000010.76 8A  002000.12 F0 | line 23  CM0101,TIDSCD(TMXI)
+!CHECK 005072.40 | 004632.27 30 | line 24  T MNG SV,TMXGA,TERFLG
+!CHECK 005073.00 | 005075.71 42 | line 25  BXVZ,TM1AA
+!CHECK 005073.40 | 000002.74 8A  004000.20 50 | line 27  L,TITYCD(TMXI)
+!CHECK 005074.40 | 005075.74 C0 | line 28  BZRZ,TM1AA
+!CHECK 005075.00 | 005075.04 00 | line 29  BD,$
+!CHECK 005075.40 | 004653.20 10 | line 36  T M1AA LX,TMXG,TUNXW
+!CHECK 005076.00 | 000000.64 8A  014027.20 50 | line 37  L,TIREF(TMXI),46
+!CHECK 005077.00 | 005100.74 C0 | line 38  BZRZ,TMEAT
+!CHECK 005077.40 | 000010.03 01 | line 39  T MDOG LVI,TMX1,8.0
+!CHECK 005100.00 | 005377.10 00 | line 40  B,TMREJB
+!CHECK 005100.40 | 002155.00 80  022027.20 10 | line 41  T MEAT +(BU,18),TLIMB,46
+!CHECK 005101.40 | 000011.10 30 | line 42  LV,TMXC,$R
+!CHECK 005102.00 | 000000.00 84  000000.06 70 | line 43  LF(BU),0.0(TMXC)
+!CHECK 005103.00 | 005077.74 C0 | line 44  BZRZ,TMDOG
+!CHECK 005103.40 | 000004.00 8A  060010.20 50 | line 45  L,TICH(TMXI),16
+!CHECK 005104.40 | 000005.00 8A  060050.06 70 | line 46  LF,TIUN(TMXI),80
+!CHECK 005105.40 | 000002.74 8A  004000.06 70 | line 47  LF,TITYCD(TMXI)
+!CHECK 005106.40 | 000000.21 05 | line 48  V+I,TMXG,0.0
+!CHECK 005107.00 | 005116.30 42 | line 49  BXCZ,TM1E
+!CHECK 005107.40 | 000000.00 88  060010.23 10 | line 50  T M1A KF,TCHNM(TMXG),16
+!CHECK 005110.40 | 005115.76 C0 | line 51  BZAE,TM1B
+!CHECK 005111.00 | 000000.74 88  004000.23 10 | line 52  KF,TUNTYP(TMXG)
+!CHECK 005112.00 | 005115.76 C0 | line 53  BZAE,TM1B
+!CHECK 005112.40 | 004652.21 30 | line 54  SV,TMXG,TDKSAV
+!CHECK 005113.00 | 000002.74 8A  005162.34 00 | line 55  BZB,TITYCD(TMXI),TM1D
+!CHECK 005114.00 | 000031.00 88  060050.23 10 | line 56  KF,TUNME(TMXG),80

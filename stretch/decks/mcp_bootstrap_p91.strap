@@ -1,0 +1,306 @@
+! mcp_bootstrap_p91.strap -- MCP INITIALIZATION, printed page 91:
+! the tail of "ZERO THE I/O REQUEST TBL AND REEL SLOT", the one-line
+! note that the unit area table is already generated, and the head of
+! "GENERATE THE FILE AREA TABLES".
+! docs/MCP_Mar63_001-249.pdf PDF p.98, header "PAGE NUMBER 91".
+!
+! Fifty-six printed lines.  THIRTY-FIVE COMPILE; the other twenty-one
+! carry only the dash in the STATEMENT column (lines 1-3, 9, 14-16,
+! 20, 22, 24-28, 31, 34, 38, 42, 45, 49, 53) or are the boxed banners
+! "ZERO THE I/O REQUEST TBL AND REEL SLOT" (line 2), "THE UNIT AREA
+! TABLE IS ALREADY GENERATED FOR THIS IOD CARD" (line 15) and
+! "GENERATE THE FILE AREA TABLES" (lines 25-27).
+!
+! CONTIGUOUS BY ADDRESS, AND THE BACKWARD EDGE CLOSES.  First located
+! line is 4 at 005154.40, last is 56 at 005210.00 (two half words),
+! so printed p.92 must begin at 005211.00.  Every link in between
+! closes: each row's location plus one half word per "XXXXXX.NN NN"
+! group in its BINARY OUTPUT equals the next row's location, all
+! thirty-four links, with no gap and no overlap.  That is what says
+! no line fell off the top or the bottom of the render.  Printed
+! p.90's last row is its line 56, a single half word at 005154.00
+! ("V+I,TMXE,9.0"), and 005154.00 plus one half word is 005154.40 --
+! this page's first location, with nothing in between.
+!
+! WHAT THE PAGE DOES.  Lines 4-13 finish zeroing: the I/O request
+! table slot's reel address is loaded, and if non-zero the reel slot
+! it points at is zeroed too (T M2AC), then the I/O request table
+! slot itself.  The loop walks the table by stepping T MXB a word at
+! a time (V+IC) until T LAST+1.0 marks the end, when T MXB is
+! reloaded to T IOREQ-1 and the loop drops through to T N5.  Line 17
+! (T M1D) starts the per-card work: the IOD card's reference number
+! picks a symbolic-I/O location out of T LIMB, that word's unit area
+! address goes to T MXEE, and the unit's IOD count is bumped.  Lines
+! 29-56 build the file area table for this card: reference number,
+! unit area address and file area address into the symbolic I/O
+! table, table-of-exits address into the file area table, then the
+! mode (card machine or tape), and for tape the disposition and the
+! density.  Line 54 reloads the type code and line 55-56 test it for
+! DISK.
+!
+! ---------------------------------------------------------------
+! EXTERNALS -- EVERY ONE TRANSCRIBED ELSEWHERE AND CONFIRMED HERE
+! ---------------------------------------------------------------
+! Each field offset below is printed in THIS page's own address
+! field, and every one matches a deck already in the tree.  Nothing
+! here is derived from the assembler.
+!
+!   T FREEL  000000.34  BU,18   printed pp.56, 62, 69, 70
+!   T LAST   000000.22  BU,1    printed pp.57, 58, 62, 65, 66
+!                               (line 10 prints 000001.22 -- the
+!                                statement is T LAST+1.0)
+!   T IOREQ  (8)3373.0          printed pp.48, 57, 58, 65, 66
+!                               (line 11's LVI prints 003372.07,
+!                                the statement being T IOREQ-1.)
+!   T LIMB   (8)2155.0          printed p.83; line 18 prints
+!                               002155.00 80  022027.20 10, which is
+!                               printed p.89 line 41's row verbatim
+!   T UNREF  000000.60  BU,12   printed p.84
+!   T IODK   000001.06  BU,12   printed p.84 line 48
+!   T IREF   000000.64  BU,12   printed p.84; line 29's whole row is
+!                               printed p.89 line 37's row verbatim
+!   T IODRN  000000.00  BU,18   printed p.85
+!   T IABEX  000000.00  BU,18   printed p.84
+!   T TOELO  000002.00  BU,18   printed p.85
+!   T ITYCD  000002.74  BU,4    printed pp.84, 89
+!   T IMOCD  000006.76  BU,2    printed pp.84, 89
+!   T FMODE  000002.60  BU,2    printed p.85
+!   T IDSCD  000010.76  BU,2    printed pp.84, 89
+!   T REELD  000002.35  BU,3    printed p.85
+!   T IDNCD  000007.76  BU,2    printed pp.84, 89
+!   T DENMD  000002.33  BU,2    printed p.85
+!   the index names T MXB=$3, T MXC=$4, T MXD=$5, T MXG=$8,
+!   T MXEE=$9, T MXI=$10, T MXGA=$11 -- all printed p.83, and each
+!   confirmed here by the index digit this page's bytes print.
+!
+! ONE OFF-PAGE BRANCH TARGET, read out of this page's own binary
+! column: T M1FA.  Lines 52 and 56 both print 005262 in the address
+! field, line 52's B with the ".10" a B prints for a first-half-word
+! target (printed p.89 line 40) and line 56's BZAE with the ".36"
+! that is p.89 line 51's ".76" with bit 18 cleared.  T M1FA =
+! 005262.00.  Printed p.92 will state it outright.
+!
+! >>> THIS PAGE SETTLES printed p.89's DERIVED T M1D. <<<  That deck
+! recovered T M1D = 005162.00 from its line 55's "005162.34 00" and
+! the BZB low-field constant ".34".  Line 17 here IS T M1D, and the
+! LOCATION column prints 005162.00 beside it.
+!
+! >>> TWO SPELLINGS IN EARLIER DECKS DO NOT MATCH WHAT THE PAGES
+! PRINT. <<<  Recorded here, not changed there:
+!   * decks/mcp_bootstrap_p84.strap calls 000001.06 "T IODCK".  Both
+!     printed p.84 line 48 and this page's line 23 print "T IODK" --
+!     four letters after the T, not five.  This deck writes T IODK.
+!   * decks/mcp_bootstrap_p85.strap calls 000002.60 "T FMCDE".  Both
+!     printed p.85 line 11 and this page's lines 40 and 44 print
+!     "T FMODE", with the closed O of "T ORARC" on the line below it
+!     rather than the wide-open C that same name ends with.  The
+!     comment on p.85 reads "-FILE MODE".  This deck writes T FMODE.
+!
+! >>> O AND C IN THE STATEMENT COLUMN. <<<  Line 36's operand prints
+! as "TTCELC" at 400 dpi.  Printed p.85 line 8 prints the same symbol
+! in its NAME column two lines under "T IODRN", whose O is undamaged,
+! and the glyphs match: T TOELO.  Lines 37/46/54's "T ITYCD" and
+! lines 39/43's "T IMOCD" were settled the same way, against printed
+! p.84's !SYM block, which gives both the address and the width this
+! page's own binary column prints.
+!
+! >>> 0 AND C IN THE HEX BYTE, AND WHY THE EYE CANNOT DO IT HERE.
+! <<<  A zero on this page prints OPEN about as often as it prints
+! closed.  Crop the two leading zeros of the LOCATION-style octal
+! field -- a field that can hold only 0-7, so every round glyph in
+! it is certainly a zero -- and at 3600 dpi lines 5, 11, 41 and 52
+! print them as two wide C shapes while lines 7, 12 and 13 print the
+! first open and the second closed.  Deciding 0 against C by looking
+! at one glyph is therefore not possible on this page, and it is how
+! "C1" for line 11 and "C0" for line 13 came out of the first read.
+!
+! WHAT DOES DECIDE IT is the comparison the whole project's rule
+! asks for, done against a KNOWN-GOOD INSTANCE IN THE SAME ROW,
+! where the ink is the same.  Normalised overlap between the byte's
+! first digit and that row's own two octal zeros:
+!
+!     lines 7, 8, 11, 12, 13, 41, 52   0.70 0.70 0.75 0.73 0.71
+!                                      0.84 0.72     -> a zero
+!     line  5                          0.55          -> NOT a zero
+!     the 8 rows                       0.40-0.57
+!     the 3 rows                       0.24-0.40
+!     control, zero against zero       0.53-0.84
+!
+! Every row whose first digit this deck writes as 0 scores at or
+! above its own row's zero-against-zero control; line 5, the one row
+! that carries a C, falls below every one of them.  Line 56 is below
+! that crop and is settled by eye instead: its byte's first glyph is
+! a wide C with flat terminals beside the tight closed ovals of its
+! own "005262", and it is the same C0 printed p.89's two BZAE rows
+! print.  The assembler reproduces all thirty-five rows from the
+! STATEMENT text alone, which is the third witness.
+
+! ---- index names, printed p.83 ------------------------------------
+TMXB    SYN, $3
+TMXC    SYN, $4
+TMXD    SYN, $5
+TMXG    SYN, $8
+TMXEE   SYN, $9
+TMXI    SYN, $10
+TMXGA   SYN, $11
+
+! ---- words and tables, printed pp.48, 57, 83 ----------------------
+TIOREQ  SYN, (8)3373.0
+TLIMB   SYN, (8)2155.0
+
+! ---- I/O request table offsets, printed pp.56, 57, 62 -------------
+TFREEL  SYN(BU,18), 0.28
+TLAST   SYN(BU,1), 0.18
+
+! ---- unit area table offsets, printed p.84 ------------------------
+TUNREF  SYN(BU,12), 0.48
+TIODK   SYN(BU,12), 1.6
+
+! ---- IOD card breakdown table offsets, printed p.84 ---------------
+TIABEX  SYN(BU,18), 0.0
+TIREF   SYN(BU,12), 0.52
+TITYCD  SYN(BU,4), 2.60
+TIMOCD  SYN(BU,2), 6.62
+TIDNCD  SYN(BU,2), 7.62
+TIDSCD  SYN(BU,2), 8.62
+
+! ---- file area table offsets, printed p.85 ------------------------
+TIODRN  SYN(BU,18), 0.0
+TTOELO  SYN(BU,18), 2.0
+TDENMD  SYN(BU,2), 2.27
+TREELD  SYN(BU,3), 2.29
+TFMODE  SYN(BU,2), 2.48
+
+! ---- off page, read out of THIS page's binary column --------------
+TM1FA   SYN, (8)5262.0
+
+        SLC, (8)5154.40
+
+! ---- ZERO THE I/O REQUEST TBL AND REEL SLOT (continued) ----------
+        L, TFREEL(TMXB), 46          ! line 4  -GET THE FIRST REEL ADDRESS
+        BRZ, TM2AC                   ! line 5  -NO REEL
+        LV, TMXGA, $R                ! line 6
+        Z, 0.0(TMXGA)                ! line 7  -ZERO THE REEL SLOT
+TM2AC   Z, 0.0(TMXB)                 ! line 8  -ZERO THE I/O REQ TBL SLOT
+        BZB, TLAST+1.0(TMXB), TM1DB  ! line 10 -IF NOT LAST ENTRY IN THE
+                                      !          I/O REQ TBL
+        LVI, TMXB, TIOREQ-1.         ! line 11
+TM1DB   V+IC, TMXB, 1.0              ! line 12
+        B, TN5                       ! line 13
+
+! ---- THE UNIT AREA TABLE IS ALREADY GENERATED FOR THIS IOD CARD --
+TM1D    L, TUNREF(TMXG), 46          ! line 17 -GET THE REF NO.
+        +(BU,18), TLIMB, 46          ! line 18 -COMPUTE SYMB. I/O LOC
+                                      !          ADDRESS
+        LV, TMXG, $R                 ! line 19
+        LV, TMXEE, 0.0(TMXG)         ! line 21 -GET UNIT AREA ADDRESS
+TN5     M+1, TIODK(TMXEE)            ! line 23 -ADD TO IOD COUNT
+
+! ---- GENERATE THE FILE AREA TABLES -------------------------------
+        L, TIREF(TMXI), 46           ! line 29 -GENERATE LOC OF SYMB I/O
+                                      !          LOC WORD
+        CM0101, TIODRN(TMXD), 46     ! line 30 -STORE REF NO. IN FILE
+                                      !          AREA TABLE
+        SV, TMXEE, 0.0(TMXC)         ! line 32 -STORE UNIT AREA ADD IN
+                                      !          SYMB I/O TB
+        SV, TMXD, 0.32(TMXC)         ! line 33 -STORE FILE AREA ADD IN
+                                      !          SYMB I/O TB
+        C0011, TIABEX(TMXI)          ! line 35 -GET TABLE OF EXITS ADDRESS
+        CM0101, TTOELO(TMXD)         ! line 36 -PLACE IN FILE AREA TABLE
+        BB, TITYCD(TMXI), TM1FUZ     ! line 37 -IF TAPE
+        LF, TIMOCD-1.0(TMXI)         ! line 39 -GET CARD MACHINE MODE
+        CM0101, TFMODE(TMXD)         ! line 40
+        B, TM1FAZ                    ! line 41
+TM1FUZ  LF, TIMOCD(TMXI)             ! line 43 -GET THE TAPE MODE
+        SF, TFMODE(TMXD)             ! line 44
+        BZB, TITYCD(TMXI), TM1FAZ    ! line 46 -IF THE EQUIP IS NOT TAPE
+        C0011, TIDSCD(TMXI)          ! line 47 -GET THE REEL DISP
+        CM0101, TREELD(TMXD)         ! line 48
+        C0011, TIDNCD(TMXI)          ! line 50 -GET GIVEN DENSITY
+        CM0101, TDENMD(TMXD)         ! line 51
+        B, TM1FA                     ! line 52
+TM1FAZ  L, TITYCD(TMXI)              ! line 54
+        KFI(BU,4), 1                 ! line 55 -LOOK FOR DISK
+        BZAE, TM1FA                  ! line 56 -IF NOT DISK
+
+! ---------------------------------------------------------------
+! THE PRINTED LISTING -- all thirty-five rows that compile.
+! ---------------------------------------------------------------
+!   line  4  005154.40    000000.34 83  022027.20 50          L,TFREEL(TMXB),46
+!   line  5  005155.40    005157.34 C2                        BRZ,TM2AC
+!   line  6  005156.00    000011.26 30                        LV,TMXGA,$R
+!   line  7  005156.40    000000.22 0B                        Z,0.0(TMXGA)
+!   line  8  005157.00    000000.22 03                T M2AC  Z,0.0(TMXB)
+!   line 10  005157.40    000001.22 83  005161.34 00          BZB,TLAST+1.0(TMXB),TM1DB
+!   line 11  005160.40    003372.07 01                        LVI,TMXB,TIOREQ-1.
+!   line 12  005161.00 *  000001.07 06                T M1DB  V+IC,TMXB,1.0
+!   line 13  005161.40    005165.10 00                        B,TN5
+!   line 17  005162.00    000000.60 88  014027.20 50  T M1D   L,TUNREF(TMXG),46
+!   line 18  005163.00    002155.00 80  022027.20 10          +(BU,18),TLIMB,46
+!   line 19  005164.00    000011.20 30                        LV,TMXG,$R
+!   line 21  005164.40    000000.22 38                        LV,TMXEE,0.0(TMXG)
+!   line 23  005165.00    000001.06 89  014000.22 B0  T N5    M+1,TIODK(TMXEE)
+!   line 29  005166.00    000000.64 8A  014027.20 50          L,TIREF(TMXI),46
+!   line 30  005167.00    000000.00 85  022027.12 F0          CM0101,TIODRN(TMXD),46
+!   line 32  005170.00    000000.23 34                        SV,TMXEE,0.0(TMXC)
+!   line 33  005170.40    000000.53 34                        SV,TMXD,0.32(TMXC)
+!   line 35  005171.00    000000.00 8A  022000.06 70          C0011,TIABEX(TMXI)
+!   line 36  005172.00    000002.00 85  022000.12 F0          CM0101,TTOELO(TMXD)
+!   line 37  005173.00    000002.74 8A  005176.74 02          BB,TITYCD(TMXI),TM1FUZ
+!   line 39  005174.00 *  000005.76 8A  002000.06 70          LF,TIMOCD-1.0(TMXI)
+!   line 40  005175.00    000002.60 85  002000.12 F0          CM0101,TFMODE(TMXD)
+!   line 41  005176.00    005206.10 00                        B,TM1FAZ
+!   line 43  005176.40    000006.76 8A  002000.06 70  T M1FUZ LF,TIMOCD(TMXI)
+!   line 44  005177.40    000002.60 85  002000.12 F0          SF,TFMODE(TMXD)
+!   line 46  005200.40    000002.74 8A  005206.34 00          BZB,TITYCD(TMXI),TM1FAZ
+!   line 47  005201.40    000010.76 8A  002000.06 70          C0011,TIDSCD(TMXI)
+!   line 48  005202.40    000002.35 85  003000.12 F0          CM0101,TREELD(TMXD)
+!   line 50  005203.40    000007.76 8A  002000.06 70          C0011,TIDNCD(TMXI)
+!   line 51  005204.40    000002.33 85  002000.12 F0          CM0101,TDENMD(TMXD)
+!   line 52  005205.40    005262.10 00                        B,TM1FA
+!   line 54  005206.00    000002.74 8A  004000.20 50  T M1FAZ L,TITYCD(TMXI)
+!   line 55  005207.00    040000.00 80  404000.23 10          KFI(BU,4),1
+!   line 56  005210.00 *  005262.36 C0                        BZAE,TM1FA
+
+! ---- CHECKS, read by tests/verify_mcp_page.py 91 --------
+!SYM   TM2AC    005157.00
+!SYM   TM1DB    005161.00
+!SYM   TM1D     005162.00
+!SYM   TN5      005165.00
+!SYM   TM1FUZ   005176.40
+!SYM   TM1FAZ   005206.00
+!CHECK 005154.40 | 000000.34 83  022027.20 50 | line 4   L,TFREEL(TMXB),46
+!CHECK 005155.40 | 005157.34 C2 | line 5   BRZ,TM2AC
+!CHECK 005156.00 | 000011.26 30 | line 6   LV,TMXGA,$R
+!CHECK 005156.40 | 000000.22 0B | line 7   Z,0.0(TMXGA)
+!CHECK 005157.00 | 000000.22 03 | line 8   T M2AC Z,0.0(TMXB)
+!CHECK 005157.40 | 000001.22 83  005161.34 00 | line 10  BZB,TLAST+1.0(TMXB),TM1DB
+!CHECK 005160.40 | 003372.07 01 | line 11  LVI,TMXB,TIOREQ-1.
+!CHECK 005161.00 | 000001.07 06 | line 12  T M1DB V+IC,TMXB,1.0
+!CHECK 005161.40 | 005165.10 00 | line 13  B,TN5
+!CHECK 005162.00 | 000000.60 88  014027.20 50 | line 17  T M1D L,TUNREF(TMXG),46
+!CHECK 005163.00 | 002155.00 80  022027.20 10 | line 18  +(BU,18),TLIMB,46
+!CHECK 005164.00 | 000011.20 30 | line 19  LV,TMXG,$R
+!CHECK 005164.40 | 000000.22 38 | line 21  LV,TMXEE,0.0(TMXG)
+!CHECK 005165.00 | 000001.06 89  014000.22 B0 | line 23  T N5 M+1,TIODK(TMXEE)
+!CHECK 005166.00 | 000000.64 8A  014027.20 50 | line 29  L,TIREF(TMXI),46
+!CHECK 005167.00 | 000000.00 85  022027.12 F0 | line 30  CM0101,TIODRN(TMXD),46
+!CHECK 005170.00 | 000000.23 34 | line 32  SV,TMXEE,0.0(TMXC)
+!CHECK 005170.40 | 000000.53 34 | line 33  SV,TMXD,0.32(TMXC)
+!CHECK 005171.00 | 000000.00 8A  022000.06 70 | line 35  C0011,TIABEX(TMXI)
+!CHECK 005172.00 | 000002.00 85  022000.12 F0 | line 36  CM0101,TTOELO(TMXD)
+!CHECK 005173.00 | 000002.74 8A  005176.74 02 | line 37  BB,TITYCD(TMXI),TM1FUZ
+!CHECK 005174.00 | 000005.76 8A  002000.06 70 | line 39  LF,TIMOCD-1.0(TMXI)
+!CHECK 005175.00 | 000002.60 85  002000.12 F0 | line 40  CM0101,TFMODE(TMXD)
+!CHECK 005176.00 | 005206.10 00 | line 41  B,TM1FAZ
+!CHECK 005176.40 | 000006.76 8A  002000.06 70 | line 43  T M1FUZ LF,TIMOCD(TMXI)
+!CHECK 005177.40 | 000002.60 85  002000.12 F0 | line 44  SF,TFMODE(TMXD)
+!CHECK 005200.40 | 000002.74 8A  005206.34 00 | line 46  BZB,TITYCD(TMXI),TM1FAZ
+!CHECK 005201.40 | 000010.76 8A  002000.06 70 | line 47  C0011,TIDSCD(TMXI)
+!CHECK 005202.40 | 000002.35 85  003000.12 F0 | line 48  CM0101,TREELD(TMXD)
+!CHECK 005203.40 | 000007.76 8A  002000.06 70 | line 50  C0011,TIDNCD(TMXI)
+!CHECK 005204.40 | 000002.33 85  002000.12 F0 | line 51  CM0101,TDENMD(TMXD)
+!CHECK 005205.40 | 005262.10 00 | line 52  B,TM1FA
+!CHECK 005206.00 | 000002.74 8A  004000.20 50 | line 54  T M1FAZ L,TITYCD(TMXI)
+!CHECK 005207.00 | 040000.00 80  404000.23 10 | line 55  KFI(BU,4),1
+!CHECK 005210.00 | 005262.36 C0 | line 56  BZAE,TM1FA

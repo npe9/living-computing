@@ -1780,7 +1780,34 @@ def statement_size(stmt, symtab=None):
         # and the printed value is its SIZE, exactly as DR's is.  Note
         # the count is written BARE there and parenthesised on p.21;
         # dr_count has always taken either.
-        return 0, dds_length_bits(stmt.mods, stmt.lineno, symtab) * dr_count(stmt, symtab)
+        # >>> A RESERVATION WHOSE MODE IS "N" ALIGNS TO A WORD. <<<
+        #
+        # printed p.87 line 11 is "T CAT DRZ(N),2" and the page puts it
+        # at 004771.00.  The four VFs above it (lines 6-9) are 25 bits
+        # each, so the counter arrives at 004770.71; with alignment 0
+        # the reservation lands there and every symbol after it is a
+        # bit low.  parse_dds("N") is ('N', None, None) and
+        # dds_length_bits gives 64, so an N datum IS a word.
+        #
+        # THIS RULE IS FITTED TO THAT PAGE, NOT READ FROM C22-6531, and
+        # two broader versions were REFUTED before it:
+        #
+        #   "DR/DRZ always rounds to a half word" breaks LBLZOR --
+        #   printed p.54 SYNs it at bit 90227 and printed p.48 places
+        #   it at 90280.
+        #
+        #   "any mode-only dds aligns" moves X VSTOR, which printed
+        #   p.24 line 52 ("DRZ(BU),100") puts at 001243.50 -- bit 40,
+        #   neither word nor half-word aligned.
+        #
+        # Restricted to mode N, NO existing symbol moves (checked by
+        # diffing the whole merged image's symbol table) and printed
+        # p.87 verifies 6 of 6.  What would settle it properly is
+        # C22-6531's own sentence, the way the VF rounding rule below
+        # was settled, or a second page using DRZ(N).
+        _mode, _len, _ = parse_dds(stmt.mods[0], stmt.lineno)
+        return (64 if _mode == 'N' else 0), \
+            dds_length_bits(stmt.mods, stmt.lineno, symtab) * dr_count(stmt, symtab)
     if op == 'VF':
         # >>> VF IS TWENTY-FIVE BITS, NOT A WHOLE HALF WORD, and the
         # size only ever showed as a half because everything that can

@@ -394,9 +394,20 @@ NO_DECK_PAGES = {47, 59, 60, 81, 82}
 # page's own last instruction, and each lands on the later page's
 # first printed location.  prosa.py checks the whole range again on
 # every build, so this comment is a summary and not the evidence.
+# >>> THE RANGE REACHES printed p.96, 2026-10-30. <<<
+# pp.90-96 continue MOVE from p.89 and their address chain closes end
+# to end (tests/run_tests.sh records each boundary).  Merging them
+# caught three symbols that the per-page checks cannot see, because a
+# page that only USES an external never prints its data description:
+# p.90 had TFIAAC with no dds against p.84's (BU,18), TTYPE as (BU,1)
+# against p.62's (BU,4) -- BZB prints no length, so p.90 could not see
+# it -- and TUNME as (BU,64), which is its own statement's dds and not
+# the symbol's (BU,48) from p.84 line 9.  In each case the page that
+# PRINTS THE DEFINITION is the authority and the reconstruction gave
+# way.  None of the three changed a single assembled bit.
 MCP_IPL_PAGES = [
     (DECK("mcp_bootstrap_p%d.strap" % n), "printed p.%d" % n)
-    for n in range(15, 86) if n not in NO_DECK_PAGES
+    for n in range(15, 97) if n not in NO_DECK_PAGES
 ]
 
 

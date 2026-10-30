@@ -6205,6 +6205,61 @@ run "The file area, reel pool and TYPE SCAN tables, printed p.85, bit-exact (MCP
 # checker that silently approves a page it never looked at is worse
 # than no checker.
 run "The generic page checker reproduces pp.83-85 from the decks' own blocks" sh -c 'python3 verify_mcp_page.py 83 && python3 verify_mcp_page.py 84 && python3 verify_mcp_page.py 85'
+
+# pp.86 and 87 use the generic checker alone -- no hand-written
+# verifier -- which is the point of it.  p.86 is the MODE, DENSITY and
+# DISPOSITION scan tables; p.87 is THE DUMMY TABLES FOR THE
+# UN-ASSIGNMENT, whose last line is an XW at 005013.00, ONE WORD before
+# T MOVE at 005014.00 on printed p.88.
+run "The mode, density and disposition scan tables, printed p.86" python3 verify_mcp_page.py 86
+run "The dummy un-assignment tables, printed p.87 (ends one word before T MOVE)" python3 verify_mcp_page.py 87
+
+# >>> T MOVE ITSELF. <<<  printed p.88 line 6 is "T MOVE
+# SWAPI,12,$1,T SIOXW" at 005014.00 -- its first instruction saves the
+# indexes into the fifteen-word area printed p.83 declares at
+# 004633.00.  The page is the CONSUMER of everything pp.83-87 set up:
+# p.83's TERFLG and TMIOD, p.84's IOD field map, p.85's TYPE scan and
+# p.86's MODE scan all appear in its first thirty lines, and each one
+# reproduces the printed binary from the other page's address.
+#
+# p.89 continues the field scan and the unit-name-table search.  A
+# cross-check worth keeping: p.88 DERIVED T MNG = 005072.40 from a
+# forward branch, and p.89 READ T MNG off its own LOCATION column at
+# the same half word.
+run "T MOVE, printed p.88" python3 verify_mcp_page.py 88
+run "MOVE's field scan and unit-name search, printed p.89" python3 verify_mcp_page.py 89
+
+# >>> MOVE CONTINUES, printed pp.90-96, 2026-10-30. <<<
+# Seven pages, 55 symbols and 265 listing rows, each transcribed by a
+# separate agent that never saw the others' work.  What makes them
+# more than seven independent page checks is that THE ADDRESS CHAIN
+# CLOSES END TO END with no gap and no overlap:
+#
+#   p.89 ends 005114.00 = p.90 line 1       p.93 ends 005273.40 = p.94 line 1
+#   p.90 ends 005154.00 = p.91 line 1       p.94 ends 005326.00 = p.95 line 1
+#   p.91 ends 005210.00 = p.92 line 1       p.95 ends 005365.00 = p.96 line 1
+#   p.92 ends 005244.00 = p.93 line 1       p.96 ends 005424.00
+#
+# Each boundary is a full or half word computed from the earlier
+# page's own last instruction landing on the later page's first
+# printed location, so a dropped or duplicated row on any one page
+# would break the next page's chain.
+run "MOVE's table build and reel status, printed p.90" python3 verify_mcp_page.py 90
+run "MCP initialization and the file area tables, printed p.91" python3 verify_mcp_page.py 91
+run "MOVE's disk and unit handling, printed p.92" python3 verify_mcp_page.py 92
+run "MOVE's mode and density scan, printed p.93" python3 verify_mcp_page.py 93
+run "MOVE's reel status and job synchronization, printed p.94" python3 verify_mcp_page.py 94
+run "MOVE's IOD sort and table locations, printed p.95" python3 verify_mcp_page.py 95
+run "MOVE's table zeroing, printed p.96" python3 verify_mcp_page.py 96
+
+# A LABEL'S SPELLING IS THE ONE THING listing_oracle CANNOT CHECK:
+# it compares LOCATIONS and BINARY, and a name is not in the machine
+# code.  printed p.84 read T IODK as TIODCK and printed p.85 read
+# T FMODE as TFMCDE (p.93 copied it); all three assembled perfectly
+# and passed their page checks while being the wrong name.  Two pages
+# referencing one word are two independent readings of it, so
+# disagreement is a defect -- see tests/check_symbol_spellings.py.
+run "No MCP symbol is spelled two ways across the decks" python3 check_symbol_spellings.py
 # Thirty-seven lines, thirty compiled, and only SEVEN print any
 # machine code at all.  A data page: the message buffers the
 # assignment printer fills in, three hexadecimal constants, five SYN

@@ -1,0 +1,81 @@
+! mcp_bootstrap_p87.strap -- MCP INITIALIZATION, printed page 87:
+! THE DUMMY TABLES FOR THE UN-ASSIGNMENT.
+! docs/MCP_Mar63_001-249.pdf PDF p.94, header "PAGE NUMBER 87".
+!
+! CONTIGUOUS AT BOTH ENDS.  printed p.86 ends at 004765.76 and this
+! page's line 5 CNOP is at 004766.40; its last line, 26, is an XW at
+! 005013.00, one word before printed p.88's first line -- 005014.00,
+! which is T MOVE.
+!
+! >>> "T WORM" IS AN O AND NOT A C, AND THE GLYPH ALONE DOES NOT SAY
+! SO. <<<  At 900 dpi the label at line 26 reads "T WCRM": its third
+! character has a break in the upper right.  The REFERENCES at lines
+! 16, 17, 22 and 23 print the same symbol with a closed round O,
+! identical to the O in "T BOID" on the line above.  Cropped to the
+! same magnification and set side by side, the label's glyph is a WORN
+! O -- a C in this font has a far larger opening.  They must be one
+! symbol, and the undamaged instances say which.
+!
+! That is the same hazard strap/mcp_crop.sh's header records for B
+! against 8, in another pair: compare an ambiguous glyph against a
+! known-good instance of each candidate in the same font and row,
+! rather than deciding it in isolation.
+
+        SLC, (8)4766.40
+
+        CNOP                         ! line 5
+TDSIO   VF, TCAT                     ! line 6
+        VF, TBIRD                    ! line 7  -SAVE TAPES
+        VF, TCOT                     ! line 8
+        VF, TBOID                    ! line 9
+TCAT    DRZ(N), 2                    ! line 11 -DUMMY UNIT AREA
+TBIRD   DRZ(N), 2                    ! line 13 -DUMMY FILE AREA
+        XW, (.31)3                   ! line 14 -SET TO SAVE
+        DRZ(N), 3                    ! line 15 -MORE FOR THE ...
+        VF, TWORM                    ! line 16
+        VF, TWORM                    ! line 17
+        DD(BU,7), (16)01             ! line 18
+TCOT    DRZ(N), 2                    ! line 20
+TBOID   DRZ(N), 6                    ! line 21
+        VF, TWORM                    ! line 22
+        VF, TWORM                    ! line 23
+        DD(BU,7), (16)01             ! line 24
+TWORM   XW, (.26)3                   ! line 26 -THE DUMMY REEL POOL
+
+! ---------------------------------------------------------------
+! THE PRINTED LISTING, for listing_oracle.py
+! ---------------------------------------------------------------
+!   line  5  004766.40  000000.30 00                      CNOP
+!   line  6  004767.00  004771.00+                T DSIO  VF,TCAT
+!   line  7  004767.40  004773.00+                        VF,TBIRD
+!   line  8  004770.00  005002.00+                        VF,TCOT
+!   line  9  004770.40  005004.00+                        VF,TBOID
+!   line 11  004771.00  000002.00                 T CAT   DRZ(N),2
+!   line 13  004773.00  000002.00                 T BIRD  DRZ(N),2
+!   line 14  004775.00  000000.00+ 000 140000 000000       XW,(.31)3
+!   line 15  004776.00  000003.00                         DRZ(N),3
+!   line 16  005001.00  005013.00+                        VF,TWORM
+!   line 17  005001.40  005013.00+                        VF,TWORM
+!   line 18  005001.71           001                      DD(BU,7),(16)01
+!   line 20  005002.00  000002.00                 T COT   DRZ(N),2
+!   line 21  005004.00  000006.00                 T BOID  DRZ(N),6
+!   line 22  005012.00  005013.00+                        VF,TWORM
+!   line 23  005012.40  005013.00+                        VF,TWORM
+!   line 24  005012.71           001                      DD(BU,7),(16)01
+!   line 26  005013.00  000000.00+ 110 000000 000000  T WORM  XW,(.26)3
+
+! ---- CHECKS, read by tests/verify_mcp_page.py 87 -----------------
+!SYM   TDSIO    004767.00
+!SYM   TCAT     004771.00
+!SYM   TBIRD    004773.00
+!SYM   TCOT     005002.00
+!SYM   TBOID    005004.00
+!SYM   TWORM    005013.00
+!CHECK 004766.40 | 000000.30 00 | line 5  CNOP
+!CHECK 004767.00 | 004771.00+ | line 6  T DSIO VF,TCAT
+!CHECK 004767.40 | 004773.00+ | line 7  VF,TBIRD
+!CHECK 004770.00 | 005002.00+ | line 8  VF,TCOT
+!CHECK 004770.40 | 005004.00+ | line 9  VF,TBOID
+!CHECK 005001.00 | 005013.00+ | line 16 VF,TWORM
+!CHECK 005012.00 | 005013.00+ | line 22 VF,TWORM
+!CHECK 005013.00 | 000000.00+ 110 000000 000000 | line 26 T WORM XW,(.26)3

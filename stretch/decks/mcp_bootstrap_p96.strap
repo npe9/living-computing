@@ -1,0 +1,396 @@
+! mcp_bootstrap_p96.strap -- MCP, printed page 96:
+! THE TAIL OF THE TABLE-BUILDING CODE, AND "THE DISPATCHER TOLD MOVE
+! TO REJECT NEXT JOB".
+! docs/MCP_Mar63_001-249.pdf PDF p.103, header "PAGE NUMBER 96" --
+! read, not assumed: the top line prints "TIME CLOCK 00054041  PUNID
+! 11011IPL  CARD ID 18000698  DIST. OF 3/01   3/01   PAGE NUMBER 96",
+! and the page's own LOCATION sub-header prints 005365.
+!
+! Fifty-six lines, forty-four of which compile.  The twelve that do
+! not are 6, 16, 18-25, 30 and 31: blank rules and the two boxed
+! headings "THE DISPATCHER TOLD MOVE TO REJECT NEXT JOB" (line 20) and
+! "A SPECIAL REJECT WHENTHE PPRUN INDEX HAS BEEN STEPPED" (line 24 --
+! "WHENTHE" is the page's own spacing).  Card serials run 18000698
+! (line 1) to 18000753 (line 56), so the line number is the serial
+! minus 18000697; that is how the 56-line count was CONFIRMED rather
+! than estimated, and it is what proves no line fell off the top or
+! the bottom of the render.
+!
+! THE LOCATION CHAIN CLOSES END TO END.  005365.40 (line 1) to
+! 005424.00 (line 56); every row's printed location plus its half
+! words equals the next row's printed location, with no gap and no
+! overlap, for all forty-four compiled rows.  Line 56 is a single
+! half-word, so the counter reaches 005424.40, which is where printed
+! p.97 should begin.  THE JOIN TO p.95 IS NOT CHECKED HERE: p.95 has
+! not been read, so this deck asserts only that this page's own header
+! says LOCATION 005365 and its line 1 sits at 005365.40.
+!
+! >>> WHAT THE PAGE DOES. <<<  Lines 1-17 finish laying out the
+! tables: LFT loads the unit count T UNCT out of the PP reference word
+! and the cumulative multiply at line 2 multiplies it by the unit-area
+! table length T UNLGN (printed p.84 line 45 declares it SYN(BU,6),9),
+! giving the reel-pool size; T MXF takes the first free cell, the base
+! address T LIMB is removed, and T MXC and T MXG are set to the first
+! free location.  Line 9 compares the result against T BAMCP, the
+! upper bound, and line 10 branches past the error exit.  Lines 11-13
+! set error code 4.0 in T MX1 and reject the job; lines 14-15 are the
+! zeroing loop T M1F; line 17 goes back to T M1 for the next card.
+! Lines 26-29 are T MREJB, the special reject that marks the PP word
+! rejected and processed and falls into T MREJS with T MXB activated
+! for the count check.  Lines 32-45 are T MREJ proper, the entry the
+! dispatcher uses: it picks the next job out of T PPRUN (overlap) or
+! T PPURF (not overlap), sets the processed bit, tests and sets the
+! reject bit, steps T PPRUN and loads T MXB.  Lines 46-56 are T MREJS
+! / T MREJ1, which walk the I/O request table releasing units --
+! channel address, multi-channel test, channel number, store into the
+! dummy unit area T CAT, unit table address, unit number.
+!
+! T MREJ at 005402.00 IS THE SYMBOL printed p.88 line 11 branches to
+! ("BZRZ,T MREJ", 005402.34 C0).  p.88's deck carried it as a forward
+! SYN stand-in at (8)5402.0; this page prints the label itself, in the
+! NAME column at line 32, and confirms that address.
+!
+! ---------------------------------------------------------------
+! WHAT WAS READ, WHAT WAS DERIVED
+! ---------------------------------------------------------------
+! (1) EVERY LOCATION AND EVERY BINARY HALF-WORD below was read off the
+!     page: the LINE+LOCATION column at 600 dpi, the BINARY OUTPUT
+!     column at 900 dpi in four bands, the NAME+STATEMENT column at
+!     600 dpi and the five disputed rows again at 1200 dpi.
+!
+! (2) THE OFF-PAGE SYMBOLS ARE NOT DERIVED FROM THIS PAGE.  Each is
+!     carried as a SYN stand-in quoting the page that PRINTS it:
+!       p.83  T MX1, T MXA, T MXB, T MXC, T MXF, T MXG, T MXEE
+!             (lines 21-29), T LIMB (15), T BAMCP (17), T MAXRF (18)
+!       p.80  T PPRUN, T PPURF, T CRREF, T UNCT, T JBPRO, T RJECT
+!       p.84  T UNLGN (line 45)
+!       p.78  T CHSXW          p.62  T ABSCH, T ABSUN
+!       p.63  T MULTI, T UNTBA p.87  T CAT (line 11)
+!     Those are the rows that are a REAL check of address placement:
+!     the address came from another page's print, and this page's
+!     print reproduces it.
+!
+! (3) FOUR SYMBOLS COULD NOT BE READ ANYWHERE AND ARE DERIVED.  Say so
+!     when quoting this deck.  The hazard is that a branch's low octal
+!     field is NOT the target's bit offset -- it carries the condition
+!     too -- so an address may never be taken off a branch row without
+!     a same-operation calibration.  The listing's own format (see
+!     strap/listing_oracle.py) is that bit 18, the half-word select,
+!     is the TOP bit of the printed octal pair, and the five low bits
+!     are the operation.  On this page the calibration is complete for
+!     one of the four and partial for three:
+!
+!       T M1    005021.40   READ-EQUIVALENT.  Line 17 prints
+!                           "005021.50 00" for "B,T M1".  Three bare
+!                           B rows on THIS page have targets this page
+!                           prints outright -- line 13 B,T MREJB
+!                           005377.10 against 005377.00, line 35
+!                           B,T MREJ7 005405.10 against 005405.00,
+!                           line 29 B,T MREJS 005414.10 against
+!                           005414.00 -- so a bare B adds 0o10 and
+!                           nothing else.  005021.50 - 0o10 =
+!                           005021.40, and printed p.88 line 15 prints
+!                           "T M1" in its NAME column at 005021.40.
+!                           Two independent routes, same value.
+!       T N2    005444.00   Line 46 prints "005444.30 42" for
+!                           "BXCZ,T N2".  p.88's BZXCZ rows print
+!                           0o30 against targets at .00 (line 26,
+!                           005026.30 40 for T MLOK1 at 005026.00).
+!                           Same low five bits, so the half-word bit
+!                           is clear and the target is word-aligned.
+!                           DERIVED.
+!       T MREJ5 005437.40   Line 50's SECOND half-word prints
+!                           "005437.74 00".  0o74 = 111100: top bit
+!                           set -> .40.  The 0o34 low part matches the
+!                           BB rows (lines 33 and 42) and the BZB1 row
+!                           (line 40), all three of which have targets
+!                           this page prints -- but BZB is not BB, so
+!                           this is a FAMILY calibration, not a
+!                           same-operation one.  DERIVED.
+!       T MREJ3 005442.00   Line 48 prints "005442.34 C2" for
+!                           "BRZ,T MREJ3".  Same reading of the top
+!                           bit: 0o34 = 011100, half-word bit clear,
+!                           so word-aligned.  NO same-operation
+!                           witness anywhere in the corpus.  DERIVED,
+!                           and the weakest of the four.
+!
+!     THE THREE ROWS THAT NAME THEM -- lines 46, 48 and 50 -- THEREFORE
+!     CHECK ONLY THEIR OPERATION BITS, because their addresses were
+!     taken from these very rows.  Forty-one of the forty-four rows
+!     are independent checks; three are not.  Line 50 is half an
+!     exception worth keeping: it is two half-words and only the
+!     SECOND carries T MREJ5.  Its first, "000000.33 88", encodes
+!     T MULTI, which printed p.63 line 2 gives as SYN(BU,1),0.27 and
+!     0o33 is 27.  That half IS an independent check.
+!
+! (4) THE TWO BB ROWS CROSS-CHECK EACH OTHER, which is the cheapest
+!     test of the page's most unusual operand.  Line 33 is
+!     "BB,0.25($15),T MREJ8" -> 005404.74, with T MREJ8 printed on
+!     this page at 005404.40: delta 0o34.  Line 42 is
+!     "BB,.25($15),T MREJS-.32" -> 005413.74, and T MREJS is printed
+!     at 005414.00, so the operand T MREJS-.32 is 005413.40: delta
+!     0o34 again.  Same mnemonic, same trailing byte, same delta, two
+!     targets this page prints.  The "-.32" is read correctly.
+!
+! ---------------------------------------------------------------
+! GLYPHS
+! ---------------------------------------------------------------
+! >>> THE 0/C PAIR IS NOT DECIDABLE BY SHAPE ON THIS PAGE EITHER, and
+! printed p.88's deck already said why: the SAME field prints open in
+! one row and closed in another off the same worn drum. <<<  Three
+! places on this page had to be settled by something other than the
+! shape:
+!
+!   line 12  The statement prints "CMOCOO(BU,18),T MAXRF" and the
+!            second half-word's trailing byte prints "FC".  printed
+!            p.88 line 8 is the same statement against another symbol,
+!            "CM0000(BU,18),T ERFLG", and prints "022000.00 F0".  An
+!            independently transcribed witness, so: CM0000, and F0.
+!   line 33  "BB,C.25($15),T MREJ8".  Line 42 is the same mnemonic
+!            with ".25($15)" and NO leading character, and the two
+!            rows print the IDENTICAL first half-word, 000000.31 8F.
+!            A character that changes no bit between the two rows is a
+!            zero.  Written 0.25.
+!   line 48  "005442.34 C2" -- the trailing byte.  THIS ONE IS NOT
+!            SETTLED BY THE INK AND IS NOT SETTLED BY A WITNESS.
+!            p.88 prints C2 for BAE and for BXVLZ, which are different
+!            operations; BRZ has no transcribed twin anywhere in the
+!            corpus.  The value below is what strap_asm assembles.
+!            That is NOT circular -- strap/opcodes.py took BRZ's bits
+!            from bsv/StretchDecode.bsv, i.e. from the Reference Card,
+!            with no input from this page -- but it is also not a
+!            second reading of the INK, and a row settled by the
+!            assembler is a row this listing has not checked.
+!            RECORDED AS AN UNRESOLVED GLYPH.
+!
+! ---------------------------------------------------------------
+! ONE SUBSTITUTION
+! ---------------------------------------------------------------
+! >>> THE LISTING SPELLS CUMULATIVE MULTIPLY IMMEDIATE "*I+" AND THIS
+! DECK SPELLS IT "*+I". <<<  Line 2 prints "*I+,T UNLGN,46" -- the
+! asterisk is unmistakable at 1200 dpi and is a six-pointed glyph
+! plainly unlike the "+" two characters along.  strap_asm implements
+! the immediate suffix as C22-6531 Appendix A footnote 4 words it ("may
+! be suffixed by the letter I"), i.e. TRAILING, and rejects the infix
+! form with "unknown mnemonic '*I+'".  Written "*+I", the row
+! assembles to 110000.00 80  406027.23 90 -- the printed word, bit for
+! bit, both half-words.  So this is a spelling difference and not a
+! different instruction, and it is ALSO the check on T UNLGN: the left
+! half-word carries 9 left-justified in a 6-bit field, which is printed
+! p.84 line 45's "T UNLGN SYN(BU,6),9" arriving from the other end.
+! THE ASSEMBLER LIMITATION IS REAL and is the one this page hit: STRAP
+! as IBM shipped it accepted the I between the operation and its
+! modifier, and strap_asm does not.
+!
+! ---------------------------------------------------------------
+! LISTING MARKS: lines 10, 38 and 53 carry the bare "*" after their
+! location that printed pp.3, 37-39, 88 and 98 also carry.  It changes
+! no compiled bit.
+
+! ---- index names, printed p.83 lines 21-29 ------------------------
+TMX1    SYN, $1                      ! p.83 line 21
+TMXA    SYN, $2                      ! p.83 line 22 -PP REF WORD LOCATOR
+TMXB    SYN, $3                      ! p.83 line 23 -I/O REQ TABLE PICK
+TMXC    SYN, $4                      ! p.83 line 24 -SYMB I/O TABLE INDEX
+TMXF    SYN, $7                      ! p.83 line 27 -REEL POOL INDEX
+TMXG    SYN, $8                      ! p.83 line 28 -TEMPORARY INDEX
+TMXEE   SYN, $9                      ! p.83 line 29 -TEMPORARY INDEX
+! ---- bounds and limits, printed p.83 lines 15/17/18 ---------------
+TLIMB   SYN, (8)2155.0               ! p.83 line 15 -UPPER BOUNDARY
+TBAMCP  SYN, (8)2153.0               ! p.83 line 17
+TMAXRF  SYN, (8)2155.40              ! p.83 line 18
+! ---- the PP reference word, printed p.80 --------------------------
+TPPRUN  SYN, (8)3315.0
+TPPURF  SYN, (8)3313.0
+TCRREF  SYN(BU,18), 0.0
+TUNCT   SYN(BU,8), 0.28
+TJBPRO  SYN(BU,1), 0.36
+TRJECT  SYN(BU,1), 0.37
+! ---- the unit area table length, printed p.84 line 45 -------------
+TUNLGN  SYN(BU,6), 9
+! ---- the I/O request table, printed pp.62, 63 and 78 --------------
+TCHSXW  SYN, (8)2152.0               ! p.78
+TABSCH  SYN(BU,18), 0.46             ! p.62 line 39 -ABSOLUTE CHANNEL
+TABSUN  SYN(BU,3), 0.07              ! p.62 line 34 -UNIT NUMBER
+TMULTI  SYN(BU,1), 0.27              ! p.63 line 2  -MULTI-CHANNEL BIT
+TUNTBA  SYN(BU,18), 0.0              ! p.63 line 1  -UNIT TABLE ADDRESS
+! ---- the dummy unit area, printed p.87 line 11 --------------------
+TCAT    SYN, (8)4771.0
+! ---- backward, onto printed p.88 ----------------------------------
+TM1     SYN, (8)5021.40              ! p.88 line 15 prints the label
+! ---- DERIVED, see (3) above: NOT read anywhere ---------------------
+TN2     SYN, (8)5444.0
+TMREJ3  SYN, (8)5442.0
+TMREJ5  SYN, (8)5437.40
+
+        SLC, (8)5365.40
+
+        LFT, TUNCT(TMXA)             ! line 1  -THE NO. OF UNITS REQ
+                                      !           TO FACTOR REG
+        *+I, TUNLGN, 46              ! line 2  -ADD UNIT AREA TBL
+                                      !     LENGHT  (card: "*I+")
+        LV, TMXF, $R                 ! line 3  -FIRST CELL AVAIL FOR
+                                      !           REEL NUMBER
+        -(BU,18), TLIMB, 46          ! line 4  -REMOVE THE BASE ADDRESS
+        LV, TMXC, TLIMB              ! line 5  -FIRST LOC AVAL FOR SYM
+                                      !           I/O LOC TBL
+
+        LV, TMXG, TLIMB              ! line 7  -PREPARE FOR TABLE ZEROING
+        LC, TMXG, $R                 ! line 8
+        KV, TMXF, TBAMCP             ! line 9  -IS THE REEL POOL
+                                      !           EXCEEDING BOUNDS
+        BXL, TM1F                    ! line 10 -IF WITHIN PP ALLOWED
+                                      !           LIMMITS           (*)
+        LVI, TMX1, 4.0               ! line 11 -NOTE THE ERROR-
+                                      !           OUTSIDE LIMITS
+        CM0000(BU,18), TMAXRF        ! line 12
+        B, TMREJB                    ! line 13 -AND REJECT JOB
+TM1F    Z, 0.0(TMXG)                 ! line 14 -ZERO THE SLOTS
+        CB+, TMXG, TM1F              ! line 15
+
+        B, TM1                       ! line 17 -GET THE FIRST CARD
+
+! ---- A SPECIAL REJECT WHENTHE PPRUN INDEX HAS BEEN STEPPED --------
+TMREJB  CM1111, TRJECT(TMXA)         ! line 26
+        CM1111, TJBPRO(TMXA)         ! line 27 -SET THE JOB PROCESSED
+                                      !           BIT ON
+        V+I, TMXB, 0.0               ! line 28 -TO ACTIVATE IX FOR
+                                      !           COUNT CHECK
+        B, TMREJS                    ! line 29
+
+! ---- THE DISPATCHER TOLD MOVE TO REJECT NEXT JOB -------------------
+TMREJ   LVI, TMXEE, 0.0              ! line 32
+        BB, 0.25($15), TMREJ8        ! line 33 -IF NOT OVERLAP
+        LX, TMXA, TPPRUN             ! line 34 -GET THE NEXT JOB TO
+                                      !           BE RUN
+        B, TMREJ7                    ! line 35
+TMREJ8  LX, TMXA, TPPURF             ! line 36 -SET UP FOR NOT OVERLAP
+TMREJ7  L, TCRREF(TMXA), 46          ! line 37 -I/O REQ TABLE ADDRESS
+        LF, TUNCT(TMXA), 18          ! line 38 -THE NUMBER OF UNITS
+                                      !           TO CF              (*)
+        CM1111, TJBPRO(TMXA)         ! line 39 -SET THE JOB PROCESSED BIT
+        BZB1, TRJECT(TMXA), TMREJ6   ! line 40 -TEST AND SET THE
+                                      !           REJECT BIT
+        Z, $R                        ! line 41 -CLEAR ACC IF ALREADY
+                                      !           REJECTED
+        BB, .25($15), TMREJS-.32     ! line 42 -IF BYPASS
+TMREJ6  V+ICR, TMXA, 2.0             ! line 43
+        SX, TMXA, TPPRUN             ! line 44 -ADVANCE AND SAVE FOR
+                                      !           NEXT JOB
+        LX, TMXB, $R                 ! line 45
+TMREJS  BXCZ, TN2                    ! line 46 -IF NO REQ TO ZERO
+TMREJ1  L, TABSCH(TMXB), 46          ! line 47 -GET ADDRESS OF CHANNEL
+        BRZ, TMREJ3                  ! line 48
+        LV, TMXG, $R                 ! line 49
+        BZB, TMULTI(TMXG), TMREJ5    ! line 50 -IF A NON-MULTI CHANNEL
+        -(BU,18), TCHSXW, 46         ! line 51 -COMPUTE THE CHANNEL
+                                      !           NUMBER
+        ST(BU,7), TCAT+.12, 46       ! line 52
+        L, TUNTBA(TMXG), 46          ! line 53 -GET UNIT TABLE ADDRESS
+                                      !                              (*)
+        LV, TMXG, $R                 ! line 54
+        L, TABSUN(TMXB), 46          ! line 55 -GET THE UNIT NUMBER
+        V+, TMXG, $R                 ! line 56 -ADD TO INITIAL UNIT
+                                      !           ADDRESS
+
+! ---------------------------------------------------------------
+! THE PRINTED LISTING -- all forty-four rows that compile.
+! ---------------------------------------------------------------
+!   line  1  005365.40  000000.34 82  010000.20 B0          LFT,T UNCT(T MXA)
+!   line  2  005366.40  110000.00 80  406027.23 90          *I+,T UNLGN,46
+!   line  3  005367.40  000011.16 30                        LV,T MXF,$R
+!   line  4  005370.00  002155.00 80  022027.30 10          -(BU,18),T LIMB,46
+!   line  5  005371.00  002155.10 30                        LV,T MXC,T LIMB
+!   line  7  005371.40  002155.20 30                        LV,T MXG,T LIMB
+!   line  8  005372.00  000011.20 50                        LC,T MXG,$R
+!   line  9  005372.40  002153.16 90                        KV,T MXF,T BAMCP
+!   line 10  005373.00* 005375.72 42                        BXL,T M1F
+!   line 11  005373.40  000004.03 01                        LVI,T MX1,4.0
+!   line 12  005374.00  002155.40 80  022000.00 F0          CM0000(BU,18),T MAXRF
+!   line 13  005375.00  005377.10 00                        B,T MREJB
+!   line 14  005375.40  000000.22 08                T M1F   Z,0.0(T MXG)
+!   line 15  005376.00  005375.61 48                        CB+,T MXG,T M1F
+!   line 17  005376.40  005021.50 00                        B,T M1
+!   line 26  005377.00  000000.45 82  001000.36 F0  T MREJB CM1111,T RJECT(T MXA)
+!   line 27  005400.00  000000.44 82  001000.36 F0          CM1111,T JBPRO(T MXA)
+!   line 28  005401.00  000000.07 05                        V+I,T MXB,0.0
+!   line 29  005401.40  005414.10 00                        B,T MREJS
+!   line 32  005402.00  000000.23 01                T MREJ  LVI,T MXEE,0.0
+!   line 33  005402.40  000000.31 8F  005404.74 02          BB,0.25($15),T MREJ8
+!   line 34  005403.40  003315.04 10                        LX,T MXA,T PPRUN
+!   line 35  005404.00  005405.10 00                        B,T MREJ7
+!   line 36  005404.40  003313.04 10                T MREJ8 LX,T MXA,T PPURF
+!   line 37  005405.00  000000.00 82  022027.20 50  T MREJ7 L,T CRREF(T MXA),46
+!   line 38  005406.00* 000000.34 82  010011.06 70          LF,T UNCT(T MXA),18
+!   line 39  005407.00  000000.44 82  001000.36 F0          CM1111,T JBPRO(T MXA)
+!   line 40  005410.00  000000.45 82  005412.74 0C          BZB1,T RJECT(T MXA),T MREJ6
+!   line 41  005411.00  000011.22 00                        Z,$R
+!   line 42  005411.40  000000.31 8F  005413.74 02          BB,.25($15),T MREJS-.32
+!   line 43  005412.40  000002.05 07                T MREJ6 V+ICR,T MXA,2.0
+!   line 44  005413.00  003315.05 10                        SX,T MXA,T PPRUN
+!   line 45  005413.40  000011.06 10                        LX,T MXB,$R
+!   line 46  005414.00  005444.30 42                T MREJS BXCZ,T N2
+!   line 47  005414.40  000000.56 83  022027.20 50  T MREJ1 L,T ABSCH(T MXB),46
+!   line 48  005415.40  005442.34 C2                        BRZ,T MREJ3
+!   line 49  005416.00  000011.20 30                        LV,T MXG,$R
+!   line 50  005416.40  000000.33 88  005437.74 00          BZB,T MULTI(T MXG),T MREJ5
+!   line 51  005417.40  002152.00 80  022027.30 10          -(BU,18),T CHSXW,46
+!   line 52  005420.40  004771.14 80  007027.20 D0          ST(BU,7),T CAT+.12,46
+!   line 53  005421.40* 000000.00 88  022027.20 50          L,T UNTBA(T MXG),46
+!   line 54  005422.40  000011.20 30                        LV,T MXG,$R
+!   line 55  005423.00  000000.07 83  003027.20 50          L,T ABSUN(T MXB),46
+!   line 56  005424.00  000011.20 B0                        V+,T MXG,$R
+
+! ---- CHECKS, read by tests/verify_mcp_page.py 96 -----------------
+!SYM   TM1F     005375.40
+!SYM   TMREJB   005377.00
+!SYM   TMREJ    005402.00
+!SYM   TMREJ8   005404.40
+!SYM   TMREJ7   005405.00
+!SYM   TMREJ6   005412.40
+!SYM   TMREJS   005414.00
+!SYM   TMREJ1   005414.40
+!CHECK 005365.40 | 000000.34 82 010000.20 B0 | line 1  LFT,T UNCT(T MXA)
+!CHECK 005366.40 | 110000.00 80 406027.23 90 | line 2  *I+,T UNLGN,46
+!CHECK 005367.40 | 000011.16 30 | line 3  LV,T MXF,$R
+!CHECK 005370.00 | 002155.00 80 022027.30 10 | line 4  -(BU,18),T LIMB,46
+!CHECK 005371.00 | 002155.10 30 | line 5  LV,T MXC,T LIMB
+!CHECK 005371.40 | 002155.20 30 | line 7  LV,T MXG,T LIMB
+!CHECK 005372.00 | 000011.20 50 | line 8  LC,T MXG,$R
+!CHECK 005372.40 | 002153.16 90 | line 9  KV,T MXF,T BAMCP
+!CHECK 005373.00 | 005375.72 42 | line 10 BXL,T M1F
+!CHECK 005373.40 | 000004.03 01 | line 11 LVI,T MX1,4.0
+!CHECK 005374.00 | 002155.40 80 022000.00 F0 | line 12 CM0000(BU,18),T MAXRF
+!CHECK 005375.00 | 005377.10 00 | line 13 B,T MREJB
+!CHECK 005375.40 | 000000.22 08 | line 14 T M1F Z,0.0(T MXG)
+!CHECK 005376.00 | 005375.61 48 | line 15 CB+,T MXG,T M1F
+!CHECK 005376.40 | 005021.50 00 | line 17 B,T M1
+!CHECK 005377.00 | 000000.45 82 001000.36 F0 | line 26 T MREJB CM1111,T RJECT(T MXA)
+!CHECK 005400.00 | 000000.44 82 001000.36 F0 | line 27 CM1111,T JBPRO(T MXA)
+!CHECK 005401.00 | 000000.07 05 | line 28 V+I,T MXB,0.0
+!CHECK 005401.40 | 005414.10 00 | line 29 B,T MREJS
+!CHECK 005402.00 | 000000.23 01 | line 32 T MREJ LVI,T MXEE,0.0
+!CHECK 005402.40 | 000000.31 8F 005404.74 02 | line 33 BB,0.25($15),T MREJ8
+!CHECK 005403.40 | 003315.04 10 | line 34 LX,T MXA,T PPRUN
+!CHECK 005404.00 | 005405.10 00 | line 35 B,T MREJ7
+!CHECK 005404.40 | 003313.04 10 | line 36 T MREJ8 LX,T MXA,T PPURF
+!CHECK 005405.00 | 000000.00 82 022027.20 50 | line 37 T MREJ7 L,T CRREF(T MXA),46
+!CHECK 005406.00 | 000000.34 82 010011.06 70 | line 38 LF,T UNCT(T MXA),18
+!CHECK 005407.00 | 000000.44 82 001000.36 F0 | line 39 CM1111,T JBPRO(T MXA)
+!CHECK 005410.00 | 000000.45 82 005412.74 0C | line 40 BZB1,T RJECT(T MXA),T MREJ6
+!CHECK 005411.00 | 000011.22 00 | line 41 Z,$R
+!CHECK 005411.40 | 000000.31 8F 005413.74 02 | line 42 BB,.25($15),T MREJS-.32
+!CHECK 005412.40 | 000002.05 07 | line 43 T MREJ6 V+ICR,T MXA,2.0
+!CHECK 005413.00 | 003315.05 10 | line 44 SX,T MXA,T PPRUN
+!CHECK 005413.40 | 000011.06 10 | line 45 LX,T MXB,$R
+!CHECK 005414.00 | 005444.30 42 | line 46 T MREJS BXCZ,T N2     (op bits only)
+!CHECK 005414.40 | 000000.56 83 022027.20 50 | line 47 T MREJ1 L,T ABSCH(T MXB),46
+!CHECK 005415.40 | 005442.34 C2 | line 48 BRZ,T MREJ3           (op bits only)
+!CHECK 005416.00 | 000011.20 30 | line 49 LV,T MXG,$R
+!CHECK 005416.40 | 000000.33 88 005437.74 00 | line 50 BZB,T MULTI(T MXG),T MREJ5  (2nd half-word op bits only)
+!CHECK 005417.40 | 002152.00 80 022027.30 10 | line 51 -(BU,18),T CHSXW,46
+!CHECK 005420.40 | 004771.14 80 007027.20 D0 | line 52 ST(BU,7),T CAT+.12,46
+!CHECK 005421.40 | 000000.00 88 022027.20 50 | line 53 L,T UNTBA(T MXG),46
+!CHECK 005422.40 | 000011.20 30 | line 54 LV,T MXG,$R
+!CHECK 005423.00 | 000000.07 83 003027.20 50 | line 55 L,T ABSUN(T MXB),46
+!CHECK 005424.00 | 000011.20 B0 | line 56 V+,T MXG,$R

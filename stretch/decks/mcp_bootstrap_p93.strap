@@ -1,0 +1,291 @@
+! mcp_bootstrap_p93.strap -- MCP, printed page 93: the tail of the
+! TRACK ANALYSER, and LOCATE THE PROPER REEL SLOT FOR ENTRY.
+! docs/MCP_Mar63_001-249.pdf PDF p.100, header "PAGE NUMBER 93".
+!
+! Forty-nine printed lines, thirty-four of which compile.  The page
+! runs 005244.40 .. 005273.40 and is code throughout -- no SYN cards,
+! no storage reservations.  Lines 1-3 and 31-33 box its two titles,
+! and lines 9, 15, 21, 24, 27, 28, 37, 45 and 47 are the blank "-"
+! separator lines the listing prints between blocks.
+!
+! >>> THE PAGE'S OWN TITLES ARE "TRACK ANALYSER" (line 2) AND
+! "LOCATE THE PROPER REEL SLOT FOR ENTRY" (line 32). <<<  This page
+! was taken as a continuation of the MOVE sub-routine that begins on
+! printed p.88 at 005014.00; the address trail is continuous with it
+! and every label here is a T-name, but the page prints no "MOVE"
+! heading of its own.  Recorded as the page prints it.
+!
+! ---------------------------------------------------------------
+! THE LOCATION TRAIL CLOSES ON ITSELF
+! ---------------------------------------------------------------
+! Thirteen rows compile a full word (4, 6, 7, 10, 11, 12, 13, 16,
+! 18, 19, 22, 34, 48) and twenty-one compile a half word; walking the
+! two lengths from 005244.40 reproduces every one of the thirty-
+! four printed locations with nothing left over -- 13x64 + 21x32 =
+! 1504 bits, and 005244.40 + 1504 bits is 005274.00.  Line 4 is a VFL
+! word that STARTS AT A HALF-WORD BOUNDARY (005244.40 -> 005245.40),
+! which is normal: instructions are addressed in half words.
+!
+! ---------------------------------------------------------------
+! >>> FOUR BRANCHES CHECK THE PAGE AGAINST ITSELF; FIVE DO NOT. <<<
+! ---------------------------------------------------------------
+! A branch half word prints as WWWWWW.OO HH, where the TOP BIT of
+! the six-bit field (0o40) is the half-word selector.  Four branches
+! on this page aim at labels DEFINED ON THIS PAGE, so their printed
+! address is an independent check of both the decode rule and the
+! label's own location:
+!
+!   line 35  BAE,TM6D     005266.76  -> 005266.40 = T M6D   (line 38)
+!   line 36  BD,$         005266.04  -> 005266.00 = its own loc
+!   line 40  CBZ,TMXGA,TOK 005262.66 -> 005262.40 = T OK    (line 25)
+!   line 44  BZXVZ,TM6A   005270.71  -> 005270.40 = T M6A   (line 42)
+!
+! All four agree.  The other five branch targets are NOT on this
+! page and are NOT in any deck transcribed so far -- T MDK1A and
+! T MDK belong to printed p.92, T M6C, T MREJ and T N2 to printed
+! p.94 and later.  Their values below are read off THIS page's
+! binary column, so the rows that use them are self-referential and
+! prove nothing about those five addresses; they are stand-ins, and
+! the pages that declare them are the place to confirm them.  Two of
+! them are at least double-attested HERE, which is why they are
+! written as they are:
+!
+!   line 5  BRZ,TMDK1A  005242.34   and  line 8  B,TMDK1A  005242.10
+!   line 17 BRZ,TMDK    005214.74   and  line 20 B,TMDK    005214.50
+!
+! -- two different ops, two different modifier patterns, the same
+! word and the same half-word bit each time.
+!
+! ---------------------------------------------------------------
+! >>> LINE 35'S LAST GLYPH IS A D AND LINE 46'S IS A C, AND THEY
+! LOOK ALIKE ON THE PAGE. <<<
+! ---------------------------------------------------------------
+! At 400 dpi both lines read "TM6C".  They cannot be one symbol:
+! line 35 compiles 005266.76 (= 005266.40) and line 46 compiles
+! 005307.23 (= 005307.00).  Cropped to the same window at 1800 dpi
+! and set beside the known-good D of line 38's own label, line 35's
+! glyph has the D's STRAIGHT VERTICAL LEFT STEM and SQUARED top and
+! bottom right corners with the middle of the bowl worn away, while
+! line 46's is a round C with no stem at all -- the same arc as the
+! C of line 4's "CT0011".  Ink and object code agree: line 35 is
+! T M6D, line 46 is T M6C.  (Same hazard, same remedy, as printed
+! p.87's "T WORM".)
+!
+! >>> AND THE SAME WORN D IS IN "T MDK", WHICH WAS TRANSCRIBED
+! "T MCK" FIRST. <<<  Once line 35 proved the drum's D can print
+! with its bowl worn through, EVERY C-or-D glyph on the page was
+! re-rendered at 1800 dpi and set beside both a known-good D (line
+! 38's label) and a known-good C (line 46's operand).  Six came
+! back D:
+!
+!   line  4  T MDK2        line 10  T MNULD      line 29  T MDSK3
+!   line  5  BRZ,TMDK1A    line  8  B,TMDK1A
+!   line 17  BRZ,TMDK      line 20  B,TMDK
+!
+! The test is the LEFT side, not the right: this font's C and 0 are
+! round with no stem (line 18's "CM0000(BU,3)", printed directly
+! under line 17, has five of them in a row for comparison), while
+! every glyph above has a straight vertical left stem and squared
+! top and bottom right corners.  "B,TMDK" on line 20 prints its
+! bowl closed and is the clearest of the six.
+!
+! The names read as a set that way, which is corroboration and not
+! the reason: the TRACK ANALYSER's two arms are T MDK (disk, $R)
+! and T MTRK (track, $L), beside T MNULD (null disk) and T MDSK3
+! (illegal disk request).  NOTHING COMPILED CHANGES -- T MDK and
+! T MDK1A are off-page stand-ins and T MDK2 is referenced nowhere
+! on this page -- so the oracle cannot catch this one, and printed
+! p.92, which defines T MDK and T MDK1A, is where it is settled
+! for good.
+!
+! T OK (line 25) was checked the same way and is an O: the glyph
+! is CLOSED on all four sides, unlike line 46's open C.
+!
+! ---------------------------------------------------------------
+! LINE 4 IS "CT0011" AND NOT "C0011"
+! ---------------------------------------------------------------
+! Six characters, the second an unmistakable T, against line 48's
+! five-character "C0011" on the same page in the same font.  The
+! assembler settles it independently: CT0011(BU,3),$R+.61 compiles
+! 000011.75 80  003000.07 70, which is the row exactly, while
+! C0011(BU,3),$R+.61 compiles ...003000.06 70.  Connect for Test
+! discards the result and sets indicators only, which is what the
+! next line (BRZ) and the comment "CHECK FOR MULTIPLE OF 8" want.
+!
+! ---------------------------------------------------------------
+! TWO LISTING MARKS, AND ONE TRUNCATED COMMENT
+! ---------------------------------------------------------------
+! Lines 12 and 36 carry the bare "*" after their location that
+! printed pp.3, 37, 38, 39 and 98 also carry.  It changes no
+! compiled bit.
+!
+! Line 19's comment ends "...BEGINNING TRACK L".  THAT IS THE
+! LISTING'S OWN TRUNCATION, not the crop: the right-edge render
+! (x=5300..6700 at 400 dpi) shows the card-sequence numbers
+! 18000554 etc. immediately to the right of it with clear paper
+! between, so there is no more text to find.
+
+        SLC, (8)5244.40
+
+! ---- index names, printed p.83 lines 21-32 ------------------------
+TMX1    SYN, $1
+TMXD    SYN, $5
+TMXG    SYN, $8
+TMXEE   SYN, $9
+TMXI    SYN, $10
+TMXGA   SYN, $11
+TMXH    SYN, TMX1
+! ---- words and field offsets, printed pp.83, 84, 85 ---------------
+TMMAX   SYN(BU,12), (8)4630.0        ! p.83 line 8, a DD(BU,12)
+TMREEL  SYN(BU,24,6), (8)4630.44     ! p.83 line 10, (AX)DD(BU,24,6)
+TIREF   SYN(BU,12), 0.52             ! p.84 line 25
+TDSKRF  SYN(BU,12), 25.48            ! p.84 line 10
+TIREEL  SYN(BU,48), 2.0              ! p.84 line 28
+TFRLAD  SYN(BU,18), 8.0              ! p.84 line 51
+TFMODE  SYN(BU,2), 2.48              ! p.85 line 11
+TMXARC  SYN(BU,12), 5.38             ! p.85 line 13
+! ---- STAND-INS, read off THIS page's binary column ----------------
+! Not declared by any page transcribed so far.  See the note above:
+! the rows that reference them carry no independent check.
+TMDK1A  SYN, (8)5242.0               ! lines 5 and 8
+TMDK    SYN, (8)5214.40              ! lines 17 and 20
+TM6C    SYN, (8)5307.0               ! line 46
+TMREJ   SYN, (8)5402.0               ! line 30
+TN2     SYN, (8)5444.0               ! line 26
+
+        SLC, (8)5244.40
+
+! ---- TRACK ANALYSER (continued) -----------------------------------
+TMDK2   CT0011(BU,3), $R+.61         ! line 4  -CHECK FOR MULTIPLE
+                                      !           OF 8
+        BRZ, TMDK1A                  ! line 5  -YES
+        CM0000(BU,3), $R+.61         ! line 6  -ZERO THE TRIVIAL BITS
+        M+1(BU,9), $R+.52            ! line 7  -ADD NEXT BEGINNING
+                                      !           TRACK LOC
+        B, TMDK1A                    ! line 8
+TMNULD  LF, TIREF(TMXI)              ! line 10 -IF NULL DISK OR
+                                      !           TRACK ,GET REF NO.
+        ST, TDSKRF(TMXG)             ! line 11
+        LF, TMMAX                    ! line 12 -GET THE MAX DISK
+                                      !           NUMBER POSSIBLE  (*)
+        ST, TMXARC(TMXD)             ! line 13
+        B, TM1FA                     ! line 14
+TMTRK   CT0011(BU,3), $L+.61         ! line 16 -CHECK FOR MULTIPLE
+                                      !           OF 8
+        BRZ, TMDK                    ! line 17 -YES - RETURN
+        CM0000(BU,3), $L+.61         ! line 18 -NO ZERO THE TRIVIAL
+                                      !           BITS
+        M+1(BU,9), $L+.52            ! line 19 -ADD ON TO GET NEXT
+                                      !           BEGINNING TRACK L
+        B, TMDK                      ! line 20
+        CM1111(BU,1), TFMODE+.1(TMXD) ! line 22 -A DUMMY ONE FOR
+                                      !           ALL BUT TAPE
+TM1FA   V+I, TMXD, 7.0               ! line 23 -STEP THE VF BY A
+                                      !           FILE TABLE
+TOK     LVI, TMX1, 0.0               ! line 25 -OK RETURN
+        B, TN2                       ! line 26
+TMDSK3  LVI, TMX1, 1.0               ! line 29 -ILLEGAL DISK REQ
+        B, TMREJ                     ! line 30 -GO TO REJECT JOB
+
+! ---- LOCATE THE PROPER REEL SLOT FOR ENTRY ------------------------
+TM6     KF, TMREEL                   ! line 34 -CHECK FOR A REEL CARD
+        BAE, TM6D                    ! line 35 -OK
+        BD, $                        ! line 36 -MCP ERROR, INVALID
+                                      !           OP CODE ON CD.  (*)
+TM6D    LV, TMXG, TFRLAD(TMXEE)      ! line 38 -GET INITIAL REEL ENTRY
+        LX, TMXGA, 0.0(TMXI)         ! line 39 -TO GET THE REEL COUNT
+        CBZ, TMXGA, TOK              ! line 40 -GET 1ST REEL LOC IF ANY
+        LV, TMXGA, TMXI              ! line 41 -GET FIRST REEL ADDRESS
+TM6A    LV, TMXH, TMXG               ! line 42 -SAVE FOR LAST ENTRY
+        LX, TMXG, 0.0(TMXG)          ! line 43 -LOOK AHEAD ONE SLOT
+        BZXVZ, TM6A                  ! line 44 -IF THERE IS AN ENTRY
+        BXF, TM6C                    ! line 46 -IF A REEL NUMBER IS
+                                      !           ENTERED
+TN6     C0011, TIREEL(TMXGA)         ! line 48 -GET A REEL NAME FROM
+                                      !           BREAKDOWN
+        Z, 0.0(TMXH)                 ! line 49 -CLEAR THE REEL SLOT
+                                      !           FIRST
+
+! ---------------------------------------------------------------
+! THE PRINTED LISTING, as rendered at 900 dpi
+! ---------------------------------------------------------------
+!   line  4  005244.40    000011.75 80  003000.07 70  T MDK2 CT0011(BU,3),$R+.61
+!   line  5  005245.40    005242.34 C2                       BRZ,TMDK1A
+!   line  6  005246.00    000011.75 80  003000.00 F0         CM0000(BU,3),$R+.61
+!   line  7  005247.00    000011.64 80  011000.22 B0         M+1(BU,9),$R+.52
+!   line  8  005250.00    005242.10 00                       B,TMDK1A
+!   line 10  005250.40    000000.64 8A  014000.06 70  T MNULD LF,TIREF(TMXI)
+!   line 11  005251.40    000031.60 88  014000.20 D0         ST,TDSKRF(TMXG)
+!   line 12  005252.40 *  004630.00 80  014000.06 70         LF,TMMAX
+!   line 13  005253.40    000005.46 85  014000.20 D0         ST,TMXARC(TMXD)
+!   line 14  005254.40    005262.10 00                       B,TM1FA
+!   line 16  005255.00    000010.75 80  003000.07 70  T MTRK CT0011(BU,3),$L+.61
+!   line 17  005256.00    005214.74 C2                       BRZ,TMDK
+!   line 18  005256.40    000010.75 80  003000.00 F0         CM0000(BU,3),$L+.61
+!   line 19  005257.40    000010.64 80  011000.22 B0         M+1(BU,9),$L+.52
+!   line 20  005260.40    005214.50 00                       B,TMDK
+!   line 22  005261.00    000002.61 85  001000.36 F0         CM1111(BU,1),TFMODE+.1(TMXD)
+!   line 23  005262.00    000007.13 05                T M1FA V+I,TMXD,7.0
+!   line 25  005262.40    000000.03 01                T OK   LVI,TMX1,0.0
+!   line 26  005263.00    005444.10 00                       B,TN2
+!   line 29  005263.40    000001.03 01                T MDSK3 LVI,TMX1,1.0
+!   line 30  005264.00    005402.10 00                       B,TMREJ
+!   line 34  005264.40    004630.44 80  030600.23 10  T M6   KF,TMREEL
+!   line 35  005265.40    005266.76 C2                       BAE,TM6D
+!   line 36  005266.00 *  005266.04 00                       BD,$
+!   line 38  005266.40    000010.20 39                T M6D  LV,TMXG,TFRLAD(TMXEE)
+!   line 39  005267.00    000000.26 1A                       LX,TMXGA,0.0(TMXI)
+!   line 40  005267.40    005262.66 4A                       CBZ,TMXGA,TOK
+!   line 41  005270.00    000032.26 30                       LV,TMXGA,TMXI
+!   line 42  005270.40    000030.02 30                T M6A  LV,TMXH,TMXG
+!   line 43  005271.00    000000.20 18                       LX,TMXG,0.0(TMXG)
+!   line 44  005271.40    005270.71 40                       BZXVZ,TM6A
+!   line 46  005272.00    005307.23 42                       BXF,TM6C
+!   line 48  005272.40    000002.00 8B  060000.06 70  T N6   C0011,TIREEL(TMXGA)
+!   line 49  005273.40    000000.22 01                       Z,0.0(TMXH)
+
+! ---- CHECKS, read by tests/verify_mcp_page.py 93 ------------------
+!SYM   TMDK2    005244.40
+!SYM   TMNULD   005250.40
+!SYM   TMTRK    005255.00
+!SYM   TM1FA    005262.00
+!SYM   TOK      005262.40
+!SYM   TMDSK3   005263.40
+!SYM   TM6      005264.40
+!SYM   TM6D     005266.40
+!SYM   TM6A     005270.40
+!SYM   TN6      005272.40
+!CHECK 005244.40 | 000011.75 80 003000.07 70 | line 4  T MDK2 CT0011(BU,3),$R+.61
+!CHECK 005245.40 | 005242.34 C2 | line 5  BRZ,TMDK1A
+!CHECK 005246.00 | 000011.75 80 003000.00 F0 | line 6  CM0000(BU,3),$R+.61
+!CHECK 005247.00 | 000011.64 80 011000.22 B0 | line 7  M+1(BU,9),$R+.52
+!CHECK 005250.00 | 005242.10 00 | line 8  B,TMDK1A
+!CHECK 005250.40 | 000000.64 8A 014000.06 70 | line 10 T MNULD LF,TIREF(TMXI)
+!CHECK 005251.40 | 000031.60 88 014000.20 D0 | line 11 ST,TDSKRF(TMXG)
+!CHECK 005252.40 | 004630.00 80 014000.06 70 | line 12 LF,TMMAX
+!CHECK 005253.40 | 000005.46 85 014000.20 D0 | line 13 ST,TMXARC(TMXD)
+!CHECK 005254.40 | 005262.10 00 | line 14 B,TM1FA
+!CHECK 005255.00 | 000010.75 80 003000.07 70 | line 16 T MTRK CT0011(BU,3),$L+.61
+!CHECK 005256.00 | 005214.74 C2 | line 17 BRZ,TMDK
+!CHECK 005256.40 | 000010.75 80 003000.00 F0 | line 18 CM0000(BU,3),$L+.61
+!CHECK 005257.40 | 000010.64 80 011000.22 B0 | line 19 M+1(BU,9),$L+.52
+!CHECK 005260.40 | 005214.50 00 | line 20 B,TMDK
+!CHECK 005261.00 | 000002.61 85 001000.36 F0 | line 22 CM1111(BU,1),TFMODE+.1(TMXD)
+!CHECK 005262.00 | 000007.13 05 | line 23 T M1FA V+I,TMXD,7.0
+!CHECK 005262.40 | 000000.03 01 | line 25 T OK LVI,TMX1,0.0
+!CHECK 005263.00 | 005444.10 00 | line 26 B,TN2
+!CHECK 005263.40 | 000001.03 01 | line 29 T MDSK3 LVI,TMX1,1.0
+!CHECK 005264.00 | 005402.10 00 | line 30 B,TMREJ
+!CHECK 005264.40 | 004630.44 80 030600.23 10 | line 34 T M6 KF,TMREEL
+!CHECK 005265.40 | 005266.76 C2 | line 35 BAE,TM6D
+!CHECK 005266.00 | 005266.04 00 | line 36 BD,$
+!CHECK 005266.40 | 000010.20 39 | line 38 T M6D LV,TMXG,TFRLAD(TMXEE)
+!CHECK 005267.00 | 000000.26 1A | line 39 LX,TMXGA,0.0(TMXI)
+!CHECK 005267.40 | 005262.66 4A | line 40 CBZ,TMXGA,TOK
+!CHECK 005270.00 | 000032.26 30 | line 41 LV,TMXGA,TMXI
+!CHECK 005270.40 | 000030.02 30 | line 42 T M6A LV,TMXH,TMXG
+!CHECK 005271.00 | 000000.20 18 | line 43 LX,TMXG,0.0(TMXG)
+!CHECK 005271.40 | 005270.71 40 | line 44 BZXVZ,TM6A
+!CHECK 005272.00 | 005307.23 42 | line 46 BXF,TM6C
+!CHECK 005272.40 | 000002.00 8B 060000.06 70 | line 48 T N6 C0011,TIREEL(TMXGA)
+!CHECK 005273.40 | 000000.22 01 | line 49 Z,0.0(TMXH)

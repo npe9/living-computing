@@ -1,0 +1,297 @@
+! mcp_bootstrap_p90.strap -- MCP INITIALIZATION, printed page 90:
+! the tail of the unit-area-table generator inside the MOVE
+! sub-routine -- "GENERATE THE UNIT AREA TABLES" and "MODIFY THE
+! CHAN/UNIT STATUS TABLES".
+! docs/MCP_Mar63_001-249.pdf PDF p.97, header "PAGE NUMBER 90",
+! card ids 18000383..18000438, LOCATION 005115 in the header.
+!
+! Fifty-six listing lines, thirty-nine of which compile.
+! First printed location 005115.00, last 005154.00.
+!
+! ---------------------------------------------------------------
+! >>> WHAT THE PAGE DOES <<<
+! ---------------------------------------------------------------
+! Lines 1-8 finish the loop that builds one entry of the unit
+! table: fetch the reference number, store the 64-bit unit name,
+! store the new entry, step the table counter in T UNXW+28, and
+! save the pointer in T DKSAV.  Lines 16-36 are "GENERATE THE UNIT
+! AREA TABLES": the channel address and number go in, and if the
+! channel is multi-unit the unit number goes in too; if the type is
+! tape the system-tape bit is set, a reel-pool slot is taken, its
+! first reel zeroed and labelled, the pool index stepped and
+! bounds-checked, and an over-run goes to T MREJB with code 4 in
+! T MX1.  Lines 42-56 are "MODIFY THE CHAN/UNIT STATUS TABLES":
+! compute the unit-table address, set the SEL bit, store the unit
+! area table address, carry the ownership bit over from .26($15),
+! set the assigned bit, reset the not-overlap-reserved bit, and
+! leave two indexes straddling the table.
+!
+! ---------------------------------------------------------------
+! >>> THE STAND-INS BELOW ARE READ OFF THIS PAGE'S OWN BINARY <<<
+! ---------------------------------------------------------------
+! No symbol this page uses is defined on this page, and pp.86-89
+! have no decks yet, so the deck cannot assemble without stand-ins.
+! Rather than guess them, every one is taken from the BINARY OUTPUT
+! column of the very row that uses it, which is printed primary
+! source.  The decoding used, established against decks/
+! mcp_bootstrap_p80.strap where both sides are known:
+!
+!   a half-word prints as  AAAAAA.BB CC  = address(18 bits, octal)
+!   . six more bits (octal) . opcode byte (hex).
+!
+!   INDEX OPS (one half-word): BB = [half-word bit][index(4)][1].
+!     p80 line 9 "SV,TIXG,TNEXT", T NEXT = (8)3264.40, prints
+!     003264.61 30 -- 0o61 = 1 1000 1, half-word bit 1 for the .40
+!     and 1000 = 8 for T IXG = $8.
+!
+!   VFL OPS (two half-words): the first half-word is the operand's
+!   bit address and the opcode byte's low nibble is the index; the
+!   second half-word carries the field length in bits 3-8 and half
+!   the third operand in bits 10-17.
+!     p80 line 17 "L,TUNCT(TIXG),46", T UNCT = SYN(BU,8),0.28,
+!     prints 000000.34 88  010027.20 50 -- 0o34 = 28, nibble 8 =
+!     T IXG, length bits = 001000 = 8, and 0o027 low bits = 23 = 46/2.
+!
+! LINE 4's THIRD OPERAND IS "04" AND THE ASSEMBLER AGREES: the
+! third operand is encoded in the second half-word, line 4's
+! !CHECK on 014002.06 70 passes with the deck reading ",04", and
+! ",64" or ",46" would have produced a different word.  The same
+! field also halves the operand into bits 10-17 -- 4 -> 2 on line
+! 4, 64 -> 32 on line 5, 46 -> 23 on line 17 -- which is how the
+! glyph was read in the first place.
+!
+! A stand-in's NAME is read from the STATEMENT column; its VALUE
+! and LENGTH are read from the BINARY OUTPUT column of the same
+! row, which is cited after each.  Nothing here is inferred from
+! what the name sounds like.  THREE ARE EXCEPTIONS AND ARE MARKED:
+! T MULTI (line 21), T TYPE (line 24) and T UNRES (line 52) are the
+! operands of a BZB or a BBZ, and a branch-on-bit prints its target
+! in the second half-word instead of a length, so for those three
+! only the bit address is read and the (BU,1) is the op's own
+! one-bit operand, not something the column printed.
+!
+! ---------------------------------------------------------------
+! >>> WHAT THIS DECK'S CHECKS DO AND DO NOT PROVE <<<
+! ---------------------------------------------------------------
+! Most stand-ins are read out of the same field the !CHECK then
+! compares against, so those rows re-report their own input.  What
+! is NOT circular, and passes:
+!
+!   * the OPCODE BYTE of all thirty-nine rows.  It comes from the
+!     mnemonic and the index register, never from a stand-in's
+!     value, so it is an independent test of the statement column:
+!     8A 8F 83 86 87 88 80 48 C2 42 90 30 38 36 10 05 07 06 00
+!     50 D0 F0 70 B0 01.
+!   * all five SYMBOLS.  They depend only on half-word counts --
+!     two for a VFL op, one for an index op -- which no stand-in
+!     can move.
+!   * the FOURTEEN ROWS WITH NO STAND-IN IN THEM end to end: lines
+!     6, 18, 30, 32, 35, 43, 46, 48, 55, 56 carry only literals,
+!     and lines 21, 24, 34, 52 branch to labels on this page, so
+!     their 005146.34, 005143.74, 005143.72 and 005153.74 are
+!     computed from this deck's own layout and check T M1DA,
+!     T M1DAA and T M1DX a second time, against the instruction
+!     stream rather than the location column.
+!
+! Circular by construction: the first half-word's address and the
+! second half-word's length on the twenty-two rows whose operand is
+! a derived symbol.
+!
+! ---------------------------------------------------------------
+! >>> CONTINUITY <<<
+! ---------------------------------------------------------------
+! Line 7's T UNXW is 004653.00, which is exactly where printed
+! p.84 line 4 puts "T UNXW  XW,TUNATB,0,$0".  The page's own
+! location column also closes on itself: every one of the thirty-
+! nine deltas is 0.40 for a one-half-word row and 1.00 for a
+! two-half-word row, carries included (005117 -> 005120,
+! 005137.40 -> 005140.00, 005147.40 -> 005150.40).
+!
+! A SECOND, MACHINE READING OF THE LOCATION COLUMN.
+! "python3 strap/mcp_ocr.py 90" recovers twenty of the thirty-nine
+! locations, and all twenty agree with the eye (its "065123.00" for
+! 005123.00 is a dropped-digit OCR slip of the kind that file warns
+! about, not a disagreement about the page).  It flagged nothing.
+!
+! ---------------------------------------------------------------
+! >>> LINE 35's OPCODE BYTE READS C1 AND IS 01 <<<
+! ---------------------------------------------------------------
+! The only row where the first assemble disagreed with the eye, so
+! it was re-rendered at 1800 dpi BEFORE the assembler's answer was
+! taken, the way decks/mcp_bootstrap_p80.strap describes.
+!
+! THE ROW'S OWN ZEROS DECIDE IT.  Line 35 prints
+!
+!     000004.03 01     as   C C C C C 4 . C 3   C 1
+!
+! -- a weak-impression row in which EVERY zero comes out open on
+! the right, including the four in "000004" and the one in ".03",
+! which cannot be anything but zeros.  The byte's first glyph has
+! exactly that shape.  Line 1, three inches up the same column,
+! prints "005162.36 C2": there the zeros are CLOSED ovals and the
+! byte's first glyph is open, a shape unlike that row's zeros --
+! and C2 is what the assembler independently produces for BAE.
+! So the page prints a real C and a worn 0 in the same column, and
+! what separates them is the other zeros in the same row, not the
+! opening itself.
+!
+! The structure agrees: enc_imm_index lays out
+! imm(19) J(4) 10000(5) code(4), so an immediate-index op's byte is
+! 0000cccc and its high nibble CANNOT be C.  Lines 32 and 56 --
+! V+I, byte 05 -- and printed p.80's V+ICR, byte 07, print the same
+! way and match.  p.80 records C5 -> 05 and C7 -> 07 as two of the
+! seven earlier cases of this exact glyph on this exact format.
+
+        SLC, (8)5115.0
+
+! ---- index names, read from the index field of the rows that use
+!      them (and from the operand addresses of lines 26 and 55,
+!      where an index register appears as its memory word, 16+n) --
+TMX1    SYN, $1              ! line 35  BB = 0o03 -> index 1
+TMXB    SYN, $3              ! lines 17,22,24  opcode 83 -> 3
+TMXD    SYN, $5              ! line 16  BB = 0o13 -> index 5
+TMXE    SYN, $6              ! line 56  BB = 0o15 -> 6; line 55
+                             !          addresses it as word 0o26
+TMXF    SYN, $7              ! line 32  BB = 0o17 -> 7; line 26
+                             !          addresses it as word 0o27
+TMXG    SYN, $8              ! lines 8,18  BB = 0o21/0o20 -> 8
+TMXEE   SYN, $9              ! line 55  BB = 0o22 -> index 9
+TMXI    SYN, $10             ! line 4   opcode 8A -> 10
+
+! ---- words, read from the address field of the rows that use them
+TCHSXW  SYN, (8)2152.0       ! line 19  002152.00
+TBAMCP  SYN, (8)2153.0       ! line 33  002153.16, BB bit 0 = 0
+TDKSAV  SYN, (8)4652.0       ! line 8   004652.21, BB bit 0 = 0
+TUNXW   SYN, (8)4653.0       ! line 7   004653.34 (= printed p.84)
+TM1A    SYN, (8)5107.40      ! line 2   005107.61, BB bit 0 = 1
+TM1D    SYN, (8)5162.0       ! line 1   005162.36
+TMREJB  SYN, (8)5377.0       ! line 36  005377.10
+
+! ---- table offsets, read from the first half-word's bit address
+!      and the second half-word's length field -------------------
+TIREF   SYN(BU,12), 0.52     ! line 4   000000.64 / len 001100
+TUNME   SYN(BU,48), 25.0     ! line 5   000031.00.  The len 000000
+                             !          in this row is the STATEMENT's
+                             !          own (BU,64), not the symbol's;
+                             !          printed p.84 line 9 defines
+                             !          TUNME as (BU,48).
+TFIAAC  SYN(BU,18), 3.0             ! line 16  000003.13 (an index op)
+TABSCH  SYN(BU,18), 0.46     ! line 17  000000.56 / len 010010
+TCHANN  SYN(BU,7), 0.12      ! line 20  000000.14 / len 000111
+TMULTI  SYN(BU,1), 0.27      ! line 21  000000.33 (BZB, one bit)
+TABSUN  SYN(BU,3), 0.7       ! line 22  000000.07 / len 000011
+TUNITN  SYN(BU,3), 0.47      ! line 23  000000.57 / len 000011
+TTYPE   SYN(BU,4), 0.3       ! line 24  000000.03 -- BZB PRINTS NO
+                             !          LENGTH, so this page cannot
+                             !          see it; (BU,4) is printed p.62
+                             !          line 33, which defines it.
+TSYSTM  SYN(BU,1), 7.25      ! line 25  000007.31 / len 000001
+TFRLAD  SYN(BU,18), 8.0      ! line 27  000010.00 / len 010010
+TCREEL  SYN(BU,18), 8.32     ! line 28  000010.40 / len 010010
+TREELK  SYN(BU,7), 8.57      ! line 29  000010.71 / len 000111
+TRELB   SYN(BU,1), 0.27      ! line 31  000000.33, (BU,1) printed
+TUNTBA  SYN(BU,18), 0.0      ! line 42  000000.00 / len 010010
+TSEL    SYN(BU,1), 0.39      ! line 44  000000.47 / len 000001
+TCHOWN  SYN(BU,1), 0.32      ! line 49  000000.40 / len 000001
+TUNASG  SYN(BU,1), 0.29      ! line 51  000000.35 / len 000001
+TUNRES  SYN(BU,1), 0.62      ! line 52  000000.76 (BBZ, one bit)
+TOVRES  SYN(BU,1), 0.63      ! line 53  000000.77 / len 000001
+
+        SLC, (8)5115.0
+
+! ---- the page, as printed -----------------------------------------
+        BAE,TM1D                     ! line 1  -UNIT AREA TABLE GENERATED
+TM1B    CB+,TMXG,TM1A                ! line 2
+TM1E    LF,TIREF(TMXI),04            ! line 4  -GET THE REF. NUMBER
+        SF(BU,64),TUNME(TMXG),64     ! line 5
+        CM0101(BU,64),0.0(TMXG)      ! line 6  -STORE NEW ENTRY IN TABLE
+        M+1(BU,18),TUNXW+28          ! line 7  -STEP TABLE COUNTER
+        SV,TMXG,TDKSAV               ! line 8
+
+! ---- GENERATE THE UNIT AREA TABLES (lines 12-14) ------------------
+        SV,TMXD,TFIAAC(TMXE)         ! line 16 -FILE AREA ACT. ADDRESS
+        L,TABSCH(TMXB),46            ! line 17 -GET THE ADDR OF THE
+                                      !          ASSIGNED CHAN
+        LX,TMXG,$R                   ! line 18 -CHAN TABLE ADDR TO IX
+        -(BU,18),TCHSXW,46           ! line 19 -COMPUTE THE CHANNEL NUMBER
+        ST,TCHANN(TMXE),46           ! line 20
+        BZB,TMULTI(TMXG),TM1DA       ! line 21 -IF NOT A MULTI UNIT CHAN
+        L,TABSUN(TMXB),46            ! line 22 -GET THE UNIT NUMBER
+        ST,TUNITN(TMXE),46           ! line 23 -AND PLACE IN UNIT AREA TBL
+        BZB,TTYPE(TMXB),TM1DAA       ! line 24 -IF THE TYPE IS NOT TAPE
+        CM1111,TSYSTM(TMXE)          ! line 25 -SET THE SYSTEM TAPE BIT
+                                      !          FOR INITIAL
+        C0011(BU,18),TMXF            ! line 26 -GET REEL POOL ADDRESS
+        CM0101,TFRLAD(TMXE)          ! line 27 -AND STORE IN UNIT AREA
+        CM0101,TCREEL(TMXE)          ! line 28
+        M+1,TREELK(TMXE)             ! line 29 -SET THE REEL COUNT TO ONE
+        Z,0.0(TMXF)                  ! line 30 -ZERO THE FIRST REEL SLOT
+        CM1111(BU,1),TRELB(TMXF)     ! line 31
+        V+I,TMXF,1.0                 ! line 32 -STEP REEL POOL INDEX
+        KV,TMXF,TBAMCP               ! line 33 -IS THE REEL POOL
+                                      !          EXCEEDING BOUNDS
+        BXL,TM1DAA                   ! line 34 -NO
+        LVI,TMX1,4.0                 ! line 35 -YES SO NOTE IT JC
+        B,TMREJB                     ! line 36 -AND REJECT JOB
+
+! ---- MODIFY THE CHAN/UNIT STATUS TABLES (lines 38-40) -------------
+TM1DAA  +,TUNTBA(TMXG),46            ! line 42 -COMPUTE UNIT TABLE ADDR.
+                                      !          IN MULTI CASE
+        LV,TMXG,$R                   ! line 43 -GET POINTER FOR UNIT TABLE
+        CM1111,TSEL(TMXG)            ! line 44 -SET THE SEL BIT TO 1 FOR
+                                      !          ALL MULTI CH
+TM1DA   SV,TMXE,0.0(TMXG)            ! line 46 -STORE UNIT AREA TBL ADDRESS
+        LF(BU,1),.26($15)            ! line 48 -GET THE OWNERSHIP BIT
+        SF,TCHOWN(TMXG)              ! line 49
+        CM0000,TUNASG(TMXG)          ! line 51 -SET THE UNIT ASSIGNED BIT
+        BBZ,TUNRES(TMXG),TM1DX       ! line 52 -RESET THE NOT OV RES FIRST
+        CM0000,TOVRES(TMXG)          ! line 53 -
+TM1DX   LV,TMXEE,TMXE                ! line 55 -KEEP ONE IX TO BEGINNING
+                                      !          OF TBL
+        V+I,TMXE,9.0                 ! line 56 -ADVANCE THE OTHER TO END + 1
+
+! ---- CHECKS, read by tests/verify_mcp_page.py 90 -----------------
+!SYM   TM1B     005115.40
+!SYM   TM1E     005116.00
+!SYM   TM1DAA   005143.40
+!SYM   TM1DA    005146.00
+!SYM   TM1DX    005153.40
+!CHECK 005115.00 | 005162.36 C2 | line 1  BAE,TM1D
+!CHECK 005115.40 | 005107.61 48 | line 2  T M1B  CB+,TMXG,TM1A
+!CHECK 005116.00 | 000000.64 8A  014002.06 70 | line 4  T M1E  LF,TIREF(TMXI),04
+!CHECK 005117.00 | 000031.00 88  000040.12 F0 | line 5  SF(BU,64),TUNME(TMXG),64
+!CHECK 005120.00 | 000000.00 88  000000.12 F0 | line 6  CM0101(BU,64),0.0(TMXG)
+!CHECK 005121.00 | 004653.34 80  022000.22 B0 | line 7  M+1(BU,18),TUNXW+28
+!CHECK 005122.00 | 004652.21 30 | line 8  SV,TMXG,TDKSAV
+!CHECK 005122.40 | 000003.13 36 | line 16  SV,TMXD,TFIAAC(TMXE)
+!CHECK 005123.00 | 000000.56 83  022027.20 50 | line 17  L,TABSCH(TMXB),46
+!CHECK 005124.00 | 000011.20 10 | line 18  LX,TMXG,$R
+!CHECK 005124.40 | 002152.00 80  022027.30 10 | line 19  -(BU,18),TCHSXW,46
+!CHECK 005125.40 | 000000.14 86  007027.20 D0 | line 20  ST,TCHANN(TMXE),46
+!CHECK 005126.40 | 000000.33 88  005146.34 00 | line 21  BZB,TMULTI(TMXG),TM1DA
+!CHECK 005127.40 | 000000.07 83  003027.20 50 | line 22  L,TABSUN(TMXB),46
+!CHECK 005130.40 | 000000.57 86  003027.20 D0 | line 23  ST,TUNITN(TMXE),46
+!CHECK 005131.40 | 000000.03 83  005143.74 00 | line 24  BZB,TTYPE(TMXB),TM1DAA
+!CHECK 005132.40 | 000007.31 86  001000.36 F0 | line 25  CM1111,TSYSTM(TMXE)
+!CHECK 005133.40 | 000027.00 80  022000.06 70 | line 26  C0011(BU,18),TMXF
+!CHECK 005134.40 | 000010.00 86  022000.12 F0 | line 27  CM0101,TFRLAD(TMXE)
+!CHECK 005135.40 | 000010.40 86  022000.12 F0 | line 28  CM0101,TCREEL(TMXE)
+!CHECK 005136.40 | 000010.71 86  007000.22 B0 | line 29  M+1,TREELK(TMXE)
+!CHECK 005137.40 | 000000.22 07 | line 30  Z,0.0(TMXF)
+!CHECK 005140.00 | 000000.33 87  001000.36 F0 | line 31  CM1111(BU,1),TRELB(TMXF)
+!CHECK 005141.00 | 000001.17 05 | line 32  V+I,TMXF,1.0
+!CHECK 005141.40 | 002153.16 90 | line 33  KV,TMXF,TBAMCP
+!CHECK 005142.00 | 005143.72 42 | line 34  BXL,TM1DAA
+!CHECK 005142.40 | 000004.03 01 | line 35  LVI,TMX1,4.0  -- see the note on line 35's opcode byte
+!CHECK 005143.00 | 005377.10 00 | line 36  B,TMREJB
+!CHECK 005143.40 | 000000.00 88  022027.20 10 | line 42  T M1DAA  +,TUNTBA(TMXG),46
+!CHECK 005144.40 | 000011.20 30 | line 43  LV,TMXG,$R
+!CHECK 005145.00 | 000000.47 88  001000.36 F0 | line 44  CM1111,TSEL(TMXG)
+!CHECK 005146.00 | 000000.15 38 | line 46  T M1DA  SV,TMXE,0.0(TMXG)
+!CHECK 005146.40 | 000000.32 8F  001000.06 70 | line 48  LF(BU,1),.26($15)
+!CHECK 005147.40 | 000000.40 88  001000.12 F0 | line 49  SF,TCHOWN(TMXG)
+!CHECK 005150.40 | 000000.35 88  001000.00 F0 | line 51  CM0000,TUNASG(TMXG)
+!CHECK 005151.40 | 000000.76 88  005153.74 06 | line 52  BBZ,TUNRES(TMXG),TM1DX
+!CHECK 005152.40 | 000000.77 88  001000.00 F0 | line 53  CM0000,TOVRES(TMXG)
+!CHECK 005153.40 | 000026.22 30 | line 55  T M1DX  LV,TMXEE,TMXE
+!CHECK 005154.00 | 000011.15 05 | line 56  V+I,TMXE,9.0

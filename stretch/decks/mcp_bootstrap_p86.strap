@@ -1,0 +1,83 @@
+! mcp_bootstrap_p86.strap -- MCP INITIALIZATION, printed page 86:
+! THE MODE SCAN TABLES, THE DENSITY SCAN TABLE and THE DISPOSITION
+! SCAN TABLE.
+! docs/MCP_Mar63_001-249.pdf PDF p.93, header "PAGE NUMBER 86".
+!
+! CONTIGUOUS WITH printed p.85, whose last line is a DD(BU,5) at
+! 004752.14; this page's line 5 XW is word-aligned at 004753.00.
+!
+! >>> THREE MORE SCAN TABLES, AND THE FIXTURE'S IOD SUBFIELDS ARE IN
+! THEM. <<<  printed p.85 gave the TYPE scan; these give MODE, DENSITY
+! and DISPOSITION.  strap/prosa.py's MCP_IODS punches
+! subfields=("", "OUT1", "ODD", "HD", "SAVE") for its output tapes --
+! and "ODD" is a mode here, "HD" a density, "SAVE" a disposition.  The
+! fixture's card was written before these pages were read; the pages
+! say the names were right.
+!
+!   mode:         (blank) 0   ECC 1   ODD 3   EVEN 2   NOECC 3
+!   density:      HD 1   LD 3   (blank) 0
+!   disposition:  NSAVE 0   (blank) 0   CSAVE 1   ISAVE 2   SAVE 3
+!
+! EACH NAME IS PADDED TO ITS FIELD: (AX)DD(BU,30,6) is five 6-bit
+! characters, (BU,12,6) is two.  The space after the comma is DATA in
+! entry mode, so there is none, and the trailing X is the terminator.
+
+        SLC, (8)4753.0
+
+! ---- THE MODE SCAN TABLES ----------------------------------------
+TSCIX2  XW, TSCAN2, 5, 0             ! line 5  -INDEX FOR MODE SCAN
+TSCBK2  VF, -2                       ! line 6  -BACKUP CONSTANT
+TSCAN2  (AX)DD(BU,30,6),     X       ! line 8
+        DD(BU,2), 0                  ! line 9
+        (AX)DD(BU,30,6),ECC  X       ! line 10
+        DD(BU,2), 1                  ! line 11
+        (AX)DD(BU,30,6),ODD  X       ! line 12
+        DD(BU,2), 3                  ! line 13
+        (AX)DD(BU,30,6),EVEN X       ! line 14
+        DD(BU,2), 2                  ! line 15
+        (AX)DD(BU,30,6),NOECCX       ! line 16
+        DD(BU,2), 3                  ! line 17
+        DD(BU,2), 3                  ! line 18 -AN ERROR WILL BE ...
+
+! ---- THE DENSITY SCAN TABLE --------------------------------------
+TSCIX3  XW, TSCAN3, 3, 0             ! line 24 -IX FOR DENSITY SCAN
+TSCBK3  VF, -2                       ! line 25 -BACKUP CONSTANT
+TSCAN3  (AX)DD(BU,12,6),HDX          ! line 26
+        DD(BU,2), 1                  ! line 27
+        (AX)DD(BU,12,6),LDX          ! line 28
+        DD(BU,2), 3                  ! line 29
+        (AX)DD(BU,12,6),  X          ! line 30
+        DD(BU,2), 0                  ! line 31
+        DD(BU,2), 0                  ! line 32 -ERROR WILL BE NU...
+
+! ---- THE DISPOSITION SCAN TABLE ----------------------------------
+TSCIX4  XW, TSCAN4, 5, 0             ! line 39 -IX FOR THE DISPOSITION
+TSCBK4  VF, -3                       ! line 40 -BACKUP CONSTANT
+TSCAN4  (AX)DD(BU,30,6),NSAVEX       ! line 42
+        DD(BU,3), 0                  ! line 43
+        (AX)DD(BU,30,6),     X       ! line 44
+        DD(BU,3), 0                  ! line 45
+        (AX)DD(BU,30,6),CSAVEX       ! line 46
+        DD(BU,3), 1                  ! line 47
+        (AX)DD(BU,30,6),ISAVEX       ! line 48
+        DD(BU,3), 2                  ! line 49
+        (AX)DD(BU,30,6),SAVE X       ! line 50
+        DD(BU,3), 3                  ! line 51
+        DD(BU,03), 0                 ! line 52 -AN ERROR WILL BE ...
+
+! ---- CHECKS, read by tests/verify_mcp_page.py 86 -----------------
+!SYM   TSCIX2   004753.00
+!SYM   TSCBK2   004754.00
+!SYM   TSCAN2   004754.31
+!SYM   TSCIX3   004757.00
+!SYM   TSCBK3   004760.00
+!SYM   TSCAN3   004760.31
+!SYM   TSCIX4   004762.00
+!SYM   TSCBK4   004763.00
+!SYM   TSCAN4   004763.31
+!CHECK 004753.00 | 004754.31+ 000 000005 000000 | line 5  T SCIX2 XW,TSCAN2,5,0
+!CHECK 004754.00 | 000000.02- | line 6  T SCBK2 VF,-2
+!CHECK 004757.00 | 004760.31+ 000 000003 000000 | line 24 T SCIX3 XW,TSCAN3,3,0
+!CHECK 004760.00 | 000000.02- | line 25 T SCBK3 VF,-2
+!CHECK 004762.00 | 004763.31+ 000 000005 000000 | line 39 T SCIX4 XW,TSCAN4,5,0
+!CHECK 004763.00 | 000000.03- | line 40 T SCBK4 VF,-3

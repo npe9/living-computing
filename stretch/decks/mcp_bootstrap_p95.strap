@@ -1,0 +1,422 @@
+! mcp_bootstrap_p95.strap -- MCP INITIALIZATION, printed page 95:
+! the tail of the per-job entry loop, SORT THE I/O REQUEST WITHIN THE
+! I/O REQUEST TABLE, and the head of COMPUTE THE TABLE LOCATIONS AND
+! ZERO THEM.
+! docs/MCP_Mar63_001-249.pdf PDF p.102, header "PAGE NUMBER 95",
+! LOCATION 005327 printed in the column header.
+!
+! Fifty-six printed lines; FORTY-TWO COMPILE.  Lines 8, 13, 17, 21,
+! 24-28 and 44-48 carry only the dash in the STATEMENT column (26-27
+! and 46 are the two boxed banners).  Card serials run 18000642 on
+! line 1 to 18000697 on line 56, so the line number is the serial
+! minus 18000641 -- which is how the 56-line count was confirmed
+! rather than estimated.
+!
+! CONTIGUOUS BY ADDRESS, all forty-one links.  The first located line
+! is 1 at 005327.00 and the last is 56 at 005365.00, one half word
+! long, so printed p.96 must begin at 005365.40 (a prediction, not a
+! read).  Every row's location plus one half word per "XXXXXX.NN NN"
+! group in its BINARY OUTPUT equals the next row's location, with no
+! gap and no overlap.  That is what says no line fell off the top or
+! the bottom of the render.
+!
+! WHAT THE PAGE DOES.  Lines 1-23 finish the loop that walks the job
+! table: an unequal compare rejects the job as out of sync (LVI into
+! T MX1 then B to T N2), and T M3EZ steps T MXG to the next job,
+! saving the pointer in T PPRUN only when overlap is on.  T M2AM and
+! T M3A check the REJECTED and PROCESSED bits of the job entry -- a
+! bit already set is an MCP error and halts on BD,$ -- then T M3C
+! picks up the I/O request table address from T CRREF, sets the
+! PROCESSED bit with CM1111 and connects the unit count out of
+! T UNCT.  No I/O request branches away to T OK; an unassigned job is
+! another BD,$ halt.
+!
+! Lines 29-43 are an exchange sort of the I/O request table by IOD
+! sequence number, written as two nested count-and-branch loops:
+! T SORT1/T SORT3 is the outer pass over T MXF and T SORT2/T SORT3
+! the inner over T MXG, each reloading T IOREQ at the T LAST bit.
+! The compare is "KF,T IODSQ(T MXG),36" and only a high compare
+! (BZAH is the skip) swaps, which it does by loading the swap index
+! into T MXGA, storing the greater word, then putting the lesser back
+! from $R.
+!
+! Lines 49-56 begin the table arithmetic: the IOD count goes to the
+! factor register with LFT, the largest reference number is saved in
+! T MAXRF, the SIOL upper limit T LIMB is added, one is added for
+! proper table size, and T MXD then T MXE are set to the first cell
+! available for the file area and for the unit area table, with the
+! file area table length T FLLGN (the bare-integer SYN whose value is
+! 7, printed p.85 line 6) multiplied in by *I+.
+!
+! ---------------------------------------------------------------
+! EXTERNALS -- WHICH ARE TRANSCRIBED AND WHICH ARE DERIVED
+! ---------------------------------------------------------------
+! (a) ALREADY TRANSCRIBED ELSEWHERE, and confirmed a SECOND time by
+!     this page's own address field.  Each offset below was read off
+!     this page before the corpus was consulted, and every one of
+!     them matches an existing deck's !SYM/SYN exactly:
+!
+!       line  9  T RJECT  000000.45 -> 0.37   (p.84, decks p58/p62/..)
+!       line 11  T JBPRO  000000.44 -> 0.36
+!       line 14  T CRREF  000000.00, length 022 -> (BU,18), 0.0
+!       line 16  T UNCT   000000.34, length 010 -> (BU,8),  0.28
+!       line 22  T ASGNP  000000.46 -> 0.38
+!       line 30  T LAST   000000.22 -> 0.18
+!       line 36  T IODSQ  000000.23, length 011 -> (BU,9),  0.19
+!       line 49  T IODCT  000000.64, length 014 -> (BU,12), 0.52
+!       line 50  T LREFN  000000.50, length 014 -> (BU,12), 0.40
+!       line  7  T PPRUN  003315.00                      (p.83)
+!       line 31  T IOREQ  003373.00                      (p.83)
+!       line 51  T MAXRF  002155.40                      (p.83 l.18)
+!       line 52  T LIMB   002155.00                      (p.83 l.15)
+!
+!     >>> LINE 52 PRINTS THE SAME WORD AS printed p.89 LINE 41. <<<
+!     Both are "+(BU,18),T LIMB,46" and both print
+!     002155.00 80  022027.20 10.  That is an independent witness for
+!     T LIMB arriving from two separate pages.
+!
+!     The index names are confirmed the same way, twice each -- once
+!     by the register offset in the half-word address field (LX uses
+!     2n, LVI/SX/SV use 2n+1) and once by the index nibble of the
+!     modifier byte of the VFL rows:
+!
+!       T MX1  $1  (line  2, .03)      T MXE  $6  (line 56, .14)
+!       T MXA  $2  (line  4, 000022 = word 16+2; byte 82 on lines
+!                   9/11/14/15/16/22/49/50)
+!       T MXB  $3  (line 18, .06)      T MXF  $7  (line 29, .16;
+!                                           line 32, 000027 = 16+7;
+!                                           byte 87 on lines 33/42)
+!       T MXD  $5  (line 54, .12)      T MXG  $8  (line  6, .21;
+!                                           byte 88 on lines 30/34/
+!                                           36/39)
+!       T MXGA $11 (line 38, .26; line 40, .27)
+!
+!     and all eight match printed p.83's own SYN cards.
+!
+! (b) TWO VALUES DERIVED, NOT READ, AND BOTH ARE MARKED.  T N2 (line
+!     3) and T OK (line 20) are reached only by a bare B and appear
+!     nowhere transcribed.  A bare B's low octal field is its target's
+!     offset PLUS 0o10 -- confirmed on five independently transcribed
+!     rows, printed p.88 lines 28 (005031.50 -> T GET1 005031.40),
+!     42 (005043.10 -> T GET2 005043.00), 46 and 54, and printed p.89
+!     line 9 (005061.50 -> T GET3 005061.00).  So
+!
+!       line  3  B,T N2  prints 005444.10  ->  T N2 = 005444.00
+!       line 20  B,T OK  prints 005262.50  ->  T OK = 005262.40
+!
+!     >>> THE LOW FIELD OF A BRANCH IS NOT THE TARGET'S OFFSET. <<<
+!     This page proves it on itself: line 1's BAE,T M3EZ prints
+!     005330.76 and T M3EZ is at 005330.40, so the .36 is condition.
+!     Each constant used here was calibrated against a target some
+!     page states outright, never read off a branch.
+!
+!     >>> LINES 3 AND 20 CHECK THEIR OPCODE BITS ONLY. <<<  T N2 and
+!     T OK were taken from these very rows, so the oracle comparing
+!     them back is circular and proves only the opcode and the low
+!     field -- the same caveat printed p.88's header records for its
+!     five forward branches.  THIRTY-SEVEN of the thirty-nine passing
+!     rows are independent address checks; these two are not.
+!
+! (c) >>> "T OK" IS A LETTER O AND NOT A C. <<<  At 1800 dpi the
+!     symbol at line 20 reads "T CK": its middle glyph has a break in
+!     the right stroke.  Cropped to the same magnification and set
+!     beside line 16's "C0011", the difference is decisive -- that C
+!     is ROUND with a wide mouth and curled terminals, while this
+!     glyph is the SQUARE, wide letter O, whose top-right and
+!     bottom-right corners are both printed and whose right stroke is
+!     merely broken in the middle.  The digit 0 in the same rows is a
+!     third shape again, a narrow oval.  Same hazard, same method, as
+!     printed p.87's T WORM.
+!
+! >>> THREE LISTING MARKS: the asterisk after the location on lines
+! 4, 29 and 50, recorded as printed and not interpreted here.
+!
+! ---------------------------------------------------------------
+! WHAT THIS PAGE ASKS OF strap_asm -- THREE ROWS IT CANNOT YET MEET
+! ---------------------------------------------------------------
+! Assembled standalone, ELEVEN OF ELEVEN SYMBOLS land on their
+! printed location and THIRTY-NINE OF FORTY-TWO rows reproduce the
+! BINARY OUTPUT column bit for bit.  The three that do not are all
+! one thing -- this page is the corpus's FIRST witness for three
+! mnemonics -- and none of them is a transcription doubt about an
+! address:
+!
+!   line 55  THE PAGE PRINTS "*I+", WHICH strap_asm DOES NOT ACCEPT
+!            ("unknown mnemonic").  The deck writes the supported
+!            spelling "*+I" and the !CHECK note keeps the printed one.
+!            This is a SPELLING difference, not a different
+!            instruction, and the bits say so: the delta between "*"
+!            and the page is 0o02 in the printed .21/.23 field, which
+!            is IBM bit 54 -- the MSB of code6, the single bit that
+!            separates "*" (0b011001) from "*+" (0b111001).  So the
+!            operation IS "*+" with the Appendix A footnote 3 "I"
+!            immediate suffix, written by IBM with the I in the
+!            middle.  Printed p.96 prints "*I+" too and assembles
+!            bit-exact as "*+I": two witnesses, zero disagreement.
+!            Compare E+I/E+AI/E-I/E-AI in strap_asm.py, the family
+!            whose modifier letters already sit inside the mnemonic.
+!            Accepting "*I+" directly is a to-do, not a blocker.
+!
+!   lines 49 and 53  THESE READ B0, NOT BC.  AN EARLIER READING OF
+!            THIS PAGE SAID BC AND BLAMED THE ASSEMBLER.  IT WAS
+!            WRONG, AND THE REFUTATION IS IN THE SAME ROW:
+!
+!   005356.40   COC000.64 82   014000.2C BC      LFT,T IODCT(T MXA)
+!
+!            The first two fields of a half-word print in OCTAL and
+!            cannot hold a C, so "COC000" is 000000 and ".2C" is .20.
+!            This row prints 0 as an open C three times before it
+!            reaches the byte.  Line 53's "COC011.CC 80" and line
+!            55's "C70C000.00" print the same way.  Ink dropout can
+!            open a closed glyph but never close an open one, so the
+!            byte is B0.
+!            The STATEMENT column agrees independently: the low
+!            nibble of a VFL full word is i2, the offset index from
+!            the OF7(I') operand (vflAddrOf: w[3:0], IBM bits 60-63).
+!            Neither statement has a second operand, so i2 is 0.
+!            Assembling "LFT,T IODCT(T MXA), 0(T MLXA)" -- T MLXA is
+!            $12, printed p.83 line 33 -- turns B0 into BC and
+!            changes nothing else, which is what identifies the
+!            nibble.  The earlier reading compared these bytes with
+!            zeros two and four rows AWAY instead of with the
+!            impossible C's in their own row.
+!            All 42 rows now agree with strap_asm.
+
+! >>> ONE DISAGREEMENT WITH THE PRINT IS RECORDED BELOW, NOT HIDDEN.
+! See the note above the !CHECK block for lines 3 and 10.
+
+! ---- index names, printed p.83 ------------------------------------
+TMX1    SYN, $1
+TMXA    SYN, $2
+TMXB    SYN, $3
+TMXD    SYN, $5
+TMXE    SYN, $6
+TMXF    SYN, $7
+TMXG    SYN, $8
+TMXGA   SYN, $11
+
+! ---- job table / IOD field offsets, printed p.84 ------------------
+TCRREF  SYN(BU,18), 0.0
+TLAST   SYN(BU,1), 0.18
+TIODSQ  SYN(BU,9), 0.19
+TUNCT   SYN(BU,8), 0.28
+TJBPRO  SYN(BU,1), 0.36
+TRJECT  SYN(BU,1), 0.37
+TASGNP  SYN(BU,1), 0.38
+TLREFN  SYN(BU,12), 0.40
+TIODCT  SYN(BU,12), 0.52
+
+! ---- words, printed p.83 ------------------------------------------
+TLIMB   SYN, (8)2155.0               ! p.83 line 15 -UPPER BOUNDARY
+TMAXRF  SYN, (8)2155.40              ! p.83 line 18 -MAX REF NO.
+TPPRUN  SYN, (8)3315.0
+TIOREQ  SYN, (8)3373.0
+
+! ---- the file area table length, printed p.85 line 6 --------------
+TFLLGN  SYN(BU,6), 7
+
+! ---- off page, DERIVED from the bare-B constant -- see (b) --------
+TN2     SYN, (8)5444.0               ! DERIVED
+TOK     SYN, (8)5262.40              ! DERIVED
+
+        SLC, (8)5327.0
+
+! ---- the tail of the per-job entry loop ---------------------------
+        BAE, TM3EZ                   ! line 1  -OK IF ALIKE
+        LVI, TMX1, 2.0               ! line 2  -ERROR --JOBS ARE OUT
+                                      !           OF SYNC
+        B, TN2                       ! line 3  -RETURN WITHOUT REJECT
+TM3EZ   LX, TMXG, TMXA               ! line 4  -SET UP FOR NEXT JOB -
+                                      !           MOVE POINTER
+        BB, .25($15), TM2AM          ! line 5  -IF NOT OVERLAP DONT
+                                      !           SAVE PTR.
+        V+ICR, TMXG, 2.0             ! line 6
+        SX, TMXG, TPPRUN             ! line 7
+
+TM2AM   BZB, TRJECT(TMXA), TM3A      ! line 9  -IF PP WAS NOT REJECTED
+        BD, $                        ! line 10 -MCP ERROR, PP WAS
+                                      !           PREVIOUSLY REJ
+TM3A    BZB, TJBPRO(TMXA), TM3C      ! line 11 -IF THE JOB WAS NOT
+                                      !           PROCESSED
+        BD, $                        ! line 12 -MCP ERROR, PP WAS
+                                      !           PREVIOUSLY RUN
+
+TM3C    L, TCRREF(TMXA), 46          ! line 14 -GET LOC OF I/O REQ TBL
+        CM1111, TJBPRO(TMXA)         ! line 15 -SET THE JOB PROCESSED
+                                      !           BIT ON
+        C0011, TUNCT(TMXA), 18       ! line 16 -GET NUMBER OF I/O REQ
+
+        LX, TMXB, $R                 ! line 18
+        BZXCZ, TM3B                  ! line 19
+        B, TOK                       ! line 20 -IF NO I/O REQ
+
+TM3B    BB, TASGNP(TMXA), TSORT      ! line 22 -IF JOB WAS ASSIGNED
+        BD, $                        ! line 23 -MCP ERROR, JOB NOT
+                                      !           ASSIGNED
+
+! ---- SORT THE I/O REQUEST WITHIN THE I/O REQUEST TABLE ------------
+! ---- BY THE IOD SEQUENCE NUMBER AS PER PP ------------------------
+TSORT   LX, TMXF, $R                 ! line 29 -LOAD TO GET I/O
+                                      !           REQUEST TABLE
+TSORT1  BZB, TLAST(TMXG), TSORT4     ! line 30
+        LVI, TMXG, TIOREQ            ! line 31
+TSORT4  LX, TMXG, TMXF               ! line 32
+        L(BU,64), 0.0(TMXF)          ! line 33 -GET A WORD FROM REQ
+                                      !           TABLE FOR COMPARE
+TSORT2  BZB, TLAST(TMXG), TSORT5     ! line 34
+        LVI, TMXG, TIOREQ            ! line 35
+TSORT5  KF, TIODSQ(TMXG), 36         ! line 36 -COMPARE THE NEXT SEQ
+                                      !           NO AND SO FORTH
+        BZAH, TSORT3                 ! line 37 -SWAP ONLY ON HIGH
+        LX, TMXGA, 0.0(TMXG)         ! line 38 -LOAD SWAP INDEX
+        ST(BU,64), 0.0(TMXG)         ! line 39 -STORE THE GREATER
+        SX, TMXGA, $R                ! line 40 -REPLACE THE ACC WITH
+                                      !           THE LESSER
+TSORT3  CB+, TMXG, TSORT2            ! line 41
+        ST(BU,64), 0.0(TMXF)         ! line 42 -REPLACE THE INITIAL
+                                      !           WORD
+        CB+, TMXF, TSORT1            ! line 43
+
+! ---- COMPUTE THE TABLE LOCATIONS AND ZERO THEM --------------------
+        LFT, TIODCT(TMXA)            ! line 49 -NUMBER OF IODS TO
+                                      !           FACTOR REG
+        L, TLREFN(TMXA), 46          ! line 50 -GET LARGEST REF NO
+                                      !           FOR TBL LENGTH
+        CM0101(BU,18), TMAXRF, 46    ! line 51 -SAVE THE LARGEST
+                                      !           REFERENCE NUMBER
+        +(BU,18), TLIMB, 46          ! line 52 -ADD TO IT THE UPPER
+                                      !           LIMIT OF PP
+        M+1(BU,18), $R               ! line 53 -ADD ONE FOR PROPER
+                                      !           TABLE SIZE
+        LV, TMXD, $R                 ! line 54 -FIRST CELL AVAIL FOR
+                                      !           FILE AREA
+        *+I, TFLLGN, 46              ! line 55 -ADD FILE AREA TABLE
+                                      !           LENGHT
+        LV, TMXE, $R                 ! line 56 -FIRST CELL AVAILABLE
+                                      !           FOR UNIT AREA TB
+
+! ---------------------------------------------------------------
+! THE PRINTED LISTING -- all forty-two rows that compile.
+! ---------------------------------------------------------------
+!   line  1  005327.00    005330.76 C2                        BAE,T M3EZ
+!   line  2  005327.40    000002.03 01                        LVI,T MX1,2.0
+!   line  3  005330.00    005444.10 C0                        B,T N2
+!   line  4  005330.40 *  000022.20 10                T M3EZ  LX,T MXG,T MXA
+!   line  5  005331.00    000000.31 8F  005333.34 02          BB,.25($15),T M2AM
+!   line  6  005332.00    000002.21 07                        V+ICR,T MXG,2.0
+!   line  7  005332.40    003315.21 10                        SX,T MXG,T PPRUN
+!   line  9  005333.00    000000.45 82  005334.74 00  T M2AM  BZB,T RJECT(T MXA),T M3A
+!   line 10  005334.00    005334.04 C0                        BD,$
+!   line 11  005334.40    000000.44 82  005336.34 00  T M3A   BZB,T JBPRO(T MXA),T M3C
+!   line 12  005335.40    005335.44 00                        BD,$
+!   line 14  005336.00    000000.00 82  022027.20 50  T M3C   L,T CRREF(T MXA),46
+!   line 15  005337.00    000000.44 82  001000.36 F0          CM1111,T JBPRO(T MXA)
+!   line 16  005340.00    000000.34 82  010011.06 70          C0011,T UNCT(T MXA),18
+!   line 18  005341.00    000011.06 10                        LX,T MXB,$R
+!   line 19  005341.40    005342.70 40                        BZXCZ,T M3B
+!   line 20  005342.00    005262.50 00                        B,T OK
+!   line 22  005342.40    000000.46 82  005344.34 02  T M3B   BB,T ASGNP(T MXA),T SORT
+!   line 23  005343.40    005343.44 00                        BD,$
+!   line 29  005344.00 *  000011.16 10                T SORT  LX,T MXF,$R
+!   line 30  005344.40    000000.22 88  005346.34 00  T SORT1 BZB,T LAST(T MXG),T SORT4
+!   line 31  005345.40    003373.21 01                        LVI,T MXG,T IOREQ
+!   line 32  005346.00    000027.20 10                T SORT4 LX,T MXG,T MXF
+!   line 33  005346.40    000000.00 87  000000.20 50          L(BU,64),0.0(T MXF)
+!   line 34  005347.40    000000.22 88  005351.34 00  T SORT2 BZB,T LAST(T MXG),T SORT5
+!   line 35  005350.40    003373.21 01                        LVI,T MXG,T IOREQ
+!   line 36  005351.00    000000.23 88  011022.23 10  T SORT5 KF,T IODSQ(T MXG),36
+!   line 37  005352.00    005354.77 40                        BZAH,T SORT3
+!   line 38  005352.40    000000.26 18                        LX,T MXGA,0.0(T MXG)
+!   line 39  005353.00    000000.00 88  000000.20 D0          ST(BU,64),0.0(T MXG)
+!   line 40  005354.00    000011.27 10                        SX,T MXGA,$R
+!   line 41  005354.40    005347.61 48                T SORT3 CB+,T MXG,T SORT2
+!   line 42  005355.00    000000.00 87  000000.20 D0          ST(BU,64),0.0(T MXF)
+!   line 43  005356.00    005344.57 48                        CB+,T MXF,T SORT1
+!   line 49  005356.40    000000.64 82  014000.20 BC          LFT,T IODCT(T MXA)
+!   line 50  005357.40 *  000000.50 82  014027.20 50          L,T LREFN(T MXA),46
+!   line 51  005360.40    002155.40 80  022027.12 F0          CM0101(BU,18),T MAXRF,46
+!   line 52  005361.40    002155.00 80  022027.20 10          +(BU,18),T LIMB,46
+!   line 53  005362.40    000011.00 80  022000.22 BC          M+1(BU,18),$R
+!   line 54  005363.40    000011.12 30                        LV,T MXD,$R
+!   line 55  005364.00    070000.00 80  406027.23 90          *I+,T FLLGN,46
+!   line 56  005365.00    000011.14 30                        LV,T MXE,$R
+
+! >>> LINES 3 AND 10 PRINT "C0" WHERE THE PAGE ITSELF SAYS "00". <<<
+! The page carries two bare B rows and three BD,$ rows.  Line 3
+! (B,T N2) and line 10 (BD,$) print an opcode byte whose first glyph
+! is unmistakably a round, wide-mouthed C at 1800 dpi; line 20
+! (B,T OK) and lines 12 and 23 (BD,$) print two narrow closed ovals,
+! "00", just as unmistakably.  Identical statements cannot assemble
+! to different opcode bytes, so one of each pair is ink -- and the
+! majority on this page plus the corpus say which: printed p.89 line
+! 29's BD,$ prints 005075.04 00, and a bare B prints ".x0 00" on
+! forty-nine independently transcribed rows across printed pp.44-80
+! (printed p.88 lines 28/42/46/54 among them).  THE !CHECK ROWS BELOW
+! THEREFORE READ 00 ON LINES 3 AND 10, and the discrepancy is
+! recorded here rather than smoothed away.  (The header's note on
+! lines 49/53 settles the same question a cheaper way: this page
+! prints C's inside OCTAL fields, where a C cannot occur, so the
+! open glyph is demonstrably a 0 on this page's own ink.)  THE DIRECTION OF THE
+! ARGUMENT MATTERS: a worn drum and a dry ribbon can only OPEN a
+! glyph, never close one, so an observed C may be a damaged 0 while
+! an observed 0 can never be a damaged C.  Where one statement
+! prints both ways on one page, the CLOSED reading is the true one.
+! The contrast that keeps
+! this honest is line 1: BAE really does print C2, and so does every
+! BAE on printed p.88.  The C is ink only where the same statement's
+! twin on the same page prints a closed glyph.
+
+! ---- CHECKS, read by tests/verify_mcp_page.py 95 -----------------
+!SYM   TM3EZ    005330.40
+!SYM   TM2AM    005333.00
+!SYM   TM3A     005334.40
+!SYM   TM3C     005336.00
+!SYM   TM3B     005342.40
+!SYM   TSORT    005344.00
+!SYM   TSORT1   005344.40
+!SYM   TSORT4   005346.00
+!SYM   TSORT2   005347.40
+!SYM   TSORT5   005351.00
+!SYM   TSORT3   005354.40
+!CHECK 005327.00 | 005330.76 C2 | line 1  BAE,TM3EZ
+!CHECK 005327.40 | 000002.03 01 | line 2  LVI,TMX1,2.0
+!CHECK 005330.00 | 005444.10 00 | line 3  B,TN2 -- page prints C0, see note
+!CHECK 005330.40 | 000022.20 10 | line 4  T M3EZ LX,TMXG,TMXA
+!CHECK 005331.00 | 000000.31 8F 005333.34 02 | line 5  BB,.25($15),TM2AM
+!CHECK 005332.00 | 000002.21 07 | line 6  V+ICR,TMXG,2.0
+!CHECK 005332.40 | 003315.21 10 | line 7  SX,TMXG,TPPRUN
+!CHECK 005333.00 | 000000.45 82 005334.74 00 | line 9  T M2AM BZB,TRJECT(TMXA),TM3A
+!CHECK 005334.00 | 005334.04 00 | line 10 BD,$ -- page prints C0, see note
+!CHECK 005334.40 | 000000.44 82 005336.34 00 | line 11 T M3A BZB,TJBPRO(TMXA),TM3C
+!CHECK 005335.40 | 005335.44 00 | line 12 BD,$
+!CHECK 005336.00 | 000000.00 82 022027.20 50 | line 14 T M3C L,TCRREF(TMXA),46
+!CHECK 005337.00 | 000000.44 82 001000.36 F0 | line 15 CM1111,TJBPRO(TMXA)
+!CHECK 005340.00 | 000000.34 82 010011.06 70 | line 16 C0011,TUNCT(TMXA),18
+!CHECK 005341.00 | 000011.06 10 | line 18 LX,TMXB,$R
+!CHECK 005341.40 | 005342.70 40 | line 19 BZXCZ,TM3B
+!CHECK 005342.00 | 005262.50 00 | line 20 B,TOK
+!CHECK 005342.40 | 000000.46 82 005344.34 02 | line 22 T M3B BB,TASGNP(TMXA),TSORT
+!CHECK 005343.40 | 005343.44 00 | line 23 BD,$
+!CHECK 005344.00 | 000011.16 10 | line 29 T SORT LX,TMXF,$R
+!CHECK 005344.40 | 000000.22 88 005346.34 00 | line 30 T SORT1 BZB,TLAST(TMXG),TSORT4
+!CHECK 005345.40 | 003373.21 01 | line 31 LVI,TMXG,TIOREQ
+!CHECK 005346.00 | 000027.20 10 | line 32 T SORT4 LX,TMXG,TMXF
+!CHECK 005346.40 | 000000.00 87 000000.20 50 | line 33 L(BU,64),0.0(TMXF)
+!CHECK 005347.40 | 000000.22 88 005351.34 00 | line 34 T SORT2 BZB,TLAST(TMXG),TSORT5
+!CHECK 005350.40 | 003373.21 01 | line 35 LVI,TMXG,TIOREQ
+!CHECK 005351.00 | 000000.23 88 011022.23 10 | line 36 T SORT5 KF,TIODSQ(TMXG),36
+!CHECK 005352.00 | 005354.77 40 | line 37 BZAH,TSORT3
+!CHECK 005352.40 | 000000.26 18 | line 38 LX,TMXGA,0.0(TMXG)
+!CHECK 005353.00 | 000000.00 88 000000.20 D0 | line 39 ST(BU,64),0.0(TMXG)
+!CHECK 005354.00 | 000011.27 10 | line 40 SX,TMXGA,$R
+!CHECK 005354.40 | 005347.61 48 | line 41 T SORT3 CB+,TMXG,TSORT2
+!CHECK 005355.00 | 000000.00 87 000000.20 D0 | line 42 ST(BU,64),0.0(TMXF)
+!CHECK 005356.00 | 005344.57 48 | line 43 CB+,TMXF,TSORT1
+!CHECK 005356.40 | 000000.64 82 014000.20 B0 | line 49 LFT,TIODCT(TMXA)
+!CHECK 005357.40 | 000000.50 82 014027.20 50 | line 50 L,TLREFN(TMXA),46
+!CHECK 005360.40 | 002155.40 80 022027.12 F0 | line 51 CM0101(BU,18),TMAXRF,46
+!CHECK 005361.40 | 002155.00 80 022027.20 10 | line 52 +(BU,18),TLIMB,46
+!CHECK 005362.40 | 000011.00 80 022000.22 B0 | line 53 M+1(BU,18),$R
+!CHECK 005363.40 | 000011.12 30 | line 54 LV,TMXD,$R
+!CHECK 005364.00 | 070000.00 80 406027.23 90 | line 55 *I+,TFLLGN,46
+!CHECK 005365.00 | 000011.14 30 | line 56 LV,TMXE,$R

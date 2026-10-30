@@ -1,0 +1,299 @@
+! agent_p92.strap -- MCP, printed page 92: THE DISK ANALYSER.
+! docs/MCP_Mar63_001-249.pdf PDF p.99, header "PAGE NUMBER 92"
+! (confirmed by rendering the header band: "PAGE NUMBER   92",
+! card id 18000495, PUNID 11C11IPL).
+!
+! THE PAGE IS BOX-HEADED "DISK ANALYSER", not a MOVE continuation.
+! Lines 1-6 are the box and blanks; lines 7-40 all compile, thirty-
+! four rows, 005210.40 through 005244.00.  Whether DISK ANALYSER is
+! a sub-section of MOVE or a successor routine is not something this
+! page settles, and nothing here asserts it.  The next box, on
+! printed p.93, is "TRACK ANALYSER".
+!
+! THE PAGE IS CONTIGUOUS WITH printed p.93 AT ITS TAIL.  Line 40 is
+! a one-half-word "B,T M1FA" at 005244.00, so the counter reaches
+! 005244.40, and PDF p.100 (printed p.93) line 4 is "T MDK2" at
+! 005244.40.  That was read, not computed.
+!
+! ---------------------------------------------------------------
+! WHAT THE ROUTINE DOES, in the page's own comments
+! ---------------------------------------------------------------
+! Get the unit table address (line 7), the relative address of the
+! disk counter (8) and the counter itself (10); if the request is
+! for a TRACK go to T MTRK on p.93 (11).  Otherwise set current and
+! original arc from the counter (12-14), fetch the disk number
+! (15), compare it against T M6BL -- the six blanks of printed p.83
+! line 13 -- and branch to T MNULD if the disk is null (16-17).
+! Not null: call the conversion subroutine at T MCONV with a return
+! index of T MDK1 (18-19), add the converted number to the counter
+! (21-26), subtract one (27), and reject through T MDSK3 if the
+! result exceeds T MMAX = 4095 (28-29).  Store the maximum arc (30),
+! pick up the reference number of the null IOD (31), and if there is
+! none fall out to T M1FA (32).  If there is one, index into the
+! SIOL table through T LIMB (33-35), reload the last counter (36)
+! and update that file area's current and original arc too (37-40).
+!
+! ---------------------------------------------------------------
+! >>> THE PRINTER'S ZERO IS AN OPEN C ON THIS PAGE <<<
+! ---------------------------------------------------------------
+! listing_typography.md 13d.  Nearly every 0 on p.92 prints with a
+! break in its right side: line 7's location reads "CC5210.40" and
+! line 18's second octal group reads "005223.C3".  Read at 900 dpi
+! and compared with the SAME row's undamaged zeros, they are zeros.
+! The one place this mattered is line 21's trailing hex byte, which
+! reads "7C" at every resolution tried: it is 70.  The proof is in
+! the column, not in the glyph -- line 36 is the SAME instruction
+! with the count operand dropped, "LF,T SBDFT(T MXGA)", and prints
+! "014000.06 70" with an undamaged 0, and the assembler compiles
+! both forms with the same trailing byte 70.  A real C there would
+! have made the count operand change bits 28-31, which it does not.
+!
+! A genuine B DOES appear, on line 27: "014000.32 B0".  Its glyph
+! has the flat left stem and two bowls; set beside line 26's
+! opcode "8B" and line 28's "80" at 1800 dpi the three are distinct.
+!
+! ---------------------------------------------------------------
+! >>> TWO LISTING MARKS <<<
+! ---------------------------------------------------------------
+! Lines 21 and 34 carry the asterisk after the LOCATION value that
+! docs/listing_typography.md 12 records as open and unexplained.
+! Both rows are in the checked set below and both match the printed
+! BINARY OUTPUT character for character, so the mark changes no bit
+! here either.
+!
+! ---------------------------------------------------------------
+! >>> SIX FORWARD SYMBOLS, ALL READ OFF A PRINTED NAME COLUMN <<<
+! ---------------------------------------------------------------
+! The page branches to six labels it does not define.  None of them
+! is back-derived from this page's own BINARY OUTPUT column; each
+! was read from the NAME and LOCATION columns of the page that
+! declares it, which were rendered for this purpose:
+!
+!   T MDK2   005244.40   PDF p.100 (printed p.93) line  4
+!   T MNULD  005250.40   PDF p.100 (printed p.93) line 10
+!   T MTRK   005255.00   PDF p.100 (printed p.93) line 16
+!   T M1FA   005262.00   PDF p.100 (printed p.93) line 23
+!   T MDSK3  005263.40   PDF p.100 (printed p.93) line 29
+!   T MCONV  005450.40   PDF p.105 (printed p.98) line  5
+!
+! listing_oracle.py's own docstring names this the house move --
+! "any symbol defined outside the transcribed range given by SYN
+! from its printed address" -- and warns that rows naming such a
+! symbol verify only the opcode and modifier bits.  Here they verify
+! more than that, because the addresses came from a DIFFERENT page's
+! location column rather than from this page's binary column, so the
+! agreement of e.g. line 11's "005255.34 02" is a real check that
+! bit 18 and the BB modifier land where the assembler puts them.
+!
+! THAT HALF-WORD SELECT IS WHY THE .40s MATTER.  listing_oracle.py:
+! "bit 18, the half-word select of a branch target, is the top bit
+! of the octal pair".  T MNULD at 005250.40 is the second half-word
+! of its word, so BAE prints 005250.76 (.40 + the .36 modifier) and
+! BRZ prints 005250.74 (.40 + .34).  printed p.93 line 17 settles
+! the modifier independently: "BRZ,T MDK" prints 005214.74 and
+! T MDK is this page's line 12 at 005214.40, so BRZ's modifier is
+! .34 and nothing on this page had to be assumed to get it.
+!
+! ---------------------------------------------------------------
+! >>> LINE 27 IS "M-1" AND THIS ASSEMBLER HAS NO M-1 <<<
+! ---------------------------------------------------------------
+! "M-1(BU,12),$L+.52" at 005231.00, printed 000010.64 80
+! 014000.32 B0.  strap_asm.assemble raises KeyError 'M-1'.
+!
+! The encoding is not a mystery -- strap_asm.strip_fp_sign already
+! carries "M-" -> ("M+", 0, 1), the written-minus form being M+ with
+! the invert-sign modifier, and the printed bits say M-1 is the same
+! rule applied to M+1: M+1 prints ".22 B0" on printed pp.55, 71 and
+! 73, M-1 prints ".32 B0" here, and 0o32 - 0o22 = 0o10 is exactly
+! the bit that separates M- (.50 A0) from M+ (.40 A0).  But that is
+! a conclusion about the assembler, not a reading of this page, so
+! the row is NOT written as M+1 -- compiling a knowingly wrong word
+! into the one column this deck exists to check would be worse than
+! leaving the hole.  The statement is kept verbatim as a comment,
+! line 28 is re-anchored with its own SLC, and the row is left out
+! of the checked set.  Same shape as printed p.3's "left OUT of the
+! checked set" and p.7/p.8's "This assembler does not implement".
+!
+! ---------------------------------------------------------------
+! EXTERNAL SYMBOLS AND THEIR SOURCE PAGES
+! ---------------------------------------------------------------
+! Index registers and the six-blank constant come from printed p.83,
+! the file-area and unit-table offsets from p.84, the arc offsets
+! from p.85.  T MMAX and T M6BL are given WITH THEIR DATA
+! DESCRIPTIONS, because KF inherits the dds of its operand symbol:
+! KF,T M6BL prints 060600.23 10 only when T M6BL is (BU,48,6), and
+! KF,T MMAX,64 prints 014040.23 10 only when T MMAX is (BU,12).
+! Both dds are printed on p.83 (lines 8 and 13).
+
+        SLC, (8)5210.40
+
+! ---- index registers, printed p.83 --------------------------------
+TMX1    SYN, $1                      ! p.83 line 21
+TMXD    SYN, $5                      ! p.83 line 25 -FILE AREA TBL IX
+TMXG    SYN, $8                      ! p.83 line 28 -TEMPORARY INDEX
+TMXI    SYN, $10                     ! p.83 line 30 -CONTROL WORD IX
+TMXGA   SYN, $11                     ! p.83 line 31 -TEMPORARY INDEX
+! ---- words and constants, printed p.83 ----------------------------
+TMMAX   SYN(BU,12), (8)4630.0        ! p.83 line 8  -THE VERY MAX DISK REF
+TM6BL   SYN(BU,48,6), (8)4631.10     ! p.83 line 13 -SIX BLANKS
+TLIMB   SYN, (8)2155.0               ! p.83 line 15 = S BAPP
+TDKSAV  SYN, (8)4652.0               ! p.83 line 42 -ADDR OF UNIT TABLE
+! ---- table offsets, printed p.84 ----------------------------------
+TDSKRF  SYN(BU,12), 25.48            ! p.84 line 10 -REF NUMBER
+TDTRK   SYN(BU,1), 25.60             ! p.84 line 11 -ONE IF TRACK
+TDKCT   SYN(BU,3), 25.61             ! p.84 line 12 -RELATIVE ADDRESS
+TSBDFT  SYN(BU,12), (8)4737.05       ! p.84 line 18 -DISK ALLOC TABLE
+TITRK   SYN(BU,1), 2.59              ! p.84 line 29 -TRACK CODE BIT
+TINO    SYN(BU,48), 5.0              ! p.84 line 33 -THE NUMBER FOR DISK
+! ---- file area table offsets, printed p.85 ------------------------
+TORARC  SYN(BU,12), 5.06             ! p.85 line 12 -ORIGINAL ARC
+TMXARC  SYN(BU,12), 5.38             ! p.85 line 13 -MAXIMUM ARC
+TCUARC  SYN(BU,12), 6.06             ! p.85 line 14 -CURRENT ARC
+! ---- forward labels, printed pp.93 and 98 -------------------------
+TMDK2   SYN, (8)5244.40              ! p.93 line  4
+TMNULD  SYN, (8)5250.40              ! p.93 line 10
+TMTRK   SYN, (8)5255.0               ! p.93 line 16
+TM1FA   SYN, (8)5262.0               ! p.93 line 23
+TMDSK3  SYN, (8)5263.40              ! p.93 line 29
+TMCONV  SYN, (8)5450.40              ! p.98 line  5
+
+        SLC, (8)5210.40
+
+! ---- DISK ANALYSER ------------------------------------------------
+        LV, TMXG, TDKSAV             ! line 7  -GET UNIT TABLE ADDRESS
+        L, TDKCT(TMXG), 45           ! line 8  -GET RELATIVE ADDRESS
+                                     !           OF DISK COUNTER
+        LV, TMXGA, $R                ! line 9
+        L, TSBDFT(TMXGA), 64         ! line 10 -GET COUNTER
+        BB, TITRK(TMXI), TMTRK       ! line 11 -IF TRACK
+TMDK    ST, TCUARC(TMXD), 64         ! line 12 -SET CURRENT ARC
+        ST, TORARC(TMXD), 64         ! line 13 -SET ORIGINAL ARC
+        ST, TSBDFT(TMXGA), 64        ! line 14 -SAVE AS TRACK ROUNDS OFF
+        L, TINO(TMXI)                ! line 15 -GET THE DISK NUMBER
+        KF, TM6BL                    ! line 16 -LOOK FOR DISK NULL--
+                                     !           BLANK
+        BAE, TMNULD                  ! line 17 -IF NULL
+        LVI, TMX1, TMDK1             ! line 18
+        B, TMCONV                    ! line 19 -GO TO THE CONVERSION
+                                     !           ROUTINE
+TMDK1   BRZ, TMNULD                  ! line 20 -IF NULL -- ZERO
+        LF, TSBDFT(TMXGA), 64        ! line 21 -RELOAD ACC
+        BB, TITRK(TMXI), TMDK3       ! line 22 -IF TRACK
+        +(BU,12), $R+.52, 64         ! line 23 -ADD THE CONVERTED NUMBER
+        B, TMDK4                     ! line 24
+TMDK3   +(BU,12), $R+.52, 67         ! line 25 -ADD THE CONVERTED
+                                     !           NUMBER -- TRACK
+TMDK4   ST, TSBDFT(TMXGA), 64        ! line 26 -UP DATE THE COUNTER
+
+! line 27  005231.00  000010.64 80  014000.32 B0   M-1(BU,12),$L+.52
+! NOT ASSEMBLED: strap_asm has no "M-1" (KeyError 'M-1').  See the
+! header.  Its full word is left as a hole and line 28 re-anchored.
+
+        SLC, (8)5232.0
+
+        KF, TMMAX, 64                ! line 28 -LOOK FOR ILLEGAL DISK
+                                     !           REQUEST
+        BAH, TMDSK3                  ! line 29 -YES
+        ST, TMXARC(TMXD), 64         ! line 30 -STORE THE MAXIMUM ARC
+        L, TDSKRF(TMXG), 46          ! line 31 -GET THE REF NO. OF
+                                     !           NULL IOD
+        BRZ, TM1FA                   ! line 32 -IF NONE
+        +(BU,18), TLIMB, 46          ! line 33 -ADD THE BASE ADDRESS
+                                     !           OF THE SIOL TBL
+        LV, TMXD, $R                 ! line 34
+        LV, TMXD, 0.32(TMXD)         ! line 35 -GET FILE AREA OF
+                                     !           NULL IOD
+        LF, TSBDFT(TMXGA)            ! line 36 -GET LAST COUNTER
+        BB, TDTRK(TMXG), TMDK2       ! line 37 -IF TRACK
+TMDK1A  ST, TCUARC(TMXD)             ! line 38 -UPDATE CURRENT ARC
+        ST, TORARC(TMXD)             ! line 39 -UPDATE ORIGINAL ARC
+        B, TM1FA                     ! line 40
+
+! NO "END" CARD.  The page prints none, and END's operand is the
+! program's ENTRY POINT -- printed p.80 line 4's T PICA is that
+! page's entry, and decks pp.85, 87, 88 and 89 carry no END at all.
+! This page's first statement, line 7, is UNLABELLED, so there is no
+! entry label to name and nothing to put on an END card.
+
+! ---------------------------------------------------------------
+! THE PRINTED LISTING, as read at 900 dpi
+! ---------------------------------------------------------------
+!   line  7  005210.40    004652.20 30                   LV,TMXG,TDKSAV
+!   line  8  005211.00    000031.75 88  003026.60 50     L,TDKCT(TMXG),45
+!   line  9  005212.00    000011.26 30                   LV,TMXGA,$R
+!   line 10  005212.40    004737.05 8B  014040.20 50     L,TSBDFT(TMXGA),64
+!   line 11  005213.40    000002.73 8A  005255.34 02     BB,TITRK(TMXI),TMTRK
+!   line 12  005214.40    000006.06 85  014040.20 D0   T MDK   ST,TCUARC(TMXD),64
+!   line 13  005215.40    000005.06 85  014040.20 D0     ST,TORARC(TMXD),64
+!   line 14  005216.40    004737.05 8B  014040.20 D0     ST,TSBDFT(TMXGA),64
+!   line 15  005217.40    000005.00 8A  060000.20 50     L,TINO(TMXI)
+!   line 16  005220.40    004631.10 80  060600.23 10     KF,TM6BL
+!   line 17  005221.40    005250.76 C2                   BAE,TMNULD
+!   line 18  005222.00    005223.03 01                   LVI,TMX1,TMDK1
+!   line 19  005222.40    005450.50 00                   B,TMCONV
+!   line 20  005223.00    005250.74 C2                 T MDK1  BRZ,TMNULD
+!   line 21  005223.40 *  004737.05 8B  014040.06 70     LF,TSBDFT(TMXGA),64
+!   line 22  005224.40    000002.73 8A  005227.34 02     BB,TITRK(TMXI),TMDK3
+!   line 23  005225.40    000011.64 80  014040.20 10     +(BU,12),$R+.52,64
+!   line 24  005226.40    005230.10 00                   B,TMDK4
+!   line 25  005227.00    000011.64 80  014041.60 10   T MDK3  +(BU,12),$R+.52,67
+!   line 26  005230.00    004737.05 8B  014040.20 D0   T MDK4  ST,TSBDFT(TMXGA),64
+!   line 27  005231.00    000010.64 80  014000.32 B0     M-1(BU,12),$L+.52
+!   line 28  005232.00    004630.00 80  014040.23 10     KF,TMMAX,64
+!   line 29  005233.00    005263.77 42                   BAH,TMDSK3
+!   line 30  005233.40    000005.46 85  014040.20 D0     ST,TMXARC(TMXD),64
+!   line 31  005234.40    000031.60 88  014027.20 50     L,TDSKRF(TMXG),46
+!   line 32  005235.40    005262.34 C2                   BRZ,TM1FA
+!   line 33  005236.00    002155.00 80  022027.20 10     +(BU,18),TLIMB,46
+!   line 34  005237.00 *  000011.12 30                   LV,TMXD,$R
+!   line 35  005237.40    000000.52 35                   LV,TMXD,0.32(TMXD)
+!   line 36  005240.00    004737.05 8B  014000.06 70     LF,TSBDFT(TMXGA)
+!   line 37  005241.00    000031.74 88  005244.74 02     BB,TDTRK(TMXG),TMDK2
+!   line 38  005242.00    000006.06 85  014000.20 D0   T MDK1A ST,TCUARC(TMXD)
+!   line 39  005243.00    000005.06 85  014000.20 D0     ST,TORARC(TMXD)
+!   line 40  005244.00    005262.10 00                   B,TM1FA
+
+! ---- CHECKS ------------------------------------------------------
+!SYM   TMDK     005214.40
+!SYM   TMDK1    005223.00
+!SYM   TMDK3    005227.00
+!SYM   TMDK4    005230.00
+!SYM   TMDK1A   005242.00
+!CHECK 005210.40 | 004652.20 30 | line 7  LV,TMXG,TDKSAV
+!CHECK 005211.00 | 000031.75 88  003026.60 50 | line 8  L,TDKCT(TMXG),45
+!CHECK 005212.00 | 000011.26 30 | line 9  LV,TMXGA,$R
+!CHECK 005212.40 | 004737.05 8B  014040.20 50 | line 10 L,TSBDFT(TMXGA),64
+!CHECK 005213.40 | 000002.73 8A  005255.34 02 | line 11 BB,TITRK(TMXI),TMTRK
+!CHECK 005214.40 | 000006.06 85  014040.20 D0 | line 12 T MDK ST,TCUARC(TMXD),64
+!CHECK 005215.40 | 000005.06 85  014040.20 D0 | line 13 ST,TORARC(TMXD),64
+!CHECK 005216.40 | 004737.05 8B  014040.20 D0 | line 14 ST,TSBDFT(TMXGA),64
+!CHECK 005217.40 | 000005.00 8A  060000.20 50 | line 15 L,TINO(TMXI)
+!CHECK 005220.40 | 004631.10 80  060600.23 10 | line 16 KF,TM6BL
+!CHECK 005221.40 | 005250.76 C2 | line 17 BAE,TMNULD
+!CHECK 005222.00 | 005223.03 01 | line 18 LVI,TMX1,TMDK1
+!CHECK 005222.40 | 005450.50 00 | line 19 B,TMCONV
+!CHECK 005223.00 | 005250.74 C2 | line 20 T MDK1 BRZ,TMNULD
+!CHECK 005223.40 | 004737.05 8B  014040.06 70 | line 21 LF,TSBDFT(TMXGA),64
+!CHECK 005224.40 | 000002.73 8A  005227.34 02 | line 22 BB,TITRK(TMXI),TMDK3
+!CHECK 005225.40 | 000011.64 80  014040.20 10 | line 23 +(BU,12),$R+.52,64
+!CHECK 005226.40 | 005230.10 00 | line 24 B,TMDK4
+!CHECK 005227.00 | 000011.64 80  014041.60 10 | line 25 T MDK3 +(BU,12),$R+.52,67
+!CHECK 005230.00 | 004737.05 8B  014040.20 D0 | line 26 T MDK4 ST,TSBDFT(TMXGA),64
+! NO !CHECK FOR LINE 27 (005231.00, printed 000010.64 80 014000.32
+! B0, "M-1(BU,12),$L+.52").  strap_asm has no M-1 and the row is not
+! assembled; see the header.  DO NOT CLOSE THE GAP BY WRITING M+1 --
+! it compiles .22 B0 where the page prints .32 B0.  Thirty-four rows
+! are printed on the page and thirty-three are checked here.
+!CHECK 005232.00 | 004630.00 80  014040.23 10 | line 28 KF,TMMAX,64
+!CHECK 005233.00 | 005263.77 42 | line 29 BAH,TMDSK3
+!CHECK 005233.40 | 000005.46 85  014040.20 D0 | line 30 ST,TMXARC(TMXD),64
+!CHECK 005234.40 | 000031.60 88  014027.20 50 | line 31 L,TDSKRF(TMXG),46
+!CHECK 005235.40 | 005262.34 C2 | line 32 BRZ,TM1FA
+!CHECK 005236.00 | 002155.00 80  022027.20 10 | line 33 +(BU,18),TLIMB,46
+!CHECK 005237.00 | 000011.12 30 | line 34 LV,TMXD,$R
+!CHECK 005237.40 | 000000.52 35 | line 35 LV,TMXD,0.32(TMXD)
+!CHECK 005240.00 | 004737.05 8B  014000.06 70 | line 36 LF,TSBDFT(TMXGA)
+!CHECK 005241.00 | 000031.74 88  005244.74 02 | line 37 BB,TDTRK(TMXG),TMDK2
+!CHECK 005242.00 | 000006.06 85  014000.20 D0 | line 38 T MDK1A ST,TCUARC(TMXD)
+!CHECK 005243.00 | 000005.06 85  014000.20 D0 | line 39 ST,TORARC(TMXD)
+!CHECK 005244.00 | 005262.10 00 | line 40 B,TM1FA
