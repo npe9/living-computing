@@ -14848,3 +14848,82 @@ and eighty-one legitimate advances are not.
 > other than its label. The pattern is worth the vigilance: a probe
 > that is wrong tends to be wrong in the direction of looking
 > informative.
+
+## >>> MCP-DECODE WORKS. THE TABLE IS BUILT, AND THEN CLEARED. <<< 2026-10-30
+
+Everything above in this file that says the I/O request table is empty
+is **wrong twice over -- wrong table and wrong time** -- and this entry
+supersedes it.
+
+### Wrong table: the fixture is in NOT-OVERLAP mode
+
+`$5` (`LXIO`) reads **119552** at every site in MCP-DECODE, and
+119552 is `T U IOREQ` (p.62, word 1868), **not** `T IOREQ` (word 1787).
+That is correct, and five independent things say so:
+
+| evidence | reading |
+|---|---|
+| X242's flag bit is 1 (the `,4`, IBM 25) | the mode word says not-overlap |
+| p.57 L17 `LVI, LIODX, TUIORQ  -IF NOT OVERLAP MODE` | MCP uses the TU\* tables |
+| p.71 L42 / L47 `BXF, ... -NOT OVERLAP` | the reject path is the not-overlap one |
+| `C22-6728-1` printed p.98 | the minimal IPL case is "normal IPL, **unoverlapped**" |
+| `$5` = 119552 = `TUIORQ` exactly | the stores go to the not-overlap table |
+
+The LTY swap area is also exactly right: assembled, its `$5` slot is
+`0x01bec00001400573` -- addr 114368, count 80, refill 1395 -- so `$5`
+starts as `T IOREQ`, and MCP *switches* it to `TUIORQ` on the mode test.
+Nothing is broken here.
+
+### Wrong time: the reject path clears what DECODE built
+
+Stopping the run deliberately between the stores (first at step
+6,119,138) and ASSIGN's entry (6,123,287), with the cap at 6,120,000 so
+the checks read mid-execution state ON PURPOSE:
+
+```
+probe_mid_tuiorq_0 = 0x0600001000000000     <- AT MID-RUN
+probe_mid_tuiorq_1..7 = 0
+probe_mid_tioreq_0..3 = 0                   (the overlap table, correctly idle)
+```
+
+and at end of run that same word reads **zero**. `docs/boot_plan.md`
+already describes the reject path as "clearing the reel slot, the
+assigned bits and the mount bits" -- so the table is built, ASSIGN
+fails, and the reject path wipes it before any end-of-run check sees it.
+
+### And the entry is CORRECT, field by field
+
+p.62 gives the entry's own field map -- `TASGNI SYN(BU,1), 0.00`,
+`TTYPE SYN(BU,4), 0.03`, `TIODSQ SYN(BU,9), 0.19`. Decoding
+`0x0600001000000000`, whose set bits are IBM 5, 6 and 27:
+
+```
+TTYPE  IBM 3-6    = 0b0011 = 3      READER   (conf-table row 3)
+TIODSQ IBM 19-27  = 1               MCP_IODS[0] = MCPRDR, ref_number 1
+TASGNI IBM 0      = 0               not yet assigned -- ASSIGN has not run
+```
+
+**That is the first punched IOD card, decoded correctly.**
+`strap/prosa.py`'s `MCP_IODS[0]` is `MCPRDR`, `iod_type="READER"`,
+`ref_number=1`, and the request table entry says type READER, sequence
+1. The IOD-card-to-request-table path works end to end.
+
+### SO THE OPEN QUESTION MOVES, AGAIN
+
+Not "why is the table empty" -- it is not empty. **Why does ASSIGN fail
+to assign a READER request when the configuration has a reader?** The
+conf table measured `(3,1,1)` for READER: type 3, one configured, one
+available. The request asks for type 3. ASSIGN rejects anyway.
+
+The next measurement is inside ASSIGN (printed pp.65-80) with the run
+capped just past its entry at 6,123,287, reading `TUIORQ[0]` at
+successive caps to find the step at which `TASGNI` fails to be set, and
+latching `$R` / `TX3` around p.70 L34 and p.71 L15 -- the two
+`BB1, TASGNI(...)` sites that SET the assigned bit.
+
+> **AND THE CHECKS IN gen_mcp_boot_tb.py ARE POINTED AT THE WRONG WORDS.**
+> `mcp_t_ioreq_0/1/2` read words 1787-1789, the OVERLAP table, which is
+> correctly zero in a not-overlap boot and would stay zero however well
+> or badly DECODE performed. They cannot fail for any reason worth
+> knowing about. The real datum needs a capped run, because at
+> end-of-run every word of both tables is zero by design.
