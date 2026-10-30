@@ -1307,8 +1307,9 @@ function Tuple2#(Word64, FpCommit)
       // sign byte register bits 5-7, are placed in the flag bit
       // positions, bits 61-63 of the addressed storage location."
       if (protViol) ind = setBit(ind, ind_DS, 1);
-      else fpc.store = tagged Valid tuple2(ea, { r.res.ef, r.res.em, r.res.es, r.res.frac,
-                         r.res.sign, sbFlags(accS) });
+      else fpc.store = tagged Valid tuple2(ea, { r.res.ef, r.res.em, r.res.es,
+                                                 r.res.frac, r.res.sign,
+                                                 sbFlags(accS) });
       // "The entire accumulator and its sign byte remain unchanged."
       ind = setBit(ind, ind_MOP, 1);
       ind = setResultIndicatorsFp(ind, r.res);

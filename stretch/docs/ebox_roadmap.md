@@ -108,7 +108,7 @@ Every number below is a grep over `bsv/*.bsv`, not a recollection.
 | Step | State | Evidence |
 |---|---|---|
 | 1 `prepareExec`, no exec-as-query | **DONE** | `PreparedExec` + `prepareExec` in `StretchIBox.bsv` (8 hits); `EBox.exec` deleted |
-| 2 typed `ExecRequest`/`ExecCompletion`, commit records | **COSMETIC ONLY** | `ExecCompletion` 0 hits, `ExecRequest` 0 hits.  `ExecDispatch` (3 hits) replaced the Tuple5 return, which is shape, not commit.  **89** direct `st.writeWord`/`writeIndex`/`setIndicatorBits`/`writeAcc` calls remain inside execution |
+| 2 typed `ExecRequest`/`ExecCompletion`, commit records | **FIRST FAMILY LANDED** (2026-10-29) | `FpCommit` + `commitFp`; `fpStoreClass` is a PURE function with zero `st` references.  Its ten writes became four at one commit point, so the file's direct-write count is **88 -> 82**.  The remaining 78 inside arithmetic are the work |
 | 3 one iterative op as a request/response box | **DONE** | `mkFpDivBox`, `bsv/StretchDivBox.bsv`, 336 lines |
 | 4 generalise to `mkPAU`/`mkSAU` | **NOT STARTED** | `mkPAU` 0 hits, `mkSAU` 0 hits.  Divide is one box; multiply is the second (see fig 3.8.11 below) |
 | 5 `ebusy` -> real response readiness | **NOT STARTED** | `ebusy` 17 hits; `StretchCore.bsv:427` still gates `headReady` on `ebusy == 0` |
@@ -118,8 +118,12 @@ Every number below is a grep over `bsv/*.bsv`, not a recollection.
 
 ### The one number that says "interpreter" best
 
-**89.**  That is how many times execution reaches out and mutates
-architectural state in the middle of computing a result.  Step 2 is
+**78, and it was 88.**  That is how many times execution reaches out
+and mutates architectural state in the middle of computing a result.
+`fpStoreClass`'s ten are gone -- it hands back an `FpCommit` the caller
+applies -- and the four writes in `commitFp` are a commit point rather
+than arithmetic mutating state mid-calculation.  Every remaining
+number in this document that says 88 or 89 predates that.  Step 2 is
 not a naming exercise; it is the step that makes a box testable
 without storage, makes suppression on alarm or protection violation a
 single decision, and makes branch recovery something other than
