@@ -10,14 +10,44 @@
 
 set -e
 TESTS_DIR="$(cd "$(dirname "$0")" && pwd)"
+
+# >>> ONE SUITE AT A TIME, BECAUSE TEN SCRIPTS SHARE bsv/build. <<<
+# This repository is worked by many agents at once (48 worktrees were
+# live on 2026-10-29).  Two concurrent suites compile into the same
+# -bdir and -simdir and corrupt each other's .bo files; the symptom is
+#   Error: model  creation time (...) does not match
+# and it cost one run SIX passes in sections unrelated to the change
+# under test.  mkdir is atomic, so it is the lock.
+#
+# This does NOT protect a bare run_program.sh, and it does not fix the
+# deeper sharing (generated $MODULE.bsv and ${MODULE}_sim collide too).
+# See docs/concurrent_runs.md for the full fix.
+SUITE_LOCK="$TESTS_DIR/../bsv/.suite.lock"
+if ! mkdir "$SUITE_LOCK" 2>/dev/null; then
+  echo "*** ANOTHER SUITE IS RUNNING (lock: $SUITE_LOCK) ***" >&2
+  echo "    Two suites share bsv/build and corrupt each other." >&2
+  echo "    If no suite is running, the lock is stale: rmdir it." >&2
+  exit 1
+fi
+# ONE trap per signal.  A second `trap ... EXIT` REPLACES the first, it does
+# not add to it.  An earlier version of this file set the lock trap here and
+# then set `trap 'rm -f "$TMPOUT"' EXIT` four lines down; the second one
+# silently discarded this one and every suite leaked bsv/.suite.lock, so the
+# next suite refused to start.  Both cleanups now live in one handler.
+cleanup() {
+  rmdir "$SUITE_LOCK" 2>/dev/null
+  [ -n "${TMPOUT:-}" ] && rm -f "$TMPOUT"
+  return 0
+}
+trap cleanup EXIT INT TERM
 # The assembler lives in ../strap now; the verifiers and
 # generators import it by module name.
 PYTHONPATH="$TESTS_DIR/../strap:$TESTS_DIR"; export PYTHONPATH
 BSV_DIR="$TESTS_DIR/../bsv"
-TMPOUT="$(mktemp)"
-trap 'rm -f "$TMPOUT"' EXIT
+TMPOUT="$(mktemp)"   # removed by cleanup() above
 
 FAILED=0
+FAILED_SECTIONS=""
 
 # A LINE CONTINUATION MUST BE A SINGLE BACKSLASH.  "\\" at end of line
 # is an ESCAPED backslash: the command ends there and the next line
@@ -67,6 +97,18 @@ run() {
   fi
   if [ "$status" -ne 0 ] || grep -q "TEST(S) FAILED" "$TMPOUT"; then
     FAILED=1
+    FAILED_SECTIONS="$FAILED_SECTIONS
+  exit $status: $name"
+    # A NON-ZERO EXIT WITH NO FAIL LINES is the hard case to diagnose, so
+    # name it here.  On 2026-10-29 three sections died on
+    #   ld: write() failed, errno=28 (No space left on device)
+    # and the suite reported "ONE OR MORE TESTS FAILED" over 5632 PASS
+    # lines and 0 FAIL lines -- all three facts true, and nothing said
+    # WHICH section.  Finding it took a dozen greps, because tail -20 is
+    # the only per-section output a passing section leaves behind.
+    if [ "$status" -ne 0 ]; then
+      echo "*** SECTION FAILED (exit $status): $name ***"
+    fi
     # FAIL_FAST=1 stops at the first failing section instead of running
     # the whole suite.  Default OFF, so an ordinary run still reports
     # EVERY failure -- which is what you want when judging a change.
@@ -12441,6 +12483,9 @@ rm -f "$BSV_DIR"/*_sim "$BSV_DIR"/*_sim.so
 rm -rf "$BSV_DIR"/build "$BSV_DIR"/simbuild
 
 if [ "$FAILED" -ne 0 ]; then
+  if [ -n "$FAILED_SECTIONS" ]; then
+    echo "*** FAILING SECTIONS ***$FAILED_SECTIONS" >&2
+  fi
   echo "*** ONE OR MORE TESTS FAILED ***" >&2
   exit 1
 fi

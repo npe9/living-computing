@@ -97,3 +97,38 @@ trap 'rmdir "$BSV_DIR/.suite.lock" 2>/dev/null' EXIT
 
 — which does nothing for a bare `run_program.sh`, but that is the rarer
 case.
+
+## errno=28 IS THE NEIGHBOUR, NOT A REGRESSION (pre-registered 2026-10-29)
+
+A suite run on 2026-10-29 reported `*** ONE OR MORE TESTS FAILED ***`
+over **5632 PASS and 0 FAIL lines**.  Three sections had died on:
+
+```
+ld: write() failed, errno=28 (No space left on device) for 'StretchFpAddExpTb_sim.so'
+clang++: error: linker command failed with exit code 1
+```
+
+The cause was **outside this repository**: a live `xargs -P 8` run in
+`/Users/npe/src/bsc-cursor-ergo` holding ~51 GB of scratchpad on the
+same volume.  Nothing in `bsv/` or `tests/` was at fault, and that
+other repository's work was left alone.
+
+**Pre-registered, so it is not re-diagnosed:** if a suite reports
+`errno=28` or `No space left on device`, check
+`df -h /System/Volumes/Data` and `du -sm /private/tmp/claude-501/*`
+FIRST.  Re-run; do not bisect, and do not touch another project's
+files to make room.
+
+Two things changed in `run_tests.sh` because of this run, and they are
+the lasting value of it:
+
+* The lock trap was being **silently discarded**.  `trap cleanup EXIT`
+  was set, then `trap 'rm -f "$TMPOUT"' EXIT` four lines later; a
+  second trap for the same signal REPLACES the first, so every suite
+  leaked `bsv/.suite.lock` and the next suite refused to start.  Both
+  cleanups now live in one `cleanup()`.  Measured: fixed releases on
+  exit 0 and exit 1, the injected double-trap leaks on both.
+* A section exiting non-zero with no FAIL lines now **names itself**
+  (`*** SECTION FAILED (exit N): <name> ***`) and the epilogue prints
+  a `*** FAILING SECTIONS ***` list.  Finding the three FP sections by
+  hand took a dozen greps.
