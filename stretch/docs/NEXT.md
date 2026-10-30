@@ -15323,3 +15323,70 @@ stated here as the reading it is.
 
 **So printed p.83 is the next page to transcribe**, and it is a short
 one: about ten lines of code, a block of SYN cards, and a reservation.
+
+### printed p.83, transcribed as far as it can honestly go -- 2026-10-30
+
+The statement and name columns read cleanly. **The binary output column
+did not**: `mcp_crop.sh`'s `code` geometry is calibrated on printed p.2
+and lands on the data-description column for this page, which is a
+sparse definitions page with a different layout. So the values are NOT
+transcribed, and no deck is committed.
+
+What the page says, from the NAME and STATEMENT columns:
+
+```
+         CNOP
+T MMAX   DD(BU,12),4095           -THE VERY MAX DISK R...
+T MIOD   (AX)DD(BU,24,6),IOD X    - BCD CODE FOR IOD
+T MREEL  (AX)DD(BU,24,6),REELX    -BCD CODE FOR A REEL
+T LBL    (AX)DD(BU,6,6),LX        -LABELED CHARACTER
+T NCP    (AX)DD(BU,6,6),NX        -NOT PROTECT CHARACTER
+T M6BL   (AX)DD(BU,48,6),      X
+T ERFLG  VF,0                     -IOD CARD ERROR INDICATOR
+T LIMB   SYN,SBAPP      T SYRFT SYN,SSYRFT    T BAMCP SYN,SMAXUB
+T MAXRF  SYN,SMAXRN     T MARK  SYN,SMARK
+T MX1 SYN,$1   T MXA SYN,$2   T MXB SYN,$3   T MXC SYN,$4
+T MXD SYN,$5   T MXE SYN,$6   T MXF SYN,$7   T MXG SYN,$8
+T MXEE SYN,$9  T MXI SYN,$10  T MXGA SYN,$11 T MXH SYN,TMX1
+T MLXA SYN,$12
+         CNOP                      SAVE AND RESTORE AREA FOR INDEXES
+T SIOXW  DRZ(BU,64),(15)
+T DKSAV  VF,0                     -ADDRESS OF THE UNIT...
+```
+
+#### Checked by assembling it, against the LOCATION column
+
+Omitting only the five `(AX)DD` lines whose values are unread:
+
+```
+14 of 16 symbols land on their printed addresses exactly
+   TMX1..TMLXA   all fourteen index SYNs    000021.00 .. 000034.00
+   TMMAX                                    004630.00
+   TSIOXW   printed 004633.00, assembled 004631.00   -- 2 words low
+   TDKSAV   printed 004652.00, assembled 004650.00   -- 2 words low
+```
+
+**Both misses are exactly the two words the five omitted `(AX)DD`
+constants occupy** (printed 004630.14 .. 004631.10). The error is
+accounted for to the word, which is what makes the other fourteen
+trustworthy rather than lucky.
+
+Two things this establishes independently of any test already written:
+
+* **The X-register word mapping.** `T MX1 SYN,$1` prints `000021.00` =
+  word 17, and X1 IS word 17 (X0-X15 at words 16-31); `T MLXA SYN,$12`
+  prints `000034.00` = word 28 = X12.
+* **The chained-SYN fix works on a real printed page.**
+  `T MXH SYN,TMX1` is a SYN whose target is itself a SYN of `$1`, and it
+  lands at `000021.00`, TMX1's own word. That is the construct that made
+  `LX,TIXF,TCHSXW` compile with `j=0` and cost sixteen million steps.
+  It was fixed this morning; here is the next page that needs it.
+
+#### What remains for p.83
+
+1. A `code`-column crop that fits this page's layout -- the existing
+   geometry is p.2's and needs a per-page x/width, or a one-off
+   `pdftoppm` with the column found by eye first.
+2. The five `(AX)DD` BCD constants' values.
+3. Then the deck, checked with `listing_oracle.py` the way every other
+   page was.
