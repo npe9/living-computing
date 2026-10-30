@@ -1,0 +1,134 @@
+! mcp_bootstrap_p83.strap -- MCP INITIALIZATION, printed page 83:
+! the MOVE routine's constants, its index-register names, and the
+! SAVE AND RESTORE AREA FOR INDEXES.
+! docs/MCP_Mar63_001-249.pdf PDF p.90, header "PAGE NUMBER 83".
+! docs/transcription_workflow.md has the loop this was transcribed by.
+!
+! CONTIGUOUS WITH printed p.80 BY ADDRESS.  p.80's last line is 31,
+! "B,1.00($15)" at 004627.00 -- ASSIGN's return -- and this page's
+! first located line is 7, at 004627.40, the very next half word.
+! printed pp.81 and 82 compile NOTHING (their LOCATION columns are
+! empty down the whole page), which is why the two pages between them
+! leave no gap.
+!
+! ---------------------------------------------------------------
+! EXTERNALS, every one recovered from this page's own binary output
+! ---------------------------------------------------------------
+! A SYN card prints its VALUE in the location column, so the five
+! SYNs to symbols this project has not read yet give those symbols'
+! addresses directly:
+!
+!   line 15  T LIMB  SYN,SBAPP    prints 002155.00  -> S BAPP  = 2155.0
+!   line 16  T SYRFT SYN,SSYRFT   prints 002157.40  -> S SYRFT = 2157.40
+!   line 17  T BAMCP SYN,SMAXUB   prints 002153.00  -> S MAXUB = 2153.0
+!   line 18  T MAXRF SYN,SMAXRN   prints 002155.40  -> S MAXRN = 2155.40
+!   line 19  T MARK  SYN,SMARK    prints 002162.40  -> S MARK  = 2162.40
+!
+! S MAXUB AT 2153.0 AGREES WITH TWO PAGES ALREADY TRANSCRIBED:
+! docs/NEXT.md records printed p.40 and p.28 both placing S MAXUB and
+! S BA MCP at (8)2153.0, and printed p.98 line 33's "S MAXUB SYN,
+! S BA MCP" says they are the same symbol.  Three sources, one value.
+!
+! ---------------------------------------------------------------
+! THE INDEX NAMES, AND ONE OF THEM IS A CHAINED SYN
+! ---------------------------------------------------------------
+! Lines 21-33 name $1-$12 for the MOVE routine, and the LOCATION
+! column prints each one's WORD: "T MX1 SYN,$1" prints 000021.00,
+! and 0o21 = 17, which is X1 (X0-X15 occupy words 16-31).  "T MLXA
+! SYN,$12" prints 000034.00 = word 28 = X12.  The page confirms the
+! register-to-word mapping on its own.
+!
+! >>> LINE 32 IS "T MXH SYN,T MX1" -- A SYN WHOSE TARGET IS ITSELF A
+! SYN OF $1 -- AND IT PRINTS 000021.00, TMX1's OWN WORD. <<<  That is
+! the construct strap_asm.py recorded only one level deep until
+! 2026-10-30, which made "LX,TIXF,TCHSXW" on printed p.72 compile with
+! j=0 and cost the boot sixteen million steps.  tests/
+! verify_syn_chain_reg.py pins the fix; this page is the next user of
+! it, and its printed value is the independent check.
+!
+! >>> IN ENTRY MODE THE SPACE AFTER THE COMMA IS DATA. <<<
+! The first draft wrote "(AX)DD(BU,24,6), IOD X" with a space, as the
+! rest of this deck's operands are written, and every symbol after it
+! landed six bits late -- T MREEL at 004630.52 where the page prints
+! 004630.44.  Measured directly:
+!
+!     '(AX)DD(BU,24,6), IOD X'  -> 30 bits
+!     '(AX)DD(BU,24,6),IOD X'   -> 24 bits
+!
+! and 24 is the declared length.  The trailing X is the terminator the
+! assembler requires ("entry-mode datum is not terminated by 'X'"), not
+! a character of the datum.  T M6BL's operand is SEVEN BLANKS and the X,
+! which is how a 48-bit field of 6-bit blanks is written.
+
+SBAPP   SYN, (8)2155.0
+SSYRFT  SYN, (8)2157.40
+SMAXUB  SYN, (8)2153.0
+SMAXRN  SYN, (8)2155.40
+SMARK   SYN, (8)2162.40
+
+        SLC, (8)4627.40
+
+        CNOP                         ! line 7
+TMMAX   DD(BU,12), 4095              ! line 8  -THE VERY MAX DISK REF
+TMIOD   (AX)DD(BU,24,6),IOD X       ! line 9  - BCD CODE FOR IOD
+TMREEL  (AX)DD(BU,24,6),REELX       ! line 10 -BCD CODE FOR A REEL
+TLBL    (AX)DD(BU,6,6),LX           ! line 11 -LABELED CHARACTER
+TNCP    (AX)DD(BU,6,6),NX           ! line 12 -NOT PROTECT CHARACTER
+TM6BL   (AX)DD(BU,48,6),       X           ! line 13
+TERFLG  VF, 0                        ! line 14 -IOD CARD ERROR INDICATOR
+TLIMB   SYN, SBAPP                   ! line 15 -UPPER BOUNDARY
+TSYRFT  SYN, SSYRFT                  ! line 16 -THE ADDRESS OF THE ...
+TBAMCP  SYN, SMAXUB                  ! line 17 -FOR CHECKING THE UPPER ...
+TMAXRF  SYN, SMAXRN                  ! line 18 -THE MAX REF NO. PER ...
+TMARK   SYN, SMARK                   ! line 19 -THE NEXT VACANT REEL ...
+TMX1    SYN, $1                      ! line 21
+TMXA    SYN, $2                      ! line 22 -PP REF WORD LOCATOR
+TMXB    SYN, $3                      ! line 23 -I/O REQ TABLE PICK ...
+TMXC    SYN, $4                      ! line 24 -SYMB I/O TABLE INDEX
+TMXD    SYN, $5                      ! line 25 -FILE AREA TABLE INDEX
+TMXE    SYN, $6                      ! line 26 -UNIT AREA TABLE INDEX
+TMXF    SYN, $7                      ! line 27 -REEL POOL INDEX
+TMXG    SYN, $8                      ! line 28 -TEMPORARY INDEX
+TMXEE   SYN, $9                      ! line 29 -TEMPORARY INDEX
+TMXI    SYN, $10                     ! line 30 -CONTROL WORD INDEX
+TMXGA   SYN, $11                     ! line 31 -TEMPORARY INDEX
+TMXH    SYN, TMX1                    ! line 32
+TMLXA   SYN, $12                     ! line 33 -CONVERSION ROUTINE
+
+! ---- SAVE AND RESTORE AREA FOR INDEXES ---------------------------
+        CNOP                         ! line 39
+TSIOXW  DRZ(BU,64), (15)             ! line 40
+TDKSAV  VF, 0                        ! line 42 -ADDRESS OF THE UNIT ...
+
+! ---------------------------------------------------------------
+! THE PRINTED LISTING, for listing_oracle.py
+! ---------------------------------------------------------------
+!   line  7  004627.40  000000.30 00                   CNOP
+!   line  8  004630.00                      7777       T MMAX   DD(BU,12),4095
+!   line  9  004630.14                                 T MIOD   (AX)DD(BU,24,6),IOD X
+!   line 10  004630.44                                 T MREEL  (AX)DD(BU,24,6),REELX
+!   line 11  004630.74                                 T LBL    (AX)DD(BU,6,6),LX
+!   line 12  004631.02                                 T NCP    (AX)DD(BU,6,6),NX
+!   line 13  004631.10                                 T M6BL   (AX)DD(BU,48,6),
+!   line 14  004632.00  000000.00+                     T ERFLG  VF,0
+!   line 15  002155.00+ +00000000   B ,31 ,01          T LIMB   SYN,SBAPP
+!   line 16  002157.40+ +00000000   B ,31 ,01          T SYRFT  SYN,SSYRFT
+!   line 17  002153.00+ +00000000   B ,31 ,01          T BAMCP  SYN,SMAXUB
+!   line 18  002155.40+ +00000000   B ,31 ,01          T MAXRF  SYN,SMAXRN
+!   line 19  002162.40+ +00000000   B ,31 ,01          T MARK   SYN,SMARK
+!   line 21  000021.00+ +00000000   BU,100,10          T MX1    SYN,$1
+!   line 22  000022.00+ +00000000   BU,100,10          T MXA    SYN,$2
+!   line 23  000023.00+ +00000000   BU,100,10          T MXB    SYN,$3
+!   line 24  000024.00+ +00000000   BU,100,10          T MXC    SYN,$4
+!   line 25  000025.00+ +00000000   BU,100,10          T MXD    SYN,$5
+!   line 26  000026.00+ +00000000   BU,100,10          T MXE    SYN,$6
+!   line 27  000027.00+ +00000000   BU,100,10          T MXF    SYN,$7
+!   line 28  000030.00+ +00000000   BU,100,10          T MXG    SYN,$8
+!   line 29  000031.00+ +00000000   BU,100,10          T MXEE   SYN,$9
+!   line 30  000032.00+ +00000000   BU,100,10          T MXI    SYN,$10
+!   line 31  000033.00+ +00000000   BU,100,10          T MXGA   SYN,$11
+!   line 32  000021.00+ +00000000   BU,100,10          T MXH    SYN,TMX1
+!   line 33  000034.00+ +00000000   BU,100,10          T MLXA   SYN,$12
+!   line 39  004632.40  000000.30 00                   CNOP
+!   line 40  004633.00  000017.00                      T SIOXW  DRZ(BU,64),(15)
+!   line 42  004652.00  000000.00+                     T DKSAV  VF,0

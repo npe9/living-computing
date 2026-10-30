@@ -15390,3 +15390,55 @@ Two things this establishes independently of any test already written:
 2. The five `(AX)DD` BCD constants' values.
 3. Then the deck, checked with `listing_oracle.py` the way every other
    page was.
+
+## A PRINTED ORACLE FOR DR/DRZ ALIGNMENT -- 2026-10-30
+
+Transcribing printed p.87 turned up a rule `strap_asm.py` does not
+implement, and the page is the evidence.
+
+`strap_asm.py` returns alignment **0** for `DR` and `DRZ`:
+
+```python
+if op in ('DR', 'DRZ'):
+    return 0, dds_length_bits(...) * dr_count(stmt, symtab)
+```
+
+printed p.87 says otherwise. Lines 6-9 are four `VF`s at 004767.00,
+004767.40, 004770.00 and 004770.40; a `VF` is 25 bits, so the counter
+after the fourth is **004770.71**. Line 11 is
+`T CAT DRZ(N),2` and the page prints its location as **004771.00**.
+
+```
+assembled   TCAT  004770.71     (alignment 0 -- starts where VF left off)
+printed     TCAT  004771.00     (rounded up)
+            TBIRD 004773.00     printed; assembled 004772.71 -- same bit
+```
+
+**The SIZES are right**: `TBIRD - TCAT` is two words either way, which
+is `DRZ(N),2`. Only the start is off, and by exactly the rounding.
+
+From 004770.71 the next HALF word is 004771.00 (half words fall at .00
+and .40), so the printed behaviour is consistent with a reservation
+rounding the location counter up the way `VF` does -- `strap_asm.py`
+already quotes C22-6531 printed p.18 for VF: *"The location counter is
+rounded to the next half word."*
+
+### Why it is not changed here
+
+`DR`/`DRZ` appear in many transcribed decks and the alignment feeds
+every address after them, so flipping it is a suite-wide change that
+deserves its own pass with the full 524 sections as the check -- not a
+side effect of transcribing a page. It is also possible the rule is
+narrower than "always round", e.g. tied to the dds: printed p.83 puts
+an explicit `CNOP` before its `DRZ(BU,64),(15)`, which would be
+redundant if a reservation always rounded to a word.
+
+**What to do:** find C22-6531's own sentence for DR/DRZ the way the VF
+rule was found, then change `strap_asm.py` and run the suite. printed
+p.87 line 11 is the test case either way, and
+`decks/mcp_bootstrap_p87.strap` is drafted and waiting on it --
+everything on that page verifies except the two reservation starts.
+
+> And note what the page is: THE DUMMY TABLES FOR THE UN-ASSIGNMENT,
+> ending at line 26 with `T WORM XW,(.26)3` at 005013.00 -- **one word
+> before T MOVE at 005014.00.** p.87 is the last page before it.

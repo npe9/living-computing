@@ -6178,6 +6178,15 @@ run "THE REJECT PATH and the ASSIGN DISPATCH TABLE, printed p.75, bit-exact (MCP
 # (005005.00 for 004771.14); and T FREEL's dds 18 -> 8 bits, 1 FAIL
 # at 004373.40 (010027 for 022027).
 run "A PRINT SUB-ROUTINE THAT WILL PRINT ASSIGNMENTS, printed p.76, bit-exact (MCP_Mar63 PDF p.83)" python3 verify_mcp_bootstrap_p76.py
+
+# >>> THE PAGES PAST ASSIGN, TOWARDS T MOVE. <<<  printed p.80 ends at
+# 004627.00 with ASSIGN's return; pp.81 and 82 compile nothing (their
+# LOCATION columns are empty down the whole page); p.83 picks the trail
+# up at 004627.40 and pp.84-85 carry it to 004752.  T MOVE is printed
+# p.88 line 5014.0, which docs/NEXT.md maps page by page.
+run "MOVE's constants and index names, printed p.83, bit-exact (MCP_Mar63 PDF p.90)" python3 verify_mcp_bootstrap_p83.py
+run "The unit name and disk allocation tables, printed p.84, bit-exact (MCP_Mar63 PDF p.91)" python3 verify_mcp_bootstrap_p84.py
+run "The file area, reel pool and TYPE SCAN tables, printed p.85, bit-exact (MCP_Mar63 PDF p.92)" python3 verify_mcp_bootstrap_p85.py
 # Thirty-seven lines, thirty compiled, and only SEVEN print any
 # machine code at all.  A data page: the message buffers the
 # assignment printer fills in, three hexadecimal constants, five SYN

@@ -361,7 +361,13 @@ def build(verbose=False, pages=None, end_at='XIPLBS'):
 # So a hole in this range now has three explanations and each is
 # named here: p.47 and p.59 compile nothing because they are prose,
 # p.60 because a SYN card is not a word.
-NO_DECK_PAGES = {47, 59, 60}
+# printed pp.81 and 82 join them 2026-10-30, and they are the same
+# kind of hole: their LOCATION columns are EMPTY down the whole page
+# (lines 4-27 and 4-21 respectively), checked by rendering the full
+# column rather than its top band.  Nothing on either compiles, so the
+# address trail runs straight from p.80's last line at 004627.00 to
+# p.83's first at 004627.40.
+NO_DECK_PAGES = {47, 59, 60, 81, 82}
 
 # >>> THE RANGE REACHES printed p.58, 2026-10-24, AND IT IS
 # CONTIGUOUS. <<<
@@ -390,7 +396,7 @@ NO_DECK_PAGES = {47, 59, 60}
 # every build, so this comment is a summary and not the evidence.
 MCP_IPL_PAGES = [
     (DECK("mcp_bootstrap_p%d.strap" % n), "printed p.%d" % n)
-    for n in range(15, 81) if n not in NO_DECK_PAGES
+    for n in range(15, 86) if n not in NO_DECK_PAGES
 ]
 
 

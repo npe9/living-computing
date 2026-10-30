@@ -1,0 +1,65 @@
+! mcp_bootstrap_p85.strap -- MCP INITIALIZATION, printed page 85:
+! SYN CARDS FOR FILE AREA TABLE, THE FORMAT OF THE REEL POOL, and
+! THE TYPE SCAN TABLES.
+! docs/MCP_Mar63_001-249.pdf PDF p.92, header "PAGE NUMBER 85".
+!
+! CONTIGUOUS WITH printed p.84.  That page's line 17 is
+! "T SBDTB DRZ(BU,32),(8)" at 004737.00 -- eight units of 32 bits is
+! four words -- so the counter reaches 004743.00, which is this page's
+! line 29.
+!
+! >>> THE TYPE SCAN TABLE IS THE PRINTED SOURCE OF THE TYPE CODES. <<<
+! Lines 32-47 pair each equipment name with its code:
+!
+!     CONSOLE 2   DISK 1   READER 3   PUNCH 4
+!     PRINTER 5   IQS 6    TRACK (2)10001   TAPE 8
+!
+! which is exactly the row order of the configuration table that
+! tests/gen_mcp_boot_tb.py's mcp_conf_table_word0/1/2 check, and it is
+! where TTYPE=3 in the READER request that ASSIGN satisfies comes from
+! (see tests/run_mcp_assign_test.sh).  Those codes had been read out of
+! MCP's behaviour; this page prints them.
+!
+! EACH NAME IS SEVEN CHARACTERS.  (AX)DD(BU,42,6) is 42 bits of 6-bit
+! BCD, so the datum is padded to seven before its X terminator --
+! "DISK   X", "IQS    X", "PRINTER" with none.  The space after the
+! comma is DATA in entry mode, so there is none.
+
+        SLC, (8)4743.0
+
+! ---- SYN CARDS FOR FILE AREA TABLE -------------------------------
+TFLLGN  SYN(BU,6), 7                 ! line 6  -THE FILE AREA TABLE LENGTH
+TIODRN  SYN(BU,18), 0.0              ! line 7  -IOD REF NUMBER
+TTOELO  SYN(BU,18), 2.0              ! line 8  -TABLE OF EXITS LOCATION
+TDENMD  SYN(BU,2), 2.27              ! line 9  -THE FILE AREA DENSITY
+TREELD  SYN(BU,3), 2.29              ! line 10 -REEL DISPOSITION
+TFMCDE  SYN(BU,2), 2.48              ! line 11 -FILE MODE
+TORARC  SYN(BU,12), 5.06             ! line 12 -ORIGINAL ARC
+TMXARC  SYN(BU,12), 5.38             ! line 13 -MAXIMUM ARC
+TCUARC  SYN(BU,12), 6.06             ! line 14 -CURRENT ARC
+
+! ---- THE FORMAT OF THE REEL POOL ---------------------------------
+TRENTY  SYN(BU,1), 0.25              ! line 20 -A ONE IF A REEL WAS ...
+TREPR   SYN(BU,1), 0.26              ! line 21 -REEL PROTECT BIT
+TRELB   SYN(BU,1), 0.27              ! line 22 -REEL LABELED IF ONE
+TRENME  SYN(BU,30), 0.34             ! line 23 -REEL NAME FORMAT
+
+! ---- THE TYPE SCAN TABLES ----------------------------------------
+TSCIX1  XW, TSCAN1, 8, 0             ! line 29 -INDEX FOR TYPE SCAN
+TSCBK1  VF, -5                       ! line 30 -THE BACKUP CONSTANT
+TSCAN1  (AX)DD(BU,42,6),CONSOLEX     ! line 32
+        DD(BU,5), 2                  ! line 33
+        (AX)DD(BU,42,6),DISK   X     ! line 34
+        DD(BU,5), 1                  ! line 35
+        (AX)DD(BU,42,6),READER X     ! line 36
+        DD(BU,5), 3                  ! line 37
+        (AX)DD(BU,42,6),PUNCH  X     ! line 38
+        DD(BU,5), 4                  ! line 39
+        (AX)DD(BU,42,6),PRINTERX     ! line 40
+        DD(BU,5), 5                  ! line 41
+        (AX)DD(BU,42,6),IQS    X     ! line 42
+        DD(BU,5), 6                  ! line 43
+        (AX)DD(BU,42,6),TRACK  X     ! line 44
+        DD(BU,5), (2)10001           ! line 45 -SPECIAL TRACK INDICATOR
+        (AX)DD(BU,42,6),TAPE   X     ! line 46
+        DD(BU,5), 8                  ! line 47

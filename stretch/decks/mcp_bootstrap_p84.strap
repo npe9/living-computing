@@ -1,0 +1,61 @@
+! mcp_bootstrap_p84.strap -- MCP INITIALIZATION, printed page 84:
+! THE UNIT NAME TABLE, THE DISK ALLOCATION TABLE, THE FORMAT OF THE
+! IOD CARD BREAKDOWN TABLE, and SYN CARDS FOR THE UNIT AREA TABLE.
+! docs/MCP_Mar63_001-249.pdf PDF p.91, header "PAGE NUMBER 84".
+!
+! CONTIGUOUS WITH printed p.83.  That page's last line is 42,
+! "T DKSAV VF,0" at 004652.00; this page's line 4 is at 004653.00.
+!
+! AND ITS TWO RESERVATIONS ARE WHAT CARRY THE COUNTER TO 004736:
+! line 4's XW is one word and line 5's DRZ(BU,64),(50) is fifty, so
+! 004653 + 1 + 50 = 004736, which is line 16's own printed location.
+! The DRZ prints its COUNT in the binary column -- 000062.00, and
+! 0o62 = 50 -- exactly as printed p.83's DRZ(15) printed 000017.00.
+
+        SLC, (8)4653.0
+
+! ---- THE UNIT NAME TABLE -----------------------------------------
+TUNXW   XW, TUNATB, 0, $0            ! line 4  -RESET INDEX
+TUNATB  DRZ(BU,64), (50)             ! line 5  -THE CHAN/UNIT NAME TABLE
+TCHNM   SYN(BU,48), 0.0              ! line 6  -SYMBOLIC CHAN NAME
+TUNTYP  SYN(BU,4), 0.60              ! line 7  -THE EQUIP TYPE
+TUNREF  SYN(BU,12), 0.48             ! line 8  -REF NO IN THE UNIT ...
+TUNME   SYN(BU,48), 25.0             ! line 9  -2ND TABLE -- UNIT ...
+TDSKRF  SYN(BU,12), 25.48            ! line 10 -REF NUMBER
+TDTRK   SYN(BU,1), 25.60             ! line 11 -ONE IF TRACK
+TDKCT   SYN(BU,3), 25.61             ! line 12 -RELATIVE ADDRESS
+
+! ---- THE DISK ALLOCATION TABLE -----------------------------------
+TDCLRX  XW, TSBDFT, 4, $             ! line 16 -INDEX WORD FOR CLEARING
+TSBDTB  DRZ(BU,32), (8)              ! line 17
+TSBDFT  SYN(BU,12), TSBDTB+.05       ! line 18 -DISK ALLOCATION TABLE
+
+! ---- THE FORMAT OF THE IOD CARD BREAKDOWN TABLE ------------------
+TJCNME  SYN(BU,48,6), -1.0           ! line 23 -JOB NAME FORMAT
+TIABEX  SYN(BU,18), 0.0              ! line 24 -THE ABSOLUTE EXIT
+TIREF   SYN(BU,12), 0.52             ! line 25 -THE REF NUMBER
+TIOP    SYN(BU,24), 1.0              ! line 26 -OP CODE FIELD
+TITY    SYN(BU,42), 2.0              ! line 27 - THE TYPE FIELD
+TIREEL  SYN(BU,48), 2.0              ! line 28 -FORMAT AND POSITION
+TITRK   SYN(BU,1), 2.59              ! line 29 -TRACK CODE BIT
+TITYCD  SYN(BU,4), 2.60              ! line 30 -THE TYPE FIELD CODE
+TICH    SYN(BU,48), 4.0              ! line 31 -CHANNEL FIELD
+TIUN    SYN(BU,48), 5.0              ! line 32 -THE UNIT FIELD
+TINO    SYN(BU,48), 5.0              ! line 33 -THE NUMBER FOR DISK
+TIMO    SYN(BU,30), 6.0              ! line 34 -THE MODE FIELD
+TIMOCD  SYN(BU,2), 6.62              ! line 35 -THE MODE FIELD CODE
+TIDN    SYN(BU,12), 7.0              ! line 36 -THE DENSITY FIELD
+TIDNCD  SYN(BU,2), 7.62              ! line 37 -THE DENSITY FIELD CODE
+TIDS    SYN(BU,30), 8.0              ! line 38 -THE DISP FIELD
+TIDSCD  SYN(BU,2), 8.62              ! line 39 -THE DISP FIELD CODE
+
+! ---- SYN CARDS FOR THE UNIT AREA TABLE ---------------------------
+TUNLGN  SYN(BU,6), 9                 ! line 45 -THE UNIT AREA TABLE LENGTH
+TCHANN  SYN(BU,7), 0.12              ! line 46 -THE CHANNEL NUMBER
+TUNITN  SYN(BU,3), 0.47              ! line 47 -THE UNIT NUMBER
+TIODCK  SYN(BU,12), 1.6              ! line 48 -THE IOD COUNT
+TFIAAC  SYN(BU,18), 3.0              ! line 49 -THE FILE AREA TABLE
+TSYSTM  SYN(BU,1), 7.25              ! line 50 -SYSTEM TAPE IF A ONE
+TFRLAD  SYN(BU,18), 8.0              ! line 51 -FIRST REEL ADDRESS
+TCREEL  SYN(BU,18), 8.32             ! line 52 -CURRENT REEL ADDRESS
+TREELK  SYN(BU,7), 8.57              ! line 53 -CURRENT REEL COUNT

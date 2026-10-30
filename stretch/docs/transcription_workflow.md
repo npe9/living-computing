@@ -32,9 +32,10 @@ LINE | LOCATION | BINARY OUTPUT | NAME | STATEMENT | (comment)
 ### 2. Render and read, in two images not nine
 
 ```sh
-# LOCATION, NAME and STATEMENT together -- one read
-pdftoppm -f $((P+7)) -l $((P+7)) -r 400 -png -x 500 -y 800 -W 4200 -H 2950 \
-         docs/MCP_Mar63_001-249.pdf /tmp/p${P}_left
+# EVERYTHING but the line numbers, in one read.  y=480 is LINE 1 --
+# see the warning below; 800 starts at line 6 and silently drops five.
+pdftoppm -f $((P+7)) -l $((P+7)) -r 400 -png -x 900 -y 480 -W 4300 -H 4100 \
+         docs/MCP_Mar63_001-249.pdf /tmp/p${P}_all
 # BINARY OUTPUT at 900 dpi -- B and 8 differ by one stroke
 strap/mcp_crop.sh $P code 1 ; strap/mcp_crop.sh $P code 2
 ```
@@ -42,6 +43,15 @@ strap/mcp_crop.sh $P code 1 ; strap/mcp_crop.sh $P code 2
 Montage multi-band renders into ONE image before reading:
 `magick montage a.png b.png -tile 2x1 -geometry +10+10 out.png`.
 Six reads become one.
+
+> **START AT LINE 1, WHICH IS y=480 AT 400 dpi.**  An earlier version
+> of this file said `-y 800`, which starts at LINE 6.  On printed p.84
+> that dropped lines 4 and 5 -- `T UNXW XW,TUNATB,0,$0` at 004653.00 and
+> `T UNATB DRZ(BU,64),(50)` at 004654.00 -- and their absence turned
+> into a phantom "51-word gap" between p.83's end and p.84's first
+> storage, which was then written up as unexplained.  The XW plus the
+> fifty-word reservation IS the 51 words.  Nothing was unexplained; five
+> lines were simply not on the screen.
 
 > **READ THE WHOLE COLUMN, NOT BAND 1.** Twice in one hour on
 > 2026-10-30 a page was described from its top third and the
@@ -55,6 +65,27 @@ Six reads become one.
 > byte size 0o10=8. That is the column working correctly on a
 > definitions page, not the crop landing in the wrong place.
 
+### 2a. Get a SECOND reading, by machine
+
+```sh
+python3 strap/mcp_ocr.py 86        # tesseract on the LOCATION column
+```
+
+Diff its output against the locations you read by eye. **It is a
+cross-check and not a source** -- measured on printed p.86, tesseract
+reads about 85% of the column correctly and drops a digit every few
+lines, so transcribing from it would put a wrong word in the image.
+What it is good for is DISAGREEMENT: on p.86 it flagged line 24 as
+`004757.60` where the eye read `004757.00`, one zoom settled it (the
+eye was right), and the other eighteen rows agreed. Two independent
+readings of the same column cost one command and turn a whole-page
+re-read into one zoom.
+
+> **NOT /tmp FOR THE INTERMEDIATE PNG.** `pdftoppm` writes it and
+> `tesseract` then reports *"image file not found"* for the file that
+> demonstrably exists -- the two processes do not see the same `/tmp`
+> here. `tempfile.mkdtemp()` honours `TMPDIR` and both see it.
+
 ### 3. Write the deck
 
 `decks/mcp_bootstrap_pNN.strap`, in the house format: a header saying
@@ -66,6 +97,36 @@ the printed listing recorded as comments
 ```
 
 so `listing_oracle.py` can check them.
+
+### 3a. Write the page's verifier -- this is the step that makes it stick
+
+Every transcribed page has one: `tests/verify_mcp_bootstrap_pNN.py`,
+73 of them so far. It is short and always the same shape:
+
+```python
+from listing_oracle import check_rows, finish
+from strap_asm import assemble
+prog = assemble(open("../decks/mcp_bootstrap_p84.strap").read())
+SYMBOLS = {"TUNXW": "004653.00", "TUNATB": "004654.00", ...}
+ROWS = [("004654.00", "000062.00", "line 5  T UNATB DRZ(BU,64),(50)"), ...]
+finish(check_rows(prog, ROWS, SYMBOLS, label="MCP p.84 "))
+```
+
+`check_rows` does BOTH halves -- it checks every symbol against the
+LOCATION column and every row against the BINARY OUTPUT column -- so
+the one call is the whole oracle. A DD printed as bare octal digits
+takes a fourth element, its width in bits.
+
+Register it in `tests/run_tests.sh` beside the others:
+
+```
+run "... printed p.84, bit-exact (MCP_Mar63 PDF p.91)" python3 verify_mcp_bootstrap_p84.py
+```
+
+> **SIGN IS PRINTED AS A SUFFIX.** A negative SYN prints `000001.00-`,
+> magnitude then sign, so a check that compares a signed bit count to
+> that string reports a mismatch that is not one. printed p.84 line 23's
+> `T JCNME SYN(BU,48,6),-1.0` is -64 bits and prints `000001.00-`.
 
 ### 4. Join it to the image -- two mechanical edits
 
@@ -93,6 +154,35 @@ symbols matched and the two that did not were short by exactly the two
 words of the five lines left out.
 
 ### 6. Commit the page, then take the next one
+
+---
+
+## Gotchas that have cost a page each
+
+**In entry mode the space after the comma is DATA.** `(AX)DD` and
+friends take their datum literally, so
+
+```
+(AX)DD(BU,24,6), IOD X    -> 30 bits   WRONG
+(AX)DD(BU,24,6),IOD X     -> 24 bits   right
+```
+
+and every symbol after the first one lands six bits late. The trailing
+`X` is the terminator the assembler demands -- it errors with
+*"entry-mode datum is not terminated by 'X'"* without it -- and is not
+a character of the datum. A 48-bit field of 6-bit blanks is written as
+seven blanks and the X.
+
+**The address check finds this in one second.** Assemble the page alone
+and compare every symbol against the LOCATION column; on printed p.83
+the first run was 23 of 27 with the four misses starting exactly at the
+line after the bad operand, which names the line AND the amount.
+
+**`build()` is the IPL bootstrap, `build_mcp_ipl()` is the MCP body.**
+`PAGES` is pp.2-14 and goes on the tape through `mktape.py`;
+`MCP_IPL_PAGES` is pp.15-onward and is what MCP moves into place. A new
+MCP page goes in the SECOND list, and looking for its symbols in
+`build()`'s symbol table finds nothing and means nothing.
 
 ---
 
