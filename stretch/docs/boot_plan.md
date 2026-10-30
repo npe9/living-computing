@@ -1709,10 +1709,23 @@ Both its LOCATION and BINARY columns are empty on every row, so there
 is nothing for `verify_mcp_page.py` to check and a registered line
 would be a permanent red.
 
-Three independent tells identify a comment card, worth reusing:
-a one-character flag column between BINARY OUTPUT and NAME prints a
-`-`; both printed columns are empty; and **the card image is printed
-raw from column 2 on, so nothing aligns** -- p.100's twelve comments
-land at twelve different x positions, where a card that assembles is
-printed field by field and lines up. The ragged column is the
-decisive one.
+**TWO tells identify a comment card, and a third that looked good
+does not.** Both printed columns are empty, and **the card image is
+printed raw from column 2 on, so nothing aligns** -- p.100's twelve
+comments land at twelve different x positions, where a card that
+assembles is printed field by field and lines up. The ragged column
+is the decisive one.
+
+> **THE "FLAG COLUMN DASH" IS NOT A TELL.** An earlier version of
+> this section said a one-character column between BINARY OUTPUT and
+> NAME prints `-` on a comment card. Printed p.101 refutes it in both
+> directions: its line 2 is unambiguously a comment card
+> (`-***** UNIT AREA TABLE DEFINITIONS *****-`, both columns empty)
+> and prints NO dash there at 1200 dpi, while lines 1, 3 and 4 of the
+> same box do; and printed p.102 line 10 prints a dash followed by
+> `S REELDSYN(BU,3),2.29`, a SYN card commented out with its name and
+> statement jammed together. The column is simply **card column 2 of
+> the raw image**, which holds `-` on some cards and a blank on
+> others. What marks a comment card in STRAP's own card format is NOT
+> established from a primary source here; C22-6729 is in `docs/` and
+> would settle it.
