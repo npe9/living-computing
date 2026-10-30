@@ -1898,7 +1898,37 @@ def main():
                    # instruction counter is SITTING on the halt.
                    pc_check=239,
                    pc_trail_check=239,
-                   step_cap=40000000,
+                   # >>> THE STEP CAP IS A RATCHET NOW, AND IT GUARDS THE
+                   # DEFECT THAT COST THIRTEEN REFUTED HYPOTHESES. <<<
+                   #
+                   # The boot completes at step 6,140,103 (measured
+                   # 2026-10-29).  It used to take 22,118,685, of which
+                   # about SIXTEEN MILLION were a stretch where $10 was
+                   # never written at all -- the signature of a chained
+                   # SYN losing its index register, so that
+                   # "LX,TIXF,TCHSXW" compiled with j=0 and wrote word
+                   # 0, the permanent zero.  Nothing bounded the boot's
+                   # length, so that dead stretch was invisible: the run
+                   # halted in the right place with every check passing.
+                   #
+                   # 10,000,000 is 63% headroom over the real figure and
+                   # nowhere near the old 22M, so a regression that
+                   # reintroduces a multi-million-step dead stretch
+                   # fails here instead of hiding.
+                   #
+                   # IF THIS FIRES, IT IS NOT AUTOMATICALLY A BUG.  A
+                   # newly transcribed page legitimately adds steps (p.76
+                   # added ~400).  But 6.1M -> >10M is a 60% jump that no
+                   # page addition explains, so measure before raising
+                   # it, and raise it with the new figure written down.
+                   #
+                   # A CAP THAT IS TOO LOW LIES.  This session reported
+                   # "MCP is spinning" from a cap of 6,140,000 against a
+                   # 22M-step boot -- the run never reached its halt and
+                   # the checks ran mid-execution.  gen_tb prints
+                   # "step cap reached without halting" and fails when
+                   # that happens, which is the only reason it was caught.
+                   step_cap=10000000,
                    pc_trail=True,
                    op_trail=True,
                    ipl=True))
