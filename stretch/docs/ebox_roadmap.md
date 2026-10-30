@@ -96,6 +96,62 @@ opinion on stage structure is wanted.
    admits this: every live entry is `Whole`.)
 8. Add forwarding and accurate SAU/PAU overlap.
 
+## STATUS, MEASURED AGAINST THE CODE 2026-10-29
+
+Asked by the owner: *"did you make a plan to fix ebox and make it not
+an interpreter?"*  The plan is this document.  The conversion is about
+**two of eight**, and the E-box IS STILL AN INTERPRETER:
+`bsv/StretchExecute.bsv` is 6834 lines.
+
+Every number below is a grep over `bsv/*.bsv`, not a recollection.
+
+| Step | State | Evidence |
+|---|---|---|
+| 1 `prepareExec`, no exec-as-query | **DONE** | `PreparedExec` + `prepareExec` in `StretchIBox.bsv` (8 hits); `EBox.exec` deleted |
+| 2 typed `ExecRequest`/`ExecCompletion`, commit records | **COSMETIC ONLY** | `ExecCompletion` 0 hits, `ExecRequest` 0 hits.  `ExecDispatch` (3 hits) replaced the Tuple5 return, which is shape, not commit.  **89** direct `st.writeWord`/`writeIndex`/`setIndicatorBits`/`writeAcc` calls remain inside execution |
+| 3 one iterative op as a request/response box | **DONE** | `mkFpDivBox`, `bsv/StretchDivBox.bsv`, 336 lines |
+| 4 generalise to `mkPAU`/`mkSAU` | **NOT STARTED** | `mkPAU` 0 hits, `mkSAU` 0 hits.  Divide is one box; multiply is the second (see fig 3.8.11 below) |
+| 5 `ebusy` -> real response readiness | **NOT STARTED** | `ebusy` 17 hits; `StretchCore.bsv:427` still gates `headReady` on `ebusy == 0` |
+| 6 decode/prep as an I-box stage bundle | **NOT STARTED** | `PreparedExec` is a per-instruction record, not a stage output |
+| 7 split `Whole` look-ahead entries | **NOT STARTED** | `LaKind` 5 hits; every live entry is `Whole` |
+| 8 forwarding, SAU/PAU overlap | **NOT STARTED** | needs 4 and 5 first |
+
+### The one number that says "interpreter" best
+
+**89.**  That is how many times execution reaches out and mutates
+architectural state in the middle of computing a result.  Step 2 is
+not a naming exercise; it is the step that makes a box testable
+without storage, makes suppression on alarm or protection violation a
+single decision, and makes branch recovery something other than
+hoping nothing committed yet.  It is the largest single piece of work
+left in this document and it is the one with no progress.
+
+### Why the order has NOT been followed exactly, and why that STOPS HERE
+
+Step 3 was taken before step 2 deliberately: divide is the forcing
+case the owner named, and building it proved the request/response
+shape against a printed cycle count (fig 3.8.19) before committing 89
+call sites to a record layout that the boxes had not yet justified.
+
+**That licence does not extend to a second box.**  Taking multiply
+next would move 2/8 to 2.5/8 on a peripheral axis while leaving the 89
+untouched — deferral of the only step with no progress, dressed as
+sequencing.  Apply the discriminator to any candidate: **does it
+reduce the 89?**  Multiply does not.
+
+So step 2 is next, and it is taken in a way that a 518-section suite
+can actually underwrite:
+
+> **ONE instruction family at a time.**  That family returns an
+> `ExecCompletion`; a single commit rule applies it; the other 88 call
+> sites keep writing directly; the suite must be **bit-identical**.
+
+A live call site teaches the record its shape better than a box
+interface does, and if the first family shows the layout is wrong the
+cost is one family, not eighty-nine.  Elsewhere this document warns
+*"not every write must go through one universal structure"* — the
+family-at-a-time rule is how that warning is obeyed instead of quoted.
+
 ## Separate commit from calculation
 
 Execution helpers currently call `st.writeWord`, `st.writeIndex`,
