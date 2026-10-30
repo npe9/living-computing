@@ -152,6 +152,104 @@ cost is one family, not eighty-nine.  Elsewhere this document warns
 *"not every write must go through one universal structure"* — the
 family-at-a-time rule is how that warning is obeyed instead of quoted.
 
+## STEP 2, FIRST FAMILY: FLOATING POINT, AND THE SHAPE IS MEASURED
+
+The family was chosen by counting, not by taste.  Every architectural
+write in `StretchExecute.bsv`, grouped by the function that makes it:
+
+| function | lines | writes | kinds |
+|---|---|---|---|
+| `fpArithClass` | 1531-2312 | **34** | `writeWord` only |
+| `execute` | 5082-6521 | 15 | 11 word, 2 index, 2 indicator |
+| `vflIntOp` | 2313-3702 | 11 | 9 word, 2 index |
+| `fpStoreClass` | 1173-1530 | **10** | `writeWord` only |
+| `mkEBox` | 6522-6834 | 2 | word |
+| `connectiveOp`, `dirIndexOp`, `immIndexOp`, `ioOpExec` | — | 1 each | — |
+
+**Floating point is 44 of 88 — half the debt — and every one of the 44
+is a `writeWord`.** One effect kind, the largest cluster, and the
+best-tested arms in the suite. That is the first family.
+
+### The pattern is NOT new, and the reason it exists matters
+
+`vflIntOp`, `connectiveOp`, `dirIndexOp`/`immIndexOp` and `ioOpExec`
+already return effects as data — `VflOutcome`, `IndexOutcome`,
+`IoOutcome` — and the caller commits them. So step 2 is **extending a
+pattern this repository has already proved three times**, not inventing
+one.
+
+Why those three exist is worth knowing before adding a fourth, because
+only one of the two reasons is architectural:
+
+* **bsc refused the direct writes.** `IndexOutcome`'s own comment:
+  *"bsc will not take two `st.writeIndex` call sites in one `execute()`
+  invocation, so VflInt's progressive update needed a channel of its
+  own."*  `VflOutcome.connCounts` exists because bsc *"calls them a
+  conflict in `rl_au_remove` however the register is split or its ports
+  are assigned."*
+* **A primary source asked for it.** Reference Manual printed p.76:
+  *"The counts are set AT THE END of the connective operations, so
+  their previous values may be used as operands in the operation."*
+  Returning the counts is what makes that true.
+
+The FP family is the first one converted because it is *right*, rather
+than because bsc forced it. If the suite is bit-identical afterwards,
+that is the evidence; if bsc starts complaining about something it
+accepted before, the conversion changed scheduling and the record is
+wrong.
+
+### The layout, taken from the 44 live call sites
+
+Counted over lines 1173-2312, the targets are a tiny constant set —
+which the file already asserts independently at line 412 (*"of the 64
+`st.writeWord` sites in this file, 43 write a CONSTANT
+special-register address -- the accumulator halves, its sign byte, the
+zeros/ones counts, remainder, factor"*):
+
+| target | word | sites |
+|---|---|---|
+| `addrAccSignByte` | 10 | 14 |
+| `addrAccLeft` | 8 | 14 |
+| `addrAccRight` | 9 | 9 |
+| `ea` (computed) | — | 5 |
+| `addrRemainder` | — | 1 |
+| `addrFactor` | 14 | 1 |
+
+So the record is six fields, and it was read off the call sites rather
+than guessed at from a box interface:
+
+```bluespec
+typedef struct {
+  Maybe#(Word64) accLeft;    // word 8
+  Maybe#(Word64) accRight;   // word 9
+  Maybe#(Word64) accSign;    // word 10
+  Maybe#(Word64) factor;     // word 14
+  Maybe#(Word64) remainder;
+  Maybe#(Tuple2#(WordAddr, Word64)) store;   // the computed-address store
+} FpCommit deriving (Bits, Eq, FShow);
+```
+
+### THE ONE THING THAT MUST NOT MOVE
+
+The five `ea` sites are all of the form `else st.writeWord(ea, ...)` —
+the `else` of the DS/DF store-suppression predicate described at line
+411.  Suppression is a *decision*, and step 2's stated benefit is that
+it becomes a single decision.  **It does not get to become a different
+decision in the same change.**  The record carries `store` as `Valid`
+only when the existing predicate already permitted the write, so the
+suppressed cases are byte-identical.  Relocating the predicate is a
+separate piece of work with its own citation (printed p.31-32) and its
+own suite run.
+
+### The oracle
+
+Bit-identical suite, all 518 sections.  The FP arms are among the most
+heavily checked in the repository (the `jb_af1c` F213 series alone
+covers the range table, normalization and the sign modifiers against
+printed results), so "no change anywhere" is a real constraint here
+rather than a hope.  The injection: drop one field of `FpCommit` at the
+commit point and the corresponding F213 section must fail.
+
 ## Separate commit from calculation
 
 Execution helpers currently call `st.writeWord`, `st.writeIndex`,
