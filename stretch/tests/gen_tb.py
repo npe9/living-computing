@@ -23,7 +23,8 @@ def generate(module_name, prog, checks, step_cap=30000, reader_image=None,
              console_checks=None,
              pc_check=None, cycle_bound=None, cycle_window=None,
              ipl=False, pc_trail=False,
-             pc_trail_check=None, op_trail=False):
+             pc_trail_check=None, op_trail=False,
+             max_steps_check=None):
     """checks: list of (label:str, word_addr_expr:str, expected:int).
 
     reader_image: optional list of ints -- words to pre-load into the
@@ -128,6 +129,20 @@ def generate(module_name, prog, checks, step_cap=30000, reader_image=None,
     lines.append('        $display("PASS %s = %0d (0x%0x)", label, got, got);')
     lines.append("      else begin")
     lines.append('        $display("FAIL %s = %0d (0x%0x), expected %0d (0x%0x)", label, got, got, expected, expected);')
+    lines.append("        fails <= fails + 1;")
+    lines.append("      end")
+    lines.append("    endaction;")
+    lines.append("")
+    # A BOUND IS NOT AN EQUALITY, and it needs its own message: "got
+    # 6140103, expected 6140103" would have to be edited every time a
+    # page lands, which is how a ratchet turns into noise and then gets
+    # deleted.  "6140103 <= 10000000" survives an honest change.
+    lines.append("  function Action checkAtMost(String label, Bit#(32) got, Bit#(32) bound) =")
+    lines.append("    action")
+    lines.append("      if (got <= bound)")
+    lines.append('        $display("PASS %s = %0d (bound %0d)", label, got, bound);')
+    lines.append("      else begin")
+    lines.append('        $display("FAIL %s = %0d, which EXCEEDS the bound %0d", label, got, bound);')
     lines.append("        fails <= fails + 1;")
     lines.append("      end")
     lines.append("    endaction;")
@@ -397,6 +412,36 @@ def generate(module_name, prog, checks, step_cap=30000, reader_image=None,
         lines.append(f"  rule pctrailcheck (phase == {pccheck_phase});")
         lines.append('    check("last non-zero PC (half-word address)", '
                      f'zeroExtend(lastNonZeroPc), {pc_trail_check});')
+        lines.append(f"    phase <= {pccheck_phase + 1};")
+        lines.append("  endrule")
+        lines.append("")
+        pccheck_phase += 1
+    # >>> HOW LONG THE RUN TOOK, AS A CHECK AND NOT A $display. <<<
+    #
+    # THIS IS NOT THE STEP CAP AND MUST NOT BE CONFLATED WITH IT.  The
+    # cap is a safety valve: if the machine never halts, stop and say
+    # so.  Lowering the cap to bound a run's LENGTH makes the run stop
+    # mid-execution, so every later check reads a half-finished machine
+    # -- measured 2026-10-29, a cap of 6,000,000 against a 6,140,103-step
+    # boot produced THIRTY-FOUR failures with the console words reading
+    # zero and the PC at 862, not one of which said "the run got
+    # longer".  verify_no_probes.py pins the cap at its canonical value
+    # for exactly that reason and it is right to.
+    #
+    # This fires without truncating anything: the run completes, then
+    # the bound is checked like any other datum.
+    #
+    # WHAT IT GUARDS.  MCP's boot took 22,118,685 steps of which about
+    # SIXTEEN MILLION were a stretch where $10 was never written -- the
+    # signature of a chained SYN losing its index register.  It was
+    # invisible: the run halted in the right place with every check
+    # passing, because nothing bounded the length.  Thirteen model-side
+    # hypotheses were refuted before the defect was found in the
+    # assembler.
+    if max_steps_check is not None:
+        lines.append(f"  rule maxstepscheck (phase == {pccheck_phase});")
+        lines.append('    checkAtMost("steps to completion", stepCount, '
+                     f'{max_steps_check});')
         lines.append(f"    phase <= {pccheck_phase + 1};")
         lines.append("  endrule")
         lines.append("")
