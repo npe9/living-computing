@@ -669,6 +669,46 @@ def main():
         # designation in the assembler and LX,TIXF,TCHSXW loaded $0
         # (see tests/verify_syn_chain_reg.py).  With the scan indexing
         # correctly, p.72 lines 38-42 compute and store the channel.
+        # >>> PRINTED p.64's VALIDITY-CHECK TABLE, AND IT IS NOW
+        # GENERATED, 2026-10-29. <<<  Eight rows of three bytes --
+        # (type, conf, req) -- at words 1962-1964, one per equipment
+        # class.  Rendered printed p.72 function 2 says "the equipment
+        # count is generated for the validity check table", and until
+        # the chained-SYN assembler bug was fixed it generated none:
+        # p.72's channel scan ran with a ZERO index because
+        # LX,TIXF,TCHSXW loaded $0 (tests/verify_syn_chain_reg.py).
+        #
+        # Measured before the fix (docs/mcp_io_tables.md) against now:
+        #
+        #   row      static      BEFORE        NOW
+        #   DISK     (1,1,0)     (0,0,1)       (1,1,0)
+        #   CONSOLE  (2,0,0)     (1,0,0)       (2,1,0)
+        #   READER   (3,0,0)     (37,0,0)      (3,1,1)
+        #   PUNCH    (4,0,0)     (4,0,0)       (4,0,0)
+        #   PRINTER  (5,0,0)     (5,0,0)       (5,1,0)
+        #   IQS      (6,0,0)     (6,0,0)       (6,0,0)
+        #   EXTRA    (7,0,0)     (0,0,0)       (7,0,0)
+        #   TAPE     (8,0,0)     (0,0,0)       (8,2,2)
+        #
+        # ALL FIVE CORRUPTED TYPE BYTES ARE REPAIRED, and the counts
+        # are not merely non-zero but CORRECT FOR THE DECK: TAPE's
+        # conf = 2 is the two output-tape IODs of strap/prosa.py's
+        # MCP_IODS, and READER's conf = 1 is the one reader.  That
+        # correspondence is what makes this a check rather than a
+        # transcription of whatever came out.
+        ("mcp_conf_table_word0", "1962", 0x0101000201000301),
+        ("mcp_conf_table_word1", "1963", 0x0104000005010006),
+        ("mcp_conf_table_word2", "1964", 0x0000070000080202),
+
+        # T IOREQ, words 1787-1789, is STILL ALL ZERO AND THAT IS
+        # CORRECT -- it is the problem-program request table that
+        # MCP-DECODE builds for a JOB (printed pp.52-56), and no job is
+        # loaded.  It was conflated with the conf counts above earlier
+        # in this work; asserting zero here keeps the two apart.
+        ("mcp_t_ioreq_empty_no_job", "1787", 0),
+        ("mcp_t_ioreq_empty_no_job1", "1788", 0),
+        ("mcp_t_ioreq_empty_no_job2", "1789", 0),
+
         ("mcp_console_channel_in_comm_region",
          str(ipl_hw("SYCOCH") // 2),
          (35 << (63 - 18)) | (33 << (63 - 50))),
