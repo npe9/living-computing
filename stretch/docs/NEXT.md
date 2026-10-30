@@ -15208,3 +15208,48 @@ brackets 005014 is `T MOVE`'s page.
 > Recording the failure rather than quietly replacing the number: the
 > estimate was wrong because of an assumption that was never stated when
 > it was made, which is the only interesting thing about it.
+
+### >>> T MOVE IS THE FIRST LINE OF PRINTED p.88 <<< 2026-10-30
+
+Found by the mechanical scan the previous entry called for, not by
+estimating. Six pages' LOCATION columns rendered at 300 dpi and
+montaged into one image (ImageMagick is installed; `pdftotext` on this
+PDF yields one character, so it must be read visually):
+
+| printed page | LOCATION column |
+|---|---|
+| 81 | empty through its top band -- compiles nothing there |
+| 82 | **blank** -- compiles nothing |
+| 83 | 004627.40 .. 004632.00, then SYN values, then 004632.40 .. 004652.00 |
+| 84 | mostly SYN offsets; code at 004736.00 .. 004737.05 |
+| 85 | SYN field offsets (000000.31+ and the like) |
+| 86 | 004754.00 .. 004765.76 |
+| 87 | 004767.00 .. **005013.00** |
+| 88 | **005014.00**, 005015.00, 005016.00 .. |
+
+`T MOVE` is `(8)5014.0`. **printed p.87 ends at 005013.00 and printed
+p.88 begins at 005014.00**, contiguous, so T MOVE is p.88's first
+located line.
+
+The estimate was p.85. The answer is p.88 -- three pages out, which is
+what averaging over pages that compile nothing buys.
+
+#### What this makes the next work
+
+Printed pp.81-87 lie between the transcribed image and `T MOVE`, and
+they are NOT seven pages of dense code:
+
+* **pp.81 and 82 compile nothing** (or nearly), like pp.47, 59 and 60
+  before them -- cheap.
+* **p.85 is field definitions** -- SYN cards, no code.
+* **pp.83, 84, 86, 87 carry the code**, and p.84's is only two lines.
+
+So reaching `T MOVE` is roughly four pages of real transcription, not
+eight. Each one still gets checked against its own binary column the way
+every page so far has been.
+
+> One gap to resolve while transcribing: p.84's code ends at 004737.05
+> and p.86 starts at 004754.00. Printed p.85's band 1 shows only SYN
+> offsets, so either its later bands carry 004740-004753 or those
+> addresses belong to a page not yet looked at. Worth knowing before
+> assuming p.85 compiles nothing.
