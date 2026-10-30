@@ -89,18 +89,39 @@ Six reads become one.
 >
 > `COC000` and `.2C` are `000000` and `.20` -- a C cannot occur in
 > either field -- so this row prints 0 as an open C three times before
-> it reaches the byte, and the byte is `B0`, not `BC`. Line 53's
-> `COC011.CC 80` and line 55's `C70C000.00` say the same thing.
+> it reaches the byte. Line 53's `COC011.CC 80` and line 55's
+> `C70C000.00` print the same way.
 >
-> This matters because the asymmetry runs ONE WAY: **ink dropout can
-> open a closed glyph but never closes an open one, so an observed C
-> may be a damaged 0 while an observed 0 is never a damaged C.** The
-> octal fields tell you whether this particular row is dropping ink.
-> Comparing against zeros in OTHER rows is not the same test and can
-> give the opposite answer -- that is exactly how p.95's first reading
-> concluded `BC` on lines 49 and 53, against an assembler that was
-> right.
+> What this establishes is NOT that the byte is `B0`; it is that **on
+> this page an open round glyph is a perfectly ordinary 0**, so "it
+> looks like a C" carries almost no information. The asymmetry runs
+> one way: ink dropout can open a closed glyph but never closes an
+> open one, so an observed C may be a damaged 0 while an observed 0 is
+> never a damaged C.
 >
+> **BE PRECISE ABOUT WHAT THE GAUGE IS.** It is not a per-row ink
+> level -- ink varies per CHARACTER. Printed p.85 line 12 prints the
+> comment `-ORIGINAL ARC` with a clean closed O and the name beside it
+> as `T CRARC`, open, in the same row off the same drum. So an octal-
+> field C tells you the page drops ink on round glyphs; it does not
+> license converting any particular C to a 0.
+>
+> Comparing a byte against zeros in OTHER rows is weaker still, and is
+> exactly how p.95's first reading concluded `BC` on lines 49 and 53,
+> against an assembler that was right.
+>
+> **THE COMMENT COLUMN IS ENGLISH, AND THAT MAKES IT AN ORACLE.**
+> A misprinted letter inside a known word is visible as a misspelling.
+> Printed p.85 line 11 prints the name `T FMCDE` and the comment
+> `-FILE MCDE`: the word is MODE, so both are O's and the symbol is
+> `T FMODE`, not the `TFMCDE` the deck carried. Printed p.84 line 48
+> is `T IODK` -- four letters, I O D K -- against the deck's
+> `TIODCK`; its comment `-THE IOD COUNT` confirms the O. Neither
+> error could fail a test, because `listing_oracle` checks LOCATIONS
+> and BINARY and never label SPELLINGS, and both symbols happened to
+> be referenced only inside their own deck. **When a label looks odd,
+> read its comment.**
+
 > When the two still disagree, the STATEMENT column is the tie-breaker,
 > because it is what produced the bits: `LFT,T IODCT(T MXA)` has no
 > second operand, and the low nibble of a VFL full word is `i2`, the
