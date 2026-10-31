@@ -373,14 +373,21 @@ def main():
     # strap_asm grew its written-minus-plus-immediate rule; it is the
     # VFL add with the invert bit AND immediate addressing, so like
     # every other immediate Table A-2 does not cost it.
+    # "CI0111" and "CTI0110" joined on 2026-10-31 with printed
+    # pp.154-156.  Both are immediate connectives written with the "I"
+    # INFIX, the spelling strap_asm learned for CI0001/CTI0001, and
+    # Table A-2 costs no immediate -- so they join for the same reason
+    # every other entry here did, not as a new category.
+    #
     # "*I" joined on 2026-10-31 with printed p.138, which spells it
     # "*I(BU,18),8,46".  The trailing-I loop above had always built
     # it; this is simply the first landed deck to USE it, and like
     # every other immediate Table A-2 gives it no count.
     check("page_silent_mnemonics_in_mcp",
           sorted(notgiven),
-          ["*I", "*I+", "+I", "-I", "/I", "CI0001", "CTI0001", "KFI",
-           "KI", "LFI", "LI", "SWAPI", "T", "TB", "TI"])
+          ["*I", "*I+", "+I", "-I", "/I", "CI0001", "CI0111", "CTI0001",
+           "CTI0110", "KFI", "KI", "LFI", "LI", "SWAPI", "T", "TB",
+           "TI"])
 
     if fails:
         print(f"\n{fails} TEST(S) FAILED")

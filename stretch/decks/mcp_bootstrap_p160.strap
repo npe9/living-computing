@@ -55,7 +55,7 @@
 !   lines 15-22  K K LOC + 2.0, where the locate interrupt comes
 !                back.  Tests index 4, clears the locate-suppress
 !                bit S LOC SU, calls the I/O-indicator check
-!                (SIC,E IND R ; B,E IC IND -- the calling sequence
+!                (SIC,E IND R ; B,E IO IND -- the calling sequence
 !                printed in full on printed p.189), then calls
 !                K POST L and leaves to Z STEVL.
 !
@@ -88,7 +88,7 @@
 !   IE000056  lines 11,12   LVI,9,Z STEVL    ; SVA,9,K LOCTD
 !   IE000057  lines 13,14   SIC,S RET AD($12); B,K LOCAT
 !   IE000058  lines 15,16   KVI,4,.32        ; BZXE,$+1.32
-!   IE000060  lines 18,19   SIC,E IND R      ; B,E IC IND
+!   IE000060  lines 18,19   SIC,E IND R      ; B,E IO IND
 !   IE000061  lines 20,21   SIC,K POSLD      ; B,K POST L
 !
 ! Every one of the six is a SIC/branch or a test/branch pair, so
@@ -282,20 +282,39 @@
 !            p.159's LAST, and the half word it occupies is what
 !            leaves the counter at this page's 220057.00.
 !
-! AND THE TWO EXTERNALS NOBODY HAD PINNED, E IND R AND E IC IND,
+! >>> CORRECTED 2026-10-31: THIS PAGE FIRST READ IT "E IC IND". <<<
+! printed p.156 landed in the same batch spelling the same address
+! "E IO IND", and check_symbol_spellings caught the pair -- a
+! conflict NEITHER page could see, because each transcriber saw only
+! its own sheet.  THE TYPESET MANUALS SETTLE IT, 11 to 1: C22-6728,
+! C22-6728-1, C22-6678-1 and the MCP user's guide spell KIOIND
+! eleven times and KICIND once.  Different press, so rung 2 of the
+! glyph ladder is a genuine second reading here.
+!
+! The ink agrees once it is read properly.  printed p.189's defining
+! card prints "E IC IND" -- but THAT ROW IS DROPPING INK: its own
+! data description prints "BU,1CC,1C" where the values must be
+! BU,100,10, and its value field prints "+00C00000".  C-shaped
+! glyphs in fields that cannot hold a C.  Dropout OPENS a closed
+! glyph and never closes an open one, so that C is a damaged O.
+! printed p.156 line 4's comment reads "-CHECK I? INDS" and another
+! page glosses the routine "CHECK IF SUCCESSFUL END OP" -- an
+! end-of-operation test, which is I-O, not instruction-counter.
+!
+! AND THE TWO EXTERNALS NOBODY HAD PINNED, E IND R AND E IO IND,
 ! ARE DEFINED BY CARDS ON printed p.189 (PDF p.196), found by
 ! grepping the ADDRESS and not the name:
 !
-!   "221370.00+ ... BU,100,10   E IC IND  SYN,K IC IND"
+!   "221370.00+ ... BU,100,10   E IO IND  SYN,K IO IND"
 !   "221371.00+ ... BU,40,10    E IND R   SYN,K K IND"
 !
 ! and that page's own comment card prints the calling sequence
 ! this page uses on lines 18-19:
 !
-!   "- CALLING SEQUENCE  **  SIC,E IND R ; B,E IC IND"
+!   "- CALLING SEQUENCE  **  SIC,E IND R ; B,E IO IND"
 !
-! So both are aliases: E IC IND for K IC IND at 221370.00 (whose
-! defining instruction, "K IC IND L(BU,2),S IO IND($13)", prints
+! So both are aliases: E IO IND for K IO IND at 221370.00 (whose
+! defining instruction, "K IO IND L(BU,2),S IO IND($13)", prints
 ! at 221370.00), and E IND R for K K IND at 221371.00 (whose
 ! "K K IND BRZ,$" prints at 221371.00).  Both SYN cards print
 ! their 24-bit VALUE, so these are addresses read off a card, not
@@ -369,7 +388,7 @@
 ! A SIC prints its operand's FULL 24-bit address; a branch prints
 ! bit 18 and nothing below it.  So on this page E IND R's ".00" is
 ! OBSERVED to all six octal digits (line 18 is a SIC), while
-! E IC IND's ".00" is observed only to the half word (line 19 is a
+! E IO IND's ".00" is observed only to the half word (line 19 is a
 ! branch) -- and is then supplied exactly by printed p.189's SYN
 ! card, which prints 221370.00+.
 !
@@ -488,13 +507,13 @@ KLOCTD  SYN, (8)220047.0
 !                       decks whose ".00" is a reading and not a
 !                       convention.
 EINDR   SYN, (8)221371.0
-! E IC IND   221370.00  printed p.189's SYN card "E IC IND SYN,K
-!                       IC IND"; K IC IND's own instruction prints
+! E IO IND   221370.00  printed p.189's SYN card "E IO IND SYN,K
+!                       IC IND"; K IO IND's own instruction prints
 !                       at 221370.00 and the SYN prints its value
 !                       as 221370.00+.  Line 19 is a BRANCH, so
 !                       this page observes bit 18 only (it is 0);
 !                       the rest comes from p.189.
-EICIND  SYN, (8)221370.0
+EIOIND  SYN, (8)221370.0
 
         SLC, (8)220057.0             ! p.159 line 50 leaves here
 
@@ -516,7 +535,7 @@ KKLOC   LVI,9,ZSTEVL                 ! line 11
         BZXE,$+1.32                  ! line 16  same card as 15
         CM0000,SLOCSU                ! line 17
         SIC,EINDR                    ! line 18
-        B,EICIND                     ! line 19  same card as 18
+        B,EIOIND                     ! line 19  same card as 18
         SIC,KPOSLD                   ! line 20
         B,KPOSTL                     ! line 21  same card as 20
         B,ZSTEVL                     ! line 22
@@ -554,7 +573,7 @@ KGLOCR  B,$                          ! line 34
 !   line 16  220070.00    220071.72 C0                          BZXE,$+1.32                     IE000058
 !   line 17  220070.40    215001.21 80  001000.00 F0            CM0000,SLOCSU                   IE000059
 !   line 18  220071.40    221371.00 80                          SIC,E IND R                     IE000060
-!   line 19  220072.00    221370.10 00                          B,E IC IND                      IE000060
+!   line 19  220072.00    221370.10 00                          B,E IO IND                      IE000060
 !   line 20  220072.40    220100.00 80                          SIC,K POSLD                     IE000061
 !   line 21  220073.00    220074.10 00                          B,K POST L                      IE000061
 !   line 22  220073.40    221144.50 00                          B,Z STEVL                       IE000062
@@ -677,7 +696,7 @@ KGLOCR  B,$                          ! line 34
 !CHECK 220070.00 | 220071.72 C0 | line 16 BZXE,$+1.32 -- $ is 220070.00 so the target is 220071.40; bit 18 set, and this row checks the deck's own counter
 !CHECK 220070.40 | 215001.21 80 001000.00 F0 | line 17 CM0000,SLOCSU -- a VFL operand prints its FULL address, so 0o21 = bit 17 of S COMRG is checked; the second group's 001000.00 is the all-zero connective against line 31's 001000.36
 !CHECK 220071.40 | 221371.00 80 | line 18 SIC,E IND R -- a SIC, so E IND R's offset is OBSERVED to all six octal digits, not assumed (see THE SIC MEASUREMENT)
-!CHECK 220072.00 | 221370.10 00 | line 19 B,E IC IND -- a branch, so bit 18 only; printed p.189's SYN card supplies the rest
+!CHECK 220072.00 | 221370.10 00 | line 19 B,E IO IND -- a branch, so bit 18 only; printed p.189's SYN card supplies the rest
 !CHECK 220072.40 | 220100.00 80 | line 20 SIC,K POSLD -- forward reference to line 27, all 24 bits internal to this page
 !CHECK 220073.00 | 220074.10 00 | line 21 B,K POST L -- forward reference to line 23; byte for byte printed p.159 line 50's word, which is that page's last row
 !CHECK 220073.40 | 221144.50 00 | line 22 B,Z STEVL -- the same external as line 11 reached by a branch; the two rows agree on bit 18

@@ -1,0 +1,303 @@
+! mcp_bootstrap_p156.strap -- the tail of the WRITE-FILE-MARK /
+! change-density path and the start of the WRITE LABEL path, printed
+! page 156.  docs/MCP_Mar63_001-249.pdf PDF p.163, header READ and not
+! assumed: the top line prints "TIME CLOCK 00054041  PUNID 11D11MCP
+! CARD ID IB000130   DIST. OF 3/01   3/01   PAGE NUMBER  156", and the
+! column-heading row's own "LOCATION 217744" names line 1's word.
+!
+! ---------------------------------------------------------------
+! WHAT THE PAGE IS
+! ---------------------------------------------------------------
+! TWENTY-EIGHT PRINTED LINES, twenty-seven of which emit bits.  The
+! page prints NO SLC, NO DD and NO SYN: every emitting row is an
+! instruction except the last, which is an index word (XW).  Line 11
+! is a CNOP that found the counter already on a word boundary and so
+! printed NEITHER a location NOR any bits (line 10 is a half-word
+! branch ending exactly at 217752.00).
+!
+! The page is SHORT -- it stops at line 28 with two-thirds of the
+! sheet blank, which is what a listing does at the end of a section
+! of the source deck.  Card serials run IB000130 .. IB000149 with no
+! gap, which is the check that nothing fell off either end.
+!
+! Three fragments, back to back:
+!
+!   lines 1-4    the tail of whatever precedes it on printed p.155:
+!                it offers the I/O instruction, returns control
+!                through M IOREJ if the I/O was accepted, and
+!                otherwise saves the IC in E IND R and goes to
+!                E IO IND to check the indicators.
+!   lines 5-10   K KF DEN, "SET UNIT TO FILE DENSITY".  It pulls the
+!                one-bit density out of S F DEN, puts the return
+!                address in $R, saves the IC in S RET AD and calls
+!                K DENST; on return it saves the IC in K K IND and
+!                goes to K IO IND.
+!   lines 11-20  the WEF (write-end-of-file) command: build the I/O
+!                instruction in place (LX/SX through S IO INS), the
+!                CTL with the octal command 117, set the SET UP bit
+!                under K SUPP, offer it, and go through M IOREJ or
+!                E IO IND exactly as lines 1-4 do.
+!   lines 21-28  K WLTMK, "UPDATE REEL POOL": bump the current reel,
+!                pick up the 30-bit scratch-pad word, branch round
+!                the store if S OWNER is set, store it at .34($4),
+!                add one to the file count (S FILEK), and leave
+!                through Z STEVL.  Line 28 is E LAB CW, the WRITE
+!                LABEL control word, a self-refilling index word.
+!
+! ---------------------------------------------------------------
+! WHERE THE PAGE JOINS
+! ---------------------------------------------------------------
+! The page prints no SLC, so its origin is the counter arriving from
+! printed p.155 and the deck ASSERTS it with a hard SLC.  Two
+! independent readings agree that line 1 is at 217744.40:
+!   * the column-heading row's own LOCATION field reads 217744; and
+!   * printed p.155's own rows (OCR, a DIFFERENT page, so a real
+!     witness) print "217732.00 ... SV,0,E LAB CW" and "217741.00
+!     ... W,0.0($14),E LAB CW", i.e. p.155 runs up to at least
+!     217741 and references this page's last line.
+! The deck's hard SLC cannot DISAGREE with a counter it overrides --
+! compare p.155's end by hand when that page lands.
+!
+! The page leaves the counter at 217766.00: line 28 is a full word at
+! 217765.00.  PREDICTION FOR printed p.157: its first location is
+! 217766.00 and its first card serial is IB000150.
+!
+! ---------------------------------------------------------------
+! TWO THINGS THE PRINTED FORM AND strap_asm DISAGREE ABOUT
+! ---------------------------------------------------------------
+! 1. LINE 14 IS LEFT FAILING ON PURPOSE.  The page prints
+!
+!        CTL,0.0($14),(8)117.          000000.00 8E 000117.05 00
+!
+!    and strap_asm compiles that statement to "000117" shifted six
+!    bits left -- "011700.05 00".  Measured, nothing else varied:
+!
+!        CTL,0.0($14),(8)117.   ->  011700.05 00
+!        CTL,0.0($14),(8)117    ->  000117.05 00      (no trailing dot)
+!        CTL,0.0($14),(8)1.17   ->  000117.05 00
+!
+!    so the assembler is storing a 24-bit BIT address where real
+!    STRAP stored the 18-bit WORD number -- the same ">>6 word
+!    conversion" that strap_asm already performs for XW's REFILL
+!    field and for CW, and does not perform for a CTL's second
+!    operand.  (0o11700 >> 6 = 0o117 exactly, which is the printed
+!    field, so the direction of the error is not in doubt.)  The deck
+!    keeps the PRINTED statement and the PRINTED !CHECK, which
+!    contradict each other, and the row FAILS.  Do not "fix" it by
+!    dropping the printed dot: that would be a silent substitution
+!    hiding an assembler bug.
+!
+!    THE DOT WAS READ AT 1800 dpi, twice, because the whole finding
+!    rests on it: the page prints ") , ( 8 ) 1 1 7 ." with a solid
+!    round period and then white paper until the comment
+!    "-WEF COMMAND".  Nothing follows the dot.
+!
+!    NO CLAIM IS MADE THAT THIS IS THE FIRST CTL WITH A NON-ZERO
+!    OPERAND -- it is not.  decks/ carries "CTL, 0($1), 94",
+!    "CTL(SEOP), 0($1), 126", "CTL(SEOP), 10.0, 0.0" and, closest of
+!    all, printed p.16 line 35's
+!    "X11 3  CTL(SEOP),0.0($15),(8)137", which prints "000137.15 00"
+!    and passes.  THAT CARD WAS RE-RENDERED FOR THIS PAGE (PDF p.23,
+!    600 dpi) AND IT PRINTS NO TRAILING DOT: real STRAP's "(8)137" is
+!    a bare octal CODE and this page's "(8)117." is an ADDRESS
+!    literal, and strap_asm is right about the first and wrong about
+!    the second.  So the bug is specific to the DOTTED form in an I/O
+!    operation's code field, p.16's deck is faithful, and no landed
+!    page is implicated.
+!
+! 2. LINE 28 IS A LABELLED SUBSTITUTION.  The page prints
+!
+!        E LAB CW  XW,S SCR PM($12),1,$
+!
+!    and strap_asm REFUSES it:
+!        "line 48: cannot parse expression 'SSCRPM($12)' at '($12)'"
+!    -- XW's VALUE field takes no index.  The deck writes
+!
+!        ELABCW  XW,SSCRPM,1,$
+!
+!    i.e. the printed card WITHOUT its "($12)".  That is bit-exact
+!    for this row: an index word has no index field at all -- VALUE,
+!    COUNT, REFILL and a three-bit FLAG, C22-6531 as quoted at
+!    strap/strap_asm.py:3172 -- the page's own flag digits print 000,
+!    and the assembled word matches the printed
+!    "000006.00+ 000 000001 217765" exactly, which is what the
+!    passing !CHECK on line 28 actually establishes.  The substitution
+!    is in the SOURCE only, and it is needed to keep the counter
+!    honest -- line 28 is a full word and p.157 starts after it.
+!
+! ---------------------------------------------------------------
+! WHAT THE INK SAID AND WHAT SETTLED IT
+! ---------------------------------------------------------------
+! * THE PAGE DROPS INK ON ROUND GLYPHS CONSTANTLY.  Line 1's octal
+!   field prints "000005.00" with two open C-shaped zeros; line 16
+!   prints "C0C000.37"; line 28 prints "CC00C6.00+".  All are octal
+!   fields, so every one of those C's is a damaged 0 with certainty.
+! * BUT A C IN THE HEX BYTE CAN BE REAL.  Line 1's byte really is
+!   "8C": a SIC prints 80 and the index $12 is C.  So the octal-field
+!   argument sets no licence for the byte two characters away.
+! * LINE 22'S BYTE IS 8C AND READS AS "3C" AT 400 dpi.  Rendered at
+!   1800 dpi beside line 21's genuine "3C" the two glyphs are plainly
+!   different: line 21's 3 is open on the left, line 22's 8 has the
+!   closed upper bowl and the left stroke.  The statement settles it
+!   independently -- L(BU,30) is a VFL operation and every VFL first
+!   half word on this page prints 8x (line 5 8D, 16 8B, 23 8B,
+!   24 84), with the low nibble the index ($12 = C).
+! * THE BRANCH BYTES ARE 00, NOT C0.  Lines 2, 4, 10, 18 and 20 print
+!   a byte whose first glyph is open.  "B," with no index is 00, and
+!   printed p.152 line 6 prints the IDENTICAL card "B,M IOREJ" as
+!   "221261.10 00".  Line 8's "217674.50 00" on this page prints both
+!   zeros closed, which is the same drum one row away.
+! * "K KF DEN" IS D, NOT C -- the left side is a straight vertical
+!   stem with squared corners at 1800 dpi, and the comment on the
+!   same row reads "-SET UNIT TO FILE DENSITY".
+!
+! ---------------------------------------------------------------
+! THE LOCATION-COLUMN ASTERISK, AND A RULE THIS PAGE KILLS
+! ---------------------------------------------------------------
+! Lines 7 and 26 carry the extra asterisk AFTER the location
+! (217750.00 * and 217763.40 *).  Line 28 carries a different one:
+! "28**217765.00", a second asterisk in the LINE column, before the
+! location, which lines 7 and 26 do not have.
+!
+! THIS PAGE REFUTES ANY RULE THAT KEYS THE TRAILING ASTERISK TO THE
+! STATEMENT.  Lines 1, 7 and 17 are the SAME CARD TEXT --
+! "SIC,S RET AD($12)", compiling the same "000005.00 8C" -- and only
+! line 7 is starred.  Whatever the mark is, it is not a property of
+! the operation, the operand, the index, or the emitted bits.  No
+! hypothesis is offered here; printed pp.147 and 151 already spent
+! one afternoon on this.
+!
+! ---------------------------------------------------------------
+! WHAT RESTS ON INK ALONE
+! ---------------------------------------------------------------
+! * K WLTMK (line 21) is defined here and referenced by NOTHING else
+!   in the volume OCR, so its spelling rests on this page's ink.  It
+!   was read at 1800 dpi: K, space, W L T M K.
+! * K KF DEN and E LAB CW are both pinned from OTHER pages, so their
+!   spellings are safe: the volume OCR carries "KVI,2,K KF DEN"
+!   against 217746.45 (a later page) and two p.155 cards referencing
+!   E LAB CW against 217765.
+! * Every external SYNed below is back-derived from a printed branch
+!   or SIC, so its bit offset WITHIN the half word is unobservable.
+!   The half word itself IS checked.  SIC rows (lines 1, 3, 7, 9, 17,
+!   19) print the bare 24-bit address, so those targets ARE pinned to
+!   the bit.
+! * S FILEK's bit offset is unobservable from this page: an index-
+!   arithmetic operand keeps only bit 32.  Measured -- SYN 7.38 and
+!   SYN 7.32 both render line 26 as "000007.41 3C".  The 7.38 below
+!   is printed p.101's defining card, not a reading of this page.
+! ---------------------------------------------------------------
+
+SRETAD  SYN(BU,19), 5.0              ! p.101 line 18 -RETURN ADDRESS IN MCP
+SFDEN   SYN(BU,2), 2.27              ! p.102 line 12 -IOD DENSITY
+SSETUP  SYN(BU,1), 0.31              ! p.99  line 29 -PSEUDO-OP SET-UP
+SIOINS  SYN(BU,64), 4.0              ! p.101 line 17 -IO INSTR. LAST
+SCREEL  SYN(BU,18), 8.32             ! p.101 line 28 -CURRENT REEL ADDRESS
+SSCRPM  SYN(BU,64), 6.0              ! p.101 line 20 -SCRATCH PAD MEMORY
+SOWNER  SYN(BU,1), 0.32              ! p.99  line 30
+SFILEK  SYN(BU,12), 7.38             ! p.101 line 25 -FILE COUNT
+MIOREJ  SYN, (8)221261.0             ! off lines 2 and 18; bit offset unobservable
+EINDR   SYN, (8)221371.0             ! off the SIC on lines 3 and 19 -- pinned to the bit
+EIOIND  SYN, (8)221370.0             ! off lines 4 and 20; bit offset unobservable
+KDENST  SYN, (8)217674.40            ! off line 8; the .40 half word IS checked
+KKIND   SYN, (8)221371.0             ! off the SIC on line 9 -- same word as E IND R
+KIOIND  SYN, (8)221370.0             ! off line 10 -- same word as E IO IND
+KSUPP   SYN, (8)216242.0             ! as fifteen other decks write it
+ZSTEVL  SYN, (8)221144.40            ! as printed pp.151 and 152 write it
+
+        SLC, (8)217744.40            ! the page prints no SLC; heading LOCATION 217744
+
+        SIC,SRETAD($12)              ! line  1
+        B,MIOREJ                     ! line  2  (same card as 1) -RETURN CONTROL IF I/O ACCEPTED
+        SIC,EINDR                    ! line  3
+        B,EIOIND                     ! line  4  (same card as 3) -CHECK IO INDS
+KKFDEN  L(BU,1),SFDEN($13),46        ! line  5  -SET UNIT TO FILE DENSITY
+        LV,0,$R                      ! line  6
+        SIC,SRETAD($12)              ! line  7
+        B,KDENST                     ! line  8  (same card as 7)
+        SIC,KKIND                    ! line  9
+        B,KIOIND                     ! line 10  (same card as 9)
+        CNOP                         ! line 11  (emits nothing: already aligned)
+        LX,0,$+1.                    ! line 12
+        SX,0,SIOINS($12)             ! line 13  (same card as 12)
+        CTL,0.0($14),(8)117.         ! line 14  -WEF COMMAND  <<< LEFT FAILING, see above
+        LVI,1,KSUPP                  ! line 15
+        CM1111(BU,1),SSETUP($11)     ! line 16
+        SIC,SRETAD($12)              ! line 17
+        B,MIOREJ                     ! line 18  (same card as 17)
+        SIC,EINDR                    ! line 19
+        B,EIOIND                     ! line 20  (same card as 19) -GO TO IO IND ROUTINE
+KWLTMK  LV,4,SCREEL($12)             ! line 21  -UPDATE REEL POOL
+        L(BU,30),SSCRPM($12)         ! line 22
+        BB,SOWNER($11),$+2.0         ! line 23
+        ST(BU,30),.34($4)            ! line 24
+        LVI,0,1.                     ! line 25
+        SV,0,SFILEK($12)             ! line 26  (same card as 25) -UPDATE FILE COUNT
+        B,ZSTEVL                     ! line 27  -BRANCH TO EVAL. ROUTINE
+ELABCW  XW,SSCRPM,1,$                ! line 28  -WRITE LABEL CTL WD
+                                     !          printed "XW,S SCR PM($12),1,$"
+
+! ---------------------------------------------------------------
+! THE PRINTED LISTING, line by line (card serial in the right margin
+! of the page runs IB000130 .. IB000149 with no gap).
+!
+!   line  1  217744.40   000005.00 8C                 SIC,S RET AD($12)
+!   line  2  217745.00   221261.10 00                 B,M IOREJ  -RETURN CONTROL IF I/O ACCEPTED
+!   line  3  217745.40   221371.00 80                 SIC,E IND R
+!   line  4  217746.00   221370.10 00                 B,E IO IND  -CHECK IO INDS
+!   line  5  217746.40   000002.33 8D 001027.20 50  K KF DEN  L(BU,1),S F DEN($13),46  -SET UNIT TO FILE DENSITY
+!   line  6  217747.40   000011.00 30                 LV,0,$R
+!   line  7  217750.00 * 000005.00 8C                 SIC,S RET AD($12)
+!   line  8  217750.40   217674.50 00                 B,K DENST
+!   line  9  217751.00   221371.00 80                 SIC,K K IND
+!   line 10  217751.40   221370.10 00                 B,K IO IND
+!   line 11  (no location, no bits)                   CNOP
+!   line 12  217752.00   217753.00 10                 LX,0,$+1.
+!   line 13  217752.40   000004.01 1C                 SX,0,S IO INS($12)
+!   line 14  217753.00   000000.00 8E 000117.05 00    CTL,0.0($14),(8)117.  -WEF COMMAND
+!   line 15  217754.00   216242.03 01                 LVI,1,K SUPP
+!   line 16  217754.40   000000.37 8B 001000.36 F0    CM1111(BU,1),S SET UP($11)
+!   line 17  217755.40   000005.00 8C                 SIC,S RET AD($12)
+!   line 18  217756.00   221261.10 00                 B,M IOREJ
+!   line 19  217756.40   221371.00 80                 SIC,E IND R
+!   line 20  217757.00   221370.10 00                 B,E IO IND  -GO TO IO IND ROUTINE
+!   line 21  217757.40   000010.50 3C               K WLTMK  LV,4,S C REEL($12)  -UPDATE REEL POOL
+!   line 22  217760.00   000006.00 8C 036000.20 50    L(BU,30),S SCR PM($12)
+!   line 23  217761.00   000000.40 8B 217763.34 02    BB,SOWNER($11),$+2.0
+!   line 24  217762.00   000000.42 84 036000.20 D0    ST(BU,30),.34($4)
+!   line 25  217763.00   000001.01 01                 LVI,0,1.
+!   line 26  217763.40 * 000007.41 3C                 SV,0,S FILEK($12)  -UPDATE FILE COUNT
+!   line 27  217764.00   221144.50 00                 B,Z STEVL  -BRANCH TO EVAL. ROUTINE
+!   line 28**217765.00   000006.00+ 000 000001 217765  E LAB CW  XW,S SCR PM($12),1,$  -WRITE LABEL CTL WD
+! ---------------------------------------------------------------
+
+!SYM   KKFDEN   217746.40
+!SYM   KWLTMK   217757.40
+!SYM   ELABCW   217765.00
+!CHECK 217744.40 | 000005.00 8C | line 1 SIC,S RET AD($12) -- the first row on the page, which the survey lost; byte 8C is 80 for SIC plus i = $12 = 12 decimal = C, so this C is REAL and not a damaged 0
+!CHECK 217745.00 | 221261.10 00 | line 2 B,M IOREJ (same card as line 1) -- printed p.152 line 6 prints the identical card with both byte zeros closed
+!CHECK 217745.40 | 221371.00 80 | line 3 SIC,E IND R -- a SIC prints the bare 24-bit address, so this row pins E IND R to the bit
+!CHECK 217746.00 | 221370.10 00 | line 4 B,E IO IND (same card as line 3) -- .10 is B's operation bits, so E IO IND is 221370.00 to the half word only
+!CHECK 217746.40 | 000002.33 8D 001027.20 50 | line 5 K KF DEN L(BU,1),S F DEN($13),46 -- .33 is S F DEN's bit 27; the second half's leading 001 is the byte size 1 and .20 50 is L with offset 46; byte 8D is i = $13 = 13 decimal
+!CHECK 217747.40 | 000011.00 30 | line 6 LV,0,$R -- $R is word 0o11 out of SYSTEM_SYMBOLS, and J=0 so the row prints it bare (compare line 21's J=4)
+!CHECK 217750.00 | 000005.00 8C | line 7 SIC,S RET AD($12) -- identical card to lines 1 and 17; THIS one carries the trailing asterisk and they do not
+!CHECK 217750.40 | 217674.50 00 | line 8 B,K DENST (same card as line 7) -- .50 is K DENST's own .40 plus B's .10; both byte zeros print closed here, one row from line 2's open ones
+!CHECK 217751.00 | 221371.00 80 | line 9 SIC,K K IND -- same word as line 3's E IND R, under a different name, and pinned to the bit by the SIC
+!CHECK 217751.40 | 221370.10 00 | line 10 B,K IO IND (same card as line 9) -- same word as line 4's E IO IND
+!CHECK 217752.00 | 217753.00 10 | line 12 LX,0,$+1. -- line 11's CNOP found the counter already aligned and printed neither a location nor any bits
+!CHECK 217752.40 | 000004.01 1C | line 13 SX,0,S IO INS($12) (same card as line 12) -- .01 is SX's operation bit, byte C is i = $12
+!CHECK 217753.00 | 000000.00 8E 000117.05 00 | line 14 CTL,0.0($14),(8)117. -WEF COMMAND -- LEFT FAILING ON PURPOSE: strap_asm compiles the printed statement to 011700.05 00, shifting the octal 117 six bits left; the .05 checks plain CTL against CTL(SEOP)'s .15 and the 8E checks the index $14
+!CHECK 217754.00 | 216242.03 01 | line 15 LVI,1,K SUPP -- the .03 is LVI's .01 plus J=1's .02, not address bits
+!CHECK 217754.40 | 000000.37 8B 001000.36 F0 | line 16 CM1111(BU,1),S SET UP($11) -- .37 is S SET UP's bit 31; CM0000 would print 001000.00 instead of .36, and byte B is i = $11
+!CHECK 217755.40 | 000005.00 8C | line 17 SIC,S RET AD($12) -- the third printing of this card on one page, and the second one with no asterisk
+!CHECK 217756.00 | 221261.10 00 | line 18 B,M IOREJ (same card as line 17)
+!CHECK 217756.40 | 221371.00 80 | line 19 SIC,E IND R
+!CHECK 217757.00 | 221370.10 00 | line 20 B,E IO IND (same card as line 19)
+!CHECK 217757.40 | 000010.50 3C | line 21 K WLTMK LV,4,S C REEL($12) -- .50 is S C REEL's own .40 plus J=4's .10; the leading 3 of the byte is a genuine 3, which is what makes line 22's 8 readable
+!CHECK 217760.00 | 000006.00 8C 036000.20 50 | line 22 L(BU,30),S SCR PM($12) -- byte 8C and NOT the 3C it reads as at 400 dpi: a VFL first half word prints 8x on this page four other times, and 036 octal is the byte size 30
+!CHECK 217761.00 | 000000.40 8B 217763.34 02 | line 23 BB,SOWNER($11),$+2.0 -- printed "SOWNER" closed up; the .34 02 is the BB encoding (printed p.152 line 7 prints the same pair), and the target 217763.00 is line 25
+!CHECK 217762.00 | 000000.42 84 036000.20 D0 | line 24 ST(BU,30),.34($4) -- the bare ".34" is DECIMAL 34 and prints octal .42; ST's byte is D0 against line 22's L at 50
+!CHECK 217763.00 | 000001.01 01 | line 25 LVI,0,1. -- J=0, so the .01 is LVI's operation bit alone
+!CHECK 217763.40 | 000007.41 3C | line 26 SV,0,S FILEK($12) (same card as line 25) -- .41 is SV's .01 plus S FILEK's bit 32; the bits BELOW 32 are dropped by an index-arithmetic operand, so 7.38 and 7.32 are indistinguishable here (this LOCATION carries the trailing asterisk)
+!CHECK 217764.00 | 221144.50 00 | line 27 B,Z STEVL -- .50 is Z STEVL's .40 plus B's .10, exactly as printed p.152 line 27 prints it
+!CHECK 217765.00 | 000006.00+ 000 000001 217765 | line 28 E LAB CW XW,S SCR PM($12),1,$ -- a full word, so the counter leaves this page at 217766.00; the refill is the XW's own address and the count is 1; the deck drops the printed "($12)" because strap_asm's XW VALUE field takes no index and an index word has no index field to put it in

@@ -813,6 +813,23 @@ def eval_addr_field(expr, symtab, loc_bits, unit_shift, lineno=None, int_shift=0
     return total
 
 
+def _written_as_bit_address(expr, lineno=None):
+    """True when this operand is spelled as a STRAP BIT ADDRESS.
+
+    "(8)176." tokenizes as a bitaddr of word 126; "(8)176" and "126"
+    are both the integer 126.  The distinction is the operand's
+    SPELLING, not its value, which is exactly what separates a control
+    code a programmer wrote as a number from one written as an address.
+    """
+    if not expr or not expr.strip():
+        return False
+    try:
+        toks = tokenize_expr(expr, lineno)
+    except Exception:
+        return False
+    return bool(toks) and all(kind == 'bitaddr' for _s, kind, _v in toks)
+
+
 def _names_an_address(expr, symtab, lineno=None):
     """True when this register expression is written as an ADDRESS.
 
@@ -3585,7 +3602,34 @@ def emit_statement(stmt, symtab, image):
         i2 = eval_reg(paren2, symtab, stmt.lineno)
         addr24 = chan_bits & 0xFFFFFF
         is_code_field = lookup in ('CTL', 'CTLSEOP', 'LOC', 'LOCSEOP')
-        addr18 = (addr2_bits & 0x3FFFF) if is_code_field else ((addr2_bits >> 6) & 0x3FFFF)
+        # A CONTROL CODE WRITTEN AS AN ADDRESS IS STILL WORD-GRANULAR.
+        # CTL/LOC's A is a raw code and NOT a core-storage address
+        # (Reference Manual printed p.111, and the >>6 was removed from
+        # this field once CTL had real tape behaviour to test against)
+        # -- so an INTEGER operand is used exactly as written, which is
+        # what decks/io_tape.strap's "CTL, 0($1), 126" relies on and
+        # what this branch has always done.
+        #
+        # But MCP writes the same codes in STRAP's ADDRESS form, with a
+        # trailing dot, and the listing shows the WORD number landing in
+        # the field:
+        #     printed p.154 l.8   46.        -> 000056   (0o56, "Erase
+        #                                       Long Gap", RefMan p.132)
+        #     printed p.155 l.18  (8)176.    -> 000176   (= 126, the
+        #                                       code io_tape writes bare)
+        #     printed p.156 l.14  (8)117.    -> 000117
+        # The tokenizer already separates the two: "(8)176." is a
+        # bitaddr of WORD 126 and "(8)176" and "126" are both the
+        # integer 126.  Converting only the address-written form leaves
+        # every bare code in the corpus bit-identical -- which is the
+        # whole reason this is safe to do and the earlier blanket
+        # conversion was not.
+        if is_code_field and _written_as_bit_address(base2, stmt.lineno):
+            addr18 = (addr2_bits >> 6) & 0x3FFFF
+        elif is_code_field:
+            addr18 = addr2_bits & 0x3FFFF
+        else:
+            addr18 = (addr2_bits >> 6) & 0x3FFFF
         image.deposit_word_instr(loc, enc_io(addr24, i1, addr18, IO_OP[lookup], i2))
         return
 
@@ -3618,9 +3662,25 @@ def emit_statement(stmt, symtab, image):
         # the page could check nothing -- which is why printed p.136
         # had to substitute "C1111(BU,1),0.0" to get its other 53 rows
         # verified.
+        # >>> AND THE FIELDS AFTER IT SURVIVE. <<<  This rewrite first
+        # replaced the WHOLE list with ['0.0'], which silently threw
+        # away the OFFSET field of "C1111(BU,3),,9" -- printed p.155
+        # line 32, which compiles 003004.76 70 and came out 003000.36
+        # 70.  Measured: ",,9" and ",,11" produced the SAME word, so
+        # the offset was dropped rather than misread, and no
+        # diagnostic was emitted.
+        #
+        # The half of C22-6531 printed p.7 quoted above is not the
+        # half that matters here.  The sentence continues: "A MAJOR
+        # FIELD MAY BE NULL, EVEN THOUGH OTHER NON-NULL FIELDS FOLLOW
+        # IT.  Such is the case if nothing but the comma denoting the
+        # field termination is written."  That is this statement
+        # exactly -- a null address written as a bare comma, with a
+        # live offset after it.
         if not stmt.fields or not stmt.fields[0].strip():
             stmt = Statement(stmt.lineno, stmt.name, stmt.op, stmt.mods,
-                             ['0.0'], stmt.raw, stmt.entry)
+                             ['0.0'] + list(stmt.fields[1:]),
+                             stmt.raw, stmt.entry)
         base, paren = split_field_trailing_paren(stmt.fields[0])
         if immediate:
             # THE OPERAND FIELD'S UNIT IS NOT ONE BIT.  Reference

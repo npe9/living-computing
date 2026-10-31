@@ -36,6 +36,7 @@ MEASURED INJECTIONS, both run, with the values they actually printed.
           module_DECKS_is_resolved_at_call_time      1155 vs 0
 """
 import os
+import re
 import subprocess
 import sys
 import tempfile
@@ -98,10 +99,14 @@ def main():
             env["PYTHONPATH"] = pythonpath
         out = subprocess.run([sys.executable, "check_symbol_spellings.py"],
                              cwd=HERE, env=env, capture_output=True, text=True)
-        for tok in out.stdout.split():
-            if tok.isdigit():
-                return int(tok)
-        return None
+        # Parse the COUNT, not the first digit in the output.  An
+        # earlier version took the first digit token and silently read
+        # an ADDRESS out of a "FAIL two spellings of one symbol at
+        # 4767232" line when the checker was failing for an unrelated
+        # reason -- a test that reports a wrong number instead of
+        # refusing is the very thing this file exists to prevent.
+        m = re.search(r'(\d+)\s+symbol definitions', out.stdout)
+        return int(m.group(1)) if m else None
 
     bare = run(None)
     with_path = run(os.path.join(HERE, "..", "strap"))

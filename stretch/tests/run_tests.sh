@@ -6491,20 +6491,29 @@ run "the disk request tail and CHANGE MODE, printed p.152" python3 verify_mcp_pa
 # assembler's job.  It is the general case of the TIXF bug already
 # confessed inline in assemble().
 #
-# >>> pp.154, 155 and 156 ARE DELIBERATELY NOT HERE. <<<  Each still
-# has one failing row, all three the same open question: whether a
-# DOTTED literal in a CTL/LOC control-code field converts to a word
-# number.  Three pages print it ((8)176., (8)117., 46.) and
-# decks/io_tape.strap independently writes that code as 126, but
-# emit_statement's "raw code, NO conversion" rule is sourced to
-# Reference Manual p.111 and was REMOVED once CTL had real tape
-# behaviour to test against.  A sourced, tested decision is not
-# overturned by listing rows alone.  The decks are transcribed and
-# held; see docs/NEXT.md.
+# pp.154-156 were held back for one commit on the CTL question and
+# are now here.  A CONTROL CODE WRITTEN AS AN ADDRESS IS STILL
+# WORD-GRANULAR: "(8)176." tokenizes as a bitaddr of WORD 126 while
+# "(8)176" and "126" are the integer 126, so gating the conversion on
+# the operand's SPELLING converts the three printed rows and leaves
+# every bare code in the corpus -- including decks/io_tape.strap's
+# tested "CTL, 0($1), 126" -- bit-identical.  That is why this is not
+# the blanket conversion Reference Manual p.111 had it removed for.
+#
+# printed p.155 also caught a bug THIS SESSION INTRODUCED.  The
+# bare-connective rewrite (printed p.136) replaced the whole field
+# list with ['0.0'] and silently dropped the OFFSET of
+# "C1111(BU,3),,9" -- ",,9" and ",,11" compiled to the SAME word.
+# C22-6531 printed p.7's sentence had been quoted by half: it ends
+# "A MAJOR FIELD MAY BE NULL, EVEN THOUGH OTHER NON-NULL FIELDS
+# FOLLOW IT."
 run "the WRITE routine, printed p.153" python3 verify_mcp_page.py 153
 run "the copy control word, printed p.157" python3 verify_mcp_page.py 157
 run "the RELEASE routine, printed p.158" python3 verify_mcp_page.py 158
 run "the LOCATE routine, printed p.159" python3 verify_mcp_page.py 159
+run "the write-label density path, printed p.154" python3 verify_mcp_page.py 154
+run "WRITE LABEL, printed p.155" python3 verify_mcp_page.py 155
+run "the write-mode tail, printed p.156" python3 verify_mcp_page.py 156
 run "the equipment dispatch, printed p.160" python3 verify_mcp_page.py 160
 run "more system symbols, printed p.108" python3 verify_mcp_page.py 108
 run "the program status table, printed p.109" python3 verify_mcp_page.py 109

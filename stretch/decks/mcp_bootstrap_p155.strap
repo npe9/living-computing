@@ -1,0 +1,753 @@
+! mcp_bootstrap_p155.strap -- "WRITE LABEL", printed page 155.
+! docs/MCP_Mar63_001-249.pdf PDF p.162.  Header read and not
+! assumed: the top line prints "TIME CLOCK 00054041  PUNID
+! 11011MCP   CARD ID IB000088   DIST. OF 3/01   3/01   PAGE
+! NUMBER 155".
+!
+! >>> THE HEADING ROW'S OWN LOCATION FIELD READS 217704. <<<
+! Rendered at 900 dpi and looked at, not guessed: the column-
+! heading line prints "LINE  LOCATION  BINARY OUTPUT  NAME
+! STATEMENT  LOCATION   217704", with four clean digits after the
+! 2177.  That is LINE 1'S LOCATION WORD (docs/transcription_
+! workflow.md step 1), and line 1 is 217704.40 -- the word agrees,
+! and the field gives no bit offset, so the ".40" is this deck's
+! own reading of the LOCATION column and not the header's.
+!
+! ---------------------------------------------------------------
+! WHAT THE PAGE IS
+! ---------------------------------------------------------------
+! Forty-eight printed lines.  Forty-four of them are located,
+! emitting rows; one (line 14) is a CNOP that emits NOTHING; three
+! (lines 8, 9, 10) are the comment card that boxes the heading
+! "***************** WRITE LABEL *****************".  No SYN, no
+! DD, no VF, no DR/DRZ -- no data of any kind -- so rule 5 of
+! "WHAT THE ORACLE CANNOT SEE" (DR vs DRZ) does not arise here.
+!
+!   lines  1-7   the tail of the CHANGE DENSITY routine that
+!                printed p.154 begins: turn on the set-up bit,
+!                CNOP/LX/SX the instruction into S IO INS, issue
+!                "K DEN OP  CTL,0.0($14),0.0  -CHANGE DENSITY
+!                COMMAND", then LVI,1,K SUPP / B,M IO REJ to check
+!                whether the channel accepted it.
+!   lines  8-10  the asterisk box around "WRITE LABEL".
+!   K W LABL (11) backspace the block: LVI,1,K SUPP, pick up the
+!                current reel, branch to K ILEGL if the file is
+!                protected, then the CNOP/LX/SX/CTL sequence that
+!                issues the BSP command, SIC,S RET AD / B,M IO REJ
+!                and SIC,K K IND / B,K IO IND.
+!   lines 23-34  BUILD THE DENSITY/PARITY BCD CHARACTER.  Load the
+!                file mode, branch to Z WLABL if it is zero, then
+!                a four-way decision written as connectives:
+!                CTI0110 tests for mode 11 (no-ECC odd), LFI plants
+!                BCD 0, CI0111 ORs in BCD C or E, C0011 loads the
+!                IOD density bit, and CI0111 again makes BCD L for
+!                low density, or C1111 makes BCD H for high.
+!   lines 35-41  fill in the label image: LVE/SV plant the label
+!                control word E LAB CW, then four SF (= CM0101,
+!                Store Field) stores lay the mode, the density and
+!                a 24-bit blank field (8)202020.20 into S SCR PM.
+!   lines 42-48  CNOP, LX/SX the instruction into S IO INS, issue
+!                "W,0.0($14),E LAB CW  -WRITE LABEL COMMAND",
+!                LVI,1,K SUPP, clear S CTL and set S SET UP again.
+!
+! ---------------------------------------------------------------
+! FORTY-ONE CARDS OVER FORTY-EIGHT LINES; NOTHING FELL OFF EITHER
+! END
+! ---------------------------------------------------------------
+! COUNTED OFF THE CARD-SERIAL COLUMN, not off the survey.  The
+! serials run IB000088 (line 1) to IB000128 (line 48) with no gap,
+! and SEVEN serials are printed TWICE, on two statements each:
+!
+!   IB000090  lines  3 and  4   LX,0,$+1.   + SX,0,S IOINS($12)
+!   IB000092  lines  6 and  7   LVI,1,K SUPP + B,M IO REJ
+!   IB000101  lines 16 and 17   LX,0,$+1.   + SX,0,S IO INS($12)
+!   IB000103  lines 19 and 20   SIC,S RET AD($12) + B,M IO REJ
+!   IB000104  lines 21 and 22   SIC,K K IND + B,K IO IND
+!   IB000117  lines 35 and 36   LVE,0,R V4  + SV,0,E LAB CW
+!   IB000124  lines 43 and 44   LX,0,$+1.0  + SX,0,S IO INS($12)
+!
+! 41 + 7 = 48, so every printed line is accounted for and the
+! render lost nothing.  Line 1 is the page's first line (the
+! render starts at y=480 at 400 dpi, which is LINE 1) and line 48
+! is followed by blank paper to the bottom rule.
+!
+! NOTE which pairs share a card and which do not: the two SIC/
+! branch pairs on 19/20 and 21/22 DO share, as does the LVI/B pair
+! on 6/7 -- but the LX/SX pairs share as well, and lines 45/46
+! (W + LVI) do NOT.  "A SIC and its branch share a card" is not
+! what is happening; what shares a card here is simply a card with
+! two statements punched on it, and the kinds vary.
+!
+! >>> WHERE THIS DECK DISAGREES WITH THE SURVEY. <<<  The survey
+! reported 25 rows spanning 217705.40..217737.4.  This page has 44
+! located statements emitting 64 HALF WORDS and runs
+! 217704.40..217743.40.  (64 counted twice: 20 two-half-word rows
+! plus 24 one-half-word rows is 64, and 0o217744.40 - 0o217704.40
+! is 0o40 words = 32 words = 64 half words, which agree because
+! the CNOP chain below shows the span is gapless.)  The survey lost LINE 1 off the top (rule
+! 4's predicted failure, exactly) and everything from line 42 on
+! -- the CNOP/LX/SX/W that actually issue the write -- and it
+! under-read the middle.  This deck wins because all 66 half words
+! are checked against the printed BINARY OUTPUT column below and
+! every one agrees, and because the card-serial arithmetic above
+! closes independently of the binary.
+!
+! ---------------------------------------------------------------
+! THE CNOP PARITY CHAIN -- A FREE WHOLE-PAGE CHECK
+! ---------------------------------------------------------------
+! This page prints THREE CNOPs and one of them emits NOTHING.
+! That is not an anomaly, it is the alignment rule, and because a
+! CNOP's output depends on the counter's parity it turns into an
+! assertion about every row above it:
+!
+!   line  2  at 217705.40, odd half word  -> emits 000000.30 00
+!   line 14  no location, no binary       -> emits NOTHING,
+!            because line 13's two half words leave the counter at
+!            217713.00, a word boundary
+!   line 42  at 217737.40, odd half word  -> emits 000000.30 00
+!
+! So if ANY width in lines 1-13 were wrong, line 14's CNOP would
+! emit a half word and every location from 217713.00 down would
+! shift by .40 -- and forty rows of !CHECK would fail at once.
+! Line 14 therefore appears in the deck as a statement with no
+! !CHECK row of its own, and it is the strongest single structural
+! claim on the page.
+!
+! ---------------------------------------------------------------
+! THE JOIN
+! ---------------------------------------------------------------
+! NEAR SIDE.  This page prints NO SLC, so the counter arrives from
+! printed p.154 and this deck restates it hard as
+! "SLC,(8)217704.40" in order to assemble standalone.  A hard SLC
+! CANNOT DISAGREE WITH THE ARRIVING COUNTER (docs/transcription_
+! workflow.md), so that line ASSERTS the origin; what READS it is
+! the heading row's own LOCATION field, 217704, printed by IBM's
+! assembler and rendered at 900 dpi here.  The bit offset .40 is
+! read off line 1's LOCATION column.
+!
+! >>> A FALSIFIABLE PREDICTION ABOUT PRINTED p.154. <<<  Line 1 is
+! at 217704.40, the ODD half word of word 217704.  So p.154's last
+! emitting row occupied 217704.00 and was a HALF WORD; p.154
+! CANNOT end on a word boundary, and it cannot end at 217704.40
+! either.  If p.154's transcriber reports a last row at 217703.40
+! or at 217704.40, one of us is wrong.
+!
+! >>> AND IT IS ALREADY CONFIRMED, off printed p.154's own IMAGE
+! (PDF p.161) rendered at 1200 dpi -- not off an OCR.  p.154's
+! line 48 is
+!
+!   48*  217704.00   217707.43 D0        SVA,1,K DEN OP+.32
+!
+! -- a HALF WORD at 217704.00, exactly as predicted, and it is a
+! forward reference INTO THIS PAGE: K DEN OP + 32 bits is
+! 217707.40, so that row pins THIS page's line 5 label to
+! 217707.00 from outside, and prints the name K DEN OP in its own
+! ink with the D's straight left stem plainly visible.
+!
+! FAR SIDE.  Line 48 is a two-half-word VFL at 217743.40, so it
+! occupies 217743.40 and 217744.00 and THE COUNTER LEAVES THIS
+! PAGE AT 217744.40 -- an odd half word.  Printed p.156 opens
+! there unless it prints an SLC of its own.
+!
+! >>> AND THAT FORWARD JOIN IS ALREADY CLOSED, by the volume OCR
+! OF ANOTHER PAGE -- which is the one thing that OCR is good for
+! (docs/transcription_workflow.md: "an excellent index of where a
+! symbol is DEFINED on a page nobody has opened yet").
+! docs/ocr/MCP_Mar63_001-249.txt's block for PDF page 163 =
+! printed p.156 opens
+!
+!   LINE LOCATICN ...
+!   1 217744.40 05.C C SIC,S RET AC( $12)
+!
+! -- line 1 at 217744.40, which is this page's predicted exit
+! EXACTLY, and the row is a half-word SIC.  (The prediction is
+! still recorded above as a prediction: it was made from this
+! page's own counter before that block was read, and p.156's
+! transcriber should re-read it off the image, not off the OCR.)
+!
+! ---------------------------------------------------------------
+! GLYPHS, AND HOW EACH DOUBTFUL ONE WAS SETTLED
+! ---------------------------------------------------------------
+! THIS PAGE DROPS INK ON ROUND GLYPHS CONSTANTLY.  Line 5's first
+! half word prints "CCCCCC.CC 8E" and line 18's prints
+! "CCCCCC.CC 8E" -- six and six impossible C's in OCTAL fields --
+! so the octal-field argument (ladder rung 5) fires on this page
+! harder than on any page yet transcribed.  Every "C" recorded
+! below as a 0 is in a field that cannot hold a C.
+!
+! (1) THE CONNECTIVE MNEMONICS, at 900 dpi, are the one place the
+!     reading was genuinely in doubt, because an O/0 confusion
+!     inside "C0110" changes an instruction:
+!       line 25  CTI0110   C T I 0 1 1 0  -- seven characters
+!       line 29  CI0111    C I 0 1 1 1    -- six
+!       line 30  C0011     C 0 0 1 1      -- five
+!       line 32  C1111     C 1 1 1 1      -- five
+!       line 34  CI0111    C I 0 1 1 1    -- six
+!     What makes this safe is that classify_connective takes
+!     C/CM/CT plus EXACTLY four binary digits, and the I-infix
+!     immediate form is rewritten to the suffix form -- so a
+!     miscount of the digits is not an instruction at all and the
+!     assembler refuses it.  All five were handed to it in the
+!     printed form and all five assembled; the bits then agree
+!     with the printed BINARY OUTPUT column, which is what pins
+!     the digits themselves.
+!
+! (2) "K DEN OP" (line 5) -- settled three ways.  The comment
+!     column is the oracle: "-CHANGE DENSITY COMMAND" gives DEN,
+!     and this page's own line 30 reads S F DEN against p.102's
+!     "-IOD DENSITY" card.  The "... OP" suffix has precedent in
+!     p.101's "S CTL OP".  AND PRINTED p.154's LINE 48 PRINTS THE
+!     NAME ITSELF, on another page and in a different row of ink:
+!     "217704.00  217707.43 D0  SVA,1,K DEN OP+.32", rendered at
+!     1200 dpi, D's straight left stem and all -- and its
+!     arithmetic lands on 217707.40, this page's line 5 plus 32
+!     bits, so the name and the address come together.
+!
+! (3) "K K IND" (line 21) and "K IO IND" (line 22) are read off
+!     the ink.  The doubled-prefix shape is this module's: p.152
+!     prints "K K MODE" beside "K MODE" at 217624.40/217615.00,
+!     and these two sit one half word apart at 221371.00 and
+!     221370.00, the same SIC-here/branch-there shape.
+!
+! (4) "Z WLABL" (line 27, and referenced by line 24) prints with a
+!     blank after the Z and none inside WLABL; "K W LABL" (line
+!     11) prints with blanks on both sides of the W.  BOTH close
+!     up to six characters, and they are DIFFERENT SYMBOLS at
+!     different addresses (217723.00 and 217711.00) -- the page
+!     prints them four lines apart and the branch on line 24 goes
+!     to the Z one, which is what the bits say.
+!
+! (5) THE BYTES THAT LOOKED DOUBTFUL WERE SETTLED ON WHAT PRODUCED
+!     THEM, not on ink:
+!     * lines 1, 15 and 48 all print "001000.36 F0"; F0 is CM, and
+!       printed p.18 prints CM1111(BU,1) six times, every one
+!       "001000.36 F0".
+!     * line 47's second word prints "001000.CC FC" -- the ".CC"
+!       is an impossible octal C, so that row IS dropping ink on
+!       round glyphs, and the byte's open second glyph is a
+!       damaged 0.  The statement settles it outright: CM0000 with
+!       no offset operand has i2 = 0, so the byte ends in 0.
+!     * lines 26 and 31 print "C0" where lines 24 prints "C2".
+!       Those are BZRZ and BRZ and the assembler reproduces both
+!       exactly as printed.
+!
+! (6) THE COMMENT COLUMN, recorded verbatim including its own
+!     typos -- line 31's is printed "DESITY", not "DENSITY", and
+!     line 27's is "NECC ODD" where line 25's is "NO ECC ODD".
+!     Neither is corrected here; they are what the card punched.
+!
+! ---------------------------------------------------------------
+! >>> "EU" AND "EF": A SYMBOLIC INDEX, AND ONLY HALF OF IT IS READ
+! ---------------------------------------------------------------
+! Two statements write their index register as a NAME instead of
+! "$n":
+!
+!   line 48   CM1111,S SET UP(EU)        -> 000000.37 8B
+!   line 23   L,S F MODE(EF),1           -> 000002.60 8D
+!
+! EU == $11 IS PINNED BY THIS PAGE ITSELF, by glyph-ladder rung 4
+! (the same statement printed twice on one page).  Lines 1 and 15
+! print "CM1111(BU,1),S SET UP($11)" and compile to
+! "000000.37 8B  001000.36 F0"; line 48 prints
+! "CM1111,S SET UP(EU)" and compiles to THE SAME TWO HALF WORDS.
+! Same page, same drum, same symbol, and the low nibble of the
+! first byte is B = 11.  That also shows the second thing line 48
+! is doing: with no "(BU,1)" written, the data description comes
+! from S SET UP's own SYN, and the word is unchanged.
+!
+! EF == $13 is read the same way: the printed low nibble is D =
+! 13, and printed p.151 line 38 prints "LV,1,S F MODE($13)" for
+! the same symbol.
+!
+! >>> AND THE DEFINING CARDS ARE ON PRINTED p.154, READ OFF ITS
+! OWN IMAGE AT 900 dpi. <<<  p.154's lines 23-28 are a block of
+! index equivalences, printed as NULL cards:
+!
+!   000014.00+  +00000000  NULL  EA  SYN,12.0  -UNIT AREA TAB[LE]
+!                       -               $10    -CHANNEL STATUS TAB
+!   000015.00+  +00000000  NULL  EF  SYN,13.0  -FILE AREA TAB[LE]
+!   000010.00+  +00000000  NULL  EX  SYN,8.0   -SCRATCH INDEX
+!                       -               $9      SCRATCH INDEX
+!   000013.00+  +00000000  NULL  EU  SYN,11.0  -UNIT STATUS T[ABLE]
+!
+! So the SPELLINGS ARE SETTLED, not guessed: EA=12, EF=13, EX=8,
+! EU=11, each with an English comment naming the table it indexes,
+! and each with its own value printed in the BINARY OUTPUT column
+! in octal (000014 = 12, 000015 = 13, 000010 = 8, 000013 = 11).
+! NOTE that the volume OCR reads that last card "ER", which is
+! WRONG -- the image prints a U with a rounded bottom -- and that
+! printed p.154's line 21 independently prints "CM1111,S WR(EU)
+! -TURN ON WRITE BIT IN U.S.T.", the Unit Status Table, which is
+! what the SYN's own comment calls it.  That is why the OCR is an
+! index and not a witness.
+!
+! >>> A HAZARD FOR THE MERGE, MEASURED. <<<  The printed defining
+! form is "SYN,11.0", a DOTTED literal, and in this assembler a
+! symbol so defined is a BIT COUNT -- 11*64 -- while an index
+! field takes eval_expr(...) & 0xF.  Measured, varying only the
+! SYN and nothing else, against this page's line 48:
+!
+!   EU  SYN,11      ->  000000.37 8B  001000.36 F0   (the page)
+!   EU  SYN,$11     ->  000000.37 8B  001000.36 F0   (the page)
+!   EU  SYN,11.0    ->  000000.37 80  001000.36 F0   <-- index LOST
+!   EU  SYN,(8)13.0 ->  000000.37 80  001000.36 F0   <-- index LOST
+!
+! So if printed p.154's deck writes its index equivalences in the
+! PRINTED form "SYN,11.0", every instruction on THIS page and on
+! p.154 that indexes through one of them will silently compile
+! with index 0.  THIS DECK THEREFORE WRITES "SYN, 11" AND "SYN,
+! 13", labelled here as a deliberate departure from the printed
+! form, with the printed form recorded above.  It is the same
+! root cause as finding (A) below: eval_expr returns a bit count
+! where the field wants the word number.
+!
+! >>> AND THE MANUAL SAYS THE PRINTED FORM IS THE RIGHT ONE. <<<
+! C22-6531 "Arithmetic Expressions", printed p.11, lists five
+! restrictions on what may appear in a symbolized field, and the
+! FIRST is: "The 'I' or 'K' index field must contain at least one
+! bit address term."  "SYN,11.0" IS a bit-address term; "SYN,11"
+! is an integer and is the form the manual excludes.  So p.154's
+! cards are correct STRAP and this assembler is the thing that
+! does not take them, which makes this a GAP and not a quirk of
+! the listing.  The same manual's worked example fixes the
+! conversion: "$5 ... by the index field 5 if it appears in an I
+! or J field, or by the address 21.0 if it appears in an address
+! field" -- so in an index field a term is reduced to an index
+! NUMBER.  A candidate fix, NOT applied here and offered with its
+! own refutation test: give eval_reg the eval_addr_field
+! treatment at unit_shift 6 (bit-address terms >> 6, integers
+! as-is, "$N" still N in reg_context).  IT MUST NOT BREAK "($12)"
+! -- if it does, it is wrong.
+!
+! ---------------------------------------------------------------
+! >>> WHAT THIS DECK COSTS THE MERGED IMAGE, STATED PLAINLY <<<
+! ---------------------------------------------------------------
+! As it stands, joining this page to the image DEPOSITS TWO WRONG
+! WORDS: 017600.05 00 at 217715.00 where the page prints
+! 000176.05 00, and 003000.36 70 at 217727.00 where the page
+! prints 003004.76 70.  No check inside this deck hides that --
+! both rows FAIL by design -- but nothing in strap/ or
+! strap/mcp_image.py may be touched from here, so the decision is
+! the caller's.  RECOMMENDATION: do not add printed p.155 to
+! MCP_IPL_PAGES until finding (A) and finding (B) are fixed; the
+! deck is correct as a transcription either way.  Finding (A)'s
+! candidate fix is one line and already has a passing test --
+! "(8)176." -> 126, "(8)176" -> 126 and io_tape.strap's bare 126
+! -> 126 all hold under eval_addr_field at unit_shift 6.
+!
+! >>> AND ONE MERGE COLLISION TO EXPECT, WHICH IS LOUD <<<
+! This deck defines EU and EF, and so will printed p.154's, whose
+! page carries the actual cards.  Measured on the two paths:
+!
+!   strap_asm.assemble() of the two definitions concatenated --
+!     SILENT.  The LAST definition wins; "EU SYN,11.0" then
+!     "EU SYN,11" gives byte 8B, the reverse order gives byte 80,
+!     with no diagnostic either way.
+!   mcp_image.merge() -- LOUD.  Neither form matches _STANDIN's
+!     "(8)NNN.NN" pattern, so both land in `defines`, and two
+!     disagreeing `defines` are a hard SystemExit naming both
+!     pages and both bit values (11 against 704).
+!
+! So the image build CANNOT silently take the wrong one.  What it
+! WILL do is refuse to build until p.154 and p.155 agree, and the
+! right resolution is the integer form -- see the EU/EF section.
+!
+! ---------------------------------------------------------------
+! WHAT COULD NOT BE SETTLED ON THIS PAGE
+! ---------------------------------------------------------------
+! (i)  THE BIT OFFSETS OF THE SIX CODE EXTERNALS.  K SUPP,
+!      M IO REJ, K ILEGL, K IO IND, R V4 and E LAB CW are all
+!      back-derived from branches and LVI/LVE/SV/W instructions,
+!      which show only the half-word bit.  Each is written ".0"
+!      by convention, NOT by reading.  K K IND is the exception
+!      and is pinned to the bit, because line 21's SIC prints a
+!      bare 24-bit address.
+!
+! (ii) WHETHER STRAP'S RULE FOR A DOTTED LITERAL IN A CTL CODE
+!      FIELD IS WHAT FINDING (A) INFERS.  Two listings agree
+!      (this page's line 18 and printed p.156's line 14) and the
+!      value is corroborated by decks/io_tape.strap, but NO
+!      MANUAL SENTENCE was found that states the CONTROL field's
+!      units.  C22-6531 p.11's five restrictions cover the index
+!      field and the parenthetical-integer field and say nothing
+!      about this one.  So (A) is two witnesses and an inference,
+!      not a citation.
+!
+! (iii) WHAT STRAP MEANT BY THE EMPTY ADDRESS FIELD IN LINE 32'S
+!      "C1111(BU,3),,9".  The bits establish that the ADDRESS
+!      came out zero and the OFFSET survived as 9; they do not
+!      establish whether an omitted field is defined to be zero
+!      or whether the card is relying on something else.  Nothing
+!      on this page distinguishes those.
+!
+! (iv) THE ONE-SPACE INDENT ON LINE 36.  "SV,0,E LAB CW" starts
+!      one character to the right of every other statement on the
+!      page, and it is the second statement on card IB000117.
+!      Recorded because it is printed; nothing depends on it, and
+!      no other shared card on this page is indented.
+!
+! (v)  THE LOCATION-COLUMN ASTERISK, as always.  See below.
+!
+! ---------------------------------------------------------------
+! THE LOCATION-COLUMN ASTERISK
+! ---------------------------------------------------------------
+! Every line number carries an asterisk after it ("5*", "48*").
+! That is the ordinary column.  THREE lines carry a SECOND
+! asterisk after the LOCATION: line 2 (217705.40, a CNOP), line 24
+! (217721.00, a BRZ) and line 39 (217734.40, an SF).  Recorded and
+! nothing proposed: a CNOP, a branch and a store-field have
+! nothing in common, p.152's marker fell on an SX, and the two
+! rules tried so far ("the SLC line is marked", "an odd half word
+! is marked") are both already dead -- line 2 and line 39 ARE odd
+! half words but so are thirty other rows here, none marked.
+! docs/listing_typography.md item 12 now has NINE things it is
+! not.
+!
+! ---------------------------------------------------------------
+! >>> TWO ROWS ARE LEFT FAILING ON PURPOSE. <<<
+! ---------------------------------------------------------------
+! Both printed statements were handed to strap_asm EXACTLY AS
+! PRINTED, both assembled without complaint, and both produced a
+! word that is NOT the word the page prints.  Neither affects the
+! location counter -- each is a two-half-word VFL/I-O either way,
+! so every row below them still lands on its printed address --
+! so nothing had to be substituted to keep the page honest, and
+! per docs/transcription_workflow.md and the block brief a FAILING
+! row beats a silent substitution.  Each is measured to the token.
+!
+! (A) LINE 18, "CTL,0.0($14),(8)176."   -BSP COMMAND
+!     printed   000000.00 8E  000176.05 00
+!     assembled 000000.00 8E  017600.05 00     <-- 64x too big
+!
+!     The trailing "." is really printed: rendered at 1200 dpi,
+!     "(8)176." with a period and nothing after it.  Measured,
+!     varying only that token and nothing else:
+!
+!       CTL,0.0($14),(8)176.   ->  017600.05 00
+!       CTL,0.0($14),(8)176    ->  000176.05 00   (the printed word)
+!       CTL,0.0($14),126       ->  000176.05 00   (the printed word)
+!       CTL,0.0($14),176       ->  000260.05 00
+!
+!     WHY: emit_statement's I-O branch takes CTL/LOC's second field
+!     as "a raw code, not an address of anything", so it evaluates
+!     it with eval_expr -- which returns a BIT COUNT -- and masks
+!     it in unconverted.  A dotted literal "(8)176." is therefore
+!     126*64 = 8064, while STRAP evidently took its WORD number,
+!     176 octal.  Note that line 5 ("CTL,0.0($14),0.0") and line 45
+!     ("W,0.0($14),E LAB CW") CANNOT see this: line 5's operand is
+!     zero, and line 45 is a W, whose A field IS converted (>>6).
+!     THIS ROW IS THE FIRST WITNESS IN THE CORPUS of a CTL code
+!     field written as a dotted literal.
+!
+!     The VALUE is corroborated from outside this page:
+!     decks/io_tape.strap writes the same tape function as
+!     "CTL, 0($1), 126   !BACKSPACE BLOCK (octal 176)", which is
+!     what line 18's own comment "-BSP COMMAND" says it is.
+!
+!     AND THE FORM HAS A SECOND WITNESS ON ANOTHER PRINTED PAGE.
+!     The volume OCR's block for PDF page 163 = printed p.156
+!     carries, at its line 14,
+!
+!       14# 217753.CC0 O00C0. 8E O000117.C5 OC
+!                             CTL,0.0($14),(8) 117.  -WEF CCMMAND
+!
+!     i.e. the same dotted-literal spelling "(8)117." printing
+!     "000117.05 00" -- word number into the field, again.  So
+!     this is a RULE about STRAP's CTL code field and not a
+!     one-card oddity, and printed p.156 will hit the identical
+!     failure.  (That is an OCR of a DIFFERENT page, so it is a
+!     legitimate index; p.156's transcriber must re-read it off
+!     the image.)
+!
+!     A candidate one-line fix, NOT applied here (this deck may
+!     not touch strap/): evaluate the CTL/LOC code field with
+!     eval_addr_field(..., unit_shift=6), which converts a
+!     bit-address term to a word count and still inserts a bare
+!     integer as itself -- "(8)176." and "(8)176" would then BOTH
+!     render 000176 and io_tape.strap's "126" would be unchanged.
+!     That is a hypothesis about one line of strap_asm.py, offered
+!     with its own refutation test, and it is for the caller to
+!     check, not for this deck to assert.
+!
+! (B) LINE 32, "C1111(BU,3),,9"         -IF SO,MAKE BCD H
+!     printed   000000.00 80  003004.76 70
+!     assembled 000000.00 80  003000.36 70     <-- offset 9 lost
+!
+!     The two commas with nothing between them are really printed:
+!     rendered at 1200 dpi, "C1111(BU,3),,9".  Measured, varying
+!     only the empty middle field:
+!
+!       C1111(BU,3),,9     ->  003000.36 70   (offset silently 0)
+!       C1111(BU,3),0,9    ->  003004.76 70   (the printed word)
+!       C1111(BU,3),0.0,9  ->  003004.76 70   (the printed word)
+!       C1111(BU,3), ,9    ->  003000.36 70   (a blank is not enough)
+!       C1111(BU,3),,11    ->  003000.36 70   (the offset is simply
+!                                              dropped, not misread)
+!
+!     So an EMPTY address field makes the assembler lose the OFFSET
+!     that follows it, SILENTLY -- no error, just a wrong word.
+!     That the offset really is 9 is arithmetic, not opinion: the
+!     19-bit field is length*1024 + offset, printed as its top 18
+!     bits followed by its low bit as 0o40 of the 6-bit group.
+!     0o003004 with 0o40 set in the ".76" is 1540*2+1 = 3081 =
+!     3*1024 + 9, and 3 is the written (BU,3).  The assembled
+!     0o003000 with 0o40 clear in the ".36" is 3072 = 3*1024 + 0.
+!     Four other rows on this page confirm the same packing:
+!     line 30 (len 1, offset 6) prints 001003, line 37 (len 2,
+!     offset 1) prints 002000.52, line 39 (len 12, offset 0)
+!     prints 014000, line 41 (len 22, offset 2) prints 026001.
+!
+! ---------------------------------------------------------------
+! EXTERNALS
+! ---------------------------------------------------------------
+! The eleven unit-area field offsets are carried by LANDED decks
+! at these same values and this page's printed bits agree with
+! every one of them to the bit, which is eleven independent joins
+! between this page and pp.99/101/102.
+SSETUP  SYN(BU,1),  0.31     ! p.99  line 25 -PSEUDO-OP SET-UP; line 1 prints 000000.37
+SCTL    SYN(BU,1),  0.60     ! p.99  line 48 -CONTROL - OPERATION; line 47 prints 000000.74
+SFP     SYN(BU,1),  .26      ! p.99  -FILE PROTECT; line 13 prints 000000.32
+SFMODE  SYN(BU,2),  2.48     ! p.102 line 13 -FILE MODE; line 23 prints 000002.60
+SFDEN   SYN(BU,2),  2.27     ! p.102 line 12 -IOD DENSITY; line 30 prints 000002.33
+SIOINS  SYN(BU,64), 4.0      ! p.101 line 17 -IO INSTR. LAST; lines 4/17/44 print 000004.01
+SRETAD  SYN(BU,19), 5.0      ! p.101 line 18 -RETURN ADDRESS IN MCP; line 19 prints 000005.00
+SSCRPM  SYN(BU,64), 6.0      ! p.101 line 20 -SCRATCH PAD MEMORY; line 39 prints 000006.36
+SLABM   SYN(BU,2),  7.16     ! p.101 line 22 -MODE SPECIFIED IN; line 37 prints 000007.20
+SLABD   SYN(BU,1),  7.29     ! p.101 line 24 -DENSITY SPECIFIED IN; line 38 prints 000007.35
+SCREEL  SYN(BU,18), 8.32     ! p.101 line 28 -CURRENT REEL ADDRESS; line 12 prints 000010.62
+! THE TWO NAMED INDEX REGISTERS.  Values measured off this page's
+! own bytes (8B on line 48 against lines 1/15, 8D on line 23); the
+! SPELLINGS are ink only.  See above.
+! >>> NOT THE PRINTED FORM. <<<  p.154 prints "EU SYN,11.0" and
+! "EF SYN,13.0"; written that way the index field comes out 0 in
+! this assembler.  See the EU/EF section above for the
+! measurement.  The VALUES are p.154's own.
+EU      SYN, 11              ! p.154 "EU SYN,11.0 -UNIT STATUS TABLE INDEX"; line 48's byte 8B
+EF      SYN, 13              ! p.154 "EF SYN,13.0 -FILE AREA TABLE INDEX"; line 23's byte 8D
+! The six code externals.  Each printed address below is read off
+! THIS page's BINARY OUTPUT column; the NAME and the fact that a
+! card defines that address are from elsewhere, as cited.  A SYN
+! written ".0" asserts a bit offset this page cannot see -- only
+! the half-word bit shows -- so each is written .0 deliberately.
+! K SUPP   216242.00  already SYN'd at (8)216242.0 by landed decks
+!                     citing printed p.128's defining card
+!                     "K SUPP NOP,K COMM R".  Lines 6, 11 and 46
+!                     print 216242.03 01, the same LVI three times.
+KSUPP   SYN, (8)216242.0
+! M IO REJ 221261.00  already SYN'd at (8)221261.0 by landed
+!                     decks; lines 7 and 20 print 221261.10 00.
+MIOREJ  SYN, (8)221261.0
+! K ILEGL  220064.00  decks/mcp_bootstrap_p127.strap SYNs KILEGL
+!                     at (8)220064.0 citing printed p.160, where
+!                     the label card is printed.
+KILEGL  SYN, (8)220064.0
+! K K IND  221371.00  NEW TO THIS CORPUS.  The address is line
+!                     21's own SIC, which prints a bare 24-bit
+!                     address (221371.00 80) and therefore pins it
+!                     TO THE BIT, not just to the half word.  The
+!                     NAME is read off this page's ink AND
+!                     corroborated by cards on TWO OTHER printed
+!                     pages, which the volume OCR indexes:
+!                     "22C147.4C 221371.CC 80 SIC,K K IND" and
+!                     "22C162.40 221371-CC 80 SICK K ING".  This
+!                     page's own OCR lines are NOT counted.
+KKIND   SYN, (8)221371.0
+! K IO IND 221370.00  NEW TO THIS CORPUS.  Line 22's B prints
+!                     221370.10 00, so the half word is checked
+!                     and the bit within it is not.  One half word
+!                     BELOW K K IND, which is the ordinary shape
+!                     of a SIC-here/branch-there pair.  Cards on
+!                     THREE OTHER printed pages corroborate both
+!                     the address and the name, via the volume
+!                     OCR: "22C15C.CO 221370.1C CO B K IC INE",
+!                     "22C0163.CC 221370.1C CO B,K IO IND" and
+!                     "217757.0C 221370.1C O00 B[,]K IC IND
+!                     -GO TO IC ING RCUTINE".
+KIOIND  SYN, (8)221370.0
+! R V4     221201.00  NEW TO THIS CORPUS.  Line 35's LVE prints
+!                     221201.01 B0; the .01 is the operation's own
+!                     bits, so only the half word is observable.
+!                     THE DEFINING CARD IS ON ANOTHER PRINTED PAGE
+!                     and the volume OCR reads it cleanly:
+!                     "221201.00 COCCO06.CO 8C 000000.20 50  RV4
+!                     L(BL),S SCR PM($12)  -BRING LABEL WORD INTC
+!                     $R" -- an L at 221201.00 named RV4, which is
+!                     exactly what this page branches a value to.
+!                     Two further pages print "LVE,9,RV4" against
+!                     221201.23 80 and one prints "LVE,O,RV4"
+!                     against 221201.C1 BO, byte-for-byte line
+!                     35's word.
+RV4     SYN, (8)221201.0
+! E LAB CW 217765.00  NEW TO THIS CORPUS, and pinned TWICE on this
+!                     page: line 36's SV prints 217765.01 30 and
+!                     line 45's W prints 217765.03 00.  Both leave
+!                     the bit within the half word unobservable.
+!                     THE DEFINING CARD IS ON PRINTED p.156 and
+!                     the volume OCR of that OTHER page reads it:
+!                     "26**217765.00  CCOCCE.00+ ... 217765
+!                     E LAB CW  XWS SCR PM($12),1,$  = WRITE LABEL
+!                     CTL WO[RD]" -- an XW at 217765.00 named
+!                     E LAB CW, which is both the spelling and the
+!                     address this page's two instructions demand.
+ELABCW  SYN, (8)217765.0
+
+! ---------------------------------------------------------------
+! THE ORIGIN.  The page prints NO SLC; this is the heading row's
+! 217704 plus line 1's own .40.  See THE JOIN.
+! ---------------------------------------------------------------
+        SLC, (8)217704.40
+
+! ---- the tail of CHANGE DENSITY ---------------------------------
+        CM1111(BU,1),SSETUP($11)     ! line  1
+        CNOP                         ! line  2
+        LX,0,$+1.                    ! line  3
+        SX,0,SIOINS($12)             ! line  4
+KDENOP  CTL,0.0($14),0.0             ! line  5  -CHANGE DENSITY COMMAND
+        LVI,1,KSUPP                  ! line  6
+        B,MIOREJ                     ! line  7  -CHECK IF ACCEPTED
+! ---- ***************** WRITE LABEL ***************** (8-10) -----
+KWLABL  LVI,1,KSUPP                  ! line 11  -BACKSPACE BLOCK
+        LV,9,SCREEL($12)             ! line 12
+        BB,SFP($9),KILEGL            ! line 13  -IF FILE PROTECTED, FAKE EPGK
+        CNOP                         ! line 14  EMITS NOTHING -- see THE CNOP PARITY CHAIN
+        CM1111(BU,1),SSETUP($11)     ! line 15
+        LX,0,$+1.                    ! line 16
+        SX,0,SIOINS($12)             ! line 17
+        CTL,0.0($14),(8)176.         ! line 18  -BSP COMMAND
+        SIC,SRETAD($12)              ! line 19
+        B,MIOREJ                     ! line 20
+        SIC,KKIND                    ! line 21
+        B,KIOIND                     ! line 22
+        L,SFMODE(EF),1               ! line 23  -LOAD FILE MODE IN $R
+        BRZ,ZWLABL                   ! line 24
+        CTI0110(BU,2),(8)600000.,1   ! line 25  -TEST IF 11  (NO ECC ODD)
+        BZRZ,$+2.0                   ! line 26  -IF NOT,BRANCH
+ZWLABL  LFI(BU,6),(8)460000.0        ! line 27  -GET BCD 0 FOR NECC ODD
+        B,$+1.32                     ! line 28
+        CI0111(BU,6),(8)610000.      ! line 29  -MAKE BCD C OR E
+        C0011(BU,1),SFDEN($13),6     ! line 30
+        BZRZ,$+2.0                   ! line 31  -TEST IF DESIRED DESITY IS HIGH
+        C1111(BU,3),,9               ! line 32  -IF SO,MAKE BCD H
+        B,$+1.32                     ! line 33
+        CI0111(BU,6),(8)420000.,6    ! line 34  -IF NOT,MAKE BCD L FOR LOW DENS
+        LVE,0,RV4                    ! line 35
+        SV,0,ELABCW                  ! line 36
+        SF(BU,2),SLABM($12),1        ! line 37  -SET MODE
+        SF(BU,1),SLABD($12),6        ! line 38  -SET DENSITY
+        SF(BU,12),SSCRPM+.30($12)    ! line 39  -SET UP LABEL
+        LI(BU,24),(8)202020.20       ! line 40
+        SF(BU,22),SSCRPM.42($12),2   ! line 41
+        CNOP                         ! line 42
+        LX,0,$+1.0                   ! line 43
+        SX,0,SIOINS($12)             ! line 44
+        W,0.0($14),ELABCW            ! line 45  -WRITE LABEL COMMAND
+        LVI,1,KSUPP                  ! line 46
+        CM0000(BU,1),SCTL($11)       ! line 47
+        CM1111,SSETUP(EU)            ! line 48  -TURN ON SET UP BIT
+
+! ---------------------------------------------------------------
+! THE PRINTED LISTING, AS RENDERED AT 150/400/600/900/1800 dpi
+! ---------------------------------------------------------------
+!   1*  217704.40   000000.37 8B  001000.36 F0            CM1111(BU,1),S SET UP($11)                             IB000088
+!   2*  217705.40 * 000000.30 00                          CNOP                                                   IB000089
+!   3*  217706.00   217707.00 10                          LX,0,$+1.                                              IB000090
+!   4*  217706.40   000004.01 1C                          SX,0,S IOINS($12)                                      IB000090
+!   5*  217707.00   000000.00 8E  000000.05 00   K DEN OP CTL,0.0($14),0.0        -CHANGE DENSITY COMMAND        IB000091
+!   6*  217710.00   216242.03 01                          LVI,1,K SUPP                                           IB000092
+!   7*  217710.40   221261.10 00                          B,M IO REJ              -CHECK IF ACCEPTED             IB000092
+!   8*                                          -                                                                IB000093
+!   9*                                          -         *****************   WRITE LABEL   *****************    IB000094
+!  10*                                          -                                                                IB000095
+!  11*  217711.00   216242.03 01                 K W LABL LVI,1,K SUPP            -BACKSPACE BLOCK               IB000096
+!  12*  217711.40   000010.62 3C                          LV,9,S C REEL($12)                                     IB000097
+!  13*  217712.00   000000.32 89  220064.34 02            BB,S FP($9),K ILEGL     -IF FILE PROTECTED, FAKE EPGK  IB000098
+!  14*                                                    CNOP                                                   IB000099
+!  15*  217713.00   000000.37 8B  001000.36 F0            CM1111(BU,1),S SET UP($11)                             IB000100
+!  16*  217714.00   217715.00 10                          LX,0,$+1.                                              IB000101
+!  17*  217714.40   000004.01 1C                          SX,0,S IO INS($12)                                     IB000101
+!  18*  217715.00   000000.00 8E  000176.05 00            CTL,0.0($14),(8)176.    -BSP COMMAND                   IB000102
+!  19*  217716.00   000005.00 8C                          SIC,S RET AD($12)                                      IB000103
+!  20*  217716.40   221261.10 00                          B,M IO REJ                                             IB000103
+!  21*  217717.00   221371.00 80                          SIC,K K IND                                            IB000104
+!  22*  217717.40   221370.10 00                          B,K IO IND                                             IB000104
+!  23*  217720.00   000002.60 8D  002000.60 50            L,S F MODE(EF),1        -LOAD FILE MODE IN $R          IB000105
+!  24*  217721.00 * 217723.34 C2                          BRZ,Z WLABL                                            IB000106
+!  25*  217721.40   600000.00 80  402000.55 70            CTI0110(BU,2),(8)600000.,1  -TEST IF 11  (NO ECC ODD)  IB000107
+!  26*  217722.40   217724.74 C0                          BZRZ,$+2.0              -IF NOT,BRANCH                 IB000108
+!  27*  217723.00   460000.00 80  406000.06 70   Z WLABL  LFI(BU,6),(8)460000.0   -GET BCD 0 FOR NECC ODD        IB000109
+!  28*  217724.00   217725.50 00                          B,$+1.32                                               IB000110
+!  29*  217724.40   610000.00 80  406000.16 70            CI0111(BU,6),(8)610000. -MAKE BCD C OR E               IB000111
+!  30*  217725.40   000002.33 8D  001003.06 70            C0011(BU,1),S F DEN($13),6                             IB000112
+!  31*  217726.40   217730.74 C0                          BZRZ,$+2.0              -TEST IF DESIRED DESITY IS HIGH IB000113
+!  32*  217727.00   000000.00 80  003004.76 70            C1111(BU,3),,9          -IF SO,MAKE BCD H              IB000114
+!  33*  217730.00   217731.50 00                          B,$+1.32                                               IB000115
+!  34*  217730.40   420000.00 80  406003.16 70            CI0111(BU,6),(8)420000.,6 -IF NOT,MAKE BCD L FOR LOW DENS IB000116
+!  35*  217731.40   221201.01 B0                          LVE,0,R V4                                             IB000117
+!  36*  217732.00   217765.01 30                           SV,0,E LAB CW                                         IB000117
+!  37*  217732.40   000007.20 8C  002000.52 F0            SF(BU,2),S LABM($12),1  -SET MODE                      IB000118
+!  38*  217733.40   000007.35 8C  001003.12 F0            SF(BU,1),S LAB D($12),6 -SET DENSITY                   IB000119
+!  39*  217734.40 * 000006.36 8C  014000.12 F0            SF(BU,12),S SCR PM+.30($12)  -SET UP LABEL             IB000120
+!  40*  217735.40   202020.20 80  430000.20 50            LI(BU,24),(8)202020.20                                 IB000121
+!  41*  217736.40   000006.52 8C  026001.12 F0            SF(BU,22),S SCR PM.42($12),2                           IB000122
+!  42*  217737.40   000000.30 00                          CNOP                                                   IB000123
+!  43*  217740.00   217741.00 10                          LX,0,$+1.0                                             IB000124
+!  44*  217740.40   000004.01 1C                          SX,0,S IO INS($12)                                     IB000124
+!  45*  217741.00   000000.00 8E  217765.03 00            W,0.0($14),E LAB CW     -WRITE LABEL COMMAND           IB000125
+!  46*  217742.00   216242.03 01                          LVI,1,K SUPP                                           IB000126
+!  47*  217742.40   000000.74 8B  001000.00 F0            CM0000(BU,1),S CTL($11)                                IB000127
+!  48*  217743.40   000000.37 8B  001000.36 F0            CM1111,S SET UP(EU)     -TURN ON SET UP BIT            IB000128
+!
+! The banner on line 9 is SEVENTEEN asterisks, three blanks,
+! "WRITE LABEL", three blanks, SEVENTEEN asterisks -- counted by
+! column runs over the 600-dpi render, not by eye.
+!
+! ---------------------------------------------------------------
+! THE CHECKS
+! ---------------------------------------------------------------
+!SYM   KDENOP   217707.00
+!SYM   KWLABL   217711.00
+!SYM   ZWLABL   217723.00
+!CHECK 217704.40 | 000000.37 8B 001000.36 F0 | line 1 CM1111(BU,1),S SET UP($11) -- .37 is S SET UP's 0.31 octal
+!CHECK 217705.40 | 000000.30 00 | line 2 CNOP -- emits because the counter is at an odd half word
+!CHECK 217706.00 | 217707.00 10 | line 3 LX,0,$+1.
+!CHECK 217706.40 | 000004.01 1C | line 4 SX,0,S IOINS($12) -- printed with no blank; line 17 prints "S IO INS"
+!CHECK 217707.00 | 000000.00 8E 000000.05 00 | line 5 K DEN OP CTL,0.0($14),0.0 -- 8E is the index $14
+!CHECK 217710.00 | 216242.03 01 | line 6 LVI,1,K SUPP -- the .03 is LVI's operation bits, not K SUPP's offset
+!CHECK 217710.40 | 221261.10 00 | line 7 B,M IO REJ (same card as line 6)
+!CHECK 217711.00 | 216242.03 01 | line 11 K W LABL LVI,1,K SUPP -- byte-identical to line 6, four lines apart
+!CHECK 217711.40 | 000010.62 3C | line 12 LV,9,S C REEL($12) -- .62 is S C REEL's 8.32 (octal .40) plus J=9
+!CHECK 217712.00 | 000000.32 89 220064.34 02 | line 13 BB,S FP($9),K ILEGL -- 89 is the index $9
+!CHECK 217713.00 | 000000.37 8B 001000.36 F0 | line 15 CM1111(BU,1),S SET UP($11) -- the word line 14's silent CNOP guarantees
+!CHECK 217714.00 | 217715.00 10 | line 16 LX,0,$+1.
+!CHECK 217714.40 | 000004.01 1C | line 17 SX,0,S IO INS($12) (same card as line 16)
+!CHECK 217715.00 | 000000.00 8E 000176.05 00 | line 18 CTL,0.0($14),(8)176. -- FAILS ON PURPOSE, see TWO ROWS ARE LEFT FAILING (A): the printed dotted literal assembles 64x too big, and (8)176 without the dot gives this printed word exactly
+!CHECK 217716.00 | 000005.00 8C | line 19 SIC,S RET AD($12) -- 8C is the index $12
+!CHECK 217716.40 | 221261.10 00 | line 20 B,M IO REJ (same card as line 19)
+!CHECK 217717.00 | 221371.00 80 | line 21 SIC,K K IND -- a bare 24-bit address, so this row pins K K IND to the bit
+!CHECK 217717.40 | 221370.10 00 | line 22 B,K IO IND (same card as line 21) -- .10 is B's operation bit
+!CHECK 217720.00 | 000002.60 8D 002000.60 50 | line 23 L,S F MODE(EF),1 -- 8D is index 13, which is what reads EF
+!CHECK 217721.00 | 217723.34 C2 | line 24 BRZ,Z WLABL -- forward reference to line 27, a real check of this page's counting
+!CHECK 217721.40 | 600000.00 80 402000.55 70 | line 25 CTI0110(BU,2),(8)600000.,1 -- the .55 against line 27's .06 is CT's own bit
+!CHECK 217722.40 | 217724.74 C0 | line 26 BZRZ,$+2.0 -- target 217724.40, printed .74
+!CHECK 217723.00 | 460000.00 80 406000.06 70 | line 27 Z WLABL LFI(BU,6),(8)460000.0 -- LF is the connective C0011, immediate
+!CHECK 217724.00 | 217725.50 00 | line 28 B,$+1.32 -- .32 bare is DECIMAL 32 bits, printed .40, plus B's .10
+!CHECK 217724.40 | 610000.00 80 406000.16 70 | line 29 CI0111(BU,6),(8)610000. -- C0111 immediate
+!CHECK 217725.40 | 000002.33 8D 001003.06 70 | line 30 C0011(BU,1),S F DEN($13),6 -- .33 is S F DEN's 2.27 octal
+!CHECK 217726.40 | 217730.74 C0 | line 31 BZRZ,$+2.0 -- byte-identical to line 26
+!CHECK 217727.00 | 000000.00 80 003004.76 70 | line 32 C1111(BU,3),,9 -- FAILS ON PURPOSE, see TWO ROWS ARE LEFT FAILING (B): an empty address field silently loses the offset 9, and C1111(BU,3),0,9 gives this printed word exactly
+!CHECK 217730.00 | 217731.50 00 | line 33 B,$+1.32
+!CHECK 217730.40 | 420000.00 80 406003.16 70 | line 34 CI0111(BU,6),(8)420000.,6 -- same op as line 29, offset 6 shows in the .03
+!CHECK 217731.40 | 221201.01 B0 | line 35 LVE,0,R V4 -- B0, not the LV family's 3x
+!CHECK 217732.00 | 217765.01 30 | line 36 SV,0,E LAB CW (same card as line 35)
+!CHECK 217732.40 | 000007.20 8C 002000.52 F0 | line 37 SF(BU,2),S LABM($12),1 -- SF is CM0101; .20 is S LABM's 7.16 octal
+!CHECK 217733.40 | 000007.35 8C 001003.12 F0 | line 38 SF(BU,1),S LAB D($12),6 -- .35 is S LAB D's 7.29 octal
+!CHECK 217734.40 | 000006.36 8C 014000.12 F0 | line 39 SF(BU,12),S SCR PM+.30($12) -- the +.30 is DECIMAL 30, printed octal .36
+!CHECK 217735.40 | 202020.20 80 430000.20 50 | line 40 LI(BU,24),(8)202020.20 -- 24 bits of BCD blank
+!CHECK 217736.40 | 000006.52 8C 026001.12 F0 | line 41 SF(BU,22),S SCR PM.42($12),2 -- the .42 is DECIMAL 42, printed octal .52
+!CHECK 217737.40 | 000000.30 00 | line 42 CNOP -- emits, byte-identical to line 2
+!CHECK 217740.00 | 217741.00 10 | line 43 LX,0,$+1.0 -- printed ".0" where lines 3 and 16 print "."
+!CHECK 217740.40 | 000004.01 1C | line 44 SX,0,S IO INS($12) (same card as line 43)
+!CHECK 217741.00 | 000000.00 8E 217765.03 00 | line 45 W,0.0($14),E LAB CW -- the .03 is the operation's bits
+!CHECK 217742.00 | 216242.03 01 | line 46 LVI,1,K SUPP -- the third byte-identical copy on this page
+!CHECK 217742.40 | 000000.74 8B 001000.00 F0 | line 47 CM0000(BU,1),S CTL($11) -- .74 is S CTL's 0.60 octal
+!CHECK 217743.40 | 000000.37 8B 001000.36 F0 | line 48 CM1111,S SET UP(EU) -- identical to lines 1 and 15, which is what reads EU

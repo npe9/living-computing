@@ -23,12 +23,57 @@ accumulate.
 
 
 
-## DOES A DOTTED LITERAL IN A CTL/LOC CODE FIELD CONVERT? -- OPEN, blocks three pages
+## I DROPPED A CONNECTIVE'S OFFSET FIELD THIS SESSION -- fixed same day
 
-**Three transcribed decks are held out of the suite on this one
-question**: printed pp.154, 155 and 156, each with exactly one failing
-row. The transcriptions are believed right; the assembler's answer is
-what is in doubt.
+> **A BUG I INTRODUCED, caught by the next page that could see it.**
+> The bare-connective rewrite added for printed p.136 ("a connective
+> may carry no address field at all") replaced the WHOLE field list
+> with `['0.0']` -- discarding every field after the address.
+>
+> printed p.155 line 32 prints `C1111(BU,3),,9` and compiles
+> `003004.76 70`; it came out `003000.36 70`. Measured: `,,9` and
+> `,,11` produced the **same** word, so the offset was DROPPED, not
+> misread, and nothing was reported.
+>
+> **The citation was already in the file, quoted by half.** C22-6531
+> printed p.7 was cited for "a null field is always compiled as a
+> zero" -- and the sentence continues: *"A MAJOR FIELD MAY BE NULL,
+> EVEN THOUGH OTHER NON-NULL FIELDS FOLLOW IT. Such is the case if
+> nothing but the comma denoting the field termination is written."*
+> That describes this statement exactly. **Reading one more sentence
+> of the source I was already citing would have prevented it.**
+>
+> Injection: restore the `['0.0']` rewrite and printed p.155 line 32
+> fails; printed p.136's bare `C1111(BU,1)` passes either way, which
+> is why the original change looked complete.
+
+## A CONTROL CODE WRITTEN AS AN ADDRESS IS WORD-GRANULAR -- closed 2026-10-31
+
+> **CLOSED, and NOT by overturning Reference Manual p.111.** The
+> resolution is that the two rules were never in conflict: p.111 says
+> what the value MEANS to the device (control information, not a
+> core-storage address), and the question was how STRAP EVALUATES the
+> operand. Gating on the operand's SPELLING answers it without
+> touching the behaviour p.111 had the blanket conversion removed for.
+>
+> The tokenizer already separates them, which is what makes this safe:
+>
+> ```
+>   (8)176.  ->  bitaddr (126, 0)      word 126
+>   (8)176   ->  int 126
+>   126      ->  int 126
+> ```
+>
+> An INTEGER operand is used exactly as written -- so
+> `decks/io_tape.strap`'s tested `CTL, 0($1), 126` and every other
+> bare code in the corpus are **bit-identical**, which was the
+> falsifier named before the change and it held. An operand written
+> as an ADDRESS converts, which is what the three printed rows need.
+> All three spellings now compile to the same word.
+
+Three decks were held out of the suite for one commit on this
+question: printed pp.154, 155 and 156, each with exactly one failing
+row.
 
 **The rows.** Each prints a control code written as a DOTTED literal
 and lands it as a word number:
